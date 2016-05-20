@@ -103,8 +103,8 @@ void Rdb::addBase ( collnum_t collnum , RdbBase *base ) {
 	//cr->m_bases[(unsigned char)m_rdbId] = base;
 	cr->setBasePtr ( m_rdbId , base );
 	log ( LOG_DEBUG,"db: added base to collrec "
-	    "for rdb=%s rdbid=%"INT32" coll=%s collnum=%"INT32" "
-	      "base=0x%"PTRFMT"",
+	    "for rdb=%s rdbid=%" PRId32" coll=%s collnum=%" PRId32" "
+	      "base=0x%" PTRFMT"",
 	    m_dbname,(int32_t)m_rdbId,cr->m_coll,(int32_t)collnum,
 	      (PTRTYPE)base);
 }
@@ -274,7 +274,7 @@ bool Rdb::updateToRebuildFiles ( Rdb *rdb2 , char *coll ) {
 	int32_t status = ::mkdir ( dstDir , getDirCreationFlags() );
 
 	// we have to create it
-	sprintf ( dstDir , "%s/trash/rebuilt%"UINT32"/" , g_hostdb.m_dir , t );
+	sprintf ( dstDir , "%s/trash/rebuilt%" PRIu32"/" , g_hostdb.m_dir , t );
 	status = ::mkdir ( dstDir , getDirCreationFlags() );
 	if ( status && errno != EEXIST ) {
 		g_errno = errno;
@@ -397,7 +397,7 @@ bool Rdb::addRdbBase2 ( collnum_t collnum ) { // addColl2()
 		g_errno = ENOBUFS;
 		int64_t maxColls = 1LL << (sizeof(collnum_t)*8);
 		return log("db: %s: Failed to add collection #%i. Would "
-			   "breech maximum number of collections, %"INT64".",
+			   "breech maximum number of collections, %" PRId64".",
 			   m_dbname,collnum,maxColls);
 	}
 
@@ -417,7 +417,7 @@ bool Rdb::addRdbBase2 ( collnum_t collnum ) { // addColl2()
 	if ( base ) { // m_bases [ collnum ] ) {
 		g_errno = EBADENGINEER;
 		return log("db: Rdb for db \"%s\" and "
-			   "collection \"%s\" (collnum %"INT32") exists.",
+			   "collection \"%s\" (collnum %" PRId32") exists.",
 			   m_dbname,coll,(int32_t)collnum);
 	}
 	// make a new one
@@ -425,7 +425,7 @@ bool Rdb::addRdbBase2 ( collnum_t collnum ) { // addColl2()
 	try {newColl= new(RdbBase);}
 	catch(...){
 		g_errno = ENOMEM;
-		return log("db: %s: Failed to allocate %"INT32" bytes for "
+		return log("db: %s: Failed to allocate %" PRId32" bytes for "
 			   "collection \"%s\".",
 			   m_dbname,(int32_t)sizeof(Rdb),coll);
 	}
@@ -589,7 +589,7 @@ bool Rdb::deleteColl ( collnum_t collnum , collnum_t newCollnum ) {
 
 	
 	log(LOG_DEBUG,"db: %s base from collrec "
-	    "rdb=%s rdbid=%"INT32" coll=%s collnum=%"INT32" newcollnum=%"INT32"",
+	    "rdb=%s rdbid=%" PRId32" coll=%s collnum=%" PRId32" newcollnum=%" PRId32,
 	    msg,m_dbname,(int32_t)m_rdbId,coll,(int32_t)collnum,
 	    (int32_t)newCollnum);
 
@@ -597,16 +597,16 @@ bool Rdb::deleteColl ( collnum_t collnum , collnum_t newCollnum ) {
 	// new dir. otherwise RdbDump will try to dump out the recs to
 	// the old dir and it will end up coring
 	//char tmp[1024];
-	//sprintf(tmp , "%scoll.%s.%"INT32"",g_hostdb.m_dir,coll,(int32_t)newCollnum );
+	//sprintf(tmp , "%scoll.%s.%" PRId32,g_hostdb.m_dir,coll,(int32_t)newCollnum );
 	//m_dir.set ( tmp );
 
 	// move the files into trash
 	// nuke it on disk
 	char oldname[1024];
-	sprintf(oldname, "%scoll.%s.%"INT32"/",g_hostdb.m_dir,coll,
+	sprintf(oldname, "%scoll.%s.%" PRId32"/",g_hostdb.m_dir,coll,
 		(int32_t)collnum);
 	char newname[1024];
-	sprintf(newname, "%strash/coll.%s.%"INT32".%"INT64"/",g_hostdb.m_dir,coll,
+	sprintf(newname, "%strash/coll.%s.%" PRId32".%" PRId64"/",g_hostdb.m_dir,coll,
 		(int32_t)collnum,gettimeofdayInMilliseconds());
 	//Dir d; d.set ( dname );
 	// ensure ./trash dir is there
@@ -614,7 +614,7 @@ bool Rdb::deleteColl ( collnum_t collnum , collnum_t newCollnum ) {
 	// move into that dir
 	::rename ( oldname , newname );
 
-	log ( LOG_DEBUG, "db: cleared data for coll \"%s\" (%"INT32") rdb=%s.",
+	log ( LOG_DEBUG, "db: cleared data for coll \"%s\" (%" PRId32") rdb=%s.",
 	       coll,(int32_t)collnum ,getDbnameFromId(m_rdbId));
 
 	return true;
@@ -954,7 +954,7 @@ bool Rdb::loadTree ( ) {
 
 		int32_t numKeys = m_buckets.getNumKeys();
 		
-		// log("db: Loaded %"INT32" recs from %s's buckets on disk.",
+		// log("db: Loaded %" PRId32" recs from %s's buckets on disk.",
 		//     numKeys, m_dbname);
 		
 		if(!m_buckets.testAndRepair()) {
@@ -966,7 +966,7 @@ bool Rdb::loadTree ( ) {
 		if(treeExists) {
 			m_buckets.addTree( &m_tree );
 			if ( m_buckets.getNumKeys() - numKeys > 0 ) {
-				log( LOG_ERROR, "db: Imported %" INT32" recs from %s's tree to buckets.",
+				log( LOG_ERROR, "db: Imported %" PRId32" recs from %s's tree to buckets.",
 				     m_buckets.getNumKeys()-numKeys, m_dbname);
 			}
 
@@ -974,7 +974,7 @@ bool Rdb::loadTree ( ) {
 				m_buckets.setNeedsSave(false);
 			} else {
 				char newFilename[256];
-				sprintf(newFilename,"%s-%"INT32".old", filename, (int32_t)getTime());
+				sprintf(newFilename,"%s-%" PRId32".old", filename, (int32_t)getTime());
 				bool usingThreads = g_jobScheduler.are_new_jobs_allowed();
 				g_jobScheduler.disallow_new_jobs();
 				file.rename(newFilename);
@@ -1097,7 +1097,7 @@ bool Rdb::dumpTree ( int32_t niceness ) {
 	m_niceness = niceness;
 
 	// debug msg
-	log(LOG_INFO,"db: Dumping %s to disk. nice=%"INT32"",m_dbname,niceness);
+	log(LOG_INFO,"db: Dumping %s to disk. nice=%" PRId32,m_dbname,niceness);
 
 	// record last dump time so main.cpp will not save us this period
 	m_lastWrite = gettimeofdayInMilliseconds();
@@ -1121,7 +1121,7 @@ bool Rdb::dumpTree ( int32_t niceness ) {
 	}
 
 	log( LOG_INFO, "db: Checking validity of in memory data of %s before dumping, "
-	     "took %"INT64" ms.",m_dbname,gettimeofdayInMilliseconds()-start );
+	     "took %" PRId64" ms.",m_dbname,gettimeofdayInMilliseconds()-start );
 
 	////
 	//
@@ -1264,7 +1264,7 @@ bool Rdb::dumpCollLoop ( ) {
 
 	// hwo can this happen? error swappingin?
 	if ( ! base ) { 
-		log( LOG_WARN, "rdb: dumpcollloop base was null for cn=%"INT32"", (int32_t)m_dumpCollnum);
+		log( LOG_WARN, "rdb: dumpcollloop base was null for cn=%" PRId32, (int32_t)m_dumpCollnum);
 		goto hadError;
 	}
 
@@ -1288,7 +1288,7 @@ bool Rdb::dumpCollLoop ( ) {
 	if ( base->m_numFiles + 1 >= MAX_RDB_FILES ) {
 		if ( s_flag < 10 )
 			log( LOG_WARN, "db: could not dump tree to disk for cn="
-			    "%i %s because it has %"INT32" files on disk. "
+			    "%i %s because it has %" PRId32" files on disk. "
 			    "Need to wait for merge operation.",
 			    (int)m_dumpCollnum,m_dbname,base->m_numFiles);
 		s_flag++;
@@ -1480,7 +1480,7 @@ void doneDumpingCollWrapper ( void *state ) {
 // RdbDump.cpp::dumpTree()
 void Rdb::doneDumping ( ) {
 	// msg
-	//log(LOG_INFO,"db: Done dumping %s to %s (#%"INT32"): %s.",
+	//log(LOG_INFO,"db: Done dumping %s to %s (#%" PRId32"): %s.",
 	//    m_dbname,m_files[n]->getFilename(),n,mstrerror(g_errno));
 	log(LOG_INFO,"db: Done dumping %s: %s.",m_dbname,
 	    mstrerror(m_dumpErrno));
@@ -1529,17 +1529,17 @@ void forceMergeAll ( char rdbId , char niceness ) {
 		CollectionRec *cr = g_collectiondb.m_recs[i];
 		if ( ! cr ) 
 		{
-			log(LOG_INFO,"%s:%s:%d: coll %"INT32" - could not get CollectionRec", __FILE__,__func__,__LINE__,i);
+			log(LOG_INFO,"%s:%s:%d: coll %" PRId32" - could not get CollectionRec", __FILE__,__func__,__LINE__,i);
 			continue;
 		}
 		RdbBase *base = cr->getBase ( rdbId );
 		if ( ! base ) 
 		{
-			log(LOG_INFO,"%s:%s:%d: coll %"INT32" - could not get RdbBase", __FILE__,__func__,__LINE__,i);
+			log(LOG_INFO,"%s:%s:%d: coll %" PRId32" - could not get RdbBase", __FILE__,__func__,__LINE__,i);
 			continue;
 		}
 
-		log(LOG_INFO,"%s:%s:%d: coll %"INT32" - Set next merge to Forced", __FILE__,__func__,__LINE__,i);
+		log(LOG_INFO,"%s:%s:%d: coll %" PRId32" - Set next merge to Forced", __FILE__,__func__,__LINE__,i);
 		base->m_nextMergeForced = true;
 	}
 
@@ -1678,7 +1678,7 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list, int32_t niceness/*, bool 
 	       m_rdbId == RDB_SPIDERDB   ) ) {
 
 		// allow banning of sites still
-		log("db: How did an add come in while in repair mode? rdbId=%"INT32"",(int32_t)m_rdbId);
+		log("db: How did an add come in while in repair mode? rdbId=%" PRId32,(int32_t)m_rdbId);
 		g_errno = EREPAIRING;
 		return false;
 	}
@@ -1710,7 +1710,7 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list, int32_t niceness/*, bool 
 		// if tree is empty, list will never fit!!!
 		if ( m_useTree && m_tree.getNumUsedNodes() <= 0 ) {
 			g_errno = ELISTTOOBIG;
-			log( LOG_WARN, "db: Tried to add a record that is simply too big (%" INT32" bytes) to ever fit in "
+			log( LOG_WARN, "db: Tried to add a record that is simply too big (%" PRId32" bytes) to ever fit in "
 				   "the memory space for %s. Please increase the max memory for %s in gb.conf.",
 				   list->m_listSize, m_dbname, m_dbname );
 			return false;
@@ -1948,8 +1948,8 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 	// sanity check
 	else if ( m_fixedDataSize >= 0 && dataSize != m_fixedDataSize ) {
 		g_errno = EBADENGINEER;
-		log(LOG_LOGIC,"db: addRecord: DataSize is %"INT32" should "
-		    "be %"INT32"", dataSize,m_fixedDataSize );
+		log(LOG_LOGIC,"db: addRecord: DataSize is %" PRId32" should "
+		    "be %" PRId32, dataSize,m_fixedDataSize );
 		char *xx=NULL;*xx=0;
 		return false;
 	}
@@ -1994,7 +1994,7 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 		data = (char *) m_mem.dupData ( key, data, dataSize, collnum);
 		if ( ! data ) { 
 			g_errno = ETRYAGAIN; 
-			return log("db: Could not allocate %"INT32" bytes to add "
+			return log("db: Could not allocate %" PRId32" bytes to add "
 				   "data to %s. Retrying.",dataSize,m_dbname);
 		}
 	}
@@ -2030,7 +2030,7 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 		if ( KEYNEG(key) ) {
 			// log debug
 			logf(LOG_DEBUG,"spider: removed doledb key "
-			     "for pri=%"INT32" time=%"UINT32" uh48=%"UINT64"",
+			     "for pri=%" PRId32" time=%" PRIu32" uh48=%" PRIu64,
 			     (int32_t)g_doledb.getPriority(&doleKey),
 			     (uint32_t)g_doledb.getSpiderTime(&doleKey),
 			     g_doledb.getUrlHash48(&doleKey));
@@ -2040,9 +2040,9 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 			// log debug
 			SpiderRequest *sreq = (SpiderRequest *)data;
 			logf(LOG_DEBUG,"spider: added doledb key "
-			     "for pri=%"INT32" time=%"UINT32" "
-			     "uh48=%"UINT64" "
-			     //"docid=%"INT64" "
+			     "for pri=%" PRId32" time=%" PRIu32" "
+			     "uh48=%" PRIu64" "
+			     //"docid=%" PRId64" "
 			     "u=%s",
 			     (int32_t)g_doledb.getPriority(&doleKey),
 			     (uint32_t)g_doledb.getSpiderTime(&doleKey),
@@ -2085,7 +2085,7 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 					// log debug
 					logf(LOG_DEBUG,"spider: rdb: "
 					     "got negative doledb "
-					     "key for uh48=%"UINT64" - removing "
+					     "key for uh48=%" PRIu64" - removing "
 					     "spidering lock",
 					     g_doledb.getUrlHash48(&doleKey));
 			}
@@ -2255,7 +2255,7 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 				       sizeof(key_t) );
 				// debug log
 				if ( g_conf.m_logDebugSpider )
-					log("spider: cursor reset pri=%"INT32" to "
+					log("spider: cursor reset pri=%" PRId32" to "
 					    "%s",
 					    pri,KEYSTR(key,12));
 			}
@@ -2277,8 +2277,8 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 			if ( g_conf.m_logDebugSpider )
 				logf(LOG_DEBUG,"spider: rdb: added spider "
 				     "request to spiderdb rdb tree "
-				     "addnode=%"INT32" "
-				     "request for uh48=%"UINT64" prntdocid=%"UINT64" "
+				     "addnode=%" PRId32" "
+				     "request for uh48=%" PRIu64" prntdocid=%" PRIu64" "
 				     "firstIp=%s spiderdbkey=%s",
 				     tn,
 				     sreq->getUrlHash48(), 
@@ -2301,7 +2301,7 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 			// log that. why isn't this undoling always
 			if ( g_conf.m_logDebugSpider )
 				logf(LOG_DEBUG,"rdb: rdb: got spider reply"
-				     " for uh48=%"UINT64"",rr->getUrlHash48());
+				     " for uh48=%" PRIu64,rr->getUrlHash48());
 			// add the reply
 			sc->addSpiderReply(rr);
 			// don't actually add it if "fake". i.e. if it
@@ -2322,7 +2322,7 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 			     indexCode == EHITPROCESSLIMIT ) {
 				log("rdb: not adding spiderreply to rdb "
 				    "because "
-				    "it was an internal error for uh48=%"UINT64" "
+				    "it was an internal error for uh48=%" PRIu64" "
 				    "errCode = %s",
 				    rr->getUrlHash48(),
 				    mstrerror(indexCode));
@@ -2672,7 +2672,7 @@ int32_t getDataSizeFromRdbId ( uint8_t rdbId ) {
 char *getDbnameFromId ( uint8_t rdbId ) {
         Rdb *rdb = getRdbFromId ( rdbId );
 	if ( rdb ) return rdb->m_dbname;
-	log(LOG_LOGIC,"db: rdbId of %"INT32" is invalid.",(int32_t)rdbId);
+	log(LOG_LOGIC,"db: rdbId of %" PRId32" is invalid.",(int32_t)rdbId);
 	return "INVALID";
 }
 
@@ -2702,7 +2702,7 @@ RdbBase *getRdbBase ( uint8_t rdbId, const char *coll ) {
 RdbBase *getRdbBase ( uint8_t rdbId , collnum_t collnum ) {
 	Rdb *rdb = getRdbFromId ( rdbId );
 	if ( ! rdb ) {
-		log("db: Collection #%"INT32" does not exist.",(int32_t)collnum);
+		log("db: Collection #%" PRId32" does not exist.",(int32_t)collnum);
 		return NULL;
 	}
 	if ( rdb->m_isCollectionLess ) collnum = (collnum_t) 0;
@@ -2843,8 +2843,8 @@ int32_t Rdb::reclaimMemFromDeletedTreeNodes( int32_t niceness ) {
 		// a dup? sanity check
 		if ( ht.isInTable ( &doff ) ) {
 			int32_t *vp = (int32_t *) ht.getValue ( &doff );
-			log("rdb: reclaim got dup oldi=0x%"PTRFMT" "
-			    "newi=%"INT32" dataoff=%"INT32"."
+			log("rdb: reclaim got dup oldi=0x%" PTRFMT" "
+			    "newi=%" PRId32" dataoff=%" PRId32"."
 			    ,(PTRTYPE)vp,i,doff);
 			//while ( 1 == 1 ) sleep(1);
 			dups++;
@@ -2918,7 +2918,7 @@ int32_t Rdb::reclaimMemFromDeletedTreeNodes( int32_t niceness ) {
 
 	// sanity -- this breaks us. i tried taking the quickpolls out to stop
 	// if(ht.getNumSlotsUsed()!=m_tree.m_numUsedNodes){
-	// 	log("rdb: %"INT32" != %"INT32
+	// 	log("rdb: %" PRId32" != %" PRId32
 	// 	    ,ht.getNumSlotsUsed()
 	// 	    ,m_tree.m_numUsedNodes
 	// 	    );
@@ -2956,8 +2956,8 @@ int32_t Rdb::reclaimMemFromDeletedTreeNodes( int32_t niceness ) {
 		m_tree.m_data[i] = newData;
 	}
 
-	log("rdb: reclaimed %"INT32" bytes after scanning %"INT32" "
-	    "undeleted nodes and %"INT32" deleted nodes for doledb"
+	log("rdb: reclaimed %" PRId32" bytes after scanning %" PRId32" "
+	    "undeleted nodes and %" PRId32" deleted nodes for doledb"
 	    ,reclaimed,nn,marked);
 
 	// return # of bytes of mem we reclaimed

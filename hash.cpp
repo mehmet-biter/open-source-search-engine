@@ -23,7 +23,7 @@ bool hashinit () {
 	if ( s_initialized ) return true;
 
 	// show RAND_MAX
-	//printf("RAND_MAX = %"UINT32"\n", RAND_MAX ); it's 0x7fffffff
+	//printf("RAND_MAX = %" PRIu32"\n", RAND_MAX ); it's 0x7fffffff
 	// seed with same value so we get same rand sequence for all
 	srand ( 1945687 );
 
@@ -45,7 +45,7 @@ bool hashinit () {
 			if ( rand() > (0x7fffffff / 2) ) 
 				g_hashtab[i][j] |= 0x80000000;
 			// fixes for cygwin/apple
-			//fprintf(stdout,"%"UINT64"ULL",g_hashtab[i][j]);
+			//fprintf(stdout,"%" PRIu64"ULL",g_hashtab[i][j]);
 			//if ( j+1<256 ) fprintf(stdout,",");
 		}
 		//fprintf(stdout,"},\n");

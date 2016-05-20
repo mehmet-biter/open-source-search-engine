@@ -234,7 +234,7 @@ bool sendBackDump ( TcpSocket *sock, HttpRequest *hr ) {
 			       // dedup. since stream=1 and pss=0 below
 			       // this will dedup on page content hash only
 			       // which is super fast.
-			       "dr=%"INT32"&"
+			       "dr=%" PRId32"&"
 			       "c=%s&n=1000000&"
 			       // stream it now
 			       "stream=1&"
@@ -270,7 +270,7 @@ bool sendBackDump ( TcpSocket *sock, HttpRequest *hr ) {
 			       // dedup. since stream=1 and pss=0 below
 			       // this will dedup on page content hash only
 			       // which is super fast.
-			       "dr=%"INT32"&"
+			       "dr=%" PRId32"&"
 			       "c=%s&n=1000000&"
 			       // we can stream this because unlink csv it
 			       // has no header row that needs to be 
@@ -307,7 +307,7 @@ bool sendBackDump ( TcpSocket *sock, HttpRequest *hr ) {
 			       // dedup. since stream=1 and pss=0 below
 			       // this will dedup on page content hash only
 			       // which is super fast.
-			       "dr=%"INT32"&"
+			       "dr=%" PRId32"&"
 			       "c=%s&n=1000000&"
 			       // we can stream this because unlink csv it
 			       // has no header row that needs to be 
@@ -414,7 +414,7 @@ bool sendBackDump ( TcpSocket *sock, HttpRequest *hr ) {
 	st->m_accumulated = 0LL;
 
 	// debug
-	//log("mnew1: st=%"XINT32"",(int32_t)st);
+	//log("mnew1: st=%" PRIx32,(int32_t)st);
 
 	// begin the possible segmented process of sending back spiderdb
 	// to the user's browser
@@ -441,7 +441,7 @@ bool readAndSendLoop ( StateCD *st , bool readFirst ) {
 
 	// wait if some are outstanding. how can this happen?
 	if ( st->m_numRequests > st->m_numReplies ) {
-		log("crawlbot: only got %"INT32" of %"INT32" replies. waiting for "
+		log("crawlbot: only got %" PRId32" of %" PRId32" replies. waiting for "
 		    "all to come back in.",
 		    st->m_numReplies,st->m_numRequests);
 		return false;
@@ -522,7 +522,7 @@ bool StateCD::readDataFromRdb ( ) {
 	CollectionRec *cr = g_collectiondb.getRec(m_collnum);
 	// collection got nuked?
 	if ( ! cr ) {
-		log("crawlbot: readdatafromrdb: coll %"INT32" got nuked",
+		log("crawlbot: readdatafromrdb: coll %" PRId32" got nuked",
 		    (int32_t)m_collnum);
 		g_errno = ENOCOLLREC;
 		return true;
@@ -549,7 +549,7 @@ bool StateCD::readDataFromRdb ( ) {
 		Host *h = g_hostdb.getLiveHostInShard(i);
 		// show it
 		int32_t ks = getKeySizeFromRdbId(m_rdbId);
-		log("dump: asking host #%"INT32" for list sk=%s",
+		log("dump: asking host #%" PRId32" for list sk=%s",
 		    h->m_hostId,KEYSTR(sk,ks));
 		// msg0 uses multicast in case one of the hosts in a shard is
 		// dead or dies during this call.
@@ -592,7 +592,7 @@ bool StateCD::sendList ( ) {
 	// inc it
 	//m_numReplies++;
 	// sohw it
-	log("crawlbot: got list from shard. req=%"INT32" rep=%"INT32"",
+	log("crawlbot: got list from shard. req=%" PRId32" rep=%" PRId32,
 	    m_numRequests,m_numReplies);
 	// return if still awaiting more replies
 	if ( m_numReplies < m_numRequests ) return false;
@@ -651,7 +651,7 @@ bool StateCD::sendList ( ) {
 		m_needMore[i] = false;
 
 		// report it
-		log("dump: got list of %"INT32" bytes from host #%"INT32" round #%"INT32"",
+		log("dump: got list of %" PRId32" bytes from host #%" PRId32" round #%" PRId32,
 		    list->getListSize(),i,m_dumpRound);
 
 
@@ -705,7 +705,7 @@ bool StateCD::sendList ( ) {
 
 	m_dumpRound++;
 
-	//log("rdbid=%"INT32" fmt=%"INT32" some=%"INT32" printed=%"INT32"",
+	//log("rdbid=%" PRId32" fmt=%" PRId32" some=%" PRId32" printed=%" PRId32,
 	//    (int32_t)m_rdbId,(int32_t)m_fmt,(int32_t)m_someoneNeedsMore,
 	//    (int32_t)m_printedEndingBracket);
 
@@ -718,7 +718,7 @@ bool StateCD::sendList ( ) {
 		// end array of json objects. might be empty!
 		if ( m_rdbId == RDB_TITLEDB && m_fmt == FORMAT_JSON )
 			sb.safePrintf("\n]\n");
-		//log("adding ]. len=%"INT32"",sb.length());
+		//log("adding ]. len=%" PRId32,sb.length());
 		// i'd like to exit streaming mode here. i fixed tcpserver.cpp
 		// so if we are called from makecallback() there it won't
 		// call destroysocket if we WERE in streamingMode just yet
@@ -753,7 +753,7 @@ void doneSendingWrapper ( void *state , TcpSocket *sock ) {
 	//TcpSocket *socket = st->m_socket;
 	st->m_accumulated += sock->m_totalSent;
 
-	log("crawlbot: done sending on socket %"INT32"/%"INT32" [%"INT64"] bytes",
+	log("crawlbot: done sending on socket %" PRId32"/%" PRId32" [%" PRId64"] bytes",
 	    sock->m_totalSent,
 	    sock->m_sendBufUsed,
 	    st->m_accumulated);
@@ -804,7 +804,7 @@ void StateCD::printSpiderdbList ( RdbList *list,SafeBuf *sb,char **lastKeyPtr){
 		
 		if ( sreq->isCorrupt() ) {
 			log("spider: encountered a corrupt spider req "
-			    "when dumping cn=%"INT32". skipping.",
+			    "when dumping cn=%" PRId32". skipping.",
 			    (int32_t)cr->m_collnum);
 			continue;
 		}
@@ -813,7 +813,7 @@ void StateCD::printSpiderdbList ( RdbList *list,SafeBuf *sb,char **lastKeyPtr){
 		if ( srep && srep->getUrlHash48() != sreq->getUrlHash48()){
 			badCount++;
 			//log("diffbot: had a spider reply with no "
-			//    "corresponding spider request for uh48=%"INT64""
+			//    "corresponding spider request for uh48=%" PRId64
 			//    , srep->getUrlHash48());
 			//char *xx=NULL;*xx=0;
 		}
@@ -937,10 +937,10 @@ void StateCD::printSpiderdbList ( RdbList *list,SafeBuf *sb,char **lastKeyPtr){
 				       "{\"url\":"
 				       "\"%s\"},"
 				       "{\"time\":"
-				       "\"%"UINT32"\"},"
+				       "\"%" PRIu32"\"},"
 
 				       "{\"status\":"
-				       "\"%"INT32"\"},"
+				       "\"%" PRId32"\"},"
 
 				       "{\"statusMsg\":"
 				       "\"%s\"}"
@@ -972,9 +972,9 @@ void StateCD::printSpiderdbList ( RdbList *list,SafeBuf *sb,char **lastKeyPtr){
 				       , as
 				       );
 			if ( cr->m_isCustomCrawl )
-				sb->safePrintf("%"INT32",",(int32_t)isProcessed);
+				sb->safePrintf("%" PRId32",",(int32_t)isProcessed);
 			sb->safePrintf(
-				       "%"UINT32",%"UINT32",\"%s\",\"%s\",\""
+				       "%" PRIu32",%" PRIu32",\"%s\",\"%s\",\""
 				       //",%s"
 				       //"\n"
 				       // when was it first added to spiderdb?
@@ -1001,7 +1001,7 @@ void StateCD::printSpiderdbList ( RdbList *list,SafeBuf *sb,char **lastKeyPtr){
 			else if ( priority == -5 )
 				sb->safePrintf("will spider next round");
 			else 
-				sb->safePrintf("%"INT32"",priority);
+				sb->safePrintf("%" PRId32,priority);
 			sb->safePrintf("\""
 				       "\n");
 		}
@@ -1010,7 +1010,7 @@ void StateCD::printSpiderdbList ( RdbList *list,SafeBuf *sb,char **lastKeyPtr){
 	if ( ! badCount ) return;
 
 	log("diffbot: had a spider reply with no "
-	    "corresponding spider request %"INT32" times", badCount);
+	    "corresponding spider request %" PRId32" times", badCount);
 }
 
 
@@ -1157,7 +1157,7 @@ void addedUrlsToSpiderdbWrapper ( void *state ) {
 			     st->m_collnum );
 	mdelete ( st , sizeof(StateCD) , "stcd" );
 	delete st;
-	//log("mdel2: st=%"XINT32"",(int32_t)st);
+	//log("mdel2: st=%" PRIx32,(int32_t)st);
 }
 
 class HelpItem {
@@ -1270,7 +1270,7 @@ void collOpDoneWrapper ( void *state ) {
 	log("crawlbot: done with blocked op.");
 	mdelete ( st , sizeof(StateCD) , "stcd" );
 	delete st;
-	//log("mdel3: st=%"XINT32"",(int32_t)st);
+	//log("mdel3: st=%" PRIx32,(int32_t)st);
 	g_httpServer.sendDynamicPage (socket,"OK",2);
 }
 
@@ -1571,7 +1571,7 @@ bool sendPageCrawlbot ( TcpSocket *socket , HttpRequest *hr ) {
 	if ( cr ) coll = cr->m_coll;
 
 	if ( seeds )
-		log("crawlbot: adding seeds=\"%s\" coll=%s (%"INT32")",
+		log("crawlbot: adding seeds=\"%s\" coll=%s (%" PRId32")",
 		    seeds,coll,(int32_t)st->m_collnum);
 
 	char bulkurlsfile[1024];
@@ -1582,7 +1582,7 @@ bool sendPageCrawlbot ( TcpSocket *socket , HttpRequest *hr ) {
 		 g_hostdb.m_dir , coll );//, (int32_t)st->m_collnum );
 	if ( spots && cr && cr->m_isCustomCrawl == 2 ) {
 	    int32_t spotsLen = (int32_t)gbstrlen(spots);
-		log("crawlbot: got spots (len=%"INT32") to add coll=%s (%"INT32")",
+		log("crawlbot: got spots (len=%" PRId32") to add coll=%s (%" PRId32")",
 		    spotsLen,coll,(int32_t)st->m_collnum);
 		FILE *f = fopen(bulkurlsfile, "w");
 		if (f != NULL) {
@@ -1614,7 +1614,7 @@ bool sendPageCrawlbot ( TcpSocket *socket , HttpRequest *hr ) {
 		bb.load(bulkurlsfile);
 		bb.nullTerm();
 		spots = bb.getBufStart();
-		log("crawlbot: restarting bulk job file=%s bufsize=%"INT32" for %s",
+		log("crawlbot: restarting bulk job file=%s bufsize=%" PRId32" for %s",
 		    bulkurlsfile,bb.length(), cr->m_coll);
 	}
 
@@ -1682,7 +1682,7 @@ bool sendPageCrawlbot ( TcpSocket *socket , HttpRequest *hr ) {
 	// get rid of that state
 	mdelete ( st , sizeof(StateCD) , "stcd" );
 	delete st;
-	//log("mdel4: st=%"XINT32"",(int32_t)st);
+	//log("mdel4: st=%" PRIx32,(int32_t)st);
 	return true;
 }
 
@@ -1719,28 +1719,28 @@ bool printCrawlDetailsInJson ( SafeBuf *sb , CollectionRec *cx, int version ) {
 		      "\"name\":\"%s\",\n"
 		      "\"type\":\"%s\",\n"
 
-		       "\"jobCreationTimeUTC\":%"INT32",\n"
-		       "\"jobCompletionTimeUTC\":%"INT32",\n"
+		       "\"jobCreationTimeUTC\":%" PRId32",\n"
+		       "\"jobCompletionTimeUTC\":%" PRId32",\n"
 
 		      //"\"alias\":\"%s\",\n"
-		      //"\"crawlingEnabled\":%"INT32",\n"
+		      //"\"crawlingEnabled\":%" PRId32",\n"
 		      "\"jobStatus\":{" // nomen = jobStatus / crawlStatus
-		      "\"status\":%"INT32","
+		      "\"status\":%" PRId32","
 		      "\"message\":\"%s\"},\n"
-		      "\"sentJobDoneNotification\":%"INT32",\n"
-		      //"\"crawlingPaused\":%"INT32",\n"
-		      "\"objectsFound\":%"INT64",\n"
-		      "\"urlsHarvested\":%"INT64",\n"
-		      //"\"urlsExamined\":%"INT64",\n"
-		      "\"pageCrawlAttempts\":%"INT64",\n"
-		      "\"pageCrawlSuccesses\":%"INT64",\n"
-		      "\"pageCrawlSuccessesThisRound\":%"INT64",\n"
+		      "\"sentJobDoneNotification\":%" PRId32",\n"
+		      //"\"crawlingPaused\":%" PRId32",\n"
+		      "\"objectsFound\":%" PRId64",\n"
+		      "\"urlsHarvested\":%" PRId64",\n"
+		      //"\"urlsExamined\":%" PRId64",\n"
+		      "\"pageCrawlAttempts\":%" PRId64",\n"
+		      "\"pageCrawlSuccesses\":%" PRId64",\n"
+		      "\"pageCrawlSuccessesThisRound\":%" PRId64",\n"
 
-		      "\"pageProcessAttempts\":%"INT64",\n"
-		      "\"pageProcessSuccesses\":%"INT64",\n"
-		      "\"pageProcessSuccessesThisRound\":%"INT64",\n"
+		      "\"pageProcessAttempts\":%" PRId64",\n"
+		      "\"pageProcessSuccesses\":%" PRId64",\n"
+		      "\"pageProcessSuccessesThisRound\":%" PRId64",\n"
 
-		      "\"maxRounds\":%"INT32",\n"
+		      "\"maxRounds\":%" PRId32",\n"
 		      "\"repeat\":%f,\n"
 		      "\"crawlDelay\":%f,\n"
 
@@ -1775,7 +1775,7 @@ bool printCrawlDetailsInJson ( SafeBuf *sb , CollectionRec *cx, int version ) {
 		      , cx->m_collectiveCrawlDelay
 		      );
 
-	sb->safePrintf("\"obeyRobots\":%"INT32",\n"
+	sb->safePrintf("\"obeyRobots\":%" PRId32",\n"
 		      , (int32_t)cx->m_useRobotsTxt );
 
 	// if not a "bulk" injection, show crawl stats
@@ -1783,10 +1783,10 @@ bool printCrawlDetailsInJson ( SafeBuf *sb , CollectionRec *cx, int version ) {
 
 		sb->safePrintf(
 			      // settable parms
-			      "\"maxToCrawl\":%"INT64",\n"
-			      "\"maxToProcess\":%"INT64",\n"
-			      //"\"restrictDomain\":%"INT32",\n"
-			      "\"onlyProcessIfNew\":%"INT32",\n"
+			      "\"maxToCrawl\":%" PRId64",\n"
+			      "\"maxToProcess\":%" PRId64",\n"
+			      //"\"restrictDomain\":%" PRId32",\n"
+			      "\"onlyProcessIfNew\":%" PRId32",\n"
 			      , cx->m_maxToCrawl
 			      , cx->m_maxToProcess
 			      //, (int32_t)cx->m_restrictDomain
@@ -1797,15 +1797,15 @@ bool printCrawlDetailsInJson ( SafeBuf *sb , CollectionRec *cx, int version ) {
 		sb->safePrintf("\",\n");
 	}
 
-	sb->safePrintf("\"roundsCompleted\":%"INT32",\n",
+	sb->safePrintf("\"roundsCompleted\":%" PRId32",\n",
 		      cx->m_spiderRoundNum);
 
-	sb->safePrintf("\"roundStartTime\":%"UINT32",\n",
+	sb->safePrintf("\"roundStartTime\":%" PRIu32",\n",
 		      cx->m_spiderRoundStartTime);
 
-	sb->safePrintf("\"currentTime\":%"UINT32",\n",
+	sb->safePrintf("\"currentTime\":%" PRIu32",\n",
 		       (uint32_t)getTimeGlobal() );
-	sb->safePrintf("\"currentTimeUTC\":%"UINT32",\n",
+	sb->safePrintf("\"currentTimeUTC\":%" PRIu32",\n",
 		       (uint32_t)getTimeGlobal() );
 
 
@@ -1835,7 +1835,7 @@ bool printCrawlDetailsInJson ( SafeBuf *sb , CollectionRec *cx, int version ) {
 	sb->safeUtf8ToJSON ( cx->m_diffbotUrlProcessRegEx.getBufStart() );
 	sb->safePrintf("\",\n");
 
-	sb->safePrintf("\"maxHops\":%"INT32",\n",
+	sb->safePrintf("\"maxHops\":%" PRId32",\n",
 		       (int32_t)cx->m_diffbotMaxHops);
 
 	char *token = cx->m_diffbotToken.getBufStart();
@@ -1897,14 +1897,14 @@ bool printCrawlDetails2 (SafeBuf *sb , CollectionRec *cx , char format ) {
 	if ( format == FORMAT_JSON ) {
 		sb->safePrintf("{"
 			       "\"response\":{\n"
-			       "\t\"statusCode\":%"INT32",\n"
+			       "\t\"statusCode\":%" PRId32",\n"
 			       "\t\"statusMsg\":\"%s\",\n"
-			       "\t\"jobCreationTimeUTC\":%"INT32",\n"
-			       "\t\"jobCompletionTimeUTC\":%"INT32",\n"
-			       "\t\"sentJobDoneNotification\":%"INT32",\n"
-			       "\t\"urlsHarvested\":%"INT64",\n"
-			       "\t\"pageCrawlAttempts\":%"INT64",\n"
-			       "\t\"pageCrawlSuccesses\":%"INT64",\n"
+			       "\t\"jobCreationTimeUTC\":%" PRId32",\n"
+			       "\t\"jobCompletionTimeUTC\":%" PRId32",\n"
+			       "\t\"sentJobDoneNotification\":%" PRId32",\n"
+			       "\t\"urlsHarvested\":%" PRId64",\n"
+			       "\t\"pageCrawlAttempts\":%" PRId64",\n"
+			       "\t\"pageCrawlSuccesses\":%" PRId64",\n"
 			       , crawlStatus
 			       , tmp.getBufStart()
 			       , cx->m_diffbotCrawlStartTime
@@ -1914,9 +1914,9 @@ bool printCrawlDetails2 (SafeBuf *sb , CollectionRec *cx , char format ) {
 			       , cx->m_globalCrawlInfo.m_pageDownloadAttempts
 			       , cx->m_globalCrawlInfo.m_pageDownloadSuccesses
 			       );
-		sb->safePrintf("\t\"currentTime\":%"UINT32",\n",
+		sb->safePrintf("\t\"currentTime\":%" PRIu32",\n",
 			       (uint32_t)getTimeGlobal() );
-		sb->safePrintf("\t\"currentTimeUTC\":%"UINT32"\n",
+		sb->safePrintf("\t\"currentTimeUTC\":%" PRIu32"\n",
 			       (uint32_t)getTimeGlobal() );
 		sb->safePrintf("\t}\n");
 		sb->safePrintf("}\n");
@@ -1924,29 +1924,29 @@ bool printCrawlDetails2 (SafeBuf *sb , CollectionRec *cx , char format ) {
 
 	if ( format == FORMAT_XML ) {
 		sb->safePrintf("<response>\n"
-			       "\t<statusCode>%"INT32"</statusCode>\n"
+			       "\t<statusCode>%" PRId32"</statusCode>\n"
 			       , crawlStatus
 			       );
 		sb->safePrintf(
 			       "\t<statusMsg><![CDATA[%s]]></statusMsg>\n"
-			       "\t<jobCreationTimeUTC>%"INT32""
+			       "\t<jobCreationTimeUTC>%" PRId32
 			       "</jobCreationTimeUTC>\n"
 			       , (char *)tmp.getBufStart()
 			       , (int32_t)cx->m_diffbotCrawlStartTime
 			       );
 		sb->safePrintf(
-			       "\t<jobCompletionTimeUTC>%"INT32""
+			       "\t<jobCompletionTimeUTC>%" PRId32
 			       "</jobCompletionTimeUTC>\n"
 
-			       "\t<sentJobDoneNotification>%"INT32""
+			       "\t<sentJobDoneNotification>%" PRId32
 			       "</sentJobDoneNotification>\n"
 
-			       "\t<urlsHarvested>%"INT64"</urlsHarvested>\n"
+			       "\t<urlsHarvested>%" PRId64"</urlsHarvested>\n"
 
-			       "\t<pageCrawlAttempts>%"INT64""
+			       "\t<pageCrawlAttempts>%" PRId64
 			       "</pageCrawlAttempts>\n"
 
-			       "\t<pageCrawlSuccesses>%"INT64""
+			       "\t<pageCrawlSuccesses>%" PRId64
 			       "</pageCrawlSuccesses>\n"
 
 			       , completed
@@ -1955,9 +1955,9 @@ bool printCrawlDetails2 (SafeBuf *sb , CollectionRec *cx , char format ) {
 			       , cx->m_globalCrawlInfo.m_pageDownloadAttempts
 			       , cx->m_globalCrawlInfo.m_pageDownloadSuccesses
 			       );
-		sb->safePrintf("\t<currentTime>%"UINT32"</currentTime>\n",
+		sb->safePrintf("\t<currentTime>%" PRIu32"</currentTime>\n",
 			       (uint32_t)getTimeGlobal() );
-		sb->safePrintf("\t<currentTimeUTC>%"UINT32"</currentTimeUTC>\n",
+		sb->safePrintf("\t<currentTimeUTC>%" PRIu32"</currentTimeUTC>\n",
 			       (uint32_t)getTimeGlobal() );
 		sb->safePrintf("</response>\n");
 	}
@@ -2048,10 +2048,10 @@ bool printCrawlBotPage2 ( TcpSocket *socket ,
 		rand64 <<= 32;
 		rand64 |=  r2;
 		char newCollName[MAX_COLL_LEN+1];
-		snprintf(newCollName,MAX_COLL_LEN,"%s-%016"XINT64"",
+		snprintf(newCollName,MAX_COLL_LEN,"%s-%016" PRIx64,
 			 token , rand64 );
 		// first print "add new collection"
-		sb.safePrintf("[ <a href=/crawlbot?name=%016"XINT64"&token=%s&"
+		sb.safePrintf("[ <a href=/crawlbot?name=%016" PRIx64"&token=%s&"
 			      "format=html&addCrawl=%s>"
 			      "add new crawl"
 			      "</a> ] &nbsp; "
@@ -2094,7 +2094,7 @@ bool printCrawlBotPage2 ( TcpSocket *socket ,
 		sb.safePrintf("&name=");
 		sb.urlEncode(cx->m_diffbotCrawlName.getBufStart());
 		sb.safePrintf("&format=html>"
-			      "%s (%"INT32")"
+			      "%s (%" PRId32")"
 			      "</a> &nbsp; "
 			      , cx->m_diffbotCrawlName.getBufStart()
 			      , (int32_t)cx->m_collnum
@@ -2194,15 +2194,15 @@ bool printCrawlBotPage2 ( TcpSocket *socket ,
 		// print in table
 		sb.safePrintf("<tr>"
 			      "<td>%s</td>"
-			      "<td>%"INT64"</td>"
-			      "<td>%"INT64"</td>"
-			      //"<td>%"INT64"</td>"
-			      "<td>%"INT64"</td>"
-			      "<td>%"INT64"</td>"
-			      "<td>%"INT64"</td>"
-			      "<td>%"INT64"</td>"
-			      "<td>%"INT64"</td>"
-			      "<td>%"INT64"</td>"
+			      "<td>%" PRId64"</td>"
+			      "<td>%" PRId64"</td>"
+			      //"<td>%" PRId64"</td>"
+			      "<td>%" PRId64"</td>"
+			      "<td>%" PRId64"</td>"
+			      "<td>%" PRId64"</td>"
+			      "<td>%" PRId64"</td>"
+			      "<td>%" PRId64"</td>"
+			      "<td>%" PRId64"</td>"
 			      "</tr>"
 			      , cx->m_coll
 			      , cx->m_globalCrawlInfo.m_objectsAdded -
@@ -2245,7 +2245,7 @@ bool printCrawlBotPage2 ( TcpSocket *socket ,
 				"border-color:black;>"
 				//"bgcolor=#%s>\n" 
 				"<tr><td colspan=50>"// bgcolor=#%s>"
-				"<b>Last 10 URLs</b> (%"INT32" spiders active)"
+				"<b>Last 10 URLs</b> (%" PRId32" spiders active)"
 				//,LIGHT_BLUE
 				//,DARK_BLUE
 				,(int32_t)g_spiderLoop.m_numSpidersOut);
@@ -2257,7 +2257,7 @@ bool printCrawlBotPage2 ( TcpSocket *socket ,
 		}
 		sb.safePrintf(" "
 			      "<a href=/crawlbot?%s"
-			      "&pauseCrawl=%"INT32"><b>%s</b></a>"
+			      "&pauseCrawl=%" PRId32"><b>%s</b></a>"
 			      , lb.getBufStart() // has &name=&token= encoded
 			      , pval
 			      , str
@@ -2326,7 +2326,7 @@ bool printCrawlBotPage2 ( TcpSocket *socket ,
 			      // dup removal off
 			      "<input type=hidden name=dr value=0>"
 			      "<input type=hidden name=c value=\"%s\">"
-			      "<input type=hidden name=rand value=%"INT64">"
+			      "<input type=hidden name=rand value=%" PRId64">"
 			      // bypass ajax, searchbox, logo, etc.
 			      "<input type=hidden name=id value=12345>"
 			      // restrict search to json objects
@@ -2349,7 +2349,7 @@ bool printCrawlBotPage2 ( TcpSocket *socket ,
 			      // dup removal off
 			      "<input type=hidden name=dr value=0>"
 			      "<input type=hidden name=c value=\"%s\">"
-			      "<input type=hidden name=rand value=%"INT64">"
+			      "<input type=hidden name=rand value=%" PRId64">"
 			      // bypass ajax, searchbox, logo, etc.
 			      "<input type=hidden name=id value=12345>"
 			      // restrict search to NON json objects
@@ -2443,7 +2443,7 @@ bool printCrawlBotPage2 ( TcpSocket *socket ,
 
 			      "<tr>"
 			      "<td><b>Crawl Type:</td>"
-			      "<td>%"INT32"</td>"
+			      "<td>%" PRId32"</td>"
 			      "</tr>"
 
 			      "<tr>"
@@ -2458,7 +2458,7 @@ bool printCrawlBotPage2 ( TcpSocket *socket ,
 
 			      "<tr>"
 			      "<td><b>Crawl Status:</td>"
-			      "<td>%"INT32"</td>"
+			      "<td>%" PRId32"</td>"
 			      "</tr>"
 
 			      "<tr>"
@@ -2468,23 +2468,23 @@ bool printCrawlBotPage2 ( TcpSocket *socket ,
 
 			      "<tr>"
 			      "<td><b>Crawl Start Time:</td>"
-			      "<td>%"UINT32"</td>"
+			      "<td>%" PRIu32"</td>"
 			      "</tr>"
 
 			      "<tr>"
 			      "<td><b>Last Crawl Completion Time:</td>"
-			      "<td>%"UINT32"</td>"
+			      "<td>%" PRIu32"</td>"
 			      "</tr>"
 
 
 			      "<tr>"
 			      "<td><b>Rounds Completed:</td>"
-			      "<td>%"INT32"</td>"
+			      "<td>%" PRId32"</td>"
 			      "</tr>"
 
 			      "<tr>"
 			      "<td><b>Has Urls Ready to Spider:</td>"
-			      "<td>%"INT32"</td>"
+			      "<td>%" PRId32"</td>"
 			      "</tr>"
 
 			      , cr->m_diffbotCrawlName.getBufStart()
@@ -2530,43 +2530,43 @@ bool printCrawlBotPage2 ( TcpSocket *socket ,
 		sb.safePrintf(
 			      "<tr>"
 			      "<td><b>Objects Found</b></td>"
-			      "<td>%"INT64"</td>"
+			      "<td>%" PRId64"</td>"
 			      "</tr>"
 
 			      "<tr>"
 			      "<td><b>URLs Harvested</b> (inc. dups)</td>"
-			      "<td>%"INT64"</td>"
+			      "<td>%" PRId64"</td>"
      
 			      "</tr>"
 
 			      "<tr>"
 			      "<td><b>Page Crawl Attempts</b></td>"
-			      "<td>%"INT64"</td>"
+			      "<td>%" PRId64"</td>"
 			      "</tr>"
 
 			      "<tr>"
 			      "<td><b>Page Crawl Successes</b></td>"
-			      "<td>%"INT64"</td>"
+			      "<td>%" PRId64"</td>"
 			      "</tr>"
 
 			      "<tr>"
 			      "<td><b>Page Crawl Successes This Round</b></td>"
-			      "<td>%"INT64"</td>"
+			      "<td>%" PRId64"</td>"
 			      "</tr>"
 
 			      "<tr>"
 			      "<td><b>Page Process Attempts</b></td>"
-			      "<td>%"INT64"</td>"
+			      "<td>%" PRId64"</td>"
 			      "</tr>"
 
 			      "<tr>"
 			      "<td><b>Page Process Successes</b></td>"
-			      "<td>%"INT64"</td>"
+			      "<td>%" PRId64"</td>"
 			      "</tr>"
 
 			      "<tr>"
 			      "<td><b>Page Process Successes This Round</b></td>"
-			      "<td>%"INT64"</td>"
+			      "<td>%" PRId64"</td>"
 			      "</tr>"
 
 			      
@@ -2607,7 +2607,7 @@ bool printCrawlBotPage2 ( TcpSocket *socket ,
 		sb.safePrintf(
 			      // newest json on top of results
 			      "<a href=/search?icc=1&format=json&sc=0&dr=0&"
-			      "c=%s&n=10000000&rand=%"UINT64"&scores=0&id=1&"
+			      "c=%s&n=10000000&rand=%" PRIu64"&scores=0&id=1&"
 			      "q=gbsortby%%3Agbspiderdate&"
 			      "prepend=type%%3Ajson"
 			      ">"
@@ -2622,13 +2622,13 @@ bool printCrawlBotPage2 ( TcpSocket *socket ,
 			      "sc=0&"
 			      // doNOTdupcontentremoval:
 			      "dr=0&"
-			      "c=%s&n=10000000&rand=%"UINT64"&scores=0&id=1&"
+			      "c=%s&n=10000000&rand=%" PRIu64"&scores=0&id=1&"
 			      "stream=1&" // stream results back as we get them
 			      "q="
 			      // put NEWEST on top
 			      "gbsortbyint%%3Agbspiderdate+"
 			      // min spider date = now - 10 mins
-			      "gbminint%%3Agbspiderdate%%3A%"INT32"&"
+			      "gbminint%%3Agbspiderdate%%3A%" PRId32"&"
 			      //"debug=1"
 			      "prepend=type%%3Ajson"
 			      ">"
@@ -2658,7 +2658,7 @@ bool printCrawlBotPage2 ( TcpSocket *socket ,
 			      "</td><td>"
 			      // make it search.csv so excel opens it
 			      "<a href=/search.csv?icc=1&format=csv&sc=0&dr=0&"
-			      "c=%s&n=10000000&rand=%"UINT64"&scores=0&id=1&"
+			      "c=%s&n=10000000&rand=%" PRIu64"&scores=0&id=1&"
 			      "q=gbrevsortby%%3Aproduct.offerPrice&"
 			      "prepend=type%%3Ajson"
 			      //"+type%%3Aproduct%%7C"
@@ -2666,7 +2666,7 @@ bool printCrawlBotPage2 ( TcpSocket *socket ,
 			      "csv</a>"
 			      " &nbsp; "
 			      "<a href=/search?icc=1&format=html&sc=0&dr=0&"
-			      "c=%s&n=10000000&rand=%"UINT64"&scores=0&id=1&"
+			      "c=%s&n=10000000&rand=%" PRIu64"&scores=0&id=1&"
 			      "q=gbrevsortby%%3Aproduct.offerPrice&"
 			      "prepend=type%%3Ajson"
 			      ">"
@@ -2696,14 +2696,14 @@ bool printCrawlBotPage2 ( TcpSocket *socket ,
 			      "<td><b>Latest Objects:</b> "
 			      "</td><td>"
 			      "<a href=/search.csv?icc=1&format=csv&sc=0&dr=0&"
-			      "c=%s&n=10&rand=%"UINT64"&scores=0&id=1&"
+			      "c=%s&n=10&rand=%" PRIu64"&scores=0&id=1&"
 			      "q=gbsortby%%3Agbspiderdate&"
 			      "prepend=type%%3Ajson"
 			      ">"
 			      "csv</a>"
 			      " &nbsp; "
 			      "<a href=/search?icc=1&format=html&sc=0&dr=0&"
-			      "c=%s&n=10rand=%"UINT64"&scores=0&id=1&"
+			      "c=%s&n=10rand=%" PRIu64"&scores=0&id=1&"
 			      "q=gbsortby%%3Agbspiderdate&"
 			      "prepend=type%%3Ajson"
 			      ">"
@@ -2715,14 +2715,14 @@ bool printCrawlBotPage2 ( TcpSocket *socket ,
 			      "<td><b>Latest Products:</b> "
 			      "</td><td>"
 			      "<a href=/search.csv?icc=1&format=csv&sc=0&dr=0&"
-			      "c=%s&n=10&rand=%"UINT64"&scores=0&id=1&"
+			      "c=%s&n=10&rand=%" PRIu64"&scores=0&id=1&"
 			      "q=gbsortby%%3Agbspiderdate&"
 			      "prepend=type%%3Ajson+type%%3Aproduct"
 			      ">"
 			      "csv</a>"
 			      " &nbsp; "
 			      "<a href=/search?icc=1&format=html&sc=0&dr=0&"
-			      "c=%s&n=10&rand=%"UINT64"&scores=0&id=1&"
+			      "c=%s&n=10&rand=%" PRIu64"&scores=0&id=1&"
 			      "q=gbsortby%%3Agbspiderdate&"
 			      "prepend=type%%3Ajson+type%%3Aproduct"
 			      ">"
@@ -2923,7 +2923,7 @@ bool printCrawlBotPage2 ( TcpSocket *socket ,
 			      "<td><b>Max hopcount to seeds:</b> "
 			      "</td><td>"
 			      "<input type=text name=maxHops "
-			      "size=9 value=%"INT32"> "
+			      "size=9 value=%" PRId32"> "
 			      "<input type=submit name=submit value=OK>"
 			      "</td>"
 			      "</tr>"
@@ -2951,7 +2951,7 @@ bool printCrawlBotPage2 ( TcpSocket *socket ,
 			      "<td><b>Max Page Crawl Successes:</b> "
 			      "</td><td>"
 			      "<input type=text name=maxToCrawl "
-			      "size=9 value=%"INT64"> "
+			      "size=9 value=%" PRId64"> "
 			      "<input type=submit name=submit value=OK>"
 			      "</td>"
 			      "</tr>"
@@ -2960,7 +2960,7 @@ bool printCrawlBotPage2 ( TcpSocket *socket ,
 			      "<td><b>Max Page Process Successes:</b>"
 			      "</td><td>"
 			      "<input type=text name=maxToProcess "
-			      "size=9 value=%"INT64"> "
+			      "size=9 value=%" PRId64"> "
 			      "<input type=submit name=submit value=OK>"
 			      "</td>"
 			      "</tr>"
@@ -2969,7 +2969,7 @@ bool printCrawlBotPage2 ( TcpSocket *socket ,
 			      "<td><b>Max Rounds:</b>"
 			      "</td><td>"
 			      "<input type=text name=maxRounds "
-			      "size=9 value=%"INT32"> "
+			      "size=9 value=%" PRId32"> "
 			      "<input type=submit name=submit value=OK>"
 			      "</td>"
 			      "</tr>"

@@ -117,11 +117,11 @@ bool Msg2::getLists ( ) {
 			ek = (key144_t *)m_qterms[m_i].m_endKey;
 			int64_t docId0 = g_posdb.getDocId(sk);
 			int64_t docId1 = g_posdb.getDocId(ek);
-			log("query: reading termlist #%"INT32" "//from "
-			    //"distributed cache on host #%"INT32". "
-			    "termId=%"INT64". sk=%s ek=%s "
-			    "mr=%"INT32" (docid0=%"INT64" to "
-			    "docid1=%"INT64").",
+			log("query: reading termlist #%" PRId32" "//from "
+			    //"distributed cache on host #%" PRId32". "
+			    "termId=%" PRId64". sk=%s ek=%s "
+			    "mr=%" PRId32" (docid0=%" PRId64" to "
+			    "docid1=%" PRId64").",
 			    m_i,
 			    //hostId, 
 			    g_posdb.getTermId(sk),
@@ -157,7 +157,7 @@ bool Msg2::getLists ( ) {
 		   m_req->m_allowHighFrequencyTermCache &&
 		   g_hfts.query_term_shortcut(m_query->getTermId(m_i),&hfterm_shortcut_posdb_buffer,&hfterm_shortcut_buffer_bytes))
 		{
-			log("query: term %"PRId64" (%*.*s) is a high-frequency term",m_query->getTermId(m_i),qt->m_qword->m_wordLen,qt->m_qword->m_wordLen,qt->m_qword->m_word);
+			log("query: term %" PRId64" (%*.*s) is a high-frequency term",m_query->getTermId(m_i),qt->m_qword->m_wordLen,qt->m_qword->m_wordLen,qt->m_qword->m_word);
 			//use PosDB shortcut buffer, put into RdbList and avoid actually going into PosDB
 			char *startKey = (char*)hfterm_shortcut_posdb_buffer;
 			char *endKey = ((char*)hfterm_shortcut_posdb_buffer)+hfterm_shortcut_buffer_bytes-18;
@@ -233,7 +233,7 @@ bool Msg2::getLists ( ) {
 		returnMsg5 ( msg5 );
 		// note it
 		//if ( m_isDebug )
-		//	logf(LOG_DEBUG,"query: got list #%"INT32" size=%"INT32"",
+		//	logf(LOG_DEBUG,"query: got list #%" PRId32" size=%" PRId32,
 		//	     i,m_lists[i].getListSize() );
 		// break out on error and wait for replies if we blocked
 		if ( ! g_errno ) continue;
@@ -398,9 +398,9 @@ void gotListWrapper ( void *state , RdbList *rdblist, Msg5 *msg5 ) {
 	// note it
 	if ( THIS->m_isDebug ) {
 		if ( ! list )
-			logf(LOG_DEBUG,"query: got NULL list #%"INT32"",  i);
+			logf(LOG_DEBUG,"query: got NULL list #%" PRId32,  i);
 		else
-			logf(LOG_DEBUG,"query: got list #%"INT32" size=%"INT32"",
+			logf(LOG_DEBUG,"query: got list #%" PRId32" size=%" PRId32,
 			     i,list->getListSize() );
 	}
 	// try to launch more
@@ -434,7 +434,7 @@ bool Msg2::gotList ( RdbList *list ) {
 	// note it
 	if ( m_isDebug ) {
 		for ( int32_t i = 0 ; i < m_numLists ; i++ ) {
-			log("msg2: read termlist #%"INT32" size=%"INT32"",
+			log("msg2: read termlist #%" PRId32" size=%" PRId32,
 			    i,m_lists[i].m_listSize);
 		}
 	}
@@ -445,8 +445,8 @@ bool Msg2::gotList ( RdbList *list ) {
 		if ( m_minRecSizes[i] == 0 ) continue;
 		if ( m_minRecSizes[i] == -1 ) continue;
 
-		log("msg2: read termlist #%"INT32" size=%"INT32" "
-		    "maxSize=%"INT32". losing docIds!",
+		log("msg2: read termlist #%" PRId32" size=%" PRId32" "
+		    "maxSize=%" PRId32". losing docIds!",
 		    i,m_lists[i].m_listSize,m_minRecSizes[i]);
 	}
 

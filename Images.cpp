@@ -284,7 +284,7 @@ bool Images::getThumbnail ( char *pageSite ,
 	// site MUST NOT start with "http://"
 	if ( strncmp ( pageSite , "http://", 7)==0){char*xx=NULL;*xx=0;}
 	// this must match what we hash in XmlDoc::hashNoSplit()
-	sprintf ( buf , "gbsitetemplate:%" UINT32"%s", (uint32_t)*tph,pageSite );
+	sprintf ( buf , "gbsitetemplate:%" PRIu32"%s", (uint32_t)*tph,pageSite );
 	pageSite[siteLen]=c;
 	// TODO: make sure this is a no-split termid storage thingy
 	// in Msg14.cpp
@@ -305,7 +305,7 @@ bool Images::getThumbnail ( char *pageSite ,
 	int32_t shardNum = g_hostdb.getShardNumByTermId ( &startKey );
 
 	if ( g_conf.m_logDebugImage )
-		log("image: image checking %s list on shard %" INT32"",buf,shardNum);
+		log("image: image checking %s list on shard %" PRId32,buf,shardNum);
 
 	// if ( ! m_msg36.getTermFreq ( m_collnum               ,
 	// 			     0                  , // maxAge
@@ -408,8 +408,8 @@ bool Images::launchRequests ( ) {
 
 		// debug msg
 		if ( g_conf.m_logDebugImage )
-			log("image: image checking shardnum %" INT32" (termid0=%" UINT64")"
-			    " for image url #%" INT32"",
+			log("image: image checking shardnum %" PRId32" (termid0=%" PRIu64")"
+			    " for image url #%" PRId32,
 			    shardNum ,m_termIds[i],i);
 
 		// get the termlist
@@ -525,7 +525,7 @@ bool Images::downloadImages () {
 			// skip if bad or not unique
 			if ( m_errors[m_j] ) continue;
 			// set status msg
-			sprintf ( m_statusBuf ,"downloading image %" INT32"",m_j);
+			sprintf ( m_statusBuf ,"downloading image %" PRId32,m_j);
 			// point to it
 			if ( m_xd ) m_xd->setStatus ( m_statusBuf );
 		}
@@ -657,7 +657,7 @@ static void downloadImageWrapper ( void *state ) {
 bool Images::downloadImage ( ) {
 	// error?
 	if ( m_latestIp == 0 || m_latestIp == -1 ) {
-		log(LOG_DEBUG,"images: ip of %s is %" INT32" (%s)",
+		log(LOG_DEBUG,"images: ip of %s is %" PRId32" (%s)",
 		    m_imageUrl.getUrl(),m_latestIp,mstrerror(g_errno));
 		// ignore errors
 		g_errno = 0;
@@ -758,7 +758,7 @@ bool Images::makeThumb ( ) {
 	int32_t httpStatus = mime.getHttpStatus();
 	// check the status
 	if ( httpStatus != 200 ) {
-		log( LOG_DEBUG, "image: http status of img download is %" INT32".",
+		log( LOG_DEBUG, "image: http status of img download is %" PRId32".",
 		     m_httpStatus);
 		// give up on the remaining images then
 		m_stopDownloading = true;
@@ -799,11 +799,11 @@ bool Images::makeThumb ( ) {
 
 	// log the image dimensions
 	log( LOG_DEBUG,"image: Image Link: %s", iu.getUrl() );
-	log( LOG_DEBUG,"image: Max Buffer Size: %" UINT32" bytes.",m_imgReplyMaxLen);
-	log( LOG_DEBUG,"image: Image Original Size: %" UINT32" bytes.",m_imgReplyLen);
+	log( LOG_DEBUG,"image: Max Buffer Size: %" PRIu32" bytes.",m_imgReplyMaxLen);
+	log( LOG_DEBUG,"image: Image Original Size: %" PRIu32" bytes.",m_imgReplyLen);
 	log( LOG_DEBUG,"image: Image Buffer @ 0x%" PTRFMT" - 0x%" PTRFMT"",(PTRTYPE)m_imgReply,
 	     (PTRTYPE)(m_imgReply+m_imgReplyMaxLen) );
-	log( LOG_DEBUG, "image: Size: %" UINT32"px x %" UINT32"px", m_dx, m_dy );
+	log( LOG_DEBUG, "image: Size: %" PRIu32"px x %" PRIu32"px", m_dx, m_dy );
 
 	// what is this?
 	if ( m_dx <= 0 || m_dy <= 0 ) {
@@ -896,7 +896,7 @@ void Images::thumbStart_r ( bool amThread ) {
 	// rather than a pipe, since popen() seems broken.
 	// m_dir ends in / so this should work.
 	char in[364];
-	snprintf ( in , 363,"%strash/in.%" INT64""
+	snprintf ( in , 363,"%strash/in.%" PRId64
 		   , g_hostdb.m_dir, (int64_t)id );
 	unlink ( in );
 
@@ -905,7 +905,7 @@ void Images::thumbStart_r ( bool amThread ) {
 	// collect the output from the filter from this file
 	// m_dir ends in / so this should work.
 	char out[364];
-	snprintf ( out , 363,"%strash/out.%" INT64""
+	snprintf ( out , 363,"%strash/out.%" PRId64
 		   , g_hostdb.m_dir, (int64_t)id );
         unlink ( out );
 
@@ -977,7 +977,7 @@ void Images::thumbStart_r ( bool amThread ) {
 	// wdir ends in / so this should work.
 	snprintf( cmd, 2500 ,
 		 "LD_LIBRARY_PATH=%s %s%stopnm %s 2>> %s | "
-		 "LD_LIBRARY_PATH=%s %spnmscale -xysize %" INT32" %" INT32" - 2>> %s | "
+		 "LD_LIBRARY_PATH=%s %spnmscale -xysize %" PRId32" %" PRId32" - 2>> %s | "
 		  // put all its stderr msgs into /dev/null
 		  // so "jpegtopnm: WRITING PPM FILE" doesn't clog console
 		 "LD_LIBRARY_PATH=%s %sppmtojpeg - > %s 2>> %s"
@@ -998,7 +998,7 @@ void Images::thumbStart_r ( bool amThread ) {
 	if ( s_hasNetpbm )
 		snprintf( cmd, 2500 ,
 			  "%stopnm %s 2>> %s | "
-			  "pnmscale -xysize %" INT32" %" INT32" - 2>> %s | "
+			  "pnmscale -xysize %" PRId32" %" PRId32" - 2>> %s | "
 			  "ppmtojpeg - > %s 2>> %s"
 			  , ext , in , logFile
 			  , m_xysize , m_xysize , logFile
@@ -1039,7 +1039,7 @@ void Images::thumbStart_r ( bool amThread ) {
         }
 
 	if( (m_thumbnailSize = lseek( fhndl, 0, SEEK_END )) < 0 ) {
-		log( "image: Seek of file, %s, returned invalid size: %" INT32"",
+		log( "image: Seek of file, %s, returned invalid size: %" PRId32,
 		     out, m_thumbnailSize );
 		m_stopDownloading = true;
 		close(fhndl);
@@ -1049,10 +1049,10 @@ void Images::thumbStart_r ( bool amThread ) {
 
 	if( m_thumbnailSize > m_imgReplyMaxLen ) {
 		log(LOG_DEBUG,"image: Image thumbnail larger than buffer!" );
-		log(LOG_DEBUG,"image: File Read Bytes: %" INT32"", m_thumbnailSize);
-		log(LOG_DEBUG,"image: Buf Max Bytes  : %" INT32"",m_imgReplyMaxLen );
+		log(LOG_DEBUG,"image: File Read Bytes: %" PRId32, m_thumbnailSize);
+		log(LOG_DEBUG,"image: Buf Max Bytes  : %" PRId32,m_imgReplyMaxLen );
 		log(LOG_DEBUG,"image: -----------------------" );
-		log(LOG_DEBUG,"image: Diff           : %" INT32"",
+		log(LOG_DEBUG,"image: Diff           : %" PRId32,
 		     m_imgReplyMaxLen-m_thumbnailSize );
 		close(fhndl);
 		unlink ( out );
@@ -1101,9 +1101,9 @@ void Images::thumbStart_r ( bool amThread ) {
 	
 
 
-	log( LOG_DEBUG, "image: Thumbnail size: %" INT32" bytes.", m_imgDataSize );
-	log( LOG_DEBUG, "image: Thumbnail dx=%" INT32" dy=%" INT32".", m_tdx,m_tdy );
-	log( LOG_DEBUG, "image: Thumbnail generated in %" INT64"ms.", stop-start );
+	log( LOG_DEBUG, "image: Thumbnail size: %" PRId32" bytes.", m_imgDataSize );
+	log( LOG_DEBUG, "image: Thumbnail dx=%" PRId32" dy=%" PRId32".", m_tdx,m_tdy );
+	log( LOG_DEBUG, "image: Thumbnail generated in %" PRId64"ms.", stop-start );
 }
 
 // . *it is the image type
@@ -1243,7 +1243,7 @@ bool ThumbnailInfo::printThumbnailInHtml ( SafeBuf *sb ,
 		sb->safePrintf("<a href=%s>", getUrl() );
 
 	if ( format !=FORMAT_XML && format != FORMAT_JSON )
-		sb->safePrintf("<img width=%" INT32" height=%" INT32" align=left "
+		sb->safePrintf("<img width=%" PRId32" height=%" PRId32" align=left "
 			       "%s"
 			       "src=\"data:image/"
 			       "jpg;base64,"

@@ -87,7 +87,7 @@ bool Msg5::getList ( char     rdbId         ,
 		char *xx = NULL; *xx = 0; 
 	}
 	if ( collnum < 0 ) {
-		log("msg5: called with bad collnum=%"INT32"",(int32_t)collnum);
+		log("msg5: called with bad collnum=%" PRId32,(int32_t)collnum);
 		g_errno = ENOCOLLREC;
 		return true;
 	}
@@ -216,7 +216,7 @@ bool Msg5::getList ( char     rdbId         ,
 	if ( m_minRecSizes == 0    ) return true;
 
 	// timing debug
-	//log("Msg5:getting list startKey.n1=%"UINT32"",m_startKey.n1);
+	//log("Msg5:getting list startKey.n1=%" PRIu32,m_startKey.n1);
 	// start the read loop - hopefully, will only loop once
 	if ( readList ( ) ) return true;
 
@@ -370,8 +370,8 @@ bool Msg5::readList ( ) {
 			int64_t took = now - start ;
 			if ( took > 9 )
 				logf(LOG_INFO,"net: Got list from %s "
-				     "in %"UINT64" ms. size=%"INT32" db=%s "
-				     "niceness=%"INT32".",
+				     "in %" PRIu64" ms. size=%" PRId32" db=%s "
+				     "niceness=%" PRId32".",
 				     structName, took,m_treeList.getListSize(),
 				     base->m_dbname,m_niceness);
 		}
@@ -524,7 +524,7 @@ bool Msg5::needsRecall ( ) {
 	RdbBase *base = getRdbBase ( m_rdbId , m_collnum );
 	// if collection was deleted from under us, base will be NULL
 	if ( ! base && ! g_errno ) {
-		log("msg5: base lost for rdbid=%"INT32" collnum %"INT32"",
+		log("msg5: base lost for rdbid=%" PRId32" collnum %" PRId32,
 		    (int32_t)m_rdbId,(int32_t)m_collnum);
 		g_errno = ENOCOLLREC;
 		return false;
@@ -545,7 +545,7 @@ bool Msg5::needsRecall ( ) {
 	// seems to be ok, let's open it up to fix this bug where we try
 	// to read too many bytes a small titledb and it does an infinite loop
 	if ( m_readAbsolutelyNothing ) {
-		log("rdb: read absolutely nothing more for dbname=%s on cn=%"INT32"",
+		log("rdb: read absolutely nothing more for dbname=%s on cn=%" PRId32,
 		    base->m_dbname,(int32_t)m_collnum);
 		goto done;
 	}
@@ -563,9 +563,9 @@ bool Msg5::needsRecall ( ) {
 	// so common for doledb because of key annihilations
 	if ( m_rdbId == RDB_DOLEDB && m_round < 10 ) logIt = false;
 	if ( logIt )
-		log("db: Reading %"INT32" again from %s (need %"INT32" total "
-		     "got %"INT32" totalListSizes=%"INT32" sk=%s) "
-		     "cn=%"INT32" this=0x%"PTRFMT" round=%"INT32".", 
+		log("db: Reading %" PRId32" again from %s (need %" PRId32" total "
+		     "got %" PRId32" totalListSizes=%" PRId32" sk=%s) "
+		     "cn=%" PRId32" this=0x%" PTRFMT" round=%" PRId32".", 
 		     m_newMinRecSizes , base->m_dbname , m_minRecSizes, 
 		     m_list->m_listSize,
 		     m_totalSize,
@@ -656,7 +656,7 @@ bool Msg5::gotList2 ( ) {
 
 	// sanity check.
 	if ( m_msg3.getNumLists() > MAX_RDB_FILES ) 
-		log(LOG_LOGIC,"db: Msg3 had more than %"INT32" lists.",
+		log(LOG_LOGIC,"db: Msg3 had more than %" PRId32" lists.",
 		    (int32_t)MAX_RDB_FILES);
 
 	// . get smallest endKey from all the lists
@@ -738,7 +738,7 @@ bool Msg5::gotList2 ( ) {
 
 	// bitch
 	if ( n >= MAX_RDB_FILES ) 
-		log(LOG_LOGIC,"net: msg5: Too many lists (%"INT32" | %"INT32").",
+		log(LOG_LOGIC,"net: msg5: Too many lists (%" PRId32" | %" PRId32").",
 			   m_msg3.getNumLists() , n);
 
 	// store # of lists here for use by the call to merge_r()
@@ -848,7 +848,7 @@ bool Msg5::gotList2 ( ) {
 			//   we only have 1 non-empty list ptr, either from the tree
 			//   or from the file
 			//if ( ! m_list->isEmpty() ) 
-			//	log("Msg5::gotList: why is it not empty? size=%"INT32"",
+			//	log("Msg5::gotList: why is it not empty? size=%" PRId32,
 			//	    m_list->getListSize() );
 			// just copy ptrs from this list into m_list
 			m_list->set ( m_listPtrs[0]->getList          () ,
@@ -967,7 +967,7 @@ static void threadDoneWrapper ( void *state, job_exit_t /*exit_type*/ ) {
 	// we MAY be in a thread now
 	Msg5 *THIS = (Msg5 *)state;
 	// debug msg
-	//log("msg3 back from merge thread (msg5=%"UINT32")",THIS->m_state);
+	//log("msg3 back from merge thread (msg5=%" PRIu32")",THIS->m_state);
 	// . add m_list to our cache if we should
 	// . this returns false if blocked, true otherwise
 	// . sets g_errno on error
@@ -1016,8 +1016,8 @@ void Msg5::repairLists_r ( ) {
 		     m_rdbId == RDB_POSDB &&
 		     m_listPtrs[i]->m_listSize > m_minRecSizes + 12 )
 			// just log it for now, maybe force core later
-			log(LOG_DEBUG,"db: Index list size is %"INT32" but "
-			    "minRecSizes is %"INT32".",
+			log(LOG_DEBUG,"db: Index list size is %" PRId32" but "
+			    "minRecSizes is %" PRId32".",
 			    m_listPtrs[i]->m_listSize ,
 			    m_minRecSizes );
 		// this took like 50ms (-O3) on lenny on a 4meg list
@@ -1041,14 +1041,14 @@ void Msg5::repairLists_r ( ) {
 		if ( i < nn && base ) {
 			int32_t fn = m_msg3.m_fileNums[i];
 			BigFile *bf = base->getFile ( fn );
-			log("db: Corrupt filename is %s in collnum %"INT32"."
+			log("db: Corrupt filename is %s in collnum %" PRId32"."
 			    ,bf->getFilename()
 			    ,(int32_t)m_collnum);
 			//key_t sk = m_listPtrs[i]->getStartKey();
 			//key_t ek = m_listPtrs[i]->getEndKey  ();
 			//log("db: "
-			//    "startKey.n1=%"XINT32" n0=%"XINT64" "
-			//    "endKey.n1=%"XINT32" n0=%"XINT64"",
+			//    "startKey.n1=%" PRIx32" n0=%" PRIx64" "
+			//    "endKey.n1=%" PRIx32" n0=%" PRIx64,
 			//    sk.n1,sk.n0,ek.n1,ek.n0);
 			const char *sk = m_listPtrs[i]->getStartKey();
 			const char *ek = m_listPtrs[i]->getEndKey  ();
@@ -1174,7 +1174,7 @@ bool Msg5::doneMerging ( ) {
 	//   our first merge
 	if ( m_hadCorruption ) {
 		// log it here, cuz logging in thread doesn't work too well
-		log("net: Encountered a corrupt list in rdb=%s collnum=%"INT32"",
+		log("net: Encountered a corrupt list in rdb=%s collnum=%" PRId32,
 		    base->m_dbname,(int32_t)m_collnum);
 		// remove error condition, we removed the bad data in thread
 		
@@ -1188,9 +1188,9 @@ bool Msg5::doneMerging ( ) {
 			char msgbuf[1024];
 			Host *h = g_hostdb.getHost ( 0 );
 			snprintf(msgbuf, 1024,
-				 "%"INT32" corrupt lists. "
+				 "%" PRId32" corrupt lists. "
 				 "cluster=%s "
-				 "host=%"INT32"",
+				 "host=%" PRId32,
 				 g_numCorrupt,
 				 iptoa(h->m_ip),
 				 g_hostdb.m_hostId);
@@ -1219,7 +1219,7 @@ bool Msg5::doneMerging ( ) {
 	}
 
 	if ( m_isRealMerge )
-		log(LOG_DEBUG,"db: merged list is %"INT32" bytes long.",
+		log(LOG_DEBUG,"db: merged list is %" PRId32" bytes long.",
 		    m_list->m_listSize);
 
 	// log it
@@ -1231,10 +1231,10 @@ bool Msg5::doneMerging ( ) {
 	if ( g_conf.m_logTimingNet ) {
 		if ( took > 5 )
 			log(LOG_INFO,
-			    "net: Took %"UINT64" ms to do merge. %"INT32" lists merged "
-			     "into one list of %"INT32" bytes.",
+			    "net: Took %" PRIu64" ms to do merge. %" PRId32" lists merged "
+			     "into one list of %" PRId32" bytes.",
 			     took , m_numListPtrs , m_list->getListSize() );
-		//log("Msg5:: of that %"UINT64" ms was in checkList_r()s",
+		//log("Msg5:: of that %" PRIu64" ms was in checkList_r()s",
 		//     m_checkTime );
 	}
 
@@ -1475,16 +1475,16 @@ bool Msg5::gotRemoteList ( ) {
 		//   it will take to patch the bad data
 		//key_t sk = m_list->getStartKey();
 		//key_t ek = m_list->getEndKey  ();
-		//log("net: Received good list from twin. Requested %"INT32" bytes "
-		//    "and got %"INT32". "
-		//    "startKey.n1=%"XINT32" n0=%"XINT64" "
-		//    "endKey.n1=%"XINT32" n0=%"XINT64"",
+		//log("net: Received good list from twin. Requested %" PRId32" bytes "
+		//    "and got %" PRId32". "
+		//    "startKey.n1=%" PRIx32" n0=%" PRIx64" "
+		//    "endKey.n1=%" PRIx32" n0=%" PRIx64,
 		//    m_minRecSizes , m_list->getListSize() ,
 		//    sk.n1,sk.n0,ek.n1,ek.n0);
 		const char *sk = m_list->getStartKey();
 		const char *ek = m_list->getEndKey  ();
-		log("net: Received good list from twin. Requested %"INT32" bytes "
-		    "and got %"INT32". "
+		log("net: Received good list from twin. Requested %" PRId32" bytes "
+		    "and got %" PRId32". "
 		    "startKey=%s endKey=%s",
 		    m_minRecSizes , m_list->getListSize() ,
 		    KEYSTR(sk,m_ks),KEYSTR(ek,m_ks));
@@ -1499,20 +1499,20 @@ bool Msg5::gotRemoteList ( ) {
 		//k = m_list->getStartKey();
 		const char *k = m_list->getStartKey();
 		log(LOG_DEBUG,
-		    //"net: Received list skey.n1=%08"XINT32" skey.n0=%016"XINT64"." ,
+		    //"net: Received list skey.n1=%08" PRIx32" skey.n0=%016" PRIx64"." ,
 		    //  k.n1 , k.n0 );
 		    "net: Received list skey=%s." ,
 		      KEYSTR(k,m_ks) );
 		k = m_list->getEndKey();
 		log(LOG_DEBUG,
-		    //"net: Received list ekey.n1=%08"XINT32" ekey.n0=%016"XINT64"." ,
+		    //"net: Received list ekey.n1=%08" PRIx32" ekey.n0=%016" PRIx64"." ,
 		    //  k.n1 , k.n0 );
 		    "net: Received list ekey=%s",
 		      KEYSTR(k,m_ks) );
 		if ( ! m_list->isEmpty() ) {
 			k = m_list->getLastKey();
-			//log(LOG_DEBUG,"net: Received list Lkey.n1=%08"XINT32" "
-			//      "Lkey.n0=%016"XINT64"" , k.n1 , k.n0 );
+			//log(LOG_DEBUG,"net: Received list Lkey.n1=%08" PRIx32" "
+			//      "Lkey.n0=%016" PRIx64 , k.n1 , k.n0 );
 			log(LOG_DEBUG,"net: Received list Lkey=%s",
 			    KEYSTR(k,m_ks) );
 		}

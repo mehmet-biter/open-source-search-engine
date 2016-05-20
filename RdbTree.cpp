@@ -1337,7 +1337,7 @@ bool RdbTree::checkTree2 ( bool printMsgs , bool doChainTest ) {
 	// now return if we aren't doing active balancing
 	if ( ! m_depth ) return true;
 	// debug -- just always return now
-	if ( printMsgs )logf(LOG_DEBUG,"***m_headNode=%" PRId32", m_numUsedNodes=%" PRId32"",
+	if ( printMsgs )logf(LOG_DEBUG,"***m_headNode=%" PRId32", m_numUsedNodes=%" PRId32,
 			      m_headNode,m_numUsedNodes);
 	//CollectionRec *recs = g_collectiondb.m_recs;
 	int32_t           max  = g_collectiondb.m_numRecs;
@@ -1618,9 +1618,9 @@ void RdbTree::gbmprotect ( void *p , int32_t size , int prot ) {
 	if ( mprotect ( np , nsize , prot ) == -1 )
 		log("db: mprotect (size=%" PRId32"): %s.",nsize,mstrerror(errno)); 
 	//if ( prot == (PROT_READ | PROT_WRITE) )
-	//	log("db: unprotect: 0x%" PRIx32" size=%" PRId32"",(int32_t)np,nsize);
+	//	log("db: unprotect: 0x%" PRIx32" size=%" PRId32,(int32_t)np,nsize);
 	//else
-	//	log("db: protect: 0x%" PRIx32" size=%" PRId32"",(int32_t)np,nsize);
+	//	log("db: protect: 0x%" PRIx32" size=%" PRId32,(int32_t)np,nsize);
 }
 
 int32_t RdbTree::getMemOccupiedForList2 ( collnum_t collnum  ,
@@ -2876,7 +2876,7 @@ bool RdbTree::fastLoad ( BigFile *f , RdbMem *stack ) {
 			//deleteNode3 ( i , true ); // freeData?
 			//goto again;
 		}
-		log("REMOVED %" PRId32"",count);
+		log("REMOVED %" PRId32,count);
 		if ( ! checkTree( false ) ) return fixTree ( );
 	}
 	*/

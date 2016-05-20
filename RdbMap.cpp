@@ -180,10 +180,10 @@ bool RdbMap::writeMap2 ( ) {
 	g_errno = 0;
 
 	if( g_conf.m_logTraceRdbMap ) {
-		log(LOG_DEBUG, " m_offset.........: %"INT64"", m_offset);
-		log(LOG_DEBUG, " m_fileStartOffset: %"INT64"", m_fileStartOffset);
-		log(LOG_DEBUG, " m_numPositiveRecs: %"INT64"", m_numPositiveRecs);
-		log(LOG_DEBUG, " m_numNegativeRecs: %"INT64"", m_numNegativeRecs);
+		log(LOG_DEBUG, " m_offset.........: %" PRId64, m_offset);
+		log(LOG_DEBUG, " m_fileStartOffset: %" PRId64, m_fileStartOffset);
+		log(LOG_DEBUG, " m_numPositiveRecs: %" PRId64, m_numPositiveRecs);
+		log(LOG_DEBUG, " m_numNegativeRecs: %" PRId64, m_numNegativeRecs);
 		loghex(LOG_DEBUG, m_lastKey, m_ks, " m_lastKey........: (hexdump)");
 	}
 	
@@ -240,7 +240,7 @@ bool RdbMap::writeMap2 ( ) {
 
 
 	if( g_conf.m_logTraceRdbMap ) {
-		log(LOG_TRACE, "%s:%s:d: Writing %"INT32" segments", __FILE__, __func__, m_numSegments);
+		log(LOG_TRACE, "%s:%s:d: Writing %" PRId32" segments", __FILE__, __func__, m_numSegments);
 	}
 
 
@@ -249,7 +249,7 @@ bool RdbMap::writeMap2 ( ) {
 	for ( int32_t i = 0 ; i < m_numSegments ; ++i ) {
 		offset = writeSegment ( i , offset );
 		if ( offset<=0 ) {
-			log(LOG_ERROR, "%s:%s: Failed to write to %s (m_numSegments, segment %"INT32"): %s",
+			log(LOG_ERROR, "%s:%s: Failed to write to %s (m_numSegments, segment %" PRId32"): %s",
 			    __FILE__, __func__, m_file.getFilename(), i, mstrerror(g_errno));
 			return false;
 		}
@@ -357,13 +357,13 @@ bool RdbMap::verifyMap ( BigFile *dataFile )
 		diff = diff * -1LL;
 	}
 
-	if( g_conf.m_logTraceRdbMap ) log(LOG_TRACE,"%s:%s:%d: diff: %"INT64"", __FILE__, __func__, __LINE__,  diff);
+	if( g_conf.m_logTraceRdbMap ) log(LOG_TRACE,"%s:%s:%d: diff: %" PRId64, __FILE__, __func__, __LINE__,  diff);
 
 	// . return false if file size does not match
 	// . i've seen this happen before
 	if ( diff ) 
 	{
-		log(LOG_WARN, "%s:%s:%d: Map file [%s] says that file [%s] should be %"INT64" bytes long, but it is %"INT64" bytes.",
+		log(LOG_WARN, "%s:%s:%d: Map file [%s] says that file [%s] should be %" PRId64" bytes long, but it is %" PRId64" bytes.",
 			__FILE__, __func__, __LINE__, m_file.getFilename(), dataFile->getFilename(), m_offset - m_fileStartOffset, dataFile->getFileSize() );
 		    
 		// we let headless files squeak by on this because we cannot
@@ -394,11 +394,11 @@ bool RdbMap::verifyMap ( BigFile *dataFile )
 	int64_t minSize =(int64_t)(m_numPages - 1)*(int64_t)m_pageSize;
 	int64_t dfs = dataFile->getFileSize();
 	if ( dfs < minSize || dfs > maxSize ) {
-		//log("db: File is not mapped with PAGE_SIZE of %"INT32". Please "
+		//log("db: File is not mapped with PAGE_SIZE of %" PRId32". Please "
 		//    "delete map file %s and restart in order to regenerate "
 		//    "it. Chances are you are running a new version of gb on "
 		//    "old data.", (int32_t)PAGE_SIZE, m_file.getFilename());
-		log(LOG_ERROR, "File %s is not mapped with PAGE_SIZE of %"INT32". "
+		log(LOG_ERROR, "File %s is not mapped with PAGE_SIZE of %" PRId32". "
 		    "You may be running a new version of gb on "
 		    "old data.", m_file.getFilename(),(int32_t)m_pageSize);
 		//exit (-1);
@@ -427,7 +427,7 @@ bool RdbMap::verifyMap ( BigFile *dataFile )
 	
 	if ( numMissingParts > 0 ) 
 	{
-		log(LOG_ERROR,"%s:%s:%d: %"INT32" missing parts. filename [%s]", __FILE__, __func__, __LINE__,  numMissingParts, m_file.getFilename());	
+		log(LOG_ERROR,"%s:%s:%d: %" PRId32" missing parts. filename [%s]", __FILE__, __func__, __LINE__,  numMissingParts, m_file.getFilename());
 
 		File *f = dataFile->getFile2 ( numMissingParts );
 		
@@ -443,7 +443,7 @@ bool RdbMap::verifyMap ( BigFile *dataFile )
 	// . don't map to PARTs of data file that have been chopped
 	while ( removed < numMissingParts ) 
 	{
-		log(LOG_WARN,"db: Removing part #%"INT32" from map.",removed);
+		log(LOG_WARN,"db: Removing part #%" PRId32" from map.",removed);
 		chopHead ( MAX_PART_SIZE );
 		removed++;
 	}
@@ -471,20 +471,20 @@ bool RdbMap::verifyMap2 ( ) {
 		// just bitch for now
 		log(
 		    "db: Key out of order in map file %s/%s. "
-		    "page = %"INT32". key offset = %"INT64". "
+		    "page = %" PRId32". key offset = %" PRId64". "
 		    "Map or data file is "
 		    "corrupt, but it is probably the data file. Please "
 		    "delete the map file and restart.",
 		    m_file.getDir(),m_file.getFilename() ,
 		    i,(int64_t)m_pageSize*(int64_t)i+getOffset(i));
 
-		//log("db: oldk.n1=%08"XINT32" n0=%016"XINT64"",
+		//log("db: oldk.n1=%08" PRIx32" n0=%016" PRIx64,
 		//    lastKey.n1,lastKey.n0);
-		//log("db: k.n1=%08"XINT32" n0=%016"XINT64"",k.n1 ,k.n0);
-		log("db: oldk.n1=%016"XINT64" n0=%016"XINT64"",
+		//log("db: k.n1=%08" PRIx32" n0=%016" PRIx64,k.n1 ,k.n0);
+		log("db: oldk.n1=%016" PRIx64" n0=%016" PRIx64,
 		    KEY1(lastKey,m_ks),KEY0(lastKey));
-		log("db:    k.n1=%016"XINT64" n0=%016"XINT64"",KEY1(k,m_ks),KEY0(k));
-		log("db: m_numPages = %"INT32"",m_numPages);
+		log("db:    k.n1=%016" PRIx64" n0=%016" PRIx64,KEY1(k,m_ks),KEY0(k));
+		log("db: m_numPages = %" PRId32,m_numPages);
 
 		log(LOG_ERROR,"%s:%s: Previous versions would have move %s/%s to trash!!", 
 			__FILE__,__func__,m_file.getDir(), m_file.getFilename());
@@ -552,7 +552,7 @@ bool RdbMap::verifyMap2 ( ) {
 		for ( int32_t j = a ; j <= b ; j++ )
 			setKey ( j , keya );
 		// count it for reference
-		log("db: Removed bad block in map of %"INT32" pages. Data "
+		log("db: Removed bad block in map of %" PRId32" pages. Data "
 		    "may have been permanently lost. Consider "
 		    "syncing from a twin.",b-a+1);
 		// try from the top
@@ -687,7 +687,7 @@ bool RdbMap::addRecord ( char *key, char *rec , int32_t recSize ) {
 
 #ifdef GBSANITYCHECK
 	// debug
-	log(LOG_TRACE,"db: addmap k=%s keysize=%"INT32" offset=%"INT64" pagenum=%"INT32"",
+	log(LOG_TRACE,"db: addmap k=%s keysize=%" PRId32" offset=%" PRId64" pagenum=%" PRId32,
 	    KEYSTR(key,m_ks),recSize,m_offset,pageNum);
 #endif
 
@@ -708,12 +708,12 @@ bool RdbMap::addRecord ( char *key, char *rec , int32_t recSize ) {
 		m_lastLogTime = getTime();
 		
 		//pageNum > 0 && getKey(pageNum-1) > getKey(pageNum) ) {
-		log(LOG_LOGIC,"build: RdbMap: added key out of order. count=%"INT64" file=%s/%s.",
+		log(LOG_LOGIC,"build: RdbMap: added key out of order. count=%" PRId64" file=%s/%s.",
 			m_badKeys, m_file.getDir(), m_file.getFilename());
 			
-		//log(LOG_LOGIC,"build: k.n1=%"XINT32" %"XINT64"  lastKey.n1=%"XINT32" %"XINT64"",
+		//log(LOG_LOGIC,"build: k.n1=%" PRIx32" %" PRIx64"  lastKey.n1=%" PRIx32" %" PRIx64,
 		//    key.n1,key.n0,m_lastKey.n1,m_lastKey.n0 );
-		log(LOG_LOGIC,"build: offset=%"INT64"",
+		log(LOG_LOGIC,"build: offset=%" PRId64,
 		    m_offset);
 		log(LOG_LOGIC,"build: k1=%s",
 		    KEYSTR(m_lastKey,m_ks));
@@ -749,7 +749,7 @@ bool RdbMap::addRecord ( char *key, char *rec , int32_t recSize ) {
 	//m_lastKey = key;
 	KEYSET(m_lastKey,key,m_ks);
 	// debug msg
-	//log(LOG_LOGIC,"build: map add lastk.n1=%"XINT64" %"XINT64"",
+	//log(LOG_LOGIC,"build: map add lastk.n1=%" PRIx64" %" PRIx64,
 	//    KEY1(m_lastKey,m_ks),KEY0(m_lastKey));
 	// set m_numPages to the last page num we touch plus one
 	m_numPages = lastPageNum + 1;
@@ -1188,17 +1188,17 @@ int32_t RdbMap::getPage ( const char *startKey ) {
 void RdbMap::printMap () {
 	int32_t h = 0;
 	for ( int i = 0 ; i < m_numPages; i++ ) {
-		//log(LOG_INFO,"page=%i) key=%"UINT64"--%"UINT32", offset=%hi\n",
+		//log(LOG_INFO,"page=%i) key=%" PRIu64"--%" PRIu32", offset=%hi\n",
 		//	i,getKey(i).n0,getKey(i).n1,getOffset(i));
 		// for comparing
 		char buf[1000];
-		sprintf(buf,"page=%i) key=%"XINT64" %"XINT64", offset=%hi",
+		sprintf(buf,"page=%i) key=%" PRIx64" %" PRIx64", offset=%hi",
 		    i,KEY1(getKeyPtr(i),m_ks),KEY0(getKeyPtr(i)),
 		    getOffset(i));
 		h = hash32 ( buf , gbstrlen(buf) , h );
 		log(LOG_INFO,"%s",buf);
 	}
-	log(LOG_INFO,"map checksum = 0x%"XINT32"",h);
+	log(LOG_INFO,"map checksum = 0x%" PRIx32,h);
 }
 
 //int32_t RdbMap::setMapSizeFromFileSize ( int32_t fileSize ) {
@@ -1358,7 +1358,7 @@ bool RdbMap::chopHead ( int32_t fileHeadSize ) {
 	// ensure fileHeadSize is valid
 	if ( fileHeadSize != MAX_PART_SIZE )
 		return log(LOG_LOGIC,"db: rdbmap: chopHead: fileHeadSize of "
-			   "%"INT32" is invalid.", fileHeadSize );
+			   "%" PRId32" is invalid.", fileHeadSize );
 	// what segment does this page fall on?
 	int32_t segNum = (fileHeadSize / m_pageSize) / PAGES_PER_SEGMENT;
 	// . must match exactly
@@ -1478,7 +1478,7 @@ bool RdbMap::generateMap ( BigFile *f ) {
 	{
 		if ( next != 0 ) 
 		{
-			logf(LOG_INFO,"db: Read %"INT64" bytes [%s]", next, f->getFilename() );
+			logf(LOG_INFO,"db: Read %" PRId64" bytes [%s]", next, f->getFilename() );
 		}
 		
 		next += 500000000; // 500MB
@@ -1495,14 +1495,14 @@ bool RdbMap::generateMap ( BigFile *f ) {
 	}
 
 	// debug msg
-	//fprintf(stderr,"reading map @ off=%"INT64" size=%"INT64"\n"
+	//fprintf(stderr,"reading map @ off=%" PRId64" size=%" PRId64"\n"
 	//	, offset , readSize );
 
 	// otherwise, read it in
 	if ( ! f->read ( buf , readSize , offset ) ) {
 		mfree ( buf , bufSize , "RdbMap");
-		return log("db: Failed to read %"INT64" bytes of %s at "
-			   "offset=%"INT64". Map generation failed.",
+		return log("db: Failed to read %" PRId64" bytes of %s at "
+			   "offset=%" PRId64". Map generation failed.",
 			   bufSize,f->getFilename(),offset);
 	}
 
@@ -1516,7 +1516,7 @@ bool RdbMap::generateMap ( BigFile *f ) {
 		// if none found, bail
 		if ( fullKeyOff < 0 )
 		{
-			log(LOG_ERROR,"%s:%s:%d: Could not get a full key in the first %"INT64" bytes read of headless file [%s]",
+			log(LOG_ERROR,"%s:%s:%d: Could not get a full key in the first %" PRId64" bytes read of headless file [%s]",
 				__FILE__,
 				__func__,
 				__LINE__,
@@ -1599,8 +1599,8 @@ bool RdbMap::generateMap ( BigFile *f ) {
 	// don't chop keys
 	//if ( recSize > 1000000 ) { char *xx = NULL; *xx = 0; }
 	if ( recSize < 6 ) {
-		log("db: Got negative recsize of %"INT32" at offset=%"INT64" "
-		    "lastgoodoff=%"INT64"",
+		log("db: Got negative recsize of %" PRId32" at offset=%" PRId64" "
+		    "lastgoodoff=%" PRId64,
 		    recSize , offset + (rec-buf), m_offset );
 		// it truncates to m_offset!
 		if ( truncateFile(f) ) goto done;
@@ -1621,8 +1621,8 @@ bool RdbMap::generateMap ( BigFile *f ) {
 			log(
 			    "db: Map generation failed because last record "
 			    "in data file was split. Power failure while "
-			    "writing? Truncating file to %"INT64" bytes. "
-			    "(lost %"INT64" bytes)", offset,fileSize-offset);
+			    "writing? Truncating file to %" PRId64" bytes. "
+			    "(lost %" PRId64" bytes)", offset,fileSize-offset);
 			// when merge resumes it call our getFileSize()
 			// in RdbMerge.cpp::gotLock() to set the dump offset
 			// otherwise, if we don't do this and write data
@@ -1642,7 +1642,7 @@ bool RdbMap::generateMap ( BigFile *f ) {
 			//g_errno = ECORRUPTDATA;
 			log(
 			    "RdbMap::generateMap: Insane rec size of "
-			    "%"INT32" bytes encountered. off=%"INT64". "
+			    "%" PRId32" bytes encountered. off=%" PRId64". "
 			    "data corruption? ignoring.",
 			    recSize, offset);
 			//log("RdbMap::generateMap: truncating the file.");
@@ -1657,7 +1657,7 @@ bool RdbMap::generateMap ( BigFile *f ) {
 			if ( ! buf )
 				return log("db: Got error while "
 					   "generating the map file: %s. "
-					   "offset=%"UINT64".",
+					   "offset=%" PRIu64".",
 					   mstrerror(g_errno),oldOffset);
 		}
 		// read agin starting at the adjusted offset
@@ -1688,7 +1688,7 @@ done:
 	// if there was bad data we probably added out of order keys
 	if ( m_needVerify ) 
 	{
-		log(LOG_ERROR,"%s:%s:%d: Fixing map for [%s]. Added at least %"INT64" bad keys.",
+		log(LOG_ERROR,"%s:%s:%d: Fixing map for [%s]. Added at least %" PRId64" bad keys.",
 			__FILE__,
 			__func__,
 			__LINE__,
@@ -1716,7 +1716,7 @@ bool RdbMap::truncateFile ( BigFile *f )
 
 	//if ( tail > 20*1024*1024 )
 	//	return log("db: Cannot truncate data file because bad tail is "
-	//		   "%"INT64" bytes > %"INT32".",tail,(int32_t)MAX_TRUNC_SIZE);
+	//		   "%" PRId64" bytes > %" PRId32".",tail,(int32_t)MAX_TRUNC_SIZE);
 
 	// up to 20MB is ok to remove if most just bytes that are zeroes
 	log("db: Counting bytes that are zeroes in the tail.");
@@ -1731,7 +1731,7 @@ bool RdbMap::truncateFile ( BigFile *f )
 		f->read ( buf , readSize , off );
 		if ( ! f->read ( buf , readSize , off ) )
 		{
-			log(LOG_ERROR,"%s:%s:%d: Failed to read %"INT32" bytes of [%s] at offset=%"INT64".",
+			log(LOG_ERROR,"%s:%s:%d: Failed to read %" PRId32" bytes of [%s] at offset=%" PRId64".",
 				__FILE__, __func__, __LINE__, readSize, f->getFilename(), off);
 			return false;
 		}
@@ -1750,7 +1750,7 @@ bool RdbMap::truncateFile ( BigFile *f )
 	// if too much remains, do not truncate it
 	if ( tail > MAX_TRUNC_SIZE )
 	{
-		log(LOG_ERROR,"%s:%s:%d: Cannot truncate data file because bad tail is %"INT64" bytes > %"INT32". That excludes bytes that are zero.",
+		log(LOG_ERROR,"%s:%s:%d: Cannot truncate data file because bad tail is %" PRId64" bytes > %" PRId32". That excludes bytes that are zero.",
 			__FILE__, __func__, __LINE__, tail, (int32_t)MAX_TRUNC_SIZE);
 		return false;
 	}
@@ -1764,7 +1764,7 @@ bool RdbMap::truncateFile ( BigFile *f )
 	
 	if ( ! p ) 
 	{
-		log(LOG_ERROR,"%s:%s:%d: Unable to get part %"INT32" of file [%s]",
+		log(LOG_ERROR,"%s:%s:%d: Unable to get part %" PRId32" of file [%s]",
 			__FILE__, __func__, __LINE__, partnum, f->getFilename());
 		return false;
 	}
@@ -1778,10 +1778,10 @@ bool RdbMap::truncateFile ( BigFile *f )
 	int32_t oldSize = p->getFileSize();
 	int32_t lost    = oldSize - newSize;
 	
-	log(LOG_WARN, "db: Removing %"INT32" bytes at the end of %s. Power outage probably corrupted it.",
+	log(LOG_WARN, "db: Removing %" PRId32" bytes at the end of %s. Power outage probably corrupted it.",
 		lost, p->getFilename());
 	    
-	log(LOG_WARN, "db: Doing a truncate(%s,%"INT32").", p->getFilename(), newSize);
+	log(LOG_WARN, "db: Doing a truncate(%s,%" PRId32").", p->getFilename(), newSize);
 
 	// we must always be the last part of next to last part
 	if ( partnum != numParts-1 && partnum != numParts-2 )
@@ -1800,7 +1800,7 @@ bool RdbMap::truncateFile ( BigFile *f )
 		p2 = f->getFile2 ( partnum + 1 );
 		if ( ! p2 ) 
 		{
-			log(LOG_ERROR,"%s:%s:%d: Could not get next part %"INT32" of file [%s]",
+			log(LOG_ERROR,"%s:%s:%d: Could not get next part %" PRId32" of file [%s]",
 				__FILE__, __func__, __LINE__, partnum+1, f->getFilename());
 			return false;
 		}
@@ -1808,7 +1808,7 @@ bool RdbMap::truncateFile ( BigFile *f )
 			
 		if ( p2->getFileSize() > MAX_TRUNC_SIZE )
 		{
-			log(LOG_ERROR,"%s:%s:%d: db: Next part file is bigger than %"INT32" bytes.",
+			log(LOG_ERROR,"%s:%s:%d: db: Next part file is bigger than %" PRId32" bytes.",
 				__FILE__, __func__, __LINE__, (int32_t)MAX_TRUNC_SIZE);
 			return false;
 		}
@@ -1818,7 +1818,7 @@ bool RdbMap::truncateFile ( BigFile *f )
 	if ( truncate ( p->getFilename() , newSize ) )
 	{
 		// return false if had an error
-		log(LOG_ERROR, "%s:%s:%d: truncate(%s,%"INT32"): %s.",
+		log(LOG_ERROR, "%s:%s:%d: truncate(%s,%" PRId32"): %s.",
 			   __FILE__, __func__, __LINE__, p->getFilename(),newSize,mstrerror(errno));
 		return false;
 	}

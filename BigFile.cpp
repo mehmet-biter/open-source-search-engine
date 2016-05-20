@@ -72,19 +72,19 @@ void BigFile::logAllData(int32_t log_type)
 
 	struct tm *stm = localtime(&m_lastModified);
 	
-	log(log_type, "m_flags................: %"INT32"", m_flags);
+	log(log_type, "m_flags................: %" PRId32, m_flags);
 	log(log_type, "m_usePartFiles.........: [%s]", m_usePartFiles?"true":"false");
-	log(log_type, "m_maxParts.............: %"INT32"", m_maxParts);
+	log(log_type, "m_maxParts.............: %" PRId32, m_maxParts);
 	log(log_type, "m_numParts.............: %d", m_numParts);
-	log(log_type, "m_vfd..................: %"INT32"", m_vfd);
-	log(log_type, "m_fileSize.............: %"INT64"", m_fileSize);
+	log(log_type, "m_vfd..................: %" PRId32, m_vfd);
+	log(log_type, "m_fileSize.............: %" PRId64, m_fileSize);
 	log(log_type, "m_lastModified.........: %04d%02d%02d-%02d%02d%02d", stm->tm_year+1900,stm->tm_mon+1,stm->tm_mday,stm->tm_hour,stm->tm_min,stm->tm_sec);
 	
-	log(log_type, "m_numThreads...........: %"INT32"", m_numThreads);
+	log(log_type, "m_numThreads...........: %" PRId32, m_numThreads);
 	log(log_type, "m_isClosing............: [%s]", m_isClosing?"true":"false");
 	log(log_type, "m_isUnlink.............: [%s]", m_isUnlink?"true":"false");
-	log(log_type, "m_part.................: %"INT32"", m_part);
-	log(log_type, "m_partsRemaining.......: %"INT32"", m_partsRemaining);
+	log(log_type, "m_part.................: %" PRId32, m_part);
+	log(log_type, "m_partsRemaining.......: %" PRId32, m_partsRemaining);
 
 	loghex( log_type, m_tinyBuf, sizeof(m_tinyBuf), 		"m_tinyBuf..............: (hex dump)");
 	loghex( log_type, m_littleBuf, sizeof(m_littleBuf), 	"m_littleBuf............: (hex dump)");
@@ -96,8 +96,8 @@ void BigFile::logAllData(int32_t log_type)
 	loghex( log_type, m_newBaseFilename.getBufStart(), m_newBaseFilename.getBufUsed(),      "m_newBaseFilename......: (hex dump)");
 	loghex( log_type, m_newBaseFilenameDir.getBufStart(), m_newBaseFilenameDir.getBufUsed(),"m_newBaseFilenameDir...: (hex dump)");
 	
-	log(log_type, "g_lastDiskReadCompleted: %"INT64"", g_lastDiskReadCompleted);
-	log(log_type, "g_unlinkRenameThreads..: %"INT32"", g_unlinkRenameThreads);
+	log(log_type, "g_lastDiskReadCompleted: %" PRId64, g_lastDiskReadCompleted);
+	log(log_type, "g_unlinkRenameThreads..: %" PRId32, g_unlinkRenameThreads);
 }
 
 
@@ -228,7 +228,7 @@ bool BigFile::addParts ( const char *dirname ) {
 			continue;
 		} else {
 			part = atoi ( filename + blen + 5 );
-			logTrace( g_conf.m_logTraceBigFile, "  Detected part %" INT32"", part);
+			logTrace( g_conf.m_logTraceBigFile, "  Detected part %" PRId32, part);
 		}
 
 		// make this part file
@@ -248,14 +248,14 @@ bool BigFile::addParts ( const char *dirname ) {
 // referencing the file ptr. so let's just keep the m_filePtrs[] array
 // and realloc on that.
 bool BigFile::addPart ( int32_t n ) {
-	logTrace( g_conf.m_logTraceBigFile, "BEGIN n [%"INT32"] filename [%s]", n, getFilename());
+	logTrace( g_conf.m_logTraceBigFile, "BEGIN n [%" PRId32"] filename [%s]", n, getFilename());
 
 	// . grow our dynamic array and return ptr to last element
 	// . n's come in NOT necessarily in order!!!
 	int32_t need = (n+1) * sizeof(File *);
 	// capacity must be length always for this
 	if ( m_filePtrsBuf.getCapacity() != m_filePtrsBuf.getLength() ) {
-		log(LOG_ERROR, "%s:%s:%d: Capacity/Length mismatch when adding part %"INT32"", __FILE__, __func__, __LINE__, n);
+		log(LOG_ERROR, "%s:%s:%d: Capacity/Length mismatch when adding part %" PRId32, __FILE__, __func__, __LINE__, n);
 		logAllData(LOG_ERROR);
 		char *xx=NULL;*xx=0;
 	}
@@ -276,7 +276,7 @@ bool BigFile::addPart ( int32_t n ) {
 	//   there may be gaps or not exist because the BigFile was being
 	//   merged.
 	if ( delta > 0 && ! m_filePtrsBuf.reserve ( delta ,"bfbuf", true ) ) {
-		log(LOG_ERROR, "%s:%s:%d: Failed to reserve %"INT32" more mem for part", __FILE__, __func__, __LINE__, delta);
+		log(LOG_ERROR, "%s:%s:%d: Failed to reserve %" PRId32" more mem for part", __FILE__, __func__, __LINE__, delta);
 		logAllData(LOG_ERROR);
 		return false;
 	}
@@ -326,7 +326,7 @@ bool BigFile::addPart ( int32_t n ) {
 	// set maxPart
 	if ( n+1 > m_maxParts ) {
 		m_maxParts = n+1;
-		logTrace( g_conf.m_logTraceBigFile, "New m_maxParts: %" INT32, m_maxParts );
+		logTrace( g_conf.m_logTraceBigFile, "New m_maxParts: %" PRId32, m_maxParts );
 	}
 	
 	logTrace( g_conf.m_logTraceBigFile, "END - OK. New File object prepared. returning true" );
@@ -400,7 +400,7 @@ void BigFile::makeFilename_r ( char *baseFilename    ,
 		char *xx=NULL; *xx=0;
 	}
 	// return if it fit into "buf"
-	r = snprintf ( buf, bufSize, "%s/%s.part%"INT32,dir,baseFilename,n);
+	r = snprintf ( buf, bufSize, "%s/%s.part%" PRId32,dir,baseFilename,n);
 	if ( r < bufSize ) return;
 	// truncation is bad
 	char *xx=NULL; *xx=0;
@@ -598,7 +598,7 @@ bool BigFile::readwrite ( void         *buf      ,
 	// . when our offset was just a int32_t 2gig+ files, when dumped,
 	//   had negative offsets, bad engineer
 	if ( offset < 0 ) {
-		log(LOG_LOGIC,"disk: readwrite() offset is %"INT64" "
+		log(LOG_LOGIC,"disk: readwrite() offset is %" PRId64" "
 		    "< 0. filename=%s/%s. dumping core. try deleting "
 		    "the .map file for it and restarting.",offset,
 		    m_dir.getBufStart(),m_baseFilename.getBufStart());
@@ -646,7 +646,7 @@ bool BigFile::readwrite ( void         *buf      ,
 	fstate->m_usePartFiles = m_usePartFiles;
 	// sanity
 	if ( fstate->m_bytesToGo > 150000000 ) {
-		log( LOG_WARN, "file: huge read of %"INT64" bytes", ( int64_t ) size );
+		log( LOG_WARN, "file: huge read of %" PRId64" bytes", ( int64_t ) size );
 	}
 
 	// . set our fd's before entering the thread in case RdbMerge
@@ -768,7 +768,7 @@ bool BigFile::readwrite ( void         *buf      ,
 			     "disk: Doing blocking disk access. "
 			     //"This will hurt "
 			     //"performance. "
-			     "isWrite=%"INT32". (%s)",(int32_t)doWrite,
+			     "isWrite=%" PRId32". (%s)",(int32_t)doWrite,
 			     mstrerror(saved));
 		}
 	}
@@ -911,8 +911,8 @@ bool BigFile::readwrite ( void         *buf      ,
 	int32_t      rate  = 100000;
 	if ( took  > 500 ) rate = fstate->m_bytesDone / took ;
 	if ( rate < 8000 && fstate->m_niceness <= 0 ) {
-		log(LOG_INFO,"disk: Read %"INT64" bytes in %"INT64" "
-		    "ms (%"INT32"KB/s).",
+		log(LOG_INFO,"disk: Read %" PRId64" bytes in %" PRId64" "
+		    "ms (%" PRId32"KB/s).",
 		    fstate->m_bytesDone,took,rate);
 		g_stats.m_slowDiskReads++;
 	}
@@ -951,14 +951,14 @@ bool BigFile::readwrite ( void         *buf      ,
 		int32_t fn1 = fstate->m_filenum1;
 		int32_t fn2 = fstate->m_filenum2;
 		char *s = getFilename();
-		log(LOG_DEBUG,"disk: Closing old fd1 (%s,%"INT32")",s,fn1);
-		log(LOG_DEBUG,"disk: Closing old fd2 (%s,%"INT32")",s,fn2);
+		log(LOG_DEBUG,"disk: Closing old fd1 (%s,%" PRId32")",s,fn1);
+		log(LOG_DEBUG,"disk: Closing old fd2 (%s,%" PRId32")",s,fn2);
 		// get the File ptr from the table
 		File *f1 = getFile(fn1);
 		File *f2 = getFile(fn2);
 		if ( f2 == f1 ) f2 = NULL;
-		log(LOG_DEBUG,"disk: Closing old fd1 (%s,%"INT32")",s,fn1);
-		if ( f2) log(LOG_DEBUG,"disk: Closing old fd2 (%s,%"INT32")",s,fn2);
+		log(LOG_DEBUG,"disk: Closing old fd1 (%s,%" PRId32")",s,fn1);
+		if ( f2) log(LOG_DEBUG,"disk: Closing old fd2 (%s,%" PRId32")",s,fn2);
 		if ( f1 ) f1->close();
 		if ( f2 ) f2->close();
 	}
@@ -999,8 +999,8 @@ void doneWrapper ( void *state, job_exit_t exit_type ) {
 	if ( fstate->m_errno == EDISKSTUCK ) slow = true;
 	if ( slow && fstate->m_niceness <= 0 ) {
 		if ( fstate->m_errno != EDISKSTUCK )
-		  log(LOG_INFO, "disk: Read %"INT64" bytes in %"INT64" "
-		      "ms (%"INT32"KB/s).",
+		  log(LOG_INFO, "disk: Read %" PRId64" bytes in %" PRId64" "
+		      "ms (%" PRId32"KB/s).",
 		    fstate->m_bytesDone,took,rate);
 		g_stats.m_slowDiskReads++;
 	}
@@ -1044,19 +1044,19 @@ void doneWrapper ( void *state, job_exit_t exit_type ) {
 	//if ( fstate->m_this->getFlags() & O_NONBLOCK ) t = "yes";
 	// this is bad for real-time threads cuz our unlink() routine may
 	// have been called by RdbMerge and our m_files may be altered 
-	//log("disk::readwrite: %s %"INT32" bytes from %s(nonBlock=%s)",s,n,
+	//log("disk::readwrite: %s %" PRId32" bytes from %s(nonBlock=%s)",s,n,
 	//    m_files[filenum]->getFilename(),t);
-	//log("disk::readwrite_r: %s %"INT32" bytes (nonBlock=%s)",
+	//log("disk::readwrite_r: %s %" PRId32" bytes (nonBlock=%s)",
 	//     s,fstate->m_bytesDone/*n*/,t);
 	// debug msg
 	//int32_t took = gettimeofdayInMilliseconds() - fstate->m_startTime ;
-	//log("read of %"INT32" bytes took %"INT32" ms",fstate->m_bytesDone, took);
+	//log("read of %" PRId32" bytes took %" PRId32" ms",fstate->m_bytesDone, took);
 	// now log our stuff here
 	int32_t tt = LOG_WARN;
 	if ( g_errno == EFILECLOSED ) tt = LOG_INFO;
 	if ( g_errno && g_errno != EDISKSTUCK ) 
-		log (tt,"disk: %s. fd1=%"INT32" fd2=%"INT32" "
-		     "off=%"INT64" toread=%"INT32,
+		log (tt,"disk: %s. fd1=%" PRId32" fd2=%" PRId32" "
+		     "off=%" PRId64" toread=%" PRId32,
 		     mstrerror(g_errno),
 		     (int32_t)fstate->m_fd1,
 		     (int32_t)fstate->m_fd2,
@@ -1084,8 +1084,8 @@ void doneWrapper ( void *state, job_exit_t exit_type ) {
 		// CAUTION: if file got delete THIS will be invalid!!!
 		BigFile *THIS = fstate->m_this;
 		char *s = THIS->getFilename();
-		log(LOG_DEBUG,"disk: Closing old fd1 (%s,%"INT32")",s,fn1);
-		log(LOG_DEBUG,"disk: Closing old fd2 (%s,%"INT32")",s,fn2);
+		log(LOG_DEBUG,"disk: Closing old fd1 (%s,%" PRId32")",s,fn1);
+		log(LOG_DEBUG,"disk: Closing old fd2 (%s,%" PRId32")",s,fn2);
 		// get the File ptr from the table
 		File *f1 = THIS->getFile(fn1);
 		File *f2 = THIS->getFile(fn2);
@@ -1101,7 +1101,7 @@ void doneWrapper ( void *state, job_exit_t exit_type ) {
 
 static void readwriteWrapper_r ( void *state ) {
 	// debug msg
-	//log("disk: this thread id = %"INT32"",(int32_t)pthread_self());
+	//log("disk: this thread id = %" PRId32,(int32_t)pthread_self());
 
 	int64_t time_start = gettimeofdayInMilliseconds();
 	int64_t time_took;
@@ -1226,7 +1226,7 @@ static void readwriteWrapper_r ( void *state ) {
 	time_took = gettimeofdayInMilliseconds() - time_start;
 
 	if ( !fstate->m_doWrite && time_took >= g_conf.m_logDiskReadTimeThreshold ) {
-		log(LOG_WARN, "Disk read of %"INT64" bytes took %"INT64" ms", fstate->m_bytesDone, gettimeofdayInMilliseconds() - time_start);
+		log(LOG_WARN, "Disk read of %" PRId64" bytes took %" PRId64" ms", fstate->m_bytesDone, gettimeofdayInMilliseconds() - time_start);
 	}
 	
 	fstate->m_doneTime = gettimeofdayInMilliseconds();
@@ -1330,9 +1330,9 @@ bool readwrite_r ( FileState *fstate ) {
 		    (int)fstate->m_closeCount2 ,
 		    (int)getCloseCount_r ( fstate->m_fd2 ) ,
 		    mstrerror(errno) );
-		//log("disk::readwrite_r: %s %"INT32" bytes (nonBlock=%s)",
+		//log("disk::readwrite_r: %s %" PRId32" bytes (nonBlock=%s)",
 		//s,n,t);
-		//log("disk::readwrite_r: did %"INT32" bytes", n);
+		//log("disk::readwrite_r: did %" PRId32" bytes", n);
 	}
 
 	// interrupted system call?
@@ -1348,7 +1348,7 @@ bool readwrite_r ( FileState *fstate ) {
 	if (n==0 && len > 0 ) {
 		// MDW: don't access m_this in case bigfile was deleted
 		// since we are in a thread
-		log(LOG_WARN, "disk: Read of %"INT32" bytes at offset %"INT64" "
+		log(LOG_WARN, "disk: Read of %" PRId32" bytes at offset %" PRId64" "
 		    " failed because file is too short for that "
 		    "offset? Our fd was probably stolen from us by another "
 		    "thread. fd1=%i fd2=%i len=%i filenum=%i "
@@ -1453,7 +1453,7 @@ bool BigFile::chopHead(int32_t part )
 {
 	bool rc;
 
-	logTrace( g_conf.m_logTraceBigFile, "BEGIN. part %"INT32"", part);
+	logTrace( g_conf.m_logTraceBigFile, "BEGIN. part %" PRId32, part);
 	
 	rc=unlinkRename ( NULL, part, false, NULL, NULL );
 	// rc indicates blocked/unblocked
@@ -1495,7 +1495,7 @@ bool BigFile::chopHead(int32_t part, void (*callback)(void *state), void *state)
 {
 	bool rc;
 
-	logTrace( g_conf.m_logTraceBigFile, "BEGIN. part %"INT32"", part);
+	logTrace( g_conf.m_logTraceBigFile, "BEGIN. part %" PRId32, part);
 
 	//for ( int32_t i = 0 ; i < part ; i++ ) 
 	// set return value to false if we blocked somewhere
@@ -1664,7 +1664,7 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 		// otherwise, thread spawn failed, do it blocking then
 		log(LOG_INFO,
 		    "disk: Failed to launch unlink/rename thread for %s. "
-		    "Doing blocking unlink. part=%"INT32"/%"INT32". "
+		    "Doing blocking unlink. part=%" PRId32"/%" PRId32". "
 		    "This will hurt performance. "
 		    "%s.",f->getFilename(),i,m_part,mstrerror(g_errno));
 		    
@@ -1699,7 +1699,7 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 	//close();
 	// if one blocked, we block, but never return false if !useThread
 	if ( m_numThreads > 0 && useThread ) {
-		logTrace( g_conf.m_logTraceBigFile, "m_numThreads [%" INT32"] && useThread", m_numThreads );
+		logTrace( g_conf.m_logTraceBigFile, "m_numThreads [%" PRId32"] && useThread", m_numThreads );
 
 		return false;
 	}

@@ -738,27 +738,27 @@ bool Pages::printAdminTop (SafeBuf     *sb   ,
 		       );
 	sb->safePrintf(
 		       "<font color=black>"
-		       "&#x25cf;</font> spider is done (%"INT32")"
+		       "&#x25cf;</font> spider is done (%" PRId32")"
 		       "<br>"
 		       "\n"
 
 		       "<font color=orange>"
-		       "&#x25cf;</font> spider is paused (%"INT32")"
+		       "&#x25cf;</font> spider is paused (%" PRId32")"
 		       "<br>"
 		       "\n"
 
 		       "<font color=green>"
-		       "&#x25cf;</font> spider is active (%"INT32")"
+		       "&#x25cf;</font> spider is active (%" PRId32")"
 		       "<br>"
 		       "\n"
 
 		       "<font color=gray>"
-		       "&#x25cf;</font> spider queue empty (%"INT32")"
+		       "&#x25cf;</font> spider queue empty (%" PRId32")"
 		       "<br>"
 		       "\n"
 
 		       "<font color=blue>"
-		       "&#x25cf;</font> between rounds (%"INT32")"
+		       "&#x25cf;</font> between rounds (%" PRId32")"
 		       "<br>"
 		       "\n"
 
@@ -1012,7 +1012,7 @@ void Pages::printFormData( SafeBuf *sb, TcpSocket *s, HttpRequest *r ) {
 			 "value=\"%s\" />\n", coll);
 
 	// should any changes be broadcasted to all hosts?
-	sb->safePrintf ("<input type=\"hidden\" name=\"cast\" value=\"%"INT32"\" "
+	sb->safePrintf ("<input type=\"hidden\" name=\"cast\" value=\"%" PRId32"\" "
 			"/>\n",
 			(int32_t)s_pages[page].m_cast);
 
@@ -1171,7 +1171,7 @@ bool Pages::printHostLinks ( SafeBuf* sb     ,
 		// print the link to it
 		sb->safePrintf("%s<a href=\"http://%s:%hu/%s?"
 			       "c=%s%s\">"
-			       "%"INT32"</a>%s ",
+			       "%" PRId32"</a>%s ",
 			       ft,iptoa(ip),port,path,
 			       coll,qs,i,bt);
 	}		
@@ -1191,7 +1191,7 @@ bool Pages::printHostLinks ( SafeBuf* sb     ,
 		char *path = s_pages[page].m_filename;
 		sb->safePrintf("%s<a href=\"http://%s:%hu/%s?"
 			       "c=%s%s\">"
-			       "proxy%"INT32"</a>%s ",
+			       "proxy%" PRId32"</a>%s ",
 			       ft,iptoa(ip),port,path,
 			       coll,qs,i,bt);
 	}
@@ -1343,7 +1343,7 @@ bool Pages::printCollectionNavBar ( SafeBuf *sb, int32_t page, const char *coll,
 
 
 	if ( isMasterAdmin )
-		sb->safePrintf ( "<center><nobr><b>%"INT32" Collection%s</b></nobr>"
+		sb->safePrintf ( "<center><nobr><b>%" PRId32" Collection%s</b></nobr>"
 				 "</center>\n",
 				 g_collectiondb.m_numRecsUsed , s );
 	else
@@ -1666,7 +1666,7 @@ bool printApiForPage ( SafeBuf *sb , int32_t PAGENUM , CollectionRec *cr ) {
 
 	// page display/output parms
 	sb->safePrintf("<tr bgcolor=%s>"
-		       "<td>%"INT32"</td>\n"
+		       "<td>%" PRId32"</td>\n"
 		       "<td><b>format</b></td>"
 		       "<td>STRING</td>"
 		       "<td>output format</td>"
@@ -1680,7 +1680,7 @@ bool printApiForPage ( SafeBuf *sb , int32_t PAGENUM , CollectionRec *cr ) {
 	count++;
 
 	sb->safePrintf("<tr bgcolor=%s>"
-		       "<td>%"INT32"</td>\n"
+		       "<td>%" PRId32"</td>\n"
 		       "<td><b>showinput</b></td>"
 		       "<td>BOOL (0 or 1)</td>"
 		       "<td>show input and settings</td>"
@@ -1738,7 +1738,7 @@ bool printApiForPage ( SafeBuf *sb , int32_t PAGENUM , CollectionRec *cr ) {
 		else
 			sb->safePrintf ( "<tr bgcolor=#%s>",blues[count%2]);
 
-		sb->safePrintf("<td>%"INT32"</td>",count++);
+		sb->safePrintf("<td>%" PRId32"</td>",count++);
 
 		// use m_cgi if no m_scgi
 		const char *cgi = parm->m_cgi;
@@ -1760,8 +1760,8 @@ bool printApiForPage ( SafeBuf *sb , int32_t PAGENUM , CollectionRec *cr ) {
 		case TYPE_FLOAT: sb->safePrintf ( "FLOAT32" ); break;
 		case TYPE_DOUBLE: sb->safePrintf ( "FLOAT64" ); break;
 		case TYPE_IP: sb->safePrintf ( "IP" ); break;
-		case TYPE_LONG: sb->safePrintf ( "INT32" ); break;
-		case TYPE_LONG_LONG: sb->safePrintf ( "INT64" ); break;
+		case TYPE_LONG: sb->safePrintf ( " PRId32" ); break;
+		case TYPE_LONG_LONG: sb->safePrintf ( " PRId64" ); break;
 		case TYPE_CHARPTR: sb->safePrintf ( "STRING" ); break;
 		case TYPE_STRING: sb->safePrintf ( "STRING" ); break;
 		case TYPE_STRINGBOX: sb->safePrintf ( "STRING" ); break;
@@ -2417,7 +2417,7 @@ bool sendPageLogin ( TcpSocket *socket , HttpRequest *hr ) {
 		      , ff );
 
 	sb.safePrintf(
-		  "<input type=hidden name=ref value=\"%"INT32"\">"
+		  "<input type=hidden name=ref value=\"%" PRId32"\">"
 		  "<center>"
 		  "<br><br>"
 		  "<font color=ff0000><b>%s</b></font>"
@@ -2572,7 +2572,7 @@ bool printRedBox ( SafeBuf *mb , TcpSocket *sock , HttpRequest *hr ) {
 		char *s = "s are";
 		if ( out == 1 ) s = " is";
 		mb->safePrintf("%s",box);
-		mb->safePrintf("%"INT32" host%s over 98%% disk usage. "
+		mb->safePrintf("%" PRId32" host%s over 98%% disk usage. "
 			       "See the <a href=/admin/hosts?c=%s>"
 			       "hosts</a> table.",out,s,coll);
 		mb->safePrintf("%s",boxEnd);
@@ -2637,8 +2637,8 @@ bool printRedBox ( SafeBuf *mb , TcpSocket *sock , HttpRequest *hr ) {
 		char *s = "s are";
 		if ( out == 1 ) s = " is";
 		mb->safePrintf("%s",box);
-		mb->safePrintf("%"INT32" host%s jammed with "
-			       "over %"INT32" unhandled "
+		mb->safePrintf("%" PRId32" host%s jammed with "
+			       "over %" PRId32" unhandled "
 			       "incoming udp requests. "
 			       "See <a href=/admin/sockets?c=%s>sockets</a>"
 			       " table.",jammedHosts,s,400,coll);
@@ -2729,7 +2729,7 @@ bool printRedBox ( SafeBuf *mb , TcpSocket *sock , HttpRequest *hr ) {
 		char *s = "hosts are";
 		if ( ps->m_numHostsDead == 1 ) s = "host is";
 		mb->safePrintf("%s",box);
-		mb->safePrintf("%"INT32" %s dead and not responding to "
+		mb->safePrintf("%" PRId32" %s dead and not responding to "
 			      "pings. See the "
 			       "<a href=/admin/hosts?c=%s>hosts table</a>.",
 			       ps->m_numHostsDead ,s ,coll);

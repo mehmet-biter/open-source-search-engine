@@ -142,7 +142,7 @@ void Stats::addStat_r ( int32_t        numBytes    ,
 void Stats::dumpGIF ( int64_t startTime , int64_t endTime ) {
 
 	char fname [ 1024 ];
-	sprintf ( fname , "%s/diskGraph%"INT32".gif" ,
+	sprintf ( fname , "%s/diskGraph%" PRId32".gif" ,
 		  g_hostdb.m_httpRootDir , g_hostdb.m_hostId );
 	FILE *fd = fopen ( fname,"w" );
 	if ( ! fd ) { 
@@ -169,7 +169,7 @@ void Stats::dumpGIF ( int64_t startTime , int64_t endTime ) {
 
 	// gif size
 	char tmp[64];
-	sprintf ( tmp , "%"INT32"x%"INT32"", (int32_t)DX+40 , (int32_t)DY+40 ); // "1040x440"
+	sprintf ( tmp , "%" PRId32"x%" PRId32, (int32_t)DX+40 , (int32_t)DY+40 ); // "1040x440"
 
 #ifdef _USEPLOTTER_
 
@@ -241,7 +241,7 @@ void Stats::dumpGIF ( int64_t startTime , int64_t endTime ) {
 		plotter.line ( x , -20 , x , 20 );
 		// generate label
 		char buf [ 32 ];
-		sprintf ( buf , "%"INT32"" , 
+		sprintf ( buf , "%" PRId32 ,
 			  (int32_t)(DT * (int64_t)x / (int64_t)DX) );
 		// move cursor
 		plotter.move ( x , -by / 2 - 9 );
@@ -261,7 +261,7 @@ void Stats::dumpGIF ( int64_t startTime , int64_t endTime ) {
 	lrgBuf = (char *) mmalloc(lrgSize, "Stats.cpp"); 
 	if (! lrgBuf) {
 	    log("could not allocate memory for local buffer in Stats.cpp"
-		"%"INT32" bytes needed", lrgSize);
+		"%" PRId32" bytes needed", lrgSize);
 	    return;
 	}
 	char *lrgPtr = (char *)lrgBuf;
@@ -306,7 +306,7 @@ void Stats::dumpGIF ( int64_t startTime , int64_t endTime ) {
 		// . line thickness is function of read/write size
 		// . take logs
 		int w = (int)log(((double)p->m_numBytes)/8192.0) + 3;
-		//log("log of %"INT32" is %i",m_pts[i].m_numBytes,w);
+		//log("log of %" PRId32" is %i",m_pts[i].m_numBytes,w);
 		if ( w < 3         ) w = 3;
 		if ( w > MAX_WIDTH ) w = MAX_WIDTH;
 		plotter.linewidth ( w );       
@@ -323,8 +323,8 @@ void Stats::dumpGIF ( int64_t startTime , int64_t endTime ) {
 		plotter.line ( x1 , fy1 , x2 , fy1 );
 		// debug msg
 		//log("line (%i,%i, %i,%i) ", x1 , vert , x2 , vert );
-		//log("bytes = %"INT32" width = %"INT32" ", m_pts[i].m_numBytes,w);
-		//log("st=%i, end=%i color=%"XINT32" " ,
+		//log("bytes = %" PRId32" width = %" PRId32" ", m_pts[i].m_numBytes,w);
+		//log("st=%i, end=%i color=%" PRIx32" " ,
 		//      (int)m_pts[i].m_startTime , 
 		//      (int)m_pts[i].m_endTime   , 
 		//      m_pts[i].m_color );
@@ -368,7 +368,7 @@ void Stats::addPoint (StatPoint **points    ,
 		a -= 4*border;
 		b += 4*border;
 		// debug
-		//log("a=%"INT64" b=%"INT64" d=%"INT32"",a,b,4*border);
+		//log("a=%" PRId64" b=%" PRId64" d=%" PRId32,a,b,4*border);
 		for ( j = 0 ; j < n ; j++ ) {
 			// get that point
 			StatPoint *pp = points[MAX_POINTS * i + j];
@@ -499,12 +499,12 @@ void drawLine2 ( SafeBuf &sb ,
 		 int32_t width ) {
 
 	sb.safePrintf("<div style=\"position:absolute;"
-		      "left:%"INT32";"
-		      "top:%"INT32";"
-		      "background-color:#%06"XINT32";"
+		      "left:%" PRId32";"
+		      "top:%" PRId32";"
+		      "background-color:#%06" PRIx32";"
 		      "z-index:5;"
-		      "min-height:%"INT32"px;"
-		      "min-width:%"INT32"px;\"></div>\n"
+		      "min-height:%" PRId32"px;"
+		      "min-width:%" PRId32"px;\"></div>\n"
 		      , x1
 		      , (fy1 - width/2) - 20 //- 300
 		      , color
@@ -522,7 +522,7 @@ void Stats::printGraphInHtml ( SafeBuf &sb ) {
 
 	// gif size
 	char tmp[64];
-	sprintf ( tmp , "%"INT32"x%"INT32"", (int32_t)DX+40 , (int32_t)DY+40 ); // "1040x440"
+	sprintf ( tmp , "%" PRId32"x%" PRId32, (int32_t)DX+40 , (int32_t)DY+40 ); // "1040x440"
 
 	// 20 pixel borders
 	//int bx = 10;
@@ -570,8 +570,8 @@ void Stats::printGraphInHtml ( SafeBuf &sb ) {
 		      // the tick marks we print below are based on it
 		      // being a window of the last 20 seconds... and using
 		      // DX pixels
-		      "min-width:%"INT32"px;"
-		      "min-height:%"INT32"px;"
+		      "min-width:%" PRId32"px;"
+		      "min-height:%" PRId32"px;"
 		      //"width:100%%;"
 		      //"min-height:600px;"
 		      //"margin-top:10px;"
@@ -587,7 +587,7 @@ void Stats::printGraphInHtml ( SafeBuf &sb ) {
 		// tick mark
 		//plotter.line ( x , -20 , x , 20 );
 		sb.safePrintf("<div style=\"position:absolute;"
-			      "left:%"INT32";"
+			      "left:%" PRId32";"
 			      "bottom:0;"
 			      "background-color:#000000;"
 			      "z-index:110;"
@@ -597,11 +597,11 @@ void Stats::printGraphInHtml ( SafeBuf &sb ) {
 			      );
 		// generate label
 		//char buf [ 32 ];
-		//sprintf ( buf , "%"INT32"" , 
+		//sprintf ( buf , "%" PRId32 ,
 		//	  (int32_t)(DT * (int64_t)x / (int64_t)DX) );
 		// LABEL
 		sb.safePrintf("<div style=\"position:absolute;"
-			      "left:%"INT32";"
+			      "left:%" PRId32";"
 			      "bottom:20;"
 			      //"background-color:#000000;"
 			      "z-index:110;"
@@ -630,7 +630,7 @@ void Stats::printGraphInHtml ( SafeBuf &sb ) {
 	lrgBuf = (char *) mmalloc(lrgSize, "Stats.cpp"); 
 	if (! lrgBuf) {
 	    log("could not allocate memory for local buffer in Stats.cpp"
-		"%"INT32" bytes needed", lrgSize);
+		"%" PRId32" bytes needed", lrgSize);
 	    return;
 	}
 	char *lrgPtr = (char *)lrgBuf;
@@ -675,7 +675,7 @@ void Stats::printGraphInHtml ( SafeBuf &sb ) {
 		// . line thickness is function of read/write size
 		// . take logs
 		int w = (int)log(((double)p->m_numBytes)/8192.0) + 3;
-		//log("log of %"INT32" is %i",m_pts[i].m_numBytes,w);
+		//log("log of %" PRId32" is %i",m_pts[i].m_numBytes,w);
 		if ( w < 3         ) w = 3;
 		if ( w > MAX_WIDTH ) w = MAX_WIDTH;
 		//plotter.linewidth ( w );       
@@ -693,8 +693,8 @@ void Stats::printGraphInHtml ( SafeBuf &sb ) {
 		drawLine2 ( sb , x1 , x2 , fy1 , p->m_color , w );
 		// debug msg
 		//log("line (%i,%i, %i,%i) ", x1 , vert , x2 , vert );
-		//log("bytes = %"INT32" width = %"INT32" ", m_pts[i].m_numBytes,w);
-		//log("st=%i, end=%i color=%"XINT32" " ,
+		//log("bytes = %" PRId32" width = %" PRId32" ", m_pts[i].m_numBytes,w);
+		//log("st=%i, end=%i color=%" PRIx32" " ,
 		//      (int)m_pts[i].m_startTime , 
 		//      (int)m_pts[i].m_endTime   , 
 		//      m_pts[i].m_color );

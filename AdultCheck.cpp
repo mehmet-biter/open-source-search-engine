@@ -521,7 +521,7 @@ int32_t getAdultPoints ( char *s, int32_t slen, int32_t niceness, const char *ur
 		// log debug
 		if ( ! g_conf.m_logDebugDirty ) continue;
 		// show it in the log
-		log("dirty: %s %"INT32" %s"
+		log("dirty: %s %" PRId32" %s"
 		    ,s_dirtyWords[i].m_string
 		    ,(int32_t)s_dirtyWords[i].m_id
 		    ,url
@@ -572,7 +572,7 @@ int32_t getAdultPoints ( char *s, int32_t slen, int32_t niceness, const char *ur
 		// log debug
 		if ( ! g_conf.m_logDebugDirty ) continue;
 		// show it in the log
-		log("dirty: %s %"INT32" %s"
+		log("dirty: %s %" PRId32" %s"
 		    ,s_dirtyWordsPart2[i].m_string
 		    ,(int32_t)s_dirtyWordsPart2[i].m_id
 		    ,url

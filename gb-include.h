@@ -7,23 +7,13 @@
 
 #include <inttypes.h>
 
-#define XINT32 "x"
-#define UINT32 "u"
-#define INT32  "d"
-
 #if __WORDSIZE == 64
-#define XINT64 "lx"
-#define UINT64 "lu"
-#define INT64  "ld"
 #define PTRTYPE  uint64_t
 #define SPTRTYPE int64_t
 #define PTRFMT  "lx"
 #endif
 
 #if __WORDSIZE == 32
-#define XINT64 "llx"
-#define UINT64 "llu"
-#define INT64  "lld"
 #define PTRTYPE  unsigned long //uint32_t
 #define SPTRTYPE int32_t
 #define PTRFMT  "lx"

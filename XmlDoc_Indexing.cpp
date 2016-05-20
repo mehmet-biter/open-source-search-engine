@@ -164,7 +164,7 @@ bool XmlDoc::hashNoSplit ( HashTableX *tt ) {
 	// for exact content deduping
 	setStatus ( "hashing gbcontenthash (deduping) no-split keys" );
 	char cbuf[64];
-	int32_t clen = sprintf(cbuf,"%"UINT64"",*pch64);
+	int32_t clen = sprintf(cbuf,"%" PRIu64,*pch64);
 	hi.m_prefix    = "gbcontenthash";
 	if ( ! hashString ( cbuf,clen,&hi ) ) return false;
 
@@ -787,16 +787,16 @@ bool XmlDoc::hashDateNumbers ( HashTableX *tt ) { // , bool isStatusDoc ) {
 	hi.m_createSortByForNumbers = true;
 
 	char buf[64];
-	int32_t bufLen = sprintf ( buf , "%"UINT32"", (uint32_t)m_spideredTime );
+	int32_t bufLen = sprintf ( buf , "%" PRIu32, (uint32_t)m_spideredTime );
 	if ( ! hashNumberForSorting( buf , buf , bufLen , &hi ) )
 		return false;
 
 	// and index time is >= spider time, so you want to sort by that for
 	// the widget for instance
- 	hi.m_desc      = "last indexed date";
- 	hi.m_prefix    = "gbindexdate";
- 	bufLen = sprintf ( buf , "%"UINT32"", (uint32_t)indexedTime );
- 	if ( ! hashNumberForSorting ( buf , buf , bufLen , &hi ) )
+	hi.m_desc      = "last indexed date";
+	hi.m_prefix    = "gbindexdate";
+	bufLen = sprintf ( buf , "%" PRIu32, (uint32_t)indexedTime );
+	if ( ! hashNumberForSorting ( buf , buf , bufLen , &hi ) )
  		return false;
 
 	// do not index the rest if we are a "spider reply" document
@@ -812,13 +812,13 @@ bool XmlDoc::hashDateNumbers ( HashTableX *tt ) { // , bool isStatusDoc ) {
   BR 20160108: Don't store these as we don't plan to use them
 	hi.m_desc      = "doc last spidered date";
 	hi.m_prefix    = "gbdocspiderdate";
-	bufLen = sprintf ( buf , "%"UINT32"", (uint32_t)m_spideredTime );
+	bufLen = sprintf ( buf , "%" PRIu32, (uint32_t)m_spideredTime );
 	if ( ! hashNumberForSorting ( buf , buf , bufLen , &hi ) )
 		return false;
 
  	hi.m_desc      = "doc last indexed date";
  	hi.m_prefix    = "gbdocindexdate";
- 	bufLen = sprintf ( buf , "%"UINT32"", (uint32_t)indexedTime );
+	bufLen = sprintf ( buf , "%" PRIu32, (uint32_t)indexedTime );
  	if ( ! hashNumberForSorting ( buf , buf , bufLen , &hi ) )
  		return false;
 */
@@ -846,7 +846,7 @@ bool XmlDoc::hashContentType ( HashTableX *tt ) {
 	hi.m_prefix    = "type";
 
 	char tmp[6];
-	sprintf(tmp,"%"UINT32"",(uint32_t)ctype);
+	sprintf(tmp,"%" PRIu32,(uint32_t)ctype);
 	if ( ! hashString (tmp,gbstrlen(tmp),&hi ) ) return false;
 
 
@@ -1104,15 +1104,15 @@ bool XmlDoc::hashLinksForLinkdb ( HashTableX *dt ) {
 		//char c = site[siteLen];
 		//site[siteLen]=0;
 		//char tmp[1024];
-		//sprintf(tmp,"xmldoc: hashinglink site=%s sitelen=%"INT32" ",
+		//sprintf(tmp,"xmldoc: hashinglink site=%s sitelen=%" PRId32" ",
 		//	site,siteLen);
 		//site[siteLen] = c;
 		log(//"%s "
 		    "url=%s "
-		    "linkeesitehash32=0x%08"XINT32" "
-		    "linkersitehash32=0x%08"XINT32" "
+		    "linkeesitehash32=0x%08" PRIx32" "
+		    "linkersitehash32=0x%08" PRIx32" "
 		    "urlhash64=0x%16llx "
-		    "docid=%"INT64" k=%s",
+		    "docid=%" PRId64" k=%s",
 		    //tmp,
 		    m_links.getLink(i),
 		    (int32_t)linkeeSiteHash32,
@@ -1254,7 +1254,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 	int pbufLen=0;
 	int32_t port = fu->getPort();
 	if( port > 0 && port != 80 && port != 443 ) {
-		pbufLen=snprintf(pbuf, 12, ":%"UINT32"",fu->getPort());
+		pbufLen=snprintf(pbuf, 12, ":%" PRIu32,fu->getPort());
 	}
 
 
@@ -1376,7 +1376,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 	// no longer, we just index json now
 	//if ( isStatusDoc ) hi.m_prefix = "gbdocid2";
 	char buf2[32];
-	sprintf(buf2,"%"UINT64"",(m_docId) );
+	sprintf(buf2,"%" PRIu64,(m_docId) );
 	if ( ! hashSingleTerm(buf2,gbstrlen(buf2),&hi) ) return false;
 
 	//if ( isStatusDoc ) return true;
@@ -1430,17 +1430,17 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 	//
 	// this is for proving how many docs are in the index
 	uint32_t h = hash32 ( s , slen );
-	blen = sprintf(buf,"%"UINT32"",h);
+	blen = sprintf(buf,"%" PRIu32,h);
 	hi.m_prefix    = "urlhash";
 	if ( ! hashString(buf,blen,&hi) ) return false;
 
 /*
 	BR 20160106 removed.
-	blen = sprintf(buf,"%"UINT32"",h/10);
+	blen = sprintf(buf,"%" PRIu32,h/10);
 	// update hashing parms
 	hi.m_prefix = "urlhashdiv10";
 	if ( ! hashString(buf,blen,&hi) ) return false;
-	blen = sprintf(buf,"%"UINT32"",h/100);
+	blen = sprintf(buf,"%" PRIu32,h/100);
 	// update hashing parms
 	hi.m_prefix = "urlhashdiv100";
 	if ( ! hashString(buf,blen,&hi) ) return false;
@@ -1846,7 +1846,7 @@ bool XmlDoc::hashLanguage ( HashTableX *tt ) {
 	int32_t langId = (int32_t)*getLangId();
 
 	char s[32]; // numeric langid
-	int32_t slen = sprintf(s, "%"INT32"", langId );
+	int32_t slen = sprintf(s, "%" PRId32, langId );
 
 	// update hash parms
 	HashInfo hi;
@@ -2587,7 +2587,7 @@ bool XmlDoc::hashFieldMatchTerm ( char *val , int32_t vlen , HashInfo *hi ) {
 	// store in buffer for display on pageparser.cpp output
 	char buf[128];
 	int32_t bufLen ;
-	bufLen = sprintf(buf,"gbfieldmatch:%s:%"UINT64"",hi->m_prefix,val64);
+	bufLen = sprintf(buf,"gbfieldmatch:%s:%" PRIu64,hi->m_prefix,val64);
 
 	// make a special hashinfo for this facet
 	HashInfo hi2;
@@ -2749,7 +2749,7 @@ bool XmlDoc::hashNumberForSortingAsInt32 ( int32_t n , HashInfo *hi , char *sort
 
 	// store in buffer
 	char buf[128];
-	snprintf(buf,126,"%s:%s int32=%"INT32"",sortByStr, hi->m_prefix,n);
+	snprintf(buf,126,"%s:%s int32=%" PRId32,sortByStr, hi->m_prefix,n);
 	int32_t bufLen = gbstrlen(buf);
 
 	// add to wts for PageParser.cpp display
@@ -2897,7 +2897,7 @@ char *XmlDoc::hashJSONFields2 ( HashTableX *table ,
 				tt = (int32_t)0x7fffffff;
 			if ( tt ) {
 				// print out the time_t in ascii
-				vlen = sprintf(tbuf,"%"INT32"",(int32_t)tt);
+				vlen = sprintf(tbuf,"%" PRId32,(int32_t)tt);
 				// and point to it for hashing/indexing
 				val = tbuf;
 			}

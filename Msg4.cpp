@@ -193,7 +193,7 @@ bool flushMsg4Buffers ( void *state , void (* callback) (void *) ) {
 
 	// no room?
 	if ( cb >= cbEnd ) {
-		log(LOG_ERROR, "%s:%s: END. msg4: no room for flush callback. count=%"INT32", returning true",
+		log(LOG_ERROR, "%s:%s: END. msg4: no room for flush callback. count=%" PRId32", returning true",
 		    __FILE__,__func__,(int32_t)s_numCallbacks);
 		    
 		g_errno = EBUFTOOSMALL;
@@ -316,7 +316,7 @@ bool Msg4::addMetaList ( const char *metaList, int32_t metaListSize, collnum_t c
 		s_msg4Tail = this;
 		// debug log. seems to happen a lot if not using threads..
 		if ( g_jobScheduler.are_new_jobs_allowed() )
-			log("msg4: queueing body msg4=0x%"PTRFMT"",(PTRTYPE)this);
+			log("msg4: queueing body msg4=0x%" PTRFMT"",(PTRTYPE)this);
 		// mark it
 		m_inUse = true;
 		// all done then, but return false so caller does not free
@@ -404,7 +404,7 @@ bool Msg4::addMetaList2 ( ) {
 		int32_t ks = getKeySizeFromRdbId ( rdbId );
 
 		logTrace( g_conf.m_logTraceMsg4, "  Key: %s", KEYSTR(key, ks) );
-		logTrace( g_conf.m_logTraceMsg4, "  Key size: %"INT32"", ks);
+		logTrace( g_conf.m_logTraceMsg4, "  Key size: %" PRId32, ks);
 
 		// negative key?
 		bool del = !( *key & 0x01 );
@@ -421,14 +421,14 @@ bool Msg4::addMetaList2 ( ) {
 			shardNum = m_shardOverride;
 		}
 			
-		logTrace( g_conf.m_logTraceMsg4, "  shardNum: %"INT32"", shardNum);
+		logTrace( g_conf.m_logTraceMsg4, "  shardNum: %" PRId32, shardNum);
 
 		// get the record, is -1 if variable. a table lookup.
 		// . negative keys have no data
 		// . this unfortunately is not true according to RdbList.cpp
 		int32_t dataSize = del ? 0 : getDataSizeFromRdbId ( rdbId );
 
-		logTrace( g_conf.m_logTraceMsg4, "  dataSize: %"INT32"", dataSize);
+		logTrace( g_conf.m_logTraceMsg4, "  dataSize: %" PRId32, dataSize);
 
 		// if variable read that in
 		if ( dataSize == -1 ) {
@@ -440,7 +440,7 @@ bool Msg4::addMetaList2 ( ) {
 			// skip dataSize
 			p += 4;
 
-			logTrace( g_conf.m_logTraceMsg4, "  dataSize: %"INT32" (variable size read)", dataSize);
+			logTrace( g_conf.m_logTraceMsg4, "  dataSize: %" PRId32" (variable size read)", dataSize);
 		}
 
 		// skip over the data, if any
@@ -457,7 +457,7 @@ bool Msg4::addMetaList2 ( ) {
 		// group. uses a quick hash table.
 		Host *hosts = g_hostdb.getShard ( shardNum );
 		int32_t hostId = hosts[0].m_hostId;
-		logTrace( g_conf.m_logTraceMsg4, "  hostId: %"INT32"", hostId);
+		logTrace( g_conf.m_logTraceMsg4, "  hostId: %" PRId32, hostId);
 		
 		
 		// . add that rec to this groupId, gid, includes the key
@@ -675,7 +675,7 @@ bool sendBuffer ( int32_t hostId , int32_t niceness ) {
 	p += 8;
 	// syncdb debug
 	if ( g_conf.m_logDebugSpider )
-		logf(LOG_DEBUG,"syncdb: sending msg4 request zid=%"UINT64"",zid);
+		logf(LOG_DEBUG,"syncdb: sending msg4 request zid=%" PRIu64,zid);
 
 	// this is the request
 	char *request     = buf;
@@ -722,7 +722,7 @@ bool sendBuffer ( int32_t hostId , int32_t niceness ) {
 
 	// g_errno should be set
 	log("net: Had error when sending request to add data to rdb shard "
-	    "#%"UINT32": %s.", shardNum,mstrerror(g_errno));
+	    "#%" PRIu32": %s.", shardNum,mstrerror(g_errno));
 
 	returnMulticast ( mcast );
 
@@ -793,7 +793,7 @@ void gotReplyWrapper4 ( void *state , void *state2 ) {
 	// bail if no callbacks to call
 	if ( s_numCallbacks == 0 ) return;
 
-	//log("msg4: got msg4 reply. replyslot starttime=%"INT64" slot=0x%"XINT32"",
+	//log("msg4: got msg4 reply. replyslot starttime=%" PRId64" slot=0x%" PRIx32,
 	//    replyingSlot->m_startTime,(int32_t)replyingSlot);
 
 	// get the oldest msg4 slot starttime
@@ -812,7 +812,7 @@ void gotReplyWrapper4 ( void *state , void *state2 ) {
 		// be less than our callback's m_timestamp
 		//if ( slot == replyingSlot ) continue;
 		// log it
-		//log("msg4: slot starttime = %"INT64" ",slot->m_startTime);
+		//log("msg4: slot starttime = %" PRId64" ",slot->m_startTime);
 		// get it
 		if ( min && slot->m_startTime >= min ) continue;
 		// got a new min
@@ -820,7 +820,7 @@ void gotReplyWrapper4 ( void *state , void *state2 ) {
 	}
 
 	// log it
-	//log("msg4: slots min = %"INT64" ",min);
+	//log("msg4: slots min = %" PRId64" ",min);
 
 	// scan for slots whose callbacks we can call now
 	char *buf = s_callbackBuf.getBufStart();
@@ -832,7 +832,7 @@ void gotReplyWrapper4 ( void *state , void *state2 ) {
 		// skip if empty
 		if ( ! cb->m_callback ) continue;
 		// debug
-		//log("msg4: cb timestamp = %"INT64"",cb->m_timestamp);
+		//log("msg4: cb timestamp = %" PRId64,cb->m_timestamp);
 		// wait until callback's stored time is <= all msg4
 		// slot's start times, then we can guarantee that all the
 		// msg4s required for this callback have replied.
@@ -879,7 +879,7 @@ void storeLineWaiters ( ) {
 	if ( ! msg4->m_callback ) { char *xx=NULL;*xx=0; }
 	// log this now i guess. seems to happen a lot if not using threads
 	if ( g_jobScheduler.are_new_jobs_allowed() )
-		logf(LOG_DEBUG,"msg4: calling callback for msg4=0x%"PTRFMT"",
+		logf(LOG_DEBUG,"msg4: calling callback for msg4=0x%" PTRFMT"",
 		     (PTRTYPE)msg4);
 	// release it
 	msg4->m_inUse = false;
@@ -968,8 +968,8 @@ void handleRequest4 ( UdpSlot *slot , int32_t netnice ) {
 	if ( used != readBufSize ) {
 		// if we send back a g_errno then multicast retries forever
 		// so just absorb it!
-		log(LOG_ERROR,"%s:%s: msg4: got corrupted request from hostid %"INT32" "
-		    "used [%"INT32"] != readBufSize [%"INT32"]",
+		log(LOG_ERROR,"%s:%s: msg4: got corrupted request from hostid %" PRId32" "
+		    "used [%" PRId32"] != readBufSize [%" PRId32"]",
 		    __FILE__, 
 		    __func__,
 		    slot->m_host->m_hostId,
@@ -1025,7 +1025,7 @@ void handleRequest4 ( UdpSlot *slot , int32_t netnice ) {
 bool addMetaList ( const char *p , UdpSlot *slot ) {
 
 	if ( g_conf.m_logDebugSpider )
-		logf(LOG_DEBUG,"syncdb: calling addMetalist zid=%"UINT64"",
+		logf(LOG_DEBUG,"syncdb: calling addMetalist zid=%" PRIu64,
 		     *(int64_t *)(p+4));
 
 	// get total buf used
@@ -1076,12 +1076,12 @@ bool addMetaList ( const char *p , UdpSlot *slot ) {
 
 		if ( ! rdb ) {
 			if ( slot ) 
-				log( LOG_WARN, "msg4: rdbId of %"INT32" unrecognized "
+				log( LOG_WARN, "msg4: rdbId of %" PRId32" unrecognized "
 				    "from hostip=%s. "
 				    "dropping WHOLE request", (int32_t)rdbId,
 				    iptoa(slot->m_ip));
 			else
-				log( LOG_WARN, "msg4: rdbId of %"INT32" unrecognized. "
+				log( LOG_WARN, "msg4: rdbId of %" PRId32" unrecognized. "
 				    "dropping WHOLE request", (int32_t)rdbId);
 			g_errno = ETRYAGAIN;
 			return false;
@@ -1110,7 +1110,7 @@ bool addMetaList ( const char *p , UdpSlot *slot ) {
 	// sanity check
 	if ( rdb->getKeySize() == 0 ) {
 		log(LOG_WARN, "seems like a stray /e/repair-addsinprogress.dat file "
-		    "rdbId=%"INT32". waiting to be in repair mode."
+		    "rdbId=%" PRId32". waiting to be in repair mode."
 		    ,(int32_t)rdbId);
 		    //not in repair mode. dropping.",(int32_t)rdbId);
 		g_errno = ETRYAGAIN;
@@ -1315,7 +1315,7 @@ bool loadAddsInProgress ( const char *prefix ) {
 		return false;
 	}
 
-	log(LOG_INFO,"build: Loading %"INT32" bytes from %s",pend,filename);
+	log(LOG_INFO,"build: Loading %" PRId32" bytes from %s",pend,filename);
 
 	// . deserialize each hostbuf
 	// . the # of host bufs
@@ -1350,7 +1350,7 @@ bool loadAddsInProgress ( const char *prefix ) {
 		char *buf = (char *)mmalloc ( allocSize , "Msg4" );
 		if ( ! buf ) 
 		{
-			log(LOG_ERROR,"build: Could not alloc %"INT32" bytes for "
+			log(LOG_ERROR,"build: Could not alloc %" PRId32" bytes for "
 					"reading %s",allocSize,filename);
 
 			logTrace( g_conf.m_logTraceMsg4, "END - returning false" );
@@ -1396,7 +1396,7 @@ bool loadAddsInProgress ( const char *prefix ) {
 		// must be there
 		if ( ! h ) {
 			close (fd);
-			log(LOG_ERROR, "%s:%s: bad msg4 hostid %"INT32"",__FILE__,__func__,hostId);
+			log(LOG_ERROR, "%s:%s: bad msg4 hostid %" PRId32,__FILE__,__func__,hostId);
 
 			logTrace( g_conf.m_logTraceMsg4, "END - returning false" );
 			return false;

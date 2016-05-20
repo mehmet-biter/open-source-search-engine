@@ -319,7 +319,7 @@ skip:
 	if ( g_conf.m_logDebugQuery )
 		log(LOG_DEBUG,"net: msg0: Sending request for data to "
 		    "shard=%" PRIu32" "
-		    "listPtr=%"PTRFMT" minRecSizes=%" PRId32" termId=%" PRIu64" "
+		    "listPtr=%" PTRFMT" minRecSizes=%" PRId32" termId=%" PRIu64" "
 		    //"startKey.n1=%" PRIx32",n0=%" PRIx64" (niceness=%" PRId32")",
 		    "startKey.n1=%" PRIx64",n0=%" PRIx64" (niceness=%" PRId32")",
 		    //g_hostdb.makeHostId ( m_groupId ) ,
@@ -766,12 +766,12 @@ void gotListWrapper ( void *state , RdbList *listb , Msg5 *msg5xx ) {
 
 	// timing debug
 	if ( g_conf.m_logTimingNet || g_conf.m_logDebugNet ) {
-		//log("Msg0:hndled request %" PRIu64"",gettimeofdayInMilliseconds());
+		//log("Msg0:hndled request %" PRIu64,gettimeofdayInMilliseconds());
 		int32_t size = -1;
 		if ( list ) size     = list->getListSize();
 		log(LOG_TIMING|LOG_DEBUG,
 		    "net: msg0: Handled request for data. "
-		    "Now sending data termId=%" PRIu64" size=%" PRId32""
+		    "Now sending data termId=%" PRIu64" size=%" PRId32
 		    " transId=%" PRId32" ip=%s port=%i took=%" PRId64" "
 		    "(niceness=%" PRId32").",
 		    g_posdb.getTermId(msg5->m_startKey),
@@ -873,7 +873,7 @@ void gotListWrapper ( void *state , RdbList *listb , Msg5 *msg5xx ) {
 	}
 
 
-	//log("sending replySize=%" PRId32" min=%" PRId32"",dataSize,msg5->m_minRecSizes);
+	//log("sending replySize=%" PRId32" min=%" PRId32,dataSize,msg5->m_minRecSizes);
 	// . TODO: dataSize may not equal list->getListMaxSize() so
 	//         Mem class may show an imblanace
 	// . now g_udpServer is responsible for freeing data/dataSize

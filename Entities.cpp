@@ -501,7 +501,7 @@ uint32_t getDecimalEntity ( const char *s , int32_t len ) {
 
 	//printf("Translated entity (dec)");
 	//for (int i=0;i<len;i++)putchar(s[i]);
-	//printf(" to [U+%"INT32"]\n", v);
+	//printf(" to [U+%" PRId32"]\n", v);
 
 	if (v < 32 || v>0x10ffff) return (uint32_t)' ';
 

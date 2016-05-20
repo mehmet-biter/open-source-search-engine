@@ -120,7 +120,7 @@ bool Speller::loadUnifiedDict() {
 			log("gb: unifiedDict-buf.txt or "
 			    "unifiedDict-map.dat "
 			    "checksum is not approved for "
-			    "live service (%"INT64" != %"INT64")" ,h,n);
+			    "live service (%" PRId64" != %" PRId64")" ,h,n);
 			//return false;
 		}
 
@@ -232,7 +232,7 @@ bool Speller::loadUnifiedDict() {
 		if(gbstrlen(phrase) < 1) {
 			log(LOG_WARN,
 				"spell: Got zero length entry in unifiedDict "
-			    "at line %"UINT64", skipping\n",
+			    "at line %" PRIu64", skipping\n",
 				atline);
 			p += gbstrlen(p) + 1;
 			continue;
@@ -243,7 +243,7 @@ bool Speller::loadUnifiedDict() {
 		if(gbstrlen(phrase) == 1 && (phrase[0] < 'a')) {
 			log(LOG_WARN,
 				"spell: Got questionable entry in "
-			    "unifiedDict at line %"UINT64", skipping: %s\n",
+			    "unifiedDict at line %" PRIu64", skipping: %s\n",
 				atline,p);
 			p += gbstrlen(p) + 1;
 			continue;
@@ -328,7 +328,7 @@ bool Speller::loadUnifiedDict() {
 			if ( pops[i] == 0 ) continue;
 			// skip "unknown" what does that really mean?
 			if ( i == 0 ) continue;
-			m_unifiedBuf.safePrintf("%"INT32"\t%"INT32"\t",
+			m_unifiedBuf.safePrintf("%" PRId32"\t%" PRId32"\t",
 						i,(int32_t)pops[i]);
 			count++;
 		}
@@ -352,7 +352,7 @@ bool Speller::loadUnifiedDict() {
 		p += gbstrlen(p) + 1;
 	}
 
-	log (LOG_WARN,"spell: got %"INT32" TOTAL collisions in unified dict",
+	log (LOG_WARN,"spell: got %" PRId32" TOTAL collisions in unified dict",
 	     totalCollisions);
 
 	HashTableX dedup;
@@ -429,7 +429,7 @@ bool Speller::loadUnifiedDict() {
 			if ( pops[i] == 0 ) continue;
 			// skip "unknown" what does that really mean?
 			if ( i == 0 ) continue;
-			m_unifiedBuf.safePrintf("%"INT32"\t%"INT32"\t",
+			m_unifiedBuf.safePrintf("%" PRId32"\t%" PRId32"\t",
 						i,(int32_t)pops[i]);
 			count++;
 		}
@@ -778,7 +778,7 @@ char *Speller::getPhraseRecord(char *phrase, int len ) {
 	//char *rv = NULL;
 	int64_t h = hash64d(phrase, len);
 	int32_t slot = m_unifiedDict.getSlot(&h);
-	//log("speller: h=%"UINT64" len=%i slot=%"INT32"",h,len,slot);
+	//log("speller: h=%" PRIu64" len=%i slot=%" PRId32,h,len,slot);
 	if ( slot < 0 ) return NULL;
 	//rv = *(char **)m_unifiedDict.getValueFromSlot(slot);
 	int32_t offset =  *(int32_t *)m_unifiedDict.getValueFromSlot(slot);
@@ -917,8 +917,8 @@ void Speller::dictLookupTest ( char *ff ){
 		}
 		count++;
 	}
-	log ( LOG_WARN,"speller: dictLookupTest took %"INT64" ms to do "
-	      "%"INT32" words. Compare against 46-66ms taken for dict/words file.",
+	log ( LOG_WARN,"speller: dictLookupTest took %" PRId64" ms to do "
+	      "%" PRId32" words. Compare against 46-66ms taken for dict/words file.",
 	      gettimeofdayInMilliseconds() - start, count );
 	fclose(fd);
 }

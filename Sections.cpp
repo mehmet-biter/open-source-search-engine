@@ -521,11 +521,11 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 				if ( stackPtr->m_tid != ptid) ms =" UNMATCHED";
 				char *back ="";
 				if ( fullPopTid & BACKBIT ) back = "/";
-				logf(LOG_DEBUG,"section: pop tid=%"INT32" "
-				     "i=%"INT32" "
-				     "level=%"INT32" "
+				logf(LOG_DEBUG,"section: pop tid=%" PRId32" "
+				     "i=%" PRId32" "
+				     "level=%" PRId32" "
 				     "%s%s "
-				     //"h=0x%"XINT32""
+				     //"h=0x%" PRIx32
 				     "%s",(int32_t)tid,
 				     i,
 				     (int32_t)(stackPtr - stack),
@@ -586,9 +586,9 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 		// debug log
 		if ( ! g_conf.m_logDebugSections ) continue;
 
-		logf(LOG_DEBUG,"section: push tid=%"INT32" "
-		     "i=%"INT32" "
-		     "level=%"INT32" "
+		logf(LOG_DEBUG,"section: push tid=%" PRId32" "
+		     "i=%" PRId32" "
+		     "level=%" PRId32" "
 		     "%s "
 		     ,
 		     (int32_t)tid,
@@ -3257,7 +3257,7 @@ bool Sections::print( SafeBuf *sbuf, int32_t hiPos, int32_t *wposVec, char *dens
 		char ttt[100];
 		if ( sn->m_contentHash64 ) {
 			int32_t modified = sn->m_tagHash ^ sn->m_contentHash64;
-			sprintf(ttt,"0x%"XINT32"",modified);
+			sprintf(ttt,"0x%" PRIx32,modified);
 			xs = ttt;
 		}
 		// shortcut
@@ -3267,16 +3267,16 @@ bool Sections::print( SafeBuf *sbuf, int32_t hiPos, int32_t *wposVec, char *dens
 		if ( parent ) pswn = parent->m_a;
 		if ( parent ) pewn = parent->m_b;
 		// print it
-		sbuf->safePrintf("<tr><td>%"INT32"</td>\n"
-				 "<td>%"INT32"</td>"
-				 "<td>%"INT32"</td>"
-				 "<td>0x%"XINT32"</td>"
-				 "<td>0x%"XINT32"</td>"
-				 "<td>0x%"XINT32"</td>"
-				 "<td>0x%"XINT32"</td>"
+		sbuf->safePrintf("<tr><td>%" PRId32"</td>\n"
+				 "<td>%" PRId32"</td>"
+				 "<td>%" PRId32"</td>"
+				 "<td>0x%" PRIx32"</td>"
+				 "<td>0x%" PRIx32"</td>"
+				 "<td>0x%" PRIx32"</td>"
+				 "<td>0x%" PRIx32"</td>"
 				 "<td>%s</td>"
-				 "<td>%"INT32"</td>"
-				 "<td><nobr>%"INT32" to %"INT32"</nobr></td>"
+				 "<td>%" PRId32"</td>"
+				 "<td><nobr>%" PRId32" to %" PRId32"</nobr></td>"
 				 "<td><nobr>" ,
 				 scount++,
 				 sn->m_a,
@@ -3363,10 +3363,10 @@ bool Sections::printSectionDiv( Section *sk ) {
 	// start the new div
 	m_sbuf->safePrintf("<div "
 			 "style=\""
-			 "background-color:#%06"XINT32";"
+			 "background-color:#%06" PRIx32";"
 			 "margin-left:20px;"
-			 "border:#%06"XINT32" 1px solid;"
-			 "color:#%06"XINT32"\">",
+			 "border:#%06" PRIx32" 1px solid;"
+			 "color:#%06" PRIx32"\">",
 			 //(int32_t)sk,
 			 bcolor,
 			 rcolor,
@@ -3384,13 +3384,13 @@ bool Sections::printSectionDiv( Section *sk ) {
 	m_sbuf->safePrintf("<i>");
 
 	// print the flags
-	m_sbuf->safePrintf("A=%"INT32" ",sk->m_a);
+	m_sbuf->safePrintf("A=%" PRId32" ",sk->m_a);
 
 	// print tag hash now
-	m_sbuf->safePrintf("taghash=%"UINT32" ",(int32_t)sk->m_tagHash);
+	m_sbuf->safePrintf("taghash=%" PRIu32" ",(int32_t)sk->m_tagHash);
 
 	if ( sk->m_contentHash64 )
-		m_sbuf->safePrintf("ch64=%"UINT64" ",sk->m_contentHash64);
+		m_sbuf->safePrintf("ch64=%" PRIu64" ",sk->m_contentHash64);
 
 	printFlags ( m_sbuf , sk );
 	
@@ -3468,15 +3468,15 @@ bool Sections::printSectionDiv( Section *sk ) {
 					   "font-size:10px;"
 					   "border:black 1px solid;"
 					   "color:black;\">");
-			m_sbuf->safePrintf("%"INT32"",m_wposVec[i]);
+			m_sbuf->safePrintf("%" PRId32,m_wposVec[i]);
 			if ( m_densityVec[i] != MAXDENSITYRANK )
-				m_sbuf->safePrintf("/<font color=purple><b>%"INT32""
+				m_sbuf->safePrintf("/<font color=purple><b>%" PRId32
 						   "</b></font>"
 						   ,
 						   (int32_t)m_densityVec[i]);
 
 			if ( m_wordSpamVec[i] != MAXWORDSPAMRANK )
-				m_sbuf->safePrintf("/<font color=red><b>%"INT32""
+				m_sbuf->safePrintf("/<font color=red><b>%" PRId32
 						   "</b></font>"
 						   ,
 						   (int32_t)m_wordSpamVec[i]);

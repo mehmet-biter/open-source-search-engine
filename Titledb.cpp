@@ -161,8 +161,8 @@ bool Titledb::verify ( char *coll ) {
 	if ( got != count ) {
 		// tally it up
 		g_rebalance.m_numForeignRecs += count - got;
-		log ("db: Out of first %"INT32" records in titledb, "
-		     "only %"INT32" belong to our shard. c=%s",count,got,coll);
+		log ("db: Out of first %" PRId32" records in titledb, "
+		     "only %" PRId32" belong to our shard. c=%s",count,got,coll);
 		// exit if NONE, we probably got the wrong data
 		if ( count > 10 && got == 0 ) 
 			log("db: Are you sure you have the right "
@@ -177,7 +177,7 @@ bool Titledb::verify ( char *coll ) {
 			//uint32_t groupId = getGroupId ( RDB_TITLEDB,&k);
 			//int32_t groupNum = g_hostdb.getGroupNum(groupId);
 			int32_t shardNum = getShardNum ( RDB_TITLEDB, &k );
-			log("db: docid=%"INT64" shard=%"INT32"",
+			log("db: docid=%" PRId64" shard=%" PRId32,
 			    getDocId(&k),shardNum);
 		}
 		g_jobScheduler.allow_new_jobs();
@@ -191,7 +191,7 @@ bool Titledb::verify ( char *coll ) {
 		return true;
 	}
 
-	log ( LOG_DEBUG, "db: Titledb passed verification successfully for %"INT32""
+	log ( LOG_DEBUG, "db: Titledb passed verification successfully for %" PRId32
 			" recs.", count );
 	// DONE
 	g_jobScheduler.allow_new_jobs();

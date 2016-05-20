@@ -318,7 +318,7 @@ void Robots::parse() {
 	m_nextLineStartPos = 0;
 
 	if ( g_conf.m_logTimingRobots ) {
-		log( LOG_TIMING, "robots: %s: took %" INT64 " ms", __func__, ( gettimeofdayInMilliseconds() - startTime ) );
+		log( LOG_TIMING, "robots: %s: took %" PRId64 " ms", __func__, ( gettimeofdayInMilliseconds() - startTime ) );
 	}
 }
 
@@ -355,7 +355,7 @@ bool Robots::isAllowed( Url *url ) {
 	}
 
 	if ( g_conf.m_logTimingRobots ) {
-		log( LOG_TIMING, "robots: %s: took %" INT64 " ms", __func__, ( gettimeofdayInMilliseconds() - startTime ) );
+		log( LOG_TIMING, "robots: %s: took %" PRId64 " ms", __func__, ( gettimeofdayInMilliseconds() - startTime ) );
 	}
 
 	return isAllowed;

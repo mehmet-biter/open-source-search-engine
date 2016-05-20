@@ -329,7 +329,7 @@ bool printSpiderProxyTable ( SafeBuf *sb ) {
 	if ( g_hostdb.m_myHost->m_hostId != 0 ) {
 		Host *h = g_hostdb.getHost(0);
 		sb->safePrintf("<br>"
-			       "<b>See table on <a href=http://%s:%"INT32"/"
+			       "<b>See table on <a href=http://%s:%" PRId32"/"
 			       "admin/proxies>"
 			       "host #0</a></b>"
 			       "<br>"
@@ -404,26 +404,26 @@ bool printSpiderProxyTable ( SafeBuf *sb ) {
 		sb->safePrintf (
 			       "<tr bgcolor=#%s>"
 			       "<td>%s</td>" // proxy ip
-			       "<td>%"UINT32"</td>" // port
+			       "<td>%" PRIu32"</td>" // port
 			       , bg
 			       , iptoa(sp->m_ip)
 			       , (uint32_t)(uint16_t)sp->m_port
 			       );
 
-		sb->safePrintf("<td>%"INT64"</td>",sp->m_timesUsed);
+		sb->safePrintf("<td>%" PRId64"</td>",sp->m_timesUsed);
 
 		int32_t banCount = s_banCountTable.getScore32 ( &sp->m_ip );
 		if ( banCount < 0 ) banCount = 0;
-		sb->safePrintf("<td>%"INT32"</td>",banCount);
+		sb->safePrintf("<td>%" PRId32"</td>",banCount);
 
 		int32_t currentLoad;
 
 		// get # times it appears in loadtable
 		int32_t np = getNumLoadPoints ( sp , &currentLoad );
-		sb->safePrintf("<td>%"INT32"</td>",np);
+		sb->safePrintf("<td>%" PRId32"</td>",np);
 
 		// currently outstanding downloads on this proxy
-		sb->safePrintf("<td>%"INT32"</td>",currentLoad);
+		sb->safePrintf("<td>%" PRId32"</td>",currentLoad);
 
 		// last SUCCESSFUL download time ago. when it completed.
 		int32_t ago = now - sp->m_lastSuccessfulTestMS/1000;
@@ -447,7 +447,7 @@ bool printSpiderProxyTable ( SafeBuf *sb ) {
 
 		// how long to download the test url?
 		if ( sp->m_lastDownloadTookMS != -1 )
-			sb->safePrintf("<td>%"INT32"ms</td>",
+			sb->safePrintf("<td>%" PRId32"ms</td>",
 				       (int32_t)sp->m_lastDownloadTookMS);
 		else if ( sp->m_lastDownloadTestAttemptMS<= 0 )
 			sb->safePrintf("<td>unknown</td>");
@@ -456,7 +456,7 @@ bool printSpiderProxyTable ( SafeBuf *sb ) {
 				       "<font color=red>FAILED</font>"
 				       "</td>");
 
-		sb->safePrintf("<td>%"INT32"</td>",sp->m_lastBytesDownloaded);
+		sb->safePrintf("<td>%" PRId32"</td>",sp->m_lastBytesDownloaded);
 
 		if ( sp->m_lastDownloadError )
 			sb->safePrintf("<td><font color=red>%s</font></td>",
@@ -488,7 +488,7 @@ void handleRequest54 ( UdpSlot *udpSlot , int32_t niceness ) {
 
 	// sanity check
 	if ( requestSize != preq->getProxyRequestSize() ) {
-		log("db: Got bad request 0x54 size of %"INT32" bytes. bad",
+		log("db: Got bad request 0x54 size of %" PRId32" bytes. bad",
 		    requestSize );
 		g_udpServer.sendErrorReply ( udpSlot , EBADREQUESTSIZE );
 		return;
@@ -653,8 +653,8 @@ void handleRequest54 ( UdpSlot *udpSlot , int32_t niceness ) {
 	
 	
 	if ( threshHold <= 0 ) {
-		log("proxy: spiderproxy error in threshold of %"INT32" "
-		    "for banned=%"INT32"",threshHold,numBannedProxies);
+		log("proxy: spiderproxy error in threshold of %" PRId32" "
+		    "for banned=%" PRId32,threshHold,numBannedProxies);
 		threshHold = 1;
 	}
 
@@ -861,7 +861,7 @@ void returnProxy ( Msg13Request *preq , UdpSlot *udpSlot ) {
 	}
 
 	if ( i < 0 ) 
-		log("sproxy: could not find load bucket id #%"INT32"",preq->m_lbId);
+		log("sproxy: could not find load bucket id #%" PRId32,preq->m_lbId);
 
 	// if no slot provided, return to called without sending back reply,
 	// they are banning a proxy and need to also return it before

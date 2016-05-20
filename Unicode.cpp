@@ -16,12 +16,12 @@ iconv_t gbiconv_open( const char *tocode, const char *fromcode) {
 	iconv_t *convp = (iconv_t *)s_convTable.getValue(&hash);
 	iconv_t conv = NULL;
 	if ( convp ) conv = *convp;
-	//log(LOG_DEBUG, "uni: convertor %s -> %s from hash 0x%"XINT32": 0x%"XINT32"",
+	//log(LOG_DEBUG, "uni: convertor %s -> %s from hash 0x%" PRIx32": 0x%" PRIx32,
 	//    fromcode, tocode,
 	//    hash, conv);
 	if (!conv){
 		//log(LOG_DEBUG, "uni: Allocating new convertor for "
-		//    "%s to %s (hash: 0x%"XINT32")",
+		//    "%s to %s (hash: 0x%" PRIx32")",
 		//    fromcode, tocode,hash);
 		conv = iconv_open(tocode, fromcode);
 		if (conv == (iconv_t) -1) {
@@ -40,7 +40,7 @@ iconv_t gbiconv_open( const char *tocode, const char *fromcode) {
 		g_mem.addMem((void*)conv, 52, "iconv", 1);
 		// cache convertor
 		s_convTable.addKey(&hash, &conv);
-		//log(LOG_DEBUG, "uni: Saved convertor 0x%"INT32" under hash 0x%"XINT32"",
+		//log(LOG_DEBUG, "uni: Saved convertor 0x%" PRId32" under hash 0x%" PRIx32,
 		//    conv, hash);
 	}
 	else{
@@ -286,7 +286,7 @@ done:
 	static char eflag = 1;
 	if (numBadChars) {
 		if ( eflag )
-			log(LOG_DEBUG, "uni: ucToAny: got %"INT32" bad chars "
+			log(LOG_DEBUG, "uni: ucToAny: got %" PRId32" bad chars "
 			    "in conversion 2. Only reported once.",
 			    numBadChars);
 		// this flag makes it so no bad characters are reported

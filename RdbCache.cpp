@@ -172,7 +172,7 @@ bool RdbCache::init ( int32_t  maxMem        ,
 		//m_bufEnds  [ m_numBufs ] = NULL;
 		if ( ! m_bufs [ m_numBufs ] ) {
 			reset();
-			return log("db: Could not allocate %"INT32" bytes for "
+			return log("db: Could not allocate %" PRId32" bytes for "
 				   "cache for %s.",size,dbname);
 		}
 		m_numBufs++;
@@ -245,7 +245,7 @@ int64_t RdbCache::getLongLong ( collnum_t collnum ,
 			   promoteRecord ) ) 
 		return -1LL;
 	if ( recSize != 8 ) {
-		log(LOG_LOGIC,"db: cache: Bad engineer. RecSize = %"INT32".",
+		log(LOG_LOGIC,"db: cache: Bad engineer. RecSize = %" PRId32".",
 		    recSize);
 		return -1LL;
 	}
@@ -277,7 +277,7 @@ int64_t RdbCache::getLongLong2 ( collnum_t collnum ,
 			   promoteRecord ) ) 
 		return -1LL;
 	if ( recSize != 8 ) {
-		log(LOG_LOGIC,"db: cache: Bad engineer. RecSize = %"INT32".",
+		log(LOG_LOGIC,"db: cache: Bad engineer. RecSize = %" PRId32".",
 		    recSize);
 		return -1LL;
 	}
@@ -345,7 +345,7 @@ int32_t RdbCache::getLong ( collnum_t collnum ,
 			   promoteRecord ) ) 
 		return -1;
 	if ( recSize != 4 ) {
-		log(LOG_LOGIC,"db: cache: Bad engineer. RecSize = %"INT32".",
+		log(LOG_LOGIC,"db: cache: Bad engineer. RecSize = %" PRId32".",
 		    recSize);
 		return -1;
 	}
@@ -481,8 +481,8 @@ bool RdbCache::getRecord ( collnum_t collnum   ,
 		// too much and i don't care about it
 		if ( m_dbname[0]!='s' || m_dbname[1]!='i' )
 			log(LOG_DEBUG,"db: Found rec in cache for %s, "
-			    "but elapsed time of %"INT32" is greater "
-			    "than %"INT32".",
+			    "but elapsed time of %" PRId32" is greater "
+			    "than %" PRId32".",
 			    m_dbname, 
 			    (int32_t)(getTimeLocal() - timestamp) , 
 			    maxAge );
@@ -520,7 +520,7 @@ bool RdbCache::getRecord ( collnum_t collnum   ,
 		*rec = mdup ( p , *recSize , "RdbCache3" );
 		if ( ! *rec ) {
 			return log("db: Could not allocate space for "
-				   "cached record for %s of %"INT32" bytes.",
+				   "cached record for %s of %" PRId32" bytes.",
 				   m_dbname,*recSize);
 		}
 	}
@@ -575,10 +575,10 @@ bool RdbCache::getRecord ( collnum_t collnum   ,
 	// debug
 	//if ( check )
 	//	logf(LOG_DEBUG,
-	//	     "db: promote=%"UINT32" "
-	//	     "start1=%"UINT32" end1=%"UINT32" "
-	//	     "start2=%"UINT32" end2=%"UINT32" "
-	//	     "rec=%"UINT32" m_tail=%"UINT32" bufs[0]=%"UINT32" total=%"UINT32"",
+	//	     "db: promote=%" PRIu32" "
+	//	     "start1=%" PRIu32" end1=%" PRIu32" "
+	//	     "start2=%" PRIu32" end2=%" PRIu32" "
+	//	     "rec=%" PRIu32" m_tail=%" PRIu32" bufs[0]=%" PRIu32" total=%" PRIu32,
 	//	     (int32_t)promoteRecord ,
 	//	     (int32_t)start1,(int32_t)end1,(int32_t)start2,(int32_t)end2,
 	//	     (int32_t)*rec,(int32_t)m_tail,(int32_t)m_bufs[0],m_totalBufSize);
@@ -596,7 +596,7 @@ bool RdbCache::getRecord ( collnum_t collnum   ,
 		//if ( this == &g_robotdb.m_rdbCache )
 		// if ( this == &g_spiderLoop.m_winnerListCache ) {
 		// 	logf(LOG_DEBUG, "db: cachebug: promoting record "
-		// 	     "k.n0=0x%"XINT64" n=%"INT32"",
+		// 	     "k.n0=0x%" PRIx64" n=%" PRId32,
 		// 	     ((key_t *)cacheKey)->n0,
 		// 	     *recSize);
 		// }
@@ -615,7 +615,7 @@ bool RdbCache::getRecord ( collnum_t collnum   ,
 	}
 	// debug msg time
 	if ( g_conf.m_logTimingDb )
-		log(LOG_TIMING,"db: cache: %s getRecord %"INT32" bytes took %"INT64" "
+		log(LOG_TIMING,"db: cache: %s getRecord %" PRId32" bytes took %" PRId64" "
 		    "ms.",m_dbname,*recSize,
 		    gettimeofdayInMillisecondsLocal()-t);
 	// it was found, so return true
@@ -706,7 +706,7 @@ bool RdbCache::addList ( collnum_t collnum , char *cacheKey , RdbList *list ) {
 	// . msg2 sometimes fails this check when it adds to the cache
 	if ( list->m_ks != m_dks ) { 
 		//g_errno = EBADENGINEER;
-		return log("cache: key size %"INT32" != %"INT32"",
+		return log("cache: key size %" PRId32" != %" PRId32,
 			   (int32_t)list->m_ks,(int32_t)m_dks);
 		//char *xx = NULL; *xx = 0; }
 	}
@@ -785,7 +785,7 @@ bool RdbCache::addRecord ( collnum_t collnum ,
 	// are we bad?
 	if (m_fixedDataSize>=0 && ! m_supportLists && need != m_fixedDataSize){
 		char *xx=NULL;*xx=0;
-		return log(LOG_LOGIC,"db: cache: addRecord: %"INT32" != %"INT32".",
+		return log(LOG_LOGIC,"db: cache: addRecord: %" PRId32" != %" PRId32".",
 			   need,m_fixedDataSize);
 	}
 	// don't allow 0 timestamps, those are special indicators
@@ -811,12 +811,12 @@ bool RdbCache::addRecord ( collnum_t collnum ,
 	// watch out
 	if ( need >= m_totalBufSize )
 		return log(LOG_INFO,
-			   "db: Could not fit record of %"INT32" bytes into %s "
-			   "cache. Max size is %"INT32".",need,m_dbname,
+			   "db: Could not fit record of %" PRId32" bytes into %s "
+			   "cache. Max size is %" PRId32".",need,m_dbname,
 			   m_totalBufSize);
 	if ( need >= BUFSIZE )
 		return log(LOG_INFO,
-			   "db: Could not fit record of %"INT32" bytes into %s "
+			   "db: Could not fit record of %" PRId32" bytes into %s "
 			   "cache. Max size is %i.",need,m_dbname,BUFSIZE);
 
 	// if too many slots in hash table used free one up
@@ -926,8 +926,8 @@ bool RdbCache::addRecord ( collnum_t collnum ,
 	// . if we are already in there, preserve the 
 	addKey ( collnum , cacheKey , start ); // , crc ); // debug test
 	// debug msg time
-	log(LOG_TIMING,"db: cache: %s addRecord %"INT32" bytes took %"INT64" "
-	    "ms this=0x%"PTRFMT" key.n1=%"UINT32" n0=%"UINT64"",
+	log(LOG_TIMING,"db: cache: %s addRecord %" PRId32" bytes took %" PRId64" "
+	    "ms this=0x%" PTRFMT" key.n1=%" PRIu32" n0=%" PRIu64,
 	    m_dbname, (int32_t)(p - start) , 
 	    gettimeofdayInMillisecondsLocal()-t,
 	    (PTRTYPE)this,
@@ -976,8 +976,8 @@ bool RdbCache::deleteRec ( ) {
 			       //|| !g_collectiondb.m_recs[collnum]
 	     ) {
 		log (LOG_WARN,"db: cache: deleteRec: possible "
-		     "corruption, start=%"PTRFMT" collNum=%"INT32" "
-		     "maxCollNum=%"INT32" dbname=%s", (PTRTYPE)start,
+		     "corruption, start=%" PTRFMT" collNum=%" PRId32" "
+		     "maxCollNum=%" PRId32" dbname=%s", (PTRTYPE)start,
 		     (int32_t)collnum, g_collectiondb.m_numRecsUsed,  
 		     m_dbname);
 		char *xx=NULL;*xx=0;
@@ -1040,7 +1040,7 @@ bool RdbCache::deleteRec ( ) {
 	
 	// debug msg (MDW)
 	// if ( this == &g_spiderLoop.m_winnerListCache ) {
-	// log("cache: deleting rec @ %"INT32" size=%"INT32"",m_tail,
+	// log("cache: deleting rec @ %" PRId32" size=%" PRId32,m_tail,
 	//     dataSize+2+12+4+4);
 	// }
 
@@ -1071,8 +1071,8 @@ bool RdbCache::deleteRec ( ) {
 
 	//if ( this == &g_robotdb.m_rdbCache ) 
 	// if ( this == &g_spiderLoop.m_winnerListCache )
-	// 	logf(LOG_DEBUG, "db: cachebug: removing k.n0=0x%"XINT64" "
-	// 	     "oldtail=%"INT32" newtail=%"INT32" ds=%"INT32"", 
+	// 	logf(LOG_DEBUG, "db: cachebug: removing k.n0=0x%" PRIx64" "
+	// 	     "oldtail=%" PRId32" newtail=%" PRId32" ds=%" PRId32,
 	// 	     ((key_t *)k)->n0,saved,m_tail,dataSize);
 
 	//else
@@ -1085,11 +1085,11 @@ bool RdbCache::deleteRec ( ) {
 	// memset(start+sizeof(collnum_t), 0xff, m_cks);
 	
 	// debug msg
-	//log("%s m_tail = %"INT32", #ptrs=%"INT32"",
+	//log("%s m_tail = %" PRId32", #ptrs=%" PRId32,
 	//     m_dbname,m_tail,m_numPtrsUsed);
 	//}
 	// debug msg
-	//log("%s m_tail = %"INT32", #ptrs=%"INT32"",m_dbname,m_tail,m_numPtrsUsed);
+	//log("%s m_tail = %" PRId32", #ptrs=%" PRId32,m_dbname,m_tail,m_numPtrsUsed);
 	m_needsSave = true;
 	return true;
 }
@@ -1100,7 +1100,7 @@ void RdbCache::markDeletedRecord(char *ptr){
 	int32_t dataSize = sizeof(collnum_t)+m_cks+sizeof(int32_t);
 	// debug it 
 	// if ( this == &g_spiderLoop.m_winnerListCache ) {
-	//logf(LOG_DEBUG,"cache: makeDeleteRec ptr=0x%"PTRFMT" off=%"INT32"",
+	//logf(LOG_DEBUG,"cache: makeDeleteRec ptr=0x%" PTRFMT" off=%" PRId32,
 	//      (PTRTYPE)ptr,(int32_t)(ptr-m_bufs[0]));
 	// }
 	// get dataSize and data
@@ -1130,11 +1130,11 @@ void RdbCache::removeKey ( collnum_t collnum , char *key , char *rec ) {
 	int32_t n = hash32 ( key , m_cks ) % m_numPtrsMax;
 	// debug msg
 	//if ( m_cks == 4)
-	//	log("remove first try = slot #%"INT32" (%"INT32")",n,m_numPtrsMax);
+	//	log("remove first try = slot #%" PRId32" (%" PRId32")",n,m_numPtrsMax);
 	// debug msg
-	//log("%s removing key.n1=%"UINT32" key.n0=%"UINT64"",m_dbname,key.n1,key.n0);
+	//log("%s removing key.n1=%" PRIu32" key.n0=%" PRIu64,m_dbname,key.n1,key.n0);
 	//if ( m_cks == 4 )
-	//	log("removing k=%"XINT32"",*(int32_t *)key);
+	//	log("removing k=%" PRIx32,*(int32_t *)key);
 	// chain
 	while ( m_ptrs[n] && 
 		( *(collnum_t *)(m_ptrs[n]+0                ) != collnum ||
@@ -1183,7 +1183,7 @@ void RdbCache::removeKey ( collnum_t collnum , char *key , char *rec ) {
 
 	// debug msg 
 	//key_t *k = (key_t *)(m_ptrs[n]+2);
-	//log("cache: %s removing key.n1=%"UINT32" key.n0=%"UINT64" from slot #%"INT32"",
+	//log("cache: %s removing key.n1=%" PRIu32" key.n0=%" PRIu64" from slot #%" PRId32,
 	//    m_dbname,k->n1,k->n0,n);
 	
 	// all done if already cleared
@@ -1218,7 +1218,7 @@ void RdbCache::addKey ( collnum_t collnum , char *key , char *ptr ) {
 	// save orig for debugging
 	//int32_t n2 = n;
 	// debug msg
-	//log("add first try = slot #%"INT32" (%"INT32")",n,m_numPtrsMax);
+	//log("add first try = slot #%" PRId32" (%" PRId32")",n,m_numPtrsMax);
 	//int32_t n = key.n0 % m_numPtrsMax;
 	// chain
 	while ( m_ptrs[n] && 
@@ -1234,14 +1234,14 @@ void RdbCache::addKey ( collnum_t collnum , char *key , char *ptr ) {
 		m_memOccupied += sizeof(char *);
 		// debug msg 
 		//key_t *k = (key_t *)key;
-		//log("cache: %s added key.n1=%"UINT32" key.n0=%"UINT64" to slot #%"INT32" "
-		//    "ptr=0x%"XINT32" off=%"INT32" size=%"INT32"",
+		//log("cache: %s added key.n1=%" PRIu32" key.n0=%" PRIu64" to slot #%" PRId32" "
+		//    "ptr=0x%" PRIx32" off=%" PRId32" size=%" PRId32,
 		//    m_dbname,k->n1,k->n0,n,ptr,ptr-m_bufs[0],
 		//    *(int32_t *)(ptr+2+12+4));
 	}
 	// debug msg
 	//else 
-	//	log("%s update key.n1=%"UINT32" key.n0=%"UINT64" in slot #%"INT32"",
+	//	log("%s update key.n1=%" PRIu32" key.n0=%" PRIu64" in slot #%" PRId32,
 	//	    m_dbname,key.n1,key.n0,n);
 		
 	// If this pointer is already set, we may be replacing it from 
@@ -1257,8 +1257,8 @@ void RdbCache::addKey ( collnum_t collnum , char *key , char *ptr ) {
 
 	//if ( this == &g_robotdb.m_rdbCache ) 
 	// if ( this == &g_spiderLoop.m_winnerListCache )
-	// 	logf(LOG_DEBUG,"db: cachebug: addkey slot #%"INT32" has "
-	// 	     "ptr=0x%"PTRFMT"",n,(PTRTYPE)ptr);
+	// 	logf(LOG_DEBUG,"db: cachebug: addkey slot #%" PRId32" has "
+	// 	     "ptr=0x%" PTRFMT"",n,(PTRTYPE)ptr);
 
 }
 
@@ -1343,7 +1343,7 @@ bool RdbCache::save ( bool useThreads ) {
 	if ( m_isSaving ) return false;
 
 	// log
-	log(LOG_INIT,"db: Saving %"INT32" bytes of cache to %s/%s.cache",
+	log(LOG_INIT,"db: Saving %" PRId32" bytes of cache to %s/%s.cache",
 	     m_memAlloced,g_hostdb.m_dir,m_dbname);
 
 	// spawn the thread
@@ -1516,7 +1516,7 @@ bool RdbCache::saveSome_r ( int fd , int32_t *iptr , int32_t *off ) {
 		//if ( n != 4 ) return false;
 	}
 	if ( used != m_numPtrsUsed ) { 
-		log("cache: error saving cache. %"INT32" != %"INT32""
+		log("cache: error saving cache. %" PRId32" != %" PRId32
 		    , used , m_numPtrsUsed );
 		//char *xx=NULL;*xx=0; }
 		return false;
@@ -1568,8 +1568,8 @@ bool RdbCache::load ( char *dbname ) {
 	     maxMem     != m_maxMem      ) {
 		log("db: Error while loading cache file %s. Does not match "
 		    "current cache config. "
-		    "current numPtrsMax=%"INT32" maxMem=%"INT32", "
-		    "ondisk  numPtrsMax=%"INT32" maxMem=%"INT32". "
+		    "current numPtrsMax=%" PRId32" maxMem=%" PRId32", "
+		    "ondisk  numPtrsMax=%" PRId32" maxMem=%" PRId32". "
 		    "Attempting to convert.",
 		    //"Ignoring file.",
 		    f.getFilename() ,
@@ -1661,15 +1661,15 @@ bool RdbCache::load ( char *dbname ) {
 		
 		// debug msg
 		//key_t kk = *(key_t *)p;
-		//log("loaded k.n1=%"UINT32" k.n0=%"UINT64"",kk.n1,kk.n0);
+		//log("loaded k.n1=%" PRIu32" k.n0=%" PRIu64,kk.n1,kk.n0);
 		//if ( m_fixedDataSize || m_supportLists )
-		//	log("loaded k.n1=%"UINT32" k.n0=%"UINT64" size=%"INT32"",
+		//	log("loaded k.n1=%" PRIu32" k.n0=%" PRIu64" size=%" PRId32,
 		//	    kk.n1,kk.n0, 20+*(int32_t *)(p+sizeof(key_t)+4));
 		//else
-		//	log("loaded k.n1=%"UINT32" k.n0=%"UINT64"", kk.n1,kk.n0);
+		//	log("loaded k.n1=%" PRIu32" k.n0=%" PRIu64, kk.n1,kk.n0);
 	}
 	if ( used != m_numPtrsUsed ) { 
-		log("cache: error loading cache. %"INT32" != %"INT32""
+		log("cache: error loading cache. %" PRId32" != %" PRId32
 		    , used , m_numPtrsUsed );
 		return false;
 	}
@@ -1792,10 +1792,10 @@ bool RdbCache::convertCache ( int32_t numPtrsMax , int32_t maxMem ) {
 		else              success++;
 	}
 	// log it
-	logf(LOG_INFO,"db: Successfully converted %"INT32" recs from cache on disk "
+	logf(LOG_INFO,"db: Successfully converted %" PRId32" recs from cache on disk "
 	     "for %s.", success,m_dbname);
 	if ( failed > 0 )
-		logf(LOG_INFO,"db: Failed to convert %"INT32" recs from cache on "
+		logf(LOG_INFO,"db: Failed to convert %" PRId32" recs from cache on "
 		     "disk for %s.", failed,m_dbname);
 	return true;
 }
@@ -1828,7 +1828,7 @@ void RdbCache::verify(){
 		 //int32_t  timestamp = *(int32_t  *)p ; 
 		 p += 4;
 	
-		 //logf(LOG_DEBUG, "db: cachebug: removing key.  tail=%"INT32" ", 
+		 //logf(LOG_DEBUG, "db: cachebug: removing key.  tail=%" PRId32" ",
 		 //     m_tail);
 		 
 		 // get data size

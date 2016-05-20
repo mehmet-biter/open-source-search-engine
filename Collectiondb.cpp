@@ -32,7 +32,7 @@ Collectiondb::Collectiondb ( ) {
 	m_needsSave = false;
 	// sanity
 	if ( RDB_END2 >= RDB_END ) return;
-	log("db: increase RDB_END2 to at least %"INT32" in "
+	log("db: increase RDB_END2 to at least %" PRId32" in "
 	    "Collectiondb.h",(int32_t)RDB_END);
 	char *xx=NULL;*xx=0;
 }
@@ -68,7 +68,7 @@ bool Collectiondb::save ( ) {
 	for ( int32_t i = 0 ; i < m_numRecs ; i++ ) {
 		if ( ! m_recs[i]              ) continue;
 		// temp debug message
-		//logf(LOG_DEBUG,"admin: SAVING collection #%"INT32" ANYWAY",i);
+		//logf(LOG_DEBUG,"admin: SAVING collection #%" PRId32" ANYWAY",i);
 		if ( ! m_recs[i]->m_needsSave ) {
 			continue;
 		}
@@ -81,7 +81,7 @@ bool Collectiondb::save ( ) {
 			continue;
 		}
 
-		//log(LOG_INFO,"admin: Saving collection #%"INT32".",i);
+		//log(LOG_INFO,"admin: Saving collection #%" PRId32".",i);
 		m_recs[i]->save ( );
 	}
 	// oh well
@@ -209,7 +209,7 @@ bool Collectiondb::addExistingColl ( char *coll, collnum_t collnum ) {
 		    ,(int)i,ocr->m_coll,coll,coll);
 		SafeBuf cmd;
 		int64_t now = gettimeofdayInMilliseconds();
-		cmd.safePrintf ( "mv coll.%s.%i trash/coll.%s.%i.%"UINT64
+		cmd.safePrintf ( "mv coll.%s.%i trash/coll.%s.%i.%" PRIu64
 				 , coll
 				 ,(int)i
 				 , coll
@@ -223,7 +223,7 @@ bool Collectiondb::addExistingColl ( char *coll, collnum_t collnum ) {
 	// create the record in memory
 	CollectionRec *cr = new (CollectionRec);
 	if ( ! cr )
-		return log("admin: Failed to allocated %"INT32" bytes for new "
+		return log("admin: Failed to allocated %" PRId32" bytes for new "
 			   "collection record for \"%s\".",
 			   (int32_t)sizeof(CollectionRec),coll);
 	mnew ( cr , sizeof(CollectionRec) , "CollectionRec" );
@@ -252,7 +252,7 @@ bool Collectiondb::addExistingColl ( char *coll, collnum_t collnum ) {
 	// load coll.conf file
 	if ( ! cr->load ( coll , i ) ) {
 		mdelete ( cr, sizeof(CollectionRec), "CollectionRec" );
-		log("admin: Failed to load coll.%s.%"INT32"/coll.conf",coll,i);
+		log("admin: Failed to load coll.%s.%" PRId32"/coll.conf",coll,i);
 		delete ( cr );
 		if ( m_recs ) m_recs[i] = NULL;
 		return false;
@@ -327,7 +327,7 @@ bool Collectiondb::addNewColl ( char *coll, char customCrawl, bool saveIt,
 	if ( gbstrlen(coll) > MAX_COLL_LEN ) {
 		g_errno = ENOBUFS;
 		log( LOG_WARN, "admin: Trying to create a new collection whose name '%s' of %i chars is longer than the "
-		     "max of %" INT32" chars.", coll, gbstrlen(coll), (int32_t)MAX_COLL_LEN );
+		     "max of %" PRId32" chars.", coll, gbstrlen(coll), (int32_t)MAX_COLL_LEN );
 		return false;
 	}
 
@@ -342,7 +342,7 @@ bool Collectiondb::addNewColl ( char *coll, char customCrawl, bool saveIt,
 
 	// MDW: ensure not created on disk since time of last load
 	char dname[512];
-	sprintf(dname, "%scoll.%s.%"INT32"/",g_hostdb.m_dir,coll,(int32_t)newCollnum);
+	sprintf(dname, "%scoll.%s.%" PRId32"/",g_hostdb.m_dir,coll,(int32_t)newCollnum);
 	DIR *dir = opendir ( dname );
 	if ( dir ) closedir ( dir );
 	if ( dir ) {
@@ -354,7 +354,7 @@ bool Collectiondb::addNewColl ( char *coll, char customCrawl, bool saveIt,
 	// create the record in memory
 	CollectionRec *cr = new (CollectionRec);
 	if ( ! cr ) {
-		log( LOG_WARN, "admin: Failed to allocated %"INT32" bytes for new collection record for '%s'.",
+		log( LOG_WARN, "admin: Failed to allocated %" PRId32" bytes for new collection record for '%s'.",
 		     ( int32_t ) sizeof( CollectionRec ), coll );
 		return false;
 	}
@@ -513,7 +513,7 @@ bool Collectiondb::addNewColl ( char *coll, char customCrawl, bool saveIt,
 	// END NEW CODE
 	//
 
-	//log("admin: adding coll \"%s\" (new=%"INT32")",coll,(int32_t)isNew);
+	//log("admin: adding coll \"%s\" (new=%" PRId32")",coll,(int32_t)isNew);
 
 	// MDW: create the new directory
  retry22:
@@ -615,7 +615,7 @@ bool Collectiondb::addRdbBasesForCollRec ( CollectionRec *cr ) {
 	//cleanTrees();
 
 	// debug message
-	//log ( LOG_INFO, "db: verified collection \"%s\" (%"INT32").",
+	//log ( LOG_INFO, "db: verified collection \"%s\" (%" PRId32").",
 	//      coll,(int32_t)cr->m_collnum);
 
 	// tell SpiderCache about this collection, it will create a
@@ -641,7 +641,7 @@ bool Collectiondb::deleteRec2 ( collnum_t collnum ) { //, WaitEntry *we ) {
 	// bitch if not found
 	if ( collnum < 0 ) {
 		g_errno = ENOTFOUND;
-		log(LOG_LOGIC,"admin: Collection #%"INT32" is bad, "
+		log(LOG_LOGIC,"admin: Collection #%" PRId32" is bad, "
 		    "delete failed.",(int32_t)collnum);
 		return true;
 	}
@@ -662,7 +662,7 @@ bool Collectiondb::deleteRec2 ( collnum_t collnum ) { //, WaitEntry *we ) {
 	char *coll = cr->m_coll;
 
 	// note it
-	log(LOG_INFO,"db: deleting coll \"%s\" (%"INT32")",coll,
+	log(LOG_INFO,"db: deleting coll \"%s\" (%" PRId32")",coll,
 	    (int32_t)cr->m_collnum);
 
 	// we need a save
@@ -838,7 +838,7 @@ bool Collectiondb::setRecPtr ( collnum_t collnum , CollectionRec *cr ) {
 	// add to hash table to map name to collnum_t
 	int64_t h64 = hash64n(cr->m_coll);
 	// debug
-	//log("coll: adding key %"INT64" for %s",h64,cr->m_coll);
+	//log("coll: adding key %" PRId64" for %s",h64,cr->m_coll);
 	if ( ! g_collTable.addKey ( &h64 , &collnum ) )
 		return false;
 
@@ -848,7 +848,7 @@ bool Collectiondb::setRecPtr ( collnum_t collnum , CollectionRec *cr ) {
 	// count it
 	m_numRecsUsed++;
 
-	//log("coll: adding key4 %"UINT64" for coll \"%s\" (%"INT32")",h64,cr->m_coll,
+	//log("coll: adding key4 %" PRIu64" for coll \"%s\" (%" PRId32")",h64,cr->m_coll,
 	//    (int32_t)i);
 
 	// reserve it
@@ -873,7 +873,7 @@ bool Collectiondb::resetColl2( collnum_t oldCollnum, collnum_t newCollnum, bool 
 		return true;
 	}
 
-	//log("admin: resetting collnum %"INT32"",(int32_t)oldCollnum);
+	//log("admin: resetting collnum %" PRId32,(int32_t)oldCollnum);
 
 	// CAUTION: tree might be in the middle of saving
 	// we deal with this in Process.cpp now
@@ -949,7 +949,7 @@ bool Collectiondb::resetColl2( collnum_t oldCollnum, collnum_t newCollnum, bool 
 
 	// a new directory then since we changed the collnum
 	char dname[512];
-	sprintf(dname, "%scoll.%s.%"INT32"/",
+	sprintf(dname, "%scoll.%s.%" PRId32"/",
 		g_hostdb.m_dir,
 		cr->m_coll,
 		(int32_t)newCollnum);
@@ -1107,7 +1107,7 @@ CollectionRec *Collectiondb::getRec ( collnum_t collnum) {
 		// it is called from CollectionRec::reset() which is called
 		// from the CollectionRec constructor and ::load() so
 		// it won't have anything in rdb at that time
-		//log("colldb: collnum %"INT32" > numrecs = %"INT32"",
+		//log("colldb: collnum %" PRId32" > numrecs = %" PRId32,
 		//    (int32_t)collnum,(int32_t)m_numRecs);
 		return NULL;
 	}
@@ -1204,7 +1204,7 @@ collnum_t Collectiondb::reserveCollNum ( ) {
 		m_wrapped = i+1;
 		// note it
 		log("colldb: returning wrapped collnum "
-		    "of %"INT32"",(int32_t)i);
+		    "of %" PRId32,(int32_t)i);
 		return (collnum_t)i;
 	}
 
@@ -1291,7 +1291,7 @@ CollectionRec::~CollectionRec() {
 
 void CollectionRec::reset() {
 
-	//log("coll: resetting collnum=%"INT32"",(int32_t)m_collnum);
+	//log("coll: resetting collnum=%" PRId32,(int32_t)m_collnum);
 
 	// . grows dynamically
 	// . setting to 0 buckets should never have error
@@ -1354,7 +1354,7 @@ bool CollectionRec::load ( char *coll , int32_t i ) {
 	// get the filename with that id
 	File f;
 	char tmp2[1024];
-	sprintf ( tmp2 , "%scoll.%s.%"INT32"/coll.conf", g_hostdb.m_dir , coll,i);
+	sprintf ( tmp2 , "%scoll.%s.%" PRId32"/coll.conf", g_hostdb.m_dir , coll,i);
 	f.set ( tmp2 );
 	if ( ! f.doesExist () ) return log("admin: %s does not exist.",tmp2);
 	// set our collection number
@@ -1365,7 +1365,7 @@ bool CollectionRec::load ( char *coll , int32_t i ) {
 		strcpy ( m_coll , coll );
 
 	if ( ! g_conf.m_doingCommandLine )
-		log(LOG_INFO,"db: Loading conf for collection %s (%"INT32")",coll,
+		log(LOG_INFO,"db: Loading conf for collection %s (%" PRId32")",coll,
 		    (int32_t)m_collnum);
 
 	// the default conf file
@@ -1383,7 +1383,7 @@ bool CollectionRec::load ( char *coll , int32_t i ) {
 	// LOAD the crawlinfo class in the collectionrec for diffbot
 	//
 	// LOAD LOCAL
-	snprintf ( tmp1 , 1023, "%scoll.%s.%"INT32"/localcrawlinfo.dat",
+	snprintf ( tmp1 , 1023, "%scoll.%s.%" PRId32"/localcrawlinfo.dat",
 		  g_hostdb.m_dir , m_coll , (int32_t)m_collnum );
 	log(LOG_DEBUG,"db: Loading %s",tmp1);
 	m_localCrawlInfo.reset();
@@ -1396,7 +1396,7 @@ bool CollectionRec::load ( char *coll , int32_t i ) {
 
 
 	if ( ! g_conf.m_doingCommandLine && ! g_collectiondb.m_initializing )
-		log("coll: Loaded %s (%"INT32") local hasurlsready=%"INT32"",
+		log("coll: Loaded %s (%" PRId32") local hasurlsready=%" PRId32,
 		    m_coll,
 		    (int32_t)m_collnum,
 		    (int32_t)m_localCrawlInfo.m_hasUrlsReadyToSpider);
@@ -1421,7 +1421,7 @@ bool CollectionRec::load ( char *coll , int32_t i ) {
 	}
 
 	// LOAD GLOBAL
-	snprintf ( tmp1 , 1023, "%scoll.%s.%"INT32"/globalcrawlinfo.dat",
+	snprintf ( tmp1 , 1023, "%scoll.%s.%" PRId32"/globalcrawlinfo.dat",
 		  g_hostdb.m_dir , m_coll , (int32_t)m_collnum );
 	log(LOG_DEBUG,"db: Loading %s",tmp1);
 	m_globalCrawlInfo.reset();
@@ -1432,7 +1432,7 @@ bool CollectionRec::load ( char *coll , int32_t i ) {
 		gbmemcpy ( &m_globalCrawlInfo , sb.getBufStart(),sb.length() );
 
 	if ( ! g_conf.m_doingCommandLine && ! g_collectiondb.m_initializing )
-		log("coll: Loaded %s (%"INT32") global hasurlsready=%"INT32"",
+		log("coll: Loaded %s (%" PRId32") global hasurlsready=%" PRId32,
 		    m_coll,
 		    (int32_t)m_collnum,
 		    (int32_t)m_globalCrawlInfo.m_hasUrlsReadyToSpider);
@@ -1441,7 +1441,7 @@ bool CollectionRec::load ( char *coll , int32_t i ) {
 	// and therefore backoff and use proxies for
 	if ( ! g_conf.m_doingCommandLine ) {
 		sb.reset();
-		sb.safePrintf("%scoll.%s.%"INT32"/",
+		sb.safePrintf("%scoll.%s.%" PRId32"/",
 			      g_hostdb.m_dir , m_coll , (int32_t)m_collnum );
 		m_twitchyTable.m_allocName = "twittbl";
 		m_twitchyTable.load ( sb.getBufStart() , "ipstouseproxiesfor.dat" );
@@ -2723,13 +2723,13 @@ bool CollectionRec::save ( ) {
 
 	//File f;
 	char tmp[1024];
-	//sprintf ( tmp , "%scollections/%"INT32".%s/c.conf",
+	//sprintf ( tmp , "%scollections/%" PRId32".%s/c.conf",
 	//	  g_hostdb.m_dir,m_id,m_coll);
 	// collection name HACK for backwards compatibility
 	//if ( m_collLen == 0 )
 	//	sprintf ( tmp , "%scoll.main/coll.conf", g_hostdb.m_dir);
 	//else
-	snprintf ( tmp , 1023, "%scoll.%s.%"INT32"/coll.conf",
+	snprintf ( tmp , 1023, "%scoll.%s.%" PRId32"/coll.conf",
 		  g_hostdb.m_dir , m_coll , (int32_t)m_collnum );
 	if ( ! g_parms.saveToXml ( (char *)this , tmp ,OBJ_COLL)) {
 		return false;
@@ -2741,7 +2741,7 @@ bool CollectionRec::save ( ) {
 	// save the crawlinfo class in the collectionrec for diffbot
 	//
 	// SAVE LOCAL
-	snprintf ( tmp , 1023, "%scoll.%s.%"INT32"/localcrawlinfo.dat",
+	snprintf ( tmp , 1023, "%scoll.%s.%" PRId32"/localcrawlinfo.dat",
 		  g_hostdb.m_dir , m_coll , (int32_t)m_collnum );
 	//log("coll: saving %s",tmp);
 	// in case emergency save from malloc core, do not alloc
@@ -2756,7 +2756,7 @@ bool CollectionRec::save ( ) {
 		g_errno = 0;
 	}
 	// SAVE GLOBAL
-	snprintf ( tmp , 1023, "%scoll.%s.%"INT32"/globalcrawlinfo.dat",
+	snprintf ( tmp , 1023, "%scoll.%s.%" PRId32"/globalcrawlinfo.dat",
 		  g_hostdb.m_dir , m_coll , (int32_t)m_collnum );
 	//log("coll: saving %s",tmp);
 	sb.reset();
@@ -2772,7 +2772,7 @@ bool CollectionRec::save ( ) {
 	// the list of ip addresses that we have detected as being throttled
 	// and therefore backoff and use proxies for
 	sb.reset();
-	sb.safePrintf("%scoll.%s.%"INT32"/",
+	sb.safePrintf("%scoll.%s.%" PRId32"/",
 		      g_hostdb.m_dir , m_coll , (int32_t)m_collnum );
 	m_twitchyTable.save ( sb.getBufStart() , "ipstouseproxiesfor.dat" );
 
@@ -3020,7 +3020,7 @@ bool CollectionRec::rebuildUrlFiltersDiffbot() {
 
 		// transform long to string
 		char numstr[21]; // enough to hold all numbers up to 64-bits
-		sprintf(numstr, "%"INT32"", (int32_t)m_diffbotMaxHops);
+		sprintf(numstr, "%" PRId32, (int32_t)m_diffbotMaxHops);
 
 		// form regEx like: hopcount>3
 		char hopcountStr[30];

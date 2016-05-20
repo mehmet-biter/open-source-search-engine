@@ -229,7 +229,7 @@ bool HttpServer::getDoc ( char   *url      ,
 		if ( useHttpTunnel ) {
 			sb.safePrintf("CONNECT ");
 			sb.safeMemcpy ( host, hostLen );
-			sb.safePrintf(":%"INT32" HTTP/1.0\r\n",port);
+			sb.safePrintf(":%" PRId32" HTTP/1.0\r\n",port);
 			// sb.safePrintf("Host: ");
 			// sb.safeMemcpy ( host, hostLen );
 			// sb.safePrintf("\r\n");
@@ -305,7 +305,7 @@ bool HttpServer::getDoc ( char   *url      ,
 	if ( s_numOutgoingSockets >= MAX_DOWNLOADS ) {
 		mfree ( req, reqSize, "HttpServer" );
 		g_errno = ETOOMANYDOWNLOADS;
-		log("http: already have %"INT32" sockets downloading. Sending "
+		log("http: already have %" PRId32" sockets downloading. Sending "
 		    "back ETOOMANYDOWNLOADS.",(int32_t)MAX_DOWNLOADS);
 		return true;
 	}
@@ -317,7 +317,7 @@ bool HttpServer::getDoc ( char   *url      ,
 		if ( n >= MAX_DOWNLOADS ) {
 			mfree ( req, reqSize, "HttpServer" );
 			g_errno = ETOOMANYDOWNLOADS;
-			log("http: already have %"INT32" sockets downloading",
+			log("http: already have %" PRId32" sockets downloading",
 			    (int32_t)MAX_DOWNLOADS);
 			return true;
 		}
@@ -326,7 +326,7 @@ bool HttpServer::getDoc ( char   *url      ,
 	callbacks[n] = callback;
 	s_numOutgoingSockets++;
 	// debug
-	log(LOG_DEBUG,"http: Getting doc with ip=%s state=%"PTRFMT" url=%s.",
+	log(LOG_DEBUG,"http: Getting doc with ip=%s state=%" PTRFMT" url=%s.",
 	    iptoa(ip),(PTRTYPE)state,url);
 
 	// . send it away
@@ -367,7 +367,7 @@ bool HttpServer::gotDoc ( int32_t n, TcpSocket *s ) {
 	void *state = states[n];
 	void (*callback)(void *state, TcpSocket *s) = callbacks[n];
 	// debug
-	log(LOG_DEBUG,"http: Got doc with state=%"PTRFMT".",(PTRTYPE)state);
+	log(LOG_DEBUG,"http: Got doc with state=%" PTRFMT".",(PTRTYPE)state);
 	states[n]    = NULL;
 	callbacks[n] = NULL;
 	s_numOutgoingSockets--;
@@ -453,7 +453,7 @@ void handleRequestfd ( UdpSlot *slot , int32_t niceness ) {
 
 	// log this out on gk144 to see why dropping
 	if ( g_conf.m_logDebugBuild )
-		log("fd: handling request transid=%"INT32" %s", 
+		log("fd: handling request transid=%" PRId32" %s", 
 		    slot->m_transId, request );
 
 	// ultimately, Tcp::sendMsg() should be called which will free "s"
@@ -545,7 +545,7 @@ void HttpServer::requestHandler ( TcpSocket *s ) {
 			s_count++;
 		else {
 			log("query: Too many sockets open. Sending 500 "
-			    "http status code to %s. (msgslogged=%"INT32")",
+			    "http status code to %s. (msgslogged=%" PRId32")",
 			    iptoa(s->m_ip),s_count);
 			s_count = 0;
 			s_last = now;
@@ -959,17 +959,17 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 	// return true and set g_errno if couldn't make a new File class
 	catch ( ... ) { 
 		g_errno = ENOMEM;
-		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. new(%"INT32": %s", __FILE__, __func__, __LINE__, (int32_t)sizeof(File),mstrerror(g_errno));
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. new(%" PRId32": %s", __FILE__, __func__, __LINE__, (int32_t)sizeof(File),mstrerror(g_errno));
 		return sendErrorReply(s,500,mstrerror(g_errno)); 
 	}
 	mnew ( f, sizeof(File), "HttpServer");
 	// note that 
 	if ( g_conf.m_logDebugTcp )
-		log("tcp: new filestate=0x%"PTRFMT"",(PTRTYPE)f);
+		log("tcp: new filestate=0x%" PTRFMT"",(PTRTYPE)f);
 	// don't honor HUGE requests
 	if ( pathLen > 100 ) {
 		if ( g_conf.m_logDebugTcp )
-			log("tcp: deleting filestate=0x%"PTRFMT" [1]",
+			log("tcp: deleting filestate=0x%" PTRFMT" [1]",
 			    (PTRTYPE)f);
 		mdelete ( f, sizeof(File), "HttpServer");
 		delete (f);
@@ -992,7 +992,7 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 		// use default page if does not exist under host-specific path
 		if (pathLen == 11 && strncmp ( path , "/index.html" ,11 ) ==0){
 			if ( g_conf.m_logDebugTcp )
-				log("tcp: deleting filestate=0x%"PTRFMT" [2]",
+				log("tcp: deleting filestate=0x%" PTRFMT" [2]",
 				    (PTRTYPE)f);
 			mdelete ( f, sizeof(File), "HttpServer");
 			delete (f);
@@ -1013,7 +1013,7 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 	// if f STILL does not exist (or error) then send a 404
 	if ( f->doesExist() <= 0 ) {
 		if ( g_conf.m_logDebugTcp )
-			log("tcp: deleting filestate=0x%"PTRFMT" [3]",
+			log("tcp: deleting filestate=0x%" PTRFMT" [3]",
 			    (PTRTYPE)f);
 		mdelete ( f, sizeof(File), "HttpServer");
 		delete (f);
@@ -1042,7 +1042,7 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 	// . set g_errno on error
 	if ( bytesToSend > 0  &&  ! f->open(O_RDONLY | O_NONBLOCK | O_ASYNC)) {
 		if ( g_conf.m_logDebugTcp )
-			log("tcp: deleting filestate=0x%"PTRFMT" [4]",
+			log("tcp: deleting filestate=0x%" PTRFMT" [4]",
 			    (PTRTYPE)f);
 		mdelete ( f, sizeof(File), "HttpServer");
 		delete (f); 
@@ -1092,7 +1092,7 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 			log("http: got ZET request and am not proxy");
 		// bail
 		if ( g_conf.m_logDebugTcp )
-			log("tcp: deleting filestate=0x%"PTRFMT" [5]",
+			log("tcp: deleting filestate=0x%" PTRFMT" [5]",
 			    (PTRTYPE)f);
 		mdelete ( f, sizeof(File), "HttpServer");
 		delete (f); 
@@ -1109,11 +1109,11 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 	char *sendBuf    = (char *) mmalloc ( sendBufSize ,"HttpServer" );
 	if ( ! sendBuf ) { 
 		if ( g_conf.m_logDebugTcp )
-			log("tcp: deleting filestate=0x%"PTRFMT" [6]",
+			log("tcp: deleting filestate=0x%" PTRFMT" [6]",
 			    (PTRTYPE)f);
 		mdelete ( f, sizeof(File), "HttpServer");
 		delete (f); 
-		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. Could not alloc sendBuf (%"INT32")", __FILE__, __func__, __LINE__, sendBufSize);
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. Could not alloc sendBuf (%" PRId32")", __FILE__, __func__, __LINE__, sendBufSize);
 		return sendErrorReply(s,500,mstrerror(g_errno));
 	}
 	gbmemcpy ( sendBuf , m.getMime() , mimeLen );
@@ -1207,7 +1207,7 @@ bool HttpServer::sendReply2 ( char *mime,
 	// . this is the ONLY situation in which we destroy "s" ourselves
 	// . that is, when we cannot even transmit the server-side error info
 	if ( ! sendBuf ) { 
-		log("http: Failed to allocate %"INT32" bytes for send "
+		log("http: Failed to allocate %" PRId32" bytes for send "
 		    "buffer. Send failed.",sendBufSize);
 		// set this so it gets destroyed
 		s->m_waitingOnHandler = false;
@@ -1261,7 +1261,7 @@ bool HttpServer::sendReply2 ( char *mime,
 		// update bookmark
 		*saved2 = used2;
 		// note it
-		//logf(LOG_DEBUG,"http: compressing. from %"INT32" to %"INT32"",
+		//logf(LOG_DEBUG,"http: compressing. from %" PRId32" to %" PRId32,
 		//     mimeLen+contentLen,(int32_t)(((char *)p)-sendBuf));
 		// change size
 		sendBufSize = (char *)p - sendBuf;
@@ -1273,7 +1273,7 @@ bool HttpServer::sendReply2 ( char *mime,
 		// sanity check
 		if ( sendBufSize != contentLen ) { char *xx=NULL;*xx=0; }
 		// note it
-		//logf(LOG_DEBUG,"http: forwarding. pageLen=%"INT32"",contentLen);
+		//logf(LOG_DEBUG,"http: forwarding. pageLen=%" PRId32,contentLen);
 	}
 	else {
 		// copy mime into sendBuf first
@@ -1341,8 +1341,8 @@ void cleanUp ( void *state , TcpSocket *s ) {
 							true );
 	}
 	if ( g_conf.m_logDebugTcp )
-		log("tcp: deleting filestate=0x%"PTRFMT" fd=%"INT32" [7] "
-		    "s=0x%"PTRFMT"", (PTRTYPE)f,fd,(PTRTYPE)s);
+		log("tcp: deleting filestate=0x%" PTRFMT" fd=%" PRId32" [7] "
+		    "s=0x%" PTRFMT"", (PTRTYPE)f,fd,(PTRTYPE)s);
 	// . i guess this is the file state!?!?!
 	// . it seems the socket sometimes is not destroyed when we return
 	//   and we get a sig hangup and call this again!! so make this NULL
@@ -1413,7 +1413,7 @@ bool HttpServer::sendSuccessReply ( TcpSocket *s , char format, char *addMsg) {
 
 	sb.safePrintf(
 		      "HTTP/1.0 200 (OK)\r\n"
-		      "Content-Length: %"INT32"\r\n"
+		      "Content-Length: %" PRId32"\r\n"
 		      "Connection: Close\r\n"
 		      "Content-Type: %s\r\n"
 		      "Date: %s UTC\r\n\r\n"
@@ -1454,7 +1454,7 @@ bool HttpServer::sendErrorReply ( GigablastRequest *gr ) {
 
 	if ( format == FORMAT_XML ) {
 		xb.safePrintf("<response>\n"
-			      "\t<statusCode>%"INT32"</statusCode>\n"
+			      "\t<statusCode>%" PRId32"</statusCode>\n"
 			      "\t<statusMsg><![CDATA[", error );
 		xb.cdataEncode(errmsg );
 		xb.safePrintf("]]></statusMsg>\n"
@@ -1463,7 +1463,7 @@ bool HttpServer::sendErrorReply ( GigablastRequest *gr ) {
 
 	if ( format == FORMAT_JSON ) {
 		xb.safePrintf("{\"response\":{\n"
-			      "\t\"statusCode\":%"INT32",\n"
+			      "\t\"statusCode\":%" PRId32",\n"
 			      "\t\"statusMsg\":\"", error );
 		xb.jsonEncode(errmsg );
 		xb.safePrintf("\"\n"
@@ -1472,8 +1472,8 @@ bool HttpServer::sendErrorReply ( GigablastRequest *gr ) {
 	}
 
 	sb.safePrintf(
-		      "HTTP/1.0 %"INT32" (%s)\r\n"
-		      "Content-Length: %"INT32"\r\n"
+		      "HTTP/1.0 %" PRId32" (%s)\r\n"
+		      "Content-Length: %" PRId32"\r\n"
 		      "Connection: Close\r\n"
 		      "Content-Type: %s\r\n"
 		      "Date: %s UTC\r\n\r\n"
@@ -1546,7 +1546,7 @@ bool HttpServer::sendErrorReply ( TcpSocket *s , int32_t error , const char *err
 
 	if ( format == FORMAT_XML ) {
 		xb.safePrintf("<response>\n"
-			      "\t<statusCode>%"INT32"</statusCode>\n"
+			      "\t<statusCode>%" PRId32"</statusCode>\n"
 			      "\t<statusMsg><![CDATA[", error );
 		xb.cdataEncode(errmsg );
 		xb.safePrintf("]]></statusMsg>\n"
@@ -1555,7 +1555,7 @@ bool HttpServer::sendErrorReply ( TcpSocket *s , int32_t error , const char *err
 
 	if ( format == FORMAT_JSON ) {
 		xb.safePrintf("{\"response\":{\n"
-			      "\t\"statusCode\":%"INT32",\n"
+			      "\t\"statusCode\":%" PRId32",\n"
 			      "\t\"statusMsg\":\"", error );
 		xb.jsonEncode(errmsg );
 		xb.safePrintf("\"\n"
@@ -1564,8 +1564,8 @@ bool HttpServer::sendErrorReply ( TcpSocket *s , int32_t error , const char *err
 	}
 
 	sb.safePrintf(
-		      "HTTP/1.0 %"INT32" (%s)\r\n"
-		      "Content-Length: %"INT32"\r\n"
+		      "HTTP/1.0 %" PRId32" (%s)\r\n"
+		      "Content-Length: %" PRId32"\r\n"
 		      "Connection: Close\r\n"
 		      "Content-Type: %s\r\n"
 		      "Date: %s UTC\r\n\r\n"
@@ -1646,7 +1646,7 @@ bool HttpServer::sendQueryErrorReply( TcpSocket *s , int32_t error ,
 			 errmsg, content);
 		// Header and content prepared for sending
 		sprintf ( msg , 
-			  "HTTP/1.0 %"INT32" (%s)\r\n"
+			  "HTTP/1.0 %" PRId32" (%s)\r\n"
 			  "Content-Length: %i\r\n"
 			  "Connection: Close\r\n"
 			  "Content-type: text/html; charset=utf-8\r\n"
@@ -1669,7 +1669,7 @@ bool HttpServer::sendQueryErrorReply( TcpSocket *s , int32_t error ,
 			 "</error>\n",
 			 (int)error, errmsg, content);
 		sprintf ( msg , 
-			  "HTTP/1.0 %"INT32" (%s)\r\n"
+			  "HTTP/1.0 %" PRId32" (%s)\r\n"
 			  "Content-Length: %i\r\n"
 			  "Connection: Close\r\n"
 			  "Content-type: text/xml; charset=utf-8\r\n"
@@ -1699,7 +1699,7 @@ bool HttpServer::sendQueryErrorReply( TcpSocket *s , int32_t error ,
 	// . this is the ONLY situation in which we destroy "s" ourselves
 	// . that is, when we cannot even transmit the server-side error info
 	if ( ! sendBuf ) { 
-		log("http: Failed to allocate %"INT32" bytes for send "
+		log("http: Failed to allocate %" PRId32" bytes for send "
 		    "buffer. Send failed.",sendBufSize);
 		// set this so it gets destroyed
 		s->m_waitingOnHandler = false;
@@ -1934,7 +1934,7 @@ int32_t getMsgSize ( char *buf, int32_t bufSize, TcpSocket *s ) {
 		if ( bufSize < 20*1024 ) return -1;
 		// in that case bitch about it
 		log("http: Could not find end of HTTP MIME in at least "
-		    "the first 20k. Truncating MIME to %"INT32" bytes.",
+		    "the first 20k. Truncating MIME to %" PRId32" bytes.",
 		     bufSize);
 		return bufSize;
 	}
@@ -2065,8 +2065,8 @@ int32_t getMsgSize ( char *buf, int32_t bufSize, TcpSocket *s ) {
 	// all-or-nothing filter
 	if ( totalReplySize > max && allOrNothing ) {
 		log(LOG_INFO,
-		    "http: reply/request size of %"INT32" is larger "
-		    "than limit of %"INT32". Cutoff documents "
+		    "http: reply/request size of %" PRId32" is larger "
+		    "than limit of %" PRId32". Cutoff documents "
 		    "of this type are useless. "
 		    "Abandoning.",totalReplySize,max);
 		// do not read any more than what we have
@@ -2074,14 +2074,14 @@ int32_t getMsgSize ( char *buf, int32_t bufSize, TcpSocket *s ) {
 	}
 	// warn if we received a post that was truncated
 	if ( totalReplySize > max && isPost ) {
-		log("http: Truncated POST request from %"INT32" "
-		    "to %"INT32" bytes. Increase \"max other/text doc "
+		log("http: Truncated POST request from %" PRId32" "
+		    "to %" PRId32" bytes. Increase \"max other/text doc "
 		    "len\" in Spider Controls page to prevent this.",
 		    totalReplySize,max);
 	}
 	// truncate the reply if we have to
 	if ( totalReplySize > max ) {
-		log("http: truncating reply of %"INT32" to %"INT32" bytes",
+		log("http: truncating reply of %" PRId32" to %" PRId32" bytes",
 		    totalReplySize,max);
 		totalReplySize = max;
 	}
@@ -2093,7 +2093,7 @@ int32_t getMsgSize ( char *buf, int32_t bufSize, TcpSocket *s ) {
 	// we don't know how big it is...
 	if ( isPost ) {
 		log("http: Received large POST request without Content-Length "
-		    "field. Assuming request size is %"INT32".",bufSize);
+		    "field. Assuming request size is %" PRId32".",bufSize);
 		return bufSize;
 	}
 	// . we only need to be read shit after the \r\n\r\n if it is a 200 OK
@@ -2181,7 +2181,7 @@ void HttpServer::getKey ( int32_t *key, char *kname,
 void HttpServer::getKeys ( int32_t *key1, int32_t *key2, char *kname1, char *kname2,
 			   char *q , int32_t qlen , int32_t now , int32_t s , int32_t n ) {
 	// debug msg
-	//log("q=%s qlen=%"INT32" now/32=%"INT32" s=%"INT32" n=%"INT32"",q,qlen,now/32,s,n);
+	//log("q=%s qlen=%" PRId32" now/32=%" PRId32" s=%" PRId32" n=%" PRId32,q,qlen,now/32,s,n);
 	// new base key every 64 seconds
 	int32_t now1 = now / 64;
 	int32_t now2 = now1 - 1;
@@ -2205,7 +2205,7 @@ void HttpServer::getKeys ( int32_t *key1, int32_t *key2, char *kname1, char *kna
 	kname1[2] = 'a' + now1 % 26;
 	kname1[3] = '\0';
 	// debug msg
-	//log("kname1=%s v1=%"UINT32"",kname1,*key1);
+	//log("kname1=%s v1=%" PRIu32,kname1,*key1);
 
 	if ( ! kname2 ) return;
 	kname2[0] = 'k';
@@ -2228,7 +2228,7 @@ bool HttpServer::hasPermission ( int32_t ip , HttpRequest *r ,
 	int32_t key1 , key2 ;
 	char kname1[4], kname2[4];
 	// debug msg
-	//log("get keys for permission: q=%s qlen=%"INT32"",q,qlen);
+	//log("get keys for permission: q=%s qlen=%" PRId32,q,qlen);
 	getKeys (&key1,&key2,kname1,kname2,q,qlen,now,s,n);
 	// what value where in the http request?
 	int32_t v1 = r->getLong ( kname1 , 0 );
@@ -2257,7 +2257,7 @@ bool HttpServer::hasPermission ( int32_t ip , HttpRequest *r ,
 	}
 
 	// debug msg
-	//log("NO!!!! input--> kname1=%s kname2=%s v1=%"INT32" v2=%"INT32"",
+	//log("NO!!!! input--> kname1=%s kname2=%s v1=%" PRId32" v2=%" PRId32,
 	//   kname1,kname2,v1,v2);
 
 	// . you always need key if you specifiy s= or n=, no freebies for that
@@ -2359,7 +2359,7 @@ TcpSocket *HttpServer::unzipReply(TcpSocket* s) {
 	int32_t newSize = *(int32_t*)(s->m_readBuf + s->m_readOffset - 4);
 
 	if(newSize < 0 || newSize > 500*1024*1024) {
-		log("http: got bad gzipped reply1 of size=%"INT32".", newSize );
+		log("http: got bad gzipped reply1 of size=%" PRId32".", newSize );
 		g_errno = ECORRUPTHTTPGZIP;
 		return s;
 	}
@@ -2447,7 +2447,7 @@ TcpSocket *HttpServer::unzipReply(TcpSocket* s) {
 		ptr1 = NULL;
 	}
 	else if ( nextMin == mime.getContentLengthPos() ) {
-		pnew += sprintf(pnew, " %"INT32"",newSize);
+		pnew += sprintf(pnew, " %" PRId32,newSize);
 		ptr2 = NULL;
 	}
 	else if ( nextMin == mime.getContentTypePos() ) {
@@ -2473,7 +2473,7 @@ TcpSocket *HttpServer::unzipReply(TcpSocket* s) {
 	// leading \n's in the document body because the while loop above
 	// was bad logic
 	// if ( restLen < 0 || ! ptr1 ) {
-	// 	log("http: got bad gzipped reply2 of size=%"INT32".",
+	// 	log("http: got bad gzipped reply2 of size=%" PRId32".",
 	// 	    newSize );
 	// 	mfree (newBuf, need, "HttpUnzipError");
 	// 	g_errno = ECORRUPTHTTPGZIP;
@@ -2494,7 +2494,7 @@ TcpSocket *HttpServer::unzipReply(TcpSocket* s) {
 
 	if(zipErr != Z_OK ||
 	   uncompressedLen != (uint32_t)newSize) {
-		log("http: got gzipped unlikely reply of size=%"INT32".",
+		log("http: got gzipped unlikely reply of size=%" PRId32".",
 		    newSize );
 		mfree (newBuf, need, "HttpUnzipError");
 		g_errno = ECORRUPTHTTPGZIP;//EBADREPLYSIZE;
@@ -2505,7 +2505,7 @@ TcpSocket *HttpServer::unzipReply(TcpSocket* s) {
 	if(pnew - newBuf > need - 2 ) {char *xx=NULL;*xx=0;}
 	*pnew = '\0';
 	//log("http: got compressed doc, %f:1 compressed "
-	//"(%"INT32"/%"INT32"). took %"INT64" ms",
+	//"(%" PRId32"/%" PRId32"). took %" PRId64" ms",
 	//(float)uncompressedLen/compressedLen, 
 	//uncompressedLen,compressedLen,
 	//gettimeofdayInMilliseconds() - start);
@@ -2634,9 +2634,9 @@ bool HttpServer::processSquidProxyRequest ( TcpSocket *sock, HttpRequest *hr) {
 	// return true and set g_errno if couldn't make a new File class
 	catch ( ... ) { 
 		g_errno = ENOMEM;
-		log("squid: new(%"INT32"): %s",
+		log("squid: new(%" PRId32"): %s",
 		    (int32_t)sizeof(SquidState),mstrerror(g_errno));
-		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. Could not alloc SquidState (%"INT32")", __FILE__, __func__, __LINE__, (int32_t)sizeof(SquidState));
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. Could not alloc SquidState (%" PRId32")", __FILE__, __func__, __LINE__, (int32_t)sizeof(SquidState));
 		return sendErrorReply(sock,500,mstrerror(g_errno)); 
 	}
 	mnew ( sqs, sizeof(SquidState), "squidst");

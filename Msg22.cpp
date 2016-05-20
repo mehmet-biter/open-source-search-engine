@@ -214,7 +214,7 @@ void Msg22::gotReply ( ) {
 			    r->m_url,mstrerror(g_errno));
 		else
 			log("db: Had error getting title record for docId of "
-			    "%"INT64": %s.",r->m_docId,mstrerror(g_errno));
+			    "%" PRId64": %s.",r->m_docId,mstrerror(g_errno));
 		// free reply buf right away
 		m_mcast.reset();
 		m_callback ( m_state );
@@ -319,7 +319,7 @@ void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
 	// sanity check
 	int32_t  requestSize = slot->m_readBufSize;
 	if ( requestSize < r->getMinSize() ) {
-		log("db: Got bad request size of %"INT32" bytes for title record. "
+		log("db: Got bad request size of %" PRId32" bytes for title record. "
 		    "Need at least 28.",  requestSize );
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		us->sendErrorReply ( slot , EBADREQUESTSIZE );
@@ -329,7 +329,7 @@ void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
 	// get base, returns NULL and sets g_errno to ENOCOLLREC on error
 	RdbBase *tbase = getRdbBase( RDB_TITLEDB, r->m_collnum );
 	if ( ! tbase ) {
-		log("db: Could not get title rec in collection # %" INT32" because rdbbase is null.", (int32_t)r->m_collnum);
+		log("db: Could not get title rec in collection # %" PRId32" because rdbbase is null.", (int32_t)r->m_collnum);
 		g_errno = EBADENGINEER;
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		us->sendErrorReply ( slot , g_errno ); 
@@ -358,7 +358,7 @@ void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
 	try { st = new (State22); }
 	catch ( ... ) {
 		g_errno = ENOMEM;
-		log("query: Msg22: new(%"INT32"): %s", (int32_t)sizeof(State22),
+		log("query: Msg22: new(%" PRId32"): %s", (int32_t)sizeof(State22),
 		mstrerror(g_errno));
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		us->sendErrorReply ( slot , g_errno );
@@ -408,7 +408,7 @@ void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
 	   // bogus url?
 	   if ( ! dom ) {
 	       log("msg22: got bad url in request: %s from "
-		   "hostid %"INT32" for msg22 call ",
+		   "hostid %" PRId32" for msg22 call ",
 		   r->m_url,slot->m_host->m_hostId);
 	       g_errno = EBADURL;
 	       log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
@@ -603,7 +603,7 @@ void gotTitleList ( void *state , RdbList *list , Msg5 *msg5 ) {
 	st->m_availDocId = ad;
 	// note it
 	if ( ad == 0LL && (r->m_getAvailDocIdOnly || r->m_url[0]) ) 
-		log("msg22: avail docid is 0 for pd=%"INT64"!",pd);
+		log("msg22: avail docid is 0 for pd=%" PRId64"!",pd);
 
 	// . ok, return an available docid
 	if ( r->m_url[0] || r->m_justCheckTfndb || r->m_getAvailDocIdOnly ) {
@@ -620,7 +620,7 @@ void gotTitleList ( void *state , RdbList *list , Msg5 *msg5 ) {
 	}
 
 	// not found! and it was a docid based request...
-	log("msg22: could not find title rec for docid %"UINT64" collnum=%"INT32"",
+	log("msg22: could not find title rec for docid %" PRIu64" collnum=%" PRId32,
 	    r->m_docId,(int32_t)r->m_collnum);
 	g_errno = ENOTFOUND;
 	goto hadError;

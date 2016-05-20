@@ -107,12 +107,12 @@ bool RdbScan::setRead ( BigFile  *file         ,
 	// get the memory to hold what we read
 	//char *buf = (char *) mmalloc ( bufSize , "RdbScan" );
 	//if ( ! buf ) { 
-	//	log("disk: Could not allocate %"INT32" bytes for read of %s.",
+	//	log("disk: Could not allocate %" PRId32" bytes for read of %s.",
 	//	    bufSize ,file->getFilename());
 	//	return true;
 	//}
 	// note
-	//logf(LOG_DEBUG,"db: list %"UINT32" has buf %"UINT32".",(int32_t)m_list,(int32_t)buf);
+	//logf(LOG_DEBUG,"db: list %" PRIu32" has buf %" PRIu32".",(int32_t)m_list,(int32_t)buf);
 	// . set up the list
 	// . set min/max keys on list if we're done reading
 	// . the min/maxKey defines the range of keys we read
@@ -150,7 +150,7 @@ bool RdbScan::setRead ( BigFile  *file         ,
 	m_fstate.m_buf      = NULL;
 	//m_fstate.m_usePartFiles = true;
 	// debug msg
-	//log("diskOff=%"INT64" nb=%"INT32"",offset,bytesToRead);
+	//log("diskOff=%" PRId64" nb=%" PRId32,offset,bytesToRead);
 
 	// . do a threaded, non-blocking read 
 	// . we now pass in a NULL buffer so Threads.cpp will do the
@@ -172,10 +172,10 @@ bool RdbScan::setRead ( BigFile  *file         ,
 
 	/*
 	// debug point
-	log("RDBSCAN: read %"INT32" bytes @ %"INT64"",bytesToRead, offset);
+	log("RDBSCAN: read %" PRId32" bytes @ %" PRId64,bytesToRead, offset);
 	for ( int32_t i = 0 ; i < bytesToRead ; i++ ) {
 		if (((offset+i) % 20) == 0 ) 
-			fprintf(stderr,"\n%"INT64") ",offset+i);
+			fprintf(stderr,"\n%" PRId64") ",offset+i);
 		fprintf(stderr,"%02hhx ",(buf+pad+m_off)[i]);
 	}
 	fprintf(stderr,"\n");
@@ -320,7 +320,7 @@ void RdbScan::gotList ( ) {
 	// . i think a read overflow might be causing a segv in malloc
 	// . NOTE: BigFile's call to DiskPageCache alters these values
 	if ( m_fstate.m_bytesDone != m_fstate.m_bytesToGo && m_hitDisk )
-		log(LOG_INFO,"disk: Read %"INT64" bytes but needed %"INT64".",
+		log(LOG_INFO,"disk: Read %" PRId64" bytes but needed %" PRId64".",
 		     m_fstate.m_bytesDone , m_fstate.m_bytesToGo );
 	// adjust the list size for biased page cache if necessary
 	//if ( m_file->m_pc && m_allowPageCache &&

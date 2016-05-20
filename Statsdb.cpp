@@ -339,7 +339,7 @@ bool Statsdb::addStat ( int32_t        niceness ,
 	// we have already flushed stats 30+ seconds old, so if this op took
 	// 30 seconds, discard it!
 	if ( dtSecs >= 30 ) {
-		//log("statsdb: stat is %"INT32" secs > 30 secs old, discarding.",
+		//log("statsdb: stat is %" PRId32" secs > 30 secs old, discarding.",
 		//   (int32_t)dtSecs);
 		return true;
 	}
@@ -444,7 +444,7 @@ bool Statsdb::addStat ( int32_t        niceness ,
 		break;
 	}
 
-	//logf(LOG_DEBUG,"statsdb: sp=0x%"XINT32"",(int32_t)sp);
+	//logf(LOG_DEBUG,"statsdb: sp=0x%" PRIx32,(int32_t)sp);
 
 	return true;
 }	
@@ -518,7 +518,7 @@ bool Statsdb::makeGIF ( int32_t t1Arg ,
 	// open the file for the gif
 	/*
 	char fname [ 1024 ];
-	sprintf ( fname , "%s/stats%"INT32".gif" ,
+	sprintf ( fname , "%s/stats%" PRId32".gif" ,
 		  g_hostdb.m_httpRootDir , g_hostdb.m_hostId );
 	m_fd = fopen ( fname,"w" );
 	if ( ! m_fd ) { 
@@ -605,7 +605,7 @@ bool Statsdb::gifLoop ( ) {
 	// gif size
 	//char tmp[64];
 	// dimensions of the gif
-	//sprintf ( tmp , "%"INT32"x%"INT32"", (int32_t)DX2+m_bx*2 , (int32_t)DY2+m_by*2 );
+	//sprintf ( tmp , "%" PRId32"x%" PRId32, (int32_t)DX2+m_bx*2 , (int32_t)DY2+m_by*2 );
 	//GIFPlotter::parampl ( "BITMAPSIZE" , (void *)tmp );
 	// create one
 	//GIFPlotter plotter ( NULL , m_fd , NULL );
@@ -635,8 +635,8 @@ bool Statsdb::gifLoop ( ) {
 					// the tick marks we print below are based on it
 					// being a window of the last 20 seconds... and using
 					// DX2 pixels
-					"min-width:%"INT32"px;"
-					"min-height:%"INT32"px;"
+					"min-width:%" PRId32"px;"
+					"min-height:%" PRId32"px;"
 					//"width:100%%;"
 					//"min-height:600px;"
 					"margin-top:10px;"
@@ -655,7 +655,7 @@ bool Statsdb::gifLoop ( ) {
 		// tick mark
 		//plotter.line ( x , -20 , x , 20 );
 		m_gw.safePrintf("<div style=\"position:absolute;"
-			      "left:%"INT32";"
+			      "left:%" PRId32";"
 			      "bottom:0;"
 			      "background-color:black;"
 			      "z-index:10;"
@@ -666,7 +666,7 @@ bool Statsdb::gifLoop ( ) {
 		int32_t xv = (int32_t)(dt * (int64_t)x/(int64_t)DX2)-(int32_t)dt;
 		// LABEL
 		m_gw.safePrintf("<div style=\"position:absolute;"
-				"left:%"INT32";"
+				"left:%" PRId32";"
 				"bottom:22;"
 				//"background-color:#000000;"
 				"z-index:10;"
@@ -675,7 +675,7 @@ bool Statsdb::gifLoop ( ) {
 				"color:black;"
 				"font-size:10px;"
 				"min-height:20px;"
-				"min-width:3px;\">%"INT32"s</div>\n"
+				"min-width:3px;\">%" PRId32"s</div>\n"
 				, (int32_t)x-15 + m_bx
 				// the label:
 				, xv
@@ -722,10 +722,10 @@ bool Statsdb::gifLoop ( ) {
 		if ( col == 0 )
 			m_sb2->safePrintf("<tr>");
 
-		m_sb2->safePrintf("<td bgcolor=#%06"XINT32"><label>"
+		m_sb2->safePrintf("<td bgcolor=#%06" PRIx32"><label>"
 						  "<input class=\"graph-toggles\" "
 						  "type=\"checkbox\" "
-						  "value=\"%06"XINT32"\"/></label></td>"
+						  "value=\"%06" PRIx32"\"/></label></td>"
 						  "<td>%s</td>\n",
 						  bb->m_color ,
 						  bb->m_color ,
@@ -766,7 +766,7 @@ bool Statsdb::gifLoop ( ) {
 		Parm *m = g_parms.getParmFromParmHash ( pp->m_parmHash );
 		// make sure we got it
 		if ( ! m ) { 
-			log("statsdb: unrecognized parm hash = %"INT32"",
+			log("statsdb: unrecognized parm hash = %" PRId32,
 			    pp->m_parmHash);
 			continue;
 			//char *xx=NULL;*xx=0; }
@@ -810,7 +810,7 @@ bool Statsdb::gifLoop ( ) {
 		const char *title = "unknown parm";
 		if ( m ) title = m->m_title;
 
-		m_sb2->safePrintf("<td bgcolor=#%06"XINT32">&nbsp; &nbsp;</td>",c1);
+		m_sb2->safePrintf("<td bgcolor=#%06" PRIx32">&nbsp; &nbsp;</td>",c1);
 
 		// print the parm name and old/new values
 		m_sb2->safePrintf("<td><b>%s</b>",title);
@@ -1036,7 +1036,7 @@ char *Statsdb::plotGraph ( char *pstart ,
 		}
 
 		// log it
-		//logf(LOG_DEBUG,"plot: (%"INT32",%.02f) - (%"INT32",%.02f) [%s]",
+		//logf(LOG_DEBUG,"plot: (%" PRId32",%.02f) - (%" PRId32",%.02f) [%s]",
 		//     x1 , y1 , x2 , y2 , label->m_label );
 
 		// ensure at least 3 units wide for visibility
@@ -1164,14 +1164,14 @@ void Statsdb::drawHR ( float z ,
 
 	// LABEL
 	gw.safePrintf("<div style=\"position:absolute;"
-				  "left:%"INT32";"
-				  "bottom:%"INT32";"
-				  "color:#%"XINT32";"
+				  "left:%" PRId32";"
+				  "bottom:%" PRId32";"
+				  "color:#%" PRIx32";"
 				  "z-index:110;"
 				  "font-size:14px;"
 				  "min-height:20px;"
 				  "min-width:3px;\""
-                  " class=\"color-%"XINT32"\""
+                  " class=\"color-%" PRIx32"\""
 				  ">%s</div>\n"
 		      , (int32_t)(m_bx)
 		      , (int32_t)z2 +m_by
@@ -1367,10 +1367,10 @@ bool Statsdb::addPoint(StatKey *sk,StatData *sd,StatState *ss , Label *label){
 	 
 	 // show the individual point
 	 //if ( doLatency )
-	 //	logf(LOG_DEBUG,"statsdb: (%"UINT64", %"UINT64") [%s]",
+	 //	logf(LOG_DEBUG,"statsdb: (%" PRIu64", %" PRIu64") [%s]",
 	 //	     sp->getTime1(),delta,label->m_label);
 	 //else
-	 //	logf(LOG_DEBUG,"statsdb: (%"UINT64", %.03f) [%s]",
+	 //	logf(LOG_DEBUG,"statsdb: (%" PRIu64", %.03f) [%s]",
 	 //	     sp->getTime1(),quantity,label->m_label);
 	 
 	 // inc and wrap
@@ -1425,7 +1425,7 @@ bool Statsdb::addPoint ( int32_t      x        ,
 	int32_t  x2 = (int32_t)(xf + .5) ;//+ m_bx;
 	// gotta be >= 0 it's a pixel
 	if ( x2 < 0 ) {
-		log("statsdb: bad x2 of %"INT32"",x2);
+		log("statsdb: bad x2 of %" PRId32,x2);
 		return true;
 	}
 	// make this our y pos
@@ -1439,7 +1439,7 @@ bool Statsdb::addPoint ( int32_t      x        ,
 			 ss->m_lastWeight);
 
 		//logf(LOG_DEBUG,"statsdb: collision "
-		//     "x=%"UINT32" x2=%"INT32" y=%.02f yt=%.02f",
+		//     "x=%" PRIu32" x2=%" PRId32" y=%.02f yt=%.02f",
 		//     x,x2,y,y2);
 
 		// update these
@@ -1460,7 +1460,7 @@ bool Statsdb::addPoint ( int32_t      x        ,
 	if ( ! m_sb1.reserve2x ( 64 ) ) return false;
 
 	//logf(LOG_DEBUG,"statsdb: addPoint "
-	//     "x=%"UINT32" x2=%"UINT32" y=%.02f y2=%.02f gh=%"UINT32"",x,x2,y,y2,graphHash);
+	//     "x=%" PRIu32" x2=%" PRIu32" y=%.02f y2=%.02f gh=%" PRIu32,x,x2,y,y2,graphHash);
 
 	// store into array, safe buf
 	m_sb1.pushLong  ( x2 );
@@ -1523,7 +1523,7 @@ bool Statsdb::addEventPoint ( int32_t  t1        ,
 	// make sure we got it
 	Parm *m = g_parms.getParmFromParmHash ( parmHash );
 	if ( ! m ) { 
-		log("statsdb: unrecognized parm hash = %"INT32"",parmHash);
+		log("statsdb: unrecognized parm hash = %" PRId32,parmHash);
 		return true;
 		//char *xx=NULL;*xx=0; }
 	}
@@ -1604,13 +1604,13 @@ void Statsdb::drawLine3 ( SafeBuf &sb ,
 	m_dupTable.addKey(&key32);
 
 	sb.safePrintf("<div style=\"position:absolute;"
-				  "left:%"INT32";"
-				  "bottom:%"INT32";"
-				  "background-color:#%"XINT32";"
+				  "left:%" PRId32";"
+				  "bottom:%" PRId32";"
+				  "background-color:#%" PRIx32";"
 				  "z-index:-5;"
-				  "min-height:%"INT32"px;"
-				  "min-width:%"INT32"px;\""
-				  " class=\"color-%"XINT32"\"></div>\n"
+				  "min-height:%" PRId32"px;"
+				  "min-width:%" PRId32"px;\""
+				  " class=\"color-%" PRIx32"\"></div>\n"
 		      , x1 + m_bx
 		      , (fy1 - width/2) + m_by
 		      , color

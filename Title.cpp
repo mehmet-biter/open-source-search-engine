@@ -306,7 +306,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 		if ( n + 30 >= MAX_TIT_CANDIDATES ) break;
 	}
 
-	//logf(LOG_DEBUG,"title: took1=%"INT64"",gettimeofdayInMilliseconds()-x);
+	//logf(LOG_DEBUG,"title: took1=%" PRId64,gettimeofdayInMilliseconds()-x);
 	//x = gettimeofdayInMilliseconds();
 
 	// . set the flags array
@@ -456,7 +456,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 		}
 	}
 
-	//logf(LOG_DEBUG,"title: took2=%"INT64"",gettimeofdayInMilliseconds()-x);
+	//logf(LOG_DEBUG,"title: took2=%" PRId64,gettimeofdayInMilliseconds()-x);
 	//x = gettimeofdayInMilliseconds();
 
 	//int64_t *wids = WW->getWordIds();
@@ -696,7 +696,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 		}
 	}
 
-	//logf(LOG_DEBUG,"title: took3=%"INT64"",gettimeofdayInMilliseconds()-x);
+	//logf(LOG_DEBUG,"title: took3=%" PRId64,gettimeofdayInMilliseconds()-x);
 	//x = gettimeofdayInMilliseconds();
 
 	// to handle text documents, throw in the first line of text
@@ -750,7 +750,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 		}
 	}
 
-	//logf(LOG_DEBUG,"title: took4=%"INT64"",gettimeofdayInMilliseconds()-x);
+	//logf(LOG_DEBUG,"title: took4=%" PRId64,gettimeofdayInMilliseconds()-x);
 	//x = gettimeofdayInMilliseconds();
 
 	{
@@ -1236,7 +1236,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 
 			// custom boosting!
 			if ( fp > 0.0 && g_conf.m_logDebugTitle )
-				logf(LOG_DEBUG,"title: i=%"INT32" j=%"INT32" fp=%.02f "
+				logf(LOG_DEBUG,"title: i=%" PRId32" j=%" PRId32" fp=%.02f "
 				     "b=%.02f", i,j,fp,boost);
 			// apply it
 			scores[i] *= boost;
@@ -1247,7 +1247,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 		inCommonCandBoost[i] = iccb;
 	}
 
-	//logf(LOG_DEBUG,"title: took7=%"INT64"",gettimeofdayInMilliseconds()-x);
+	//logf(LOG_DEBUG,"title: took7=%" PRId64,gettimeofdayInMilliseconds()-x);
 	//x = gettimeofdayInMilliseconds();
 
 
@@ -1394,9 +1394,9 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 		// get the title
 		pbuf->safePrintf(
 				 "<tr>"
-				 "<td>#%"INT32"</td>"
+				 "<td>#%" PRId32"</td>"
 				 "<td><nobr>%s</nobr></td>"
-				 "<td>%"INT32"</td>"
+				 "<td>%" PRId32"</td>"
 				 "<td>%0.2f</td>" // baseScore
 				 "<td>%0.2f</td>"
 				 "<td>%0.2f</td>"
@@ -1662,7 +1662,7 @@ bool Title::copyTitle(Words *w, int32_t t0, int32_t t1) {
 	if ( need > MAX_TITLE_LEN ) {
 		m_title[0] = '\0';
 		m_titleLen = 0;
-		log("query: Could not alloc %"INT32" bytes for title.",need);
+		log("query: Could not alloc %" PRId32" bytes for title.",need);
 		return false;
 	}
 

@@ -809,7 +809,7 @@ void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripParams, bool 
 
 	// we may add a "www." a trailing backslash and \0, ...
 	if ( tlen > MAX_URL_LEN - 10 ) {
-		log( LOG_LIMIT, "db: Encountered url of length %" INT32 ". Truncating to %i", tlen, MAX_URL_LEN - 10 );
+		log( LOG_LIMIT, "db: Encountered url of length %" PRId32 ". Truncating to %i", tlen, MAX_URL_LEN - 10 );
 		tlen = MAX_URL_LEN - 10;
 	}
 
@@ -864,7 +864,7 @@ void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripParams, bool 
 		(void)VALGRIND_SET_VBITS(t+tlen,vbits,1);
 #endif
 
-		log(LOG_DEBUG, "build: attempting to decode unicode url %s pos at %"INT32, t, nonAsciiPos);
+		log(LOG_DEBUG, "build: attempting to decode unicode url %s pos at %" PRId32, t, nonAsciiPos);
 
 		if ( tmp ) {
 			( (char *)t )[tlen] = tmp;
@@ -1425,7 +1425,7 @@ void Url::print() {
 	logf(LOG_DEBUG, "scheme: %.*s", m_slen, m_scheme);
 	logf(LOG_DEBUG, "path: %.*s", m_plen, m_path);
 	logf(LOG_DEBUG, "query: %s",m_query);
-	logf(LOG_DEBUG, "port: %"INT32"", m_port );
+	logf(LOG_DEBUG, "port: %" PRId32, m_port );
 	logf(LOG_DEBUG, "domain: %.*s", m_dlen, m_domain);
 	logf(LOG_DEBUG, "tld: %.*s", m_tldLen, m_tld);
 	logf(LOG_DEBUG, "mid domain: %.*s", m_mdlen, m_domain);
@@ -1749,7 +1749,7 @@ bool Url::hasNonIndexableExtension( int32_t version ) {
 			int64_t swh = hash64Lower_a(s_badExtensions[i],tlen);
 			if(!s_badExtTable.addKey(swh,(int32_t)50))
 			{
-				log(LOG_ERROR,"hasNonIndexableExtension: Could not add hash %"INT64" to badExtTable.", swh);
+				log(LOG_ERROR,"hasNonIndexableExtension: Could not add hash %" PRId64" to badExtTable.", swh);
 				return false;
 			}
 			i++;

@@ -437,7 +437,7 @@ bool RdbList::prepareForMerge ( RdbList **lists         ,
 		// bitch if not
 		g_errno = EBADENGINEER;
 		log(LOG_LOGIC,"db: rdblist: prepareForMerge: Non-uniform "
-		    "fixedDataSize. %"INT32" != %"INT32".",
+		    "fixedDataSize. %" PRId32" != %" PRId32".",
 		    lists[i]->getFixedDataSize(), m_fixedDataSize );
 		return false;
 	}
@@ -608,13 +608,13 @@ bool RdbList::growList ( int32_t newSize ) {
 	// don't shrink list
 	if ( newSize <= m_allocSize ) return true;
 	// debug msg
-	// log("RdbList::growList 0x%"PTRFMT "from %"INT32" to %"INT32"",
+	// log("RdbList::growList 0x%" PTRFMT "from %" PRId32" to %" PRId32,
 	//     (PTRTYPE)this,m_allocSize , newSize );
 	// make a new buffer
 	char *tmp =(char *) mrealloc ( m_alloc,m_allocSize,newSize,"RdbList");
 
 	// debug msg
-	//log("tmp=%"XINT32"", (int32_t)tmp);
+	//log("tmp=%" PRIx32, (int32_t)tmp);
 	// debug msg
 	//if ( newSize > 2500000 /*about 2.5megs*/ ) {
 	//	log("BIG LIST SIZE");
@@ -622,8 +622,8 @@ bool RdbList::growList ( int32_t newSize ) {
 	//}
 	// return false and g_errno should be set to ENOMEM
 	// do not log down this low, log higher up -- out of memory
-	//return log("RdbList::growList: couldn't realloc from %"INT32" "
-	//	   "to %"INT32"", m_allocSize , newSize );
+	//return log("RdbList::growList: couldn't realloc from %" PRId32" "
+	//	   "to %" PRId32, m_allocSize , newSize );
 	if ( ! tmp ) return false;
 	// if we got a different address then re-set the list
 	// TODO: fix this to keep our old list
@@ -676,7 +676,7 @@ bool RdbList::checkList_r ( bool removeNegRecs , bool sleepOnProblem ,
 		return false;
 	}
 
-	//log("m_list=%"INT32"",(int32_t)m_list);
+	//log("m_list=%" PRId32,(int32_t)m_list);
 	//key_t oldk;
 	//oldk.n0 = 0 ; oldk.n1 = 0;
 	char oldk[MAX_KEY_BYTES];
@@ -767,7 +767,7 @@ bool RdbList::checkList_r ( bool removeNegRecs , bool sleepOnProblem ,
 		//	hc = g_linkdb.getLinkerHopCount_uk((key192_t *)k);
 		//	if ( hc ) { char *xx=NULL;*xx=0; }
 		//}
-		//log("key.n1=%"INT32" key.n0=%"INT64" dsize=%"INT32"",
+		//log("key.n1=%" PRId32" key.n0=%" PRId64" dsize=%" PRId32,
 		//	k.n1,k.n0,dataSize);
 		//if ( k <  oldk      ) {
 		//if ( k < m_startKey ) {
@@ -784,9 +784,9 @@ bool RdbList::checkList_r ( bool removeNegRecs , bool sleepOnProblem ,
 			    "db: Key out of order in list of records.");
 			log("db: k1=%s",KEYSTR(oldk,m_ks));
 			log("db: k2=%s",KEYSTR(k,m_ks));
-			//log("db: k1.n1=%"XINT64" k1.n0=%"XINT64"",
+			//log("db: k1.n1=%" PRIx64" k1.n0=%" PRIx64,
 			//    KEY1(oldk,m_ks),KEY0(oldk));
-			//log("db:k2.n1=%"XINT64" k2.n0=%"XINT64"",KEY1(k,m_ks),KEY0(k));
+			//log("db:k2.n1=%" PRIx64" k2.n0=%" PRIx64,KEY1(k,m_ks),KEY0(k));
 			//char *xx=NULL;*xx=0;
 			//if ( sleepOnProblem ) {char *xx = NULL; *xx = 0; }
 			//if ( sleepOnProblem ) sleep(50000);
@@ -795,10 +795,10 @@ bool RdbList::checkList_r ( bool removeNegRecs , bool sleepOnProblem ,
 		//if ( k > acceptable ) {
 		if ( KEYCMP(k,acceptable,m_ks)>0 ) {
 			log("db: Key after end key in list of records.");
-			//log("db: k.n1=%"XINT32" k.n0=%"XINT64"",k.n1,k.n0);
+			//log("db: k.n1=%" PRIx32" k.n0=%" PRIx64,k.n1,k.n0);
 			log("db: k2=%s",KEYSTR(k,m_ks));
 			log("db: ak=%s",KEYSTR(acceptable,m_ks));
-			//log("db:e.n1=%"XINT32" e.n0=%"XINT64"",m_endKey.n1,m_endKey.n0);
+			//log("db:e.n1=%" PRIx32" e.n0=%" PRIx64,m_endKey.n1,m_endKey.n0);
 			log("db: ek=%s",KEYSTR(m_endKey,m_ks));
 			if ( sleepOnProblem ) {char *xx = NULL; *xx = 0; }
 			if ( sleepOnProblem ) sleep(50000);
@@ -831,12 +831,12 @@ bool RdbList::checkList_r ( bool removeNegRecs , bool sleepOnProblem ,
 		char *saved = m_listPtr;
 		// test this
 		//int32_t recSize = getCurrentRecSize();
-		//log("db: recsize=%"INT32"",recSize);
+		//log("db: recsize=%" PRId32,recSize);
 		// advance to next guy
 		skipCurrentRecord();
 		// test this - no, might be end of list!
 		//recSize = getCurrentRecSize();
-		//log("db: recsize2=%"INT32"",recSize);
+		//log("db: recsize2=%" PRId32,recSize);
 		// sometimes dataSize is too big in corrupt lists
 		if ( m_listPtr > m_listEnd ) {
 			log(
@@ -866,12 +866,12 @@ bool RdbList::checkList_r ( bool removeNegRecs , bool sleepOnProblem ,
 		log(LOG_LOGIC,
 		    "db: rdbList: checkList_r: Got bad last key.");
 		log(LOG_LOGIC,
-		    //"db: rdbList: checkList_r: k.n1=%"XINT32" k.n0=%"XINT64"",
+		    //"db: rdbList: checkList_r: k.n1=%" PRIx32" k.n0=%" PRIx64,
 		    //oldk.n1,oldk.n0);
 		    "db: rdbList: checkList_r: key=%s",
 		    KEYSTR(oldk,m_ks));
 		log(LOG_LOGIC,
-		    //"db: rdbList: checkList_r: l.n1=%"XINT32" l.n0=%"XINT64"",
+		    //"db: rdbList: checkList_r: l.n1=%" PRIx32" l.n0=%" PRIx64,
 		    //m_lastKey.n1,m_lastKey.n0);
 		    "db: rdbList: checkList_r: key=%s",
 		    KEYSTR(m_lastKey,m_ks) );
@@ -939,7 +939,7 @@ bool RdbList::removeBadData_r ( ) {
 		// watch out for rec sizes that are too small
 		//if ( rec + 6 > m_listEnd ) {
 		if ( rec + minSize > m_listEnd ) {
-			log("db: Record size of %"INT32" is too big. "
+			log("db: Record size of %" PRId32" is too big. "
 			    "Truncating list at record.",minSize);
 			m_listEnd = rec;
 			m_listSize = m_listEnd - m_list;
@@ -948,7 +948,7 @@ bool RdbList::removeBadData_r ( ) {
 		int32_t size = getCurrentRecSize();
 		// or too big
 		if ( rec + size > m_listEnd ) {
-			log("db: Record size of %"INT32" is too big. "
+			log("db: Record size of %" PRId32" is too big. "
 			    "Truncating list at record.",size);
 			m_listEnd = rec;
 			m_listSize = m_listEnd - m_list;
@@ -957,7 +957,7 @@ bool RdbList::removeBadData_r ( ) {
 		// size must be at least 6 -- corruption causes negative sizes
 		//if ( size < 6 ) {
 		if ( size < minSize ) {
-			log( "db: Record size of %"INT32" is too small. "
+			log( "db: Record size of %" PRId32" is too small. "
 			    "Truncating list at record.",size);
 			m_listEnd = rec;
 			m_listSize = m_listEnd - m_list;
@@ -1035,12 +1035,12 @@ bool RdbList::removeBadData_r ( ) {
 	resetListPtr();
 	// msg -- taken out since will be in thread usually
 	log(
-	    "db: Removed %"INT32" bytes of data from list to make it sane." ,
+	    "db: Removed %" PRId32" bytes of data from list to make it sane." ,
 	    oldSize-m_listSize );
 	log(
-	    "db: Removed %"INT32" recs to fix out of order problem.",orderCount*2);
+	    "db: Removed %" PRId32" recs to fix out of order problem.",orderCount*2);
 	log(
-	    "db: Removed %"INT32" recs to fix out of range problem.",rangeCount  );
+	    "db: Removed %" PRId32" recs to fix out of range problem.",rangeCount  );
 
 	// sanity. assume posdb???
 	//if ( m_ks == 18 ) {
@@ -1057,12 +1057,12 @@ int RdbList::printPosdbList ( int32_t logtype ) {
 
 	log(logtype, "%s:%s: BEGIN",__FILE__,__func__);
 
-	//log("m_list=%"INT32"",(int32_t)m_list);
+	//log("m_list=%" PRId32,(int32_t)m_list);
 	// save
 	char *oldp   = m_listPtr;
 	const char *oldphi = m_listPtrHi;
 	resetListPtr();
-	log(logtype, "db: STARTKEY=%s, m_ks=%d, datasize=%"INT32"",KEYSTR(m_startKey,m_ks), (int)m_ks, m_listSize);
+	log(logtype, "db: STARTKEY=%s, m_ks=%d, datasize=%" PRId32,KEYSTR(m_startKey,m_ks), (int)m_ks, m_listSize);
 
 	size_t key_size;
 	// 48bit 38bit 4bit 4bit 18bit
@@ -1132,13 +1132,13 @@ int RdbList::printPosdbList ( int32_t logtype ) {
 		switch(key_size)
 		{
 			case 18:
-				log(logtype,"db:   %15"INT64" %12"INT64" %4"INT64" %4"INT64" %7"INT64" %3s", term_id, doc_id, site_rank, lang_id, word_pos, !nodelete_marker?"Y":"N");
+				log(logtype,"db:   %15" PRId64" %12" PRId64" %4" PRId64" %4" PRId64" %7" PRId64" %3s", term_id, doc_id, site_rank, lang_id, word_pos, !nodelete_marker?"Y":"N");
 				break;
 			case 12:
-				log(logtype,"db:   %15s %12"INT64" %4"INT64" %4"INT64" %7"INT64" %3s", "-", doc_id, site_rank, lang_id, word_pos, !nodelete_marker?"Y":"N");
+				log(logtype,"db:   %15s %12" PRId64" %4" PRId64" %4" PRId64" %7" PRId64" %3s", "-", doc_id, site_rank, lang_id, word_pos, !nodelete_marker?"Y":"N");
 				break;
 			default:
-				log(logtype,"db:   %15s %12s %4s %4s %7"INT64" %3s", "-", "-", "-", "-", word_pos, !nodelete_marker?"Y":"N");
+				log(logtype,"db:   %15s %12s %4s %4s %7" PRId64" %3s", "-", "-", "-", "-", word_pos, !nodelete_marker?"Y":"N");
 				break;
 		}
 
@@ -1169,7 +1169,7 @@ int RdbList::printList ( int32_t logtype ) {
 
 	log(logtype, "%s:%s: BEGIN",__FILE__,__func__);
 
-	//log("m_list=%"INT32"",(int32_t)m_list);
+	//log("m_list=%" PRId32,(int32_t)m_list);
 	// save
 	char *oldp   = m_listPtr;
 	const char *oldphi = m_listPtrHi;
@@ -1192,7 +1192,7 @@ int RdbList::printList ( int32_t logtype ) {
 			d = "";
 		}
 
-		log(logtype, "db: k=%s dsize=%07"INT32"%s", KEYSTR(k,m_ks),dataSize,d);
+		log(logtype, "db: k=%s dsize=%07" PRId32"%s", KEYSTR(k,m_ks),dataSize,d);
 		skipCurrentRecord();
 	}
 
@@ -1258,7 +1258,7 @@ bool RdbList::constrain ( const char   *startKey    ,
 
 	if ( hintOffset > m_listSize ) { //char *xx=NULL;*xx=0; }
 		g_errno = ECORRUPTDATA;
-		return log("db: Hint offset %"INT32" > %"INT32" is corrupt."
+		return log("db: Hint offset %" PRId32" > %" PRId32" is corrupt."
 			   ,hintOffset,
 			   m_listSize);
 	}
@@ -1301,7 +1301,7 @@ bool RdbList::constrain ( const char   *startKey    ,
 		if ( KEYCMP(k,startKey,m_ks) >= 0 ) break;
 #ifdef GBSANITYCHECK
 		// debug msg
-		log("constrain: skipping key=%s rs=%"INT32"",
+		log("constrain: skipping key=%s rs=%" PRId32,
 		    KEYSTR(k,m_ks),getRecSize(p));
 #endif
 		// . since we don't call skipCurrentRec() we must update
@@ -1318,7 +1318,7 @@ bool RdbList::constrain ( const char   *startKey    ,
 			m_listPtrHi = savelistPtrHi ;
 			m_listPtrLo = savelistPtrLo ;
 			g_errno = ECORRUPTDATA;
-			return log("db: Got record size of %"INT32" < 0. "
+			return log("db: Got record size of %" PRId32" < 0. "
 				   "Corrupt data file.",recSize);
 		}
 		p += recSize;
@@ -1369,7 +1369,7 @@ bool RdbList::constrain ( const char   *startKey    ,
 
 #ifdef GBSANITYCHECK
 	log("constrain: hk=%s",KEYSTR(hintKey,m_ks));
-	log("constrain: hintOff=%"INT32"",hintOffset);
+	log("constrain: hintOff=%" PRId32,hintOffset);
 #endif
 
 	// inc m_list , m_alloc should remain where it is
@@ -1435,7 +1435,7 @@ bool RdbList::constrain ( const char   *startKey    ,
 			m_listPtrLo = savelistPtrLo;
 			m_listPtr   = savelist;
 			g_errno = ECORRUPTDATA;
-			return log("db: Corrupt record size of %"INT32" "
+			return log("db: Corrupt record size of %" PRId32" "
 				   "bytes in %s.",size,filename);
 		}
 		// set hiKey in case m_useHalfKeys is true for this list
@@ -1454,7 +1454,7 @@ bool RdbList::constrain ( const char   *startKey    ,
 			m_listPtrLo = savelistPtrLo;
 			m_listPtr   = savelist;
 			g_errno = ECORRUPTDATA;
-			return log("db: Corrupt record size of %"INT32" "
+			return log("db: Corrupt record size of %" PRId32" "
 				   "bytes in %s.",size,filename);
 		}
 	}
@@ -1475,7 +1475,7 @@ bool RdbList::constrain ( const char   *startKey    ,
 			m_listPtrLo = savelistPtrLo;
 			m_listPtr   = savelist;
 			g_errno = ECORRUPTDATA;
-			return log("db: Corrupt record size of %"INT32" "
+			return log("db: Corrupt record size of %" PRId32" "
 				   "bytes in %s.",size,filename);
 		}
 		// set endKey to last key in our constrained list
@@ -1487,7 +1487,7 @@ bool RdbList::constrain ( const char   *startKey    ,
 	m_listSize  = m_listEnd - m_list;
 	// bitch if size is -1 still
 	if ( size == -1 ) {
-		log("db: Encountered bad endkey in %s. listSize=%"INT32"",
+		log("db: Encountered bad endkey in %s. listSize=%" PRId32,
 		    filename,m_listSize);
 		char *xx=NULL;*xx=0;
 	}
@@ -1590,8 +1590,8 @@ void RdbList::merge_r ( RdbList **lists         ,
 	// sanity check
 	for ( int32_t i = 1 ; i < numLists ; i++ )
 		if ( lists[i]->m_ks != m_ks ) {
-			log("db: non conforming key size of %"INT32" != %"INT32" for "
-			    "list #%"INT32".",(int32_t)lists[i]->m_ks,(int32_t)m_ks,i);
+			log("db: non conforming key size of %" PRId32" != %" PRId32" for "
+			    "list #%" PRId32".",(int32_t)lists[i]->m_ks,(int32_t)m_ks,i);
 			char *xx = NULL; *xx = 0;
 		}
 	// bail if nothing requested
@@ -2015,9 +2015,9 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 
 #ifdef _MERGEDEBUG_
 	log(LOG_LOGIC,"%s:%s: removeNegKeys: %s", __FILE__, __func__, removeNegKeys?"true":"false");
-	log(LOG_LOGIC,"%s:%s: sk.n1=%"XINT64" sk.n0=%"XINT64" ek.n1=%"XINT64" ek.n0=%"XINT64"",
+	log(LOG_LOGIC,"%s:%s: sk.n1=%" PRIx64" sk.n0=%" PRIx64" ek.n1=%" PRIx64" ek.n0=%" PRIx64,
 	    __FILE__,__func__, KEY1(startKey,m_ks),KEY0(startKey),KEY1(endKey,m_ks),KEY0(endKey));
-	log(LOG_LOGIC,"%s:%s: numLists: %"INT32", m_allocSize=%"INT32", m_mergeMinListSize=%"INT32", minRecSizes=%"INT32"",
+	log(LOG_LOGIC,"%s:%s: numLists: %" PRId32", m_allocSize=%" PRId32", m_mergeMinListSize=%" PRId32", minRecSizes=%" PRId32,
 		__FILE__,__func__, numLists, m_allocSize, m_mergeMinListSize, minRecSizes);
 #endif
 
@@ -2087,7 +2087,7 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 		if ( lists[i]->isEmpty() ) continue;
 
 #ifdef _MERGEDEBUG_
-		log(LOG_LOGIC,"%s:%s: DUMPING LIST %"INT32"", __FILE__,__func__, i);
+		log(LOG_LOGIC,"%s:%s: DUMPING LIST %" PRId32, __FILE__,__func__, i);
 		lists[i]->printList(LOG_LOGIC);
 #endif
 

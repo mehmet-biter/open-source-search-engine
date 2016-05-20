@@ -163,7 +163,7 @@ bool Msg3::readList  ( char           rdbId         ,
 	m_listsChecked = false;
 	// warn
 	if ( minRecSizes < -1 ) {
-		log(LOG_LOGIC,"db: Msg3 got minRecSizes of %"INT32", changing "
+		log(LOG_LOGIC,"db: Msg3 got minRecSizes of %" PRId32", changing "
 		    "to -1.",minRecSizes);
 		minRecSizes = -1;
 	}
@@ -238,7 +238,7 @@ bool Msg3::readList  ( char           rdbId         ,
 	if ( g_conf.m_logDebugQuery )
 		log(LOG_DEBUG,
 		    "net: msg3: "
-		    "c=%"INT32" hmf=%"INT32" sfn=%"INT32" msfn=%"INT32" nf=%"INT32" db=%s.",
+		    "c=%" PRId32" hmf=%" PRId32" sfn=%" PRId32" msfn=%" PRId32" nf=%" PRId32" db=%s.",
 		     (int32_t)compensateForMerge,(int32_t)base->hasMergeFile(),
 		     (int32_t)startFileNum,(int32_t)base->m_mergeStartFileNum-1,
 		     (int32_t)numFiles,base->m_dbname);
@@ -256,7 +256,7 @@ bool Msg3::readList  ( char           rdbId         ,
 		// debug msg
 		if ( g_conf.m_logDebugQuery )
 			log(LOG_DEBUG,
-			   "net: msg3: startFileNum from %"INT32" to %"INT32" (mfn=%"INT32")",
+			   "net: msg3: startFileNum from %" PRId32" to %" PRId32" (mfn=%" PRId32")",
 			    startFileNum,startFileNum+1,mergeFileNum);
 		// if merge file was inserted before us, inc our file number
 		startFileNum++;
@@ -286,7 +286,7 @@ bool Msg3::readList  ( char           rdbId         ,
 	// set g_errno and return true if it is < 0
 	if ( numFiles < 0 ) { 
 		log(LOG_LOGIC,
-		   "net: msg3: readList: numFiles = %"INT32" < 0 (max=%"INT32")(sf=%"INT32")",
+		   "net: msg3: readList: numFiles = %" PRId32" < 0 (max=%" PRId32")(sf=%" PRId32")",
 		    numFiles , max , startFileNum );
 		g_errno = EBADENGINEER; 
 		// force core dump
@@ -314,7 +314,7 @@ bool Msg3::readList  ( char           rdbId         ,
 		m_allocSize = need;
 		m_alloc = (char *)mcalloc ( need , "Msg3" );
 		if ( ! m_alloc ) {
-			log("disk: Could not allocate %"INT32" bytes read "
+			log("disk: Could not allocate %" PRId32" bytes read "
 			    "structures to read %s.",need,base->m_dbname);
 			return true;
 		}
@@ -429,7 +429,7 @@ bool Msg3::readList  ( char           rdbId         ,
 	}
 
 	// debug msg
-	//log("msg3 getting list (msg5=%"UINT32")",m_state);
+	//log("msg3 getting list (msg5=%" PRIu32")",m_state);
 	// . MDW removed this -- go ahead an end on a delete key
 	// . RdbMerge might not pick it up this round, but oh well
 	// . so we can have both positive and negative co-existing in same file
@@ -445,7 +445,7 @@ bool Msg3::readList  ( char           rdbId         ,
 		int32_t fn = m_fileNums[i];
 		// this can happen somehow!
 		if ( fn < 0 ) {
-			log(LOG_LOGIC,"net: msg3: fn=%"INT32". Bad engineer.",fn);
+			log(LOG_LOGIC,"net: msg3: fn=%" PRId32". Bad engineer.",fn);
 			continue;
 		}
 		// sanity check
@@ -486,7 +486,7 @@ bool Msg3::readList  ( char           rdbId         ,
 		// debug msg
 		//#ifdef _DEBUG_		
 		//if ( minRecSizes == 2000000 ) 
-		//log("Msg3:: reading %"INT32" bytes from file #%"INT32"",bytesToRead,i);
+		//log("Msg3:: reading %" PRId32" bytes from file #%" PRId32,bytesToRead,i);
 		//#endif
 		// inc our m_numScans
 		m_numScansStarted++;
@@ -566,13 +566,13 @@ bool Msg3::readList  ( char           rdbId         ,
 		// timing debug
 		if ( g_conf.m_logTimingDb )
 			log(LOG_TIMING,
-			    "net: msg: reading %"INT32" bytes from %s file #%"INT32" "
-			     "(niceness=%"INT32")",
+			    "net: msg: reading %" PRId32" bytes from %s file #%" PRId32" "
+			     "(niceness=%" PRId32")",
 			     bytesToRead,base->m_dbname,i,m_niceness);
 
 		// log huge reads, those hurt us
 		if ( bytesToRead > 150000000 ) {
-			logf(LOG_INFO,"disk: Reading %"INT32" bytes at offset %"INT64" "
+			logf(LOG_INFO,"disk: Reading %" PRId32" bytes at offset %" PRId64" "
 			    "from %s.",
 			    bytesToRead,offset,base->m_dbname);
 		}
@@ -592,9 +592,9 @@ bool Msg3::readList  ( char           rdbId         ,
 			}
 		}
 		if ( ccount > 10 ) {
-			logf(LOG_INFO,"disk: Reading %"INT32" bytes from %s file #"
-			     "%"INT32" when min "
-			     "required is %"INT32". Map is corrupt and has %"INT32" "
+			logf(LOG_INFO,"disk: Reading %" PRId32" bytes from %s file #"
+			     "%" PRId32" when min "
+			     "required is %" PRId32". Map is corrupt and has %" PRId32" "
 			     "identical consecutive page keys because the "
 			     "map was \"repaired\" because out of order keys "
 			     "in the index.",
@@ -681,10 +681,10 @@ bool Msg3::readList  ( char           rdbId         ,
 			g_errno = 0;
 		}
 		// debug msg
-		//fprintf(stderr,"Msg3:: reading %"INT32" bytes from file #%"INT32","
-		//	"done=%"INT32",offset=%"INT64",g_errno=%s,"
-		//	"startKey=n1=%"UINT32",n0=%"UINT64",  "
-		//	"endKey=n1=%"UINT32",n0=%"UINT64"\n",
+		//fprintf(stderr,"Msg3:: reading %" PRId32" bytes from file #%" PRId32","
+		//	"done=%" PRId32",offset=%" PRId64",g_errno=%s,"
+		//	"startKey=n1=%" PRIu32",n0=%" PRIu64",  "
+		//	"endKey=n1=%" PRIu32",n0=%" PRIu64"\n",
 		//	bytesToRead,i,(int32_t)done,offset,mstrerror(g_errno),
 		//	m_startKey,m_endKey);
 		//if ( bytesToRead == 0 )
@@ -825,7 +825,7 @@ bool Msg3::doneScanning ( ) {
 			biggest = m_scans[i].m_bytesToRead;
 		}
 		if ( biggest > 500000000 ) {
-			log("db: Max read size was %"INT32" > 500000000. Assuming "
+			log("db: Max read size was %" PRId32" > 500000000. Assuming "
 			    "corrupt data in data file.",biggest);
 			m_errno = ECORRUPTDATA;
 			m_hadCorruption = true;
@@ -887,7 +887,7 @@ bool Msg3::doneScanning ( ) {
 		time_t now = getTime();
 		if ( now - s_time > 5 || g_errno != ENOTHREADSLOTS ) {
 			log("net: Had error reading %s: %s. Retrying. "
-			    "(retry #%"INT32")", 
+			    "(retry #%" PRId32")", 
 			    base->m_dbname,mstrerror(m_errno) , m_retryNum );
 			s_time = now;
 		}
@@ -934,7 +934,7 @@ bool Msg3::doneScanning ( ) {
 	// if we got an error and should not retry any more then give up
 	if ( g_errno ) {
 		log(
-		    "net: Had error reading %s: %s. Giving up after %"INT32" "
+		    "net: Had error reading %s: %s. Giving up after %" PRId32" "
 		    "retries.",
 		    base->m_dbname,mstrerror(g_errno) , m_retryNum );
 		return true;
@@ -942,7 +942,7 @@ bool Msg3::doneScanning ( ) {
 
 	// note it if the retry finally worked
 	if ( m_retryNum > 0 ) 
-		log(LOG_INFO,"disk: Read succeeded after retrying %"INT32" times.",
+		log(LOG_INFO,"disk: Read succeeded after retrying %" PRId32" times.",
 		    (int32_t)m_retryNum);
 
 	// count total bytes for logging
@@ -1056,7 +1056,7 @@ bool Msg3::doneScanning ( ) {
 					      filename,//ff->getFilename() ,
 					      m_niceness ) ) {
 			log("net: Had error while constraining list read from "
-			    "%s: %s/%s. vfd=%"INT32" parts=%"INT32". "
+			    "%s: %s/%s. vfd=%" PRId32" parts=%" PRId32". "
 			    "This is likely caused by corrupted "
 			    "data on disk.", 
 			    mstrerror(g_errno), ff->getDir(),
@@ -1071,8 +1071,8 @@ bool Msg3::doneScanning ( ) {
 		int64_t now = gettimeofdayInMilliseconds();
 		int64_t took = now - m_startTime;
 		log(LOG_TIMING,
-		    "net: Took %"INT64" ms to read %"INT32" lists of %"INT32" bytes total"
-		     " from %s (niceness=%"INT32").",
+		    "net: Took %" PRId64" ms to read %" PRId32" lists of %" PRId32" bytes total"
+		     " from %s (niceness=%" PRId32").",
 		     took,m_numFileNums,count,base->m_dbname,m_niceness);
 	}
 	return true;
@@ -1282,7 +1282,7 @@ void Msg3::compensateForNegativeRecs ( RdbBase *base ) {
 		// . it happened right after startup before a merge should
 		//   have been attempted
 		if ( fn < 0 ) {
-			log(LOG_LOGIC,"net: msg3: fn=%"INT32". bad engineer.",fn);
+			log(LOG_LOGIC,"net: msg3: fn=%" PRId32". bad engineer.",fn);
 			continue;
 		}
 		totalNegatives += maps[fn]->getNumNegativeRecs();
@@ -1317,7 +1317,7 @@ void Msg3::compensateForNegativeRecs ( RdbBase *base ) {
 	if ( newMin < m_minRecSizes ) newMin = 0x7fffffff;
 	// print msg if we changed m_minRecSizes
 	//if ( newMin != m_minRecSizes )
-	//	log("Msg3::compensated from minRecSizes from %"INT32" to %"INT32"",
+	//	log("Msg3::compensated from minRecSizes from %" PRId32" to %" PRId32,
 	//	    m_minRecSizes, newMin );
 	// set the new min
 	m_minRecSizes = newMin;

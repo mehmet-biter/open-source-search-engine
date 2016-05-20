@@ -270,7 +270,7 @@ bool Msge0::doneSending ( int32_t i ) {
 	// tally it up
 	m_numReplies++;
 	//if ( m_getSiteRecs ) ruleset = m_siteRecBuf[n].m_filenum;
-	//log ( LOG_DEBUG, "build: Finished Msge0 for url [%"INT32",%"INT32"]: %s",
+	//log ( LOG_DEBUG, "build: Finished Msge0 for url [%" PRId32",%" PRId32"]: %s",
 	//      n, i, m_urls[i].getUrl() );
 	// free it
 	m_used[i] = false;

@@ -139,7 +139,7 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 		g_errno = EBUFTOOSMALL; 
 		return log(
 			   "conf: %s has filesize "
-			   "of %"INT32" bytes, which is greater than %"INT32" max.",
+			   "of %" PRId32" bytes, which is greater than %" PRId32" max.",
 			   filename,m_bufSize,
 			   (int32_t)(MAX_HOSTS+MAX_SPARES)*128);
 	}
@@ -437,7 +437,7 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 		char tmp2[32];
 		if ( ! hostname2 && host[0]=='g' && host[1]=='k') {
 			int32_t hn = atol(host+2);
-			sprintf(tmp2,"gki%"INT32"",hn);
+			sprintf(tmp2,"gki%" PRId32,hn);
 			hostname2 = tmp2;
 		}
 		// limit
@@ -527,7 +527,7 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 		
 		if ( ! wdir ) {
 			g_errno = EBADENGINEER;
-			log(LOG_WARN, "admin: need working-dir for host in hosts.conf line %"INT32"",line);
+			log(LOG_WARN, "admin: need working-dir for host in hosts.conf line %" PRId32,line);
 			return false;
 		}
 
@@ -575,7 +575,7 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 		// ensure they're in proper order without gaps
 		if ( h->m_type==HT_GRUNT && h->m_hostId != i ) {
 		     g_errno = EBADHOSTID; 
-		     return log(LOG_WARN, "conf: Unordered hostId of %"INT32", should be %"INT32" in %s line %"INT32".",
+		     return log(LOG_WARN, "conf: Unordered hostId of %" PRId32", should be %" PRId32" in %s line %" PRId32".",
 		                h->m_hostId,i,filename,line);
 		}
 
@@ -584,20 +584,20 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 		      g_errno = EBADENGINEER;
 		      return log(LOG_WARN,
 		                 "conf: Host working dir too long in "
-				 "%s line %"INT32".",filename,line);
+				 "%s line %" PRId32".",filename,line);
 		}
 		if ( wdirlen <= 0 ) {
 		      g_errno = EBADENGINEER;
 		      return log(LOG_WARN,
 		                 "conf: No working dir supplied in "
-				 "%s line %"INT32".",filename,line);
+				 "%s line %" PRId32".",filename,line);
 		}
 		// make sure it is legit
 		if ( wdir[0] != '/' ) {
 		      g_errno = EBADENGINEER;
 		      return log(LOG_WARN,
 		                 "conf: working dir must start "
-				 "with / in %s line %"INT32"",filename,line);
+				 "with / in %s line %" PRId32,filename,line);
 		}
 
 		// take off slash if there
@@ -704,7 +704,7 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 
 	// assign spare hosts
 	if ( m_numSpareHosts > MAX_SPARES ) {
-		log ( LOG_WARN, "conf: Number of spares (%"INT32") exceeds max of %i, "
+		log ( LOG_WARN, "conf: Number of spares (%" PRId32") exceeds max of %i, "
 		      "truncating.", m_numSpareHosts, MAX_SPARES );
 		m_numSpareHosts = MAX_SPARES;
 	}
@@ -714,7 +714,7 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 	
 	// assign proxy hosts
 	if ( m_numProxyHosts > MAX_PROXIES ) {
-		log ( LOG_WARN, "conf: Number of proxies (%"INT32") exceeds max of %i, "
+		log ( LOG_WARN, "conf: Number of proxies (%" PRId32") exceeds max of %i, "
 		      "truncating.", m_numProxyHosts, MAX_PROXIES );
 		char *xx=NULL;*xx=0;
 		m_numProxyHosts = MAX_PROXIES;
@@ -727,15 +727,15 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 	}
 
 	// log discovered hosts
-	log ( LOG_INFO, "conf: Discovered %"INT32" hosts and %"INT32" spares and "
-	      "%"INT32" proxies.",m_numHosts, m_numSpareHosts, m_numProxyHosts );
+	log ( LOG_INFO, "conf: Discovered %" PRId32" hosts and %" PRId32" spares and "
+	      "%" PRId32" proxies.",m_numHosts, m_numSpareHosts, m_numProxyHosts );
 
 	// if we have m_numShards we must have 
 	int32_t hostsPerShard  = m_numHosts / m_numShards;
 	// must be exact fit
 	if ( hostsPerShard * m_numShards != m_numHosts ) {
 		g_errno = EBADENGINEER;
-		return log(LOG_WARN, "conf: Bad number of hosts for %"INT32" shards "
+		return log(LOG_WARN, "conf: Bad number of hosts for %" PRId32" shards "
 			   "in hosts.conf.",m_numShards);
 	}
 	// count number of hosts in each shard
@@ -890,13 +890,13 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 	if ( proxyHost )
 		h = getProxy ( m_hostId );
 	if ( ! h ) return log(LOG_WARN,
-	                      "conf: HostId %"INT32" not found in %s.",
+	                      "conf: HostId %" PRId32" not found in %s.",
 			      m_hostId,filename);
 	// set m_dir to THIS host's working dir
 	strcpy ( m_dir , h->m_dir );
 	// likewise, set m_htmlDir to this host's html dir
 	sprintf ( m_httpRootDir , "%shtml/" , m_dir );
-	sprintf ( m_logFilename , "%slog%03"INT32"", m_dir , m_hostId );
+	sprintf ( m_logFilename , "%slog%03" PRId32, m_dir , m_hostId );
 
 	if ( ! g_conf.m_runAsDaemon &&
 	     ! g_conf.m_logToFile )
@@ -997,11 +997,11 @@ bool Hostdb::hashHosts ( ) {
 
 		h2 = getUdpHost ( h->m_ipShotgun , h->m_port );
 		if ( h != h2 ) {
-			log( LOG_WARN, "db: Host lookup2 failed for hostId %"INT32".", h->m_hostId );
+			log( LOG_WARN, "db: Host lookup2 failed for hostId %" PRId32".", h->m_hostId );
 			return false;
 		}
 		if ( ! isIpInNetwork ( h->m_ip ) ) {
-			log( LOG_WARN, "db: Host lookup5 failed for hostId %"INT32".", h->m_hostId );
+			log( LOG_WARN, "db: Host lookup5 failed for hostId %" PRId32".", h->m_hostId );
 			return false;
 		}
 	}
@@ -1013,13 +1013,13 @@ bool Hostdb::hashHosts ( ) {
 		Host *h2 ;
 		h2 = getTcpHost ( h->m_ip , h->m_httpPort );
 		if ( h != h2 ) {
-			log( LOG_WARN, "db: Host lookup3 failed for hostId %"INT32". ip=%s port=%hu",
+			log( LOG_WARN, "db: Host lookup3 failed for hostId %" PRId32". ip=%s port=%hu",
 			     h->m_hostId, iptoa( h->m_ip ), h->m_httpPort );
 			return false;
 		}
 		h2 = getTcpHost ( h->m_ip , h->m_httpsPort );
 		if ( h != h2 ) {
-			log( LOG_WARN, "db: Host lookup4 failed for hostId %"INT32".", h->m_hostId );
+			log( LOG_WARN, "db: Host lookup4 failed for hostId %" PRId32".", h->m_hostId );
 			return false;
 		}
 	}
@@ -1039,7 +1039,7 @@ bool Hostdb::hashHost (	bool udp , Host *h , uint32_t ip , uint16_t port ) {
 	if ( hh && port ) { 
 		log("db: Must hash hosts.conf first, then hosts2.conf.");
 		log("db: or there is a repeated ip/port in hosts.conf.");
-		log("db: repeated host ip=%s port=%"INT32" "
+		log("db: repeated host ip=%s port=%" PRId32" "
 		    "name=%s",iptoa(ip),(int32_t)port,h->m_hostname);
 		return false;//char *xx=NULL;*xx=0;
 	}
@@ -1086,8 +1086,8 @@ bool Hostdb::hashHost (	bool udp , Host *h , uint32_t ip , uint16_t port ) {
 		// to make isIpInNetwork() function work.
 		if ( port == 0 ) return true;
 		old = *(Host **)t->getValueFromSlot(slot);
-		return log("db: Got collision between hostId %"INT32" and "
-			   "%"INT32"(proxy=%"INT32"). Both have same ip/port. Does "
+		return log("db: Got collision between hostId %" PRId32" and "
+			   "%" PRId32"(proxy=%" PRId32"). Both have same ip/port. Does "
 			   "hosts.conf match hosts2.conf?",
 			   old->m_hostId,h->m_hostId,(int32_t)h->m_isProxy);
 	}
@@ -1259,7 +1259,7 @@ Host *Hostdb::getLeastLoadedInShard ( uint32_t shardNum , char niceness ) {
 		if ( niceness == 0 && ! hh->m_queryEnabled  ) continue;
 		if ( ! bestDead ) bestDead = hh;
 		if(isDead(hh)) continue;
-		// log("host %"INT32 " numOutstanding is %"INT32, hh->m_hostId, 
+		// log("host %" PRId32 " numOutstanding is %" PRId32, hh->m_hostId, 
 		// 	hh->m_pingInfo.m_udpSlotsInUseIncoming);
 		if ( hh->m_pingInfo.m_udpSlotsInUseIncoming > 
 		     minOutstandingRequests )
@@ -1438,8 +1438,8 @@ bool Hostdb::saveHostsConf ( ) {
 		"# we insert an 'i' into hostname to get ip of eth1\n"
 		"\n"
 		"working-dir: %s\n"
-		//"port-offset: %"INT32"\n"
-		"index-splits: %"INT32"\n"
+		//"port-offset: %" PRId32"\n"
+		"index-splits: %" PRId32"\n"
 		"\n"
 		,
 		g_hostdb.m_dir,
@@ -1462,11 +1462,11 @@ bool Hostdb::saveHostsConf ( ) {
 			sprintf(temp, "spare ");
 
 		else if ( i < 10 )
-			sprintf(temp, "00%"INT32"   ", i);
+			sprintf(temp, "00%" PRId32"   ", i);
 		else if ( i < 100 )
-			sprintf(temp, "0%"INT32"   ", i);
+			sprintf(temp, "0%" PRId32"   ", i);
 		else
-			sprintf(temp, "%"INT32"   ", i);
+			sprintf(temp, "%" PRId32"   ", i);
 		write(fd, temp, gbstrlen(temp));
 
 		// the new format is just the hostname then note
@@ -1502,7 +1502,7 @@ bool Hostdb::syncHost ( int32_t syncHostId, bool useSecondaryIps ) {
 		return log(LOG_WARN, "conf: Cannot manage two syncs on this "
 				     "host. Aborting.");
 	// log the start
-	log ( LOG_INFO, "init: Syncing host %"INT32" with twin.", syncHostId );
+	log ( LOG_INFO, "init: Syncing host %" PRId32" with twin.", syncHostId );
 	// if no twins, can't do it
 	if ( m_numHostsPerShard == 1 )
 		return log(LOG_WARN, "conf: Cannot sync host, no twins. "
@@ -1514,7 +1514,7 @@ bool Hostdb::syncHost ( int32_t syncHostId, bool useSecondaryIps ) {
 	// first, the host must be marked as dead
 	Host *h = getHost(syncHostId);
 	if ( ! h )
-		log("conf: Cannot get host with host id #%"INT32"",
+		log("conf: Cannot get host with host id #%" PRId32,
 		    (int32_t)syncHostId);
 	if ( !isDead(h) )
 		return log(LOG_WARN, "conf: Cannot sync live host. Aborting.");
@@ -1544,7 +1544,7 @@ bool Hostdb::syncHost ( int32_t syncHostId, bool useSecondaryIps ) {
 	// check the size
 	int32_t checkSize = atol(cmd);
 	if ( checkSize > 4096 || checkSize <= 0 )
-		return log(LOG_WARN, "conf: Detected %"INT32" bytes in "
+		return log(LOG_WARN, "conf: Detected %" PRId32" bytes in "
 			   "directory to "
 			   "sync.  Must be empty.  Aborting.",
 			   checkSize);
@@ -1641,7 +1641,7 @@ void Hostdb::syncDone ( ) {
 	log ( LOG_INFO, "init: Sync copy done.  Starting host." );
 	m_syncHost->m_doingSync = 0;
 	char cmd[1024];
-	sprintf(cmd, "./gb start %"INT32"", m_syncHost->m_hostId);
+	sprintf(cmd, "./gb start %" PRId32, m_syncHost->m_hostId);
 	log ( LOG_INFO, "init: %s", cmd );
 	gbsystem(cmd);
 	m_syncHost = NULL;
@@ -1840,12 +1840,12 @@ int32_t Hostdb::getCRC ( ) {
 	for ( int32_t i = 0 ; i < getNumGrunts() ; i++ ) {
 		Host *h = &m_hosts[i];
 		// dns client port not so important
-		str.safePrintf("%"INT32",", i);
+		str.safePrintf("%" PRId32",", i);
 		str.safePrintf("%s," , iptoa(h->m_ip));
 		str.safePrintf("%s," , iptoa(h->m_ipShotgun));
-		str.safePrintf("%"INT32",", (int32_t)h->m_httpPort);
-		str.safePrintf("%"INT32",", (int32_t)h->m_httpsPort);
-		str.safePrintf("%"INT32",", (int32_t)h->m_port);
+		str.safePrintf("%" PRId32",", (int32_t)h->m_httpPort);
+		str.safePrintf("%" PRId32",", (int32_t)h->m_httpsPort);
+		str.safePrintf("%" PRId32",", (int32_t)h->m_port);
 		str.pushChar('\n');
 	}
 	str.nullTerm();

@@ -118,7 +118,7 @@ bool TcpServer::init ( void (* requestHandler)(TcpSocket *s) ,
 		s_stdinSock = fopen ( "stdin" , "r" );
 		// sanity - make sure 0 was opened as stdin!
 		if ( s_stdinSock != NULL ) { 
-			log("tcp: stdinSock = %"PTRFMT" != 0", 
+			log("tcp: stdinSock = %" PTRFMT" != 0",
 			    (PTRTYPE)s_stdinSock);
 			char *xx=NULL;*xx=0;
 		}
@@ -182,7 +182,7 @@ bool TcpServer::init ( void (* requestHandler)(TcpSocket *s) ,
 		g_errno = errno;
 		//if ( g_errno == EINVAL ) { port++; goto again; }
 		close ( m_sock );
-		return log("tcp: Failed to bind socket on port %"INT32": %s.",
+		return log("tcp: Failed to bind socket on port %" PRId32": %s.",
 			   (int32_t)port,mstrerror(g_errno));
 	}
 retry16:
@@ -321,11 +321,11 @@ retry19:
 		close ( m_sock );
 		if ( ! printMsg ) 
 			return false;
-		fprintf(stderr,"Failed to bind socket on port %"INT32": %s."
+		fprintf(stderr,"Failed to bind socket on port %" PRId32": %s."
 			"\n"
 			"Are you already running gb?\n"
 			"If not, try editing ./hosts.conf to\n"
-			"change the port from %"INT32" to something bigger.\n"
+			"change the port from %" PRId32" to something bigger.\n"
 			"Or stop gb by running 'gb stop' or by "
 			"clicking\n'save & exit' in the master controls.\n"
 		   	,(int32_t)port,mstrerror(g_errno),(int32_t)port);
@@ -374,7 +374,7 @@ bool TcpServer::sendMsg( char *hostname, int32_t hostnameLen, int16_t port, char
 	// make sure hostname not too big
 	if ( hostnameLen >= 254 ) {
 		g_errno = EBUFTOOSMALL;
-		log( LOG_LOGIC, "tcp: tcpserver: sendMsg: hostname length is too big. it's %" INT32 ", max is 254.",
+		log( LOG_LOGIC, "tcp: tcpserver: sendMsg: hostname length is too big. it's %" PRId32 ", max is 254.",
 			 hostnameLen );
 		mfree( sendBuf, sendBufSize, "TcpServer" );
 		return true;
@@ -745,7 +745,7 @@ TcpSocket *TcpServer::getAvailableSocket ( int32_t ip, int16_t port ) {
 		s->m_shutdownStart  = 0;
 		// debug msg
 		//log("........... TcpServer found available sock "
-		//"%"INT32"\n",i);
+		//"%" PRId32"\n",i);
 		return s;
 	}
 	// return NULL if none pre-connected and available for this ip/port
@@ -770,8 +770,8 @@ TcpSocket *TcpServer::getNewSocket ( ) {
 			if ( now - s_last < 5 && s_last ) 
 				s_count++;
 			else {
-				log("tcp: Out of sockets. Max sockets = %"INT32". "
-				    "(msgslogged=%"INT32")",
+				log("tcp: Out of sockets. Max sockets = %" PRId32". "
+				    "(msgslogged=%" PRId32")",
 				    *m_maxSocketsPtr,s_count);
 				s_count = 0;
 				s_last = now;
@@ -792,7 +792,7 @@ TcpSocket *TcpServer::getNewSocket ( ) {
 	int sd = socket ( AF_INET , SOCK_STREAM , 0 ) ;
 
 	if ( g_conf.m_logDebugTcp ) {
-		logf( LOG_DEBUG, "tcp: ...... created new socket sd=%" INT32 "", (int32_t)sd );
+		logf( LOG_DEBUG, "tcp: ...... created new socket sd=%" PRId32 "", (int32_t)sd );
 	}
 
 	while ( sd == 0 ) {
@@ -804,7 +804,7 @@ TcpSocket *TcpServer::getNewSocket ( ) {
 	}
 	if ( sd >= MAX_NUM_FDS ) {
 		log("tcp: using statically linked libc that only supports "
-		    "an fd of up to %"INT32", but got an fd = %"INT32". fd_set is "
+		    "an fd of up to %" PRId32", but got an fd = %" PRId32". fd_set is "
 		    "only geared for 1024 bits of file descriptors for "
 		    "doing poll() in Loop.cpp. Ensure 'ulimit -a' limits "
 		    "open files to 1024. "
@@ -821,7 +821,7 @@ TcpSocket *TcpServer::getNewSocket ( ) {
 		g_errno = errno;
 		log("tcp: Failed to create new socket: %s.",
 		    mstrerror(g_errno));
-		log("tcp: numopensocks = %"INT32"",m_numUsed);
+		log("tcp: numopensocks = %" PRId32,m_numUsed);
 		log("tcp: try editing /etc/security/limits.conf and "
 		    "restarting in fresh shell.");
 		log("tcp: try using multiple spider compression proxies on "
@@ -832,7 +832,7 @@ TcpSocket *TcpServer::getNewSocket ( ) {
 	m_numOpen++;
 
 	// ssl debug
-	//log("tcp: open socket fd=%i (open=%"INT32")",sd,m_numOpen-m_numClosed);
+	//log("tcp: open socket fd=%i (open=%" PRId32")",sd,m_numOpen-m_numClosed);
 
 	// . create a new TcpSocket around this socket descriptor
 	// . returns NULL and sets g_errno on error
@@ -845,10 +845,10 @@ TcpSocket *TcpServer::getNewSocket ( ) {
 		if ( sd == 0 ) log("tcp: closing1 sd of 0");
 		log("tcp: wrapsocket2 returned null for sd=%i",(int)sd);
 		if ( ::close(sd) == -1 )
-			log("tcp: close2(%"INT32") = %s",(int32_t)sd,mstrerror(errno));
+			log("tcp: close2(%" PRId32") = %s",(int32_t)sd,mstrerror(errno));
 		else {
 			m_numClosed++;
-			// log("tcp: closing sock %i (open=%"INT32")",sd,
+			// log("tcp: closing sock %i (open=%" PRId32")",sd,
 			//     m_numOpen-m_numClosed);
 		}
 		return NULL; 
@@ -880,7 +880,7 @@ TcpSocket *TcpServer::getSocket  ( int sd ) {
 // . NOTE: it's up to the caller to fill in the details of the TcpSocket!
 TcpSocket *TcpServer::wrapSocket ( int sd , int32_t niceness , bool isIncoming ) {
 	// debug
-	//logf(LOG_DEBUG,"tcp: wrapsocket sd=%"INT32"",sd);
+	//logf(LOG_DEBUG,"tcp: wrapsocket sd=%" PRId32,sd);
 
 	if ( isIncoming && m_numIncomingUsed >= *m_maxSocketsPtr ) {
 		if ( ! closeLeastUsed () ) {
@@ -891,7 +891,7 @@ TcpSocket *TcpServer::wrapSocket ( int sd , int32_t niceness , bool isIncoming )
 			if ( now - s_last < 5 && s_last ) {
 				s_count++;
 			} else {
-				log( "tcp: Out of sockets. Max sockets = %" INT32 ". (msgslogged=%" INT32 ")[2]",
+				log( "tcp: Out of sockets. Max sockets = %" PRId32 ". (msgslogged=%" PRId32 ")[2]",
 					 *m_maxSocketsPtr, s_count );
 				s_count = 0;
 				s_last = now;
@@ -911,7 +911,7 @@ TcpSocket *TcpServer::wrapSocket ( int sd , int32_t niceness , bool isIncoming )
 
 	// sanity check
 	if ( sd < 0 || sd >= MAX_TCP_SOCKS ) {
-		log(LOG_LOGIC,"tcp: Got bad sd of %"INT32".",(int32_t)sd);
+		log(LOG_LOGIC,"tcp: Got bad sd of %" PRId32".",(int32_t)sd);
 		// another stat
 		g_stats.m_closedSockets++;
 		g_errno = EOUTOFSOCKETS; 
@@ -928,15 +928,15 @@ TcpSocket *TcpServer::wrapSocket ( int sd , int32_t niceness , bool isIncoming )
 	// . sanity check, it should be clear always! it means "in use" or not
 	// . this has happened a few times lately...
 	if ( s->m_startTime != 0 ) {
-		log(LOG_LOGIC,"tcp: sd of %"INT32" is already in use.",(int32_t)sd);
+		log(LOG_LOGIC,"tcp: sd of %" PRId32" is already in use.",(int32_t)sd);
 		g_stats.m_closedSockets++;
 		g_errno = EOUTOFSOCKETS;
 		if ( sd == 0 ) log("tcp: closing2 sd of 0");
 		if ( ::close(sd) == -1 )
-			log("tcp: close3(%"INT32") = %s",(int32_t)sd,mstrerror(errno));
+			log("tcp: close3(%" PRId32") = %s",(int32_t)sd,mstrerror(errno));
 		else {
 			m_numClosed++;
-			// log("tcp: closing sock %i (%"INT32")",sd, m_numOpen-m_numClosed);
+			// log("tcp: closing sock %i (%" PRId32")",sd, m_numOpen-m_numClosed);
 		}
 
 		// send email alert
@@ -1026,7 +1026,7 @@ TcpSocket *TcpServer::wrapSocket ( int sd , int32_t niceness , bool isIncoming )
 // . if maxIdleTime > 0 we may not close ANY sockets
 // . if maxIdleTime <= 0 then we ALWAYS close the least used
 bool TcpServer::closeLeastUsed ( int32_t maxIdleTime ) {
-	//log(LOG_WARN, "closing. %"INT32" used!", m_numUsed);
+	//log(LOG_WARN, "closing. %" PRId32" used!", m_numUsed);
 	uint32_t times   [MAX_TCP_SOCKS];
 	int16_t         indices [MAX_TCP_SOCKS];
 	unsigned char numSocks[MAX_TCP_SOCKS];
@@ -1062,7 +1062,7 @@ bool TcpServer::closeLeastUsed ( int32_t maxIdleTime ) {
 			if ( nowms - s->m_lastActionTime <= maxms ) continue;
 			// log it
 			log(LOG_INFO,"tcp: closing socket. ip=%s. "
-			    "idle time was %"INT64" ms > %"INT64" ms",
+			    "idle time was %" PRId64" ms > %" PRId64" ms",
 			    iptoa(s->m_ip),nowms-s->m_lastActionTime,maxms);
 			// set g_errno? i guess to zero
 			g_errno = 0;
@@ -1096,7 +1096,7 @@ bool TcpServer::closeLeastUsed ( int32_t maxIdleTime ) {
 		tmp[reqLen] = '\0';
 	}
 	nowms = gettimeofdayInMilliseconds();
-	log(LOG_WARN, "tcp: closing least used! sd=%"INT32" idle=%"INT64"ms "
+	log(LOG_WARN, "tcp: closing least used! sd=%" PRId32" idle=%" PRId64"ms "
 	    "readbuf=%s" 
 	    , (int32_t)s->m_sd
 	    , nowms - s->m_lastActionTime
@@ -1171,7 +1171,7 @@ void readSocketWrapper ( int sd , void *state ) {
 
 void readSocketWrapper2 ( int sd , void *state ) {
 	// debug msg
-	//log("........... TcpServer::readSocketWrapper %"INT32"\n",sd);
+	//log("........... TcpServer::readSocketWrapper %" PRId32"\n",sd);
 	// extract our this ptr
 	TcpServer *THIS = (TcpServer *)state;
 	// get a TcpSocket from sd
@@ -1319,7 +1319,7 @@ void readSocketWrapper2 ( int sd , void *state ) {
 		// note it
 		if ( g_conf.m_logDebugProxies )
 			log("tcp: established http tunnel for https url of "
-			    "sd=%"INT32" req=%s",
+			    "sd=%" PRId32" req=%s",
 			    (int32_t)s->m_sd,s->m_sendBuf);
 		// free current read buffer if we should
 		if ( s->m_readBuf )
@@ -1408,7 +1408,7 @@ int32_t TcpServer::readSocket ( TcpSocket *s ) {
 	// }
 
 	if ( g_conf.m_logDebugTcp )
-	 	logf(LOG_DEBUG,"tcp: readSocket: reading on sd=%"INT32"",
+		logf(LOG_DEBUG,"tcp: readSocket: reading on sd=%" PRId32,
 	 	     (int32_t)s->m_sd);
 
 	// do the read
@@ -1422,7 +1422,7 @@ int32_t TcpServer::readSocket ( TcpSocket *s ) {
 #endif
 		//int64_t now2 = gettimeofdayInMilliseconds();
 		//int64_t took = now2 - now1 ;
-		//if ( took >= 2 ) log("tcp: ssl_read took %"INT64"ms", took);
+		//if ( took >= 2 ) log("tcp: ssl_read took %" PRId64"ms", took);
 	}
 	else
 		n = ::read ( s->m_sd, s->m_readBuf + s->m_readOffset, avail );
@@ -1453,12 +1453,12 @@ int32_t TcpServer::readSocket ( TcpSocket *s ) {
 
 	// debug msg
 	if ( g_conf.m_logDebugTcp )
-		logf(LOG_DEBUG,"tcp: readSocket: read %"INT32" bytes on sd=%"INT32"",
+		logf(LOG_DEBUG,"tcp: readSocket: read %" PRId32" bytes on sd=%" PRId32,
 		     (int32_t)n,(int32_t)s->m_sd);
 
 	// debug spider proxy
 	if ( g_conf.m_logDebugProxies )
-		log("tcp: readtcpbuf(%"INT32")=%s",
+		log("tcp: readtcpbuf(%" PRId32")=%s",
 		    (int32_t)n,s->m_readBuf+s->m_readOffset);
 
 	// debug msg
@@ -1583,7 +1583,7 @@ bool TcpServer::setTotalToRead ( TcpSocket *s ) {
 	newBuf = (char * ) mrealloc(s->m_readBuf,s->m_readBufSize,size,
 				    "TcpServerR");
 	if ( ! newBuf )
-		return log("tcp: Failed to reallocate from %"INT32" to %"INT32" "
+		return log("tcp: Failed to reallocate from %" PRId32" to %" PRId32" "
 				   "bytes to read from socket.",
 				   s->m_readBufSize,size);
 	// set the new buffer
@@ -1598,7 +1598,7 @@ bool TcpServer::setTotalToRead ( TcpSocket *s ) {
 // . we call this when socket is connected, too
 void writeSocketWrapper ( int sd , void *state ) {
 	// debug msg
-	//log("........... TcpServer::writeSocketWrapper sd=%"INT32"\n",sd);
+	//log("........... TcpServer::writeSocketWrapper sd=%" PRId32"\n",sd);
 	TcpServer *THIS = (TcpServer *)state;
 
 	// get the TcpSocket for this socket descriptor
@@ -1638,7 +1638,7 @@ void writeSocketWrapper ( int sd , void *state ) {
 		// note the ip now too
 		int64_t nowms = gettimeofdayInMilliseconds();
 		if ( g_conf.m_logDebugTcp )
-		     log(LOG_INFO,"tcp: sock closed. ip=%s. idle for %"INT64" ms.",
+		     log(LOG_INFO,"tcp: sock closed. ip=%s. idle for %" PRId64" ms.",
 			 iptoa(s->m_ip),nowms-s->m_lastActionTime);
 		// . some http servers close socket as end of transmission
 		// . so it's not really an g_errno
@@ -1713,7 +1713,7 @@ void writeSocketWrapper ( int sd , void *state ) {
 	// set to false, so don't destroy socket just yet...
 	if ( wasStreaming ) {
 		log("tcp: not destroying sock in streaming mode after callback"
-		    ". s=0x%"PTRFMT,   (PTRTYPE)s);
+		    ". s=0x%" PTRFMT,   (PTRTYPE)s);
 		    return;
 	}
 
@@ -1818,9 +1818,9 @@ int32_t TcpServer::writeSocket ( TcpSocket *s ) {
 
 	// debug msg
 	if ( g_conf.m_logDebugTcp )
-		logf(LOG_DEBUG,"tcp: writeSocket: writing %"INT32" bytes "
-		     "(of %"INT32" bytes total) "
-		     "on %"INT32"",
+		logf(LOG_DEBUG,"tcp: writeSocket: writing %" PRId32" bytes "
+		     "(of %" PRId32" bytes total) "
+		     "on %" PRId32,
 		     toSend,toSend,(int32_t)s->m_sd);
 
  retry10:
@@ -1830,7 +1830,7 @@ int32_t TcpServer::writeSocket ( TcpSocket *s ) {
 		n = SSL_write ( s->m_ssl, msg + s->m_sendOffset, toSend );
 		//int64_t now2 = gettimeofdayInMilliseconds();
 		//int64_t took = now2 - now1 ;
-		//if ( took >= 2 ) log("tcp: ssl_write took %"INT64"ms", took);
+		//if ( took >= 2 ) log("tcp: ssl_write took %" PRId64"ms", took);
 	}
 	else
 		n = ::send ( s->m_sd , msg + s->m_sendOffset , toSend , 0 );
@@ -1850,7 +1850,7 @@ int32_t TcpServer::writeSocket ( TcpSocket *s ) {
 		// debug msg
 		if ( g_errno != EAGAIN ) {
 			//if ( g_conf.m_logDebugTcp )
-			log("tcp: ::send returned %"INT32" err=%s"
+			log("tcp: ::send returned %" PRId32" err=%s"
 			    ,n,mstrerror(g_errno));
 			return -1;
 		}
@@ -1885,7 +1885,7 @@ int32_t TcpServer::writeSocket ( TcpSocket *s ) {
 	if ( n < toSend ) {
 		// another debug
 		//if ( g_conf.m_logDebugTcp )
-			log("tcp: only wrote %"INT32" of %"INT32" bytes "
+			log("tcp: only wrote %" PRId32" of %" PRId32" bytes "
 			    "tried. sd=%i",n,toSend,s->m_sd);
 		// need to listen for writability now since our write
 		// failed to write everythin gout
@@ -1913,7 +1913,7 @@ int32_t TcpServer::writeSocket ( TcpSocket *s ) {
 	// . we should be notified via sig/callback when we can send the rest
 	if ( n < toSend ) {
 		//if ( g_conf.m_logDebugTcp )
-		//	log(".... Tcpserver: %"INT32"<%"INT32"",n,toSend);
+		//	log(".... Tcpserver: %" PRId32"<%" PRId32,n,toSend);
 		return 0;
 	}
 	// . we sent all we were asked to, but our sendBuf may need a refill
@@ -1921,8 +1921,8 @@ int32_t TcpServer::writeSocket ( TcpSocket *s ) {
 	if ( s->m_totalSent  < s->m_totalToSend ) {
 		// note that
 		if ( g_conf.m_logDebugTcp )
-			log(".... Tcpserver: only sent fraction %"INT32" of "
-			    "%"INT32" bytes. looping.",
+			log(".... Tcpserver: only sent fraction %" PRId32" of "
+			    "%" PRId32" bytes. looping.",
 			    s->m_totalSent , s->m_totalToSend);
 		// . refill the sendBuf
 		// . this might set m_sendBufUsed, m_sendBufOffset, ...
@@ -1968,7 +1968,7 @@ int32_t TcpServer::writeSocket ( TcpSocket *s ) {
 
 	if ( s->m_streamingMode ) {
 		log("tcp: not destroying sock in streaming mode after "
-		    "writing data. s=0x%"PTRFMT,
+		    "writing data. s=0x%" PTRFMT,
 		    (PTRTYPE)s);
 		return true;
 	}
@@ -1997,7 +1997,7 @@ int32_t TcpServer::connectSocket ( TcpSocket *s ) {
 	to.sin_addr.s_addr =  s->m_ip;
 	to.sin_port        = htons ((uint16_t)( s->m_port));
 	if ( g_conf.m_logDebugTcp ) {
-		log( "........... TcpServer connecting %i to %s port %" UINT32 "", s->m_sd, iptoa( s->m_ip ),
+		log( "........... TcpServer connecting %i to %s port %" PRIu32 "", s->m_sd, iptoa( s->m_ip ),
 			 ( uint32_t )(uint16_t)s->m_port );
 	}
 
@@ -2006,7 +2006,7 @@ int32_t TcpServer::connectSocket ( TcpSocket *s ) {
 	if ( ::connect ( s->m_sd, (sockaddr *)(void*)&to, sizeof(to) ) == 0 ) {
 		// debug msg
 		if ( g_conf.m_logDebugTcp ) {
-			log( "........... TcpServer connected %i to %s port %" UINT32 "", s->m_sd, iptoa( s->m_ip ),
+			log( "........... TcpServer connected %i to %s port %" PRIu32 "", s->m_sd, iptoa( s->m_ip ),
 				 ( uint32_t )(uint16_t)s->m_port );
 		}
 
@@ -2061,7 +2061,7 @@ int32_t TcpServer::connectSocket ( TcpSocket *s ) {
 	}
 	// return -1 on real error
 	if ( g_conf.m_logDebugTcp )
-		log(LOG_INFO,"tcp: Failed to connect socket: %s, %s:%"INT32"", 
+		log(LOG_INFO,"tcp: Failed to connect socket: %s, %s:%" PRId32,
 		    mstrerror(g_errno), iptoa(s->m_ip), (int32_t)s->m_port);
 	return -1;
 
@@ -2201,7 +2201,7 @@ void TcpServer::destroySocket ( TcpSocket *s ) {
 				return;
 			// otherwise, force close the ssl socket
 			log("ssl: ssl_shutdown timed out fd=%i "
-			    "(start=%"INT32" now=%"INT32")",sd,s->m_shutdownStart,now);
+			    "(start=%" PRId32" now=%" PRId32")",sd,s->m_shutdownStart,now);
 			//return;
 		}
 		*/
@@ -2244,7 +2244,7 @@ void TcpServer::destroySocket ( TcpSocket *s ) {
 	s->m_streamingMode = false;
 
 	if ( cret != 0 ) { // == -1 ) 
-		log("tcp: s=%"PTRFMT" close(%"INT32") = %"INT32" = %s",
+		log("tcp: s=%" PTRFMT" close(%" PRId32") = %" PRId32" = %s",
 		    (PTRTYPE)s,(int32_t)sd,cret,mstrerror(errno));
 		if ( sd < 0 )
 			log("tcp: caught double close/callback while "
@@ -2252,7 +2252,7 @@ void TcpServer::destroySocket ( TcpSocket *s ) {
 	}
 	else {
 		m_numClosed++;
-		// log("tcp: closing sock %i (open=%"INT32")",sd,
+		// log("tcp: closing sock %i (open=%" PRId32")",sd,
 		//     m_numOpen-m_numClosed);
 		// set it negative to try to fix the double close while
 		// streaming bug. -sd -m_sd m_sd = m_sd=
@@ -2261,7 +2261,7 @@ void TcpServer::destroySocket ( TcpSocket *s ) {
 	// a 2nd close? it should return -1 with errno set!
 	//int32_t cret2 = ::close ( sd );
 	//if ( cret2 != -1 )
-	//	log("tcp: double close was required fd=%"INT32"",(int32_t)sd);
+	//	log("tcp: double close was required fd=%" PRId32,(int32_t)sd);
 	// flag it
 	s->m_sockState = ST_CLOSE_CALLED;
 	//::close ( 0 );
@@ -2287,7 +2287,7 @@ void TcpServer::destroySocket ( TcpSocket *s ) {
 	}
 	g_loop.unregisterReadCallback  ( sd , this , readSocketWrapper  );
 	// debug msg
-	//log("unregistering sd=%"INT32"",sd);
+	//log("unregistering sd=%" PRId32,sd);
 	// discount if it was an incoming connection
 	if ( s->m_isIncoming ) m_numIncomingUsed--;
 	// clear it, this means no longer in use
@@ -2419,7 +2419,7 @@ void TcpServer::readTimeoutPoll ( ) {
 			if ( Bps < 20.0 ) {
 				timeOut = true;
 				log("tcp: Read rate too low. Timing out. "
-				    "Bps=%"INT32" ip=%s", (int32_t)Bps,iptoa(s->m_ip));
+				    "Bps=%" PRId32" ip=%s", (int32_t)Bps,iptoa(s->m_ip));
 			}
 		}				
 
@@ -2437,20 +2437,20 @@ void TcpServer::readTimeoutPoll ( ) {
 		if ( ! timeOut && elapsed < s->m_timeout) continue;
 
 		if ( s->m_streamingMode ) {
-			log("tcp: not timing out streaming socket fd=%"INT32"",
+			log("tcp: not timing out streaming socket fd=%" PRId32,
 			    s->m_sd);
 			continue;
 		}
 
 		if ( g_conf.m_logDebugTcp )
-			log("tcp: timeloop: timing out sd=%i s=0x%"PTRFMT ,
+			log("tcp: timeloop: timing out sd=%i s=0x%" PTRFMT ,
 			    s->m_sd,(PTRTYPE)s);
 
 		else if ( m_useSSL )
-			log("tcp: timeloop: timing out ssl sd=%i s=0x%"PTRFMT ,
+			log("tcp: timeloop: timing out ssl sd=%i s=0x%" PTRFMT ,
 			    s->m_sd,(PTRTYPE)s);
 
-		//log("tcp: timeout=%"INT32" fd=%"INT32"",sockTimeout,s->m_sd);
+		//log("tcp: timeout=%" PRId32" fd=%" PRId32,sockTimeout,s->m_sd);
 
 		// uncomment this if you want to close a socket if they havent 
 		// finished reading in 10 seconds
@@ -2520,7 +2520,7 @@ TcpSocket *TcpServer::acceptSocket ( ) {
 	if ( g_errno == EILSEQ ) { g_errno = 0; return NULL; }
 
 	if ( g_conf.m_logDebugTcp ) 
-		logf(LOG_DEBUG,"tcp: ...... accepted sd=%"INT32"",(int32_t)newsd);
+		logf(LOG_DEBUG,"tcp: ...... accepted sd=%" PRId32,(int32_t)newsd);
 
 	// debug to find why sockets getting diffbot replies get commandeered.
 	// we think that they are using an sd used by a streaming socket,
@@ -2552,14 +2552,14 @@ TcpSocket *TcpServer::acceptSocket ( ) {
 
 		// so calling close(0) seems to really close it...???
 		//if ( ::close (0) == -1 )
-		//	log("tcp: close3(%"INT32") = %s",(int32_t)0,mstrerror(errno));
+		//	log("tcp: close3(%" PRId32") = %s",(int32_t)0,mstrerror(errno));
 		//goto loop;
 		//return NULL;
 	}
 
 	m_numOpen++;
 
-	//log("tcp: accept socket fd=%i (open=%"INT32")",newsd,
+	//log("tcp: accept socket fd=%i (open=%" PRId32")",newsd,
 	//m_numOpen-m_numClosed);
 
 	// . wrap a new TcpSocket around "newsd"
@@ -2573,11 +2573,11 @@ TcpSocket *TcpServer::acceptSocket ( ) {
 		if ( newsd == 0 ) log("tcp: closing sd of 0");
 		log("tcp: wrapsocket1 returned null for sd=%i",(int)newsd);
 		if ( ::close(newsd)== -1 )
-			log("tcp: close2(%"INT32") = %s",
+			log("tcp: close2(%" PRId32") = %s",
 			    (int32_t)newsd,mstrerror(errno));
 		else {
 			m_numClosed++;
-			// log("tcp: closing sock %i (open=%"INT32")",newsd,
+			// log("tcp: closing sock %i (open=%" PRId32")",newsd,
 			//     m_numOpen-m_numClosed);
 		}
 		return NULL; 
@@ -2615,7 +2615,7 @@ bool TcpServer::sslAccept ( TcpSocket *s ) {
 	if ( ! s->m_ssl ) {
 		//log("ssl: SSL_new");
 		SSL *ssl = SSL_new(m_ctx);
-		//log("ssl: SSL_set_fd %"INT32"",(int32_t)newsd);
+		//log("ssl: SSL_set_fd %" PRId32,(int32_t)newsd);
 		SSL_set_fd(ssl, newsd);
 		//log("ssl: SSL_set_accept_state");
 		SSL_set_accept_state(ssl);
@@ -2628,7 +2628,7 @@ bool TcpServer::sslAccept ( TcpSocket *s ) {
 		}
 	}
 
-	//log("ssl: SSL_accept %"INT32"",newsd);
+	//log("ssl: SSL_accept %" PRId32,newsd);
 	int64_t now1 = gettimeofdayInMilliseconds();
  retry19:
 	// . javier put this in here, but it was not non-blocking!!!
@@ -2641,7 +2641,7 @@ bool TcpServer::sslAccept ( TcpSocket *s ) {
 	int64_t now2 = gettimeofdayInMilliseconds();
 	int64_t took = now2 - now1 ;
 	if ( took >= 2 ) 
-		log("tcp: ssl_accept %"INT32" took %"INT64"ms", (int32_t)newsd, took);
+		log("tcp: ssl_accept %" PRId32" took %" PRId64"ms", (int32_t)newsd, took);
 	// did it block?
 	if ( r < 0 && errno == EINTR ) goto retry19;
 	// copy errno to g_errno
@@ -2650,7 +2650,7 @@ bool TcpServer::sslAccept ( TcpSocket *s ) {
 	if ( g_errno == SSL_ERROR_WANT_READ ||
 	     g_errno == SSL_ERROR_WANT_WRITE ||
 	     g_errno == EAGAIN ) {
-		//log("ssl: SSL_accept would block %"INT32"",newsd);
+		//log("ssl: SSL_accept would block %" PRId32,newsd);
 		return true;
 	}
 	// any other?
@@ -2666,7 +2666,7 @@ bool TcpServer::sslAccept ( TcpSocket *s ) {
 	// log this so we can monitor if we get too many of these per second
 	// because they take like 10ms each on sp1!!! (even with non-blocking 
 	// sockets, they'll block for 10ms) - mdw 2013
-	//log("ssl: SSL_accept (~10ms) completed %"INT32"",newsd);
+	//log("ssl: SSL_accept (~10ms) completed %" PRId32,newsd);
 	// ok, we got it
 	s->m_sockState = ST_READING;
 	return true;
@@ -2677,12 +2677,12 @@ void TcpServer::makeCallback ( TcpSocket * s ) {
 	if ( ! s->m_callback ) {
 		// note it
 		if ( g_conf.m_logDebugTcp )
-			log("tcp: null callback for s=0x%"PTRFMT"",(PTRTYPE)s);
+			log("tcp: null callback for s=0x%" PTRFMT"",(PTRTYPE)s);
 		return;
 	}
 
 	if ( g_conf.m_logDebugTcp )
-		log("tcp: calling callback for sd=%"INT32"",(int32_t)s->m_sd);
+		log("tcp: calling callback for sd=%" PRId32,(int32_t)s->m_sd);
 	s->m_callback ( s->m_state , s );
 }
 
@@ -2710,7 +2710,7 @@ bool TcpServer::sendChunk( TcpSocket *s, SafeBuf *sb, void *state,
 						   // so that it can read another chunk and call
 						   // sendChunk() again.
 						   void ( *doneSendingWrapper )( void *, TcpSocket * ) ) {
-	log( "tcp: sending chunk of %" INT32 " bytes sd=%i", sb->length(), s->m_sd );
+	log( "tcp: sending chunk of %" PRId32 " bytes sd=%i", sb->length(), s->m_sd );
 
 	// if socket had shit on there already, free that memory
 	// just like TcpServer::destroySocket would
@@ -2770,7 +2770,7 @@ int TcpServer::sslHandshake ( TcpSocket *s ) {
 	g_inMemFunction = false;
 
 	if ( g_conf.m_logDebugTcp ) {
-		log( "tcp: ssl handshake on sd=%" INT32 " r=%i", (int32_t)s->m_sd, r );
+		log( "tcp: ssl handshake on sd=%" PRId32 " r=%i", (int32_t)s->m_sd, r );
 	}
 
 	if (!s->m_ssl) {
@@ -2792,7 +2792,7 @@ int TcpServer::sslHandshake ( TcpSocket *s ) {
 	char *sslMsg = getSSLError(s->m_ssl, r);
 
 	if ( sslError != SSL_ERROR_WANT_READ && sslError != SSL_ERROR_WANT_WRITE && sslError != SSL_ERROR_NONE ) {
-		log( "tcp: ssl: Error on Connect (%" INT32 "). r=%i ip=%s msg=%s", (int32_t)sslError, r,
+		log( "tcp: ssl: Error on Connect (%" PRId32 "). r=%i ip=%s msg=%s", (int32_t)sslError, r,
 			 iptoa( s->m_ip ), sslMsg );
 
 		g_errno = ESSLERROR;
@@ -2810,7 +2810,7 @@ int TcpServer::sslHandshake ( TcpSocket *s ) {
 	}
 
 	if ( g_conf.m_logDebugTcp ) {
-		log( "tcp: ssl: sslConnect (%" INT32 "). r=%i ip=%s msg=%s", (int32_t)sslError, r, iptoa( s->m_ip ),
+		log( "tcp: ssl: sslConnect (%" PRId32 "). r=%i ip=%s msg=%s", (int32_t)sslError, r, iptoa( s->m_ip ),
 			 sslMsg );
 	}
 

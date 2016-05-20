@@ -210,7 +210,7 @@ bool Posdb::init ( ) {
 	char *p = list.m_list;
 	char *pend = p + list.m_listSize;
 	for ( ; p < pend ; p++ )
-		log("db: %02"INT32") 0x%02"XINT32"",p-list.m_list,
+		log("db: %02" PRId32") 0x%02" PRIx32,p-list.m_list,
 		    (int32_t)(*(unsigned char *)p));
 	list.resetListPtr();
 	list.checkList_r(false,true,RDB_POSDB);
@@ -365,7 +365,7 @@ bool Posdb::verify ( const char *coll ) {
 		if ( shardNum == getMyShardNum() ) got++;
 		else if ( !printedKey ) {
 			log ( "db: Found bad key in list (only printing once): "
-			      "%"XINT64" %"XINT64" %"XINT32"", k.n2, k.n1 ,(int32_t)k.n0);
+			      "%" PRIx64" %" PRIx64" %" PRIx32, k.n2, k.n1 ,(int32_t)k.n0);
 			printedKey = true;
 		}
 		if ( k.n1 == 0 && k.n0 == 0 ) {
@@ -381,7 +381,7 @@ bool Posdb::verify ( const char *coll ) {
 	if ( got != count ) {
 		// tally it up
 		g_rebalance.m_numForeignRecs += count - got;
-		log ("db: Out of first %"INT32" records in posdb, only %"INT32" belong "
+		log ("db: Out of first %" PRId32" records in posdb, only %" PRId32" belong "
 		     "to our group.",count,got);
 		// exit if NONE, we probably got the wrong data
 		if ( got == 0 ) log("db: Are you sure you have the "
@@ -392,7 +392,7 @@ bool Posdb::verify ( const char *coll ) {
 		g_threads.enableThreads();
 		return g_conf.m_bypassValidation;
 	}
-	log ( LOG_DEBUG, "db: Posdb passed verification successfully for %"INT32" "
+	log ( LOG_DEBUG, "db: Posdb passed verification successfully for %" PRId32" "
 			"recs.", count );
 	// DONE
 	g_threads.enableThreads();
@@ -604,7 +604,7 @@ int64_t Posdb::getTermFreq ( collnum_t collnum, int64_t termId ) {
 	// -1 means not found in cache. if found, return it though.
 	// do not return even if found if we are doing a qa test.
 	if ( val >= 0 && ! qaTest ) {
-		//log("posdb: got %"INT64" in cache",val);
+		//log("posdb: got %" PRId64" in cache",val);
 		return val;
 	}
 
@@ -676,7 +676,7 @@ int64_t Posdb::getTermFreq ( collnum_t collnum, int64_t termId ) {
 	//maxRecs /= 8;
 
 	// log it
-	//log("posdb: approx=%"INT64" exact=%"INT64"",maxRecs,numBytes);
+	//log("posdb: approx=%" PRId64" exact=%" PRId64,maxRecs,numBytes);
 
 	// now cache it. it sets g_errno to zero.
 	g_termFreqCache.addLongLong2 ( collnum, termId, maxRecs );
@@ -873,12 +873,12 @@ void PosdbTable::prepareWhiteListTable()
 		// sanity test
 		int64_t d1 = g_posdb.getDocId(list->getList());
 		if ( d1 > m_msg2->m_docIdEnd ) { 
-			log("posdb: d1=%"INT64" > %"INT64"",
+			log("posdb: d1=%" PRId64" > %" PRId64,
 			    d1,m_msg2->m_docIdEnd);
 			//char *xx=NULL;*xx=0; 
 		}
 		if ( d1 < m_msg2->m_docIdStart ) { 
-			log("posdb: d1=%"INT64" < %"INT64"",
+			log("posdb: d1=%" PRId64" < %" PRId64,
 			    d1,m_msg2->m_docIdStart);
 			//char *xx=NULL;*xx=0; 
 		}
@@ -908,7 +908,7 @@ bool PosdbTable::allocTopTree ( ) {
 		if ( list->isEmpty() ) continue;
 		// show if debug
 		if ( m_debug )
-			log("toptree: adding listsize %"INT32" to nn2",
+			log("toptree: adding listsize %" PRId32" to nn2",
 			    list->m_listSize);
 		// tally. each new docid in this termlist will compress
 		// the 6 byte termid out, so reduce by 6.
@@ -966,12 +966,12 @@ bool PosdbTable::allocTopTree ( ) {
 	nn = gbmin(nn,2000000000);
 
 	if ( m_debug )
-		log("toptree: toptree: initializing %"INT64" nodes",nn);
+		log("toptree: toptree: initializing %" PRId64" nodes",nn);
 
 	if ( nn < m_r->m_docsToGet )
-		log("query: warning only getting up to %"INT64" docids "
-		    "even though %"INT32" requested because termlist "
-		    "sizes are so small!! splits=%"INT32""
+		log("query: warning only getting up to %" PRId64" docids "
+		    "even though %" PRId32" requested because termlist "
+		    "sizes are so small!! splits=%" PRId32
 		    , nn
 		    , m_r->m_docsToGet 
 		    , (int32_t)m_r->m_numDocIdSplits
@@ -1382,8 +1382,8 @@ void PosdbTable::evalSlidingWindow ( char **ptrs ,
 				// must be in right order!
 				if ( dist < 0 ) {
 					max = -1.0;
-					//log("ddd0: i=%"INT32" j=%"INT32" "
-					//    "dist=%"INT32" qdist=%"INT32"",
+					//log("ddd0: i=%" PRId32" j=%" PRId32" "
+					//    "dist=%" PRId32" qdist=%" PRId32,
 					//    i,j,dist,qdist);
 				}
 				// allow for a discrepancy of 1 unit in case 
@@ -1391,19 +1391,19 @@ void PosdbTable::evalSlidingWindow ( char **ptrs ,
 				// unit
 				else if ( dist > qdist && dist - qdist > 1 ) {
 					max = -1.0;
-					//log("ddd1: i=%"INT32" j=%"INT32" "
-					//    "dist=%"INT32" qdist=%"INT32"",
+					//log("ddd1: i=%" PRId32" j=%" PRId32" "
+					//    "dist=%" PRId32" qdist=%" PRId32,
 					//    i,j,dist,qdist);
 				}
 				else if ( dist < qdist && qdist - dist > 1 ) {
 					max = -1.0;
-					//log("ddd2: i=%"INT32" j=%"INT32" "
-					//    "dist=%"INT32" qdist=%"INT32"",
+					//log("ddd2: i=%" PRId32" j=%" PRId32" "
+					//    "dist=%" PRId32" qdist=%" PRId32,
 					//    i,j,dist,qdist);
 				}
 				//else {
-				//	log("ddd3: i=%"INT32" j=%"INT32" "
-				//	    "dist=%"INT32" qdist=%"INT32"",
+				//	log("ddd3: i=%" PRId32" j=%" PRId32" "
+				//	    "dist=%" PRId32" qdist=%" PRId32,
 				//	    i,j,dist,qdist);
 				//}
 			}
@@ -1444,7 +1444,7 @@ void PosdbTable::evalSlidingWindow ( char **ptrs ,
 		//if ( winners2[i*MAX_QUERY_TERMS+j])
 		//unsigned char hg2;
 		//hg2=g_posdb.getHashGroup(winners2[i*MAX_QUERY_TERMS+j]
-		//log("winner %"INT32" x %"INT32" 0x%"XINT32" 0x%"XINT32"",i,j,
+		//log("winner %" PRId32" x %" PRId32" 0x%" PRIx32" 0x%" PRIx32,i,j,
 		//    (int32_t)winners1[i*MAX_QUERY_TERMS+j],
 		//    (int32_t)winners1[i*MAX_QUERY_TERMS+j]);
 	}
@@ -2081,7 +2081,7 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
  loop:
 
 	// pos = 19536
-	//log("hg1=%"INT32" hg2=%"INT32" pos1=%"INT32" pos2=%"INT32"",
+	//log("hg1=%" PRId32" hg2=%" PRId32" pos1=%" PRId32" pos2=%" PRId32,
 	//    (int32_t)hg1,(int32_t)hg2,(int32_t)p1,(int32_t)p2);
 
 	// . if p1/p2 is in body and not in window, skip
@@ -2103,8 +2103,8 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 		// if in the same quoted phrase, order is bad!
 		if ( inSameQuotedPhrase ) {
 			// debug
-			//log("dddx: i=%"INT32" j=%"INT32" dist=%"INT32" qdist=%"INT32" posi=%"INT32" "
-			//    "posj=%"INT32"",
+			//log("dddx: i=%" PRId32" j=%" PRId32" dist=%" PRId32" qdist=%" PRId32" posi=%" PRId32" "
+			//    "posj=%" PRId32,
 			//    i,j,dist,qdist,p1,p2);
 			// TODO: allow for off by 1
 			// if it has punct in it then dist will be 3, 
@@ -2276,8 +2276,8 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 		// if in the same quoted phrase, order is bad!
 		if ( inSameQuotedPhrase ) {
 			// debug
-			//log("dddy: i=%"INT32" j=%"INT32" dist=%"INT32" qdist=%"INT32" posi=%"INT32" "
-			//    "posj=%"INT32"",
+			//log("dddy: i=%" PRId32" j=%" PRId32" dist=%" PRId32" qdist=%" PRId32" posi=%" PRId32" "
+			//    "posj=%" PRId32,
 			//    i,j,dist,qdist,p1,p2);
 			goto skip2;
 		}
@@ -2444,7 +2444,7 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 
 	if ( m_debug >= 2 ) {
 		for ( int32_t k = 0 ; k < numTop ; k++ )
-			log("posdb: best score #%"INT32" = %f",k,bestScores[k]);
+			log("posdb: best score #%" PRId32" = %f",k,bestScores[k]);
 		log("posdb: best score sum = %f",sum);
 	}
 
@@ -2495,7 +2495,7 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 	m_pairScoreBuf.incrementLength(need);
 
 	//if ( m_debug )
-	//	log("posdb: DOCID=%"INT64" BESTSCORE=%f",m_docId,sum);
+	//	log("posdb: DOCID=%" PRId64" BESTSCORE=%f",m_docId,sum);
 
 	// set each of the top scoring terms individiually
 	for ( int32_t k = 0 ; k < numTop ; k++ , px++ ) {
@@ -2560,31 +2560,31 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 		// only log for debug if it is one result
 		if ( m_debug < 2 ) continue;
 		// log each one for debug
-		log("posdb: result #%"INT32" "
-		    "i=%"INT32" "
-		    "j=%"INT32" "
-		    "termNum0=%"INT32" "
-		    "termNum1=%"INT32" "
+		log("posdb: result #%" PRId32" "
+		    "i=%" PRId32" "
+		    "j=%" PRId32" "
+		    "termNum0=%" PRId32" "
+		    "termNum1=%" PRId32" "
 		    "finalscore=%f "
 		    "tfw0=%f "
 		    "tfw1=%f "
-		    "fixeddist=%"INT32" " // bool
+		    "fixeddist=%" PRId32" " // bool
 		    "wts=%f "
-		    "bflags0=%"INT32" "
-		    "bflags1=%"INT32" "
-		    "syn0=%"INT32" "
-		    "syn1=%"INT32" "
-		    "div0=%"INT32" "
-		    "div1=%"INT32" "
-		    "wspam0=%"INT32" "
-		    "wspam1=%"INT32" "
+		    "bflags0=%" PRId32" "
+		    "bflags1=%" PRId32" "
+		    "syn0=%" PRId32" "
+		    "syn1=%" PRId32" "
+		    "div0=%" PRId32" "
+		    "div1=%" PRId32" "
+		    "wspam0=%" PRId32" "
+		    "wspam1=%" PRId32" "
 		    "hgrp0=%s "
 		    "hgrp1=%s "
-		    "qdist=%"INT32" "
-		    "wpos0=%"INT32" "
-		    "wpos1=%"INT32" "
-		    "dens0=%"INT32" "
-		    "dens1=%"INT32" "
+		    "qdist=%" PRId32" "
+		    "wpos0=%" PRId32" "
+		    "wpos1=%" PRId32" "
+		    "dens0=%" PRId32" "
+		    "dens1=%" PRId32" "
 		    ,k
 		    ,i
 		    ,j
@@ -2996,7 +2996,7 @@ bool PosdbTable::setQueryTermInfo ( ) {
 		qti->m_termFreqWeight =((float *)m_r->ptr_termFreqWeights)[i];
 		// crazy?
 		if ( nn >= MAX_SUBLISTS ) {
-			log("query: too many sublists. %"INT32" >= %"INT32"",
+			log("query: too many sublists. %" PRId32" >= %" PRId32,
 			    nn,(int32_t)MAX_SUBLISTS);
 			return false;
 		}
@@ -3537,7 +3537,7 @@ void PosdbTable::addDocIdVotes ( const QueryTermInfo *qti , int32_t   listGroupN
 	/*
 	// debug
 	int64_t dd = g_posdb.getDocId(minRecPtr);
-	log("posdb: adding docid %"INT64"", dd);
+	log("posdb: adding docid %" PRId64, dd);
 	// test
 	uint64_t actualDocId;
 	actualDocId = *(uint32_t *)(dp+1);
@@ -3660,7 +3660,7 @@ void PosdbTable::intersectLists10_r ( ) {
 		
 	m_finalScore = 0.0;
 
-	if( g_conf.m_logTracePosdb ) log(LOG_TRACE,"%s:%s:%d: numTerms: %"INT32"", __FILE__,__func__, __LINE__, m_q->m_numTerms);
+	if( g_conf.m_logTracePosdb ) log(LOG_TRACE,"%s:%s:%d: numTerms: %" PRId32, __FILE__,__func__, __LINE__, m_q->m_numTerms);
 
 	prepareWhiteListTable();
 
@@ -3720,11 +3720,11 @@ void PosdbTable::intersectLists10_r ( ) {
 		list->m_listSize -= 6;
 		list->m_list      = p;
 		
-		if( g_conf.m_logTracePosdb ) log(LOG_TRACE,"%s:%s:%d: termList #%"INT32" totalSize=%"INT64"", __FILE__,__func__, __LINE__,k,total);
+		if( g_conf.m_logTracePosdb ) log(LOG_TRACE,"%s:%s:%d: termList #%" PRId32" totalSize=%" PRId64, __FILE__,__func__, __LINE__,k,total);
 
 		// print total list sizes
 		if ( ! m_debug ) continue;
-		log("query: termlist #%"INT32" totalSize=%"INT64"",k,total);
+		log("query: termlist #%" PRId32" totalSize=%" PRId64,k,total);
 	}
 
 	// point to our array of query term infos set in setQueryTermInfos()
@@ -3851,7 +3851,7 @@ void PosdbTable::intersectLists10_r ( ) {
 	if ( m_debug ) {
 		now = gettimeofdayInMilliseconds();
 		took = now - lastTime;
-		log("posdb: new algo phase %"INT32" took %"INT64" ms", phase,took);
+		log("posdb: new algo phase %" PRId32" took %" PRId64" ms", phase,took);
 		lastTime = now;
 		phase++;
 	}
@@ -3892,7 +3892,7 @@ void PosdbTable::intersectLists10_r ( ) {
 	if ( m_debug ) {
 		now = gettimeofdayInMilliseconds();
 		took = now - lastTime;
-		log("posdb: new algo phase %"INT32" took %"INT64" ms", phase,took);
+		log("posdb: new algo phase %" PRId32" took %" PRId64" ms", phase,took);
 		lastTime = now;
 		phase++;
 	}
@@ -4177,7 +4177,7 @@ void PosdbTable::intersectLists10_r ( ) {
 			// save it
 			qti->m_savedCursor[j] = xc;
 			// get new docid
-			//log("new docid %"INT64"",g_posdb.getDocId(xc) );
+			//log("new docid %" PRId64,g_posdb.getDocId(xc) );
 			// advance the cursors. skip our 12
 			xc += 12;
 			// then skip any following 6 byte keys because they
@@ -4597,7 +4597,7 @@ void PosdbTable::intersectLists10_r ( ) {
 			mptr += 6;
 		}
 	skipOver:
-		//log("skipping ks=%"INT32"",(int32_t)ks);
+		//log("skipping ks=%" PRId32,(int32_t)ks);
 		// advance the cursor over the key we used.
 		nwp[mink] += ks; // g_posdb.getKeySize(nwp[mink]);
 		// exhausted?
@@ -5128,7 +5128,7 @@ void PosdbTable::intersectLists10_r ( ) {
 		// save that
 		int32_t len = m_scoreInfoBuf.m_length;
 		// show it, 190255775595
-		//log("posdb: storing score info for d=%"INT64"",m_docId);
+		//log("posdb: storing score info for d=%" PRId64,m_docId);
 		// copy into the safebuf for holding the scoring info
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(&dcs,sizeof(dcs));
@@ -5194,7 +5194,7 @@ void PosdbTable::intersectLists10_r ( ) {
 		// note it because it is slow
 		// this is only used if getting score info, which is
 		// not default when getting an xml or json feed
-		//log("query: kicking out docid %"INT64" from score buf",
+		//log("query: kicking out docid %" PRId64" from score buf",
 		//    si->m_docId);
 
 		// get his single and pair offsets
@@ -5277,7 +5277,7 @@ void PosdbTable::intersectLists10_r ( ) {
 	if ( m_debug ) {
 		now = gettimeofdayInMilliseconds();
 		took = now - lastTime;
-		log("posdb: new algo phase %"INT32" took %"INT64" ms", phase,took);
+		log("posdb: new algo phase %" PRId32" took %" PRId64" ms", phase,took);
 		lastTime = now;
 		phase++;
 	}
@@ -5310,11 +5310,11 @@ void PosdbTable::intersectLists10_r ( ) {
 	}
 
 	if ( m_debug ) {
-		log("posdb: # fail0 = %"INT32" ", fail0 );
-		log("posdb: # pass0 = %"INT32" ", pass0 );
+		log("posdb: # fail0 = %" PRId32" ", fail0 );
+		log("posdb: # pass0 = %" PRId32" ", pass0 );
 
-		log("posdb: # fail = %"INT32" ", fail );
-		log("posdb: # pass = %"INT32" ", pass );
+		log("posdb: # fail = %" PRId32" ", fail );
+		log("posdb: # pass = %" PRId32" ", pass );
 	}
 
 	// get time now
@@ -5324,7 +5324,7 @@ void PosdbTable::intersectLists10_r ( ) {
 	m_t1 = t1;
 	m_t2 = now;
 	
-	if( g_conf.m_logTracePosdb ) log(LOG_TRACE,"%s:%s:%d: Done. Took %"INT64" msec", __FILE__,__func__, __LINE__, m_addListsTime);
+	if( g_conf.m_logTracePosdb ) log(LOG_TRACE,"%s:%s:%d: Done. Took %" PRId64" msec", __FILE__,__func__, __LINE__, m_addListsTime);
 }
 
 
@@ -5492,7 +5492,7 @@ void printTermList ( int32_t i, const char *list, int32_t listSize ) {
 		int32_t dr = g_posdb.getDensityRank(px);
 		int32_t hg = g_posdb.getHashGroup(px);
 		int32_t syn = g_posdb.getIsSynonym(px);
-		log("seo: qterm#%"INT32" pos=%"INT32" dr=%"INT32" hg=%s syn=%"INT32""
+		log("seo: qterm#%" PRId32" pos=%" PRId32" dr=%" PRId32" hg=%s syn=%" PRId32
 		    , i
 		    , wp
 		    , dr
@@ -5668,7 +5668,7 @@ bool PosdbTable::makeDocIdVoteBufForBoolQuery_r ( ) {
 
 	// debug info
 	// int32_t nc = m_bt.getLongestString();
-	// log("posdb: string of %"INT32" filled slots!",nc);
+	// log("posdb: string of %" PRId32" filled slots!",nc);
 
 	char *dst = m_docIdVoteBuf.getBufStart();
 
@@ -5689,7 +5689,7 @@ bool PosdbTable::makeDocIdVoteBufForBoolQuery_r ( ) {
 		// it passes, add the ocid
 		if ( m_debug ) {
 			int64_t docId =*(int64_t *)m_bt.getKeyFromSlot(i);
-			log("query: eval d=%"UINT64" vec[0]=%"XINT32" h64=%"INT64"",
+			log("query: eval d=%" PRIu64" vec[0]=%" PRIx32" h64=%" PRId64,
 			    docId,(int32_t)vec[0],h64);
 			//if ( docId == 47801316261LL )
 			//	log("hy");
@@ -5701,8 +5701,8 @@ bool PosdbTable::makeDocIdVoteBufForBoolQuery_r ( ) {
 			int64_t docId =*(int64_t *)m_bt.getKeyFromSlot(i);
 			// fix it up
 			if ( m_debug ) {
-				log("query: adding d=%"UINT64" bitVecSize=%"INT32" "
-				    "bitvec[0]=0x%"XINT32" (TRUE)",
+				log("query: adding d=%" PRIu64" bitVecSize=%" PRId32" "
+				    "bitvec[0]=0x%" PRIx32" (TRUE)",
 				    docId,m_vecSize,(int32_t)vec[0]);
 			}
 			// shift up
@@ -5720,7 +5720,7 @@ bool PosdbTable::makeDocIdVoteBufForBoolQuery_r ( ) {
 			int64_t docId =*(int64_t *)m_bt.getKeyFromSlot(i);
 			// fix it up
 			if ( m_debug ) {
-				log("query: adding d=%"UINT64" vec[0]=0x%"XINT32"",
+				log("query: adding d=%" PRIu64" vec[0]=0x%" PRIx32,
 				    docId,(int32_t)vec[0]);
 			}
 			// shift up
@@ -5791,7 +5791,7 @@ int Posdb::printList ( RdbList &list ) {
 			//int64_t nd3 = g_posdb.getDocId(rec+18);
 			// what size is it really?
 			// seems like 12 bytes
-			//log("debug1: d=%"INT64" nd1=%"INT64" nd2=%"INT64" nd3=%"INT64"",
+			//log("debug1: d=%" PRId64" nd1=%" PRId64" nd2=%" PRId64" nd3=%" PRId64,
 			//d,nd1,nd2,nd3);
 			err = " (alignerror1)";
 			if ( nd1 < d ) err = " (alignordererror1)";
@@ -5805,7 +5805,7 @@ int Posdb::printList ( RdbList &list ) {
 			//int64_t nd3 = g_posdb.getDocId(rec+18);
 			// what size is it really?
 			// seems like 12 bytes
-			//log("debug1: d=%"INT64" nd1=%"INT64" nd2=%"INT64" nd3=%"INT64"",
+			//log("debug1: d=%" PRId64" nd1=%" PRId64" nd2=%" PRId64" nd3=%" PRId64,
 			//d,nd1,nd2,nd3);
 			//if ( nd2 < d ) { char *xx=NULL;*xx=0; }
 			//char *xx=NULL;*xx=0;
@@ -5821,7 +5821,7 @@ int Posdb::printList ( RdbList &list ) {
 			//int64_t nd3 = g_posdb.getDocId(rec+18);
 			// what size is it really?
 			// seems like 12 bytes really as well!
-			//log("debug2: d=%"INT64" nd1=%"INT64" nd2=%"INT64" nd3=%"INT64"",
+			//log("debug2: d=%" PRId64" nd1=%" PRId64" nd2=%" PRId64" nd3=%" PRId64,
 			//d,nd1,nd2,nd3);
 			//char *xx=NULL;*xx=0;
 			err = " (alignerror3)";
@@ -5830,21 +5830,21 @@ int Posdb::printList ( RdbList &list ) {
 
 		log(
 		       "k=%s "
-		       "tid=%015"UINT64" "
-		       "docId=%012"INT64" "
+		       "tid=%015" PRIu64" "
+		       "docId=%012" PRId64" "
 
-		       "siterank=%02"INT32" "
-		       "langid=%02"INT32" "
-		       "pos=%06"INT32" "
-		       "hgrp=%02"INT32" "
-		       "spamrank=%02"INT32" "
-		       "divrank=%02"INT32" "
-		       "syn=%01"INT32" "
-		       "densrank=%02"INT32" "
-		       "mult=%02"INT32" "
+		       "siterank=%02" PRId32" "
+		       "langid=%02" PRId32" "
+		       "pos=%06" PRId32" "
+		       "hgrp=%02" PRId32" "
+		       "spamrank=%02" PRId32" "
+		       "divrank=%02" PRId32" "
+		       "syn=%01" PRId32" "
+		       "densrank=%02" PRId32" "
+		       "mult=%02" PRId32" "
 
-		       "dh=0x%02"XINT32" "
-		       "rs=%"INT32"" //recSize
+		       "dh=0x%02" PRIx32" "
+		       "rs=%" PRId32 //recSize
 		       "%s" // dd
 		       "%s" // err
 		       "\n" ,

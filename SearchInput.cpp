@@ -94,7 +94,7 @@ void SearchInput::test ( ) {
 		}
 		if ( ! name ) continue;
 		log("query: Got uncovered SearchInput parm at offset "
-		    "%"INT32" in SearchInput. name=%s.",off,name);
+		    "%" PRId32" in SearchInput. name=%s.",off,name);
 	}
 }
 
@@ -533,7 +533,7 @@ bool SearchInput::setQueryBuffers ( HttpRequest *hr ) {
 		timestamp -= m_secsBack;
 		if ( timestamp <= 0 ) timestamp = 0;
 		if ( m_sbuf1.length() ) m_sbuf1.pushChar(' ');
-		m_sbuf1.safePrintf("gbminint:gbspiderdate:%"UINT32"",timestamp);
+		m_sbuf1.safePrintf("gbminint:gbspiderdate:%" PRIu32,timestamp);
 	}
 
 	if ( m_sortBy == 1 ) {
@@ -559,8 +559,8 @@ bool SearchInput::setQueryBuffers ( HttpRequest *hr ) {
 	if( gblang >= 0 ) {
 	 	if ( m_sbuf1.length() ) m_sbuf1.pushChar(' ');
 	 	if ( m_sbuf2.length() ) m_sbuf2.pushChar(' ');
-	 	m_sbuf1.safePrintf( "+gblang:%"INT32"", gblang );
-	 	m_sbuf2.safePrintf( "+gblang:%"INT32"", gblang );
+		m_sbuf1.safePrintf( "+gblang:%" PRId32, gblang );
+		m_sbuf2.safePrintf( "+gblang:%" PRId32, gblang );
 		if ( ! boolq ) {
 			m_sbuf1.safeStrcpy(" |");
 			m_sbuf2.safeStrcpy(" |");

@@ -103,8 +103,8 @@ size_t UCPropTable::serialize(char *buf, size_t bufSize) {
 	// sanity check
 	if (p != buf + size)
 		return log(LOG_WARN,
-			   "UCPropTable: size mismatch: expected %"INT32" bytes, "
-			   "but wrote %"INT32" instead", (int32_t)size, (int32_t)(p-buf));
+			   "UCPropTable: size mismatch: expected %" PRId32" bytes, "
+			   "but wrote %" PRId32" instead", (int32_t)size, (int32_t)(p-buf));
 	return p-buf;
 }
 
@@ -150,6 +150,6 @@ size_t UCPropTable::deserialize(char *buf, size_t bufSize) {
 		//printf ("Read %d bytes after table %d\n", p-buf, prefix);
 	}
 	// shouldn't get here
-	log("UCPropTable: read %"INT32" too many bytes\n", (int32_t)(p-(buf+size)));
+	log("UCPropTable: read %" PRId32" too many bytes\n", (int32_t)(p-(buf+size)));
 	return 0;
 }

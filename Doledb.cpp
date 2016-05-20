@@ -114,7 +114,7 @@ void nukeDoledb ( collnum_t collnum ) {
 	}
 
 	// note it
-	log("spider: finished nuking doledb for coll (%"INT32")",
+	log("spider: finished nuking doledb for coll (%" PRId32")",
 	    (int32_t)collnum);
 }
 

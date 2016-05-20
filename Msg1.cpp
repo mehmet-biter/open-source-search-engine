@@ -39,7 +39,7 @@ Msg1 *getMsg1 ( ) {
 	int32_t i = s_head;
 	s_head = s_next [ s_head ];
 	// debug msg
-	//log("got mcast=%"INT32"",(int32_t)(&s_msg1[i].m_mcast));
+	//log("got mcast=%" PRId32,(int32_t)(&s_msg1[i].m_mcast));
 	return &s_msg1[i];
 }
 void returnMsg1 ( void *state ) {
@@ -47,7 +47,7 @@ void returnMsg1 ( void *state ) {
 	// free this if we have to
 	msg1->m_ourList.freeList();
 	// debug msg
-	//log("return mcast=%"INT32"",(int32_t)(&msg1->m_mcast));
+	//log("return mcast=%" PRId32,(int32_t)(&msg1->m_mcast));
 	int32_t i = msg1 - s_msg1;
 	if ( i < 0 || i > MAX_MSG1S ) {
 		log(LOG_LOGIC,"net: msg1: Major problem adding data."); 
@@ -185,7 +185,7 @@ bool Msg1::addList ( RdbList      *list              ,
 		// is false, but the request may still be in transit
 		if ( inTransit ) return true;
 		// debug msg
-		//log("did not block, listSize=%"INT32"",m->m_ourList.m_listSize);
+		//log("did not block, listSize=%" PRId32,m->m_ourList.m_listSize);
 		// we did it without blocking, but it is still in transit
 		// unless there was an error
 		if ( g_errno ) log("net: Adding data to %s had error: %s.",
@@ -237,7 +237,7 @@ bool Msg1::sendSomeOfList ( ) {
 	     m_list->m_ks != 24 ) { 
 		char *xx=NULL;*xx=0; }
 	// debug msg
-	//log("sendSomeOfList: mcast=%"UINT32" exhausted=%"INT32"",
+	//log("sendSomeOfList: mcast=%" PRIu32" exhausted=%" PRId32,
 	//    (int32_t)&m_mcast,(int32_t)m_list->isExhausted());
  loop:
 	// return true if list exhausted and nothing left to add
@@ -302,7 +302,7 @@ bool Msg1::sendSomeOfList ( ) {
 		// make the groupId local, our group
 		//groupId = g_hostdb.m_groupId;
 		// bitch about this to log it
-		log("net: Data does not belong in shard %"UINT32", but adding "
+		log("net: Data does not belong in shard %" PRIu32", but adding "
 		    "to %s anyway. Probable data corruption.",
 		    (uint32_t)shardNum,getDbnameFromId(m_rdbId));
 	}
@@ -329,7 +329,7 @@ bool Msg1::sendSomeOfList ( ) {
 // . sets g_errno on error
 bool Msg1::sendData ( uint32_t shardNum, char *listData , int32_t listSize) {
 	// debug msg
-	//log("sendData: mcast=%"UINT32" listSize=%"INT32"",
+	//log("sendData: mcast=%" PRIu32" listSize=%" PRId32,
 	//    (int32_t)&m_mcast,(int32_t)listSize);
 
 	// bail if this is an interface machine, don't write to the main
@@ -399,7 +399,7 @@ bool Msg1::sendData ( uint32_t shardNum, char *listData , int32_t listSize) {
 			   rdb->useHalfKeys()      ,
 			   ks                      ); 
 		// note that
-		//log("msg1: local addlist niceness=%"INT32"",m_niceness);
+		//log("msg1: local addlist niceness=%" PRId32,m_niceness);
 		// this returns false and sets g_errno on error
 		rdb->addList ( m_coll , &list , m_niceness );
 		// if titledb, add tfndb recs to map the title recs
@@ -464,7 +464,7 @@ skip:
 	// for small packets
 	//int32_t niceness = 2;
 	//if ( requestLen < TMPBUFSIZE - 32 ) niceness = 0;
-	//log("msg1: sending mcast niceness=%"INT32"",m_niceness);
+	//log("msg1: sending mcast niceness=%" PRId32,m_niceness);
 	// . multicast to all hosts in group "groupId"
 	// . multicast::send() returns false and sets g_errno on error
 	// . we return false if we block, true otherwise
@@ -498,7 +498,7 @@ skip:
  	QUICKPOLL(m_niceness);
 	// g_errno should be set
 	log("net: Had error when sending request to add data to %s in shard "
-	    "#%"UINT32": %s.", getDbnameFromId(m_rdbId),shardNum,mstrerror(g_errno));
+	    "#%" PRIu32": %s.", getDbnameFromId(m_rdbId),shardNum,mstrerror(g_errno));
 	return true;	
 }
 
@@ -523,7 +523,7 @@ void gotReplyWrapper1 ( void *state , void *state2 ) {
 		if ( THIS->m_callback ) THIS->m_callback ( THIS->m_state ); 
 		//if(g_conf.m_profilingEnabled){
 		//	if(!g_profiler.endTimer(address, __PRETTY_FUNCTION__))
-		//		log(LOG_WARN,"admin: Couldn't add the fn %"INT32"",
+		//		log(LOG_WARN,"admin: Couldn't add the fn %" PRId32,
 		//		    (int32_t)address);
 		//}
 
@@ -537,7 +537,7 @@ void gotReplyWrapper1 ( void *state , void *state2 ) {
 		if ( THIS->m_callback ) THIS->m_callback ( THIS->m_state ); 
 		//if(g_conf.m_profilingEnabled){
 		//	if(!g_profiler.endTimer(address, __PRETTY_FUNCTION__))
-		//		log(LOG_WARN,"admin: Couldn't add the fn %"INT32"",
+		//		log(LOG_WARN,"admin: Couldn't add the fn %" PRId32,
 		//		    (int32_t)address);
 		//}
 		return; 
@@ -609,8 +609,8 @@ void handleRequest1 ( UdpSlot *slot , int32_t netnice ) {
 		   rdb->useHalfKeys()      ,
 		   rdb->getKeySize ()      ); 
 	// note it
-	//log("msg1: handlerequest1 calling addlist niceness=%"INT32"",niceness);
-	//log("msg1: handleRequest1 niceness=%"INT32"",niceness);
+	//log("msg1: handlerequest1 calling addlist niceness=%" PRId32,niceness);
+	//log("msg1: handleRequest1 niceness=%" PRId32,niceness);
 	// this returns false and sets g_errno on error
 	rdb->addList ( collnum , &list , niceness);
 	// if titledb, add tfndb recs to map the title recs

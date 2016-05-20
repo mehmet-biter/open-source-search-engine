@@ -129,7 +129,7 @@ void doneReindexing ( void *state ) {
 		sb.safePrintf("<response>\n"
 			      "\t<statusCode>0</statusCode>\n"
 			      "\t<statusMsg>Success</statusMsg>\n"
-			      "\t<matchingResults>%"INT32"</matchingResults>\n"
+			      "\t<matchingResults>%" PRId32"</matchingResults>\n"
 			      "</response>"
 			      , st->m_msg1c.m_numDocIdsAdded
 			      );
@@ -147,7 +147,7 @@ void doneReindexing ( void *state ) {
 		sb.safePrintf("{\"response\":{\n"
 			      "\t\"statusCode\":0,\n"
 			      "\t\"statusMsg\":\"Success\",\n"
-			      "\t\"matchingResults\":%"INT32"\n"
+			      "\t\"matchingResults\":%" PRId32"\n"
 			      "}\n"
 			      "}\n"
 			      , st->m_msg1c.m_numDocIdsAdded
@@ -178,7 +178,7 @@ void doneReindexing ( void *state ) {
 
 	if ( gr->m_query && gr->m_query[0] && ! g_errno )
 		sb.safePrintf ( "<center><font color=red><b>Success. "
-			  "Added %"INT32" docid(s) to "
+			  "Added %" PRId32" docid(s) to "
 			  "spider queue.</b></font></center><br>" , 
 			  st->m_msg1c.m_numDocIdsAdded );
 
@@ -266,7 +266,7 @@ bool Msg1c::reindexQuery ( char *query ,
 	//m_req.m_debug = 1;
 
 	// log for now
-	logf(LOG_DEBUG,"reindex: qlangid=%"INT32" q=%s",langId,query);
+	logf(LOG_DEBUG,"reindex: qlangid=%" PRId32" q=%s",langId,query);
 
 	g_errno = 0;
 	// . get the docIds
@@ -307,7 +307,7 @@ bool Msg1c::gotList ( ) {
 
 	m_numDocIds = numDocIds; // save for reporting
 	// log it
-	log(LOG_INFO,"admin: Got %"INT32" docIds for query reindex.", numDocIds);
+	log(LOG_INFO,"admin: Got %" PRId32" docIds for query reindex.", numDocIds);
 	// bail if no need
 	if ( numDocIds <= 0 ) return true;
 
@@ -340,7 +340,7 @@ bool Msg1c::gotList ( ) {
 		sr.reset();
 
 		// url is a docid!
-		sprintf ( sr.m_url , "%"UINT64"" , docId );
+		sprintf ( sr.m_url , "%" PRIu64 , docId );
 
 		// make a fake first ip
 		// use only 64k values so we don't stress doledb/waittrees/etc.
@@ -405,7 +405,7 @@ bool Msg1c::gotList ( ) {
 			if ( ! g_errno ) { char *xx=NULL;*xx=0; }
 
 			log(LOG_LOGIC,
-			    "admin: Query reindex size of %"INT32" "
+			    "admin: Query reindex size of %" PRId32" "
 			    "too big. Aborting. Bad engineer." , 
 			    (int32_t)0);//m_list.getListSize() );
 			return true;

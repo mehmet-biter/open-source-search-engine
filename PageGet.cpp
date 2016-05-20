@@ -324,7 +324,7 @@ bool processLoop ( void *state ) {
 	// get this host
 	Host *h = g_hostdb.getHost ( g_hostdb.m_hostId );
 	if ( ! h ) {
-		log("pageget: hostid %"INT32" is bad",g_hostdb.m_hostId);
+		log("pageget: hostid %" PRId32" is bad",g_hostdb.m_hostId);
 		return sendErrorReply(st,EBADENGINEER );
 	}
 
@@ -475,8 +475,8 @@ bool processLoop ( void *state ) {
 		// Moved over from PageResults.cpp
 		sb->safePrintf( "</span> - <a href=\""
 			      "/get?"
-			      "q=%s&amp;c=%s&amp;rtq=%"INT32"&amp;"
-			      "d=%"INT64"&amp;strip=1\""
+			      "q=%s&amp;c=%s&amp;rtq=%" PRId32"&amp;"
+			      "d=%" PRId64"&amp;strip=1\""
 			      " style=\"%s\">"
 			      "[stripped]</a>", 
 			      q , st->m_coll , 
@@ -532,7 +532,7 @@ bool processLoop ( void *state ) {
 	uint32_t  ip   = h->m_ip;
 	uint16_t port = h->m_httpPort;
 	//}
-	//sprintf ( x , "http://%s:%"INT32"/get?q=" , iptoa ( ip ) , port );
+	//sprintf ( x , "http://%s:%" PRId32"/get?q=" , iptoa ( ip ) , port );
 	// . we no longer put the port in here
 	// . but still need http:// since we use <base href=>
 	if (port == 80) sprintf(x,"http://%s/get?q=",iptoa(ip));
@@ -542,9 +542,9 @@ bool processLoop ( void *state ) {
 	int32_t elen = urlEncode ( x , thisUrlEnd - x , q , qlen );
 	x += elen;
 	// separate cgi vars with a &
-	//sprintf ( x, "&seq=%"INT32"&rtq=%"INT32"d=%"INT64"",
+	//sprintf ( x, "&seq=%" PRId32"&rtq=%" PRId32"d=%" PRId64,
 	//	  (int32_t)st->m_seq,(int32_t)st->m_rtq,st->m_msg22.getDocId());
-	sprintf ( x, "&d=%"INT64"",st->m_docId );
+	sprintf ( x, "&d=%" PRId64,st->m_docId );
 	x += gbstrlen(x);		
 	// set our query for highlighting
 	Query qq;
@@ -604,8 +604,8 @@ bool processLoop ( void *state ) {
 		sb->safePrintf("<url><![CDATA[");
 		sb->cdataEncode(xd->m_firstUrl.getUrl());
 		sb->safePrintf("]]></url>\n");
-		sb->safePrintf("<docId>%"UINT64"</docId>\n",xd->m_docId);
-		sb->safePrintf("\t<cachedTimeUTC>%"INT32"</cachedTimeUTC>\n",
+		sb->safePrintf("<docId>%" PRIu64"</docId>\n",xd->m_docId);
+		sb->safePrintf("\t<cachedTimeUTC>%" PRId32"</cachedTimeUTC>\n",
 			       (int32_t)lastSpiderDate);
 		sb->safePrintf("\t<cachedTimeStr>%s</cachedTimeStr>\n",tbuf);
 	}
@@ -617,8 +617,8 @@ bool processLoop ( void *state ) {
 		sb->safePrintf("\t\"url\":\"");
 		sb->jsonEncode(xd->m_firstUrl.getUrl());
 		sb->safePrintf("\",\n");
-		sb->safePrintf("\t\"docId\":%"UINT64",\n",xd->m_docId);
-		sb->safePrintf("\t\"cachedTimeUTC\":%"INT32",\n",
+		sb->safePrintf("\t\"docId\":%" PRIu64",\n",xd->m_docId);
+		sb->safePrintf("\t\"cachedTimeUTC\":%" PRId32",\n",
 			       (int32_t)lastSpiderDate);
 		sb->safePrintf("\t\"cachedTimeStr\":\"%s\",\n",tbuf);
 	}
@@ -701,7 +701,7 @@ bool processLoop ( void *state ) {
 				       "color:#000000;\" "
 				       "href=\""
 				       "/get?"
-				       "c=%s&d=%"INT64"&qh=0&cnsp=1&eb=%s\">"
+				       "c=%s&d=%" PRId64"&qh=0&cnsp=1&eb=%s\">"
 				       "cached link</a>"
 				       " &nbsp; "
 				       "<a "

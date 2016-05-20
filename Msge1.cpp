@@ -357,7 +357,7 @@ bool Msge1::doneSending ( int32_t i ) {
 	int32_t ip = m_ipBuf[n];
 	// what is this?
 	//if ( ip == 3 ) { char *xx=NULL;*xx=0; }
-	//log ( LOG_DEBUG, "build: Finished Msge1 for url [%"INT32",%"INT32"]: %s ip=%s",
+	//log ( LOG_DEBUG, "build: Finished Msge1 for url [%" PRId32",%" PRId32"]: %s ip=%s",
 	//      n, i,  m_urls[i].getUrl() ,iptoa(ip));
 
 	// store it?
@@ -521,7 +521,7 @@ bool getTestIp ( char *url , int32_t *retIp , bool *found , int32_t niceness ,
 		// error?
 		if ( ! s_testBuf ) {
 			// note it
-			log("test: failed to alloc %"INT32" bytes for ip buf",need);
+			log("test: failed to alloc %" PRId32" bytes for ip buf",need);
 			// error out
 			return false;
 		}
@@ -536,7 +536,7 @@ bool getTestIp ( char *url , int32_t *retIp , bool *found , int32_t niceness ,
 			// check it
 			if ( rs != fsize ) {
 				// note it
-				log("test: failed to read %"INT32" bytes of "
+				log("test: failed to read %" PRId32" bytes of "
 				    "./%s/ips.txt file",fsize,testDir);
 				// close it
 				f.close();
@@ -689,7 +689,7 @@ bool saveTestBuf ( char *testDir ) {
 	f.close();
 	// bitch?
 	if ( ws != size ) 
-		return log("test: failed to write %"INT32" bytes to %s",size,fn);
+		return log("test: failed to write %" PRId32" bytes to %s",size,fn);
 	// note it
 	log("test: saved ips.txt");
 	// ok

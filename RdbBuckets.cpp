@@ -456,14 +456,14 @@ bool RdbBucket::selfTest (char* prevKey) {
 	}
 
  	for(int32_t i = 0; i < m_numKeys; i++) {
-//log(LOG_WARN, "rdbbuckets last key: ""%016" PRIx64"%08" PRIx32" num keys: %" PRId32"",
+//log(LOG_WARN, "rdbbuckets last key: ""%016" PRIx64"%08" PRIx32" num keys: %" PRId32,
 //   *(int64_t*)(kk+(sizeof(int32_t))), *(int32_t*)kk, m_numKeys);
 		if(i > 0 && KEYCMP(last, kk, ks) > 0) {
 			log(LOG_WARN, "db: bucket's last key was out "
 			    "of order!!!!!"
-			    "key was: %016" PRIx64"%08" PRIx32" vs prev: %016" PRIx64"%08" PRIx32""
-			    " num keys: %" PRId32""
-			    " ks=%" PRId32" bucketNum=%" PRId32"",
+			    "key was: %016" PRIx64"%08" PRIx32" vs prev: %016" PRIx64"%08" PRIx32
+			    " num keys: %" PRId32
+			    " ks=%" PRId32" bucketNum=%" PRId32,
 			    *(int64_t*)(kk+(sizeof(int32_t))), *(int32_t*)kk, 
 			    *(int64_t*)(last+(sizeof(int32_t))), *(int32_t*)last, 
 			    m_numKeys, ks, i);
@@ -488,7 +488,7 @@ void RdbBucket::printBucket() {
 	int32_t recSize = m_parent->getRecSize();
  	for(int32_t i = 0; i < m_numKeys;i++) {
 		log(LOG_WARN, "rdbbuckets last key: ""%016" PRIx64"%08" PRIx32" num "
-		    "keys: %" PRId32"",
+		    "keys: %" PRId32,
  		    *(int64_t*)(kk+(sizeof(int32_t))), *(int32_t*)kk, m_numKeys);
 		kk += recSize;
 	}
@@ -553,7 +553,7 @@ bool RdbBuckets::set( int32_t fixedDataSize , int32_t maxMem, bool ownData, cons
 	}
 	
 	// log("init: Successfully initialized buckets for %s, "
-	//     "keysize is %" PRId32", max mem is %" PRId32", datasize is %" PRId32"",
+	//     "keysize is %" PRId32", max mem is %" PRId32", datasize is %" PRId32,
 	//     m_dbname, (int32_t)m_ks, m_maxMem, m_fixedDataSize);
 
 
@@ -675,7 +675,7 @@ bool RdbBuckets::resizeTable( int32_t numNeeded ) {
 		if( m_maxBucketsCapacity <= m_maxBuckets ) {
 			log(LOG_INFO, "db: could not resize buckets currently have %" PRId32" "
 			    "buckets, asked for %" PRId32", max number of buckets"
-			    " for %" PRId32" bytes with keysize %" PRId32" is %" PRId32"",
+			    " for %" PRId32" bytes with keysize %" PRId32" is %" PRId32,
 			    m_maxBuckets, numNeeded, m_maxMem, (int32_t)m_ks,
 			    m_maxBucketsCapacity);
 			g_errno = ENOMEM;
@@ -747,7 +747,7 @@ bool RdbBuckets::resizeTable( int32_t numNeeded ) {
 	if(bucketMemPtr != m_swapBuf) {char* xx = NULL; *xx = 0;}
 
 // 	log(LOG_WARN, "new size = %" PRId32", old size = %" PRId32", newMemUsed = %" PRId32" "
-// 	    "oldMemUsed = %" PRId32"",
+// 	    "oldMemUsed = %" PRId32,
 // 	    numNeeded, m_maxBuckets, newMasterSize, m_masterSize);
 
 	if ( m_masterPtr ) {
@@ -903,7 +903,7 @@ bool RdbBuckets::getList ( collnum_t collnum ,
 	else endBucket = getBucketNum(endKey, collnum);
 	if(endBucket == m_numBuckets ||
 	   m_buckets[endBucket]->getCollnum() != collnum) endBucket--;
-	//log(LOG_WARN, "db numBuckets %" PRId32" start %" PRId32" end %" PRId32"",
+	//log(LOG_WARN, "db numBuckets %" PRId32" start %" PRId32" end %" PRId32,
 	//m_numBuckets, startBucket, endBucket);
 	if(m_buckets[endBucket]->getCollnum() != collnum) {
 		char* xx = NULL; *xx = 0;
@@ -1006,7 +1006,7 @@ int RdbBuckets::getListSizeExact ( collnum_t collnum ,
 	if(endBucket == m_numBuckets ||
 	   m_buckets[endBucket]->getCollnum() != collnum) endBucket--;
 
-	//log(LOG_WARN, "db numBuckets %" PRId32" start %" PRId32" end %" PRId32"",
+	//log(LOG_WARN, "db numBuckets %" PRId32" start %" PRId32" end %" PRId32,
 	//m_numBuckets, startBucket, endBucket);
 	if(m_buckets[endBucket]->getCollnum() != collnum) {
 		char* xx = NULL; *xx = 0; }
@@ -1109,13 +1109,13 @@ bool RdbBuckets::selfTest(bool thorough, bool core) {
 		totalNumKeys += b->getNumKeys();
 		char* kk = b->getEndKey();
 		//log(LOG_WARN, "rdbbuckets last key: ""%016" PRIx64"%08" PRIx32" "
-		//"num keys: %" PRId32"",
+		//"num keys: %" PRId32,
 		//*(int64_t*)(kk+(sizeof(int32_t))),*(int32_t*)kk,b->getNumKeys());
 		if(i > 0 &&
 		   lastcoll == b->getCollnum() && 
 		   KEYCMPNEGEQ(last, kk,m_ks) >= 0) {
 			log(LOG_WARN, "rdbbuckets last key: "
-			    "%016" PRIx64"%08" PRIx32" num keys: %" PRId32"",
+			    "%016" PRIx64"%08" PRIx32" num keys: %" PRId32,
 			    *(int64_t*)(kk+(sizeof(int32_t))),
 			    *(int32_t*)kk, b->getNumKeys());
 			log(LOG_WARN, "rdbbuckets last key was out "
@@ -1354,7 +1354,7 @@ bool RdbBucket::getList(RdbList* list,
 	}
 	else end = m_numKeys - 1;
 
-	//log(LOG_WARN, "numKeys %" PRId32" start %" PRId32" end %" PRId32"",
+	//log(LOG_WARN, "numKeys %" PRId32" start %" PRId32" end %" PRId32,
 	//m_numKeys, start, end);
 	
 	//keep track of our negative a positive recs
@@ -1412,7 +1412,7 @@ bool RdbBucket::getList(RdbList* list,
 			    "  it is < startkey."
 			    "  %016" PRIx64"%08" PRIx32" %016" PRIx64"%08" PRIx32"."
 			    "  getting keys %" PRId32" to %" PRId32" for list"
-			    "bounded by %016" PRIx64"%08" PRIx32" %016" PRIx64"%08" PRIx32"",
+			    "bounded by %016" PRIx64"%08" PRIx32" %016" PRIx64"%08" PRIx32,
 			    *(int64_t*)(startKey+(sizeof(int32_t))),
 			    *(int32_t*)startKey,
 			    *(int64_t*)(currKey+(sizeof(int32_t))),
@@ -1432,7 +1432,7 @@ bool RdbBucket::getList(RdbList* list,
 			    "  it is > endkey"
 			    "  %016" PRIx64"%08" PRIx32" %016" PRIx64"%08" PRIx32"."
 			    "  getting keys %" PRId32" to %" PRId32" for list"
-			    "bounded by %016" PRIx64"%08" PRIx32" %016" PRIx64"%08" PRIx32"",
+			    "bounded by %016" PRIx64"%08" PRIx32" %016" PRIx64"%08" PRIx32,
 			    *(int64_t*)(currKey+(sizeof(int32_t))),
 			    *(int32_t*)currKey,
 			    *(int64_t*)(endKey+(sizeof(int32_t))),
@@ -1635,7 +1635,7 @@ bool RdbBuckets::deleteList(collnum_t collnum, RdbList *list) {
 	int32_t endBucket = getBucketNum(endKey, collnum);
 	if(endBucket == m_numBuckets ||
 	   m_buckets[endBucket]->getCollnum() != collnum) endBucket--;
-	//log(LOG_WARN, "db numBuckets %" PRId32" start %" PRId32" end %" PRId32"",
+	//log(LOG_WARN, "db numBuckets %" PRId32" start %" PRId32" end %" PRId32,
 	//  m_numBuckets, startBucket, endBucket);
 
 	list->resetListPtr();
@@ -1904,7 +1904,7 @@ int64_t RdbBuckets::getListSize ( collnum_t collnum,
 
 	if(endBucket == m_numBuckets ||
 	   m_buckets[endBucket]->getCollnum() != collnum) endBucket--;
-	//log(LOG_WARN, "db numBuckets %" PRId32" start %" PRId32" end %" PRId32"",
+	//log(LOG_WARN, "db numBuckets %" PRId32" start %" PRId32" end %" PRId32,
 	//m_numBuckets, startBucket, endBucket);
 
 	int64_t retval = 0;
@@ -2148,7 +2148,7 @@ int64_t RdbBuckets::fastLoadColl( BigFile *f, char *dbname, int64_t offset ) {
 
 	if(bucketSize != BUCKET_SIZE) {
 		log( LOG_ERROR, "db: It appears you have changed the bucket size please restart the old executable and dump "
-		     "buckets to disk. old=%" PRId32" new=%" PRId32"", bucketSize, (int32_t)BUCKET_SIZE);
+		     "buckets to disk. old=%" PRId32" new=%" PRId32, bucketSize, (int32_t)BUCKET_SIZE);
 		char *xx = NULL; *xx = 0;
 	}
 

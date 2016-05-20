@@ -104,7 +104,7 @@ void Matches::setQuery ( Query *q ) {
 		// don't breach. MDW: i made this >= from > (2/11/09)
 		if ( numToMatch < MAX_QUERY_WORDS_TO_MATCH ) continue;
 		// note it
-		log("matches: hit %"INT32" max query words to match limit",
+		log("matches: hit %" PRId32" max query words to match limit",
 		    (int32_t)MAX_QUERY_WORDS_TO_MATCH);
 		break;
 	}

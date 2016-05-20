@@ -53,15 +53,15 @@ bool SpiderLoop::printLockTable ( ) {
 		int64_t lockKey = *(int64_t *)ht->getKeyFromSlot(i);
 		// show it
 		log("dump: lock. "
-		    "lockkey=%"INT64" "
-		    "spiderout=%"INT32" "
-		    "confirmed=%"INT32" "
+		    "lockkey=%" PRId64" "
+		    "spiderout=%" PRId32" "
+		    "confirmed=%" PRId32" "
 		    "firstip=%s "
-		    "expires=%"INT32" "
-		    "hostid=%"INT32" "
-		    "timestamp=%"INT32" "
-		    "sequence=%"INT32" "
-		    "collnum=%"INT32" "
+		    "expires=%" PRId32" "
+		    "hostid=%" PRId32" "
+		    "timestamp=%" PRId32" "
+		    "sequence=%" PRId32" "
+		    "collnum=%" PRId32" "
 		    ,lockKey
 		    ,(int32_t)(lock->m_spiderOutstanding)
 		    ,(int32_t)(lock->m_confirmed)
@@ -251,7 +251,7 @@ void doneSleepingWrapperSL ( int fd , void *state ) {
 		// match most likely
 		if ( tr != nextActive ) {
 			// this shouldn't happen much so log it
-			log("spider: collnum %"INT32" got deleted. rebuilding active list", (int32_t)nextActiveCollnum);
+			log("spider: collnum %" PRId32" got deleted. rebuilding active list", (int32_t)nextActiveCollnum);
 
 			// rebuild the active list now
 			nextActive = g_spiderLoop.getActiveList();
@@ -286,7 +286,7 @@ void doneSleepingWrapperSL ( int fd , void *state ) {
 			// if a scan is ongoing, this will re-set it
 			sc->m_nextKey2.setMin();
 			sc->m_waitingTreeNeedsRebuild = true;
-			log( LOG_INFO, "spider: hit spider queue rebuild timeout for %s (%"INT32")",
+			log( LOG_INFO, "spider: hit spider queue rebuild timeout for %s (%" PRId32")",
 			     crp->m_coll, (int32_t)crp->m_collnum );
 		}
 
@@ -701,7 +701,7 @@ subloopNextPriority:
 		}
 	}
 
-	logTrace( g_conf.m_logTraceSpider, "maxSpiders: %"INT32"" , maxSpiders );
+	logTrace( g_conf.m_logTraceSpider, "maxSpiders: %" PRId32 , maxSpiders );
 
 	// if some spiders are currently outstanding
 	if ( m_sc->m_spidersOut ) {
@@ -947,8 +947,8 @@ bool SpiderLoop::gotDoledbList2 ( ) {
 		int64_t took = now - m_doleStart;
 		if ( took > 2 )
 			logf(LOG_DEBUG,"spider: GOT list from doledb in "
-			     "%"INT64"ms "
-			     "size=%"INT32" bytes",
+			     "%" PRId64"ms "
+			     "size=%" PRId32" bytes",
 			     took,m_list.getListSize());
 	}
 
@@ -1029,7 +1029,7 @@ bool SpiderLoop::gotDoledbList2 ( ) {
 
 	if ( g_conf.m_logDebugSpider ) {
 		int32_t pri4 = g_doledb.getPriority ( &m_sc->m_nextDoledbKey );
-		log( LOG_DEBUG, "spider: setting pri2=%"INT32" queue doledb nextkey to %s (pri=%"INT32")",
+		log( LOG_DEBUG, "spider: setting pri2=%" PRId32" queue doledb nextkey to %s (pri=%" PRId32")",
 		     m_sc->m_pri2, KEYSTR(&m_sc->m_nextDoledbKey,12), pri4 );
 	}
 
@@ -1176,7 +1176,7 @@ skipDoledbRec:
 	}
 
 	if ( g_conf.m_logDebugSpider ) {
-		log( LOG_DEBUG, "spider: %"INT32" spiders out for %s for %s", ipOut, iptoa( sreq->m_firstIp ), sreq->m_url );
+		log( LOG_DEBUG, "spider: %" PRId32" spiders out for %s for %s", ipOut, iptoa( sreq->m_firstIp ), sreq->m_url );
 	}
 
 	// sometimes we have it locked, but is still in doledb i guess.
@@ -1202,7 +1202,7 @@ skipDoledbRec:
 		static int32_t s_lastTime = 0;
 		if ( nowGlobal - s_lastTime >= 2 ) {
 			// why is it not getting unlocked!?!?!
-			log( "spider: spider request locked but still in doledb. uh48=%"INT64" firstip=%s %s",
+			log( "spider: spider request locked but still in doledb. uh48=%" PRId64" firstip=%s %s",
 			     sreq->getUrlHash48(), iptoa(sreq->m_firstIp), sreq->m_url );
 			s_lastTime = nowGlobal;
 		}
@@ -1239,7 +1239,7 @@ skipDoledbRec:
 
 	// if we thought we were done, note it if something comes back up
 	if ( ! ci->m_hasUrlsReadyToSpider ) 
-		log("spider: got a reviving url for coll %s (%"INT32") to crawl %s",
+		log("spider: got a reviving url for coll %s (%" PRId32") to crawl %s",
 		    cr->m_coll,(int32_t)cr->m_collnum,sreq->m_url);
 
 	// if changing status, resend our local crawl info to all hosts?
@@ -1418,7 +1418,7 @@ bool SpiderLoop::spiderUrl9 ( SpiderRequest *sreq ,
 		// don't spam the log, bug let people know about it
 		if ( now - s_lastTime > 10 ) {
 			log("spider: Need 25MB of free mem to launch spider, "
-			    "only have %"INT64". Failed to launch %"INT32" times so "
+			    "only have %" PRId64". Failed to launch %" PRId32" times so "
 			    "far.", g_conf.m_maxMem - g_mem.m_used , s_missed );
 			s_lastTime = now;
 		}
@@ -1507,7 +1507,7 @@ bool SpiderLoop::spiderUrl9 ( SpiderRequest *sreq ,
 	// the lockTable check above because we do not control our own
 	// lock now necessarily. it often is in another group's lockTable.
 	//if ( g_spiderLoop.m_lockTable.isInTable(&lockKey) ) {
-	//	log("spider: already have lock for lockKey=%"UINT64"",lockKey);
+	//	log("spider: already have lock for lockKey=%" PRIu64,lockKey);
 	//	// proceed
 	//	return spiderUrl2();
 	//}
@@ -1521,7 +1521,7 @@ bool SpiderLoop::spiderUrl9 ( SpiderRequest *sreq ,
 							true);
 
 	if ( g_conf.m_logDebugSpider )
-		log("spider: deleting doledb tree node %"INT32,node);
+		log("spider: deleting doledb tree node %" PRId32,node);
 
 	// if url filters rebuilt then doledb gets reset and i've seen us hit
 	// this node == -1 condition here... so maybe ignore it... just log
@@ -1577,7 +1577,7 @@ bool SpiderLoop::spiderUrl9 ( SpiderRequest *sreq ,
 	tmp.m_confirmed = 1;
 	tmp.m_collnum = m_collnum;
 	if ( g_conf.m_logDebugSpider )
-		log("spider: adding lock uh48=%"INT64" lockkey=%"INT64"",
+		log("spider: adding lock uh48=%" PRId64" lockkey=%" PRId64,
 		    m_sreq->getUrlHash48(),lockKeyUh48);
 	if ( ! ht->addKey ( &lockKeyUh48 , &tmp ) )
 		return true;
@@ -1606,7 +1606,7 @@ bool SpiderLoop::spiderUrl2 ( ) {
 
 	// come back later if we're full
 	if ( i >= MAX_SPIDERS ) {
-		log(LOG_DEBUG,"build: Already have %"INT32" outstanding spiders.",
+		log(LOG_DEBUG,"build: Already have %" PRId32" outstanding spiders.",
 		    (int32_t)MAX_SPIDERS);
 		char *xx = NULL; *xx = 0;
 	}
@@ -1620,7 +1620,7 @@ bool SpiderLoop::spiderUrl2 ( ) {
 	// bail on failure, sleep and try again
 	catch ( ... ) { 
 		g_errno = ENOMEM;
-		log("build: Could not allocate %"INT32" bytes to spider "
+		log("build: Could not allocate %" PRId32" bytes to spider "
 		    "the url %s. Will retry later.",
 		    (int32_t)sizeof(XmlDoc),  m_sreq->m_url );
 		    
@@ -1660,13 +1660,13 @@ bool SpiderLoop::spiderUrl2 ( ) {
 	//	// for now core on this
 	//	if ( ! sreq2 ) {  char *xx=NULL;*xx=0; }
 	//	// log it
-	//	logf(LOG_DEBUG,"spider: spidering uh48=%"UINT64" pdocid=%"UINT64"",
+	//	logf(LOG_DEBUG,"spider: spidering uh48=%" PRIu64" pdocid=%" PRIu64,
 	//	     uh48,pdocid);
 	//}
 
 	if ( g_conf.m_logDebugSpider )
-		logf(LOG_DEBUG,"spider: spidering firstip9=%s(%"UINT32") "
-		     "uh48=%"UINT64" prntdocid=%"UINT64" k.n1=%"UINT64" k.n0=%"UINT64"",
+		logf(LOG_DEBUG,"spider: spidering firstip9=%s(%" PRIu32") "
+		     "uh48=%" PRIu64" prntdocid=%" PRIu64" k.n1=%" PRIu64" k.n0=%" PRIu64,
 		     iptoa(m_sreq->m_firstIp),
 		     (uint32_t)m_sreq->m_firstIp,
 		     m_sreq->getUrlHash48(),
@@ -1744,14 +1744,14 @@ bool SpiderLoop::spiderUrl2 ( ) {
 	m_sc->m_outstandingSpiders[(unsigned char)m_sreq->m_priority]++;
 
 	if ( g_conf.m_logDebugSpider )
-		log(LOG_DEBUG,"spider: sc_out=%"INT32" waiting=%"INT32" url=%s",
+		log(LOG_DEBUG,"spider: sc_out=%" PRId32" waiting=%" PRId32" url=%s",
 		    m_sc->m_spidersOut,
 		    m_sc->m_waitingTree.m_numUsedNodes,
 		    m_sreq->m_url);
 
 
 	// debug log
-	//log("XXX: incremented count to %"INT32" for %s",
+	//log("XXX: incremented count to %" PRId32" for %s",
 	//    m_sc->m_spidersOut,m_sreq->m_url);
 	//if ( m_sc->m_spidersOut != m_numSpidersOut ) { char *xx=NULL;*xx=0; }
 
@@ -1859,7 +1859,7 @@ bool SpiderLoop::indexedDoc ( XmlDoc *xd ) {
 	if ( sc ) sc->m_outstandingSpiders[(unsigned char)sreq->m_priority]--;
 
 	// debug log
-	//log("XXX: decremented count to %"INT32" for %s",
+	//log("XXX: decremented count to %" PRId32" for %s",
 	//    sc->m_spidersOut,sreq->m_url);
 	//if ( sc->m_spidersOut != m_numSpidersOut ) { char *xx=NULL;*xx=0; }
 
@@ -1881,10 +1881,10 @@ bool SpiderLoop::indexedDoc ( XmlDoc *xd ) {
 		// log("spider: ------ *** LOCAL ERROR ***  ------");
 		// log("spider: ------ *** LOCAL ERROR ***  ------");
 		// log("spider: ------ *** LOCAL ERROR ***  ------");
-		log("spider: spidering %s has error: %s. uh48=%"INT64". "
+		log("spider: spidering %s has error: %s. uh48=%" PRId64". "
 		    //"Respidering "
-		    //"in %"INT32" seconds. MAX_LOCK_AGE when lock expires. "
-		    "cn=%"INT32"",
+		    //"in %" PRId32" seconds. MAX_LOCK_AGE when lock expires. "
+		    "cn=%" PRId32,
 		    xd->m_firstUrl.getUrl(),
 		    mstrerror(g_errno),
 		    xd->getFirstUrlHash48(),
@@ -2163,9 +2163,9 @@ void doneSendingNotification ( void *state ) {
 	// sync with us using the parm sync code, msg3e, every 13.5 seconds.
 	//cr->m_spiderRoundStartTime += respiderFreq;
 	char roundTime[128];
-	sprintf(roundTime,"%"UINT32"", (uint32_t)(getTimeGlobal() + seconds));
+	sprintf(roundTime,"%" PRIu32, (uint32_t)(getTimeGlobal() + seconds));
 	char roundStr[128];
-	sprintf(roundStr,"%"INT32"", cr->m_spiderRoundNum + 1);
+	sprintf(roundStr,"%" PRId32, cr->m_spiderRoundNum + 1);
 
 	// we have to send these two parms to all in cluster now INCLUDING
 	// ourselves, when we get it in Parms.cpp there's special
@@ -2182,7 +2182,7 @@ void doneSendingNotification ( void *state ) {
 	g_parms.broadcastParmList ( &parmList , NULL , NULL );
 
 	// log it
-	log("spider: new round #%"INT32" starttime = %"UINT32" for %s"
+	log("spider: new round #%" PRId32" starttime = %" PRIu32" for %s"
 	    , cr->m_spiderRoundNum
 	    , (uint32_t)cr->m_spiderRoundStartTime
 	    , cr->m_coll
@@ -2194,7 +2194,7 @@ bool sendNotificationForCollRec ( CollectionRec *cr )  {
 	if ( ! cr->m_spiderStatus ) { char *xx=NULL; *xx=0; }
 
 	log(LOG_INFO,
-	    "spider: sending notification for crawl status %"INT32" in "
+	    "spider: sending notification for crawl status %" PRId32" in "
 	    "coll %s. "
 	    ,(int32_t)cr->m_spiderStatus
 	    ,cr->m_coll
@@ -2301,7 +2301,7 @@ void updateAllCrawlInfosSleepWrapper ( int fd , void *state ) {
 		}
 	}
 	
-	logTrace( g_conf.m_logTraceSpider, "Sent %"INT32" requests, got %"INT32" replies" , s_requests, s_replies);
+	logTrace( g_conf.m_logTraceSpider, "Sent %" PRId32" requests, got %" PRId32" replies" , s_requests, s_replies);
 	// return false if we blocked awaiting replies
 	if ( s_replies < s_requests ) {
 		logTrace( g_conf.m_logTraceSpider, "END. requests/replies mismatch" );
@@ -2322,7 +2322,7 @@ void updateAllCrawlInfosSleepWrapper ( int fd , void *state ) {
 // . all hosts should get it at *about* the same time
 void spiderRoundIncremented ( CollectionRec *cr ) {
 
-	log("spider: incrementing spider round for coll %s to %"INT32" (%"UINT32")",
+	log("spider: incrementing spider round for coll %s to %" PRId32" (%" PRIu32")",
 	    cr->m_coll,cr->m_spiderRoundNum,
 	    (uint32_t)cr->m_spiderRoundStartTime);
 
@@ -2367,7 +2367,7 @@ void gotCrawlInfoReply ( void *state , UdpSlot *slot ) {
 	// reply is error? then use the last known good reply we had from him
 	// assuming udp reply timed out. empty buf just means no update now!
 	if ( ! slot->m_readBuf && g_errno ) {
-		log("spider: got crawlinfo reply error from host %"INT32": %s. "
+		log("spider: got crawlinfo reply error from host %" PRId32": %s. "
 		    "spidering will be paused.",
 		    h->m_hostId,mstrerror(g_errno));
 		// just clear it
@@ -2413,7 +2413,7 @@ void gotCrawlInfoReply ( void *state , UdpSlot *slot ) {
 
 		CollectionRec *cr = g_collectiondb.getRec ( collnum );
 		if ( ! cr ) {
-			log("spider: updatecrawlinfo collnum %"INT32" "
+			log("spider: updatecrawlinfo collnum %" PRId32" "
 			    "not found",(int32_t)collnum);
 			continue;
 		}
@@ -2497,8 +2497,8 @@ void gotCrawlInfoReply ( void *state , UdpSlot *slot ) {
 				// crazy stat?
 				if ( *ss > 1000000000LL ||
 				     *ss < -1000000000LL ) 
-					log("spider: crazy stats %"INT64" "
-					    "from host #%"INT32" coll=%s",
+					log("spider: crazy stats %" PRId64" "
+					    "from host #%" PRId32" coll=%s",
 					    *ss,k,cr->m_coll);
 				gs++;
 				ss++;
@@ -2524,15 +2524,15 @@ void gotCrawlInfoReply ( void *state , UdpSlot *slot ) {
 
 			// revival?
 			if ( ! cr->m_globalCrawlInfo.m_hasUrlsReadyToSpider )
-				log("spider: reviving crawl %s from host %" INT32"", cr->m_coll,k);
+				log("spider: reviving crawl %s from host %" PRId32, cr->m_coll,k);
 		} // end loop over hosts
 
 		if ( hadUrlsReady &&
 		     // and it no longer does now...
 		     ! cr->m_globalCrawlInfo.m_hasUrlsReadyToSpider ) {
 			log(LOG_INFO,
-			    "spider: all %"INT32" hosts report "
-			    "%s (%"INT32") has no "
+			    "spider: all %" PRId32" hosts report "
+			    "%s (%" PRId32") has no "
 			    "more urls ready to spider",
 			    s_replies,cr->m_coll,(int32_t)cr->m_collnum);
 			// set crawl end time
@@ -2733,7 +2733,7 @@ void handleRequestc1 ( UdpSlot *slot , int32_t niceness ) {
 				if ( printIt )
 				log("spider: not ending crawl because "
 				    "waiting tree key is ready for scan "
-				    "%"INT64" ms from now for coll=%s",
+				    "%" PRId64" ms from now for coll=%s",
 				    nextTimeMS - nowMS,cr->m_coll );
 				goto doNotEnd;
 			}
@@ -2785,7 +2785,7 @@ void handleRequestc1 ( UdpSlot *slot , int32_t niceness ) {
 		if ( ! sendIt ) continue;
 
 		// note it
-		// log("spider: sending ci for coll %s to host %"INT32"",
+		// log("spider: sending ci for coll %s to host %" PRId32,
 		//     cr->m_coll,hostId);
 		
 		// save it

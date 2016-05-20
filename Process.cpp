@@ -410,7 +410,7 @@ void hdtempDoneWrapper ( void *state, job_exit_t /*exit_type*/ ) {
 	char msgbuf[1024];
 	Host *h0 = g_hostdb.getHost ( 0 );
 	snprintf(msgbuf, 1024,
-		 "hostid %"INT32" has overheated HD at %"INT32" C "
+		 "hostid %" PRId32" has overheated HD at %" PRId32" C "
 		 "cluster=%s (%s). Disabling spiders.",
 		 h->m_hostId,
 		 (int32_t)max,
@@ -474,7 +474,7 @@ void heartbeatWrapper ( int fd , void *state ) {
 		// to see if its overflowed. hopefully i will fix this by
 		// queue the signals myself in Loop.cpp.
 		log("db: missed calling niceness 0 heartbeatWrapper "
-		    "function by %"INT64" ms. Either you need a quickpoll "
+		    "function by %" PRId64" ms. Either you need a quickpoll "
 		    "somewhere or a niceness 0 function is taking too long. "
 		    , elapsed-100);
 	s_last = now;
@@ -666,7 +666,7 @@ bool Process::shutdown ( bool urgent, void  *state, void (*callback) (void *stat
 		}
 
 		// otherwise, log it!
-		log("process: shutdown called, but mode is %"INT32"", (int32_t)m_mode);
+		log("process: shutdown called, but mode is %" PRId32, (int32_t)m_mode);
 
 		return true;
 	}
@@ -789,9 +789,9 @@ bool Process::shutdown2() {
 	}
 
 	if ( m_urgent ) {
-		log(LOG_INFO,"gb: Shutting down urgently. Timed try #%"INT32".", m_try++);
+		log(LOG_INFO,"gb: Shutting down urgently. Timed try #%" PRId32".", m_try++);
 	} else {
-		log(LOG_INFO,"gb: Shutting down. Timed try #%"INT32".", m_try++);
+		log(LOG_INFO,"gb: Shutting down. Timed try #%" PRId32".", m_try++);
 	}
 
 	// switch to urgent if having problems
@@ -1386,7 +1386,7 @@ static void loadavg_callback(loadavg_state* state) {
 		s_st_lavg.bigfile.close();
 		s_st_lavg.bigfile.setNonBlocking();
 		s_st_lavg.bigfile.open(O_RDONLY);
-		log(LOG_INFO, "build: errno %"INT32" reading /proc/loadavg",
+		log(LOG_INFO, "build: errno %" PRId32" reading /proc/loadavg",
 			s_st_lavg.filestate.m_errno);
 		s_st_lavg.filestate.m_errno = 0;
 		return;

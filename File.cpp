@@ -506,7 +506,7 @@ int File::getfd () {
 	// if someone closed our fd, why didn't our m_fd get set to -1 ??!?!?!!
 	if ( m_fd >= 0 && m_closeCount != s_closeCounts[m_fd] ) {
 		log(LOG_DEBUG,"disk: invalidating existing fd %i "
-		    "for %s this=0x%"PTRFMT" ccSaved=%i ccNow=%i",
+		    "for %s this=0x%" PTRFMT" ccSaved=%i ccNow=%i",
 		    (int)m_fd,getFilename(),(PTRTYPE)this,
 		    (int)m_closeCount,
 		    (int)s_closeCounts[m_fd]);
@@ -745,7 +745,7 @@ again:
 			char *fname = "";
 			if ( f ) fname = f->getFilename();
 			logf(LOG_DEBUG,"disk: force closed fd %i for"
-			     " %s. age=%"INT64" #openfiles=%i this=0x%"PTRFMT,
+			     " %s. age=%" PRId64" #openfiles=%i this=0x%" PTRFMT,
 			     fd,fname,now-s_timestamps[mini],
 			     (int)s_numOpenFiles,
 			     (PTRTYPE)this);
@@ -983,7 +983,7 @@ int32_t File::lseek ( int32_t offset , int whence ) {
 	// copy errno to g_errno
 	g_errno = errno;
 
-	log("disk: lseek ( %s(%i) , %"INT32" , whence ): %s" , getFilename() ,
+	log("disk: lseek ( %s(%i) , %" PRId32" , whence ): %s" , getFilename() ,
 	      m_fd, offset , strerror ( g_errno ) );
 
 	return -1;

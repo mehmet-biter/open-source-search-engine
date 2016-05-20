@@ -29,7 +29,7 @@ int32_t Tag::print ( ) {
 }
 
 bool Tag::printToBuf ( SafeBuf *sb ) {
-	sb->safePrintf("k.hsthash=%016"XINT64" k.duphash=%08"XINT32" k.sitehash=%08"XINT32" ",
+	sb->safePrintf("k.hsthash=%016" PRIx64" k.duphash=%08" PRIx32" k.sitehash=%08" PRIx32" ",
 	               m_key.n1, (int32_t)(m_key.n0>>32), (int32_t)(m_key.n0&0xffffffff));
 
 	// print the tagname
@@ -40,7 +40,7 @@ bool Tag::printToBuf ( SafeBuf *sb ) {
 	struct tm *timeStruct = localtime ( &ts );
 	char tmp[100];
 	strftime(tmp,100,"%b-%d-%Y-%H:%M:%S,",timeStruct);
-	sb->safePrintf("%s(%"UINT32"),",tmp,m_timestamp);
+	sb->safePrintf("%s(%" PRIu32"),",tmp,m_timestamp);
 
 	// print the ip added from
 	sb->safePrintf("%s,",iptoa(m_ip));
@@ -293,8 +293,8 @@ bool Tag::printToBufAsAddRequest ( SafeBuf *sb ) {
 	// we don't know the "site" for all tags because "site" is a tag
 	// itself. we should take this in lieu of the "u=" url parm
 	// which is made to generate the key anyhow.
-	sb->safePrintf("&tagn0keyb0=%"INT64"",m_key.n0);
-	sb->safePrintf("&tagn1keyb0=%"INT64"",m_key.n1);
+	sb->safePrintf("&tagn0keyb0=%" PRId64,m_key.n0);
+	sb->safePrintf("&tagn1keyb0=%" PRId64,m_key.n1);
 
 	// print the user that added this tag
 	sb->safePrintf ( "&username=%s" , getUser() );
@@ -326,7 +326,7 @@ bool Tag::printToBufAsXml ( SafeBuf *sb ) {
 	sb->safePrintf ("\t\t<tag>\n\t\t\t<name>%s</name>\n\t\t\t<user>%s", str,getUser());
 
 	// print the date when this tag was added
-	sb->safePrintf("</user>\n\t\t\t<timestamp>%"INT32"</timestamp>\n", m_timestamp);
+	sb->safePrintf("</user>\n\t\t\t<timestamp>%" PRId32"</timestamp>\n", m_timestamp);
 
 	// print the ip added from
 	sb->safePrintf("\t\t\t<ip>%s</ip>\n",iptoa(m_ip));
@@ -362,7 +362,7 @@ bool Tag::printToBufAsHtml ( SafeBuf *sb , const char *prefix ) {
 	struct tm *timeStruct = localtime ( &ts );
 	char tmp[100];
 	strftime(tmp,100,"%b-%d-%Y-%H:%M:%S",timeStruct);
-	sb->safePrintf("%s(%"UINT32")",tmp,m_timestamp);
+	sb->safePrintf("%s(%" PRIu32")",tmp,m_timestamp);
 
 	// print the ip added from
 	sb->safePrintf(" ip=%s",iptoa(m_ip));
@@ -626,9 +626,9 @@ int32_t TagRec::getNumTags ( ) {
 	return numTags;
 }
 
-// . &tagtype%"INT32"=<tagtype>
-// . &tagdata%"INT32"=<data>
-// . &deltag%"INT32"=1 (to delete it)
+// . &tagtype%" PRId32"=<tagtype>
+// . &tagdata%" PRId32"=<data>
+// . &deltag%" PRId32"=1 (to delete it)
 // . set &user=mwells, etc. in cookie of HttpReqest, "r" for user
 // . "this" TagRec's user, ip and timestamp will be carried over to "newtr"
 // . returns false and sets g_errno on error
@@ -669,39 +669,39 @@ bool TagRec::setFromHttpRequest ( HttpRequest *r, TcpSocket *s ) {
 	// loop over all tags in the TagRec to mod them
 	for ( int32_t i = 0 ; ; ++i ) {
 		char buf[32];
-		sprintf ( buf , "tagtype%"INT32"",i );
+		sprintf ( buf , "tagtype%" PRId32,i );
 		const char *tagTypeStr = r->getString(buf,NULL,NULL);
 		// if not there we are done
 		if ( ! tagTypeStr ) break;
 
 		// should we delete it?
-		sprintf ( buf , "deltag%"INT32"",i);
+		sprintf ( buf , "deltag%" PRId32,i);
 		const char *deltag = r->getString(buf,NULL,NULL);
 
-		sprintf ( buf , "taguser%"INT32"",i);
+		sprintf ( buf , "taguser%" PRId32,i);
 		const char *tagUser = r->getString( buf,NULL,"admin");
 
-		sprintf ( buf , "tagtime%"INT32"",i);
+		sprintf ( buf , "tagtime%" PRId32,i);
 		int32_t  tagTime = r->getLong(buf,now);
 
-		sprintf ( buf , "tagip%"INT32"",i);
+		sprintf ( buf , "tagip%" PRId32,i);
 		int32_t  tagIp   = r->getLong(buf,ip);
 
 		// get the value of this tag
-		sprintf ( buf , "tagdata%"INT32"" , i );
+		sprintf ( buf , "tagdata%" PRId32 , i );
 		const char *dataPtr = r->getString ( buf , NULL );
 
 		// get the tag original key
 		key128_t key;
-		sprintf ( buf , "tagn1key%"INT32"" , i );
+		sprintf ( buf , "tagn1key%" PRId32 , i );
 		key.n1 = r->getLongLong ( buf, 0 );
-		sprintf ( buf , "tagn0key%"INT32"" , i );
+		sprintf ( buf , "tagn0key%" PRId32 , i );
 		key.n0 = r->getLongLong ( buf, 0LL );
 
 		// for supporting dumping/adding of tagdb using wget
-		sprintf ( buf , "tagn1key%"INT32"b" , i );
+		sprintf ( buf , "tagn1key%" PRId32"b" , i );
 		int64_t v1 = r->getLongLong ( buf, key.n1 );
-		sprintf ( buf , "tagn0key%"INT32"b" , i );
+		sprintf ( buf , "tagn0key%" PRId32"b" , i );
 		int64_t v0 = r->getLongLong ( buf, key.n0 );
 		bool hackKey = ( v1 || v0 );
 		key.n1 = v1;
@@ -998,7 +998,7 @@ const char *getTagStrFromType ( int32_t tagType ) {
 	TagDesc **ptd = (TagDesc **)s_ht.getValue ( &tagType );
 	// sanity check
 	if ( ! ptd ) {
-		log(LOG_ERROR,"%s:%s:%d: Failed to lookup tagType %"INT32"", __FILE__, __func__, __LINE__, tagType);
+		log(LOG_ERROR,"%s:%s:%d: Failed to lookup tagType %" PRId32, __FILE__, __func__, __LINE__, tagType);
 		return "UNKNOWN";
 	}
 
@@ -1141,7 +1141,7 @@ bool Tagdb::verify ( char *coll ) {
 	if ( got != count ) {
 		// tally it up
 		g_rebalance.m_numForeignRecs += count - got;
-		log (LOG_DEBUG, "tagdb: Out of first %" INT32" records in %s, only %" INT32" belong to our group.",
+		log (LOG_DEBUG, "tagdb: Out of first %" PRId32" records in %s, only %" PRId32" belong to our group.",
 		     count, rdbName, got);
 		// exit if NONE, we probably got the wrong data
 		if ( got == 0 ) {
@@ -1152,7 +1152,7 @@ bool Tagdb::verify ( char *coll ) {
 		return g_conf.m_bypassValidation;
 	}
 
-	log ( LOG_DEBUG, "db: %s passed verification successfully for %"INT32" recs.", rdbName, count );
+	log ( LOG_DEBUG, "db: %s passed verification successfully for %" PRId32" recs.", rdbName, count );
 
 	// turn threads back on
 	g_jobScheduler.allow_new_jobs();
@@ -1684,7 +1684,7 @@ bool sendPageTagdb ( TcpSocket *s , HttpRequest *req ) {
 	try { st = new (State12); }
 	catch ( ... ) {
 		g_errno = ENOMEM;
-		log("PageTagdb: new(%"INT32"): %s", 
+		log("PageTagdb: new(%" PRId32"): %s",
 		    (int32_t)sizeof(State12),mstrerror(g_errno));
 		    
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
@@ -2096,7 +2096,7 @@ bool sendReply2 ( void *state ) {
 		sb.safePrintf("<td>");
 
 		if ( ctag && canEdit ) {
-			sb.safePrintf("<input name=deltag%"INT32" type=checkbox>", count);
+			sb.safePrintf("<input name=deltag%" PRId32" type=checkbox>", count);
 		} else {
 			sb.safePrintf("&nbsp;");
 		}
@@ -2108,7 +2108,7 @@ bool sendReply2 ( void *state ) {
 
 		// print drop down
 		if ( ! ctag ) {
-			sb.safePrintf("<select name=tagtype%"INT32">", count);
+			sb.safePrintf("<select name=tagtype%" PRId32">", count);
 		}
 
 		// how many tags do we have?
@@ -2134,7 +2134,7 @@ bool sendReply2 ( void *state ) {
 			sb.safePrintf("</select>");
 		} else {
 			const char *tagName = getTagStrFromType ( ctag->m_type );
-			sb.safePrintf("<input type=hidden name=tagtype%"INT32" "
+			sb.safePrintf("<input type=hidden name=tagtype%" PRId32" "
 				      "value=\"%s\">%s",
 				      count,tagName,tagName);
 		}
@@ -2143,7 +2143,7 @@ bool sendReply2 ( void *state ) {
 		// the score field for the drop down list, whatever tag id
 		// was selected will have this score
 		if ( canEdit ) {
-			sb.safePrintf( "<input type=text name=tagdata%"INT32" size=50 value=\"", count );
+			sb.safePrintf( "<input type=text name=tagdata%" PRId32" size=50 value=\"", count );
 		}
 
 		// show the value
@@ -2171,7 +2171,7 @@ bool sendReply2 ( void *state ) {
 		}
 
 		// data size
-		sb.safePrintf("<td>%"INT32"</td>",(int32_t)ctag->getTagDataSize());
+		sb.safePrintf("<td>%" PRId32"</td>",(int32_t)ctag->getTagDataSize());
 
 		// username, timestamp only for non-empty tags
 		char *username = ctag->getUser();
@@ -2192,24 +2192,24 @@ bool sendReply2 ( void *state ) {
 			strftime(tmp,64,"%b-%d-%Y-%H:%M:%S",timeStruct);
 		}
 
-		sb.safePrintf("<td><input type=hidden name=taguser%"INT32" value=%s>%s</td>",
+		sb.safePrintf("<td><input type=hidden name=taguser%" PRId32" value=%s>%s</td>",
 			      count,username,username);
-		sb.safePrintf("<td><input type=hidden name=tagtime%"INT32" value=%"INT32">%s</td>",
+		sb.safePrintf("<td><input type=hidden name=tagtime%" PRId32" value=%" PRId32">%s</td>",
 			      count,timestamp,tmp);
 
-		sb.safePrintf("<td><input type=hidden name=tagip%"INT32" value=%"INT32">%s",
+		sb.safePrintf("<td><input type=hidden name=tagip%" PRId32" value=%" PRId32">%s",
 			      count,ip,ips);
 
-		sb.safePrintf("<input type=hidden name=tagn1key%"INT32" value=%"UINT64">",
+		sb.safePrintf("<input type=hidden name=tagn1key%" PRId32" value=%" PRIu64">",
 			      count,ctag->m_key.n1);
-		sb.safePrintf("<input type=hidden name=tagn0key%"INT32" value=%"UINT64">",
+		sb.safePrintf("<input type=hidden name=tagn0key%" PRId32" value=%" PRIu64">",
 			      count,ctag->m_key.n0);
 
 		sb.safePrintf("</td>");
 
-		sb.safePrintf("<td>0x%"XINT32"</td>", (int32_t)(ctag->m_key.n0>>32) );
+		sb.safePrintf("<td>0x%" PRIx32"</td>", (int32_t)(ctag->m_key.n0>>32) );
 
-		sb.safePrintf("<td>0x%"XINT32"</td>", 
+		sb.safePrintf("<td>0x%" PRIx32"</td>",
 			      // order 1 in since we always do that because
 			      // we forgot to shift up one for the delbit
 			      // above in Tag::set() when it sets m_key.n0
@@ -2256,14 +2256,14 @@ bool isTagTypeUnique ( int32_t tt ) {
 	// look up in hash table
 	TagDesc **tdp = (TagDesc **)s_ht.getValue ( &tt );
 	if ( ! tdp ) {
-		log("tagdb: tag desc is NULL for tag type %"INT32" assuming "
+		log("tagdb: tag desc is NULL for tag type %" PRId32" assuming "
 		    "not indexable",tt);
 		return false;
 	}
 	// do not core for now
 	TagDesc *td = *tdp;
 	if ( ! td ) {
-		log("tagdb: got unknown tag type %"INT32" assuming "
+		log("tagdb: got unknown tag type %" PRId32" assuming "
 		    "unique",tt);
 		return true;
 	}
@@ -2283,13 +2283,13 @@ bool isTagTypeIndexable ( int32_t tt ) {
 	TagDesc **tdp = (TagDesc **)s_ht.getValue ( &tt );
 	// do not core for now
 	if ( ! tdp ) {
-		log("tagdb: got unknown tag type %"INT32" assuming "
+		log("tagdb: got unknown tag type %" PRId32" assuming "
 		    "not indexable",tt);
 		return false;
 	}
 	TagDesc *td = *tdp;
 	if ( ! td ) {
-		log("tagdb: tag desc is NULL for tag type %"INT32" assuming "
+		log("tagdb: tag desc is NULL for tag type %" PRId32" assuming "
 		    "not indexable",tt);
 		return false;
 	}
@@ -2386,7 +2386,7 @@ bool Tagdb::loadMinSiteInlinksBuffer ( ) {
 	msi = getMinSiteInlinks ( hostHash32 );
 	if ( msi < 3 ) 	{
 		log("tagdb: bad siteinlinks. www.hindu.com not found "
-		    "(%"INT32").",
+		    "(%" PRId32").",
 		    hostHash32);
 		//return false;
 	}
@@ -2443,7 +2443,7 @@ bool Tagdb::loadMinSiteInlinksBuffer2 ( ) {
 	for ( ; p < pend ; p = newp ) {
 		
 		if ( ++count % 1000000 == 0 )
-			log("gb: parsing line # %"INT32,count);
+			log("gb: parsing line # %" PRId32,count);
 
 		// advance to next line
 		newp = p;

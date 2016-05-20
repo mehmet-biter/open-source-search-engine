@@ -123,14 +123,14 @@ static bool CommandUpdateSiteList ( char *rec ) {
 	// sanity
 	int32_t dataSize = getDataSizeFromParmRec ( rec );
 	if ( dataSize < 0 ) {
-		log("parms: bad site list size = %"INT32" bad!",dataSize);
+		log("parms: bad site list size = %" PRId32" bad!",dataSize);
 		g_errno = EBADENGINEER;
 		return true;
 	}
 	// need this
 	CollectionRec *cr = g_collectiondb.getRec ( collnum );
 	if ( ! cr ) {
-		log("parms: no cr for collnum %"INT32" to update",(int32_t)collnum);
+		log("parms: no cr for collnum %" PRId32" to update",(int32_t)collnum);
 		return true;
 	}
 	// get the sitelist
@@ -174,7 +174,7 @@ static bool CommandInsertUrlFiltersRow ( char *rec ) {
 	// sanity
 	int32_t dataSize = getDataSizeFromParmRec ( rec );
 	if ( dataSize <= 1 ) {
-		log("parms: insert row data size = %"INT32" bad!",dataSize);
+		log("parms: insert row data size = %" PRId32" bad!",dataSize);
 		g_errno = EBADENGINEER;
 		return true;
 	}
@@ -210,7 +210,7 @@ static bool CommandRemoveUrlFiltersRow ( char *rec ) {
 	// sanity
 	int32_t dataSize = getDataSizeFromParmRec ( rec );
 	if ( dataSize <= 1 ) {
-		log("parms: insert row data size = %"INT32" bad!",dataSize);
+		log("parms: insert row data size = %" PRId32" bad!",dataSize);
 		g_errno = EBADENGINEER;
 		return true;
 	}
@@ -264,7 +264,7 @@ static bool CommandCloneColl ( char *rec ) {
 		return log("parms: invalid coll %s to clone from",
 			   srcColl);
 	if ( ! dstRec )
-		return log("parms: invalid collnum %"INT32" to clone to",
+		return log("parms: invalid collnum %" PRId32" to clone to",
 			   (int32_t)dstCollnum);
 
 	log ("parms: cloning parms from collection %s to %s",
@@ -382,7 +382,7 @@ static bool CommandForceNextSpiderRound ( char *rec ) {
 	CollectionRec *cr = g_collectiondb.getRec ( collnum );
 	if ( ! cr ) {
 		g_errno = ENOCOLLREC;
-		log("parms: bad collnum %"INT32" for restart spider round",
+		log("parms: bad collnum %" PRId32" for restart spider round",
 		    (int32_t)collnum);
 		return true;
 	}
@@ -396,7 +396,7 @@ static bool CommandForceNextSpiderRound ( char *rec ) {
 	// see the HACK: in Parms::convertHttpRequestToParmList() where we
 	// construct this data in response to a "roundStart" cmd. we used
 	// sprintf() so it's natural to use sscanf() to parse it out.
-	sscanf ( data , "%"UINT32",%"INT32"",
+	sscanf ( data , "%" PRIu32",%" PRId32,
 		 &roundStartTime,
 		 &newRoundNum);
 
@@ -436,7 +436,7 @@ static bool CommandRestartColl ( char *rec , WaitEntry *we ) {
 	if ( oldCollnum < 0 ||
 	     oldCollnum >= g_collectiondb.m_numRecs ||
 	     ! g_collectiondb.m_recs[oldCollnum] ) {
-		log("parms: invalid collnum %"INT32" to restart",(int32_t)oldCollnum);
+		log("parms: invalid collnum %" PRId32" to restart",(int32_t)oldCollnum);
 		return true;
 	}
 
@@ -496,7 +496,7 @@ static bool CommandResetColl ( char *rec , WaitEntry *we ) {
 	if ( oldCollnum < 0 ||
 	     oldCollnum >= g_collectiondb.m_numRecs ||
 	     ! g_collectiondb.m_recs[oldCollnum] ) {
-		log("parms: invalid collnum %"INT32" to reset",(int32_t)oldCollnum);
+		log("parms: invalid collnum %" PRId32" to reset",(int32_t)oldCollnum);
 		return true;
 	}
 
@@ -629,7 +629,7 @@ static bool CommandClearKernelError ( char *rec ) {
 static bool CommandPowerNotice ( int32_t hasPower ) {
 
 	//int32_t hasPower = r->getLong("haspower",-1);
-	log("powermo: received haspower=%"INT32"",hasPower);
+	log("powermo: received haspower=%" PRId32,hasPower);
 	if ( hasPower != 0 && hasPower != 1 ) return true;
 
 	// did power state change? if not just return true
@@ -748,7 +748,7 @@ bool Parms::setGigablastRequest ( TcpSocket *socket ,
 	// ensure valid
 	if ( ! THIS ) {
 		// it is null when no collection explicitly specified...
-		log("admin: THIS is null for page %"INT32".",page);
+		log("admin: THIS is null for page %" PRId32".",page);
 		return false;
 	}
 
@@ -1106,7 +1106,7 @@ bool printDropDown ( int32_t n , SafeBuf* sb, char *name, int32_t select ) {	// 
 	if ( select < 0 ) select = 0;
 
 	for ( int32_t i = 0 ; i < n ; ++i ) {
-		sb->safePrintf( "<option value=%" INT32"%s>%" INT32, i, ( i == select ) ? "selected" : "", i );
+		sb->safePrintf( "<option value=%" PRId32"%s>%" PRId32, i, ( i == select ) ? "selected" : "", i );
 	}
 
 	sb->safePrintf ( "</select>" );
@@ -1166,7 +1166,7 @@ bool printDropDownProfile ( SafeBuf* sb, char *name, CollectionRec *cr ) {
 bool printCheckBoxes ( int32_t n , SafeBuf* sb, char *name, char *array){
 	for ( int32_t i = 0 ; i < n ; i++ ) {
 		if ( i > 0 )
-			sb->safePrintf ("<input type=checkbox value=1 name=%s%"INT32"",
+			sb->safePrintf ("<input type=checkbox value=1 name=%s%" PRId32,
 					name,i);
 		else
 			sb->safePrintf ("<input type=checkbox value=1 name=%s",
@@ -1174,7 +1174,7 @@ bool printCheckBoxes ( int32_t n , SafeBuf* sb, char *name, char *array){
 		if ( array[i] ) {
 			sb->safePrintf ( " checked");
 		}
-		sb->safePrintf ( ">%"INT32" &nbsp;" , i );
+		sb->safePrintf ( ">%" PRId32" &nbsp;" , i );
 		//if i is single digit, add another nbsp so that everything's
 		//aligned
 		if ( i < 10 )
@@ -1533,7 +1533,7 @@ bool Parms::printParm ( SafeBuf* sb,
 	}
 	char cgi[64];
 	if ( m->m_cgi ) {
-		if ( j > 0 ) sprintf ( cgi , "%s%"INT32"" , m->m_cgi , j );
+		if ( j > 0 ) sprintf ( cgi , "%s%" PRId32 , m->m_cgi , j );
 		else         sprintf ( cgi , "%s"    , m->m_cgi     );
 		// let's try dropping the index # and just doing dup parms
 		//sprintf ( cgi , "%s"    , m->m_cgi     );
@@ -1618,7 +1618,7 @@ bool Parms::printParm ( SafeBuf* sb,
 			     mk->m_page == PAGE_FILTERS ) {
 				sb->safePrintf("<a href=# "
 					       "onclick=\"checkAll(this, "
-					       "'id_%s', %"INT32");\">",
+					       "'id_%s', %" PRId32");\">",
 					       m_parms[k].m_cgi, m->m_max);
 			}
 			sb->safePrintf ( "<b>%s</b>", m_parms[k].m_title );
@@ -1640,7 +1640,7 @@ bool Parms::printParm ( SafeBuf* sb,
 		if ( firstInRow ) {
 			sb->safePrintf ( "<tr bgcolor=#%s><td>" , bg );
 		}
-		sb->safePrintf ( "<td width=%"INT32"%%>" , 100/nc/2 );
+		sb->safePrintf ( "<td width=%" PRId32"%%>" , 100/nc/2 );
 	}
 
 	// if parm value is not defaut, use orange!
@@ -1683,9 +1683,9 @@ bool Parms::printParm ( SafeBuf* sb,
 			// parm is too advanced to display
 			sb->safePrintf ( "<td " );
 			if ( m->m_colspan > 0 )
-				sb->safePrintf ( "colspan=%"INT32" ",
+				sb->safePrintf ( "colspan=%" PRId32" ",
 						 (int32_t)m->m_colspan);
-			sb->safePrintf ( "width=%"INT32"%%>"//"<td width=78%%>
+			sb->safePrintf ( "width=%" PRId32"%%>"//"<td width=78%%>
 					 "<b>%s</b><br><font size=1>",
 					 3*100/nc/2/4, m->m_title );
 
@@ -1734,7 +1734,7 @@ bool Parms::printParm ( SafeBuf* sb,
 								  false);
 				}
 			}
-			sb->safePrintf ( "</font></td>\n<td%s width=%"INT32"%%>" ,
+			sb->safePrintf ( "</font></td>\n<td%s width=%" PRId32"%%>" ,
 				  color , 100/nc/2/4 );
 		}
 	}
@@ -1751,7 +1751,7 @@ bool Parms::printParm ( SafeBuf* sb,
 		// for this same row, silly
 		if ( firstInRow ) // && m->m_page != PAGE_PRIORITIES )
 			sb->safePrintf ( "<tr bgcolor=#%s>"
-					 "<td>%"INT32"</td>\n<td>",
+					 "<td>%" PRId32"</td>\n<td>",
 					 bgc,
 					 j );//j+1
 		else if ( firstInRow )
@@ -1774,7 +1774,7 @@ bool Parms::printParm ( SafeBuf* sb,
 		// if cast=1, command IS broadcast to all hosts
 		else
 			sb->safePrintf ( "<b><a href=\"/%s?c=%s&"
-					 "%s=%s\">" // &cast=%"INT32"\">"
+					 "%s=%s\">" // &cast=%" PRId32"\">"
 					 "<center>%s</center></a></b>",
 					 g_pages.getPath(m->m_page),coll,
 					 cgi,v,//cast,
@@ -1802,7 +1802,7 @@ bool Parms::printParm ( SafeBuf* sb,
 		// 	if ( ! lastRow ) {
 		// 		int32_t val = 0;
 		// 		if ( *s ) val = 1;
-		// 		sb->safePrintf("\"%s\":%"INT32",\n",cgi,val);
+		// 		sb->safePrintf("\"%s\":%" PRId32",\n",cgi,val);
 		// 	}
 		// }
 		//sb->safePrintf("<center><nobr>");
@@ -1864,17 +1864,17 @@ bool Parms::printParm ( SafeBuf* sb,
 			       );
 	}
 	else if ( t == TYPE_CHAR )
-		sb->safePrintf ("<input type=text name=%s value=\"%"INT32"\" "
+		sb->safePrintf ("<input type=text name=%s value=\"%" PRId32"\" "
 				"size=3>",cgi,(int32_t)(*s));
 	/*	else if ( t == TYPE_CHAR2 )
-		sprintf (p,"<input type=text name=%s value=\"%"INT32"\" "
+		sprintf (p,"<input type=text name=%s value=\"%" PRId32"\" "
 		"size=3>",cgi,*(char*)s);*/
 	else if ( t == TYPE_PRIORITY ) 
 		printDropDown ( MAX_SPIDER_PRIORITIES , sb , cgi , *s );
 	else if ( t == TYPE_PRIORITY2 ) {
 		// just show the parm name and value if printing in json
 		// if ( format==FORMAT_JSON) // isJSON )
-		// 	sb->safePrintf("\"%s\":%"INT32",\n",cgi,(int32_t)*(char *)s);
+		// 	sb->safePrintf("\"%s\":%" PRId32",\n",cgi,(int32_t)*(char *)s);
 		// else
 		printDropDown ( MAX_SPIDER_PRIORITIES , sb , cgi , *s );
 	}
@@ -1916,7 +1916,7 @@ bool Parms::printParm ( SafeBuf* sb,
 		// if cast=0 it will be executed, otherwise it will be
 		// broadcasted with cast=1 to all hosts and they will all
 		// execute it
-		sb->safePrintf ( "<b><a href=\"/%s?c=%s&%s=1\">" // cast=%"INT32"
+		sb->safePrintf ( "<b><a href=\"/%s?c=%s&%s=1\">" // cast=%" PRId32"
 			  "<center>%s</center></a></b>",
 			  g_pages.getPath(m->m_page),coll,
 			  cgi,m->m_title);
@@ -1942,23 +1942,23 @@ bool Parms::printParm ( SafeBuf* sb,
 	else if ( t == TYPE_LONG ) {
 		// just show the parm name and value if printing in json
 		// if ( format == FORMAT_JSON ) // isJSON )
-		// 	sb->safePrintf("\"%s\":%"INT32",\n",cgi,*(int32_t *)s);
+		// 	sb->safePrintf("\"%s\":%" PRId32",\n",cgi,*(int32_t *)s);
 		// else
 		sb->safePrintf ("<input type=text name=%s "
-				"value=\"%"INT32"\" "
+				"value=\"%" PRId32"\" "
 				// 3 was ok on firefox but need 6
 				// on chrome
 				"size=6>",cgi,*(int32_t *)s);
 	}
 	else if ( t == TYPE_LONG_CONST )
-		sb->safePrintf ("%"INT32"",*(int32_t *)s);
+		sb->safePrintf ("%" PRId32,*(int32_t *)s);
 	else if ( t == TYPE_LONG_LONG )
-		sb->safePrintf ("<input type=text name=%s value=\"%"INT64"\" "
+		sb->safePrintf ("<input type=text name=%s value=\"%" PRId64"\" "
 				"size=12>",cgi,*(int64_t *)s);
 	else if ( t == TYPE_STRING || t == TYPE_STRINGNONEMPTY ) {
 		int32_t size = m->m_size;
 		if ( size > 20 ) size = 20;
-		sb->safePrintf ("<input type=text name=%s size=%"INT32" value=\"",
+		sb->safePrintf ("<input type=text name=%s size=%" PRId32" value=\"",
 				cgi,size);
 
 		// if it has PF_DEFAULTCOLL flag set then use the coll
@@ -1982,7 +1982,7 @@ bool Parms::printParm ( SafeBuf* sb,
 			sb->safePrintf ("</textarea>");
 		}
 		else {
-			sb->safePrintf ("<input type=text name=%s size=%"INT32" "
+			sb->safePrintf ("<input type=text name=%s size=%" PRId32" "
 					"value=\"",cgi,size);
 			// if it has PF_DEFAULTCOLL flag set then use the coll
 			if ( cr && (m->m_flags & PF_COLLDEFAULT) )
@@ -2043,7 +2043,7 @@ bool Parms::printParm ( SafeBuf* sb,
 			sb->safePrintf ("</textarea>");
 		}
 		else {
-			sb->safePrintf ("<input type=text name=%s size=%"INT32" "
+			sb->safePrintf ("<input type=text name=%s size=%" PRId32" "
 					"value=\"",
 					cgi,size);
 			//sb->dequote ( s , gbstrlen(s) );
@@ -2077,7 +2077,7 @@ bool Parms::printParm ( SafeBuf* sb,
 	else if ( t == TYPE_CONSTANT )
 		sb->safePrintf ("%s",m->m_title);
 	else if ( t == TYPE_MONOD2 )
-		sb->safePrintf ("%"INT32"",j / 2 );
+		sb->safePrintf ("%" PRId32,j / 2 );
 	else if ( t == TYPE_MONOM2 ) {
 		/*
 		if ( m->m_page == PAGE_PRIORITIES ) {
@@ -2086,7 +2086,7 @@ bool Parms::printParm ( SafeBuf* sb,
 		}
 		else
 		*/
-			sb->safePrintf ("%"INT32"",j % 2 );
+			sb->safePrintf ("%" PRId32,j % 2 );
 	}
 	else if ( t == TYPE_RULESET ) ;
 		// subscript is already included in "cgi"
@@ -2132,7 +2132,7 @@ bool Parms::printParm ( SafeBuf* sb,
 		// print the date in the input forms
 		sb->safePrintf(
 			"<input type=text name=%sday "
-			"size=2 value=%"INT32"> "
+			"size=2 value=%" PRId32"> "
 			"<select name=%smon>"
 			"<option value=0%s>Jan"
 			"<option value=1%s>Feb"
@@ -2147,14 +2147,14 @@ bool Parms::printParm ( SafeBuf* sb,
 			"<option value=10%s>Nov"
 			"<option value=11%s>Dec"
 			"</select>\n"
-			"<input type=text name=%syr size=4 value=%"INT32">"
+			"<input type=text name=%syr size=4 value=%" PRId32">"
 			"<br>"
 			"<input type=text name=%shr size=2 "
-			"value=%02"INT32">h "
+			"value=%02" PRId32">h "
 			"<input type=text name=%smin size=2 "
-			"value=%02"INT32">m "
+			"value=%02" PRId32">m "
 			"<input type=text name=%ssec size=2 "
-			"value=%02"INT32">s" ,
+			"value=%02" PRId32">s" ,
 			cgi    ,
 			(int32_t)tp->tm_mday ,
 			cgi    ,
@@ -2207,7 +2207,7 @@ bool Parms::printParm ( SafeBuf* sb,
 				 //"ins_%s=1\">insert</td>\n",coll,cgi );
 				 // insert=<rowNum>
 				 // "j" is the row #
-				 "insert=%"INT32"\">insert</td>\n",coll,j );
+				 "insert=%" PRId32"\">insert</td>\n",coll,j );
 	}
 
 	// does next guy start a new row?
@@ -2245,7 +2245,7 @@ bool Parms::printParm ( SafeBuf* sb,
 			sb->safePrintf ("<td><a href=\"?c=%s&" // cast=1&"
 					//"rm_%s=1\">"
 					// remove=<rownum>
-					"remove%s=%"INT32"\">"
+					"remove%s=%" PRId32"\">"
 					"remove</a></td>\n",coll,//cgi );
 					suffix,
 					j); // j is row #
@@ -2331,15 +2331,15 @@ bool Parms::insertParm ( int32_t i , int32_t an ,  char *THIS ) {
 	// ensure we are valid
 	if ( an >= num || an < 0 ) {
 		log("admin: Invalid insertion of element "
-		    "%"INT32" in array of size %"INT32" for \"%s\".",
+		    "%" PRId32" in array of size %" PRId32" for \"%s\".",
 		    an,num,m->m_title);
 		return false;
 	}
 	// also ensure that we have space to put the parm in, because in
 	// case of URl filters, it is bounded by MAX_FILTERS
 	if ( num >= MAX_FILTERS ){
-		log("admin: Invalid insert of element %"INT32", array is full "
-		    "in size %"INT32" for \"%s\".",an, num, m->m_title);
+		log("admin: Invalid insert of element %" PRId32", array is full "
+		    "in size %" PRId32" for \"%s\".",an, num, m->m_title);
 		return false;
 	}
 	// point to the place where the element is to be inserted
@@ -2377,7 +2377,7 @@ bool Parms::removeParm ( int32_t i , int32_t an , char *THIS ) {
 	// ensure we are valid
 	if ( an >= num || an < 0 ) {
 		log("admin: Invalid removal of element "
-		    "%"INT32" in array of size %"INT32" for \"%s\".",
+		    "%" PRId32" in array of size %" PRId32" for \"%s\".",
 		    an,num,m->m_title);
 		return false;
 	}
@@ -2848,7 +2848,7 @@ bool Parms::setFromFile ( void *THIS        ,
 		newnn = xml.getNodeNum(nn,1000000,m->m_xml,gbstrlen(m->m_xml));
 
 		// debug
-		//log("%s --> %"INT32"",m->m_xml,nn);
+		//log("%s --> %" PRId32,m->m_xml,nn);
 		// try default xml file if none, but only if first try
 		if ( newnn < 0 && first ) goto try2;
 		// it is valid, use it
@@ -3100,7 +3100,7 @@ bool Parms::saveToXml ( char *THIS , char *f , char objType ) {
 		// get it
 		Parm *m = &m_parms[i];
 
-		// log("%s: i [%"INT32"], m_xml [%s], obj [%d], type [%d], offset [%"INT32"]", __func__, i, m->m_xml, (int)m->m_obj, (int)m->m_type, m->m_off);
+		// log("%s: i [%" PRId32"], m_xml [%s], obj [%d], type [%d], offset [%" PRId32"]", __func__, i, m->m_xml, (int)m->m_obj, (int)m->m_type, m->m_off);
 
 		if ( m->m_obj != objType ) {
 			continue;
@@ -3246,7 +3246,7 @@ skip2:
  hadError:
 	return log("admin: Error writing to %s: %s",f,mstrerror(g_errno));
 
-	//File bigger than %"INT32" bytes."
+	//File bigger than %" PRId32" bytes."
 	//	   "  Please increase #define in Parms.cpp.",
 	//	   (int32_t)MAX_CONF_SIZE);
 }
@@ -3264,16 +3264,16 @@ bool Parms::getParmHtmlEncoded ( SafeBuf *sb , Parm *m , char *s ) {
 	     t == TYPE_PRIORITY_BOXES || t == TYPE_RETRIES        ||
 	     t == TYPE_RETRIES        || t == TYPE_FILTER         ||
 	     t == TYPE_BOOL2          || t == TYPE_CHAR2           )
-		sb->safePrintf("%"INT32"",(int32_t)*s);
+		sb->safePrintf("%" PRId32,(int32_t)*s);
 	else if ( t == TYPE_FLOAT )
 		sb->safePrintf("%f",*(float *)s);
 	else if ( t == TYPE_IP )
 		sb->safePrintf("%s",iptoa(*(int32_t *)s));
 	else if ( t == TYPE_LONG || t == TYPE_LONG_CONST || t == TYPE_RULESET||
 		  t == TYPE_SITERULE )
-		sb->safePrintf("%"INT32"",*(int32_t *)s);
+		sb->safePrintf("%" PRId32,*(int32_t *)s);
 	else if ( t == TYPE_LONG_LONG )
-		sb->safePrintf("%"INT64"",*(int64_t *)s);
+		sb->safePrintf("%" PRId64,*(int64_t *)s);
 	else if ( t == TYPE_SAFEBUF ) {
 		SafeBuf *sb2 = (SafeBuf *)s;
 		char *buf = sb2->getBufStart();
@@ -5701,7 +5701,7 @@ void Parms::init ( ) {
 	m->m_title = "max heartbeat delay in milliseconds";
 	m->m_desc  = "If a heartbeat is delayed this many milliseconds "
 		"dump a core so we can see where the CPU was. "
-		"Logs 'db: missed heartbeat by %"INT64" ms'. "
+		"Logs 'db: missed heartbeat by %" PRId64" ms'. "
 		"Use 0 or less to disable.";
 	m->m_cgi   = "mhdms";
 	m->m_off   = offsetof(Conf,m_maxHeartbeatDelay);
@@ -5716,8 +5716,8 @@ void Parms::init ( ) {
 	m->m_desc  = "If a call to a message callback or message handler "
 		"in the udp server takes more than this many milliseconds, "
 		"then log it. "
-		"Logs 'udp: Took %"INT64" ms to call callback for msgType="
-		"0x%hhx niceness=%"INT32"'. "
+		"Logs 'udp: Took %" PRId64" ms to call callback for msgType="
+		"0x%hhx niceness=%" PRId32"'. "
 		"Use -1 or less to disable the logging.";
 	m->m_cgi   = "mdch";
 	m->m_off   = offsetof(Conf,m_maxCallbackDelay);
@@ -10520,8 +10520,8 @@ void Parms::init ( ) {
 		// upload file buttons are always dup of another parm
 		if ( m_parms[j].m_type == TYPE_FILEUPLOADBUTTON )
 			continue;
-		log(LOG_LOGIC,"conf: Cgi parm for #%"INT32" \"%s\" "
-		    "matches #%"INT32" \"%s\". Exiting.",
+		log(LOG_LOGIC,"conf: Cgi parm for #%" PRId32" \"%s\" "
+		    "matches #%" PRId32" \"%s\". Exiting.",
 		    i,m_parms[i].m_cgi,j,m_parms[j].m_cgi);
 		exit(-1);
 	}
@@ -10537,8 +10537,8 @@ void Parms::init ( ) {
 		// sanity check
 		if ( m_parms[i].m_off   > mm ||
 		     m_parms[i].m_smaxc > mm   ) {
-			log(LOG_LOGIC,"conf: Bad offset in parm #%"INT32" %s."
-			    " (%"INT32",%"INT32",%"INT32"). Did you FORGET to include "
+			log(LOG_LOGIC,"conf: Bad offset in parm #%" PRId32" %s."
+			    " (%" PRId32",%" PRId32",%" PRId32"). Did you FORGET to include "
 			    "an & before the cr.myVariable when setting "
 			    "m_off for this parm? Or subtract  'x' instead "
 			    "of 'g' or vice versa.",
@@ -10553,7 +10553,7 @@ void Parms::init ( ) {
 		int32_t j = 0;
 		for ( ; m_parms[i].m_cgi && m_parms[i].m_cgi[j] ; j++ ) {
 			if ( is_digit ( m_parms[i].m_cgi[j] ) ) {
-				log(LOG_LOGIC,"conf: Parm #%"INT32" \"%s\" has "
+				log(LOG_LOGIC,"conf: Parm #%" PRId32" \"%s\" has "
 				    "number in cgi name.",
 				    i,m_parms[i].m_title);
 				exit(-1);
@@ -10578,7 +10578,7 @@ void Parms::init ( ) {
 		// if its a fixed size then make sure m_size is not set
 		if ( m_parms[i].m_fixed > 0 ) {
 			if ( m_parms[i].m_size != 0 ) {
-				log(LOG_LOGIC,"conf: Parm #%"INT32" \"%s\" is "
+				log(LOG_LOGIC,"conf: Parm #%" PRId32" \"%s\" is "
 				    "fixed but size is not 0.",
 				    i,m_parms[i].m_title);
 				exit(-1);
@@ -10591,7 +10591,7 @@ void Parms::init ( ) {
 		size = 0;
 		t = m_parms[i].m_type;
 		if ( t == -1 ) {
-			log(LOG_LOGIC,"conf: Parm #%"INT32" \"%s\" has no type.",
+			log(LOG_LOGIC,"conf: Parm #%" PRId32" \"%s\" has no type.",
 			    i,m_parms[i].m_title);
 			exit(-1);
 		}
@@ -10629,7 +10629,7 @@ void Parms::init ( ) {
 		     t != TYPE_CHARPTR &&
 		     t != TYPE_MONOD2   &&
 		     t != TYPE_MONOM2     ) {
-			log(LOG_LOGIC,"conf: Size of parm #%"INT32" \"%s\" "
+			log(LOG_LOGIC,"conf: Size of parm #%" PRId32" \"%s\" "
 			    "not set.", i,m_parms[i].m_title);
 			exit(-1);
 		}
@@ -10646,13 +10646,13 @@ void Parms::init ( ) {
 		if ( t == TYPE_SAFEBUF  ) continue;
 		// search parms do not need an offset
 		if ( m_parms[i].m_off == -1 ){//&& m_parms[i].m_sparm == 0 ) {
-			log(LOG_LOGIC,"conf: Parm #%"INT32" \"%s\" has no offset.",
+			log(LOG_LOGIC,"conf: Parm #%" PRId32" \"%s\" has no offset.",
 			    i,m_parms[i].m_title);
 			exit(-1);
 		}
 		if ( m_parms[i].m_off < -1 ) {
-			log(LOG_LOGIC,"conf: Parm #%"INT32" \"%s\" has bad offset "
-			    "of %"INT32".", i,m_parms[i].m_title,m_parms[i].m_off);
+			log(LOG_LOGIC,"conf: Parm #%" PRId32" \"%s\" has bad offset "
+			    "of %" PRId32".", i,m_parms[i].m_title,m_parms[i].m_off);
 			exit(-1);
 		}
 		if ( m->m_obj == OBJ_CONF && m->m_off >= (int32_t)sizeof(Conf) ) {
@@ -10671,12 +10671,12 @@ void Parms::init ( ) {
 		}
 
 		if ( m_parms[i].m_page == -1 ) {
-			log(LOG_LOGIC,"conf: Parm #%"INT32" \"%s\" has no page.",
+			log(LOG_LOGIC,"conf: Parm #%" PRId32" \"%s\" has no page.",
 			    i,m_parms[i].m_title);
 			exit(-1);
 		}
 		if ( m_parms[i].m_obj == -1 ) {
-			log(LOG_LOGIC,"conf: Parm #%"INT32" \"%s\" has no object.",
+			log(LOG_LOGIC,"conf: Parm #%" PRId32" \"%s\" has no object.",
 			    i,m_parms[i].m_title);
 			exit(-1);
 		}
@@ -10711,7 +10711,7 @@ void Parms::init ( ) {
 		m_searchParms[n++] = &m_parms[i];
 		// sanity check
 		if ( m_parms[i].m_off == -1 ) {
-			log(LOG_LOGIC,"conf: SEARCH Parm #%"INT32" \"%s\" has "
+			log(LOG_LOGIC,"conf: SEARCH Parm #%" PRId32" \"%s\" has "
 			    "m_off < 0 (offset into SearchInput).",
 			    i,m_parms[i].m_title);
 			exit(-1);
@@ -10738,7 +10738,7 @@ void Parms::overlapTest ( char step ) {
 	int32_t start = 0;
 	if ( step == -1 ) start = m_numParms - 1;
 
-	//log("conf: Using step=%"INT32"",(int32_t)step);
+	//log("conf: Using step=%" PRId32,(int32_t)step);
 
 	SearchInput   tmpsi;
 	GigablastRequest tmpgr;
@@ -10776,15 +10776,15 @@ void Parms::overlapTest ( char step ) {
 		b = (char)i;
 		// string box type is a pointer!!
 		if ( p1 ) memset ( p1 , b , size );
-		//log("conf: setting %"INT32" bytes for %s at 0x%"XINT32" char=0x%hhx",
+		//log("conf: setting %" PRId32" bytes for %s at 0x%" PRIx32" char=0x%hhx",
 		//    size,m_parms[i].m_title,(int32_t)p1,b);
 		// search input uses character ptrs!!
 		if ( m_parms[i].m_type == TYPE_STRINGBOX ) size = 4;
 		if ( m_parms[i].m_type == TYPE_STRING    ) size = 4;
 		if ( m_parms[i].m_fixed > 0 ) size *= m_parms[i].m_fixed ;
 		if ( p2 ) memset ( p2 , b , size );
-		//log("conf: setting %"INT32" bytes for %s at 0x%"XINT32" char=0x%hhx "
-		//    "i=%"INT32"",   size,m_parms[i].m_title,(int32_t)p2,b,i);
+		//log("conf: setting %" PRId32" bytes for %s at 0x%" PRIx32" char=0x%hhx "
+		//    "i=%" PRId32,   size,m_parms[i].m_title,(int32_t)p2,b,i);
 	}
 
 	//
@@ -10825,8 +10825,8 @@ void Parms::overlapTest ( char step ) {
 		// save it
 		obj = m_parms[i].m_obj;
 
-		//log("conf: testing %"INT32" bytes for %s at 0x%"XINT32" char=0x%hhx "
-		//    "i=%"INT32"", size,m_parms[i].m_title,(int32_t)p1,b,i);
+		//log("conf: testing %" PRId32" bytes for %s at 0x%" PRIx32" char=0x%hhx "
+		//    "i=%" PRId32, size,m_parms[i].m_title,(int32_t)p1,b,i);
 
 		for ( j = 0 ; p1 && j < size ; j++ ) {
 			if ( p1[j] == b ) continue;
@@ -10858,8 +10858,8 @@ void Parms::overlapTest ( char step ) {
 		if ( m_parms[i].m_fixed > 0 ) size *= m_parms[i].m_fixed ;
 		objStr = "SearchInput.h";
 
-		//log("conf: testing %"INT32" bytes for %s at 0x%"XINT32" char=0x%hhx "
-		//    "i=%"INT32"",  size,m_parms[i].m_title,(int32_t)p2,b,i);
+		//log("conf: testing %" PRId32" bytes for %s at 0x%" PRIx32" char=0x%hhx "
+		//    "i=%" PRId32,  size,m_parms[i].m_title,(int32_t)p2,b,i);
 
 		for ( j = 0 ; p2 && j < size ; j++ ) {
 			if ( p2[j] == b ) continue;
@@ -10875,8 +10875,8 @@ void Parms::overlapTest ( char step ) {
 	return;
 
  error:
-	log("conf: Had a parm value collision. Parm #%"INT32" "
-	    "\"%s\" (size=%"INT32") in %s has overlapped with another parm. "
+	log("conf: Had a parm value collision. Parm #%" PRId32" "
+	    "\"%s\" (size=%" PRId32") in %s has overlapped with another parm. "
 	    "Your TYPE_* for this parm or a neighbor of it "
 	    "does not agree with what you have declared it as in the *.h "
 	    "file.",i,m_parms[i].m_title,m_parms[i].m_size,objStr);
@@ -10899,8 +10899,8 @@ void Parms::overlapTest ( char step ) {
 		// NOTE: these need to be fixed!!!
 		b = (char) i;
 		if ( b == infringerB )
-			log("conf: possible overlap with parm #%"INT32" in %s "
-			    "\"%s\" (size=%"INT32") "
+			log("conf: possible overlap with parm #%" PRId32" in %s "
+			    "\"%s\" (size=%" PRId32") "
 			    "xml=%s "
 			    "desc=\"%s\"",
 			    i,objStr,m_parms[i].m_title,
@@ -10962,7 +10962,7 @@ bool Parms::addNewParmToList2 ( SafeBuf *parmList ,
 	if ( collnum != -1 ) {
 		CollectionRec *cr = g_collectiondb.getRec ( collnum );
 		if ( cr ) obj = (char *)cr;
-		//	log("parms: no coll rec for %"INT32"",(int32_t)collnum);
+		//	log("parms: no coll rec for %" PRId32,(int32_t)collnum);
 		//	return false;
 		//}
 		//obj = (char *)cr;
@@ -11133,7 +11133,7 @@ bool Parms::addCurrentParmToList2 ( SafeBuf *parmList ,
 	/*
 	// debug it
 	log("parms: adding parm collnum=%i title=%s "
-	    "key=%s datasize=%i data=%s hash=%"UINT32
+	    "key=%s datasize=%i data=%s hash=%" PRIu32
 	    ,(int)collnum
 	    ,m->m_title
 	    ,KEYSTR(&key,sizeof(key))
@@ -11203,7 +11203,7 @@ bool Parms::convertHttpRequestToParmList (HttpRequest *hr, SafeBuf *parmList,
 	// &c= or a &name=/&token= pair.
 	char oldCollName[MAX_COLL_LEN+1];
 	oldCollName[0] = '\0';
-	if ( cr ) sprintf(oldCollName,"%"INT32"",(int32_t)cr->m_collnum);
+	if ( cr ) sprintf(oldCollName,"%" PRId32,(int32_t)cr->m_collnum);
 
 
 	////////
@@ -11259,7 +11259,7 @@ bool Parms::convertHttpRequestToParmList (HttpRequest *hr, SafeBuf *parmList,
 			return false;
 		}
 		// log it for now
-		log("parms: trying to add custom crawl (%"INT32")",
+		log("parms: trying to add custom crawl (%" PRId32")",
 		    (int32_t)parmCollnum);
 		// formulate name
 		char newName[MAX_COLL_LEN+1];
@@ -11335,12 +11335,12 @@ bool Parms::convertHttpRequestToParmList (HttpRequest *hr, SafeBuf *parmList,
 		if ( cr && strcmp(m->m_cgi,"roundStart") == 0 ) {
 			// use the current time so anything spidered before
 			// this time (the round start time) will be respidered
-			//sprintf(tmp,"%"UINT32"",getTimeGlobalNoCore());
+			//sprintf(tmp,"%" PRIu32,getTimeGlobalNoCore());
 			//val = tmp;
 			char tmpVal[64];
 			// use the same round start time for all shards
 			sprintf(tmpVal,
-				"%"UINT32",%"INT32""
+				"%" PRIu32",%" PRId32
 				,(uint32_t)getTimeGlobalNoCore()
 				,cr->m_spiderRoundNum+1
 				);
@@ -11555,7 +11555,7 @@ bool Parms::convertHttpRequestToParmList (HttpRequest *hr, SafeBuf *parmList,
 		char tmp[24];
 		if ( strcmp(field,"roundStart")==0 &&
 		     val && (val[0]=='0'||val[0]=='1') && val[1]==0 )
-			sprintf(tmp,"%"UINT32"",(int32_t)getTimeGlobalNoCore()+0);
+			sprintf(tmp,"%" PRIu32,(int32_t)getTimeGlobalNoCore()+0);
 			val = tmp;
 		}
 		*/
@@ -11616,7 +11616,7 @@ Parm *Parms::getParmFast2 ( int32_t cgiHash32 ) {
 				if ( duplicate->m_off == parm->m_off )
 					continue;
 				// otherwise bitch about it and drop core
-				log("parms: dup parm h32=%"INT32" "
+				log("parms: dup parm h32=%" PRId32" "
 				    "\"%s\" vs \"%s\"",
 				    ph32, duplicate->m_title,parm->m_title);
 				char *xx=NULL;*xx=0;
@@ -11635,7 +11635,7 @@ Parm *Parms::getParmFast2 ( int32_t cgiHash32 ) {
 
 
 Parm *Parms::getParmFast1 ( char *cgi , int32_t *occNum ) {
-	// strip off the %"INT32" for things like 'fe3' for example
+	// strip off the %" PRId32" for things like 'fe3' for example
 	// because that is the occurence # for parm arrays.
 	int32_t clen = gbstrlen(cgi);
 
@@ -11830,7 +11830,7 @@ static void gotParmReplyWrapper ( void *state , UdpSlot *slot ) {
 
 	// this is usually timeout on a dead host i guess
 	if ( g_errno ) {
-		log("parms: got parm update reply from host #%"INT32": %s",
+		log("parms: got parm update reply from host #%" PRId32": %s",
 		    h->m_hostId,mstrerror(g_errno));
 	}
 
@@ -12011,7 +12011,7 @@ bool Parms::doParmSendingLoop ( ) {
 
 		// debug log
 		log(LOG_INFO,"parms: sending parm request "
-		    "to hostid %"INT32"",h->m_hostId);
+		    "to hostid %" PRId32,h->m_hostId);
 
 		// count it
 		pn->m_numRequests++;
@@ -12081,7 +12081,7 @@ static void handleRequest3fLoop ( void *weArg ) {
 
 		if ( ! parm ) {
 			int32_t h32 = getHashFromParmRec(rec);
-			log("parms: unknown parm sent to us hash=%"INT32"",h32);
+			log("parms: unknown parm sent to us hash=%" PRId32,h32);
 			for ( int32_t i = 0 ; i < g_parms.m_numParms ; i++ ) {
 				Parm *x = &g_parms.m_parms[i];
 				if ( x->m_cgiHash != h32 ) continue;
@@ -12233,7 +12233,7 @@ void handleRequest3f ( UdpSlot *slot , int32_t niceness ) {
 	char *parmRecs = slot->m_readBuf;
 	char *parmEnd  = parmRecs + slot->m_readBufSize;
 
-	log("parms: got parm update request. size=%"INT32".",
+	log("parms: got parm update request. size=%" PRId32".",
 	    (int32_t)(parmEnd-parmRecs));
 
 	// make a new waiting entry
@@ -12433,8 +12433,8 @@ void handleRequest3e ( UdpSlot *slot , int32_t niceness ) {
 
 		if ( c >= 0 && ! cr ) {
 			// note in log
-			logf(LOG_INFO,"sync: telling host #%"INT32" to delete "
-			     "collnum %"INT32"", hostId,(int32_t)c);
+			logf(LOG_INFO,"sync: telling host #%" PRId32" to delete "
+			     "collnum %" PRId32, hostId,(int32_t)c);
 			// add the parm rec as a parm cmd
 			if (! g_parms.addNewParmToList1( &replyBuf,
 							 c,
@@ -12456,8 +12456,8 @@ void handleRequest3e ( UdpSlot *slot , int32_t niceness ) {
 		// if match, keep chugging, that's in sync
 		if ( h64 == m64 ) continue;
 		// note in log
-		logf(LOG_INFO,"sync: sending all parms for collnum %"INT32" "
-		     "to host #%"INT32"", (int32_t)c, hostId);
+		logf(LOG_INFO,"sync: sending all parms for collnum %" PRId32" "
+		     "to host #%" PRId32, (int32_t)c, hostId);
 		// otherwise, send him the list
 		if ( ! replyBuf.safeMemcpy ( &tmp ) ) goto hadError;
 	}
@@ -12477,8 +12477,8 @@ void handleRequest3e ( UdpSlot *slot , int32_t niceness ) {
 		if ( cr->m_isCustomCrawl == 1 ) cmdStr = "addCrawl";
 		if ( cr->m_isCustomCrawl == 2 ) cmdStr = "addBulk";
 		// note in log
-		logf(LOG_INFO,"sync: telling host #%"INT32" to add "
-		     "collnum %"INT32" coll=%s", hostId,(int32_t)cr->m_collnum,
+		logf(LOG_INFO,"sync: telling host #%" PRId32" to add "
+		     "collnum %" PRId32" coll=%s", hostId,(int32_t)cr->m_collnum,
 		     cr->m_coll);
 		// add the parm rec as a parm cmd
 		if ( ! g_parms.addNewParmToList1 ( &replyBuf,
@@ -12498,7 +12498,7 @@ void handleRequest3e ( UdpSlot *slot , int32_t niceness ) {
 		goto hadError;
 
 	// this should at least have the in sync command
-	log("parms: sending %"INT32" bytes of parms to sync to host #%"INT32"",
+	log("parms: sending %" PRId32" bytes of parms to sync to host #%" PRId32,
 	    replyBuf.length(),hostId);
 
 	// . use the broadcast call here so things keep their order!
@@ -12629,7 +12629,7 @@ bool Parms::addAllParmsToList ( SafeBuf *parmList, collnum_t collnum ) {
 			// note it for debugging hash
 			SafeBuf xb;
 			parm->printVal ( &xb ,collnum,occNum);
-			log("parms: adding (h=%"XINT64") parm %s = %s",
+			log("parms: adding (h=%" PRIx64") parm %s = %s",
 			    h64,parm->m_title,xb.getBufStart());
 			*/
 		}
@@ -12672,7 +12672,7 @@ bool Parms::updateParm ( char *rec , WaitEntry *we ) {
 		int32_t dataSize = getDataSizeFromParmRec ( rec );
 		if ( dataSize == 0 ) data = NULL;
 		log("parmdb: running function for "
-		    "parm \"%s\" (collnum=%"INT32") args=\"%s\""
+		    "parm \"%s\" (collnum=%" PRId32") args=\"%s\""
 		    , parm->m_title
 		    , (int32_t)collnum
 		    , data
@@ -12706,7 +12706,7 @@ bool Parms::updateParm ( char *rec , WaitEntry *we ) {
 		if ( ! cr ) {
 			const char *ps = "unknown parm";
 			if ( parm ) ps = parm->m_title;
-			log("parmdb: invalid collnum %"INT32" for parm \"%s\"",
+			log("parmdb: invalid collnum %" PRId32" for parm \"%s\"",
 			    (int32_t)collnum,ps);
 			g_errno = ENOCOLLREC;
 			return true;
@@ -12723,7 +12723,7 @@ bool Parms::updateParm ( char *rec , WaitEntry *we ) {
 	else                           base = &g_conf;
 
 	if ( ! base ) {
-		log("parms: no collrec (%"INT32") to change parm",(int32_t)collnum);
+		log("parms: no collrec (%" PRId32") to change parm",(int32_t)collnum);
 		g_errno = ENOCOLLREC;
 		return true;
 	}
@@ -12831,7 +12831,7 @@ bool Parms::updateParm ( char *rec , WaitEntry *we ) {
 
 	// show it
 	log("parms: updating parm \"%s\" "
-	    "(%s[%"INT32"]) (collnum=%"INT32") from \"%s\" -> \"%s\"",
+	    "(%s[%" PRId32"]) (collnum=%" PRId32") from \"%s\" -> \"%s\"",
 	    parm->m_title,
 	    parm->m_cgi,
 	    occNum,
@@ -12916,7 +12916,7 @@ bool Parm::printVal ( SafeBuf *sb , collnum_t collnum , int32_t occNum ) {
 	else                     base = (char *)&g_conf;
 
 	if ( ! base ) {
-		log("parms: no collrec (%"INT32") to change parm",(int32_t)collnum);
+		log("parms: no collrec (%" PRId32") to change parm",(int32_t)collnum);
 		g_errno = ENOCOLLREC;
 		return true;
 	}
@@ -12946,19 +12946,19 @@ bool Parm::printVal ( SafeBuf *sb , collnum_t collnum , int32_t occNum ) {
 		return sb->safePrintf("%s",val);
 
 	if ( m_type == TYPE_LONG || m_type == TYPE_LONG_CONST )
-		return sb->safePrintf("%"INT32"",*(int32_t *)val);
+		return sb->safePrintf("%" PRId32,*(int32_t *)val);
 
 	if ( m_type == TYPE_DATE )
-		return sb->safePrintf("%"INT32"",*(int32_t *)val);
+		return sb->safePrintf("%" PRId32,*(int32_t *)val);
 
 	if ( m_type == TYPE_DATE2 )
-		return sb->safePrintf("%"INT32"",*(int32_t *)val);
+		return sb->safePrintf("%" PRId32,*(int32_t *)val);
 
 	if ( m_type == TYPE_FLOAT )
 		return sb->safePrintf("%f",*(float *)val);
 
 	if ( m_type == TYPE_LONG_LONG )
-		return sb->safePrintf("%"INT64"",*(int64_t *)val);
+		return sb->safePrintf("%" PRId64,*(int64_t *)val);
 
 	if ( m_type == TYPE_CHARPTR ) {
 		if ( val ) return sb->safePrintf("%s",val);

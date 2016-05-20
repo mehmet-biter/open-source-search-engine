@@ -115,7 +115,7 @@ void *RdbMem::allocData ( char *key , int32_t dataSize , collnum_t collnum ) {
 			// debug why recs added during dump aren't going into
 			// secondary mem
 			// log("rdbmem: allocating %i bytes for rec in %s (cn=%i) "
-			//     "ptr1=%"PTRFMT" --ptr2=%"PTRFMT" mem=%"PTRFMT,
+			//     "ptr1=%" PTRFMT" --ptr2=%" PTRFMT" mem=%" PTRFMT,
 			//     (int)dataSize,m_rdb->m_dbname,(int)collnum,
 			//     (PTRTYPE)m_ptr1,(PTRTYPE)m_ptr2,(PTRTYPE)m_mem);
 
@@ -124,7 +124,7 @@ void *RdbMem::allocData ( char *key , int32_t dataSize , collnum_t collnum ) {
 			m_ptr2 -= dataSize;
 			// note it
 			//if ( m_ks == 16 )
-			//log("rdbmem: ptr2a=%"UINT32" size=%"INT32"",
+			//log("rdbmem: ptr2a=%" PRIu32" size=%" PRId32,
 			//    (int32_t)m_ptr2,dataSize);
 			return m_ptr2;
 		}
@@ -135,7 +135,7 @@ void *RdbMem::allocData ( char *key , int32_t dataSize , collnum_t collnum ) {
 		// debug why recs added during dump aren't going into
 		// secondary mem
 		// log("rdbmem: allocating %i bytes for rec in %s (cn=%i) "
-		//     "ptr1=%"PTRFMT" ++ptr2=%"PTRFMT" mem=%"PTRFMT,
+		//     "ptr1=%" PTRFMT" ++ptr2=%" PTRFMT" mem=%" PTRFMT,
 		//     (int)dataSize,m_rdb->m_dbname,(int)collnum,
 		//     (PTRTYPE)m_ptr1,(PTRTYPE)m_ptr2,(PTRTYPE)m_mem);
 
@@ -143,7 +143,7 @@ void *RdbMem::allocData ( char *key , int32_t dataSize , collnum_t collnum ) {
 		m_ptr2 += dataSize;
 		// note it
 		//if ( m_ks == 16 )
-		//log("rdbmem: ptr2b=%"UINT32" size=%"INT32"",
+		//log("rdbmem: ptr2b=%" PRIu32" size=%" PRId32,
 		//    (int32_t)m_ptr2-dataSize,dataSize);
 		return m_ptr2 - dataSize;
 	}
@@ -158,7 +158,7 @@ void *RdbMem::allocData ( char *key , int32_t dataSize , collnum_t collnum ) {
 		if ( m_ptr1 < m_90down ) m_is90PercentFull = true;
 		// note it
 		//if ( m_ks == 16 )
-		//log("rdbmem: ptr1a=%"UINT32" size=%"INT32"",(int32_t)m_ptr1,dataSize);
+		//log("rdbmem: ptr1a=%" PRIu32" size=%" PRId32,(int32_t)m_ptr1,dataSize);
 		// return the ptr
 		return m_ptr1;
 	}
@@ -171,7 +171,7 @@ void *RdbMem::allocData ( char *key , int32_t dataSize , collnum_t collnum ) {
 	if ( m_ptr1 > m_90up ) m_is90PercentFull = true;
 	// note it
 	//if ( m_ks == 16 )
-	//log("rdbmem: ptr1b=%"UINT32" size=%"INT32"",(int32_t)m_ptr1-dataSize,dataSize);
+	//log("rdbmem: ptr1b=%" PRIu32" size=%" PRId32,(int32_t)m_ptr1-dataSize,dataSize);
 	// return the ptr
 	return m_ptr1 - dataSize;
 }
@@ -255,7 +255,7 @@ void RdbMem::freeDumpedMem( RdbTree *tree ) {
 			stillNeedsMove = true;
 		}
 		if ( stillNeedsMove ) {// this should never happen!!
-			log("rdbmem: olddata=0x%"PTRFMT" newdata=0x%"PTRFMT,
+			log("rdbmem: olddata=0x%" PTRFMT" newdata=0x%" PTRFMT,
 				(PTRTYPE)data, (PTRTYPE)newData);
 			log("rdbmem: still needs move!");
 		}
@@ -273,7 +273,7 @@ void RdbMem::freeDumpedMem( RdbTree *tree ) {
 	char *tmp = m_ptr1;
 	// debug
 	//logf(LOG_DEBUG,
-	//     "db: freeing dumped mem ptr1=%"XINT32" ptr2=%"XINT32".",m_ptr1,m_ptr2);
+	//     "db: freeing dumped mem ptr1=%" PRIx32" ptr2=%" PRIx32".",m_ptr1,m_ptr2);
 	// primary pointer, m_ptr1, becomes m_ptr2
 	m_ptr1 = m_ptr2;
 	// secondary ptr becomes primary

@@ -69,7 +69,7 @@ int32_t SpiderRequest::print ( SafeBuf *sbarg ) {
 
 	// indicate it's a request not a reply
 	sb->safePrintf("REQ ");
-	sb->safePrintf("uh48=%"UINT64" ",getUrlHash48());
+	sb->safePrintf("uh48=%" PRIu64" ",getUrlHash48());
 	// if negtaive bail early now
 	if ( (m_key.n0 & 0x01) == 0x00 ) {
 		sb->safePrintf("[DELETE]");
@@ -77,14 +77,14 @@ int32_t SpiderRequest::print ( SafeBuf *sbarg ) {
 		return sb->length();
 	}
 
-	sb->safePrintf("recsize=%"INT32" ",getRecSize());
-	sb->safePrintf("parentDocId=%"UINT64" ",getParentDocId());
+	sb->safePrintf("recsize=%" PRId32" ",getRecSize());
+	sb->safePrintf("parentDocId=%" PRIu64" ",getParentDocId());
 
 	sb->safePrintf("firstip=%s ",iptoa(m_firstIp) );
-	sb->safePrintf("hostHash32=0x%"XINT32" ",m_hostHash32 );
-	sb->safePrintf("domHash32=0x%"XINT32" ",m_domHash32 );
-	sb->safePrintf("siteHash32=0x%"XINT32" ",m_siteHash32 );
-	sb->safePrintf("siteNumInlinks=%"INT32" ",m_siteNumInlinks );
+	sb->safePrintf("hostHash32=0x%" PRIx32" ",m_hostHash32 );
+	sb->safePrintf("domHash32=0x%" PRIx32" ",m_domHash32 );
+	sb->safePrintf("siteHash32=0x%" PRIx32" ",m_siteHash32 );
+	sb->safePrintf("siteNumInlinks=%" PRId32" ",m_siteNumInlinks );
 
 	// print time format: 7/23/1971 10:45:32
 	struct tm *timeStruct ;
@@ -93,37 +93,37 @@ int32_t SpiderRequest::print ( SafeBuf *sbarg ) {
 	time_t ts = (time_t)m_addedTime;
 	timeStruct = gmtime ( &ts );
 	strftime ( time , 256 , "%b %e %T %Y UTC", timeStruct );
-	sb->safePrintf("addedTime=%s(%"UINT32") ",time,(uint32_t)m_addedTime );
+	sb->safePrintf("addedTime=%s(%" PRIu32") ",time,(uint32_t)m_addedTime );
 
 	//sb->safePrintf("parentFirstIp=%s ",iptoa(m_parentFirstIp) );
 	sb->safePrintf("pageNumInlinks=%i ",(int)m_pageNumInlinks);
-	sb->safePrintf("parentHostHash32=0x%"XINT32" ",m_parentHostHash32 );
-	sb->safePrintf("parentDomHash32=0x%"XINT32" ",m_parentDomHash32 );
-	sb->safePrintf("parentSiteHash32=0x%"XINT32" ",m_parentSiteHash32 );
+	sb->safePrintf("parentHostHash32=0x%" PRIx32" ",m_parentHostHash32 );
+	sb->safePrintf("parentDomHash32=0x%" PRIx32" ",m_parentDomHash32 );
+	sb->safePrintf("parentSiteHash32=0x%" PRIx32" ",m_parentSiteHash32 );
 
-	sb->safePrintf("hopCount=%"INT32" ",(int32_t)m_hopCount );
+	sb->safePrintf("hopCount=%" PRId32" ",(int32_t)m_hopCount );
 
 	//timeStruct = gmtime ( &m_spiderTime );
 	//time[0] = 0;
 	//if ( m_spiderTime ) strftime (time,256,"%b %e %T %Y UTC",timeStruct);
-	//sb->safePrintf("spiderTime=%s(%"UINT32") ",time,m_spiderTime);
+	//sb->safePrintf("spiderTime=%s(%" PRIu32") ",time,m_spiderTime);
 
 	//timeStruct = gmtime ( &m_pubDate );
 	//time[0] = 0;
 	//if ( m_pubDate ) strftime (time,256,"%b %e %T %Y UTC",timeStruct);
-	//sb->safePrintf("pubDate=%s(%"UINT32") ",time,m_pubDate );
+	//sb->safePrintf("pubDate=%s(%" PRIu32") ",time,m_pubDate );
 
-	sb->safePrintf("ufn=%"INT32" ", (int32_t)m_ufn);
+	sb->safePrintf("ufn=%" PRId32" ", (int32_t)m_ufn);
 	// why was this unsigned?
-	sb->safePrintf("priority=%"INT32" ", (int32_t)m_priority);
+	sb->safePrintf("priority=%" PRId32" ", (int32_t)m_priority);
 
-	//sb->safePrintf("errCode=%s(%"UINT32") ",mstrerror(m_errCode),m_errCode );
-	//sb->safePrintf("crawlDelay=%"INT32"ms ",m_crawlDelay );
-	//sb->safePrintf("httpStatus=%"INT32" ",(int32_t)m_httpStatus );
-	//sb->safePrintf("retryNum=%"INT32" ",(int32_t)m_retryNum );
-	//sb->safePrintf("langId=%s(%"INT32") ",
+	//sb->safePrintf("errCode=%s(%" PRIu32") ",mstrerror(m_errCode),m_errCode );
+	//sb->safePrintf("crawlDelay=%" PRId32"ms ",m_crawlDelay );
+	//sb->safePrintf("httpStatus=%" PRId32" ",(int32_t)m_httpStatus );
+	//sb->safePrintf("retryNum=%" PRId32" ",(int32_t)m_retryNum );
+	//sb->safePrintf("langId=%s(%" PRId32") ",
 	//	       getLanguageString(m_langId),(int32_t)m_langId );
-	//sb->safePrintf("percentChanged=%"INT32"%% ",(int32_t)m_percentChanged );
+	//sb->safePrintf("percentChanged=%" PRId32"%% ",(int32_t)m_percentChanged );
 
 	if ( m_isNewOutlink ) sb->safePrintf("ISNEWOUTLINK ");
 	if ( m_isAddUrl ) sb->safePrintf("ISADDURL ");
@@ -155,7 +155,7 @@ int32_t SpiderRequest::print ( SafeBuf *sbarg ) {
 	//if ( m_doled ) sb->safePrintf("DOLED ");
 
 	int32_t shardNum = g_hostdb.getShardNum( RDB_SPIDERDB, this );
-	sb->safePrintf("shardnum=%"UINT32" ",(uint32_t)shardNum);
+	sb->safePrintf("shardnum=%" PRIu32" ",(uint32_t)shardNum);
 
 	sb->safePrintf("url=%s",m_url);
 
@@ -185,8 +185,8 @@ int32_t SpiderReply::print ( SafeBuf *sbarg ) {
 	// indicate it's a reply
 	sb->safePrintf("REP ");
 
-	sb->safePrintf("uh48=%"UINT64" ",getUrlHash48());
-	sb->safePrintf("parentDocId=%"UINT64" ",getParentDocId());
+	sb->safePrintf("uh48=%" PRIu64" ",getUrlHash48());
+	sb->safePrintf("parentDocId=%" PRIu64" ",getParentDocId());
 
 
 	// if negtaive bail early now
@@ -206,30 +206,30 @@ int32_t SpiderReply::print ( SafeBuf *sbarg ) {
 	timeStruct = gmtime ( &ts );
 	time[0] = 0;
 	if ( m_spideredTime ) strftime (time,256,"%b %e %T %Y UTC",timeStruct);
-	sb->safePrintf("spideredTime=%s(%"UINT32") ",time,
+	sb->safePrintf("spideredTime=%s(%" PRIu32") ",time,
 		       (uint32_t)m_spideredTime);
 
-	sb->safePrintf("siteNumInlinks=%"INT32" ",m_siteNumInlinks );
+	sb->safePrintf("siteNumInlinks=%" PRId32" ",m_siteNumInlinks );
 
 	time_t ts2 = (time_t)m_pubDate;
 	timeStruct = gmtime ( &ts2 );
 	time[0] = 0;
 	if ( m_pubDate != 0 && m_pubDate != -1 ) 
 		strftime (time,256,"%b %e %T %Y UTC",timeStruct);
-	sb->safePrintf("pubDate=%s(%"INT32") ",time,m_pubDate );
+	sb->safePrintf("pubDate=%s(%" PRId32") ",time,m_pubDate );
 
-	//sb->safePrintf("newRequests=%"INT32" ",m_newRequests );
-	sb->safePrintf("ch32=%"UINT32" ",(uint32_t)m_contentHash32);
+	//sb->safePrintf("newRequests=%" PRId32" ",m_newRequests );
+	sb->safePrintf("ch32=%" PRIu32" ",(uint32_t)m_contentHash32);
 
-	sb->safePrintf("crawldelayms=%"INT32"ms ",m_crawlDelayMS );
-	sb->safePrintf("httpStatus=%"INT32" ",(int32_t)m_httpStatus );
-	sb->safePrintf("langId=%s(%"INT32") ",
+	sb->safePrintf("crawldelayms=%" PRId32"ms ",m_crawlDelayMS );
+	sb->safePrintf("httpStatus=%" PRId32" ",(int32_t)m_httpStatus );
+	sb->safePrintf("langId=%s(%" PRId32") ",
 		       getLanguageString(m_langId),(int32_t)m_langId );
 
 	if ( m_errCount )
-		sb->safePrintf("errCount=%"INT32" ",(int32_t)m_errCount);
+		sb->safePrintf("errCount=%" PRId32" ",(int32_t)m_errCount);
 
-	sb->safePrintf("errCode=%s(%"UINT32") ",mstrerror(m_errCode),
+	sb->safePrintf("errCode=%s(%" PRIu32") ",mstrerror(m_errCode),
 		       (uint32_t)m_errCode );
 
 	//if ( m_isSpam ) sb->safePrintf("ISSPAM ");
@@ -259,12 +259,12 @@ int32_t SpiderRequest::printToTable ( SafeBuf *sb , const char *status ,
 	if ( xd ) {
 		int64_t now = gettimeofdayInMilliseconds();
 		int64_t elapsed = now - xd->m_startTime;
-		sb->safePrintf(" <td>%"INT32"</td>\n",row);
-		sb->safePrintf(" <td>%"INT64"ms</td>\n",elapsed);
+		sb->safePrintf(" <td>%" PRId32"</td>\n",row);
+		sb->safePrintf(" <td>%" PRId64"ms</td>\n",elapsed);
 		collnum_t collnum = xd->m_collnum;
 		CollectionRec *cr = g_collectiondb.getRec(collnum);
 		char *cs = ""; if ( cr ) cs = cr->m_coll;
-		// sb->safePrintf(" <td><a href=/crawlbot?c=%s>%"INT32"</a></td>\n",
+		// sb->safePrintf(" <td><a href=/crawlbot?c=%s>%" PRId32"</a></td>\n",
 		// 	       cs,(int32_t)collnum);
 		//sb->safePrintf(" <td><a href=/crawlbot?c=%s>%s</a></td>\n",
 		//	       cs,cs);
@@ -277,21 +277,21 @@ int32_t SpiderRequest::printToTable ( SafeBuf *sb , const char *status ,
 	sb->safePrintf("</nobr></a></td>\n");
 	sb->safePrintf(" <td><nobr>%s</nobr></td>\n",status );
 
-	sb->safePrintf(" <td>%"INT32"</td>\n",(int32_t)m_priority);
-	sb->safePrintf(" <td>%"INT32"</td>\n",(int32_t)m_ufn);
+	sb->safePrintf(" <td>%" PRId32"</td>\n",(int32_t)m_priority);
+	sb->safePrintf(" <td>%" PRId32"</td>\n",(int32_t)m_ufn);
 
 	sb->safePrintf(" <td>%s</td>\n",iptoa(m_firstIp) );
-	sb->safePrintf(" <td>%"INT32"</td>\n",(int32_t)m_errCount );
+	sb->safePrintf(" <td>%" PRId32"</td>\n",(int32_t)m_errCount );
 
-	sb->safePrintf(" <td>%"UINT64"</td>\n",getUrlHash48());
+	sb->safePrintf(" <td>%" PRIu64"</td>\n",getUrlHash48());
 
-	//sb->safePrintf(" <td>0x%"XINT32"</td>\n",m_hostHash32 );
-	//sb->safePrintf(" <td>0x%"XINT32"</td>\n",m_domHash32 );
-	//sb->safePrintf(" <td>0x%"XINT32"</td>\n",m_siteHash32 );
+	//sb->safePrintf(" <td>0x%" PRIx32"</td>\n",m_hostHash32 );
+	//sb->safePrintf(" <td>0x%" PRIx32"</td>\n",m_domHash32 );
+	//sb->safePrintf(" <td>0x%" PRIx32"</td>\n",m_siteHash32 );
 
-	sb->safePrintf(" <td>%"INT32"</td>\n",m_siteNumInlinks );
-	//sb->safePrintf(" <td>%"INT32"</td>\n",m_pageNumInlinks );
-	sb->safePrintf(" <td>%"INT32"</td>\n",(int32_t)m_hopCount );
+	sb->safePrintf(" <td>%" PRId32"</td>\n",m_siteNumInlinks );
+	//sb->safePrintf(" <td>%" PRId32"</td>\n",m_pageNumInlinks );
+	sb->safePrintf(" <td>%" PRId32"</td>\n",(int32_t)m_hopCount );
 
 	// print time format: 7/23/1971 10:45:32
 	struct tm *timeStruct ;
@@ -300,28 +300,28 @@ int32_t SpiderRequest::printToTable ( SafeBuf *sb , const char *status ,
 	time_t ts3 = (time_t)m_addedTime;
 	timeStruct = gmtime ( &ts3 );
 	strftime ( time , 256 , "%b %e %T %Y UTC", timeStruct );
-	sb->safePrintf(" <td><nobr>%s(%"UINT32")</nobr></td>\n",time,
+	sb->safePrintf(" <td><nobr>%s(%" PRIu32")</nobr></td>\n",time,
 		       (uint32_t)m_addedTime);
 
 	//timeStruct = gmtime ( &m_pubDate );
 	//time[0] = 0;
 	//if ( m_pubDate ) strftime (time,256,"%b %e %T %Y UTC",timeStruct);
-	//sb->safePrintf(" <td>%s(%"UINT32")</td>\n",time,m_pubDate );
+	//sb->safePrintf(" <td>%s(%" PRIu32")</td>\n",time,m_pubDate );
 
-	//sb->safePrintf(" <td>%s(%"UINT32")</td>\n",mstrerror(m_errCode),m_errCode);
-	//sb->safePrintf(" <td>%"INT32"ms</td>\n",m_crawlDelay );
+	//sb->safePrintf(" <td>%s(%" PRIu32")</td>\n",mstrerror(m_errCode),m_errCode);
+	//sb->safePrintf(" <td>%" PRId32"ms</td>\n",m_crawlDelay );
 	sb->safePrintf(" <td>%i</td>\n",(int)m_pageNumInlinks);
-	sb->safePrintf(" <td>%"UINT64"</td>\n",getParentDocId() );
+	sb->safePrintf(" <td>%" PRIu64"</td>\n",getParentDocId() );
 
-	//sb->safePrintf(" <td>0x%"XINT32"</td>\n",m_parentHostHash32);
-	//sb->safePrintf(" <td>0x%"XINT32"</td>\n",m_parentDomHash32 );
-	//sb->safePrintf(" <td>0x%"XINT32"</td>\n",m_parentSiteHash32 );
+	//sb->safePrintf(" <td>0x%" PRIx32"</td>\n",m_parentHostHash32);
+	//sb->safePrintf(" <td>0x%" PRIx32"</td>\n",m_parentDomHash32 );
+	//sb->safePrintf(" <td>0x%" PRIx32"</td>\n",m_parentSiteHash32 );
 
-	//sb->safePrintf(" <td>%"INT32"</td>\n",(int32_t)m_httpStatus );
-	//sb->safePrintf(" <td>%"INT32"</td>\n",(int32_t)m_retryNum );
-	//sb->safePrintf(" <td>%s(%"INT32")</td>\n",
+	//sb->safePrintf(" <td>%" PRId32"</td>\n",(int32_t)m_httpStatus );
+	//sb->safePrintf(" <td>%" PRId32"</td>\n",(int32_t)m_retryNum );
+	//sb->safePrintf(" <td>%s(%" PRId32")</td>\n",
 	//	       getLanguageString(m_langId),(int32_t)m_langId );
-	//sb->safePrintf(" <td>%"INT32"%%</td>\n",(int32_t)m_percentChanged );
+	//sb->safePrintf(" <td>%" PRId32"%%</td>\n",(int32_t)m_percentChanged );
 
 	sb->safePrintf(" <td><nobr>");
 
@@ -397,8 +397,8 @@ int32_t SpiderRequest::printToTableSimple ( SafeBuf *sb , const char *status ,
 	if ( xd ) {
 		int64_t now = gettimeofdayInMilliseconds();
 		int64_t elapsed = now - xd->m_startTime;
-		sb->safePrintf(" <td>%"INT32"</td>\n",row);
-		sb->safePrintf(" <td>%"INT64"ms</td>\n",elapsed);
+		sb->safePrintf(" <td>%" PRId32"</td>\n",row);
+		sb->safePrintf(" <td>%" PRId64"ms</td>\n",elapsed);
 		// print collection
 		CollectionRec *cr = g_collectiondb.getRec ( xd->m_collnum );
 		char *coll = "";
@@ -414,15 +414,15 @@ int32_t SpiderRequest::printToTableSimple ( SafeBuf *sb , const char *status ,
 	sb->safePrintf(" <td>%s</td>\n",iptoa(m_firstIp));
 
 	if ( xd->m_crawlDelayValid && xd->m_crawlDelay >= 0 )
-		sb->safePrintf(" <td>%"INT32" ms</td>\n",xd->m_crawlDelay);
+		sb->safePrintf(" <td>%" PRId32" ms</td>\n",xd->m_crawlDelay);
 	else
 		sb->safePrintf(" <td>--</td>\n");
 
-	sb->safePrintf(" <td>%"INT32"</td>\n",(int32_t)m_priority);
+	sb->safePrintf(" <td>%" PRId32"</td>\n",(int32_t)m_priority);
 
-	sb->safePrintf(" <td>%"INT32"</td>\n",(int32_t)m_errCount );
+	sb->safePrintf(" <td>%" PRId32"</td>\n",(int32_t)m_errCount );
 
-	sb->safePrintf(" <td>%"INT32"</td>\n",(int32_t)m_hopCount );
+	sb->safePrintf(" <td>%" PRId32"</td>\n",(int32_t)m_hopCount );
 
 	// print time format: 7/23/1971 10:45:32
 	struct tm *timeStruct ;
@@ -431,7 +431,7 @@ int32_t SpiderRequest::printToTableSimple ( SafeBuf *sb , const char *status ,
 	time_t ts4 = (time_t)m_addedTime;
 	timeStruct = gmtime ( &ts4 );
 	strftime ( time , 256 , "%b %e %T %Y UTC", timeStruct );
-	sb->safePrintf(" <td><nobr>%s(%"UINT32")</nobr></td>\n",time,
+	sb->safePrintf(" <td><nobr>%s(%" PRIu32")</nobr></td>\n",time,
 		       (uint32_t)m_addedTime);
 
 	sb->safePrintf("</tr>\n");
@@ -644,8 +644,8 @@ bool Spiderdb::verify ( char *coll ) {
 	if ( got != count ) {
 		// tally it up
 		g_rebalance.m_numForeignRecs += count - got;
-		log ("db: Out of first %"INT32" records in spiderdb, "
-		     "only %"INT32" belong to our shard.",count,got);
+		log ("db: Out of first %" PRId32" records in spiderdb, "
+		     "only %" PRId32" belong to our shard.",count,got);
 		// exit if NONE, we probably got the wrong data
 		if ( got == 0 ) log("db: Are you sure you have the "
 					   "right "
@@ -655,7 +655,7 @@ bool Spiderdb::verify ( char *coll ) {
 		g_jobScheduler.allow_new_jobs();
 		return g_conf.m_bypassValidation;
 	}
-	log (LOG_DEBUG,"db: Spiderdb passed verification successfully for %"INT32" "
+	log (LOG_DEBUG,"db: Spiderdb passed verification successfully for %" PRId32" "
 	      "recs.", count );
 	// DONE
 	g_jobScheduler.allow_new_jobs();
@@ -780,10 +780,10 @@ void SpiderCache::save ( bool useThread ) {
 		if ( tree->m_isSaving ) continue;
 		char *filename = "waitingtree";
 		char dir[1024];
-		sprintf(dir,"%scoll.%s.%"INT32"",g_hostdb.m_dir,
+		sprintf(dir,"%scoll.%s.%" PRId32,g_hostdb.m_dir,
 			sc->m_coll,(int32_t)sc->m_collnum);
 		// log it for now
-		log("spider: saving waiting tree for cn=%"INT32"",(int32_t)i);
+		log("spider: saving waiting tree for cn=%" PRId32,(int32_t)i);
 		// returns false if it blocked, callback will be called
 		tree->fastSave ( dir, // g_hostdb.m_dir ,
 				 filename ,
@@ -869,38 +869,38 @@ bool tryToDeleteSpiderColl ( SpiderColl *sc , const char *msg ) {
 	if ( ! sc->m_deleteMyself ) return false;
 	// otherwise always return true
 	if ( sc->m_msg5b.m_waitingForList ) {
-		log("spider: deleting sc=0x%"PTRFMT" for collnum=%"INT32" "
+		log("spider: deleting sc=0x%" PTRFMT" for collnum=%" PRId32" "
 		    "waiting1",
 		    (PTRTYPE)sc,(int32_t)sc->m_collnum);
 		return true;
 	}
 	// if ( sc->m_msg1.m_mcast.m_inUse ) {
-	// 	log("spider: deleting sc=0x%"PTRFMT" for collnum=%"INT32" "
+	// 	log("spider: deleting sc=0x%" PTRFMT" for collnum=%" PRId32" "
 	// 	    "waiting2",
 	// 	    (PTRTYPE)sc,(int32_t)sc->m_collnum);
 	// 	return true;
 	// }
 	if ( sc->m_isLoading ) {
-		log("spider: deleting sc=0x%"PTRFMT" for collnum=%"INT32" "
+		log("spider: deleting sc=0x%" PTRFMT" for collnum=%" PRId32" "
 		    "waiting3",
 		    (PTRTYPE)sc,(int32_t)sc->m_collnum);
 		return true;
 	}
 	// this means msg5 is out
 	if ( sc->m_msg5.m_waitingForList ) {
-		log("spider: deleting sc=0x%"PTRFMT" for collnum=%"INT32" "
+		log("spider: deleting sc=0x%" PTRFMT" for collnum=%" PRId32" "
 		    "waiting4",
 		    (PTRTYPE)sc,(int32_t)sc->m_collnum);
 		return true;
 	}
 	// if ( sc->m_gettingList1 ) {
-	// 	log("spider: deleting sc=0x%"PTRFMT" for collnum=%"INT32" 
+	// 	log("spider: deleting sc=0x%" PTRFMT" for collnum=%" PRId32"
 	//"waiting5",
 	// 	    (int32_t)sc,(int32_t)sc->m_collnum);
 	// 	return true;
 	// }
 	// if ( sc->m_gettingList2 ) {
-	// 	log("spider: deleting sc=0x%"PTRFMT" for collnum=%"INT32" 
+	// 	log("spider: deleting sc=0x%" PTRFMT" for collnum=%" PRId32"
 	//"waiting6",
 	// 	    (int32_t)sc,(int32_t)sc->m_collnum);
 	// 	return true;
@@ -908,7 +908,7 @@ bool tryToDeleteSpiderColl ( SpiderColl *sc , const char *msg ) {
 	// there's still a core of someone trying to write to someting
 	// in "sc" so we have to try to fix that. somewhere in xmldoc.cpp
 	// or spider.cpp. everyone should get sc from cr everytime i'd think
-	log("spider: deleting sc=0x%"PTRFMT" for collnum=%"INT32" (msg=%s)",
+	log("spider: deleting sc=0x%" PTRFMT" for collnum=%" PRId32" (msg=%s)",
 	    (PTRTYPE)sc,(int32_t)sc->m_collnum,msg);
 	// . make sure nobody has it
 	// . cr might be NULL because Collectiondb.cpp::deleteRec2() might
@@ -944,7 +944,7 @@ SpiderColl *SpiderCache::getSpiderColl ( collnum_t collnum ) {
 	// make it
 	try { sc = new(SpiderColl); }
 	catch ( ... ) {
-		log("spider: failed to make SpiderColl for collnum=%"INT32"",
+		log("spider: failed to make SpiderColl for collnum=%" PRId32,
 		    (int32_t)collnum);
 		return NULL;
 	}
@@ -954,7 +954,7 @@ SpiderColl *SpiderCache::getSpiderColl ( collnum_t collnum ) {
 	//m_spiderColls [ collnum ] = sc;
 	cr->m_spiderColl = sc;
 	// note it
-	logf(LOG_DEBUG,"spider: made spidercoll=%"PTRFMT" for cr=%"PTRFMT"",
+	logf(LOG_DEBUG,"spider: made spidercoll=%" PTRFMT" for cr=%" PTRFMT"",
 	    (PTRTYPE)sc,(PTRTYPE)cr);
 	// update this
 	//if ( m_numSpiderColls < collnum + 1 )
@@ -1373,7 +1373,7 @@ bool sendPage ( State11 *st ) {
 	SafeBuf *sbTable = &st->m_safeBuf;
 
 	// generate a query string to pass to host bar
-	char qs[64]; sprintf ( qs , "&n=%"INT32"", st->m_numRecs );
+	char qs[64]; sprintf ( qs , "&n=%" PRId32, st->m_numRecs );
 
 	// store the page in here!
 	SafeBuf sb;
@@ -1429,8 +1429,8 @@ bool sendPage ( State11 *st ) {
 			"<tr><td colspan=50>"
 			//"<center>"
 			"<b>Currently Spidering on This Host</b>"
-			" (%"INT32" spiders)"
-			//" (%"INT32" locks)"
+			" (%" PRId32" spiders)"
+			//" (%" PRId32" locks)"
 			//"</center>"
 			"</td></tr>\n"
 			, TABLE_STYLE
@@ -1564,14 +1564,14 @@ bool sendPage ( State11 *st ) {
 		       "</td></tr>"
 
 		       "<tr class=poo><td><b>Total Spiders</n>"
-		       "</td><td>%"INT64"</td><td>%"INT64"</td><td>%"INT64"</td>\n"
-		       "</td><td>%"INT32"</td><td>%"INT32"</td><td>%"INT32"</td></tr>\n"
+		       "</td><td>%" PRId64"</td><td>%" PRId64"</td><td>%" PRId64"</td>\n"
+		       "</td><td>%" PRId32"</td><td>%" PRId32"</td><td>%" PRId32"</td></tr>\n"
 		       //"<tr class=poo><td><b>Successful Spiders</n>"
-		       //"</td><td>%"INT64"</td><td>%"INT64"</td><td>%"INT64"</td>\n"
-		       //"</td><td>%"INT32"</td><td>%"INT32"</td><td>%"INT32"</td></tr>\n"
+		       //"</td><td>%" PRId64"</td><td>%" PRId64"</td><td>%" PRId64"</td>\n"
+		       //"</td><td>%" PRId32"</td><td>%" PRId32"</td><td>%" PRId32"</td></tr>\n"
 		       //"<tr class=poo><td><b>Failed Spiders</n>"
-		       //"</td><td>%"INT64"</td><td>%"INT64"</td><td>%"INT64"</td>\n"
-		       //"</td><td>%"INT32"</td><td>%"INT32"</td><td>%"INT32"</td></tr>\n"
+		       //"</td><td>%" PRId64"</td><td>%" PRId64"</td><td>%" PRId64"</td>\n"
+		       //"</td><td>%" PRId32"</td><td>%" PRId32"</td><td>%" PRId32"</td></tr>\n"
 		       "<tr class=poo><td><b>Success Rate</b>"
 		       "</td><td>%.02f%%</td><td>%.02f%%</td>"
 		       "</td><td>%.02f%%</td><td>%.02f%%</td>"
@@ -1635,12 +1635,12 @@ bool sendPage ( State11 *st ) {
 			       "%s"
 			       "</a>"
 			       "</b></td>"
-			       "<td>%"INT64"</td>"
-			       "<td>%"INT64"</td>"
-			       "<td>%"INT64"</td>"
-			       "<td>%"INT32"</td>"
-			       "<td>%"INT32"</td>"
-			       "<td>%"INT32"</td>"
+			       "<td>%" PRId64"</td>"
+			       "<td>%" PRId64"</td>"
+			       "<td>%" PRId64"</td>"
+			       "<td>%" PRId32"</td>"
+			       "<td>%" PRId32"</td>"
+			       "<td>%" PRId32"</td>"
 			       "</tr>\n" ,
 			       mstrerror(i),
 			       g_stats.m_allErrorsNew[i] +
@@ -1791,7 +1791,7 @@ bool sendPage ( State11 *st ) {
 			"<b>URLs Ready to Spider for collection "
 			"<font color=red><b>%s</b>"
 			"</font>"
-			" (%"INT32" ips in doleiptable)"
+			" (%" PRId32" ips in doleiptable)"
 			,
 			TABLE_STYLE,
 			st->m_coll ,
@@ -1803,7 +1803,7 @@ bool sendPage ( State11 *st ) {
 	char time[256];
 	timeStruct = gmtime ( &nowUTC );
 	strftime ( time , 256 , "%b %e %T %Y UTC", timeStruct );
-	sb.safePrintf("</b>" //  (current time = %s = %"UINT32") "
+	sb.safePrintf("</b>" //  (current time = %s = %" PRIu32") "
 		      "</td></tr>\n" 
 		      //,time,nowUTC
 		      );
@@ -1836,8 +1836,8 @@ bool sendPage ( State11 *st ) {
 			st->m_coll );
 	// print time format: 7/23/1971 10:45:32
 	int64_t timems = gettimeofdayInMillisecondsGlobal();
-	sb.safePrintf("</b> (current time = %"UINT64")(totalcount=%"INT32")"
-		      "(waittablecount=%"INT32")",
+	sb.safePrintf("</b> (current time = %" PRIu64")(totalcount=%" PRId32")"
+		      "(waittablecount=%" PRId32")",
 		      timems,
 		      sc->m_waitingTree.getNumUsedNodes(),
 		      sc->m_waitingTable.getNumUsedSlots());
@@ -1885,7 +1885,7 @@ bool sendPage ( State11 *st ) {
 		// 		"SpiderRequest?</font></b>)";
 		// get the rest of the data
 		sb.safePrintf("<tr bgcolor=#%s>"
-			      "<td>%"INT64"%s</td>"
+			      "<td>%" PRId64"%s</td>"
 			      "<td>%s</td>"
 			      "</tr>\n",
 			      LIGHT_BLUE,
@@ -2212,7 +2212,7 @@ bool updateSiteListBuf ( collnum_t collnum ,
 
 		// error? skip it then...
 		if ( u.getHostLen() <= 0 ) {
-			log("basic: error on line #%"INT32" in sitelist",lineNum);
+			log("basic: error on line #%" PRId32" in sitelist",lineNum);
 			continue;
 		}
 
@@ -2309,7 +2309,7 @@ bool updateSiteListBuf ( collnum_t collnum ,
 
 	if ( ! addSeeds ) return true;
 
-	log( "spider: adding %" INT32" seed urls", added );
+	log( "spider: adding %" PRId32" seed urls", added );
 
 	// use spidercoll to contain this msg4 but if in use it
 	// won't be able to be deleted until it comes back..
@@ -2633,7 +2633,7 @@ checkNextRule:
 			p += 10;
 			p = strstr(p,"&&");
 			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
 			p += 2;
@@ -2664,7 +2664,7 @@ checkNextRule:
 			p += 10;
 			p = strstr(p,"&&");
 			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
 			p += 2;
@@ -2685,7 +2685,7 @@ checkNextRule:
 			p = strstr(p, "&&");
 			// all done?
 			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
 			p += 2;
@@ -2709,7 +2709,7 @@ checkNextRule:
 			p = strstr(p, "&&");
 			// if nothing, else then it is a match
 			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
 			// skip the '&&' and go to next rule
@@ -2775,7 +2775,7 @@ checkNextRule:
 			p = strstr(p, "&&");
 			// all done?
 			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
 			p += 2;
@@ -2795,7 +2795,7 @@ checkNextRule:
 			p = strstr(p, "&&");
 			// all done?
 			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
 			p += 2;
@@ -2814,7 +2814,7 @@ checkNextRule:
 			p = strstr(p, "&&");
 			// all done?
 			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
 			p += 2;
@@ -2833,7 +2833,7 @@ checkNextRule:
 			p = strstr(p, "&&");
 			// all done?
 			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
 			p += 2;
@@ -2870,7 +2870,7 @@ checkNextRule:
 			p = strstr(p, "&&");
 			// all done?
 			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
 			p += 2;
@@ -2890,7 +2890,7 @@ checkNextRule:
 			p = strstr(p, "&&");
 			// all done?
 			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
 			p += 2;
@@ -2917,7 +2917,7 @@ checkNextRule:
 			p = strstr(p, "&&");
 			// all done?
 			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
 			p += 2;
@@ -2938,7 +2938,7 @@ checkNextRule:
 			p = strstr(p, "&&");
 			// all done?
 			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
 			p += 2;
@@ -2956,7 +2956,7 @@ checkNextRule:
 			p = strstr(p, "&&");
 			// all done?
 			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
 			p += 2;
@@ -2995,7 +2995,7 @@ checkNextRule:
 			p = strstr(p, "&&");
 			// all done?
 			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
 			
@@ -3029,7 +3029,7 @@ checkNextRule:
 			p = strstr(p, "&&");
 			// all done?
 			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
 			p += 2;
@@ -3053,7 +3053,7 @@ checkNextRule:
 			p = strstr(p, "&&");
 			// all done?
 			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
 			p += 2;
@@ -3071,7 +3071,7 @@ checkNextRule:
 			p = strstr(p, "&&");
 			// all done?
 			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
 			p += 2;
@@ -3090,7 +3090,7 @@ checkNextRule:
 			p += 6;
 			p = strstr(p, "&&");
 			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
 			p += 2;
@@ -3105,7 +3105,7 @@ checkNextRule:
 			p += 8;
 			p = strstr(p, "&&");
 			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
 			p += 2;
@@ -3124,7 +3124,7 @@ checkNextRule:
 			p += 6;
 			p = strstr(p, "&&");
 			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
 			p += 2;
@@ -3230,7 +3230,7 @@ checkNextRule:
 			p += 7;
 			p = strstr(p, "&&");
 			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
 			p += 2;
@@ -3254,7 +3254,7 @@ checkNextRule:
 			p = strstr(p, "&&");
 			// if nothing, else then it is a match
 			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
 			// skip the '&&' and go to next rule
@@ -3272,7 +3272,7 @@ checkNextRule:
 			p = strstr(p, "&&");
 			// if nothing, else then it is a match
 			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
 			// skip the '&&' and go to next rule
@@ -3298,7 +3298,7 @@ checkNextRule:
 			p = strstr(p, "&&");
 			// if nothing, else then it is a match
 			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
 
@@ -3320,7 +3320,7 @@ checkNextRule:
 
 			// if nothing, else then it is a match
 			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
 			// skip the '&&' and go to next rule
@@ -3340,7 +3340,7 @@ checkNextRule:
 			p = strstr(p, "&&");
 			// if nothing, else then it is a match
 			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
 			// skip the '&&' and go to next rule
@@ -3371,7 +3371,7 @@ checkNextRule:
 			p = strstr(p, "&&");
 			// if nothing, else then it is a match
 			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
 			// skip the '&&' and go to next rule
@@ -3396,7 +3396,7 @@ checkNextRule:
 			p = strstr(p, "&&");
 			// if nothing, else then it is a match
 			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
 			// skip the '&&' and go to next rule
@@ -3426,7 +3426,7 @@ checkNextRule:
 			// another rule?
 			p = strstr(p,"&&");
 			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
 			// skip the '&&'
@@ -3440,7 +3440,7 @@ checkNextRule:
 		// . we always match the "default" reg ex
 		// . this line must ALWAYS exist!
 		if ( *p=='d' && ! strcmp(p,"default" ) ) {
-			logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+			logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 			return i;
 		}
 
@@ -3470,7 +3470,7 @@ checkNextRule:
 			p = strstr(p, "&&");
 			// all done?
 			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
 			p += 2;
@@ -3536,7 +3536,7 @@ checkNextRule:
 			if ( ! valPtr ) a=0;//continue;//{char *xx=NULL;*xx=0;}
 			// shortcut
 			else a = *valPtr;
-			//log("siteadds=%"INT32" for %s",a,sreq->m_url);
+			//log("siteadds=%" PRId32" for %s",a,sreq->m_url);
 			// what is the provided value in the url filter rule?
 			int32_t b = atoi(s);
 			// compare
@@ -3549,7 +3549,7 @@ checkNextRule:
 			p = strstr(s, "&&");
 			//if nothing, else then it is a match
 			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
 			//skip the '&&' and go to next rule
@@ -3591,7 +3591,7 @@ checkNextRule:
 			p = strstr(s, "&&");
 			//if nothing, else then it is a match
 			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
 			//skip the '&&' and go to next rule
@@ -3622,7 +3622,7 @@ checkNextRule:
 			if ( ! valPtr ) a = 0;//{ char *xx=NULL;*xx=0; }
 			else a = *valPtr;
 			// shortcut
-			//log("sitepgs=%"INT32" for %s",a,sreq->m_url);
+			//log("sitepgs=%" PRId32" for %s",a,sreq->m_url);
 			// what is the provided value in the url filter rule?
 			int32_t b = atoi(s);
 			// compare
@@ -3635,7 +3635,7 @@ checkNextRule:
 			p = strstr(s, "&&");
 			//if nothing, else then it is a match
 			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
 			//skip the '&&' and go to next rule
@@ -3684,7 +3684,7 @@ checkNextRule:
 			p = strstr(s, "&&");
 			//if nothing, else then it is a match
 			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
 			//skip the '&&' and go to next rule
@@ -3752,7 +3752,7 @@ checkNextRule:
 			p = strstr ( b , "&&" );
 			// if nothing, else then it is a match
 			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
 			
@@ -3820,7 +3820,7 @@ checkNextRule:
 			p = strstr ( b , "&&" );
 			// if nothing, else then it is a match
 			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
 			// skip the '&&' and go to next rule
@@ -3886,7 +3886,7 @@ checkNextRule:
 			p = strstr ( b , "&&" );
 			// if nothing, else then it is a match
 			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
 			// skip the '&&' and go to next rule
@@ -3914,7 +3914,7 @@ checkNextRule:
 			p = strstr(s, "&&");
 			//if nothing, else then it is a match
 			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
 			//skip the '&&' and go to next rule
@@ -3954,7 +3954,7 @@ checkNextRule:
 			p = strstr(s, "&&");
 			//if nothing, else then it is a match
 			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
 			//skip the '&&' and go to next rule
@@ -3991,7 +3991,7 @@ checkNextRule:
 			p = strstr(s, "&&");
 			//if nothing, else then it is a match
 			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
 			//skip the '&&' and go to next rule
@@ -4026,7 +4026,7 @@ checkNextRule:
 			p = strstr(s, "&&");
 			//if nothing, else then it is a match
 			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
 			//skip the '&&' and go to next rule
@@ -4061,7 +4061,7 @@ checkNextRule:
 			p = strstr(s, "&&");
 			//if nothing, else then it is a match
 			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
 			//skip the '&&' and go to next rule
@@ -4088,7 +4088,7 @@ checkNextRule:
 			p = strstr(s, "&&");
 			//if nothing, else then it is a match
 			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
 			//skip the '&&' and go to next rule
@@ -4128,7 +4128,7 @@ checkNextRule:
 			p = strstr(s, "&&");
 			//if nothing, else then it is a match
 			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
 			//skip the '&&' and go to next rule
@@ -4167,7 +4167,7 @@ checkNextRule:
 			p = strstr(s, "&&");
 			//if nothing, else then it is a match
 			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
 			//skip the '&&' and go to next rule
@@ -4200,7 +4200,7 @@ checkNextRule:
 			p = strstr(s, "&&");
 			//if nothing, else then it is a match
 			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
 			//skip the '&&' and go to next rule
@@ -4231,7 +4231,7 @@ checkNextRule:
 			p = strstr(s, "&&");
 			//if nothing, else then it is a match
 			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
 			//skip the '&&' and go to next rule
@@ -4267,7 +4267,7 @@ checkNextRule:
 			//if nothing, else then it is a match
 			if ( ! p ) 
 			{
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
 			//skip the '&&' and go to next rule
@@ -4301,7 +4301,7 @@ checkNextRule:
 				p = strstr(s, "&&");
 				//if nothing, else then it is a match
 				if ( ! p ) {
-					logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+					logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 					return i;
 				}
 				//skip the '&&' and go to next rule
@@ -4343,7 +4343,7 @@ checkNextRule:
 				p = strstr(s, "&&");
 				//if nothing, else then it is a match
 				if ( ! p ) {
-					logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+					logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 					return i;
 				}
 
@@ -4402,7 +4402,7 @@ checkNextRule:
 			p = strstr(s, "&&");
 			//if nothing, else then it is a match
 			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
 				return i;
 			}
 			//skip the '&&' and go to next rule
@@ -4683,7 +4683,7 @@ bool getSpiderStatusMsg ( CollectionRec *cx , SafeBuf *msg , int32_t *status ) {
 		*status = SP_ROUNDDONE;
 		return msg->safePrintf("Jobs has reached maxToCrawl limit. "
 				       "Next crawl round to start "
-				       "in %"INT32" seconds.",
+				       "in %" PRId32" seconds.",
 				       (int32_t)(cx->m_spiderRoundStartTime-
 						 now));
 	}
@@ -4694,7 +4694,7 @@ bool getSpiderStatusMsg ( CollectionRec *cx , SafeBuf *msg , int32_t *status ) {
 		*status = SP_ROUNDDONE;
 		return msg->safePrintf("Jobs has reached maxToProcess limit. "
 				       "Next crawl round to start "
-				       "in %"INT32" seconds.",
+				       "in %" PRId32" seconds.",
 				       (int32_t)(cx->m_spiderRoundStartTime-
 						 now));
 	}
@@ -4733,7 +4733,7 @@ bool getSpiderStatusMsg ( CollectionRec *cx , SafeBuf *msg , int32_t *status ) {
 	     now < cx->m_spiderRoundStartTime ) {
 		*status = SP_ROUNDDONE;
 		return msg->safePrintf("Next crawl round to start "
-				       "in %"INT32" seconds.",
+				       "in %" PRId32" seconds.",
 				       (int32_t)(cx->m_spiderRoundStartTime-
 						 now) );
 	}

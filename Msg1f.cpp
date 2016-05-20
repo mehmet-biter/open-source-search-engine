@@ -80,7 +80,7 @@ void handleRequest ( UdpSlot *slot , int32_t netnice ) {
 		buf = (char*)mmalloc(numBytes, "Msg1fA");
 		if(!buf) {
 			log(LOG_INFO, 
-			    "admin: malloc of %"INT32" bytes failed "
+			    "admin: malloc of %" PRId32" bytes failed "
 			    "for logview,"
 			    " falling back on stack buffer.",
 			    numBytes);
@@ -113,7 +113,7 @@ void handleRequest ( UdpSlot *slot , int32_t netnice ) {
 		g_udpServer.sendErrorReply ( slot, EBADFILE ); 
 		return;
 	}
-	//log(LOG_DEBUG, "bytes read! %"INT32" ", numRead);
+	//log(LOG_DEBUG, "bytes read! %" PRId32" ", numRead);
 
 	g_udpServer.sendReply_ass (buf, numRead, allocBuf,allocBufSize, slot); //send
 }

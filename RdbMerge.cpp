@@ -114,7 +114,7 @@ bool RdbMerge::merge ( char     rdbId        ,
 			while ( maps[i]->getAbsoluteOffset(pn) < minOff ) pn++;
 			if ( pn != pn0 ) {
 				log("db: Lost data during merge. Starting "
-				    "merge at page number %"INT32" from %"INT32" for "
+				    "merge at page number %" PRId32" from %" PRId32" for "
 				    "file.",pn,pn0);
 				m_startKey = maps[i]->getKey ( pn );
 			}
@@ -329,7 +329,7 @@ bool RdbMerge::getNextList ( ) {
 		if ( ! map->chopHead ( MAX_PART_SIZE ) ) {
 			// we had an error!
 			log("db: Failed to remove data from map for "
-			    "%s.part%"INT32".",
+			    "%s.part%" PRId32".",
 			    file->getFilename(),part);
 			return true;
 		}
@@ -340,7 +340,7 @@ bool RdbMerge::getNextList ( ) {
 		if ( ! file->chopHead ( part - 1 , chopWrapper , this ) ) 
 			m_numThreads++;
 		if ( ! g_errno ) continue;
-		log("db: Failed to unlink file %s.part%"INT32".",
+		log("db: Failed to unlink file %s.part%" PRId32".",
 		    file->getFilename(),part);
 		return true;
 	}
@@ -543,8 +543,8 @@ bool RdbMerge::dumpList ( ) {
 	// debug msg
 	log(LOG_DEBUG,"db: Dumping list.");
 	// debug msg
-	//fprintf(stderr,"list startKey.n1=%"UINT32",n0=%"UINT64", endKey.n1=%"UINT32",n0=%"UINT64","
-	//	" size=%"INT32"\n", 
+	//fprintf(stderr,"list startKey.n1=%" PRIu32",n0=%" PRIu64", endKey.n1=%" PRIu32",n0=%" PRIu64","
+	//	" size=%" PRId32"\n",
 	//	m_list.getStartKey().n1, 
 	//	m_list.getStartKey().n0, 
 	//	m_list.getLastKey().n1, 

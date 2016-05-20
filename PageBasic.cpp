@@ -36,7 +36,7 @@ bool printSitePatternExamples ( SafeBuf *sb , HttpRequest *hr ) {
 	int32_t max = 1000000;
 	if ( cr->m_siteListBuf.length() > max ) {
 		msgBuf.safePrintf( "<font color=red><b>"
-				   "Site list is over %"INT32" bytes large, "
+				   "Site list is over %" PRId32" bytes large, "
 				   "too many to "
 				   "display on this web page. Please use the "
 				   "file upload feature only for now."
@@ -421,7 +421,7 @@ bool printScrollingWidget ( SafeBuf *sb , CollectionRec *cr ) {
 		       // preserve the relative scroll position so we
 		       // do not jerk around since we might have added 
 		       // "added" new results to the top.
-		       "sd.scrollTop += added*%"INT32";"
+		       "sd.scrollTop += added*%" PRId32";"
 
 		       // try to scroll out new results if we are
 		       // still at the top of the scrollbar and
@@ -502,8 +502,8 @@ bool printScrollingWidget ( SafeBuf *sb , CollectionRec *cr ) {
 		      "&dr=0" // no deduping
 			      // 10 results at a time
 		      "&n=10"
-		      "&widgetheight=%"INT32""
-		      "&widgetwidth=%"INT32""
+		      "&widgetheight=%" PRId32
+		      "&widgetwidth=%" PRId32
 		      , cr->m_coll
 		      , widgetHeight
 		      , widgetWidth
@@ -522,7 +522,7 @@ bool printScrollingWidget ( SafeBuf *sb , CollectionRec *cr ) {
 		       // we call this (see PageResults.cpp) so that
 		       // we do not register multiple timeouts
 		       "if ( ! force ) "
-		       "setTimeout('widget123_reload(0)',%"INT32");"
+		       "setTimeout('widget123_reload(0)',%" PRId32");"
 
 		       // get the query box
 		       "var qb=document.getElementById(\"qbox\");"
@@ -602,7 +602,7 @@ bool printScrollingWidget ( SafeBuf *sb , CollectionRec *cr ) {
 		       // not initiated on that call since we had to
 		       // set force=1 to load in case the query box
 		       // was currently visible.
-		       "setTimeout('widget123_reload(0)',%"INT32");"
+		       "setTimeout('widget123_reload(0)',%" PRId32");"
 
 		       //, widgetHeight
 		       , (int32_t)DEFAULT_WIDGET_RELOAD
@@ -627,7 +627,7 @@ bool printScrollingWidget ( SafeBuf *sb , CollectionRec *cr ) {
 		       "\"widget123_scrolldiv\");"
 		       "if ( sd ) {"
 		       "var pos=parseInt(sd.scrollTop);"
-		       "if (pos < (sd.scrollHeight-%"INT32")) "
+		       "if (pos < (sd.scrollHeight-%" PRId32")) "
 		       "return;"
 		       "}"
 
@@ -690,14 +690,14 @@ bool printScrollingWidget ( SafeBuf *sb , CollectionRec *cr ) {
 		       "client.onreadystatechange="
 		       "widget123_handler_append;"
 
-		       //"alert('appending scrollTop='+sd.scrollTop+' scrollHeight='+sd.scrollHeight+' 5results=%"INT32"'+u);"
+		       //"alert('appending scrollTop='+sd.scrollTop+' scrollHeight='+sd.scrollHeight+' 5results=%" PRId32"'+u);"
 		       "client.open('GET',u);"
 		       "client.send();"
 		       "}\n\n"
 
 		       "</script>\n\n"
 
-		       // if (pos < (sd.scrollHeight-%"INT32")) return...
+		       // if (pos < (sd.scrollHeight-%" PRId32")) return...
 		       // once user scrolls down to within last 5
 		       // results then try to append to the results.
 		       , widgetHeight +5*((int32_t)RESULT_HEIGHT+2*PADDING)
@@ -721,7 +721,7 @@ bool printScrollingWidget ( SafeBuf *sb , CollectionRec *cr ) {
 	sb->safePrintf("<div id=widget123 "
 		       "style=\"border:2px solid black;"
 		       "position:relative;border-radius:10px;"
-		       "width:%"INT32"px;height:%"INT32"px;\">"
+		       "width:%" PRId32"px;height:%" PRId32"px;\">"
 		       , widgetWidth
 		       , widgetHeight
 		       );
@@ -880,7 +880,7 @@ bool sendPageBasicStatus ( TcpSocket *socket , HttpRequest *hr ) {
 
 			      "<tr>"
 			      "<td><b>Crawl Status Code:</td>"
-			      "<td>%"INT32"</td>"
+			      "<td>%" PRId32"</td>"
 			      "</tr>"
 
 			      "<tr>"
@@ -890,7 +890,7 @@ bool sendPageBasicStatus ( TcpSocket *socket , HttpRequest *hr ) {
 
 			      //"<tr>"
 			      //"<td><b>Rounds Completed:</td>"
-			      //"<td>%"INT32"</td>"
+			      //"<td>%" PRId32"</td>"
 			      //"</tr>"
 
 			      "<tr>"
@@ -902,29 +902,29 @@ bool sendPageBasicStatus ( TcpSocket *socket , HttpRequest *hr ) {
 			      // this will  have to be in crawlinfo too!
 			      //"<tr>"
 			      //"<td><b>pages indexed</b>"
-			      //"<td>%"INT64"</td>"
+			      //"<td>%" PRId64"</td>"
 			      //"</tr>"
 
 			      "<tr>"
 			      "<td><b><nobr>URLs Harvested</b> "
 			      "(may include dups)</nobr></td>"
-			      "<td>%"INT64"</td>"
+			      "<td>%" PRId64"</td>"
      
 			      "</tr>"
 
 			      //"<tr>"
 			      //"<td><b>URLs Examined</b></td>"
-			      //"<td>%"INT64"</td>"
+			      //"<td>%" PRId64"</td>"
 			      //"</tr>"
 
 			      "<tr>"
 			      "<td><b>Page Crawl Attempts</b></td>"
-			      "<td>%"INT64"</td>"
+			      "<td>%" PRId64"</td>"
 			      "</tr>"
 
 			      "<tr>"
 			      "<td><b>Page Crawl Successes</b></td>"
-			      "<td>%"INT64"</td>"
+			      "<td>%" PRId64"</td>"
 			      "</tr>"
 			      , crawlStatus
 			      , tmp.getBufStart()
@@ -959,7 +959,7 @@ bool sendPageBasicStatus ( TcpSocket *socket , HttpRequest *hr ) {
 				       "%s"
 				       "</a>"
 				       "</b></td>"
-				       "<td>%"INT64"</td>"
+				       "<td>%" PRId64"</td>"
 				       "</tr>\n" ,
 				       mstrerror(i),
 				       g_stats.m_allErrorsNew[i] +

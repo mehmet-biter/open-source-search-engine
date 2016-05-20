@@ -272,7 +272,7 @@ bool Proxy::handleRequest (TcpSocket *s){
 			s_count++;
 		else {
 			log("query: Too many sockets open. Sending 500 "
-			    "http status code to %s. (msgslogged=%"INT32")[2]",
+			    "http status code to %s. (msgslogged=%" PRId32")[2]",
 			    iptoa(s->m_ip),s_count);
 			s_count = 0;
 			s_last = now;
@@ -411,8 +411,8 @@ bool Proxy::forwardRequest ( StateControl *stC ) {
 
 	TcpSocket *s = stC->m_s;
 
-	//log (LOG_DEBUG,"query: proxy: (hash=%"UINT32") %s from "
-	//     "hostId #%"INT32", port %i", stC->m_hash, hr.getRequest(), 
+	//log (LOG_DEBUG,"query: proxy: (hash=%" PRIu32") %s from "
+	//     "hostId #%" PRId32", port %i", stC->m_hash, hr.getRequest(),
 	//     h->m_hostId,h->m_httpPort);
 
 	// if sending to the temporary network, add one to port
@@ -552,9 +552,9 @@ void Proxy::gotReplyPage ( void *state, UdpSlot *slot ) {
 		uncountStripe ( stC );
 		// pick another host! should NEVER return NULL
 		Host *h = pickBestHost ( stC );
-		log("proxy: hostid #%"INT32" timed out. req=%s Rerouting "
+		log("proxy: hostid #%" PRId32" timed out. req=%s Rerouting "
 		    "forward request "
-		    "to hostid #%"INT32" instead.",stC->m_hostId,
+		    "to hostid #%" PRId32" instead.",stC->m_hostId,
 		    req,//stC->m_s->m_readBuf,
 		    h->m_hostId);
 		// . try a resend!
@@ -609,7 +609,7 @@ void Proxy::gotReplyPage ( void *state, UdpSlot *slot ) {
 		int32_t size1 = *(int32_t *)p; p += 4; // size of compressed mime
 		int32_t size2 = *(int32_t *)p; p += 4; // size of compressed content
 		// note it
-		//logf(LOG_DEBUG,"proxy: uncompressing from %"INT32" to %"INT32"",
+		//logf(LOG_DEBUG,"proxy: uncompressing from %" PRId32" to %" PRId32,
 		//     size1+size2+12,need);
 		// make the decompressed buf
 		unsigned char *dbuf = (unsigned char *)mmalloc ( need,"pdbuf");
@@ -917,8 +917,8 @@ void Proxy::printRequest(TcpSocket *s, HttpRequest *r,
 	if ( (int32_t)took < g_conf.m_logQueryTimeThreshold ) return;
 
 	if ( ! g_conf.m_logQueryReply || ! content || contentLen <= 0 ) {
-		logf (LOG_INFO,"http: Took %"UINT64" ms "
-		      "(len=%"INT32" bytes) "
+		logf (LOG_INFO,"http: Took %" PRIu64" ms "
+		      "(len=%" PRId32" bytes) "
 		      "for request %s",
 		      took, contentLen, r->getRequest());
 		return;
@@ -938,8 +938,8 @@ void Proxy::printRequest(TcpSocket *s, HttpRequest *r,
 	// null terminate
 	p[contentLen]=0;
 
-	logf (LOG_INFO,"http: Took %"UINT64" ms "
-	      "(len=%"INT32" bytes) "
+	logf (LOG_INFO,"http: Took %" PRIu64" ms "
+	      "(len=%" PRId32" bytes) "
 	      "for request %s reply=%s",
 	      took, contentLen, r->getRequest(),content);
 

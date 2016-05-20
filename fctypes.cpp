@@ -526,8 +526,8 @@ int32_t ulltoa ( char *s , uint64_t n ) {
 	// print the hunks separated by comma
 	for ( int32_t i = lastHunk ; i >= 0 ; i-- ) {
 		// pad all hunks except highest hunk with zeroes
-		if ( i != lastHunk ) sprintf ( s , "%03"INT32"" , hunks[i] );
-		else                 sprintf ( s , "%"INT32"" , hunks[i] );
+		if ( i != lastHunk ) sprintf ( s , "%03" PRId32 , hunks[i] );
+		else                 sprintf ( s , "%" PRId32 , hunks[i] );
 		s += gbstrlen(s);
 		// comma after all hunks but lowest hunk
 		if ( i != 0 ) *s++ = ',';
@@ -1093,7 +1093,7 @@ bool loadTimeAdjustment ( ) {
 	// parse the text line
 	int64_t stampTime = 0LL;
 	int64_t clockAdj  = 0LL;
-	if(sscanf ( rbuf , "%"UINT64" %"INT64"", &stampTime, &clockAdj ) != 2) {
+	if(sscanf ( rbuf , "%" PRIu64" %" PRId64, &stampTime, &clockAdj ) != 2) {
 		log("util: Could not parse content of %s", s_tafile);
 		g_errno = errno;
 		return false;
@@ -1110,7 +1110,7 @@ bool loadTimeAdjustment ( ) {
 	// and really slow down loadups
 	g_clockInSync = true;
 	// note it
-	log("util: loaded %s and put clock in sync. age=%"UINT64" adj=%"INT64"",
+	log("util: loaded %s and put clock in sync. age=%" PRIu64" adj=%" PRId64,
 	    s_tafile,stampAge,clockAdj);
 	return true;
 }
@@ -1125,7 +1125,7 @@ bool saveTimeAdjustment ( ) {
 	// store it
 	int64_t local = gettimeofdayInMillisecondsLocal();
 	char wbuf[1024];
-	sprintf (wbuf,"%"UINT64" %"INT64"\n",local,s_adjustment);
+	sprintf (wbuf,"%" PRIu64" %" PRId64"\n",local,s_adjustment);
 	// write it out
 	int fd = open ( s_tafile , O_CREAT|O_WRONLY|O_TRUNC , 0666 );
 	if ( fd < 0 ) {
@@ -1165,7 +1165,7 @@ void settimeofdayInMillisecondsGlobal ( int64_t newTime ) {
 	int64_t delta = s_adjustment - (newTime - now) ;
 	if ( delta > 100 || delta < -100 )
 		logf(LOG_INFO,"gb: Updating clock adjustment from "
-		     "%"INT64" ms to %"INT64" ms", s_adjustment , newTime - now );
+		     "%" PRId64" ms to %" PRId64" ms", s_adjustment , newTime - now );
 	// set adjustment
 	s_adjustment = newTime - now;
 	// return?

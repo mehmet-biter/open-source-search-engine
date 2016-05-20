@@ -106,12 +106,12 @@ char *Rebalance::getNeedsRebalance ( ) {
 	// parse the file
 	char keyStr[128];
 	sscanf(sb.getBufStart(),
-	       "myshard: %"INT32"\n"
-	       "numshards: %"INT32"\n"
-	       "numhostspershard: %"INT32"\n"
-	       "rebalancing: %"INT32"\n"
-	       "collnum: %"INT32"\n"
-	       "rdbnum: %"INT32"\n"
+	       "myshard: %" PRId32"\n"
+	       "numshards: %" PRId32"\n"
+	       "numhostspershard: %" PRId32"\n"
+	       "rebalancing: %" PRId32"\n"
+	       "collnum: %" PRId32"\n"
+	       "rdbnum: %" PRId32"\n"
 	       "nextkey: %s\n",
 	       &x,
 	       &y,
@@ -227,7 +227,7 @@ void Rebalance::scanLoop ( ) {
 			//if ( rdb->m_rdbId != RDB_TAGDB ) continue;
 			// log it as well
 			if ( m_lastRdb != rdb ) {
-				log("rebal: scanning %s (%"INT32") [%s]",
+				log("rebal: scanning %s (%" PRId32") [%s]",
 				    cr->m_coll,(int32_t)cr->m_collnum,
 				    rdb->m_dbname);
 				// only do this once per rdb/coll
@@ -249,14 +249,14 @@ void Rebalance::scanLoop ( ) {
 			percent *= 100;
 			percent /= 256;
 			if ( percent != m_lastPercent && percent ) {
-				log("rebal: %"INT32"%% complete",percent);
+				log("rebal: %" PRId32"%% complete",percent);
 				m_lastPercent = percent;
 			}
 			// scan it. returns true if done, false if blocked
 			if ( ! scanRdb ( ) ) return;
 			// note it
-			log("rebal: moved %"INT64" of %"INT64" recs scanned in "
-			    "%s for coll.%s.%"INT32"",
+			log("rebal: moved %" PRId64" of %" PRId64" recs scanned in "
+			    "%s for coll.%s.%" PRId32,
 			    m_rebalanceCount,m_scannedCount,
 			    rdb->m_dbname,cr->m_coll,(int32_t)cr->m_collnum);
 			//if ( m_rebalanceCount ) goto done;
@@ -305,12 +305,12 @@ bool Rebalance::saveRebalanceFile ( ) {
 	char tmp[30000];
 	SafeBuf sb(tmp,30000);
 	sb.safePrintf (
-		       "myshard: %"INT32"\n"
-		       "numshards: %"INT32"\n"
-		       "numhostspershard: %"INT32"\n"
-		       "rebalancing: %"INT32"\n"
-		       "collnum: %"INT32"\n"
-		       "rdbnum: %"INT32"\n"
+		       "myshard: %" PRId32"\n"
+		       "numshards: %" PRId32"\n"
+		       "numhostspershard: %" PRId32"\n"
+		       "rebalancing: %" PRId32"\n"
+		       "collnum: %" PRId32"\n"
+		       "rdbnum: %" PRId32"\n"
 		       "nextkey: %s\n",
 		       (int32_t)g_hostdb.m_myHost->m_shardNum,
 		       (int32_t)g_hostdb.m_numShards,
@@ -362,7 +362,7 @@ bool Rebalance::scanRdb ( ) {
 	RdbBase *base = rdb->getBase ( m_collnum );
 	// base is NULL for like monitordb...
 	if ( base && base->isMerging() ) {
-		log("rebal: waiting for merge on %s for coll #%"INT32" to complete",
+		log("rebal: waiting for merge on %s for coll #%" PRId32" to complete",
 		    rdb->m_dbname,(int32_t)m_collnum);
 		g_loop.registerSleepCallback ( 1000,NULL,sleepWrapper,1);
 		m_registered = true;
@@ -451,7 +451,7 @@ bool Rebalance::gotList ( ) {
 
 	m_list.resetListPtr();
 
-	//log("rebal: got list of %"INT32" bytes",m_list.getListSize());
+	//log("rebal: got list of %" PRId32" bytes",m_list.getListSize());
 
 	m_posMetaList.reset();
 	m_negMetaList.reset();
@@ -481,7 +481,7 @@ bool Rebalance::gotList ( ) {
 		// skip it if it belongs with us
 		if ( shard == myShard ) continue;
 		// note it
-		//log("rebal: shard is %"INT32"",shard);
+		//log("rebal: shard is %" PRId32,shard);
 		// count it
 		m_rebalanceCount++;
 		// otherwise, it does not!

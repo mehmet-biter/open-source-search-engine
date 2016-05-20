@@ -131,13 +131,13 @@ bool Msg12::getLocks ( int64_t uh48, // probDocId ,
 	if ( lockTime >= 0 ) {
 		if ( g_conf.m_logDebugSpider )
 			logf(LOG_DEBUG,"spider: cached missed lock for %s "
-			     "lockkey=%"UINT64"", m_url,m_lockKeyUh48);
+			     "lockkey=%" PRIu64, m_url,m_lockKeyUh48);
 		return true;
 	}
 
 	if ( g_conf.m_logDebugSpider )
 		logf(LOG_DEBUG,"spider: sending lock request for %s "
-		     "lockkey=%"UINT64"",  m_url,m_lockKeyUh48);
+		     "lockkey=%" PRIu64,  m_url,m_lockKeyUh48);
 
 	// now the locking group is based on the probable docid
 	//m_lockGroupId = g_hostdb.getGroupIdFromDocId(m_lockKey);
@@ -179,8 +179,8 @@ bool Msg12::getLocks ( int64_t uh48, // probDocId ,
 		// note it
 		if ( g_conf.m_logDebugSpider )
 			logf(LOG_DEBUG,"spider: sent lock "
-			     "request #%"INT32" for lockkey=%"UINT64" %s to "
-			     "hid=%"INT32"",m_numRequests,m_lockKeyUh48,
+			     "request #%" PRId32" for lockkey=%" PRIu64" %s to "
+			     "hid=%" PRId32,m_numRequests,m_lockKeyUh48,
 			     m_url,h->m_hostId);
 		// send request to him
 		if ( ! us->sendRequest ( request      ,
@@ -205,7 +205,7 @@ bool Msg12::getLocks ( int64_t uh48, // probDocId ,
 	// m_hasLock should be false... all lock hosts seem dead... wait
 	if ( g_conf.m_logDebugSpider )
 		logf(LOG_DEBUG,"spider: all lock hosts seem dead for %s "
-		     "lockkey=%"UINT64"", m_url,m_lockKeyUh48);
+		     "lockkey=%" PRIu64, m_url,m_lockKeyUh48);
 	return true;
 }
 
@@ -288,7 +288,7 @@ bool Msg12::gotLockReply ( UdpSlot *slot ) {
 		// note it
 		if ( g_conf.m_logDebugSpider )
 		      logf(LOG_DEBUG,"spider: done removing all locks "
-			   "(replies=%"INT32") for %s",
+			   "(replies=%" PRId32") for %s",
 			   m_numReplies,m_url);//m_sreq->m_url);
 		// we are done
 		m_gettingLocks = false;
@@ -299,7 +299,7 @@ bool Msg12::gotLockReply ( UdpSlot *slot ) {
 		// note it
 		if ( g_conf.m_logDebugSpider )
 		      logf(LOG_DEBUG,"spider: done confirming all locks "
-			   "for %s uh48=%"INT64"",m_url,m_origUh48);//m_sreq->m_url);
+			   "for %s uh48=%" PRId64,m_url,m_origUh48);//m_sreq->m_url);
 		// we are done
 		m_gettingLocks = false;
 		// . keep processing
@@ -314,7 +314,7 @@ bool Msg12::gotLockReply ( UdpSlot *slot ) {
 	if ( m_grants == m_numReplies ) {
 		// note it
 		if ( g_conf.m_logDebugSpider )
-		      logf(LOG_DEBUG,"spider: got lock for docid=lockkey=%"UINT64"",
+		      logf(LOG_DEBUG,"spider: got lock for docid=lockkey=%" PRIu64,
 			   m_lockKeyUh48);
 		// flag this
 		m_hasLock = true;
@@ -347,8 +347,8 @@ bool Msg12::gotLockReply ( UdpSlot *slot ) {
 	}
 	// note it
 	if ( g_conf.m_logDebugSpider )
-		logf(LOG_DEBUG,"spider: missed lock for %s lockkey=%"UINT64" "
-		     "(grants=%"INT32")",   m_url,m_lockKeyUh48,m_grants);
+		logf(LOG_DEBUG,"spider: missed lock for %s lockkey=%" PRIu64" "
+		     "(grants=%" PRId32")",   m_url,m_lockKeyUh48,m_grants);
 
 	// . if it was locked by another then add to our lock cache so we do
 	//   not try to lock it again
@@ -376,7 +376,7 @@ bool Msg12::gotLockReply ( UdpSlot *slot ) {
 	// note that
 	if ( g_conf.m_logDebugSpider )
 		logf(LOG_DEBUG,"spider: sending request to all in shard to "
-		     "remove lock uh48=%"UINT64". grants=%"INT32"",
+		     "remove lock uh48=%" PRIu64". grants=%" PRId32,
 		     m_lockKeyUh48,(int32_t)m_grants);
 	// remove all locks we tried to get, BUT only if from our hostid!
 	// no no! that doesn't quite work right... we might be the ones
@@ -398,7 +398,7 @@ bool Msg12::removeAllLocks ( ) {
 	// skip if injecting
 	//if ( m_sreq->m_isInjecting ) return true;
 	if ( g_conf.m_logDebugSpider )
-		logf(LOG_DEBUG,"spider: removing all locks for %s %"UINT64"",
+		logf(LOG_DEBUG,"spider: removing all locks for %s %" PRIu64,
 		     m_url,m_lockKeyUh48);
 	// we are now removing 
 	m_removing = true;
@@ -506,7 +506,7 @@ bool Msg12::confirmLockAcquisition ( ) {
 	m_numReplies  = 0;
 	// note it
 	if ( g_conf.m_logDebugSpider )
-		log("spider: confirming lock for uh48=%"UINT64" firstip=%s",
+		log("spider: confirming lock for uh48=%" PRIu64" firstip=%s",
 		    m_lockKeyUh48,iptoa(m_firstIp));
 	// loop over hosts in that shard
 	for ( int32_t i = 0 ; i < hpg ; i++ ) {
@@ -642,7 +642,7 @@ void handleRequest12 ( UdpSlot *udpSlot , int32_t niceness ) {
 
 	// sanity check
 	if ( reqSize != sizeof(LockRequest) ) {
-		log("spider: bad msg12 request size of %"INT32"",reqSize);
+		log("spider: bad msg12 request size of %" PRId32,reqSize);
 		
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		us->sendErrorReply ( udpSlot , EBADREQUEST );
@@ -675,7 +675,7 @@ void handleRequest12 ( UdpSlot *udpSlot , int32_t niceness ) {
 	if ( lr->m_lockKeyUh48 &0xffff000000000000LL ) { char *xx=NULL;*xx=0; }
 	// note it
 	if ( g_conf.m_logDebugSpider )
-		log("spider: got msg12 request uh48=%"INT64" remove=%"INT32"",
+		log("spider: got msg12 request uh48=%" PRId64" remove=%" PRId32,
 		    lr->m_lockKeyUh48, (int32_t)lr->m_removeLock);
 	// get time
 	int32_t nowGlobal = getTimeGlobal();
@@ -705,7 +705,7 @@ void handleRequest12 ( UdpSlot *udpSlot , int32_t niceness ) {
 	     lock->m_lockSequence == lr->m_lockSequence ) {
 		// note it for now
 		if ( g_conf.m_logDebugSpider )
-			log("spider: removing lock for lockkey=%"UINT64" hid=%"INT32"",
+			log("spider: removing lock for lockkey=%" PRIu64" hid=%" PRId32,
 			    lr->m_lockKeyUh48,hostId);
 		// unlock it
 		ht->removeSlot ( slot );
@@ -729,8 +729,8 @@ void handleRequest12 ( UdpSlot *udpSlot , int32_t niceness ) {
 	// if lock > 1 hour old then remove it automatically!!
 	if ( lock && nowGlobal - lock->m_timestamp > MAX_LOCK_AGE ) {
 		// note it for now
-		log("spider: removing lock after %"INT32" seconds "
-		    "for lockKey=%"UINT64" hid=%"INT32"",
+		log("spider: removing lock after %" PRId32" seconds "
+		    "for lockKey=%" PRIu64" hid=%" PRId32,
 		    (nowGlobal - lock->m_timestamp),
 		    lr->m_lockKeyUh48,hostId);
 		// unlock it
@@ -742,7 +742,7 @@ void handleRequest12 ( UdpSlot *udpSlot , int32_t niceness ) {
 	if ( lock ) {
 		// note it for now
 		if ( g_conf.m_logDebugSpider )
-			log("spider: refusing lock for lockkey=%"UINT64" hid=%"INT32"",
+			log("spider: refusing lock for lockkey=%" PRIu64" hid=%" PRId32,
 			    lr->m_lockKeyUh48,hostId);
 		reply[0] = 0;
 		us->sendReply_ass ( reply , 1 , reply , 1 , udpSlot );
@@ -782,7 +782,7 @@ void handleRequest12 ( UdpSlot *udpSlot , int32_t niceness ) {
 	}
 	// note it for now
 	if ( g_conf.m_logDebugSpider )
-		log("spider: granting lock for lockKey=%"UINT64" hid=%"INT32"",
+		log("spider: granting lock for lockKey=%" PRIu64" hid=%" PRId32,
 		    lr->m_lockKeyUh48,hostId);
 	// grant the lock
 	reply[0] = 1;
@@ -829,7 +829,7 @@ void removeExpiredLocks ( int32_t hostId ) {
 		if ( collnum >= g_collectiondb.m_numRecs ||
 		     ! g_collectiondb.m_recs[collnum] ) {
 			log("spider: removing lock from missing collnum "
-			    "%"INT32"",(int32_t)collnum);
+			    "%" PRId32,(int32_t)collnum);
 			goto nuke;
 		}
 		// skip if not yet expired
@@ -837,9 +837,9 @@ void removeExpiredLocks ( int32_t hostId ) {
 		if ( lock->m_expires >= nowGlobal ) continue;
 		// note it for now
 		if ( g_conf.m_logDebugSpider )
-			log("spider: removing lock after waiting. elapsed=%"INT32"."
-			    " lockKey=%"UINT64" hid=%"INT32" expires=%"UINT32" "
-			    "nowGlobal=%"UINT32"",
+			log("spider: removing lock after waiting. elapsed=%" PRId32"."
+			    " lockKey=%" PRIu64" hid=%" PRId32" expires=%" PRIu32" "
+			    "nowGlobal=%" PRIu32,
 			    (nowGlobal - lock->m_timestamp),
 			    lockKey,hostId,
 			    (uint32_t)lock->m_expires,

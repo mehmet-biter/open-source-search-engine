@@ -109,7 +109,7 @@ skipReplaceHost:
 	int32_t refreshRate = r->getLong("rr", 0);
 	if(refreshRate > 0 && format == FORMAT_HTML ) 
 		sb.safePrintf("<META HTTP-EQUIV=\"refresh\" "
-			      "content=\"%"INT32"\"\\>", 
+			      "content=\"%" PRId32"\"\\>",
 			      refreshRate);
 
 	// print standard header
@@ -142,7 +142,7 @@ skipReplaceHost:
 			       "<tr><td colspan=%s><center>"
 			       //"<font size=+1>"
 			       "<b>Hosts "
-			       "(<a href=\"/admin/hosts?c=%s&sort=%"INT32"&resetstats=1\">"
+			       "(<a href=\"/admin/hosts?c=%s&sort=%" PRId32"&resetstats=1\">"
 			       "reset)</a></b>"
 			       //"</font>"
 			       "</td></tr>" 
@@ -372,7 +372,7 @@ skipReplaceHost:
                 int32_t pingAge = generatePingMsg(h, nowmsLocal, ptr);
 		char pms[64];
 		if ( h->m_pingMax < 0 ) sprintf(pms,"???");
-		else                    sprintf(pms,"%"INT32"ms",h->m_pingMax);
+		else                    sprintf(pms,"%" PRId32"ms",h->m_pingMax);
 		// the sync status ascii-ized
 		char syncStatus = h->m_syncStatus;
 		char *ptr2;
@@ -393,11 +393,11 @@ skipReplaceHost:
 		for ( int32_t k = 0 ; k < 4 ; k++ ) {
 			int32_t temp = h->m_hdtemps[k];
 			if ( temp > 50 && format == FORMAT_HTML )
-				hp += sprintf(hp,"<font color=red><b>%"INT32""
+				hp += sprintf(hp,"<font color=red><b>%" PRId32
 					      "</b></font>",
 					      temp);
 			else
-				hp += sprintf(hp,"%"INT32"",temp);
+				hp += sprintf(hp,"%" PRId32,temp);
 			if ( k < 3 ) *hp++ = '/';
 			*hp = '\0';
 		}
@@ -475,21 +475,21 @@ skipReplaceHost:
 			if ( n )
 				fb.safePrintf("<font color=red><b>"
 					      "C"
-					      "<sup>%"INT32"</sup>"
+					      "<sup>%" PRId32"</sup>"
 					      "</b></font>"
 					      , n );
 			n = h->m_pingInfo.m_numOutOfMems;
 			if ( n )
 				fb.safePrintf("<font color=red><b>"
 					      "O"
-					      "<sup>%"INT32"</sup>"
+					      "<sup>%" PRId32"</sup>"
 					      "</b></font>"
 					      , n );
 			n = h->m_pingInfo.m_socketsClosedFromHittingLimit;
 			if ( n )
 				fb.safePrintf("<font color=red><b>"
 					      "K"
-					      "<sup>%"INT32"</sup>"
+					      "<sup>%" PRId32"</sup>"
 					      "</b></font>"
 					      , n );
 			if ( flags & PFLAG_OUTOFSYNC )
@@ -507,7 +507,7 @@ skipReplaceHost:
 			// at 255. this level is 1 the first time we core
 			// and are restarted.
 			if ( h->m_pingInfo.m_recoveryLevel > 1 )
-			fb.safePrintf("<sup>%"INT32"</sup>",
+			fb.safePrintf("<sup>%" PRId32"</sup>",
 				      (int32_t)
 				      h->m_pingInfo.m_recoveryLevel);
 		}
@@ -536,7 +536,7 @@ skipReplaceHost:
 		// if it has spiders going on say "S" with # as the superscript
 		if ((flags & PFLAG_HASSPIDERS) && format == FORMAT_HTML )
 			fb.safePrintf ( "<span title=\"Spidering\">S"
-					"<sup>%"INT32"</sup>"
+					"<sup>%" PRId32"</sup>"
 					"</span>"
 					,h->m_pingInfo.m_currentSpiders
 					);
@@ -557,7 +557,7 @@ skipReplaceHost:
 			fb.safePrintf("<span title=\"udpSlotsInUse\">"
 				      "%s"
 				      "U"
-				      "<sup>%"INT32"</sup>"
+				      "<sup>%" PRId32"</sup>"
 				      "%s"
 				      "</span>"
 				      ,f1
@@ -580,7 +580,7 @@ skipReplaceHost:
 			fb.safePrintf("<span title=\"tcpSocketsInUse\">"
 				      "%s"
 				      "T"
-				      "<sup>%"INT32"</sup>"
+				      "<sup>%" PRId32"</sup>"
 				      "%s"
 				      "</span>"
 				      ,f1
@@ -643,9 +643,9 @@ skipReplaceHost:
 				      );
 			sb.cdataEncode (h->m_hostname);
 			sb.safePrintf("]]></name>\n");
-			sb.safePrintf("\t\t<shard>%"INT32"</shard>\n",
+			sb.safePrintf("\t\t<shard>%" PRId32"</shard>\n",
 				      (int32_t)h->m_shardNum);
-			sb.safePrintf("\t\t<mirror>%"INT32"</mirror>\n",
+			sb.safePrintf("\t\t<mirror>%" PRId32"</mirror>\n",
 				      h->m_stripe);
 
 			sb.safePrintf("\t\t<ip1>%s</ip1>\n",
@@ -653,72 +653,72 @@ skipReplaceHost:
 			sb.safePrintf("\t\t<ip2>%s</ip2>\n",
 				      iptoa(h->m_ipShotgun));
 
-			sb.safePrintf("\t\t<httpPort>%"INT32"</httpPort>\n",
+			sb.safePrintf("\t\t<httpPort>%" PRId32"</httpPort>\n",
 				      (int32_t)h->m_httpPort);
-			sb.safePrintf("\t\t<udpPort>%"INT32"</udpPort>\n",
+			sb.safePrintf("\t\t<udpPort>%" PRId32"</udpPort>\n",
 				      (int32_t)h->m_port);
-			sb.safePrintf("\t\t<dnsPort>%"INT32"</dnsPort>\n",
+			sb.safePrintf("\t\t<dnsPort>%" PRId32"</dnsPort>\n",
 				      (int32_t)h->m_dnsClientPort);
 
 			//sb.safePrintf("\t\t<hdTemp>%s</hdTemp>\n",hdbuf);
 			sb.safePrintf("\t\t<gbVersion>%s</gbVersion>\n",vbuf);
 
-			sb.safePrintf("\t\t<resends>%"INT32"</resends>\n",
+			sb.safePrintf("\t\t<resends>%" PRId32"</resends>\n",
 				      h->m_pingInfo.m_totalResends);
 
 			/*
 			  MDW: take out for new stuff
-			sb.safePrintf("\t\t<errorReplies>%"INT32"</errorReplies>\n",
+			sb.safePrintf("\t\t<errorReplies>%" PRId32"</errorReplies>\n",
 				      h->m_errorReplies);
 			*/
 
-			sb.safePrintf("\t\t<errorTryAgains>%"INT32""
+			sb.safePrintf("\t\t<errorTryAgains>%" PRId32
 				      "</errorTryAgains>\n",
 				      h->m_pingInfo.m_etryagains);
 
-			sb.safePrintf("\t\t<udpSlotsInUse>%"INT32""
+			sb.safePrintf("\t\t<udpSlotsInUse>%" PRId32
 				      "</udpSlotsInUse>\n",
 				      h->m_pingInfo.m_udpSlotsInUseIncoming);
 
-			sb.safePrintf("\t\t<tcpSocketsInUse>%"INT32""
+			sb.safePrintf("\t\t<tcpSocketsInUse>%" PRId32
 				      "</tcpSocketsInUse>\n",
 				      h->m_pingInfo.m_tcpSocketsInUse);
 
 			/*
-			sb.safePrintf("\t\t<dgramsTo>%"INT64"</dgramsTo>\n",
+			sb.safePrintf("\t\t<dgramsTo>%" PRId64"</dgramsTo>\n",
 				      h->m_dgramsTo);
-			sb.safePrintf("\t\t<dgramsFrom>%"INT64"</dgramsFrom>\n",
+			sb.safePrintf("\t\t<dgramsFrom>%" PRId64"</dgramsFrom>\n",
 				      h->m_dgramsFrom);
 			*/
 
-			sb.safePrintf("\t\t<numCorruptDiskReads>%"INT32""
+			sb.safePrintf("\t\t<numCorruptDiskReads>%" PRId32
 				      "</numCorruptDiskReads>\n"
 				      ,h->m_pingInfo.m_numCorruptDiskReads);
-			sb.safePrintf("\t\t<numOutOfMems>%"INT32""
+			sb.safePrintf("\t\t<numOutOfMems>%" PRId32
 				      "</numOutOfMems>\n"
 				      ,h->m_pingInfo.m_numOutOfMems);
-			sb.safePrintf("\t\t<numClosedSockets>%"INT32""
+			sb.safePrintf("\t\t<numClosedSockets>%" PRId32
 				      "</numClosedSockets>\n"
 				      ,h->m_pingInfo.
 				      m_socketsClosedFromHittingLimit);
-			sb.safePrintf("\t\t<numOutstandingSpiders>%"INT32""
+			sb.safePrintf("\t\t<numOutstandingSpiders>%" PRId32
 				      "</numOutstandingSpiders>\n"
 				      ,h->m_pingInfo.m_currentSpiders );
 
 
-			sb.safePrintf("\t\t<splitTime>%"INT32"</splitTime>\n",
+			sb.safePrintf("\t\t<splitTime>%" PRId32"</splitTime>\n",
 				      splitTime);
-			sb.safePrintf("\t\t<splitsDone>%"INT32"</splitsDone>\n",
+			sb.safePrintf("\t\t<splitsDone>%" PRId32"</splitsDone>\n",
 				      h->m_splitsDone);
 			
 			sb.safePrintf("\t\t<status><![CDATA[%s]]></status>\n",
 				      fb.getBufStart());
 
-			sb.safePrintf("\t\t<slowDiskReads>%"INT32""
+			sb.safePrintf("\t\t<slowDiskReads>%" PRId32
 				      "</slowDiskReads>\n",
 				      h->m_pingInfo.m_slowDiskReads);
 
-			sb.safePrintf("\t\t<docsIndexed>%"INT32""
+			sb.safePrintf("\t\t<docsIndexed>%" PRId32
 				      "</docsIndexed>\n",
 				      h->m_pingInfo.m_totalDocsIndexed);
 
@@ -737,7 +737,7 @@ skipReplaceHost:
 			sb.safePrintf("\t\t<maxPing1>%s</maxPing1>\n",
 				      pms );
 
-			sb.safePrintf("\t\t<maxPingAge1>%"INT32"ms</maxPingAge1>\n",
+			sb.safePrintf("\t\t<maxPingAge1>%" PRId32"ms</maxPingAge1>\n",
 				      pingAge );
 
 			sb.safePrintf("\t\t<ping1>%s</ping1>\n",
@@ -746,11 +746,11 @@ skipReplaceHost:
 			sb.safePrintf("\t\t<note>%s</note>\n",
 				      h->m_note );
 
-			sb.safePrintf("\t\t<spider>%"INT32"</spider>\n",
+			sb.safePrintf("\t\t<spider>%" PRId32"</spider>\n",
 						  (int32_t)h->m_spiderEnabled );
 
 
-			sb.safePrintf("\t\t<query>%"INT32"</query>\n",
+			sb.safePrintf("\t\t<query>%" PRId32"</query>\n",
 						  (int32_t)h->m_queryEnabled );
 
 			sb.safePrintf("\t</host>\n");
@@ -769,70 +769,70 @@ skipReplaceHost:
 			
 			sb.safePrintf("\t\"host\":{\n");
 			sb.safePrintf("\t\t\"name\":\"%s\",\n",h->m_hostname);
-			sb.safePrintf("\t\t\"shard\":%"INT32",\n",
+			sb.safePrintf("\t\t\"shard\":%" PRId32",\n",
 				      (int32_t)h->m_shardNum);
-			sb.safePrintf("\t\t\"mirror\":%"INT32",\n", h->m_stripe);
+			sb.safePrintf("\t\t\"mirror\":%" PRId32",\n", h->m_stripe);
 
 			sb.safePrintf("\t\t\"ip1\":\"%s\",\n",iptoa(h->m_ip));
 			sb.safePrintf("\t\t\"ip2\":\"%s\",\n",
 				      iptoa(h->m_ipShotgun));
 
-			sb.safePrintf("\t\t\"httpPort\":%"INT32",\n",
+			sb.safePrintf("\t\t\"httpPort\":%" PRId32",\n",
 				      (int32_t)h->m_httpPort);
-			sb.safePrintf("\t\t\"udpPort\":%"INT32",\n",
+			sb.safePrintf("\t\t\"udpPort\":%" PRId32",\n",
 				      (int32_t)h->m_port);
-			sb.safePrintf("\t\t\"dnsPort\":%"INT32",\n",
+			sb.safePrintf("\t\t\"dnsPort\":%" PRId32",\n",
 				      (int32_t)h->m_dnsClientPort);
 
 			//sb.safePrintf("\t\t\"hdTemp\":\"%s\",\n",hdbuf);
 			sb.safePrintf("\t\t\"gbVersion\":\"%s\",\n",vbuf);
 
-			sb.safePrintf("\t\t\"resends\":%"INT32",\n",
+			sb.safePrintf("\t\t\"resends\":%" PRId32",\n",
 				      h->m_pingInfo.m_totalResends);
 
 			/*
-			sb.safePrintf("\t\t\"errorReplies\":%"INT32",\n",
+			sb.safePrintf("\t\t\"errorReplies\":%" PRId32",\n",
 				      h->m_errorReplies);
 			*/
-			sb.safePrintf("\t\t\"errorTryAgains\":%"INT32",\n",
+			sb.safePrintf("\t\t\"errorTryAgains\":%" PRId32",\n",
 				      h->m_pingInfo.m_etryagains);
-			sb.safePrintf("\t\t\"udpSlotsInUse\":%"INT32",\n",
+			sb.safePrintf("\t\t\"udpSlotsInUse\":%" PRId32",\n",
 				      h->m_pingInfo.m_udpSlotsInUseIncoming);
-			sb.safePrintf("\t\t\"tcpSocketsInUse\":%"INT32",\n",
+			sb.safePrintf("\t\t\"tcpSocketsInUse\":%" PRId32",\n",
 				      h->m_pingInfo.m_tcpSocketsInUse);
 
 			/*
-			sb.safePrintf("\t\t\"dgramsTo\":%"INT64",\n",
+			sb.safePrintf("\t\t\"dgramsTo\":%" PRId64",\n",
 				      h->m_dgramsTo);
-			sb.safePrintf("\t\t\"dgramsFrom\":%"INT64",\n",
+			sb.safePrintf("\t\t\"dgramsFrom\":%" PRId64",\n",
 				      h->m_dgramsFrom);
 			*/
 
 
-			sb.safePrintf("\t\t\"numCorruptDiskReads\":%"INT32",\n"
+			sb.safePrintf("\t\t\"numCorruptDiskReads\":%" PRId32",\n"
 				      ,h->m_pingInfo.m_numCorruptDiskReads);
-			sb.safePrintf("\t\t\"numOutOfMems\":%"INT32",\n"
+			sb.safePrintf("\t\t\"numOutOfMems\":%" PRId32",\n"
 				      ,h->m_pingInfo.m_numOutOfMems);
-			sb.safePrintf("\t\t\"numClosedSockets\":%"INT32",\n"
+			sb.safePrintf("\t\t\"numClosedSockets\":%" PRId32",\n"
 				      ,h->m_pingInfo.
 				      m_socketsClosedFromHittingLimit);
-			sb.safePrintf("\t\t\"numOutstandingSpiders\":%"INT32""
+			sb.safePrintf("\t\t\"numOutstandingSpiders\":%" PRId32
 				      ",\n"
 				      ,h->m_pingInfo.m_currentSpiders );
 
 
-			sb.safePrintf("\t\t\"splitTime\":%"INT32",\n",
+			sb.safePrintf("\t\t\"splitTime\":%" PRId32",\n",
 				      splitTime);
-			sb.safePrintf("\t\t\"splitsDone\":%"INT32",\n",
+			sb.safePrintf("\t\t\"splitsDone\":%" PRId32",\n",
 				      h->m_splitsDone);
 			
 			sb.safePrintf("\t\t\"status\":\"%s\",\n",
 				      fb.getBufStart());
 
-			sb.safePrintf("\t\t\"slowDiskReads\":%"INT32",\n",
+			sb.safePrintf("\t\t\"slowDiskReads\":%" PRId32",\n",
 				      h->m_pingInfo.m_slowDiskReads);
 
-			sb.safePrintf("\t\t\"docsIndexed\":%"INT32",\n",
+			sb.safePrintf("\t\t\"docsIndexed\":%" PRId32",\n",
 				      h->m_pingInfo.m_totalDocsIndexed);
 
 			sb.safePrintf("\t\t\"percentMemUsed\":\"%.1f%%\",\n",
@@ -845,7 +845,7 @@ skipReplaceHost:
 
 			sb.safePrintf("\t\t\"maxPing1\":\"%s\",\n",pms);
 
-			sb.safePrintf("\t\t\"maxPingAge1\":\"%"INT32"ms\",\n",
+			sb.safePrintf("\t\t\"maxPingAge1\":\"%" PRId32"ms\",\n",
 				      pingAge );
 
 			sb.safePrintf("\t\t\"ping1\":\"%s\",\n",
@@ -854,10 +854,10 @@ skipReplaceHost:
 			sb.safePrintf("\t\t\"note\":\"%s\"\n",
 				      h->m_note );
 
-			sb.safePrintf("\t\t\"spider\":\"%"INT32"\"\n",
+			sb.safePrintf("\t\t\"spider\":\"%" PRId32"\"\n",
 						  (int32_t)h->m_spiderEnabled );
 
-			sb.safePrintf("\t\t\"query\":\"%"INT32"\"\n",
+			sb.safePrintf("\t\t\"query\":\"%" PRId32"\"\n",
 						  (int32_t)h->m_queryEnabled );
 
 
@@ -876,21 +876,21 @@ skipReplaceHost:
 			  "<td><a href=\"http://%s:%hi/admin/hosts?"
 			  ""
 			  "c=%s"
-			  "&sort=%"INT32"\">%"INT32"</a></td>"
+			  "&sort=%" PRId32"\">%" PRId32"</a></td>"
 
 			  "<td>%s</td>" // hostname
 
-			  "<td>%"INT32"</td>" // group
-			  "<td>%"INT32"</td>" // stripe
-			  //"<td>0x%08"XINT32"</td>" // group mask
+			  "<td>%" PRId32"</td>" // group
+			  "<td>%" PRId32"</td>" // stripe
+			  //"<td>0x%08" PRIx32"</td>" // group mask
 
 			  //"<td>%s</td>" // ip1
 			  //"<td>%s</td>" // ip2
 			  //"<td>%hi</td>" // port
 			  //"<td>%hi</td>" // client port
 			  "<td>%hi</td>" // http port
-			  //"<td>%"INT32"</td>" // token group num
-			  //"<td>%"INT32"</td>" // switch group
+			  //"<td>%" PRId32"</td>" // token group num
+			  //"<td>%" PRId32"</td>" // switch group
 			  //"<td>%s</td>" // tmpN
 
 			  // hd temps
@@ -898,35 +898,35 @@ skipReplaceHost:
 			  "<td><nobr>%s%s%s</nobr></td>"
 
 			  // resends
-			  "<td>%"INT32"</td>"
+			  "<td>%" PRId32"</td>"
 
 			  // error replies
-			  //"<td>%"INT32"</td>"
+			  //"<td>%" PRId32"</td>"
 
 			  // etryagains
-			  "<td>%"INT32"</td>"
+			  "<td>%" PRId32"</td>"
 
 			  // # dgrams sent to
-			  //"<td>%"INT64"</td>"
+			  //"<td>%" PRId64"</td>"
 			  // # dgrams recvd from
-			  //"<td>%"INT64"</td>"
+			  //"<td>%" PRId64"</td>"
 
 			  // loadavg
 			  //"<td>%.2f</td>"
 
 			  // split time
-			  "<td>%"INT32"</td>"
+			  "<td>%" PRId32"</td>"
 			  // splits done
-			  "<td>%"INT32"</td>"
+			  "<td>%" PRId32"</td>"
 
 			  // flags
 			  "<td>%s</td>"
 
 			  // slow disk reads
-			  "<td>%"INT32"</td>"
+			  "<td>%" PRId32"</td>"
 
 			  // docs indexed
-			  "<td>%"INT32"</td>"
+			  "<td>%" PRId32"</td>"
 
 			  // percent mem used
 			  "<td>%s%.1f%%%s</td>"
@@ -939,12 +939,12 @@ skipReplaceHost:
 			  "<td>%s</td>"
 
 			  // ping age
-			  "<td>%"INT32"ms</td>"
+			  "<td>%" PRId32"ms</td>"
 
 			  // ping
 			  "<td>%s</td>"
 			  //"<td>%s</td>"
-			  //"<td>%"INT32"ms</td>"
+			  //"<td>%" PRId32"ms</td>"
 			  "<td nowrap=1>%s</td>"
 			  "</tr>" , 
 			  bg,//LIGHT_BLUE ,
@@ -1072,7 +1072,7 @@ skipReplaceHost:
 			// print it
 			sb.safePrintf (
 						   "<tr bgcolor=#%s>"
-						   "<td>%"INT32"</td>"
+						   "<td>%" PRId32"</td>"
 						   "<td>%s</td>"
 						   "<td>%s</td>"
 						   "<td>%s</td>"
@@ -1154,7 +1154,7 @@ skipReplaceHost:
 
 		char pms[64];
 		if ( h->m_pingMax < 0 ) sprintf(pms,"???");
-		else                    sprintf(pms,"%"INT32"ms",h->m_pingMax);
+		else                    sprintf(pms,"%" PRId32"ms",h->m_pingMax);
 		// the sync status ascii-ized
 
 		char *type = "proxy";
@@ -1168,7 +1168,7 @@ skipReplaceHost:
 			  "<td><a href=\"http://%s:%hi/admin/hosts?"
 			  ""
 			  "c=%s\">"
-			  "%"INT32"</a></td>"
+			  "%" PRId32"</a></td>"
 
 			  "<td>%s</td>"
 			  "<td>%s</td>"
@@ -1180,9 +1180,9 @@ skipReplaceHost:
 			  "<td>%hi</td>"
 			  //"<td>%i</td>" // switch id
 			  "<td>%s</td>" // ping max
-			  "<td>%"INT32"ms</td>" // ping age
+			  "<td>%" PRId32"ms</td>" // ping age
 			  "<td>%s</td>" // ping
-			  //"<td>%"INT32"</td>" // ide channel
+			  //"<td>%" PRId32"</td>" // ide channel
 			  "<td>%s </td>"
 			  "</tr>" , 
 
@@ -1551,7 +1551,7 @@ static int32_t generatePingMsg( Host *h, int64_t nowms, char *buf ) {
         // if last ping is still 0, we haven't pinged it yet
         if ( h->m_lastPing == 0 ) pingAge = 0;
         // ping to string
-        sprintf ( buf , "%"INT32"ms", ping );
+        sprintf ( buf , "%" PRId32"ms", ping );
         // ping time ptr
         // make it "DEAD" if > 6000
         if ( ping >= g_conf.m_deadHostTimeout ) {
@@ -1582,7 +1582,7 @@ static int32_t generatePingMsg( Host *h, int64_t nowms, char *buf ) {
 
         // the second eth port, ip2, the shotgun port
         int32_t pingB = h->m_pingShotgun;
-        sprintf ( p , "%"INT32"ms", pingB );
+        sprintf ( p , "%" PRId32"ms", pingB );
         if ( pingB >= g_conf.m_deadHostTimeout ) {
                 // mark SYNC if doing a sync
                 if ( h->m_doingSync )

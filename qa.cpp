@@ -271,7 +271,7 @@ void processReply ( char *reply , int32_t replyLen ) {
 	fb2.nullTerm();
 
 	// log that we got the reply
-	log("qa: got reply(len=%"INT32")(errno=%s)",
+	log("qa: got reply(len=%" PRId32")(errno=%s)",
 	    replyLen,mstrerror(g_errno));
 
 	char *content = NULL;
@@ -304,7 +304,7 @@ void processReply ( char *reply , int32_t replyLen ) {
 	if ( content ) contentCRC = qa_hash32 ( content );
 
 	// note it
-	log("qa: got contentCRC of %"UINT32"",contentCRC);
+	log("qa: got contentCRC of %" PRIu32,contentCRC);
 
 	// if what we expected, save to disk if not there yet, then
 	// call s_callback() to resume the qa pipeline
@@ -312,7 +312,7 @@ void processReply ( char *reply , int32_t replyLen ) {
 	if ( contentCRC == s_expectedCRC ) {
 		// save content if good
 		char fn3[1024];
-		sprintf(fn3,"%sqa/content.%"UINT32"",g_hostdb.m_dir,contentCRC);
+		sprintf(fn3,"%sqa/content.%" PRIu32,g_hostdb.m_dir,contentCRC);
 		File ff; ff.set ( fn3 );
 		if ( ! ff.doesExist() ) {
 			// if not there yet then save it
@@ -340,7 +340,7 @@ void processReply ( char *reply , int32_t replyLen ) {
 		if(gb_strcasestr(content, s_expect)) {
 			g_qaOutput.safePrintf("<b style=color:green;>"
 								  "passed test</b><br>%s : "
-								  "<a href=%s>%s</a> Found %s (crc=%"UINT32")<br>"
+								  "<a href=%s>%s</a> Found %s (crc=%" PRIu32")<br>"
 								  "<hr>",
 								  s_qt->m_testName,
 								  s_url.getUrl(),
@@ -353,7 +353,7 @@ void processReply ( char *reply , int32_t replyLen ) {
 
 			g_qaOutput.safePrintf("<b style=color:red;>FAILED TEST</b><br>%s : "
 								  "<a href=%s>%s</a><br> Expected: %s in reply"
-								  " (crc=%"UINT32")<br>"
+								  " (crc=%" PRIu32")<br>"
 								  "<hr>",
 								  s_qt->m_testName,
 								  s_url.getUrl(),
@@ -380,8 +380,8 @@ void processReply ( char *reply , int32_t replyLen ) {
 	//
 
 
-	//const char *emsg = "qa: bad contentCRC of %"INT32" should be %"INT32" "
-	//	"\n";//"phase=%"INT32"\n";
+	//const char *emsg = "qa: bad contentCRC of %" PRId32" should be %" PRId32" "
+	//	"\n";//"phase=%" PRId32"\n";
 	//fprintf(stderr,emsg,contentCRC,s_expectedCRC);//,s_phase-1);
 
 	// hash url
@@ -397,7 +397,7 @@ void processReply ( char *reply , int32_t replyLen ) {
 
 	// break up into lines
 	char fn2[1024];
-	sprintf(fn2,"%sqa/content.%"UINT32"",g_hostdb.m_dir,contentCRC);
+	sprintf(fn2,"%sqa/content.%" PRIu32,g_hostdb.m_dir,contentCRC);
 	fb2.save ( fn2 );
 
 	// look up in hashtable to see what reply crc should be
@@ -407,9 +407,9 @@ void processReply ( char *reply , int32_t replyLen ) {
 	if ( val && contentCRC == *val ) {
 		g_qaOutput.safePrintf("<b style=color:green;>"
 				      "passed test</b><br>%s : "
-				      "<a href=%s>%s</a> (urlhash=%"UINT32" "
-				      "crc=<a href=/qa/content.%"UINT32">"
-				      "%"UINT32"</a>)<br>"
+				      "<a href=%s>%s</a> (urlhash=%" PRIu32" "
+				      "crc=<a href=/qa/content.%" PRIu32">"
+				      "%" PRIu32"</a>)<br>"
 				      "<hr>",
 				      s_qt->m_testName,
 				      s_url.getUrl(),
@@ -428,8 +428,8 @@ void processReply ( char *reply , int32_t replyLen ) {
 		g_qaOutput.safePrintf("<b style=color:blue;>"
 				      "first time testing</b><br>%s : "
 				      "<a href=%s>%s</a> "
-				      "(urlhash=%"UINT32" "
-				      "crc=<a href=/qa/content.%"UINT32">%"UINT32""
+				      "(urlhash=%" PRIu32" "
+				      "crc=<a href=/qa/content.%" PRIu32">%" PRIu32
 				      "</a>)<br>"
 				      "<hr>",
 				      s_qt->m_testName,
@@ -442,13 +442,13 @@ void processReply ( char *reply , int32_t replyLen ) {
 	}
 
 
-	log("qa: crc changed for url %s from %"INT32" to %"INT32"",
+	log("qa: crc changed for url %s from %" PRId32" to %" PRId32,
 	    s_url.getUrl(),*val,contentCRC);
 
 	// get response on file
 	SafeBuf fb1;
 	char fn1[1024];
-	sprintf(fn1,"%sqa/content.%"UINT32"",g_hostdb.m_dir, *val);
+	sprintf(fn1,"%sqa/content.%" PRIu32,g_hostdb.m_dir, *val);
 	fb1.load(fn1);
 	fb1.nullTerm();
 
@@ -481,23 +481,23 @@ void processReply ( char *reply , int32_t replyLen ) {
 	he.htmlEncode ( s_url.getUrl() );
 
 	g_qaOutput.safePrintf("<b style=color:red;>FAILED TEST</b><br>%s : "
-			      "<a href=%s>%s</a> (urlhash=%"UINT32")<br>"
+			      "<a href=%s>%s</a> (urlhash=%" PRIu32")<br>"
 
-			      "<input type=checkbox name=urlhash%"UINT32" value=1 "
+			      "<input type=checkbox name=urlhash%" PRIu32" value=1 "
 			      // use ajax to update test crc. if you undo your
 			      // check then it should put the old val back.
 			      // when you first click the checkbox it should
 			      // gray out the diff i guess.
-			      "onclick=submitchanges(%"UINT32",%"UINT32");> "
+			      "onclick=submitchanges(%" PRIu32",%" PRIu32");> "
 			      "Accept changes"
 
 			      "<br>"
 			      "original on left, new on right. "
-			      "oldcrc = <a href=/qa/content.%"UINT32">%"UINT32"</a>"
+			      "oldcrc = <a href=/qa/content.%" PRIu32">%" PRIu32"</a>"
 
-			      " != <a href=/qa/content.%"UINT32">%"UINT32"</a> = newcrc"
+			      " != <a href=/qa/content.%" PRIu32">%" PRIu32"</a> = newcrc"
 			      "<br>diff output follows:<br>"
-			      "<pre id=%"UINT32" style=background-color:0xffffff;>",
+			      "<pre id=%" PRIu32" style=background-color:0xffffff;>",
 			      s_qt->m_testName,
 			      s_url.getUrl(),
 			      he.getBufStart(),
@@ -510,11 +510,11 @@ void processReply ( char *reply , int32_t replyLen ) {
 			      urlHash32, 
 			      contentCRC,
 
-			      // original/old content.%"UINT32"
+			      // original/old content.%" PRIu32"
 			      *val,
 			      *val,
 
-			      // new content.%"UINT32"
+			      // new content.%" PRIu32"
 			      contentCRC,
 			      contentCRC,
 
@@ -557,7 +557,7 @@ bool getUrl( const char *path , int32_t checkCRC = 0 , char *post = NULL ,
              char* expect = NULL, char** ignore = NULL) {
 
 	SafeBuf sb;
-	sb.safePrintf ( "http://%s:%"INT32"%s"
+	sb.safePrintf ( "http://%s:%" PRId32"%s"
 			, iptoa(g_hostdb.m_myHost->m_ip)
 			, (int32_t)g_hostdb.m_myHost->m_httpPort
 			, path
@@ -918,7 +918,7 @@ bool qainject1 ( ) {
 				// parse it up
 				int64_t tid = g_posdb.getTermId ( rec );
 				int64_t d = g_posdb.getDocId ( rec ) ;
-				log("qa: termid=%"INT64" docid=%"INT64,
+				log("qa: termid=%" PRId64" docid=%" PRId64,
 				    tid,d);
 			}
 			//char *xx=NULL;*xx=0;
@@ -1448,7 +1448,7 @@ bool qaTimeAxis ( ) {
 	    sb.safePrintf("&metadata=");
 	    static int32_t s_count9 = 0;
 	    SafeBuf tmp;
-	    tmp.safePrintf("{\"qatesttime\":%"INT32"}\n",s_count9++);
+	    tmp.safePrintf("{\"qatesttime\":%" PRId32"}\n",s_count9++);
 	    sb.urlEncode ( tmp.getBufStart(), tmp.getLength() );
             sb.safePrintf("&content=");
             sb.urlEncode(s_contentPtrs[contentIndex]);
@@ -1547,7 +1547,7 @@ bool qaWarcFiles ( ) {
 
 		sb.safePrintf("&c=qatest123"
 					  "&format=json"
-					  "&url=http://%s:%"INT32"/test.warc.gz"
+					  "&url=http://%s:%" PRId32"/test.warc.gz"
 				  , iptoa(g_hostdb.m_myHost->m_ip)
 				  , (int32_t)g_hostdb.m_myHost->m_httpPort
 
@@ -1569,7 +1569,7 @@ bool qaWarcFiles ( ) {
 		SafeBuf sb;
 		sb.safePrintf("&c=qatest123"
 				"&format=json"
-				"&url=http://%s:%"INT32"/test.arc.gz"
+				"&url=http://%s:%" PRId32"/test.arc.gz"
 				, iptoa(g_hostdb.m_myHost->m_ip)
 				, (int32_t)g_hostdb.m_myHost->m_httpPort);
 
@@ -1640,7 +1640,7 @@ bool qaInjectMetadata ( ) {
 		sb.safePrintf("&c=qatest123"
 					  "&format=json"
 					  "&spiderlinks=1"
-					  "&url=http://%s:%"INT32"/test.warc.gz"
+					  "&url=http://%s:%" PRId32"/test.warc.gz"
 					  "&metadata=%s"
 					  , iptoa(g_hostdb.m_myHost->m_ip)
 					  , (int32_t)g_hostdb.m_myHost->m_httpPort
@@ -3504,7 +3504,7 @@ bool sendPageQA ( TcpSocket *sock , HttpRequest *hr ) {
 		// send back the urlhash so the checkbox can turn the
 		// bg color of the "diff" gray
 		SafeBuf sb3;
-		sb3.safePrintf("%"UINT32"",ajaxUrlHash);
+		sb3.safePrintf("%" PRIu32,ajaxUrlHash);
 		g_httpServer.sendDynamicPage(sock,
 					     sb3.getBufStart(),
 					     sb3.length(),
@@ -3540,7 +3540,7 @@ bool sendPageQA ( TcpSocket *sock , HttpRequest *hr ) {
 	for ( int32_t i = 0 ; submit && i < n ; i++ ) {
 		QATest *qt = &s_qatests[i];
 		char tmp[10];
-		sprintf(tmp,"test%"INT32"",i);
+		sprintf(tmp,"test%" PRId32,i);
 		qt->m_doTest = hr->getLong(tmp,0);
 	}
 
@@ -3623,7 +3623,7 @@ bool sendPageQA ( TcpSocket *sock , HttpRequest *hr ) {
 	// header row
 	sb.safePrintf("<tr><td><b>Do Test?</b> <a style=cursor:hand;"
 		      "cursor:pointer; "
-		      "onclick=\"checkAll('test', %"INT32");\">(toggle)</a>",n);
+		      "onclick=\"checkAll('test', %" PRId32");\">(toggle)</a>",n);
 	sb.safePrintf("</td><td><b>Test Name</b></td></tr>\n");
 	
 	// . we keep the ptr to each test in an array
@@ -3634,8 +3634,8 @@ bool sendPageQA ( TcpSocket *sock , HttpRequest *hr ) {
 		if ( i % 2 == 0 ) bg = LIGHT_BLUE;
 		else              bg = DARK_BLUE;
 		sb.safePrintf("<tr bgcolor=#%s>"
-			      "<td><input type=checkbox value=1 name=test%"INT32" "
-			      "id=test%"INT32"></td>"
+			      "<td><input type=checkbox value=1 name=test%" PRId32" "
+			      "id=test%" PRId32"></td>"
 			      "<td>%s"
 			      "<br>"
 			      "<font color=gray size=-1>%s</font>"

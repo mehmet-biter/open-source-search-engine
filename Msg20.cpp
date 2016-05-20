@@ -276,7 +276,7 @@ void Msg20::gotReply ( UdpSlot *slot ) {
 	if ( g_errno ) { 
 		m_errno = g_errno; 
 		if ( g_errno != EMISSINGQUERYTERMS )
-			log("query: msg20: got reply for docid %"INT64" : %s",
+			log("query: msg20: got reply for docid %" PRId64" : %s",
 			    m_requestDocId,mstrerror(g_errno));
 		return; 
 	}
@@ -379,7 +379,7 @@ void handleRequest20 ( UdpSlot *slot , int32_t netnice ) {
 
 	// if it's not stored locally that's an error
 	if ( req->m_docId >= 0 && ! g_titledb.isLocal ( req->m_docId ) ) {
-		log("query: Got msg20 request for non-local docId %"INT64"",
+		log("query: Got msg20 request for non-local docId %" PRId64,
 		    req->m_docId);
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		g_udpServer.sendErrorReply ( slot , ENOTLOCAL ); 
@@ -389,7 +389,7 @@ void handleRequest20 ( UdpSlot *slot , int32_t netnice ) {
 	// sanity
 	if ( req->m_docId == 0 && ! req->ptr_ubuf ) { //char *xx=NULL;*xx=0; }
 		log("query: Got msg20 request for docid of 0 and no url for "
-		    "collnum=%"INT32" query %s",(int32_t)req->m_collnum,req->ptr_qbuf);
+		    "collnum=%" PRId32" query %s",(int32_t)req->m_collnum,req->ptr_qbuf);
 		    
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		g_udpServer.sendErrorReply ( slot , ENOTFOUND );
@@ -404,7 +404,7 @@ void handleRequest20 ( UdpSlot *slot , int32_t netnice ) {
 	try { xd = new (XmlDoc); }
 	catch ( ... ) { 
 		g_errno = ENOMEM;
-		log("query: msg20 new(%"INT32"): %s", (int32_t)sizeof(XmlDoc),
+		log("query: msg20 new(%" PRId32"): %s", (int32_t)sizeof(XmlDoc),
 		    mstrerror(g_errno));
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		g_udpServer.sendErrorReply ( slot, g_errno ); 
@@ -462,7 +462,7 @@ bool gotReplyWrapperxd ( void *state ) {
 	// only do for niceness 0 otherwise it gets interrupted by quickpoll
 	// and can take a int32_t time.
 	if ( req->m_niceness == 0 && (req->m_isDebug || took > 100 || took2 > 100 ) ) {
-		log(LOG_TIMING, "query: Took %" INT64" ms (total=%" INT64" ms) to compute summary for d=%" INT64" "
+		log(LOG_TIMING, "query: Took %" PRId64" ms (total=%" PRId64" ms) to compute summary for d=%" PRId64" "
 		    "u=%s status=%s q=%s",
 		    took2,
 			took,
@@ -513,7 +513,7 @@ bool Msg20Reply::sendReply ( Msg20Request *req, XmlDoc *xd ) {
 
 	if ( g_errno ) {
 		// extract titleRec ptr
-		log("query: Had error generating msg20 reply for d=%"INT64": "
+		log("query: Had error generating msg20 reply for d=%" PRId64": "
 		    "%s",xd->m_docId, mstrerror(g_errno));
 		// don't forget to delete this list
 	haderror:

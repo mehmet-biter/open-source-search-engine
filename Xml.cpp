@@ -221,7 +221,7 @@ bool Xml::set( char *s, int32_t slen, int32_t version, int32_t niceness, char co
 
 	// debug msg time
 	if ( g_conf.m_logTimingBuild ) {
-		logf( LOG_TIMING, "build: xml: set: 4a. %" UINT64 "", gettimeofdayInMilliseconds() );
+		logf( LOG_TIMING, "build: xml: set: 4a. %" PRIu64 "", gettimeofdayInMilliseconds() );
 	}
 
 	// sanity check
@@ -297,7 +297,7 @@ bool Xml::set( char *s, int32_t slen, int32_t version, int32_t niceness, char co
 
 	// debug msg time
 	if ( g_conf.m_logTimingBuild ) {
-		logf( LOG_TIMING, "build: xml: set: 4b. %" UINT64 "", gettimeofdayInMilliseconds() );
+		logf( LOG_TIMING, "build: xml: set: 4b. %" PRIu64 "", gettimeofdayInMilliseconds() );
 	}
 
 	// . truncate it to avoid spammers
@@ -309,8 +309,8 @@ bool Xml::set( char *s, int32_t slen, int32_t version, int32_t niceness, char co
 	if (num100k <= 0) num100k = 1;
 	int32_t bigMax = 35*1024 * num100k;
 	if (m_maxNumNodes > bigMax){
-		log(LOG_WARN, "build: xml: doclen %"INT32", "
-		    "too many nodes: counted %"INT32", max %"INT32" "
+		log(LOG_WARN, "build: xml: doclen %" PRId32", "
+		    "too many nodes: counted %" PRId32", max %" PRId32" "
 		    "...truncating", slen, m_maxNumNodes, bigMax);
 		m_maxNumNodes = bigMax;
 	}
@@ -321,13 +321,13 @@ bool Xml::set( char *s, int32_t slen, int32_t version, int32_t niceness, char co
 	m_nodes = (XmlNode *)mmalloc( sizeof( XmlNode ) * m_maxNumNodes, "Xml1" );
 	if ( ! m_nodes ) { 
 		reset();
-		return log( "build: Could not allocate %" INT32 " bytes need to parse document.",
+		return log( "build: Could not allocate %" PRId32 " bytes need to parse document.",
 					(int32_t)sizeof( XmlNode ) * m_maxNumNodes );
 	}
 
 	// debug msg time
 	if ( g_conf.m_logTimingBuild ) {
-		logf( LOG_TIMING, "build: xml: set: 4c. %" UINT64 "", gettimeofdayInMilliseconds() );
+		logf( LOG_TIMING, "build: xml: set: 4c. %" PRIu64 "", gettimeofdayInMilliseconds() );
 	}
 
 	XmlNode *parent = NULL;
@@ -600,7 +600,7 @@ bool Xml::set( char *s, int32_t slen, int32_t version, int32_t niceness, char co
 
 	// debug msg time
 	if ( g_conf.m_logTimingBuild ) {
-		logf( LOG_TIMING, "build: xml: set: 4d. %" UINT64 "", gettimeofdayInMilliseconds() );
+		logf( LOG_TIMING, "build: xml: set: 4d. %" PRIu64 "", gettimeofdayInMilliseconds() );
 	}
 
 	return true;

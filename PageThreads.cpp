@@ -93,15 +93,15 @@ bool sendPageThreads ( TcpSocket *s , HttpRequest *r ) {
 		p.safePrintf("  <tr bgcolor=#%s>\n",LIGHT_BLUE);
 		p.safePrintf("    <td>%s</td>\n", thread_type_name((thread_type_t)thread_type));
 		if(queued_count)
-			p.safePrintf("    <td>%d</td><td>%"PRIu64"</td>\n", queued_count, queued_time/queued_count);
+			p.safePrintf("    <td>%d</td><td>%" PRIu64"</td>\n", queued_count, queued_time/queued_count);
 		else
 			p.safePrintf("    <td>-</td><td>-</td>\n");
 		if(running_count)
-			p.safePrintf("    <td>%d</td><td>%"PRIu64"</td>\n", running_count, running_time/running_count);
+			p.safePrintf("    <td>%d</td><td>%" PRIu64"</td>\n", running_count, running_time/running_count);
 		else
 			p.safePrintf("    <td>-</td><td>-</td>\n");
 		if(stopped_count)
-			p.safePrintf("    <td>%d</td><td>%"PRIu64"</td>\n", stopped_count, stopped_time/stopped_count);
+			p.safePrintf("    <td>%d</td><td>%" PRIu64"</td>\n", stopped_count, stopped_time/stopped_count);
 		else
 			p.safePrintf("    <td>-</td><td>-</td>\n");
 	}
@@ -123,13 +123,13 @@ bool sendPageThreads ( TcpSocket *s , HttpRequest *r ) {
 		p.safePrintf("  <tr bgcolor=#%s>\n",LIGHT_BLUE);
 		p.safePrintf("    <td>%s</td>", thread_type_name(jd.thread_type));
 		p.safePrintf("    <td>%s</td>", g_profiler.getFnName((PTRTYPE)jd.start_routine));
-		p.safePrintf("    <td>%"PRIu64"</td>", now-jd.queue_enter_time);
+		p.safePrintf("    <td>%" PRIu64"</td>", now-jd.queue_enter_time);
 		if(jd.job_state==JobDigest::job_state_running || jd.job_state==JobDigest::job_state_stopped)
-			p.safePrintf("    <td>%"PRIu64"</td>", now-jd.start_time);
+			p.safePrintf("    <td>%" PRIu64"</td>", now-jd.start_time);
 		else
 			p.safePrintf("    <td></td>");
 		if(jd.job_state==JobDigest::job_state_stopped)
-			p.safePrintf("    <td>%"PRIu64"</td>", now-jd.stop_time);
+			p.safePrintf("    <td>%" PRIu64"</td>", now-jd.stop_time);
 		else
 			p.safePrintf("    <td></td>");
 		p.safePrintf("   </tr>\n");

@@ -504,8 +504,8 @@ char *getMatches2 ( Needle *needles          ,
 
 
 	//if ( debugCount > 0 ) pp = haystackSize / debugCount;
-	//log("build: debug count = %"INT32" uc=%"INT32" hsize=%"INT32" "
-	//    "1 in %"INT32" chars matches.",
+	//log("build: debug count = %" PRId32" uc=%" PRId32" hsize=%" PRId32" "
+	//    "1 in %" PRId32" chars matches.",
 	//    debugCount,(int32_t)isHaystackUtf16,haystackSize,pp);
 
 	// before we exit, clean up

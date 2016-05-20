@@ -157,7 +157,7 @@ bool initWordTable( HashTableX *table, char *words[],
 		if ( ! sw ) break;
 		int32_t       swlen = gbstrlen ( sw );
 		int64_t  swh   = hash64Lower_utf8 ( sw , swlen );
-		//log("ii: #%"INT32"  %s",i,sw);
+		//log("ii: #%" PRId32"  %s",i,sw);
 		if ( ! table->addTerm (&swh,i+1) ) return false;
 	}
 	return true;

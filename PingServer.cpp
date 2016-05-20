@@ -429,7 +429,7 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 	if ( ip == h->m_ip ) h->m_inProgress1 = false;
 	else                 h->m_inProgress2 = false;
 	// had an error
-	log("net: Pinging host #%"INT32" had error: %s.",
+	log("net: Pinging host #%" PRId32" had error: %s.",
 	    h->m_hostId,mstrerror(g_errno) );
 	// reset it cuz it's not a showstopper
 	g_errno = 0;
@@ -510,8 +510,8 @@ void gotReplyWrapperP ( void *state , UdpSlot *slot ) {
                         char *buf = "Host";
                         if(h->m_isProxy)
                                 buf = "Proxy";
-			log("net: %s #%"INT32" ip=%s is dead. Has not responded to "
-			    "ping in %"INT32" ms.", buf, h->m_hostId,
+			log("net: %s #%" PRId32" ip=%s is dead. Has not responded to "
+			    "ping in %" PRId32" ms.", buf, h->m_hostId,
 			    iptoa(slot->m_ip),
 			    (int32_t)g_conf.m_deadHostTimeout);
 			// set dead time
@@ -568,7 +568,7 @@ void gotReplyWrapperP ( void *state , UdpSlot *slot ) {
 	// if this host is alive but has some kernel error, then send an
 	// email alert.
 	if ( pi->m_kernelErrors && !h->m_kernelErrorReported ){
-		log("net: Host #%"INT32" is reporting kernel errors.",
+		log("net: Host #%" PRId32" is reporting kernel errors.",
 		    h->m_hostId);
 		h->m_kernelErrorReported = true;
 	}
@@ -661,7 +661,7 @@ void handleRequest11 ( UdpSlot *slot , int32_t niceness ) {
 		// ./gb ./hosts.conf <hid> --udp
 		if ( requestSize != 3 && ! g_conf.isConnectIp(ip) )
 			log(LOG_LOGIC,"net: pingserver: No host for "
-			    "dstip=%s port=%hu tid=%"INT32" fromhostid=%"INT32"",
+			    "dstip=%s port=%hu tid=%" PRId32" fromhostid=%" PRId32,
 			    iptoa(ip),port,slot->m_transId,slot->m_hostId);
 		// set "useSameSwitch" to true so even if shotgunning is on
 		// the udp server will send the reply back to the same ip/port
@@ -846,9 +846,9 @@ void handleRequest11 ( UdpSlot *slot , int32_t niceness ) {
 			// what time is it now?
 			int64_t nowmsLocal=gettimeofdayInMillisecondsLocal();
 			// log it
-			log(LOG_DEBUG,"admin: Got ping of %"INT32" ms. Updating "
-			     "clock. drift=%"INT32" delta=%"INT32" s_deltaTime=%"INT64"ms "
-			     "nowmsLocal=%"INT64"ms",
+			log(LOG_DEBUG,"admin: Got ping of %" PRId32" ms. Updating "
+			     "clock. drift=%" PRId32" delta=%" PRId32" s_deltaTime=%" PRId64"ms "
+			     "nowmsLocal=%" PRId64"ms",
 			     (int32_t)g_pingServer.m_currentPing,drift,delta,
 			     s_deltaTime,nowmsLocal);
 			// what should the new time be? (local mobo time)
@@ -874,8 +874,8 @@ void handleRequest11 ( UdpSlot *slot , int32_t niceness ) {
 			// . or that is about 17 seconds a day
 			// . we do NOT know how accurate host #0's supplied
 			//   time is because the request may have been delayed
-			log(LOG_DEBUG,"admin: host #0 time is %"INT64" ms and "
-			    "our local time is %"INT64" ms, delta=%"INT64" ms",
+			log(LOG_DEBUG,"admin: host #0 time is %" PRId64" ms and "
+			    "our local time is %" PRId64" ms, delta=%" PRId64" ms",
 			    *(int64_t *)request,nowmsLocal ,
 			    *(int64_t *)request - nowmsLocal );
 			// update s_delta in case host #0 sends us a 
@@ -888,7 +888,7 @@ void handleRequest11 ( UdpSlot *slot , int32_t niceness ) {
 	// otherwise, unknown request size
 	else {
 		log(LOG_LOGIC,"net: pingserver: Unknown request size of "
-		    "%"INT32" bytes. You are probably running a different gb "
+		    "%" PRId32" bytes. You are probably running a different gb "
 		    "version on this host. check the hosts table for "
 		    "version info.", requestSize);
 	}
@@ -989,7 +989,7 @@ bool PingServer::sendEmail ( Host *h            ,
 	g_errno = 0;
 	// not if we have outstanding requests
 	if ( m_numReplies2 < m_numRequests2 ) {
-		log("net: Email not sent since there are %"INT32" outstanding "
+		log("net: Email not sent since there are %" PRId32" outstanding "
 		    "replies.",m_numReplies2 - m_numRequests2);
 		return true;
 	}
@@ -1011,8 +1011,8 @@ bool PingServer::sendEmail ( Host *h            ,
 		// . this is useful cuz it might hint at a down link
 		if ( h != NULL && h->m_emailCode == 0 ) {
 			h->m_emailCode = 1;
-			//log("net: Host #%"INT32" is dead. Has not responded to "
-			//    "ping in %"INT32" ms.",h->m_hostId,
+			//log("net: Host #%" PRId32" is dead. Has not responded to "
+			//    "ping in %" PRId32" ms.",h->m_hostId,
 			//    (int32_t)g_conf.m_deadHostTimeout);
 		}
 		return true;
@@ -1066,17 +1066,17 @@ bool PingServer::sendEmail ( Host *h            ,
 		if ( h->m_isProxy ) nm = "Proxy";
 		// note it in the log
 		if ( oom ) 
-			log("net: %s %s #%"INT32" is out of mem for %"INT32" ms. "
+			log("net: %s %s #%" PRId32" is out of mem for %" PRId32" ms. "
 			    "Sending email alert.",h->m_hostname,nm,
 			    h->m_hostId,
 			    (int32_t)g_conf.m_sendEmailTimeout);
 		else if ( kernelErrors )
-			log("net: %s %s #%"INT32" has an error in the kernel. "
+			log("net: %s %s #%" PRId32" has an error in the kernel. "
 			    "Sending email alert.",h->m_hostname,nm,
 			    h->m_hostId);
 		else
-			log("net: %s %s #%"INT32" is dead. Has not responded to "
-			    "ping in %"INT32" ms. Sending email alert.",
+			log("net: %s %s #%" PRId32" is dead. Has not responded to "
+			    "ping in %" PRId32" ms. Sending email alert.",
 			    h->m_hostname,nm,h->m_hostId,
 			    (int32_t)g_conf.m_sendEmailTimeout);
 		// . make the msg
@@ -1087,7 +1087,7 @@ bool PingServer::sendEmail ( Host *h            ,
 		char *desc = "dead";
 		if ( oom ) desc = "out of memory";
 		else if ( kernelErrors ) desc = "having kernel errors";
-		sprintf ( msgbuf , "%s %s %"INT32" is %s. cluster=%s (%s)",  
+		sprintf ( msgbuf , "%s %s %" PRId32" is %s. cluster=%s (%s)",
 			  h->m_hostname,nm,
 			  h->m_hostId, desc, g_conf.m_clusterName,iptoa(ip0));
 		errmsg = msgbuf;
@@ -1285,7 +1285,7 @@ void gotDocWrapper ( void *state , TcpSocket *s ) {
 	g_pingServer.m_numReplies2++;
 	if ( g_pingServer.m_numReplies2 > g_pingServer.m_maxRequests2 ) {
 		log(LOG_LOGIC,"net: too many replies received. "
-		    "requests:%"INT32" replies:%"INT32" maxrequests:%"INT32"",
+		    "requests:%" PRId32" replies:%" PRId32" maxrequests:%" PRId32,
 		    g_pingServer.m_numRequests2, 
 		    g_pingServer.m_numReplies2, 
 		    g_pingServer.m_maxRequests2);
@@ -1300,7 +1300,7 @@ void gotDocWrapper ( void *state , TcpSocket *s ) {
 		if(h) {
 			log("net: Had error sending email to mobile for dead "
 			    "hostId "
-			    "#%"INT32": %s.", h->m_hostId,mstrerror(g_errno));
+			    "#%" PRId32": %s.", h->m_hostId,mstrerror(g_errno));
 		} else {
 			log("net: Had error sending email to mobile for "
 			    "int32_t latency: %s.", mstrerror(g_errno));
@@ -1313,14 +1313,14 @@ void gotDocWrapper ( void *state , TcpSocket *s ) {
 	}
 	// log it
 	if(h)
-		log("net: Email sent successfully for dead host #%"INT32".", 
+		log("net: Email sent successfully for dead host #%" PRId32".",
 		    h->m_hostId);
 	else 
 		log("net: Email sent successfully for int32_t latency.");
 	// . show the reply
 	// . seems to crash if we log the read buffer... no \0?
 	if ( s && s->m_readBuf )
-		log("net: Got messaging server reply #%"INT32".\n%s",
+		log("net: Got messaging server reply #%" PRId32".\n%s",
 		    g_pingServer.m_numReplies2,s->m_readBuf );
 	// otherwise, success
 	if(h) {
@@ -1551,7 +1551,7 @@ void PingServer::tapHost ( int32_t hostId ) {
 	// consider it out of progress
 	//h->m_inTapProgress = false;
 	// had an error
-	log("net: Had error sending sync point request to host #%"INT32": %s.", 
+	log("net: Had error sending sync point request to host #%" PRId32": %s.",
 	    h->m_hostId,mstrerror(g_errno) );
 	// reset it cuz it's not a showstopper
 	g_errno = 0;
@@ -1585,8 +1585,8 @@ void updatePingTime ( Host *h , int32_t *pingPtr , int32_t tripTime ) {
 		char *desc = "";
 		if ( pingPtr == &h->m_pingShotgun ) desc = " (shotgun)";
 		if ( tripTime > 50 )
-			log("gb: got new max ping time of %"INT32" for "
-			    "host #%"INT32"%s ",tripTime,h->m_hostId,desc);
+			log("gb: got new max ping time of %" PRId32" for "
+			    "host #%" PRId32"%s ",tripTime,h->m_hostId,desc);
 	}
 
 	// is it dead now?
@@ -1620,7 +1620,7 @@ void checkKernelErrors( int fd, void *state ){
 		if ( len > 200 ) len = 200;
 		char c = buf[len];
 		buf[len] = '\0';
-		log("db: klogctl took %"INT64" ms to read %s",took, buf);
+		log("db: klogctl took %" PRId64" ms to read %s",took, buf);
 		buf[len] = c;
 	}
 
@@ -1949,7 +1949,7 @@ bool sendEmailThroughMandrill ( class EmailInfo *ei ) {
 	char *s = strstr(sb.getBufStart(),needle);
 	s += needleLen;
 	char c = s[4];
-	sprintf(s,"%04"INT32"",contentLen);
+	sprintf(s,"%04" PRId32,contentLen);
 	s[4] = c;
 	
 
@@ -1997,7 +1997,7 @@ void doneSendingNotifyEmailWrapper ( void *state ) {
 	EmailInfo *ei = (EmailInfo *)state;
 	ei->m_notifyBlocked--;
 	// error?
-	log("build: email notification status (count=%i) (ei=0x%"PTRFMT"): %s",
+	log("build: email notification status (count=%i) (ei=0x%" PTRFMT"): %s",
 	    (int)ei->m_notifyBlocked,(PTRTYPE)ei,mstrerror(g_errno));
 	// ignore it for rest
 	g_errno = 0;
@@ -2015,7 +2015,7 @@ void doneGettingNotifyUrlWrapper ( void *state , TcpSocket *sock ) {
 	EmailInfo *ei = (EmailInfo *)state;
 	ei->m_notifyBlocked--;
 	// error?
-	log("build: url notification status (count=%i) (ei=0x%"PTRFMT"): %s",
+	log("build: url notification status (count=%i) (ei=0x%" PTRFMT"): %s",
 	    (int)ei->m_notifyBlocked,(PTRTYPE)ei,mstrerror(g_errno));
 	// wait for email to get done
 	if ( ei->m_notifyBlocked > 0 ) return;
@@ -2100,7 +2100,7 @@ bool sendNotification ( EmailInfo *ei ) {
 		// the collection details
 		printCrawlDetailsInJson ( &postContent , cr );
 		// content-length of it
-		fullReq.safePrintf("Content-Length: %"INT32"\r\n",
+		fullReq.safePrintf("Content-Length: %" PRId32"\r\n",
 				   postContent.length());
 		// type is json
 		fullReq.safePrintf("Content-Type: application/json\r\n");

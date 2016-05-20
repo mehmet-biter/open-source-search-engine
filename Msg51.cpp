@@ -93,7 +93,7 @@ bool Msg51::getClusterRecs ( int64_t     *docIds                   ,
 	CollectionRec *cr = g_collectiondb.getRec ( collnum );
 	// return true on error, g_errno should already be set
 	if ( ! cr ) {
-		log("db: msg51. Collection rec null for collnum %"INT32".", 
+		log("db: msg51. Collection rec null for collnum %" PRId32".",
 		    (int32_t)collnum);
 		g_errno = EBADENGINEER;
 		char *xx=NULL; *xx=0;
@@ -204,7 +204,7 @@ bool Msg51::sendRequests ( int32_t k ) {
 		// it is no longer CR_UNINIT, we got the rec now
 		m_clusterLevels[m_nexti] = CR_GOT_REC;
 		// debug msg
-		//logf(LOG_DEBUG,"query: msg51 getRec k.n0=%"UINT64" rec.n0=%"UINT64"",
+		//logf(LOG_DEBUG,"query: msg51 getRec k.n0=%" PRIu64" rec.n0=%" PRIu64,
 		//     ckey.n0,m_clusterRecs[m_nexti].n0);
 		m_nexti++;
 		goto sendLoop;
@@ -385,7 +385,7 @@ void Msg51::gotClusterRec ( Msg0 *msg0 ) { //, RdbList *list ) {
 	// bail on error
 	if ( g_errno || list->getListSize() < 12 ) {
 		//log(LOG_DEBUG,
-		//    "build: clusterdb rec for d=%"INT64" dptr=%"UINT32" "
+		//    "build: clusterdb rec for d=%" PRId64" dptr=%" PRIu32" "
 		//     "not found. where is it?", docId, (int32_t)ci);
 		g_errno = 0;
 		return;
@@ -399,8 +399,8 @@ void Msg51::gotClusterRec ( Msg0 *msg0 ) { //, RdbList *list ) {
 	*rec = *(key_t *)(list->m_list);
 	// debug note
 	log(LOG_DEBUG,
-	    "build: had clusterdb SUCCESS for d=%"INT64" dptr=%"UINT32" "
-	    "rec.n1=%"XINT32",%016"XINT64" sitehash26=0x%"XINT32".", (int64_t)docId, (int32_t)ci,
+	    "build: had clusterdb SUCCESS for d=%" PRId64" dptr=%" PRIu32" "
+	    "rec.n1=%" PRIx32",%016" PRIx64" sitehash26=0x%" PRIx32".", (int64_t)docId, (int32_t)ci,
 	    rec->n1,rec->n0,
 	    g_clusterdb.getSiteHash26((char *)rec));
 
@@ -433,7 +433,7 @@ void Msg51::gotClusterRec ( Msg0 *msg0 ) { //, RdbList *list ) {
 		s_cacheInit = true;
 
 	// debug msg
-	//logf(LOG_DEBUG,"query: msg51 addRec k.n0=%"UINT64" rec.n0=%"UINT64"",docId,
+	//logf(LOG_DEBUG,"query: msg51 addRec k.n0=%" PRIu64" rec.n0=%" PRIu64,docId,
 	//     rec->n0);
 
 	// . add the record to our quick cache as a int64_t
@@ -547,8 +547,8 @@ loop:
 	for ( int32_t i = 0 ; i < numRecs && isDebug ; i++ ) {
 		crec = (char *)&clusterRecs[i];
 		uint32_t siteHash26=g_clusterdb.getSiteHash26(crec);
-		logf(LOG_DEBUG,"query: msg51: hit #%"INT32") sitehash26=%"UINT32" "
-		     "rec.n0=%"XINT64" docid=%"INT64" cl=%"INT32" (%s)",
+		logf(LOG_DEBUG,"query: msg51: hit #%" PRId32") sitehash26=%" PRIu32" "
+		     "rec.n0=%" PRIx64" docid=%" PRId64" cl=%" PRId32" (%s)",
 		     (int32_t)count++,
 		     (int32_t)siteHash26,
 		     clusterRecs[i].n0,
@@ -558,12 +558,12 @@ loop:
 	}
 
 
-	//log(LOG_DEBUG,"build: numVisible=%"INT32" numClustered=%"INT32" numErrors=%"INT32"",
+	//log(LOG_DEBUG,"build: numVisible=%" PRId32" numClustered=%" PRId32" numErrors=%" PRId32,
 	//    *numVisible,*numClustered,*numErrors);
 	// show time
 	uint64_t took = gettimeofdayInMilliseconds() - startTime;
 	if ( took <= 3 ) return true;
-	log(LOG_INFO,"build: Took %"INT64" ms to do clustering.",took);
+	log(LOG_INFO,"build: Took %" PRId64" ms to do clustering.",took);
 
 	// we are all done
 	return true;

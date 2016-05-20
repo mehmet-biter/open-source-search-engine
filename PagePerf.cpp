@@ -59,7 +59,7 @@ bool sendPagePerf ( TcpSocket *s , HttpRequest *r ) {
 		     "        if (req.status == 200) {"
 		     "        var uniq = new Date();"
 		     "        uniq.getTime();"
-		     "   document.diskgraph.src=\"/diskGraph%"INT32".gif?\" + uniq;"
+		     "   document.diskgraph.src=\"/diskGraph%" PRId32".gif?\" + uniq;"
 		     "        timeit();"
 		     "    } else {"
 	     //   "            alert(\"There was a problem retrieving \");"
@@ -105,7 +105,7 @@ bool sendPagePerf ( TcpSocket *s , HttpRequest *r ) {
 		       "<center>"
 		       //"<br>"
 		       //"<img name=\"diskgraph\" 
-		       //src=/diskGraph%"INT32".gif><br><br>",
+		       //src=/diskGraph%" PRId32".gif><br><br>",
 		       //g_hostdb.m_hostId );
 		     );
 

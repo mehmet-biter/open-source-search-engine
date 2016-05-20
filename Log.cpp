@@ -40,7 +40,7 @@ void Log::reset ( ) {
 static bool renameCurrentLogFile ( ) {
 	File f;
 	char tmp[16];
-	sprintf(tmp,"log%03"INT32"",g_hostdb.m_hostId);
+	sprintf(tmp,"log%03" PRId32,g_hostdb.m_hostId);
 	f.set ( g_hostdb.m_dir , tmp );
 	// make new filename like log000-bak20131104-181932
 	time_t now = getTimeLocal();
@@ -48,7 +48,7 @@ static bool renameCurrentLogFile ( ) {
 	char tmp2[64];
 	strftime(tmp2,64,"%Y%m%d-%H%M%S",tm1);
 	SafeBuf newName;
-	if ( ! newName.safePrintf ( "%slog%03"INT32"-bak%s",
+	if ( ! newName.safePrintf ( "%slog%03" PRId32"-bak%s",
 				    g_hostdb.m_dir,
 				    g_hostdb.m_hostId,
 				    tmp2 ) ) {
@@ -235,18 +235,18 @@ bool Log::logR ( int64_t now, int32_t type, const char *msg, bool forced ) {
             time_t now_t = (time_t)(now / 1000);
             struct tm *stm = localtime(&now_t);
 
-            p += sprintf ( p , "%04d%02d%02d-%02d%02d%02d-%03d %04" INT32" ", stm->tm_year+1900,stm->tm_mon+1,stm->tm_mday,stm->tm_hour,stm->tm_min,stm->tm_sec,(int)(now%1000), g_hostdb.m_hostId );
+            p += sprintf ( p , "%04d%02d%02d-%02d%02d%02d-%03d %04" PRId32" ", stm->tm_year+1900,stm->tm_mon+1,stm->tm_mday,stm->tm_hour,stm->tm_min,stm->tm_sec,(int)(now%1000), g_hostdb.m_hostId );
         }
         else
         {
             if ( g_hostdb.m_numHosts <= 999 )
-                    p += sprintf ( p , "%" UINT64" %03" INT32" ",
+                    p += sprintf ( p , "%" PRIu64" %03" PRId32" ",
                               now , g_hostdb.m_hostId );
             else if ( g_hostdb.m_numHosts <= 9999 )
-                    p += sprintf ( p , "%" UINT64" %04" INT32" ",
+                    p += sprintf ( p , "%" PRIu64" %04" PRId32" ",
                               now , g_hostdb.m_hostId );
             else if ( g_hostdb.m_numHosts <= 99999 )
-                    p += sprintf ( p , "%" UINT64" %05" INT32" ",
+                    p += sprintf ( p , "%" PRIu64" %05" PRId32" ",
                               now , g_hostdb.m_hostId );
         }
 	}

@@ -11,7 +11,7 @@ bool sendPageHealthCheck( TcpSocket *s , HttpRequest *r ) {
 	SafeBuf p(buf, 64*1024);
 	int32_t uptime = time(NULL) - g_stats.m_uptimeStart;
 	
-	p.safePrintf("{\n\"status\":\"active\",\n\"uptime_secs\":%"INT32"\n}\n", uptime);
+	p.safePrintf("{\n\"status\":\"active\",\n\"uptime_secs\":%" PRId32"\n}\n", uptime);
 	
 	return g_httpServer.sendDynamicPage (s, (char*)p.getBufStart(), p.length(), -1, false, "application/json", -1, NULL, "utf8" );
 }

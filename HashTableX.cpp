@@ -388,8 +388,8 @@ bool HashTableX::setTableSize ( int32_t oldn , char *buf , int32_t bufSize ) {
 		if ( m_allocName ) name = m_allocName;
 
 		int64_t now = gettimeofdayInMilliseconds();
-		logf(LOG_DEBUG,"table: grewtable %s from %"INT32" to %"INT32" slots "
-		     "in %"INT64" ms (this=0x%"PTRFMT") (used=%"INT32")",  
+		logf(LOG_DEBUG,"table: grewtable %s from %" PRId32" to %" PRId32" slots "
+		     "in %" PRId64" ms (this=0x%" PTRFMT") (used=%" PRId32")",
 		     name,old,m_numSlots ,now - startTime,(PTRTYPE)this,oldUsed);
 	}
 
@@ -437,7 +437,7 @@ bool HashTableX::load ( const char *dir, const char *filename, char **tbuf, int3
 		if ( strstr(filename,"ipstouseproxiesfor.dat") )
 			return false;
 		log("htable: reading hashtable from %s%s: "
-		    "bogus keysize of %"INT32"",
+		    "bogus keysize of %" PRId32,
 		    pdir,filename,ks );
 		return false;
 	}
@@ -481,7 +481,7 @@ bool HashTableX::load ( const char *dir, const char *filename, char **tbuf, int3
         f.close();
 	m_needsSave = false;
 	int32_t totalMem = *tsize+m_numSlots*(m_ks+m_ds);
-	log(LOG_INFO,"admin: Loaded hashtablex from %s%s %"INT32" total mem",
+	log(LOG_INFO,"admin: Loaded hashtablex from %s%s %" PRId32" total mem",
 	    pdir,filename, totalMem);
         return true;
 }

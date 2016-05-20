@@ -19,7 +19,7 @@ char *getVersion ( ) {
 	sprintf(s_vbuf,"%s %s", __DATE__, __TIME__ );
 	// PingServer.cpp needs this exactly to be 24
 	if ( gbstrlen(s_vbuf) != getVersionSize() - 1 ) { 
-		log("getVersion: %s %"PRId32" != %"PRId32"",
+		log("getVersion: %s %" PRId32" != %" PRId32,
 		    s_vbuf,
 		    (int32_t)gbstrlen(s_vbuf),
 		    getVersionSize() - 1);

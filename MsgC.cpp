@@ -59,7 +59,7 @@ bool MsgC::getIp(char  *hostname    , int32_t   hostnameLen ,
 	// debug
 	//char c = hostname[hostnameLen];
 	//if ( c != 0 ) hostname[hostnameLen] = 0;
-	log(LOG_DEBUG,"dns: msgc: getting ip (sendtoproxy=%"INT32") for [%s]",
+	log(LOG_DEBUG,"dns: msgc: getting ip (sendtoproxy=%" PRId32") for [%s]",
 	    (int32_t)forwardToProxy, hostname);
 	    
 	    
@@ -90,7 +90,7 @@ bool MsgC::getIp(char  *hostname    , int32_t   hostnameLen ,
 	if ( g_dns.isInCache ( key , ip ) ) {
 		if ( *ip == 3 ) { char *xx=NULL;*xx=0; }
 		// debug msg
-		//log(LOG_DEBUG, "dns::getIp: %s (key=%"UINT64") has ip=%s in cache!!!",
+		//log(LOG_DEBUG, "dns::getIp: %s (key=%" PRIu64") has ip=%s in cache!!!",
 		//     tmp,key.n0,iptoa(*ip));
 		return true;
 	}
@@ -237,7 +237,7 @@ void gotReplyWrapper ( void *state , void *state2 ) {
 		char *s ="";
 		if ( THIS->m_forwardToProxy ) s = "from proxy ";
 		logf(LOG_DEBUG,"dns: msgc: got reply %sof %s for %s. "
-		     "state=0x%"PTRFMT" mcast=0x%"PTRFMT"",
+		     "state=0x%" PTRFMT" mcast=0x%" PTRFMT"",
 		     s,iptoa(*THIS->m_ipPtr),THIS->m_u.getUrl(),(PTRTYPE)state2,
 		     (PTRTYPE)&THIS->m_mcast);
 	}
@@ -254,7 +254,7 @@ int32_t MsgC::gotReply(){
 	// sanity check
 	if (replySize != 12 || !reply ){
 		g_errno = EBADREPLYSIZE;
-		log( "dns: msgc: Bad reply size of %"PTRFMT"",
+		log( "dns: msgc: Bad reply size of %" PTRFMT"",
 		     (PTRTYPE)reply );
 	}
         else {
@@ -269,7 +269,7 @@ int32_t MsgC::gotReply(){
 	    iptoa(*m_ipPtr),m_u.getUrl());
 	// test checkusm
 	if ( *m_ipPtr != ip2 ) {
-		log("dns: ip checksum is incorrect. %"UINT32" != %"UINT32". "
+		log("dns: ip checksum is incorrect. %" PRIu32" != %" PRIu32". "
 		    "setting to -1.",  *m_ipPtr,ip2);
 		g_errno = ETRYAGAIN;
 		*m_ipPtr = -1;
@@ -288,7 +288,7 @@ int32_t MsgC::gotReply(){
 	// sanity check
 	if ( (uint32_t)*m_ipPtr <= 255 &&
 	     (uint32_t)*m_ipPtr >  0      ) {
-		log("dns: msgc: got msgc ip reply of %"UINT32" for %s. wtf? trying "
+		log("dns: msgc: got msgc ip reply of %" PRIu32" for %s. wtf? trying "
 		    "again.", *m_ipPtr,m_u.getUrl());
 		g_errno = ETRYAGAIN;
 		*m_ipPtr = 0;
@@ -345,7 +345,7 @@ void handleRequest ( UdpSlot *slot , int32_t niceness  ) {
 
 	//char c = hostname[hostnameLen];
 	//if ( c != 0 ) hostname[hostnameLen] = 0;
-	log(LOG_DEBUG,"dns: msgc: handle request called for %s state=%"PTRFMT"",
+	log(LOG_DEBUG,"dns: msgc: handle request called for %s state=%" PTRFMT"",
 	    hostname,(PTRTYPE)slot);
 	//if ( c != 0 ) hostname[hostnameLen] = c;
 
@@ -410,7 +410,7 @@ void handleRequest ( UdpSlot *slot , int32_t niceness  ) {
 void gotMsgCIpWrapper( void *state, int32_t ip){
 	UdpSlot *slot=(UdpSlot *) state;
 
-	log(LOG_DEBUG,"dns: msgc sending reply for state=%"PTRFMT".",(PTRTYPE)state);
+	log(LOG_DEBUG,"dns: msgc sending reply for state=%" PTRFMT".",(PTRTYPE)state);
 
 	//to fit the ip address
 	char reply[12];

@@ -127,8 +127,8 @@ bool Clusterdb::verify ( char *coll ) {
 	if ( got != count ) {
 		// tally it up
 		g_rebalance.m_numForeignRecs += count - got;
-		log ("db: Out of first %"INT32" records in clusterdb, "
-		     "only %"INT32" belong to our group.",count,got);
+		log ("db: Out of first %" PRId32" records in clusterdb, "
+		     "only %" PRId32" belong to our group.",count,got);
 		// exit if NONE, we probably got the wrong data
 		if ( got == 0 ) log("db: Are you sure you have the "
 					   "right "
@@ -139,7 +139,7 @@ bool Clusterdb::verify ( char *coll ) {
 		return g_conf.m_bypassValidation;
 	}
 	log ( LOG_DEBUG, "db: Clusterdb passed verification successfully for "
-			"%"INT32" recs.", count );
+			"%" PRId32" recs.", count );
 	// DONE
 	g_jobScheduler.allow_new_jobs();
 	return true;

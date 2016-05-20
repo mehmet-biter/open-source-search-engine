@@ -30,12 +30,12 @@
 void SpiderColl::setCollectionRec ( CollectionRec *cr ) {
 	m_cr = cr;
 	// this was useful for debugging a null m_cr bug
-	//log("sc: sc 0x%"PTRFMT" setting cr to 0x%"PTRFMT""
+	//log("sc: sc 0x%" PTRFMT" setting cr to 0x%" PTRFMT""
 	//,(int32_t)this,(int32_t)cr);
 }
 
 CollectionRec *SpiderColl::getCollectionRec ( ) {
-	//log("sc: sc 0x%"PTRFMT" getting cr of 0x%"PTRFMT""
+	//log("sc: sc 0x%" PTRFMT" getting cr of 0x%" PTRFMT""
 	//,(int32_t)this,(int32_t)m_cr);
 	return m_cr;
 }
@@ -91,7 +91,7 @@ bool SpiderColl::load ( ) {
 	char *coll = g_collectiondb.getColl(m_collnum);
 	// sanity check
 	if ( ! coll || coll[0]=='\0' ) {
-		log("spider: bad collnum of %"INT32"",(int32_t)m_collnum);
+		log("spider: bad collnum of %" PRId32,(int32_t)m_collnum);
 		g_errno = ENOCOLLREC;
 		return false;
 		//char *xx=NULL;*xx=0; }
@@ -152,7 +152,7 @@ bool SpiderColl::load ( ) {
 
 	// make dir
 	char dir[500];
-	sprintf(dir,"%scoll.%s.%"INT32"",g_hostdb.m_dir,coll,(int32_t)m_collnum);
+	sprintf(dir,"%scoll.%s.%" PRId32,g_hostdb.m_dir,coll,(int32_t)m_collnum);
 	// load up all the tables
 	if ( ! m_cdTable .load(dir,"crawldelay.dat"  ) ) err = g_errno;
 	if ( ! m_sniTable.load(dir,"siteinlinks.dat" ) ) err = g_errno;
@@ -383,14 +383,14 @@ bool SpiderColl::makeWaitingTree ( ) {
 		// note it
 		if ( g_conf.m_logDebugSpider )
 			logf(LOG_DEBUG,"spider: added time=1 ip=%s to waiting "
-			    "tree (node#=%"INT32")", iptoa(firstIp),wn);
+			    "tree (node#=%" PRId32")", iptoa(firstIp),wn);
 		// a tmp var
 		int64_t fakeone = 1LL;
 		// add to table now since its in the tree
 		if ( ! m_waitingTable.addKey ( &firstIp , &fakeone ) ) {
 			log("spider: makeWaitTree2: %s",mstrerror(g_errno));
 			m_waitingTree.deleteNode3 ( wn , true );
-			//log("sper: 6 del node %"INT32" for %s",wn,iptoa(firstIp));
+			//log("sper: 6 del node %" PRId32" for %s",wn,iptoa(firstIp));
 			return false;
 		}
 	}
@@ -632,8 +632,8 @@ bool SpiderColl::addSpiderReply ( SpiderReply *srep ) {
 	time_t nowGlobal = getTimeGlobal();
 
 	if ( g_conf.m_logDebugSpider )
-		logf(LOG_DEBUG,"spider: removing lock uh48=%"INT64" "
-		     "lockKey=%"UINT64"",  
+		logf(LOG_DEBUG,"spider: removing lock uh48=%" PRId64" "
+		     "lockKey=%" PRIu64,
 		     srep->getUrlHash48(),
 		     lockKey );
 
@@ -664,7 +664,7 @@ bool SpiderColl::addSpiderReply ( SpiderReply *srep ) {
 	// when "rebuilding" (Rebuild.cpp) this msg gets triggered too much...
 	// so only show it when in debug mode.
 	if ( !lock && g_conf.m_logDebugSpider)//ht->isInTable(&lockKey)) 
-		logf(LOG_DEBUG,"spider: rdb: lockKey=%"UINT64" "
+		logf(LOG_DEBUG,"spider: rdb: lockKey=%" PRIu64" "
 		     "was not in lock table",lockKey);
 
 	// now just remove it since we only spider our own urls
@@ -751,9 +751,9 @@ bool SpiderColl::addSpiderReply ( SpiderReply *srep ) {
 						  srep->m_downloadEndTime );
 	// log this for now
 	if ( g_conf.m_logDebugSpider )
-		log("spider: adding spider reply, download end time %"INT64" for "
-		    "ip=%s(%"UINT32") uh48=%"UINT64" indexcode=\"%s\" coll=%"INT32" "
-		    "k.n1=%"UINT64" k.n0=%"UINT64"",
+		log("spider: adding spider reply, download end time %" PRId64" for "
+		    "ip=%s(%" PRIu32") uh48=%" PRIu64" indexcode=\"%s\" coll=%" PRId32" "
+		    "k.n1=%" PRIu64" k.n0=%" PRIu64,
 		    //"to SpiderColl::m_lastDownloadCache",
 		    srep->m_downloadEndTime,
 		    iptoa(srep->m_firstIp),
@@ -820,7 +820,7 @@ void SpiderColl::removeFromDoledbTable ( int32_t firstIp ) {
 	// now we log it too
 	if ( g_conf.m_logDebugSpider )
 		log(LOG_DEBUG,"spider: removed ip=%s from doleiptable "
-		    "(newcount=%"INT32")", iptoa(firstIp),*score);
+		    "(newcount=%" PRId32")", iptoa(firstIp),*score);
 
 
 	// remove if zero
@@ -836,7 +836,7 @@ void SpiderColl::removeFromDoledbTable ( int32_t firstIp ) {
 	// all done?
 	if ( g_conf.m_logDebugSpider ) {
 		// log that too!
-		logf(LOG_DEBUG,"spider: discounting firstip=%s to %"INT32"",
+		logf(LOG_DEBUG,"spider: discounting firstip=%s to %" PRId32,
 		     iptoa(firstIp),*score);
 	}
 }
@@ -879,7 +879,7 @@ bool SpiderColl::isInDupCache ( SpiderRequest *sreq , bool addToCache ) {
 	if ( m_dupCache.getLong ( 0,dupKey64,86400,true ) != -1 ) {
 	dedup:
 		if ( g_conf.m_logDebugSpider )
-			log("spider: skipping dup request url=%s uh48=%"UINT64"",
+			log("spider: skipping dup request url=%s uh48=%" PRIu64,
 			    sreq->m_url,sreq->getUrlHash48());
 		return true;
 	}
@@ -917,7 +917,7 @@ bool SpiderColl::isInDupCache ( SpiderRequest *sreq , bool addToCache ) {
 bool SpiderColl::addSpiderRequest ( SpiderRequest *sreq , int64_t nowGlobalMS ) {
 	// don't add negative keys or data less thangs
 	if ( sreq->m_dataSize <= 0 ) {
-		log( "spider: add spider request is dataless for uh48=%"UINT64"", sreq->getUrlHash48() );
+		log( "spider: add spider request is dataless for uh48=%" PRIu64, sreq->getUrlHash48() );
 		return true;
 	}
 
@@ -926,7 +926,7 @@ bool SpiderColl::addSpiderRequest ( SpiderRequest *sreq , int64_t nowGlobalMS ) 
 	//   Rdb.cpp won't add the spiderrequest if its in this dup cache, and we add
 	//   it to the dupcache here...
 	if ( isInDupCache ( sreq , true ) ) {
-		logDebug( g_conf.m_logDebugSpider, "spider: skipping dup request url=%s uh48=%" UINT64,
+		logDebug( g_conf.m_logDebugSpider, "spider: skipping dup request url=%s uh48=%" PRIu64,
 		          sreq->m_url, sreq->getUrlHash48() );
 		return true;
 	}
@@ -944,7 +944,7 @@ bool SpiderColl::addSpiderRequest ( SpiderRequest *sreq , int64_t nowGlobalMS ) 
 	// watch out for corruption
 	if ( sreq->m_firstIp ==  0 || sreq->m_firstIp == -1 || ulen <= 0 ) {
 		log("spider: Corrupt spider req with url length of "
-		    "%"INT32" <= 0 u=%s. dataSize=%"INT32" firstip=%"INT32" uh48=%"UINT64". Skipping.",
+		    "%" PRId32" <= 0 u=%s. dataSize=%" PRId32" firstip=%" PRId32" uh48=%" PRIu64". Skipping.",
 		    ulen,sreq->m_url,
 		    sreq->m_dataSize,sreq->m_firstIp,sreq->getUrlHash48());
 		return true;
@@ -1006,7 +1006,7 @@ bool SpiderColl::addSpiderRequest ( SpiderRequest *sreq , int64_t nowGlobalMS ) 
 
 	// spiders disabled for this row in url filters?
 	if ( ufn >= 0 && m_cr->m_maxSpidersPerRule[ufn] == 0 ) {
-		logDebug( g_conf.m_logDebugSpider, "spider: request spidersoff ufn=%" INT32" url=%s", ufn, sreq->m_url );
+		logDebug( g_conf.m_logDebugSpider, "spider: request spidersoff ufn=%" PRId32" url=%s", ufn, sreq->m_url );
 		return true;
 	}
 
@@ -1019,12 +1019,12 @@ bool SpiderColl::addSpiderRequest ( SpiderRequest *sreq , int64_t nowGlobalMS ) 
 
 	// do not add to doledb if bad
 	if ( m_cr->m_forceDelete[ufn] ) {
-		logDebug( g_conf.m_logDebugSpider, "spider: request %s is filtered ufn=%" INT32, sreq->m_url, ufn );
+		logDebug( g_conf.m_logDebugSpider, "spider: request %s is filtered ufn=%" PRId32, sreq->m_url, ufn );
 		return true;
 	}
 
 	if ( m_cr->m_forceDelete[ufn] ) {
-		logDebug( g_conf.m_logDebugSpider, "spider: request %s is banned ufn=%" INT32, sreq->m_url, ufn );
+		logDebug( g_conf.m_logDebugSpider, "spider: request %s is banned ufn=%" PRId32, sreq->m_url, ufn );
 		return true;
 	}
 
@@ -1051,15 +1051,15 @@ bool SpiderColl::addSpiderRequest ( SpiderRequest *sreq , int64_t nowGlobalMS ) 
 
 	// log it
 	logDebug( g_conf.m_logDebugSpider, "spider: %s request to waiting tree %s"
-	          " uh48=%" UINT64
+	          " uh48=%" PRIu64
 	          " firstIp=%s "
-	          " pageNumInlinks=%" UINT32
-	          " parentdocid=%" UINT64
-	          " isinjecting=%" INT32
-	          " ispagereindex=%" INT32
-	          " ufn=%" INT32
-	          " priority=%" INT32
-	          " addedtime=%" UINT32,
+	          " pageNumInlinks=%" PRIu32
+	          " parentdocid=%" PRIu64
+	          " isinjecting=%" PRId32
+	          " ispagereindex=%" PRId32
+	          " ufn=%" PRId32
+	          " priority=%" PRId32
+	          " addedtime=%" PRIu32,
 	          added ? "ADDED" : "DIDNOTADD",
 	          sreq->m_url,
 	          sreq->getUrlHash48(),
@@ -1086,7 +1086,7 @@ bool SpiderColl::printWaitingTree ( ) {
 		// then ip
 		int32_t firstIp = wk->n0 & 0xffffffff;
 		// show it
-		log("dump: time=%"INT64" firstip=%s",spiderTimeMS,iptoa(firstIp));
+		log("dump: time=%" PRId64" firstip=%s",spiderTimeMS,iptoa(firstIp));
 	}
 	return true;
 }
@@ -1202,7 +1202,7 @@ bool SpiderColl::addToWaitingTree ( uint64_t spiderTimeMS, int32_t firstIp, bool
 		}
 
 		// log the replacement
-		logDebug( g_conf.m_logDebugSpider, "spider: replacing waitingtree key oldtime=%" UINT32" newtime=%" UINT32" firstip=%s",
+		logDebug( g_conf.m_logDebugSpider, "spider: replacing waitingtree key oldtime=%" PRIu32" newtime=%" PRIu32" firstip=%s",
 		          (uint32_t)(sms/1000LL),
 		          (uint32_t)(spiderTimeMS/1000LL),
 		          iptoa( firstIp ) );
@@ -1215,7 +1215,7 @@ bool SpiderColl::addToWaitingTree ( uint64_t spiderTimeMS, int32_t firstIp, bool
 		// requests for this first ip
 
 		// log the replacement
-		logDebug( g_conf.m_logDebugSpcache, "spider: adding new key to waitingtree newtime=%" UINT32"%s firstip=%s",
+		logDebug( g_conf.m_logDebugSpcache, "spider: adding new key to waitingtree newtime=%" PRIu32"%s firstip=%s",
 		          (uint32_t)(spiderTimeMS/1000LL),
 		          ( spiderTimeMS == 0 ) ? "(replyreset)" : "",
 		          iptoa( firstIp ) );
@@ -1225,7 +1225,7 @@ bool SpiderColl::addToWaitingTree ( uint64_t spiderTimeMS, int32_t firstIp, bool
 	key_t wk = makeWaitingTreeKey ( spiderTimeMS, firstIp );
 	// what is this?
 	if ( firstIp == 0 || firstIp == -1 ) {
-		log("spider: got ip of %s. cn=%"INT32" "
+		log("spider: got ip of %s. cn=%" PRId32" "
 		    "wtf? failed to add to "
 		    "waiting tree, but return true anyway.",
 		    iptoa(firstIp) ,
@@ -1245,8 +1245,8 @@ bool SpiderColl::addToWaitingTree ( uint64_t spiderTimeMS, int32_t firstIp, bool
 		if ( more < 10 ) more = 10;
 		if ( more > 100000 ) more = 100000;
 		int32_t newNum = max + more;
-		log("spider: growing waiting tree to from %"INT32" to %"INT32" nodes "
-		    "for collnum %"INT32"",
+		log("spider: growing waiting tree to from %" PRId32" to %" PRId32" nodes "
+		    "for collnum %" PRId32,
 		    max , newNum , (int32_t)m_collnum );
 		if ( ! m_waitingTree.growTree ( newNum , MAX_NICENESS ) )
 			return log("spider: failed to grow waiting tree to "
@@ -1268,14 +1268,14 @@ bool SpiderColl::addToWaitingTree ( uint64_t spiderTimeMS, int32_t firstIp, bool
 	}
 
 	// note it
-	logDebug( g_conf.m_logDebugSpider, "spider: added time=%"INT64" ip=%s to waiting tree scan=%" INT32" node=%" INT32,
+	logDebug( g_conf.m_logDebugSpider, "spider: added time=%" PRId64" ip=%s to waiting tree scan=%" PRId32" node=%" PRId32,
 	          spiderTimeMS , iptoa( firstIp ), (int32_t)callForScan, wn );
 
 	// add to table now since its in the tree
 	if ( ! m_waitingTable.addKey ( &firstIp , &spiderTimeMS ) ) {
 		// remove from tree then
 		m_waitingTree.deleteNode3 ( wn , false );
-		//log("spider: 5 del node %"INT32" for %s",wn,iptoa(firstIp));
+		//log("spider: 5 del node %" PRId32" for %s",wn,iptoa(firstIp));
 		return false;
 	}
 	// . kick off a scan, i don't care if this blocks or not!
@@ -1346,11 +1346,11 @@ int32_t SpiderColl::getNextIpFromWaitingTree ( ) {
 		// and becase the trees/tables for spidercache are saving
 		// in Process.cpp's g_spiderCache::save() call
 		m_waitingTree.deleteNode3 ( node , true );
-		//log("spdr: 8 del node node %"INT32" for %s",node,iptoa(firstIp));
+		//log("spdr: 8 del node node %" PRId32" for %s",node,iptoa(firstIp));
 		// note it
 		if ( g_conf.m_logDebugSpider )
 			log(LOG_DEBUG,"spider: removed1 ip=%s from waiting "
-			    "tree. nn=%"INT32"",
+			    "tree. nn=%" PRId32,
 			    iptoa(firstIp),m_waitingTree.m_numUsedNodes);
 
 		// log it
@@ -1378,7 +1378,7 @@ int32_t SpiderColl::getNextIpFromWaitingTree ( ) {
 	// sanity
 	if ( firstIp == 0 || firstIp == -1 ) { 
 		//char *xx=NULL;*xx=0; }
-		log("spider: removing corrupt spiderreq firstip of %"INT32
+		log("spider: removing corrupt spiderreq firstip of %" PRId32
 		    " from waiting tree collnum=%i",
 		    firstIp,(int)m_collnum);
 		goto removeFromTree;
@@ -1519,7 +1519,7 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 		// . get the list of spiderdb records
 		// . do not include cache, those results are old and will mess
 		//   us up
-		log(LOG_DEBUG,"spider: populateWaitingTree: calling msg5: startKey=0x%"XINT64",0x%"XINT64" firstip=%s",
+		log(LOG_DEBUG,"spider: populateWaitingTree: calling msg5: startKey=0x%" PRIx64",0x%" PRIx64" firstip=%s",
 		    m_nextKey2.n1, m_nextKey2.n0, iptoa(g_spiderdb.getFirstIp(&m_nextKey2)));
 		    
 		// flag it
@@ -1550,7 +1550,7 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 	}
 
 	// show list stats
-	logDebug( g_conf.m_logDebugSpider, "spider: populateWaitingTree: got list of size %" INT32, m_list2.m_listSize );
+	logDebug( g_conf.m_logDebugSpider, "spider: populateWaitingTree: got list of size %" PRId32, m_list2.m_listSize );
 
 	// unflag it
 	m_gettingList2 = false;
@@ -1693,14 +1693,14 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 
 	// announce every 10MB
 	if ( m_numBytesScanned - m_lastPrintCount > 10000000 ) {
-		log("spider: %"UINT64" spiderdb bytes scanned for waiting tree "
-		    "re-population for cn=%"INT32"",m_numBytesScanned,
+		log("spider: %" PRIu64" spiderdb bytes scanned for waiting tree "
+		    "re-population for cn=%" PRId32,m_numBytesScanned,
 		    (int32_t)m_collnum);
 		m_lastPrintCount = m_numBytesScanned;
 	}
 
 	// debug info
-	log(LOG_DEBUG,"spider: Read2 %"INT32" spiderdb bytes.",list->getListSize());
+	log(LOG_DEBUG,"spider: Read2 %" PRId32" spiderdb bytes.",list->getListSize());
 	// reset any errno cuz we're just a cache
 	g_errno = 0;
 
@@ -1713,7 +1713,7 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 		if ( lastKey < m_nextKey2 ) {
 			log("spider: got corruption 9. spiderdb "
 			    "keys out of order for "
-			    "collnum=%"INT32, (int32_t)m_collnum);
+			    "collnum=%" PRId32, (int32_t)m_collnum);
 			g_corruptCount++;
 			// this should result in an empty list read for
 			// our next scan of spiderdb. unfortunately we could
@@ -1744,12 +1744,12 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 		m_lastScanTime = getTimeLocal();
 		// log it
 		// if ( m_numAdded )
-		// 	log("spider: added %"INT32" recs to waiting tree from "
-		// 	    "scan of %"INT64" bytes coll=%s",
+		// 	log("spider: added %" PRId32" recs to waiting tree from "
+		// 	    "scan of %" PRId64" bytes coll=%s",
 		// 	    m_numAdded,m_numBytesScanned,
 		// 	    m_cr->m_coll);
 		// note it
-		log("spider: rebuild complete for %s. Added %"INT32" recs to waiting tree, scanned %"INT64" bytes of spiderdb.",
+		log("spider: rebuild complete for %s. Added %" PRId32" recs to waiting tree, scanned %" PRId64" bytes of spiderdb.",
 		    m_coll,m_numAdded, m_numBytesScanned);
 		    
 		// reset the count for next scan
@@ -1907,7 +1907,7 @@ void SpiderColl::populateDoledbFromWaitingTree ( ) { // bool reentry ) {
 		else m_localTable.reset();
 	}
 
-	logDebug( g_conf.m_logDebugSpider, "spider: evalIpLoop: waitingtree nextip=%s numUsedNodes=%" INT32,
+	logDebug( g_conf.m_logDebugSpider, "spider: evalIpLoop: waitingtree nextip=%s numUsedNodes=%" PRId32,
 	          iptoa(ip), m_waitingTree.m_numUsedNodes );
 
 //@@@@@@ BR: THIS SHOULD BE DEBUGGED AND ENABLED
@@ -2172,8 +2172,8 @@ bool SpiderColl::evalIpLoop ( ) {
 	if ( inCache ) {
 		int32_t crc = hash32 ( doleBuf + 4 , doleBufSize - 4 );
 
-		logDebug( g_conf.m_logDebugSpider, "spider: GOT %" INT32" bytes of SpiderRequests "
-		          "from winnerlistcache for ip %s ptr=0x%" PTRFMT" crc=%" UINT32,
+		logDebug( g_conf.m_logDebugSpider, "spider: GOT %" PRId32" bytes of SpiderRequests "
+		          "from winnerlistcache for ip %s ptr=0x%" PTRFMT" crc=%" PRIu32,
 		          doleBufSize,
 		          iptoa( m_scanningIp ),
 		          (PTRTYPE)doleBuf,
@@ -2241,13 +2241,13 @@ bool SpiderColl::evalIpLoop ( ) {
 		// save mem
 		m_list.freeList();
 
-		logTrace( g_conf.m_logTraceSpider, "END, g_errno %" INT32, g_errno );
+		logTrace( g_conf.m_logTraceSpider, "END, g_errno %" PRId32, g_errno );
 		return true;
 	}
 
 
 	// if we started reading, then assume we got a fresh list here
-	logDebug( g_conf.m_logDebugSpider, "spider: back from msg5 spiderdb read2 of %" INT32" bytes (cn=%" INT32")",
+	logDebug( g_conf.m_logDebugSpider, "spider: back from msg5 spiderdb read2 of %" PRId32" bytes (cn=%" PRId32")",
 	          m_list.m_listSize, (int32_t)m_collnum );
 
 	// . set the winning request for all lists we read so far
@@ -2266,7 +2266,7 @@ bool SpiderColl::evalIpLoop ( ) {
 		if ( lastKey < m_nextKey ) {
 			log("spider: got corruption. spiderdb "
 			    "keys out of order for "
-			    "collnum=%"INT32" for evaluation of "
+			    "collnum=%" PRId32" for evaluation of "
 			    "firstip=%s so terminating evaluation of that "
 			    "firstip." ,
 			    (int32_t)m_collnum,
@@ -2350,7 +2350,7 @@ bool SpiderColl::readListFromSpiderdb ( ) {
 
 	CollectionRec *cr = g_collectiondb.getRec ( m_collnum );
 	if ( ! cr ) {
-		log("spider: lost collnum %"INT32"",(int32_t)m_collnum);
+		log("spider: lost collnum %" PRId32,(int32_t)m_collnum);
 		g_errno = ENOCOLLREC;
 		
 		logTrace( g_conf.m_logTraceSpider, "END, ENOCOLLREC" );
@@ -2382,7 +2382,7 @@ bool SpiderColl::readListFromSpiderdb ( ) {
 	// the ip if it equals m_scanningIp?
 	if ( wn < 0 ) { 
 		log("spider: waiting tree key removed while reading list "
-		    "for %s (%"INT32")",
+		    "for %s (%" PRId32")",
 		    cr->m_coll,(int32_t)m_collnum);
 		logTrace( g_conf.m_logTraceSpider, "END, waitingTree node was removed" );
 		return true;
@@ -2430,7 +2430,7 @@ bool SpiderColl::readListFromSpiderdb ( ) {
 		tmp.safePrintf("endKey=%s ", KEYSTR(&m_endKey,sizeof(key128_t)));
 		tmp.safePrintf("nextKey=%s ", KEYSTR(&m_nextKey,sizeof(key128_t)));
 		tmp.safePrintf("firstip=%s ", iptoa(m_scanningIp));
-		tmp.safePrintf("(cn=%"INT32")",(int32_t)m_collnum);
+		tmp.safePrintf("(cn=%" PRId32")",(int32_t)m_collnum);
 		log(LOG_DEBUG,"%s",tmp.getBufStart());
 	}
 	
@@ -2469,7 +2469,7 @@ bool SpiderColl::readListFromSpiderdb ( ) {
 	}
 	
 	// note its return
-	logDebug( g_conf.m_logDebugSpider, "spider: back from msg5 spiderdb read of %" INT32" bytes",m_list.m_listSize);
+	logDebug( g_conf.m_logDebugSpider, "spider: back from msg5 spiderdb read of %" PRId32" bytes",m_list.m_listSize);
 		
 	// no longer getting list
 	m_gettingList1 = false;
@@ -2541,7 +2541,7 @@ bool SpiderColl::scanListForWinners ( ) {
 	}
 
 	// show list stats
-	logDebug( g_conf.m_logDebugSpider, "spider: readListFromSpiderdb: got list of size %" INT32" for firstip=%s",
+	logDebug( g_conf.m_logDebugSpider, "spider: readListFromSpiderdb: got list of size %" PRId32" for firstip=%s",
 	          m_list.m_listSize, iptoa( m_scanningIp ) );
 
 
@@ -2604,10 +2604,10 @@ bool SpiderColl::scanListForWinners ( ) {
 					log( LOG_WARN, "spider: got corrupt time "
 						"spiderReply in "
 						"scan "
-						"uh48=%"INT64" "
-						"httpstatus=%"INT32" "
-						"datasize=%"INT32" "
-						"(cn=%"INT32")",
+						"uh48=%" PRId64" "
+						"httpstatus=%" PRId32" "
+						"datasize=%" PRId32" "
+						"(cn=%" PRId32")",
 						tmp->getUrlHash48(),
 						(int32_t)tmp->m_httpStatus,
 						tmp->m_dataSize,
@@ -2627,10 +2627,10 @@ bool SpiderColl::scanListForWinners ( ) {
 					log(LOG_WARN, "spider: got corrupt 3 "
 					    "spiderReply in "
 					    "scan "
-					    "uh48=%"INT64" "
-					    "httpstatus=%"INT32" "
-					    "datasize=%"INT32" "
-					    "(cn=%"INT32")",
+					    "uh48=%" PRId64" "
+					    "httpstatus=%" PRId32" "
+					    "datasize=%" PRId32" "
+					    "(cn=%" PRId32")",
 					    tmp->getUrlHash48(),
 					    (int32_t)tmp->m_httpStatus,
 					    tmp->m_dataSize,
@@ -2644,8 +2644,8 @@ bool SpiderColl::scanListForWinners ( ) {
 			// bad langid?
 			if ( ! getLanguageAbbr (tmp->m_langId) ) {
 				log(LOG_WARN, "spider: got corrupt 4 spiderReply in "
-				    "scan uh48=%"INT64" "
-				    "langid=%"INT32" (cn=%"INT32")",
+				    "scan uh48=%" PRId64" "
+				    "langid=%" PRId32" (cn=%" PRId32")",
 				    tmp->getUrlHash48(),
 				    (int32_t)tmp->m_langId,
 				    (int32_t)m_collnum);
@@ -2801,7 +2801,7 @@ bool SpiderColl::scanListForWinners ( ) {
 			m_localTable.addScore(&sreq->m_siteHash32,1);
 			m_localTable.addScore(&sreq->m_domHash32,1);
 
-			logDebug( g_conf.m_logDebugSpider, "spider: sitequota: got %" INT32" indexed docs for site from "
+			logDebug( g_conf.m_logDebugSpider, "spider: sitequota: got %" PRId32" indexed docs for site from "
 			          "firstip of %s from url %s",
 			          *( (int32_t *)m_localTable.getValue( &( sreq->m_siteHash32 ) ) ),
 			          iptoa( sreq->m_firstIp ),
@@ -2857,7 +2857,7 @@ bool SpiderColl::scanListForWinners ( ) {
 		     ! is_digit(sreq->m_url[0]) ) { 
 			if ( m_cr->m_spiderCorruptCount == 0 )
 				log( LOG_WARN, "spider: got corrupt 1 spiderRequest in "
-				    "scan because url is %s (cn=%"INT32")"
+				    "scan because url is %s (cn=%" PRId32")"
 				    ,sreq->m_url,(int32_t)m_collnum);
 			m_cr->m_spiderCorruptCount++;
 			continue;
@@ -2865,7 +2865,7 @@ bool SpiderColl::scanListForWinners ( ) {
 		if ( sreq->m_dataSize > (int32_t)sizeof(SpiderRequest) ) {
 			if ( m_cr->m_spiderCorruptCount == 0 )
 				log( LOG_WARN, "spider: got corrupt 11 spiderRequest in "
-				    "scan because rectoobig u=%s (cn=%"INT32")"
+				    "scan because rectoobig u=%s (cn=%" PRId32")"
 				    ,sreq->m_url,(int32_t)m_collnum);
 			m_cr->m_spiderCorruptCount++;
 			continue;
@@ -2874,7 +2874,7 @@ bool SpiderColl::scanListForWinners ( ) {
 			sreq->m_dataSize < 0 ) {
 				if ( m_cr->m_spiderCorruptCount == 0 )
 					log( LOG_WARN, "spider: got corrupt 11 spiderRequest in "
-						"scan because size=%i u=%s (cn=%"INT32")"
+						"scan because size=%i u=%s (cn=%" PRId32")"
 						,(int)sreq->m_dataSize
 						,sreq->m_url,(int32_t)m_collnum);
 				m_cr->m_spiderCorruptCount++;
@@ -2888,8 +2888,8 @@ bool SpiderColl::scanListForWinners ( ) {
 			if ( m_cr->m_spiderCorruptCount == 0 || s_first ) {
 				s_first = false;
 				log( LOG_WARN, "spider: got corrupt 6 spiderRequest in "
-				    "scan because added time is %"INT32" "
-				    "(delta=%"INT32" "
+				    "scan because added time is %" PRId32" "
+				    "(delta=%" PRId32" "
 				    "which is well into the future. url=%s "
 				    "(cn=%i)"
 				    ,(int32_t)sreq->m_addedTime
@@ -2962,7 +2962,7 @@ bool SpiderColl::scanListForWinners ( ) {
 		          ufn, sreq->m_url, sreq->getUrlHash48() )
 
 		if ( srep )
-			logDebug(g_conf.m_logDebugSpider, "spider: lastspidered=%" UINT32"", srep->m_spideredTime );
+			logDebug(g_conf.m_logDebugSpider, "spider: lastspidered=%" PRIu32, srep->m_spideredTime );
 
 		// spiders disabled for this row in url filteres?
 		if ( m_cr->m_maxSpidersPerRule[ufn] <= 0 ) continue;
@@ -2992,14 +2992,14 @@ bool SpiderColl::scanListForWinners ( ) {
 		// sanity
 		if ( (int64_t)spiderTimeMS < 0 ) { 
 			log( LOG_WARN, "spider: got corrupt 2 spiderRequest in "
-			    "scan (cn=%"INT32")",
+			    "scan (cn=%" PRId32")",
 			    (int32_t)m_collnum);
 			continue;
 		}
 		// more corruption detection
 		if ( sreq->m_hopCount < -1 ) {
 			log( LOG_WARN, "spider: got corrupt 5 spiderRequest in "
-			    "scan (cn=%"INT32")",
+			    "scan (cn=%" PRId32")",
 			    (int32_t)m_collnum);
 			continue;
 		}
@@ -3009,7 +3009,7 @@ bool SpiderColl::scanListForWinners ( ) {
 		int64_t delta2 = spiderTimeMS - nowGlobalMS;
 		if ( delta2 > 86400LL*1000LL*100LL ) {
 			log("spider: got corrupt 7 spiderRequest in "
-			    "scan (cn=%"INT32") (delta=%"INT64") url=%s",
+			    "scan (cn=%" PRId32") (delta=%" PRId64") url=%s",
 			    (int32_t)m_collnum,
 			    delta2,
 			    sreq->m_url);
@@ -3106,8 +3106,8 @@ bool SpiderColl::scanListForWinners ( ) {
 
 		// debug. show candidates due to be spidered now.
 		//if(g_conf.m_logDebugSpider ) //&& spiderTimeMS< nowGlobalMS )
-		//	log("spider: considering ip=%s sreq spiderTimeMS=%"INT64" "
-		//	    "pri=%"INT32" uh48=%"INT64"",
+		//	log("spider: considering ip=%s sreq spiderTimeMS=%" PRId64" "
+		//	    "pri=%" PRId32" uh48=%" PRId64,
 		//	    iptoa(sreq->m_firstIp),
 		//	    spiderTimeMS,
 		//	    priority,
@@ -3146,12 +3146,12 @@ bool SpiderColl::scanListForWinners ( ) {
 		// same ip at the same time.
 		int64_t key = makeLockTableKey ( sreq );
 
-		logDebug( g_conf.m_logDebugSpider, "spider: checking uh48=%" INT64" lockkey=%" INT64" used=%" INT32,
+		logDebug( g_conf.m_logDebugSpider, "spider: checking uh48=%" PRId64" lockkey=%" PRId64" used=%" PRId32,
 		          uh48, key, g_spiderLoop.m_lockTable.getNumUsedSlots() );
 
 		// MDW
 		if ( g_spiderLoop.m_lockTable.isInTable ( &key ) ) {
-			logDebug( g_conf.m_logDebugSpider, "spider: skipping url lockkey=%" INT64" in lock table sreq.url=%s",
+			logDebug( g_conf.m_logDebugSpider, "spider: skipping url lockkey=%" PRId64" in lock table sreq.url=%s",
 			          key, sreq->m_url );
 			continue;
 		}
@@ -3375,7 +3375,7 @@ bool SpiderColl::scanListForWinners ( ) {
 		// // why we should be getting dups in winnertree because they
 		// // have the same uh48 and that is the key in the tree.
 		// if ( dedup.isInTable ( &winUh48 ) ) {
-		// 	log("spider: got dup uh48=%"UINT64" dammit", winUh48);
+		// 	log("spider: got dup uh48=%" PRIu64" dammit", winUh48);
 		// 	char *xx=NULL;*xx=0;
 		// 	continue;
 		// }
@@ -3427,8 +3427,8 @@ bool SpiderColl::scanListForWinners ( ) {
 		m_lastReplyValid = true;
 	}
 
-	logDebug(g_conf.m_logDebugSpider, "spider: Checked list of %" INT32" spiderdb bytes (%" INT32" recs) "
-		    "for winners for firstip=%s. winnerTreeUsedNodes=%" INT32" #newreqs=%" INT64,
+	logDebug(g_conf.m_logDebugSpider, "spider: Checked list of %" PRId32" spiderdb bytes (%" PRId32" recs) "
+		    "for winners for firstip=%s. winnerTreeUsedNodes=%" PRId32" #newreqs=%" PRId64,
 	         list->getListSize(), recCount,
 	         iptoa( m_scanningIp ), m_winnerTree.getNumUsedNodes(), m_totalNewSpiderRequests );
 
@@ -3466,7 +3466,7 @@ bool SpiderColl::scanListForWinners ( ) {
 		return true;
 	m_lastOverflowFirstIp = firstIp;
 	if ( overflow ) {
-		logDebug( g_conf.m_logDebugSpider, "spider: firstip %s overflowing with %" INT32" new reqs",
+		logDebug( g_conf.m_logDebugSpider, "spider: firstip %s overflowing with %" PRId32" new reqs",
 		          iptoa(firstIp), (int32_t)m_totalNewSpiderRequests );
 	}
 
@@ -3550,8 +3550,8 @@ bool SpiderColl::addWinnersIntoDoledb ( ) {
 	  MDW: let's print out recs we add to doledb
 	//if ( g_conf.m_logDebugSpider && m_bestRequestValid ) {
 	if ( g_conf.m_logDebugSpider && m_bestRequestValid ) {
-		log("spider: got best ip=%s sreq spiderTimeMS=%"INT64" "
-		    "pri=%"INT32" uh48=%"INT64"",
+		log("spider: got best ip=%s sreq spiderTimeMS=%" PRId64" "
+		    "pri=%" PRId32" uh48=%" PRId64,
 		    iptoa(m_bestRequest->m_firstIp),
 		    m_bestSpiderTimeMS,
 		    (int32_t)m_bestRequest->m_priority,
@@ -3592,8 +3592,8 @@ bool SpiderColl::addWinnersIntoDoledb ( ) {
 		timestamp64 |= m_waitingTreeKey.n0 >> 32;
 		int32_t firstIp = m_waitingTreeKey.n0 &= 0xffffffff;
 		if ( g_conf.m_logDebugSpider )
-			log(LOG_DEBUG,"spider: removed2 time=%"INT64" ip=%s from "
-			    "waiting tree. nn=%"INT32".",
+			log(LOG_DEBUG,"spider: removed2 time=%" PRId64" ip=%s from "
+			    "waiting tree. nn=%" PRId32".",
 			    timestamp64, iptoa(firstIp),
 			    m_waitingTree.m_numUsedNodes);
 
@@ -3684,7 +3684,7 @@ bool SpiderColl::addWinnersIntoDoledb ( ) {
 		// why we should be getting dups in winnertree because they
 		// have the same uh48 and that is the key in the tree.
 		if ( dedup.isInTable ( &winUh48 ) ) {
-			log("spider: got dup uh48=%"UINT64" dammit", winUh48);
+			log("spider: got dup uh48=%" PRIu64" dammit", winUh48);
 			continue;
 		}
 		// count it
@@ -3708,7 +3708,7 @@ bool SpiderColl::addWinnersIntoDoledb ( ) {
 		}
 	}
 
-	// log("spider: added %"INT32" doledb recs to cache for cn=%i "
+	// log("spider: added %" PRId32" doledb recs to cache for cn=%i "
 	//     "dolebufsize=%i",
 	//     added,
 	//     (int)m_collnum,
@@ -3775,7 +3775,7 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 	int32_t wn = m_waitingTree.getNode(0,(char *)&m_waitingTreeKey);
 	if ( wn < 0 ) { 
 		log("spider: waiting tree key removed while reading list for "
-		    "%s (%"INT32")",m_coll,(int32_t)m_collnum);
+		    "%s (%" PRId32")",m_coll,(int32_t)m_collnum);
 		// play it safe and add it back for now...
 		// when i try to break here in gdb it never happens because
 		// of timing issues. heisenbug...
@@ -3802,7 +3802,7 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 	if ( outNow >= m_bestMaxSpidersPerIp ) {
 		// note it
 		if ( g_conf.m_logDebugSpider )
-			log("spider: already got %"INT32" from this ip out. ip=%s",
+			log("spider: already got %" PRId32" from this ip out. ip=%s",
 			    m_bestMaxSpidersPerIp,
 			    iptoa(m_scanningIp)
 			    );
@@ -3812,7 +3812,7 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 		if ( wn >= 0 ) {
 			m_waitingTree.deleteNode (wn,false );
 			// note that
-			//log("spdr: 1 del node %"INT32" for %s",wn,iptoa(firstIp));
+			//log("spdr: 1 del node %" PRId32" for %s",wn,iptoa(firstIp));
 		}
 		// keep the table in sync now with the time
 		m_waitingTable.removeKey( &m_bestRequest->m_firstIp );
@@ -3864,7 +3864,7 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 		//if ( wn < 0 ) { char *xx=NULL;*xx=0; }
 		if ( wn >= 0 ) {
 			m_waitingTree.deleteNode3 (wn,false );
-			//log("spdr: 2 del node %"INT32" for %s",wn,iptoa(firstIp));
+			//log("spdr: 2 del node %" PRId32" for %s",wn,iptoa(firstIp));
 		}
 
 		// invalidate
@@ -3874,8 +3874,8 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 		// log the replacement
 		if ( g_conf.m_logDebugSpider )
 			log("spider: scan replacing waitingtree key "
-			    "oldtime=%"UINT32" newtime=%"UINT32" firstip=%s",
-			    // bestpri=%"INT32" "
+			    "oldtime=%" PRIu32" newtime=%" PRIu32" firstip=%s",
+			    // bestpri=%" PRId32" "
 			    //"besturl=%s",
 			    (uint32_t)(oldSpiderTimeMS/1000LL),
 			    (uint32_t)(m_minFutureTimeMS/1000LL),
@@ -3887,8 +3887,8 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 		int32_t dn = m_waitingTree.addKey ( &wk2 );
 		// note it
 		if ( g_conf.m_logDebugSpider )
-			logf(LOG_DEBUG,"spider: RE-added time=%"INT64" ip=%s to "
-			    "waiting tree node %"INT32"",
+			logf(LOG_DEBUG,"spider: RE-added time=%" PRId64" ip=%s to "
+			    "waiting tree node %" PRId32,
 			    m_minFutureTimeMS , iptoa(firstIp),dn);
 
 		// keep the table in sync now with the time
@@ -3920,7 +3920,7 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 	
 
 	if ( g_conf.m_logDebugSpider )
-		log("spider: got winner pdocid=%"INT64" url=%s",
+		log("spider: got winner pdocid=%" PRId64" url=%s",
 		    m_bestRequest->m_probDocId,
 		    m_bestRequest->m_url);
 
@@ -4062,9 +4062,9 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 		if ( newJump < 4 ) { char *xx=NULL;*xx=0;}
 		if ( g_conf.m_logDebugSpider ) // || m_collnum == 18752 )
 			log("spider: rdbcache: updating "
-			    "%"INT32" bytes of SpiderRequests "
-			    "to winnerlistcache for ip %s oldjump=%"INT32
-			    " newJump=%"INT32" ptr=0x%"PTRFMT,
+			    "%" PRId32" bytes of SpiderRequests "
+			    "to winnerlistcache for ip %s oldjump=%" PRId32
+			    " newJump=%" PRId32" ptr=0x%" PTRFMT,
 			    doleBuf->length(),iptoa(firstIp),oldJump,
 			    newJump,
 			    (PTRTYPE)x);
@@ -4132,7 +4132,7 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 	g_doledb.m_rdb.addList ( m_collnum , &tmpList , MAX_NICENESS );
 
 	if ( g_conf.m_logDebugSpider )
-		log("spider: adding doledb tree node size=%"INT32"",
+		log("spider: adding doledb tree node size=%" PRId32,
 		    doledbRecSize);
 
 
@@ -4165,8 +4165,8 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 		spiderTimeMS <<= 32;
 		spiderTimeMS |= (m_waitingTreeKey.n0 >> 32);
 		logf(LOG_DEBUG,"spider: removing doled waitingtree key"
-		     " spidertime=%"UINT64" firstIp=%s "
-		     //"pri=%"INT32" "
+		     " spidertime=%" PRIu64" firstIp=%s "
+		     //"pri=%" PRId32" "
 		     //"url=%s"
 		     ,spiderTimeMS,
 		     iptoa(storedFirstIp)
@@ -4219,7 +4219,7 @@ uint64_t SpiderColl::getSpiderTimeMS ( SpiderRequest *sreq,
 	if ( ! srep && sreq->m_isPageReindex ) return spiderTimeMS;
 
 
-	//log("spider: getting spider time %"INT64, spiderTimeMS);
+	//log("spider: getting spider time %" PRId64, spiderTimeMS);
 	// to avoid hammering an ip, get last time we spidered it...
 	int64_t lastMS ;
 	lastMS = m_lastDownloadCache.getLongLong ( m_collnum       ,
@@ -4282,7 +4282,7 @@ uint64_t SpiderColl::getSpiderTimeMS ( SpiderRequest *sreq,
 		if ( ! s_printed ) {
 			s_printed = true;
 			log("spider: min spider wait is 15 seconds, "
-			    "not %"UINT64" (ufn=%"INT32")",waitInSecs,ufn);
+			    "not %" PRIu64" (ufn=%" PRId32")",waitInSecs,ufn);
 		}
 		waitInSecs = 15;//900; this was 15 minutes
 	}
@@ -4324,8 +4324,8 @@ bool SpiderColl::addToDoleTable ( SpiderRequest *sreq ) {
 		if ( score ) ss = *score + 1;
 		// if for some reason this collides with another key
 		// already in doledb then our counts are off
-		log("spider: added to doletbl uh48=%"UINT64" parentdocid=%"UINT64" "
-		    "ipdolecount=%"INT32" ufn=%"INT32" priority=%"INT32" firstip=%s",
+		log("spider: added to doletbl uh48=%" PRIu64" parentdocid=%" PRIu64" "
+		    "ipdolecount=%" PRId32" ufn=%" PRId32" priority=%" PRId32" firstip=%s",
 		    uh48,pdocid,ss,(int32_t)sreq->m_ufn,(int32_t)sreq->m_priority,
 		    iptoa(sreq->m_firstIp));
 	}
@@ -4338,14 +4338,14 @@ bool SpiderColl::addToDoleTable ( SpiderRequest *sreq ) {
 		// only one per ip!
 		// not any more! we allow MAX_WINNER_NODES per ip!
 		if ( *score > MAX_WINNER_NODES )
-			log("spider: crap. had %"INT32" recs in doledb for %s "
+			log("spider: crap. had %" PRId32" recs in doledb for %s "
 			    "from %s."
 			    "how did this happen?",
 			    (int32_t)*score,m_coll,iptoa(sreq->m_firstIp));
 		// now we log it too
 		if ( g_conf.m_logDebugSpider )
 			log(LOG_DEBUG,"spider: added ip=%s to doleiptable "
-			    "(score=%"INT32")",
+			    "(score=%" PRId32")",
 			    iptoa(sreq->m_firstIp),*score);
 	}
 	else {

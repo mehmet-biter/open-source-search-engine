@@ -835,12 +835,12 @@ void HttpMime::makeMime  ( int32_t    totalContentLen    ,
 		if ( ! charset ) charset = "utf-8";
 		//sprintf ( m_buf , 
 		p += sprintf ( p,
-			  "HTTP/1.0 %"INT32"%s\r\n"
+			  "HTTP/1.0 %" PRId32"%s\r\n"
 			  "Date: %s\r\n"
 			       //"P3P: CP=\"CAO PSA OUR\"\r\n"
 			  "Access-Control-Allow-Origin: *\r\n"
 			  "Server: Gigablast/1.0\r\n"
-			  "Content-Length: %"INT32"\r\n"
+			  "Content-Length: %" PRId32"\r\n"
 			  //"Expires: Wed, 23 Dec 2003 10:23:01 GMT\r\n"
 			  //"Expires: -1\r\n"
 			  "Connection: Close\r\n"
@@ -864,10 +864,10 @@ void HttpMime::makeMime  ( int32_t    totalContentLen    ,
 		if ( ! charset ) charset = "utf-8";
 		//sprintf ( m_buf , 
 		p += sprintf( p,
-			      "HTTP/1.0 %"INT32" Partial content\r\n"
+			      "HTTP/1.0 %" PRId32" Partial content\r\n"
 			      "%s"
-			      "Content-Length: %"INT32"\r\n"
-			      "Content-Range: %"INT32"-%"INT32"(%"INT32")\r\n"// added "bytes"
+			      "Content-Length: %" PRId32"\r\n"
+			      "Content-Range: %" PRId32"-%" PRId32"(%" PRId32")\r\n"// added "bytes"
 			      "Connection: Close\r\n"
 			      //"P3P: CP=\"CAO PSA OUR\"\r\n"
 			      // for ajax support
@@ -896,7 +896,7 @@ void HttpMime::makeMime  ( int32_t    totalContentLen    ,
 		if ( httpStatus == 200 ) smsg = " OK";
 		//sprintf ( m_buf , 
 		p += sprintf( p,
-			      "HTTP/1.0 %"INT32"%s\r\n"
+			      "HTTP/1.0 %" PRId32"%s\r\n"
 			      , httpStatus , smsg );
 		// if content length is not known, as in diffbot.cpp, then
 		// do not print it into the mime
@@ -906,7 +906,7 @@ void HttpMime::makeMime  ( int32_t    totalContentLen    ,
 				       // change the length of the content 
 				       // should we insert a login bar in 
 				       // Proxy::storeLoginBar()
-				       "Content-Length: %04"INT32"\r\n"
+				       "Content-Length: %04" PRId32"\r\n"
 				       , totalContentLen );
 		p += sprintf ( p ,
 			      "%s"
@@ -1151,7 +1151,7 @@ bool HttpMime::init ( ) {
 		tt = getContentTypeFromExtension ( s_ext[i] );
 		if ( strcmp(tt,s_ext[i+1]) == 0 ) continue;
 		g_errno = EBADENGINEER;
-		return log("http: Failed to do mime table correctly. i=%"INT32"",i);
+		return log("http: Failed to do mime table correctly. i=%" PRId32,i);
 	}
 
 	// TODO: set it from a user supplied file here

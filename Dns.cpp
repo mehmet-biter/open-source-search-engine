@@ -105,7 +105,7 @@ bool Dns::init ( uint16_t clientPort ) {
 				  true           ))// is dns?
 		return log ("dns: Udp server init failed.");
 	// innocent log msg
-	log ( LOG_INIT,"dns: Sending requests on client port %"INT32" "
+	log ( LOG_INIT,"dns: Sending requests on client port %" PRId32" "
 	      "using socket descriptor %i.", 
 	      (int32_t)m_dnsClientPort , m_udpServer.m_sock );
 
@@ -221,7 +221,7 @@ static const TLDIPEntry* getTLDIP(DnsState* ds) {
 		return NULL;
 	}
 
-	log(LOG_DEBUG,"dns: TLD cache hit .%s NS depth %"INT32" for %s.",
+	log(LOG_DEBUG,"dns: TLD cache hit .%s NS depth %" PRId32" for %s.",
 		buf, (int32_t) ds->m_depth, ds->m_hostname);
 
 	return tldip;
@@ -383,7 +383,7 @@ bool Dns::getIp ( char *hostname ,
 	     strncmp ( ptr->m_ds->m_hostname, hostname, hostnameLen ) != 0 ) {
 		g_errno = EBADENGINEER;
 		log("dns: Found key collision in wait queue. host %s has "
-		    "same key as %s. key=%"UINT64".",
+		    "same key as %s. key=%" PRIu64".",
 		    ptr->m_ds->m_hostname, tmp, hostKey64);
 		//char *xx = NULL; *xx = 0;
 		// we should just error out if this happens, it is better
@@ -483,8 +483,8 @@ bool Dns::getIp ( char *hostname ,
 	}
 
 	// debug msg
-	log(LOG_DEBUG,"dns: Adding key %"UINT64" from table. "
-	    "parentKey=%"UINT64" callback=%"PTRFMT" state=%"PTRFMT".",
+	log(LOG_DEBUG,"dns: Adding key %" PRIu64" from table. "
+	    "parentKey=%" PRIu64" callback=%" PTRFMT" state=%" PTRFMT".",
 	    finalKey,parentKey,(PTRTYPE)callback,(PTRTYPE)state);
 	// ensure "bogus" key not already present in table, otherwise,
 	// addKey will just overwrite the value!!
@@ -527,9 +527,9 @@ bool Dns::getIp ( char *hostname ,
 		// so put it into us, too
 		ppp->m_listId = ptr->m_listId;
 		if ( g_conf.m_logDebugDns )
-			log(LOG_DEBUG,"dns: Waiting in line for %s. key=%"UINT64". "
-			    "nextKey=%"UINT64" listSize=%"INT32" listId=%"INT32" "
-			    "numSlots=%"INT32".",
+			log(LOG_DEBUG,"dns: Waiting in line for %s. key=%" PRIu64". "
+			    "nextKey=%" PRIu64" listSize=%" PRId32" listId=%" PRId32" "
+			    "numSlots=%" PRId32".",
 			    tmp,finalKey,oldNext,
 			    ptr->m_listSize,ptr->m_listId,
 			    s_dnstable.getNumSlots());
@@ -552,8 +552,8 @@ bool Dns::getIp ( char *hostname ,
 		if ( ! ds ) {
 			log("dns: Failed to allocate mem for ip lookup.");
 			// debug msg
-			log(LOG_DEBUG,"dns: Removing2 key %"UINT64" from table. "
-			    "parentKey=%"UINT64" callback=%"PTRFMT" state=%"PTRFMT".",
+			log(LOG_DEBUG,"dns: Removing2 key %" PRIu64" from table. "
+			    "parentKey=%" PRIu64" callback=%" PTRFMT" state=%" PTRFMT".",
 			    hostKey64,parentKey,
 				(PTRTYPE)callback,(PTRTYPE)state);
 			s_dnstable.removeKey ( finalKey );
@@ -584,7 +584,7 @@ bool Dns::getIp ( char *hostname ,
 	ds->m_errno        = 0;
 	ds->m_recursionDesired = 1;
 	// debug msg
-	//log("dns::getIp: %s (key=%"UINT64") NOT in cache...",tmp,key.n0);
+	//log("dns::getIp: %s (key=%" PRIu64") NOT in cache...",tmp,key.n0);
 
 	// reset m_loopCount and startTime if we are just starting
 	if ( ds && callback != gotIpOfDNSWrapper ) {
@@ -667,8 +667,8 @@ bool Dns::getIp ( char *hostname ,
 		return false;
 
 	// debug msg
-	log(LOG_DEBUG,"dns: Removing3 key %"UINT64" from table. "
-	    "parentKey=%"UINT64" callback=%"PTRFMT" state=%"PTRFMT".",
+	log(LOG_DEBUG,"dns: Removing3 key %" PRIu64" from table. "
+	    "parentKey=%" PRIu64" callback=%" PTRFMT" state=%" PTRFMT".",
 	    hostKey64,parentKey,
 		(PTRTYPE)callback,(PTRTYPE)state);
 	// if we made it here, remove from table
@@ -702,7 +702,7 @@ bool Dns::getIpOfDNS ( DnsState *ds ) {
 	}
 	// sanity check
 	if ( LOOP_BUF_SIZE / (sizeof(DnsState) - LOOP_BUF_SIZE) < 3 ) {
-		log("dns: Increase LOOP_BUF_SIZE, %"INT32", in Dns.h.",
+		log("dns: Increase LOOP_BUF_SIZE, %" PRId32", in Dns.h.",
 		    (int32_t)LOOP_BUF_SIZE);
 		char *xx = NULL; *xx = 0; 
 	}
@@ -713,7 +713,7 @@ bool Dns::getIpOfDNS ( DnsState *ds ) {
 	ds2->m_startTime = ds->m_startTime;
 	// or if we have too many ips already, do not bother adding more
 	if (ds->m_numDnsIps[ds->m_depth]>=MAX_DNS_IPS){
-		log("dns: Already have %"INT32" ips at depth %"INT32".",
+		log("dns: Already have %" PRId32" ips at depth %" PRId32".",
 		    (int32_t)MAX_DNS_IPS,(int32_t)ds->m_depth);
 		g_errno=EBUFTOOSMALL;
 		return true;
@@ -787,7 +787,7 @@ bool Dns::getIpOfDNS ( DnsState *ds ) {
 		else {
 			int32_t depth = ds->m_depth;
 			log(LOG_DEBUG,
-				"dns: Added ip [1-%"INT32"] %s to depth %"INT32" for %s.",
+				"dns: Added ip [1-%" PRId32"] %s to depth %" PRId32" for %s.",
 		    		ds->m_numDnsIps[depth],
 		    		iptoa(ip),(int32_t)depth,ds->m_hostname);
 			ds->m_dnsIps[depth][ds->m_numDnsIps[depth]++] = ip ;
@@ -821,7 +821,7 @@ void gotIpOfDNSWrapper ( void *state , int32_t ip ) {
 			int32_t depth = ds->m_depth;
 			ds->m_dnsIps[depth][ds->m_numDnsIps[depth]++] = ip ;
 			log(LOG_DEBUG,
-				"dns: Added ip [2-%"INT32"] %s to depth %"INT32" for %s.",
+				"dns: Added ip [2-%" PRId32"] %s to depth %" PRId32" for %s.",
 				ds->m_numDnsIps[depth],
 		    		iptoa(ip),(int32_t)depth,ds->m_hostname);
 		}
@@ -860,7 +860,7 @@ bool Dns::sendToNextDNS ( DnsState *ds ) {
 	//if ( delta > 100 ) ds->m_startTime = now;
 	if ( delta > TIMEOUT_TOTAL  ) {
 		log(LOG_DEBUG,"dns: Timing out the request for %s. Took over "
-		    "%"INT32" seconds. delta=%"INT32". now=%"INT32".",
+		    "%" PRId32" seconds. delta=%" PRId32". now=%" PRId32".",
 		    ds->m_hostname,(int32_t)TIMEOUT_TOTAL,delta,now);
 		if ( ds->m_errno ) g_errno = ds->m_errno;
 		else               g_errno = EDNSTIMEDOUT; 
@@ -870,7 +870,7 @@ bool Dns::sendToNextDNS ( DnsState *ds ) {
 	// we've tried to ask too many nameservers already
 	if ( ds->m_numTried >= MAX_TRIED_IPS ) {
 		log(LOG_INFO,"dns: Asked maximum number of name servers, "
-		     "%"INT32", for %s. Timing out.",(int32_t)MAX_TRIED_IPS,
+		     "%" PRId32", for %s. Timing out.",(int32_t)MAX_TRIED_IPS,
 		    ds->m_hostname);
 		if ( ds->m_errno ) g_errno = ds->m_errno;
 		else               g_errno = EDNSTIMEDOUT; 
@@ -1001,7 +1001,7 @@ bool Dns::sendToNextDNS ( DnsState *ds ) {
 		// log this...
 		ds->m_fallbacks[depth]++;
 		log(LOG_DEBUG,
-			"dns: depth %"INT32"/%"INT32" rootTLD %d #fb %"INT32" #ip %"INT32" #name %"INT32"",
+			"dns: depth %" PRId32"/%" PRId32" rootTLD %d #fb %" PRId32" #ip %" PRId32" #name %" PRId32,
 			depth, ds->m_depth,
 			ds->m_rootTLD[depth],
 			ds->m_fallbacks[depth],
@@ -1127,7 +1127,7 @@ bool Dns::sendToNextDNS ( DnsState *ds ) {
 		int32_t nlen = start - end;
 		if ( nlen >= 64 ) {
 			g_errno = EHOSTNAMETOOBIG;
-			log(LOG_INFO,"dns: Request's host component is %"INT32" bytes. "
+			log(LOG_INFO,"dns: Request's host component is %" PRId32" bytes. "
 			    "Must be under 64.",nlen);
 			return true;
 		}
@@ -1162,8 +1162,8 @@ bool Dns::sendToNextDNS ( DnsState *ds ) {
 
 	// debug msg
 	log(LOG_DEBUG,
-		"dns: Asking %s (depth=%"INT32",%"INT32") att %"INT32" "
-		"for ip of %s (tid=%"INT32")",
+		"dns: Asking %s (depth=%" PRId32",%" PRId32") att %" PRId32" "
+		"for ip of %s (tid=%" PRId32")",
 		iptoa(ds->m_dnsIps[depth][n]), (int32_t)depth,(int32_t)n,
 		(int32_t) ds->m_numTried, ds->m_hostname , (int32_t)transId);
 
@@ -1263,7 +1263,7 @@ void gotIpWrapper ( void *state , UdpSlot *slot ) {
 		}
 	}
 	// debug msg
-	//log("got %s [%"UINT32"] for %s",iptoa(ip),ip,ds->m_hostname );
+	//log("got %s [%" PRIu32"] for %s",iptoa(ip),ip,ds->m_hostname );
 	// bitch on error
 	if ( g_errno ) {
 		//int32_t type = LOG_WARN;
@@ -1432,9 +1432,9 @@ void returnIp ( DnsState *ds , int32_t ip ) {
 		// get the next one to call in the linked list
 		int64_t nextKey = ce->m_nextKey;
 		// debug msg
-		log(LOG_DEBUG,"dns: Removing key %"UINT64" from table. "
-		    "parentKey=%"UINT64" nextKey=%"UINT64" callback=%"PTRFMT" "
-		    "state=0x%"PTRFMT".",
+		log(LOG_DEBUG,"dns: Removing key %" PRIu64" from table. "
+		    "parentKey=%" PRIu64" nextKey=%" PRIu64" callback=%" PTRFMT" "
+		    "state=0x%" PTRFMT".",
 		    key,
 		    parentKey,
 		    nextKey,
@@ -1451,7 +1451,7 @@ void returnIp ( DnsState *ds , int32_t ip ) {
 		// and NEVER get called.
 		s_dnstable.removeKey ( key );
 		// debug msg
-		log(LOG_DEBUG,"dns: table now has %"INT32" used slots.",
+		log(LOG_DEBUG,"dns: table now has %" PRId32" used slots.",
 		    (int32_t)s_dnstable.getNumSlotsUsed());
 		// then call the callback
 		// CAREFUL: calling this callback can alter the hash
@@ -1490,7 +1490,7 @@ void returnIp ( DnsState *ds , int32_t ip ) {
 
 	// debug msg
 	if ( g_conf.m_logDebugDns ) 
-		log(LOG_DEBUG,"dns: Called %"INT32" callbacks for %s.",
+		log(LOG_DEBUG,"dns: Called %" PRId32" callbacks for %s.",
 		    count,tmp);
 
 	// free our state holding structure
@@ -1499,7 +1499,7 @@ void returnIp ( DnsState *ds , int32_t ip ) {
 	// debug check
 	if ( count == listSize ) return;
 
-	log("dns: Only called %"INT32" callbacks out of %"INT32". Critical "
+	log("dns: Only called %" PRId32" callbacks out of %" PRId32". Critical "
 	    "error. Scanning table for missing callback.",count,listSize);
 
  loop:
@@ -1516,7 +1516,7 @@ void returnIp ( DnsState *ds , int32_t ip ) {
 		// call its callback
 		ce->m_callback ( ce->m_state , ip );
 		// note it
-		log("dns: Calling callback for slot #%"INT32".",i);
+		log("dns: Calling callback for slot #%" PRId32".",i);
 		// remove it. restart from top in case table shrank
 		s_dnstable.removeKey ( key );
 		goto loop;
@@ -1598,7 +1598,7 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 	// return -1 if too small
 	if ( dgramSize < 12 ) { 
 		log(LOG_INFO,"dns: Nameserver (%s) returned bad "
-		    "reply size of %"INT32" bytes which is less than 12 bytes.",
+		    "reply size of %" PRId32" bytes which is less than 12 bytes.",
 		    iptoa(slot->m_ip),dgramSize);
 		g_errno = EBADREPLY; 
 		return -1; 
@@ -1651,7 +1651,7 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 		g_errno = EDNSREFUSED;
 		return -1;
 	default: log(LOG_INFO,"dns: Nameserver (%s) returned unknown "
-		    "return code = %"INT32".",
+		    "return code = %" PRId32".",
 		    iptoa(slot->m_ip), rcode ); 
 		g_errno = EBADREPLY;
 		return -1;
@@ -1675,7 +1675,7 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 	if ( qdcount != 1 ) { 
 		g_errno = EBADREPLY; 
 		log (LOG_INFO,"dns: Nameserver (%s) returned query count "
-		     "of %"INT32" (not 1).", iptoa(slot->m_ip),(int32_t)qdcount);
+		     "of %" PRId32" (not 1).", iptoa(slot->m_ip),(int32_t)qdcount);
 		return -1; 
 	}
 	// . now we should have our answer here
@@ -1690,7 +1690,7 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
  	if ( ancount < 0 ) { 
 		g_errno = EBADREPLY; 
 		log ("dns: Nameserver (%s) returned a negative answer count "
-		     "of %"INT32".", iptoa(slot->m_ip),(int32_t)ancount);
+		     "of %" PRId32".", iptoa(slot->m_ip),(int32_t)ancount);
 		return -1; 
 	}
 
@@ -1968,8 +1968,8 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 			// if it was a NS name, do that
 			if ( rrtype == 2 ) {
 				log(LOG_DEBUG,
-					"dns: Added name [0-%"INT32"] %s to "
-					"depth %"INT32" for %s.",
+					"dns: Added name [0-%" PRId32"] %s to "
+					"depth %" PRId32" for %s.",
 					ds->m_numDnsNames[ds->m_depth+1],
 					ds->m_nameBufPtr,
 					(int32_t)ds->m_depth+1,
@@ -2001,7 +2001,7 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 					/*
 					  this spams the log!
 					log(LOG_INFO,
-					    "dns: Aliased hostname %s is %"INT32" > "
+					    "dns: Aliased hostname %s is %" PRId32" > "
 					    "127 chars long.",ds->m_nameBufPtr,len);
 					*/
 					g_errno = EBUFTOOSMALL;
@@ -2059,7 +2059,7 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 		//if ( rrtype != 5 ) {
 		//	g_errno = EBADREPLY;
 		//	log("dns: Nameserver (%s) returned "
-		//	    "a bad rr type of %"INT32".", iptoa(slot->m_ip),
+		//	    "a bad rr type of %" PRId32".", iptoa(slot->m_ip),
 		//	    (int32_t)rrtype);
 		//	return -1;
 		//}
@@ -2102,7 +2102,7 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 			else {
 				ips[numIps] = ip;
 				log(LOG_DEBUG,
-					"dns: Added ip [0-%"INT32"] %s to depth %"INT32" "
+					"dns: Added ip [0-%" PRId32"] %s to depth %" PRId32" "
 					"for %s.",
 					numIps, iptoa(ip),(int32_t)ds->m_depth+1,
 					ds->m_hostname);
@@ -2151,7 +2151,7 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 	// bail if already went too deep
 	if ( ! ips ) {
 		g_errno = EBADREPLY;
-		log(LOG_INFO,"dns: Exceeded max recursion depth of %"INT32" for %s",
+		log(LOG_INFO,"dns: Exceeded max recursion depth of %" PRId32" for %s",
 		    (int32_t)MAX_DEPTH,ds->m_hostname);
 		return -1;
 	}
@@ -2167,7 +2167,7 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 	// set up ds2
 	ds->m_numDnsIps[ds->m_depth] = numIps;
 	log(LOG_DEBUG,
-		"dns: depth +%"INT32" rootTLD %d #fb %"INT32" #ip %"INT32" #name %"INT32"",
+		"dns: depth +%" PRId32" rootTLD %d #fb %" PRId32" #ip %" PRId32" #name %" PRId32,
 		ds->m_depth,
 		ds->m_rootTLD[ds->m_depth],
 		ds->m_fallbacks[ds->m_depth],
@@ -2214,7 +2214,7 @@ bool Dns::isInCache ( key_t key , int32_t *ip ) {
 		return false;
 	// recSize must be 4 -- sanity check
 	if ( recSize != 4 ) 
-		return log("dns: Got bad record of size %"INT32" from cache.",
+		return log("dns: Got bad record of size %" PRId32" from cache.",
 			   recSize);
 	// the data ptr itself is the ip
 	*ip = *(int32_t *)rec ;
@@ -2225,7 +2225,7 @@ bool Dns::isInCache ( key_t key , int32_t *ip ) {
 // ttl is in seconds
 void Dns::addToCache ( key_t hostnameKey , int32_t ip , int32_t ttl ) {
 	// debug msg
-	log(LOG_DEBUG, "dns: addToCache added key %"UINT64" ip %s ttl %"INT32" to cache",
+	log(LOG_DEBUG, "dns: addToCache added key %" PRIu64" ip %s ttl %" PRId32" to cache",
 		hostnameKey.n0, iptoa(ip), ttl);
         // set timestamp to be maxTime (24 hours = 8640 sec) - ttl
         int32_t timestamp;

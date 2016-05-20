@@ -291,12 +291,12 @@ bool SafeBuf::reserve(int32_t i , const char *label, bool clearIt ) {
 			m_buf = (char*)mrealloc(m_buf, 0, m_capacity,m_label);
 			if(!m_buf) {
 				m_buf = tmpBuf;
-				log("safebuf: failed to reserve %"INT32" bytes",
+				log("safebuf: failed to reserve %" PRId32" bytes",
 				    m_capacity);
 				m_capacity = tmpCap;
 				return false;
 			}
-			log(LOG_DEBUG, "query: safebuf switching to heap: %"INT32"",
+			log(LOG_DEBUG, "query: safebuf switching to heap: %" PRId32,
 			    m_capacity);
 			gbmemcpy(m_buf, tmpBuf, m_length);
 			// reset to 0's?
@@ -312,7 +312,7 @@ bool SafeBuf::reserve(int32_t i , const char *label, bool clearIt ) {
 		m_buf = (char*)mrealloc(m_buf, tmpCap, m_capacity,m_label);
 		if(!m_buf) {
 			m_buf = tmpBuf;
-			log("safebuf: failed to realloc %"INT32" bytes",m_capacity);
+			log("safebuf: failed to realloc %" PRId32" bytes",m_capacity);
 			m_capacity = tmpCap;
 			return false;
 		}
@@ -321,7 +321,7 @@ bool SafeBuf::reserve(int32_t i , const char *label, bool clearIt ) {
 			int32_t clearSize = m_capacity - tmpCap;
 			memset(m_buf+tmpCap,0,clearSize);
 		}
-		// log(LOG_DEBUG, "query: resize safebuf %"INT32" to %"INT32"", tmpCap, m_capacity);
+		// log(LOG_DEBUG, "query: resize safebuf %" PRId32" to %" PRId32, tmpCap, m_capacity);
 	}
 	// reset to 0's?
 	//if ( ! clearIt ) return true;
@@ -363,14 +363,14 @@ int32_t SafeBuf::dumpToFile(const char *filename ) {
 		    filename,mstrerror(errno));
 		return -1;
 	}
-	//logf(LOG_DEBUG, "test: safebuf %"INT32" bytes written to %s",m_length,
+	//logf(LOG_DEBUG, "test: safebuf %" PRId32" bytes written to %s",m_length,
 	//     filename);
  retry23:
 	int32_t bytes = write(fd, (char*)m_buf, m_length) ;
 	if ( bytes != m_length ) {
 		// valgrind
 		if ( bytes <= 0 && errno == EINTR ) goto retry23;
-		logf(LOG_DEBUG,"test: safebuf bad write %"INT32" != %"INT32": %s",
+		logf(LOG_DEBUG,"test: safebuf bad write %" PRId32" != %" PRId32": %s",
 		     bytes,m_length,mstrerror(errno));
 		close(fd);
 		return -1;
@@ -399,14 +399,14 @@ int32_t SafeBuf::safeSave (char *filename ) {
 		    fn.getBufStart(), mstrerror(errno));
 		return -1;
 	}
-	//logf(LOG_DEBUG, "test: safebuf %"INT32" bytes written to %s",m_length,
+	//logf(LOG_DEBUG, "test: safebuf %" PRId32" bytes written to %s",m_length,
 	//     filename);
  retry23:
 	int32_t bytes = write(fd, (char*)m_buf, m_length) ;
 	if ( bytes != m_length ) {
 		// valgrind
 		if ( bytes <= 0 && errno == EINTR ) goto retry23;
-		logf(LOG_DEBUG,"test: safebuf bad write %"INT32" != %"INT32": %s",
+		logf(LOG_DEBUG,"test: safebuf bad write %" PRId32" != %" PRId32": %s",
 		     bytes,m_length,mstrerror(errno));
 		close(fd);
 		return -1;
@@ -1083,7 +1083,7 @@ Tag *SafeBuf::addTag2 ( const char *mysite ,
 			int32_t  val ,
 			char  rdbId ) {
 	char buf[64];
-	sprintf(buf,"%"INT32"",val);
+	sprintf(buf,"%" PRId32,val);
 	int32_t dsize = gbstrlen(buf) + 1;
 	return addTag ( mysite,tagname,now,user,ip,buf,dsize,rdbId,true);
 }
@@ -1126,7 +1126,7 @@ bool SafeBuf::addTag ( Tag *tag ) {
 	//tag->setDataSize();
 	if ( tag->m_recDataSize <= 16 ) { 
 		// note it
-		return log("safebuf: encountered corrupted tag datasize=%"INT32".",
+		return log("safebuf: encountered corrupted tag datasize=%" PRId32".",
 			   tag->m_recDataSize);
 		//char *xx=NULL;*xx=0; }
 	}
@@ -1786,23 +1786,23 @@ bool SafeBuf::printTimeAgo ( int32_t ago , int32_t now , bool shorthand ) {
 	bool printed = false;
 	// print the time ago
 	if ( shorthand ) {
-		if ( mins==0 ) safePrintf("%"INT32" secs ago",secs);
-		else if ( mins ==1)safePrintf("%"INT32" min ago",mins);
-		else if (mins<60)safePrintf ( "%"INT32" mins ago",mins);
-		else if ( hrs == 1 )safePrintf ( "%"INT32" hr ago",hrs);
-		else if ( hrs < 24 )safePrintf ( "%"INT32" hrs ago",hrs);
-		else if ( days == 1 )safePrintf ( "%"INT32" day ago",days);
-		else if (days< 7 )safePrintf ( "%"INT32" days ago",days);
+		if ( mins==0 ) safePrintf("%" PRId32" secs ago",secs);
+		else if ( mins ==1)safePrintf("%" PRId32" min ago",mins);
+		else if (mins<60)safePrintf ( "%" PRId32" mins ago",mins);
+		else if ( hrs == 1 )safePrintf ( "%" PRId32" hr ago",hrs);
+		else if ( hrs < 24 )safePrintf ( "%" PRId32" hrs ago",hrs);
+		else if ( days == 1 )safePrintf ( "%" PRId32" day ago",days);
+		else if (days< 7 )safePrintf ( "%" PRId32" days ago",days);
 		printed = true;
 	}
 	else {
-		if ( mins==0 ) safePrintf("%"INT32" seconds ago",secs);
-		else if ( mins ==1)safePrintf("%"INT32" minute ago",mins);
-		else if (mins<60)safePrintf ( "%"INT32" minutes ago",mins);
-		else if ( hrs == 1 )safePrintf ( "%"INT32" hour ago",hrs);
-		else if ( hrs < 24 )safePrintf ( "%"INT32" hours ago",hrs);
-		else if ( days == 1 )safePrintf ( "%"INT32" day ago",days);
-		else if (days< 7 )safePrintf ( "%"INT32" days ago",days);
+		if ( mins==0 ) safePrintf("%" PRId32" seconds ago",secs);
+		else if ( mins ==1)safePrintf("%" PRId32" minute ago",mins);
+		else if (mins<60)safePrintf ( "%" PRId32" minutes ago",mins);
+		else if ( hrs == 1 )safePrintf ( "%" PRId32" hour ago",hrs);
+		else if ( hrs < 24 )safePrintf ( "%" PRId32" hours ago",hrs);
+		else if ( days == 1 )safePrintf ( "%" PRId32" day ago",days);
+		else if (days< 7 )safePrintf ( "%" PRId32" days ago",days);
 		printed = true;
 	}
 	// do not show if more than 1 wk old! we want to seem as

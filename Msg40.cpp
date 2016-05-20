@@ -165,7 +165,7 @@ bool Msg40::getResults ( SearchInput *si      ,
 	// ok, need some sane limit though to prevent malloc from 
 	// trying to get 7800003 docids and going ENOMEM
 	if ( get > MAXDOCIDSTOCOMPUTE ) {
-		log("msg40: asking for too many docids. reducing to %"INT32"",
+		log("msg40: asking for too many docids. reducing to %" PRId32,
 		    (int32_t)MAXDOCIDSTOCOMPUTE);
 		get = MAXDOCIDSTOCOMPUTE;
 	}
@@ -192,7 +192,7 @@ bool Msg40::getResults ( SearchInput *si      ,
 
 	// debug msg
 	if ( m_si->m_debug ) 
-		logf(LOG_DEBUG,"query: msg40 mapped %"INT32" wanted to %"INT32" to get",
+		logf(LOG_DEBUG,"query: msg40 mapped %" PRId32" wanted to %" PRId32" to get",
 		     m_docsToGetVisible,m_docsToGet );
 
 	// let's try using msg 0xfd like Proxy.cpp uses to forward an http
@@ -222,11 +222,11 @@ bool Msg40::prepareToGetDocIds ( ) {
 	if ( g_conf.m_logTimingQuery || m_si->m_debug || g_conf.m_logDebugQuery) {
 		int64_t now  = gettimeofdayInMilliseconds();
 		int64_t took = now - m_startTime;
-		logf(LOG_TIMING,"query: [%"PTRFMT"] Not found in cache. "
-		     "Lookup took %"INT64" ms.",(PTRTYPE)this,took);
+		logf(LOG_TIMING,"query: [%" PTRFMT"] Not found in cache. "
+		     "Lookup took %" PRId64" ms.",(PTRTYPE)this,took);
 		m_startTime = now;
-		logf(LOG_TIMING,"query: msg40: [%"PTRFMT"] Getting up to %"INT32" "
-		     "(docToGet=%"INT32") docids", (PTRTYPE)this,
+		logf(LOG_TIMING,"query: msg40: [%" PTRFMT"] Getting up to %" PRId32" "
+		     "(docToGet=%" PRId32") docids", (PTRTYPE)this,
 		     m_docsToGetVisible,  m_docsToGet);
 	}
 
@@ -443,9 +443,9 @@ bool Msg40::gotDocIds ( ) {
 
 	if ( g_conf.m_logTimingQuery || m_si->m_debug||g_conf.m_logDebugQuery){
 		int64_t took = now - m_startTime;
-		logf(LOG_DEBUG,"query: msg40: [%"PTRFMT"] Got %"INT32" docids in %"INT64" ms",
+		logf(LOG_DEBUG,"query: msg40: [%" PTRFMT"] Got %" PRId32" docids in %" PRId64" ms",
 		     (PTRTYPE)this,m_msg3a.getNumDocIds(),took);
-		logf(LOG_DEBUG,"query: msg40: [%"PTRFMT"] Getting up to %"INT32" "
+		logf(LOG_DEBUG,"query: msg40: [%" PTRFMT"] Getting up to %" PRId32" "
 		     "summaries", (PTRTYPE)this,m_docsToGetVisible);
 	}
 
@@ -482,7 +482,7 @@ bool Msg40::gotDocIds ( ) {
 
 	// debug msg
 	if ( m_si->m_debug || g_conf.m_logDebugQuery )
-		logf(LOG_DEBUG,"query: [%"PTRFMT"] Getting "
+		logf(LOG_DEBUG,"query: [%" PTRFMT"] Getting "
 		     "reference pages and dir pages.",(PTRTYPE)this);
 
 	return launchMsg20s ( false );
@@ -666,7 +666,7 @@ bool Msg40::reallocMsg20Buf ( ) {
 			if ( k >= m_numMsg20s ) {
 				/*
 				logf(LOG_DEBUG,"query: msg40: could not match "
-				     "docid %"INT64" (max=%"INT32") "
+				     "docid %" PRId64" (max=%" PRId32") "
 				     "to msg20. newBitScore=0x%hhx q=%s",
 				     m_msg3a.m_docIds[i],
 				     (char)m_msg3a.m_bitScores[i],
@@ -785,7 +785,7 @@ bool Msg40::launchMsg20s ( bool recalled ) {
 		m_numRequests = m_si->m_firstResultNum;
 		m_numReplies  = m_si->m_firstResultNum;
 		m_didSummarySkip = true;
-		log("query: skipping summary generation of first %"INT32" docs",
+		log("query: skipping summary generation of first %" PRId32" docs",
 		    m_si->m_firstResultNum);
 	}
 
@@ -838,8 +838,8 @@ bool Msg40::launchMsg20s ( bool recalled ) {
 		     // periodically
 		     ! m_si->m_streamResults ) {
 			log("msg40: skipping summary "
-			    "lookup #%"INT32" of "
-			    "docid %"INT64" for dead shard #%"INT32""
+			    "lookup #%" PRId32" of "
+			    "docid %" PRId64" for dead shard #%" PRId32
 			    , i
 			    , docId
 			    , shardNum );
@@ -869,8 +869,8 @@ bool Msg40::launchMsg20s ( bool recalled ) {
 		g_errno = 0;
 		// debug msg
 		if ( m_si->m_debug || g_conf.m_logDebugQuery )
-			logf(LOG_DEBUG,"query: msg40: [%"PTRFMT"] Getting "
-			     "summary #%"INT32" for docId=%"INT64"",
+			logf(LOG_DEBUG,"query: msg40: [%" PTRFMT"] Getting "
+			     "summary #%" PRId32" for docId=%" PRId64,
 			     (PTRTYPE)this,i,m_msg3a.m_docIds[i]);
 		// launch it
 		m_numRequests++;
@@ -1015,7 +1015,7 @@ bool gotSummaryWrapper ( void *state ) {
 	THIS->m_numReplies++;
 
 	if ( (THIS->m_numReplies % 10) == 0 ) {
-		log( "msg40: got %" INT32 " summaries out of %" INT32 "",
+		log( "msg40: got %" PRId32 " summaries out of %" PRId32 "",
 		     THIS->m_numReplies,
 			 THIS->m_msg3a.m_numDocIds );
 	}
@@ -1069,8 +1069,8 @@ void doneSendingWrapper9 ( void *state , TcpSocket *sock ) {
 bool Msg40::gotSummary ( ) {
 	// now m_linkInfo[i] (for some i, i dunno which) is filled
 	if ( m_si->m_debug || g_conf.m_logDebugQuery )
-		logf(LOG_DEBUG,"query: msg40: [%"PTRFMT"] Got summary. "
-		     "Total got=#%"INT32".",
+		logf(LOG_DEBUG,"query: msg40: [%" PTRFMT"] Got summary. "
+		     "Total got=#%" PRId32".",
 		     (PTRTYPE)this,m_numReplies);
 
 	// did we have a problem getting this summary?
@@ -1119,7 +1119,7 @@ bool Msg40::gotSummary ( ) {
 			break;
 
 		if ( m20->m_errno ) {
-			log("msg40: sum #%"INT32" error: %s",
+			log("msg40: sum #%" PRId32" error: %s",
 			    m_printi,mstrerror(m20->m_errno));
 			// make it available to be reused
 			m20->reset();
@@ -1141,8 +1141,8 @@ bool Msg40::gotSummary ( ) {
 		     mr->m_contentType != CT_STATUS &&
 		     m_dedupTable.isInTable ( &mr->m_contentHash32 ) ) {
 			//if ( g_conf.m_logDebugQuery )
-			log("msg40: dup sum #%"INT32" (%"UINT32")"
-			    "(d=%"INT64")",m_printi,
+			log("msg40: dup sum #%" PRId32" (%" PRIu32")"
+			    "(d=%" PRId64")",m_printi,
 			    mr->m_contentHash32,mr->m_docId);
 			// make it available to be reused
 			m20->reset();
@@ -1164,13 +1164,13 @@ bool Msg40::gotSummary ( ) {
 
 		// assume we show this to the user
 		m_numDisplayed++;
-		//log("msg40: numdisplayed=%"INT32"",m_numDisplayed);
+		//log("msg40: numdisplayed=%" PRId32,m_numDisplayed);
 
 		// do not print it if before the &s=X start position though
 		if ( m_si && m_numDisplayed <= m_si->m_firstResultNum ){
 			if ( m_printCount == 0 ) 
-				log("msg40: hiding #%"INT32" (%"UINT32")"
-				    "(d=%"INT64")",
+				log("msg40: hiding #%" PRId32" (%" PRIu32")"
+				    "(d=%" PRId64")",
 				    m_printi,mr->m_contentHash32,mr->m_docId);
 		        m_printCount++;
 			if ( m_printCount == 100 ) m_printCount = 0;
@@ -1229,9 +1229,9 @@ bool Msg40::gotSummary ( ) {
 		log("msg40: too many summaries deduped. "
 		    "getting more "
 		    "docids from msg3a merge and getting summaries. "
-		    "%"INT32" are visible, need %"INT32". "
-		    "changing docsToGet from %"INT32" to %"INT32". "
-		    "numReplies=%"INT32" numRequests=%"INT32"",
+		    "%" PRId32" are visible, need %" PRId32". "
+		    "changing docsToGet from %" PRId32" to %" PRId32". "
+		    "numReplies=%" PRId32" numRequests=%" PRId32,
 		    m_numDisplayed,
 		    m_docsToGetVisible,
 		    m_msg3a.m_docsToGet, 
@@ -1363,7 +1363,7 @@ bool Msg40::gotSummary ( ) {
 		//delete st;
 		// otherwise, all done!
 		log("msg40: did not send last search result summary. "
-		    "this=0x%"PTRFMT" because had error: %s",(PTRTYPE)this,
+		    "this=0x%" PTRFMT" because had error: %s",(PTRTYPE)this,
 		    mstrerror(m_socketHadError));
 		return true;
 	}
@@ -1412,7 +1412,7 @@ bool Msg40::gotSummary ( ) {
 		// doesn't match the query, maybe because of indexdb corruption
 		if ( m->m_errno ) {
 			if ( m_si->m_debug || g_conf.m_logDebugQuery ) {
-				logf( LOG_DEBUG, "query: result %" INT32 " (docid=%" INT64 ") had "
+				logf( LOG_DEBUG, "query: result %" PRId32 " (docid=%" PRId64 ") had "
 								 "an error (%s) and will not be shown.",
 				      i, m_msg3a.m_docIds[i], mstrerror( m->m_errno ) );
 			}
@@ -1436,7 +1436,7 @@ bool Msg40::gotSummary ( ) {
 
 		if ( ! m_si->m_showBanned && mr && mr->m_isBanned ) {
 			if ( m_si->m_debug || g_conf.m_logDebugQuery )
-				logf( LOG_DEBUG, "query: result %" INT32 " (docid=%" INT64 ") is "
+				logf( LOG_DEBUG, "query: result %" PRId32 " (docid=%" PRId64 ") is "
 								 "banned and will not be shown.",
 					  i, m_msg3a.m_docIds[i] );
 			*level = CR_BANNED_URL;
@@ -1445,7 +1445,7 @@ bool Msg40::gotSummary ( ) {
 
 		// corruption?
 		if ( mr && !mr->ptr_ubuf ) {
-			log( "msg40: got corrupt msg20 reply for docid %" INT64, mr->m_docId );
+			log( "msg40: got corrupt msg20 reply for docid %" PRId64, mr->m_docId );
 			*level = CR_BAD_URL;
 			continue;
 		}
@@ -1520,9 +1520,9 @@ bool Msg40::gotSummary ( ) {
 			if ( (int32_t)s < dedupPercent ) continue;
 			// otherwise mark it as a summary dup
 			if ( m_si->m_debug || g_conf.m_logDebugQuery )
-				logf( LOG_DEBUG, "query: result #%"INT32" "
-				      "(docid=%"INT64") is %.02f%% similar-"
-				      "summary of #%"INT32" (docid=%"INT64")", 
+				logf( LOG_DEBUG, "query: result #%" PRId32" "
+				      "(docid=%" PRId64") is %.02f%% similar-"
+				      "summary of #%" PRId32" (docid=%" PRId64")",
 				      m, m_msg3a.m_docIds[m] , 
 				      s, i, m_msg3a.m_docIds[i] );
 			*level = CR_DUP_SUMMARY;
@@ -1594,10 +1594,10 @@ bool Msg40::gotSummary ( ) {
 				// cluster level URL already exited previously
 				char *level = &m_msg3a.m_clusterLevels[i];
 				if(m_si->m_debug || g_conf.m_logDebugQuery)
-					logf(LOG_DEBUG, "query: result #%"INT32" "
-								 "(docid=%"INT64") is the "
+					logf(LOG_DEBUG, "query: result #%" PRId32" "
+								 "(docid=%" PRId64") is the "
 								 "same URL as "
-								 "(docid=%"INT64")",
+								 "(docid=%" PRId64")",
 						 i,m_msg3a.m_docIds[i],
 						 m_urlTable.getValueFromSlot(slot));
 				*level = CR_DUP_URL;
@@ -1626,7 +1626,7 @@ bool Msg40::gotSummary ( ) {
 	// show time
 	took = gettimeofdayInMilliseconds() - startTime;
 	if ( took > 3 )
-		log(LOG_INFO,"query: Took %"INT64" ms to do clustering and dup removal.",took);
+		log(LOG_INFO,"query: Took %" PRId64" ms to do clustering and dup removal.",took);
 
 	// . let's wait for the tasks to complete before even trying to launch
 	//   more than the first MAX_OUTSTANDING msg20s
@@ -1641,15 +1641,15 @@ bool Msg40::gotSummary ( ) {
 		if ( cn < 0 || cn >= CR_END ) { char *xx=NULL;*xx=0; }
 		char *s = g_crStrings[cn];
 		if ( ! s ) { char *xx=NULL;*xx=0; }
-		logf(LOG_DEBUG, "query: msg40 final hit #%"INT32") d=%"UINT64" "
-		     "cl=%"INT32" (%s)", 
+		logf(LOG_DEBUG, "query: msg40 final hit #%" PRId32") d=%" PRIu64" "
+		     "cl=%" PRId32" (%s)",
 		     i,m_msg3a.m_docIds[i],(int32_t)m_msg3a.m_clusterLevels[i],s);
 	}
 
 	if ( debug )
-		logf (LOG_DEBUG,"query: msg40: firstResult=%"INT32", "
-		      "totalDocIds=%"INT32", resultsWanted=%"INT32" "
-		      "visible=%"INT32" toGet=%"INT32" recallCnt=%"INT32"",
+		logf (LOG_DEBUG,"query: msg40: firstResult=%" PRId32", "
+		      "totalDocIds=%" PRId32", resultsWanted=%" PRId32" "
+		      "visible=%" PRId32" toGet=%" PRId32" recallCnt=%" PRId32,
 		      m_si->m_firstResultNum, m_msg3a.m_numDocIds ,
 		      m_docsToGetVisible, visible,
 		      //m_numContiguous, 
@@ -1669,9 +1669,9 @@ bool Msg40::gotSummary ( ) {
 		// note it
 		log("msg40: too many summaries invisible. getting more "
 		    "docids from msg3a merge and getting summaries. "
-		    "%"INT32" are visible, need %"INT32". "
-		    "%"INT32" to %"INT32". "
-		    "numReplies=%"INT32" numRequests=%"INT32"",
+		    "%" PRId32" are visible, need %" PRId32". "
+		    "%" PRId32" to %" PRId32". "
+		    "numReplies=%" PRId32" numRequests=%" PRId32,
 		    visible, m_docsToGetVisible,
 		    m_msg3a.m_docsToGet, need,
 		    m_numReplies, m_numRequests);
@@ -1700,8 +1700,8 @@ bool Msg40::gotSummary ( ) {
 			    0x008220ff  );
 	// timestamp log
 	if ( g_conf.m_logTimingQuery || m_si->m_debug )
-		logf(LOG_DEBUG,"query: msg40: [%"PTRFMT"] Got %"INT32" summaries in "
-		    "%"INT64" ms",
+		logf(LOG_DEBUG,"query: msg40: [%" PTRFMT"] Got %" PRId32" summaries in "
+		    "%" PRId64" ms",
 		     (PTRTYPE)this ,
 		     visible, // m_visibleContiguous,
 		     now - m_startTime );
@@ -1772,8 +1772,8 @@ bool Msg40::gotSummary ( ) {
 
 	// debug
 	for ( int32_t i = 0 ; debug && i < m_msg3a.m_numDocIds ; i++ )
-		logf(LOG_DEBUG, "query: msg40 clipped hit #%"INT32") d=%"UINT64" "
-		     "cl=%"INT32" (%s)", 
+		logf(LOG_DEBUG, "query: msg40 clipped hit #%" PRId32") d=%" PRIu64" "
+		     "cl=%" PRId32" (%s)", 
 		     i,m_msg3a.m_docIds[i],(int32_t)m_msg3a.m_clusterLevels[i],
 		     g_crStrings[(int32_t)m_msg3a.m_clusterLevels[i]]);
 
@@ -1805,7 +1805,7 @@ bool Msg40::gotSummary ( ) {
 
 	// debug
 	if ( m_si->m_debug )
-		logf(LOG_DEBUG,"query: [%"PTRFMT"] Storing output in cache.",
+		logf(LOG_DEBUG,"query: [%" PTRFMT"] Storing output in cache.",
 		     (PTRTYPE)this);
 	// store in this buffer
 	char tmpBuf [ 64 * 1024 ];
@@ -1821,7 +1821,7 @@ bool Msg40::gotSummary ( ) {
 		g_errno = 0;
 		logf ( LOG_INFO ,
 		       "query: Size of cached search results page (and "
-		       "all associated data) is %"INT32" bytes. Max is %i. "
+		       "all associated data) is %" PRId32" bytes. Max is %i. "
 		       "Page not cached.", tmpSize, 32*1024 );
 		return true;
 	}
@@ -1831,8 +1831,8 @@ bool Msg40::gotSummary ( ) {
 	if ( nb != tmpSize || nb == 0 ) {
 		g_errno = EBADENGINEER;
 		log (LOG_LOGIC,
-		     "query: Size of cached search results page (%"INT32") "
-		     "does not match what it should be. (%"INT32")",
+		     "query: Size of cached search results page (%" PRId32") "
+		     "does not match what it should be. (%" PRId32")",
 		     nb, tmpSize );
 		return true;
 	}
@@ -1908,15 +1908,15 @@ int32_t Msg40::serialize ( char *buf , int32_t bufLen ) {
 		int32_t nb = m_msg20[i]->serialize ( p , pend - p ) ;
 		// count it
 		if ( m_msg3a.m_rrr.m_debug )
-			log("query: msg40 serialize msg20size=%"INT32"",nb);
+			log("query: msg40 serialize msg20size=%" PRId32,nb);
 
 		if ( nb == -1 ) return -1;
 		p += nb;
 	}
 
 	if ( m_msg3a.m_rrr.m_debug )
-		log("query: msg40 serialize nd=%"INT32" "
-		    "msg3asize=%"INT32" ",m_msg3a.m_numDocIds,nb);
+		log("query: msg40 serialize nd=%" PRId32" "
+		    "msg3asize=%" PRId32" ",m_msg3a.m_numDocIds,nb);
 
 	// return bytes stored
 	return p - buf;
@@ -2061,7 +2061,7 @@ bool Msg40::printSearchResult9 ( int32_t ix , int32_t *numPrintedSoFar ,
 		// hide if above limit
 		if ( m_printCount == 0 )
 			log(LOG_INFO,"msg40: hiding above docsWanted "
-			    "#%"INT32" (%"UINT32")(d=%"INT64")",
+			    "#%" PRId32" (%" PRIu32")(d=%" PRId64")",
 			    m_printi,mr->m_contentHash32,mr->m_docId);
 		m_printCount++;
 		if ( m_printCount == 100 ) m_printCount = 0;

@@ -82,7 +82,7 @@ void DailyMerge::dailyMergeLoop ( ) {
 		// if it is valid, the CollectionRec MUST be there
 		CollectionRec *cr = g_collectiondb.getRec ( i );
 		if ( ! cr ) { 
-			log("daily: host #0 bad collnum %"INT32"",(int32_t)i);return;}
+			log("daily: host #0 bad collnum %" PRId32,(int32_t)i);return;}
 		// if valid, use it
 		m_cr = cr;
 		// we set m_cr, go to next mode

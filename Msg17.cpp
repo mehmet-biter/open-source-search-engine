@@ -197,7 +197,7 @@ bool Msg17::gotReply ( UdpSlot *slot , char *cbuf , int32_t cbufSize ,
 		       bool includesCachedTime ) {
 	// bitch about any error we got
 	if ( g_errno ) return log("query: Reply for cache cacheId=%i "
-				  "(niceness=%"INT32") had error: %s.",
+				  "(niceness=%" PRId32") had error: %s.",
 				  m_cacheId,m_niceness,mstrerror(g_errno));
 	// assume we were not able to get the cached Msg40
 	m_found = false;
@@ -218,7 +218,7 @@ bool Msg17::gotReply ( UdpSlot *slot , char *cbuf , int32_t cbufSize ,
 					   k        ,
 					   p        ,
 					   pend - p ) )
-			log("query: Had error storing cache cacheId=%"INT32": "
+			log("query: Had error storing cache cacheId=%" PRId32": "
 			    "%s.", cacheId, mstrerror(g_errno));
 	}
 	*/
@@ -229,7 +229,7 @@ bool Msg17::gotReply ( UdpSlot *slot , char *cbuf , int32_t cbufSize ,
 		int32_t recSize = *(int32_t *)cbuf;
 		// sanity check
 		if ( recSize < 0 ) {
-			log("query: got bad cached rec size=%"INT32" cacheid=%"INT32"",
+			log("query: got bad cached rec size=%" PRId32" cacheid=%" PRId32,
 			    recSize,(int32_t)m_cacheId);
 			return false;
 		}
@@ -240,7 +240,7 @@ bool Msg17::gotReply ( UdpSlot *slot , char *cbuf , int32_t cbufSize ,
 		int32_t  ubufSize = recSize;
 		char *ubuf = (char *)mmalloc ( ubufSize , "Msg17" );
 		if ( ! ubuf ) 
-			return log("query: Could not allocate %"INT32" bytes for "
+			return log("query: Could not allocate %" PRId32" bytes for "
 				   "uncompressing cache cacheId=%i: "
 				   "%s.",
 				   ubufSize,m_cacheId,mstrerror(g_errno));
@@ -304,7 +304,7 @@ void handleRequest17 ( UdpSlot *slot , int32_t niceness  ) {
 
 	// need at least a key in the request
 	if ( requestSize < (int32_t)sizeof(key_t) ) {
-		log("query: Request size for cache (%"INT32") "
+		log("query: Request size for cache (%" PRId32") "
 		    "is too small for some reason.", (int32_t)sizeof(key_t));
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		us->sendErrorReply ( slot , EBADREQUESTSIZE );
@@ -404,7 +404,7 @@ bool Msg17::storeInCache ( char   cacheId ,
 //	if ( tmpSize > 32*1024 ) {
 //		log(LOG_LIMIT,
 //		    "query: Size of cached search results page (and all "
-//		    "associated data) is %"INT32" bytes. Max is %"INT32". "
+//		    "associated data) is %" PRId32" bytes. Max is %" PRId32". "
 //		    "Page not cached.",tmpSize,32*1024);
 //		return true; 
 //	}
@@ -413,8 +413,8 @@ bool Msg17::storeInCache ( char   cacheId ,
 //	// it must fit exactly
 //	if ( nb != tmpSize || nb == 0 ) {
 //		log(LOG_LOGIC,
-//		    "query: Size of cached search results page (%"INT32") does not "
-//		    "match what it should be. (%"INT32")" , nb , tmpSize );
+//		    "query: Size of cached search results page (%" PRId32") does not "
+//		    "match what it should be. (%" PRId32")" , nb , tmpSize );
 //		return true;
 //	}
 //	// make key
@@ -475,8 +475,8 @@ bool Msg17::storeInCache ( char   cacheId ,
 		if ( err != Z_OK ) { 
 			g_errno = ECOMPRESSFAILED; 
 			log("query: Compression of cache cacheId=%i "
-			    "failed err=%"INT32" avail=%"INT32" collnum=%"INT32" "
-			    "recSize=%"INT32".", 
+			    "failed err=%" PRId32" avail=%" PRId32" collnum=%" PRId32" "
+			    "recSize=%" PRId32".", 
 			    cacheId , (int32_t)err ,
 			    saved , (int32_t)collnum , recSize );
 			return true;
@@ -515,7 +515,7 @@ bool Msg17::storeInCache ( char   cacheId ,
 	char *request = (char *) mdup ( buf , requestSize , "Msg17" );
 	if ( ! request ) {
 		log("query: Failed to allocate %i bytes to hold cache "
-		    "cacheId=%"INT32" for transmission to caching host.",
+		    "cacheId=%" PRId32" for transmission to caching host.",
 		    cacheId, requestSize);
 		return true;
 	}

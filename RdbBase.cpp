@@ -45,7 +45,7 @@ void RdbBase::reset ( ) {
 
 	char *db = "";
 	if ( m_rdb  ) db = m_dbname;
-	//log("debug: base resetting db=%s collnum=%"INT32"",db,(int32_t)m_collnum);
+	//log("debug: base resetting db=%s collnum=%" PRId32,db,(int32_t)m_collnum);
 
 	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) {
 		mdelete ( m_files[i] , sizeof(BigFile),"RdbBFile");
@@ -102,11 +102,11 @@ bool RdbBase::init ( char  *dir            ,
 	// . "tmp" is bogus
 	// . /home/mwells/github/coll.john-test1113.654coll.john-test1113.655
 	char tmp[1024];
-	sprintf ( tmp , "%scoll.%s.%"INT32"" , dir , coll , (int32_t)collnum );
+	sprintf ( tmp , "%scoll.%s.%" PRId32 , dir , coll , (int32_t)collnum );
 
 	// logDebugAdmin
 	log(LOG_DEBUG,"db: "
-	    "adding new base for dir=%s coll=%s collnum=%"INT32" db=%s",
+	    "adding new base for dir=%s coll=%s collnum=%" PRId32" db=%s",
 	    dir,coll,(int32_t)collnum,dbname);
 
 	// make a special subdir to store the map and data files in if
@@ -247,9 +247,9 @@ bool RdbBase::init ( char  *dir            ,
 	if ( ! m_pc ) return true;
 	char buf [ 512000 ];
 	int32_t total = m_pc->getMemMax();
-	log(LOG_DEBUG,"db: %s: Preloading page cache. Total mem to use =%"UINT32"",
+	log(LOG_DEBUG,"db: %s: Preloading page cache. Total mem to use =%" PRIu32,
 	     m_dbname,total);
-	//log("max=%"INT32"",total);
+	//log("max=%" PRId32,total);
 	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) {
 		if ( total <= 0 ) break;
 		BigFile *f = m_files[i];
@@ -381,7 +381,7 @@ bool RdbBase::setFiles ( ) {
 		// we are getting this from a bogus m_dir
 		return log("db: Had error opening directory %s", getDir());
 	// note it
-	log(LOG_DEBUG,"db: Loading files for %s coll=%s (%"INT32").",
+	log(LOG_DEBUG,"db: Loading files for %s coll=%s (%" PRId32").",
 	     m_dbname,m_coll,(int32_t)m_collnum );
 	// . set our m_files array
 	// . addFile() will return -1 and set g_errno on error
@@ -499,7 +499,7 @@ bool RdbBase::setFiles ( ) {
 		// just fix it for them
 		BigFile bf;
 		SafeBuf oldName;
-		oldName.safePrintf("%s%04"INT32".dat",m_dbname,m_fileIds[0]);
+		oldName.safePrintf("%s%04" PRId32".dat",m_dbname,m_fileIds[0]);
 		bf.set ( m_dir.getDir() , oldName.getBufStart() );
 
 		// rename it to like "spiderdb.0001.dat"
@@ -517,7 +517,7 @@ bool RdbBase::setFiles ( ) {
 		// get the map file name we want to move to 0001.map
 		BigFile cmf;
 		SafeBuf curMap;
-		curMap.safePrintf("%s%04"INT32".map",m_dbname,m_fileIds[0]);
+		curMap.safePrintf("%s%04" PRId32".map",m_dbname,m_fileIds[0]);
 		cmf.set ( m_dir.getDir(), curMap.getBufStart());
 
 		// rename to spiderdb0081.map to spiderdb0001.map
@@ -546,7 +546,7 @@ int32_t RdbBase::addFile ( int32_t id, bool isNew, int32_t mergeNum, int32_t id2
 	if ( n >= MAX_RDB_FILES ) {
 		g_errno = ETOOMANYFILES;
 		log( LOG_LOGIC,
-		     "db: Can not have more than %"INT32" files. File add "
+		     "db: Can not have more than %" PRId32" files. File add "
 				     "failed.", ( int32_t ) MAX_RDB_FILES );
 		return -1;
 	}
@@ -570,13 +570,13 @@ int32_t RdbBase::addFile ( int32_t id, bool isNew, int32_t mergeNum, int32_t id2
 	// set the data file's filename
 	char name[512];
 	if ( mergeNum <= 0 && m_isTitledb ) {
-		snprintf( name, 511, "%s%04" INT32"-%03" INT32".dat", m_dbname, id, id2 );
+		snprintf( name, 511, "%s%04" PRId32"-%03" PRId32".dat", m_dbname, id, id2 );
 	} else if ( mergeNum <= 0 ) {
-		snprintf( name, 511, "%s%04" INT32".dat", m_dbname, id );
+		snprintf( name, 511, "%s%04" PRId32".dat", m_dbname, id );
 	} else if ( m_isTitledb ) {
-		snprintf( name, 511, "%s%04" INT32"-%03" INT32".%03" INT32".dat", m_dbname, id, id2, mergeNum );
+		snprintf( name, 511, "%s%04" PRId32"-%03" PRId32".%03" PRId32".dat", m_dbname, id, id2, mergeNum );
 	} else {
-		snprintf( name, 511, "%s%04" INT32".%03" INT32".dat", m_dbname, id, mergeNum );
+		snprintf( name, 511, "%s%04" PRId32".%03" PRId32".dat", m_dbname, id, mergeNum );
 	}
 
 	f->set ( getDir() , name , NULL ); // g_conf.m_stripeDir );
@@ -619,7 +619,7 @@ int32_t RdbBase::addFile ( int32_t id, bool isNew, int32_t mergeNum, int32_t id2
 		File *ff = f->getFile2(j);//m_files[j];
 		if ( ! ff ) continue;
 		if ( ff->getFileSize() == MAX_PART_SIZE ) continue;
-		log ( LOG_WARN, "db: File %s %s has length %" INT64", but it should be %" INT64". "
+		log ( LOG_WARN, "db: File %s %s has length %" PRId64", but it should be %" PRId64". "
 		      "You should move it to a temporary directory "
 		      "and restart. It probably happened when the power went "
 		      "out and a file delete operation failed to complete.",
@@ -631,7 +631,7 @@ int32_t RdbBase::addFile ( int32_t id, bool isNew, int32_t mergeNum, int32_t id2
 	}
 
 	// set the map file's  filename
-	sprintf ( name , "%s%04"INT32".map", m_dbname, id );
+	sprintf ( name , "%s%04" PRId32".map", m_dbname, id );
 	m->set ( getDir(), name, m_fixedDataSize, m_useHalfKeys, m_ks, m_pageSize );
 	if ( ! isNew && ! m->readMap ( f ) ) { 
 		// if out of memory, do not try to regen for that
@@ -643,7 +643,7 @@ int32_t RdbBase::addFile ( int32_t id, bool isNew, int32_t mergeNum, int32_t id2
 		// want to write any data
 		if ( g_dumpMode ) return -1;
 
-		log("db: Attempting to generate map file for data file %s* of %" INT64" bytes. May take a while.",
+		log("db: Attempting to generate map file for data file %s* of %" PRId64" bytes. May take a while.",
 		    f->getFilename(), f->getFileSize() );
 
 		// this returns false and sets g_errno on error
@@ -682,7 +682,7 @@ int32_t RdbBase::addFile ( int32_t id, bool isNew, int32_t mergeNum, int32_t id2
 	}
 
 	if ( ! isNew ) {
-		log( LOG_DEBUG, "db: Added %s for collnum=%" INT32" pages=%" INT32,
+		log( LOG_DEBUG, "db: Added %s for collnum=%" PRId32" pages=%" PRId32,
 		     name, ( int32_t ) m_collnum, m->getNumPages() );
 	}
 
@@ -737,7 +737,7 @@ int32_t RdbBase::addFile ( int32_t id, bool isNew, int32_t mergeNum, int32_t id2
 	// inc # of files we have
 	m_numFiles++;
 	// debug note
-	//log("rdb: numFiles=%"INT32" for collnum=%"INT32" db=%s",
+	//log("rdb: numFiles=%" PRId32" for collnum=%" PRId32" db=%s",
 	//    m_numFiles,(int32_t)m_collnum,m_dbname);
 	// keep it NULL terminated
 	m_files [ m_numFiles ] = NULL;
@@ -821,8 +821,8 @@ bool RdbBase::incorporateMerge ( ) {
 	// print out info of newly merged file
 	int64_t tp = m_maps[x]->getNumPositiveRecs();
 	int64_t tn = m_maps[x]->getNumNegativeRecs();
-	log(LOG_INFO, "merge: Merge succeeded. %s (#%"INT32") has %"INT64" positive "
-	    "and %"INT64" negative recs.", m_files[x]->getFilename(), x, tp, tn);
+	log(LOG_INFO, "merge: Merge succeeded. %s (#%" PRId32") has %" PRId64" positive "
+	    "and %" PRId64" negative recs.", m_files[x]->getFilename(), x, tp, tn);
 
 	// . bitch if bad news
 	// . sanity checks to make sure we didn't mess up our data from merging
@@ -834,19 +834,19 @@ bool RdbBase::incorporateMerge ( ) {
 	// . i just re-added some partially indexed urls so indexdb will
 	//   have dup overwrites now too!!
 	if ( tp > m_numPos ) {
-		log(LOG_INFO,"merge: %s gained %"INT64" positives.", m_dbname , tp - m_numPos );
+		log(LOG_INFO,"merge: %s gained %" PRId64" positives.", m_dbname , tp - m_numPos );
 	}
 
 	if ( tp < m_numPos - m_numNeg ) {
-		log(LOG_INFO,"merge: %s: lost %"INT64" positives", m_dbname , m_numPos - tp );
+		log(LOG_INFO,"merge: %s: lost %" PRId64" positives", m_dbname , m_numPos - tp );
 	}
 
 	if ( tn > m_numNeg ) {
-		log(LOG_INFO,"merge: %s: gained %"INT64" negatives.", m_dbname , tn - m_numNeg );
+		log(LOG_INFO,"merge: %s: gained %" PRId64" negatives.", m_dbname , tn - m_numNeg );
 	}
 
 	if ( tn < m_numNeg - m_numPos ) {
-		log(LOG_INFO,"merge: %s: lost %"INT64" negatives.", m_dbname , m_numNeg - tn );
+		log(LOG_INFO,"merge: %s: lost %" PRId64" negatives.", m_dbname , m_numNeg - tn );
 	}
 
 	// assume no unlinks blocked
@@ -866,8 +866,8 @@ bool RdbBase::incorporateMerge ( ) {
 	// will end on a non-key boundary.
 	if ( fs != fs2 ) {
 		log("build: Map file size does not agree with actual file "
-		    "size for %s. Map says it should be %"INT64" bytes but it "
-		    "is %"INT64" bytes.", 
+		    "size for %s. Map says it should be %" PRId64" bytes but it "
+		    "is %" PRId64" bytes.",
 		    m_files[x]->getFilename(), fs2 , fs );
 		if ( fs2-fs > 12 || fs-fs2 > 12 ) { char *xx = NULL; *xx = 0; }
 		// now print the exception
@@ -884,7 +884,7 @@ bool RdbBase::incorporateMerge ( ) {
 			continue;
 
 		// debug msg
-		log(LOG_INFO,"merge: Unlinking merged file %s/%s (#%"INT32").",
+		log(LOG_INFO,"merge: Unlinking merged file %s/%s (#%" PRId32").",
 		    m_files[i]->getDir(),m_files[i]->getFilename(),i);
 
 		// . these links will be done in a thread
@@ -895,17 +895,17 @@ bool RdbBase::incorporateMerge ( ) {
 		} else {
 			// debug msg
 			// MDW this cores if file is bad... if collection got delete from under us i guess!!
-			log(LOG_INFO,"merge: Unlinked %s (#%"INT32").", m_files[i]->getFilename(), i);
+			log(LOG_INFO,"merge: Unlinked %s (#%" PRId32").", m_files[i]->getFilename(), i);
 		}
 
 		// debug msg
-		log(LOG_INFO,"merge: Unlinking map file %s (#%"INT32").", m_maps[i]->getFilename(),i);
+		log(LOG_INFO,"merge: Unlinking map file %s (#%" PRId32").", m_maps[i]->getFilename(),i);
 
 		if ( ! m_maps[i]->unlink  ( doneWrapper , this ) ) {
 			m_numThreads++; g_numThreads++;
 		} else {
 			// debug msg
-			log(LOG_INFO,"merge: Unlinked %s (#%"INT32").", m_maps[i]->getFilename(), i);
+			log(LOG_INFO,"merge: Unlinked %s (#%" PRId32").", m_maps[i]->getFilename(), i);
 		}
 	}
 
@@ -933,7 +933,7 @@ bool RdbBase::incorporateMerge ( ) {
 
 void doneWrapper ( void *state ) {
 	RdbBase *THIS = (RdbBase *)state;
-	log("merge: done unlinking file. #threads=%"INT32"",THIS->m_numThreads);
+	log("merge: done unlinking file. #threads=%" PRId32,THIS->m_numThreads);
 	THIS->doneWrapper2 ( );
 }
 
@@ -974,7 +974,7 @@ void RdbBase::doneWrapper2 ( ) {
 
 	if ( ! m_isTitledb ) {
 		// debug statement
-		log(LOG_INFO,"db: Renaming %s of size %"INT64" to %s",
+		log(LOG_INFO,"db: Renaming %s of size %" PRId64" to %s",
 		    m_files[x]->getFilename(),fs , m_files[a]->getFilename());
 		// rename it, this may block
 		if ( ! m_files[x]->rename ( m_files[a]->getFilename() ,
@@ -982,10 +982,10 @@ void RdbBase::doneWrapper2 ( ) {
 			m_numThreads++; g_numThreads++; }
 	}
 	else {
-		// rename to this (titledb%04"INT32"-%03"INT32".dat)
+		// rename to this (titledb%04" PRId32"-%03" PRId32".dat)
 		char buf [ 1024 ];
 		// use m_dbname in case its titledbRebuild
-		sprintf ( buf , "%s%04"INT32"-%03"INT32".dat" , 
+		sprintf ( buf , "%s%04" PRId32"-%03" PRId32".dat" ,
 			  m_dbname, m_fileIds[a], m_fileIds2[x] );
 
 		// rename it, this may block
@@ -1003,8 +1003,8 @@ void RdbBase::doneWrapper2 ( ) {
 
 void doneWrapper3 ( void *state ) {
 	RdbBase *THIS = (RdbBase *)state;
-	log("rdb: thread completed rename operation for collnum=%"INT32" "
-	    "#thisbaserenamethreads=%"INT32"",
+	log("rdb: thread completed rename operation for collnum=%" PRId32" "
+	    "#thisbaserenamethreads=%" PRId32,
 	    (int32_t)THIS->m_collnum,THIS->m_numThreads-1);
 	THIS->doneWrapper4 ( );
 }
@@ -1090,7 +1090,7 @@ void RdbBase::buryFiles ( int32_t a , int32_t b ) {
 	// decrement the file count appropriately
 	m_numFiles -= (b-a);
 	// sanity
-	log("rdb: bury files: numFiles now %"INT32" (b=%"INT32" a=%"INT32" collnum=%"INT32")",
+	log("rdb: bury files: numFiles now %" PRId32" (b=%" PRId32" a=%" PRId32" collnum=%" PRId32")",
 	    m_numFiles,b,a,(int32_t)m_collnum);
 	// ensure last file is NULL (so BigFile knows the end of m_files)
 	m_files [ m_numFiles ] = NULL;
@@ -1106,7 +1106,7 @@ void RdbBase::buryFiles ( int32_t a , int32_t b ) {
 bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 			     int32_t minToMergeOverride ) {
 
-	logTrace( g_conf.m_logTraceRdbBase, "BEGIN. minToMergeOverride: %"INT32"", minToMergeOverride);
+	logTrace( g_conf.m_logTraceRdbBase, "BEGIN. minToMergeOverride: %" PRId32, minToMergeOverride);
 
 	// don't do merge if we're in read only mode
 	if ( g_conf.m_readOnlyMode ) {
@@ -1149,7 +1149,7 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 	if ( m_nextMergeForced ) forceMergeAll = true;
 
 	if ( forceMergeAll ) {
-		log(LOG_INFO,"merge: forcing merge for %s. (collnum=%"INT32")",m_dbname,(int32_t)m_collnum);
+		log(LOG_INFO,"merge: forcing merge for %s. (collnum=%" PRId32")",m_dbname,(int32_t)m_collnum);
 	}
 
 	// if we are trying to merge titledb but a titledb dump is going on
@@ -1180,7 +1180,7 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 		if ( doLog )
 			log(LOG_INFO,"merge: Waiting for unlink/rename "
 			    "operations to finish before attempting merge "
-			    "for %s. (collnum=%"INT32")",m_dbname,(int32_t)m_collnum);
+			    "for %s. (collnum=%" PRId32")",m_dbname,(int32_t)m_collnum);
 		logTrace( g_conf.m_logTraceRdbBase, "END, wait for unlink/rename" );
 		return false;
 	}
@@ -1193,7 +1193,7 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 			log(LOG_INFO,"merge: Waiting for another "
 			    "collection's unlink/rename "
 			    "operations to finish before attempting merge "
-			    "for %s (collnum=%"INT32").",
+			    "for %s (collnum=%" PRId32").",
 			    m_dbname,(int32_t)m_collnum);
 		s_lastTime = now;
 		logTrace( g_conf.m_logTraceRdbBase, "END, waiting for threads to finish" );
@@ -1217,7 +1217,7 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 	// is actually valid at this point, use it as is, therefore, just set
 	// cr to NULL
 
-	logTrace( g_conf.m_logTraceRdbBase, "m_minToMergeArg: %"INT32"", m_minToMergeArg);
+	logTrace( g_conf.m_logTraceRdbBase, "m_minToMergeArg: %" PRId32, m_minToMergeArg);
 		
 	m_minToMerge = m_minToMergeArg;
 	if ( cr && m_minToMerge > 0 ) cr = NULL;
@@ -1226,38 +1226,38 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 	if ( cr ) {
 		if ( m_rdb == g_posdb.getRdb() ) {
 			m_minToMerge = cr->m_posdbMinFilesToMerge;
-			logTrace( g_conf.m_logTraceRdbBase, "posdb. m_minToMerge: %" INT32, m_minToMerge );
+			logTrace( g_conf.m_logTraceRdbBase, "posdb. m_minToMerge: %" PRId32, m_minToMerge );
 		} else if ( m_rdb == g_titledb.getRdb() ) {
 			m_minToMerge = cr->m_titledbMinFilesToMerge;
-			logTrace( g_conf.m_logTraceRdbBase, "titledb. m_minToMerge: %" INT32, m_minToMerge );
+			logTrace( g_conf.m_logTraceRdbBase, "titledb. m_minToMerge: %" PRId32, m_minToMerge );
 		} else if ( m_rdb == g_spiderdb.getRdb() ) {
 		    m_minToMerge = cr->m_spiderdbMinFilesToMerge;
-			logTrace( g_conf.m_logTraceRdbBase, "spiderdb. m_minToMerge: %" INT32, m_minToMerge );
+			logTrace( g_conf.m_logTraceRdbBase, "spiderdb. m_minToMerge: %" PRId32, m_minToMerge );
 		//} else if ( m_rdb == g_clusterdb.getRdb() ) {
 		//	m_minToMerge = cr->m_clusterdbMinFilesToMerge;
-		//  logTrace( g_conf.m_logTraceRdbBase, "clusterdb. m_minToMerge: %" INT32, m_minToMerge );
+		//  logTrace( g_conf.m_logTraceRdbBase, "clusterdb. m_minToMerge: %" PRId32, m_minToMerge );
 		//} else if ( m_rdb == g_statsdb.getRdb() )
 		//	m_minToMerge = g_conf.m_statsdbMinFilesToMerge;
-		//  logTrace( g_conf.m_logTraceRdbBase, "statdb. m_minToMerge: %" INT32, m_minToMerge );
+		//  logTrace( g_conf.m_logTraceRdbBase, "statdb. m_minToMerge: %" PRId32, m_minToMerge );
 		} else if ( m_rdb == g_linkdb.getRdb() ) {
 			m_minToMerge = cr->m_linkdbMinFilesToMerge;
-			logTrace( g_conf.m_logTraceRdbBase, "linkdb. m_minToMerge: %" INT32, m_minToMerge );
+			logTrace( g_conf.m_logTraceRdbBase, "linkdb. m_minToMerge: %" PRId32, m_minToMerge );
 		} else if ( m_rdb == g_tagdb.getRdb() ) {
 			m_minToMerge = cr->m_tagdbMinFilesToMerge;
-			logTrace( g_conf.m_logTraceRdbBase, "tagdb. m_minToMerge: %" INT32, m_minToMerge );
+			logTrace( g_conf.m_logTraceRdbBase, "tagdb. m_minToMerge: %" PRId32, m_minToMerge );
 		}
 	}
 
 	// always obey the override
 	if ( minToMergeOverride >= 2 ) {
-		log("merge: Overriding min files to merge of %" INT32" with %" INT32, m_minToMerge, minToMergeOverride );
+		log("merge: Overriding min files to merge of %" PRId32" with %" PRId32, m_minToMerge, minToMergeOverride );
 		m_minToMerge = minToMergeOverride;
-		logTrace( g_conf.m_logTraceRdbBase, "Overriding. m_minToMerge: %" INT32, m_minToMerge );
+		logTrace( g_conf.m_logTraceRdbBase, "Overriding. m_minToMerge: %" PRId32, m_minToMerge );
 	}
 
 	// if still -1 that is a problem
 	if ( m_minToMerge <= 0 ) {
-		log("Got bad minToMerge of %"INT32" for %s. Set its default to "
+		log("Got bad minToMerge of %" PRId32" for %s. Set its default to "
 		    "something besides -1 in Parms.cpp or add it to "
 		    "CollectionRec.h.",
 		    m_minToMerge,m_dbname);
@@ -1267,8 +1267,8 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 	// mdw: comment this out to reduce log spam when we have 800 colls!
 	// print it
 	if ( doLog ) 
-		log(LOG_INFO,"merge: Attempting to merge %"INT32" %s files on disk."
-		    " %"INT32" files needed to trigger a merge.",
+		log(LOG_INFO,"merge: Attempting to merge %" PRId32" %s files on disk."
+		    " %" PRId32" files needed to trigger a merge.",
 		    numFiles,m_dbname,m_minToMerge);
 	
 	// . even though another merge may be going on, we can speed it up
@@ -1316,7 +1316,7 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 	// tries to merge on one file...
 	if ( ! resuming && m_numFiles <= 1 ) {
 		m_nextMergeForced = false;
-		logTrace( g_conf.m_logTraceRdbBase, "END, too few files (%"INT32")", m_numFiles);
+		logTrace( g_conf.m_logTraceRdbBase, "END, too few files (%" PRId32")", m_numFiles);
 		return false;
 	}
 
@@ -1333,8 +1333,8 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 		m_nextMergeForced = true;
 		forceMergeAll = true;
 		log("rdb: hit negative rec concentration of %f "
-		    "(total=%"INT64") for "
-		    "collnum %"INT32" on db %s when diskAvail=%"INT64" bytes",
+		    "(total=%" PRId64") for "
+		    "collnum %" PRId32" on db %s when diskAvail=%" PRId64" bytes",
 		    percentNegativeRecs,totalRecs,(int32_t)m_collnum,
 		    m_rdb->m_dbname,g_process.m_diskAvail);
 	}
@@ -1344,8 +1344,8 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 		m_nextMergeForced = true;
 		forceMergeAll = true;
 		log("rdb: hit negative rec concentration of %f "
-		    "(total=%"INT64") for "
-		    "collnum %"INT32" on db %s",
+		    "(total=%" PRId64") for "
+		    "collnum %" PRId32" on db %s",
 		    percentNegativeRecs,totalRecs,(int32_t)m_collnum,
 		    m_rdb->m_dbname);
 	}
@@ -1359,7 +1359,7 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 		// 20,000+ collections. if we dump a file to disk for it
 		// then we set this flag back to false in Rdb.cpp.
 		m_checkedForMerge = true;
-		logTrace( g_conf.m_logTraceRdbBase, "END, min files not reached (%"INT32" / %"INT32")",numFiles,minToMerge);
+		logTrace( g_conf.m_logTraceRdbBase, "END, min files not reached (%" PRId32" / %" PRId32")",numFiles,minToMerge);
 		return false;
 	}
 
@@ -1519,7 +1519,7 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 		for ( int32_t i = mergeFileNum ; i <= mergeFileNum + n ; i++ ) {
 			if ( i >= m_numFiles ) {
 				log("merge: Number of files to merge has "
-				    "shrunk from %"INT32" to %"INT32" since time of "
+				    "shrunk from %" PRId32" to %" PRId32" since time of "
 				    "last merge. Probably because those files "
 				    "were deleted because they were "
 				    "exhausted and had no recs to offer."
@@ -1528,7 +1528,7 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 				break;
 			}
 			if ( ! m_files[i] ) {
-				log("merge: File #%"INT32" is NULL, skipping.",i);
+				log("merge: File #%" PRId32" is NULL, skipping.",i);
 				continue;
 			}
 			// only count files AFTER the file being merged to
@@ -1536,8 +1536,8 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 			mint += m_files[i]->getFileSize();
 		}
 		if ( mm != n ) {
-			log("merge: Only merging %"INT32" instead of the "
-			    "original %"INT32" files.",mm,n);
+			log("merge: Only merging %" PRId32" instead of the "
+			    "original %" PRId32" files.",mm,n);
 			// cause the "if (mm==0)" to kick in below
 			if ( mm == 1 || mm == 0 ) {
 				mm = 0;
@@ -1561,14 +1561,14 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 			// since it got nuked on disk
 			//incorporateMerge();
 			char fbuf[256];
-			sprintf(fbuf,"%s%04"INT32".dat",m_dbname,mergeFileId-1);
+			sprintf(fbuf,"%s%04" PRId32".dat",m_dbname,mergeFileId-1);
 			if ( m_isTitledb )
-				sprintf(fbuf,"%s%04"INT32"-%03"INT32".dat",
+				sprintf(fbuf,"%s%04" PRId32"-%03" PRId32".dat",
 					m_dbname,mergeFileId-1,id2);
 			log("merge: renaming final merged file %s",fbuf);
 			// this does not use a thread...
 			m_files[j]->rename(fbuf);
-			sprintf(fbuf,"%s%04"INT32".map",m_dbname,mergeFileId-1);
+			sprintf(fbuf,"%s%04" PRId32".map",m_dbname,mergeFileId-1);
 			//File *mf = m_maps[j]->getFile();
 			m_maps[j]->rename(fbuf);
 			log("merge: renaming final merged file %s",fbuf);
@@ -1670,8 +1670,8 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 				mini   = i;
 				mint   = total;
 				minOld = old;
-				log(LOG_INFO,"merge: titledb i=%"INT32" n=%"INT32" "
-				    "mint=%"INT64" mini=%"INT32" "
+				log(LOG_INFO,"merge: titledb i=%" PRId32" n=%" PRId32" "
+				    "mint=%" PRId64" mini=%" PRId32" "
 				    "oldestfile=%.02fdays",
 				    i,n,mint,mini,
 				    ((float)nowLocal-date)/(24*3600.0) );
@@ -1716,10 +1716,10 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 		int64_t prevSize = 0;
 		if ( i > 0 ) prevSize = m_files[i-1]->getFileSize();
 		if ( i > 0 && prevSize < total/4 ) tooBig = 1;
-		log(LOG_INFO,"merge: i=%"INT32" n=%"INT32" ratio=%.2f adjratio=%.2f "
-		    "minr=%.2f mint=%"INT64" mini=%"INT32" prevFileSize=%"INT64" "
-		    "mergeFileSize=%"INT64" tooBig=%"INT32" oldestfile=%.02fdays "
-		    "collnum=%"INT32"",
+		log(LOG_INFO,"merge: i=%" PRId32" n=%" PRId32" ratio=%.2f adjratio=%.2f "
+		    "minr=%.2f mint=%" PRId64" mini=%" PRId32" prevFileSize=%" PRId64" "
+		    "mergeFileSize=%" PRId64" tooBig=%" PRId32" oldestfile=%.02fdays "
+		    "collnum=%" PRId32,
 		    i,n,ratio,adjratio,minr,mint,mini,
 		    prevSize , total ,(int32_t)tooBig,
 		    ((float)nowLocal-date)/(24*3600.0) ,
@@ -1791,7 +1791,7 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
  startMerge:
 	// sanity check
 	if ( n <= 1 && ! overide ) {
-		log(LOG_LOGIC,"merge: gotTokenForMerge: Not merging %"INT32" files.", n);
+		log(LOG_LOGIC,"merge: gotTokenForMerge: Not merging %" PRId32" files.", n);
 		return false; 
 	}
 
@@ -1804,8 +1804,8 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 	if ( cr ) coll = cr->m_coll;
 
 	// log merge parms
-	log(LOG_INFO,"merge: Merging %"INT32" %s files to file id %"INT32" now. "
-	    "collnum=%"INT32" coll=%s",
+	log(LOG_INFO,"merge: Merging %" PRId32" %s files to file id %" PRId32" now. "
+	    "collnum=%" PRId32" coll=%s",
 	    n,m_dbname,mergeFileId,(int32_t)m_collnum,coll);
 
 	// print out file info
@@ -1815,14 +1815,14 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 	      i < m_mergeStartFileNum + m_numFilesToMerge ; i++ ) {
 		m_numPos += m_maps[i]->getNumPositiveRecs();		
 		m_numNeg += m_maps[i]->getNumNegativeRecs();
-		log(LOG_INFO,"merge: %s (#%"INT32") has %"INT64" positive "
-		     "and %"INT64" negative records." , 
+		log(LOG_INFO,"merge: %s (#%" PRId32") has %" PRId64" positive "
+		     "and %" PRId64" negative records." ,
 		     m_files[i]->getFilename() ,
 		     i , 
 		     m_maps[i]->getNumPositiveRecs(),
 		     m_maps[i]->getNumNegativeRecs() );
 	}
-	log(LOG_INFO,"merge: Total positive = %"INT64" Total negative = %"INT64".",
+	log(LOG_INFO,"merge: Total positive = %" PRId64" Total negative = %" PRId64".",
 	     m_numPos,m_numNeg);
 
 	// assume we are now officially merging
@@ -2110,8 +2110,8 @@ bool RdbBase::verifyFileSharding ( ) {
 	char rdbId = m_rdb->m_rdbId;
 	if ( rdbId == RDB_TITLEDB ) minRecSizes = 640000;
 	
-	log ( "db: Verifying shard parity for %s of %"INT32" bytes "
-	      "for coll %s (collnum=%"INT32")...", 
+	log ( "db: Verifying shard parity for %s of %" PRId32" bytes "
+	      "for coll %s (collnum=%" PRId32")...",
 	      m_dbname , 
 	      minRecSizes,
 	      m_coll , (int32_t)m_collnum );
@@ -2168,7 +2168,7 @@ bool RdbBase::verifyFileSharding ( ) {
 		if ( ++printed > 100 ) continue;
 
 		// avoid log spam... comment this out. nah print out 1st 100.
-		log ( "db: Found bad key in list belongs to shard %"INT32"",
+		log ( "db: Found bad key in list belongs to shard %" PRId32,
 		      shardNum);
 	}
 
@@ -2180,7 +2180,7 @@ bool RdbBase::verifyFileSharding ( ) {
 
 	// tally it up
 	g_rebalance.m_numForeignRecs += count - got;
-	log ("db: Out of first %"INT32" records in %s for %s.%"INT32", only %"INT32" belong "
+	log ("db: Out of first %" PRId32" records in %s for %s.%" PRId32", only %" PRId32" belong "
 	     "to our group.",count,m_dbname,m_coll,(int32_t)m_collnum,got);
 
 	//log ( "db: Exiting due to Posdb inconsistency." );

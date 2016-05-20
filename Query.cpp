@@ -111,8 +111,8 @@ bool Query::set2 ( const char *query        ,
 
 	// truncate query if too big
 	if ( queryLen >= ABS_MAX_QUERY_LEN ) {
-		log("query: Query length of %"INT32" must be "
-		    "less than %"INT32". "
+		log("query: Query length of %" PRId32" must be "
+		    "less than %" PRId32". "
 		    "Truncating.",queryLen,(int32_t)ABS_MAX_QUERY_LEN);
 		queryLen = ABS_MAX_QUERY_LEN - 1;
 		m_truncated = true;
@@ -200,14 +200,14 @@ bool Query::set2 ( const char *query        ,
 			while ( is_digit(query[j]) ) j++;
 			char c = query[j];
 			if ( (c == 'a' || c == 'r') && query[j+1]==']' ) {
-				m_sb.safePrintf(" LeFtB %"INT32" %c RiGhB ",
+				m_sb.safePrintf(" LeFtB %" PRId32" %c RiGhB ",
 					  val,c);
 				i = j + 1;
 				continue;
 			}
 			else if ( (c == 'a' || c == 'r') && 
 				  query[j+1]=='p' && query[j+2]==']') {
-				m_sb.safePrintf(" LeFtB %"INT32" %cp RiGhB ",
+				m_sb.safePrintf(" LeFtB %" PRId32" %cp RiGhB ",
 				val,c);
 				i = j + 2;
 				continue;
@@ -300,7 +300,7 @@ bool Query::set2 ( const char *query        ,
 	// if they just hit the admin's ceiling, there's nothing we can do
 	if ( m_numTerms >= m_maxQueryTerms ) return true;
 	// a temp log message
-	log(LOG_DEBUG,"query: Encountered %"INT32" query terms.",m_numTerms);
+	log(LOG_DEBUG,"query: Encountered %" PRId32" query terms.",m_numTerms);
 
 	// otherwise, we're below m_maxQueryTerms BUT above MAX_QUERY_TERMS
 	// so we can use hard counts to get more power...
@@ -473,12 +473,12 @@ bool Query::setQTerms ( Words &words ) {
 		// stop breach
 		if ( n >= ABS_MAX_QUERY_TERMS ) {
 			log("query: lost query phrase terms to max term "
-			    "limit of %"INT32"",(int32_t)ABS_MAX_QUERY_TERMS );
+			    "limit of %" PRId32,(int32_t)ABS_MAX_QUERY_TERMS );
 			break;
 		}
 		if ( n >= m_maxQueryTerms ) {
 			log("query: lost query phrase terms to max term cr "
-			    "limit of %"INT32"",(int32_t)m_maxQueryTerms);
+			    "limit of %" PRId32,(int32_t)m_maxQueryTerms);
 			break;
 		}
 
@@ -565,12 +565,12 @@ bool Query::setQTerms ( Words &words ) {
 		// stop breach
 		if ( n >= ABS_MAX_QUERY_TERMS ) {
 			log("query: lost query terms to max term "
-			    "limit of %"INT32"",(int32_t)ABS_MAX_QUERY_TERMS );
+			    "limit of %" PRId32,(int32_t)ABS_MAX_QUERY_TERMS );
 			break;
 		}
 		if ( n >= m_maxQueryTerms ) {
 			log("query: lost query terms to max term cr "
-			    "limit of %"INT32"",(int32_t)m_maxQueryTerms);
+			    "limit of %" PRId32,(int32_t)m_maxQueryTerms);
 			break;
 		}
 
@@ -809,7 +809,7 @@ bool Query::setQTerms ( Words &words ) {
 			// stop breach
 			if ( n >= ABS_MAX_QUERY_TERMS ) {
 				log("query: lost synonyms due to max term "
-				    "limit of %"INT32"",
+				    "limit of %" PRId32,
 				    (int32_t)ABS_MAX_QUERY_TERMS );
 				break;
 			}
@@ -818,7 +818,7 @@ bool Query::setQTerms ( Words &words ) {
 
 			if ( n >= m_maxQueryTerms ) {
 				log("query: lost synonyms due to max cr term "
-				    "limit of %"INT32"",
+				    "limit of %" PRId32,
 				    (int32_t)m_maxQueryTerms);
 				break;
 			}
@@ -1222,7 +1222,7 @@ bool Query::setQWords ( char boolFlag ,
 	int32_t numWords = words.getNumWords();
 	// truncate it
 	if ( numWords > ABS_MAX_QUERY_WORDS ) {
-		log("query: Had %"INT32" words. Max is %"INT32". Truncating.",
+		log("query: Had %" PRId32" words. Max is %" PRId32". Truncating.",
 		    numWords,(int32_t)ABS_MAX_QUERY_WORDS);
 		numWords = ABS_MAX_QUERY_WORDS;
 		m_truncated = true;
@@ -1509,7 +1509,7 @@ bool Query::setQWords ( char boolFlag ,
 			if   ( inQuotes && i+1< numWords ) quoteStart =  i+1;
 			else                               quoteStart = -1;
 		}
-		//log(LOG_DEBUG, "Query: nq: %"INT32" inQuotes: %d,quoteStart: %"INT32"",
+		//log(LOG_DEBUG, "Query: nq: %" PRId32" inQuotes: %d,quoteStart: %" PRId32,
 		//    nq, inQuotes, quoteStart);
 		// does word #i have a space in it? that will cancel fieldCode
 		// if we were in a field
@@ -3150,16 +3150,16 @@ void Query::dumpToLog() const
 		log("  %d",i);
 		log("    word='%*.*s'", (int)qw.m_wordLen, (int)qw.m_wordLen, qw.m_word);
 		log("    phrase='%*.*s'", (int)qw.m_phraseLen, (int)qw.m_phraseLen, qw.m_word);
-		log("    m_wordId=%"PRId64, qw.m_wordId);
-		log("    m_phraseId=%"PRId64, qw.m_phraseId);
+		log("    m_wordId=%" PRId64, qw.m_wordId);
+		log("    m_phraseId=%" PRId64, qw.m_phraseId);
 	}
 	log("Query:setQTerms: dumping %d query-terms:", m_numTerms);
 	for(int i=0; i<m_numTerms; i++) {
 		const QueryTerm &qt = m_qterms[i];
 		log("%d",i);
 		log("  m_isPhrase=%s", qt.m_isPhrase?"true":"false");
-		log("  m_termId=%"PRId64, qt.m_termId);
-		log("  m_rawTermId=%"PRId64, qt.m_rawTermId);
+		log("  m_termId=%" PRId64, qt.m_termId);
+		log("  m_rawTermId=%" PRId64, qt.m_rawTermId);
 		log("  m_term='%*.*s'", (int)qt.m_termLen, (int)qt.m_termLen, qt.m_term);
 		log("  m_isWikiHalfStopBigram=%s", qt.m_isWikiHalfStopBigram?"true":"false");
 		log("  m_leftPhraseTermNum=%d, m_leftPhraseTerm=%p", qt.m_leftPhraseTermNum, (void*)qt.m_leftPhraseTerm);
