@@ -192,8 +192,8 @@ void RdbTree::delColl ( collnum_t collnum ) {
 	//key_t endKey;
 	//startKey.setMin();
 	//endKey.setMax();
-	char *startKey = KEYMIN();
-	char *endKey   = KEYMAX();
+	const char *startKey = KEYMIN();
+	const char *endKey   = KEYMAX();
 	deleteNodes ( collnum , startKey , endKey , true/*freeData*/) ;
 }
 

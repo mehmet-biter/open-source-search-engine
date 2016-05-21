@@ -1270,7 +1270,7 @@ bool Rdb::dumpCollLoop ( ) {
 
 	// before we create the file, see if tree has anything for this coll
 	if(m_useTree) {
-		char *k = KEYMIN();
+		const char *k = KEYMIN();
 		int32_t nn = m_tree.getNextNode ( m_dumpCollnum , k );
 		if ( nn < 0 ) goto loop;
 		if ( m_tree.m_collnums[nn] != m_dumpCollnum ) goto loop;

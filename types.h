@@ -858,7 +858,7 @@ static inline void KEYMAX ( char *k, char keySize ) {
 	for ( int32_t i = 0 ; i < keySize ; i++ ) k[i]=(char)0xff;
 }
 
-static inline char *KEYMIN() { return  "\0\0\0\0"
+static inline const char *KEYMIN() { return  "\0\0\0\0"
 			 "\0\0\0\0"
 			 "\0\0\0\0"
 			 "\0\0\0\0"
@@ -866,7 +866,7 @@ static inline char *KEYMIN() { return  "\0\0\0\0"
 			 "\0\0\0\0"
 			 "\0\0\0\0"
 			 "\0\0\0\0"; }
-static inline char *KEYMAX() {
+static inline const char *KEYMAX() {
 	static int s_foo[] = {
 		(int)0xffffffff ,
 	        (int)0xffffffff ,

@@ -1452,8 +1452,8 @@ bool RdbMap::generateMap ( BigFile *f ) {
 	//key_t startKey;
 	//endKey.setMax();
 	//startKey.setMin();
-	char *startKey = KEYMIN();
-	char *endKey   = KEYMAX();
+	const char *startKey = KEYMIN();
+	const char *endKey   = KEYMAX();
 	// a rec needs to be at least this big
 	int32_t minRecSize = 0;
 	// negative keys do not have the dataSize field... so undo this
