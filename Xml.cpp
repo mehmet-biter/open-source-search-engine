@@ -21,7 +21,7 @@ Xml::~Xml () {
 }
 
 // . for parsing xml conf files
-int32_t Xml::getLong ( int32_t n0 , int32_t n1 , char *tagName , int32_t defaultLong ) {
+int32_t Xml::getLong ( int32_t n0, int32_t n1, const char *tagName, int32_t defaultLong ) {
 	int32_t len;
 	char *s = getTextForXmlTag ( n0 , n1 , tagName , &len , false );
 	if ( s ) return atol2 ( s , len );
@@ -29,7 +29,7 @@ int32_t Xml::getLong ( int32_t n0 , int32_t n1 , char *tagName , int32_t default
 	return defaultLong;
 }
 
-char *Xml::getString ( int32_t n0 , int32_t n1 , char *tagName, int32_t *len ,
+char *Xml::getString ( int32_t n0, int32_t n1, const char *tagName, int32_t *len ,
 		       bool skipLeadingSpaces ) const {
 	char *s = getTextForXmlTag ( n0, n1, tagName, len, skipLeadingSpaces );
 	if ( s ) return s;
@@ -40,7 +40,7 @@ char *Xml::getString ( int32_t n0 , int32_t n1 , char *tagName, int32_t *len ,
 // . used by getValueAsBool/Long/String()
 // . tagName is compound for xml tags, simple for html tags
 // . NOTE: we skip over leading spaces
-char *Xml::getTextForXmlTag ( int32_t n0 , int32_t n1 , char *tagName , int32_t *len ,
+char *Xml::getTextForXmlTag ( int32_t n0, int32_t n1, const char *tagName, int32_t *len,
 			      bool skipLeadingSpaces ) const {
 	// assume len is 0
 	*len = 0;
@@ -762,7 +762,7 @@ int32_t Xml::getText( char *buf, int32_t bufMaxSize, int32_t node1, int32_t node
 }
 
 // just get a pointer to it
-char *Xml::getMetaContentPointer( char *field, int32_t fieldLen, char *name, int32_t *slen ) {
+char *Xml::getMetaContentPointer( const char *field, int32_t fieldLen, const char *name, int32_t *slen ) {
 	// find the first meta summary node
 	for ( int32_t i = 0 ; i < m_numNodes ; i++ ) {
 		// continue if not a meta tag

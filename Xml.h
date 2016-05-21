@@ -99,9 +99,9 @@ public:
 	// . "tagName" is always compound
 	// . only searches nodes in [n0,n1] node range
 
-	int32_t getLong( int32_t n0, int32_t n1, char *tagName, int32_t defaultLong = 0 );
+	int32_t getLong( int32_t n0, int32_t n1, const char *tagName, int32_t defaultLong = 0 );
 
-	char *getString( int32_t n0, int32_t n1, char *tagName, int32_t *len,
+	char *getString( int32_t n0, int32_t n1, const char *tagName, int32_t *len,
 					 bool skipLeadingSpaces = true ) const;
 
 	// like above routines but we search all nodes
@@ -109,7 +109,7 @@ public:
 		return getLong( 0, m_numNodes, tagName, defaultLong );
 	}
 
-	char *getString( char *tagName, int32_t *len, bool skipLeadingSpaces = true ) const {
+	char *getString( const char *tagName, int32_t *len, bool skipLeadingSpaces = true ) const {
 		return getString( 0, m_numNodes, tagName, len, skipLeadingSpaces );
 	}
 
@@ -141,7 +141,7 @@ public:
 							int32_t startNode = 0, int32_t *matchedNode = NULL );
 
 	// just get a pointer to it
-	char *getMetaContentPointer( char *field, int32_t fieldLen, char *name = "name", int32_t *len = NULL );
+	char *getMetaContentPointer( const char *field, int32_t fieldLen, const char *name = "name", int32_t *len = NULL );
 
 	// . filters out tags (uses html entities) and stores in "buf"
 	// . replaces "line breaking" html tags with 2 returns
@@ -164,7 +164,7 @@ public:
 
 	// . used by getValueAsBool/Long/String()
 	// . tagName is compound for xml tags, simple for html tags
-	char *getTextForXmlTag( int32_t n0, int32_t n1, char *tagName, int32_t *len,
+	char *getTextForXmlTag( int32_t n0, int32_t n1, const char *tagName, int32_t *len,
 							bool skipLeadingSpaces ) const;
 
 private:
