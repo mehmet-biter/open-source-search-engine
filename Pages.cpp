@@ -14,7 +14,7 @@
 Pages g_pages;
 
 // error message thingy used by HttpServer.cpp for logging purposes
-char *g_msg;
+const char *g_msg;
 
 // . list of all dynamic pages, their path names, permissions and callback
 //   functions that generate that page

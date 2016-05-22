@@ -29,7 +29,7 @@ bool printRedBox  ( SafeBuf *mb ,
 #define DARKEST_BLUE  "8080f0"
 #define TABLE_STYLE " style=\"border-radius:10px;border:#6060f0 2px solid;\" width=100% bgcolor=#a0a0f0 cellpadding=4 border=0 "
 
-extern char *g_msg;
+extern const char *g_msg;
 
 // . declare all dynamic functions here
 // . these are all defined in Page*.cpp files
