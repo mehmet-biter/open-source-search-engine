@@ -20,7 +20,6 @@ const char *g_msg;
 //   functions that generate that page
 // . IMPORTANT: these must be in the same order as the PAGE_* enum in Pages.h
 //   otherwise you'll get a malformed error when running
-static int32_t s_numPages = 0;
 static WebPage s_pages[] = {
 	// publicly accessible pages
 	{ PAGE_ROOT      , "index.html"    , 0 , "root" , 0 , 0 ,
@@ -247,6 +246,7 @@ static WebPage s_pages[] = {
 	  PG_NOAPI|PG_ACTIVE},
 
 };
+static const int32_t s_numPages = sizeof(s_pages) / sizeof(WebPage);
 
 const WebPage *Pages::getPage ( int32_t page ) {
 	if ( page < PAGE_ROOT || page >= PAGE_NONE ) {
@@ -261,8 +261,6 @@ const char *Pages::getPath ( int32_t page ) {
 }
 
 void Pages::init ( ) {
-	// array of dynamic page descriptions
-	s_numPages = sizeof(s_pages) / sizeof(WebPage);
 	// sanity check, ensure PAGE_* corresponds to position
 	for ( int32_t i = 0 ; i < s_numPages ; i++ ) 
 		if ( s_pages[i].m_pageNum != i ) {
