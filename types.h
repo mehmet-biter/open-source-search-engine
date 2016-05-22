@@ -867,7 +867,7 @@ static inline const char *KEYMIN() { return  "\0\0\0\0"
 			 "\0\0\0\0"
 			 "\0\0\0\0"; }
 static inline const char *KEYMAX() {
-	static int s_foo[] = {
+	static const int s_foo[] = {
 		(int)0xffffffff ,
 	        (int)0xffffffff ,
 		(int)0xffffffff ,
@@ -877,7 +877,7 @@ static inline const char *KEYMAX() {
 		(int)0xffffffff ,
 		(int)0xffffffff
 	};
-	return (char *)s_foo;
+	return (const char *)s_foo;
 }
 
 
