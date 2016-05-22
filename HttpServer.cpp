@@ -858,7 +858,7 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 		//CollectionRec *cr = g_collectiondb.getRec ( r );
 		//printApiForPage ( &sb , n , cr );
 		// xml/json header
-		char *res = NULL;
+		const char *res = NULL;
 		if ( format == FORMAT_XML )
 			res = "<response>\n"
 				"\t<statusCode>0</statusCode>\n"
@@ -880,7 +880,7 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 			res = "\t}\n}\n";
 		if ( res )
 			sb.safeStrcpy ( res );
-		char *ct = "text/html";
+		const char *ct = "text/html";
 		if ( format == FORMAT_JSON ) ct = "application/json";
 		if ( format == FORMAT_XML  ) ct = "text/xml";
 		return g_httpServer.sendDynamicPage(s,
@@ -1054,7 +1054,7 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 	if ( offset > 0 || bytesToSend != fileSize ) partialContent = true;
 	// . use the file extension to determine content type
 	// . default to html if no extension
-	char *ext = f->getExtension();
+	const char *ext = f->getExtension();
 	// . generate our mime header
 	// . see http://www.vbip.com/winsock/winsock_http_08_01.asp
 	// . this will do a "partial content" mime if offset!=0||size!=-1
@@ -1070,7 +1070,7 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 	if ( strncmp(path,"/diskGraph",10) == 0 ) ct = 0;
 
 	// if no extension assume charset utf8
-	char *charset = NULL;
+	const char *charset = NULL;
 	if ( ! ext || ext[0] == 0 ) charset = "utf-8";
 
 	if ( isQAFile ) ext = "txt";
@@ -1371,7 +1371,7 @@ bool HttpServer::sendSuccessReply ( TcpSocket *s , char format, const char *addM
 	char *tt = asctime(gmtime ( &now ));
 	tt [ gbstrlen(tt) - 1 ] = '\0';
 
-	char *ct = "text/html";
+	const char *ct = "text/html";
 	if ( format == FORMAT_XML  ) ct = "text/xml";
 	if ( format == FORMAT_JSON ) ct = "application/json";
 
@@ -1443,7 +1443,7 @@ bool HttpServer::sendErrorReply ( GigablastRequest *gr ) {
 	char *tt = asctime(gmtime ( &now ));
 	tt [ gbstrlen(tt) - 1 ] = '\0';
 
-	char *ct = "text/html";
+	const char *ct = "text/html";
 	if ( format == FORMAT_XML  ) ct = "text/xml";
 	if ( format == FORMAT_JSON ) ct = "application/json";
 
@@ -1535,7 +1535,7 @@ bool HttpServer::sendErrorReply ( TcpSocket *s , int32_t error , const char *err
 	char *tt = asctime(gmtime ( &now ));
 	tt [ gbstrlen(tt) - 1 ] = '\0';
 
-	char *ct = "text/html";
+	const char *ct = "text/html";
 	if ( format == FORMAT_XML  ) ct = "text/xml";
 	if ( format == FORMAT_JSON ) ct = "application/json";
 
@@ -2545,8 +2545,8 @@ bool sendPagePretty ( TcpSocket *s ,
 	// done
 	sb.safePrintf("\n</html>");
 
-	char *charset = "utf-8";
-	char *ct = "text/html";
+	const char *charset = "utf-8";
+	const char *ct = "text/html";
 	g_httpServer.sendDynamicPage ( s      , 
 				       sb.getBufStart(), 
 				       sb.length(), 

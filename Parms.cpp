@@ -11492,7 +11492,7 @@ bool Parms::convertHttpRequestToParmList (HttpRequest *hr, SafeBuf *parmList,
 		// get cgi parm name
 		char *field = hr->getField    ( i );
 		// get value of the cgi field
-		char *val  = hr->getValue   (i);
+		const char *val  = hr->getValue   (i);
 
 		// get the occurence # if its regex. this is the row #
 		// in the url filters table, since those parms repeat names.

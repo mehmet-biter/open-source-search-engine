@@ -899,7 +899,7 @@ bool printGigabotAdvice ( SafeBuf *sb ,
 
 	// gradient class
 	// yellow box
-	char *box = 
+	const char *box =
 		"<table cellpadding=5 "
 		// full width of enclosing div
 		"width=100%% "
@@ -911,10 +911,10 @@ bool printGigabotAdvice ( SafeBuf *sb ,
 		"border=0"
 		">"
 		"<tr><td>";
-	char *boxEnd =
+	const char *boxEnd =
 		"</td></tr></table>";
 
-	char *advice = NULL;
+	const char *advice = NULL;
 #ifndef PRIVACORE_SAFE_VERSION
 	if ( page == PAGE_ADDCOLL )
 		advice =
@@ -1160,10 +1160,10 @@ bool Pages::printHostLinks ( SafeBuf* sb     ,
 		// use the ip that is not dead, prefer eth0
 		uint32_t ip = g_hostdb.getBestIp ( h , fromIp );
 		// convert our current page number to a path
-		char *path = s_pages[page].m_filename;
+		const char *path = s_pages[page].m_filename;
 		// highlight itself
-		char *ft = "";
-		char *bt = "";
+		const char *ft = "";
+		const char *bt = "";
 		if ( i == hid && ! g_proxy.isProxy() ) {
 			ft = "<b><font color=red>";
 			bt = "</font></b>";
@@ -1178,8 +1178,8 @@ bool Pages::printHostLinks ( SafeBuf* sb     ,
 
 	// print the proxies
 	for ( int32_t i = 0; i < g_hostdb.m_numProxyHosts; i++ ) {
-		char *ft = "";
-		char *bt = "";
+		const char *ft = "";
+		const char *bt = "";
 		if ( i == hid && g_proxy.isProxy() ) {
 			ft = "<b><font color=red>";
 			bt = "</font></b>";
@@ -1188,7 +1188,7 @@ bool Pages::printHostLinks ( SafeBuf* sb     ,
 		uint16_t port = h->m_httpPort;
 		// use the ip that is not dead, prefer eth0
 		uint32_t ip = g_hostdb.getBestIp ( h , fromIp );
-		char *path = s_pages[page].m_filename;
+		const char *path = s_pages[page].m_filename;
 		sb->safePrintf("%s<a href=\"http://%s:%hu/%s?"
 			       "c=%s%s\">"
 			       "proxy%" PRId32"</a>%s ",
@@ -1336,7 +1336,7 @@ bool Pages::printCollectionNavBar ( SafeBuf *sb, int32_t page, const char *coll,
 	while ( b < g_collectiondb.m_numRecs && countb < 16 )
 		if ( g_collectiondb.m_recs[b++] ) countb++;
 
-	char *s = "s";
+	const char *s = "s";
 	if ( g_collectiondb.m_numRecsUsed == 1 ) s = "";
 
 	bool isMasterAdmin = g_conf.isMasterAdmin ( sock , hr );
@@ -1377,7 +1377,7 @@ bool Pages::printCollectionNavBar ( SafeBuf *sb, int32_t page, const char *coll,
 
 #endif
 
-	char *color = "red";
+	const char *color = "red";
 
 	// style for printing collection names
 	sb->safePrintf("<style>.x{text-decoration:none;font-weight:bold;}"
@@ -1411,7 +1411,7 @@ bool Pages::printCollectionNavBar ( SafeBuf *sb, int32_t page, const char *coll,
 		// count it
 		numPrinted++;
 
-		char *cname = cc->m_coll;
+		const char *cname = cc->m_coll;
 
 		row++;
 
@@ -1430,7 +1430,7 @@ bool Pages::printCollectionNavBar ( SafeBuf *sb, int32_t page, const char *coll,
 		//       like timeouts etc.
 
 		CrawlInfo *ci = &cc->m_globalCrawlInfo;
-		char *bcolor = "";
+		const char *bcolor = "";
 		if ( ! cc->m_spideringEnabled && ci->m_hasUrlsReadyToSpider )
 			bcolor = "orange";// yellow is too hard to see
 		if (   cc->m_spideringEnabled && ci->m_hasUrlsReadyToSpider )
@@ -1480,7 +1480,7 @@ bool Pages::printCollectionNavBar ( SafeBuf *sb, int32_t page, const char *coll,
 
 	// convert our current page number to a path
 	if ( printMsg ) {
-		char *path = s_pages[page].m_filename;
+		const char *path = s_pages[page].m_filename;
 		sb->safePrintf("<a href=\"/%s?c=%s&showall=1\">"
 			       "...show all...</a><br>"
 			       , path , coll );
@@ -1500,7 +1500,7 @@ bool sendPageAPI ( TcpSocket *s , HttpRequest *r ) {
 	SafeBuf p(pbuf, 32768);
 
 	CollectionRec *cr = g_collectiondb.getRec ( r , true );
-	char *coll = "";
+	const char *coll = "";
 	if ( cr ) coll = cr->m_coll;
 
 	p.safePrintf("<html><head><title>Gigablast API</title></head><body>");
@@ -1529,7 +1529,7 @@ bool sendPageAPI ( TcpSocket *s , HttpRequest *r ) {
 
 	for ( int32_t i = 0 ; i < s_numPages ; i++ ) {
 		if ( s_pages[i].m_pgflags & PG_NOAPI ) continue;
-		char *pageStr = s_pages[i].m_filename;
+		const char *pageStr = s_pages[i].m_filename;
 		// unknown?
 		if ( ! pageStr ) pageStr = "???";
 		p.safePrintf("<li> <a href=#/%s>/%s</a>"
@@ -1578,7 +1578,7 @@ bool printApiForPage ( SafeBuf *sb , int32_t PAGENUM , CollectionRec *cr ) {
 		return true;
 	}
 
-	char *pageStr = s_pages[PAGENUM].m_filename;
+	const char *pageStr = s_pages[PAGENUM].m_filename;
 	
 	// unknown?
 	if ( ! pageStr ) pageStr = "???";
@@ -1648,7 +1648,7 @@ bool printApiForPage ( SafeBuf *sb , int32_t PAGENUM , CollectionRec *cr ) {
 			, TABLE_STYLE
 			, DARK_BLUE );
 	
-	const char *blues[] = {DARK_BLUE,LIGHT_BLUE};
+	static const char * const blues[] = {DARK_BLUE,LIGHT_BLUE};
 	int32_t count = 1;
 
 	//
@@ -1820,7 +1820,7 @@ bool printApiForPage ( SafeBuf *sb , int32_t PAGENUM , CollectionRec *cr ) {
 
 	sb->safePrintf("<pre style=max-width:500px;>\n");
 
-	char *get = "<html><title>Some web page title</title>"
+	const char *get = "<html><title>Some web page title</title>"
 		"<head>My first web page</head></html>";
 
 	// example output in xml
@@ -2403,10 +2403,10 @@ bool sendPageLogin ( TcpSocket *socket , HttpRequest *hr ) {
 	// if they had an original destination, redirect there NOW
 	WebPage *pagePtr = g_pages.getPage(refPage);
 
-	char *ep = emsg.getBufStart();
+	const char *ep = emsg.getBufStart();
 	if ( !ep ) ep = "";
 
-	char *ff = "admin/settings";
+	const char *ff = "admin/settings";
 	if ( pagePtr ) ff = pagePtr->m_filename;
 	
 	sb.safePrintf(
@@ -2472,7 +2472,7 @@ bool printRedBox ( SafeBuf *mb , TcpSocket *sock , HttpRequest *hr ) {
 
 	PingServer *ps = &g_pingServer;
 
-	char *box = 
+	const char *box = 
 		"<table cellpadding=5 "
 		// full width of enclosing div
 		"width=100%% "
@@ -2485,7 +2485,7 @@ bool printRedBox ( SafeBuf *mb , TcpSocket *sock , HttpRequest *hr ) {
 		"border=0"
 		">"
 		"<tr><td>";
-	char *boxEnd =
+	const char *boxEnd =
 		"</td></tr></table>";
 
 	int32_t adds = 0;
@@ -2535,7 +2535,7 @@ bool printRedBox ( SafeBuf *mb , TcpSocket *sock , HttpRequest *hr ) {
 
 	CollectionRec *cr = g_collectiondb.getRec ( hr );
 
-	char *coll = "";
+	const char *coll = "";
 	if ( cr ) coll = cr->m_coll;
 
 	if ( cr &&
@@ -2569,7 +2569,7 @@ bool printRedBox ( SafeBuf *mb , TcpSocket *sock , HttpRequest *hr ) {
 	if ( out > 0 ) {
 		if ( adds ) mb->safePrintf("<br>");
 		adds++;
-		char *s = "s are";
+		const char *s = "s are";
 		if ( out == 1 ) s = " is";
 		mb->safePrintf("%s",box);
 		mb->safePrintf("%" PRId32" host%s over 98%% disk usage. "
@@ -2634,7 +2634,7 @@ bool printRedBox ( SafeBuf *mb , TcpSocket *sock , HttpRequest *hr ) {
 	if ( jammedHosts > 0 ) {
 		if ( adds ) mb->safePrintf("<br>");
 		adds++;
-		char *s = "s are";
+		const char *s = "s are";
 		if ( out == 1 ) s = " is";
 		mb->safePrintf("%s",box);
 		mb->safePrintf("%" PRId32" host%s jammed with "
@@ -2672,7 +2672,7 @@ bool printRedBox ( SafeBuf *mb , TcpSocket *sock , HttpRequest *hr ) {
 		mb->safePrintf("%s",boxEnd);
 	}
 	// if any host had foreign recs, not that
-	char *needsRebalance = g_rebalance.getNeedsRebalance();
+	const char *needsRebalance = g_rebalance.getNeedsRebalance();
 	if ( ! g_rebalance.m_isScanning &&
 	     needsRebalance &&
 	     *needsRebalance ) {
@@ -2697,7 +2697,7 @@ bool printRedBox ( SafeBuf *mb , TcpSocket *sock , HttpRequest *hr ) {
 		adds++;
 		mb->safePrintf("%s",box);
 
-		char *ff = "admin/settings";
+		const char *ff = "admin/settings";
 		if ( wp ) ff = wp->m_filename;
 
 		mb->safePrintf("You have no write access to these "
@@ -2726,7 +2726,7 @@ bool printRedBox ( SafeBuf *mb , TcpSocket *sock , HttpRequest *hr ) {
 	if ( ps->m_numHostsDead ) {
 		if ( adds ) mb->safePrintf("<br>");
 		adds++;
-		char *s = "hosts are";
+		const char *s = "hosts are";
 		if ( ps->m_numHostsDead == 1 ) s = "host is";
 		mb->safePrintf("%s",box);
 		mb->safePrintf("%" PRId32" %s dead and not responding to "
