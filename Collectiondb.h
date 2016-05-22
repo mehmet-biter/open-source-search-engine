@@ -86,9 +86,9 @@ class Collectiondb  {
 	// what collnum will be used the next time a coll is added?
 	collnum_t reserveCollNum ( ) ;
 
-	bool addExistingColl ( char *coll, collnum_t collnum );
+	bool addExistingColl ( const char *coll, collnum_t collnum );
 
-	bool addNewColl( char *coll, char customCrawl, bool saveIt, collnum_t newCollnum ) ;
+	bool addNewColl( const char *coll, char customCrawl, bool saveIt, collnum_t newCollnum ) ;
 
 	bool registerCollRec ( CollectionRec *cr ,  bool isNew ) ;
 
@@ -252,7 +252,7 @@ class CollectionRec {
 	bool      save ();
 	bool      m_needsSave;
 
-	bool      load ( char *coll , int32_t collNum ) ;
+	bool      load ( const char *coll , int32_t collNum ) ;
 	void reset();
 
 	// for customcrawls

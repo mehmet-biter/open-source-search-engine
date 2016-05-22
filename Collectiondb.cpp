@@ -185,7 +185,7 @@ bool Collectiondb::cleanTrees ( ) {
 #include "Statsdb.h"
 
 // same as addOldColl()
-bool Collectiondb::addExistingColl ( char *coll, collnum_t collnum ) {
+bool Collectiondb::addExistingColl ( const char *coll, collnum_t collnum ) {
 
 	int32_t i = collnum;
 
@@ -294,7 +294,7 @@ bool Collectiondb::addExistingColl ( char *coll, collnum_t collnum ) {
 //   code is. like for instance, posdb.
 // . "customCrawl" is 0 for a regular collection, 1 for a simple crawl
 //   2 for a bulk job. diffbot terminology.
-bool Collectiondb::addNewColl ( char *coll, char customCrawl, bool saveIt,
+bool Collectiondb::addNewColl ( const char *coll, char customCrawl, bool saveIt,
 				// Parms.cpp reserves this so it can be sure
 				// to add the same collnum to every shard
 				collnum_t newCollnum ) {
@@ -302,7 +302,7 @@ bool Collectiondb::addNewColl ( char *coll, char customCrawl, bool saveIt,
 	// just return ETRYAGAIN for the parmlist...
 
 	// ensure coll name is legit
-	char *p = coll;
+	const char *p = coll;
 	for ( ; *p ; p++ ) {
 		if ( is_alnum_a(*p) ) continue;
 		if ( *p == '-' ) continue;
@@ -1346,7 +1346,7 @@ void CollectionRec::reset() {
 //   collection config file. if it does not have them then we use
 //   the value we received from call to setToDefaults()
 // . returns false and sets g_errno on load error
-bool CollectionRec::load ( char *coll , int32_t i ) {
+bool CollectionRec::load ( const char *coll , int32_t i ) {
 	// also reset some counts not included in parms list
 	reset();
 	// before we load, set to defaults in case some are not in xml file
