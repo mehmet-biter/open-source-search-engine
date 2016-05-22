@@ -804,7 +804,7 @@ void HttpMime::makeMime  ( int32_t    totalContentLen    ,
 	// . also use cache-control: for the browser itself (HTTP1.1, though)
 	// . pns = "Pragma: no-cache\nCache-Control: no-cache\nExpires: -1\n";
 	char tmp[128];
-	char *pns ;
+	const char *pns;
 	// with cache-control on, when you hit the back button, it reloads
 	// the page, this is bad for most things... so we only avoid the
 	// cache for index.html and PageAddUrl.cpp (the main and addurl page)
@@ -828,7 +828,7 @@ void HttpMime::makeMime  ( int32_t    totalContentLen    ,
 	// . set httpStatus
 	// . a reply to a POST (not a GET or HEAD) should be 201
 	char *p = m_buf;
-	char *smsg = "";
+	const char *smsg = "";
 	if ( POSTReply ) {
 		if ( httpStatus == -1 ) httpStatus = 200;
 		if ( httpStatus == 200 ) smsg = " OK";
@@ -952,7 +952,7 @@ void HttpMime::makeMime  ( int32_t    totalContentLen    ,
 //------------------------------------
 
 // set hash table
-static char *s_ext[] = {
+static const char * const s_ext[] = {
       "ai" , "application/postscript",
      "aif" , "audio/x-aiff",
     "aifc" , "audio/x-aiff",

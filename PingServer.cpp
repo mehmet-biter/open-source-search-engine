@@ -507,7 +507,7 @@ void gotReplyWrapperP ( void *state , UdpSlot *slot ) {
 		}
 		//*pingPtr = g_conf.m_deadHostTimeout;
 		if ( h->m_wasAlive ) {
-                        char *buf = "Host";
+                        const char *buf = "Host";
                         if(h->m_isProxy)
                                 buf = "Proxy";
 			log("net: %s #%" PRId32" ip=%s is dead. Has not responded to "
@@ -1062,7 +1062,7 @@ bool PingServer::sendEmail ( Host *h            ,
 		// mark him as in progress
 		h->m_emailCode = -4;
 		// a host or proxy?
-		char *nm = "Host";
+		const char *nm = "Host";
 		if ( h->m_isProxy ) nm = "Proxy";
 		// note it in the log
 		if ( oom ) 
@@ -1084,7 +1084,7 @@ bool PingServer::sendEmail ( Host *h            ,
 		Host *h0 = g_hostdb.getHost ( 0 );
 		int32_t ip0 = 0;
 		if ( h0 ) ip0 = h0->m_ip;
-		char *desc = "dead";
+		const char *desc = "dead";
 		if ( oom ) desc = "out of memory";
 		else if ( kernelErrors ) desc = "having kernel errors";
 		sprintf ( msgbuf , "%s %s %" PRId32" is %s. cluster=%s (%s)",
@@ -1582,7 +1582,7 @@ void updatePingTime ( Host *h , int32_t *pingPtr , int32_t tripTime ) {
 	     gettimeofdayInMillisecondsLocal()-g_process.m_processStartTime>=
 	     60000 ) {
 		h->m_pingMax = tripTime;
-		char *desc = "";
+		const char *desc = "";
 		if ( pingPtr == &h->m_pingShotgun ) desc = " (shotgun)";
 		if ( tripTime > 50 )
 			log("gb: got new max ping time of %" PRId32" for "
@@ -1897,10 +1897,10 @@ bool sendEmailThroughMandrill ( class EmailInfo *ei ) {
 	//
 	// post data
 	//
-	char *to = ei->m_toAddress.getBufStart();
-	char *from = ei->m_fromAddress.getBufStart();
+	const char *to = ei->m_toAddress.getBufStart();
+	const char *from = ei->m_fromAddress.getBufStart();
 
-	char *crawl = "unknown2";
+	const char *crawl = "unknown2";
 	CollectionRec *cr = g_collectiondb.m_recs[ei->m_collnum];
 	if ( cr ) crawl = cr->m_diffbotCrawlName.getBufStart();
 
@@ -1944,7 +1944,7 @@ bool sendEmailThroughMandrill ( class EmailInfo *ei ) {
 	sb.nullTerm();
 
 	// set it
-	char *needle = "Content-Length: ";
+	const char *needle = "Content-Length: ";
 	int32_t needleLen = gbstrlen(needle);
 	char *s = strstr(sb.getBufStart(),needle);
 	s += needleLen;
@@ -2037,9 +2037,9 @@ bool sendNotification ( EmailInfo *ei ) {
 	// caller must set this, as well as m_finalCallback/m_finalState
 	CollectionRec *cr = g_collectiondb.m_recs[ei->m_collnum];
 
-	char *email = "";
+	const char *email = "";
 	char *url   = "";
-	char *crawl = "unknown2";
+	const char *crawl = "unknown2";
 
 	if ( cr ) email = cr->m_notifyEmail.getBufStart();
 	if ( cr ) url   = cr->m_notifyUrl.getBufStart();

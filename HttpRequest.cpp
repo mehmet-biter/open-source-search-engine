@@ -1497,7 +1497,7 @@ bool HttpRequest::getCurrentUrl ( SafeBuf &cu ) {
 	cu.safePrintf("http");
 	if ( m_isSSL ) cu.pushChar('s');
 	cu.safePrintf("://%s",host);
-	char *path = m_path;
+	const char *path = m_path;
 	int32_t  plen = m_plen;
 	if ( ! path ) {
 		path = "/";
@@ -1506,8 +1506,8 @@ bool HttpRequest::getCurrentUrl ( SafeBuf &cu ) {
 	// . scan path and change \0 back to = or &
 	// . similar logic in HttpServer.cpp for logging!
 	char *dst = cu.getBuf();
-	char *src = path;
-	char *srcEnd = path + plen;
+	const char *src = path;
+	const char *srcEnd = path + plen;
 	char dd = '=';
 	for ( ; src < srcEnd ; src++ , dst++ ) {
 		*dst = *src;

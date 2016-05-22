@@ -742,7 +742,7 @@ again:
 		// debug msg
 		if ( g_conf.m_logDebugDisk ) {
 			File *f = s_filePtrs [ fd ];
-			char *fname = "";
+			const char *fname = "";
 			if ( f ) fname = f->getFilename();
 			logf(LOG_DEBUG,"disk: force closed fd %i for"
 			     " %s. age=%" PRId64" #openfiles=%i this=0x%" PTRFMT,

@@ -1341,7 +1341,7 @@ void gotIpWrapper ( void *state , UdpSlot *slot ) {
 void returnIp ( DnsState *ds , int32_t ip ) {
 	// ok, we got the final answer at this point
 	// debug msg
-	char *pre = "";
+	const char *pre = "";
 	if ( ip == 0 ) pre = " [NXDOMAIN]";
 	if ( ip == -1 ) pre = " [DNSTIMEDOUT|SERVFAIL]";
 	if ( g_conf.m_logDebugDns ) {
