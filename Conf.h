@@ -44,7 +44,7 @@ class Conf {
 	Conf();
 
 	bool isCollAdmin ( TcpSocket *socket , HttpRequest *hr ) ;
-	bool isCollAdminForColl (TcpSocket *sock, HttpRequest *hr,char *coll );
+	bool isCollAdminForColl (TcpSocket *sock, HttpRequest *hr, const char *coll );
 	bool isCollAdmin2 (TcpSocket *socket , HttpRequest *hr,
 			   class CollectionRec *cr) ;
 

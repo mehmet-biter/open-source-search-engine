@@ -64,7 +64,7 @@ bool Conf::isCollAdmin ( TcpSocket *sock , HttpRequest *hr ) {
 
 }
 
-bool Conf::isCollAdminForColl ( TcpSocket *sock, HttpRequest *hr, char *coll ) {
+bool Conf::isCollAdminForColl ( TcpSocket *sock, HttpRequest *hr, const char *coll ) {
 	CollectionRec *cr = g_collectiondb.getRec ( coll );
 
 	if ( ! cr ) return false;

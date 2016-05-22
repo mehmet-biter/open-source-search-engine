@@ -1150,8 +1150,8 @@ bool printDropDownProfile ( SafeBuf* sb, char *name, CollectionRec *cr ) {
 	for ( int32_t i = 0 ; i < nd ; i++ ) {
 		//if ( i == select ) s = " selected";
 		//else               s = "";
-		char *x = cr->m_urlFiltersProfile.getBufStart();
-		char *s;
+		const char *x = cr->m_urlFiltersProfile.getBufStart();
+		const char *s;
 		if ( strcmp(g_drops[i].m_title, x) == 0 ) s = " selected";
 		else                                      s = "";
 		sb->safePrintf ("<option value=%s%s>%s",
@@ -1220,12 +1220,12 @@ bool Parms::printParms2 ( SafeBuf* sb ,
 	bool status = true;
 	s_count = 0;
 	// background color
-	char *bg1 = LIGHT_BLUE;
-	char *bg2 = DARK_BLUE;
+	const char *bg1 = LIGHT_BLUE;
+	const char *bg2 = DARK_BLUE;
 	// background color
-	char *bg = NULL;
+	const char *bg = NULL;
 
-	char *coll = NULL;
+	const char *coll = NULL;
 	if ( cr ) coll = cr->m_coll;
 
 	// page aliases
@@ -1396,15 +1396,15 @@ bool Parms::printParms2 ( SafeBuf* sb ,
 
 bool Parms::printParm ( SafeBuf* sb,
 			//int32_t  user ,
-			char *username,
+			const char *username,
 			Parm *m    ,
 			int32_t  mm   , // m = &m_parms[mm]
 			int32_t  j    ,
 			int32_t  jend ,
 			char *THIS ,
-			char *coll ,
-			char *pwd  ,
-			char *bg   ,
+			const char *coll ,
+			const char *pwd  ,
+			const char *bg   ,
 			int32_t  nc   , // # column?
 			int32_t  pd   , // print description
 			bool lastRow ,
@@ -1540,7 +1540,7 @@ bool Parms::printParm ( SafeBuf* sb,
 	}
 	// . display title and description of the control/parameter
 	// . the input cell of some parameters are colored
-	char *color = "";
+	const char *color = "";
 	if ( t == TYPE_CMD  || t == TYPE_BOOL2 )
 		color = " bgcolor=#6060ff";
 	if ( t == TYPE_BOOL ) {
@@ -1743,7 +1743,7 @@ bool Parms::printParm ( SafeBuf* sb,
 	// . used for url filters table, etc.
 	if ( m->m_max > 1 ) {
 		// bg color alternates
-		char *bgc = LIGHT_BLUE;
+		const char *bgc = LIGHT_BLUE;
 		if ( j % 2 ) bgc = DARK_BLUE;
 		// do not print this if doing json
 		//if ( format != FORMAT_HTML );//isJSON ) ;
@@ -1766,7 +1766,7 @@ bool Parms::printParm ( SafeBuf* sb,
 
 	// print the input box
 	if ( t == TYPE_BOOL ) {
-		char *tt, *v;
+		const char *tt, *v;
 		if ( *s ) { tt = "YES"; v = "0"; }
 		else      { tt = "NO" ; v = "1"; }
 		if ( g_conf.m_readOnlyMode && m->m_rdonly )
@@ -1815,7 +1815,7 @@ bool Parms::printParm ( SafeBuf* sb,
 		//	sb->safePrintf("<input type=hidden ");
 		//char *val = "Y";
 		//if ( ! *s ) val = "N";
-		char *val = "";
+		const char *val = "";
 		// "s" is invalid of parm has no "object"
 		if ( m->m_obj == OBJ_NONE && m->m_def[0] != '0' )
 			val = " checked";
@@ -1971,7 +1971,7 @@ bool Parms::printParm ( SafeBuf* sb,
 	}
 	else if ( t == TYPE_CHARPTR ) {
 		int32_t size = m->m_size;
-		char *sp = NULL;
+		const char *sp = NULL;
 		if ( s && *s ) sp = *(char **)s;
 		if ( ! sp ) sp = "";
 		if ( m->m_flags & PF_TEXTAREA ) {
@@ -2234,7 +2234,7 @@ bool Parms::printParm ( SafeBuf* sb,
 		if ( j == *nr - 1 ) lastRow = true;
 		// do not allow removal of last default url filters rule
 		//if ( lastRow && !strcmp(m->m_cgi,"fsp")) show = false;
-		char *suffix = "";
+		const char *suffix = "";
 		if ( m->m_page == PAGE_MASTERPASSWORDS &&
 		     m->m_type == TYPE_IP )
 			suffix = "ip";
@@ -3157,7 +3157,7 @@ skip2:
 		char tmp [10*1024];
 		if ( m->m_max > 1 && count == 0 && gbstrlen(d) < 9000 &&
 		     m->m_xml && m->m_xml[0] ) {
-			char *cc = "";
+			const char *cc = "";
 			if ( d && d[0] ) cc = "\n";
 			sprintf ( tmp , "%s%sUse <%s> tag.",d,cc,m->m_xml);
 			d = tmp;
@@ -10792,7 +10792,7 @@ void Parms::overlapTest ( char step ) {
 	//
 	if ( step == -1 ) b--;
 	else              b = 0;
-	char *objStr = "none";
+	const char *objStr = "none";
 	int32_t  obj;
 	char  infringerB;
 	int32_t  j;
@@ -10924,9 +10924,9 @@ void Parms::overlapTest ( char step ) {
 
 bool Parms::addNewParmToList1 ( SafeBuf *parmList ,
 				collnum_t collnum ,
-				char *parmValString ,
+				const char *parmValString ,
 				int32_t  occNum ,
-				char *parmName ) {
+				const char *parmName ) {
 	// get the parm descriptor
 	Parm *m = getParmFast1 ( parmName , NULL );
 	if ( ! m ) return log("parms: got bogus parm2 %s",parmName );
@@ -10939,11 +10939,11 @@ bool Parms::addNewParmToList1 ( SafeBuf *parmList ,
 // . returns false w/ g_errno set on error
 bool Parms::addNewParmToList2 ( SafeBuf *parmList ,
 				collnum_t collnum ,
-				char *parmValString ,
+				const char *parmValString ,
 				int32_t occNum ,
 				Parm *m ) {
 	// get value
-	char *val = NULL;
+	const char *val = NULL;
 	int32_t valSize = 0;
 
 	//char buf[2+MAX_COLL_LEN];
@@ -11078,7 +11078,7 @@ bool Parms::addCurrentParmToList2 ( SafeBuf *parmList ,
 				    int32_t occNum ,
 				    Parm *m ) {
 
-	char *obj = NULL;
+	const char *obj = NULL;
 
 	if ( collnum != -1 ) {
 		CollectionRec *cr = g_collectiondb.getRec ( collnum );
@@ -11089,7 +11089,7 @@ bool Parms::addCurrentParmToList2 ( SafeBuf *parmList ,
 		obj = (char *)&g_conf;
 	}
 
-	char *data = obj + m->m_off;
+	const char *data = obj + m->m_off;
 	// Parm::m_size is the max string size
 	int32_t dataSize = m->m_size;
 	if ( occNum > 0 ) data += occNum * m->m_size;
@@ -11264,7 +11264,7 @@ bool Parms::convertHttpRequestToParmList (HttpRequest *hr, SafeBuf *parmList,
 		// formulate name
 		char newName[MAX_COLL_LEN+1];
 		snprintf(newName,MAX_COLL_LEN,"%s-%s",token,name);
-		char *cmdStr = "addCrawl";
+		const char *cmdStr = "addCrawl";
 		if ( customCrawl == 2 ) cmdStr = "addBulk";
 		// add to parm list
 		if ( ! addNewParmToList1 ( parmList ,
@@ -11280,7 +11280,7 @@ bool Parms::convertHttpRequestToParmList (HttpRequest *hr, SafeBuf *parmList,
 		// get cgi parm name
 		char *field = hr->getField    ( i );
 		// get value of the cgi field
-		char *val  = hr->getValue   (i);
+		const char *val  = hr->getValue   (i);
 		// convert field to parm
 		int32_t occNum;
 		// parm names can be shared across pages, like "c"
@@ -11634,12 +11634,12 @@ Parm *Parms::getParmFast2 ( int32_t cgiHash32 ) {
 }
 
 
-Parm *Parms::getParmFast1 ( char *cgi , int32_t *occNum ) {
+Parm *Parms::getParmFast1 ( const char *cgi , int32_t *occNum ) {
 	// strip off the %" PRId32" for things like 'fe3' for example
 	// because that is the occurence # for parm arrays.
 	int32_t clen = gbstrlen(cgi);
 
-	char *d = NULL;
+	const char *d = NULL;
 
 	if ( clen > 1 ) {
 		d = cgi + clen - 1;
@@ -12473,7 +12473,7 @@ void handleRequest3e ( UdpSlot *slot , int32_t niceness ) {
 		if ( cr->m_hackFlag ) continue;
 		//char *cmdStr = "addColl";
 		// now use lowercase, not camelcase
-		char *cmdStr = "addcoll";
+		const char *cmdStr = "addcoll";
 		if ( cr->m_isCustomCrawl == 1 ) cmdStr = "addCrawl";
 		if ( cr->m_isCustomCrawl == 2 ) cmdStr = "addBulk";
 		// note in log

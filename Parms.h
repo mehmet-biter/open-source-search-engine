@@ -243,15 +243,15 @@ class Parms {
 			  );
 
 	bool printParm ( SafeBuf* sb,
-			  char *username,
+			  const char *username,
 			  Parm *m    ,
 			  int32_t  mm   , // m = &m_parms[mm]
 			  int32_t  j    ,
 			  int32_t  jend ,
 			  char *THIS ,
-			  char *coll ,
-			  char *pwd  ,
-			  char *bg   ,
+			  const char *coll ,
+			  const char *pwd  ,
+			  const char *bg   ,
 			  int32_t  nc   ,
 			 int32_t  pd   ,
 			 bool lastRow ,
@@ -306,12 +306,12 @@ class Parms {
 
 	bool addNewParmToList1 ( SafeBuf *parmList ,
 				 collnum_t collnum ,
-				 char *parmValString ,
+				 const char *parmValString ,
 				 int32_t  occNum ,
-				 char *parmName ) ;
+				 const char *parmName ) ;
 	bool addNewParmToList2 ( SafeBuf *parmList ,
 				 collnum_t collnum ,
-				 char *parmValString ,
+				 const char *parmValString ,
 				 int32_t occNum ,
 				 Parm *m ) ;
 
@@ -322,7 +322,7 @@ class Parms {
 	bool convertHttpRequestToParmList (HttpRequest *hr,SafeBuf *parmList,
 					   int32_t page , TcpSocket *sock );
 	Parm *getParmFast2 ( int32_t cgiHash32 ) ;
-	Parm *getParmFast1 ( char *cgi , int32_t *occNum ) ;
+	Parm *getParmFast1 ( const char *cgi , int32_t *occNum ) ;
 	bool broadcastParmList ( SafeBuf *parmList ,
 				 void    *state ,
 				 void   (* callback)(void *) ,
