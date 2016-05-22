@@ -375,7 +375,7 @@ skipReplaceHost:
 		else                    sprintf(pms,"%" PRId32"ms",h->m_pingMax);
 		// the sync status ascii-ized
 		char syncStatus = h->m_syncStatus;
-		char *ptr2;
+		const char *ptr2;
 		if      (syncStatus==0) 
 			ptr2 ="<b>N</b>";
 		else if (syncStatus==1) 
@@ -405,8 +405,8 @@ skipReplaceHost:
 		char *vbuf = h->m_pingInfo.m_gbVersionStr;//m_gbVersionStrBuf;
 		// get hash
 		int32_t vhash32 = hash32n ( vbuf );
-		char *vbuf1 = "";
-		char *vbuf2 = "";
+		const char *vbuf1 = "";
+		const char *vbuf2 = "";
 		if ( vhash32 != majorityHash32 ) {
 			vbuf1 = "<font color=red><b>";
 			vbuf2 = "</font></b>";
@@ -422,8 +422,8 @@ skipReplaceHost:
 		char ipbuf3[64];
 		strcpy(ipbuf3,iptoa(eip));
 
-		char *fontTagFront = "";
-		char *fontTagBack  = "";
+		const char *fontTagFront = "";
+		const char *fontTagBack  = "";
 		if ( h->m_pingInfo.m_percentMemUsed >= 98.0 && 
 		     format == FORMAT_HTML ) {
 			fontTagFront = "<font color=red>";
@@ -543,8 +543,8 @@ skipReplaceHost:
 
 		if ( format == FORMAT_HTML && 
 		     h->m_pingInfo.m_udpSlotsInUseIncoming ) {
-			char *f1 = "";
-			char *f2 = "";
+			const char *f1 = "";
+			const char *f2 = "";
 			// MAXUDPSLOTS in Spider.cpp is 300 right now
 			if ( h->m_pingInfo.m_udpSlotsInUseIncoming >= 300 ) {
 				f1 = "<b>";
@@ -567,8 +567,8 @@ skipReplaceHost:
 		}
 
 		if ( format == FORMAT_HTML && h->m_pingInfo.m_tcpSocketsInUse){
-			char *f1 = "";
-			char *f2 = "";
+			const char *f1 = "";
+			const char *f2 = "";
 			if ( h->m_pingInfo.m_tcpSocketsInUse >= 100 ) {
 				f1 = "<b>";
 				f2 = "</b>";
@@ -628,7 +628,7 @@ skipReplaceHost:
 
 		fb.nullTerm();
 
-		char *bg = LIGHT_BLUE;
+		const char *bg = LIGHT_BLUE;
 		if ( h->m_ping >= g_conf.m_deadHostTimeout ) 
 			bg = "ffa6a6";
 

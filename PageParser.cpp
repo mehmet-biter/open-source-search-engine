@@ -150,8 +150,7 @@ static bool sendPageParser2 ( TcpSocket   *s ,
 		// do it. this is defined in XmlDoc.cpp
 		//addCheckboxSpan ( uh64 , divTag , addNum );
 		// make basic reply
-		char *reply;
-		reply = "HTTP/1.0 200 OK\r\n"
+		const char *reply = "HTTP/1.0 200 OK\r\n"
 			"Connection: Close\r\n";
 		// that is it! send a basic reply ok
 		bool status = g_httpServer.sendDynamicPage( s , 

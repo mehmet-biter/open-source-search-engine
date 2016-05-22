@@ -24,7 +24,7 @@
 
 bool printNumAbbr ( SafeBuf &p, int64_t vvv ) {
 	float val = (float)vvv;
-	char *suffix = "K";
+	const char *suffix = "K";
 	val /= 1024;
 	if ( val > 1000.0 ) { val /= 1024.0; suffix = "M"; }
 	if ( val == 0.0 ) 
@@ -47,13 +47,13 @@ bool printUptime ( SafeBuf &sb ) {
 	int32_t secs  = uptime;
 
 	// singular plural
-	char *ds = "day";
+	const char *ds = "day";
 	if ( days != 1 ) ds = "days";
-	char *hs = "hour";
+	const char *hs = "hour";
 	if ( hours != 1 ) hs = "hours";
-	char *ms = "minute";
+	const char *ms = "minute";
 	if ( mins != 1 ) ms = "minutes";
-	char *ss = "seconds";
+	const char *ss = "seconds";
 	if ( secs == 1 ) ss = "second";
 	
 	if ( days >= 1 )
@@ -768,7 +768,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 	// General Info Table
 	//
 	FILE *ff = fopen ("/proc/version", "r" );
-	char *kv = "unknown";
+	const char *kv = "unknown";
 	char kbuf[1024];
 	//char kbuf2[1024];
 	if ( ff ) {

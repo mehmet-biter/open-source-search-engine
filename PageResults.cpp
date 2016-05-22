@@ -60,11 +60,11 @@ bool sendReply ( State0 *st , char *reply ) {
 		//char *xx=NULL;*xx=0; }
 	}
 	SearchInput *si = &st->m_si;
-	char *ct = "text/html";
+	const char *ct = "text/html";
 	if ( si->m_format == FORMAT_XML ) ct = "text/xml"; 
 	if ( si->m_format == FORMAT_JSON ) ct = "application/json";
 
-	char *charset = "utf-8";
+	const char *charset = "utf-8";
 	char format = si->m_format;
 
 	// . filter anything < 0x20 to 0x20 to keep XML legal
@@ -567,7 +567,7 @@ static bool printLeftNavColumn ( SafeBuf &sb, State0 *st ) {
 	char format = si->m_format;
 
 	if ( format == FORMAT_HTML ) {
-		char *title = "Search Results";
+		const char *title = "Search Results";
 		sb.safePrintf("<title>Gigablast - %s</title>\n",title);
 		sb.safePrintf("<style><!--\n");
 		sb.safePrintf("body {\n");
@@ -1854,9 +1854,9 @@ static bool printInlinkText ( SafeBuf *sb , Msg20Reply *mr , SearchInput *si ,
 		char *str   = k->getLinkText();//ptr_linkText;
 		int32_t strLen = k->size_linkText;
 
-		char *frontTag = 
+		const char *frontTag =
 		     "<font style=\"color:black;background-color:yellow\">" ;
-		char *backTag = "</font>";
+		const char *backTag = "</font>";
 		if ( si->m_format == FORMAT_XML ) {
 			frontTag = "<b>";
 			backTag  = "</b>";
@@ -2501,9 +2501,9 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	
 	int32_t hlen;
 
-	char *frontTag = 
+	const char *frontTag =
 		"<font style=\"color:black;background-color:yellow\">" ;
-	char *backTag = "</font>";
+	const char *backTag = "</font>";
 	if ( si->m_format == FORMAT_XML ) {
 		frontTag = "<b>";
 		backTag  = "</b>";
@@ -3192,7 +3192,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 
 
 	if (si->m_format == FORMAT_HTML && ( isAdmin || cr->m_isCustomCrawl)){
-		char *un = "";
+		const char *un = "";
 		int32_t  banVal = 1;
 		if ( mr->m_isBanned ) {
 			un = "UN";

@@ -287,7 +287,7 @@ bool processLoop ( void *state ) {
 			return false;
 	}
 
-	char *contentType = "text/html";
+	const char *contentType = "text/html";
 	char format = st->m_format;
 	if ( format == FORMAT_XML ) contentType = "text/xml";
 	if ( format == FORMAT_JSON ) contentType = "application/json";

@@ -121,7 +121,7 @@ void doneReindexing ( void *state ) {
 
 	SafeBuf sb;
 
-	char *ct = "text/html";
+	const char *ct = "text/html";
 	if ( format == FORMAT_JSON ) ct = "application/json";
 	if ( format == FORMAT_XML  ) ct = "text/xml";
 

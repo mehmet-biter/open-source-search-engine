@@ -69,12 +69,12 @@ bool sendPageAddDelColl ( TcpSocket *s , HttpRequest *r , bool add ) {
 		if ( ! delcoll ) delcoll = r->getString("delColl",NULL);
 		if ( page == PAGE_ADDCOLL && ! addcoll ) {
 			g_errno = EBADENGINEER;
-			char *msg = "no addcoll parm provided";
+			const char *msg = "no addcoll parm provided";
 			return g_httpServer.sendErrorReply(s,g_errno,msg,NULL);
 		}
 		if ( page == PAGE_DELCOLL && ! delcoll ) {
 			g_errno = EBADENGINEER;
-			char *msg = "no delcoll parm provided";
+			const char *msg = "no delcoll parm provided";
 			return g_httpServer.sendErrorReply(s,g_errno,msg,NULL);
 		}
 		return g_httpServer.sendSuccessReply(s,format);
@@ -162,7 +162,7 @@ bool sendPageAddDelColl ( TcpSocket *s , HttpRequest *r , bool add ) {
 	}
 
 	if ( msg && ! guide ) {
-		char *cc = "deleting";
+		const char *cc = "deleting";
 		if ( add ) cc = "adding";
 		p.safePrintf (
 			  "<center>\n"
@@ -184,7 +184,7 @@ bool sendPageAddDelColl ( TcpSocket *s , HttpRequest *r , bool add ) {
 	// print the add collection box
 	if ( add /*&& (! nc[0] || g_errno ) */ ) {
 
-		char *t1 = "Add Collection";
+		const char *t1 = "Add Collection";
 		if ( guide ) t1 = "Add Search Engine";
 
 		p.safePrintf (
@@ -195,7 +195,7 @@ bool sendPageAddDelColl ( TcpSocket *s , HttpRequest *r , bool add ) {
 			  ,TABLE_STYLE
 			  ,t1
 			      );
-		char *t2 = "collection";
+		const char *t2 = "collection";
 		if ( guide ) t2 = "search engine";
 		const char *str = addColl;
 		if ( ! addColl ) str = "";
@@ -325,7 +325,7 @@ skip:
 bool sendPageCloneColl ( TcpSocket *s , HttpRequest *r ) {
 #ifdef PRIVACORE_SAFE_VERSION
         g_errno = EBADENGINEER;
-        char *msg = "Function disabled by PRIVACORE_SAFE_VERSION define";
+        const char *msg = "Function disabled by PRIVACORE_SAFE_VERSION define";
         return g_httpServer.sendErrorReply(s,g_errno,msg,NULL);
 #else
 	char format = r->getReplyFormat();

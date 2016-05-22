@@ -121,7 +121,7 @@ void printTcpTable ( SafeBuf* p, const char *title, TcpServer *server ) {
 		// get the ith socket
 		TcpSocket *s = socks[i];
 		// set socket state
-		char *st = "ERROR";
+		const char *st = "ERROR";
 		switch ( s->m_sockState ) {
 		case ST_AVAILABLE:  st="available";  break;
 		//case ST_CLOSED:     st="closed";     break;
@@ -135,7 +135,7 @@ void printTcpTable ( SafeBuf* p, const char *title, TcpServer *server ) {
 		case ST_SSL_HANDSHAKE: st = "ssl handshake"; break;
 		}
 		// bgcolor is lighter for incoming requests
-		char *bg = "c0c0f0";
+		const char *bg = "c0c0f0";
 		if ( s->m_isIncoming ) bg = "e8e8ff";
 		// times
 		int32_t elapsed1 = now - s->m_startTime      ;
@@ -264,7 +264,7 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 			msgCount1[s->m_msgType]++;
 	}
 
-	char *wr = "";
+	const char *wr = "";
 	if ( server->m_writeRegistered )
 		wr = " [write registered]";
 
@@ -297,7 +297,7 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 	}
 	p->safePrintf ( "</table><br>" );
 
-	char *dd = "";
+	const char *dd = "";
 	if ( ! isDns ) 
 		dd =    "<td><b>msgType</td>"
 			"<td><b>desc</td>"
@@ -370,14 +370,14 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 		if ( s->m_lastReadTime == 0LL ) strcpy ( e1 , "--" );
 		if ( s->m_lastSendTime == 0LL ) strcpy ( e2 , "--" );
 		// bgcolor is lighter for incoming requests
-		char *bg = LIGHT_BLUE;//"c0c0f0";
+		const char *bg = LIGHT_BLUE;//"c0c0f0";
 		// is it incoming
 		if ( ! s->m_callback ) bg = LIGHTER_BLUE;//"e8e8ff";
 		Host *h = g_hostdb.getHost ( s->m_ip , s->m_port );
-		char           *eip     = "??";
+		const char           *eip     = "??";
 		uint16_t  eport   =  0 ;
 		//int32_t          ehostId = -1 ;
-		char           *ehostId = "-1";
+		const char           *ehostId = "-1";
 		//char tmpIp    [64];
 		// print the ip
 
@@ -405,7 +405,7 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 		}
 		// set description of the msg
 		int32_t msgType        = s->m_msgType;
-		char *desc          = "";
+		const char *desc          = "";
 		char *rbuf          = s->m_readBuf;
 		char *sbuf          = s->m_sendBuf;
 		int32_t  rbufSize      = s->m_readBufSize;
@@ -434,7 +434,7 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 			Rdb *rdb = NULL;
 			if ( rdbId >= 0 && ! isDns ) 
 				rdb = getRdbFromId ((uint8_t)rdbId );
-			char *cmd;
+			const char *cmd;
 			if ( msgType == 0x01 ) cmd = "add to";
 			else                   cmd = "get from";
 			tt[0] = ' '; tt[1]='\0';
@@ -494,8 +494,8 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 		p->safePrintf("<td>%s:%" PRIu32"</td>",
 			      iptoa(s->m_ip),(uint32_t)s->m_port);
 
-		char *cf1 = "";
-		char *cf2 = "";
+		const char *cf1 = "";
+		const char *cf2 = "";
 		if ( s->m_convertedNiceness ) {
 			cf1 = "<font color=red>";
 			cf2 = "</font>";
@@ -529,7 +529,7 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 			//"<td>%s</td>"  // ip
 			//"<td>%hu</td>" // port
 			// clickable hostId
-			char *toFrom = "to";
+			const char *toFrom = "to";
 			if ( ! s->m_callback ) toFrom = "from";
 			//"<td><a href=http://%s:%hu/cgi/15.cgi>%" PRId32"</a></td>"
 			p->safePrintf (	"<td>0x%hhx</td>"  // msgtype
@@ -555,8 +555,8 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 					);
 		}
 
-		char *rf1 = "";
-		char *rf2 = "";
+		const char *rf1 = "";
+		const char *rf2 = "";
 		if ( s->m_resendCount ) {
 			rf1 = "<b style=color:red;>";
 			rf2 = "</b>";

@@ -33,8 +33,8 @@ static bool printNav ( SafeBuf &sb , HttpRequest *r ) {
 //////////////
 
 static bool printFamilyFilter ( SafeBuf& sb , bool familyFilterOn ) {
-	char *s1 = "";
-	char *s2 = "";
+	const char *s1 = "";
+	const char *s2 = "";
 	if ( familyFilterOn ) s1 = " checked";
 	else                  s2 = " checked";
 	//p += sprintf ( p ,
@@ -436,7 +436,7 @@ bool printLeftColumnRocketAndTabs ( SafeBuf *sb ,
 		{"API","/api.html"}
 	};
 
-	char *coll = "";
+	const char *coll = "";
 	if ( cr ) coll = cr->m_coll;
 
 	//
@@ -728,7 +728,7 @@ static bool printWebHomePage ( SafeBuf &sb , HttpRequest *r , TcpSocket *sock ) 
 	// if there's a ton of sites use the post method otherwise
 	// they won't fit into the http request, the browser will reject
 	// sending such a large request with "GET"
-	char *method = "GET";
+	const char *method = "GET";
 	if ( si.m_sites && gbstrlen(si.m_sites)>800 ) {
 		method = "POST";
 	}
@@ -885,7 +885,7 @@ static bool printAddUrlHomePage ( SafeBuf &sb , const char *url , HttpRequest *r
 	sb.safePrintf("<form method=GET "
 		      "action=/addurl name=f>\n" );
 
-	char *coll = "";
+	const char *coll = "";
 	if ( cr ) coll = cr->m_coll;
 	if ( cr )
 		sb.safePrintf("<input type=hidden name=c value=\"%s\">",
@@ -972,7 +972,7 @@ static bool printAddUrlHomePage ( SafeBuf &sb , const char *url , HttpRequest *r
 
 
 	// if addurl is turned off, just print "disabled" msg
-	char *msg = NULL;
+	const char *msg = NULL;
 	if ( ! g_conf.m_addUrlEnabled ) 
 		msg = "Add url is temporarily disabled";
 	// can also be turned off in the collection rec
@@ -995,7 +995,7 @@ static bool printAddUrlHomePage ( SafeBuf &sb , const char *url , HttpRequest *r
 	// . when loaded with the main page for the first time it will
 	//   immediately replace its content...
 	if ( url ) {
-		char *root = "";
+		const char *root = "";
 
 		sb.safePrintf("<br>"
 			      "<br>"
@@ -1239,7 +1239,7 @@ bool sendPageAddUrl ( TcpSocket *sock , HttpRequest *hr ) {
 	//
 
 	// if addurl is turned off, just print "disabled" msg
-	char *msg = NULL;
+	const char *msg = NULL;
 	if ( ! g_conf.m_addUrlEnabled ) 
 		msg = "Add url is temporarily disabled";
 	// can also be turned off in the collection rec
@@ -1457,7 +1457,7 @@ static void doneInjectingWrapper3 ( void *st ) {
 	//CollectionRec *cr = g_collectiondb.getRec ( st1->m_coll );
 	
 	// collection name
-	char *coll = st1->m_coll;
+	const char *coll = st1->m_coll;
 	if ( ! coll ) coll = "";
 
 	//char tt [ 128 ];
@@ -1474,7 +1474,7 @@ static void doneInjectingWrapper3 ( void *st ) {
 
 	// if there was an error let them know
 	//char msg[MAX_URL_LEN + 1024];
-	char *pm = "";
+	const char *pm = "";
 	if ( g_errno ) {
 		if ( g_errno == ETOOEARLY ) {
 			pm = "Error. 100 urls have "
@@ -1849,9 +1849,9 @@ bool sendPageHelp ( TcpSocket *sock , HttpRequest *hr ) {
 	sb.safePrintf("</i></td></tr>\n");
 
 
-	char *bg1 = "#E1FFFF";
-	char *bg2 = "#ffffff";
-	char *bgcolor = bg1;
+	const char *bg1 = "#E1FFFF";
+	const char *bg2 = "#ffffff";
+	const char *bgcolor = bg1;
 
 	// table of the query keywords
 	int32_t n = getNumFieldCodes();
@@ -1890,7 +1890,7 @@ bool sendPageHelp ( TcpSocket *sock , HttpRequest *hr ) {
 		}
 
 		// print it out
-		char *d = f->desc;
+		const char *d = f->desc;
 		// fix table internal cell bordering
 		if ( ! d || d[0] == '\0' ) d = "&nbsp;";
 		sb.safePrintf("<tr bgcolor=%s>"
