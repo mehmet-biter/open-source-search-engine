@@ -248,7 +248,7 @@ static WebPage s_pages[] = {
 
 };
 
-WebPage *Pages::getPage ( int32_t page ) {
+const WebPage *Pages::getPage ( int32_t page ) {
 	if ( page < PAGE_ROOT || page >= PAGE_NONE ) {
 		return NULL;
 	}
@@ -256,7 +256,7 @@ WebPage *Pages::getPage ( int32_t page ) {
 	return &s_pages[page];
 }
 
-char *Pages::getPath ( int32_t page ) { 
+const char *Pages::getPath ( int32_t page ) { 
 	return s_pages[page].m_filename; 
 }
 
@@ -2401,7 +2401,7 @@ bool sendPageLogin ( TcpSocket *socket , HttpRequest *hr ) {
 		refPage = PAGE_BASIC_SETTINGS;
 
 	// if they had an original destination, redirect there NOW
-	WebPage *pagePtr = g_pages.getPage(refPage);
+	const WebPage *pagePtr = g_pages.getPage(refPage);
 
 	const char *ep = emsg.getBufStart();
 	if ( !ep ) ep = "";
@@ -2687,7 +2687,7 @@ bool printRedBox ( SafeBuf *mb , TcpSocket *sock , HttpRequest *hr ) {
 		mb->safePrintf("%s",boxEnd);
 	}
 
-	WebPage *wp = g_pages.getPage(page);
+	const WebPage *wp = g_pages.getPage(page);
 
 	if ( wp && 
 	     (wp->m_pgflags & (PG_MASTERADMIN|PG_COLLADMIN)) &&

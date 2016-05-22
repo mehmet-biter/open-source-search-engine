@@ -87,14 +87,14 @@ bool sendPageHealthCheck ( TcpSocket *sock , HttpRequest *hr ) ;
 class WebPage {
  public:
 	char  m_pageNum;  // see enum array below for this
-	char *m_filename;
+	const char *m_filename;
 	int32_t  m_flen;
-	char *m_name;     // for printing the links to the pages in admin sect.
+	const char *m_name;     // for printing the links to the pages in admin sect.
 	bool  m_cast;     // broadcast input to all hosts?
 	char  m_usePost;  // use a POST request/reply instead of GET?
 	                  // used because GET's input is limited to a few k.
 	//char  m_perm;     // permissions, see USER_* #define's below
-	char *m_desc; // page description
+	const char *m_desc; // page description
 	bool (* m_function)(TcpSocket *s , HttpRequest *r);
 	int32_t  m_niceness;
 	char *m_reserved1;
@@ -108,7 +108,7 @@ class Pages {
 
  public:
 
-	WebPage *getPage ( int32_t page ) ;
+	const WebPage *getPage ( int32_t page ) ;
 
 	// . associate each page number (like PAGE_SEARCH) with a callback
 	//   to which we pass the HttpRequest and TcpSocket
@@ -118,7 +118,7 @@ class Pages {
 	// a request like "GET /sockets" should return PAGE_SOCKETS
 	int32_t getDynamicPageNumber ( HttpRequest *r ) ;
 
-	char *getPath ( int32_t page ) ;
+	const char *getPath ( int32_t page ) ;
 
 	// this passes control to the dynamic page generation routine based
 	// on the path of the GET request

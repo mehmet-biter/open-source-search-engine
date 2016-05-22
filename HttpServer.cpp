@@ -851,7 +851,7 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 	//////////
 	char format = r->getReplyFormat();
 	int32_t show = r->getLong("showinput",0);
-	WebPage *wp = g_pages.getPage(n);
+	const WebPage *wp = g_pages.getPage(n);
 	if ( wp && (wp->m_pgflags & PG_NOAPI) ) show = false;
 	if ( show ) {
 		SafeBuf sb;
