@@ -110,12 +110,12 @@ class HttpMime {
 			  const char   *ext              = NULL,
 			  bool    POSTReply        = false,
 			  const char   *contentType      = NULL ,
-			  char   *charset          = NULL ,
+			  const char   *charset          = NULL ,
 			  int32_t    httpStatus       = -1   ,
-			  char   *cookie           = NULL );
+			  const char   *cookie           = NULL );
 
 	// make a redirect mime
-	void makeRedirMime ( char *redirUrl , int32_t redirUrlLen );
+	void makeRedirMime ( const char *redirUrl , int32_t redirUrlLen );
 
 	bool addCookiesIntoBuffer ( class SafeBuf *sb ) ;
 

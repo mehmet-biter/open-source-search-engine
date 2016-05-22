@@ -727,7 +727,7 @@ const char *HttpMime::getContentEncodingFromExtension ( const char *ext ) {
 }
 
 // make a redirect mime
-void HttpMime::makeRedirMime ( char *redir , int32_t redirLen ) {
+void HttpMime::makeRedirMime ( const char *redir , int32_t redirLen ) {
 	char *p = m_buf;
 	gbmemcpy ( p , "HTTP/1.0 302 RD\r\nLocation: " , 27 );
 	p += 27;
@@ -754,9 +754,9 @@ void HttpMime::makeMime  ( int32_t    totalContentLen    ,
 			   const char   *ext                ,
 			   bool    POSTReply          ,
 			   const char   *contentType        ,
-			   char   *charset            ,
+			   const char   *charset            ,
 			   int32_t    httpStatus         ,
-			   char   *cookie             ) {
+			   const char   *cookie             ) {
 	// assume UTF-8
 	//if ( ! charset ) charset = "utf-8";
 	// . make the content type line
