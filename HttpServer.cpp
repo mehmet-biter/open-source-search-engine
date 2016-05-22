@@ -128,15 +128,15 @@ bool HttpServer::getDoc ( char   *url      ,
 			  int16_t   proxyPort,
 			  int32_t    maxTextDocLen  ,
 			  int32_t    maxOtherDocLen ,
-			  char   *userAgent ,
+			  const char   *userAgent ,
 			  //bool    respectDownloadLimit ,
-			  char    *proto ,
+			  const char    *proto ,
 			  bool     doPost ,
-			  char    *cookie ,
-			  char    *additionalHeader ,
-			  char    *fullRequest ,
-			  char    *postContent ,
-			  char    *proxyUsernamePwdAuth ) { 
+			  const char    *cookie ,
+			  const char    *additionalHeader ,
+			  const char    *fullRequest ,
+			  const char    *postContent ,
+			  const char    *proxyUsernamePwdAuth ) {
 	// sanity
 	if ( ip == -1 ) 
 		log("http: you probably didn't mean to set ip=-1 did you? "
@@ -162,7 +162,7 @@ bool HttpServer::getDoc ( char   *url      ,
 	// "fullRequest" and the url will be like "CONNECT foo.com:443 HTT..."
 	// and it is an https url, because we only use the CONNECT cmd for
 	// downloading https urls over a proxy i think
-	char *p = fullRequest;
+	const char *p = fullRequest;
 	if ( p && strncmp(p,"CONNECT ",8)==0 )
 		urlIsHttps = true;
 
@@ -1174,9 +1174,9 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 	return true;
 }
 
-bool HttpServer::sendReply2 ( char *mime, 
+bool HttpServer::sendReply2 ( const char *mime,
 			      int32_t  mimeLen ,
-			      const char *content  ,
+			      const char *content,
 			      int32_t  contentLen ,
 			      TcpSocket *s ,
 			      bool alreadyCompressed ,
@@ -1352,13 +1352,13 @@ void cleanUp ( void *state , TcpSocket *s ) {
 	delete (f);
 }
 
-bool HttpServer::sendSuccessReply ( GigablastRequest *gr , char *addMsg ) {
+bool HttpServer::sendSuccessReply ( GigablastRequest *gr , const char *addMsg ) {
 	return sendSuccessReply ( gr->m_socket ,
 				  gr->m_hr.getReplyFormat() ,
 				  addMsg );
 }
 
-bool HttpServer::sendSuccessReply ( TcpSocket *s , char format, char *addMsg) {
+bool HttpServer::sendSuccessReply ( TcpSocket *s , char format, const char *addMsg) {
 	// get time in secs since epoch
 	time_t now ;
 	if ( isClockInSync() ) now = getTimeGlobal();
@@ -1613,7 +1613,7 @@ bool HttpServer::sendQueryErrorReply( TcpSocket *s , int32_t error ,
 				      const char *errmsg, 
 				      //int32_t  rawFormat, 
 				      char format ,
-				      int errnum, char *content) {
+				      int errnum, const char *content) {
 
 	// just use this for now. it detects the format already...
 	log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. %d [%s]", __FILE__, __func__, __LINE__, errnum, errmsg);
@@ -2296,7 +2296,7 @@ bool HttpServer::hasPermission ( int32_t ip , HttpRequest *r ,
 // . status should be 200 for all replies except POST which is 201
 bool HttpServer::sendDynamicPage ( TcpSocket *s, const char *page, int32_t pageLen, int32_t cacheTime,
                                    bool POSTReply, const char *contentType, int32_t httpStatus,
-                                   char *cookie, char *charset, HttpRequest *hr) {
+                                   const char *cookie, const char *charset, HttpRequest *hr) {
 	// how big is the TOTAL page?
 	int32_t contentLen = pageLen; // headerLen + pageLen + tailLen;
 	// get the time for a mime

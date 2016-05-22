@@ -71,19 +71,19 @@ class HttpServer {
 		      int16_t   proxyPort,
 		      int32_t    maxTextDocLen  ,
 		      int32_t    maxOtherDocLen ,
-		      char   *userAgent = NULL ,
+		      const char   *userAgent = NULL ,
 		      // . say HTTP/1.1 instead of 1.0 so we can communicate
 		      //   with room alert...
 		      // . we do not support 1.1 that is why you should always
 		      //   use 1.0
-		      char   *proto = DEFAULT_HTTP_PROTO , // "HTTP/1.0" ,
+		      const char   *proto = DEFAULT_HTTP_PROTO , // "HTTP/1.0" ,
 		      bool    doPost = false ,
-		      char   *cookie = NULL ,
-		      char *additionalHeader = NULL , // does not include \r\n
+		      const char   *cookie = NULL ,
+		      const char *additionalHeader = NULL , // does not include \r\n
 		      // specify your own mime and post data here...
-		      char *fullRequest = NULL ,
-		      char *postContent = NULL ,
-		      char *proxyUsernamePwdAuth = NULL );
+		      const char *fullRequest = NULL ,
+		      const char *postContent = NULL ,
+		      const char *proxyUsernamePwdAuth = NULL );
 
 	bool gotDoc ( int32_t n , TcpSocket *s );
 
@@ -92,17 +92,17 @@ class HttpServer {
 	void requestHandler ( TcpSocket *s );
 
 	// send an error reply, like "HTTP/1.1 404 Not Found"
-	bool sendErrorReply ( TcpSocket *s , int32_t error , const char *errmsg ,
+	bool sendErrorReply ( TcpSocket *s, int32_t error, const char *errmsg,
 			      int32_t *bytesSent = NULL ); 
 	bool sendErrorReply ( class GigablastRequest *gr );
 	// xml and json uses this
-	bool sendSuccessReply ( class GigablastRequest *gr,char *addMsg=NULL);
-	bool sendSuccessReply (TcpSocket *s , char format , char *addMsg=NULL);
+	bool sendSuccessReply ( class GigablastRequest *gr, const char *addMsg=NULL);
+	bool sendSuccessReply (TcpSocket *s, char format, const char *addMsg=NULL);
 	// send a "prettier" error reply, formatted in XML if necessary
 	bool sendQueryErrorReply ( TcpSocket *s , int32_t error , const char *errmsg,
 				   // FORMAT_HTML=0,FORMAT_XML,FORMAT_JSON
 				   char format, int errnum, 
-				   char *content=NULL); 
+				   const char *content=NULL);
 	
 
 	// these are for stopping annoying seo bots
@@ -125,8 +125,8 @@ class HttpServer {
 				int32_t cacheTime = -1 , bool POSTReply = false ,
 				const char *contentType = NULL,
 				int32_t httpStatus = -1,
-				char *cookie = NULL,
-				char *charset = NULL ,
+				const char *cookie = NULL,
+				const char *charset = NULL ,
 				HttpRequest *hr = NULL );
 
 	// for PageSockets
@@ -167,9 +167,9 @@ class HttpServer {
 	// go ahead and start sending the file ("path") over the socket
 	bool sendReply ( TcpSocket *s , HttpRequest *r , bool isAdmin);
 
-	bool sendReply2 ( char *mime, 
+	bool sendReply2 ( const char *mime,
 			  int32_t  mimeLen ,
-			  const char *content  ,
+			  const char *content,
 			  int32_t  contentLen ,
 			  TcpSocket *s ,
 			  bool alreadyCompressed = false ,
