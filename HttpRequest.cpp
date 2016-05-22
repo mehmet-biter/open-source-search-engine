@@ -160,7 +160,7 @@ bool HttpRequest::set (char *url,int32_t offset,int32_t size,time_t ifModifiedSi
 
 	int32_t hlen ;
 	int32_t port = 80;
-	char *hptr = getHostFast ( url , &hlen , &port );
+	const char *hptr = getHostFast ( url , &hlen , &port );
 	char *path = getPathFast ( url );
 
 	// . use the full url if sending to an http proxy
@@ -170,7 +170,7 @@ bool HttpRequest::set (char *url,int32_t offset,int32_t size,time_t ifModifiedSi
 	if ( proxyIp && strncmp(url,"https://",8) != 0 ) path = url;
 
 	char *pathEnd  = NULL;
-	char *postData = NULL;
+	const char *postData = NULL;
 	if ( doPost ) {
 		pathEnd  = strstr(path,"?");
 		if ( pathEnd ) {
@@ -201,7 +201,7 @@ bool HttpRequest::set (char *url,int32_t offset,int32_t size,time_t ifModifiedSi
 	}
 	// the if-modified-since field
 	char  ibuf[64];
-	char *ims = "";
+	const char *ims = "";
 	if ( ifModifiedSince ) {
 		// NOTE: ctime appends a \n 
 		sprintf(ibuf,"If-Modified-Since: %s UTC",
@@ -223,7 +223,7 @@ bool HttpRequest::set (char *url,int32_t offset,int32_t size,time_t ifModifiedSi
 	// . this is usually Gigabot/1.0
 	if ( ! userAgent ) userAgent = g_conf.m_spiderUserAgent;
 	// accept only these
-	char *accept = "*/*";
+	const char *accept = "*/*";
 	/*
 		 "text/html, "
 		 "text/plain, "
@@ -235,7 +235,7 @@ bool HttpRequest::set (char *url,int32_t offset,int32_t size,time_t ifModifiedSi
 		 "application/postscript";
 	*/
 
-	char *cmd = "GET";
+	const char *cmd = "GET";
 	if ( size == 0 ) cmd = "HEAD";
 	if ( doPost    ) cmd = "POST";
 
@@ -244,7 +244,7 @@ bool HttpRequest::set (char *url,int32_t offset,int32_t size,time_t ifModifiedSi
 	//proto = "HTTP/1.1";
 
 	SafeBuf tmp;
-	char *up = "";
+	const char *up = "";
 	if ( proxyUsernamePwd && proxyUsernamePwd[0] ) {
 		tmp.safePrintf("Proxy-Authorization: Basic ");
 		tmp.base64Encode (proxyUsernamePwd,gbstrlen(proxyUsernamePwd));
@@ -256,7 +256,7 @@ bool HttpRequest::set (char *url,int32_t offset,int32_t size,time_t ifModifiedSi
 	 // . i removed keep-alive connection since some connections close on
 	 //   non-200 ok http statuses and we think they're open since close
 	 //   signal (read 0 bytes) may have been delayed
-	 char* acceptEncoding = "";
+	 const char* acceptEncoding = "";
 	 // the scraper is getting back gzipped search results from goog,
 	 // so disable this for now
 	 // i am re-enabling now for testing...

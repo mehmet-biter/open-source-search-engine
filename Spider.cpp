@@ -2540,7 +2540,7 @@ int32_t getUrlFilterNum ( 	SpiderRequest	*sreq,
 	plang = getLanguageAbbr(sreq->m_parentLangId);
 	if ( plang ) plangLen = gbstrlen(plang);
 
-	char *tld = (char *)-1;
+	const char *tld = (char *)-1;
 	int32_t  tldLen;
 
 	int32_t  urlLen = sreq->getUrlLen();
