@@ -1163,7 +1163,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 				for ( int i = 0 ; i < langLast ; i++ ) {
 					uint64_t bit = (uint64_t)1 << i;
 					if ( ! (qt->m_langIdBits&bit))continue;
-					char *str = getLanguageAbbr(i);
+					const char *str = getLanguageAbbr(i);
 					if ( ! first ) sb->pushChar(',');
 					first = false;
 					sb->jsonEncode ( str );

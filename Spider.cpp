@@ -2525,7 +2525,7 @@ int32_t getUrlFilterNum ( 	SpiderRequest	*sreq,
 	if ( srep ) langId = srep->m_langId;
 
 	// convert lang to string
-	char *lang    = NULL;
+	const char *lang    = NULL;
 	int32_t  langLen = 0;
 	if ( langId >= 0 ) { // if ( srep ) {
 		// this is NULL on corruption
@@ -2535,7 +2535,7 @@ int32_t getUrlFilterNum ( 	SpiderRequest	*sreq,
 
 	// . get parent language in the request
 	// . primarpy language of the parent page that linked to this url
-	char *plang = NULL;
+	const char *plang = NULL;
 	int32_t  plangLen = 0;
 	plang = getLanguageAbbr(sreq->m_parentLangId);
 	if ( plang ) plangLen = gbstrlen(plang);

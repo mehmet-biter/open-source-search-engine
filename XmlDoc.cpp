@@ -21168,7 +21168,7 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 	if ( m_wasContentInjected && !*isRoot ) addRootLang = false;
 	// . get the two letter (usually) language code from the id
 	// . i think the two chinese languages are 5 letters
-	char *newrl = NULL;
+	const char *newrl = NULL;
 	if ( addRootLang )
 		// i've seen this return NULL because *rl is a corrupt 215
 		// for some reason
