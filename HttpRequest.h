@@ -48,14 +48,14 @@ class HttpRequest {
 	// . fill in your own offset/size for partial GET requests
 	// . returns false and sets errno on error
 	bool set ( char *url , int32_t offset = 0 , int32_t size = -1 ,
-		   time_t ifModifiedSince = 0 , char *userAgent = NULL ,
-		   char *proto = "HTTP/1.0" ,
+		   time_t ifModifiedSince = 0 , const char *userAgent = NULL ,
+		   const char *proto = "HTTP/1.0" ,
 		   bool doPost = false ,
-		   char *cookie = NULL ,
-		   char *additionalHeader = NULL , // does not incl \r\n
+		   const char *cookie = NULL ,
+		   const char *additionalHeader = NULL , // does not incl \r\n
 		   int32_t postContentLen = -1 , // for content-length of POST
 		   int32_t proxyIp = 0 ,
-		   char *proxyUsernamePwdAuth = NULL );
+		   const char *proxyUsernamePwdAuth = NULL );
 
 	// use this
 	SafeBuf m_reqBuf;

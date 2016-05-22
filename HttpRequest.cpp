@@ -147,14 +147,14 @@ bool HttpRequest::copy ( class HttpRequest *r , bool stealBuf ) {
 // . returns false and sets g_errno on error
 // . NOTE: http 1.1 uses Keep-Alive by default (use Connection: close to not)
 bool HttpRequest::set (char *url,int32_t offset,int32_t size,time_t ifModifiedSince,
-		       char *userAgent , char *proto , bool doPost ,
-		       char *cookie , char *additionalHeader ,
+		       const char *userAgent, const char *proto, bool doPost,
+		       const char *cookie, const char *additionalHeader,
 		       // if posting something, how many bytes is it?
 		       int32_t postContentLen ,
 		       // are we sending the request through an http proxy?
 		       // if so this will be non-zero
 		       int32_t proxyIp ,
-		       char *proxyUsernamePwd ) {
+		       const char *proxyUsernamePwd ) {
 
 	m_reqBufValid = false;
 
