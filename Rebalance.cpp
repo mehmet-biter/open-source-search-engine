@@ -45,7 +45,7 @@ Rebalance::Rebalance ( ) {
 
 // . returns NULL if we don't know yet if we need to rebalance
 // . otherwise returns ptr to the bool we want
-char *Rebalance::getNeedsRebalance ( ) {
+const char *Rebalance::getNeedsRebalance ( ) {
 
 	if ( m_needsRebalanceValid )
 		return &m_needsRebalance;
@@ -164,7 +164,7 @@ char *Rebalance::getNeedsRebalance ( ) {
 void Rebalance::rebalanceLoop ( ) {
 
 	// once this knows, it returns right away. so it is super fast
-	char *np = getNeedsRebalance();
+	const char *np = getNeedsRebalance();
 	// if we don't know yet, this np is NULL
 	if ( ! np ) return;
 	// if we do not need to rebalance just return

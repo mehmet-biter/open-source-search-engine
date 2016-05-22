@@ -16,7 +16,7 @@ class Rebalance {
 
 	Rebalance();
 
-	char *getNeedsRebalance ( ) ;
+	const char *getNeedsRebalance ( ) ;
 	void rebalanceLoop ( ) ;
 	void scanLoop ( ) ;
 	bool scanRdb ( ) ;
