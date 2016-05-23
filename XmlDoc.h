@@ -298,7 +298,7 @@ public:
  public:
 	bool set2 ( char *titleRec,
 		    int32_t maxSize, 
-		    char *coll,
+		    const char *coll,
 		    class SafeBuf *p,
 		    int32_t niceness ,
 		    class SpiderRequest *sreq = NULL );
@@ -312,7 +312,7 @@ public:
 
 	bool set4 ( class SpiderRequest *sreq  , 
 		    key_t           *doledbKey ,
-		    char            *coll      , 
+		    const char      *coll      ,
 		    class SafeBuf   *pbuf      , 
 		    int32_t          niceness  ,
 		    char            *utf8Content = NULL ,
