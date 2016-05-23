@@ -18,24 +18,11 @@ class Dir {
 
 	bool close    ( );
 
-	void rewind   ( ); // rewind to get the first filename
-
-	bool cleanOut ( ); // remove all files/dir in directory
-
-	bool create   ( ); // create the directory
-
 	char *getNextFilename ( char *pattern = NULL );
 
 	// . calls getNextFilename and returns number of files matching the 
 	//   pattern
 	int getNumFiles             ( char *pattern = NULL );
-
-	// . does not yet support recursion
-	int64_t   getUsedSpace    ( );
-
-	char *getNewFilename ( char *pattern  ) ;
-	int64_t   getNewId       ( char *pattern  ) ;
-	int64_t   getFileId      ( char *filename ) ;
 
 	char *getDir     ( ) { return m_dirname; }
 	char *getDirName ( ) { return m_dirname; }

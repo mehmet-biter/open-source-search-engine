@@ -67,32 +67,10 @@ bool Dir::open ( ) {
 	return true;
 }
 
-// remove all files in m_dirname
-bool Dir::cleanOut ( ) {
-	char buf[1024];
-	sprintf ( buf , "rm -r %s/*", m_dirname );
-	gbsystem ( buf );
-	return true;
-}
-
-// create m_dirname
-bool Dir::create ( ) {
-	char buf[1024];
-	sprintf ( buf , "mkdir %s", m_dirname );
-	gbsystem ( buf );
-	return true;
-}
-
-
 int Dir::getNumFiles ( char *pattern ) {
 	int count = 0;
 	while ( getNextFilename ( pattern ) ) count++;
 	return count;
-}
-
-// rewind to get the first filename
-void Dir::rewind ( ) {
-	rewinddir ( m_dir );
 }
 
 char *Dir::getNextFilename ( char *pattern ) {
@@ -130,82 +108,9 @@ char *Dir::getNextFilename ( char *pattern ) {
 	return NULL;
 }
 
-// must call set first
-// not recursive!
-// return -1 on error
-int64_t Dir::getUsedSpace ( ) {
-
-	rewinddir ( m_dir );
-
-	int64_t total = 0;
-	struct dirent *ent ;
-	while ( ( ent = readdir ( m_dir ) )  )  {
-		File tmpfile;
-		tmpfile.set ( ent->d_name );
-		int64_t space = tmpfile.getFileSize ( );
-		if ( space > 0 ) total += space;
-	}
-		
-	return total;
-}
-
 // . replace the * in the pattern with a unique id from getNewId()
 char *Dir::getFullName ( char *filename ) {
 	static char buf[1024];
 	sprintf ( buf , "%s/%s", m_dirname , filename );
 	return buf;
-}
-
-// . replace the * in the pattern with a unique id from getNewId()
-char *Dir::getNewFilename ( char *pattern ) {
-	int64_t id = getNewId ( pattern );
-	static char buf[1024];
-	strcpy ( buf , m_dirname );
-	int j = gbstrlen ( buf );
-	for ( int i = 0 ; pattern[i] ; i++ ) {
-		if ( pattern[i] != '*' ) {buf[j++] = pattern[i]; continue;}
-		sprintf ( &buf[j] , "%" PRId64 , id );
-		j = gbstrlen ( buf );
-	}
-	buf[j++] = '\0';
-	return buf;
-}
-
-// . a highly specialized function
-// . gets a new id represented by files of pattern "pattern"
-// . if pattern is "*.data" will return the LUB for *, a int64_t
-int64_t Dir::getNewId ( char *pattern ) {
-
-	rewinddir ( m_dir );
-
-	char *filename ;
-	int64_t   lub = 0;
-	while ( (filename = getNextFilename ( pattern ))  ) {
-		int64_t id = getFileId ( filename );
-		if ( id >= lub ) lub = id + 1;
-	}	
-
-	return lub;
-}
-
-// . another highly specialized function
-// . expects filename to begin with a number
-// . return -1 if none exists
-int64_t Dir::getFileId ( char *filename ) {
-
-	int end = gbstrlen ( filename ) -1;
-	while ( end >= 0 && filename [ end ] != '.' ) end--;
-	if ( end < 0 ) return -1;
-	end--;
-	while ( end >= 0 && isdigit ( filename [ end ] ) ) end--;
-	// now 3 cases:
-	// 1. end  = -1 and filename[0] is NOT a digit
-	// 2. end  = -1 and filename[0] is a digit
-	// 3. end >=  0 and filename[end+1] is a digit
-	if   ( end < 0 && ! isdigit ( filename[0] ) ) return -1;
-	if   ( end < 0 ) end = 0;
-	else             end++;
-	int64_t id = -1;
-	sscanf ( filename + end , "%" PRId64"." , & id );
-	return id;
 }
