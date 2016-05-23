@@ -49,7 +49,7 @@ class Statsdb {
 	//   we get an ETRYAGAIN error, so we try to accumulate stats in a
 	//   local buffer in that case
 	bool addStat ( int32_t        niceness ,
-		       char       *label    ,
+		       const char    *label    ,
 		       int64_t   t1       ,
 		       int64_t   t2       ,
 		       float       value    , // y-value really, "numBytes"
