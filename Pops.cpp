@@ -15,7 +15,7 @@ Pops::~Pops() {
 	}
 }
 
-bool Pops::set ( Words *words , int32_t a , int32_t b ) {
+bool Pops::set ( const Words *words , int32_t a , int32_t b ) {
 	int32_t nw = words->getNumWords();
 
 	int32_t need = nw * 4;
