@@ -157,15 +157,6 @@ bool SafeBuf::safeMemcpy ( const Words *w, int32_t a, int32_t b ) {
 	return safeMemcpy ( p , pend - p );
 }
 
-char* SafeBuf::pushStr  (const char* str, uint32_t len) {
-	int32_t initLen = m_length;
-	bool status = safeMemcpy ( str , len );
-	status &= nullTerm();
-	m_length++; //count the null so it isn't overwritten
-	if(!status) return NULL;
-	return m_buf + initLen;
-}
-
 bool SafeBuf::pushPtr ( void *ptr ) {
 	if ( m_length + (int32_t)sizeof(char *) > m_capacity ) 
 		if(!reserve(sizeof(char *)))//2*m_capacity + 1))
@@ -198,53 +189,6 @@ bool SafeBuf::pushFloat ( float i) {
 			return false;
 	*(float *)(m_buf+m_length) = i;
 	m_length += 4;
-	return true;
-}
-
-// hack off trailing 0's
-bool SafeBuf::printFloatPretty ( float f ) {
-
-	if ( m_length + 40 > m_capacity && ! reserve(40) )
-		return false;
-
-	char *p = m_buf + m_length;
-
-	int len =  sprintf(p,"%f",f);
-
-	// need a decimal point to truncate trailing 0's
-	char *ss = strstr(p,".");
-	if ( ! ss ) {
-		m_length += len;
-		return true;
-	}
-
-	// hack off trailing zeros
-	char *e = p + len - 1;
-	int plen = len;
-
-	for ( ; e > p ; e-- ) {
-		if ( e[0] == '.' ) {
-			//e[0] = '\0';
-			plen--;
-			break;
-		}
-		if ( e[0] != '0' ) break;
-		//e[0] = '\0';
-		plen--;
-	}
-
-	m_length += plen;//e - p;
-	p[plen] = '\0';
-	return true;
-}
-
-
-bool SafeBuf::pushDouble ( double i) {
-	if ( m_length + (int32_t)sizeof(double) > m_capacity ) 
-		if(!reserve(sizeof(double)))
-			return false;
-	*(double *)(m_buf+m_length) = i;
-	m_length += sizeof(double);
 	return true;
 }
 

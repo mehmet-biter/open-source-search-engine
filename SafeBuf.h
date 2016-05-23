@@ -268,15 +268,10 @@ public:
 	}
 
 
-	// hack off trailing 0's
-	bool printFloatPretty ( float f ) ;
-
-	char* pushStr  (const char* str, uint32_t len);
 	bool  pushPtr  ( void *ptr );
 	bool  pushLong (int32_t i);
 	bool  pushLongLong (int64_t i);
 	bool  pushFloat (float i);
-	bool  pushDouble (double i);
 	int32_t  popLong();
 	float popFloat();
 
