@@ -9,7 +9,7 @@
 #include "SpiderProxy.h" // OP_GETPROXY OP_RETPROXY
 #include "zlib.h"
 
-static char *g_fakeReply = 
+static char g_fakeReply[] =
 	"HTTP/1.0 200 (OK)\r\n"
 	"Content-Length: 0\r\n"
 	"Connection: Close\r\n"
@@ -1117,7 +1117,7 @@ void gotHttpReply9 ( void *state , TcpSocket *ts ) {
 
 	// log a handy msg if proxy was banned
 	if ( banned ) {
-		char *msg = "No more proxies to try. Using reply as is.";
+		const char *msg = "No more proxies to try. Using reply as is.";
 		if ( r->m_hasMoreProxiesToTry )  msg = "Trying another proxy.";
 		char tmpIp[64];
 		sprintf(tmpIp,"%s",iptoa(r->m_urlIp));
@@ -2570,19 +2570,18 @@ void stripProxyAuthorization ( char *squidProxiedReqBuf ) {
 	//
  loop:
 	// include space so it won't match anything in url
-	char *needle = "Proxy-Authorization: ";
-	char *s = gb_strcasestr ( squidProxiedReqBuf , needle );
+	char *s = gb_strcasestr ( squidProxiedReqBuf , "Proxy-Authorization: " );
 	if ( ! s ) return;
 	// find next \r\n
-	char *end = strstr ( s , "\r\n");
+	const char *end = strstr ( s , "\r\n");
 	if ( ! end ) return;
 	// bury the \r\n as well
 	end += 2;
 	// bury that string
 	int32_t reqLen = gbstrlen(squidProxiedReqBuf);
-	char *reqEnd = squidProxiedReqBuf + reqLen;
+	const char *reqEnd = squidProxiedReqBuf + reqLen;
 	// include \0, so add +1
-	gbmemcpy ( s ,end , reqEnd-end + 1);
+	memmove ( s ,end , reqEnd-end + 1);
 	// bury more of them
 	goto loop;
 }
@@ -2725,7 +2724,7 @@ int64_t computeProxiedCacheKey64 ( Msg13Request *r ) {
 
 bool printHammerQueueTable ( SafeBuf *sb ) {
 
-	char *title = "Queued Download Requests";
+	const char *title = "Queued Download Requests";
 	sb->safePrintf ( 
 			 "<table %s>"
 			 "<tr class=hdrow><td colspan=19>"
@@ -2802,7 +2801,7 @@ bool printHammerQueueTable ( SafeBuf *sb ) {
 
 	// show collection name as a link, also truncate to 32 chars
 	CollectionRec *cr = g_collectiondb.getRec ( r->m_collnum );
-	char *coll = "none";
+	const char *coll = "none";
 	if ( cr ) coll = cr->m_coll;
 	sb->safePrintf("<td>");
 	if ( cr ) {
