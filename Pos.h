@@ -22,7 +22,7 @@ class Pos {
 	~Pos();
 	void reset();
 
-	bool set(Words *words, int32_t a = 0, int32_t b = -1 );
+	bool set(const Words *words, int32_t a = 0, int32_t b = -1 );
 
 	// . filter out xml words [a,b] into plain text, stores into "f"
 	// . will not exceed "fend"

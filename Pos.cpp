@@ -496,7 +496,7 @@ int32_t Pos::filter( Words *words, int32_t a, int32_t b, bool addEllipsis, char 
 	return (f - fstart);
 }
 
-bool Pos::set( Words *words, int32_t a, int32_t b ) {
+bool Pos::set( const Words *words, int32_t a, int32_t b ) {
 	// free m_buf in case this is a second call
 	reset();
 
