@@ -33,7 +33,7 @@ class ThumbnailInfo {
 				    int32_t maxHeight,
 				    bool printLink ,
 				    int32_t *newdx ,
-				    char *style = NULL ,
+				    const char *style = NULL ,
 				    char format = FORMAT_HTML ) ;
 } __attribute__((packed, aligned(4)));
 
