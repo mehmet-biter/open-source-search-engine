@@ -498,7 +498,7 @@ bool Synonyms::addAmpPhrase ( int32_t wordNum , HashTableX *dt ) {
 }
 
 // return false and set g_errno on error
-bool Synonyms::addStripped ( char *w , int32_t wlen , HashTableX *dt ) {
+bool Synonyms::addStripped ( const char *w , int32_t wlen , HashTableX *dt ) {
 	// avoid overflow
 	if ( wlen > 200 ) return true;
 
