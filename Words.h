@@ -60,7 +60,10 @@ class Words {
 	int32_t getNumAlnumWords() const {
 		return m_numAlnumWords;
 	}
-	char *getWord( int32_t n ) const {
+	char *getWord( int32_t n ) {
+		return m_words[n];
+	}
+	const char *getWord( int32_t n ) const {
 		return m_words[n];
 	}
 	int32_t getWordLen( int32_t n ) const {
