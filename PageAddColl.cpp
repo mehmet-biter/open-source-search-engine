@@ -335,7 +335,7 @@ bool sendPageCloneColl ( TcpSocket *s , HttpRequest *r ) {
 	if ( format == FORMAT_XML || format == FORMAT_JSON ) {
 		if ( ! coll ) {
 			g_errno = EBADENGINEER;
-			char *msg = "no c parm provided";
+			const char *msg = "no c parm provided";
 			return g_httpServer.sendErrorReply(s,g_errno,msg,NULL);
 		}
 		return g_httpServer.sendSuccessReply(s,format);
