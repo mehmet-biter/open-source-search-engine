@@ -39,13 +39,14 @@ int32_t Synonyms::getSynonyms ( const Words *words ,
 			     int32_t niceness ) {
 
 	// punct words have no synoyms
-	if ( ! words->m_wordIds[wordNum] ) return 0;
+	if ( ! words->getWordId(wordNum) )
+		return 0;
 
 	// store these
 	m_words     = words;
 
 	// sanity check
-	if ( wordNum > m_words->m_numWords ) { char *xx=NULL;*xx=0; }
+	if ( wordNum > m_words->getNumWords() ) { char *xx=NULL;*xx=0; }
 
 	// init the dedup table to dedup wordIds
 	HashTableX dt;
@@ -111,8 +112,8 @@ int32_t Synonyms::getSynonyms ( const Words *words ,
 	m_langIdsPtr = m_langIds;
 
 	
-	char *w    = m_words->m_words   [wordNum];
-	int32_t  wlen = m_words->m_wordLens[wordNum];
+	const char *w = m_words->getWord(wordNum);
+	int32_t  wlen = m_words->getWordLen(wordNum);
 
 	//
 	// NOW hit wiktionary
@@ -160,14 +161,14 @@ int32_t Synonyms::getSynonyms ( const Words *words ,
 
 	// try looking up bigram so "new jersey" gets "nj" as synonym
 	if ( wikiLangId && 
-	     wordNum+2< m_words->m_numWords &&
-	     m_words->m_wordIds[wordNum+2]) {
+	     wordNum+2< m_words->getNumWords() &&
+	     m_words->getWordId(wordNum+2)) {
 		// get phrase id bigram then
 		int32_t conti = 0;
 		bwid = hash64Lower_utf8_cont(w,wlen,0,&conti);
 		// then the next word
-		char *wp2 = m_words->m_words[wordNum+2];
-		int32_t  wlen2 = m_words->m_wordLens[wordNum+2];
+		const char *wp2 = m_words->getWord(wordNum+2);
+		int32_t  wlen2 = m_words->getWordLen(wordNum+2);
 		bwid = hash64Lower_utf8_cont(wp2,wlen2,bwid,&conti);
 		baseNumAlnumWords = 2;
 		ss = g_wiktionary.getSynSet( bwid, wikiLangId );
@@ -176,7 +177,7 @@ int32_t Synonyms::getSynonyms ( const Words *words ,
 	// need a language for wiktionary to work with
 	if ( wikiLangId && ! ss ) {
 		// get raw word id
-		bwid = m_words->m_wordIds[wordNum];
+		bwid = m_words->getWordId(wordNum);
 		baseNumAlnumWords = 1;
 		//if ( bwid == 1424622907102375150LL)
 		//	log("a");
@@ -353,8 +354,8 @@ int32_t Synonyms::getSynonyms ( const Words *words ,
 			Words sw;
 			sw.set ( p , e - p , true, niceness );
 
-			*(int64_t *)m_wids0Ptr = sw.m_wordIds[0];
-			*(int64_t *)m_wids1Ptr = sw.m_wordIds[2];
+			*(int64_t *)m_wids0Ptr = sw.getWordId(0);
+			*(int64_t *)m_wids1Ptr = sw.getWordId(2);
 			*(int32_t  *)m_numAlnumWordsPtr = sw.getNumAlnumWords();
 		}
 
@@ -405,8 +406,8 @@ int32_t Synonyms::getSynonyms ( const Words *words ,
 
 bool Synonyms::addWithoutApostrophe ( int32_t wordNum , HashTableX *dt ) {
 
-	int32_t  wlen = m_words->m_wordLens[wordNum];
-	char *w    = m_words->m_words[wordNum];
+	int32_t  wlen = m_words->getWordLen(wordNum);
+	const char *w    = m_words->getWord(wordNum);
 
 	wlen -= 2;
 	
@@ -445,13 +446,13 @@ bool Synonyms::addAmpPhrase ( int32_t wordNum , HashTableX *dt ) {
 	// . "D & B" --> dandb
 	// . make the "andb" a suffix
 	//char tbuf[100];
-	if ( wordNum +2 >= m_words->m_numWords   ) return true;
-	if ( ! m_words->m_wordIds [wordNum+2]    ) return true;
-	if ( m_words->m_wordLens[wordNum+2] > 50 ) return true;
+	if ( wordNum +2 >= m_words->getNumWords() ) return true;
+	if ( ! m_words->getWordId(wordNum+2)     ) return true;
+	if ( m_words->getWordLen(wordNum+2) > 50 ) return true;
 	if ( ! m_words->hasChar(wordNum+1,'&')   ) return true;
 
-	int32_t  wlen = m_words->m_wordLens[wordNum];
-	char *w    = m_words->m_words[wordNum];
+	int32_t  wlen = m_words->getWordLen(wordNum);
+	const char *w    = m_words->getWord(wordNum);
 
 	// need this for hash continuation procedure
 	int32_t conti = 0;

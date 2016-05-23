@@ -1663,8 +1663,8 @@ bool XmlDoc::hashTitle ( HashTableX *tt ) {
 	// this has been called, note it
 	m_hashedTitle = true;
 
-	nodeid_t *tids = m_words.m_tagIds;
-	int32_t      nw   = m_words.m_numWords;
+	const nodeid_t *tids = m_words.getTagIds();
+	int32_t      nw   = m_words.getNumWords();
 
 	// find the first <title> tag in the doc
 	int32_t i ;

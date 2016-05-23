@@ -362,7 +362,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 		inLink = true;
 
 		// get the node in the xml
-		int32_t xn = words->m_nodes[i];
+		int32_t xn = words->getNodes()[i];
 
 		// is it a self link?
 		int32_t len;
@@ -941,7 +941,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 				skipTo = wp + rootTitleLens[j];
 				// must land on qualified punct then!!
 				int32_t e = k+1;
-				for ( ; e<b && w->m_words[e]<skipTo ; e++ );
+				for ( ; e<b && w->getWord(e)<skipTo ; e++ );
 				// ok, word #e must be a qualified punct
 				if ( e<b &&
 				     ! isWordQualified(w->getWord(e),w->getWordLen(e)))
@@ -1490,7 +1490,7 @@ float Title::getSimilarity ( Words  *w1 , int32_t i0 , int32_t i1 ,
 	// loop over all words in "w1" and hash them
 	for ( int32_t i = i0 ; i < i1 ; i++ ) {
 		// the word id
-		int64_t wid = w1->m_wordIds[i] ;
+		int64_t wid = w1->getWordId(i);
 
 		// skip if not indexable
 		if ( wid == 0 ) {
@@ -1561,7 +1561,7 @@ float Title::getSimilarity ( Words  *w1 , int32_t i0 , int32_t i1 ,
 	// loop over all words in "w1" and hash them
 	for ( int32_t i = t0 ; i < t1 ; i++ ) {
 		// the word id
-		int64_t wid = w2->m_wordIds[i] ;
+		int64_t wid = w2->getWordId(i);
 
 		// skip if not indexable
 		if ( wid == 0 ) {
@@ -1632,9 +1632,9 @@ float Title::getSimilarity ( Words  *w1 , int32_t i0 , int32_t i1 ,
 // . returns false on error and sets g_errno
 bool Title::copyTitle(Words *w, int32_t t0, int32_t t1) {
 	// skip initial punct
-	char      **wp        = w->m_words;
-	int32_t       *wlens     = w->m_wordLens;
-	int32_t        nw        = w->m_numWords;
+	const char *const *wp    = w->getWords();
+	const int32_t     *wlens = w->getWordLens();
+	int32_t            nw    = w->getNumWords();
 
 	// sanity check
 	if ( t1 < t0 ) { char *xx = NULL; *xx = 0; }
@@ -1650,7 +1650,7 @@ bool Title::copyTitle(Words *w, int32_t t0, int32_t t1) {
 		return true;
 	}
 
-	char *end = wp[t1-1] + wlens[t1-1] ;
+	const char *end = wp[t1-1] + wlens[t1-1] ;
 
 	// allocate title
 	int32_t need = end - wp[t0];
@@ -1667,8 +1667,8 @@ bool Title::copyTitle(Words *w, int32_t t0, int32_t t1) {
 	}
 
 	// point to the title to transcribe
-	char *src    = wp[t0];
-	char *srcEnd = end;
+	const char *src    = wp[t0];
+	const char *srcEnd = end;
 
 	// include a \" or \'
 	if ( t0 > 0 && ( src[-1] == '\'' || src[-1] == '\"' ) ) {

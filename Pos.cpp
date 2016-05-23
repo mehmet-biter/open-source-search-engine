@@ -501,9 +501,7 @@ bool Pos::set( Words *words, int32_t a, int32_t b ) {
 	reset();
 
 	int32_t nw = words->getNumWords();
-	int32_t *wlens = words->m_wordLens;
-	nodeid_t *tids = words->getTagIds(); // m_tagIds;
-	char **wp = words->m_words;
+	const nodeid_t *tids = words->getTagIds();
 
 	// -1 is the default value
 	if ( b == -1 ) {
@@ -578,11 +576,12 @@ bool Pos::set( Words *words, int32_t a, int32_t b ) {
 		}
 
 		// scan through all chars discounting back-to-back spaces
-		char *pend = wp[i] + wlens[i];
+		const char *wp = words->getWord(i);
+		const char *pend = wp + words->getWordLen(i);
 		unsigned char cs = 0;
 
 		// assume filters out to the same # of chars
-		for ( char *p = wp[i]; p < pend; p += cs ) {
+		for ( const char *p = wp; p < pend; p += cs ) {
 			// get size
 			cs = getUtf8CharSize(p);
 

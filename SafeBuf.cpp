@@ -153,8 +153,8 @@ bool SafeBuf::safeMemcpy_nospaces(const char *s, int32_t len) {
 #include "Words.h"
 
 bool SafeBuf::safeMemcpy ( Words *w , int32_t a , int32_t b ) {
-	char *p    = w->m_words[a];
-	char *pend = w->m_words[b-1] + w->m_wordLens[b-1];
+	const char *p    = w->getWord(a);
+	const char *pend = w->getWord(b-1) + w->getWordLen(b-1);
 	return safeMemcpy ( p , pend - p );
 }
 

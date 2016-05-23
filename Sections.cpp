@@ -72,7 +72,7 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 
 	if ( ! w ) return true;
 
-	if ( w->m_numWords > 1000000 ) {
+	if ( w->getNumWords() > 1000000 ) {
 		log("sections: over 1M words. skipping sections set for "
 		    "performance.");
 		return true;

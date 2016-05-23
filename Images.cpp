@@ -158,7 +158,7 @@ void Images::setCandidates ( Url *pageUrl , Words *words , Xml *xml ,
 		// skip if not <img> tag
 		if (tids[i] != TAG_IMG ) continue;
 		// get the node num into Xml.cpp::m_nodes[] array
-		int32_t nn = words->m_nodes[i];
+		int32_t nn = words->getNodes()[i];
 		// check width to rule out small decorating imgs
 		int32_t width = xml->getLong(nn,nn+1,"width", -1 );
 		if ( width != -1 && width < 50 ) continue;

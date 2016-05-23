@@ -4535,7 +4535,7 @@ bool parseTest ( char *coll , int64_t docId , char *query ) {
 	e = gettimeofdayInMilliseconds();
 	log("build: Words::set(xml,computeIds=true) took %.3f ms for %" PRId32" words"
 	    " (precount=%" PRId32") for docId %" PRId64".",
-	    (double)(e - t)/100.0,words.m_numWords,words.m_preCount,docId);
+	    (double)(e - t)/100.0,words.getNumWords(),words.getPreCount(),docId);
 
 
 	t = gettimeofdayInMilliseconds();
@@ -4548,7 +4548,7 @@ bool parseTest ( char *coll , int64_t docId , char *query ) {
 	log("build: Words::set(xml,computeIds=false) "
 	    "took %.3f ms for %" PRId32" words"
 	    " (precount=%" PRId32") for docId %" PRId64".",
-	    (double)(e - t)/100.0,words.m_numWords,words.m_preCount,docId);
+	    (double)(e - t)/100.0,words.getNumWords(),words.getPreCount(),docId);
 
 
 	t = gettimeofdayInMilliseconds();
@@ -4563,7 +4563,7 @@ bool parseTest ( char *coll , int64_t docId , char *query ) {
 	log("build: Words::set(content,computeIds=true) "
 	    "took %.3f ms for %" PRId32" words "
 	    "for docId %" PRId64".",
-	    (double)(e - t)/100.0,words.m_numWords,docId);
+	    (double)(e - t)/100.0,words.getNumWords(),docId);
 
 
 	Pos pos;
@@ -4580,7 +4580,7 @@ bool parseTest ( char *coll , int64_t docId , char *query ) {
 	log("build: Pos::set() "
 	    "took %.3f ms for %" PRId32" words "
 	    "for docId %" PRId64".",
-	    (double)(e - t)/100.0,words.m_numWords,docId);
+	    (double)(e - t)/100.0,words.getNumWords(),docId);
 
 
 	Bits bits;
@@ -4597,7 +4597,7 @@ bool parseTest ( char *coll , int64_t docId , char *query ) {
 	log("build: Bits::setForSummary() "
 	    "took %.3f ms for %" PRId32" words "
 	    "for docId %" PRId64".",
-	    (double)(e - t)/100.0,words.m_numWords,docId);
+	    (double)(e - t)/100.0,words.getNumWords(),docId);
 
 
 	Sections sections;
@@ -4617,7 +4617,7 @@ bool parseTest ( char *coll , int64_t docId , char *query ) {
 	log("build: Scores::set() "
 	    "took %.3f ms for %" PRId32" words "
 	    "for docId %" PRId64".",
-	    (double)(e - t)/100.0,words.m_numWords,docId);
+	    (double)(e - t)/100.0,words.getNumWords(),docId);
 
 	
 
@@ -4633,7 +4633,7 @@ bool parseTest ( char *coll , int64_t docId , char *query ) {
 	log("build: Phrases::set() "
 	    "took %.3f ms for %" PRId32" words "
 	    "for docId %" PRId64".",
-	    (double)(e - t)/100.0,words.m_numWords,docId);
+	    (double)(e - t)/100.0,words.getNumWords(),docId);
 
 	char *buf = (char *)mmalloc(contentLen*2+1,"main");
 	t = gettimeofdayInMilliseconds();
@@ -4682,7 +4682,7 @@ bool parseTest ( char *coll , int64_t docId , char *query ) {
 	e = gettimeofdayInMilliseconds();
 	log("build: Matches::set() took %.3f ms for %" PRId32" words"
 	    " (precount=%" PRId32") for docId %" PRId64".",
-	    (double)(e - t)/100.0,words.m_numWords,words.m_preCount,docId);
+	    (double)(e - t)/100.0,words.getNumWords(),words.getPreCount(),docId);
 
 
 

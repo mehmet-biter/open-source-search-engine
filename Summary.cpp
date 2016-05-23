@@ -409,18 +409,18 @@ bool Summary::setSummary ( Xml *xml, Words *words, Sections *sections, Pos *pos,
 		swbit_t *bb = maxm->m_bits->m_swbits;
 
 		// this should be impossible
-		if ( maxa > ww->m_numWords || maxb > ww->m_numWords ) {
+		if ( maxa > ww->getNumWords() || maxb > ww->getNumWords() ) {
 			log ( LOG_WARN,"query: summary starts or ends after "
 			      "document is over! maxa=%" PRId32" maxb=%" PRId32" nw=%" PRId32,
-			      maxa, maxb, ww->m_numWords );
-			maxa = ww->m_numWords - 1;
-			maxb = ww->m_numWords;
+			      maxa, maxb, ww->getNumWords() );
+			maxa = ww->getNumWords() - 1;
+			maxb = ww->getNumWords();
 		}
 
 		// assume we do not preceed with ellipsis "..."
 		bool needEllipsis = true;
 		
-		char *c = ww->m_words[maxa]+0;
+		const char *c = ww->getWord(maxa)+0;
 
 		// rule of thumb, don't use ellipsis if the first letter is capital, or a non letter
 		// is punct word before us pair acrossable? if so then we probably are not the start of a sentence.
@@ -664,7 +664,7 @@ int64_t Summary::getBestWindow ( Matches *matches, int32_t mm, int32_t *lasta,
 
 		// stop if its the start of a quoted sentence
 		if ( a+1<nw && (bb[a+1] & D_IN_QUOTES) && 
-		     words->m_words[a][0] == '\"' ){
+		     words->getWord(a)[0] == '\"' ){
 			startOnQuote = true;
 			goodStart    = true;
 			break;
@@ -687,7 +687,7 @@ int64_t Summary::getBestWindow ( Matches *matches, int32_t mm, int32_t *lasta,
 	}
 
 	// don't let punct or tag word start a line, unless a quote
-	if ( a < matchWordNum && !wids[a] && words->m_words[a][0] != '\"' ){
+	if ( a < matchWordNum && !wids[a] && words->getWord(a)[0] != '\"' ){
 		while ( a < matchWordNum && !wids[a] ) a++;
 		
 		// do not break right after a "strong connector", like 
@@ -715,7 +715,7 @@ int64_t Summary::getBestWindow ( Matches *matches, int32_t mm, int32_t *lasta,
 			break;
 		}
 		
-		if ( startOnQuote && words->m_words[b][0] == '\"' ) {
+		if ( startOnQuote && words->getWord(b)[0] == '\"' ) {
 			endQuoteWordNum = b;
 		}
 
@@ -752,7 +752,7 @@ int64_t Summary::getBestWindow ( Matches *matches, int32_t mm, int32_t *lasta,
 			numTagsCrossed++;
 
 			// try to have atleast 10 words in the summary
-			if ( wordCount > 10 && words->m_words[b-1][0] != ':' ) {
+			if ( wordCount > 10 && words->getWord(b-1)[0] != ':' ) {
 				break;
 			}
 		}
@@ -812,7 +812,7 @@ int64_t Summary::getBestWindow ( Matches *matches, int32_t mm, int32_t *lasta,
 			int32_t len = words->getWordLen(i);
 			char cs;
 			for (int32_t k=0;k<len; k+=cs ) {
-				char *c = words->m_words[i]+k;
+				const char *c = words->getWord(i)+k;
 				cs = getUtf8CharSize(c);
 				if ( is_binary_utf8 ( c ) ) {
 					continue;
@@ -834,8 +834,8 @@ int64_t Summary::getBestWindow ( Matches *matches, int32_t mm, int32_t *lasta,
 
 		// check if there is a url. best way to check for '://'
 		if ( wids && !wids[i] ) {
-			char *wrd = words->m_words[i];
-			int32_t  wrdLen = words->m_wordLens[i];
+			const char *wrd = words->getWord(i);
+			int32_t  wrdLen = words->getWordLen(i);
 			if ( wrdLen == 3 && wrd[0] == ':' && wrd[1] == '/' &&  wrd[2] == '/' ) {
 				hasUrl = true;
 			}
@@ -1016,8 +1016,8 @@ bool Summary::getDefaultSummary ( Xml *xml, Words *words, Sections *sections, Po
 	int32_t lastAlnum = -1;
 	int32_t badFlags = SEC_SCRIPT|SEC_STYLE|SEC_SELECT|SEC_IN_TITLE;
 	// shortcut
-	nodeid_t  *tids = words->m_tagIds;
-	int64_t *wids = words->getWordIds();
+	const nodeid_t  *tids = words->getTagIds();
+	const int64_t *wids = words->getWordIds();
 
 	// get the section ptr array 1-1 with the words, "sp"
 	Section **sp = NULL;
@@ -1032,7 +1032,7 @@ bool Summary::getDefaultSummary ( Xml *xml, Words *words, Sections *sections, Po
 		}
 
 		if (start > 0 && bestStart == start &&
-		    ( words->m_words[i] - words->m_words[start] ) >= 
+		    ( words->getWord(i) - words->getWord(start) ) >=
 		    ( maxSummaryLen - 8 )){
 			longestConsecutive = numConsecutive;
 			bestStart = start;

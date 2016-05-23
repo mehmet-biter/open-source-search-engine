@@ -2774,7 +2774,7 @@ int32_t *XmlDoc::getIndexCode2 ( ) {
 		return (int32_t *)sections;
 	}
 
-	if ( sections->m_numSections == 0 && words->m_numWords > 0 ) {
+	if ( sections->m_numSections == 0 && words->getNumWords() > 0 ) {
 		m_indexCode      = EDOCBADSECTIONS;
 		m_indexCodeValid = true;
 		logTrace( g_conf.m_logTraceXmlDoc, "END, EDOCBADSECTIONS" );;
@@ -3442,9 +3442,9 @@ static bool setLangVec ( Words *words ,
 			 Sections *ss ,
 			 int32_t niceness ) {
 
-	int64_t  *wids  = words->getWordIds    ();
-	char      **wptrs = words->m_words;
-	int32_t        nw    = words->getNumWords   ();
+	const int64_t *wids       = words->getWordIds();
+	const char * const *wptrs = words->getWords();
+	int32_t nw                = words->getNumWords();
 
 	// allocate
 	if ( ! langBuf->reserve ( nw ) ) return false;
@@ -3715,9 +3715,8 @@ char XmlDoc::computeLangId ( Sections *sections , Words *words, char *lv ) {
 
 
 
-	int32_t           nw = words->getNumWords   ();
-	char      **wptrs = words->m_words;
-	int32_t       *wlens = words->m_wordLens;
+	int32_t             nw    = words->getNumWords();
+	const char * const *wptrs = words->getWords();
 
 
 	// now set the langid
@@ -3730,11 +3729,12 @@ char XmlDoc::computeLangId ( Sections *sections , Words *words, char *lv ) {
 		// skip if in a url
 		//
 		// blah/
-		if ( wptrs[i][wlens[i]] == '/' ) continue;
+		int32_t wlen = words->getWordLen(i);
+		if ( wptrs[i][wlen] == '/' ) continue;
 		// blah.blah or blah?blah
-		if ( (wptrs[i][wlens[i]] == '.' ||
-		      wptrs[i][wlens[i]] == '?' ) &&
-		     is_alnum_a(wptrs[i][wlens[i]+1]) )
+		if ( (wptrs[i][wlen] == '.' ||
+		      wptrs[i][wlen] == '?' ) &&
+		     is_alnum_a(wptrs[i][wlen+1]) )
 			continue;
 		// /blah or ?blah
 		if ( (i>0 && wptrs[i][-1] == '/') ||
@@ -4215,11 +4215,8 @@ HashTableX *XmlDoc::getCountTable ( ) {
 	HashTableX *ct = &m_countTable;
 
 	// ez var
-	int64_t  *wids  = words->getWordIds    ();
-	nodeid_t   *tids  = words->getTagIds     ();
-	int32_t        nw    = words->getNumWords   ();
-	char      **wptrs = words->m_words;
-	int32_t       *wlens = words->m_wordLens;
+	const nodeid_t *tids  = words->getTagIds();
+	int32_t   nw    = words->getNumWords   ();
 	int64_t  *pids  = phrases->getPhraseIds2();
 
 	// add 5000 slots for inlink text in hashString_ct() calls below
@@ -4236,22 +4233,25 @@ HashTableX *XmlDoc::getCountTable ( ) {
 		// breathe
 		QUICKPOLL ( m_niceness );
 		// add the word
-		if ( wids[i] == 0LL ) continue;
+		int64_t wid = words->getWordId(i);
+		if ( wid == 0LL )
+			continue;
 
 		// . skip if in repeated fragment
 		// . unfortunately we truncate the frag vec to like
 		//   the first 80,000 words for performance reasons
 		if ( i < MAXFRAGWORDS && fv[i] == 0 ) continue;
 		// accumulate the wid with a score of 1 each time it occurs
-		if ( ! ct->addTerm ( &wids[i] ) ) return (HashTableX *)NULL;
+		if ( ! ct->addTerm ( &wid ) ) return (HashTableX *)NULL;
 		// skip if word #i does not start a phrase
 		if ( ! pids [i] ) continue;
 		// if phrase score is less than 100% do not consider as a
 		// phrase so that we do not phrase "albuquerque, NM" and stuff
 		// like that... in fact, we can only have a space here...
-		if ( wptrs[i+1][0] == ',' ) continue;
-		if ( wptrs[i+1][1] == ',' ) continue;
-		if ( wptrs[i+1][2] == ',' ) continue;
+		const char *wptr = words->getWord(i+1);
+		if ( wptr[0] == ',' ) continue;
+		if ( wptr[1] == ',' ) continue;
+		if ( wptr[2] == ',' ) continue;
 		// put it in, accumulate, max score is 0x7fffffff
 		if ( ! ct->addTerm ( &pids[i] ) ) return (HashTableX *)NULL;
 	}
@@ -4263,11 +4263,10 @@ HashTableX *XmlDoc::getCountTable ( ) {
 		// skip if not a meta tag
 		if ( tids[i] != TAG_META ) continue;
 		// find the "content=" word
-		char *w    = wptrs[i];
-		int32_t  wlen = wlens[i];
-		char *wend = w + wlen;
-		char *p    ;
-		p = strncasestr  (w,wlen,"content=");
+		const char *w    = words->getWord(i);
+		int32_t  wlen = words->getWordLen(i);
+		const char *wend = w + wlen;
+		const char *p = strncasestr  (w,wlen,"content=");
 		// skip if we did not have any content in this meta tag
 		if ( ! p ) continue;
 		// skip the "content="
@@ -4276,7 +4275,8 @@ HashTableX *XmlDoc::getCountTable ( ) {
 		if ( wend - p <= 0 ) continue;
 
 		// our ouw hash
-		if ( ! hashString_ct ( ct , p , wend - p ) )
+		//const_cast because hashString_ct calls Words::set and that is still not const-sane
+		if ( ! hashString_ct ( ct , const_cast<char*>(p) , wend - p ) )
 			return (HashTableX *)NULL;
 	}
 	// add each incoming link text
@@ -4322,30 +4322,30 @@ bool XmlDoc::hashString_ct ( HashTableX *ct , char *s , int32_t slen ) {
 	if ( !phrases.set( &words, &bits, m_niceness ) )
 		return false;
 	int32_t nw = words.getNumWords();
-	int64_t  *wids  = words.getWordIds();
 	int64_t  *pids  = phrases.getPhraseIds2();
-	char      **wptrs = words.m_words;
-	int32_t       *wlens = words.m_wordLens;
 
 	for ( int32_t i = 0 ; i < nw ; i++ ) {
 		// breathe
 		QUICKPOLL ( m_niceness );
 		// add the word
-		if ( wids[i] == 0LL ) continue;
+		int64_t wid = words.getWordId(i);
+		if ( wid == 0LL ) continue;
 		// skip if in repeated fragment
 		// . NO, we do not use this for these short strings
 		//if ( ww[i] == 0 ) continue;
 		// accumulate the wid with a score of 1 each time it occurs
-		if ( ! ct->addTerm ( &wids[i] ) ) return false;
+		if ( ! ct->addTerm ( &wid ) ) return false;
 		// skip if word #i does not start a phrase
 		if ( ! pids [i] ) continue;
 		// if phrase score is less than 100% do not consider as a
 		// phrase so that we do not phrase "albuquerque, NM" and stuff
 		// like that... in fact, we can only have a space here...
 		if ( i+1<nw ) {
-			if ( wptrs[i+1][0] == ',' ) continue;
-			if ( wlens[i+1]>=2 && wptrs[i+1][1] == ',' ) continue;
-			if ( wlens[i+1]>=3 && wptrs[i+1][2] == ',' ) continue;
+			const char *wptr = words.getWord(i+1);
+			if ( wptr[0] == ',' ) continue;
+			int32_t wlen = words.getWordLen(i);
+			if ( wlen>=2 && wptr[1] == ',' ) continue;
+			if ( wlen>=3 && wptr[2] == ',' ) continue;
 		}
 		// put it in, accumulate, max score is 0x7fffffff
 		if ( ! ct->addTerm ( &pids[i] ) ) return false;
@@ -4457,9 +4457,9 @@ uint32_t *XmlDoc::getTagPairHash32 ( ) {
 
         // shortcuts
 	//int64_t *wids  = words->getWordIds  ();
-        nodeid_t    *tids  = words->getTagIds   ();
-        int32_t           nw  = words->getNumWords ();
-	int32_t           nt  = words->m_numTags;
+	const nodeid_t *tids  = words->getTagIds();
+	int32_t           nw  = words->getNumWords();
+	int32_t           nt  = words->getNumTags();
 
 	// . get the hash of all the tag pair hashes!
 	// . we then combine that with our site hash to get our site specific
@@ -4611,10 +4611,10 @@ int32_t *XmlDoc::getPostLinkTextVector ( int32_t linkNode ) {
 	if ( linkNode >= nn ) return m_postVec;
 
 	// now convert the linkNode # to a word #, "start"
-	int32_t       nw   = ww->getNumWords ();
-	int64_t *wids = ww->getWordIds  ();
-	nodeid_t  *tids = ww->getTagIds   ();
-	int32_t      *wn   = ww->m_nodes;
+	int32_t          nw   = ww->getNumWords();
+	const int64_t   *wids = ww->getWordIds();
+	const nodeid_t  *tids = ww->getTagIds();
+	const int32_t   *wn   = ww->getNodes();
 	int32_t       i    = 0;
 	for ( ; i < nw ; i++ ) {
 		// breathe
@@ -4679,14 +4679,14 @@ int32_t XmlDoc::computeVector( Words *words, uint32_t *vec, int32_t start, int32
 
 	// shortcuts
 	int32_t       nw     = words->getNumWords();
-	int64_t *wids   = words->getWordIds();
+	const int64_t *wids  = words->getWordIds();
 
 	// set the end to the real end if it was specified as less than zero
 	if ( end < 0 ) end = nw;
 
 	// # of alnum words, about... minus the tags, then the punct words
 	// are half of what remains...
-	int32_t count = words->m_numAlnumWords;
+	int32_t count = words->getNumAlnumWords();
 
 	// . Get sample vector from content section only.
 	// . This helps remove duplicate menu/ad from vector
@@ -18162,9 +18162,9 @@ SafeBuf *XmlDoc::getHeaderTagBuf() {
 		return &m_htb;
 	}
 	// otherwise, set it
-	char *a = m_words.m_words[si->m_firstWordPos];
-	char *b = m_words.m_words[si->m_lastWordPos] ;
-	b += m_words.m_wordLens[si->m_lastWordPos];
+	const char *a = m_words.getWord(si->m_firstWordPos);
+	const char *b = m_words.getWord(si->m_lastWordPos);
+	b += m_words.getWordLen(si->m_lastWordPos);
 
 	// copy it
 	m_htb.safeMemcpy ( a , b - a );
@@ -20087,10 +20087,10 @@ bool XmlDoc::printRainbowSections ( SafeBuf *sb , HttpRequest *hr ) {
 			int32_t pnum = parent - sections->m_sections;
 			sb->safePrintf("\t\t<parent>%" PRId32"</parent>\n",pnum);
 		}
-		char *byte1 = words->m_words[si->m_a];
-		char *byte2 = words->m_words[si->m_b-1] +
-			words->m_wordLens[si->m_b-1];
-		int32_t off1 = byte1 - words->m_words[0];
+		const char *byte1 = words->getWord(si->m_a);
+		const char *byte2 = words->getWord(si->m_b-1) +
+				    words->getWordLen(si->m_b-1);
+		int32_t off1 = byte1 - words->getWord(0);
 		int32_t size = byte2 - byte1;
 		sb->safePrintf("\t\t<byteOffset>%" PRId32"</byteOffset>\n",off1);
 		sb->safePrintf("\t\t<numBytes>%" PRId32"</numBytes>\n",size);
@@ -21551,7 +21551,7 @@ char *XmlDoc::getWordSpamVec ( ) {
 		int32_t count = 0;
 		int32_t knp = np;
 		// must be 3+ letters, not a stop word, not a number
-		if ( words->m_wordLens[profile[0]] <= 2 || commonWords[i] )
+		if ( words->getWordLen(profile[0]) <= 2 || commonWords[i] )
 			knp = 0;
 		// scan to see if they are a tight list
 		for ( int32_t k = 1 ; k < knp ; k++ ) {
@@ -21572,18 +21572,18 @@ char *XmlDoc::getWordSpamVec ( ) {
 			for ( int32_t j = a+1 ; j <b ; j++ ) {
 				// if in link do not count, chinese spammer
 				// does not have his crap in links
-				if ( words->m_words[j][0] == '<' &&
-				     words->m_wordLens[j]>=3 ) {
+				if ( words->getWord(j)[0] == '<' &&
+				     words->getWordLen(j)>=3 ) {
 					// get the next char after the <
 					char nc;
-					nc=to_lower_a(words->m_words[j][1]);
+					nc=to_lower_a(words->getWord(j)[1]);
 					// now check it for anchor tag
 					if ( nc == 'a' ) {
 						inLink = true; break; }
 				}
-				if ( words->m_words[j][0] == '<' )
+				if ( words->getWord(j)[0] == '<' )
 					gotSep = true;
-				if ( is_alnum_a(words->m_words[j][0]) )
+				if ( is_alnum_a(words->getWord(j)[0]) )
 					gotSep = true;
 			}
 			// . the chinese spammer always has a separator,
@@ -21831,8 +21831,7 @@ bool getWordPosVec ( const Words *words ,
 	int32_t tagDist = 0;
 	Section **sp = NULL;
 	if ( sections ) sp = sections->m_sectionPtrs;
-	const nodeid_t *tids = words->m_tagIds;
-	const int64_t *wids = words->m_wordIds;
+	const nodeid_t *tids = words->getTagIds();
 	const int32_t *wlens = words->getWordLens();
 	const char *const*wptrs = words->getWords();
 	int32_t nw = words->getNumWords();
@@ -21859,7 +21858,7 @@ bool getWordPosVec ( const Words *words ,
 		// . and so do sequences of punct
 		// . must duplicate this code in Query.cpp for setting
 		//   QueryWord::m_posNum
-		if ( ! wids[i] ) {
+		if ( ! words->getWordId(i) ) {
 			// simple space or sequence of just white space
 			if ( words->isSpaces(i) )
 				dist++;

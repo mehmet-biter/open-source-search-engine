@@ -427,11 +427,11 @@ bool Matches::addMatches(Words *words, Phrases *phrases, Sections *sections, Bit
 
 	// set convenience vars
 	uint32_t mask = m_numSlots - 1;
-	int64_t *wids = words->getWordIds();
-	int32_t *wlens = words->getWordLens();
-	char **wptrs = words->getWords();
+	const int64_t *wids = words->getWordIds();
+	const int32_t *wlens = words->getWordLens();
+	const char * const *wptrs = words->getWords();
 	nodeid_t *tids = words->getTagIds();
-	int32_t nw = words->m_numWords;
+	int32_t nw = words->getNumWords();
 	int32_t n;
 	int32_t matchStack = 0;
 	int64_t nextMatchWordIdMustBeThis = 0;
@@ -717,9 +717,10 @@ int32_t Matches::getNumWordsInMatch( Words *words, int32_t wn, int32_t n, int32_
 	if ( m_qtableFlags[n] & 0x08 ) {
 		// get the word following this
 		int64_t wid2 = 0LL;
-		if ( wn+2 < words->m_numWords ) wid2 = words->m_wordIds[wn+2];
+		if ( wn+2 < words->getNumWords() )
+			wid2 = words->getWordId(wn+2);
 		// scan the synonyms...
-		int64_t *wids = words->m_wordIds;
+		const int64_t *wids = words->getWordIds();
 		for ( int32_t k = 0 ; k < m_q->m_numTerms ; k++ ) {
 			QueryTerm *qt = &m_q->m_qterms[k];
 			if ( ! qt->m_synonymOf ) continue;
@@ -748,7 +749,7 @@ int32_t Matches::getNumWordsInMatch( Words *words, int32_t wn, int32_t n, int32_
 	//the word we match in the query appears in quotes in the query
 	int32_t k     = -1;
 	int32_t count = 0;
-	int32_t nw    = words->m_numWords;
+	int32_t nw    = words->getNumWords();
 
 	// loop through all the quotes in the query and find
 	// which one we match, if any. we will have to advance the

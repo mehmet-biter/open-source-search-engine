@@ -1468,8 +1468,8 @@ bool Query::setQWords ( char boolFlag ,
 		// if there's a quote before the first space then
 		// it's ok!!!
 		if ( endField ) {
-			char *s = words.m_words[i];
-			char *send = s + words.m_wordLens[i];
+			const char *s = words.getWord(i);
+			const char *send = s + words.getWordLen(i);
 			for ( ; s < send ; s++ ) {
 				// if the space is inside the quotes then it
 				// doesn't count!
@@ -1717,9 +1717,9 @@ bool Query::setQWords ( char boolFlag ,
 		     fieldCode == FIELD_GBFIELDMATCH ) {
 			// . find 1st space -- that terminates the field value
 			// . make "end" point to the end of the entire query
-			char *end =
-					(words.m_words[words.m_numWords - 1] +
-					 words.m_wordLens[words.m_numWords - 1]);
+			const char *end =
+					(words.getWord(words.getNumWords() - 1) +
+					 words.getWordLen(words.getNumWords() - 1));
 			// use this for gbmin:price:1.99 etc.
 			int32_t firstColonLen = -1;
 			int32_t lastColonLen = -1;
@@ -1956,8 +1956,8 @@ bool Query::setQWords ( char boolFlag ,
 		if (fieldCode == FIELD_CHARSET){
 			// find first space -- that terminates the field value
 			char* end = 
-				(words.m_words[words.m_numWords-1] +
-				 words.m_wordLens[words.m_numWords-1]);
+				(words.getWord(words.getNumWords()-1) +
+				 words.getWordLen(words.getNumWords()-1));
 			while ( w+wlen<end && 
 				! is_wspace_utf8(w+wlen) ) wlen++;
 			// ignore following words until we hit a space
@@ -2106,7 +2106,7 @@ bool Query::setQWords ( char boolFlag ,
 		// skip all but strongly connected words
 		if ( m_qwords[j].m_ignoreWord != IGNORE_CONNECTED &&
 		     // must also be non punct word OR a space
-		     ( !words.isPunct(j) || words.m_words[j][0] == ' ' ) ) {
+		     ( !words.isPunct(j) || words.getWord(j)[0] == ' ' ) ) {
 			// break the "quote", if any
 			qs = -1; continue; }
 		// if he is punctuation and qs is -1, skip him,

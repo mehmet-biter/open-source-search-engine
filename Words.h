@@ -69,6 +69,9 @@ class Words {
 	int32_t getWordLen( int32_t n ) const {
 		return m_wordLens[n];
 	}
+	int32_t getNumTags() const {
+		return m_numTags;
+	}
 
 	// . size of string from word #a up to and NOT including word #b
 	// . "b" can be m_numWords to mean up to the end of the doc
@@ -197,7 +200,8 @@ class Words {
 	const int32_t  *getWordLens() const { return m_wordLens; }
 	int64_t        *getWordIds()       { return m_wordIds; }
 	const int64_t  *getWordIds() const { return m_wordIds; }
-
+	const int32_t  *getNodes() const { return m_nodes; }
+	
 	// 2 types of "words": punctuation and alnum
 	// isPunct() will return true on tags, too, so they are "punct"
 	bool      isPunct  ( int32_t n ) const { return m_wordIds[n] == 0;}
@@ -271,7 +275,9 @@ class Words {
 		return m_words[0]; 
 	}
 
-	// private:
+	int32_t getPreCount() const { return m_preCount; }
+
+private:
 
 	bool allocateWordBuffers(int32_t count, bool tagIds = false);
 	
