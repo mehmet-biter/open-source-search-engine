@@ -3,6 +3,8 @@
 /statsdb/
 # generated file/binary
 *.o
+*.gcda
+*.gcno
 *.dat
 *.conf.saving
 *.conf

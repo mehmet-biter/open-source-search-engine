@@ -80,7 +80,7 @@ CPPFLAGS = -g -Wall -fno-stack-protector -DPTHREADS -Wstrict-aliasing=0
 CPPFLAGS += -std=c++11
 
 # optimization
-ifeq ($(config),$(filter $(config),debug test))
+ifeq ($(config),$(filter $(config),debug test coverage))
 O1 =
 O2 =
 O3 =
@@ -98,13 +98,24 @@ endif
 # defines
 ifeq ($(config),debug)
 DEFS += -D_VALGRIND_
+
 else ifeq ($(config),test)
 DEFS += -D_VALGRIND_
 DEFS += -DPRIVACORE_TEST_VERSION
+
+else ifeq ($(config), coverage)
+CONFIG_CPPFLAGS += -fprofile-arcs -ftest-coverage
+
 else ifeq ($(config),release)
 # if defined, UI options that can damage our production index will be disabled
 DEFS += -DPRIVACORE_SAFE_VERSION
+
 endif
+
+# export to sub-make
+export CONFIG_CPPFLAGS
+
+CPPFLAGS += $(CONFIG_CPPFLAGS)
 
 ifeq ($(CXX), g++)
 CPPFLAGS += -Wno-write-strings -Wno-maybe-uninitialized -Wno-unused-but-set-variable
@@ -313,7 +324,8 @@ urlinfo: $(OBJS) urlinfo.o
 # comment this out for faster deb package building
 clean:
 	-rm -f *.o gb *.bz2 blaster2 udptest memtest hashtest mergetest monitor reindex urlinfo dnstest gmon.* quarantine core core.* libgb.a
-	make -C test $@
+	-rm -f *.gcda *.gcno
+	$(MAKE) -C test $@
 
 StopWords.o:
 	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp

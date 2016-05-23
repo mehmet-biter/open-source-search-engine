@@ -36,7 +36,10 @@ CPPFLAGS += -g
 CPPFLAGS += -Wno-write-strings
 CPPFLAGS += -Wl,-rpath=. -Wl,-rpath=$(BASE_DIR)
 CPPFLAGS += -I$(BASE_DIR) -I$(GTEST_DIR)/include
-CPPFLAGS+= -std=c++11
+CPPFLAGS += -std=c++11
+
+# exported in parent make
+CPPFLAGS += $(CONFIG_CPPFLAGS)
 
 LIBS += -L./ -lgtest 
 LIBS += $(BASE_DIR)/libgb.a -lz -lpthread -lssl -lcrypto
@@ -56,6 +59,7 @@ test: all ucdata
 .PHONY: clean
 clean:
 	rm -f *.o $(TARGET) core.*
+	rm -f *.gcda *.gcno
 
 
 JobSchedulerTest00: JobSchedulerTest00.o libgb.a GigablastTest.o
