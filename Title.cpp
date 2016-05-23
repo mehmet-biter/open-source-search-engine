@@ -1490,7 +1490,7 @@ float Title::getSimilarity ( Words  *w1 , int32_t i0 , int32_t i1 ,
 	// loop over all words in "w1" and hash them
 	for ( int32_t i = i0 ; i < i1 ; i++ ) {
 		// the word id
-		int64_t wid = (int32_t) w1->m_wordIds[i] ;
+		int64_t wid = w1->m_wordIds[i] ;
 
 		// skip if not indexable
 		if ( wid == 0 ) {
@@ -1561,7 +1561,7 @@ float Title::getSimilarity ( Words  *w1 , int32_t i0 , int32_t i1 ,
 	// loop over all words in "w1" and hash them
 	for ( int32_t i = t0 ; i < t1 ; i++ ) {
 		// the word id
-		int64_t wid = (int32_t) w2->m_wordIds[i] ;
+		int64_t wid = w2->m_wordIds[i] ;
 
 		// skip if not indexable
 		if ( wid == 0 ) {
