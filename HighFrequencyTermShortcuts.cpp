@@ -81,7 +81,7 @@ bool HighFrequencyTermShortcuts::load()
 	
 	const char *end = new_buffer + st.st_size;
 	char *p = new_buffer;
-	while(p+8+4<end) {
+	while(p+8+4<=end) {
 		uint64_t term_id = *(const uint64_t*)p;
 		p += 8;
 		uint32_t posdb_entries = *(const uint32_t*)p;
