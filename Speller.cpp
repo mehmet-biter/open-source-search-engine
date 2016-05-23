@@ -786,8 +786,8 @@ char *Speller::getPhraseRecord(char *phrase, int len ) {
 	return p;
 }
 
-int64_t Speller::getLangBits64 ( int64_t *wid ) {
-	int32_t slot = m_unifiedDict.getSlot(wid);
+int64_t Speller::getLangBits64 ( int64_t wid ) {
+	int32_t slot = m_unifiedDict.getSlot(&wid);
 	if (slot < 0) return 0LL;
 	int32_t offset =  *(int32_t *)m_unifiedDict.getValueFromSlot(slot);
 	char *p = m_unifiedBuf.getBufStart() + offset;

@@ -120,7 +120,7 @@ static bool storeTerm ( const char	*s        ,
 	ti.m_synSrc = synSrc; // isSynonym = isSynonym;
 
 	// get language bit vec
-	ti.m_langBitVec64 = g_speller.getLangBits64(&termId);
+	ti.m_langBitVec64 = g_speller.getLangBits64(termId);
 
 	// make the key
 	key96_t k;

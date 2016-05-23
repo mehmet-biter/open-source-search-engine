@@ -33,7 +33,7 @@ class Speller {
 
 	void test (char *ff);
 
-	int64_t getLangBits64 ( int64_t *wid ) ;
+	int64_t getLangBits64 ( int64_t wid ) ;
 
 	int32_t getPhrasePopularity( char *s, uint64_t h, unsigned char langId );
 

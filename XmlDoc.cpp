@@ -3466,7 +3466,7 @@ static bool setLangVec ( Words *words ,
 		}
 		// get the lang bits. does not include langTranslingual
 		// or langUnknown
-		int64_t bits = g_speller.getLangBits64 ( &wids[i] );
+		int64_t bits = g_speller.getLangBits64 ( wids[i] );
 		// skip if not unique
 		char count = getNumBitsOn64 ( bits ) ;
 		// if we only got one lang we could be, assume that
@@ -3513,7 +3513,7 @@ static bool setLangVec ( Words *words ,
 			if ( is_digit(wptrs[j][0]) ) continue;
 			// get 64 bit lang vec. does not include
 			// langUnknown or langTransligual bits
-			bits &= g_speller.getLangBits64 ( &wids[j] );
+			bits &= g_speller.getLangBits64 ( wids[j] );
 		}
 		// bail if none
 		if ( ! bits ) continue;
@@ -3557,7 +3557,7 @@ static bool setLangVec ( Words *words ,
 		//     langVector[i] != langTranslingual )
 		//	continue;
 		// get last 5
-		window[wp] = g_speller.getLangBits64 ( &wids[i] );
+		window[wp] = g_speller.getLangBits64 ( wids[i] );
 		// skip if not in dictionary!
 		if ( window[wp] == 0 ) continue;
 		// otherwise, store it
