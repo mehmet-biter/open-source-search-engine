@@ -35,7 +35,7 @@ class Speller {
 
 	int64_t getLangBits64 ( int64_t wid ) ;
 
-	int32_t getPhrasePopularity( char *s, uint64_t h, unsigned char langId );
+	int32_t getPhrasePopularity( const char *s, uint64_t h, unsigned char langId );
 
 	bool canSplitWords( char *s, int32_t slen, bool *isPorn, char *splitWords, unsigned char langId );
 	

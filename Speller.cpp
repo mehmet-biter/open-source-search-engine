@@ -465,7 +465,7 @@ bool Speller::loadUnifiedDict() {
 
 // in case the language is unknown, just give the pop of the
 // first found language
-int32_t Speller::getPhrasePopularity( char *str, uint64_t h, unsigned char langId ) {
+int32_t Speller::getPhrasePopularity( const char *str, uint64_t h, unsigned char langId ) {
 	//char *xx=NULL;*xx=0;
 
 	// hack fixes. 
