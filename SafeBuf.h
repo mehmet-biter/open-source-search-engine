@@ -11,6 +11,8 @@
 
 #include "iana_charset.h"
 
+class Words;
+
 class SafeBuf {
 public:
 	//*TRUCTORS
@@ -44,16 +46,21 @@ public:
 	bool stealBuf ( SafeBuf *sb );
 
 	//ACCESSORS
-	char *getBuf() { return m_buf + m_length; }
-	char *getBufPtr() { return m_buf + m_length; }
-	char *getBufCursor() { return m_buf + m_length; }
-	char *getBufStart() { return m_buf; }
-	char *getBufEnd() { return m_buf + m_capacity; }
-	int32_t getCapacity() { return m_capacity; }
-	int32_t getAvail() { return m_capacity - m_length; }
-	int32_t length() { return m_length; }
-	int32_t getLength() { return m_length; }
-	int32_t getBufUsed() { return m_length; }
+	char       *getBuf()       { return m_buf + m_length; }
+	const char *getBuf() const { return m_buf + m_length; }
+	char       *getBufPtr()       { return m_buf + m_length; }
+	const char *getBufPtr() const { return m_buf + m_length; }
+	char       *getBufCursor()       { return m_buf + m_length; }
+	const char *getBufCursor() const { return m_buf + m_length; }
+	char       *getBufStart()       { return m_buf; }
+	const char *getBufStart() const { return m_buf; }
+	char       *getBufEnd()       { return m_buf + m_capacity; }
+	const char *getBufEnd() const { return m_buf + m_capacity; }
+	int32_t getCapacity() const { return m_capacity; }
+	int32_t getAvail() const { return m_capacity - m_length; }
+	int32_t length() const { return m_length; }
+	int32_t getLength() const { return m_length; }
+	int32_t getBufUsed() const { return m_length; }
 	void print() { 
 	  if ( write(1,m_buf,m_length) != m_length) { char*xx=NULL;*xx=0;} }
 
@@ -106,8 +113,8 @@ public:
 	bool  safeMemcpy(const void *s, int32_t len){return safeMemcpy((const char*)s,len);}
 	bool  safeMemcpy(const char *s, int32_t len);
 	bool  safeMemcpy_nospaces(const char *s, int32_t len);
-	bool  safeMemcpy(SafeBuf *c){return safeMemcpy(c->m_buf,c->m_length);}
-	bool  safeMemcpy ( class Words *w , int32_t a , int32_t b ) ;
+	bool  safeMemcpy(const SafeBuf *c) { return safeMemcpy(c->m_buf,c->m_length); }
+	bool  safeMemcpy ( const Words *w, int32_t a, int32_t b );
 	bool  safeStrcpy ( const char *s ) ;
 	//bool  safeStrcpyPrettyJSON ( char *decodedJson ) ;
 	bool  safeUtf8ToJSON ( const char *utf8 ) ;
@@ -119,10 +126,10 @@ public:
 	bool  base64Encode ( const char *s , int32_t len , int32_t niceness = 0 );
 	bool  base64Decode ( const char *src , int32_t srcLen , int32_t niceness = 0 ) ;
 
-	bool base64Encode( char *s ) ;
+	bool base64Encode( const char *s ) ;
 
 	//bool  pushLong ( int32_t val ) { return safeMemcpy((char *)&val,4); }
-	bool  cat(SafeBuf& c);
+	bool  cat(const SafeBuf& c);
 
 	void  reset() { m_length = 0; }
 	void  purge(); // Clear all data and free all allocated memory

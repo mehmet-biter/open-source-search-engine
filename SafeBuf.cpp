@@ -150,9 +150,8 @@ bool SafeBuf::safeMemcpy_nospaces(const char *s, int32_t len) {
 	return true;
 }
 
-#include "Words.h"
 
-bool SafeBuf::safeMemcpy ( Words *w , int32_t a , int32_t b ) {
+bool SafeBuf::safeMemcpy ( const Words *w, int32_t a, int32_t b ) {
 	const char *p    = w->getWord(a);
 	const char *pend = w->getWord(b-1) + w->getWordLen(b-1);
 	return safeMemcpy ( p , pend - p );
@@ -269,7 +268,7 @@ int32_t SafeBuf::pad(const char ch, const int32_t len) {
 	return len;
 }
 
-bool SafeBuf::cat(SafeBuf& c) {
+bool SafeBuf::cat(const SafeBuf& c) {
 	return safeMemcpy(c.getBufStart(), c.length());
 }
 
@@ -1689,7 +1688,7 @@ bool SafeBuf::base64Encode ( const char *sx , int32_t len , int32_t niceness ) {
 	return true;
 }
 
-bool SafeBuf::base64Encode( char *s ) {
+bool SafeBuf::base64Encode( const char *s ) {
 	return base64Encode(s,gbstrlen(s)); 
 }
 
