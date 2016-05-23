@@ -7,6 +7,8 @@
 #include "BigFile.h"
 #include "HashTableX.h"
 
+class Words;
+
 class Wiki {
 public:
 	Wiki();
@@ -14,7 +16,7 @@ public:
 
 	void reset();
 
-	int32_t getNumWordsInWikiPhrase ( int32_t i , class Words *words );
+	int32_t getNumWordsInWikiPhrase ( int32_t i, const Words *words );
 
 	// . load from disk
 	// . wikititles.txt (loads wikititles.dat if and date is newer)

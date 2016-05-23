@@ -171,7 +171,7 @@ bool Wiki::loadText ( int32_t fileSize ) {
 
 // if a phrase in a query is in a wikipedia title, then increase
 // its affWeights beyond the normal 1.0
-int32_t Wiki::getNumWordsInWikiPhrase ( int32_t i , Words *w ) {
+int32_t Wiki::getNumWordsInWikiPhrase ( int32_t i, const Words *w ) {
 	const int64_t *wids = w->getWordIds();
 	if ( ! wids[i] ) return 0;
 	int32_t nw = w->getNumWords();
