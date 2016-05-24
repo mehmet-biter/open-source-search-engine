@@ -33,7 +33,6 @@ class Dir {
 	char          *m_dirname;
 	DIR           *m_dir;
 	char          m_dentryBuffer[1024];
-	bool m_needsClose;
 };
 
 #endif // GB_DIR_H
