@@ -23,7 +23,6 @@ class Dir {
 	const char *getDir     ( ) { return m_dirname; }
 	const char *getDirName ( ) { return m_dirname; }
 	const char *getDirname ( ) { return m_dirname; }
-	const char *getFullName ( const char *filename ); // prepends path
 
 	 Dir     ( );
 	~Dir     ( );

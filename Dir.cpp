@@ -104,10 +104,3 @@ const char *Dir::getNextFilename ( const char *pattern ) {
 
 	return NULL;
 }
-
-// . replace the * in the pattern with a unique id from getNewId()
-const char *Dir::getFullName ( const char *filename ) {
-	static char buf[1024];
-	sprintf ( buf , "%s/%s", m_dirname , filename );
-	return buf;
-}
