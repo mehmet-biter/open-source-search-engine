@@ -60,7 +60,7 @@ static void generateSummary(Summary &summary, char *htmlInput, char *queryStr, c
 	summary.setSummary(&xml, &words, &sections, &pos, &query, 180, 3, 3, 180, &url, &matches, title.getTitle(), title.getTitleLen());
 }
 
-TEST (SummaryTest, StripSamePunct) {
+TEST( SummaryTest, StripSamePunct ) {
 	const char *body =
 	   "<pre>"
 	   "---------------------------------------------------------------------------------\n"
@@ -83,4 +83,24 @@ TEST (SummaryTest, StripSamePunct) {
 	generateSummary(summary, input, "jesse budge", "http://www.example.com/");
 
 	EXPECT_STREQ("CANDRA BUDGE | $22.00 | … | JESSE NICLEY | $34.00 …", summary.getSummary());
+}
+
+TEST( SummaryTest, NoEllipsisAdded ) {
+	const char *head =
+		"<title>Instrument prices by Acme Inc.</title>\n"
+		"<meta name=\"description\" content=\"Unorthodox musical instrument value estimation\">\n";
+
+	const char *body =
+		"<h1>Unusual saxophone valuation</h1>\n"
+		"<p>Looking for knowing how much your saxophone is worth and what an appropriate insurance should be?. We provide that and other relevant information such as procedures, locations and time tables</p>\n"
+		"<p>We also provide valuation for other musical instrucments.</p>\n";
+
+	char input[MAX_BUF_SIZE];
+	std::sprintf(input, HTML_FORMAT, head, body);
+
+	Summary summary;
+	generateSummary(summary, input, "saxophone", "http://www.example.com/");
+
+	/// @todo we're not adding ellipsis here due to lack of space. But we should take one less word instead and add ellipsis.
+	EXPECT_STREQ( "Unusual saxophone valuation. Looking for knowing how much your saxophone is worth and what an appropriate insurance should be?. We provide that and other relevant information such", summary.getSummary() );
 }

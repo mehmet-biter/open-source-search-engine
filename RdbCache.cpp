@@ -69,7 +69,7 @@ bool RdbCache::init ( int32_t  maxMem        ,
 		      bool  supportLists  ,
 		      int32_t  maxRecs       ,
 		      bool  useHalfKeys   ,
-		      char *dbname        ,
+		      const char *dbname  ,
 		      bool  loadFromDisk  ,
 		      char  cacheKeySize  ,
 		      char  dataKeySize   ,
@@ -189,7 +189,7 @@ bool RdbCache::init ( int32_t  maxMem        ,
 }
 
 //bool RdbCache::isInCache ( collnum_t collnum, key_t cacheKey, int32_t maxAge ) {
-bool RdbCache::isInCache ( collnum_t collnum, char *cacheKey, int32_t maxAge ) {
+bool RdbCache::isInCache ( collnum_t collnum, const char *cacheKey, int32_t maxAge ) {
 	// maxAge of 0 means don't check cache
 	if ( maxAge == 0 ) return false;
 	// bail if no cache
@@ -373,8 +373,8 @@ void RdbCache::addLong ( collnum_t collnum ,
 }
 
 
-bool RdbCache::getRecord ( char    *coll       ,
-			   char    *cacheKey   ,
+bool RdbCache::getRecord ( const char    *coll       ,
+			   const char    *cacheKey   ,
 			   char   **rec        ,
 			   int32_t    *recSize    ,
 			   bool     doCopy     ,
@@ -393,7 +393,7 @@ bool RdbCache::getRecord ( char    *coll       ,
 
 // returns false if was not in the cache, true otherwise
 bool RdbCache::setTimeStamp ( collnum_t  collnum      ,
-			      char      *cacheKey     ,
+			      const char      *cacheKey     ,
 			      int32_t       newTimeStamp ) {
 
 	// return now if table empty
@@ -419,7 +419,7 @@ bool RdbCache::setTimeStamp ( collnum_t  collnum      ,
 // . returns true if found, false if not found in cache
 // . sets *rec and *recSize iff found
 bool RdbCache::getRecord ( collnum_t collnum   ,
-			   char    *cacheKey   ,
+			   const char    *cacheKey   ,
 			   char   **rec        ,
 			   int32_t    *recSize    ,
 			   bool     doCopy     ,
@@ -631,10 +631,8 @@ bool RdbCache::getRecord ( collnum_t collnum   ,
 // . if "incCounts" is true and we hit  we inc the hit  count
 // . if "incCounts" is true and we miss we inc the miss count
 bool RdbCache::getList ( collnum_t collnum  ,
-			 //key_t    cacheKey  ,
-			 //key_t    startKey  ,
-			 char     *cacheKey  ,
-			 char     *startKey  ,
+			 const char     *cacheKey  ,
+			 const char     *startKey  ,
 			 RdbList *list      ,
 			 bool     doCopy    ,
 			 int32_t     maxAge    ,
@@ -689,7 +687,7 @@ bool RdbCache::getList ( collnum_t collnum  ,
 
 // returns false and sets errno on error
 //bool RdbCache::addList ( char *coll , key_t cacheKey , RdbList *list ) {
-bool RdbCache::addList ( char *coll , char *cacheKey , RdbList *list ) {
+bool RdbCache::addList ( const char *coll, const char *cacheKey, RdbList *list ) {
 	collnum_t collnum = g_collectiondb.getCollnum ( coll );
 	if ( collnum < 0 ) {
 		log("query: Collection %s does not exist. Cache failed.",
@@ -701,7 +699,7 @@ bool RdbCache::addList ( char *coll , char *cacheKey , RdbList *list ) {
 
 // returns false and sets errno on error
 //bool RdbCache::addList ( collnum_t collnum , key_t cacheKey , RdbList *list){
-bool RdbCache::addList ( collnum_t collnum , char *cacheKey , RdbList *list ) {
+bool RdbCache::addList ( collnum_t collnum, const char *cacheKey, RdbList *list ) {
 	// . sanity check
 	// . msg2 sometimes fails this check when it adds to the cache
 	if ( list->m_ks != m_dks ) { 
@@ -723,7 +721,6 @@ bool RdbCache::addList ( collnum_t collnum , char *cacheKey , RdbList *list ) {
 	// . return false on error (and set errno), false otherwise
 	return  addRecord ( collnum  ,
 			    cacheKey , 
-			    //(char *)&k      , sizeof(key_t)       , 
 			    k , m_dks ,
 			    list->getList() , list->getListSize() ,
 			    0 );
@@ -736,9 +733,8 @@ bool RdbCache::addList ( collnum_t collnum , char *cacheKey , RdbList *list ) {
 // . returns -1 on error and sets errno
 // . returns node # in tree we added it to on success
 bool RdbCache::addRecord ( collnum_t collnum ,
-			   //key_t  cacheKey  , 
-			   char  *cacheKey  , 
-			   char  *rec       , 
+			   const char  *cacheKey  ,
+			   const char  *rec       ,
 			   int32_t   recSize   ,
 			   int32_t   timestamp ,
 			   char **retRecPtr ) {
@@ -746,9 +742,9 @@ bool RdbCache::addRecord ( collnum_t collnum ,
 			  retRecPtr);
 }
 
-bool RdbCache::addRecord ( char  *coll      ,
-			   char  *cacheKey  , 
-			   char  *rec       , 
+bool RdbCache::addRecord ( const char  *coll      ,
+			   const char  *cacheKey  ,
+			   const char  *rec       ,
 			   int32_t   recSize   ,
 			   int32_t   timestamp ) {
 	collnum_t collnum = g_collectiondb.getCollnum ( coll );
@@ -760,10 +756,10 @@ bool RdbCache::addRecord ( char  *coll      ,
 }
 
 bool RdbCache::addRecord ( collnum_t collnum ,
-			   char  *cacheKey  , 
-			   char  *rec1      ,
+			   const char  *cacheKey  ,
+			   const char  *rec1      ,
 			   int32_t   recSize1  ,
-			   char  *rec2      ,
+			   const char  *rec2      ,
 			   int32_t   recSize2  ,
 			   int32_t   timestamp ,
 			   char **retRecPtr ) {
@@ -1125,7 +1121,7 @@ void RdbCache::markDeletedRecord(char *ptr){
 
 // patch the hole so chaining still works
 //void RdbCache::removeKey ( collnum_t collnum , key_t key , char *rec ) {
-void RdbCache::removeKey ( collnum_t collnum , char *key , char *rec ) {
+void RdbCache::removeKey ( collnum_t collnum, const char *key, const char *rec ) {
 	//int32_t n = (key.n0 + (uint64_t)key.n1)% m_numPtrsMax;
 	int32_t n = hash32 ( key , m_cks ) % m_numPtrsMax;
 	// debug msg
@@ -1211,7 +1207,7 @@ void RdbCache::removeKey ( collnum_t collnum , char *key , char *rec ) {
 }
 
 //void RdbCache::addKey ( collnum_t collnum , key_t key , char *ptr ) { 
-void RdbCache::addKey ( collnum_t collnum , char *key , char *ptr ) { 
+void RdbCache::addKey ( collnum_t collnum, const char *key, char *ptr ) {
 	// look up in hash table
 	//int32_t n = (key.n0 + (uint64_t)key.n1)% m_numPtrsMax;
 	int32_t n = hash32 ( key , m_cks ) % m_numPtrsMax;
@@ -1528,7 +1524,7 @@ bool RdbCache::saveSome_r ( int fd , int32_t *iptr , int32_t *off ) {
 	return true;
 }
 
-bool RdbCache::load ( char *dbname ) {
+bool RdbCache::load ( const char *dbname ) {
 	// append .cache to "dbname" to get cache filename
 	char filename [ 64 ];
 	if ( gbstrlen(dbname) > 50 )
@@ -1679,8 +1675,8 @@ bool RdbCache::load ( char *dbname ) {
 
 // remove a key range from the cache
 void RdbCache::removeKeyRange ( collnum_t collnum ,
-				char *startKey ,
-				char *endKey ) {
+				const char *startKey ,
+				const char *endKey ) {
 	//int32_t n = (key.n0 + (uint64_t)key.n1)% m_numPtrsMax;
 	// unused now!!
 	int32_t n = hash32 ( startKey , m_cks ) % m_numPtrsMax;

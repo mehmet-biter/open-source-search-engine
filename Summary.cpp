@@ -441,7 +441,8 @@ bool Summary::setSummary ( Xml *xml, Words *words, Sections *sections, Pos *pos,
 			if ( p > m_summary ) {
 				*p++ = ' ';
 			}
-			gbmemcpy ( p , "... " , 4 );
+
+			memcpy ( p, "\342\200\246 ", 4 ); //horizontal ellipsis, code point 0x2026
 			p += 4;
 		}
 
@@ -515,7 +516,9 @@ bool Summary::setSummary ( Xml *xml, Words *words, Sections *sections, Pos *pos,
 		// if we ended on punct that can be paired across we need
 		// to add an ellipsis
 		if ( needEllipsis ) {
-			if ( p + 4 + 2 > pend ) break;
+			if ( p + 4 + 2 > pend ) {
+				break;
+			}
 			memcpy ( p, " \342\200\246", 4 ); //horizontal ellipsis, code point 0x2026
 			p += 4;
 		}
