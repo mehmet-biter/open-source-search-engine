@@ -6,7 +6,7 @@
 #include <functional>
 #include <algorithm>
 
-Robots::Robots( const char* robotsTxt, int32_t robotsTxtLen, const char *userAgent )
+Robots::Robots( const char *robotsTxt, int32_t robotsTxtLen, const char *userAgent )
 	: m_robotsTxt( robotsTxt )
 	, m_robotsTxtLen( robotsTxtLen )
 	, m_currentLine ( NULL )
@@ -121,9 +121,8 @@ bool Robots::getField( const char **field, int32_t *fieldLen ) {
 		--(*fieldLen);
 	}
 
-	if ( g_conf.m_logTraceRobots ) {
-		log( LOG_TRACE, "robots: %s: len=%d field='%.*s'", __func__, *fieldLen, *fieldLen, *field );
-	}
+	logTrace( g_conf.m_logTraceRobots, "len=%d field='%.*s'", *fieldLen, *fieldLen, *field );
+
 	return ( *fieldLen > 0 );
 }
 
@@ -136,9 +135,8 @@ bool Robots::getValue( const char **value, int32_t *valueLen ) {
 	*value = m_currentLine + m_valueStartPos;
 	*valueLen = m_currentLineLen - m_valueStartPos;
 
-	if ( g_conf.m_logTraceRobots ) {
-		logf( LOG_TRACE, "robots: %s: len=%d value='%.*s'", __func__, *valueLen, *valueLen, *value );
-	}
+	logTrace( g_conf.m_logTraceRobots, "len=%d value='%.*s'", *valueLen, *valueLen, *value );
+
 	return ( *valueLen > 0 );
 }
 
@@ -182,10 +180,8 @@ bool Robots::parseCrawlDelay( const char *field, int32_t fieldLen, bool isUserAg
 			double crawlDelay = strtod( value, &endPtr );
 
 			if ( endPtr == ( value + valueLen ) ) {
-				if (g_conf.m_logTraceRobots) {
-					log( LOG_TRACE, "robots: %s: isUserAgent=%s crawlDelay='%.4f'",
-					     __func__, isUserAgent ? "true" : "false", crawlDelay );
-				}
+				logTrace( g_conf.m_logTraceRobots, "isUserAgent=%s crawlDelay='%.4f'",
+				          isUserAgent ? "true" : "false", crawlDelay );
 
 				if ( isUserAgent ) {
 					m_crawlDelay = static_cast<int32_t>(crawlDelay * 1000);
@@ -206,10 +202,8 @@ void Robots::parsePath( bool isAllow, bool isUserAgent ) {
 	int32_t valueLen = 0;
 
 	if ( getValue( &value, &valueLen ) ) {
-		if ( g_conf.m_logTraceRobots ) {
-			log( LOG_TRACE, "robots: %s: isAllow=%s isUserAgent=%s path='%.*s'",
-			     __func__, isAllow ? "true" : "false", isUserAgent ? "true" : "false", valueLen, value );
-		}
+		logTrace( g_conf.m_logTraceRobots, "isAllow=%s isUserAgent=%s path='%.*s'",
+		          isAllow ? "true" : "false", isUserAgent ? "true" : "false", valueLen, value );
 
 		if ( isUserAgent ) {
 			m_rules.push_back( RobotRule( isAllow, value, valueLen ));
