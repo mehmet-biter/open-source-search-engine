@@ -1798,7 +1798,7 @@ TEST( RobotsTest, RRobotsBoeEs ) {
 }
 
 // url encoded / utf-8
-TEST( RobotsTest, DISABLED_RRobotsWikipediaOrg ) {
+TEST( RobotsTest, RRobotsWikipediaOrg ) {
 	std::string robotsTxt = loadRobotsFile( "robots/wikipedia.org" );
 
 	TestRobots robots( robotsTxt.c_str(), robotsTxt.length() );
@@ -1808,4 +1808,29 @@ TEST( RobotsTest, DISABLED_RRobotsWikipediaOrg ) {
 	EXPECT_TRUE( robots.isDefaultUserAgentFound() );
 	EXPECT_FALSE( robots.isDefaultRulesEmpty() );
 
+	/// @todo add some test cases
+}
+
+// no line endings (last line)
+TEST( RobotsTest, RRobotsUpfEdu ) {
+	std::string robotsTxt = loadRobotsFile( "robots/upf.edu" );
+
+	TestRobots robots( robotsTxt.c_str(), robotsTxt.length() );
+
+	EXPECT_FALSE( robots.isUserAgentFound() );
+	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_TRUE( robots.isDefaultUserAgentFound() );
+	EXPECT_FALSE( robots.isDefaultRulesEmpty() );
+}
+
+// no line endings with starting whitespaces (last line)
+TEST( RobotsTest, RRobotsCoriolisIo ) {
+	std::string robotsTxt = loadRobotsFile( "robots/coriolis.io" );
+
+	TestRobots robots( robotsTxt.c_str(), robotsTxt.length() );
+
+	EXPECT_FALSE( robots.isUserAgentFound() );
+	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_FALSE( robots.isDefaultUserAgentFound() );
+	EXPECT_TRUE( robots.isDefaultRulesEmpty() );
 }

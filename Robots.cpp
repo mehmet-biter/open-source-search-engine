@@ -38,6 +38,11 @@ bool Robots::getNextLine() {
 		++currentPos;
 	}
 
+	// don't cross limit
+	if ( currentPos == m_robotsTxtLen ) {
+		return false;
+	}
+
 	int32_t linePos = currentPos;
 	m_currentLine = m_robotsTxt + currentPos;
 
@@ -75,7 +80,7 @@ bool Robots::getNextLine() {
 
 	if ( !foundLineLen ) {
 		// set to end of robots.txt
-		m_currentLineLen = m_robotsTxtLen - m_nextLineStartPos;
+		m_currentLineLen = static_cast<int32_t>( ( m_robotsTxt + m_robotsTxtLen ) - m_currentLine );
 	}
 
 	// store next lineStartPos
