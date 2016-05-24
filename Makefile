@@ -84,7 +84,8 @@ ifeq ($(config),$(filter $(config),debug test coverage))
 O1 =
 O2 =
 O3 =
-else ifeq ($(config),release)
+
+else ifeq ($(config),$(filter $(config),release sanitize))
 O1 = -O1
 O2 = -O2
 O3 = -O3
@@ -105,6 +106,13 @@ DEFS += -DPRIVACORE_TEST_VERSION
 
 else ifeq ($(config), coverage)
 CONFIG_CPPFLAGS += -fprofile-arcs -ftest-coverage
+
+else ifeq ($(config),sanitize)
+DEFS += -DPRIVACORE_SAFE_VERSION
+CONFIG_CPPFLAGS += -fsanitize=address -fno-omit-frame-pointer # libasan
+CONFIG_CPPFLAGS += -fsanitize=undefined # libubsan
+#CONFIG_CPPFLAGS += -fsanitize=thread # libtsan
+CONFIG_CPPFLAGS += -fsanitize=leak # liblsan
 
 else ifeq ($(config),release)
 # if defined, UI options that can damage our production index will be disabled
