@@ -1,7 +1,6 @@
 //-*- coding: utf-8 -*-
 
 #include "gb-include.h"
-
 #include "hash.h"
 #include "XmlDoc.h"
 #include "Conf.h"
@@ -624,8 +623,9 @@ bool XmlDoc::set4 ( SpiderRequest *sreq      ,
 	m_deleteFromIndex = deleteFromIndex;
 
 	// PageReindex.cpp will set this in the spider request
-	if ( sreq->m_forceDelete )
+	if ( sreq->m_forceDelete ) {
 		m_deleteFromIndex = true;
+	}
 
 	char *utf8Content = utf8ContentArg;
 
@@ -4002,7 +4002,7 @@ int32_t *XmlDoc::getLinkSiteHashes ( ) {
 			char *u = links->getLinkPtr(i);
 			// assume site is just the host
 			int32_t hostLen = 0;
-			char *host = ::getHost ( u , &hostLen );
+			const char *host = ::getHost ( u , &hostLen );
 			int32_t siteHash32 = hash32 ( host , hostLen , 0 );
 			// unless give as otherwise
 			if ( p < pend && *p == i ) {
@@ -4031,7 +4031,7 @@ int32_t *XmlDoc::getLinkSiteHashes ( ) {
 		char *u = links->getLinkPtr(i);
 		// get full host from link
 		int32_t hostLen = 0;
-		char *host = ::getHost ( u , &hostLen );
+		const char *host = ::getHost ( u , &hostLen );
 		int32_t hostHash32 = hash32 ( host , hostLen , 0 );
 		// get the site
 		TagRec *gr = (*grv)[i];
@@ -7257,7 +7257,7 @@ int32_t *XmlDoc::getIp ( ) {
 		// stolen from msgc.cpp:
 		// if url is already in a.b.c.d format return that
 		int32_t ip2 = 0;
-		char *host = u->getHost();
+		const char *host = u->getHost();
 		if ( host ) ip2 = atoip ( host,u->getHostLen() );
 		if ( ip2 != 0 ) {
 			m_ip = ip2;
@@ -11736,7 +11736,7 @@ int32_t *XmlDoc::getUrlFilterNum ( ) {
 }
 
 // . both "u" and "site" must not start with http:// or https:// or protocol
-static bool isSiteRootFunc ( char *u , char *site ) {
+static bool isSiteRootFunc ( const char *u , const char *site ) {
 	// get length of each
 	int32_t slen = gbstrlen(site);//m_siteLen;
 	int32_t ulen = gbstrlen(u);
@@ -11762,7 +11762,7 @@ static bool isSiteRootFunc ( char *u , char *site ) {
 	return false;
 }
 
-static bool isSiteRootFunc3 ( char *u , int32_t siteRootHash32 ) {
+static bool isSiteRootFunc3 ( const char *u , int32_t siteRootHash32 ) {
 	// get length of each
 	int32_t ulen = gbstrlen(u);
 	// remove trailing /
@@ -11781,7 +11781,7 @@ char *XmlDoc::getIsSiteRoot ( ) {
 	char *site = getSite ();
 	if ( ! site || site == (char *)-1 ) return (char *)site;
 	// get our url without the http:// or https://
-	char *u = getFirstUrl()->getHost();
+	const char *u = getFirstUrl()->getHost();
 	if ( ! u ) {
 		g_errno = EBADURL;
 		return NULL;
