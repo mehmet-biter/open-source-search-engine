@@ -78,7 +78,7 @@ class RdbCache {
 		    bool supportLists  ,
 		    int32_t maxCacheNodes ,
 		    bool useHalfKeys   ,
-		    char *dbname       ,
+		    const char *dbname       ,
 		    bool  loadFromDisk ,
 		    char  cacheKeySize = 12 ,
 		    char  dataKeySize  = 12 ,
@@ -121,7 +121,7 @@ class RdbCache {
 	// . sets *cachedTime to time the rec was cached
 	// . use maxAge of -1 to have no limit to the age of cached rec
 	bool getRecord ( collnum_t collnum   ,
-			 char    *cacheKey   ,
+			 const char    *cacheKey   ,
 			 char   **rec        ,
 			 int32_t    *recSize    ,
 			 bool     doCopy     ,
@@ -130,8 +130,8 @@ class RdbCache {
 			 time_t  *cachedTime = NULL ,
 			 bool     promoteRecord = true );
 
-	bool getRecord ( char    *coll       ,
-			 char    *cacheKey   ,
+	bool getRecord ( const char    *coll       ,
+			 const char    *cacheKey   ,
 			 char   **rec        ,
 			 int32_t    *recSize    ,
 			 bool     doCopy     ,
@@ -149,11 +149,11 @@ class RdbCache {
 			 bool     incCounts  ,
 			 time_t  *cachedTime = NULL,
 			 bool     promoteRecord = true) {
-		return getRecord (collnum,(char *)&cacheKey,rec,recSize,doCopy,
+		return getRecord (collnum,(const char *)&cacheKey,rec,recSize,doCopy,
 				  maxAge,incCounts,cachedTime, promoteRecord);
 	}
 
-	bool getRecord ( char    *coll       ,
+	bool getRecord ( const char    *coll       ,
 			 key_t    cacheKey   ,
 			 char   **rec        ,
 			 int32_t    *recSize    ,
@@ -162,7 +162,7 @@ class RdbCache {
 			 bool     incCounts  ,
 			 time_t  *cachedTime = NULL,
 			 bool     promoteRecord = true) {
-		return getRecord (coll,(char *)&cacheKey,rec,recSize,doCopy,
+		return getRecord (coll,(const char *)&cacheKey,rec,recSize,doCopy,
 				  maxAge,incCounts,cachedTime, promoteRecord);
 	}
 
@@ -175,7 +175,7 @@ class RdbCache {
 	}
 
 	bool setTimeStamp ( collnum_t  collnum      ,
-			    char      *cacheKey     ,
+			    const char      *cacheKey     ,
 			    int32_t       newTimeStamp );
 
 	// . returns true if found, false if not found
@@ -189,8 +189,8 @@ class RdbCache {
 	// . if "incCounts" is true and we hit  we inc the hit  count
 	// . if "incCounts" is true and we miss we inc the miss count
 	bool getList ( collnum_t collnum  ,
-		       char    *cacheKey  ,
-		       char    *startKey  ,
+		       const char    *cacheKey  ,
+		       const char    *startKey  ,
 		       RdbList *list      ,
 		       bool     doCopy    ,
 		       int32_t     maxAge    , // in seconds
@@ -198,47 +198,47 @@ class RdbCache {
 
 	// use this key for cache lookup of the list rather than form from 
 	// startKey/endKey
-	bool addList ( collnum_t collnum , char *cacheKey , RdbList *list );
-	bool addList ( collnum_t collnum , key_t cacheKey , RdbList *list ) {
-		return addList(collnum,(char *)&cacheKey,list);
+	bool addList ( collnum_t collnum, const char *cacheKey, RdbList *list );
+	bool addList ( collnum_t collnum, key_t cacheKey, RdbList *list ) {
+		return addList(collnum,(const char *)&cacheKey,list);
 	}
 
-	bool addList ( char *coll , char *cacheKey , RdbList *list );
-	bool addList ( char *coll , key_t cacheKey , RdbList *list ) {
-		return addList(coll,(char *)&cacheKey,list);
+	bool addList ( const char *coll, const char *cacheKey, RdbList *list );
+	bool addList ( const char *coll, key_t cacheKey, RdbList *list ) {
+		return addList(coll,(const char *)&cacheKey,list);
 	}
 
 	// . add a list of only 1 record
 	// . return false on error and set g_errno, otherwise return true
 	// . recOffset is proper offset into the buffer system
 	bool addRecord ( collnum_t collnum ,
-			 char *cacheKey , 
-			 char *rec      ,
+			 const char *cacheKey ,
+			 const char *rec      ,
 			 int32_t  recSize  ,
 			 int32_t  timestamp = 0 ,
 			 char **retRecPtr = NULL ) ;
 
-	bool addRecord ( char *coll     ,
-			 char *cacheKey , 
-			 char *rec      ,
+	bool addRecord ( const char *coll     ,
+			 const char *cacheKey ,
+			 const char *rec      ,
 			 int32_t  recSize  ,
 			 int32_t  timestamp = 0 );
 
 	bool addRecord ( collnum_t collnum ,
 			 key_t cacheKey , 
-			 char *rec      ,
+			 const char *rec      ,
 			 int32_t  recSize  ,
 			 int32_t  timestamp = 0 ) {
-		return addRecord(collnum,(char *)&cacheKey,rec,recSize,
+		return addRecord(collnum,(const char *)&cacheKey,rec,recSize,
 				 timestamp);
 	}
 
-	bool addRecord ( char *coll     ,
+	bool addRecord ( const char *coll     ,
 			 key_t cacheKey , 
-			 char *rec      ,
+			 const char *rec      ,
 			 int32_t  recSize  ,
 			 int32_t  timestamp = 0 ) {
-		return addRecord(coll,(char *)&cacheKey,rec,recSize,
+		return addRecord(coll,(const char *)&cacheKey,rec,recSize,
 				 timestamp);
 	}
 
@@ -246,10 +246,10 @@ class RdbCache {
 
 	// . just checks to see if a record is in the cache
 	// . does not promote record
-	bool isInCache ( collnum_t collnum , char *cacheKey , int32_t maxAge );
+	bool isInCache ( collnum_t collnum , const char *cacheKey , int32_t maxAge );
 
 	bool isInCache ( collnum_t collnum , key_t cacheKey , int32_t maxAge ) {
-		return isInCache(collnum,(char *)&cacheKey,maxAge);
+		return isInCache(collnum,(const char *)&cacheKey,maxAge);
 	}
 
 	// these include our mem AND our tree's mem combined
@@ -271,7 +271,7 @@ class RdbCache {
 	int32_t getNumTotalNodes () { return m_numPtrsMax ; }
 
 	bool useDisk ( ) { return m_useDisk; }
-	bool load ( char *dbname );
+	bool load ( const char *dbname );
 	bool save ( bool useThreads );
 	bool save_r ( );
 	bool save2_r ( int fd );
@@ -284,27 +284,27 @@ class RdbCache {
 
 	// remove a key range from the cache
 	void removeKeyRange ( collnum_t collnum,
-			      char *startKey,
-			      char *endKey );
+			      const char *startKey,
+			      const char *endKey );
 
-	char *getDbname () { return m_dbname ; }
+	const char *getDbname () { return m_dbname ; }
 
-	char *m_dbname;
+	const char *m_dbname;
 
 	// private:
 
 	bool addRecord ( collnum_t collnum ,
-			 char *cacheKey , 
-			 char *rec1     ,
+			 const char *cacheKey ,
+			 const char *rec1     ,
 			 int32_t  recSize1 ,
-			 char *rec2     ,
+			 const char *rec2     ,
 			 int32_t  recSize2 ,
 			 int32_t  timestamp ,
 			 char **retRecPtr = NULL ) ;
 
 	bool deleteRec ( );
-	void addKey     ( collnum_t collnum , char *key , char *ptr ) ;
-	void removeKey  ( collnum_t collnum , char *key , char *rec ) ;
+	void addKey     ( collnum_t collnum, const char *key, char *ptr );
+	void removeKey  ( collnum_t collnum, const char *key, const char *rec );
 	void markDeletedRecord(char *ptr);
 
 	bool convertCache ( int32_t numPtrsMax , int32_t maxMem ) ;
