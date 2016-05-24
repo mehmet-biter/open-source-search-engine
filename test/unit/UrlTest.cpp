@@ -63,63 +63,38 @@ TEST( UrlTest, SetNonAsciiInvalid ) {
 }
 
 TEST( UrlTest, GetDisplayUrlFromCharArray ) {
-	const char* input_urls[] = {
-		"http://xn--topbeskring-g9a.dk/velkommen",
-		"www.xn--Alliancefranaise-npb.nu",
-		"xn--franaise-v0a.Alliance.nu",
-		"xn--franaise-v0a.Alliance.nu/asdf",
-		"http://xn--franaise-v0a.Alliance.nu/asdf",
-		"http://xn--franaise-v0a.Alliance.nu/",
-		"xn--lwt711i.xn--mi7a.com",
-		"xn--lwt711i.xn--mi7a.com/asdf/运/abc",
-		"xn--lwt711i.xn--mi7a.com/asdf",
-		"http://xn--lwt711i.xn--mi7a.com/asdf",
-		"http://xn--d0a6das0ae0bir7j.org/Акадэмічная",
-		"https://hi.xn--d0a6divjd1bi0f.com",
-		"https://fakedomain.xn--fiq228c.org/asdf",
-		"http://www.example.xn--80aswg",
-		"http://www.example.com/xn--fooled-you-into-trying-to-decode-this",
-		"http://www.example.xn--80aswg/xn--fooled-you-into-trying-to-decode-this",
-		"http://www.example.сайт/xn--fooled-you-into-trying-to-decode-this",
-		"http://xn--kjvp61d69f6wc3zf.jp/",
-		"http://xn--80agflthakqd0d1e.xn--p1ai/robots.txt",
-		"http://xn--80agflthakqd0d1e.xn--p1ai",
-		"http://сацминэнерго.рф",
-		"http://mct.verisign-grs.com/convertServlet?input=r7d.xn--g1a8ac.xn--p1ai"
+	std::vector<std::tuple<const char *, const char *>> test_cases = {
+		std::make_tuple( "http://xn--topbeskring-g9a.dk/velkommen", "http://topbeskæring.dk/velkommen" ),
+		std::make_tuple( "www.xn--Alliancefranaise-npb.nu", "www.Alliancefrançaise.nu" ),
+		std::make_tuple( "xn--franaise-v0a.Alliance.nu", "française.Alliance.nu" ),
+		std::make_tuple( "xn--franaise-v0a.Alliance.nu/asdf", "française.Alliance.nu/asdf" ),
+		std::make_tuple( "http://xn--franaise-v0a.Alliance.nu/asdf", "http://française.Alliance.nu/asdf" ),
+		std::make_tuple( "http://xn--franaise-v0a.Alliance.nu/", "http://française.Alliance.nu/" ),
+		std::make_tuple( "xn--lwt711i.xn--mi7a.com", "幸运.龍.com" ),
+		std::make_tuple( "xn--lwt711i.xn--mi7a.com/asdf/运/abc", "幸运.龍.com/asdf/运/abc"),
+		std::make_tuple( "xn--lwt711i.xn--mi7a.com/asdf", "幸运.龍.com/asdf" ),
+		std::make_tuple( "http://xn--lwt711i.xn--mi7a.com/asdf", "http://幸运.龍.com/asdf" ),
+		std::make_tuple( "http://xn--d0a6das0ae0bir7j.org/Акадэмічная", "http://Беларуская.org/Акадэмічная" ),
+		std::make_tuple( "https://hi.xn--d0a6divjd1bi0f.com", "https://hi.Български.com" ),
+		std::make_tuple( "https://fakedomain.xn--fiq228c.org/asdf", "https://fakedomain.中文.org/asdf" ),
+		std::make_tuple( "http://www.example.xn--80aswg", "http://www.example.сайт" ),
+		std::make_tuple( "http://www.example.com/xn--fooled-you-into-trying-to-decode-this",
+		                 "http://www.example.com/xn--fooled-you-into-trying-to-decode-this" ),
+		std::make_tuple( "http://www.example.xn--80aswg/xn--fooled-you-into-trying-to-decode-this",
+		                 "http://www.example.сайт/xn--fooled-you-into-trying-to-decode-this" ),
+		std::make_tuple( "http://www.example.сайт/xn--fooled-you-into-trying-to-decode-this",
+		                 "http://www.example.сайт/xn--fooled-you-into-trying-to-decode-this" ),
+		std::make_tuple( "http://xn--kjvp61d69f6wc3zf.jp/", "http://腕時計通販.jp/" ),
+		std::make_tuple( "http://xn--80agflthakqd0d1e.xn--p1ai/robots.txt", "http://сацминэнерго.рф/robots.txt" ),
+		std::make_tuple( "http://xn--80agflthakqd0d1e.xn--p1ai", "http://сацминэнерго.рф" ),
+		std::make_tuple( "http://сацминэнерго.рф", "http://сацминэнерго.рф" ),
+		std::make_tuple( "http://mct.verisign-grs.com/convertServlet?input=r7d.xn--g1a8ac.xn--p1ai",
+		                 "http://mct.verisign-grs.com/convertServlet?input=r7d.xn--g1a8ac.xn--p1ai" )
 	};
 
-	const char *expected_display[] = {
-		"http://topbeskæring.dk/velkommen",
-		"www.Alliancefrançaise.nu",
-		"française.Alliance.nu",
-		"française.Alliance.nu/asdf",
-		"http://française.Alliance.nu/asdf",
-		"http://française.Alliance.nu/",
-		"幸运.龍.com",
-		"幸运.龍.com/asdf/运/abc",
-		"幸运.龍.com/asdf",
-		"http://幸运.龍.com/asdf",
-		"http://Беларуская.org/Акадэмічная",
-		"https://hi.Български.com",
-		"https://fakedomain.中文.org/asdf",
-		"http://www.example.сайт",
-		"http://www.example.com/xn--fooled-you-into-trying-to-decode-this",
-		"http://www.example.сайт/xn--fooled-you-into-trying-to-decode-this",
-		"http://www.example.сайт/xn--fooled-you-into-trying-to-decode-this",
-		"http://腕時計通販.jp/",
-		"http://сацминэнерго.рф/robots.txt",
-		"http://сацминэнерго.рф",
-		"http://сацминэнерго.рф",
-		"http://mct.verisign-grs.com/convertServlet?input=r7d.xn--g1a8ac.xn--p1ai"
-	};
-
-	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),
-	           sizeof( expected_display ) / sizeof( expected_display[0] ) );
-
-	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
-	for ( size_t i = 0; i < len; i++ ) {
+	for ( auto it = test_cases.begin(); it != test_cases.end(); ++it ) {
 		StackBuf( tmpBuf );
-		EXPECT_STREQ( expected_display[i], (const char *) Url::getDisplayUrl( input_urls[i], &tmpBuf ));
+		EXPECT_STREQ( std::get<1>( *it ), ( const char * ) Url::getDisplayUrl( std::get<0>( *it ), &tmpBuf ) );
 	}
 }
 
@@ -401,556 +376,300 @@ TEST( UrlTest, StripParamsAtlassian ) {
 }
 
 TEST( UrlTest, StripParamsJSessionId ) {
-	const char *input_urls[] = {
+	std::vector<std::tuple<const char *, const char *>> test_cases = {
 		// jessionid
-		"https://scholarships.wisc.edu/Scholarships/recipientDetails;jsessionid=D2DCE4F10608F15CA177E29EB2AB162F?recipId=850",
-		"http://staging.ilo.org/gimi/gess/ShowProject.do;jsessionid=759cb78d694bd5a5dd5551c6eb36a1fb66b98f4e786d5ae3c73cee161067be75.e3aTbhuLbNmSe34MchaRahaRaNb0?id=1625",
-		"https://jobs.bathspa.ac.uk/wrl/pages/vacancy.jsf;jsessionid=C4882E8D70D04244661C8A8E811D3290?latest=01001967",
-		"https://sa.www4.irs.gov/wmar/start.do;jsessionid=DQnV2P-nFQir0foo7ThxBejZ",
-		"https://webshop.lic.co.nz/cws001/catalog/productDetail.jsf;jsessionid=0_cVS0dqWe1zHDcxyveGcysJVfbkUwHPDMUe_SAPzI8IIDaGbNUXn59V-PZnbFVZ;saplb_*=%28J2EE516230320%29516230351?sort=TA&wec-appid=WS001&page=B43917ED9DD446288421D9F817EE305E&itemKey=463659D75F2F005D000000000A0A0AF0&show=12&view=grid&wec-locale=en_NZ",
-		"http://www.oracle.com/technetwork/developer-tools/adf/overview/index.html;jsessionid=6R39V8WhqTQ7HMb2vTQTkzbP5XRFgs4RQzyxQ7fqxH9y6p6vKXk4!-460884186",
-		"http://www.cnpas.org/portal/media-type/html/language/ro/user/anon/page/default.psml/jsessionid/A27DF3C8CF0C66C480EC74FF6A7C837C?action=forum.ScreenAction",
-		"http://www.medienservice-online.de/dyn/epctrl/jsessionid/FA082288A00623E49FCC553D95D484C9/mod/wwpress002431/cat/wwpress005964/pri/wwpress"
+		std::make_tuple( "https://scholarships.wisc.edu/Scholarships/recipientDetails;jsessionid=D2DCE4F10608F15CA177E29EB2AB162F?recipId=850",
+		                 "https://scholarships.wisc.edu/Scholarships/recipientDetails?recipId=850" ),
+		std::make_tuple( "http://staging.ilo.org/gimi/gess/ShowProject.do;jsessionid=759cb78d694bd5a5dd5551c6eb36a1fb66b98f4e786d5ae3c73cee161067be75.e3aTbhuLbNmSe34MchaRahaRaNb0?id=1625",
+		                 "http://staging.ilo.org/gimi/gess/ShowProject.do?id=1625" ),
+		std::make_tuple( "https://jobs.bathspa.ac.uk/wrl/pages/vacancy.jsf;jsessionid=C4882E8D70D04244661C8A8E811D3290?latest=01001967",
+		                 "https://jobs.bathspa.ac.uk/wrl/pages/vacancy.jsf?latest=01001967" ),
+		std::make_tuple( "https://sa.www4.irs.gov/wmar/start.do;jsessionid=DQnV2P-nFQir0foo7ThxBejZ",
+		                 "https://sa.www4.irs.gov/wmar/start.do" ),
+		std::make_tuple( "https://webshop.lic.co.nz/cws001/catalog/productDetail.jsf;jsessionid=0_cVS0dqWe1zHDcxyveGcysJVfbkUwHPDMUe_SAPzI8IIDaGbNUXn59V-PZnbFVZ;saplb_*=%28J2EE516230320%29516230351?sort=TA&wec-appid=WS001&page=B43917ED9DD446288421D9F817EE305E&itemKey=463659D75F2F005D000000000A0A0AF0&show=12&view=grid&wec-locale=en_NZ",
+		                 "https://webshop.lic.co.nz/cws001/catalog/productDetail.jsf?sort=TA&wec-appid=WS001&page=B43917ED9DD446288421D9F817EE305E&itemKey=463659D75F2F005D000000000A0A0AF0&show=12&view=grid&wec-locale=en_NZ" ),
+		std::make_tuple( "http://www.oracle.com/technetwork/developer-tools/adf/overview/index.html;jsessionid=6R39V8WhqTQ7HMb2vTQTkzbP5XRFgs4RQzyxQ7fqxH9y6p6vKXk4!-460884186",
+		                 "http://www.oracle.com/technetwork/developer-tools/adf/overview/index.html" ),
+		std::make_tuple( "http://www.cnpas.org/portal/media-type/html/language/ro/user/anon/page/default.psml/jsessionid/A27DF3C8CF0C66C480EC74FF6A7C837C?action=forum.ScreenAction",
+		                 "http://www.cnpas.org/portal/media-type/html/language/ro/user/anon/page/default.psml?action=forum.ScreenAction" ),
+		std::make_tuple( "http://www.medienservice-online.de/dyn/epctrl/jsessionid/FA082288A00623E49FCC553D95D484C9/mod/wwpress002431/cat/wwpress005964/pri/wwpress",
+		                 "http://www.medienservice-online.de/dyn/epctrl/mod/wwpress002431/cat/wwpress005964/pri/wwpress" )
 	};
 
-	const char *expected_urls[] = {
-		// jessionid
-		"https://scholarships.wisc.edu/Scholarships/recipientDetails?recipId=850",
-		"http://staging.ilo.org/gimi/gess/ShowProject.do?id=1625",
-		"https://jobs.bathspa.ac.uk/wrl/pages/vacancy.jsf?latest=01001967",
-		"https://sa.www4.irs.gov/wmar/start.do",
-		"https://webshop.lic.co.nz/cws001/catalog/productDetail.jsf?sort=TA&wec-appid=WS001&page=B43917ED9DD446288421D9F817EE305E&itemKey=463659D75F2F005D000000000A0A0AF0&show=12&view=grid&wec-locale=en_NZ",
-		"http://www.oracle.com/technetwork/developer-tools/adf/overview/index.html",
-		"http://www.cnpas.org/portal/media-type/html/language/ro/user/anon/page/default.psml?action=forum.ScreenAction",
-		"http://www.medienservice-online.de/dyn/epctrl/mod/wwpress002431/cat/wwpress005964/pri/wwpress"
-	};
-
-	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),
-	           sizeof( expected_urls ) / sizeof( expected_urls[0] ) );
-
-	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
-	for ( size_t i = 0; i < len; i++ ) {
-		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
-
-		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
-	}
+	strip_param_tests( test_cases );
 }
 
 TEST( UrlTest, StripParamsPHPSessId ) {
-	const char *input_urls[] = {
+	std::vector<std::tuple<const char *, const char *>> test_cases = {
 		// phpsessid
-		"http://www.praxis-jennewein.de/?&sitemap&PHPSESSID_netsh107345=84b58a8e5c56d8d1f9d459311caf18ee",
+		std::make_tuple( "http://www.praxis-jennewein.de/?&sitemap&PHPSESSID_netsh107345=84b58a8e5c56d8d1f9d459311caf18ee",
+		                 "http://www.praxis-jennewein.de/?sitemap" ),
 
 	    // phpsessid (no strip)
-		"http://korel.com.au/disable-phpsessid/feed/"
+		std::make_tuple( "http://korel.com.au/disable-phpsessid/feed/",
+		                 "http://korel.com.au/disable-phpsessid/feed/" )
 	};
 
-	const char *expected_urls[] = {
-		// phpsessid
-		"http://www.praxis-jennewein.de/?sitemap",
-
-	    // phpsessid (no strip)
-		"http://korel.com.au/disable-phpsessid/feed/"
-	};
-
-	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),
-	           sizeof( expected_urls ) / sizeof( expected_urls[0] ) );
-
-	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
-	for ( size_t i = 0; i < len; i++ ) {
-		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
-
-		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
-	}
+	strip_param_tests( test_cases );
 }
 
 TEST( UrlTest, StripParamsSessionId ) {
-	const char *input_urls[] = {
+	std::vector<std::tuple<const char *, const char *>> test_cases = {
 		// sessionid
-		"http://ualberta.intelliresponse.com/index.jsp?requestType=NormalRequest&source=3&id=474&sessionId=f5b80817-fa7e-11e5-9343-5f3e78a954d2&question=How+many+students+are+enrolled",
-		"http://www.eyecinema.ie/cinemas/film_info_detail.asp?SessionID=78C5F9DFF1B9441EB5ED527AB61BAB5B&cn=1&ci=2&ln=1&fi=7675",
+		std::make_tuple( "http://ualberta.intelliresponse.com/index.jsp?requestType=NormalRequest&source=3&id=474&sessionId=f5b80817-fa7e-11e5-9343-5f3e78a954d2&question=How+many+students+are+enrolled",
+		                 "http://ualberta.intelliresponse.com/index.jsp?requestType=NormalRequest&source=3&id=474&question=How+many+students+are+enrolled" ),
+		std::make_tuple( "http://www.eyecinema.ie/cinemas/film_info_detail.asp?SessionID=78C5F9DFF1B9441EB5ED527AB61BAB5B&cn=1&ci=2&ln=1&fi=7675",
+		                 "http://www.eyecinema.ie/cinemas/film_info_detail.asp?cn=1&ci=2&ln=1&fi=7675" ),
 
 		// sessionid (no strip)
-		"http://tbinternet.ohchr.org/_layouts/treatybodyexternal/SessionDetails1.aspx?SessionID=1016&Lang=en",
-		"https://collab365.conferencehosts.com/SitePages/sessionDetails.aspx?sessionid=C365117",
+		std::make_tuple( "http://tbinternet.ohchr.org/_layouts/treatybodyexternal/SessionDetails1.aspx?SessionID=1016&Lang=en",
+		                 "http://tbinternet.ohchr.org/_layouts/treatybodyexternal/SessionDetails1.aspx?SessionID=1016&Lang=en" ),
+		std::make_tuple( "https://collab365.conferencehosts.com/SitePages/sessionDetails.aspx?sessionid=C365117",
+		                 "https://collab365.conferencehosts.com/SitePages/sessionDetails.aspx?sessionid=C365117" ),
 
 		// session_id
-		"https://www.insideultrasound.com/mm5/merchant.mvc?Session_ID=1f59af8e2ba36c1239ce5c897e1a90a3&Screen=PROD&Product_Code=IU400CME",
-		"http://www.sylt-ferienwohnungen-urlaub.de/objekt_buchungsanfrage.php?session_id=5mt70lh8h19ci2i77h9p4e7gv5&objekt_id=644",
-		"http://www.zdravotnicke-potreby.cz/main/kosik_insert.php?id_produktu=26418&session_id=gkv1ufp8spdj670c6m66qn4184&ip=",
+		std::make_tuple( "https://www.insideultrasound.com/mm5/merchant.mvc?Session_ID=1f59af8e2ba36c1239ce5c897e1a90a3&Screen=PROD&Product_Code=IU400CME",
+		                 "https://www.insideultrasound.com/mm5/merchant.mvc?Screen=PROD&Product_Code=IU400CME" ),
+		std::make_tuple( "http://www.sylt-ferienwohnungen-urlaub.de/objekt_buchungsanfrage.php?session_id=5mt70lh8h19ci2i77h9p4e7gv5&objekt_id=644",
+		                 "http://www.sylt-ferienwohnungen-urlaub.de/objekt_buchungsanfrage.php?objekt_id=644" ),
+		std::make_tuple( "http://www.zdravotnicke-potreby.cz/main/kosik_insert.php?id_produktu=26418&session_id=gkv1ufp8spdj670c6m66qn4184&ip=",
+		                 "http://www.zdravotnicke-potreby.cz/main/kosik_insert.php?id_produktu=26418&ip=" ),
 
 		// session_id (no strip)
-		"https://rms.miamidade.gov/Saturn/Activities/Details.aspx?session_id=53813&back_url=fi9BY3Rpdml0aWVzL1NlYXJjaC5hc3B4",
-		"http://www.pbd-india.com/media-photo-gallery-event.asp?session_id=4"
+		std::make_tuple( "https://rms.miamidade.gov/Saturn/Activities/Details.aspx?session_id=53813&back_url=fi9BY3Rpdml0aWVzL1NlYXJjaC5hc3B4",
+		                 "https://rms.miamidade.gov/Saturn/Activities/Details.aspx?session_id=53813&back_url=fi9BY3Rpdml0aWVzL1NlYXJjaC5hc3B4" ),
+		std::make_tuple( "http://www.pbd-india.com/media-photo-gallery-event.asp?session_id=4",
+		                 "http://www.pbd-india.com/media-photo-gallery-event.asp?session_id=4" )
 	};
 
-	const char *expected_urls[] = {
-		// sessionid
-		"http://ualberta.intelliresponse.com/index.jsp?requestType=NormalRequest&source=3&id=474&question=How+many+students+are+enrolled",
-		"http://www.eyecinema.ie/cinemas/film_info_detail.asp?cn=1&ci=2&ln=1&fi=7675",
-
-		// sessionid (no strip)
-		"http://tbinternet.ohchr.org/_layouts/treatybodyexternal/SessionDetails1.aspx?SessionID=1016&Lang=en",
-		"https://collab365.conferencehosts.com/SitePages/sessionDetails.aspx?sessionid=C365117",
-
-		// session_id
-		"https://www.insideultrasound.com/mm5/merchant.mvc?Screen=PROD&Product_Code=IU400CME",
-		"http://www.sylt-ferienwohnungen-urlaub.de/objekt_buchungsanfrage.php?objekt_id=644",
-		"http://www.zdravotnicke-potreby.cz/main/kosik_insert.php?id_produktu=26418&ip=",
-
-		// session_id (no strip)
-		"https://rms.miamidade.gov/Saturn/Activities/Details.aspx?session_id=53813&back_url=fi9BY3Rpdml0aWVzL1NlYXJjaC5hc3B4",
-		"http://www.pbd-india.com/media-photo-gallery-event.asp?session_id=4"
-	};
-
-	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),
-	           sizeof( expected_urls ) / sizeof( expected_urls[0] ) );
-
-	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
-	for ( size_t i = 0; i < len; i++ ) {
-		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
-
-		//url.print();
-		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
-	}
+	strip_param_tests( test_cases );
 }
 
 TEST( UrlTest, StripParamsSessId ) {
-	const char *input_urls[] = {
+	std::vector<std::tuple<const char *, const char *>> test_cases = {
 		// vbsessid
-		"https://www.westfalia.de/static/servicebereich/service/serviceangebote/impressum.html?&vbSESSID=50d96959db895a0adbfebd325a4a65e0",
-		"https://www.westfalia.de/static/servicebereich/service/aktionen/banner.html?vbSESSID=f4db3ec33001c9759d095c6432651e39&cHash=5babb7ddd11f5164a9fccc7cbbf42aad",
+		std::make_tuple( "https://www.westfalia.de/static/servicebereich/service/serviceangebote/impressum.html?&vbSESSID=50d96959db895a0adbfebd325a4a65e0",
+		                 "https://www.westfalia.de/static/servicebereich/service/serviceangebote/impressum.html" ),
+		std::make_tuple( "https://www.westfalia.de/static/servicebereich/service/aktionen/banner.html?vbSESSID=f4db3ec33001c9759d095c6432651e39&cHash=5babb7ddd11f5164a9fccc7cbbf42aad",
+		                 "https://www.westfalia.de/static/servicebereich/service/aktionen/banner.html?cHash=5babb7ddd11f5164a9fccc7cbbf42aad" ),
 
 		// asesessid
-		"http://www.aseforums.com/viewtopic.php?topicid=70&asesessid=07d0b0d2dc4162ac01afe5b784940274",
-		"http://hardwarelogic.com/articles.php?id=6441&asesessid=e4c6ee21fc4f3fc6f93a022647bb290b474f1c84",
+		std::make_tuple( "http://www.aseforums.com/viewtopic.php?topicid=70&asesessid=07d0b0d2dc4162ac01afe5b784940274",
+		                 "http://www.aseforums.com/viewtopic.php?topicid=70" ),
+		std::make_tuple( "http://hardwarelogic.com/articles.php?id=6441&asesessid=e4c6ee21fc4f3fc6f93a022647bb290b474f1c84",
+		                 "http://hardwarelogic.com/articles.php?id=6441" ),
 
 		// nlsessid
-		"https://www.videobuster.de/?NLSESSID=67ccc49cb2490dcb5f6d53878facf1a8",
+		std::make_tuple( "https://www.videobuster.de/?NLSESSID=67ccc49cb2490dcb5f6d53878facf1a8",
+		                 "https://www.videobuster.de/" ),
 
 		// sessid (no strip)
-		"http://foto.ametikool.ee/index.php/oppeprotsessid/Ettev-tluserialade-reis-Saaremaa-ja-Muhu-ettev-tetesse/IMG_2216",
-		"http://korel.com.au/disable-phpsessid/feed/"
+		std::make_tuple( "http://foto.ametikool.ee/index.php/oppeprotsessid/Ettev-tluserialade-reis-Saaremaa-ja-Muhu-ettev-tetesse/IMG_2216",
+		                 "http://foto.ametikool.ee/index.php/oppeprotsessid/Ettev-tluserialade-reis-Saaremaa-ja-Muhu-ettev-tetesse/IMG_2216" ),
+		std::make_tuple( "http://korel.com.au/disable-phpsessid/feed/",
+		                 "http://korel.com.au/disable-phpsessid/feed/" )
 	};
 
-	const char *expected_urls[] = {
-		// vbsessid
-		"https://www.westfalia.de/static/servicebereich/service/serviceangebote/impressum.html",
-		"https://www.westfalia.de/static/servicebereich/service/aktionen/banner.html?cHash=5babb7ddd11f5164a9fccc7cbbf42aad",
-
-		// asesessid
-		"http://www.aseforums.com/viewtopic.php?topicid=70",
-		"http://hardwarelogic.com/articles.php?id=6441",
-
-		// nlsessid
-		"https://www.videobuster.de/",
-
-		// sessid (no strip)
-		"http://foto.ametikool.ee/index.php/oppeprotsessid/Ettev-tluserialade-reis-Saaremaa-ja-Muhu-ettev-tetesse/IMG_2216",
-		"http://korel.com.au/disable-phpsessid/feed/"
-	};
-
-	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),
-	           sizeof( expected_urls ) / sizeof( expected_urls[0] ) );
-
-	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
-	for ( size_t i = 0; i < len; i++ ) {
-		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
-
-		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
-	}
+	strip_param_tests( test_cases );
 }
 
 TEST( UrlTest, StripSessionIdPSession ) {
-	const char *input_urls[] = {
+	std::vector<std::tuple<const char *, const char *>> test_cases = {
 	    // psession
-	    "http://ebretsteiner.at/kinderwagen/kinderwagen-Kat97.html?pSession=7d01p6qvcl2e72j8ivmppk12k0",
-	    "http://kontorlokaler.dk/show_unique/index.asp?Psession=491022863920110420135759",
-	    "http://freespass.de/homepage.php?pSession=XUjuplcPFGlJD2ZF5O26ApqAj5ZNEZwZrUKX5kkA&id=716"
+		std::make_tuple( "http://ebretsteiner.at/kinderwagen/kinderwagen-Kat97.html?pSession=7d01p6qvcl2e72j8ivmppk12k0",
+		                 "http://ebretsteiner.at/kinderwagen/kinderwagen-Kat97.html" ),
+		std::make_tuple( "http://kontorlokaler.dk/show_unique/index.asp?Psession=491022863920110420135759",
+		                 "http://kontorlokaler.dk/show_unique/index.asp" ),
+		std::make_tuple( "http://freespass.de/homepage.php?pSession=XUjuplcPFGlJD2ZF5O26ApqAj5ZNEZwZrUKX5kkA&id=716",
+		                 "http://freespass.de/homepage.php?id=716" )
 	};
 
-	const char *expected_urls[] = {
-	    // psession
-	    "http://ebretsteiner.at/kinderwagen/kinderwagen-Kat97.html",
-	    "http://kontorlokaler.dk/show_unique/index.asp",
-	    "http://freespass.de/homepage.php?id=716"
-	};
-
-	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),
-	           sizeof( expected_urls ) / sizeof( expected_urls[0] ) );
-
-	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
-	for ( size_t i = 0; i < len; i++ ) {
-	    Url url;
-	    url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
-
-	    EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
-	}
+	strip_param_tests( test_cases );
 }
 
 TEST( UrlTest, StripParamsGalileoSession ) {
-	const char *input_urls[] = {
+	std::vector<std::tuple<const char *, const char *>> test_cases = {
 		// galileosession
-		"http://www.tutego.de/blog/javainsel/page/38/?GalileoSession=39387871A4pi84-MI8M",
-		"https://shop.vierfarben.de/hilfe/Vierfarben/agb?GalileoSession=54933578A7-0S-.kn-A",
-		"https://www.rheinwerk-verlag.de/?titelID=560&GalileoSession=47944076A4-xkQI91C8"
+		std::make_tuple( "http://www.tutego.de/blog/javainsel/page/38/?GalileoSession=39387871A4pi84-MI8M",
+		                 "http://www.tutego.de/blog/javainsel/page/38/" ),
+		std::make_tuple( "https://shop.vierfarben.de/hilfe/Vierfarben/agb?GalileoSession=54933578A7-0S-.kn-A",
+		                 "https://shop.vierfarben.de/hilfe/Vierfarben/agb" ),
+		std::make_tuple( "https://www.rheinwerk-verlag.de/?titelID=560&GalileoSession=47944076A4-xkQI91C8",
+		                 "https://www.rheinwerk-verlag.de/?titelID=560" )
 	};
 
-	const char *expected_urls[] = {
-		// galileosession
-		"http://www.tutego.de/blog/javainsel/page/38/",
-		"https://shop.vierfarben.de/hilfe/Vierfarben/agb",
-		"https://www.rheinwerk-verlag.de/?titelID=560"
-	};
-
-	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),
-	           sizeof( expected_urls ) / sizeof( expected_urls[0] ) );
-
-	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
-	for ( size_t i = 0; i < len; i++ ) {
-		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
-
-		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
-	}
+	strip_param_tests( test_cases );
 }
 
 TEST( UrlTest, StripParamsAuthSess ) {
-	const char *input_urls[] = {
+	std::vector<std::tuple<const char *, const char *>> test_cases = {
 		// auth_sess
-		"http://www.jobxoom.com/location.php?province=Iowa&lid=738&auth_sess=kgq6kd4bl9ma1rap6pbks1c8b2",
-		"http://www.gojobcenter.com/view.php?job_id=61498&auth_sess=cb5f29174d9f5e9fbb4d7ec41cd69112&ref=bc87a09ce74326f40200e7abb"
+		std::make_tuple( "http://www.jobxoom.com/location.php?province=Iowa&lid=738&auth_sess=kgq6kd4bl9ma1rap6pbks1c8b2",
+		                 "http://www.jobxoom.com/location.php?province=Iowa&lid=738" ),
+		std::make_tuple( "http://www.gojobcenter.com/view.php?job_id=61498&auth_sess=cb5f29174d9f5e9fbb4d7ec41cd69112&ref=bc87a09ce74326f40200e7abb",
+		                 "http://www.gojobcenter.com/view.php?job_id=61498&ref=bc87a09ce74326f40200e7abb" )
 	};
 
-	const char *expected_urls[] = {
-		// auth_sess
-		"http://www.jobxoom.com/location.php?province=Iowa&lid=738",
-		"http://www.gojobcenter.com/view.php?job_id=61498&ref=bc87a09ce74326f40200e7abb"
-	};
-
-	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),
-	           sizeof( expected_urls ) / sizeof( expected_urls[0] ) );
-
-	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
-	for ( size_t i = 0; i < len; i++ ) {
-		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
-
-		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
-	}
+	strip_param_tests( test_cases );
 }
 
 TEST( UrlTest, StripParamsMySid ) {
-	const char *input_urls[] = {
+	std::vector<std::tuple<const char *, const char *>> test_cases = {
 	    // mysid
-		"https://www.worldvision.de/_downloads/allgemein/Haiti_3years_Earthquake%20Response%20Report.pdf?mysid=glwcjvci",
-		"http://www.nobilia.de/file.php?mySID=80fa669565e6c41006e82e7b87b4d6c4&file=/download/Pressearchiv/Tete-A-Tete-KR%20SO14_nobilia.pdf&type=down&usg=AFQjCNELf61sLLvtPUnOJA9IwI87-ngOvQ",
+		std::make_tuple( "https://www.worldvision.de/_downloads/allgemein/Haiti_3years_Earthquake%20Response%20Report.pdf?mysid=glwcjvci",
+		                 "https://www.worldvision.de/_downloads/allgemein/Haiti_3years_Earthquake%20Response%20Report.pdf" ),
+		std::make_tuple( "http://www.nobilia.de/file.php?mySID=80fa669565e6c41006e82e7b87b4d6c4&file=/download/Pressearchiv/Tete-A-Tete-KR%20SO14_nobilia.pdf&type=down&usg=AFQjCNELf61sLLvtPUnOJA9IwI87-ngOvQ",
+		                 "http://www.nobilia.de/file.php?file=/download/Pressearchiv/Tete-A-Tete-KR%20SO14_nobilia.pdf&type=down&usg=AFQjCNELf61sLLvtPUnOJA9IwI87-ngOvQ" ),
 
 		// mysid (no strip)
-		"http://old.evangelskivestnik.net/statia.php?mysid=773",
-		"http://www.ajusd.org/m/documents.cfm?getfiles=5170|0&mysid=1054"
+		std::make_tuple( "http://old.evangelskivestnik.net/statia.php?mysid=773",
+		                 "http://old.evangelskivestnik.net/statia.php?mysid=773" ),
+		std::make_tuple( "http://www.ajusd.org/m/documents.cfm?getfiles=5170|0&mysid=1054",
+		                 "http://www.ajusd.org/m/documents.cfm?getfiles=5170|0&mysid=1054" )
 	};
 
-	const char *expected_urls[] = {
-	    // mysid
-		"https://www.worldvision.de/_downloads/allgemein/Haiti_3years_Earthquake%20Response%20Report.pdf",
-		"http://www.nobilia.de/file.php?file=/download/Pressearchiv/Tete-A-Tete-KR%20SO14_nobilia.pdf&type=down&usg=AFQjCNELf61sLLvtPUnOJA9IwI87-ngOvQ",
-
-		// mysid (no strip)
-		"http://old.evangelskivestnik.net/statia.php?mysid=773",
-		"http://www.ajusd.org/m/documents.cfm?getfiles=5170|0&mysid=1054"
-	};
-
-	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),
-			   sizeof( expected_urls ) / sizeof( expected_urls[0] ) );
-
-	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
-	for ( size_t i = 0; i < len; i++ ) {
-		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
-
-		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
-	}
+	strip_param_tests( test_cases );
 }
 
 TEST( UrlTest, StripParamsS ) {
-	const char *input_urls[] = {
+	std::vector<std::tuple<const char *, const char *>> test_cases = {
 		// s
-		"http://forum.tuningracers.de/index.php?page=Thread&threadID=5995&s=1951704681f7fd088ef0489a29c5753ea333208b",
-	    "https://www.futanaripalace.com/member.php?63612-SizeLover&s=6c526e0872ce06f974f456a897ef2b1c",
+		std::make_tuple( "http://forum.tuningracers.de/index.php?page=Thread&threadID=5995&s=1951704681f7fd088ef0489a29c5753ea333208b",
+		                 "http://forum.tuningracers.de/index.php?page=Thread&threadID=5995"),
+	    std::make_tuple( "https://www.futanaripalace.com/member.php?63612-SizeLover&s=6c526e0872ce06f974f456a897ef2b1c",
+	                     "https://www.futanaripalace.com/member.php?63612-SizeLover" ),
 
 	    // s (no strip)
-		"http://www.medpharmjobs.pl/job-offers?p=88&s=976&c=8"
+		std::make_tuple( "http://www.medpharmjobs.pl/job-offers?p=88&s=976&c=8",
+		                 "http://www.medpharmjobs.pl/job-offers?p=88&s=976&c=8" )
 	};
 
-	const char *expected_urls[] = {
-		// s
-		"http://forum.tuningracers.de/index.php?page=Thread&threadID=5995",
-		"https://www.futanaripalace.com/member.php?63612-SizeLover",
-
-		// s (no strip)
-		"http://www.medpharmjobs.pl/job-offers?p=88&s=976&c=8"
-	};
-
-	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),
-	           sizeof( expected_urls ) / sizeof( expected_urls[0] ) );
-
-	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
-	for ( size_t i = 0; i < len; i++ ) {
-		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
-
-		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
-	}
+	strip_param_tests( test_cases );
 }
 
 TEST( UrlTest, StripApacheDirSort ) {
-	const char *input_urls[] = {
-		"http://www.amphonesinh.info/poemes/sa/livre/images/tmp/?C=D;O=",
-	    "http://gda.reconcavo.org.br/gda_repository/pesquisas/pos/?C=D;",
-	    "http://mirrors.psychz.net/Centos/2.1/?C=S;O=A",
-	    "http://www.3ddx.com/blog/wp-includes/SimplePie/Decode/HTML/?C=N;O=D",
-	    "http://macports.mirror.ac.za/release/ports/www/midori/?C=M&O=A"
+	std::vector<std::tuple<const char *, const char *>> test_cases = {
+		std::make_tuple( "http://www.amphonesinh.info/poemes/sa/livre/images/tmp/?C=D;O=",
+		                 "http://www.amphonesinh.info/poemes/sa/livre/images/tmp/" ),
+	    std::make_tuple( "http://gda.reconcavo.org.br/gda_repository/pesquisas/pos/?C=D;",
+	                     "http://gda.reconcavo.org.br/gda_repository/pesquisas/pos/" ),
+	    std::make_tuple( "http://mirrors.psychz.net/Centos/2.1/?C=S;O=A",
+	                     "http://mirrors.psychz.net/Centos/2.1/" ),
+	    std::make_tuple( "http://www.3ddx.com/blog/wp-includes/SimplePie/Decode/HTML/?C=N;O=D",
+	                     "http://www.3ddx.com/blog/wp-includes/SimplePie/Decode/HTML/" ),
+	    std::make_tuple( "http://macports.mirror.ac.za/release/ports/www/midori/?C=M&O=A",
+			                     "http://macports.mirror.ac.za/release/ports/www/midori/" )
 	};
 
-	const char *expected_urls[] = {
-		"http://www.amphonesinh.info/poemes/sa/livre/images/tmp/",
-		"http://gda.reconcavo.org.br/gda_repository/pesquisas/pos/",
-		"http://mirrors.psychz.net/Centos/2.1/",
-		"http://www.3ddx.com/blog/wp-includes/SimplePie/Decode/HTML/",
-		"http://macports.mirror.ac.za/release/ports/www/midori/"
-	};
-
-	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),
-	           sizeof( expected_urls ) / sizeof( expected_urls[0] ) );
-
-	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
-	for ( size_t i = 0; i < len; i++ ) {
-		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
-
-		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
-	}
+	strip_param_tests( test_cases );
 }
 
 TEST( UrlTest, StripParamsGoogleAnalytics ) {
-	const char *input_urls[] = {
+	std::vector<std::tuple<const char *, const char *>> test_cases = {
 		// google analytics
-		"http://www.urchin.com/download.html?utm_source=newsletter4&utm_medium=email&utm_term=urchin&utm_content=easter&utm_campaign=product",
-        "http://www.huffingtonpost.com/parker-marie-molloy/todd-kincannon-transgender-camps_b_4100777.html?utm_source=feedburner&utm_medium=feed&utm_campaign=Feed%3A+HP%2FPolitics+%28Politics+on+The+Huffington+Post",
-        "http://www.staffnet.manchester.ac.uk/news/display/?id=10341&;utm_source=newsletter&utm_medium=email&utm_campaign=eUpdate",
-        "http://www.nightdivestudios.com/games/turok-dinosaur-hunter/?utm_source=steampowered.com&utm_medium=product&utm_campaign=website%20-%20turok%20dinosaur%20hunter",
-		"http://www.mihomes.com/Find-Your-New-Home/Virginia-Homes?utm_source=NewHomesDirectory.com&utm_campaign=referral-division&utm_medium=feed&utm_content=&utm_term=consumer&cookiecheck=true",
-        "http://www.huffingtonpost.com.au/entry/tiny-moments-happiness_us_56ec1a35e4b084c672200a36?section=australia&utm_hp_ref=healthy-living&utm_hp_ref=au-life&adsSiteOverride=au"
+		std::make_tuple( "http://www.urchin.com/download.html?utm_source=newsletter4&utm_medium=email&utm_term=urchin&utm_content=easter&utm_campaign=product",
+		                 "http://www.urchin.com/download.html" ),
+        std::make_tuple( "http://www.huffingtonpost.com/parker-marie-molloy/todd-kincannon-transgender-camps_b_4100777.html?utm_source=feedburner&utm_medium=feed&utm_campaign=Feed%3A+HP%2FPolitics+%28Politics+on+The+Huffington+Post",
+                         "http://www.huffingtonpost.com/parker-marie-molloy/todd-kincannon-transgender-camps_b_4100777.html" ),
+        std::make_tuple( "http://www.staffnet.manchester.ac.uk/news/display/?id=10341&;utm_source=newsletter&utm_medium=email&utm_campaign=eUpdate",
+                         "http://www.staffnet.manchester.ac.uk/news/display/?id=10341" ),
+        std::make_tuple( "http://www.nightdivestudios.com/games/turok-dinosaur-hunter/?utm_source=steampowered.com&utm_medium=product&utm_campaign=website%20-%20turok%20dinosaur%20hunter",
+                         "http://www.nightdivestudios.com/games/turok-dinosaur-hunter/" ),
+		std::make_tuple( "http://www.mihomes.com/Find-Your-New-Home/Virginia-Homes?utm_source=NewHomesDirectory.com&utm_campaign=referral-division&utm_medium=feed&utm_content=&utm_term=consumer&cookiecheck=true",
+		                 "http://www.mihomes.com/Find-Your-New-Home/Virginia-Homes?cookiecheck=true" ),
+        std::make_tuple( "http://www.huffingtonpost.com.au/entry/tiny-moments-happiness_us_56ec1a35e4b084c672200a36?section=australia&utm_hp_ref=healthy-living&utm_hp_ref=au-life&adsSiteOverride=au",
+                         "http://www.huffingtonpost.com.au/entry/tiny-moments-happiness_us_56ec1a35e4b084c672200a36?section=australia&adsSiteOverride=au" )
 	};
 
-	const char *expected_urls[] = {
-		// google analytics
-		"http://www.urchin.com/download.html",
-		"http://www.huffingtonpost.com/parker-marie-molloy/todd-kincannon-transgender-camps_b_4100777.html",
-		"http://www.staffnet.manchester.ac.uk/news/display/?id=10341",
-		"http://www.nightdivestudios.com/games/turok-dinosaur-hunter/",
-		"http://www.mihomes.com/Find-Your-New-Home/Virginia-Homes?cookiecheck=true",
-		"http://www.huffingtonpost.com.au/entry/tiny-moments-happiness_us_56ec1a35e4b084c672200a36?section=australia&adsSiteOverride=au"
-	};
-
-	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),
-			   sizeof( expected_urls ) / sizeof( expected_urls[0] ) );
-
-	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
-	for ( size_t i = 0; i < len; i++ ) {
-		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
-
-		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
-	}
+	strip_param_tests( test_cases );
 }
 
 TEST( UrlTest, StripParamsOracleEloqua ) {
-	const char *input_urls[] = {
+	std::vector<std::tuple<const char *, const char *>> test_cases = {
         // oracle eloqua
-		"http://maersklinereefer.com/about/merry-christmas/?elqTrackId=786C9D2AE676DEC435B578D75CB0B4FD&elqaid=2666&elqat=2",
-        "https://community.oracle.com/community/topliners/?elq_mid=21557&elq_cid=1618237&elq=3c0cfe27635443ca9b6410238cc876a9&elqCampaignId=2182&elqaid=21557&elqat=1&elqTrackId=40772b5725924f53bc2c6a6fb04759a3",
-	    "http://app.reg.techweb.com/e/er?s=2150&lid=25554&elq=00000000000000000000000000000000&elqaid=2294&elqat=2&elqTrackId=3de2badc5d7c4a748bc30253468225fd",
-	    "http://www.biography.com/people/louis-armstrong-9188912?elq=7fd0dd577ebf4eafa1e73431feee849f&elqCampaignId=2887"
+		std::make_tuple( "http://maersklinereefer.com/about/merry-christmas/?elqTrackId=786C9D2AE676DEC435B578D75CB0B4FD&elqaid=2666&elqat=2",
+		                 "http://maersklinereefer.com/about/merry-christmas/" ),
+        std::make_tuple( "https://community.oracle.com/community/topliners/?elq_mid=21557&elq_cid=1618237&elq=3c0cfe27635443ca9b6410238cc876a9&elqCampaignId=2182&elqaid=21557&elqat=1&elqTrackId=40772b5725924f53bc2c6a6fb04759a3",
+                         "https://community.oracle.com/community/topliners/" ),
+	    std::make_tuple( "http://app.reg.techweb.com/e/er?s=2150&lid=25554&elq=00000000000000000000000000000000&elqaid=2294&elqat=2&elqTrackId=3de2badc5d7c4a748bc30253468225fd",
+	                     "http://app.reg.techweb.com/e/er?s=2150&lid=25554" ),
+	    std::make_tuple( "http://www.biography.com/people/louis-armstrong-9188912?elq=7fd0dd577ebf4eafa1e73431feee849f&elqCampaignId=2887",
+	                     "http://www.biography.com/people/louis-armstrong-9188912" )
 	};
 
-	const char *expected_urls[] = {
-		// oracle eloqua
-		"http://maersklinereefer.com/about/merry-christmas/",
-		"https://community.oracle.com/community/topliners/",
-		"http://app.reg.techweb.com/e/er?s=2150&lid=25554",
-		"http://www.biography.com/people/louis-armstrong-9188912"
-	};
-
-	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),
-			   sizeof( expected_urls ) / sizeof( expected_urls[0] ) );
-
-	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
-	for ( size_t i = 0; i < len; i++ ) {
-		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
-
-		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
-	}
+	strip_param_tests( test_cases );
 }
 
 TEST( UrlTest, StripParamsWebTrends ) {
-	const char *input_urls[] = {
+	std::vector<std::tuple<const char *, const char *>> test_cases = {
 	    // webtrends
-	    "http://www.thermoscientific.com/en/product/haake-mars-rotational-rheometers.html?elq_mid=1089&elq_cid=107687&wt.mc_id=CAD_MOL_MC_PR_EM1_0815_NewHaakeMars_English_GLB_2647&elq=f17d2c276ed045c0bb391e4c273b789c&elqCampaignId=&elqaid=1089&elqat=1&elqTrackId=ce2a4c4879ee4f6488a14d924fa1f8a5"
+	    std::make_tuple( "http://www.thermoscientific.com/en/product/haake-mars-rotational-rheometers.html?elq_mid=1089&elq_cid=107687&wt.mc_id=CAD_MOL_MC_PR_EM1_0815_NewHaakeMars_English_GLB_2647&elq=f17d2c276ed045c0bb391e4c273b789c&elqCampaignId=&elqaid=1089&elqat=1&elqTrackId=ce2a4c4879ee4f6488a14d924fa1f8a5",
+	                     "http://www.thermoscientific.com/en/product/haake-mars-rotational-rheometers.html" )
 	};
 
-	const char *expected_urls[] = {
-		// webtrends
-		"http://www.thermoscientific.com/en/product/haake-mars-rotational-rheometers.html"
-	};
-
-	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),
-			   sizeof( expected_urls ) / sizeof( expected_urls[0] ) );
-
-	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
-	for ( size_t i = 0; i < len; i++ ) {
-		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
-
-		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
-	}
+	strip_param_tests( test_cases );
 }
 
 TEST( UrlTest, StripParamsPiwik ) {
-	const char *input_urls[] = {
+	std::vector<std::tuple<const char *, const char *>> test_cases = {
 	    // piwik
-		"https://astro-report.com/lp2.html?pk_campaign=1%20Natal%20Chart%20-%20RDMs&pk_kwd=astrological%20chart%20free&gclid=CPfkwKfP2LgCFcJc3godgSMAHA",
-		"http://lapprussia.lappgroup.com/kontakty.html?pk_campaign=yadirect-crossselling&pk_kwd=olflex&pk_source=yadirect&pk_medium=cpc&pk_content=olflex&rel=bytib"
+		std::make_tuple( "https://astro-report.com/lp2.html?pk_campaign=1%20Natal%20Chart%20-%20RDMs&pk_kwd=astrological%20chart%20free&gclid=CPfkwKfP2LgCFcJc3godgSMAHA",
+		                 "https://astro-report.com/lp2.html" ),
+		std::make_tuple( "http://lapprussia.lappgroup.com/kontakty.html?pk_campaign=yadirect-crossselling&pk_kwd=olflex&pk_source=yadirect&pk_medium=cpc&pk_content=olflex&rel=bytib",
+		                 "http://lapprussia.lappgroup.com/kontakty.html?rel=bytib" )
 	};
 
-	const char *expected_urls[] = {
-	    // piwik
-		"https://astro-report.com/lp2.html",
-		"http://lapprussia.lappgroup.com/kontakty.html?rel=bytib"
-	};
-
-	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),
-			   sizeof( expected_urls ) / sizeof( expected_urls[0] ) );
-
-	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
-	for ( size_t i = 0; i < len; i++ ) {
-		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
-
-		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
-	}
+	strip_param_tests( test_cases );
 }
 
 TEST( UrlTest, StripParamsTrk ) {
-	const char *input_urls[] = {
+	std::vector<std::tuple<const char *, const char *>> test_cases = {
 	    // trk
-		"https://www.nerdwallet.com/investors/?trk=nw_gn_2.0",
-		"https://www.linkedin.com/company/intel-corporation?trk=ppro_cprof"
+		std::make_tuple( "https://www.nerdwallet.com/investors/?trk=nw_gn_2.0",
+		                 "https://www.nerdwallet.com/investors/" ),
+		std::make_tuple( "https://www.linkedin.com/company/intel-corporation?trk=ppro_cprof",
+		                 "https://www.linkedin.com/company/intel-corporation" )
 	};
 
-	const char *expected_urls[] = {
-	    // trk
-		"https://www.nerdwallet.com/investors/",
-		"https://www.linkedin.com/company/intel-corporation"
-	};
-
-	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),
-			   sizeof( expected_urls ) / sizeof( expected_urls[0] ) );
-
-	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
-	for ( size_t i = 0; i < len; i++ ) {
-		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
-
-		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
-	}
+	strip_param_tests( test_cases );
 }
 
 TEST( UrlTest, StripParamsPartnerRef ) {
-	const char *input_urls[] = {
+	std::vector<std::tuple<const char *, const char *>> test_cases = {
 		// partnerref
-		"http://www.lookfantastic.com/offers/20-off-your-top-20.list?partnerref=ENLF-_EmailExclusive"
-
+		std::make_tuple( "http://www.lookfantastic.com/offers/20-off-your-top-20.list?partnerref=ENLF-_EmailExclusive",
+		                 "http://www.lookfantastic.com/offers/20-off-your-top-20.list" )
 	};
 
-	const char *expected_urls[] = {
-		// partnerref
-		"http://www.lookfantastic.com/offers/20-off-your-top-20.list"
-	};
 
-	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),
-			   sizeof( expected_urls ) / sizeof( expected_urls[0] ) );
-
-	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
-	for ( size_t i = 0; i < len; i++ ) {
-		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
-
-		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
-	}
+	strip_param_tests( test_cases );
 }
 
 TEST( UrlTest, StripParamsWho ) {
-	const char *input_urls[] = {
+	std::vector<std::tuple<const char *, const char *>> test_cases = {
 		// who
-		"http://www.bigchurch.com/go/page/privacy.html?who=r,/cu4qLiwvculGvDvGrNzyhKpyhktvMpoVzsk0AGO5LEkHr/CP73pECeMNUNAAnQxhyuVznsP0mN0_gc73W/4TBykmZSBM_dVZJuzeXuBRaskyEzrh1nIpIaeqHAY_dEZ",
-	    "https://affiliates.danni.com/p/partners/main.cgi?who=r,VgwuU_i/jKvDCoWe1vEMdEktDgo/UpGf6pX3qsopquP0xCYOlgReamC2S1RnQSdn5DG42QxPixcOP1q67s6_nK0kwqcf8YqW70Sux_iWenV/PNHPK9ddNE88CXGs9s2o&action=faq&trlid=affiliate_navbar_v1_0-15",
+		std::make_tuple( "http://www.bigchurch.com/go/page/privacy.html?who=r,/cu4qLiwvculGvDvGrNzyhKpyhktvMpoVzsk0AGO5LEkHr/CP73pECeMNUNAAnQxhyuVznsP0mN0_gc73W/4TBykmZSBM_dVZJuzeXuBRaskyEzrh1nIpIaeqHAY_dEZ",
+		                 "http://www.bigchurch.com/go/page/privacy.html" ),
+	    std::make_tuple( "https://affiliates.danni.com/p/partners/main.cgi?who=r,VgwuU_i/jKvDCoWe1vEMdEktDgo/UpGf6pX3qsopquP0xCYOlgReamC2S1RnQSdn5DG42QxPixcOP1q67s6_nK0kwqcf8YqW70Sux_iWenV/PNHPK9ddNE88CXGs9s2o&action=faq&trlid=affiliate_navbar_v1_0-15",
+	                     "https://affiliates.danni.com/p/partners/main.cgi?action=faq&trlid=affiliate_navbar_v1_0-15" ),
 
 	    // who (no strip)
-	    "http://www.pailung.com.tw/tw/Applications_Show2.aspx?idNo=E&typeNo=0&QueryStr=E&Who=Application"
+	    std::make_tuple( "http://www.pailung.com.tw/tw/Applications_Show2.aspx?idNo=E&typeNo=0&QueryStr=E&Who=Application",
+	                     "http://www.pailung.com.tw/tw/Applications_Show2.aspx?idNo=E&typeNo=0&QueryStr=E&Who=Application" )
 	};
 
-	const char *expected_urls[] = {
-		// who
-		"http://www.bigchurch.com/go/page/privacy.html",
-		"https://affiliates.danni.com/p/partners/main.cgi?action=faq&trlid=affiliate_navbar_v1_0-15",
-
-		// who (no strip)
-		"http://www.pailung.com.tw/tw/Applications_Show2.aspx?idNo=E&typeNo=0&QueryStr=E&Who=Application"
-	};
-
-	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),
-	           sizeof( expected_urls ) / sizeof( expected_urls[0] ) );
-
-	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
-	for ( size_t i = 0; i < len; i++ ) {
-		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
-
-		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
-	}
+	strip_param_tests( test_cases );
 }
 
 TEST( UrlTest, Normalization ) {
-	const char *input_urls[] = {
-		"http://puddicatcreationsdigitaldesigns.com/index.php?route=product/product&amp;product_id=1510",
-		"http://www.huffingtonpost.com.au/entry/tiny-moments-happiness_us_56ec1a35e4b084c672200a36?section=australia&adsSiteOverride=au&section=australia",
-	    "http://www.example.com/%7ejoe/index.html",
-		"http://www.example.com/%7joe/index.html",
+	std::vector<std::tuple<const char *, const char *>> test_cases = {
+		std::make_tuple( "http://puddicatcreationsdigitaldesigns.com/index.php?route=product/product&amp;product_id=1510",
+		                 "http://puddicatcreationsdigitaldesigns.com/index.php?route=product/product&product_id=1510" ),
+		std::make_tuple( "http://www.huffingtonpost.com.au/entry/tiny-moments-happiness_us_56ec1a35e4b084c672200a36?section=australia&adsSiteOverride=au&section=australia",
+		                 "http://www.huffingtonpost.com.au/entry/tiny-moments-happiness_us_56ec1a35e4b084c672200a36?section=australia&adsSiteOverride=au" ),
+	    std::make_tuple( "http://www.example.com/%7ejoe/index.html", "http://www.example.com/~joe/index.html" ),
+		std::make_tuple( "http://www.example.com/%7joe/index.html", "http://www.example.com/joe/index.html" )
 	};
 
-	const char *expected_urls[] = {
-		"http://puddicatcreationsdigitaldesigns.com/index.php?route=product/product&product_id=1510",
-		"http://www.huffingtonpost.com.au/entry/tiny-moments-happiness_us_56ec1a35e4b084c672200a36?section=australia&adsSiteOverride=au",
-		"http://www.example.com/~joe/index.html",
-		"http://www.example.com/joe/index.html",
-	};
-
-	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),
-	           sizeof( expected_urls ) / sizeof( expected_urls[0] ) );
-
-	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
-	for ( size_t i = 0; i < len; i++ ) {
-		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
-
-		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
-	}
-
+	strip_param_tests( test_cases );
 }
