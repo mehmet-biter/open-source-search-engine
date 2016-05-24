@@ -21,13 +21,13 @@ public:
 	int32_t set( SafeBuf *sb, char *content, int32_t contentLen, Query *q, const char *frontTag,
 				  const char *backTag, int32_t niceness );
 
-	int32_t set( SafeBuf *sb, Words *words, Matches *matches, const char *frontTag = NULL,
-				 const char *backTag = NULL, Query *q = NULL );
+	int32_t set( SafeBuf *sb, const Words *words, const Matches *matches, const char *frontTag = NULL,
+				 const char *backTag = NULL, const Query *q = NULL );
 
 	int32_t getNumMatches() { return m_numMatches; }
 
  private:
-	bool highlightWords ( Words *words , Matches *m , Query *q=NULL );
+	bool highlightWords ( const Words *words, const Matches *m, const Query *q=NULL );
 
 	class SafeBuf *m_sb;
 
