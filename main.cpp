@@ -5375,7 +5375,7 @@ int injectFile ( char *filename , char *ips , char *coll ) {
 			dir.open();
 			log("setting dir to %s",p);
 		subloop:
-			char *xarcFilename = dir.getNextFilename("*arc.gz");
+			const char *xarcFilename = dir.getNextFilename("*arc.gz");
 			// get next archive
 			if ( ! xarcFilename ) {
 				cmd.reset();
@@ -5387,7 +5387,7 @@ int injectFile ( char *filename , char *ips , char *coll ) {
 				continue;
 			}
 			int32_t flen = gbstrlen(xarcFilename);
-			char *ext = xarcFilename + flen -7;
+			const char *ext = xarcFilename + flen -7;
 			// gunzip to foo.warc or foo.arc depending!
 			char *es = "";
 			if ( ext[0] == 'w' ) es = "w";
@@ -7872,20 +7872,17 @@ bool isRecoveryFutile ( ) {
 	dir.open ();
 
 	// scan files in dir
-	char *filename;
+	const char *filename;
 
 	int32_t now = getTimeLocal();
 
 	int32_t fails = 0;
 
-	// getNextFilename() writes into this
-	char pattern[8]; strcpy ( pattern , "*"); // log*-*" );
-
-	while ( ( filename = dir.getNextFilename ( pattern ) ) ) {
+	while ( ( filename = dir.getNextFilename ( "*" ) ) ) {
 		// filename must be a certain length
 		//int32_t filenameLen = gbstrlen(filename);
 
-		char *p = filename;
+		const char *p = filename;
 
 		if ( !strstr ( filename,"log") ) continue;
 

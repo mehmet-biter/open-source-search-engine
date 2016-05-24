@@ -208,7 +208,7 @@ bool BigFile::addParts ( const char *dirname ) {
 	
 	logTrace( g_conf.m_logTraceBigFile, "Look for [%s]", pattern);
 	
-	char *filename;
+	const char *filename;
 	while ( ( filename = dir.getNextFilename ( pattern ) ) ) {
 		logTrace( g_conf.m_logTraceBigFile, "  Checking [%s]", filename);
 		

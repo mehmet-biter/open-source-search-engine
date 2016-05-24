@@ -67,13 +67,7 @@ bool Dir::open ( ) {
 	return true;
 }
 
-int Dir::getNumFiles ( char *pattern ) {
-	int count = 0;
-	while ( getNextFilename ( pattern ) ) count++;
-	return count;
-}
-
-char *Dir::getNextFilename ( char *pattern ) {
+const char *Dir::getNextFilename ( const char *pattern ) {
 
 	if ( ! m_dir ) {
 		log("dir: m_dir is NULL so can't find pattern %s",pattern);
@@ -83,18 +77,18 @@ char *Dir::getNextFilename ( char *pattern ) {
 	struct dirent *ent;
 	int32_t plen = gbstrlen ( pattern );
 	while ( (ent = readdir ( m_dir ))  ) {
-		char *filename = ent->d_name;
+		const char *filename = ent->d_name;
 		if ( ! pattern ) return filename;
 		if ( plen>2 && pattern[0] == '*' && pattern[plen-1] == '*' ) {
-			pattern[plen-1]='\0';
-			char *s = strstr ( filename , pattern+1 ) ;
-			pattern[plen-1]='*';
-			if ( ! s ) continue;
-			else       return filename;
+			char tmp[128];
+			memcpy(tmp,pattern+1,plen-2);
+			tmp[plen-2] = '\0';
+			if ( strstr ( filename, tmp ) )
+				return filename;
 		}
 		if ( pattern[0] == '*' ) {
 			if ( gbstrlen(filename) < gbstrlen(pattern + 1) ) continue;
-			char *tail = filename + 
+			const char *tail = filename + 
 				gbstrlen ( filename ) - 
 				gbstrlen ( pattern ) + 1;
 			if ( strcmp ( tail , pattern+1) == 0 ) return filename;
@@ -109,7 +103,7 @@ char *Dir::getNextFilename ( char *pattern ) {
 }
 
 // . replace the * in the pattern with a unique id from getNewId()
-char *Dir::getFullName ( char *filename ) {
+const char *Dir::getFullName ( const char *filename ) {
 	static char buf[1024];
 	sprintf ( buf , "%s/%s", m_dirname , filename );
 	return buf;

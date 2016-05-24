@@ -1164,10 +1164,8 @@ bool ImportState::setCurrentTitleFileAndOffset ( ) {
 	// assume none
 	int32_t minFileId = -1;
 
-	// getNextFilename() writes into this
-	char pattern[64]; strcpy ( pattern , "titledb*" );
-	char *filename;
-	while ( ( filename = dir.getNextFilename ( pattern ) ) ) {
+	const char *filename;
+	while ( ( filename = dir.getNextFilename ( "titledb*" ) ) ) {
 		// filename must be a certain length
 		int32_t filenameLen = gbstrlen(filename);
 		// we need at least "titledb0001.dat"
@@ -1179,7 +1177,7 @@ bool ImportState::setCurrentTitleFileAndOffset ( ) {
 		if ( ! strstr ( filename , ".dat" ) )
 			continue;
 		// then a 4 digit number should follow
-		char *s = filename + 7;
+		const char *s = filename + 7;
 		if ( ! isdigit(*(s+0)) ) continue;
 		if ( ! isdigit(*(s+1)) ) continue;
 		if ( ! isdigit(*(s+2)) ) continue;

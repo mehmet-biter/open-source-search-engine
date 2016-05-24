@@ -389,11 +389,9 @@ bool RdbBase::setFiles ( ) {
 	//   (but not necessarily the file)
 	// . we now put a '*' at end of "*.dat*" since we may be reading in
 	//   some headless BigFiles left over froma killed merge
-	char *filename;
+	const char *filename;
 
-	// getNextFilename() writes into this
-	char pattern[8]; strcpy ( pattern , "*.dat*" );
-	while ( ( filename = m_dir.getNextFilename ( pattern ) ) ) {
+	while ( ( filename = m_dir.getNextFilename ( "*.dat*" ) ) ) {
 		// filename must be a certain length
 		int32_t filenameLen = gbstrlen(filename);
 		// we need at least "indexdb0000.dat"
@@ -402,7 +400,7 @@ bool RdbBase::setFiles ( ) {
 		if ( strncmp ( filename , m_dbname , m_dbnameLen ) != 0 )
 			continue;
 		// then a 4 digit number should follow
-		char *s = filename + m_dbnameLen;
+		const char *s = filename + m_dbnameLen;
 		if ( ! isdigit(*(s+0)) ) continue;
 		if ( ! isdigit(*(s+1)) ) continue;
 		if ( ! isdigit(*(s+2)) ) continue;

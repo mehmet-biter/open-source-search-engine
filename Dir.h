@@ -18,16 +18,12 @@ class Dir {
 
 	bool close    ( );
 
-	char *getNextFilename ( char *pattern = NULL );
+	const char *getNextFilename ( const char *pattern = NULL );
 
-	// . calls getNextFilename and returns number of files matching the 
-	//   pattern
-	int getNumFiles             ( char *pattern = NULL );
-
-	char *getDir     ( ) { return m_dirname; }
-	char *getDirName ( ) { return m_dirname; }
-	char *getDirname ( ) { return m_dirname; }
-	char *getFullName ( char *filename ); // prepends path
+	const char *getDir     ( ) { return m_dirname; }
+	const char *getDirName ( ) { return m_dirname; }
+	const char *getDirname ( ) { return m_dirname; }
+	const char *getFullName ( const char *filename ); // prepends path
 
 	 Dir     ( );
 	~Dir     ( );

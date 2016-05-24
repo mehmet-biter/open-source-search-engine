@@ -110,7 +110,7 @@ bool Collectiondb::loadAllCollRecs ( ) {
 	}
 
 	int32_t count = 0;
-	char *f;
+	const char *f;
 	while ( ( f = d.getNextFilename ( "*" ) ) ) {
 		// skip if first char not "coll."
 		if ( strncmp ( f , "coll." , 5 ) != 0 ) continue;
@@ -137,15 +137,17 @@ bool Collectiondb::loadAllCollRecs ( ) {
 		// must end on a digit (i.e. coll.main.0)
 		if ( ! is_digit (f[gbstrlen(f)-1]) ) continue;
 		// point to collection
-		char *coll = f + 5;
+		const char *coll = f + 5;
 		// NULL terminate at .
-		char *pp = strchr ( coll , '.' );
+		const char *pp = strchr ( coll , '.' );
 		if ( ! pp ) continue;
-		*pp = '\0';
+		char collname[256];
+		memcpy(collname,coll,pp-coll);
+		collname[pp-coll] = '\0';
 		// get collnum
 		collnum_t collnum = atol ( pp + 1 );
 		// add it
-		if ( ! addExistingColl ( coll , collnum ) )
+		if ( ! addExistingColl ( collname, collnum ) )
 			return false;
 		// swap it out if we got 100+ collections
 		// if ( count < 100 ) continue;

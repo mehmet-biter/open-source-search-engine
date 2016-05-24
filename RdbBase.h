@@ -85,7 +85,7 @@ class RdbBase {
 	void saveMaps  ();
 
 	// get the directory name where this rdb stores it's files
-	char *getDir ( ) { return m_dir.getDirname(); }
+	const char *getDir ( ) { return m_dir.getDirname(); }
 
 	int32_t getFixedDataSize ( ) { return m_fixedDataSize; }
 
