@@ -273,11 +273,11 @@ test: unittest systemtest
 
 .PHONY: unittest
 unittest:
-	make -C test $@
+	+$(MAKE) -C test $@
 
 .PHONY: systemtest
 systemtest:
-	make -C test $@
+	$(MAKE) -C test $@
 
 test_parser: $(OBJS) test_parser.o Makefile
 	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ test_parser.o $(OBJS) $(LIBS)
