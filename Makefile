@@ -76,7 +76,7 @@ OBJS =  UdpSlot.o Rebalance.o \
 
 # common flags
 DEFS = -D_REENTRANT_ -I.
-CPPFLAGS = -g -Wall -fno-stack-protector -DPTHREADS -Wstrict-aliasing=0
+CPPFLAGS = -g -fno-stack-protector -DPTHREADS -Wstrict-aliasing=0
 CPPFLAGS += -std=c++11
 
 # optimization
@@ -118,6 +118,7 @@ export CONFIG_CPPFLAGS
 CPPFLAGS += $(CONFIG_CPPFLAGS)
 
 ifeq ($(CXX), g++)
+CPPFLAGS += -Wall
 CPPFLAGS += -Wno-write-strings -Wno-maybe-uninitialized -Wno-unused-but-set-variable
 CPPFLAGS += -Wno-invalid-offsetof
 else ifeq ($(CXX), clang++)
@@ -128,12 +129,13 @@ CPPFLAGS += -Wno-invalid-offsetof -Wno-extended-offsetof
 CPPFLAGS += -Wno-gnu-zero-variadic-macro-arguments -Wno-gnu-conditional-omitted-operand
 CPPFLAGS += -Wno-zero-length-array -Wno-c99-extensions
 # other warnings (to be moved above or re-enabled when we have cleaned up the code sufficiently)
-CPPFLAGS += -Wno-cast-align -Wno-padded -Wno-tautological-undefined-compare -Wno-float-equal -Wno-weak-vtables -Wno-global-constructors -Wno-exit-time-destructors
+CPPFLAGS += -Wno-cast-align -Wno-tautological-undefined-compare -Wno-float-equal -Wno-weak-vtables -Wno-global-constructors -Wno-exit-time-destructors
 CPPFLAGS += -Wno-shadow -Wno-conversion -Wno-sign-conversion -Wno-old-style-cast -Wno-shorten-64-to-32
-CPPFLAGS += -Wno-unused-parameter -Wno-missing-prototypes -Wno-c++11-compat-deprecated-writable-strings
+CPPFLAGS += -Wno-unused-parameter -Wno-missing-prototypes
 CPPFLAGS += -Wno-sometimes-uninitialized -Wno-conditional-uninitialized
-CPPFLAGS += -Wno-packed
-CPPFLAGS += -Wno-c++98-compat-pedantic -Wno-writable-strings
+CPPFLAGS += -Wno-packed -Wno-padded
+CPPFLAGS += -Wno-c++98-compat-pedantic
+CPPFLAGS += -Wno-writable-strings -Wno-c++11-compat-deprecated-writable-strings
 CPPFLAGS += -Wno-deprecated
 endif
 
