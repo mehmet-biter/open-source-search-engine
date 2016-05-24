@@ -74,9 +74,13 @@ const char *Dir::getNextFilename ( const char *pattern ) {
 		return NULL;
 	}
 
+	//Note: m_dentryBuffer has a fixed sized. The reccommended way is to
+	//use a dynamic size and use sysconf() to determine how large it should
+	//be. I just take a wild guess that no paths are longer than 1024
+	//characters.
 	struct dirent *ent;
 	int32_t plen = gbstrlen ( pattern );
-	while ( (ent = readdir ( m_dir ))  ) {
+	while( readdir_r(m_dir,(dirent*)m_dentryBuffer,&ent)==0 && ent ) {
 		const char *filename = ent->d_name;
 		if ( ! pattern ) return filename;
 		if ( plen>2 && pattern[0] == '*' && pattern[plen-1] == '*' ) {
