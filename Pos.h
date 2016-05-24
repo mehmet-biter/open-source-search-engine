@@ -27,7 +27,7 @@ class Pos {
 	// . filter out xml words [a,b] into plain text, stores into "f"
 	// . will not exceed "fend"
 	// . returns number of BYTES stored into "f"
-	int32_t filter( Words *words, int32_t a, int32_t b, bool addEllipsis, char *f, char *fend,
+	int32_t filter( const Words *words, int32_t a, int32_t b, bool addEllipsis, char *f, char *fend,
 					int32_t version = TITLEREC_CURRENT_VERSION );
 
 	// . the position in CHARACTERS of word i is given by m_pos[i]
