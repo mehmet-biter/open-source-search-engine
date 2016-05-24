@@ -9,6 +9,8 @@ class UrlParser {
 public:
 	UrlParser( const char *url, size_t urlLen );
 
+	void print() const;
+
 	void deleteComponent( UrlComponent *urlComponent );
 
 	// path
@@ -36,6 +38,24 @@ public:
 
 	const char* unparse();
 
+	// member access
+	const char* getUrl() const;
+	size_t getUrlLen() const;
+
+	const char* getScheme() const;
+	size_t getSchemeLen() const;
+
+	const char* getAuthority() const;
+	size_t getAuthorityLen() const;
+
+	const char* getHost() const;
+	size_t getHostLen() const;
+
+	const char* getDomain() const;
+	size_t getDomainLen() const;
+
+	const std::vector<UrlComponent>* getPaths() const;
+	const std::vector<UrlComponent>* getQueries() const;
 private:
 	void parse();
 
@@ -47,8 +67,14 @@ private:
 	const char *m_scheme;
 	size_t m_schemeLen;
 
-	const char *m_hostName; // including port (for now)
-	size_t m_hostNameLen;
+	const char *m_authority;
+	size_t m_authorityLen;
+
+	const char *m_host;
+	size_t m_hostLen;
+
+	const char *m_domain;
+	size_t m_domainLen;
 
 	std::vector<UrlComponent> m_paths;
 	char m_pathEndChar;
@@ -60,5 +86,54 @@ private:
 
 	std::string m_urlParsed;
 };
+
+// member access
+inline const char* UrlParser::getUrl() const {
+	return m_url;
+}
+
+inline size_t UrlParser::getUrlLen() const {
+	return m_urlLen;
+}
+
+inline const char* UrlParser::getScheme() const {
+	return m_scheme;
+}
+
+inline size_t UrlParser::getSchemeLen() const {
+	return m_schemeLen;
+}
+
+inline const char* UrlParser::getAuthority() const {
+	return m_authority;
+}
+
+inline size_t UrlParser::getAuthorityLen() const {
+	return m_authorityLen;
+}
+
+inline const char* UrlParser::getHost() const {
+	return m_host;
+}
+
+inline size_t UrlParser::getHostLen() const {
+	return m_hostLen;
+}
+
+inline const char* UrlParser::getDomain() const {
+	return m_domain;
+}
+
+inline size_t UrlParser::getDomainLen() const {
+	return m_domainLen;
+}
+
+inline const std::vector<UrlComponent>* UrlParser::getPaths() const {
+	return &m_paths;
+}
+
+inline const std::vector<UrlComponent>* UrlParser::getQueries() const {
+	return &m_queries;
+}
 
 #endif // GB_URLPARSER_H
