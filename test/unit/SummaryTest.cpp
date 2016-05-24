@@ -18,7 +18,7 @@
 #define MAX_BUF_SIZE 1024
 #define HTML_FORMAT "<html><head>%s</head><body>%s</body></html>"
 
-static void generateSummary(Summary &summary, char *htmlInput, char *queryStr, char *urlStr) {
+static void generateSummary( Summary &summary, char *htmlInput, const char *queryStr, const char *urlStr ) {
 	Xml xml;
 	ASSERT_TRUE(xml.set(htmlInput, strlen(htmlInput), 0, 0, CT_HTML));
 
@@ -85,7 +85,7 @@ TEST( SummaryTest, StripSamePunct ) {
 	EXPECT_STREQ("CANDRA BUDGE | $22.00 | … | JESSE NICLEY | $34.00 …", summary.getSummary());
 }
 
-TEST( SummaryTest, NoEllipsisAdded ) {
+TEST( SummaryTest, BUGNoEllipsisAdded ) {
 	const char *head =
 		"<title>Instrument prices by Acme Inc.</title>\n"
 		"<meta name=\"description\" content=\"Unorthodox musical instrument value estimation\">\n";
@@ -101,6 +101,19 @@ TEST( SummaryTest, NoEllipsisAdded ) {
 	Summary summary;
 	generateSummary(summary, input, "saxophone", "http://www.example.com/");
 
-	/// @todo we're not adding ellipsis here due to lack of space. But we should take one less word instead and add ellipsis.
+	/// @todo we're not adding ellipsis here due to lack of space. we should take one less word instead and add ellipsis.
 	EXPECT_STREQ( "Unusual saxophone valuation. Looking for knowing how much your saxophone is worth and what an appropriate insurance should be?. We provide that and other relevant information such", summary.getSummary() );
+}
+
+TEST( SummaryTest, BUGEllipsisAdded ) {
+	const char *body = "Giraffe on rollerblades. Penguin on skateboard. The giraffe is way faster than that plumb bird with pathetic wings.\n";
+
+	char input[MAX_BUF_SIZE];
+	std::sprintf(input, "%s", body);
+
+	Summary summary;
+	generateSummary(summary, input, "giraffe", "http://www.example.com/");
+
+	/// @todo we're adding ellipsis even with a full sentence.
+	EXPECT_STREQ( "Giraffe on rollerblades. Penguin on skateboard. The giraffe is way faster than that plumb bird with pathetic wings.  …", summary.getSummary() );
 }
