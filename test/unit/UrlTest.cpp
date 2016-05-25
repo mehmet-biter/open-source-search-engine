@@ -624,6 +624,72 @@ TEST( UrlTest, StripParamsWho ) {
 	strip_param_tests( test_cases, 123 );
 }
 
+TEST( UrlTest, StripAffiliateAmazon ) {
+	std::vector<std::tuple<const char *, const char *>> test_cases = {
+		// tag
+		std::make_tuple( "http://www.amazon.com/b?node=5174&tag=americanidolnet-20&camp=213769&creative=393921&linkCode=ur1&adid=1XZ1813ZHDE203A2DXNM&",
+		                 "http://www.amazon.com/b?node=5174&camp=213769&creative=393921&linkCode=ur1&adid=1XZ1813ZHDE203A2DXNM" ),
+	    std::make_tuple( "http://www.amazon.co.uk/b/ref=as_li_qf_br_sr_tl?_encoding=UTF8&camp=1634&creative=6738&linkCode=ur2&node=68&tag=emplorescu-21&linkId=YUHGPWBWLGWXUKWN",
+	                     "http://www.amazon.co.uk/b?_encoding=UTF8&camp=1634&creative=6738&linkCode=ur2&node=68&linkId=YUHGPWBWLGWXUKWN" ),
+
+	    // tag (no strip)
+		std::make_tuple( "http://ec2-54-193-91-91.us-west-1.compute.amazonaws.com/index.php?route=product/search&tag=coffee",
+		                 "http://ec2-54-193-91-91.us-west-1.compute.amazonaws.com/index.php?route=product/search&tag=coffee" ),
+		std::make_tuple( "http://www.exampleamazon.com/index.php?tag=coffee",
+		                 "http://www.exampleamazon.com/index.php?tag=coffee" ),
+		std::make_tuple( "http://ec2-54-74-58-105.eu-west-1.compute.amazonaws.com/wordpress/tag/comfort/",
+		                 "http://ec2-54-74-58-105.eu-west-1.compute.amazonaws.com/wordpress/tag/comfort/" ),
+
+	    // coliid
+		std::make_tuple( "http://www.amazon.ca/product-reviews/B001OMU6UM/ref=wl_it_v_cm_cr_acr_txt/181-6738123-5655708?ie=UTF8&colid=YI4DNQQXCCEZ&coliid=I2KNXYYL6X9E1W&showViewpoints=1",
+		                 "http://www.amazon.ca/product-reviews/B001OMU6UM/181-6738123-5655708?ie=UTF8&showViewpoints=1" ),
+		// colid
+		std::make_tuple( "http://www.amazon.ca/gp/offer-listing/B001OMU6UM?ie=UTF8&colid=YI4DNQQXCCEZ&coliid=I2KNXYYL6X9E1W",
+		                 "http://www.amazon.ca/gp/offer-listing/B001OMU6UM?ie=UTF8"),
+	    // ref
+		std::make_tuple( "http://www.amazon.com/dp/B00O29DJXU/ref=dm_ws_tlw_trk2",
+		                 "http://www.amazon.com/dp/B00O29DJXU" ),
+	    std::make_tuple( "http://www.amazon.co.uk/s/ref=nb_sb_noss?url=search-alias%3Dstripbooks&field-keywords=Hugh%20Oakeley%20Arnold-Forster%2C%20History%20of%20Engl",
+	                     "http://www.amazon.co.uk/s?url=search-alias%3Dstripbooks&field-keywords=Hugh%20Oakeley%20Arnold-Forster%2C%20History%20of%20Engl" ),
+	    std::make_tuple( "https://aws.amazon.com/marketplace/review/product-reviews/ref=srh_res_product_rating/187-4587074-8841263?ie=UTF8&asin=B00DYW58IA",
+	                     "https://aws.amazon.com/marketplace/review/product-reviews/187-4587074-8841263?ie=UTF8&asin=B00DYW58IA" ),
+
+	    // ref (no strip)
+		std::make_tuple( "http://services.amazon.es/servicios/productos-patrocinados/funcionamiento.html/ref=ASESFooter",
+		                 "http://services.amazon.es/servicios/productos-patrocinados/funcionamiento.html/ref=ASESFooter" )
+	};
+
+	strip_param_tests( test_cases, 123 );
+}
+
+TEST( UrlTest, StripAffiliateEbay ) {
+	std::vector<std::tuple<const char *, const char *>> test_cases = {
+		// icep_ff3
+		std::make_tuple( "http://myworld.ebay.com/virtanen13/?icep_ff3=1&pub=5574719130&toolid=10001&campid=5336443318&customid=&ipn=psmain&icep_vectorid=229466&kwid=902099&mtid=824&kw=lg",
+		                 "http://myworld.ebay.com/virtanen13/?ipn=psmain&icep_vectorid=229466&kwid=902099&mtid=824&kw=lg" ),
+		// pub
+		std::make_tuple( "http://deals.ebay.com/5000583820__50_iTunes_Card_for_ONLY__40?customid=3ajQLCVZEeOu0AqHYiPljw0_eaui3_s9P_0_0&pub=5574652453&afepn=5335869999&campid=5335869999&afepn=5335869999",
+		                 "http://deals.ebay.com/5000583820__50_iTunes_Card_for_ONLY__40" ),
+		// toolid
+		std::make_tuple( "http://stores.ebay.com/Discount-Tire-Direct/Tires-/_i.html?customid=pQaBRKQAEeONq8ZSIP-VjA0_8Btz3_i9S_0_0&pub=5574652453&afepn=5335869999&campid=5335869999&_fsub=7361854",
+		                 "http://stores.ebay.com/Discount-Tire-Direct/Tires-/_i.html?_fsub=7361854" ),
+
+		// campid
+		std::make_tuple( "http://deals.ebay.com/5002838323_Lenovo_G50_15_6__Touchscreen_Laptop_Intel_Core_i3_5020U_2_2GHz_4GB_RAM_500GB_HDD?customid=3b986ca0ffba11e5a3cd9a2420d4ebaf0INT&pub=5574652453&campid=5335869999&afepn=5335869999&rmvSB=true&afepn=5335869999&rmvSB=true",
+		                 "http://deals.ebay.com/5002838323_Lenovo_G50_15_6__Touchscreen_Laptop_Intel_Core_i3_5020U_2_2GHz_4GB_RAM_500GB_HDD?rmvSB=true" ),
+
+		// customid
+	    std::make_tuple( "http://www.ebay.com/itm/Classic-car-rare-rosewood-convertible-1964-/322088645170?icep_ff3=1&pub=5575157929&toolid=10001&campid=5337827646&customid=&ipn=psmain&icep_vectorid=229466&kwid=902099&mtid=824&kw=lg",
+	                     "http://www.ebay.com/itm/Classic-car-rare-rosewood-convertible-1964-/322088645170?ipn=psmain&icep_vectorid=229466&kwid=902099&mtid=824&kw=lg"),
+		// afepn
+		std::make_tuple( "http://deals.ebay.com/5002902034_Sony_PlayStation_Plus_1_Year_Membership_Subscription_Card___NEW_?rmvSB=true&afepn=5335869999&afepn=5335869999&rmvSB=true",
+		                 "http://deals.ebay.com/5002902034_Sony_PlayStation_Plus_1_Year_Membership_Subscription_Card___NEW_?rmvSB=true" ),
+
+	};
+
+	strip_param_tests( test_cases, 123 );
+}
+
 TEST( UrlTest, Normalization ) {
 	std::vector<std::tuple<const char *, const char *>> test_cases = {
 		std::make_tuple( "http://puddicatcreationsdigitaldesigns.com/index.php?route=product/product&amp;product_id=1510",
@@ -631,6 +697,7 @@ TEST( UrlTest, Normalization ) {
 		std::make_tuple( "http://www.huffingtonpost.com.au/entry/tiny-moments-happiness_us_56ec1a35e4b084c672200a36?section=australia&adsSiteOverride=au&section=australia",
 		                 "http://www.huffingtonpost.com.au/entry/tiny-moments-happiness_us_56ec1a35e4b084c672200a36?section=australia&adsSiteOverride=au" ),
 	    std::make_tuple( "http://www.example.com/%7ejoe/index.html", "http://www.example.com/~joe/index.html" ),
+	    std::make_tuple( "http://www.example.com/jo%e9/index.html", "http://www.example.com/jo%E9/index.html" ),
 		std::make_tuple( "http://www.example.com/%7joe/index.html", "http://www.example.com/joe/index.html" )
 	};
 
