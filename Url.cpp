@@ -633,44 +633,25 @@ static void stripParameters( UrlParser *urlParser ) {
 		UrlComponent *cUrlComponent = ( cQueryMatches.size() == 1 ) ? cQueryMatches[0] : NULL;
 		UrlComponent *oUrlComponent = ( oQueryMatches.size() == 1 ) ? oQueryMatches[0] : NULL;
 
-		bool deleteC = false;
-		bool deleteO = false;
-
 		if ( cUrlComponent ) {
 			if ( cUrlComponent->getValueLen() == 0 ) {
-				deleteC = true;
+				urlParser->deleteComponent( cUrlComponent );
 			} else if ( cUrlComponent->getValueLen() == 1 ) {
 				char c = *( cUrlComponent->getValue() );
 				if ( c == 'N' || c == 'M' || c == 'S' || c == 'D' ) {
-					deleteC = true;
+					urlParser->deleteComponent( cUrlComponent );
 				}
 			}
 		}
 
 		if ( oUrlComponent ) {
 			if ( oUrlComponent->getValueLen() == 0 ) {
-				deleteO = true;
+				urlParser->deleteComponent( oUrlComponent );
 			} else if ( oUrlComponent->getValueLen() == 1 ) {
 				char o = *( oUrlComponent->getValue() );
 				if ( o == 'A' || o == 'D' ) {
-					deleteO = true;
+					urlParser->deleteComponent( oUrlComponent );
 				}
-			}
-		}
-
-		if ( urlParser->getQueryParamCount() == 2 ) {
-			if ( deleteC && deleteO ) {
-				urlParser->deleteComponent( cUrlComponent );
-				urlParser->deleteComponent( oUrlComponent );
-			}
-		} else {
-			if ( deleteC ) {
-				urlParser->deleteComponent( cUrlComponent );
-			}
-
-			if ( deleteO ) {
-				oUrlComponent->setDeleted();
-				urlParser->deleteComponent( oUrlComponent );
 			}
 		}
 	}
