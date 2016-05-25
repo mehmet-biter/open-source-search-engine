@@ -521,7 +521,7 @@ TEST( UrlTest, StripApacheDirSort ) {
 	    std::make_tuple( "http://www.3ddx.com/blog/wp-includes/SimplePie/Decode/HTML/?C=N;O=D",
 	                     "http://www.3ddx.com/blog/wp-includes/SimplePie/Decode/HTML/" ),
 	    std::make_tuple( "http://macports.mirror.ac.za/release/ports/www/midori/?C=M&O=A",
-			                     "http://macports.mirror.ac.za/release/ports/www/midori/" )
+	                     "http://macports.mirror.ac.za/release/ports/www/midori/" )
 	};
 
 	strip_param_tests( test_cases, 123 );

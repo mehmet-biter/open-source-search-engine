@@ -633,44 +633,25 @@ static void stripParameters( UrlParser *urlParser ) {
 		UrlComponent *cUrlComponent = ( cQueryMatches.size() == 1 ) ? cQueryMatches[0] : NULL;
 		UrlComponent *oUrlComponent = ( oQueryMatches.size() == 1 ) ? oQueryMatches[0] : NULL;
 
-		bool deleteC = false;
-		bool deleteO = false;
-
 		if ( cUrlComponent ) {
 			if ( cUrlComponent->getValueLen() == 0 ) {
-				deleteC = true;
+				urlParser->deleteComponent( cUrlComponent );
 			} else if ( cUrlComponent->getValueLen() == 1 ) {
 				char c = *( cUrlComponent->getValue() );
 				if ( c == 'N' || c == 'M' || c == 'S' || c == 'D' ) {
-					deleteC = true;
+					urlParser->deleteComponent( cUrlComponent );
 				}
 			}
 		}
 
 		if ( oUrlComponent ) {
 			if ( oUrlComponent->getValueLen() == 0 ) {
-				deleteO = true;
+				urlParser->deleteComponent( oUrlComponent );
 			} else if ( oUrlComponent->getValueLen() == 1 ) {
 				char o = *( oUrlComponent->getValue() );
 				if ( o == 'A' || o == 'D' ) {
-					deleteO = true;
+					urlParser->deleteComponent( oUrlComponent );
 				}
-			}
-		}
-
-		if ( urlParser->getQueryParamCount() == 2 ) {
-			if ( deleteC && deleteO ) {
-				urlParser->deleteComponent( cUrlComponent );
-				urlParser->deleteComponent( oUrlComponent );
-			}
-		} else {
-			if ( deleteC ) {
-				urlParser->deleteComponent( cUrlComponent );
-			}
-
-			if ( deleteO ) {
-				oUrlComponent->setDeleted();
-				urlParser->deleteComponent( oUrlComponent );
 			}
 		}
 	}
@@ -774,31 +755,35 @@ static void stripParameters( UrlParser *urlParser ) {
 
 	/// @todo ALC cater for more affiliate links here
 
-	if ( strncmp( urlParser->getDomain(), "amazon.", 7 ) == 0 ) {
-		// amazon
-		// https://www.reddit.com/r/GameDeals/wiki/affiliate
+	// only check domain specific logic when we have a domain
+	if ( urlParser->getDomain() ) {
+		if ( strncmp( urlParser->getDomain(), "amazon.", 7 ) == 0 ) {
+			// amazon
+			// https://www.reddit.com/r/GameDeals/wiki/affiliate
 
-		// affiliate
-		urlParser->removeQueryParam( "tag" );
+			// affiliate
+			urlParser->removeQueryParam( "tag" );
 
-		// wishlist
-		urlParser->removeQueryParam( "coliid" );
-		urlParser->removeQueryParam( "colid" );
+			// wishlist
+			urlParser->removeQueryParam( "coliid" );
+			urlParser->removeQueryParam( "colid" );
 
-		// reference
-		urlParser->removeQueryParam( "ref" );
-		urlParser->removePathParam( UrlComponent::Matcher( "ref" ), UrlComponent::Validator( 0, 0, false, ALLOW_ALL, MANDATORY_PUNCTUATION ) );
-	} else if ( strncmp( urlParser->getDomain(), "ebay.", 5 ) == 0 ) {
-		// ebay
-		// http://www.ebaypartnernetworkblog.com/en/2009/05/new-link-generator-tool-additional-information/
+			// reference
+			urlParser->removeQueryParam( "ref" );
+			urlParser->removePathParam( UrlComponent::Matcher( "ref" ),
+			                            UrlComponent::Validator( 0, 0, false, ALLOW_ALL, MANDATORY_PUNCTUATION ) );
+		} else if ( strncmp( urlParser->getDomain(), "ebay.", 5 ) == 0 ) {
+			// ebay
+			// http://www.ebaypartnernetworkblog.com/en/2009/05/new-link-generator-tool-additional-information/
 
-		urlParser->removeQueryParam( "icep_ff3" );
-		urlParser->removeQueryParam( "pub" );
-		urlParser->removeQueryParam( "toolid" );
-		urlParser->removeQueryParam( "campid" );
-		urlParser->removeQueryParam( "customid" );
-		urlParser->removeQueryParam( "afepn" );
-		urlParser->removeQueryParam( "pid" );
+			urlParser->removeQueryParam( "icep_ff3" );
+			urlParser->removeQueryParam( "pub" );
+			urlParser->removeQueryParam( "toolid" );
+			urlParser->removeQueryParam( "campid" );
+			urlParser->removeQueryParam( "customid" );
+			urlParser->removeQueryParam( "afepn" );
+			urlParser->removeQueryParam( "pid" );
+		}
 	}
 }
 

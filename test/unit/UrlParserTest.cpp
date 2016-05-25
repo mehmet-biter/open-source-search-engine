@@ -30,6 +30,14 @@ TEST( UrlParserTest, ParseSchemeNone ) {
 }
 
 TEST( UrlParserTest, ParseUserInfo ) {
+	std::string url( "http://username:password@www.example.com/param1=abc-123" );
+	UrlParser urlParser( url.c_str(), url.size() );
+
+	checkResult( "username:password@www.example.com", urlParser.getAuthority(), urlParser.getAuthorityLen() );
+	checkResult( "example.com", urlParser.getDomain(), urlParser.getDomainLen() );
+}
+
+TEST( UrlParserTest, ParseUserInfoPort ) {
 	std::string url( "http://username:password@www.example.com:8080/param1=abc-123" );
 	UrlParser urlParser( url.c_str(), url.size() );
 
@@ -51,6 +59,22 @@ TEST( UrlParserTest, ParsePortSchemeNone ) {
 
 	checkResult( "www.example.com:8080", urlParser.getAuthority(), urlParser.getAuthorityLen() );
 	checkResult( "example.com", urlParser.getDomain(), urlParser.getDomainLen() );
+}
+
+TEST( UrlParserTest, ParseIP ) {
+	std::string url( "http://127.0.0.1/param1=abc-123" );
+	UrlParser urlParser( url.c_str(), url.size() );
+
+	checkResult( "127.0.0.1", urlParser.getAuthority(), urlParser.getAuthorityLen() );
+	checkResult( "", urlParser.getDomain(), urlParser.getDomainLen() );
+}
+
+TEST( UrlParserTest, ParseIPPort ) {
+	std::string url( "http://127.0.0.1:8080/param1=abc-123" );
+	UrlParser urlParser( url.c_str(), url.size() );
+
+	checkResult( "127.0.0.1:8080", urlParser.getAuthority(), urlParser.getAuthorityLen() );
+	checkResult( "", urlParser.getDomain(), urlParser.getDomainLen() );
 }
 
 TEST( UrlParserTest, ParseSubdomainNone ) {
@@ -83,7 +107,7 @@ TEST( UrlParserTest, ParseTLDNone ) {
 	UrlParser urlParser( url.c_str(), url.size() );
 
 	checkResult( "ok", urlParser.getAuthority(), urlParser.getAuthorityLen() );
-	checkResult( "ok", urlParser.getDomain(), urlParser.getDomainLen() );
+	checkResult( "", urlParser.getDomain(), urlParser.getDomainLen() );
 }
 
 TEST( UrlParserTest, ParseSLD ) {
