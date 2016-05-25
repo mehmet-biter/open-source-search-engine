@@ -41,3 +41,13 @@ reindex: $(OBJS) reindex.o
 urlinfo: $(OBJS) urlinfo.o
 	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ $(OBJS) urlinfo.o $(LIBS)
 
+
+#iana_charset.cpp: parse_iana_charsets.pl character-sets supported_charsets.txt
+#	./parse_iana_charsets.pl < character-sets
+
+#iana_charset.h: parse_iana_charsets.pl character-sets supported_charsets.txt
+#	./parse_iana_charsets.pl < character-sets
+
+test_parser2.o:
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
+

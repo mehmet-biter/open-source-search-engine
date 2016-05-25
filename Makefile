@@ -166,6 +166,7 @@ LIBS += ./libiconv64.a
 
 else ifeq ($(ARCH), armv7l)
 CPPFLAGS += -fsigned-char
+
 else
 CPPFLAGS +=
 LIBS += ./libiconv64.a
@@ -221,12 +222,6 @@ cygwin:
 
 gb32:
 	make CPPFLAGS="-m32 -g -Wall -pipe -fno-stack-protector -Wno-write-strings -Wstrict-aliasing=0 -Wno-uninitialized -DPTHREADS -Wno-unused-but-set-variable" LIBS=" -L. ./libssl.a ./libcrypto.a ./libiconv.a ./libm.a ./libstdc++.a -lpthread " gb
-
-#iana_charset.cpp: parse_iana_charsets.pl character-sets supported_charsets.txt
-#	./parse_iana_charsets.pl < character-sets
-
-#iana_charset.h: parse_iana_charsets.pl character-sets supported_charsets.txt
-#	./parse_iana_charsets.pl < character-sets
 
 .PHONY: dist
 dist: DIST_DIR=gb-$(shell date +'%Y%m%d')-$(shell git rev-parse --short HEAD)
@@ -450,9 +445,6 @@ Doledb.o:
 	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 
 Msg12.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
-
-test_parser2.o:
 	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 
 PostQueryRerank.o:
