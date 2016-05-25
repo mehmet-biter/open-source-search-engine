@@ -29,6 +29,14 @@ TEST( UrlParserTest, ParseSchemeNone ) {
 	checkResult( "example.com", urlParser.getDomain(), urlParser.getDomainLen() );
 }
 
+TEST( UrlParserTest, ParseUserInfo ) {
+	std::string url( "http://username:password@www.example.com:8080/param1=abc-123" );
+	UrlParser urlParser( url.c_str(), url.size() );
+
+	checkResult( "username:password@www.example.com:8080", urlParser.getAuthority(), urlParser.getAuthorityLen() );
+	checkResult( "example.com", urlParser.getDomain(), urlParser.getDomainLen() );
+}
+
 TEST( UrlParserTest, ParsePort ) {
 	std::string url( "http://www.example.com:8080/param1=abc-123" );
 	UrlParser urlParser( url.c_str(), url.size() );

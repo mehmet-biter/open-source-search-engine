@@ -103,9 +103,9 @@ void UrlParser::parse() {
 		m_hostLen = m_authorityLen;
 	}
 
-	const char *portPos = static_cast<const char *>( memchr( m_authority, ':', m_authorityLen ) );
+	const char *portPos = static_cast<const char *>( memrchr( m_host, ':', m_hostLen ) );
 	if ( portPos != NULL ) {
-		m_hostLen -= ( m_authorityLen - ( portPos - m_authority ) );
+		m_hostLen -= ( m_hostLen - ( portPos - m_host ) );
 	}
 
 	// host        = IP-literal / IPv4address / reg-name
