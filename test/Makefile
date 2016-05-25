@@ -5,13 +5,13 @@ test: unittest systemtest
 
 .PHONY: unittest
 unittest:
-	make -C unit test
+	$(MAKE) -C unit test
 
 .PHONY: systemtest
 systemtest:
-	make -C system test
+	$(MAKE) -C system test
 
 .PHONY: clean
 clean:
-	make -C unit $@
-	make -C system $@
+	$(MAKE) -C unit $@
+	$(MAKE) -C system $@

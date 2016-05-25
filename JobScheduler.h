@@ -1,5 +1,5 @@
-#ifndef JOBSCEHDULER_H_
-#define JOBSCEHDULER_H_
+#ifndef GB_JOBSCHEDULER_H
+#define GB_JOBSCHEDULER_H
 
 #include <inttypes.h>
 #include <vector>
@@ -111,5 +111,4 @@ private:
 
 extern JobScheduler g_jobScheduler;
 
-
-#endif
+#endif // GB_JOBSCHEDULER_H

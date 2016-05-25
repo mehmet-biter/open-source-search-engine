@@ -38,8 +38,8 @@ static bool inTag( nodeid_t tagId, nodeid_t expectedTagId, int *count ) {
 	return ( *count > 0 );
 }
 
-int32_t Pos::filter( Words *words, int32_t a, int32_t b, bool addEllipsis, char *f, char *fend, int32_t version ) {
-	nodeid_t *tids = words->getTagIds(); // m_tagIds;
+int32_t Pos::filter( const Words *words, int32_t a, int32_t b, bool addEllipsis, char *f, char *fend, int32_t version ) {
+	const nodeid_t *tids = words->getTagIds();
 
 	// save start point for filtering
 	char *fstart = f;
@@ -64,14 +64,14 @@ int32_t Pos::filter( Words *words, int32_t a, int32_t b, bool addEllipsis, char 
 	int inBadTags = 0;
 	int capCount = 0;
 
-	char *lastPunct = NULL;
+	const char *lastPunct = NULL;
 	unsigned char lastPunctSize = 0;
 	int samePunctCount = 0;
 
 	int dotCount = 0; // store last encountered total consecutive dots
 	char* dotPrevChar = NULL; // store char before dot which is not a space
 
-	char* entityPos[32];
+	const char* entityPos[32];
 	int32_t entityLen[32];
 	char entityChar[32];
 	int32_t entityCount = 0;
@@ -86,8 +86,8 @@ int32_t Pos::filter( Words *words, int32_t a, int32_t b, bool addEllipsis, char 
 		}
 
 		int32_t totalLen = (words->getWord(maxWord) + words->getWordLen(maxWord)) - words->getWord(a);
-		char *pos = words->getWord(a);
-		char *endPos = pos + totalLen;
+		const char *pos = words->getWord(a);
+		const char *endPos = pos + totalLen;
 
 		for ( ; ( pos + 3 ) < endPos; ++pos ) {
 			if (*pos == '&') {
@@ -205,14 +205,14 @@ int32_t Pos::filter( Words *words, int32_t a, int32_t b, bool addEllipsis, char 
 
 		// scan through all chars discounting back-to-back spaces
 		unsigned char cs = 0;
-		char *p    = words->getWord(i) ;
-		char *pend = words->getWord(i) + words->getWordLen(i);
+		const char *p    = words->getWord(i) ;
+		const char *pend = words->getWord(i) + words->getWordLen(i);
 
 
-		char *currentEntity = NULL;
+		const char *currentEntity = NULL;
 		int32_t currentEntityLen = 0;
 		char currentEntityChar = '\0';
-		char *nextEntity = NULL;
+		const char *nextEntity = NULL;
 		int32_t nextEntityLen = 0;
 		char nextEntityChar = '\0';
 

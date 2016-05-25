@@ -3,8 +3,6 @@
 /statsdb/
 # generated file/binary
 *.o
-*.gcda
-*.gcno
 *.dat
 *.conf.saving
 *.conf
@@ -32,3 +30,7 @@ log000*
 *.creator.user
 *.files
 *.includes
+# coverage
+*.gcda
+*.gcno
+coverage*.html

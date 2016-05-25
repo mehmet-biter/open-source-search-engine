@@ -1,6 +1,7 @@
 #include "UrlParser.h"
 #include "Log.h"
 #include "fctypes.h"
+#include "Domains.h"
 #include <string.h>
 #include <iterator>
 
@@ -22,15 +23,17 @@ static const char* strnpbrk( const char *str1, size_t len, const char *str2 ) {
 	return NULL;
 }
 
-/// @todo we should see if we need to do relative path resolution here
+/// @todo ALC we should see if we need to do relative path resolution here
 /// https://tools.ietf.org/html/rfc3986#section-5.2
 UrlParser::UrlParser( const char *url, size_t urlLen )
 	: m_url( url )
 	, m_urlLen( urlLen )
 	, m_scheme( NULL )
 	, m_schemeLen( 0 )
-	, m_hostName( NULL )
-	, m_hostNameLen( 0 )
+	, m_authority( NULL )
+	, m_authorityLen( 0 )
+	, m_domain( NULL )
+	, m_domainLen( 0 )
 	, m_paths()
 	, m_pathEndChar('\0')
 	, m_pathsDeleteCount( 0 )
@@ -42,34 +45,96 @@ UrlParser::UrlParser( const char *url, size_t urlLen )
 	parse();
 }
 
+void UrlParser::print() const {
+	logf( LOG_DEBUG, "UrlParser::url       : %.*s", static_cast<uint32_t>( m_urlLen ), m_url );
+	logf( LOG_DEBUG, "UrlParser::scheme    : %.*s", static_cast<uint32_t>( m_schemeLen ), m_scheme );
+	logf( LOG_DEBUG, "UrlParser::authority : %.*s", static_cast<uint32_t>( m_authorityLen ), m_authority );
+	logf( LOG_DEBUG, "UrlParser::host      : %.*s", static_cast<uint32_t>( m_hostLen ), m_host );
+	logf( LOG_DEBUG, "UrlParser::domain    : %.*s", static_cast<uint32_t>( m_domainLen ), m_domain );
+
+	for ( auto it = m_paths.begin(); it != m_paths.end(); ++it ) {
+		logf( LOG_DEBUG, "UrlParser::path[%02li]  : %s", std::distance( m_paths.begin(), it ), it->getString().c_str() );
+	}
+
+	for ( auto it = m_queries.begin(); it != m_queries.end(); ++it ) {
+		logf( LOG_DEBUG, "UrlParser::query[%02li] : %s", std::distance( m_queries.begin(), it ), it->getString().c_str() );
+	}
+}
+
 void UrlParser::parse() {
 	// URI = scheme ":" hier-part [ "?" query ] [ "#" fragment ]
+
 	const char *urlEnd = m_url + m_urlLen;
 	const char *currentPos = m_url;
 
-	m_hostName = static_cast<const char*>( memmem( currentPos, urlEnd - currentPos, "://", 3 ) );
-	if ( m_hostName != NULL ) {
-		m_hostName += 3;
-		currentPos = m_hostName;
+	// hier-part   = "//" authority path-abempty
+	//             / path-absolute
+	//             / path-rootless
+	//             / path-empty
+
+	const char *schemePos = static_cast<const char*>( memmem( currentPos, urlEnd - currentPos, "://", 3 ) );
+	if ( schemePos != NULL ) {
+		m_authority = schemePos + 3;
+		currentPos = m_authority;
+	} else {
+		m_authority = currentPos;
 	}
 
 	const char *pathPos = static_cast<const char*>( memchr( currentPos, '/', urlEnd - currentPos ) );
 	if ( pathPos != NULL ) {
-		m_hostNameLen = pathPos - m_hostName;
+		m_authorityLen = pathPos - m_authority;
 		currentPos = pathPos + 1;
 	} else {
-		m_hostNameLen = urlEnd - m_hostName;
+		m_authorityLen = urlEnd - m_authority;
 
 		// nothing else to process
 		return;
 	}
 
-	const char *queryPos = pathPos ? static_cast<const char*>( memchr( currentPos, '?', urlEnd - currentPos ) ) : NULL;
+	// @todo similar logic in Url.cpp ( merge this )
+
+	// authority   = [ userinfo "@" ] host [ ":" port ]
+	const char *userInfoPos = static_cast<const char *>( memchr( m_authority, '@', m_authorityLen ) );
+	if ( userInfoPos != NULL ) {
+		m_host = userInfoPos + 1;
+		m_hostLen = m_authorityLen - ( userInfoPos - m_authority );
+	} else {
+		m_host = m_authority;
+		m_hostLen = m_authorityLen;
+	}
+
+	const char *portPos = static_cast<const char *>( memrchr( m_host, ':', m_hostLen ) );
+	if ( portPos != NULL ) {
+		m_hostLen -= ( m_hostLen - ( portPos - m_host ) );
+	}
+
+	// host        = IP-literal / IPv4address / reg-name
+
+	/// @todo ALC we should remove the const cast once we fix all the const issue
+	const char *tldPos = ::getTLD( const_cast<char*>( m_host ), m_hostLen );
+	if ( tldPos ) {
+		size_t tldLen = m_host + m_hostLen - tldPos;
+		if ( tldLen < m_hostLen ) {
+			m_domain = static_cast<const char *>( memrchr( m_host, '.', m_hostLen - tldLen - 1 ) );
+			if ( m_domain ) {
+				m_domain += 1;
+				m_domainLen = m_hostLen - ( m_domain - m_host );
+			}
+		}
+
+		// defaults to host
+		if ( !m_domain ) {
+			m_domain = m_host;
+			m_domainLen = m_hostLen;
+		}
+	}
+
+	const char *queryPos = static_cast<const char*>( memchr( currentPos, '?', urlEnd - currentPos ) );
 	if ( queryPos != NULL ) {
 		currentPos = queryPos + 1;
 	}
 
-	const char *anchorPos = pathPos ? static_cast<const char*>( memrchr( currentPos, '#', urlEnd - currentPos ) ) : NULL;
+	const char *anchorPos = static_cast<const char*>( memrchr( currentPos, '#', urlEnd - currentPos ) );
 //	if ( anchorPos != NULL ) {
 //		currentPos = anchorPos + 1;
 //	}
@@ -137,7 +202,7 @@ const char* UrlParser::unparse() {
 	m_urlParsed.clear();
 
 	// domain
-	m_urlParsed.append( m_url, ( m_hostName - m_url ) + m_hostNameLen );
+	m_urlParsed.append( m_url, ( m_authority - m_url ) + m_authorityLen );
 
 	bool isFirst = true;
 	for ( auto it = m_paths.begin(); it != m_paths.end(); ++it ) {

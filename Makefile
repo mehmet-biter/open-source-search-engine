@@ -76,7 +76,7 @@ OBJS =  UdpSlot.o Rebalance.o \
 
 # common flags
 DEFS = -D_REENTRANT_ -I.
-CPPFLAGS = -g -Wall -fno-stack-protector -DPTHREADS -Wstrict-aliasing=0
+CPPFLAGS = -g -fno-stack-protector -DPTHREADS -Wstrict-aliasing=0
 CPPFLAGS += -std=c++11
 
 # optimization
@@ -84,7 +84,8 @@ ifeq ($(config),$(filter $(config),debug test coverage))
 O1 =
 O2 =
 O3 =
-else ifeq ($(config),release)
+
+else ifeq ($(config),$(filter $(config),release sanitize))
 O1 = -O1
 O2 = -O2
 O3 = -O3
@@ -104,7 +105,14 @@ DEFS += -D_VALGRIND_
 DEFS += -DPRIVACORE_TEST_VERSION
 
 else ifeq ($(config), coverage)
-CONFIG_CPPFLAGS += -fprofile-arcs -ftest-coverage
+CONFIG_CPPFLAGS += --coverage
+
+else ifeq ($(config),sanitize)
+DEFS += -DPRIVACORE_SAFE_VERSION
+CONFIG_CPPFLAGS += -fsanitize=address -fno-omit-frame-pointer # libasan
+CONFIG_CPPFLAGS += -fsanitize=undefined # libubsan
+#CONFIG_CPPFLAGS += -fsanitize=thread # libtsan
+CONFIG_CPPFLAGS += -fsanitize=leak # liblsan
 
 else ifeq ($(config),release)
 # if defined, UI options that can damage our production index will be disabled
@@ -118,23 +126,30 @@ export CONFIG_CPPFLAGS
 CPPFLAGS += $(CONFIG_CPPFLAGS)
 
 ifeq ($(CXX), g++)
+CPPFLAGS += -Wall
 CPPFLAGS += -Wno-write-strings -Wno-maybe-uninitialized -Wno-unused-but-set-variable
 CPPFLAGS += -Wno-invalid-offsetof
+
 else ifeq ($(CXX), clang++)
 CPPFLAGS += -Weverything
+
 # disable offsetof warnings
 CPPFLAGS += -Wno-invalid-offsetof -Wno-extended-offsetof
+
 # extensions
 CPPFLAGS += -Wno-gnu-zero-variadic-macro-arguments -Wno-gnu-conditional-omitted-operand
 CPPFLAGS += -Wno-zero-length-array -Wno-c99-extensions
+
 # other warnings (to be moved above or re-enabled when we have cleaned up the code sufficiently)
-CPPFLAGS += -Wno-cast-align -Wno-padded -Wno-tautological-undefined-compare -Wno-float-equal -Wno-weak-vtables -Wno-global-constructors -Wno-exit-time-destructors
+CPPFLAGS += -Wno-cast-align -Wno-tautological-undefined-compare -Wno-float-equal -Wno-weak-vtables -Wno-global-constructors -Wno-exit-time-destructors
 CPPFLAGS += -Wno-shadow -Wno-conversion -Wno-sign-conversion -Wno-old-style-cast -Wno-shorten-64-to-32
-CPPFLAGS += -Wno-unused-parameter -Wno-missing-prototypes -Wno-c++11-compat-deprecated-writable-strings
+CPPFLAGS += -Wno-unused-parameter -Wno-missing-prototypes
 CPPFLAGS += -Wno-sometimes-uninitialized -Wno-conditional-uninitialized
-CPPFLAGS += -Wno-packed
-CPPFLAGS += -Wno-c++98-compat-pedantic -Wno-writable-strings
+CPPFLAGS += -Wno-packed -Wno-padded
+CPPFLAGS += -Wno-c++98-compat-pedantic
+CPPFLAGS += -Wno-writable-strings -Wno-c++11-compat-deprecated-writable-strings
 CPPFLAGS += -Wno-deprecated
+
 endif
 
 LIBS = -lm -lpthread -lssl -lcrypto -lz
@@ -156,6 +171,7 @@ LIBS += ./libiconv64.a
 
 else ifeq ($(ARCH), armv7l)
 CPPFLAGS += -fsigned-char
+
 else
 CPPFLAGS +=
 LIBS += ./libiconv64.a
@@ -169,26 +185,34 @@ ifneq ($(shell git diff --shortstat 2> /dev/null),)
 endif
 GIT_VERSION=$(shell git rev-parse HEAD)$(DIRTY)
 
+
+.PHONY: all
 all: gb
 
-utils: blaster2 hashtest monitor urlinfo treetest dnstest gbtitletest
 
 # third party libraries
 LIBFILES = libcld2_full.so
 LIBS += -Wl,-rpath=. -L. -lcld2_full
 
+
 libcld2_full.so:
 	cd third-party/cld2/internal && CPPFLAGS="-ggdb" ./compile_libs.sh
 	ln -s third-party/cld2/internal/libcld2_full.so libcld2_full.so
 
+
+.PHONY: vclean
 vclean:
 	rm -f Version.o
+
 
 gb: vclean $(OBJS) main.o $(LIBFILES)
 	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ main.o $(OBJS) $(LIBS)
 
+
+.PHONY: static
 static: vclean $(OBJS) main.o $(LIBFILES)
 	$(CXX) $(DEFS) $(CPPFLAGS) -static -o gb main.o $(OBJS) $(LIBS)
+
 
 # use this for compiling on CYGWIN:
 # only for 32bit cygwin right now and
@@ -206,18 +230,15 @@ static: vclean $(OBJS) main.o $(LIBFILES)
 # 6. DEVEL > make: The GNU version of the 'make' utility
 # 7. DEVEL > git: Distributed version control system
 # 8. EDITORS > emacs
+.PHONY: cygwin
 cygwin:
 	make DEFS="-DCYGWIN -D_REENTRANT_ -I." LIBS=" -lz -lm -lpthread -lssl -lcrypto -liconv" gb
 
 
+.PHONY: gb32
 gb32:
 	make CPPFLAGS="-m32 -g -Wall -pipe -fno-stack-protector -Wno-write-strings -Wstrict-aliasing=0 -Wno-uninitialized -DPTHREADS -Wno-unused-but-set-variable" LIBS=" -L. ./libssl.a ./libcrypto.a ./libiconv.a ./libm.a ./libstdc++.a -lpthread " gb
 
-#iana_charset.cpp: parse_iana_charsets.pl character-sets supported_charsets.txt
-#	./parse_iana_charsets.pl < character-sets
-
-#iana_charset.h: parse_iana_charsets.pl character-sets supported_charsets.txt
-#	./parse_iana_charsets.pl < character-sets
 
 .PHONY: dist
 dist: DIST_DIR=gb-$(shell date +'%Y%m%d')-$(shell git rev-parse --short HEAD)
@@ -260,72 +281,56 @@ dist: all
 	@tar -czvf $(DIST_DIR).tar.gz $(DIST_DIR)
 	@rm -rf $(DIST_DIR)
 
+
 # doxygen
 doc:
 	doxygen doxygen/doxygen_config.conf
+
 
 # used for unit testing
 libgb.a: $(OBJS)
 	ar rcs $@ $^
 
+
 .PHONY: test
 test: unittest systemtest
 
+
 .PHONY: unittest
 unittest:
-	make -C test $@
+	+$(MAKE) -C test $@
+
 
 .PHONY: systemtest
 systemtest:
-	make -C test $@
-
-test_parser: $(OBJS) test_parser.o Makefile
-	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ test_parser.o $(OBJS) $(LIBS)
-test_parser2: $(OBJS) test_parser2.o Makefile
-	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ test_parser2.o $(OBJS) $(LIBS)
-
-test_hash: test_hash.o $(OBJS)
-	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ test_hash.o $(OBJS) $(LIBS)
-test_norm: $(OBJS) test_norm.o
-	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ test_norm.o $(OBJS) $(LIBS)
-test_convert: $(OBJS) test_convert.o
-	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ test_convert.o $(OBJS) $(LIBS)
-
-supported_charsets: $(OBJS) supported_charsets.o supported_charsets.txt
-	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ supported_charsets.o $(OBJS) $(LIBS)
-create_ucd_tables: $(OBJS) create_ucd_tables.o
-	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ create_ucd_tables.o $(OBJS) $(LIBS)
-
-blaster2: $(OBJS) blaster2.o
-	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ $@.o $(OBJS) $(LIBS)
-udptest: $(OBJS) udptest.o
-	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ $@.o $(OBJS) $(LIBS)
-dnstest: $(OBJS) dnstest.o
-	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ $@.o $(OBJS) $(LIBS)
-memtest: memtest.o
-	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ $@.o
-hashtest: hashtest.cpp
-	$(CXX) $(O3) -o hashtest hashtest.cpp
-mergetest: $(OBJS) mergetest.o
-	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ $@.o $(OBJS) $(LIBS)
-treetest: $(OBJ) treetest.o
-	$(CXX) $(DEFS) $(O2) $(CPPFLAGS) -o $@ $@.o $(OBJS) $(LIBS)
-nicetest: nicetest.o
-	$(CXX) -o nicetest nicetest.cpp
-
-
-monitor: $(OBJS) monitor.o
-	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ monitor.o $(OBJS) $(LIBS)
-reindex: $(OBJS) reindex.o
-	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ $@.o $(OBJS) $(LIBS)
-urlinfo: $(OBJS) urlinfo.o
-	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ $(OBJS) urlinfo.o $(LIBS)
-
-# comment this out for faster deb package building
-clean:
-	-rm -f *.o gb *.bz2 blaster2 udptest memtest hashtest mergetest monitor reindex urlinfo dnstest gmon.* quarantine core core.* libgb.a
-	-rm -f *.gcda *.gcno
 	$(MAKE) -C test $@
+
+
+.PHONY: clean
+clean:
+	-rm -f *.o gb core core.* libgb.a
+	-rm -f gmon.*
+	-rm -f *.gcda *.gcno coverage*.html
+	$(MAKE) -C test $@
+
+
+.PHONY: cleandb
+cleandb:
+	rm -rf coll.main.?
+	rm -f *-saved.dat spiderproxystats.dat addsinprogress.dat robots.txt.cache dns.cache
+
+
+# shortcuts
+.PHONY: debug
+debug:
+	$(MAKE) config=debug
+
+
+.PHONY: coverage
+coverage:
+	$(MAKE) config=coverage unittest
+	gcovr -r . --html --html-detail -o coverage.html -e ".*Test\.cpp" -e "googletest.*"
+
 
 StopWords.o:
 	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
@@ -475,9 +480,6 @@ Doledb.o:
 Msg12.o:
 	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 
-test_parser2.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
-
 PostQueryRerank.o:
 	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 
@@ -516,9 +518,4 @@ depend:
 	$(CXX) -MM $(DEFS) $(DPPFLAGS) *.cpp > Make.depend
 
 -include Make.depend
-
-.PHONY: cleandb
-cleandb:
-	rm -rf coll.main.?
-	rm -f *-saved.dat spiderproxystats.dat addsinprogress.dat robots.txt.cache dns.cache
 

@@ -175,7 +175,7 @@ static void stripParametersv122( char *s, int32_t *len ) {
 
 	// now search for severl strings in the cgi query string
 	char *tt = NULL;
-	int32_t x;
+	int32_t x = 0;
 
 	if ( ! tt ) { tt = gb_strcasestr ( p, "PHPSESSID=" ); x = 10;}
 	if ( ! tt ) { tt = strstr        ( p , "SID="       ); x =  4;}
@@ -341,11 +341,11 @@ static void stripParametersv122( char *s, int32_t *len ) {
 }
 
 static void stripParameters( UrlParser *urlParser ) {
-	/// @todo reorder parameter?
+	/// @todo ALC reorder parameter?
 	/// if we have ?abc=123&def=456
 	/// wouldn't it be the same as ?def=456&abc=123
 
-	/// @todo login pages?
+	/// @todo ALC login pages?
 	/// should we even spider them?
 
 	static const UrlComponent::Validator s_defaultParamValidator( 0, 0, true, ALLOW_ALL, MANDATORY_NONE );
@@ -588,7 +588,7 @@ static void stripParameters( UrlParser *urlParser ) {
 		}
 	}
 
-	// @todo
+	// @todo ALC session
 	// session
 	// eg:
 	//   eRbInbLDoNaEr4gkIju0
@@ -611,7 +611,7 @@ static void stripParameters( UrlParser *urlParser ) {
 		}
 	}
 
-	// @todo
+	// @todo ALC sess
 	// sess
 	//   eg: 4be234480736093ba237bc397fb6e32d
 	urlParser->removeQueryParam( UrlComponent::Matcher( "sess" ), UrlComponent::Validator() ); /// @todo make sure this is okay
@@ -675,7 +675,7 @@ static void stripParameters( UrlParser *urlParser ) {
 		}
 	}
 
-	/// @todo token?
+	/// @todo ALC token?
 
 	// Skip most common tracking parameters
 
@@ -765,29 +765,41 @@ static void stripParameters( UrlParser *urlParser ) {
 	// Misc
 	urlParser->removeQueryParam( "partnerref" );
 
-	/// @todo redirect ??
+	/// @todo ALC redirect ??
 	/// redirect_to, redirect, redirect_url
 
-	/// @todo referer??
+	/// @todo ALC referer??
 	/// /referer/, referer=
 
 
-	/// @todo affiliate links
-	// https://www.reddit.com/r/GameDeals/wiki/affiliate
-	// https://www.reddit.com/r/amiibo/wiki/affiliate-links
+	/// @todo ALC cater for more affiliate links here
 
-	// amazon
-	// affiliate
-	//  urlParser->removeQueryParam( "tag" );
-	// wishlist
-	//  urlParser->removeQueryParam( "coliid" );
-	//  urlParser->removeQueryParam( "colid" );
-	// reference
-	//  urlParser->removeQueryParam( "ref" );
+	if ( strncmp( urlParser->getDomain(), "amazon.", 7 ) == 0 ) {
+		// amazon
+		// https://www.reddit.com/r/GameDeals/wiki/affiliate
 
-	// ebay
-	// afepn=[code], campid=[code], pid=[code]
+		// affiliate
+		urlParser->removeQueryParam( "tag" );
 
+		// wishlist
+		urlParser->removeQueryParam( "coliid" );
+		urlParser->removeQueryParam( "colid" );
+
+		// reference
+		urlParser->removeQueryParam( "ref" );
+		urlParser->removePathParam( UrlComponent::Matcher( "ref" ), UrlComponent::Validator( 0, 0, false, ALLOW_ALL, MANDATORY_PUNCTUATION ) );
+	} else if ( strncmp( urlParser->getDomain(), "ebay.", 5 ) == 0 ) {
+		// ebay
+		// http://www.ebaypartnernetworkblog.com/en/2009/05/new-link-generator-tool-additional-information/
+
+		urlParser->removeQueryParam( "icep_ff3" );
+		urlParser->removeQueryParam( "pub" );
+		urlParser->removeQueryParam( "toolid" );
+		urlParser->removeQueryParam( "campid" );
+		urlParser->removeQueryParam( "customid" );
+		urlParser->removeQueryParam( "afepn" );
+		urlParser->removeQueryParam( "pid" );
+	}
 }
 
 // . url rfc = http://www.blooberry.com/indexdot/html/topics/urlencoding.htm

@@ -11,7 +11,7 @@ OBJECTS = GigablastTest.o \
 	PosTest.o ProcessTest.o \
 	RobotRuleTest.o RobotsTest.o \
 	ScalingFunctionsTest.o SummaryTest.o \
-	UnicodeTest.o UrlTest.o \
+	UnicodeTest.o UrlParserTest.o UrlTest.o \
 	WordsTest.o \
 	XmlTest.o \
 
@@ -20,13 +20,13 @@ all: $(TARGET)
 
 .PHONY: libgb.a
 libgb.a:
-	make -C $(BASE_DIR) libgb.a
+	$(MAKE) -C $(BASE_DIR) libgb.a
 
 ucdata:
 	ln -s $(BASE_DIR)/$@ .
 
 $(BASE_DIR)/libcld2_full.so:
-	make -C $(BASE_DIR) libcld2_full.so
+	$(MAKE) -C $(BASE_DIR) libcld2_full.so
 
 libgtest.so:
 	cd $(GTEST_DIR) && cmake -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Debug && make

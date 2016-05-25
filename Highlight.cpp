@@ -69,8 +69,8 @@ int32_t Highlight::set( SafeBuf *sb, char *content, int32_t contentLen, Query *q
 }
 
 // New version
-int32_t Highlight::set( SafeBuf *sb, Words *words, Matches *matches, const char *frontTag,
-						const char *backTag, Query *q ) {
+int32_t Highlight::set( SafeBuf *sb, const Words *words, const Matches *matches, const char *frontTag,
+						const char *backTag, const Query *q ) {
 	// save stuff
 	m_frontTag    = frontTag;
 	m_backTag     = backTag;
@@ -99,12 +99,10 @@ int32_t Highlight::set( SafeBuf *sb, Words *words, Matches *matches, const char 
 	return m_sb->length();
 }
 
-bool Highlight::highlightWords ( Words *words , Matches *m, Query *q ) {
+bool Highlight::highlightWords ( const Words *words, const Matches *m, const Query *q ) {
 	// get num of words
 	int32_t numWords = words->getNumWords();
 	// some convenience ptrs to word info
-	char *w;
-	int32_t  wlen;
 
 	// set nexti to the word # of the first word that matches a query word
 	int32_t nextm = -1;
@@ -119,8 +117,8 @@ bool Highlight::highlightWords ( Words *words , Matches *m, Query *q ) {
 
 	for ( int32_t i = 0 ; i < numWords  ; i++ ) {
 		// set word's info
-		w    = words->getWord(i);
-		wlen = words->getWordLen(i);
+		const char *w    = words->getWord(i);
+		int32_t  wlen = words->getWordLen(i);
 		bool endHead = false;
 		bool endHtml = false;
 
@@ -133,7 +131,7 @@ bool Highlight::highlightWords ( Words *words , Matches *m, Query *q ) {
 		}
 
 		// match class ptr
-		Match *mat = NULL;
+		const Match *mat = NULL;
 		// This word is a match...see if we're gonna tag it
 		// dont put the same tags around consecutive matches
 		if ( i == nexti && ! inTitle && ! endHead && ! endHtml) {
