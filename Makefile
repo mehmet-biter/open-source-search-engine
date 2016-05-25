@@ -105,7 +105,7 @@ DEFS += -D_VALGRIND_
 DEFS += -DPRIVACORE_TEST_VERSION
 
 else ifeq ($(config), coverage)
-CONFIG_CPPFLAGS += -fprofile-arcs -ftest-coverage
+CONFIG_CPPFLAGS += --coverage
 
 else ifeq ($(config),sanitize)
 DEFS += -DPRIVACORE_SAFE_VERSION
@@ -218,7 +218,6 @@ static: vclean $(OBJS) main.o $(LIBFILES)
 # 8. EDITORS > emacs
 cygwin:
 	make DEFS="-DCYGWIN -D_REENTRANT_ -I." LIBS=" -lz -lm -lpthread -lssl -lcrypto -liconv" gb
-
 
 gb32:
 	make CPPFLAGS="-m32 -g -Wall -pipe -fno-stack-protector -Wno-write-strings -Wstrict-aliasing=0 -Wno-uninitialized -DPTHREADS -Wno-unused-but-set-variable" LIBS=" -L. ./libssl.a ./libcrypto.a ./libiconv.a ./libm.a ./libstdc++.a -lpthread " gb
@@ -336,6 +335,16 @@ clean:
 	-rm -f *.o gb *.bz2 blaster2 udptest memtest hashtest mergetest monitor reindex urlinfo dnstest gmon.* quarantine core core.* libgb.a
 	-rm -f *.gcda *.gcno
 	$(MAKE) -C test $@
+
+# shortcuts
+.PHONY: debug
+debug:
+	$(MAKE) config=debug
+
+.PHONY: coverage
+coverage:
+	$(MAKE) config=coverage unittest
+	gcovr -r . --html --html-detail -o coverage.html -e ".*Test\.cpp" -e "googletest.*"
 
 StopWords.o:
 	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
