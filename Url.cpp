@@ -755,31 +755,35 @@ static void stripParameters( UrlParser *urlParser ) {
 
 	/// @todo ALC cater for more affiliate links here
 
-	if ( strncmp( urlParser->getDomain(), "amazon.", 7 ) == 0 ) {
-		// amazon
-		// https://www.reddit.com/r/GameDeals/wiki/affiliate
+	// only check domain specific logic when we have a domain
+	if ( urlParser->getDomain() ) {
+		if ( strncmp( urlParser->getDomain(), "amazon.", 7 ) == 0 ) {
+			// amazon
+			// https://www.reddit.com/r/GameDeals/wiki/affiliate
 
-		// affiliate
-		urlParser->removeQueryParam( "tag" );
+			// affiliate
+			urlParser->removeQueryParam( "tag" );
 
-		// wishlist
-		urlParser->removeQueryParam( "coliid" );
-		urlParser->removeQueryParam( "colid" );
+			// wishlist
+			urlParser->removeQueryParam( "coliid" );
+			urlParser->removeQueryParam( "colid" );
 
-		// reference
-		urlParser->removeQueryParam( "ref" );
-		urlParser->removePathParam( UrlComponent::Matcher( "ref" ), UrlComponent::Validator( 0, 0, false, ALLOW_ALL, MANDATORY_PUNCTUATION ) );
-	} else if ( strncmp( urlParser->getDomain(), "ebay.", 5 ) == 0 ) {
-		// ebay
-		// http://www.ebaypartnernetworkblog.com/en/2009/05/new-link-generator-tool-additional-information/
+			// reference
+			urlParser->removeQueryParam( "ref" );
+			urlParser->removePathParam( UrlComponent::Matcher( "ref" ),
+			                            UrlComponent::Validator( 0, 0, false, ALLOW_ALL, MANDATORY_PUNCTUATION ) );
+		} else if ( strncmp( urlParser->getDomain(), "ebay.", 5 ) == 0 ) {
+			// ebay
+			// http://www.ebaypartnernetworkblog.com/en/2009/05/new-link-generator-tool-additional-information/
 
-		urlParser->removeQueryParam( "icep_ff3" );
-		urlParser->removeQueryParam( "pub" );
-		urlParser->removeQueryParam( "toolid" );
-		urlParser->removeQueryParam( "campid" );
-		urlParser->removeQueryParam( "customid" );
-		urlParser->removeQueryParam( "afepn" );
-		urlParser->removeQueryParam( "pid" );
+			urlParser->removeQueryParam( "icep_ff3" );
+			urlParser->removeQueryParam( "pub" );
+			urlParser->removeQueryParam( "toolid" );
+			urlParser->removeQueryParam( "campid" );
+			urlParser->removeQueryParam( "customid" );
+			urlParser->removeQueryParam( "afepn" );
+			urlParser->removeQueryParam( "pid" );
+		}
 	}
 }
 

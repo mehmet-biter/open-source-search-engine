@@ -97,7 +97,7 @@ void UrlParser::parse() {
 	const char *userInfoPos = static_cast<const char *>( memchr( m_authority, '@', m_authorityLen ) );
 	if ( userInfoPos != NULL ) {
 		m_host = userInfoPos + 1;
-		m_hostLen = m_authorityLen - ( userInfoPos - m_authority );
+		m_hostLen = m_authorityLen - ( userInfoPos - m_authority ) - 1;
 	} else {
 		m_host = m_authority;
 		m_hostLen = m_authorityLen;
@@ -119,13 +119,10 @@ void UrlParser::parse() {
 			if ( m_domain ) {
 				m_domain += 1;
 				m_domainLen = m_hostLen - ( m_domain - m_host );
+			} else {
+				m_domain = m_host;
+				m_domainLen = m_hostLen;
 			}
-		}
-
-		// defaults to host
-		if ( !m_domain ) {
-			m_domain = m_host;
-			m_domainLen = m_hostLen;
 		}
 	}
 
