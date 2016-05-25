@@ -1,4 +1,6 @@
 
+utils: blaster2 hashtest monitor urlinfo treetest dnstest gbtitletest
+
 test_parser: $(OBJS) test_parser.o Makefile
 	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ test_parser.o $(OBJS) $(LIBS)
 test_parser2: $(OBJS) test_parser2.o Makefile
@@ -51,3 +53,8 @@ urlinfo: $(OBJS) urlinfo.o
 test_parser2.o:
 	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 
+
+
+
+clean:
+	-rm -f *.o blaster2 udptest memtest hashtest mergetest monitor reindex urlinfo dnstest core core.*

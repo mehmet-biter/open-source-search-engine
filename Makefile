@@ -129,13 +129,17 @@ ifeq ($(CXX), g++)
 CPPFLAGS += -Wall
 CPPFLAGS += -Wno-write-strings -Wno-maybe-uninitialized -Wno-unused-but-set-variable
 CPPFLAGS += -Wno-invalid-offsetof
+
 else ifeq ($(CXX), clang++)
 CPPFLAGS += -Weverything
+
 # disable offsetof warnings
 CPPFLAGS += -Wno-invalid-offsetof -Wno-extended-offsetof
+
 # extensions
 CPPFLAGS += -Wno-gnu-zero-variadic-macro-arguments -Wno-gnu-conditional-omitted-operand
 CPPFLAGS += -Wno-zero-length-array -Wno-c99-extensions
+
 # other warnings (to be moved above or re-enabled when we have cleaned up the code sufficiently)
 CPPFLAGS += -Wno-cast-align -Wno-tautological-undefined-compare -Wno-float-equal -Wno-weak-vtables -Wno-global-constructors -Wno-exit-time-destructors
 CPPFLAGS += -Wno-shadow -Wno-conversion -Wno-sign-conversion -Wno-old-style-cast -Wno-shorten-64-to-32
@@ -145,6 +149,7 @@ CPPFLAGS += -Wno-packed -Wno-padded
 CPPFLAGS += -Wno-c++98-compat-pedantic
 CPPFLAGS += -Wno-writable-strings -Wno-c++11-compat-deprecated-writable-strings
 CPPFLAGS += -Wno-deprecated
+
 endif
 
 LIBS = -lm -lpthread -lssl -lcrypto -lz
@@ -180,26 +185,34 @@ ifneq ($(shell git diff --shortstat 2> /dev/null),)
 endif
 GIT_VERSION=$(shell git rev-parse HEAD)$(DIRTY)
 
+
+.PHONY: all
 all: gb
 
-utils: blaster2 hashtest monitor urlinfo treetest dnstest gbtitletest
 
 # third party libraries
 LIBFILES = libcld2_full.so
 LIBS += -Wl,-rpath=. -L. -lcld2_full
 
+
 libcld2_full.so:
 	cd third-party/cld2/internal && CPPFLAGS="-ggdb" ./compile_libs.sh
 	ln -s third-party/cld2/internal/libcld2_full.so libcld2_full.so
 
+
+.PHONY: vclean
 vclean:
 	rm -f Version.o
+
 
 gb: vclean $(OBJS) main.o $(LIBFILES)
 	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ main.o $(OBJS) $(LIBS)
 
+
+.PHONY: static
 static: vclean $(OBJS) main.o $(LIBFILES)
 	$(CXX) $(DEFS) $(CPPFLAGS) -static -o gb main.o $(OBJS) $(LIBS)
+
 
 # use this for compiling on CYGWIN:
 # only for 32bit cygwin right now and
@@ -217,11 +230,15 @@ static: vclean $(OBJS) main.o $(LIBFILES)
 # 6. DEVEL > make: The GNU version of the 'make' utility
 # 7. DEVEL > git: Distributed version control system
 # 8. EDITORS > emacs
+.PHONY: cygwin
 cygwin:
 	make DEFS="-DCYGWIN -D_REENTRANT_ -I." LIBS=" -lz -lm -lpthread -lssl -lcrypto -liconv" gb
 
+
+.PHONY: gb32
 gb32:
 	make CPPFLAGS="-m32 -g -Wall -pipe -fno-stack-protector -Wno-write-strings -Wstrict-aliasing=0 -Wno-uninitialized -DPTHREADS -Wno-unused-but-set-variable" LIBS=" -L. ./libssl.a ./libcrypto.a ./libiconv.a ./libm.a ./libstdc++.a -lpthread " gb
+
 
 .PHONY: dist
 dist: DIST_DIR=gb-$(shell date +'%Y%m%d')-$(shell git rev-parse --short HEAD)
@@ -264,40 +281,56 @@ dist: all
 	@tar -czvf $(DIST_DIR).tar.gz $(DIST_DIR)
 	@rm -rf $(DIST_DIR)
 
+
 # doxygen
 doc:
 	doxygen doxygen/doxygen_config.conf
+
 
 # used for unit testing
 libgb.a: $(OBJS)
 	ar rcs $@ $^
 
+
 .PHONY: test
 test: unittest systemtest
+
 
 .PHONY: unittest
 unittest:
 	+$(MAKE) -C test $@
 
+
 .PHONY: systemtest
 systemtest:
 	$(MAKE) -C test $@
 
-# comment this out for faster deb package building
+
+.PHONY: clean
 clean:
-	-rm -f *.o gb *.bz2 blaster2 udptest memtest hashtest mergetest monitor reindex urlinfo dnstest gmon.* quarantine core core.* libgb.a
-	-rm -f *.gcda *.gcno
+	-rm -f *.o gb core core.* libgb.a
+	-rm -f gmon.*
+	-rm -f *.gcda *.gcno coverage*.html
 	$(MAKE) -C test $@
+
+
+.PHONY: cleandb
+cleandb:
+	rm -rf coll.main.?
+	rm -f *-saved.dat spiderproxystats.dat addsinprogress.dat robots.txt.cache dns.cache
+
 
 # shortcuts
 .PHONY: debug
 debug:
 	$(MAKE) config=debug
 
+
 .PHONY: coverage
 coverage:
 	$(MAKE) config=coverage unittest
 	gcovr -r . --html --html-detail -o coverage.html -e ".*Test\.cpp" -e "googletest.*"
+
 
 StopWords.o:
 	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
@@ -485,9 +518,4 @@ depend:
 	$(CXX) -MM $(DEFS) $(DPPFLAGS) *.cpp > Make.depend
 
 -include Make.depend
-
-.PHONY: cleandb
-cleandb:
-	rm -rf coll.main.?
-	rm -f *-saved.dat spiderproxystats.dat addsinprogress.dat robots.txt.cache dns.cache
 
