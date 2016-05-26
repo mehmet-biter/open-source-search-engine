@@ -260,15 +260,25 @@ TEST( UrlTest, StripParamsPhpSessId ) {
 
 TEST( UrlTest, StripParamsOsCommerce ) {
 	std::vector<std::tuple<const char *, const char *>> test_cases = {
-		// osCommerce
+		// osCAdminId
 		std::make_tuple( "http://www.nailcosmetics.pl/?osCAdminID=70b4c843a51204ec897136bc04282462&osCAdminID=70b4c843a51204ec897136bc04282462&osCAdminID=70b4c843a51204ec897136bc04282462&osCAdminID=70b4c843a51204ec897136bc04282462",
 		                 "http://www.nailcosmetics.pl/" ),
 		std::make_tuple( "http://ezofit.sk/obchod/admin/categories.php?cPath=205&action=new_product&osCAdminID=dogjdaa5ogukr5vdtnld0o80r4",
 		                 "http://ezofit.sk/obchod/admin/categories.php?cPath=205&action=new_product" ),
 		std::make_tuple( "http://calisonusa.com/specials.html?osCAdminID=a401c1738f8e361728c7f61e9dd23a31",
 		                 "http://calisonusa.com/specials.html" ),
+
+		// osCsid
 		std::make_tuple( "http://www.silversites.net/sweetheart-tree.php?osCsid=4c7154c9159ec1aadfc788a3525e61dd",
-		                 "http://www.silversites.net/sweetheart-tree.php" )
+		                 "http://www.silversites.net/sweetheart-tree.php" ),
+	    std::make_tuple( "https://www.decent-cigar.com/collectibles.php/osCsid/847ve0olpeu5bs5ujkt9ulrgn0",
+	                     "https://www.decent-cigar.com/collectibles.php" ),
+	    std::make_tuple( "http://www.plat.co.jp/shop/catalog/default/language/en/cPath/22/osCsid/79bdb5fa7557ca04fb46ef1bd706139f/river-lake-fishing-freshwater/",
+	                     "http://www.plat.co.jp/shop/catalog/default/language/en/cPath/22/river-lake-fishing-freshwater/" ),
+	    std::make_tuple( "https://www.12stepcds.com/catalog/product_info/products_id/577/osCsid/",
+	                     "https://www.12stepcds.com/catalog/product_info/products_id/577/" ),
+		std::make_tuple( "http://www.steviaforyou.com/information.php/info_id/33/stevia-producten/osCsid/language/nl/osCsid/546bb2d065677b8e53747e81309b2660",
+		                 "http://www.steviaforyou.com/information.php/info_id/33/stevia-producten/osCsid/language/nl" )
 	};
 
 	strip_param_tests( test_cases, 123 );
@@ -521,7 +531,9 @@ TEST( UrlTest, StripApacheDirSort ) {
 	    std::make_tuple( "http://www.3ddx.com/blog/wp-includes/SimplePie/Decode/HTML/?C=N;O=D",
 	                     "http://www.3ddx.com/blog/wp-includes/SimplePie/Decode/HTML/" ),
 	    std::make_tuple( "http://macports.mirror.ac.za/release/ports/www/midori/?C=M&O=A",
-	                     "http://macports.mirror.ac.za/release/ports/www/midori/" )
+	                     "http://macports.mirror.ac.za/release/ports/www/midori/" ),
+		std::make_tuple( "http://www.example.com/?C=&O=A",
+	                     "http://www.example.com/" )
 	};
 
 	strip_param_tests( test_cases, 123 );
