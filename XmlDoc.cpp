@@ -12012,7 +12012,13 @@ char *XmlDoc::getSpiderLinks ( ) {
 }
 
 int32_t *XmlDoc::getSpiderPriority ( ) {
-	if ( m_priorityValid ) return &m_priority;
+	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );
+
+	if ( m_priorityValid ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END. already valid: %" PRId32, m_priority );
+		return &m_priority;
+	}
+
 	setStatus ("getting spider priority");
 	// need tagrec to see if banned
 	TagRec *gr = getTagRec();
@@ -12021,20 +12027,32 @@ int32_t *XmlDoc::getSpiderPriority ( ) {
 	if ( gr->getLong("manualban",0) ) {
 		m_priority      = -3;//SPIDER_PRIORITY_BANNED;
 		m_priorityValid = true;
+		logTrace( g_conf.m_logTraceXmlDoc, "END. Manual ban" );
 		return &m_priority;
 	}
 	int32_t *ufn = getUrlFilterNum();
-	if ( ! ufn || ufn == (void *)-1 ) return (int32_t *)ufn;
+	if ( ! ufn || ufn == (void *)-1 ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END. Invalid ufn" );
+		return (int32_t *)ufn;
+	}
+
 	// sanity check
 	if ( *ufn < 0 ) { char *xx=NULL;*xx=0; }
 	CollectionRec *cr = getCollRec();
-	if ( ! cr ) return NULL;
+	if ( ! cr ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END. No collection" );
+		return NULL;
+	}
 
 	m_priority = cr->m_spiderPriorities[*ufn];
 
 	// continue to use -3 to indicate SPIDER_PRIORITY_FILTERED for now
-	if ( cr->m_forceDelete[*ufn] ) m_priority = -3;
+	if ( cr->m_forceDelete[*ufn] ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "force delete" );
+		m_priority = -3;
+	}
 
+	logTrace( g_conf.m_logTraceXmlDoc, "END. ufn=%" PRId32" priority=%" PRId32, *ufn, m_priority );
 	m_priorityValid = true;
 	return &m_priority;
 }
