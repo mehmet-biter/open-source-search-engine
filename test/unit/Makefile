@@ -11,7 +11,7 @@ OBJECTS = GigablastTest.o \
 	PosTest.o ProcessTest.o \
 	RobotRuleTest.o RobotsTest.o \
 	ScalingFunctionsTest.o SummaryTest.o \
-	UnicodeTest.o UrlParserTest.o UrlTest.o \
+	UnicodeTest.o UrlComponentTest.o UrlParserTest.o UrlTest.o \
 	WordsTest.o \
 	XmlTest.o \
 
