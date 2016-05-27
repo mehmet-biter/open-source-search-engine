@@ -125,11 +125,11 @@ public:
 
 	char       *getTLD()       { return m_tld; }
 	const char *getTLD() const { return m_tld; }
-	int32_t getTLDLen() { return m_tldLen; }
+	int32_t getTLDLen() const { return m_tldLen; }
 
 	// w/o the tld
 	const char *getMidDomain() { return m_domain; }
-	int32_t getMidDomainLen() { return m_mdlen; }
+	int32_t getMidDomainLen() const { return m_mdlen; }
 
 	char       *getPath()       { return m_path; }
 	const char *getPath() const { return m_path; }
@@ -138,7 +138,7 @@ public:
 
 	char       *getFilename()       { return m_filename; }
 	const char *getFilename() const { return m_filename; }
-	int32_t getFilenameLen() { return m_flen; }
+	int32_t getFilenameLen() const { return m_flen; }
 
 	const char *getExtension() { return m_extension; }
 	int32_t getExtensionLen() const { return m_elen; }
