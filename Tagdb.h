@@ -44,7 +44,7 @@ class Tag {
 	bool printToBufAsTagVector  ( SafeBuf *sb );
 	// just print the m_data...
 	bool printDataToBuf         ( SafeBuf *sb );
-	bool isType                 ( char    *t  );
+	bool isType                 ( const char *t );
 	bool isIndexable            ( ) {
 		return isTagTypeIndexable ( m_type ); }
 
@@ -111,7 +111,7 @@ public:
 	Tag *getNextTag ( Tag *tag );
 
 	// return the number the tags having particular tag types
-	int32_t getNumTagTypes ( char *tagTypeStr );
+	int32_t getNumTagTypes ( const char *tagTypeStr );
 
 	// get a tag from the tagType
 	Tag *getTag ( const char *tagTypeStr );
@@ -163,9 +163,7 @@ class Tagdb  {
 	// . TODO: have m_useSeals parameter???
 	bool init  ( );
 
-	bool verify ( char *coll );
-
-	bool addColl ( char *coll, bool doVerify = true );
+	bool verify ( const char *coll );
 
 	// used by ../rdb/Msg0 and ../rdb/Msg1
 	Rdb *getRdb ( ) { return &m_rdb; }

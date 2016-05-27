@@ -384,7 +384,7 @@ bool Tag::printToBufAsTagVector ( SafeBuf *sb ) {
 	return true;
 }
 
-bool Tag::isType ( char *t ) {
+bool Tag::isType ( const char *t ) {
 	int32_t h = hash32n ( t );
 	return (m_type == h);
 }
@@ -594,7 +594,7 @@ const char *TagRec::getString ( const char *tagTypeStr, const char *defalt, int3
 }
 
 // return the number of tags having the particular TagType
-int32_t TagRec::getNumTagTypes ( char *tagTypeStr ) {
+int32_t TagRec::getNumTagTypes ( const char *tagTypeStr ) {
 	int32_t tagType = getTagTypeFromStr ( tagTypeStr );
 	int32_t numTagType = 0;
 	// start at the first tag
@@ -1085,8 +1085,8 @@ bool Tagdb::init ( ) {
 			    true ); // bias disk page cache?
 }
 
-bool Tagdb::verify ( char *coll ) {
-	char *rdbName = "Tagdb";
+bool Tagdb::verify ( const char *coll ) {
+	const char *rdbName = "Tagdb";
 	
 	log ( LOG_DEBUG, "db: Verifying %s for coll %s...", rdbName, coll );
 	
