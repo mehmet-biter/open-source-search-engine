@@ -113,9 +113,9 @@ UrlComponent::Validator::Validator( size_t minLength, size_t maxLength, bool all
 	, m_allowEmpty( allowEmpty )
 	, m_allowCriteria( allowCriteria )
 	, m_allowAlpha ( allowCriteria & ( ALLOW_HEX | ALLOW_ALPHA | ALLOW_ALPHA_LOWER | ALLOW_ALPHA_UPPER ) )
-	, m_allowAlphaLower( allowCriteria & ALLOW_ALPHA_LOWER )
-	, m_allowAlphaUpper( allowCriteria & ALLOW_ALPHA_UPPER )
-	, m_allowAlphaHex( allowCriteria & ( ALLOW_HEX | ALLOW_ALPHA_LOWER | ALLOW_ALPHA_UPPER ) )
+	, m_allowAlphaLower( allowCriteria & ( ALLOW_ALPHA | ALLOW_ALPHA_LOWER ) )
+	, m_allowAlphaUpper( allowCriteria & ( ALLOW_ALPHA | ALLOW_ALPHA_UPPER ) )
+	, m_allowAlphaHex( allowCriteria & ( ALLOW_HEX | ALLOW_ALPHA | ALLOW_ALPHA_LOWER | ALLOW_ALPHA_UPPER ) )
 	, m_allowDigit( allowCriteria & ( ALLOW_DIGIT | ALLOW_HEX ) )
 	, m_allowPunctuation( allowCriteria & ( ALLOW_PUNCTUATION ) )
 	, m_mandatoryCriteria( mandatoryCriteria )
@@ -193,24 +193,36 @@ bool UrlComponent::Validator::isValid( const UrlComponent &urlPart ) const {
 					continue;
 				}
 
-				if ( !hasAlphaNoHexLower && ( hasAlphaNoHexLower = is_lower_a( c ) ) ) {
-					continue;
+				if ( !hasAlphaNoHexLower ) {
+					hasAlphaNoHexLower = is_lower_a( c );
+					if ( hasAlphaNoHexLower ) {
+						continue;
+					}
 				}
 
-				if ( !hasAlphaNoHexUpper && ( hasAlphaNoHexUpper = is_upper_a( c ) ) ) {
-					continue;
+				if ( !hasAlphaNoHexUpper ) {
+					hasAlphaNoHexUpper = is_upper_a( c );
+					if ( hasAlphaNoHexUpper ) {
+						continue;
+					}
 				}
 
 				continue;
 			}
 		}
 
-		if ( !hasDigit && ( hasDigit = is_digit( c ) ) ) {
-			continue;
+		if ( !hasDigit ) {
+			hasDigit = is_digit( c );
+			if ( hasDigit ) {
+				continue;
+			}
 		}
 
-		if ( !hasPunctuation && ( hasPunctuation = is_punct_a( c ) ) ) {
-			continue;
+		if ( !hasPunctuation ) {
+			hasPunctuation = is_punct_a( c );
+			if ( hasPunctuation ) {
+				continue;
+			}
 		}
 	}
 
@@ -218,11 +230,11 @@ bool UrlComponent::Validator::isValid( const UrlComponent &urlPart ) const {
 	bool validMandatory = true;
 
 	if ( m_allowCriteria != ALLOW_ALL ) {
-		validAllow = !( ( !m_allowAlpha && hasAlpha ) &&
-		                ( !m_allowAlphaLower && hasAlphaNoHexLower ) &&
-		                ( !m_allowAlphaUpper && hasAlphaNoHexUpper ) &&
-		                ( !m_allowAlphaHex && ( hasAlphaHexLower || hasAlphaHexUpper ) ) &&
-		                ( !m_allowDigit && hasDigit ) &&
+		validAllow = !( ( !m_allowAlpha && hasAlpha ) ||
+		                ( !m_allowAlphaLower && hasAlphaNoHexLower ) ||
+		                ( !m_allowAlphaUpper && hasAlphaNoHexUpper ) ||
+		                ( !m_allowAlphaHex && ( hasAlphaHexLower || hasAlphaHexUpper ) ) ||
+		                ( !m_allowDigit && hasDigit ) ||
 		                ( !m_allowPunctuation && hasPunctuation ) );
 	}
 

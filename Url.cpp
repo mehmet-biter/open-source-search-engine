@@ -723,7 +723,7 @@ static void stripParameters( UrlParser *urlParser ) {
 	//   ppro_cprof
 	//   prc-basic
 	urlParser->removeQueryParam( UrlComponent::Matcher( "trk" ),
-	                             UrlComponent::Validator( 0, 0, false, ( ALLOW_ALPHA | ALLOW_PUNCTUATION ), ( MANDATORY_ALPHA | MANDATORY_PUNCTUATION ) ) );
+	                             UrlComponent::Validator( 0, 0, false, ALLOW_ALL, ( MANDATORY_ALPHA | MANDATORY_PUNCTUATION ) ) );
 
 	// who
 	// eg:
