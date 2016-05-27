@@ -132,3 +132,162 @@ TEST( UrlComponentTest, MatcherMatchCaseMatchPartial ) {
 	UrlComponent::Matcher matcherExact( "Param1", matchCriteria );
 	EXPECT_TRUE( matcherExact.isMatching( urlComponent ) );
 }
+
+UrlComponent createUrlComponent( UrlComponent::Type type, const char *component ) {
+	return UrlComponent( type, component, strlen( component ), '?' );
+}
+
+TEST( UrlComponentTest, ValidatorDefault ) {
+	UrlComponent::Validator validator;
+
+	EXPECT_TRUE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=abcdefghijklmnopqrstuvwxyz" ) ) );
+	EXPECT_TRUE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=ABCDEFGHIJKLMNOPQRSTUVWXYZ" ) ) );
+	EXPECT_TRUE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=1234567890" ) ) );
+	EXPECT_TRUE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=1234567890ABCDEF" ) ) );
+	EXPECT_TRUE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=123456_ABCDEF_ghijkl" ) ) );
+	EXPECT_TRUE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=!%40%23%24%25%5E%26*()_%2B" ) ) );
+
+	/// @todo ALC utf-8 url encoded parameter
+}
+
+TEST( UrlComponentTest, ValidatorAllowDigit ) {
+	UrlComponent::Validator validator( 0, 0, false, ALLOW_DIGIT, MANDATORY_NONE );
+
+	EXPECT_FALSE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=abcdefghijklmnopqrstuvwxyz" ) ) );
+	EXPECT_FALSE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=ABCDEFGHIJKLMNOPQRSTUVWXYZ" ) ) );
+	EXPECT_TRUE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=1234567890" ) ) );
+	EXPECT_FALSE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=1234567890ABCDEF" ) ) );
+	EXPECT_FALSE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=123456_ABCDEF_ghijkl" ) ) );
+	EXPECT_FALSE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=!%40%23%24%25%5E%26*()_%2B" ) ) );
+}
+
+TEST( UrlComponentTest, ValidatorAllowHex ) {
+	UrlComponent::Validator validator( 0, 0, false, ALLOW_HEX, MANDATORY_NONE );
+
+	EXPECT_FALSE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=abcdefghijklmnopqrstuvwxyz" ) ) );
+	EXPECT_FALSE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=ABCDEFGHIJKLMNOPQRSTUVWXYZ" ) ) );
+	EXPECT_TRUE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=1234567890" ) ) );
+	EXPECT_TRUE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=1234567890ABCDEF" ) ) );
+	EXPECT_FALSE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=123456_ABCDEF_ghijkl" ) ) );
+	EXPECT_FALSE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=!%40%23%24%25%5E%26*()_%2B" ) ) );
+}
+
+TEST( UrlComponentTest, ValidatorAllowAlpha ) {
+	UrlComponent::Validator validator( 0, 0, false, ALLOW_ALPHA, MANDATORY_NONE );
+
+	EXPECT_TRUE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=abcdefghijklmnopqrstuvwxyz" ) ) );
+	EXPECT_TRUE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=ABCDEFGHIJKLMNOPQRSTUVWXYZ" ) ) );
+	EXPECT_FALSE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=1234567890" ) ) );
+	EXPECT_FALSE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=1234567890ABCDEF" ) ) );
+	EXPECT_FALSE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=123456_ABCDEF_ghijkl" ) ) );
+	EXPECT_FALSE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=!%40%23%24%25%5E%26*()_%2B" ) ) );
+}
+
+TEST( UrlComponentTest, ValidatorAllowAlphaUpper ) {
+	UrlComponent::Validator validator( 0, 0, false, ALLOW_ALPHA_UPPER, MANDATORY_NONE );
+
+	EXPECT_FALSE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=abcdefghijklmnopqrstuvwxyz" ) ) );
+	EXPECT_TRUE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=ABCDEFGHIJKLMNOPQRSTUVWXYZ" ) ) );
+	EXPECT_FALSE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=1234567890" ) ) );
+	EXPECT_FALSE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=1234567890ABCDEF" ) ) );
+	EXPECT_FALSE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=123456_ABCDEF_ghijkl" ) ) );
+	EXPECT_FALSE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=!%40%23%24%25%5E%26*()_%2B" ) ) );
+}
+
+TEST( UrlComponentTest, ValidatorAllowAlphaLower ) {
+	UrlComponent::Validator validator( 0, 0, false, ALLOW_ALPHA_LOWER, MANDATORY_NONE );
+
+	EXPECT_TRUE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=abcdefghijklmnopqrstuvwxyz" ) ) );
+	EXPECT_FALSE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=ABCDEFGHIJKLMNOPQRSTUVWXYZ" ) ) );
+	EXPECT_FALSE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=1234567890" ) ) );
+	EXPECT_FALSE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=1234567890ABCDEF" ) ) );
+	EXPECT_FALSE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=123456_ABCDEF_ghijkl" ) ) );
+	EXPECT_FALSE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=!%40%23%24%25%5E%26*()_%2B" ) ) );
+}
+
+TEST( UrlComponentTest, ValidatorAllowAlphaPunctuation ) {
+	UrlComponent::Validator validator( 0, 0, false, ALLOW_PUNCTUATION, MANDATORY_NONE );
+
+	EXPECT_FALSE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=abcdefghijklmnopqrstuvwxyz" ) ) );
+	EXPECT_FALSE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=ABCDEFGHIJKLMNOPQRSTUVWXYZ" ) ) );
+	EXPECT_FALSE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=1234567890" ) ) );
+	EXPECT_FALSE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=1234567890ABCDEF" ) ) );
+	EXPECT_FALSE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=123456_ABCDEF_ghijkl" ) ) );
+
+	/// @todo ALC
+	//EXPECT_TRUE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=!%40%23%24%25%5E%26*()_%2B" ) ) );
+}
+
+TEST( UrlComponentTest, ValidatorMandatoryDigit ) {
+	UrlComponent::Validator validator( 0, 0, false, ALLOW_ALL, MANDATORY_DIGIT );
+
+	EXPECT_FALSE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=abcdefghijklmnopqrstuvwxyz" ) ) );
+	EXPECT_FALSE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=ABCDEFGHIJKLMNOPQRSTUVWXYZ" ) ) );
+	EXPECT_TRUE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=1234567890" ) ) );
+	EXPECT_TRUE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=1234567890ABCDEF" ) ) );
+	EXPECT_TRUE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=123456_ABCDEF_ghijkl" ) ) );
+
+	/// @todo ALC
+	//EXPECT_FALSE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=!%40%23%24%25%5E%26*()_%2B" ) ) );
+}
+
+TEST( UrlComponentTest, ValidatorMandatoryAlphaHex ) {
+	UrlComponent::Validator validator( 0, 0, false, ALLOW_ALL, MANDATORY_ALPHA_HEX );
+
+	EXPECT_TRUE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=abcdefghijklmnopqrstuvwxyz" ) ) );
+	EXPECT_TRUE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=ABCDEFGHIJKLMNOPQRSTUVWXYZ" ) ) );
+	EXPECT_FALSE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=1234567890" ) ) );
+	EXPECT_TRUE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=1234567890ABCDEF" ) ) );
+	EXPECT_TRUE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=123456_ABCDEF_ghijkl" ) ) );
+
+	/// @todo ALC
+	//EXPECT_FALSE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=!%40%23%24%25%5E%26*()_%2B" ) ) );
+}
+
+TEST( UrlComponentTest, ValidatorMandatoryAlpha ) {
+	UrlComponent::Validator validator( 0, 0, false, ALLOW_ALL, MANDATORY_ALPHA );
+
+	EXPECT_TRUE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=abcdefghijklmnopqrstuvwxyz" ) ) );
+	EXPECT_TRUE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=ABCDEFGHIJKLMNOPQRSTUVWXYZ" ) ) );
+	EXPECT_FALSE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=1234567890" ) ) );
+	EXPECT_TRUE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=1234567890ABCDEF" ) ) );
+	EXPECT_TRUE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=123456_ABCDEF_ghijkl" ) ) );
+
+	/// @todo ALC
+	//EXPECT_FALSE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=!%40%23%24%25%5E%26*()_%2B" ) ) );
+}
+
+TEST( UrlComponentTest, ValidatorMandatoryAlphaUpper ) {
+	UrlComponent::Validator validator( 0, 0, false, ALLOW_ALL, MANDATORY_ALPHA_UPPER );
+
+	EXPECT_FALSE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=abcdefghijklmnopqrstuvwxyz" ) ) );
+	EXPECT_TRUE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=ABCDEFGHIJKLMNOPQRSTUVWXYZ" ) ) );
+	EXPECT_FALSE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=1234567890" ) ) );
+	EXPECT_TRUE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=1234567890ABCDEF" ) ) );
+	EXPECT_TRUE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=123456_ABCDEF_ghijkl" ) ) );
+
+	/// @todo ALC
+	//EXPECT_FALSE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=!%40%23%24%25%5E%26*()_%2B" ) ) );
+}
+
+TEST( UrlComponentTest, ValidatorMandatoryAlphaLower ) {
+	UrlComponent::Validator validator( 0, 0, false, ALLOW_ALL, MANDATORY_ALPHA_LOWER );
+
+	EXPECT_TRUE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=abcdefghijklmnopqrstuvwxyz" ) ) );
+	EXPECT_FALSE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=ABCDEFGHIJKLMNOPQRSTUVWXYZ" ) ) );
+	EXPECT_FALSE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=1234567890" ) ) );
+	EXPECT_FALSE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=1234567890ABCDEF" ) ) );
+	EXPECT_TRUE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=123456_ABCDEF_ghijkl" ) ) );
+	EXPECT_FALSE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=!%40%23%24%25%5E%26*()_%2B" ) ) );
+}
+
+TEST( UrlComponentTest, ValidatorMandatoryAlphaPunctuation ) {
+	UrlComponent::Validator validator( 0, 0, false, ALLOW_ALL, MANDATORY_PUNCTUATION );
+
+	EXPECT_FALSE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=abcdefghijklmnopqrstuvwxyz" ) ) );
+	EXPECT_FALSE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=ABCDEFGHIJKLMNOPQRSTUVWXYZ" ) ) );
+	EXPECT_FALSE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=1234567890" ) ) );
+	EXPECT_FALSE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=1234567890ABCDEF" ) ) );
+	EXPECT_TRUE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=123456_ABCDEF_ghijkl" ) ) );
+	EXPECT_TRUE( validator.isValid( createUrlComponent( UrlComponent::TYPE_QUERY, "param=!%40%23%24%25%5E%26*()_%2B" ) ) );
+}
