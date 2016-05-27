@@ -15,7 +15,7 @@ void UrlComponent::normalize( std::string *component ) {
 			if ( hexLen == 2 ) {
 				// list is based on RFC 3986
 				// https://tools.ietf.org/html/rfc3986#section-2.3
-				if ( ( value >= 0x41 && value <= 0x51 ) ||
+				if ( ( value >= 0x41 && value <= 0x5A ) ||
 				     ( value >= 0x61 && value <= 0x7A ) ||
 				     ( value >= 0x30 && value <= 0x39 ) ||
 				     ( value == 0x2D ) || ( value == 0x2E ) || ( value == 0x5F ) || ( value == 0x7E ) ) {
@@ -32,8 +32,8 @@ void UrlComponent::normalize( std::string *component ) {
 					}
 				}
 			} else {
-				// invalid url encoded (nothing much we can do)
-				component->erase( percentPos, hexLen + 1 );
+				// invalid url encoded (encode percent)
+				component->insert( percentPos + 1, "25" );
 			}
 		}
 		++percentPos;
