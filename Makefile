@@ -91,7 +91,7 @@ O2 = -O2
 O3 = -O3
 
 ifeq ($(ARCH), x86_64)
-CPPFLAGS += -march=corei7 -msse4.2
+CPPFLAGS += -march=core-avx-i -msse4.2
 endif
 
 endif
