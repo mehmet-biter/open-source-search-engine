@@ -46,7 +46,7 @@ int32_t getPathDepth ( char *s , bool hasHttp );
 class Url {
 public:
 	// set from another Url, does a copy
-	void set( Url *url ) {
+	void set( const Url *url ) {
 		if ( ! url ) {
 			reset();
 			return;
@@ -67,12 +67,12 @@ public:
 		set( s, len, addWWW, stripParams, false, false, titledbVersion );
 	}
 
-	void set( Url *baseUrl, const char *s, int32_t len ) {
+	void set( const Url *baseUrl, const char *s, int32_t len ) {
 		set( baseUrl, s, len, false, false, false, false );
 	}
 
 	// . "s" must be an ENCODED url
-	void set( Url *baseUrl, const char *s, int32_t len, bool addWWW, bool stripParams, bool stripPound,
+	void set( const Url *baseUrl, const char *s, int32_t len, bool addWWW, bool stripParams, bool stripPound,
 	          bool stripCommonFile, int32_t titledbVersion = TITLEREC_CURRENT_VERSION );
 
 	void print  ();

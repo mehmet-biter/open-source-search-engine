@@ -36,7 +36,7 @@ void Url::reset() {
 	m_ip          = 0;
 }
 
-void Url::set( Url *baseUrl, const char *s, int32_t len, bool addWWW, bool stripParams, bool stripPound,
+void Url::set( const Url *baseUrl, const char *s, int32_t len, bool addWWW, bool stripParams, bool stripPound,
                bool stripCommonFile, int32_t titledbVersion ) {
 
 	reset();
