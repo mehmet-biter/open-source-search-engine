@@ -1,5 +1,6 @@
 #include "UrlComponent.h"
 #include "fctypes.h"
+#include "Log.h"
 #include <algorithm>
 
 void UrlComponent::normalize( std::string *component ) {
@@ -63,6 +64,15 @@ UrlComponent::UrlComponent( UrlComponent::Type type, const char *pos, size_t len
 	std::transform( m_key.begin(), m_key.end(), m_key.begin(), ::tolower );
 }
 
+void UrlComponent::print() const {
+	logf( LOG_DEBUG, "UrlComponent::type         : %s", m_type == TYPE_PATH ? "path" : m_type == TYPE_QUERY ? "query" : "unknown" );
+	logf( LOG_DEBUG, "UrlComponent::componentStr : %s", m_componentStr.c_str() );
+	logf( LOG_DEBUG, "UrlComponent::separator    : %c", m_separator );
+	logf( LOG_DEBUG, "UrlComponent::key          : %s", m_key.c_str() );
+	logf( LOG_DEBUG, "UrlComponent::keyLen       : %zu", m_keyLen );
+	logf( LOG_DEBUG, "UrlComponent::deleted      : %s", m_deleted ? "true" : "false" );
+}
+
 UrlComponent::Matcher::Matcher( const char *param, MatchCriteria matchCriteria )
 	: m_param( param )
 	, m_matchCriteria( matchCriteria )
@@ -71,6 +81,13 @@ UrlComponent::Matcher::Matcher( const char *param, MatchCriteria matchCriteria )
 	if ( !m_matchCase ) {
 		std::transform( m_param.begin(), m_param.end(), m_param.begin(), ::tolower );
 	}
+}
+
+void UrlComponent::Matcher::print() const {
+	logf( LOG_DEBUG, "UrlComponent::Matcher::param         : %s", m_param.c_str() );
+	logf( LOG_DEBUG, "UrlComponent::Matcher::matchCriteria : %d", m_matchCriteria );
+	logf( LOG_DEBUG, "UrlComponent::Matcher::matchPartial  : %s", m_matchPartial ? "true" : "false" );
+	logf( LOG_DEBUG, "UrlComponent::Matcher::matchCase     : %s", m_matchCase ? "true" : "false" );
 }
 
 bool UrlComponent::Matcher::isMatching( const UrlComponent &urlPart ) const {
@@ -108,6 +125,28 @@ UrlComponent::Validator::Validator( size_t minLength, size_t maxLength, bool all
 	, m_mandatoryAlphaHex( mandatoryCriteria & MANDATORY_ALPHA_HEX )
 	, m_mandatoryDigit( mandatoryCriteria & MANDATORY_DIGIT )
 	, m_mandatoryPunctuation( mandatoryCriteria & MANDATORY_PUNCTUATION ) {
+}
+
+void UrlComponent::Validator::print() const {
+	logf( LOG_DEBUG, "UrlComponent::Validator::minLength            : %zu", m_minLength );
+	logf( LOG_DEBUG, "UrlComponent::Validator::maxLength            : %zu", m_maxLength );
+	logf( LOG_DEBUG, "UrlComponent::Validator::allowEmpty           : %s", m_allowEmpty ? "true" : "false" );
+
+	logf( LOG_DEBUG, "UrlComponent::Validator::allowCriteria        : %d", m_allowCriteria );
+	logf( LOG_DEBUG, "UrlComponent::Validator::allowAlpha           : %s", m_allowAlpha ? "true" : "false" );
+	logf( LOG_DEBUG, "UrlComponent::Validator::allowAlphaLower      : %s", m_allowAlphaLower ? "true" : "false" );
+	logf( LOG_DEBUG, "UrlComponent::Validator::allowAlphaUpper      : %s", m_allowAlphaUpper ? "true" : "false" );
+	logf( LOG_DEBUG, "UrlComponent::Validator::allowAlphaHex        : %s", m_allowAlphaHex ? "true" : "false" );
+	logf( LOG_DEBUG, "UrlComponent::Validator::allowDigit           : %s", m_allowDigit ? "true" : "false" );
+	logf( LOG_DEBUG, "UrlComponent::Validator::allowPunctuation     : %s", m_allowPunctuation ? "true" : "false" );
+
+	logf( LOG_DEBUG, "UrlComponent::Validator::mandatoryCriteria    : %d", m_mandatoryCriteria );
+	logf( LOG_DEBUG, "UrlComponent::Validator::mandatoryAlpha       : %s", m_mandatoryAlpha ? "true" : "false" );
+	logf( LOG_DEBUG, "UrlComponent::Validator::mandatoryAlphaLower  : %s", m_mandatoryAlphaLower ? "true" : "false" );
+	logf( LOG_DEBUG, "UrlComponent::Validator::mandatoryAlphaUpper  : %s", m_mandatoryAlphaUpper ? "true" : "false" );
+	logf( LOG_DEBUG, "UrlComponent::Validator::mandatoryAlphaHex    : %s", m_mandatoryAlphaHex ? "true" : "false" );
+	logf( LOG_DEBUG, "UrlComponent::Validator::mandatoryDigit       : %s", m_mandatoryDigit ? "true" : "false" );
+	logf( LOG_DEBUG, "UrlComponent::Validator::mandatoryPunctuation : %s", m_mandatoryPunctuation ? "true" : "false" );
 }
 
 bool UrlComponent::Validator::isValid( const UrlComponent &urlPart ) const {
