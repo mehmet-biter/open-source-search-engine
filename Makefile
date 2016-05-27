@@ -326,10 +326,12 @@ debug:
 	$(MAKE) config=debug
 
 
+# pip install gcovr
+
 .PHONY: coverage
 coverage:
 	$(MAKE) config=coverage unittest
-	gcovr -r . --html --html-detail -o coverage.html -e ".*Test\.cpp" -e "googletest.*"
+	gcovr -r . --html --html-details --branch --output=coverage.html --exclude=".*Test\.cpp" --exclude="googletest.*"
 
 
 StopWords.o:
