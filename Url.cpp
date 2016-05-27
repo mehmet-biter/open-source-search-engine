@@ -1980,8 +1980,8 @@ bool Url::isDomainUnwantedForIndexing() {
 				if( plen >= 12 && memcmp(path, "/pin/create/", 12) == 0 )
 				{
 					// http://www.pinterest.com/pin/create/button/?description=&media=https%3A%2F%2Fcdn1.vox-cdn.com%2Fthumbor%2FrMA6BPH4ZkdBg2RqB9mmZVhYqUs%3D%2F0x77%3A1000x640%2F1050x591%2Fcdn0.vox-cdn.com%2Fuploads%2Fchorus_image%2Fimage%2F48544087%2Fshutterstock_308548907.0.0.jpg&url=http%3A%2F%2Fwww.eater.com%2Fmaps%2Fbest-coffee-taipei
+					return true;
 				}
-				return true;
 			}
 			break;
 		case 14:
