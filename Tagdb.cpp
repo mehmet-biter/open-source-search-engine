@@ -1167,7 +1167,7 @@ bool Tagdb::verify ( char *coll ) {
 // . ssssssss ssssssss ssssssss ssssssss  hash of site/url
 // . xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx  tagType OR hash of that+user+data
 // . xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx
-key128_t Tagdb::makeStartKey ( char *site ) {
+key128_t Tagdb::makeStartKey ( const char *site ) {
 	key128_t k;
 	k.n1 = hash64n ( site );
 	// set lower 64 bits of key to hash of this url
@@ -1175,7 +1175,7 @@ key128_t Tagdb::makeStartKey ( char *site ) {
 	return k;
 }
 
-key128_t Tagdb::makeEndKey ( char *site ) {
+key128_t Tagdb::makeEndKey ( const char *site ) {
 	key128_t k;
 	k.n1 = hash64n ( site );
 	// set lower 64 bits of key to hash of this url

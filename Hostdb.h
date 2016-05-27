@@ -252,7 +252,7 @@ class Hostdb {
 	// . gets filename from Conf.h class
 	bool init ( int32_t hostId , char *netname = NULL,
 		    bool proxyHost = false , char useTempCluster = 0 ,
-		    char *cwd = NULL );
+		    const char *cwd = NULL );
 
 	// if config changes this *should* change
 	int32_t getCRC();
@@ -318,8 +318,8 @@ class Hostdb {
 	}
 
 	// get the host that has this path/ip
-	Host *getHost2 ( char *cwd , int32_t *localIps ) ;
-	Host *getProxy2 ( char *cwd , int32_t *localIps ) ;
+	Host *getHost2 ( const char *cwd , int32_t *localIps ) ;
+	Host *getProxy2 ( const char *cwd , int32_t *localIps ) ;
 
 	// . like above but just gets one host
 	Host *getHost ( int32_t hostId ) {
@@ -455,7 +455,7 @@ class Hostdb {
 
 	bool m_initialized;
 
-	bool createHostsConf( char *cwd );
+	bool createHostsConf( const char *cwd );
 	bool m_created;
 
 	int32_t m_crc;

@@ -78,26 +78,26 @@ bool registerMsgHandlers3 ( ) ;
 
 void rmTest();
 
-static void dumpTitledb  (char *coll, int32_t sfn, int32_t numFiles, bool includeTree,
+static void dumpTitledb  (const char *coll, int32_t sfn, int32_t numFiles, bool includeTree,
 			   int64_t docId , bool justPrintDups );
-static int32_t dumpSpiderdb ( char *coll,int32_t sfn,int32_t numFiles,bool includeTree,
+static int32_t dumpSpiderdb ( const char *coll,int32_t sfn,int32_t numFiles,bool includeTree,
 			   char printStats , int32_t firstIp );
 
-static void dumpTagdb( char *coll, int32_t sfn, int32_t numFiles, bool includeTree, char rec = 0,
-					   int32_t rdbId = RDB_TAGDB, char *site = NULL );
+static void dumpTagdb( const char *coll, int32_t sfn, int32_t numFiles, bool includeTree, char rec = 0,
+					   int32_t rdbId = RDB_TAGDB, const char *site = NULL );
 
-void dumpPosdb  ( char *coll,int32_t sfn,int32_t numFiles,bool includeTree, 
+void dumpPosdb  ( const char *coll,int32_t sfn,int32_t numFiles,bool includeTree, 
 		  int64_t termId , bool justVerify ) ;
-static void dumpWaitingTree( char *coll );
-static void dumpDoledb  ( char *coll,int32_t sfn,int32_t numFiles,bool includeTree);
+static void dumpWaitingTree( const char *coll );
+static void dumpDoledb  ( const char *coll, int32_t sfn, int32_t numFiles, bool includeTree);
 
-void dumpClusterdb       ( char *coll,int32_t sfn,int32_t numFiles,bool includeTree);
+void dumpClusterdb       ( const char *coll,int32_t sfn,int32_t numFiles,bool includeTree);
 
 //void dumpStatsdb 	 ( int32_t startFileNum, int32_t numFiles, bool includeTree,
 //			   int test );
 			   
-void dumpLinkdb          ( char *coll,int32_t sfn,int32_t numFiles,bool includeTree,
-			   char *url );
+void dumpLinkdb          ( const char *coll, int32_t sfn, int32_t numFiles, bool includeTree,
+			   const char *url );
 
 extern bool g_recoveryMode;
 
@@ -105,7 +105,7 @@ extern int32_t g_recoveryLevel;
 	
 bool isRecoveryFutile ( ) ;
 
-int copyFiles ( char *dstDir ) ;
+int copyFiles ( const char *dstDir ) ;
 
 
 char *getcwd2 ( char *arg ) ;
@@ -116,8 +116,8 @@ static int32_t checkDirPerms ( char *dir ) ;
 bool treetest    ( ) ;
 bool hashtest    ( ) ;
 // how fast to parse the content of this docId?
-bool parseTest ( char *coll , int64_t docId , char *query );
-bool summaryTest1   ( char *rec, int32_t listSize, char *coll , int64_t docId ,
+bool parseTest ( const char *coll , int64_t docId , char *query );
+bool summaryTest1   ( char *rec, int32_t listSize, const char *coll , int64_t docId ,
 		      char *query );
 
 // time a big write, read and then seeks
@@ -847,7 +847,7 @@ int main2 ( int argc , char *argv[] ) {
 	//
 	// get current working dir that the gb binary is in. all the data
 	// files should in there too!!
-	char *workingDir = getcwd2 ( argv[0] );
+	const char *workingDir = getcwd2 ( argv[0] );
 	if ( ! workingDir ) {
 		fprintf(stderr,"could not get working dir. Exiting.\n");
 		return 1;
@@ -2963,7 +2963,7 @@ bool registerMsgHandlers3(){
 // dump routines here now
 //
 
-void dumpTitledb (char *coll,int32_t startFileNum,int32_t numFiles,bool includeTree,
+void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree,
                   int64_t docid , bool justPrintDups) {
 
 	if(startFileNum!=0 && numFiles<0) {
@@ -3235,7 +3235,7 @@ void dumpTitledb (char *coll,int32_t startFileNum,int32_t numFiles,bool includeT
 	goto loop;
 }
 
-void dumpWaitingTree (char *coll ) {
+void dumpWaitingTree (const char *coll ) {
 	RdbTree wt;
 	if (!wt.set(0,-1,true,20000000,true,"waittree2", false,"waitingtree",sizeof(key_t))) {
 		return;
@@ -3276,7 +3276,7 @@ void dumpWaitingTree (char *coll ) {
 }
 
 
-void dumpDoledb (char *coll,int32_t startFileNum,int32_t numFiles,bool includeTree){
+void dumpDoledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree){
 	g_doledb.init ();
 	g_doledb.getRdb()->addRdbBase1(coll );
 	key_t startKey ;
@@ -3453,7 +3453,7 @@ void addUStat2 ( SpiderReply *srep , int32_t now ) {
 }
 
 
-int32_t dumpSpiderdb ( char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree, char printStats,
+int32_t dumpSpiderdb ( const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree, char printStats,
                        int32_t firstIp ) {
 	if ( startFileNum < 0 ) {
 		log(LOG_LOGIC,"db: Start file number is < 0. Must be >= 0.");
@@ -4199,8 +4199,8 @@ void startUp ( void *state ) {
 	}
 }
 
-void dumpTagdb( char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree, char req, int32_t rdbId,
-				char *siteArg ) {
+void dumpTagdb( const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree, char req, int32_t rdbId,
+		const char *siteArg ) {
 	g_tagdb.init ();
 
 	if ( rdbId == RDB_TAGDB ) {
@@ -4396,7 +4396,7 @@ void dumpTagdb( char *coll, int32_t startFileNum, int32_t numFiles, bool include
 	goto loop;
 }
 
-bool parseTest ( char *coll , int64_t docId , char *query ) {
+bool parseTest ( const char *coll, int64_t docId, char *query ) {
 	g_conf.m_maxMem = 2000000000LL; // 2G
 	g_titledb.init ();
 	g_titledb.getRdb()->addRdbBase1 ( coll );
@@ -4689,7 +4689,7 @@ bool parseTest ( char *coll , int64_t docId , char *query ) {
 	return true;
 }	
 
-bool summaryTest1   ( char *rec , int32_t listSize, char *coll , int64_t docId , char *query ) {
+bool summaryTest1   ( char *rec, int32_t listSize, const char *coll, int64_t docId, char *query ) {
 
 	// start the timer
 	int64_t t = gettimeofdayInMilliseconds();
@@ -4725,7 +4725,7 @@ bool summaryTest1   ( char *rec , int32_t listSize, char *coll , int64_t docId ,
 	return true;
 }
 
-void dumpPosdb (char *coll,int32_t startFileNum,int32_t numFiles,bool includeTree, 
+void dumpPosdb (const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree,
 		   int64_t termId , bool justVerify ) {
 	if ( ! justVerify ) {
 		g_posdb.init ();
@@ -4922,7 +4922,7 @@ void dumpPosdb (char *coll,int32_t startFileNum,int32_t numFiles,bool includeTre
 	goto loop;
 }
 
-void dumpClusterdb ( char *coll,
+void dumpClusterdb ( const char *coll,
 		     int32_t startFileNum,
 		     int32_t numFiles,
 		     bool includeTree ) {
@@ -5012,11 +5012,11 @@ void dumpClusterdb ( char *coll,
 	goto loop;
 }
 
-void dumpLinkdb ( char *coll,
+void dumpLinkdb ( const char *coll,
 		  int32_t startFileNum,
 		  int32_t numFiles,
 		  bool includeTree ,
-		  char *url ) {
+		  const char *url ) {
 	g_linkdb.init ();
 	g_linkdb.getRdb()->addRdbBase1(coll );
 	key224_t startKey ;
@@ -8074,7 +8074,7 @@ char *getcwd2 ( char *arg2 ) {
 // used to make package to install files for the package
 //
 ///////
-int copyFiles ( char *dstDir ) {
+int copyFiles ( const char *dstDir ) {
 
 	const char *srcDir = "./";
 	SafeBuf fileListBuf;

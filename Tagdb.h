@@ -170,8 +170,8 @@ class Tagdb  {
 	// used by ../rdb/Msg0 and ../rdb/Msg1
 	Rdb *getRdb ( ) { return &m_rdb; }
 
-	key128_t makeStartKey ( char *site );//Url *u ) ;
-	key128_t makeEndKey   ( char *site );//Url *u ) ;
+	key128_t makeStartKey ( const char *site );
+	key128_t makeEndKey   ( const char *site );
 
 	key128_t makeDomainStartKey ( Url *u ) ;
 	key128_t makeDomainEndKey   ( Url *u ) ;

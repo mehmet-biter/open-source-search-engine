@@ -76,7 +76,7 @@ char *Hostdb::getNetName ( ) {
 // . return false on errro
 // . g_errno may NOT be set
 bool Hostdb::init ( int32_t hostIdArg , char *netName ,
-		    bool proxyHost , char useTmpCluster , char *cwd ) {
+		    bool proxyHost, char useTmpCluster, const char *cwd ) {
 	// reset my ip and port
 	m_myIp             = 0;
 	m_myIpShotgun      = 0;
@@ -90,10 +90,10 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 	m_useTmpCluster    = useTmpCluster;
 	m_initialized = true;
 
-	char *dir = "./";
+	const char *dir = "./";
 	if ( cwd ) dir = cwd;
 
-	char *filename = "hosts.conf";
+	const char *filename = "hosts.conf";
 
 	// for now we autodetermine
 	if ( hostIdArg != -1 ) { char *xx=NULL;*xx=0; }
@@ -1860,7 +1860,7 @@ int32_t Hostdb::getCRC ( ) {
 }
 
 
-bool Hostdb::createHostsConf( char *cwd ) {
+bool Hostdb::createHostsConf( const char *cwd ) {
   fprintf(stderr,"Creating %shosts.conf\n",cwd);
 	SafeBuf sb;
 	sb.safePrintf("# The Gigablast host configuration file.\n");
@@ -1990,7 +1990,7 @@ bool isMyIp ( int32_t ip ) {
 }
 
 
-Host *Hostdb::getHost2 ( char *cwd , int32_t *localIps ) {
+Host *Hostdb::getHost2 ( const char *cwd , int32_t *localIps ) {
 	for ( int32_t i = 0 ; i < m_numHosts ; i++ ) {
 		Host *h = &m_hosts[i];
 		// . get the path. guaranteed to end in '/'
@@ -2008,7 +2008,7 @@ Host *Hostdb::getHost2 ( char *cwd , int32_t *localIps ) {
 	return NULL;
 }
 
-Host *Hostdb::getProxy2 ( char *cwd , int32_t *localIps ) {
+Host *Hostdb::getProxy2 ( const char *cwd , int32_t *localIps ) {
 	for ( int32_t i = 0 ; i < m_numProxyHosts ; i++ ) {
 		Host *h = getProxy(i);
 		if ( ! (h->m_type & HT_PROXY ) ) continue;
