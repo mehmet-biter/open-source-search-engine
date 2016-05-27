@@ -222,21 +222,19 @@ void Phrases::setPhrase ( int32_t i ) {
 
 // . store phrase that starts with word #i into "printBuf"
 // . return bytes stored in "printBuf"
-char *Phrases::getPhrase(int32_t i, int32_t *phrLen) {
+void Phrases::getPhrase(int32_t i, char *buf, size_t bufsize, int32_t *phrLen) const {
 	// return 0 if no phrase
 	if ( m_phraseIds2[i] == 0LL ) {
-		return NULL;
+		*buf='\0';
+		return;
 	}
-
-	// store the phrase in here
-	static char buf[256];
 
 	// . how many words, including punct words, are in phrase?
 	// . this should never be 1 or less
 	int32_t  n = m_numWordsTotal2[i] ;
 
 	char *s     = buf;
-	char *send  = buf + 255;
+	char *send  = buf + bufsize - 1;
 	for (int32_t w = i;w<i+n;w++){
 		if (!m_words->isAlnum(w)){
 			// skip spaces for now since we has altogether now
@@ -258,9 +256,6 @@ char *Phrases::getPhrase(int32_t i, int32_t *phrLen) {
 
 	// set length we wrote into "buf"
 	*phrLen = s - buf;
-
-	// return ptr to buf
-	return buf;
 }
 
 int32_t Phrases::getMinWordsInPhrase ( int32_t i , int64_t *pid ) {

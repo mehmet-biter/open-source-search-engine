@@ -36,7 +36,7 @@ public:
 	// . store phrase that starts with word #i into "dest"
 	// . we also NULL terminated it in "dest"
 	// . return length
-	char *getPhrase(int32_t i, int32_t *phrLen);
+	void getPhrase(int32_t i, char *buf, size_t bufsize, int32_t *phrLen) const;
 
 	int32_t getNumWordsInPhrase2( int32_t i ) const {
 		return m_numWordsTotal2[i];
