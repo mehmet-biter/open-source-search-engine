@@ -1357,7 +1357,7 @@ void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripParams, bool 
 }
 
 // hostname must also be www or NULL to be a root url
-bool Url::isRoot() {
+bool Url::isRoot() const {
 	if ( m_plen    != 1              ) return false;
 	if ( !m_path || m_path[0] != '/' ) return false;
 	if ( m_query                     ) return false;
@@ -1366,7 +1366,7 @@ bool Url::isRoot() {
 	return true;
 }
 
-bool Url::isSimpleSubdomain ( ) {
+bool Url::isSimpleSubdomain ( ) const {
 	// if hostname is same as domain, it's passes
 	if ( m_host == m_domain && m_hlen == m_dlen ) return true;
 	// if host is not "www." followed by domain, it's NOT
@@ -1379,7 +1379,7 @@ bool Url::isSimpleSubdomain ( ) {
 // . basically like adding j /.. to the end of the url
 // . sub-url #0 is the full url
 // . includes /~ as it's own path
-int32_t Url::getSubUrlLen ( int32_t j ) {
+int32_t Url::getSubUrlLen ( int32_t j ) const {
 
 	// assume it's the whole url
 	int32_t len = m_ulen;
@@ -1407,7 +1407,7 @@ int32_t Url::getSubUrlLen ( int32_t j ) {
 
 // . similar to getSubUrlLen() above but only works on the path
 // . if j is 0 that's the whole url path!
-int32_t Url::getSubPathLen ( int32_t j ) {
+int32_t Url::getSubPathLen ( int32_t j ) const {
 	int32_t subUrlLen = getSubUrlLen ( j );
 	if ( subUrlLen <= 0 ) return 0; 
 	// . the subPath length includes the root backslash
@@ -1429,9 +1429,9 @@ void Url::print() {
 	logf(LOG_DEBUG, "is root %i",isRoot());
 }
 
-int32_t  Url::getPathDepth ( bool countFilename ) {
-	char *s     = m_path + 1;
-	char *send  = m_url + m_ulen;
+int32_t  Url::getPathDepth ( bool countFilename ) const {
+	const char *s     = m_path + 1;
+	const char *send  = m_url + m_ulen;
 	int32_t  count = 0;
 	while ( s < send ) if ( *s++ == '/' ) count++;
 	// if we're counting the filename as a path component...
@@ -1439,7 +1439,7 @@ int32_t  Url::getPathDepth ( bool countFilename ) {
 	return count;
 }
 
-bool Url::isHostWWW ( ) {
+bool Url::isHostWWW ( ) const {
 	if ( m_hlen < 4 ) return false;
 	if ( m_host[0] != 'w' ) return false;
 	if ( m_host[1] != 'w' ) return false;
@@ -1452,7 +1452,7 @@ bool Url::isHostWWW ( ) {
 // . i use /usr/share/dict/words to check for legit words
 // . if it's int32_t and has 4+ hyphens, consider it spam
 // . if you add a word here, add it to PageResults.cpp:isQueryDirty()
-bool Url::isSpam() {
+bool Url::isSpam() const {
 	// store the hostname in a buf since we strtok it
 	char s [ MAX_URL_LEN ];
 	// don't store the .com or .org while searching for isSpam
@@ -1500,7 +1500,7 @@ bool Url::isSpam() {
 	goto loop;
 }
 
-bool Url::isSpam ( char *s , int32_t slen ) {	
+bool Url::isSpam ( char *s , int32_t slen ) const {	
 
 	// no need to indent below, keep it clearer
 	if ( ! isAdult ( s, slen ) ) return false;
@@ -1736,7 +1736,7 @@ static HashTable s_badExtTable;
 static bool s_badExtInitialized;
 
 //returns True if the extension is listed as bad
-bool Url::hasNonIndexableExtension( int32_t version ) {
+bool Url::hasNonIndexableExtension( int32_t version ) const {
 	if ( ! m_extension || m_elen == 0 ) return false;
 	if(!s_badExtInitialized) { //if hash has not been created-create one
 		int32_t i=0;
@@ -1816,12 +1816,12 @@ bool Url::hasNonIndexableExtension( int32_t version ) {
 // BR 20160115
 // Yes, ugly hardcoded stuff again.. Can likely be optimized a bit too..
 // List of domains we do not want to store hashes for in posdb for "link:" entries
-bool Url::isDomainUnwantedForIndexing() {
-	char *domain 	= getDomain();				// top domain only, e.g. googleapis.com
+bool Url::isDomainUnwantedForIndexing() const {
+	const char *domain 	= getDomain();				// top domain only, e.g. googleapis.com
 	int32_t dlen 	= getDomainLen();
-	char *host		= getHost();				// domain including subdomain, e.g. fonts.googleapis.com
+	const char *host		= getHost();				// domain including subdomain, e.g. fonts.googleapis.com
 	int32_t hlen	= getHostLen();
-	char *path		= getPath();				// document path, e.g. /bla/doh/doc.html
+	const char *path		= getPath();				// document path, e.g. /bla/doh/doc.html
 	int32_t plen	= getPathLen();
 
 	if ( !domain || dlen <= 0 ) return true;
@@ -2028,8 +2028,8 @@ bool Url::isDomainUnwantedForIndexing() {
 // BR 20160115
 // Yes, ugly hardcoded stuff again.. Can likely be optimized a bit too..
 // List of paths we do not want to store hashes for in posdb for "link:" entries
-bool Url::isPathUnwantedForIndexing() {
-	char *path		= getPath();				// document path, e.g. /bla/doh/doc.html
+bool Url::isPathUnwantedForIndexing() const {
+	const char *path = getPath();				// document path, e.g. /bla/doh/doc.html
 	int32_t plen	= getPathLen();
 
 	if ( !path|| plen <= 0 ) return false;
@@ -2087,7 +2087,7 @@ bool Url::isPathUnwantedForIndexing() {
 }
 
 
-bool Url::hasMediaExtension ( ) {
+bool Url::hasMediaExtension ( ) const {
 
 	if ( ! m_extension || ! m_elen || m_elen > 4 ) return false;
 
@@ -2136,7 +2136,7 @@ bool Url::hasMediaExtension ( ) {
 }
 
 
-bool Url::hasXmlExtension ( ) {
+bool Url::hasXmlExtension ( ) const {
 
 	if ( ! m_extension || ! m_elen || m_elen > 3 ) return false;
 
@@ -2164,7 +2164,7 @@ bool Url::hasXmlExtension ( ) {
 }
 
 
-bool Url::hasJsonExtension ( ) {
+bool Url::hasJsonExtension ( ) const {
 
 	if ( ! m_extension || ! m_elen || m_elen >= 4 ) return false;
 
@@ -2192,7 +2192,7 @@ bool Url::hasJsonExtension ( ) {
 }
 
 
-bool Url::hasScriptExtension ( ) {
+bool Url::hasScriptExtension ( ) const {
 
 	if ( ! m_extension || ! m_elen || m_elen > 4 ) return false;
 
@@ -2222,13 +2222,13 @@ bool Url::hasScriptExtension ( ) {
 
 
 // see Url.h for a description of this.
-bool Url::isLinkLoop ( ) {
-	char *s             = m_path ;
-	char *send          = m_url + m_ulen;
+bool Url::isLinkLoop ( ) const {
+	const char *s          = m_path ;
+	const char *send       = m_url + m_ulen;
 	int32_t  count         = 0;
 	int32_t  components    = 0;
 	bool  prevWasDouble = false;
-	char *last          = NULL;
+	const char *last     = NULL;
 	if (!s) return false;
 	// use this hash table to hash each path component in the url
 	char  buf [ 5000 ];
@@ -2284,40 +2284,40 @@ bool Url::isLinkLoop ( ) {
 //http://www.pittsburghlive.com:8000/x/tribune-review/opinion/steigerwald/letters\/send/archive/bish/letters/send/archive/bish/letters/send/bish/archive/letters/\send/bish/archive/letters/send/archive/letters/bish/archive/bish/archive/letter\s/
 
 
-bool Url::isIp() { 
+bool Url::isIp() const {
 	if(!m_host)            return false;
 	if(!is_digit(*m_host)) return false; 
 	return atoip ( m_host , m_hlen ); 
 }
 
-int32_t Url::getHash32WithWWW ( ) {
+int32_t Url::getHash32WithWWW ( ) const {
 	uint32_t hh = hash32n ( "www." );
 	int32_t conti = 4;
 	hh = hash32_cont ( m_domain , m_dlen , hh , &conti );
 	return hh;
 }
 
-int32_t Url::getHostHash32 ( ) { 
+int32_t Url::getHostHash32 ( ) const {
 	return hash32 ( m_host , m_hlen ); 
 }
 
-int64_t Url::getHostHash64 ( ) { 
+int64_t Url::getHostHash64 ( ) const {
 	return hash64 ( m_host , m_hlen ); 
 }
 
-int32_t Url::getDomainHash32 ( ) { 
+int32_t Url::getDomainHash32 ( ) const {
 	return hash32 ( m_domain , m_dlen ); 
 }
 
-int64_t Url::getDomainHash64 ( ) { 
+int64_t Url::getDomainHash64 ( ) const {
 	return hash64 ( m_domain , m_dlen ); 
 }
 
-int32_t Url::getUrlHash32 ( ) { 
+int32_t Url::getUrlHash32 ( ) const {
 	return hash32(m_url,m_ulen); 
 }
 
-int64_t Url::getUrlHash64 ( ) { 
+int64_t Url::getUrlHash64 ( ) const {
 	return hash64(m_url,m_ulen); 
 }
 
@@ -2566,7 +2566,7 @@ char *getDomFast ( char *url , int32_t *domLen , bool hasHttp ) {
 // links, which would normally be detected as link spam. This function is kept
 // around until we have a better way of handling it  than hardcoded URLs in a
 // source file.
-bool Url::isPingServer ( ) {
+bool Url::isPingServer ( ) const {
 	return false;
 }
 

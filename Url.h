@@ -79,108 +79,115 @@ public:
 	void reset  ();
 
 	// compare another url to us
-	bool equals ( Url *u ) {
+	bool equals ( const Url *u ) const {
 		return ( m_ulen == u->m_ulen && strcmp( m_url, u->m_url ) == 0 );
 	}
 
 	// is the url's hostname actually in ip in disguise ("a.b.c.d")
-	bool isIp   (); 
+	bool isIp() const;
 
-	bool isRoot              ();
-	bool isCgi               () { return m_query ; }
+	bool isRoot() const;
+	bool isCgi() const { return m_query; }
 
 	//returns True if the extension is in the list of 
 	//badExtensions - extensions not to be parsed
-	bool hasNonIndexableExtension(int32_t xxx);
-	bool isDomainUnwantedForIndexing();
-	bool isPathUnwantedForIndexing();
+	bool hasNonIndexableExtension(int32_t xxx) const;
+	bool isDomainUnwantedForIndexing() const;
+	bool isPathUnwantedForIndexing() const;
 
 	// is it http://rpc.weblogs.com/shortChanges.xml, etc.?
-	bool isPingServer ( ) ;
+	bool isPingServer ( ) const;
 
-	int32_t getSubUrlLen        (int32_t i);
-	int32_t getSubPathLen       (int32_t i);
+	int32_t getSubUrlLen(int32_t i) const;
+	int32_t getSubPathLen(int32_t i) const;
 
-	int32_t getPort() { return m_port; }
-	int32_t getPortLen() { return m_portLen; }
+	int32_t getPort() const { return m_port; }
+	int32_t getPortLen() const { return m_portLen; }
 
-	int32_t getDefaultPort() { return m_defPort; }
+	int32_t getDefaultPort() const { return m_defPort; }
 
-	int32_t getIp() { return m_ip; }
+	int32_t getIp() const { return m_ip; }
 
-	char *getUrl() { return m_url; }
-	int32_t getUrlLen() { return m_ulen; }
+	char       *getUrl()       { return m_url; }
+	const char *getUrl() const { return m_url; }
+	int32_t getUrlLen() const { return m_ulen; }
 
 	const char *getScheme() { return m_scheme; }
-	int32_t getSchemeLen() { return m_slen; }
+	int32_t getSchemeLen() const { return m_slen; }
 
-	char *getHost() { return m_host; }
-	int32_t getHostLen() { return m_hlen; }
+	char       *getHost()       { return m_host; }
+	const char *getHost() const { return m_host; }
+	int32_t getHostLen() const { return m_hlen; }
 
-	char *getDomain() { return m_domain; }
-	int32_t getDomainLen() { return m_dlen; }
+	char       *getDomain()       { return m_domain; }
+	const char *getDomain() const { return m_domain; }
+	int32_t getDomainLen() const { return m_dlen; }
 
-	char *getTLD() { return m_tld; }
+	char       *getTLD()       { return m_tld; }
+	const char *getTLD() const { return m_tld; }
 	int32_t getTLDLen() { return m_tldLen; }
 
 	// w/o the tld
 	const char *getMidDomain() { return m_domain; }
 	int32_t getMidDomainLen() { return m_mdlen; }
 
-	char *getPath() { return m_path; }
-	int32_t getPathLen() { return m_plen; }
+	char       *getPath()       { return m_path; }
+	const char *getPath() const { return m_path; }
+	int32_t getPathLen() const { return m_plen; }
 	char *getPathEnd() { return m_path + m_plen; }
 
-	char *getFilename() { return m_filename; }
+	char       *getFilename()       { return m_filename; }
+	const char *getFilename() const { return m_filename; }
 	int32_t getFilenameLen() { return m_flen; }
 
 	const char *getExtension() { return m_extension; }
-	int32_t getExtensionLen() { return m_elen; }
+	int32_t getExtensionLen() const { return m_elen; }
 
-	char *getQuery() { return m_query; }
-	int32_t getQueryLen() { return m_qlen; }
+	char       *getQuery()       { return m_query; }
+	const char *getQuery() const { return m_query; }
+	int32_t getQueryLen() const { return m_qlen; }
 
-	int32_t  getPathLenWithCgi () {
+	int32_t  getPathLenWithCgi () const {
 		return m_query ? (m_plen + 1 + m_qlen) : m_plen;
 	}
 
-	bool  isHttp() { return ( m_defPort == 80 ); }
-	bool  isHttps() { return ( m_defPort == 443 ); }
+	bool  isHttp() const { return ( m_defPort == 80 ); }
+	bool  isHttps() const { return ( m_defPort == 443 ); }
 
 	// used by buzz i guess
-	int32_t      getUrlHash32    ( ) ;
-	int32_t      getHostHash32   ( ) ;
-	int32_t      getDomainHash32 ( ) ;
+	int32_t      getUrlHash32    ( ) const;
+	int32_t      getHostHash32   ( ) const;
+	int32_t      getDomainHash32 ( ) const;
 
 	// if url is xyz.com then get hash of www.xyz.com
-	int32_t getHash32WithWWW ( );
+	int32_t getHash32WithWWW ( ) const;
 
-	int64_t getUrlHash64    ( ) ;
-	int64_t getHostHash64   ( ) ;
-	int64_t getDomainHash64   ( ) ;
+	int64_t getUrlHash64    ( ) const;
+	int64_t getHostHash64   ( ) const;
+	int64_t getDomainHash64 ( ) const;
 
-	int64_t getUrlHash48    ( ) {
+	int64_t getUrlHash48    ( ) const {
 		return getUrlHash64() & 0x0000ffffffffffffLL;
 	}
 
-	bool hasMediaExtension();
-	bool hasScriptExtension();
-	bool hasXmlExtension();
-	bool hasJsonExtension();
+	bool hasMediaExtension() const;
+	bool hasScriptExtension() const;
+	bool hasXmlExtension() const;
+	bool hasJsonExtension() const;
 
 	// count the path components (root url as 0 path components)
-	int32_t  getPathDepth ( bool countFilename ); // = false );
+	int32_t  getPathDepth ( bool countFilename ) const;
 
 	// is our hostname "www" ?
-	bool isHostWWW ( ) ;
+	bool isHostWWW ( ) const;
 
-	bool hasSubdomain() { return (m_dlen != m_hlen); }
+	bool hasSubdomain() const { return (m_dlen != m_hlen); }
 
 	// is it xxx.com/* or www.xxx.com/* (CAUTION: www.xxx.yyy.com)
-	bool isSimpleSubdomain();
+	bool isSimpleSubdomain() const;
 
 	// is the url a porn/spam url?
-	bool isSpam();
+	bool isSpam() const;
 
 	// . detects crazy repetetive urls like this:
 	//   http://www.pittsburghlive.com:8000/x/tribune-review/opinion/
@@ -192,7 +199,7 @@ public:
 	// . this is called by Msg14.cpp to not even spider such urls, and we
 	//   also have some even better detection logic in Links.cpp which
 	//   is probably more accurate than this function.
-	bool isLinkLoop();
+	bool isLinkLoop() const;
 
 	static char* getDisplayUrl( const char* url, SafeBuf* sb );
 
@@ -200,7 +207,7 @@ private:
 	void set( const char *s, int32_t len, bool addWWW, bool stripParams, bool stripPound, bool stripCommonFile,
 	          int32_t titledbVersion );
 
-	bool isSpam ( char *s , int32_t slen ) ;
+	bool isSpam ( char *s , int32_t slen ) const;
 
 	// the normalized url
 	char m_url[MAX_URL_LEN];
