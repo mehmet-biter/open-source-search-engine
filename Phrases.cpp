@@ -20,7 +20,7 @@ void Phrases::reset() {
 }
 
 // initialize this token array with the string, "s" of length, "len".
-bool Phrases::set( Words *words, Bits *bits, int32_t niceness ) {
+bool Phrases::set( const Words *words, const Bits *bits, int32_t niceness ) {
 	// reset in case being re-used
 	reset();
 
@@ -241,8 +241,8 @@ void Phrases::getPhrase(int32_t i, char *buf, size_t bufsize, int32_t *phrLen) c
 			*s++ = ' ';
 			continue;
 		}
-		char *w1   = m_words->getWord(w);
-		char *wend = w1 + m_words->getWordLen(w);
+		const char *w1   = m_words->getWord(w);
+		const char *wend = w1 + m_words->getWordLen(w);
 		for ( int32_t j = 0 ; j < m_words->getWordLen(w) && s<send ; j++){
 			// write the lower case char from w1+j into "s"
 			int32_t size = to_lower_utf8 ( s , send , w1 + j , wend );
@@ -258,7 +258,7 @@ void Phrases::getPhrase(int32_t i, char *buf, size_t bufsize, int32_t *phrLen) c
 	*phrLen = s - buf;
 }
 
-int32_t Phrases::getMinWordsInPhrase ( int32_t i , int64_t *pid ) {
+int32_t Phrases::getMinWordsInPhrase ( int32_t i , int64_t *pid ) const {
 	*pid = 0LL;
 
 	if ( m_numWordsTotal2[i] ) {

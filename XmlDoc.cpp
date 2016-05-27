@@ -4217,7 +4217,7 @@ HashTableX *XmlDoc::getCountTable ( ) {
 	// ez var
 	const nodeid_t *tids  = words->getTagIds();
 	int32_t   nw    = words->getNumWords   ();
-	int64_t  *pids  = phrases->getPhraseIds2();
+	const int64_t  *pids  = phrases->getPhraseIds2();
 
 	// add 5000 slots for inlink text in hashString_ct() calls below
 	int32_t numSlots = nw * 3 + 5000;
@@ -4322,7 +4322,7 @@ bool XmlDoc::hashString_ct ( HashTableX *ct , char *s , int32_t slen ) {
 	if ( !phrases.set( &words, &bits, m_niceness ) )
 		return false;
 	int32_t nw = words.getNumWords();
-	int64_t  *pids  = phrases.getPhraseIds2();
+	const int64_t  *pids  = phrases.getPhraseIds2();
 
 	for ( int32_t i = 0 ; i < nw ; i++ ) {
 		// breathe

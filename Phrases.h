@@ -24,17 +24,14 @@ public:
 	// . a phraseSpam of PSKIP means word is not in a phrase
 	// . "bits" describes the words in a phrasing context
 	// . "spam" is % spam of each word (spam may be NULL)
-	bool set(Words *words, Bits *bits, int32_t niceness );
+	bool set(const Words *words, const Bits *bits, int32_t niceness );
 
-	int64_t *getPhraseIds2() {
-		return m_phraseIds2;
-	}
 	const int64_t *getPhraseIds2() const {
 		return m_phraseIds2;
 	}
 
-	// . store phrase that starts with word #i into "dest"
-	// . we also NULL terminated it in "dest"
+	// . store phrase that starts with word #i into "buf"
+	// . we also NULL terminated it in "buf"
 	// . return length
 	void getPhrase(int32_t i, char *buf, size_t bufsize, int32_t *phrLen) const;
 
@@ -42,7 +39,7 @@ public:
 		return m_numWordsTotal2[i];
 	}
 
-    int32_t  getMinWordsInPhrase( int32_t i , int64_t *pid ) ;
+	int32_t getMinWordsInPhrase( int32_t i , int64_t *pid ) const;
 
 private:
 	// . called by Phrases::set() above for each i
@@ -63,12 +60,12 @@ private:
 	int32_t m_numPhrases; // should equal the # of words
 
 	// placeholders to avoid passing to subroutine
-	Words *m_words;
-	int64_t *m_wids;
-	char **m_wptrs;
-	int32_t *m_wlens;
+	const Words *m_words;
+	const int64_t *m_wids;
+	const char * const *m_wptrs;
+	const int32_t *m_wlens;
 
-	Bits *m_bits;
+	const Bits *m_bits;
 };
 
 #endif // GB_PHRASES_H
