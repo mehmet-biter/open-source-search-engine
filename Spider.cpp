@@ -4655,7 +4655,14 @@ void dedupSpiderdbList ( RdbList *list, bool removeNegRecs ) {
 			}
 			// otherwise, replace him
 		replacePrevReq:
-			if ( prevReq->m_url[0] != 'h' ) { char *xx=NULL;*xx=0;}
+			// it could be a docid indicating a query reindex,
+			// in which case it won't start with 'h'
+			// and we should always just add it and not bother
+			// with deduping these. well, no, let's dedup
+			// as normal. they should have the urlIsDocId bit
+			// set which contributes to their hash.
+			// if ( prevReq->m_url[0] != 'h' )
+			// 	goto justAddIt;
 			prevReq->m_url[0] = 'x'; // mark for removal. xttp://
 			myLink = link;
 			// make a note of this so we physically remove these
@@ -4708,6 +4715,7 @@ void dedupSpiderdbList ( RdbList *list, bool removeNegRecs ) {
 			headLink = myLink;
 		}
 
+		//	justAddIt:
 
 		// get our size
 		int32_t recSize = sreq->getRecSize();
@@ -5308,6 +5316,15 @@ bool SpiderRequest::isCorrupt ( ) {
 	if ( ! is_digit(m_url[1]) ) { 
 		log("spider: got corrupt 2 spiderRequest");
 		return true;
+	}
+	char *p    = m_url + 2;
+	char *pend = m_url + getUrlLen();
+	for ( ; p < pend && *p ; p++ ) {
+		// the whole url must be digits, a docid
+		if ( ! is_digit(*p) ) {
+			log("spider: got corrupt 13 spiderRequest");
+			return true;
+		}
 	}
 
 	return false;
