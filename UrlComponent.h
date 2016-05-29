@@ -12,6 +12,8 @@ public:
 
 	UrlComponent( Type type, const char *pos, size_t len, char separator );
 
+	void print() const;
+
 	Type getType() const {
 		return m_type;
 	}
@@ -96,6 +98,8 @@ class UrlComponent::Matcher {
 public:
 	Matcher( const char *param, MatchCriteria matchCriteria = MATCH_DEFAULT );
 
+	void print() const;
+
 	MatchCriteria getMatchCriteria() const {
 		return m_matchCriteria;
 	}
@@ -154,6 +158,8 @@ inline MandatoryCriteria operator&( MandatoryCriteria a, MandatoryCriteria b ) {
 class UrlComponent::Validator {
 public:
 	Validator( size_t minLength = 0, size_t maxLength = 0, bool allowEmpty = false, AllowCriteria allowCriteria = ALLOW_ALL, MandatoryCriteria mandatoryCriteria = MANDATORY_NONE );
+
+	void print() const;
 
 	bool allowEmptyValue() const {
 		return m_allowEmpty;

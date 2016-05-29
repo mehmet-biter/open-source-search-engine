@@ -91,7 +91,7 @@ O2 = -O2
 O3 = -O3
 
 ifeq ($(ARCH), x86_64)
-CPPFLAGS += -march=corei7 -msse4.2
+CPPFLAGS += -march=core-avx-i -msse4.2
 endif
 
 endif
@@ -326,10 +326,12 @@ debug:
 	$(MAKE) config=debug
 
 
+# pip install gcovr
+
 .PHONY: coverage
 coverage:
 	$(MAKE) config=coverage unittest
-	gcovr -r . --html --html-detail -o coverage.html -e ".*Test\.cpp" -e "googletest.*"
+	gcovr -r . --html --html-details --branch --output=coverage.html --exclude=".*Test\.cpp" --exclude="googletest.*"
 
 
 StopWords.o:

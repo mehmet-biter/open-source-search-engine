@@ -126,3 +126,10 @@ TEST( UrlParserTest, ParseSLDUnknown ) {
 	checkResult( "fuel.aero", urlParser.getDomain(), urlParser.getDomainLen() );
 }
 
+TEST( UrlParserTest, ParseIDN ) {
+	std::string url( "http://www.xn--relgeroskilde-5fb0y.dk/" );
+	UrlParser urlParser( url.c_str(), url.size() );
+
+	checkResult( "www.xn--relgeroskilde-5fb0y.dk", urlParser.getAuthority(), urlParser.getAuthorityLen() );
+	checkResult( "xn--relgeroskilde-5fb0y.dk", urlParser.getDomain(), urlParser.getDomainLen() );
+}

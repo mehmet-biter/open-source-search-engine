@@ -384,7 +384,7 @@ bool Tag::printToBufAsTagVector ( SafeBuf *sb ) {
 	return true;
 }
 
-bool Tag::isType ( char *t ) {
+bool Tag::isType ( const char *t ) {
 	int32_t h = hash32n ( t );
 	return (m_type == h);
 }
@@ -594,7 +594,7 @@ const char *TagRec::getString ( const char *tagTypeStr, const char *defalt, int3
 }
 
 // return the number of tags having the particular TagType
-int32_t TagRec::getNumTagTypes ( char *tagTypeStr ) {
+int32_t TagRec::getNumTagTypes ( const char *tagTypeStr ) {
 	int32_t tagType = getTagTypeFromStr ( tagTypeStr );
 	int32_t numTagType = 0;
 	// start at the first tag
@@ -1085,8 +1085,8 @@ bool Tagdb::init ( ) {
 			    true ); // bias disk page cache?
 }
 
-bool Tagdb::verify ( char *coll ) {
-	char *rdbName = "Tagdb";
+bool Tagdb::verify ( const char *coll ) {
+	const char *rdbName = "Tagdb";
 	
 	log ( LOG_DEBUG, "db: Verifying %s for coll %s...", rdbName, coll );
 	
@@ -1167,7 +1167,7 @@ bool Tagdb::verify ( char *coll ) {
 // . ssssssss ssssssss ssssssss ssssssss  hash of site/url
 // . xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx  tagType OR hash of that+user+data
 // . xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx
-key128_t Tagdb::makeStartKey ( char *site ) {
+key128_t Tagdb::makeStartKey ( const char *site ) {
 	key128_t k;
 	k.n1 = hash64n ( site );
 	// set lower 64 bits of key to hash of this url
@@ -1175,7 +1175,7 @@ key128_t Tagdb::makeStartKey ( char *site ) {
 	return k;
 }
 
-key128_t Tagdb::makeEndKey ( char *site ) {
+key128_t Tagdb::makeEndKey ( const char *site ) {
 	key128_t k;
 	k.n1 = hash64n ( site );
 	// set lower 64 bits of key to hash of this url

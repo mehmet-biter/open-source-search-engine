@@ -710,7 +710,7 @@ TEST( UrlTest, Normalization ) {
 		                 "http://www.huffingtonpost.com.au/entry/tiny-moments-happiness_us_56ec1a35e4b084c672200a36?section=australia&adsSiteOverride=au" ),
 	    std::make_tuple( "http://www.example.com/%7ejoe/index.html", "http://www.example.com/~joe/index.html" ),
 	    std::make_tuple( "http://www.example.com/jo%e9/index.html", "http://www.example.com/jo%E9/index.html" ),
-		std::make_tuple( "http://www.example.com/%7joe/index.html", "http://www.example.com/joe/index.html" )
+		std::make_tuple( "http://www.example.com/%7joe/index.html", "http://www.example.com/%257joe/index.html" )
 	};
 
 	strip_param_tests( test_cases, 123 );

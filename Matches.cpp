@@ -420,7 +420,7 @@ bool Matches::addMatches(Words *words, Phrases *phrases, Sections *sections, Bit
 	m_flags       [ m_numMatchGroups ] = flags;
 	m_numMatchGroups++;
 
-	int64_t *pids = NULL;
+	const int64_t *pids = NULL;
 	if ( phrases ) {
 		pids = phrases->getPhraseIds2();
 	}

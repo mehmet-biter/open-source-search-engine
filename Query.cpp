@@ -2221,7 +2221,8 @@ bool Query::setQWords ( char boolFlag ,
 
 			// how many regular words int32_t is the bigram?
 			int32_t plen2;
-			phrases.getPhrase(i, &plen2);
+			char buf[256];
+			phrases.getPhrase(i, buf, sizeof(buf), &plen2);
 
 			// get just the bigram for now
 			qw->m_phraseLen = plen2;

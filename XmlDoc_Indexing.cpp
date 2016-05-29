@@ -2482,9 +2482,10 @@ skipsingleword:
 		if ( wts && npid ) {
 			// get phrase as a string
 			int32_t plen;
-			char *phr= phrases->getPhrase(i, &plen);
+			char phraseBuffer[256];
+			phrases->getPhrase(i, phraseBuffer, sizeof(phraseBuffer), &plen);
 			// store it
-			if ( ! storeTerm ( phr,plen,ph2,hi,i,
+			if ( ! storeTerm ( phraseBuffer,plen,ph2,hi,i,
 					   wposvec[i], // wordPos
 					   densvec[i],// densityRank , // 0-15
 					   MAXDIVERSITYRANK,//phrase
