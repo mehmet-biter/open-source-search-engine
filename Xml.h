@@ -72,6 +72,9 @@ public:
 	char *getNode( int32_t n ) {
 		return m_nodes[n].m_node;
 	}
+	const char *getNode( int32_t n ) const {
+		return m_nodes[n].m_node;
+	}
 
 	int32_t getNodeLen( int32_t n ) {
 		return m_nodes[n].m_nodeLen;
@@ -105,11 +108,14 @@ public:
 					 bool skipLeadingSpaces = true ) const;
 
 	// like above routines but we search all nodes
-	int32_t getLong( char *tagName, int32_t defaultLong = 0 ) {
+	int32_t getLong( const char *tagName, int32_t defaultLong = 0 ) {
 		return getLong( 0, m_numNodes, tagName, defaultLong );
 	}
 
-	char *getString( const char *tagName, int32_t *len, bool skipLeadingSpaces = true ) const {
+	char *getString( const char *tagName, int32_t *len, bool skipLeadingSpaces = true ) {
+		return getString( 0, m_numNodes, tagName, len, skipLeadingSpaces );
+	}
+	const char *getString( const char *tagName, int32_t *len, bool skipLeadingSpaces = true ) const {
 		return getString( 0, m_numNodes, tagName, len, skipLeadingSpaces );
 	}
 
@@ -137,7 +143,7 @@ public:
 	// . field can be stuff like "summary","description","keywords",...
 	// . use "http-equiv" for "name" for meta redirect tags
 	// . if "convertHtmlEntites" is true we change < to &lt; and > to &gt;
-	int32_t getMetaContent( char *buf, int32_t bufLen, char *field, int32_t fieldLen, char *name = "name",
+	int32_t getMetaContent( char *buf, int32_t bufLen, const char *field, int32_t fieldLen, const char *name = "name",
 							int32_t startNode = 0, int32_t *matchedNode = NULL );
 
 	// just get a pointer to it
@@ -159,7 +165,8 @@ public:
 
 	int32_t isRSSFeed();
 
-	char *getRSSTitle( int32_t *titleLen, bool *isHtmlEncoded ) const;
+	char *getRSSTitle( int32_t *titleLen, bool *isHtmlEncoded );
+	const char *getRSSTitle( int32_t *titleLen, bool *isHtmlEncoded ) const;
 	char *getRSSDescription( int32_t *titleLen, bool *isHtmlEncoded );
 
 	// . used by getValueAsBool/Long/String()
