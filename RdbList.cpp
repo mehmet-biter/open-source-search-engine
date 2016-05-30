@@ -1182,7 +1182,7 @@ int RdbList::printList ( int32_t logtype ) {
 		getCurrentKey(k);
 		int32_t dataSize = getCurrentDataSize();
 
-		char *d;
+		const char *d;
 		if ( (*m_listPtr & 0x01) == 0x00 )
 		{
 			d = " (del)";
