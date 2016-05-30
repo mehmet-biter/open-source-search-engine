@@ -53,7 +53,7 @@ public:
 	// array of collnum_t's to search... usually just one
 	SafeBuf m_collnumBuf;
 
-	char          *m_displayQuery;     // pts into m_qbuf1
+	const char          *m_displayQuery;     // pts into m_qbuf1
 
 	// urlencoded display query. everything is compiled into this.
 	SafeBuf m_qe;
