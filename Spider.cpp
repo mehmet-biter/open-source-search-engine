@@ -263,7 +263,8 @@ int32_t SpiderRequest::printToTable ( SafeBuf *sb , const char *status ,
 		sb->safePrintf(" <td>%" PRId64"ms</td>\n",elapsed);
 		collnum_t collnum = xd->m_collnum;
 		CollectionRec *cr = g_collectiondb.getRec(collnum);
-		char *cs = ""; if ( cr ) cs = cr->m_coll;
+		const char *cs = "";
+		if ( cr ) cs = cr->m_coll;
 		// sb->safePrintf(" <td><a href=/crawlbot?c=%s>%" PRId32"</a></td>\n",
 		// 	       cs,(int32_t)collnum);
 		//sb->safePrintf(" <td><a href=/crawlbot?c=%s>%s</a></td>\n",
@@ -401,7 +402,7 @@ int32_t SpiderRequest::printToTableSimple ( SafeBuf *sb , const char *status ,
 		sb->safePrintf(" <td>%" PRId64"ms</td>\n",elapsed);
 		// print collection
 		CollectionRec *cr = g_collectiondb.getRec ( xd->m_collnum );
-		char *coll = "";
+		const char *coll = "";
 		if ( cr ) coll = cr->m_coll;
 		sb->safePrintf("<td>%s</td>",coll);
 	}
@@ -778,7 +779,7 @@ void SpiderCache::save ( bool useThread ) {
 		if ( ! tree->m_needsSave ) continue;
 		// if already saving from a thread
 		if ( tree->m_isSaving ) continue;
-		char *filename = "waitingtree";
+		const char *filename = "waitingtree";
 		char dir[1024];
 		sprintf(dir,"%scoll.%s.%" PRId32,g_hostdb.m_dir,
 			sc->m_coll,(int32_t)sc->m_collnum);
@@ -1875,7 +1876,7 @@ bool sendPage ( State11 *st ) {
 		spiderTimeMS <<= 32;
 		// or in
 		spiderTimeMS |= (key->n0 >> 32);
-		char *note = "";
+		const char *note = "";
 		// if a day more in the future -- complain
 		// no! we set the repeat crawl to 3000 days for crawl jobs that
 		// do not repeat...
