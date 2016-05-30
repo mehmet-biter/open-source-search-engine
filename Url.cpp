@@ -2585,9 +2585,9 @@ char *getHost ( char *s , int32_t *hostLen ) {
 }
 
 // "s" point to the start of a normalized url (includes http://, etc.)
-char *getScheme ( char *s , int32_t *schemeLen ) 
+const char *getScheme ( const char *s , int32_t *schemeLen )
 {
-	char *div = strstr(s, "://");
+	const char *div = strstr(s, "://");
 	
 	if( !div )
 	{

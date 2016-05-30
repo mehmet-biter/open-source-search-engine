@@ -32,7 +32,7 @@ char *getHost ( char *s , int32_t *hostLen ) ;
 // . returns the scheme of a normalized url pointed to by "s"
 // . i.e. "s" must start with the protocol (i.e. http:// or https:// etc.)
 // . used by SiteGetter.cpp too
-char *getScheme( char *s , int32_t *hostLen );
+const char *getScheme( const char *s , int32_t *hostLen );
 
 
 // . get the path end of a normalized url

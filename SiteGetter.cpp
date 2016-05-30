@@ -418,7 +418,7 @@ bool SiteGetter::setSite ( ) {
 	// . get the scheme of our normalized url
 	// . assume the hostname is the site
 	int32_t schemeLen;
-	char *scheme = ::getScheme ( m_url , &schemeLen );
+	const char *scheme = ::getScheme ( m_url , &schemeLen );
 
 	if ( schemeLen < MAX_SCHEME_LEN ) {
 		gbmemcpy(m_scheme, scheme, schemeLen);
