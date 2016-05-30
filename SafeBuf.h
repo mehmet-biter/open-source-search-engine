@@ -174,10 +174,10 @@ public:
 	void zeroOut() { memset ( m_buf , 0 , m_capacity ); }
 
 	// insert <br>'s to make 's' no more than 'cols' chars per line
-	bool brify2 ( char *s, int32_t cols, const char *sep = "<br>" ,
+	bool brify2 ( const char *s, int32_t cols, const char *sep = "<br>" ,
 		      bool isHtml = true ) ;
 
-	bool brify( char *s, int32_t slen, int32_t niceness, int32_t cols, const char *sep = "<br>",
+	bool brify( const char *s, int32_t slen, int32_t niceness, int32_t cols, const char *sep = "<br>",
 				bool isHtml = true );
 
 	bool hasDigits();

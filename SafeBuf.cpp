@@ -1322,21 +1322,21 @@ bool SafeBuf::safeUtf8ToJSON ( const char *utf8 ) {
 }
 
 
-bool SafeBuf::brify2 ( char *s, int32_t cols, const char *sep, bool isHtml ) {
+bool SafeBuf::brify2 ( const char *s, int32_t cols, const char *sep, bool isHtml ) {
 	return brify ( s, gbstrlen(s), 0 , cols , sep , isHtml ); 
 }
 
-bool SafeBuf::brify( char *s, int32_t slen, int32_t niceness, int32_t maxCharsPerLine, const char *sep,
+bool SafeBuf::brify( const char *s, int32_t slen, int32_t niceness, int32_t maxCharsPerLine, const char *sep,
 					 bool isHtml ) {
 	// count the xml tags so we know how much buf to allocated
-	char *p = s;
-	char *pend = s + slen;
+	const char *p = s;
+	const char *pend = s + slen;
 	char cs;
 	int32_t brSizes = 0;
 	bool lastRound = false;
 	int32_t col = 0;
-	char *pstart = s;
-	char *breakPoint = NULL;
+	const char *pstart = s;
+	const char *breakPoint = NULL;
 	bool inTag = false;
 	int32_t sepLen = gbstrlen(sep);
 	bool forced = false;

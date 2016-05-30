@@ -2493,7 +2493,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	// . the title can be NULL
 	// . highlight it first
 	// . the title itself should not have any tags in it!
-	char  *str  = mr->ptr_tbuf;
+	const char  *str  = mr->ptr_tbuf;
 	int32_t strLen = mr->size_tbuf - 1;
 	if ( ! str || strLen < 0 ) {
 		strLen = 0;
