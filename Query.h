@@ -112,12 +112,12 @@ int32_t getNumFieldCodes ( );
 #define QTF_BEGINNEWTABLE 0x04
 
 struct QueryField {
-	char *text;
+	const char *text;
 	char field;
 	bool hasColon;
-	char *example;
-	char *desc;
-	char *m_title;
+	const char *example;
+	const char *desc;
+	const char *m_title;
 	char  m_flag;
 };
 
