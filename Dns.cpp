@@ -1291,7 +1291,7 @@ void gotIpWrapper ( void *state , UdpSlot *slot ) {
 			key_t k;
 			k.n0 = 0LL;
 			k.n1 = slot->m_ip;
-			static char *s_data = "1111";
+			static const char *s_data = "1111";
 			log(LOG_DEBUG,
 			    "dns: adding ip %s to timedout cache: %s",
 			    iptoa(slot->m_ip),mstrerror(g_errno));
