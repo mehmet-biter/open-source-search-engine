@@ -450,7 +450,7 @@ public:
 bool Mem::printMemBreakdownTable ( SafeBuf* sb, 
 				   char *lightblue, 
 				   char *darkblue) {
-	char *ss = "";
+	const char *ss = "";
 
 	sb->safePrintf (
 		       "<table>"
