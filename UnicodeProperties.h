@@ -14,44 +14,44 @@ typedef uint16_t UCProps;
 typedef unsigned char  UCScript;
 
 
-bool loadUnicodeTable(UCPropTable *table, char *filename, bool useChecksum = false, uint32_t expectedChecksum = 0);
-bool saveUnicodeTable(UCPropTable *table, char *filename);
+bool loadUnicodeTable(UCPropTable *table, const char *filename, bool useChecksum = false, uint32_t expectedChecksum = 0);
+bool saveUnicodeTable(UCPropTable *table, const char *filename);
 // JAB: we now have Kompatible and Canonical decomposition tables
-bool saveKDecompTable(char *baseDir = NULL) ;
-bool loadDecompTables(char *baseDir = NULL) ;
+bool saveKDecompTable(const char *baseDir = NULL) ;
+bool loadDecompTables(const char *baseDir = NULL) ;
 void resetDecompTables() ;
 
 bool     setKDValue(UChar32 c, UChar32* decomp, int32_t decompCount,
 		    bool fullComp = false);
-UChar32 *getKDValue(UChar32 c, int32_t *decompCount, bool *fullComp = NULL);
+const UChar32 *getKDValue(UChar32 c, int32_t *decompCount, bool *fullComp = NULL);
 int32_t     recursiveKDExpand(UChar32 c, UChar32 *buf, int32_t bufSize);
 
-UCProps ucProperties(UChar32 c);
-bool    ucIsAlpha(UChar32 c);
-bool    ucIsDigit(UChar32 c);
-bool    ucIsAlnum(UChar32 c);
+static UCProps ucProperties(UChar32 c);
+static bool    ucIsAlpha(UChar32 c);
+static bool    ucIsDigit(UChar32 c);
+static bool    ucIsAlnum(UChar32 c);
 
-bool    ucIsUpper(UChar32 c);
-bool    ucIsLower(UChar32 c);
+static bool    ucIsUpper(UChar32 c);
+static bool    ucIsLower(UChar32 c);
 
-int32_t ucDigitValue(UChar32 c);
+static int32_t ucDigitValue(UChar32 c);
 
-UChar32 ucToLower(UChar32 c);
-UChar32 ucToUpper(UChar32 c);
+static UChar32 ucToLower(UChar32 c);
+static UChar32 ucToUpper(UChar32 c);
 
 unsigned char ucCombiningClass(UChar32 c);
 
 
-bool ucIsWhiteSpace(UChar32 c);
-bool is_wspace_uc(UChar32 c);
-bool ucIsIdeograph(UChar32 c);
-bool ucIsPunct(UChar32 c);
-bool is_punct_uc(UChar32 c);
-bool ucIsWordChar(UChar32 c);
-bool ucIsIgnorable(UChar32 c);
-bool ucIsExtend(UChar32 c);
+static bool ucIsWhiteSpace(UChar32 c);
+static bool is_wspace_uc(UChar32 c);
+static bool ucIsIdeograph(UChar32 c);
+static bool ucIsPunct(UChar32 c);
+static bool is_punct_uc(UChar32 c);
+static bool ucIsWordChar(UChar32 c);
+static bool ucIsIgnorable(UChar32 c);
+static bool ucIsExtend(UChar32 c);
 
-UCScript ucGetScript(UChar32 c);
+static UCScript ucGetScript(UChar32 c);
 
 
 // Parse Properties
@@ -78,7 +78,7 @@ extern UCPropTable g_ucScripts;
 extern UCPropTable g_ucKDIndex;
 
 
-extern char *g_ucScriptNames[];
+extern const char * const g_ucScriptNames[];
 
 enum ucScript {
 	ucScriptCommon = 0,
@@ -200,98 +200,98 @@ enum HangulComposition {
 };
 
 // Inline Functions here
-inline bool ucIsAlpha(UChar32 c) {
+static inline bool ucIsAlpha(UChar32 c) {
 	void *p = g_ucProps.getValue(c);
 	if (!p) return false;
 	return *(UCProps*)p & UC_ALPHA;
 }
 
 
-inline bool ucIsDigit(UChar32 c) {
+static inline bool ucIsDigit(UChar32 c) {
 	void *p = g_ucProps.getValue(c);
 	if (!p) return false;
 	return *(UCProps*)p & UC_DIGIT;
 }
-inline bool ucIsAlnum(UChar32 c) {
+static inline bool ucIsAlnum(UChar32 c) {
 	void *p = g_ucProps.getValue(c);
 	if (!p) return false;
 	return *(UCProps*)p & UC_WORDCHAR;
 }
 
-inline bool ucIsUpper(UChar32 c) {
+static inline bool ucIsUpper(UChar32 c) {
 	void *p = g_ucProps.getValue(c);
 	if (!p) return false;
 	return *(UCProps*)p & UC_UPPER;
 }
 
-inline bool ucIsLower(UChar32 c) {
+static inline bool ucIsLower(UChar32 c) {
 	void *p = g_ucProps.getValue(c);
 	if (!p) return false;
 	return *(UCProps*)p & UC_LOWER;
 }
 
-inline bool ucIsWhiteSpace(UChar32 c) {
+static inline bool ucIsWhiteSpace(UChar32 c) {
 	void *p = g_ucProps.getValue(c);
 	if (!p) return false;
 	return *(UCProps*)p & UC_WHITESPACE;	
 }
 
-inline bool is_wspace_uc(UChar32 c) {
+static inline bool is_wspace_uc(UChar32 c) {
 	void *p = g_ucProps.getValue(c);
 	if (!p) return false;
 	return *(UCProps*)p & UC_WHITESPACE;	
 }
 
-inline bool ucIsIdeograph(UChar32 c) {
+static inline bool ucIsIdeograph(UChar32 c) {
 	void *p = g_ucProps.getValue(c);
 	if (!p) return false;
 	return *(UCProps*)p & UC_IDEOGRAPH;
 }
 
-inline bool ucIsPunct(UChar32 c) {
+static inline bool ucIsPunct(UChar32 c) {
 	return !ucIsWordChar(c);
 }
 
-inline bool is_punct_uc(UChar32 c) {
+static inline bool is_punct_uc(UChar32 c) {
 	return !ucIsWordChar(c);
 }
 
-inline bool ucIsIgnorable(UChar32 c) {
+static inline bool ucIsIgnorable(UChar32 c) {
 	void *p = g_ucProps.getValue(c);
 	if (!p) return false;
 	return *(UCProps*)p & UC_IGNORABLE;
 }
-inline bool ucIsExtend(UChar32 c) {
+static inline bool ucIsExtend(UChar32 c) {
 	void *p = g_ucProps.getValue(c);
 	if (!p) return false;
 	return *(UCProps*)p & UC_EXTEND;
 }
 
 
-inline UChar32 ucToLower(UChar32 c) {
+static inline UChar32 ucToLower(UChar32 c) {
 	void *p = g_ucLowerMap.getValue(c);
 	if (!p || !*(UChar32*)p) return c;
 	return *(UChar32*)p;
 }
 
-inline UChar32 ucToUpper(UChar32 c){
+static inline UChar32 ucToUpper(UChar32 c){
 	void *p = g_ucUpperMap.getValue(c);
 	if (!p || !*(UChar32*)p) return c;
 	return *(UChar32*)p;
 }
 
-inline UCProps ucProperties(UChar32 c) {
+static inline UCProps ucProperties(UChar32 c) {
 	void *p = g_ucProps.getValue(c);
 	if (!p) return (UCProps)0;
 	return *(UCProps*)p;
 }
 
-inline int32_t ucDigitValue(UChar32 c) {
+static inline int32_t ucDigitValue(UChar32 c) {
 	if (c >= '0' && c <= '9') return (int32_t)(c-'0');
 	return 0;
 }
 
-inline UCScript ucGetScript(UChar32 c) {
+static inline UCScript ucGetScript(UChar32 c) {
 	void *p = g_ucScripts.getValue(c);
 	if (!p) return ucScriptCommon;
 	return *(UCScript*)p;

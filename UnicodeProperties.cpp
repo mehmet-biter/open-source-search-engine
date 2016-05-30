@@ -16,7 +16,7 @@ static u_int32_t      s_ucKDDataSize = 0;
 static u_int32_t      s_ucKDAllocSize = 0;
 
 uint32_t calculateChecksum(char *buf, int32_t bufLen);
-char *g_ucScriptNames[] = {
+const char * const g_ucScriptNames[] = {
 	"Common",
 	"Arabic",
 	"Armenian",
@@ -73,7 +73,7 @@ char *g_ucScriptNames[] = {
 	"Yi"
 };
 
-bool saveUnicodeTable(UCPropTable *table, char *filename) {
+bool saveUnicodeTable(UCPropTable *table, const char *filename) {
 	size_t tableSize = table->getStoredSize();
 	char *buf = (char*)mmalloc(tableSize,"UP1");
 	if (!buf){
@@ -114,7 +114,7 @@ bool saveUnicodeTable(UCPropTable *table, char *filename) {
 }
 
 
-bool loadUnicodeTable(UCPropTable *table, char *filename, bool useChecksum, uint32_t expectedChecksum) {
+bool loadUnicodeTable(UCPropTable *table, const char *filename, bool useChecksum, uint32_t expectedChecksum) {
 
 	FILE *fp = fopen(filename, "r");
 	if (!fp) 
@@ -204,7 +204,7 @@ bool setKDValue(UChar32 c, UChar32* decomp, int32_t decompCount, bool fullComp) 
 	return g_ucKDIndex.setValue(c, (void*)&pos);
 }
 
-UChar32 *getKDValue(UChar32 c, int32_t *decompCount, bool *fullComp) {
+const UChar32 *getKDValue(UChar32 c, int32_t *decompCount, bool *fullComp) {
 	*decompCount = 0;
 	if (fullComp) *fullComp = false;
 	int32_t *pos = (int32_t*)g_ucKDIndex.getValue(c);
@@ -232,7 +232,7 @@ int32_t recursiveKDExpand(UChar32 c, UChar32 *buf, int32_t bufSize) {
 }
 
 // JAB: we now have Kompatible and Canonical decomposition
-bool saveKDecompTable(char *baseDir) {
+bool saveKDecompTable(const char *baseDir) {
 	if (!s_ucKDData) return false;
 	//char *filename = "ucdata/kd_data.dat";
 	char filename[384];
@@ -272,7 +272,7 @@ void resetDecompTables() {
 }
 
 // JAB: we now have Kompatible and Canonical decomposition
-bool loadKDecompTable(char *baseDir) {
+static bool loadKDecompTable(const char *baseDir) {
 	if (s_ucKDData) {
 		//reset table if already loaded
 		resetDecompTables();
@@ -321,6 +321,6 @@ bool loadKDecompTable(char *baseDir) {
 }
 
 // JAB: we now have Kompatible and Canonical decomposition
-bool loadDecompTables(char *baseDir) {
+bool loadDecompTables(const char *baseDir) {
 	return loadKDecompTable(baseDir);
 }
