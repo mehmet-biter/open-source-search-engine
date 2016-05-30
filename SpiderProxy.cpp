@@ -92,7 +92,7 @@ bool buildProxyTable ( ) {
 		// scan in an ip:port
 		char *s = p; char *portStr = NULL;
 		int32_t dc = 0, pc = 0, gc = 0, bc = 0;
-		char *msg;
+		const char *msg;
 
 		char *usernamePwd = NULL;
 		int32_t usernamePwdLen = 0;
@@ -390,7 +390,7 @@ bool printSpiderProxyTable ( SafeBuf *sb ) {
 
 		SpiderProxy *sp = (SpiderProxy *)s_iptab.getValueFromSlot(i);
 
-		char *bg = LIGHT_BLUE;
+		const char *bg = LIGHT_BLUE;
 		// mark with light red bg if last test url attempt failed
 		if ( sp->m_lastDownloadTookMS == -1 &&
 		     sp->m_lastDownloadTestAttemptMS>0 )
