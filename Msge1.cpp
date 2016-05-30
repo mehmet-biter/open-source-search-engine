@@ -36,7 +36,7 @@ bool Msge1::getFirstIps ( TagRec **grv ,
 			  void   (*callback)(void *state) ,
 			  int32_t     nowGlobal              ,
 			  bool     addTags                ,
-			  char    *testDir                ) {
+			  const char    *testDir                ) {
 
 	reset();
 	// bail if no urls or linkee

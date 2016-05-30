@@ -409,7 +409,7 @@ void XmlDoc::logQueryTimingEnd(const char* function, int64_t startTime) {
 	//}
 }
 
-char *XmlDoc::getTestDir ( ) {
+const char *XmlDoc::getTestDir ( ) {
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) return NULL;
 
@@ -439,7 +439,7 @@ int32_t XmlDoc::getSpideredTime ( ) {
 		return m_spideredTime;
 	}
 
-	char *testDir = getTestDir();
+	const char *testDir = getTestDir();
 
 	// get url
 	Url *cu = getCurrentUrl();
@@ -495,7 +495,7 @@ static void loadFromOldTitleRecWrapper ( void *state ) {
 	// return if it blocked
 	if ( ! THIS->loadFromOldTitleRec ( ) ) return;
 
-	char *coll = "";
+	const char *coll = "";
 	CollectionRec *cr = THIS->getCollRec();
 	if ( cr ) coll = cr->m_coll;
 
@@ -1884,7 +1884,7 @@ logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );
 			m_addedStatusDocSize = len;
 			m_addedStatusDocSizeValid = true;
 
-			char *url = "unknown";
+			const char *url = "unknown";
 			if ( m_sreqValid ) url = m_sreq.m_url;
 			log("build: error2 getting real firstip of "
 			    "%" PRId32" for "
@@ -7268,7 +7268,7 @@ int32_t *XmlDoc::getIp ( ) {
 		// assume not found in our file
 		bool found = false;
 		// get test dir
-		char *testDir = getTestDir();
+		const char *testDir = getTestDir();
 		// get it from "./test/ips.txt"
 		getTestIp ( u->getUrl() , &m_ip , &found , m_niceness,testDir);
 		// if we found a match...
@@ -7409,7 +7409,7 @@ int32_t *XmlDoc::gotIp ( bool save ) {
 		// . this function is in Msge1.cpp
 		addTestIp ( u->getHost() , u->getHostLen() , m_ip );
 		// get test dir
-		char *testDir = getTestDir();
+		const char *testDir = getTestDir();
 		// save it
 		saveTestBuf ( testDir );
 	}
@@ -8561,7 +8561,7 @@ char **XmlDoc::getHttpReply2 ( ) {
 		r->m_compressReply       = true;
 	}
 
-	char *td = getTestDir();
+	const char *td = getTestDir();
 	if ( td ) strncpy ( r->m_testDir, td, 31);
 
 	logTrace( g_conf.m_logTraceXmlDoc, "cu->m_url [%s]", cu->getUrl());
@@ -11618,7 +11618,7 @@ int32_t **XmlDoc::getOutlinkFirstIpVector () {
 	//if ( m_sreqValid && m_sreq.m_isPageParser ) addTags = false;
 	if ( getIsPageParser() ) addTags = false;
 	// get this
-	char *testDir = getTestDir();
+	const char *testDir = getTestDir();
 
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) return NULL;

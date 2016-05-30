@@ -39,7 +39,7 @@ public:
 			   void        (*callback)(void *state) ,
 			   int32_t          nowGlobal              ,
 			   bool          addTags                ,
-			   char         *testDir                );
+			   const char         *testDir                );
 
 	bool launchRequests ( int32_t starti ) ;
 
@@ -88,7 +88,7 @@ public:
 
 	int32_t m_nowGlobal;
 
-	char *m_testDir;
+	const char *m_testDir;
 
 	// for errors
 	int32_t      m_errno;

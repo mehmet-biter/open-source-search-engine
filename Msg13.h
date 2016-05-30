@@ -178,8 +178,8 @@ class Msg13 {
 	Msg13Request *m_request;
 };
 
-bool getTestSpideredDate ( Url *u , int32_t *origSpideredDate , char *testDir ) ;
-bool addTestSpideredDate ( Url *u , int32_t  spideredTime     , char *testDir ) ;
+bool getTestSpideredDate ( Url *u , int32_t *origSpideredDate , const char *testDir ) ;
+bool addTestSpideredDate ( Url *u , int32_t  spideredTime     , const char *testDir ) ;
 
 extern RdbCache s_hammerCache;
 

@@ -23,8 +23,6 @@ void scanHammerQueue ( int fd , void *state );
 void downloadTheDocForReals ( Msg13Request *r ) ;
 
 // utility functions
-bool getTestSpideredDate ( Url *u , int32_t *origSpiderDate , char *testDir ) ;
-bool addTestSpideredDate ( Url *u , int32_t  spideredTime   , char *testDir ) ;
 bool getTestDoc ( char *u , class TcpSocket *ts , Msg13Request *r );
 bool addTestDoc ( int64_t urlHash64 , char *httpReply , int32_t httpReplySize ,
 		  int32_t err , Msg13Request *r ) ;
@@ -1910,7 +1908,7 @@ bool getTestDoc ( char *u , TcpSocket *ts , Msg13Request *r ) {
 	return true;
 }
 
-bool getTestSpideredDate ( Url *u , int32_t *origSpideredDate , char *testDir ) {
+bool getTestSpideredDate ( Url *u , int32_t *origSpideredDate , const char *testDir ) {
 	// hash the url into 64 bits
 	int64_t uh64 = hash64(u->getUrl(),u->getUrlLen());
 	// read the spider date file first
@@ -1946,7 +1944,7 @@ bool getTestSpideredDate ( Url *u , int32_t *origSpideredDate , char *testDir ) 
 	return true;
 }
 
-bool addTestSpideredDate ( Url *u , int32_t spideredTime , char *testDir ) {
+bool addTestSpideredDate ( Url *u , int32_t spideredTime , const char *testDir ) {
 
 	// ensure dir exists
 	::mkdir(testDir,getDirCreationFlags());
