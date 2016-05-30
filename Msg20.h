@@ -205,7 +205,7 @@ public:
 	char       *ptr_surroundingText      ; // set for m_getLinkText
 	char       *ptr_linkUrl              ; // what we link to
 	char       *ptr_rssItem              ; // set for m_getLinkText
-	char       *ptr_categories           ;
+	const char       *ptr_categories           ;
 	char       *ptr_content              ; // page content in utf8
 	char       *ptr_templateVector       ;
 	char       *ptr_metadataBuf;

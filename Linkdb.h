@@ -433,7 +433,7 @@ class Msg25 {
 	class Msg25Request * m_req25;
 
 	class Msg20Reply *getLoser (class Msg20Reply *r, class Msg20Reply *p);
-	char             *isDup    (class Msg20Reply *r, class Msg20Reply *p);
+	const char             *isDup    (class Msg20Reply *r, class Msg20Reply *p);
 
 	bool addNote ( const char *note , int32_t noteLen , int64_t docId );
 
@@ -816,7 +816,7 @@ class Inlink {
 			size_linkText + 
 			size_surroundingText;
 	}
-	char *getCategories ( ) { 
+	const char *getCategories ( ) {
 		if ( size_categories == 0 ) return NULL;
 		//return m_buf + off_categories; 
 		return m_buf + 
@@ -957,7 +957,7 @@ bool isPermalink (
 		   char         contentType ,
 		   class LinkInfo    *linkInfo    ,
 		   bool         isRSS       ,
-		   char       **note        = NULL  ,
+		   const char       **note        = NULL  ,
 		   char        *pathOverride= NULL  ,
 		   bool         ignoreCgi   = false ,
 		   linkflags_t  *extraFlags = NULL  ) ;
@@ -1162,7 +1162,7 @@ public:
 	// . returns  0 if probably not a permalink
 	// . returns  1 if probably is a permalink
 	// . returns -1 if not enough information to make a decision
-	char isPermalink( char ** /*note*/ ) {
+	char isPermalink( const char ** /*note*/ ) {
 		return -1;
 	}
 

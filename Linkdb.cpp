@@ -1037,7 +1037,7 @@ bool Msg25::doReadLoop ( ) {
 
 	// debug log
 	if ( g_conf.m_logDebugLinkInfo ) {
-		char *ms = "page";
+		const char *ms = "page";
 		if ( m_mode == MODE_SITELINKINFO ) ms = "site";
 		log("msg25: reading linkdb list mode=%s site=%s url=%s "
 		    "docid=%" PRId64" linkdbstartkey=%s",
@@ -1528,7 +1528,7 @@ bool Msg25::sendRequests ( ) {
 
 		// debug log
 		if ( g_conf.m_logDebugLinkInfo ) {
-			char *ms = "page";
+			const char *ms = "page";
 			if ( m_mode == MODE_SITELINKINFO ) ms = "site";
 			log("msg25: getting single link mode=%s site=%s "
 			    "url=%s docid=%" PRId64" request=%" PRId32,
@@ -1902,7 +1902,7 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 		// allow internal inlinks to match
 		if ( pinternal ) continue;
 		// is "p" a dup of us? (or we of it?)
-		char *dupNote = isDup ( r , p ) ;
+		const char *dupNote = isDup ( r , p ) ;
 		// if it is not a dup, keep going
 		if ( ! dupNote ) continue;
 		// getLoser() returns the lowest-scoring reply of "r" and "p"
@@ -2041,7 +2041,7 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 		// count it
 		m_round++;
 		// note it
-		char *ms = "page";
+		const char *ms = "page";
 		char *id = m_url;
 		if ( m_mode == MODE_SITELINKINFO ) {
 			ms = "site";
@@ -2073,7 +2073,7 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 
 	// debug log
 	if ( g_conf.m_logDebugLinkInfo ) {
-		char *ms = "page";
+		const char *ms = "page";
 		if ( m_mode == MODE_SITELINKINFO ) ms = "site";
 		log("msg25: making final linkinfo mode=%s site=%s url=%s "
 		    "docid=%" PRId64,
@@ -2161,7 +2161,7 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 	else
 		sprintf(buf,"UNKNOWN time");
 
-	char *ss = "site";
+	const char *ss = "site";
 	if ( m_mode == MODE_PAGELINKINFO ) ss = "page";
 
 	LinkInfo *info = (LinkInfo *)m_linkInfoBuf->getBufStart();
@@ -2807,7 +2807,7 @@ Msg20Reply *Msg25::getLoser ( Msg20Reply *r , Msg20Reply *p ) {
 // . we will kick out the worst one so it cannot vote
 // . returns NULL if not a dup
 // . returns NULL with g_errno set on error
-char *Msg25::isDup ( Msg20Reply *r , Msg20Reply *p ) {
+const char *Msg25::isDup ( Msg20Reply *r , Msg20Reply *p ) {
 
 	// reset this
 	g_errno = 0;
@@ -3469,7 +3469,7 @@ bool LinkInfo::print ( SafeBuf *sb , char *coll ) {
 		int32_t  rlen = k->size_rssItem - 1;
 		char *g    = k->getGigabitQuery();
 		int32_t  glen = k->size_gigabitQuery - 1;
-		char *c    = k->getCategories();//ptr_categories;
+		const char *c    = k->getCategories();//ptr_categories;
 		int32_t  clen = k->size_categories - 1;
 		if ( slen < 0 ) slen = 0;
 		if ( dlen < 0 ) dlen = 0;
@@ -3629,7 +3629,7 @@ bool Links::set ( bool useRelNoFollow ,
 	if ( baseUrl ) m_baseUrl = baseUrl;
 
 	// visit each node in the xml tree. a node can be a tag or a non-tag.
-	char *urlattr = NULL;
+	const char *urlattr = NULL;
 	for ( int32_t i=0; i < m_numNodes ; i++ ) {
 		QUICKPOLL(niceness);
 		// . continue if this tag ain't an <a href> tag
@@ -4344,7 +4344,7 @@ bool Links::addLink ( const char *link , int32_t linkLen , int32_t nodeNum ,
 	//   tell whether we are siteRoot, and therefore NOT a permalink
 	linkflags_t extraFlags = 0;
 	if ( permCheck &&
-	     ::isPermalink ( //m_coll   ,
+	     ::isPermalink (
 			     NULL     , // Links ptr
 			     &url     , // the url
 			     CT_HTML  , // contentType
@@ -4712,13 +4712,12 @@ bool Links::flagOldLinks ( Links *old ) {
 // . this registers as a permalink which it is not:
 //   http://www.dawn.com/2009/01/04/rss.htm
 //   http://www.msnbc.msn.com/id/3032072
-bool isPermalink ( //char        *coll         ,
-		   Links       *links        ,
+bool isPermalink ( Links       *links        ,
 		   Url         *u            ,
 		   char         contentType  ,
 		   LinkInfo    *linkInfo     ,
 		   bool         isRSS        ,
-		   char       **note         ,
+		   const char       **note         ,
 		   char        *pathOverride ,
 		   bool         ignoreCgi    ,
 		   linkflags_t *retFlags     ) {
