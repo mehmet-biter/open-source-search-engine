@@ -1015,7 +1015,7 @@ void doneWrapper ( void *state, job_exit_t exit_type ) {
 	if ( ! g_errno ) {
 		// default graph color is black
 		int color = 0x00000000; 
-		char *label = "disk_read";
+		const char *label = "disk_read";
 		// use red for writes, though
 		if ( fstate->m_doWrite ) {
 			color = 0x00ff0000;
