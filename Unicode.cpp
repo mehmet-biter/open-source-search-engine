@@ -91,7 +91,7 @@ void gbiconv_reset(){
 #define CHKSUM_SCRIPTS           1826246000
 #define CHKSUM_KDMAP             1920116453
 
-bool ucInit(char *path) {
+bool ucInit(const char *path) {
 
 	char file[384];
 	if (path == NULL) path = "./";
@@ -153,7 +153,7 @@ failed:
 		   "uni: unable to load all property tables");
 }
 
-char *ucDetectBOM(char *buf, int32_t bufsize){
+const char *ucDetectBOM(char *buf, int32_t bufsize){
 	if (bufsize < 4) return NULL;
 	// copied from ICU
 	if(buf[0] == '\xFE' && buf[1] == '\xFF') {

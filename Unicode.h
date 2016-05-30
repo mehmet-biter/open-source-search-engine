@@ -9,7 +9,7 @@
 #include <iconv.h>
 
 // Initialize unicode word parser
-bool 	ucInit(char *path = NULL);
+bool 	ucInit(const char *path = NULL);
 
 //////////////////////////////////////////////////////
 // Converters
@@ -225,7 +225,7 @@ inline int32_t ucToUtf8(char *outbuf, int32_t outbuflen,
 int32_t	utf8Encode(UChar32 c, char* buf);
 
 // Try to detect the Byte Order Mark of a Unicode Document
-char *	ucDetectBOM(char *buf, int32_t bufsize);
+const char *	ucDetectBOM(char *buf, int32_t bufsize);
 
 //int32_t utf8ToAscii(char *outbuf, int32_t outbufsize,
 //		  unsigned char *inbuf, int32_t inbuflen);
