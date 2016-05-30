@@ -167,7 +167,7 @@ class UdpSlot {
 
 	// . or by readDataGramOrAck() to read a faked ack for protocols that 
 	//   don't use ACKs
-	void readAck  ( int sock , int32_t dgramNum , int64_t now );
+	void readAck  ( int32_t dgramNum, int64_t now );
 
 	// . will reset to send() will start sending at the first unacked dgram
 	// . if "reset" is true then will resend ALL dgrams

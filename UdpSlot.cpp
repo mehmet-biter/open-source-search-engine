@@ -1220,7 +1220,7 @@ bool UdpSlot::readDatagramOrAck ( int        sock    ,
 	}
 	// handle acks
 	if ( m_proto->isAck ( peek , peekSize ) ) {
-		readAck ( sock, dgramNum , now ); 
+		readAck ( dgramNum , now );
 		// keep stats
 		if ( m_host ) m_host->m_dgramsFrom++;
 		return true;
@@ -1530,7 +1530,7 @@ bool UdpSlot::readDatagramOrAck ( int        sock    ,
 		// inc the lit bit count
 		m_readBitsOn++;
 		// if our proto doesn't use acks, treat this as an ACK as well
-		if ( ! m_proto->useAcks () ) readAck(sock,0/*dgramNum*/,now);
+		if ( ! m_proto->useAcks () ) readAck(0/*dgramNum*/,now);
 		// if read everything, set the queued timer
 		if ( m_readBitsOn >= m_dgramsToRead )
 			m_queuedTime = gettimeofdayInMilliseconds();
@@ -1579,7 +1579,7 @@ bool UdpSlot::readDatagramOrAck ( int        sock    ,
 	// inc the lit bit count
 	m_readBitsOn++;
 	// if our proto doesn't use acks, treat this as an ACK as well
-	if ( ! m_proto->useAcks () ) readAck(sock,0/*dgramNum*/,now);
+	if ( ! m_proto->useAcks () ) readAck(0/*dgramNum*/,now);
 	// if read everything, set the queued timer
 	if ( m_readBitsOn >= m_dgramsToRead )
 		m_queuedTime = gettimeofdayInMilliseconds();
@@ -1588,7 +1588,7 @@ bool UdpSlot::readDatagramOrAck ( int        sock    ,
 }
 
 // called to process an ack we read for dgram # "dgramNum"
-void UdpSlot::readAck ( int sock , int32_t dgramNum , int64_t now ) {
+void UdpSlot::readAck ( int32_t dgramNum, int64_t now ) {
 	// protection from garbled dgrams
 	if ( dgramNum >= MAX_DGRAMS ) {
 		log(LOG_LOGIC,
