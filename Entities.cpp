@@ -78,7 +78,7 @@ static HashTableX s_table;
 static bool       s_isInitialized = false;
 struct Entity {
 	int32_t           unicode;
-	char          *entity;
+	const char          *entity;
 	unsigned char  c;
 	int32_t           utf8Len;
 	unsigned char  utf8[4];
