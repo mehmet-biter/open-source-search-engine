@@ -55,7 +55,7 @@ bool Wiktionary::test ( ) {
 	//w.set9 ("get $4,500.00 now",0);
 
 	// test it out!
-	char *str = "love";//pie"; //forsake";
+	const char *str = "love";//pie"; //forsake";
 	//int64_t wid = hash64Lower_utf8(str);
 	int64_t wid = hash64n(str);
 	// use this now
@@ -265,7 +265,7 @@ bool Wiktionary::load() {
 	return true;
 }
 
-static char *s_lowerLangWikiStrings[] = {
+static const char *s_lowerLangWikiStrings[] = {
 	"unknown","english","french","spanish","russian","turkish","japanese",
 	"cantonese", // "chinese traditional",
 	"mandarin", // "chinese simplified",
@@ -309,7 +309,7 @@ static char *s_lowerLangWikiStrings[] = {
 // Synonyms.cpp should check this table separately so we can keep it
 // somewhat small and re-load it on the fly.
 // mysynonyms.txt
-bool Wiktionary::addSynsets ( char *filename ) {
+bool Wiktionary::addSynsets ( const char *filename ) {
 
 	// load it up
 	//SafeBuf sb;
@@ -1133,7 +1133,7 @@ bool Wiktionary::generateHashTableFromWiktionaryTxt ( int32_t sizen ) {
 		// is it a language we support?
 		int32_t n = sizeof(s_lowerLangWikiStrings) / sizeof(char *);
 		for ( int32_t i = 0 ; i < n ; i++ ) {
-			char *str = s_lowerLangWikiStrings[i];
+			const char *str = s_lowerLangWikiStrings[i];
 			if ( ! str ) { char *xx=NULL;*xx=0; }
 			int32_t  len = strlen(str);
 			if ( ! strncasecmp(wp,str,len) ) {

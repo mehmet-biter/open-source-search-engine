@@ -129,7 +129,7 @@ class Wiktionary {
 
 	bool generateHashTableFromWiktionaryTxt ( int32_t fileSize );
 
-	bool addSynsets ( char *filename ) ;
+	bool addSynsets ( const char *filename ) ;
 
 	bool integrateUnifiedDict ( );
 
