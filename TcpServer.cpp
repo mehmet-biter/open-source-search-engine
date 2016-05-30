@@ -19,7 +19,7 @@ static void readTimeoutPollWrapper ( int sd , void *state ) ;
 static void acceptSocketWrapper    ( int sd , void *state ) ;
 static void timePollWrapper        ( int fd , void *state ) ;
 
-static char *getSSLError(SSL *ssl, int ret) {
+static const char *getSSLError(SSL *ssl, int ret) {
 	switch (SSL_get_error(ssl, ret)) {
 	case SSL_ERROR_NONE:
 		return "No SSL Error.";
@@ -2789,7 +2789,7 @@ int TcpServer::sslHandshake ( TcpSocket *s ) {
 
 	int sslError = SSL_get_error(s->m_ssl, r);
 
-	char *sslMsg = getSSLError(s->m_ssl, r);
+	const char *sslMsg = getSSLError(s->m_ssl, r);
 
 	if ( sslError != SSL_ERROR_WANT_READ && sslError != SSL_ERROR_WANT_WRITE && sslError != SSL_ERROR_NONE ) {
 		log( "tcp: ssl: Error on Connect (%" PRId32 "). r=%i ip=%s msg=%s", (int32_t)sslError, r,

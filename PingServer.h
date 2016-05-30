@@ -113,7 +113,7 @@ class PingServer {
 		return g_repairMode;
 	}
 
-	void sendEmailMsg ( int32_t *lastTimeStamp , char *msg ) ;
+	void sendEmailMsg ( int32_t *lastTimeStamp , const char *msg ) ;
 
 	void    setMinRepairMode ( Host *h ) ;
 	// set by setMinRepairMode() function
