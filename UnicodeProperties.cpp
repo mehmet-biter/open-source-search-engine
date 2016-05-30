@@ -216,7 +216,7 @@ const UChar32 *getKDValue(UChar32 c, int32_t *decompCount, bool *fullComp) {
 
 int32_t recursiveKDExpand(UChar32 c, UChar32 *buf, int32_t bufSize) {
 	int32_t decompCount = 0;
-	UChar32 *decomp = getKDValue(c, &decompCount);
+	const UChar32 *decomp = getKDValue(c, &decompCount);
 	if (!decompCount) {
 		buf[0] = c;
 		return 1;
