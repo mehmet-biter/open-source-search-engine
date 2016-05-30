@@ -517,9 +517,9 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 			
 			// debug log
 			if ( g_conf.m_logDebugSections ) {
-				char *ms = "";
+				const char *ms = "";
 				if ( stackPtr->m_tid != ptid) ms =" UNMATCHED";
-				char *back ="";
+				const char *back ="";
 				if ( fullPopTid & BACKBIT ) back = "/";
 				logf(LOG_DEBUG,"section: pop tid=%" PRId32" "
 				     "i=%" PRId32" "
@@ -3223,7 +3223,7 @@ bool Sections::print( SafeBuf *sbuf, int32_t hiPos, int32_t *wposVec, char *dens
 	}
 
 	// print header
-	char *hdr =
+	const char *hdr =
 		"<table border=1>"
 		"<tr>"
 		"<td><b>sec #</b></td>"
@@ -3253,7 +3253,7 @@ bool Sections::print( SafeBuf *sbuf, int32_t hiPos, int32_t *wposVec, char *dens
 		// see if one big table causes a browser slowdown
 		if ( (++rcount % TABLE_ROWS ) == 0 ) 
 			sbuf->safePrintf("</table>%s\n",hdr);
-		char *xs = "--";
+		const char *xs = "--";
 		char ttt[100];
 		if ( sn->m_contentHash64 ) {
 			int32_t modified = sn->m_tagHash ^ sn->m_contentHash64;
