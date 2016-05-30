@@ -1562,7 +1562,7 @@ bool Repair::addToTfndb2 ( ) {
 // . this is called by Parms.cpp
 bool Repair::printRepairStatus ( SafeBuf *sb , int32_t fromIp ) {
 	// default is a repairMode of 0, "not running"
-	char *status = "not running";
+	const char *status = "not running";
 	if ( g_repairMode == 0 && g_conf.m_repairingEnabled )
 		status = "waiting for previous rebuild to complete";
 	if ( g_repairMode == 1 )
@@ -1607,10 +1607,10 @@ bool Repair::printRepairStatus ( SafeBuf *sb , int32_t fromIp ) {
 	int64_t errors2 = 
 		m_spiderRecSetErrors;
 
-	char *newColl = " &nbsp; ";
+	const char *newColl = " &nbsp; ";
 	//if ( m_fullRebuild ) newColl = m_newColl;
 
-	char *oldColl = " &nbsp; ";
+	const char *oldColl = " &nbsp; ";
 	if ( m_cr ) oldColl = m_cr->m_coll;
 
 	Host *mh = g_pingServer.m_minRepairModeHost;
@@ -1862,7 +1862,7 @@ bool Repair::printRepairStatus ( SafeBuf *sb , int32_t fromIp ) {
 	// . count the recs in each secondary rdb
 	// . those are the rdbs we are adding the recs to
 	for ( int32_t i = 0 ; i < nsr ; i++ ) {
-		char *bg = DARK_BLUE;
+		const char *bg = DARK_BLUE;
 		Rdb *rdb = rdbs[i];
 		int64_t tr = rdb->getNumTotalRecs();
 		// skip if init2() as not called on it b/c the
@@ -1880,7 +1880,7 @@ bool Repair::printRepairStatus ( SafeBuf *sb , int32_t fromIp ) {
 	sb->safePrintf("</table>\n<br>");
 
 	// print a table
-	char *rr[23];
+	const char *rr[23];
 	if ( m_fullRebuild )       rr[0] = "Y";
 	else                       rr[0] = "N";
 
