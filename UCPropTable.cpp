@@ -39,7 +39,7 @@ void *UCPropTable::getValue(uint32_t c){
 }
 */
 
-bool UCPropTable::setValue(u_int32_t c, void* value) {
+bool UCPropTable::setValue(u_int32_t c, const void* value) {
 	u_int32_t prefix = c >> m_tableBits;
 	uint16_t key = c & m_tableMask;
 	if (prefix >= m_numTables) return false; // invalid plane
@@ -64,7 +64,7 @@ bool UCPropTable::setValue(u_int32_t c, void* value) {
 	
 }
 
-size_t UCPropTable::getStoredSize() {
+size_t UCPropTable::getStoredSize() const {
 	// Header
 	u_int32_t size = sizeof(u_int32_t) // record size
 		+ sizeof(u_char) // value size
@@ -83,7 +83,7 @@ size_t UCPropTable::getStoredSize() {
 }
 #define RECORD_END (u_int32_t)0xdeadbeef
 
-size_t UCPropTable::serialize(char *buf, size_t bufSize) {
+size_t UCPropTable::serialize(char *buf, size_t bufSize) const {
 	uint32_t size = getStoredSize();
 	if (bufSize < size) return 0;
 	char *p = buf;
@@ -108,9 +108,9 @@ size_t UCPropTable::serialize(char *buf, size_t bufSize) {
 	return p-buf;
 }
 
-size_t UCPropTable::deserialize(char *buf, size_t bufSize) {
+size_t UCPropTable::deserialize(const char *buf, size_t bufSize) {
 	reset();
-	char *p = buf;
+	const char *p = buf;
 	u_int32_t size = *(u_int32_t*)p; p+=sizeof(u_int32_t);
 	//printf("Expecting %d bytes (buffer size: %d)\n", size, bufSize);
 	if (bufSize < size) return 0;

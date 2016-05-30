@@ -338,7 +338,7 @@ uint32_t calculateChecksum(char *buf, int32_t bufLen);
 inline bool ucIsWordChar(UChar32 c) {
 	if (!(c & 0xffffff80)) return is_alnum_a(c);
 	//if (c < 256) return is_alnum(c);
-	void *p = g_ucProps.getValue(c);
+	const void *p = g_ucProps.getValue(c);
 	if (!p) return false;
 	return *(UCProps*)p & UC_WORDCHAR;
 }

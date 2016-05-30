@@ -201,49 +201,49 @@ enum HangulComposition {
 
 // Inline Functions here
 static inline bool ucIsAlpha(UChar32 c) {
-	void *p = g_ucProps.getValue(c);
+	const void *p = g_ucProps.getValue(c);
 	if (!p) return false;
 	return *(UCProps*)p & UC_ALPHA;
 }
 
 
 static inline bool ucIsDigit(UChar32 c) {
-	void *p = g_ucProps.getValue(c);
+	const void *p = g_ucProps.getValue(c);
 	if (!p) return false;
 	return *(UCProps*)p & UC_DIGIT;
 }
 static inline bool ucIsAlnum(UChar32 c) {
-	void *p = g_ucProps.getValue(c);
+	const void *p = g_ucProps.getValue(c);
 	if (!p) return false;
 	return *(UCProps*)p & UC_WORDCHAR;
 }
 
 static inline bool ucIsUpper(UChar32 c) {
-	void *p = g_ucProps.getValue(c);
+	const void *p = g_ucProps.getValue(c);
 	if (!p) return false;
 	return *(UCProps*)p & UC_UPPER;
 }
 
 static inline bool ucIsLower(UChar32 c) {
-	void *p = g_ucProps.getValue(c);
+	const void *p = g_ucProps.getValue(c);
 	if (!p) return false;
 	return *(UCProps*)p & UC_LOWER;
 }
 
 static inline bool ucIsWhiteSpace(UChar32 c) {
-	void *p = g_ucProps.getValue(c);
+	const void *p = g_ucProps.getValue(c);
 	if (!p) return false;
 	return *(UCProps*)p & UC_WHITESPACE;	
 }
 
 static inline bool is_wspace_uc(UChar32 c) {
-	void *p = g_ucProps.getValue(c);
+	const void *p = g_ucProps.getValue(c);
 	if (!p) return false;
 	return *(UCProps*)p & UC_WHITESPACE;	
 }
 
 static inline bool ucIsIdeograph(UChar32 c) {
-	void *p = g_ucProps.getValue(c);
+	const void *p = g_ucProps.getValue(c);
 	if (!p) return false;
 	return *(UCProps*)p & UC_IDEOGRAPH;
 }
@@ -257,31 +257,31 @@ static inline bool is_punct_uc(UChar32 c) {
 }
 
 static inline bool ucIsIgnorable(UChar32 c) {
-	void *p = g_ucProps.getValue(c);
+	const void *p = g_ucProps.getValue(c);
 	if (!p) return false;
 	return *(UCProps*)p & UC_IGNORABLE;
 }
 static inline bool ucIsExtend(UChar32 c) {
-	void *p = g_ucProps.getValue(c);
+	const void *p = g_ucProps.getValue(c);
 	if (!p) return false;
 	return *(UCProps*)p & UC_EXTEND;
 }
 
 
 static inline UChar32 ucToLower(UChar32 c) {
-	void *p = g_ucLowerMap.getValue(c);
+	const void *p = g_ucLowerMap.getValue(c);
 	if (!p || !*(UChar32*)p) return c;
 	return *(UChar32*)p;
 }
 
 static inline UChar32 ucToUpper(UChar32 c){
-	void *p = g_ucUpperMap.getValue(c);
+	const void *p = g_ucUpperMap.getValue(c);
 	if (!p || !*(UChar32*)p) return c;
 	return *(UChar32*)p;
 }
 
 static inline UCProps ucProperties(UChar32 c) {
-	void *p = g_ucProps.getValue(c);
+	const void *p = g_ucProps.getValue(c);
 	if (!p) return (UCProps)0;
 	return *(UCProps*)p;
 }
@@ -292,7 +292,7 @@ static inline int32_t ucDigitValue(UChar32 c) {
 }
 
 static inline UCScript ucGetScript(UChar32 c) {
-	void *p = g_ucScripts.getValue(c);
+	const void *p = g_ucScripts.getValue(c);
 	if (!p) return ucScriptCommon;
 	return *(UCScript*)p;
 }
