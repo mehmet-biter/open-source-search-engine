@@ -42,14 +42,14 @@ static UChar32 ucToUpper(UChar32 c);
 unsigned char ucCombiningClass(UChar32 c);
 
 
-static bool ucIsWhiteSpace(UChar32 c);
-static bool is_wspace_uc(UChar32 c);
-static bool ucIsIdeograph(UChar32 c);
-static bool ucIsPunct(UChar32 c);
-static bool is_punct_uc(UChar32 c);
-static bool ucIsWordChar(UChar32 c);
-static bool ucIsIgnorable(UChar32 c);
-static bool ucIsExtend(UChar32 c);
+static inline bool ucIsWhiteSpace(UChar32 c);
+static inline bool is_wspace_uc(UChar32 c);
+static inline bool ucIsIdeograph(UChar32 c);
+static inline bool ucIsPunct(UChar32 c);
+static inline bool is_punct_uc(UChar32 c);
+static inline bool ucIsWordChar(UChar32 c);
+static inline bool ucIsIgnorable(UChar32 c);
+static inline bool ucIsExtend(UChar32 c);
 
 static UCScript ucGetScript(UChar32 c);
 
