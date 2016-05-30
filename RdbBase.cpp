@@ -42,11 +42,6 @@ RdbBase::RdbBase ( ) {
 }
 
 void RdbBase::reset ( ) {
-
-	char *db = "";
-	if ( m_rdb  ) db = m_dbname;
-	//log("debug: base resetting db=%s collnum=%" PRId32,db,(int32_t)m_collnum);
-
 	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) {
 		mdelete ( m_files[i] , sizeof(BigFile),"RdbBFile");
 		delete (m_files[i]);
@@ -1824,7 +1819,7 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 	m_numFilesToMerge   = n  ; // numFiles - 1;
 	m_mergeStartFileNum = mergeFileNum + 1; // 1
 
-	char *coll = "";
+	const char *coll = "";
 	if ( cr ) coll = cr->m_coll;
 
 	// log merge parms
