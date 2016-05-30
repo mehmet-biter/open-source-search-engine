@@ -234,7 +234,7 @@ void gotReplyWrapper ( void *state , void *state2 ) {
 	int32_t ip = THIS->gotReply();
 	// debug
 	if ( g_conf.m_logDebugDns ) {
-		char *s ="";
+		const char *s ="";
 		if ( THIS->m_forwardToProxy ) s = "from proxy ";
 		logf(LOG_DEBUG,"dns: msgc: got reply %sof %s for %s. "
 		     "state=0x%" PTRFMT" mcast=0x%" PTRFMT"",
