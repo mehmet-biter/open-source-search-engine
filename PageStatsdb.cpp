@@ -53,7 +53,7 @@ static bool s_graphInUse = false;
 bool sendPageGraph ( TcpSocket *s, HttpRequest *r ) {
 
 	if ( s_graphInUse ) {
-		char *msg = "stats graph calculating for another user. "
+		const char *msg = "stats graph calculating for another user. "
 			"Try again later.";
 		g_httpServer.sendErrorReply(s,500,msg);
 		return true;
