@@ -10,7 +10,7 @@
 #include "Unicode.h"
 #include "matches2.h"
 
-bool isLinkChain ( Xml *xml , Url *linker , Url *linkee , int32_t linkNode ,
+static bool isLinkChain ( Xml *xml, const Url *linker, const Url *linkee, int32_t linkNode,
 		   const char **note ) ;
 
 // . here's some additional things to mark it as a log page, but these
@@ -260,7 +260,7 @@ static Needle s_needles2[] = {
 //   the outlink is a spam link or not
 // . returns true on success, false on error
 bool setLinkSpam ( int32_t       ip                 ,
-		   Url       *linker             ,
+		   const Url       *linker             ,
 		   int32_t       siteNumInlinks     ,
 		   Xml       *xml                ,
 		   Links     *links              ,
@@ -291,15 +291,12 @@ bool setLinkSpam ( int32_t       ip                 ,
 	QUICKPOLL( niceness );
 
 	// guestbook in hostname - domain?
-	char *hd  = linker->getHost();
-	char *hd2 = linker->getDomain();
+	const char *hd  = linker->getHost();
+	const char *hd2 = linker->getDomain();
 	int32_t  hdlen = hd2 - hd;
 	if ( hd && hd2 && hdlen < 30 ) {
-		char c = hd[hdlen];
-		hd[hdlen] = '\0';
 		bool hasIt = false;
-		if ( strstr ( hd , "guestbook" ) ) hasIt = true;
-		hd[hdlen] = c;
+		if ( strnstr ( hd , "guestbook", hdlen ) ) hasIt = true;
 		if ( hasIt ) 
 			return links->setAllSpamBits("guestbook in hostname");
 	}
@@ -313,7 +310,7 @@ bool setLinkSpam ( int32_t       ip                 ,
 	// are not a guestbook
 	//if ( links->hasRelNoFollow() ) plen = 0;
 	if ( plen > 1 ) {
-		char *p    = linker->getPath();
+		const char *p    = linker->getPath();
 		//char  c    = p[plen-1];
 		//p[plen-1] = '\0';
 		//bool val = false;
@@ -367,14 +364,14 @@ bool setLinkSpam ( int32_t       ip                 ,
 
 	// does title contain "web statistics for"?
 	int32_t  tlen ;
-	char *title = xml->getString ( "title" , &tlen );
+	const char *title = xml->getString ( "title" , &tlen );
 	if ( title && tlen > 0 ) {
 		// normalize title into buffer, remove non alnum chars
 		char buf[256];
 		char *d    = buf;
 		char *dend = buf + 250;
-		char *s    = title;
-		char *send = title + tlen;
+		const char *s    = title;
+		const char *send = title + tlen;
 		while ( d < dend && s < send ) {
 			// remove punct
 			if ( ! is_alnum_a(*s) ) { s++; continue; }
@@ -622,7 +619,7 @@ bool setLinkSpam ( int32_t       ip                 ,
 
 
 
-bool isLinkSpam ( Url *linker, 
+bool isLinkSpam ( const Url *linker,
 		  int32_t ip ,
 		  int32_t siteNumInlinks ,
 		  //TitleRec *tr, 
@@ -630,7 +627,7 @@ bool isLinkSpam ( Url *linker,
 		  Links *links ,
 		  int32_t maxDocLen , 
 		  const char **note ,
-		  Url *linkee , 
+		  const Url *linkee ,
 		  // node position of the linkee in the linker's content
 		  int32_t  linkNode ,
 		  int32_t  niceness ) {
@@ -670,15 +667,12 @@ bool isLinkSpam ( Url *linker,
 	}
 
 	// guestbook in hostname - domain?
-	char *hd  = linker->getHost();
-	char *hd2 = linker->getDomain();
+	const char *hd  = linker->getHost();
+	const char *hd2 = linker->getDomain();
 	int32_t  hdlen = hd2 - hd;
 	if ( hd && hd2 && hdlen < 30 ) {
-		char c = hd[hdlen];
-		hd[hdlen] = '\0';
 		bool hasIt = false;
-		if ( strstr ( hd , "guestbook" ) ) hasIt = true;
-		hd[hdlen] = c;
+		if ( strnstr ( hd , "guestbook", hdlen ) ) hasIt = true;
 		if ( hasIt ) { 
 			*note = "guestbook in hostname"; 
 			return true; 
@@ -697,7 +691,7 @@ bool isLinkSpam ( Url *linker,
 	// are not a guestbook
 	//if ( links->hasRelNoFollow() ) plen = 0;
 	if ( plen > 1 ) {
-		char *p    = linker->getPath();
+		const char *p    = linker->getPath();
 		//char  c    = p[plen-1];
 		//p[plen-1] = '\0';
 		//bool val = false;
@@ -941,9 +935,9 @@ bool isLinkSpam ( Url *linker,
 
 	// init these before the loop
 	int32_t  hlen  = linkee->getHostLen();
-	char *host  = linkee->getHost();
-	char *uu    = linkee->getUrl();
-	char *uuend = host + hlen;
+	const char *host  = linkee->getHost();
+	const char *uu    = linkee->getUrl();
+	const char *uuend = host + hlen;
 	int32_t  uulen = uuend - uu;
 	int32_t  x     = linkNode;
  loop:
@@ -984,7 +978,7 @@ bool isLinkSpam ( Url *linker,
 //    outlinks in the chain
 // 4. this might hurt blogrolls, and resource pages, but such links
 //    are kind of low quality anyway.
-bool isLinkChain ( Xml *xml, Url *linker, Url *linkee, int32_t linkNode, const char **note ) {
+static bool isLinkChain ( Xml *xml, const Url *linker, const Url *linkee, int32_t linkNode, const char **note ) {
 
 	//log(LOG_DEBUG,"build: doing %s",linker->m_url);
 
@@ -993,7 +987,7 @@ bool isLinkChain ( Xml *xml, Url *linker, Url *linkee, int32_t linkNode, const c
 	     strncmp ( linkee->getDomain() , linker->getDomain(),linkee->getDomainLen())==0)
 		return false;
 
-	char *linkPos = NULL;
+	const char *linkPos = NULL;
 	if ( linkNode >= 0 ) linkPos = xml->getNode ( linkNode );
 
 	// did we have text to the left/right of this link and after/before
