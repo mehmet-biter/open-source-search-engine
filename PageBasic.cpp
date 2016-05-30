@@ -797,7 +797,7 @@ bool sendPageBasicStatus ( TcpSocket *socket , HttpRequest *hr ) {
 	if ( format == FORMAT_JSON || format == FORMAT_XML) {
 		// this is in PageCrawlBot.cpp
 		printCrawlDetails2 ( &sb , cr , format );
-		char *ct = "text/xml";
+		const char *ct = "text/xml";
 		if ( format == FORMAT_JSON ) ct = "application/json";
 		return g_httpServer.sendDynamicPage (socket, 
 						     sb.getBufStart(), 
@@ -852,24 +852,11 @@ bool sendPageBasicStatus ( TcpSocket *socket , HttpRequest *hr ) {
 	// show stats
 	//
 	if ( format == FORMAT_HTML ) {
-
-		char *seedStr = cr->m_diffbotSeeds.getBufStart();
-		if ( ! seedStr ) seedStr = "";
-
 		SafeBuf tmp;
 		int32_t crawlStatus = -1;
 		getSpiderStatusMsg ( cr , &tmp , &crawlStatus );
-		CrawlInfo *ci = &cr->m_localCrawlInfo;
-		int32_t sentAlert = (int32_t)ci->m_sentCrawlDoneAlert;
-		if ( sentAlert ) sentAlert = 1;
 
-		//sb.safePrintf(
-		//	      "<form method=get action=/crawlbot>"
-		//	      "%s"
-		//	      , sb.getBufStart() // hidden input token/name/..
-		//	      );
-
-		char *hurts = "No";
+		const char *hurts = "No";
 		if ( cr->m_globalCrawlInfo.m_hasUrlsReadyToSpider )
 			hurts = "Yes";
 
