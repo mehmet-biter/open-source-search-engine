@@ -1639,7 +1639,7 @@ bool Msg40::gotSummary ( ) {
 	for ( int32_t i = 0 ; debug && i < m_msg3a.m_numDocIds ; i++ ) {
 		int32_t cn = (int32_t)m_msg3a.m_clusterLevels[i];
 		if ( cn < 0 || cn >= CR_END ) { char *xx=NULL;*xx=0; }
-		char *s = g_crStrings[cn];
+		const char *s = g_crStrings[cn];
 		if ( ! s ) { char *xx=NULL;*xx=0; }
 		logf(LOG_DEBUG, "query: msg40 final hit #%" PRId32") d=%" PRIu64" "
 		     "cl=%" PRId32" (%s)",
@@ -1969,7 +1969,7 @@ int32_t Msg40::deserialize ( char *buf , int32_t bufSize ) {
 }
 
 
-static char      *s_subDoms[] = {
+static const char      *s_subDoms[] = {
         // Common Language sub-domains
         "en" ,
         "fr" ,
@@ -2004,7 +2004,7 @@ static char      *s_subDoms[] = {
         "www" };
 static HashTable  s_subDomTable;
 static bool       s_subDomInitialized = false;
-static bool initSubDomTable(HashTable *table, char *words[], int32_t size ){
+static bool initSubDomTable(HashTable *table, const char *words[], int32_t size ){
 	// set up the hash table
 	if ( ! table->set ( size * 2 ) ) 
 		return log(LOG_INIT,"build: Could not init sub-domain "
@@ -2012,7 +2012,7 @@ static bool initSubDomTable(HashTable *table, char *words[], int32_t size ){
 	// now add in all the stop words
 	int32_t n = (int32_t)size/ sizeof(char *); 
 	for ( int32_t i = 0 ; i < n ; i++ ) {
-		char      *sw    = words[i];
+		const char      *sw    = words[i];
 		int32_t       swlen = gbstrlen ( sw );
                 int32_t h = hash32Lower_a(sw, swlen);
                 int32_t slot = table->getSlot(h);
@@ -2095,7 +2095,7 @@ bool printHttpMime ( State0 *st ) {
 	sb->nullTerm();
 
 	// defaults to FORMAT_HTML
-	char *ct = "text/html";
+	const char *ct = "text/html";
 	if ( si->m_format == FORMAT_JSON ) {
 		ct = "application/json";
 	} else if ( si->m_format == FORMAT_XML ) {

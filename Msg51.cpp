@@ -12,7 +12,7 @@
 
 // . these must be 1-1 with the enums above
 // . used for titling the counts of g_stats.m_filterStats[]
-char *g_crStrings[] = {
+const char *g_crStrings[] = {
 	"cluster rec not found"  ,  // 0
 	"uninitialized"          ,
 	"got clusterdb record"   ,

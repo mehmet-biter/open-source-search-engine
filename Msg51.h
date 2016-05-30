@@ -71,7 +71,7 @@ enum {
 };
 
 // define in Msg51.cpp
-extern char *g_crStrings[];
+extern const char *g_crStrings[];
 
 bool setClusterLevels ( key_t     *clusterRecs          ,
 			int64_t *docIds               ,
