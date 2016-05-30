@@ -136,7 +136,7 @@ bool sendBackDump ( TcpSocket *sock, HttpRequest *hr ) {
 
 	char *str = strstr ( path , "/download/" );
 	if ( ! str ) {
-		char *msg = "bad download request";
+		const char *msg = "bad download request";
 		log("crawlbot: %s",msg);
 		g_httpServer.sendErrorReply(sock,500,msg);
 		return true;
@@ -189,8 +189,7 @@ bool sendBackDump ( TcpSocket *sock, HttpRequest *hr ) {
 
 	// sanity, must be one of 3 download calls
 	if ( rdbId == RDB_NONE ) {
-		char *msg ;
-		msg = "usage: downloadurls, downloadpages, downloaddata";
+		const char *msg = "usage: downloadurls, downloadpages, downloaddata";
 		log("crawlbot: %s",msg);
 		g_httpServer.sendErrorReply(sock,500,msg);
 		return true;
@@ -199,7 +198,7 @@ bool sendBackDump ( TcpSocket *sock, HttpRequest *hr ) {
 
 	char *coll = str + 10;
 	if ( coll >= pathEnd ) {
-		char *msg = "bad download request2";
+		const char *msg = "bad download request2";
 		log("crawlbot: %s",msg);
 		g_httpServer.sendErrorReply(sock,500,msg);
 		return true;
@@ -211,7 +210,7 @@ bool sendBackDump ( TcpSocket *sock, HttpRequest *hr ) {
 	//CollectionRec *cr = getCollRecFromHttpRequest ( hr );
 	CollectionRec *cr = g_collectiondb.getRec ( coll , collEnd - coll );
 	if ( ! cr ) {
-		char *msg = "token or id (crawlid) invalid";
+		const char *msg = "token or id (crawlid) invalid";
 		log("crawlbot: invalid token or crawlid to dump");
 		g_httpServer.sendErrorReply(sock,500,msg);
 		return true;
@@ -600,7 +599,7 @@ bool StateCD::sendList ( ) {
 	SafeBuf sb;
 	//sb.setLabel("dbotdmp");
 
-	char *ct = "text/csv";
+	const char *ct = "text/csv";
 	if ( m_fmt == FORMAT_JSON )
 		ct = "application/json";
 	if ( m_fmt == FORMAT_XML )
@@ -884,7 +883,7 @@ void StateCD::printSpiderdbList ( RdbList *list,SafeBuf *sb,char **lastKeyPtr){
 					false, // isoutlink?
 					NULL,
 					-1); // langIdArg
-		char *expression = NULL;
+		const char *expression = NULL;
 		int32_t  priority = -4;
 		// sanity check
 		if ( ufn >= 0 ) { 
@@ -908,7 +907,7 @@ void StateCD::printSpiderdbList ( RdbList *list,SafeBuf *sb,char **lastKeyPtr){
 			priority = -5;
 		}
 
-		char *as = "discovered";
+		const char *as = "discovered";
 		if ( sreq && 
 		     ( sreq->m_isInjecting ||
 		       sreq->m_isAddUrl ) ) {
@@ -1079,7 +1078,7 @@ bool sendReply2 (TcpSocket *socket , int32_t fmt , char *msg ) {
 	// log it
 	log("crawlbot: %s",msg);
 
-	char *ct = "text/html";
+	const char *ct = "text/html";
 
 	// send this back to browser
 	SafeBuf sb;
@@ -1110,7 +1109,7 @@ bool sendErrorReply2 ( TcpSocket *socket , int32_t fmt , const char *msg ) {
 	// log it
 	log("crawlbot: sending back 500 http status '%s'",msg);
 
-	char *ct = "text/html";
+	const char *ct = "text/html";
 
 	// send this back to browser
 	SafeBuf sb;
@@ -1162,8 +1161,8 @@ void addedUrlsToSpiderdbWrapper ( void *state ) {
 
 class HelpItem {
 public:
-	char *m_parm;
-	char *m_desc;
+	const char *m_parm;
+	const char *m_desc;
 };
 
 static class HelpItem s_his[] = {
@@ -1356,7 +1355,7 @@ bool sendPageCrawlbot ( TcpSocket *socket , HttpRequest *hr ) {
 
 
 	if ( ! token && fmt == FORMAT_JSON ) { // (cast==0|| fmt == FORMAT_JSON ) ) {
-		char *msg = "invalid token";
+		const char *msg = "invalid token";
 		return sendErrorReply2 (socket,fmt,msg);
 	}
 
@@ -1390,7 +1389,7 @@ bool sendPageCrawlbot ( TcpSocket *socket , HttpRequest *hr ) {
 
 	if ( gbstrlen(token) > 32 ) { 
 		//log("crawlbot: token is over 32 chars");
-		char *msg = "crawlbot: token is over 32 chars";
+		const char *msg = "crawlbot: token is over 32 chars";
 		return sendErrorReply2 (socket,fmt,msg);
 	}
 
@@ -1407,7 +1406,7 @@ bool sendPageCrawlbot ( TcpSocket *socket , HttpRequest *hr ) {
 
 	// default name to next available collection crawl name in the
 	// case of a delete operation...
-	char *msg = NULL;
+	const char *msg = NULL;
 	if ( hr->hasField("delete") ) msg = "deleted";
 	// need to re-add urls for a restart
 	//if ( hr->hasField("restart") ) msg = "restarted";
@@ -1459,8 +1458,8 @@ bool sendPageCrawlbot ( TcpSocket *socket , HttpRequest *hr ) {
 
 	if ( ! name ) {
 		// if the token is valid
-		char *ct = "application/json";
-		char *msg = "{}\n";
+		const char *ct = "application/json";
+		const char *msg = "{}\n";
 		return g_httpServer.sendDynamicPage ( socket, 
 						      msg,
 						      gbstrlen(msg) ,
@@ -1473,7 +1472,7 @@ bool sendPageCrawlbot ( TcpSocket *socket , HttpRequest *hr ) {
 
 	if ( gbstrlen(name) > 30 ) { 
 		//log("crawlbot: name is over 30 chars");
-		char *msg = "crawlbot: name is over 30 chars";
+		const char *msg = "crawlbot: name is over 30 chars";
 		return sendErrorReply2 (socket,fmt,msg);
 	}
 
@@ -1492,7 +1491,7 @@ bool sendPageCrawlbot ( TcpSocket *socket , HttpRequest *hr ) {
 	if ( ! cr ) {
 		log("crawlbot: missing coll rec for coll %s",collName);
 		//char *msg = "invalid or missing collection rec";
-		char *msg = "Could not create job because missing seeds or "
+		const char *msg = "Could not create job because missing seeds or "
 			"urls.";
 		return sendErrorReply2 (socket,fmt,msg);
 	}
@@ -1699,7 +1698,7 @@ bool printCrawlDetailsInJson ( SafeBuf *sb , CollectionRec *cx, int version ) {
 	int32_t sentAlert = (int32_t)ci->m_sentCrawlDoneAlert;
 	if ( sentAlert ) sentAlert = 1;
 
-	char *crawlTypeStr = "crawl";
+	const char *crawlTypeStr = "crawl";
 	//char *nomen = "crawl";
 	if ( cx->m_isCustomCrawl == 2 ) {
 		crawlTypeStr = "bulk";
@@ -1841,7 +1840,7 @@ bool printCrawlDetailsInJson ( SafeBuf *sb , CollectionRec *cx, int version ) {
 	char *token = cx->m_diffbotToken.getBufStart();
 	char *name = cx->m_diffbotCrawlName.getBufStart();
 
-	char *mt = "crawl";
+	const char *mt = "crawl";
 	if ( cx->m_isCustomCrawl == 2 ) mt = "bulk";
 
 	sb->safePrintf("\"downloadJson\":"
@@ -1990,7 +1989,7 @@ bool printCrawlBotPage2 ( TcpSocket *socket ,
 	// was coll deleted while adding urls to spiderdb?
 	if ( ! cr ) {
 		g_errno = EBADREQUEST;
-		char *msg = "invalid crawl. crawl was deleted.";
+		const char *msg = "invalid crawl. crawl was deleted.";
 		return sendErrorReply2(socket,fmt,msg);
 	}
 
@@ -2083,7 +2082,7 @@ bool printCrawlBotPage2 ( TcpSocket *socket ,
 		// highlight the tab if it is what we selected
 		bool highlight = false;
 		if ( cx == cr ) highlight = true;
-		char *style = "";
+		const char *style = "";
 		if  ( highlight ) {
 			style = "style=text-decoration:none; ";
 			sb.safePrintf ( "<b><font color=red>");
@@ -2249,7 +2248,7 @@ bool printCrawlBotPage2 ( TcpSocket *socket ,
 				//,LIGHT_BLUE
 				//,DARK_BLUE
 				,(int32_t)g_spiderLoop.m_numSpidersOut);
-		char *str = "<font color=green>Resume Crawl</font>";
+		const char *str = "<font color=green>Resume Crawl</font>";
 		int32_t pval = 0;
 		if ( cr->m_spideringEnabled )  {
 			str = "<font color=red>Pause Crawl</font>";
@@ -2414,7 +2413,7 @@ bool printCrawlBotPage2 ( TcpSocket *socket ,
 	//
 	if ( fmt == FORMAT_HTML ) {
 
-		char *seedStr = cr->m_diffbotSeeds.getBufStart();
+		const char *seedStr = cr->m_diffbotSeeds.getBufStart();
 		if ( ! seedStr ) seedStr = "";
 
 		SafeBuf tmp;
@@ -2798,56 +2797,56 @@ bool printCrawlBotPage2 ( TcpSocket *socket ,
 			      "<table cellpadding=5 border=0>"
 			      );
 
-		char *urtYes = " checked";
-		char *urtNo  = "";
+		const char *urtYes = " checked";
+		const char *urtNo  = "";
 		if ( ! cr->m_useRobotsTxt ) {
 			urtYes = "";
 			urtNo  = " checked";
 		}
 
-		char *isNewYes = "";
-		char *isNewNo  = " checked";
+		const char *isNewYes = "";
+		const char *isNewNo  = " checked";
 		if ( cr->m_diffbotOnlyProcessIfNewUrl ) {
 			isNewYes = " checked";
 			isNewNo  = "";
 		}
 
-		char *api = cr->m_diffbotApiUrl.getBufStart();
+		const char *api = cr->m_diffbotApiUrl.getBufStart();
 		if ( ! api ) api = "";
 		SafeBuf apiUrl;
 		apiUrl.htmlEncode ( api , gbstrlen(api), true , 0 );
 		apiUrl.nullTerm();
 
-		char *px1 = cr->m_diffbotUrlCrawlPattern.getBufStart();
+		const char *px1 = cr->m_diffbotUrlCrawlPattern.getBufStart();
 		if ( ! px1 ) px1 = "";
 		SafeBuf ppp1;
 		ppp1.htmlEncode ( px1 , gbstrlen(px1) , true , 0 );
 		ppp1.nullTerm();
 
-		char *px2 = cr->m_diffbotUrlProcessPattern.getBufStart();
+		const char *px2 = cr->m_diffbotUrlProcessPattern.getBufStart();
 		if ( ! px2 ) px2 = "";
 		SafeBuf ppp2;
 		ppp2.htmlEncode ( px2 , gbstrlen(px2) , true , 0 );
 		ppp2.nullTerm();
 
-		char *px3 = cr->m_diffbotPageProcessPattern.getBufStart();
+		const char *px3 = cr->m_diffbotPageProcessPattern.getBufStart();
 		if ( ! px3 ) px3 = "";
 		SafeBuf ppp3;
 		ppp3.htmlEncode ( px3 , gbstrlen(px3) , true , 0 );
 		ppp3.nullTerm();
 
-		char *rx1 = cr->m_diffbotUrlCrawlRegEx.getBufStart();
+		const char *rx1 = cr->m_diffbotUrlCrawlRegEx.getBufStart();
 		if ( ! rx1 ) rx1 = "";
 		SafeBuf rrr1;
 		rrr1.htmlEncode ( rx1 , gbstrlen(rx1), true , 0 );
 
-		char *rx2 = cr->m_diffbotUrlProcessRegEx.getBufStart();
+		const char *rx2 = cr->m_diffbotUrlProcessRegEx.getBufStart();
 		if ( ! rx2 ) rx2 = "";
 		SafeBuf rrr2;
 		rrr2.htmlEncode ( rx2 , gbstrlen(rx2), true , 0 );
 
-		char *notifEmail = cr->m_notifyEmail.getBufStart();
-		char *notifUrl   = cr->m_notifyUrl.getBufStart();
+		const char *notifEmail = cr->m_notifyEmail.getBufStart();
+		const char *notifUrl   = cr->m_notifyUrl.getBufStart();
 		if ( ! notifEmail ) notifEmail = "";
 		if ( ! notifUrl   ) notifUrl = "";
 
@@ -3134,7 +3133,7 @@ bool printCrawlBotPage2 ( TcpSocket *socket ,
 	if ( fmt == FORMAT_JSON )
 		sb.safePrintf("}\n");
 
-	char *ct = "text/html";
+	const char *ct = "text/html";
 	if ( fmt == FORMAT_JSON ) ct = "application/json";
 	if ( fmt == FORMAT_XML ) ct = "text/xml";
 
