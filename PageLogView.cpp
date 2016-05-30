@@ -24,7 +24,7 @@ struct StateLogView {
 	int32_t       m_numSlots;
 };
 
-static char *s_magicStr = "4j3.8x*";
+static const char *s_magicStr = "4j3.8x*";
 
 bool sendPageLogView    ( TcpSocket *s , HttpRequest *r ) {
 
@@ -134,7 +134,7 @@ bool sendPageLogView    ( TcpSocket *s , HttpRequest *r ) {
 
 	p->safePrintf("<tr bgcolor=#%s><td>Filter Types:</td><td>",
 		      LIGHT_BLUE);
-	char *checked;
+	const char *checked;
 	st->m_numFilts = 0;
 	for(int32_t i = 7; i >= 0; i--) {
 		char tmpbuf[128];
