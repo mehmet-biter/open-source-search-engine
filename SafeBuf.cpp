@@ -444,28 +444,28 @@ retry2:
 }
 
 // a special replace
-bool SafeBuf::insert ( SafeBuf *c , int32_t insertPos ) {
+bool SafeBuf::insert ( const SafeBuf *c , int32_t insertPos ) {
 	return safeReplace ( c->getBufStart() ,
 			     c->length()      ,
 			     insertPos        ,
 			     0                );
 }
 
-bool SafeBuf::insert ( char *s , int32_t insertPos ) {
+bool SafeBuf::insert ( const char *s, int32_t insertPos ) {
 	return safeReplace ( s         ,
 			     gbstrlen(s) ,
 			     insertPos ,
 			     0         );
 }
 
-bool SafeBuf::insert2 ( char *s , int32_t slen , int32_t insertPos ) {
+bool SafeBuf::insert2 ( const char *s, int32_t slen, int32_t insertPos ) {
 	return safeReplace ( s         ,
 			     slen      ,
 			     insertPos ,
 			     0         );
 }
 
-bool SafeBuf::replace ( char *src , char *dst ) {
+bool SafeBuf::replace ( const char *src, const char *dst ) {
 	int32_t len1 = gbstrlen(src);
 	int32_t len2 = gbstrlen(dst);
 	if ( len1 != len2 ) {
@@ -498,7 +498,7 @@ bool SafeBuf::removeChunk2 ( int32_t pos , int32_t len ) {
 
 
 // replace string at "pos/replaceLen" with s/len
-bool SafeBuf::safeReplace ( char *s, int32_t len, int32_t pos, int32_t replaceLen ) {
+bool SafeBuf::safeReplace ( const char *s, int32_t len, int32_t pos, int32_t replaceLen ) {
 	// make sure we have room
 	int32_t diff = len - replaceLen;
 	// add in one for the silent terminating \0
@@ -523,7 +523,7 @@ bool SafeBuf::safeReplace ( char *s, int32_t len, int32_t pos, int32_t replaceLe
 	return true;
 }
 
-bool SafeBuf::safeReplace3 ( char *s, char *t , int32_t niceness ) {
+bool SafeBuf::safeReplace3 ( const char *s, const char *t, int32_t niceness ) {
 	if ( ! safeReplace2 ( s , gbstrlen(s) ,
 			      t , gbstrlen(t) ,
 			      niceness ) )
@@ -534,8 +534,8 @@ bool SafeBuf::safeReplace3 ( char *s, char *t , int32_t niceness ) {
 }
 
 // return false and set g_errno on error
-bool SafeBuf::safeReplace2 ( char *s, int32_t slen, 
-			     char *t , int32_t tlen ,
+bool SafeBuf::safeReplace2 (const char *s, int32_t slen,
+			    const char *t, int32_t tlen,
 			     int32_t niceness ,
 			     int32_t startOff ) {
 
@@ -1322,11 +1322,11 @@ bool SafeBuf::safeUtf8ToJSON ( const char *utf8 ) {
 }
 
 
-bool SafeBuf::brify2 ( char *s , int32_t cols , char *sep , bool isHtml ) {
+bool SafeBuf::brify2 ( char *s, int32_t cols, const char *sep, bool isHtml ) {
 	return brify ( s, gbstrlen(s), 0 , cols , sep , isHtml ); 
 }
 
-bool SafeBuf::brify( char *s, int32_t slen, int32_t niceness, int32_t maxCharsPerLine, char *sep,
+bool SafeBuf::brify( char *s, int32_t slen, int32_t niceness, int32_t maxCharsPerLine, const char *sep,
 					 bool isHtml ) {
 	// count the xml tags so we know how much buf to allocated
 	char *p = s;

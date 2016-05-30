@@ -157,27 +157,27 @@ public:
 	int32_t  catFile(const char *filename) ;
 
 	void  detachBuf();
-	bool  insert ( class SafeBuf *c , int32_t insertPos ) ;
-	bool  insert ( char *s , int32_t insertPos ) ;
-	bool  insert2 ( char *s , int32_t slen, int32_t insertPos ) ;
-	bool  replace ( char *src , char *dst ) ; // must be same lengths!
+	bool  insert ( const SafeBuf *c , int32_t insertPos ) ;
+	bool  insert ( const char *s , int32_t insertPos ) ;
+	bool  insert2 ( const char *s , int32_t slen, int32_t insertPos ) ;
+	bool  replace ( const char *src, const char *dst ) ; // must be same lengths!
 	bool removeChunk1 ( char *p , int32_t len ) ;
 	bool removeChunk2 ( int32_t pos , int32_t len ) ;
-	bool  safeReplace(char *s, int32_t len, int32_t pos, int32_t replaceLen);
-	bool  safeReplace2 ( char *s, int32_t slen, 
-			     char *t , int32_t tlen ,
+	bool  safeReplace(const char *s, int32_t len, int32_t pos, int32_t replaceLen);
+	bool  safeReplace2 ( const char *s, int32_t slen,
+			     const char *t, int32_t tlen,
 			     int32_t niceness ,
 			     int32_t startOff = 0 );
-	bool  safeReplace3 ( char *s, char *t , int32_t niceness = 0 ) ;
+	bool  safeReplace3 ( const char *s, const char *t, int32_t niceness = 0 ) ;
 	void replaceChar ( char src , char dst );
 
 	void zeroOut() { memset ( m_buf , 0 , m_capacity ); }
 
 	// insert <br>'s to make 's' no more than 'cols' chars per line
-	bool brify2 ( char *s , int32_t cols , char *sep = "<br>" ,
+	bool brify2 ( char *s, int32_t cols, const char *sep = "<br>" ,
 		      bool isHtml = true ) ;
 
-	bool brify( char *s, int32_t slen, int32_t niceness, int32_t cols, char *sep = "<br>",
+	bool brify( char *s, int32_t slen, int32_t niceness, int32_t cols, const char *sep = "<br>",
 				bool isHtml = true );
 
 	bool hasDigits();

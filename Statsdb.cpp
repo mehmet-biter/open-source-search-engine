@@ -290,7 +290,7 @@ void Statsdb::addDocsIndexed ( ) {
 // . oldVal, newVal are reflect a state change, like maybe changing the
 //   value of a parm. typically for such things t1 equals t2
 bool Statsdb::addStat ( int32_t        niceness ,
-			char      *label    ,
+			const char    *label    ,
 			int64_t   t1Arg    ,
 			int64_t   t2Arg    ,
 			float     value    , // y-value really, "numBytes"

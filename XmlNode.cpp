@@ -337,7 +337,7 @@ int32_t XmlNode::set( char *node, bool pureXml ) {
 }
 
 // . return the length of a node starting at "node"
-int32_t getTagLen ( char *node ) {
+int32_t getTagLen ( const char *node ) {
 	// skip over first <
 	int32_t i ;
 
@@ -886,7 +886,7 @@ nodeid_t getTagId ( const char *s , NodeType **retp ) {
 
 		// set the hash table
 		for ( int32_t i = 0 ; i < nn ; i++ ) {
-			char *name = g_nodes[i].m_nodeName;
+			const char *name = g_nodes[i].m_nodeName;
 			int32_t  nlen = gbstrlen(name);
 			int64_t h = hash64Upper_a ( name,nlen,0LL );
 			NodeType *nt = &g_nodes[i];

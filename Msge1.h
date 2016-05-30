@@ -95,10 +95,10 @@ public:
 };
 
 // utility functions
-extern bool getTestIp ( char *url , int32_t *retIp , bool *found , int32_t niceness,
-			char *testDir );
-extern bool addTestIp ( char *host , int32_t hostLen , int32_t ip ) ;
-extern bool saveTestBuf ( char *testDir ) ;
+extern bool getTestIp ( const char *url, int32_t *retIp, bool *found, int32_t niceness,
+			const char *testDir );
+extern bool addTestIp ( const char *host, int32_t hostLen, int32_t ip );
+extern bool saveTestBuf ( const char *testDir ) ;
 
 void resetTestIpTable ( ) ;
 

@@ -272,7 +272,7 @@ bool expandHtml (  SafeBuf& sb,
 			// insert the location
 			int32_t sortBy = r->getLong("sortby",1);
 			// print the radio buttons
-			char *cs[5];
+			const char *cs[5];
 			cs[0]="";
 			cs[1]="";
 			cs[2]="";
@@ -420,10 +420,9 @@ bool printLeftColumnRocketAndTabs ( SafeBuf *sb ,
 				    CollectionRec *cr ,
 				    const char *tabName ) {
 
-	class MenuItem {
-	public:
-		char *m_text;
-		char *m_url;
+	struct MenuItem {
+		const char *m_text;
+		const char *m_url;
 	};
 
 	static const MenuItem mi[] = {
@@ -435,6 +434,7 @@ bool printLeftColumnRocketAndTabs ( SafeBuf *sb ,
 		{"FAQ","/faq.html"},
 		{"API","/api.html"}
 	};
+	static const int32_t n = sizeof(mi) / sizeof(MenuItem);
 
 	const char *coll = "";
 	if ( cr ) coll = cr->m_coll;
@@ -480,7 +480,6 @@ bool printLeftColumnRocketAndTabs ( SafeBuf *sb ,
 			 "<br>"
 		      );
 
-	int32_t n = sizeof(mi) / sizeof(MenuItem);
 
 
 	for ( int32_t i = 0 ; i < n ; i++ ) {

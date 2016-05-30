@@ -794,7 +794,7 @@ char *Xml::getMetaContentPointer( const char *field, int32_t fieldLen, const cha
 //         generation purposes in Summary class
 // . "name" is usually "name" or "http-equiv"
 // . if "convertHtmlEntities" is true we turn < into &lt; and > in &gt;
-int32_t Xml::getMetaContent( char *buf, int32_t bufLen, char *field, int32_t fieldLen, char *name,
+int32_t Xml::getMetaContent( char *buf, int32_t bufLen, const char *field, int32_t fieldLen, const char *name,
 							 int32_t startNode, int32_t *matchedNode ) {
 	// return 0 length if no buffer space
 	if ( bufLen <= 0 ) return 0;
@@ -1067,7 +1067,7 @@ int32_t Xml::isRSSFeed ( ) {
 	return 0;
 }
 
-char *Xml::getRSSTitle ( int32_t *titleLen , bool *isHtmlEncoded ) const {
+char *Xml::getRSSTitle ( int32_t *titleLen , bool *isHtmlEncoded ) {
 	// assume it is html encoded (i.e. <'s are encoded as &lt;'s)
 	*isHtmlEncoded = true;
 	// . extract the RSS/Atom title
@@ -1086,6 +1086,10 @@ char *Xml::getRSSTitle ( int32_t *titleLen , bool *isHtmlEncoded ) const {
 	// return
 	*titleLen  = tLen;
 	return title;
+}
+
+const char *Xml::getRSSTitle ( int32_t *titleLen , bool *isHtmlEncoded ) const {
+	return const_cast<Xml*>(this)->getRSSTitle(titleLen,isHtmlEncoded);
 }
 
 char *Xml::getRSSDescription ( int32_t *descLen , bool *isHtmlEncoded ) {

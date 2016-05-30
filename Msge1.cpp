@@ -2,12 +2,6 @@
 
 #include "Msge1.h"
 
-// utility functions
-bool getTestIp ( char *url , int32_t *retIp , bool *found , int32_t niceness ,
-		 char *testDir ) ;
-bool addTestIp ( char *host , int32_t hostLen , int32_t ip ) ;
-bool saveTestBuf ( char *testDir ) ;
-
 Msge1::Msge1() {
 	m_buf = NULL;
 	m_numReplies = 0;
@@ -469,8 +463,8 @@ static HashTableX s_ht;
 // . we try to get the ip by accessing the "./test/ips.txt" file
 // . we also ad ips we lookup to that file in the collection is "qatest123"
 // . returns false and sets g_errno on error, true on success
-bool getTestIp ( char *url , int32_t *retIp , bool *found , int32_t niceness ,
-		 char *testDir ) {
+bool getTestIp ( const char *url, int32_t *retIp, bool *found, int32_t niceness,
+		 const char *testDir ) {
 
 	// set the url from the url string, "us"
 	Url u; u.set ( url );
@@ -636,7 +630,7 @@ void resetTestIpTable ( ) {
 }
 
 // returns false if unable to add, returns true if added
-bool addTestIp ( char *host , int32_t hostLen , int32_t ip ) {
+bool addTestIp ( const char *host, int32_t hostLen, int32_t ip ) {
 	// must have first tried to get it
 	if ( s_needsReload ) { char *xx=NULL;*xx=0; }
 	// must have allocated this
@@ -672,7 +666,7 @@ void makeQADir();
 
 // . save it back to disk
 // . we should call this from Test.cpp when the run is completed!!
-bool saveTestBuf ( char *testDir ) {
+bool saveTestBuf ( const char *testDir ) {
 	// ensure ./qa/ subdir exsts. in qa.cpp
 	makeQADir();
 	// filename

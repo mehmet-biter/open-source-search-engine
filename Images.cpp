@@ -1218,7 +1218,7 @@ bool ThumbnailInfo::printThumbnailInHtml ( SafeBuf *sb ,
 					   int32_t maxHeight,
 					   bool printLink ,
 					   int32_t *retNewdx ,
-					   char *style ,
+					   const char *style ,
 					   char format )  {
 	if ( ! style ) style = "";
 	// account for scrollbar on the right

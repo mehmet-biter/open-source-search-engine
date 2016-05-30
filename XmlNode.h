@@ -11,7 +11,7 @@ typedef int16_t nodeid_t;
 int32_t getNumXmlNodes ( ) ;
 bool isBreakingTagId ( nodeid_t tagId ) ;
 bool hasBackTag ( nodeid_t tagId ) ;
-int32_t getTagLen ( char *node ) ;
+int32_t getTagLen ( const char *node );
 
 // s points to tag name - first char
 nodeid_t getTagId ( const char *s , class NodeType **retp = NULL );
@@ -277,7 +277,7 @@ public:
 };
 
 // . does "s" start a tag? (regular tag , back tag or comment tag)
-inline bool isTagStart ( char *s ) {
+inline bool isTagStart ( const char *s ) {
 	// it must start with < to be a tag
 	if ( s[0] != '<' ) {
 		return false;
@@ -362,7 +362,7 @@ enum NodeTagType {
 //   are not visible/indexable
 class NodeType {
 public:
-	char *m_nodeName;
+	const char *m_nodeName;
 	bool m_hasBackTag;
 	char m_isBreaking;
 	char m_isVisible;
@@ -374,7 +374,7 @@ public:
 
 extern class NodeType g_nodes[];
 
-inline char *getTagName( nodeid_t tagId ) {
+static inline const char *getTagName( nodeid_t tagId ) {
 	return g_nodes[tagId].m_nodeName;
 }
 

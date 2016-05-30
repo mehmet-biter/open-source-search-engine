@@ -590,7 +590,7 @@ CollectionRec *XmlDoc::getCollRec ( ) {
 // returns false and sets g_errno on error
 bool XmlDoc::set4 ( SpiderRequest *sreq      ,
 		    key_t         *doledbKey ,
-		    char          *coll      ,
+		    const char     *coll      ,
 		    SafeBuf       *pbuf      ,
 		    int32_t        niceness  ,
 		    char          *utf8ContentArg ,
