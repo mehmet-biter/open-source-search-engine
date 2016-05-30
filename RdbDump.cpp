@@ -135,7 +135,7 @@ bool RdbDump::set ( //char     *coll          ,
 	if ( ! m_tree && !m_buckets ) return true;
 	// how many recs in tree?
 	int32_t nr;
-	char *structureName;
+	const char *structureName;
 	if(m_tree) {
 		nr = m_tree->getNumUsedNodes();
 		structureName = "tree";
@@ -397,10 +397,10 @@ bool RdbDump::dumpTree ( bool recall ) {
 		// . ensures keys are ordered from lowest to highest as well
 		//#ifdef GBSANITYCHECK
 		if ( g_conf.m_verifyWrites || g_conf.m_verifyDumpedLists ) {
-			char *s = "none";
+			const char *s = "none";
 			if ( m_rdb ) s = getDbnameFromId(m_rdb->m_rdbId);
-			char *ks1 = "";
-			char *ks2 = "";
+			const char *ks1 = "";
+			const char *ks2 = "";
 			char tmp1[32];
 			char tmp2[32];
 			if ( m_firstKeyInQueue ) {
