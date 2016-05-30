@@ -1916,7 +1916,7 @@ bool sendReply2 ( void *state ) {
 
 	// sometimes we add a huge # of urls, so don't display them because
 	// it like freezes the silly browser
-	char *uu = st->m_urls;
+	const char *uu = st->m_urls;
 	if ( st->m_urlsLen > 100000 ) uu = "";
 
 	sb.safePrintf ( "<tr class=poo><td>"
@@ -2120,7 +2120,7 @@ bool sendReply2 ( void *state ) {
 			const char *tagName = td->m_name;
 
 			// select the item in the dropdown
-			char *selected = "";
+			const char *selected = "";
 			// was it selected?
 			if ( ctag && td->m_type == ctag->m_type ) 
 				selected = " selected";
@@ -2177,7 +2177,7 @@ bool sendReply2 ( void *state ) {
 		char *username = ctag->getUser();
 		int32_t timestamp = ctag->m_timestamp;
 		int32_t  ip  = 0;
-		char *ips = "&nbsp;";
+		const char *ips = "&nbsp;";
 		if ( ctag->m_ip ) {
 			ip=ctag->m_ip;
 			ips=iptoa(ctag->m_ip);
