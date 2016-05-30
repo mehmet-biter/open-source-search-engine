@@ -222,7 +222,7 @@ class RdbBase {
 	char      m_dbname [32];
 	int32_t      m_dbnameLen;
 
-	char      *m_coll;
+	const char      *m_coll;
 	collnum_t  m_collnum;
 
 	bool m_didRepair;

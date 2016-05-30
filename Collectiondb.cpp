@@ -1025,7 +1025,7 @@ bool Collectiondb::resetColl2( collnum_t oldCollnum, collnum_t newCollnum, bool 
 }
 
 // a hack function
-bool addCollToTable ( char *coll , collnum_t collnum ) {
+bool addCollToTable ( const char *coll , collnum_t collnum ) {
 	// readd it to the hashtable that maps name to collnum too
 	int64_t h64 = hash64n(coll);
 	g_collTable.set(8,sizeof(collnum_t), 256,NULL,0,

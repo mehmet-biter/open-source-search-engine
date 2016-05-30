@@ -108,7 +108,7 @@ bool isRecoveryFutile ( ) ;
 int copyFiles ( const char *dstDir ) ;
 
 
-char *getcwd2 ( char *arg ) ;
+const char *getcwd2 ( char *arg ) ;
 
 static int32_t checkDirPerms ( char *dir ) ;
 
@@ -116,20 +116,19 @@ static int32_t checkDirPerms ( char *dir ) ;
 bool treetest    ( ) ;
 bool hashtest    ( ) ;
 // how fast to parse the content of this docId?
-bool parseTest ( const char *coll , int64_t docId , char *query );
+bool parseTest ( const char *coll , int64_t docId , const char *query );
 bool summaryTest1   ( char *rec, int32_t listSize, const char *coll , int64_t docId ,
-		      char *query );
+		      const char *query );
 
 // time a big write, read and then seeks
 bool thrutest ( char *testdir , int64_t fileSize ) ;
-void seektest ( char *testdir , int32_t numThreads , int32_t maxReadSize ,
-		char *filename );
+void seektest ( const char *testdir , int32_t numThreads , int32_t maxReadSize , const char *filename );
 
 bool pingTest ( int32_t hid , uint16_t clientPort );
 bool memTest();
 bool cacheTest();
 bool ramdiskTest();
-void countdomains( char* coll, int32_t numRecs, int32_t verb, int32_t output );
+void countdomains( const char* coll, int32_t numRecs, int32_t verb, int32_t output );
 
 static void wakeupPollLoop() {
 	g_loop.wakeupPollLoop();
@@ -163,7 +162,7 @@ int collcopy ( char *newHostsConf , char *coll , int32_t collnum ) ;
 
 bool doCmd ( const char *cmd , int32_t hostId , const char *filename , bool sendToHosts,
 	     bool sendToProxies, int32_t hostId2=-1 );
-int injectFile ( char *filename , char *ips , char *coll );
+int injectFile ( const char *filename , char *ips , const char *coll );
 int injectFileTest ( int32_t  reqLen  , int32_t hid ); // generates the file
 void membustest ( int32_t nb , int32_t loops , bool readf ) ;
 
@@ -680,8 +679,8 @@ int main2 ( int argc , char *argv[] ) {
 			log("db: Failed to init hashtable." ); return 1; }
 
 		int64_t docid = atoll1(argv[cmdarg+1]);
-		char *coll   = "";
-		char *query  = "";
+		const char *coll   = "";
+		const char *query  = "";
 		if ( cmdarg+3 <= argc ) coll  = argv[cmdarg+2];
 		if ( cmdarg+4 == argc ) query = argv[cmdarg+3];
 		parseTest( coll, docid, query );
@@ -729,7 +728,7 @@ int main2 ( int argc , char *argv[] ) {
 	}
 	// gb seektest <testdir> <numThreads> <maxReadSize>
 	if ( strcmp ( cmd , "seektest" ) == 0 ) {
-		char     *testdir         = "/tmp/";
+		const char     *testdir         = "/tmp/";
 		int32_t      numThreads      = 20; //30;
 		int64_t maxReadSize     = 20000;
 		char     *filename        = NULL;
@@ -1657,7 +1656,7 @@ int main2 ( int argc , char *argv[] ) {
 		int32_t numFiles     = -1;
 		int32_t includeTree  =  1;
 		int64_t termId  = -1;
-		char *coll = "";
+		const char *coll = "";
 
 		// so we do not log every collection coll.conf we load
 		g_conf.m_doingCommandLine = true;
@@ -1769,7 +1768,7 @@ int main2 ( int argc , char *argv[] ) {
 	}
 
 	if( strcmp( cmd, "countdomains" ) == 0 && argc >= (cmdarg + 2) ) {
-		char *coll = "";
+		const char *coll = "";
 		int32_t verb;
 		int32_t outpt;
 		coll = argv[cmdarg+1];
@@ -2554,7 +2553,7 @@ int scale ( char *newHostsConf , bool useShotgunIp) {
 		//fprintf(stderr,"rcp %s:%s*db*.dat* ",
 		//	iptoa( h->m_ip), h->m_dir  );
 		// if same ip then do a 'cp' not rcp
-		char *cmd = "rcp -r";
+		const char *cmd = "rcp -r";
 		if ( h->m_ip == h2->m_ip ) cmd = "cp -pr";
 
 		fprintf(stderr,"%s %s*db*.dat* ", cmd, h->m_dir  );
@@ -3106,7 +3105,7 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 					//(int32_t)xd->m_headerWeight,
 					//(int32_t)xd->m_urlPathWeight,
 					(int32_t)xd->m_siteNumInlinks);
-				char *ru = xd->ptr_redirUrl;
+				const char *ru = xd->ptr_redirUrl;
 				if ( ! ru ) ru = "";
 				sprintf(ttt,
 					"n1=%08" PRIx32" n0=%016" PRIx64" docId=%012" PRId64" "
@@ -3182,7 +3181,7 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 			"sni=%" PRId32" ",
 			(int32_t)xd->m_siteNumInlinks);
 
-		char *ru = xd->ptr_redirUrl;
+		const char *ru = xd->ptr_redirUrl;
 		if ( ! ru ) ru = "";
 
 		fprintf(stdout,
@@ -4082,8 +4081,7 @@ static int64_t s_startTime = 0;
 #include <sys/types.h>
 #include <sys/wait.h>
 
-void seektest ( char *testdir, int32_t numThreads, int32_t maxReadSize , 
-		char *filename ) {
+void seektest ( const char *testdir, int32_t numThreads, int32_t maxReadSize , const char *filename ) {
 
 	g_loop.init();
 	g_jobScheduler.initialize(numThreads,numThreads,numThreads);
@@ -4396,7 +4394,7 @@ void dumpTagdb( const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 	goto loop;
 }
 
-bool parseTest ( const char *coll, int64_t docId, char *query ) {
+bool parseTest ( const char *coll, int64_t docId, const char *query ) {
 	g_conf.m_maxMem = 2000000000LL; // 2G
 	g_titledb.init ();
 	g_titledb.getRdb()->addRdbBase1 ( coll );
@@ -4689,7 +4687,7 @@ bool parseTest ( const char *coll, int64_t docId, char *query ) {
 	return true;
 }	
 
-bool summaryTest1   ( char *rec, int32_t listSize, const char *coll, int64_t docId, char *query ) {
+bool summaryTest1   ( char *rec, int32_t listSize, const char *coll, int64_t docId, const char *query ) {
 
 	// start the timer
 	int64_t t = gettimeofdayInMilliseconds();
@@ -4801,12 +4799,12 @@ void dumpPosdb (const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 	      list.skipCurrentRecord() ) {
 		key144_t k; list.getCurrentKey(&k);
 		// compare to last
-		char *err = "";
+		const char *err = "";
 		if ( KEYCMP((char *)&k,(char *)&lastKey,sizeof(key144_t))<0 ) 
 			err = " (out of order)";
 		lastKey = k;
 		// is it a delete?
-		char *dd = "";
+		const char *dd = "";
 		if ( (k.n0 & 0x01) == 0x00 ) dd = " (delete)";
 		int64_t d = g_posdb.getDocId(&k);
 		uint8_t dh = g_titledb.getDomHash8FromDocId(d);
@@ -4977,7 +4975,7 @@ void dumpClusterdb ( const char *coll,
 	      list.skipCurrentRecord() ) {
 		key_t k    = list.getCurrentKey();
 		// is it a delete?
-		char *dd = "";
+		const char *dd = "";
 		if ( (k.n0 & 0x01) == 0x00 ) dd = " (delete)";
 		// get the language string
 		languageToString ( g_clusterdb.getLanguage((char*)&k),
@@ -5077,7 +5075,7 @@ void dumpLinkdb ( const char *coll,
 		key224_t k;
 		list.getCurrentKey((char *) &k);
 		// is it a delete?
-		char *dd = "";
+		const char *dd = "";
 		if ( (k.n0 & 0x01) == 0x00 ) dd = " (delete)";
 		int64_t docId = (int64_t)g_linkdb.getLinkerDocId_uk(&k);
 		int32_t shardNum = getShardNum(RDB_LINKDB,&k);
@@ -5287,7 +5285,7 @@ int injectFileTest ( int32_t reqLen , int32_t hid ) {
 	int32_t rlen = p - req;
 
 	// generate the filename
-	char *filename = "/tmp/inject-test";
+	const char *filename = "/tmp/inject-test";
 	File f; 
 	f.set ( filename );
 	f.unlink();
@@ -5329,14 +5327,14 @@ static bool s_isDelete;
 static int32_t s_injectTitledb;
 static int32_t s_injectWarc;
 static int32_t s_injectArc;
-static char *s_coll = NULL;
+static const char *s_coll = NULL;
 static key_t s_titledbKey;
 static char *s_req  [MAX_INJECT_SOCKETS];
 static int64_t s_docId[MAX_INJECT_SOCKETS];
 static char s_init5 = false;
 static int64_t s_endDocId;
 
-int injectFile ( char *filename , char *ips , char *coll ) {
+int injectFile ( const char *filename , char *ips , const char *coll ) {
 	// or part of an itemlist.txt-N
 	int flen2 = gbstrlen(filename);
 	if ( flen2>=14 && strncmp(filename,"itemlist.txt",12)==0 ) {
@@ -5389,7 +5387,7 @@ int injectFile ( char *filename , char *ips , char *coll ) {
 			int32_t flen = gbstrlen(xarcFilename);
 			const char *ext = xarcFilename + flen -7;
 			// gunzip to foo.warc or foo.arc depending!
-			char *es = "";
+			const char *es = "";
 			if ( ext[0] == 'w' ) es = "w";
 			// inject the warc.gz files
 			cmd.reset();
@@ -5516,7 +5514,7 @@ int injectFile ( char *filename , char *ips , char *coll ) {
 		g_collectiondb.m_recs[0] = cr;
 
 		// right now this is just for the main collection
-		char *coll = "main";
+		const char *coll = "main";
 		addCollToTable ( coll , (collnum_t) 0 );
 
 		// force RdbTree.cpp not to bitch about corruption
@@ -5537,7 +5535,7 @@ int injectFile ( char *filename , char *ips , char *coll ) {
 		if ( gbstrlen(filename)<=8 )
 			return log("build: need titledb-coll.main.0 or "
 			    "titledb-gk144 not just 'titledb'");
-		char *coll2 = filename + 8;
+		const char *coll2 = filename + 8;
 
 		char tmp[1024];
 		sprintf(tmp,"./%s",coll2);
@@ -5631,7 +5629,7 @@ void doInject ( int fd , void *state ) {
 		endKey = g_titledb.makeFirstKey(s_endDocId);
 		RdbList list;
 		Msg5 msg5;
-		char *coll = "main";
+		const char *coll = "main";
 		CollectionRec *cr = g_collectiondb.getRec(coll);
 		msg5.getList ( RDB_TITLEDB ,
 			       cr->m_collnum,
@@ -5873,7 +5871,7 @@ void doInject ( int fd , void *state ) {
 		}
 		char *rp = req;
 		// a different format?
-		char *ipStr = "1.2.3.4";
+		const char *ipStr = "1.2.3.4";
 		rp += sprintf(rp,
 			      "POST /inject HTTP/1.0\r\n"
 			      "Content-Length: 000000000\r\n"//bookmrk
@@ -6229,7 +6227,7 @@ void doInjectWarc ( int64_t fsize ) {
 	SafeBuf req;
 
 	// a different format?
-	char *ipStr = "1.2.3.4";
+	const char *ipStr = "1.2.3.4";
 	req.safePrintf(
 		       "POST /admin/inject HTTP/1.0\r\n"
 		       "Content-Length: 000000000\r\n"//bookmrk
@@ -6898,7 +6896,7 @@ void membustest ( int32_t nb , int32_t loops , bool readf ) {
 	int64_t now = gettimeofdayInMilliseconds();
 	fprintf(stderr,"memtest: now = %" PRId64"\n",t);
 	// multiply by 4 since these are int32_ts
-	char *op = "read";
+	const char *op = "read";
 	if ( ! readf ) op = "wrote";
 	fprintf(stderr,"memtest: %s %" PRId32" bytes (x%" PRId32") in"
 		"%" PRIu64" ms.\n",
@@ -7144,7 +7142,7 @@ static int ip_dcmp  (const void *p1, const void *p2);
 static int dom_fcmp (const void *p1, const void *p2);
 static int dom_lcmp (const void *p1, const void *p2);
 
-void countdomains( char* coll, int32_t numRecs, int32_t verbosity, int32_t output ) {
+void countdomains( const char* coll, int32_t numRecs, int32_t verbosity, int32_t output ) {
 	struct ip_info **ip_table;
 	struct dom_info **dom_table;
 
@@ -7936,7 +7934,7 @@ bool isRecoveryFutile ( ) {
 	return true;
 }
 
-char *getcwd2 ( char *arg2 ) {
+const char *getcwd2 ( char *arg2 ) {
 	char argBuf[1026];
 	char *arg = argBuf;
 

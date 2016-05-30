@@ -7,7 +7,7 @@
 
 #include "SafeBuf.h"
 
-bool addCollToTable ( char *coll , collnum_t collnum ) ;
+bool addCollToTable ( const char *coll , collnum_t collnum ) ;
 
 class WaitEntry {
 public:
