@@ -5769,12 +5769,12 @@ int Posdb::printList ( RdbList &list ) {
 	      list.skipCurrentRecord() ) {
 		key144_t k; list.getCurrentKey(&k);
 		// compare to last
-		char *err = "";
+		const char *err = "";
 		if ( KEYCMP((char *)&k,(char *)&lastKey,sizeof(key144_t))<0 ) 
 			err = " (out of order)";
 		lastKey = k;
 		// is it a delete?
-		char *dd = "";
+		const char *dd = "";
 		if ( (k.n0 & 0x01) == 0x00 ) dd = " (delete)";
 		int64_t d = g_posdb.getDocId(&k);
 		uint8_t dh = g_titledb.getDomHash8FromDocId(d);
