@@ -22,8 +22,7 @@ HttpServer g_httpServer;
 //bool sendPageSiteMap ( TcpSocket *s , HttpRequest *r ) ;
 //bool sendPageApi ( TcpSocket *s , HttpRequest *r ) ;
 bool sendPageAnalyze ( TcpSocket *s , HttpRequest *r ) ;
-bool sendPagePretty ( TcpSocket *s , HttpRequest *r , char *filename ,
-		      char *tabName ) ;
+bool sendPagePretty ( TcpSocket *s , HttpRequest *r , const char *filename , const char *tabName ) ;
 
 // we get like 100k submissions a day!!!
 static HashTable s_htable;
@@ -736,7 +735,7 @@ bool sendPageRobotsTxt ( TcpSocket *s , HttpRequest *r ) {
 }
 */
 
-bool endsWith(char *haystack, int haystackLen, char *needle, int needleLen) {
+bool endsWith(char *haystack, int haystackLen, const char *needle, int needleLen) {
     return haystackLen >= needleLen && !strncmp(haystack + haystackLen - needleLen, needle, needleLen);
 }
 
@@ -2521,11 +2520,7 @@ TcpSocket *HttpServer::unzipReply(TcpSocket* s) {
 }
 
 
-bool sendPagePretty ( TcpSocket *s , 
-		      HttpRequest *r , 
-		      char *filename ,
-		      char *tabName ) {
-
+bool sendPagePretty ( TcpSocket *s , HttpRequest *r , const char *filename , const char *tabName ) {
 	SafeBuf sb;
 
 	CollectionRec *cr = g_collectiondb.getRec ( r );
