@@ -146,16 +146,12 @@ class Dns {
 	// . we set ip to 0 if not found
 	// . returns -1 and sets errno on error
 	// . returns 0 if transaction blocked, 1 if completed
-	bool getIp ( char  *hostname    , 
+	bool getIp ( const char  *hostname,
 		     int32_t   hostnameLen ,
 		     int32_t  *ip ,
 		     void  *state ,
 		     void (* callback) ( void *state , int32_t ip ) ,
 		     DnsState *ds = NULL ,
-		     //char *dnsNames = NULL ,
-		     //int32_t *numDnsNames = 0 ,
-		     //int32_t  *dnsIps   = NULL ,
-		     //int32_t   numDnsIps = 0 ,
 		     int32_t   timeout   = 60    ,
 		     bool   dnsLookup = false ,
 		     // monitor.cpp passes in false for this:
@@ -182,8 +178,8 @@ class Dns {
 	RdbCache *getCacheLocal () { return &m_rdbCacheLocal; }
 
 	// . pull the hostname out of a dns reply packet's query resource rec.
-	bool extractHostname ( char *dgram    , 
-			       char *record   , 
+	bool extractHostname ( const char *dgram,
+			       const char *record,
 			       char *hostname );
 
 	void cancel ( void *state ) { m_udpServer.cancel ( state , -1 ); }
@@ -199,7 +195,7 @@ class Dns {
 	// is it in the /etc/hosts file?
 	bool isInFile (key_t key , int32_t *ip );
 
-	key_t getKey ( char *hostname , int32_t hostnameLen ) ;
+	static key_t getKey ( const char *hostname , int32_t hostnameLen ) ;
 
 	Host *getResponsibleHost ( key_t key ) ;
 

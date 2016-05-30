@@ -287,16 +287,12 @@ static const TLDIPEntry* getTLDIP(DnsState* ds) {
 // . calls gotIp with ip when it gets it or timesOut or errors out
 // . sets *ip to 0 if none (does not exist)
 // . sets *ip to -1 and sets g_errno if there was an error
-bool Dns::getIp ( char *hostname , 
+bool Dns::getIp ( const char *hostname,
 		  int32_t  hostnameLen ,
 		  int32_t *ip       ,
 		  void *state    ,
 		  void (* callback ) ( void *state , int32_t ip ) ,
 		  DnsState *ds ,
-		  //char **dnsNames ,
-		  //int32_t   numDnsNames ,
-		  //int32_t  *dnsIps      ,
-		  //int32_t   numDnsIps   ,
 		  int32_t   timeout     ,
 		  bool   dnsLookup   ,
 		  // monitor.cpp passes in false for this:
@@ -2254,17 +2250,17 @@ void Dns::addToCache ( key_t hostnameKey , int32_t ip , int32_t ttl ) {
 
 // . s pts to the hostname in the len/label pair format
 // . hostname will be filled with the hostname
-bool Dns::extractHostname ( char *dgram    , 
-			    char *record   , 
+bool Dns::extractHostname ( const char *dgram,
+			    const char *record,
 			    char *hostname ) {
 
 	hostname[0] = '\0';
 	int32_t    i = 0;
-	char *end = dgram + DGRAM_SIZE; 
+	const char *end = dgram + DGRAM_SIZE;
 
 	while ( *record ) {
 		int16_t  len   = (u_char)(*record);
-		char  *src   =  record + 1;
+		const char  *src   =  record + 1;
 		int32_t   times = 0;
 		// if 2 hi bits on "len" are set it's a label offset
 		while ( (len & 0xc0) && times++ < 5 ) {
@@ -2424,7 +2420,7 @@ bool Dns::loadFile ( ) {
 	return true;
 }		
 
-key_t Dns::getKey ( char *hostname , int32_t hostnameLen ) {
+key_t Dns::getKey ( const char *hostname, int32_t hostnameLen ) {
 	// use the domain name name. so *.blogspot.com does not flood their dns
 	return hash96 ( hostname , hostnameLen );
 	//int32_t  dlen = 0;
