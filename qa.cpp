@@ -46,10 +46,10 @@ static SafeBuf s_ubuf2;
 static SafeBuf s_cbuf2;
 
 static Url s_url;
-static char *s_expect = NULL;
-static char **s_ignore = NULL;
+static const char *s_expect = NULL;
+static const char **s_ignore = NULL;
 
-void markOut ( char *content , char *needle ) {
+void markOut ( char *content , const char *needle ) {
 
 	if ( ! content ) return;
 
@@ -79,7 +79,7 @@ void markOut ( char *content , char *needle ) {
 }
 
 
-void markOut2 ( char *content , char *needle ) {
+void markOut2 ( char *content , const char *needle ) {
 
 	if ( ! content ) return;
 
@@ -217,8 +217,8 @@ int32_t qa_hash32 ( char *s ) {
 class QATest {
 public:
 	bool (* m_func)();
-	char *m_testName;
-	char *m_testDesc;
+	const char *m_testName;
+	const char *m_testDesc;
 	char  m_doTest;
 	// we set s_flags to this
 	int32_t  m_flags[MAXFLAGS];
@@ -554,7 +554,7 @@ static void gotReplyWrapper ( void *state , TcpSocket *sock ) {
 
 // returns false if blocked, true otherwise, like on quick connect error
 bool getUrl( const char *path , int32_t checkCRC = 0 , char *post = NULL ,
-             char* expect = NULL, char** ignore = NULL) {
+             const char* expect = NULL, const char** ignore = NULL) {
 
 	SafeBuf sb;
 	sb.safePrintf ( "http://%s:%" PRId32"%s"
@@ -1238,7 +1238,7 @@ bool qaSyntax ( ) {
 	//
 	// now run a bunch of queries
 	//
-	static char *s_q[] ={"cat dog",
+	static const char *s_q[] ={"cat dog",
 			     "+cat",
 			     "mp3 \"take five\"",
 			     "\"john smith\" -\"bob dole\"",
@@ -1371,7 +1371,7 @@ typedef enum {
     EXAMINE_RESULTS2 = 22,
     EXAMINE_RESULTS3 = 24
 } TimeAxisFlags;
-static char* g_timeAxisIgnore[3] = {"Bad IP", "Doc is error page", NULL};
+static const char* g_timeAxisIgnore[3] = {"Bad IP", "Doc is error page", NULL};
 
 
 bool qaTimeAxis ( ) {
@@ -1432,7 +1432,7 @@ bool qaTimeAxis ( ) {
             int32_t contentIndex = s_flags[URL_COUNTER] +
                 s_flags[CONTENT_COUNTER] - flipFlop ;
 
-            char* expect = "[Success]";
+            const char* expect = "[Success]";
             if(flipFlop && urlIndex != contentIndex) {
                 expect = "[Doc unchanged]";
             }
@@ -1629,7 +1629,7 @@ bool qaInjectMetadata ( ) {
 	// at about half the rate that we spider them.
 	if ( s_flags[ADD_INITIAL_URLS] == 0) {
 
-		char* metadata = "{\"testtest\":42,\"a-hyphenated-name\":5, "
+		const char* metadata = "{\"testtest\":42,\"a-hyphenated-name\":5, "
 			"\"a-string-value\":\"can we search for this\", "
 			"\"an array\":[\"a\",\"b\", \"c\", 1,2,3], "
 			"\"a field with spaces\":6, \"compound\":{\"field\":7}}";
@@ -1740,7 +1740,7 @@ bool qaMetadataFacetSearch ( ) {
             // inject using html api
             SafeBuf sb;
 
-            char* expect = "[Success]";
+            const char* expect = "[Success]";
 
             sb.safePrintf("&c=qatest123&deleteurl=0&"
                           "format=xml&u=");
@@ -2823,7 +2823,7 @@ bool qascrape ( ) {
 	return true;
 }
 
-static char *s_ubuf4 = 
+static const char *s_ubuf4 =
 	"http://www.nortel.com/multimedia/flash/mediaplayer/config/solutions_enterprisesecurity.json "
 	"http://quirksmode.org/m/d/md.json "
 	"http://www.chip.de/headfoot/json/8659753/tk.json?t=11-02-08-13-32 "
@@ -3086,7 +3086,7 @@ bool qajson ( ) {
 	return true;
 }
 
-static char *s_ubuf5 = 
+static const char *s_ubuf5 =
 	"http://www.thompsoncancer.com/News/RSSLocation2.ashx?sid=7 "
 	"http://www.jdlculaval.com/xmlrpc.php?rsd "
 	"http://pharmacept.com/feed/ "
@@ -3630,7 +3630,7 @@ bool sendPageQA ( TcpSocket *sock , HttpRequest *hr ) {
 	// . print out each qa function
 	for ( int32_t i = 0 ; i < n ; i++ ) {
 		QATest *qt = &s_qatests[i];
-		char *bg;
+		const char *bg;
 		if ( i % 2 == 0 ) bg = LIGHT_BLUE;
 		else              bg = DARK_BLUE;
 		sb.safePrintf("<tr bgcolor=#%s>"
