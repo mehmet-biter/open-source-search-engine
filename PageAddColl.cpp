@@ -19,7 +19,7 @@ bool sendPageDelColl ( TcpSocket *s , HttpRequest *r ) {
 bool sendPageAddDelColl ( TcpSocket *s , HttpRequest *r , bool add ) {
 #ifdef PRIVACORE_SAFE_VERSION
 	g_errno = EBADENGINEER;
-	char *msg = "Function disabled by PRIVACORE_SAFE_VERSION define";
+	const char *msg = "Function disabled by PRIVACORE_SAFE_VERSION define";
 	return g_httpServer.sendErrorReply(s,g_errno,msg,NULL);
 #else
 	// get collection name
