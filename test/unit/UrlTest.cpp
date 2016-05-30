@@ -415,7 +415,17 @@ TEST( UrlTest, StripParamsAuthSess ) {
 	strip_param_tests( test_cases, 123 );
 }
 
-/// @todo ALC ps_sess_id
+TEST( UrlTest, StripParamsPsSessId ) {
+	std::vector<std::tuple<const char *, const char *>> test_cases = {
+		// ps_sess_id
+		std::make_tuple( "http://cs.kafemlynek.cz/psychostats/player.php?id=312&ps_sess_id=d6a03bb621999e995d09244d2b15b2e5",
+		                 "http://cs.kafemlynek.cz/psychostats/player.php?id=312" ),
+		std::make_tuple( "http://ph.csh.lv/dd2/awards.php?ps_sess_id=ec7579208365e58c45af9505a7b6c4ec",
+		                 "http://ph.csh.lv/dd2/awards.php" )
+	};
+
+	strip_param_tests( test_cases, 123 );
+}
 
 TEST( UrlTest, StripParamsMySid ) {
 	std::vector<std::tuple<const char *, const char *>> test_cases = {
@@ -461,7 +471,21 @@ TEST( UrlTest, StripParamsSid ) {
 	strip_param_tests( test_cases, 123 );
 }
 
-/// @todo ALC SES
+TEST( UrlTest, StripParamsSes ) {
+	std::vector<std::tuple<const char *, const char *>> test_cases = {
+		// ses
+		std::make_tuple( "http://hotelres.boulevards.com/hotel/10007179-10192233O.html?ses=95ee88728aa10bc1da9d0120e94373fcht&unps=y",
+		                 "http://hotelres.boulevards.com/hotel/10007179-10192233O.html?unps=y" ),
+	    std::make_tuple( "http://www.statel.lt/index.php?id=karjera&ses=9bi7f6mih4hd2pdgkqjc88rib7",
+	                     "http://www.statel.lt/index.php?id=karjera" ),
+
+	    // ses (no strip)
+		std::make_tuple( "http://www.ccft.ro:8080/gal/index.php?loc=125&ses=128",
+		                 "http://www.ccft.ro:8080/gal/index.php?loc=125&ses=128" )
+	};
+
+	strip_param_tests( test_cases, 123 );
+}
 
 TEST( UrlTest, StripParamsS ) {
 	std::vector<std::tuple<const char *, const char *>> test_cases = {
@@ -539,11 +563,55 @@ TEST( UrlTest, StripParamsSessId ) {
 	strip_param_tests( test_cases, 123 );
 }
 
-/// @todo ALC session
+TEST( UrlTest, StripParamsSession ) {
+	std::vector<std::tuple<const char *, const char *>> test_cases = {
+		// session
+		std::make_tuple( "http://forum.fps-power.eu/switch-vermietung/?SESSION=0vvsbvno0mqlk0nfa512tvdo95",
+		                 "http://forum.fps-power.eu/switch-vermietung/" ),
+		std::make_tuple( "http://www.wfg-guben.de/index.php?c_lang=2&session=43665c1a0295d79062a7854b2fec10a4",
+		                 "http://www.wfg-guben.de/index.php?c_lang=2" ),
 
-/// @todo ALC sess
+		// session (no strip)
+		std::make_tuple( "http://mokuhankan.com/parties/reservations.php?session=590&date=2015-04-01&time=10:00",
+		                 "http://mokuhankan.com/parties/reservations.php?session=590&date=2015-04-01&time=10:00" )
+	};
 
-/// @todo ALC ts
+	strip_param_tests( test_cases, 123 );
+}
+
+TEST( UrlTest, StripParamsSess ) {
+	std::vector<std::tuple<const char *, const char *>> test_cases = {
+		// sess
+		std::make_tuple( "http://yubirea.com/help.php?SESS=f7abccc07285fdaad29e92a7236201e5",
+		                 "http://yubirea.com/help.php" ),
+		std::make_tuple( "http://suka2gue.com/index.php?SESS=9006b4724952d3b2ff25a3dd95306d02",
+		                 "http://suka2gue.com/index.php" ),
+
+		// sess (no strip)
+		std::make_tuple( "http://gac.esd.mun.ca/gac_2001/seven/sub_program.asp?sess=492&form=9",
+		                 "http://gac.esd.mun.ca/gac_2001/seven/sub_program.asp?sess=492&form=9" ),
+	    std::make_tuple( "http://www.cocobongo.com.br/news/news.php?id=11169&sess=12",
+	                     "http://www.cocobongo.com.br/news/news.php?id=11169&sess=12" )
+	};
+
+	strip_param_tests( test_cases, 123 );
+}
+
+TEST( UrlTest, StripParamsTs ) {
+	std::vector<std::tuple<const char *, const char *>> test_cases = {
+		// ts
+		std::make_tuple( "https://m.firstrust.com/mw/05439/moreList.do?ts=1451195648812",
+		                 "https://m.firstrust.com/mw/05439/moreList.do" ),
+		std::make_tuple( "http://bibliotheque.montreuil.fr/ipac20/ipac.jsp?profile=web&menu=dsiTab&ts=1422473229525",
+		                 "http://bibliotheque.montreuil.fr/ipac20/ipac.jsp?profile=web&menu=dsiTab" ),
+
+		// ts (no strip)
+		std::make_tuple( "http://www.obeczdiby.cz/uredni-deska/file.asp?id=46931&ts=Qz6FAab5D7jNu0RVw8y8W5FKB0VOvBU%3D&at=1",
+		                 "http://www.obeczdiby.cz/uredni-deska/file.asp?id=46931&ts=Qz6FAab5D7jNu0RVw8y8W5FKB0VOvBU%3D&at=1" )
+	};
+
+	strip_param_tests( test_cases, 123 );
+}
 
 TEST( UrlTest, StripApacheDirSort ) {
 	std::vector<std::tuple<const char *, const char *>> test_cases = {
@@ -612,7 +680,19 @@ TEST( UrlTest, StripParamsPiwik ) {
 	strip_param_tests( test_cases, 123 );
 }
 
-/// @todo ALC owa
+TEST( UrlTest, StripParamsOpenWebAnalytics ) {
+	std::vector<std::tuple<const char *, const char *>> test_cases = {
+		// owa
+		std::make_tuple( "http://www.be-forever.at/Affiliate.aspx?banner_id=69&owa_medium=paid&owa_source=affiliate&owa_campaign=sportundfitnessmarathonskyscraper&owa_ad=2516&owa_ad_type=banner",
+		                 "http://www.be-forever.at/Affiliate.aspx?banner_id=69" ),
+
+		// owa (no strip)
+		std::make_tuple( "http://demo.openwebanalytics.com/owa/index.php?owa_period=today&owa_siteId=&owa_startDate=20150220&owa_endDate=20150220&owa_do=base.reportVisitor&owa_visitor_id=1424456444640459675",
+		                 "http://demo.openwebanalytics.com/owa/index.php?owa_period=today&owa_siteId=&owa_startDate=20150220&owa_endDate=20150220&owa_do=base.reportVisitor&owa_visitor_id=1424456444640459675" )
+	};
+
+	strip_param_tests( test_cases, 123 );
+}
 
 TEST( UrlTest, StripParamsWebTrends ) {
 	std::vector<std::tuple<const char *, const char *>> test_cases = {
@@ -624,9 +704,19 @@ TEST( UrlTest, StripParamsWebTrends ) {
 	strip_param_tests( test_cases, 123 );
 }
 
-/// @todo ALC webtrends
+TEST( UrlTest, StripParamsMarketo ) {
+	std::vector<std::tuple<const char *, const char *>> test_cases = {
+		// marketo
+		std::make_tuple( "http://info.nexuminc.com/index.php/email/emailWebview?mkt_tok=3RkMMJWWfF9wsRomrfCcI63Em2iQPJWpsrB0B%2FDC18kX3RUsK7Sefkz6htBZF5s8TM3DWVNGXqdI4kENTrA%3D",
+		                 "http://info.nexuminc.com/index.php/email/emailWebview" ),
+		std::make_tuple( "http://www.sescoil.com/learn-more-modicon-controllers?mkt_tok=3RkMMJWWfF9wsRomrfCcI63Em2iQPJWpsrB0B%2FDC18kX3RUvJb2ffkz6htBZF5s8TM3DVFRHXqpN6EEJQ7M%3D",
+		                 "http://www.sescoil.com/learn-more-modicon-controllers" ),
+		std::make_tuple( "http://info.nimblestorage.com/dejeuner_avec_NimbleStorage_Asema_30avril.html?mkt_tok=3RkMMJWWfF9wsRomrfCcI63Em2iQPJWpsrB0B%2FDC18kX3RUrK7iYbAfind1SFJk7a8C6XFFGR91D7C0VTLbA",
+		                 "http://info.nimblestorage.com/dejeuner_avec_NimbleStorage_Asema_30avril.html" )
+	};
 
-/// @todo ALC marketo
+	strip_param_tests( test_cases, 123 );
+}
 
 TEST( UrlTest, StripParamsTrk ) {
 	std::vector<std::tuple<const char *, const char *>> test_cases = {
@@ -662,7 +752,6 @@ TEST( UrlTest, StripParamsPartnerRef ) {
 		std::make_tuple( "http://www.lookfantastic.com/offers/20-off-your-top-20.list?partnerref=ENLF-_EmailExclusive",
 		                 "http://www.lookfantastic.com/offers/20-off-your-top-20.list" )
 	};
-
 
 	strip_param_tests( test_cases, 123 );
 }

@@ -588,7 +588,6 @@ static void stripParameters( UrlParser *urlParser ) {
 		}
 	}
 
-	// @todo ALC session
 	// session
 	// eg:
 	//   eRbInbLDoNaEr4gkIju0
@@ -596,7 +595,6 @@ static void stripParameters( UrlParser *urlParser ) {
 	//   ARC-1454710019-541634862-12401
 	//   ARC-1454807400-18472177182-25788
 	//   A5C45BC6DC3B436899C43B9D904FC8DE
-	//   710ffbfeccf6f0ec1e261cfa895d65de (x)
 	//   7b478486-e52c-46aa-aca8-8cd446fcb79e
 	//   39663_1455055828_84298238456ba63d42992a
 	//   14185_1455099610_106560567456bb0eda9d317
@@ -604,17 +602,13 @@ static void stripParameters( UrlParser *urlParser ) {
 	//   DMQBEXa5Z-aJ7r67ylAJ_y9H8_S2HTUaIjoafUtOjYuGcxwRefR0Q3xXzyS
 	//   bGJL_GuP2eDGwJJzoXM9T3_LRgjAsalqaREGEBDoEERJOIMIL8Wh7Q3K3FcgHtYc9hM6CuJmVKlmmCxjmSYEhwVlOdUEX5RnUXycKSHKO5iAz2_ulWoJOZ1d7QCD2Afn9WPkXkvaJaSgjo7hcfYbBnUOXhedzMolha6kfV7hvf4mRAF700MhB350--QV0wQAur9Rz47QiX8SiRXp_vQDdwInUSfO3PqOwXfBu72w4e-JySzUf7Aj9Ks9ouOUPAn1W_GtORLLT4Gho7-Tb_IwyGVYPKF97f3VMXsTfoFqUvs
 	//
-	{
-		std::vector<UrlComponent*> queryMatches = urlParser->matchQueryParam( UrlComponent::Matcher( "session" ) );
-		if ( !queryMatches.empty() ) {
-			urlParser->removeQueryParam( queryMatches, UrlComponent::Validator() );
-		}
-	}
+	urlParser->removeQueryParam( urlParser->matchQueryParam( UrlComponent::Matcher( "session" ) ),
+	                             UrlComponent::Validator( 20, 0, false, ALLOW_ALL, ( MANDATORY_ALPHA | MANDATORY_DIGIT) ) );
 
-	// @todo ALC sess
 	// sess
 	//   eg: 4be234480736093ba237bc397fb6e32d
-	urlParser->removeQueryParam( UrlComponent::Matcher( "sess" ), UrlComponent::Validator() ); /// @todo make sure this is okay
+	urlParser->removeQueryParam( UrlComponent::Matcher( "sess" ),
+	                             UrlComponent::Validator( 20, 0, false, ( ALLOW_ALPHA | ALLOW_DIGIT ) ) );
 
 	// ts
 	// eg:
