@@ -53,11 +53,11 @@ void UrlParser::print() const {
 	logf( LOG_DEBUG, "UrlParser::domain    : %.*s", static_cast<uint32_t>( m_domainLen ), m_domain );
 
 	for ( auto it = m_paths.begin(); it != m_paths.end(); ++it ) {
-		logf( LOG_DEBUG, "UrlParser::path[%02li]  : %s", std::distance( m_paths.begin(), it ), it->getString().c_str() );
+		logf( LOG_DEBUG, "UrlParser::path[%02zi]  : %s", std::distance( m_paths.begin(), it ), it->getString().c_str() );
 	}
 
 	for ( auto it = m_queries.begin(); it != m_queries.end(); ++it ) {
-		logf( LOG_DEBUG, "UrlParser::query[%02li] : %s", std::distance( m_queries.begin(), it ), it->getString().c_str() );
+		logf( LOG_DEBUG, "UrlParser::query[%02zi] : %s", std::distance( m_queries.begin(), it ), it->getString().c_str() );
 	}
 }
 
