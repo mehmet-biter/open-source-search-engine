@@ -174,12 +174,12 @@ char *ucDetectBOM(char *buf, int32_t bufsize){
 	return NULL;
 }
 
-int32_t ucToAny(char *outbuf, int32_t outbufsize, char *charset_out,
-		 char *inbuf, int32_t inbuflen, char *charset_in,
+int32_t ucToAny(char *outbuf, int32_t outbufsize, const char *charset_out,
+		 char *inbuf, int32_t inbuflen, const char *charset_in,
 		 int32_t ignoreBadChars , int32_t niceness ){
 	if (inbuflen == 0) return 0;
 	// alias for iconv
-	char *csAlias = charset_in;
+	const char *csAlias = charset_in;
 	if (!strncmp(charset_in, "x-windows-949", 13))
 		csAlias = "CP949";
 
@@ -198,9 +198,9 @@ int32_t ucToAny(char *outbuf, int32_t outbufsize, char *charset_out,
 	}
 
 	//if (normalized) *normalized = false;
-	char *pin = (char*)inbuf;
+	char *pin = inbuf;
 	size_t inRemaining = inbuflen;
-	char *pout = (char*)outbuf;
+	char *pout = outbuf;
 	size_t outRemaining = outbufsize;
 	int res = 0;
 	if (outbuf == NULL || outbufsize == 0) {

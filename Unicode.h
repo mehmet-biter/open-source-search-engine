@@ -16,8 +16,8 @@ bool 	ucInit(char *path = NULL);
 iconv_t gbiconv_open(const char *tocode, const char *fromcode) ;
 int gbiconv_close(iconv_t cd) ;
 
-int32_t 	ucToAny(char *outbuf, int32_t outbuflen, char *charset_out,
-		 char *inbuf, int32_t inbuflen, char *charset_in,
+int32_t 	ucToAny(char *outbuf, int32_t outbuflen, const char *charset_out,
+		 char *inbuf, int32_t inbuflen, const char *charset_in,
 		 int32_t ignoreBadChars,int32_t niceness);
 
 // table for decoding utf8...says how many bytes in the character
@@ -215,7 +215,7 @@ inline char *getPrevUtf8Char ( char *p , char *start ) {
 
 inline int32_t ucToUtf8(char *outbuf, int32_t outbuflen, 
 			 char *inbuf, int32_t inbuflen, 
-			 char *charset, int32_t ignoreBadChars,
+			 const char *charset, int32_t ignoreBadChars,
 		     int32_t niceness) {
   return ucToAny(outbuf, outbuflen, (char *)"UTF-8",
 		 inbuf, inbuflen, charset, ignoreBadChars,niceness);

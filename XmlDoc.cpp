@@ -10278,7 +10278,7 @@ char **XmlDoc::getRawUtf8Content ( ) {
 	uint16_t *charset = getCharset ( );
 	if ( ! charset || charset == (uint16_t *)-1 ) return (char **)charset;
 
-	char *csName = get_charset_str(*charset);
+	const char *csName = get_charset_str(*charset);
 
 	// . if not supported fix that!
 	// . m_indexCode should be set to EBADCHARSET ultimately, but not here

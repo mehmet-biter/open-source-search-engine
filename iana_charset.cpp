@@ -9,8 +9,8 @@
 #include "hash.h"
 
 typedef struct {
-    char *name;
-    char *mime;
+    const char *name;
+    const char *mime;
     int16_t mib_enum;
     char supported;
 } IANACharset;
@@ -870,7 +870,7 @@ int16_t get_iana_charset(const char *cs, int len)
     return (int16_t)s_charsets[i-1].mib_enum;
 }
 
-char *get_charset_str(int16_t cs)
+const char *get_charset_str(int16_t cs)
 {
     int s=0;
     int e=sizeof(s_charsets)/sizeof(IANACharset)-2;

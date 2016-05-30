@@ -104,7 +104,7 @@ foreach my $cs (sort {$a->{enum_val} <=> $b->{enum_val}} values %charsets){
 print CFILE "\tcsReserved = 3000\n};\n\n";
 
 print CFILE "short get_iana_charset(char *cs, int len); \n";
-print CFILE "char *get_charset_str(short cs); \n";
+print CFILE "const char *get_charset_str(short cs); \n";
 print CFILE "bool supportedCharset(short cs); \n";
 print CFILE "void setSupportedCharsets(short *cs, int numCharsets);\n";
 print CFILE "#endif // GB_IANACHARSET_H\n";
@@ -123,8 +123,8 @@ print CFILE "#include \"hash.h\"\n";
 print CFILE<<EOL;
 
 typedef struct {
-    char *name;
-    char *mime;
+    const char *name;
+    const char *mime;
     short mib_enum;
     char supported;
 } IANACharset;
@@ -206,7 +206,7 @@ short get_iana_charset(char *cs, int len)
     return (short)s_charsets[i-1].mib_enum;
 }
 
-char *get_charset_str(short cs)
+const char *get_charset_str(short cs)
 {
     int s=0;
     int e=sizeof(s_charsets)/sizeof(IANACharset)-2;
