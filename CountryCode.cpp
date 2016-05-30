@@ -9,7 +9,7 @@
 
 CountryCode g_countryCode;
 
-static char * s_countryCode[] = {
+static const char * s_countryCode[] = {
 	"zz", // Unknown
 	"ad", // Principality of Andorra
 	"ae", // United Arab Emirates
@@ -270,7 +270,7 @@ static char * s_countryCode[] = {
 };
 
 // map a country id to the two letter country abbr
-char *getCountryCode ( uint8_t crid ) {
+const char *getCountryCode ( uint8_t crid ) {
 	return s_countryCode[crid];
 }
 
