@@ -996,31 +996,25 @@ void readPollWrapper_ass ( int fd , void *state ) {
 int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 	// NULLify slot
 	*slotPtr = NULL;
-	// now peek at the first few bytes of the dgram to get some info
-	char        peek[32]; 
 	sockaddr_in from;
 	socklen_t fromLen = sizeof ( struct sockaddr );
-	// how many bytes should we peek at to get basic info about the msg
-	int32_t maxPeekSize = m_proto->getMaxPeekSize();
-	// watch out for overflow
-	//if ( maxPeekSize > 32 ) maxPeekSize = 32;
-	// peak so we can read directly into the right slot, zero-copy
-	int peekSize = recvfrom ( m_sock            , 
-				  peek              , 
-				  maxPeekSize       ,
-				  MSG_PEEK          ,
-				  (sockaddr *)(void*)&from ,
-				  &fromLen          );	
+	char readBuffer[64*1024];
+	int readSize = recvfrom ( m_sock,
+				  readBuffer,
+				  sizeof(readBuffer),
+				  0,                        //flags
+				  (sockaddr *)(void*)&from,
+				  &fromLen);
 
 	// note it
 	if ( g_conf.m_logDebugLoop )
-		log("loop: readsock_ass: peekSize=%i m_sock/fd=%i",
-		    peekSize,m_sock);
+		log("loop: readsock_ass: readSize=%i m_sock/fd=%i",
+		    readSize,m_sock);
 
 	//static int s_ss = 0;
 
 	// cancel silly g_errnos and return 0 since we blocked
-	if ( peekSize < 0 ) {
+	if ( readSize < 0 ) {
 		g_errno = errno;
 
 		if ( g_errno == 0 || g_errno == EILSEQ || g_errno == EAGAIN ) {
@@ -1033,8 +1027,6 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 		return -1;
 	}
 
-	// the discard buffer, for reading dgram into
-	char tmpbuf [DGRAM_SIZE_CEILING];
 	uint32_t ip2 ;
 	Host    *h        ;
 	key_t    key      ;
@@ -1044,7 +1036,6 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 	int32_t     transId  ;
 	bool     discard  = true;
 	bool     status   ;
-	int32_t     readSize ;
 	unsigned char msgType  ;
 	int32_t          niceness ;
 
@@ -1099,8 +1090,8 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 	if ( h ) ip2 = h->m_ip;
 	//logf(LOG_DEBUG,"net: got h=%" PRIu32,(int32_t)h);
 	// generate a unique KEY for this TRANSACTION 
-	key = m_proto->makeKey ( peek                  , 
-				 peekSize              ,
+	key = m_proto->makeKey ( readBuffer            ,
+				 readSize              ,
 				 //from.sin_addr.s_addr, // network order
 				 ip2                   , // ip        ,
 				 //ip                  , // network order
@@ -1108,11 +1099,11 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 	// get the corresponding slot for this key, if it exists
 	slot = getUdpSlot ( key );
 	// get the dgram number on this dgram
-	dgramNum = m_proto->getDgramNum ( peek , peekSize );
+	dgramNum = m_proto->getDgramNum ( readBuffer, readSize );
 	// was it an ack?
-	wasAck   = m_proto->isAck       ( peek , peekSize );
+	wasAck   = m_proto->isAck       ( readBuffer, readSize );
 	// everybody has a transId
-	transId  = m_proto->getTransId  ( peek , peekSize );
+	transId  = m_proto->getTransId  ( readBuffer, readSize );
 	// other vars we'll use later
 	discard = true;
 	status  = true;
@@ -1121,8 +1112,8 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 	// #2) a reply we ACKed but it didn't get our ACK and we've closed
 	// #3) a stray ACK???
 	// #4) a reply but we timed out and our slot is gone
-	msgType  = m_proto->getMsgType ( peek , peekSize );
-	niceness = m_proto->isNice     ( peek , peekSize );
+	msgType  = m_proto->getMsgType ( readBuffer, readSize );
+	niceness = m_proto->isNice     ( readBuffer, readSize );
 	// general count
 	if ( niceness == 0 ) {
 		g_stats.m_packetsIn[msgType][0]++;
@@ -1158,7 +1149,7 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 			goto discard;
 		}
 		// condition #2
-		if ( m_proto->isReply ( peek , peekSize ) ) {
+		if ( m_proto->isReply ( readBuffer, readSize ) ) {
 			// if we don't use ACK then do nothing!
 			if ( ! m_proto->useAcks () ) {
 				// print out the domain in the packet
@@ -1189,7 +1180,7 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 				    "udp: got dgram we acked, but we closed, "
 				    "transId=%" PRId32" dgram=%" PRId32" dgramSize=%i "
 				    "fromIp=%s fromPort=%i msgType=0x%hhx",
-				    transId, dgramNum , peekSize,
+				    transId, dgramNum , readSize,
 				    iptoa((int32_t)from.sin_addr.s_addr) , 
 				    ntohs(from.sin_port) , msgType );
 		cancelTrans:
@@ -1307,8 +1298,8 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 		if ( msgType == 0x00 && m_numUsedSlots > 1500 && niceness ) {
 			// allow a ton of those tagdb lookups to come in
 			char rdbId = 0;
-			if ( peekSize > RDBIDOFFSET )
-				rdbId = peek[RDBIDOFFSET];
+			if ( readSize > RDBIDOFFSET )
+				rdbId = readBuffer[RDBIDOFFSET];
 			if ( rdbId != RDB_TAGDB )
 				getSlot = false;
 		}
@@ -1332,7 +1323,7 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 		// we always need to reserve some slots for sending our
 		// requests out on. do this regardless of msg23 or not.
 		//if ( m_numUsedSlots >= (m_maxSlots>>1) ) getSlot = false;
-		//int32_t niceness = m_proto->isNice ( peek , peekSize );
+		//int32_t niceness = m_proto->isNice ( readBuffer, readSize );
 		// lower priorty slots are dropped first
 		if ( m_numUsedSlots >= 1300 && niceness > 0 && ! isProxy &&
 		     // we dealt with special tagdb msg00's above so
@@ -1437,9 +1428,7 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 	}
 	// let caller know the slot associated with reading this dgram
 	*slotPtr = slot;
-	// . otherwise read our dgram into the slot
 	// . it returns false and sets g_errno on error
-	readSize = 0;
 	discard  = false;
 
 	// . HACK: kinda. 
@@ -1462,8 +1451,7 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 	}
 
 	//if ( ! slot->m_host ) { char *xx = NULL; *xx = 0;}
-	status   = slot->readDatagramOrAck(m_sock,peek,peekSize,now,&discard,
-					   &readSize);
+	status   = slot->readDatagramOrAck(readBuffer,readSize,now,&discard);
 
 	// we we could not allocate a read buffer to hold the request/reply
 	// just send a cancel ack so the send will call its callback with
@@ -1494,11 +1482,6 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 	//	}
 
  discard:
-	// discard if we should
-	if ( discard ) {
-	       readSize=recvfrom(m_sock,tmpbuf,DGRAM_SIZE_CEILING,0,NULL,NULL);
-	       //log("udp: recvfrom3 = %i",(int)readSize);
-	}
 	// . update stats, just put them all in g_udpServer
 	// . do not count acks
 	// . do not count discarded dgrams here

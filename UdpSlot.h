@@ -152,9 +152,8 @@ class UdpSlot {
 	// . tries to send ACK on "sock" if we read a dgram
 	// . tries to send a dgram if we read an ACK
 	// . sets *discard to true if caller should discard the dgram
-	bool readDatagramOrAck ( int sock , char *header , int32_t numRead ,
-				 int64_t now , bool *discard ,
-				 int32_t *readSize );
+	bool readDatagramOrAck ( const void *buf, int32_t numRead,
+				 int64_t now, bool *discard);
 
 	// . send an ACK
 	// . returns -2 if nothing to send, -1 on error, 0 if blocked, 

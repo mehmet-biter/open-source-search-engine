@@ -1144,16 +1144,15 @@ int32_t UdpSlot::sendAck ( int sock , int64_t now ,
 //   in case the send was blocking on receiving an ACK or we should send an ACK
 // . updates: m_readBits2, m_readBitsOn, m_sentAckBits2, m_sentAckBitsOn
 //            m_firstUnlitSentAckBit
-bool UdpSlot::readDatagramOrAck ( int        sock    , 
-				  char      *peek    ,
-				  int32_t       peekSize,
-				  int64_t  now     ,
-				  bool      *discard ,
-				  int32_t      *readSize ) {
+bool UdpSlot::readDatagramOrAck ( const void *readBuffer_,
+				  int32_t     readSize,
+				  int64_t     now     ,
+				  bool       *discard) {
+	const char * const readBuffer = (const char*)readBuffer_;
 	// assume discard
 	*discard = true;
 	// get dgram Number
-	int32_t dgramNum = m_proto->getDgramNum ( peek , peekSize );
+	int32_t dgramNum = m_proto->getDgramNum ( readBuffer, readSize );
 	// protection from garbled dgrams
 	if ( dgramNum >= MAX_DGRAMS ) {
 		log(LOG_LOGIC,
@@ -1162,7 +1161,7 @@ bool UdpSlot::readDatagramOrAck ( int        sock    ,
 		return true;
 	}
 	// was it a cancel signal?
-	if ( m_proto->isCancelTrans ( peek , peekSize ) ) {
+	if ( m_proto->isCancelTrans ( readBuffer, readSize ) ) {
 		//if ( g_conf.m_logDebugUdp ) 
 		//logf(LOG_INFO,//LOG_DEBUG,
 		log(LOG_DEBUG,
@@ -1170,9 +1169,9 @@ bool UdpSlot::readDatagramOrAck ( int        sock    ,
 		     "src=%s:%hu msgType=0x%hhx weInitiated=%" PTRFMT" "
 		    "sent=%" PRId32" "
 		    "sendbufalloc=%" PTRFMT" sendbufsize=%" PRIu32,
-		     peekSize , m_proto->getTransId ( peek,peekSize ),
+		     readSize , m_proto->getTransId ( readBuffer,readSize ),
 		     iptoa(m_ip),m_port,
-		     m_proto->getMsgType(peek,peekSize),
+		     m_proto->getMsgType(readBuffer,readSize),
 		    (PTRTYPE)m_callback,
 		    m_sentBitsOn,
 		    (PTRTYPE)m_sendBufAlloc,
@@ -1219,7 +1218,7 @@ bool UdpSlot::readDatagramOrAck ( int        sock    ,
 		return true;
 	}
 	// handle acks
-	if ( m_proto->isAck ( peek , peekSize ) ) {
+	if ( m_proto->isAck ( readBuffer, readSize ) ) {
 		readAck ( dgramNum , now );
 		// keep stats
 		if ( m_host ) m_host->m_dgramsFrom++;
@@ -1250,17 +1249,17 @@ bool UdpSlot::readDatagramOrAck ( int        sock    ,
 		    "error=%" PRId32" "
 		    "hid=%" PRId32,
 		    (int32_t)dgramNum,
-		    (int16_t)m_proto->getMsgType(peek,peekSize),
-		    (int32_t)m_proto->getTransId(peek,peekSize),
+		    (int16_t)m_proto->getMsgType(readBuffer,readSize),
+		    (int32_t)m_proto->getTransId(readBuffer,readSize),
 		    iptoa(m_ip), 
 		    (uint16_t)m_port,
 		    (int32_t)kk,
 		    (int32_t)(gettimeofdayInMilliseconds() - m_startTime) ,
 		    (int32_t)m_readBitsOn , 
 		    (int32_t)m_sentAckBitsOn , 
-		    //(int32_t)peekSize ,
-		    (int32_t)m_proto->getMsgSize(peek,peekSize) ,
-		    (int32_t)(m_proto->hadError(peek,peekSize)),
+		    //(int32_t)readSize ,
+		    (int32_t)m_proto->getMsgSize(readBuffer,readSize) ,
+		    (int32_t)(m_proto->hadError(readBuffer,readSize)),
 		    hid);
 		//	}
 		//#endif
@@ -1268,7 +1267,7 @@ bool UdpSlot::readDatagramOrAck ( int        sock    ,
 	// update time of last read
 	m_lastReadTime = gettimeofdayInMilliseconds();
 	// if it's passing us an g_errno then set our g_errno from it
-	if ( m_proto->hadError ( peek , peekSize ) ) {
+	if ( m_proto->hadError ( readBuffer, readSize ) ) {
 		// bitch if not dgramNum #0
 		if ( dgramNum != 0 ) 
 			log(LOG_LOGIC,"udp: Error dgram is not dgram #0.");
@@ -1282,7 +1281,7 @@ bool UdpSlot::readDatagramOrAck ( int        sock    ,
 		m_readBufSize  = 0;
 		// . but set the remote error bit so we know it's not local 
 		// . why? this was messing up g_errno interp. in Multicast!
-		g_errno = m_proto->getErrno(peek,peekSize);//|REMOTE_ERROR_BIT;
+		g_errno = m_proto->getErrno(readBuffer,readSize);//|REMOTE_ERROR_BIT;
 		// return false cuz this was a remote-side error
 		return false;
 	}
@@ -1324,7 +1323,7 @@ bool UdpSlot::readDatagramOrAck ( int        sock    ,
 
 	// . copy the msg meat into our m_readBuf
 	// . how big is the dgram header?
-	int32_t headerSize  = m_proto->getHeaderSize ( peek , peekSize );
+	int32_t headerSize  = m_proto->getHeaderSize ( readBuffer, readSize );
 	// make it zero if proto wants them in m_readBuf
 	if ( ! m_proto->stripHeaders() ) headerSize = 0;
 	// . we store transId, size, type, etc. in the UdpSlot
@@ -1361,14 +1360,14 @@ bool UdpSlot::readDatagramOrAck ( int        sock    ,
 	// . how many bytes should be in this dgram?
 	// . this will be -1 if unknown, but under a dgram's worth of bytes
 	// . -1 is used for the DNS protocol
-	int32_t msgSize = m_proto->getMsgSize ( peek , peekSize );
+	int32_t msgSize = m_proto->getMsgSize ( readBuffer, readSize );
 
 	// if this is the first dgram then set this shit
 	if ( m_readBitsOn == 0 ) {
 		// how many dgrams are we reading for this msg?
 		m_dgramsToRead = m_proto->getNumDgrams(msgSize,m_maxDgramSize);
 		// set the msgType from the dgram header
-		m_msgType = m_proto->getMsgType ( peek , peekSize );
+		m_msgType = m_proto->getMsgType ( readBuffer, readSize );
 		// how big is the msg? remember it
 		m_readBufSize = msgSize;
 		// . set the cback niceness
@@ -1376,7 +1375,7 @@ bool UdpSlot::readDatagramOrAck ( int        sock    ,
 		//   niceness. so if the slot niceness got converted by
 		//   the handler we do not re-nice it on our end.
 		if ( ! m_sendBuf )
-			m_niceness = m_proto->isNice ( peek , peekSize );
+			m_niceness = m_proto->isNice ( readBuffer, readSize );
 	}
 
 	// . if m_readBuf is NULL then init m_readBuf/m_readBufMaxSize big
@@ -1439,16 +1438,16 @@ bool UdpSlot::readDatagramOrAck ( int        sock    ,
 	/*
 	  MDW: this seems to be causing problems on local networks
 	  so taking it out. 4/7/2015.
-	if ( m_msgType == 0x0c && msgSize == 12 && peekSize == 24 &&
+	if ( m_msgType == 0x0c && msgSize == 12 && readSize == 24 &&
 	     // must be reply! not request.
 	     m_callback ) {
 		// sanity
 		if ( m_proto->getMaxPeekSize() < 24 ) { char *xx=NULL;*xx=0;}
 		if ( headerSize != 12 )               { char *xx=NULL;*xx=0;}
 		// ips must match. like a checksum kinda.
-		int32_t ip1 = *(int32_t *)(peek+headerSize);
-		int32_t ip2 = *(int32_t *)(peek+headerSize+4);
-		int32_t crc = *(int32_t *)(peek+headerSize+8);
+		int32_t ip1 = *(int32_t *)(readBuffer+headerSize);
+		int32_t ip2 = *(int32_t *)(readBuffer+headerSize+4);
+		int32_t crc = *(int32_t *)(readBuffer+headerSize+8);
 		// one more check since ip1 seems to equal ip2 sometimes
 		// when it should not!
 		int32_t h32 = hash32h ( ip1 , 0 );
@@ -1504,23 +1503,10 @@ bool UdpSlot::readDatagramOrAck ( int        sock    ,
 		// save what's before us
 		char tmp[32];
 		memcpy_ass ( tmp , dest , headerSize );
-		int numRead = recvfrom ( sock   , 
-					 dest   ,
-					 toRead ,
-					 0      ,
-					 NULL   ,
-					 NULL   );
+		memcpy(dest, readBuffer, toRead);
 		//log("udp: recvfrom1 = %i",(int)numRead);
-		// let caller know how much we read for stats purposes
-		*readSize = numRead;
 		// restore what was at the header before we stored it there
 		memcpy_ass ( dest , tmp , headerSize );
-		// bail on error, how could this happen?
-		if ( numRead < 0 ) {
-			g_errno = errno;
-			return log("udp: Call to recvfrom had error: %s.",
-				   mstrerror(g_errno));
-		}
 		// keep stats
 		if ( m_host ) m_host->m_dgramsFrom++;
 		// keep track of dgrams sent outside of our cluster
@@ -1540,36 +1526,18 @@ bool UdpSlot::readDatagramOrAck ( int        sock    ,
 
 	// otherwise, copy into our tmp buffer
 	char dgram [DGRAM_SIZE_CEILING];
- retry2:
-	// read in the whole dgram
-	int dgramSize = recvfrom ( sock          , 
-				   dgram         , 
-				   DGRAM_SIZE_CEILING , 
-				   0             , 
-				   NULL          , 
-				   NULL          );
-	//log("udp: recvfrom2 = %i",(int)dgramSize);
-	// bail on error, how could this happen?
-	if ( dgramSize < 0 ) {
-		// valgrind
-		if ( errno == EINTR ) goto retry2;
-		g_errno = errno;
-		return log("udp: Call to recvfrom had error: %s.",
-			   mstrerror(g_errno));
-	}
+	memcpy(dgram, readBuffer, readSize);
 	// keep stats
 	if ( m_host ) m_host->m_dgramsFrom++;
 	// keep track of dgrams sent outside of our cluster
 	//else          g_stats.m_dgramsFromStrangers++;
-	// let caller know how much we read for stats purposes
-	*readSize = dgramSize;
 
 	// where to put it? it might not be dgram #0...
 	char *dest = m_readBuf + offset ;
 	// what to put?
 	char *src  = dgram + headerSize ;
 	// how much to put
-	int32_t  len  = dgramSize - headerSize;
+	int32_t  len  = readSize - headerSize;
 	// if msgSize was -1 then m_readBufSize will be -1
 	if ( m_readBufSize == -1 ) m_readBufSize = len;
 	// bounce it back into m_readBuf
