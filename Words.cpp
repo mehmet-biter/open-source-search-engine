@@ -681,7 +681,7 @@ int32_t Words::getLanguage( Sections *sections, int32_t maxSamples, int32_t nice
 
 // . return the value of the specified "field" within this html tag, "s"
 // . the case of "field" does not matter
-char *getFieldValue( char *s, int32_t slen, char *field, int32_t *valueLen ) {
+char *getFieldValue( char *s, int32_t slen, const char *field, int32_t *valueLen ) {
 	// reset this to 0
 	*valueLen = 0;
 	// scan for the field name in our node

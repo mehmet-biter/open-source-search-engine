@@ -6258,9 +6258,8 @@ XmlDoc **XmlDoc::getRootXmlDoc ( int32_t maxCacheAge ) {
 	// prefix with http:// in Url::set even for https sites.
 	char sitebuf[MAX_SITE_LEN + MAX_SCHEME_LEN+4];	// +4 = :// + 0-terminator
 	char *mysite 	= sitebuf;
-	char *myscheme 	= getScheme();
-	if( myscheme )
-	{
+	const char *myscheme 	= getScheme();
+	if( myscheme ) {
 		mysite += sprintf(mysite, "%s://", myscheme);
 	}
 	sprintf(mysite, "%s", _mysite);
@@ -7795,7 +7794,7 @@ char *XmlDoc::getIsWWWDup ( ) {
 
 	// make it without the www
 	char withoutWWW[MAX_URL_LEN+1];
-	char *proto = "http";
+	const char *proto = "http";
 	if ( u->isHttps() ) proto = "https";
 	sprintf(withoutWWW,"%s://%s",proto,u->getDomain());
 
@@ -8193,7 +8192,7 @@ int32_t *XmlDoc::getSiteHash32 ( ) {
 }
 
 
-char *XmlDoc::getScheme ( ) {
+const char *XmlDoc::getScheme ( ) {
 	// was there a problem getting site?
 	if ( m_siteValid && m_siteGetter.m_errno ) {
 		g_errno = m_siteGetter.m_errno;
@@ -11524,7 +11523,7 @@ char *XmlDoc::hasNoIndexMetaTag() {
 	// store value/content of meta tag in here
 	char mbuf[16];
 	mbuf[0] = '\0';
-	char *tag = "noindex";
+	const char *tag = "noindex";
 	int32_t tlen = gbstrlen(tag);
 	// check the xml for a meta tag
 	Xml *xml = getXml();
@@ -11541,7 +11540,7 @@ char *XmlDoc::hasFakeIpsMetaTag ( ) {
 
 	char mbuf[16];
 	mbuf[0] = '\0';
-	char *tag = "usefakeips";
+	const char *tag = "usefakeips";
 	int32_t tlen = gbstrlen(tag);
 
 	// check the xml for a meta tag
@@ -12095,7 +12094,7 @@ bool XmlDoc::logIt (SafeBuf *bb ) {
 	// invalid?
 	if ( ! m_ipValid ) ip = 0;
 
-	char *coll = "nuked";
+	const char *coll = "nuked";
 	CollectionRec *cr = getCollRec();
 	if ( cr ) coll = cr->m_coll;
 
@@ -12751,7 +12750,7 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 	SafeBuf tmp;
 	if ( ! sb ) sb = &tmp;
 
-	char *hdr =
+	const char *hdr =
 		"<table border=1>\n"
 		"<tr>"
 		"<td><b>rdb</b></td>"
@@ -13181,7 +13180,7 @@ bool XmlDoc::hashMetaList ( HashTableX *ht        ,
 				// got us
 				char *start = m_wbuf.getBufStart();
 				char *term = start + ti->m_termOff;
-				char *prefix = "";
+				const char *prefix = "";
 				if ( ti->m_prefixOff >= 0 ) {
 					prefix = start + ti->m_prefixOff;
 					//prefix[ti->m_prefixLen] = '\0';
@@ -14533,7 +14532,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 			if ( ! m_firstIpValid ) { char *xx=NULL;*xx=0; }
 			// sanity log
 			if ( m_firstIp == 0 || m_firstIp == -1 ) {
-				char *url = "unknown";
+				const char *url = "unknown";
 				if ( m_sreqValid ) url = m_sreq.m_url;
 				log("build: error3 getting real firstip of "
 				    "%" PRId32" for %s. not adding new request.",
@@ -15782,7 +15781,7 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 	//
 	char mbuf[16];
 	mbuf[0] = '\0';
-	char *tag = "spiderlinkslinks";
+	const char *tag = "spiderlinkslinks";
 	int32_t tlen = gbstrlen(tag);
 	xml->getMetaContent ( mbuf, 16 , tag , tlen );
 	bool avoid = false;
@@ -16135,7 +16134,7 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 			if ( gr ) gr->printToBuf ( &sb2 );
 			// get it
 			//SafeBuf sb1;
-			char *action = "add";
+			const char *action = "add";
 			logf(LOG_DEBUG,
 			     "spider: attempting to %s link. "
 			     "%s "
@@ -18705,7 +18704,7 @@ char *XmlDoc::getIsErrorPage ( ) {
 	int32_t len;
 	int32_t len2;
 
-	char* errMsg = NULL;
+	const char* errMsg = NULL;
 
 	int32_t numChecked = 0;
 	// check the first header and title tag
@@ -18756,7 +18755,7 @@ char *XmlDoc::getIsErrorPage ( ) {
 }
 
 
-char* XmlDoc::matchErrorMsg(char* p, char* pend ) {
+const char* XmlDoc::matchErrorMsg(char* p, char* pend ) {
  	char utf8Buf[1024];
 	//	int32_t utf8Len = 0;
 	int32_t len = pend - p;
@@ -18772,7 +18771,7 @@ char* XmlDoc::matchErrorMsg(char* p, char* pend ) {
 	p = utf8Buf;
 	pend = p + len;
 
-	char* errMsg = NULL;
+	const char* errMsg = NULL;
 
 	while(p < pend) {
 		int32_t r = pend - p;
@@ -18975,7 +18974,7 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 	// shortcut
 	char *fu = ptr_firstUrl;
 
-	char *allowed = "???";
+	const char *allowed = "???";
 	if      ( m_isAllowedValid && m_isAllowed )  allowed = "yes";
 	else if ( m_isAllowedValid                )  allowed = "no";
 
@@ -19226,7 +19225,7 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 
 
 
-	char *ddd = "---";
+	const char *ddd = "---";
 
 	char strLanguage[128];
 	languageToString(m_langId, strLanguage);
@@ -19264,7 +19263,7 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 	LinkInfo *info1 = ptr_linkInfo1;
 
 	char *ipString = iptoa(m_ip);
-	char *estimated = "";
+	const char *estimated = "";
 
 	//char *ls = getIsLinkSpam();
 	Links *links = getLinks();
@@ -19473,7 +19472,7 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 		if ( (++rcount % TABLE_ROWS) == 0 )
 			sb->safePrintf("</table>%s",hdr);
 
-		char *prefix = "&nbsp;";
+		const char *prefix = "&nbsp;";
 		if ( tp[i]->m_prefixOff >= 0 )
 			prefix = start + tp[i]->m_prefixOff;
 
@@ -19658,7 +19657,7 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 	Url uu;
 	uu.set ( fu );
 
-	char *allowed = "???";
+	const char *allowed = "???";
 	int32_t allowedInt = 1;
 	if      ( m_isAllowedValid && m_isAllowed )  {
 		allowed = "yes";

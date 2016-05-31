@@ -425,7 +425,7 @@ public:
 	char *getIsWWWDup ( ) ;
 	class LinkInfo *getLinkInfo1 ( ) ;
 	char *getSite ( ) ;
-	char *getScheme ( ) ;	
+	const char *getScheme ( ) ;
 	
 	void  gotSite ( ) ;
 	int32_t *getSiteHash32 ( ) ;
@@ -550,7 +550,7 @@ public:
 	int32_t *getUrlFilterNum();
 	char *getIsLinkSpam ( ) ;
 	char *getIsErrorPage ( ) ;
-	char* matchErrorMsg(char* p, char* pend );
+	const char* matchErrorMsg(char* p, char* pend );
 
 	bool hashWords( class HashInfo *hi );
 	bool hashSingleTerm( const char *s, int32_t slen, class HashInfo *hi );
