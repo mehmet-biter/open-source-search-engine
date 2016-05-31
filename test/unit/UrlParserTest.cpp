@@ -3,14 +3,18 @@
 #include "UrlParser.h"
 
 void checkResult( const char *expected, const char *result, size_t resultLen ) {
-	size_t expectedLen = strlen( expected );
+	size_t expectedLen = expected ? strlen( expected ) : 0;
 
 	std::stringstream ss;
 	ss << "expected='" << expected << "'" << " result='" << result << "' resultLen=" << resultLen;
 	SCOPED_TRACE( ss.str() );
 
 	ASSERT_EQ( expectedLen, resultLen );
-	EXPECT_EQ( strncmp( expected, result, resultLen ), 0 );
+	if ( expected ) {
+		EXPECT_EQ( strncmp( expected, result, resultLen ), 0 );
+	} else {
+		EXPECT_EQ( expected, result );
+	}
 }
 
 TEST( UrlParserTest, ParseScheme ) {
@@ -107,7 +111,7 @@ TEST( UrlParserTest, ParseTLDNone ) {
 	UrlParser urlParser( url.c_str(), url.size() );
 
 	checkResult( "ok", urlParser.getAuthority(), urlParser.getAuthorityLen() );
-	checkResult( "", urlParser.getDomain(), urlParser.getDomainLen() );
+	checkResult( NULL, urlParser.getDomain(), urlParser.getDomainLen() );
 }
 
 TEST( UrlParserTest, ParseSLD ) {
