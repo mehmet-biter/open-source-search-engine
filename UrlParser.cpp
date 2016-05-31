@@ -2,6 +2,7 @@
 #include "Log.h"
 #include "fctypes.h"
 #include "Domains.h"
+#include "ip.h"
 #include <string.h>
 #include <iterator>
 
@@ -111,17 +112,24 @@ void UrlParser::parse() {
 	// host        = IP-literal / IPv4address / reg-name
 
 	/// @todo ALC we should remove the const cast once we fix all the const issue
-	const char *tldPos = ::getTLD( const_cast<char*>( m_host ), m_hostLen );
-	if ( tldPos ) {
-		size_t tldLen = m_host + m_hostLen - tldPos;
-		if ( tldLen < m_hostLen ) {
-			m_domain = static_cast<const char *>( memrchr( m_host, '.', m_hostLen - tldLen - 1 ) );
-			if ( m_domain ) {
-				m_domain += 1;
-				m_domainLen = m_hostLen - ( m_domain - m_host );
-			} else {
-				m_domain = m_host;
-				m_domainLen = m_hostLen;
+	int32_t ip = atoip( m_host, m_hostLen );
+	if ( ip ) {
+		int32_t domainLen = 0;
+		m_domain = getDomainOfIp ( const_cast<char *>( m_host ), m_hostLen , &domainLen );
+		m_domainLen = domainLen;
+	} else {
+		const char *tldPos = ::getTLD( const_cast<char *>( m_host ), m_hostLen );
+		if ( tldPos ) {
+			size_t tldLen = m_host + m_hostLen - tldPos;
+			if ( tldLen < m_hostLen ) {
+				m_domain = static_cast<const char *>( memrchr( m_host, '.', m_hostLen - tldLen - 1 ) );
+				if ( m_domain ) {
+					m_domain += 1;
+					m_domainLen = m_hostLen - ( m_domain - m_host );
+				} else {
+					m_domain = m_host;
+					m_domainLen = m_hostLen;
+				}
 			}
 		}
 	}

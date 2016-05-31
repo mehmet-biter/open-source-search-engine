@@ -66,7 +66,7 @@ TEST( UrlParserTest, ParseIP ) {
 	UrlParser urlParser( url.c_str(), url.size() );
 
 	checkResult( "127.0.0.1", urlParser.getAuthority(), urlParser.getAuthorityLen() );
-	checkResult( "", urlParser.getDomain(), urlParser.getDomainLen() );
+	checkResult( "127.0.0", urlParser.getDomain(), urlParser.getDomainLen() );
 }
 
 TEST( UrlParserTest, ParseIPPort ) {
@@ -74,7 +74,7 @@ TEST( UrlParserTest, ParseIPPort ) {
 	UrlParser urlParser( url.c_str(), url.size() );
 
 	checkResult( "127.0.0.1:8080", urlParser.getAuthority(), urlParser.getAuthorityLen() );
-	checkResult( "", urlParser.getDomain(), urlParser.getDomainLen() );
+	checkResult( "127.0.0", urlParser.getDomain(), urlParser.getDomainLen() );
 }
 
 TEST( UrlParserTest, ParseSubdomainNone ) {

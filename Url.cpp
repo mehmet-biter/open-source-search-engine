@@ -1413,17 +1413,17 @@ int32_t Url::getSubPathLen ( int32_t j ) const {
 }
 
 void Url::print() {
-	logf(LOG_DEBUG, "############ url ############");
-	logf(LOG_DEBUG, "url: %s",m_url);
-	logf(LOG_DEBUG, "host: %.*s", m_hlen, m_host);
-	logf(LOG_DEBUG, "scheme: %.*s", m_slen, m_scheme);
-	logf(LOG_DEBUG, "path: %.*s", m_plen, m_path);
-	logf(LOG_DEBUG, "query: %s",m_query);
-	logf(LOG_DEBUG, "port: %" PRId32, m_port );
-	logf(LOG_DEBUG, "domain: %.*s", m_dlen, m_domain);
-	logf(LOG_DEBUG, "tld: %.*s", m_tldLen, m_tld);
-	logf(LOG_DEBUG, "mid domain: %.*s", m_mdlen, m_domain);
-	logf(LOG_DEBUG, "is root %i",isRoot());
+	logf( LOG_DEBUG, "Url::url        : %s", m_url );
+	logf( LOG_DEBUG, "Url::host       : %.*s", m_hlen, m_host );
+	logf( LOG_DEBUG, "Url::ip         : %" PRId32, m_ip );
+	logf( LOG_DEBUG, "Url::scheme     : %.*s", m_slen, m_scheme );
+	logf( LOG_DEBUG, "Url::path       : %.*s", m_plen, m_path );
+	logf( LOG_DEBUG, "Url::query      : %s", m_query );
+	logf( LOG_DEBUG, "Url::port       : %" PRId32, m_port );
+	logf( LOG_DEBUG, "Url::domain     : %.*s", m_dlen, m_domain );
+	logf( LOG_DEBUG, "Url::tld        : %.*s", m_tldLen, m_tld );
+	logf( LOG_DEBUG, "Url::mid domain : %.*s", m_mdlen, m_domain );
+	logf( LOG_DEBUG, "Url::is root    : %i", isRoot() );
 }
 
 int32_t  Url::getPathDepth ( bool countFilename ) const {
