@@ -31,7 +31,7 @@ class MsgC {
 	// Don't bother about dnsState, only Msg14 used to use it, and now 
 	// since we are not using getIp in Msg16 anymore, it is useless.
 	// returns false if blocked, true otherwise
-	bool getIp(char  *hostname    , int32_t   hostnameLen ,
+	bool getIp(const char  *hostname    , int32_t   hostnameLen ,
 		   int32_t  *ip ,
 		   void  *state ,
 		   void (* callback) ( void *state , int32_t ip ),

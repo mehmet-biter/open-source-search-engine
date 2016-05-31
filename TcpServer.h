@@ -72,7 +72,7 @@ class TcpServer {
 	// . that is, when both m_sendBuf and m_readBuf have been filled
 	// . callback is also called on error
 	// . default timeout of 60 secs of no read OR no write
-	bool sendMsg( char *hostname, int32_t hostnameLen, int16_t port, char *sendBuf, int32_t sendBufSize,
+	bool sendMsg( const char *hostname, int32_t hostnameLen, int16_t port, char *sendBuf, int32_t sendBufSize,
 				  int32_t sendBufUsed, int32_t msgTotalSize, void *state,
 				  void ( *callback )( void *state, TcpSocket *s ), int32_t timeout, int32_t maxTextDocLen,
 				  int32_t maxOtherDocLen );

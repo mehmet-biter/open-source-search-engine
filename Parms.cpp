@@ -2124,7 +2124,7 @@ bool Parms::printParm ( SafeBuf* sb,
 		time_t tmp_ct = ct;
 		struct tm *tp = gmtime ( &tmp_ct );
 		// set the "selected" month for the drop down
-		char *ss[12];
+		const char *ss[12];
 		for ( int32_t i = 0 ; i < 12 ; i++ ) ss[i]="";
 		int32_t month = tp->tm_mon;
 		if ( month < 0 || month > 11 ) month = 0; // Jan

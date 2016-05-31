@@ -2068,7 +2068,7 @@ bool RdbBuckets::loadBuckets ( char* dbname) {
 
 	// set a BigFile to this filename
 	BigFile file;//g_hostdb.m_dir
-	char *dir = g_hostdb.m_dir;
+	const char *dir = g_hostdb.m_dir;
 	if( *dir == '\0') dir = ".";
 	file.set ( dir , filename , NULL ); 
 	if ( file.doesExist() <= 0 ) return true;

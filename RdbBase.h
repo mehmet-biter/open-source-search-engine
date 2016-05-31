@@ -70,7 +70,7 @@ class RdbBase {
 		    bool   useHalfKeys     ,
 		    char   keySize         ,
 		    int32_t   pageSize        ,
-		    char                *coll    ,
+		    const char                *coll    ,
 		    collnum_t            collnum ,
 		    RdbTree             *tree    ,
 		    RdbBuckets          *buckets ,

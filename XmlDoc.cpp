@@ -12825,7 +12825,7 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 
 		// print dbname
 		sb->safePrintf("<tr>");
-		char *dn = getDbnameFromId ( rdbId );
+		const char *dn = getDbnameFromId ( rdbId );
 		sb->safePrintf("<td>%s</td>",dn);
 
 		if ( neg ) sb->safePrintf("<td>D</td>");

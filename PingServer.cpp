@@ -54,9 +54,9 @@ static void updatePingTime ( Host *h , int32_t *pingPtr , int32_t tripTime ) ;
 //static bool pageSprintPCS ( Host *h , char *errmsg , char *num ) ;
 //static void sprintPCSWrapper ( void *state , TcpSocket *ts ) ;
 //static bool pageSprintPCS2 ( void *state , TcpSocket *ts ) ;
-static bool sendAdminEmail ( Host  *h, char  *fromAddress,
-			     char  *toAddress, char  *body ,
-			     char  *emailServIp );//= "mail.gigablast.com" );
+static bool sendAdminEmail ( Host  *h, const char  *fromAddress,
+                             const char  *toAddress, char  *body ,
+			     const char  *emailServIp );//= "mail.gigablast.com" );
 
 bool PingServer::registerHandler ( ) {
 	// . we'll handle msgTypes of 0x11 for pings
@@ -1228,10 +1228,10 @@ bool PingServer::sendEmail ( Host *h            ,
 static void gotDocWrapper ( void *state , TcpSocket *ts ) ;
 
 bool sendAdminEmail ( Host  *h,
-		      char  *fromAddress,
-		      char  *toAddress,
+		      const char  *fromAddress,
+		      const char  *toAddress,
 		      char  *body , 
-		      char  *emailServIp) {
+		      const char  *emailServIp) {
 	// create a new buffer
 	char *buf = (char *) mmalloc ( PAGER_BUF_SIZE , "PingServer" );
 	// fill the buffer
@@ -1260,7 +1260,7 @@ bool sendAdminEmail ( Host  *h,
 	//if ( !ts->sendMsg ( g_conf.m_smtpHost,
 	//		    gbstrlen(g_conf.m_smtpHost),
 	//		    g_conf.m_smtpPort,
-	char *ip = emailServIp; // gf39, mail server ip
+	const char *ip = emailServIp; // gf39, mail server ip
 	// use backup if there
 	//char ipString[64];
 	//if ( g_emailServIPBackup ) {

@@ -726,7 +726,7 @@ void doneScanningWrapper ( void *state ) {
 	if ( g_errno ) { 
 		// get base, returns NULL and sets g_errno to ENOCOLLREC on err
 		RdbBase *base = getRdbBase( THIS->m_rdbId, THIS->m_collnum );
-		char *dbname = "NOT FOUND";
+		const char *dbname = "NOT FOUND";
 		if ( base ) dbname = base->m_dbname;
 		int32_t tt = LOG_WARN;
 		if ( g_errno == EFILECLOSED ) tt = LOG_INFO;
@@ -989,7 +989,7 @@ bool Msg3::doneScanning ( ) {
 		BigFile *ff = base->getFile(m_fileNums[i]);
 		// if we did a merge really quick and delete one of the 
 		// files we were reading, i've seen 'ff' be NULL
-		char *filename = "lostfilename";
+		const char *filename = "lostfilename";
 		if ( ff ) filename = ff->getFilename();
 
 		// compute cache info

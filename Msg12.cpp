@@ -556,7 +556,7 @@ void handleRequest12 ( UdpSlot *udpSlot , int32_t niceness ) {
 	//   before adding a waiting tree entry to re-pop the doledb record
 	//
 	if ( reqSize == sizeof(ConfirmRequest) ) {
-		char *msg = NULL;
+		const char *msg = NULL;
 		ConfirmRequest *cq = (ConfirmRequest *)request;
 
 		// confirm the lock

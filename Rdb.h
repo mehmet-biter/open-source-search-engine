@@ -73,7 +73,7 @@ char getIdFromRdb ( class Rdb *rdb ) ;
 char isSecondaryRdb ( uint8_t rdbId ) ;
 
 // get the dbname
-char *getDbnameFromId ( uint8_t rdbId ) ;
+const char *getDbnameFromId ( uint8_t rdbId ) ;
 
 // size of keys
 char getKeySizeFromRdbId  ( uint8_t rdbId );

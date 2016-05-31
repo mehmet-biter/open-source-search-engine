@@ -68,7 +68,7 @@ class Conf {
 	// . get the default collection based on hostname
 	//   will look for the hostname in each collection for a match
 	//   no match defaults to default collection
-	char *getDefaultColl ( char *hostname, int32_t hostnameLen );
+	const char *getDefaultColl ( char *hostname, int32_t hostnameLen );
 
 	// max amount of memory we can use
 	int64_t        m_maxMem;

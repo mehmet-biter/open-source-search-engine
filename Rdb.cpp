@@ -403,7 +403,7 @@ bool Rdb::addRdbBase2 ( collnum_t collnum ) { // addColl2()
 
 
 	CollectionRec *cr = NULL;
-	char *coll = NULL;
+	const char *coll = NULL;
 	if ( ! m_isCollectionLess ) cr = g_collectiondb.m_recs[collnum];
 	if ( cr ) coll = cr->m_coll;
 
@@ -571,7 +571,7 @@ bool Rdb::deleteColl ( collnum_t collnum , collnum_t newCollnum ) {
 	oldcr->setBasePtr ( m_rdbId , NULL );
 	char *coll = oldcr->m_coll;
 
-	char *msg = "deleted";
+	const char *msg = "deleted";
 
 	// if just resetting recycle base
 	if ( collnum != newCollnum ) {
@@ -689,7 +689,7 @@ bool Rdb::close ( void *state , void (* callback)(void *state ), bool urgent ,
 	//   when we come back up again
 	if ( ! m_urgent && m_inDumpLoop ) { // m_dump.isDumping() ) {
 		m_isSaving = false;
-		char *tt = "save";
+		const char *tt = "save";
 		if ( m_isReallyClosing ) tt = "close";
 		return log ( LOG_INFO,"db: Cannot %s %s until dump finishes.",
 			     tt,m_dbname);
@@ -861,7 +861,7 @@ bool Rdb::isSavingTree ( ) {
 }
 
 bool Rdb::saveTree ( bool useThread ) {
-	char *dbn = m_dbname;
+	const char *dbn = m_dbname;
 	if ( ! dbn || ! dbn[0] ) {
 		dbn = "unknown";
 	}
@@ -2362,7 +2362,7 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 	*/
 
 	// enhance the error message
-	char *ss ="";
+	const char *ss ="";
 	if ( m_tree.m_isSaving ) ss = " Tree is saving.";
 	if ( !m_useTree && m_buckets.isSaving() ) ss = " Buckets are saving.";
 	// return ETRYAGAIN if out of memory, this should tell
@@ -2669,7 +2669,7 @@ int32_t getDataSizeFromRdbId ( uint8_t rdbId ) {
 }
 
 // get the dbname
-char *getDbnameFromId ( uint8_t rdbId ) {
+const char *getDbnameFromId ( uint8_t rdbId ) {
         Rdb *rdb = getRdbFromId ( rdbId );
 	if ( rdb ) return rdb->m_dbname;
 	log(LOG_LOGIC,"db: rdbId of %" PRId32" is invalid.",(int32_t)rdbId);

@@ -367,7 +367,7 @@ public:
 //   call g_loop.callCallbacks(sd) or something
 // . those bytes should be stored in m_sendBuf, but not overwrite what 
 //   has not been sent yet
-bool TcpServer::sendMsg( char *hostname, int32_t hostnameLen, int16_t port, char *sendBuf,
+bool TcpServer::sendMsg( const char *hostname, int32_t hostnameLen, int16_t port, char *sendBuf,
 						 int32_t sendBufSize, int32_t sendBufUsed, int32_t msgTotalSize, void *state,
 						 void ( *callback )( void *state, TcpSocket *s ), int32_t timeout,
 						 int32_t maxTextDocLen, int32_t maxOtherDocLen ) {
