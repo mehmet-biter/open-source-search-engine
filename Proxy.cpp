@@ -11,7 +11,7 @@ static void proxyHandlerWrapper ( TcpSocket *s );
 //static void gotReplyWrapperPage( void *state, TcpSocket *s );
 static void gotHttpReplyWrapper ( void *state, UdpSlot *slot ) ;
 //static void gotDataFeedRequestWrapper( void *state );
-static void uncountStripe ( class StateControl *stC ) ;
+static void uncountStripe ( struct StateControl *stC ) ;
 
 struct StateControl{
 	int32_t m_pageNum;
