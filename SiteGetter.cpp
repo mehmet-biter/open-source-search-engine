@@ -251,7 +251,7 @@ bool SiteGetter::getSiteList ( ) {
 		char *pend = getPathEnd( m_url, m_pathDepth );
 
 		// hash up to that
-		char *host = getHostFast( m_url, NULL );
+		const char *host = getHostFast( m_url, NULL );
 
 		// hash the prefix first to match XmlDoc::hashNoSplit()
 		const char *prefix = "siteterm";

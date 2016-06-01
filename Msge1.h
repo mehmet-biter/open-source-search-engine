@@ -43,7 +43,7 @@ public:
 
 	bool launchRequests ( int32_t starti ) ;
 
-	bool sendMsgC      ( int32_t i , char *host , int32_t hlen );
+	bool sendMsgC      ( int32_t i , const char *host , int32_t hlen );
 	bool doneSending   ( int32_t i );
 	bool addTag        ( int32_t i );
 	bool doneAddingTag ( int32_t i );

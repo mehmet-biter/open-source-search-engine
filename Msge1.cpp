@@ -182,7 +182,7 @@ bool Msge1::launchRequests ( int32_t starti ) {
 
 	// if it is ip based that makes things easy
 	int32_t  hlen = 0;
-	char *host = getHostFast ( p , &hlen );
+	const char *host = getHostFast ( p , &hlen );
 
 	// reset this again
 	ip = 0;
@@ -267,7 +267,7 @@ bool Msge1::launchRequests ( int32_t starti ) {
 
 static void gotMsgCWrapper ( void *state , int32_t ip ) ;
 
-bool Msge1::sendMsgC ( int32_t i , char *host , int32_t hlen ) {
+bool Msge1::sendMsgC ( int32_t i , const char *host , int32_t hlen ) {
 	// we are processing the nth url
 	int32_t   n    = m_ns[i];
 	// set m_errno if we should at this point
@@ -358,7 +358,7 @@ bool Msge1::doneSending ( int32_t i ) {
 	if ( ! strcmp(m_coll,"qatest123") ) {
 		// get host
 		int32_t  hlen = 0;
-		char *host = getHostFast ( m_urlPtrs[n] , &hlen );
+		const char *host = getHostFast ( m_urlPtrs[n] , &hlen );
 		// use domain, we are "firstip" only now!!!
 		//int32_t  dlen = 0;
 		//char *dom  = getDomFast ( m_urlPtrs[n] , &dlen );
@@ -410,7 +410,7 @@ bool Msge1::addTag ( int32_t i ) {
 	//char *hostBuf = m->m_request;
 	// get the host
 	int32_t  hlen = 0;
-	char *host  = getHostFast ( m_urlPtrs[n] , &hlen );
+	const char *host  = getHostFast ( m_urlPtrs[n] , &hlen );
 
 
 	// if invalid or ip-based, skip it!

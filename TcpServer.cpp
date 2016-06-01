@@ -514,7 +514,7 @@ bool TcpServer::gotTcpServerIp ( TcpState *tst , int32_t ip ) {
 // . sets g_errno on error
 // . NOTE: should not be called by user since does not copy "msg"
 // . NOTE: we do not copy "msg" so keep it on your stack
-bool TcpServer::sendMsg( char *hostname, int32_t hostnameLen, int32_t ip, int16_t port, char *sendBuf,
+bool TcpServer::sendMsg( const char *hostname, int32_t hostnameLen, int32_t ip, int16_t port, char *sendBuf,
 						 int32_t sendBufSize, int32_t sendBufUsed, int32_t msgTotalSize, void *state,
 						 void ( *callback )( void *state, TcpSocket *s ), int32_t timeout,
 						 int32_t maxTextDocLen, int32_t maxOtherDocLen, bool useHttpTunnel ) {

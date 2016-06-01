@@ -22,7 +22,7 @@ char *getPathFast  ( char *url );
 char *getTLDFast   ( char *url , int32_t *tldLen  , bool hasHttp = true ) ;
 char *getDomFast   ( char *url , int32_t *domLen  , bool hasHttp = true ) ;
 bool  hasSubdomain ( char *url );
-char *getHostFast  ( char *url , int32_t *hostLen , int32_t *port = NULL ) ;
+const char *getHostFast  ( const char *url , int32_t *hostLen , int32_t *port = NULL ) ;
 
 // . returns the host of a normalized url pointed to by "s"
 // . i.e. "s" must start with the protocol (i.e. http:// or https:// etc.)

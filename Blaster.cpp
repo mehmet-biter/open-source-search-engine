@@ -1041,20 +1041,13 @@ void Blaster::gotDoc3 ( void *state, TcpSocket *s){
 		// The site name is in st->m_u2.getSite()
 		// But copy it because it is not nulled.
 		char tmp[1024];
-		//char site[1024];//how long could a site be?
 		int32_t siteLen = 0;
-		char *site    = getHostFast(st->m_u2,&siteLen);
-		char c = site[siteLen];
-		site[siteLen] = 0;
-		//strncpy(site,st->m_u2.getSite(),
-		//	st->m_u2.getSiteLen());
-		//site[st->m_u2.getSiteLen()]='\0';
-		sprintf(tmp,"%ssearch?"
-			"code=gbmonitor&"
-			"q=url%%3A%s",site,st2->m_url);
-		site[siteLen] = c;
-		if (m_verbose)
-			log(LOG_WARN,"blaster: Checking %s",tmp);
+		const char *site = getHostFast(st->m_u2,&siteLen);
+		sprintf(tmp,"%.*ssearch?code=gbmonitor&q=url%%3A%s", siteLen, site,st2->m_url);
+		if (m_verbose) {
+			log( LOG_WARN, "blaster: Checking %s", tmp );
+		}
+
 		//Url u;
 		//u.set(tmp,gbstrlen(tmp));
 		//Now get the doc

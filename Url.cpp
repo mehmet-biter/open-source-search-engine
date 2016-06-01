@@ -2318,19 +2318,19 @@ int64_t Url::getUrlHash64 ( ) const {
 	return hash64(m_url,m_ulen); 
 }
 
-char *getHostFast ( char *url , int32_t *hostLen , int32_t *port ) {
+const char *getHostFast ( const char *url , int32_t *hostLen , int32_t *port ) {
 	// point to the url
-	char *pp = url;
+	const char *pp = url;
 	// skip http(s):// or ftp:// (always there?)
 	while ( *pp && *pp != ':' ) pp++;
 	// skip ://
 	pp += 3;
 	// point "uhost" to hostname right away
-	char *uhost = pp;
+	const char *uhost = pp;
 	// advance "pp" till we hit a / or :<port>
 	while ( *pp && *pp !='/' && *pp !=':' ) pp++;
 	// advance "pe" over the port
-	char *pe = pp;
+	const char *pe = pp;
 	if ( *pp == ':' ) {
 		// if port ptr given, do not treat port as part of hostname
 		if ( port ) *port = atoi(pp+1);

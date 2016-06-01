@@ -5237,7 +5237,7 @@ bool SpiderRequest::setFromAddUrl ( char *url ) {
 	m_domHash32 = hash32 ( dom , dlen );
 	// and "site"
 	int32_t hlen = 0;
-	char *host = getHostFast ( url , &hlen );
+	const char *host = getHostFast ( url , &hlen );
 	m_siteHash32 = hash32 ( host , hlen );
 	m_hostHash32 = m_siteHash32;
 
