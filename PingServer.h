@@ -137,6 +137,9 @@ class PingServer {
 
 extern class PingServer g_pingServer;
 
+extern bool g_recoveryMode;
+extern int32_t g_recoveryLevel;
+
 // . returns false if blocked, true otherwise
 // . use this for sending generic emails
 bool sendEmail ( class EmailInfo *ei ) ;

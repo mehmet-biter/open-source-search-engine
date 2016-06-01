@@ -99,10 +99,6 @@ void dumpClusterdb       ( const char *coll,int32_t sfn,int32_t numFiles,bool in
 void dumpLinkdb          ( const char *coll, int32_t sfn, int32_t numFiles, bool includeTree,
 			   const char *url );
 
-extern bool g_recoveryMode;
-
-extern int32_t g_recoveryLevel;
-	
 bool isRecoveryFutile ( ) ;
 
 int copyFiles ( const char *dstDir ) ;
