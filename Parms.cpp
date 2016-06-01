@@ -2183,7 +2183,7 @@ bool Parms::printParm ( SafeBuf* sb,
 	}
 	else if ( t == TYPE_SITERULE ) {
 		// print the siterec rules as a drop down
-		char *ss[5];
+		const char *ss[5];
 		for ( int32_t i = 0; i < 5; i++ ) ss[i] = "";
 		int32_t v = *(int32_t*)s;
 		if ( v < 0 || v > 4 ) v = 0;
