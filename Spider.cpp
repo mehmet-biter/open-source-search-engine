@@ -4436,16 +4436,10 @@ void dedupSpiderdbList ( RdbList *list, bool removeNegRecs ) {
 	int64_t reqUh48  = 0LL;
 	int64_t repUh48  = 0LL;
 	SpiderReply   *oldRep = NULL;
-	//SpiderRequest *oldReq = NULL;
 	char *lastKey     = NULL;
 
 	int32_t oldSize = list->m_listSize;
 	int32_t corrupt = 0;
-	// debug
-	// static int32_t s_count = 0;
-	// s_count++;
-	// if ( s_count == 2524 )
-	// 	log("gotit");
 
 	int32_t numToFilter = 0;
 
@@ -4615,14 +4609,6 @@ void dedupSpiderdbList ( RdbList *list, bool removeNegRecs ) {
 		bool skipUs = false;
 		Link *myLink = NULL;
 		Link *link = headLink;
-
-		// debug point. should be deduped by
-		// if ( sreq->m_key.n0==7199823231990374913LL &&
-		//      sreq->m_key.n1==6511615362168588088 )
-		// 	log("hey1");
-		// if ( sreq->m_key.n0==7199823542662487041LL &&
-		//      sreq->m_key.n1==6511615362168588088 )
-		// 	log("hey2");
 
 		// now we keep a list of the last ten
 		for ( ; link ; link = link->m_next ) {
@@ -4811,8 +4797,6 @@ void dedupSpiderdbList ( RdbList *list, bool removeNegRecs ) {
 		lastKey = dst;
 		memmove ( dst , rec , recSize );
 		dst += recSize;
-		// if ( sreq->getUrlHash48() == 49553538838LL )
-		// 	log("napkins");
 	}
 
 
