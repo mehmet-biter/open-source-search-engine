@@ -535,7 +535,7 @@ bool RdbMerge::dumpList ( ) {
 	/////
 	if ( m_rdbId == RDB_SPIDERDB )
 		// removeNegRecs? = false
-		dedupSpiderdbList(&m_list, false);
+		dedupSpiderdbList(&m_list);
 
 	// if the startKey rolled over we're done
 	//if ( m_startKey.n0 == 0LL && m_startKey.n1 == 0 ) m_doneMerging=true;

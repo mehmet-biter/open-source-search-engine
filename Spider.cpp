@@ -4428,7 +4428,7 @@ checkNextRule:
 //   with the date now, so if url filters do not change then 
 //   gotSpiderdbList() can assume those to be valid and save time. BUT it does
 //   have siteNumInlinks...
-void dedupSpiderdbList ( RdbList *list, bool removeNegRecs ) {
+void dedupSpiderdbList ( RdbList *list ) {
 	char *newList = list->m_list;
 
 	char *dst          = newList;
@@ -4468,11 +4468,6 @@ void dedupSpiderdbList ( RdbList *list, bool removeNegRecs ) {
 
 		// skip if negative, just copy over
 		if ( ( rec[0] & 0x01 ) == 0x00 ) {
-			// should not be in here if this was true...
-			if ( removeNegRecs ) {
-				log("spider: filter got negative key");
-				char *xx=NULL;*xx=0;
-			}
 			// otherwise, keep it
 			lastKey = dst;
 			memmove ( dst , rec , sizeof(key128_t) );

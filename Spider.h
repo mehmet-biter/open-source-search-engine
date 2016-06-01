@@ -476,7 +476,7 @@ class Spiderdb {
 	int32_t print( char *srec , SafeBuf *sb = NULL );
 };
 
-void dedupSpiderdbList ( RdbList *list, bool removeNegRecs );
+void dedupSpiderdbList ( RdbList *list );
 
 extern class Spiderdb g_spiderdb;
 extern class Spiderdb g_spiderdb2;
