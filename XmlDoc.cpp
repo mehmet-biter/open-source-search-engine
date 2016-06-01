@@ -4115,6 +4115,8 @@ Links *XmlDoc::getLinks ( bool doQuickSet ) {
 	// get the latest url we are on
 	Url *u = getCurrentUrl();
 
+	/// @todo ALC why do we need to add to spiderdb?
+
 	//
 	// if we had a EDOCSIMPLIFIEDREDIR error, pretend it is a link
 	// so addOutlinkSpiderRecsToMetaList() will add it to spiderdb
@@ -5592,7 +5594,7 @@ Url **XmlDoc::getRedirUrl() {
 			ptr_redirUrl    = m_redirUrl.getUrl();
 			size_redirUrl   = m_redirUrl.getUrlLen()+1;
 
-			/// @todo should we use EDOCSIMPLIFIEDREDIR
+			/// @todo ALC should we use EDOCSIMPLIFIEDREDIR
 			// m_redirError = EDOCSIMPLIFIEDREDIR
 
 			// no error
@@ -7731,7 +7733,7 @@ bool *XmlDoc::getIsAllowed ( ) {
 	}
 
 
-	/// @todo cache robots instead of robots.txt
+	/// @todo ALC cache robots instead of robots.txt
 	// initialize robots
 	Robots robots( content, contentLen, g_conf.m_spiderBotName );
 

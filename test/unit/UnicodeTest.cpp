@@ -116,7 +116,7 @@ TEST(UnicodeTest, InvalidUtf8) {
 	    "\xe0\x80\x80",
 	    "\xf0\x80\x80",
 
-	    /// @todo support for the rest of the test cases
+	    /// @todo ALC support for the rest of the test cases
 
 	};
 

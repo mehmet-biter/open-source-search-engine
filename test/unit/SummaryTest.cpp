@@ -101,7 +101,7 @@ TEST( SummaryTest, BUGNoEllipsisAdded ) {
 	Summary summary;
 	generateSummary(summary, input, "saxophone", "http://www.example.com/");
 
-	/// @todo we're not adding ellipsis here due to lack of space. we should take one less word instead and add ellipsis.
+	/// @todo ALC we're not adding ellipsis here due to lack of space. we should take one less word instead and add ellipsis.
 	EXPECT_STREQ( "Unusual saxophone valuation. Looking for knowing how much your saxophone is worth and what an appropriate insurance should be?. We provide that and other relevant information such", summary.getSummary() );
 }
 
@@ -114,6 +114,6 @@ TEST( SummaryTest, BUGEllipsisAdded ) {
 	Summary summary;
 	generateSummary(summary, input, "giraffe", "http://www.example.com/");
 
-	/// @todo we're adding ellipsis even with a full sentence.
+	/// @todo ALC we're adding ellipsis even with a full sentence.
 	EXPECT_STREQ( "Giraffe on rollerblades. Penguin on skateboard. The giraffe is way faster than that plumb bird with pathetic wings.  …", summary.getSummary() );
 }
