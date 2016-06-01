@@ -2038,7 +2038,7 @@ bool sendNotification ( EmailInfo *ei ) {
 	CollectionRec *cr = g_collectiondb.m_recs[ei->m_collnum];
 
 	const char *email = "";
-	char *url   = "";
+	char *url = NULL;
 	const char *crawl = "unknown2";
 
 	if ( cr ) email = cr->m_notifyEmail.getBufStart();
