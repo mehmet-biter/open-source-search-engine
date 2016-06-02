@@ -3,6 +3,9 @@
 #include "HttpRequest.h"
 #include "ip.h"
 #include "Conf.h"
+#include <stdlib.h>
+#include <float.h>
+
 
 HttpRequest::HttpRequest () { m_cgiBuf = NULL; m_cgiBuf2 = NULL; reset(); }
 HttpRequest::~HttpRequest() { reset();      }
@@ -1210,102 +1213,83 @@ bool HttpRequest::getBool ( const char *field , bool defaultBool ) {
 }
 
 int32_t HttpRequest::getLong ( const char *field , int32_t defaultLong ) {
-	 int32_t len;
-	 const char *value = getValue ( field, &len, NULL );
-	 // return default if no match
+	int32_t len;
+	const char *value = getValue ( field, &len, NULL );
+	// return default if no match
 	if ( ! value || len <= 0 )
 		return defaultLong;
 	// otherwise, it's a match
 	char tmpbuf[32];
-	if((size_t)len>=sizeof(tmpbuf))
+	if((size_t)len>=sizeof(tmpbuf) || len==0)
 		return defaultLong;
 	memcpy(tmpbuf,value,len);
 	tmpbuf[len] = '\0';
-	int32_t res = atol ( value );
-	 if ( res == 0 ) {
-		 // may be an error. if so return the default
-		 int32_t i = 0;
-		 while ( i < len && is_wspace_a(value[i]) ) i++;
-		 if ( i < len && (value[i] == '-' || value[i] == '+') ) i++;
-		 if ( i >= len || !is_digit(value[i]) ) return defaultLong;
-	 }
-	 return res;
+	char *endptr = NULL;
+	int32_t res = strtol ( value, &endptr, 10 );
+	if(endptr && *endptr)
+		return defaultLong;
+	return res;
 }
 
 int64_t HttpRequest::getLongLong   ( const char *field , 
 					int64_t defaultLongLong ) {
-	 int32_t len;
-	 const char *value = getValue ( field, &len, NULL );
-	 // return default if no match
+	int32_t len;
+	const char *value = getValue ( field, &len, NULL );
+	// return default if no match
 	if ( ! value || len <= 0 )
 		return defaultLongLong;
 	// otherwise, it's a match
 	char tmpbuf[32];
-	if((size_t)len>=sizeof(tmpbuf))
+	if((size_t)len>=sizeof(tmpbuf) || len==0)
 		return defaultLongLong;
 	memcpy(tmpbuf,value,len);
 	tmpbuf[len] = '\0';
-	int64_t res = strtoull ( value , NULL, 10 );
-	 if ( res == 0 ) {
-		 // may be an error. if so return the default
-		 int32_t i = 0;
-		 while ( i < len && is_wspace_a(value[i]) ) i++;
-		 if ( i < len && (value[i] == '-' || value[i] == '+') ) i++;
-		 if ( i >= len || !is_digit(value[i]) ) return defaultLongLong;
-	 }
-	 return res;
+	char *endptr = NULL;
+	int64_t res = strtoull ( value, &endptr, 10 );
+	if(endptr && *endptr)
+		return defaultLongLong;
+	return res;
 }
 
 float HttpRequest::getFloat   ( const char *field , double defaultFloat ) {
-	 int32_t len;
-	 const char *value = getValue ( field, &len, NULL );
-	 // return default if no match
+	int32_t len;
+	const char *value = getValue ( field, &len, NULL );
+	// return default if no match
 	if ( ! value || len <= 0 )
 		return defaultFloat;
 	// otherwise, it's a match
 	char tmpbuf[32];
-	if((size_t)len>=sizeof(tmpbuf))
+	if((size_t)len>=sizeof(tmpbuf) || len==0)
 		return defaultFloat;
 	memcpy(tmpbuf,value,len);
 	tmpbuf[len] = '\0';
-	float res = atof ( value );
-	 if ( res == +0.0 ) {
-		 // may be an error. if so return the default
-		 int32_t i = 0;
-		 while ( i < len && is_wspace_a(value[i]) ) i++;
-		 if ( i < len && 
-		      (value[i] == '-' || 
-		       value[i] == '+' || 
-		       value[i] == '.') ) i++;
-		 if ( i >= len || !is_digit(value[i]) ) return defaultFloat;
-	 }
-	 return res;
+	char *endptr = NULL;
+	double res = strtod ( tmpbuf, &endptr );
+	if(endptr && *endptr)
+		return defaultFloat;
+	if(res>FLT_MAX || res<-FLT_MAX)
+		return defaultFloat; //would overflow precision of a float
+	//precision underflow silently ignored
+	return res;
 }
 
 double HttpRequest::getDouble ( const char *field , double defaultDouble ) {
-	 int32_t len;
-	 const char *value = getValue ( field, &len, NULL );
-	 // return default if no match
+	int32_t len;
+	const char *value = getValue ( field, &len, NULL );
+	// return default if no match
 	if ( ! value || len <= 0 )
 		return defaultDouble;
 	// otherwise, it's a match
 	char tmpbuf[32];
-	if((size_t)len>=sizeof(tmpbuf))
+	if((size_t)len>=sizeof(tmpbuf) || len==0)
 		return defaultDouble;
 	memcpy(tmpbuf,value,len);
 	tmpbuf[len] = '\0';
-	double res = strtod ( tmpbuf , NULL );
-	 if ( res == +0.0 ) {
-		 // may be an error. if so return the default
-		 int32_t i = 0;
-		 while ( i < len && is_wspace_a(value[i]) ) i++;
-		 if ( i < len && 
-		      (value[i] == '-' || 
-		       value[i] == '+' || 
-		       value[i] == '.') ) i++;
-		 if ( i >= len || !is_digit(value[i]) ) return defaultDouble;
-	 }
-	 return res;
+	char *endptr = NULL;
+	double res = strtod ( tmpbuf, &endptr );
+	if(endptr && *endptr)
+		return defaultDouble;
+	return res;
 }
 
 
