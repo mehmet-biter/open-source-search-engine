@@ -2086,7 +2086,7 @@ bool RdbBuckets::fastLoad ( BigFile *f , char* dbname) {
 		return false;
 	}
 
-	int32_t fsize = f->getFileSize();
+	int64_t fsize = f->getFileSize();
 	if ( fsize == 0 ) {
 		return true;
 	}
