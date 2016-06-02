@@ -785,7 +785,7 @@ bool Parms::setGigablastRequest ( TcpSocket *socket ,
 	// loop through cgi parms
 	for ( int32_t i = 0 ; i < hr->getNumFields() ; i++ ) {
 		// get cgi parm name
-		char *field = hr->getField    ( i );
+		const char *field = hr->getField    ( i );
 		//int32_t  flen  = hr->getFieldLen ( i );
 		// find in parms list
 		int32_t  j;
@@ -808,7 +808,7 @@ bool Parms::setGigablastRequest ( TcpSocket *socket ,
 			continue;
 		}
 		// value of cgi parm (null terminated)
-		char *v = hr->getValue ( i );
+		const char *v = hr->getValue ( i );
 		// . skip if no value was provided
 		// . unless it was a string! so we can make them empty.
 		if ( v[0] == '\0' &&
@@ -2283,7 +2283,7 @@ bool Parms::setFromRequest ( HttpRequest *r ,
 	// loop through cgi parms
 	for ( int32_t i = 0 ; i < r->getNumFields() ; i++ ) {
 		// get cgi parm name
-		char *field = r->getField    ( i );
+		const char *field = r->getField    ( i );
 		// find in parms list
 		int32_t  j;
 		Parm *m;
@@ -2302,7 +2302,7 @@ bool Parms::setFromRequest ( HttpRequest *r ,
 		// bail if the cgi field is not in the parms list
 		if ( j >= m_numParms ) continue;
 		// get the value of cgi parm (null terminated)
-		char *v = r->getValue ( i );
+		const char *v = r->getValue ( i );
 		// empty?
 		if ( ! v ) continue;
 		// . skip if no value was provided
@@ -11278,7 +11278,7 @@ bool Parms::convertHttpRequestToParmList (HttpRequest *hr, SafeBuf *parmList,
 	// loop through cgi parms
 	for ( int32_t i = 0 ; i < hr->getNumFields() ; i++ ) {
 		// get cgi parm name
-		char *field = hr->getField    ( i );
+		const char *field = hr->getField    ( i );
 		// get value of the cgi field
 		const char *val  = hr->getValue   (i);
 		// convert field to parm
@@ -11490,7 +11490,7 @@ bool Parms::convertHttpRequestToParmList (HttpRequest *hr, SafeBuf *parmList,
 	// loop through cgi parms
 	for ( int32_t i = 0 ; i < hr->getNumFields() ; i++ ) {
 		// get cgi parm name
-		char *field = hr->getField    ( i );
+		const char *field = hr->getField    ( i );
 		// get value of the cgi field
 		const char *val  = hr->getValue   (i);
 

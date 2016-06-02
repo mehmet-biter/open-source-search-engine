@@ -136,12 +136,12 @@ class HttpRequest {
 	// . for parsing the terms in a cgi url
 	// . the returned string is NOT NULL terminated
 	const char *getString  ( const char *field, int32_t *len = NULL,
-				 const char *defaultString = NULL , int32_t *next=NULL);
-	bool       getBool     ( const char *field, bool defaultBool );
-	int32_t       getLong     ( const char *field, int32_t defaultLong           );
-	int64_t  getLongLong ( const char *field, int64_t defaultLongLong    );
-	float      getFloat    ( const char *field, double defaultFloat );
-	double     getDouble   ( const char *field, double defaultDouble );
+				 const char *defaultString = NULL , int32_t *next=NULL) const;
+	bool       getBool     ( const char *field, bool defaultBool ) const;
+	int32_t    getLong     ( const char *field, int32_t defaultLong ) const;
+	int64_t    getLongLong ( const char *field, int64_t defaultLongLong ) const;
+	float      getFloat    ( const char *field, double defaultFloat ) const;
+	double     getDouble   ( const char *field, double defaultDouble ) const;
 
 	float      getFloatFromCookie    ( const char *field, float def );
 	int32_t       getLongFromCookie    ( const char *field, int32_t def );
@@ -152,7 +152,7 @@ class HttpRequest {
 					  int32_t *next=NULL);
 	
 
-	bool hasField ( const char *field );
+	bool hasField ( const char *field ) const;
 
 	// are we a redir? if so return non-NULL
 	char      *getRedir    ( ) { return m_redir;    }
@@ -172,17 +172,21 @@ class HttpRequest {
 
 	// . get value of cgi "field" term in the requested filename
 	// . you know GET /myfile.html?q=123&name=nathaniel
-	char *getValue ( const char *field , int32_t *len=NULL, int32_t *next=NULL) ;
+	const char *getValue ( const char *field , int32_t *len=NULL, int32_t *next=NULL) const;
 
 	// get value of the ith field
-	char *getValue ( int32_t i, int32_t *len = NULL);
+	const char *getValue ( int32_t i, int32_t *len = NULL) const;
 
 	// get the ith cgi parameter name, return NULL if none
-	int32_t  getNumFields   ( ) { return m_numFields; }
-	char *getField    ( int32_t i ) {
-		if ( i >= m_numFields ) return NULL; return m_fields[i]; }
-	int32_t  getFieldLen ( int32_t i ) {
-		if ( i >= m_numFields ) return 0   ; return m_fieldLens[i]; }
+	int32_t  getNumFields( ) const { return m_numFields; }
+	const char *getField( int32_t i ) const {
+		if ( i >= m_numFields ) return NULL;
+		return m_fields[i];
+	}
+	int32_t  getFieldLen ( int32_t i ) const {
+		if ( i >= m_numFields ) return 0;
+		return m_fieldLens[i];
+	}
 
 	// . s is a cgi string
 	// . either the stuff after the '?' in a url

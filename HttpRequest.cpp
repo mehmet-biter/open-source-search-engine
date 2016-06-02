@@ -1189,8 +1189,8 @@ const char *HttpRequest::getStringFromCookie ( const char *field      ,
 // *next is set to ptr into m_cgiBuf so that the next successive call to
 // getString with the SAME "field" will start at *next. that way you
 // can use the same cgi parameter multiple times. (like strstr kind of)
-const char *HttpRequest::getString ( const char *field , int32_t *len , const char *defaultStr ,
-				int32_t *next ) {
+const char *HttpRequest::getString ( const char *field, int32_t *len, const char *defaultStr,
+				int32_t *next ) const {
 	 const char *value = getValue ( field , len, next );
 	 // return default if no match
 	 if ( ! value ) { 
@@ -1204,7 +1204,7 @@ const char *HttpRequest::getString ( const char *field , int32_t *len , const ch
 	 return value;
  }
 
-bool HttpRequest::getBool ( const char *field , bool defaultBool ) {
+bool HttpRequest::getBool ( const char *field, bool defaultBool ) const {
 	int32_t flen;
 	const char *cs = getString ( field , &flen , NULL );
 	if ( ! cs ) return defaultBool;
@@ -1212,7 +1212,7 @@ bool HttpRequest::getBool ( const char *field , bool defaultBool ) {
 	return true;
 }
 
-int32_t HttpRequest::getLong ( const char *field , int32_t defaultLong ) {
+int32_t HttpRequest::getLong ( const char *field, int32_t defaultLong ) const {
 	int32_t len;
 	const char *value = getValue ( field, &len, NULL );
 	// return default if no match
@@ -1231,8 +1231,8 @@ int32_t HttpRequest::getLong ( const char *field , int32_t defaultLong ) {
 	return res;
 }
 
-int64_t HttpRequest::getLongLong   ( const char *field , 
-					int64_t defaultLongLong ) {
+int64_t HttpRequest::getLongLong ( const char *field,
+				   int64_t defaultLongLong ) const {
 	int32_t len;
 	const char *value = getValue ( field, &len, NULL );
 	// return default if no match
@@ -1251,7 +1251,7 @@ int64_t HttpRequest::getLongLong   ( const char *field ,
 	return res;
 }
 
-float HttpRequest::getFloat   ( const char *field , double defaultFloat ) {
+float HttpRequest::getFloat ( const char *field, double defaultFloat ) const {
 	int32_t len;
 	const char *value = getValue ( field, &len, NULL );
 	// return default if no match
@@ -1273,7 +1273,7 @@ float HttpRequest::getFloat   ( const char *field , double defaultFloat ) {
 	return res;
 }
 
-double HttpRequest::getDouble ( const char *field , double defaultDouble ) {
+double HttpRequest::getDouble ( const char *field, double defaultDouble ) const {
 	int32_t len;
 	const char *value = getValue ( field, &len, NULL );
 	// return default if no match
@@ -1308,7 +1308,7 @@ bool HttpRequest::hasField ( const char *field ) {
 }
 
 
-char *HttpRequest::getValue ( const char *field , int32_t *len, int32_t *next ) {
+const char *HttpRequest::getValue ( const char *field , int32_t *len, int32_t *next ) const {
 	// how long is it?
 	int32_t fieldLen = gbstrlen ( field );
 	// scan the field table directly
@@ -1327,7 +1327,7 @@ char *HttpRequest::getValue ( const char *field , int32_t *len, int32_t *next ) 
 	return NULL;
 }
 
-char *HttpRequest::getValue ( int32_t i, int32_t *len ) {
+const char *HttpRequest::getValue ( int32_t i, int32_t *len ) const {
 	if ( i >= m_numFields ) return NULL;
 	if (len) *len = gbstrlen(m_fieldValues[i]);
 	return m_fieldValues[i];
