@@ -835,3 +835,28 @@ TEST( UrlTest, Normalization ) {
 
 	strip_param_tests( test_cases, 123 );
 }
+
+TEST( UrlTest, GetSubPathLen ) {
+	Url url;
+	url.set("http://s1.t7.example.com:8080/subpath1/sub2/s3/");
+
+	uint8_t i = 0;
+
+	const char *expected = "/subpath1/sub2/s3/";
+	size_t expectedLen = strlen( expected );
+
+	EXPECT_EQ( url.getSubPathLen( i++ ), expectedLen );
+	EXPECT_EQ( url.getSubPathLen( i++ ), expectedLen );
+
+	expected = "/subpath1/sub2/";
+	expectedLen = strlen( expected );
+	EXPECT_EQ( url.getSubPathLen( i++ ), expectedLen );
+
+	expected = "/subpath1/";
+	expectedLen = strlen( expected );
+	EXPECT_EQ( url.getSubPathLen( i++ ), expectedLen );
+
+	expected = "";
+	expectedLen = strlen( expected );
+	EXPECT_EQ( url.getSubPathLen( i++ ), expectedLen );
+}
