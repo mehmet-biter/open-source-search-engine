@@ -2071,7 +2071,7 @@ bool RdbBuckets::loadBuckets ( char* dbname) {
 	const char *dir = g_hostdb.m_dir;
 	if( *dir == '\0') dir = ".";
 	file.set ( dir , filename , NULL ); 
-	if ( file.doesExist() <= 0 ) return true;
+	if ( !file.doesExist() ) return true;
 	// load the table with file named "THISDIR/saved"
 	bool status = fastLoad ( &file , dbname ) ;
 	file.close();
