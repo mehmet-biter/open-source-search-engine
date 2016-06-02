@@ -166,8 +166,6 @@ class HttpRequest {
 	char *getPath    ( ) { return m_path; }
 	int32_t  getPathLen ( ) { return m_plen; }
 
-	bool isMSIE ( ) { return m_isMSIE; }
-
 	// private:
 
 	// . get value of cgi "field" term in the requested filename
@@ -225,9 +223,6 @@ class HttpRequest {
 
 	// are we coming from a local machine? 
 	bool  m_isLocal;
-
-	// is it the microsoft internet explorer browser?
-	bool m_isMSIE;
 
 	// does the connecting machine have admin privledges?
 	//bool  m_isMasterAdmin;

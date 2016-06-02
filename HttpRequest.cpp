@@ -80,7 +80,6 @@ void HttpRequest::reset() {
 	m_cookiePtr = NULL;
 	m_cookieLen = 0;
 	m_userIP = 0;
-	m_isMSIE = false;
 	m_reqBufValid = false;
 	m_reqBuf.purge();
 
@@ -811,10 +810,6 @@ bool HttpRequest::set ( char *origReq , int32_t origReqLen , TcpSocket *sock ) {
 	 // NULL terminate it
 	 m_userAgent [ len ] = '\0';
 
-	 m_isMSIE = false;
-	 if ( strstr ( m_userAgent , "MSIE" ) )
-		 m_isMSIE = true;
-
 	 // get Cookie: field
 	 s = strstr ( req, "Cookie:" );
 	 // find another
@@ -1293,7 +1288,7 @@ double HttpRequest::getDouble ( const char *field, double defaultDouble ) const 
 }
 
 
-bool HttpRequest::hasField ( const char *field ) {
+bool HttpRequest::hasField ( const char *field ) const {
 	// how long is it?
 	int32_t fieldLen = gbstrlen ( field );
 	// scan the field table directly
