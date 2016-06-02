@@ -232,6 +232,7 @@ static Needle s_dirtyWords []  = {
 	// scunthorpe (north lincolnshire)
 	{"scunthorpe"  ,0,-2,0,0,NULL},
 };
+static const int32_t numDirty = sizeof(s_dirtyWords) / sizeof(s_dirtyWords[0]);
 
 ////
 //// New stuff from sex.com adult word list
@@ -490,6 +491,7 @@ static Needle s_dirtyWordsPart2 []  = {
         {"wifeswapping" ,0,2,0,0,NULL},
         {"xrated"       ,0,2,0,0,NULL}
 };
+static const int32_t numDirty2 = sizeof(s_dirtyWordsPart2) / sizeof(s_dirtyWordsPart2[0]);
 
 
 int32_t getAdultPoints ( char *s, int32_t slen, int32_t niceness, const char *url ) {
@@ -497,7 +499,6 @@ int32_t getAdultPoints ( char *s, int32_t slen, int32_t niceness, const char *ur
 	// . then check each match to see if it is actually a legit word
 	// . actually match the dirty words, then match the clean words
 	//   then we can subtract counts.
-	int32_t numDirty = sizeof(s_dirtyWords) / sizeof(Needle);
 	getMatches2 ( s_dirtyWords ,
 		      numDirty     ,
 		      s            ,
@@ -537,8 +538,8 @@ int32_t getAdultPoints ( char *s, int32_t slen, int32_t niceness, const char *ur
 	// so many needles in one haystack.
 	//
 	///
-	// int32_t numDirty2 = sizeof(s_dirtyWordsPart2) / sizeof(Needle);
 
+#if 0
 	// . disable this for now. most of these are phrases and they
 	//   will not be detected.
 	// . TODO: hash the dirty words and phrases and just lookup
@@ -547,7 +548,6 @@ int32_t getAdultPoints ( char *s, int32_t slen, int32_t niceness, const char *ur
 	//   with isDirtyUrl() which will split the string into words
 	//   and call isDirtyWord() on each one. also use bi and tri grams
 	//   in the hash table.
-	int32_t numDirty2 = 0;
 
 	getMatches2 ( s_dirtyWordsPart2 ,
 		      numDirty2     ,
@@ -578,6 +578,7 @@ int32_t getAdultPoints ( char *s, int32_t slen, int32_t niceness, const char *ur
 		    ,url
 		    );
 	}
+#endif
 
 
 	return points;
