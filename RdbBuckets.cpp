@@ -2062,7 +2062,7 @@ int64_t RdbBuckets::fastSaveColl_r(int fd, int64_t offset) {
 	return offset;
 }
 
-bool RdbBuckets::loadBuckets ( char* dbname) {
+bool RdbBuckets::loadBuckets ( const char* dbname) {
 	char filename[256];
 	sprintf(filename,"%s-buckets-saved.dat",dbname);
 
@@ -2078,7 +2078,7 @@ bool RdbBuckets::loadBuckets ( char* dbname) {
 	return status;
 }
 
-bool RdbBuckets::fastLoad ( BigFile *f , char* dbname) {
+bool RdbBuckets::fastLoad ( BigFile *f, const char* dbname) {
 	log(LOG_INIT,"db: Loading %s.",f->getFilename());
 
 	// open it up
@@ -2104,7 +2104,7 @@ bool RdbBuckets::fastLoad ( BigFile *f , char* dbname) {
 }
 
 
-int64_t RdbBuckets::fastLoadColl( BigFile *f, char *dbname, int64_t offset ) {
+int64_t RdbBuckets::fastLoadColl( BigFile *f, const char *dbname, int64_t offset ) {
 	int32_t maxBuckets;
 	int32_t numBuckets;
 	int32_t version;
