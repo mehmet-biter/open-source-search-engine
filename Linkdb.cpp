@@ -11,6 +11,21 @@
 #include <valgrind/memcheck.h>
 #endif
 
+static LinkInfo *makeLinkInfo ( char        *coll                    ,
+			 int32_t         ip                      ,
+			 int32_t         siteNumInlinks          ,
+			 Msg20Reply **replies                 ,
+			 int32_t         numReplies              ,
+			 // if link spam give this weight
+			 int32_t         spamWeight              ,
+			 bool         oneVotePerIpTop         ,
+			 int64_t    linkeeDocId             ,
+			 int32_t         lastUpdateTime          ,
+			 bool         onlyNeedGoodInlinks      ,
+			 int32_t         niceness                ,
+			 class Msg25 *msg25 ,
+			 SafeBuf *linkInfoBuf ) ;
+
 Linkdb g_linkdb;
 Linkdb g_linkdb2;
 
@@ -2957,7 +2972,7 @@ bool Msg25::addNote ( const char *note , int32_t noteLen , int64_t docId ) {
 //   LinkInfo's Inlinks to get their weights, etc.
 // . returns the LinkInfo on success
 // . returns NULL and sets g_errno on error
-LinkInfo *makeLinkInfo ( char        *coll                    ,
+static LinkInfo *makeLinkInfo ( char        *coll                    ,
 			 int32_t         ip                      ,
 			 int32_t         siteNumInlinks          ,
 			 Msg20Reply **replies                 ,

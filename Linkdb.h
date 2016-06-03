@@ -899,23 +899,6 @@ class Inlink {
 	char       m_buf[MAXINLINKSTRINGBUFSIZE] ;
 } __attribute__((packed, aligned(4)));
 
-// . this function is normally called like "info = makeLinkInfo()"
-//   to create a new LinkInfo based on a bunch of Msg20 replies
-// . returns NULL and sets g_errno on error
-LinkInfo *makeLinkInfo ( char        *coll                    ,
-			 int32_t         ip                      ,
-			 int32_t         siteNumInlinks          ,
-			 Msg20Reply **replies                 ,
-			 int32_t         numReplies              ,
-			 // if link spam give this weight
-			 int32_t         spamWeight              ,
-			 bool         oneVotePerIpTop         ,
-			 int64_t    linkeeDocId             ,
-			 int32_t         lastUpdateTime          ,
-			 bool         onlyNeedGoodInlinks      ,
-			 int32_t         niceness                ,
-			 class Msg25 *msg25 ,
-			 SafeBuf *linkInfoBuf ) ;
 
 ////////
 //
