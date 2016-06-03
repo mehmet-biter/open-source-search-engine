@@ -11,7 +11,7 @@
 #include <valgrind/memcheck.h>
 #endif
 
-static LinkInfo *makeLinkInfo ( char        *coll                    ,
+static LinkInfo *makeLinkInfo ( const char        *coll                    ,
 			 int32_t         ip                      ,
 			 int32_t         siteNumInlinks          ,
 			 Msg20Reply **replies                 ,
@@ -2093,14 +2093,14 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 		    ms,m_site,m_url,m_docId);
 	}
 
-	CollectionRec *cr = g_collectiondb.getRec ( m_collnum );
+	const CollectionRec *cr = g_collectiondb.getRec ( m_collnum );
 	if ( ! cr ) {
 		log("linkdb: collnum %" PRId32" is gone 2",(int32_t)m_collnum);
 		// that func doesn't set g_errno so we must
 		g_errno = ENOCOLLREC;
 		return true;
 	}
-	char *coll = cr->m_coll;
+	const char *coll = cr->m_coll;
 
 	// . this returns NULL and sets g_errno on error
 	// . returns an allocated ptr to a LinkInfo class
@@ -2972,7 +2972,7 @@ bool Msg25::addNote ( const char *note , int32_t noteLen , int64_t docId ) {
 //   LinkInfo's Inlinks to get their weights, etc.
 // . returns the LinkInfo on success
 // . returns NULL and sets g_errno on error
-static LinkInfo *makeLinkInfo ( char        *coll                    ,
+static LinkInfo *makeLinkInfo ( const char        *coll                    ,
 			 int32_t         ip                      ,
 			 int32_t         siteNumInlinks          ,
 			 Msg20Reply **replies                 ,
