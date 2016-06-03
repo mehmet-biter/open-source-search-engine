@@ -140,8 +140,6 @@ int32_t SpiderRequest::print ( SafeBuf *sbarg ) {
 	if ( m_sameHost ) sb->safePrintf("SAMEHOST ");
 	if ( m_sameSite ) sb->safePrintf("SAMESITE ");
 	if ( m_wasParentIndexed ) sb->safePrintf("WASPARENTINDEXED ");
-	if ( m_parentIsRSS ) sb->safePrintf("PARENTISRSS ");
-	if ( m_parentIsPermalink ) sb->safePrintf("PARENTISPERMALINK ");
 	if ( m_parentIsPingServer ) sb->safePrintf("PARENTISPINGSERVER ");
 	if ( m_parentIsSiteMap ) sb->safePrintf("PARENTISSITEMAP ");
 	if ( m_isMenuOutlink ) sb->safePrintf("MENUOUTLINK ");
@@ -340,8 +338,6 @@ int32_t SpiderRequest::printToTable ( SafeBuf *sb , const char *status ,
 	if ( m_sameHost ) sb->safePrintf("SAMEHOST ");
 	if ( m_sameSite ) sb->safePrintf("SAMESITE ");
 	if ( m_wasParentIndexed ) sb->safePrintf("WASPARENTINDEXED ");
-	if ( m_parentIsRSS ) sb->safePrintf("PARENTISRSS ");
-	if ( m_parentIsPermalink ) sb->safePrintf("PARENTISPERMALINK ");
 	if ( m_parentIsPingServer ) sb->safePrintf("PARENTISPINGSERVER ");
 	if ( m_parentIsSiteMap ) sb->safePrintf("PARENTISSITEMAP ");
 	if ( m_isMenuOutlink ) sb->safePrintf("MENUOUTLINK ");
@@ -2925,27 +2921,6 @@ checkNextRule:
 			goto checkNextRule;
 		}
 
-		// does it have an rss inlink? we want to expedite indexing
-		// of such pages. i.e. that we gather from an rss feed that
-		// we got from a pingserver...
-		if ( strncmp(p,"isparentrss",11) == 0 ) {
-			// skip for msg20
-			if ( isForMsg20 ) continue;
-			// if we have no such inlink
-			if ( (bool)sreq->m_parentIsRSS == val ) continue;
-			// skip
-			p += 11;
-			// skip to next constraint
-			p = strstr(p, "&&");
-			// all done?
-			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
-				return i;
-			}
-			p += 2;
-			goto checkNextRule;
-		}
-
 		if ( strncmp(p,"isparentsitemap",15) == 0 ) {
 			// skip for msg20
 			if ( isForMsg20 ) continue;
@@ -4598,8 +4573,6 @@ void dedupSpiderdbList ( RdbList *list ) {
 		if ( sreq->m_parentIsSiteMap    ) srh ^= 0xe0c20e3f;
 		if ( sreq->m_urlIsDocId         ) srh ^= 0xee015b07;
 		if ( sreq->m_fakeFirstIp        ) srh ^= 0x95b8d376;
-		if ( sreq->m_parentIsRSS        ) srh ^= 0xb08c7545;
-		if ( sreq->m_parentIsPermalink  ) srh ^= 0xbd688268;
 		if ( sreq->m_parentIsPingServer ) srh ^= 0xb4c8a811;
 		if ( sreq->m_isMenuOutlink      ) srh ^= 0xd97bb80b;
 

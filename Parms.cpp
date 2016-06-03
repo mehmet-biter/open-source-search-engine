@@ -13289,12 +13289,6 @@ static bool printUrlExpressionExamples ( SafeBuf *sb ) {
 			  "</font></b>"
 			  "</td></tr>"
 
-			  "<tr class=poo><td>isparentrss | !isparentrss</td>"
-			  "<td>"
-			  "If a parent of the URL was an RSS page "
-			  "then this will be matched."
-			  "</td></tr>"
-
 			  "<tr class=poo><td>isparentsitemap | "
 			  "!isparentsitemap</td>"
 			  "<td>"

@@ -1614,8 +1614,6 @@ void XmlDoc::getRebuiltSpiderRequest ( SpiderRequest *sreq ) {
 	sreq->m_sameHost             = 0;//m_sreq.m_sameHost;
 	sreq->m_sameSite             = 0;//m_sreq.m_sameSite;
 	sreq->m_wasParentIndexed     = 0;//m_sreq.m_parentWasIndexed;
-	sreq->m_parentIsRSS          = 0;//m_sreq.m_parentIsRSS;
-	sreq->m_parentIsPermalink    = 0;//m_sreq.m_parentIsPermalink;
 	sreq->m_parentIsPingServer   = 0;//m_sreq.m_parentIsPingServer;
 
 	// validate the stuff so getUrlFilterNum() acks it
@@ -15525,8 +15523,6 @@ void XmlDoc::setSpiderReqForMsg20 ( SpiderRequest *sreq   ,
 	sreq->m_sameHost             = 0;//m_sreq.m_sameHost;
 	sreq->m_sameSite             = 0;//m_sreq.m_sameSite;
 	sreq->m_wasParentIndexed     = 0;//m_sreq.m_parentWasIndexed;
-	sreq->m_parentIsRSS          = 0;//m_sreq.m_parentIsRSS;
-	sreq->m_parentIsPermalink    = 0;//m_sreq.m_parentIsPermalink;
 	sreq->m_parentIsPingServer   = 0;//m_sreq.m_parentIsPingServer;
 
 	// validate the stuff so getUrlFilterNum() acks it
@@ -15697,12 +15693,10 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 	//	onlyInternal = true;
 
 	bool    isParentRSS       = false;
-	bool    parentIsPermalink = false;
 	bool    parentIsSiteMap   = false;
 	// PageAddUrl.cpp does not supply a valid new doc, so this is NULL
 	if ( nd ) {
 		isParentRSS       = *nd->getIsRSS() ;
-		parentIsPermalink = *nd->getIsPermalink();
 		parentIsSiteMap   = *nd->getIsSiteMap();
 	}
 
@@ -16041,8 +16035,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		if ( hostHash32 == m_hostHash32a ) ksr.m_sameHost = 1;
 		if ( linkSiteHashes[i]==m_siteHash32  ) ksr.m_sameSite = 1;
 		if ( *ipi                        ) ksr.m_wasParentIndexed  = 1;
-		if ( isParentRSS                 ) ksr.m_parentIsRSS       = 1;
-		if ( parentIsPermalink           ) ksr.m_parentIsPermalink = 1;
 		if ( isParentPingServer          ) ksr.m_parentIsPingServer= 1;
 		if ( parentIsSiteMap             ) ksr.m_parentIsSiteMap   = 1;
 
