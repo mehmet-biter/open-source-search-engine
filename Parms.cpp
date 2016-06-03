@@ -8310,6 +8310,7 @@ void Parms::init ( ) {
 
 	m->m_title = "clusterdb max tree mem";
 	m->m_desc  = "Clusterdb caches small records for site clustering and deduping.";
+	m->m_cgi   = "mcmt";
 	m->m_off   = offsetof(Conf,m_clusterdbMaxTreeMem);
 	m->m_def   = "1000000";
 	m->m_type  = TYPE_LONG;
@@ -8424,6 +8425,7 @@ void Parms::init ( ) {
 
 	m->m_title = "statsdb max tree mem";
 	m->m_desc  = "";
+	m->m_cgi   = "mstmt";
 	m->m_off   = offsetof(Conf,m_statsdbMaxTreeMem);
 	m->m_def   = "5000000";
 	m->m_type  = TYPE_LONG;
@@ -8439,6 +8441,7 @@ void Parms::init ( ) {
 
 	m->m_title = "statsdb max cache mem";
 	m->m_desc  = "";
+	m->m_cgi   = "stcm";
 	m->m_off   = offsetof(Conf,m_statsdbMaxCacheMem);
 	m->m_def   = "0";
 	m->m_type  = TYPE_LONG;
@@ -8478,11 +8481,7 @@ void Parms::init ( ) {
 	m->m_def   = "2";
 	m->m_type  = TYPE_LONG;
 	m->m_flags = PF_CLONE;//PF_HIDDEN | PF_NOSAVE;
-#ifndef PRIVACORE_TEST_VERSION
-	m->m_page  = PAGE_NONE;
-#else
 	m->m_page  = PAGE_RDB;
-#endif
 	m->m_obj   = OBJ_COLL;
 	m->m_group = false;
 	m++;
