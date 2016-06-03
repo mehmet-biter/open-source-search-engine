@@ -141,7 +141,6 @@ int32_t SpiderRequest::print ( SafeBuf *sbarg ) {
 	if ( m_sameSite ) sb->safePrintf("SAMESITE ");
 	if ( m_wasParentIndexed ) sb->safePrintf("WASPARENTINDEXED ");
 	if ( m_parentIsPingServer ) sb->safePrintf("PARENTISPINGSERVER ");
-	if ( m_parentIsSiteMap ) sb->safePrintf("PARENTISSITEMAP ");
 	if ( m_isMenuOutlink ) sb->safePrintf("MENUOUTLINK ");
 
 	if ( m_hasAuthorityInlink ) sb->safePrintf("HASAUTHORITYINLINK ");
@@ -339,7 +338,6 @@ int32_t SpiderRequest::printToTable ( SafeBuf *sb , const char *status ,
 	if ( m_sameSite ) sb->safePrintf("SAMESITE ");
 	if ( m_wasParentIndexed ) sb->safePrintf("WASPARENTINDEXED ");
 	if ( m_parentIsPingServer ) sb->safePrintf("PARENTISPINGSERVER ");
-	if ( m_parentIsSiteMap ) sb->safePrintf("PARENTISSITEMAP ");
 	if ( m_isMenuOutlink ) sb->safePrintf("MENUOUTLINK ");
 
 	//if ( m_fromSections ) sb->safePrintf("FROMSECTIONS ");
@@ -2921,24 +2919,6 @@ checkNextRule:
 			goto checkNextRule;
 		}
 
-		if ( strncmp(p,"isparentsitemap",15) == 0 ) {
-			// skip for msg20
-			if ( isForMsg20 ) continue;
-			// if no match continue
-			if ( (bool)sreq->m_parentIsSiteMap == val) continue;
-			// skip
-			p += 15;
-			// skip to next constraint
-			p = strstr(p, "&&");
-			// all done?
-			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
-				return i;
-			}
-			p += 2;
-			goto checkNextRule;
-		}
-
 		// does it have an rss inlink? we want to expedite indexing
 		// of such pages. i.e. that we gather from an rss feed that
 		// we got from a pingserver...
@@ -4570,7 +4550,6 @@ void dedupSpiderdbList ( RdbList *list ) {
 		if ( sreq->m_isPageReindex ) srh ^= 0x70fb3911;
 		if ( sreq->m_forceDelete   ) srh ^= 0x4e6e9aee;
 
-		if ( sreq->m_parentIsSiteMap    ) srh ^= 0xe0c20e3f;
 		if ( sreq->m_urlIsDocId         ) srh ^= 0xee015b07;
 		if ( sreq->m_fakeFirstIp        ) srh ^= 0x95b8d376;
 		if ( sreq->m_parentIsPingServer ) srh ^= 0xb4c8a811;

@@ -15693,11 +15693,9 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 	//	onlyInternal = true;
 
 	bool    isParentRSS       = false;
-	bool    parentIsSiteMap   = false;
 	// PageAddUrl.cpp does not supply a valid new doc, so this is NULL
 	if ( nd ) {
 		isParentRSS       = *nd->getIsRSS() ;
-		parentIsSiteMap   = *nd->getIsSiteMap();
 	}
 
 	int32_t n = links->m_numLinks;
@@ -15953,8 +15951,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		ksr.m_siteNumInlinksValid = true;
 		ksr.m_isRSSExt            = isRSSExt;
 
-		ksr.m_parentIsSiteMap = parentIsSiteMap;
-
 		ksr.m_hasMediaExtension = url.hasMediaExtension();
 		ksr.m_hasMediaExtensionValid = 1;
 
@@ -16036,7 +16032,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		if ( linkSiteHashes[i]==m_siteHash32  ) ksr.m_sameSite = 1;
 		if ( *ipi                        ) ksr.m_wasParentIndexed  = 1;
 		if ( isParentPingServer          ) ksr.m_parentIsPingServer= 1;
-		if ( parentIsSiteMap             ) ksr.m_parentIsSiteMap   = 1;
 
 		// this is used for building dmoz. we just want to index
 		// the urls in dmoz, not their outlinks.

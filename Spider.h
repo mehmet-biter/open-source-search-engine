@@ -585,7 +585,7 @@ public:
 	unsigned    m_isPageParser:1;
 	// should we use the test-spider-dir for caching test coll requests?
 	//unsigned    m_useTestSpiderDir:1;
-	unsigned    m_parentIsSiteMap:1;
+	unsigned    m_reserved3q:1;
 	// . is the url a docid (not an actual url)
 	// . could be a "query reindex"
 	unsigned    m_urlIsDocId:1;

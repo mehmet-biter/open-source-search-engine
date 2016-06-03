@@ -378,7 +378,7 @@ bool Msg1c::gotList ( ) {
 		sr.m_isPageReindex  =  1;
 		sr.m_urlIsDocId     =  1;
 		sr.m_fakeFirstIp    =  1;
-		sr.m_parentIsSiteMap = 0;
+
 		// now you can recycle content instead of re-downloading it
 		// for every docid
 		sr.m_recycleContent = gr->m_recycleContent;
