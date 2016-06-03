@@ -429,21 +429,19 @@ void gotMulticastReplyWrapper25 ( void *state , void *state2 ) {
 // . calls req->m_callback when ready if it would block
 bool getLinkInfo ( SafeBuf   *reqBuf              ,
 		   Multicast *mcast               ,
-		   char      *site                ,
-		   char      *url                 ,
+		   const char      *site                ,
+		   const char      *url                 ,
 		   bool       isSiteLinkInfo      ,
 		   int32_t       ip                  ,
 		   int64_t  docId               ,
 		   collnum_t  collnum             ,
-		   char      *qbuf,
-		   int32_t       qbufSize,
 		   void      *state               ,
 		   void (* callback)(void *state) ,
 		   bool       isInjecting         ,
 		   SafeBuf   *pbuf                ,
 		   bool       printInXml          ,
 		   int32_t       siteNumInlinks      ,
-		   LinkInfo  *oldLinkInfo         ,
+		   const LinkInfo  *oldLinkInfo         ,
 		   int32_t       niceness            ,
 		   bool       doLinkSpamCheck     ,
 		   bool       oneVotePerIpDom     ,
@@ -477,13 +475,13 @@ bool getLinkInfo ( SafeBuf   *reqBuf              ,
 
 	req->m_mcast = mcast;
 
-	req->ptr_site = site;
+	req->ptr_site = const_cast<char*>(site);
 	req->size_site = siteLen + 1;
 
-	req->ptr_url  = url;
+	req->ptr_url  = const_cast<char*>(url);
 	req->size_url  = urlLen  + 1;
 
-	req->ptr_oldLinkInfo = (char *)oldLinkInfo;
+	req->ptr_oldLinkInfo = reinterpret_cast<const char *>(oldLinkInfo);
 	if ( oldLinkInfo ) req->size_oldLinkInfo = oldLinkInfo->getSize();
 	else               req->size_oldLinkInfo = 0;
 

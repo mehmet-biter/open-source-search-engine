@@ -7152,8 +7152,6 @@ LinkInfo *XmlDoc::getSiteLinkInfo() {
 				*fip                 ,
 				0 , // docId
 				cr->m_collnum           , //linkInfoColl
-				NULL                , // qbuf
-				0                   , // qbufSize
 				m_masterState       ,
 				m_masterLoop        ,
 				m_contentInjected ,// isInjecting?
@@ -8038,8 +8036,6 @@ LinkInfo *XmlDoc::getLinkInfo1 ( ) {
 					*ip                 ,
 					*d                  ,
 					cr->m_collnum       , //linkInfoColl
-					NULL                , // qbuf
-					0                   , // qbufSize
 					m_masterState       ,
 					m_masterLoop        ,
 					m_contentInjected ,//m_injectedReply ,

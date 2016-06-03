@@ -92,7 +92,7 @@ public:
 
 	char      *ptr_site;
 	char      *ptr_url;
-	char      *ptr_oldLinkInfo;
+	const char      *ptr_oldLinkInfo;
 
 	int32_t       size_site;
 	int32_t       size_url;
@@ -110,14 +110,12 @@ public:
 // . your req->m_callback will be called with the Msg25Reply
 bool getLinkInfo ( SafeBuf *reqBuf , // store msg25 request in here
 		   Multicast *mcast , // use this to send msg 0x25 request
-		   char      *site ,
-		   char      *url  ,
+		   const char      *site ,
+		   const char      *url  ,
 		   bool       isSiteLinkInfo ,
 		   int32_t       ip                  ,
 		   int64_t  docId               ,
 		   collnum_t collnum ,
-		   char      *qbuf                ,
-		   int32_t       qbufSize            ,
 		   void      *state               ,
 		   void (* callback)(void *state) ,
 		   bool       isInjecting         ,
@@ -125,7 +123,7 @@ bool getLinkInfo ( SafeBuf *reqBuf , // store msg25 request in here
 		   //class XmlDoc *xd ,
 		   bool printInXml ,
 		   int32_t       siteNumInlinks      ,
-		   LinkInfo  *oldLinkInfo         ,
+		   const LinkInfo  *oldLinkInfo         ,
 		   int32_t       niceness            ,
 		   bool       doLinkSpamCheck     ,
 		   bool       oneVotePerIpDom     ,
@@ -634,14 +632,14 @@ class LinkInfo {
 
  public:
 
-	int32_t   getStoredSize  ( ) { return m_lisize; }
-	int32_t   getSize        ( ) { return m_lisize; }
-	time_t getLastUpdated ( ) { return (time_t)m_lastUpdated; }
+	int32_t   getStoredSize  ( ) const { return m_lisize; }
+	int32_t   getSize        ( ) const { return m_lisize; }
+	time_t getLastUpdated ( ) const { return (time_t)m_lastUpdated; }
 
-	int32_t   getNumLinkTexts ( ) { 
+	int32_t   getNumLinkTexts ( ) const {
 		if ( this == NULL ) return 0; return m_numStoredInlinks; }
 
-	int32_t   getNumGoodInlinks   ( ) { 
+	int32_t   getNumGoodInlinks ( ) const {
 		if ( this == NULL ) return 0; return m_numGoodInlinks; }
 
 	class Inlink *getNextInlink ( class Inlink *k ) ;
