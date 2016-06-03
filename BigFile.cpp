@@ -34,7 +34,6 @@ BigFile::~BigFile () {
 BigFile::BigFile () {
 	//m_permissions = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH ;
 	m_flags       = O_RDWR ; // | O_DIRECT;
-	m_usePartFiles = true;
 	m_maxParts = 0;
 	m_numParts = 0;
 	m_vfd = -1;
@@ -73,7 +72,6 @@ void BigFile::logAllData(int32_t log_type)
 	struct tm *stm = localtime(&m_lastModified);
 	
 	log(log_type, "m_flags................: %" PRId32, m_flags);
-	log(log_type, "m_usePartFiles.........: [%s]", m_usePartFiles?"true":"false");
 	log(log_type, "m_maxParts.............: %" PRId32, m_maxParts);
 	log(log_type, "m_numParts.............: %d", m_numParts);
 	log(log_type, "m_vfd..................: %" PRId32, m_vfd);
@@ -117,8 +115,6 @@ bool BigFile::set ( const char *dir, const char *baseFilename, const char *strip
 
 	m_dir.setLabel("bfd");
 	m_baseFilename.setLabel("bfbf");
-
-	m_usePartFiles = true;
 
 	// use this 32 byte char buf to avoid a malloc if possible
 	m_baseFilename.setBuf (m_tmpBaseBuf,sizeof(m_tmpBaseBuf),0,false);
@@ -360,8 +356,6 @@ bool BigFile::open ( int flags, void *pc, int64_t maxFileSize, int permissions )
     m_flags       = flags;
 	//m_permissions = permissions;
 	m_isClosing   = false;
-	// this is true except when parsing big warc files
-	m_usePartFiles = true;//usePartFiles;
 
 	// . init the page cache for this vfd
 	// . this returns our "virtual fd", not the same as File::m_vfd
@@ -643,7 +637,7 @@ bool BigFile::readwrite ( void         *buf      ,
 	fstate->m_callback    = callback;
 	fstate->m_niceness    = niceness;
 	fstate->m_flags       = m_flags;
-	fstate->m_usePartFiles = m_usePartFiles;
+
 	// sanity
 	if ( fstate->m_bytesToGo > 150000000 ) {
 		log( LOG_WARN, "file: huge read of %" PRId64" bytes", ( int64_t ) size );
@@ -658,12 +652,6 @@ bool BigFile::readwrite ( void         *buf      ,
 	//   situation occurs and pass a g_errno back to the caller.
 	fstate->m_filenum1    =  offset          / MAX_PART_SIZE;
 	fstate->m_filenum2    = (offset + size ) / MAX_PART_SIZE;
-
-	// if not really a big file. we use this for parsing huge warc files
-	if ( ! m_usePartFiles ) {
-		fstate->m_filenum1 = 0;
-		fstate->m_filenum2 = 0;
-	}
 
 	// . save the open count for this fd
 	// . if it changes when we're done with the read we do a re-read
@@ -817,7 +805,7 @@ bool BigFile::readwrite ( void         *buf      ,
 	// how many bytes to read from each file?
 	int64_t readSize1 = size;
 	int64_t readSize2 = 0;
-	if ( off1 + readSize1 > MAX_PART_SIZE && m_usePartFiles ) {
+	if ( off1 + readSize1 > MAX_PART_SIZE ) {
 		readSize1 = ((int64_t)MAX_PART_SIZE) - off1;
 		readSize2 = size - readSize1;
 	}
@@ -835,11 +823,6 @@ bool BigFile::readwrite ( void         *buf      ,
 	// translate offset to a filenum and offset
 	int32_t filenum     = offset / MAX_PART_SIZE;
 	int32_t localOffset = offset % MAX_PART_SIZE;
-
-	if ( ! m_usePartFiles ) {
-		filenum = 0;
-		localOffset = offset;
-	}
 
 	// read or write?
 	if ( doWrite ) a0->aio_lio_opcode = LIO_WRITE;
@@ -1272,13 +1255,6 @@ bool readwrite_r ( FileState *fstate ) {
 	// how many bytes can we write to it now
 	if ( len > avail ) len = avail;
 
-	// hack for reading warc files
-	if ( ! fstate->m_usePartFiles ) {
-		filenum = 0;
-		localOffset = offset;
-		len = bytesToGo - bytesDone;
-	}
-
 	// get the fd for this filenum
 	int fd = -1;
 	if ( filenum == fstate->m_filenum1 ) {
@@ -1352,7 +1328,7 @@ bool readwrite_r ( FileState *fstate ) {
 		    " failed because file is too short for that "
 		    "offset? Our fd was probably stolen from us by another "
 		    "thread. fd1=%i fd2=%i len=%i filenum=%i "
-		    "localoffset=%i. usepart=%i error=%s.",
+		    "localoffset=%i. error=%s.",
 		    (int32_t)len,fstate->m_offset,
 		    //fstate->m_this->getDir(),
 		    //fstate->m_this->getFilename(),
@@ -1361,7 +1337,6 @@ bool readwrite_r ( FileState *fstate ) {
 		    len,
 		    filenum,
 		    localOffset,
-		    fstate->m_usePartFiles,
 		    mstrerror(errno));
 		errno = EBADENGINEER;
 		return false;

@@ -69,7 +69,6 @@ public:
 	// when we started for graphing purposes (in milliseconds)
 	int64_t       m_startTime;
 	int64_t       m_doneTime;
-	bool 			m_usePartFiles;
 
 	// it is
 	// a "virtual fd" for this whole file
@@ -322,8 +321,6 @@ public:
 
 	// prevent circular calls to BigFile::close() with this
 	bool m_isClosing;
-
-	bool m_usePartFiles;
 
 	int64_t m_fileSize;
 
