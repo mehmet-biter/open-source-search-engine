@@ -4500,18 +4500,23 @@ void dedupSpiderdbList ( RdbList *list ) {
 				// otherwise, erase him
 				dst     = restorePoint;
 			}
+
 			// save in case we get erased
 			restorePoint = dst;
+
 			// get our size
 			int32_t recSize = srep->getRecSize();
+
 			// and add us
 			lastKey = dst;
 			memmove ( dst , rec , recSize );
+
 			// advance
 			dst += recSize;
 			// update this crap for comparing to next reply
 			repUh48 = uh48;
 			oldRep  = srep;
+
 			// get next spiderdb record
 			continue;
 		}
@@ -4552,7 +4557,9 @@ void dedupSpiderdbList ( RdbList *list ) {
 			// TODO: what about diffbotxyz spider requests? those
 			// have a fakefirstip... they should not have requests
 			// though, since their parent url has that.
-			if ( sreq->m_fakeFirstIp ) continue;
+			if ( sreq->m_fakeFirstIp ) {
+				continue;
+			}
 
 			SpiderReply *old = oldRep;
 			sreq->m_hasAuthorityInlink = old->m_hasAuthorityInlink;
@@ -4565,6 +4572,7 @@ void dedupSpiderdbList ( RdbList *list ) {
 			numLinks = 0;
 			headLink = NULL;
 			tailLink = NULL;
+
 			// we are the new banner carrier
 			reqUh48 = uh48;
 		}
@@ -4607,11 +4615,17 @@ void dedupSpiderdbList ( RdbList *list ) {
 
 		// now we keep a list of the last ten
 		for ( ; link ; link = link->m_next ) {
-			if ( srh != link->m_srh ) continue;
+			if ( srh != link->m_srh ) {
+				continue;
+			}
+
 			SpiderRequest *prevReq = link->m_sreq;
+
 			// if we are better, replace him and stop
-			if ( sreq->m_hopCount < prevReq->m_hopCount ) 
+			if ( sreq->m_hopCount < prevReq->m_hopCount ) {
 				goto replacePrevReq;
+			}
+
 			// skip us if previous guy is better
 			if ( sreq->m_hopCount > prevReq->m_hopCount ) {
 				skipUs = true;
@@ -4635,8 +4649,9 @@ void dedupSpiderdbList ( RdbList *list ) {
 				skipUs = true;
 				break;
 			}
+
 			// otherwise, replace him
-		replacePrevReq:
+replacePrevReq:
 			// it could be a docid indicating a query reindex,
 			// in which case it won't start with 'h'
 			// and we should always just add it and not bother
@@ -4645,17 +4660,21 @@ void dedupSpiderdbList ( RdbList *list ) {
 			// set which contributes to their hash.
 			// if ( prevReq->m_url[0] != 'h' )
 			// 	goto justAddIt;
+
 			prevReq->m_url[0] = 'x'; // mark for removal. xttp://
 			myLink = link;
+
 			// make a note of this so we physically remove these
 			// entries after we are done with this scan.
 			numToFilter++;
 			goto promoteLinkToHead;
 		}
+
 		// if we were not as good as someone that was basically the
 		// same SpiderRequest before us, keep going
-		if ( skipUs )
+		if ( skipUs ) {
 			continue;
+		}
 
 		// add to linked list
 		if ( numLinks < MAXLINKS ) {
@@ -4667,12 +4686,12 @@ void dedupSpiderdbList ( RdbList *list ) {
 				headLink = myLink;
 				tailLink = myLink;
 			}
-		}
-		// if full, just supplant the tail link
-		else 
+		} else {
+			// if full, just supplant the tail link
 			myLink = tailLink;
+		}
 
-	promoteLinkToHead:
+promoteLinkToHead:
 
 		myLink->m_srh  = srh;
 		myLink->m_sreq = (SpiderRequest *)dst;//sreq;
@@ -4761,13 +4780,14 @@ void dedupSpiderdbList ( RdbList *list ) {
 		// and we'll re-write everything back into itself at "dst"
 		dst = newList;
 	}
+
 	for ( ; ! list->isExhausted() ; ) {
-		// breathe. NO! assume in thread!!
-		//QUICKPOLL(niceness);
 		// get rec
 		char *rec = list->getCurrentRec();
+
 		// pre skip it
 		list->skipCurrentRec();
+
 		// skip if negative, just copy over
 		if ( ( rec[0] & 0x01 ) == 0x00 ) {
 			lastKey = dst;
@@ -4775,6 +4795,7 @@ void dedupSpiderdbList ( RdbList *list ) {
 			dst += sizeof(key128_t);
 			continue;
 		}
+
 		// is it a reply?
 		if ( g_spiderdb.isSpiderReply ( (key128_t *)rec ) ) {
 			SpiderReply *srep = (SpiderReply *)rec;
@@ -4784,10 +4805,13 @@ void dedupSpiderdbList ( RdbList *list ) {
 			dst += recSize;
 			continue;
 		}
+
 		SpiderRequest *sreq = (SpiderRequest *)rec;
 		// skip if filtered out
-		if ( sreq->m_url[0] == 'x' ) 
+		if ( sreq->m_url[0] == 'x' ) {
 			continue;
+		}
+
 		int32_t recSize = sreq->getRecSize();
 		lastKey = dst;
 		memmove ( dst , rec , recSize );
@@ -4803,13 +4827,13 @@ void dedupSpiderdbList ( RdbList *list ) {
 	list->m_listPtrHi = NULL;
 
 	// log("spiderdb: remove ME!!!");
-	// // check it
+	// check it
 	// list->checkList_r(false,false,RDB_SPIDERDB);
 	// list->resetListPtr();
 
 	int32_t delta = oldSize - list->m_listSize;
-	log("spider: deduped %i bytes (of which %i were corrupted) "
-	    "out of %i",(int)delta,(int)corrupt,(int)oldSize);
+	log( LOG_INFO, "spider: deduped %i bytes (of which %i were corrupted) out of %i",
+	     (int)delta,(int)corrupt,(int)oldSize);
 
 	if ( lastKey ) {
 		KEYSET( list->m_lastKey, lastKey, list->m_ks );

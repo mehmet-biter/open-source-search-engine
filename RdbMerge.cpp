@@ -533,9 +533,9 @@ bool RdbMerge::dumpList ( ) {
 	// dedup for spiderdb before we dump it. try to save disk space.
 	//
 	/////
-	if ( m_rdbId == RDB_SPIDERDB )
-		// removeNegRecs? = false
-		dedupSpiderdbList(&m_list);
+	if ( m_rdbId == RDB_SPIDERDB ) {
+		dedupSpiderdbList( &m_list );
+	}
 
 	// if the startKey rolled over we're done
 	//if ( m_startKey.n0 == 0LL && m_startKey.n1 == 0 ) m_doneMerging=true;
