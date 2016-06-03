@@ -140,7 +140,6 @@ int32_t SpiderRequest::print ( SafeBuf *sbarg ) {
 	if ( m_sameHost ) sb->safePrintf("SAMEHOST ");
 	if ( m_sameSite ) sb->safePrintf("SAMESITE ");
 	if ( m_wasParentIndexed ) sb->safePrintf("WASPARENTINDEXED ");
-	if ( m_parentIsPingServer ) sb->safePrintf("PARENTISPINGSERVER ");
 	if ( m_isMenuOutlink ) sb->safePrintf("MENUOUTLINK ");
 
 	if ( m_hasAuthorityInlink ) sb->safePrintf("HASAUTHORITYINLINK ");
@@ -337,7 +336,6 @@ int32_t SpiderRequest::printToTable ( SafeBuf *sb , const char *status ,
 	if ( m_sameHost ) sb->safePrintf("SAMEHOST ");
 	if ( m_sameSite ) sb->safePrintf("SAMESITE ");
 	if ( m_wasParentIndexed ) sb->safePrintf("WASPARENTINDEXED ");
-	if ( m_parentIsPingServer ) sb->safePrintf("PARENTISPINGSERVER ");
 	if ( m_isMenuOutlink ) sb->safePrintf("MENUOUTLINK ");
 
 	//if ( m_fromSections ) sb->safePrintf("FROMSECTIONS ");
@@ -2992,30 +2990,6 @@ checkNextRule:
 			goto checkNextRule;
 		}
 
-
-		// . check to see if a page is linked to by
-		//   www.weblogs.com/shortChanges.xml and if it is we put
-		//   it into a queue that has a respider rate no faster than
-		//   30 days, because we don't need to spider it quick since
-		//   it is in the ping server!
-		if ( strncmp(p,"isparentpingserver",18) == 0 ) {
-			// skip for msg20
-			if ( isForMsg20 ) continue;
-			// if no match continue
-			if ( (bool)sreq->m_parentIsPingServer == val) continue;
-			// skip
-			p += 18;
-			// skip to next constraint
-			p = strstr(p, "&&");
-			// all done?
-			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
-				return i;
-			}
-			p += 2;
-			goto checkNextRule;
-		}
-
 		if ( strncmp(p,"ispingserver",12) == 0 ) {
 			// skip for msg20
 			if ( isForMsg20 ) continue;
@@ -4552,7 +4526,6 @@ void dedupSpiderdbList ( RdbList *list ) {
 
 		if ( sreq->m_urlIsDocId         ) srh ^= 0xee015b07;
 		if ( sreq->m_fakeFirstIp        ) srh ^= 0x95b8d376;
-		if ( sreq->m_parentIsPingServer ) srh ^= 0xb4c8a811;
 		if ( sreq->m_isMenuOutlink      ) srh ^= 0xd97bb80b;
 
 		// we may assign url filter priority based on parent langid

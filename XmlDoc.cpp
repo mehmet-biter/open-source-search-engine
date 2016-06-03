@@ -1614,7 +1614,6 @@ void XmlDoc::getRebuiltSpiderRequest ( SpiderRequest *sreq ) {
 	sreq->m_sameHost             = 0;//m_sreq.m_sameHost;
 	sreq->m_sameSite             = 0;//m_sreq.m_sameSite;
 	sreq->m_wasParentIndexed     = 0;//m_sreq.m_parentWasIndexed;
-	sreq->m_parentIsPingServer   = 0;//m_sreq.m_parentIsPingServer;
 
 	// validate the stuff so getUrlFilterNum() acks it
 	sreq->m_hopCountValid = 1;
@@ -15523,7 +15522,6 @@ void XmlDoc::setSpiderReqForMsg20 ( SpiderRequest *sreq   ,
 	sreq->m_sameHost             = 0;//m_sreq.m_sameHost;
 	sreq->m_sameSite             = 0;//m_sreq.m_sameSite;
 	sreq->m_wasParentIndexed     = 0;//m_sreq.m_parentWasIndexed;
-	sreq->m_parentIsPingServer   = 0;//m_sreq.m_parentIsPingServer;
 
 	// validate the stuff so getUrlFilterNum() acks it
 	sreq->m_hopCountValid = 1;
@@ -15739,10 +15737,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 	// count how many we add
 	int32_t numAdded = 0;
 	int32_t numAddedFromSameDomain = 0;
-
-	bool isParentPingServer = false;
-	if ( fu && fu->isPingServer() ) isParentPingServer = true;
-	if ( cu && cu->isPingServer() ) isParentPingServer = true;
 
 	//bool useTestSpiderDir = (m_sreqValid && m_sreq.m_useTestSpiderDir);
 
@@ -16031,7 +16025,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		if ( hostHash32 == m_hostHash32a ) ksr.m_sameHost = 1;
 		if ( linkSiteHashes[i]==m_siteHash32  ) ksr.m_sameSite = 1;
 		if ( *ipi                        ) ksr.m_wasParentIndexed  = 1;
-		if ( isParentPingServer          ) ksr.m_parentIsPingServer= 1;
 
 		// this is used for building dmoz. we just want to index
 		// the urls in dmoz, not their outlinks.

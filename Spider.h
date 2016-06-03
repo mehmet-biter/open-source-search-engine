@@ -626,7 +626,7 @@ public:
 	unsigned    m_wasParentIndexed  :1;
 	unsigned    m_reserved3o        :1;
 	unsigned    m_reserved3p        :1;
-	unsigned    m_parentIsPingServer:1;
+	unsigned    m_reserved3r        :1;
 	unsigned    m_reserved3l        :1;
 	// is this outlink from content or menu?
 	unsigned    m_isMenuOutlink     :1;
