@@ -4832,7 +4832,7 @@ promoteLinkToHead:
 	// list->resetListPtr();
 
 	int32_t delta = oldSize - list->m_listSize;
-	log( LOG_INFO, "spider: deduped %i bytes (of which %i were corrupted) out of %i",
+	log( LOG_DEBUG, "spider: deduped %i bytes (of which %i were corrupted) out of %i",
 	     (int)delta,(int)corrupt,(int)oldSize);
 
 	if ( lastKey ) {
