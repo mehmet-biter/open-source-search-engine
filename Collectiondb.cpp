@@ -1257,14 +1257,15 @@ CollectionRec::CollectionRec() {
 	// JAB - track which regex parsers have been initialized
 	//log(LOG_DEBUG,"regex: %p initalizing empty parsers", m_pRegExParser);
 
-	// clear these out so Parms::calcChecksum can work:
-	memset( m_spiderFreqs, 0, MAX_FILTERS*sizeof(*m_spiderFreqs) );
-	//for ( int i = 0; i < MAX_FILTERS ; i++ )
-	//	m_spiderQuotas[i] = -1;
-	memset( m_spiderPriorities, 0,
-		MAX_FILTERS*sizeof(*m_spiderPriorities) );
-	memset ( m_harvestLinks,0,MAX_FILTERS);
-	memset ( m_forceDelete,0,MAX_FILTERS);
+	// clear these out so Parms::calcChecksum can work and so Parms.cpp doesn't work with uninitialized data
+	//m_regExs: ctor() done
+	memset( m_spiderFreqs, 0, sizeof(m_spiderFreqs) );
+	memset( m_spiderPriorities, 0, sizeof(m_spiderPriorities) );
+	memset( m_maxSpidersPerRule, 0, sizeof(m_maxSpidersPerRule) );
+	memset( m_spiderIpWaits, 0, sizeof(m_spiderIpWaits) );
+	memset( m_spiderIpMaxSpiders, 0, sizeof(m_spiderIpMaxSpiders) );
+	memset( m_harvestLinks, 0, sizeof(m_harvestLinks) );
+	memset( m_forceDelete, 0, sizeof(m_forceDelete) );
 
 	m_numRegExs = 0;
 
