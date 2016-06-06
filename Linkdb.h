@@ -34,6 +34,8 @@
 #include "Rdb.h"
 #include "Titledb.h"
 
+class Msg20Reply;
+
 void  handleRequest25 ( UdpSlot *slot , int32_t netnice ) ;
 
 // . get the inlinkers to this SITE (any page on this site)
@@ -430,8 +432,8 @@ class Msg25 {
 	// a new parm referencing the request we got over the network
 	class Msg25Request * m_req25;
 
-	class Msg20Reply *getLoser (class Msg20Reply *r, class Msg20Reply *p);
-	const char             *isDup    (class Msg20Reply *r, class Msg20Reply *p);
+	Msg20Reply *getLoser (Msg20Reply *r, Msg20Reply *p);
+	const char *isDup    (Msg20Reply *r, Msg20Reply *p);
 
 	bool addNote ( const char *note , int32_t noteLen , int64_t docId );
 
@@ -700,26 +702,26 @@ class Inlink {
 	// zero ourselves out
 	void reset() ;
 
-	void set ( class Msg20Reply *reply );
+	void set ( const Msg20Reply *reply );
 
 	// set ourselves from a serialized older-versioned Inlink
-	void set2 ( class Inlink *old );
+	void set2 ( const Inlink *old );
 
 	bool setXmlFromRSS      ( Xml *xml , int32_t niceness ) ;
 
 	// . set a Msg20Reply from ourselves
 	// . Msg25 uses this to recycle old inlinks that are now gone
 	// . allows us to preserve ptr_rssInfo, etc.
-	void setMsg20Reply ( class Msg20Reply *r ) ;
+	void setMsg20Reply ( Msg20Reply *r ) ;
 
-	int32_t getStoredSize ( ) ;
+	int32_t getStoredSize ( ) const;
 
 	// . return ptr to the buffer we serialize into
 	// . return NULL and set g_errno on error
 	char *serialize ( int32_t *retSize     ,
 			  char *userBuf     ,
 			  int32_t  userBufSize ,
-			  bool  makePtrsRefNewBuf ) ;
+			  bool  makePtrsRefNewBuf ) const;
 
 	int32_t       m_ip                  ; //0
 	int64_t  m_docId               ; // 4

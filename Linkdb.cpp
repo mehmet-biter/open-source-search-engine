@@ -3240,7 +3240,7 @@ bool LinkInfo::hasLinkText ( ) {
 	return false;
 }
 
-void Inlink::set ( Msg20Reply *r ) {
+void Inlink::set ( const Msg20Reply *r ) {
 	// set ourselves now
 	m_ip                 = r->m_ip;
 	m_firstIp            = r->m_firstIp;
@@ -3414,19 +3414,17 @@ void Inlink::reset ( ) {
 
 // . set a new Inlink from an older versioned Inlink
 // . this is how we handle versioning
-void Inlink::set2 ( Inlink *old ) {
+void Inlink::set2 ( const Inlink *old ) {
 	// clear ouselves
 	reset();
 
 	int fullSize = old->getStoredSize();
 
 	// return how many bytes we processed
-	gbmemcpy ( (char *)this , (char *)old , fullSize );
-
-	return;
+	memcpy ( this, old, fullSize );
 }
 
-int32_t Inlink::getStoredSize ( ) {
+int32_t Inlink::getStoredSize ( ) const {
 	int32_t size = sizeof(Inlink) -	MAXINLINKSTRINGBUFSIZE;
 
 	size += size_urlBuf;
@@ -3445,7 +3443,7 @@ int32_t Inlink::getStoredSize ( ) {
 char *Inlink::serialize ( int32_t *retSize     ,
 			  char *userBuf     ,
 			  int32_t  userBufSize ,
-			  bool  makePtrsRefNewBuf ) {
+			  bool  makePtrsRefNewBuf ) const {
 	// make a buffer to serialize into
 	char *buf  = NULL;
 	int32_t  need = getStoredSize();
@@ -3460,7 +3458,7 @@ char *Inlink::serialize ( int32_t *retSize     ,
 	// copy the easy stuff
 	char *p = buf;
 	char *pend = buf + need;
-	gbmemcpy ( p , (char *)this , need );
+	gbmemcpy ( p, this, need );
 	p += need;
 
 	if ( p != pend ) { char *xx=NULL;*xx=0; }
