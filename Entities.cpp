@@ -438,7 +438,7 @@ static bool initEntityTable(){
 // . return the 32-bit unicode char it represents
 // . returns 0 if none
 // . JAB: const-ness for optimizer...
-uint32_t getTextEntity ( const char *s , int32_t len ) {
+static uint32_t getTextEntity ( const char *s , int32_t len ) {
 	if ( !initEntityTable()) return 0;
 	// take the ; off, if any
 	if ( s[len-1] == ';' ) len--;
@@ -459,7 +459,7 @@ uint32_t getTextEntity ( const char *s , int32_t len ) {
 // . get a decimal encoded entity
 // . s/len is the whol thing
 // . JAB: const-ness for optimizer...
-uint32_t getDecimalEntity ( const char *s , int32_t len ) {
+static uint32_t getDecimalEntity ( const char *s , int32_t len ) {
 	// take the ; off, if any
 	if ( s[len-1] == ';' ) len--;
 	// . &#1 is smallest it can be
@@ -512,7 +512,7 @@ uint32_t getDecimalEntity ( const char *s , int32_t len ) {
 // . get a hexadecimal encoded entity
 // . JAB: const-ness for optimizer...
 // . returns a UChar32
-uint32_t getHexadecimalEntity ( const char *s , int32_t len ) {
+static uint32_t getHexadecimalEntity ( const char *s , int32_t len ) {
 	// take the ; off, if any
 	if ( s[len-1] == ';' ) len--;
 	// . &#x1  is smallest it can be
