@@ -311,6 +311,7 @@ clean:
 	-rm -f *.o gb core core.* libgb.a
 	-rm -f gmon.*
 	-rm -f *.gcda *.gcno coverage*.html
+	-rm entities.inc
 	$(MAKE) -C test $@
 
 
@@ -333,6 +334,13 @@ coverage:
 	$(MAKE) config=coverage unittest
 	gcovr -r . --html --html-details --branch --output=coverage.html --exclude=".*Test\.cpp" --exclude="googletest.*"
 
+
+# special dependency and auto-generated file
+Entities.o: entities.inc
+
+entities.inc: entities.json generate_entities.py
+entities.json entities.inc:
+	./generate_entities.py >entities.inc
 
 StopWords.o:
 	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp

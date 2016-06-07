@@ -34,3 +34,4 @@ log000*
 *.gcda
 *.gcno
 coverage*.html
+entities.inc
