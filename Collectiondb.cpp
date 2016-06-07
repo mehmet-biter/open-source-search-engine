@@ -2995,42 +2995,6 @@ bool CollectionRec::rebuildUrlFiltersDiffbot() {
 		i++;
 	}
 
-	// 2nd default filter
-	// always turn this on for now. they need to add domains they want
-	// to crawl as seeds so they do not spider the web.
-	// no because FTB seeds with link pages that link to another
-	// domain. they just need to be sure to supply a crawl pattern
-	// to avoid spidering the whole web.
-	//
-	// if they did not EXPLICITLY provide a url crawl pattern or
-	// url crawl regex then restrict to seeds to prevent from spidering
-	// the entire internet.
-	//if ( ! ucp && ! m_hasucr ) { // m_restrictDomain ) {
-	// MDW: even if they supplied a crawl pattern let's restrict to seed
-	// domains 12/15/14
-	m_regExs[i].set("!isonsamedomain && !ismanualadd");
-	m_maxSpidersPerRule  [i] = 0;
-	m_spiderPriorities   [i] = 100; // delete!
-	m_forceDelete        [i] = 1;
-	i++;
-	//}
-
-	bool ucpHasPositive = false;
-	// . scan them to see if all patterns start with '!' or not
-	// . if pattern starts with ! it is negative, otherwise positve
-	if ( ucp ) ucpHasPositive = hasPositivePattern ( ucp );
-
-	// if no crawl regex, and it has a crawl pattern consisting of
-	// only negative patterns then restrict to domains of seeds
-	if ( ucp && ! ucpHasPositive && ! m_hasucr ) {
-		m_regExs[i].set("!isonsamedomain && !ismanualadd");
-		m_maxSpidersPerRule  [i] = 0;
-		m_spiderPriorities   [i] = 100; // delete!
-		m_forceDelete        [i] = 1;
-		i++;
-	}
-
-
 	// 3rd rule for respidering
 	if ( respiderFreq > 0.0 ) {
 		m_regExs[i].set("lastspidertime>={roundstart}");

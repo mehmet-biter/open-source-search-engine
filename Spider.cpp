@@ -95,11 +95,7 @@ int32_t SpiderRequest::print ( SafeBuf *sbarg ) {
 	strftime ( time , 256 , "%b %e %T %Y UTC", timeStruct );
 	sb->safePrintf("addedTime=%s(%" PRIu32") ",time,(uint32_t)m_addedTime );
 
-	//sb->safePrintf("parentFirstIp=%s ",iptoa(m_parentFirstIp) );
 	sb->safePrintf("pageNumInlinks=%i ",(int)m_pageNumInlinks);
-	sb->safePrintf("parentHostHash32=0x%" PRIx32" ",m_parentHostHash32 );
-	sb->safePrintf("parentDomHash32=0x%" PRIx32" ",m_parentDomHash32 );
-	sb->safePrintf("parentSiteHash32=0x%" PRIx32" ",m_parentSiteHash32 );
 
 	sb->safePrintf("hopCount=%" PRId32" ",(int32_t)m_hopCount );
 
@@ -136,9 +132,6 @@ int32_t SpiderRequest::print ( SafeBuf *sbarg ) {
 	if ( m_fakeFirstIp ) sb->safePrintf("ISFAKEFIRSTIP ");
 	if ( m_isInjecting ) sb->safePrintf("ISINJECTING ");
 	if ( m_forceDelete ) sb->safePrintf("FORCEDELETE ");
-	if ( m_sameDom ) sb->safePrintf("SAMEDOM ");
-	if ( m_sameHost ) sb->safePrintf("SAMEHOST ");
-	if ( m_sameSite ) sb->safePrintf("SAMESITE ");
 	if ( m_wasParentIndexed ) sb->safePrintf("WASPARENTINDEXED ");
 	if ( m_isMenuOutlink ) sb->safePrintf("MENUOUTLINK ");
 
@@ -310,10 +303,6 @@ int32_t SpiderRequest::printToTable ( SafeBuf *sb , const char *status ,
 	sb->safePrintf(" <td>%i</td>\n",(int)m_pageNumInlinks);
 	sb->safePrintf(" <td>%" PRIu64"</td>\n",getParentDocId() );
 
-	//sb->safePrintf(" <td>0x%" PRIx32"</td>\n",m_parentHostHash32);
-	//sb->safePrintf(" <td>0x%" PRIx32"</td>\n",m_parentDomHash32 );
-	//sb->safePrintf(" <td>0x%" PRIx32"</td>\n",m_parentSiteHash32 );
-
 	//sb->safePrintf(" <td>%" PRId32"</td>\n",(int32_t)m_httpStatus );
 	//sb->safePrintf(" <td>%" PRId32"</td>\n",(int32_t)m_retryNum );
 	//sb->safePrintf(" <td>%s(%" PRId32")</td>\n",
@@ -332,9 +321,6 @@ int32_t SpiderRequest::printToTable ( SafeBuf *sb , const char *status ,
 	if ( m_isPingServer ) sb->safePrintf("ISPINGSERVER ");
 	if ( m_isInjecting ) sb->safePrintf("ISINJECTING ");
 	if ( m_forceDelete ) sb->safePrintf("FORCEDELETE ");
-	if ( m_sameDom ) sb->safePrintf("SAMEDOM ");
-	if ( m_sameHost ) sb->safePrintf("SAMEHOST ");
-	if ( m_sameSite ) sb->safePrintf("SAMESITE ");
 	if ( m_wasParentIndexed ) sb->safePrintf("WASPARENTINDEXED ");
 	if ( m_isMenuOutlink ) sb->safePrintf("MENUOUTLINK ");
 
@@ -3008,50 +2994,12 @@ checkNextRule:
 			goto checkNextRule;
 		}
 
-		if ( strncmp ( p , "isonsamesubdomain",17 ) == 0 ) {
-			// skip for msg20
-			if ( isForMsg20 ) continue;
-			if ( val == 0 &&
-			     sreq->m_parentHostHash32 != sreq->m_hostHash32 ) 
-				continue;
-			if ( val == 1 &&
-			     sreq->m_parentHostHash32 == sreq->m_hostHash32 ) 
-				continue;
-			p += 6;
-			p = strstr(p, "&&");
-			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
-				return i;
-			}
-			p += 2;
-			goto checkNextRule;
-		}
-
 		if ( strncmp ( p , "isfakeip",8 ) == 0 ) {
 			// skip for msg20
 			if ( isForMsg20 ) continue;
 			// if no match continue
 			if ( (bool)sreq->m_fakeFirstIp == val ) continue;
 			p += 8;
-			p = strstr(p, "&&");
-			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
-				return i;
-			}
-			p += 2;
-			goto checkNextRule;
-		}
-
-		if ( strncmp ( p , "isonsamedomain",14 ) == 0 ) {
-			// skip for msg20
-			if ( isForMsg20 ) continue;
-			if ( val == 0 &&
-			     sreq->m_parentDomHash32 != sreq->m_domHash32 ) 
-				continue;
-			if ( val == 1 &&
-			     sreq->m_parentDomHash32 == sreq->m_domHash32 ) 
-				continue;
-			p += 6;
 			p = strstr(p, "&&");
 			if ( ! p ) {
 				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );

@@ -13515,30 +13515,6 @@ static bool printUrlExpressionExamples ( SafeBuf *sb ) {
 			  "is a root ur but http://www.abc.com/foo is not. "
 			  "</td></tr>"
 
-
-			  "<tr class=poo><td>isonsamedomain | !isonsamedomain</td>"
-			  "<td>"
-			  "This is true if the url is from the same "
-			  "DOMAIN as the page from which it was "
-			  "harvested."
-			  //"Only effective for links being added from a page "
-			  //"being spidered, because this information is "
-			  //"not preserved in the titleRec."
-			  "</td></tr>"
-
-
-			  "<tr class=poo><td><nobr>"
-			  "isonsamesubdomain | !isonsamesubdomain"
-			  "</nobr></td>"
-			  "<td>"
-			  "This is true if the url is from the same "
-			  "SUBDOMAIN as the page from which it was "
-			  "harvested."
-			  //"Only effective for links being added from a page "
-			  //"being spidered, because this information is "
-			  //"not preserved in the titleRec."
-			  "</td></tr>"
-
 			  "<tr class=poo><td>ismedia | !ismedia</td>"
 			  "<td>"
 			  "Does the url have a media or css related "

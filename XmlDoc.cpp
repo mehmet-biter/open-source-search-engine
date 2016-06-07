@@ -1596,9 +1596,6 @@ void XmlDoc::getRebuiltSpiderRequest ( SpiderRequest *sreq ) {
 	//sreq->m_pageNumInlinks     = m_pageNumInlinks;
 	sreq->m_hopCount             = m_hopCount;
 
-	sreq->m_parentHostHash32     = 0;//m_sreq.m_parentHostHash32;
-	sreq->m_parentDomHash32      = 0;//m_sreq.m_parentDomHash32;
-	sreq->m_parentSiteHash32     = 0;//m_sreq.m_parentSiteHash32;
 	sreq->m_pageNumInlinks       = 0;//m_sreq.m_parentFirstIp;
 
 	Url *fu = getFirstUrl();
@@ -1610,9 +1607,6 @@ void XmlDoc::getRebuiltSpiderRequest ( SpiderRequest *sreq ) {
 
 	// transcribe from old spider rec, stuff should be the same
 	sreq->m_addedTime            = m_firstIndexedDate;
-	sreq->m_sameDom              = 0;//m_sreq.m_sameDom;
-	sreq->m_sameHost             = 0;//m_sreq.m_sameHost;
-	sreq->m_sameSite             = 0;//m_sreq.m_sameSite;
 	sreq->m_wasParentIndexed     = 0;//m_sreq.m_parentWasIndexed;
 
 	// validate the stuff so getUrlFilterNum() acks it
@@ -12302,8 +12296,6 @@ bool XmlDoc::logIt (SafeBuf *bb ) {
 	if ( m_numOutlinksAddedValid ) {
 		sb->safePrintf("outlinksadded=%04" PRId32" ",
 			       (int32_t)m_numOutlinksAdded);
-		sb->safePrintf("outlinksaddedfromsamedomain=%04" PRId32" ",
-			       (int32_t)m_numOutlinksAddedFromSameDomain);
 	}
 
 	if ( m_metaListValid )
@@ -15506,9 +15498,6 @@ void XmlDoc::setSpiderReqForMsg20 ( SpiderRequest *sreq   ,
 	sreq->m_hostHash32           = m_hostHash32a;
 	sreq->m_hopCount             = m_hopCount;
 
-	sreq->m_parentHostHash32     = 0;//m_sreq.m_parentHostHash32;
-	sreq->m_parentDomHash32      = 0;//m_sreq.m_parentDomHash32;
-	sreq->m_parentSiteHash32     = 0;//m_sreq.m_parentSiteHash32;
 	sreq->m_pageNumInlinks       = 0;//m_sreq.m_parentFirstIp;
 
 	sreq->m_isNewOutlink         = 0;
@@ -15518,9 +15507,6 @@ void XmlDoc::setSpiderReqForMsg20 ( SpiderRequest *sreq   ,
 
 	// transcribe from old spider rec, stuff should be the same
 	sreq->m_addedTime          = m_firstIndexedDate;
-	sreq->m_sameDom              = 0;//m_sreq.m_sameDom;
-	sreq->m_sameHost             = 0;//m_sreq.m_sameHost;
-	sreq->m_sameSite             = 0;//m_sreq.m_sameSite;
 	sreq->m_wasParentIndexed     = 0;//m_sreq.m_parentWasIndexed;
 
 	// validate the stuff so getUrlFilterNum() acks it
@@ -15669,9 +15655,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		return (char *)langId;
 	}
 
-	// validate this to prevent core for simplified redirect links
-	int32_t hostHash32a = getHostHash32a();
-
 	// so linkSites[i] is site for link #i in Links.cpp class
 	int32_t *linkSiteHashes = getLinkSiteHashes ( );
 	if ( ! linkSiteHashes || linkSiteHashes == (void *)-1 )
@@ -15736,7 +15719,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 
 	// count how many we add
 	int32_t numAdded = 0;
-	int32_t numAddedFromSameDomain = 0;
 
 	//bool useTestSpiderDir = (m_sreqValid && m_sreq.m_useTestSpiderDir);
 
@@ -15972,19 +15954,7 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		ksr.m_addedTime        = getSpideredTime();//m_spideredTime;
 		//ksr.m_lastAttempt    = 0;
 		//ksr.m_errCode        = 0;
-		ksr.m_parentHostHash32 = hostHash32a;
-		ksr.m_parentDomHash32  = m_domHash32;
-		ksr.m_parentSiteHash32 = m_siteHash32;
 
-		// if a seed/hopcount0 url redirected to a different domain
-		// then use that if it is the same. that way we can satisft
-		// the "isonsamedomain" expression in the url filters table.
-		if ( redirDomHash32 == domHash32 && redirDomHash32 )
-			ksr.m_parentDomHash32 = redirDomHash32;
-		if ( redirHostHash32 == hostHash32 && redirHostHash32 )
-			ksr.m_parentHostHash32 = redirHostHash32;
-
-		//ksr.m_parentFirstIp    = *pfip;//m_ip;
 		ksr.m_pageNumInlinks   = 0;
 
 		// get this
@@ -16012,18 +15982,7 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		if ( gr->getTag("authorityinlink"))ksr.m_hasAuthorityInlink =1;
 		ksr.m_hasAuthorityInlinkValid = true;
 
-		// if our url was a seed and redirected to another domain
-		// allow outlinks on that other domain to be on domain too.
-		// only used for diffbot crawlbot right now.
-		if ( domHash32  == redirDomHash32  && redirDomHash32 )
-			ksr.m_sameDom  = 1;
-		if ( hostHash32 == redirHostHash32 && redirHostHash32 )
-			ksr.m_sameHost = 1;
-
 		// set parent based info
-		if ( domHash32  == m_domHash32   ) ksr.m_sameDom  = 1;
-		if ( hostHash32 == m_hostHash32a ) ksr.m_sameHost = 1;
-		if ( linkSiteHashes[i]==m_siteHash32  ) ksr.m_sameSite = 1;
 		if ( *ipi                        ) ksr.m_wasParentIndexed  = 1;
 
 		// this is used for building dmoz. we just want to index
@@ -16147,9 +16106,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		p += need;
 		// count it
 		numAdded++;
-		// check domain
-		//if ( domHash32  == m_domHash32 ) numAddedFromSameDomain++;
-		if ( ksr.m_sameDom ) numAddedFromSameDomain++;
 	}
 
 	logTrace( g_conf.m_logTraceXmlDoc, "Added %" PRId32" links", numAdded);
@@ -16157,7 +16113,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 	// save it
 	m_numOutlinksAdded      = numAdded;
 	m_numOutlinksAddedValid = true;
-	m_numOutlinksAddedFromSameDomain = numAddedFromSameDomain;
 
 	// update end of list once we have successfully added all spider recs
 	m_p = p;

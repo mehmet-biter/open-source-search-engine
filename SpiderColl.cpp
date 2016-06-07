@@ -869,9 +869,6 @@ bool SpiderColl::isInDupCache ( SpiderRequest *sreq , bool addToCache ) {
 	if ( sreq->m_isPageReindex) dupKey64 ^= 32999604;
 	if ( sreq->m_forceDelete ) dupKey64 ^= 29386239;
 	if ( sreq->m_hadReply    ) dupKey64 ^= 293294099;
-	if ( sreq->m_sameDom     ) dupKey64 ^= 963493311;
-	if ( sreq->m_sameHost    ) dupKey64 ^= 288844772;
-	if ( sreq->m_sameSite    ) dupKey64 ^= 58320355;
 
 	// . maxage=86400,promoteRec=yes. returns -1 if not in there
 	// . dupKey64 is for hopcount 0, so if this url is in the dupcache

@@ -532,9 +532,9 @@ public:
 	uint8_t    m_reservedb4;
 
 	// info on the page we were harvest from
-	int32_t    m_parentHostHash32;
-	int32_t    m_parentDomHash32;
-	int32_t    m_parentSiteHash32;
+	int32_t    m_reservedb5;
+	int32_t    m_reservedb6;
+	int32_t    m_reservedb7;
 
 	// if there are several spiderrequests for a url, this should be
 	// the earliest m_addedTime, basically, the url discovery time. this is
@@ -620,9 +620,9 @@ public:
 	// if the parent was respidered and the outlink was there last time
 	// and is there now, then this is "0", otherwise, this is "1"
 	unsigned    m_isNewOutlink      :1;
-	unsigned    m_sameDom           :1;
-	unsigned    m_sameHost          :1;
-	unsigned    m_sameSite          :1;
+	unsigned    m_reserved3s        :1;
+	unsigned    m_reserved3t        :1;
+	unsigned    m_reserved3u        :1;
 	unsigned    m_wasParentIndexed  :1;
 	unsigned    m_reserved3o        :1;
 	unsigned    m_reserved3p        :1;

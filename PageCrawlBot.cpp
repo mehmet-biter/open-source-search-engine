@@ -957,8 +957,8 @@ void StateCD::printSpiderdbList ( RdbList *list,SafeBuf *sb,char **lastKeyPtr){
 		        if (cr->m_diffbotUrlCrawlPattern.m_length == 0
 		            && cr->m_diffbotUrlProcessPattern.m_length == 0) {
 		            // If a crawl and there are no urlCrawlPattern or urlCrawlRegEx values, only return URLs from seed domain
-		            if (sreq && !sreq->m_sameDom)
-		                continue;
+		            //if (sreq && !sreq->m_sameDom)
+		            //    continue;
 		        } else {
 		            // TODO: if we get here, we have a crawl with a custom urlCrawlPattern and/or custom
 		            //       urlProcessPattern. We have to check if the current url matches the pattern
@@ -3246,11 +3246,6 @@ bool getSpiderRequestMetaList ( const char *doc, SafeBuf *listBuf, bool spiderLi
 		sreq.m_isNewOutlink = 1;
 		sreq.m_isWWWSubdomain = url.isSimpleSubdomain();
 		
-		// treat seed urls as being on same domain and hostname
-		sreq.m_sameDom = 1;
-		sreq.m_sameHost = 1;
-		sreq.m_sameSite = 1;
-
 		sreq.m_fakeFirstIp = 1;
 		sreq.m_isAddUrl = 1;
 

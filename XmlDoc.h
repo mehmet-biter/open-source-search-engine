@@ -1002,7 +1002,6 @@ public:
 	int32_t  m_outlinkHopCountVectorSize;
 	int32_t m_urlFilterNum;
 	int32_t m_numOutlinksAdded;
-	int32_t m_numOutlinksAddedFromSameDomain;
 	int32_t m_numRedirects;
 	bool m_isPageParser;
 	Url m_baseUrl;
