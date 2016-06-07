@@ -496,6 +496,9 @@ PostQueryRerank.o:
 sort.o:
 	$(CXX) $(DEFS) $(CPPFLAGS) $(O3) -c $*.cpp
 
+IPAddressChecks.o:
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O3) -c $*.cpp
+
 Version.o:
 	$(CXX) $(DEFS) $(CPPFLAGS) -DGIT_COMMIT_ID=$(GIT_VERSION) -DBUILD_CONFIG=$(config) -c $*.cpp
 
