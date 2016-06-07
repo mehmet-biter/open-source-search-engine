@@ -609,7 +609,6 @@ public:
 
 	//
 	// these "parent" bits are invalid if m_parentHostHash32 is 0!
-	// that includes m_isMenuOutlink
 	//
 
 	// if the parent was respidered and the outlink was there last time
@@ -623,8 +622,7 @@ public:
 	unsigned    m_reserved3p        :1;
 	unsigned    m_reserved3r        :1;
 	unsigned    m_reserved3l        :1;
-	// is this outlink from content or menu?
-	unsigned    m_isMenuOutlink     :1;
+	unsigned    m_reserved3w        :1;
 
 
 	// 

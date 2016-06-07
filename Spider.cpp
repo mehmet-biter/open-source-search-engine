@@ -132,7 +132,6 @@ int32_t SpiderRequest::print ( SafeBuf *sbarg ) {
 	if ( m_fakeFirstIp ) sb->safePrintf("ISFAKEFIRSTIP ");
 	if ( m_isInjecting ) sb->safePrintf("ISINJECTING ");
 	if ( m_forceDelete ) sb->safePrintf("FORCEDELETE ");
-	if ( m_isMenuOutlink ) sb->safePrintf("MENUOUTLINK ");
 
 	if ( m_hasAuthorityInlink ) sb->safePrintf("HASAUTHORITYINLINK ");
 
@@ -320,7 +319,6 @@ int32_t SpiderRequest::printToTable ( SafeBuf *sb , const char *status ,
 	if ( m_isPingServer ) sb->safePrintf("ISPINGSERVER ");
 	if ( m_isInjecting ) sb->safePrintf("ISINJECTING ");
 	if ( m_forceDelete ) sb->safePrintf("FORCEDELETE ");
-	if ( m_isMenuOutlink ) sb->safePrintf("MENUOUTLINK ");
 
 	//if ( m_fromSections ) sb->safePrintf("FROMSECTIONS ");
 	if ( m_hasAuthorityInlink ) sb->safePrintf("HASAUTHORITYINLINK ");
@@ -4398,7 +4396,6 @@ void dedupSpiderdbList ( RdbList *list ) {
 
 		if ( sreq->m_urlIsDocId         ) srh ^= 0xee015b07;
 		if ( sreq->m_fakeFirstIp        ) srh ^= 0x95b8d376;
-		if ( sreq->m_isMenuOutlink      ) srh ^= 0xd97bb80b;
 
 		// if he's essentially different input parms but for the
 		// same url, we want to keep him because he might map the
