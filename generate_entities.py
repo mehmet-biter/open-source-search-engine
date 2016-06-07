@@ -63,4 +63,4 @@ for entity_name,data in json_entities.iteritems():
 	print '	{"&%s",	%d, {%s},	0, ""},'%(entity_name, len(codepoints), ",".join([str(c) for c in codepoints]))
 print "};"
 
-print "static const int max_entity_name_len = %d;"%max_entity_name_len
+print "static const int max_entity_name_len = %d;"%(max_entity_name_len+1)
