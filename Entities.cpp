@@ -214,7 +214,7 @@ int32_t getEntity_a ( const char *s , int32_t maxLen , uint32_t *c ) {
 	len++;
 
 	// we don't have entities longer than what w3c specified
-	if ( len > max_entity_name_len ) {
+	if ( len > max_entity_name_len+1 ) {
 		return 0;
 	}
 
