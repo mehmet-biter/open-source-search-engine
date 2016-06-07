@@ -18,6 +18,8 @@
 // NOTE: the "c" bits were the hopcount of the inlinker, but we changed
 // them to the lower ip byte so steve can show the # of unique ips linking
 // to your page or site.
+//
+// The ip is it network order (the top 24 bit that is. The low 8 bits are a separate field)
 
 #ifndef GB_LINKDB_H
 #define GB_LINKDB_H
