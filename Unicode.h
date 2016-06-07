@@ -260,7 +260,7 @@ inline int32_t utf8Encode(UChar32 c, char* buf) {
 		buf[2] = (char)(0x80 | (c & 0x3f));
 		return 3;
 	}
-	if (!(c & 0xe0)){ 
+	if (!(c & 0xe0000000)) {
 		// 4 byte
 		buf[0] = (char)(0xf0 | (c >> 18 & 0x07));//5
 		buf[1] = (char)(0x80 | (c >> 12 & 0x3f));//5
