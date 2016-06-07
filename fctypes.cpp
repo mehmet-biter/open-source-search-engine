@@ -756,101 +756,96 @@ int32_t saftenTags ( char *dst , int32_t dstlen , const char *src , int32_t srcl
 
 // . if "doSpecial" is true, then we don't touch &lt;, &gt; and &amp;
 int32_t htmlDecode( char *dst, const char *src, int32_t srcLen, bool doSpecial, int32_t niceness ) {
+	//special-case optimization
 	if ( srcLen == 0 ) {
 		return 0;
 	}
 
-	char *start  = dst;
-	const char *srcEnd = src + srcLen;
+	char * const start  = dst;
+	const char * const srcEnd = src + srcLen;
 	for ( ; src < srcEnd ; ) {
-		// breathe
-		QUICKPOLL(niceness);
-
-		// utf8 support?
-		char size = getUtf8CharSize(src);
-
-		// all entities must start with '&'
+		
 		if ( *src != '&' ) {
-			if ( size == 1 ) {
+			*dst++ = *src++;
+		} else {
+			// Ok, we have an ampersand. So decode it into unicode/utf8, do a few special
+			// checks, and in general store the resulting string in dst[]
+		
+			// store decoded entity char into dst[j]
+			uint32_t codepoint[2];
+			int32_t codepointCount;
+
+			// "skip" is how many bytes the entites was in "src"
+			int32_t skip = getEntity_a( src, srcEnd - src, codepoint, &codepointCount );
+	
+			// If the entity is invalid/unknown then store it as text
+			if ( skip == 0 ) {
+				//todo: if doSpecial then make it an &amp;
+				// but the decoding is done in-place (bad idea) so we cannot expand the output
 				*dst++ = *src++;
 				continue;
 			}
 
-			gbmemcpy ( dst , src , size );
-			src += size;
-			dst += size;
-			continue;
-		}
+			// . special mapping
+			// . make &lt; and &gt; special so Xml::set() still works
+			// . and make &amp; special so we do not screw up summaries
+			if ( doSpecial ) {
+				if ( codepoint[0] == '<' || codepoint[0] == '>' || codepoint[0] == '&' ) {
+					int32_t entityLen = 4;
+					const char* entityStr = "";
+	
+					if (codepoint[0] == '<') {
+						entityStr = "&lt;";
+					} else if (codepoint[0] == '>') {
+						entityStr = "&gt;";
+					} else {
+						entityStr = "&amp;";
+						entityLen = 5;
+					}
+	
+					memcpy(dst, entityStr, entityLen);
+					src += skip;
+					dst += entityLen;
+					continue;
+				}
+	
+				/// @todo verify if we need to replace " with '
+	
+				// some tags have &quot; in their value strings
+				// so we have to preserve that!
+				// use curling quote:
+				//http://www.dwheeler.com/essays/quotes-test-utf-8.html
+				// curling double and single quotes resp:
+				// &ldquo; &rdquo; &lsquo; &rdquo;
+				if ( codepoint[0] == '\"' ) {
+					*dst = '\'';
+					dst++;
+					src += skip;
+					continue;
+				}
+			}
 
-		// store decoded entity char into dst[j]
-		uint32_t c;
+			int32_t totalUtf8Bytes = 0;
+			for ( int i=0; i<codepointCount; i++) {
+				// . store it into "dst" in utf8 format
+				int32_t numBytes = utf8Encode ( codepoint[i], dst );
+				totalUtf8Bytes += numBytes;
 
-		// "skip" is how many bytes the entites was in "src"
-		int32_t skip = getEntity_a( src, srcEnd - src, &c );
-
-		// ignore the "entity" if it was invalid
-		if ( skip == 0 ) {
-			*dst++ = *src++;
-			continue;
-		}
-
-		// . special mapping
-		// . make &lt; and &gt; special so Xml::set() still works
-		// . and make &amp; special so we do not screw up summaries
-		if ( doSpecial ) {
-			if ( c == '<' || c == '>' || c == '&' ) {
-				int32_t entityLen = 4;
-				const char* entityStr = "";
-
-				if (c == '<') {
-					entityStr = "&lt;";
-				} else if (c == '>') {
-					entityStr = "&gt;";
-				} else {
-					entityStr = "&amp;";
-					entityLen = 5;
+				// sanity check. do not eat our tail if dst == src
+				if ( totalUtf8Bytes > skip ) {
+					char *xx = NULL; *xx = 0;
 				}
 
-				gbmemcpy(dst, entityStr, entityLen);
-				src += skip;
-				dst += entityLen;
-				continue;
+				// advance dst ptr
+				dst += numBytes;
 			}
 
-			/// @todo verify if we need to replace " with '
-
-			// some tags have &quot; in their value strings
-			// so we have to preserve that!
-			// use curling quote:
-			//http://www.dwheeler.com/essays/quotes-test-utf-8.html
-			// curling double and single quotes resp:
-			// &ldquo; &rdquo; &lsquo; &rdquo;
-			if ( c == '\"' ) {
-				*dst = '\'';
-				dst++;
-				src += skip;
-				continue;
-			}
+			// skip over the encoded entity in the source string
+			src += skip;
 		}
-
-		// . otherwise it was a legit entity
-		// . store it into "dst" in utf8 format
-		// . "numBytes" is how many bytes it stored into 'dst"
-		int32_t numBytes = utf8Encode ( c , dst );
-
-		// sanity check. do not eat our tail if dst == src
-		if ( numBytes > skip ) {
-			char *xx = NULL; *xx = 0;
-		}
-
-		// advance dst ptr
-		dst += numBytes;
-
-		// skip over the encoded entity in the source string
-		src += skip;
 	}
 
-	// NULL term
+	// NUL term
 	*dst = '\0';
 
 	return dst - start;

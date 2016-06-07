@@ -64,7 +64,7 @@ static bool initEntityTable(){
 // . return the 32-bit unicode char it represents
 // . returns 0 if none
 // . JAB: const-ness for optimizer...
-static uint32_t getTextEntity ( const char *s , int32_t len ) {
+static const Entity *getTextEntity ( const char *s , int32_t len ) {
 	if ( !initEntityTable()) return 0;
 	// take the ; off, if any
 	if ( s[len-1] == ';' ) len--;
@@ -73,13 +73,10 @@ static uint32_t getTextEntity ( const char *s , int32_t len ) {
 	// get the entity index from table (stored in the score field)
 	int32_t i = (int32_t) s_table.getScore ( &h );
 	// return 0 if no match
-	if ( i == 0 ) return 0;
+	if ( i == 0 )
+		return NULL;
 	// point to the utf8 char. these is 1 or 2 bytes it seems
-	char *p = (char *)s_entities[i-1].utf8;
-	// encode into unicode
-	uint32_t c = utf8Decode ( p );
-	// return that
-	return c;
+	return s_entities+i-1;
 }
 
 // . get a decimal encoded entity
@@ -185,7 +182,7 @@ static uint32_t getHexadecimalEntity ( const char *s , int32_t len ) {
 // . returns full length of entity @ "s" if there is a valid one, 0 otherwise
 // . sets *c to the iso character the entity represents (if there is one)
 // JAB: const-ness for optimizer...
-int32_t getEntity_a ( const char *s , int32_t maxLen , uint32_t *c ) {
+int32_t getEntity_a ( const char *s, int32_t maxLen, uint32_t codepoint[2], int32_t *codepointCount ) {
 	//TODO: handle multi-codepoint entitites
 	// ensure there's an & as first char
 	if ( s[0] != '&' ) {
@@ -227,17 +224,25 @@ int32_t getEntity_a ( const char *s , int32_t maxLen , uint32_t *c ) {
 	// . pass in the whole she-bang: "&#12...;" or "&acute...;
 	if ( s[1] == '#' ) {
 		if ( s[2] == 'x' ) {
-			*c = getHexadecimalEntity( s, len );
+			codepoint[0] = getHexadecimalEntity( s, len );
+			*codepointCount = 1;
 		} else {
-			*c = getDecimalEntity( s, len );
+			codepoint[0] = getDecimalEntity( s, len );
+			*codepointCount = 1;
 		}
 	} else {
-		// otherwise, it's text
-		*c = getTextEntity( s, len );
+		// otherwise, it's a named entity
+		const Entity *entity = getTextEntity( s, len );
+		if(entity) {
+			memcpy(codepoint, entity->codepoint, entity->codepoints*sizeof(int32_t));
+			*codepointCount = entity->codepoints;
+			return len;
+		} else
+			return 0; //unknown named entity
 	}
 
 	// return 0 if not an entity, length of entity if it is an entity
-	if ( *c ) {
+	if ( codepoint[0] ) {
 		return len;
 	} else {
 		return 0;
