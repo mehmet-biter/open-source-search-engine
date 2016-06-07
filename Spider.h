@@ -618,7 +618,7 @@ public:
 	unsigned    m_reserved3s        :1;
 	unsigned    m_reserved3t        :1;
 	unsigned    m_reserved3u        :1;
-	unsigned    m_wasParentIndexed  :1;
+	unsigned    m_reserved3v        :1;
 	unsigned    m_reserved3o        :1;
 	unsigned    m_reserved3p        :1;
 	unsigned    m_reserved3r        :1;

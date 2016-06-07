@@ -1607,7 +1607,6 @@ void XmlDoc::getRebuiltSpiderRequest ( SpiderRequest *sreq ) {
 
 	// transcribe from old spider rec, stuff should be the same
 	sreq->m_addedTime            = m_firstIndexedDate;
-	sreq->m_wasParentIndexed     = 0;//m_sreq.m_parentWasIndexed;
 
 	// validate the stuff so getUrlFilterNum() acks it
 	sreq->m_hopCountValid = 1;
@@ -15502,7 +15501,6 @@ void XmlDoc::setSpiderReqForMsg20 ( SpiderRequest *sreq   ,
 
 	// transcribe from old spider rec, stuff should be the same
 	sreq->m_addedTime          = m_firstIndexedDate;
-	sreq->m_wasParentIndexed     = 0;//m_sreq.m_parentWasIndexed;
 
 	// validate the stuff so getUrlFilterNum() acks it
 	sreq->m_hopCountValid = 1;
@@ -15976,9 +15974,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		// the mere existence of these tags is good
 		if ( gr->getTag("authorityinlink"))ksr.m_hasAuthorityInlink =1;
 		ksr.m_hasAuthorityInlinkValid = true;
-
-		// set parent based info
-		if ( *ipi                        ) ksr.m_wasParentIndexed  = 1;
 
 		// this is used for building dmoz. we just want to index
 		// the urls in dmoz, not their outlinks.

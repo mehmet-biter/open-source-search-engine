@@ -132,7 +132,6 @@ int32_t SpiderRequest::print ( SafeBuf *sbarg ) {
 	if ( m_fakeFirstIp ) sb->safePrintf("ISFAKEFIRSTIP ");
 	if ( m_isInjecting ) sb->safePrintf("ISINJECTING ");
 	if ( m_forceDelete ) sb->safePrintf("FORCEDELETE ");
-	if ( m_wasParentIndexed ) sb->safePrintf("WASPARENTINDEXED ");
 	if ( m_isMenuOutlink ) sb->safePrintf("MENUOUTLINK ");
 
 	if ( m_hasAuthorityInlink ) sb->safePrintf("HASAUTHORITYINLINK ");
@@ -321,7 +320,6 @@ int32_t SpiderRequest::printToTable ( SafeBuf *sb , const char *status ,
 	if ( m_isPingServer ) sb->safePrintf("ISPINGSERVER ");
 	if ( m_isInjecting ) sb->safePrintf("ISINJECTING ");
 	if ( m_forceDelete ) sb->safePrintf("FORCEDELETE ");
-	if ( m_wasParentIndexed ) sb->safePrintf("WASPARENTINDEXED ");
 	if ( m_isMenuOutlink ) sb->safePrintf("MENUOUTLINK ");
 
 	//if ( m_fromSections ) sb->safePrintf("FROMSECTIONS ");
@@ -4531,10 +4529,6 @@ promoteLinkToHead:
 		     oldReq->m_isNewOutlink  != sreq->m_isNewOutlink  ||
 		     //  use hopcount now too!
 		     oldReq->m_hopCount      != sreq->m_hopCount      ||
-		     // we prefer the most recent spider request
-		     // from thsi site in the logic above, so this is not
-		     // necessary. mdw commented out.
-		     //oldReq->m_wasParentIndexed != sreq->m_wasParentIndexed||
 		     oldReq->m_isInjecting   != sreq->m_isInjecting   ||
 		     oldReq->m_isAddUrl      != sreq->m_isAddUrl      ||
 		     oldReq->m_isPageReindex != sreq->m_isPageReindex ||
