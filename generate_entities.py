@@ -11,7 +11,7 @@ def die(msg):
 	sys.exit(1)
 
 
-# 1: Fetch (if not already done) https://www.w3.org/TR/2014/REC-html5-20141028/entities.json
+# 1: Fetch (if not already done) https://www.w3.org/TR/html5-author/entities.json
 # 2: Transform into nice 'Entity' data entries for inclusion in Entities.cpp
 
 
@@ -19,7 +19,7 @@ def die(msg):
 #if 'entities.json' doesn't exist then fetch it
 filename = "entities.json"
 if not os.path.exists(filename):
-	url = "https://www.w3.org/TR/2014/REC-html5-20141028/entities.json"
+	url = "https://www.w3.org/TR/html5-author/entities.json"
 	f = urllib2.urlopen(url)
 	
 	if f.getcode()!=200:
