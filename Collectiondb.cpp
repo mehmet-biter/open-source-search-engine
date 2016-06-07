@@ -2112,7 +2112,7 @@ bool CollectionRec::rebuildLangRules ( const char *langStr , const char *tldStr 
 
 	m_regExs[n].reset();
 	m_regExs[n].safePrintf("hopcount==0 && iswww && isnew && "
-			       "parentlang==%s,xx"
+			       "lang==%s,xx"
 			       ,langStr);
 	m_harvestLinks       [n] = 1;
 	m_spiderFreqs        [n] = 7; // 30 days default
@@ -2144,7 +2144,7 @@ bool CollectionRec::rebuildLangRules ( const char *langStr , const char *tldStr 
 	n++;
 
 	m_regExs[n].reset();
-	m_regExs[n].safePrintf("hopcount==0 && iswww && parentlang==%s,xx",
+	m_regExs[n].safePrintf("hopcount==0 && iswww && lang==%s,xx",
 			       langStr);
 	m_harvestLinks       [n] = 1;
 	m_spiderFreqs        [n] = 7.0; // days b4 respider
@@ -2178,7 +2178,7 @@ bool CollectionRec::rebuildLangRules ( const char *langStr , const char *tldStr 
 	n++;
 
 	m_regExs[n].reset();
-	m_regExs[n].safePrintf("hopcount==0 && isnew && parentlang==%s,xx",
+	m_regExs[n].safePrintf("hopcount==0 && isnew && lang==%s,xx",
 			       langStr);
 	m_harvestLinks       [n] = 1;
 	m_spiderFreqs        [n] = 7.0;
@@ -2210,7 +2210,7 @@ bool CollectionRec::rebuildLangRules ( const char *langStr , const char *tldStr 
 	n++;
 
 	m_regExs[n].reset();
-	m_regExs[n].safePrintf("hopcount==0 && parentlang==%s,xx",langStr);
+	m_regExs[n].safePrintf("hopcount==0 && lang==%s,xx",langStr);
 	m_harvestLinks       [n] = 1;
 	m_spiderFreqs        [n] = 10.0;
 	m_maxSpidersPerRule  [n] = 9; // max spiders
@@ -2242,7 +2242,7 @@ bool CollectionRec::rebuildLangRules ( const char *langStr , const char *tldStr 
 	n++;
 
 	m_regExs[n].reset();
-	m_regExs[n].safePrintf("hopcount==1 && isnew && parentlang==%s,xx",
+	m_regExs[n].safePrintf("hopcount==1 && isnew && lang==%s,xx",
 			       tldStr);
 	m_harvestLinks       [n] = 1;
 	m_spiderFreqs        [n] = 20.0;
@@ -2274,7 +2274,7 @@ bool CollectionRec::rebuildLangRules ( const char *langStr , const char *tldStr 
 	n++;
 
 	m_regExs[n].reset();
-	m_regExs[n].safePrintf("hopcount==1 && parentlang==%s,xx",langStr);
+	m_regExs[n].safePrintf("hopcount==1 && lang==%s,xx",langStr);
 	m_harvestLinks       [n] = 1;
 	m_spiderFreqs        [n] = 20.0;
 	m_maxSpidersPerRule  [n] = 9; // max spiders
@@ -2305,7 +2305,7 @@ bool CollectionRec::rebuildLangRules ( const char *langStr , const char *tldStr 
 	n++;
 
 	m_regExs[n].reset();
-	m_regExs[n].safePrintf("hopcount==2 && isnew && parentlang==%s,xx",
+	m_regExs[n].safePrintf("hopcount==2 && isnew && lang==%s,xx",
 			       langStr);
 	m_harvestLinks       [n] = 1;
 	m_spiderFreqs        [n] = 40;
@@ -2338,7 +2338,7 @@ bool CollectionRec::rebuildLangRules ( const char *langStr , const char *tldStr 
 	n++;
 
 	m_regExs[n].reset();
-	m_regExs[n].safePrintf("hopcount==2 && parentlang==%s,xx",langStr);
+	m_regExs[n].safePrintf("hopcount==2 && lang==%s,xx",langStr);
 	m_harvestLinks       [n] = 1;
 	m_spiderFreqs        [n] = 40;
 	m_maxSpidersPerRule  [n] = 9; // max spiders
@@ -2370,7 +2370,7 @@ bool CollectionRec::rebuildLangRules ( const char *langStr , const char *tldStr 
 	n++;
 
 	m_regExs[n].reset();
-	m_regExs[n].safePrintf("hopcount>=3 && isnew && parentlang==%s,xx",
+	m_regExs[n].safePrintf("hopcount>=3 && isnew && lang==%s,xx",
 			       langStr);
 	m_harvestLinks       [n] = 1;
 	m_spiderFreqs        [n] = 60;
@@ -2403,7 +2403,7 @@ bool CollectionRec::rebuildLangRules ( const char *langStr , const char *tldStr 
 	n++;
 
 	m_regExs[n].reset();
-	m_regExs[n].safePrintf("hopcount>=3 && parentlang==%s,xx",langStr);
+	m_regExs[n].safePrintf("hopcount>=3 && lang==%s,xx",langStr);
 	m_harvestLinks       [n] = 1;
 	m_spiderFreqs        [n] = 60;
 	m_maxSpidersPerRule  [n] = 9; // max spiders

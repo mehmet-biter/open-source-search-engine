@@ -13466,16 +13466,6 @@ static bool printUrlExpressionExamples ( SafeBuf *sb ) {
 			  "See table below for supported language "
 			  "abbreviations.</td></tr>"
 
-			  "<tr class=poo><td><nobr>parentlang==zh_cn,zh_tw,xx"
-			  "</nobr></td>"
-			  "<td>Matches if "
-			  "the url's referring parent url is primarily in "
-			  "this language. Useful for prioritizing spidering "
-			  "pages of a certain language."
-			  "See table below for supported language "
-			  "abbreviations."
-			  "</td></tr>"
-
 			  /*
 			  "<tr class=poo><td>link:gigablast</td>"
 			  "<td>Matches if the document links to gigablast."

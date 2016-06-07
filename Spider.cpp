@@ -2512,13 +2512,6 @@ int32_t getUrlFilterNum ( 	SpiderRequest	*sreq,
 		if (lang) langLen = gbstrlen(lang);
 	}
 
-	// . get parent language in the request
-	// . primarpy language of the parent page that linked to this url
-	const char *plang = NULL;
-	int32_t  plangLen = 0;
-	plang = getLanguageAbbr(sreq->m_parentLangId);
-	if ( plang ) plangLen = gbstrlen(plang);
-
 	const char *tld = (char *)-1;
 	int32_t  tldLen;
 
@@ -3707,73 +3700,6 @@ checkNextRule:
 			// come here if we did not match the tld
 		}
 
-
-		// parentlang=en,zh_cn
-		if ( *p=='p' && strncmp(p,"parentlang",10)==0){
-			// if we do not have enough info for outlink, all done
-			if ( isOutlink ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning -1" );
-				return -1;
-			}
-			// must have a reply
-			//if ( ! srep ) continue;
-			// skip if unknown? no, we support "xx" as unknown now
-			//if ( srep->m_langId == 0 ) continue;
-			// set these up
-			char *b = s;
-			// loop for the comma-separated list of langids
-			// like parentlang==en,es,...
-		subloop2b:
-			// get length of it in the expression box
-			char *start = b;
-			while ( *b && !is_wspace_a(*b) && *b!=',' ) b++;
-			int32_t  blen = b - start;
-			//char sm;
-			// if we had parentlang==en,es,...
-			if ( sign == SIGN_EQ &&
-			     blen == plangLen && 
-			     strncasecmp(start,plang,plangLen)==0 ) 
-				// if we matched any, that's great
-				goto matched2b;
-			// if its parentlang!=en,es,...
-			// and we equal the string, then we do not matcht his
-			// particular rule!!!
-			if ( sign == SIGN_NE &&
-			     blen == plangLen && 
-			     strncasecmp(start,plang,plangLen)==0 ) 
-				// we do not match this rule if we matched
-				// and of the langs in the != list
-				continue;
-			// might have another in the comma-separated list
-			if ( *b != ',' ) {
-				// if that was the end of the list and the
-				// sign was == then skip this rule
-				if ( sign == SIGN_EQ ) continue;
-				// otherwise, if the sign was != then we win!
-				if ( sign == SIGN_NE ) goto matched2b;
-				// otherwise, bad sign?
-				continue;
-			}
-			// advance to next list item if was a comma after us
-			b++;
-			// and try again
-			goto subloop2b;
-			// come here on a match
-		matched2b:
-			// we matched, now look for &&
-			p = strstr ( b , "&&" );
-			// if nothing, else then it is a match
-			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
-				return i;
-			}
-			// skip the '&&' and go to next rule
-			p += 2;
-			goto checkNextRule;
-			// come here if we did not match the tld
-		}
-
-
 		// hopcount == 20 [&&]
 		if ( *p=='h' && strncmp(p, "hopcount", 8) == 0){
 			// skip if not valid
@@ -4475,9 +4401,6 @@ void dedupSpiderdbList ( RdbList *list ) {
 		if ( sreq->m_urlIsDocId         ) srh ^= 0xee015b07;
 		if ( sreq->m_fakeFirstIp        ) srh ^= 0x95b8d376;
 		if ( sreq->m_isMenuOutlink      ) srh ^= 0xd97bb80b;
-
-		// we may assign url filter priority based on parent langid
-		srh ^= (uint32_t)g_hashtab[0][(uint8_t)sreq->m_parentLangId];
 
 		// if he's essentially different input parms but for the
 		// same url, we want to keep him because he might map the

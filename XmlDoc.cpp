@@ -12243,11 +12243,6 @@ bool XmlDoc::logIt (SafeBuf *bb ) {
 		sb->safePrintf("ctype=%s ",
 			      g_contentTypeStrings [m_contentType]);
 
-	if ( m_sreqValid )
-		sb->safePrintf("parentlang=%02" PRId32"(%s) ",
-			       (int32_t)m_sreq.m_parentLangId,
-			       getLanguageAbbr(m_sreq.m_parentLangId));
-
 	if ( m_langIdValid )
 		sb->safePrintf("lang=%02" PRId32"(%s) ",(int32_t)m_langId,
 			      getLanguageAbbr(m_langId));
@@ -16019,11 +16014,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 			if ( m_sreq.m_isAddUrl )
 				ksr.m_isAddUrl = 1;
 		}
-
-		// it is useful to know the primary langid of the parent
-		// when prioritizing links for spidering in the case of
-		// focussing the search engine on a particular set of langs
-		ksr.m_parentLangId = *langId;
 
 		// copy the url into SpiderRequest::m_url buffer
 		strcpy(ksr.m_url,s);

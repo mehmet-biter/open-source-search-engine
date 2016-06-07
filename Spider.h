@@ -553,12 +553,7 @@ public:
 	// . i made this a int16_t from int32_t to support m_parentLangId etc above
 	int16_t   m_hopCount;
 	
-	// when creating a chinese search engine for instance it is nice
-	// to know the language of the page we are spidering's parent.
-	// typically a chinese page will link to another chinese page,
-	// though not always of course. this is the primary language of
-	// the parent.
-	uint8_t m_parentLangId;
+	uint8_t m_reservedb8;
 
 	unsigned char    m_ignoreDocUnchangedError:1;
 	unsigned char    m_recycleContent:1;
@@ -697,8 +692,6 @@ public:
 		m_ufn = -1;
 		// this too
 		m_priority = -1;
-		// this happens to be zero already, but just in case it changes
-		m_parentLangId = langUnknown;
 	}
 
 	static int32_t getNeededSize ( int32_t urlLen ) {
