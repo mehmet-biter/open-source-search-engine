@@ -13140,14 +13140,6 @@ static bool printUrlExpressionExamples ( SafeBuf *sb ) {
 			  "</td></tr>"
 			  */
 
-			  "<tr class=poo><td><nobr>isnewoutlink | !isnewoutlink"
-			  "</nobr></td>"
-			  "<td>"
-			  "This is true since the outlink was not there "
-			  "the last time we spidered the page we harvested "
-			  "it from."
-			  "</td></tr>"
-
 			  "<tr class=poo><td>hasreply | !hasreply</td>"
 			  "<td>"
 			  "This is true if we have tried to spider "

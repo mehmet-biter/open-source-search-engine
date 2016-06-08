@@ -1600,7 +1600,6 @@ void XmlDoc::getRebuiltSpiderRequest ( SpiderRequest *sreq ) {
 
 	Url *fu = getFirstUrl();
 
-	sreq->m_isNewOutlink         = 0;
 	sreq->m_isAddUrl             = 0;//m_isAddUrl;
 	sreq->m_isPingServer         = fu->isPingServer();
 	//sreq->m_isUrlPermalinkFormat = m_isUrlPermalinkFormat;
@@ -15494,7 +15493,6 @@ void XmlDoc::setSpiderReqForMsg20 ( SpiderRequest *sreq   ,
 
 	sreq->m_pageNumInlinks       = 0;//m_sreq.m_parentFirstIp;
 
-	sreq->m_isNewOutlink         = 0;
 	sreq->m_isAddUrl             = 0;//m_isAddUrl;
 	sreq->m_isPingServer         = fu->isPingServer();
 	//sreq->m_isUrlPermalinkFormat = m_isUrlPermalinkFormat;
@@ -15859,11 +15857,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 			continue;
 		}
 
-		// are we a new outlink from a ? i.e. a "hot link"? assume so
-		bool newOutlink = true;
-		// if no old links, can not be a new outlink then
-		if ( flags & LF_OLDLINK ) newOutlink = false;
-
 		// get # of inlinks to this site... if recorded...
 		int32_t ksni = -1;
 		Tag *st = NULL;
@@ -15945,7 +15938,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		// get this
 		bool isupf = ::isPermalink(NULL,&url,CT_HTML,NULL,isRSSExt);
 		// set some bit flags. the rest are 0 since we call reset()
-		if ( newOutlink   ) ksr.m_isNewOutlink         = 1;
 		if ( isupf        ) ksr.m_isUrlPermalinkFormat = 1;
 		//if ( isIndexed    ) ksr.m_isIndexed          = 1;
 		if ( ispingserver ) ksr.m_isPingServer         = 1;

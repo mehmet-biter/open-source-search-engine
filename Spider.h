@@ -613,7 +613,7 @@ public:
 
 	// if the parent was respidered and the outlink was there last time
 	// and is there now, then this is "0", otherwise, this is "1"
-	unsigned    m_isNewOutlink      :1;
+	unsigned    m_reserved3x        :1;
 	unsigned    m_reserved3s        :1;
 	unsigned    m_reserved3t        :1;
 	unsigned    m_reserved3u        :1;

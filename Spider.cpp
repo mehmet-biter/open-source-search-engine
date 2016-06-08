@@ -121,7 +121,6 @@ int32_t SpiderRequest::print ( SafeBuf *sbarg ) {
 	//	       getLanguageString(m_langId),(int32_t)m_langId );
 	//sb->safePrintf("percentChanged=%" PRId32"%% ",(int32_t)m_percentChanged );
 
-	if ( m_isNewOutlink ) sb->safePrintf("ISNEWOUTLINK ");
 	if ( m_isAddUrl ) sb->safePrintf("ISADDURL ");
 	if ( m_isPageReindex ) sb->safePrintf("ISPAGEREINDEX ");
 	if ( m_isPageParser ) sb->safePrintf("ISPAGEPARSER ");
@@ -309,7 +308,6 @@ int32_t SpiderRequest::printToTable ( SafeBuf *sb , const char *status ,
 
 	sb->safePrintf(" <td><nobr>");
 
-	if ( m_isNewOutlink ) sb->safePrintf("ISNEWOUTLINK ");
 	if ( m_isAddUrl ) sb->safePrintf("ISADDURL ");
 	if ( m_isPageReindex ) sb->safePrintf("ISPAGEREINDEX ");
 	if ( m_isPageParser ) sb->safePrintf("ISPAGEPARSER ");
@@ -3084,26 +3082,6 @@ checkNextRule:
 		}
 
 		// check for this
-		if ( strncmp(p,"isnewoutlink",12) == 0 ) {
-			// skip for msg20
-			if ( isForMsg20 ) continue;
-			// skip if we do not match this rule
-			if ( (bool)sreq->m_isNewOutlink == val ) continue;
-			// skip it
-			p += 10;
-			// check for &&
-			p = strstr(p, "&&");
-			// if nothing, else then it is a match
-			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
-				return i;
-			}
-			// skip the '&&' and go to next rule
-			p += 2;
-			goto checkNextRule;
-		}
-
-		// check for this
 		if ( strncmp(p,"isnewrequest",12) == 0 ) {
 			// if we do not have enough info for outlink, all done
 			if ( isOutlink ) {
@@ -4275,7 +4253,6 @@ void dedupSpiderdbList ( RdbList *list ) {
 
 		// why does sitehash32 matter really?
 		uint32_t srh = sreq->m_siteHash32;
-		if ( sreq->m_isNewOutlink  ) srh ^= 0xb714d3a3;
 		if ( sreq->m_isInjecting   ) srh ^= 0x42538909;
 		//if ( sreq->m_hasContent    ) srh ^= 0xbbbefd59;
 		if ( sreq->m_isAddUrl      ) srh ^= 0x587c5a0b;
@@ -4411,7 +4388,6 @@ promoteLinkToHead:
 
 		/*
 		if ( oldReq->m_siteHash32    != sreq->m_siteHash32    ||
-		     oldReq->m_isNewOutlink  != sreq->m_isNewOutlink  ||
 		     //  use hopcount now too!
 		     oldReq->m_hopCount      != sreq->m_hopCount      ||
 		     oldReq->m_isInjecting   != sreq->m_isInjecting   ||
@@ -4893,7 +4869,6 @@ bool SpiderRequest::setFromAddUrl ( char *url ) {
 	// . now fill it up
 	// . TODO: calculate the other values... lazy!!! (m_isRSSExt, 
 	//         m_siteNumInlinks,...)
-	m_isNewOutlink = 1;
 	m_isAddUrl     = 1;
 	m_addedTime    = (uint32_t)getTimeGlobal();//now;
 	m_fakeFirstIp   = 1;
