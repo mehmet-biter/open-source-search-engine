@@ -57,10 +57,13 @@ for entity_name,data in json_entities.iteritems():
 	codepoints = data[u'codepoints']
 	if len(codepoints)<1 or len(codepoints)>2:
 		die("Unexpected codepoint count for entity %s",entity_name)
-
+	codepoint_count = len(codepoints)
+	if len(codepoints)<2:
+		codepoints.append(0) #make codepoints a full array so compilers/flexelint dont complain about too few initializers
+	
 	max_entity_name_len = max(max_entity_name_len,len(entity_name))
 	
-	print '	{"&%s",	%d, {%s},	0, ""},'%(entity_name, len(codepoints), ",".join([str(c) for c in codepoints]))
+	print '	{"&%s",	%d, {%s},	0, ""},'%(entity_name, codepoint_count, ",".join([str(c) for c in codepoints]))
 print "};"
 
 print "static const int max_entity_name_len = %d;"%(max_entity_name_len+1)
