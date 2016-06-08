@@ -15915,9 +15915,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		ksr.m_siteNumInlinksValid = true;
 		ksr.m_isRSSExt            = isRSSExt;
 
-		ksr.m_hasMediaExtension = url.hasMediaExtension();
-		ksr.m_hasMediaExtensionValid = 1;
-
 		// hop count is now 16 bits so do not wrap that around
 		int32_t hc = m_hopCount + 1;
 		if ( hc > 65535 ) hc = 65535;

@@ -13494,12 +13494,6 @@ static bool printUrlExpressionExamples ( SafeBuf *sb ) {
 			  "is a root ur but http://www.abc.com/foo is not. "
 			  "</td></tr>"
 
-			  "<tr class=poo><td>ismedia | !ismedia</td>"
-			  "<td>"
-			  "Does the url have a media or css related "
-			  "extension. Like gif, jpg, mpeg, css, etc.? "
-			  "</td></tr>"
-
 
 			  "<tr class=poo><td>tag:<i>tagname</i></td>"
 			  "<td>"

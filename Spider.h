@@ -557,8 +557,8 @@ public:
 
 	unsigned char    m_ignoreDocUnchangedError:1;
 	unsigned char    m_recycleContent:1;
-	unsigned char    m_hasMediaExtension:1;
-	unsigned char    m_hasMediaExtensionValid:1;
+	unsigned char    m_reserved2i:1;
+	unsigned char    m_reserved2j:1;
 
 	unsigned char    m_reserved2e:1;
 	unsigned char    m_reserved2f:1;

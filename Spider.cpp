@@ -2534,10 +2534,6 @@ int32_t getUrlFilterNum ( 	SpiderRequest	*sreq,
 	if ( ! cr->m_hasucr ) ucr = NULL;
 	if ( ! cr->m_hasupr ) upr = NULL;
 
-
-	char *ext;
-	//char *special;
-
 	// CONSIDER COMPILING FOR SPEED:
 	// 1) each command can be combined into a bitmask on the spiderRequest
 	//    bits, or an access to m_siteNumInlinks, or a substring match
@@ -2793,7 +2789,6 @@ checkNextRule:
 			// skip for msg20
 			if ( isForMsg20 ) continue;
 			// if no match continue
-			//if ( (bool)sreq->m_urlIsDocId==val ) continue;
 			if ( (bool)sreq->m_isPageReindex==val ) continue;
 			// skip
 			p += 9;
@@ -2997,113 +2992,6 @@ checkNextRule:
 			p += 2;
 			goto checkNextRule;
 		}
-
-		// jpg JPG gif GIF wmv mpg css etc.
-		if ( strncmp ( p , "ismedia",7 ) == 0 ) {
-			// skip for msg20
-			if ( isForMsg20 ) continue;
-
-			// the new way is much faster, but support the
-			// old way below for a while since this bit is new
-			if ( sreq->m_hasMediaExtension )
-				goto gotOne;
-			// if that bit is valid, and zero, then we do not match
-			if ( sreq->m_hasMediaExtensionValid )
-				continue;
-
-			// check the extension
-			if ( urlLen<=5 ) continue;
-			ext = url + urlLen - 4;
-			if ( ext[0] == '.' ) {
-				if ( to_lower_a(ext[1]) == 'c' &&
-				     to_lower_a(ext[2]) == 's' &&
-				     to_lower_a(ext[3]) == 's' )
-					goto gotOne;
-				if ( to_lower_a(ext[1]) == 'm' &&
-				     to_lower_a(ext[2]) == 'p' &&
-				     to_lower_a(ext[3]) == 'g' )
-					goto gotOne;
-				if ( to_lower_a(ext[1]) == 'p' &&
-				     to_lower_a(ext[2]) == 'n' &&
-				     to_lower_a(ext[3]) == 'g' )
-					goto gotOne;
-				if ( to_lower_a(ext[1]) == 'w' &&
-				     to_lower_a(ext[2]) == 'm' &&
-				     to_lower_a(ext[3]) == 'v' )
-					goto gotOne;
-				if ( to_lower_a(ext[1]) == 'w' &&
-				     to_lower_a(ext[2]) == 'a' &&
-				     to_lower_a(ext[3]) == 'v' )
-					goto gotOne;
-				if ( to_lower_a(ext[1]) == 'j' &&
-				     to_lower_a(ext[2]) == 'p' &&
-				     to_lower_a(ext[3]) == 'g' )
-					goto gotOne;
-				if ( to_lower_a(ext[1]) == 'g' &&
-				     to_lower_a(ext[2]) == 'i' &&
-				     to_lower_a(ext[3]) == 'f' )
-					goto gotOne;
-				if ( to_lower_a(ext[1]) == 'i' &&
-				     to_lower_a(ext[2]) == 'c' &&
-				     to_lower_a(ext[3]) == 'o' )
-					goto gotOne;
-				if ( to_lower_a(ext[1]) == 'm' &&
-				     to_lower_a(ext[2]) == 'p' &&
-				     to_lower_a(ext[3]) == '3' )
-					goto gotOne;
-				if ( to_lower_a(ext[1]) == 'm' &&
-				     to_lower_a(ext[2]) == 'p' &&
-				     to_lower_a(ext[3]) == '4' )
-					goto gotOne;
-				if ( to_lower_a(ext[1]) == 'm' &&
-				     to_lower_a(ext[2]) == 'o' &&
-				     to_lower_a(ext[3]) == 'v' )
-					goto gotOne;
-				if ( to_lower_a(ext[1]) == 'a' &&
-				     to_lower_a(ext[2]) == 'v' &&
-				     to_lower_a(ext[3]) == 'i' )
-					goto gotOne;
-			}
-			else if ( ext[-1] == '.' ) {
-				if ( to_lower_a(ext[0]) == 'm' &&
-				     to_lower_a(ext[1]) == 'p' &&
-				     to_lower_a(ext[2]) == 'e' &&
-				     to_lower_a(ext[3]) == 'g' )
-					goto gotOne;
-				if ( to_lower_a(ext[0]) == 'j' &&
-				     to_lower_a(ext[1]) == 'p' &&
-				     to_lower_a(ext[2]) == 'e' &&
-				     to_lower_a(ext[3]) == 'g' )
-					goto gotOne;
-			}
-
-			// try to make detecting .css? super fast
-			if ( ext[0] != '.' &&
-			     ext[1] != '.' &&
-			     urlLen > 10 ) {
-				for(register int32_t k=urlLen-10;k<urlLen;k++){
-					if ( url[k] != '.' ) continue;
-					if ( url[k+1] == 'c' &&
-					     url[k+2] == 's' &&
-					     url[k+3] == 's' &&
-					     url[k+4] == '?' )
-						goto gotOne;
-				}
-			}
-
-			// no match, try the next rule
-			continue;
-		gotOne:
-			p += 7;
-			p = strstr(p, "&&");
-			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
-				return i;
-			}
-			p += 2;
-			goto checkNextRule;
-		}
-
 
 		// check for "isrss" aka "rss"
 		if ( strncmp(p,"isrss",5) == 0 ) {
