@@ -3243,7 +3243,6 @@ bool getSpiderRequestMetaList ( const char *doc, SafeBuf *listBuf, bool spiderLi
 		sreq.m_hopCount   = 0; // we're a seed
 		sreq.m_hopCountValid = true;
 		sreq.m_addedTime = now;
-		sreq.m_isNewOutlink = 1;
 		sreq.m_isWWWSubdomain = url.isSimpleSubdomain();
 		
 		sreq.m_fakeFirstIp = 1;
