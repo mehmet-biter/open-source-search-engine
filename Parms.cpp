@@ -13289,17 +13289,6 @@ static bool printUrlExpressionExamples ( SafeBuf *sb ) {
 			  "</font></b>"
 			  "</td></tr>"
 
-			  /*
-			  "<tr class=poo><td>parentisnew | !parentisnew</td>"
-			  "<td>"
-			  "<b>Parent providing this outlink is not currently "
-			  "in the index but is trying to be added right now. "
-			  "</b>This is a special expression in that "
-			  "it only applies to assigning spider priorities "
-			  "to outlinks we are harvesting on a page.</b>"
-			  "</td></tr>"
-			  */
-
 			  "<tr class=poo><td>isindexed | !isindexed</td>"
 			  "<td>"
 			  "This url matches this if in the index already. "

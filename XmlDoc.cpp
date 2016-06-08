@@ -15863,11 +15863,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		bool newOutlink = true;
 		// if no old links, can not be a new outlink then
 		if ( flags & LF_OLDLINK ) newOutlink = false;
-		// . do not consider outlinks of new pages to be newOutlinks.
-		//   that is somewhat redundant.
-		// . you can use "parentisnew" to do what you want in the url
-		//   filters table
-		//if ( ! isIndexed ) newOutlink = false;
 
 		// get # of inlinks to this site... if recorded...
 		int32_t ksni = -1;
