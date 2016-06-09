@@ -4109,7 +4109,8 @@ void dedupSpiderdbList ( RdbList *list ) {
 
 	int32_t numToFilter = 0;
 
-	std::list<std::pair<uint32_t, SpiderRequest*>> lists;
+	// keep track of spider requests with the same url hash (uh48)
+	std::list<std::pair<uint32_t, SpiderRequest*>> spiderRequests;
 
 	// reset it
 	list->resetListPtr();
@@ -4240,7 +4241,7 @@ void dedupSpiderdbList ( RdbList *list ) {
 		// we will not need to dedup, but should add ourselves to
 		// the linked list, which we also reset here.
 		if ( uh48 != reqUh48 ) {
-			lists.clear();
+			spiderRequests.clear();
 
 			// we are the new banner carrier
 			reqUh48 = uh48;
@@ -4262,7 +4263,7 @@ void dedupSpiderdbList ( RdbList *list ) {
 		bool skipUs = false;
 
 		// now we keep a list of the last ten
-		for ( auto it = lists.begin(); it != lists.end(); ++it ) {
+		for ( auto it = spiderRequests.begin(); it != spiderRequests.end(); ++it ) {
 			if ( srh != it->first ) {
 				continue;
 			}
@@ -4296,7 +4297,7 @@ void dedupSpiderdbList ( RdbList *list ) {
 			prevReq->m_url[0] = 'x';
 
 			// no issue with erasing list here as we break out of loop immediately
-			lists.erase( it );
+			spiderRequests.erase( it );
 
 			// make a note of this so we physically remove these
 			// entries after we are done with this scan.
@@ -4311,7 +4312,7 @@ void dedupSpiderdbList ( RdbList *list ) {
 
 
 		// add to linked list
-		lists.emplace_front( srh, (SpiderRequest *)dst );
+		spiderRequests.emplace_front( srh, (SpiderRequest *)dst );
 
 		// get our size
 		int32_t recSize = sreq->getRecSize();
