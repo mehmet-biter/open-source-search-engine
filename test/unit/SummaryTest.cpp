@@ -121,7 +121,7 @@ TEST( SummaryTest, BUGEllipsisAdded ) {
 TEST( SummaryTest, DefaultSummary ) {
 	const char *head = "<qtitle>f1 doc</qtitle>";
 	const char *body = "<p>cucumber</p>\n"
-	                   "<a href=\"http://s2.t13.test.test:8080/f3.html\">snegl</a>\n"
+	                   "<a href=\"f3.html\">snegl</a>\n"
 	                   "snegl\n";
 
 	char input[MAX_BUF_SIZE];
