@@ -4225,13 +4225,13 @@ void dedupSpiderdbList ( RdbList *list ) {
 		// update request with SpiderReply if newer, because ultimately
 		// ::getUrlFilterNum() will just look at SpiderRequest's 
 		// version of these bits!
-		if ( oldRep && repUh48 == uh48 &&
-		     oldRep->m_spideredTime > sreq->m_addedTime ) {
+		if ( oldRep && repUh48 == uh48 && oldRep->m_spideredTime > sreq->m_addedTime ) {
 
-			// if request was a page reindex docid based request 
-			// and url has since been spidered, nuke it!
+			// if request was a page reindex docid based request and url has since been spidered, nuke it!
 			//if ( sreq->m_urlIsDocId ) continue;
-			if ( sreq->m_isPageReindex ) continue;
+			if ( sreq->m_isPageReindex ) {
+				continue;
+			}
 
 			// same if indexcode was EFAKEFIRSTIP which XmlDoc.cpp
 			// re-adds to spiderdb with the right firstip. once
@@ -4243,8 +4243,7 @@ void dedupSpiderdbList ( RdbList *list ) {
 				continue;
 			}
 
-			SpiderReply *old = oldRep;
-			sreq->m_hasAuthorityInlink = old->m_hasAuthorityInlink;
+			sreq->m_hasAuthorityInlink = oldRep->m_hasAuthorityInlink;
 		}
 
 		// if we are not the same url as last request, then
@@ -4271,7 +4270,6 @@ void dedupSpiderdbList ( RdbList *list ) {
 		// why does sitehash32 matter really?
 		uint32_t srh = sreq->m_siteHash32;
 		if ( sreq->m_isInjecting   ) srh ^= 0x42538909;
-		//if ( sreq->m_hasContent    ) srh ^= 0xbbbefd59;
 		if ( sreq->m_isAddUrl      ) srh ^= 0x587c5a0b;
 		if ( sreq->m_isPageReindex ) srh ^= 0x70fb3911;
 		if ( sreq->m_forceDelete   ) srh ^= 0x4e6e9aee;
@@ -4397,35 +4395,9 @@ promoteLinkToHead:
 		// and add us
 		lastKey = dst;
 		memmove ( dst , rec , recSize );
+
 		// advance
 		dst += recSize;
-
-		// get next spiderdb record
-		continue;
-
-		/*
-		if ( oldReq->m_siteHash32    != sreq->m_siteHash32    ||
-		     //  use hopcount now too!
-		     oldReq->m_hopCount      != sreq->m_hopCount      ||
-		     oldReq->m_isInjecting   != sreq->m_isInjecting   ||
-		     oldReq->m_isAddUrl      != sreq->m_isAddUrl      ||
-		     oldReq->m_isPageReindex != sreq->m_isPageReindex ||
-		     oldReq->m_forceDelete   != sreq->m_forceDelete    )
-			// we are different enough to coexist
-			goto addIt;
-		// . if the same check who has the most recent added time
-		// . if we are not the most recent, just do not add us
-		// . no, now i want the oldest so we can do gbssDiscoveryTime
-		//   and set sreq->m_discoveryTime accurately, above
-		if ( sreq->m_addedTime >= oldReq->m_addedTime ) continue;
-
-		// otherwise, erase over him
-		dst     = restorePoint;
-		lastKey = prevLastKey;
-		// and add us over top of him
-		goto addIt;
-		*/
-
 	}
 
 	// sanity check

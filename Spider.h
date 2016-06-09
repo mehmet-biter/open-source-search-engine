@@ -607,12 +607,6 @@ public:
 	// www.xxx.com/*? or xxx.com/*?
 	unsigned    m_isWWWSubdomain:1;
 
-	//
-	// these "parent" bits are invalid if m_parentHostHash32 is 0!
-	//
-
-	// if the parent was respidered and the outlink was there last time
-	// and is there now, then this is "0", otherwise, this is "1"
 	unsigned    m_reserved3x        :1;
 	unsigned    m_reserved3s        :1;
 	unsigned    m_reserved3t        :1;
