@@ -79,6 +79,7 @@ bool Msg5::getList ( char     rdbId         ,
 		     bool        allowPageCache ) {
 	const char *startKey = static_cast<const char*>(startKey_);
 	const char *endKey = static_cast<const char*>(endKey_);
+
 	char fixedEndKey[MAX_KEY_BYTES];
 	
 	// make sure we are not being re-used prematurely
@@ -218,13 +219,17 @@ bool Msg5::getList ( char     rdbId         ,
 	// timing debug
 	//log("Msg5:getting list startKey.n1=%" PRIu32,m_startKey.n1);
 	// start the read loop - hopefully, will only loop once
-	if ( readList ( ) ) return true;
+	if ( readList ( ) ) {
+		return true;
+	}
 
 	// tell Spider.cpp not to nuke us until we get back!!!
 	m_waitingForList = true;
+
 	// we blocked!!! must call m_callback
 	return false;
 }
+
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
 // . reads from cache, tree and files
@@ -899,9 +904,7 @@ bool Msg5::gotList2 ( ) {
 	// . prepare for the merge, grows the buffer
 	// . this returns false and sets g_errno on error
 	// . should not affect the current list in m_list, only build on top
-	if ( ! m_list->prepareForMerge ( m_listPtrs    , 
-					 m_numListPtrs , 
-					 m_minRecSizes ) ) {
+	if ( ! m_list->prepareForMerge ( m_listPtrs, m_numListPtrs, m_minRecSizes ) ) {
 		log("net: Had error preparing to merge lists from %s: %s",
 		    base->m_dbname,mstrerror(g_errno));
 		return true;

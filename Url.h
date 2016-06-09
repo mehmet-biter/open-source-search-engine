@@ -170,7 +170,6 @@ public:
 		return getUrlHash64() & 0x0000ffffffffffffLL;
 	}
 
-	bool hasMediaExtension() const;
 	bool hasScriptExtension() const;
 	bool hasXmlExtension() const;
 	bool hasJsonExtension() const;

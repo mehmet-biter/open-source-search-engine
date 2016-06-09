@@ -557,8 +557,8 @@ public:
 
 	unsigned char    m_ignoreDocUnchangedError:1;
 	unsigned char    m_recycleContent:1;
-	unsigned char    m_hasMediaExtension:1;
-	unsigned char    m_hasMediaExtensionValid:1;
+	unsigned char    m_reserved2i:1;
+	unsigned char    m_reserved2j:1;
 
 	unsigned char    m_reserved2e:1;
 	unsigned char    m_reserved2f:1;
@@ -607,24 +607,16 @@ public:
 	// www.xxx.com/*? or xxx.com/*?
 	unsigned    m_isWWWSubdomain:1;
 
-	//
-	// these "parent" bits are invalid if m_parentHostHash32 is 0!
-	// that includes m_isMenuOutlink
-	//
-
-	// if the parent was respidered and the outlink was there last time
-	// and is there now, then this is "0", otherwise, this is "1"
-	unsigned    m_isNewOutlink      :1;
+	unsigned    m_reserved3x        :1;
 	unsigned    m_reserved3s        :1;
 	unsigned    m_reserved3t        :1;
 	unsigned    m_reserved3u        :1;
-	unsigned    m_wasParentIndexed  :1;
+	unsigned    m_reserved3v        :1;
 	unsigned    m_reserved3o        :1;
 	unsigned    m_reserved3p        :1;
 	unsigned    m_reserved3r        :1;
 	unsigned    m_reserved3l        :1;
-	// is this outlink from content or menu?
-	unsigned    m_isMenuOutlink     :1;
+	unsigned    m_reserved3w        :1;
 
 
 	// 

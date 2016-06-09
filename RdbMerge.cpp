@@ -395,13 +395,10 @@ bool RdbMerge::getAnotherList ( ) {
 	//   the original retry of 25
 	int32_t nn = base->getNumFiles();
 	if ( m_numFiles > 0 && m_numFiles < nn ) nn = m_numFiles;
-	// don't access any biased page caches
-	bool usePageCache = true;
-	if ( m_rdbId == RDB_CLUSTERDB )
-		usePageCache = false;
+
 	// . i don't trust page cache too much (mdw)... well, give it a shot
 	// . see if ths helps fix WD corruption... i doubt it
-	usePageCache = false;
+	bool usePageCache = false;
 	// for now force to 100k
 	int32_t bufSize = 100000; // g_conf.m_mergeBufSize , // minRecSizes
 	// get it
@@ -435,7 +432,7 @@ void gotListWrapper ( void *state , RdbList *list , Msg5 *msg5 ) {
  loop:
 	// if g_errno is out of memory then msg3 wasn't able to get the lists
 	// so we should sleep and retry
-	if ( g_errno == ENOMEM || g_errno == ENOTHREADSLOTS ) { 
+	if ( g_errno == ENOMEM || g_errno == ENOTHREADSLOTS ) {
 		THIS->doSleep(); return; }
 	// if g_errno we're done
 	if ( g_errno || THIS->m_doneMerging ) { THIS->doneMerging(); return; }

@@ -13140,14 +13140,6 @@ static bool printUrlExpressionExamples ( SafeBuf *sb ) {
 			  "</td></tr>"
 			  */
 
-			  "<tr class=poo><td><nobr>isnewoutlink | !isnewoutlink"
-			  "</nobr></td>"
-			  "<td>"
-			  "This is true since the outlink was not there "
-			  "the last time we spidered the page we harvested "
-			  "it from."
-			  "</td></tr>"
-
 			  "<tr class=poo><td>hasreply | !hasreply</td>"
 			  "<td>"
 			  "This is true if we have tried to spider "
@@ -13288,17 +13280,6 @@ static bool printUrlExpressionExamples ( SafeBuf *sb ) {
 			  "pingserver urls are assigned a hop count of 0"
 			  "</font></b>"
 			  "</td></tr>"
-
-			  /*
-			  "<tr class=poo><td>parentisnew | !parentisnew</td>"
-			  "<td>"
-			  "<b>Parent providing this outlink is not currently "
-			  "in the index but is trying to be added right now. "
-			  "</b>This is a special expression in that "
-			  "it only applies to assigning spider priorities "
-			  "to outlinks we are harvesting on a page.</b>"
-			  "</td></tr>"
-			  */
 
 			  "<tr class=poo><td>isindexed | !isindexed</td>"
 			  "<td>"
@@ -13503,12 +13484,6 @@ static bool printUrlExpressionExamples ( SafeBuf *sb ) {
 			  "<td>Matches if the URL is a root URL. Like if "
 			  "its path is just '/'. Example: http://www.abc.com "
 			  "is a root ur but http://www.abc.com/foo is not. "
-			  "</td></tr>"
-
-			  "<tr class=poo><td>ismedia | !ismedia</td>"
-			  "<td>"
-			  "Does the url have a media or css related "
-			  "extension. Like gif, jpg, mpeg, css, etc.? "
 			  "</td></tr>"
 
 

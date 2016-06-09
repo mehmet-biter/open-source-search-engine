@@ -2083,56 +2083,6 @@ bool Url::isPathUnwantedForIndexing() const {
 	return false;
 }
 
-
-bool Url::hasMediaExtension ( ) const {
-
-	if ( ! m_extension || ! m_elen || m_elen > 4 ) return false;
-
-	char ext[5];
-	int i;
-	for(i=0; i < m_elen; i++)
-	{
-		ext[i] = to_lower_a(m_extension[i]);
-	}
-	ext[i] = '\0';
-	
-	switch( m_elen )
-	{
-		case 3:
-			if( 
-				memcmp(ext, "avi", 3) == 0 ||
-				memcmp(ext, "css", 3) == 0 ||
-				memcmp(ext, "gif", 3) == 0 ||
-				memcmp(ext, "ico", 3) == 0 ||
-				memcmp(ext, "jpg", 3) == 0 ||
-				memcmp(ext, "mov", 3) == 0 ||
-				memcmp(ext, "mp2", 3) == 0 ||
-				memcmp(ext, "mp3", 3) == 0 ||
-				memcmp(ext, "mp4", 3) == 0 ||
-				memcmp(ext, "mpg", 3) == 0 ||
-				memcmp(ext, "png", 3) == 0 ||
-				memcmp(ext, "svg", 3) == 0 ||
-				memcmp(ext, "wav", 3) == 0 ||
-				memcmp(ext, "wmv", 3) == 0 )
-			{
-				return true;
-			}
-			break;
-		case 4:
-			if( memcmp(ext, "mpeg", 4) == 0 ||
-				memcmp(ext, "jpeg", 4) == 0 )
-			{
-				return true;
-			}
-			break;
-		default:
-			break;
-	}
-
-	return false;
-}
-
-
 bool Url::hasXmlExtension ( ) const {
 
 	if ( ! m_extension || ! m_elen || m_elen > 3 ) return false;

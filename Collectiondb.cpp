@@ -1576,16 +1576,6 @@ bool CollectionRec::rebuildUrlFilters2 ( ) {
 	m_spiderPriorities   [n] = 80;
 	n++;
 
-	m_regExs[n].set("ismedia");
-	m_harvestLinks       [n] = 1;
-	m_spiderFreqs        [n] = 0; // 30 days default
-	m_maxSpidersPerRule  [n] = 99; // max spiders
-	m_spiderIpMaxSpiders [n] = 1; // max spiders per ip
-	m_spiderIpWaits      [n] = 1000; // same ip wait
-	m_spiderPriorities   [n] = 100; // delete!
-	m_forceDelete        [n] = 1;
-	n++;
-
 	// if not in the site list then nuke it
 	m_regExs[n].set("!ismanualadd && !insitelist");
 	m_harvestLinks       [n] = 1;
@@ -1838,16 +1828,6 @@ bool CollectionRec::rebuildPrivacoreRules () {
 	m_spiderPriorities   [n] = 80;
 	n++;
 
-	m_regExs[n].set("ismedia");
-	m_harvestLinks       [n] = 0;
-	m_spiderFreqs        [n] = 0; 		// 0 days default
-	m_maxSpidersPerRule  [n] = 99; 		// max spiders
-	m_spiderIpMaxSpiders [n] = 1; 		// max spiders per ip
-	m_spiderIpWaits      [n] = 1000; 	// same ip wait
-	m_spiderPriorities   [n] = 100;
-	m_forceDelete        [n] = 1;		// delete!
-	n++;
-
 	m_regExs[n].reset();
 	m_regExs[n].safePrintf("lang!=%s", langWhitelistStr);
 	m_harvestLinks       [n] = 0;
@@ -2048,16 +2028,6 @@ bool CollectionRec::rebuildLangRules ( const char *langStr , const char *tldStr 
 	m_spiderIpMaxSpiders [n] = 1; // max spiders per ip
 	m_spiderIpWaits      [n] = 1000; // same ip wait
 	m_spiderPriorities   [n] = 80;
-	n++;
-
-	m_regExs[n].set("ismedia");
-	m_harvestLinks       [n] = 1;
-	m_spiderFreqs        [n] = 0; // 30 days default
-	m_maxSpidersPerRule  [n] = 99; // max spiders
-	m_spiderIpMaxSpiders [n] = 1; // max spiders per ip
-	m_spiderIpWaits      [n] = 1000; // same ip wait
-	m_spiderPriorities   [n] = 100; // delete!
-	m_forceDelete        [n] = 1;
 	n++;
 
 	// if not in the site list then nuke it
@@ -2459,16 +2429,6 @@ bool CollectionRec::rebuildShallowRules ( ) {
 	m_spiderIpMaxSpiders [n] = 1; // max spiders per ip
 	m_spiderIpWaits      [n] = 1000; // same ip wait
 	m_spiderPriorities   [n] = 80;
-	n++;
-
-	m_regExs[n].set("ismedia");
-	m_harvestLinks       [n] = 1;
-	m_spiderFreqs        [n] = 0; // 30 days default
-	m_maxSpidersPerRule  [n] = 99; // max spiders
-	m_spiderIpMaxSpiders [n] = 1; // max spiders per ip
-	m_spiderIpWaits      [n] = 1000; // same ip wait
-	m_spiderPriorities   [n] = 100; // delete!
-	m_forceDelete        [n] = 1;
 	n++;
 
 	// if not in the site list then nuke it
@@ -2949,13 +2909,6 @@ bool CollectionRec::rebuildUrlFiltersDiffbot() {
 	m_regExs[i].set("isreindex");
 	m_spiderIpMaxSpiders [i] = 10;
 	m_spiderPriorities   [i] = 70;
-	i++;
-
-	// 2nd default url
-	m_regExs[i].set("ismedia && !ismanualadd");
-	m_maxSpidersPerRule  [i] = 0;
-	m_spiderPriorities   [i] = 100; // delete!
-	m_forceDelete        [i] = 1;
 	i++;
 
 	// de-prioritize fakefirstip urls so we don't give the impression our

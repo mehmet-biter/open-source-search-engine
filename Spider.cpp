@@ -121,7 +121,6 @@ int32_t SpiderRequest::print ( SafeBuf *sbarg ) {
 	//	       getLanguageString(m_langId),(int32_t)m_langId );
 	//sb->safePrintf("percentChanged=%" PRId32"%% ",(int32_t)m_percentChanged );
 
-	if ( m_isNewOutlink ) sb->safePrintf("ISNEWOUTLINK ");
 	if ( m_isAddUrl ) sb->safePrintf("ISADDURL ");
 	if ( m_isPageReindex ) sb->safePrintf("ISPAGEREINDEX ");
 	if ( m_isPageParser ) sb->safePrintf("ISPAGEPARSER ");
@@ -132,8 +131,6 @@ int32_t SpiderRequest::print ( SafeBuf *sbarg ) {
 	if ( m_fakeFirstIp ) sb->safePrintf("ISFAKEFIRSTIP ");
 	if ( m_isInjecting ) sb->safePrintf("ISINJECTING ");
 	if ( m_forceDelete ) sb->safePrintf("FORCEDELETE ");
-	if ( m_wasParentIndexed ) sb->safePrintf("WASPARENTINDEXED ");
-	if ( m_isMenuOutlink ) sb->safePrintf("MENUOUTLINK ");
 
 	if ( m_hasAuthorityInlink ) sb->safePrintf("HASAUTHORITYINLINK ");
 
@@ -311,7 +308,6 @@ int32_t SpiderRequest::printToTable ( SafeBuf *sb , const char *status ,
 
 	sb->safePrintf(" <td><nobr>");
 
-	if ( m_isNewOutlink ) sb->safePrintf("ISNEWOUTLINK ");
 	if ( m_isAddUrl ) sb->safePrintf("ISADDURL ");
 	if ( m_isPageReindex ) sb->safePrintf("ISPAGEREINDEX ");
 	if ( m_isPageParser ) sb->safePrintf("ISPAGEPARSER ");
@@ -321,8 +317,6 @@ int32_t SpiderRequest::printToTable ( SafeBuf *sb , const char *status ,
 	if ( m_isPingServer ) sb->safePrintf("ISPINGSERVER ");
 	if ( m_isInjecting ) sb->safePrintf("ISINJECTING ");
 	if ( m_forceDelete ) sb->safePrintf("FORCEDELETE ");
-	if ( m_wasParentIndexed ) sb->safePrintf("WASPARENTINDEXED ");
-	if ( m_isMenuOutlink ) sb->safePrintf("MENUOUTLINK ");
 
 	//if ( m_fromSections ) sb->safePrintf("FROMSECTIONS ");
 	if ( m_hasAuthorityInlink ) sb->safePrintf("HASAUTHORITYINLINK ");
@@ -2538,10 +2532,6 @@ int32_t getUrlFilterNum ( 	SpiderRequest	*sreq,
 	if ( ! cr->m_hasucr ) ucr = NULL;
 	if ( ! cr->m_hasupr ) upr = NULL;
 
-
-	char *ext;
-	//char *special;
-
 	// CONSIDER COMPILING FOR SPEED:
 	// 1) each command can be combined into a bitmask on the spiderRequest
 	//    bits, or an access to m_siteNumInlinks, or a substring match
@@ -2797,7 +2787,6 @@ checkNextRule:
 			// skip for msg20
 			if ( isForMsg20 ) continue;
 			// if no match continue
-			//if ( (bool)sreq->m_urlIsDocId==val ) continue;
 			if ( (bool)sreq->m_isPageReindex==val ) continue;
 			// skip
 			p += 9;
@@ -3002,113 +2991,6 @@ checkNextRule:
 			goto checkNextRule;
 		}
 
-		// jpg JPG gif GIF wmv mpg css etc.
-		if ( strncmp ( p , "ismedia",7 ) == 0 ) {
-			// skip for msg20
-			if ( isForMsg20 ) continue;
-
-			// the new way is much faster, but support the
-			// old way below for a while since this bit is new
-			if ( sreq->m_hasMediaExtension )
-				goto gotOne;
-			// if that bit is valid, and zero, then we do not match
-			if ( sreq->m_hasMediaExtensionValid )
-				continue;
-
-			// check the extension
-			if ( urlLen<=5 ) continue;
-			ext = url + urlLen - 4;
-			if ( ext[0] == '.' ) {
-				if ( to_lower_a(ext[1]) == 'c' &&
-				     to_lower_a(ext[2]) == 's' &&
-				     to_lower_a(ext[3]) == 's' )
-					goto gotOne;
-				if ( to_lower_a(ext[1]) == 'm' &&
-				     to_lower_a(ext[2]) == 'p' &&
-				     to_lower_a(ext[3]) == 'g' )
-					goto gotOne;
-				if ( to_lower_a(ext[1]) == 'p' &&
-				     to_lower_a(ext[2]) == 'n' &&
-				     to_lower_a(ext[3]) == 'g' )
-					goto gotOne;
-				if ( to_lower_a(ext[1]) == 'w' &&
-				     to_lower_a(ext[2]) == 'm' &&
-				     to_lower_a(ext[3]) == 'v' )
-					goto gotOne;
-				if ( to_lower_a(ext[1]) == 'w' &&
-				     to_lower_a(ext[2]) == 'a' &&
-				     to_lower_a(ext[3]) == 'v' )
-					goto gotOne;
-				if ( to_lower_a(ext[1]) == 'j' &&
-				     to_lower_a(ext[2]) == 'p' &&
-				     to_lower_a(ext[3]) == 'g' )
-					goto gotOne;
-				if ( to_lower_a(ext[1]) == 'g' &&
-				     to_lower_a(ext[2]) == 'i' &&
-				     to_lower_a(ext[3]) == 'f' )
-					goto gotOne;
-				if ( to_lower_a(ext[1]) == 'i' &&
-				     to_lower_a(ext[2]) == 'c' &&
-				     to_lower_a(ext[3]) == 'o' )
-					goto gotOne;
-				if ( to_lower_a(ext[1]) == 'm' &&
-				     to_lower_a(ext[2]) == 'p' &&
-				     to_lower_a(ext[3]) == '3' )
-					goto gotOne;
-				if ( to_lower_a(ext[1]) == 'm' &&
-				     to_lower_a(ext[2]) == 'p' &&
-				     to_lower_a(ext[3]) == '4' )
-					goto gotOne;
-				if ( to_lower_a(ext[1]) == 'm' &&
-				     to_lower_a(ext[2]) == 'o' &&
-				     to_lower_a(ext[3]) == 'v' )
-					goto gotOne;
-				if ( to_lower_a(ext[1]) == 'a' &&
-				     to_lower_a(ext[2]) == 'v' &&
-				     to_lower_a(ext[3]) == 'i' )
-					goto gotOne;
-			}
-			else if ( ext[-1] == '.' ) {
-				if ( to_lower_a(ext[0]) == 'm' &&
-				     to_lower_a(ext[1]) == 'p' &&
-				     to_lower_a(ext[2]) == 'e' &&
-				     to_lower_a(ext[3]) == 'g' )
-					goto gotOne;
-				if ( to_lower_a(ext[0]) == 'j' &&
-				     to_lower_a(ext[1]) == 'p' &&
-				     to_lower_a(ext[2]) == 'e' &&
-				     to_lower_a(ext[3]) == 'g' )
-					goto gotOne;
-			}
-
-			// try to make detecting .css? super fast
-			if ( ext[0] != '.' &&
-			     ext[1] != '.' &&
-			     urlLen > 10 ) {
-				for(register int32_t k=urlLen-10;k<urlLen;k++){
-					if ( url[k] != '.' ) continue;
-					if ( url[k+1] == 'c' &&
-					     url[k+2] == 's' &&
-					     url[k+3] == 's' &&
-					     url[k+4] == '?' )
-						goto gotOne;
-				}
-			}
-
-			// no match, try the next rule
-			continue;
-		gotOne:
-			p += 7;
-			p = strstr(p, "&&");
-			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
-				return i;
-			}
-			p += 2;
-			goto checkNextRule;
-		}
-
-
 		// check for "isrss" aka "rss"
 		if ( strncmp(p,"isrss",5) == 0 ) {
 			if ( isOutlink ) {
@@ -3189,26 +3071,6 @@ checkNextRule:
 			// check for &&
 			p = strstr(p, "&&");
 
-			// if nothing, else then it is a match
-			if ( ! p ) {
-				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
-				return i;
-			}
-			// skip the '&&' and go to next rule
-			p += 2;
-			goto checkNextRule;
-		}
-
-		// check for this
-		if ( strncmp(p,"isnewoutlink",12) == 0 ) {
-			// skip for msg20
-			if ( isForMsg20 ) continue;
-			// skip if we do not match this rule
-			if ( (bool)sreq->m_isNewOutlink == val ) continue;
-			// skip it
-			p += 10;
-			// check for &&
-			p = strstr(p, "&&");
 			// if nothing, else then it is a match
 			if ( ! p ) {
 				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" PRId32")", i );
@@ -4333,6 +4195,23 @@ void dedupSpiderdbList ( RdbList *list ) {
 			continue;
 		}
 
+		{
+			/// @todo ALC only need this to clean out existing spiderdb records. (remove once it's cleaned up!)
+			// unwanted for indexing (direct copy from XmlDoc.cpp)
+
+			Url url;
+			// we don't need to strip parameter here, speed up
+			url.set( sreq->m_url, strlen( sreq->m_url ), false, false, 122 );
+			if ( url.hasNonIndexableExtension( TITLEREC_CURRENT_VERSION ) ||
+				 url.hasScriptExtension() ||
+				 url.hasJsonExtension() ||
+				 url.isDomainUnwantedForIndexing() ||
+				 url.isPathUnwantedForIndexing() ) {
+				logDebug( g_conf.m_logDebugSpider, "Unwanted for indexing [%s]", url.getUrl());
+				continue;
+			}
+		}
+
 		// shortcut
 		int64_t uh48 = sreq->getUrlHash48();
 
@@ -4346,13 +4225,13 @@ void dedupSpiderdbList ( RdbList *list ) {
 		// update request with SpiderReply if newer, because ultimately
 		// ::getUrlFilterNum() will just look at SpiderRequest's 
 		// version of these bits!
-		if ( oldRep && repUh48 == uh48 &&
-		     oldRep->m_spideredTime > sreq->m_addedTime ) {
+		if ( oldRep && repUh48 == uh48 && oldRep->m_spideredTime > sreq->m_addedTime ) {
 
-			// if request was a page reindex docid based request 
-			// and url has since been spidered, nuke it!
+			// if request was a page reindex docid based request and url has since been spidered, nuke it!
 			//if ( sreq->m_urlIsDocId ) continue;
-			if ( sreq->m_isPageReindex ) continue;
+			if ( sreq->m_isPageReindex ) {
+				continue;
+			}
 
 			// same if indexcode was EFAKEFIRSTIP which XmlDoc.cpp
 			// re-adds to spiderdb with the right firstip. once
@@ -4364,8 +4243,7 @@ void dedupSpiderdbList ( RdbList *list ) {
 				continue;
 			}
 
-			SpiderReply *old = oldRep;
-			sreq->m_hasAuthorityInlink = old->m_hasAuthorityInlink;
+			sreq->m_hasAuthorityInlink = oldRep->m_hasAuthorityInlink;
 		}
 
 		// if we are not the same url as last request, then
@@ -4391,16 +4269,13 @@ void dedupSpiderdbList ( RdbList *list ) {
 
 		// why does sitehash32 matter really?
 		uint32_t srh = sreq->m_siteHash32;
-		if ( sreq->m_isNewOutlink  ) srh ^= 0xb714d3a3;
 		if ( sreq->m_isInjecting   ) srh ^= 0x42538909;
-		//if ( sreq->m_hasContent    ) srh ^= 0xbbbefd59;
 		if ( sreq->m_isAddUrl      ) srh ^= 0x587c5a0b;
 		if ( sreq->m_isPageReindex ) srh ^= 0x70fb3911;
 		if ( sreq->m_forceDelete   ) srh ^= 0x4e6e9aee;
 
 		if ( sreq->m_urlIsDocId         ) srh ^= 0xee015b07;
 		if ( sreq->m_fakeFirstIp        ) srh ^= 0x95b8d376;
-		if ( sreq->m_isMenuOutlink      ) srh ^= 0xd97bb80b;
 
 		// if he's essentially different input parms but for the
 		// same url, we want to keep him because he might map the
@@ -4520,40 +4395,9 @@ promoteLinkToHead:
 		// and add us
 		lastKey = dst;
 		memmove ( dst , rec , recSize );
+
 		// advance
 		dst += recSize;
-
-		// get next spiderdb record
-		continue;
-
-		/*
-		if ( oldReq->m_siteHash32    != sreq->m_siteHash32    ||
-		     oldReq->m_isNewOutlink  != sreq->m_isNewOutlink  ||
-		     //  use hopcount now too!
-		     oldReq->m_hopCount      != sreq->m_hopCount      ||
-		     // we prefer the most recent spider request
-		     // from thsi site in the logic above, so this is not
-		     // necessary. mdw commented out.
-		     //oldReq->m_wasParentIndexed != sreq->m_wasParentIndexed||
-		     oldReq->m_isInjecting   != sreq->m_isInjecting   ||
-		     oldReq->m_isAddUrl      != sreq->m_isAddUrl      ||
-		     oldReq->m_isPageReindex != sreq->m_isPageReindex ||
-		     oldReq->m_forceDelete   != sreq->m_forceDelete    )
-			// we are different enough to coexist
-			goto addIt;
-		// . if the same check who has the most recent added time
-		// . if we are not the most recent, just do not add us
-		// . no, now i want the oldest so we can do gbssDiscoveryTime
-		//   and set sreq->m_discoveryTime accurately, above
-		if ( sreq->m_addedTime >= oldReq->m_addedTime ) continue;
-
-		// otherwise, erase over him
-		dst     = restorePoint;
-		lastKey = prevLastKey;
-		// and add us over top of him
-		goto addIt;
-		*/
-
 	}
 
 	// sanity check
@@ -5014,7 +4858,6 @@ bool SpiderRequest::setFromAddUrl ( char *url ) {
 	// . now fill it up
 	// . TODO: calculate the other values... lazy!!! (m_isRSSExt, 
 	//         m_siteNumInlinks,...)
-	m_isNewOutlink = 1;
 	m_isAddUrl     = 1;
 	m_addedTime    = (uint32_t)getTimeGlobal();//now;
 	m_fakeFirstIp   = 1;

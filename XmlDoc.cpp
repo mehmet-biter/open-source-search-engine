@@ -1600,14 +1600,12 @@ void XmlDoc::getRebuiltSpiderRequest ( SpiderRequest *sreq ) {
 
 	Url *fu = getFirstUrl();
 
-	sreq->m_isNewOutlink         = 0;
 	sreq->m_isAddUrl             = 0;//m_isAddUrl;
 	sreq->m_isPingServer         = fu->isPingServer();
 	//sreq->m_isUrlPermalinkFormat = m_isUrlPermalinkFormat;
 
 	// transcribe from old spider rec, stuff should be the same
 	sreq->m_addedTime            = m_firstIndexedDate;
-	sreq->m_wasParentIndexed     = 0;//m_sreq.m_parentWasIndexed;
 
 	// validate the stuff so getUrlFilterNum() acks it
 	sreq->m_hopCountValid = 1;
@@ -15495,14 +15493,12 @@ void XmlDoc::setSpiderReqForMsg20 ( SpiderRequest *sreq   ,
 
 	sreq->m_pageNumInlinks       = 0;//m_sreq.m_parentFirstIp;
 
-	sreq->m_isNewOutlink         = 0;
 	sreq->m_isAddUrl             = 0;//m_isAddUrl;
 	sreq->m_isPingServer         = fu->isPingServer();
 	//sreq->m_isUrlPermalinkFormat = m_isUrlPermalinkFormat;
 
 	// transcribe from old spider rec, stuff should be the same
 	sreq->m_addedTime          = m_firstIndexedDate;
-	sreq->m_wasParentIndexed     = 0;//m_sreq.m_parentWasIndexed;
 
 	// validate the stuff so getUrlFilterNum() acks it
 	sreq->m_hopCountValid = 1;
@@ -15861,16 +15857,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 			continue;
 		}
 
-		// are we a new outlink from a ? i.e. a "hot link"? assume so
-		bool newOutlink = true;
-		// if no old links, can not be a new outlink then
-		if ( flags & LF_OLDLINK ) newOutlink = false;
-		// . do not consider outlinks of new pages to be newOutlinks.
-		//   that is somewhat redundant.
-		// . you can use "parentisnew" to do what you want in the url
-		//   filters table
-		//if ( ! isIndexed ) newOutlink = false;
-
 		// get # of inlinks to this site... if recorded...
 		int32_t ksni = -1;
 		Tag *st = NULL;
@@ -15922,9 +15908,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		ksr.m_siteNumInlinksValid = true;
 		ksr.m_isRSSExt            = isRSSExt;
 
-		ksr.m_hasMediaExtension = url.hasMediaExtension();
-		ksr.m_hasMediaExtensionValid = 1;
-
 		// hop count is now 16 bits so do not wrap that around
 		int32_t hc = m_hopCount + 1;
 		if ( hc > 65535 ) hc = 65535;
@@ -15955,7 +15938,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		// get this
 		bool isupf = ::isPermalink(NULL,&url,CT_HTML,NULL,isRSSExt);
 		// set some bit flags. the rest are 0 since we call reset()
-		if ( newOutlink   ) ksr.m_isNewOutlink         = 1;
 		if ( isupf        ) ksr.m_isUrlPermalinkFormat = 1;
 		//if ( isIndexed    ) ksr.m_isIndexed          = 1;
 		if ( ispingserver ) ksr.m_isPingServer         = 1;
@@ -15976,9 +15958,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		// the mere existence of these tags is good
 		if ( gr->getTag("authorityinlink"))ksr.m_hasAuthorityInlink =1;
 		ksr.m_hasAuthorityInlinkValid = true;
-
-		// set parent based info
-		if ( *ipi                        ) ksr.m_wasParentIndexed  = 1;
 
 		// this is used for building dmoz. we just want to index
 		// the urls in dmoz, not their outlinks.
