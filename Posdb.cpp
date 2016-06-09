@@ -1150,6 +1150,15 @@ static void initWeights ( ) {
 }
 
 
+// Called when ranking settings are changed. Normally called from update-parameter
+// broadcast handling (see handleRequest3fLoop() )
+void reinitializeRankingSettings()
+{
+	s_init = false;
+	initWeights();
+}
+
+
 float getHashGroupWeight ( unsigned char hg ) {
 	if ( ! s_init ) initWeights();
 	return s_hashGroupWeights[hg];

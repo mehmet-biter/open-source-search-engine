@@ -24,6 +24,7 @@
 #include "Rebalance.h"
 #include "SpiderProxy.h" // buildProxyTable()
 #include "PageInject.h" // InjectionRequest
+#include "Posdb.h"
 
 
 Parms g_parms;
@@ -4376,7 +4377,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_FLOAT;
 	m->m_def   = "20.000000";
 	m->m_group = true;
-	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_flags = PF_REBUILDRANKINGSETTINGS;
 	m->m_page  = PAGE_RANKING;
 	m->m_obj   = OBJ_COLL;
 	m++;
@@ -4388,7 +4389,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_FLOAT;
 	m->m_def   = "0.000000";
 	m->m_group = true;
-	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_flags = PF_REBUILDRANKINGSETTINGS;
 	m->m_page  = PAGE_RANKING;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -4400,7 +4401,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_FLOAT;
 	m->m_def   = "0.500000";
 	m->m_group = false;
-	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_flags = PF_REBUILDRANKINGSETTINGS;
 	m->m_page  = PAGE_RANKING;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -4412,7 +4413,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_FLOAT;
 	m->m_def   = "0.500000";
 	m->m_group = false;
-	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_flags = PF_REBUILDRANKINGSETTINGS;
 	m->m_page  = PAGE_RANKING;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -4424,7 +4425,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_FLOAT;
 	m->m_def   = "1.000000";
 	m->m_group = false;
-	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_flags = PF_REBUILDRANKINGSETTINGS;
 	m->m_page  = PAGE_RANKING;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -4436,7 +4437,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_FLOAT;
 	m->m_def   = "0.350000";
 	m->m_group = true;
-	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_flags = PF_REBUILDRANKINGSETTINGS;
 	m->m_page  = PAGE_RANKING;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -4448,7 +4449,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_FLOAT;
 	m->m_def   = "1.000000";
 	m->m_group = false;
-	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_flags = PF_REBUILDRANKINGSETTINGS;
 	m->m_page  = PAGE_RANKING;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -4460,7 +4461,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_FLOAT;
 	m->m_def   = "1.000000"; //"0.15"; disabled for now
 	m->m_group = true;
-	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_flags = PF_REBUILDRANKINGSETTINGS;
 	m->m_page  = PAGE_RANKING;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -4472,7 +4473,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_FLOAT;
 	m->m_def   = "1.000000";
 	m->m_group = false;
-	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_flags = PF_REBUILDRANKINGSETTINGS;
 	m->m_page  = PAGE_RANKING;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -4484,7 +4485,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_FLOAT;
 	m->m_def   = "1.000000";
 	m->m_group = true;
-	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_flags = PF_REBUILDRANKINGSETTINGS;
 	m->m_page  = PAGE_RANKING;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -4496,7 +4497,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_FLOAT;
 	m->m_def   = "8.000000";
 	m->m_group = false;
-	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_flags = PF_REBUILDRANKINGSETTINGS;
 	m->m_page  = PAGE_RANKING;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -4508,7 +4509,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_FLOAT;
 	m->m_def   = "1.500000"; //3.0
 	m->m_group = false;
-	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_flags = PF_REBUILDRANKINGSETTINGS;
 	m->m_page  = PAGE_RANKING;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -4520,7 +4521,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_FLOAT;
 	m->m_def   = "0.300000";
 	m->m_group = false;
-	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_flags = PF_REBUILDRANKINGSETTINGS;
 	m->m_page  = PAGE_RANKING;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -4532,7 +4533,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_FLOAT;
 	m->m_def   = "0.100000";
 	m->m_group = false;
-	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_flags = PF_REBUILDRANKINGSETTINGS;
 	m->m_page  = PAGE_RANKING;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -4544,7 +4545,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_FLOAT;
 	m->m_def   = "16.000000";
 	m->m_group = false;
-	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_flags = PF_REBUILDRANKINGSETTINGS;
 	m->m_page  = PAGE_RANKING;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -4556,7 +4557,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_FLOAT;
 	m->m_def   = "1.000000";
 	m->m_group = false;
-	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_flags = PF_REBUILDRANKINGSETTINGS;
 	m->m_page  = PAGE_RANKING;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -4568,7 +4569,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_FLOAT;
 	m->m_def   = "0.000000";
 	m->m_group = false;
-	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_flags = PF_REBUILDRANKINGSETTINGS;
 	m->m_page  = PAGE_RANKING;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -4580,7 +4581,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_FLOAT;
 	m->m_def   = "4.000000";
 	m->m_group = false;
-	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_flags = PF_REBUILDRANKINGSETTINGS;
 	m->m_page  = PAGE_RANKING;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -4592,7 +4593,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_FLOAT;
 	m->m_def   = "1.000000";
 	m->m_group = false;
-	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_flags = PF_REBUILDRANKINGSETTINGS;
 	m->m_page  = PAGE_RANKING;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -4604,7 +4605,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_FLOAT;
 	m->m_def   = "0.200000";
 	m->m_group = false;
-	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_flags = PF_REBUILDRANKINGSETTINGS;
 	m->m_page  = PAGE_RANKING;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -4616,7 +4617,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_FLOAT;
 	m->m_def   = "0.900000";
 	m->m_group = true;
-	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_flags = PF_REBUILDRANKINGSETTINGS;
 	m->m_page  = PAGE_RANKING;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -12064,6 +12065,8 @@ static void handleRequest3fLoop ( void *weArg ) {
 
 	CollectionRec *cx = NULL;
 
+	bool rebuildRankingSettings = false;
+
 	// process them
 	char *p = we->m_parmPtr;
 	for ( ; p < we->m_parmEnd ; ) {
@@ -12119,6 +12122,9 @@ static void handleRequest3fLoop ( void *weArg ) {
 
 		if ( parm->m_flags & PF_REBUILDACTIVELIST )
 			we->m_rebuildActiveList = true;
+
+		if ( parm->m_flags & PF_REBUILDRANKINGSETTINGS )
+			rebuildRankingSettings = true;
 
 		// get collnum i guess
 		if ( parm->m_type != TYPE_CMD )
@@ -12206,6 +12212,9 @@ static void handleRequest3fLoop ( void *weArg ) {
 	if ( we->m_doProxyRebuild )
 		buildProxyTable();
 
+	if ( rebuildRankingSettings )
+		reinitializeRankingSettings();
+
 	// note it
 	if ( ! we->m_sentReply )
 		log("parms: sending parm update reply");
@@ -12225,6 +12234,7 @@ static void handleRequest3fLoop ( void *weArg ) {
 // . host #0 is requesting that we update some parms
 // . the readbuf in the request is the list of the parms
 void handleRequest3f ( UdpSlot *slot , int32_t niceness ) {
+	log("parms: handling updated parameters (request type 3f)");
 
 	// sending to host #0 is not right...
 	//if ( g_hostdb.m_hostId == 0 ) { char *xx=NULL;*xx=0; }

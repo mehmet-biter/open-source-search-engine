@@ -716,4 +716,6 @@ extern Posdb g_posdb;
 extern Posdb g_posdb2;
 extern RdbCache g_termFreqCache;
 
+void reinitializeRankingSettings();
+
 #endif // GB_POSDB_H

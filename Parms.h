@@ -123,31 +123,35 @@ class GigablastRequest {
 	char  m_recycleContent;
 };
 
-// values for Parm::m_flags
-#define PF_COOKIE  0x01  // store in cookie?
-#define PF_REDBOX  0x02  // redbox constraint on search results
-//#define PF_UNUSED  0x04
-#define PF_WIDGET_PARM     0x08
-#define PF_API             0x10
-#define PF_REBUILDURLFILTERS 0x20
-#define PF_NOSYNC            0x40
-#define PF_DIFFBOT           0x80
 
-#define PF_HIDDEN   0x0100
-#define PF_NOSAVE   0x0200
-#define PF_DUP      0x0400
-#define PF_TEXTAREA 0x0800
-#define PF_COLLDEFAULT 0x1000
-#define PF_NOAPI       0x2000
-#define PF_REQUIRED    0x4000
-#define PF_REBUILDPROXYTABLE 0x8000
+// bit flags for Parm::m_flags
+#define PF_COOKIE                   0x00000001  // store in cookie?
+#define PF_REDBOX                   0x00000002  // redbox constraint on search results
+//#define PF_UNUSED                 0x00000004
+#define PF_WIDGET_PARM              0x00000008
+#define PF_API                      0x00000010
+#define PF_REBUILDURLFILTERS        0x00000020
+#define PF_NOSYNC                   0x00000040
+#define PF_DIFFBOT                  0x00000080
 
-#define PF_NOHTML      0x10000
+#define PF_HIDDEN                   0x00000100
+#define PF_NOSAVE                   0x00000200
+#define PF_DUP                      0x00000400
+#define PF_TEXTAREA                 0x00000800
+#define PF_COLLDEFAULT              0x00001000
+#define PF_NOAPI                    0x00002000
+#define PF_REQUIRED                 0x00004000
+#define PF_REBUILDPROXYTABLE        0x00008000
 
-#define PF_CLONE       0x20000
-#define PF_PRIVATE     0x40000 // for password to not show in api
-#define PF_SMALLTEXTAREA 0x80000
-#define PF_REBUILDACTIVELIST 0x100000
+#define PF_NOHTML                   0x00010000
+
+#define PF_CLONE                    0x00020000
+#define PF_PRIVATE                  0x00040000 // for password to not show in api
+#define PF_SMALLTEXTAREA            0x00080000
+#define PF_REBUILDACTIVELIST        0x00100000
+
+#define PF_REBUILDRANKINGSETTINGS   0x00200000 // ranking setting. Reinitialize any derived values
+
 
 class Parm {
  public:
