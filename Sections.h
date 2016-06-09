@@ -36,7 +36,7 @@
 #define SEC_STYLE        0x0010
 #define SEC_SELECT       0x0020
 //#define SEC_UNUSED     0x0040
-//#define SEC_UNUSED     0x0080
+#define SEC_IN_HEAD      0x0080 // in <head>
 #define SEC_IN_TITLE     0x0100 // in title
 #define SEC_IN_HEADER    0x0200 // in <hN> tags
 //#define SEC_UNUSED     0x0400 

@@ -1027,7 +1027,7 @@ bool Summary::getDefaultSummary ( Xml *xml, Words *words, Sections *sections, Po
 	int32_t bestEnd = -1;
 	int32_t longestConsecutive = 0;
 	int32_t lastAlnum = -1;
-	int32_t badFlags = SEC_SCRIPT|SEC_STYLE|SEC_SELECT|SEC_IN_TITLE;
+	int32_t badFlags = SEC_SCRIPT|SEC_STYLE|SEC_SELECT|SEC_IN_TITLE|SEC_IN_HEAD;
 	// shortcut
 	const nodeid_t  *tids = words->getTagIds();
 	const int64_t *wids = words->getWordIds();
@@ -1097,14 +1097,7 @@ bool Summary::getDefaultSummary ( Xml *xml, Words *words, Sections *sections, Po
 	}
 
 	if (bestStart >= 0 && bestEnd > bestStart){
-		int32_t len = pos->filter( words, bestStart, bestEnd, false, p, pend - 10, xml->getVersion() );
-		p += len;
-		if ( len > 0 && p + 3 + 2 < pend ) {
-			// space first?
-			if ( p > m_summary ) *p++ = ' ';
-			gbmemcpy ( p , "..." , 3 );
-			p += 3;
-		}
+		p += pos->filter( words, bestStart, bestEnd, true, p, pend - 10, xml->getVersion() );
 
 		// NULL terminate
 		*p++ = '\0';
@@ -1119,5 +1112,6 @@ bool Summary::getDefaultSummary ( Xml *xml, Words *words, Sections *sections, Po
 		if ( m_summaryLen > 50000 ) { char*xx=NULL;*xx=0; }
 		return true;
 	}
+
 	return true;
 }	

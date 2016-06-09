@@ -117,3 +117,18 @@ TEST( SummaryTest, BUGEllipsisAdded ) {
 	/// @todo ALC we're adding ellipsis even with a full sentence.
 	EXPECT_STREQ( "Giraffe on rollerblades. Penguin on skateboard. The giraffe is way faster than that plumb bird with pathetic wings.  …", summary.getSummary() );
 }
+
+TEST( SummaryTest, DefaultSummary ) {
+	const char *head = "<qtitle>f1 doc</qtitle>";
+	const char *body = "<p>cucumber</p>\n"
+	                   "<a href=\"http://s2.t13.test.test:8080/f3.html\">snegl</a>\n"
+	                   "snegl\n";
+
+	char input[MAX_BUF_SIZE];
+	std::sprintf(input, HTML_FORMAT, head, body);
+
+	Summary summary;
+	generateSummary(summary, input, "banana", "http://www.example.com/");
+
+	EXPECT_STREQ( "cucumber. snegl snegl", summary.getSummary() );
+}

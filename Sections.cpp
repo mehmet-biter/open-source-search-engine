@@ -1055,6 +1055,7 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 		else if ( tid == TAG_H3      ) mf = SEC_IN_HEADER;
 		else if ( tid == TAG_H4      ) mf = SEC_IN_HEADER;
 		else if ( tid == TAG_TITLE   ) mf = SEC_IN_TITLE;
+		else if ( tid == TAG_HEAD    ) mf = SEC_IN_HEAD;
 
 		// accumulate
 		inFlag |= mf;
