@@ -147,6 +147,8 @@ bool is_trusted_protocol_ip(uint32_t ip/*network-order*/)
 }
 
 
+#if 0
+Disabled until we have measured if there is any benefit of having these checks concerning internal/external links based solely on IP-address.
 //This is a replacement for the hardcoded checks on the /16 prefix of the ip addresses
 //This is slightly more intelligent.
 //The correct solution would be to have access to whois information and check the
@@ -185,3 +187,4 @@ bool is_same_network_linkwise(uint32_t ip_a/*network order*/, uint32_t ip_b/*net
 		return true;
 	return false;
 }
+#endif

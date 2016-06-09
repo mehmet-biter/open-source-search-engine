@@ -21,6 +21,7 @@ bool is_trusted_protocol_ip(uint32_t ip/*network-order*/);
 
 //Make a guess if the two IPs are on the same network / controlled by the same
 //entity and links between them should be treated as internal links
-bool is_same_network_linkwise(uint32_t ip_a/*network order*/, uint32_t ip_b/*network order*/);
+//bool is_same_network_linkwise(uint32_t ip_a/*network order*/, uint32_t ip_b/*network order*/);
+static inline bool is_same_network_linkwise(uint32_t,uint32_t) { return false; }
 
 #endif // GB_IPADDRESSCHECKS_H
