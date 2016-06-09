@@ -3966,6 +3966,7 @@ void PosdbTable::intersectLists10_r ( ) {
 	uint64_t lastDocId = 0LL;
 	int32_t lastLen = 0;
 	char siteRank =0;
+	int highestInlinkSiteRank = -1;
 	char docLang =0;
 	float score;
 	int32_t intScore;
@@ -4803,6 +4804,11 @@ void PosdbTable::intersectLists10_r ( ) {
 	     ! (qip[0].m_bigramFlags[0] & (BF_NUMBER) ) ) {
 		siteRank = g_posdb.getSiteRank ( miniMergedList[0] );
 		docLang  = g_posdb.getLangId   ( miniMergedList[0] );
+		if ( g_posdb.getHashGroup(miniMergedList[0])==HASHGROUP_INLINKTEXT) {
+			char inlinkerSiteRank = g_posdb.getWordSpamRank(miniMergedList[0]);
+			if(inlinkerSiteRank>highestInlinkSiteRank)
+				highestInlinkSiteRank = inlinkerSiteRank;
+		}
 	}
 	else {
 		for ( int32_t k = 1 ; k < m_numQueryTermInfos ; k++ ) {
@@ -4813,6 +4819,11 @@ void PosdbTable::intersectLists10_r ( ) {
 				continue;
 			siteRank = g_posdb.getSiteRank ( miniMergedList[k] );
 			docLang  = g_posdb.getLangId   ( miniMergedList[k] );
+			if ( g_posdb.getHashGroup(miniMergedList[k])==HASHGROUP_INLINKTEXT) {
+				char inlinkerSiteRank = g_posdb.getWordSpamRank(miniMergedList[k]);
+				if(inlinkerSiteRank>highestInlinkSiteRank)
+					highestInlinkSiteRank = inlinkerSiteRank;
+			}
 			break;
 		}
 	}
@@ -5051,8 +5062,14 @@ void PosdbTable::intersectLists10_r ( ) {
 
  boolJump2:
 
+	float effectiveSiteRank;
+	effectiveSiteRank = siteRank;
+	if( highestInlinkSiteRank > siteRank ) {
+		//adjust effective siterank because a high-rank site linked to it. Don't adjust it too much though.
+		effectiveSiteRank = siteRank + (highestInlinkSiteRank-siteRank)/3.0;
+	}
 	// try dividing it by 3! (or multiply by .33333 faster)
-	score = minScore * (((float)siteRank)*m_siteRankMultiplier+1.0);
+	score = minScore * (effectiveSiteRank*m_siteRankMultiplier+1.0);
 
 	// . not foreign language? give a huge boost
 	// . use "qlang" parm to set the language. i.e. "&qlang=fr"
