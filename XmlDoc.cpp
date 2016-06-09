@@ -15887,9 +15887,15 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		// is link rss?
 		bool isRSSExt = false;
 		const char *ext = url.getExtension();
-		if ( ext && strcasecmp(ext,"rss" ) == 0 ) isRSSExt = true;
-		if ( ext && strcasecmp(ext,"xml" ) == 0 ) isRSSExt = true;
-		if ( ext && strcasecmp(ext,"atom") == 0 ) isRSSExt = true;
+		if ( ext ) {
+			if ( strcasecmp( ext, "rss" ) == 0 ) {
+				isRSSExt = true;
+			} else if ( strcasecmp( ext, "xml" ) == 0 ) {
+				isRSSExt = true;
+			} else if ( strcasecmp( ext, "atom" ) == 0 ) {
+				isRSSExt = true;
+			}
+		}
 
 		logTrace( g_conf.m_logTraceXmlDoc, "link is RSS [%s]", isRSSExt?"true":"false");
 
