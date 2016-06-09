@@ -2406,6 +2406,9 @@ void Sections::printFlags (SafeBuf *sbuf , Section *sn ) {
 	if ( f & SEC_SELECT )
 		sbuf->safePrintf("inselect ");
 
+	if ( f & SEC_IN_HEAD )
+		sbuf->safePrintf("inhead ");
+
 	if ( f & SEC_IN_TITLE )
 		sbuf->safePrintf("intitle ");
 
