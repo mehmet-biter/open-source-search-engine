@@ -191,6 +191,16 @@ bool Summary::setSummary ( Xml *xml, Words *words, Sections *sections, Pos *pos,
 		return false;
 	}
 
+	/// @todo ALC fix word weights
+	/// non-working logic is removed in commit 5eacee9063861e859b54ec62035a600aa8af25df
+
+	// . compute our word weights wrt each query. words which are more rare
+	//   have a higher weight. We use this to weight the terms importance
+	//   when generating the summary.
+	// . used by the proximity algo
+	// . used in setSummaryScores() for scoring summaries
+
+
 	for ( int32_t i = 0 ; i < q->m_numWords; i++ ) {
 		m_wordWeights[i] = 1.0;
 	}
