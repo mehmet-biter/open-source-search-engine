@@ -526,7 +526,7 @@ install:
 	$(CXX) $(DEFS) $(CPPFLAGS) -c $*.c
 
 .PHONY: depend
-depend:
+depend: entities.inc
 	@echo "generating dependency information"
 	$(CXX) -MM $(DEFS) $(DPPFLAGS) *.cpp > Make.depend
 
