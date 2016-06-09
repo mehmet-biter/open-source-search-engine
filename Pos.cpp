@@ -417,7 +417,13 @@ int32_t Pos::filter( const Words *words, int32_t a, int32_t b, bool addEllipsis,
 					continue;
 				}
 			} else {
-				isFirstLetter = true;
+				// some hard coded punctuation that we don't want to treat as first letter
+				// eg: Program's instead of Program'S
+				if ( cs == 1 && *c == '\'' ) {
+					isFirstLetter = false;
+				} else {
+					isFirstLetter = true;
+				}
 				continue;
 			}
 

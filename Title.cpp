@@ -55,9 +55,9 @@ void Title::reset() {
 }
 
 bool Title::setTitleFromTags( Xml *xml, int32_t maxTitleLen, uint8_t contentType ) {
-	/// @todo cater for CT_PDF & CT_DOC (when antiword is replaced)
-	// only allow html documents for now
-	if ( contentType != CT_HTML ) {
+	/// @todo cater for CT_DOC (when antiword is replaced)
+	// only allow html & pdf documents for now
+	if ( contentType != CT_HTML && contentType != CT_PDF ) {
 		return false;
 	}
 
@@ -65,35 +65,44 @@ bool Title::setTitleFromTags( Xml *xml, int32_t maxTitleLen, uint8_t contentType
 	const int minTitleLen = 3;
 
 	// meta property = "og:title"
-	if ( xml->getTagContent("property", "og:title", m_title, MAX_TITLE_LEN, minTitleLen, maxTitleLen, &m_titleLen, true, TAG_META) ) {
-		if ( g_conf.m_logDebugTitle ) {
-			log( LOG_DEBUG, "title: generated from meta property og:title. title='%.*s'", m_titleLen, m_title );
-		}
+	if ( contentType == CT_HTML &&
+	     xml->getTagContent("property", "og:title", m_title, MAX_TITLE_LEN, minTitleLen, maxTitleLen, &m_titleLen, true, TAG_META) ) {
+		logDebug(g_conf.m_logDebugTitle, "title: generated from meta property og:title. title='%.*s'", m_titleLen, m_title );
 
 		return true;
 	}
 
 	// meta name = "title"
-	if ( xml->getTagContent("name", "title", m_title, MAX_TITLE_LEN, minTitleLen, maxTitleLen, &m_titleLen, true, TAG_META) ) {
-		if ( g_conf.m_logDebugTitle ) {
-			log( LOG_DEBUG, "title: generated from meta property title. title='%.*s'", m_titleLen, m_title );
-		}
+	if ( contentType == CT_HTML &&
+	     xml->getTagContent("name", "title", m_title, MAX_TITLE_LEN, minTitleLen, maxTitleLen, &m_titleLen, true, TAG_META) ) {
+		logDebug(g_conf.m_logDebugTitle, "title: generated from meta property title. title='%.*s'", m_titleLen, m_title );
 
 		return true;
 	}
 
 	// title
 	if ( xml->getTagContent( "", "", m_title, MAX_TITLE_LEN, minTitleLen, maxTitleLen, &m_titleLen, true, TAG_TITLE ) ) {
-		if ( g_conf.m_logDebugTitle ) {
-			log( LOG_DEBUG, "title: generated from title tag. title='%.*s'", m_titleLen, m_title );
+		if ( contentType == CT_PDF ) {
+			// when using pdftohtml, the title tag is the filename when PDF property does not have title tag
+			const char *result = strnstr( m_title, "/in.", m_titleLen );
+			if ( result != NULL ) {
+				char *endp = NULL;
+
+				// do some further verification to avoid screwing up title
+				if ( ( strtoll( result + 4, &endp, 10 ) > 0 ) && ( endp == m_title + m_titleLen ) ) {
+					m_title[0] = '\0';
+					m_titleLen = 0;
+					return false;
+				}
+			}
 		}
+
+		logDebug(g_conf.m_logDebugTitle, "title: generated from title tag. title='%.*s'", m_titleLen, m_title );
 
 		return true;
 	}
 
-	if ( g_conf.m_logDebugTitle ) {
-		log(LOG_DEBUG, "title: unable to generate title from meta/title tags");
-	}
+	logDebug(g_conf.m_logDebugTitle, "title: unable to generate title from meta/title tags");
 
 	return false;
 }
@@ -504,9 +513,9 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 			}
 		}
 
-		/// @todo ALC we should allow more tags than just title/link
-		// skip if not a good tag.
-		if (tid != TAG_TITLE && tid != TAG_A) {
+		/// @todo ALC we should allow more tags than just link
+		// skip if not a good tag. we're already checking for title tag in Title::setTitleFromTags
+		if (tid != TAG_A) {
 			continue;
 		}
 
@@ -598,22 +607,6 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 		// . this does not include the length of word #i, but #(i-1)
 		if ( words->getStringSize ( start , i ) > 1000 ) {
 			continue;
-		}
-
-		// when using pdftohtml, the title tag is the filename when PDF property does not have title tag
-		if ( tid == TAG_TITLE && contentType == CT_PDF ) {
-			// skip if title == '/in.[0-9]*'
-			char* title_start = words->getWord(start);
-			char* title_end = words->getWord(i);
-			size_t title_size = title_end - title_start;
-			const char* result = strnstr( title_start, "/in.", title_size );
-			if (result != NULL) {
-				char* endp = NULL;
-				// do some further verification to avoid screwing up title
-				if ((strtoll(result + 4, &endp, 10) > 0) && (endp == title_end)) {
-					continue;
-				}
-			}
 		}
 
 		// count it
