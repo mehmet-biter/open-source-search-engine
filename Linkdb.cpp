@@ -1337,7 +1337,7 @@ bool Msg25::sendRequests ( ) {
 			// if none left, we really are done
 			if ( ! m_k ) break;
 			// set these
-			itop       = m_k->m_ip & 0x0000ffff;
+			itop       = m_k->m_ip & 0x00ffffff;
 			ip32       = m_k->m_ip;
 			isLinkSpam = m_k->m_isLinkSpam;
 			docId      = m_k->m_docId;
