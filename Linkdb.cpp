@@ -7,6 +7,7 @@
 #include "Rebalance.h"
 #include "Process.h"
 #include "HashTable.h"
+#include "IPAddressChecks.h"
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
 #endif
@@ -2537,9 +2538,9 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 		Msg20Reply *r = m_replyPtrs[i];
 		// are we internal
 		bool internal = false;
-		if ( (r->m_ip&0x0000ffff) == (m_ip&0x0000ffff) ) 
+		if ( is_same_network_linkwise(r->m_ip,m_ip) )
 			internal = true;
-		if ( (r->m_firstIp&0x0000ffff) == (m_ip&0x0000ffff))
+		if ( is_same_network_linkwise(r->m_firstIp,m_ip))
 			internal = true;
 		// the "external" string
 		//char *ext = "Y"; if ( internal ) ext = "N";
@@ -3001,9 +3002,9 @@ static LinkInfo *makeLinkInfo ( const char        *coll                    ,
 		if ( ! replies[i] ) continue;
 		//if ( texts[i]->m_errno ) continue;
 		bool internal = false;
-		if ( (replies[i]->m_ip&0x0000ffff) == (ip&0x0000ffff) )
+		if ( is_same_network_linkwise(replies[i]->m_ip,ip) )
 			internal = true;
-		if ( (replies[i]->m_firstIp&0x0000ffff) == (ip&0x0000ffff) )
+		if ( is_same_network_linkwise(replies[i]->m_firstIp,ip) )
 			internal = true;
 		if ( internal )
 			icount++;
@@ -3041,9 +3042,9 @@ static LinkInfo *makeLinkInfo ( const char        *coll                    ,
 		}
 
 		bool internal = false;
-		if ((r->m_ip&0x0000ffff) == (ip & 0x0000ffff)) 
+		if ( is_same_network_linkwise(r->m_ip,ip))
 			internal = true;
-		if ((r->m_firstIp&0x0000ffff) == (ip & 0x0000ffff)) 
+		if ( is_same_network_linkwise(r->m_firstIp,ip))
 			internal = true;
 
 		// if its internal do not count towards good, but do
@@ -3136,9 +3137,9 @@ static LinkInfo *makeLinkInfo ( const char        *coll                    ,
 		if ( r->m_isLinkSpam && onlyNeedGoodInlinks ) continue;
 		// are we internal?
 		bool internal = false;
-		if ( (r->m_ip&0x0000ffff) == (ip & 0x0000ffff) ) 
+		if ( is_same_network_linkwise(r->m_ip,ip) )
 			internal = true;
-		if ( (r->m_firstIp&0x0000ffff) == (ip & 0x0000ffff) )
+		if ( is_same_network_linkwise(r->m_firstIp,ip) )
 			internal = true;
 		if ( internal ) icount3++;
 		// set the Inlink

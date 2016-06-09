@@ -145,3 +145,43 @@ bool is_trusted_protocol_ip(uint32_t ip/*network-order*/)
 	//probably not an intranet host, so we err on the side of caution
 	return false;
 }
+
+
+//This is a replacement for the hardcoded checks on the /16 prefix of the ip addresses
+//This is slightly more intelligent.
+//The correct solution would be to have access to whois information and check the
+//identity of the owner, and have special cases for all hosting providers.
+bool is_same_network_linkwise(uint32_t ip_a/*network order*/, uint32_t ip_b/*network order*/)
+{
+	if(ip_a==ip_b) {
+		//same IP - same network
+		//This is inaccurate for some hosting providers, apache with virtual
+		//domains and general frontends eg. cloudflare. It is widly inaccurate for CDNs
+		//but there are rarely permalinks to CNDs so it's not a major problem.
+		return true;
+	}
+	if((ip_a&0x000000ff)!=(ip_b&0x000000ff)) {
+		//Top 8 bit are different so they are not even on the same class-A network. So must be different.
+		//This fails if a company has a fragmented address space due to mergers. Eg. HP now owns Compaqs
+		//networks and Compaq owned DEC's networks, so ... quite messy and inexact. But better than nothing.
+		return false;
+	}
+	//make educated guesses for some of the known class-A owners
+	//from the test above we know that the top 8 bites are quals
+	if((ip_a&0xff)==3)
+		return true; //General Electric
+	if((ip_a&0xff)==6)
+		return true; //DoD
+	if((ip_a&0xff)==7)
+		return true; //DoD
+	if((ip_a&0xff)==9)
+		return true; //IBM
+	if((ip_a&0xff)==11)
+		return true; //DoD
+	if((ip_a&0xff)==15)
+		return true; //HP
+	//make a wild guess
+	if((ip_a&0x0000ffff)==(ip_b&0x0000ffff)) //same /16 net?
+		return true;
+	return false;
+}
