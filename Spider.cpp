@@ -34,6 +34,7 @@
 #include "Pages.h"
 #include "Parms.h"
 #include "Rebalance.h"
+#include <list>
 
 void testWinnerTreeKey ( ) ;
 
@@ -4108,18 +4109,7 @@ void dedupSpiderdbList ( RdbList *list ) {
 
 	int32_t numToFilter = 0;
 
-	class Link {
-	public:
-		uint32_t m_srh;
-		SpiderRequest *m_sreq;
-		class Link *m_prev;
-		class Link *m_next;
-	};
-#define MAXLINKS 30
-	Link *headLink = NULL;
-	Link *tailLink = NULL;
-	Link  links[MAXLINKS];
-	int32_t numLinks = 0;
+	std::list<std::pair<uint32_t, SpiderRequest*>> lists;
 
 	// reset it
 	list->resetListPtr();
@@ -4250,9 +4240,7 @@ void dedupSpiderdbList ( RdbList *list ) {
 		// we will not need to dedup, but should add ourselves to
 		// the linked list, which we also reset here.
 		if ( uh48 != reqUh48 ) {
-			numLinks = 0;
-			headLink = NULL;
-			tailLink = NULL;
+			lists.clear();
 
 			// we are the new banner carrier
 			reqUh48 = uh48;
@@ -4281,16 +4269,14 @@ void dedupSpiderdbList ( RdbList *list ) {
 		// same url, we want to keep him because he might map the
 		// url to a different url priority!
 		bool skipUs = false;
-		Link *myLink = NULL;
-		Link *link = headLink;
 
 		// now we keep a list of the last ten
-		for ( ; link ; link = link->m_next ) {
-			if ( srh != link->m_srh ) {
+		for ( auto it = lists.begin(); it != lists.end(); ++it ) {
+			if ( srh != it->first ) {
 				continue;
 			}
 
-			SpiderRequest *prevReq = link->m_sreq;
+			SpiderRequest *prevReq = it->second;
 
 			// if we are better, replace him and stop
 			if ( sreq->m_hopCount < prevReq->m_hopCount ) {
@@ -4333,7 +4319,9 @@ replacePrevReq:
 			// 	goto justAddIt;
 
 			prevReq->m_url[0] = 'x'; // mark for removal. xttp://
-			myLink = link;
+
+			// no issue with erasing list here as we break out of loop immediately
+			lists.erase( it );
 
 			// make a note of this so we physically remove these
 			// entries after we are done with this scan.
@@ -4347,47 +4335,10 @@ replacePrevReq:
 			continue;
 		}
 
-		// add to linked list
-		if ( numLinks < MAXLINKS ) {
-			myLink = &links[numLinks++];
-			myLink->m_prev = NULL;
-			myLink->m_next = NULL;
-			// if first one, we are head and tail
-			if ( numLinks == 1 ) {
-				headLink = myLink;
-				tailLink = myLink;
-			}
-		} else {
-			// if full, just supplant the tail link
-			myLink = tailLink;
-		}
-
 promoteLinkToHead:
 
-		myLink->m_srh  = srh;
-		myLink->m_sreq = (SpiderRequest *)dst;//sreq;
-
-		// move link to head if not already
-		if ( myLink != headLink ) {
-			// if we are the tail, there will be a new tail
-			if ( myLink == tailLink ) tailLink = myLink->m_prev;
-			// make previous link point over us
-			if ( myLink->m_prev )
-				myLink->m_prev->m_next = myLink->m_next;
-			// make next link ptr point backward over us
-			if ( myLink->m_next )
-				myLink->m_next->m_prev = myLink->m_prev;
-			// make current head point backward to us
-			headLink->m_prev = myLink;
-			// and we point forward to him
-			myLink->m_next = headLink;
-			// and backward to nobody
-			myLink->m_prev = NULL;
-			// and we are the head now
-			headLink = myLink;
-		}
-
-		//	justAddIt:
+		// add to linked list
+		lists.emplace_front( srh, (SpiderRequest *)dst );
 
 		// get our size
 		int32_t recSize = sreq->getRecSize();
