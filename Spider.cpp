@@ -4246,15 +4246,6 @@ void dedupSpiderdbList ( RdbList *list ) {
 			reqUh48 = uh48;
 		}
 
-		// try to kinda grab the min hop count as well
-		// do not alter spiderdb!
-		// if ( sreq->m_hopCountValid && oldReq->m_hopCountValid ) {
-		// 	if ( oldReq->m_hopCount < sreq->m_hopCount )
-		// 		sreq->m_hopCount = oldReq->m_hopCount;
-		// 	else
-		// 		oldReq->m_hopCount = sreq->m_hopCount;
-		// }
-
 		// why does sitehash32 matter really?
 		uint32_t srh = sreq->m_siteHash32;
 		if ( sreq->m_isInjecting   ) srh ^= 0x42538909;
@@ -4299,15 +4290,6 @@ void dedupSpiderdbList ( RdbList *list ) {
 
 
 			// otherwise, replace him
-
-			// it could be a docid indicating a query reindex,
-			// in which case it won't start with 'h'
-			// and we should always just add it and not bother
-			// with deduping these. well, no, let's dedup
-			// as normal. they should have the urlIsDocId bit
-			// set which contributes to their hash.
-			// if ( prevReq->m_url[0] != 'h' )
-			// 	goto justAddIt;
 
 
 			// mark for removal. xttp://
@@ -4356,7 +4338,7 @@ void dedupSpiderdbList ( RdbList *list ) {
 	if ( numToFilter > 0 ) {
 		// update list so for-loop below works
 		list->m_listSize  = dst - newList;
-		list->m_listPtr   = newList;//dst;
+		list->m_listPtr   = newList;
 		list->m_listEnd   = list->m_list + list->m_listSize;
 		list->m_listPtrHi = NULL;
 		// and we'll re-write everything back into itself at "dst"
