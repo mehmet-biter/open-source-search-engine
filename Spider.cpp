@@ -4278,13 +4278,14 @@ void dedupSpiderdbList ( RdbList *list ) {
 
 			SpiderRequest *prevReq = it->second;
 
-			// if we are better, replace him and stop
-			if ( sreq->m_hopCount < prevReq->m_hopCount ) {
-				goto replacePrevReq;
-			}
-
 			// skip us if previous guy is better
-			if ( sreq->m_hopCount > prevReq->m_hopCount ) {
+
+			// resort to added time if hopcount is tied
+			// . if the same check who has the most recentaddedtime
+			// . if we are not the most recent, just do not add us
+			// . no, now i want the oldest so we can do gbssDiscoveryTime and set sreq->m_discoveryTime accurately, above
+			if ( ( sreq->m_hopCount > prevReq->m_hopCount ) ||
+				 ( ( sreq->m_hopCount == prevReq->m_hopCount ) && ( sreq->m_addedTime >= prevReq->m_addedTime ) ) ) {
 				skipUs = true;
 				break;
 			}
@@ -4296,19 +4297,9 @@ void dedupSpiderdbList ( RdbList *list ) {
 			// new secondary hash is unique we can let you in
 			// if your parentpageinlinks is the highest of all.
 
-			// resort to added time if hopcount is tied
-			// . if the same check who has the most recentaddedtime
-			// . if we are not the most recent, just do not add us
-			// . no, now i want the oldest so we can do 
-			//   gbssDiscoveryTime and set sreq->m_discoveryTime 
-			//   accurately, above
-			if ( sreq->m_addedTime >= prevReq->m_addedTime ) {
-				skipUs = true;
-				break;
-			}
 
 			// otherwise, replace him
-replacePrevReq:
+
 			// it could be a docid indicating a query reindex,
 			// in which case it won't start with 'h'
 			// and we should always just add it and not bother
@@ -4318,7 +4309,9 @@ replacePrevReq:
 			// if ( prevReq->m_url[0] != 'h' )
 			// 	goto justAddIt;
 
-			prevReq->m_url[0] = 'x'; // mark for removal. xttp://
+
+			// mark for removal. xttp://
+			prevReq->m_url[0] = 'x';
 
 			// no issue with erasing list here as we break out of loop immediately
 			lists.erase( it );
@@ -4326,16 +4319,14 @@ replacePrevReq:
 			// make a note of this so we physically remove these
 			// entries after we are done with this scan.
 			numToFilter++;
-			goto promoteLinkToHead;
+			break;
 		}
 
-		// if we were not as good as someone that was basically the
-		// same SpiderRequest before us, keep going
+		// if we were not as good as someone that was basically the same SpiderRequest before us, keep going
 		if ( skipUs ) {
 			continue;
 		}
 
-promoteLinkToHead:
 
 		// add to linked list
 		lists.emplace_front( srh, (SpiderRequest *)dst );
