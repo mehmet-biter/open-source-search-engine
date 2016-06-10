@@ -570,40 +570,53 @@ public:
 	//
 
 	unsigned    m_hopCountValid:1;
+
 	// are we a request/reply from the add url page?
 	unsigned    m_isAddUrl:1;
+
 	// are we a request/reply from PageReindex.cpp
 	unsigned    m_isPageReindex:1;
+
 	// are we a request/reply from PageInject.cpp
 	unsigned    m_reserved3a:1;
+
 	// or from PageParser.cpp directly
 	unsigned    m_isPageParser:1;
-	// should we use the test-spider-dir for caching test coll requests?
-	//unsigned    m_useTestSpiderDir:1;
+
 	unsigned    m_reserved3q:1;
+
 	// . is the url a docid (not an actual url)
 	// . could be a "query reindex"
 	unsigned    m_urlIsDocId:1;
+
 	// does m_url end in .rss .xml .atom? or a related rss file extension?
 	unsigned    m_isRSSExt:1;
+
 	// is url in a format known to be a permalink format?
 	unsigned    m_isUrlPermalinkFormat:1;
+
 	// is url "rpc.weblogs.com/shortChanges.xml"?
 	unsigned    m_isPingServer:1;
+
 	// . are we a delete instruction? (from Msg7.cpp as well)
 	// . if you want it to be permanently banned you should ban or filter
 	//   it in the urlfilters/tagdb. so this is kinda useless...
 	unsigned    m_forceDelete:1;
+
 	// are we a fake spider rec? called from Test.cpp now!
 	unsigned    m_isInjecting:1;
+
 	// are we a respider request from Sections.cpp
 	//unsigned    m_fromSections:1;
 	// a new flag. replaced above. did we have a corresponding SpiderReply?
 	unsigned    m_hadReply:1;
+
 	unsigned    m_reserved3b:1;
 	unsigned    m_reserved3c:1;
+
 	// is first ip a hash of url or docid or whatever?
 	unsigned    m_fakeFirstIp:1;
+
 	// www.xxx.com/*? or xxx.com/*?
 	unsigned    m_isWWWSubdomain:1;
 
@@ -628,17 +641,19 @@ public:
 	// expires after a certain time or if ownership changed
 	// did it have an inlink from a really nice site?
 	unsigned    m_hasAuthorityInlink :1;
+
 	unsigned    m_reserved3m         :1;
 	unsigned    m_reserved3j         :1;
 	unsigned    m_reserved3d         :1;
-
 	unsigned    m_reserved3i              :1;
+
 	unsigned    m_hasAuthorityInlinkValid :1;
 	unsigned    m_reserved3n              :1;
 	unsigned    m_reserved3k              :1;
 	unsigned    m_reserved3e              :1;
 	unsigned    m_reserved3f              :1;
 	unsigned    m_reserved3g              :1;
+
 	unsigned    m_siteNumInlinksValid     :1;
 
 	// we set this to one from Diffbot.cpp when urldata does not
