@@ -15647,24 +15647,7 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 	// turn off for now
 	bool isTestColl = false;
 
-
-
-	// if the file we are indexing now has
-	// "<meta name=spiderlinkslinks value=0>" then that means to
-	// add the links to spiderdb, but do not spider their links!
-	// dmozparse uses this to make a file called gbdmoz.urs.txt.0
-	// that is just filled with urls that are in dmoz. and we want
-	// to index just those urls.
-	//
-	// now just make dmozparse output urls as <a href=> tags.
-	//
-	char mbuf[16];
-	mbuf[0] = '\0';
-	const char *tag = "spiderlinkslinks";
-	int32_t tlen = gbstrlen(tag);
-	xml->getMetaContent ( mbuf, 16 , tag , tlen );
 	bool avoid = false;
-	if ( mbuf[0] == '0' ) avoid = true;
 
 	// if this is a simplified redir and we should not be spidering
 	// links then turn it off as well! because we now add simplified
