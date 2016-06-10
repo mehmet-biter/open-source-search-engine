@@ -393,8 +393,8 @@ RdbBuckets.o:
 Linkdb.o:
 	$(CXX) $(DEFS) $(CPPFLAGS) $(O3) -c $*.cpp
 
-#XmlDoc.o:
-#	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
+XmlDoc.o:
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 
 # final gigabit generation in here:
 Msg40.o:
@@ -432,9 +432,8 @@ Posdb.o:
 #Query.o:
 #	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 
-# Msg3's should calculate the page ranges fast
-#Msg3.o:
-#	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
+Msg3.o Msg2.o Msg5.o:
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 
 # fast parsing
 Xml.o:
