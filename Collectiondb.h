@@ -261,12 +261,6 @@ class CollectionRec {
 	// for regular crawls
 	bool rebuildUrlFilters2();
 
-	// for diffbot crawl or bulk jobs
-	bool rebuildUrlFiltersDiffbot();
-
-	// rebuild the regexes related to diffbot, such as the one for the URL pattern
-	bool rebuildDiffbotRegexes();
-
 	bool rebuildLangRules( const char *lang , const char *tld );
 
 	bool rebuildPrivacoreRules();
