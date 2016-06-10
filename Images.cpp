@@ -967,24 +967,22 @@ void Images::thumbStart_r ( bool amThread ) {
 		       break;
         } 
 
-	// i hope 2500 is big enough!
-	char  cmd[2501];
+	char  cmd[2500];
 
 	//sprintf( cmd, scmd, ext, in, out);
-	char *wdir = g_hostdb.m_dir;
-	// can be /dev/stderr or like /var/gigablast/data/log000 etc.
-	const char *logFile = g_log.getFilename();
+	const char *wdir = g_hostdb.m_dir;
 	// wdir ends in / so this should work.
-	snprintf( cmd, 2500 ,
-		 "LD_LIBRARY_PATH=%s %s%stopnm %s 2>> %s | "
-		 "LD_LIBRARY_PATH=%s %spnmscale -xysize %" PRId32" %" PRId32" - 2>> %s | "
+	snprintf( cmd, sizeof(cmd),
+		 "LD_LIBRARY_PATH=%s %s%stopnm %s | "
+		 "LD_LIBRARY_PATH=%s %spnmscale -xysize %" PRId32" %" PRId32" - | "
 		  // put all its stderr msgs into /dev/null
 		  // so "jpegtopnm: WRITING PPM FILE" doesn't clog console
-		 "LD_LIBRARY_PATH=%s %sppmtojpeg - > %s 2>> %s"
-		  , wdir , wdir , ext , in , logFile
-		  , wdir , wdir , m_xysize , m_xysize , logFile
-		  , wdir , wdir , out , logFile
+		 "LD_LIBRARY_PATH=%s %sppmtojpeg - > %s"
+		  , wdir, wdir, ext, in
+		  , wdir, wdir, m_xysize, m_xysize
+		  , wdir, wdir, out
 		 );
+	cmd[sizeof(cmd)-1] = '\0';
 
 	// if they already have netpbm package installed use that then
 	static bool s_checked = false;
@@ -996,13 +994,13 @@ void Images::thumbStart_r ( bool amThread ) {
 		s_hasNetpbm = f.doesExist() ;
 	}
 	if ( s_hasNetpbm )
-		snprintf( cmd, 2500 ,
-			  "%stopnm %s 2>> %s | "
-			  "pnmscale -xysize %" PRId32" %" PRId32" - 2>> %s | "
-			  "ppmtojpeg - > %s 2>> %s"
-			  , ext , in , logFile
-			  , m_xysize , m_xysize , logFile
-			  , out , logFile
+		snprintf( cmd, sizeof(cmd),
+			  "%stopnm %s | "
+			  "pnmscale -xysize %" PRId32" %" PRId32" - | "
+			  "ppmtojpeg - > %s"
+			  , ext, in
+			  , m_xysize, m_xysize
+			  , out
 			  );
 		
         
