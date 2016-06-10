@@ -2585,8 +2585,7 @@ int32_t *XmlDoc::getIndexCode ( ) {
 	// crawls will do this check.
 	if ( cr->m_isCustomCrawl && ! cr->m_diffbotOnlyProcessIfNewUrl )
 		check = false;
-	if ( m_sreqValid && m_sreq.m_ignoreDocUnchangedError )
-		check = false;
+
 	// or if recycling content turn this off as well! otherwise
 	// it will always be 100% the same
 	if ( m_recycleContent )

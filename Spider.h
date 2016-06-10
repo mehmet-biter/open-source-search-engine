@@ -555,7 +555,7 @@ public:
 	
 	uint8_t m_reservedb8;
 
-	unsigned char    m_ignoreDocUnchangedError:1;
+	unsigned char    m_reserved2k:1;
 	unsigned char    m_recycleContent:1;
 	unsigned char    m_reserved2i:1;
 	unsigned char    m_reserved2j:1;
