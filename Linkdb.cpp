@@ -3671,25 +3671,31 @@ bool Links::set ( bool useRelNoFollow ,
 		if ( id == TAG_FBORIGLINK ) m_isFeedBurner = true;
 
 		// if it's a back tag continue
-		if ( xml->isBackTag ( i ) ) continue;
+		if ( xml->isBackTag ( i ) ) {
+			continue;
+		}
+
 		// . if it has rel=nofollow then ignore it
 		// . for old titleRecs we should skip this part so that the
 		//   link: terms are indexed/hashed the same way in XmlDoc.cpp
-		if ( useRelNoFollow ) s = xml->getString ( i , "rel", &slen ) ;
-		if ( useRelNoFollow &&
-		     slen==8 &&   // ASCII
-		     strncasecmp ( s,"nofollow", 8 ) == 0) {
-			// if this flag is set then::hasSpamLinks() will always
-			// return false. the site owner is taking the necessary
-			// precautions to prevent log spam.
-			m_hasRelNoFollow = true;
-			// . do not ignore it now, just flag it
-			// . fandango has its ContactUs with a nofollow!
-			flags |= LF_NOFOLLOW;
+		if ( useRelNoFollow ) {
+			s = xml->getString ( i , "rel", &slen ) ;
+
+			if ( slen == 8 && strncasecmp ( s,"nofollow", 8 ) == 0 ) {
+				// if this flag is set then::hasSpamLinks() will always
+				// return false. the site owner is taking the necessary
+				// precautions to prevent log spam.
+				m_hasRelNoFollow = true;
+				// . do not ignore it now, just flag it
+				// . fandango has its ContactUs with a nofollow!
+				flags |= LF_NOFOLLOW;
+			}
 		}
+
 		// get the href field of this anchor tag
 		int32_t linkLen;
 		char *link = (char *) xml->getString ( i, urlattr, &linkLen );
+
 		// does it have the link after the tag?
 		//int32_t tagId = xml->getNodeId(i);
 		// skip the block below if we got one in the tag itself
@@ -3729,11 +3735,13 @@ bool Links::set ( bool useRelNoFollow ,
 		// . "link" may not be NULL if empty, so use linkLen
 		if ( linkLen == 0 ) 
 			continue;
+
 		// skip spaces in the front (should be utf8 compatible)
 		while ( linkLen > 0 && is_wspace_a(*link) ) {
 			link++; 
 			linkLen--;
 		}
+
 		// don't add this link if it begins with javascript:
 		if ( linkLen >= 11 && strncasecmp (link,"javascript:",11) ==0){
 			// well... a lot of times the provided function has
@@ -3765,15 +3773,16 @@ bool Links::set ( bool useRelNoFollow ,
 			linkLen = ocurlend - ocurl;
 			// and continue
 		}
-		if ( linkLen == 0 ) 
+
+		if ( linkLen == 0 )
 			continue;
+
 		// it's a page-relative link
 		if ( link[0]=='#' )  continue;
+
 		// ignore mailto: links
 		if ( linkLen >= 7 && strncasecmp( link , "mailto:" , 7 ) == 0 )
 			continue;
-		// make sure not too many links already
-		//if ( version < 72 && m_numLinks >= MAX_LINKS ) break;
 
 		QUICKPOLL(niceness);
 
@@ -3785,7 +3794,8 @@ bool Links::set ( bool useRelNoFollow ,
 		if ( pmaxLen > 20 ) pmaxLen = 20;
 		char *pend = link + pmaxLen;
 		while ( p < pend && (is_alnum_a(*p) || *p=='-') ) p++;
-		// is the protocol, if it exists, a valid one like http or 
+
+		// is the protocol, if it exists, a valid one like http or
 		// https?  if not, ignore it. we only support FQDNs 
 		// (fully qualified domain names) here really. so if you
 		// have something like mylocalhostname:8000/ it is not going
@@ -3800,9 +3810,11 @@ bool Links::set ( bool useRelNoFollow ,
 			if ( plen == 5 && strncasecmp(link,"https",plen) == 0 )
 				proto = true;
 		}
+
 		// skip if proto invalid like callto:+4355645998 or
 		// mailto:jimbob@hoho.com
 		if ( ! proto ) continue;
+
 		// add it
 		char  ptmp [ MAX_URL_LEN + 1 + 1 ];
 		// keep an underpad of 1 byte in case we need to prepend a /
@@ -3821,6 +3833,7 @@ bool Links::set ( bool useRelNoFollow ,
 			}
 			continue;
 		}
+
 		// see if the <link> tag has a "type" file
 		bool isRSS = false;
 		int32_t typeLen;
@@ -3888,10 +3901,10 @@ bool Links::set ( bool useRelNoFollow ,
 		//node->m_linkNum = m_numLinks - 1;
 		// set the flag if it is an RSS link
 	}
+
 	// . flag the links we have that are old (spidered last time)
 	// . set LF_OLDLINK flag
-	if ( ! flagOldLinks ( oldLinks ) ) return false;
-	return true;
+	return flagOldLinks ( oldLinks );
 }
 
 // just a NULL-terminated text buffer/file of links to add
