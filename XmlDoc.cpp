@@ -15854,12 +15854,10 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		// an authority linker.  (see updateTagdb() function above)
 
 		//@todo BR: This is how site authority is decided. Improve?
-		if ( *isRoot && *psni >= 500 )
-			ksr.m_hasAuthorityInlink   = 1;
-
-
-		// the mere existence of these tags is good
-		if ( gr->getTag("authorityinlink"))ksr.m_hasAuthorityInlink =1;
+		// the mere existence of authorityinlink tag is good
+		if ( ( *isRoot && *psni >= 500 ) || ( gr->getTag("authorityinlink") ) ) {
+			ksr.m_hasAuthorityInlink = 1;
+		}
 		ksr.m_hasAuthorityInlinkValid = true;
 
 		// this is used for building dmoz. we just want to index
