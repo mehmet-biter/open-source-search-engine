@@ -29,7 +29,7 @@ def verify_summary(gb_api, httpserver, filename, expected_summary, custom_filena
 
 def emoticon_expected_summary():
     return 'Li Europan lingues es membres del sam familie. Lor separat existentie es un myth. ' \
-            'Por scientie, musica, sport etc, litot Europa usa li sam vocabular. Li lingues ...'
+            'Por scientie, musica, sport etc, litot Europa usa li sam vocabular. Li lingues …'
 
 
 @pytest.mark.parametrize('filename, expected_summary', [
