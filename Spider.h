@@ -646,11 +646,7 @@ public:
 	// this 0 and to not avoid spidering the links.
 	unsigned    m_avoidSpiderLinks:1;
 
-	// when indexing urls for dmoz, i.e. the urls outputted from
-	// 'dmozparse urldump -s' we need to index them even if there
-	// was a ETCPTIMEDOUT because we have to have indexed the same
-	// urls that dmoz has in it in order to be identical to dmoz.
-	unsigned    m_ignoreExternalErrors:1;
+	unsigned    m_reserved3y:1;
 
 	//
 	// INTERNAL USE ONLY

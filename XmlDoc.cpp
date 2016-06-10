@@ -2205,87 +2205,9 @@ key_t *XmlDoc::getTitleRecKey() {
 	return &m_titleRecKey;
 }
 
-
-int32_t *XmlDoc::getIndexCode ( ) {
-
-	int32_t *indexCode = getIndexCode2();
-	if ( ! indexCode || indexCode == (void *)-1 ) return indexCode;
-
-	// if zero good!
-	if ( *indexCode == 0 ) return indexCode;
-
-	//
-	// should we neutralize it?
-	//
-	// in the case of indexing dmoz urls outputted from
-	// 'dmozparse urldump -s' it outputs a meta tag
-	// (<meta name=ignorelinksexternalerrors content=1>) that
-	// indicates to index the links even in the case of some errors,
-	// so that we can be assured to have exactly the same urls the dmoz
-	// has in our index. so when we do a gbcatid:xxx query we get the same
-	// urls in the search results that dmoz has for that category id.
-	if ( ! m_sreqValid || ! m_sreq.m_ignoreExternalErrors )
-		return indexCode;
-
-	// only neutralize certain errors
-	if (    *   indexCode != EDNSTIMEDOUT
-		&& *indexCode != ETCPTIMEDOUT
-		&& *indexCode != EUDPTIMEDOUT
-		// from m_redirError
-		&& *indexCode != EDOCSIMPLIFIEDREDIR
-		&& *indexCode != EDOCNONCANONICAL
-		&& *indexCode != EDNSDEAD
-		&& *indexCode != ENETUNREACH
-		&& *indexCode != EHOSTUNREACH
-		&& *indexCode != EDOCFILTERED
-		&& *indexCode != EDOCREPEATSPAMMER
-		&& *indexCode != EDOCDUP
-		&& *indexCode != EDOCISERRPG
-		&& *indexCode != EDOCBADHTTPSTATUS
-		&& *indexCode != EDOCDISALLOWED
-		&& *indexCode != EBADCHARSET
-		&& *indexCode != EDOCDUPWWW
-		&& *indexCode != EBADIP
-		&& *indexCode != EDOCEVILREDIRECT // fix video.google.com dmoz
-		&& *indexCode != EBADMIME
-		// index.t and .exe files are in dmoz but those
-		// extensions are "bad" according to Url::isBadExtension()
-		&& *indexCode != EDOCBADCONTENTTYPE
-		// repeat url path components are ok:
-		&& *indexCode != ELINKLOOP
-		&& *indexCode != ECONNREFUSED
-		// malformed sections:
-		&& *indexCode != EDOCBADSECTIONS
-		&& *indexCode != ECORRUPTHTTPGZIP
-		)
-		return indexCode;
-
-	// ok, neutralize it
-	*indexCode = 0;
-
-	// if we could not get an ip we need to make a fake one
-	if ( ! m_ipValid || m_ip == 0 || m_ip == -1 ) {
-		log("build: ip unattainable. forcing ip address of %s "
-		    "to 10.5.123.45",m_firstUrl.getUrl());
-
-		//@todo BR: Ehh??
-		m_ip = atoip("10.5.123.45");
-		m_ipValid = true;
-	}
-
-	// make certain things valid to avoid core in getNewSpiderReply()
-	if ( ! m_crawlDelayValid ) {
-		m_crawlDelayValid = true;
-		m_crawlDelay      = -1;
-	}
-
-	return indexCode;
-}
-
-
 // . return NULL and sets g_errno on error
 // . returns -1 if blocked
-int32_t *XmlDoc::getIndexCode2 ( ) {
+int32_t *XmlDoc::getIndexCode ( ) {
 
 	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );;
 
@@ -15750,14 +15672,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 	if ( m_spiderLinksValid && ! m_spiderLinks )
 		avoid = true;
 
-	// it also has this meta tag now too
-	mbuf[0] = '\0';
-	tag = "ignorelinksexternalerrors";
-	tlen = gbstrlen(tag);
-	xml->getMetaContent ( mbuf, 16 , tag , tlen );
-	bool ignore = false;
-	if ( mbuf[0] == '1' ) ignore = true;
-
 	// for diffbot crawlbot, if we are a seed url and redirected to a
 	// different domain... like bn.com --> barnesandnoble.com
 	int32_t redirDomHash32  = 0;
@@ -15968,10 +15882,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		// this is used for building dmoz. we just want to index
 		// the urls in dmoz, not their outlinks.
 		if ( avoid  ) ksr.m_avoidSpiderLinks = 1;
-
-		// this is used for building dmoz. we need to index this
-		// url even in the case of ETCPTIMEDOUT, etc.
-		if ( ignore ) ksr.m_ignoreExternalErrors = 1;
 
 		// . if this is the 2nd+ time we were spidered and this outlink
 		//   wasn't there last time, then set this!

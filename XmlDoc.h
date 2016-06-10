@@ -466,7 +466,6 @@ public:
 	bool getIsInjecting();
 	int32_t *getSpiderPriority ( ) ;
 	int32_t *getIndexCode ( ) ;
-	int32_t *getIndexCode2 ( ) ;
 	SafeBuf *getNewTagBuf ( ) ;
 
 	bool logIt ( class SafeBuf *bb = NULL ) ;
