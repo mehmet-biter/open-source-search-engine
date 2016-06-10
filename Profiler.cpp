@@ -1184,7 +1184,6 @@ Profiler::printRealTimeInfo(SafeBuf *sb, const char *coll) {
 		sb->safePrintf("</table><br><br>\n");
 		return true;
 	}
-log(LOG_INIT, "admin: @@@@2 printRealTimeInfo: stopping profiler");
 	stopRealTimeProfiler(true);
 
 
