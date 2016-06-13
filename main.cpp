@@ -36,6 +36,7 @@
 #include "IPAddressChecks.h"
 #include <sys/resource.h>  // setrlimit
 #include "Stats.h"
+#include "Statistics.h"
 #include "Speller.h"       // g_speller
 #include "Wiki.h"          // g_wiki
 #include "Wiktionary.h"    // g_wiktionary
@@ -2246,6 +2247,10 @@ int main2 ( int argc , char *argv[] ) {
 	// try to sync parms (and collection recs) with host 0
 	if ( ! g_loop.registerSleepCallback(1000,NULL,tryToSyncWrapper,0))
 		return false;
+
+	if(!Statistics::initialize()) {
+		return false;
+	}
 
 	if(g_recoveryMode) {
 		//now that everything is init-ed send the message.

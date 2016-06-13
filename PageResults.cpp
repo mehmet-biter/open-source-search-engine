@@ -4,6 +4,7 @@
 //#include "CollectionRec.h"
 #include "Stats.h"
 #include "Statsdb.h"
+#include "Statistics.h"
 #include "Query.h"
 #include "Speller.h"
 #include "Msg40.h"
@@ -104,6 +105,7 @@ bool sendReply ( State0 *st , char *reply ) {
 			    nowms,
 			    si->m_q.m_numTerms);
 
+	Statistics::register_query_time(si->m_q.m_numWords, si->m_queryLangId, took);
 	// . log the time
 	// . do not do this if g_errno is set lest m_sbuf1 be bogus b/c
 	//   it failed to allocate its buf to hold terminating \0 in

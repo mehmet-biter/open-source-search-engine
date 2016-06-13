@@ -73,6 +73,7 @@ OBJS =  UdpSlot.o Rebalance.o \
 	JobScheduler.o \
 	AdultCheck.o \
 	Url.o UrlParser.o UrlComponent.o \
+	Statistics.o \
 
 # common flags
 DEFS = -D_REENTRANT_ -I.
@@ -496,6 +497,9 @@ sort.o:
 	$(CXX) $(DEFS) $(CPPFLAGS) $(O3) -c $*.cpp
 
 IPAddressChecks.o:
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O3) -c $*.cpp
+
+Statistics.o:
 	$(CXX) $(DEFS) $(CPPFLAGS) $(O3) -c $*.cpp
 
 Version.o:

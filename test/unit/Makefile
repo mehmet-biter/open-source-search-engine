@@ -117,3 +117,9 @@ JobSchedulerTest10: JobSchedulerTest10.o libgb.a GigablastTest.o
 .PHONY: JobSchedulerTest10_run
 JobSchedulerTest10_run: JobSchedulerTest10
 	./JobSchedulerTest10
+
+StatisticsTest00: StatisticsTest00.o libgb.a GigablastTest.o
+	$(CXX) $(CPPFLAGS) StatisticsTest00.o $(LIBS) -o $@
+.PHONY: StatisticsTest00_run
+StatisticsTest00_run: StatisticsTest00
+	./StatisticsTest00
