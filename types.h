@@ -3,25 +3,11 @@
 
 #include <string.h>
 
-// . max # of tags any one site or url can have
-// . even AFTER the "inheritance loop"
-// . includes the 4 bytes used for size and # of tags
-//#define MAX_TAGREC_SIZE 1024
-#define MAX_TAGREC_SIZE 4000
-
 // . up to 32768 collections possible, MUST be signed
 // . a collnum_t of -1 is used by RdbCache to mean "no collection"
 typedef int16_t collnum_t;
 
-// damn, /usr/include/sys/types.h defines this as just an int!
-#undef u_int128_t
-
 #define MAX_KEY_BYTES 28
-
-// ACC XXX On Mac OSX ignore the system definition of key_t.
-#ifdef __APPLE__
-#define _KEY_T
-#endif
 
 // shit, how was i supposed to know this is defined in sys/types.h...
 #define key_t   u_int96_t
