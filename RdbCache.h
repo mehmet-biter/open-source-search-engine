@@ -64,7 +64,7 @@ class RdbCache {
 	//   clear out the collection's stuff in the cache
 	void clear ( collnum_t collnum ) ;
 
-	bool isInitialized () { 
+	bool isInitialized () const { 
 		if ( m_ptrs ) return true; 
 		return false;
 	}
@@ -246,9 +246,9 @@ class RdbCache {
 
 	// . just checks to see if a record is in the cache
 	// . does not promote record
-	bool isInCache ( collnum_t collnum , const char *cacheKey , int32_t maxAge );
+	bool isInCache ( collnum_t collnum , const char *cacheKey , int32_t maxAge ) const;
 
-	bool isInCache ( collnum_t collnum , key_t cacheKey , int32_t maxAge ) {
+	bool isInCache ( collnum_t collnum , key_t cacheKey , int32_t maxAge ) const {
 		return isInCache(collnum,(const char *)&cacheKey,maxAge);
 	}
 

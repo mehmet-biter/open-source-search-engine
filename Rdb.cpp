@@ -2741,7 +2741,7 @@ bool Rdb::addRecord ( const char *coll , char *key, char *data, int32_t dataSize
 }
 
 
-int32_t Rdb::getNumUsedNodes ( ) {
+int32_t Rdb::getNumUsedNodes ( ) const {
 	 if(m_useTree) return m_tree.getNumUsedNodes(); 
 	 return m_buckets.getNumKeys();
 }

@@ -130,28 +130,28 @@ void RdbBucket::reset() {
 	m_endKey = NULL;
 }
 
-int32_t RdbBuckets::getMemAlloced () {
+int32_t RdbBuckets::getMemAlloced () const {
 	int32_t alloced = sizeof(RdbBuckets) + m_masterSize + m_dataMemOccupied;
 	return alloced;
 }
 
 //includes data in the data ptrs
-int32_t RdbBuckets::getMemOccupied() {
+int32_t RdbBuckets::getMemOccupied() const {
 	return (m_numKeysApprox * m_recSize) + m_dataMemOccupied +
 		sizeof(RdbBuckets) + 
 		m_sortBufSize + 
 		BUCKET_SIZE * m_recSize; //swapbuf
 }
 
-int32_t RdbBuckets::getMemAvailable() {
+int32_t RdbBuckets::getMemAvailable() const {
 	return m_maxMem - getMemOccupied();
 }
 
-bool RdbBuckets::is90PercentFull() {
+bool RdbBuckets::is90PercentFull() const {
 	return getMemOccupied () > m_maxMem * .9;
 }
 
-bool RdbBuckets::needsDump() {
+bool RdbBuckets::needsDump() const {
 	if ( m_numBuckets + 1 < m_maxBuckets ) {
 		return false;
 	}
@@ -162,7 +162,7 @@ bool RdbBuckets::needsDump() {
 //be very conservative with this because if we say we can fit it
 //and we can't then we'll get a partial list added and we will
 //add the whole list again.
-bool RdbBuckets::hasRoom ( int32_t numRecs ) {
+bool RdbBuckets::hasRoom ( int32_t numRecs ) const {
 	int32_t numBucketsRequired = (((numRecs / BUCKET_SIZE)+1) * 2);
 	return ( m_maxBucketsCapacity - m_numBuckets >= numBucketsRequired );
 }
@@ -406,7 +406,7 @@ char* RdbBucket::getKeyVal( const char *key , char **data , int32_t* dataSize ) 
 	return rec;
 }
 
-int32_t RdbBucket::getKeyNumExact(const char* key) {
+int32_t RdbBucket::getKeyNumExact(const char* key) const {
 	uint8_t ks = m_parent->getKeySize();
 	int32_t recSize = m_parent->getRecSize();
 	int32_t i = 0;
@@ -1205,7 +1205,7 @@ bool RdbBuckets::collExists(collnum_t collnum) {
 	return false;
 }
 
-int32_t RdbBuckets::getNumKeys(collnum_t collnum) {
+int32_t RdbBuckets::getNumKeys(collnum_t collnum) const {
 	int32_t numKeys = 0;
 	for(int32_t i = 0; i < m_numBuckets; i++) {
 		if(m_buckets[i]->getCollnum() == collnum) 
@@ -1216,7 +1216,7 @@ int32_t RdbBuckets::getNumKeys(collnum_t collnum) {
 }
 
 	
-int32_t RdbBuckets::getNumKeys() {
+int32_t RdbBuckets::getNumKeys() const {
 	return m_numKeysApprox;
 }
 
@@ -1231,12 +1231,12 @@ int32_t RdbBuckets::getNumKeys() {
 // }
 
 
-int32_t RdbBuckets::getNumNegativeKeys ( ) {
+int32_t RdbBuckets::getNumNegativeKeys ( ) const {
 	return m_numNegKeys;
 }
 
 
-int32_t  RdbBuckets::getNumPositiveKeys ( ) {
+int32_t  RdbBuckets::getNumPositiveKeys ( ) const {
 	return getNumKeys() - getNumNegativeKeys ( );
 }
 
@@ -1263,7 +1263,7 @@ char *RdbBucket::getFirstKey() {
 	return m_keys;
 }
 
-int32_t RdbBucket::getNumNegativeKeys ( ) {
+int32_t RdbBucket::getNumNegativeKeys ( ) const {
 	int32_t numNeg = 0;
 	int32_t recSize = m_parent->getRecSize();
 	char *currKey = m_keys;

@@ -59,13 +59,13 @@ class RdbTree {
 	// . Rdb uses this to determine when to dump this tree to disk
 	// . look at % of memory occupied/alloced of max, as well as % of
 	//   nodes used
-	bool is90PercentFull ( ) {
+	bool is90PercentFull() const {
 		// . m_memOccupied is amount of alloc'd mem that data occupies
 		// . now we /90 and /100 since multiplying overflowed
 		return ( m_numUsedNodes/90 >= m_numNodes/100 );
 	}
 
-	bool isFull ( ) { return (m_numUsedNodes >= m_numNodes); }
+	bool isFull() const { return (m_numUsedNodes >= m_numNodes); }
 
 	bool hasRoomForKeys ( int32_t nk ) {
 		return (m_numUsedNodes + nk <= m_numNodes); }
@@ -190,41 +190,41 @@ class RdbTree {
 
 	// since our arrays aren't public
 	char *getData      ( int32_t node ) { return m_data    [node]; }
-	int32_t  getDataSize  ( int32_t node ) { return m_sizes   [node]; }
+	int32_t  getDataSize  ( int32_t node ) const { return m_sizes   [node]; }
 	//key_t getKey       ( int32_t node ) { return m_keys    [node]; }
 	char *getKey       ( int32_t node ) { return &m_keys   [node*m_ks]; }
-	int32_t  getParentNum ( int32_t node ) { return m_parents [node]; }
+	int32_t  getParentNum ( int32_t node ) const { return m_parents [node]; }
 
-	collnum_t getCollnum ( int32_t node ) { return m_collnums [node];}
+	collnum_t getCollnum ( int32_t node ) const { return m_collnums [node];}
 
-	bool  isEmpty      ( int32_t node ) { return (m_parents [ node ] == -2);}
+	bool  isEmpty      ( int32_t node ) const { return (m_parents [ node ] == -2);}
 
 	// an upper bound on the # of used nodes
-	int32_t  getNumNodes  ( ) { return m_minUnusedNode; }
+	int32_t  getNumNodes() const { return m_minUnusedNode; }
 
-	int32_t  getNumUsedNodes  ( ) { return m_numUsedNodes; }
+	int32_t  getNumUsedNodes() const { return m_numUsedNodes; }
 
-	bool  isEmpty ( ) { return (m_numUsedNodes == 0); }
+	bool  isEmpty() const { return (m_numUsedNodes == 0); }
 
-	int32_t  getNumAvailNodes ( ) { return m_numNodes - m_numUsedNodes; }
+	int32_t  getNumAvailNodes() const { return m_numNodes - m_numUsedNodes; }
 
-	int32_t  getNumTotalNodes ( ) { return m_numNodes; }
+	int32_t  getNumTotalNodes() const { return m_numNodes; }
 
 	// negative and postive counts
-	int32_t  getNumNegativeKeys ( ) { return m_numNegativeKeys; }
-	int32_t  getNumPositiveKeys ( ) { return m_numPositiveKeys; }
+	int32_t  getNumNegativeKeys() const { return m_numNegativeKeys; }
+	int32_t  getNumPositiveKeys() const { return m_numPositiveKeys; }
 
-	int32_t  getNumNegativeKeys ( collnum_t collnum ) ;
-	int32_t  getNumPositiveKeys ( collnum_t collnum ) ;
+	int32_t  getNumNegativeKeys( collnum_t collnum ) const;
+	int32_t  getNumPositiveKeys( collnum_t collnum ) const;
 
 	void setNumKeys ( class CollectionRec *cr ) ;
 
 	// how much mem, including data, is used by this class?
-	int32_t getMemAlloced       ( ) { return m_memAlloced;  }
+	int32_t getMemAlloced       ( ) const { return m_memAlloced;  }
 	// . how much of the alloc'd mem is actually in use holding data
 	// . includes the tree infrastructure as well as the data itself
-	int32_t getMemOccupied      ( ) { return m_memOccupied; }
-	int32_t getMaxMem           ( ) { return m_maxMem; }
+	int32_t getMemOccupied      ( ) const { return m_memOccupied; }
+	int32_t getMaxMem           ( ) const { return m_maxMem; }
 
 	// . like getMemOccupied() above but does not include left/right/parent
 	// . only includes occupied keys/sizes and the dataSizes themself
@@ -239,7 +239,7 @@ class RdbTree {
 
 	// . how much mem does this tree use, not including stored data
 	// . this will be the same as getMemAlloced() if fixedDataSize is 0
-	int32_t getTreeOverhead() { return m_overhead * m_numNodes; }
+	int32_t getTreeOverhead() const { return m_overhead * m_numNodes; }
 
 	// . throw all the records in this range into this list
 	// . used for dumping to an rdb file permanently

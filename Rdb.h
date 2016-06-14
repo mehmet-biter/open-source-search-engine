@@ -184,7 +184,7 @@ public:
 	RdbMem     *getRdbMem  ( ) { return &m_mem; }
 	bool       useTree     ( ) { return m_useTree;}
 
-	int32_t       getNumUsedNodes ( );
+	int32_t       getNumUsedNodes() const;
 	int32_t       getMaxTreeMem();
 	int32_t       getTreeMemOccupied() ;
 	int32_t       getTreeMemAlloced () ;

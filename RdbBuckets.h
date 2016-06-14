@@ -38,17 +38,20 @@ public:
 	void clear();
 	void reBuf(char *newbuf);
 
-	char *getFirstKey();
-	char *getEndKey()  { return m_endKey;  }
-	int32_t  getNumKeys() { return m_numKeys; }
-	char *getKeys()    { return m_keys; }
-	collnum_t getCollnum()    { return m_collnum; }
-	void  setCollnum(collnum_t c){ m_collnum = c; }
+	char       *getFirstKey();
+	const char *getFirstKey() const { return const_cast<RdbBucket*>(this)->getFirstKey(); }
+	char       *getEndKey()       { return m_endKey;  }
+	const char *getEndKey() const { return m_endKey;  }
+	int32_t  getNumKeys() const { return m_numKeys; }
+	char       *getKeys()       { return m_keys; }
+	const char *getKeys() const { return m_keys; }
+	collnum_t getCollnum() const { return m_collnum; }
+	void  setCollnum(collnum_t c) { m_collnum = c; }
 
 	bool  addKey(const char *key , char *data , int32_t dataSize);
 	char *getKeyVal ( const char *key , char **data , int32_t* dataSize ); 
-	int32_t  getKeyNumExact(const char* key); //returns -1 if not found
-	int32_t  getNumNegativeKeys ( );
+	int32_t  getKeyNumExact(const char* key) const; //returns -1 if not found
+	int32_t  getNumNegativeKeys() const;
 	void  resetLastSorted() { m_lastSorted = 0; }
 	bool  getList(RdbList* list, 
 		      const char *startKey, 
@@ -60,7 +63,7 @@ public:
 
 	bool deleteList(RdbList *list);
 
-	int getListSizeExact ( const char *startKey, const char *endKey ) ;
+	int getListSizeExact ( const char *startKey, const char *endKey );
 
 	//Save State
 	int64_t fastSave_r(int fd, int64_t offset);
@@ -154,25 +157,25 @@ class RdbBuckets {
 	void      setNeedsSave(bool s);
 
 	
-	int32_t      getMemAlloced ();
-	int32_t      getMemAvailable();
-	bool      is90PercentFull();
-	bool      needsDump();
-	bool      hasRoom ( int32_t numRecs );
+	int32_t      getMemAlloced() const;
+	int32_t      getMemAvailable() const;
+	bool         is90PercentFull() const;
+	bool         needsDump() const;
+	bool         hasRoom( int32_t numRecs ) const;
 
-	int32_t      getNumKeys();
-	int32_t      getMemOccupied( );
+	int32_t      getNumKeys() const;
+	int32_t      getMemOccupied() const;
 
-	int32_t      getNumNegativeKeys ( );
-	int32_t      getNumPositiveKeys ( );
+	int32_t      getNumNegativeKeys() const;
+	int32_t      getNumPositiveKeys() const;
 	void cleanBuckets ( );
  	bool      delColl            ( collnum_t collnum );
 
 	//just for this collection
-// 	int32_t      getMemOccupied     ( collnum_t collnum );
- 	int32_t      getNumKeys         ( collnum_t collnum );
-//  	int32_t      getNumNegativeKeys ( collnum_t collnum );
-//  	int32_t      getNumPositiveKeys ( collnum_t collnum );
+// 	int32_t      getMemOccupied     ( collnum_t collnum ) const;
+ 	int32_t      getNumKeys         ( collnum_t collnum ) const;
+//  	int32_t      getNumNegativeKeys ( collnum_t collnum ) const;
+//  	int32_t      getNumPositiveKeys ( collnum_t collnum ) const;
 
 	//syntactic sugar
  	RdbBucket* bucketFactory();

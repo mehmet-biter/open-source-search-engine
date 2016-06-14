@@ -189,7 +189,7 @@ bool RdbCache::init ( int32_t  maxMem        ,
 }
 
 //bool RdbCache::isInCache ( collnum_t collnum, key_t cacheKey, int32_t maxAge ) {
-bool RdbCache::isInCache ( collnum_t collnum, const char *cacheKey, int32_t maxAge ) {
+bool RdbCache::isInCache ( collnum_t collnum, const char *cacheKey, int32_t maxAge ) const {
 	// maxAge of 0 means don't check cache
 	if ( maxAge == 0 ) return false;
 	// bail if no cache

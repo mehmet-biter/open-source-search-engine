@@ -3068,7 +3068,7 @@ void RdbTree::cleanTree ( ) { // char **bases ) {
 	     "memory, too.");
 }
 
-int32_t  RdbTree::getNumNegativeKeys ( collnum_t collnum ) { 
+int32_t  RdbTree::getNumNegativeKeys( collnum_t collnum ) const { 
 	// fix for statsdb or other collectionless rdbs
 	if ( m_rdbId < 0 ) return m_numNegativeKeys;
 	CollectionRec *cr = g_collectiondb.m_recs[collnum];
@@ -3077,7 +3077,7 @@ int32_t  RdbTree::getNumNegativeKeys ( collnum_t collnum ) {
 	return cr->m_numNegKeysInTree[(unsigned char)m_rdbId]; 
 }
 
-int32_t  RdbTree::getNumPositiveKeys ( collnum_t collnum ) { 
+int32_t  RdbTree::getNumPositiveKeys( collnum_t collnum ) const { 
 	// fix for statsdb or other collectionless rdbs
 	if ( m_rdbId < 0 ) return m_numPositiveKeys;
 	CollectionRec *cr = g_collectiondb.m_recs[collnum];
