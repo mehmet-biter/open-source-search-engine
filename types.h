@@ -11,9 +11,7 @@
 
 // . up to 32768 collections possible, MUST be signed
 // . a collnum_t of -1 is used by RdbCache to mean "no collection"
-#define collnum_t int16_t
-
-//typedef char bool
+typedef int16_t collnum_t;
 
 // damn, /usr/include/sys/types.h defines this as just an int!
 #undef u_int128_t
