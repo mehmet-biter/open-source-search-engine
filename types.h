@@ -715,7 +715,7 @@ static inline int64_t KEY2 ( const char *k , char keySize ) {
 static inline int64_t KEY0 ( const char *k ) {
 	return *(const int64_t *)k;
 }
-static inline void KEYSET ( char *k1 , const char *k2 , char keySize ) {
+static inline void KEYSET ( char *k1, const char *k2, char keySize ) {
 	// posdb
 	if ( keySize == 18 ) {
 		*(int16_t *)(k1  ) = *(const int16_t *)(k2  );
@@ -759,50 +759,45 @@ static inline void KEYSET ( char *k1 , const char *k2 , char keySize ) {
 	return;
 }
 
-static inline char KEYNEG ( const char *k , int32_t a , char keySize ) {
+static inline bool KEYNEG ( const char *k, int32_t a, char keySize ) {
 	// posdb
 	if ( keySize == 18 ) {
-		if ( (k[a*18] & 0x01) == 0x00 ) return 1;
-		return 0;
+		if ( (k[a*18] & 0x01) == 0x00 ) return true;
+		return false;
 	}
 	if ( keySize == 12 ) {
-		if ( (k[a*12] & 0x01) == 0x00 ) return 1;
-		return 0;
+		if ( (k[a*12] & 0x01) == 0x00 ) return true;
+		return false;
 	}
 	// otherwise, assume 16 bytes
 	if (keySize == 16 ) {
-		if ( (k[a*16] & 0x01) == 0x00 ) return 1;
-		return 0;
+		if ( (k[a*16] & 0x01) == 0x00 ) return true;
+		return false;
 	}
 	if ( keySize == 24 ) {
-		if ( (k[a*24] & 0x01) == 0x00 ) return 1;
-		return 0;
+		if ( (k[a*24] & 0x01) == 0x00 ) return true;
+		return false;
 	}
 	if ( keySize == 28 ) {
-		if ( (k[a*28] & 0x01) == 0x00 ) return 1;
-		return 0;
+		if ( (k[a*28] & 0x01) == 0x00 ) return true;
+		return false;
 	}
 	if ( keySize == 8 ) {
-		if ( (k[a*8] & 0x01) == 0x00 ) return 1;
-		return 0;
+		if ( (k[a*8] & 0x01) == 0x00 ) return true;
+		return false;
 	}
 	char *xx=NULL;*xx=0;
-	return 0;
+	return false;
 }
 
-static inline char KEYNEG ( const char *k ) {
-	if ( (k[0] & 0x01) == 0x00 ) return 1;
-	return 0;
+static inline bool KEYNEG ( const char *k ) {
+	if ( (k[0] & 0x01) == 0x00 ) return true;
+	return false;
 }
 
-static inline char KEYNEG ( key_t k ) {
-	if ( (k.n0 & 0x01) == 0x00 ) return 1;
-	return 0;
-}
-
-static inline char KEYPOS ( const char *k ) {
-	if ( (k[0] & 0x01) == 0x01 ) return 1;
-	return 0;
+static inline bool KEYNEG ( key_t k ) {
+	if ( (k.n0 & 0x01) == 0x00 ) return true;
+	return false;
 }
 
 static inline void KEYADD ( char *k , char keySize ) {
