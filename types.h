@@ -9,15 +9,6 @@ typedef int16_t collnum_t;
 
 #define MAX_KEY_BYTES 28
 
-// shit, how was i supposed to know this is defined in sys/types.h...
-#define key_t   u_int96_t
-
-// or you can be less ambiguous with these types
-#define key96_t   u_int96_t
-#define uint96_t  u_int96_t
-#define key128_t  u_int128_t
-#define uint128_t u_int128_t
-
 class u_int96_t {
 
  public:
@@ -28,94 +19,28 @@ class u_int96_t {
 	u_int96_t (                ) { }
 	u_int96_t ( uint32_t i ) {	n0 = i; n1 = 0; }
 
-	bool isNegativeKey ( ) { 
-		return ( (   ((int32_t)n0) & ((int32_t)0x01)  ) == 0x00 ); }
-
 	void setMin ( ) { n0 = 0LL; n1 = 0; }
-
-	void setToMin ( ) { n0 = 0LL; n1 = 0; }
 
 	void setMax ( ) { n0 = 0xffffffffffffffffLL; n1 = 0xffffffff; }
 
-	void setToMax ( ) { n0 = 0xffffffffffffffffLL; n1 = 0xffffffff;	}
-
-	int32_t getHighLong ( ) { return n1; }
-
-	bool operator == ( u_int96_t i ) { 
+	bool operator == ( u_int96_t i ) const {
 		return ( i.n0 == n0 && i.n1 == n1);}
-	bool operator != ( u_int96_t i ) { 
+	bool operator != ( u_int96_t i ) const {
 		return ( i.n0 != n0 || i.n1 != n1);}
 	void operator =  ( u_int96_t i ) {
 		n0 = i.n0; n1 = i.n1; }
 
-	u_int96_t  operator |  ( u_int96_t i ) {
-		n0 |= i.n0; n1 |= i.n1; return *this; }
-	u_int96_t  operator ^  ( u_int96_t i ) {
-		n0 ^= i.n0; n1 ^= i.n1; return *this; }
-	u_int96_t operator &  ( u_int96_t i ) {
-		n0 &= i.n0; n1 &= i.n1; return *this; }
-	u_int96_t  operator ~  ( ) {
-		n0 = ~n0; n1 = ~n1;  return *this; }
-
-	bool operator != ( uint32_t i ) { 
+	bool operator != ( uint32_t i ) const {
 		return ( i    != n0 ); }
 	void operator =  ( uint32_t i ) {
 		n0 = i; n1 = 0; }
-	int32_t operator &  ( uint32_t i ) {
+	int32_t operator &  ( uint32_t i ) const {
 		return n0 & i; }
-
-	//void operator += ( uint64_t i ) { // watch out for carry
-	//if ( n0 + i < n0 ) n1++;
-	//n0 += i; }
-
-	/*
-	void operator += ( u_int96_t i ) {
-		if ( n0 + i.n0  < n0 ) n1++;
-		n0 += i.n0;
-		n1 += i.n1;
-	}
-	*/
 
 	void operator |= ( u_int96_t i ) {
 		n0 |= i.n0;
 		n1 |= i.n1;
 	}
-
-	// NOTE: i must be bigger than j!?
-	/*
-	key_t operator + ( u_int96_t i ) {
-		uint64_t oldn0 = n0;
-		n0 = n0 + i.n0;
-		if ( n0 < oldn0 ) n1++; // carry
-		n1 += i.n1;
-		return *this;
-	}
-	*/
-
-	// . NOTE: i must be bigger than j!
-	// . this is used by RdbCache only and doesn't need to be exact
-	//key_t operator - ( u_int96_t i ) {
-	u_int96_t minus ( u_int96_t i ) {
-		n0 = n0 - i.n0 ;
-		if ( n0 < i.n0 ) { n1--; n0++; } // carry
-		n1 = n1 - i.n1;
-		return *this;
-	}
-
-	// NOTE: i must be bigger than j!?
-	/*
-	key_t operator + ( uint32_t i ) {
-		if ( n0 + i < n0 ) n1++;
-		n0 += i; 
-		return *this;
-	}
-
-	key_t operator - ( uint32_t i ) {
-		if ( n0 - i > n0 ) n1--;
-		n0 -= i; 
-		return *this;
-	}
-	*/
 
 	// NOTE: i must be bigger than j!?
 	void operator -= ( uint32_t i ) {
@@ -127,56 +52,32 @@ class u_int96_t {
 		if ( n0 + i < n0 ) n1++;
 		n0 += i; }
 
-	// TODO: make this more efficient
-	u_int96_t operator >> ( int32_t i ) {
-		for ( int32_t j = 0 ; j < i ; j++ ) {
-			int64_t carry = n1 & 0x01;
-			n1 >>= 1;
-			n0 >>= 1;
-			if ( carry ) n0 |= 0x8000000000000000LL;
-		}
-		return *this;
-	}
-	// TODO: make this more efficient
-	u_int96_t operator << ( int32_t i ) {
-		for ( int32_t j = 0 ; j < i ; j++ ) {
-			int64_t carry = n0 & 0x8000000000000000LL;
-			n0 <<= 1;
-			n1 <<= 1;
-			if ( carry ) n1 |= 0x01;
-		}
-		return *this;
-	}
-
-	bool operator >  ( u_int96_t i ) {
+	bool operator >  ( u_int96_t i ) const {
 		if ( n1 > i.n1 ) return true;
 		if ( n1 < i.n1 ) return false;
 		if ( n0 > i.n0 ) return true;
 		return false;
 	}
-	bool operator <  ( u_int96_t i ) {
+	bool operator <  ( u_int96_t i ) const {
 		if ( n1 < i.n1 ) return true;
 		if ( n1 > i.n1 ) return false;
 		if ( n0 < i.n0 ) return true;
 		return false;
 	}
-	bool operator <= ( u_int96_t i ) {
+	bool operator <= ( u_int96_t i ) const {
 		if ( n1 < i.n1 ) return true;
 		if ( n1 > i.n1 ) return false;
 		if ( n0 < i.n0 ) return true;
 		if ( n0 > i.n0 ) return false;
 		return true;
 	}
-	bool operator >= ( u_int96_t i ) {
+	bool operator >= ( u_int96_t i ) const {
 		if ( n1 > i.n1 ) return true;
 		if ( n1 < i.n1 ) return false;
 		if ( n0 > i.n0 ) return true;
 		if ( n0 < i.n0 ) return false;
 		return true;
 	}
-	// TODO: should we fix this?
-	int32_t operator %  ( uint32_t mod ) { 
-		return n0 % mod; }
 
 } __attribute__((packed, aligned(4)));
 
@@ -190,18 +91,9 @@ class u_int128_t {
 	u_int128_t (                ) { }
 	u_int128_t ( uint32_t i ) {	n0 = i; n1 = 0; }
 
-	bool isNegativeKey ( ) const {
-		return ( (   ((int32_t)n0) & ((int32_t)0x01)  ) == 0x00 ); }
-
 	void setMin ( ) { n0 = 0LL; n1 = 0LL; }
 
-	void setToMin ( ) { n0 = 0LL; n1 = 0LL; }
-
 	void setMax ( ) { n0=0xffffffffffffffffLL; n1=0xffffffffffffffffLL;}
-
-	void setToMax ( ) { n0=0xffffffffffffffffLL; n1=0xffffffffffffffffLL;}
-
-	int32_t getHighLong ( ) const { return n1; }
 
 	bool operator == ( u_int128_t i ) const {
 		return ( i.n0 == n0 && i.n1 == n1);}
@@ -209,15 +101,6 @@ class u_int128_t {
 		return ( i.n0 != n0 || i.n1 != n1);}
 	void operator =  ( u_int128_t i ) {
 		n0 = i.n0; n1 = i.n1; }
-
-	u_int128_t  operator |  ( u_int128_t i ) {
-		n0 |= i.n0; n1 |= i.n1; return *this; }
-	u_int128_t  operator ^  ( u_int128_t i ) {
-		n0 ^= i.n0; n1 ^= i.n1; return *this; }
-	u_int128_t operator &  ( u_int128_t i ) {
-		n0 &= i.n0; n1 &= i.n1; return *this; }
-	u_int128_t  operator ~  ( ) {
-		n0 = ~n0; n1 = ~n1;  return *this; }
 
 	bool operator != ( uint32_t i ) const {
 		return ( i    != n0 ); }
@@ -231,16 +114,6 @@ class u_int128_t {
 		n1 |= i.n1;
 	}
 
-	// . NOTE: i must be bigger than j!
-	// . this is used by RdbCache only and doesn't need to be exact
-	//key_t operator - ( u_int128_t i ) {
-	u_int128_t minus ( u_int128_t i ) {
-		n0 = n0 - i.n0 ;
-		if ( n0 < i.n0 ) { n1--; n0++; } // carry
-		n1 = n1 - i.n1;
-		return *this;
-	}
-
 	// NOTE: i must be bigger than j!?
 	void operator -= ( uint32_t i ) {
 		if ( n0 - i > n0 ) n1--;
@@ -250,27 +123,6 @@ class u_int128_t {
 	void operator += ( uint32_t i ) { // watch out for carry
 		if ( n0 + i < n0 ) n1++;
 		n0 += i; }
-
-	// TODO: make this more efficient
-	u_int128_t operator >> ( int32_t i ) {
-		for ( int32_t j = 0 ; j < i ; j++ ) {
-			int64_t carry = n1 & 0x01;
-			n1 >>= 1;
-			n0 >>= 1;
-			if ( carry ) n0 |= 0x8000000000000000LL;
-		}
-		return *this;
-	}
-	// TODO: make this more efficient
-	u_int128_t operator << ( int32_t i ) {
-		for ( int32_t j = 0 ; j < i ; j++ ) {
-			int64_t carry = n0 & 0x8000000000000000LL;
-			n0 <<= 1;
-			n1 <<= 1;
-			if ( carry ) n1 |= 0x01;
-		}
-		return *this;
-	}
 
 	bool operator >  ( u_int128_t i ) const {
 		if ( n1 > i.n1 ) return true;
@@ -305,16 +157,8 @@ class u_int128_t {
 
 } __attribute__((packed, aligned(4)));
 
-// used only by m_orderTree in Spider.cpp for RdbTree.cpp
 class key192_t {
  public:
-	// k0 is the LEAST significant int32_t
-	//uint32_t k0;
-	//uint32_t k1;
-	//uint32_t k2;
-	//uint32_t k3;
-	//uint32_t k4;
-	//uint32_t k5;
 	// it's little endian
 	uint64_t n0; // the low  int64_t
 	uint64_t n1; // the medium int64_t
@@ -357,13 +201,6 @@ class key192_t {
 
 class key224_t {
  public:
-	// k0 is the LEAST significant int32_t
-	//uint32_t k0;
-	//uint32_t k1;
-	//uint32_t k2;
-	//uint32_t k3;
-	//uint32_t k4;
-	//uint32_t k5;
 	// it's little endian
 	uint32_t      n0;
 	uint64_t n1; // the low  int64_t
@@ -418,7 +255,7 @@ class key224_t {
 class key144_t {
  public:
 	// it's little endian
-	uint16_t      n0; // the low int16_t
+	uint16_t  n0; // the low int16_t
 	uint64_t  n1; // the medium int64_t
 	uint64_t  n2; // the high int64_t
 
@@ -661,6 +498,19 @@ inline char KEYCMPNEGEQ ( const char *k1, const char *k2, char keySize ) {
 	char *xx=NULL; *xx = 0;
 	return 0;
 }
+
+
+// shit, how was i supposed to know this is defined in sys/types.h...
+#define key_t   u_int96_t
+
+// or you can be less ambiguous with these types
+typedef u_int96_t  key96_t;
+typedef u_int96_t  uint96_t;
+typedef u_int128_t key128_t;
+typedef u_int128_t uint128_t;
+
+
+
 
 static inline char *KEYSTR ( const void *vk , int32_t ks ) {
 	const char *k = (char *)vk;
