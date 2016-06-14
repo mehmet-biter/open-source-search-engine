@@ -253,24 +253,24 @@ class RdbCache {
 	}
 
 	// these include our mem AND our tree's mem combined
-	int32_t getMemOccupied () {
+	int32_t getMemOccupied () const {
 		return m_memOccupied ;
 	}
 
-	int32_t getMemAlloced  () {
+	int32_t getMemAlloced  () const {
 		return m_memAlloced ;
 	}
 
-	int32_t getMaxMem      () { return m_maxMem; }
+	int32_t getMaxMem      () const { return m_maxMem; }
 
 	// cache stats
-	int64_t getNumHits   () { return m_numHits;   }
-	int64_t getNumMisses () { return m_numMisses; }
-	int64_t getHitBytes  () { return m_hitBytes; }
-	int32_t getNumUsedNodes  () { return m_numPtrsUsed; }
-	int32_t getNumTotalNodes () { return m_numPtrsMax ; }
+	int64_t getNumHits   () const { return m_numHits;   }
+	int64_t getNumMisses () const { return m_numMisses; }
+	int64_t getHitBytes  () const { return m_hitBytes; }
+	int32_t getNumUsedNodes  () const { return m_numPtrsUsed; }
+	int32_t getNumTotalNodes () const { return m_numPtrsMax ; }
 
-	bool useDisk ( ) { return m_useDisk; }
+	bool useDisk ( ) const { return m_useDisk; }
 	bool load ( const char *dbname );
 	bool save ( bool useThreads );
 	bool save_r ( );
@@ -287,7 +287,7 @@ class RdbCache {
 			      const char *startKey,
 			      const char *endKey );
 
-	const char *getDbname () { return m_dbname ; }
+	const char *getDbname () const { return m_dbname ; }
 
 	const char *m_dbname;
 
