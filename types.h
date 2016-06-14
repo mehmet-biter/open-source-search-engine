@@ -190,7 +190,7 @@ class u_int128_t {
 	u_int128_t (                ) { }
 	u_int128_t ( uint32_t i ) {	n0 = i; n1 = 0; }
 
-	bool isNegativeKey ( ) { 
+	bool isNegativeKey ( ) const {
 		return ( (   ((int32_t)n0) & ((int32_t)0x01)  ) == 0x00 ); }
 
 	void setMin ( ) { n0 = 0LL; n1 = 0LL; }
@@ -201,11 +201,11 @@ class u_int128_t {
 
 	void setToMax ( ) { n0=0xffffffffffffffffLL; n1=0xffffffffffffffffLL;}
 
-	int32_t getHighLong ( ) { return n1; }
+	int32_t getHighLong ( ) const { return n1; }
 
-	bool operator == ( u_int128_t i ) { 
+	bool operator == ( u_int128_t i ) const {
 		return ( i.n0 == n0 && i.n1 == n1);}
-	bool operator != ( u_int128_t i ) { 
+	bool operator != ( u_int128_t i ) const {
 		return ( i.n0 != n0 || i.n1 != n1);}
 	void operator =  ( u_int128_t i ) {
 		n0 = i.n0; n1 = i.n1; }
@@ -219,11 +219,11 @@ class u_int128_t {
 	u_int128_t  operator ~  ( ) {
 		n0 = ~n0; n1 = ~n1;  return *this; }
 
-	bool operator != ( uint32_t i ) { 
+	bool operator != ( uint32_t i ) const {
 		return ( i    != n0 ); }
 	void operator =  ( uint32_t i ) {
 		n0 = i; n1 = 0; }
-	int32_t operator &  ( uint32_t i ) {
+	int32_t operator &  ( uint32_t i ) const {
 		return n0 & i; }
 
 	void operator |= ( u_int128_t i ) {
@@ -272,26 +272,26 @@ class u_int128_t {
 		return *this;
 	}
 
-	bool operator >  ( u_int128_t i ) {
+	bool operator >  ( u_int128_t i ) const {
 		if ( n1 > i.n1 ) return true;
 		if ( n1 < i.n1 ) return false;
 		if ( n0 > i.n0 ) return true;
 		return false;
 	}
-	bool operator <  ( u_int128_t i ) {
+	bool operator <  ( u_int128_t i ) const {
 		if ( n1 < i.n1 ) return true;
 		if ( n1 > i.n1 ) return false;
 		if ( n0 < i.n0 ) return true;
 		return false;
 	}
-	bool operator <= ( u_int128_t i ) {
+	bool operator <= ( u_int128_t i ) const {
 		if ( n1 < i.n1 ) return true;
 		if ( n1 > i.n1 ) return false;
 		if ( n0 < i.n0 ) return true;
 		if ( n0 > i.n0 ) return false;
 		return true;
 	}
-	bool operator >= ( u_int128_t i ) {
+	bool operator >= ( u_int128_t i ) const {
 		if ( n1 > i.n1 ) return true;
 		if ( n1 < i.n1 ) return false;
 		if ( n0 > i.n0 ) return true;
@@ -299,8 +299,9 @@ class u_int128_t {
 		return true;
 	}
 	// TODO: should we fix this?
-	int32_t operator %  ( uint32_t mod ) { 
-		return n0 % mod; }
+	int32_t operator %  ( uint32_t mod ) const {
+		return n0 % mod;
+	}
 
 } __attribute__((packed, aligned(4)));
 
@@ -319,7 +320,7 @@ class key192_t {
 	uint64_t n1; // the medium int64_t
 	uint64_t n2; // the high int64_t
 
-	bool operator == ( key192_t i ) { 
+	bool operator == ( key192_t i ) const {
 		return ( i.n0 == n0 && 
 			 i.n1 == n1 && 
 			 i.n2 == n2 
@@ -334,7 +335,7 @@ class key192_t {
 		n0 += i; 
 	}
 
-	bool operator <  ( key192_t i ) {
+	bool operator <  ( key192_t i ) const {
 		if ( n2 < i.n2 ) return true;
 		if ( n2 > i.n2 ) return false;
 		if ( n1 < i.n1 ) return true;
@@ -369,7 +370,7 @@ class key224_t {
 	uint64_t n2; // the medium int64_t
 	uint64_t n3; // the high int64_t
 
-	bool operator == ( key224_t i ) { 
+	bool operator == ( key224_t i ) const {
 		return ( i.n0 == n0 && 
 			 i.n1 == n1 && 
 			 i.n2 == n2 &&
@@ -391,7 +392,7 @@ class key224_t {
 		n3--; n2--; n1--; n0 -= i;
 	}
 
-	bool operator <  ( key224_t i ) {
+	bool operator <  ( key224_t i ) const {
 		if ( n3 < i.n3 ) return true;
 		if ( n3 > i.n3 ) return false;
 		if ( n2 < i.n2 ) return true;
