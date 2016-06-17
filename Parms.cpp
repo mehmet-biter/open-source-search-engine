@@ -5452,7 +5452,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "sua";
 	m->m_off   = offsetof(Conf,m_spiderUserAgent);
 	m->m_type  = TYPE_STRING;
-	m->m_size  = USERAGENTMAXSIZE;
+	m->m_size  = sizeof(Conf::m_spiderUserAgent);
 	m->m_def   = "GigablastOpenSource/1.0";
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -5463,7 +5463,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "botname";
 	m->m_off   = offsetof(Conf,m_spiderBotName);
 	m->m_type  = TYPE_STRING;
-	m->m_size  = USERAGENTMAXSIZE;
+	m->m_size  = sizeof(Conf::m_spiderBotName);
 	m->m_def   = "gigablastopensource";
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -5750,7 +5750,7 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(Conf,m_sendmailIp);
 	m->m_type  = TYPE_STRING;
 	m->m_def   = "";
-	m->m_size  = MAX_MX_LEN;
+	m->m_size  = sizeof(Conf::m_sendmailIp);
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -5785,10 +5785,11 @@ void Parms::init ( ) {
 	m->m_cgi   = "cn";
 	m->m_off   = offsetof(Conf,m_clusterName);
 	m->m_type  = TYPE_STRING;
-	m->m_size  = 32;
+	m->m_size  = sizeof(Conf::m_clusterName);
 	m->m_def   = "unspecified";
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
+	m++;
 
 	m->m_title = "spider round start time";
 	m->m_desc  = "When the next spider round starts. If you force this to "
@@ -5797,7 +5798,6 @@ void Parms::init ( ) {
 		"that were not yet spidered in the round will still be "
 		"spidered.";
 	m->m_cgi   = "spiderRoundStart";
-	m->m_size  = 0;
 	m->m_off   = offsetof(CollectionRec,m_spiderRoundStartTime);
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "0";
@@ -5974,7 +5974,7 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(Conf,m_errstr1);
 	m->m_type  = TYPE_STRING;
 	m->m_def   = "I/O error";
-	m->m_size  = MAX_URL_LEN;
+	m->m_size  = sizeof(Conf::m_errstr1);
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5987,7 +5987,7 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(Conf,m_errstr2);
 	m->m_type  = TYPE_STRING;
 	m->m_def   = "";
-	m->m_size  = MAX_URL_LEN;
+	m->m_size  = sizeof(Conf::m_errstr2);
 	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -6001,7 +6001,7 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(Conf,m_errstr3);
 	m->m_type  = TYPE_STRING;
 	m->m_def   = "";
-	m->m_size  = MAX_URL_LEN;
+	m->m_size  = sizeof(Conf::m_errstr3);
 	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -6043,7 +6043,7 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(Conf,m_email1MX);
 	m->m_type  = TYPE_STRING;
 	m->m_def   = "127.0.0.1";
-	m->m_size  = MAX_MX_LEN;
+	m->m_size  = sizeof(Conf::m_email1MX);
 	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -6055,7 +6055,7 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(Conf,m_email1Addr);
 	m->m_type  = TYPE_STRING;
 	m->m_def   = "4081234567@vtext.com";
-	m->m_size  = MAX_EMAIL_LEN;
+	m->m_size  = sizeof(Conf::m_email1Addr);
 	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -6067,7 +6067,7 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(Conf,m_email1From);
 	m->m_type  = TYPE_STRING;
 	m->m_def   = "sysadmin@mydomain.com";
-	m->m_size  = MAX_EMAIL_LEN;
+	m->m_size  = sizeof(Conf::m_email1From);
 	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -6101,7 +6101,7 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(Conf,m_email2MX);
 	m->m_type  = TYPE_STRING;
 	m->m_def   = "mail.mydomain.com";
-	m->m_size  = MAX_MX_LEN;
+	m->m_size  = sizeof(Conf::m_email2MX);
 	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -6113,7 +6113,7 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(Conf,m_email2Addr);
 	m->m_type  = TYPE_STRING;
 	m->m_def   = "";
-	m->m_size  = MAX_EMAIL_LEN;
+	m->m_size  = sizeof(Conf::m_email2Addr);
 	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -6125,7 +6125,7 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(Conf,m_email2From);
 	m->m_type  = TYPE_STRING;
 	m->m_def   = "sysadmin@mydomain.com";
-	m->m_size  = MAX_EMAIL_LEN;
+	m->m_size  = sizeof(Conf::m_email2From);
 	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -6159,7 +6159,7 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(Conf,m_email3MX);
 	m->m_type  = TYPE_STRING;
 	m->m_def   = "mail.mydomain.com";
-	m->m_size  = MAX_MX_LEN;
+	m->m_size  = sizeof(Conf::m_email3MX);
 	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -6171,7 +6171,7 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(Conf,m_email3Addr);
 	m->m_type  = TYPE_STRING;
 	m->m_def   = "";
-	m->m_size  = MAX_EMAIL_LEN;
+	m->m_size  = sizeof(Conf::m_email3Addr);
 	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -6183,7 +6183,7 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(Conf,m_email3From);
 	m->m_type  = TYPE_STRING;
 	m->m_def   = "sysadmin@mydomain.com";
-	m->m_size  = MAX_EMAIL_LEN;
+	m->m_size  = sizeof(Conf::m_email3From);
 	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -6219,7 +6219,7 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(Conf,m_email4MX);
 	m->m_type  = TYPE_STRING;
 	m->m_def   = "mail.mydomain.com";
-	m->m_size  = MAX_MX_LEN;
+	m->m_size  = sizeof(Conf::m_email4MX);
 	m->m_group = false;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
@@ -6232,7 +6232,7 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(Conf,m_email4Addr);
 	m->m_type  = TYPE_STRING;
 	m->m_def   = "";
-	m->m_size  = MAX_EMAIL_LEN;
+	m->m_size  = sizeof(Conf::m_email4Addr);
 	m->m_group = false;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
@@ -6245,7 +6245,7 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(Conf,m_email4From);
 	m->m_type  = TYPE_STRING;
 	m->m_def   = "sysadmin@mydomain.com";
-	m->m_size  = MAX_EMAIL_LEN;
+	m->m_size  = sizeof(Conf::m_email4From);
 	m->m_group = false;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
@@ -6493,7 +6493,7 @@ void Parms::init ( ) {
 	m->m_cgi = "redir";
 	m->m_off = offsetof( Conf, m_redirect );
 	m->m_type = TYPE_STRING;
-	m->m_size = MAX_URL_LEN;
+	m->m_size = sizeof(Conf::m_redirect);
 	m->m_def = "";
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page = PAGE_MASTER;
@@ -6768,7 +6768,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "dcn";
 	m->m_off   = offsetof(Conf,m_defaultColl);
 	m->m_type  = TYPE_STRING;
-	m->m_size  = MAX_COLL_LEN+1;
+	m->m_size  = sizeof(Conf::m_defaultColl);
 	m->m_def   = "";
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
@@ -7925,7 +7925,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "defqlang";
 	m->m_off   = offsetof(CollectionRec,m_defaultSortLanguage2);
 	m->m_type  = TYPE_STRING;
-	m->m_size  = 6; // up to 5 chars + NULL, e.g. "en_US"
+	m->m_size  = sizeof(CollectionRec::m_defaultSortLanguage2);
 	m->m_def   = "xx";//_US";
 	m->m_flags = PF_API | PF_CLONE;
 	m->m_page  = PAGE_SEARCH;
@@ -7993,7 +7993,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "sfht";
 	m->m_off   = offsetof(CollectionRec,m_summaryFrontHighlightTag);
 	m->m_type  = TYPE_STRING;
-	m->m_size  = SUMMARYHIGHLIGHTTAGMAXSIZE ;
+	m->m_size  = sizeof(CollectionRec::m_summaryFrontHighlightTag);
 	m->m_def   = "<b style=\"color:black;background-color:#ffff66\">";
 	m->m_group = false;
 	m->m_flags = PF_API | PF_CLONE;
@@ -8007,7 +8007,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "sbht";
 	m->m_off   = offsetof(CollectionRec,m_summaryBackHighlightTag);
 	m->m_type  = TYPE_STRING;
-	m->m_size  = SUMMARYHIGHLIGHTTAGMAXSIZE ;
+	m->m_size  = sizeof(CollectionRec::m_summaryBackHighlightTag);
 	m->m_def   = "</b>";
 	m->m_group = false;
 	m->m_flags = PF_API | PF_CLONE;
@@ -8872,7 +8872,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "dmdl";
 	m->m_off   = offsetof(CollectionRec,m_dailyMergeDOWList);
 	m->m_type  = TYPE_STRING;
-	m->m_size  = 48;
+	m->m_size  = sizeof(CollectionRec::m_dailyMergeDOWList);
 	// make sunday the default
 	m->m_def   = "0";
 	m->m_group = false;
@@ -9218,7 +9218,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "tdbc";
 	m->m_off   = offsetof(CollectionRec,m_tagdbColl);
 	m->m_type  = TYPE_STRING;
-	m->m_size  = MAX_COLL_LEN+1;
+	m->m_size  = sizeof(CollectionRec::m_tagdbColl);
 	m->m_def   = "";
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SPIDER;
