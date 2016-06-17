@@ -56,7 +56,7 @@ static void updatePingTime ( Host *h , int32_t *pingPtr , int32_t tripTime ) ;
 //static bool pageSprintPCS2 ( void *state , TcpSocket *ts ) ;
 static bool sendAdminEmail ( Host  *h, const char  *fromAddress,
                              const char  *toAddress, char  *body ,
-			     const char  *emailServIp );//= "mail.gigablast.com" );
+			     const char  *emailServIp );
 
 bool PingServer::registerHandler ( ) {
 	// . we'll handle msgTypes of 0x11 for pings
@@ -1103,10 +1103,10 @@ bool PingServer::sendEmail ( Host *h            ,
 	if ( g_conf.m_sendEmailAlertsToSysadmin && sendToAdmin ) {
 		m_numRequests2++;
 		if ( ! sendAdminEmail ( h,
-					"sysadmin@gigablast.com",
-					"sysadmin@gigablast.com",
+					"sysadmin@example.com",
+					"sysadmin@example.com",
 					errmsg ,
-					"mail.gigablast.com" ) )
+					"mail.example.com" ) )
 			status = false;
 	}
 
@@ -1118,7 +1118,7 @@ bool PingServer::sendEmail ( Host *h            ,
 	if ( oom || kernelErrors ) delay = false;
 
 	// if delay non critical email alerts is true do not send email 
-	// alerts about dead hosts to anyone except sysadmin@gigablast.com 
+	// alerts about dead hosts to anyone except sysadmin@example.com
 	// between 10:00pm and 9:30am unless all the other twins of the 
 	// dead host are also dead. Instead, wait till after 9:30 am if 
 	// the host is still dead.
@@ -1232,12 +1232,14 @@ bool sendAdminEmail ( Host  *h,
 		      const char  *toAddress,
 		      char  *body , 
 		      const char  *emailServIp) {
+	char hostname[ 256];
+	gethostname(hostname,sizeof(hostname));
 	// create a new buffer
 	char *buf = (char *) mmalloc ( PAGER_BUF_SIZE , "PingServer" );
 	// fill the buffer
 	char *p = buf;
 	// helo line
-	p += sprintf(p, "HELO gigablast.com\r\n");
+	p += sprintf(p, "HELO %s\r\n",hostname);
 	// mail line
 	p += sprintf(p, "MAIL from:<%s>\r\n", fromAddress);
 	// to line

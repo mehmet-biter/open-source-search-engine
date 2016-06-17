@@ -117,11 +117,8 @@ bool Proxy::initProxy ( int32_t proxyId, uint16_t udpPort,
 	g_conf.m_sendEmailAlerts = true;
 
 	g_conf.m_sendEmailAlertsToEmail1 = true;
-	// verizon bought us out... smtp-sl.vtext.com
-	// was messages.alltel.com
-	strcpy ( g_conf.m_email1Addr , "5054503518@vtext.com");
-	strcpy ( g_conf.m_email1From , "sysadmin@gigablast.com");
-	//strcpy ( g_conf.m_email1MX   , "gbmxrec-vtext.com");
+	strcpy ( g_conf.m_email1Addr , "search-engine@example.com");
+	strcpy ( g_conf.m_email1From , "sysadmin@example.com");
 	strcpy ( g_conf.m_email1MX   , "");
 
 	// start pinging right away, udpServer has already been init'ed

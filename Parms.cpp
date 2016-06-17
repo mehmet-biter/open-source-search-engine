@@ -5768,7 +5768,7 @@ void Parms::init ( ) {
 
 	m->m_title = "delay non critical email alerts";
 	m->m_desc  = "Do not send email alerts about dead hosts to "
-		"anyone except sysadmin@gigablast.com between the times "
+		"anyone except sysadmin@example.com between the times "
 		"given below unless all the twins of the dead host are "
 		"also dead. Instead, wait till after if the host "
 		"is still dead. ";
@@ -5853,7 +5853,7 @@ void Parms::init ( ) {
 	m++;
 
 	m->m_title = "send email alerts to sysadmin";
-	m->m_desc  = "Sends to sysadmin@gigablast.com.";
+	m->m_desc  = "Sends to sysadmin@example.com.";
 	m->m_cgi   = "seatsa";
 	m->m_off   = offsetof(Conf,m_sendEmailAlertsToSysadmin);
 	m->m_type  = TYPE_BOOL;
