@@ -155,7 +155,9 @@ public:
 	char   m_hideAllClustered;
 
 	char   m_askOtherShards;
-	
+
+	char   m_queryId[32];             //for log and correlation
+
 	// ranking algos
 	char   m_doMaxScoreAlgo;
 

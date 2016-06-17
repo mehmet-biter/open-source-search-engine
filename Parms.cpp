@@ -4082,6 +4082,20 @@ void Parms::init ( ) {
 	m->m_flags = PF_API;
 	m++;
 
+	m->m_title = "query-id";
+	m->m_desc  = "query-id, for logging and correlation purposes.";
+	m->m_cgi   = "fx_qid";
+	m->m_off   = offsetof(SearchInput,m_queryId);
+	m->m_type  = TYPE_STRING;
+	m->m_size  = sizeof(SearchInput::m_queryId);
+	m->m_page  = PAGE_RESULTS;
+	m->m_obj   = OBJ_SI;
+	m->m_def   = "";
+	m->m_group = false;
+	m->m_flags = PF_API;
+	m++;
+
+
 
 	m->m_title = "dedup results";
 	m->m_desc  = "Should duplicate search results be removed? This is "
