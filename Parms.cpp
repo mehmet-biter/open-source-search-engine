@@ -6054,7 +6054,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "eaddrone";
 	m->m_off   = offsetof(Conf,m_email1Addr);
 	m->m_type  = TYPE_STRING;
-	m->m_def   = "4081234567@vtext.com";
+	m->m_def   = "";
 	m->m_size  = sizeof(Conf::m_email1Addr);
 	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
@@ -6066,7 +6066,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "efaddrone";
 	m->m_off   = offsetof(Conf,m_email1From);
 	m->m_type  = TYPE_STRING;
-	m->m_def   = "sysadmin@mydomain.com";
+	m->m_def   = "sysadmin@example.com";
 	m->m_size  = sizeof(Conf::m_email1From);
 	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
@@ -6100,7 +6100,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "esrvtwo";
 	m->m_off   = offsetof(Conf,m_email2MX);
 	m->m_type  = TYPE_STRING;
-	m->m_def   = "mail.mydomain.com";
+	m->m_def   = "mail.example.com";
 	m->m_size  = sizeof(Conf::m_email2MX);
 	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
@@ -6124,7 +6124,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "efaddrtwo";
 	m->m_off   = offsetof(Conf,m_email2From);
 	m->m_type  = TYPE_STRING;
-	m->m_def   = "sysadmin@mydomain.com";
+	m->m_def   = "sysadmin@example.com";
 	m->m_size  = sizeof(Conf::m_email2From);
 	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
@@ -6158,7 +6158,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "esrvthree";
 	m->m_off   = offsetof(Conf,m_email3MX);
 	m->m_type  = TYPE_STRING;
-	m->m_def   = "mail.mydomain.com";
+	m->m_def   = "mail.example.com";
 	m->m_size  = sizeof(Conf::m_email3MX);
 	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
@@ -6182,7 +6182,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "efaddrthree";
 	m->m_off   = offsetof(Conf,m_email3From);
 	m->m_type  = TYPE_STRING;
-	m->m_def   = "sysadmin@mydomain.com";
+	m->m_def   = "sysadmin@example.com";
 	m->m_size  = sizeof(Conf::m_email3From);
 	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
@@ -6218,7 +6218,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "esrvfour";
 	m->m_off   = offsetof(Conf,m_email4MX);
 	m->m_type  = TYPE_STRING;
-	m->m_def   = "mail.mydomain.com";
+	m->m_def   = "mail.example.com";
 	m->m_size  = sizeof(Conf::m_email4MX);
 	m->m_group = false;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
@@ -6244,7 +6244,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "efaddrfour";
 	m->m_off   = offsetof(Conf,m_email4From);
 	m->m_type  = TYPE_STRING;
-	m->m_def   = "sysadmin@mydomain.com";
+	m->m_def   = "sysadmin@example.com";
 	m->m_size  = sizeof(Conf::m_email4From);
 	m->m_group = false;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
