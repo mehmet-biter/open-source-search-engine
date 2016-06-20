@@ -6,6 +6,8 @@
 #include "HashTable.h"
 #include "Timezone.h"
 #include "HashTableX.h"
+#include "Process.h"
+
 
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
@@ -661,7 +663,7 @@ int32_t HttpMime::getContentTypePrivate ( char *s ) {
 	ct = getContentTypeFromStr  ( s );
 
 	// log it for reference
-	//if ( ct == -1 ) { char *xx=NULL;*xx=0; }
+	//if ( ct == -1 ) { g_process.shutdownAbort(true); }
 	if ( ct == CT_UNKNOWN ) { 
 		//ct = CT_UNKNOWN;
 		log("http: unrecognized content type \"%s\"",s);
@@ -740,7 +742,7 @@ void HttpMime::makeRedirMime ( const char *redir , int32_t redirLen ) {
 	*p++ = '\n';
 	*p = '\0';
 	m_bufLen = p - m_buf;
-	if ( m_bufLen > 1023 ) { char *xx=NULL;*xx=0; }
+	if ( m_bufLen > 1023 ) { g_process.shutdownAbort(true); }
 	// set the mime's length
 	//m_bufLen = gbstrlen ( m_buf );
 }

@@ -7,6 +7,8 @@
 #include "HashTableX.h"
 #include "Sections.h"
 #include "XmlNode.h" // getTagLen()
+#include "Process.h"
+
 
 Words::Words ( ) {
 	m_buf = NULL;
@@ -107,7 +109,7 @@ static int32_t countWords ( const char *p ) {
 
 bool Words::set( Xml *xml, bool computeWordIds, int32_t niceness, int32_t node1, int32_t node2 ) {
 	// prevent setting with the same string
-	if ( m_xml == xml ) { char *xx=NULL;*xx=0; }
+	if ( m_xml == xml ) { g_process.shutdownAbort(true); }
 
 	reset();
 
@@ -130,7 +132,7 @@ bool Words::set( Xml *xml, bool computeWordIds, int32_t niceness, int32_t node1,
 	}
 
 	// sanity check
-	if ( node1 > node2 ) { char *xx=NULL;*xx=0; }
+	if ( node1 > node2 ) { g_process.shutdownAbort(true); }
 
 	char *start = xml->getNode(node1);
 	char *end = xml->getNode( node2 - 1 ) + xml->getNodeLen( node2 - 1 );
@@ -424,7 +426,7 @@ bool Words::addWords( char *s, int32_t nodeLen, bool computeWordIds, int32_t nic
 	// bad programming warning
 	if ( m_numWords > m_preCount ) {
 		log(LOG_LOGIC, "build: words: set: Fix counting routine.");
-		char *xx = NULL; *xx = 0;
+		g_process.shutdownAbort(true);
 	}
 
 	if ( badCount )
@@ -475,7 +477,7 @@ bool Words::allocateWordBuffers(int32_t count, bool tagIds) {
 		p += sizeof(nodeid_t) * count;
 	}
 
-	if ( p > m_buf + m_bufSize ) { char *xx=NULL;*xx=0; }
+	if ( p > m_buf + m_bufSize ) { g_process.shutdownAbort(true); }
 
 	return true;
 }

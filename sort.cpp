@@ -10,6 +10,7 @@
 
 #include "Mem.h"
 #include "Loop.h"
+#include "Process.h"
 
 #else
 
@@ -377,7 +378,7 @@ gbmergesort(	void*	base,
 	mallocsize = nmemb * size + PSIZE;
 	if(bufSpace) {
 		if(bufSpaceSize < mallocsize) {
-			char *xx = NULL; *xx = 0;
+			g_process.shutdownAbort(true);
 		}
 		list2 = (u_char*)bufSpace;
 	}

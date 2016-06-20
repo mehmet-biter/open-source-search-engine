@@ -42,7 +42,7 @@ Rdb::Rdb ( ) {
 void Rdb::reset ( ) {
 	//if ( m_needsSave ) {
 	//	log(LOG_LOGIC,"db: Trying to reset tree without saving.");
-	//	char *xx = NULL; *xx = 0;
+	//	g_process.shutdownAbort(true);
 	//	return;
 	//}
 	/*
@@ -97,9 +97,9 @@ void Rdb::addBase ( collnum_t collnum , RdbBase *base ) {
 	}
 	CollectionRec *cr = g_collectiondb.m_recs[collnum];
 	if ( ! cr ) return;
-	//if ( cr->m_bases[(unsigned char)m_rdbId] ) { char *xx=NULL;*xx=0; }
+	//if ( cr->m_bases[(unsigned char)m_rdbId] ) { g_process.shutdownAbort(true); }
 	RdbBase *oldBase = cr->getBasePtr ( m_rdbId );
-	if ( oldBase ) { char *xx=NULL;*xx=0; }
+	if ( oldBase ) { g_process.shutdownAbort(true); }
 	//cr->m_bases[(unsigned char)m_rdbId] = base;
 	cr->setBasePtr ( m_rdbId , base );
 	log ( LOG_DEBUG,"db: added base to collrec "
@@ -131,7 +131,7 @@ bool Rdb::init ( const char     *dir                  ,
 	reset();
 
 	// sanity
-	if ( ! dir ) { char *xx=NULL;*xx=0; }
+	if ( ! dir ) { g_process.shutdownAbort(true); }
 
 	// statsdb
 	m_isCollectionLess = isCollectionLess;
@@ -162,7 +162,7 @@ bool Rdb::init ( const char     *dir                  ,
 	}
 
 	// sanity check
-	if ( m_ks != getKeySizeFromRdbId(m_rdbId) ) { char*xx=NULL;*xx=0;}
+	if ( m_ks != getKeySizeFromRdbId(m_rdbId) ) { g_process.shutdownAbort(true);}
 
 	// get page size
 	m_pageSize = GB_TFNDB_PAGE_SIZE;
@@ -265,7 +265,7 @@ bool Rdb::init ( const char     *dir                  ,
 // . returns false and sets g_errno on error
 bool Rdb::updateToRebuildFiles ( Rdb *rdb2 , char *coll ) {
 	// how come not in repair mode?
-	if ( ! g_repairMode ) { char *xx = NULL; *xx = 0; }
+	if ( ! g_repairMode ) { g_process.shutdownAbort(true); }
 	// make a dir in the trash subfolder to hold them
 	uint32_t t = (uint32_t)getTime();
 	char dstDir[256];
@@ -290,7 +290,7 @@ bool Rdb::updateToRebuildFiles ( Rdb *rdb2 , char *coll ) {
 	// allow anything more to be added... and we do not allow any
 	// collections to be deleted via Collectiondb::deleteRec() when
 	// in repair mode... how could this happen?
-	//if ( m_needsSave ) { char *xx = NULL; *xx = 0; }
+	//if ( m_needsSave ) { g_process.shutdownAbort(true); }
 	// delete old collection recs
 	CollectionRec *cr = g_collectiondb.getRec ( coll );
 	if ( ! cr ) return log("db: Exchange could not find coll, %s.",coll);
@@ -500,7 +500,7 @@ bool Rdb::deleteAllRecs ( collnum_t collnum ) {
 	// only for doledb now, because we unlink we do not move the files
 	// into the trash subdir and doledb is easily regenerated. i don't
 	// want to take the risk with other files.
-	if ( m_rdbId != RDB_DOLEDB ) { char *xx=NULL;*xx=0; }
+	if ( m_rdbId != RDB_DOLEDB ) { g_process.shutdownAbort(true); }
 
 	CollectionRec *cr = g_collectiondb.getRec ( collnum );
 
@@ -786,7 +786,7 @@ bool Rdb::close ( void *state , void (* callback)(void *state ), bool urgent ,
 void closeSleepWrapper ( int fd , void *state ) {
 	Rdb *THIS = (Rdb *)state;
 	// sanity check
-	if ( ! THIS->m_isClosing ) { char *xx = NULL; *xx = 0; }
+	if ( ! THIS->m_isClosing ) { g_process.shutdownAbort(true); }
 	// continue closing, this returns false if blocked
 	if ( ! THIS->close ( THIS->m_closeState, 
 			     THIS->m_closeCallback ,
@@ -825,7 +825,7 @@ void Rdb::doneSaving ( ) {
 
 	// sanity
 	if ( m_dbname == NULL || m_dbname[0]=='\0' ) {
-		char *xx=NULL;*xx=0; }
+		g_process.shutdownAbort(true); }
 	// display any error, if any, otherwise prints "Success"
 	logf(LOG_INFO,"db: Successfully saved %s-saved.dat.", m_dbname);
 
@@ -959,7 +959,7 @@ bool Rdb::loadTree ( ) {
 		
 		if(!m_buckets.testAndRepair()) {
 			log( LOG_ERROR, "db: unrepairable buckets, remove and restart." );
-			char *xx = NULL; *xx = 0;
+			g_process.shutdownAbort(true);
 		}
 
 		
@@ -1358,7 +1358,7 @@ bool Rdb::dumpCollLoop ( ) {
 	}
 
 	// sanity
-	if ( maxFileSize < 0 ) { char *xx=NULL;*xx=0; }
+	if ( maxFileSize < 0 ) { g_process.shutdownAbort(true); }
 
 	// because we are actively spidering the list we dump ends up
 	// being more, by like 20% or so, otherwise we do not make a
@@ -1414,7 +1414,7 @@ bool Rdb::dumpCollLoop ( ) {
 		// and if that is there do not clear RdbMem!
 		m_dumpErrno = g_errno;
 		// for now core out
-		//char *xx=NULL;*xx=0;
+		//g_process.shutdownAbort(true);
 	}
 
 	// loop back up since we did not block
@@ -1650,7 +1650,7 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list, int32_t niceness/*, bool 
 	// if nothing then just return true
 	if ( list->isExhausted() ) return true;
 	// sanity check
-	if ( list->m_ks != m_ks ) { char *xx = NULL; *xx = 0; }
+	if ( list->m_ks != m_ks ) { g_process.shutdownAbort(true); }
 	// we now call getTimeGlobal() so we need to be in sync with host #0
 	if ( ! isClockInSync () ) {
 		// log("rdb: can not add data because clock not in sync with "
@@ -1942,7 +1942,7 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 	if ( KEYNEG(key) ) {
 		if ( (dataSize > 0 && data) ) {
 			log( LOG_WARN, "db: Got data for a negative key." );
-			char *xx=NULL;*xx=0;
+			g_process.shutdownAbort(true);
 		}
 	}
 	// sanity check
@@ -1950,7 +1950,7 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 		g_errno = EBADENGINEER;
 		log(LOG_LOGIC,"db: addRecord: DataSize is %" PRId32" should "
 		    "be %" PRId32, dataSize,m_fixedDataSize );
-		char *xx=NULL;*xx=0;
+		g_process.shutdownAbort(true);
 		return false;
 	}
 
@@ -2023,7 +2023,7 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 
 	if ( m_rdbId == RDB_DOLEDB && g_conf.m_logDebugSpider ) {
 		// must be 96 bits
-		if ( m_ks != 12 ) { char *xx=NULL;*xx=0; }
+		if ( m_ks != 12 ) { g_process.shutdownAbort(true); }
 		// set this
 		key_t doleKey = *(key_t *)key;
 		// remove from g_spiderLoop.m_lockTable too!
@@ -2055,7 +2055,7 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 	/*
 	if ( m_rdbId == RDB_DOLEDB ) {
 		// must be 96 bits
-		if ( m_ks != 12 ) { char *xx=NULL;*xx=0; }
+		if ( m_ks != 12 ) { g_process.shutdownAbort(true); }
 		// set this
 		key_t doleKey = *(key_t *)key;
 		// remove from g_spiderLoop.m_lockTable too!
@@ -2345,7 +2345,7 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 		// sanity check
 		if ( n < 0 ) {
 			log("db: Did not find tfndb key to rollback.");
-			char *xx = NULL; *xx = 0;
+			g_process.shutdownAbort(true);
 		}
 		// did we have an "oppKey"?
 		if ( s_tfndbHadOppKey ) {
@@ -2355,7 +2355,7 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 			// would since we deleted it above
 			if ( n < 0 ) {
 				log("db: Failed to re-add tfndb key.");
-				char *xx = NULL; *xx = 0;
+				g_process.shutdownAbort(true);
 			}
 		}
 	}
@@ -2592,7 +2592,7 @@ char getKeySizeFromRdbId ( uint8_t rdbId ) {
 		s_flag = false;
 
 		// sanity check. do not breach s_table1[]!
-		if ( RDB_END >= 50 ) { char *xx=NULL;*xx=0; }
+		if ( RDB_END >= 50 ) { g_process.shutdownAbort(true); }
 
 		// . loop over all possible rdbIds
 		// . RDB_NONE is 0!
@@ -2619,7 +2619,7 @@ char getKeySizeFromRdbId ( uint8_t rdbId ) {
 	// sanity check
 	if ( s_table1[rdbId] == 0 ) { 
 		log("rdb: bad lookup rdbid of %i",(int)rdbId);
-		char *xx=NULL;*xx=0; 
+		g_process.shutdownAbort(true); 
 	}
 	return s_table1[rdbId];
 }
@@ -2632,7 +2632,7 @@ int32_t getDataSizeFromRdbId ( uint8_t rdbId ) {
 		// only stock the table once
 		s_flag = false;
 		// sanity check
-		if ( RDB_END >= 80 ) { char *xx=NULL;*xx=0; }
+		if ( RDB_END >= 80 ) { g_process.shutdownAbort(true); }
 		// loop over all possible rdbIds
 		for ( int32_t i = 1 ; i < RDB_END ; i++ ) {
 			// assume none
@@ -2795,7 +2795,7 @@ int32_t Rdb::reclaimMemFromDeletedTreeNodes( int32_t niceness ) {
 	log("rdb: reclaiming tree mem for doledb");
 
 	// this only works for non-dumped RdbMem right now, i.e. doledb only
-	if ( m_rdbId != RDB_DOLEDB ) { char *xx=NULL;*xx=0; }
+	if ( m_rdbId != RDB_DOLEDB ) { g_process.shutdownAbort(true); }
 
 	// start scanning the mem pool
 	char *p    = m_mem.m_mem;
@@ -2837,7 +2837,7 @@ int32_t Rdb::reclaimMemFromDeletedTreeNodes( int32_t niceness ) {
 		//char *key = m_tree.getKey(i);
 		//if ( (key[0] & 0x01) == 0x00 ) { occupied++; continue; }
 		// sanity, ensure legit
-		if ( data < pstart ) { char *xx=NULL;*xx=0; }
+		if ( data < pstart ) { g_process.shutdownAbort(true); }
 		// offset
 		int32_t doff = (int32_t)(data - pstart);
 		// a dup? sanity check
@@ -2890,7 +2890,7 @@ int32_t Rdb::reclaimMemFromDeletedTreeNodes( int32_t niceness ) {
 		if ( sreq->isCorrupt() ||  dst + recSize > memEnd ) {
 			log("rdb: not readding corrupted doledb1 in scan. "
 				"deleting from tree.");
-			char *xx=NULL;*xx=0;
+			g_process.shutdownAbort(true);
 			// a dup? sanity check
 			int32_t *nodePtr = (int32_t *)ht.getValue (&oldOffset);
 			if ( ! nodePtr ) {
@@ -2915,7 +2915,7 @@ int32_t Rdb::reclaimMemFromDeletedTreeNodes( int32_t niceness ) {
 		p += recSize;
 	}
 
-	//if ( skipped != marked ) { char *xx=NULL;*xx=0; }
+	//if ( skipped != marked ) { g_process.shutdownAbort(true); }
 
 	// sanity -- this breaks us. i tried taking the quickpolls out to stop
 	// if(ht.getNumSlotsUsed()!=m_tree.m_numUsedNodes){
@@ -2924,7 +2924,7 @@ int32_t Rdb::reclaimMemFromDeletedTreeNodes( int32_t niceness ) {
 	// 	    ,m_tree.m_numUsedNodes
 	// 	    );
 	// 	while(1==1)sleep(1);
-	// 	char *xx=NULL;*xx=0;
+	// 	g_process.shutdownAbort(true);
 	// }
 
 	int32_t inUseNew = dst - pstart;
@@ -2935,11 +2935,11 @@ int32_t Rdb::reclaimMemFromDeletedTreeNodes( int32_t niceness ) {
 	// how much did we reclaim
 	int32_t reclaimed = inUseOld - inUseNew;
 
-	if ( reclaimed < 0 ) { char *xx=NULL;*xx=0; }
-	if ( inUseNew  < 0 ) { char *xx=NULL;*xx=0; }
-	if ( inUseNew  > m_mem.m_memSize ) { char *xx=NULL;*xx=0; }
+	if ( reclaimed < 0 ) { g_process.shutdownAbort(true); }
+	if ( inUseNew  < 0 ) { g_process.shutdownAbort(true); }
+	if ( inUseNew  > m_mem.m_memSize ) { g_process.shutdownAbort(true); }
 
-	//if ( reclaimed == 0 && marked ) { char *xx=NULL;*xx=0;}
+	//if ( reclaimed == 0 && marked ) { g_process.shutdownAbort(true);}
 
 	// now update data ptrs in the tree, m_data[]
 	for ( int i = 0 ; i < nn ; i++ ) {
@@ -2949,10 +2949,10 @@ int32_t Rdb::reclaimMemFromDeletedTreeNodes( int32_t niceness ) {
 		// update the data otherwise
 		char *data = m_tree.m_data[i];
 		// sanity, ensure legit
-		if ( data < pstart ) { char *xx=NULL;*xx=0; }
+		if ( data < pstart ) { g_process.shutdownAbort(true); }
 		int32_t offset = data - pstart;
 		int32_t *newOffsetPtr = (int32_t *)ht.getValue ( &offset );
-		if ( ! newOffsetPtr ) { char *xx=NULL;*xx=0; }
+		if ( ! newOffsetPtr ) { g_process.shutdownAbort(true); }
 		char *newData = pstart + *newOffsetPtr;
 		m_tree.m_data[i] = newData;
 	}

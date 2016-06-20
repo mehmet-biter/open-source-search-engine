@@ -10,6 +10,8 @@
 #include "Linkdb.h"
 #include "Msg5.h"                 // local getList()
 #include "XmlDoc.h"
+#include "Process.h"
+
 
 static void handleRequest0           ( UdpSlot *slot , int32_t niceness ) ;
 static void gotMulticastReplyWrapper0( void *state , void *state2 ) ;
@@ -129,7 +131,7 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 
 	// if startKey > endKey, don't read anything
 	//if ( startKey > endKey ) return true;
-	if ( KEYCMP(startKey,endKey,m_ks)>0 ) { char *xx=NULL;*xx=0; }//rettrue
+	if ( KEYCMP(startKey,endKey,m_ks)>0 ) { g_process.shutdownAbort(true); }//rettrue
 	// . reset hostid if it is dead
 	// . this is causing UOR queries to take forever when we have a dead
 	if ( hostId >= 0 && g_hostdb.isDead ( hostId ) ) hostId = -1;
@@ -139,7 +141,7 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 		logTrace( g_conf.m_logTraceMsg0, "END" );
 
 		log(LOG_LOGIC, "net: msg0: Negative minRecSizes no longer supported.");
-		char *xx=NULL;*xx=0;
+		g_process.shutdownAbort(true);
 	}
 
 	// remember these
@@ -346,7 +348,7 @@ skip:
 	*(int32_t      *) p = startFileNum     ; p += 4;
 	*(int32_t      *) p = numFiles         ; p += 4;
 	*(int32_t      *) p = maxCacheAge      ; p += 4;
-	if ( p - m_request != RDBIDOFFSET ) { char *xx=NULL;*xx=0; }
+	if ( p - m_request != RDBIDOFFSET ) { g_process.shutdownAbort(true); }
 	*p               = m_rdbId          ; p++;
 	*p               = addToCache       ; p++;
 	*p               = doErrorCorrection; p++;

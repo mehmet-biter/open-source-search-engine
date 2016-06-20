@@ -58,7 +58,7 @@ bool sendReply ( State0 *st , char *reply ) {
 	if ( ! sock ) { 
 		log("results: not sending back results on an empty socket."
 		    "socket must have closed on us abruptly.");
-		//char *xx=NULL;*xx=0; }
+		//g_process.shutdownAbort(true); }
 	}
 	SearchInput *si = &st->m_si;
 	const char *ct = "text/html";
@@ -1821,7 +1821,7 @@ static bool printInlinkText ( SafeBuf *sb , Msg20Reply *mr , SearchInput *si ,
 	//   and stale. Both are really only for BuzzLogic.
 	LinkInfo *info = (LinkInfo *)mr->ptr_linkInfo;//inlinks;
 	// sanity
-	if ( info && mr->size_linkInfo!=info->m_lisize ){char *xx=NULL;*xx=0; }
+	if ( info && mr->size_linkInfo!=info->m_lisize ){g_process.shutdownAbort(true); }
 	// NULLify if empty
 	if ( mr->size_linkInfo <= 0 ) info = NULL;
 	// do not both if none
@@ -3314,7 +3314,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 			sb->safePrintf ("\n\t}\n\n");
 		}
 		// wtf?
-		//char *xx=NULL;*xx=0;
+		//g_process.shutdownAbort(true);
 		// at least close up the table
 		if ( si->m_format != FORMAT_HTML ) return true;
 
@@ -5189,7 +5189,7 @@ static bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) {
 		n++;
 
 		s_num = n;
-		if ( n > 200 ) { char *xx=NULL;*xx=0; }
+		if ( n > 200 ) { g_process.shutdownAbort(true); }
 		
 		s_init = true;
 	}

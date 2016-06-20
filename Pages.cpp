@@ -9,6 +9,8 @@
 #include "Rebalance.h"
 #include "Profiler.h"
 #include "PageRoot.h"
+#include "Process.h"
+
 
 // a global class extern'd in Pages.h
 Pages g_pages;
@@ -267,7 +269,7 @@ void Pages::init ( ) {
 			log(LOG_LOGIC,"conf: Bad engineer. WebPage array is "
 			    "malformed. It must be 1-1 with the "
 			    "WebPage enum in Pages.h.");
-			char *xx=NULL;*xx=0;
+			g_process.shutdownAbort(true);
 			//exit ( -1 );
 		}
 	// set the m_flen member
@@ -2387,7 +2389,7 @@ bool sendPageLogin ( TcpSocket *socket , HttpRequest *hr ) {
 
 
 	// sanity
-	if ( hasPermission && emsg.length() ) { char *xx=NULL;*xx=0; }
+	if ( hasPermission && emsg.length() ) { g_process.shutdownAbort(true); }
 
 	// what page are they originally trying to get to?
 	int32_t page = g_pages.getDynamicPageNumber(hr);

@@ -6,6 +6,8 @@
 #include "Rdb.h"
 #include "Profiler.h"
 #include "Repair.h"
+#include "Process.h"
+
 
 static void gotReplyWrapper1 ( void    *state , void *state2 ) ;
 static void handleRequest1   ( UdpSlot *slot  , int32_t niceness ) ;
@@ -51,7 +53,7 @@ void returnMsg1 ( void *state ) {
 	int32_t i = msg1 - s_msg1;
 	if ( i < 0 || i > MAX_MSG1S ) {
 		log(LOG_LOGIC,"net: msg1: Major problem adding data."); 
-		char *xx = NULL; *xx = 0; }
+		g_process.shutdownAbort(true); }
 	if ( s_head == -1 ) { s_head    = i      ; s_next[i] = -1; }
 	else                { s_next[i] = s_head ; s_head    =  i; }
 }
@@ -124,7 +126,7 @@ bool Msg1::addList ( RdbList      *list              ,
 	     list->m_ks != 12 &&
 	     list->m_ks != 16 &&
 	     list->m_ks != 24 ) { 
-		char *xx=NULL;*xx=0; }
+		g_process.shutdownAbort(true); }
 	// start at the beginning
 	list->resetListPtr();
 	// if caller does not want reply try to accomodate him
@@ -155,7 +157,7 @@ bool Msg1::addList ( RdbList      *list              ,
 		else if ( ! list->m_ownData ) {
 			log(LOG_LOGIC,"net: msg1: List must own data. Bad "
 			    "engineer.");
-			char *xx = NULL; *xx = 0; 
+			g_process.shutdownAbort(true); 
 		}
 		// lastly, if it was a clean steal, don't let list free it
 		else list->m_ownData = false;
@@ -166,7 +168,7 @@ bool Msg1::addList ( RdbList      *list              ,
 		if ( Y->m_ourList.isExhausted() ) {
 			log(LOG_LOGIC,"net: msg1: List is exhausted. "
 			    "Bad engineer."); 
-			char *xx = NULL; *xx = 0; }
+			g_process.shutdownAbort(true); }
 		// now re-call
 		bool inTransit;
 		bool status = Y->addList ( &Y->m_ourList ,
@@ -235,7 +237,7 @@ bool Msg1::sendSomeOfList ( ) {
 	     m_list->m_ks != 12 &&
 	     m_list->m_ks != 16 &&
 	     m_list->m_ks != 24 ) { 
-		char *xx=NULL;*xx=0; }
+		g_process.shutdownAbort(true); }
 	// debug msg
 	//log("sendSomeOfList: mcast=%" PRIu32" exhausted=%" PRId32,
 	//    (int32_t)&m_mcast,(int32_t)m_list->isExhausted());
@@ -287,7 +289,7 @@ bool Msg1::sendSomeOfList ( ) {
 		m_list->skipCurrentRecord();
 		// sanity check
 		if ( m_list->m_listPtr > m_list->m_listEnd ) {
-			char *xx=NULL;*xx=0; }
+			g_process.shutdownAbort(true); }
 	}
  done:
 	// now point to the end of the data
@@ -311,7 +313,7 @@ bool Msg1::sendSomeOfList ( ) {
 
 	// sanity test for new rdbs
 	if ( m_list->m_fixedDataSize != getDataSizeFromRdbId(m_rdbId) ) {
-		char *xx=NULL;*xx=0; }
+		g_process.shutdownAbort(true); }
 
 	// . now send this list to the host
 	// . this returns false if blocked, true otherwise
@@ -452,7 +454,7 @@ skip:
 	// sanity check
 	//if ( collLen <= 0 ) {
 	//	log(LOG_LOGIC,"net: No collection specified for list add.");
-	//	//char *xx = NULL; *xx = 0;
+	//	//g_process.shutdownAbort(true);
 	//	g_errno = ENOCOLLREC;
 	//	return true;
 	//}

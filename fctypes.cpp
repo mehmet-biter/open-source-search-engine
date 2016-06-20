@@ -6,6 +6,7 @@
 #include "Xml.h"
 #include "XmlNode.h"
 #include "Conf.h"
+#include "Process.h"
 
 static bool g_clockInSync = false;
 
@@ -635,7 +636,7 @@ void hexToBin ( const char *src , int32_t srcLen , char *dst ) {
 		dst++;
 	}
 	// sanity check
-	if ( src != srcEnd ) { char *xx=NULL;*xx=0; }
+	if ( src != srcEnd ) { g_process.shutdownAbort(true); }
 }
 
 void binToHex ( const unsigned char *src , int32_t srcLen , char *dst ) {
@@ -648,7 +649,7 @@ void binToHex ( const unsigned char *src , int32_t srcLen , char *dst ) {
 	// always null term!
 	*dst = '\0';
 	// sanity check
-	if ( src != srcEnd ) { char *xx=NULL;*xx=0; }
+	if ( src != srcEnd ) { g_process.shutdownAbort(true); }
 }
 
 
@@ -833,7 +834,7 @@ int32_t htmlDecode( char *dst, const char *src, int32_t srcLen, bool doSpecial, 
 
 				// sanity check. do not eat our tail if dst == src
 				if ( totalUtf8Bytes > skip ) {
-					char *xx = NULL; *xx = 0;
+					g_process.shutdownAbort(true);
 				}
 
 				// advance dst ptr
@@ -1055,7 +1056,7 @@ bool setTimeAdjustmentFilename ( const char *dir, const char *filename ) {
 	s_hasFileName = true;
 	int32_t len1 = gbstrlen(dir);
 	int32_t len2 = gbstrlen(filename);
-	if ( len1 + len2 > 1000 ) { char *xx=NULL;*xx=0; }
+	if ( len1 + len2 > 1000 ) { g_process.shutdownAbort(true); }
 	sprintf(s_tafile,"%s/%s",dir,filename);
 	return true;
 }
@@ -1432,7 +1433,7 @@ int32_t stripHtml( char *content, int32_t contentLen, int32_t version, int32_t s
 		gbmemcpy ( x , nodes[i].m_node , nodes[i].m_nodeLen );
 		x += nodes[i].m_nodeLen;
 		// sanity check
-		if ( x > xend ) { char *xx=NULL;*xx=0;}
+		if ( x > xend ) { g_process.shutdownAbort(true);}
 	}
 	contentLen = x - content;
 	content [ contentLen ] = '\0';
@@ -1544,7 +1545,7 @@ char *serializeMsg ( int32_t  baseSize ,
 		if ( ! *strPtr ) goto skip;
 		// sanity check -- cannot copy onto ourselves
 		if ( p > *strPtr && p < *strPtr + *sizePtr ) {
-			char *xx = NULL; *xx = 0; }
+			g_process.shutdownAbort(true); }
 		// copy the string into the buffer
 		gbmemcpy ( p , *strPtr , *sizePtr );
 	skip:
@@ -1608,14 +1609,14 @@ char *serializeMsg2 ( void *thisPtr ,
 		if ( ! *srcStrPtr )
 			goto skip;
 		// if this is valid then size can't be 0! fix upstream.
-		if ( ! *srcSizePtr ) { char *xx=NULL;*xx=0; }
+		if ( ! *srcSizePtr ) { g_process.shutdownAbort(true); }
 		// if size is 0 use gbstrlen. helps with InjectionRequest
 		// where we set ptr_url or ptr_content but not size_url, etc.
 		//if ( ! *srcSizePtr )
 		//	*srcSizePtr = gbstrlen(*strPtr);
 		// sanity check -- cannot copy onto ourselves
 		if ( p > *srcStrPtr && p < *srcStrPtr + *srcSizePtr ) {
-			char *xx = NULL; *xx = 0; }
+			g_process.shutdownAbort(true); }
 		// copy the string into the buffer
 		gbmemcpy ( p , *srcStrPtr , *srcSizePtr );
 	skip:
@@ -1683,7 +1684,7 @@ bool deserializeMsg2 ( char    **firstStrPtr , // ptr_url
 		// make it NULL if size is 0 though
 		if ( *sizePtr == 0 ) *strPtr = NULL;
 		// sanity check
-		if ( *sizePtr < 0 ) return false;//{ char *xx = NULL; *xx =0; }
+		if ( *sizePtr < 0 ) return false;//{ g_process.shutdownAbort(true); }
 		// advance our destination ptr
 		p += *sizePtr;
 		// advance both ptrs to next string

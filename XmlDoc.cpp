@@ -38,6 +38,8 @@
 #include "Robots.h"
 #include <pthread.h>
 #include "JobScheduler.h"
+#include "Process.h"
+
 
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
@@ -443,7 +445,7 @@ int32_t XmlDoc::getSpideredTime ( ) {
 
 	// get url
 	Url *cu = getCurrentUrl();
-	if ( ! cu || cu == (void *)-1 ) { char *xx=NULL;*xx=0; }
+	if ( ! cu || cu == (void *)-1 ) { g_process.shutdownAbort(true); }
 
 	// this returns false if not in there, in which case, add it
 	if ( ! getTestSpideredDate(cu,&date,testDir) ) {
@@ -489,7 +491,7 @@ bool XmlDoc::set3 ( int64_t  docId       ,
 static void loadFromOldTitleRecWrapper ( void *state ) {
 	XmlDoc *THIS = (XmlDoc *)state;
 	// make sure has not been freed from under us!
-	if ( THIS->m_freed ) { char *xx=NULL;*xx=0;}
+	if ( THIS->m_freed ) { g_process.shutdownAbort(true);}
 	// note it
 	THIS->setStatus ( "loading from old title rec wrapper" );
 	// return if it blocked
@@ -549,7 +551,7 @@ bool XmlDoc::loadFromOldTitleRec ( ) {
 	// we are now loaded, do not re-call
 	m_loaded = true;
 	// sanity check
-	if ( ! m_titleRecBufValid ) { char *xx=NULL;*xx=0; }
+	if ( ! m_titleRecBufValid ) { g_process.shutdownAbort(true); }
 	// good to go
 	return true;
 }
@@ -568,7 +570,7 @@ bool XmlDoc::setCollNum ( const char *coll ) {
 }
 
 CollectionRec *XmlDoc::getCollRec ( ) {
-	if ( ! m_collnumValid ) { char *xx=NULL;*xx=0; }
+	if ( ! m_collnumValid ) { g_process.shutdownAbort(true); }
 	CollectionRec *cr = g_collectiondb.m_recs[m_collnum];
 	if ( ! cr ) {
 		log("build: got NULL collection rec for collnum=%" PRId32".",
@@ -604,7 +606,7 @@ bool XmlDoc::set4 ( SpiderRequest *sreq      ,
 	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );
 
 	// sanity check
-	if ( sreq->m_dataSize == 0 ) { char *xx=NULL;*xx=0; }
+	if ( sreq->m_dataSize == 0 ) { g_process.shutdownAbort(true); }
 
 	reset();
 
@@ -745,7 +747,7 @@ bool XmlDoc::set4 ( SpiderRequest *sreq      ,
 	// for every outlink it had!
 	if ( sreq->m_isNewOutlink && sreq->m_parentPrevSpiderTime ) {
 		// sanity check
-		if ( ! sreq->m_parentPrevSpiderTime ) {char *xx=NULL;*xx=0;}
+		if ( ! sreq->m_parentPrevSpiderTime ) {g_process.shutdownAbort(true);}
 		// pub date is somewhere between these two times
 		m_minPubDate = sreq->m_parentPrevSpiderTime;
 		m_maxPubDate = sreq->m_addedTime;
@@ -764,7 +766,7 @@ bool XmlDoc::set4 ( SpiderRequest *sreq      ,
 	//     // sometimes the initiating msg13 class was re-niced to 0
 	//     // in the niceness converstion logic.
 	//     ! g_hostdb.m_myHost->m_isProxy ) {
-	//	char *xx=NULL; *xx=0; }
+	//	g_process.shutdownAbort(true); }
 
 	m_sreqValid    = true;
 
@@ -833,7 +835,7 @@ bool XmlDoc::set4 ( SpiderRequest *sreq      ,
 		//   this out. MDW 9/25/2014.
 		//m_recycleContent = true;
 		// sanity
-		if ( m_docId == 0LL ) { char *xx=NULL;*xx=0; }
+		if ( m_docId == 0LL ) { g_process.shutdownAbort(true); }
 	}
 	else {
 		logTrace( g_conf.m_logTraceXmlDoc, "Calling setFirstUrl with [%s]", m_sreq.m_url);
@@ -885,7 +887,7 @@ bool XmlDoc::set2 ( char    *titleRec ,
 	//m_state     = state;
 
 	// sanity check - since we do not reset
-	if ( m_contentValid ) { char *xx=NULL;*xx=0; }
+	if ( m_contentValid ) { g_process.shutdownAbort(true); }
 
 	// this is true
 	m_setFromTitleRec = true;
@@ -949,7 +951,7 @@ bool XmlDoc::set2 ( char    *titleRec ,
 	if ( (m_titleRecKey.n0 & 0x01) == 0x00 ) {
 		g_errno = EBADTITLEREC;
 		log("db: Titledb record is a negative key.");
-		char *xx=NULL; *xx=0;
+		g_process.shutdownAbort(true);
 		return false;
 	}
 
@@ -1100,7 +1102,7 @@ bool XmlDoc::set2 ( char    *titleRec ,
 		// get the size
 		*ps = *(int32_t *)up;
 		// this should never be 0, otherwise, why was its flag set?
-		if ( *ps <= 0 ) { char *xx=NULL;*xx=0; }
+		if ( *ps <= 0 ) { g_process.shutdownAbort(true); }
 		// skip over to point to data
 		up += 4;
 		// point to the data. could be 64-bit ptr.
@@ -1122,7 +1124,7 @@ bool XmlDoc::set2 ( char    *titleRec ,
 	// cap it
 	char *pend = m_ubuf + m_ubufSize;
 	// sanity check. must match exactly.
-	if ( up != pend ) { char *xx=NULL;*xx=0; }
+	if ( up != pend ) { g_process.shutdownAbort(true); }
 
 	// set the urls i guess
 	m_firstUrl.set   ( ptr_firstUrl );
@@ -1195,13 +1197,13 @@ bool XmlDoc::set2 ( char    *titleRec ,
 	m_downloadEndTimeValid = true;
 
 	// must not be negative
-	if ( m_siteNumInlinks < 0 ) { char *xx=NULL;*xx=0; }
+	if ( m_siteNumInlinks < 0 ) { g_process.shutdownAbort(true); }
 
 
 	// sanity check. if m_siteValid is true, this must be there
 	if ( ! ptr_site ) {
 		log("set2: ptr_site is null for docid %" PRId64,m_docId);
-		//char *xx=NULL;*xx=0; }
+		//g_process.shutdownAbort(true); }
 		g_errno = ECORRUPTDATA;
 		return false;
 	}
@@ -1292,7 +1294,7 @@ void XmlDoc::setCallback ( void *state, void (* callback) (void *state) ) {
 	// doing a page parser
 	if ( state == this &&
 	     // i don't remember why i added this sanity check...
-	     callback == getMetaListWrapper ) { char *xx=NULL;*xx=0; }
+	     callback == getMetaListWrapper ) { g_process.shutdownAbort(true); }
 }
 
 void XmlDoc::setCallback ( void *state, bool (*callback) (void *state) ) {
@@ -1307,7 +1309,7 @@ static void indexDocWrapper ( void *state ) {
 
 	XmlDoc *THIS = (XmlDoc *)state;
 	// make sure has not been freed from under us!
-	if ( THIS->m_freed ) { char *xx=NULL;*xx=0;}
+	if ( THIS->m_freed ) { g_process.shutdownAbort(true);}
 	// note it
 	THIS->setStatus ( "in index doc wrapper" );
 
@@ -1428,7 +1430,7 @@ bool XmlDoc::injectDoc ( char *url ,
 	//	// try to download the page!
 	//	s_dummy[0] = '\0';
 	//	content = s_dummy;
-	//	//char *xx=NULL;*xx=0; }
+	//	//g_process.shutdownAbort(true); }
 	//}
 
 	// . use the enormous power of our new XmlDoc class
@@ -1450,7 +1452,7 @@ bool XmlDoc::injectDoc ( char *url ,
 		      contentHasMimeArg )) {
 		// g_errno should be set if that returned false
 		logTrace( g_conf.m_logTraceXmlDoc, "END, returning true. set4 returned false" );
-		if ( ! g_errno ) { char *xx=NULL;*xx=0; }
+		if ( ! g_errno ) { g_process.shutdownAbort(true); }
 		return true;
 	}
 
@@ -1542,19 +1544,19 @@ bool XmlDoc::injectDoc ( char *url ,
 // a SpiderReply in spiderdb but no matching SpiderRequest as well.
 void XmlDoc::getRevisedSpiderRequest ( SpiderRequest *revisedReq ) {
 
-	if ( ! m_sreqValid ) { char *xx=NULL; *xx=0; }
+	if ( ! m_sreqValid ) { g_process.shutdownAbort(true); }
 
 	// we are doing this because it has a fake first ip
-	if ( ! m_sreq.m_fakeFirstIp ) { char *xx=NULL;*xx=0; }
+	if ( ! m_sreq.m_fakeFirstIp ) { g_process.shutdownAbort(true); }
 
 	// copy it over from our current spiderrequest
 	gbmemcpy ( revisedReq , &m_sreq , m_sreq.getRecSize() );
 
 	// this must be valid for us of course
-	if ( ! m_firstIpValid ) { char *xx=NULL;*xx=0; }
+	if ( ! m_firstIpValid ) { g_process.shutdownAbort(true); }
 
 	// wtf? it might be invalid!!! parent caller will handle it...
-	//if ( m_firstIp == 0 || m_firstIp == -1 ) { char *xx=NULL;*xx=0; }
+	//if ( m_firstIp == 0 || m_firstIp == -1 ) { g_process.shutdownAbort(true); }
 
 	// store the real ip in there now
 	revisedReq->m_firstIp = m_firstIp;
@@ -1580,13 +1582,13 @@ void XmlDoc::getRebuiltSpiderRequest ( SpiderRequest *sreq ) {
 	// assume not valid
 	sreq->m_siteNumInlinks = -1;
 
-	if ( ! m_siteNumInlinksValid ) { char *xx=NULL;*xx=0; }
+	if ( ! m_siteNumInlinksValid ) { g_process.shutdownAbort(true); }
 
 	// how many site inlinks?
 	sreq->m_siteNumInlinks       = m_siteNumInlinks;
 	sreq->m_siteNumInlinksValid  = true;
 
-	if ( ! m_firstIpValid ) { char *xx=NULL;*xx=0; }
+	if ( ! m_firstIpValid ) { g_process.shutdownAbort(true); }
 
 	// set other fields besides key
 	sreq->m_firstIp              = m_firstIp;
@@ -1639,7 +1641,7 @@ logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );
 	// return from the msg4.addMetaList() below?
 	if ( m_msg4Launched ) {
 		// must have been waiting
-		if ( ! m_msg4Waiting ) { char *xx=NULL;*xx=0; }
+		if ( ! m_msg4Waiting ) { g_process.shutdownAbort(true); }
 
 		logTrace( g_conf.m_logTraceXmlDoc, "END, returning true. m_msg4Launched" );
 		return true;
@@ -1846,7 +1848,7 @@ logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );
 			goto logErr;
 		}
 		// sanity log
-		if ( ! m_firstIpValid ) { char *xx=NULL;*xx=0; }
+		if ( ! m_firstIpValid ) { g_process.shutdownAbort(true); }
 		// sanity log
 		if ( *fip == 0 || *fip == -1 ) {
 			//
@@ -2052,7 +2054,7 @@ bool XmlDoc::indexDoc2 ( ) {
 			log("build: Error UNKNOWN error spidering. setting "
 			    "to bad engineer.");
 			g_errno = EBADENGINEER;
-			//char *xx=NULL;*xx=0; }
+			//g_process.shutdownAbort(true); }
 		}
 		log("build: Error spidering for doc %s: %s",
 		    m_firstUrl.getUrl(),mstrerror(g_errno));
@@ -2124,7 +2126,7 @@ bool XmlDoc::indexDoc2 ( ) {
 	}
 
 	// make sure our msg4 is no longer in the linked list!
-	if (m_msg4Waiting && isInMsg4LinkedList(&m_msg4)){char *xx=NULL;*xx=0;}
+	if (m_msg4Waiting && isInMsg4LinkedList(&m_msg4)){g_process.shutdownAbort(true);}
 
 	if ( m_msg4Waiting && g_conf.m_testSpiderEnabled )
 		logf(LOG_DEBUG,"build: msg4=0x%" PTRFMT" returned"
@@ -2188,7 +2190,7 @@ static void doneReadingArchiveFileWrapper ( int fd, void *state ) {
 static void getTitleRecBufWrapper ( void *state ) {
 	XmlDoc *THIS = (XmlDoc *)state;
 	// make sure has not been freed from under us!
-	if ( THIS->m_freed ) { char *xx=NULL;*xx=0;}
+	if ( THIS->m_freed ) { g_process.shutdownAbort(true);}
 	// note it
 	THIS->setStatus ( "in get title rec wrapper" );
 	// return if it blocked
@@ -2229,7 +2231,7 @@ int32_t *XmlDoc::getIndexCode ( ) {
 		return &m_indexCode;
 	}
 
-	if ( ! m_firstUrlValid ) { char *xx=NULL;*xx=0; }
+	if ( ! m_firstUrlValid ) { g_process.shutdownAbort(true); }
 
 	if ( m_firstUrl.getUrlLen() <= 5 ) {
 		m_indexCode = EBADURL;
@@ -2391,7 +2393,7 @@ int32_t *XmlDoc::getIndexCode ( ) {
 	}
 
 	// this must be valid now
-	if ( ! m_redirErrorValid ) { char *xx=NULL;*xx=0; }
+	if ( ! m_redirErrorValid ) { g_process.shutdownAbort(true); }
 	if ( m_redirError ) {
 		m_indexCode      = m_redirError;
 		m_indexCodeValid = true;
@@ -2692,7 +2694,7 @@ int32_t *XmlDoc::getIndexCode ( ) {
 	}
 
 	// i think an oom error is not being caught by Sections.cpp properly
-	if ( g_errno ) { char *xx=NULL;*xx=0; }
+	if ( g_errno ) { g_process.shutdownAbort(true); }
 
 
 	// are we a root?
@@ -2957,7 +2959,7 @@ bool XmlDoc::setTitleRecBuf ( SafeBuf *tbuf, int64_t docId, int64_t uh48 ){
 		p += *ps;
 	}
 	// sanity check
-	if ( p != ubuf + need1 ) { char *xx=NULL; *xx=0; }
+	if ( p != ubuf + need1 ) { g_process.shutdownAbort(true); }
 
 	// . make a buf big enough to hold compressed, we'll realloc afterwards
 	// . according to zlib.h line 613 compress buffer must be .1% larger
@@ -3034,10 +3036,10 @@ bool XmlDoc::setTitleRecBuf ( SafeBuf *tbuf, int64_t docId, int64_t uh48 ){
 	*(int32_t  *) p = need1 ; p += 4;
 
 	// sanity check
-	if ( p != cbuf + hdrSize ) { char *xx = NULL; *xx = 0; }
+	if ( p != cbuf + hdrSize ) { g_process.shutdownAbort(true); }
 
 	// sanity check
-	if ( need1 <= 0 ) { char *xx = NULL; *xx = 0; }
+	if ( need1 <= 0 ) { g_process.shutdownAbort(true); }
 
 	// advance over data
 	p += size;
@@ -3066,7 +3068,7 @@ SafeBuf *XmlDoc::getTitleRecBuf ( ) {
 
 	int32_t *indexCode = getIndexCode();
 	// not allowed to block here
-	if ( indexCode == (void *)-1) { char *xx=NULL;*xx=0; }
+	if ( indexCode == (void *)-1) { g_process.shutdownAbort(true); }
 	// return on errors with g_errno set
 	if ( ! indexCode ) return NULL;
 	// force delete? EDOCFORCEDELETE
@@ -3089,50 +3091,50 @@ SafeBuf *XmlDoc::getTitleRecBuf ( ) {
 	/////////
 
 	// verify key parts
-	if ( ! m_docIdValid                  ) { char *xx=NULL;*xx=0; }
+	if ( ! m_docIdValid                  ) { g_process.shutdownAbort(true); }
 
 	// verify record parts
-	//if ( ! m_versionValid                ) { char *xx=NULL;*xx=0; }
-	if ( ! m_ipValid                     ) { char *xx=NULL;*xx=0; }
-	if ( ! m_spideredTimeValid           ) { char *xx=NULL;*xx=0; }
-	if ( ! m_firstIndexedDateValid       ) { char *xx=NULL;*xx=0; }
-	if ( ! m_outlinksAddedDateValid      ) { char *xx=NULL;*xx=0; }
-	if ( ! m_charsetValid                ) { char *xx=NULL;*xx=0; }
-	if ( ! m_countryIdValid              ) { char *xx=NULL;*xx=0; }
-	if ( ! m_httpStatusValid             ) { char *xx=NULL;*xx=0; }
+	//if ( ! m_versionValid                ) { g_process.shutdownAbort(true); }
+	if ( ! m_ipValid                     ) { g_process.shutdownAbort(true); }
+	if ( ! m_spideredTimeValid           ) { g_process.shutdownAbort(true); }
+	if ( ! m_firstIndexedDateValid       ) { g_process.shutdownAbort(true); }
+	if ( ! m_outlinksAddedDateValid      ) { g_process.shutdownAbort(true); }
+	if ( ! m_charsetValid                ) { g_process.shutdownAbort(true); }
+	if ( ! m_countryIdValid              ) { g_process.shutdownAbort(true); }
+	if ( ! m_httpStatusValid             ) { g_process.shutdownAbort(true); }
 
-	if ( ! m_siteNumInlinksValid         ) { char *xx=NULL;*xx=0; }
-	if ( ! m_rootLangIdValid             ) { char *xx=NULL;*xx=0; }
+	if ( ! m_siteNumInlinksValid         ) { g_process.shutdownAbort(true); }
+	if ( ! m_rootLangIdValid             ) { g_process.shutdownAbort(true); }
 
-	if ( ! m_hopCountValid               ) { char *xx=NULL;*xx=0; }
-	if ( ! m_metaListCheckSum8Valid      ) { char *xx=NULL;*xx=0; }
-	if ( ! m_langIdValid                 ) { char *xx=NULL;*xx=0; }
-	if ( ! m_contentTypeValid            ) { char *xx=NULL;*xx=0; }
+	if ( ! m_hopCountValid               ) { g_process.shutdownAbort(true); }
+	if ( ! m_metaListCheckSum8Valid      ) { g_process.shutdownAbort(true); }
+	if ( ! m_langIdValid                 ) { g_process.shutdownAbort(true); }
+	if ( ! m_contentTypeValid            ) { g_process.shutdownAbort(true); }
 
-	if ( ! m_isRSSValid                  ) { char *xx=NULL;*xx=0; }
-	if ( ! m_isPermalinkValid            ) { char *xx=NULL;*xx=0; }
-	if ( ! m_isAdultValid                ) { char *xx=NULL;*xx=0; }
-	if ( ! m_spiderLinksValid            ) { char *xx=NULL;*xx=0; }
-	if ( ! m_isContentTruncatedValid     ) { char *xx=NULL;*xx=0; }
-	if ( ! m_isLinkSpamValid             ) { char *xx=NULL;*xx=0; }
+	if ( ! m_isRSSValid                  ) { g_process.shutdownAbort(true); }
+	if ( ! m_isPermalinkValid            ) { g_process.shutdownAbort(true); }
+	if ( ! m_isAdultValid                ) { g_process.shutdownAbort(true); }
+	if ( ! m_spiderLinksValid            ) { g_process.shutdownAbort(true); }
+	if ( ! m_isContentTruncatedValid     ) { g_process.shutdownAbort(true); }
+	if ( ! m_isLinkSpamValid             ) { g_process.shutdownAbort(true); }
 
 	// buffers
-	if ( ! m_firstUrlValid               ) { char *xx=NULL;*xx=0; }
-	if ( ! m_redirUrlValid               ) { char *xx=NULL;*xx=0; }
-	if ( ! m_tagRecValid                 ) { char *xx=NULL;*xx=0; }
-	if ( ! m_imageDataValid              ) { char *xx=NULL;*xx=0; }
+	if ( ! m_firstUrlValid               ) { g_process.shutdownAbort(true); }
+	if ( ! m_redirUrlValid               ) { g_process.shutdownAbort(true); }
+	if ( ! m_tagRecValid                 ) { g_process.shutdownAbort(true); }
+	if ( ! m_imageDataValid              ) { g_process.shutdownAbort(true); }
 	if ( ! m_recycleContent ) {
-		if ( ! m_rawUtf8ContentValid         ) { char *xx=NULL;*xx=0; }
-		if ( ! m_expandedUtf8ContentValid    ) { char *xx=NULL;*xx=0; }
+		if ( ! m_rawUtf8ContentValid         ) { g_process.shutdownAbort(true); }
+		if ( ! m_expandedUtf8ContentValid    ) { g_process.shutdownAbort(true); }
 	}
-	if ( ! m_utf8ContentValid            ) { char *xx=NULL;*xx=0; }
-	if ( ! m_siteValid                   ) { char *xx=NULL;*xx=0; }
-	if ( ! m_linkInfo1Valid              ) { char *xx=NULL;*xx=0; }
+	if ( ! m_utf8ContentValid            ) { g_process.shutdownAbort(true); }
+	if ( ! m_siteValid                   ) { g_process.shutdownAbort(true); }
+	if ( ! m_linkInfo1Valid              ) { g_process.shutdownAbort(true); }
 
 	// do we need these?
-	if ( ! m_hostHash32aValid            ) { char *xx=NULL;*xx=0; }
-	if ( ! m_contentHash32Valid          ) { char *xx=NULL;*xx=0; }
-	if ( ! m_tagPairHash32Valid          ) { char *xx=NULL;*xx=0; }
+	if ( ! m_hostHash32aValid            ) { g_process.shutdownAbort(true); }
+	if ( ! m_contentHash32Valid          ) { g_process.shutdownAbort(true); }
+	if ( ! m_tagPairHash32Valid          ) { g_process.shutdownAbort(true); }
 
 	// breathe
 	QUICKPOLL( m_niceness );
@@ -3923,7 +3925,7 @@ int32_t *XmlDoc::getLinkSiteHashes ( ) {
 			// store that then. should not fail since we allocated
 			// right above
 			if ( ! m_linkSiteHashBuf.pushLong(siteHash32) ) {
-				char *xx=NULL;*xx=0; }
+				g_process.shutdownAbort(true); }
 		}
 		// return ptr of array, which is a safebuf
 		logTrace( g_conf.m_logTraceXmlDoc, "END, m_setFromTitleRec. Returning link list" );
@@ -3976,7 +3978,7 @@ int32_t *XmlDoc::getLinkSiteHashes ( ) {
 		// store it always in this buf
 		if ( ! m_linkSiteHashBuf.pushLong(linkeeSiteHash32) ) {
 			// space should have been reserved above!
-			char *xx=NULL;*xx=0; }
+			g_process.shutdownAbort(true); }
 	}
 	// set ptr_linkdbData
 	ptr_linkdbData  = m_linkdbDataBuf.getBufStart();
@@ -4501,7 +4503,7 @@ int32_t *XmlDoc::getPostLinkTextVector ( int32_t linkNode ) {
 	if ( ! ww || ww == (Words *)-1 ) return (int32_t *)ww;
 
 	// sanity check
-	if ( linkNode < 0 ) { char *xx=NULL;*xx=0; }
+	if ( linkNode < 0 ) { g_process.shutdownAbort(true); }
 
 	// linkNode starts pointing to a <a> tag so skip over that!
 	linkNode++;
@@ -4627,7 +4629,7 @@ int32_t XmlDoc::computeVector( Words *words, uint32_t *vec, int32_t start, int32
 	char hbuf[3000*6*2];
 	HashTableX ht;
 	if ( ! ht.set(4,0,3000,hbuf,3000*6*2,false,m_niceness,"xmlvecdedup")){
-		char*xx=NULL;*xx=0;}
+		g_process.shutdownAbort(true);}
 
  again:
 	// a buffer to hold the top termIds
@@ -4652,7 +4654,7 @@ int32_t XmlDoc::computeVector( Words *words, uint32_t *vec, int32_t start, int32
 		if ( ht.getSlot ( &wid32 ) >= 0 ) continue;
 
 		// add to hash table. return NULL and set g_errno on error
-		if ( ! ht.addKey (&wid32 )){char*xx=NULL;*xx=0; }
+		if ( ! ht.addKey (&wid32 )){g_process.shutdownAbort(true); }
 
 		// add it to our vector
 		d[nd] = (uint32_t)wids[i];
@@ -4888,7 +4890,7 @@ float computeSimilarity ( int32_t   *vec0 ,
 	//else           percent = 100 * (float)matches    / (float)total;
 	// sanity
 	//if ( percent > 100 ) percent = 100;
-	if ( percent > 100 ) { char *xx=NULL;*xx=0; }
+	if ( percent > 100 ) { g_process.shutdownAbort(true); }
 
 	return percent;
 }
@@ -4967,7 +4969,7 @@ int64_t *XmlDoc::getExactContentHash64 ( ) {
 
 	// sanity
 	//if ( ! p ) return 0LL;
-	//if ( p[plen] != '\0' ) { char *xx=NULL;*xx=0; }
+	//if ( p[plen] != '\0' ) { g_process.shutdownAbort(true); }
 
 	unsigned char *pend = (unsigned char *)p + plen;
 	uint64_t h64 = 0LL;
@@ -5162,7 +5164,7 @@ char *XmlDoc::getIsDup ( ) {
 	}
 
 	// sanity. must be posdb list.
-	if ( ! list->isEmpty() && list->m_ks != 18 ) { char *xx=NULL;*xx=0;}
+	if ( ! list->isEmpty() && list->m_ks != 18 ) { g_process.shutdownAbort(true);}
 
 	// so getSiteRank() does not core
 	int32_t *sni = getSiteNumInlinks();
@@ -5295,9 +5297,9 @@ Url *XmlDoc::getFirstUrl() {
 		return &m_firstUrl;
 	}
 	// must be this otherwise
-	if ( ! m_setFromDocId ) { char *xx=NULL;*xx=0; }
+	if ( ! m_setFromDocId ) { g_process.shutdownAbort(true); }
 	// this must be valid
-	if ( ! m_docIdValid ) { char *xx=NULL;*xx=0; }
+	if ( ! m_docIdValid ) { g_process.shutdownAbort(true); }
 
 	// get the old xml doc from the old title rec
 	XmlDoc **pod = getOldXmlDoc ( );
@@ -5314,7 +5316,7 @@ Url *XmlDoc::getFirstUrl() {
 int64_t XmlDoc::getFirstUrlHash48() {
 	if ( m_firstUrlHash48Valid ) return m_firstUrlHash48;
 	// this must work
-	if ( ! m_firstUrlValid ) { char *xx=NULL;*xx=0; }
+	if ( ! m_firstUrlValid ) { g_process.shutdownAbort(true); }
 	if ( getUseTimeAxis() ) {
 		m_firstUrlHash48 = hash64b ( getTimeAxisUrl()->getBufStart() ) & 0x0000ffffffffffffLL;
 		m_firstUrlHash48Valid = true;
@@ -5329,7 +5331,7 @@ int64_t XmlDoc::getFirstUrlHash48() {
 int64_t XmlDoc::getFirstUrlHash64() {
 	if ( m_firstUrlHash64Valid ) return m_firstUrlHash64;
 	// this must work
-	if ( ! m_firstUrlValid ) { char *xx=NULL;*xx=0; }
+	if ( ! m_firstUrlValid ) { g_process.shutdownAbort(true); }
 
 	if ( getUseTimeAxis() ) {
 		m_firstUrlHash64 = hash64b ( getTimeAxisUrl()->getBufStart() );
@@ -5370,7 +5372,7 @@ Url **XmlDoc::getRedirUrl() {
 	m_redirUrlPtr = NULL;
 
 	// we might have a title rec
-	if ( m_setFromTitleRec ) { char *xx=NULL;*xx=0; }
+	if ( m_setFromTitleRec ) { g_process.shutdownAbort(true); }
 
 	// or recycling content from old title rec
 	if ( m_recycleContent ) {
@@ -5382,7 +5384,7 @@ Url **XmlDoc::getRedirUrl() {
 	}
 
 	// get the current http reply, not the final http reply necessarily
-	if ( ! m_httpReplyValid ) { char *xx=NULL;*xx=0; }
+	if ( ! m_httpReplyValid ) { g_process.shutdownAbort(true); }
 
 	// set a mime on the stack
 	HttpMime mime;
@@ -5391,7 +5393,7 @@ Url **XmlDoc::getRedirUrl() {
 	int32_t httpReplyLen = m_httpReplySize - 1;
 
 	// sanity check
-	if ( httpReplyLen > 0 && ! m_httpReply ) { char *xx=NULL;*xx=0; }
+	if ( httpReplyLen > 0 && ! m_httpReply ) { g_process.shutdownAbort(true); }
 
 	// empty reply, no redir
 	if ( httpReplyLen == 0 ) {
@@ -5767,7 +5769,7 @@ int32_t *XmlDoc::getFirstIndexedDate ( ) {
 	// valid
 	m_firstIndexedDateValid = true;
 	// must be downloaded
-	//if ( ! m_spideredTimeValid ) { char *xx=NULL;*xx=0; }
+	//if ( ! m_spideredTimeValid ) { g_process.shutdownAbort(true); }
 	// assume now is the first time
 	m_firstIndexedDate = getSpideredTime();//m_spideredTime;
 	// inherit from our old title rec
@@ -5784,7 +5786,7 @@ int32_t *XmlDoc::getOutlinksAddedDate ( ) {
 	// valid
 	m_outlinksAddedDateValid = true;
 	// must be downloaded
-	//if ( ! m_spideredTimeValid ) { char *xx=NULL;*xx=0; }
+	//if ( ! m_spideredTimeValid ) { g_process.shutdownAbort(true); }
 	// assume we are doing it now
 	m_outlinksAddedDate = getSpideredTime();//m_spideredTime;
 	// get that
@@ -5828,7 +5830,7 @@ uint8_t *XmlDoc::getRootLangId ( ) {
 		m_rootLangId = *langId;
 		m_rootLangIdValid = true;
 		return &m_rootLangId;
-		//char *xx=NULL;*xx=0; }
+		//g_process.shutdownAbort(true); }
 	}
 	// get the tag rec
 	TagRec *gr = getTagRec ();
@@ -5859,14 +5861,14 @@ uint8_t *XmlDoc::getRootLangId ( ) {
 		// update our tag rec now
 		//Tag *tt = rd->m_newTagRec.getTag("rootlang");
 		// must be there
-		//if ( ! tt ) { char *xx=NULL;*xx=0; }
+		//if ( ! tt ) { g_process.shutdownAbort(true); }
 		// add it for us
 		//if ( ! m_newTagRec.addTag ( tt ) ) return NULL;
 		// get it
 		uint8_t *rl = rd->getLangId();
 		if ( ! rl || rl == (void *)-1 ) return (uint8_t *)rl;
 		// must be legit now!
-		if ( ! rd->m_langIdValid ) { char *xx=NULL;*xx=0;}
+		if ( ! rd->m_langIdValid ) { g_process.shutdownAbort(true);}
 		// now validate our stuff
 		m_rootLangIdValid = true;
 		m_rootLangId      = rd->m_langId;
@@ -5875,7 +5877,7 @@ uint8_t *XmlDoc::getRootLangId ( ) {
 
 	// sanity check ( must be like "en,50\0" or could be
 	// "en_US,50\0" or "zh_cn,50"
-	if ( tag->getTagDataSize() > 6 ) { char *xx=NULL;*xx=0; }
+	if ( tag->getTagDataSize() > 6 ) { g_process.shutdownAbort(true); }
 
 	// point to 2 character language abbreviation
 	char *abbr = tag->getTagData();
@@ -5956,7 +5958,7 @@ XmlDoc **XmlDoc::getOldXmlDoc ( ) {
 				NULL       , // pbuf
 				m_niceness ) ) {
 		log("build: failed to set old doc for %s",m_firstUrl.getUrl());
-		if ( ! g_errno ) { char *xx=NULL;*xx=0; }
+		if ( ! g_errno ) { g_process.shutdownAbort(true); }
 		//int32_t saved = g_errno;
 		// ok, fix the memleak here
 		mdelete ( m_oldDoc , sizeof(XmlDoc), "odnuke" );
@@ -6038,9 +6040,9 @@ XmlDoc **XmlDoc::getExtraDoc ( char *u , int32_t maxCacheAge ) {
 	//int32_t *pfip = getFirstIp();
 	//if ( ! pfip || pfip == (void *)-1 ) return (XmlDoc **)pfip;
 	// must be NULL
-	if ( m_extraDoc ) { char *xx=NULL;*xx=0; }
+	if ( m_extraDoc ) { g_process.shutdownAbort(true); }
 	// sanity check
-	if ( ! u || ! u[0] ) { char *xx=NULL;*xx=0; }//return &m_extraDoc;
+	if ( ! u || ! u[0] ) { g_process.shutdownAbort(true); }//return &m_extraDoc;
 	CollectionRec *cr = getCollRec();
 	if ( ! cr )
 	{
@@ -6122,7 +6124,7 @@ XmlDoc **XmlDoc::getExtraDoc ( char *u , int32_t maxCacheAge ) {
 
 	// without this we send all the msg13 requests to host #3! because
 	// Msg13 uses it to determine what host to handle it
-	if ( ! m_firstIpValid ) { char *xx=NULL;*xx=0; }
+	if ( ! m_firstIpValid ) { g_process.shutdownAbort(true); }
 	m_extraDoc->m_firstIp = m_firstIp;
 	m_extraDoc->m_firstIpValid = true;
 
@@ -6148,7 +6150,7 @@ bool XmlDoc::getIsPageParser ( ) {
 XmlDoc **XmlDoc::getRootXmlDoc ( int32_t maxCacheAge ) {
 	if ( m_rootDocValid ) return &m_rootDoc;
 	// help avoid mem leaks
-	if ( m_rootDoc ) { char *xx=NULL;*xx=0; }
+	if ( m_rootDoc ) { g_process.shutdownAbort(true); }
 	// note it
 
 	setStatus ( "getting root doc");
@@ -6338,7 +6340,7 @@ char **XmlDoc::getOldTitleRec ( ) {
 	}
 	// sanity check
 	if ( m_oldTitleRecValid && m_msg22a.m_outstanding ) {
-		char *xx=NULL;*xx=0; }
+		g_process.shutdownAbort(true); }
 	// point to url
 	//char *u = getCurrentUrl()->getUrl();
 	//char *u = getFirstUrl()->getUrl();
@@ -6360,7 +6362,7 @@ char **XmlDoc::getOldTitleRec ( ) {
 		return &m_oldTitleRec;
 	}
 	// sanity check. if we have no url or docid ...
-	if ( ! m_firstUrlValid && ! m_docIdValid ) { char *xx=NULL;*xx=0; }
+	if ( ! m_firstUrlValid && ! m_docIdValid ) { g_process.shutdownAbort(true); }
 	// use docid if first url not valid
 	int64_t docId = 0;
 	if ( ! m_firstUrlValid ) docId = m_docId;
@@ -6543,7 +6545,7 @@ int64_t *XmlDoc::getDocId ( ) {
 		int64_t d1 = g_titledb.getFirstProbableDocId ( pd );
 		int64_t d2 = g_titledb.getLastProbableDocId  ( pd );
 		if ( m_docId < d1 || m_docId > d2 ) {
-			char *xx=NULL;*xx=0; }
+			g_process.shutdownAbort(true); }
 	}
 
 	// if docid is zero, none is a vailable!!!
@@ -6579,7 +6581,7 @@ char *XmlDoc::getIsIndexed ( ) {
 	if ( ! cr ) return NULL;
 
 	// sanity check. if we have no url or docid ...
-	if ( ! m_firstUrlValid && ! m_docIdValid ) { char *xx=NULL;*xx=0; }
+	if ( ! m_firstUrlValid && ! m_docIdValid ) { g_process.shutdownAbort(true); }
 	// use docid if first url not valid
 	int64_t docId = 0;
 	char      *url  = NULL;
@@ -6733,7 +6735,7 @@ int32_t *XmlDoc::getFirstIp ( ) {
 	m_firstIpValid = true;
 	return &m_firstIp;
 	// must be 4 bytes - no now its a string
-	//if ( tag->getTagDataSize() != 4 ) { char *xx=NULL;*xx=0; }
+	//if ( tag->getTagDataSize() != 4 ) { g_process.shutdownAbort(true); }
 }
 
 uint8_t *XmlDoc::getSiteNumInlinks8 () {
@@ -6756,7 +6758,7 @@ int32_t *XmlDoc::getSiteNumInlinks ( ) {
 	if ( m_siteNumInlinksValid ) return &m_siteNumInlinks;
 
 	// sanity check
-	if ( m_setFromTitleRec && ! m_useSecondaryRdbs) {char *xx=NULL;*xx=0;}
+	if ( m_setFromTitleRec && ! m_useSecondaryRdbs) {g_process.shutdownAbort(true);}
 
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) return NULL;
@@ -6835,7 +6837,7 @@ int32_t *XmlDoc::getSiteNumInlinks ( ) {
 	int32_t now = getTimeGlobal();
 	// use the spidered time for the test collection for consistency
 	if ( !strcmp(cr->m_coll,"qatest123") ) {
-		//if ( ! m_spideredTimeValid ) { char *xx=NULL;*xx=0; }
+		//if ( ! m_spideredTimeValid ) { g_process.shutdownAbort(true); }
 		now = getSpideredTime();//m_spideredTime;
 	}
 	// get tag age in days
@@ -6953,7 +6955,7 @@ int32_t *XmlDoc::getSiteNumInlinks ( ) {
 	setStatus ( "adding site info tags to tagdb 1");
 
 	// why are we adding tag again! should already be in tagdb!!!
-	if ( m_doingConsistencyCheck ) {char*xx=NULL;*xx=0;}
+	if ( m_doingConsistencyCheck ) {g_process.shutdownAbort(true);}
 
 	// do not re-call at this point
 	m_siteNumInlinks      = (int32_t)sinfo->m_numGoodInlinks;
@@ -7041,7 +7043,7 @@ LinkInfo *XmlDoc::getSiteLinkInfo() {
 	//if ( m_sreqValid && m_sreq.m_isInjecting ) injected = true;
 	// but be consistent if doing the "qatest123" collection
 	if ( ! strcmp(cr->m_coll,"qatest123") ) {
-		//if ( ! m_spideredTimeValid ) {char *xx=NULL;*xx=0;}
+		//if ( ! m_spideredTimeValid ) {g_process.shutdownAbort(true);}
 		lastUpdateTime = getSpideredTime();//m_spideredTime;
 	}
 
@@ -7313,7 +7315,7 @@ int32_t *XmlDoc::gotIp ( bool save ) {
 		//}
 		// get the best url
 		Url *u = getCurrentUrl();
-		if ( !u || u == (void *)-1 ) { char *xx=NULL;*xx=0; }
+		if ( !u || u == (void *)-1 ) { g_process.shutdownAbort(true); }
 		// . add it to "./test/ips.txt"
 		// . this function is in Msge1.cpp
 		addTestIp ( u->getHost() , u->getHostLen() , m_ip );
@@ -7446,7 +7448,7 @@ bool *XmlDoc::getIsAllowed ( ) {
 	}
 
 	// double get?
-	if ( m_crawlDelayValid ) { char *xx=NULL;*xx=0; }
+	if ( m_crawlDelayValid ) { g_process.shutdownAbort(true); }
 
 	// . if WE are robots.txt that is always allowed!!!
 	// . check the *first* url since these often redirect to wierd things
@@ -7488,7 +7490,7 @@ bool *XmlDoc::getIsAllowed ( ) {
 		// note this
 		log("build: robots.txt ip is %s for url=%s. allowing for now.", iptoa(*ip), fu->getUrl());
 		// just core for now
-		//char *xx=NULL;*xx=0;
+		//g_process.shutdownAbort(true);
 
 		//@todo BR: WHY allow when we couldn't get IP??
 		m_isAllowed      = true;
@@ -7537,7 +7539,7 @@ bool *XmlDoc::getIsAllowed ( ) {
 
 
 	// sanity
-	if ( ! cu->getHost() ) { char *xx=NULL;*xx=0; }
+	if ( ! cu->getHost() ) { g_process.shutdownAbort(true); }
 	gbmemcpy ( p , cu->getHost() , cu->getHostLen() );
 	p += cu->getHostLen();
 
@@ -7569,7 +7571,7 @@ bool *XmlDoc::getIsAllowed ( ) {
 	// return NULL on error with g_errno set
 	if ( ! ed ) {
 		// sanity check, g_errno must be set
-		if ( ! g_errno ) { char *xx=NULL;*xx=0; }
+		if ( ! g_errno ) { g_process.shutdownAbort(true); }
 		// log it -- should be rare?
 		log("doc: had error getting robots.txt: %s",
 		    mstrerror(g_errno));
@@ -7608,7 +7610,7 @@ bool *XmlDoc::getIsAllowed ( ) {
 
 	// sanity check
 	if ( content && contentLen>0 && content[contentLen] != '\0'){
-		char*xx=NULL;*xx=0;}
+		g_process.shutdownAbort(true);}
 
 	// reset this. -1 means unknown or none found.
 	m_crawlDelay = -1;
@@ -7855,7 +7857,7 @@ LinkInfo *XmlDoc::getLinkInfo1 ( ) {
 	//link info generation requires an IP for internal/external computation
 	// UNLESS we are from getSpiderStatusDocMetaList2() ... so handle
 	// -1 above!
-	//if ( *ip == -1 || *ip == 0 ) { char *xx=NULL;*xx=0; }
+	//if ( *ip == -1 || *ip == 0 ) { g_process.shutdownAbort(true); }
 
 	// . error getting linkers?
 	// . on udp timeout we were coring below because msg25.m_linkInfo
@@ -7887,7 +7889,7 @@ LinkInfo *XmlDoc::getLinkInfo1 ( ) {
 		int32_t lastUpdateTime = getTimeGlobal();
 		// but be consistent if doing the "qatest123" collection
 		if ( ! strcmp(cr->m_coll,"qatest123") ) {
-			//if ( ! m_spideredTimeValid ) {char *xx=NULL;*xx=0;}
+			//if ( ! m_spideredTimeValid ) {g_process.shutdownAbort(true);}
 			lastUpdateTime = getSpideredTime();//m_spideredTime;
 		}
 		// do not redo it
@@ -7974,7 +7976,7 @@ LinkInfo *XmlDoc::getLinkInfo1 ( ) {
 		log("build: xmldoc call to msg25 did not block");
 		// must now block since it uses multicast now to
 		// send the request onto the network
-		char *xx=NULL;*xx=0;
+		g_process.shutdownAbort(true);
 		//}
 	}
 
@@ -7991,7 +7993,7 @@ LinkInfo *XmlDoc::getLinkInfo1 ( ) {
 	// this can not be NULL!
 	if ( ! ptr_linkInfo1 || size_linkInfo1 <= 0 ) {
 		log("build: error getting linkinfo1: %s",mstrerror(g_errno));
-		char *xx=NULL;*xx=0;
+		g_process.shutdownAbort(true);
 		return NULL;
 	}
 	// take it from msg25 permanently
@@ -8025,7 +8027,7 @@ char *XmlDoc::getSite ( ) {
 	// need this
 	TagRec *gr = getTagRec();
 	// sanity check
-	if ( ! gr && ! g_errno ) { char *xx=NULL;*xx=0; }
+	if ( ! gr && ! g_errno ) { g_process.shutdownAbort(true); }
 	// blocked or error?
 	if ( ! gr || gr == (TagRec *)-1 ) return (char *)gr;
 	CollectionRec *cr = getCollRec();
@@ -8068,14 +8070,14 @@ void gotSiteWrapper ( void *state ) {
 
 void XmlDoc::gotSite ( ) {
 	// sanity check
-	if ( ! m_siteGetter.m_allDone && ! g_errno ) { char *xx=NULL;*xx=0; }
+	if ( ! m_siteGetter.m_allDone && ! g_errno ) { g_process.shutdownAbort(true); }
 
 	// this sets g_errno on error
 	ptr_site    = m_siteGetter.m_site;
 	size_site   = m_siteGetter.m_siteLen+1; // include \0
 
 	// sanity check -- must have a site
-	if ( ! g_errno && size_site <= 1 ) { char *xx=NULL;*xx=0; }
+	if ( ! g_errno && size_site <= 1 ) { g_process.shutdownAbort(true); }
 
 	// BR 20151215: Part of fix that avoids defaultint to http:// when getting
 	// robots.txt and root document of a https:// site.
@@ -8086,7 +8088,7 @@ void XmlDoc::gotSite ( ) {
 	m_siteValid = true;
 
 	// must be valid
-	if ( ! m_tagRecValid ) { char *xx=NULL;*xx=0; }
+	if ( ! m_tagRecValid ) { g_process.shutdownAbort(true); }
 }
 
 
@@ -8149,7 +8151,7 @@ char **XmlDoc::getHttpReply ( ) {
 		if ( ! redirp || redirp == (void *)-1 ) return (char **)redirp;
 
 		// sanity check
-		if ( *redirp && ! m_redirUrlValid ) { char *xx=NULL;*xx=0; }
+		if ( *redirp && ! m_redirUrlValid ) { g_process.shutdownAbort(true); }
 
 		// if NULL, we are done
 		if ( ! *redirp ) return &m_httpReply;
@@ -8285,7 +8287,7 @@ char **XmlDoc::getHttpReply2 ( ) {
 	}
 
 	// this must be valid, since we share m_msg13 with it
-	if ( ! m_isAllowedValid ) { char *xx=NULL;*xx=0; }
+	if ( ! m_isAllowedValid ) { g_process.shutdownAbort(true); }
 
 	int32_t *cd = getFinalCrawlDelay();
 	if ( ! cd || cd == (void *)-1 )
@@ -8337,7 +8339,7 @@ char **XmlDoc::getHttpReply2 ( ) {
 
 
 	// sanity check
-	if ( od && m_recycleContent ) {char *xx=NULL;*xx=0; }
+	if ( od && m_recycleContent ) {g_process.shutdownAbort(true); }
 
 	// validate m_firstIpValid
 	int32_t *pfip = getFirstIp();
@@ -8358,7 +8360,7 @@ char **XmlDoc::getHttpReply2 ( ) {
 	setStatus ( "getting web page" );
 
 	// sanity check
-	if ( ! m_masterLoop ) { char *xx=NULL;*xx=0; }
+	if ( ! m_masterLoop ) { g_process.shutdownAbort(true); }
 
 	// shortcut. this will return the redirUrl if it is non-empty.
 	Url *cu = getCurrentUrl();
@@ -8380,7 +8382,7 @@ char **XmlDoc::getHttpReply2 ( ) {
 	r->size_url = cu->getUrlLen()+1;
 
 	// sanity check
-	if ( ! m_firstIpValid ) { char *xx=NULL;*xx=0; }
+	if ( ! m_firstIpValid ) { g_process.shutdownAbort(true); }
 
 	// max to download in bytes.
 	r->m_maxTextDocLen          = cr->m_maxTextDocLen;
@@ -8491,7 +8493,7 @@ char **XmlDoc::getHttpReply2 ( ) {
 	// if we had already spidered it... try to save bandwidth and time
 	if ( od ) {
 		// sanity check
-		if ( ! od->m_spideredTimeValid ) { char *xx=NULL;*xx=0; }
+		if ( ! od->m_spideredTimeValid ) { g_process.shutdownAbort(true); }
 		// only get it if modified since last spider time
 		r->m_ifModifiedSince = od->m_spideredTime;
 	}
@@ -8522,13 +8524,13 @@ char **XmlDoc::getHttpReply2 ( ) {
 	// sanity check. keep injections fast. no downloading!
 	if ( m_wasContentInjected ) {
 		log("xmldoc: url injection failed! error!");
-		char *xx=NULL;*xx=0;
+		g_process.shutdownAbort(true);
 	}
 
 	// sanity check
 	if ( m_deleteFromIndex ) {
 		log("xmldoc: trying to download page to delete");
-		char *xx=NULL;*xx=0;
+		g_process.shutdownAbort(true);
 	}
 
 	m_downloadStartTimeValid = true;
@@ -8559,7 +8561,7 @@ char **XmlDoc::gotHttpReply ( ) {
 	setStatus ( "got web page" );
 
 	// sanity check. are we already valid?
-	if ( m_httpReply && m_httpReplyValid ) { char *xx=NULL;*xx=0; }
+	if ( m_httpReply && m_httpReplyValid ) { g_process.shutdownAbort(true); }
 
 	// do not re-call
 	m_httpReplyValid = true;
@@ -8578,7 +8580,7 @@ char **XmlDoc::gotHttpReply ( ) {
 	m_httpReplyAllocSize = m_msg13.m_replyBufAllocSize;
 
 	// sanity check
-	if ( m_httpReplySize > 0 && ! m_httpReply ) { char *xx=NULL;*xx=0; }
+	if ( m_httpReplySize > 0 && ! m_httpReply ) { g_process.shutdownAbort(true); }
 
 	// . don't let UdpServer free m_buf when socket is
 	//   recycled/closed
@@ -8602,7 +8604,7 @@ char **XmlDoc::gotHttpReply ( ) {
 	// . i.e. what are you doing downloading the page if there was
 	//   a problem with the page we already know about
 	if ( m_indexCode && m_indexCodeValid &&
-	     strcmp(cr->m_coll,"qatest123") ) { char *xx=NULL;*xx=0; }
+	     strcmp(cr->m_coll,"qatest123") ) { g_process.shutdownAbort(true); }
 
 	// fix this
 	if ( saved == EDOCUNCHANGED ) {
@@ -8684,7 +8686,7 @@ char **XmlDoc::gotHttpReply ( ) {
 		m_httpReplyAllocSize = 0;
 		// call it data corruption i guess for now
 		g_errno = ECORRUPTDATA;
-		//char *xx=NULL;*xx=0;
+		//g_process.shutdownAbort(true);
 		logTrace( g_conf.m_logTraceXmlDoc, "Clearing data, detected corruption" );;
 	}
 
@@ -8804,7 +8806,7 @@ int32_t *XmlDoc::getDownloadStatus ( ) {
 	char **reply = getHttpReply ();
 	if ( ! reply || reply == (void *)-1 ) return (int32_t *)reply;
 	// must be valid now
-	if ( ! m_downloadStatusValid ) { char *xx=NULL;*xx=0; }
+	if ( ! m_downloadStatusValid ) { g_process.shutdownAbort(true); }
 	// return it
 	return &m_downloadStatus;
 }
@@ -8843,7 +8845,7 @@ int64_t *XmlDoc::getDownloadEndTime ( ) {
 	char **reply = getHttpReply ();
 	if ( ! reply || reply == (void *)-1 ) return (int64_t *)reply;
 	// must be valid now
-	if ( ! m_downloadEndTimeValid ) { char *xx=NULL;*xx=0;}
+	if ( ! m_downloadEndTimeValid ) { g_process.shutdownAbort(true);}
 	// return it
 	return &m_downloadEndTime;
 }
@@ -8984,14 +8986,14 @@ char **XmlDoc::getContent ( ) {
 
 	// if we were set from a title rec use that we do not have the original
 	// content, and caller should be calling getUtf8Content() anyway!!
-	if ( m_setFromTitleRec ) { char *xx=NULL; *xx=0; }
+	if ( m_setFromTitleRec ) { g_process.shutdownAbort(true); }
 
 	// get the mime first
 	HttpMime *mime = getMime();
 	if ( ! mime || mime == (HttpMime *)-1 ) return (char **)mime;
 
 	// http reply must be valid
-	if ( ! m_httpReplyValid ) { char *xx=NULL;*xx=0; }
+	if ( ! m_httpReplyValid ) { g_process.shutdownAbort(true); }
 
 	// make it valid
 	m_contentValid = true;
@@ -9017,7 +9019,7 @@ char **XmlDoc::getContent ( ) {
 	m_contentLen--;
 
 	// sanity check
-	if ( m_contentLen < 0 ) { char *xx = NULL; *xx = 0; }
+	if ( m_contentLen < 0 ) { g_process.shutdownAbort(true); }
 	return &m_content;
 }
 
@@ -9311,7 +9313,7 @@ Url **XmlDoc::getMetaRedirUrl ( ) {
 	if ( ! m_httpReplyValid )
 	{
 		logTrace( g_conf.m_logTraceXmlDoc, "DIE, reply not valid." );;
-		char *xx=NULL;*xx=0;
+		g_process.shutdownAbort(true);
 	}
 
 	char *p    = m_httpReply;
@@ -9847,7 +9849,7 @@ char **XmlDoc::getFilteredContent ( ) {
 	// if ( m_content &&
 	//      m_contentValid &&
 	//      m_content[m_contentLen] ) {
-	// 	char *xx=NULL;*xx=0; }
+	// 	g_process.shutdownAbort(true); }
 
 	int32_t max , max2;
 	CollectionRec *cr;
@@ -9938,7 +9940,7 @@ char **XmlDoc::getFilteredContent ( ) {
 
 	// how can this be? don't core like this in thread, because it
 	// does not save our files!!
-	if ( ! m_mimeValid ) { char *xx=NULL;*xx=0; }
+	if ( ! m_mimeValid ) { g_process.shutdownAbort(true); }
 
 	// do it
 	if ( g_jobScheduler.submit(filterStartWrapper_r,
@@ -9973,7 +9975,7 @@ skip:
 	// but bail out if it set g_errno
 	if ( g_errno ) return NULL;
 	// must be valid now - sanity check
-	if ( ! m_filteredContentValid ) { char *xx=NULL;*xx=0; }
+	if ( ! m_filteredContentValid ) { g_process.shutdownAbort(true); }
 	// return it
 	return &m_filteredContent;
 }
@@ -10012,7 +10014,7 @@ void XmlDoc::filterStart_r ( bool amThread ) {
 	// get thread id
 	pthread_t id = pthread_self();
 	// sanity check
-	if ( ! m_contentTypeValid ) { char *xx=NULL;*xx=0; }
+	if ( ! m_contentTypeValid ) { g_process.shutdownAbort(true); }
 	// shortcut
 	int32_t ctype = m_contentType;
 
@@ -10044,7 +10046,7 @@ void XmlDoc::filterStart_r ( bool amThread ) {
 		return;
 	}
 	// we are in a thread, this must be valid!
-	if ( ! m_mimeValid ) { char *xx=NULL;*xx=0;}
+	if ( ! m_mimeValid ) { g_process.shutdownAbort(true);}
 
  retry12:
 	// write the content into the input file
@@ -10084,11 +10086,11 @@ void XmlDoc::filterStart_r ( bool amThread ) {
 	} else if ( ctype == CT_PS  ) {
 		snprintf(cmd, 2047, "ulimit -v 25000 ; ulimit -t 30; timeout 10s nice -n 19 %s/pstotext %s > %s" , wdir , in , out );
 	} else {
-		char *xx=NULL;*xx=0;
+		g_process.shutdownAbort(true);
 	}
 
 	// breach sanity check
-	//if ( gbstrlen(cmd) > 2040 ) { char *xx=NULL;*xx=0; }
+	//if ( gbstrlen(cmd) > 2040 ) { g_process.shutdownAbort(true); }
 
 	// execute it
 	int retVal = gbsystem ( cmd );
@@ -10123,7 +10125,7 @@ void XmlDoc::filterStart_r ( bool amThread ) {
 		return;
 	}
 	// sanity -- need room to store a \0
-	if ( m_filteredContentAllocSize < 2 ) { char *xx=NULL;*xx=0; }
+	if ( m_filteredContentAllocSize < 2 ) { g_process.shutdownAbort(true); }
 	// to read - leave room for \0
 	int32_t toRead = m_filteredContentAllocSize - 1;
  retry14:
@@ -10149,7 +10151,7 @@ void XmlDoc::filterStart_r ( bool amThread ) {
 	// save the new buf len
 	m_filteredContentLen = r;
 	// ensure enough room for null term
-	if ( r >= m_filteredContentAllocSize ) { char *xx=NULL;*xx=0; }
+	if ( r >= m_filteredContentAllocSize ) { g_process.shutdownAbort(true); }
 	// ensure filtered stuff is NULL terminated so we can set the Xml class
 	m_filteredContent [ m_filteredContentLen ] = '\0';
 	// it is good
@@ -10205,7 +10207,7 @@ char **XmlDoc::getRawUtf8Content ( ) {
 	if ( m_filteredContent &&
 	     m_filteredContentValid &&
 	     m_filteredContent[m_filteredContentLen] ) {
-		char *xx=NULL;*xx=0; }
+		g_process.shutdownAbort(true); }
 
 	// NULL out if no content
 	if ( ! m_filteredContent ) {
@@ -10238,7 +10240,7 @@ char **XmlDoc::getRawUtf8Content ( ) {
 			return NULL;
 		}
 		// sanity check
-		if ( ! csName ) { char *xx=NULL;*xx=0; }
+		if ( ! csName ) { g_process.shutdownAbort(true); }
 		// note it
 		setStatus ( "converting doc to utf8" );
 		// returns # of bytes i guess
@@ -10313,7 +10315,7 @@ char **XmlDoc::getRawUtf8Content ( ) {
 	//   utf8, and that we can parse it without breaching our buffer!
 	p = m_rawUtf8Content;
 	// make sure NULL terminated always
-	if ( p[m_rawUtf8ContentSize-1]) { char *xx=NULL;*xx=0;}
+	if ( p[m_rawUtf8ContentSize-1]) { g_process.shutdownAbort(true);}
 	// make sure we don't breach the buffer when parsing it
 	char size;
 	char *lastp = NULL;
@@ -10334,13 +10336,13 @@ char **XmlDoc::getRawUtf8Content ( ) {
 		    "keepalive?) in doc %s",m_firstUrl.getUrl());
 	}
 	// overflow?
-	if ( p != pend ) { char *xx=NULL;*xx=0; }
+	if ( p != pend ) { g_process.shutdownAbort(true); }
 	// sanity check for breach. or underrun in case we encountered a
 	// premature \0
-	if (p-m_rawUtf8Content!=m_rawUtf8ContentSize-1) {char*xx=NULL;*xx=0;}
+	if (p-m_rawUtf8Content!=m_rawUtf8ContentSize-1) {g_process.shutdownAbort(true);}
 
 	// sanity -- must be \0 terminated
-	if ( m_rawUtf8Content[m_rawUtf8ContentSize-1] ) {char *xx=NULL;*xx=0; }
+	if ( m_rawUtf8Content[m_rawUtf8ContentSize-1] ) {g_process.shutdownAbort(true); }
 
         // it might have shrunk us
 	//m_rawUtf8ContentSize = n + 1;
@@ -10533,11 +10535,11 @@ char **XmlDoc::getExpandedUtf8Content ( ) {
 		// . return -1 if it blocked???
 		// . no, this is not supported right now
 		// . it will mess up our for loop
-		if ( ped == (void *)-1 ) {char *xx=NULL;*xx=0;}
+		if ( ped == (void *)-1 ) {g_process.shutdownAbort(true);}
 		// cast it
 		ed = *ped;
 		// sanity
-		if ( ! ed ) { char *xx=NULL;*xx=0; }
+		if ( ! ed ) { g_process.shutdownAbort(true); }
 		// jump in here from above
 	gotMime:
 		// make it not use the ips.txt cache
@@ -10556,7 +10558,7 @@ char **XmlDoc::getExpandedUtf8Content ( ) {
 		// update m_downloadEndTime if we should
 		if ( ed->m_downloadEndTimeValid ) {
 			// we must already be valid
-			if ( ! m_downloadEndTimeValid ) {char *xx=NULL;*xx=0;}
+			if ( ! m_downloadEndTimeValid ) {g_process.shutdownAbort(true);}
 			// only replace it if it had ip and robots.txt allowed
 			if ( ed->m_downloadEndTime )
 				m_downloadEndTime = ed->m_downloadEndTime;
@@ -10565,7 +10567,7 @@ char **XmlDoc::getExpandedUtf8Content ( ) {
 		// re-write that extra doc into the content
 		char **puc = ed->getRawUtf8Content();
 		// this should not block
-		//if ( puc == (void *)-1 ) { char *xx=NULL;*xx=0; }
+		//if ( puc == (void *)-1 ) { g_process.shutdownAbort(true); }
 		// it blocked before! because the charset was not known!
 		if ( puc == (void *)-1 ) return (char **)puc;
 		// error?
@@ -10580,7 +10582,7 @@ char **XmlDoc::getExpandedUtf8Content ( ) {
 			continue;
 		}
 		// size includes terminating \0
-		if ( uc[ed->m_rawUtf8ContentSize-1] ) { char *xx=NULL;*xx=0;}
+		if ( uc[ed->m_rawUtf8ContentSize-1] ) { g_process.shutdownAbort(true);}
 
 		// if first time we are expanding, set this
 		if ( ! m_oldp ) m_oldp = *up;
@@ -10622,7 +10624,7 @@ char **XmlDoc::getExpandedUtf8Content ( ) {
 		// end of frame tag, skip over whole thing
 		m_oldp = fend ;
 		// sanity check
-		if ( m_oldp > pend ) { char *xx=NULL;*xx=0; }
+		if ( m_oldp > pend ) { g_process.shutdownAbort(true); }
 		// another flag
 		m_didExpansion = true;
 		// count how many we did
@@ -10644,7 +10646,7 @@ char **XmlDoc::getExpandedUtf8Content ( ) {
 	}
 	// sanity -- must be \0 terminated
 	if ( m_expandedUtf8Content[m_expandedUtf8ContentSize-1] ) {
-		char *xx=NULL;*xx=0; }
+		g_process.shutdownAbort(true); }
 
 	m_expandedUtf8ContentValid = true;
 	return &m_expandedUtf8Content;
@@ -10695,7 +10697,7 @@ char **XmlDoc::getUtf8Content ( ) {
 			// sanity check
 			if ( ptr_utf8Content &&
 			     ptr_utf8Content[size_utf8Content-1] ) {
-				char *xx=NULL;*xx=0; }
+				g_process.shutdownAbort(true); }
 			return &ptr_utf8Content;
 		}
 		// if could not find title rec and we are docid-based then
@@ -10742,11 +10744,11 @@ char **XmlDoc::getUtf8Content ( ) {
 	// why would the spider proxy, who use msg13.cpp to call
 	// XmlDoc::getExpandedUtf8Content() want to call this??? it seems
 	// to destroy expandedutf8content with a call to htmldecode
-	if ( m_isSpiderProxy ) { char *xx=NULL;*xx=0; }
+	if ( m_isSpiderProxy ) { g_process.shutdownAbort(true); }
 
 	// sabnity check
-	if ( m_xmlValid   ) { char *xx=NULL;*xx=0; }
-	if ( m_wordsValid ) { char *xx=NULL;*xx=0; }
+	if ( m_xmlValid   ) { g_process.shutdownAbort(true); }
+	if ( m_wordsValid ) { g_process.shutdownAbort(true); }
 
 	QUICKPOLL(m_niceness);
 
@@ -10769,7 +10771,7 @@ char **XmlDoc::getUtf8Content ( ) {
 	}
 
 	// sanity
-	if ( ! m_contentTypeValid ) { char *xx=NULL;*xx=0; }
+	if ( ! m_contentTypeValid ) { g_process.shutdownAbort(true); }
 
 	// richmondspca.org has &quot; in some tags and we do not like
 	// expanding that to " because it messes up XmlNode::getTagLen()
@@ -10795,15 +10797,15 @@ char **XmlDoc::getUtf8Content ( ) {
 
 	// can't exceed this! n does not include the final \0 even though
 	// we do right it out.
-	if ( n > m_expandedUtf8ContentSize-1 ) {char *xx=NULL;*xx=0; }
+	if ( n > m_expandedUtf8ContentSize-1 ) {g_process.shutdownAbort(true); }
 
 	// sanity
-	if ( m_expandedUtf8Content[n] != '\0' ) { char *xx=NULL;*xx=0; }
+	if ( m_expandedUtf8Content[n] != '\0' ) { g_process.shutdownAbort(true); }
 
 	// sanity
-	if ( n > m_expandedUtf8ContentSize-1 ) {char *xx=NULL;*xx=0; }
+	if ( n > m_expandedUtf8ContentSize-1 ) {g_process.shutdownAbort(true); }
 	// sanity
-	if ( m_expandedUtf8Content[n] != '\0' ) { char *xx=NULL;*xx=0; }
+	if ( m_expandedUtf8Content[n] != '\0' ) { g_process.shutdownAbort(true); }
 
 	// finally transform utf8 apostrophe's into regular apostrophes
 	// to make parsing easier
@@ -10882,11 +10884,11 @@ char **XmlDoc::getUtf8Content ( ) {
 	size_utf8Content = (char *)dst - m_expandedUtf8Content;
 
 	// sanity -- skipped over the \0???
-	if ( p > pend ) { char *xx=NULL;*xx=0; }
+	if ( p > pend ) { g_process.shutdownAbort(true); }
 
 	// sanity check
 	if ( ptr_utf8Content && ptr_utf8Content[size_utf8Content-1] ) {
-		char *xx=NULL;*xx=0; }
+		g_process.shutdownAbort(true); }
 
 	m_utf8ContentValid = true;
 	return &ptr_utf8Content;
@@ -10899,7 +10901,7 @@ int32_t getContentHash32Fast ( unsigned char *p ,
 	// sanity
 	if ( ! p ) return 0;
 	if ( plen <= 0 ) return 0;
-	if ( p[plen] != '\0' ) { char *xx=NULL;*xx=0; }
+	if ( p[plen] != '\0' ) { g_process.shutdownAbort(true); }
 	unsigned char *pend = p + plen;
 
 	static bool s_init = false;
@@ -11394,7 +11396,7 @@ TagRec ***XmlDoc::getOutlinkTagRecVector () {
 				    m_masterState      ,
 				    m_masterLoop       )) {
 		// sanity check
-		if ( m_doingConsistencyCheck ) { char *xx=NULL;*xx=0; }
+		if ( m_doingConsistencyCheck ) { g_process.shutdownAbort(true); }
 
 		// we blocked
 		logTrace( g_conf.m_logTraceXmlDoc, "END, msge0.getTagRecs blocked" );
@@ -11517,7 +11519,7 @@ int32_t **XmlDoc::getOutlinkFirstIpVector () {
 	// assume valid
 	m_outlinkIpVectorValid = true;
 	// sanity check
-	//if ( ! m_spideredTimeValid ) { char *xx=NULL;*xx=0; }
+	//if ( ! m_spideredTimeValid ) { g_process.shutdownAbort(true); }
 	// use this
 	int32_t nowGlobal = getSpideredTime();//m_spideredTime;
 	// add tags to tagdb?
@@ -11549,7 +11551,7 @@ int32_t **XmlDoc::getOutlinkFirstIpVector () {
 				     addTags            ,
 				     testDir            )) {
 		// sanity check
-		if ( m_doingConsistencyCheck ) { char *xx=NULL;*xx=0; }
+		if ( m_doingConsistencyCheck ) { g_process.shutdownAbort(true); }
 		// we blocked
 		return (int32_t **)-1;
 	}
@@ -11601,7 +11603,7 @@ int32_t *XmlDoc::getUrlFilterNum ( ) {
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) return NULL;
 	// this must be valid
-	//if ( ! m_spideredTimeValid ) { char *xx=NULL;*xx=0; }
+	//if ( ! m_spideredTimeValid ) { g_process.shutdownAbort(true); }
 	int32_t spideredTime = getSpideredTime();
 	// get the spider request
 	SpiderRequest *oldsr = &m_sreq;
@@ -11956,7 +11958,7 @@ int32_t *XmlDoc::getSpiderPriority ( ) {
 	}
 
 	// sanity check
-	if ( *ufn < 0 ) { char *xx=NULL;*xx=0; }
+	if ( *ufn < 0 ) { g_process.shutdownAbort(true); }
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END. No collection" );
@@ -12094,7 +12096,7 @@ bool XmlDoc::logIt (SafeBuf *bb ) {
 	}
 
 
-	//if ( ! m_isIndexedValid ) { char *xx=NULL;*xx=0; }
+	//if ( ! m_isIndexedValid ) { g_process.shutdownAbort(true); }
 
 	// just use the oldurlfilternum for grepping i guess
 	//if ( m_oldDocValid && m_oldDoc )
@@ -12296,7 +12298,7 @@ bool XmlDoc::logIt (SafeBuf *bb ) {
 	//   will have the spider priority
 	if ( ! getIsInjecting() ) {
 		//int32_t *priority = getSpiderPriority();
-		//if ( ! priority ||priority==(void *)-1){char *xx=NULL;*xx=0;}
+		//if ( ! priority ||priority==(void *)-1){g_process.shutdownAbort(true);}
 		if ( m_priorityValid )
 			sb->safePrintf("priority=%" PRId32" ",
 				      (int32_t)m_priority);
@@ -12571,12 +12573,12 @@ bool XmlDoc::doConsistencyTest ( bool forceTest ) {
 	char *rv = doc->getMetaList ( );
 
 	// sanity check - compare urls
-	if ( doc->m_firstUrl.getUrlLen() != m_firstUrl.getUrlLen()){char *xx=NULL;*xx=0;}
+	if ( doc->m_firstUrl.getUrlLen() != m_firstUrl.getUrlLen()){g_process.shutdownAbort(true);}
 
 	// error setting it?
 	if ( ! rv ) {
 		// sanity check
-		if ( ! g_errno ) { char *xx=NULL;*xx=0; }
+		if ( ! g_errno ) { g_process.shutdownAbort(true); }
 		// free it
 		mdelete ( doc , sizeof(XmlDoc) , "xdnuke");
 		delete ( doc );
@@ -12584,7 +12586,7 @@ bool XmlDoc::doConsistencyTest ( bool forceTest ) {
 		return false;
 	}
 	// blocked? that is not allowed
-	if ( rv == (void *)-1 ) { char *xx=NULL; *xx=0; }
+	if ( rv == (void *)-1 ) { g_process.shutdownAbort(true); }
 
 	// compare with the old list
 	char *list1     = m_metaList;
@@ -12613,13 +12615,13 @@ bool XmlDoc::doConsistencyTest ( bool forceTest ) {
 
 	// see if each key in list1 is in list2
 	if ( ! hashMetaList ( &ht1 , p1 , pend1 , false ) ) {
-		char *xx=NULL;*xx=0;
+		g_process.shutdownAbort(true);
 		mdelete ( doc , sizeof(XmlDoc) , "xdnuke");
 		delete ( doc );
 		return log("doc: failed consistency test for %s",ptr_firstUrl);
 	}
 	if ( ! hashMetaList ( &ht2 , p2 , pend2 , false ) ) {
-		char *xx=NULL;*xx=0;
+		g_process.shutdownAbort(true);
 		mdelete ( doc , sizeof(XmlDoc) , "xdnuke");
 		delete ( doc );
 		return log("doc: failed consistency test for %s",ptr_firstUrl);
@@ -12681,7 +12683,7 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 		// convert into a key128_t, the biggest possible key
 		//key224_t k ;
 		char k[MAX_KEY_BYTES];
-		if ( ks > MAX_KEY_BYTES ) { char *xx=NULL;*xx=0; }
+		if ( ks > MAX_KEY_BYTES ) { g_process.shutdownAbort(true); }
 		//k.setMin();
 		gbmemcpy ( &k , p , ks );
 		// is it a negative key?
@@ -12704,7 +12706,7 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 			// inc this
 			recSize += 4;
 			// sanity check
-                        if ( dataSize < 0 ) { char *xx=NULL;*xx=0; }
+                        if ( dataSize < 0 ) { g_process.shutdownAbort(true); }
 			p += 4;
                 }
 		// point to it
@@ -12745,7 +12747,7 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 			//uint8_t score8 = g_posdb.getScore ( *k2 );
 			//uint32_t score32 = score8to32 ( score8 );
 			// sanity check
-			if(dataSize!=0){char*xx=NULL;*xx=0;}
+			if(dataSize!=0){g_process.shutdownAbort(true);}
 			sb->safePrintf("<td>"
 				       "termId=%020" PRIu64" "
 				       //"score8=%03" PRIu32" "
@@ -12768,7 +12770,7 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 			int32_t ip32       = g_linkdb.getLinkerIp_uk       (k2);
 			int64_t docId = g_linkdb.getLinkerDocId_uk      (k2);
 			// sanity check
-			if(dataSize!=0){char*xx=NULL;*xx=0;}
+			if(dataSize!=0){g_process.shutdownAbort(true);}
 			sb->safePrintf("<td>"
 				       "<nobr>"
 				       "linkeeSiteHash32=0x%08" PRIx32" "
@@ -12799,7 +12801,7 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 			int64_t docId = g_clusterdb.getDocId        ( r );
 			char ff         = g_clusterdb.getFamilyFilter ( r );
 			// sanity check
-			if(dataSize!=0){char*xx=NULL;*xx=0;}
+			if(dataSize!=0){g_process.shutdownAbort(true);}
 			sb->safePrintf("<td>"
 				       // 26 bit site hash
 				       "siteHash26=0x%08" PRIx32" "
@@ -12865,7 +12867,7 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 			sb->safePrintf("</nobr></td>");
 		}
 		else {
-			char *xx=NULL;*xx=0;
+			g_process.shutdownAbort(true);
 		}
 
 		// close it up
@@ -12908,31 +12910,31 @@ bool XmlDoc::verifyMetaList ( char *p , char *pend , bool forDelete ) {
 		// no, this is no longer the case because we add spider
 		// replies to the index when deleting or rejecting a doc.
 		//if ( m_deleteFromIndex && ! del && rdbId != RDB_SPIDERDB) {
-		//	char *xx=NULL;*xx=0; }
+		//	g_process.shutdownAbort(true); }
 
 		// get the key size. a table lookup in Rdb.cpp.
 		int32_t ks = getKeySizeFromRdbId ( rdbId );
 		if ( rdbId == RDB_POSDB || rdbId == RDB2_POSDB2 ) {
 			// no compress bits set!
-			if ( p[0] & 0x06 ) { char*xx=NULL;*xx=0; }
+			if ( p[0] & 0x06 ) { g_process.shutdownAbort(true); }
 			// alignment bit set or cleared
-			if ( ! ( p[1] & 0x02 ) ) { char *xx=NULL;*xx=0; }
-			if (   ( p[7] & 0x02 ) ) { char *xx=NULL;*xx=0; }
+			if ( ! ( p[1] & 0x02 ) ) { g_process.shutdownAbort(true); }
+			if (   ( p[7] & 0x02 ) ) { g_process.shutdownAbort(true); }
 			int64_t docId = g_posdb.getDocId(p);
 			if ( docId != m_docId && !cr->m_indexSpiderReplies) {
 				log( LOG_WARN, "xmldoc: %" PRId64" != %" PRId64, docId, m_docId );
-				char *xx=NULL;*xx=0;
+				g_process.shutdownAbort(true);
 			}
 		}
 
 		// sanity
-		if ( ks < 12 ) { char *xx=NULL;*xx=0; }
-		if ( ks > MAX_KEY_BYTES ) { char *xx=NULL;*xx=0; }
+		if ( ks < 12 ) { g_process.shutdownAbort(true); }
+		if ( ks > MAX_KEY_BYTES ) { g_process.shutdownAbort(true); }
 		// another check
 		Rdb *rdb = getRdbFromId(rdbId);
-		if ( ! rdb ) { char *xx=NULL;*xx=0; }
+		if ( ! rdb ) { g_process.shutdownAbort(true); }
 		if ( rdb->m_ks < 12 || rdb->m_ks > MAX_KEY_BYTES ) {
-			char *xx=NULL;*xx=0;}
+			g_process.shutdownAbort(true);}
 
 		char *rec = p;
 
@@ -12965,21 +12967,21 @@ bool XmlDoc::verifyMetaList ( char *p , char *pend , bool forDelete ) {
 		     ! forDelete &&
 		     ! del &&
 		     dataSize == 0 ) {
-			char *xx=NULL;*xx=0; }
+			g_process.shutdownAbort(true); }
 
 		// if variable read that in
 		if ( dataSize == -1 ) {
 			// -1 means to read it in
 			dataSize = *(int32_t *)p;
 			// sanity check
-			if ( dataSize < 0 ) { char *xx=NULL;*xx=0; }
+			if ( dataSize < 0 ) { g_process.shutdownAbort(true); }
 			// skip dataSize
 			p += 4;
 		}
 		// skip over the data, if any
 		p += dataSize;
 		// breach us?
-		if ( p > pend ) { char *xx=NULL;*xx=0; }
+		if ( p > pend ) { g_process.shutdownAbort(true); }
 	}
 	// must be exactly equal to end
 	if ( p != pend ) return false;
@@ -13004,7 +13006,7 @@ bool XmlDoc::hashMetaList ( HashTableX *ht        ,
 		// get key size
 		int32_t ks = getKeySizeFromRdbId ( rdbId );
 		// sanity check
-		if ( ks > 28 ) { char *xx=NULL;*xx=0; }
+		if ( ks > 28 ) { g_process.shutdownAbort(true); }
 		// is it a delete key?
 		char del ;
 		if ( ( p[0] & 0x01 ) == 0x00 ) del = true;
@@ -13025,7 +13027,7 @@ bool XmlDoc::hashMetaList ( HashTableX *ht        ,
 		if ( dataSize == -1 ) {
 			dataSize = *(int32_t *)p;
 			// sanity check
-                        if ( dataSize < 0 ) { char *xx=NULL;*xx=0; }
+                        if ( dataSize < 0 ) { g_process.shutdownAbort(true); }
 			p += 4;
                 }
 
@@ -13093,7 +13095,7 @@ bool XmlDoc::hashMetaList ( HashTableX *ht        ,
 				    term,prefix);//,(int32_t)ti->m_score32);
 			}
 
-			char *xx=NULL; *xx=0;
+			g_process.shutdownAbort(true);
 			// count it for PageStats.cpp
 			g_stats.m_parsingInconsistencies++;
 			continue;
@@ -13103,7 +13105,7 @@ bool XmlDoc::hashMetaList ( HashTableX *ht        ,
 			    "ks=%s "
 			    ,count,getDbnameFromId(rdbId),(int32_t)ks,
 			    (int32_t)dataSize,KEYSTR(k,ks));
-			char *xx=NULL; *xx=0;
+			g_process.shutdownAbort(true);
 			// count it for PageStats.cpp
 			g_stats.m_parsingInconsistencies++;
 			continue;
@@ -13158,7 +13160,7 @@ bool XmlDoc::hashMetaList ( HashTableX *ht        ,
 			log("build: rec2=%s",sb2.getBufStart());
 
 		}
-		char *xx=NULL; *xx=0;
+		g_process.shutdownAbort(true);
 		// count it for PageStats.cpp
 		g_stats.m_parsingInconsistencies++;
 	}
@@ -13168,7 +13170,7 @@ bool XmlDoc::hashMetaList ( HashTableX *ht        ,
 void getMetaListWrapper ( void *state ) {
 	XmlDoc *THIS = (XmlDoc *)state;
 	// make sure has not been freed from under us!
-	if ( THIS->m_freed ) { char *xx=NULL;*xx=0;}
+	if ( THIS->m_freed ) { g_process.shutdownAbort(true);}
 	// note it
 	THIS->setStatus ( "in get meta list wrapper" );
 	// get it
@@ -13177,12 +13179,12 @@ void getMetaListWrapper ( void *state ) {
 	if ( ! ml && ! g_errno ) {
 		log("doc: getMetaList() returned NULL without g_errno");
 		sleep(5);
-		char *xx=NULL;*xx=0;
+		g_process.shutdownAbort(true);
 	}
 	// return if it blocked
 	if ( ml == (void *)-1 ) return;
 	// sanityh check
-	if ( THIS->m_callback1 == getMetaListWrapper ) { char *xx=NULL;*xx=0;}
+	if ( THIS->m_callback1 == getMetaListWrapper ) { g_process.shutdownAbort(true);}
 	// otherwise, all done, call the caller callback
 	if ( THIS->m_callback1 ) THIS->m_callback1 ( THIS->m_state );
 	else                     THIS->m_callback2 ( THIS->m_state );
@@ -13417,7 +13419,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	}
 
 	// sanity check
-	if ( ! m_indexCodeValid ) { char *xx=NULL;*xx=0; }
+	if ( ! m_indexCodeValid ) { g_process.shutdownAbort(true); }
 
 	// this means to abandon the injection
 	if ( *indexCode == EABANDONED ||
@@ -13453,7 +13455,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		|| *indexCode == EDOCUNCHANGED
 		) {
 		// sanity - in repair mode?
-		if ( m_useSecondaryRdbs ) { char *xx=NULL;*xx=0; }
+		if ( m_useSecondaryRdbs ) { g_process.shutdownAbort(true); }
 		logTrace( g_conf.m_logTraceXmlDoc, "Temporary error state: %" PRId32, *indexCode);
 
 		// . this seems to be an issue for blocking
@@ -13542,7 +13544,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 
 		// . panic on blocking! this is supposed to be fast!
 		// . it might still have to lookup the tagdb rec?????
-		if ( newsr == (void *)-1 ) { char *xx=NULL;*xx=0; }
+		if ( newsr == (void *)-1 ) { g_process.shutdownAbort(true); }
 		// how much we need
 		int32_t needx = sizeof(SpiderReply) + 1;
 
@@ -13597,7 +13599,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		}
 
 		// sanity check
-		if ( ! m_docIdValid ) { char *xx=NULL;*xx=0; }
+		if ( ! m_docIdValid ) { g_process.shutdownAbort(true); }
 
 		// now add the new rescheduled time
 		setStatus ( "adding SpiderReply to spiderdb" );
@@ -13608,7 +13610,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		if ( m_useSecondaryRdbs ) rd = RDB2_SPIDERDB2;
 		*m_p++ = rd;
 		// get this
-		if ( ! m_srepValid ) { char *xx=NULL;*xx=0; }
+		if ( ! m_srepValid ) { g_process.shutdownAbort(true); }
 		// store the spider rec
 		int32_t newsrSize = newsr->getRecSize();
 		gbmemcpy ( m_p , newsr , newsrSize );
@@ -13616,7 +13618,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		m_addedSpiderReplySize = newsrSize;
 		m_addedSpiderReplySizeValid = true;
 		// sanity check
-		if ( m_p - saved != needx ) { char *xx=NULL;*xx=0; }
+		if ( m_p - saved != needx ) { g_process.shutdownAbort(true); }
 		// sanity check
 		verifyMetaList( m_metaList , m_p , forDelete );
 		// verify it
@@ -13989,7 +13991,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		// shit, this blocks which is bad!!!
 		char *nod = hashAll ( &tt1 ) ;
 		// you can't block here because if we are re-called we lose tt1
-		if ( nod == (char *)-1 ) { char *xx=NULL;*xx=0; }
+		if ( nod == (char *)-1 ) { g_process.shutdownAbort(true); }
 		// error?
 		if ( ! nod ) {
 			logTrace( g_conf.m_logTraceXmlDoc, "END, hashAll failed" );
@@ -14166,7 +14168,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 			if ( cr && strcmp(cr->m_coll,"qatest123") == 0 ) {
 				log("xmldoc: sleep 1000");
 				sleep(1000);
-				exit(0);}//char *xx=NULL;*xx=0; }
+				exit(0);}//g_process.shutdownAbort(true); }
 		}
 
 		// assign the new one, getTitleRecBuf() call below needs this
@@ -14190,12 +14192,12 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		SafeBuf *tr = getTitleRecBuf ();
 		// panic if this blocks! it should not at this point because
 		// we'd have to re-hash the crap above
-		if ( tr == (void *) -1 ) { char *xx=NULL;*xx=0; }
+		if ( tr == (void *) -1 ) { g_process.shutdownAbort(true); }
 		// return NULL with g_errno set on error
 		if ( ! tr ) return (char *)tr;
 		// sanity check - if the valid title rec is null,
 		// m_indexCode is set!
-		if ( tr->length()==0 && ! m_indexCode ) { char *xx=NULL;*xx=0;}
+		if ( tr->length()==0 && ! m_indexCode ) { g_process.shutdownAbort(true);}
 	}
 
 	// . add in title rec size
@@ -14223,7 +14225,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 
 	// . alloc mem for metalist
 	// . sanity
-	if ( m_metaListSize > 0 ) { char *xx=NULL;*xx=0; }
+	if ( m_metaListSize > 0 ) { g_process.shutdownAbort(true); }
 	// make the buffer
 	m_metaList = (char *)mmalloc ( need , "metalist");
 	if ( ! m_metaList ) return NULL;
@@ -14247,7 +14249,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		if ( m_useSecondaryRdbs ) *m_p++ = RDB2_TITLEDB2;
 		else                      *m_p++ = RDB_TITLEDB;
 		// sanity
-		if ( ! nd->m_titleRecBufValid ) { char *xx=NULL;*xx=0; }
+		if ( ! nd->m_titleRecBufValid ) { g_process.shutdownAbort(true); }
 		// key, dataSize, data is the whole rec
 		int32_t tsize = nd->m_titleRecBuf.length();
 		// if getting an "oldList" to do incremental posdb updates
@@ -14262,7 +14264,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		//if ( forDelete ) { *(int32_t *)m_p = 0; m_p += 4; }
 	}
 	// sanity check
-	if ( m_p - saved > needTitledb ) { char *xx=NULL;*xx=0; }
+	if ( m_p - saved > needTitledb ) { g_process.shutdownAbort(true); }
 	// sanity check
 	verifyMetaList( m_metaList , m_p , forDelete );
 
@@ -14280,7 +14282,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	}
 
 	// sanity check
-	if ( m_p - saved > needIndexdb ) { char*xx=NULL;*xx=0; }
+	if ( m_p - saved > needIndexdb ) { g_process.shutdownAbort(true); }
 	// free all mem
 	tt1.reset();
 
@@ -14295,7 +14297,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	saved = m_p;
 
 	// sanity check
-	if ( m_p - saved > needSectiondb ) { char *xx=NULL;*xx=0; }
+	if ( m_p - saved > needSectiondb ) { g_process.shutdownAbort(true); }
 	// free mem
 	st1.reset();
 
@@ -14311,7 +14313,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	saved = m_p;
 	// . do we have adult content?
 	// . should already be valid!
-	if ( nd && ! m_isAdultValid ) { char *xx=NULL;*xx=0; }
+	if ( nd && ! m_isAdultValid ) { g_process.shutdownAbort(true); }
 	// . get new clusterdb key
 	// . we use the host hash for the site hash! hey, this is only 26 bits!
 	key_t newk ; newk.setMin();
@@ -14340,7 +14342,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	}
 
 	// sanity check
-	if ( m_p - saved > needClusterdb ) { char *xx=NULL;*xx=0; }
+	if ( m_p - saved > needClusterdb ) { g_process.shutdownAbort(true); }
 	// sanity check
 	verifyMetaList( m_metaList , m_p , forDelete );
 
@@ -14360,7 +14362,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	}
 
 	// sanity check
-	if ( m_p - saved > needLinkdb ) { char *xx=NULL;*xx=0; }
+	if ( m_p - saved > needLinkdb ) { g_process.shutdownAbort(true); }
 	// all done
 	kt1.reset();
 
@@ -14390,7 +14392,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		if ( m_useSecondaryRdbs ) *m_p = RDB2_SPIDERDB2;
 		m_p++;
 		// get this
-		if ( ! m_srepValid ) { char *xx=NULL;*xx=0; }
+		if ( ! m_srepValid ) { g_process.shutdownAbort(true); }
 		// store the spider rec
 		int32_t newsrSize = newsr->getRecSize();
 		gbmemcpy ( m_p , newsr , newsrSize );
@@ -14401,9 +14403,9 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 
 		// sanity check - must not be a request, this is a reply
 		if ( g_spiderdb.isSpiderRequest( &newsr->m_key ) ) {
-			char *xx=NULL;*xx=0; }
+			g_process.shutdownAbort(true); }
 		// sanity check
-		if ( m_p - saved != needSpiderdb1 ) { char *xx=NULL;*xx=0; }
+		if ( m_p - saved != needSpiderdb1 ) { g_process.shutdownAbort(true); }
 		// sanity check
 		verifyMetaList( m_metaList , m_p , forDelete );
 	}
@@ -14430,7 +14432,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		if ( ! m_useSecondaryRdbs ) {
 			getRevisedSpiderRequest ( &revisedReq );
 			// sanity log
-			if ( ! m_firstIpValid ) { char *xx=NULL;*xx=0; }
+			if ( ! m_firstIpValid ) { g_process.shutdownAbort(true); }
 			// sanity log
 			if ( m_firstIp == 0 || m_firstIp == -1 ) {
 				const char *url = "unknown";
@@ -14450,7 +14452,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		// skip over it
 		m_p += revisedReq.getRecSize();
 		// sanity check
-		if ( m_p - saved > needSpiderdb3 ) { char *xx=NULL;*xx=0; }
+		if ( m_p - saved > needSpiderdb3 ) { g_process.shutdownAbort(true); }
 
 		m_addedSpiderRequestSize = revisedReq.getRecSize();
 		m_addedSpiderRequestSizeValid = true;
@@ -14467,7 +14469,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	//
 	setStatus ( "adding spiderdb keys" );
 	// sanity check. cannot spider until in sync
-	if ( ! isClockInSync() ) { char *xx=NULL;*xx=0; }
+	if ( ! isClockInSync() ) { g_process.shutdownAbort(true); }
 	// checkpoint
 	saved = m_p;
 	// . should be fixed from Links::setRdbList
@@ -14486,7 +14488,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		// returns NULL and sets g_errno on error
 		char *ret = addOutlinkSpiderRecsToMetaList ();
 		// sanity check
-		if ( ! ret && ! g_errno ) { char *xx=NULL;*xx=0; }
+		if ( ! ret && ! g_errno ) { g_process.shutdownAbort(true); }
 		// return NULL on error
 		if ( ! ret )
 		{
@@ -14494,10 +14496,10 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 			return NULL;
 		}
 		// this MUST not block down here, to avoid re-hashing above
-		if ( ret == (void *)-1 ) { char *xx=NULL;*xx=0; }
+		if ( ret == (void *)-1 ) { g_process.shutdownAbort(true); }
 	}
 	// sanity check
-	if ( m_p - saved > needSpiderdb2 ) { char *xx=NULL;*xx=0; }
+	if ( m_p - saved > needSpiderdb2 ) { g_process.shutdownAbort(true); }
 	// sanity check
 	verifyMetaList( m_metaList , m_p , forDelete );
 
@@ -14518,7 +14520,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		m_p += srcSize;
 	}
 	// sanity check
-	if ( m_p - saved > needTagdb ) { char *xx=NULL;*xx=0; }
+	if ( m_p - saved > needTagdb ) { g_process.shutdownAbort(true); }
 	// sanity check
 	verifyMetaList( m_metaList , m_p , forDelete );
 
@@ -14544,7 +14546,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	saved = m_p;
 
 	// sanity check
-	if ( m_p > m_pend || m_p < m_metaList ) { char *xx=NULL;*xx=0;}
+	if ( m_p > m_pend || m_p < m_metaList ) { g_process.shutdownAbort(true);}
 
 	int32_t now = getTimeGlobal();
 
@@ -14623,7 +14625,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 			if ( rdbId == RDB_LINKDB &&
 			     g_linkdb.getLinkerDocId_uk((key224_t *)k)!=
 			     m_docId ) {
-				char *xx=NULL;*xx=0; }
+				g_process.shutdownAbort(true); }
 
 			if ( ! dt8.addKey(&hk,&rec) )
 			{
@@ -14757,7 +14759,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 			// key size
 			int32_t ks = getKeySizeFromRdbId(rdbId);
 			// sanity test - no negative keys
-			if ( (rec[1] & 0x01) == 0x00 ) { char *xx=NULL;*xx=0;}
+			if ( (rec[1] & 0x01) == 0x00 ) { g_process.shutdownAbort(true);}
 			// copy the rdbId byte and key
 			gbmemcpy ( nptr , rec , 1 + ks );
 			// skip over rdbid
@@ -14774,7 +14776,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 				int32_t lost = g_linkdb.getLostDate_uk( rec+1 );
 				// how can it be non-zero? it should have
 				// been freshly made from the old titlerec...
-				if ( lost ) { char *xx=NULL;*xx=0; }
+				if ( lost ) { g_process.shutdownAbort(true); }
 				// if zero, set it to now!
 				//g_linkdb.setLostDate_uk(realRec,now);
 				// copy the rdbId byte and key
@@ -14791,7 +14793,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 
 		}
 		// sanity. check for metalist breach
-		if ( nptr > nmax ) { char *xx=NULL;*xx=0; }
+		if ( nptr > nmax ) { g_process.shutdownAbort(true); }
 		// free the old meta list
 		mfree ( m_metaList , m_metaListAllocSize , "fm" );
 		// now switch over to the new one
@@ -14966,7 +14968,7 @@ SpiderReply *XmlDoc::getFakeSpiderReply ( ) {
 	// if m_isChildDoc is true, like for diffbot url, this should be
 	// a bogus one.
 	SpiderReply *nsr = getNewSpiderReply ();
-	if ( nsr == (void *)-1) { char *xx=NULL;*xx=0; }
+	if ( nsr == (void *)-1) { g_process.shutdownAbort(true); }
 	if ( ! nsr ) {
 		log("doc: crap, could not even add spider reply "
 		    "to indicate internal error: %s",mstrerror(g_errno));
@@ -14977,7 +14979,7 @@ SpiderReply *XmlDoc::getFakeSpiderReply ( ) {
 
 	return nsr;
 
-	//if ( nsr->getRecSize() <= 1) { char *xx=NULL;*xx=0; }
+	//if ( nsr->getRecSize() <= 1) { g_process.shutdownAbort(true); }
 
 	//CollectionRec *cr = getCollRec();
 	//if ( ! cr ) return true;
@@ -14991,7 +14993,7 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	setStatus ( "getting spider reply" );
 
 	// diffbot guys, robots.txt, frames, sshould not be here
-	if ( m_isChildDoc ) { char *xx=NULL;*xx=0; }
+	if ( m_isChildDoc ) { g_process.shutdownAbort(true); }
 
 	// . get the mime first
 	// . if we are setting XmlDoc from a titleRec, this causes
@@ -15057,7 +15059,7 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 		else
 			log("xmldoc: BAD FIRST IP for %" PRId64,m_docId);
 		firstIp = 12345;
-		//char *xx=NULL;*xx=0; }
+		//g_process.shutdownAbort(true); }
 	}
 	// store it
 	m_srep.m_firstIp = firstIp;
@@ -15075,10 +15077,10 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	if ( fu ) m_srep.m_domHash32  = getDomHash32();
 	else      m_srep.m_domHash32  = 0;
 
-	if ( ! m_tagRecValid               ) { char *xx=NULL;*xx=0; }
-	if ( ! m_ipValid                   ) { char *xx=NULL;*xx=0; }
-	if ( ! m_siteHash32Valid           ) { char *xx=NULL;*xx=0; }
-	//if ( ! m_spideredTimeValid         ) { char *xx=NULL;*xx=0; }
+	if ( ! m_tagRecValid               ) { g_process.shutdownAbort(true); }
+	if ( ! m_ipValid                   ) { g_process.shutdownAbort(true); }
+	if ( ! m_siteHash32Valid           ) { g_process.shutdownAbort(true); }
+	//if ( ! m_spideredTimeValid         ) { g_process.shutdownAbort(true); }
 
 	// . set other fields besides key
 	// . crap! if we are the "qatest123" collection then m_spideredTime
@@ -15226,7 +15228,7 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 			// we should have had a spider request, because that's
 			// where we got the m_contentHash32 we passed to
 			// Msg13Request.
-			if ( ! m_sreqValid ) { char *xx=NULL;*xx=0; }
+			if ( ! m_sreqValid ) { g_process.shutdownAbort(true); }
 			// make it a success
 			m_srep.m_errCode = 0;
 			// and no error count, it wasn't an error per se
@@ -15252,7 +15254,7 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	}
 
 	// this will help us avoid hammering ips & respect same ip wait
-	if ( ! m_downloadEndTimeValid ) { char *xx=NULL;*xx=0; }
+	if ( ! m_downloadEndTimeValid ) { g_process.shutdownAbort(true); }
 	m_srep.m_downloadEndTime      = m_downloadEndTime;
 
 	// . if m_indexCode was 0, we are indexed then...
@@ -15302,16 +15304,16 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	}
 
 	// sanity checks
-	//if(! m_sreqValid                ) { char *xx=NULL;*xx=0; }
-	if ( ! m_siteNumInlinksValid       ) { char *xx=NULL;*xx=0; }
-	if ( ! m_hopCountValid             ) { char *xx=NULL;*xx=0; }
-	if ( ! m_langIdValid               ) { char *xx=NULL;*xx=0; }
-	if ( ! m_isRSSValid                ) { char *xx=NULL;*xx=0; }
-	if ( ! m_isPermalinkValid          ) { char *xx=NULL;*xx=0; }
-	//if ( ! m_pageNumInlinksValid     ) { char *xx=NULL;*xx=0; }
-	if ( ! m_percentChangedValid       ) { char *xx=NULL;*xx=0; }
-	//if ( ! m_isSpamValid               ) { char *xx=NULL;*xx=0; }
-	//if ( ! m_crawlDelayValid           ) { char *xx=NULL;*xx=0; }
+	//if(! m_sreqValid                ) { g_process.shutdownAbort(true); }
+	if ( ! m_siteNumInlinksValid       ) { g_process.shutdownAbort(true); }
+	if ( ! m_hopCountValid             ) { g_process.shutdownAbort(true); }
+	if ( ! m_langIdValid               ) { g_process.shutdownAbort(true); }
+	if ( ! m_isRSSValid                ) { g_process.shutdownAbort(true); }
+	if ( ! m_isPermalinkValid          ) { g_process.shutdownAbort(true); }
+	//if ( ! m_pageNumInlinksValid     ) { g_process.shutdownAbort(true); }
+	if ( ! m_percentChangedValid       ) { g_process.shutdownAbort(true); }
+	//if ( ! m_isSpamValid               ) { g_process.shutdownAbort(true); }
+	//if ( ! m_crawlDelayValid           ) { g_process.shutdownAbort(true); }
 
 	// httpStatus is -1 if not found (like for empty http replies)
 	m_srep.m_httpStatus = *hs;
@@ -15371,7 +15373,7 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 		if ( lock1 != lock2 ) {
 			log("build: lock1 != lock2 lock mismatch for %s",
 			    m_firstUrl.getUrl());
-			char *xx=NULL;*xx=0;
+			g_process.shutdownAbort(true);
 		}
 	}
 
@@ -15389,11 +15391,11 @@ void XmlDoc::setSpiderReqForMsg20 ( SpiderRequest *sreq   ,
 				    SpiderReply   *srep   ) {
 
 	// sanity checks
-	if ( ! m_ipValid                   ) { char *xx=NULL;*xx=0; }
-	if ( ! m_hopCountValid             ) { char *xx=NULL;*xx=0; }
-	if ( ! m_langIdValid               ) { char *xx=NULL;*xx=0; }
-	if ( ! m_isRSSValid                ) { char *xx=NULL;*xx=0; }
-	if ( ! m_isPermalinkValid          ) { char *xx=NULL;*xx=0; }
+	if ( ! m_ipValid                   ) { g_process.shutdownAbort(true); }
+	if ( ! m_hopCountValid             ) { g_process.shutdownAbort(true); }
+	if ( ! m_langIdValid               ) { g_process.shutdownAbort(true); }
+	if ( ! m_isRSSValid                ) { g_process.shutdownAbort(true); }
+	if ( ! m_isPermalinkValid          ) { g_process.shutdownAbort(true); }
 
 	Url *fu = getFirstUrl();
 
@@ -15402,7 +15404,7 @@ void XmlDoc::setSpiderReqForMsg20 ( SpiderRequest *sreq   ,
 	// assume not valid
 	sreq->m_siteNumInlinks = -1;
 
-	if ( ! m_siteNumInlinksValid ) { char *xx=NULL;*xx=0; }
+	if ( ! m_siteNumInlinksValid ) { g_process.shutdownAbort(true); }
 	// how many site inlinks?
 	sreq->m_siteNumInlinks       = m_siteNumInlinks;
 	sreq->m_siteNumInlinksValid  = true;
@@ -15453,7 +15455,7 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 
 	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );
 
-	if ( m_doingConsistencyCheck ) { char *xx=NULL;*xx=0; }
+	if ( m_doingConsistencyCheck ) { g_process.shutdownAbort(true); }
 
 	// do not do this if recycling content
 	// UNLESS REBUILDING...
@@ -15516,7 +15518,7 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 
 	// need this
 	int32_t parentDomHash32 = getDomHash32();
-	if ( parentDomHash32 != m_domHash32 ) { char *xx=NULL;*xx=0; }
+	if ( parentDomHash32 != m_domHash32 ) { g_process.shutdownAbort(true); }
 
 	char *isRoot = getIsSiteRoot();
 	if ( ! isRoot || isRoot == (char *)-1 )
@@ -15601,13 +15603,13 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 	}
 
 	// sanity checks
-	if ( ! m_ipValid             ) { char *xx=NULL;*xx=0; }
-	if ( ! m_domHash32Valid      ) { char *xx=NULL;*xx=0; }
-	if ( ! m_siteNumInlinksValid ) { char *xx=NULL;*xx=0; }
-	if ( ! m_hostHash32aValid    ) { char *xx=NULL;*xx=0; }
-	if ( ! m_siteHash32Valid     ) { char *xx=NULL;*xx=0; }
-	if ( ! m_hopCountValid       ) { char *xx=NULL;*xx=0; }
-	//if ( ! m_spideredTimeValid   ) { char *xx=NULL;*xx=0; }
+	if ( ! m_ipValid             ) { g_process.shutdownAbort(true); }
+	if ( ! m_domHash32Valid      ) { g_process.shutdownAbort(true); }
+	if ( ! m_siteNumInlinksValid ) { g_process.shutdownAbort(true); }
+	if ( ! m_hostHash32aValid    ) { g_process.shutdownAbort(true); }
+	if ( ! m_siteHash32Valid     ) { g_process.shutdownAbort(true); }
+	if ( ! m_hopCountValid       ) { g_process.shutdownAbort(true); }
+	//if ( ! m_spideredTimeValid   ) { g_process.shutdownAbort(true); }
 
 	int64_t myUh48 = m_firstUrl.getUrlHash48();
 
@@ -15894,7 +15896,7 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		strcpy(ksr.m_url,s);
 
 		// this must be valid
-		if ( ! m_docIdValid ) { char *xx=NULL;*xx=0; }
+		if ( ! m_docIdValid ) { g_process.shutdownAbort(true); }
 
 		// set the key, ksr.m_key. isDel = false
 		ksr.setKey ( firstIp, *d , false );
@@ -15954,7 +15956,7 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		int32_t need = ksr.getRecSize();
 
 		// sanity check
-		if ( p + 1 + need > m_pend ) { char *xx=NULL;*xx=0; }
+		if ( p + 1 + need > m_pend ) { g_process.shutdownAbort(true); }
 		// store the rdbId
 		if ( m_useSecondaryRdbs ) *p++ = RDB2_SPIDERDB2;
 		else                      *p++ = RDB_SPIDERDB;
@@ -15989,7 +15991,7 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 }
 
 int32_t XmlDoc::getSiteRank ( ) {
-	if ( ! m_siteNumInlinksValid ) { char *xx=NULL;*xx=0; }
+	if ( ! m_siteNumInlinksValid ) { g_process.shutdownAbort(true); }
 	return ::getSiteRank ( m_siteNumInlinks );
 }
 
@@ -15999,8 +16001,8 @@ bool XmlDoc::addTable144 ( HashTableX *tt1 , int64_t docId , SafeBuf *buf ) {
 
 	// sanity check
 	if ( tt1->m_numSlots ) {
-		if ( tt1->m_ks != sizeof(key144_t) ) {char *xx=NULL;*xx=0;}
-		if ( tt1->m_ds != 4                ) {char *xx=NULL;*xx=0;}
+		if ( tt1->m_ks != sizeof(key144_t) ) {g_process.shutdownAbort(true);}
+		if ( tt1->m_ds != 4                ) {g_process.shutdownAbort(true);}
 	}
 
 	// assume we are storing into m_p
@@ -16017,7 +16019,7 @@ bool XmlDoc::addTable144 ( HashTableX *tt1 , int64_t docId , SafeBuf *buf ) {
 
 	int32_t siteRank = getSiteRank ();
 
-	if ( ! m_langIdValid ) { char *xx=NULL;*xx=0; }
+	if ( ! m_langIdValid ) { g_process.shutdownAbort(true); }
 
 	char rdbId = RDB_POSDB;
 	if ( m_useSecondaryRdbs ) rdbId = RDB2_POSDB2;
@@ -16067,7 +16069,7 @@ bool XmlDoc::addTable144 ( HashTableX *tt1 , int64_t docId , SafeBuf *buf ) {
 	// fix SafeBuf::m_length
 	buf->setLength ( p - start );
 	// sanity
-	if ( buf->length() > buf->getCapacity() ) { char *xx=NULL;*xx=0; }
+	if ( buf->length() > buf->getCapacity() ) { g_process.shutdownAbort(true); }
 
 	return true;
 }
@@ -16077,8 +16079,8 @@ bool XmlDoc::addTable224 ( HashTableX *tt1 ) {
 
 	// sanity check
 	if ( tt1->m_numSlots ) {
-		if ( tt1->m_ks != sizeof(key224_t) ) {char *xx=NULL;*xx=0;}
-		if ( tt1->m_ds != 0                ) {char *xx=NULL;*xx=0;}
+		if ( tt1->m_ks != sizeof(key224_t) ) {g_process.shutdownAbort(true);}
+		if ( tt1->m_ds != 0                ) {g_process.shutdownAbort(true);}
 	}
 
 	char rdbId = RDB_LINKDB;
@@ -16208,7 +16210,7 @@ SafeBuf *XmlDoc::getSpiderStatusDocMetaList2 ( SpiderReply *reply1 ) {
 	// to keep qa test consistent this docid should be consistent
 	// so base it on spidertime of parent doc.
 	// if doc is being force deleted then this is invalid!
-	//if ( ! m_spideredTimeValid ) { char *xx=NULL;*xx=0; }
+	//if ( ! m_spideredTimeValid ) { g_process.shutdownAbort(true); }
 	int64_t h = hash64(m_docId, m_spideredTime );
 	// mask it out
 	int64_t d = h & DOCID_MASK;
@@ -16240,10 +16242,10 @@ SafeBuf *XmlDoc::getSpiderStatusDocMetaList2 ( SpiderReply *reply1 ) {
 
 
 	// sanity
-	if ( ! m_indexCodeValid ) { char *xx=NULL;*xx=0; }
+	if ( ! m_indexCodeValid ) { g_process.shutdownAbort(true); }
 
 	// why isn't gbhopcount: being indexed consistently?
-	//if ( ! m_hopCountValid )  { char *xx=NULL;*xx=0; }
+	//if ( ! m_hopCountValid )  { g_process.shutdownAbort(true); }
 
 	// reset just in case
 	m_spiderStatusDocMetaList.reset();
@@ -16252,7 +16254,7 @@ SafeBuf *XmlDoc::getSpiderStatusDocMetaList2 ( SpiderReply *reply1 ) {
 	if ( *uqd <= 0 || *uqd > MAX_DOCID ) {
 		log("xmldoc: avail docid = %" PRId64". could not index spider "
 		    "reply or %s",*uqd,m_firstUrl.getUrl());
-		//char *xx=NULL;*xx=0; }
+		//g_process.shutdownAbort(true); }
 		m_spiderStatusDocMetaListValid = true;
 		return &m_spiderStatusDocMetaList;
 	}
@@ -16537,7 +16539,7 @@ SafeBuf *XmlDoc::getSpiderStatusDocMetaList2 ( SpiderReply *reply1 ) {
 	// copy stuff from THIS so the spider reply "document" has the same
 	// header info stuff
 	int32_t hsize = (char *)&ptr_firstUrl - (char *)this;
-	if ( hsize > 2048 ) { char *xx=NULL;*xx=0; }
+	if ( hsize > 2048 ) { g_process.shutdownAbort(true); }
 	gbmemcpy ( xdhead , (char *)this , hsize );
 
 	// override spider time in case we had error to be consistent
@@ -16545,14 +16547,14 @@ SafeBuf *XmlDoc::getSpiderStatusDocMetaList2 ( SpiderReply *reply1 ) {
 	//xd->m_spideredTime = reply->m_spideredTime;
 	//xd->m_spideredTimeValid = true;
 	// sanity
-	//if ( reply->m_spideredTime != m_spideredTime ) {char *xx=NULL;*xx=0;}
+	//if ( reply->m_spideredTime != m_spideredTime ) {g_process.shutdownAbort(true);}
 
 	// this will cause the maroon box next to the search result to
 	// say "STATUS" similar to "PDF" "DOC" etc.
 	xd->m_contentType  = CT_STATUS;
 
 	int32_t fullsize = &m_dummyEnd - (char *)this;
-	if ( fullsize > 2048 ) { char *xx=NULL;*xx=0; }
+	if ( fullsize > 2048 ) { g_process.shutdownAbort(true); }
 
 	/*
 	// the ptr_* were all zero'd out, put the ones we want to keep back in
@@ -16713,7 +16715,7 @@ uint8_t score32to8 ( uint32_t score ) {
 	// scale it into [126,0] (add .5 for rounding)
 	double scaled   = (logscore* 127.0) / s_maxscore  + .5;
 	// sanity check
-	if ( (unsigned char)scaled >= 128 ) { char *xx=NULL;*xx=0; }
+	if ( (unsigned char)scaled >= 128 ) { g_process.shutdownAbort(true); }
 	// . go into the 8 bit score now
 	// . set the hi bit so they know we took its log
 	unsigned char score8 = (unsigned char)scaled | 128;
@@ -17016,7 +17018,7 @@ void XmlDoc::set20 ( Msg20Request *req ) {
 static void getMsg20ReplyWrapper ( void *state ) {
 	XmlDoc *THIS = (XmlDoc *)state;
 	// make sure has not been freed from under us!
-	if ( THIS->m_freed ) { char *xx=NULL;*xx=0;}
+	if ( THIS->m_freed ) { g_process.shutdownAbort(true);}
 	// return if it blocked
 	if ( THIS->getMsg20Reply ( ) == (void *)-1 ) return;
 	// otherwise, all done, call the caller callback
@@ -17045,7 +17047,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	}
 
 	// caller shouldhave the callback set
-	if ( ! m_callback1 && ! m_callback2 ) { char *xx=NULL;*xx=0; }
+	if ( ! m_callback1 && ! m_callback2 ) { g_process.shutdownAbort(true); }
 
 	// shortcut
 	Msg20Reply *reply = &m_reply;
@@ -17068,7 +17070,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	if ( ! *otr ) { g_errno = ENOTFOUND; return NULL; }
 
 	// sanity
-	if ( *otr != m_oldTitleRec ) { char *xx=NULL;*xx=0; }
+	if ( *otr != m_oldTitleRec ) { g_process.shutdownAbort(true); }
 
 	// what is this?
 	int32_t maxSize = 0;
@@ -17081,7 +17083,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		bool status = set2( *otr, maxSize, cr->m_coll, NULL, m_niceness);
 
 		// sanity check
-		if ( ! status && ! g_errno ) { char *xx=NULL;*xx=0; }
+		if ( ! status && ! g_errno ) { g_process.shutdownAbort(true); }
 
 		// if there was an error, g_errno should be set.
 		if ( ! status ) return NULL;
@@ -17240,7 +17242,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 
 		// must be \0 terminated. not any more, it can be a subset
 		// of a larger summary used for deduping
-		if ( hsumLen > 0 && hsum[hsumLen] ) { char *xx=NULL;*xx=0; }
+		if ( hsumLen > 0 && hsum[hsumLen] ) { g_process.shutdownAbort(true); }
 
 		// grab stuff from it!
 		reply-> ptr_displaySum = hsum;
@@ -17295,7 +17297,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		reply-> ptr_tbuf = tit;
 		reply->size_tbuf = titLen + 1; // include \0
 		// sanity
-		if ( tit && tit[titLen] != '\0' ) { char *xx=NULL;*xx=0; }
+		if ( tit && tit[titLen] != '\0' ) { g_process.shutdownAbort(true); }
 		if ( ! tit || titLen <= 0 ) {
 			reply->ptr_tbuf = NULL;
 			reply->size_tbuf = 0;
@@ -17432,7 +17434,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 
 
 	// check the tag first
-	if ( ! m_siteNumInlinksValid ) { char *xx=NULL;*xx=0; }
+	if ( ! m_siteNumInlinksValid ) { g_process.shutdownAbort(true); }
 
 	reply->m_siteNumInlinks       = m_siteNumInlinks;
 
@@ -17563,7 +17565,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		// do not let multicast forward to a twin! so use this instead
 		// of ECORRUTPDATA
 		g_errno = EBADENGINEER;
-		//char *xx=NULL;*xx=0;
+		//g_process.shutdownAbort(true);
 		return NULL;
 	}
 
@@ -17592,9 +17594,9 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		// save the size into the reply, include the \0
 		reply->size_linkText = blen + 1;
 		// sanity check
-		if ( (size_t)blen + 2 > sizeof(m_linkTextBuf) ) { char *xx=NULL;*xx=0; }
+		if ( (size_t)blen + 2 > sizeof(m_linkTextBuf) ) { g_process.shutdownAbort(true); }
 		// sanity check. null termination required.
-		if ( m_linkTextBuf[blen] ) { char *xx=NULL;*xx=0; }
+		if ( m_linkTextBuf[blen] ) { g_process.shutdownAbort(true); }
 	}
 
 	// . the link we link to
@@ -17628,7 +17630,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		// reset to NULL to avoid gbstrlen segfault
 		const char *note = NULL;
 		// need this
-		if ( ! m_xmlValid ) { char *xx=NULL;*xx=0; }
+		if ( ! m_xmlValid ) { g_process.shutdownAbort(true); }
 
 		Url linkeeUrl;
 		linkeeUrl.set ( m_req->ptr_linkee );
@@ -17671,7 +17673,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	if ( reply->ptr_rssItem &&
 	     reply->size_rssItem>0 &&
 	     reply->ptr_rssItem[reply->size_rssItem-1]!=0) {
-		char *xx=NULL;*xx=0; }
+		g_process.shutdownAbort(true); }
 
 	// . skip all this junk if we are a spammy voter
 	// . we get the title above in "getThatTitle"
@@ -17688,7 +17690,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	//   the slow sections class, so i took it out
 	getPageSampleVector ();
 	// must not block or error out. sanity check
-	if ( ! m_pageSampleVecValid ) { char *xx=NULL;*xx=0; }
+	if ( ! m_pageSampleVecValid ) { g_process.shutdownAbort(true); }
 	//st->m_v1.setPairHashes    ( ww , -1    , m_niceness );
 
 	// breathe
@@ -17705,7 +17707,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	// get it
 	getTagPairHashVector();
 	// must not block or error out. sanity check
-	if ( ! m_tagPairHashVecValid ) { char *xx=NULL;*xx=0; }
+	if ( ! m_tagPairHashVecValid ) { g_process.shutdownAbort(true); }
 
 	// breathe
 	QUICKPOLL( m_niceness );
@@ -18225,7 +18227,7 @@ char *XmlDoc::getHighlightedSummary ( bool *isSetFromTagsPtr ) {
 		return m_finalSummaryBuf.getBufStart();
 	}
 
-	if ( ! m_langIdValid ) { char *xx=NULL;*xx=0; }
+	if ( ! m_langIdValid ) { g_process.shutdownAbort(true); }
 
 	// url encode summary
 	StackBuf(tmpSum);
@@ -18240,7 +18242,7 @@ char *XmlDoc::getHighlightedSummary ( bool *isSetFromTagsPtr ) {
 	// highlight::set() returns 0 on error
 	if ( hlen < 0 ) {
 		log("build: highlight class error = %s",mstrerror(g_errno));
-		if ( ! g_errno ) { char *xx=NULL;*xx=0; }
+		if ( ! g_errno ) { g_process.shutdownAbort(true); }
 		return NULL;
 	}
 
@@ -18958,7 +18960,7 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 
 
 	// sanity check
-	//if ( ! m_sreqValid ) { char *xx=NULL;*xx=0; }
+	//if ( ! m_sreqValid ) { g_process.shutdownAbort(true); }
 
 	/*
 	sb->safePrintf("<tr><td>next spider date</td>"
@@ -18971,7 +18973,7 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 	*/
 
 	// must always start with http i guess!
-	if ( strncmp ( fu , "http" , 4 ) ) { char *xx=NULL;*xx=0; }
+	if ( strncmp ( fu , "http" , 4 ) ) { g_process.shutdownAbort(true); }
 	// show the host that should spider it
 	//int32_t domLen ; char *dom = getDomFast ( fu , &domLen , true );
 	//int32_t hostId;
@@ -19066,7 +19068,7 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 	//char *ls = getIsLinkSpam();
 	Links *links = getLinks();
 	// sanity check. should NEVER block!
-	if ( links == (void *)-1 ) { char *xx=NULL;*xx=0; }
+	if ( links == (void *)-1 ) { g_process.shutdownAbort(true); }
 
 	// this is all to get "note"
 	//char *note = NULL;
@@ -19075,7 +19077,7 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 	// sanity check
 	Xml *xml = getXml();
 	// sanity check
-	if ( xml == (void *)-1 ) { char *xx=NULL;*xx=0; }
+	if ( xml == (void *)-1 ) { g_process.shutdownAbort(true); }
 
 	sb->safePrintf (
 		  "<tr><td>datedb date</td><td>%s UTC (%" PRIu32")%s"
@@ -19175,7 +19177,7 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 	// PRINT SECTIONS
 	//
 	Sections *sections = getSections();
-	if ( ! sections ||sections==(Sections *)-1) {char*xx=NULL;*xx=0;}
+	if ( ! sections ||sections==(Sections *)-1) {g_process.shutdownAbort(true);}
 
 	printRainbowSections ( sb , NULL );
 
@@ -19342,7 +19344,7 @@ bool XmlDoc::printMenu ( SafeBuf *sb ) {
 static void printDocForProCogWrapper ( void *state ) {
 	XmlDoc *THIS = (XmlDoc *)state;
 	// make sure has not been freed from under us!
-	if ( THIS->m_freed ) { char *xx=NULL;*xx=0;}
+	if ( THIS->m_freed ) { g_process.shutdownAbort(true);}
 	// note it
 	THIS->setStatus ( "in print doc for pro cog wrapper" );
 	// get it
@@ -19570,7 +19572,7 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 
 
 	// must always start with http i guess!
-	if ( strncmp ( fu , "http" , 4 ) ) { char *xx=NULL;*xx=0; }
+	if ( strncmp ( fu , "http" , 4 ) ) { g_process.shutdownAbort(true); }
 
 	time_t ts = (time_t)m_firstIndexedDate;
 
@@ -19722,7 +19724,7 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 	if ( m_tagRecDataValid ) {
 		ogr = getTagRec(); // &m_tagRec;
 		// sanity. should be set from titlerec, so no blocking!
-		if ( ! ogr || ogr == (void *)-1 ) { char *xx=NULL;*xx=0; }
+		if ( ! ogr || ogr == (void *)-1 ) { g_process.shutdownAbort(true); }
 	}
 	if ( ogr && ! isXml ) ogr->printToBufAsHtml ( sb , "tag" );
 	else if ( ogr )       ogr->printToBufAsXml  ( sb  );
@@ -20007,7 +20009,7 @@ bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {
 			       );
 	}
 
-	if ( ! m_langIdValid ) { char *xx=NULL;*xx=0; }
+	if ( ! m_langIdValid ) { g_process.shutdownAbort(true); }
 
 	if ( ! isXml ) {
 		//printMenu ( sb );
@@ -20436,7 +20438,7 @@ char *XmlDoc::getRootTitleBuf ( ) {
 		srcSize = tag->getTagDataSize();
 		// no need to add to title rec since already in the tag so
 		// make sure we did not double add
-		if ( ptr_rootTitleBuf ) { char *xx=NULL;*xx=0; }
+		if ( ptr_rootTitleBuf ) { g_process.shutdownAbort(true); }
 	}
 	else {
 		// . get the root doc
@@ -20493,7 +20495,7 @@ char *XmlDoc::getRootTitleBuf ( ) {
 	}
 
 	// sanity check - breach check
-	if ( m_rootTitleBufSize > ROOT_TITLE_BUF_MAX ) { char *xx=NULL;*xx=0;}
+	if ( m_rootTitleBufSize > ROOT_TITLE_BUF_MAX ) { g_process.shutdownAbort(true);}
 
 	// serialize into our titlerec
 	ptr_rootTitleBuf  = m_rootTitleBuf;
@@ -20595,12 +20597,12 @@ char *XmlDoc::getFilteredRootTitleBuf ( ) {
 	// sanity check, must include the null ni the size
 	if ( m_filteredRootTitleBufSize > 0 &&
 	     m_filteredRootTitleBuf [ m_filteredRootTitleBufSize - 1 ] ) {
-		char *xx=NULL;*xx=0;
+		g_process.shutdownAbort(true);
 	}
 
 	// sanity check - breach check
 	if ( m_filteredRootTitleBufSize > ROOT_TITLE_BUF_MAX ) {
-		char *xx=NULL;*xx=0;}
+		g_process.shutdownAbort(true);}
 
 	m_filteredRootTitleBufValid = true;
 
@@ -20782,7 +20784,7 @@ char *XmlDoc::getTitleBuf ( ) {
 
 	// sanity check - make sure sorted right
 	//if ( linkNum >= 2 && bk[0].m_score < bk[1].m_score ) {
-	//	char *xx=NULL; *xx=0; }
+	//	g_process.shutdownAbort(true); }
 
 	// . now add the winners to the buffer
 	// . skip if score is 0
@@ -20801,13 +20803,13 @@ char *XmlDoc::getTitleBuf ( ) {
 
 	// sanity
 	int32_t size = ptmp - tmp;
-	if ( size > ROOT_TITLE_BUF_MAX ) { char *xx=NULL;*xx=0; }
+	if ( size > ROOT_TITLE_BUF_MAX ) { g_process.shutdownAbort(true); }
 
 	gbmemcpy ( m_titleBuf , tmp , ptmp - tmp );
 	m_titleBufSize = size;
 	m_titleBufValid = true;
 	// ensure null terminated
-	if ( size > 0 && m_titleBuf[size-1] ) { char *xx=NULL;*xx=0; }
+	if ( size > 0 && m_titleBuf[size-1] ) { g_process.shutdownAbort(true); }
 	//ptr_siteTitleBuf = m_siteTitleBuf;
 	//size_siteTitleBuf = m_siteTitleBufSize;
 	return m_titleBuf;
@@ -20822,12 +20824,12 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 	setStatus ( "getting new tags");
 
 	int32_t *ic = getIndexCode();
-	if ( ic == (void *)-1 ) { char *xx=NULL;*xx=0; }
+	if ( ic == (void *)-1 ) { g_process.shutdownAbort(true); }
 
 	// get our ip
 	int32_t *ip = getIp();
 	// this must not block to avoid re-computing "addme" above
-	if ( ip == (void *)-1 ) { char *xx=NULL;*xx=0; }
+	if ( ip == (void *)-1 ) { g_process.shutdownAbort(true); }
 	if ( ! ip || ip == (int32_t *)-1) return (SafeBuf *)ip;
 
 	// . do not both if there is a problem
@@ -20850,7 +20852,7 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 	// get our site
 	char *mysite = getSite();
 	// this must not block to avoid re-computing "addme" above
-	if ( mysite == (void *)-1 ) { char *xx=NULL;*xx=0; }
+	if ( mysite == (void *)-1 ) { g_process.shutdownAbort(true); }
 	if ( ! mysite || mysite == (char *)-1 ) return (SafeBuf *)mysite;
 
 	// age of tag in seconds
@@ -20964,7 +20966,7 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 	// actually, use spider download time if we can. that way
 	// Test.cpp's injection runs will be more consistent!
 	if ( ! strcmp(cr->m_coll,"qatest123") ) {
-		//if ( ! m_spideredTimeValid ) { char *xx=NULL;*xx=0; }
+		//if ( ! m_spideredTimeValid ) { g_process.shutdownAbort(true); }
 		now = getSpideredTime();//m_spideredTime;
 	}
 	// store tags into here
@@ -21233,7 +21235,7 @@ char *XmlDoc::getWordSpamVec ( ) {
 
 	// shortcut
 	int32_t sni = m_siteNumInlinks;
-	if ( ! m_siteNumInlinksValid ) { char *xx=NULL;*xx=0; }
+	if ( ! m_siteNumInlinksValid ) { g_process.shutdownAbort(true); }
 
 	// set "m_maxPercent"
 	int32_t maxPercent = 6;
@@ -21284,7 +21286,7 @@ char *XmlDoc::getWordSpamVec ( ) {
 	char      *commonWords   = (char      *)p;  p += size * 1;
 
 	// sanity check
-	if ( p - tmp > need ) { char *xx=NULL;*xx=0; }
+	if ( p - tmp > need ) { g_process.shutdownAbort(true); }
 
 	// clear all our spam percentages for these words
 	memset ( spam , 0 , numWords );
@@ -21768,7 +21770,7 @@ bool getDensityRanks ( const int64_t *wids ,
 	Section *ss = NULL;
 	if ( sections ) ss = sections->m_firstSent;
 	// sanity
-	//if ( sections && wordStart != 0 ) { char *xx=NULL;*xx=0; }
+	//if ( sections && wordStart != 0 ) { g_process.shutdownAbort(true); }
 	for ( ; ss ; ss = ss->m_nextSent ) {
 		// breathe
 		QUICKPOLL(niceness);
@@ -21863,7 +21865,7 @@ bool getDiversityVec( const Words *words, const Phrases *phrases, HashTableX *co
 					      &ww2     ,
 					      countTable);
 		// 0 to 1.0
-		if ( ww2 < 0 || ww2 > 1.0 ) { char *xx=NULL;*xx=0; }
+		if ( ww2 < 0 || ww2 > 1.0 ) { g_process.shutdownAbort(true); }
 		// save the last phrase id
 		if ( nwp > 0 ) {
 			nexti        = i + nwp - 1;
@@ -21885,7 +21887,7 @@ bool getDiversityVec( const Words *words, const Phrases *phrases, HashTableX *co
 		char wrank = (char) ((ww[i] * ((float)MAXDIVERSITYRANK))/.55);
 		// sanity
 		if ( wrank > MAXDIVERSITYRANK ) wrank = MAXDIVERSITYRANK;
-		if ( wrank < 0 ) { char *xx=NULL;*xx=0; }
+		if ( wrank < 0 ) { g_process.shutdownAbort(true); }
 		// assign now
 		nww[i] = wrank;
 	}
@@ -21955,7 +21957,7 @@ char *XmlDoc::getFragVec ( ) {
 
 	for ( int32_t i = 0 ; i < nw ; i++ ) ww[i] = 1.0;
 
-	if ( ptr != buf + need ) { char *xx=NULL;*xx=0; }
+	if ( ptr != buf + need ) { g_process.shutdownAbort(true); }
 
 	// make the mask
 	uint32_t mask = nb - 1;
@@ -22004,22 +22006,22 @@ char *XmlDoc::getFragVec ( ) {
 		// . setCountTable() calls set3() with this set to NULL
 		//if ( bits && ! bits->canStartPhrase(start) ) continue;
 		// sanity check
-		if ( start <= lastStart ) { char *xx = NULL; *xx = 0; }
+		if ( start <= lastStart ) { g_process.shutdownAbort(true); }
 		// reset max matched
 		int32_t max = 0;
 		// look up in the hash table
 		uint32_t n = h & mask;
 		// sanity breach check
-		if ( n >= nb ) { char *xx=NULL;*xx=0; }
+		if ( n >= nb ) { g_process.shutdownAbort(true); }
 	loop:
 		// all done if empty
 		if ( ! hashes[n] ) {
 			// sanity check
-			//if ( n >= nb ) { char *xx = NULL; *xx = 0; }
+			//if ( n >= nb ) { g_process.shutdownAbort(true); }
 			// add ourselves to the hash table now
 			hashes[n] = h;
 			// sanity check
-			//if ( wids[start] == 0 ) { char *xx = NULL; *xx = 0; }
+			//if ( wids[start] == 0 ) { g_process.shutdownAbort(true); }
 			// this is where the 5-word sequence starts
 			vals  [n] = start;
 			// save it
@@ -22052,8 +22054,8 @@ char *XmlDoc::getFragVec ( ) {
 			int32_t j;
 			for ( j = start ; mc < max ; j++ ) {
 				// sanity
-				if ( j >= nw ) { char *xx=NULL;*xx=0; }
-				if ( j <  0 ) { char *xx=NULL;*xx=0; }
+				if ( j >= nw ) { g_process.shutdownAbort(true); }
+				if ( j <  0 ) { g_process.shutdownAbort(true); }
 				// skip if not an alnum word
 				if ( ! wids[j] ) continue;
 				// count it
@@ -22092,7 +22094,7 @@ char *XmlDoc::getFragVec ( ) {
 		// k becomes the start of the current 5-word sequence
 		int32_t k = start;
 		// sanity check
-		if ( j == k ) { char *xx = NULL; *xx = 0; }
+		if ( j == k ) { g_process.shutdownAbort(true); }
 		// skip to next in chain to check later
 		if ( ++n >= nb ) n = 0;
 		// keep advancing k and j as int32_t as the words match
@@ -22112,7 +22114,7 @@ char *XmlDoc::getFragVec ( ) {
 		goto loop;
 	}
 
-	if ( nw <= 0 ) { char *xx=NULL;*xx=0;}
+	if ( nw <= 0 ) { g_process.shutdownAbort(true);}
 
 	// make space
 	if ( ! m_fragBuf.reserve ( nw ) ) {
@@ -22137,7 +22139,7 @@ char *XmlDoc::getFragVec ( ) {
 	if ( buf != tmpBuf ) mfree ( buf , need , "WeightsSet3" );
 
 	// wtf?
-	if ( ! ff ) { char *xx=NULL;*xx=0; }
+	if ( ! ff ) { g_process.shutdownAbort(true); }
 
 	return ff;
 }
@@ -22179,7 +22181,7 @@ static void getWordToPhraseRatioWeights ( int64_t   pid1 , // pre phrase
 		// the float version
 		s_fsp = (float)sliderParm / 100.0;
 		// sanity test
-		if ( s_fsp < 0.0 || s_fsp > 1.0 ) { char *xx = NULL; *xx = 0; }
+		if ( s_fsp < 0.0 || s_fsp > 1.0 ) { g_process.shutdownAbort(true); }
 		// i is the word count, how many times a particular word
 		// occurs in the document
 		for ( int32_t i = 0 ; i < 30 ; i++ ) {
@@ -22316,8 +22318,8 @@ static void getWordToPhraseRatioWeights ( int64_t   pid1 , // pre phrase
 	// . sanity check
 	// . neighborhood.cpp does not always have wid/pid pairs
 	//   that match up right for some reason... so we can't do this
-	//if ( phrcount1 > wrdcount1 ) { char *xx = NULL; *xx = 0; }
-	//if ( phrcount2 > wrdcount2 ) { char *xx = NULL; *xx = 0; }
+	//if ( phrcount1 > wrdcount1 ) { g_process.shutdownAbort(true); }
+	//if ( phrcount2 > wrdcount2 ) { g_process.shutdownAbort(true); }
 
 	// apply the weights from the table we computed above
 	*retww = mod   *   s_wtab[wrdcount1][phrcountMax];
@@ -22328,7 +22330,7 @@ static void getWordToPhraseRatioWeights ( int64_t   pid1 , // pre phrase
 	// ensure we do not punish too hard
 	if ( *retww <= 0.0 ) *retww = 0.01;
 
-	if ( *retww > 1.0 ) { char *xx=NULL;*xx=0; }
+	if ( *retww > 1.0 ) { g_process.shutdownAbort(true); }
 
 	// . if the word is Mexico in 'New Mexico good times' then
 	//   phrase term #i which is, say, "Mexico good" needs to
@@ -22404,7 +22406,7 @@ Json *XmlDoc::getParsedJson ( ) {
 	if ( m_contentTypeValid && m_contentType != CT_JSON &&
 	     // spider status docs are now really json
 	     m_contentType != CT_STATUS ) {
-		char *xx=NULL;*xx=0; }
+		g_process.shutdownAbort(true); }
 
 	// \0 terminated
 	char **pp = getUtf8Content();

@@ -5,15 +5,6 @@
 #define gbmemcpy(xx,yy,zz) memmove(xx,yy,zz)
 #define memcpy_ass(xx,yy,zz) memmove(xx,yy,zz)
 
-// do/while construct to make it usable like a function
-// Do not add ending ; after while(0)
-#define GB_DIE_HARD() 		\
-	do { 			\
-		abort(); 	\
-	} while(0)
-
-
-
 #include <inttypes.h>
 
 #if __WORDSIZE == 64

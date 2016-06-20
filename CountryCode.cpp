@@ -4,6 +4,8 @@
 #include "HashTableX.h"
 #include "Lang.h"
 #include "max_niceness.h"
+#include "Process.h"
+
 #include <sys/types.h>
 
 
@@ -290,7 +292,7 @@ uint8_t getCountryId ( char *cc ) {
 			char *s    = (char *)s_countryCode[i];
 			//int32_t  slen = gbstrlen ( s );
 			// sanity check
-			if ( !s[0] || !s[1] || s[2]) { char *xx=NULL;*xx=0; }
+			if ( !s[0] || !s[1] || s[2]) { g_process.shutdownAbort(true); }
 			// map it to a 4 byte key
 			tmp[0]=s[0];
 			tmp[1]=s[1];
@@ -301,7 +303,7 @@ uint8_t getCountryId ( char *cc ) {
 			uint8_t val = i; // +1;
 			// add 1 cuz 0 means lang unknown
 			if ( ! ht.addKey ( tmp , &val ) ) {
-				char *xx=NULL;*xx=0; }
+				g_process.shutdownAbort(true); }
 		}
 	}
 	// lookup

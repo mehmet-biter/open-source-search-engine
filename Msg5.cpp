@@ -7,6 +7,8 @@
 #include "JobScheduler.h"
 #include "Msg0.h"
 #include "PingServer.h"
+#include "Process.h"
+
 
 //#define GBSANITYCHECK
 
@@ -31,7 +33,7 @@ void Msg5::reset() {
 		log("disk: Trying to reset a class waiting for a reply.");
 		// might being doing an urgent exit (mainShutdown(1)) or
 		// g_process.shutdown(), so do not core here
-		//char *xx = NULL; *xx = 0; 
+		//g_process.shutdownAbort(true); 
 	}
 	m_msg3.reset();
 	m_prevCount = 0;
@@ -85,7 +87,7 @@ bool Msg5::getList ( char     rdbId         ,
 	// make sure we are not being re-used prematurely
 	if ( m_waitingForList ) {
 		log("disk: Trying to reset a class waiting for a reply.");
-		char *xx = NULL; *xx = 0; 
+		g_process.shutdownAbort(true); 
 	}
 	if ( collnum < 0 ) {
 		log("msg5: called with bad collnum=%" PRId32,(int32_t)collnum);
@@ -94,11 +96,11 @@ bool Msg5::getList ( char     rdbId         ,
 	}
 	// sanity check. we no longer have record caches!
 	// now we do again for posdb gbdocid:xxx| restricted queries
-	//if ( addToCache || maxCacheAge ) {char *xx=NULL;*xx=0; }
+	//if ( addToCache || maxCacheAge ) {g_process.shutdownAbort(true); }
 	// assume no error
 	g_errno = 0;
 	// sanity
-	if ( ! list && true ) { char *xx=NULL;*xx=0; }
+	if ( ! list && true ) { g_process.shutdownAbort(true); }
 	// warning
 	if ( collnum < 0 ) log(LOG_LOGIC,"net: bad collection. msg5.");
 	// . reset the provided list
@@ -117,7 +119,7 @@ bool Msg5::getList ( char     rdbId         ,
 		if ( g_conf.m_logDebugDb )
 		      log(LOG_LOGIC,"net: msg5: MinRecSizes < 0, using 2GB.");
 		minRecSizes = 0x7fffffff;
-		//char *xx = NULL; *xx = 0;
+		//g_process.shutdownAbort(true);
 	}
 	// ensure startKey last bit clear, endKey last bit set
 	if ( !KEYNEG(startKey) )
@@ -481,7 +483,7 @@ bool Msg5::readList ( ) {
 	QUICKPOLL((m_niceness));
 	const char *diskEndKey = m_treeList.getEndKey();
 	// sanity check
-	if ( m_treeList.m_ks != m_ks ) { char *xx = NULL; *xx = 0; }
+	if ( m_treeList.m_ks != m_ks ) { g_process.shutdownAbort(true); }
 
 	// we are waiting for the list
 	//m_waitingForList = true;
@@ -535,7 +537,7 @@ bool Msg5::needsRecall ( ) {
 		return false;
 	}
 	// sanity check
-	if ( ! base && ! g_errno ) { char *xx=NULL;*xx=0; }
+	if ( ! base && ! g_errno ) { g_process.shutdownAbort(true); }
 	// . return true if we're done reading
 	// . sometimes we'll need to read more because Msg3 will shorten the
 	//   endKey to better meat m_minRecSizes but because of 
@@ -603,7 +605,7 @@ static void gotListWrapper ( void *state ) {
 	// . only returns true if COMPLETELY done
 	if ( THIS->needsRecall() && ! THIS->readList() ) return;
 	// sanity check
-	if ( THIS->m_calledCallback ) { char *xx=NULL;*xx=0; }
+	if ( THIS->m_calledCallback ) { g_process.shutdownAbort(true); }
 	// set it now
 	THIS->m_calledCallback = 1;
 	// we are no longer waiting for the list
@@ -676,7 +678,7 @@ bool Msg5::gotList2 ( ) {
 		//	m_minEndKey = m_listPtrs[i]->getEndKey();
 		// sanity check
 		//if ( KEYNEG(m_listPtrs[i]->getEndKey()) ) {
-		//	char *xx=NULL;*xx=0; }
+		//	g_process.shutdownAbort(true); }
 		if ( KEYCMP(m_listPtrs[i]->getEndKey(),m_minEndKey,m_ks)<0 ) {
 			KEYSET(m_minEndKey,m_listPtrs[i]->getEndKey(),m_ks);
 			// crap, if list is all negative keys, then the
@@ -688,7 +690,7 @@ bool Msg5::gotList2 ( ) {
 		}
 	}
 	// sanity check
-	//if ( KEYNEG( m_minEndKey) ) {char *xx=NULL;*xx=0; }
+	//if ( KEYNEG( m_minEndKey) ) {g_process.shutdownAbort(true); }
 
 	QUICKPOLL(m_niceness);
 	// . is treeList included?
@@ -981,7 +983,7 @@ static void threadDoneWrapper ( void *state, job_exit_t /*exit_type*/ ) {
 	// . only returns true if COMPLETELY done
 	if ( THIS->needsRecall() && ! THIS->readList() ) return;
 	// sanity check
-	if ( THIS->m_calledCallback ) { char *xx=NULL;*xx=0; }
+	if ( THIS->m_calledCallback ) { g_process.shutdownAbort(true); }
 	// we are no longer waiting for the list
 	THIS->m_waitingForList = false;
 	// set it now
@@ -1205,7 +1207,7 @@ bool Msg5::doneMerging ( ) {
 		// note that
 		if ( ! g_errno ) {
 			log("net: got remote list without blocking");
-			char *xx=NULL;*xx=0;
+			g_process.shutdownAbort(true);
 		}
 		// if it set g_errno, it could not get a remote list
 		// so try to make due with what we have
@@ -1448,7 +1450,7 @@ void gotRemoteListWrapper( void *state ) { // , RdbList *list ) {
 	// return if this blocks
 	if ( ! THIS->gotRemoteList() ) return;
 	// sanity check
-	if ( THIS->m_calledCallback ) { char *xx=NULL;*xx=0; }
+	if ( THIS->m_calledCallback ) { g_process.shutdownAbort(true); }
 	// we are no longer waiting for the list
 	THIS->m_waitingForList = false;
 	// set it now

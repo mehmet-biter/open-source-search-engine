@@ -16,6 +16,8 @@
 #include "Spider.h"
 #include "Repair.h"
 #include "Parms.h"
+#include "Process.h"
+
 
 static HashTableX g_collTable;
 
@@ -34,7 +36,7 @@ Collectiondb::Collectiondb ( ) {
 	if ( RDB_END2 >= RDB_END ) return;
 	log("db: increase RDB_END2 to at least %" PRId32" in "
 	    "Collectiondb.h",(int32_t)RDB_END);
-	char *xx=NULL;*xx=0;
+	g_process.shutdownAbort(true);
 }
 
 // reset rdb
@@ -199,7 +201,7 @@ bool Collectiondb::addExistingColl ( const char *coll, collnum_t collnum ) {
 		    "already exists in memory. Do an ls on "
 		    "the working dir to see if there are two "
 		    "collection dirs with the same coll name",coll);
-		char *xx=NULL;*xx=0;
+		g_process.shutdownAbort(true);
 	}
 
 	// also try by #, i've seen this happen too
@@ -316,7 +318,7 @@ bool Collectiondb::addNewColl ( const char *coll, char customCrawl, bool saveIt,
 		log( LOG_WARN, "admin: '%s' is a malformed collection name because it contains the '%c' character.",coll,*p);
 		return false;
 	}
-	if ( newCollnum < 0 ) { char *xx=NULL;*xx=0; }
+	if ( newCollnum < 0 ) { g_process.shutdownAbort(true); }
 
 	// if empty... bail, no longer accepted, use "main"
 	if ( ! coll || !coll[0] ) {
@@ -545,16 +547,16 @@ bool Collectiondb::addNewColl ( const char *coll, char customCrawl, bool saveIt,
 }
 
 void CollectionRec::setBasePtr ( char rdbId , class RdbBase *base ) {
-	if ( rdbId < 0 || rdbId >= RDB_END ) { char *xx=NULL;*xx=0; }
+	if ( rdbId < 0 || rdbId >= RDB_END ) { g_process.shutdownAbort(true); }
 	// Rdb::deleteColl() will call this even though we are swapped in
 	// but it calls it with "base" set to NULL after it nukes the RdbBase
 	// so check if base is null here.
-	if ( base && m_bases[ (unsigned char)rdbId ]){ char *xx=NULL;*xx=0; }
+	if ( base && m_bases[ (unsigned char)rdbId ]){ g_process.shutdownAbort(true); }
 	m_bases [ (unsigned char)rdbId ] = base;
 }
 
 RdbBase *CollectionRec::getBasePtr ( char rdbId ) {
-	if ( rdbId < 0 || rdbId >= RDB_END ) { char *xx=NULL;*xx=0; }
+	if ( rdbId < 0 || rdbId >= RDB_END ) { g_process.shutdownAbort(true); }
 	return m_bases [ (unsigned char)rdbId ];
 }
 
@@ -564,7 +566,7 @@ static bool s_inside = false;
 // . TODO: ensure not called from in thread, not thread safe
 RdbBase *CollectionRec::getBase ( char rdbId ) {
 
-	if ( s_inside ) { char *xx=NULL;*xx=0; }
+	if ( s_inside ) { g_process.shutdownAbort(true); }
 
 	return m_bases[(unsigned char)rdbId];
 }
@@ -764,7 +766,7 @@ bool Collectiondb::growRecPtrBuf ( collnum_t collnum ) {
 	}
 
 	// sanity
-	if ( m_recPtrBuf.getCapacity() < need ) { char *xx=NULL;*xx=0; }
+	if ( m_recPtrBuf.getCapacity() < need ) { g_process.shutdownAbort(true); }
 
 	// set it
 	m_recs = (CollectionRec **)m_recPtrBuf.getBufStart();
@@ -775,7 +777,7 @@ bool Collectiondb::growRecPtrBuf ( collnum_t collnum ) {
 	// re-max
 	int32_t max = m_recPtrBuf.getCapacity() / sizeof(CollectionRec *);
 	// sanity
-	if ( collnum >= max ) { char *xx=NULL;*xx=0; }
+	if ( collnum >= max ) { g_process.shutdownAbort(true); }
 
 	// initialize slot
 	m_recs [ collnum ] = NULL;
@@ -793,7 +795,7 @@ bool Collectiondb::setRecPtr ( collnum_t collnum , CollectionRec *cr ) {
 	}
 
 	// sanity
-	if ( collnum < 0 ) { char *xx=NULL;*xx=0; }
+	if ( collnum < 0 ) { g_process.shutdownAbort(true); }
 
 	// sanity
 	int32_t max = m_recPtrBuf.getCapacity() / sizeof(CollectionRec *);
@@ -808,7 +810,7 @@ bool Collectiondb::setRecPtr ( collnum_t collnum , CollectionRec *cr ) {
 	// a delete?
 	if ( ! cr ) {
 		// sanity
-		if ( collnum >= max ) { char *xx=NULL;*xx=0; }
+		if ( collnum >= max ) { g_process.shutdownAbort(true); }
 		// get what's there
 		CollectionRec *oc = m_recs[collnum];
 		// let it go
@@ -835,7 +837,7 @@ bool Collectiondb::setRecPtr ( collnum_t collnum , CollectionRec *cr ) {
 	}
 
 	// sanity
-	if ( cr->m_collnum != collnum ) { char *xx=NULL;*xx=0; }
+	if ( cr->m_collnum != collnum ) { g_process.shutdownAbort(true); }
 
 	// add to hash table to map name to collnum_t
 	int64_t h64 = hash64n(cr->m_coll);
@@ -928,7 +930,7 @@ bool Collectiondb::resetColl2( collnum_t oldCollnum, collnum_t newCollnum, bool 
 
 	// advance sanity check. did we wrap around?
 	// right now we #define collnum_t int16_t
-	if ( m_numRecs > 0x7fff ) { char *xx=NULL;*xx=0; }
+	if ( m_numRecs > 0x7fff ) { g_process.shutdownAbort(true); }
 
 	// make a new collnum so records in transit will not be added
 	// to any rdb...
@@ -1311,9 +1313,9 @@ void CollectionRec::reset() {
 
 	// make sure we do not leave spiders "hanging" waiting for their
 	// callback to be called... and it never gets called
-	//if ( m_callbackQueue.length() > 0 ) { char *xx=NULL;*xx=0; }
-	//if ( m_doingCallbacks ) { char *xx=NULL;*xx=0; }
-	//if ( m_replies != m_requests  ) { char *xx=NULL;*xx=0; }
+	//if ( m_callbackQueue.length() > 0 ) { g_process.shutdownAbort(true); }
+	//if ( m_doingCallbacks ) { g_process.shutdownAbort(true); }
+	//if ( m_replies != m_requests  ) { g_process.shutdownAbort(true); }
 	m_localCrawlInfo.reset();
 	m_globalCrawlInfo.reset();
 	//m_requests = 0;
@@ -2793,8 +2795,8 @@ int64_t CollectionRec::getNumDocsIndexed() {
 // so we do not have to keep sending this huge msg!
 bool CollectionRec::shouldSendLocalCrawlInfoToHost ( int32_t hostId ) {
 	if ( ! m_spiderColl ) return false;
-	if ( hostId < 0 ) { char *xx=NULL;*xx=0; }
-	if ( hostId >= g_hostdb.m_numHosts ) { char *xx=NULL;*xx=0; }
+	if ( hostId < 0 ) { g_process.shutdownAbort(true); }
+	if ( hostId >= g_hostdb.m_numHosts ) { g_process.shutdownAbort(true); }
 	// sanity
 	return m_spiderColl->m_sendLocalCrawlInfoToHost[hostId];
 }

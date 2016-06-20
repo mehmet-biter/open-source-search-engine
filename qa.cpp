@@ -3,6 +3,8 @@
 #include "HttpServer.h"
 #include "Posdb.h"
 #include "JobScheduler.h"
+#include "Process.h"
+
 
 static TcpSocket *g_qaSock = NULL;
 static SafeBuf g_qaOutput;
@@ -285,7 +287,7 @@ void processReply ( char *reply , int32_t replyLen ) {
 		content = mime.getContent();
 		contentLen = mime.getContentLen();
 		if ( content && contentLen>0 && content[contentLen] ) { 
-			char *xx=NULL;*xx=0; }
+			g_process.shutdownAbort(true); }
 	}
 
 	if ( ! content ) {
@@ -904,7 +906,7 @@ bool qainject1 ( ) {
 				      -1LL          ,
 				      true          )) {
 			log("qa: HEY! it did not block");
-			char *xx=NULL;*xx=0;
+			g_process.shutdownAbort(true);
 		}
 		g_jobScheduler.allow_new_jobs();
 		if ( list.m_listSize ) {
@@ -921,7 +923,7 @@ bool qainject1 ( ) {
 				log("qa: termid=%" PRId64" docid=%" PRId64,
 				    tid,d);
 			}
-			//char *xx=NULL;*xx=0;
+			//g_process.shutdownAbort(true);
 			exit(0);
 		}
 
@@ -942,7 +944,7 @@ bool qainject1 ( ) {
 		ff.set ( sb.getBufStart() );
 		if ( ff.doesExist() ) {
 			log("qa: failed qa test of posdb0001.dat. coring.");
-			char *xx=NULL;*xx=0;
+			g_process.shutdownAbort(true);
 		}
 		*/
 	}

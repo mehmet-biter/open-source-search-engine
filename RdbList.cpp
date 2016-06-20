@@ -7,6 +7,8 @@
 #include "Titledb.h"
 #include "Spider.h"
 #include "BitOperations.h"
+#include "Process.h"
+
 
 //#define _MERGEDEBUG_
 
@@ -209,7 +211,7 @@ void RdbList::set ( const char *startKey, const char *endKey ) {
 char *RdbList::getLastKey  ( ) {
 	if ( ! m_lastKeyIsValid ) {
 		log("db: rdblist: getLastKey: m_lastKey not valid.");
-		GB_DIE_HARD();
+		g_process.shutdownAbort(true);
 	}
 	return m_lastKey;
 };
@@ -262,7 +264,7 @@ bool RdbList::addRecord ( const char *key, int32_t dataSize, const char *data,
 			    "delete posdb-buckets-saved.dat and restart.");
 			// return true so rdbbuckets::getlist doesn't stop
 			//return true;
-			GB_DIE_HARD();
+			g_process.shutdownAbort(true);
 		}
 		// grow the list if we need to
 		if ( m_listEnd + 18 >  m_alloc + m_allocSize )
@@ -306,13 +308,14 @@ bool RdbList::addRecord ( const char *key, int32_t dataSize, const char *data,
 	// return false if we don't own the data
 	if ( ! m_ownData && bitch ) {
 		log(LOG_LOGIC,"db: rdblist: addRecord: Data not owned.");
-		char *p = NULL; *p = 0;	exit(-1);
+		g_process.shutdownAbort(true);
+//		exit(-1);
 	}
 	// get total size of the record
 	//int32_t recSize = sizeof(key_t) + dataSize;
 	int32_t recSize = m_ks + dataSize;
 	// sanity
-	if ( dataSize && KEYNEG(key) ) { GB_DIE_HARD(); }
+	if ( dataSize && KEYNEG(key) ) { g_process.shutdownAbort(true); }
 	// . include the 4 bytes to store the dataSize if it's not fixed
 	// . negative keys never have a datasize field now
 	if ( m_fixedDataSize < 0 && !KEYNEG(key) ) recSize += 4;
@@ -322,7 +325,7 @@ bool RdbList::addRecord ( const char *key, int32_t dataSize, const char *data,
 			return false;// log("RdbList::merge: growList failed");
 
 	// sanity check
-	//if ( m_listEnd != m_list+m_listSize ) { GB_DIE_HARD(); }
+	//if ( m_listEnd != m_list+m_listSize ) { g_process.shutdownAbort(true); }
 	// . special case for half keys
 	// . if high 6 bytes are the same as last key,
 	//   then just store low 6 bytes
@@ -389,7 +392,8 @@ bool RdbList::prepareForMerge ( RdbList **lists         ,
 	// return false if we don't own the data
 	if ( ! m_ownData ) {
 		log("db: rdblist: prepareForMerge: Data not owned.");
-		char *p = NULL; *p = 0;	exit(-1);
+		g_process.shutdownAbort(true);
+//		exit(-1);
 	}
 	// . reset ourselves
 	// . sets m_listSize to 0 and m_ownData to true
@@ -550,7 +554,7 @@ void RdbList::getKey ( const char *rec , char *key ) const {
 		return;
 	}
 	// sanity
-	if ( m_ks != 12 ) { GB_DIE_HARD(); }
+	if ( m_ks != 12 ) { g_process.shutdownAbort(true); }
 	// set top most 4 bytes from hi key
 	//*(int32_t  *)(&((char *)&key)[8]) = *(int32_t  *)&m_listPtrHi[2];
 	// next 2 bytes from hi key
@@ -598,12 +602,14 @@ bool RdbList::growList ( int32_t newSize ) {
 	// return false if we don't own the data
 	if ( ! m_ownData ) {
 		log(LOG_LOGIC,"db: rdblist: growlist: Data not owned.");
-		char *p = NULL; *p = 0;	exit(-1);
+		g_process.shutdownAbort(true);
+//		exit(-1);
 	}
 	// sanity check
 	if ( newSize <  0 ) {
 		log(LOG_LOGIC,"db: rdblist: growlist: Size is negative.");
-		char *p = NULL; *p = 0;	exit(-1);
+		g_process.shutdownAbort(true);
+//		exit(-1);
 	}
 	// don't shrink list
 	if ( newSize <= m_allocSize ) return true;
@@ -660,7 +666,7 @@ bool RdbList::checkList_r ( bool removeNegRecs , bool sleepOnProblem ,
 	// ensure m_listSize jives with m_listEnd
 	if ( m_listEnd - m_list != m_listSize ) {
 		log("db: Data end does not correspond to data size.");
-		if ( sleepOnProblem ) { GB_DIE_HARD();}
+		if ( sleepOnProblem ) { g_process.shutdownAbort(true);}
 		if ( sleepOnProblem ) sleep(50000);
 		return false;
 	}
@@ -671,7 +677,7 @@ bool RdbList::checkList_r ( bool removeNegRecs , bool sleepOnProblem ,
 	     m_fixedDataSize > 0 &&
 	     ( m_listSize % (m_fixedDataSize+m_ks))!=0){
 		log("db: Odd data size. Corrupted data file.");
-		if ( sleepOnProblem ) {GB_DIE_HARD(); }
+		if ( sleepOnProblem ) {g_process.shutdownAbort(true); }
 		if ( sleepOnProblem ) sleep(50000);
 		return false;
 	}
@@ -715,7 +721,7 @@ bool RdbList::checkList_r ( bool removeNegRecs , bool sleepOnProblem ,
 			if ( data &&
 			     (*(int32_t *)data < 0 ||
 			      *(int32_t *)data > 100000000 ) ) {
-				GB_DIE_HARD(); }
+				g_process.shutdownAbort(true); }
 		}
 		// tagrec?
 		if ( rdbId == RDB_TAGDB && ! KEYNEG(k) ) {
@@ -729,7 +735,7 @@ bool RdbList::checkList_r ( bool removeNegRecs , bool sleepOnProblem ,
 				// core if tag val is not \0 terminated
 				if ( tsize > 0 && tdata[tsize-1]!='\0' ) {
 					log("db: bad root title tag");
-					GB_DIE_HARD(); }
+					g_process.shutdownAbort(true); }
 			}
 		}
 		if ( rdbId == RDB_SPIDERDB && ! KEYNEG(k) &&
@@ -741,7 +747,7 @@ bool RdbList::checkList_r ( bool removeNegRecs , bool sleepOnProblem ,
 				SpiderRequest *sr = (SpiderRequest *)rec;
 				if ( sr->isCorrupt() ) {
 					log("db: spider req corrupt");
-					GB_DIE_HARD();
+					g_process.shutdownAbort(true);
 				}
 			}
 		}
@@ -751,7 +757,7 @@ bool RdbList::checkList_r ( bool removeNegRecs , bool sleepOnProblem ,
 			int32_t usize = *(int32_t *)(rec+12+4);
 			if ( usize <= 0 || usize>100000000 ) {
 				log("db: bad titlerec uncompress size");
-				GB_DIE_HARD();
+				g_process.shutdownAbort(true);
 			}
 		}
 		// debug msg
@@ -765,7 +771,7 @@ bool RdbList::checkList_r ( bool removeNegRecs , bool sleepOnProblem ,
 		//if ( m_ks == 24 ) {
 		//	unsigned char hc;
 		//	hc = g_linkdb.getLinkerHopCount_uk((key192_t *)k);
-		//	if ( hc ) { GB_DIE_HARD(); }
+		//	if ( hc ) { g_process.shutdownAbort(true); }
 		//}
 		//log("key.n1=%" PRId32" key.n0=%" PRId64" dsize=%" PRId32,
 		//	k.n1,k.n0,dataSize);
@@ -775,7 +781,7 @@ bool RdbList::checkList_r ( bool removeNegRecs , bool sleepOnProblem ,
 			log("db: Key before start key in list of records.");
 			log("db: sk=%s",KEYSTR(m_startKey,m_ks));
 			log("db: k2=%s",KEYSTR(k,m_ks));
-			if ( sleepOnProblem ) {GB_DIE_HARD(); }
+			if ( sleepOnProblem ) {g_process.shutdownAbort(true); }
 			if ( sleepOnProblem ) sleep(50000);
 			return false;
 		}
@@ -787,8 +793,8 @@ bool RdbList::checkList_r ( bool removeNegRecs , bool sleepOnProblem ,
 			//log("db: k1.n1=%" PRIx64" k1.n0=%" PRIx64,
 			//    KEY1(oldk,m_ks),KEY0(oldk));
 			//log("db:k2.n1=%" PRIx64" k2.n0=%" PRIx64,KEY1(k,m_ks),KEY0(k));
-			//GB_DIE_HARD();
-			//if ( sleepOnProblem ) {GB_DIE_HARD(); }
+			//g_process.shutdownAbort(true);
+			//if ( sleepOnProblem ) {g_process.shutdownAbort(true); }
 			//if ( sleepOnProblem ) sleep(50000);
 			return false;
 		}
@@ -800,7 +806,7 @@ bool RdbList::checkList_r ( bool removeNegRecs , bool sleepOnProblem ,
 			log("db: ak=%s",KEYSTR(acceptable,m_ks));
 			//log("db:e.n1=%" PRIx32" e.n0=%" PRIx64,m_endKey.n1,m_endKey.n0);
 			log("db: ek=%s",KEYSTR(m_endKey,m_ks));
-			if ( sleepOnProblem ) {GB_DIE_HARD(); }
+			if ( sleepOnProblem ) {g_process.shutdownAbort(true); }
 			if ( sleepOnProblem ) sleep(50000);
 			return false;
 		}
@@ -809,7 +815,7 @@ bool RdbList::checkList_r ( bool removeNegRecs , bool sleepOnProblem ,
 		if ( KEYNEG(k) ) {
 			if ( removeNegRecs ) {
 				log("db: Got unmet negative key.");
-				if ( sleepOnProblem ) {GB_DIE_HARD();}
+				if ( sleepOnProblem ) {g_process.shutdownAbort(true);}
 				if ( sleepOnProblem ) sleep(50000);
 				return false;
 			}
@@ -819,8 +825,8 @@ bool RdbList::checkList_r ( bool removeNegRecs , bool sleepOnProblem ,
 				log("db: Got negative key with "
 				    "positive dataSize.");
 				// what's causing this???
-				GB_DIE_HARD();
-				if ( sleepOnProblem ) {GB_DIE_HARD();}
+				g_process.shutdownAbort(true);
+				if ( sleepOnProblem ) {g_process.shutdownAbort(true);}
 				if ( sleepOnProblem ) sleep(50000);
 				return false;
 			}
@@ -842,7 +848,7 @@ bool RdbList::checkList_r ( bool removeNegRecs , bool sleepOnProblem ,
 			log(
 			    "db: Got record with bad data size field. "
 			    "Corrupted data file.");
-			if ( sleepOnProblem ) {GB_DIE_HARD();}
+			if ( sleepOnProblem ) {g_process.shutdownAbort(true);}
 			if ( sleepOnProblem ) sleep(50000);
 			return false;
 		}
@@ -852,7 +858,7 @@ bool RdbList::checkList_r ( bool removeNegRecs , bool sleepOnProblem ,
 			log(
 			    "db: Got record with bad data size field. "
 			    "Corrupted data file.");
-			if ( sleepOnProblem ) {GB_DIE_HARD();}
+			if ( sleepOnProblem ) {g_process.shutdownAbort(true);}
 			if ( sleepOnProblem ) sleep(50000);
 			return false;
 		}
@@ -875,7 +881,7 @@ bool RdbList::checkList_r ( bool removeNegRecs , bool sleepOnProblem ,
 		    //m_lastKey.n1,m_lastKey.n0);
 		    "db: rdbList: checkList_r: key=%s",
 		    KEYSTR(m_lastKey,m_ks) );
-		if ( sleepOnProblem ) {GB_DIE_HARD();}
+		if ( sleepOnProblem ) {g_process.shutdownAbort(true);}
 		if ( sleepOnProblem ) sleep(50000);
 		// fix it
 		//m_lastKey = oldk;
@@ -1253,10 +1259,10 @@ bool RdbList::constrain ( const char   *startKey    ,
 	if ( m_ks == 18 && hintKey && (hintKey[0]&0x06)){
 		g_errno = ECORRUPTDATA;
 		return log("db: Hint key is corrupt.");
-		//GB_DIE_HARD();}
+		//g_process.shutdownAbort(true);}
 	}
 
-	if ( hintOffset > m_listSize ) { //GB_DIE_HARD(); }
+	if ( hintOffset > m_listSize ) { //g_process.shutdownAbort(true); }
 		g_errno = ECORRUPTDATA;
 		return log("db: Hint offset %" PRId32" > %" PRId32" is corrupt."
 			   ,hintOffset,
@@ -1293,7 +1299,7 @@ bool RdbList::constrain ( const char   *startKey    ,
 		if ( KEYCMP(k,lastKey,m_ks)<= 0 ) {
 			log("constrain: key=%s out of order",
 			    KEYSTR(k,m_ks));
-			GB_DIE_HARD();
+			g_process.shutdownAbort(true);
 		}
 		KEYSET(lastKey,k,m_ks);
 #endif
@@ -1404,7 +1410,7 @@ bool RdbList::constrain ( const char   *startKey    ,
 		log("db: Corrupt data or map file. Bad hint for %s.",filename);
 		// . until we fix the corruption, drop a core
 		// . no, a lot of files could be corrupt, just do it for merge
-		//GB_DIE_HARD();
+		//g_process.shutdownAbort(true);
 		p           = m_list;
 		m_listPtr   = m_list;
 		//m_listPtrHi = m_list + 6;
@@ -1489,7 +1495,7 @@ bool RdbList::constrain ( const char   *startKey    ,
 	if ( size == -1 ) {
 		log("db: Encountered bad endkey in %s. listSize=%" PRId32,
 		    filename,m_listSize);
-		GB_DIE_HARD();
+		g_process.shutdownAbort(true);
 	}
 	// otherwise store the last key if size is not -1
 	else if ( m_listSize > 0 ) {
@@ -1535,7 +1541,7 @@ void RdbList::merge_r ( RdbList **lists         ,
 	// sanity
 	if ( ! m_ownData ) {
 		log("list: merge_r data not owned");
-		GB_DIE_HARD();
+		g_process.shutdownAbort(true);
 	}
 	// bail if none! i saw a doledb merge do this from Msg5.cpp
 	// and it was causing a core because m_MergeMinListSize was -1
@@ -1592,7 +1598,7 @@ void RdbList::merge_r ( RdbList **lists         ,
 		if ( lists[i]->m_ks != m_ks ) {
 			log("db: non conforming key size of %" PRId32" != %" PRId32" for "
 			    "list #%" PRId32".",(int32_t)lists[i]->m_ks,(int32_t)m_ks,i);
-			GB_DIE_HARD();
+			g_process.shutdownAbort(true);
 		}
 	// bail if nothing requested
 	if ( minRecSizes == 0 ) return;
@@ -1616,7 +1622,7 @@ void RdbList::merge_r ( RdbList **lists         ,
 		//log(LOG_LOGIC,"db: rdblist: merge_r: merge_r called on one "
 		//    "list.");
 		// this seems to nuke our list!!
-		//GB_DIE_HARD();
+		//g_process.shutdownAbort(true);
 		required = m_listSize + lists[0]->m_listSize;
 	}
 	// otherwise, list #j has the minKey, although may not be min
@@ -1657,7 +1663,7 @@ void RdbList::merge_r ( RdbList **lists         ,
 	// don't breech the list's boundary when adding keys from merge
 	char *allocEnd = m_alloc + m_allocSize;
 	// sanity
-	//if ( ! m_alloc ) { GB_DIE_HARD(); }
+	//if ( ! m_alloc ) { g_process.shutdownAbort(true); }
 	// now begin the merge loop
 	//key_t ckey;
 	//key_t mkey;
@@ -1936,7 +1942,7 @@ void RdbList::merge_r ( RdbList **lists         ,
 	// . but if minRecSizes kicked us out first, then we might have less
 	//   then "required"
 	if ( required >= 0 && m_listSize < required && m_listSize<minRecSizes){
-		GB_DIE_HARD(); }
+		g_process.shutdownAbort(true); }
 
 	// dedup for spiderdb
 	//if ( rdbId == RDB_SPIDERDB )
@@ -1963,30 +1969,30 @@ void RdbList::merge_r ( RdbList **lists         ,
 		if ( min > m_listSize ) min = m_listSize;
 		for ( int32_t k = 0 ; k < min ; k++ ) {
 			if ( ttt.m_list[k] !=  m_list[k] ) {
-				GB_DIE_HARD();}
+				g_process.shutdownAbort(true);}
 		}
-		if ( ttt.m_listSize != m_listSize ) { GB_DIE_HARD();}
+		if ( ttt.m_listSize != m_listSize ) { g_process.shutdownAbort(true);}
 		if ( ttt.m_listPtr - ttt.m_list !=
-			    m_listPtr - m_list ) { GB_DIE_HARD(); }
+			    m_listPtr - m_list ) { g_process.shutdownAbort(true); }
 		if ( ttt.m_listPtrLo - ttt.m_list !=
-			    m_listPtrLo - m_list ) { GB_DIE_HARD(); }
+			    m_listPtrLo - m_list ) { g_process.shutdownAbort(true); }
 		if ( ttt.m_listPtrHi - ttt.m_list !=
-			    m_listPtrHi - m_list ) { GB_DIE_HARD(); }
+			    m_listPtrHi - m_list ) { g_process.shutdownAbort(true); }
 		if ( ttt.m_listEnd - ttt.m_list !=
-			    m_listEnd - m_list ) { GB_DIE_HARD(); }
+			    m_listEnd - m_list ) { g_process.shutdownAbort(true); }
 		if ( ttt.m_fixedDataSize != m_fixedDataSize){
-			GB_DIE_HARD(); }
-		if ( ttt.m_useHalfKeys != m_useHalfKeys){GB_DIE_HARD(); }
+			g_process.shutdownAbort(true); }
+		if ( ttt.m_useHalfKeys != m_useHalfKeys){g_process.shutdownAbort(true); }
 		//if ( ttt.m_list &&
 		//     memcmp ( ttt.m_list , m_list , ttt.m_listSize ) ){
-		//	GB_DIE_HARD();}
+		//	g_process.shutdownAbort(true);}
 		if ( KEYCMP(ttt.m_endKey,m_endKey,m_ks) !=0){
-			GB_DIE_HARD();}
+			g_process.shutdownAbort(true);}
 		if ( m_lastKeyIsValid &&
 		     KEYCMP(ttt.m_lastKey,m_lastKey,m_ks)!=0){
-			GB_DIE_HARD();}
+			g_process.shutdownAbort(true);}
 		if ( m_lastKeyIsValid !=ttt.m_lastKeyIsValid){
-			GB_DIE_HARD();}
+			g_process.shutdownAbort(true);}
 	}
 	*/
 }
@@ -2009,7 +2015,7 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 			     bool      removeNegKeys ,
 			     int32_t      niceness       ) {
 	// sanity
-	if ( m_ks != sizeof(key144_t) ) { GB_DIE_HARD(); }
+	if ( m_ks != sizeof(key144_t) ) { g_process.shutdownAbort(true); }
 	//no-op check
 	if ( numLists == 0 ) return true;
 
@@ -2026,14 +2032,14 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 		log(LOG_LOGIC,"db: rdblist: posdbMerge_r: prepareForMerge() "
 		    "not called.");
 		// save state and dump core, sigBadHandler will catch this
-		char *p = NULL;	*p = 0;
+		g_process.shutdownAbort(true);
 	}
 	// warning msg
 	if ( m_listPtr != m_listEnd )
 		log(LOG_LOGIC,"db: rdblist: posdbMerge_r: warning. "
 		    "merge not storing at end of list.");
 	// sanity check
-	if ( numLists>0 && lists[0]->m_ks != m_ks ) { GB_DIE_HARD(); }
+	if ( numLists>0 && lists[0]->m_ks != m_ks ) { g_process.shutdownAbort(true); }
 	// set this list's boundary keys
 	KEYSET(m_startKey,startKey,sizeof(key144_t));
 	KEYSET(m_endKey,endKey,sizeof(key144_t));
@@ -2048,7 +2054,7 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 	// 	log(LOG_LOGIC,"db: rdblist: posdbMerge_r: Illegal endKey for "
 	// 	    "merging");
 	// 	// this happens when dumping datedb... wtf?
-	// 	//GB_DIE_HARD();
+	// 	//g_process.shutdownAbort(true);
 	// }
 	// bail if nothing requested
 	if ( minRecSizes == 0 ) return true;
@@ -2071,7 +2077,7 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 		errno = EBADENGINEER;
 		log(LOG_LOGIC,"db: rdblist: posdbMerge_r: Too many "
 		    "lists for merging.");
-		GB_DIE_HARD();
+		g_process.shutdownAbort(true);
 	}
 
 	// initialize the arrays, 1-1 with the unignored lists
@@ -2098,7 +2104,7 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 			errno = EBADENGINEER;
 			log(LOG_LOGIC,"db: posdbMerge_r: First key of list is "
 			    "a compressed key.");
-			GB_DIE_HARD();
+			g_process.shutdownAbort(true);
 		}
 		// set ptrs
 		ends    [n] = lists[i]->getListEnd ();

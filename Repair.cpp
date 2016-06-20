@@ -209,7 +209,7 @@ void repairWrapper ( int fd , void *state ) {
 		// saved as essentially an empty file at this point. 
 		saveAddsInProgress ( NULL );
 		// sanity check
-		//char *xx = NULL; *xx = 0;
+		//g_process.shutdownAbort(true);
 		// hey, everyone is done "writing"
 		g_repairMode = 3;
 		// not eit
@@ -1077,7 +1077,7 @@ bool Repair::scanRecs ( ) {
 	    (int32_t)base->getNumFiles());//,m_fn,nf);
 	// sanity check
 	if ( m_msg5InUse ) {
-		char *xx = NULL; *xx = 0; }
+		g_process.shutdownAbort(true); }
 	// when building anything but tfndb we can get the rec
 	// from the twin in case of data corruption on disk
 	bool fixErrors = true;
@@ -1315,7 +1315,7 @@ static void doneWithIndexDoc ( XmlDoc *xd ) {
 		if ( ! s_inUse[i] ) continue;
 		if ( xd == &s_docs[i] ) break;
 	}
-	if ( i >= MAX_OUT_REPAIR ) { char *xx=NULL;*xx=0; }
+	if ( i >= MAX_OUT_REPAIR ) { g_process.shutdownAbort(true); }
 	// reset it i guess
 	xd->reset();
 	// give back the tr
@@ -1439,7 +1439,7 @@ bool Repair::injectTitleRec ( ) {
 		// core until we find a way to preserve the old discovery
 		// date from the old linkdb!
 		//log("repair: fix linkdb rebuild. coring.");
-		//char *xx=NULL;*xx=0;
+		//g_process.shutdownAbort(true);
 	}
 
 	if ( ! g_conf.m_rebuildRecycleLinkInfo ) {
@@ -1516,13 +1516,13 @@ bool Repair::addToTfndb2 ( ) {
 
 	// . this is broken!!! figure out why the rebuild doesn't work...
 	// . seems like the tfns are off...
-	//char *xx = NULL; *xx = 0;
+	//g_process.shutdownAbort(true);
 
 	QUICKPOLL(MAX_NICENESS);
 
 	// sanity check, must have a valid m_ext
-	//if ( m_ext == -1 ) { char *xx = NULL; *xx = 0; }
-	if ( ! m_uh48 ) { char *xx = NULL; *xx = 0; }
+	//if ( m_ext == -1 ) { g_process.shutdownAbort(true); }
+	if ( ! m_uh48 ) { g_process.shutdownAbort(true); }
 
 	// m_docId should already have been set!
 	m_tfndbKey = g_tfndb.makeKey ( m_docId    , // tr->getDocId()
@@ -1986,7 +1986,7 @@ bool saveAllRdbs ( void *state , void (* callback)(void *state) ) {
 		//log("db: Already saving all.");
 		// let them know their callback will not be called even 
 		// though we returned false
-		if ( callback ) { char *xx = NULL; *xx = 0; }
+		if ( callback ) { g_process.shutdownAbort(true); }
 		return false;
 	}
 	// set it

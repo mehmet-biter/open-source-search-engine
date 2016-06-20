@@ -1,4 +1,5 @@
 #include "gb-include.h"
+#include "Process.h"
 
 #include "MsgC.h"
 
@@ -37,7 +38,7 @@ bool MsgC::getIp(const char  *hostname    , int32_t   hostnameLen ,
 	m_ipPtr = ip;
 	m_forwardToProxy = forwardToProxy;
 	// sanity check
-	if ( ! m_ipPtr ) { char *xx = NULL; *xx = 0; }
+	if ( ! m_ipPtr ) { g_process.shutdownAbort(true); }
 	// First check if g_dns has it. This function is a part of the 
 	// g_dns.getIp() function, except that we do not lookup the ip in
 	// the dns server directly after not finding it in the cache.
@@ -70,7 +71,7 @@ bool MsgC::getIp(const char  *hostname    , int32_t   hostnameLen ,
 		// somebody put a http://3.0/ link in here
 		//if ( *ip >= 1 && *ip < 10 )
 		//	log("dns: hostname had ip %s",iptoa(*ip));
-		//if ( *ip == 3 ) { char *xx=NULL;*xx=0; }
+		//if ( *ip == 3 ) { g_process.shutdownAbort(true); }
 		if ( *ip != 0 ) return true;
 	}
 	
@@ -88,7 +89,7 @@ bool MsgC::getIp(const char  *hostname    , int32_t   hostnameLen ,
 	//   a dns timed out error getting it the last time. these will be
 	//   cached for about a day.
 	if ( g_dns.isInCache ( key , ip ) ) {
-		if ( *ip == 3 ) { char *xx=NULL;*xx=0; }
+		if ( *ip == 3 ) { g_process.shutdownAbort(true); }
 		// debug msg
 		//log(LOG_DEBUG, "dns::getIp: %s (key=%" PRIu64") has ip=%s in cache!!!",
 		//     tmp,key.n0,iptoa(*ip));
@@ -181,7 +182,7 @@ bool MsgC::getIp(const char  *hostname    , int32_t   hostnameLen ,
 	// it should have set g_errno to EDEADHOST if this happens
 	if ( ! host ) {
 		log("dns: please add primary dns to spider proxy gb.conf");
-		if ( ! g_errno ) { char *xx=NULL;*xx=0; }
+		if ( ! g_errno ) { g_process.shutdownAbort(true); }
 		return true;
 	}
 	//uint32_t groupId     = host->m_groupId;
@@ -292,7 +293,7 @@ int32_t MsgC::gotReply(){
 		    "again.", *m_ipPtr,m_u.getUrl());
 		g_errno = ETRYAGAIN;
 		*m_ipPtr = 0;
-		//char *xx=NULL;*xx=0; }
+		//g_process.shutdownAbort(true); }
 	}
 	// . don't add to cache if there was an error.
 	// . at this level, these are multicast errors, not dns errors
@@ -417,7 +418,7 @@ void gotMsgCIpWrapper( void *state, int32_t ip){
 	// don't put it on the stack because sendReply_ass does not copy!
 	char *reply = slot->m_tmpBuf;
 	int32_t replySize=12;
-	if ( TMPBUFSIZE < replySize ) { char *xx=NULL;*xx=0; }
+	if ( TMPBUFSIZE < replySize ) { g_process.shutdownAbort(true); }
 	//	reply=(char*) mmalloc(replySize,"MsgC");
 	char *p = reply;
 	*(int32_t *)p = ip; p += 4;

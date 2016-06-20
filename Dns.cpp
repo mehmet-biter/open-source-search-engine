@@ -2,6 +2,8 @@
 
 #include "Dns.h"
 #include "HashTableT.h"
+#include "Process.h"
+
 
 // comment out the following line to disable DNS TLD caching
 // TLD caching seems to give about 15% performance increase over not caching.
@@ -318,10 +320,10 @@ bool Dns::getIp ( const char *hostname,
 	g_errno = 0;
 
 	// only g_dnsDistributed should be calling this, not g_dnsLocal
-	if ( this != &g_dns ) { char *xx = NULL; *xx = 0; }
+	if ( this != &g_dns ) { g_process.shutdownAbort(true); }
 
 	// not thread safe
-	//if ( g_threads.amThread() ) { char *xx = NULL; *xx = 0; }
+	//if ( g_threads.amThread() ) { g_process.shutdownAbort(true); }
 
 	if ( hostnameLen <= 0 ) {
 		log(LOG_LOGIC,"dns: Asked to get IP of zero length hostname.");
@@ -381,7 +383,7 @@ bool Dns::getIp ( const char *hostname,
 		log("dns: Found key collision in wait queue. host %s has "
 		    "same key as %s. key=%" PRIu64".",
 		    ptr->m_ds->m_hostname, tmp, hostKey64);
-		//char *xx = NULL; *xx = 0;
+		//g_process.shutdownAbort(true);
 		// we should just error out if this happens, it is better
 		// than giving him the wrong ip, he will be retried later
 		// by the spider.
@@ -469,7 +471,7 @@ bool Dns::getIp ( const char *hostname,
 		parent -= ((char *)ds->m_buf - (char *)ds);
 		// sanity check
 		//if ( ((DnsState *)parent)->m_buf != (char *)ds ) {
-		//	char *xx = NULL; *xx = 0; }
+		//	g_process.shutdownAbort(true); }
 		// do we have the circular dependency?
 		if ( parent == (char *)ptr->m_ds ) {
 			g_errno = EBADENGINEER;
@@ -502,14 +504,14 @@ bool Dns::getIp ( const char *hostname,
 	// sanity check
 	if ( ppp->m_callback != callback || ppp->m_state != state  ) {
 		log("dns: Failed sanity check 3.");
-		char *xx = NULL; *xx = 0; 
+		g_process.shutdownAbort(true); 
 	}
 	// adding a key may have changed the parent ptr... get again just
 	// in case
 	if ( ptr ) {
 		ptr = s_dnstable.getValuePointer ( hostKey64 );
 		// sanity check - it should still be there for sure
-		if ( ! ptr ) { char *xx = NULL; *xx = 0; }
+		if ( ! ptr ) { g_process.shutdownAbort(true); }
 	}
 	// . insert into beginning of the linked list to avoid having to scan
 	// . "ptr" is a ptr to the parent CallbackEntry, head of linked list
@@ -700,7 +702,7 @@ bool Dns::getIpOfDNS ( DnsState *ds ) {
 	if ( LOOP_BUF_SIZE / (sizeof(DnsState) - LOOP_BUF_SIZE) < 3 ) {
 		log("dns: Increase LOOP_BUF_SIZE, %" PRId32", in Dns.h.",
 		    (int32_t)LOOP_BUF_SIZE);
-		char *xx = NULL; *xx = 0; 
+		g_process.shutdownAbort(true); 
 	}
 	// increment the loop count, we can only use m_buf so many times
 	// before running out of room.
@@ -802,7 +804,7 @@ void gotIpOfDNSWrapper ( void *state , int32_t ip ) {
 	// sanity check
 	if ( ds->m_numDnsIps[ds->m_depth] + 1 >= MAX_DNS_IPS ) {
 		log("dns: Wierd. Not enough buffer.");
-		char *xx = NULL; *xx = 0; 
+		g_process.shutdownAbort(true); 
 	}
 	// . if ip is 0 it was a does not exist
 	// . add it to the array of ips
@@ -1027,7 +1029,7 @@ bool Dns::sendToNextDNS ( DnsState *ds ) {
 	}
 
 	// sanity check
-	if ( ip != ds->m_dnsIps[depth][n] ) { char *xx = NULL; *xx = 0; }
+	if ( ip != ds->m_dnsIps[depth][n] ) { g_process.shutdownAbort(true); }
 	// alright, we got a valid ip to send the request to.
 	// mark this ip we are about to ask as tried.
 	ds->m_triedIps[ds->m_numTried++] = ip; //ds->m_dnsIps[depth][n];
@@ -1348,7 +1350,7 @@ void returnIp ( DnsState *ds , int32_t ip ) {
 		    iptoa(ip),ds->m_hostname,pre,mstrerror(g_errno),ipbuf);
 	}
 	// not thread safe
-	//if ( g_threads.amThread() ) { char *xx = NULL; *xx = 0; }
+	//if ( g_threads.amThread() ) { g_process.shutdownAbort(true); }
 	// save g_errno
 	int32_t err = g_errno;
 	// if we timed out, cache this so future lookups are fast
@@ -1406,7 +1408,7 @@ void returnIp ( DnsState *ds , int32_t ip ) {
 	     ce->m_state    != ds->m_state    ||
 	     ce->m_ds       != ds              ) {
 		log("dns: Failed sanity check 1.");
-		char *xx = NULL; *xx = 0; 
+		g_process.shutdownAbort(true); 
 	}
 	// calling the callback for "ds" could free it, so record this now
 	bool freeit = ds->m_freeit;
@@ -1466,19 +1468,19 @@ void returnIp ( DnsState *ds , int32_t ip ) {
 		// nobody is allowed to wait in line of a dns lookup
 		if ( dnsLookup ) { 
 			log("dns: Failed sanity check 8.");
-			char *xx = NULL; *xx = 0;
+			g_process.shutdownAbort(true);
 		}
 		// another sanity check
 		if ( ! (nextKey & 0x8000000000000000LL) ) {
 			log("dns: Failed sanity check 7.");
-			char *xx = NULL; *xx = 0;
+			g_process.shutdownAbort(true);
 		}
 		// get next guy's value
 		ce = s_dnstable.getValuePointer ( nextKey );
 		// he better be there, otherwise, core
 		if ( ! ce ) {
 			log("dns: Failed sanity check 5.");
-			char *xx = NULL; *xx = 0;
+			g_process.shutdownAbort(true);
 		}
 		// update key
 		key = nextKey;

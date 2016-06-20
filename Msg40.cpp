@@ -13,6 +13,8 @@
 #include "PageResults.h"
 #include "HashTable.h"
 #include "AdultCheck.h"
+#include "Process.h"
+
 
 // increasing this doesn't seem to improve performance any on a single
 // node cluster....
@@ -198,7 +200,7 @@ bool Msg40::getResults ( SearchInput *si      ,
 	// let's try using msg 0xfd like Proxy.cpp uses to forward an http
 	// request! then we just need specify the ip of the proxy and we
 	// do not need hosts2.conf!
-	if ( forward ) { char *xx=NULL;*xx=0; }
+	if ( forward ) { g_process.shutdownAbort(true); }
 
 	// time the cache lookup
 	if ( g_conf.m_logTimingQuery || m_si->m_debug || g_conf.m_logDebugQuery) 
@@ -529,7 +531,7 @@ bool Msg40::mergeDocIdsIntoBaseMsg3a() {
 	m_msg3a.m_clusterLevels = (char      *)p; p += td * 1;
 	m_msg3a.m_scoreInfos    = NULL;
 	m_msg3a.m_collnums      = (collnum_t *)p; p += td * sizeof(collnum_t);
-	if ( p - m_msg3a.m_finalBuf != need ) { char *xx=NULL;*xx=0; }
+	if ( p - m_msg3a.m_finalBuf != need ) { g_process.shutdownAbort(true); }
 
 	m_msg3a.m_numDocIds = td;
 
@@ -603,7 +605,7 @@ bool Msg40::reallocMsg20Buf ( ) {
 	// MDW: try to preserve the old Msg20s if we are being re-called
 	if ( m_buf2 ) {
 		// we do not do recalls when streaming yet
-		if ( m_si->m_streamResults ) { char *xx=NULL;*xx=0; }
+		if ( m_si->m_streamResults ) { g_process.shutdownAbort(true); }
 
 		// make new buf
 		char *newBuf = (char *)mmalloc(need,"Msg40d");
@@ -685,7 +687,7 @@ bool Msg40::reallocMsg20Buf ( ) {
 			tmp[i]->copyFrom ( m_msg20[k] );
 		}
 		// sanity check
-		if ( p - (char *)tmp != need ) { char *xx = NULL; *xx = 0; }
+		if ( p - (char *)tmp != need ) { g_process.shutdownAbort(true); }
 
 		resetBuf2();
 
@@ -754,7 +756,7 @@ bool Msg40::reallocMsg20Buf ( ) {
 bool Msg40::launchMsg20s ( bool recalled ) {
 
 	// don't launch any more if client browser closed socket
-	if ( m_socketHadError ) { char *xx=NULL; *xx=0; }
+	if ( m_socketHadError ) { g_process.shutdownAbort(true); }
 
 	// these are just like for passing to Msg39 above
 	int64_t maxCacheAge = 0 ;
@@ -991,7 +993,7 @@ Msg20 *Msg40::getAvailMsg20 ( ) {
 		return m_msg20[i];
 	}
 	// how can this happen???  THIS HAPPEND
-	char *xx=NULL;*xx=0; 
+	g_process.shutdownAbort(true); 
 	return NULL;
 }
 
@@ -1242,7 +1244,7 @@ bool Msg40::gotSummary ( ) {
 		// merge more docids from the shards' termlists
 		m_msg3a.m_docsToGet = need;
 		// sanity. the original msg39request must be there
-		if ( ! m_msg3a.m_r ) { char *xx=NULL;*xx=0; }
+		if ( ! m_msg3a.m_r ) { g_process.shutdownAbort(true); }
 		// this should increase m_msg3a.m_numDocIds
 		m_msg3a.mergeLists();
 	}
@@ -1255,7 +1257,7 @@ bool Msg40::gotSummary ( ) {
 	     m_printi >= m_msg3a.m_numDocIds ) {
 		m_printedTail = true;
 		printSearchResultsTail ( st );
-		if ( m_sendsIn < m_sendsOut ) { char *xx=NULL;*xx=0; }
+		if ( m_sendsIn < m_sendsOut ) { g_process.shutdownAbort(true); }
 		if ( g_conf.m_logDebugTcp )
 			log("tcp: disabling streamingMode now");
 		// this will be our final send
@@ -1385,8 +1387,8 @@ bool Msg40::gotSummary ( ) {
 		char *level = &m_msg3a.m_clusterLevels[i];
 		// sanity check -- this is a transistional value msg3a should 
 		// set it to something else!
-		if ( *level == CR_GOT_REC         ) { char *xx=NULL; *xx=0; }
-		if ( *level == CR_ERROR_CLUSTERDB ) { char *xx=NULL; *xx=0; }
+		if ( *level == CR_GOT_REC         ) { g_process.shutdownAbort(true); }
+		if ( *level == CR_ERROR_CLUSTERDB ) { g_process.shutdownAbort(true); }
 		// skip if already "bad"
 		if ( *level != CR_OK ) continue;
 		// if the user only requested docids, we have no summaries
@@ -1639,9 +1641,9 @@ bool Msg40::gotSummary ( ) {
 	bool debug = (m_si->m_debug || g_conf.m_logDebugQuery);
 	for ( int32_t i = 0 ; debug && i < m_msg3a.m_numDocIds ; i++ ) {
 		int32_t cn = (int32_t)m_msg3a.m_clusterLevels[i];
-		if ( cn < 0 || cn >= CR_END ) { char *xx=NULL;*xx=0; }
+		if ( cn < 0 || cn >= CR_END ) { g_process.shutdownAbort(true); }
 		const char *s = g_crStrings[cn];
-		if ( ! s ) { char *xx=NULL;*xx=0; }
+		if ( ! s ) { g_process.shutdownAbort(true); }
 		logf(LOG_DEBUG, "query: msg40 final hit #%" PRId32") d=%" PRIu64" "
 		     "cl=%" PRId32" (%s)",
 		     i,m_msg3a.m_docIds[i],(int32_t)m_msg3a.m_clusterLevels[i],s);
@@ -1723,7 +1725,7 @@ bool Msg40::gotSummary ( ) {
 	}
 
 	// alloc m_buf, which should be NULL
-	if ( m_buf ) { char *xx = NULL; *xx = 0; }
+	if ( m_buf ) { g_process.shutdownAbort(true); }
 
 	// . we need to collapse m_msg3a.m_docIds[], etc. into m_docIds[] etc
 	//   to be just the docids we wanted.
@@ -1892,7 +1894,7 @@ int32_t Msg40::serialize ( char *buf , int32_t bufLen ) {
 	for ( int32_t i = 0 ; i < m_msg3a.m_numDocIds ; i++ ) {
 		// sanity check
 		if ( m_msg3a.m_clusterLevels[i] == CR_OK && ! m_msg20[i] ) {
-			char *xx = NULL; *xx = 0; }
+			g_process.shutdownAbort(true); }
 		// if null skip it
 		if ( ! m_msg20[i] ) continue;
 		// do not store the big samples if we're not storing cached 
@@ -2047,7 +2049,7 @@ bool Msg40::printSearchResult9 ( int32_t ix , int32_t *numPrintedSoFar ,
 
 	// . we stream results right onto the socket
 	// . useful for thousands of results... and saving mem
-	if ( ! m_si || ! m_si->m_streamResults ) { char *xx=NULL;*xx=0; }
+	if ( ! m_si || ! m_si->m_streamResults ) { g_process.shutdownAbort(true); }
 
 	// get state0
 	State0 *st = (State0 *)m_state;

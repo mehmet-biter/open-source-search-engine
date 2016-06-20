@@ -11,6 +11,8 @@
 #include "Dns.h"
 #include "BigFile.h"
 #include "Spider.h"
+#include "Process.h"
+
 
 bool g_cacheWritesEnabled = true;
 
@@ -230,7 +232,7 @@ int64_t RdbCache::getLongLong ( collnum_t collnum ,
 	k.n0 = 0;
 	k.n1 = (uint64_t)key;
 	// sanity check
-	//if ( m_cks != 4 ) { char *xx = NULL; *xx = 0; }
+	//if ( m_cks != 4 ) { g_process.shutdownAbort(true); }
 	// return -1 if not found
 	if ( ! getRecord ( collnum  ,
 			   //k        ,
@@ -263,8 +265,8 @@ int64_t RdbCache::getLongLong2 ( collnum_t collnum ,
 	k.n0 = (uint64_t)key;
 	k.n1 = 0;
 	// sanity check
-	if ( m_cks != 8 ) { char *xx = NULL; *xx = 0; }
-	if ( m_dks != 0 ) { char *xx = NULL; *xx = 0; }
+	if ( m_cks != 8 ) { g_process.shutdownAbort(true); }
+	if ( m_dks != 0 ) { g_process.shutdownAbort(true); }
 	// return -1 if not found
 	if ( ! getRecord ( collnum  ,
 			   (char *)&k,
@@ -293,8 +295,8 @@ void RdbCache::addLongLong2 ( collnum_t collnum ,
 	k.n0 = (uint64_t)key;
 	k.n1 = 0;
 	// sanity check
-	if ( m_cks != 8 ) { char *xx = NULL; *xx = 0; }
-	if ( m_dks != 0 ) { char *xx = NULL; *xx = 0; }
+	if ( m_cks != 8 ) { g_process.shutdownAbort(true); }
+	if ( m_dks != 0 ) { g_process.shutdownAbort(true); }
 	addRecord ( collnum , (char *)&k , NULL , 0 , (char *)&value , 8 ,
 		    0 , // timestamp=now
 		    retRecPtr );
@@ -310,10 +312,10 @@ void RdbCache::addLongLong ( collnum_t collnum ,
 	k.n0 = 0;
 	k.n1 = (uint64_t)key;
 	// sanity check
-	//if ( m_cks != 4 ) { char *xx = NULL; *xx = 0; }
+	//if ( m_cks != 4 ) { g_process.shutdownAbort(true); }
 	// sanity check
-	if ( m_cks > (int32_t)sizeof(key_t) ) { char *xx = NULL; *xx = 0; }
-	//if ( m_dks != 0 ) { char *xx = NULL; *xx = 0; }
+	if ( m_cks > (int32_t)sizeof(key_t) ) { g_process.shutdownAbort(true); }
+	//if ( m_dks != 0 ) { g_process.shutdownAbort(true); }
 	//addRecord ( collnum , k , NULL , 0 , (char *)&value , 8 ,
 	//addRecord ( collnum , (char *)&key , NULL , 0 , (char *)&value , 8 ,
 	addRecord ( collnum , (char *)&k , NULL , 0 , (char *)&value , 8 ,
@@ -362,7 +364,7 @@ void RdbCache::addLong ( collnum_t collnum ,
 	k.n0 = 0;
 	k.n1 = key;
 	// sanity check
-	if ( m_cks > (int32_t)sizeof(key_t) ) { char *xx = NULL; *xx = 0; }
+	if ( m_cks > (int32_t)sizeof(key_t) ) { g_process.shutdownAbort(true); }
 	addRecord ( collnum , (char *)&k , NULL , 0 , (char *)&value , 
 		    // by long we really mean 32 bits!
 		    4,//sizeof(char *), // 4 , now 8 for 64 bit archs
@@ -552,10 +554,10 @@ bool RdbCache::getRecord ( collnum_t collnum   ,
 	if ( check ) promoteRecord = false;
 	// sanity check, do not allow the site quality cache or dns cache to 
 	// be > 128MB, that just does not make sense and it complicates things
-	//if(check && m_totalBufSize > BUFSIZE ) { char *xx = NULL; *xx = 0; }
+	//if(check && m_totalBufSize > BUFSIZE ) { g_process.shutdownAbort(true); }
 	// sanity check
 	if ( m_tail < 0 || m_tail > m_totalBufSize ) { 
-		char *xx = NULL; *xx = 0; }
+		g_process.shutdownAbort(true); }
 	// get the window of promotion
 	int32_t  tenPercent = (int32_t)(((float)m_totalBufSize) * .10);
 	char *start1     = m_bufs[0] + m_tail ;
@@ -681,7 +683,7 @@ bool RdbCache::getList ( collnum_t collnum  ,
 	//bool ok = list->checkList_r ( false , true );
 	//if ( ! ok ) log("RDBCACHE::GETLIST had problem");
 	// break out
-	//if ( ! ok ) { char *xx = NULL; *xx = 0; }
+	//if ( ! ok ) { g_process.shutdownAbort(true); }
 	return true;
 }
 
@@ -706,7 +708,7 @@ bool RdbCache::addList ( collnum_t collnum, const char *cacheKey, RdbList *list 
 		//g_errno = EBADENGINEER;
 		return log("cache: key size %" PRId32" != %" PRId32,
 			   (int32_t)list->m_ks,(int32_t)m_dks);
-		//char *xx = NULL; *xx = 0; }
+		//g_process.shutdownAbort(true); }
 	}
 	// store endkey then list data in the record data slot
 	//key_t k;
@@ -768,10 +770,10 @@ bool RdbCache::addRecord ( collnum_t collnum ,
 	if ( m_totalBufSize <= 0 ) return true;
 
 	//int64_t startTime = gettimeofdayInMillisecondsLocal();
-	if ( collnum < (collnum_t)0) {char *xx=NULL;*xx=0; }
-	if ( collnum >= m_maxColls ) {char *xx=NULL;*xx=0; }
+	if ( collnum < (collnum_t)0) {g_process.shutdownAbort(true); }
+	if ( collnum >= m_maxColls ) {g_process.shutdownAbort(true); }
 	// full key not allowed because we use that in markDeletedRecord()
-	if ( KEYCMP(cacheKey,KEYMAX(),m_cks) == 0 ) { char  *xx=NULL;*xx=0; }
+	if ( KEYCMP(cacheKey,KEYMAX(),m_cks) == 0 ) { g_process.shutdownAbort(true); }
 
 	// debug msg
 	int64_t t = 0LL ;
@@ -780,7 +782,7 @@ bool RdbCache::addRecord ( collnum_t collnum ,
 	int32_t need = recSize1 + recSize2;
 	// are we bad?
 	if (m_fixedDataSize>=0 && ! m_supportLists && need != m_fixedDataSize){
-		char *xx=NULL;*xx=0;
+		g_process.shutdownAbort(true);
 		return log(LOG_LOGIC,"db: cache: addRecord: %" PRId32" != %" PRId32".",
 			   need,m_fixedDataSize);
 	}
@@ -898,7 +900,7 @@ bool RdbCache::addRecord ( collnum_t collnum ,
 		*(int32_t *)p = recSize1+recSize2; p +=4; } //datasize
 	// sanity : check if the recSizes add up right
 	else if ( m_fixedDataSize != recSize1 + recSize2 ){
-		char *xx = NULL; *xx = 0; }
+		g_process.shutdownAbort(true); }
 	// save for returning
 	if ( retRecPtr ) *retRecPtr = p;
 
@@ -941,7 +943,7 @@ bool RdbCache::addRecord ( collnum_t collnum ,
 bool RdbCache::deleteRec ( ) {
 	// sanity. 
 	if ( m_tail < 0 || m_tail >= m_totalBufSize ) {
-		char *xx = NULL; *xx = 0;}
+		g_process.shutdownAbort(true);}
 
 	// get ptr from offset
 	int32_t  bufNum = m_tail / BUFSIZE;
@@ -976,7 +978,7 @@ bool RdbCache::deleteRec ( ) {
 		     "maxCollNum=%" PRId32" dbname=%s", (PTRTYPE)start,
 		     (int32_t)collnum, g_collectiondb.m_numRecsUsed,  
 		     m_dbname);
-		char *xx=NULL;*xx=0;
+		g_process.shutdownAbort(true);
 		// exception for gourav's bug (dbname=Users)
 		// i am tired of it craping out every 2-3 wks
 		//if ( m_dbname[0]=='U' ) return true;
@@ -984,7 +986,7 @@ bool RdbCache::deleteRec ( ) {
 		m_needsSave = true;
 		// but its corrupt so don't save to disk
 		m_corruptionDetected = true;
-		//char *xx=NULL;*xx=0;
+		//g_process.shutdownAbort(true);
 		return false;
 	}
 	
@@ -1012,7 +1014,7 @@ bool RdbCache::deleteRec ( ) {
 		m_tail = bufNum * BUFSIZE;
 		// sanity
 		//if ( m_tail < 0  || m_tail > m_totalBufSize ) {
-		//	char *xx = NULL; *xx = 0;}
+		//	g_process.shutdownAbort(true);}
 		// if ( this == &g_spiderLoop.m_winnerListCache )
 		// 	logf(LOG_DEBUG, "db: cachebug: wrapping tail to 0");
 		//return true; // continue;
@@ -1029,7 +1031,7 @@ bool RdbCache::deleteRec ( ) {
 	
 	// sanity
 	if ( dataSize < 0 || dataSize > m_totalBufSize ){
-		char *xx = NULL; *xx = 0;
+		g_process.shutdownAbort(true);
 	}
 
 	//int32_t saved = m_tail;
@@ -1050,7 +1052,7 @@ bool RdbCache::deleteRec ( ) {
 	// sanity. this must be failing due to a corrupt dataSize...
 	if ( m_tail < 0 || 
 	     m_tail +(int32_t)sizeof(collnum_t)+m_cks+4>m_totalBufSize){
-		char *xx = NULL; *xx = 0;}
+		g_process.shutdownAbort(true);}
 	
 	// if ( this == &g_spiderLoop.m_winnerListCache )
 	// 	log("spider: rdbcache: removing tail rec collnum=%i",
@@ -1173,7 +1175,7 @@ void RdbCache::removeKey ( collnum_t collnum, const char *key, const char *rec )
 	if ( m_ptrs[n] != rec ) {
 		// debug msg
 		// This shouldn't happen anymore -partap
-		char *xx = NULL; xx = 0;
+		g_process.shutdownAbort(true);
 		return;
 	}
 
@@ -1243,7 +1245,7 @@ void RdbCache::addKey ( collnum_t collnum, const char *key, char *ptr ) {
 	// If this pointer is already set, we may be replacing it from 
 	// Msg5::needRecall.  We need to mark the old record as deleted
 	if (m_ptrs[n]){
-		//char *xx = NULL; *xx = 0;
+		//g_process.shutdownAbort(true);
 		markDeletedRecord(m_ptrs[n]);
 	}
 	// store the ptr
@@ -1303,8 +1305,8 @@ void RdbCache::clearAll ( ) {
 // . try it again now with new 64-bit logic updates (MDW 2/10/2015)
 void RdbCache::clear ( collnum_t collnum ) {
 	// bail if no writing ops allowed now
-	if ( ! g_cacheWritesEnabled ) { char *xx=NULL;*xx=0; }
-	if (   m_isSaving           ) { char *xx=NULL;*xx=0; }
+	if ( ! g_cacheWritesEnabled ) { g_process.shutdownAbort(true); }
+	if (   m_isSaving           ) { g_process.shutdownAbort(true); }
 
 	for ( int32_t i = 0 ; i < m_numPtrsMax ; i++ ) {
 		// skip if empty bucket
@@ -1514,7 +1516,7 @@ bool RdbCache::saveSome_r ( int fd , int32_t *iptr , int32_t *off ) {
 	if ( used != m_numPtrsUsed ) { 
 		log("cache: error saving cache. %" PRId32" != %" PRId32
 		    , used , m_numPtrsUsed );
-		//char *xx=NULL;*xx=0; }
+		//g_process.shutdownAbort(true); }
 		return false;
 	}
 	// now write it all at once
@@ -1645,7 +1647,7 @@ bool RdbCache::load ( const char *dbname ) {
 		//if ( j == -1 ) { m_ptrs[i] = NULL; continue; }
 		if ( *poff == -1 ) { m_ptrs[i] = NULL; continue; }
 		// sanity
-		if ( *poff >= m_numBufs * BUFSIZE ) { char *xx=NULL;*xx=0;}
+		if ( *poff >= m_numBufs * BUFSIZE ) { g_process.shutdownAbort(true);}
 		// get buffer
 		int32_t bufNum = (*poff) / BUFSIZE;
 		char *p = m_bufs[bufNum] + (*poff) % BUFSIZE ;
@@ -1814,7 +1816,7 @@ void RdbCache::verify(){
 		 // collnum can be 0 in case we have to go to next buffer
 		 if ( collnum != 0 && ( collnum >= m_maxColls || collnum <-1)){
 			 //	!g_collectiondb.m_recs[collnum] ) ) {
-			 char *xx = NULL; *xx = 0;
+			 g_process.shutdownAbort(true);
 		 }
 	
 		 // get key
@@ -1837,15 +1839,15 @@ void RdbCache::verify(){
 		 
 		 // sanity
 		 if ( dataSize < 0 || dataSize > m_totalBufSize ){
-			 char *xx = NULL; *xx = 0;
+			 g_process.shutdownAbort(true);
 		 }
 		 // count it
 		 count++;
 	 }
 	 if ( !foundTail && m_wrapped ){
-		 char *xx = NULL; *xx = 0 ;
+		 g_process.shutdownAbort(true);
 	 }
 	 if ( count != m_numPtrsUsed ) {
-		 char *xx = NULL; *xx = 0 ;
+		 g_process.shutdownAbort(true);
 	 }
 }

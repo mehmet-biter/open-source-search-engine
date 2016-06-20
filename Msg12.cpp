@@ -57,10 +57,10 @@ bool Msg12::getLocks ( int64_t uh48, // probDocId ,
 		       void (* callback)(void *state) ) {
 
 	// ensure not in use. not msg12 replies outstanding.
-	if ( m_numRequests != m_numReplies ) { char *xx=NULL;*xx=0; }
+	if ( m_numRequests != m_numReplies ) { g_process.shutdownAbort(true); }
 
 	// no longer use this
-	char *xx=NULL;*xx=0;
+	g_process.shutdownAbort(true);
 
 	// do not use locks for injections
 	//if ( m_sreq->m_isInjecting ) return true;
@@ -73,7 +73,7 @@ bool Msg12::getLocks ( int64_t uh48, // probDocId ,
 	m_removing = false;
 	m_confirming = false;
 	// make sure is really docid
-	//if ( probDocId & ~DOCID_MASK ) { char *xx=NULL;*xx=0; }
+	//if ( probDocId & ~DOCID_MASK ) { g_process.shutdownAbort(true); }
 	// . mask out the lower bits that may change if there is a collision
 	// . in this way a url has the same m_probDocId as the same url
 	//   in the index. i.e. if we add a new spider request for url X and
@@ -102,9 +102,9 @@ bool Msg12::getLocks ( int64_t uh48, // probDocId ,
 	m_firstIp = firstIp;
 
 	// sanity check, just 6 bytes! (48 bits)
-	if ( uh48 & 0xffff000000000000LL ) { char *xx=NULL;*xx=0; }
+	if ( uh48 & 0xffff000000000000LL ) { g_process.shutdownAbort(true); }
 
-	if ( m_lockKeyUh48 & 0xffff000000000000LL ) { char *xx=NULL;*xx=0; }
+	if ( m_lockKeyUh48 & 0xffff000000000000LL ) { g_process.shutdownAbort(true); }
 
 	// cache time
 	int32_t ct = 120;
@@ -201,7 +201,7 @@ bool Msg12::getLocks ( int64_t uh48, // probDocId ,
 	// block?
 	if ( m_numRequests > 0 ) return false;
 	// i guess nothing... hmmm... all dead?
-	//char *xx=NULL; *xx=0; 
+	//g_process.shutdownAbort(true); 
 	// m_hasLock should be false... all lock hosts seem dead... wait
 	if ( g_conf.m_logDebugSpider )
 		logf(LOG_DEBUG,"spider: all lock hosts seem dead for %s "
@@ -214,7 +214,7 @@ bool Msg12::getLocks ( int64_t uh48, // probDocId ,
 bool Msg12::gotLockReply ( UdpSlot *slot ) {
 
 	// no longer use this
-	char *xx=NULL;*xx=0;
+	g_process.shutdownAbort(true);
 
 	// got reply
 	m_numReplies++;
@@ -390,10 +390,10 @@ bool Msg12::gotLockReply ( UdpSlot *slot ) {
 bool Msg12::removeAllLocks ( ) {
 
 	// ensure not in use. not msg12 replies outstanding.
-	if ( m_numRequests != m_numReplies ) { char *xx=NULL;*xx=0; }
+	if ( m_numRequests != m_numReplies ) { g_process.shutdownAbort(true); }
 
 	// no longer use this
-	char *xx=NULL;*xx=0;
+	g_process.shutdownAbort(true);
 
 	// skip if injecting
 	//if ( m_sreq->m_isInjecting ) return true;
@@ -465,10 +465,10 @@ bool Msg12::removeAllLocks ( ) {
 bool Msg12::confirmLockAcquisition ( ) {
 
 	// ensure not in use. not msg12 replies outstanding.
-	if ( m_numRequests != m_numReplies ) { char *xx=NULL;*xx=0; }
+	if ( m_numRequests != m_numReplies ) { g_process.shutdownAbort(true); }
 
 	// no longer use this
-	char *xx=NULL;*xx=0;
+	g_process.shutdownAbort(true);
 
 	// we are now removing 
 	m_confirming = true;
@@ -480,7 +480,7 @@ bool Msg12::confirmLockAcquisition ( ) {
 	char *request     = (char *)cq;
 	int32_t  requestSize = sizeof(ConfirmRequest);
 	// sanity
-	if ( requestSize == sizeof(LockRequest)){ char *xx=NULL;*xx=0; }
+	if ( requestSize == sizeof(LockRequest)){ g_process.shutdownAbort(true); }
 	// set it
 	cq->m_collnum   = m_collnum;
 	cq->m_doledbKey = m_doledbKey;
@@ -572,7 +572,7 @@ void handleRequest12 ( UdpSlot *udpSlot , int32_t niceness ) {
 			log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 			us->sendErrorReply ( udpSlot , g_errno );
 			return;
-			//char *xx=NULL;*xx=0; }
+			//g_process.shutdownAbort(true); }
 		}
 		UrlLock *lock = (UrlLock *)ht->getValueFromSlot ( slot );
 		lock->m_confirmed = true;
@@ -596,7 +596,7 @@ void handleRequest12 ( UdpSlot *udpSlot , int32_t niceness ) {
 			// tree is dumping or something, probably ETRYAGAIN
 			if ( g_errno != ETRYAGAIN ) {msg = "error adding neg rec to doledb";	log("spider: %s %s",msg,mstrerror(g_errno));
 			}
-			//char *xx=NULL;*xx=0;
+			//g_process.shutdownAbort(true);
 			
 			log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 			us->sendErrorReply ( udpSlot , g_errno );
@@ -672,7 +672,7 @@ void handleRequest12 ( UdpSlot *udpSlot , int32_t niceness ) {
 	// mask it out
 	//lockKey &= 0x7fffffffffffffffLL;
 	// sanity check, just 6 bytes! (48 bits)
-	if ( lr->m_lockKeyUh48 &0xffff000000000000LL ) { char *xx=NULL;*xx=0; }
+	if ( lr->m_lockKeyUh48 &0xffff000000000000LL ) { g_process.shutdownAbort(true); }
 	// note it
 	if ( g_conf.m_logDebugSpider )
 		log("spider: got msg12 request uh48=%" PRId64" remove=%" PRId32,
@@ -684,7 +684,7 @@ void handleRequest12 ( UdpSlot *udpSlot , int32_t niceness ) {
 
 	int32_t hostId = g_hostdb.getHostId ( udpSlot->m_ip , udpSlot->m_port );
 	// this must be legit - sanity check
-	if ( hostId < 0 ) { char *xx=NULL;*xx=0; }
+	if ( hostId < 0 ) { g_process.shutdownAbort(true); }
 
 	// remove expired locks from locktable
 	removeExpiredLocks ( hostId );

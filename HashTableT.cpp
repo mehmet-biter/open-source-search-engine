@@ -5,6 +5,8 @@
 #include "Title.h" // For Title::InLinkInfo
 #include "Dns.h"
 #include "types.h"
+#include "Process.h"
+
 
 template<class Key_t, class Val_t> 
 HashTableT<Key_t, Val_t>::HashTableT() {
@@ -247,7 +249,7 @@ void HashTableT<Key_t, Val_t>::removeSlot ( int32_t n ) {
 	// save it
 	Key_t key = m_keys[n];
 	// sanity check, must be occupied
-	if ( key == 0 ) { char *xx = NULL; *xx = 0; }
+	if ( key == 0 ) { g_process.shutdownAbort(true); }
 	// delete it
 	m_keys[n] = 0;
 	m_numSlotsUsed--;
@@ -283,7 +285,7 @@ bool HashTableT<Key_t, Val_t>::setTableSize ( int32_t n, char *buf, int32_t bufS
 	m_bufSize = bufSize; 
 
 	// sanity check 
-	//if( m_buf && m_bufSize < need){ char *xx = NULL; *xx = 0; }
+	//if( m_buf && m_bufSize < need){ g_process.shutdownAbort(true); }
 
 	// 
 	//char *buf = m_buf1;

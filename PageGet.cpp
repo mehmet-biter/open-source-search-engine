@@ -10,6 +10,7 @@
 #include "Pages.h"
 #include "Tagdb.h"
 #include "XmlDoc.h"
+#include "Process.h"
 
 // TODO: redirect to host that has the titleRec locally
 
@@ -205,7 +206,7 @@ bool sendPageGet ( TcpSocket *s , HttpRequest *r ) {
 // returns true
 bool sendErrorReply ( void *state , int32_t err ) {
 	// ensure this is set
-	if ( ! err ) { char *xx=NULL;*xx=0; }
+	if ( ! err ) { g_process.shutdownAbort(true); }
 	// get it
 	State2 *st = (State2 *)state;
 	// get the tcp socket from the state

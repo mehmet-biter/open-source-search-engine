@@ -83,8 +83,8 @@ static key96_t makeParmKey ( collnum_t collnum , Parm *m , int16_t occNum ) {
 	// delbit. 1 means positive key
 	k.n0 |= 0x01;
 	// test
-	if ( getCollnumFromParmRec ((char *)&k)!=collnum){char*xx=NULL;*xx=0;}
-	if ( getOccNumFromParmRec ((char *)&k)!=occNum){char*xx=NULL;*xx=0;}
+	if ( getCollnumFromParmRec ((char *)&k)!=collnum){g_process.shutdownAbort(true);}
+	if ( getOccNumFromParmRec ((char *)&k)!=occNum){g_process.shutdownAbort(true);}
 	return k;
 }
 
@@ -192,7 +192,7 @@ static bool CommandInsertUrlFiltersRow ( char *rec ) {
 		// must be an array!
 		if ( ! m->isArray() ) continue;
 		// sanity check
-		if ( m->m_obj != OBJ_COLL ) { char *xx=NULL;*xx=0; }
+		if ( m->m_obj != OBJ_COLL ) { g_process.shutdownAbort(true); }
 		// . add that row
 		// . returns false and sets g_errno on error
 		if ( ! g_parms.insertParm ( i, rowNum,(char *)cr)) return true;
@@ -228,7 +228,7 @@ static bool CommandRemoveUrlFiltersRow ( char *rec ) {
 		// must be an array!
 		if ( ! m->isArray() ) continue;
 		// sanity check
-		if ( m->m_obj != OBJ_COLL ) { char *xx=NULL;*xx=0; }
+		if ( m->m_obj != OBJ_COLL ) { g_process.shutdownAbort(true); }
 		// . nuke that parm's element
 		// . returns false and sets g_errno on error
 		if ( ! g_parms.removeParm ( i,rowNum,(char *)cr)) return true;
@@ -247,7 +247,7 @@ static bool CommandCloneColl ( char *rec ) {
 	// . from "&restart=467" for example
 	char *data = rec + sizeof(key96_t) + 4;
 	int32_t dataSize = *(int32_t *)(rec + sizeof(key96_t));
-	//if ( dataSize < 1 ) { char *xx=NULL;*xx=0; }
+	//if ( dataSize < 1 ) { g_process.shutdownAbort(true); }
 	// copy parm settings from this collection name
 	char *srcColl = data;
 
@@ -299,7 +299,7 @@ static bool CommandAddColl ( char *rec , char customCrawl ) {
 	char *data = rec + sizeof(key96_t) + 4;
 	int32_t dataSize = *(int32_t *)(rec + sizeof(key96_t));
 	// collection name must be at least 2 bytes (includes \0)
-	if ( dataSize <= 1 ) { char *xx=NULL;*xx=0; }
+	if ( dataSize <= 1 ) { g_process.shutdownAbort(true); }
 
 	// then collname, \0 terminated
 	char *collName = data;
@@ -431,7 +431,7 @@ static bool CommandRestartColl ( char *rec , WaitEntry *we ) {
 	// . from "&restart=467" for example
 	char *data = rec + sizeof(key96_t) + 4;
 	int32_t dataSize = *(int32_t *)(rec + sizeof(key96_t));
-	if ( dataSize < 1 ) { char *xx=NULL;*xx=0; }
+	if ( dataSize < 1 ) { g_process.shutdownAbort(true); }
 	collnum_t oldCollnum = atol(data);
 
 	if ( oldCollnum < 0 ||
@@ -491,7 +491,7 @@ static bool CommandResetColl ( char *rec , WaitEntry *we ) {
 	// . from "&restart=467" for example
 	char *data = rec + sizeof(key96_t) + 4;
 	int32_t dataSize = *(int32_t *)(rec + sizeof(key96_t));
-	if ( dataSize < 1 ) { char *xx=NULL;*xx=0; }
+	if ( dataSize < 1 ) { g_process.shutdownAbort(true); }
 	collnum_t oldCollnum = atol(data);
 
 	if ( oldCollnum < 0 ||
@@ -1307,7 +1307,7 @@ bool Parms::printParms2 ( SafeBuf* sb ,
 
 			//
 			// mdw just debug to here ... left off here
-			//char *xx=NULL;*xx=0;
+			//g_process.shutdownAbort(true);
 
 		// . do we have an array? if so print title on next row
 		//   UNLESS these are priority checkboxes, those can all
@@ -1530,7 +1530,7 @@ bool Parms::printParm ( SafeBuf* sb,
 	// delimit each cgi var if we need to
 	if ( m->m_cgi && gbstrlen(m->m_cgi) > 45 ) {
 		log(LOG_LOGIC,"admin: Cgi variable is TOO big.");
-		char *xx = NULL; *xx = 0;
+		g_process.shutdownAbort(true);
 	}
 	char cgi[64];
 	if ( m->m_cgi ) {
@@ -1883,7 +1883,7 @@ bool Parms::printParm ( SafeBuf* sb,
 	// a string and that string is the diffbot api url to use.
 	// the string is empty or zero length to indicate none.
 	//else if ( t == TYPE_DIFFBOT_DROPDOWN ) {
-	//	char *xx=NULL;*xx=0;
+	//	g_process.shutdownAbort(true);
 	//}
 	//else if ( t == TYPE_UFP )
 	else if ( t == TYPE_SAFEBUF &&
@@ -2271,14 +2271,14 @@ bool Parms::setFromRequest ( HttpRequest *r ,
 
 	// use convertHttpRequestToParmList() for these because they
 	// are persistent records that are updated on every shard.
-	if ( objType == OBJ_COLL ) { char *xx=NULL;*xx=0; }
-	if ( objType == OBJ_CONF ) { char *xx=NULL;*xx=0; }
+	if ( objType == OBJ_COLL ) { g_process.shutdownAbort(true); }
+	if ( objType == OBJ_CONF ) { g_process.shutdownAbort(true); }
 
 	// ensure valid
 	if ( ! THIS ) {
 		// it is null when no collection explicitly specified...
 		log(LOG_LOGIC,"admin: THIS is null for setFromRequest");
-		char *xx=NULL;*xx=0;
+		g_process.shutdownAbort(true);
 	}
 
 	// loop through cgi parms
@@ -2416,7 +2416,7 @@ bool Parms::removeParm ( int32_t i , int32_t an , char *THIS ) {
 void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char *s ,
 		      bool isHtmlEncoded , bool fromRequest ) {
 
-	if ( fromRequest ) { char *xx=NULL;*xx=0; }
+	if ( fromRequest ) { g_process.shutdownAbort(true); }
 
 	// . this is just for setting CollectionRecs, so skip if offset < 0
 	// . some parms are just for SearchInput (search parms)
@@ -2437,13 +2437,13 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 		log(LOG_LOGIC,"admin: Parm \"%s\" had NULL default value. "
 		    "Forcing to 0.",
 		    tit);
-		//char *xx = NULL; *xx = 0;
+		//g_process.shutdownAbort(true);
 	}
 
 	// sanity check
 	if ( &m_parms[mm] != m ) {
 		log(LOG_LOGIC,"admin: Not sane parameters.");
-		char *xx = NULL; *xx = 0;
+		g_process.shutdownAbort(true);
 	}
 
 	// if attempting to add beyond array max, bail out
@@ -2727,14 +2727,14 @@ void Parms::setToDefault ( char *THIS , char objType , CollectionRec *argcr ) {
 		// what is this?
 		//if ( m->m_obj == OBJ_COLL ) {
 		//	CollectionRec *cr = (CollectionRec *)THIS;
-		//	if ( cr->m_bases[1] ) { char *xx=NULL;*xx=0; }
+		//	if ( cr->m_bases[1] ) { g_process.shutdownAbort(true); }
 		//}
 		// sanity check, make sure it does not overflow
 		if ( m->m_obj == OBJ_COLL &&
 		     m->m_off > (int32_t)sizeof(CollectionRec)){
 			log(LOG_LOGIC,"admin: Parm in Parms.cpp should use "
 			    "OBJ_COLL not OBJ_CONF");
-			char *xx = NULL; *xx = 0;
+			g_process.shutdownAbort(true);
 		}
 
 		if ( m->m_page > PAGE_API && // CGIPARMS &&
@@ -2743,12 +2743,12 @@ void Parms::setToDefault ( char *THIS , char objType , CollectionRec *argcr ) {
 			log(LOG_LOGIC,"admin: Page can not reference "
 			    "g_conf and be declared AFTER PAGE_CGIPARMS in "
 			    "Pages.h. Title=%s",m->m_title);
-			char *xx = NULL; *xx = 0;
+			g_process.shutdownAbort(true);
 		}
 		// if defOff >= 0 get from cr like for searchInput vals
 		// whose default is from the collectionRec...
 		if ( m->m_defOff >= 0 && argcr ) {
-			if ( ! argcr ) { char *xx=NULL;*xx=0; }
+			if ( ! argcr ) { g_process.shutdownAbort(true); }
 			char *def = m->m_defOff+(char *)argcr;
 			char *dst = (char *)THIS + m->m_off;
 			gbmemcpy ( dst , def , m->m_size );
@@ -2756,7 +2756,7 @@ void Parms::setToDefault ( char *THIS , char objType , CollectionRec *argcr ) {
 		}
 		// leave arrays empty, set everything else to default
 		if ( m->m_max <= 1 ) {
-			//if ( ! m->m_def ) { char *xx=NULL;*xx=0; }
+			//if ( ! m->m_def ) { g_process.shutdownAbort(true); }
 			setParm ( THIS , m, i, 0, m->m_def, false/*not enc.*/,
 				  false );
 			//((CollectionRec *)THIS)->m_orig[i] = 1;
@@ -2844,7 +2844,7 @@ bool Parms::setFromFile ( void *THIS        ,
 		int32_t nb;
 		int32_t newnn;
 	loop:
-		if ( m->m_obj == OBJ_NONE ) { char *xx=NULL;*xx=0; }
+		if ( m->m_obj == OBJ_NONE ) { g_process.shutdownAbort(true); }
 		// get xml node number of m->m_xml in the "xml" file
 		newnn = xml.getNodeNum(nn,1000000,m->m_xml,gbstrlen(m->m_xml));
 
@@ -10584,10 +10584,10 @@ void Parms::init ( ) {
 		// sanity now
 		if ( m_parms[i].m_page == -1 ) {
 			log("parms: bad page \"%s\"",m_parms[i].m_title);
-			char *xx=NULL;*xx=0; }
+			g_process.shutdownAbort(true); }
 		if ( m_parms[i].m_obj == -1 ) {
 			log("parms: bad obj \"%s\"",m_parms[i].m_title);
-			char *xx=NULL;*xx=0; }
+			g_process.shutdownAbort(true); }
 
 		// if its a fixed size then make sure m_size is not set
 		if ( m_parms[i].m_fixed > 0 ) {
@@ -10671,17 +10671,17 @@ void Parms::init ( ) {
 		}
 		if ( m->m_obj == OBJ_CONF && m->m_off >= (int32_t)sizeof(Conf) ) {
 			log("admin: Parm %s has bad m_off value.",m->m_title);
-			char *xx = NULL; *xx = 0;
+			g_process.shutdownAbort(true);
 		}
 		if (m->m_obj==OBJ_COLL&&m->m_off>=(int32_t)sizeof(CollectionRec)){
 			log("admin: Parm %s has bad m_off value.",m->m_title);
-			char *xx = NULL; *xx = 0;
+			g_process.shutdownAbort(true);
 		}
 		if ( m->m_off >= 0 &&
 		     m->m_obj == OBJ_SI &&
 		     m->m_off >= (int32_t)sizeof(SearchInput)){
 			log("admin: Parm %s has bad m_off value.",m->m_title);
-			char *xx = NULL; *xx = 0;
+			g_process.shutdownAbort(true);
 		}
 
 		if ( m_parms[i].m_page == -1 ) {
@@ -11002,7 +11002,7 @@ bool Parms::addNewParmToList2 ( SafeBuf *parmList ,
 		// include \0
 		valSize = gbstrlen(val)+1;
 		// sanity
-		if ( val[valSize-1] != '\0' ) { char *xx=NULL;*xx=0; }
+		if ( val[valSize-1] != '\0' ) { g_process.shutdownAbort(true); }
 	}
 	else if ( m->m_type == TYPE_LONG ) {
 		// watch out for unsigned 32-bit numbers, so use atoLL()
@@ -11065,7 +11065,7 @@ bool Parms::addNewParmToList2 ( SafeBuf *parmList ,
 	}
 	else {
 		log("parms: shit unsupported parm type");
-		char *xx=NULL;*xx=0;
+		g_process.shutdownAbort(true);
 	}
 
 	key96_t key = makeParmKey ( collnum , m ,  occNum );
@@ -11122,7 +11122,7 @@ bool Parms::addCurrentParmToList2 ( SafeBuf *parmList ,
 		dataSize = sb->length();
 		// sanity
 		if ( dataSize > 0 && !data[dataSize-1]){
-			char *xx=NULL;*xx=0;
+			g_process.shutdownAbort(true);
 		}
 			
 			
@@ -11134,7 +11134,7 @@ bool Parms::addCurrentParmToList2 ( SafeBuf *parmList ,
 			dataSize = 1;
 		}
 		// sanity check
-		if ( dataSize > 0 && data[dataSize-1] ) {char *xx=NULL;*xx=0;}
+		if ( dataSize > 0 && data[dataSize-1] ) {g_process.shutdownAbort(true);}
 		// if just a \0 then make it empty
 		//if ( dataSize && !data[0] ) {
 		//	data = NULL;
@@ -11525,7 +11525,7 @@ bool Parms::convertHttpRequestToParmList (HttpRequest *hr, SafeBuf *parmList,
 			m = getParmFast1 ( "cse",  &occNum);
 			if      ( val && val[0] == '0' ) val = "1";
 			else if ( val && val[0] == '1' ) val = "0";
-			if ( ! m ) { char *xx=NULL;*xx=0; }
+			if ( ! m ) { g_process.shutdownAbort(true); }
 		}
 
 		if ( ! m ) continue;
@@ -11603,7 +11603,7 @@ Parm *Parms::getParmFast2 ( int32_t cgiHash32 ) {
 		s_pht.m_useKeyMagic = true;
 		// wtf?
 		if ( m_numParms <= 0 ) init();
-		if ( m_numParms <= 0 ) { char *xx=NULL;*xx=0; }
+		if ( m_numParms <= 0 ) { g_process.shutdownAbort(true); }
 		// fill up hashtable
 		for ( int32_t i = 0 ; i < m_numParms ; i++ ) {
 			// get it
@@ -11633,7 +11633,7 @@ Parm *Parms::getParmFast2 ( int32_t cgiHash32 ) {
 				log("parms: dup parm h32=%" PRId32" "
 				    "\"%s\" vs \"%s\"",
 				    ph32, duplicate->m_title,parm->m_title);
-				char *xx=NULL;*xx=0;
+				g_process.shutdownAbort(true);
 			}
 			// add that to hash table
 			s_pht.addKey ( &ph32 , &parm );
@@ -11900,7 +11900,7 @@ static void gotParmReplyWrapper ( void *state , UdpSlot *slot ) {
 		// a new head
 		if ( pn == s_headNode ) {
 			// sanity
-			if ( pn->m_prevNode ) { char *xx=NULL;*xx=0; }
+			if ( pn->m_prevNode ) { g_process.shutdownAbort(true); }
 			// the guy after us is the new head
 			s_headNode = pn->m_nextNode;
 		}
@@ -11908,7 +11908,7 @@ static void gotParmReplyWrapper ( void *state , UdpSlot *slot ) {
 		// a new tail?
 		if ( pn == s_tailNode ) {
 			// sanity
-			if ( pn->m_nextNode ) { char *xx=NULL;*xx=0; }
+			if ( pn->m_nextNode ) { g_process.shutdownAbort(true); }
 			// the guy before us is the new tail
 			s_tailNode = pn->m_prevNode;
 		}
@@ -11917,7 +11917,7 @@ static void gotParmReplyWrapper ( void *state , UdpSlot *slot ) {
 		if ( ! s_headNode ) s_tailNode = NULL;
 
 		// wtf?
-		if ( ! pn->m_calledCallback ) { char *xx=NULL;*xx=0; }
+		if ( ! pn->m_calledCallback ) { g_process.shutdownAbort(true); }
 
 		// do callback first before freeing pn
 		//if ( pn->m_callback ) pn->m_callback ( pn->m_state );
@@ -12251,7 +12251,7 @@ void handleRequest3f ( UdpSlot *slot , int32_t niceness ) {
 	log("parms: handling updated parameters (request type 3f)");
 
 	// sending to host #0 is not right...
-	//if ( g_hostdb.m_hostId == 0 ) { char *xx=NULL;*xx=0; }
+	//if ( g_hostdb.m_hostId == 0 ) { g_process.shutdownAbort(true); }
 
 	char *parmRecs = slot->m_readBuf;
 	char *parmEnd  = parmRecs + slot->m_readBufSize;
@@ -12355,8 +12355,8 @@ bool Parms::syncParmsWithHost0 ( ) {
 	// copy for sending
 	SafeBuf sendBuf;
 	if ( ! sendBuf.safeMemcpy ( &hashList ) ) return false;
-	if ( sendBuf.getCapacity() != hashList.length() ){char *xx=NULL;*xx=0;}
-	if ( sendBuf.length() != hashList.length()  ){char *xx=NULL;*xx=0;}
+	if ( sendBuf.getCapacity() != hashList.length() ){g_process.shutdownAbort(true);}
+	if ( sendBuf.length() != hashList.length()  ){g_process.shutdownAbort(true);}
 
 	// allow udpserver to free it
 	char *request = sendBuf.getBufStart();
@@ -12438,7 +12438,7 @@ void handleRequest3e ( UdpSlot *slot , int32_t niceness ) {
 		uint32_t collNameHash32 = *(int32_t *)p;
 		p += 4;
 		// sanity check. -1 means g_conf. i guess.
-		if ( c < -1 ) { char *xx=NULL;*xx=0; }
+		if ( c < -1 ) { g_process.shutdownAbort(true); }
 		// and parm hash
 		int64_t h64 = *(int64_t *)p;
 		p += 8;
@@ -12615,7 +12615,7 @@ bool Parms::addAllParmsToList ( SafeBuf *parmList, collnum_t collnum ) {
 
 		if ( collnum == -1 && parm->m_obj != OBJ_CONF ) continue;
 		if ( collnum >=  0 && parm->m_obj != OBJ_COLL ) continue;
-		if ( collnum < -1 ) { char *xx=NULL;*xx=0; }
+		if ( collnum < -1 ) { g_process.shutdownAbort(true); }
 
 		// like 'statsdb max cache mem' etc.
 		if ( parm->m_flags & PF_NOSYNC ) continue;
@@ -12624,7 +12624,7 @@ bool Parms::addAllParmsToList ( SafeBuf *parmList, collnum_t collnum ) {
 		// receiving end
 		if ( parm->m_cgiHash == 0 ) {
 			log("parms: no cgi for parm %s",parm->m_title);
-			char *xx=NULL; *xx=0;
+			g_process.shutdownAbort(true);
 		}
 
 		int32_t occNum = -1;
@@ -12788,10 +12788,10 @@ bool Parms::updateParm ( char *rec , WaitEntry *we ) {
 		// nuke it
 		sb->purge();
 		// require that the \0 be part of the update i guess
-		//if ( ! data || dataSize <= 0 ) { char *xx=NULL;*xx=0; }
+		//if ( ! data || dataSize <= 0 ) { g_process.shutdownAbort(true); }
 		// check for \0
 		if ( data && dataSize > 0 ) {
-			if ( data[dataSize-1] != '\0') { char *xx=NULL;*xx=0;}
+			if ( data[dataSize-1] != '\0') { g_process.shutdownAbort(true);}
 			// this means that we can not use string POINTERS as
 			// parms!! don't include \0 as part of length
 			sb->safeStrcpy ( data ); // , dataSize );
@@ -12803,7 +12803,7 @@ bool Parms::updateParm ( char *rec , WaitEntry *we ) {
 		// sanity
 		// we no longer include the \0 in the dataSize...so a dataSize
 		// of 0 means empty string...
-		//if ( data[dataSize-1] != '\0' ) { char *xx=NULL;*xx=0; }
+		//if ( data[dataSize-1] != '\0' ) { g_process.shutdownAbort(true); }
 	}
 	else {
 		// and copy the data into collrec or g_conf
@@ -13005,7 +13005,7 @@ bool Parm::printVal ( SafeBuf *sb , collnum_t collnum , int32_t occNum ) {
 
 	log("parms: missing parm type!!");
 
-	char *xx=NULL;*xx=0;
+	g_process.shutdownAbort(true);
 	return false;
 }
 

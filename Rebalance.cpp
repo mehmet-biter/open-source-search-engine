@@ -428,7 +428,7 @@ bool Rebalance::scanRdb ( ) {
 }
 
 static void doneAddingMetaWrapper ( void *state ) {
-	if ( g_rebalance.m_blocked <= 0 ) { char *xx=NULL;*xx=0; }
+	if ( g_rebalance.m_blocked <= 0 ) { g_process.shutdownAbort(true); }
 	g_rebalance.m_blocked--;
 	// wait for other msg4 add to complete
 	if ( g_rebalance.m_blocked > 0 ) return;
@@ -439,7 +439,7 @@ static void doneAddingMetaWrapper ( void *state ) {
 // scan that list
 bool Rebalance::gotList ( ) {
 
-	if ( m_blocked ) { char *xx=NULL;*xx=0; }
+	if ( m_blocked ) { g_process.shutdownAbort(true); }
 
 	Rdb *rdb = g_process.m_rdbs[m_rdbNum];
 

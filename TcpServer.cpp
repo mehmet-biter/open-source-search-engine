@@ -6,6 +6,8 @@
 #include "PingServer.h"
 #include "Hostdb.h"
 #include "max_niceness.h"
+#include "Process.h"
+
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
 #endif
@@ -120,7 +122,7 @@ bool TcpServer::init ( void (* requestHandler)(TcpSocket *s) ,
 		if ( s_stdinSock != NULL ) { 
 			log("tcp: stdinSock = %" PTRFMT" != 0",
 			    (PTRTYPE)s_stdinSock);
-			char *xx=NULL;*xx=0;
+			g_process.shutdownAbort(true);
 		}
 		s_openned = true;
 	}
@@ -677,7 +679,7 @@ bool TcpServer::sendMsg( TcpSocket *s, char *sendBuf, int32_t sendBufSize, int32
 	// ensure the correct TcpServer
 	if (s->m_this != this) {
 		log("tcpserver: Socket comming into incorrect TcpServer!");
-		char *xx = NULL; *xx = 0;
+		g_process.shutdownAbort(true);
 	}
 	s->m_this             = this;
 	//	s->m_ip               = ip;
@@ -811,7 +813,7 @@ TcpSocket *TcpServer::getNewSocket ( ) {
 		    "Check open fds using ls /proc/<gb-pid>/fds/ and ensure "
 		    "they are all BELOW 1024.",
 		    (int32_t)MAX_NUM_FDS,(int32_t)sd);
-		char *xx=NULL;*xx=0; 
+		g_process.shutdownAbort(true); 
 	}
 	// return NULL and set g_errno on failure
 	if ( sd <  0 ) {
@@ -1220,7 +1222,7 @@ void readSocketWrapper2 ( int sd , void *state ) {
 			s->m_tunnelMode = 3;
 		}
 		// sanity
-		if ( s->m_sockState != ST_WRITING ) { char *xx=NULL;*xx=0; }
+		if ( s->m_sockState != ST_WRITING ) { g_process.shutdownAbort(true); }
 		// it went through, should be ST_WRITING so go below
 		THIS->writeSocket ( s );
 		return;
@@ -1243,7 +1245,7 @@ void readSocketWrapper2 ( int sd , void *state ) {
 			// ssl: Error on Connect
 			// ssl: Error: Syscall 
 			// from this with g_errno not set
-			if ( ! g_errno ) { char *xx=NULL;*xx=0; }
+			if ( ! g_errno ) { g_process.shutdownAbort(true); }
 			THIS->makeCallback  ( s );
 			THIS->destroySocket ( s ); 
 			return ;
@@ -1262,7 +1264,7 @@ void readSocketWrapper2 ( int sd , void *state ) {
 	// . TODO: deleting nodes from under Loop::callCallbacks is dangerous!!
 	if ( status == -1 ) {
 		// g_errno is not set if it just read 0 bytes
-		//if ( ! g_errno ) { char *xx=NULL;*xx=0; }
+		//if ( ! g_errno ) { g_process.shutdownAbort(true); }
 		THIS->makeCallback  ( s );
 		THIS->destroySocket ( s ); 
 		return;
@@ -1480,7 +1482,7 @@ int32_t TcpServer::readSocket ( TcpSocket *s ) {
 		g_errno = 0;
 		// for debug. seems like content-length: is counting
 		// the \r\n when it shoulnd't be
-		//char *xx=NULL;*xx=0; 
+		//g_process.shutdownAbort(true); 
 		return -1; } // { s->m_sockState = ST_CLOSED; return 1; }
 	// update counts
 	s->m_totalRead  += n;
@@ -1628,7 +1630,7 @@ void writeSocketWrapper ( int sd , void *state ) {
 			return; 
 		}
 		// it went through, should be ST_WRITING so go below
-		if ( s->m_sockState != ST_WRITING ) { char *xx=NULL;*xx=0; }
+		if ( s->m_sockState != ST_WRITING ) { g_process.shutdownAbort(true); }
 	}
 			
 
@@ -1661,7 +1663,7 @@ void writeSocketWrapper ( int sd , void *state ) {
 		int32_t status = THIS->connectSocket(s) ;
 		// if connection had an error, bail, g_errno should be set
 		if ( status == -1 ) {
-			if ( ! g_errno ) { char *xx=NULL;*xx=0; }
+			if ( ! g_errno ) { g_process.shutdownAbort(true); }
 			THIS->makeCallback ( s );
 			THIS->destroySocket ( s ); 
 		}
@@ -2104,8 +2106,8 @@ void TcpServer::destroySocket ( TcpSocket *s ) {
 		log("tcp: destroying socket in streaming mode. err=%s",
 		    mstrerror(g_errno));
 		// why is it being destroyed without g_errno set?
-		//if ( ! g_errno ) { char *xx=NULL;*xx=0; }
-		//char *xx=NULL;*xx=0; }
+		//if ( ! g_errno ) { g_process.shutdownAbort(true); }
+		//g_process.shutdownAbort(true); }
 	}
 
 	if ( s->m_sockState == ST_CLOSE_CALLED ) {
@@ -2749,7 +2751,7 @@ bool TcpServer::sendChunk( TcpSocket *s, SafeBuf *sb, void *state,
 
 // returns -1 on error with g_errno set. returns 0 if would block. 1 if done.
 int TcpServer::sslHandshake ( TcpSocket *s ) {
-	if ( s->m_sockState != ST_SSL_HANDSHAKE ) { char *xx=NULL;*xx=0; }
+	if ( s->m_sockState != ST_SSL_HANDSHAKE ) { g_process.shutdownAbort(true); }
 
 	// steal from ssl tcp server i guess in case we are not it
 	if ( ! s->m_ssl ) {
@@ -2775,7 +2777,7 @@ int TcpServer::sslHandshake ( TcpSocket *s ) {
 
 	if (!s->m_ssl) {
 		log("ssl: SSL is NULL after connect.");
-		char *xx = NULL; *xx = 0;
+		g_process.shutdownAbort(true);
 	}
 	// if the connection happened return r, should be 1
 	if ( r > 0 ) {
@@ -2814,7 +2816,7 @@ int TcpServer::sslHandshake ( TcpSocket *s ) {
 			 sslMsg );
 	}
 
-	if ( sslError <= 0 ) { char *xx=NULL;*xx=0; }
+	if ( sslError <= 0 ) { g_process.shutdownAbort(true); }
 
 	if ( g_conf.m_logDebugTcp ) {
 		log( "tcp: ssl handshake returned r=%i", r );

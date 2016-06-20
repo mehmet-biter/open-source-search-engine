@@ -10,6 +10,8 @@
 #include "Phrases.h"
 #include "sort.h"
 #include "Wiktionary.h"
+#include "Process.h"
+
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
 #endif
@@ -46,7 +48,7 @@ int32_t Synonyms::getSynonyms ( const Words *words ,
 	m_words     = words;
 
 	// sanity check
-	if ( wordNum > m_words->getNumWords() ) { char *xx=NULL;*xx=0; }
+	if ( wordNum > m_words->getNumWords() ) { g_process.shutdownAbort(true); }
 
 	// init the dedup table to dedup wordIds
 	HashTableX dt;
@@ -97,7 +99,7 @@ int32_t Synonyms::getSynonyms ( const Words *words ,
 	m_langIds = (uint8_t *)bufPtr;
 	bufPtr += maxSyns ;
 
-	if ( bufPtr > tmpBuf + TMPSYNBUFSIZE ) { char *xx=NULL;*xx=0; }
+	if ( bufPtr > tmpBuf + TMPSYNBUFSIZE ) { g_process.shutdownAbort(true); }
 
 	// cursors
 	m_aidsPtr  = m_aids;
@@ -274,7 +276,7 @@ int32_t Synonyms::getSynonyms ( const Words *words ,
 		// zh_ch?
 		if ( *pipe == '_' ) pipe += 3;
 		// sanity
-		if ( *pipe != '|' ) { char *xx=NULL;*xx=0; }
+		if ( *pipe != '|' ) { g_process.shutdownAbort(true); }
 
 		// is it "en" or "zh_ch" etc.
 		int synLangAbbrLen = pipe - ss;
@@ -322,7 +324,7 @@ int32_t Synonyms::getSynonyms ( const Words *words ,
 
 		// store the lang as a bit in a bit vector for the query term
 		// so it can be from multiple langs.
-		if ( synLangAbbrLen > 30 ) { char *xx=NULL;*xx=0; }
+		if ( synLangAbbrLen > 30 ) { g_process.shutdownAbort(true); }
 		gbmemcpy ( tmp , synLangAbbr , synLangAbbrLen );
 		tmp[synLangAbbrLen] = '\0';
 		langId = getLangIdFromAbbr ( tmp ); // order is linear

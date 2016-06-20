@@ -3,6 +3,8 @@
 #include "Entities.h"
 #include "Unicode.h"
 #include "HashTableX.h"
+#include "Process.h"
+
 
 
 static HashTableX s_table;
@@ -38,7 +40,7 @@ static bool initEntityTable(){
 			for(int j=0; j<s_entities[i].codepoints; j++) {
 				UChar32 codepoint = s_entities[i].codepoint[j];
 				int32_t len = utf8Encode(codepoint,buf);
-				if ( len == 0 ) { char *xx=NULL;*xx=0; }
+				if ( len == 0 ) { g_process.shutdownAbort(true); }
 				
 				// make modification to make parsing easier
 				if ( codepoint == 160 ) {  // nbsp
@@ -50,7 +52,7 @@ static bool initEntityTable(){
 			}
 			s_entities[i].utf8Len = (size_t)(buf-s_entities[i].utf8);
 			// must not exist!
-			if ( s_table.isInTable(&h) ) { char*xx=NULL;*xx=0;}
+			if ( s_table.isInTable(&h) ) { g_process.shutdownAbort(true);}
 			// store the entity index in the hash table as score
 			if ( ! s_table.addTerm ( &h, i+1 ) ) return false;
 		}

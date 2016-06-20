@@ -1,8 +1,9 @@
 #include "gb-include.h"
 
 #include "RdbMem.h"
-//#include "RdbDump.h"
 #include "Rdb.h"
+#include "Process.h"
+
 
 RdbMem::RdbMem() {
 	m_mem     = NULL;
@@ -187,7 +188,7 @@ void RdbMem::freeDumpedMem( RdbTree *tree ) {
     //char *memEnd = m_mem + m_memSize;
 
     // this should still be true so allocData() returns m_ptr2 ptrs
-    if ( ! m_rdb->m_inDumpLoop ) { char *xx=NULL;*xx=0; }
+    if ( ! m_rdb->m_inDumpLoop ) { g_process.shutdownAbort(true); }
 
     // count how many data nodes we had to move to avoid corruption
     int32_t count = 0;
@@ -232,7 +233,7 @@ void RdbMem::freeDumpedMem( RdbTree *tree ) {
 		if ( tree->m_sizes ) size = tree->m_sizes[i];
 		else size = tree->m_fixedDataSize;
 			
-		if ( size < 0 ) { char *xx=NULL;*xx=0; }
+		if ( size < 0 ) { g_process.shutdownAbort(true); }
 		if ( size == 0 ) continue;
 			
 		// m_inDumpLoop is still true at this point so

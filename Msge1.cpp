@@ -1,4 +1,5 @@
 #include "gb-include.h"
+#include "Process.h"
 
 #include "Msge1.h"
 
@@ -153,7 +154,7 @@ bool Msge1::launchRequests ( int32_t starti ) {
 		// now "ip" might actually be -1 or 0 (invalid) so be careful
 		m_ipBuf[m_n] = ip;
 		// what is this?
-		//if ( ip == 3 ) { char *xx=NULL;*xx=0; }
+		//if ( ip == 3 ) { g_process.shutdownAbort(true); }
 		m_numRequests++; 
 		m_numReplies++; 
 		m_n++; 
@@ -193,7 +194,7 @@ bool Msge1::launchRequests ( int32_t starti ) {
 		// what is this? i no longer have this bug really - i fixed
 		// it - but it did core here probably from a bad dns reply!
 		// so take this out...
-		//if ( ip == 3 ) { char *xx=NULL;*xx=0; }
+		//if ( ip == 3 ) { g_process.shutdownAbort(true); }
 		m_ipBuf[m_n] = ip;
 		m_numRequests++; 
 		m_numReplies++; 
@@ -219,7 +220,7 @@ bool Msge1::launchRequests ( int32_t starti ) {
 			// save it
 			m_errno = g_errno;
 			// hard exit
-			char *xx=NULL; *xx=0; 
+			g_process.shutdownAbort(true); 
 		}
 		// an ip of 0 means we could not find it
 		if ( found ) { // quickIp != 0 ) {
@@ -239,7 +240,7 @@ bool Msge1::launchRequests ( int32_t starti ) {
 	for ( i = starti ; i < MAX_OUTSTANDING_MSGE1 ; i++ )
 		if ( ! m_used[i] ) break;
 	// sanity check
-	if ( i >= MAX_OUTSTANDING_MSGE1 ) { char *xx = NULL; *xx = 0; }
+	if ( i >= MAX_OUTSTANDING_MSGE1 ) { g_process.shutdownAbort(true); }
 	// normalize the url
 	//m_urls[i].set ( p , plen );
 	// save the url number, "n"
@@ -304,14 +305,14 @@ bool Msge1::sendMsgC ( int32_t i , const char *host , int32_t hlen ) {
 			// save it
 			m_errno = g_errno;
 			// hard exit
-			char *xx=NULL; *xx=0; 
+			g_process.shutdownAbort(true); 
 		}
 		// an ip of 0 means we could not find it
 		if ( found ) 
 			return addTag(i);
 	}
 
-	//char *xx=NULL;*xx=0;
+	//g_process.shutdownAbort(true);
 
 	if ( ! m->getIp ( host           ,
 			  hlen           ,
@@ -350,7 +351,7 @@ bool Msge1::doneSending ( int32_t i ) {
 	// get ip we got
 	int32_t ip = m_ipBuf[n];
 	// what is this?
-	//if ( ip == 3 ) { char *xx=NULL;*xx=0; }
+	//if ( ip == 3 ) { g_process.shutdownAbort(true); }
 	//log ( LOG_DEBUG, "build: Finished Msge1 for url [%" PRId32",%" PRId32"]: %s ip=%s",
 	//      n, i,  m_urls[i].getUrl() ,iptoa(ip));
 
@@ -491,7 +492,7 @@ bool getTestIp ( const char *url, int32_t *retIp, bool *found, int32_t niceness,
 		if ( s_testBuf ) mfree ( s_testBuf , s_testBufSize, "msge1" );
 		// hashtable set, map urlhash32 to ip
 		if ( !s_ht.set(4,4,400000,NULL,0,false,niceness,"msge1tab")) { 
-			char *xx=NULL;*xx=0; }
+			g_process.shutdownAbort(true); }
 		// null it out now, we freed it
 		s_testBuf = NULL;
 		// filename
@@ -578,14 +579,14 @@ bool getTestIp ( const char *url, int32_t *retIp, bool *found, int32_t niceness,
 		// all done? not found...
 		if ( ! ips[0] ) { *retIp = 0; return true; }
 		// sanity check, each line must have an IP!
-		if ( ips >= s_testBufPtr ) { char *xx=NULL;*xx=0; }
+		if ( ips >= s_testBufPtr ) { g_process.shutdownAbort(true); }
 		// must be number
 		if ( ! is_digit(*ips) ) { 
 			// there is a single line that is \0 0.0.0.\n
 			// so let's fix this by skipping until \n
 			for ( ; p<s_testBufPtr&& *p!='\n';p++);
 			goto loop;
-			//char *xx=NULL;*xx=0; }
+			//g_process.shutdownAbort(true); }
 		}
 		// advance to end
 		char *ie = ips; 
@@ -596,7 +597,7 @@ bool getTestIp ( const char *url, int32_t *retIp, bool *found, int32_t niceness,
 		int32_t ip = atoip ( ips , ie - ips );
 		// store in hash table for lookup below
 		if ( u32 && ! s_ht.addKey ( &u32 , &ip ) ) { 
-			char *xx=NULL;*xx=0; }
+			g_process.shutdownAbort(true); }
 		// advance p for next round
 		p = ie;
 		// skip over spaces
@@ -632,7 +633,7 @@ void resetTestIpTable ( ) {
 // returns false if unable to add, returns true if added
 bool addTestIp ( const char *host, int32_t hostLen, int32_t ip ) {
 	// must have first tried to get it
-	if ( s_needsReload ) { char *xx=NULL;*xx=0; }
+	if ( s_needsReload ) { g_process.shutdownAbort(true); }
 	// must have allocated this
 	if ( ! s_testBuf )
 		return log("test: no test buf to add ip %s",iptoa(ip));
@@ -657,7 +658,7 @@ bool addTestIp ( const char *host, int32_t hostLen, int32_t ip ) {
 	s_testBufPtr += ps;
 	// add to hash table too
 	int32_t u32 = hash32 ( host , hostLen );
-	if ( ! s_ht.addKey ( &u32 , &ip ) ) { char *xx=NULL;*xx=0; }
+	if ( ! s_ht.addKey ( &u32 , &ip ) ) { g_process.shutdownAbort(true); }
 	// success
 	return true;
 }

@@ -18,6 +18,7 @@ Profiler g_profiler;
 #include "gb-include.h"
 #include "Profiler.h"
 #include "Stats.h"
+#include "Process.h"
 #include "sort.h"
 Profiler g_profiler;
 
@@ -207,7 +208,7 @@ uint32_t Profiler::getByte (unsigned char * field,int size){
 			|    (((uint32_t) (field [3])) << 24);
 	default:
 		log(LOG_INIT,"admin: Unhandled data length: %d", size);
-		char *xx=NULL; xx=0;
+		g_process.shutdownAbort(true);
 		return 0;
 	}
 }
@@ -622,7 +623,7 @@ bool Profiler::endTimer(int32_t address,
 		// This happens because at closing the profiler is still on
 		// after destructor has been called. Not displaying address
 		// because is is of no use
-		//		{ char *xx = NULL; *xx = 0; }
+		//		{ g_process.shutdownAbort(true); }
 		//		return false;
 		return true;
 	}

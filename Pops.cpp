@@ -4,6 +4,8 @@
 #include "Words.h"
 #include "StopWords.h"
 #include "Speller.h"
+#include "Process.h"
+
 
 Pops::Pops () {
 	m_pops = NULL;
@@ -42,7 +44,7 @@ bool Pops::set ( const Words *words , int32_t a , int32_t b ) {
 		m_pops[i] = g_speller.getPhrasePopularity( wp, key, 0 );
 
 		// sanity check
-		if ( m_pops[i] < 0 ) { char *xx=NULL;*xx=0; }
+		if ( m_pops[i] < 0 ) { g_process.shutdownAbort(true); }
 
 		if ( m_pops[i] == 0 ) {
 			m_pops[i] = 1;

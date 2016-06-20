@@ -223,7 +223,7 @@ bool Loop::addSlot ( bool forReading , int fd, void *state,
 	// sanity
 	if ( fd > MAX_NUM_FDS ) {
 		log("loop: bad fd of %" PRId32,(int32_t)fd);
-		char *xx=NULL;*xx=0;
+		g_process.shutdownAbort(true);
 	}
 	// debug note
 	if (  forReading && (g_conf.m_logDebugLoop || g_conf.m_logDebugTcp) )
@@ -262,7 +262,7 @@ bool Loop::addSlot ( bool forReading , int fd, void *state,
 			s_readFds[s_numReadFds++] = fd;
 			FD_SET ( fd,&s_selectMaskRead  );
 			// sanity
-			if ( s_numReadFds>MAX_NUM_FDS){char *xx=NULL;*xx=0;}
+			if ( s_numReadFds>MAX_NUM_FDS){g_process.shutdownAbort(true);}
 		}
 		// fd == MAX_NUM_FDS if it's a sleep callback
 		//if ( fd < MAX_NUM_FDS ) {
@@ -279,7 +279,7 @@ bool Loop::addSlot ( bool forReading , int fd, void *state,
 	 		s_writeFds[s_numWriteFds++] = fd;
 	 		FD_SET ( fd,&s_selectMaskWrite  );
 	 		// sanity
-	 		if ( s_numWriteFds>MAX_NUM_FDS){char *xx=NULL;*xx=0;}
+	 		if ( s_numWriteFds>MAX_NUM_FDS){g_process.shutdownAbort(true);}
 	 	}
 	}
 	// set our callback and state
@@ -379,7 +379,7 @@ void Loop::callCallbacks_ass ( bool forReading , int fd , int64_t now ,
 			    "nice=%" PRId32,(int32_t)fd,(int32_t)s->m_niceness);
 
 		// sanity check. -1 no longer supported
-		if ( s->m_niceness < 0 ) { char *xx=NULL;*xx=0; }
+		if ( s->m_niceness < 0 ) { g_process.shutdownAbort(true); }
 
 		// Temporarily (for the duration of the callback call) switch
 		// niceness to the niceness of the slot
@@ -1053,11 +1053,11 @@ void Loop::quickPoll(int32_t niceness, const char* caller, int32_t lineno) {
 	// sanity check
 	if ( g_niceness > niceness ) {
 		log(LOG_WARN,"loop: niceness mismatch!");
-		//char *xx=NULL;*xx=0; }
+		//g_process.shutdownAbort(true); }
 	}
 
 	// sanity -- temporary -- no quickpoll in a thread!!!
-	//if ( g_threads.amThread() ) { char *xx=NULL;*xx=0; }
+	//if ( g_threads.amThread() ) { g_process.shutdownAbort(true); }
 
 	// if we are niceness 1 and not in a handler, make it niceness 2
 	// so the handlers can be answered and we don't slow other

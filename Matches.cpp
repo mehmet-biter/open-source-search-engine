@@ -10,6 +10,8 @@
 #include "Sections.h"
 #include "XmlDoc.h"
 #include "BitOperations.h"
+#include "Process.h"
+
 
 // TODO: have Matches set itself from all the meta tags, titles, link text,
 //       neighborhoods and body. then proximity algo can utilize that info
@@ -70,7 +72,7 @@ void Matches::setQuery ( Query *q ) {
 	// save it
 	m_q       = q;
 
-	if ( m_qwordFlags ) { char *xx=NULL;*xx=0; }
+	if ( m_qwordFlags ) { g_process.shutdownAbort(true); }
 
 	int32_t need = m_q->m_numWords * sizeof(mf_t) ;
 	m_qwordAllocSize = need;
@@ -119,7 +121,7 @@ void Matches::setQuery ( Query *q ) {
 	int32_t          n;
 	// sanity check
 	if ( m_numSlots > MAX_QUERY_WORDS_TO_MATCH * 3 ) {
-		char *xx = NULL; *xx = 0; }
+		g_process.shutdownAbort(true); }
 
 	// clear hash table
 	memset ( m_qtableIds   , 0 , m_numSlots * 8 );
@@ -438,7 +440,7 @@ bool Matches::addMatches(Words *words, Phrases *phrases, Sections *sections, Bit
 	int32_t nextMatchWordPos = 0;
 	int32_t lasti = -3;
 
-	if ( getNumXmlNodes() > 512 ) { char *xx=NULL;*xx=0; }
+	if ( getNumXmlNodes() > 512 ) { g_process.shutdownAbort(true); }
 
 	int32_t badFlags =SEC_SCRIPT|SEC_STYLE|SEC_SELECT|SEC_IN_TITLE;
 
@@ -874,7 +876,7 @@ int32_t Matches::getNumWordsInMatch( Words *words, int32_t wn, int32_t n, int32_
 			return 0;
 	}
 	// sanity check
-	if ( k < 0 ) { char *xx = NULL; *xx = 0; }
+	if ( k < 0 ) { g_process.shutdownAbort(true); }
 	// skip punct words
 	if ( j-1>=0 && m_q->m_qwords[j-1].m_isPunct ) j--;
 	// . ok, we got a quote match

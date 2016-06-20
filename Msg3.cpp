@@ -21,7 +21,7 @@ Msg3::~Msg3() {
 }
 
 void Msg3::reset() {
-	if ( m_numScansCompleted < m_numScansStarted ) { char *xx=NULL;*xx=0; }
+	if ( m_numScansCompleted < m_numScansStarted ) { g_process.shutdownAbort(true); }
 	m_hadCorruption = false;
 	// reset # of lists to 0
 	m_numScansCompleted = 0;
@@ -290,7 +290,7 @@ bool Msg3::readList  ( char           rdbId         ,
 		    numFiles , max , startFileNum );
 		g_errno = EBADENGINEER; 
 		// force core dump
-		char *xx=NULL;*xx=0;
+		g_process.shutdownAbort(true);
 		return true; 
 	}
 
@@ -331,7 +331,7 @@ bool Msg3::readList  ( char           rdbId         ,
 	// sanity check
 	if ( p - m_alloc != need ) {
 		log(LOG_LOGIC,"disk: Bad malloc in Msg3.cpp.");
-		char *xx = NULL; *xx = 0;
+		g_process.shutdownAbort(true);
 	}
 	// call constructors
 	for ( int32_t i = 0 ; i < nn ; i++ ) m_lists[i].constructor();
@@ -425,7 +425,7 @@ bool Msg3::readList  ( char           rdbId         ,
 	// sanity check
 	if ( m_numFileNums > nn ) {
 		log(LOG_LOGIC,"disk: Failed sanity check in Msg3.");
-		char *xx = NULL; *xx = 0;
+		g_process.shutdownAbort(true);
 	}
 
 	// debug msg
@@ -455,7 +455,7 @@ bool Msg3::readList  ( char           rdbId         ,
 			    "from oldest to newest so RdbList::indexMerge_r "
 			    "works properly. Otherwise, corruption will "
 			    "result. ");
-			char *xx = NULL; *xx = 0;
+			g_process.shutdownAbort(true);
 			return true;
 		}
 		// . sanity check?
@@ -795,7 +795,7 @@ bool Msg3::doneScanning ( ) {
 
 	// how does this happen? we should never bail out on a low priority
 	// disk read... we just wait for it to complete...
-	if ( g_errno == EDISKSTUCK && m_niceness != 0 ) { char *xx=NULL;*xx=0;}
+	if ( g_errno == EDISKSTUCK && m_niceness != 0 ) { g_process.shutdownAbort(true);}
 
 	// on I/O, give up at call it corrupt after a while. some hitachis
 	// have I/O errros on little spots, like gk88, maybe we can fix him
@@ -1018,7 +1018,7 @@ bool Msg3::doneScanning ( ) {
 			       memcmp ( m_lists[i].m_list , rec+1,recSize-1) ||
 			       *rec != m_scans[i].m_shifted ) ) {
 				log("msg3: cache did not validate");
-				char *xx=NULL;*xx=0;
+				g_process.shutdownAbort(true);
 			}
 			mfree ( rec , recSize , "vca" );
 		}
@@ -1121,7 +1121,7 @@ void  Msg3::setPageRanges ( RdbBase *base ,
 			    char  *endKey        ,
 			    int32_t   minRecSizes   ) {
 	// sanity check
-	//if ( m_ks != 12 && m_ks != 16 ) { char *xx=NULL;*xx=0; }
+	//if ( m_ks != 12 && m_ks != 16 ) { g_process.shutdownAbort(true); }
 	// get the file maps from the rdb
 	RdbMap **maps = base->getMaps();
 	// . initialize the startpg/endpg for each file
@@ -1129,7 +1129,7 @@ void  Msg3::setPageRanges ( RdbBase *base ,
 	// . since we set them equal that means an empty range for each file
 	for ( int32_t i = 0 ; i < numFileNums ; i++ ) {
 		int32_t fn = fileNums[i];
-		if ( fn < 0 ) { char *xx = NULL; *xx = 0; }
+		if ( fn < 0 ) { g_process.shutdownAbort(true); }
 		m_startpg[i] = maps[fn]->getPage( startKey );
 		m_endpg  [i] = m_startpg[i];
 	}
@@ -1258,7 +1258,7 @@ void  Msg3::setPageRanges ( RdbBase *base ,
 		// . this sanity check fails sometimes, but leave it
 		//   out for now... causes the Illegal endkey msgs in
 		//   RdbList::indexMerge_r()
-		//if ( KEYNEG(lastMinKey) ) { char *xx=NULL;*xx=0; }
+		//if ( KEYNEG(lastMinKey) ) { g_process.shutdownAbort(true); }
 		KEYSET(endKey,lastMinKey,m_ks);
 		//return lastMinKey;
 		return;

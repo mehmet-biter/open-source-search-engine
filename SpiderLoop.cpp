@@ -380,7 +380,7 @@ void SpiderLoop::spiderDoledUrls ( ) {
 	// if we got the lock or not
 	if ( m_msg12.m_gettingLocks ) {
 		// this should no longer happen
-		char *xx=NULL; *xx=0;
+		g_process.shutdownAbort(true);
 		// make a note, maybe this is why spiders are deficient?
 		if ( g_conf.m_logDebugSpider )
 			log("spider: failed to get doledb rec to spider: "
@@ -726,7 +726,7 @@ subloopNextPriority:
 	}
 
 	// sanity check
-	if ( nowGlobal == 0 ) { char *xx=NULL;*xx=0; }
+	if ( nowGlobal == 0 ) { g_process.shutdownAbort(true); }
 
 	// need this for msg5 call
 	key_t endKey;
@@ -753,7 +753,7 @@ subloopNextPriority:
 
 			// sanity
 			if ( sp >= MAX_SPIDER_PRIORITIES){
-				char *xx=NULL;*xx=0;
+				g_process.shutdownAbort(true);
 			}
 
 			// skip if already mapped
@@ -794,7 +794,7 @@ subloopNextPriority:
 
 		// sanity
 		if ( cr != m_sc->getCollectionRec() ) {
-			char *xx = NULL; *xx = 0;
+			g_process.shutdownAbort(true);
 		}
 
 		// skip the priority if we already have enough spiders on it
@@ -1001,7 +1001,7 @@ bool SpiderLoop::gotDoledbList2 ( ) {
 	// sanity check -- wrap watch -- how can this really happen?
 	if ( m_sc->m_nextDoledbKey.n1 == 0xffffffff           &&
 	     m_sc->m_nextDoledbKey.n0 == 0xffffffffffffffffLL ) {
-		char *xx=NULL;*xx=0;
+		g_process.shutdownAbort(true);
 	}
 
 	// if its negative inc by two then! this fixes the bug where the
@@ -1013,7 +1013,7 @@ bool SpiderLoop::gotDoledbList2 ( ) {
 	if ( m_sc->m_nextDoledbKey.n1 == 0x0 &&
 	     m_sc->m_nextDoledbKey.n0 == 0x0 ) {
 		// TODO: work this out
-		char *xx=NULL;*xx=0;
+		g_process.shutdownAbort(true);
 	}
 
 	// get priority from doledb key
@@ -1038,7 +1038,7 @@ bool SpiderLoop::gotDoledbList2 ( ) {
 	m_sc->m_nextKeys [ m_sc->m_pri2 ] = m_sc->m_nextDoledbKey;
 
 	// sanity
-	if ( pri < 0 || pri >= MAX_SPIDER_PRIORITIES ) { char *xx=NULL;*xx=0; }
+	if ( pri < 0 || pri >= MAX_SPIDER_PRIORITIES ) { g_process.shutdownAbort(true); }
 
 	// skip the priority if we already have enough spiders on it
 	int32_t out = m_sc->m_outstandingSpiders[pri];
@@ -1092,7 +1092,7 @@ bool SpiderLoop::gotDoledbList2 ( ) {
 	}
 
 	// what is this? a dataless positive key?
-	if ( m_list.getCurrentRecSize() <= 16 ) { char *xx=NULL;*xx=0; }
+	if ( m_list.getCurrentRecSize() <= 16 ) { g_process.shutdownAbort(true); }
 
 	int32_t ipOut = 0;
 	int32_t globalOut = 0;
@@ -1343,17 +1343,17 @@ bool SpiderLoop::spiderUrl9 ( SpiderRequest *sreq ,
 			      int32_t sameIpWaitTime ,
 			      int32_t maxSpidersOutPerIp ) {
 	// sanity check
-	//if ( ! sreq->m_doled ) { char *xx=NULL;*xx=0; }
+	//if ( ! sreq->m_doled ) { g_process.shutdownAbort(true); }
 	// if waiting on a lock, wait
-	if ( m_msg12.m_gettingLocks ) { char *xx=NULL;*xx=0; }
+	if ( m_msg12.m_gettingLocks ) { g_process.shutdownAbort(true); }
 	// sanity
-	if ( ! m_sc ) { char *xx=NULL;*xx=0; }
+	if ( ! m_sc ) { g_process.shutdownAbort(true); }
 
 	// sanity check
 	// core dump? just re-run gb and restart the parser test...
 	if ( g_conf.m_testParserEnabled &&
 	     ! sreq->m_isInjecting ) { 
-		char *xx=NULL;*xx=0; }
+		g_process.shutdownAbort(true); }
 
 	// wait until our clock is synced with host #0 before spidering since
 	// we store time stamps in the domain and ip wait tables in 
@@ -1476,7 +1476,7 @@ bool SpiderLoop::spiderUrl9 ( SpiderRequest *sreq ,
 			log("spider: spidering same url %s twice. "
 			    "different firstips?",
 			    xd->m_firstUrl.getUrl());
-			//char *xx=NULL;*xx=0; }
+			//g_process.shutdownAbort(true); }
 		}
 		// keep chugging
 		continue;
@@ -1488,7 +1488,7 @@ bool SpiderLoop::spiderUrl9 ( SpiderRequest *sreq ,
 	QUICKPOLL(MAX_NICENESS);
 
 	// sanity. ensure m_sreq doesn't change from under us i guess
-	if ( m_msg12.m_gettingLocks ) { char *xx=NULL;*xx=0; }
+	if ( m_msg12.m_gettingLocks ) { g_process.shutdownAbort(true); }
 
 	// get rid of this crap for now
 	//g_spiderCache.meterBandwidth();
@@ -1594,7 +1594,7 @@ bool SpiderLoop::spiderUrl2 ( ) {
 	logTrace( g_conf.m_logTraceSpider, "BEGIN" );
 		
 	// sanity check
-	//if ( ! m_sreq->m_doled ) { char *xx=NULL;*xx=0; }
+	//if ( ! m_sreq->m_doled ) { g_process.shutdownAbort(true); }
 
 	// . find an available doc slot
 	// . we can have up to MAX_SPIDERS spiders (300)
@@ -1608,7 +1608,7 @@ bool SpiderLoop::spiderUrl2 ( ) {
 	if ( i >= MAX_SPIDERS ) {
 		log(LOG_DEBUG,"build: Already have %" PRId32" outstanding spiders.",
 		    (int32_t)MAX_SPIDERS);
-		char *xx = NULL; *xx = 0;
+		g_process.shutdownAbort(true);
 	}
 
 	// breathe
@@ -1656,9 +1656,9 @@ bool SpiderLoop::spiderUrl2 ( ) {
 	//	// get any request from our urlhash table
 	//	SpiderRequest *sreq2 = m_sc->getSpiderRequest2 (&uh48,pdocid);
 	//	// must be valid parent
-	//	if ( ! sreq2 && pdocid == 0LL ) { char *xx=NULL;*xx=0; }
+	//	if ( ! sreq2 && pdocid == 0LL ) { g_process.shutdownAbort(true); }
 	//	// for now core on this
-	//	if ( ! sreq2 ) {  char *xx=NULL;*xx=0; }
+	//	if ( ! sreq2 ) {  g_process.shutdownAbort(true); }
 	//	// log it
 	//	logf(LOG_DEBUG,"spider: spidering uh48=%" PRIu64" pdocid=%" PRIu64,
 	//	     uh48,pdocid);
@@ -1737,9 +1737,9 @@ bool SpiderLoop::spiderUrl2 ( ) {
 		    "url %s",
 		    (int)m_sreq->m_priority,m_sreq->m_url);
 		m_sreq->m_priority = 0;
-		//char *xx=NULL;*xx=0; 
+		//g_process.shutdownAbort(true); 
 	}
-	//if (m_sreq->m_priority >= MAX_SPIDER_PRIORITIES){char *xx=NULL;*xx=0;}
+	//if (m_sreq->m_priority >= MAX_SPIDER_PRIORITIES){g_process.shutdownAbort(true);}
 	// update this
 	m_sc->m_outstandingSpiders[(unsigned char)m_sreq->m_priority]++;
 
@@ -1753,7 +1753,7 @@ bool SpiderLoop::spiderUrl2 ( ) {
 	// debug log
 	//log("XXX: incremented count to %" PRId32" for %s",
 	//    m_sc->m_spidersOut,m_sreq->m_url);
-	//if ( m_sc->m_spidersOut != m_numSpidersOut ) { char *xx=NULL;*xx=0; }
+	//if ( m_sc->m_spidersOut != m_numSpidersOut ) { g_process.shutdownAbort(true); }
 
 	// . return if this blocked
 	// . no, launch another spider!
@@ -1827,7 +1827,7 @@ bool SpiderLoop::indexedDoc ( XmlDoc *xd ) {
 	int32_t i = 0;
 	for ( ; i < MAX_SPIDERS ; i++ ) if ( m_docs[i] == xd) break;
 	// sanity check
-	if ( i >= MAX_SPIDERS ) { char *xx=NULL;*xx=0; }
+	if ( i >= MAX_SPIDERS ) { g_process.shutdownAbort(true); }
 	// set to -1 to indicate inject
 	//if ( i < 0 || i >= MAX_SPIDERS ) i = -1;
 
@@ -1861,7 +1861,7 @@ bool SpiderLoop::indexedDoc ( XmlDoc *xd ) {
 	// debug log
 	//log("XXX: decremented count to %" PRId32" for %s",
 	//    sc->m_spidersOut,sreq->m_url);
-	//if ( sc->m_spidersOut != m_numSpidersOut ) { char *xx=NULL;*xx=0; }
+	//if ( sc->m_spidersOut != m_numSpidersOut ) { g_process.shutdownAbort(true); }
 
 	// breathe
 	QUICKPOLL ( xd->m_niceness );
@@ -1939,7 +1939,7 @@ bool SpiderLoop::indexedDoc ( XmlDoc *xd ) {
 	//if ( addedMetaList ) return true;
 
 	// sanity
-	//if ( ! m_uh48 ) { char *xx=NULL; *xx=0; }
+	//if ( ! m_uh48 ) { g_process.shutdownAbort(true); }
 
 	// the lock we had in g_spiderLoop.m_lockTable for the doleKey
 	// is now remove in Rdb.cpp when it receives a negative dole key to
@@ -2123,7 +2123,7 @@ void doneSendingNotification ( void *state ) {
 	cr->m_needsSave = 1;
 
 	// sanity
-	if ( cr->m_spiderStatus == 0 ) { char *xx=NULL;*xx=0; }
+	if ( cr->m_spiderStatus == 0 ) { g_process.shutdownAbort(true); }
 
 	float respiderFreq = cr->m_collectiveRespiderFrequency;
 
@@ -2191,7 +2191,7 @@ void doneSendingNotification ( void *state ) {
 
 bool sendNotificationForCollRec ( CollectionRec *cr )  {
 	// wtf? caller must set this
-	if ( ! cr->m_spiderStatus ) { char *xx=NULL; *xx=0; }
+	if ( ! cr->m_spiderStatus ) { g_process.shutdownAbort(true); }
 
 	log(LOG_INFO,
 	    "spider: sending notification for crawl status %" PRId32" in "
@@ -2379,7 +2379,7 @@ void gotCrawlInfoReply ( void *state , UdpSlot *slot ) {
 	// inc it
 	s_replies++;
 
-	if ( s_replies > s_requests ) { char *xx=NULL;*xx=0; }
+	if ( s_replies > s_requests ) { g_process.shutdownAbort(true); }
 
 
 	// crap, if any host is dead and not reporting it's number then
@@ -2637,7 +2637,7 @@ void gotCrawlInfoReply ( void *state , UdpSlot *slot ) {
 
 void handleRequestc1 ( UdpSlot *slot , int32_t niceness ) {
 	// just a single collnum
-	if ( slot->m_readBufSize != 1 ) { char *xx=NULL;*xx=0; }
+	if ( slot->m_readBufSize != 1 ) { g_process.shutdownAbort(true); }
 
 	char *req = slot->m_readBuf;
 

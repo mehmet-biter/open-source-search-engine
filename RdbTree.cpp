@@ -9,6 +9,8 @@
 #include "JobScheduler.h"
 #include "Linkdb.h"
 #include "Spider.h"
+#include "Process.h"
+
 
 RdbTree::RdbTree () {
 	//m_countsInitialized = false;
@@ -87,8 +89,8 @@ bool RdbTree::set ( int32_t fixedDataSize ,
 	// set rdbid
 	m_rdbId = rdbId; // -1;
 	// sanity
-	if ( rdbId < -1       ) { char *xx=NULL;*xx=0; }
-	if ( rdbId >= RDB_END ) { char *xx=NULL;*xx=0; }
+	if ( rdbId < -1       ) { g_process.shutdownAbort(true); }
+	if ( rdbId >= RDB_END ) { g_process.shutdownAbort(true); }
 	// if its doledb, set it
 	//if ( dbname && strcmp(dbname,"doledb") == 0 ) m_rdbId = RDB_DOLEDB;
 	// adjust m_maxMem to virtual infinity if it was -1
@@ -128,7 +130,7 @@ void RdbTree::reset ( ) {
 		// it calls Collectiondb::deleteRec() which calls
 		// SpiderColl::reset() which calls m_waitingTree.reset()
 		// which was coring here! so take this out
-		//char *xx = NULL; *xx = 0;
+		//g_process.shutdownAbort(true);
 	}
 	// unprotect it all
 	if ( m_useProtection ) unprotect ( );
@@ -245,7 +247,7 @@ int32_t RdbTree::clear ( ) {
 		CollectionRec *cr = g_collectiondb.getRec(i);
 		if ( ! cr ) continue;
 		if ( m_rdbId < 0 ) continue;
-		//if (((unsigned char)m_rdbId)>=RDB_END){char *xx=NULL;*xx=0; }
+		//if (((unsigned char)m_rdbId)>=RDB_END){g_process.shutdownAbort(true); }
 		cr->m_numNegKeysInTree[(unsigned char)m_rdbId] = 0;
 		cr->m_numPosKeysInTree[(unsigned char)m_rdbId] = 0;
 	}
@@ -443,19 +445,19 @@ int32_t RdbTree::addNode ( collnum_t collnum , const char *key , char *data , in
 
 	// sanity check - no empty positive keys for doledb
 	if ( m_rdbId == RDB_DOLEDB && dataSize == 0 && (key[0]&0x01) == 0x01){
-		char *xx=NULL;*xx=0; }
+		g_process.shutdownAbort(true); }
 
 	// for posdb
-	if ( m_ks == 18 &&(key[0] & 0x06) ) {char *xx=NULL;*xx=0; }
+	if ( m_ks == 18 &&(key[0] & 0x06) ) {g_process.shutdownAbort(true); }
 
 	// sanity check, break if 0 > titleRec > 100MB, it's probably corrupt
 	//if ( m_dbname && m_dbname[0]=='t' && dataSize >= 4 && 
 	//     (*((int32_t *)data) > 100000000 || *((int32_t *)data) < 0 ) ) {
-	//	char *xx = NULL; *xx = 0; }
+	//	g_process.shutdownAbort(true); }
 	// sanity check (MDW)
 	//if ( dataSize == 0 && (*key & 0x01) && m_dbname[0] != 'c' && 
 	//     (*key & 0x02) ) {
-	//	char *xx = NULL; *xx = 0; }
+	//	g_process.shutdownAbort(true); }
 	// commented out because is90PercentFull checks m_memOccupied and
 	// we can breech m_memAlloced w/o breeching 90% of m_memOccupied
 	// if ( m_memAlloced + dataSize > m_maxMem) {
@@ -515,7 +517,7 @@ int32_t RdbTree::addNode ( collnum_t collnum , const char *key , char *data , in
 		// crap, when fixing a tree this will segfault because
 		// m_recs[collnum] is NULL.
 		if ( m_rdbId >= 0 && g_collectiondb.m_recs[collnum] ) {
-			//if( ((unsigned char)m_rdbId)>=RDB_END){char *xx=NULL;*xx=0; }
+			//if( ((unsigned char)m_rdbId)>=RDB_END){g_process.shutdownAbort(true); }
 			g_collectiondb.m_recs[collnum]->
 				m_numNegKeysInTree[(unsigned char)m_rdbId] =0;
 			g_collectiondb.m_recs[collnum]->
@@ -599,7 +601,7 @@ int32_t RdbTree::addNode ( collnum_t collnum , const char *key , char *data , in
 		// m_recs[collnum] is NULL.
 		if ( m_rdbId >= 0 && g_collectiondb.m_recs[collnum] ) {
 			//if( ((unsigned char)m_rdbId)>=RDB_END){
-			//char *xx=NULL;*xx=0; }
+			//g_process.shutdownAbort(true); }
 			CollectionRec *cr ;
 			cr = g_collectiondb.m_recs[collnum];
 			if(cr)cr->m_numNegKeysInTree[(unsigned char)m_rdbId]++;
@@ -612,7 +614,7 @@ int32_t RdbTree::addNode ( collnum_t collnum , const char *key , char *data , in
 		// m_recs[collnum] is NULL.
 		if ( m_rdbId >= 0 && g_collectiondb.m_recs[collnum] ) {
 			//if( ((unsigned char)m_rdbId)>=RDB_END){
-			//char *xx=NULL;*xx=0; }
+			//g_process.shutdownAbort(true); }
 			CollectionRec *cr ;
 			cr = g_collectiondb.m_recs[collnum];
 			if(cr)cr->m_numPosKeysInTree[(unsigned char)m_rdbId]++;
@@ -686,7 +688,7 @@ void RdbTree::deleteNodes ( collnum_t collnum ,
 		log("db: Can not delete record from tree because "
 		    "not writable 2. name=%s",m_dbname);
 		return;
-		//char *xx = NULL; *xx = 0;
+		//g_process.shutdownAbort(true);
 	}
 
 	// protect it all from writes again
@@ -718,10 +720,10 @@ void RdbTree::deleteNode3 ( int32_t i , bool freeData ) {
 		log("db: Can not delete record from tree because "
 		    "not writable. name=%s",m_dbname);
 		return;
-		//char *xx = NULL; *xx = 0;
+		//g_process.shutdownAbort(true);
 	}
 	// must be saved from interrupts lest i be changed
-	//if(g_intOff <= 0 && g_globalNiceness == 0 ) { char *xx=NULL;*xx=0; }
+	//if(g_intOff <= 0 && g_globalNiceness == 0 ) { g_process.shutdownAbort(true); }
 
 	// no deleting if we're saving
 	if ( m_isSaving ) log("db: Can not delete record from tree because "
@@ -856,7 +858,7 @@ void RdbTree::deleteNode3 ( int32_t i , bool freeData ) {
 	//m_numPosKeysPerColl[m_collnums[i]] = 0;
 	if ( m_rdbId >= 0 ) {
 		//if ( ((unsigned char)m_rdbId)>=RDB_END){
-		//char *xx=NULL;*xx=0; }
+		//g_process.shutdownAbort(true); }
 		CollectionRec *cr ;
 		cr = g_collectiondb.m_recs[m_collnums[i]];
 		if(cr){
@@ -928,7 +930,7 @@ void RdbTree::deleteNode3 ( int32_t i , bool freeData ) {
 		m_numNegativeKeys--;
 		//m_numNegKeysPerColl[m_collnums[i]]--;
 		if ( m_rdbId >= 0 ) {
-			//if( ((unsigned char)m_rdbId)>=RDB_END){char *xx=NULL;*xx=0; }
+			//if( ((unsigned char)m_rdbId)>=RDB_END){g_process.shutdownAbort(true); }
 			CollectionRec *cr ;
 			cr = g_collectiondb.m_recs[m_collnums[i]];
 			if(cr)cr->m_numNegKeysInTree[(unsigned char)m_rdbId]--;
@@ -938,7 +940,7 @@ void RdbTree::deleteNode3 ( int32_t i , bool freeData ) {
 		m_numPositiveKeys--;
 		//m_numPosKeysPerColl[m_collnums[i]]--;
 		if ( m_rdbId >= 0 ) {
-			//if( ((unsigned char)m_rdbId)>=RDB_END){char *xx=NULL;*xx=0; }
+			//if( ((unsigned char)m_rdbId)>=RDB_END){g_process.shutdownAbort(true); }
 			CollectionRec *cr ;
 			cr = g_collectiondb.m_recs[m_collnums[i]];
 			if(cr)cr->m_numPosKeysInTree[(unsigned char)m_rdbId]--;
@@ -995,7 +997,7 @@ bool RdbTree::deleteKeys ( collnum_t collnum , char *keys , int32_t numKeys ) {
 bool RdbTree::deleteList ( collnum_t collnum ,
 			   RdbList *list , bool doBalancing ) {
 	// sanity check
-	if ( list->m_ks != m_ks ) { char *xx = NULL; *xx = 0; }
+	if ( list->m_ks != m_ks ) { g_process.shutdownAbort(true); }
 	// return if no non-empty nodes in the tree
 	if ( m_numUsedNodes <= 0 ) return true;
 	// reset before calling list->getCurrent*() functions
@@ -1245,7 +1247,7 @@ bool RdbTree::checkTree2 ( bool printMsgs , bool doChainTest ) {
 		}
 		// for posdb
 		if ( m_ks == 18 &&(m_keys[i*m_ks] & 0x06) ) {
-			char *xx=NULL;*xx=0; }
+			g_process.shutdownAbort(true); }
 
 		if ( isTitledb && m_data[i] ) {
 			char *data = m_data[i];
@@ -1409,7 +1411,7 @@ bool RdbTree::checkTree2 ( bool printMsgs , bool doChainTest ) {
 			// assume linkdb
 			//key192_t *kp = (key192_t *)k;
 			//unsigned char hc = g_linkdb.getLinkerHopCount_uk(kp);
-			//if ( hc ) { char *xx=NULL;*xx=0; }
+			//if ( hc ) { g_process.shutdownAbort(true); }
 		}
 		//ensure depth
 		int32_t newDepth = computeDepth ( i );
@@ -1538,49 +1540,49 @@ bool RdbTree::growTree ( int32_t nn , int32_t niceness ) {
 	// . downsizing should NEVER fail!
 	if ( cp ) {
 		ss = (collnum_t *)mrealloc ( cp , nn*cs , on*cs , m_allocName);
-		if ( ! ss ) { char *xx = NULL; *xx = 0; }
+		if ( ! ss ) { g_process.shutdownAbort(true); }
 		m_collnums = ss;
 		QUICKPOLL(niceness);
 	}
 	if ( kp ) {
 		kk = (char *)mrealloc ( kp, nn*k, on*k, m_allocName );
-		if ( ! kk ) { char *xx = NULL; *xx = 0; }
+		if ( ! kk ) { g_process.shutdownAbort(true); }
 		m_keys = kk;
 		QUICKPOLL(niceness);
 	}
 	if ( lp ) {
 		x = (int32_t *)mrealloc ( lp , nn*4 , on*4 , m_allocName );
-		if ( ! x ) { char *xx = NULL; *xx = 0; }
+		if ( ! x ) { g_process.shutdownAbort(true); }
 		m_left = x;
 		QUICKPOLL(niceness);
 	}
 	if ( rp ) {
 		x = (int32_t *)mrealloc ( rp , nn*4 , on*4 , m_allocName );
-		if ( ! x ) { char *xx = NULL; *xx = 0; }
+		if ( ! x ) { g_process.shutdownAbort(true); }
 		m_right = x;
 		QUICKPOLL(niceness);
 	}
 	if ( pp ) {
 		x = (int32_t *)mrealloc ( pp , nn*4 , on*4 , m_allocName );
-		if ( ! x ) { char *xx = NULL; *xx = 0; }
+		if ( ! x ) { g_process.shutdownAbort(true); }
 		m_parents = x;
 		QUICKPOLL(niceness);
 	}
 	if ( dp && m_fixedDataSize != 0 ) {
 		p = (char **)mrealloc ( dp , nn*d , on*d , m_allocName );
-		if ( ! p ) { char *xx = NULL; *xx = 0; }
+		if ( ! p ) { g_process.shutdownAbort(true); }
 		m_data = p;
 		QUICKPOLL(niceness);
 	}
 	if ( sp && m_fixedDataSize == -1 ) {
 		x = (int32_t *)mrealloc ( sp , nn*4 , on*4 , m_allocName );
-		if ( ! x ) { char *xx = NULL; *xx = 0; }
+		if ( ! x ) { g_process.shutdownAbort(true); }
 		m_sizes = x;
 		QUICKPOLL(niceness);
 	}
 	if ( tp && m_doBalancing ) {
 		s = (char *)mrealloc ( tp , nn   , on   , m_allocName );
-		if ( ! s ) { char *xx = NULL; *xx = 0; }
+		if ( ! s ) { g_process.shutdownAbort(true); }
 		m_depth = s;
 		QUICKPOLL(niceness);
 	}
@@ -1853,7 +1855,7 @@ bool RdbTree::getList ( collnum_t collnum ,
 			//if (m_dbname && m_dbname[0]=='t' && dataSize >= 4 && 
 			//     (*((int32_t *)m_data[node]) > 100000000 || 
 			//      *((int32_t *)m_data[node]) < 0 ) ) {
-			//	char *xx = NULL; *xx = 0; }
+			//	g_process.shutdownAbort(true); }
 			// add the key and data
 			if ( ! list->addRecord ( key,//&m_keys[node*m_ks] ,
 						 dataSize     ,
@@ -1881,7 +1883,7 @@ bool RdbTree::getList ( collnum_t collnum ,
 				// detect tagdb corruption
 				if ( tag->m_bufSize < 0 ||
 				     tag->m_bufSize > 3000 ) {
-					char *xx=NULL;*xx=0; }
+					g_process.shutdownAbort(true); }
 			}
 			*/
 		}
@@ -2471,7 +2473,7 @@ bool RdbTree::fastSave ( const char *dir, const char *dbname, bool useThread, vo
 	// sanity check
 	if ( dbname && strcmp(dbname,m_dbname) ) {
 		log( LOG_ERROR, "db: tree dbname mismatch." );
-		char *xx=NULL;*xx=0;
+		g_process.shutdownAbort(true);
 	}
 
 	m_state    = state;
@@ -2920,7 +2922,7 @@ int32_t RdbTree::fastLoadBlock ( BigFile *f, int32_t start, int32_t totalNodes, 
 	// get valid collnum ranges
 	int32_t max  = g_collectiondb.m_numRecs;
 	// sanity check
-	//if ( max >= MAX_COLLS ) { char *xx = NULL; *xx = 0; }
+	//if ( max >= MAX_COLLS ) { g_process.shutdownAbort(true); }
 	// define ending node for all loops
 	int32_t end = start + n ;
 	// shortcut
@@ -3073,7 +3075,7 @@ int32_t  RdbTree::getNumNegativeKeys( collnum_t collnum ) const {
 	if ( m_rdbId < 0 ) return m_numNegativeKeys;
 	CollectionRec *cr = g_collectiondb.m_recs[collnum];
 	if ( ! cr ) return 0;
-	//if ( ! m_countsInitialized ) { char *xx=NULL;*xx=0; }
+	//if ( ! m_countsInitialized ) { g_process.shutdownAbort(true); }
 	return cr->m_numNegKeysInTree[(unsigned char)m_rdbId]; 
 }
 
@@ -3082,7 +3084,7 @@ int32_t  RdbTree::getNumPositiveKeys( collnum_t collnum ) const {
 	if ( m_rdbId < 0 ) return m_numPositiveKeys;
 	CollectionRec *cr = g_collectiondb.m_recs[collnum];
 	if ( ! cr ) return 0;
-	//if ( ! m_countsInitialized ) { char *xx=NULL;*xx=0; }
+	//if ( ! m_countsInitialized ) { g_process.shutdownAbort(true); }
 	return cr->m_numPosKeysInTree[(unsigned char)m_rdbId]; 
 }
 
@@ -3095,7 +3097,7 @@ void RdbTree::setNumKeys ( CollectionRec *cr ) {
 	return;
 
 #if 0
-	if ( ((unsigned char)m_rdbId) >= RDB_END ) { char *xx=NULL;*xx=0; }
+	if ( ((unsigned char)m_rdbId) >= RDB_END ) { g_process.shutdownAbort(true); }
 
 	collnum_t collnum = cr->m_collnum;
 	cr->m_numNegKeysInTree[(unsigned char)m_rdbId] = 0;

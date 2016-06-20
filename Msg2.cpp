@@ -7,6 +7,8 @@
 #include "Posdb.h" // getTermId()
 #include "Msg3a.h" // DEFAULT_POSDB_READ_SIZE
 #include "HighFrequencyTermShortcuts.h"
+#include "Process.h"
+
 
 //static void gotListWrapper0 ( void *state ) ;
 static void  gotListWrapper ( void *state , RdbList *list , Msg5 *msg5 ) ;
@@ -52,7 +54,7 @@ bool Msg2::getLists ( int32_t     rdbId       ,
 	}
 	// save callback and state
 	m_query       = query;
-	if ( ! query ) { char *xx=NULL;*xx=0; }
+	if ( ! query ) { g_process.shutdownAbort(true); }
 	m_state       = state;
 	m_callback    = callback;
 	m_niceness    = niceness;
@@ -104,7 +106,7 @@ bool Msg2::getLists ( ) {
 	// . make slots for all
 	for (  ; m_i < m_numLists ; m_i++ ) {
 		// sanity for Msg39's sake. do no breach m_lists[].
-		if ( m_i >= ABS_MAX_QUERY_TERMS ) { char *xx=NULL;*xx=0; }
+		if ( m_i >= ABS_MAX_QUERY_TERMS ) { g_process.shutdownAbort(true); }
 		// if any had error, forget the rest. do not launch any more
 		if ( m_errno ) break;
 		// skip if no bytes requested
@@ -294,7 +296,7 @@ bool Msg2::getLists ( ) {
 		m_p = p;
 
 		// sanity for Msg39's sake. do no breach m_lists[].
-		if ( m_w >= MAX_WHITELISTS ) { char *xx=NULL;*xx=0; }
+		if ( m_w >= MAX_WHITELISTS ) { g_process.shutdownAbort(true); }
 
 		// like 90MB last time i checked. so it won't read more
 		// than that...
@@ -373,7 +375,7 @@ void Msg2::returnMsg5 ( Msg5 *msg5 ) {
 	int32_t i; for ( i = 0 ; i < MSG2_MAX_REQUESTS ; i++ ) 
 		if ( &m_msg5[i] == msg5 ) break;
 	// wtf?
-	if ( i >= MSG2_MAX_REQUESTS ) { char *xx=NULL;*xx=0; }
+	if ( i >= MSG2_MAX_REQUESTS ) { g_process.shutdownAbort(true); }
 	// make it available
 	m_avail[i] = true;
 	// reset it

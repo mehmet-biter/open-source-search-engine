@@ -3,6 +3,7 @@
 #include "Msg1.h"
 #include "Rdb.h"
 #include "Posdb.h"
+#include "Process.h"
 
 //
 // BASIC IDEA
@@ -169,7 +170,7 @@ bool SiteGetter::getSite ( char *url, TagRec *gr, int32_t timestamp, collnum_t c
 
 		// . now set the site with m_sitePathDepth
 		// . sanity check, should not block since m_state is NULL
-		if ( ! setSite () ) { char *xx=NULL;*xx=0; }
+		if ( ! setSite () ) { g_process.shutdownAbort(true); }
 
 		// we did not block
 		return true;
@@ -188,7 +189,7 @@ bool SiteGetter::getSite ( char *url, TagRec *gr, int32_t timestamp, collnum_t c
 		m_sitePathDepth = -1;
 
 		// sanity check, should not block since m_state is NULL
-		if ( ! setSite () ) { char *xx=NULL;*xx=0; }
+		if ( ! setSite () ) { g_process.shutdownAbort(true); }
 
 		// we did not block
 		return true;

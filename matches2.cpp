@@ -153,7 +153,7 @@ char *getMatches2 ( Needle *needles          ,
 		//limit, I just don't expect there to be this many
 		//static needles at this point.
 		if(s_quickTables.getNumSlotsUsed() > 32){
-			char *xx=NULL; *xx = 0;
+			g_process.shutdownAbort(true);
 		}
 	}
 	*/

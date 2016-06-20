@@ -5,6 +5,7 @@
 #include "Dns.h"
 #include "HttpServer.h"
 #include "Loop.h"
+#include "Process.h"
 
 #include "Speller.h"
 #include <stdio.h>
@@ -180,7 +181,7 @@ bool Speller::loadUnifiedDict() {
 		// skip til |
 		for ( ; *p && *p != '|' ; p++ );
 		// sanity check
-		if ( *p != '|' ) { char *xx=NULL;*xx=0; }
+		if ( *p != '|' ) { g_process.shutdownAbort(true); }
 		// tmp NULL that
 		*p = '\0';
 		char langId = getLangIdFromAbbr(start);
@@ -367,7 +368,7 @@ bool Speller::loadUnifiedDict() {
 		for ( ; *p && *p !='\n' && *p !='|' ; p++ );
 		if ( *p != '|' ) {
 			log("speller: bad format in wiktionary-lang.txt");
-			char *xx=NULL;*xx=0;
+			g_process.shutdownAbort(true);
 		}
 		//*p = '\0';
 		//uint8_t langId = getLangIdFromAbbr ( langAbbr );
@@ -378,7 +379,7 @@ bool Speller::loadUnifiedDict() {
 		for ( ; *p && *p !='\n' ; p++ );
 		if ( *p != '\n' ) {
 			log("speller: bad format in wiktionary-lang.txt");
-			char *xx=NULL;*xx=0;
+			g_process.shutdownAbort(true);
 		}
 		int32_t wordLen = p - word;
 		// wiktinary has like prefixes ending in minus. skip!
@@ -466,7 +467,7 @@ bool Speller::loadUnifiedDict() {
 // in case the language is unknown, just give the pop of the
 // first found language
 int32_t Speller::getPhrasePopularity( const char *str, uint64_t h, unsigned char langId ) {
-	//char *xx=NULL;*xx=0;
+	//g_process.shutdownAbort(true);
 
 	// hack fixes. 
 	// common word like "and"?
@@ -773,7 +774,7 @@ bool Speller::findNext( char *s, char *send, char **nextWord, bool *isPorn, unsi
 // language detection to keep from making 32 sequential
 // calls for the same phrase to isolate the language.
 char *Speller::getPhraseRecord(char *phrase, int len ) {
-	//char *xx=NULL;*xx=0;
+	//g_process.shutdownAbort(true);
 	if ( !phrase ) return NULL;
 	//char *rv = NULL;
 	int64_t h = hash64d(phrase, len);
@@ -913,7 +914,7 @@ void Speller::dictLookupTest ( char *ff ){
 		uint64_t h = hash64d ( buf, gbstrlen(buf));
 		int32_t pop = g_speller.getPhrasePopularity( buf, h, 0 );
 		if ( pop < 0 ){
-			char *xx = NULL; *xx = 0;
+			g_process.shutdownAbort(true);
 		}
 		count++;
 	}

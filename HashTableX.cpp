@@ -11,6 +11,7 @@
 #include "Loop.h"
 #include "File.h"
 #include "Conf.h"
+#include "Process.h"
 
 
 HashTableX::HashTableX () {
@@ -55,8 +56,8 @@ bool HashTableX::set ( int32_t  ks              ,
 	//if ( initialNumTerms < 32 ) initialNumTerms = 32;
 	// sanity check. assume min keysize of 4 because we do *(int32_t *)key
 	// logic below!!
-	if ( ks <  4 ) { char *xx=NULL;*xx=0; }
-	if ( ds <  0 ) { char *xx=NULL;*xx=0; }
+	if ( ks <  4 ) { g_process.shutdownAbort(true); }
+	if ( ds <  0 ) { g_process.shutdownAbort(true); }
 	// auto?
 	if ( initialNumTerms == -1 ) {
 		int32_t slotSize = ks + ds + 1;
@@ -166,7 +167,7 @@ int32_t HashTableX::getOccupiedSlotNum ( const void *key ) const {
 // for value-less hashtables
 bool HashTableX::addKey ( const void *key ) {
 	// sanity check -- need to supply data?
-	if ( m_ds != 0 ) { char *xx=NULL;*xx=0; }
+	if ( m_ds != 0 ) { g_process.shutdownAbort(true); }
 	return addKey ( key , NULL , NULL );
 }
 
@@ -179,7 +180,7 @@ bool HashTableX::addKey ( const void *key , const void *val , int32_t *slot ) {
 		return false;
 	}
 	// never got initialized? call HashTableX::init()
-	if ( m_ks <= 0 ){ char *xx=NULL; *xx=0; }
+	if ( m_ks <= 0 ){ g_process.shutdownAbort(true); }
 
 	// check to see if we should grow the table. now we grow
 	// when 25% full to make operations faster so getLongestString()
@@ -305,17 +306,17 @@ bool HashTableX::setTableSize ( int32_t oldn , char *buf , int32_t bufSize ) {
 	// make it a power of 2 for speed if small
 	int64_t n = getHighestLitBitValueLL((uint64_t)oldn * 2LL -1);
 	// sanity check, must be less than 1B
-	if ( n > 1000000000 ) { char *xx=NULL;*xx=0; }
+	if ( n > 1000000000 ) { g_process.shutdownAbort(true); }
 	// limit...
 	//if ( n > m_maxSlots ) n = m_maxSlots;
 	// do not go negative on me
 	if ( oldn == 0 ) n = 0;
 	// sanity check
-	if ( n < oldn ) { char *xx = NULL; *xx = 0; }
+	if ( n < oldn ) { g_process.shutdownAbort(true); }
 	// do we have a buf?
 	int32_t need = (m_ks+m_ds+1) * n;
 	// sanity check, buf should also meet what we need
-	if ( buf && bufSize < need ) { char *xx = NULL; *xx = 0; }
+	if ( buf && bufSize < need ) { g_process.shutdownAbort(true); }
 
 	// we grow kinda slow, it slows things down, so note it
 	int64_t startTime =0LL;
@@ -594,7 +595,7 @@ int32_t HashTableX::getKeyChecksum32 () const {
 			continue;
 		}
 		// unsupported key size
-		char *xx=NULL;*xx=0;
+		g_process.shutdownAbort(true);
 	}
 	return checksum;
 }

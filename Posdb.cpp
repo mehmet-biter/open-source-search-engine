@@ -9,6 +9,8 @@
 #include "Rebalance.h"
 #include "ScalingFunctions.h"
 #include "BitOperations.h"
+#include "Process.h"
+
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
 #endif
@@ -99,7 +101,7 @@ static inline char *getWordPosList ( int64_t docId , char *list , int32_t listSi
 	// . TODO: speed this up!!!
 	step = step - (step % 6);
 	// sanity
-	if ( step % 6 ) { char *xx=NULL;*xx=0; }
+	if ( step % 6 ) { g_process.shutdownAbort(true); }
 	// ensure never 0
 	if ( step <= 0 ) {
 		step = 6;
@@ -156,36 +158,36 @@ bool Posdb::init ( ) {
 			  false , // delkey?
 			  shardedByTermId );
 	// test it out
-	if ( g_posdb.getTermId ( &k ) != termId ) { char *xx=NULL;*xx=0; }
+	if ( g_posdb.getTermId ( &k ) != termId ) { g_process.shutdownAbort(true); }
 	//int64_t d2 = g_posdb.getDocId(&k);
-	if ( g_posdb.getDocId (&k ) != docId ) { char *xx=NULL;*xx=0; }
-	if ( g_posdb.getHashGroup ( &k ) !=hashGroup) { char *xx=NULL;*xx=0; }
-	if ( g_posdb.getWordPos ( &k ) !=  dist ) { char *xx=NULL;*xx=0; }
-	if ( g_posdb.getDensityRank (&k)!=densityRank){ char *xx=NULL;*xx=0; }
-	if ( g_posdb.getDiversityRank(&k)!=diversityRank){char *xx=NULL;*xx=0;}
-	if ( g_posdb.getWordSpamRank(&k)!=wordSpamRank){ char *xx=NULL;*xx=0; }
-	if ( g_posdb.getSiteRank (&k) != siteRank ) { char *xx=NULL;*xx=0; }
-	if ( g_posdb.getLangId ( &k ) != langId ) { char *xx=NULL;*xx=0; }
-	if ( g_posdb.getMultiplier ( &k ) !=multiplier){char *xx=NULL;*xx=0; }
-	if ( g_posdb.getIsSynonym ( &k ) != isSynonym) { char *xx=NULL;*xx=0; }
-	if ( g_posdb.isShardedByTermId(&k)!=shardedByTermId){char *xx=NULL;*xx=0; }
+	if ( g_posdb.getDocId (&k ) != docId ) { g_process.shutdownAbort(true); }
+	if ( g_posdb.getHashGroup ( &k ) !=hashGroup) { g_process.shutdownAbort(true); }
+	if ( g_posdb.getWordPos ( &k ) !=  dist ) { g_process.shutdownAbort(true); }
+	if ( g_posdb.getDensityRank (&k)!=densityRank){ g_process.shutdownAbort(true); }
+	if ( g_posdb.getDiversityRank(&k)!=diversityRank){g_process.shutdownAbort(true);}
+	if ( g_posdb.getWordSpamRank(&k)!=wordSpamRank){ g_process.shutdownAbort(true); }
+	if ( g_posdb.getSiteRank (&k) != siteRank ) { g_process.shutdownAbort(true); }
+	if ( g_posdb.getLangId ( &k ) != langId ) { g_process.shutdownAbort(true); }
+	if ( g_posdb.getMultiplier ( &k ) !=multiplier){g_process.shutdownAbort(true); }
+	if ( g_posdb.getIsSynonym ( &k ) != isSynonym) { g_process.shutdownAbort(true); }
+	if ( g_posdb.isShardedByTermId(&k)!=shardedByTermId){g_process.shutdownAbort(true); }
 	// more tests
 	setDocIdBits ( &k, docId );
 	setMultiplierBits ( &k, multiplier );
 	setSiteRankBits ( &k, siteRank );
 	setLangIdBits ( &k, langId );
 	// test it out
-	if ( g_posdb.getTermId ( &k ) != termId ) { char *xx=NULL;*xx=0; }
-	if ( g_posdb.getDocId (&k ) != docId ) { char *xx=NULL;*xx=0; }
-	if ( g_posdb.getWordPos ( &k ) !=  dist ) { char *xx=NULL;*xx=0; }
-	if ( g_posdb.getDensityRank (&k)!=densityRank){ char *xx=NULL;*xx=0; }
-	if ( g_posdb.getDiversityRank(&k)!=diversityRank){char *xx=NULL;*xx=0;}
-	if ( g_posdb.getWordSpamRank(&k)!=wordSpamRank){ char *xx=NULL;*xx=0; }
-	if ( g_posdb.getSiteRank (&k) != siteRank ) { char *xx=NULL;*xx=0; }
-	if ( g_posdb.getHashGroup ( &k ) !=hashGroup) { char *xx=NULL;*xx=0; }
-	if ( g_posdb.getLangId ( &k ) != langId ) { char *xx=NULL;*xx=0; }
-	if ( g_posdb.getMultiplier ( &k ) !=multiplier){char *xx=NULL;*xx=0; }
-	if ( g_posdb.getIsSynonym ( &k ) != isSynonym) { char *xx=NULL;*xx=0; }
+	if ( g_posdb.getTermId ( &k ) != termId ) { g_process.shutdownAbort(true); }
+	if ( g_posdb.getDocId (&k ) != docId ) { g_process.shutdownAbort(true); }
+	if ( g_posdb.getWordPos ( &k ) !=  dist ) { g_process.shutdownAbort(true); }
+	if ( g_posdb.getDensityRank (&k)!=densityRank){ g_process.shutdownAbort(true); }
+	if ( g_posdb.getDiversityRank(&k)!=diversityRank){g_process.shutdownAbort(true);}
+	if ( g_posdb.getWordSpamRank(&k)!=wordSpamRank){ g_process.shutdownAbort(true); }
+	if ( g_posdb.getSiteRank (&k) != siteRank ) { g_process.shutdownAbort(true); }
+	if ( g_posdb.getHashGroup ( &k ) !=hashGroup) { g_process.shutdownAbort(true); }
+	if ( g_posdb.getLangId ( &k ) != langId ) { g_process.shutdownAbort(true); }
+	if ( g_posdb.getMultiplier ( &k ) !=multiplier){g_process.shutdownAbort(true); }
+	if ( g_posdb.getIsSynonym ( &k ) != isSynonym) { g_process.shutdownAbort(true); }
 
 	/*
 	// more tests
@@ -214,7 +216,7 @@ bool Posdb::init ( ) {
 		    (int32_t)(*(unsigned char *)p));
 	list.resetListPtr();
 	list.checkList_r(false,true,RDB_POSDB);
-	char *xx=NULL;*xx=0;
+	g_process.shutdownAbort(true);
 	*/
 
 	// make it lower now for debugging
@@ -419,14 +421,14 @@ void Posdb::makeKey ( void              *vkp            ,
 		      bool shardedByTermId ) {
 
 	// sanity
-	if ( siteRank      > MAXSITERANK      ) { char *xx=NULL;*xx=0; }
-	if ( wordSpamRank  > MAXWORDSPAMRANK  ) { char *xx=NULL;*xx=0; }
-	if ( densityRank   > MAXDENSITYRANK   ) { char *xx=NULL;*xx=0; }
-	if ( diversityRank > MAXDIVERSITYRANK ) { char *xx=NULL;*xx=0; }
-	if ( langId        > MAXLANGID        ) { char *xx=NULL;*xx=0; }
-	if ( hashGroup     > MAXHASHGROUP     ) { char *xx=NULL;*xx=0; }
-	if ( wordPos       > MAXWORDPOS       ) { char *xx=NULL;*xx=0; }
-	if ( multiplier    > MAXMULTIPLIER    ) { char *xx=NULL;*xx=0; }
+	if ( siteRank      > MAXSITERANK      ) { g_process.shutdownAbort(true); }
+	if ( wordSpamRank  > MAXWORDSPAMRANK  ) { g_process.shutdownAbort(true); }
+	if ( densityRank   > MAXDENSITYRANK   ) { g_process.shutdownAbort(true); }
+	if ( diversityRank > MAXDIVERSITYRANK ) { g_process.shutdownAbort(true); }
+	if ( langId        > MAXLANGID        ) { g_process.shutdownAbort(true); }
+	if ( hashGroup     > MAXHASHGROUP     ) { g_process.shutdownAbort(true); }
+	if ( wordPos       > MAXWORDPOS       ) { g_process.shutdownAbort(true); }
+	if ( multiplier    > MAXMULTIPLIER    ) { g_process.shutdownAbort(true); }
 
 	key144_t *kp = (key144_t *)vkp;
 
@@ -661,7 +663,7 @@ int64_t Posdb::getTermFreq ( collnum_t collnum, int64_t termId ) {
 	// 			  &numNeg,
 	// 			  true );
 	// if ( numPos*18 != numBytes ) {
-	// 	char *xx=NULL;*xx=0; }
+	// 	g_process.shutdownAbort(true); }
 
 	
 
@@ -747,7 +749,7 @@ void PosdbTable::init ( Query     *q               ,
 			Msg2 *msg2 ,
 			Msg39Request *r            ) {
 	// sanity check -- watch out for double calls
-	if ( m_initialized ) { char *xx= NULL; *xx =0; }
+	if ( m_initialized ) { g_process.shutdownAbort(true); }
 	// clear everything
 	reset();
 	// we are now
@@ -761,7 +763,7 @@ void PosdbTable::init ( Query     *q               ,
 	//m_numLists = q->m_numTerms;
 	m_msg2 = msg2;
 	// sanity
-	if ( ! m_msg2->m_query ) { char *xx=NULL;*xx=0; }
+	if ( ! m_msg2->m_query ) { g_process.shutdownAbort(true); }
 	// save this
 	m_collnum = r->m_collnum;
 	// save the request
@@ -771,7 +773,7 @@ void PosdbTable::init ( Query     *q               ,
 	//m_coll = coll;
 	// get the rec for it
         CollectionRec *cr = g_collectiondb.getRec ( m_collnum );
-        if ( ! cr ) { char *xx=NULL;*xx=0; }
+        if ( ! cr ) { g_process.shutdownAbort(true); }
 	// set this now
 	//m_collnum = cr->m_collnum;
 
@@ -794,12 +796,12 @@ void PosdbTable::init ( Query     *q               ,
 	// QueryTerm::m_posdbListPtrs
 	if ( ! msg2 ) return;
 	// sanity
-	if ( msg2->getNumLists() != m_q->getNumTerms() ) {char *xx=NULL;*xx=0;}
+	if ( msg2->getNumLists() != m_q->getNumTerms() ) {g_process.shutdownAbort(true);}
 	// copy the list ptrs to the QueryTerm::m_posdbListPtr
 	for ( int32_t i = 0 ; i < m_q->m_numTerms ; i++ ) 
 		m_q->m_qterms[i].m_posdbListPtr = msg2->getList(i);
 	// we always use it now
-	if ( ! topTree ) {char *xx=NULL;*xx=0;}
+	if ( ! topTree ) {g_process.shutdownAbort(true);}
 }
 
 // this is separate from allocTopTree() function below because we must
@@ -875,12 +877,12 @@ void PosdbTable::prepareWhiteListTable()
 		if ( d1 > m_msg2->m_docIdEnd ) { 
 			log("posdb: d1=%" PRId64" > %" PRId64,
 			    d1,m_msg2->m_docIdEnd);
-			//char *xx=NULL;*xx=0; 
+			//g_process.shutdownAbort(true); 
 		}
 		if ( d1 < m_msg2->m_docIdStart ) { 
 			log("posdb: d1=%" PRId64" < %" PRId64,
 			    d1,m_msg2->m_docIdStart);
-			//char *xx=NULL;*xx=0; 
+			//g_process.shutdownAbort(true); 
 		}
 		// first key is always 18 bytes cuz it has the termid
 		// scan recs in the list
@@ -1645,7 +1647,7 @@ float PosdbTable::getSingleTermScore ( int32_t i,
 		if ( s_first ) log("posdb: CRITICAL single buf overflow");
 		s_first = false;
 		return sum;
-		//char *xx=NULL;*xx=0; }
+		//g_process.shutdownAbort(true); }
 	}
 	// increase buf ptr over this then
 	m_singleScoreBuf.incrementLength(need);
@@ -2256,7 +2258,7 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 			// not deleted right!
 			if ( (uint64_t)g_posdb.getDocId(wpi) != 
 			     m_docId ) {
-				char *xx=NULL;*xx=0;
+				g_process.shutdownAbort(true);
 				goto done;
 			}
 			// re-set this i guess
@@ -2421,7 +2423,7 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 			// not deleted right!
 			if ( (uint64_t)g_posdb.getDocId(wpj) != 
 			     m_docId ) {
-				char *xx=NULL;*xx=0;
+				g_process.shutdownAbort(true);
 				goto done;
 			}
 			// re-set this i guess
@@ -3077,7 +3079,7 @@ bool PosdbTable::setQueryTermInfo ( ) {
 	}
 
 	// bad! ringbuf[] was not designed for this nonsense!
-	if ( m_minListi >= 255 ) { char *xx=NULL;*xx=0; }
+	if ( m_minListi >= 255 ) { g_process.shutdownAbort(true); }
 	
 	// set this for caller to use to loop over the queryterminfos
 	m_numQueryTermInfos = nrg;
@@ -3254,7 +3256,7 @@ static inline bool isInRange( const char *p, const QueryTerm *qt ) {
 	// }
 
 	// how did this happen?
-	char *xx=NULL;*xx=0;
+	g_process.shutdownAbort(true);
 	return true;
 }
 		
@@ -3274,7 +3276,7 @@ static inline bool isInRange2 ( const char *recPtr, const char *subListEnd, cons
 void PosdbTable::addDocIdVotes ( const QueryTermInfo *qti , int32_t   listGroupNum) {
 
 	// sanity check, we store this in a single byte below for voting
-	if ( listGroupNum >= 256 ) { char *xx=NULL;*xx=0; }
+	if ( listGroupNum >= 256 ) { g_process.shutdownAbort(true); }
 
 	// shortcut
 	char *bufStart = m_docIdVoteBuf.getBufStart();
@@ -3553,7 +3555,7 @@ void PosdbTable::addDocIdVotes ( const QueryTermInfo *qti , int32_t   listGroupN
 	actualDocId <<= 8;
 	actualDocId |= (unsigned char)dp[0];
 	actualDocId >>= 2;
-	if (  dd != actualDocId ) { char *xx=NULL;*xx=0; }
+	if (  dd != actualDocId ) { g_process.shutdownAbort(true); }
 	*/
 
 	// advance
@@ -3930,7 +3932,7 @@ void PosdbTable::intersectLists10_r ( ) {
 	char    **xpos           = (char   **)pp; pp += sizeof(char *) * nqt;
 	char     *bflags         = (char    *)pp; pp += sizeof(char) * nqt;
 	float    *scoreMatrix    = (float   *)pp; pp += sizeof(float) *nqt*nqt;
-	if ( pp > m_stackBuf.getBufEnd() ) {char *xx=NULL;*xx=0; }
+	if ( pp > m_stackBuf.getBufEnd() ) {g_process.shutdownAbort(true); }
 
 	for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
 		// get it
@@ -4126,7 +4128,7 @@ void PosdbTable::intersectLists10_r ( ) {
 					px += 12;
 				}
 				// sanity check
-				if ( px != xp ) { char *xx=NULL;*xx=0; }
+				if ( px != xp ) { g_process.shutdownAbort(true); }
 				*/
 				// not there? xlist will be NULL
 				qti->m_savedCursor[j] = xp;
@@ -4183,7 +4185,7 @@ void PosdbTable::intersectLists10_r ( ) {
 			}
 			// sanity. must be 12 byte key
 			//if ( (*xc & 0x06) != 0x02 ) {
-			//	char *xx=NULL;*xx=0;}
+			//	g_process.shutdownAbort(true);}
 			// save it
 			qti->m_savedCursor[j] = xc;
 			// get new docid
@@ -4209,7 +4211,7 @@ void PosdbTable::intersectLists10_r ( ) {
 					log("posdb: encountered corrupt "
 					    "posdb list. bailing.");
 					return;
-					//char *xx=NULL;*xx=0;
+					//g_process.shutdownAbort(true);
 				}
 				// the next docid? it will be a 12 byte key.
 				if ( ! (*xc & 0x04) ) break;
@@ -4489,7 +4491,7 @@ void PosdbTable::intersectLists10_r ( ) {
 			nwp      [nsub] = qti->m_savedCursor [k];
 			// sanity
 			//if ( g_posdb.getKeySize(nwp[nsub]) > 12 ) { 
-			//	char *xx=NULL;*xx=0;}
+			//	g_process.shutdownAbort(true);}
 			// if doing seohack then m_cursor was not advanced
 			// so advance it here
 			nwpEnd [nsub] = qti->m_cursor [k];
@@ -4537,7 +4539,7 @@ void PosdbTable::intersectLists10_r ( ) {
 		// get keysize
 		char ks = g_posdb.getKeySize(nwp[mink]);
 		// sanity
-		//if ( ks > 12 ) { char *xx=NULL;*xx=0; }
+		//if ( ks > 12 ) { g_process.shutdownAbort(true); }
 		//
 		// HACK OF CONFUSION:
 		//
@@ -4623,7 +4625,7 @@ void PosdbTable::intersectLists10_r ( ) {
 	}
 
 	// breach?
-	if ( mptr > mbuf + 300000 ) { char *xx=NULL;*xx=0; }
+	if ( mptr > mbuf + 300000 ) { g_process.shutdownAbort(true); }
 
 	// clear the counts on this DocIdScore class for this new docid
 	pdcs = NULL;
@@ -4653,10 +4655,10 @@ void PosdbTable::intersectLists10_r ( ) {
 		int32_t  psize    = plistEnd - plist;
 		// test it. first key is 12 bytes.
 		if ( psize && g_posdb.getKeySize(plist) != 12 ) {
-			char *xx=NULL;*xx=0; }
+			g_process.shutdownAbort(true); }
 		// next key is 6
 		if ( psize > 12 && g_posdb.getKeySize(plist+12) != 6){
-			char *xx=NULL;*xx=0; }
+			g_process.shutdownAbort(true); }
 	}
 
 
@@ -4788,7 +4790,7 @@ void PosdbTable::intersectLists10_r ( ) {
 		// sanity check
 		if ( bestPos[i] &&
 		     s_inBody[g_posdb.getHashGroup(bestPos[i])] ) {
-			char *xx=NULL;*xx=0; }
+			g_process.shutdownAbort(true); }
 		//sts /= 3.0;
 		if ( sts < minSingleScore ) minSingleScore = sts;
 	}
@@ -4890,7 +4892,7 @@ void PosdbTable::intersectLists10_r ( ) {
 			// ok, no more! null means empty list
 			xpos[i] = NULL;
 			// must be in title or something else then
-			if ( ! bestPos[i] ) { char *xx=NULL;*xx=0; }
+			if ( ! bestPos[i] ) { g_process.shutdownAbort(true); }
 		}
 		// if all xpos are NULL, then no terms are in body...
 		if ( xpos[i] ) allNull = false;
@@ -4947,7 +4949,7 @@ void PosdbTable::intersectLists10_r ( ) {
 		minPos = g_posdb.getWordPos(xpos[x]);
 	}
 	// sanity
-	if ( minx < 0 ) { char *xx=NULL;*xx=0; }
+	if ( minx < 0 ) { g_process.shutdownAbort(true); }
 
  advanceAgain:
 	// now advance that to slide our window
@@ -5215,7 +5217,7 @@ void PosdbTable::intersectLists10_r ( ) {
 		// might not be full yet
 		if ( sx >= sxEnd ) goto advance;
 		// must be there!
-		if ( ! si ) { char *xx=NULL;*xx=0; }
+		if ( ! si ) { g_process.shutdownAbort(true); }
 
 		// note it because it is slow
 		// this is only used if getting score info, which is
@@ -5258,12 +5260,12 @@ void PosdbTable::intersectLists10_r ( ) {
 		// sanity
 		// take this out i've seen this core here before, no idea
 		// why, but why core?
-		//if ( m_docId == 0 ) { char *xx=NULL;*xx=0; }
+		//if ( m_docId == 0 ) { g_process.shutdownAbort(true); }
 		// use an integer score like lastSpidered timestamp?
 		if ( m_sortByTermNumInt >= 0 ) {
 			t->m_intScore = intScore;
 			t->m_score = 0.0;
-			if ( ! m_topTree->m_useIntScores){char *xx=NULL;*xx=0;}
+			if ( ! m_topTree->m_useIntScores){g_process.shutdownAbort(true);}
 		}
 		// . this will not add if tree is full and it is less than the 
 		//   m_lowNode in score
@@ -5526,9 +5528,9 @@ void printTermList ( int32_t i, const char *list, int32_t listSize ) {
 		    , syn
 		    );
 		if ( firstKey && g_posdb.getKeySize(px)!=12) {
-			char *xx=NULL;*xx=0; }
+			g_process.shutdownAbort(true); }
 		else if ( ! firstKey&& g_posdb.getKeySize(px)!=6) {
-			char *xx=NULL;*xx=0; }
+			g_process.shutdownAbort(true); }
 		if ( firstKey ) px += 12;
 		else            px += 6;
 		firstKey = false;
@@ -5629,7 +5631,7 @@ bool PosdbTable::makeDocIdVoteBufForBoolQuery_r ( ) {
 				bool inRange = false;
 
 				// sanity
-				//if ( d < lastDocId ) { char *xx=NULL;*xx=0; }
+				//if ( d < lastDocId ) { g_process.shutdownAbort(true); }
 				//lastDocId = d;
 
 				// point to it
@@ -5674,14 +5676,14 @@ bool PosdbTable::makeDocIdVoteBufForBoolQuery_r ( ) {
 				//docId &= DOCID_MASK;
 				// test it
 				//int64_t docId = g_posdb.getDocId(dp-8);
-				//if ( d2 != docId ) { char *xx=NULL;*xx=0; }
+				//if ( d2 != docId ) { g_process.shutdownAbort(true); }
 				// store this docid though. treat as int64_t
 				// but we mask with keymask
 				int32_t slot = m_bt.getSlot ( &docId );
 				if ( slot < 0 ) {
 					// we can't alloc in a thread, careful
 					if ( ! m_bt.addKey(&docId,bitVec) ) {
-						char *xx=NULL;*xx=0; }
+						g_process.shutdownAbort(true); }
 					continue;
 				}
 				// or the bit in otherwise
@@ -5761,7 +5763,7 @@ bool PosdbTable::makeDocIdVoteBufForBoolQuery_r ( ) {
 				d2 |= (unsigned char)dst[0];
 				d2 >>= 2;
 				docId >>= 2;
-				if ( d2 != docId ) { char *xx=NULL;*xx=0; }
+				if ( d2 != docId ) { g_process.shutdownAbort(true); }
 			}
 			// end test
 			dst += 6;
@@ -5821,7 +5823,7 @@ int Posdb::printList ( RdbList &list ) {
 			//d,nd1,nd2,nd3);
 			err = " (alignerror1)";
 			if ( nd1 < d ) err = " (alignordererror1)";
-			//char *xx=NULL;*xx=0;
+			//g_process.shutdownAbort(true);
 		}
 		if ( recSize == 12 && !(rec[1] & 0x02) )  {
 			//int64_t nd1 = g_posdb.getDocId(rec+6);
@@ -5833,8 +5835,8 @@ int Posdb::printList ( RdbList &list ) {
 			// seems like 12 bytes
 			//log("debug1: d=%" PRId64" nd1=%" PRId64" nd2=%" PRId64" nd3=%" PRId64,
 			//d,nd1,nd2,nd3);
-			//if ( nd2 < d ) { char *xx=NULL;*xx=0; }
-			//char *xx=NULL;*xx=0;
+			//if ( nd2 < d ) { g_process.shutdownAbort(true); }
+			//g_process.shutdownAbort(true);
 			err = " (alignerror2)";
 			if ( nd2 < d ) err = " (alignorderrror2)";
 		}
@@ -5849,7 +5851,7 @@ int Posdb::printList ( RdbList &list ) {
 			// seems like 12 bytes really as well!
 			//log("debug2: d=%" PRId64" nd1=%" PRId64" nd2=%" PRId64" nd3=%" PRId64,
 			//d,nd1,nd2,nd3);
-			//char *xx=NULL;*xx=0;
+			//g_process.shutdownAbort(true);
 			err = " (alignerror3)";
 			if ( nd2 < d ) err = " (alignordererror3)";
 		}

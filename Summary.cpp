@@ -6,6 +6,8 @@
 #include "Xml.h"
 #include "Pos.h"
 #include "Matches.h"
+#include "Process.h"
+
 
 Summary::Summary()
     : m_summaryLen(0)
@@ -582,7 +584,7 @@ bool Summary::setSummary ( Xml *xml, Words *words, Sections *sections, Pos *pos,
 	// set length
 	m_summaryLen = p - m_summary;
 
-	if ( m_summaryLen > 50000 ) { char*xx=NULL;*xx=0; }
+	if ( m_summaryLen > 50000 ) { g_process.shutdownAbort(true); }
 
 	return true;
 }
@@ -907,7 +909,7 @@ int64_t Summary::getBestWindow ( Matches *matches, int32_t mm, int32_t *lasta,
 		// which query word # does it match
 		int32_t qwn = next->m_qwordNum;
 
-		if ( qwn < 0 || qwn >= m_q->m_numWords ){char*xx=NULL;*xx=0;}
+		if ( qwn < 0 || qwn >= m_q->m_numWords ){g_process.shutdownAbort(true);}
 
 		// undo old score
 		score -= t;
@@ -1109,7 +1111,7 @@ bool Summary::getDefaultSummary ( Xml *xml, Words *words, Sections *sections, Po
 			m_displayLen = m_summaryLen;
 		}
 
-		if ( m_summaryLen > 50000 ) { char*xx=NULL;*xx=0; }
+		if ( m_summaryLen > 50000 ) { g_process.shutdownAbort(true); }
 		return true;
 	}
 

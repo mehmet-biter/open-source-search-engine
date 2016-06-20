@@ -57,7 +57,7 @@ void Msg20::reset() {
 			return;
 		}
 		// otherwise core
-		char *xx=NULL;*xx=0; 
+		g_process.shutdownAbort(true); 
 	}
 
 	m_launched = false;
@@ -198,7 +198,7 @@ bool Msg20::getSummary ( Msg20Request *req ) {
 	// . TODO: fix the urldb cache preload logic
 	int32_t hostNum = (probDocId % (128LL*1024*1024)) / sectionWidth;
 	if ( hostNum < 0 ) hostNum = 0; // watch out for negative docids
-	if ( hostNum >= nc ) { char *xx = NULL; *xx = 0; }
+	if ( hostNum >= nc ) { g_process.shutdownAbort(true); }
 	int32_t firstHostId = cand [ hostNum ]->m_hostId ;
 
 	m_requestSize = 0;
@@ -264,7 +264,7 @@ void Msg20::gotReply ( UdpSlot *slot ) {
 	// no longer in progress, we got a reply
 	m_inProgress = false;
 	// sanity check
-	if ( m_r ) { char *xx = NULL; *xx = 0; }
+	if ( m_r ) { g_process.shutdownAbort(true); }
 
 	// free our serialized request buffer to save mem
 	if ( m_request ) {
@@ -303,14 +303,14 @@ void Msg20::gotReply ( UdpSlot *slot ) {
 	// slot's m_readBuf... we need to own it.
 	if ( freeit ) {
 		log(LOG_LOGIC,"query: msg20: gotReply: Bad engineer.");
-		char *xx = NULL; *xx = 0;
+		g_process.shutdownAbort(true);
 		return;
 	}
 
 	// see if too small for a getSummary request
 	if ( m_replySize < (int32_t)sizeof(Msg20Reply) ) { 
 		log("query: Summary reply is too small.");
-		//char *xx = NULL; *xx = 0;
+		//g_process.shutdownAbort(true);
 		m_errno = g_errno = EREPLYTOOSMALL; return; }
 
 	// cast it
@@ -353,7 +353,7 @@ void handleRequest20 ( UdpSlot *slot , int32_t netnice ) {
 	// . this is "destructive" on "request"
 	int32_t nb = req->deserialize();
 	// sanity check
-	if ( nb != slot->m_readBufSize ) { char *xx = NULL; *xx = 0; }
+	if ( nb != slot->m_readBufSize ) { g_process.shutdownAbort(true); }
 
 	// sanity check, the size include the \0
 	if ( req->m_collnum < 0 ) {
@@ -387,7 +387,7 @@ void handleRequest20 ( UdpSlot *slot , int32_t netnice ) {
 	}
 
 	// sanity
-	if ( req->m_docId == 0 && ! req->ptr_ubuf ) { //char *xx=NULL;*xx=0; }
+	if ( req->m_docId == 0 && ! req->ptr_ubuf ) { //g_process.shutdownAbort(true); }
 		log("query: Got msg20 request for docid of 0 and no url for "
 		    "collnum=%" PRId32" query %s",(int32_t)req->m_collnum,req->ptr_qbuf);
 		    
@@ -476,9 +476,9 @@ bool gotReplyWrapperxd ( void *state ) {
 	// this should not block now
 	Msg20Reply *reply = xd->getMsg20Reply ( );
 	// sanity check, should not block here now
-	if ( reply == (void *)-1 ) { char *xx=NULL;*xx=0; }
+	if ( reply == (void *)-1 ) { g_process.shutdownAbort(true); }
 	// NULL means error, -1 means blocked. on error g_errno should be set
-	if ( ! reply && ! g_errno ) { char *xx=NULL;*xx=0;}
+	if ( ! reply && ! g_errno ) { g_process.shutdownAbort(true);}
 	// send it off. will send an error reply if g_errno is set
 	return reply->sendReply ( req, xd );
 }
@@ -533,7 +533,7 @@ bool Msg20Reply::sendReply ( Msg20Request *req, XmlDoc *xd ) {
 	int32_t used = serialize ( buf , need );
 
 	// sanity
-	if ( used != need ) { char *xx=NULL;*xx=0; }
+	if ( used != need ) { g_process.shutdownAbort(true); }
 
 	// use blue for our color
 	int32_t color = 0x0000ff;
@@ -542,7 +542,7 @@ bool Msg20Reply::sendReply ( Msg20Request *req, XmlDoc *xd ) {
 	if ( xd->m_niceness > 0 ) color = 0x0000b0;
 
 	// sanity check
-	if ( ! xd->m_utf8ContentValid ) { char *xx=NULL;*xx=0; }
+	if ( ! xd->m_utf8ContentValid ) { g_process.shutdownAbort(true); }
 
 	// for records
 	int32_t clen = 0;
@@ -729,7 +729,7 @@ int32_t Msg20Reply::serialize ( char *buf , int32_t bufSize ) {
 	             &retSize,
 	             buf, bufSize,
 	             false);
-	if ( retSize > bufSize ) { char *xx = NULL; *xx = 0; }
+	if ( retSize > bufSize ) { g_process.shutdownAbort(true); }
 	// return it
 	return retSize;
 }

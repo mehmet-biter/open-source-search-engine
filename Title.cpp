@@ -10,6 +10,8 @@
 #include "HashTable.h"
 #include "HttpMime.h"
 #include "Linkdb.h"
+#include "Process.h"
+
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
 #endif
@@ -480,7 +482,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 	char table[512];
 
 	// sanity check
-	if ( getNumXmlNodes() > 512 ) { char *xx=NULL;*xx=0; }
+	if ( getNumXmlNodes() > 512 ) { g_process.shutdownAbort(true); }
 
 	// clear table counts
 	memset ( table , 0 , 512 );
@@ -1318,7 +1320,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 	// point to the words class of the winner
 	Words *w = cptrs[winner];
 	// skip if got nuked above
-	if ( ! w ) { char *xx=NULL;*xx=0; }
+	if ( ! w ) { g_process.shutdownAbort(true); }
 
 	// need to make our own Pos class if title not from body
 	Pos  tp;
@@ -1333,7 +1335,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 	int32_t a = as[winner];
 	int32_t b = bs[winner];
 	// sanity check
-	if ( a < 0 || b > w->getNumWords() ) { char*xx=NULL;*xx=0; }
+	if ( a < 0 || b > w->getNumWords() ) { g_process.shutdownAbort(true); }
 
 	// save the title
 	if ( ! copyTitle(w, a, b) ) {
@@ -1614,8 +1616,8 @@ float Title::getSimilarity ( Words  *w1 , int32_t i0 , int32_t i1 ,
 	// do not divide by zero
 	if ( sum == 0.0 ) return 0.0;
 	// sanity check
-	//if ( found > sum              ) { char *xx=NULL;*xx=0; }
-	if ( found < 0.0 || sum < 0.0 ) { char *xx=NULL;*xx=0; }
+	//if ( found > sum              ) { g_process.shutdownAbort(true); }
+	if ( found < 0.0 || sum < 0.0 ) { g_process.shutdownAbort(true); }
 	// . return the percentage matched
 	// . will range from 0.0 to 1.0
 	return found / sum;
@@ -1630,7 +1632,7 @@ bool Title::copyTitle(Words *w, int32_t t0, int32_t t1) {
 	int32_t            nw    = w->getNumWords();
 
 	// sanity check
-	if ( t1 < t0 ) { char *xx = NULL; *xx = 0; }
+	if ( t1 < t0 ) { g_process.shutdownAbort(true); }
 
 	// don't breech number of words
 	if ( t1 > nw ) {

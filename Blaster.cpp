@@ -7,6 +7,7 @@
 #include "Blaster.h"
 #include "Titledb.h" // TITLEREC_CURRENT_VERSION
 #include "Linkdb.h"
+#include "Process.h"
 
 Blaster g_blaster;
 static void gotDocWrapper1 ( void *state , TcpSocket *s ) ;
@@ -376,7 +377,7 @@ void Blaster::startBlastering(){
 		if ( m_doInjection || m_doInjectionWithLinks ) {
 			// get host #0 i guess
 			Host *h0 = g_hostdb.getHost(0);
-			if ( ! h0 ) { char *xx=NULL;*xx=0; }
+			if ( ! h0 ) { g_process.shutdownAbort(true); }
 			static bool s_flag = true;
 			if ( s_flag ) {
 				s_flag = false;

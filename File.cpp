@@ -61,7 +61,7 @@ void sanityCheck ( ) {
 	int32_t openCount = 0;
 	for ( int i = 0 ; i < MAX_NUM_FDS ; i++ )
 		if ( s_open[i] ) openCount++;
-	if ( openCount != s_numOpenFiles ) { char *xx=NULL;*xx=0; }
+	if ( openCount != s_numOpenFiles ) { g_process.shutdownAbort(true); }
 }
 
 
@@ -467,7 +467,7 @@ bool File::close ( ) {
 		return false;
 	}
 	// sanity
-	if ( ! s_open[m_fd] ) { char *xx=NULL;*xx=0; }
+	if ( ! s_open[m_fd] ) { g_process.shutdownAbort(true); }
 	// mark it as closed
 	s_open        [ m_fd ] = 0;
 	s_filePtrs    [ m_fd ] = NULL;
@@ -499,7 +499,7 @@ int File::getfd () {
 	if ( ! m_calledOpen ) { // m_vfd < 0 ) {
 		g_errno = EBADENGINEER;
 		log(LOG_LOGIC,"disk: getfd: Must call open() first.");
-		char *xx=NULL; *xx=0;
+		g_process.shutdownAbort(true);
 		return -2;
 	}
 
@@ -518,7 +518,7 @@ int File::getfd () {
 		logDebug( g_conf.m_logDebugDisk, "disk: returning existing fd %i for %s this=0x%" PTRFMT" ccSaved=%i ccNow=%i",
 		          m_fd,getFilename(),(PTRTYPE)this, (int)m_closeCount, (int)s_closeCounts[m_fd] );
 
-		if ( m_fd >= MAX_NUM_FDS ) { char *xx=NULL;*xx=0; }
+		if ( m_fd >= MAX_NUM_FDS ) { g_process.shutdownAbort(true); }
 		// but update the timestamp to reduce chance it closes on us
 		s_timestamps [ m_fd ] = gettimeofdayInMillisecondsLocal();
 		return m_fd;
@@ -574,7 +574,7 @@ int File::getfd () {
 
 		// sanity. how can we get an fd already opened?
 		// because it was closed in a thread in close1_r()
-		if ( fd >= 0 && s_open[fd] ) { char *xx=NULL;*xx=0; }
+		if ( fd >= 0 && s_open[fd] ) { g_process.shutdownAbort(true); }
 
 		// . now inc that count in case there was someone reading on
 		//   that fd right before it was closed and we got it
@@ -902,7 +902,7 @@ int32_t File::doesExist ( ) {
 	if ( ! g_errno ) {
 		log(LOG_ERROR, "process: you tried to overload __errno_location() "
 		    "but were unsuccessful. you need to be using pthreads.");
-		char *xx=NULL;*xx=0;
+		g_process.shutdownAbort(true);
 	}
 
 	log( LOG_ERROR, "disk: error stat3(%s): %s", getFilename() , strerror(g_errno));

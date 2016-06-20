@@ -96,7 +96,7 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 	const char *filename = "hosts.conf";
 
 	// for now we autodetermine
-	if ( hostIdArg != -1 ) { char *xx=NULL;*xx=0; }
+	if ( hostIdArg != -1 ) { g_process.shutdownAbort(true); }
 	// init to -1
 	m_hostId = -1;
 
@@ -716,14 +716,14 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 	if ( m_numProxyHosts > MAX_PROXIES ) {
 		log ( LOG_WARN, "conf: Number of proxies (%" PRId32") exceeds max of %i, "
 		      "truncating.", m_numProxyHosts, MAX_PROXIES );
-		char *xx=NULL;*xx=0;
+		g_process.shutdownAbort(true);
 		m_numProxyHosts = MAX_PROXIES;
 	}
 	for ( i = 0; i < m_numProxyHosts; i++ ) {
 		m_proxyHosts[i] = &m_hosts[m_numHosts + m_numSpareHosts + i];
 		m_proxyHosts[i]->m_isProxy = true;
 		// sanity
-		if ( m_proxyHosts[i]->m_type == 0  ) { char *xx=NULL;*xx=0; }
+		if ( m_proxyHosts[i]->m_type == 0  ) { g_process.shutdownAbort(true); }
 	}
 
 	// log discovered hosts
@@ -1041,7 +1041,7 @@ bool Hostdb::hashHost (	bool udp , Host *h , uint32_t ip , uint16_t port ) {
 		log("db: or there is a repeated ip/port in hosts.conf.");
 		log("db: repeated host ip=%s port=%" PRId32" "
 		    "name=%s",iptoa(ip),(int32_t)port,h->m_hostname);
-		return false;//char *xx=NULL;*xx=0;
+		return false;//g_process.shutdownAbort(true);
 	}
 
 	// . keep a list of the udp ips for pinging
@@ -1220,7 +1220,7 @@ int32_t Hostdb::getHostIdWithSpideringEnabled ( uint32_t shardNum ) {
 	}
 	if( !hosts [ hostNum ].m_spiderEnabled) {
 		log("build: cannot spider when entire shard has nospider enabled");
-		char *xx = NULL; *xx = 0;
+		g_process.shutdownAbort(true);
 	}
 	return hosts [ hostNum ].m_hostId ;
 }
@@ -1238,7 +1238,7 @@ Host *Hostdb::getHostWithSpideringEnabled ( uint32_t shardNum ) {
 	}
 	if( !hosts [ hostNum ].m_spiderEnabled) {
 		log("build: cannot spider when entire shard has nospider enabled");
-		char *xx = NULL; *xx = 0;
+		g_process.shutdownAbort(true);
 	}
 	return &hosts [ hostNum ];
 }
@@ -1662,7 +1662,7 @@ int32_t Hostdb::getBestIp ( Host *h , int32_t fromIp ) {
 // . this returns which ip we should send to
 int32_t Hostdb::getBestHosts2IP ( Host  *h ) {
 	// sanity check
-	if ( this != &g_hostdb ) { char *xx = NULL; *xx = 0; }
+	if ( this != &g_hostdb ) { g_process.shutdownAbort(true); }
 	// get external ips
 	unsigned char *a = (unsigned char *)&h->m_ipShotgun;
 	unsigned char *c = (unsigned char *)&h->m_ip;
@@ -1782,7 +1782,7 @@ uint32_t Hostdb::getShardNum ( char rdbId, const void *k ) {
 	}
 
 	// core -- must be provided
-	char *xx = NULL; *xx = 0;
+	g_process.shutdownAbort(true);
 	return 0;
 }
 
@@ -1811,7 +1811,7 @@ Host *Hostdb::getBestSpiderCompressionProxy ( int32_t *key ) {
 			// now must be alive
 			if ( g_hostdb.isDead (h) ) continue;
 			// stop to avoid breach
-			if ( s_numAlive >= 64 ) { char *xx=NULL;*xx=0; }
+			if ( s_numAlive >= 64 ) { g_process.shutdownAbort(true); }
 			// add it otherwise
 			s_alive[s_numAlive++] = h;
 		}
