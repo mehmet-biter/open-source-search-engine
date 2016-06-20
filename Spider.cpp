@@ -49,7 +49,7 @@ char s_countsAreValid = 1;
 void SpiderRequest::setKey (int32_t firstIp, int64_t parentDocId, int64_t uh48, bool isDel) {
 
 	// sanity
-	if ( firstIp == 0 || firstIp == -1 ) { char *xx=NULL;*xx=0; }
+	if ( firstIp == 0 || firstIp == -1 ) { g_process.shutdownAbort(true); }
 
 	m_key = g_spiderdb.makeKey ( firstIp, uh48, true, parentDocId, isDel );
 	// set dataSize too!
@@ -491,18 +491,18 @@ bool Spiderdb::init ( ) {
 
 	// doledb key test
 	key_t dk = g_doledb.makeKey(priority,spiderTime,urlHash48,false);
-	if(g_doledb.getPriority(&dk)!=priority){char*xx=NULL;*xx=0;}
-	if(g_doledb.getSpiderTime(&dk)!=spiderTime){char*xx=NULL;*xx=0;}
-	if(g_doledb.getUrlHash48(&dk)!=urlHash48){char*xx=NULL;*xx=0;}
-	if(g_doledb.getIsDel(&dk)!= 0){char*xx=NULL;*xx=0;}
+	if(g_doledb.getPriority(&dk)!=priority){g_process.shutdownAbort(true);}
+	if(g_doledb.getSpiderTime(&dk)!=spiderTime){g_process.shutdownAbort(true);}
+	if(g_doledb.getUrlHash48(&dk)!=urlHash48){g_process.shutdownAbort(true);}
+	if(g_doledb.getIsDel(&dk)!= 0){g_process.shutdownAbort(true);}
 
 	// spiderdb key test
 	int64_t docId = 123456789;
 	int32_t firstIp = 0x23991688;
 	key128_t sk = g_spiderdb.makeKey ( firstIp, urlHash48, 1, docId, false );
-	if ( ! g_spiderdb.isSpiderRequest (&sk) ) { char *xx=NULL;*xx=0; }
-	if ( g_spiderdb.getUrlHash48(&sk) != urlHash48){char *xx=NULL;*xx=0;}
-	if ( g_spiderdb.getFirstIp(&sk) != firstIp) {char *xx=NULL;*xx=0;}
+	if ( ! g_spiderdb.isSpiderRequest (&sk) ) { g_process.shutdownAbort(true); }
+	if ( g_spiderdb.getUrlHash48(&sk) != urlHash48){g_process.shutdownAbort(true);}
+	if ( g_spiderdb.getFirstIp(&sk) != firstIp) {g_process.shutdownAbort(true);}
 
 	testWinnerTreeKey();
 
@@ -1002,7 +1002,7 @@ key192_t makeWinnerTreeKey ( int32_t firstIp ,
 	k.n2 <<= 16;
 	// query reindex is still using hopcount -1...
 	if ( hopCount == -1 ) hopCount = 0;
-	if ( hopCount < 0 ) { char *xx=NULL;*xx=0; }
+	if ( hopCount < 0 ) { g_process.shutdownAbort(true); }
 	if ( hopCount > 0xffff ) hopCount = 0xffff;
 	k.n2 |= hopCount;
 
@@ -1042,11 +1042,11 @@ void testWinnerTreeKey ( ) {
 	int64_t uh482;
 	int32_t hc2;
 	parseWinnerTreeKey(&k,&firstIp2,&priority2,&hc2,&spiderTimeMS2,&uh482);
-	if ( firstIp != firstIp2 ) { char *xx=NULL;*xx=0; }
-	if ( priority != priority2 ) { char *xx=NULL;*xx=0; }
-	if ( spiderTimeMS != spiderTimeMS2 ) { char *xx=NULL;*xx=0; }
-	if ( uh48 != uh482 ) { char *xx=NULL;*xx=0; }
-	if ( hc != hc2 ) { char *xx=NULL;*xx=0; }
+	if ( firstIp != firstIp2 ) { g_process.shutdownAbort(true); }
+	if ( priority != priority2 ) { g_process.shutdownAbort(true); }
+	if ( spiderTimeMS != spiderTimeMS2 ) { g_process.shutdownAbort(true); }
+	if ( uh48 != uh482 ) { g_process.shutdownAbort(true); }
+	if ( hc != hc2 ) { g_process.shutdownAbort(true); }
 }
 
 void removeExpiredLocks ( int32_t hostId );
@@ -1079,7 +1079,7 @@ uint32_t getShardToSpider ( char *sr ) {
 bool isAssignedToUs ( int32_t firstIp ) {
 	// sanity check... must be in our group.. we assume this much
 	//if ( g_spiderdb.getGroupId(firstIp) != g_hostdb.m_myHost->m_groupId){
-	//	char *xx=NULL;*xx=0; }
+	//	g_process.shutdownAbort(true); }
 	// . host to dole it based on ip
 	// . ignore lower 8 bits of ip since one guy often owns a whole block!
 	//int32_t hostId=(((uint32_t)firstIp) >> 8) % g_hostdb.getNumHosts();
@@ -1301,12 +1301,12 @@ bool printList ( State11 *st ) {
 		// count it
 		st->m_count++;
 		// what is this?
-		if ( list->getCurrentRecSize() <= 16 ) { char *xx=NULL;*xx=0;}
+		if ( list->getCurrentRecSize() <= 16 ) { g_process.shutdownAbort(true);}
 		// sanity check. requests ONLY in doledb
 		if ( ! g_spiderdb.isSpiderRequest ( (key128_t *)rec )) {
 			log("spider: not printing spiderreply");
 			continue;
-			//char*xx=NULL;*xx=0;
+			//g_process.shutdownAbort(true);
 		}
 		// get the spider rec, encapsed in the data of the doledb rec
 		SpiderRequest *sreq = (SpiderRequest *)rec;
@@ -1340,7 +1340,7 @@ bool printList ( State11 *st ) {
 
 bool sendPage ( State11 *st ) {
 	// sanity check
-	//if ( ! g_errno ) { char *xx=NULL;*xx=0; }
+	//if ( ! g_errno ) { g_process.shutdownAbort(true); }
 	//SafeBuf sb; sb.safePrintf("Error = %s",mstrerror(g_errno));
 
 	// shortcut
@@ -1424,7 +1424,7 @@ bool sendPage ( State11 *st ) {
 		// skip if empty
 		if ( ! xd ) continue;
 		// sanity check
-		if ( ! xd->m_sreqValid ) { char *xx=NULL;*xx=0; }
+		if ( ! xd->m_sreqValid ) { g_process.shutdownAbort(true); }
 		// grab it
 		SpiderRequest *oldsr = &xd->m_sreq;
 		// get status
@@ -2261,7 +2261,7 @@ bool updateSiteListBuf ( collnum_t collnum ,
 			if (  x >= pe   ) break;
 			// ok, we got something here i think
 			// no, might be like http://xyz.com/?poo
-			//if ( u.getPathLen() <= 1 ) { char *xx=NULL;*xx=0; }
+			//if ( u.getPathLen() <= 1 ) { g_process.shutdownAbort(true); }
 			// calc length from "start" of line so we can
 			// jump to the path quickly for compares. inc "/"
 			pd.m_pathOff = (x-1) - patternStart;
@@ -2344,7 +2344,7 @@ char *getMatchingUrlPattern ( SpiderColl *sc, SpiderRequest *sreq, char *tagArg 
 		// empty site list -- no matches
 		logTrace( g_conf.m_logTraceSpider, "END. No slots. Returning NULL" );
 		return NULL;
-		//char *xx=NULL;*xx=0; }
+		//g_process.shutdownAbort(true); }
 	}
 
 	// this table maps a 32-bit domain hash of a domain to a
@@ -3194,7 +3194,7 @@ checkNextRule:
 			// skip for now???
 			// this happens if INJECTING a url from the
 			// "add url" function on homepage
-			if ( ! valPtr ) a=0;//continue;//{char *xx=NULL;*xx=0;}
+			if ( ! valPtr ) a=0;//continue;//{g_process.shutdownAbort(true);}
 			// shortcut
 			else a = *valPtr;
 			//log("siteadds=%" PRId32" for %s",a,sreq->m_url);
@@ -3238,7 +3238,7 @@ checkNextRule:
 			// if no count in table, that is strange, i guess
 			// skip for now???
 			int32_t a;
-			if ( ! valPtr ) a = 0;//{ char *xx=NULL;*xx=0; }
+			if ( ! valPtr ) a = 0;//{ g_process.shutdownAbort(true); }
 			else a = *valPtr;
 			// what is the provided value in the url filter rule?
 			int32_t b = atoi(s);
@@ -3280,7 +3280,7 @@ checkNextRule:
 			// if no count in table, that is strange, i guess
 			// skip for now???
 			int32_t a;
-			if ( ! valPtr ) a = 0;//{ char *xx=NULL;*xx=0; }
+			if ( ! valPtr ) a = 0;//{ g_process.shutdownAbort(true); }
 			else a = *valPtr;
 			// shortcut
 			//log("sitepgs=%" PRId32" for %s",a,sreq->m_url);
@@ -3331,7 +3331,7 @@ checkNextRule:
 			// if no count in table, that is strange, i guess
 			// skip for now???
 			int32_t a;
-			if ( ! valPtr ) a = 0;//{ char *xx=NULL;*xx=0; }
+			if ( ! valPtr ) a = 0;//{ g_process.shutdownAbort(true); }
 			else a = *valPtr;
 			// what is the provided value in the url filter rule?
 			int32_t b = atoi(s);
@@ -4254,7 +4254,7 @@ void dedupSpiderdbList ( RdbList *list ) {
 
 	// sanity check
 	if ( dst < list->m_list || dst > list->m_list + list->m_listSize ) {
-		char *xx=NULL;*xx=0;
+		g_process.shutdownAbort(true);
 	}
 
 

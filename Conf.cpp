@@ -4,6 +4,8 @@
 #include "Parms.h"
 #include "Proxy.h"
 #include "Msg3a.h" // MAX_SHARDS
+#include "Process.h"
+
 
 Conf g_conf;
 
@@ -238,7 +240,7 @@ bool Conf::init ( char *dir ) { // , int32_t hostId ) {
 	// sanity check
 	if ( g_hostdb.m_indexSplits > MAX_SHARDS ) {
 		log("db: Increase MAX_SHARDS");
-		char *xx = NULL; *xx = 0; 
+		g_process.shutdownAbort(true); 
 	}
 
 	// HACK: set this now

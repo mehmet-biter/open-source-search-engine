@@ -2,7 +2,8 @@
 
 #include "RdbScan.h"
 #include "Rdb.h"
-//#include "Threads.h"
+#include "Process.h"
+
 
 void gotListWrapper ( void *state ) ;
 
@@ -181,10 +182,10 @@ bool RdbScan::setRead ( BigFile  *file         ,
 	fprintf(stderr,"\n");
 
 	if ( offset == 49181 && bytesToRead == 98299 ) {
-		char *xx = NULL ;*xx = 0; }
+		g_process.shutdownAbort(true); }
 	*/
 
-	if ( m_fstate.m_errno && ! g_errno ) { char *xx=NULL;*xx=0; }
+	if ( m_fstate.m_errno && ! g_errno ) { g_process.shutdownAbort(true); }
 
 	// fix the list if we need to
 	gotList();
@@ -230,11 +231,11 @@ void RdbScan::gotList ( ) {
 		int32_t  bytesDone = m_fstate.m_bytesDone;
 		// sanity checks
 		if ( bytesDone > allocSize                 ) { 
-			char *xx = NULL; *xx = 0; }
+			g_process.shutdownAbort(true); }
 		if ( allocOff + m_bytesToRead != allocSize ) { 
-			char *xx = NULL; *xx = 0; }
+			g_process.shutdownAbort(true); }
 		if ( allocOff != m_off + 16                ) { 
-			char *xx = NULL; *xx = 0; }
+			g_process.shutdownAbort(true); }
 		// now set this list. this always succeeds.
 		m_list->set ( allocBuf + allocOff , // buf + pad + m_off , 
 			      m_bytesToRead   , // bytesToRead   , 
@@ -290,14 +291,14 @@ void RdbScan::gotList ( ) {
 		if ( ! g_errno ) {
 			char *buf = m_list->getList();
 			if ( memcmp ( bb , buf , m_bytesToRead) != 0 ) {
-				char *xx = NULL; *xx = 0; }
+				g_process.shutdownAbort(true); }
 			if ( m_bytesToRead != m_list->getListSize() ) {
-				char *xx = NULL; *xx = 0; }
+				g_process.shutdownAbort(true); }
 		}
 		// compare
 		if ( memcmp ( allocBuf+allocOff, bb , m_bytesToRead ) ) {
 			log("db: failed diskpagecache verify");
-			char *xx=NULL;*xx=0; 
+			g_process.shutdownAbort(true); 
 		}
 		//mfree ( allocBuf , allocSize , "RS" );
 		mfree ( bb , m_bytesToRead , "RS" );

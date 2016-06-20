@@ -7,7 +7,7 @@
 #include "Stats.h"
 #include "HashTableT.h"
 #include "SearchInput.h"
-
+#include "Process.h"
 
 static void gotReplyWrapper3a     ( void *state , void *state2 ) ;
 
@@ -586,7 +586,7 @@ bool Msg3a::gotAllShardReplies ( ) {
 		//   to free it since it is owned by the slot?
 		if ( freeit ) {
 			log(LOG_LOGIC,"query: msg3a: Steal failed.");
-			char *xx = NULL; *xx=0;
+			g_process.shutdownAbort(true);
 		}
 		// bad reply?
 		if ( ! mr || replySize < 29 ) {
@@ -723,7 +723,7 @@ bool Msg3a::mergeLists ( ) {
 	int64_t     *diEnd [MAX_SHARDS];
 	for ( int32_t j = 0; j < m_numQueriedHosts ; j++ ) {
 		// how does this happen?
-		if ( j >= MAX_SHARDS ) { char *xx=NULL;*xx=0; }
+		if ( j >= MAX_SHARDS ) { g_process.shutdownAbort(true); }
 		Msg39Reply *mr =m_reply[j];
 		// if we have gbdocid:| in query this could be NULL
 		if ( ! mr ) {
@@ -747,7 +747,7 @@ bool Msg3a::mergeLists ( ) {
 		m_finalBufSize = 0;
 	}
 
-	if ( m_docsToGet <= 0 ) { char *xx=NULL;*xx=0; }
+	if ( m_docsToGet <= 0 ) { g_process.shutdownAbort(true); }
 
 	// . how much do we need to store final merged docids, etc.?
 	// . docid=8 score=4 bitScore=1 clusterRecs=key_t clusterLevls=1
@@ -786,7 +786,7 @@ bool Msg3a::mergeLists ( ) {
 
 	// sanity check
 	char *pend = m_finalBuf + need;
-	if ( p != pend ) { char *xx = NULL; *xx =0; }
+	if ( p != pend ) { g_process.shutdownAbort(true); }
 	// . now allocate for hash table
 	// . get at least twice as many slots as docids
 	HashTableT<int64_t,char> htable;
@@ -904,7 +904,7 @@ bool Msg3a::mergeLists ( ) {
 				    "info for "
 				    "d=%" PRId64,
 				    m_docIds[m_numDocIds]);
-			//char *xx=NULL; *xx=0;  261561804684
+			//g_process.shutdownAbort(true);  261561804684
 			// qry = www.yahoo
 		}
 		// point to the single DocIdScore for this docid
@@ -1019,7 +1019,7 @@ int32_t Msg3a::serialize   ( char *buf , char *bufEnd ) {
 	// store cluster levels
 	gbmemcpy ( p , m_clusterLevels , m_numDocIds ); p += m_numDocIds;
 	// sanity check
-	if ( p > pend ) { char *xx = NULL ; *xx = 0; }
+	if ( p > pend ) { g_process.shutdownAbort(true); }
 	// return how much we did
 	return p - buf;
 }
@@ -1038,7 +1038,7 @@ int32_t Msg3a::deserialize ( char *buf , char *bufEnd ) {
 	// get cluster levels
 	m_clusterLevels = (char *)p; p += m_numDocIds;
 	// sanity check
-	if ( p > pend ) { char *xx = NULL ; *xx = 0; }
+	if ( p > pend ) { g_process.shutdownAbort(true); }
 	// return how much we did
 	return p - buf;
 }

@@ -2,6 +2,8 @@
 
 #include "Phrases.h"
 #include "Mem.h"
+#include "Process.h"
+
 
 Phrases::Phrases ( ) {
 	m_buf = NULL;
@@ -57,7 +59,7 @@ bool Phrases::set( const Words *words, const Bits *bits, int32_t niceness ) {
 	p += m_numPhrases * 1;
 
 	// sanity
-	if ( p != m_buf + need ) { char *xx=NULL;*xx=0; }
+	if ( p != m_buf + need ) { g_process.shutdownAbort(true); }
 
 	// point to this info while we parse
 	m_words        = words;
@@ -197,10 +199,10 @@ void Phrases::setPhrase ( int32_t i ) {
 	}
 
 	// sanity check
-	if ( lastWordj == -1 ) { char *xx = NULL; *xx = 0; }
+	if ( lastWordj == -1 ) { g_process.shutdownAbort(true); }
 
 	// sanity check
-	if ( lastWordj - i + 1 > 255 ) { char *xx=NULL;*xx=0; }
+	if ( lastWordj - i + 1 > 255 ) { g_process.shutdownAbort(true); }
 
 	// hyphen between numbers does not count (so 1-2 != 12)
 	if ( isNum ) hasHyphen = false;

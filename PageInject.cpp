@@ -9,6 +9,7 @@
 #include "PageCrawlBot.h"
 #include "HttpRequest.h"
 #include "Stats.h"
+#include "Process.h"
 
 
 static bool sendHttpReply        ( void *state );
@@ -79,7 +80,7 @@ void setInjectionRequestFromParms ( TcpSocket *sock ,
 			if ( is ) *(int32_t *)ii = atoip(is);
 		}
 		// if unsupported let developer know
-		else { char *xx=NULL;*xx=0; }
+		else { g_process.shutdownAbort(true); }
 	}
 
 
@@ -214,7 +215,7 @@ bool Msg7::sendInjectionRequestToHost ( InjectionRequest *ir ,
 					void (* callback)(void *) ) {
 
 	// ensure it is our own
-	if ( &m_injectionRequest != ir ) { char *xx=NULL;*xx=0; }
+	if ( &m_injectionRequest != ir ) { g_process.shutdownAbort(true); }
 
 	//if ( strcmp ( ir->ptr_url , "http://www.indyweek.com/durham/current/news.html" )  == 0 )
 	//	fprintf(stderr,"ey\n");
@@ -282,7 +283,7 @@ bool Msg7::sendInjectionRequestToHost ( InjectionRequest *ir ,
 		// we also return true on success, false on error
 		return true;
 
-	if ( ! g_errno ) { char *xx=NULL;*xx=0; }
+	if ( ! g_errno ) { g_process.shutdownAbort(true); }
 	// there was an error, g_errno should be set
 	return false;
 }
@@ -405,7 +406,7 @@ bool sendPageInject ( TcpSocket *sock , HttpRequest *hr ) {
 
 	if ( ! g_errno ) {
 		log("inject: blocked with no error!");
-		char *xx=NULL;*xx=0; 
+		g_process.shutdownAbort(true); 
 	}
 		
 	// error?
@@ -534,7 +535,7 @@ bool sendHttpReply ( void *state ) {
 	// bunch of junk into msg7->m_pbuf
 	if ( xd->m_docId ) {
 		char *metalist = xd->getMetaList ( 1,1,1,1,1,1 );
-		if ( ! metalist || metalist==(void *)-1){char *xx=NULL;*xx=0;}
+		if ( ! metalist || metalist==(void *)-1){g_process.shutdownAbort(true);}
 		// print it out
 		SafeBuf *pbuf = &msg7->m_sbuf;
 		xd->printDoc( pbuf );
@@ -743,7 +744,7 @@ void handleRequest7 ( UdpSlot *slot , int32_t netnice ) {
 	}
 	if(ir->ptr_content && ir->ptr_content[ir->size_content - 1]) {
 		// XmlDoc expects this buffer to be null terminated.
-		char *xx=NULL;*xx=0;
+		g_process.shutdownAbort(true);
 	}
 
 	if ( ! xd->injectDoc ( ir->ptr_url , // m_injectUrlBuf.getBufStart() ,
@@ -805,7 +806,7 @@ Msg7::~Msg7 () {
 
 void Msg7::reset() { 
 	m_round = 0;
-	//if ( m_inUse ) { char *xx=NULL;*xx=0; }
+	//if ( m_inUse ) { g_process.shutdownAbort(true); }
 	//m_firstTime = true;
 	//m_fixMe = false;
 	//m_injectCount = 0;
@@ -1521,7 +1522,7 @@ bool ImportState::importLoop ( ) {
 	req = sbuf->getBufStart();
 	reqSize = sbuf->length();
 
-	if ( reqSize != need ) { char *xx=NULL;*xx=0 ; }
+	if ( reqSize != need ) { g_process.shutdownAbort(true); }
 
 	// do not free it, let multicast free it after sending it
 	sbuf->detachBuf();

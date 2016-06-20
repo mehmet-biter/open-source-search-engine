@@ -3,6 +3,7 @@
 #include "Msg22.h"
 #include "Titledb.h"
 #include "UdpServer.h"
+#include "Process.h"
 
 static void handleRequest22 ( UdpSlot *slot , int32_t netnice ) ;
 
@@ -82,22 +83,22 @@ bool Msg22::getTitleRec ( Msg22Request  *r              ,
 	m_availDocId = 0;
 
 	// sanity
-	if ( getAvailDocIdOnly && justCheckTfndb ) { char *xx=NULL;*xx=0; }
-	if ( getAvailDocIdOnly && url            ) { char *xx=NULL;*xx=0; }
+	if ( getAvailDocIdOnly && justCheckTfndb ) { g_process.shutdownAbort(true); }
+	if ( getAvailDocIdOnly && url            ) { g_process.shutdownAbort(true); }
 
 	//if ( url ) log(LOG_DEBUG,"build: getting TitleRec for %s",url);
 	// sanity checks
-	if ( url    && docId!=0LL ) { char *xx=NULL;*xx=0; }
-	if ( url    && !url[0]    ) { char *xx=NULL;*xx=0; }
-	if ( docId!=0LL && url    ) { char *xx=NULL;*xx=0; }
-	if ( ! coll               ) { char *xx=NULL;*xx=0; }
-	if ( ! callback           ) { char *xx=NULL;*xx=0; }
-	if ( r->m_inUse           ) { char *xx=NULL;*xx=0; }
-	if ( m_outstanding        ) { char *xx = NULL;*xx=0; }
+	if ( url    && docId!=0LL ) { g_process.shutdownAbort(true); }
+	if ( url    && !url[0]    ) { g_process.shutdownAbort(true); }
+	if ( docId!=0LL && url    ) { g_process.shutdownAbort(true); }
+	if ( ! coll               ) { g_process.shutdownAbort(true); }
+	if ( ! callback           ) { g_process.shutdownAbort(true); }
+	if ( r->m_inUse           ) { g_process.shutdownAbort(true); }
+	if ( m_outstanding        ) { g_process.shutdownAbort(true); }
 	// sanity check
 	if ( ! justCheckTfndb && ! getAvailDocIdOnly ) {
-		if ( ! titleRecPtrPtr  ) { char *xx=NULL;*xx=0; }
-		if ( ! titleRecSizePtr ) { char *xx=NULL;*xx=0; }
+		if ( ! titleRecPtrPtr  ) { g_process.shutdownAbort(true); }
+		if ( ! titleRecSizePtr ) { g_process.shutdownAbort(true); }
 	}
 
 	// remember, caller want us to set this
@@ -264,7 +265,7 @@ void Msg22::gotReply ( ) {
 
 	// sanity check. must either be an empty reply indicating nothing
 	// available or an 8 byte reply above!
-	if ( m_r->m_getAvailDocIdOnly ) { char *xx=NULL;*xx=0; }
+	if ( m_r->m_getAvailDocIdOnly ) { g_process.shutdownAbort(true); }
 
 	// otherwise, it was found
 	m_found = true;
@@ -350,7 +351,7 @@ void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
 	QUICKPOLL ( r->m_niceness);
 
 	// sanity check
-	if ( r->m_collnum < 0 ) { char *xx=NULL;*xx=0; }
+	if ( r->m_collnum < 0 ) { g_process.shutdownAbort(true); }
 
 
 	// make the state now
@@ -391,7 +392,7 @@ void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
 	   int64_t d1 = g_titledb.getFirstProbableDocId ( pd );
 	   int64_t d2 = g_titledb.getLastProbableDocId  ( pd );
 	   // sanity - bad url with bad subdomain?
-	   if ( pd < d1 || pd > d2 ) { char *xx=NULL;*xx=0; }
+	   if ( pd < d1 || pd > d2 ) { g_process.shutdownAbort(true); }
 	   // make sure we get a decent sample in titledb then in
 	   // case the docid we wanted is not available
 	   st->m_docId1 = d1;
@@ -421,7 +422,7 @@ void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
 	   int64_t d1 = g_titledb.getFirstProbableDocId ( pd );
 	   int64_t d2 = g_titledb.getLastProbableDocId  ( pd );
 	   // sanity - bad url with bad subdomain?
-	   if ( pd < d1 || pd > d2 ) { char *xx=NULL;*xx=0; }
+	   if ( pd < d1 || pd > d2 ) { g_process.shutdownAbort(true); }
 	   // store these
 	   st->m_pd     = pd;
 	   st->m_docId1 = d1;
@@ -482,7 +483,7 @@ void gotTitleList ( void *state , RdbList *list , Msg5 *msg5 ) {
 	hadError:
 		log("db: Had error getting title record from titledb: %s.",
 		    mstrerror(g_errno));
-		if ( ! g_errno ) { char *xx=NULL;*xx=0; }
+		if ( ! g_errno ) { g_process.shutdownAbort(true); }
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		us->sendErrorReply ( st->m_slot , g_errno ); 
 		mdelete ( st , sizeof(State22) , "Msg22" );

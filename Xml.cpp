@@ -7,6 +7,8 @@
 #include "Titledb.h"
 #include "Words.h"
 #include "Pos.h"
+#include "Process.h"
+
 
 Xml::Xml  () { 
 	m_xml = NULL; 
@@ -231,7 +233,7 @@ bool Xml::set( char *s, int32_t slen, int32_t version, int32_t niceness, char co
 
 	if ( s[slen] != '\0' ) {
 		log(LOG_LOGIC,"build: Xml: Content is not null terminated.");
-		char *xx = NULL; *xx = 0;
+		g_process.shutdownAbort(true);
 		//sleep(100);
 		g_errno = EBADENGINEER;
 		return false;
@@ -591,7 +593,7 @@ bool Xml::set( char *s, int32_t slen, int32_t version, int32_t niceness, char co
 	}
 
 	// sanity
-	if ( m_numNodes > m_maxNumNodes ) { char *xx=NULL;*xx=0; }
+	if ( m_numNodes > m_maxNumNodes ) { g_process.shutdownAbort(true); }
 
 	// trim off last node if empty! it is causing a core in isBackTag()
 	if ( m_numNodes > 0 && m_nodes[m_numNodes-1].m_nodeLen == 0 ) {

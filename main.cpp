@@ -790,7 +790,7 @@ int main2 ( int argc , char *argv[] ) {
 	getrlimit ( RLIMIT_NOFILE,&rlim);
 	if ( (int32_t)rlim.rlim_max > NOFILE || (int32_t)rlim.rlim_cur > NOFILE ) {
 		log("db: setrlimit RLIMIT_NOFILE failed!");
-		char *xx=NULL;*xx=0;
+		g_process.shutdownAbort(true);
 	}
 
 	// set the s_pages array for print admin pages
@@ -3325,7 +3325,7 @@ void dumpDoledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool 
 		// get it
 		char *drec = list.getCurrentRec();
 		// sanity check
-		if ( (drec[0] & 0x01) == 0x00 ) {char *xx=NULL;*xx=0; }
+		if ( (drec[0] & 0x01) == 0x00 ) {g_process.shutdownAbort(true); }
 		// get spider rec in it
 		char *srec = drec + 12 + 4;
 		// print doledb info first then spider request
@@ -3353,7 +3353,7 @@ void dumpDoledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool 
 		SpiderRequest *sreq = (SpiderRequest *)srec;
 		// skip negatives
 		if ( (sreq->m_key.n0 & 0x01) == 0x00 ) {
-			char *xx=NULL;*xx=0; }
+			g_process.shutdownAbort(true); }
 	}
 	startKey = *(key_t *)list.getLastKey();
 	startKey += (uint32_t) 1;
@@ -4154,7 +4154,7 @@ skip:
 	// sleep til done
 #undef sleep
 	while ( 1 == 1 ) sleep(1000);
-#define sleep(a) { char *xx=NULL;*xx=0; }
+#define sleep(a) { g_process.shutdownAbort(true); }
 }
 
 
@@ -4184,7 +4184,7 @@ void startUp ( void *state ) {
 		int64_t now = gettimeofdayInMilliseconds();
 #undef usleep
 		usleep(0);
-#define usleep(a) { char *xx=NULL;*xx=0; }
+#define usleep(a) { g_process.shutdownAbort(true); }
 		s_count++;
 		float sps = (float)((float)s_count * 1000.0) / 
 			(float)(now - s_startTime);
@@ -4818,7 +4818,7 @@ void dumpPosdb (const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 			int64_t nd1 = g_posdb.getDocId(rec+6);
 			err = " (alignerror1)";
 			if ( nd1 < d ) err = " (alignordererror1)";
-			//char *xx=NULL;*xx=0;
+			//g_process.shutdownAbort(true);
 		}
 		if ( recSize == 12 && !(rec[1] & 0x02) )  {
 			// seems like nd2 is it, so it really is 12 bytes but
@@ -5745,7 +5745,7 @@ void doInject ( int fd , void *state ) {
 		content[contentLen] = c;
 		if ( reqLen >= reqAlloc ) { 
 			log("inject: bad engineer here");
-			char *xx=NULL;*xx=0; 
+			g_process.shutdownAbort(true); 
 		}
 		// set content length
 		char *start = strstr(req,"c=");
@@ -5901,7 +5901,7 @@ void doInject ( int fd , void *state ) {
 
 		if ( ! url ) {
 			// what is this?
-			char *xx=NULL;*xx=0;
+			g_process.shutdownAbort(true);
 		}
 
 		// store the content after the &ucontent
@@ -5928,7 +5928,7 @@ void doInject ( int fd , void *state ) {
 		// set this
 		reqLen = rp - req;
 		// sanity
-		if ( reqLen > reqAlloc ) { char *xx=NULL;*xx=0; }
+		if ( reqLen > reqAlloc ) { g_process.shutdownAbort(true); }
 	}
 
 	int32_t ip = s_ip;
@@ -6984,9 +6984,9 @@ bool cacheTest() {
 				     true     , // inc count?
 				     NULL     , // *cachedTime = NULL,
 				     true     )){ // promoteRecord?
-			char *xx= NULL; *xx = 0; }
+			g_process.shutdownAbort(true); }
 		if ( ! rec || recSize != 4 || *(int32_t *)rec != oldip[next] ) {
-			char *xx= NULL; *xx = 0; }
+			g_process.shutdownAbort(true); }
 	}		     		
 
 	// now try variable sized recs
@@ -7050,11 +7050,11 @@ bool cacheTest() {
 		memset ( rec , (char)k.n1, recSize );
 		// make rec,size, like dns, will be 4 byte hash and 4 byte key?
 		if ( ! c.addRecord((collnum_t)0,k,rec,recSize,timestamp) ) {
-			char *xx=NULL; *xx=0; }
+			g_process.shutdownAbort(true); }
 		// do a dup add 1% of the time
 		if ( (i % 100) == 0 )
 			if(!c.addRecord((collnum_t)0,k,rec,recSize,timestamp)){
-				char *xx=NULL; *xx=0; }
+				g_process.shutdownAbort(true); }
 		// reset g_errno in case it had an error (we don't care)
 		g_errno = 0;	
 		// get a rec too!
@@ -7077,14 +7077,14 @@ bool cacheTest() {
 		}
 		if ( recSize != oldrs[next] ) {
 			logf(LOG_DEBUG,"test: bad rec size.");
-			char *xx=NULL; *xx = 0;
+			g_process.shutdownAbort(true);
 			continue;
 		}
 		char r = (char)back.n1;
 		for ( int32_t j = 0 ; j < recSize ; j++ ) {
 			if ( rec[j] == r ) continue;
 			logf(LOG_DEBUG,"test: bad char in rec.");
-			char *xx=NULL; *xx = 0;
+			g_process.shutdownAbort(true);
 		}
 	}
 
@@ -7256,7 +7256,7 @@ void countdomains( const char* coll, int32_t numRecs, int32_t verbosity, int32_t
 		if( i == countIp ) {
 			sipi = (struct ip_info *)mmalloc(sizeof(struct ip_info),
 							 "main-dcip" );
-			if( !sipi ) { char *XX=NULL; *XX=0; }
+			if( !sipi ) { g_process.shutdownAbort(true); }
 			ip_table[countIp++]  = sipi;
 			sipi->ip = xd.m_ip;//u->getIp();
 			sipi->pages = 1;
@@ -7278,7 +7278,7 @@ void countdomains( const char* coll, int32_t numRecs, int32_t verbosity, int32_t
 		if( i == countDom ) {
 			sdomi =(struct dom_info*)mmalloc(sizeof(struct dom_info),
 							 "main-dcdm" );
-			if( !sdomi ) { char *XX=NULL; *XX=0; }
+			if( !sdomi ) { g_process.shutdownAbort(true); }
 			dom_table[countDom++] = sdomi;
 			sdomi->dom = (char *)mmalloc( dlen,"main-dcsdm" );
 
@@ -7984,7 +7984,7 @@ const char *getcwd2 ( char *arg2 ) {
 		}
 		// find previous /
 		char *slash = p-1;
-		if ( *slash !='/' ) { char *xx=NULL;*xx=0; }
+		if ( *slash !='/' ) { g_process.shutdownAbort(true); }
 		slash--;
 		for ( ; slash > arg && *slash != '/' ; slash-- );
 		if ( slash<arg) slash=arg;

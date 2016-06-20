@@ -6,6 +6,8 @@
 #include "SafeBuf.h"
 #include "Pages.h"
 #include "ScopedLock.h"
+#include "Process.h"
+
 
 // only Mem.cpp should call ::malloc, everyone else must call mmalloc() so
 // we can keep tabs on memory usage.
@@ -275,7 +277,7 @@ void Mem::addMem ( void *mem , int32_t size , const char *note , char isnew ) {
 		// support 1.2M ptrs for now. good for about 8GB
 		// raise from 3000 to 8194 to fix host #1
 		m_memtablesize = 8194*1024;//m_maxMem / 6510;
-		//if ( m_maxMem < 8000000000 ) { char *xx=NULL;*xx=0; }
+		//if ( m_maxMem < 8000000000 ) { g_process.shutdownAbort(true); }
 	}
 
 	if ( (int32_t)m_numAllocated + 100 >= (int32_t)m_memtablesize ) { 
@@ -295,7 +297,7 @@ void Mem::addMem ( void *mem , int32_t size , const char *note , char isnew ) {
 	if ( g_conf.m_logDebugMem ) printBreeches(1);
 
 	// copy the magic character, iff not a new() call
-	if ( size == 0 ) { char *xx = NULL; *xx = 0; }
+	if ( size == 0 ) { g_process.shutdownAbort(true); }
 	// sanity check
 	if ( size < 0 ) {
 		log("mem: addMem: Negative size.");
@@ -390,14 +392,14 @@ void Mem::addMem ( void *mem , int32_t size , const char *note , char isnew ) {
 			     s_labels[h*16+3],
 			     s_labels[h*16+4],
 			     s_labels[h*16+5] );
-			char *xx = NULL; *xx = 0;
+			g_process.shutdownAbort(true);
 		}
 		h++;
 		if ( h == m_memtablesize ) h = 0;
 		if ( --count == 0 ) {
 			log( LOG_ERROR, "mem: addMem: Mem table is full.");
 			printMem();
-			char *xx = NULL; *xx = 0;
+			g_process.shutdownAbort(true);
 		}
 	}
 	// add to debug table
@@ -663,7 +665,7 @@ bool Mem::rmMem  ( void *mem , int32_t size , const char *note ) {
 		// . no, we should core otherwise it can result in some
 		//   pretty hard to track down bugs later.
 		//return false;
-		char *xx = NULL; *xx = 0;
+		g_process.shutdownAbort(true);
 	}
 
 	// are we from the "new" operator
@@ -671,12 +673,12 @@ bool Mem::rmMem  ( void *mem , int32_t size , const char *note ) {
 	// set our size
 	if ( size == -1 ) size = s_sizes[h];
 	// must be legit now
-	if ( size <= 0 ) { char *xx=NULL;*xx=0; }
+	if ( size <= 0 ) { g_process.shutdownAbort(true); }
 	// . bitch is sizes don't match
 	// . delete operator does not provide a size now (it's -1)
 	if ( s_sizes[h] != size ) {
 		log( LOG_ERROR, "mem: rmMem: Freeing %" PRId32" should be %" PRId32". (%s)", size,s_sizes[h],note);
-		char *xx = NULL; *xx = 0;
+		g_process.shutdownAbort(true);
 	}
 
 	// debug
@@ -751,8 +753,8 @@ int32_t Mem::validate ( ) {
 		count++;
 	}
 	// see if it matches
-	if ( total != m_used ) { char *xx=NULL;*xx=0; }
-	if ( count != m_numAllocated ) { char *xx=NULL;*xx=0; }
+	if ( total != m_used ) { g_process.shutdownAbort(true); }
+	if ( count != m_numAllocated ) { g_process.shutdownAbort(true); }
 	return 1;
 }
 
@@ -873,9 +875,9 @@ int Mem::printBreech ( int32_t i , char core ) {
 	if ( flag == 0 ) return 1;
 
 	// need this
-	if ( ! bp ) { char *xx=NULL;*xx=0; }
+	if ( ! bp ) { g_process.shutdownAbort(true); }
 
-	if ( flag && core ) { char *xx = NULL; *xx = 0; }
+	if ( flag && core ) { g_process.shutdownAbort(true); }
 	return 1;
 }
 
@@ -959,7 +961,7 @@ retry:
 	if ( size < 0 ) {
 		g_errno = EBADENGINEER;
 		log( LOG_ERROR, "mem: malloc(%i): Bad value.", size );
-		char *xx = NULL; *xx = 0;
+		g_process.shutdownAbort(true);
 		return NULL;
 	}
 
@@ -998,7 +1000,7 @@ mallocmemloop:
 			s_missed++;
 		}
 		// to debug oom issues:
-		//char *xx=NULL;*xx=0;
+		//g_process.shutdownAbort(true);
 
 		// send an email alert if this happens! it is a sign of "memory fragmentation"
 		//static bool s_sentEmail = false;
@@ -1068,7 +1070,7 @@ void *Mem::gbrealloc ( void *ptr , int oldSize , int newSize , const char *note 
 	// do nothing if size is same
 	if ( oldSize == newSize ) return ptr;
 	// crazy?
-	if ( newSize < 0 ) { char *xx=NULL;*xx=0; }
+	if ( newSize < 0 ) { g_process.shutdownAbort(true); }
 	// if newSize is 0...
 	if ( newSize == 0 ) { 
 		//mfree ( ptr , oldSize , note );
@@ -1168,7 +1170,7 @@ void Mem::gbfree ( void *ptr , int size , const char *note ) {
 		//log(LOG_LOGIC,"mem: FIXME!!!");
 		// return for now so procog does not core all the time!
 		return;
-		//char *xx = NULL; *xx = 0;
+		//g_process.shutdownAbort(true);
 	}
 
 	bool isnew = s_isnew[slot];

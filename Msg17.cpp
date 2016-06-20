@@ -3,9 +3,9 @@
 #include "Msg17.h"
 #include "Msg40.h"
 #include "UdpServer.h"
-//#include "zlib/zlib.h"
-//#include "TitleRec.h"
 #include "XmlDoc.h" // Z_BUF_ERROR
+#include "Process.h"
+
 
 static void gotReplyWrapper17  ( void *state , UdpSlot *slot ) ;
 static void handleRequest17    ( UdpSlot *slot , int32_t niceness ) ;
@@ -141,7 +141,7 @@ bool Msg17::getFromCache ( char   cacheId,
 	// . this is a sanity check now because we should never be returned
 	//   the hostId of a dead host
 	//if ( g_hostdb.isDead ( h ) ) return true;
-	if ( g_hostdb.isDead ( host ) ) { char *xx = NULL; *xx = 0; }
+	if ( g_hostdb.isDead ( host ) ) { g_process.shutdownAbort(true); }
 	// make request
 	char *p = m_request;
 	*(key_t *)p = m_key; p += sizeof(key_t);
@@ -265,7 +265,7 @@ bool Msg17::gotReply ( UdpSlot *slot , char *cbuf , int32_t cbufSize ,
 				   "ZG_ERRNO=%i", m_cacheId, err);
 		}
 		// sanity check
-		if ( ubufSize != recSize ) { char *xx = NULL; *xx = 0; }
+		if ( ubufSize != recSize ) { g_process.shutdownAbort(true); }
 		if ( m_recPtr  ) *m_recPtr  = ubuf;
 		if ( m_recSize ) *m_recSize = ubufSize;
 	}
@@ -457,7 +457,7 @@ bool Msg17::storeInCache ( char   cacheId ,
 		// uncompressed size
 		*(int32_t *)p = recSize; p += 4;
 		// sanity check
-		if ( recSize < 0 ) { char *xx = NULL; *xx = 0; }
+		if ( recSize < 0 ) { g_process.shutdownAbort(true); }
 		// how much left over
 		int32_t avail = pend - p;
 		// save it

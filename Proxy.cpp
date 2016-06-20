@@ -437,10 +437,10 @@ bool Proxy::forwardRequest ( StateControl *stC ) {
 	// update size
 	reqSize = p - req;
 	// sanity check
-	if ( reqSize > s->m_readBufSize ) { char *xx=NULL;*xx=0;}
+	if ( reqSize > s->m_readBufSize ) { g_process.shutdownAbort(true);}
 
 	// sanity check
-	if ( h->m_isProxy ) { char *xx=NULL;*xx=0; }
+	if ( h->m_isProxy ) { g_process.shutdownAbort(true); }
 
 	// if we are a QUERY COMPRESSION proxy send to the specified address
 	int32_t dstIp   = h->m_ip;
@@ -578,8 +578,8 @@ void Proxy::gotReplyPage ( void *state, UdpSlot *slot ) {
 	slot->m_readBuf = NULL;
 
 	// sanity check
-	//if ( s->m_readOffset < 0 ) { char *xx=NULL;*xx=0; }
-	if ( slot->m_readBufSize < 0 ) { char *xx=NULL;*xx=0; }
+	//if ( s->m_readOffset < 0 ) { g_process.shutdownAbort(true); }
+	if ( slot->m_readBufSize < 0 ) { g_process.shutdownAbort(true); }
 
 	int64_t nowms = gettimeofdayInMilliseconds();
 
@@ -598,7 +598,7 @@ void Proxy::gotReplyPage ( void *state, UdpSlot *slot ) {
 	// if reply was compressed then uncompress it
 	if ( doUncompress ) {
 		// sanity check
-		if ( size < 12 ) { char *xx=NULL;*xx=0; }
+		if ( size < 12 ) { g_process.shutdownAbort(true); }
 		// parse it up
 		unsigned char *p = (unsigned char *)reply;
 		// get the sizes
@@ -633,7 +633,7 @@ void Proxy::gotReplyPage ( void *state, UdpSlot *slot ) {
 		}
 
 		// sanity check
-		if ( dptr - dbuf != need ) { char *xx=NULL;*xx=0; }
+		if ( dptr - dbuf != need ) { g_process.shutdownAbort(true); }
 
 		// free original compressed reply
 		mfree ( reply , size , "origreply");
@@ -804,7 +804,7 @@ Host *Proxy::pickBestHost( StateControl *stC ) {
 
 	// sanity check, for m_stripeLastHostId array size, which is only 8 now
 	int32_t numStripes = g_hostdb.getNumStripes();
-	if ( numStripes > MAX_STRIPES ) { char*xx=NULL;*xx=0; }
+	if ( numStripes > MAX_STRIPES ) { g_process.shutdownAbort(true); }
 
 	// see which stripes have non-dead hosts!
 	char stripeDead[MAX_STRIPES];
@@ -840,7 +840,7 @@ Host *Proxy::pickBestHost( StateControl *stC ) {
 	}
 
 	// sanity check
-	if ( minns == -1 ) { char *xx=NULL;*xx=0; }
+	if ( minns == -1 ) { g_process.shutdownAbort(true); }
 
 	// rotate the prefered next stripe
 	if ( ++m_nextStripe >= numStripes ) m_nextStripe = 0;
@@ -860,7 +860,7 @@ Host *Proxy::pickBestHost( StateControl *stC ) {
 	Host *h = g_hostdb.getHost ( bestHostId );
 
 	// saity check
-	if ( h->m_isProxy ) { char *xx=NULL;*xx=0; }
+	if ( h->m_isProxy ) { g_process.shutdownAbort(true); }
 
 	// advance until it is from the least-loaded stripe
 	if ( h->m_stripe != minns ) goto loop;

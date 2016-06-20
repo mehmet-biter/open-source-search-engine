@@ -5,6 +5,8 @@
 #include "HttpServer.h"
 #include "SpiderProxy.h"
 #include "max_niceness.h"
+#include "Process.h"
+
 
 //#define LOADPOINT_EXPIRE_MS (10*60*1000)
 // make it 15 seconds not 10 minutes otherwise it gets too full with dup
@@ -722,7 +724,7 @@ void handleRequest54 ( UdpSlot *udpSlot , int32_t niceness ) {
 	}
 
 	// we must have a winner
-	if ( ! winnersp ) { char *xx=NULL;*xx=0; }
+	if ( ! winnersp ) { g_process.shutdownAbort(true); }
 
 	int64_t nowms = gettimeofdayInMillisecondsLocal();
 
@@ -749,7 +751,7 @@ void handleRequest54 ( UdpSlot *udpSlot , int32_t niceness ) {
 	}
 
 	// sanity
-	if ( (int32_t)sizeof(ProxyReply) > TMPBUFSIZE ){char *xx=NULL;*xx=0;}
+	if ( (int32_t)sizeof(ProxyReply) > TMPBUFSIZE ){g_process.shutdownAbort(true);}
 
 	// and give proxy ip/port back to the requester so they can
 	// use that to download their url

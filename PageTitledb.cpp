@@ -3,10 +3,6 @@
 #include "Collectiondb.h"
 #include "Msg22.h"
 #include "Pages.h"
-//#include "Links.h"
-//#include "TitleRec.h" // hasAdultWords()
-//#include "CollectionRec.h"
-//#include "TitleRec.h" 	// containsAdultWords()
 #include "XmlDoc.h"
 #include "Title.h"
 #include "SafeBuf.h"
@@ -14,6 +10,7 @@
 #include "CountryCode.h"
 #include "Tagdb.h"
 #include "Spider.h"
+#include "Process.h"
 
 // TODO: meta redirect tag to host if hostId not ours
 static bool gotTitleRec        ( void *state );
@@ -163,7 +160,7 @@ bool gotTitleRec ( void *state ) {
 		return g_httpServer.sendErrorReply(s,500,mstrerror(g_errno));
 	}
 	// sanity check. should not block
-	if ( ! xd->m_titleValid ) { char *xx=NULL;*xx=0; }
+	if ( ! xd->m_titleValid ) { g_process.shutdownAbort(true); }
 
 	// print it out
 	xd->printDoc ( &sb );

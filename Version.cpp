@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include "Mem.h"
 #include "Log.h"
+#include "Process.h"
 
 static char s_vbuf[32];
 
@@ -23,7 +24,7 @@ char *getVersion ( ) {
 		    s_vbuf,
 		    (int32_t)gbstrlen(s_vbuf),
 		    getVersionSize() - 1);
-		char *xx=NULL;*xx=0; 
+		g_process.shutdownAbort(true); 
 	}
 	return s_vbuf;
 }

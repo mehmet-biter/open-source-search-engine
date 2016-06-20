@@ -3,6 +3,8 @@
 #include "Titledb.h"
 #include "JobScheduler.h"
 #include "Rebalance.h"
+#include "Process.h"
+
 
 Titledb g_titledb;
 Titledb g_titledb2;
@@ -17,8 +19,8 @@ bool Titledb::init ( ) {
 	int64_t uh48  = 0x1234567887654321LL & 0x0000ffffffffffffLL;
 	int64_t docId = 123456789;
 	key_t k = makeKey(docId,uh48,false);
-	if ( getDocId(&k) != docId ) { char *xx=NULL;*xx=0;}
-	if ( getUrlHash48(&k) != uh48 ) { char *xx=NULL;*xx=0;}
+	if ( getDocId(&k) != docId ) { g_process.shutdownAbort(true);}
+	if ( getUrlHash48(&k) != uh48 ) { g_process.shutdownAbort(true);}
 
 	char *url = "http://.ezinemark.com/int32_t-island-child-custody-attorneys-new-york-visitation-lawyers-melville-legal-custody-law-firm-45f00bbed18.html";
 	Url uu;
@@ -27,7 +29,7 @@ bool Titledb::init ( ) {
 	int32_t  dlen1 = uu.getDomainLen();
 	int32_t dlen2 = 0;
 	char *d2 = getDomFast ( url , &dlen2 );
-	if ( dlen1 != dlen2 ) { char *xx=NULL;*xx=0; }
+	if ( dlen1 != dlen2 ) { g_process.shutdownAbort(true); }
 	// another one
 	url = "http://ok/";
 	uu.set(url);
@@ -35,7 +37,7 @@ bool Titledb::init ( ) {
 	dlen1 = uu.getDomainLen();
 	dlen2 = 0;
 	d2 = getDomFast ( url , &dlen2 );
-	if ( dlen1 != dlen2 ) { char *xx=NULL;*xx=0; }
+	if ( dlen1 != dlen2 ) { g_process.shutdownAbort(true); }
 
 	// . what's max # of tree nodes?
 	// . assume avg TitleRec size (compressed html doc) is about 1k we get:
@@ -247,7 +249,7 @@ key_t Titledb::makeKey ( int64_t docId, int64_t uh48, bool isDel ){
 
 	int64_t n0 = (uint64_t)(docId&0x3f);
 	// sanity check
-	if ( uh48 & 0xffff000000000000LL ) { char *xx=NULL;*xx=0; }
+	if ( uh48 & 0xffff000000000000LL ) { g_process.shutdownAbort(true); }
 	// make room for uh48
 	n0 <<= 48;
 	n0 |= uh48;

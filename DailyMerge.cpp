@@ -138,7 +138,7 @@ void DailyMerge::dailyMergeLoop ( ) {
 			    (int)todayDOW,cr->m_coll);
 			return;
 		}
-		//if ( todayDOW > 6 ) { char *xx=NULL;*xx=0; }
+		//if ( todayDOW > 6 ) { g_process.shutdownAbort(true); }
 		// skip if not a dayofweek to merge on
 		if ( dowCounts [ todayDOW ] == 0 ) continue;
 

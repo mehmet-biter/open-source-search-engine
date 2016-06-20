@@ -6,6 +6,7 @@
 #include "Proxy.h"
 #include "IPAddressChecks.h"
 #include "BitOperations.h"
+#include "Process.h"
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
 #endif
@@ -227,7 +228,7 @@ void UdpSlot::resetConnect ( ) {
 		  (m_ip & 0x000000ff) != (g_hostdb.m_myIp & 0x000000ff) ||
 		  ! g_hostdb.isIpInNetwork ( m_ip ) ) {
 		m_maxDgramSize = DGRAM_SIZE_INTERNET;
-		char *xx=NULL;*xx=0;
+		g_process.shutdownAbort(true);
 	}
 	//else if ( m_ip == g_hostdb.getMyIp() )
 	else if ( ip_distance(m_ip)==ip_distance_ourselves )
@@ -291,7 +292,7 @@ bool UdpSlot::sendSetup ( char      *msg         ,
 		    (int32_t)msgSize,(int32_t)m_maxDgramSize,
 		    (int32_t)MAX_DGRAMS,maxMsgSize,
 		    msgType);
-		//char *xx=NULL; *xx=0;
+		//g_process.shutdownAbort(true);
 		g_errno = EMSGTOOBIG;//EBADENGINEER;
 		return false;
 		//msgSize = MAX_DGRAMS * DGRAM_SIZE;
@@ -993,7 +994,7 @@ int32_t UdpSlot::sendAck ( int sock , int64_t now ,
 			    "Fixing. Do not panic.",
 			    dgramNum , m_dgramsToRead );
 			fixSlot();
-			//char *xx = NULL; *xx = 0;
+			//g_process.shutdownAbort(true);
 			//sleep(50000);
 			//return -1;
 			return -1;
@@ -1092,7 +1093,7 @@ int32_t UdpSlot::sendAck ( int sock , int64_t now ,
 		    "already been sent. Next ack to send should be for dgram "
 		    "# %" PRId32". Fixing. Do not panic.",
 		    dgramNum , m_firstUnlitSentAckBit );
-		//char *xx = NULL; *xx = 0;
+		//g_process.shutdownAbort(true);
 		fixSlot();
 		return 1;
 	}
@@ -1442,8 +1443,8 @@ bool UdpSlot::readDatagramOrAck ( const void *readBuffer_,
 	     // must be reply! not request.
 	     m_callback ) {
 		// sanity
-		if ( m_proto->getMaxPeekSize() < 24 ) { char *xx=NULL;*xx=0;}
-		if ( headerSize != 12 )               { char *xx=NULL;*xx=0;}
+		if ( m_proto->getMaxPeekSize() < 24 ) { g_process.shutdownAbort(true);}
+		if ( headerSize != 12 )               { g_process.shutdownAbort(true);}
 		// ips must match. like a checksum kinda.
 		int32_t ip1 = *(int32_t *)(readBuffer+headerSize);
 		int32_t ip2 = *(int32_t *)(readBuffer+headerSize+4);
@@ -1497,7 +1498,7 @@ bool UdpSlot::readDatagramOrAck ( const void *readBuffer_,
 			// is out of sync between hosts, so core
 			// SEEMS like the roadrunner wireless connection
 			// is spiking our packets sometimes with noise...
-			//char *xx = NULL; *xx = 0;
+			//g_process.shutdownAbort(true);
 			return false;
 		}
 		// save what's before us

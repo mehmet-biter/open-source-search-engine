@@ -186,7 +186,7 @@ void PingServer::sendPingsToAll ( ) {
 	// get host #0
 	Host *hz = g_hostdb.getHost ( 0 );
 	// sanity check
-	if ( hz->m_hostId != 0 ) { char *xx=NULL;*xx=0; }
+	if ( hz->m_hostId != 0 ) { g_process.shutdownAbort(true); }
 
 	// do a quick send to host 0 out of band if we have never
 	// got a reply from him. we need him to sync our clock!
@@ -279,7 +279,7 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 			}
 			// make sure count matches
 			if ( (!h->m_isProxy && count != g_hostdb.getNumHostsAlive()) ) {
-				char *xx = NULL; *xx = 0;
+				g_process.shutdownAbort(true);
 			}
 		}
 	}
@@ -347,7 +347,7 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 	pi->m_hostsConfCRC = g_hostdb.getCRC();
 
 	// ensure crc is legit
-	if ( g_hostdb.getCRC() == 0 ) { char *xx=NULL;*xx=0; }
+	if ( g_hostdb.getCRC() == 0 ) { g_process.shutdownAbort(true); }
 
 	// disk usage (df -ka)
 	pi->m_diskUsage = g_process.m_diskUsage;
@@ -396,7 +396,7 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 	// store the gbVersionStrBuf now, just a date with a \0 included
 	char *v = getVersion();
 	int32_t vsize = getVersionSize(); // 21 bytes
-	if ( vsize != 21 ) { char *xx=NULL;*xx=0; }
+	if ( vsize != 21 ) { g_process.shutdownAbort(true); }
 	gbmemcpy ( pi->m_gbVersionStr , v , vsize );
 
 	// the proxy may be interfacing with the temporary cluster while
@@ -470,8 +470,8 @@ void gotReplyWrapperP ( void *state , UdpSlot *slot ) {
 	if ( g_errno == EUDPTIMEDOUT ) tripTime = g_conf.m_deadHostTimeout;
 	updatePingTime ( h , pingPtr , tripTime );
 	// sanity checks
-	if ( slot->m_ip==h->m_ip && !h->m_inProgress1) {char *xx=NULL;*xx=0;}
-	if ( slot->m_ip!=h->m_ip && !h->m_inProgress2) {char *xx=NULL;*xx=0;}
+	if ( slot->m_ip==h->m_ip && !h->m_inProgress1) {g_process.shutdownAbort(true);}
+	if ( slot->m_ip!=h->m_ip && !h->m_inProgress2) {g_process.shutdownAbort(true);}
 	// consider it out of progress
 	if ( slot->m_ip == h->m_ip ) h->m_inProgress1 = false;
 	else                         h->m_inProgress2 = false;
@@ -691,7 +691,7 @@ void handleRequest11 ( UdpSlot *slot , int32_t niceness ) {
 		// sanity
 		PingInfo *pi2 = (PingInfo *)request;
 		if ( pi2->m_hostId != h->m_hostId ) { 
-			char *xx=NULL;*xx=0; }
+			g_process.shutdownAbort(true); }
 
 		// now we just copy the class
 		gbmemcpy ( &h->m_pingInfo , request , requestSize );
@@ -1291,7 +1291,7 @@ void gotDocWrapper ( void *state , TcpSocket *s ) {
 		    g_pingServer.m_numRequests2, 
 		    g_pingServer.m_numReplies2, 
 		    g_pingServer.m_maxRequests2);
-		//char *xx = NULL; *xx = 0;
+		//g_process.shutdownAbort(true);
 	}
 	Host *h = (Host *)state;
 
@@ -1565,7 +1565,7 @@ void updatePingTime ( Host *h , int32_t *pingPtr , int32_t tripTime ) {
 
 	// sanity check
 	if ( pingPtr != &h->m_ping && pingPtr != &h->m_pingShotgun ) { 
-		char *xx = NULL; *xx = 0; }
+		g_process.shutdownAbort(true); }
 
 	// . was it dead before this?
 	// . both ips must be dead for it to be dead
@@ -1605,7 +1605,7 @@ void updatePingTime ( Host *h , int32_t *pingPtr , int32_t tripTime ) {
 		// sanity check, this should be at least 1 since we are alive
 		if ( g_hostdb.m_numHostsAlive < 0 ||
 		     g_hostdb.m_numHostsAlive > g_hostdb.m_numHosts ) {
-			char *xx = NULL; *xx =0; }
+			g_process.shutdownAbort(true); }
 	}
 }
 
@@ -2048,7 +2048,7 @@ bool sendNotification ( EmailInfo *ei ) {
 	if ( cr ) crawl = cr->m_diffbotCrawlName.getBufStart();
 
 	// sanity check, can only call once
-	if ( ei->m_notifyBlocked != 0 ) { char *xx=NULL;*xx=0; }
+	if ( ei->m_notifyBlocked != 0 ) { g_process.shutdownAbort(true); }
 
 	if ( email && email[0] ) {
 		log("build: sending email notification to %s for "

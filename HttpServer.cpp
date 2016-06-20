@@ -11,6 +11,8 @@
 #include "PageCrawlBot.h"
 #include "Parms.h"
 #include "PageRoot.h"
+#include "Process.h"
+
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
 #endif
@@ -397,8 +399,8 @@ void handleRequestfd ( UdpSlot *slot , int32_t niceness ) {
 	// proxy so that the search result pages can be compressed to
 	// save bandwidth so we can serve APN's queries over lobonet
 	// which is only 2Mbps.
-	//if ( g_proxy.isCompressionProxy() ) { char *xx=NULL;*xx=0; }
-	if ( g_hostdb.m_myHost->m_type==HT_QCPROXY) {char *xx=NULL;*xx=0;}
+	//if ( g_proxy.isCompressionProxy() ) { g_process.shutdownAbort(true); }
+	if ( g_hostdb.m_myHost->m_type==HT_QCPROXY) {g_process.shutdownAbort(true);}
 
 	// if niceness is 0, use the higher priority udpServer
 	//UdpServer *us = &g_udpServer;
@@ -407,7 +409,7 @@ void handleRequestfd ( UdpSlot *slot , int32_t niceness ) {
 	int32_t  requestSize  = slot->m_readBufSize;
 	int32_t  requestAlloc = slot->m_readBufMaxSize;
 	// sanity check, must at least contain \0 and ip (5 bytes total)
-	if ( requestSize < 5 ) { char *xx=NULL;*xx=0; }
+	if ( requestSize < 5 ) { g_process.shutdownAbort(true); }
 	// make a fake TcpSocket
 	TcpSocket *s = (TcpSocket *)mcalloc(sizeof(TcpSocket),"tcpudp");
 	// this sucks
@@ -941,7 +943,7 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 		log("http: proxy should have handled this request");
 		// i've seen this core once on a GET /logo-small.png request
 		// and i am not sure why... so let it slide...
-		//char *xx=NULL;*xx=0; }
+		//g_process.shutdownAbort(true); }
 	}
 
 	// . where do they want us to start sending from in the file
@@ -1193,7 +1195,7 @@ bool HttpServer::sendReply2 ( const char *mime,
 	//if ( (ht & HT_PROXY) && *rb == 'Z' && alreadyCompressed ) {
 	if ( alreadyCompressed ) {
 		sendBufSize = contentLen;
-		//if ( mimeLen ) { char *xx=NULL;*xx=0; }
+		//if ( mimeLen ) { g_process.shutdownAbort(true); }
 	}
 	// what the hell is up with this???
 	//if ( sendBufSize > g_conf.m_httpMaxSendBufSize ) 
@@ -1270,7 +1272,7 @@ bool HttpServer::sendReply2 ( const char *mime,
 	else if ( (ht & HT_PROXY) && (*rb == 'Z') ) {
 		gbmemcpy ( sendBuf , content, contentLen );
 		// sanity check
-		if ( sendBufSize != contentLen ) { char *xx=NULL;*xx=0; }
+		if ( sendBufSize != contentLen ) { g_process.shutdownAbort(true); }
 		// note it
 		//logf(LOG_DEBUG,"http: forwarding. pageLen=%" PRId32,contentLen);
 	}
@@ -1282,7 +1284,7 @@ bool HttpServer::sendReply2 ( const char *mime,
 		gbmemcpy ( p , content, contentLen );
 		p += contentLen;
 		// sanity check
-		if ( sendBufSize != contentLen+mimeLen) { char *xx=NULL;*xx=0;}
+		if ( sendBufSize != contentLen+mimeLen) { g_process.shutdownAbort(true);}
 	}
 
 	// . send it away
@@ -1503,7 +1505,7 @@ bool HttpServer::sendErrorReply ( TcpSocket *s , int32_t error , const char *err
 	g_errno = 0;
 
 	// sanity check
-	if ( strncasecmp(errmsg,"Success",7)==0 ) {char*xx=NULL;*xx=0;}
+	if ( strncasecmp(errmsg,"Success",7)==0 ) {g_process.shutdownAbort(true);}
 
 	// get time in secs since epoch
 	time_t now ;//= getTimeGlobal();
@@ -1632,7 +1634,7 @@ bool HttpServer::sendQueryErrorReply( TcpSocket *s , int32_t error ,
 	if (!content) content = "";
 
 	// sanity check
-	if ( strncasecmp(errmsg,"Success",7)==0 ) {char*xx=NULL;*xx=0;}
+	if ( strncasecmp(errmsg,"Success",7)==0 ) {g_process.shutdownAbort(true);}
 
 	if ( format == FORMAT_HTML ) {
 		// Page content
@@ -2501,7 +2503,7 @@ TcpSocket *HttpServer::unzipReply(TcpSocket* s) {
 	}
 	mfree (s->m_readBuf, s->m_readBufSize, "HttpUnzip");
 	pnew += uncompressedLen;
-	if(pnew - newBuf > need - 2 ) {char *xx=NULL;*xx=0;}
+	if(pnew - newBuf > need - 2 ) {g_process.shutdownAbort(true);}
 	*pnew = '\0';
 	//log("http: got compressed doc, %f:1 compressed "
 	//"(%" PRId32"/%" PRId32"). took %" PRId64" ms",
@@ -2722,7 +2724,7 @@ void gotSquidProxiedUrlIp ( void *state , int32_t ip ) {
 	r->size_url = sqs->m_sock->m_readOffset + 1;
 
 	// sanity
-	if ( r->ptr_url && r->ptr_url[r->size_url-1] ) { char *xx=NULL;*xx=0;}
+	if ( r->ptr_url && r->ptr_url[r->size_url-1] ) { g_process.shutdownAbort(true);}
 
 	// use urlip for this, it determines what host downloads it
 	r->m_firstIp                = r->m_urlIp;
@@ -2813,7 +2815,7 @@ void gotSquidProxiedContent ( void *state ) {
 	sqs->m_msg13.m_replyBuf = NULL;
 
 	// sanity, this should be exact... since TcpServer.cpp needs that
-	//if ( replySize != replyAllocSize ) { char *xx=NULL;*xx=0; }
+	//if ( replySize != replyAllocSize ) { g_process.shutdownAbort(true); }
 
 	mdelete ( sqs, sizeof(SquidState), "sqs");
 	delete  ( sqs );

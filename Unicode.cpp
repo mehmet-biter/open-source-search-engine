@@ -3,6 +3,8 @@
 #include "Mem.h"
 #include "HashTable.h"
 #include "Titledb.h"
+#include "Process.h"
+
 
 static HashTableX s_convTable;
 
@@ -29,7 +31,7 @@ iconv_t gbiconv_open( const char *tocode, const char *fromcode) {
 			    "%s to %s: %s (%d)", fromcode, tocode, 
 			    strerror(errno), errno);
 			// need to stop if necessary converters don't open
-			//char *xx=NULL; *xx = 0;
+			//g_process.shutdownAbort(true);
 			g_errno = errno;
 			if (errno == EINVAL)
 				g_errno = EBADCHARSET;
@@ -311,7 +313,7 @@ int32_t stripAccentMarks (char *outbuf, int32_t outbufsize,
 		// break "uc" into decomposition of UChar32s
 		UChar32 ttt[32];
 		int32_t klen = recursiveKDExpand(uc,ttt,32);
-		if(klen>32){char *xx=NULL;*xx=0;}
+		if(klen>32){g_process.shutdownAbort(true);}
 		// sanity
 		if ( dst + 5 > outbuf+outbufsize ) return -1;
 		// if the same, leave it! it had no accent marks or other
@@ -328,7 +330,7 @@ int32_t stripAccentMarks (char *outbuf, int32_t outbufsize,
 		dst += stored;
 	}
 	// sanity. breach check
-	if ( dst > outbuf+outbufsize ) { char *xx=NULL;*xx=0; }
+	if ( dst > outbuf+outbufsize ) { g_process.shutdownAbort(true); }
 	// return # of bytes stored into outbuf
 	return dst - outbuf;
 }

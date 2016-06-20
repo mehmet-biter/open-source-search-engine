@@ -16,6 +16,8 @@
 #include "XmlDoc.h"
 #include "PageInject.h" // Msg7
 #include "PageReindex.h"
+#include "Process.h"
+
 
 class State13 {
 public:
@@ -402,7 +404,7 @@ bool Msg1c::gotList ( ) {
 		// store it
 		if ( ! m_sb.safeMemcpy ( (char *)&sr , recSize ) ) {
 			// g_errno must be set
-			if ( ! g_errno ) { char *xx=NULL;*xx=0; }
+			if ( ! g_errno ) { g_process.shutdownAbort(true); }
 
 			log(LOG_LOGIC,
 			    "admin: Query reindex size of %" PRId32" "

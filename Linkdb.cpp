@@ -77,29 +77,29 @@ bool Linkdb::init ( ) {
 	setLostDate_uk(&k,ld2 );
 
 	// now test it
-	if(getLinkeeSiteHash32_uk(&k)!=linkeeSiteHash32){char *xx=NULL;*xx=0;}
-	if(getLinkeeUrlHash64_uk(&k)!=linkeeUrlHash64){char *xx=NULL;*xx=0;}
-	if ( isLinkSpam_uk    ( &k ) != linkSpam       ) {char *xx=NULL;*xx=0;}
-	if (getLinkerSiteHash32_uk(&k)!=linkerSiteHash32){char *xx=NULL;*xx=0;}
-	if ( getLinkerSiteRank_uk(&k) != linkerSiteRank){char *xx=NULL;*xx=0;}
-	//if (getLinkerHopCount_uk (&k ) != hopCount  ) {char *xx=NULL;*xx=0;}
-	if ( getLinkerIp24_uk ( &k ) != ipdom3         ) {char *xx=NULL;*xx=0;}
-	if ( getLinkerIp_uk ( &k ) != ip         ) {char *xx=NULL;*xx=0;}
-	if ( getLinkerDocId_uk( &k ) != docId          ) {char *xx=NULL;*xx=0;}
-	if ( getDiscoveryDate_uk(&k) != dd2  ) {char *xx=NULL;*xx=0;}
-	if ( getLostDate_uk(&k) != ld2  ) {char *xx=NULL;*xx=0;}
+	if(getLinkeeSiteHash32_uk(&k)!=linkeeSiteHash32){g_process.shutdownAbort(true);}
+	if(getLinkeeUrlHash64_uk(&k)!=linkeeUrlHash64){g_process.shutdownAbort(true);}
+	if ( isLinkSpam_uk    ( &k ) != linkSpam       ) {g_process.shutdownAbort(true);}
+	if (getLinkerSiteHash32_uk(&k)!=linkerSiteHash32){g_process.shutdownAbort(true);}
+	if ( getLinkerSiteRank_uk(&k) != linkerSiteRank){g_process.shutdownAbort(true);}
+	//if (getLinkerHopCount_uk (&k ) != hopCount  ) {g_process.shutdownAbort(true);}
+	if ( getLinkerIp24_uk ( &k ) != ipdom3         ) {g_process.shutdownAbort(true);}
+	if ( getLinkerIp_uk ( &k ) != ip         ) {g_process.shutdownAbort(true);}
+	if ( getLinkerDocId_uk( &k ) != docId          ) {g_process.shutdownAbort(true);}
+	if ( getDiscoveryDate_uk(&k) != dd2  ) {g_process.shutdownAbort(true);}
+	if ( getLostDate_uk(&k) != ld2  ) {g_process.shutdownAbort(true);}
 
 	// more tests
 	setDiscoveryDate_uk (&k,discoveryDate);
 	setLostDate_uk (&k,lostDate);
-	if ( getDiscoveryDate_uk(&k) != dd2  ) {char *xx=NULL;*xx=0;}
-	if ( getLostDate_uk(&k) != ld2  ) {char *xx=NULL;*xx=0;}
+	if ( getDiscoveryDate_uk(&k) != dd2  ) {g_process.shutdownAbort(true);}
+	if ( getLostDate_uk(&k) != ld2  ) {g_process.shutdownAbort(true);}
 
 
 	int32_t ip3 = 0xabcdef12;
 	setIp32_uk ( &k , ip3 );
 	int32_t ip4 = getLinkerIp_uk ( &k );
-	if ( ip3 != ip4 ) { char *xx=NULL;*xx=0; }
+	if ( ip3 != ip4 ) { g_process.shutdownAbort(true); }
 
 	/*
 	// test similarity
@@ -117,7 +117,7 @@ bool Linkdb::init ( ) {
 	int32_t nv1 = sizeof(v1)/4;
 	int32_t nv2 = sizeof(v2)/4;
 	if ( isSimilar_sorted (v1,v2,nv1,nv2,80,0) ) {
-		char *xx=NULL;*xx=0;
+		g_process.shutdownAbort(true);
 	}
 	*/
 
@@ -270,8 +270,8 @@ key224_t Linkdb::makeKey_uk ( uint32_t  linkeeSiteHash32       ,
 			      uint32_t linkerSiteHash32 ,
 			      bool      isDelete         ) {
 
-	//if ( linkerSiteRank > LDB_MAXSITERANK ) { char *xx=NULL;*xx=0; }
-	//if ( linkerHopCount > LDB_MAXHOPCOUNT ) { char *xx=NULL;*xx=0; }
+	//if ( linkerSiteRank > LDB_MAXSITERANK ) { g_process.shutdownAbort(true); }
+	//if ( linkerHopCount > LDB_MAXHOPCOUNT ) { g_process.shutdownAbort(true); }
 
 	// mask it
 	linkeeUrlHash64 &= LDB_MAXURLHASH;
@@ -298,7 +298,7 @@ key224_t Linkdb::makeKey_uk ( uint32_t  linkeeSiteHash32       ,
 	k.n2 |= (linkerIp >> 24);
 
 	//uint32_t id = ipdom(linkerIp);
-	//if ( id > 0xffffff ) { char *xx=NULL;*xx=0; }
+	//if ( id > 0xffffff ) { g_process.shutdownAbort(true); }
 	k.n2 <<= 24;
 	k.n2 |= (linkerIp & 0x00ffffff);
 
@@ -311,10 +311,10 @@ key224_t Linkdb::makeKey_uk ( uint32_t  linkeeSiteHash32       ,
 	k.n1 <<= 2;
 
 	// sanity checks
-	//if(discoveryDate && discoveryDate < 1025376000){char *xx=NULL;*xx=0;}
+	//if(discoveryDate && discoveryDate < 1025376000){g_process.shutdownAbort(true);}
 	if ( lostDate && lostDate < LINKDBEPOCH){
 		lostDate = LINKDBEPOCH;
-		//char *xx=NULL;*xx=0;
+		//g_process.shutdownAbort(true);
 	}
 
 	// . convert discovery date from utc into days since jan 2008 epoch
@@ -322,7 +322,7 @@ key224_t Linkdb::makeKey_uk ( uint32_t  linkeeSiteHash32       ,
 	uint32_t epoch = LINKDBEPOCH;
 	if ( discoveryDate && discoveryDate < epoch ) {
 		discoveryDate = epoch;
-		//char *xx=NULL;*xx=0;
+		//g_process.shutdownAbort(true);
 	}
 	uint32_t nd = (discoveryDate - epoch) / 86400;
 	if ( discoveryDate == 0 ) nd = 0;
@@ -561,7 +561,7 @@ bool getLinkInfo ( SafeBuf   *reqBuf              ,
 	int32_t hostNum = x / sectionWidth;
 	int32_t numHosts = g_hostdb.getNumHostsPerShard();
 	Host *hosts = g_hostdb.getShard ( shardNum); // Group ( groupId );
-	if ( hostNum >= numHosts ) { char *xx = NULL; *xx = 0; }
+	if ( hostNum >= numHosts ) { g_process.shutdownAbort(true); }
 	int32_t hostId = hosts [ hostNum ].m_hostId ;
 	if( !hosts [ hostNum ].m_spiderEnabled) {
 		hostId = g_hostdb.getHostIdWithSpideringEnabled ( shardNum );
@@ -621,12 +621,12 @@ static void sendReplyWrapper ( void *state ) {
 		saved = g_errno = EBADENGINEER;
 		log("linkdb: sending back empty link text reply. did "
 		    "coll get deleted?");
-		//char *xx=NULL;*xx=0; }
+		//g_process.shutdownAbort(true); }
 	}
 	// get original request
 	Msg25Request *req = (Msg25Request *)slot2->m_readBuf;
 	// sanity
-	if ( req->m_udpSlot != slot2 ) { char *xx=NULL;*xx=0;}
+	if ( req->m_udpSlot != slot2 ) { g_process.shutdownAbort(true);}
 	// if in table, nuke it
 	g_lineTable.removeKey ( &req->m_siteHash64 );
 
@@ -644,7 +644,7 @@ static void sendReplyWrapper ( void *state ) {
 	if ( saved || ! reply2 ) {
 		int32_t err = saved;
 		if ( ! err ) err = g_errno;
-		if ( ! err ) { char *xx=NULL;*xx=0; }
+		if ( ! err ) { g_process.shutdownAbort(true); }
 		
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		g_udpServer.sendErrorReply(udpSlot,err);
@@ -772,9 +772,9 @@ void  handleRequest25 ( UdpSlot *slot , int32_t netnice ) {
 				   m25->m_linkInfoBuf ) ) // SafeBuf 4 output
 		return;
 
-	if(m25->m_linkInfoBuf->getLength()<=0&&!g_errno){char *xx=NULL;*xx=0;}
+	if(m25->m_linkInfoBuf->getLength()<=0&&!g_errno){g_process.shutdownAbort(true);}
 
-	if ( g_errno == ETRYAGAIN ) { char *xx=NULL;*xx=0; }
+	if ( g_errno == ETRYAGAIN ) { g_process.shutdownAbort(true); }
 
 	// wait for msg5 to be done reading list. this happens somehow,
 	// i'm not 100% sure how. code has too many indirections.
@@ -785,7 +785,7 @@ void  handleRequest25 ( UdpSlot *slot , int32_t netnice ) {
 
 	// sanity
 	if ( m25->m_msg5.m_msg3.m_numScansCompleted < 
-	     m25->m_msg5.m_msg3.m_numScansStarted ) { char *xx=NULL;*xx=0; }
+	     m25->m_msg5.m_msg3.m_numScansStarted ) { g_process.shutdownAbort(true); }
 
 	if ( g_errno )
 		log("linkdb: error getting linkinfo: %s",mstrerror(g_errno));
@@ -897,16 +897,16 @@ bool Msg25::getLinkInfo2( char      *site                ,
 	else                  m_pbuf = NULL;
 
 	// sanity check
-	//if ( ! coll ) { char *xx=NULL; *xx=0; }
+	//if ( ! coll ) { g_process.shutdownAbort(true); }
 	m_onlyNeedGoodInlinks = onlyNeedGoodInlinks;
 	m_getLinkerTitles     = getLinkerTitles;
 	// save safebuf ptr, where we store the link info
 	m_linkInfoBuf = linkInfoBuf;
-	if ( ! linkInfoBuf ) { char *xx=NULL;*xx=0; }
+	if ( ! linkInfoBuf ) { g_process.shutdownAbort(true); }
 	// sanity check
-	if ( m_mode == MODE_PAGELINKINFO && ! docId ) {char *xx=NULL; *xx=0; }
+	if ( m_mode == MODE_PAGELINKINFO && ! docId ) {g_process.shutdownAbort(true); }
 	// must have a valid ip
-	//if ( ! ip || ip == -1 ) { char *xx = NULL; *xx = 0; }
+	//if ( ! ip || ip == -1 ) { g_process.shutdownAbort(true); }
 	// get collection rec for our collection
 	CollectionRec *cr = g_collectiondb.getRec ( collnum );//, collLen );
 	// bail if NULL
@@ -994,7 +994,7 @@ bool Msg25::getLinkInfo2( char      *site                ,
 	m_round = 0;
 
 	// must have a valid ip
-	if ( ! ip || ip == -1 ) { //char *xx = NULL; *xx = 0; }
+	if ( ! ip || ip == -1 ) { //g_process.shutdownAbort(true); }
 		log("linkdb: no inlinks because ip is invalid");
 		g_errno = EBADENGINEER;
 		return true;
@@ -1011,7 +1011,7 @@ bool Msg25::doReadLoop ( ) {
 	//log("debug: entering doReadLoop this=%" PRIx32,(int32_t)this);
 
 	// sanity. no double entry.
-	if ( m_gettingList ) { char *xx=NULL;*xx=0; }
+	if ( m_gettingList ) { g_process.shutdownAbort(true); }
 
 	// . get the top X results from this termlist
 	// . but skip link: terms with a 1 (no link text) for a score
@@ -1110,7 +1110,7 @@ bool Msg25::doReadLoop ( ) {
 
 	// sanity
 	if ( m_msg5.m_msg3.m_numScansCompleted < 
-	     m_msg5.m_msg3.m_numScansStarted ) { char *xx=NULL;*xx=0; }
+	     m_msg5.m_msg3.m_numScansStarted ) { g_process.shutdownAbort(true); }
 
 	// return true on error
 	if ( g_errno ) {
@@ -1170,7 +1170,7 @@ bool Msg25::gotList() {
 
 	// sanity
 	if ( m_msg5.m_msg3.m_numScansCompleted < 
-	     m_msg5.m_msg3.m_numScansStarted ) { char *xx=NULL;*xx=0; }
+	     m_msg5.m_msg3.m_numScansStarted ) { g_process.shutdownAbort(true); }
 
 	//log("debug: entering gotlist this=%" PRIx32,(int32_t)this);
 
@@ -1209,7 +1209,7 @@ bool Msg25::gotList() {
 		int64_t needSlots = m_list.getListSize() / LDBKS;
 		// wtf?
 		if ( m_list.getListSize() > READSIZE + 10000 ) {
-			//char *xx=NULL;*xx=0; }
+			//g_process.shutdownAbort(true); }
 			log("linkdb: read very big linkdb list %" PRId32" bytes "
 			    "bigger than needed",
 			    m_list.getListSize() - READSIZE );
@@ -1248,7 +1248,7 @@ bool Msg25::gotList() {
 	if ( m_mode == MODE_SITELINKINFO ) return sendRequests();
 
 	// when MODE_PAGELINKINFO we must have a site quality for that site
-	if ( m_siteNumInlinks < 0 ) {char *xx=NULL;*xx=0; }
+	if ( m_siteNumInlinks < 0 ) {g_process.shutdownAbort(true); }
 
 	// shortcut
 	int32_t n = m_siteNumInlinks;
@@ -1457,7 +1457,7 @@ bool Msg25::sendRequests ( ) {
 		int32_t j ;
 		for (j=0 ;j<MAX_MSG20_OUTSTANDING;j++) if (!m_inUse[j]) break;
 		// sanity check
-		if ( j >= MAX_MSG20_OUTSTANDING ) { char *xx = NULL; *xx = 0; }
+		if ( j >= MAX_MSG20_OUTSTANDING ) { g_process.shutdownAbort(true); }
 		// "claim" it
 		m_inUse [j] = 1;
 
@@ -1938,7 +1938,7 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 	// set "r" to "p" doing a swap operation
 	if ( dup && dup != r ) {
 		// sanity check
-		if ( dupi < 0 ) { char *xx=NULL;*xx=0; }
+		if ( dupi < 0 ) { g_process.shutdownAbort(true); }
 		// HACK: swap them
 		Msg20Reply *tmp      = m_replyPtrs [dupi];
 		int32_t        tmpSize  = m_replySizes[dupi];
@@ -2912,7 +2912,7 @@ bool Msg25::addNote ( const char *note , int32_t noteLen , int64_t docId ) {
 		char *p = m_bufPtr;
 		if ( p + sizeof(NoteEntry) + noteLen + 1 >= m_bufEnd ) {
 			log("build: increase buf size in Msg25.");
-			char *xx = NULL; *xx = 0;
+			g_process.shutdownAbort(true);
 		}
 		// store the entry
 		NoteEntry *e = (NoteEntry *)p;
@@ -3151,9 +3151,9 @@ static LinkInfo *makeLinkInfo ( const char        *coll                    ,
 		int32_t wrote;
 		char *s = k.serialize ( &wrote , p , pend - p , true );
 		// sanity check
-		if ( s != p ) { char *xx=NULL;*xx=0; }
+		if ( s != p ) { g_process.shutdownAbort(true); }
 		// sanity check
-		if ( k.getStoredSize() != wrote ) { char *xx=NULL;*xx=0;}
+		if ( k.getStoredSize() != wrote ) { g_process.shutdownAbort(true);}
 		// note it if recycled
 		if ( k.m_recycled )
 			logf(LOG_DEBUG,"build: recycling Inlink %s for linkee "
@@ -3163,7 +3163,7 @@ static LinkInfo *makeLinkInfo ( const char        *coll                    ,
 	}
 	// . sanity check, should have used up all the buf exactly
 	// . so we can free the buf with k->getStoredSize() being the allocSize
-	if ( p != pend ) { char *xx=NULL;*xx=0; }
+	if ( p != pend ) { g_process.shutdownAbort(true); }
 
 	// how many guys that we stored were internal?
 	info->m_numInlinksInternal = (char)icount3;
@@ -3177,7 +3177,7 @@ static LinkInfo *makeLinkInfo ( const char        *coll                    ,
 	//int32_t ss = 0;
 	//for ( Inlink *k =NULL; (k=info->getNextInlink(k)) ; ) 
 	//	ss += k->getStoredSize();
-	//if ( info->m_buf + ss != pend ) { char *xx=NULL;*xx=0;}
+	//if ( info->m_buf + ss != pend ) { g_process.shutdownAbort(true);}
 
 	// success
 	return info;
@@ -3462,7 +3462,7 @@ char *Inlink::serialize ( int32_t *retSize     ,
 	gbmemcpy ( p, this, need );
 	p += need;
 
-	if ( p != pend ) { char *xx=NULL;*xx=0; }
+	if ( p != pend ) { g_process.shutdownAbort(true); }
 
 	return buf;
 }
@@ -4021,7 +4021,7 @@ bool Links::addLink ( const char *link , int32_t linkLen , int32_t nodeNum ,
 		p += newAllocLinks * sizeof(char **);
 
 		// sanity check -- check for breach
-		if ( p > newBuf + newAllocSize ) { char *xx = NULL; *xx = 0; }
+		if ( p > newBuf + newAllocSize ) { g_process.shutdownAbort(true); }
 
 		if (m_linkBuf){
 			gbmemcpy(newLinkPtrs, m_linkPtrs, 
@@ -4191,7 +4191,7 @@ bool Links::addLink ( const char *link , int32_t linkLen , int32_t nodeNum ,
 	//   see what links it has in common with the others for now...
 	if ( setLinkHash ) {
 		// sanity
-		if ( m_doQuickSet ) { char *xx=NULL;*xx=0; }
+		if ( m_doQuickSet ) { g_process.shutdownAbort(true); }
 		// get url length
 		int32_t ulen = url.getUrlLen();
 		// subtract the cgi length

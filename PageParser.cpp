@@ -1,6 +1,8 @@
 #include "gb-include.h"
 
 #include "PageParser.h"
+#include "Process.h"
+
 //#include "IndexTable.h"
 //#include "IndexTable2.h"
 //#include "XmlDoc.h" // addCheckboxSpan()
@@ -705,7 +707,7 @@ bool processLoop ( void *state ) {
 // returns true
 bool sendErrorReply ( void *state , int32_t err ) {
 	// ensure this is set
-	if ( ! err ) { char *xx=NULL;*xx=0; }
+	if ( ! err ) { g_process.shutdownAbort(true); }
 	// get it
 	State8 *st = (State8 *)state;
 	// get the tcp socket from the state

@@ -94,7 +94,7 @@ bool SpiderColl::load ( ) {
 		log("spider: bad collnum of %" PRId32,(int32_t)m_collnum);
 		g_errno = ENOCOLLREC;
 		return false;
-		//char *xx=NULL;*xx=0; }
+		//g_process.shutdownAbort(true); }
 	}
 
 	// reset this once
@@ -265,11 +265,11 @@ bool SpiderColl::makeDoleIPTable ( ) {
 		// check this out
 		int32_t recSize = list.getCurrentRecSize();
 		// zero?
-		if ( recSize <= 0 ) { char *xx=NULL;*xx=0; }
+		if ( recSize <= 0 ) { g_process.shutdownAbort(true); }
 		// 16 is bad too... wtf is this?
 		if ( recSize <= 16 ) continue;
 		// crazy?
-		if ( recSize<=minSize) {char *xx=NULL;*xx=0;}
+		if ( recSize<=minSize) {g_process.shutdownAbort(true);}
 		// . doledb key is 12 bytes, followed by a 4 byte datasize
 		// . so skip that key and dataSize to point to spider request
 		SpiderRequest *sreq = (SpiderRequest *)(rec+sizeof(key_t)+4);
@@ -358,7 +358,7 @@ bool SpiderColl::makeWaitingTree ( ) {
 		// check this out
 		int32_t recSize = list.getCurrentRecSize();
 		// zero?
-		if ( recSize <= 0 ) { char *xx=NULL;*xx=0; }
+		if ( recSize <= 0 ) { g_process.shutdownAbort(true); }
 		// 16 is bad too... wtf is this?
 		if ( recSize <= 16 ) continue;
 		// skip replies
@@ -772,7 +772,7 @@ bool SpiderColl::addSpiderReply ( SpiderReply *srep ) {
 	//						     srep->m_firstIp ,
 	//							   -1,// maxAge
 	//							   true );//pro
-	//	if ( last != srep->m_downloadEndTime ) { char *xx=NULL;*xx=0;}
+	//	if ( last != srep->m_downloadEndTime ) { g_process.shutdownAbort(true);}
 	//}
 
 	// skip:
@@ -829,10 +829,10 @@ void SpiderColl::removeFromDoledbTable ( int32_t firstIp ) {
 		// because it is saving
 		m_doleIpTable.removeKey ( &firstIp );
 		// sanity check
-		//if ( ! m_doleIpTable.m_isWritable ) { char *xx=NULL;*xx=0; }
+		//if ( ! m_doleIpTable.m_isWritable ) { g_process.shutdownAbort(true); }
 	}
 	// wtf!
-	if ( *score < 0 ) { char *xx=NULL;*xx=0; }
+	if ( *score < 0 ) { g_process.shutdownAbort(true); }
 	// all done?
 	if ( g_conf.m_logDebugSpider ) {
 		// log that too!
@@ -1017,7 +1017,7 @@ bool SpiderColl::addSpiderRequest ( SpiderRequest *sreq , int64_t nowGlobalMS ) 
 	if ( ufn >= 0 ) priority = m_cr->m_spiderPriorities[ufn];
 
 	// sanity checks
-	if ( priority >= MAX_SPIDER_PRIORITIES) {char *xx=NULL;*xx=0;}
+	if ( priority >= MAX_SPIDER_PRIORITIES) {g_process.shutdownAbort(true);}
 
 	// do not add to doledb if bad
 	if ( m_cr->m_forceDelete[ufn] ) {
@@ -1145,7 +1145,7 @@ bool SpiderColl::addToWaitingTree ( uint64_t spiderTimeMS, int32_t firstIp, bool
 	// . only evalIpLoop() will add a waiting tree key with a non-zero
 	//   value after it figures out the EARLIEST time that a 
 	//   SpiderRequest from this firstIp can be spidered.
-	if ( spiderTimeMS != 0 ) { char *xx=NULL;*xx=0; }
+	if ( spiderTimeMS != 0 ) { g_process.shutdownAbort(true); }
 
 	// waiting tree might be saving!!!
 	if ( ! m_waitingTree.m_isWritable ) {
@@ -1169,7 +1169,7 @@ bool SpiderColl::addToWaitingTree ( uint64_t spiderTimeMS, int32_t firstIp, bool
 
 	// sanity check
 	// i think this trigged on gk209 during an auto-save!!! FIX!
-	if ( ! m_waitingTree.m_isWritable ) { char *xx=NULL; *xx=0; }
+	if ( ! m_waitingTree.m_isWritable ) { g_process.shutdownAbort(true); }
 
 	// see if in tree already, so we can delete it and replace it below
 	int32_t ws = m_waitingTable.getSlot ( &firstIp ) ;
@@ -1189,7 +1189,7 @@ bool SpiderColl::addToWaitingTree ( uint64_t spiderTimeMS, int32_t firstIp, bool
 		// must be there
 		int32_t tn = m_waitingTree.getNode ( (collnum_t)0, (char *)&wk );
 		// sanity check. ensure waitingTable and waitingTree in sync
-		if ( tn < 0 ) { char *xx=NULL;*xx=0; }
+		if ( tn < 0 ) { g_process.shutdownAbort(true); }
 
 		// not only must we be a sooner time, but we must be 5-seconds
 		// sooner than the time currently in there to avoid thrashing
@@ -1265,7 +1265,7 @@ bool SpiderColl::addToWaitingTree ( uint64_t spiderTimeMS, int32_t firstIp, bool
 		log("spider: waitingtree add failed ip=%s. increase max nodes "
 		    "lest we lose this IP forever. err=%s",
 		    iptoa(firstIp),mstrerror(g_errno));
-		//char *xx=NULL; *xx=0;
+		//g_process.shutdownAbort(true);
 		return false;
 	}
 
@@ -1371,7 +1371,7 @@ int32_t SpiderColl::getNextIpFromWaitingTree ( ) {
 	// stop if need to wait for this one
 	if ( spiderTimeMS > nowMS ) return 0;
 	// sanity
-	if ( (int64_t)spiderTimeMS < 0 ) { char *xx=NULL;*xx=0; }
+	if ( (int64_t)spiderTimeMS < 0 ) { g_process.shutdownAbort(true); }
 	// save key for deleting when done
 	m_waitingTreeKey.n1 = k->n1;
 	m_waitingTreeKey.n0 = k->n0;
@@ -1379,7 +1379,7 @@ int32_t SpiderColl::getNextIpFromWaitingTree ( ) {
 	m_scanningIp = firstIp;
 	// sanity
 	if ( firstIp == 0 || firstIp == -1 ) { 
-		//char *xx=NULL;*xx=0; }
+		//g_process.shutdownAbort(true); }
 		log("spider: removing corrupt spiderreq firstip of %" PRId32
 		    " from waiting tree collnum=%i",
 		    firstIp,(int)m_collnum);
@@ -1474,7 +1474,7 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 	}
 	
 	// sanity
-	if ( m_deleteMyself ) { char *xx=NULL;*xx=0; }
+	if ( m_deleteMyself ) { g_process.shutdownAbort(true); }
 	// skip if spiders off
 	if ( ! m_cr->m_spideringEnabled ) 
 	{
@@ -2101,7 +2101,7 @@ bool SpiderColl::evalIpLoop ( ) {
 	//testWinnerTreeKey ( );
 
 	// sanity
-	if ( m_scanningIp == 0 || m_scanningIp == -1 ) { char *xx=NULL;*xx=0;}
+	if ( m_scanningIp == 0 || m_scanningIp == -1 ) { g_process.shutdownAbort(true);}
 
 	// are we trying to exit? some firstip lists can be quite long, so
 	// terminate here so all threads can return and we can exit properly
@@ -2263,7 +2263,7 @@ bool SpiderColl::evalIpLoop ( ) {
 		// calling readListFromSpiderdb()
 		key128_t lastKey  = *(key128_t *)m_list.getLastKey();
 		// sanity
-		//if ( endKey != finalKey ) { char *xx=NULL;*xx=0; }
+		//if ( endKey != finalKey ) { g_process.shutdownAbort(true); }
 		// crazy corruption?
 		if ( lastKey < m_nextKey ) {
 			log("spider: got corruption. spiderdb "
@@ -2347,8 +2347,8 @@ bool SpiderColl::evalIpLoop ( ) {
 bool SpiderColl::readListFromSpiderdb ( ) {
 	logTrace( g_conf.m_logTraceSpider, "BEGIN" );
 		
-	if ( ! m_waitingTreeKeyValid ) { char *xx=NULL;*xx=0; }
-	if ( ! m_scanningIp ) { char *xx=NULL;*xx=0; }
+	if ( ! m_waitingTreeKeyValid ) { g_process.shutdownAbort(true); }
+	if ( ! m_scanningIp ) { g_process.shutdownAbort(true); }
 
 	CollectionRec *cr = g_collectiondb.getRec ( m_collnum );
 	if ( ! cr ) {
@@ -2363,10 +2363,10 @@ bool SpiderColl::readListFromSpiderdb ( ) {
 	// populateWaitingTreeFromSpiderdb calls its own msg5.
 	int32_t firstIp0 = g_spiderdb.getFirstIp(&m_nextKey);
 	// sanity
-	if ( m_scanningIp != firstIp0 ) { char *xx=NULL;*xx=0; }
+	if ( m_scanningIp != firstIp0 ) { g_process.shutdownAbort(true); }
 	// sometimes we already have this ip in doledb/doleiptable
 	// already and somehow we try to scan spiderdb for it anyway
-	if ( m_doleIpTable.isInTable ( &firstIp0 ) ) { char *xx=NULL;*xx=0;}
+	if ( m_doleIpTable.isInTable ( &firstIp0 ) ) { g_process.shutdownAbort(true);}
 		
 	// if it got zapped from the waiting tree by the time we read the list
 	if ( ! m_waitingTable.isInTable ( &m_scanningIp ) ) 
@@ -2392,7 +2392,7 @@ bool SpiderColl::readListFromSpiderdb ( ) {
 	
 	// sanity. if first time, this must be invalid
 	//if ( needList && m_nextKey == m_firstKey && m_bestRequestValid ) {
-	//	char *xx=NULL; *xx=0 ; }
+	//	g_process.shutdownAbort(true); }
 
 	// . if the scanning ip has too many outstanding spiders
 	// . looks a UrlLock::m_firstIp and UrlLock::m_isSpiderOutstanding
@@ -2417,7 +2417,7 @@ bool SpiderColl::readListFromSpiderdb ( ) {
 	//if ( needList ) {
 
 	// sanity check
-	if ( m_gettingList1 ) { char *xx=NULL;*xx=0; }
+	if ( m_gettingList1 ) { g_process.shutdownAbort(true); }
 	// . read in a replacement SpiderRequest to add to doledb from
 	//   this ip
 	// . get the list of spiderdb records
@@ -2748,7 +2748,7 @@ bool SpiderColl::scanListForWinners ( ) {
 		if ( countIt ) {
 			m_cblocks[m_pageNumInlinks] = cblock;
 			m_pageNumInlinks++;
-			if ( m_pageNumInlinks > 20 ) { char *xx=NULL;*xx=0;}
+			if ( m_pageNumInlinks > 20 ) { g_process.shutdownAbort(true);}
 		}
 
 		// set this now. it does increase with each request. so 
@@ -2777,8 +2777,8 @@ bool SpiderColl::scanListForWinners ( ) {
 				// do not repeat count the same url
 				m_lastReqUh48a = uh48;
 				// sanity
-				if ( ! sreq->m_siteHash32){char*xx=NULL;*xx=0;}
-				if ( ! sreq->m_domHash32){char*xx=NULL;*xx=0;}
+				if ( ! sreq->m_siteHash32){g_process.shutdownAbort(true);}
+				if ( ! sreq->m_domHash32){g_process.shutdownAbort(true);}
 				// do a little magic because we count
 				// seeds as "manual adds" as well as normal pg
 				int32_t h32;
@@ -2940,8 +2940,8 @@ bool SpiderColl::scanListForWinners ( ) {
 		// separate force delete checkbox in the url filters
 		if ( priority < 0 ) priority = 0;
 		// sanity checks
-		//if ( priority == -1 ) { char *xx=NULL;*xx=0; }
-		if ( priority >= MAX_SPIDER_PRIORITIES) {char *xx=NULL;*xx=0;}
+		//if ( priority == -1 ) { g_process.shutdownAbort(true); }
+		if ( priority >= MAX_SPIDER_PRIORITIES) {g_process.shutdownAbort(true);}
 
 		logDebug( g_conf.m_logDebugSpider, "spider: got ufn=%" PRId32" for %s (%" PRId64")",
 		          ufn, sreq->m_url, sreq->getUrlHash48() )
@@ -2962,7 +2962,7 @@ bool SpiderColl::scanListForWinners ( ) {
 		if ( skip ) continue;
 
 		// temp debug
-		//char *xx=NULL;*xx=0;
+		//g_process.shutdownAbort(true);
 
 		if ( m_cr->m_forceDelete[ufn] ) {
 			logDebug( g_conf.m_logDebugSpider, "spider: force delete ufn=%" PRId32" url='%s'", ufn, sreq->m_url );
@@ -3103,7 +3103,7 @@ bool SpiderColl::scanListForWinners ( ) {
 		// the s_ufnTree uses priority as part of the key so it
 		// can get the top 100 or so urls for a firstip to avoid
 		// having to hit spiderdb for every one!
-		if ( priority < 0 ) { char *xx=NULL;*xx=0; }
+		if ( priority < 0 ) { g_process.shutdownAbort(true); }
 
 		//
 		// NO! then just a single root url can prevent all his
@@ -3220,7 +3220,7 @@ bool SpiderColl::scanListForWinners ( ) {
 
 		// sanity. make sure read is somewhat hefty for our 
 		// maxWinners=1 thing
-		if ( (int32_t)SR_READ_SIZE < 500000 ) { char *xx=NULL;*xx=0; }
+		if ( (int32_t)SR_READ_SIZE < 500000 ) { g_process.shutdownAbort(true); }
 
 		// only compare to min winner in tree if tree is full
 		if ( m_winnerTree.getNumUsedNodes() >= maxWinners ) {
@@ -3344,7 +3344,7 @@ bool SpiderColl::scanListForWinners ( ) {
 		// 		     &winSpiderTimeMS ,
 		// 		     &winUh48 );
 		// // sanity
-		//if(winUh48 != sreq2->getUrlHash48() ) { char *xx=NULL;*xx=0;}
+		//if(winUh48 != sreq2->getUrlHash48() ) { g_process.shutdownAbort(true);}
 		// // make the doledb key
 		// key_t doleKey = g_doledb.makeKey ( winPriority,
 		// 				   // convert to secs from ms
@@ -3361,7 +3361,7 @@ bool SpiderColl::scanListForWinners ( ) {
 		// // have the same uh48 and that is the key in the tree.
 		// if ( dedup.isInTable ( &winUh48 ) ) {
 		// 	log("spider: got dup uh48=%" PRIu64" dammit", winUh48);
-		// 	char *xx=NULL;*xx=0;
+		// 	g_process.shutdownAbort(true);
 		// 	continue;
 		// }
 		// // do not allow dups
@@ -3374,7 +3374,7 @@ bool SpiderColl::scanListForWinners ( ) {
 		if ( m_winnerTree.getNumUsedNodes() >= maxWinners ) {
 			// for the worst node in the tree...
 			int32_t tailNode = m_winnerTree.getLastNode();
-			if ( tailNode < 0 ) { char *xx=NULL;*xx=0; }
+			if ( tailNode < 0 ) { g_process.shutdownAbort(true); }
 			// set new tail parms
 			key192_t *tailKey;
 			tailKey = (key192_t *)m_winnerTree.getKey ( tailNode );
@@ -3386,7 +3386,7 @@ bool SpiderColl::scanListForWinners ( ) {
 					     &m_tailTimeMS ,
 					     &m_tailUh48 );
 			// sanity
-			if ( m_tailIp != firstIp ) { char *xx=NULL;*xx=0;}
+			if ( m_tailIp != firstIp ) { g_process.shutdownAbort(true);}
 		}
 
 		/*
@@ -3407,7 +3407,7 @@ bool SpiderColl::scanListForWinners ( ) {
 	// if read is not yet done, save the reply in case next list needs it
 	if ( srep ) { // && ! m_isReadDone ) {
 		int32_t rsize = srep->getRecSize();
-		if ( rsize > (int32_t)MAX_SP_REPLY_SIZE){char *xx=NULL;*xx=0; }
+		if ( rsize > (int32_t)MAX_SP_REPLY_SIZE){g_process.shutdownAbort(true); }
 		gbmemcpy ( m_lastReplyBuf, srep, rsize );
 		m_lastReplyValid = true;
 	}
@@ -3584,7 +3584,7 @@ bool SpiderColl::addWinnersIntoDoledb ( ) {
 
 		m_waitingTable.removeKey  ( &firstIp  );
 		// sanity check
-		if ( ! m_waitingTable.m_isWritable ) { char *xx=NULL;*xx=0;}
+		if ( ! m_waitingTable.m_isWritable ) { g_process.shutdownAbort(true);}
 		return true;
 	}
 
@@ -3632,10 +3632,10 @@ bool SpiderColl::addWinnersIntoDoledb ( ) {
 		SpiderRequest *sreq2;
 		sreq2 = (SpiderRequest *)m_winnerTree.getData ( node );
 		// sanity
-		if ( sreq2->m_firstIp != firstIp ) { char *xx=NULL;*xx=0; }
-		//if ( sreq2->m_spiderTimeMS < 0 ) { char *xx=NULL;*xx=0; }
-		if ( sreq2->m_ufn          < 0 ) { char *xx=NULL;*xx=0; }
-		if ( sreq2->m_priority ==   -1 ) { char *xx=NULL;*xx=0; }
+		if ( sreq2->m_firstIp != firstIp ) { g_process.shutdownAbort(true); }
+		//if ( sreq2->m_spiderTimeMS < 0 ) { g_process.shutdownAbort(true); }
+		if ( sreq2->m_ufn          < 0 ) { g_process.shutdownAbort(true); }
+		if ( sreq2->m_priority ==   -1 ) { g_process.shutdownAbort(true); }
 		// check for errors
 		bool hadError = false;
 		// parse it up
@@ -3652,8 +3652,8 @@ bool SpiderColl::addWinnersIntoDoledb ( ) {
 				     &winSpiderTimeMS ,
 				     &winUh48 );
 		// sanity
-		if ( winIp != firstIp ) { char *xx=NULL;*xx=0;}
-		if ( winUh48 != sreq2->getUrlHash48() ) { char *xx=NULL;*xx=0;}
+		if ( winIp != firstIp ) { g_process.shutdownAbort(true);}
+		if ( winUh48 != sreq2->getUrlHash48() ) { g_process.shutdownAbort(true);}
 		// make the doledb key
 		key_t doleKey = g_doledb.makeKey ( winPriority,
 						   // convert to secs from ms
@@ -3713,7 +3713,7 @@ bool SpiderColl::validateDoleBuf ( SafeBuf *doleBuf ) {
 	p += 4;
 	// sanity
 	if ( jump < 4 || jump > doleBuf->getLength() ) {
-		char *xx=NULL;*xx=0; }
+		g_process.shutdownAbort(true); }
 	bool gotIt = false;
 	for ( ; p < doleBuf->getBuf() ; ) {
 		if ( p == pstart + jump )
@@ -3727,13 +3727,13 @@ bool SpiderColl::validateDoleBuf ( SafeBuf *doleBuf ) {
 		SpiderRequest *sreq3;
 		sreq3 = (SpiderRequest *)p;
 		// point "p" to next spiderrequest
-		if ( recSize != sreq3->getRecSize() ) { char *xx=NULL;*xx=0;}
+		if ( recSize != sreq3->getRecSize() ) { g_process.shutdownAbort(true);}
 		p += recSize;//sreq3->getRecSize();
 		// sanity
-		if ( p > doleBufEnd ) { char *xx=NULL;*xx=0; }
-		if ( p < pstart     ) { char *xx=NULL;*xx=0; }
+		if ( p > doleBufEnd ) { g_process.shutdownAbort(true); }
+		if ( p < pstart     ) { g_process.shutdownAbort(true); }
 	}
-	if ( ! gotIt ) { char *xx=NULL;*xx=0; }
+	if ( ! gotIt ) { g_process.shutdownAbort(true); }
 	return true;
 }
 
@@ -3793,7 +3793,7 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 			    );
 		// when his SpiderReply comes back it will call 
 		// addWaitingTree with a "0" time so he'll get back in there
-		//if ( wn < 0 ) { char *xx=NULL; *xx=0; }
+		//if ( wn < 0 ) { g_process.shutdownAbort(true); }
 		if ( wn >= 0 ) {
 			m_waitingTree.deleteNode (wn,false );
 			// note that
@@ -3820,7 +3820,7 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 		if ( m_doleIpTable.isInTable ( &firstIp ) ) {
 			// sanity i guess. remove this line if it hits this!
 			log("spider: wtf????");
-			//char *xx=NULL;*xx=0;
+			//g_process.shutdownAbort(true);
 			return true;
 		}
 
@@ -3846,7 +3846,7 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 		oldSpiderTimeMS |= (m_waitingTreeKey.n0 >> 32);
 		// delete old node
 		//int32_t wn = m_waitingTree.getNode(0,(char *)&m_waitingTreeKey);
-		//if ( wn < 0 ) { char *xx=NULL;*xx=0; }
+		//if ( wn < 0 ) { g_process.shutdownAbort(true); }
 		if ( wn >= 0 ) {
 			m_waitingTree.deleteNode3 (wn,false );
 			//log("spdr: 2 del node %" PRId32" for %s",wn,iptoa(firstIp));
@@ -3879,7 +3879,7 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 		// keep the table in sync now with the time
 		m_waitingTable.addKey( &firstIp, &m_minFutureTimeMS );
 		// sanity check
-		if ( ! m_waitingTable.m_isWritable ) { char *xx=NULL;*xx=0;}
+		if ( ! m_waitingTable.m_isWritable ) { g_process.shutdownAbort(true);}
 		return true;
 	}
 	// we are coring here. i guess the best request or a copy of it
@@ -3893,7 +3893,7 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 	if ( g_spiderLoop.m_lockTable.isInTable ( &key ) ) {
 		log("spider: best request got doled out from under us");
 		return true;
-		char *xx=NULL;*xx=0; 
+		g_process.shutdownAbort(true); 
 	}
 
 	// make the doledb key first for this so we can add it
@@ -3920,11 +3920,11 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 	gbmemcpy ( p , m_bestRequest , recSize );
 	p += recSize;
 	// sanity check
-	if ( p - m_doleBuf > (int32_t)MAX_DOLEREC_SIZE ) { char *xx=NULL;*xx=0; }
+	if ( p - m_doleBuf > (int32_t)MAX_DOLEREC_SIZE ) { g_process.shutdownAbort(true); }
 	*/
 
 	// how did this happen?
-	//if ( ! m_msg1Avail ) { char *xx=NULL;*xx=0; }
+	//if ( ! m_msg1Avail ) { g_process.shutdownAbort(true); }
 
 	char *doleBufEnd = doleBuf->getBuf();
 
@@ -3944,7 +3944,7 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 	int32_t jump = *(int32_t *)p;
 	// sanity
 	if ( jump < 4 || jump > doleBuf->getLength() ) {
-		char *xx=NULL;*xx=0; }
+		g_process.shutdownAbort(true); }
 	// the jump includes itself
 	p += jump;
 	//for ( ; p < m_doleBuf.getBuf() ; ) {
@@ -3961,7 +3961,7 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 	p += sreq3->getRecSize();
 
 	// sanity
-	if ( p > doleBufEnd ) { char *xx=NULL;*xx=0; }
+	if ( p > doleBufEnd ) { g_process.shutdownAbort(true); }
 
 	// for caching logic below, set this
 	int32_t doledbRecSize = sizeof(key_t) + 4 + sreq3->getRecSize();
@@ -3978,8 +3978,8 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 	// 	//   priorities because it saves us a msg5 call to doledb in 
 	// 	//   the scanning loop
 	// 	//int32_t bp = sreq3->m_priority;//m_bestRequest->m_priority;
-	// 	//if ( bp <  0                     ) { char *xx=NULL;*xx=0; }
-	// 	//if ( bp >= MAX_SPIDER_PRIORITIES ) { char *xx=NULL;*xx=0; }
+	// 	//if ( bp <  0                     ) { g_process.shutdownAbort(true); }
+	// 	//if ( bp >= MAX_SPIDER_PRIORITIES ) { g_process.shutdownAbort(true); }
 	// 	//m_isDoledbEmpty [ bp ] = 0;
 	// }
 
@@ -4004,7 +4004,7 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 	// cached dolebuf to doledb then remove it from cache so it's not
 	// a cached empty dolebuf and we recompute it not using the cache.
 	if ( isFromCache && p >= doleBufEnd ) {
-		//if ( addToCache ) { char *xx=NULL;*xx=0; }
+		//if ( addToCache ) { g_process.shutdownAbort(true); }
 		// debug note
 		// if ( m_collnum == 18752 )
 		// 	log("spider: rdbcache: adding single byte. skipsize=%i"
@@ -4043,8 +4043,8 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 		// NO! we do a copy in rdbcache and copy the thing over
 		// since we promote it. so this won't work...
 		*(int32_t *)x = newJump;
-		if ( newJump >= doleBuf->getLength() ) { char *xx=NULL;*xx=0;}
-		if ( newJump < 4 ) { char *xx=NULL;*xx=0;}
+		if ( newJump >= doleBuf->getLength() ) { g_process.shutdownAbort(true);}
+		if ( newJump < 4 ) { g_process.shutdownAbort(true);}
 		if ( g_conf.m_logDebugSpider ) // || m_collnum == 18752 )
 			log("spider: rdbcache: updating "
 			    "%" PRId32" bytes of SpiderRequests "
@@ -4083,9 +4083,9 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 						true ,// incCounts
 						NULL , // rec timestamp
 						true );  // promote?
-		if ( ! inCache2 ) { char *xx=NULL;*xx=0; }
-		if ( testLen != m_doleBuf.length() ) {char *xx=NULL;*xx=0; }
-		if ( *(int32_t *)testPtr != newJump ){char *xx=NULL;*xx=0; }
+		if ( ! inCache2 ) { g_process.shutdownAbort(true); }
+		if ( testLen != m_doleBuf.length() ) {g_process.shutdownAbort(true); }
+		if ( *(int32_t *)testPtr != newJump ){g_process.shutdownAbort(true); }
 		SafeBuf tmp;
 		tmp.setBuf ( testPtr , testLen , testLen , false );
 		validateDoleBuf ( &tmp );
@@ -4170,7 +4170,7 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 	m_waitingTreeKeyValid = false;
 
 	// sanity check
-	if ( ! m_waitingTable.m_isWritable ) { char *xx=NULL;*xx=0;}
+	if ( ! m_waitingTable.m_isWritable ) { g_process.shutdownAbort(true);}
 
 	// note that ip as being in dole table
 	if ( g_conf.m_logDebugSpider )
@@ -4255,7 +4255,7 @@ uint64_t SpiderColl::getSpiderTimeMS ( SpiderRequest *sreq,
 		// a lot of times these are corrupt! wtf???
 		//spiderTimeMS = minSpiderTimeMS;
 		return spiderTimeMS;
-		//{ char*xx=NULL;*xx=0;}
+		//{ g_process.shutdownAbort(true);}
 	}
 	// compute new spiderTime for this guy, in seconds
 	int64_t waitInSecs = (uint64_t)(m_cr->m_spiderFreqs[ufn]*3600*24.0);
@@ -4284,7 +4284,7 @@ uint64_t SpiderColl::getSpiderTimeMS ( SpiderRequest *sreq,
 	//  ensure min
 	if ( spiderTimeMS < minSpiderTimeMS3 ) spiderTimeMS = minSpiderTimeMS3;
 	// sanity
-	if ( (int64_t)spiderTimeMS < 0 ) { char *xx=NULL;*xx=0; }
+	if ( (int64_t)spiderTimeMS < 0 ) { g_process.shutdownAbort(true); }
 
 	return spiderTimeMS;
 }
@@ -4319,7 +4319,7 @@ bool SpiderColl::addToDoleTable ( SpiderRequest *sreq ) {
 		// inc it
 		*score = *score + 1;
 		// sanity check
-		if ( *score <= 0 ) { char *xx=NULL;*xx=0; }
+		if ( *score <= 0 ) { g_process.shutdownAbort(true); }
 		// only one per ip!
 		// not any more! we allow MAX_WINNER_NODES per ip!
 		if ( *score > MAX_WINNER_NODES )
@@ -4348,7 +4348,7 @@ bool SpiderColl::addToDoleTable ( SpiderRequest *sreq ) {
 			log(LOG_DEBUG,"spider: added ip=%s to doleiptable "
 			    "(score=1)",iptoa(sreq->m_firstIp));
 		// sanity check
-		//if ( ! m_doleIpTable.m_isWritable ) { char *xx=NULL;*xx=0;}
+		//if ( ! m_doleIpTable.m_isWritable ) { g_process.shutdownAbort(true);}
 	}
 
 	// . these priority slots in doledb are not empty
@@ -4399,7 +4399,7 @@ bool SpiderColl::printStats ( SafeBuf &sb ) {
 
 key_t makeWaitingTreeKey ( uint64_t spiderTimeMS , int32_t firstIp ) {
 	// sanity
-	if ( ((int64_t)spiderTimeMS) < 0 ) { char *xx=NULL;*xx=0; }
+	if ( ((int64_t)spiderTimeMS) < 0 ) { g_process.shutdownAbort(true); }
 	// make the wait tree key
 	key_t wk;
 	wk.n1 = (spiderTimeMS>>32);
@@ -4407,7 +4407,7 @@ key_t makeWaitingTreeKey ( uint64_t spiderTimeMS , int32_t firstIp ) {
 	wk.n0 <<= 32;
 	wk.n0 |= (uint32_t)firstIp;
 	// sanity
-	if ( wk.n1 & 0x8000000000000000LL ) { char *xx=NULL;*xx=0; }
+	if ( wk.n1 & 0x8000000000000000LL ) { g_process.shutdownAbort(true); }
 	return wk;
 }
 

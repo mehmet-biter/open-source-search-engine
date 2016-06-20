@@ -1,7 +1,7 @@
 #undef _XOPEN_SOURCE
 #define _XOPEN_SOURCE 500
 #include "gb-include.h"
-//#include "strings.h"
+#include "Process.h"
 
 #include "Wiktionary.h"
 
@@ -62,9 +62,9 @@ bool Wiktionary::test ( ) {
 	char *p = getSynSet ( wid, langEnglish );
 	//char *p = (char *)m_synTable.getValue ( &wid );
 	// must be there
-	if ( ! p ) { char *xx=NULL;*xx=0; }
+	if ( ! p ) { g_process.shutdownAbort(true); }
 	// first # is number of forms
-	//if ( *p < 0 || *p > 100 ) { char *xx =NULL;*xx=0; }
+	//if ( *p < 0 || *p > 100 ) { g_process.shutdownAbort(true); }
 	// first is count!
 	//int32_t n = *p;
 	// skip that
@@ -914,7 +914,7 @@ bool Wiktionary::generateHashTableFromWiktionaryTxt ( int32_t sizen ) {
 		gbmemcpy(dst,"}}",2);
 		dst += 2;
 		// panic
-		if ( dst > lineEnd ) { char *xx=NULL;*xx=0; }
+		if ( dst > lineEnd ) { g_process.shutdownAbort(true); }
 		// space fill until lineEnd
 		for ( ; dst < lineEnd ; dst++ )
 			*dst = ' ';
@@ -1134,7 +1134,7 @@ bool Wiktionary::generateHashTableFromWiktionaryTxt ( int32_t sizen ) {
 		int32_t n = sizeof(s_lowerLangWikiStrings) / sizeof(char *);
 		for ( int32_t i = 0 ; i < n ; i++ ) {
 			const char *str = s_lowerLangWikiStrings[i];
-			if ( ! str ) { char *xx=NULL;*xx=0; }
+			if ( ! str ) { g_process.shutdownAbort(true); }
 			int32_t  len = strlen(str);
 			if ( ! strncasecmp(wp,str,len) ) {
 				langId = i;
@@ -1841,7 +1841,7 @@ bool Wiktionary::compile ( ) {
 
 			// must be there
 			int32_t *offPtr = (int32_t *)m_debugMap.getValue(data);
-			if ( ! offPtr ) { char *xx=NULL;*xx=0; }
+			if ( ! offPtr ) { g_process.shutdownAbort(true); }
 			char *word = m_debugBuf.getBufStart() + *offPtr;
 			// now re-hash it as lower case
 			int64_t wid = hash64Lower_utf8(word);
@@ -1912,7 +1912,7 @@ bool Wiktionary::compile ( ) {
 			// get the word itself
 			int32_t *offPtr = (int32_t *)m_debugMap.getValue(data);
 			// must be there
-			if ( ! offPtr ) { char *xx=NULL;*xx=0; }
+			if ( ! offPtr ) { g_process.shutdownAbort(true); }
 			char *word = m_debugBuf.getBufStart() + *offPtr;
 			// now re-hash it
 			int64_t wid = hash64Lower_utf8(word);

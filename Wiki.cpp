@@ -4,6 +4,7 @@
 #include "Words.h"
 #include "Titledb.h"
 #include "max_niceness.h"
+#include "Process.h"
 
 // the global instance
 Wiki g_wiki;
@@ -83,7 +84,7 @@ bool Wiki::loadText ( int32_t fileSize ) {
 
 	sb.pushChar('\0');
 	// should not have reallocated too much
-	if ( sb.length() + 100 < sb.m_capacity ) { char *xx=NULL;*xx=0; }
+	if ( sb.length() + 100 < sb.m_capacity ) { g_process.shutdownAbort(true); }
 
 	char *buf = sb.getBufStart();
 	int32_t size = sb.length() - 1;

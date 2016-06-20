@@ -24,6 +24,7 @@
 #include "Repair.h"
 #include "Parms.h"
 #include "SpiderLoop.h"
+#include "Process.h"
 
 // so user can specify the format of the reply/output
 //#define FMT_HTML 1
@@ -690,7 +691,7 @@ bool StateCD::sendList ( ) {
 			m_titledbStartKeys[i] += 1;
 		}
 
-		else { char *xx=NULL;*xx=0; }
+		else { g_process.shutdownAbort(true); }
 
 		// figure out why we do not get the full list????
 		//if ( list->m_listSize >= 0 ) { // m_minRecSizes ) {
@@ -814,7 +815,7 @@ void StateCD::printSpiderdbList ( RdbList *list,SafeBuf *sb,char **lastKeyPtr){
 			//log("diffbot: had a spider reply with no "
 			//    "corresponding spider request for uh48=%" PRId64
 			//    , srep->getUrlHash48());
-			//char *xx=NULL;*xx=0;
+			//g_process.shutdownAbort(true);
 		}
 
 		// print the url if not yet printed
@@ -1479,7 +1480,7 @@ bool sendPageCrawlbot ( TcpSocket *socket , HttpRequest *hr ) {
 	// make the collection name so it includes the token and crawl name
 	char collName[MAX_COLL_LEN+1];
 	// sanity
-	if ( MAX_COLL_LEN < 64 ) { char *xx=NULL;*xx=0; }
+	if ( MAX_COLL_LEN < 64 ) { g_process.shutdownAbort(true); }
 	// make a compound name for collection of token and name
 	sprintf(collName,"%s-%s",token,name);
 
@@ -2278,7 +2279,7 @@ bool printCrawlBotPage2 ( TcpSocket *socket ,
 			// skip if empty
 			if ( ! xd ) continue;
 			// sanity check
-			if ( ! xd->m_sreqValid ) { char *xx=NULL;*xx=0; }
+			if ( ! xd->m_sreqValid ) { g_process.shutdownAbort(true); }
 			// skip if not our coll rec!
 			//if ( xd->m_cr != cr ) continue;
 			if ( xd->m_collnum != cr->m_collnum ) continue;

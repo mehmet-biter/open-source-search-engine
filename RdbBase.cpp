@@ -90,7 +90,7 @@ bool RdbBase::init ( char  *dir            ,
 	// reset all
 	reset();
 	// sanity
-	if ( ! dir ) { char *xx=NULL;*xx=0; }
+	if ( ! dir ) { g_process.shutdownAbort(true); }
 	// set all our contained classes
 	//m_dir.set ( dir );
 	// set all our contained classes
@@ -109,7 +109,7 @@ bool RdbBase::init ( char  *dir            ,
 	if ( rdb->m_isCollectionLess ) {
 		if ( collnum != (collnum_t) 0 ) {
 			log("db: collnum not zero for catdb.");
-			char *xx = NULL; *xx = 0;
+			g_process.shutdownAbort(true);
 		}
 		// make a special "cat" dir for it if we need to
 		sprintf ( tmp , "%s%s" , dir , dbname );
@@ -235,7 +235,7 @@ bool RdbBase::init ( char  *dir            ,
 	}
 
 	// sanity check
-	if ( m_pc && m_pc->m_diskPageSize!=m_pageSize) { char *xx=NULL;*xx=0; }
+	if ( m_pc && m_pc->m_diskPageSize!=m_pageSize) { g_process.shutdownAbort(true); }
 	// now fill up the page cache
 	// preload:
 	if ( ! preloadDiskPageCache ) return true;
@@ -519,7 +519,7 @@ bool RdbBase::setFiles ( ) {
 		// replace that first file then
 		m_didRepair = true;
 		return true;
-		//char *xx=NULL; *xx=0;
+		//g_process.shutdownAbort(true);
 	}
 
 
@@ -602,7 +602,7 @@ int32_t RdbBase::addFile ( int32_t id, bool isNew, int32_t mergeNum, int32_t id2
 		// will stockpile, that sucks... things will slow down
 		if ( ! isEmpty ) {
 			return -1;
-			char *xx=NULL;*xx=0;
+			g_process.shutdownAbort(true);
 		}
 		// ok, now try again since bogus file is gone
 		goto tryAgain;
@@ -623,7 +623,7 @@ int32_t RdbBase::addFile ( int32_t id, bool isNew, int32_t mergeNum, int32_t id2
 	// reinstate the memory limit
 	g_conf.m_maxMem = mm;
 	// sanity check
-	if ( id2 < 0 && m_isTitledb ) { char *xx = NULL; *xx = 0; }
+	if ( id2 < 0 && m_isTitledb ) { g_process.shutdownAbort(true); }
 
 	CollectionRec *cr = NULL;
 
@@ -888,7 +888,7 @@ bool RdbBase::incorporateMerge ( ) {
 		    "size for %s. Map says it should be %" PRId64" bytes but it "
 		    "is %" PRId64" bytes.",
 		    m_files[x]->getFilename(), fs2 , fs );
-		if ( fs2-fs > 12 || fs-fs2 > 12 ) { char *xx = NULL; *xx = 0; }
+		if ( fs2-fs > 12 || fs-fs2 > 12 ) { g_process.shutdownAbort(true); }
 		// now print the exception
 		log("build: continuing since difference is less than 12 "
 		    "bytes. Most likely a discrepancy caused by a power "
@@ -988,7 +988,7 @@ void RdbBase::doneWrapper2 ( ) {
 	if ( fs != fs2 ) {
 		log("build: Map file size does not agree with actual file "
 		    "size");
-		char *xx = NULL; *xx = 0;
+		g_process.shutdownAbort(true);
 	}
 
 	if ( ! m_isTitledb ) {
@@ -1058,7 +1058,7 @@ void RdbBase::doneWrapper4 ( ) {
 		log("db: waiting for read thread to exit on unlinked file");
 		if (!g_loop.registerSleepCallback(100,this,
 						  checkThreadsAgainWrapper)){
-			char *xx=NULL;*xx=0; }
+			g_process.shutdownAbort(true); }
 		return;
 	}
 
@@ -1072,7 +1072,7 @@ void RdbBase::doneWrapper4 ( ) {
 	buryFiles ( a , b );
 	// sanity check
 	if ( m_numFilesToMerge != (b-a) ) {
-		log(LOG_LOGIC,"db: Bury oops."); char *xx = NULL; *xx = 0; }
+		log(LOG_LOGIC,"db: Bury oops."); g_process.shutdownAbort(true); }
 	// we no longer have a merge file
 	m_hasMergeFile = false;
 	// now unset m_mergeUrgent if we're close to our limit
@@ -1161,7 +1161,7 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 		return false;
 	}
 
-	if (   niceness == 0 ) { char *xx=NULL;*xx=0; }
+	if (   niceness == 0 ) { g_process.shutdownAbort(true); }
 
 	if ( forceMergeAll ) m_nextMergeForced = true;
 
@@ -1281,7 +1281,7 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 		    "CollectionRec.h.",
 		    m_minToMerge,m_dbname);
 		//m_minToMerge = 2;
-		char *xx = NULL; *xx = 0;
+		g_process.shutdownAbort(true);
 	}
 	// mdw: comment this out to reduce log spam when we have 800 colls!
 	// print it
@@ -1513,7 +1513,7 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 		// if titledb we got a "-023" part now
 		if ( m_isTitledb ) {
 			id2 = atol2 ( s , 3 );
-			if ( id2 < 0 ) { char *xx = NULL; *xx =0; }
+			if ( id2 < 0 ) { g_process.shutdownAbort(true); }
 			s += 4;
 		}
 		// get the "003" part
@@ -1543,7 +1543,7 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 				    "were deleted because they were "
 				    "exhausted and had no recs to offer."
 				    ,n,m_numFiles);
-				//char *xx=NULL;*xx=0;
+				//g_process.shutdownAbort(true);
 				break;
 			}
 			if ( ! m_files[i] ) {
@@ -1713,7 +1713,7 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 		// sanity check
 		if ( ratio < 0.0 ) {
 			logf(LOG_LOGIC,"merge: ratio is negative %.02f",ratio);
-			char *xx = NULL; *xx = 0; 
+			g_process.shutdownAbort(true); 
 		}
 		// the adjusted ratio
 		double adjratio = ratio;
@@ -1852,7 +1852,7 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 	//char rdbId = getIdFromRdb ( m_rdb );
 
 	// sanity check
-	if ( m_niceness == 0 ) { char *xx=NULL;*xx=0 ; }
+	if ( m_niceness == 0 ) { g_process.shutdownAbort(true); }
 
 
 	logTrace( g_conf.m_logTraceRdbBase, "merge!" );

@@ -36,7 +36,7 @@ void RdbMap::set ( const char *dir, const char *mapFilename,
 	// m_pageSize -1 must be able to be stored in m_offsets[][] (a int16_t)
 	if ( m_pageSize > 32768 ) {
 	      log(LOG_LOGIC,"db: rdbmap: m_pageSize too big for m_offsets.");
-	      char *xx = NULL; *xx = 0;
+	      g_process.shutdownAbort(true);
 	}
 	// . we remove the head part files of a BigFile when merging it
 	// . this keeps the required merge space down to a small amount
@@ -54,7 +54,7 @@ void RdbMap::set ( const char *dir, const char *mapFilename,
 	log(LOG_LOGIC,"db: rdbmap: PAGES_PER_SEGMENT*"
 	    "m_pageSize does not divide MAX_PART_SIZE.  cannot do "
 	    "space-saving merges due to this.");
-	char *xx = NULL; *xx = 0;
+	g_process.shutdownAbort(true);
 }
 
 
@@ -501,7 +501,7 @@ bool RdbMap::verifyMap2 ( ) {
 		g_process.shutdownAbort(false);
 
 #if 0
-		//char *xx=NULL;*xx=0;
+		//g_process.shutdownAbort(true);
 		// was k too small?
 		//if ( i + 1 < m_numPages && lastKey <= getKey(i+1) ) {
 		if (i+1<m_numPages && KEYCMP(lastKey,getKeyPtr(i+1),m_ks)<=0){
@@ -658,7 +658,7 @@ int64_t RdbMap::readSegment ( int32_t seg , int64_t offset , int32_t fileSize ) 
 bool RdbMap::addRecord ( char *key, char *rec , int32_t recSize ) {
 	// calculate size of the whole slot
 	//int32_t size = sizeof(key_t) ;
-	if ( m_reducedMem ) { char *xx=NULL;*xx=0; }
+	if ( m_reducedMem ) { g_process.shutdownAbort(true); }
 	// include the dataSize, 4 bytes, for each slot if it's not fixed
 	//if ( m_fixedDataSize == -1 ) size += 4;
 	// include the data
@@ -679,7 +679,7 @@ bool RdbMap::addRecord ( char *key, char *rec , int32_t recSize ) {
 			log("db: Failed to add segment3 to map file %s.",
 			    m_file.getFilename());
 			// core dump until we revert to old values
-			char *xx = NULL; *xx = 0;
+			g_process.shutdownAbort(true);
 		}
 	}
 	// we need to call writeMap() before we exit
@@ -729,14 +729,14 @@ bool RdbMap::addRecord ( char *key, char *rec , int32_t recSize ) {
 		return false;
 		
 		
-		//char *xx=NULL;*xx=0;
+		//g_process.shutdownAbort(true);
 		// . during a merge, corruption can happen, so let's core
 		//   here until we figure out how to fix it.
 		// . any why wasn't the corruption discovered and patched
 		//   with a twin? or at least excised... because the read
 		//   list may have all keys in order, but be out of order
 		//   with respect to the previously-read list?
-		//char *xx = NULL; *xx = 0;
+		//g_process.shutdownAbort(true);
 		// let's ignore it for now and just add the corrupt
 		// record (or maybe the one before was corrupted) but we
 		// need to verify the map afterwards to fix these problems
@@ -817,11 +817,11 @@ bool RdbMap::addKey ( key_t &key ) {
 // . call addRecord() or addKey() for each record in this list
 bool RdbMap::prealloc ( RdbList *list ) {
 	// sanity check
-	if ( list->m_ks != m_ks ) { char *xx = NULL; *xx = 0; }
+	if ( list->m_ks != m_ks ) { g_process.shutdownAbort(true); }
 	// bail now if it's empty
 	if ( list->isEmpty() ) return true;
 
-	if ( m_reducedMem ) { char *xx=NULL;*xx=0; }
+	if ( m_reducedMem ) { g_process.shutdownAbort(true); }
 
 	// what is the last page we touch?
 	int32_t lastPageNum = (m_offset + list->getListSize() - 1) / m_pageSize;
@@ -839,7 +839,7 @@ bool RdbMap::prealloc ( RdbList *list ) {
 bool RdbMap::addList ( RdbList *list ) {
 
 	// sanity check
-	if ( list->m_ks != m_ks ) { char *xx = NULL; *xx = 0; }
+	if ( list->m_ks != m_ks ) { g_process.shutdownAbort(true); }
 
 	// . reset list to beginning to make sure
 	// . no, because of HACK in RdbDump.cpp we set m_listPtrHi < m_list
@@ -853,7 +853,7 @@ bool RdbMap::addList ( RdbList *list ) {
 	// what is the last page we touch?
 	int32_t lastPageNum = (m_offset + list->getListSize() - 1) / m_pageSize;
 
-	if ( m_reducedMem ) { char *xx=NULL;*xx=0; }
+	if ( m_reducedMem ) { g_process.shutdownAbort(true); }
 
 	// . need to pre-alloc up here so malloc does not fail mid stream
 	// . TODO: only do it if list is big enough
@@ -895,7 +895,7 @@ bool RdbMap::addList ( RdbList *list ) {
 		// allow caller to try to fix the tree in the case of dumping
 		// a tree to a file on disk
 		return false;
-		//char *xx = NULL; *xx = 0;
+		//g_process.shutdownAbort(true);
 	}
 	if ( list->skipCurrentRecord() ) goto top2;
 
@@ -1229,7 +1229,7 @@ int64_t RdbMap::getMemAlloced ( ) {
 }
 
 bool RdbMap::addSegmentPtr ( int32_t n ) {
-	if ( m_reducedMem ) { char *xx=NULL;*xx=0; }
+	if ( m_reducedMem ) { g_process.shutdownAbort(true); }
 	// realloc
 	if ( n >= m_numSegmentPtrs ) {
 		char **k;
@@ -1313,7 +1313,7 @@ bool RdbMap::addSegment (  ) {
 	//if ( n >= MAX_SEGMENTS ) return log("db: Mapped file is "
 	//				    "too big. Critical error.");
 
-	if ( m_reducedMem ) { char *xx=NULL;*xx=0; }
+	if ( m_reducedMem ) { g_process.shutdownAbort(true); }
 
 	// the array of up to MAX_SEGMENT pool ptrs is now dynamic too!
 	// because diffbot uses thousands of collections, this will save
@@ -1543,7 +1543,7 @@ bool RdbMap::generateMap ( BigFile *f ) {
 		// now the offset on this page
 		//int32_t pageOffset = p - off;
 		// must be less than key size
-		//if ( pageOffset > m_ks ) { char *xx=NULL;*xx=0; }
+		//if ( pageOffset > m_ks ) { g_process.shutdownAbort(true); }
 		// set the list special here
 		list.set ( buf      + fullKeyOff ,
 			   readSize - fullKeyOff ,
@@ -1597,7 +1597,7 @@ bool RdbMap::generateMap ( BigFile *f ) {
 	recSize = list.getCurrentRecSize();
 	//rec     = list.getCurrentRec ();
 	// don't chop keys
-	//if ( recSize > 1000000 ) { char *xx = NULL; *xx = 0; }
+	//if ( recSize > 1000000 ) { g_process.shutdownAbort(true); }
 	if ( recSize < 6 ) {
 		log("db: Got negative recsize of %" PRId32" at offset=%" PRId64" "
 		    "lastgoodoff=%" PRId64,

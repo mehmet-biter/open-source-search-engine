@@ -7,6 +7,7 @@
 #include "Speller.h"
 #include "Punycode.h"
 #include "Unicode.h"
+#include "Process.h"
 
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
@@ -2559,7 +2560,7 @@ char *getPathEnd ( char *s , int32_t desiredDepth ) {
 	// get length of hostname
 	for ( s++; *s && *s != '/' ; s++ );
 	// should always have a /
-	if ( *s != '/' ) { char *xx=NULL;*xx=0;}
+	if ( *s != '/' ) { g_process.shutdownAbort(true);}
 	// skip that
 	s++;
 	// init depth
@@ -2601,7 +2602,7 @@ int32_t getPathDepth ( char *s , bool hasHttp ) {
 		// skip proto
 		while ( *s != ':' ) s++;
 		// must have it!
-		if ( ! *s ) { char *xx=NULL;*xx=0; }
+		if ( ! *s ) { g_process.shutdownAbort(true); }
 		// skip ://
 		s += 3;
 	}
@@ -2610,7 +2611,7 @@ int32_t getPathDepth ( char *s , bool hasHttp ) {
 	// no, might be a site like "xyz.com"
 	if ( ! *s ) return 0;
 	// should always have a /
-	if ( *s != '/' ) { char *xx=NULL;*xx=0;}
+	if ( *s != '/' ) { g_process.shutdownAbort(true);}
 	// skip that
 	s++;
 	// init depth

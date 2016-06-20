@@ -16,6 +16,8 @@
 #include "Synonyms.h"
 #include "Wiki.h"
 #include "RdbList.h"
+#include "Process.h"
+
 
 Query::Query ( ) {
 	constructor();
@@ -450,7 +452,7 @@ bool Query::setQTerms ( Words &words ) {
 		char *pp = m_stackBuf.getBufStart();
 		m_qterms = (QueryTerm *)pp;
 		pp += sizeof(QueryTerm);
-		if ( pp > m_stackBuf.getBufEnd() ) { char *xx=NULL;*xx=0; }
+		if ( pp > m_stackBuf.getBufEnd() ) { g_process.shutdownAbort(true); }
 	}
 
 	// call constructor on each one here
@@ -798,7 +800,7 @@ bool Query::setQTerms ( Words &words ) {
 		// if no synonyms, all done
 		if ( naids <= 0 ) continue;
 		// sanity
-		if ( naids > MAX_SYNS ) { char *xx=NULL;*xx=0; }
+		if ( naids > MAX_SYNS ) { g_process.shutdownAbort(true); }
 		// now make the buffer to hold them for us
 		qw->m_synWordBuf.setLabel("qswbuf");
 		qw->m_synWordBuf.safeMemcpy ( &syn.m_synWordBuf );
@@ -906,9 +908,9 @@ bool Query::setQTerms ( Words &words ) {
 			if ( ! ptr ) {
 				int32_t off = syn.m_termOffs[j];
 				if ( off < 0 ) { 
-					char *xx=NULL;*xx=0; }
+					g_process.shutdownAbort(true); }
 				if ( off > qw->m_synWordBuf.length() ) {
-					char *xx=NULL;*xx=0; }
+					g_process.shutdownAbort(true); }
 				// use QueryWord::m_synWordBuf which should
 				// be persistent and not disappear like
 				// syn.m_synWordBuf.
@@ -935,7 +937,7 @@ bool Query::setQTerms ( Words &words ) {
 
 	m_numTerms = n;
 	
-	if ( n > ABS_MAX_QUERY_TERMS ) { char *xx=NULL;*xx=0; }
+	if ( n > ABS_MAX_QUERY_TERMS ) { g_process.shutdownAbort(true); }
 
 	// . repeated terms have the same termbits!!
 	// . this is only for bool queries since regular queries ignore
@@ -1231,7 +1233,7 @@ bool Query::setQWords ( char boolFlag ,
 	// alloc the mem if we need to (mdw left off here)
 	int32_t need = m_numWords * sizeof(QueryWord);
 	// sanity check
-	if ( m_qwords || m_qwordsAllocSize ) { char *xx = NULL; *xx = 0; }
+	if ( m_qwords || m_qwordsAllocSize ) { g_process.shutdownAbort(true); }
 	// point m_qwords to our generic buffer if it will fit
 	if ( m_gnext + need < m_gbuf + GBUF_SIZE && 
 	     // it can wrap so watch out with this:
@@ -3251,7 +3253,7 @@ bool Query::matchesBoolQuery ( unsigned char *bitVec , int32_t vecSize ) {
 bool isBitNumSet ( int32_t opBitNum, unsigned char *bitVec, int32_t vecSize ) {
 	int32_t byte = opBitNum / 8;
 	int32_t mask = 1<<(opBitNum % 8);
-	if ( byte >= vecSize ) { char *xx=NULL;*xx=0; }
+	if ( byte >= vecSize ) { g_process.shutdownAbort(true); }
 	return bitVec[byte] & mask;
 }
 

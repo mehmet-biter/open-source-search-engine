@@ -6,6 +6,8 @@
 #include "CountryCode.h" // g_countryCode
 #include "Speller.h"
 #include "Synonyms.h"
+#include "Process.h"
+
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
 #endif
@@ -148,7 +150,7 @@ static bool storeTerm ( const char	*s        ,
 bool XmlDoc::hashNoSplit ( HashTableX *tt ) {
 	// this should be ready to go and not block!
 	int64_t *pch64 = getExactContentHash64();
-	if ( ! pch64 || pch64 == (void *)-1 ) { char *xx=NULL;*xx=0; }
+	if ( ! pch64 || pch64 == (void *)-1 ) { g_process.shutdownAbort(true); }
 
 	// shortcut
 	Url *fu = getFirstUrl();
@@ -226,7 +228,7 @@ bool XmlDoc::hashNoSplit ( HashTableX *tt ) {
 	// skip if root
 	if ( fu->getPathLen() <= 1 ) add = false;
 	// sanity check
-	if ( ! m_linksValid ) { char *xx=NULL; *xx=0; }
+	if ( ! m_linksValid ) { g_process.shutdownAbort(true); }
 	// . skip if we have no subdirectory outlinks
 	// . that way we do not confuse all the pages in dictionary.com or
 	//   wikipedia.org as subsites!!
@@ -295,12 +297,12 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 	if ( m_allHashed ) return (char *)1;
 
 	// sanity checks
-	if ( table->m_ks != 18 ) { char *xx=NULL;*xx=0; }
-	if ( table->m_ds != 4  ) { char *xx=NULL;*xx=0; }
+	if ( table->m_ks != 18 ) { g_process.shutdownAbort(true); }
+	if ( table->m_ds != 4  ) { g_process.shutdownAbort(true); }
 
-	if ( m_wts && m_wts->m_ks != 12  ) { char *xx=NULL;*xx=0; }
+	if ( m_wts && m_wts->m_ks != 12  ) { g_process.shutdownAbort(true); }
 	// ptr to term = 4 + score = 4 + ptr to sec = 4
-	if ( m_wts && m_wts->m_ds!=sizeof(TermDebugInfo)){char *xx=NULL;*xx=0;}
+	if ( m_wts && m_wts->m_ds!=sizeof(TermDebugInfo)){g_process.shutdownAbort(true);}
 
 	uint8_t *ct = getContentType();
 	if ( ! ct )
@@ -340,7 +342,7 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, getCountTable failed", __FILE__,__func__, __LINE__);
 		return (char *)cnt;
 	}
-	if ( cnt == (void *)-1 ) { char *xx=NULL;*xx=0; }
+	if ( cnt == (void *)-1 ) { g_process.shutdownAbort(true); }
 
 	// and this
 	Links *links = getLinks();
@@ -349,7 +351,7 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, getLinks failed", __FILE__,__func__, __LINE__);
 		return (char *)links;
 	}
-	if ( links == (Links *)-1 ) { char *xx=NULL;*xx=0; }
+	if ( links == (Links *)-1 ) { g_process.shutdownAbort(true); }
 
 	char *wordSpamVec = getWordSpamVec();
 	if (!wordSpamVec) 
@@ -357,7 +359,7 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, getWordSpamVec failed", __FILE__,__func__, __LINE__);
 		return (char *)wordSpamVec;
 	}
-	if (wordSpamVec==(void *)-1) {char *xx=NULL;*xx=0;}
+	if (wordSpamVec==(void *)-1) {g_process.shutdownAbort(true);}
 
 	char *fragVec = getFragVec();//m_fragBuf.getBufStart();
 	if ( ! fragVec ) 
@@ -365,7 +367,7 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, getFragVec failed", __FILE__,__func__, __LINE__);
 		return (char *)fragVec;
 	}
-	if ( fragVec == (void *)-1 ) { char *xx=NULL;*xx=0; }
+	if ( fragVec == (void *)-1 ) { g_process.shutdownAbort(true); }
 
 	// why do we need this?
 	if ( m_wts ) {
@@ -375,7 +377,7 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 			if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, getLangVector failed", __FILE__,__func__, __LINE__);
 			return (char *)lv;
 		}
-		if ( lv == (void *)-1 ) { char *xx=NULL;*xx=0; }
+		if ( lv == (void *)-1 ) { g_process.shutdownAbort(true); }
 	}
 
 	CollectionRec *cr = getCollRec();
@@ -994,26 +996,26 @@ bool XmlDoc::hashLinks ( HashTableX *tt ) {
 bool XmlDoc::hashLinksForLinkdb ( HashTableX *dt ) {
 
 	// sanity check
-	if ( dt->m_ks != sizeof(key224_t) ) { char *xx=NULL;*xx=0; }
-	if ( dt->m_ds != 0                ) { char *xx=NULL;*xx=0; }
+	if ( dt->m_ks != sizeof(key224_t) ) { g_process.shutdownAbort(true); }
+	if ( dt->m_ds != 0                ) { g_process.shutdownAbort(true); }
 
 	// this will be different with our new site definitions
 	uint32_t linkerSiteHash32 = *getSiteHash32();
 
 	char siteRank = getSiteRank();
 
-	if ( ! m_linksValid ) { char *xx=NULL;*xx=0; }
+	if ( ! m_linksValid ) { g_process.shutdownAbort(true); }
 
 	// we need to store this in the title rec for re-building
 	// the meta list from the title rec...
 	// is this just site info?
 	//TagRec ***pgrv = getOutlinkTagRecVector();
-	//if ( ! pgrv || pgrv == (void *)-1 ) { char *xx=NULL;*xx=0; }
+	//if ( ! pgrv || pgrv == (void *)-1 ) { g_process.shutdownAbort(true); }
 	//TagRec **grv = *pgrv;
 
 	int32_t *linkSiteHashes = getLinkSiteHashes();
 	if ( ! linkSiteHashes || linkSiteHashes == (void *)-1 ){
-		char *xx=NULL;*xx=0;}
+		g_process.shutdownAbort(true);}
 
 	// convert siteNumInlinks into a score
 	//int32_t numSiteInlinks = *xd->getSiteNumInlinks();
@@ -1205,7 +1207,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 	//
 	// HASH ip:a.b.c.d
 	//
-	if ( ! m_ipValid ) { char *xx=NULL;*xx=0; }
+	if ( ! m_ipValid ) { g_process.shutdownAbort(true); }
 	// copy it to save it
 	char ipbuf[64];
 	int32_t iplen = sprintf(ipbuf,"%s",iptoa(m_ip));
@@ -1213,7 +1215,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 	if ( ! hashSingleTerm(ipbuf,iplen,&hi) ) return false;
 
 	// . sanity check
-	if ( ! m_siteNumInlinksValid ) { char *xx=NULL;*xx=0; }
+	if ( ! m_siteNumInlinksValid ) { g_process.shutdownAbort(true); }
 
 	char buf[20];
 	int32_t blen;
@@ -1399,7 +1401,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 	// skip if root
 	if ( fu->getPathLen() <= 1 ) add = false;
 	// sanity check
-	if ( ! m_linksValid ) { char *xx=NULL; *xx=0; }
+	if ( ! m_linksValid ) { g_process.shutdownAbort(true); }
 	// . skip if we have no subdirectory outlinks
 	// . that way we do not confuse all the pages in dictionary.com or
 	//   wikipedia.org as subsites!!
@@ -1502,11 +1504,11 @@ bool XmlDoc::hashIncomingLinkText ( HashTableX *tt               ,
 	//if ( ! *getHasRSSItem() &&  m_eliminateMenus ) return true;
 
 	// sanity check
-	if ( hashAnomalies == hashNonAnomalies ) { char *xx = NULL; *xx =0; }
+	if ( hashAnomalies == hashNonAnomalies ) { g_process.shutdownAbort(true); }
 	// display this note in page parser
 	char *note = "hashing incoming link text";
 	// sanity
-	if ( ! m_linkInfo1Valid ) { char *xx=NULL;*xx=0; }
+	if ( ! m_linkInfo1Valid ) { g_process.shutdownAbort(true); }
 
 	// . finally hash in the linkText terms from the LinkInfo
 	// . the LinkInfo class has all the terms of hashed anchor text for us
@@ -1518,8 +1520,8 @@ bool XmlDoc::hashIncomingLinkText ( HashTableX *tt               ,
 	LinkInfo  *linkInfo = info1;
 
 	// sanity checks
-	if ( ! m_ipValid             ) { char *xx=NULL;*xx=0; }
-	if ( ! m_siteNumInlinksValid ) { char *xx=NULL;*xx=0; }
+	if ( ! m_ipValid             ) { g_process.shutdownAbort(true); }
+	if ( ! m_siteNumInlinksValid ) { g_process.shutdownAbort(true); }
 
 	//
 	// brought the following code in from LinkInfo.cpp
@@ -1656,7 +1658,7 @@ bool XmlDoc::hashNeighborhoods ( HashTableX *tt ) {
 //   given by "titleWeight" parm
 bool XmlDoc::hashTitle ( HashTableX *tt ) {
 	// sanity check
-	if ( m_hashedTitle ) { char *xx=NULL ; *xx=0; }
+	if ( m_hashedTitle ) { g_process.shutdownAbort(true); }
 
 	setStatus ( "hashing title" );
 
@@ -1779,7 +1781,7 @@ bool XmlDoc::hashMetaKeywords ( HashTableX *tt ) {
 bool XmlDoc::hashMetaSummary ( HashTableX *tt ) {
 
 	// sanity check
-	if ( m_hashedMetas ) { char *xx=NULL ; *xx=0; }
+	if ( m_hashedMetas ) { g_process.shutdownAbort(true); }
 
 	// this has been called, note it
 	m_hashedMetas = true;
@@ -1938,7 +1940,7 @@ bool XmlDoc::hashIsAdult ( HashTableX *tt ) {
 	char *ia = getIsAdult();
 	// this should not block or return error! should have been
 	// set in prepareToMakeTitleRec() before hashAll() was called!
-	if ( ! ia || ia == (void *)-1 ) {char *xx=NULL;*xx=0; }
+	if ( ! ia || ia == (void *)-1 ) {g_process.shutdownAbort(true); }
 
 	// index gbisadult:1 if adult or gbisadult:0 if not
 	char *val;
@@ -1961,8 +1963,8 @@ bool XmlDoc::hashIsAdult ( HashTableX *tt ) {
 bool XmlDoc::hashSingleTerm( const char *s, int32_t slen, HashInfo *hi ) {
 	// empty?
 	if ( slen <= 0 ) return true;
-	if ( ! m_versionValid    ) { char *xx=NULL;*xx=0; }
-	if ( hi->m_useCountTable && ! m_countTableValid){char *xx=NULL;*xx=0; }
+	if ( ! m_versionValid    ) { g_process.shutdownAbort(true); }
+	if ( hi->m_useCountTable && ! m_countTableValid){g_process.shutdownAbort(true); }
 
 	// a single blob hash
         int64_t termId = hash64 ( s , slen );
@@ -1981,7 +1983,7 @@ bool XmlDoc::hashSingleTerm( const char *s, int32_t slen, HashInfo *hi ) {
 	// shortcut
 	HashTableX *dt = hi->m_tt;
 	// sanity check
-	if ( dt->m_ks != sizeof(key144_t) ) { char *xx=NULL;*xx=0; }
+	if ( dt->m_ks != sizeof(key144_t) ) { g_process.shutdownAbort(true); }
 	// make the key like we do in hashWords()
 
 
@@ -2027,11 +2029,11 @@ bool XmlDoc::hashSingleTerm( const char *s, int32_t slen, HashInfo *hi ) {
 }
 
 bool XmlDoc::hashString( char *s, int32_t slen, HashInfo *hi ) {
-	if ( ! m_versionValid        ) { char *xx=NULL;*xx=0; }
+	if ( ! m_versionValid        ) { g_process.shutdownAbort(true); }
 
-	if ( hi->m_useCountTable && ! m_countTableValid){char *xx=NULL;*xx=0; }
+	if ( hi->m_useCountTable && ! m_countTableValid){g_process.shutdownAbort(true); }
 
-	if ( ! m_siteNumInlinksValid ) { char *xx=NULL;*xx=0; }
+	if ( ! m_siteNumInlinksValid ) { g_process.shutdownAbort(true); }
 
 	int32_t *sni = getSiteNumInlinks();
 	return   hashString3( s                ,
@@ -2069,23 +2071,23 @@ bool XmlDoc::hashString3( char       *s              ,
 		return false;
 
 	// use primary langid of doc
-	if ( ! m_langIdValid ) { char *xx=NULL;*xx=0; }
+	if ( ! m_langIdValid ) { g_process.shutdownAbort(true); }
 
 	return hashWords3( hi, &words, &phrases, NULL, countTable, NULL, NULL, NULL, wts, wbuf, niceness );
 }
 
 bool XmlDoc::hashWords ( HashInfo   *hi ) {
 	// sanity checks
-	if ( ! m_wordsValid   ) { char *xx=NULL; *xx=0; }
-	if ( ! m_phrasesValid ) { char *xx=NULL; *xx=0; }
-	if ( hi->m_useCountTable &&!m_countTableValid){char *xx=NULL; *xx=0; }
-	if ( ! m_bitsValid ) { char *xx=NULL; *xx=0; }
-	if ( ! m_sectionsValid) { char *xx=NULL; *xx=0; }
-	//if ( ! m_synonymsValid) { char *xx=NULL; *xx=0; }
-	if ( ! m_fragBufValid ) { char *xx=NULL; *xx=0; }
-	if ( ! m_wordSpamBufValid ) { char *xx=NULL; *xx=0; }
-	if ( m_wts && ! m_langVectorValid  ) { char *xx=NULL; *xx=0; }
-	if ( ! m_langIdValid ) { char *xx=NULL; *xx=0; }
+	if ( ! m_wordsValid   ) { g_process.shutdownAbort(true); }
+	if ( ! m_phrasesValid ) { g_process.shutdownAbort(true); }
+	if ( hi->m_useCountTable &&!m_countTableValid){g_process.shutdownAbort(true); }
+	if ( ! m_bitsValid ) { g_process.shutdownAbort(true); }
+	if ( ! m_sectionsValid) { g_process.shutdownAbort(true); }
+	//if ( ! m_synonymsValid) { g_process.shutdownAbort(true); }
+	if ( ! m_fragBufValid ) { g_process.shutdownAbort(true); }
+	if ( ! m_wordSpamBufValid ) { g_process.shutdownAbort(true); }
+	if ( m_wts && ! m_langVectorValid  ) { g_process.shutdownAbort(true); }
+	if ( ! m_langIdValid ) { g_process.shutdownAbort(true); }
 	// . is the word repeated in a pattern?
 	// . this should only be used for document body, for meta tags,
 	//   inlink text, etc. we should make sure words are unique
@@ -2113,18 +2115,18 @@ bool XmlDoc::hashWords3( HashInfo *hi, const Words *words, Phrases *phrases, Sec
 
 	// . sanity checks
 	// . posdb just uses the full keys with docid
-	if ( dt->m_ks != 18 ) { char *xx=NULL;*xx=0; }
-	if ( dt->m_ds != 4  ) { char *xx=NULL;*xx=0; }
+	if ( dt->m_ks != 18 ) { g_process.shutdownAbort(true); }
+	if ( dt->m_ds != 4  ) { g_process.shutdownAbort(true); }
 
 	// if provided...
 	if ( wts ) {
-		if ( wts->m_ks != 12               ) { char *xx=NULL;*xx=0; }
-		if ( wts->m_ds != sizeof(TermDebugInfo)){char *xx=NULL;*xx=0; }
-		if ( ! wts->m_allowDups ) { char *xx=NULL;*xx=0; }
+		if ( wts->m_ks != 12               ) { g_process.shutdownAbort(true); }
+		if ( wts->m_ds != sizeof(TermDebugInfo)){g_process.shutdownAbort(true); }
+		if ( ! wts->m_allowDups ) { g_process.shutdownAbort(true); }
 	}
 
 	// ensure caller set the hashGroup
-	if ( hi->m_hashGroup < 0 ) { char *xx=NULL;*xx=0; }
+	if ( hi->m_hashGroup < 0 ) { g_process.shutdownAbort(true); }
 
 	// handy
 	const char *const*wptrs = words->getWordPtrs();
@@ -2679,7 +2681,7 @@ bool XmlDoc::hashNumberForSortingAsInt32 ( int32_t n , HashInfo *hi , char *sort
 	if ( hi->m_prefix && nameLen )
 		nameHash = hash64Lower_utf8_nospaces( hi->m_prefix , nameLen );
 	// need a prefix for hashing numbers... for now
-	else { char *xx=NULL; *xx=0; }
+	else { g_process.shutdownAbort(true); }
 
 	// combine prefix hash with a special hash to make it unique to avoid
 	// collisions. this is the "TRUE" prefix.
@@ -2737,7 +2739,7 @@ bool XmlDoc::hashNumberForSortingAsInt32 ( int32_t n , HashInfo *hi , char *sort
 	// sanity
 	//float t = g_posdb.getFloat ( &k );
 	int32_t x = g_posdb.getInt ( &k );
-	if ( x != n ) { char *xx=NULL;*xx=0; }
+	if ( x != n ) { g_process.shutdownAbort(true); }
 
 	HashTableX *dt = hi->m_tt;
 

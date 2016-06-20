@@ -156,7 +156,7 @@ int32_t Tag::setFromBuf ( char *p , char *pend ) {
 	m_type = getTagTypeFromStr ( type , typeLen );
 
 	// panic?
-	if ( m_type == -1 ) { char *xx=NULL;*xx=0;}
+	if ( m_type == -1 ) { g_process.shutdownAbort(true);}
 
 	// now the user, skip comma and quote
 	p+=2;
@@ -238,7 +238,7 @@ int32_t Tag::setFromBuf ( char *p , char *pend ) {
 
 	// . sanity check
 	// . all tags must be NULL terminated now
-	if ( m_buf[m_bufSize-1] != '\0' ) {char *xx=NULL; *xx=0; }
+	if ( m_buf[m_bufSize-1] != '\0' ) {g_process.shutdownAbort(true); }
 
 	// return how many bytes we read
 	return p - start;
@@ -263,7 +263,7 @@ int32_t Tag::setDataFromBuf ( char *p , char *pend ) {
 	char c = m_buf[m_bufSize-1];
 
 	// sanity check
-	if ( c && ! isspace(c) ) { char *xx=NULL;*xx=0; }
+	if ( c && ! isspace(c) ) { g_process.shutdownAbort(true); }
 
 	// strings are always NULL terminated, the datasize should
 	// include the NULL termination
@@ -441,7 +441,7 @@ Tag* TagRec::getNextTag ( Tag *tag ) {
 	}
 
 	// sanity
-	if ( i >= m_numListPtrs ) { char *xx=NULL;*xx=0; }
+	if ( i >= m_numListPtrs ) { g_process.shutdownAbort(true); }
 
 	// advance
 	current += recSize;
@@ -981,7 +981,7 @@ int32_t getTagTypeFromStr( const char *tagname , int32_t tagnameLen ) {
 	if ( ! s_ht.getValue ( &tagType ) ) {
 		/// @todo we should cater for deprecated/removed tagname here
 		log( "tagdb: unsupported tagname '%s'", tagname );
-		char *xx=NULL;*xx=0;
+		g_process.shutdownAbort(true);
 		return -1;
 	}
 
@@ -1223,7 +1223,7 @@ Msg8a::~Msg8a ( ) {
 void Msg8a::reset() {
 	// do no free if in progress, reply may come in and corrupt the mem
 	if ( m_replies != m_requests && ! g_process.m_exiting ) { 
-		char *xx=NULL;*xx=0;
+		g_process.shutdownAbort(true);
 	}
 	m_replies  = 0;
 	m_requests = 0;
@@ -1250,7 +1250,7 @@ bool Msg8a::getTagRec( Url *url, collnum_t collnum, int32_t niceness, void *stat
 	tagRec->reset();
 
 	// in use? need to wait before reusing
-	if ( m_replies != m_requests ) {char *xx=NULL;*xx=0; }
+	if ( m_replies != m_requests ) {g_process.shutdownAbort(true); }
 
 	// then we gotta free the lists if any
 	reset();
@@ -1590,7 +1590,7 @@ void Msg8a::gotAllReplies ( ) {
 		if ( list->m_listSize >= 10000000 ) {
 			log("tagdb: CAUTION!!! cutoff tagdb list!");
 			log("tagdb: CAUTION!!! will lost useful info!!");
-			char *xx=NULL;*xx=0;
+			g_process.shutdownAbort(true);
 		}
 
 		// otherwise, add to array
@@ -2268,7 +2268,7 @@ bool isTagTypeUnique ( int32_t tt ) {
 		return true;
 	}
 	// if none, that is crazy
-	if ( ! td ) { char *xx=NULL;*xx=0; }
+	if ( ! td ) { g_process.shutdownAbort(true); }
 	// return 
 	if ( td->m_flags & TDF_ARRAY) return false;
 	return true;
@@ -2294,7 +2294,7 @@ bool isTagTypeIndexable ( int32_t tt ) {
 		return false;
 	}
 	// if none, that is crazy MDW coring here:
-	if ( ! td ) { char *xx=NULL;*xx=0; }
+	if ( ! td ) { g_process.shutdownAbort(true); }
 	// return false if we should not index it
 	if ( td->m_flags & TDF_NOINDEX ) return false;
 	// otherwise, index it
@@ -2509,7 +2509,7 @@ int32_t Tagdb::getMinSiteInlinks ( uint32_t hostHash32 ) {
 
 	if ( m_siteBuf1.length() <= 0 ) { 
 		log("tagdb: load not called");
-		char *xx=NULL;*xx=0; 
+		g_process.shutdownAbort(true); 
 	}
 
 	// first check buf1 doing bstep

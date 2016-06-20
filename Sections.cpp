@@ -16,6 +16,7 @@
 #include "Bits.h"
 #include "sort.h"
 #include "Abbreviations.h"
+#include "Process.h"
 
 Sections::Sections ( ) {
 	m_sections = NULL;
@@ -235,7 +236,7 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 			// inc it
 			m_numSections++;
 			// sanity check - breach check
-			if ( m_numSections > max ) { char *xx=NULL;*xx=0; }
+			if ( m_numSections > max ) { g_process.shutdownAbort(true); }
 			// set our parent
 			sn->m_parent = current;
 			// need to keep a word range that the section covers
@@ -259,7 +260,7 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 			// inc it
 			m_numSections++;
 			// sanity check - breach check
-			if ( m_numSections > max ) { char *xx=NULL;*xx=0; }
+			if ( m_numSections > max ) { g_process.shutdownAbort(true); }
 			// set our parent
 			sn->m_parent = current;
 			// need to keep a word range that the section covers
@@ -458,7 +459,7 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 			//int32_t xn = *(secNumPtr-1);
 			int32_t xn = spp->m_secNum;
 			// sanity
-			if ( xn<0 || xn>=m_numSections ) {char*xx=NULL;*xx=0;}
+			if ( xn<0 || xn>=m_numSections ) {g_process.shutdownAbort(true);}
 			// get it
 			Section *sn = &m_sections[xn];
 
@@ -481,7 +482,7 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 				// skip if this parent is still open
 				if ( ps->m_b <= 0 ) continue;
 				// parent must have closed before us
-				if ( ps->m_b > sn->m_b ) {char *xx=NULL;*xx=0;}
+				if ( ps->m_b > sn->m_b ) {g_process.shutdownAbort(true);}
 
 				// cut our end shorter
 				sn->m_b = ps->m_b;
@@ -489,7 +490,7 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 				// for spp->m_flags, so try to match ANOTHER
 				// front tag with this back tag now
 				if ( ! ( spp->m_flags & TXF_MATCHED ) ) {
-					char *xx=NULL;*xx=0; }
+					g_process.shutdownAbort(true); }
 				// ok, try to match this back tag with another
 				// front tag on the stack, because the front
 				// tag we had selected got cut short because
@@ -498,7 +499,7 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 			}
    
 			// sanity check
-			if ( sn->m_b <= sn->m_a ) { char *xx=NULL;*xx=0;}
+			if ( sn->m_b <= sn->m_a ) { g_process.shutdownAbort(true);}
 
 			// revert it to this guy, may not equal stackPtr-1 !!
 			stackPtr = spp;
@@ -562,7 +563,7 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 		m_numSections++;
 
 		// sanity check - breach check
-		if ( m_numSections > max ) { char *xx=NULL;*xx=0; }
+		if ( m_numSections > max ) { g_process.shutdownAbort(true); }
 		
 		// set our parent
 		sn->m_parent = current;
@@ -617,7 +618,7 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 		// skip if no parent
 		if ( ! sp ) continue;
 		// parent must start before us
-		if ( sp->m_a > si->m_a ) { char *xx=NULL;*xx=0; }
+		if ( sp->m_a > si->m_a ) { g_process.shutdownAbort(true); }
 		// . does parent contain our first word?
 		// . it need not fully contain our last word!!!
 		if ( sp->m_a <= si->m_a && sp->m_b > si->m_a ) continue;
@@ -696,7 +697,7 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 		// get its parent
 		Section *ps = si->m_parent;
 		// if parent is open-ended panic!
-		if ( ps && ps->m_b < 0 ) { char *xx=NULL;*xx=0; }
+		if ( ps && ps->m_b < 0 ) { g_process.shutdownAbort(true); }
 
 		// if our parent got constrained from under us, we need
 		// to telescope to a new parent
@@ -728,7 +729,7 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 			if ( ! tid1 ) continue;
 		}
 		// must be there to be open ended
-		if ( ! tid1 ) { char *xx=NULL;*xx=0; }
+		if ( ! tid1 ) { g_process.shutdownAbort(true); }
 		// NOW, see if within that parent there is actually another
 		// tag after us of our same tag type, then use that to
 		// constrain us instead!!
@@ -774,13 +775,13 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 		// get it
 		Section *si = &m_sections[i];
 		// skip if we are still open-ended
-		if ( si->m_b < 0 ) { char *xx=NULL;*xx=0; }
+		if ( si->m_b < 0 ) { g_process.shutdownAbort(true); }
 		// get parent
 		Section *sp = si->m_parent;
 		// skip if null
 		if ( ! sp ) continue;
 		// skip if parent still open ended
-		if ( sp->m_b < 0 ) { char *xx=NULL;*xx=0; }
+		if ( sp->m_b < 0 ) { g_process.shutdownAbort(true); }
 		// subloop it
 	doagain2:
 		// skip if no parent
@@ -791,7 +792,7 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 		// if parent is open ended, then it is ok for now
 		if ( sp->m_a <= si->m_a && sp->m_b == -1 ) continue;
 		// if parent is open ended, then it is ok for now
-		if ( sp->m_b == -1 ) { char *xx=NULL;*xx=0; }
+		if ( sp->m_b == -1 ) { g_process.shutdownAbort(true); }
 		// get grandparent
 		sp = sp->m_parent;
 		// set
@@ -842,8 +843,8 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 		// map each word to a section that contains it at least
 		for ( int32_t i = 0 ; i < m_nw ; i++ ) {
 			Section *si = m_sectionPtrs[i];
-			if ( si->m_a >  i ) { char *xx=NULL;*xx=0; }
-			if ( si->m_b <= i ) { char *xx=NULL;*xx=0; }
+			if ( si->m_a >  i ) { g_process.shutdownAbort(true); }
+			if ( si->m_b <= i ) { g_process.shutdownAbort(true); }
 		}
 	}
 
@@ -864,7 +865,7 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 		nodeid_t tid = tids[ws];
 		// sanity check, <a> guys are not sections
 		//if ( tid == TAG_A &&
-		//     !(sn->m_flags & SEC_SENTENCE) ) { char *xx=NULL;*xx=0; }
+		//     !(sn->m_flags & SEC_SENTENCE) ) { g_process.shutdownAbort(true); }
 		// use a modified tid as the tag hash?
 		int64_t mtid = tid;
 		// custom xml tag, hash the tag itself
@@ -937,10 +938,10 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 			}
 		}
 		// should not have either of these yet!
-		if ( sn->m_flags & SEC_FAKE     ) { char *xx=NULL;*xx=0; }
-		if ( sn->m_flags & SEC_SENTENCE ) { char *xx=NULL;*xx=0; }
+		if ( sn->m_flags & SEC_FAKE     ) { g_process.shutdownAbort(true); }
+		if ( sn->m_flags & SEC_SENTENCE ) { g_process.shutdownAbort(true); }
 		// sanity check
-		if ( mtid == 0 ) { char *xx=NULL;*xx=0; }
+		if ( mtid == 0 ) { g_process.shutdownAbort(true); }
 		// . set the base hash, usually just tid
 		// . usually base hash is zero but if it is a br tag
 		//   we set it to something special to indicate the number
@@ -1067,7 +1068,7 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 		if ( ! mf ) continue;
 
 		// sanity
-		if ( ni >= 1000 ) { char *xx=NULL;*xx=0; }
+		if ( ni >= 1000 ) { g_process.shutdownAbort(true); }
 
 		// otherwise, store on stack
 		istack[ni] = si->m_b;
@@ -1236,7 +1237,7 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 		// so we contain the range [a,b), typical half-open interval
 		sn->m_alnumPosB = alnumCount2;
 		// sanity check
-		if ( sn->m_alnumPosA == sn->m_alnumPosB ){char *xx=NULL;*xx=0;}
+		if ( sn->m_alnumPosA == sn->m_alnumPosB ){g_process.shutdownAbort(true);}
 
 		// propagate through parents
 		Section *si = sn->m_parent;
@@ -1886,10 +1887,10 @@ bool Sections::addSentenceSections ( ) {
 				// check
 				if ( adda < 0 ) break;
 				// how can this happen?
-				if ( m_wids[adda] ) { char *xx=NULL;*xx=0; }
+				if ( m_wids[adda] ) { g_process.shutdownAbort(true); }
 			}
 			// sanity
-			if ( adda < 0 ) { char *xx=NULL;*xx=0; }
+			if ( adda < 0 ) { g_process.shutdownAbort(true); }
 
 			// same for right endpoint
 			for ( ; addb < m_nw ; ) {
@@ -1946,10 +1947,10 @@ bool Sections::addSentenceSections ( ) {
 				// stop if addb 
 				if ( addb >= m_nw ) break;
 				// how can this happen?
-				if ( m_wids[addb] ) { char *xx=NULL;*xx=0; }
+				if ( m_wids[addb] ) { g_process.shutdownAbort(true); }
 			}
 			// sanity
-			if ( addb >= m_nw ) { char *xx=NULL;*xx=0; }
+			if ( addb >= m_nw ) { g_process.shutdownAbort(true); }
 
 			// ok, now add the split sentence
 			Section *is =insertSubSection(adda,addb+1,bh);
@@ -2091,7 +2092,7 @@ Section *Sections::insertSubSection ( int32_t a, int32_t b, int32_t newBaseHash 
 	if ( ! si ) {
 		// skip this until we figure it out
 		m_numSections--;
-		char *xx=NULL;*xx=0;
+		g_process.shutdownAbort(true);
 		return NULL;
 	} else {
 		// insert us into the linked list of sections
@@ -2148,12 +2149,12 @@ Section *Sections::insertSubSection ( int32_t a, int32_t b, int32_t newBaseHash 
 		for ( ; s1 ; s1 = s1->m_parent ) 
 			if ( s1->m_a < a && 
 			     s1->m_b > a &&
-			     s1->m_b < b    ) {char *xx=NULL;*xx=0;}
+			     s1->m_b < b    ) {g_process.shutdownAbort(true);}
 		// check for interlace
 		for ( ; s2 ; s2 = s2->m_parent ) 
 			if ( s2->m_a < b && 
 			     s2->m_b > b &&
-			     s2->m_a > a    ) {char *xx=NULL;*xx=0;}
+			     s2->m_a > a    ) {g_process.shutdownAbort(true);}
 	}
 #endif
 
@@ -2281,18 +2282,18 @@ void Sections::setNextBrotherPtrs ( bool setContainer ) {
 		if ( sj->m_a < si->m_b && 
 		     sj->m_tagId != TAG_TC &&
 		     si->m_tagId != TAG_TC ) {
-			char *xx=NULL;*xx=0; }
+			g_process.shutdownAbort(true); }
 		// set brother
 		si->m_nextBrother = sj;
 		// set his prev then
 		sj->m_prevBrother = si;
 		// sanity check
-		if ( sj->m_parent != si->m_parent ) { char *xx=NULL;*xx=0; }
+		if ( sj->m_parent != si->m_parent ) { g_process.shutdownAbort(true); }
 		// sanity check
 		if ( sj->m_a < si->m_b &&
 		     sj->m_tagId != TAG_TC &&
 		     si->m_tagId != TAG_TC ) { 
-			char *xx=NULL;*xx=0; }
+			g_process.shutdownAbort(true); }
 		// do more?
 		if ( ! setContainer ) continue;
 		// telescope this
@@ -2385,7 +2386,7 @@ void Sections::printFlags (SafeBuf *sbuf , Section *sn ) {
 			sbuf->safePrintf("<b>sentence</b> ");
 		else if ( sn->m_baseHash == BH_IMPLIED )
 			sbuf->safePrintf("<b>impliedsec</b> ");
-		else { char *xx=NULL;*xx=0; }
+		else { g_process.shutdownAbort(true); }
 	}
 
 	if ( f & SEC_NOTEXT )
@@ -2958,7 +2959,7 @@ void Sections::setHeader ( int32_t r , Section *first , sec_t flag ) {
 	}
 
 	// strange?
-	if ( ! sr ) { char *xx=NULL;*xx=0; }
+	if ( ! sr ) { g_process.shutdownAbort(true); }
 	// scan until outside biggest
 	int32_t lastb = biggest->m_b;
 	// . make sure sr does not contain any list in it
@@ -3143,7 +3144,7 @@ void Sections::setTagHashes ( ) {
 		int64_t bh = (int64_t)sn->m_baseHash;
 
 		// sanity check
-		if ( bh == 0 ) { char *xx=NULL;*xx=0; }
+		if ( bh == 0 ) { g_process.shutdownAbort(true); }
 
 		// if no parent, use initial values
 		if ( ! sn->m_parent ) {
@@ -3151,12 +3152,12 @@ void Sections::setTagHashes ( ) {
 			sn->m_tagHash = bh;
 
 			// sanity check
-			if ( bh == 0 ) { char *xx=NULL;*xx=0; }
+			if ( bh == 0 ) { g_process.shutdownAbort(true); }
 			continue;
 		}
 
 		// sanity check
-		if ( sn->m_parent->m_tagHash == 0 ) { char *xx=NULL;*xx=0; }
+		if ( sn->m_parent->m_tagHash == 0 ) { g_process.shutdownAbort(true); }
 
 		// . update the cumulative front tag hash
 		// . do not include hyperlinks as part of the cumulative hash!
@@ -3207,8 +3208,8 @@ bool Sections::print( SafeBuf *sbuf, int32_t hiPos, int32_t *wposVec, char *dens
 		QUICKPOLL ( m_niceness );
 		// get section
 		Section *sn = m_sectionPtrs[i];
-		if ( sn->m_a >  i ) { char *xx=NULL;*xx=0; }
-		if ( sn->m_b <= i ) { char *xx=NULL;*xx=0; }
+		if ( sn->m_a >  i ) { g_process.shutdownAbort(true); }
+		if ( sn->m_b <= i ) { g_process.shutdownAbort(true); }
 	}
 
 
@@ -3299,7 +3300,7 @@ bool Sections::print( SafeBuf *sbuf, int32_t hiPos, int32_t *wposVec, char *dens
 		int32_t a = sn->m_a;
 		int32_t b = sn->m_b;
 		// -1 means an unclosed tag!! should no longer be the case
-		if ( b == -1 ) { char *xx=NULL;*xx=0; }//b=m_words->m_numWords;
+		if ( b == -1 ) { g_process.shutdownAbort(true); }//b=m_words->m_numWords;
 		sbuf->safePrintf("</nobr></td>");
 
 		sbuf->safePrintf("<td>&nbsp;</td>");
@@ -3497,15 +3498,15 @@ bool Sections::verifySections ( ) {
 	// make sure we map each word to a section that contains it at least
 	for ( int32_t i = 0 ; i < m_nw ; i++ ) {
 		Section *si = m_sectionPtrs[i];
-		if ( si->m_a >  i ) { char *xx=NULL;*xx=0; }
-		if ( si->m_b <= i ) { char *xx=NULL;*xx=0; }
+		if ( si->m_a >  i ) { g_process.shutdownAbort(true); }
+		if ( si->m_b <= i ) { g_process.shutdownAbort(true); }
 		// must have checksum
-		if ( m_wids[i] && si->m_contentHash64==0){char *xx=NULL;*xx=0;}
+		if ( m_wids[i] && si->m_contentHash64==0){g_process.shutdownAbort(true);}
 		// must have this set if 0
 		if ( ! si->m_contentHash64 && !(si->m_flags & SEC_NOTEXT)) {
-			char *xx=NULL;*xx=0;}
+			g_process.shutdownAbort(true);}
 		if (   si->m_contentHash64 &&  (si->m_flags & SEC_NOTEXT)) {
-			char *xx=NULL;*xx=0;}
+			g_process.shutdownAbort(true);}
 	}
 
 	for ( Section *sn = m_rootSection ; sn ; sn = sn->m_next ) 
@@ -3524,8 +3525,8 @@ bool Sections::verifySections ( ) {
 		// skip if no parent
 		if ( ! sp ) continue;
 		// make sure parent fully contains
-		if ( sp->m_a > sn->m_a ) { char *xx=NULL;*xx=0; }
-		if ( sp->m_b < sn->m_b ) { char *xx=NULL;*xx=0; }
+		if ( sp->m_a > sn->m_a ) { g_process.shutdownAbort(true); }
+		if ( sp->m_b < sn->m_b ) { g_process.shutdownAbort(true); }
 		// breathe
 		QUICKPOLL ( m_niceness );
 		// and make sure every grandparent fully contains us too!
@@ -3536,7 +3537,7 @@ bool Sections::verifySections ( ) {
 	// sanity check
 	for ( int32_t i = 0 ; i < m_numSections ; i++ ) {
 		Section *sn = &m_sections[i];
-		if ( sn->m_a >= sn->m_b ) { char *xx=NULL;*xx=0; }
+		if ( sn->m_a >= sn->m_b ) { g_process.shutdownAbort(true); }
 	}
 
 	// sanity check, make sure each section is contained by the
@@ -3577,15 +3578,15 @@ bool Sections::verifySections ( ) {
 
 			// must have had us
 			if ( ps ) continue;
-			char *xx=NULL;*xx=0;
+			g_process.shutdownAbort(true);
 		}
 	}
 	
 	// make sure we map each word to a section that contains it at least
 	for ( int32_t i = 0 ; i < m_nw ; i++ ) {
 		Section *si = m_sectionPtrs[i];
-		if ( si->m_a >  i ) { char *xx=NULL;*xx=0; }
-		if ( si->m_b <= i ) { char *xx=NULL;*xx=0; }
+		if ( si->m_a >  i ) { g_process.shutdownAbort(true); }
+		if ( si->m_b <= i ) { g_process.shutdownAbort(true); }
 	}
 
 	return true;
