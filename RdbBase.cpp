@@ -819,9 +819,7 @@ bool RdbBase::incorporateMerge ( ) {
 		log("db: Merge failed for %s, Exiting.", m_dbname);
 
 		// we don't have a recovery system in place, so save state and dump core
-		char *p = NULL;
-		*p = 0;
-
+		g_process.shutdownAbort(true);
 		return true;
 	}
 

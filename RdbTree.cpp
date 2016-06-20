@@ -582,8 +582,7 @@ int32_t RdbTree::addNode ( collnum_t collnum , const char *key , char *data , in
 			    "trying to add a record. You should "
 			    "replace your memory sticks.");
 			if ( ! fixTree ( ) ) {
-				char *p = NULL;
-				*p = 1;
+				g_process.shutdownAbort(true);
 			}
 			//sleep(50000); // m_nextNode=m_minUnusedNode;
 		}
