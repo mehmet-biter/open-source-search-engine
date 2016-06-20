@@ -59,6 +59,10 @@
 #include "HashTableX.h"
 #include "Sections.h"
 
+// Ugly - but so is lots of code in .h files
+extern void gbshutdownAbort( bool save_on_abort );
+
+
 #define MAXSITERANK      0x0f // 4 bits
 #define MAXLANGID        0x3f // 6 bits (5 bits go in 'g' the other in 'L')
 #define MAXWORDPOS       0x0003ffff // 18 bits
@@ -147,7 +151,7 @@ class Posdb {
 	// we map the 32bit score to like 7 bits here
 	static void setMultiplierBits ( void *vkp , unsigned char mbits ) {
 		key144_t *kp = (key144_t *)vkp;
-		if ( mbits > MAXMULTIPLIER ) { char *xx=NULL;*xx=0; }
+		if ( mbits > MAXMULTIPLIER ) { gbshutdownAbort(true); }
 		kp->n0 &= 0xfc0f;
 		// map score to bits
 		kp->n0 |= ((uint16_t)mbits) << 4;
@@ -163,14 +167,14 @@ class Posdb {
 	
 	static void setSiteRankBits ( void *vkp , char siteRank ) {
 		key144_t *kp = (key144_t *)vkp;
-		if ( siteRank > MAXSITERANK ) { char *xx=NULL;*xx=0; }
+		if ( siteRank > MAXSITERANK ) { gbshutdownAbort(true); }
 		kp->n1 &= 0xfffffe1fffffffffLL;
 		kp->n1 |= ((uint64_t)siteRank)<<(32+5);
 	}
 	
 	static void setLangIdBits ( void *vkp , char langId ) {
 		key144_t *kp = (key144_t *)vkp;
-		if ( langId > MAXLANGID ) { char *xx=NULL;*xx=0; }
+		if ( langId > MAXLANGID ) { gbshutdownAbort(true); }
 		kp->n1 &= 0xffffffe0ffffffffLL;
 		// put the lower 5 bits here
 		kp->n1 |= ((uint64_t)(langId&0x1f))<<(32);
@@ -250,7 +254,7 @@ class Posdb {
 	// in a posdblist
 	static char *getNextDocIdSublist ( char *p ,  char *listEnd ) {
 		// key must be 12
-		//if ( getKeySize(p) != 12 ) { char *xx=NULL;*xx=0; }
+		//if ( getKeySize(p) != 12 ) { gbshutdownAbort(true); }
 		// skip that first key
 		p += 12;
 		// skip the 6 byte keys

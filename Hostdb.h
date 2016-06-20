@@ -16,6 +16,10 @@
 #include <net/if.h>               // for struct ifreq passed to ioctl()    
 #include "Xml.h" // host file in xml
 
+// Ugly - but so is lots of code in .h files
+extern void gbshutdownAbort( bool save_on_abort );
+
+
 enum {
 	ME_IOERR = 1,
 	ME_100MBPS,
@@ -323,7 +327,7 @@ class Hostdb {
 
 	// . like above but just gets one host
 	Host *getHost ( int32_t hostId ) {
-		if ( hostId < 0 ) { char *xx=NULL;*xx=0; }
+		if ( hostId < 0 ) { gbshutdownAbort(true); }
 		return m_hostPtrs[hostId]; 
 	}
 

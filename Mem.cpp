@@ -310,8 +310,7 @@ void Mem::addMem ( void *mem , int32_t size , const char *note , char isnew ) {
 		    "%08" PTRFMT" of size %" PRId32" "
 		    "which would wrap. Bad kernel.",
 		    (PTRTYPE)mem,(int32_t)size);
-		char *xx = NULL; 
-		*xx = 0;
+		g_process.shutdownAbort(true);
 	}
 
 	// umsg00

@@ -1165,8 +1165,7 @@ void RdbCache::removeKey ( collnum_t collnum, const char *key, const char *rec )
 		if ( i >= m_numPtrsMax ) {
 			log(LOG_LOGIC,"db: cache: removeKey: BAD ENGINEER. "
 			    "dbname=%s",m_dbname );
-			char *xx = NULL;
-			*xx = 1;
+			g_process.shutdownAbort(true);
 			return;
 		}
 	}

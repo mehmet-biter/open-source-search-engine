@@ -710,8 +710,7 @@ bool Multicast::sendToHost ( int32_t i ) {
 	// sanity check
 	//if ( g_hostdb.isDead(h) ) {
 	//	log("net: trying to send to dead host.");
-	//	char *xx = NULL; 
-	//	*xx = 0; 
+	//	g_process.shutdownAbort(true);
 	//}
 	// don't set hostid if we're sending to a remote cluster
 	int32_t hid = h->m_hostId;

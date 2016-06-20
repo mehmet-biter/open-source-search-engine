@@ -35,6 +35,9 @@
 #include "Conf.h"
 #include "Rdb.h"
 #include "Titledb.h"
+// Ugly - but so is lots of code in .h files
+extern void gbshutdownAbort( bool save_on_abort );
+
 
 class Msg20Reply;
 
@@ -290,7 +293,7 @@ class Linkdb {
 		// convert into days
 		date /= 86400;
 		// sanity
-		if ( date > 0x3fff || date < 0 ) { char *xx=NULL;*xx=0; }
+		if ( date > 0x3fff || date < 0 ) { gbshutdownAbort(true); }
 		// clear old bits
 		((key224_t *)k)->n1 &= 0xffffffff03ffffLL;
 		// scale us into it
@@ -318,7 +321,7 @@ class Linkdb {
 		// convert into days
 		date /= 86400;
 		// sanity
-		if ( date > 0x3fff || date < 0 ) { char *xx=NULL;*xx=0; }
+		if ( date > 0x3fff || date < 0 ) { gbshutdownAbort(true); }
 		// clear old bits
 		((key224_t *)k)->n1 &= 0xffffffffffff0003LL;
 		// scale us into it

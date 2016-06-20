@@ -6,6 +6,9 @@
 #define GB_HASHTABLEX_H
 
 #include "SafeBuf.h"
+// Ugly - but so is lots of code in .h files
+extern void gbshutdownAbort( bool save_on_abort );
+
 
 class HashTableX {
 
@@ -107,7 +110,7 @@ class HashTableX {
 		d >>= 2;
 		if ( d==110324895284 && termId == 39206941907955LL ) {
 			log("got it");
-			char *xx=NULL;*xx=0;
+			gbshutdownAbort(true);
 		}
 		*/
 		// grow it!
@@ -148,7 +151,7 @@ class HashTableX {
 		}
 		// crazy!
 		log("hash: table is full!");
-		char *xx=NULL;*xx=0;
+		gbshutdownAbort(true);
 		return true;
 	}
 
@@ -174,7 +177,7 @@ class HashTableX {
 		// return NULL if completely empty
 		if ( m_numSlots <= 0 ) return NULL;
 		// sanity check
-		if ( m_ks != 4 ) { char *xx=NULL;*xx=0; }
+		if ( m_ks != 4 ) { gbshutdownAbort(true); }
 		int32_t n;
 		if ( ! m_useKeyMagic ) {
 			// mask on the lower 32 bits i guess
@@ -208,7 +211,7 @@ class HashTableX {
 		// return NULL if completely empty
 		if ( m_numSlots <= 0 ) return NULL;
 		// sanity check
-		if ( m_ks != 8 ) { char *xx=NULL;*xx=0; }
+		if ( m_ks != 8 ) { gbshutdownAbort(true); }
 		int32_t n;
 		if ( ! m_useKeyMagic ) {
 			// mask on the lower 32 bits i guess

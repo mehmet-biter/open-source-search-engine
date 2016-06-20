@@ -13,6 +13,9 @@
 #include <stddef.h>            //for NULL
 #include <string.h>            //for strlen()
 #include <inttypes.h>
+// Ugly - but so is lots of code in .h files
+extern void gbshutdownAbort( bool save_on_abort );
+
 
 extern bool g_inMemFunction;
 
@@ -20,7 +23,7 @@ class SafeBuf;
 
 
 inline int gbstrlen ( const char *s ) {
-	if ( ! s ) { char *xx=NULL;*xx=0; }
+	if ( ! s ) { gbshutdownAbort(true); }
 	return strlen(s);
 }
 

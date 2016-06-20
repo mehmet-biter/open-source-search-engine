@@ -7,6 +7,9 @@
 
 #include "XmlNode.h"
 #include "Lang.h"
+// Ugly - but so is lots of code in .h files
+extern void gbshutdownAbort( bool save_on_abort );
+
 
 class Xml {
 public:
@@ -123,7 +126,7 @@ public:
 	// . used for getting data from meta tags
 	char *getString( int32_t node, const char *field, int32_t *valueLen ) {
 		if ( node >= m_numNodes ) {
-			char *xx = NULL; *xx = 0;
+			gbshutdownAbort(true);
 		}
 
 		return m_nodes[node].getFieldValue( field, valueLen );

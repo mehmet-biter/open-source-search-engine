@@ -5,6 +5,10 @@
 
 #define NUMTERMIDBITS 48
 
+// Ugly - but so is lots of code in .h files
+extern void gbshutdownAbort( bool save_on_abort );
+
+
 /**
  *
  * Core of the storage, this implements a list of <key><dataSize><data>.
@@ -112,7 +116,7 @@ class RdbList {
 	void  getEndKey          ( char *k ) { KEYSET(k,m_endKey  ,m_ks);}
 
 	void  getLastKey         ( char *k ) { 
-		if ( ! m_lastKeyIsValid ) { char *xx=NULL;*xx=0; }
+		if ( ! m_lastKeyIsValid ) { gbshutdownAbort(true); }
 		KEYSET(k,getLastKey(),m_ks);}
 
 	// will scan through each record if record size is variable

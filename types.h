@@ -3,6 +3,9 @@
 
 #include <string.h>
 
+// Ugly - but so is lots of code in .h files
+extern void gbshutdownAbort( bool save_on_abort );
+
 // . up to 32768 collections possible, MUST be signed
 // . a collnum_t of -1 is used by RdbCache to mean "no collection"
 typedef int16_t collnum_t;
@@ -394,7 +397,7 @@ inline char KEYCMP ( const char *k1, const char *k2, char keySize ) {
 		     (*(const uint64_t *)(k2+0)) ) return  1;
 		return 0;
 	}
-	char *xx=NULL;*xx=0;
+	gbshutdownAbort(true);
 	return 0;
 }
 
@@ -495,7 +498,7 @@ inline char KEYCMPNEGEQ ( const char *k1, const char *k2, char keySize ) {
 		     (*(const uint16_t *)(k2+0)) ) return  1;
 		return 0;
 	}
-	char *xx=NULL; *xx = 0;
+	gbshutdownAbort(true);
 	return 0;
 }
 
@@ -544,7 +547,7 @@ static inline char *KEYSTR ( const void *vk , int32_t ks ) {
 
 static inline uint16_t KEY0 ( const char *k , int32_t ks ) {
 	if ( ks == 18 ) return *(const uint16_t *)k;
-	else { char *xx=NULL;*xx=0; }
+	else { gbshutdownAbort(true); }
 	return 0;
 }
 
@@ -557,7 +560,7 @@ static inline int64_t KEY1 ( const char *k , char keySize ) {
 
 static inline int64_t KEY2 ( const char *k , char keySize ) {
 	if ( keySize == 18 ) return *(const int64_t *)(k+10);
-	char *xx=NULL;*xx=0;
+	gbshutdownAbort(true);
 	return 0;
 }
 
@@ -606,7 +609,7 @@ static inline void KEYSET ( char *k1, const char *k2, char keySize ) {
 	//	*(int32_t *)(k1  ) = *(const int32_t *)(k2  );
 	//	return;
 	//}
-	char *xx=NULL;*xx=0;
+	gbshutdownAbort(true);
 	return;
 }
 
@@ -637,7 +640,7 @@ static inline bool KEYNEG ( const char *k, int32_t a, char keySize ) {
 		if ( (k[a*8] & 0x01) == 0x00 ) return true;
 		return false;
 	}
-	char *xx=NULL;*xx=0;
+	gbshutdownAbort(true);
 	return false;
 }
 
@@ -659,7 +662,7 @@ static inline void KEYADD ( char *k , char keySize ) {
 	if ( keySize == 8  ) { *((uint64_t *)k) += (int32_t)1; return; }
 	if ( keySize == 24 ) { *((key192_t *)k) += (int32_t)1; return; }
 	if ( keySize == 28 ) { *((key224_t *)k) += (int32_t)1; return; }
-	char *xx=NULL;*xx=0;
+	gbshutdownAbort(true);
 }
 
 static inline void KEYSUB ( char *k , char keySize ) {
@@ -667,7 +670,7 @@ static inline void KEYSUB ( char *k , char keySize ) {
 	if ( keySize == 12 ) { *((key96_t  *)k) -= (int32_t)1; return; }
 	if ( keySize == 16 ) { *((key128_t *)k) -= (int32_t)1; return; }
 	if ( keySize == 28 ) { *((key224_t *)k) -= (int32_t)1; return; }
-	char *xx=NULL;*xx=0;
+	gbshutdownAbort(true);
 }
 
 static inline void KEYOR ( char *k , int32_t opor ) {

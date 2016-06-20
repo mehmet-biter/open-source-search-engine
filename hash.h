@@ -18,6 +18,9 @@
 // call this before calling any hash*() routines so we can fill our table
 extern uint64_t g_hashtab[256][256];
 
+// Ugly - but so is lots of code in .h files
+extern void gbshutdownAbort( bool save_on_abort );
+
 #include "types.h"
 #include "fctypes.h"
 
@@ -169,7 +172,7 @@ inline uint64_t hash64Lower_utf8 ( const char *p, int32_t len, uint64_t startHas
 		char tmp[4];
 		char ncs = utf8Encode ( y , tmp );
 		// sanity check
-		if ( ncs > 4 ) { char *xx=NULL;*xx=0; }
+		if ( ncs > 4 ) { gbshutdownAbort(true); }
 		// i've seen this happen for 4 byte char =
 		// -16,-112,-51,-125  which has x=66371 and y=66371
 		// but utf8Encode() returned 0!
@@ -219,7 +222,7 @@ inline uint64_t hash64Lower_utf8_nospaces ( const char *p, int32_t len  ) {
 		char tmp[4];
 		char ncs = utf8Encode ( y , tmp );
 		// sanity check
-		if ( ncs > 4 ) { char *xx=NULL;*xx=0; }
+		if ( ncs > 4 ) { gbshutdownAbort(true); }
 		// i've seen this happen for 4 byte char =
 		// -16,-112,-51,-125  which has x=66371 and y=66371
 		// but utf8Encode() returned 0!
@@ -274,7 +277,7 @@ inline uint64_t hash64Lower_utf8_cont ( const char *p,
 		char ncs = utf8Encode ( y , tmp );
 
 		// sanity check
-		if ( ncs > 4 ) { char *xx=NULL;*xx=0; }
+		if ( ncs > 4 ) { gbshutdownAbort(true); }
 
 		// i've seen this happen for 4 byte char =
 		// -16,-112,-51,-125  which has x=66371 and y=66371
@@ -345,7 +348,7 @@ inline uint64_t hash64Lower_utf8 ( const char *p ) {
 		char tmp[4];
 		char ncs = utf8Encode ( y , (char *)tmp );
 		// sanity check
-		if ( ncs > 4 ) { char *xx=NULL;*xx=0; }
+		if ( ncs > 4 ) { gbshutdownAbort(true); }
 		// i've seen this happen for 4 byte char =
 		// -16,-112,-51,-125  which has x=66371 and y=66371
 		// but utf8Encode() returned 0!

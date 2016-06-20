@@ -11,6 +11,10 @@
 
 #include "iana_charset.h"
 
+// Ugly - but so is lots of code in .h files
+extern void gbshutdownAbort( bool save_on_abort );
+
+
 class Words;
 
 class SafeBuf {
@@ -62,7 +66,7 @@ public:
 	int32_t getLength() const { return m_length; }
 	int32_t getBufUsed() const { return m_length; }
 	void print() { 
-	  if ( write(1,m_buf,m_length) != m_length) { char*xx=NULL;*xx=0;} }
+	  if ( write(1,m_buf,m_length) != m_length) { gbshutdownAbort(true); } }
 
 	// . returns bytes written to file, 0 is acceptable if m_length == 0
 	// . returns -1 on error and sets g_errno

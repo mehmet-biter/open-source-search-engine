@@ -8,6 +8,9 @@
 #include "Unicode.h"
 #include "types.h"
 
+// Ugly - but so is lots of code in .h files
+extern void gbshutdownAbort( bool save_on_abort );
+
 bool verifyUtf8 ( const char *txt ) ;
 bool verifyUtf8 ( const char *txt , int32_t tlen ) ;
 
@@ -175,7 +178,7 @@ inline int32_t htob ( char s ) {
 }
 
 inline char btoh ( char s ) {
-	if ( s >= 16 ) { char *xx=NULL;*xx=0; }
+	if ( s >= 16 ) { gbshutdownAbort(true); }
 	if ( s < 10 ) return s + '0';
 	return (s - 10) + 'a';
 }

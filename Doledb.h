@@ -19,6 +19,8 @@
 #include "RdbCache.h"
 #include "Msg12.h"
 
+// Ugly - but so is lots of code in .h files
+extern void gbshutdownAbort( bool save_on_abort );
 
 
 void gotDoledbListWrapper2 ( void *state , RdbList *list , Msg5 *msg5 ) ;
@@ -44,8 +46,8 @@ class Doledb {
 	//   so i am making the 7 reserved bits part of the urlhash48...
 	key_t makeKey ( int32_t priority, uint32_t spiderTime, int64_t urlHash48, bool isDelete ) {
 		// sanity checks
-		if ( priority  & 0xffffff00           ) { char *xx=NULL;*xx=0;}
-		if ( urlHash48 & 0xffff000000000000LL ) { char *xx=NULL;*xx=0;}
+		if ( priority  & 0xffffff00           ) { gbshutdownAbort(true); }
+		if ( urlHash48 & 0xffff000000000000LL ) { gbshutdownAbort(true); }
 		key_t k;
 		k.n1 = (255 - priority);
 		k.n1 <<= 24;

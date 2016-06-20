@@ -14,6 +14,9 @@
 
 #include "BigFile.h"
 #include "RdbList.h"
+// Ugly - but so is lots of code in .h files
+extern void gbshutdownAbort( bool save_on_abort );
+
 
 // . this can be increased to provide greater disk coverage but it will 
 //   increase delays because each seek will have to read more
@@ -238,7 +241,7 @@ class RdbMap {
 	void setKey ( int32_t page, const char *k ) {
 		//#ifdef GBSANITYCHECK
 		if ( page >= m_maxNumPages ) {
-			char *xx = NULL; *xx = 0;
+			gbshutdownAbort(true);
 			log(LOG_LOGIC,"RdbMap::setKey: bad engineer");return; }
 		//#endif
 		//m_keys[page/PAGES_PER_SEG][page%PAGES_PER_SEG] = k; }

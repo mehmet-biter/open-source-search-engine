@@ -21,6 +21,9 @@
 
 #include "BigFile.h"
 #include "HashTableX.h"
+// Ugly - but so is lots of code in .h files
+extern void gbshutdownAbort( bool save_on_abort );
+
 
 class Wiktionary {
 
@@ -65,7 +68,7 @@ class Wiktionary {
 	// LATER we could add the Part of Speech...
 	char *getSynSet ( int64_t wid , uint8_t langId ) {
 		// 0? that's bad
-		if ( wid == 0LL ) { char *xx=NULL;*xx=0;}//return NULL;
+		if ( wid == 0LL ) { gbshutdownAbort(true); }//return NULL;
 		// hash it up like we did when adding to m_tmp table
 		wid ^= g_hashtab[0][langId];
 		//wid ^= g_hashtab[1][posFlag];
@@ -83,7 +86,7 @@ class Wiktionary {
 		// nothing!
 		return NULL;
 		//if ( ! offPtr ) return NULL;
-		//if ( *offPtr < 0 ) { char *xx=NULL;*xx=0; }
+		//if ( *offPtr < 0 ) { gbshutdownAbort(true); }
 		//return m_synBuf.getBufStart() + *offPtr;
 	}
 
