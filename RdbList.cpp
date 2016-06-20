@@ -1556,7 +1556,7 @@ void RdbList::merge_r ( RdbList **lists         ,
 		// is just bad timing
 		return;
 		// save state and dump core, sigBadHandler will catch this
-		//char *p = NULL;	*p = 0;
+		// g_process.shutdownAbort(true);
 	}
 	// already there?
 	if ( minRecSizes >= 0 && m_listSize >= minRecSizes ) return;
@@ -1564,7 +1564,7 @@ void RdbList::merge_r ( RdbList **lists         ,
 	//if ( m_useHalfKeys ) {
 	//	log(LOG_LOGIC,"db: rdblist: merge_r: call indexMerge_r() not "
 	//	    "merge_r()");
-	//	char *p = NULL; *p = 0;	exit(-1);
+	//	g_process.shutdownAbort(true);	exit(-1);
 	//}
 	// warning msg
 	if ( m_listPtr != m_listEnd )

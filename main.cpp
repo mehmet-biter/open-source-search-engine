@@ -7256,7 +7256,7 @@ void countdomains( const char* coll, int32_t numRecs, int32_t verbosity, int32_t
 		if( i == countIp ) {
 			sipi = (struct ip_info *)mmalloc(sizeof(struct ip_info),
 							 "main-dcip" );
-			if( !sipi ) { char *XX=NULL; *XX=0; }
+			if( !sipi ) { g_process.shutdownAbort(true); }
 			ip_table[countIp++]  = sipi;
 			sipi->ip = xd.m_ip;//u->getIp();
 			sipi->pages = 1;
@@ -7278,7 +7278,7 @@ void countdomains( const char* coll, int32_t numRecs, int32_t verbosity, int32_t
 		if( i == countDom ) {
 			sdomi =(struct dom_info*)mmalloc(sizeof(struct dom_info),
 							 "main-dcdm" );
-			if( !sdomi ) { char *XX=NULL; *XX=0; }
+			if( !sdomi ) { g_process.shutdownAbort(true); }
 			dom_table[countDom++] = sdomi;
 			sdomi->dom = (char *)mmalloc( dlen,"main-dcsdm" );
 
