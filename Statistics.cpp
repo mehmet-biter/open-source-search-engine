@@ -89,7 +89,9 @@ static TimerangeStatistics spider_timerange_statistics[timerange_count][2]; //1=
 static pthread_mutex_t mtx_spider_timerange_statistics = PTHREAD_MUTEX_INITIALIZER;
 static unsigned old_links_found=0;
 static unsigned new_links_found=0;
-static pthread_mutex_t mtx_spider_link_count = PTHREAD_MUTEX_INITIALIZER;
+static unsigned changed_documents_spidered=0;
+static unsigned unchanged_documents_spidered=0;
+static pthread_mutex_t mtx_spider_count = PTHREAD_MUTEX_INITIALIZER;
 
 void register_spider_time(unsigned ms, int resultcode)
 {
@@ -114,16 +116,27 @@ void register_spider_time(unsigned ms, int resultcode)
 
 void register_spider_old_links(unsigned count)
 {
-	ScopedLock sl(mtx_spider_link_count);
+	ScopedLock sl(mtx_spider_count);
 	old_links_found++;
 }
 
 void register_spider_new_links(unsigned )
 {
-	ScopedLock sl(mtx_spider_link_count);
+	ScopedLock sl(mtx_spider_count);
 	new_links_found++;
 }
 
+void register_spider_changed_document(unsigned count)
+{
+	ScopedLock sl(mtx_spider_count);
+	changed_documents_spidered++;
+}
+
+void register_spider_unchanged_document(unsigned count)
+{
+	ScopedLock sl(mtx_spider_count);
+	changed_documents_spidered++;
+}
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -215,15 +228,21 @@ static void dump_statistics(time_t now)
 		}
 	}
 	
-	ScopedLock sl3(mtx_spider_link_count);
+	ScopedLock sl3(mtx_spider_count);
 	unsigned copy_old_links_found = old_links_found;
 	unsigned copy_new_links_found = new_links_found;
+	unsigned copy_changed_documents_spidered = changed_documents_spidered;
+	unsigned copy_unchanged_documents_spidered = unchanged_documents_spidered;
 	old_links_found = 0;
 	new_links_found = 0;
+	changed_documents_spidered = 0;
+	unchanged_documents_spidered = 0;
 	sl3.unlock();
 	
 	fprintf(fp,"spiderlinks:old:count=%u\n",copy_old_links_found);
 	fprintf(fp,"spiderlinks:new:count=%u\n",copy_new_links_found);
+	fprintf(fp,"spiderlinks:unchanged:count=%u\n",copy_changed_documents_spidered);
+	fprintf(fp,"spiderlinks:changed:count=%u\n",copy_unchanged_documents_spidered);
 	
 	dump_rdb_cache_statistics(fp);
 	
