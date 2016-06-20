@@ -596,7 +596,7 @@ int main2 ( int argc , char *argv[] ) {
 	if ( argc >= 3 )
 		cmd2 = argv[2];
 
-	int32_t arch = 64;
+	int arch = 64;
 	if ( sizeof(char *) == 4 ) arch = 32;
 
 	// help
@@ -1917,7 +1917,7 @@ int main2 ( int argc , char *argv[] ) {
 
 	// log the version
 	log(LOG_INIT,"conf: Gigablast Version: %s",getVersion());
-	log(LOG_INIT,"conf: Gigablast Architecture: %" PRId32"-bit\n",arch);
+	log(LOG_INIT,"conf: Gigablast Architecture: %d-bit\n",arch);
 
 
 	// show current working dir
