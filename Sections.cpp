@@ -2210,8 +2210,8 @@ Section *Sections::insertSubSection ( int32_t a, int32_t b, int32_t newBaseHash 
 		// and we become wp's parent
 		wp->m_parent = sk;
 		// sanity check
-		if ( wp->m_b > sk->m_b ) { char *xy=NULL;*xy=0; }
-		if ( wp->m_a < sk->m_a ) { char *xy=NULL;*xy=0; }
+		if ( wp->m_b > sk->m_b ) { g_process.shutdownAbort(true); }
+		if ( wp->m_a < sk->m_a ) { g_process.shutdownAbort(true); }
 	}
 
 	return sk;

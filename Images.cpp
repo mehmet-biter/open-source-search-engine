@@ -87,7 +87,7 @@ void Images::setCandidates ( Url *pageUrl , Words *words , Xml *xml ,
 		// in Msg14.cpp
 		if ( ! q.set2 ( buf , langUnknown , false ) ) return;
 		// sanity test
-		if ( q.getNumTerms() != 1 ) { char *xx=0;*xx=0; }
+		if ( q.getNumTerms() != 1 ) { g_process.shutdownAbort(true); }
 		// store the termid
 		m_termIds[m_numImages] = q.getTermId(0);
 		// advance the counter
