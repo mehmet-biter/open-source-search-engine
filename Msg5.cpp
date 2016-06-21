@@ -89,31 +89,40 @@ bool Msg5::getList ( char     rdbId         ,
 		log("disk: Trying to reset a class waiting for a reply.");
 		g_process.shutdownAbort(true); 
 	}
+
 	if ( collnum < 0 ) {
 		log("msg5: called with bad collnum=%" PRId32,(int32_t)collnum);
 		g_errno = ENOCOLLREC;
 		return true;
 	}
+
 	// sanity check. we no longer have record caches!
 	// now we do again for posdb gbdocid:xxx| restricted queries
 	//if ( addToCache || maxCacheAge ) {g_process.shutdownAbort(true); }
+
 	// assume no error
 	g_errno = 0;
+
 	// sanity
 	if ( ! list && true ) { g_process.shutdownAbort(true); }
+
 	// warning
 	if ( collnum < 0 ) log(LOG_LOGIC,"net: bad collection. msg5.");
+
 	// . reset the provided list
 	// . this will not free any mem it may have alloc'd but it will set
 	//   m_listSize to 0 so list->isEmpty() will return true
 	if ( list ) list->reset();
+
 	// key size set
 	m_ks = getKeySizeFromRdbId(rdbId);
+
 	// . complain if endKey < startKey
 	// . no because IndexReadInfo does this to prevent us from reading
 	//   a list
 	if ( KEYCMP(startKey,endKey,m_ks)>0 ) return true;
 	// log("Msg5::readList: startKey > endKey warning"); 
+
 	// we no longer allow negative minRecSizes
 	if ( minRecSizes < 0 ) {
 		if ( g_conf.m_logDebugDb )
@@ -121,9 +130,11 @@ bool Msg5::getList ( char     rdbId         ,
 		minRecSizes = 0x7fffffff;
 		//g_process.shutdownAbort(true);
 	}
+
 	// ensure startKey last bit clear, endKey last bit set
 	if ( !KEYNEG(startKey) )
 		log(LOG_REMIND,"net: msg5: StartKey lastbit set."); 
+
 	// fix endkey
 	if ( KEYNEG(endKey) ) {
 		log(LOG_REMIND,"net: msg5: EndKey lastbit clear. Fixing.");
@@ -135,6 +146,7 @@ bool Msg5::getList ( char     rdbId         ,
 		fixedEndKey[0] |= 0x01;
 		endKey = fixedEndKey;
 	}
+
 	QUICKPOLL(niceness);
 
 	// remember stuff
@@ -177,10 +189,12 @@ bool Msg5::getList ( char     rdbId         ,
 	// . these 2 vars are used for error correction
 	// . doRemoteLookup is -2 if it's up to us to decide
 	m_doErrorCorrection = doErrorCorrection;
+
 	// these get changed both by cache and gotList()
 	m_newMinRecSizes = minRecSizes;
 	m_round          = 0;
 	m_readAbsolutelyNothing = false;
+
 	KEYSET(m_fileStartKey,m_startKey,m_ks);
 
 	QUICKPOLL(m_niceness);
@@ -268,12 +282,16 @@ bool Msg5::readList ( ) {
 	//   time when the endKey is unbounded, so check that now
 	const char *treeEndKey = m_endKey;
 	bool compute = true;
+
 	if ( ! m_includeTree           ) compute = false;
+
 	// if endKey is "unbounded" then bound it...
 	char max[MAX_KEY_BYTES]; KEYMAX(max,m_ks);
 	if ( KEYCMP(m_endKey,max,m_ks) != 0 ) compute = false;
+
 	// BUT don't bother if a small list, probably faster just to get it
 	if ( m_newMinRecSizes < 1024   ) compute = false;
+
 	// try to make merge read threads higher priority than
 	// regular spider read threads
 	int32_t niceness = m_niceness;
@@ -412,6 +430,7 @@ bool Msg5::readList ( ) {
 				if ( rs < minrs ) rs = minrs;
 			}
 		}
+
 		// . TODO: get avg recSize in this rdb (avgRecSize*numNeg..)
 		// . don't do this if we're not merging because it makes
 		//   it harder to compute the # of bytes to read used to
@@ -425,6 +444,7 @@ bool Msg5::readList ( ) {
 			if ( rs > 0 && nn < m_newMinRecSizes ) nn = 0x7fffffff;
 			m_newMinRecSizes = nn;
 		}
+
 		// . if m_endKey = m_startKey + 1 and our list has a rec
 		//   then no need to check the disk, it was in the tree
 		// . it could be a negative or positive record
@@ -442,7 +462,9 @@ bool Msg5::readList ( ) {
 	}
 	// if we don't use the tree then at least set the key bounds cuz we
 	// pick the min endKey between diskList and treeList below
-	else m_treeList.set ( m_fileStartKey , m_endKey );
+	else {
+		m_treeList.set ( m_fileStartKey , m_endKey );
+	}
 
 	// . if we're reading indexlists from 2 or more sources then some 
 	//   will probably be compressed from 12 byte keys to 6 byte keys
@@ -490,6 +512,7 @@ bool Msg5::readList ( ) {
 
 	// clear just in case
 	g_errno = 0;
+
 	// . now get from disk
 	// . use the cache-modified constraints to reduce reading time
 	// . return false if it blocked
@@ -645,7 +668,7 @@ bool Msg5::gotList2 ( ) {
 	// put all the lists in an array of list ptrs
 	int32_t n = 0;
 	// all the disk lists
-	for ( int32_t i = 0 ; n < MAX_RDB_FILES && i<m_msg3.getNumLists(); i++ ) {
+	for ( int32_t i = 0 ; n < MAX_RDB_FILES && i < m_msg3.getNumLists(); ++i ) {
 		// . skip list if empty
 		// . was this causing problems?
 		if ( ! m_isRealMerge ) {
@@ -676,11 +699,14 @@ bool Msg5::gotList2 ( ) {
 	for ( int32_t i = 0 ; i < n ; i++ ) {
 		//if ( m_listPtrs[i]->getEndKey() < m_minEndKey ) 
 		//	m_minEndKey = m_listPtrs[i]->getEndKey();
+
 		// sanity check
 		//if ( KEYNEG(m_listPtrs[i]->getEndKey()) ) {
 		//	g_process.shutdownAbort(true); }
+
 		if ( KEYCMP(m_listPtrs[i]->getEndKey(),m_minEndKey,m_ks)<0 ) {
 			KEYSET(m_minEndKey,m_listPtrs[i]->getEndKey(),m_ks);
+
 			// crap, if list is all negative keys, then the
 			// end key seems negative too! however in this
 			// case RdbScan::m_endKey seems positive so
@@ -689,10 +715,12 @@ bool Msg5::gotList2 ( ) {
 			//	log("msg5: list had bad endkey");
 		}
 	}
+
 	// sanity check
 	//if ( KEYNEG( m_minEndKey) ) {g_process.shutdownAbort(true); }
 
 	QUICKPOLL(m_niceness);
+
 	// . is treeList included?
 	// . constrain treelist for the merge
 	// . if used, m_listPtrs [ m_numListPtrs - 1 ] MUST equal &m_treeList
@@ -714,7 +742,6 @@ bool Msg5::gotList2 ( ) {
 					       "tree" ,
 					       m_niceness );
 		}
-		//if ( m_rdbId == RDB_TITLEDB ) m_tfns [n] = 255;
 		m_listPtrs [ n++ ] = &m_treeList;
 	}
 	
@@ -729,7 +756,6 @@ bool Msg5::gotList2 ( ) {
 	if ( m_rdbId == RDB_TITLEDB && m_numFiles != 1 && n == 1 &&
 	     m_isRealMerge ) {
 		//log(LOG_LOGIC,"db: Adding dummy list.");
-		//m_tfns [n] = 255;
 		m_dummy.set ( NULL                      , // list data
 			      0                         , // list data size
 			      NULL                      , // alloc 
@@ -743,19 +769,21 @@ bool Msg5::gotList2 ( ) {
 		m_listPtrs [ n++ ] = &m_dummy;
 	}
 
-	// bitch
-	if ( n >= MAX_RDB_FILES ) 
-		log(LOG_LOGIC,"net: msg5: Too many lists (%" PRId32" | %" PRId32").",
-			   m_msg3.getNumLists() , n);
+	if ( n >= MAX_RDB_FILES ) {
+		log( LOG_LOGIC, "net: msg5: Too many lists (%" PRId32" | %" PRId32").", m_msg3.getNumLists(), n );
+	}
 
 	// store # of lists here for use by the call to merge_r()
 	m_numListPtrs = n;
+
 	// count the sizes
 	m_totalSize = 0;
-	for ( int32_t i = 0 ; i < m_numListPtrs ; i++ )
-		m_totalSize += m_listPtrs[i]->getListSize();
+	for ( int32_t i = 0 ; i < m_numListPtrs ; i++ ) {
+		m_totalSize += m_listPtrs[ i ]->getListSize();
+	}
 
 	QUICKPOLL(m_niceness);
+
 	// . but don't breach minRecSizes
 	// . this totalSize is just to see if we should spawn a thread, really
 	//if ( totalSize > m_minRecSizes ) m_totalSize = m_minRecSizes;
@@ -814,6 +842,7 @@ bool Msg5::gotList2 ( ) {
 		g_errno = 0;
 		// if m_doErrorCorrection is true, repairLists_r() should fix
 	}
+
 	QUICKPOLL((m_niceness));
 
 	// . should we remove negative recs from final merged list?
@@ -821,8 +850,8 @@ bool Msg5::gotList2 ( ) {
 	// . should we keep this out of the thread in case a file created?
 	int32_t fn = 0;
 	if ( base->m_numFiles > 0 ) fn = base->m_fileIds[m_startFileNum];
-	if ( fn == 0 || fn == 1 ) m_removeNegRecs = true;
-	else                      m_removeNegRecs = false;
+
+	m_removeNegRecs = ( fn == 0 || fn == 1 );
 
 	// . if we only have one list, just use it
 	// . Msg3 should have called constrain() on it so it's m_list so
@@ -838,15 +867,14 @@ bool Msg5::gotList2 ( ) {
 	//   super quick just for this purpose
 	// . crap, rather than do that just deal with the negative recs 
 	//   in the caller code... in this case Spider.cpp::gotDoledbList2()
-	if ( m_numListPtrs == 1 && m_list->isEmpty() &&//&&!m_removeNegRecs 
+	if ( m_numListPtrs == 1 && m_list->isEmpty() &&
 	     // just do this logic for doledb now, it was causing us to
 	     // return search results whose keys were negative indexdb keys.
 	     // or later we can just write some code to remove the neg
 	     // recs from the single list!
 	     ( m_rdbId == RDB_LINKDB || m_rdbId == RDB_DOLEDB ||
-	       // this speeds up our queryloop querylog parsing in
-	       // seo.cpp quite a bit
-	       (m_rdbId == RDB_POSDB && m_numFiles==1) ) ) {
+	     // this speeds up our queryloop querylog parsing in seo.cpp quite a bit
+	     ( m_rdbId == RDB_POSDB && m_numFiles == 1 ) ) ) {
 		// log any problems
 		if ( m_listPtrs[0]->m_ownData ) {
 			// . bitch if not empty
@@ -870,15 +898,19 @@ bool Msg5::gotList2 ( ) {
 			              m_ks                               );
 			// ensure we don't free it when we loop on freeLists() below
 			m_listPtrs[0]->setOwnData ( false );
+
 			// gotta set this too!
-			if ( m_listPtrs[0]->m_lastKeyIsValid )
-			     m_list->setLastKey ( m_listPtrs[0]->m_lastKey );
+			if ( m_listPtrs[0]->m_lastKeyIsValid ) {
+				m_list->setLastKey ( m_listPtrs[0]->m_lastKey );
+			}
+
 			// . remove titleRecs that shouldn't be there
 			// . if the tfn of the file we read the titlerec from does not
 			//   match the one in m_tfndbList, then remove it
 			// . but if we're not merging lists, why remove it?
 			//if ( m_rdbId == RDB_TITLEDB && m_msg3.m_numFileNums > 1 )
 			//     stripTitleRecs ( m_list , m_tfns[0] , m_tfndbList );
+
 			// . add m_list to our cache if we should
 			// . this returns false if blocked, true otherwise
 			// . sets g_errno on error
@@ -907,10 +939,10 @@ bool Msg5::gotList2 ( ) {
 	// . this returns false and sets g_errno on error
 	// . should not affect the current list in m_list, only build on top
 	if ( ! m_list->prepareForMerge ( m_listPtrs, m_numListPtrs, m_minRecSizes ) ) {
-		log("net: Had error preparing to merge lists from %s: %s",
-		    base->m_dbname,mstrerror(g_errno));
+		log( LOG_WARN, "net: Had error preparing to merge lists from %s: %s", base->m_dbname,mstrerror(g_errno));
 		return true;
-	}		
+	}
+
 	QUICKPOLL((m_niceness));
 
 	// . if size < 32k of don't bother with thread, should be < ~1 ms
@@ -921,12 +953,9 @@ bool Msg5::gotList2 ( ) {
 		// . if size is big, make a thread
 		// . let's always make niceness 0 since it wasn't being very
 		//   aggressive before
-		if ( g_jobScheduler.submit(mergeListsWrapper_r,
-		                           threadDoneWrapper,
-					   this,
-					   thread_type_query_merge,
-					   m_niceness) )
+		if ( g_jobScheduler.submit(mergeListsWrapper_r, threadDoneWrapper, this, thread_type_query_merge, m_niceness) ) {
 			return false;
+		}
 
 		//m_waitingForMerge = false;
 
@@ -941,8 +970,10 @@ bool Msg5::gotList2 ( ) {
 
 	// repair any corruption
 	repairLists_r();
+
 	// do it
 	mergeLists_r ();
+
 	// . add m_list to our cache if we should
 	// . this returns false if blocked, true otherwise
 	// . sets g_errno on error
@@ -956,12 +987,13 @@ bool Msg5::gotList2 ( ) {
 void mergeListsWrapper_r ( void *state ) {
 	// we're in a thread now!
 	Msg5 *THIS = (Msg5 *)state;
-	// debug msg
-	//log("Msg5::mergeListsWrapper: begining threaded merge!");
+
 	// repair any corruption
 	THIS->repairLists_r();
+
 	// do the merge
 	THIS->mergeLists_r();
+
 	// now cleanUp wrapper will call it
 }
 
@@ -971,23 +1003,30 @@ void mergeListsWrapper_r ( void *state ) {
 static void threadDoneWrapper ( void *state, job_exit_t /*exit_type*/ ) {
 	// we MAY be in a thread now
 	Msg5 *THIS = (Msg5 *)state;
+
 	// debug msg
 	//log("msg3 back from merge thread (msg5=%" PRIu32")",THIS->m_state);
+
 	// . add m_list to our cache if we should
 	// . this returns false if blocked, true otherwise
 	// . sets g_errno on error
 	// . only blocks if calls msg0 to patch a corrupted list
 	// . it will handle calling callback if that happens
 	if ( ! THIS->doneMerging() ) return;
+
 	// . throw it back into the loop if necessary
 	// . only returns true if COMPLETELY done
 	if ( THIS->needsRecall() && ! THIS->readList() ) return;
+
 	// sanity check
 	if ( THIS->m_calledCallback ) { g_process.shutdownAbort(true); }
+
 	// we are no longer waiting for the list
 	THIS->m_waitingForList = false;
+
 	// set it now
 	THIS->m_calledCallback = 3;
+
 	// when completely done call the callback
 	THIS->m_callback ( THIS->m_state , THIS->m_list , THIS );
 }
@@ -1025,51 +1064,42 @@ void Msg5::repairLists_r ( ) {
 			    "minRecSizes is %" PRId32".",
 			    m_listPtrs[i]->m_listSize ,
 			    m_minRecSizes );
-		// this took like 50ms (-O3) on lenny on a 4meg list
-		bool status = m_listPtrs[i]->checkList_r(false,
-		 // sleep on corruption if doing a sanity check (core dumps)
-#ifdef GBSANITYCHECK							 
-							 true
+
+#ifdef GBSANITYCHECK
+		// sleep on corruption if doing a sanity check (core dumps)
+		bool status = m_listPtrs[i]->checkList_r(false, true);
 #else
-		                                         false
+		// this took like 50ms (-O3) on lenny on a 4meg list
+		bool status = m_listPtrs[i]->checkList_r(false, false);
 #endif
-							 );
+
 		// if no errors, check the next list
 		if ( status ) continue;
 		// . show the culprit file
 		// . logging the key ranges gives us an idea of how long
 		//   it will take to patch the bad data
 		int32_t nn = m_msg3.m_numFileNums;
-		// TODO: fix this. can't call Collectiondb::getBase from
-		// within a thread!
+
+		// TODO: fix this. can't call Collectiondb::getBase from within a thread!
 		RdbBase *base = getRdbBase ( m_rdbId , m_collnum );
 		if ( i < nn && base ) {
-			int32_t fn = m_msg3.m_fileNums[i];
-			BigFile *bf = base->getFile ( fn );
-			log("db: Corrupt filename is %s in collnum %" PRId32"."
-			    ,bf->getFilename()
-			    ,(int32_t)m_collnum);
-			//key_t sk = m_listPtrs[i]->getStartKey();
-			//key_t ek = m_listPtrs[i]->getEndKey  ();
-			//log("db: "
-			//    "startKey.n1=%" PRIx32" n0=%" PRIx64" "
-			//    "endKey.n1=%" PRIx32" n0=%" PRIx64,
-			//    sk.n1,sk.n0,ek.n1,ek.n0);
-			const char *sk = m_listPtrs[i]->getStartKey();
-			const char *ek = m_listPtrs[i]->getEndKey  ();
-			log("db: "
-			    "startKey=%s "
-			    "endKey=%s ",
-			    KEYSTR(sk,m_ks),KEYSTR(ek,m_ks));
+			BigFile *bf = base->getFile ( m_msg3.m_fileNums[i] );
+			log( LOG_WARN, "db: Corrupt filename is %s in collnum %" PRId32".", bf->getFilename(), (int32_t)m_collnum );
+			log( LOG_WARN, "db: startKey=%s endKey=%s",
+			     KEYSTR( m_listPtrs[i]->getStartKey(), m_ks ),
+			     KEYSTR( m_listPtrs[i]->getEndKey(), m_ks ) );
 		}
+
 		// . remove the bad eggs from the list
 		// . TODO: support non-fixed data sizes
 		//if ( m_listPtrs[i]->getFixedDataSize() >= 0 )
 		m_listPtrs[i]->removeBadData_r();
 		//else
 		//m_listPtrs[i]->reset();
+
 		// otherwise we have a patchable error
 		m_hadCorruption = true;
+
 		// don't add a list with errors to cache, please
 		m_addToCache = false;
 	}
@@ -1117,15 +1147,7 @@ void Msg5::mergeLists_r ( ) {
 	//   Rdb::addRecord() NOT to do the annihilation, therefore it's good
 	//   to do the merge to do the annihilation
 	//else
-	m_list->merge_r ( m_listPtrs      , 
-			  m_numListPtrs   , 
-			  m_startKey      , 
-			  m_minEndKey     , 
-			  m_minRecSizes   ,
-			  m_removeNegRecs ,
-			  //getIdFromRdb ( base->m_rdb ) ,
-			  m_rdbId ,
-			  niceness      );
+	m_list->merge_r ( m_listPtrs, m_numListPtrs, m_startKey, m_minEndKey, m_minRecSizes, m_removeNegRecs, m_rdbId, niceness );
 	
 	// maintain this info for truncation purposes
 	if ( m_list->isLastKeyValid() ) 
@@ -1167,7 +1189,7 @@ bool Msg5::doneMerging ( ) {
 	// . if there was a merge error, bitch about it
 	// . Thread class should propagate g_errno when it was set in a thread
 	if ( g_errno ) {
-		log("net: Had error merging lists from %s: %s.",
+		log( LOG_WARN, "net: Had error merging lists from %s: %s.",
 		    base->m_dbname,mstrerror(g_errno));
 		return true;
 	}
@@ -1179,7 +1201,7 @@ bool Msg5::doneMerging ( ) {
 	//   our first merge
 	if ( m_hadCorruption ) {
 		// log it here, cuz logging in thread doesn't work too well
-		log("net: Encountered a corrupt list in rdb=%s collnum=%" PRId32,
+		log( LOG_WARN, "net: Encountered a corrupt list in rdb=%s collnum=%" PRId32,
 		    base->m_dbname,(int32_t)m_collnum);
 		// remove error condition, we removed the bad data in thread
 		

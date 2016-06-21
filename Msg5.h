@@ -34,8 +34,7 @@ class Msg5 {
 	//   construct us in a C wrapper so they need to delete us when 
 	//   they're done with us
 	// . if maxCacheAge is > 0, we lookup in cache first
-	bool getList ( //class RdbBase *base      ,
-		       char       rdbId         ,
+	bool getList ( char       rdbId         ,
 		       collnum_t collnum ,
 		       RdbList   *list          ,
 		       const void      *startKey      ,
@@ -47,9 +46,7 @@ class Msg5 {
 		       int32_t       startFileNum  , // first file to scan
 		       int32_t       numFiles      , // rel.to startFileNum,-1 all
 		       void      *state         , // for callback
-		       void     (* callback ) ( void    *state ,
-						RdbList *list  ,
-						Msg5    *msg5  ) ,
+		       void (* callback ) ( void *state, RdbList *list, Msg5 *msg5 ),
 		       int32_t       niceness      ,
 		       bool       doErrorCorrection  ,
 		       char      *cacheKeyPtr  = NULL ,
