@@ -1830,7 +1830,7 @@ skip:
 	// . is the last key we stored negative, a dangling negative?
 	// . if not, skip this next section
 	//if ( lastKeyIsValid && (*(char *)&lastKey & 0x01) == 0x01 )
-	if ( lastKeyIsValid && !KEYNEG(lastKey) )
+	if ( lastKeyIsValid && !KEYNEG(lastKey) ) {
 		goto positive;
 	}
 
