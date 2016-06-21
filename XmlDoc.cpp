@@ -3539,11 +3539,6 @@ uint8_t *XmlDoc::getLangId ( ) {
 	if ( m_langIdValid ) return &m_langId;
 	setStatus ( "getting lang id");
 
-	// debu ghack
-	//m_langId = langRussian;
-	//m_langIdValid = true;
-	//return &m_langId;
-
 	// get the stuff we need
 	int32_t *ip = getIp();
 	if ( ! ip || ip == (int32_t *)-1 ) return (uint8_t *)ip;
@@ -3557,8 +3552,6 @@ uint8_t *XmlDoc::getLangId ( ) {
 		return &m_langId;
 	}
 
-	//Xml      *xml      = getXml     ();
-	//if ( ! xml || xml == (Xml *)-1 ) return (uint8_t *)xml;
 	Words    *words    = getWords   ();
 	if ( ! words || words == (Words *)-1 ) return (uint8_t *)words;
 
@@ -3998,36 +3991,45 @@ Links *XmlDoc::getLinks ( bool doQuickSet ) {
 
 	// this will set it if necessary
 	Xml *xml = getXml();
+
 	// bail on error
 	if ( ! xml || xml == (Xml *)-1 ) return (Links *)xml;
+
 	// can't call getIsPermalink() here without entering a dependency loop
 	char *pp = getIsUrlPermalinkFormat();
 	if ( !pp || pp == (char *)-1 ) return (Links *)pp;
+
 	// use the old xml doc
 	XmlDoc **od = getOldXmlDoc ( );
 	if ( ! od || od == (XmlDoc **)-1 ) return (Links *)od;
+
 	// get Links class of the old title rec
 	Links *oldLinks = NULL;
+
 	// if we were set from a title rec, do not do this
 	if ( *od ) {
 		oldLinks = (*od)->getLinks();
 		if (!oldLinks||oldLinks==(Links *)-1) return (Links *)oldLinks;
 	}
+
 	Url *baseUrl = getBaseUrl();
 	if ( ! baseUrl || baseUrl==(Url *)-1) return (Links *)baseUrl;
+
 	int32_t *ip = getIp();
 	if ( ! ip || ip == (int32_t *)-1 ) return (Links *)ip;
+
 	// this ensures m_contentLen is set
 	//char **content = getContent();
 	//if ( ! content || content == (char **)-1 ) return (Links *)content;
+
 	char *ict = getIsContentTruncated();
 	if ( ! ict || ict == (char *)-1 ) return (Links *)ict;
+
 	int32_t *sni = getSiteNumInlinks();
 	if ( ! sni || sni == (int32_t *)-1 ) return (Links *)sni;
+
 	// get the latest url we are on
 	Url *u = getCurrentUrl();
-
-	/// @todo ALC why do we need to add to spiderdb?
 
 	//
 	// if we had a EDOCSIMPLIFIEDREDIR error, pretend it is a link
@@ -4046,9 +4048,14 @@ Links *XmlDoc::getLinks ( bool doQuickSet ) {
 	}
 
 	CollectionRec *cr = getCollRec();
-	if ( ! cr ) return NULL;
+	if ( ! cr ) {
+		return NULL;
+	}
+
 	bool useRelNoFollow = true;
-	if ( ! cr->m_obeyRelNoFollowLinks ) useRelNoFollow = false;
+	if ( ! cr->m_obeyRelNoFollowLinks ) {
+		useRelNoFollow = false;
+	}
 	// to keep things simple, for diffbot custom crawls, if robots.txt
 	// is not used then do not use rel no follow
 	if ( ! cr->m_useRobotsTxt && cr->m_isCustomCrawl )
