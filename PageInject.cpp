@@ -198,7 +198,7 @@ void Msg7::gotUdpReply ( UdpSlot *slot ) {
 	slot->m_sendBufAlloc = NULL;
 
 	m_replyIndexCode = EBADENGINEER;
-	if ( slot && slot->m_readBuf && slot->m_readBufSize >= 12 ) {
+	if ( slot->m_readBuf && slot->m_readBufSize >= 12 ) {
 		m_replyIndexCode = *(int32_t *)(slot->m_readBuf);
 		m_replyDocId     = *(int64_t *)(slot->m_readBuf+4);
 	}
@@ -661,8 +661,8 @@ void sendUdpReply7 ( void *state ) {
 	// for the container doc... hmmm...
 	int32_t indexCode = -1;
 	int64_t docId = 0;
-	if ( xd && xd->m_indexCodeValid ) indexCode = xd->m_indexCode;
-	if ( xd && xd->m_docIdValid     ) docId = xd->m_docId;
+	if ( xd->m_indexCodeValid ) indexCode = xd->m_indexCode;
+	if ( xd->m_docIdValid     ) docId = xd->m_docId;
 	mdelete ( xd, sizeof(XmlDoc) , "PageInject" );
 	delete (xd);
 
