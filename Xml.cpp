@@ -446,7 +446,7 @@ bool Xml::set( char *s, int32_t slen, int32_t version, int32_t niceness, char co
 			//if ( newLine && is_wspace_a(p[0]) )
 			//	continue;
 			if ( p[0] == '<' && p[1] == '!' && 
-			     p[2] == '-' && p[2] == '-' &&
+			     p[2] == '-' && p[3] == '-' &&
 			     ! inSingles && ! inDoubles &&
 			     ! inComment1 &&
 			     ! inComment2 &&
