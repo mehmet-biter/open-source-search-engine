@@ -160,8 +160,6 @@ void RdbList::set ( char  *list          ,
 	m_alloc         = alloc;
 	m_allocSize     = allocSize;
 	m_listEnd       = list + listSize;
-	//m_startKey      = startKey;
-	//m_endKey        = endKey;
 	KEYSET(m_startKey,startKey,m_ks);
 	KEYSET(m_endKey  ,endKey  ,m_ks);
 	m_fixedDataSize = fixedDataSize;
@@ -188,8 +186,6 @@ void RdbList::set (char *list          ,
 	      listSize      ,
 	      alloc         ,
 	      allocSize     ,
-	      //startKey      ,
-	      //endKey        ,
 	      startKey      ,
 	      endKey        ,
 	      fixedDataSize ,
@@ -201,8 +197,6 @@ void RdbList::set (char *list          ,
 // just set the start and end keys
 //void RdbList::set ( key_t startKey , key_t endKey ) {
 void RdbList::set ( const char *startKey, const char *endKey ) {
-	//m_startKey = startKey;
-	//m_endKey   = endKey;
 	KEYSET ( m_startKey , startKey , m_ks );
 	KEYSET ( m_endKey   , endKey   , m_ks );
 }
@@ -257,7 +251,7 @@ int32_t RdbList::getNumRecs ( ) {
 bool RdbList::addRecord ( const char *key, int32_t dataSize, const char *data,
 			  bool bitch ) {
 
-	if ( m_ks == 18 ) { // m_rdbId == RDB_POSDB ) {
+	if ( m_ks == 18 ) {
 		// sanity
 		if ( key[0] & 0x06 ) {
 			log("rdblist: posdb: cannot add bad key. please "
@@ -314,15 +308,20 @@ bool RdbList::addRecord ( const char *key, int32_t dataSize, const char *data,
 	// get total size of the record
 	//int32_t recSize = sizeof(key_t) + dataSize;
 	int32_t recSize = m_ks + dataSize;
+
 	// sanity
 	if ( dataSize && KEYNEG(key) ) { g_process.shutdownAbort(true); }
+
 	// . include the 4 bytes to store the dataSize if it's not fixed
 	// . negative keys never have a datasize field now
 	if ( m_fixedDataSize < 0 && !KEYNEG(key) ) recSize += 4;
+
 	// grow the list if we need to
-	if ( m_listEnd + recSize >  m_alloc + m_allocSize )
-		if ( ! growList ( m_allocSize + recSize ) )
+	if ( m_listEnd + recSize >  m_alloc + m_allocSize ) {
+		if ( !growList( m_allocSize + recSize ) ) {
 			return false;// log("RdbList::merge: growList failed");
+		}
+	}
 
 	// sanity check
 	//if ( m_listEnd != m_list+m_listSize ) { g_process.shutdownAbort(true); }
@@ -349,9 +348,11 @@ bool RdbList::addRecord ( const char *key, int32_t dataSize, const char *data,
 		m_listEnd  += (m_ks - 6);
 		return true;
 	}
+
 	// store the key at the end of the list
 	//*(key_t *)(&m_list[m_listSize]) = key;
 	KEYSET ( &m_list[m_listSize], key, m_ks );
+
 	// update the ptr
 	if ( m_useHalfKeys ) {
 		// we're the new hi key
@@ -360,22 +361,25 @@ bool RdbList::addRecord ( const char *key, int32_t dataSize, const char *data,
 		// turn off half bit
 		m_list[m_listSize] &= 0xfd;
 	}
-	//m_listSize += sizeof(key_t);
-	//m_listEnd  += sizeof(key_t);
+
 	m_listSize += m_ks;
 	m_listEnd  += m_ks;
 	// return true if we're dataless
+
 	if ( m_fixedDataSize == 0 ) return true;
+
 	// copy the dataSize to the list if it's not fixed or negative...
 	if ( m_fixedDataSize == -1 && !KEYNEG(key) ) {
 		*(int32_t *)(&m_list[m_listSize]) = dataSize ;
 		m_listSize += 4;
 		m_listEnd  += 4;
 	}
+
 	// copy the data itself to the list
 	memcpy ( &m_list[m_listSize] , data , dataSize );
 	m_listSize += dataSize;
 	m_listEnd  += dataSize;
+
 	return true;
 }
 
@@ -1543,43 +1547,50 @@ void RdbList::merge_r ( RdbList **lists         ,
 		log("list: merge_r data not owned");
 		g_process.shutdownAbort(true);
 	}
+
 	// bail if none! i saw a doledb merge do this from Msg5.cpp
 	// and it was causing a core because m_MergeMinListSize was -1
 	if ( numLists == 0 ) return;
+
 	// save this
 	int32_t startListSize = m_listSize;
+
 	// did they call prepareForMerge()?
 	if ( m_mergeMinListSize == -1 ) {
 		log(LOG_LOGIC,"db: rdblist: merge_r: prepareForMerge() not "
 			"called. ignoring error and returning emtpy list.");
-		// this happens if we nuke doledb during a merge of it. it
-		// is just bad timing
+		// this happens if we nuke doledb during a merge of it. it is just bad timing
 		return;
 		// save state and dump core, sigBadHandler will catch this
 		// g_process.shutdownAbort(true);
 	}
+
 	// already there?
-	if ( minRecSizes >= 0 && m_listSize >= minRecSizes ) return;
+	if ( minRecSizes >= 0 && m_listSize >= minRecSizes ) {
+		return;
+	}
+
 	// now if we're only merging 2 data-less lists to it super fast
 	//if ( m_useHalfKeys ) {
 	//	log(LOG_LOGIC,"db: rdblist: merge_r: call indexMerge_r() not "
 	//	    "merge_r()");
 	//	g_process.shutdownAbort(true);	exit(-1);
 	//}
+
 	// warning msg
-	if ( m_listPtr != m_listEnd )
-		log(LOG_LOGIC,"db: rdblist: merge_r: warning. "
-		    "merge not storing at end of list for %s.",
-		    getDbnameFromId((uint8_t)rdbId));
+	if ( m_listPtr != m_listEnd ) {
+		log( LOG_LOGIC, "db: rdblist: merge_r: warning. merge not storing at end of list for %s.",
+		     getDbnameFromId( ( uint8_t ) rdbId ) );
+	}
 	// set our key range
-	//m_startKey = startKey;
-	//m_endKey   = endKey;
 	KEYSET(m_startKey,startKey,m_ks);
 	KEYSET(m_endKey,endKey,m_ks);
+
 	// . NEVER end in a negative rec key (dangling negative rec key)
 	// . we don't want any positive recs to go un annhilated
 	// . but don't worry about this check if start and end keys are equal
 	//if ( m_startKey != m_endKey && (m_endKey.n0 & 0x01) == 0x00 )
+
 	// . MDW: this happens during the qainject1() qatest in qa.cpp that
 	//   deletes all the urls then does a dump of just negative keys.
 	//   so let's comment it out for now
@@ -1589,28 +1600,29 @@ void RdbList::merge_r ( RdbList **lists         ,
 		// make it legal so it will be read first NEXT time
 		KEYSUB(m_endKey,m_ks);
 	}
+
 	// do nothing if no lists passed in
 	if ( numLists <= 0 ) return;
+
 	// inherit the key size of what we merge
 	m_ks = lists[0]->m_ks;
+
 	// sanity check
-	for ( int32_t i = 1 ; i < numLists ; i++ )
-		if ( lists[i]->m_ks != m_ks ) {
-			log("db: non conforming key size of %" PRId32" != %" PRId32" for "
-			    "list #%" PRId32".",(int32_t)lists[i]->m_ks,(int32_t)m_ks,i);
-			g_process.shutdownAbort(true);
+	for ( int32_t i = 1 ; i < numLists ; i++ ) {
+		if ( lists[ i ]->m_ks != m_ks ) {
+			log( LOG_WARN, "db: non conforming key size of %" PRId32" != %" PRId32" for "
+			     "list #%" PRId32".", ( int32_t ) lists[ i ]->m_ks, ( int32_t ) m_ks, i );
+			g_process.shutdownAbort( true );
 		}
+	}
+
 	// bail if nothing requested
-	if ( minRecSizes == 0 ) return;
+	if ( minRecSizes == 0 ) {
+		return;
+	}
 
 	if ( rdbId  == RDB_POSDB ) {
-		posdbMerge_r ( lists ,
-			       numLists ,
-			       startKey ,
-			       endKey ,
-			       m_mergeMinListSize,
-			       removeNegRecs ,
-			       niceness );
+		posdbMerge_r ( lists, numLists, startKey, endKey, m_mergeMinListSize, removeNegRecs, niceness );
 		return;
 	}
 
@@ -1643,33 +1655,34 @@ void RdbList::merge_r ( RdbList **lists         ,
 	//char *lastNegKey = NULL;
 	char  lastNegKey[MAX_KEY_BYTES];
 	int32_t  lastNegi = -1;
+
 	// init highestKey
-	//highestKey.n1 = 0;
-	//highestKey.n0 = 0LL;
 	KEYSET(highestKey,KEYMIN(),m_ks);
+
 	// this is used for rolling back delete records
 	int32_t lastListSize = m_listSize;
+
 	// for seeing if negative rec is OLDER than positve key before
 	// annilating them together
 	//int32_t lastMini = -1;
+
 	// two vars for removing negative recs from the end of the final list
 	int32_t  savedListSize = -1;
-	//key_t savedLastKey;
-	//key_t savedHighestKey;
 	char  savedLastKey[MAX_KEY_BYTES];
 	char  savedHighestKey[MAX_KEY_BYTES];
+
 	// reset each list's ptr
 	for ( i = 0 ; i < numLists ; i++ ) lists[i]->resetListPtr();
+
 	// don't breech the list's boundary when adding keys from merge
 	char *allocEnd = m_alloc + m_allocSize;
+
 	// sanity
 	//if ( ! m_alloc ) { g_process.shutdownAbort(true); }
+
 	// now begin the merge loop
-	//key_t ckey;
-	//key_t mkey;
 	char ckey[MAX_KEY_BYTES];
 	char mkey[MAX_KEY_BYTES];
-	//int64_t prevDocId = 0LL;
 	char minKey[MAX_KEY_BYTES];
 
 	int64_t tt1 = getTagTypeFromStr( "sitenuminlinksfresh");
@@ -1677,30 +1690,32 @@ void RdbList::merge_r ( RdbList **lists         ,
 
  top:
 	// get the biggest possible minKey so everyone's <= it
-	//key_t minKey;
-	//minKey.n0 = 0xffffffffffffffffLL;
-	//minKey.n1 = 0xffffffff;
 	KEYSET(minKey,KEYMAX(),m_ks);
+
 	// assume we have no min key
 	mini = -1;
+
 	// . loop over the lists
 	// . get newer rec with same key as older rec FIRST
 	for ( i = 0 ; i < numLists ; i++ ) {
 		// TODO: to speed up extract from list of RdbLists
-		if ( lists[i]->isExhausted() ) continue;
+		if ( lists[i]->isExhausted() ) {
+			continue;
+		}
+
 		// see if the current key from this scan's read buffer is 2 big
-		//ckey = lists[i]->getCurrentKey();
-		//mkey = minKey;
 		lists[i]->getCurrentKey(ckey);
 		KEYSET(mkey,minKey,m_ks);
+
 		// treat negatives and positives as equals for this
-		//ckey.n0 |= 0x01;
-		//mkey.n0 |= 0x01;
 		*ckey |= 0x01;
 		*mkey |= 0x01;
+
 		// clear compression bits if posdb
-		if ( m_ks == 18 ) *ckey &= 0xf9;
-		//
+		if ( m_ks == 18 ) {
+			*ckey &= 0xf9;
+		}
+
 		// TODO: if merging titledb recs mask out all but the docids???
 		// then we don't have to worry about adding the negative
 		// key in Msg14.cpp adding to RDB_TITLEDB. that was causing
@@ -1726,8 +1741,9 @@ void RdbList::merge_r ( RdbList **lists         ,
 		// now this new guy is the min key
                 //minKey  = lists[i]->getCurrentKey();
 		lists[i]->getCurrentKey(minKey);
-                mini    = i;
+		mini    = i;
 	}
+
 	// we're done if all lists are exhausted
 	if ( mini == -1 ) goto done;
 	// . bail if minKey out of range
@@ -1743,11 +1759,12 @@ void RdbList::merge_r ( RdbList **lists         ,
 		lists[mini]->getCurrentKey(lastNegKey);
 		goto skip;
 	}
+
 	// special filter to remove obsolete tags from tagdb
 	if ( rdbId == RDB_TAGDB ) {
 		Tag *tag = (Tag *)lists[mini]->getCurrentRec();
 		if ( tag->m_type == tt1 || tag->m_type == tt2 ) {
-			required -= tag->getRecSize();//m_ks;
+			required -= tag->getRecSize();
 			goto skip;
 		}
 	}
@@ -1755,6 +1772,7 @@ void RdbList::merge_r ( RdbList **lists         ,
 	// remember state before we are stored in case we're annihilated and
 	// we hafta roll back to it
 	lastListSize   = m_listSize;
+
 	// before storing key, if last key was negative and its
 	// "i" was > our "i", and we match, then erase us...
 	if ( lastNegi > mini ) {
@@ -1764,24 +1782,7 @@ void RdbList::merge_r ( RdbList **lists         ,
 		//lastNegKey = NULL;
 		lastNegi = -1;
 	}
-	/*
-	// posdb?
-	if ( m_ks == 18 ) {
-		// if adding the key would breech us, goto done
-		// TODO: what about compression?
-		if (m_list + m_listSize + 6 >allocEnd ) goto done;
-		// add it using compression bits
-		addRecord ( minKey ,0,NULL,false);
-	}
-	// new linkedb?
-	else if ( m_ks == sizeof(key224_t) ) {
-		// if adding the key would breech us, goto done
-		// TODO: what about compression?
-		if (m_list + m_listSize + 18 >allocEnd ) goto done;
-		// add it using compression bits
-		addRecord ( minKey ,0,NULL,false);
-	}
-	*/
+
 	// . copy the winning record into our list
 	// . these increment store at m_list+m_listSize and inc m_listSize
 	if ( m_fixedDataSize == 0 ) {
@@ -1794,16 +1795,10 @@ void RdbList::merge_r ( RdbList **lists         ,
 		//	foo = 1;
 		// add it using compression bits
 		addRecord ( minKey ,0,NULL,false);
-		// add the record to end of list
-		//*(key_t *)(m_list + m_listSize) = minKey;
-		//KEYSET(m_list+m_listSize,minKey,m_ks);
-		//m_listSize += sizeof(key_t);
-		//m_listSize += m_ks;
-	}
-	else {
+	} else {
 		// if adding the key would breech us, goto done
-		//int32_t recSize=sizeof(key_t)+lists[mini]->getCurrentDataSize();
 		int32_t recSize=m_ks+lists[mini]->getCurrentDataSize();
+
 		// negative keys have no datasize entry
 		if (m_fixedDataSize < 0 && ! KEYNEG(minKey) ) recSize += 4;
 		if (m_list + m_listSize + recSize > allocEnd) goto done;
@@ -1811,20 +1806,21 @@ void RdbList::merge_r ( RdbList **lists         ,
 		// . normally we don't set this right until we're done merging
 		m_listEnd = m_list + m_listSize;
 		// add the record to end of list
-		addRecord ( minKey                            ,
-			    lists[mini]->getCurrentDataSize() ,
-			    lists[mini]->getCurrentData()     );
+		addRecord ( minKey, lists[mini]->getCurrentDataSize(), lists[mini]->getCurrentData() );
 	}
+
 	// if we are positive and unannhilated, store it in case
 	// last key we get is negative and removeNegRecs is true we need to
 	// know the last positive key to set m_lastKey
 	//if ( (*(char *)&minKey & 0x01) == 0x01 ) lastPosKey = minKey;
-	if ( !KEYNEG(minKey) ) KEYSET(lastPosKey,minKey,m_ks);
-	//lastKey        = minKey;
+	if ( !KEYNEG(minKey) ) {
+		KEYSET(lastPosKey,minKey,m_ks);
+	}
+
 	KEYSET(lastKey,minKey,m_ks);
-	//lastMini       = mini;
 	lastKeyIsValid = true;
- skip:
+
+skip:
 	// get the next key in line and goto top
 	lists[mini]->skipCurrentRecord();
 	// keep adding/merging more records if we still have more room w/o grow
@@ -1836,6 +1832,7 @@ void RdbList::merge_r ( RdbList **lists         ,
 	//if ( lastKeyIsValid && (*(char *)&lastKey & 0x01) == 0x01 )
 	if ( lastKeyIsValid && !KEYNEG(lastKey) )
 		goto positive;
+	}
 
 	// are negatives allowed?
 	if ( removeNegRecs ) {
@@ -1849,8 +1846,9 @@ void RdbList::merge_r ( RdbList **lists         ,
 		// . highestKey is irrelevant here cuz all lists are exhausted
 		m_listSize = lastListSize;
 		// fix this
-		if ( required >= 0 ) required = lastListSize;
-		//lastKey    = lastPosKey;
+		if ( required >= 0 ) {
+			required = lastListSize;
+		}
 		KEYSET(lastKey,lastPosKey,m_ks);
 	}
 
@@ -1890,7 +1888,9 @@ void RdbList::merge_r ( RdbList **lists         ,
 
  positive:
 	// but don't set the listSize negative
-	if ( m_listSize < 0 ) m_listSize = 0;
+	if ( m_listSize < 0 ) {
+		m_listSize = 0;
+	}
 
 	// set these 2 things for our final merged list
 	m_listEnd = m_list + m_listSize;
@@ -1942,7 +1942,8 @@ void RdbList::merge_r ( RdbList **lists         ,
 	// . but if minRecSizes kicked us out first, then we might have less
 	//   then "required"
 	if ( required >= 0 && m_listSize < required && m_listSize<minRecSizes){
-		g_process.shutdownAbort(true); }
+		g_process.shutdownAbort(true);
+	}
 
 	// dedup for spiderdb
 	//if ( rdbId == RDB_SPIDERDB )

@@ -180,8 +180,7 @@ class RdbList {
 	// . add this record to the end of the list,  @ m_list+m_listSize
 	// . returns false and sets errno on error
 	// . grows list (m_allocSize) if we need more space
-	bool addRecord ( const char *key, int32_t dataSize, const char *data,
-			 bool bitch = true );
+	bool addRecord ( const char *key, int32_t dataSize, const char *data, bool bitch = true );
 
 	// . constrain a list to [startKey,endKey]
 	// . returns false and sets g_errno on error
