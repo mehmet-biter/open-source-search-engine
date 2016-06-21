@@ -4862,7 +4862,7 @@ static int32_t s_num = 0;
 
 static int getNextMenuEntryIndex(int curr_index)
 {
-	int i = curr_index++;
+	int i = curr_index+1;
 	if( i >= MAX_MENU_ENTRIES )
 	{
 		g_process.shutdownAbort(true);
@@ -5202,7 +5202,6 @@ static bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) {
 		n = getNextMenuEntryIndex(n);
 
 		s_num = n;
-		
 		s_init = true;
 	}
 
@@ -5366,6 +5365,8 @@ static bool printMenu ( SafeBuf *sb , int32_t menuNum , HttpRequest *hr ) {
 
 	// wrap up the drop down
 	sb->safePrintf("</span>");
+	
+
 
 	// print heading or current selection i guess
 	sb->safePrintf(
