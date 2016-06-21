@@ -589,8 +589,6 @@ void handleRequest13 ( UdpSlot *slot , int32_t niceness  ) {
 
 	// save this
 	r->m_udpSlot = slot;
-	// sanity check
-	if ( ! slot ) { g_process.shutdownAbort(true); }
 
 	// send to a proxy if we are doing compression and not a proxy
 	if ( r->m_useCompressionProxy && ! g_hostdb.m_myHost->m_isProxy ) {
