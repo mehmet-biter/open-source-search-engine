@@ -1769,8 +1769,11 @@ int main2 ( int argc , char *argv[] ) {
 		int32_t verb;
 		int32_t outpt;
 		coll = argv[cmdarg+1];
-		if( argv[cmdarg+2][0] < 0x30 && argv[cmdarg+2][0] > 0x39 )
+
+		if( argv[cmdarg+2][0] < 0x30 || argv[cmdarg+2][0] > 0x39 ) {
 			goto printHelp;
+		}
+
 		int32_t numRecs = atoi( argv[cmdarg+2] );
 
 		if( argc > (cmdarg + 2) ) verb = atoi( argv[cmdarg+2] );
