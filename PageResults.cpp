@@ -4854,8 +4854,21 @@ public:
 	char  m_tmp[25];
 };
 
-static MenuItem s_mi[200];
+
+const static int MAX_MENU_ENTRIES = 200;
+
+static MenuItem s_mi[MAX_MENU_ENTRIES];
 static int32_t s_num = 0;
+
+static int getNextMenuEntryIndex(int curr_index)
+{
+	int i = curr_index++;
+	if( i >= MAX_MENU_ENTRIES )
+	{
+		g_process.shutdownAbort(true);
+	}
+	return i;
+}
 
 static bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) {
 	SafeBuf cu;
@@ -4886,27 +4899,27 @@ static bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) {
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Any time";
 		s_mi[n].m_cgi      = "secsback=0";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Past 24 hours";
 		s_mi[n].m_cgi      = "secsback=86400";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Past week";
 		s_mi[n].m_cgi      = "secsback=604800";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Past month";
 		s_mi[n].m_cgi      = "secsback=2592000";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Past year";
 		s_mi[n].m_cgi      = "secsback=31536000";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		++menuNum;
 
@@ -4914,17 +4927,17 @@ static bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) {
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Sorted by relevance";
 		s_mi[n].m_cgi      = "sortby=0";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Sorted by date";
 		s_mi[n].m_cgi      = "sortby=1";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Reverse sorted by date";
 		s_mi[n].m_cgi      = "sortby=2";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		++menuNum;
 
@@ -4932,7 +4945,7 @@ static bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) {
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Any language";
 		s_mi[n].m_cgi      = "qlang=xx";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		for ( int32_t i = 0 ; i < langLast ; i++ ) {
 			s_mi[n].m_menuNum  = menuNum;
@@ -4940,7 +4953,7 @@ static bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) {
 			const char *abbr = getLanguageAbbr(i);
 			snprintf(s_mi[n].m_tmp,10,"qlang=%s",abbr);
 			s_mi[n].m_cgi      = s_mi[n].m_tmp;
-			n++;
+			n = getNextMenuEntryIndex(n);
 		}
 
 		++menuNum;
@@ -4949,52 +4962,52 @@ static bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) {
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Any filetype";
 		s_mi[n].m_cgi      = "filetype=any";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "HTML";
 		s_mi[n].m_cgi      = "filetype=html";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "TEXT";
 		s_mi[n].m_cgi      = "filetype=txt";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "PDF";
 		s_mi[n].m_cgi      = "filetype=pdf";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Microsoft Word";
 		s_mi[n].m_cgi      = "filetype=doc";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "XML";
 		s_mi[n].m_cgi      = "filetype=xml";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "JSON";
 		s_mi[n].m_cgi      = "filetype=json";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Excel";
 		s_mi[n].m_cgi      = "filetype=xls";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "PostScript";
 		s_mi[n].m_cgi      = "filetype=ps";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Spider Status";
 		s_mi[n].m_cgi      = "filetype=status";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		++menuNum;
 
@@ -5002,22 +5015,22 @@ static bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) {
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Output HTML";
 		s_mi[n].m_cgi      = "format=html";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Output XML";
 		s_mi[n].m_cgi      = "format=xml";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Output JSON";
 		s_mi[n].m_cgi      = "format=json";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Output CSV";
 		s_mi[n].m_cgi      = "format=csv";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		++menuNum;
 
@@ -5025,12 +5038,12 @@ static bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) {
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Hide banned results";
 		s_mi[n].m_cgi      = "sb=0";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Show banned results";
 		s_mi[n].m_cgi      = "sb=1";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		++menuNum;
 
@@ -5038,12 +5051,12 @@ static bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) {
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Hide Spider Log";
 		s_mi[n].m_cgi      = "splog=0";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Show Spider Log";
 		s_mi[n].m_cgi      = "q=type:status";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		++menuNum;
 
@@ -5051,12 +5064,12 @@ static bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) {
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Family Filter Off";
 		s_mi[n].m_cgi      = "ff=0";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Family Filter On";
 		s_mi[n].m_cgi      = "ff=1";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		++menuNum;
 
@@ -5064,12 +5077,12 @@ static bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) {
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "No Meta Tags";
 		s_mi[n].m_cgi      = "dt=";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Show Meta Tags";
 		s_mi[n].m_cgi      = "dt=keywords+description";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		++menuNum;
 
@@ -5077,12 +5090,12 @@ static bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) {
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Show Admin View";
 		s_mi[n].m_cgi      = "admin=1";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Show User View";
 		s_mi[n].m_cgi      = "admin=0";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		++menuNum;
 
@@ -5090,32 +5103,32 @@ static bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) {
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "fx_country (none)";
 		s_mi[n].m_cgi      = "fx_country=";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "de";
 		s_mi[n].m_cgi      = "fx_country=de";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "dk";
 		s_mi[n].m_cgi      = "fx_country=dk";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "fr";
 		s_mi[n].m_cgi      = "fx_country=fr";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "no";
 		s_mi[n].m_cgi      = "fx_country=no";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "se";
 		s_mi[n].m_cgi      = "fx_country=se";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		++menuNum;
 
@@ -5123,37 +5136,37 @@ static bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) {
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "fx_blang (none)";
 		s_mi[n].m_cgi      = "fx_blang=";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "da";
 		s_mi[n].m_cgi      = "fx_blang=da";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "de";
 		s_mi[n].m_cgi      = "fx_blang=de";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "en";
 		s_mi[n].m_cgi      = "fx_blang=en";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "en-US";
 		s_mi[n].m_cgi      = "fx_blang=en-US";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "no";
 		s_mi[n].m_cgi      = "fx_blang=no";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "se";
 		s_mi[n].m_cgi      = "fx_blang=se";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		++menuNum;
 
@@ -5161,35 +5174,34 @@ static bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) {
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "fx_fetld (none)";
 		s_mi[n].m_cgi      = "fx_fetld=";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "com";
 		s_mi[n].m_cgi      = "fx_fetld=findx.com";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "de";
 		s_mi[n].m_cgi      = "fx_fetld=findx.de";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "dk";
 		s_mi[n].m_cgi      = "fx_fetld=findx.dk";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "no";
 		s_mi[n].m_cgi      = "fx_fetld=findx.no";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "se";
 		s_mi[n].m_cgi      = "fx_fetld=findx.se";
-		n++;
+		n = getNextMenuEntryIndex(n);
 
 		s_num = n;
-		if ( n > 200 ) { g_process.shutdownAbort(true); }
 		
 		s_init = true;
 	}

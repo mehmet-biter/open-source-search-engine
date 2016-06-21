@@ -258,11 +258,12 @@ bool Loop::addSlot ( bool forReading , int fd, void *state,
 		next = m_readSlots [ fd ];
 		m_readSlots  [ fd ] = s;
 		// if not already registered, add to list
-		if ( fd<MAX_NUM_FDS && ! FD_ISSET ( fd,&s_selectMaskRead ) ) {
+		if ( fd < MAX_NUM_FDS && ! FD_ISSET( fd,&s_selectMaskRead ) ) {
+			// sanity
+			if ( s_numReadFds >= MAX_NUM_FDS){g_process.shutdownAbort(true); return false;}
+			
 			s_readFds[s_numReadFds++] = fd;
 			FD_SET ( fd,&s_selectMaskRead  );
-			// sanity
-			if ( s_numReadFds>MAX_NUM_FDS){g_process.shutdownAbort(true);}
 		}
 		// fd == MAX_NUM_FDS if it's a sleep callback
 		//if ( fd < MAX_NUM_FDS ) {
@@ -276,10 +277,11 @@ bool Loop::addSlot ( bool forReading , int fd, void *state,
 	 	//FD_SET ( fd , &m_writefds );
 	 	// if not already registered, add to list
 	 	if ( fd<MAX_NUM_FDS && ! FD_ISSET ( fd,&s_selectMaskWrite ) ) {
+	 		// sanity
+	 		if ( s_numWriteFds>=MAX_NUM_FDS){g_process.shutdownAbort(true); return false;}
+
 	 		s_writeFds[s_numWriteFds++] = fd;
 	 		FD_SET ( fd,&s_selectMaskWrite  );
-	 		// sanity
-	 		if ( s_numWriteFds>MAX_NUM_FDS){g_process.shutdownAbort(true);}
 	 	}
 	}
 	// set our callback and state
