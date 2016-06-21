@@ -1132,7 +1132,7 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 
 	//s->m_state = NULL; // do we need this? yes, cuz s is NULL for cleanUp
 
-	if ( s && s->m_state == f ) {
+	if ( s->m_state == f ) {
 		s->m_state = NULL;
 	}
 

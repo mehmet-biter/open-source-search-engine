@@ -197,7 +197,7 @@ LIBS += -Wl,-rpath=. -L. -lcld2_full
 
 
 libcld2_full.so:
-	cd third-party/cld2/internal && CPPFLAGS="-ggdb" ./compile_libs.sh
+	cd third-party/cld2/internal && CPPFLAGS="-ggdb -std=c++98" ./compile_libs.sh
 	ln -s third-party/cld2/internal/libcld2_full.so libcld2_full.so
 
 
