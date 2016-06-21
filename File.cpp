@@ -582,18 +582,20 @@ int File::getfd () {
 		//   need to inc this guy here now, too
 		// . so when that read returns it will know to re-do
 		// . this should really be named s_openCounts!!
-		if ( fd >= 0 ) s_closeCounts [ fd ]++;
+		if ( fd >= 0 ) {
+			s_closeCounts [ fd ]++;
 
-		// . we now record this
-		// . that way if our fd gets closed in closeLeastUsed() or
-		//   in close1_r() due to a rename/unlink then we know it!
-		// . this fixes a race condition of closeCounts in Threads.cpp
-		//   where we did not know that the fd had been stolen from
-		//   us and assigned to another file because our close1_r()
-		//   had called ::close() on our fd and our closeCount algo
-		//   failed us. see the top of this file for more description
-		//   into this bug fix.
-		m_closeCount = s_closeCounts[fd];
+			// . we now record this
+			// . that way if our fd gets closed in closeLeastUsed() or
+			//   in close1_r() due to a rename/unlink then we know it!
+			// . this fixes a race condition of closeCounts in Threads.cpp
+			//   where we did not know that the fd had been stolen from
+			//   us and assigned to another file because our close1_r()
+			//   had called ::close() on our fd and our closeCount algo
+			//   failed us. see the top of this file for more description
+			//   into this bug fix.
+			m_closeCount = s_closeCounts[fd];
+		}
 	}
 
 	if ( t1 >= 0 ) {

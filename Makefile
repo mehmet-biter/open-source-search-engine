@@ -312,7 +312,7 @@ clean:
 	-rm -f *.o gb core core.* libgb.a
 	-rm -f gmon.*
 	-rm -f *.gcda *.gcno coverage*.html
-	-rm -f *.ll *.ll.out
+	-rm -f *.ll *.ll.out pstack.txt
 	-rm entities.inc
 	$(MAKE) -C test $@
 
