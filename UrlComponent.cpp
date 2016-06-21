@@ -239,12 +239,12 @@ bool UrlComponent::Validator::isValid( const UrlComponent &urlPart ) const {
 	}
 
 	if ( m_mandatoryCriteria != MANDATORY_NONE ) {
-		validMandatory = ( !m_mandatoryAlpha || ( m_mandatoryAlpha && hasAlpha ) ) &&
-		                 ( !m_mandatoryAlphaLower || ( m_mandatoryAlphaLower && ( hasAlphaHexLower || hasAlphaNoHexLower ) ) ) &&
-		                 ( !m_mandatoryAlphaUpper || ( m_mandatoryAlphaUpper && ( hasAlphaHexUpper || hasAlphaNoHexUpper ) ) ) &&
-		                 ( !m_mandatoryAlphaHex || ( m_mandatoryAlphaHex && ( hasAlphaHexLower || hasAlphaHexUpper ) ) ) &&
-		                 ( !m_mandatoryDigit || ( m_mandatoryDigit && hasDigit ) ) &&
-		                 ( !m_mandatoryPunctuation || ( m_mandatoryPunctuation && hasPunctuation ) );
+		validMandatory = ( !m_mandatoryAlpha || hasAlpha ) &&
+		                 ( !m_mandatoryAlphaLower || hasAlphaHexLower || hasAlphaNoHexLower ) &&
+		                 ( !m_mandatoryAlphaUpper || hasAlphaHexUpper || hasAlphaNoHexUpper ) &&
+		                 ( !m_mandatoryAlphaHex || hasAlphaHexLower || hasAlphaHexUpper ) &&
+		                 ( !m_mandatoryDigit || hasDigit ) &&
+		                 ( !m_mandatoryPunctuation || hasPunctuation );
 	}
 
 	return ( validAllow && validMandatory );
