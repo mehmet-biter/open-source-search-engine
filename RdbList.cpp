@@ -1425,7 +1425,8 @@ bool RdbList::constrain ( const char   *startKey    ,
 	// . if p hits or exceeds this we MUST stop
 	char *maxPtr = m_list + minRecSizes;
 	// watch out for wrap around!
-	if ( maxPtr < m_list ) maxPtr = m_listEnd;
+	if ( (intptr_t)maxPtr < (intptr_t)m_list )
+		maxPtr = m_listEnd;
 	// if mincRecSizes is -1... do not constrain on this
 	if ( minRecSizes < 0 ) maxPtr = m_listEnd;
 	// size of last rec we read in the list
@@ -1458,7 +1459,7 @@ bool RdbList::constrain ( const char   *startKey    ,
 		p += size;
 		// if size is corrupt we can breech the whole list and cause
 		// m_listSize to explode!!!
-		if ( p > m_listEnd || p < oldp ) {
+		if ( (intptr_t)p > (intptr_t)m_listEnd || (intptr_t)p < (intptr_t)oldp ) {
 			m_list      = savelist;
 			m_listPtrHi = savelistPtrHi;
 			m_listPtrLo = savelistPtrLo;
@@ -2063,7 +2064,8 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 	// maxPtr set by minRecSizes
 	const char *maxPtr = m_list + minRecSizes;
 	// watch out for wrap around
-	if ( maxPtr < m_list ) maxPtr = m_alloc + m_allocSize;
+	if ( (intptr_t)maxPtr < (intptr_t)m_list )
+		maxPtr = m_alloc + m_allocSize;
 	// don't exceed what we alloc'd though
 	if ( maxPtr > m_alloc + m_allocSize ) maxPtr = m_alloc + m_allocSize;
 
