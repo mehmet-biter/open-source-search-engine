@@ -3802,7 +3802,7 @@ bool Links::set ( bool useRelNoFollow ,
 		// to work anymore. you would need "use /etc/hosts" enabled
 		// for that to work, too.
 		bool proto = true;
-		if ( p < pend && *p == ':' ) { // && version >= 62 ) {
+		if ( p < pend && *p == ':' ) {
 			proto = false;
 			int32_t plen = p - link;
 			if ( plen == 4 && strncasecmp(link,"http" ,plen) == 0 )
