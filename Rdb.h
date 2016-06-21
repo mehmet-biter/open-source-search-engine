@@ -237,7 +237,7 @@ public:
 
 	// used for keeping track of stats
 	void      didSeek       (            ) { m_numSeeks++; }
-	void      didRead       ( int32_t bytes ) { m_numRead += bytes; }
+	void      didRead       ( int64_t bytes ) { m_numRead += bytes; }
 	void      didReSeek     (            ) { m_numReSeeks++; }
 	int64_t getNumSeeks   (            ) { return m_numSeeks; }
 	int64_t getNumReSeeks (            ) { return m_numReSeeks; }

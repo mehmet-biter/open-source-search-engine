@@ -481,7 +481,7 @@ bool Msg3::readList  ( char           rdbId         ,
 		//maps[fn]->getPageRange (startKey,endKey,minRecSizes,&p1,&p2);
 		// now get some read info
 		int64_t offset      = maps[fn]->getAbsoluteOffset ( p1 );
-		int32_t      bytesToRead = maps[fn]->getRecSizes ( p1, p2, false);
+		int64_t      bytesToRead = maps[fn]->getRecSizes ( p1, p2, false);
 		// max out the endkey for this list
 		// debug msg
 		//#ifdef _DEBUG_		
@@ -497,19 +497,18 @@ bool Msg3::readList  ( char           rdbId         ,
 			base->m_rdb->didSeek (             );
 			base->m_rdb->didRead ( bytesToRead );
 		}
+
 		// . the startKey may be different for each RdbScan class
 		// . RdbLists must have all keys within their [startKey,endKey]
 		// . therefore set startKey individually from first page in map
 		// . this endKey must be >= m_endKey 
 		// . this startKey must be < m_startKey
-		//key_t startKey = maps[fn]->getKey ( p1 );
-		//key_t endKey   = maps[fn]->getKey ( p2 );
 		char startKey2 [ MAX_KEY_BYTES ];
 		char endKey2   [ MAX_KEY_BYTES ];
+
 		maps[fn]->getKey ( p1 , startKey2 );
 		maps[fn]->getKey ( p2 , endKey2 );
-		//char *startKey = maps[fn]->getKeyPtr ( p1 );
-		//char *endKey   = maps[fn]->getKeyPtr ( p2 );
+
 		// store in here
 		m_startpg [ i ] = p1;
 		m_endpg   [ i ] = p2;
@@ -566,13 +565,13 @@ bool Msg3::readList  ( char           rdbId         ,
 		// timing debug
 		if ( g_conf.m_logTimingDb )
 			log(LOG_TIMING,
-			    "net: msg: reading %" PRId32" bytes from %s file #%" PRId32" "
+			    "net: msg: reading %" PRId64" bytes from %s file #%" PRId32" "
 			     "(niceness=%" PRId32")",
 			     bytesToRead,base->m_dbname,i,m_niceness);
 
 		// log huge reads, those hurt us
 		if ( bytesToRead > 150000000 ) {
-			logf(LOG_INFO,"disk: Reading %" PRId32" bytes at offset %" PRId64" "
+			logf(LOG_INFO,"disk: Reading %" PRId64" bytes at offset %" PRId64" "
 			    "from %s.",
 			    bytesToRead,offset,base->m_dbname);
 		}
