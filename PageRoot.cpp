@@ -834,7 +834,7 @@ static bool printWebHomePage ( SafeBuf &sb , HttpRequest *r , TcpSocket *sock ) 
 	sb.safePrintf("\n");
 
 
-	if ( cr && cr->m_coll ) { // && strcmp(cr->m_coll,"main") ) {
+	if ( cr ) { // && strcmp(cr->m_coll,"main") ) {
 		sb.safePrintf("<center>"
 			      "Searching the <b>%s</b> collection."
 			      "</center>",
@@ -1457,7 +1457,6 @@ static void doneInjectingWrapper3 ( void *st ) {
 	
 	// collection name
 	const char *coll = st1->m_coll;
-	if ( ! coll ) coll = "";
 
 	//char tt [ 128 ];
 	//tt[0] = '\0';

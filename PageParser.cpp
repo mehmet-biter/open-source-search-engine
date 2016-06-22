@@ -652,7 +652,7 @@ bool processLoop ( void *state ) {
 		// . save the ips.txt file if we are the test coll
 		// . saveTestBuf() is a function in Msge1.cpp
 		CollectionRec *cr = xd->getCollRec();
-		if ( cr && cr->m_coll && !strcmp(cr->m_coll,"qatest123"))
+		if ( cr && !strcmp(cr->m_coll,"qatest123"))
 			// use same dir that XmlDoc::getTestDir() would use
 			//saveTestBuf ( "test-page-parser" );
 			saveTestBuf("qa");
