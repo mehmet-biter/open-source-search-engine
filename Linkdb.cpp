@@ -4995,7 +4995,8 @@ bool isPermalink ( Links       *links        ,
 
 	// http://www.retailerdaily.com/cat/search-engine-marketing/
 	if (gb_strcasestr(u->getPath(), "/cat/")){
-		if ( note ) *note = "has /cat/"; return false;
+		if ( note ) *note = "has /cat/";
+		return false;
 	}
 
 	if (gb_strcasestr(u->getPath(), "/comment.html")){
@@ -5048,7 +5049,8 @@ bool isPermalink ( Links       *links        ,
 
 	// more index page detection
 	if (gb_strcasestr(u->getPath(), "/default.")){
-		if ( note ) *note = "has /default."; return false;
+		if ( note ) *note = "has /default.";
+		return false;
 	}
 
 	if (gb_strcasestr(u->getPath(), "/profile.")){

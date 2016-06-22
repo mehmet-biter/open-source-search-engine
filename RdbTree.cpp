@@ -84,7 +84,9 @@ bool RdbTree::set ( int32_t fixedDataSize ,
 	// a malloc tag, must be LESS THAN 16 bytes including the NULL
 	char *p = m_memTag;
 	gbmemcpy  ( p , "RdbTree" , 7 ); p += 7;
-	if ( dbname ) strncpy ( p , dbname    , 8 ); p += 8;
+	if ( dbname ) strncpy ( p , dbname    , 8 );
+	p += 8;
+
 	*p++ = '\0';
 	// set rdbid
 	m_rdbId = rdbId; // -1;

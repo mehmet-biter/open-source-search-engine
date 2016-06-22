@@ -862,7 +862,8 @@ void sleepWrapper1 ( int bogusfd , void    *state ) {
 		// this should just be for when a host goes down, not for
 		// performance reasons, cuz we do pretty good load balancing
 		// and when things get saturated, rerouting excacerbates it
-		if ( elapsed <  8000 ) return; break;
+		if ( elapsed <  8000 ) return;
+		break;
 	// msg to get a clusterdb rec
 	case 0x38: if ( elapsed <  2000 ) return; break;
 	// msg to get docIds from a query, may take a while

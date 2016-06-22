@@ -19435,27 +19435,48 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 	if ( ! xml ) return true;
 
 	char *ict = getIsContentTruncated();
-	if ( ! ict ) return true; if ( ict == (char *)-1 ) return false;
+	if ( ! ict ) return true;
+	if ( ict == (char *)-1 ) return false;
+
 	char *at = getIsAdult();
-	if ( ! at ) return true; if ( at == (void *)-1 ) return false;
+	if ( ! at ) return true;
+	if ( at == (void *)-1 ) return false;
+
 	char *ls = getIsLinkSpam();
-	if ( ! ls ) return true; if ( ls == (void *)-1 ) return false;
+	if ( ! ls ) return true;
+	if ( ls == (void *)-1 ) return false;
+
 	uint8_t *ct = getContentType();
-	if ( ! ct ) return true; if ( ct == (void *)-1 ) return false;
+	if ( ! ct ) return true;
+	if ( ct == (void *)-1 ) return false;
+
 	uint16_t *cs = getCharset ( );
-	if ( ! cs ) return true; if ( cs == (uint16_t *)-1 ) return false;
+	if ( ! cs ) return true;
+	if ( cs == (uint16_t *)-1 ) return false;
+
 	char *pl = getIsPermalink();
-	if ( ! pl ) return true; if ( pl == (char *)-1 ) return false;
+	if ( ! pl ) return true;
+	if ( pl == (char *)-1 ) return false;
+
 	char *isRSS   = getIsRSS();
-	if ( ! isRSS ) return true; if ( isRSS == (char  *)-1 )  return false;
+	if ( ! isRSS ) return true;
+	if ( isRSS == (char  *)-1 )  return false;
+
 	int32_t *ip = getIp();
-	if ( ! ip ) return true; if ( ip == (int32_t *)-1 ) return false;
+	if ( ! ip ) return true;
+	if ( ip == (int32_t *)-1 ) return false;
+
 	uint8_t *li = getLangId();
-	if ( ! li ) return true; if ( li == (uint8_t *)-1 ) return false;
+	if ( ! li ) return true;
+	if ( li == (uint8_t *)-1 ) return false;
+
 	uint16_t *cid = getCountryId();
-	if ( ! cid ) return true; if ( cid == (uint16_t *)-1 ) return false;
+	if ( ! cid ) return true;
+	if ( cid == (uint16_t *)-1 ) return false;
+
 	LinkInfo   *info1  = getLinkInfo1();
-	if ( ! info1 ) return true; if ( info1 == (void *)-1 ) return false;
+	if ( ! info1 ) return true;
+	if ( info1 == (void *)-1 ) return false;
 
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) return true;
@@ -19762,7 +19783,8 @@ bool XmlDoc::printSiteInlinks ( SafeBuf *sb , HttpRequest *hr ) {
 	// we need to re-get both if either is NULL
 	LinkInfo *sinfo = getSiteLinkInfo();
 	// block or error?
-	if ( ! sinfo ) return true; if ( sinfo == (LinkInfo *)-1) return false;
+	if ( ! sinfo ) return true;
+	if ( sinfo == (LinkInfo *)-1) return false;
 
 	int32_t isXml = hr->getLong("xml",0);
 
@@ -19791,7 +19813,8 @@ bool XmlDoc::printPageInlinks ( SafeBuf *sb , HttpRequest *hr ) {
 	// we need to re-get both if either is NULL
 	LinkInfo *info1 = getLinkInfo1();
 	// block or error?
-	if ( ! info1 ) return true; if ( info1 == (LinkInfo *)-1) return false;
+	if ( ! info1 ) return true;
+	if ( info1 == (LinkInfo *)-1) return false;
 
 	int32_t isXml = hr->getLong("xml",0);
 
@@ -19830,14 +19853,20 @@ bool XmlDoc::printRainbowSections ( SafeBuf *sb , HttpRequest *hr ) {
 	// PRINT SECTIONS
 	//
 	Sections *sections = getSections();
-	if ( ! sections) return true;if (sections==(Sections *)-1)return false;
+	if ( ! sections) return true;
+	if (sections==(Sections *)-1)return false;
 
 	Words *words = getWords();
-	if ( ! words ) return true; if ( words == (Words *)-1 ) return false;
+	if ( ! words ) return true;
+	if ( words == (Words *)-1 ) return false;
+
 	Phrases *phrases = getPhrases();
-	if ( ! phrases ) return true; if (phrases == (void *)-1 ) return false;
+	if ( ! phrases ) return true;
+	if (phrases == (void *)-1 ) return false;
+
 	HashTableX *cnt = getCountTable();
-	if ( ! cnt ) return true; if ( cnt == (void *)-1 ) return false;
+	if ( ! cnt ) return true;
+	if ( cnt == (void *)-1 ) return false;
 
 
 	int32_t nw = words->getNumWords();
@@ -19993,7 +20022,8 @@ bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {
 	m_useSpiderdb = false;
 
 	char *metaList = getMetaList ( );
-	if ( ! metaList ) return true; if (metaList==(char *) -1) return false;
+	if ( ! metaList ) return true;
+	if (metaList==(char *) -1) return false;
 
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) return false;
@@ -20379,7 +20409,8 @@ bool XmlDoc::printSpiderStats ( SafeBuf *sb , HttpRequest *hr ) {
 bool XmlDoc::printCachedPage ( SafeBuf *sb , HttpRequest *hr ) {
 
 	char **c = getUtf8Content();
-	if ( ! c ) return true; if ( c==(void *)-1) return false;
+	if ( ! c ) return true;
+	if ( c==(void *)-1) return false;
 
 	int32_t isXml = hr->getLong("xml",0);
 
