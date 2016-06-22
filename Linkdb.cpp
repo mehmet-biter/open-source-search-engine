@@ -3144,9 +3144,11 @@ static LinkInfo *makeLinkInfo ( const char        *coll                    ,
 		Inlink k;
 		// store it. our ptrs will reference into the Msg20Reply buf
 		k.set ( r );
+
 		// . this will copy itself into "p"
 		// . "true" --> makePtrsRefNewBuf
-		int32_t wrote;
+		int32_t wrote = 0;
+
 		char *s = k.serialize ( &wrote , p , pend - p , true );
 		// sanity check
 		if ( s != p ) { g_process.shutdownAbort(true); }

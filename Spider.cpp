@@ -2513,7 +2513,7 @@ int32_t getUrlFilterNum ( 	SpiderRequest	*sreq,
 	int32_t  urlLen = sreq->getUrlLen();
 	char *url    = sreq->m_url;
 
-	char *row;
+	char *row = NULL;
 	bool checkedRow = false;
 	//SpiderColl *sc = cr->m_spiderColl;
 	SpiderColl *sc = g_spiderCache.getSpiderColl(cr->m_collnum);
@@ -3694,22 +3694,28 @@ checkNextRule:
 		if ( *p=='s' && strncmp(p, "sitenuminlinks", 14) == 0){
 			// these are -1 if they are NOT valid
 			int32_t a1 = sreq->m_siteNumInlinks;
+
 			// only assign if valid
 			int32_t a2 = -1; 
 			if ( srep ) a2 = srep->m_siteNumInlinks;
+
 			// assume a1 is the best
-			int32_t a ;
+			int32_t a = -1;
+
 			// assign to the first valid one
 			if      ( a1 != -1 ) a = a1;
 			else if ( a2 != -1 ) a = a2;
+
 			// swap if both are valid, but srep is more recent
-			if ( a1 != -1 && a2 != -1 &&
-			     srep->m_spideredTime > sreq->m_addedTime )
+			if ( a1 != -1 && a2 != -1 && srep->m_spideredTime > sreq->m_addedTime )
 				a = a2;
+
 			// skip if nothing valid
 			if ( a == -1 ) continue;
+
 			// make it point to the priority
 			int32_t b = atoi(s);
+
 			// compare
 			if ( sign == SIGN_EQ && a != b ) continue;
 			if ( sign == SIGN_NE && a == b ) continue;

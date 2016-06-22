@@ -5514,7 +5514,7 @@ Url **XmlDoc::getRedirUrl() {
 			size_redirUrl   = m_redirUrl.getUrlLen()+1;
 
 			/// @todo ALC should we use EDOCSIMPLIFIEDREDIR
-			// m_redirError = EDOCSIMPLIFIEDREDIR
+			// m_redirError = EDOCSIMPLIFIEDREDIR;
 
 			// no error
 			m_redirError = 0;
