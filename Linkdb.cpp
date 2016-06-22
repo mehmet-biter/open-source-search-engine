@@ -2056,10 +2056,8 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 		m_round++;
 		// note it
 		const char *ms = "page";
-		char *id = m_url;
 		if ( m_mode == MODE_SITELINKINFO ) {
 			ms = "site";
-			id = m_site;
 		}
 		// debug
 		if ( g_conf.m_logDebugLinkInfo ) {

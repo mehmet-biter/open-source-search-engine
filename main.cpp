@@ -2498,8 +2498,6 @@ int scale ( char *newHostsConf , bool useShotgunIp) {
 	//   where h2 is in a derivative group of h.
 	// . do a quick monte carlo test to make sure that a key in old
 	//   group #0 maps to groups 0,8,16,24 for all keys and all dbs
-	uint32_t shard1;
-	uint32_t shard2;
 	for ( int32_t i = 0 ; i < 1000 ; i++ ) {
 		//key_t k;
 		//k.n1 = rand(); k.n0 = rand(); k.n0 <<= 32; k.n0 |= rand();
@@ -2509,10 +2507,6 @@ int scale ( char *newHostsConf , bool useShotgunIp) {
 		char k[MAX_KEY_BYTES];
 		for ( int32_t ki = 0 ; ki < MAX_KEY_BYTES ; ki++ )
 			k[ki] = rand() & 0xff;
-
-		// get old group (groupId1) and new group (groupId2)
-		shard1 = hdb1->getShardNum ( RDB_TITLEDB , k );//, hdb1 );
-		shard2 = hdb2->getShardNum( RDB_TITLEDB , k );//, hdb2 );
 	}
 
 	// . now copy all titleRecs in old hosts to all derivatives
@@ -5170,9 +5164,6 @@ bool pingTest ( int32_t hid , uint16_t clientPort ) {
 	int32_t recovered = 0;
 	int32_t acks      = 0;
 	int32_t replies   = 0;
-
-	int32_t ip = h->m_ip;
-	ip = atoip("127.0.0.1",9);
 
 	memset(&to,0,sizeof(to));
 	to.sin_family      = AF_INET;

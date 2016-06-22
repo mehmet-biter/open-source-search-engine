@@ -179,7 +179,6 @@ int32_t Wiki::getNumWordsInWikiPhrase ( int32_t i, const Words *w ) {
 	const char * const *wptrs = w->getWords();
 	const int32_t  *wlens = w->getWordLens();
 	// how many in the phrase
-	int32_t max = -1;
 	int32_t maxCount = 0;
 	// accumulate a hash of the word ids
 	//int64_t h      = 0LL;
@@ -227,7 +226,6 @@ int32_t Wiki::getNumWordsInWikiPhrase ( int32_t i, const Words *w ) {
 		}
 		if ( ! vp ) continue;
 		// we got a match
-		max = j;
 		maxCount = wcount;
 	}
 	// return now if we got one
