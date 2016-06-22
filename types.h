@@ -398,6 +398,7 @@ inline char KEYCMP ( const char *k1, const char *k2, char keySize ) {
 		return 0;
 	}
 	gbshutdownAbort(true);
+	/*NOTREACHED*/
 	return 0;
 }
 
@@ -499,6 +500,7 @@ inline char KEYCMPNEGEQ ( const char *k1, const char *k2, char keySize ) {
 		return 0;
 	}
 	gbshutdownAbort(true);
+	/*NOTREACHED*/
 	return 0;
 }
 
@@ -548,6 +550,7 @@ static inline char *KEYSTR ( const void *vk , int32_t ks ) {
 static inline uint16_t KEY0 ( const char *k , int32_t ks ) {
 	if ( ks == 18 ) return *(const uint16_t *)k;
 	else { gbshutdownAbort(true); }
+	/*NOTREACHED*/
 	return 0;
 }
 
@@ -561,6 +564,7 @@ static inline int64_t KEY1 ( const char *k , char keySize ) {
 static inline int64_t KEY2 ( const char *k , char keySize ) {
 	if ( keySize == 18 ) return *(const int64_t *)(k+10);
 	gbshutdownAbort(true);
+	/*NOTREACHED*/
 	return 0;
 }
 
@@ -610,6 +614,7 @@ static inline void KEYSET ( char *k1, const char *k2, char keySize ) {
 	//	return;
 	//}
 	gbshutdownAbort(true);
+	/*NOTREACHED*/
 	return;
 }
 
@@ -641,6 +646,7 @@ static inline bool KEYNEG ( const char *k, int32_t a, char keySize ) {
 		return false;
 	}
 	gbshutdownAbort(true);
+	/*NOTREACHED*/
 	return false;
 }
 
