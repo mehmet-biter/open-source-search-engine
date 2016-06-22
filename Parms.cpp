@@ -1755,8 +1755,6 @@ bool Parms::printParm ( SafeBuf* sb,
 					 "<td>%" PRId32"</td>\n<td>",
 					 bgc,
 					 j );//j+1
-		else if ( firstInRow )
-			sb->safePrintf ( "<tr><td>" );
 		else
 			//sb->safePrintf ( "<td%s>" , vt);
 			sb->safePrintf ( "<td>" );
