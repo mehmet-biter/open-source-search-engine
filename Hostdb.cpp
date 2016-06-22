@@ -425,7 +425,7 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 				      is_alnum_a(*p) ; p++ );
 			hlen2 = p - hostname2;
 		}
-		int32_t inc = 0;
+
 		int32_t ip2 = 0;
 		// was it "retired"?
 		if ( hostname2 && strncasecmp(hostname2,"retired",7) == 0 ) {
@@ -474,12 +474,7 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 		if ( ! ip2 ) ip2 = ip;
 		// store the ip, the eth1 ip
 		h->m_ipShotgun = ip2; // nextip;
-		// . "p" should not point to first char after hostname
-		// . a special inc
-		inc = 0;
-		if ( useTmpCluster ) inc = 1;
-		// proxies never get their port inc'd
-		if ( h->m_type & (HT_ALL_PROXIES) ) inc = 0;
+
 		// . now p should point to first char after hostname
 		// . skip spaces and tabs
 		while ( *p && (*p==' '|| *p=='\t') )p++;
@@ -1028,13 +1023,8 @@ bool Hostdb::hashHosts ( ) {
 }
 
 bool Hostdb::hashHost (	bool udp , Host *h , uint32_t ip , uint16_t port ) {
-
 	Host *hh = NULL;
 	if ( udp ) hh = getHost ( ip , port );
-
-	// debug
-	const char *hs = "unknown.conf";
-	if ( this == &g_hostdb  ) hs = "hosts.conf";
 
 	if ( hh && port ) { 
 		log("db: Must hash hosts.conf first, then hosts2.conf.");
