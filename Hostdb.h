@@ -261,7 +261,7 @@ class Hostdb {
 	// if config changes this *should* change
 	int32_t getCRC();
 
-	char *getNetName ( );
+	const char *getNetName ( );
 
 	Hostdb();
 	~Hostdb();

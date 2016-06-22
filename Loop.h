@@ -19,7 +19,7 @@
 #define QUERYPRIORITYWEIGHT 16
 #define QUICKPOLL_INTERVAL 10
 
-int gbsystem(char *cmd);
+int gbsystem(const char *cmd);
 FILE* gbpopen(char* cmd);
 
 

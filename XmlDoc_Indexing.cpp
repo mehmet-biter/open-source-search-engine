@@ -1506,7 +1506,7 @@ bool XmlDoc::hashIncomingLinkText ( HashTableX *tt               ,
 	// sanity check
 	if ( hashAnomalies == hashNonAnomalies ) { g_process.shutdownAbort(true); }
 	// display this note in page parser
-	char *note = "hashing incoming link text";
+	const char *note = "hashing incoming link text";
 	// sanity
 	if ( ! m_linkInfo1Valid ) { g_process.shutdownAbort(true); }
 
@@ -2554,7 +2554,7 @@ bool XmlDoc::hashFieldMatchTerm ( char *val , int32_t vlen , HashInfo *hi ) {
 	uint64_t composite = hash64 ( val64 , middlePrefix );
 
         // hash that with "gbfieldmatch"
-	char *prefix = "gbfieldmatch";
+	const char *prefix = "gbfieldmatch";
 	uint64_t prefixHash = hash64n ( prefix );
 	uint64_t ph2 = hash64 ( composite , prefixHash );
 
@@ -2671,7 +2671,7 @@ bool XmlDoc::hashNumberForSorting ( const char *beginBuf ,
 	return true;
 }
 
-bool XmlDoc::hashNumberForSortingAsInt32 ( int32_t n , HashInfo *hi , char *sortByStr ) {
+bool XmlDoc::hashNumberForSortingAsInt32 ( int32_t n , HashInfo *hi , const char *sortByStr ) {
 
 	// prefix is something like price. like the meta "name" or
 	// the json name with dots in it like "product.info.price" or something

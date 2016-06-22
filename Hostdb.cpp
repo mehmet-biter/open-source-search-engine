@@ -67,7 +67,7 @@ void Hostdb::reset ( ) {
 	m_syncHost          = NULL;
 }
 
-char *Hostdb::getNetName ( ) {
+const char *Hostdb::getNetName ( ) {
 	if ( this == &g_hostdb ) return "default";
 	return m_netName;
 }
@@ -1033,7 +1033,7 @@ bool Hostdb::hashHost (	bool udp , Host *h , uint32_t ip , uint16_t port ) {
 	if ( udp ) hh = getHost ( ip , port );
 
 	// debug
-	char *hs = "unknown.conf";
+	const char *hs = "unknown.conf";
 	if ( this == &g_hostdb  ) hs = "hosts.conf";
 
 	if ( hh && port ) { 

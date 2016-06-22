@@ -1140,7 +1140,7 @@ void Loop::wakeupPollLoop() {
 }
 
 
-int gbsystem(char *cmd ) {
+int gbsystem(const char *cmd ) {
 	g_loop.disableQuickpollTimer();
 	log("gb: running system(\"%s\")",cmd);
 	int ret = system(cmd);

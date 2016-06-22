@@ -573,7 +573,7 @@ public:
 
 	bool hashNumberForSortingAsInt32 ( int32_t x,
 			   class HashInfo *hi ,
-			   char *gbsortByStr ) ;
+			   const char *gbsortByStr ) ;
 
 	// print out for PageTitledb.cpp and PageParser.cpp
 	bool printDoc ( class SafeBuf *pbuf );
