@@ -612,20 +612,6 @@ double atod2 ( char *s, int32_t len ) {
 	return ret;
 }
 
-
-bool atob ( const char *s, int32_t len ) {
-	// skip over spaces
-	const char *end = s + len;
-	while ( s < end && is_wspace_a ( *s ) ) s++;
-	// return false if all spaces
-	if ( s == end ) return false;
-	// parse the ascii bool value
-	if ( s[0] == 't' || s[1] == 'T' ) return true;
-	if ( s[0] == 'y' || s[0] == 'y' ) return true;
-	if ( ! is_digit ( *s ) || *s == '0' ) return false;
-	return true;
-}
-
 // convert hex ascii string into binary at "dst"
 void hexToBin ( const char *src , int32_t srcLen , char *dst ) {
 	const char *srcEnd = src + srcLen;
