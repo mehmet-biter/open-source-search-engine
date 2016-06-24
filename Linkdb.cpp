@@ -2108,7 +2108,6 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 	makeLinkInfo ( coll            ,
 				    m_ip              ,
 				    m_siteNumInlinks  ,
-				    //m_sitePop         ,
 				    m_replyPtrs       ,
 				    m_numReplyPtrs    ,
 				    //m_numReplyPtrs, // extrapolated      ,

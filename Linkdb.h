@@ -484,7 +484,6 @@ class Msg25 {
 	void     (* m_callback) ( void *state );
 
 	int32_t m_siteNumInlinks;
-	//int32_t m_sitePop;
 	int32_t m_mode;
 	bool m_printInXml;
 

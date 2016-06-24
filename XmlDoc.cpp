@@ -5884,7 +5884,9 @@ uint8_t *XmlDoc::getRootLangId ( ) {
 
 	// sanity check ( must be like "en,50\0" or could be
 	// "en_US,50\0" or "zh_cn,50"
-	if ( tag->getTagDataSize() > 6 ) { g_process.shutdownAbort(true); }
+	if ( tag->getTagDataSize() > 6 ) {
+		g_process.shutdownAbort(true);
+	}
 
 	// point to 2 character language abbreviation
 	char *abbr = tag->getTagData();
@@ -6781,12 +6783,6 @@ int32_t *XmlDoc::getSiteNumInlinks ( ) {
 			min = g_tagdb.getMinSiteInlinks ( wwwHash32 );
 		}
 		// fix core by setting these
-		// m_siteNumInlinksUniqueIp          = 0;
-		// m_siteNumInlinksUniqueCBlock      = 0;
-		// m_siteNumInlinksTotal             = 0;
-		// m_siteNumInlinksUniqueIpValid     = true;
-		// m_siteNumInlinksUniqueCBlockValid = true;
-		// m_siteNumInlinksTotalValid        = true;
 		//a nd this
 		m_siteNumInlinksValid = true;
 		m_siteNumInlinks      = 0;
@@ -6813,13 +6809,7 @@ int32_t *XmlDoc::getSiteNumInlinks ( ) {
 	// no site inlinks
 	if ( *ip == 0 ) {
 		m_siteNumInlinks             = 0;
-		// m_siteNumInlinksUniqueIp     = 0;
-		// m_siteNumInlinksUniqueCBlock = 0;
-		// m_siteNumInlinksTotal        = 0;
 		m_siteNumInlinksValid             = true;
-		// m_siteNumInlinksUniqueIpValid     = true;
-		// m_siteNumInlinksUniqueCBlockValid = true;
-		// m_siteNumInlinksTotalValid        = true;
 		return &m_siteNumInlinks;
 	}
 
@@ -11985,8 +11975,6 @@ int32_t *XmlDoc::getSpiderPriority ( ) {
 	return &m_priority;
 }
 
-
-
 bool XmlDoc::logIt (SafeBuf *bb ) {
 
 	// set errCode
@@ -12145,10 +12133,6 @@ bool XmlDoc::logIt (SafeBuf *bb ) {
 
 	if ( m_siteNumInlinksValid ) {
 		sb->safePrintf("siteinlinks=%04" PRId32" ",m_siteNumInlinks );
-		// sb->safePrintf("siteipinlinks=%" PRId32" ",
-		// 	      m_siteNumInlinksUniqueIp);
-		// sb->safePrintf("sitecblockinlinks=%" PRId32" ",
-		// 	      m_siteNumInlinksUniqueCBlock);
 		int32_t sr = ::getSiteRank ( m_siteNumInlinks );
 		sb->safePrintf("siterank=%" PRId32" ", sr );
 	}
@@ -14890,18 +14874,7 @@ void XmlDoc::copyFromOldDoc ( XmlDoc *od ) {
 		m_ip                  = od->m_ip;
 		m_ipValid             = true;
 		m_siteNumInlinks            = od->m_siteNumInlinks;
-		// m_siteNumInlinksUniqueIp    = od->m_siteNumInlinksUniqueIp;
-		// m_siteNumInlinksUniqueCBlock= od->m_siteNumInlinksUniqueCBlo
-		// m_siteNumInlinksTotal       = od->m_siteNumInlinksTotal;
-
-		m_siteNumInlinksValid =
-			od->m_siteNumInlinksValid;
-		// m_siteNumInlinksUniqueIpValid =
-		// 	od->m_siteNumInlinksUniqueIpValid;
-		// m_siteNumInlinksUniqueCBlockValid =
-		// 	od->m_siteNumInlinksUniqueCBlockValid;
-		// m_siteNumInlinksTotal =
-		// 	od->m_siteNumInlinksTotalValid;
+		m_siteNumInlinksValid = od->m_siteNumInlinksValid;
 	}
 
 	m_indexCode      = 0;//od->m_indexCode;
