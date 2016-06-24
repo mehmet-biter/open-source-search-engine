@@ -1690,6 +1690,7 @@ void RdbList::merge_r ( RdbList **lists         ,
 	std::set<int64_t> remove_tags;
 	if ( rdbId == RDB_TAGDB ) {
 		/// @todo ALC only need this to clean out existing tagdb records. (remove once it's cleaned up!)
+		remove_tags.insert( getTagTypeFromStr( "rootlang" ) );
 		remove_tags.insert( getTagTypeFromStr( "manualfilter" ) );
 		remove_tags.insert( getTagTypeFromStr( "dateformat" ) );
 		remove_tags.insert( getTagTypeFromStr( "venueaddress" ) );

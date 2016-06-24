@@ -197,7 +197,7 @@ public:
 	
 	int8_t    m_hopCount;
 	uint8_t   m_langId;
-	uint8_t   m_rootLangId;
+	uint8_t   m_reserved6;
 	uint8_t   m_contentType;
 
 
@@ -406,7 +406,6 @@ public:
 	bool getIsPageParser ( ) ;
 	class XmlDoc **getRootXmlDoc ( int32_t maxCacheAge = 0 ) ;
 	char **getOldTitleRec ( );
-	uint8_t *getRootLangId ();
 	char **getRootTitleRec ( ) ;
 	int64_t *getAvailDocIdOnly ( int64_t preferredDocId ) ;
 	int64_t *getDocId ( ) ;
@@ -731,7 +730,6 @@ public:
 	char     m_charsetValid;
 	char     m_langVectorValid;
 	char     m_langIdValid;
-	char     m_rootLangIdValid;
 	char     m_datedbDateValid;
 	char     m_isRSSValid;
 	char     m_isSiteMapValid;

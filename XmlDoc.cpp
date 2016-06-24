@@ -1162,7 +1162,6 @@ bool XmlDoc::set2 ( char    *titleRec ,
 
 	// new stuff
 	m_siteNumInlinksValid         = true;
-	m_rootLangIdValid             = true;
 	m_metaListCheckSum8Valid      = true;
 
 	m_hopCountValid               = true;
@@ -2872,8 +2871,6 @@ char *XmlDoc::prepareToMakeTitleRec ( ) {
 	if ( ! ls || ls == (void *)-1 ) return (char *)ls;
 	uint32_t *tph = getTagPairHash32();
 	if ( ! tph || tph == (uint32_t *)-1 ) return (char *)tph;
-	uint8_t *rl = getRootLangId();
-	if ( ! rl || rl == (void *)-1 ) return (char *)rl;
 
 	m_prepared = true;
 	return (char *)1;
@@ -3104,7 +3101,6 @@ SafeBuf *XmlDoc::getTitleRecBuf ( ) {
 	if ( ! m_httpStatusValid             ) { g_process.shutdownAbort(true); }
 
 	if ( ! m_siteNumInlinksValid         ) { g_process.shutdownAbort(true); }
-	if ( ! m_rootLangIdValid             ) { g_process.shutdownAbort(true); }
 
 	if ( ! m_hopCountValid               ) { g_process.shutdownAbort(true); }
 	if ( ! m_metaListCheckSum8Valid      ) { g_process.shutdownAbort(true); }
@@ -5818,86 +5814,6 @@ uint16_t *XmlDoc::getCountryId ( ) {
 	m_countryId      = country;
 
 	return &m_countryId;
-}
-
-uint8_t *XmlDoc::getRootLangId ( ) {
-
-	// return it if we got it
-	if ( m_rootLangIdValid ) return &m_rootLangId;
-	// note it
-	setStatus ( "getting root lang id from tagdb");
-	// are we a root?
-	char *isRoot = getIsSiteRoot();
-	if ( ! isRoot || isRoot == (char *)-1 ) return (uint8_t *)isRoot;
-	// sanity check - should not be called on a root url
-	if ( *isRoot ) {
-		uint8_t *langId = getLangId();
-		if ( ! langId || langId == (uint8_t *)-1 )
-			return (uint8_t *) langId;
-		m_rootLangId = *langId;
-		m_rootLangIdValid = true;
-		return &m_rootLangId;
-		//g_process.shutdownAbort(true); }
-	}
-	// get the tag rec
-	TagRec *gr = getTagRec ();
-	if ( ! gr || gr == (TagRec *)-1 ) return (uint8_t *)gr;
-	// just use one. there may be multiple ones!
-	Tag *tag = gr->getTag("rootlang");
-	// if there use that
-	if ( ! tag ) {
-		// . get the root doc
- 		// . allow for a one hour cache of the titleRec
-		XmlDoc **prd = getRootXmlDoc( 3600 );
-		if ( ! prd || prd == (void *)-1 ) return (uint8_t *)prd;
-		// shortcut
-		XmlDoc *rd = *prd;
-		// . if no root doc, then assume language unknown
-		// . this happens if we are injecting because we do not want
-		//   to download the root page for speed purposes
-		if ( ! rd ) {
-			m_rootLangId = langUnknown;
-			m_rootLangIdValid = true;
-			return &m_rootLangId;
-		}
-		// . update tagdb rec
-		// . on root download error use language "xx" (unknown) to
-		//   avoid hammering the root page
-		//bool *status = rd->updateRootLangId ();
-		//if (! status || status==(void *)-1) return (uint8_t *)status;
-		// update our tag rec now
-		//Tag *tt = rd->m_newTagRec.getTag("rootlang");
-		// must be there
-		//if ( ! tt ) { g_process.shutdownAbort(true); }
-		// add it for us
-		//if ( ! m_newTagRec.addTag ( tt ) ) return NULL;
-		// get it
-		uint8_t *rl = rd->getLangId();
-		if ( ! rl || rl == (void *)-1 ) return (uint8_t *)rl;
-		// must be legit now!
-		if ( ! rd->m_langIdValid ) { g_process.shutdownAbort(true);}
-		// now validate our stuff
-		m_rootLangIdValid = true;
-		m_rootLangId      = rd->m_langId;
-		return &m_rootLangId;
-	}
-
-	// sanity check ( must be like "en,50\0" or could be
-	// "en_US,50\0" or "zh_cn,50"
-	if ( tag->getTagDataSize() > 6 ) {
-		g_process.shutdownAbort(true);
-	}
-
-	// point to 2 character language abbreviation
-	char *abbr = tag->getTagData();
-	// map it to an id
-	uint8_t langId = getLangIdFromAbbr( abbr );
-
-	// set that up
-	m_rootLangId      = langId;
-	//m_rootLangIdScore = score;
-	m_rootLangIdValid = true;
-	return &m_rootLangId;
 }
 
 XmlDoc **XmlDoc::getOldXmlDoc ( ) {
@@ -20948,10 +20864,6 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 		if ( ! grv || grv == (void *)-1 ) return (SafeBuf *)grv;
 	}
 
-	// get root langid of root page
-	uint8_t *rl = getRootLangId();
-	if ( ! rl || rl == (void *)-1 ) return (SafeBuf *)rl;
-
 	//
 	// init stuff
 	//
@@ -20988,37 +20900,6 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 	need += m_rootTitleBufSize;
 	// reserve it all now
 	if ( ! tbuf->reserve(need) ) return NULL;
-
-
-
-	//
-	// add root langid if we need to
-	//
-	const char *oldrl = gr->getString("rootlang", NULL, NULL, &timestamp);
-	// assume no valid id
-	int32_t oldrlid = -99;
-	// convert to id
-	if ( oldrl ) oldrlid = getLangIdFromAbbr ( oldrl );
-
-	// if not in old tag, or changed from what was in tag, or it has
-	// been 10 days or more, then update tagdb with this tag.
-	bool addRootLang = false;
-	if ( ! oldrl ) addRootLang = true;
-	if ( oldrlid != *rl ) addRootLang = true;
-	if ( oldrl && now-timestamp > 10*86400 ) addRootLang = true;
-	// injects do not download the root doc for speed reasons, so do not
-	// bother for them unless the doc itself is the root.
-	if ( m_wasContentInjected && !*isRoot ) addRootLang = false;
-	// . get the two letter (usually) language code from the id
-	// . i think the two chinese languages are 5 letters
-	const char *newrl = NULL;
-	if ( addRootLang )
-		// i've seen this return NULL because *rl is a corrupt 215
-		// for some reason
-		newrl = getLanguageAbbr( *rl );
-
-	if ( newrl )
-		tbuf->addTag3(mysite,"rootlang",now,"xmldoc",*ip,newrl,rdbId);
 
 	//
 	// add "site" tag
