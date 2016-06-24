@@ -930,6 +930,7 @@ static TagDesc s_tagDesc[] = {
 	//   doing the throttling, really messing things up
 	{"firstip"              ,0x00,0},
 
+	/// @todo ALC only need this until existing tagdb records is merged. (remove once it's cleaned up!)
     // As above, we can't remove the following definition unless if we're sure it's not set anymore
     // Anything below this point is unused.
 	{"manualfilter", 0x00, 0},
@@ -979,7 +980,8 @@ int32_t getTagTypeFromStr( const char *tagname , int32_t tagnameLen ) {
 
 	// sanity check, make sure it is a supported tag!
 	if ( ! s_ht.getValue ( &tagType ) ) {
-		/// @todo we should cater for deprecated/removed tagname here
+		/// @todo ALC we should cater for deprecated/removed tagname here
+		/// Probably will be better than waiting for tagdb to be merged before being able to remove old tags
 		log( "tagdb: unsupported tagname '%s'", tagname );
 		g_process.shutdownAbort(true);
 		return -1;
