@@ -162,6 +162,10 @@ void proxyHandlerWrapper ( TcpSocket *s ){
 
 bool Proxy::handleRequest (TcpSocket *s){
 
+	if( !s ) {
+		return false;
+	}
+	
 	// if we are a spider compression proxy, do not really act like
 	// a proxy at all!
 	if ( g_hostdb.m_myHost->m_type == HT_SCPROXY ) {
@@ -290,7 +294,7 @@ bool Proxy::handleRequest (TcpSocket *s){
 		int32_t bs;
 		bool st;
 		st=g_httpServer.sendErrorReply(s,500,mstrerror(g_errno),&bs);
-		return s;
+		return st;
 	}
 
 	// if we get here that means we've got something to forward.
