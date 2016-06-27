@@ -82,7 +82,6 @@ int64_t atoll1      ( const char *s ) ;
 int64_t atoll2      ( const char *s, int32_t len ) ;
 double    atof2       ( const char *s, int32_t len ) ;
 double    atod2       (       char *s, int32_t len ) ;
-bool      atob        ( const char *s, int32_t len ) ;
 
 char *strncasestr( char *haystack, int32_t haylen, const char *needle);
 static inline const char *strncasestr( const char *haystack, int32_t haylen, const char *needle) {

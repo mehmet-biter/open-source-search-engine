@@ -1557,7 +1557,7 @@ bool SpiderLoop::spiderUrl9 ( SpiderRequest *sreq ,
 	     ! m_sc->addToWaitingTree ( 0 , sreq->m_firstIp, false ) &&
 	     // must be an error...
 	     g_errno ) {
-		char *msg = "FAILED TO ADD TO WAITING TREE";
+		const char *msg = "FAILED TO ADD TO WAITING TREE";
 		log("spider: %s %s",msg,mstrerror(g_errno));
 		//us->sendErrorReply ( udpSlot , g_errno );
 		//return;
@@ -1633,7 +1633,7 @@ bool SpiderLoop::spiderUrl2 ( ) {
 	m_docs [ i ] = xd;
 
 	CollectionRec *cr = g_collectiondb.getRec ( m_collnum );
-	char *coll = "collnumwasinvalid";
+	const char *coll = "collnumwasinvalid";
 	if ( cr ) coll = cr->m_coll;
 
 	// . pass in a pbuf if this is the "qatest123" collection
@@ -2104,7 +2104,7 @@ void doneSendingNotification ( void *state ) {
 	collnum_t collnum = ei->m_collnum;
 	CollectionRec *cr = g_collectiondb.m_recs[collnum];
 	if ( cr != ei->m_collRec ) cr = NULL;
-	char *coll = "lostcoll";
+	const char *coll = "lostcoll";
 	if ( cr ) coll = cr->m_coll;
 	log(LOG_INFO,"spider: done sending notifications for coll=%s (%i)", 
 	    coll,(int)ei->m_collnum);

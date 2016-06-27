@@ -1261,15 +1261,7 @@ CollectionRec::CollectionRec() {
 
 	// clear these out so Parms::calcChecksum can work and so Parms.cpp doesn't work with uninitialized data
 	//m_regExs: ctor() done
-	memset( m_spiderFreqs, 0, sizeof(m_spiderFreqs) );
-	memset( m_spiderPriorities, 0, sizeof(m_spiderPriorities) );
-	memset( m_maxSpidersPerRule, 0, sizeof(m_maxSpidersPerRule) );
-	memset( m_spiderIpWaits, 0, sizeof(m_spiderIpWaits) );
-	memset( m_spiderIpMaxSpiders, 0, sizeof(m_spiderIpMaxSpiders) );
-	memset( m_harvestLinks, 0, sizeof(m_harvestLinks) );
-	memset( m_forceDelete, 0, sizeof(m_forceDelete) );
-
-	m_numRegExs = 0;
+	clearUrlFilters();
 
 	//m_requests = 0;
 	//m_replies = 0;
@@ -1293,6 +1285,28 @@ CollectionRec::~CollectionRec() {
 	//invalidateRegEx ();
         reset();
 }
+
+
+void CollectionRec::clearUrlFilters()
+{
+	memset( m_spiderFreqs, 0, sizeof(m_spiderFreqs) );
+	memset( m_spiderPriorities, 0, sizeof(m_spiderPriorities) );
+	memset( m_maxSpidersPerRule, 0, sizeof(m_maxSpidersPerRule) );
+	memset( m_spiderIpWaits, 0, sizeof(m_spiderIpWaits) );
+	memset( m_spiderIpMaxSpiders, 0, sizeof(m_spiderIpMaxSpiders) );
+	memset( m_harvestLinks, 0, sizeof(m_harvestLinks) );
+	memset( m_forceDelete, 0, sizeof(m_forceDelete) );
+
+	m_numRegExs				= 0;
+	m_numSpiderFreqs		= 0;
+	m_numSpiderPriorities	= 0;
+	m_numMaxSpidersPerRule	= 0;
+	m_numSpiderIpWaits		= 0;
+	m_numSpiderIpMaxSpiders	= 0;
+	m_numHarvestLinks		= 0;
+	m_numForceDelete		= 0;
+}
+
 
 void CollectionRec::reset() {
 
@@ -1472,6 +1486,7 @@ bool CollectionRec::load ( const char *coll , int32_t i ) {
 	return true;
 }
 
+
 bool CollectionRec::rebuildUrlFilters2 ( ) {
 
 	// tell spider loop to update active list
@@ -1506,10 +1521,15 @@ bool CollectionRec::rebuildUrlFilters2 ( ) {
 		rebuild = false;
 
 
-
 	//if ( m_numRegExs > 0 && strcmp(m_regExs[m_numRegExs-1],"default") )
 	//	addDefault = true;
 	if ( ! rebuild ) return true;
+
+
+	// Bugfix. Make sure all arrays are cleared so e.g. ForceDelete 
+	// entries are not 'inherited' by new filter rules because they
+	// are not set for each filter.
+	clearUrlFilters();
 
 
 	if ( !strcmp(s,"privacore" ) )
@@ -1852,9 +1872,6 @@ bool CollectionRec::rebuildPrivacoreRules () {
 	m_forceDelete        [n] = 1;		// delete!
 	n++;
 
-
-
-
 	// 3 or more non-temporary errors - delete it
 	m_regExs[n].set("errorcount>=3 && !hastmperror");
 	m_harvestLinks       [n] = 0;
@@ -1874,6 +1891,7 @@ bool CollectionRec::rebuildPrivacoreRules () {
 	m_spiderIpMaxSpiders [n] = 1; 		// max spiders per ip
 	m_spiderIpWaits      [n] = 1000; 	// same ip wait
 	m_spiderPriorities   [n] = 45;
+	m_forceDelete        [n] = 0;		// Do NOT delete
 	n++;
 
 	// 1 or more temporary errors - retry in a day
@@ -1884,8 +1902,8 @@ bool CollectionRec::rebuildPrivacoreRules () {
 	m_spiderIpMaxSpiders [n] = 1; 		// max spiders per ip
 	m_spiderIpWaits      [n] = 1000; 	// same ip wait
 	m_spiderPriorities   [n] = 45;
+	m_forceDelete        [n] = 0;		// Do NOT delete
 	n++;
-
 
 	m_regExs[n].set("isaddurl");
 	m_harvestLinks       [n] = 1;
@@ -1894,6 +1912,7 @@ bool CollectionRec::rebuildPrivacoreRules () {
 	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
 	m_spiderIpWaits      [n] = 1000; 	// same ip wait
 	m_spiderPriorities   [n] = 85;
+	m_forceDelete        [n] = 0;		// Do NOT delete
 	n++;
 
 	m_regExs[n].set("hopcount==0 && iswww && isnew");
@@ -1903,6 +1922,7 @@ bool CollectionRec::rebuildPrivacoreRules () {
 	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
 	m_spiderIpWaits      [n] = 1000; 	// same ip wait
 	m_spiderPriorities   [n] = 50;
+	m_forceDelete        [n] = 0;		// Do NOT delete
 	n++;
 
 	m_regExs[n].set("hopcount==0 && iswww");
@@ -1912,6 +1932,7 @@ bool CollectionRec::rebuildPrivacoreRules () {
 	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
 	m_spiderIpWaits      [n] = 1000; 	// same ip wait
 	m_spiderPriorities   [n] = 48;
+	m_forceDelete        [n] = 0;		// Do NOT delete
 	n++;
 
 	m_regExs[n].set("hopcount==0 && isnew");
@@ -1921,6 +1942,7 @@ bool CollectionRec::rebuildPrivacoreRules () {
 	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
 	m_spiderIpWaits      [n] = 1000; 	// same ip wait
 	m_spiderPriorities   [n] = 18;
+	m_forceDelete        [n] = 0;		// Do NOT delete
 	n++;
 
 	m_regExs[n].set("hopcount==0");
@@ -1930,8 +1952,8 @@ bool CollectionRec::rebuildPrivacoreRules () {
 	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
 	m_spiderIpWaits      [n] = 1000; 	// same ip wait
 	m_spiderPriorities   [n] = 17;
+	m_forceDelete        [n] = 0;		// Do NOT delete
 	n++;
-
 
 	m_regExs[n].set("hopcount==1 && isnew");
 	m_harvestLinks       [n] = 1;
@@ -1940,6 +1962,7 @@ bool CollectionRec::rebuildPrivacoreRules () {
 	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
 	m_spiderIpWaits      [n] = 1000; 	// same ip wait
 	m_spiderPriorities   [n] = 16;
+	m_forceDelete        [n] = 0;		// Do NOT delete
 	n++;
 
 	m_regExs[n].set("hopcount==1");
@@ -1949,8 +1972,8 @@ bool CollectionRec::rebuildPrivacoreRules () {
 	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
 	m_spiderIpWaits      [n] = 1000; 	// same ip wait
 	m_spiderPriorities   [n] = 15;
+	m_forceDelete        [n] = 0;		// Do NOT delete
 	n++;
-
 
 	m_regExs[n].set("hopcount==2 && isnew");
 	m_harvestLinks       [n] = 1;
@@ -1959,6 +1982,7 @@ bool CollectionRec::rebuildPrivacoreRules () {
 	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
 	m_spiderIpWaits      [n] = 1000; 	// same ip wait
 	m_spiderPriorities   [n] = 14;
+	m_forceDelete        [n] = 0;		// Do NOT delete
 	n++;
 
 	m_regExs[n].set("hopcount==2");
@@ -1968,9 +1992,8 @@ bool CollectionRec::rebuildPrivacoreRules () {
 	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
 	m_spiderIpWaits      [n] = 1000; 	// same ip wait
 	m_spiderPriorities   [n] = 13;
+	m_forceDelete        [n] = 0;		// Do NOT delete
 	n++;
-
-
 
 	m_regExs[n].set("hopcount>=3 && isnew");
 	m_harvestLinks       [n] = 1;
@@ -1979,6 +2002,7 @@ bool CollectionRec::rebuildPrivacoreRules () {
 	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
 	m_spiderIpWaits      [n] = 1000; 	// same ip wait
 	m_spiderPriorities   [n] = 12;
+	m_forceDelete        [n] = 0;		// Do NOT delete
 	n++;
 
 	m_regExs[n].set("hopcount>=3");
@@ -1988,8 +2012,8 @@ bool CollectionRec::rebuildPrivacoreRules () {
 	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
 	m_spiderIpWaits      [n] = 1000; 	// same ip wait
 	m_spiderPriorities   [n] = 11;
+	m_forceDelete        [n] = 0;		// Do NOT delete
 	n++;
-
 
 	m_regExs[n].set("default");
 	m_harvestLinks       [n] = 1;
@@ -1998,6 +2022,7 @@ bool CollectionRec::rebuildPrivacoreRules () {
 	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
 	m_spiderIpWaits      [n] = 1000; 	// same ip wait
 	m_spiderPriorities   [n] = 1;
+	m_forceDelete        [n] = 0;		// Do NOT delete
 	n++;
 
 

@@ -497,7 +497,6 @@ bool Images::downloadImages () {
 
 	int32_t  srcLen;
 	char *src = NULL;
-	int32_t node;
 
 	// . download each leftover image
 	// . stop as soon as we get one with good dimensions
@@ -515,8 +514,7 @@ bool Images::downloadImages () {
 			// advance
 			m_phase++;
 			// only if not diffbot, we set "src" above for it
-			// get img tag node
-			node = m_imageNodes[m_j];
+
 			// get the url of the image
 			src = getImageUrl ( m_j , &srcLen );
 			// use "pageUrl" as the baseUrl

@@ -528,9 +528,13 @@ int32_t getMonth ( const char *s ) {
 // . s = "xx:xx:xx"
 void getTime ( const char *s , int *sec , int *min , int *hour ) {
 	*hour = atol ( s );	
-	while ( isdigit ( *s ) ) s++;  if ( *s == ':' ) s++;
+
+	while ( isdigit ( *s ) ) s++;
+	if ( *s == ':' ) s++;
 	*min  = atol ( s );
-	while ( isdigit ( *s ) ) s++;  if ( *s == ':' ) s++;
+
+	while ( isdigit ( *s ) ) s++;
+	if ( *s == ':' ) s++;
 	*sec  = atol ( s );
 }
 

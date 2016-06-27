@@ -2056,10 +2056,8 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 		m_round++;
 		// note it
 		const char *ms = "page";
-		char *id = m_url;
 		if ( m_mode == MODE_SITELINKINFO ) {
 			ms = "site";
-			id = m_site;
 		}
 		// debug
 		if ( g_conf.m_logDebugLinkInfo ) {
@@ -2110,7 +2108,6 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 	makeLinkInfo ( coll            ,
 				    m_ip              ,
 				    m_siteNumInlinks  ,
-				    //m_sitePop         ,
 				    m_replyPtrs       ,
 				    m_numReplyPtrs    ,
 				    //m_numReplyPtrs, // extrapolated      ,
@@ -3146,9 +3143,11 @@ static LinkInfo *makeLinkInfo ( const char        *coll                    ,
 		Inlink k;
 		// store it. our ptrs will reference into the Msg20Reply buf
 		k.set ( r );
+
 		// . this will copy itself into "p"
 		// . "true" --> makePtrsRefNewBuf
-		int32_t wrote;
+		int32_t wrote = 0;
+
 		char *s = k.serialize ( &wrote , p , pend - p , true );
 		// sanity check
 		if ( s != p ) { g_process.shutdownAbort(true); }
@@ -4754,11 +4753,16 @@ bool isPermalink ( Links       *links        ,
 	if ( ! u ) return false;
 
 	// rss feeds cannot be permalinks
-	if ( isRSS ) { if ( note ) *note = "url is rss feed."; return false; }
+	if ( isRSS ) {
+		if ( note ) *note = "url is rss feed.";
+		return false;
+	}
 
 	// root pages don't get to be permalinks
 	if ( u->isRoot() ) {
-		if ( note ) *note = "url is a site root";	return false; }
+		if ( note ) *note = "url is a site root";
+		return false;
+	}
 	
 	// are we a "site root" i.e. hometown.com/users/fred/ etc.
 	//if ( u->isSiteRoot ( coll ) ) {
@@ -4766,17 +4770,23 @@ bool isPermalink ( Links       *links        ,
 		
 	// only html (atom feeds link to themselves)
 	if ( contentType != CT_HTML) {
-		if ( note ) *note = "content is not html"; return false;}
+		if ( note ) *note = "content is not html";
+		return false;
+	}
 
 	// techcrunch has links like this in the rss:
 	// http://feedproxy.google.com/~r/Techcrunch/~3/pMaRh78u1W8/
 	if ( strncmp(u->getHost(),"feedproxy.",10)==0 ) {
-		if ( note ) *note = "from feedproxy host"; return true; }
+		if ( note ) *note = "from feedproxy host";
+		return true;
+	}
+
 	// might want to get <feedburner:origLink> instead of <link> if
 	// we can. that woudl save a redirect through evil g
 	if ( strncmp(u->getHost(),"feeds.feedburner.com/~",22)==0 ) {
-		if ( note ) *note = "feedburner tilde url"; return true; }
-	
+		if ( note ) *note = "feedburner tilde url";
+		return true;
+	}
 
 
 	// . BUT if it has a link to itself on digg, reddit, etc. then it
@@ -4967,55 +4977,105 @@ bool isPermalink ( Links       *links        ,
 	// permalink!!! i took technorati.com|jp out of ruleset 36 for now
 	// ah, but a ton of the urls have /tags/ and are NOT permalinks!!!
 	if (gb_strcasestr(u->getPath(), "/tag/")){
-		if ( note ) *note = "has /tag/"; return false;}
+		if ( note ) *note = "has /tag/";
+		return false;
+	}
+
 	// no forums or category indexes
 	if (gb_strcasestr(u->getPath(), "/category")){
-		if ( note ) *note = "has /category"; return false;}
+		if ( note ) *note = "has /category";
+		return false;
+	}
+
 	if (gb_strcasestr(u->getPath(), "/cat_")){
-		if ( note ) *note = "has /cat_"; return false;}
+		if ( note ) *note = "has /cat_";
+		return false;
+	}
+
 	// http://www.retailerdaily.com/cat/search-engine-marketing/
 	if (gb_strcasestr(u->getPath(), "/cat/")){
-		if ( note ) *note = "has /cat/"; return false;}
+		if ( note ) *note = "has /cat/";
+		return false;
+	}
+
 	if (gb_strcasestr(u->getPath(), "/comment.html")){
-		if ( note ) *note = "has /comment.html"; return false;}
+		if ( note ) *note = "has /comment.html";
+		return false;
+	}
+
 	if (gb_strcasestr(u->getPath(), "/comments/")){
-		if ( note ) *note = "has /comments/"; return false;}
+		if ( note ) *note = "has /comments/";
+		return false;
+	}
 	
 
 	char *pos;
 	// category or tag page detection
 	pos = gb_strcasestr(u->getUrl(), "cat=");
 	if ( pos && pos > u->getUrl() && !is_alpha_a(*(pos-1))){
-		if ( note ) *note = "has [A-z]cat="; return false;}
+		if ( note ) *note = "has [A-z]cat=";
+		return false;
+	}
+
 	pos = gb_strcasestr(u->getUrl(), "tag=");
 	if ( pos && pos > u->getUrl() && !is_alpha_a(*(pos-1))){
-		if ( note ) *note = "has [A-z]tag="; return false;}
+		if ( note ) *note = "has [A-z]tag=";
+		return false;
+	}
+
 	pos = gb_strcasestr(u->getUrl(), "tags=");
 	if ( pos && pos > u->getUrl() && !is_alpha_a(*(pos-1))){
-		if ( note ) *note = "has [A-z]tags="; return false;}
+		if ( note ) *note = "has [A-z]tags=";
+		return false;
+	}
 
 	// more forum detection
 	if (gb_strcasestr(u->getUrl(), "forum")){
-		if ( note ) *note = "has forum"; return false;}
+		if ( note ) *note = "has forum";
+		return false;
+	}
+
 	if (gb_strcasestr(u->getPath(), "thread")){
-		if ( note ) *note = "has thread";	return false;}
+		if ( note ) *note = "has thread";
+		return false;
+	}
+
 	if (gb_strcasestr(u->getPath(), "topic") &&
-	    !gb_strcasestr(u->getPath(), "/topics/")){
-		if ( note ) *note = "has /topics/"; return false;}
+	    !gb_strcasestr(u->getPath(), "/topics/")) {
+		if ( note ) *note = "has /topics/";
+		return false;
+	}
 
 	// more index page detection
 	if (gb_strcasestr(u->getPath(), "/default.")){
-		if ( note ) *note = "has /default."; return false;}
+		if ( note ) *note = "has /default.";
+		return false;
+	}
+
 	if (gb_strcasestr(u->getPath(), "/profile.")){
-		if ( note ) *note = "has /profile."; return false;}
+		if ( note ) *note = "has /profile.";
+		return false;
+	}
+
 	if (gb_strcasestr(u->getPath(), "/archives.")){
-		if ( note ) *note = "has /archives."; return false;}
+		if ( note ) *note = "has /archives.";
+		return false;
+	}
+
 	if (gb_strcasestr(u->getPath(), "_archive.")){
-		if ( note ) *note = "has _archive."; return false;}
+		if ( note ) *note = "has _archive.";
+		return false;
+	}
+
 	if (gb_strcasestr(u->getPath(), "/search.")){
-		if ( note ) *note = "has /search."; return false; }
+		if ( note ) *note = "has /search.";
+		return false;
+	}
+
 	if (gb_strcasestr(u->getPath(), "/search/")){
-		if ( note ) *note = "has /search/"; return false; }
+		if ( note ) *note = "has /search/";
+		return false;
+	}
 
 	// get path end
 	p    = u->getPath() + u->getPathLen();

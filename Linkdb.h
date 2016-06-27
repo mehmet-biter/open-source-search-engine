@@ -484,7 +484,6 @@ class Msg25 {
 	void     (* m_callback) ( void *state );
 
 	int32_t m_siteNumInlinks;
-	//int32_t m_sitePop;
 	int32_t m_mode;
 	bool m_printInXml;
 
@@ -644,10 +643,18 @@ class LinkInfo {
 	time_t getLastUpdated ( ) const { return (time_t)m_lastUpdated; }
 
 	int32_t   getNumLinkTexts ( ) const {
-		if ( this == NULL ) return 0; return m_numStoredInlinks; }
+		if ( this == NULL ) {
+			return 0;
+		}
+		return m_numStoredInlinks;
+	}
 
 	int32_t   getNumGoodInlinks ( ) const {
-		if ( this == NULL ) return 0; return m_numGoodInlinks; }
+		if ( this == NULL ) {
+			return 0;
+		}
+		return m_numGoodInlinks;
+	}
 
 	class Inlink *getNextInlink ( class Inlink *k ) ;
 

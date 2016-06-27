@@ -886,11 +886,6 @@ static TagDesc s_tagDesc[] = {
 	///     and removing them will cause missing info in the TagDB dump code
 	///     (when clicking 'page info' in search results)
 
-	// data for the "lang" tag is 2 char language id followed by
-	// a comma then a score from 1 to 100 to indicate percentage.
-	// Allow multiple "lang" tags in one tagrec.
-	{"rootlang"             ,TDF_STRING,0},
-
 	// title tag and incoming link text of the root page is stored here
 	// for determining default venue addresses
 	{"roottitles"             ,TDF_STRING|TDF_NOINDEX,0},
@@ -930,8 +925,10 @@ static TagDesc s_tagDesc[] = {
 	//   doing the throttling, really messing things up
 	{"firstip"              ,0x00,0},
 
+	/// @todo ALC only need this until we cater for unknown tags for display (remember titlerec!)
     // As above, we can't remove the following definition unless if we're sure it's not set anymore
     // Anything below this point is unused.
+	{"rootlang"             ,TDF_STRING,0},
 	{"manualfilter", 0x00, 0},
 	{"dateformat", 0x00, 0}, // 1 = american, 2 = european
 
@@ -957,7 +954,6 @@ static TagDesc s_tagDesc[] = {
 
 	{"pagerank"             ,0x00,0},
 	{"ruleset"              ,0x00,0}
-
 };
 
 // . convert "domain_squatter" to ST_DOMAIN_SQUATTER
@@ -979,7 +975,8 @@ int32_t getTagTypeFromStr( const char *tagname , int32_t tagnameLen ) {
 
 	// sanity check, make sure it is a supported tag!
 	if ( ! s_ht.getValue ( &tagType ) ) {
-		/// @todo we should cater for deprecated/removed tagname here
+		/// @todo ALC we should cater for deprecated/removed tagname here
+		/// Probably will be better than waiting for tagdb to be merged before being able to remove old tags
 		log( "tagdb: unsupported tagname '%s'", tagname );
 		g_process.shutdownAbort(true);
 		return -1;

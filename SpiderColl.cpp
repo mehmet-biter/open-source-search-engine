@@ -297,7 +297,7 @@ CollectionRec *SpiderColl::getCollRec() {
 	return cr;
 }
 
-char *SpiderColl::getCollName() {
+const char *SpiderColl::getCollName() {
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) return "lostcollection";
 	return cr->m_coll;
@@ -539,7 +539,7 @@ void SpiderColl::reset ( ) {
 
 	m_isPopulatingDoledb = false;
 
-	char *coll = "unknown";
+	const char *coll = "unknown";
 	if ( m_coll[0] ) coll = m_coll;
 	log(LOG_DEBUG,"spider: resetting spider cache coll=%s",coll);
 

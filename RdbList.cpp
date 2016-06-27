@@ -8,7 +8,7 @@
 #include "Spider.h"
 #include "BitOperations.h"
 #include "Process.h"
-
+#include <set>
 
 //#define _MERGEDEBUG_
 
@@ -1686,10 +1686,33 @@ void RdbList::merge_r ( RdbList **lists         ,
 	char mkey[MAX_KEY_BYTES];
 	char minKey[MAX_KEY_BYTES];
 
-	int64_t tt1 = getTagTypeFromStr( "sitenuminlinksfresh");
-	int64_t tt2 = getTagTypeFromStr( "sitepop");
+	// cleanup deprecated tags
+	std::set<int64_t> remove_tags;
+	if ( rdbId == RDB_TAGDB ) {
+		/// @todo ALC only need this to clean out existing tagdb records. (remove once it's cleaned up!)
+		remove_tags.insert( getTagTypeFromStr( "rootlang" ) );
+		remove_tags.insert( getTagTypeFromStr( "manualfilter" ) );
+		remove_tags.insert( getTagTypeFromStr( "dateformat" ) );
+		remove_tags.insert( getTagTypeFromStr( "venueaddress" ) );
+		remove_tags.insert( getTagTypeFromStr( "hascontactinfo" ) );
+		remove_tags.insert( getTagTypeFromStr( "contactaddress" ) );
+		remove_tags.insert( getTagTypeFromStr( "contactemails" ) );
+		remove_tags.insert( getTagTypeFromStr( "hascontactform" ) );
+		remove_tags.insert( getTagTypeFromStr( "ingoogle" ) );
+		remove_tags.insert( getTagTypeFromStr( "ingoogleblogs" ) );
+		remove_tags.insert( getTagTypeFromStr( "ingooglenews" ) );
+		remove_tags.insert( getTagTypeFromStr( "abyznewslinks.address" ) );
+		remove_tags.insert( getTagTypeFromStr( "sitenuminlinksuniqueip" ) );
+		remove_tags.insert( getTagTypeFromStr( "sitenuminlinksuniquecblock" ) );
+		remove_tags.insert( getTagTypeFromStr( "sitenuminlinkstotal" ) );
+		remove_tags.insert( getTagTypeFromStr( "comment" ) );
+		remove_tags.insert( getTagTypeFromStr( "sitepop" ) );
+		remove_tags.insert( getTagTypeFromStr( "sitenuminlinksfresh" ) );
+		remove_tags.insert( getTagTypeFromStr( "pagerank" ) );
+		remove_tags.insert( getTagTypeFromStr( "ruleset" ) );
+	}
 
- top:
+top:
 	// get the biggest possible minKey so everyone's <= it
 	KEYSET(minKey,KEYMAX(),m_ks);
 
@@ -1764,7 +1787,7 @@ void RdbList::merge_r ( RdbList **lists         ,
 	// special filter to remove obsolete tags from tagdb
 	if ( rdbId == RDB_TAGDB ) {
 		Tag *tag = (Tag *)lists[mini]->getCurrentRec();
-		if ( tag->m_type == tt1 || tag->m_type == tt2 ) {
+		if ( remove_tags.find( tag->m_type ) != remove_tags.end() ) {
 			required -= tag->getRecSize();
 			goto skip;
 		}

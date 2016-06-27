@@ -1162,7 +1162,6 @@ bool XmlDoc::set2 ( char    *titleRec ,
 
 	// new stuff
 	m_siteNumInlinksValid         = true;
-	m_rootLangIdValid             = true;
 	m_metaListCheckSum8Valid      = true;
 
 	m_hopCountValid               = true;
@@ -2872,8 +2871,6 @@ char *XmlDoc::prepareToMakeTitleRec ( ) {
 	if ( ! ls || ls == (void *)-1 ) return (char *)ls;
 	uint32_t *tph = getTagPairHash32();
 	if ( ! tph || tph == (uint32_t *)-1 ) return (char *)tph;
-	uint8_t *rl = getRootLangId();
-	if ( ! rl || rl == (void *)-1 ) return (char *)rl;
 
 	m_prepared = true;
 	return (char *)1;
@@ -3104,7 +3101,6 @@ SafeBuf *XmlDoc::getTitleRecBuf ( ) {
 	if ( ! m_httpStatusValid             ) { g_process.shutdownAbort(true); }
 
 	if ( ! m_siteNumInlinksValid         ) { g_process.shutdownAbort(true); }
-	if ( ! m_rootLangIdValid             ) { g_process.shutdownAbort(true); }
 
 	if ( ! m_hopCountValid               ) { g_process.shutdownAbort(true); }
 	if ( ! m_metaListCheckSum8Valid      ) { g_process.shutdownAbort(true); }
@@ -5514,7 +5510,7 @@ Url **XmlDoc::getRedirUrl() {
 			size_redirUrl   = m_redirUrl.getUrlLen()+1;
 
 			/// @todo ALC should we use EDOCSIMPLIFIEDREDIR
-			// m_redirError = EDOCSIMPLIFIEDREDIR
+			// m_redirError = EDOCSIMPLIFIEDREDIR;
 
 			// no error
 			m_redirError = 0;
@@ -5818,84 +5814,6 @@ uint16_t *XmlDoc::getCountryId ( ) {
 	m_countryId      = country;
 
 	return &m_countryId;
-}
-
-uint8_t *XmlDoc::getRootLangId ( ) {
-
-	// return it if we got it
-	if ( m_rootLangIdValid ) return &m_rootLangId;
-	// note it
-	setStatus ( "getting root lang id from tagdb");
-	// are we a root?
-	char *isRoot = getIsSiteRoot();
-	if ( ! isRoot || isRoot == (char *)-1 ) return (uint8_t *)isRoot;
-	// sanity check - should not be called on a root url
-	if ( *isRoot ) {
-		uint8_t *langId = getLangId();
-		if ( ! langId || langId == (uint8_t *)-1 )
-			return (uint8_t *) langId;
-		m_rootLangId = *langId;
-		m_rootLangIdValid = true;
-		return &m_rootLangId;
-		//g_process.shutdownAbort(true); }
-	}
-	// get the tag rec
-	TagRec *gr = getTagRec ();
-	if ( ! gr || gr == (TagRec *)-1 ) return (uint8_t *)gr;
-	// just use one. there may be multiple ones!
-	Tag *tag = gr->getTag("rootlang");
-	// if there use that
-	if ( ! tag ) {
-		// . get the root doc
- 		// . allow for a one hour cache of the titleRec
-		XmlDoc **prd = getRootXmlDoc( 3600 );
-		if ( ! prd || prd == (void *)-1 ) return (uint8_t *)prd;
-		// shortcut
-		XmlDoc *rd = *prd;
-		// . if no root doc, then assume language unknown
-		// . this happens if we are injecting because we do not want
-		//   to download the root page for speed purposes
-		if ( ! rd ) {
-			m_rootLangId = langUnknown;
-			m_rootLangIdValid = true;
-			return &m_rootLangId;
-		}
-		// . update tagdb rec
-		// . on root download error use language "xx" (unknown) to
-		//   avoid hammering the root page
-		//bool *status = rd->updateRootLangId ();
-		//if (! status || status==(void *)-1) return (uint8_t *)status;
-		// update our tag rec now
-		//Tag *tt = rd->m_newTagRec.getTag("rootlang");
-		// must be there
-		//if ( ! tt ) { g_process.shutdownAbort(true); }
-		// add it for us
-		//if ( ! m_newTagRec.addTag ( tt ) ) return NULL;
-		// get it
-		uint8_t *rl = rd->getLangId();
-		if ( ! rl || rl == (void *)-1 ) return (uint8_t *)rl;
-		// must be legit now!
-		if ( ! rd->m_langIdValid ) { g_process.shutdownAbort(true);}
-		// now validate our stuff
-		m_rootLangIdValid = true;
-		m_rootLangId      = rd->m_langId;
-		return &m_rootLangId;
-	}
-
-	// sanity check ( must be like "en,50\0" or could be
-	// "en_US,50\0" or "zh_cn,50"
-	if ( tag->getTagDataSize() > 6 ) { g_process.shutdownAbort(true); }
-
-	// point to 2 character language abbreviation
-	char *abbr = tag->getTagData();
-	// map it to an id
-	uint8_t langId = getLangIdFromAbbr( abbr );
-
-	// set that up
-	m_rootLangId      = langId;
-	//m_rootLangIdScore = score;
-	m_rootLangIdValid = true;
-	return &m_rootLangId;
 }
 
 XmlDoc **XmlDoc::getOldXmlDoc ( ) {
@@ -6781,12 +6699,6 @@ int32_t *XmlDoc::getSiteNumInlinks ( ) {
 			min = g_tagdb.getMinSiteInlinks ( wwwHash32 );
 		}
 		// fix core by setting these
-		// m_siteNumInlinksUniqueIp          = 0;
-		// m_siteNumInlinksUniqueCBlock      = 0;
-		// m_siteNumInlinksTotal             = 0;
-		// m_siteNumInlinksUniqueIpValid     = true;
-		// m_siteNumInlinksUniqueCBlockValid = true;
-		// m_siteNumInlinksTotalValid        = true;
 		//a nd this
 		m_siteNumInlinksValid = true;
 		m_siteNumInlinks      = 0;
@@ -6813,13 +6725,7 @@ int32_t *XmlDoc::getSiteNumInlinks ( ) {
 	// no site inlinks
 	if ( *ip == 0 ) {
 		m_siteNumInlinks             = 0;
-		// m_siteNumInlinksUniqueIp     = 0;
-		// m_siteNumInlinksUniqueCBlock = 0;
-		// m_siteNumInlinksTotal        = 0;
 		m_siteNumInlinksValid             = true;
-		// m_siteNumInlinksUniqueIpValid     = true;
-		// m_siteNumInlinksUniqueCBlockValid = true;
-		// m_siteNumInlinksTotalValid        = true;
 		return &m_siteNumInlinks;
 	}
 
@@ -11985,8 +11891,6 @@ int32_t *XmlDoc::getSpiderPriority ( ) {
 	return &m_priority;
 }
 
-
-
 bool XmlDoc::logIt (SafeBuf *bb ) {
 
 	// set errCode
@@ -12145,10 +12049,6 @@ bool XmlDoc::logIt (SafeBuf *bb ) {
 
 	if ( m_siteNumInlinksValid ) {
 		sb->safePrintf("siteinlinks=%04" PRId32" ",m_siteNumInlinks );
-		// sb->safePrintf("siteipinlinks=%" PRId32" ",
-		// 	      m_siteNumInlinksUniqueIp);
-		// sb->safePrintf("sitecblockinlinks=%" PRId32" ",
-		// 	      m_siteNumInlinksUniqueCBlock);
 		int32_t sr = ::getSiteRank ( m_siteNumInlinks );
 		sb->safePrintf("siterank=%" PRId32" ", sr );
 	}
@@ -14890,18 +14790,7 @@ void XmlDoc::copyFromOldDoc ( XmlDoc *od ) {
 		m_ip                  = od->m_ip;
 		m_ipValid             = true;
 		m_siteNumInlinks            = od->m_siteNumInlinks;
-		// m_siteNumInlinksUniqueIp    = od->m_siteNumInlinksUniqueIp;
-		// m_siteNumInlinksUniqueCBlock= od->m_siteNumInlinksUniqueCBlo
-		// m_siteNumInlinksTotal       = od->m_siteNumInlinksTotal;
-
-		m_siteNumInlinksValid =
-			od->m_siteNumInlinksValid;
-		// m_siteNumInlinksUniqueIpValid =
-		// 	od->m_siteNumInlinksUniqueIpValid;
-		// m_siteNumInlinksUniqueCBlockValid =
-		// 	od->m_siteNumInlinksUniqueCBlockValid;
-		// m_siteNumInlinksTotal =
-		// 	od->m_siteNumInlinksTotalValid;
+		m_siteNumInlinksValid = od->m_siteNumInlinksValid;
 	}
 
 	m_indexCode      = 0;//od->m_indexCode;
@@ -19435,27 +19324,48 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 	if ( ! xml ) return true;
 
 	char *ict = getIsContentTruncated();
-	if ( ! ict ) return true; if ( ict == (char *)-1 ) return false;
+	if ( ! ict ) return true;
+	if ( ict == (char *)-1 ) return false;
+
 	char *at = getIsAdult();
-	if ( ! at ) return true; if ( at == (void *)-1 ) return false;
+	if ( ! at ) return true;
+	if ( at == (void *)-1 ) return false;
+
 	char *ls = getIsLinkSpam();
-	if ( ! ls ) return true; if ( ls == (void *)-1 ) return false;
+	if ( ! ls ) return true;
+	if ( ls == (void *)-1 ) return false;
+
 	uint8_t *ct = getContentType();
-	if ( ! ct ) return true; if ( ct == (void *)-1 ) return false;
+	if ( ! ct ) return true;
+	if ( ct == (void *)-1 ) return false;
+
 	uint16_t *cs = getCharset ( );
-	if ( ! cs ) return true; if ( cs == (uint16_t *)-1 ) return false;
+	if ( ! cs ) return true;
+	if ( cs == (uint16_t *)-1 ) return false;
+
 	char *pl = getIsPermalink();
-	if ( ! pl ) return true; if ( pl == (char *)-1 ) return false;
+	if ( ! pl ) return true;
+	if ( pl == (char *)-1 ) return false;
+
 	char *isRSS   = getIsRSS();
-	if ( ! isRSS ) return true; if ( isRSS == (char  *)-1 )  return false;
+	if ( ! isRSS ) return true;
+	if ( isRSS == (char  *)-1 )  return false;
+
 	int32_t *ip = getIp();
-	if ( ! ip ) return true; if ( ip == (int32_t *)-1 ) return false;
+	if ( ! ip ) return true;
+	if ( ip == (int32_t *)-1 ) return false;
+
 	uint8_t *li = getLangId();
-	if ( ! li ) return true; if ( li == (uint8_t *)-1 ) return false;
+	if ( ! li ) return true;
+	if ( li == (uint8_t *)-1 ) return false;
+
 	uint16_t *cid = getCountryId();
-	if ( ! cid ) return true; if ( cid == (uint16_t *)-1 ) return false;
+	if ( ! cid ) return true;
+	if ( cid == (uint16_t *)-1 ) return false;
+
 	LinkInfo   *info1  = getLinkInfo1();
-	if ( ! info1 ) return true; if ( info1 == (void *)-1 ) return false;
+	if ( ! info1 ) return true;
+	if ( info1 == (void *)-1 ) return false;
 
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) return true;
@@ -19762,7 +19672,8 @@ bool XmlDoc::printSiteInlinks ( SafeBuf *sb , HttpRequest *hr ) {
 	// we need to re-get both if either is NULL
 	LinkInfo *sinfo = getSiteLinkInfo();
 	// block or error?
-	if ( ! sinfo ) return true; if ( sinfo == (LinkInfo *)-1) return false;
+	if ( ! sinfo ) return true;
+	if ( sinfo == (LinkInfo *)-1) return false;
 
 	int32_t isXml = hr->getLong("xml",0);
 
@@ -19791,7 +19702,8 @@ bool XmlDoc::printPageInlinks ( SafeBuf *sb , HttpRequest *hr ) {
 	// we need to re-get both if either is NULL
 	LinkInfo *info1 = getLinkInfo1();
 	// block or error?
-	if ( ! info1 ) return true; if ( info1 == (LinkInfo *)-1) return false;
+	if ( ! info1 ) return true;
+	if ( info1 == (LinkInfo *)-1) return false;
 
 	int32_t isXml = hr->getLong("xml",0);
 
@@ -19830,14 +19742,20 @@ bool XmlDoc::printRainbowSections ( SafeBuf *sb , HttpRequest *hr ) {
 	// PRINT SECTIONS
 	//
 	Sections *sections = getSections();
-	if ( ! sections) return true;if (sections==(Sections *)-1)return false;
+	if ( ! sections) return true;
+	if (sections==(Sections *)-1)return false;
 
 	Words *words = getWords();
-	if ( ! words ) return true; if ( words == (Words *)-1 ) return false;
+	if ( ! words ) return true;
+	if ( words == (Words *)-1 ) return false;
+
 	Phrases *phrases = getPhrases();
-	if ( ! phrases ) return true; if (phrases == (void *)-1 ) return false;
+	if ( ! phrases ) return true;
+	if (phrases == (void *)-1 ) return false;
+
 	HashTableX *cnt = getCountTable();
-	if ( ! cnt ) return true; if ( cnt == (void *)-1 ) return false;
+	if ( ! cnt ) return true;
+	if ( cnt == (void *)-1 ) return false;
 
 
 	int32_t nw = words->getNumWords();
@@ -19993,7 +19911,8 @@ bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {
 	m_useSpiderdb = false;
 
 	char *metaList = getMetaList ( );
-	if ( ! metaList ) return true; if (metaList==(char *) -1) return false;
+	if ( ! metaList ) return true;
+	if (metaList==(char *) -1) return false;
 
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) return false;
@@ -20379,7 +20298,8 @@ bool XmlDoc::printSpiderStats ( SafeBuf *sb , HttpRequest *hr ) {
 bool XmlDoc::printCachedPage ( SafeBuf *sb , HttpRequest *hr ) {
 
 	char **c = getUtf8Content();
-	if ( ! c ) return true; if ( c==(void *)-1) return false;
+	if ( ! c ) return true;
+	if ( c==(void *)-1) return false;
 
 	int32_t isXml = hr->getLong("xml",0);
 
@@ -20944,10 +20864,6 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 		if ( ! grv || grv == (void *)-1 ) return (SafeBuf *)grv;
 	}
 
-	// get root langid of root page
-	uint8_t *rl = getRootLangId();
-	if ( ! rl || rl == (void *)-1 ) return (SafeBuf *)rl;
-
 	//
 	// init stuff
 	//
@@ -20984,37 +20900,6 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 	need += m_rootTitleBufSize;
 	// reserve it all now
 	if ( ! tbuf->reserve(need) ) return NULL;
-
-
-
-	//
-	// add root langid if we need to
-	//
-	const char *oldrl = gr->getString("rootlang", NULL, NULL, &timestamp);
-	// assume no valid id
-	int32_t oldrlid = -99;
-	// convert to id
-	if ( oldrl ) oldrlid = getLangIdFromAbbr ( oldrl );
-
-	// if not in old tag, or changed from what was in tag, or it has
-	// been 10 days or more, then update tagdb with this tag.
-	bool addRootLang = false;
-	if ( ! oldrl ) addRootLang = true;
-	if ( oldrlid != *rl ) addRootLang = true;
-	if ( oldrl && now-timestamp > 10*86400 ) addRootLang = true;
-	// injects do not download the root doc for speed reasons, so do not
-	// bother for them unless the doc itself is the root.
-	if ( m_wasContentInjected && !*isRoot ) addRootLang = false;
-	// . get the two letter (usually) language code from the id
-	// . i think the two chinese languages are 5 letters
-	const char *newrl = NULL;
-	if ( addRootLang )
-		// i've seen this return NULL because *rl is a corrupt 215
-		// for some reason
-		newrl = getLanguageAbbr( *rl );
-
-	if ( newrl )
-		tbuf->addTag3(mysite,"rootlang",now,"xmldoc",*ip,newrl,rdbId);
 
 	//
 	// add "site" tag
