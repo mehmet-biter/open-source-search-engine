@@ -761,6 +761,11 @@ void PosdbTable::init ( Query     *q               ,
 	// we should save the lists!
 	//m_lists    = msg2->m_lists;//lists;
 	//m_numLists = q->m_numTerms;
+
+	// seo.cpp supplies a NULL msg2 because it already sets
+	// QueryTerm::m_posdbListPtrs
+	if ( ! msg2 ) return;
+
 	m_msg2 = msg2;
 	// sanity
 	if ( ! m_msg2->m_query ) { g_process.shutdownAbort(true); }
@@ -772,8 +777,8 @@ void PosdbTable::init ( Query     *q               ,
 	// save this
 	//m_coll = coll;
 	// get the rec for it
-        CollectionRec *cr = g_collectiondb.getRec ( m_collnum );
-        if ( ! cr ) { g_process.shutdownAbort(true); }
+//	CollectionRec *cr = g_collectiondb.getRec ( m_collnum );
+//	if ( ! cr ) { g_process.shutdownAbort(true); }
 	// set this now
 	//m_collnum = cr->m_collnum;
 
@@ -792,9 +797,6 @@ void PosdbTable::init ( Query     *q               ,
 	m_siteRankMultiplier = SITERANKMULTIPLIER;
 	if ( m_q->m_isBoolean ) m_siteRankMultiplier = 0.0;
 
-	// seo.cpp supplies a NULL msg2 because it already sets
-	// QueryTerm::m_posdbListPtrs
-	if ( ! msg2 ) return;
 	// sanity
 	if ( msg2->getNumLists() != m_q->getNumTerms() ) {g_process.shutdownAbort(true);}
 	// copy the list ptrs to the QueryTerm::m_posdbListPtr
