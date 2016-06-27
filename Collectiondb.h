@@ -37,7 +37,7 @@ class Collectiondb  {
 
 	// does nothing
 	void reset() ;
-
+	
 	// called by main.cpp to fill in our m_recs[] array with
 	// all the coll.*.*/coll.conf info
 	bool loadAllCollRecs ( );
@@ -254,6 +254,9 @@ class CollectionRec {
 
 	bool      load ( const char *coll , int32_t collNum ) ;
 	void reset();
+
+	// Clear memory structures used by URL filters
+	void clearUrlFilters();
 
 	// for customcrawls
 	bool rebuildUrlFilters();
