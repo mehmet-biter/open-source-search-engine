@@ -447,6 +447,14 @@ bool HttpRequest::set ( char *origReq , int32_t origReqLen , TcpSocket *sock ) {
 
 	 // and point to that
 	 char *req    = m_reqBuf.getBufStart();
+
+	 if( !req ) { 
+		 log(LOG_ERROR, "http: req is NULL");
+		 g_errno = EBADREQUEST; 
+		 return false; 
+	 }
+
+
 	 int32_t  reqLen = m_reqBuf.length() - 1;
 
 	 // save this
