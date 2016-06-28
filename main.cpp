@@ -6162,12 +6162,14 @@ void doInjectWarc ( int64_t fsize ) {
 		goto loop;
 	}
 
-	char *warcDateStr = strstr(warcHeader,"WARC-Date:");
-	if ( warcDateStr ) warcDateStr += 10;
-	for(;is_wspace_a(*warcDateStr);warcDateStr++);
 	// convert to timestamp
 	int64_t warcTime = 0;
-	if ( warcDateStr ) warcTime = atotime ( warcDateStr );
+	char *warcDateStr = strstr(warcHeader,"WARC-Date:");
+	if( warcDateStr ) {
+		if ( warcDateStr ) warcDateStr += 10;
+		for(;is_wspace_a(*warcDateStr);warcDateStr++);
+		if ( warcDateStr ) warcTime = atotime ( warcDateStr );
+	}
 
 	// set the url now
 	char *url = strstr(warcHeader,"WARC-Target-URI:");

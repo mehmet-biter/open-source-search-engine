@@ -445,7 +445,12 @@ static int32_t s_lastSentHostId = -1;
 
 void gotReplyWrapperP ( void *state , UdpSlot *slot ) {
 	// state is the host
-        Host *h = (Host *)state;
+	Host *h = (Host *)state;
+	if( !h ) {
+		log(LOG_LOGIC,"net: pingserver: gotReplyWrapperP: state is NULL (no host)!");
+		return;
+	}
+	
 	int32_t hid = h->m_hostId;
 
 	// un-count it
