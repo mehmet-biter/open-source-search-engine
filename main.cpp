@@ -1919,8 +1919,10 @@ int main2 ( int argc , char *argv[] ) {
 	//	log("db: Threads init failed." ); return 1; }
 
 	// log the version
-	log(LOG_INIT,"conf: Gigablast Version: %s",getVersion());
-	log(LOG_INIT,"conf: Gigablast Architecture: %d-bit\n",arch);
+	log(LOG_INIT,"conf: Gigablast Version      : %s", getVersion());
+	log(LOG_INIT,"conf: Gigablast Architecture : %d-bit", arch);
+	log(LOG_INIT,"conf: Gigablast Build config : %s", getBuildConfig());
+	log(LOG_INIT,"conf: Gigablast Git commit   : %s", getCommitId());
 
 
 	// show current working dir
