@@ -6169,7 +6169,7 @@ void doInjectWarc ( int64_t fsize ) {
 	char *warcDateStr = strstr(warcHeader,"WARC-Date:");
 	if( warcDateStr ) {
 		if ( warcDateStr ) warcDateStr += 10;
-		for(;is_wspace_a(*warcDateStr);warcDateStr++);
+		for(;warcDateStr && is_wspace_a(*warcDateStr);warcDateStr++);
 		if ( warcDateStr ) warcTime = atotime ( warcDateStr );
 	}
 
