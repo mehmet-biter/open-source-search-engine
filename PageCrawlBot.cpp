@@ -780,6 +780,11 @@ void StateCD::printSpiderdbList ( RdbList *list,SafeBuf *sb,char **lastKeyPtr){
 		char *rec = list->getCurrentRec();
 		// save it
 		*lastKeyPtr = rec;
+		
+		if( !rec ) {
+			continue;
+		}
+		
 		// we encounter the spiderreplies first then the
 		// spiderrequests for the same url
 		if ( g_spiderdb.isSpiderReply ( (key128_t *)rec ) ) {
