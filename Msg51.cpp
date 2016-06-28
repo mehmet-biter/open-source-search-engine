@@ -99,7 +99,6 @@ bool Msg51::getClusterRecs ( int64_t     *docIds                   ,
 		    (int32_t)collnum);
 		g_errno = EBADENGINEER;
 		g_process.shutdownAbort(true);
-		return true;
 	}
 	// keep a pointer for the caller
 	m_maxCacheAge   = maxCacheAge;

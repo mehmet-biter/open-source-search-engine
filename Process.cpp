@@ -1481,8 +1481,3 @@ bool Process::checkNTPD ( ) {
 
 
 
-void gbshutdownAbort( bool save_on_abort ) {
-	g_process.shutdownAbort(save_on_abort);
-}
-
-

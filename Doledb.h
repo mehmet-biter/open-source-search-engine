@@ -18,9 +18,7 @@
 #include "hash.h"
 #include "RdbCache.h"
 #include "Msg12.h"
-
-// Ugly - but so is lots of code in .h files
-extern void gbshutdownAbort( bool save_on_abort );
+#include "Sanity.h"
 
 
 void gotDoledbListWrapper2 ( void *state , RdbList *list , Msg5 *msg5 ) ;

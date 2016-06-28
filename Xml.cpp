@@ -234,9 +234,6 @@ bool Xml::set( char *s, int32_t slen, int32_t version, int32_t niceness, char co
 	if ( s[slen] != '\0' ) {
 		log(LOG_LOGIC,"build: Xml: Content is not null terminated.");
 		g_process.shutdownAbort(true);
-		//sleep(100);
-		g_errno = EBADENGINEER;
-		return false;
 	}
 
 	// if json go no further. TODO: also do this for CT_TEXT etc.

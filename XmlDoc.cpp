@@ -952,7 +952,6 @@ bool XmlDoc::set2 ( char    *titleRec ,
 		g_errno = EBADTITLEREC;
 		log("db: Titledb record is a negative key.");
 		g_process.shutdownAbort(true);
-		return false;
 	}
 
 	// set m_docId from key
@@ -13003,9 +13002,6 @@ bool XmlDoc::hashMetaList ( HashTableX *ht        ,
 			}
 
 			g_process.shutdownAbort(true);
-			// count it for PageStats.cpp
-			g_stats.m_parsingInconsistencies++;
-			continue;
 		}
 		if ( slot < 0 && ks != 12 ) {
 			log("build: missing key #%" PRId32" rdb=%s ks=%" PRId32" ds=%" PRId32" "
@@ -13013,9 +13009,6 @@ bool XmlDoc::hashMetaList ( HashTableX *ht        ,
 			    ,count,getDbnameFromId(rdbId),(int32_t)ks,
 			    (int32_t)dataSize,KEYSTR(k,ks));
 			g_process.shutdownAbort(true);
-			// count it for PageStats.cpp
-			g_stats.m_parsingInconsistencies++;
-			continue;
 		}
 		// if in there, check the hashes
 		//int32_t h2 = *(int32_t *)ht->getValueFromSlot ( slot );
@@ -13068,8 +13061,6 @@ bool XmlDoc::hashMetaList ( HashTableX *ht        ,
 
 		}
 		g_process.shutdownAbort(true);
-		// count it for PageStats.cpp
-		g_stats.m_parsingInconsistencies++;
 	}
 	return true;
 }

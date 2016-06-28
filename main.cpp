@@ -7072,8 +7072,8 @@ bool cacheTest() {
 		if ( recSize != oldrs[next] ) {
 			logf(LOG_DEBUG,"test: bad rec size.");
 			g_process.shutdownAbort(true);
-			continue;
 		}
+
 		char r = (char)back.n1;
 		for ( int32_t j = 0 ; j < recSize ; j++ ) {
 			if ( rec[j] == r ) continue;

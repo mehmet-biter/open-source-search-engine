@@ -291,7 +291,6 @@ bool Msg3::readList  ( char           rdbId         ,
 		g_errno = EBADENGINEER; 
 		// force core dump
 		g_process.shutdownAbort(true);
-		return true; 
 	}
 
 	// . allocate buffer space
@@ -456,7 +455,6 @@ bool Msg3::readList  ( char           rdbId         ,
 			    "works properly. Otherwise, corruption will "
 			    "result. ");
 			g_process.shutdownAbort(true);
-			return true;
 		}
 		// . sanity check?
 		// . no, we must get again since we turn on endKey's last bit

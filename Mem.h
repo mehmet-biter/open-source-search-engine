@@ -13,8 +13,7 @@
 #include <stddef.h>            //for NULL
 #include <string.h>            //for strlen()
 #include <inttypes.h>
-// Ugly - but so is lots of code in .h files
-extern void gbshutdownAbort( bool save_on_abort );
+#include "Sanity.h"
 
 
 extern bool g_inMemFunction;

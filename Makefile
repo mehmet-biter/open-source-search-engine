@@ -74,6 +74,7 @@ OBJS =  UdpSlot.o Rebalance.o \
 	AdultCheck.o \
 	Url.o UrlParser.o UrlComponent.o \
 	Statistics.o \
+	Sanity.o \
 
 # common flags
 DEFS = -D_REENTRANT_ -I.

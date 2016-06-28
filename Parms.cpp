@@ -13004,7 +13004,6 @@ bool Parm::printVal ( SafeBuf *sb , collnum_t collnum , int32_t occNum ) {
 	log("parms: missing parm type!!");
 
 	g_process.shutdownAbort(true);
-	return false;
 }
 
 static bool printUrlExpressionExamples ( SafeBuf *sb ) {

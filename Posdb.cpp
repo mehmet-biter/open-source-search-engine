@@ -2258,10 +2258,8 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 			// we have a 12 byte key with the same docid but
 			// different siterank or langid because it was
 			// not deleted right!
-			if ( (uint64_t)g_posdb.getDocId(wpi) != 
-			     m_docId ) {
+			if ( (uint64_t)g_posdb.getDocId(wpi) != m_docId ) {
 				g_process.shutdownAbort(true);
-				goto done;
 			}
 			// re-set this i guess
 			firsti = true;
@@ -2423,10 +2421,8 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 			// we have a 12 byte key with the same docid but
 			// different siterank or langid because it was
 			// not deleted right!
-			if ( (uint64_t)g_posdb.getDocId(wpj) != 
-			     m_docId ) {
+			if ( (uint64_t)g_posdb.getDocId(wpj) != m_docId ) {
 				g_process.shutdownAbort(true);
-				goto done;
 			}
 			// re-set this i guess
 			firstj = true;
@@ -3259,9 +3255,8 @@ static inline bool isInRange( const char *p, const QueryTerm *qt ) {
 
 	// how did this happen?
 	g_process.shutdownAbort(true);
-	return true;
 }
-		
+
 static inline bool isInRange2 ( const char *recPtr, const char *subListEnd, const QueryTerm *qt ) {
 	// if we got a range term see if in range.
 	if ( isInRange(recPtr,qt) ) return true;

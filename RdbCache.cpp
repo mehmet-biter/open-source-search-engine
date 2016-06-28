@@ -780,12 +780,13 @@ bool RdbCache::addRecord ( collnum_t collnum ,
 	if ( g_conf.m_logTimingDb ) t = gettimeofdayInMillisecondsLocal();
 	// need space for record data
 	int32_t need = recSize1 + recSize2;
+
 	// are we bad?
 	if (m_fixedDataSize>=0 && ! m_supportLists && need != m_fixedDataSize){
+		log(LOG_LOGIC,"db: cache: addRecord: %" PRId32" != %" PRId32".", need,m_fixedDataSize);
 		g_process.shutdownAbort(true);
-		return log(LOG_LOGIC,"db: cache: addRecord: %" PRId32" != %" PRId32".",
-			   need,m_fixedDataSize);
 	}
+
 	// don't allow 0 timestamps, those are special indicators
 	if ( timestamp == 0 ) timestamp = getTimeLocal();
 	//if ( timestamp == 0 && cacheKey.n0 == 0LL && cacheKey.n1 == 0 )
@@ -979,15 +980,6 @@ bool RdbCache::deleteRec ( ) {
 		     (int32_t)collnum, g_collectiondb.m_numRecsUsed,  
 		     m_dbname);
 		g_process.shutdownAbort(true);
-		// exception for gourav's bug (dbname=Users)
-		// i am tired of it craping out every 2-3 wks
-		//if ( m_dbname[0]=='U' ) return true;
-		// some records might have been deleted
-		m_needsSave = true;
-		// but its corrupt so don't save to disk
-		m_corruptionDetected = true;
-		//g_process.shutdownAbort(true);
-		return false;
 	}
 	
 	// get key
@@ -1166,16 +1158,13 @@ void RdbCache::removeKey ( collnum_t collnum, const char *key, const char *rec )
 			log(LOG_LOGIC,"db: cache: removeKey: BAD ENGINEER. "
 			    "dbname=%s",m_dbname );
 			g_process.shutdownAbort(true);
-			return;
 		}
 	}
 	// if does not point to this rec , it is now pointing to the latest,
 	// promoted copy of the rec, so do not delete
 	if ( m_ptrs[n] != rec ) {
-		// debug msg
 		// This shouldn't happen anymore -partap
 		g_process.shutdownAbort(true);
-		return;
 	}
 
 	// debug msg 

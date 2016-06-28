@@ -7,9 +7,7 @@
 #include <math.h>      // floor()
 #include "Unicode.h"
 #include "types.h"
-
-// Ugly - but so is lots of code in .h files
-extern void gbshutdownAbort( bool save_on_abort );
+#include "Sanity.h"
 
 bool verifyUtf8 ( const char *txt ) ;
 bool verifyUtf8 ( const char *txt , int32_t tlen ) ;

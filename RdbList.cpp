@@ -818,7 +818,7 @@ bool RdbList::checkList_r ( bool removeNegRecs , bool sleepOnProblem ,
 		//if ( (k.n0 & 0x01LL) == 0LL ) {
 		if ( KEYNEG(k) ) {
 			if ( removeNegRecs ) {
-				log("db: Got unmet negative key.");
+				log( LOG_WARN, "db: Got unmet negative key.");
 				if ( sleepOnProblem ) {g_process.shutdownAbort(true);}
 				if ( sleepOnProblem ) sleep(50000);
 				return false;
@@ -826,13 +826,9 @@ bool RdbList::checkList_r ( bool removeNegRecs , bool sleepOnProblem ,
 			// ensure delete keys have no dataSize
 			if ( m_fixedDataSize == -1 &&
 			     getCurrentDataSize() != 0 ) {
-				log("db: Got negative key with "
-				    "positive dataSize.");
+				log( LOG_WARN, "db: Got negative key with positive dataSize.");
 				// what's causing this???
 				g_process.shutdownAbort(true);
-				if ( sleepOnProblem ) {g_process.shutdownAbort(true);}
-				if ( sleepOnProblem ) sleep(50000);
-				return false;
 			}
 		}
 		//oldk = k;

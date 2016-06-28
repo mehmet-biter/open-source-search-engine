@@ -18,11 +18,9 @@
 // call this before calling any hash*() routines so we can fill our table
 extern uint64_t g_hashtab[256][256];
 
-// Ugly - but so is lots of code in .h files
-extern void gbshutdownAbort( bool save_on_abort );
-
 #include "types.h"
 #include "fctypes.h"
+#include "Sanity.h"
 
 bool hashinit ();
 

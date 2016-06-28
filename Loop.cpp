@@ -260,7 +260,9 @@ bool Loop::addSlot ( bool forReading , int fd, void *state,
 		// if not already registered, add to list
 		if ( fd < MAX_NUM_FDS && ! FD_ISSET( fd,&s_selectMaskRead ) ) {
 			// sanity
-			if ( s_numReadFds >= MAX_NUM_FDS){g_process.shutdownAbort(true); return false;}
+			if ( s_numReadFds >= MAX_NUM_FDS){
+				g_process.shutdownAbort(true);
+			}
 			
 			s_readFds[s_numReadFds++] = fd;
 			FD_SET ( fd,&s_selectMaskRead  );
@@ -278,7 +280,9 @@ bool Loop::addSlot ( bool forReading , int fd, void *state,
 	 	// if not already registered, add to list
 	 	if ( fd<MAX_NUM_FDS && ! FD_ISSET ( fd,&s_selectMaskWrite ) ) {
 	 		// sanity
-	 		if ( s_numWriteFds>=MAX_NUM_FDS){g_process.shutdownAbort(true); return false;}
+	 		if ( s_numWriteFds>=MAX_NUM_FDS){
+			    g_process.shutdownAbort(true);
+		    }
 
 	 		s_writeFds[s_numWriteFds++] = fd;
 	 		FD_SET ( fd,&s_selectMaskWrite  );

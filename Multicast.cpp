@@ -42,18 +42,10 @@ void Multicast::reset ( ) {
 	// if this is called while we are shutting down and Scraper has a 
 	// MsgE out it cores
 	if ( m_inUse && ! g_process.m_exiting ) {
-		log("net: Resetting multicast which is in use. msgType=0x%hhx",
-		    m_msgType);
+		log("net: Resetting multicast which is in use. msgType=0x%hhx", m_msgType);
 		g_process.shutdownAbort(true);
-		// destroy the outstanding slots
-		destroySlotsInProgress(NULL);
-		// and undo any sleepwrapper
-		if ( m_registeredSleep ) {
-			g_loop.unregisterSleepCallback ( this , sleepWrapper1);
-			g_loop.unregisterSleepCallback ( this , sleepWrapper2);
-			m_registeredSleep = false;
-		}
 	}
+
 	if ( m_msg   && m_ownMsg ) 
 		mfree ( m_msg   , m_msgSize   , "Multicast" );
 	if ( m_readBuf && m_ownReadBuf && m_freeReadBuf ) 
@@ -1029,7 +1021,6 @@ void Multicast::gotReply1 ( UdpSlot *slot ) {
 	if ( i >= m_numHosts ) {
 		log(LOG_LOGIC,"net: multicast: Not our slot 2."); 
 		g_process.shutdownAbort(true);
-		return; 
 	}
 	// set m_errnos[i], if any
 	if ( g_errno ) m_errnos[i] = g_errno;

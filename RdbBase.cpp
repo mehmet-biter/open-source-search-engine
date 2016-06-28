@@ -598,12 +598,13 @@ int32_t RdbBase::addFile ( int32_t id, bool isNew, int32_t mergeNum, int32_t id2
 		// nuke it either way
 		mdelete ( f , sizeof(BigFile),"RdbBFile");
 		delete (f); 
+
 		// if it was not empty, we are done. i guess merges
 		// will stockpile, that sucks... things will slow down
 		if ( ! isEmpty ) {
 			return -1;
-			g_process.shutdownAbort(true);
 		}
+
 		// ok, now try again since bogus file is gone
 		goto tryAgain;
 	}
@@ -820,7 +821,6 @@ bool RdbBase::incorporateMerge ( ) {
 
 		// we don't have a recovery system in place, so save state and dump core
 		g_process.shutdownAbort(true);
-		return true;
 	}
 
 	// note

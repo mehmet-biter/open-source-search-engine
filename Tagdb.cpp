@@ -979,7 +979,6 @@ int32_t getTagTypeFromStr( const char *tagname , int32_t tagnameLen ) {
 		/// Probably will be better than waiting for tagdb to be merged before being able to remove old tags
 		log( "tagdb: unsupported tagname '%s'", tagname );
 		g_process.shutdownAbort(true);
-		return -1;
 	}
 
 	return tagType;

@@ -1951,7 +1951,6 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 		log(LOG_LOGIC,"db: addRecord: DataSize is %" PRId32" should "
 		    "be %" PRId32, dataSize,m_fixedDataSize );
 		g_process.shutdownAbort(true);
-		return false;
 	}
 
 	// do not add if range being dumped at all because when the
@@ -2592,7 +2591,9 @@ char getKeySizeFromRdbId ( uint8_t rdbId ) {
 		s_flag = false;
 
 		// sanity check. do not breach s_table1[]!
-		if ( RDB_END >= 50 ) { g_process.shutdownAbort(true); }
+		if ( RDB_END >= 50 ) {
+			g_process.shutdownAbort(true);
+		}
 
 		// . loop over all possible rdbIds
 		// . RDB_NONE is 0!
@@ -2632,7 +2633,9 @@ int32_t getDataSizeFromRdbId ( uint8_t rdbId ) {
 		// only stock the table once
 		s_flag = false;
 		// sanity check
-		if ( RDB_END >= 80 ) { g_process.shutdownAbort(true); }
+		if ( RDB_END >= 80 ) {
+			g_process.shutdownAbort(true);
+		}
 		// loop over all possible rdbIds
 		for ( int32_t i = 1 ; i < RDB_END ; i++ ) {
 			// assume none
@@ -2888,20 +2891,8 @@ int32_t Rdb::reclaimMemFromDeletedTreeNodes( int32_t niceness ) {
 
 		// corrupted? or breach of mem buf?
 		if ( sreq->isCorrupt() ||  dst + recSize > memEnd ) {
-			log("rdb: not readding corrupted doledb1 in scan. "
-				"deleting from tree.");
+			log( LOG_WARN, "rdb: not readding corrupted doledb1 in scan. deleting from tree.");
 			g_process.shutdownAbort(true);
-			// a dup? sanity check
-			int32_t *nodePtr = (int32_t *)ht.getValue (&oldOffset);
-			if ( ! nodePtr ) {
-				log("rdb: strange. not in tree anymore.");
-				skipped++;
-				continue;
-			}
-			// delete node from doledb tree
-			m_tree.deleteNode3(*nodePtr,true);//true=freedata
-			skipped++;
-			continue;
 		}
 
 		//// re -add with the proper value now

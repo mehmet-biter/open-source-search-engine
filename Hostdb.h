@@ -15,9 +15,7 @@
 #include <sys/ioctl.h>            // ioctl() - get our ip address from a socket
 #include <net/if.h>               // for struct ifreq passed to ioctl()    
 #include "Xml.h" // host file in xml
-
-// Ugly - but so is lots of code in .h files
-extern void gbshutdownAbort( bool save_on_abort );
+#include "Sanity.h"
 
 
 enum {

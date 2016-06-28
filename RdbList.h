@@ -5,9 +5,7 @@
 
 #define NUMTERMIDBITS 48
 
-// Ugly - but so is lots of code in .h files
-extern void gbshutdownAbort( bool save_on_abort );
-
+#include "Sanity.h"
 
 /**
  *

@@ -234,6 +234,7 @@ static Needle s_dirtyWords []  = {
 };
 static const int32_t numDirty = sizeof(s_dirtyWords) / sizeof(s_dirtyWords[0]);
 
+#if 0
 ////
 //// New stuff from sex.com adult word list
 ////
@@ -492,7 +493,7 @@ static Needle s_dirtyWordsPart2 []  = {
         {"xrated"       ,0,2,0,0,NULL}
 };
 static const int32_t numDirty2 = sizeof(s_dirtyWordsPart2) / sizeof(s_dirtyWordsPart2[0]);
-
+#endif
 
 int32_t getAdultPoints ( char *s, int32_t slen, int32_t niceness, const char *url ) {
 	// . use the matches function to get all the matches

@@ -35,9 +35,7 @@
 #include "Conf.h"
 #include "Rdb.h"
 #include "Titledb.h"
-// Ugly - but so is lots of code in .h files
-extern void gbshutdownAbort( bool save_on_abort );
-
+#include "Sanity.h"
 
 class Msg20Reply;
 

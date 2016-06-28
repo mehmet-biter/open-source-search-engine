@@ -209,7 +209,6 @@ uint32_t Profiler::getByte (unsigned char * field,int size){
 	default:
 		log(LOG_INIT,"admin: Unhandled data length: %d", size);
 		g_process.shutdownAbort(true);
-		return 0;
 	}
 }
 

@@ -500,7 +500,6 @@ int File::getfd () {
 		g_errno = EBADENGINEER;
 		log(LOG_LOGIC,"disk: getfd: Must call open() first.");
 		g_process.shutdownAbort(true);
-		return -2;
 	}
 
 	// if someone closed our fd, why didn't our m_fd get set to -1 ??!?!?!!

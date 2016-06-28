@@ -304,7 +304,6 @@ void Msg20::gotReply ( UdpSlot *slot ) {
 	if ( freeit ) {
 		log(LOG_LOGIC,"query: msg20: gotReply: Bad engineer.");
 		g_process.shutdownAbort(true);
-		return;
 	}
 
 	// see if too small for a getSummary request

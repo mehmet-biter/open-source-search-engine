@@ -379,13 +379,10 @@ void SpiderLoop::spiderDoledUrls ( ) {
 	// doledb list, so do not try to read more just yet until we know
 	// if we got the lock or not
 	if ( m_msg12.m_gettingLocks ) {
+		log( LOG_WARN, "spider: failed to get doledb rec to spider: msg12 is getting locks");
+
 		// this should no longer happen
 		g_process.shutdownAbort(true);
-		// make a note, maybe this is why spiders are deficient?
-		if ( g_conf.m_logDebugSpider )
-			log("spider: failed to get doledb rec to spider: "
-			    "msg12 is getting locks");
-		return;
 	}
 
 collLoop:

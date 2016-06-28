@@ -14,8 +14,7 @@
 
 #include "BigFile.h"
 #include "RdbList.h"
-// Ugly - but so is lots of code in .h files
-extern void gbshutdownAbort( bool save_on_abort );
+#include "Sanity.h"
 
 
 // . this can be increased to provide greater disk coverage but it will 
