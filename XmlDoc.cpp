@@ -902,6 +902,10 @@ bool XmlDoc::set2 ( char    *titleRec ,
 	//m_freeTitleRec  = false;
 
 	int32_t titleRecSize = *(int32_t *)(titleRec+12) + sizeof(key_t) + 4;
+
+	// it must be there!
+	if ( !titleRec||titleRecSize==0 ) {g_errno=ENOTFOUND; return false;}
+
 	// . should we free m_cbuf on our reset/destruction?
 	// . no because doCOnsistencyCheck calls XmlDoc::set2 with a titleRec
 	//   that should not be freed, besides the alloc size is not known!
