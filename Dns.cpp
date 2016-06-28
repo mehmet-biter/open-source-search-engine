@@ -1524,19 +1524,24 @@ void returnIp ( DnsState *ds , int32_t ip ) {
 }
 
 // return NULL and set g_errno on error
-char *getRRName ( char *rr , char *dgram, char *end ) {
+static const char *getRRName ( const char *rr, const char *dgram, const char *end ) {
 	static char s_buf[1024];
 	char *bufEnd = s_buf + 1024;
 	char *dst = s_buf;
+	size_t dgram_size = (size_t)(end-dgram);
 	// store into our buffer
-	char *p = rr;
+	const char *p = rr;
 	while ( *p && p < end ) {
 		// is compression bit set?
-		while ( *p & 0xc0 ) {
+		while ( (((uint8_t)(*p)) & 0xc0) == 0xc0 ) {
 			// we are jumping within the dgram
-			p = dgram +(ntohs(*(int16_t *)p)&0x3fff);
+			uint16_t offset = ntohs(*(int16_t*)p)&0x3fff;
+			if(offset>=dgram_size)
+				break;
+			p = dgram + offset;
 			// bust out of while loop if we should
-			if ( !*p || p>=end || p<dgram ) break;
+			if ( !*p || p>=end )
+				break;
 		}
 		// watch out for corruption
 		if ( dst + *p + 1 > bufEnd ) {
@@ -1549,7 +1554,7 @@ char *getRRName ( char *rr , char *dgram, char *end ) {
 			return NULL;
 		}
 		// copy the hostname
-		gbmemcpy ( dst , p+1 , *p );
+		memcpy ( dst, p+1, *p );
 		dst += *p;
 		*dst++ = '.';
 		p += ((u_char)*p) + 1;
@@ -1823,7 +1828,7 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 		// kinda, so this is how we will map
 		// an MX resource record to its A record
 		// in the answer section
-		char *s = getRRName ( rr , dgram, end );
+		const char *s = getRRName ( rr , dgram, end );
 		//log("dns: got rr name: %s",s);
 		int64_t rrHash64 = 0LL;
 		if ( s ) rrHash64 = hash64n ( s );
@@ -1926,11 +1931,15 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 
 			while ( *p && p < pend ) {
 				// is compression bit set?
-				while ( *p & 0xc0 ) {
+				while ( ((( uint8_t)(*p)) & 0xc0) == 0xc0 ) {
 					// we are jumping within the dgram
-					p = dgram +(ntohs(*(int16_t *)p)&0x3fff);
+					uint16_t offset = ntohs(*(int16_t *)p)&0x3fff;
+					if(offset>(end-dgram))
+						break;
+					p = dgram + offset;
 					// bust out of while loop if we should
-					if ( !*p || p>=pend || p<dgram ) break;
+					if ( !*p || p>=pend )
+						break;
 				}
 				// watch out for corruption
 				if ( dst + *p + 1 > ds->m_nameBufEnd ) {
@@ -1955,7 +1964,7 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 					return -1;
 				}
 				// copy the hostname
-				gbmemcpy ( dst , p+1 , *p );
+				memcpy ( dst , p+1 , *p );
 				dst += *p;
 				*dst++ = '.';
 				p += ((u_char)*p) + 1;
