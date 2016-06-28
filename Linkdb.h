@@ -30,6 +30,10 @@
 #define LDB_MAXHOPCOUNT 0xff
 #define LDB_MAXURLHASH  0x00007fffffffffffLL
 
+// The date in the records are stored as days-since-2006. That means that when
+// we use 14 bits for it we won't get a date overflow until 2006 + 2^14/265 = 2050
+//
+//                   year 2010
 #define LINKDBEPOCH (1325376000-365*86400*4)
 
 #include "Conf.h"
