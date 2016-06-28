@@ -20899,7 +20899,7 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 	//
 	// add "site" tag
 	//
-	const char *oldsite = gr->getString("site",NULL);
+	const char *oldsite = gr->getString( "site", NULL, NULL, &timestamp );
 	if ( ! oldsite || strcmp(oldsite,mysite) || now-timestamp > 10*86400)
 		tbuf->addTag3(mysite,"site",now,"xmldoc",*ip,mysite,rdbId);
 
