@@ -1647,7 +1647,7 @@ public:
 	TagRec       m_newtr;
 	Msg8a        m_msg8a;
 	Url          m_url;
-	char        *m_urls;
+	const char  *m_urls;
 	int32_t         m_urlsLen;
 	Msg1         m_msg1;
 	RdbList      m_list;
@@ -1719,12 +1719,19 @@ bool sendPageTagdb ( TcpSocket *s , HttpRequest *req ) {
 	// . get fields from cgi field of the requested url
 	// . get the null-terminated, newline-separated lists of sites to add
 	int32_t  urlsLen = 0;
-	char *urls = (char*)r->getString ( "u" , &urlsLen , NULL /*default*/);
+	const char *urls = (char*)r->getString ( "u" , &urlsLen , NULL /*default*/);
 	
-	//a quick hack so we can put multiple sites in a link
-	if(r->getLong("uenc", 0)) 
-		for(int32_t i = 0; i < urlsLen; i++) 
-			if(urls[i] == '+') urls[i] = '\n';
+	if ( urls ) {
+		//a quick hack so we can put multiple sites in a link
+		char *u = const_cast<char*>(urls);
+		if(r->getLong("uenc", 0))
+			for(int32_t i = 0; i < urlsLen; i++)
+				if(u[i] == '+')
+					u[i] = '\n';
+	} else {
+		// do not print "(null)" in the textarea
+		urls = "";
+	}
 
 	// are we coming from a local machine?
 	st->m_isLocal = r->isLocal();
@@ -1732,8 +1739,6 @@ bool sendPageTagdb ( TcpSocket *s , HttpRequest *req ) {
 	// it references into the request, should be ok
 	st->m_collnum = cr->m_collnum;
 
-	// do not print "(null)" in the textarea
-	if ( ! urls ) urls = "";
 
 	// the url buffer
 	st->m_urls    = urls;
