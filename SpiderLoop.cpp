@@ -543,7 +543,14 @@ subloop:
 		return;
 	}
 
+
 	cr = m_crx;
+
+	// Fix to shut up STACK
+	if( !m_crx ) {
+		goto collLoop;
+	}
+
 
 	// advance for next time we call goto subloop;
 	m_crx = m_crx->m_nextActive;
