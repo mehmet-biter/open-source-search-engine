@@ -22,13 +22,13 @@ bool Titledb::init ( ) {
 	if ( getDocId(&k) != docId ) { g_process.shutdownAbort(true);}
 	if ( getUrlHash48(&k) != uh48 ) { g_process.shutdownAbort(true);}
 
-	char *url = "http://.ezinemark.com/int32_t-island-child-custody-attorneys-new-york-visitation-lawyers-melville-legal-custody-law-firm-45f00bbed18.html";
+	const char *url = "http://.ezinemark.com/int32_t-island-child-custody-attorneys-new-york-visitation-lawyers-melville-legal-custody-law-firm-45f00bbed18.html";
 	Url uu;
 	uu.set(url);
-	char *d1 = uu.getDomain();
+	const char *d1 = uu.getDomain();
 	int32_t  dlen1 = uu.getDomainLen();
 	int32_t dlen2 = 0;
-	char *d2 = getDomFast ( url , &dlen2 );
+	const char *d2 = getDomFast ( url , &dlen2 );
 	if ( dlen1 != dlen2 ) { g_process.shutdownAbort(true); }
 	// another one
 	url = "http://ok/";

@@ -20,7 +20,10 @@ class SafeBuf;
 
 char *getPathFast  ( char *url );
 char *getTLDFast   ( char *url , int32_t *tldLen  , bool hasHttp = true ) ;
-char *getDomFast   ( char *url , int32_t *domLen  , bool hasHttp = true ) ;
+char       *getDomFast   ( char       *url, int32_t *domLen, bool hasHttp = true ) ;
+static inline const char *getDomFast   ( const char *url, int32_t *domLen, bool hasHttp = true ) {
+	return getDomFast(const_cast<char*>(url),domLen,hasHttp);
+}
 bool  hasSubdomain ( char *url );
 const char *getHostFast  ( const char *url , int32_t *hostLen , int32_t *port = NULL ) ;
 
