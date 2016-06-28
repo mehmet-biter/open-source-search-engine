@@ -830,11 +830,6 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 	}
 
 	{
-		Matches m;
-		if ( rootTitleBuf && query ) {
-			m.setQuery ( query );
-		}
-
 		// convert into an array
 		int32_t nr = 0;
 		const char *pr = rootTitleBuf;
@@ -845,8 +840,9 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 		for ( ; pr && pr < rootTitleBufEnd ; pr += strnlen(pr,rootTitleBufEnd-pr) + 1 ) {
 			// if we had a query...
 			if ( query ) {
-				// reset it
-				m.reset();
+				Matches m;
+
+				m.setQuery ( query );
 
 				// see if root title segment has query terms in it
 				m.addMatches ( const_cast<char*>(pr), strnlen(pr,rootTitleBufEnd-pr), MF_TITLEGEN, m_niceness );
