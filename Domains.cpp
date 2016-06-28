@@ -51,6 +51,8 @@ char *getDomain ( char *host , int32_t hostLen , char *tld , int32_t *dlen ) {
 
 // host must be NULL terminated
 char *getTLD ( char *host , int32_t hostLen ) {
+	if(hostLen==0)
+		return NULL;
 	// make "s" point to last period in the host
 	//char *s = host + gbstrlen(host) - 1;
 	char *hostEnd = host + hostLen;
