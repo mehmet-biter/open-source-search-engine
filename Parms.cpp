@@ -8556,7 +8556,7 @@ void Parms::init ( ) {
 #ifndef PRIVACORE_TEST_VERSION
 	m->m_def   = "101028000";
 #else
-	m->m_def   = "20000000";
+	m->m_def   = "200000";
 #endif
 	m->m_type  = TYPE_LONG;
 	m->m_flags = PF_NOSYNC|PF_NOAPI;
