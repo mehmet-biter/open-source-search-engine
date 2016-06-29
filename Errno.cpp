@@ -96,9 +96,6 @@ const char *mstrerrno ( int errnum ) {
 		case	EDOCIDCOLLISION  : return "DocId collision in titledb";
 		case	ESSLERROR        : return "SSL error of some kind";
 		case    EPERMDENIED      : return "Permission denied";
-		case	EDIFFBOTINTERNALERROR: return "Diffbot internal error";
-		case    EDIFFBOTMIMEERROR: return "Diffbot mime error";
-		case    EDIFFBOTBADHTTPSTATUS: return "Diffbot reply bad http status";
 		case    EHITCRAWLLIMIT: return "Hit the page download limit";
 		case    EHITPROCESSLIMIT: return "Hit the page process limit";
 		case    EINTERNALERROR: return "Internal error";
@@ -110,16 +107,6 @@ const char *mstrerrno ( int errnum ) {
 		case    ECUSTOMCRAWLMISMATCH: return "Job name/type mismatch. Job name has already been used for a crawl or bulk job.";
 		case    EBADIMG: return "Bad image";
 		case	ETOOMANYPARENS: return "Too many nested parentheses in boolean query";
-		case EDIFFBOTUNABLETOAPPLYRULES: return "Diffbot unable to apply rules";
-		case EDIFFBOTCOULDNOTPARSE: return "Diffbot could not parse page";
-		case EDIFFBOTCOULDNOTDOWNLOAD: return "Diffbot could not download page";
-		case EDIFFBOTINVALIDAPI: return "Diffbot invalid API";
-		case EDIFFBOTVERSIONREQ: return "Diffbot version required";
-		case EDIFFBOTEMPTYCONTENT: return "Diffbot empty content";
-		case EDIFFBOTREQUESTTIMEDOUT: return "Diffbot request timed out";
-		case EDIFFBOTURLPROCESSERROR: return "Diffbot error processing url";
-		case EDIFFBOTTOKENEXPIRED: return "Diffbot token expired";
-		case EDIFFBOTUNKNOWNERROR: return "Diffbot unknown error";
 		case EMISSINGINPUT: return "Missing required input parms";
 		case EPROXYSSLCONNECTFAILED: return "SSL tunnel through HTTP proxy failed";
 		case EINLINESECTIONS: return "Error generating section votes";

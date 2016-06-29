@@ -2601,26 +2601,6 @@ checkNextRule:
 			     // seeds that failed one time and the crawl
 			     // never repeated after that!
 			     errCode != EBADIP &&
-			     // assume diffbot is temporarily experiencing errs
-			     // but the crawl, if recurring, should retry these
-			     // at a later point
-			     errCode != EDIFFBOTUNABLETOAPPLYRULES &&
-			     errCode != EDIFFBOTCOULDNOTPARSE &&
-			     errCode != EDIFFBOTCOULDNOTDOWNLOAD &&
-			     errCode != EDIFFBOTINVALIDAPI &&
-			     errCode != EDIFFBOTVERSIONREQ &&
-			     errCode != EDIFFBOTURLPROCESSERROR &&
-			     errCode != EDIFFBOTTOKENEXPIRED &&
-			     errCode != EDIFFBOTUNKNOWNERROR &&
-			     errCode != EDIFFBOTINTERNALERROR &&
-			     // if diffbot received empty content when d'lding
-			     errCode != EDIFFBOTEMPTYCONTENT &&
-			     // or diffbot tcp timed out when d'lding the url
-			     errCode != EDIFFBOTREQUESTTIMEDOUT &&
-			     // if diffbot closed the socket on us...
-			     errCode != EDIFFBOTMIMEERROR &&
-			     // of the diffbot reply itself was not 200 (OK)
-			     errCode != EDIFFBOTBADHTTPSTATUS &&
 			     // out of memory while crawling?
 			     errCode != ENOMEM &&
 			     errCode != ENETUNREACH &&
