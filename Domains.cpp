@@ -1869,17 +1869,21 @@ static bool isTLD ( char *tld , int32_t tldLen ) {
 
 	if ( ! s_isInitialized ) {
 		// set up the hash table
-		if ( ! s_table.set ( 8 , 0, sizeof(s_tlds)*2,NULL,0,false,0,
-				     "tldtbl") ) 
-			return log("build: Could not init table of TLDs.");
+		if ( ! s_table.set ( 8 , 0, sizeof(s_tlds)*2,NULL,0,false,0, "tldtbl") ) {
+			log( LOG_WARN, "build: Could not init table of TLDs.");
+			return false;
+		}
+
 		// now add in all the stop words
 		int32_t n = (int32_t)sizeof(s_tlds)/ sizeof(char *); 
 		for ( int32_t i = 0 ; i < n ; i++ ) {
 			const char      *d    = s_tlds[i];
 			int32_t       dlen = gbstrlen ( d );
 			int64_t  dh   = hash64Lower_a ( d , dlen );
-			if ( ! s_table.addKey (&dh,NULL) )
-				return log("build: dom table failed");
+			if ( ! s_table.addKey (&dh,NULL) ) {
+				log( LOG_WARN, "build: dom table failed");
+				return false;
+			}
 		}
 		s_isInitialized = true;
 	} 

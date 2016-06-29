@@ -24,8 +24,10 @@ bool DailyMerge::init ( ) {
 	m_mergeMode = 0;
 	m_didDaily  = false;
 	// check every 10 seconds
-	if( ! g_loop.registerSleepCallback(10*1000,NULL,dailyMergeWrapper ) )
-		return log("repair: Failed register callback.");
+	if( ! g_loop.registerSleepCallback(10*1000,NULL,dailyMergeWrapper ) ){
+		log( LOG_WARN, "repair: Failed register callback.");
+		return false;
+	}
 	return true;
 }
 

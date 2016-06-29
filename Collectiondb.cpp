@@ -226,10 +226,11 @@ bool Collectiondb::addExistingColl ( const char *coll, collnum_t collnum ) {
 
 	// create the record in memory
 	CollectionRec *cr = new (CollectionRec);
-	if ( ! cr )
-		return log("admin: Failed to allocated %" PRId32" bytes for new "
-			   "collection record for \"%s\".",
-			   (int32_t)sizeof(CollectionRec),coll);
+	if ( ! cr ) {
+		log( LOG_WARN, "admin: Failed to allocated %" PRId32" bytes for new collection record for '%s'.",
+		     (int32_t)sizeof(CollectionRec),coll);
+		return false;
+	}
 	mnew ( cr , sizeof(CollectionRec) , "CollectionRec" );
 
 	// set collnum right for g_parms.setToDefault() call just in case
@@ -527,14 +528,16 @@ bool Collectiondb::addNewColl ( const char *coll, char customCrawl, bool saveIt,
 		g_errno = errno;
 		mdelete ( cr , sizeof(CollectionRec) , "CollectionRec" );
 		delete ( cr );
-		return log( LOG_WARN, "admin: Creating directory %s had error: %s.", dname,mstrerror(g_errno));
+		log( LOG_WARN, "admin: Creating directory %s had error: %s.", dname,mstrerror(g_errno));
+		return false;
 	}
 
 	// save it into this dir... might fail!
 	if ( saveIt && ! cr->save() ) {
 		mdelete ( cr , sizeof(CollectionRec) , "CollectionRec" );
 		delete ( cr );
-		return log( LOG_WARN, "admin: Failed to save file %s: %s", dname,mstrerror(g_errno));
+		log( LOG_WARN, "admin: Failed to save file %s: %s", dname,mstrerror(g_errno));
+		return false;
 	}
 
 
@@ -1375,7 +1378,10 @@ bool CollectionRec::load ( const char *coll , int32_t i ) {
 	char tmp2[1024];
 	sprintf ( tmp2 , "%scoll.%s.%" PRId32"/coll.conf", g_hostdb.m_dir , coll,i);
 	f.set ( tmp2 );
-	if ( ! f.doesExist () ) return log("admin: %s does not exist.",tmp2);
+	if ( ! f.doesExist () ) {
+		log( LOG_WARN, "admin: %s does not exist.",tmp2);
+		return false;
+	}
 	// set our collection number
 	m_collnum = i;
 	// set our collection name

@@ -80,8 +80,10 @@ bool Dns::init ( uint16_t clientPort ) {
 				 maxCacheNodes ,
 				 false         ,  // use half keys?
 				 "dns"         ,  // dbname
-				 true          )) // save cache to disk?
-		return log("dns: Cache init failed.");
+				 true          )) { // save cache to disk?
+		log( LOG_ERROR, "dns: Cache init failed." );
+		return false;
+	}
 
 	// make a copy of our protocol to pass to udp server
 	// static DnsProtocol proto;
@@ -93,8 +95,10 @@ bool Dns::init ( uint16_t clientPort ) {
 				      maxMemLocal/25,
 				      false         ,  // use half keys?
 				      "dnsLocal"    ,  // dbname
-				      true          )) // save cache?
-		return log("dns: Cache local init failed.");
+				      true          )) { // save cache?
+		log( LOG_ERROR, "dns: Cache local init failed." );
+		return false;
+	}
 
 	// . set the port, proto and hostmap in our udpServer
 	// . poll for timeouts every 11 seconds (11000 milliseconds)
@@ -104,8 +108,11 @@ bool Dns::init ( uint16_t clientPort ) {
 				  32000          ,// sock write buf
 				  500            ,//polltime(.5secs)
 				  500            ,//maxudpslots
-				  true           ))// is dns?
-		return log ("dns: Udp server init failed.");
+				  true           )) { // is dns?
+		log( LOG_ERROR, "dns: Udp server init failed." );
+		return false;
+	}
+
 	// innocent log msg
 	log ( LOG_INIT,"dns: Sending requests on client port %" PRId32" "
 	      "using socket descriptor %i.", 
@@ -2220,9 +2227,11 @@ bool Dns::isInCache ( key_t key , int32_t *ip ) {
 				      true     )) // inc count?
 		return false;
 	// recSize must be 4 -- sanity check
-	if ( recSize != 4 ) 
-		return log("dns: Got bad record of size %" PRId32" from cache.",
-			   recSize);
+	if ( recSize != 4 ) {
+		log( LOG_WARN, "dns: Got bad record of size %" PRId32" from cache.", recSize);
+		return false;
+	}
+
 	// the data ptr itself is the ip
 	*ip = *(int32_t *)rec ;
 	// return true since we found it
@@ -2336,24 +2345,30 @@ bool Dns::loadFile ( ) {
 	File f;
 	f.set ("/etc/","hosts");
 	int32_t fsize = f.getFileSize();
-	if ( fsize < 0 ) 
-		return log("dns: Getting file size of /etc/hosts : %s.",
-			     mstrerror(g_errno) );
+	if ( fsize < 0 ) {
+		log( LOG_WARN, "dns: Getting file size of /etc/hosts : %s.", mstrerror(g_errno) );
+		return false;
+	}
+
 	// add 1 so we can NULL terminate
 	int32_t bufSize = fsize + 1;
 	// make mem
 	char *buf = (char *)mmalloc ( bufSize , "Dns" );
-	if ( ! buf ) return log("dns: Could not read /etc/hosts : %s.",
-				 mstrerror(g_errno));
+	if ( ! buf ) {
+		log( LOG_WARN, "dns: Could not read /etc/hosts : %s.", mstrerror(g_errno));
+		return false;
+	}
+
 	// pre-open the file
 	f.open ( O_RDONLY );
 	// read it all in
 	if ( f.read ( buf , fsize , 0 ) < 0 ) {
 		mfree ( buf , bufSize , "Dns" );
 		f.close();
-		return log("dns: Could not read /etc/hosts : %s.",
-			    mstrerror(g_errno));
+		log( LOG_WARN, "dns: Could not read /etc/hosts : %s.", mstrerror(g_errno));
+		return false;
 	}
+
 	// NULL terminate it
 	buf [ fsize ] = '\0';
 	// free hash table
@@ -2376,7 +2391,8 @@ bool Dns::loadFile ( ) {
 		m_numSlots = 0;
 		mfree ( buf , bufSize , "Dns" );
 		f.close();
-		return log("dns: Read /etc/hosts : %s.", mstrerror(g_errno));
+		log( LOG_WARN, "dns: Read /etc/hosts : %s.", mstrerror(g_errno));
+		return false;
 	}
 	// clear hash table
 	memset ( m_ips , 0 , 4 * m_numSlots );

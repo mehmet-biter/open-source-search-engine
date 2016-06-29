@@ -54,10 +54,10 @@ bool Bits::set(const Words *words, int32_t niceness) {
 		m_bits = (wbit_t *)mmalloc ( need , "Bits1" );
 		m_needsFree = true;
 	}
-	if ( ! m_bits ) return log("build: Could not allocate "
-				   "Bits table used to parse words: "
-				   "%s",
-				   mstrerror(g_errno));
+	if ( ! m_bits ) {
+		log("build: Could not allocate Bits table used to parse words: %s", mstrerror(g_errno));
+		return false;
+	}
 
 	// breathe
 	QUICKPOLL ( m_niceness );
@@ -238,10 +238,8 @@ bool Bits::setForSummary ( const Words *words ) {
 	}
 
 	if ( !m_swbits ) {
-		return log( "build: Could not allocate "
-					"Bits table used to parse words: "
-					"%s",
-					mstrerror( g_errno ) );
+		log( LOG_WARN, "build: Could not allocate Bits table used to parse words: %s", mstrerror( g_errno ) );
+		return false;
 	}
 
 	// set

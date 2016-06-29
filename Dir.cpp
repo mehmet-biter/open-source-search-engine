@@ -60,9 +60,11 @@ bool Dir::open ( ) {
 	if ( ! m_dir ) 
 		g_errno = errno;
 
-	if ( ! m_dir ) 
-		return log("disk: opendir(%s) : %s",
-			   m_dirname,strerror( g_errno ) );
+	if ( ! m_dir ) {
+		log( LOG_WARN, "disk: opendir(%s) : %s", m_dirname,strerror( g_errno ) );
+		return false;
+	}
+
 	return true;
 }
 

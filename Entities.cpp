@@ -27,9 +27,11 @@ void resetEntities ( ) {
 static bool initEntityTable(){
 	if ( ! s_isInitialized ) {
 		// set up the hash table
-		if ( ! s_table.set ( 8,4,4096,NULL,0,false,0,"enttbl" ) )
-			return log("build: Could not init table of "
-					   "HTML entities.");
+		if ( ! s_table.set ( 8,4,4096,NULL,0,false,0,"enttbl" ) ) {
+			log("build: Could not init table of HTML entities.");
+			return false;
+		}
+
 		// now add in all the html entities
 		const int32_t n = (int32_t)sizeof(s_entities) / (int32_t)sizeof(Entity);
 		for ( int32_t i = 0 ; i < n ; i++ ) {

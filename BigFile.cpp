@@ -1225,7 +1225,8 @@ bool readwrite_r ( FileState *fstate ) {
 	// if no buffer to read into the alloc in Threads.cpp failed
 	if ( ! fstate->m_buf ) {
 		errno = EBUFTOOSMALL;
-		return log( LOG_WARN, "disk: read buf is NULL. malloc failed?");
+		log( LOG_WARN, "disk: read buf is NULL. malloc failed?");
+		return false;
 	}
 
 	// how many total bytes to write?

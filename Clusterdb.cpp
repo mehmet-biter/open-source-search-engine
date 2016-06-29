@@ -108,7 +108,8 @@ bool Clusterdb::verify ( char *coll ) {
 			      -1LL          ,
 			      true          )) {
 		g_jobScheduler.allow_new_jobs();
-		return log("db: HEY! it did not block");
+		log("db: HEY! it did not block");
+		return false;
 	}
 
 	int32_t count = 0;
