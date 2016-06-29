@@ -109,7 +109,6 @@ const char *mstrerrno ( int errnum ) {
 		case	ETOOMANYPARENS: return "Too many nested parentheses in boolean query";
 		case EMISSINGINPUT: return "Missing required input parms";
 		case EPROXYSSLCONNECTFAILED: return "SSL tunnel through HTTP proxy failed";
-		case EINLINESECTIONS: return "Error generating section votes";
 		case EREADONLYMODE: return "In read only mode. Failed.";
 		case ENOTITLEREC: return "No title rec found when recycling content";
 		case EQUERYINGDISABLED: return "Querying is disabled in the master controls";

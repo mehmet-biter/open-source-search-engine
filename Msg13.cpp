@@ -1714,7 +1714,6 @@ void gotHttpReply2 ( void *state ,
 			     err != ECORRUPTHTTPGZIP &&
 			     // broken pipe
 			     err != EPIPE &&
-			     err != EINLINESECTIONS &&
 			     // connection reset by peer
 			     err != ECONNRESET ) {
 				log("http: bad error from httpserver get doc: %s",
