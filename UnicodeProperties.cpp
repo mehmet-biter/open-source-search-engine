@@ -117,43 +117,42 @@ bool saveUnicodeTable(UCPropTable *table, const char *filename) {
 bool loadUnicodeTable(UCPropTable *table, const char *filename, bool useChecksum, uint32_t expectedChecksum) {
 
 	FILE *fp = fopen(filename, "r");
-	if (!fp) 
-		return log(LOG_WARN,
-			   "uni: Couldn't open %s "
-			   "for reading", filename);
+	if (!fp) {
+		log( LOG_WARN, "uni: Couldn't open %s for reading", filename );
+		return false;
+	}
 	fseek(fp,0,SEEK_END);
 	size_t fileSize = ftell(fp);
 	rewind(fp);
 	char *buf = (char*)mmalloc(fileSize, "Unicode");
 	if (!buf) {
 		fclose(fp);
-		return log(LOG_WARN, 
-			   "uni: No memory to load %s", filename);
+		log(LOG_WARN, "uni: No memory to load %s", filename);
+		return false;
 	}
 	size_t nread = fread(buf, 1, fileSize, fp);
 	if (nread != fileSize) {
 		fclose(fp);
 		mfree(buf, fileSize, "Unicode");
-		return log(LOG_WARN, 
-			   "uni: error reading %s", filename);
+		log(LOG_WARN, "uni: error reading %s", filename);
+		return false;
 	}
 
 	uint32_t chksum = calculateChecksum(buf, fileSize);
-	//log(LOG_INFO, "uni: checksum for %s: %" PRId32,
-	//    filename, chksum);
 	if (useChecksum && (expectedChecksum != chksum)) {
 		fclose(fp);
 		mfree(buf, fileSize, "Unicode");
-		return log(LOG_WARN, "uni: checksum failed for %s", 
-		    filename);
+		log(LOG_WARN, "uni: checksum failed for %s", filename);
+		return false;
 	}
 
 	if (!table->deserialize(buf, fileSize)) {
 		fclose(fp);
 		mfree(buf, fileSize, "Unicode");
-		return log(LOG_WARN,
-			   "uni: error deserializing %s", filename);
+		log(LOG_WARN, "uni: error deserializing %s", filename);
+		return false;
 	}
+
 	fclose(fp);
 	mfree(buf, fileSize, "Unicode");
 	return true;
