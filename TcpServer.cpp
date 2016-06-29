@@ -2541,8 +2541,7 @@ TcpSocket *TcpServer::acceptSocket ( ) {
 
 	if ( newsd < 0 ) {
 		log("TcpServer::acceptSocket:%s",mstrerror(g_errno));
-		// too many open files (i can't find the #define for the error).
-		if(g_errno == 24) {
+		if(g_errno == EMFILE) {
 			if(closeLeastUsed()) return acceptSocket();
 		}
 		return NULL;
@@ -2658,8 +2657,7 @@ bool TcpServer::sslAccept ( TcpSocket *s ) {
 	// any other?
 	if ( g_errno ) {
 		log("tcp: sslAccept: %s",mstrerror(g_errno));
-		// too many open files?
-		//if ( g_errno == 24 ) {
+		//if ( g_errno == EMFILE ) {
 		//	if(closeLeastUsed()) return acceptSocket();
 		//}
 		return false;

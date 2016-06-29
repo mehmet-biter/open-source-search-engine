@@ -1,5 +1,3 @@
-//-*- coding: utf-8 -*-
-
 #include "gb-include.h"
 #include "hash.h"
 #include "XmlDoc.h"
@@ -3839,7 +3837,7 @@ Sections *XmlDoc::getSections ( ) {
 		return (Sections *) -1;
 	}
 
-	// error? ETAGBREACH for example... or maybe ENOMEM
+	// error? maybe ENOMEM
 	if ( g_errno ) return NULL;
 
 	// set inlink bits
@@ -10181,13 +10179,13 @@ char **XmlDoc::getRawUtf8Content ( ) {
 				       m_niceness           );
 		// clear this if successful, otherwise, it sets errno
 		if ( used > 0 ) g_errno = 0;
-		// unrecoverable error? bad charset is g_errno == 7
+		// unrecoverable error? bad charset is g_errno == E2BIG
 		// which is like argument list too long or something
 		// error from Unicode.cpp's call to iconv()
 		if ( g_errno )
 			log(LOG_INFO, "build: xml: failed parsing buffer: %s "
 			    "(cs=%d)", mstrerror(g_errno), *charset);
-		if ( g_errno && g_errno != 7 ) {
+		if ( g_errno && g_errno != E2BIG ) {
 			mfree ( buf, need, "Xml3");
 			// do not index this doc, delete from spiderdb/tfndb
 			//if ( g_errno != ENOMEM ) m_indexCode = g_errno;
@@ -10196,7 +10194,7 @@ char **XmlDoc::getRawUtf8Content ( ) {
 			return NULL;
 		}
 		// if bad charset... just make doc empty as a utf8 doc
-		if ( g_errno == 7 ) {
+		if ( g_errno == E2BIG ) {
 			used = 0;
 			buf[0] = '\0';
 			buf[1] = '\0';
@@ -14095,9 +14093,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	//
 
 	// . MAKE the title rec from scratch, that is all we need at this point
-	// . sets m_indexCode to EDOCNOTNEW or EDOCNOTOLD sometimes
-	// . if repairing and not rebuilding titledb, we do not need the
-	//   titlerec
+	// . if repairing and not rebuilding titledb, we do not need the titlerec
 	if ( m_useTitledb ) {
 		// this buf includes key/datasize/compressdata
 		SafeBuf *tr = getTitleRecBuf ();
