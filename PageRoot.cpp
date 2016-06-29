@@ -1325,7 +1325,6 @@ bool sendPageAddUrl ( TcpSocket *sock , HttpRequest *hr ) {
 	if ( ! st1->m_isMasterAdmin &&
 	     ! canSubmit ( h , now , cr->m_maxAddUrlsPerIpDomPerDay ) ) {
 		// return error page
-		//g_errno = ETOOEARLY;
 		SafeBuf sb;
 		sb.safePrintf("You breached your add url quota.");
 		mdelete ( st1 , sizeof(State1i) , "PageAddUrl" );
@@ -1474,31 +1473,8 @@ static void doneInjectingWrapper3 ( void *st ) {
 	//char msg[MAX_URL_LEN + 1024];
 	const char *pm = "";
 	if ( g_errno ) {
-		if ( g_errno == ETOOEARLY ) {
-			pm = "Error. 100 urls have "
-			"already been submitted by "
-			"this IP address for the last 24 hours. "
-			"<a href=/addurlerror.html>Explanation</a>.";
-			log("addurls: Failed for user at %s: "
-			    "quota breeched.", iptoa(sock->m_ip));
-
-			//rb.safePrintf("Error. %" PRId32" urls have "
-			//	      "already been submitted by "
-			//	      "this IP address for the "
-			//	      "last 24 hours. ",
-			//	      cr->m_maxAddUrlsPerIpDomPerDay);
-			sb.safePrintf("%s",pm);
-		}
-		else {
-			sb.safePrintf("Error adding url(s): <b>%s[%i]</b>", 
-				      mstrerror(g_errno) , g_errno);
-			//pm = msg;
-			//rb.safePrintf("Error adding url(s): %s[%i]", 
-			//	      mstrerror(g_errno) , g_errno);
-			//sb.safePrintf("%s",pm);
-		}
-	}
-	else {
+		sb.safePrintf("Error adding url(s): <b>%s[%i]</b>", mstrerror(g_errno) , g_errno);
+	} else {
 		if ( ! g_conf.m_addUrlEnabled ) {
 			pm = "<font color=#ff0000>"
 				"Sorry, this feature is temporarily disabled. "
