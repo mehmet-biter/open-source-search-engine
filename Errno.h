@@ -19,26 +19,26 @@ const char *mstrerror ( int errnum ) ;
 //#define REMOTE_ERROR_BIT (0x40000000)
 
 enum {
-	EDUMPFAILED    = 0x00008000  , // tree dump failed 32768
+	EUNUSED1 = 0x00008000  ,
 	ETRYAGAIN        , // try doing it again
 	ECLOSING         , // can't add cuz we're closing the db
 	ENOTFOUND        , // can't find in the db
 	EHOSTNAMETOOBIG  , // hostname too big
 	EOUTOFSOCKETS    , // no more sockets?
 	EURLTOOBIG       , // too many chars in url
-	ENOSITEDEFAULT   , // tagdb record's default record missng
+	EUNUSED2         ,
 	EBADREPLYSIZE    , // reply is wrong length
 	EBADREPLY        , // something is wrong w/ reply
 	EREPLYTOOSMALL   , // reply is too small  32778
 	EREQUESTTOOSHORT , // request length too short
 	EBADREQUESTSIZE  , // request length not correct 32780
 	EBADREQUEST      , // a bad request
-	ENOTSUPPORTED    , // operation not yet supported
+	EUNUSED3         ,
 	EBADHOSTID       , // someone tried to use a bad hostId
 	EBADENGINEER     , // me being lazy
-	EISCLOSING       , // cannot add because db is closing
-	EDATANOTOWNED    , // trying to write on data you don't own
-	EDATAUNPATCHABLE , // got unpatchable corrupt data
+	EUNUSED4         ,
+	EUNUSED5         ,
+	EUNUSED6         ,
 	EBADRDBID        , // bad rdb id
 	EBUFTOOSMALL     , // used in SiteRec.cpp
 	ECOMPRESSFAILED  , // used in TitleRec.cpp  32790
@@ -50,50 +50,48 @@ enum {
 	ENOHOSTS         , // multicast can't find any hosts
 	ENOSLOTS         , // multicast can't use more than X slots
 	ENOTHREADSLOTS   , // no more room in thread queue
-	EBADNUMHOSTS     , // hostdb error
-	EFILEOPEN        , // error opening/reading a tagdb file  32800
-	EURLTOOLONG      , 
-	EDOCBINARY       , //parser/xml/XmlDoc.cpp
+	EUNUSED7         ,
+	EUNUSED8         ,
+	EURLTOOLONG      ,
+	EUNUSED9         ,
 	EDOCADULT        , //parser/xml/XmlDoc.cpp
 	EDOCBANNED       , 
 	EDOCFORCEDELETE  , // doc force deleted
 	EDOCURLSPAM      , // url detected as spam/porn
-	EDOCSPAM         , // the doc is spam
-	EDOCLINKBANNED   , // banned cuz linker as <linksBanned>1</> in rs
-	EDOCCGI          , 
-	EDOCURLIP        , 
+	EUNUSED10        ,
+	EUNUSED11        ,
+	EUNUSED12        ,
+	EUNUSED13        ,
 	EDOCBADCONTENTTYPE   ,
-	EDOCQUALITYLOW       , 
+	EUNUSED14            ,
 	EDOCBADHTTPSTATUS    , 
 	EDOCREDIRECTSTOSELF  , 
 	EDOCTOOMANYREDIRECTS ,
 	EDOCSIMPLIFIEDREDIR  , 
-	EDOCBADREDIRECTURL   , 
-	EDOCTOOBIG       ,  
-	EDOCTOOSMALL     ,  
-	EDOCTOOOLD       ,  
-	EDOCTOONEW       ,  
-	//EDOCNOTNEW       ,  
-	//EDOCNOTOLD       ,  
-	EDOCNOTMODIFIED  ,  
+	EDOCBADREDIRECTURL   ,
+	EUNUSED15        ,
+	EUNUSED16        ,
+	EUNUSED17        ,
+	EUNUSED18        ,
+	EUNUSED19        ,
 	EDOCUNCHANGED    ,
-	EDOCUNCHANGED2   ,
+	EUNUSED20        ,
 	EDOCDUP          ,  
-	EDOCDUPWWW       ,  
-	EDOCQUOTABREACH  , //breached the max docs quota
+	EDOCDUPWWW       ,
+	EUNUSED21        ,
 	EDOCDISALLOWED   , //robots.txt disallows this url
-	EDOCNOINDEX      , //meta robots tag says not to index
-	EDOCNOINDEX2     , //ruleset (tagdb*.xml)has <indexDoc>no</> in it
-	EDOCASIAN        , //asian charset disallowed
-	EDOCWRONGIP      , //doc has wrong ip, does not match sanityIp
-	EDOCNODOLLAR     , //doc does not have a $ sign, but needs it
-	EDOCNONUMBERS    , //doc does not have two back-to-back numbers in url
-	EDOCHASRSSFEED   , //doc has an rss feed to be followed
-	EDOCNOTRSS       , //doc is not linked to by RSS as required
-	EDOCISANCHORRSS  , //doc's rss links uses anchors to one page
-	EDOCHASBADRSS    , //doc is pointed to by a bad RSS
-	EDOCISSERP       , //doc is a search results page
-	ETOOMANYLISTS    , //used by rdb/Msg2.cpp for getting lists
+	EUNUSED22        ,
+	EUNUSED23        ,
+	EUNUSED24        ,
+	EUNUSED25        ,
+	EUNUSED26        ,
+	EUNUSED27        ,
+	EUNUSED28        ,
+	EUNUSED29        ,
+	EUNUSED30        ,
+	EUNUSED31        ,
+	EUNUSED32        ,
+	EUNUSED33        ,
 	ETOOMANYFILES    , //used by Rdb class when trying to dump
 	EQUERYTOOBIG     , //used by parser/query/SimpleQuery.cpp
 	EQUERYTRUNCATED  , //used in Msg39.cpp
@@ -104,7 +102,7 @@ enum {
 	ESOCKETCLOSED    , //device disconnected (POLL_HUP) Loop.cpp
 	EBADMIME         , //HttpMime.cpp
 	ENOHOSTSFILE     , //Hostdb::init() needs a hosts file
-	ENOHOSTIP        , //host file missing an IP entry for a host
+	EUNUSED34        ,
 	EURLHASNOIP      , //parser/url/Url2.cpp::hashIp()
 	EBADIP           , //parser/url/Url2.cpp::hashIp()
 	EMSGTOOBIG       , //msg is too big
@@ -113,7 +111,7 @@ enum {
 	EDNSDEAD         , //dns is dead
 	EDNSTIMEDOUT     , //was just EUDPTIMEDOUT
 	ECOLLTOOBIG      , //collection is too long
-	ESTRIKEOUT       , //retried enough times; deleting doc & giving up
+	EUNUSED35        ,
 	ENOPERM          , //permission denied
 	ECORRUPTDATA     , //corrupt data
 	ENOCOLLREC       , //no collection record
@@ -124,41 +122,38 @@ enum {
 	EFILECLOSED      , //read on closed file?
 	ELISTTOOBIG      , //Rdb::addList() calls this
 	ECANCELLED       , //transaction was cancelled
-	//EHAMMERIP        , //downloading page would hammer ip
-	//EHAMMERDOMAIN    , //downloading page would hammer domain
-	EDOCLANG         , // doc written in an invalid language
-	EBUYFEED         , //IP has exceeded free usage quota.
+	EUNUSED36        ,
+	EUNUSED37        ,
 	EBADCHARSET      , // Unsupported charset
 	ETOOMANYDOWNLOADS, //too many concurrent http downloads
-	EBADPROXY        , //admin request to a proxy 
+	EUNUSED38        ,
 	ELINKLOOP        , //url is repeating path components in a loop
 	ENOCACHE         , // document disallows caching
 	EREPAIRING       , // we are in repair mode, cannot add data
-	ECANCELACK       , // read a cancel ack, destroy the slot
+	EUNUSED39        ,
 	EBADURL          ,
 	EDOCFILTERED     , // doc is filtered
 	ESSLNOTREADY     , // SSl tcpserver is not ready to do HTTPS request
 	ERESTRICTEDPAGE  , // spider trying to download /master or /admin page
-	//ESPIDERRECDUP    , // duplicate spiderdb record
 	EDOCISERRPG      , // Doc is error page
-	EFORCED          , // Doc was force re-spidered
+	EUNUSED40        ,
 	EINJECTIONSDISABLED        , // injection is disabled
-	ETAGBREACH       , // Sections.cpp ran out of stack space
+	EUNUSED41        ,
 	EDISKSTUCK       ,
 	EDOCREPEATSPAMMER,
-	EDOCEVILREDIRECT ,
+	EUNUSED42        ,
 	EDOCBADSECTIONS  ,
-	EDOCBADDATES     ,
-	EBADGEOCODERREPLY,
+	EUNUSED43        ,
+	EUNUSED44        ,
 	EBUFOVERFLOW     ,
-	EPLSRESUBMIT     ,
-	EURLBADYEAR      ,
+	EUNUSED45        ,
+	EUNUSED46        ,
 	EABANDONED       ,
 	ECORRUPTHTTPGZIP ,
 	EDOCIDCOLLISION  ,
 	ESSLERROR        ,
 	EPERMDENIED      ,
-	ENOFUNDS         ,
+	EUNUSED47        ,
 	EDIFFBOTINTERNALERROR,
 	EDIFFBOTMIMEERROR,
 	EDIFFBOTBADHTTPSTATUS,
@@ -171,9 +166,9 @@ enum {
 	EWAITINGTOSYNCHOSTSCONF,
 	EDOCNONCANONICAL,
 	ECUSTOMCRAWLMISMATCH, // a crawl request was made with a name that already existed for bulk request (or the other way around)
-	ENOTOKEN,
+	EUNUSED48,
 	EBADIMG,
-	EREINDEXREDIR,
+	EUNUSED49,
 	ETOOMANYPARENS,
 
 	EDIFFBOTUNABLETOAPPLYRULES,
@@ -193,10 +188,10 @@ enum {
 	EREADONLYMODE,
 	ENOTITLEREC,
 	EQUERYINGDISABLED,
-	EJSONMISSINGLASTCURLY,
+	EUNUSED50,
 	EADMININTERFERENCE,
 	EDNSERROR        ,
-	ETHREADSDISABLED,
+	EUNUSED51,
 	EMALFORMEDQUERY,
 	ESHARDDOWN
 };

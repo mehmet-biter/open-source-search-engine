@@ -1761,49 +1761,30 @@ codes are all in <a href="#errno">Errno.h</a>.
 <table cellpadding=3 border=1>
 <tr><td>EBADTITLEREC</td><td>Document's TitleRec is corrupted and can not be read.</td></tr>
 <tr><td>EURLHASNOIP</td><td>Url has no ip.</td></tr>
-<tr><td>EDOCCGI</td><td>Document has CGI parms in url and <i>allowCgiUrls</i> is specified as false in the ruleset.</td></tr>
-<tr><td>EDOCURLIP</td><td>Document is an IP-based url and <i>allowIpUrls</i> is specified as false in the ruleset.</td></tr>
 <tr><td>EDOCBANNED</td><td>Document's ruleset has <i>banned</i> set to true.</td></tr>
 <tr><td>EDOCDISALLOWED</td><td>Robots.txt forbids this document to be indexed. But, if it has incoming link text, Gigablast will index it anyway, but just index the link text.</td></tr>
 <tr><td>EDOCURLSPAM</td><td>The url itself contains naughty words and the <i>do url sporn checking</i> is enabled in the Spider Controls.</td></tr>
-<tr><td>EDOCQUOTABREECH</td><td>The quota for this site has been exceeded. Quotas is based on quality of the url. See the quota section in the <a href="overview.html#quotas">Overview</a> file.</td></tr>
 <tr><td>EDOCBADCONTENTTYPE</td><td>Content type, as returned in the mime reply and parsed out by HttpMime.cpp, is not supported for indexing</td></tr>
 <tr><td>EDOCBADHTTPSTATUS</td><td>Http status was 404 or some other bad stats.</td></tr>
-<tr><td>EDOCNOTMODIFIED</td><td>Spider Controls have <i>use IfModifiedSince</i> enabled and document was not modified since the last time we indexed it.</td></tr>
 <tr><td>EDOCREDIRECTSTOSELF</td><td>The mime redirects to itself.</td></tr>
 <tr><td>EDOCTOOMANYREDIRECTS</td><td>Url had more than 6 redirects.</td></tr>
 <tr><td>EDOCBADREDIRECTURL</td><td>The redirect url was empty.</td></tr>
 <tr><td>EDOCSIMPLIFIEDREDIR</td><td>The document redirected to a simpler url, which had less path components, did not have cgi, or for whatever reason was prettier to look at. The current url will be discarded and the redirect url will be added to spiderdb.</td></tr>
 <tr><td>EDOCNONCANONICAL</td><td>Doc has a canonical link reference a url that was not itself. Used for deduping at spider time.</td></tr>
-<tr><td>EDOCNODOLLAR</td><td>Document did not contain a dollar sign followed by a price. Used for building shopping indexes.</td></tr>
-<tr><td>EDOCHASBADRSS</td><td>This should not happen.</td></tr>
-<tr><td>EDOCISANCHORRSS</td><td>This should not happen.</td></tr>
-<tr><td>EDOCHASRSSFEED</td><td><i>only index documents from rss feeds</i> is true in the Spider Controls, and the document indicates it is part of an RSS feed, and does not currently have an RSS feed linking to it in the index. Gigablast will discard the document, and add the url of the RSS feed to spiderdb. When that is spidered the url should be picked up again.</td></tr>
-<tr><td>EDOCNOTRSS</td><td>If the Spider Controls specify <i>only index articles from rss feeds</i> as true and the document is not part of an RSS feed.</td></tr>
 <tr><td>EDOCDUP</td><td>According to checksumdb, a document already exists from this hostname with the same checksumdb hash. See <a href="#deduping">Deduping</a> section.</td></tr>
 <!--<tr><td>EDOCDUPWWW</td><td>According to urldb, this url already exists in the index but with a "www." prepended to it. This prevents us from indexing both http://mysite.com/ and http://www.mysite.com/ because they are almost always the same thing.</td></tr>-->
-<tr><td>EDOCTOOOLD</td><td>Document's last modified date is before the <i>maxLastModifiedDate</i> specified in the ruleset.</td></tr>
-<tr><td>EDOCLANG</td><td>The document does not match the language given in the Spider Controls.</td></tr>
 <tr><td>EDOCADULT</td><td>Document was detected as adult and adult documents are forbidden in the Spider Controls.</td></tr>
-<tr><td>EDOCNOINDEX</td><td>Document has a noindex meta tag.</td></tr>
-<tr><td>EDOCNOINDEX2</td><td>Document's ruleset (SiteRec) says not to index it using the &lt;indexDoc&gt; tag. Probably used to just harvest links then.</td></tr>
-<tr><td>EDOCBINARY</td><td>Document is detected as a binary file.</td></tr>
-<tr><td>EDOCTOONEW</td><td>Document is after the <i>minLastModifiedDate</i> specified in the ruleset.</td></tr>
-<tr><td>EDOCTOOBIG</td><td>Document size is bigger than <i>maxDocSize</i> specified in the ruleset.</td></tr>
-<tr><td>EDOCTOOSMALL</td><td>Document size is smaller than <i>minDocSize</i> specified in the ruleset.</td></tr>
 </table>
 <br><br>
 The following error codes just set g_errno. Like if the error is an internet
 error, or something on our side. These errors are also in Errno.h.
 <br><br>
 <table cellpadding=3 border=1>
-<tr><td>ETTRYAGAIN</td><td>&nbsp;</td></tr>
 <tr><td>ENOMEM</td><td>We ran out of memory.</td></tr>
 <tr><td>ENOSLOTS</td><td>We ran out of UDP sockets.</td></tr>
 <tr><td>ECANCELLED</td><td>An administrator disabled spidering in the Master Controls thereby cancelling all outstanding spiders.</td></tr>
 <tr><td>EBADIP</td><td>Unable to get IP address of url.</td></tr>
 <tr><td>EBADENGINEER</td><td>&nbsp;</td></tr>
-<tr><td>EIPHAMMER</td><td>We would hit the IP address too hard, violating <i>sameIpWait</i> in the Spider Controls if we were to download this document.</td></tr>
 <tr><td>ETIMEDOUT</td><td>If we timed out downloading the document.</td></tr>
 <tr><td>EDNSTIMEDOUT</td><td>If we timed out looking up the IP of the url.</td></tr>
 <tr><td>EBADREPLY</td><td>DNS server sent us a bad reply.</td></tr>

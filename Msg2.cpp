@@ -81,8 +81,7 @@ bool Msg2::getLists ( int32_t     rdbId       ,
 	m_startTime = gettimeofdayInMilliseconds();
 	// set this
 	m_numLists = m_query->m_numTerms;
-	// make sure not too many lists being requested
-	//if(m_numLists > MAX_NUM_LISTS ) {g_errno=ETOOMANYLISTS; return true;}
+
 	// all msg5 available for use
 	for ( int32_t i = 0 ; i < MSG2_MAX_REQUESTS ; i++ ) m_avail[i] = true;
 	if ( m_isDebug ) {

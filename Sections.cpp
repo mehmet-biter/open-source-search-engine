@@ -325,14 +325,14 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 
 		// do not breach the stack
 		if ( stackPtr - stack >= MAXTAGSTACK ) {
-			log("html: stack breach for %s",url->getUrl());
+			log( LOG_WARN, "html: stack breach for %s",url->getUrl());
 			// if we set g_errno and return then the url just
 			// ends up getting retried once the spider lock
 			// in Spider.cpp expires in MAX_LOCK_AGE seconds.
 			// about an hour. but really we should completely
 			// give up on this. whereas we should retry OOM errors
 			// etc. but this just means bad html really.
-			//g_errno = ETAGBREACH;
+
 			// just reset to 0 sections then
 			reset();
 			return true;
