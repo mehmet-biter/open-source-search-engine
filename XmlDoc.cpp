@@ -13335,8 +13335,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	if ( ! m_indexCodeValid ) { g_process.shutdownAbort(true); }
 
 	// this means to abandon the injection
-	if ( *indexCode == EABANDONED ||
-	     *indexCode == EHITPROCESSLIMIT ) {
+	if ( *indexCode == EABANDONED ) {
 		m_metaList = (char *)0x123456;
 		m_metaListSize = 0;
 		m_metaListValid = true;
@@ -14862,8 +14861,7 @@ SpiderReply *XmlDoc::getFakeSpiderReply ( ) {
 	//	m_isIndexedValid = true;
 	//}
 
-	// if this is EABANDONED or EHITPROCESSLIMIT
-	// or ECORRUPTDATA (corrupt gzip reply)
+	// if this is EABANDONED or ECORRUPTDATA (corrupt gzip reply)
 	// then this should not block. we need a spiderReply to release the
 	// url spider lock in SpiderLoop::m_lockTable.
 	// if m_isChildDoc is true, like for diffbot url, this should be

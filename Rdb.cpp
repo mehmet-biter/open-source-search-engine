@@ -2316,8 +2316,7 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 			// so we gotta add the replies now.
 			int32_t indexCode = rr->m_errCode;
 			if ( //indexCode == EINTERNALERROR ||
-			     indexCode == EABANDONED ||
-			     indexCode == EHITPROCESSLIMIT ) {
+			     indexCode == EABANDONED ) {
 				log("rdb: not adding spiderreply to rdb "
 				    "because "
 				    "it was an internal error for uh48=%" PRIu64" "
