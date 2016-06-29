@@ -2878,7 +2878,7 @@ int32_t Rdb::reclaimMemFromDeletedTreeNodes( int32_t niceness ) {
 		// negative key? this shouldn't happen
 		if ( (sreq->m_key.n0 & 0x01) == 0x00 ) {
 			log("rdb: reclaim got negative doldb key in scan");
-			p += sizeof(DOLEDBKEY);
+			p += sizeof(key_t);
 			skipped++;
 			continue;
 		}

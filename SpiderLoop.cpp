@@ -129,8 +129,7 @@ void SpiderLoop::startLoop ( ) {
 	m_recalcTimeValid = false;
 	// falsify this flag
 	m_outstanding1 = false;
-	// not flushing
-	m_msg12.m_gettingLocks = false;
+
 	// we aren't in the middle of waiting to get a list of SpiderRequests
 	m_gettingDoledbList = false;
 	// we haven't registered for sleeping yet
@@ -374,16 +373,6 @@ void SpiderLoop::spiderDoledUrls ( ) {
 	logTrace( g_conf.m_logTraceSpider, "BEGIN"  );
 
 	m_lastCallTime = gettimeofdayInMillisecondsLocal();
-
-	// when getting a lock we keep a ptr to the SpiderRequest in the
-	// doledb list, so do not try to read more just yet until we know
-	// if we got the lock or not
-	if ( m_msg12.m_gettingLocks ) {
-		log( LOG_WARN, "spider: failed to get doledb rec to spider: msg12 is getting locks");
-
-		// this should no longer happen
-		g_process.shutdownAbort(true);
-	}
 
 collLoop:
 
@@ -776,16 +765,6 @@ subloopNextPriority:
 
 		// shortcut
 		ci = &cr->m_localCrawlInfo;
-
-		// bail if waiting for lock reply, no point in reading more
-		if ( m_msg12.m_gettingLocks ) {
-			// assume we would have launched a spider for this coll
-			ci->m_lastSpiderCouldLaunch = nowGlobal;
-
-			// wait for sleep callback to re-call us in 10ms
-			logTrace( g_conf.m_logTraceSpider, "END, still waiting for lock reply"  );
-			return;
-		}
 
 		// reset priority when it goes bogus
 		if ( m_sc->m_pri2 < 0 ) {
@@ -1348,8 +1327,7 @@ bool SpiderLoop::spiderUrl9 ( SpiderRequest *sreq ,
 			      int32_t maxSpidersOutPerIp ) {
 	// sanity check
 	//if ( ! sreq->m_doled ) { g_process.shutdownAbort(true); }
-	// if waiting on a lock, wait
-	if ( m_msg12.m_gettingLocks ) { g_process.shutdownAbort(true); }
+
 	// sanity
 	if ( ! m_sc ) { g_process.shutdownAbort(true); }
 
@@ -1490,9 +1468,6 @@ bool SpiderLoop::spiderUrl9 ( SpiderRequest *sreq ,
 	g_errno = 0;
 	// breathe
 	QUICKPOLL(MAX_NICENESS);
-
-	// sanity. ensure m_sreq doesn't change from under us i guess
-	if ( m_msg12.m_gettingLocks ) { g_process.shutdownAbort(true); }
 
 	// get rid of this crap for now
 	//g_spiderCache.meterBandwidth();
@@ -2242,6 +2217,70 @@ bool sendNotificationForCollRec ( CollectionRec *cr )  {
 	return true;
 }
 
+
+// hostId is the remote hostid sending us the lock request
+void removeExpiredLocks ( int32_t hostId ) {
+	// when we last cleaned them out
+	static time_t s_lastTime = 0;
+
+	int32_t nowGlobal = getTimeGlobalNoCore();
+
+	// only do this once per second at the most
+	if ( nowGlobal <= s_lastTime ) return;
+
+	// shortcut
+	HashTableX *ht = &g_spiderLoop.m_lockTable;
+
+	restart:
+
+	// scan the slots
+	int32_t ns = ht->m_numSlots;
+	// . clean out expired locks...
+	// . if lock was there and m_expired is up, then nuke it!
+	// . when Rdb.cpp receives the "fake" title rec it removes the
+	//   lock, only it just sets the m_expired to a few seconds in the
+	//   future to give the negative doledb key time to be absorbed.
+	//   that way we don't repeat the same url we just got done spidering.
+	// . this happens when we launch our lock request on a url that we
+	//   or a twin is spidering or has just finished spidering, and
+	//   we get the lock, but we avoided the negative doledb key.
+	for ( int32_t i = 0 ; i < ns ; i++ ) {
+		// breathe
+		QUICKPOLL(MAX_NICENESS);
+		// skip if empty
+		if ( ! ht->m_flags[i] ) continue;
+		// cast lock
+		UrlLock *lock = (UrlLock *)ht->getValueFromSlot(i);
+		int64_t lockKey = *(int64_t *)ht->getKeyFromSlot(i);
+		// if collnum got deleted or reset
+		collnum_t collnum = lock->m_collnum;
+		if ( collnum >= g_collectiondb.m_numRecs ||
+		     ! g_collectiondb.m_recs[collnum] ) {
+			log("spider: removing lock from missing collnum "
+					    "%" PRId32,(int32_t)collnum);
+			goto nuke;
+		}
+		// skip if not yet expired
+		if ( lock->m_expires == 0 ) continue;
+		if ( lock->m_expires >= nowGlobal ) continue;
+		// note it for now
+		if ( g_conf.m_logDebugSpider )
+			log("spider: removing lock after waiting. elapsed=%" PRId32"."
+					    " lockKey=%" PRIu64" hid=%" PRId32" expires=%" PRIu32" "
+					    "nowGlobal=%" PRIu32,
+			    (nowGlobal - lock->m_timestamp),
+			    lockKey,hostId,
+			    (uint32_t)lock->m_expires,
+			    (uint32_t)nowGlobal);
+		nuke:
+		// nuke the slot and possibly re-chain
+		ht->removeSlot ( i );
+		// gotta restart from the top since table may have shrunk
+		goto restart;
+	}
+	// store it
+	s_lastTime = nowGlobal;
+}
 
 
 void gotCrawlInfoReply ( void *state , UdpSlot *slot);

@@ -16,7 +16,6 @@
 #include "Msg1.h"
 #include "hash.h"
 #include "RdbCache.h"
-#include "Msg12.h"
 #include "Spider.h"
 
 // . the spider loop
@@ -63,8 +62,6 @@ class SpiderLoop {
 			  int32_t maxSpidersOutPerIp );
 
 	bool spiderUrl2 ( );
-
-	Msg12 m_msg12;
 
 	// state memory for calling SpiderUrl2() (maybe also getLocks()!)
 	SpiderRequest *m_sreq;

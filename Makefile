@@ -23,7 +23,7 @@ OBJS =  UdpSlot.o Rebalance.o \
 	Words.o UdpServer.o \
 	Titledb.o HashTable.o \
 	TcpServer.o Summary.o \
-	Spider.o SpiderColl.o SpiderLoop.o Doledb.o Msg12.o \
+	Spider.o SpiderColl.o SpiderLoop.o Doledb.o \
 	RdbTree.o RdbScan.o RdbMerge.o RdbMap.o RdbMem.o RdbBuckets.o \
 	RdbList.o RdbDump.o RdbCache.o Rdb.o RdbBase.o \
 	Query.o Phrases.o Multicast.o \
@@ -487,9 +487,6 @@ SpiderLoop.o:
 	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 
 Doledb.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
-
-Msg12.o:
 	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 
 PostQueryRerank.o:

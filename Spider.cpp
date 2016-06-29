@@ -1049,12 +1049,6 @@ void testWinnerTreeKey ( ) {
 	if ( hc != hc2 ) { g_process.shutdownAbort(true); }
 }
 
-void removeExpiredLocks ( int32_t hostId );
-
-
-
-
-
 /////////////////////////
 /////////////////////////      UTILITY FUNCTIONS
 /////////////////////////
@@ -1540,12 +1534,6 @@ bool sendPage ( State11 *st ) {
 		       "<tr class=poo><td><b>Total Spiders</n>"
 		       "</td><td>%" PRId64"</td><td>%" PRId64"</td><td>%" PRId64"</td>\n"
 		       "</td><td>%" PRId32"</td><td>%" PRId32"</td><td>%" PRId32"</td></tr>\n"
-		       //"<tr class=poo><td><b>Successful Spiders</n>"
-		       //"</td><td>%" PRId64"</td><td>%" PRId64"</td><td>%" PRId64"</td>\n"
-		       //"</td><td>%" PRId32"</td><td>%" PRId32"</td><td>%" PRId32"</td></tr>\n"
-		       //"<tr class=poo><td><b>Failed Spiders</n>"
-		       //"</td><td>%" PRId64"</td><td>%" PRId64"</td><td>%" PRId64"</td>\n"
-		       //"</td><td>%" PRId32"</td><td>%" PRId32"</td><td>%" PRId32"</td></tr>\n"
 		       "<tr class=poo><td><b>Success Rate</b>"
 		       "</td><td>%.02f%%</td><td>%.02f%%</td>"
 		       "</td><td>%.02f%%</td><td>%.02f%%</td>"
@@ -1558,25 +1546,6 @@ bool sendPage ( State11 *st ) {
 		       points,
 		       sampleNew,
 		       sampleOld,
-
-		       //g_stats.m_totalSpiderSuccessNew +
-		       //g_stats.m_totalSpiderSuccessOld,
-		       //g_stats.m_totalSpiderSuccessNew,
-		       //g_stats.m_totalSpiderSuccessOld,
-		       //g_stats.m_spiderSuccessNew +
-		       //g_stats.m_spiderSuccessOld,
-		       //g_stats.m_spiderSuccessNew,
-		       //g_stats.m_spiderSuccessOld,
-
-		       //g_stats.m_totalSpiderErrorsNew +
-		       //g_stats.m_totalSpiderErrorsOld,
-		       //g_stats.m_totalSpiderErrorsNew,
-		       //g_stats.m_totalSpiderErrorsOld,
-		       //g_stats.m_spiderErrorsNew +
-		       //g_stats.m_spiderErrorsOld,
-		       //g_stats.m_spiderErrorsNew,
-		       //g_stats.m_spiderErrorsOld,
-
 		       tsr, nsr, osr, tssr, nssr, ossr );
 
 	int32_t bucketsNew[65536];
