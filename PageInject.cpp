@@ -651,10 +651,7 @@ void sendUdpReply7 ( void *state ) {
     if(xd->m_indexCode) {
         statColor = 0xaaddaa;//0x4e99e9;
     }
-	g_stats.addStat_r ( xd->m_rawUtf8ContentSize,
-						xd->m_injectStartTime, 
-						gettimeofdayInMilliseconds(),
-						statColor );
+	g_stats.addStat_r ( xd->m_rawUtf8ContentSize, xd->m_injectStartTime, gettimeofdayInMilliseconds(), statColor );
 
 
 	// injecting a warc seems to not set m_indexCodeValid to true

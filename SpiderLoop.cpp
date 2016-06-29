@@ -1733,8 +1733,6 @@ bool SpiderLoop::spiderUrl2 ( ) {
 
 	g_spiderLoop.m_launches++;
 
-	// count it as a hit
-	//g_stats.m_spiderUrlsHit++;
 	// sanity check
 	if (m_sreq->m_priority <= -1 ) { 
 		log("spider: fixing bogus spider req priority of %i for "

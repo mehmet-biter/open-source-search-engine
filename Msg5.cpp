@@ -258,7 +258,7 @@ bool Msg5::readList ( ) {
 		return true;
 	}
 
- readMore:
+readMore:
 	// . reset our tree list
 	// . sets fixedDataSize here in case m_includeTree is false because
 	//   we don't want merge to have incompatible lists
@@ -1271,12 +1271,10 @@ bool Msg5::doneMerging ( ) {
 	// . we should use another color rather than turquoise
 	// . these clog up the graph, so only log if took more than 1 ms
 	// . only time it if we actually did a merge, check m_startTime
-	if ( took > 1 && m_startTime )
-		g_stats.addStat_r ( m_minRecSizes ,
-				    m_startTime , 
-				    now ,
-				    //"rdb_list_merge",
-				    0x0000ffff );
+	if ( took > 1 && m_startTime ) {
+		//"rdb_list_merge"
+		g_stats.addStat_r( m_minRecSizes, m_startTime, now, 0x0000ffff );
+	}
 
 	// . scan merged list for problems
 	// . this caught an incorrectly set m_list->m_lastKey before

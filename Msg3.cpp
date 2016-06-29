@@ -372,6 +372,7 @@ bool Msg3::readList  ( char           rdbId         ,
 	KEYSET(m_constrainKey,endKeyArg,m_ks);//set incase justGetEndKey istrue
 	m_minRecSizes        = minRecSizes;
 	m_compensateForMerge = compensateForMerge;
+
 	// bail if 0 files to scan -- no! need to set startKey/endKey
 	if ( numFiles == 0 ) return true;
 	// don't read anything if endKey < startKey

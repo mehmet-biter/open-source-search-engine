@@ -52,10 +52,6 @@ int main ( int argc , char *argv[] ) {
 	// if ( ! g_mem.init ( 1024*1024*30 ) ) {
 	//	fprintf (stderr,"main::Mem init failed\n" ); return 1; }
 
-
-	// plotter test
-	//g_stats.dumpGIF ();
-	//exit (0);
 	// init the loop
 	if ( ! g_loop.init() ) {
 		log("main::Loop init failed" ); return 1; }

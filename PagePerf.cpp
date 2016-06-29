@@ -8,12 +8,6 @@
 // . make a web page displaying the config of this host
 // . call g_httpServer.sendDynamicPage() to send it
 bool sendPagePerf ( TcpSocket *s , HttpRequest *r ) {
-	//int32_t refreshLen = 0;
-	//if(r->getString ( "refresh" , &refreshLen) ) {
-	//	g_stats.dumpGIF ();
-	//	return g_httpServer.sendDynamicPage ( s , "x", 1 );
-	//}
-
 	// don't allow pages bigger than 128k in cache
 	char  buf [ 64*1024 ];
 	SafeBuf p(buf, 64*1024);
@@ -69,11 +63,6 @@ bool sendPagePerf ( TcpSocket *s , HttpRequest *r ) {
 
 		p.safePrintf( "// --></script>");
 	}
-
-
-
-	// dump stats to /tmp/diskGraph.gif
-	//g_stats.dumpGIF ();
 
 	if(autoRefresh > 0) 
 		p.safePrintf("<body onLoad=\"timeit();\">"); 

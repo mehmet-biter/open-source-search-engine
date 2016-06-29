@@ -1696,11 +1696,9 @@ bool Msg40::gotSummary ( ) {
 	// . use purple for tie to get all summaries
 	// . THIS INCLUDES Msg3a/Msg39 RECALLS!!!
 	// . can we subtract that?
-	g_stats.addStat_r ( 0           , 
-			    m_startTime , 
-			    now         ,
-			    //"get_all_summaries",
-			    0x008220ff  );
+	//"get_all_summaries"
+	g_stats.addStat_r ( 0, m_startTime, now, 0x008220ff );
+
 	// timestamp log
 	if ( g_conf.m_logTimingQuery || m_si->m_debug )
 		logf(LOG_DEBUG,"query: msg40: [%" PTRFMT"] Got %" PRId32" summaries in "

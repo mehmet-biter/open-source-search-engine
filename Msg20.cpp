@@ -549,11 +549,9 @@ bool Msg20Reply::sendReply ( Msg20Request *req, XmlDoc *xd ) {
 	if ( xd->m_utf8ContentValid ) clen = xd->size_utf8Content - 1;
 
 	// show it in performance graph
-	if ( xd->m_startTimeValid ) 
-		g_stats.addStat_r ( clen                         ,
-				    xd->m_startTime              , 
-				    gettimeofdayInMilliseconds() ,
-				    color                        );
+	if ( xd->m_startTimeValid ) {
+		g_stats.addStat_r( clen, xd->m_startTime, gettimeofdayInMilliseconds(), color );
+	}
 	
 	
 	//put the reply into the summary cache

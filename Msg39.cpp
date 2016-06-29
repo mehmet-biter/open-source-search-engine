@@ -364,12 +364,9 @@ bool Msg39::controlLoop ( ) {
 			// . measure time to add the lists in bright green
 			// . use darker green if rat is false (default OR)
 			int32_t color;
-			//char *label;
 			color = 0x0000ff00 ;
 			//label = "termlist_intersect";
-			g_stats.addStat_r ( 0 , 
-					    m_posdbTable.m_t1 , 
-					    m_posdbTable.m_t2 , color );
+			g_stats.addStat_r ( 0, m_posdbTable.m_t1, m_posdbTable.m_t2, color );
 		}
 		// accumulate total hits count over each docid split
 		m_numTotalHits += m_posdbTable.m_docIdVoteBuf.length() / 6;

@@ -72,10 +72,13 @@ void Matches::setQuery ( Query *q ) {
 	// save it
 	m_q       = q;
 
-	if ( m_qwordFlags ) { g_process.shutdownAbort(true); }
+	if ( m_qwordFlags ) {
+		g_process.shutdownAbort(true);
+	}
 
 	int32_t need = m_q->m_numWords * sizeof(mf_t) ;
 	m_qwordAllocSize = need;
+
 	if ( need < 128 ) 
 		m_qwordFlags = (mf_t *)m_tmpBuf;
 	else

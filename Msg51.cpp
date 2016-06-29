@@ -524,8 +524,12 @@ loop:
 	// . these are only 32 bits!
 	if ( fakeIt ) h = g_titledb.getDomHash8FromDocId(docIds[i]);
 	else          h = g_clusterdb.getSiteHash26 ( crec );
+
 	// inc this count!
-	if ( fakeIt ) g_stats.m_filterStats[CR_ERROR_CLUSTERDB]++;
+	if ( fakeIt ) {
+		g_stats.m_filterStats[CR_ERROR_CLUSTERDB]++;
+	}
+
 	// if it matches a siteid on our black list
 	//if ( checkNegative && sht.getSlot((int64_t)h) > 0 ) {
 	//	*level = CR_BLACKLISTED_SITE; goto loop; }

@@ -457,18 +457,12 @@ bool Msg2::gotList ( RdbList *list ) {
 	// . add the stat
 	// . use yellow for our color (Y= g -b
 	if(m_niceness > 0) {
-		g_stats.addStat_r ( 0 , 
-				    m_startTime , 
-				    now         ,
-				    //"get_termlists_nice",
-				    0x00aaaa00 );
+		//"get_termlists_nice"
+		g_stats.addStat_r ( 0, m_startTime, now, 0x00aaaa00 );
 	}
 	else {
-		g_stats.addStat_r ( 0 , 
-				    m_startTime , 
-				    now         ,
-				    //"get_termlists",
-				    0x00ffff00 );
+		//"get_termlists"
+		g_stats.addStat_r ( 0, m_startTime, now, 0x00ffff00 );
 	}
 
 	m_k = -1;
