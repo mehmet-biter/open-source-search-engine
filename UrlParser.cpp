@@ -25,6 +25,7 @@ static const char* strnpbrk( const char *str1, size_t len, const char *str2 ) {
 }
 
 /// @todo ALC we should see if we need to do relative path resolution here
+/// @todo ALC we should cater for scheme relative address ( pass in parent scheme )
 /// https://tools.ietf.org/html/rfc3986#section-5.2
 UrlParser::UrlParser( const char *url, size_t urlLen )
 	: m_url( url )
@@ -73,9 +74,14 @@ void UrlParser::parse() {
 	//             / path-rootless
 	//             / path-empty
 
-	const char *schemePos = static_cast<const char*>( memmem( currentPos, urlEnd - currentPos, "://", 3 ) );
-	if ( schemePos != NULL ) {
-		m_authority = schemePos + 3;
+	const char *authorityPos = static_cast<const char*>( memmem( currentPos, urlEnd - currentPos, "//", 2 ) );
+	if ( authorityPos != NULL ) {
+		if ( authorityPos != currentPos ) {
+			m_scheme = currentPos;
+			m_schemeLen = authorityPos - currentPos - 1;
+		}
+
+		m_authority = authorityPos + 2;
 		currentPos = m_authority;
 	} else {
 		m_authority = currentPos;
