@@ -13336,7 +13336,6 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 
 	// this means to abandon the injection
 	if ( *indexCode == EABANDONED ||
-	     *indexCode == EHITCRAWLLIMIT ||
 	     *indexCode == EHITPROCESSLIMIT ) {
 		m_metaList = (char *)0x123456;
 		m_metaListSize = 0;
@@ -14863,7 +14862,7 @@ SpiderReply *XmlDoc::getFakeSpiderReply ( ) {
 	//	m_isIndexedValid = true;
 	//}
 
-	// if this is EABANDONED or EHITCRAWLLIMIT or EHITPROCESSLIMIT
+	// if this is EABANDONED or EHITPROCESSLIMIT
 	// or ECORRUPTDATA (corrupt gzip reply)
 	// then this should not block. we need a spiderReply to release the
 	// url spider lock in SpiderLoop::m_lockTable.

@@ -96,7 +96,6 @@ const char *mstrerrno ( int errnum ) {
 		case	EDOCIDCOLLISION  : return "DocId collision in titledb";
 		case	ESSLERROR        : return "SSL error of some kind";
 		case    EPERMDENIED      : return "Permission denied";
-		case    EHITCRAWLLIMIT: return "Hit the page download limit";
 		case    EHITPROCESSLIMIT: return "Hit the page process limit";
 		case    EINTERNALERROR: return "Internal error";
 		case	EBADJSONPARSER: return "Bad JSON parser";
