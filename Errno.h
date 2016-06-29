@@ -95,7 +95,7 @@ enum {
 	ETOOMANYFILES    , //used by Rdb class when trying to dump
 	EQUERYTOOBIG     , //used by parser/query/SimpleQuery.cpp
 	EQUERYTRUNCATED  , //used in Msg39.cpp
-	ETOOMANYOPERANDS , //used in Query.cpp
+	EUNUSED33A       ,
 	ENOTLOCAL        , //docId is not local (titledb/Msg20.cpp)
 	ETCPTIMEDOUT     , //op timed out TcpServer.cpp
 	EUDPTIMEDOUT     , //udp reply timed out

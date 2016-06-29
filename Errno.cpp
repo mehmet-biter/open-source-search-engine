@@ -54,7 +54,6 @@ const char *mstrerrno ( int errnum ) {
 		case	ETOOMANYFILES    : return "Too many files already";
 		case 	EQUERYTOOBIG     : return "Query too big";
 		case 	EQUERYTRUNCATED  : return "Query was truncated";
-		case 	ETOOMANYOPERANDS : return "Boolean query has too many operands";
 		case 	ENOTLOCAL        : return "DocId is not local";
 		case 	ETCPTIMEDOUT     : return "Tcp operation timed out";
 		case	EUDPTIMEDOUT     : return "Udp reply timed out";

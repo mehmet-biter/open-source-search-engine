@@ -398,7 +398,7 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) {
 	log(LOG_INFO, "query: got query %s (len=%i)" ,m_sbuf1.getBufStart() ,m_sbuf1.length());
 
 	// . now set from m_qbuf1, the advanced/composite query buffer
-	// . returns false and sets g_errno on error (ETOOMANYOPERANDS)
+	// . returns false and sets g_errno on error (?)
 	if ( ! m_q.set2 ( m_sbuf1.getBufStart(), 
 			  m_queryLangId , 
 			  m_queryExpansion ,

@@ -172,8 +172,7 @@ bool sendReply ( State0 *st , char *reply ) {
 	}
 
 	int32_t status = 500;
-	if (savedErr == ETOOMANYOPERANDS ||
-	    savedErr == EBADREQUEST ||
+	if (savedErr == EBADREQUEST ||
 	    savedErr == ENOPERM ||
 	    savedErr == ENOCOLLREC) 
 		status = 400;
