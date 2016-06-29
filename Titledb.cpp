@@ -210,8 +210,6 @@ uint64_t Titledb::getProbableDocId ( char *url ) {
 	int64_t docId ;
 	docId = 0; // hash64  ( coll , collLen );
 	docId = hash64b ( url , docId );
-	// top 8 bits of docId is always hash of the ip
-	//	if ( ! hasIp() ) { errno = EURLHASNOIP; return false; }
 	// now hash the HOSTNAME of the url as lower middle bits in docId
 	//unsigned char h = hash8 ( url->getDomain() , url->getDomainLen() );
 	// . now we store h in the middle 8 bits of the docId

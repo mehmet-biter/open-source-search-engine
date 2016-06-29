@@ -103,7 +103,7 @@ enum {
 	EBADMIME         , //HttpMime.cpp
 	ENOHOSTSFILE     , //Hostdb::init() needs a hosts file
 	EUNUSED34        ,
-	EURLHASNOIP      , //parser/url/Url2.cpp::hashIp()
+	EUNUSED34A       ,
 	EBADIP           , //parser/url/Url2.cpp::hashIp()
 	EMSGTOOBIG       , //msg is too big
 	EDNSBAD          , //dns sent us a wierd response code

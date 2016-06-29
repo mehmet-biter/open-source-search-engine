@@ -1101,8 +1101,6 @@ void Multicast::gotReply1 ( UdpSlot *slot ) {
 		if ( g_errno == EMSGTOOBIG         ) sendToTwin = false;
 		// "Argument list too long"
 		if ( g_errno == 7                  ) sendToTwin = false;
-		// i guess msg50 calls msg25 with no ip sometimes?
-		if ( g_errno == EURLHASNOIP        ) sendToTwin = false;
 		if ( g_errno == EUNCOMPRESSERROR   ) sendToTwin = false;
 		// ok, let's give up on ENOTFOUND, because the vast majority
 		// of time it seems it is really not on the twin either...

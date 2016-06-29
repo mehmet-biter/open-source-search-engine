@@ -60,7 +60,6 @@ const char *mstrerrno ( int errnum ) {
 		case 	ESOCKETCLOSED    : return "Device disconnected (POLL_HUP)";
 		case 	EBADMIME         : return "Bad mime";
 		case 	ENOHOSTSFILE     : return "No hosts.conf file";
-		case 	EURLHASNOIP      : return "Url has no IP";
 		case 	EBADIP           : return "Bad IP";
 		case	EMSGTOOBIG       : return "Msg is too big";
 		case	EDNSBAD          : return "DNS sent an unknown response code";
