@@ -247,10 +247,7 @@ int32_t RdbList::getNumRecs ( ) {
 // . used by merge() above to add records to merged list
 // . used by RdbTree to construct an RdbList from branches of records
 // . NOTE: does not set m_endKey/m_startKey/ etc..
-//bool RdbList::addRecord ( key_t &key , int32_t dataSize , char *data ,
-bool RdbList::addRecord ( const char *key, int32_t dataSize, const char *data,
-			  bool bitch ) {
-
+bool RdbList::addRecord ( const char *key, int32_t dataSize, const char *data, bool bitch ) {
 	if ( m_ks == 18 ) {
 		// sanity
 		if ( key[0] & 0x06 ) {
@@ -1752,25 +1749,38 @@ top:
 		//	ckey[7] &= 0xfc;
 		//	mkey[7] &= 0xfc;
 		//}
-                //if ( ckey > mkey ) continue;
-		if ( KEYCMP(ckey,mkey,m_ks)>0 ) continue;
+
+        //if ( ckey > mkey ) continue;
+
+		if ( KEYCMP(ckey,mkey,m_ks) > 0 ) {
+			continue;
+		}
+
 		// if this guy is newer and equal, skip the old guy
-		//if ( ckey == mkey && mini >= 0 )
-		if ( KEYCMP(ckey,mkey,m_ks)==0 && mini >= 0 )
-			lists[mini]->skipCurrentRecord();
+		if ( KEYCMP(ckey,mkey,m_ks)==0 && mini >= 0 ) {
+			lists[ mini ]->skipCurrentRecord();
+		}
 		// now this new guy is the min key
-                //minKey  = lists[i]->getCurrentKey();
+        //minKey  = lists[i]->getCurrentKey();
+
 		lists[i]->getCurrentKey(minKey);
 		mini    = i;
 	}
 
 	// we're done if all lists are exhausted
-	if ( mini == -1 ) goto done;
+	if ( mini == -1 ) {
+		goto done;
+	}
+
 	// . bail if minKey out of range
 	// . lists are not constrained properly anymore with the addition of
 	//   tfndblist in Msg5.cpp
 	//if ( minKey > endKey ) goto done;
-	if ( KEYCMP(minKey,endKey,m_ks)>0 ) goto done;
+
+	if ( KEYCMP(minKey,endKey,m_ks)>0 ) {
+		goto done;
+	}
+
 	//if ( removeNegRecs && (minKey.n0 & 0x01) == 0x00 ) goto skip;
 	if ( removeNegRecs && KEYNEG(minKey) ) {
 		required -= m_ks;
@@ -1797,7 +1807,10 @@ top:
 	// "i" was > our "i", and we match, then erase us...
 	if ( lastNegi > mini ) {
 		// does it annihilate us?
-		if ( KEYCMPNEGEQ(minKey,lastNegKey,m_ks)==0 ) goto skip;
+		if ( KEYCMPNEGEQ(minKey,lastNegKey,m_ks)==0 ) {
+			goto skip;
+		}
+
 		// otherwise, we are beyond it...
 		//lastNegKey = NULL;
 		lastNegi = -1;
@@ -1808,11 +1821,10 @@ top:
 	if ( m_fixedDataSize == 0 ) {
 		// if adding the key would breech us, goto done
 		//if (m_list + m_listSize + sizeof(key_t) >allocEnd) goto done;
-		if (m_list + m_listSize + m_ks >allocEnd ) goto done;
-		// watch out
-		//int32_t foo;
-		//if ( m_ks == 18 && m_listSize == 20136 )
-		//	foo = 1;
+		if (m_list + m_listSize + m_ks > allocEnd ) {
+			goto done;
+		}
+
 		// add it using compression bits
 		addRecord ( minKey ,0,NULL,false);
 	} else {
@@ -1820,11 +1832,18 @@ top:
 		int32_t recSize=m_ks+lists[mini]->getCurrentDataSize();
 
 		// negative keys have no datasize entry
-		if (m_fixedDataSize < 0 && ! KEYNEG(minKey) ) recSize += 4;
-		if (m_list + m_listSize + recSize > allocEnd) goto done;
+		if (m_fixedDataSize < 0 && ! KEYNEG(minKey) ) {
+			recSize += 4;
+		}
+
+		if (m_list + m_listSize + recSize > allocEnd) {
+			goto done;
+		}
+
 		// . fix m_listEnd so it doesn't try to call growList() on us
 		// . normally we don't set this right until we're done merging
 		m_listEnd = m_list + m_listSize;
+
 		// add the record to end of list
 		addRecord ( minKey, lists[mini]->getCurrentDataSize(), lists[mini]->getCurrentData() );
 	}
@@ -1844,12 +1863,13 @@ skip:
 	// get the next key in line and goto top
 	lists[mini]->skipCurrentRecord();
 	// keep adding/merging more records if we still have more room w/o grow
-	if ( m_listSize < m_mergeMinListSize ) goto top;
+	if ( m_listSize < m_mergeMinListSize ) {
+		goto top;
+	}
 
  done:
 	// . is the last key we stored negative, a dangling negative?
 	// . if not, skip this next section
-	//if ( lastKeyIsValid && (*(char *)&lastKey & 0x01) == 0x01 )
 	if ( lastKeyIsValid && !KEYNEG(lastKey) ) {
 		goto positive;
 	}
@@ -1857,10 +1877,10 @@ skip:
 	// are negatives allowed?
 	if ( removeNegRecs ) {
 		// . keep chugging if there MAY be keys left
-		// . they will replace us if they are added cuz "removeNegRecs"
-		//   is true
-		//if ( mini >= 0 && minKey < endKey ) goto top;
-		if ( mini >= 0 && KEYCMP(minKey,endKey,m_ks)<0 ) goto top;
+		// . they will replace us if they are added cuz "removeNegRecs" is true
+		if ( mini >= 0 && KEYCMP(minKey,endKey,m_ks)<0 ) {
+			goto top;
+		}
 		// . otherwise, all lists were exhausted
 		// . peel the dangling negative off the top
 		// . highestKey is irrelevant here cuz all lists are exhausted
@@ -1873,7 +1893,9 @@ skip:
 	}
 
 	// if all lists are exhausted, we're really done
-	if ( mini < 0 ) goto positive;
+	if ( mini < 0 ) {
+		goto positive;
+	}
 
 	// . we are done iff the next key does not match us (+ or -)
 	// . so keep running until last key is positive, or we
@@ -1887,9 +1909,7 @@ skip:
 		// with this one and be saved on the list and we have to
 		// peel it off and accept this dangling negative as unmatched
 		savedListSize   = m_listSize;
-		//savedLastKey    = lastKey;
 		KEYSET(savedLastKey,lastKey,m_ks);
-		//savedHighestKey = highestKey;
 		KEYSET(savedHighestKey,highestKey,m_ks);
 		goto top;
 	}

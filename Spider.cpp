@@ -4032,8 +4032,10 @@ void dedupSpiderdbList ( RdbList *list ) {
 
 	char *dst          = newList;
 	char *restorePoint = newList;
+
 	int64_t reqUh48  = 0LL;
 	int64_t repUh48  = 0LL;
+
 	SpiderReply   *oldRep = NULL;
 	char *lastKey     = NULL;
 
@@ -4195,7 +4197,7 @@ void dedupSpiderdbList ( RdbList *list ) {
 		// url to a different url priority!
 		bool skipUs = false;
 
-		// now we keep a list of the last ten
+		// now we keep a list of requests with same uh48
 		for ( auto it = spiderRequests.begin(); it != spiderRequests.end(); ++it ) {
 			if ( srh != it->first ) {
 				continue;
@@ -4225,7 +4227,6 @@ void dedupSpiderdbList ( RdbList *list ) {
 
 			// otherwise, replace him
 
-
 			// mark for removal. xttp://
 			prevReq->m_url[0] = 'x';
 
@@ -4242,7 +4243,6 @@ void dedupSpiderdbList ( RdbList *list ) {
 		if ( skipUs ) {
 			continue;
 		}
-
 
 		// add to linked list
 		spiderRequests.emplace_front( srh, (SpiderRequest *)dst );

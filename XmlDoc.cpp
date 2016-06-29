@@ -3552,19 +3552,30 @@ uint8_t *XmlDoc::getLangId ( ) {
 	}
 
 	Words    *words    = getWords   ();
-	if ( ! words || words == (Words *)-1 ) return (uint8_t *)words;
+	if ( ! words || words == (Words *)-1 ) {
+		return (uint8_t *)words;
+	}
 
 	Sections *sections = getSections();
 	// did it block?
-	if ( sections==(Sections *)-1) return(uint8_t *)sections;
+	if ( sections==(Sections *)-1) {
+		return(uint8_t *)sections;
+	}
+
 	// well, it still calls Dates::parseDates which can return g_errno
 	// set to EBUFOVERFLOW...
-	if ( ! sections && g_errno != EBUFOVERFLOW ) return NULL;
+	if ( ! sections && g_errno != EBUFOVERFLOW ) {
+		return NULL;
+	}
+
 	// if sectinos is still NULL - try lang id without sections then,
 	// reset g_errno
 	g_errno = 0;
+
 	uint8_t *lv = getLangVector();
-	if ( ! lv || lv == (void *)-1 ) return (uint8_t *)lv;
+	if ( ! lv || lv == (void *)-1 ) {
+		return (uint8_t *)lv;
+	}
 
 	setStatus ( "getting lang id");
 
@@ -12074,9 +12085,9 @@ bool XmlDoc::logIt (SafeBuf *bb ) {
 		sb->safePrintf("ctype=%s ",
 			      g_contentTypeStrings [m_contentType]);
 
-	if ( m_langIdValid )
-		sb->safePrintf("lang=%02" PRId32"(%s) ",(int32_t)m_langId,
-			      getLanguageAbbr(m_langId));
+	if ( m_langIdValid ) {
+		sb->safePrintf( "lang=%02" PRId32"(%s) ", ( int32_t ) m_langId, getLanguageAbbr( m_langId ) );
+	}
 
 	if ( m_countryIdValid )
 		sb->safePrintf("country=%02" PRId32"(%s) ",(int32_t)m_countryId,
