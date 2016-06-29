@@ -44,7 +44,7 @@ enum {
 	ECOMPRESSFAILED  , // used in TitleRec.cpp  32790
 	EUNCOMPRESSERROR , // used in TitleRec.cpp
 	EBADTITLEREC     , // used in TitleRec.cpp
-	EMISSINGQUERYTERMS,// used in Msg20.cpp for getting summary
+	EUNUSED6A        ,
 	EBADLIST         , // used in titledb/Msg23.cpp
 	ENODOCID         , // used in titledb/Msg24.cpp
 	ENOHOSTS         , // multicast can't find any hosts

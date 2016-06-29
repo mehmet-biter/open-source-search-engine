@@ -274,10 +274,8 @@ void Msg20::gotReply ( UdpSlot *slot ) {
 
 	// save error so Msg40 can look at it
 	if ( g_errno ) { 
-		m_errno = g_errno; 
-		if ( g_errno != EMISSINGQUERYTERMS )
-			log("query: msg20: got reply for docid %" PRId64" : %s",
-			    m_requestDocId,mstrerror(g_errno));
+		m_errno = g_errno;
+		log( LOG_WARN, "query: msg20: got reply for docid %" PRId64" : %s", m_requestDocId,mstrerror(g_errno));
 		return; 
 	}
 	// . get the best reply we got

@@ -1052,8 +1052,6 @@ void Multicast::gotReply1 ( UdpSlot *slot ) {
 		if ( slot->m_msgType == 0x20 && g_errno == ENOTFOUND &&
 		     ! ((Msg20 *)m_state)->m_expected )
 			logIt = false;
-		if ( slot->m_msgType == 0x20 && g_errno == EMISSINGQUERYTERMS )
-			logIt = false;
 		if ( h && logIt )
 			log("net: Multicast got error in reply from "
 			    "hostId %" PRId32
@@ -1100,7 +1098,6 @@ void Multicast::gotReply1 ( UdpSlot *slot ) {
 		//   probably during merges now, we reroute on ENOTFOUND.
 		bool sendToTwin = true;
 		if ( g_errno == EBADENGINEER       ) sendToTwin = false;
-		if ( g_errno == EMISSINGQUERYTERMS ) sendToTwin = false;
 		if ( g_errno == EMSGTOOBIG         ) sendToTwin = false;
 		// "Argument list too long"
 		if ( g_errno == 7                  ) sendToTwin = false;

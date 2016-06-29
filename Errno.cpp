@@ -31,7 +31,6 @@ const char *mstrerrno ( int errnum ) {
 		case 	ECOMPRESSFAILED  : return "Compress failed";
 		case 	EUNCOMPRESSERROR : return "Uncompress failed";
 		case 	EBADTITLEREC     : return "Bad cached document";
-		case	EMISSINGQUERYTERMS:return "Document is missing query terms";
 		case 	EBADLIST         : return "Bad list";
 		case 	ENODOCID         : return "No docid";
 		case 	ENOHOSTS         : return "Multicast can not find any hosts";

@@ -1081,9 +1081,7 @@ bool Msg40::gotSummary ( ) {
 		// save it
 		m_errno = g_errno;
 		// log it
-		if ( g_errno != EMISSINGQUERYTERMS )
-			log("query: msg40: Got error getting summary: %s.",
-			    mstrerror(g_errno));
+		log("query: msg40: Got error getting summary: %s.", mstrerror(g_errno));
 		// reset g_errno
 		g_errno = 0;
 	}
@@ -1410,9 +1408,6 @@ bool Msg40::gotSummary ( ) {
 		// if any msg20 has m_errno set, then set ours so at least the
 		// xml feed will know there was a problem even though it may 
 		// have gotten search results.
-		// the BIG HACK is done in Msg20. Msg20::m_errno is set to
-		// something like EMISSINGQUERYTERMS if the document really
-		// doesn't match the query, maybe because of indexdb corruption
 		if ( m->m_errno ) {
 			if ( m_si->m_debug || g_conf.m_logDebugQuery ) {
 				logf( LOG_DEBUG, "query: result %" PRId32 " (docid=%" PRId64 ") had "
@@ -1793,8 +1788,7 @@ bool Msg40::gotSummary ( ) {
 	//   being out of sync with titledb
 	if ( m_errno            &&
 	     // forgive "Record not found" errors, they are quite common
-	     m_errno != ENOTFOUND &&
-	     m_errno != EMISSINGQUERYTERMS ) {
+	     m_errno != ENOTFOUND ) {
 		logf(LOG_DEBUG,"query: not storing in cache: %s",
 		     mstrerror(m_errno));
 		uc = false;
