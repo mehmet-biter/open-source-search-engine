@@ -49,13 +49,6 @@ class Stats {
 			 char        type        = STAT_GENERIC,
 			 char       *fnName      = NULL);
 
-	// . use -1 to see points from ALL times stored
-	// . dumps a bar graph
-	// . each bar represents a stat in time, from inception to completion
-	// . useful for seeing possible sources of contention
-	//void dumpGIF ( int64_t startTime = -1 , int64_t endTime = -1 );
-
-
 	void printGraphInHtml ( SafeBuf &sb );
 
 	// store the points here
@@ -129,17 +122,10 @@ class Stats {
 	//int64_t m_tierTimes[MAX_TIERS];
 	// how many searches did not get enough results?
 	int32_t m_tier2Misses;
+
 	// one count for each CR_* defined in Msg51.h
 	int32_t m_filterStats[30];
-	//int32_t m_totalDedupCand;
-	//int32_t m_dedupedCand;
-	//int32_t m_bannedDups;
-	//int32_t m_bigHackDups;
-	//int32_t m_summaryDups;
-	//int32_t m_contentDups;
-	//int32_t m_clusteredTier1;
-	//int32_t m_clusteredTier2;
-	//int32_t m_errored;
+
 	int32_t m_msg3aRecalls[6];
 	SafeBuf m_keyCols;
 	//int32_t m_numTermsVsTier[14][MAX_TIERS];
@@ -180,21 +166,12 @@ class Stats {
 
 	int32_t m_totalOverflows;
 
-	// count ip and domain hammer for Msg13.cpp here
-	//int32_t m_numBackoffs;
-
 	// used by msg39
 	int32_t m_recomputeCacheMissess;
 	// if the msg3a advances to the next tier, of course, it will be
 	// a cache miss, so don't count those, they are justified 
 	// recomputeCacheMisses
 	int32_t m_icacheTierJumps;
-
-	// when SpiderLoop calls SpiderCache::getSpiderRec() how many times
-	// does it actually get back a url to spider? and how many times does
-	// it miss (not get a url to spider)?
-	//int32_t m_spiderUrlsHit;
-	//int32_t m_spiderUrlsMissed;
 
 	int32_t m_compressedBytesIn;
 	int32_t m_uncompressedBytesIn;
