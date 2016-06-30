@@ -11910,22 +11910,15 @@ bool XmlDoc::logIt (SafeBuf *bb ) {
 	if ( ! errCode && g_errno ) errCode = g_errno;
 
 	// were we new?
-	//char isIndexed = -1;
-	//if ( m_isIndexedValid ) isIndexed = m_isIndexed;
 	bool isNew = true;
 	if ( m_sreqValid && m_sreq.m_hadReply ) isNew = false;
 
+
 	// keep track of stats
-	g_stats.addSpiderPoint ( errCode, isNew ); // !isIndexed );
+	g_stats.addSpiderPoint ( errCode, isNew );
 
 	// do not log if we should not, saves some time
-	//if ( ! g_conf.m_logSpideredUrls && ! m_forceDelete ) return true;
 	if ( ! g_conf.m_logSpideredUrls ) return true;
-
-	// patch the ip
-	int32_t ip = m_ip;
-	// invalid?
-	if ( ! m_ipValid ) ip = 0;
 
 	const char *coll = "nuked";
 	CollectionRec *cr = getCollRec();
