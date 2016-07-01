@@ -9550,8 +9550,6 @@ uint16_t getCharsetFast ( HttpMime *mime,
 		char *limit = p - 500;
 		// assume charset= or encoding= did NOT occur in a tag
 		bool inTag = false;
-		// check crazy wrap if m_content was close to a NULL ptr...
-		if ( limit >= pend   ) limit = pstart;
 		if ( limit <  pstart ) limit = pstart;
 		for ( char *s = p ; s >= limit ; s -= 1 ) { // oneChar ) {
 			// break at > or <
