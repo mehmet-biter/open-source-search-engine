@@ -922,9 +922,6 @@ bool XmlDoc::set2 ( char    *titleRec ,
 	m_pbuf               = pbuf;
 	m_niceness           = niceness;
 
-	// it must be there!
-	if ( !titleRec||titleRecSize==0 ) {g_errno=ENOTFOUND; return false;}
-
 	// set our collection number
 	if ( ! setCollNum ( coll ) ) return false;
 
