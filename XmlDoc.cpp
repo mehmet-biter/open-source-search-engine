@@ -37,6 +37,7 @@
 #include <pthread.h>
 #include "JobScheduler.h"
 #include "Process.h"
+#include "Statistics.h"
 
 
 #ifdef _VALGRIND_
@@ -11902,17 +11903,30 @@ int32_t *XmlDoc::getSpiderPriority ( ) {
 }
 
 bool XmlDoc::logIt (SafeBuf *bb ) {
-
 	// set errCode
 	int32_t errCode = m_indexCode;
-	if ( ! errCode && g_errno ) errCode = g_errno;
+	if ( ! errCode && g_errno ) {
+		errCode = g_errno;
+	}
 
 	// were we new?
 	bool isNew = true;
 	if ( m_sreqValid && m_sreq.m_hadReply ) isNew = false;
 
+	// download time
+	unsigned took = 0;
+	if ( m_downloadStartTimeValid ) {
+		if ( m_downloadEndTimeValid ) {
+			took = static_cast<unsigned>( m_downloadEndTime - m_downloadStartTime );
+		} else {
+			took = static_cast<unsigned>( gettimeofdayInMilliseconds() - m_downloadStartTime );
+		}
+	}
 
 	// keep track of stats
+	Statistics::register_spider_time( isNew, errCode, m_httpStatus, took );
+
+	/// @todo ALC remove g_stats.addSpiderPoint
 	g_stats.addSpiderPoint ( errCode, isNew );
 
 	// do not log if we should not, saves some time

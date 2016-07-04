@@ -10,6 +10,9 @@
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
+#include <map>
+#include <set>
+#include <vector>
 
 static const time_t dump_interval = 60;
 static const char tmp_filename[] = "statistics.txt.new";
@@ -81,63 +84,167 @@ void Statistics::register_query_time(unsigned term_count, unsigned /*qlang*/, un
 	ts.sum += ms;
 }
 
+static void dump_query_statistics( FILE *fp ) {
+	TimerangeStatistics qcopy[timerange_count][max_term_count+1];
+	ScopedLock sl1(mtx_query_timerange_statistics);
+	memcpy(qcopy,query_timerange_statistics,sizeof(query_timerange_statistics));
+	memset(query_timerange_statistics,0,sizeof(query_timerange_statistics));
+	sl1.unlock();
+
+	for(unsigned i=0; i<timerange_count; i++) {
+		for(unsigned j=1; j<max_term_count+1; j++) {
+			const TimerangeStatistics &ts = qcopy[i][j];
+			if ( ts.count == 0 ) {
+				continue;
+			}
+
+			fprintf(fp,"query:lower_bound=%u;terms=%u;min=%u;max=%u;count=%u;sum=%u\n",
+			        timerange_lower_bound[i],
+			        j,
+			        ts.min_time,
+			        ts.max_time,
+			        ts.count,
+			        ts.sum);
+		}
+	}
+}
 
 //////////////////////////////////////////////////////////////////////////////
 // Spidering statistics
 
-static TimerangeStatistics spider_timerange_statistics[timerange_count][2]; //1=success, 0=anything else
+static std::map<std::pair<int, int>, TimerangeStatistics[timerange_count]> old_spider_timerange_statistics;
+static std::map<std::pair<int, int>, TimerangeStatistics[timerange_count]> new_spider_timerange_statistics;
 static pthread_mutex_t mtx_spider_timerange_statistics = PTHREAD_MUTEX_INITIALIZER;
-static unsigned old_links_found=0;
-static unsigned new_links_found=0;
-static unsigned changed_documents_spidered=0;
-static unsigned unchanged_documents_spidered=0;
-static pthread_mutex_t mtx_spider_count = PTHREAD_MUTEX_INITIALIZER;
 
-void register_spider_time(unsigned ms, int resultcode)
-{
-	unsigned i=ms_to_tr(ms);
-	unsigned j=resultcode==200 ? 1 : 0;
-	
-	ScopedLock sl(mtx_spider_timerange_statistics);
-	TimerangeStatistics &ts = spider_timerange_statistics[i][j];
-	if(ts.count!=0) {
-		if(ms<ts.min_time)
+void Statistics::register_spider_time( bool is_new, int error_code, int http_status, unsigned ms ) {
+	{
+		int i = ms_to_tr( ms );
+		auto key = std::make_pair( error_code, http_status );
+
+		ScopedLock sl( mtx_spider_timerange_statistics );
+		TimerangeStatistics &ts = is_new ? new_spider_timerange_statistics[ key ][ i ] :
+		                          old_spider_timerange_statistics[ key ][ i ];
+
+		if ( ts.count != 0 ) {
+			if ( ms < ts.min_time )
+				ts.min_time = ms;
+			if ( ms > ts.max_time )
+				ts.max_time = ms;
+		} else {
 			ts.min_time = ms;
-		if(ms>ts.max_time)
 			ts.max_time = ms;
-	} else {
-		ts.min_time = ms;
-		ts.max_time = ms;
+		}
+		ts.count++;
+		ts.sum += ms;
 	}
-	ts.count++;
-	ts.sum += ms;
 }
 
+enum SpiderStatistics {
+	spider_doc_new = 0,
+	spider_doc_changed,
+	spider_doc_unchanged,
+	spider_doc_deleted,
+	spider_doc_disallowed,
+	spider_doc_http_error,
+	spider_doc_other_error,
+	spider_doc_end
+};
 
-void register_spider_old_links(unsigned count)
-{
-	ScopedLock sl(mtx_spider_count);
-	old_links_found++;
+static const char* s_spider_statistics_name[] {
+	"new",
+	"changed",
+	"unchanged",
+	"deleted",
+	"disallowed",
+	"http_error",
+	"other_error",
+	""
+};
+
+static void status_to_spider_statistics( std::vector<unsigned> *spiderdoc_counts, bool is_new, int status, unsigned count ) {
+	switch ( status ) {
+		case 0:
+			(*spiderdoc_counts)[ is_new ? spider_doc_new : spider_doc_changed ] += count;
+			break;
+		case EDOCUNCHANGED:
+			(*spiderdoc_counts)[ spider_doc_unchanged ] += count;
+			break;
+		case EDOCFILTERED:
+			(*spiderdoc_counts)[ spider_doc_deleted ] += count;
+			break;
+		case EDOCDISALLOWED:
+			(*spiderdoc_counts)[ spider_doc_disallowed ] += count;
+			break;
+		case EDOCBADHTTPSTATUS:
+			(*spiderdoc_counts)[ spider_doc_http_error ] += count;
+			break;
+		default:
+			(*spiderdoc_counts)[ spider_doc_other_error ] += count;
+			break;
+	}
 }
 
-void register_spider_new_links(unsigned )
-{
-	ScopedLock sl(mtx_spider_count);
-	new_links_found++;
-}
+static void dump_spider_statistics( FILE *fp ) {
+	ScopedLock sl1(mtx_spider_timerange_statistics);
+	std::map<std::pair<int, int>, TimerangeStatistics[timerange_count]> soldcopy( old_spider_timerange_statistics );
+	old_spider_timerange_statistics.clear();
 
-void register_spider_changed_document(unsigned count)
-{
-	ScopedLock sl(mtx_spider_count);
-	changed_documents_spidered++;
-}
+	std::map<std::pair<int, int>, TimerangeStatistics[timerange_count]> snewcopy( new_spider_timerange_statistics );
+	new_spider_timerange_statistics.clear();
 
-void register_spider_unchanged_document(unsigned count)
-{
-	ScopedLock sl(mtx_spider_count);
-	changed_documents_spidered++;
-}
+	sl1.unlock();
 
+	std::vector<unsigned> spiderdoc_counts( spider_doc_end );
+
+	for ( auto it = soldcopy.begin(); it != soldcopy.end(); ++it ) {
+		for ( unsigned i = 0; i < timerange_count; ++i ) {
+			const TimerangeStatistics &ts = it->second[ i ];
+			if ( ts.count == 0 ) {
+				continue;
+			}
+
+			const char *status = it->first.first ? ( merrname( it->first.first ) ?: std::to_string( it->first.first ).c_str() ) : "SUCCESS";
+			fprintf( fp, "spider:lower_bound=%u;is_new=0;status=%s;http_code=%d;min=%u;max=%u;count=%u;sum=%u\n",
+			         timerange_lower_bound[ i ],
+			         status,
+			         it->first.second,
+			         ts.min_time,
+			         ts.max_time,
+			         ts.count,
+			         ts.sum );
+
+			status_to_spider_statistics( &spiderdoc_counts, false, it->first.first, ts.count );
+		}
+	}
+
+	for ( auto it = snewcopy.begin(); it != snewcopy.end(); ++it ) {
+		for ( unsigned i = 0; i < timerange_count; ++i ) {
+			const TimerangeStatistics &ts = it->second[ i ];
+			if ( ts.count == 0 ) {
+				continue;
+			}
+
+			const char *status = it->first.first ? ( merrname( it->first.first ) ?: std::to_string( it->first.first ).c_str() ) : "SUCCESS";
+			fprintf( fp, "spider:lower_bound=%u;is_new=1;status=%s;http_code=%d;min=%u;max=%u;count=%u;sum=%u\n",
+			         timerange_lower_bound[ i ],
+			         status,
+			         it->first.second,
+			         ts.min_time,
+			         ts.max_time,
+			         ts.count,
+			         ts.sum );
+
+			status_to_spider_statistics( &spiderdoc_counts, true, it->first.first, ts.count );
+		}
+	}
+
+	for ( unsigned i = 0; i < spider_doc_end; ++i ) {
+		unsigned count = spiderdoc_counts[ i ];
+		if ( count > 0 ) {
+			fprintf( fp, "spiderdoc:%s=%u\n", s_spider_statistics_name[ i ], count );
+		}
+	}
+}
 
 //////////////////////////////////////////////////////////////////////////////
 // RdbCache statistics
@@ -150,6 +257,7 @@ struct RdbCacheHistory {
 	int64_t last_hits;
 	int64_t last_misses;
 };
+
 static RdbCacheHistory rdb_cache_history[] = {
 	{RDB_POSDB,    "posdb",    0,0},
 	{RDB_TAGDB,    "tagdb",    0,0},
@@ -159,9 +267,7 @@ static RdbCacheHistory rdb_cache_history[] = {
 	{0,0,0,0}
 };
 
-
-static void dump_rdb_cache_statistics(FILE *fp)
-{
+static void dump_rdb_cache_statistics( FILE *fp ) {
 	for(int i=0; rdb_cache_history[i].name; i++) {
 		const RdbCache *c = getDiskPageCache(rdb_cache_history[i].rdb_id);
 		if(!c)
@@ -170,91 +276,37 @@ static void dump_rdb_cache_statistics(FILE *fp)
 		int64_t delta_misses = c->getNumMisses() - rdb_cache_history[i].last_misses;
 		rdb_cache_history[i].last_hits = c->getNumHits();
 		rdb_cache_history[i].last_misses = c->getNumMisses();
-		
+
 		fprintf(fp,"rdbcache:%s;hits=%" PRId64 ";misses=%" PRId64 "\n", rdb_cache_history[i].name,delta_hits,delta_misses);
 	}
 }
 
+//////////////////////////////////////////////////////////////////////////////
+// statistics
 
-static void dump_statistics(time_t now)
-{
+static void dump_statistics(time_t now) {
 	FILE *fp = fopen(tmp_filename,"w");
-	if(!fp) {
-		log(LOG_ERROR,"fopen(%s,\"w\") failed with errno=%d (%s)", tmp_filename, errno, strerror(errno));
+	if ( !fp ) {
+		log( LOG_ERROR, "fopen(%s,\"w\") failed with errno=%d (%s)", tmp_filename, errno, strerror( errno ) );
 		return;
 	}
+
+	fprintf( fp, "%ld\n", ( long ) now );
+
+	// dump statistics
+	dump_query_statistics( fp );
+	dump_spider_statistics( fp );
+	dump_rdb_cache_statistics( fp );
 	
-	fprintf(fp,"%ld\n", (long)now);
-	
-	TimerangeStatistics qcopy[timerange_count][max_term_count+1];
-	ScopedLock sl1(mtx_query_timerange_statistics);
-	memcpy(qcopy,query_timerange_statistics,sizeof(query_timerange_statistics));
-	memset(query_timerange_statistics,0,sizeof(query_timerange_statistics));
-	sl1.unlock();
-	
-	for(unsigned i=0; i<timerange_count; i++) {
-		for(unsigned j=1; j<max_term_count+1; j++) {
-			const TimerangeStatistics &ts = qcopy[i][j];
-			if(ts.count!=0) {
-				fprintf(fp,"query:lower_bound=%u;terms=%u;min=%u;max=%u;count=%u;sum=%u\n",
-					timerange_lower_bound[i],
-					j,
-					ts.min_time,
-					ts.max_time,
-					ts.count,
-					ts.sum);
-			}
-		}
-	}
-	
-	TimerangeStatistics scopy[timerange_count][2];
-	ScopedLock sl2(mtx_spider_timerange_statistics);
-	memcpy(scopy,spider_timerange_statistics,sizeof(spider_timerange_statistics));
-	memset(spider_timerange_statistics,0,sizeof(spider_timerange_statistics));
-	sl2.unlock();
-	
-	for(unsigned i=0; i<timerange_count; i++) {
-		for(unsigned j=0; j<2; j++) {
-			const TimerangeStatistics &ts = scopy[i][j];
-			if(ts.count!=0) {
-				fprintf(fp,"spider:lower_bound=%u;code=%d;min=%u;max=%u;count=%u;sum=%u\n",
-					timerange_lower_bound[i],
-					j?200:0,
-					ts.min_time,
-					ts.max_time,
-					ts.count,
-					ts.sum);
-			}
-		}
-	}
-	
-	ScopedLock sl3(mtx_spider_count);
-	unsigned copy_old_links_found = old_links_found;
-	unsigned copy_new_links_found = new_links_found;
-	unsigned copy_changed_documents_spidered = changed_documents_spidered;
-	unsigned copy_unchanged_documents_spidered = unchanged_documents_spidered;
-	old_links_found = 0;
-	new_links_found = 0;
-	changed_documents_spidered = 0;
-	unchanged_documents_spidered = 0;
-	sl3.unlock();
-	
-	fprintf(fp,"spiderlinks:old:count=%u\n",copy_old_links_found);
-	fprintf(fp,"spiderlinks:new:count=%u\n",copy_new_links_found);
-	fprintf(fp,"spiderlinks:unchanged:count=%u\n",copy_changed_documents_spidered);
-	fprintf(fp,"spiderlinks:changed:count=%u\n",copy_unchanged_documents_spidered);
-	
-	dump_rdb_cache_statistics(fp);
-	
-	if(fflush(fp)!=0) {
-		log(LOG_ERROR,"fflush(%s) failed with errno=%d (%s)", tmp_filename, errno, strerror(errno));
-		fclose(fp);
+	if ( fflush(fp) != 0 ) {
+		log( LOG_ERROR, "fflush(%s) failed with errno=%d (%s)", tmp_filename, errno, strerror( errno ) );
+		fclose( fp );
 		return;
 	}
 	fclose(fp);
 	
-	if(rename(tmp_filename, final_filename)!=0) {
-		log(LOG_ERROR,"rename(%s,%s) failed with errno=%d (%s)", tmp_filename, final_filename, errno, strerror(errno));
+	if ( rename( tmp_filename, final_filename ) != 0 ) {
+		log( LOG_ERROR, "rename(%s,%s) failed with errno=%d (%s)", tmp_filename, final_filename, errno, strerror( errno ) );
 	}
 }
 
