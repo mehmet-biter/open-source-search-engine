@@ -41,9 +41,6 @@ which pdftohtml >/dev/null 2>&1 || exit $?
 # Start gb #
 ############
 
-# Dump list of files before allowing gb to continue running
-find . -not -path '*/\.*' -type f -exec ls -l --full-time {} \; 2>/dev/null |column -t|sort -k 9 > file_state_before_run.txt
-
 # set env
 ulimit -c unlimited
 export MALLOC_CHECK_=0
@@ -66,6 +63,14 @@ while true; do
 	if [ ! -z ${cpu_affinity} ]; then
 		GB_PRE="taskset -c ${cpu_affinity}"
 	fi
+
+	# rename if exist
+	if [ -f file_state.txt ]; then
+		mv file_state.txt file_state-bak$(date +%Y%m%d-%H%M%S).txt
+	fi
+
+	# Dump list of files before allowing gb to continue running
+	find . -not -path '*/\.*' -not -path '*/__*' -not -path './file_state*' -type f -exec ls -l --full-time {} \; 2>/dev/null |column -t|sort -k 9 > file_state.txt
 
 	${GB_PRE} ./gb -l $ADDARGS
 
