@@ -8,6 +8,7 @@
 #include "HashTableT.h"
 #include "SearchInput.h"
 #include "Process.h"
+#include "Posdb.h"
 
 static void gotReplyWrapper3a     ( void *state , void *state2 ) ;
 

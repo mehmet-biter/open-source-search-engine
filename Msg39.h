@@ -10,7 +10,7 @@
 #include "Multicast.h"      // multicast send
 #include "Query.h"          // Query::set()
 #include "Msg2.h"           // getLists()
-#include "Posdb.h"
+#include "PosdbTable.h"
 #include "IndexList.h"
 #include "TopTree.h"
 #include "Msg51.h"

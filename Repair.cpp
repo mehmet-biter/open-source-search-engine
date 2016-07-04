@@ -17,6 +17,7 @@
 #include "Process.h"
 #include "Tagdb.h"
 #include "Sections.h"
+#include "Posdb.h"
 
 static void repairWrapper ( int fd , void *state ) ;
 static void loopWrapper   ( void *state , RdbList *list , Msg5 *msg5 ) ;

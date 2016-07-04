@@ -8,6 +8,7 @@
 #include "Clusterdb.h"
 #include "Statsdb.h"
 #include "Linkdb.h"
+#include "Posdb.h"
 #include "Dns.h"
 #include "TcpServer.h"
 #include "UdpServer.h"

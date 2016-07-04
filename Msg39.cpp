@@ -9,6 +9,7 @@
 #include "RdbList.h"
 #include "Msg5.h"
 #include "Process.h"
+#include "Posdb.h"
 
 
 #ifdef _VALGRIND_

@@ -7,6 +7,7 @@
 #include "Speller.h"
 #include "Synonyms.h"
 #include "Process.h"
+#include "Posdb.h"
 
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>

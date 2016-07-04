@@ -34,7 +34,8 @@ OBJS =  UdpSlot.o Rebalance.o \
 	Msg1.o \
 	Msg0.o Mem.o Matches.o Loop.o \
 	Log.o Lang.o \
-	Posdb.o Clusterdb.o \
+	Posdb.o PosdbTable.o \
+	Clusterdb.o \
 	HttpServer.o HttpRequest.o \
 	HttpMime.o Hostdb.o \
 	Highlight.o File.o Errno.o Entities.o \
