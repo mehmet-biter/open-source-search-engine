@@ -1724,25 +1724,31 @@ static void renameWrapper_r ( void *state ) {
 	log(LOG_TRACE,"%s:%s:%d: disk: rename [%s] to [%s]", 
 	   __FILE__, __func__, __LINE__,oldFilename,newFilename);
 
-	//if ( m_files[i]->rename ( newFilename ) ) continue;
-	// this returns 0 on success
-	if ( ::rename ( oldFilename , newFilename ) ) 
-	{
-		// reset errno and return true if file does not exist
-		if ( errno == ENOENT ) {
-			log(LOG_ERROR,"%s:%s:%d: disk: file [%s] does not exist.",__FILE__, __func__, __LINE__,oldFilename);
-			THIS->logAllData(LOG_ERROR);
-			errno = 0; 
-		}
-		else 
-		{
-			log(LOG_ERROR,"%s:%s:%d: disk: rename [%s] to [%s]: [%s]", 
-			   __FILE__, __func__, __LINE__,oldFilename,newFilename,mstrerror(errno));
-			THIS->logAllData(LOG_ERROR);
-		}
+	if ( ::access( newFilename, F_OK ) != 0 ) {
+		// suppress error (we will catch it in rename anyway)
+		errno = 0;
 
-		logTrace( g_conf.m_logTraceBigFile, "END" );
-		return;
+		// this returns 0 on success
+		if ( ::rename( oldFilename, newFilename ) ) {
+			// reset errno and return true if file does not exist
+			if ( errno == ENOENT ) {
+				log( LOG_ERROR, "%s:%s:%d: disk: file [%s] does not exist.", __FILE__, __func__, __LINE__, oldFilename );
+				THIS->logAllData( LOG_ERROR );
+				errno = 0;
+			} else {
+				log( LOG_ERROR, "%s:%s:%d: disk: rename [%s] to [%s]: [%s]",
+				     __FILE__, __func__, __LINE__, oldFilename, newFilename, mstrerror( errno ) );
+				THIS->logAllData( LOG_ERROR );
+			}
+
+			logTrace( g_conf.m_logTraceBigFile, "END" );
+			return;
+		}
+	} else {
+		// new file exists
+		log( LOG_ERROR, "%s:%s:%d: disk: trying to rename [%s] to [%s] which exists.", __FILE__, __func__, __LINE__,
+		     oldFilename, newFilename );
+		gbshutdownAbort( true );
 	}
 	
 	// we must close the file descriptor in the thread otherwise the
