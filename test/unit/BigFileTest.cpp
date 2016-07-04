@@ -39,7 +39,6 @@ TEST( BigFileTest, FileRenameDestExist ) {
 }
 
 TEST( BigFileTest, FileRenameDestNotExist ) {
-	g_conf.m_logTraceBigFile = 1;
 	BigFile file01;
 	createFile( &file01, "testfile01" );
 
