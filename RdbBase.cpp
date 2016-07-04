@@ -817,7 +817,7 @@ bool RdbBase::incorporateMerge ( ) {
 	// . we can't just unlink the merge file on error anymore
 	// . it may have some data that was deleted from the original file
 	if ( g_errno ) {
-		log("db: Merge failed for %s, Exiting.", m_dbname);
+		log( LOG_ERROR, "db: Merge failed for %s, Exiting.", m_dbname);
 
 		// we don't have a recovery system in place, so save state and dump core
 		g_process.shutdownAbort(true);
@@ -882,13 +882,13 @@ bool RdbBase::incorporateMerge ( ) {
 	// generating a map for a file screwed up from a power outage. it
 	// will end on a non-key boundary.
 	if ( fs != fs2 ) {
-		log("build: Map file size does not agree with actual file "
+		log( LOG_ERROR, "build: Map file size does not agree with actual file "
 		    "size for %s. Map says it should be %" PRId64" bytes but it "
 		    "is %" PRId64" bytes.",
 		    m_files[x]->getFilename(), fs2 , fs );
 		if ( fs2-fs > 12 || fs-fs2 > 12 ) { g_process.shutdownAbort(true); }
 		// now print the exception
-		log("build: continuing since difference is less than 12 "
+		log( LOG_WARN, "build: continuing since difference is less than 12 "
 		    "bytes. Most likely a discrepancy caused by a power "
 		    "outage and the generated map file is off a bit.");
 	}
@@ -1535,7 +1535,7 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 		int32_t mm = 0;
 		for ( int32_t i = mergeFileNum ; i <= mergeFileNum + n ; i++ ) {
 			if ( i >= m_numFiles ) {
-				log("merge: Number of files to merge has "
+				log( LOG_INFO, "merge: Number of files to merge has "
 				    "shrunk from %" PRId32" to %" PRId32" since time of "
 				    "last merge. Probably because those files "
 				    "were deleted because they were "
@@ -1553,8 +1553,7 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 			mint += m_files[i]->getFileSize();
 		}
 		if ( mm != n ) {
-			log("merge: Only merging %" PRId32" instead of the "
-			    "original %" PRId32" files.",mm,n);
+			log( LOG_INFO, "merge: Only merging %" PRId32" instead of the original %" PRId32" files.",mm,n);
 			// cause the "if (mm==0)" to kick in below
 			if ( mm == 1 || mm == 0 ) {
 				mm = 0;
@@ -1582,13 +1581,13 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 			if ( m_isTitledb )
 				sprintf(fbuf,"%s%04" PRId32"-%03" PRId32".dat",
 					m_dbname,mergeFileId-1,id2);
-			log("merge: renaming final merged file %s",fbuf);
+			log(LOG_INFO, "merge: renaming final merged file %s",fbuf);
 			// this does not use a thread...
 			m_files[j]->rename(fbuf);
 			sprintf(fbuf,"%s%04" PRId32".map",m_dbname,mergeFileId-1);
 			//File *mf = m_maps[j]->getFile();
 			m_maps[j]->rename(fbuf);
-			log("merge: renaming final merged file %s",fbuf);
+			log(LOG_INFO, "merge: renaming final merged file %s",fbuf);
 			return false;
 		}
 
@@ -1798,10 +1797,9 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 	}
 	
 	// is it a force?
-	if ( m_nextMergeForced ) log(LOG_INFO,
-				     "merge: Force merging all %s "
-				     "files, except those being dumped now.",
-				     m_dbname);
+	if ( m_nextMergeForced ) {
+		log(LOG_INFO, "merge: Force merging all %s files, except those being dumped now.", m_dbname);
+	}
 	// clear after each call to attemptMerge()
 	m_nextMergeForced = false;
 
