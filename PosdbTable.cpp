@@ -31,88 +31,91 @@
 // . b-step into list looking for docid "docId"
 // . assume p is start of list, excluding 6 byte of termid
 static inline char *getWordPosList ( int64_t docId, char *list, int32_t listSize ) {
-	// make step divisible by 6 initially
-	int32_t step = (listSize / 12) * 6;
+	if(listSize<=0)
+		return NULL;
+	// step is the byte jupm, divisable by 6
+	unsigned step = (listSize / 12) * 6;
 	// shortcut
-	char *listEnd = list + listSize;
+	char * const listEnd = list + listSize;
 	// divide in half
 	char *p = list + step;
 	// for detecting not founds
 	char count = 0;
- loop:
-	// save it
-	char *origp = p;
-	// scan up to docid. we use this special bit to distinguish between
-	// 6-byte and 12-byte posdb keys
-	for ( ; p > list && (p[1] & 0x02) ; p -= 6 );
-	// ok, we hit a 12 byte key i guess, so backup 6 more
-	p -= 6;
-	// ok, we got a 12-byte key then i guess
-	int64_t d = g_posdb.getDocId ( p );
-	// we got a match, but it might be a NEGATIVE key so
-	// we have to try to find the positive keys in that case
-	if ( d == docId ) {
-		// if its positive, no need to do anything else
-		if ( (p[0] & 0x01) == 0x01 ) return p;
-		// ok, it's negative, try to see if the positive is
-		// in here, if not then return NULL.
-		// save current pos
-		char *current = p;
-		// back up to 6 byte key before this 12 byte key
-		p -= 6;
-		// now go backwards to previous 12 byte key
-		for ( ; p > list && (p[1] & 0x02) ; p -= 6 );
+
+	for(;;) {
+		// save it
+		char *origp = p;
+		// scan up to docid. we use this special bit to distinguish between
+		// 6-byte and 12-byte posdb keys
+		for ( ; p > list && (p[1] & 0x02) ; p -= 6 )
+			;
 		// ok, we hit a 12 byte key i guess, so backup 6 more
 		p -= 6;
-		// is it there?
-		if ( p >= list && g_posdb.getDocId(p) == docId ) {
-			// sanity. return NULL if its negative! wtf????
-			if ( (p[0] & 0x01) == 0x00 ) return NULL;
-			// got it
-			return p;
+		// ok, we got a 12-byte key then i guess
+		int64_t d = g_posdb.getDocId ( p );
+		// we got a match, but it might be a NEGATIVE key so
+		// we have to try to find the positive keys in that case
+		if ( d == docId ) {
+			// if its positive, no need to do anything else
+			if ( (p[0] & 0x01) == 0x01 ) return p;
+			// ok, it's negative, try to see if the positive is
+			// in here, if not then return NULL.
+			// save current pos
+			char *current = p;
+			// back up to 6 byte key before this 12 byte key
+			p -= 6;
+			// now go backwards to previous 12 byte key
+			for ( ; p > list && (p[1] & 0x02) ; p -= 6 )
+				;
+			// ok, we hit a 12 byte key i guess, so backup 6 more
+			p -= 6;
+			// is it there?
+			if ( p >= list && g_posdb.getDocId(p) == docId ) {
+				// sanity. return NULL if its negative! wtf????
+				if ( (p[0] & 0x01) == 0x00 ) return NULL;
+				// got it
+				return p;
+			}
+			// ok, no positive before us, try after us
+			p = current;
+			// advance over current 12 byte key
+			p += 12;
+			// now go forwards to next 12 byte key
+			for ( ; p < listEnd && (p[1] & 0x02) ; p += 6 )
+				;
+			// is it there?
+			if ( p + 12 < listEnd && g_posdb.getDocId(p) == docId ) {
+				// sanity. return NULL if its negative! wtf????
+				if ( (p[0] & 0x01) == 0x00 ) return NULL;
+				// got it
+				return p;
+			}
+			// . crap, i guess just had a single negative docid then
+			// . return that and the caller will see its negative
+			return current;
+		}		
+		// reduce step by half
+		// logically:
+		//    step /= 2;
+		//    step = (step/6)*6;
+		// but this is faster:
+		step = (step/12)*6;
+		// ensure never 0
+		if ( step == 0 ) {
+			step = 6;
+			// return NULL if not found
+			if ( count++ >= 2 ) return NULL;
 		}
-		// ok, no positive before us, try after us
-		p = current;
-		// advance over current 12 byte key
-		p += 12;
-		// now go forwards to next 12 byte key
-		for ( ; p < listEnd && (p[1] & 0x02) ; p += 6 );
-		// is it there?
-		if ( p + 12 < listEnd && g_posdb.getDocId(p) == docId ) {
-			// sanity. return NULL if its negative! wtf????
-			if ( (p[0] & 0x01) == 0x00 ) return NULL;
-			// got it
-			return p;
+		// go up or down then
+		if ( d < docId ) { 
+			p = origp + step;
+			if ( p > listEnd ) p = listEnd - 6;
 		}
-		// . crap, i guess just had a single negative docid then
-		// . return that and the caller will see its negative
-		return current;
-	}		
-	// reduce step
-	//step /= 2;
-	step >>= 1;
-	// . make divisible by 6!
-	// . TODO: speed this up!!!
-	step = step - (step % 6);
-	// sanity
-	if ( step % 6 ) { g_process.shutdownAbort(true); }
-	// ensure never 0
-	if ( step <= 0 ) {
-		step = 6;
-		// return NULL if not found
-		if ( count++ >= 2 ) return NULL;
+		else {
+			p = origp - step;
+			if ( p < list ) p = list;
+		}
 	}
-	// go up or down then
-	if ( d < docId ) { 
-		p = origp + step;
-		if ( p > listEnd ) p = listEnd - 6;
-	}
-	else {
-		p = origp - step;
-		if ( p < list ) p = list;
-	}
-	// and repeat
-	goto loop;
 }
 
 
