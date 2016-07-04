@@ -1089,7 +1089,7 @@ bool Rdb::dumpTree ( int32_t niceness ) {
 		}
 
 		logTrace( g_conf.m_logTraceRdb, "END. %s: g_error=%s or g_numThreads=%d. Returning false",
-		          m_dbname, mstrerrno( g_errno), g_numThreads );
+		          m_dbname, mstrerror( g_errno), g_numThreads );
 		return false;
 	}
 
@@ -1176,7 +1176,7 @@ bool Rdb::dumpTree ( int32_t niceness ) {
 
 	// if it returns true with g_errno set, there was an error
 	if ( g_errno ) {
-		logTrace( g_conf.m_logTraceRdb, "END. %s: dumpCollLoop g_error=%s. Returning false", m_dbname, mstrerrno( g_errno) );
+		logTrace( g_conf.m_logTraceRdb, "END. %s: dumpCollLoop g_error=%s. Returning false", m_dbname, mstrerror( g_errno) );
 		return false;
 	}
 
@@ -1227,7 +1227,7 @@ bool Rdb::dumpCollLoop ( ) {
 		s_lastTryTime = getTime();
 
 		logTrace( g_conf.m_logTraceRdb, "END. %s: Done dumping with g_errno=%s. Returning true",
-		          m_dbname, mstrerrno( g_errno ) );
+		          m_dbname, mstrerror( g_errno ) );
 		return true;
 	}
 

@@ -1007,7 +1007,7 @@ void handleRequest4 ( UdpSlot *slot , int32_t netnice ) {
 
 	// this returns false with g_errno set on error
 	if ( ! addMetaList ( readBuf , slot ) ) {
-		log( LOG_ERROR, "%s:%s:%d: call sendErrorReply. error='%s'", __FILE__, __func__, __LINE__, mstrerrno( g_errno ) );
+		log( LOG_ERROR, "%s:%s:%d: call sendErrorReply. error='%s'", __FILE__, __func__, __LINE__, mstrerror( g_errno ) );
 		us->sendErrorReply(slot,g_errno);
 		
 		logTrace( g_conf.m_logTraceMsg4, "END - addMetaList returned false. g_errno=%d", g_errno);

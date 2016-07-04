@@ -9,19 +9,15 @@
 // use our own errno so threads don't fuck with it
 extern int g_errno;
 
-const char *mstrerrno ( int errnum ) ;
-const char *mstrerror ( int errnum ) ;
+const char* mstrerror ( int errnum );
+const char* merrname( int errnum );
 
-// . this is OR'ed into the errno if the errno occured on a remote machine but
-//   was passed back to use through a reply (see UdpSlot.cpp/UdpServer.cpp)
-// . this was removed because Multicast::gotReply1() was expecting the g_errno
-//   remote codes to be the same as local, like ENOTFOUND to be right!!
-//#define REMOTE_ERROR_BIT (0x40000000)
+#define GB_ERRNO_BEGIN 0x00008000 // 32768
 
 enum {
-	EUNUSED1 = 0x00008000  ,
+	EUNUSED1 = GB_ERRNO_BEGIN, // 32768
 	ETRYAGAIN        , // try doing it again
-	ECLOSING         , // can't add cuz we're closing the db
+	ECLOSING         , // can't add cuz we're closing the db 32770
 	ENOTFOUND        , // can't find in the db
 	EHOSTNAMETOOBIG  , // hostname too big
 	EOUTOFSOCKETS    , // no more sockets?
@@ -51,7 +47,7 @@ enum {
 	ENOSLOTS         , // multicast can't use more than X slots
 	ENOTHREADSLOTS   , // no more room in thread queue
 	EUNUSED7         ,
-	EUNUSED8         ,
+	EUNUSED8         , // 32800
 	EURLTOOLONG      ,
 	EUNUSED9         ,
 	EDOCADULT        , //parser/xml/XmlDoc.cpp
@@ -61,7 +57,7 @@ enum {
 	EUNUSED10        ,
 	EUNUSED11        ,
 	EUNUSED12        ,
-	EUNUSED13        ,
+	EUNUSED13        , // 32810
 	EDOCBADCONTENTTYPE   ,
 	EUNUSED14            ,
 	EDOCBADHTTPSTATUS    , 
@@ -71,7 +67,7 @@ enum {
 	EDOCBADREDIRECTURL   ,
 	EUNUSED15        ,
 	EUNUSED16        ,
-	EUNUSED17        ,
+	EUNUSED17        , // 32820
 	EUNUSED18        ,
 	EUNUSED19        ,
 	EDOCUNCHANGED    ,
@@ -81,7 +77,7 @@ enum {
 	EUNUSED21        ,
 	EDOCDISALLOWED   , //robots.txt disallows this url
 	EUNUSED22        ,
-	EUNUSED23        ,
+	EUNUSED23        , // 32830
 	EUNUSED24        ,
 	EUNUSED25        ,
 	EUNUSED26        ,
@@ -91,7 +87,7 @@ enum {
 	EUNUSED30        ,
 	EUNUSED31        ,
 	EUNUSED32        ,
-	EUNUSED33        ,
+	EUNUSED33        , // 32840
 	ETOOMANYFILES    , //used by Rdb class when trying to dump
 	EQUERYTOOBIG     , //used by parser/query/SimpleQuery.cpp
 	EQUERYTRUNCATED  , //used in Msg39.cpp
@@ -101,7 +97,7 @@ enum {
 	EUDPTIMEDOUT     , //udp reply timed out
 	ESOCKETCLOSED    , //device disconnected (POLL_HUP) Loop.cpp
 	EBADMIME         , //HttpMime.cpp
-	ENOHOSTSFILE     , //Hostdb::init() needs a hosts file
+	ENOHOSTSFILE     , //Hostdb::init() needs a hosts file 32850
 	EUNUSED34        ,
 	EUNUSED34A       ,
 	EBADIP           , //parser/url/Url2.cpp::hashIp()
@@ -111,7 +107,7 @@ enum {
 	EDNSDEAD         , //dns is dead
 	EDNSTIMEDOUT     , //was just EUDPTIMEDOUT
 	ECOLLTOOBIG      , //collection is too long
-	EUNUSED35        ,
+	EUNUSED35        , // 32860
 	ENOPERM          , //permission denied
 	ECORRUPTDATA     , //corrupt data
 	ENOCOLLREC       , //no collection record
@@ -121,7 +117,7 @@ enum {
 	EUNUSED35A       ,
 	EFILECLOSED      , //read on closed file?
 	ELISTTOOBIG      , //Rdb::addList() calls this
-	ECANCELLED       , //transaction was cancelled
+	ECANCELLED       , //transaction was cancelled 32870
 	EUNUSED36        ,
 	EUNUSED37        ,
 	EBADCHARSET      , // Unsupported charset
@@ -131,7 +127,7 @@ enum {
 	ENOCACHE         , // document disallows caching
 	EREPAIRING       , // we are in repair mode, cannot add data
 	EUNUSED39        ,
-	EBADURL          ,
+	EBADURL          , // 32880
 	EDOCFILTERED     , // doc is filtered
 	ESSLNOTREADY     , // SSl tcpserver is not ready to do HTTPS request
 	ERESTRICTEDPAGE  , // spider trying to download /master or /admin page
@@ -141,7 +137,7 @@ enum {
 	EUNUSED41        ,
 	EDISKSTUCK       ,
 	EDOCREPEATSPAMMER,
-	EUNUSED42        ,
+	EUNUSED42        , // 32890
 	EDOCBADSECTIONS  ,
 	EUNUSED43        ,
 	EUNUSED44        ,
@@ -151,7 +147,7 @@ enum {
 	EABANDONED       ,
 	ECORRUPTHTTPGZIP ,
 	EDOCIDCOLLISION  ,
-	ESSLERROR        ,
+	ESSLERROR        , // 32900
 	EPERMDENIED      ,
 	EUNUSED47        ,
 	EUNUSED47A       ,
@@ -161,7 +157,7 @@ enum {
 	EUNUSED47E       ,
 	EINTERNALERROR,
 	EBADJSONPARSER,
-	EFAKEFIRSTIP,
+	EFAKEFIRSTIP, // 32910
 	EBADHOSTSCONF,
 	EWAITINGTOSYNCHOSTSCONF,
 	EDOCNONCANONICAL,
@@ -170,9 +166,8 @@ enum {
 	EBADIMG,
 	EUNUSED49,
 	ETOOMANYPARENS,
-
 	EUNUSED49A,
-	EUNUSED49B,
+	EUNUSED49B, // 32920
 	EUNUSED49C,
 	EUNUSED49D,
 	EUNUSED49E,
@@ -181,9 +176,8 @@ enum {
 	EUNUSED49H,
 	EUNUSED49I,
 	EUNUSED49J,
-
 	EMISSINGINPUT,
-	EPROXYSSLCONNECTFAILED,
+	EPROXYSSLCONNECTFAILED, // 32930
 	EUNUSED49K,
 	EREADONLYMODE,
 	ENOTITLEREC,
@@ -193,7 +187,7 @@ enum {
 	EDNSERROR        ,
 	EUNUSED51,
 	EMALFORMEDQUERY,
-	ESHARDDOWN
+	ESHARDDOWN // 32940
 };
 
 #endif // GB_ERRNO_H

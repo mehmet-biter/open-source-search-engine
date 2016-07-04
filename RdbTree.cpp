@@ -2762,7 +2762,7 @@ bool RdbTree::fastLoad ( BigFile *f , RdbMem *stack ) {
 	if ( g_errno ) {
 		f->close();
 		m_isLoading = false;
-		log( LOG_ERROR, "db: read error: %s", mstrerrno( g_errno ) );
+		log( LOG_ERROR, "db: read error: %s", mstrerror( g_errno ) );
 		return false;
 	}
 	// parms check

@@ -318,7 +318,7 @@ readMore:
 				   true                 , // just get endKey?
 				   allowPageCache     );
 		if ( g_errno ) {
-			log("db: Msg5: getting endKey: %s",mstrerrno(g_errno));
+			log("db: Msg5: getting endKey: %s",mstrerror(g_errno));
 			return true;
 		}
 		treeEndKey = m_msg3.m_constrainKey;

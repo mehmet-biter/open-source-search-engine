@@ -463,7 +463,7 @@ bool File::close ( ) {
 	// there was a closing error if status is non-zero. --- not checking
 	// the error may lead to silent loss of data --- see "man 2 close"
 	if ( status != 0 ) {
-		log( LOG_WARN, "disk: close(%s) : %s", getFilename(), mstrerrno(g_errno) );
+		log( LOG_WARN, "disk: close(%s) : %s", getFilename(), mstrerror(g_errno) );
 		return false;
 	}
 	// sanity
