@@ -8,6 +8,7 @@
 #include "Loop.h"
 #include "Rdb.h"
 #include "Process.h"
+#include "Sanity.h"
 
 
 #define BUCKET_SIZE 8192
@@ -2160,7 +2161,17 @@ int64_t RdbBuckets::fastLoadColl( BigFile *f, const char *dbname, int64_t offset
 		return -1;
 
 	for (int32_t i = 0; i < numBuckets; i++ ) {
-		m_buckets[i] = bucketFactory();
+		// BUGFIX 20160705: Do NOT assign result of bucketFactory
+		// directly to m_buckets[i], as bucketFactory may call 
+		// resizeTable that modifies the m_buckets pointer. Cores
+		// seen in binary generated with g++ 4.9.3
+		RdbBucket *bf = bucketFactory();
+		if( !m_buckets ) {
+			log(LOG_ERROR,"db: m_buckets is NULL after call to bucketFactory()!");
+			gbshutdownLogicError();
+		}
+		m_buckets[i] = bf;
+		
 		if(m_buckets[i] == NULL) return -1;
 		offset = m_buckets[i]->fastLoad(f, offset);
 		// returns -1 on error
