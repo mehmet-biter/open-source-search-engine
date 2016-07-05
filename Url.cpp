@@ -1054,8 +1054,15 @@ void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripParams, bool 
 		}
 
 		// rebuild url
-		strcpy( s, urlParser.unparse() );
-		len = strlen(s);
+		urlParser.unparse();
+
+		len = urlParser.getUrlParsedLen();
+
+		if ( len > MAX_URL_LEN - 10 ) {
+			len = MAX_URL_LEN - 10;
+		}
+		strncpy( s, urlParser.getUrlParsed(), len );
+		s[len] = '\0';
 	}
 
 	// remove common filenames like index.html

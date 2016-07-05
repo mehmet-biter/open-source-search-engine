@@ -209,7 +209,9 @@ void UrlParser::parse() {
 	}
 }
 
-const char* UrlParser::unparse() {
+/// @todo ALC a better way of doing this will be to check if the url has changed,
+/// and call unparse automatically when getUrlParsed/getUrlParsedLen is called
+void UrlParser::unparse() {
 	m_urlParsed.clear();
 
 	// domain
@@ -247,8 +249,6 @@ const char* UrlParser::unparse() {
 			m_urlParsed.append( it->getString() );
 		}
 	}
-
-	return m_urlParsed.c_str();
 }
 
 void UrlParser::deleteComponent( UrlComponent *urlComponent ) {

@@ -36,7 +36,7 @@ public:
 	bool removeQueryParam( const std::vector<UrlComponent*> &urlComponents, const UrlComponent::Validator &validator );
 	bool removeQueryParam( const UrlComponent::Matcher &keyMatch, const UrlComponent::Validator &validator );
 
-	const char* unparse();
+	void unparse();
 
 	// member access
 	const char* getUrl() const;
@@ -56,6 +56,9 @@ public:
 
 	const std::vector<UrlComponent>* getPaths() const;
 	const std::vector<UrlComponent>* getQueries() const;
+
+	const char* getUrlParsed() const;
+	size_t getUrlParsedLen() const;
 private:
 	void parse();
 
@@ -134,6 +137,14 @@ inline const std::vector<UrlComponent>* UrlParser::getPaths() const {
 
 inline const std::vector<UrlComponent>* UrlParser::getQueries() const {
 	return &m_queries;
+}
+
+inline const char* UrlParser::getUrlParsed() const {
+	return m_urlParsed.c_str();
+}
+
+inline size_t UrlParser::getUrlParsedLen() const {
+	return m_urlParsed.size();
 }
 
 #endif // GB_URLPARSER_H
