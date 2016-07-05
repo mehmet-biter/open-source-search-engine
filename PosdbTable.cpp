@@ -197,9 +197,6 @@ void PosdbTable::init ( Query     *q,
 	if ( ! msg2 ) return;
 
 	m_msg2 = msg2;
-	// sanity
-	if ( ! m_msg2->m_query )
-		gbshutdownAbort(true);
 	// save this
 	m_collnum = r->m_collnum;
 	// save the request

@@ -31,7 +31,8 @@ void Msg2::reset ( ) {
 bool Msg2::getLists ( int32_t     rdbId       ,
 		      collnum_t collnum , // char    *coll        ,
 		      bool     addToCache  ,
-		      Query *query ,
+		      const QueryTerm *qterms,
+		      int32_t numQterms,
 		      // put list of sites to restrict to in here
 		      // or perhaps make it collections for federated search?
 		      char *whiteList ,
@@ -53,8 +54,6 @@ bool Msg2::getLists ( int32_t     rdbId       ,
 		return true;
 	}
 	// save callback and state
-	m_query       = query;
-	if ( ! query ) { g_process.shutdownAbort(true); }
 	m_state       = state;
 	m_callback    = callback;
 	m_niceness    = niceness;
@@ -68,7 +67,7 @@ bool Msg2::getLists ( int32_t     rdbId       ,
 	m_docIdStart = docIdStart;
 	m_docIdEnd   = docIdEnd;
 	m_req         = request;
-	m_qterms              = m_query->m_qterms;
+	m_qterms              = qterms;
 	m_minRecSizes         = minRecSizes;
 	m_getComponents       = false;
 	m_rdbId               = rdbId;
@@ -80,7 +79,7 @@ bool Msg2::getLists ( int32_t     rdbId       ,
 	// start the timer
 	m_startTime = gettimeofdayInMilliseconds();
 	// set this
-	m_numLists = m_query->m_numTerms;
+	m_numLists = numQterms;
 
 	// all msg5 available for use
 	for ( int32_t i = 0 ; i < MSG2_MAX_REQUESTS ; i++ ) m_avail[i] = true;
@@ -138,10 +137,10 @@ bool Msg2::getLists ( ) {
 		
 		int32_t minRecSize = m_minRecSizes[m_i];
 
-		QueryTerm *qt = &m_qterms[m_i];
+		const QueryTerm *qt = &m_qterms[m_i];
 
-		char *sk2 = NULL;
-		char *ek2 = NULL;
+		const char *sk2 = NULL;
+		const char *ek2 = NULL;
 		sk2 = qt->m_startKey;
 		ek2 = qt->m_endKey;
 
@@ -156,9 +155,9 @@ bool Msg2::getLists ( ) {
 		size_t hfterm_shortcut_buffer_bytes;
 		if(g_conf.m_useHighFrequencyTermCache &&
 		   m_req->m_allowHighFrequencyTermCache &&
-		   g_hfts.query_term_shortcut(m_query->getTermId(m_i),&hfterm_shortcut_posdb_buffer,&hfterm_shortcut_buffer_bytes))
+		   g_hfts.query_term_shortcut(m_qterms[m_i].m_termId,&hfterm_shortcut_posdb_buffer,&hfterm_shortcut_buffer_bytes))
 		{
-			log("query: term %" PRId64" (%*.*s) is a high-frequency term",m_query->getTermId(m_i),qt->m_qword->m_wordLen,qt->m_qword->m_wordLen,qt->m_qword->m_word);
+			log("query: term %" PRId64" (%*.*s) is a high-frequency term",m_qterms[m_i].m_termId,qt->m_qword->m_wordLen,qt->m_qword->m_wordLen,qt->m_qword->m_word);
 			//use PosDB shortcut buffer, put into RdbList and avoid actually going into PosDB
 			char *startKey = (char*)hfterm_shortcut_posdb_buffer;
 			char *endKey = ((char*)hfterm_shortcut_posdb_buffer)+hfterm_shortcut_buffer_bytes-18;

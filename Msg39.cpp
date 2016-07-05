@@ -627,8 +627,8 @@ bool Msg39::getLists () {
 	if ( ! m_msg2.getLists ( rdbId                      ,
 				 m_r->m_collnum,//m_r->ptr_coll              ,
 				 m_r->m_addToCache          ,
-				 //m_tmpq.m_qterms ,
-				 &m_tmpq,
+				 m_tmpq.m_qterms,
+				 m_tmpq.getNumTerms(),
 				 m_r->ptr_whiteList,
 				 // we need to restrict docid range for
 				 // whitelist as well! this is from

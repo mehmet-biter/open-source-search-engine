@@ -46,7 +46,9 @@ public:
 	 */
 	bool getLists(int32_t rdbId,
 			collnum_t collnum,			//char    *coll        ,
-			bool addToCache, class Query *query,
+			bool addToCache,
+			const QueryTerm *qterms,
+			int32_t numQterms,
 			// restrict search results to this list of sites,
 			// i.e. "abc.com+xyz.com+..." (Custom Search)
 			char *whiteList,
@@ -74,8 +76,8 @@ public:
 	int32_t m_i;
 
 	/** return the number of lists == the number of query terms */
-	int32_t getNumLists() {
-		return m_query->m_numTerms;
+	int32_t getNumLists() const {
+		return m_numLists;
 	}
 
 	/** list of sites to restrict search results to. space separated */
@@ -106,8 +108,7 @@ public:
 	RdbList *m_lists;
 
 
-	class Query *m_query;
-	class QueryTerm *m_qterms;
+	const QueryTerm *m_qterms;
 	//char     m_cacheKeys[MAX_NUM_LISTS * MAX_KEY_BYTES];
 	int32_t *m_minRecSizes;
 	int32_t m_numLists;
