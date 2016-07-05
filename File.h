@@ -65,6 +65,14 @@ class File {
 	// returns false and sets errno on error, returns true on success
 	bool rename ( const char *newFilename );
 
+	void setForceRename( bool forceRename ) {
+		m_forceRename = forceRename;
+	}
+
+	bool getForceRename() const {
+		return m_forceRename;
+	}
+
 	bool calledOpen () { return m_calledOpen; }
 	bool calledSet  () { return m_calledSet; }
 
@@ -175,7 +183,6 @@ class File {
 
 	// THIS file's VIRTUAL descriptor
 	//int m_vfd;
-
 private:
 	// now just the real fd. is -1 if not opened
 	int m_fd;
@@ -186,6 +193,8 @@ private:
 	
 	char m_calledOpen;
 	char m_calledSet;
+
+	bool m_forceRename;
 };
 
 #endif // GB_FILE_H

@@ -897,8 +897,9 @@ bool RdbBase::incorporateMerge ( ) {
 	for ( int32_t i = a ; i < b ; i++ ) {
 		// incase we are starting with just the
 		// linkdb0001.003.dat file and not the stuff we merged
-		if ( ! m_files[i] )
+		if ( ! m_files[i] ) {
 			continue;
+		}
 
 		// debug msg
 		log(LOG_INFO,"merge: Unlinking merged file %s/%s (#%" PRId32").",
@@ -908,7 +909,8 @@ bool RdbBase::incorporateMerge ( ) {
 		// . they will save the filename before spawning so we can
 		//   delete the m_files[i] now
 		if ( ! m_files[i]->unlink ( doneWrapper , this ) ) {
-			m_numThreads++; g_numThreads++;
+			m_numThreads++;
+			g_numThreads++;
 		} else {
 			// debug msg
 			// MDW this cores if file is bad... if collection got delete from under us i guess!!
@@ -919,7 +921,8 @@ bool RdbBase::incorporateMerge ( ) {
 		log(LOG_INFO,"merge: Unlinking map file %s (#%" PRId32").", m_maps[i]->getFilename(),i);
 
 		if ( ! m_maps[i]->unlink  ( doneWrapper , this ) ) {
-			m_numThreads++; g_numThreads++;
+			m_numThreads++;
+			g_numThreads++;
 		} else {
 			// debug msg
 			log(LOG_INFO,"merge: Unlinked %s (#%" PRId32").", m_maps[i]->getFilename(), i);
@@ -971,11 +974,16 @@ void RdbBase::doneWrapper2 ( ) {
 
 	int32_t x = m_x;
 	int32_t a = m_a;
+
 	// . the fileId of the merge file becomes that of a
 	// . but secondary id should remain the same
 	m_fileIds [ x ] = m_fileIds [ a ];
-	if ( ! m_maps [x]->rename(m_maps[a]->getFilename(),doneWrapper3,this)){
-		m_numThreads++; g_numThreads++; }
+
+	log(LOG_INFO,"db: Renaming %s to %s", m_files[x]->getFilename(), m_files[a]->getFilename());
+	if ( ! m_maps[x]->rename( m_maps[a]->getFilename(), doneWrapper3, this ) ) {
+		m_numThreads++;
+		g_numThreads++;
+	}
 
 	// sanity check
 	m_files[x]->m_fileSize = -1;
@@ -984,8 +992,7 @@ void RdbBase::doneWrapper2 ( ) {
 	int64_t fs2 = m_maps[x]->getFileSize();
 	// compare
 	if ( fs != fs2 ) {
-		log("build: Map file size does not agree with actual file "
-		    "size");
+		log("build: Map file size does not agree with actual file size");
 		g_process.shutdownAbort(true);
 	}
 
@@ -993,24 +1000,32 @@ void RdbBase::doneWrapper2 ( ) {
 		// debug statement
 		log(LOG_INFO,"db: Renaming %s of size %" PRId64" to %s",
 		    m_files[x]->getFilename(),fs , m_files[a]->getFilename());
-		// rename it, this may block
-		if ( ! m_files[x]->rename ( m_files[a]->getFilename() ,
-					    doneWrapper3 , this ) ) {
-			m_numThreads++; g_numThreads++; }
-	}
-	else {
-		// rename to this (titledb%04" PRId32"-%03" PRId32".dat)
-		char buf [ 1024 ];
-		// use m_dbname in case its titledbRebuild
-		sprintf ( buf , "%s%04" PRId32"-%03" PRId32".dat" ,
-			  m_dbname, m_fileIds[a], m_fileIds2[x] );
 
 		// rename it, this may block
-		if ( ! m_files   [ x ]->rename ( buf , doneWrapper3, this ) ) {
-			m_numThreads++; g_numThreads++; }
+		if ( ! m_files[x]->rename ( m_files[a]->getFilename(), doneWrapper3, this ) ) {
+			m_numThreads++;
+			g_numThreads++;
+		}
+	} else {
+		// rename to this (titledb%04" PRId32"-%03" PRId32".dat)
+		char buf [ 1024 ];
+
+		// use m_dbname in case its titledbRebuild
+		sprintf ( buf , "%s%04" PRId32"-%03" PRId32".dat", m_dbname, m_fileIds[a], m_fileIds2[x] );
+
+		// rename it, this may block
+		if ( ! m_files[ x ]->rename ( buf, doneWrapper3, this ) ) {
+			m_numThreads++;
+			g_numThreads++;
+		}
 	}
+
 	// if we blocked on all, keep going
-	if ( m_numThreads == 0 ) { doneWrapper4 ( ); return ; }
+	if ( m_numThreads == 0 ) {
+		doneWrapper4 ( );
+		return ;
+	}
+
 	// . otherwise we blocked
 	// . we are now unlinking
 	// . this is so Msg3.cpp can avoid reading the [a,b) files
@@ -1527,9 +1542,10 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 			}
 			return false;
 		}
+
 		// make a log note
-		log(LOG_INFO,"merge: Resuming killed merge for %s coll=%s.",
-		    m_dbname,m_coll);
+		log(LOG_INFO,"merge: Resuming killed merge for %s coll=%s.", m_dbname,m_coll);
+
 		// compute the total size of merged file
 		mint = 0;
 		int32_t mm = 0;
@@ -1552,21 +1568,19 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 			if ( i > j ) mm++;
 			mint += m_files[i]->getFileSize();
 		}
+
 		if ( mm != n ) {
-			log( LOG_INFO, "merge: Only merging %" PRId32" instead of the original %" PRId32" files.",mm,n);
-			// cause the "if (mm==0)" to kick in below
-			if ( mm == 1 || mm == 0 ) {
-				mm = 0;
-				// fix renaming final merged file tagdb-001.dat
-				mergeFileId = 2;
-				m_fileIds[j] = 1;
-			}
+			log( LOG_INFO, "merge: Only merging %" PRId32" instead of the original %" PRId32" files.", mm, n );
 		}
+
 		// how many files to merge?
 		n = mm;
+
 		// allow a single file to continue merging if the other
 		// file got merged out already
-		if ( mm > 0 ) overide = true;
+		if ( mm > 0 ) {
+			overide = true;
+		}
 
 		// if we've already merged and already unlinked, then the
 		// process exited, now we restart with just the final 
@@ -1574,20 +1588,25 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 		if ( mm == 0 && rdbId != RDB_TITLEDB ) {
 			m_isMerging = false;
 			// make a fake file before us that we were merging
-			// since it got nuked on disk
-			//incorporateMerge();
+			// since it got nuked on disk incorporateMerge();
 			char fbuf[256];
-			sprintf(fbuf,"%s%04" PRId32".dat",m_dbname,mergeFileId-1);
-			if ( m_isTitledb )
-				sprintf(fbuf,"%s%04" PRId32"-%03" PRId32".dat",
-					m_dbname,mergeFileId-1,id2);
+
+			if ( m_isTitledb ) {
+				sprintf( fbuf, "%s%04" PRId32"-%03" PRId32".dat", m_dbname, mergeFileId + 1, id2 );
+			} else {
+				sprintf( fbuf, "%s%04" PRId32".dat", m_dbname, mergeFileId + 1 );
+			}
 			log(LOG_INFO, "merge: renaming final merged file %s",fbuf);
-			// this does not use a thread...
 			m_files[j]->rename(fbuf);
-			sprintf(fbuf,"%s%04" PRId32".map",m_dbname,mergeFileId-1);
-			//File *mf = m_maps[j]->getFile();
-			m_maps[j]->rename(fbuf);
+
+			sprintf( fbuf, "%s%04" PRId32".map", m_dbname, mergeFileId + 1 );
+
+			// we could potentially have a 'regenerated' map file that has already been moved.
+			// eg: merge dies after moving map file, but before moving data files.
+			//     next start up, map file will be regenerated. means we now have both even & odd map files
 			log(LOG_INFO, "merge: renaming final merged file %s",fbuf);
+			m_maps[j]->rename(fbuf, true);
+
 			return false;
 		}
 

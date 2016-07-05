@@ -179,7 +179,8 @@ class BigFile {
 	// . renames ALL parts too
 	// . doesn't change directory, just the base filename
 	// . use m_dir if newBaseFilenameDir is NULL
-	bool rename ( const char *newBaseFilename, const char *newBaseFilenameDir=NULL) ;
+	// . force = rename even if newFile exist
+	bool rename ( const char *newBaseFilename, const char *newBaseFilenameDir=NULL, bool force=false ) ;
 
 	bool move ( const char *newDir );
 
@@ -192,9 +193,7 @@ class BigFile {
 	// . they set g_errno on error
 	bool unlink   ( void (* callback) ( void *state ) , 
 		        void *state ) ;
-	bool rename   ( const char *newBaseFilename,
-		        void (* callback) ( void *state ) , 
-		        void *state ) ;
+	bool rename   ( const char *newBaseFilename, void (* callback) ( void *state ) , void *state, bool force=false ) ;
 	bool chopHead ( int32_t part , 
 			void (* callback) ( void *state ) , 
 			void *state ) ;
@@ -272,7 +271,8 @@ private:
 			    bool  useThread                   ,
 			    void (* callback) ( void *state ) ,
 			    void *state                       ,
-			    const char *newBaseFilenameDir = NULL   );
+			    const char *newBaseFilenameDir = NULL,
+				bool force = false );
 
 
 	// . add all parts from this directory

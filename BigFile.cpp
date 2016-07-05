@@ -1411,13 +1411,13 @@ bool BigFile::move ( const char *newDir )
 }
 
 
-bool BigFile::rename(const char *newBaseFilename, const char *newBaseFilenameDir )
+bool BigFile::rename(const char *newBaseFilename, const char *newBaseFilenameDir, bool force )
 {
 	bool rc;
 
 	logTrace( g_conf.m_logTraceBigFile, "BEGIN. newBaseFilename [%s] newBaseFilenameDir [%s]", newBaseFilename, newBaseFilenameDir);
 	
-	rc=unlinkRename ( newBaseFilename, -1, false, NULL, NULL, newBaseFilenameDir );
+	rc=unlinkRename ( newBaseFilename, -1, false, NULL, NULL, newBaseFilenameDir, force );
 	// rc indicates blocked/unblocked
 	
 	logTrace( g_conf.m_logTraceBigFile, "END. returning [%s]", rc?"true":"false");
@@ -1453,13 +1453,13 @@ bool BigFile::unlink(void (* callback) ( void *state ) , void *state )
 }
 
 
-bool BigFile::rename(const char *newBaseFilename, void (*callback)(void *state), void *state) 
+bool BigFile::rename(const char *newBaseFilename, void (*callback)(void *state), void *state, bool force)
 {
 	bool rc;
 
 	logTrace( g_conf.m_logTraceBigFile, "BEGIN. filename [%s] newBaseFilename [%s]", getFilename(), newBaseFilename);
 
-	rc=unlinkRename ( newBaseFilename, -1, true, callback, state);
+	rc=unlinkRename ( newBaseFilename, -1, true, callback, state, NULL, force );
 	// rc indicates blocked/unblocked
 	
 	logTrace( g_conf.m_logTraceBigFile, "END. returning [%s]", rc?"true":"false");
@@ -1467,7 +1467,7 @@ bool BigFile::rename(const char *newBaseFilename, void (*callback)(void *state),
 }
 
 
-bool BigFile::chopHead(int32_t part, void (*callback)(void *state), void *state) 
+bool BigFile::chopHead(int32_t part, void (*callback)(void *state), void *state)
 {
 	bool rc;
 
@@ -1497,11 +1497,8 @@ static void doneUnlinkWrapper ( void *state, job_exit_t exit_type );
 bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 			     const char *newBaseFilename             ,
 			     // part num to unlink, -1 for all (or rename)
-			     int32_t  part                        , 
-			     bool  useThread                   ,
-			     void (* callback) ( void *state ) , 
-			     void *state                       ,
-			     const char *newBaseFilenameDir          ) {
+			     int32_t  part, bool  useThread, void (* callback) ( void *state ),
+			     void *state, const char *newBaseFilenameDir, bool force ) {
 	logTrace( g_conf.m_logTraceBigFile, "BEGIN" );
 
 	// fail in read only mode
@@ -1614,6 +1611,7 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 		// base in ptr to file, but set f->m_this and f->m_i 
 		f->m_bigfile = this;
 		f->m_i    = i;
+		f->setForceRename( force );
 
 		// assume thread launched, doneRoutine() will decrement these
 		m_numThreads++; 
@@ -1704,6 +1702,8 @@ static void renameWrapper_r ( void *state ) {
 	BigFile *THIS = f->m_bigfile;
 	// get the ith file we just unlinked
 	int32_t      i = f->m_i;
+	bool forceRename = f->getForceRename();
+
 	// . get the new full name for this file
 	// . based on m_dir/m_stripeDir and m_baseFilename
 	char newFilename [ 1024 ];
@@ -1724,7 +1724,7 @@ static void renameWrapper_r ( void *state ) {
 	log(LOG_TRACE,"%s:%s:%d: disk: rename [%s] to [%s]", 
 	   __FILE__, __func__, __LINE__,oldFilename,newFilename);
 
-	if ( ::access( newFilename, F_OK ) != 0 ) {
+	if ( forceRename || ::access( newFilename, F_OK ) != 0 ) {
 		// suppress error (we will catch it in rename anyway)
 		errno = 0;
 
