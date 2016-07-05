@@ -258,16 +258,10 @@ class Posdb {
 	}
 
 	static int64_t getDocId ( const void *key ) {
-		uint64_t d;
-		d = ((const unsigned char *)key)[11];
-		d <<= 32;
-		d |= *(const uint32_t *)(((unsigned char *)key)+7);
-		d >>= 2;
-		return d;
-		//int64_t d = ((key144_t *)key)->n2 & 0xffff;
-		//d <<= 22;
-		//d |= ((key144_t *)key)->n1 >> (32+8+2);
-		//return d;
+		const char *k = (const char*)key;
+		uint64_t d = *(const uint64_t*)(k+4);
+		d >>= (64-38);
+		return (int64_t)d;
 	}
 
 	static unsigned char getSiteRank ( const void *key ) {
