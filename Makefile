@@ -432,6 +432,9 @@ RdbBase.o:
 Posdb.o:
 	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 
+PosdbTable.o:
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
+
 # Query::setBitScores() needs this optimization
 #Query.o:
 #	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
