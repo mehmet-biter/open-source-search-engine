@@ -48,6 +48,10 @@ int32_t getPathDepth ( char *s , bool hasHttp );
 
 class Url {
 public:
+	Url() {
+		reset();
+	}
+	
 	// set from another Url, does a copy
 	void set( const Url *url ) {
 		if ( ! url ) {
