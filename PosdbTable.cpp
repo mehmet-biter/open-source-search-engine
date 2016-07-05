@@ -3,10 +3,12 @@
 
 #include "gb-include.h"
 
-#include "Posdb.h"
+#include "PosdbTable.h"
 #include "ScalingFunctions.h"
 #include "BitOperations.h"
-#include "Process.h"
+#include "Msg2.h"
+#include "Msg39.h"
+#include "Sanity.h"
 #include "Stats.h"
 #include "Conf.h"
 #include "TopTree.h"
@@ -95,7 +97,8 @@ static inline char *getWordPosList ( int64_t docId, char *list, int32_t listSize
 	// . TODO: speed this up!!!
 	step = step - (step % 6);
 	// sanity
-	if ( step % 6 ) { g_process.shutdownAbort(true); }
+	if ( step % 6 )
+		gbshutdownAbort(true);
 	// ensure never 0
 	if ( step <= 0 ) {
 		step = 6;
@@ -175,7 +178,8 @@ void PosdbTable::init ( Query     *q,
 			Msg2 *msg2,
 			Msg39Request *r) {
 	// sanity check -- watch out for double calls
-	if ( m_initialized ) { g_process.shutdownAbort(true); }
+	if ( m_initialized )
+		gbshutdownAbort(true);
 	// clear everything
 	reset();
 	// we are now
@@ -194,7 +198,8 @@ void PosdbTable::init ( Query     *q,
 
 	m_msg2 = msg2;
 	// sanity
-	if ( ! m_msg2->m_query ) { g_process.shutdownAbort(true); }
+	if ( ! m_msg2->m_query )
+		gbshutdownAbort(true);
 	// save this
 	m_collnum = r->m_collnum;
 	// save the request
@@ -204,7 +209,8 @@ void PosdbTable::init ( Query     *q,
 	//m_coll = coll;
 	// get the rec for it
 //	CollectionRec *cr = g_collectiondb.getRec ( m_collnum );
-//	if ( ! cr ) { g_process.shutdownAbort(true); }
+//	if ( ! cr )
+//		gbshutdownAbort(true);
 	// set this now
 	//m_collnum = cr->m_collnum;
 
@@ -224,12 +230,14 @@ void PosdbTable::init ( Query     *q,
 	if ( m_q->m_isBoolean ) m_siteRankMultiplier = 0.0;
 
 	// sanity
-	if ( msg2->getNumLists() != m_q->getNumTerms() ) {g_process.shutdownAbort(true);}
+	if ( msg2->getNumLists() != m_q->getNumTerms() )
+		gbshutdownAbort(true);
 	// copy the list ptrs to the QueryTerm::m_posdbListPtr
 	for ( int32_t i = 0 ; i < m_q->m_numTerms ; i++ ) 
 		m_q->m_qterms[i].m_posdbListPtr = msg2->getList(i);
 	// we always use it now
-	if ( ! topTree ) {g_process.shutdownAbort(true);}
+	if ( ! topTree )
+		gbshutdownAbort(true);
 }
 
 // this is separate from allocTopTree() function below because we must
@@ -305,12 +313,12 @@ void PosdbTable::prepareWhiteListTable()
 		if ( d1 > m_msg2->m_docIdEnd ) { 
 			log("posdb: d1=%" PRId64" > %" PRId64,
 			    d1,m_msg2->m_docIdEnd);
-			//g_process.shutdownAbort(true); 
+			//gbshutdownAbort(true);
 		}
 		if ( d1 < m_msg2->m_docIdStart ) { 
 			log("posdb: d1=%" PRId64" < %" PRId64,
 			    d1,m_msg2->m_docIdStart);
-			//g_process.shutdownAbort(true); 
+			//gbshutdownAbort(true);
 		}
 		// first key is always 18 bytes cuz it has the termid
 		// scan recs in the list
@@ -1046,7 +1054,7 @@ float PosdbTable::getSingleTermScore ( int32_t     i,
 		if ( s_first ) log("posdb: CRITICAL single buf overflow");
 		s_first = false;
 		return sum;
-		//g_process.shutdownAbort(true); }
+		//gbshutdownAbort(true); }
 	}
 	// increase buf ptr over this then
 	m_singleScoreBuf.incrementLength(need);
@@ -1658,7 +1666,7 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 			// different siterank or langid because it was
 			// not deleted right!
 			if ( (uint64_t)g_posdb.getDocId(wpi) != m_docId ) {
-				g_process.shutdownAbort(true);
+				gbshutdownAbort(true);
 			}
 			// re-set this i guess
 			firsti = true;
@@ -1821,7 +1829,7 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 			// different siterank or langid because it was
 			// not deleted right!
 			if ( (uint64_t)g_posdb.getDocId(wpj) != m_docId ) {
-				g_process.shutdownAbort(true);
+				gbshutdownAbort(true);
 			}
 			// re-set this i guess
 			firstj = true;
@@ -2476,7 +2484,8 @@ bool PosdbTable::setQueryTermInfo ( ) {
 	}
 
 	// bad! ringbuf[] was not designed for this nonsense!
-	if ( m_minListi >= 255 ) { g_process.shutdownAbort(true); }
+	if ( m_minListi >= 255 )
+		gbshutdownAbort(true);
 	
 	// set this for caller to use to loop over the queryterminfos
 	m_numQueryTermInfos = nrg;
@@ -2655,7 +2664,7 @@ static inline bool isInRange( const char *p, const QueryTerm *qt ) {
 	// }
 
 	// how did this happen?
-	g_process.shutdownAbort(true);
+	gbshutdownAbort(true);
 }
 
 
@@ -2676,7 +2685,8 @@ static inline bool isInRange2 ( const char *recPtr, const char *subListEnd, cons
 void PosdbTable::addDocIdVotes ( const QueryTermInfo *qti, int32_t listGroupNum) {
 
 	// sanity check, we store this in a single byte below for voting
-	if ( listGroupNum >= 256 ) { g_process.shutdownAbort(true); }
+	if ( listGroupNum >= 256 )
+		gbshutdownAbort(true);
 
 	// shortcut
 	char *bufStart = m_docIdVoteBuf.getBufStart();
@@ -2955,7 +2965,8 @@ void PosdbTable::addDocIdVotes ( const QueryTermInfo *qti, int32_t listGroupNum)
 	actualDocId <<= 8;
 	actualDocId |= (unsigned char)dp[0];
 	actualDocId >>= 2;
-	if (  dd != actualDocId ) { g_process.shutdownAbort(true); }
+	if (  dd != actualDocId )
+		gbshutdownAbort(true);
 	*/
 
 	// advance
@@ -3334,7 +3345,8 @@ void PosdbTable::intersectLists10_r ( ) {
 	char    **xpos           = (char   **)pp; pp += sizeof(char *) * nqt;
 	char     *bflags         = (char    *)pp; pp += sizeof(char) * nqt;
 	float    *scoreMatrix    = (float   *)pp; pp += sizeof(float) *nqt*nqt;
-	if ( pp > m_stackBuf.getBufEnd() ) {g_process.shutdownAbort(true); }
+	if ( pp > m_stackBuf.getBufEnd() )
+		gbshutdownAbort(true);
 
 	for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
 		// get it
@@ -3530,7 +3542,8 @@ void PosdbTable::intersectLists10_r ( ) {
 					px += 12;
 				}
 				// sanity check
-				if ( px != xp ) { g_process.shutdownAbort(true); }
+				if ( px != xp )
+					gbshutdownAbort(true);
 				*/
 				// not there? xlist will be NULL
 				qti->m_savedCursor[j] = xp;
@@ -3587,7 +3600,7 @@ void PosdbTable::intersectLists10_r ( ) {
 			}
 			// sanity. must be 12 byte key
 			//if ( (*xc & 0x06) != 0x02 ) {
-			//	g_process.shutdownAbort(true);}
+			//	gbshutdownAbort(true);}
 			// save it
 			qti->m_savedCursor[j] = xc;
 			// get new docid
@@ -3613,7 +3626,7 @@ void PosdbTable::intersectLists10_r ( ) {
 					log("posdb: encountered corrupt "
 					    "posdb list. bailing.");
 					return;
-					//g_process.shutdownAbort(true);
+					//gbshutdownAbort(true);
 				}
 				// the next docid? it will be a 12 byte key.
 				if ( ! (*xc & 0x04) ) break;
@@ -3893,7 +3906,7 @@ void PosdbTable::intersectLists10_r ( ) {
 			nwp      [nsub] = qti->m_savedCursor [k];
 			// sanity
 			//if ( g_posdb.getKeySize(nwp[nsub]) > 12 ) { 
-			//	g_process.shutdownAbort(true);}
+			//	gbshutdownAbort(true);}
 			// if doing seohack then m_cursor was not advanced
 			// so advance it here
 			nwpEnd [nsub] = qti->m_cursor [k];
@@ -3941,7 +3954,8 @@ void PosdbTable::intersectLists10_r ( ) {
 		// get keysize
 		char ks = g_posdb.getKeySize(nwp[mink]);
 		// sanity
-		//if ( ks > 12 ) { g_process.shutdownAbort(true); }
+		//if ( ks > 12 )
+		//	gbshutdownAbort(true);
 		//
 		// HACK OF CONFUSION:
 		//
@@ -4027,7 +4041,8 @@ void PosdbTable::intersectLists10_r ( ) {
 	}
 
 	// breach?
-	if ( mptr > mbuf + 300000 ) { g_process.shutdownAbort(true); }
+	if ( mptr > mbuf + 300000 )
+		gbshutdownAbort(true);
 
 	// clear the counts on this DocIdScore class for this new docid
 	pdcs = NULL;
@@ -4056,11 +4071,11 @@ void PosdbTable::intersectLists10_r ( ) {
 		char *plistEnd = miniMergedEnd[i];
 		int32_t  psize    = plistEnd - plist;
 		// test it. first key is 12 bytes.
-		if ( psize && g_posdb.getKeySize(plist) != 12 ) {
-			g_process.shutdownAbort(true); }
+		if ( psize && g_posdb.getKeySize(plist) != 12 )
+			gbshutdownAbort(true);
 		// next key is 6
-		if ( psize > 12 && g_posdb.getKeySize(plist+12) != 6){
-			g_process.shutdownAbort(true); }
+		if ( psize > 12 && g_posdb.getKeySize(plist+12) != 6)
+			gbshutdownAbort(true);
 	}
 
 
@@ -4191,8 +4206,8 @@ void PosdbTable::intersectLists10_r ( ) {
 					  &bestPos[i]);
 		// sanity check
 		if ( bestPos[i] &&
-		     s_inBody[g_posdb.getHashGroup(bestPos[i])] ) {
-			g_process.shutdownAbort(true); }
+		     s_inBody[g_posdb.getHashGroup(bestPos[i])] )
+			gbshutdownAbort(true);
 		//sts /= 3.0;
 		if ( sts < minSingleScore ) minSingleScore = sts;
 	}
@@ -4294,7 +4309,8 @@ void PosdbTable::intersectLists10_r ( ) {
 			// ok, no more! null means empty list
 			xpos[i] = NULL;
 			// must be in title or something else then
-			if ( ! bestPos[i] ) { g_process.shutdownAbort(true); }
+			if ( ! bestPos[i] )
+				gbshutdownAbort(true);
 		}
 		// if all xpos are NULL, then no terms are in body...
 		if ( xpos[i] ) allNull = false;
@@ -4351,7 +4367,8 @@ void PosdbTable::intersectLists10_r ( ) {
 		minPos = g_posdb.getWordPos(xpos[x]);
 	}
 	// sanity
-	if ( minx < 0 ) { g_process.shutdownAbort(true); }
+	if ( minx < 0 )
+		gbshutdownAbort(true);
 
  advanceAgain:
 	// now advance that to slide our window
@@ -4619,7 +4636,8 @@ void PosdbTable::intersectLists10_r ( ) {
 		// might not be full yet
 		if ( sx >= sxEnd ) goto advance;
 		// must be there!
-		if ( ! si ) { g_process.shutdownAbort(true); }
+		if ( ! si )
+			gbshutdownAbort(true);
 
 		// note it because it is slow
 		// this is only used if getting score info, which is
@@ -4662,12 +4680,14 @@ void PosdbTable::intersectLists10_r ( ) {
 		// sanity
 		// take this out i've seen this core here before, no idea
 		// why, but why core?
-		//if ( m_docId == 0 ) { g_process.shutdownAbort(true); }
+		//if ( m_docId == 0 )
+		//	gbshutdownAbort(true);
 		// use an integer score like lastSpidered timestamp?
 		if ( m_sortByTermNumInt >= 0 ) {
 			t->m_intScore = intScore;
 			t->m_score = 0.0;
-			if ( ! m_topTree->m_useIntScores){g_process.shutdownAbort(true);}
+			if ( ! m_topTree->m_useIntScores)
+				gbshutdownAbort(true);
 		}
 		// . this will not add if tree is full and it is less than the 
 		//   m_lowNode in score
@@ -5008,7 +5028,8 @@ bool PosdbTable::makeDocIdVoteBufForBoolQuery_r ( ) {
 				bool inRange = false;
 
 				// sanity
-				//if ( d < lastDocId ) { g_process.shutdownAbort(true); }
+				//if ( d < lastDocId )
+				//	gbshutdownAbort(true);
 				//lastDocId = d;
 
 				// point to it
@@ -5053,14 +5074,15 @@ bool PosdbTable::makeDocIdVoteBufForBoolQuery_r ( ) {
 				//docId &= DOCID_MASK;
 				// test it
 				//int64_t docId = g_posdb.getDocId(dp-8);
-				//if ( d2 != docId ) { g_process.shutdownAbort(true); }
+				//if ( d2 != docId )
+				//	gbshutdownAbort(true);
 				// store this docid though. treat as int64_t
 				// but we mask with keymask
 				int32_t slot = m_bt.getSlot ( &docId );
 				if ( slot < 0 ) {
 					// we can't alloc in a thread, careful
-					if ( ! m_bt.addKey(&docId,bitVec) ) {
-						g_process.shutdownAbort(true); }
+					if ( ! m_bt.addKey(&docId,bitVec) )
+						gbshutdownAbort(true);
 					continue;
 				}
 				// or the bit in otherwise
@@ -5140,7 +5162,8 @@ bool PosdbTable::makeDocIdVoteBufForBoolQuery_r ( ) {
 				d2 |= (unsigned char)dst[0];
 				d2 >>= 2;
 				docId >>= 2;
-				if ( d2 != docId ) { g_process.shutdownAbort(true); }
+				if ( d2 != docId )
+					gbshutdownAbort(true);
 			}
 			// end test
 			dst += 6;
