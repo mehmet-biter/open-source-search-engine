@@ -17,6 +17,7 @@
 #include "sort.h"
 #include "Abbreviations.h"
 #include "Process.h"
+#include "Posdb.h"
 
 Sections::Sections ( ) {
 	m_sections = NULL;

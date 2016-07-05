@@ -85,17 +85,8 @@
 #define HASHGROUP_INMENU               10 // body implied
 #define HASHGROUP_END                  11
 
-float getDiversityWeight ( unsigned char diversityRank );
-float getDensityWeight   ( unsigned char densityRank );
-float getWordSpamWeight  ( unsigned char wordSpamRank );
-float getLinkerWeight    ( unsigned char wordSpamRank );
 const char *getHashGroupString ( unsigned char hg );
-float getHashGroupWeight ( unsigned char hg );
 float getTermFreqWeight  ( int64_t termFreq , int64_t numDocsInColl );
-
-#define WIKI_WEIGHT    0.10 // was 0.20
-#define SITERANKDIVISOR 3.0
-#define SITERANKMULTIPLIER 0.33333333
 
 #define POSDBKEY key144_t
 

@@ -1,97 +1,15 @@
-// Matt Wells, Copyright May 2012
-
-// . format of an 18-byte posdb key
-//   tttttttt tttttttt tttttttt tttttttt  t = termId (48bits)
-//   tttttttt tttttttt dddddddd dddddddd  d = docId (38 bits)
-//   dddddddd dddddddd dddddd0r rrrggggg  r = siterank, g = langid
-//   wwwwwwww wwwwwwww wwGGGGss ssvvvvFF  w = word postion , s = wordspamrank
-//   pppppb1N MMMMLZZD                    v = diversityrank, p = densityrank
-//                                        M = multiplier, b = in outlink text
-//                                        L = langIdShiftBit (upper bit)
-//   G: 0 = body 
-//      1 = intitletag 
-//      2 = inheading 
-//      3 = inlist 
-//      4 = inmetatag
-//      5 = inlinktext
-//      6 = tag
-//      7 = inneighborhood
-//      8 = internalinlinktext
-//      9 = inurl
-//     10 = inmenu
-//
-//   F: 0 = original term
-//      1 = conjugate/sing/plural
-//      2 = synonym
-//      3 = hyponym
-
-//   NOTE: N bit is 1 if the shard of the record is determined by the
-//   termid (t bits) and NOT the docid (d bits). N stands for "nosplit"
-//   and you can find that logic in XmlDoc.cpp and Msg4.cpp. We store 
-//   the hash of the content like this so we can see if it is a dup.
-
-//   NOTE: M bits hold scaling factor (logarithmic) for link text voting
-//   so we do not need to repeat the same link text over and over again.
-//   Use M bits to hold # of inlinks the page has for other terms.
-
-//   NOTE: for inlinktext terms the spam rank is the siterank of the
-//   inlinker!
-
-//   NOTE: densityrank for title is based on # of title words only. same goes
-//   for incoming inlink text.
-
-//   NOTE: now we can b-step into the termlist looking for a docid match
-//   and not worry about misalignment from the double compression scheme
-//   because if the 6th byte's low bit is clear that means its a docid
-//   12-byte key, otherwise its the word position 6-byte key since the delbit
-//   can't be clear for those!
-
-//   THEN we can play with a tuner for how these various things affect
-//   the search results ranking.
-
-
 #ifndef GB_POSDB_TABLE_H
 #define GB_POSDB_TABLE_H
 
 #include "Rdb.h"
-#include "Conf.h"
-#include "Titledb.h" // DOCID_MASK
 #include "HashTableX.h"
-#include "Sections.h"
-#include "Sanity.h"
 
-
-#define MAXSITERANK      0x0f // 4 bits
-#define MAXLANGID        0x3f // 6 bits (5 bits go in 'g' the other in 'L')
-#define MAXWORDPOS       0x0003ffff // 18 bits
-#define MAXDENSITYRANK   0x1f // 5 bits
-#define MAXWORDSPAMRANK  0x0f // 4 bits
-#define MAXDIVERSITYRANK 0x0f // 4 bits
-#define MAXHASHGROUP     0x0f // 4 bits
-#define MAXMULTIPLIER    0x0f // 4 bits
-#define MAXISSYNONYM     0x03 // 2 bits
-
-// values for G bits in the posdb key
-#define HASHGROUP_BODY                 0 // body implied
-#define HASHGROUP_TITLE                1 
-#define HASHGROUP_HEADING              2 // body implied
-#define HASHGROUP_INLIST               3 // body implied
-#define HASHGROUP_INMETATAG            4
-#define HASHGROUP_INLINKTEXT           5
-#define HASHGROUP_INTAG                6
-#define HASHGROUP_NEIGHBORHOOD         7
-#define HASHGROUP_INTERNALINLINKTEXT   8
-#define HASHGROUP_INURL                9
-#define HASHGROUP_INMENU               10 // body implied
-#define HASHGROUP_END                  11
 
 float getDiversityWeight ( unsigned char diversityRank );
 float getDensityWeight   ( unsigned char densityRank );
 float getWordSpamWeight  ( unsigned char wordSpamRank );
 float getLinkerWeight    ( unsigned char wordSpamRank );
-const char *getHashGroupString ( unsigned char hg );
 float getHashGroupWeight ( unsigned char hg );
-float getTermFreqWeight  ( int64_t termFreq , int64_t numDocsInColl );
 
 #define WIKI_WEIGHT    0.10 // was 0.20
 #define SITERANKDIVISOR 3.0
