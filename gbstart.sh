@@ -25,6 +25,8 @@ cd ${working_dir}
 
 # Don't allow startup if fatal_error file exists
 if [ -f fatal_error ]; then
+	# @todo ALC send alert
+
     exit 1
 fi
 
@@ -79,6 +81,13 @@ while true; do
 	# if gb does exit(0) then stop
 	# also stop if ./cleanexit is there because exit(0) does not always work for some strange reasons
 	if [ $EXITSTATUS = 0 ] || [ -f "cleanexit" ]; then
+		break
+	fi
+
+	# @todo ALC send alert
+
+	# stop if ./fatal_error is there
+	if [ -f "fatal_error" ]; then
 		break
 	fi
 
