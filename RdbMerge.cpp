@@ -275,26 +275,32 @@ bool RdbMerge::resumeMerge ( ) {
 	goto loop;
 }
 
-static void chopWrapper ( void *state ) ;
+static void chopWrapper ( void *state );
 
 // . return false if blocked, true otherwise
 // . sets g_errno on error
 bool RdbMerge::getNextList ( ) {
 	// return true if g_errno is set
-	if ( g_errno || m_doneMerging ) return true;
+	if ( g_errno || m_doneMerging ) {
+		return true;
+	}
+
 	// it's suspended so we count this as blocking
 	if ( m_isSuspended ) {
 		m_isReadyToSave = true;
 		return false;
 	}
+
 	// if the power is off, suspend the merging
 	if ( ! g_process.m_powerIsOn ) {
 		m_isReadyToSave = true;
 		doSleep();
 		return false;
 	}
+
 	// no chop threads
 	m_numThreads = 0;
+
 	// get base, returns NULL and sets g_errno to ENOCOLLREC on error
 	RdbBase *base = getRdbBase( m_rdbId, m_collnum );
 	if ( ! base ) {
@@ -304,6 +310,7 @@ bool RdbMerge::getNextList ( ) {
 		g_errno = ENOCOLLREC;
 		return true;
 	}
+
 	// . if a contributor has just surpassed a "part" in his BigFile
 	//   then we can delete that part from the BigFile and the map
 	for ( int32_t i = m_startFileNum ; i < m_startFileNum + m_numFiles; i++ ){
@@ -312,13 +319,22 @@ bool RdbMerge::getNextList ( ) {
 		int64_t  offset = map->getAbsoluteOffset ( page );
 		BigFile   *file   = base->m_files[i];
 		int32_t       part   = file->getPartNum ( offset ) ;
-		if ( part == 0 ) continue;
+		if ( part == 0 ) {
+			continue;
+		}
+
 		// i've seen this bug happen if we chop a part off on our
 		// last dump and the merge never completes for some reason...
 		// so if we're in the last part then don't chop the part b4 us
-		if ( part >= file->m_maxParts - 1 ) continue;
+		if ( part >= file->m_maxParts - 1 ) {
+			continue;
+		}
+
 		// if we already unlinked part # (part-1) then continue
-		if ( ! file->doesPartExist ( part - 1 ) ) continue;
+		if ( ! file->doesPartExist ( part - 1 ) ) {
+			continue;
+		}
+
 		// . otherwise, excise from the map
 		// . we must be able to chop the mapped segments corresponding
 		//   EXACTLY to the part file
@@ -327,24 +343,31 @@ bool RdbMerge::getNextList ( ) {
 		// . i do this check in RdbMap.cpp
 		if ( ! map->chopHead ( MAX_PART_SIZE ) ) {
 			// we had an error!
-			log("db: Failed to remove data from map for "
-			    "%s.part%" PRId32".",
-			    file->getFilename(),part);
+			log( LOG_WARN, "db: Failed to remove data from map for %s.part%" PRId32".", file->getFilename(), part );
 			return true;
 		}
+
 		// . also, unlink any part files BELOW part # "part"
 		// . this returns false if it blocked, true otherwise
 		// . this sets g_errno on error
 		// . now we just unlink part file #(part-1) explicitly
-		if ( ! file->unlinkPart ( part - 1 , chopWrapper , this ) )
+		if ( ! file->unlinkPart ( part - 1 , chopWrapper , this ) ) {
 			m_numThreads++;
-		if ( ! g_errno ) continue;
-		log("db: Failed to unlink file %s.part%" PRId32".",
-		    file->getFilename(),part);
+		}
+
+		if ( ! g_errno ) {
+			continue;
+		}
+
+		log( LOG_WARN, "db: Failed to unlink file %s.part%" PRId32".", file->getFilename(), part );
 		return true;
 	}
+
 	// wait for file to be unlinked before getting list
-	if ( m_numThreads > 0 ) return false;
+	if ( m_numThreads > 0 ) {
+		return false;
+	}
+
 	// otherwise, get it now
 	return getAnotherList ( );
 }
