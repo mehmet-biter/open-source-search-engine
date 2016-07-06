@@ -1422,8 +1422,7 @@ bool BigFile::rename(const char *newBaseFilename, const char *newBaseFilenameDir
 }
 
 
-bool BigFile::chopHead(int32_t part ) 
-{
+bool BigFile::unlinkPart(int32_t part ) {
 	bool rc;
 
 	logTrace( g_conf.m_logTraceBigFile, "BEGIN. part %" PRId32, part);
@@ -1462,8 +1461,7 @@ bool BigFile::rename(const char *newBaseFilename, void (*callback)(void *state),
 }
 
 
-bool BigFile::chopHead(int32_t part, void (*callback)(void *state), void *state)
-{
+bool BigFile::unlinkPart(int32_t part, void (*callback)(void *state), void *state) {
 	bool rc;
 
 	logTrace( g_conf.m_logTraceBigFile, "BEGIN. part %" PRId32, part);

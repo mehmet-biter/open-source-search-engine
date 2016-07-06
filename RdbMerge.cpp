@@ -336,7 +336,7 @@ bool RdbMerge::getNextList ( ) {
 		// . this returns false if it blocked, true otherwise
 		// . this sets g_errno on error
 		// . now we just unlink part file #(part-1) explicitly
-		if ( ! file->chopHead ( part - 1 , chopWrapper , this ) ) 
+		if ( ! file->unlinkPart ( part - 1 , chopWrapper , this ) )
 			m_numThreads++;
 		if ( ! g_errno ) continue;
 		log("db: Failed to unlink file %s.part%" PRId32".",

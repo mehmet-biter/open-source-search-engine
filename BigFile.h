@@ -186,7 +186,7 @@ class BigFile {
 
 	// . returns false and sets g_errno on failure
 	// . chop only parts LESS THAN "part"
-	bool chopHead ( int32_t part );
+	bool unlinkPart ( int32_t part );
 
 	// . these here all use threads and call your callback when done
 	// . they return false if blocked, true otherwise
@@ -194,9 +194,7 @@ class BigFile {
 	bool unlink   ( void (* callback) ( void *state ) , 
 		        void *state ) ;
 	bool rename   ( const char *newBaseFilename, void (* callback) ( void *state ) , void *state, bool force=false ) ;
-	bool chopHead ( int32_t part , 
-			void (* callback) ( void *state ) , 
-			void *state ) ;
+	bool unlinkPart ( int32_t part , void (* callback) ( void *state ) , void *state ) ;
 
 	// closes all part files
 	bool close ();
@@ -213,7 +211,7 @@ class BigFile {
 
 	int32_t       getVfd       ( ) { return m_vfd; }
 
-	// WARNING: some may have been unlinked from call to chopHead()
+	// WARNING: some may have been unlinked from call to unlinkPart()
 	int32_t getNumParts ( ) { return m_numParts; }
 
 	// makes the filename of part file #n
