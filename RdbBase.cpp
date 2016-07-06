@@ -1511,26 +1511,37 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 	// gb saved and exited w/o finishing the merge.
 	for ( int32_t j = 0 ; j < numFiles ; j++ ) {
 		// skip odd numbered files
-		if ( m_fileIds[j] & 0x01 ) continue;
+		if ( m_fileIds[j] & 0x01 ) {
+			continue;
+		}
+
 		// hey, we got a file that was being merged into
 		mergeFileId = m_fileIds[j];
+
 		// store the merged data into this file #
 		mergeFileNum = j ;
-		// files being merged into have a filename like 
+
+		// files being merged into have a filename like
 		// indexdb0000.003.dat where the 003 indicates how many files
 		// is is merging in case we have to resume them due to power 
 		// loss or whatever
 		char *s = m_files[j]->getFilename();
+
 		// skip "indexdb0001."
 		s += gbstrlen ( m_dbname ) + 5;
+
 		// if titledb we got a "-023" part now
 		if ( m_isTitledb ) {
 			id2 = atol2 ( s , 3 );
-			if ( id2 < 0 ) { g_process.shutdownAbort(true); }
+			if ( id2 < 0 ) {
+				g_process.shutdownAbort(true);
+			}
 			s += 4;
 		}
+
 		// get the "003" part
 		n = atol2 ( s , 3 );
+
 		// sanity check
 		if ( n <= 1 ) {
 			log(LOG_LOGIC,"merge: attemptMerge: Resuming. bad "
@@ -1560,12 +1571,17 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 				//g_process.shutdownAbort(true);
 				break;
 			}
+
 			if ( ! m_files[i] ) {
-				log("merge: File #%" PRId32" is NULL, skipping.",i);
+				log(LOG_DEBUG, "merge: File #%" PRId32" is NULL, skipping.",i);
 				continue;
 			}
+
 			// only count files AFTER the file being merged to
-			if ( i > j ) mm++;
+			if ( i > j ) {
+				mm++;
+			}
+
 			mint += m_files[i]->getFileSize();
 		}
 
@@ -1587,6 +1603,7 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 		// merge final and we need to do the rename
 		if ( mm == 0 && rdbId != RDB_TITLEDB ) {
 			m_isMerging = false;
+
 			// make a fake file before us that we were merging
 			// since it got nuked on disk incorporateMerge();
 			char fbuf[256];
