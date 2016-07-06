@@ -208,7 +208,7 @@ bool RdbMerge::gotLock ( ) {
 		     NULL                );
 	// what kind of error?
 	if ( g_errno ) {
-		log("db: gotLock: %s.", mstrerror(g_errno) );
+		log( LOG_WARN, "db: gotLock: %s.", mstrerror(g_errno) );
 		return true;
 	}
 	// . create a new msg3
@@ -243,8 +243,7 @@ void RdbMerge::suspendMerge ( ) {
 }
 
 void RdbMerge::doSleep() {
-	log("db: Merge had error: %s. Sleeping and retrying.", 
-	    mstrerror(g_errno));
+	log( LOG_WARN, "db: Merge had error: %s. Sleeping and retrying.", mstrerror(g_errno) );
 	g_errno = 0;
 	g_loop.registerSleepCallback (1000,this,tryAgainWrapper);
 }

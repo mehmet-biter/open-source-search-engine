@@ -753,8 +753,7 @@ bool Msg5::gotList2 ( ) {
 
 	// if not enough lists, use a dummy list to trigger merge so tfndb
 	// filter happens and we have a chance to weed out old titleRecs
-	if ( m_rdbId == RDB_TITLEDB && m_numFiles != 1 && n == 1 &&
-	     m_isRealMerge ) {
+	if ( m_rdbId == RDB_TITLEDB && m_numFiles != 1 && n == 1 && m_isRealMerge ) {
 		//log(LOG_LOGIC,"db: Adding dummy list.");
 		m_dummy.set ( NULL                      , // list data
 			      0                         , // list data size
@@ -826,18 +825,23 @@ bool Msg5::gotList2 ( ) {
 		return doneMerging();
 	}
 
-	if ( m_numListPtrs == 0 ) m_readAbsolutelyNothing = true;
+	if ( m_numListPtrs == 0 ) {
+		m_readAbsolutelyNothing = true;
+	}
 
 	// if all lists from msg3 were 0... tree still might have something
-	if ( m_totalSize == 0 && m_treeList.isEmpty() ) 
+	if ( m_totalSize == 0 && m_treeList.isEmpty() ) {
 		m_readAbsolutelyNothing = true;
+	}
 
 	// if msg3 had corruption in a list which was detected in contrain_r()
 	if ( g_errno == ECORRUPTDATA ) {
 		// if we only had one list, we were not doing a merge
-		// so return g_errno to the requested so he tries from the
-		// twin
-		if ( m_numListPtrs == 1 ) return true;
+		// so return g_errno to the requested so he tries from the twin
+		if ( m_numListPtrs == 1 ) {
+			return true;
+		}
+
 		// assume nothing is wrong
 		g_errno = 0;
 		// if m_doErrorCorrection is true, repairLists_r() should fix
