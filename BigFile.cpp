@@ -1382,8 +1382,7 @@ bool readwrite_r ( FileState *fstate ) {
 // non-blocking unlink/rename code
 ////////////////////////////////////////
 
-bool BigFile::unlink ( ) 
-{
+bool BigFile::unlink ( ) {
 	bool rc;
 	
 	logTrace( g_conf.m_logTraceBigFile, "BEGIN. filename [%s]", getFilename());
@@ -1397,8 +1396,7 @@ bool BigFile::unlink ( )
 
 
 
-bool BigFile::move ( const char *newDir ) 
-{
+bool BigFile::move ( const char *newDir ) {
 	bool rc;
 	
 	logTrace( g_conf.m_logTraceBigFile, "BEGIN. filename [%s] newDir [%s]", getFilename(), newDir);
@@ -1411,8 +1409,7 @@ bool BigFile::move ( const char *newDir )
 }
 
 
-bool BigFile::rename(const char *newBaseFilename, const char *newBaseFilenameDir, bool force )
-{
+bool BigFile::rename(const char *newBaseFilename, const char *newBaseFilenameDir, bool force ) {
 	bool rc;
 
 	logTrace( g_conf.m_logTraceBigFile, "BEGIN. newBaseFilename [%s] newBaseFilenameDir [%s]", newBaseFilename, newBaseFilenameDir);
@@ -1439,8 +1436,7 @@ bool BigFile::chopHead(int32_t part )
 }
 
 
-bool BigFile::unlink(void (* callback) ( void *state ) , void *state ) 
-{
+bool BigFile::unlink(void (* callback) ( void *state ) , void *state ) {
 	bool rc;
 
 	logTrace( g_conf.m_logTraceBigFile, "BEGIN." );
@@ -1453,8 +1449,7 @@ bool BigFile::unlink(void (* callback) ( void *state ) , void *state )
 }
 
 
-bool BigFile::rename(const char *newBaseFilename, void (*callback)(void *state), void *state, bool force)
-{
+bool BigFile::rename(const char *newBaseFilename, void (*callback)(void *state), void *state, bool force) {
 	bool rc;
 
 	logTrace( g_conf.m_logTraceBigFile, "BEGIN. filename [%s] newBaseFilename [%s]", getFilename(), newBaseFilename);
