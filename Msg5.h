@@ -209,9 +209,6 @@ class Msg5 {
 
 	bool m_waitingForList;
 	collnum_t m_collnum;
-	
-	// hack parms
-	Msg2 *m_parent;
 };
 
 #endif // GB_MSG5_H

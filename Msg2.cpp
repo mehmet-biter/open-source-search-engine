@@ -189,9 +189,6 @@ bool Msg2::getLists ( ) {
 		// return if all are in use
 		if ( ! msg5 ) return false;
 
-		// stash this 
-		msg5->m_parent = this;
-
 		// . start up a Msg5 to get it
 		// . this will return false if blocks
 		// . no need to do error correction on this since only RdbMerge
@@ -285,9 +282,6 @@ bool Msg2::getLists ( ) {
 		Msg5 *msg5 = getAvailMsg5();
 		// return if all are in use
 		if ( ! msg5 ) return false;
-
-		// stash this 
-		msg5->m_parent = this;
 
 		// advance cursor
 		m_p = p;
