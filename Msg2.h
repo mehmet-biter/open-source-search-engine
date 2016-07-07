@@ -16,6 +16,9 @@
 /** support the &sites=xyz.com+abc.com+... to restrict search results to provided sites.*/
 #define MAX_WHITELISTS 500
 
+
+class Msg39Request;
+
 /**
  *
  * Msg2 is the "message" that gets the term-list from the disk.
@@ -60,27 +63,25 @@ public:
 			RdbList *lists,
 			void *state,
 			void (*callback)(void *state),
-			class Msg39Request *request,
+			Msg39Request *request,
 			int32_t niceness = MAX_NICENESS,
 			bool isDebug = false);
-
-	/** internal helper method that actually does the fetching of the lists */
-	bool getLists();
 
 	/** Get the list "i". Once we got the lists, (getLists(...) has been called), we cache them in m_lists.*/
 	RdbList *getList(int32_t i) {
 		return &m_lists[i];
 	}
 
-	/** helper (handles index of list) */
-	int32_t m_i;
-
 	/** return the number of lists == the number of query terms */
 	int32_t getNumLists() const {
 		return m_numLists;
 	}
 
-	/** list of sites to restrict search results to. space separated */
+private:
+	// helper (handles index of list)
+	int32_t m_i;
+
+	// list of sites to restrict search results to. space separated
 	char *m_whiteList;
 	int64_t m_docIdStart;
 	int64_t m_docIdEnd;
@@ -88,28 +89,23 @@ public:
 	int32_t m_w;
 	RdbList m_whiteLists[ MAX_WHITELISTS];
 
+	// internal helper method that actually does the fetching of the lists
+	bool getLists();
 
+	Msg5 *getAvailMsg5();
+	void returnMsg5(Msg5 *msg5);
 
-
-
-	class Msg5 *getAvailMsg5();
-	void returnMsg5(class Msg5 *msg5);
-
-	// leave public so C wrapper can call
 	bool gotList(RdbList *list);
 
 	// we can get up to MAX_QUERY_TERMS term frequencies at the same time
 	Msg5 m_msg5[ MSG2_MAX_REQUESTS];
-	//Msg0 m_msg0  [ MSG2_MAX_REQUESTS ];
 	bool m_avail[ MSG2_MAX_REQUESTS]; // which msg0s are available?
 
 	int32_t m_errno;
 
 	RdbList *m_lists;
 
-
 	const QueryTerm *m_qterms;
-	//char     m_cacheKeys[MAX_NUM_LISTS * MAX_KEY_BYTES];
 	int32_t *m_minRecSizes;
 	int32_t m_numLists;
 	bool m_getComponents;
@@ -118,24 +114,23 @@ public:
 	bool m_checkCache;
 	int32_t m_k;
 
-	/** the parent Msg39Request */
-	class Msg39Request *m_req;
-
-	// true if its a compound list that needs to be inserted into the cache
-	//char m_needsCaching [ MAX_NUM_LISTS ];
+	// the parent Msg39Request
+	Msg39Request *m_req;
 
 	int32_t m_numReplies;
 	int32_t m_numRequests;
 
+public: //public for callback
+	void gotListWrapper( Msg5 *msg5 );
+private:
 	void *m_state;
 	void (*m_callback)(void *state);
 	int32_t m_niceness;
 
-	/** if this is true we log more output */
+	// if this is true we log more output
 	bool m_isDebug;
 
-
-	/** start time */
+	// start time
 	int64_t m_startTime;
 };
 

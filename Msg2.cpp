@@ -10,7 +10,6 @@
 #include "Process.h"
 
 
-//static void gotListWrapper0 ( void *state ) ;
 static void  gotListWrapper ( void *state , RdbList *list , Msg5 *msg5 ) ;
 
 Msg2::Msg2() {
@@ -211,8 +210,8 @@ bool Msg2::getLists ( ) {
 					   0, // maxcacheage
 					   0              , // start file num
 					   numFiles, // num files
-					   msg5, // state
-					   gotListWrapper ,
+					   this,
+					   ::gotListWrapper ,
 					   m_niceness     ,
 					   false          , // error correction
 					   NULL , // cachekeyptr
@@ -321,8 +320,8 @@ bool Msg2::getLists ( ) {
 					   0, // maxcacheage
 					   0              , // start file num
 					   numFiles,//-1    , // num files
-					   msg5,//&m_msg5[i]     , // state
-					   gotListWrapper ,
+					   this,
+					   ::gotListWrapper ,
 					   m_niceness     ,
 					   false          , // error correction
 					   NULL , // cachekeyptr
@@ -382,21 +381,25 @@ void Msg2::returnMsg5 ( Msg5 *msg5 ) {
 
 
 void gotListWrapper ( void *state , RdbList *rdblist, Msg5 *msg5 ) {
-	Msg5    *ms   = (Msg5 *)state;
-	Msg2    *THIS = (Msg2 *)ms->m_parent;
-	RdbList *list = ms->m_list;
+	Msg2 *msg2 = (Msg2*)state;
+	msg2->gotListWrapper(msg5);
+}
+
+
+void Msg2::gotListWrapper( Msg5 *msg5 ) {
+	RdbList *list = msg5->m_list;
 	// note it
 	if ( g_errno ) {
 		log ("msg2: error reading list: %s",mstrerror(g_errno));
-		THIS->m_errno = g_errno;
+		m_errno = g_errno;
 		g_errno = 0;
 	}
 	// identify the msg0 slot we use
-	int32_t i  = list - THIS->m_lists;
-	THIS->returnMsg5 ( ms );
-	THIS->m_numReplies++;
+	int32_t i  = list - m_lists;
+	returnMsg5 ( msg5 );
+	m_numReplies++;
 	// note it
-	if ( THIS->m_isDebug ) {
+	if ( m_isDebug ) {
 		if ( ! list )
 			logf(LOG_DEBUG,"query: got NULL list #%" PRId32,  i);
 		else
@@ -404,12 +407,13 @@ void gotListWrapper ( void *state , RdbList *rdblist, Msg5 *msg5 ) {
 			     i,list->getListSize() );
 	}
 	// try to launch more
-	if ( ! THIS->getLists ( ) ) return;
+	if ( ! getLists ( ) ) return;
 	// set g_errno if any one list read had error
-	if ( THIS->m_errno ) g_errno = THIS->m_errno;
+	if ( m_errno ) g_errno = m_errno;
 	// now call callback, we're done
-	THIS->m_callback ( THIS->m_state );
+	m_callback ( m_state );
 }
+
 
 // . returns false if not all replies have been received (or timed/erroredout)
 // . returns true if done (or an error finished us)

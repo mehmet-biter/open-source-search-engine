@@ -1074,7 +1074,7 @@ void Msg39::estimateHitsAndSendReply ( ) {
 		topRecs      = (key_t     *) mr.ptr_clusterRecs;
 
 		// sanity
-		if ( nqt != m_msg2.m_numLists )
+		if ( nqt != m_msg2.getNumLists() )
 			log("query: nqt mismatch for q=%s",m_tmpq.m_orig);
 	}
 
