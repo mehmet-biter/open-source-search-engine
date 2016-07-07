@@ -77,6 +77,12 @@ public:
 		return m_numLists;
 	}
 
+	int64_t docIdStart() const { return m_docIdStart; }
+	int64_t docIdEnd() const { return m_docIdEnd; }
+
+	int32_t getNumWhiteLists() const { return m_w; }
+	RdbList *getWhiteList(int32_t i) { return &(m_whiteLists[i]); }
+
 private:
 	// helper (handles index of list)
 	int32_t m_i;

@@ -251,11 +251,9 @@ bool PosdbTable::allocWhiteListTable ( ) {
 	//
 	if ( m_r->size_whiteList <= 1 ) m_useWhiteTable = false; // inclds \0
 	else 		                m_useWhiteTable = true;
-	RdbList *whiteLists = m_msg2->m_whiteLists;
-	int32_t nw = m_msg2->m_w;
 	int32_t sum = 0;
-	for ( int32_t i = 0 ; i < nw ; i++ ) {
-		RdbList *list = &whiteLists[i];
+	for ( int32_t i = 0 ; i < m_msg2->getNumWhiteLists() ; i++ ) {
+		RdbList *list = m_msg2->getWhiteList(i);
 		if ( list->isEmpty() ) continue;
 		// assume 12 bytes for all keys but first which is 18
 		int32_t size = list->getListSize();
@@ -299,22 +297,19 @@ void PosdbTable::prepareWhiteListTable()
 	if ( m_addedSites )
 		return;
 
-	RdbList *whiteLists = m_msg2->m_whiteLists;
-	int32_t nw = m_msg2->m_w;
-
-	for ( int32_t i = 0 ; i < nw ; i++ ) {
-		RdbList *list = &whiteLists[i];
+	for ( int32_t i = 0 ; i < m_msg2->getNumWhiteLists() ; i++ ) {
+		RdbList *list = m_msg2->getWhiteList(i);
 		if ( list->isEmpty() ) continue;
 		// sanity test
 		int64_t d1 = g_posdb.getDocId(list->getList());
-		if ( d1 > m_msg2->m_docIdEnd ) { 
+		if ( d1 > m_msg2->docIdEnd() ) {
 			log("posdb: d1=%" PRId64" > %" PRId64,
-			    d1,m_msg2->m_docIdEnd);
+			    d1,m_msg2->docIdEnd());
 			//gbshutdownAbort(true);
 		}
-		if ( d1 < m_msg2->m_docIdStart ) { 
+		if ( d1 < m_msg2->docIdStart() ) {
 			log("posdb: d1=%" PRId64" < %" PRId64,
-			    d1,m_msg2->m_docIdStart);
+			    d1,m_msg2->docIdStart());
 			//gbshutdownAbort(true);
 		}
 		// first key is always 18 bytes cuz it has the termid
@@ -334,7 +329,7 @@ bool PosdbTable::allocTopTree ( ) {
 	int64_t nn1 = m_r->m_docsToGet;
 	int64_t nn2 = 0;
 	// just add all up in case doing boolean OR or something
-	for ( int32_t k = 0 ; k < m_msg2->m_numLists;k++){//getNumLists();k++){
+	for ( int32_t k = 0 ; k < m_msg2->getNumLists(); k++){
 		// count
 		RdbList *list = m_msg2->getList(k);
 		// skip if null
