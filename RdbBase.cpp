@@ -111,15 +111,14 @@ bool RdbBase::init ( char  *dir            ,
 			log("db: collnum not zero for catdb.");
 			g_process.shutdownAbort(true);
 		}
+
 		// make a special "cat" dir for it if we need to
 		sprintf ( tmp , "%s%s" , dir , dbname );
 		int32_t status = ::mkdir ( tmp , getDirCreationFlags() );
-			       // S_IRUSR | S_IWUSR | S_IXUSR | 
-			       // S_IRGRP | S_IWGRP | S_IXGRP | 
-			       // 		S_IROTH | S_IXOTH );
-	        if ( status == -1 && errno != EEXIST && errno )
-			return log("db: Failed to make directory %s: %s.",
-				   tmp,mstrerror(errno));
+        if ( status == -1 && errno != EEXIST && errno ) {
+	        log( LOG_WARN, "db: Failed to make directory %s: %s.", tmp, mstrerror( errno ) );
+	        return false;
+        }
 	}
 
 	//m_dir.set ( dir , coll );
@@ -183,9 +182,10 @@ bool RdbBase::init ( char  *dir            ,
 	//	return false;
 	// now get how much mem the tree is using (not including stored recs)
 	//dataMem = maxTreeMem - m_tree.getTreeOverhead();
-	//if ( fixedDataSize != 0 && ! m_mem.init ( &m_dump , dataMem ) ) 
-	//	return log("db: Failed to initialize memory: %s.", 
-	//		   mstrerror(g_errno));
+	//if ( fixedDataSize != 0 && ! m_mem.init ( &m_dump , dataMem ) ) {
+	//	log("db: Failed to initialize memory: %s.", mstrerror(g_errno));
+	//  return false;
+	//}
 	// . scan data in memory every minute to prevent swap-out
 	// . the wait here is in ms, MIN_WAIT is in seconds
 	// . call this every now and then to quickly scan our memory to
@@ -196,87 +196,6 @@ bool RdbBase::init ( char  *dir            ,
 
 	// now diskpagecache is much simpler, just basically rdbcache...
 	return true;
-
-	/*
-
-	// . init BigFile::m_fileSize and m_lastModifiedTime
-	// . m_lastModifiedTime is now used by the merge to select older
-	//   titledb files to merge
-	int64_t bigFileSize[MAX_RDB_FILES];
-	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) {
-		BigFile *f = m_files[i];
-		bigFileSize[i] = f->getFileSize();
-		f->getLastModifiedTime();
-	}
-
-	// if minimizingDiskSeeks, we need to know what files are going to be
-	// stored in the cache
-	if ( m_pc && m_numFiles > 0 && m_pc->m_minimizeDiskSeeks ){
-		int32_t maxMem = m_pc->getMemMax();
-		while ( maxMem > 0 ){
-			int32_t minIndex = 0;
-			int64_t minFileSize = -1;
-			for ( int32_t i = 0; i < m_numFiles; i++ ){
-				if ( bigFileSize[i] < 0 ) continue;
-				if ( minFileSize < 0 || 
-				     minFileSize > bigFileSize[i] ){
-					minIndex = i;
-					minFileSize = bigFileSize[i];
-					// don't use it again
-					bigFileSize[i] = -1;
-				}
-			}
-			if ( minFileSize == -1 ) break;
-			// mark in that bigFile that it can use diskcache
-			BigFile *f = m_files[minIndex];
-			f->m_vfdAllowed = true;
-			maxMem -= minFileSize;
-		}
-	}
-
-	// sanity check
-	if ( m_pc && m_pc->m_diskPageSize!=m_pageSize) { g_process.shutdownAbort(true); }
-	// now fill up the page cache
-	// preload:
-	if ( ! preloadDiskPageCache ) return true;
-	if ( ! m_pc ) return true;
-	char buf [ 512000 ];
-	int32_t total = m_pc->getMemMax();
-	log(LOG_DEBUG,"db: %s: Preloading page cache. Total mem to use =%" PRIu32,
-	     m_dbname,total);
-	//log("max=%" PRId32,total);
-	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) {
-		if ( total <= 0 ) break;
-		BigFile *f = m_files[i];
-		f->setBlocking();
-		int64_t fsize  = f->getFileSize();
-		int64_t off    = 0;
-		// for biasing, only read part of the file
-		if ( biasDiskPageCache ) {
-			int32_t numTwins = g_hostdb.getNumHostsPerShard();
-			int32_t thisTwin = g_hostdb.m_hostId/g_hostdb.m_numShards;
-			off   = (fsize/numTwins) * thisTwin;
-			if ( thisTwin < numTwins-1 )
-				fsize = (fsize/numTwins) * (thisTwin+1);
-		}
-		// read the file
-		for ( ; off < fsize ; off += 256000 ) {
-			if ( total <= 0 ) break;
-			int64_t toread = fsize - off;
-			if ( toread > 256000 ) toread = 256000;
-			f->read ( buf , toread , off );
-			total -= toread;
-		}
-		f->setNonBlocking();
-	}
-	// reset m_hits/m_misses
-	//m_pc->resetStats();
-
-	// now m_minToMerge might have changed so try to do a merge
-	//attemptMerge ( );
-
-	return true;
-	*/
 }
 
 // . move all files into trash subdir
@@ -293,21 +212,25 @@ bool RdbBase::moveToTrash ( char *dstDir ) {
 		char dstFilename [1024];
 		f = m_maps[i]->getFile();
 		sprintf ( dstFilename , "%s" , f->getFilename());
+
 		// ALWAYS log what we are doing
-		logf(LOG_INFO,"repair: Renaming %s to %s%s",
-		     f->getFilename(),dstDir,dstFilename);
-		if ( ! f->rename ( dstFilename , dstDir ) )
-			return log("repair: Moving file had error: %s.",
-				   mstrerror(errno));
+		logf(LOG_INFO,"repair: Renaming %s to %s%s", f->getFilename(),dstDir,dstFilename);
+
+		if ( ! f->rename ( dstFilename , dstDir ) ) {
+			log( LOG_WARN, "repair: Moving file had error: %s.", mstrerror( errno ) );
+			return false;
+		}
+
 		// move the data file
 		f = m_files[i];
 		sprintf ( dstFilename , "%s" , f->getFilename());
 		// ALWAYS log what we are doing
 		logf(LOG_INFO,"repair: Renaming %s to %s%s",
 		     f->getFilename(),dstDir,dstFilename);
-		if ( ! f->rename ( dstFilename, dstDir  ) )
-			return log("repair: Moving file had error: %s.",
-				   mstrerror(errno));
+		if ( ! f->rename ( dstFilename, dstDir  ) ) {
+			log( LOG_WARN, "repair: Moving file had error: %s.", mstrerror( errno ) );
+			return false;
+		}
 	}
 	// now just reset the files so we are empty, we should have our
 	// setFiles() called again once the newly rebuilt rdb files are
@@ -351,8 +274,10 @@ bool RdbBase::removeRebuildFromFilename ( BigFile *f ) {
 	strcpy ( buf , ff );
 	// remove "Rebuild" from it
 	char *p = strstr ( buf , "Rebuild" );
-	if ( ! p ) return log("repair: Rebuild not found in filename=%s",
-			      buf);
+	if ( ! p ) {
+		log( LOG_WARN, "repair: Rebuild not found in filename=%s", buf);
+		return false;
+	}
 	// bury it
 	int32_t  rlen = gbstrlen("Rebuild");
 	char *end  = buf + gbstrlen(buf);
@@ -362,8 +287,10 @@ bool RdbBase::removeRebuildFromFilename ( BigFile *f ) {
 	// now rename this file
 	logf(LOG_INFO,"repair: Renaming %s to %s",
 	     f->getFilename(),buf);
-	if ( ! f->rename ( buf ) )
-		return log("repair: Rename to %s failed",buf);
+	if ( ! f->rename ( buf ) ) {
+		log( LOG_WARN, "repair: Rename to %s failed", buf );
+		return false;
+	}
 	return true;
 }
 
@@ -372,9 +299,12 @@ bool RdbBase::removeRebuildFromFilename ( BigFile *f ) {
 // . returns false on error
 bool RdbBase::setFiles ( ) {
 	// set our directory class
-	if ( ! m_dir.open ( ) )
+	if ( ! m_dir.open ( ) ) {
 		// we are getting this from a bogus m_dir
-		return log("db: Had error opening directory %s", getDir());
+		log( LOG_WARN, "db: Had error opening directory %s", getDir() );
+		return false;
+	}
+
 	// note it
 	log(LOG_DEBUG,"db: Loading files for %s coll=%s (%" PRId32").",
 	     m_dbname,m_coll,(int32_t)m_collnum );
@@ -445,8 +375,10 @@ bool RdbBase::setFiles ( ) {
 		// does this file exist?
 		int32_t exists = ff.doesExist() ;
 		// core if does not exist (sanity check)
-		if ( exists == 0 ) 
-			return log("db: File %s does not exist.",filename);
+		if ( exists == 0 ) {
+			log( LOG_WARN, "db: File %s does not exist.", filename );
+			return false;
+		}
 		// bail on error calling ff.doesExist()
 		if ( exists == -1 ) return false;
 		// skip if 0 bytes or had error calling ff.getFileSize()
@@ -458,14 +390,13 @@ bool RdbBase::setFiles ( ) {
 			char src[1024];
 			char dst[1024];
 			sprintf ( src , "%s/%s",m_dir.getDir(),filename);
-			sprintf ( dst , "%s/trash/%s",
-				  g_hostdb.m_dir,filename);
-			log("db: Moving file %s/%s of 0 bytes into trash "
-			    "subdir. rename %s to %s", m_dir.getDir(),filename,
-			    src,dst);
-			if ( ::rename ( src , dst ) ) 
-				return log("db: Moving file had error: %s.",
-					   mstrerror(errno));
+			sprintf ( dst , "%s/trash/%s", g_hostdb.m_dir,filename);
+			log( LOG_WARN, "db: Moving file %s/%s of 0 bytes into trash subdir. rename %s to %s",
+			     m_dir.getDir(), filename, src, dst );
+			if ( ::rename ( src , dst ) ) {
+				log( LOG_WARN, "db: Moving file had error: %s.", mstrerror( errno ) );
+				return false;
+			}
 			continue;
 		}
 
@@ -535,12 +466,11 @@ bool RdbBase::setFiles ( ) {
 // reutrn -1 and set g_errno on error
 int32_t RdbBase::addFile ( int32_t id, bool isNew, int32_t mergeNum, int32_t id2 ) {
 	int32_t n = m_numFiles;
+
 	// can't exceed this
 	if ( n >= MAX_RDB_FILES ) {
 		g_errno = ETOOMANYFILES;
-		log( LOG_LOGIC,
-		     "db: Can not have more than %" PRId32" files. File add "
-				     "failed.", ( int32_t ) MAX_RDB_FILES );
+		log( LOG_LOGIC, "db: Can not have more than %" PRId32" files. File add failed.", ( int32_t ) MAX_RDB_FILES );
 		return -1;
 	}
 
@@ -553,12 +483,12 @@ int32_t RdbBase::addFile ( int32_t id, bool isNew, int32_t mergeNum, int32_t id2
 
  tryAgain:
 
-	try { f = new (BigFile); }
-	catch ( ... ) {
+	try {
+		f = new (BigFile);
+	} catch ( ... ) {
 		g_conf.m_maxMem = mm;
 		g_errno = ENOMEM;
-		log( "RdbBase: new(%i): %s",
-		     ( int ) sizeof( BigFile ), mstrerror( g_errno ) );
+		log( LOG_WARN, "RdbBase: new(%i): %s", ( int ) sizeof( BigFile ), mstrerror( g_errno ) );
 		return -1;
 	}
 	mnew( f, sizeof( BigFile ), "RdbBFile" );
@@ -579,11 +509,10 @@ int32_t RdbBase::addFile ( int32_t id, bool isNew, int32_t mergeNum, int32_t id2
 
 	// if new ensure does not exist
 	if ( isNew && f->doesExist() ) {
-		log(LOG_WARN, "rdb: creating NEW file %s/%s which already exists!",
-		    f->getDir(),
-		    f->getFilename());
+		log( LOG_WARN, "rdb: creating NEW file %s/%s which already exists!", f->getDir(), f->getFilename() );
 		// if length is NOT 0 then that sucks, just return
 		bool isEmpty = ( f->getFileSize() == 0 );
+
 		// move to trash if empty
 		if ( isEmpty ) {
 			// otherwise, move it to the trash
@@ -595,6 +524,7 @@ int32_t RdbBase::addFile ( int32_t id, bool isNew, int32_t mergeNum, int32_t id2
 			log("rdb: %s",cmd.getBufStart() );
 			gbsystem ( cmd.getBufStart() );
 		}
+
 		// nuke it either way
 		mdelete ( f , sizeof(BigFile),"RdbBFile");
 		delete (f); 
@@ -609,10 +539,10 @@ int32_t RdbBase::addFile ( int32_t id, bool isNew, int32_t mergeNum, int32_t id2
 		goto tryAgain;
 	}
 
-
 	RdbMap  *m ;
-	try { m = new (RdbMap); }
-	catch ( ... ) { 
+	try {
+		m = new (RdbMap);
+	} catch ( ... ) {
 		g_conf.m_maxMem = mm;
 		g_errno = ENOMEM;
 		log( LOG_WARN, "RdbBase: new(%i): %s", (int)sizeof(RdbMap), mstrerror(g_errno) );
@@ -620,24 +550,32 @@ int32_t RdbBase::addFile ( int32_t id, bool isNew, int32_t mergeNum, int32_t id2
 		delete (f); 
 		return -1; 
 	}
+
 	mnew ( m , sizeof(RdbMap) , "RdbBMap" );
+
 	// reinstate the memory limit
 	g_conf.m_maxMem = mm;
+
 	// sanity check
-	if ( id2 < 0 && m_isTitledb ) { g_process.shutdownAbort(true); }
+	if ( id2 < 0 && m_isTitledb ) {
+		g_process.shutdownAbort(true);
+	}
 
 	CollectionRec *cr = NULL;
 
 	// debug help
 	if ( isNew ) {
-		log( "rdb: adding new file %s/%s", f->getDir(), f->getFilename() );
+		log( LOG_DEBUG, "rdb: adding new file %s/%s", f->getDir(), f->getFilename() );
 	}
 
 	// if not a new file sanity check it
 	for ( int32_t j = 0 ; ! isNew && j < f->m_maxParts - 1 ; j++ ) {
 		// might be headless
-		File *ff = f->getFile2(j);//m_files[j];
-		if ( ! ff ) continue;
+		File *ff = f->getFile2(j);
+		if ( ! ff ) {
+			continue;
+		}
+
 		if ( ff->getFileSize() == MAX_PART_SIZE ) continue;
 		log ( LOG_WARN, "db: File %s %s has length %" PRId64", but it should be %" PRId64". "
 		      "You should move it to a temporary directory "
@@ -653,9 +591,12 @@ int32_t RdbBase::addFile ( int32_t id, bool isNew, int32_t mergeNum, int32_t id2
 	// set the map file's  filename
 	sprintf ( name , "%s%04" PRId32".map", m_dbname, id );
 	m->set ( getDir(), name, m_fixedDataSize, m_useHalfKeys, m_ks, m_pageSize );
-	if ( ! isNew && ! m->readMap ( f ) ) { 
+	if ( ! isNew && ! m->readMap ( f ) ) {
 		// if out of memory, do not try to regen for that
-		if ( g_errno == ENOMEM ) return -1;
+		if ( g_errno == ENOMEM ) {
+			return -1;
+		}
+
 		g_errno = 0;
 		log("db: Could not read map file %s",name);
 
@@ -678,27 +619,31 @@ int32_t RdbBase::addFile ( int32_t id, bool isNew, int32_t mergeNum, int32_t id2
 			str[len-3] = '*';
 			str[len-2] = '\0';
 			SafeBuf cmd;
-			cmd.safePrintf("mv %s/%s %s/trash/",
-				       m_dir.getDir(),
-				       str,
-				       g_hostdb.m_dir);
+			cmd.safePrintf("mv %s/%s %s/trash/", m_dir.getDir(), str, g_hostdb.m_dir);
 			log("db: %s",cmd.getBufStart() );
 			gbsystem ( cmd.getBufStart() );
 			exit(0);
 		}
+
 		log("db: Map generation succeeded.");
+
 		// . save it
 		// . if we're an even #'d file a merge will follow
 		//   when main.cpp calls attemptMerge()
 		log("db: Saving generated map file to disk.");
-		// turn off statsdb so it does not try to add records for 
+
+		// turn off statsdb so it does not try to add records for
 		// these writes because it is not initialized yet and will
 		// cause this write to fail!
 		g_statsdb.m_disabled = true;
+
 		// true = alldone
 		bool status = m->writeMap( true );
 		g_statsdb.m_disabled = false;
-		if ( ! status ) return log("db: Save failed.");
+		if ( ! status ) {
+			log( LOG_ERROR, "db: Save failed." );
+			return false;
+		}
 	}
 
 	if ( ! isNew ) {
@@ -1820,7 +1765,7 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 
 	// . make a filename for the merge
 	// . always starts with file #0
-	// . merge targets are named like "indexdb0000.dat.002"
+	// . merge targets are named like "indexdb0000.002.dat"
 	// . for titledb is "titledb0000-023.dat.003" (23 is id2)
 	// . this now also sets m_mergeStartFileNum for us... but we override
 	//   below anyway. we have to set it there in case we startup and
@@ -2189,7 +2134,8 @@ bool RdbBase::verifyFileSharding ( ) {
 			      -1LL          ,
 			      true          )) {
 		g_jobScheduler.allow_new_jobs();
-		return log("db: HEY! it did not block");
+		log( LOG_DEBUG, "db: HEY! it did not block");
+		return false;
 	}
 
 	int32_t count = 0;
