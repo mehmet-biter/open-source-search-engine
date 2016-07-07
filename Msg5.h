@@ -183,9 +183,6 @@ class Msg5 {
 	RdbList  *m_listPtrs [ MAX_RDB_FILES + 1 ]; // plus tree
 	int32_t      m_numListPtrs;
 
-	// key for hitting the cache
-	char           m_cacheKey[MAX_KEY_BYTES];
-
 	bool m_removeNegRecs;
 
 	char m_minEndKey[MAX_KEY_BYTES];
