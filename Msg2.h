@@ -17,8 +17,6 @@
 #define MAX_WHITELISTS 500
 
 
-class Msg39Request;
-
 /**
  *
  * Msg2 is the "message" that gets the term-list from the disk.
@@ -63,7 +61,7 @@ public:
 			RdbList *lists,
 			void *state,
 			void (*callback)(void *state),
-			Msg39Request *request,
+			bool allowHighFrequencyTermCache,
 			int32_t niceness = MAX_NICENESS,
 			bool isDebug = false);
 
@@ -120,8 +118,7 @@ private:
 	bool m_checkCache;
 	int32_t m_k;
 
-	// the parent Msg39Request
-	Msg39Request *m_req;
+	bool m_allowHighFrequencyTermCache;
 
 	int32_t m_numReplies;
 	int32_t m_numRequests;

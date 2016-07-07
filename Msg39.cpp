@@ -636,7 +636,7 @@ bool Msg39::getLists () {
 				 m_lists                    ,
 				 this                       ,
 				 Msg39_controlLoopWrapper,
-				 m_r                        ,
+				 m_r->m_allowHighFrequencyTermCache,
 				 m_r->m_niceness            ,
 				 m_debug                      )) {
 		return false;

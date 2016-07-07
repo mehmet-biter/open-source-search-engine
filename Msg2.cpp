@@ -42,7 +42,7 @@ bool Msg2::getLists ( int32_t     rdbId       ,
 		      RdbList *lists       ,
 		      void    *state       ,
 		      void   (* callback)(void *state ) ,
-		      Msg39Request *request ,
+		      bool allowHighFrequencyTermCache,
 		      int32_t     niceness    ,
 		      bool     isDebug ) {
 	// warning
@@ -65,7 +65,7 @@ bool Msg2::getLists ( int32_t     rdbId       ,
 
 	m_docIdStart = docIdStart;
 	m_docIdEnd   = docIdEnd;
-	m_req         = request;
+	m_allowHighFrequencyTermCache = allowHighFrequencyTermCache;
 	m_qterms              = qterms;
 	m_minRecSizes         = minRecSizes;
 	m_getComponents       = false;
@@ -153,7 +153,7 @@ bool Msg2::getLists ( ) {
 		const void *hfterm_shortcut_posdb_buffer;
 		size_t hfterm_shortcut_buffer_bytes;
 		if(g_conf.m_useHighFrequencyTermCache &&
-		   m_req->m_allowHighFrequencyTermCache &&
+		   m_allowHighFrequencyTermCache &&
 		   g_hfts.query_term_shortcut(m_qterms[m_i].m_termId,&hfterm_shortcut_posdb_buffer,&hfterm_shortcut_buffer_bytes))
 		{
 			log("query: term %" PRId64" (%*.*s) is a high-frequency term",m_qterms[m_i].m_termId,qt->m_qword->m_wordLen,qt->m_qword->m_wordLen,qt->m_qword->m_word);
