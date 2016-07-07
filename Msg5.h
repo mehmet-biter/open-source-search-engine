@@ -192,7 +192,6 @@ class Msg5 {
 
 	// info for truncating and passing to RdbList::indexMerge_r()
 	char  m_prevKey[MAX_KEY_BYTES];
-	int32_t  m_prevCount;
 
 	int32_t  m_oldListSize;
 	

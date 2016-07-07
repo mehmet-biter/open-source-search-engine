@@ -36,7 +36,6 @@ void Msg5::reset() {
 		//g_process.shutdownAbort(true); 
 	}
 	m_msg3.reset();
-	m_prevCount = 0;
 	KEYMIN(m_prevKey,MAX_KEY_BYTES);// m_ks); m_ks is invalid
 	m_numListPtrs = 0;
 	// and the tree list
@@ -1125,8 +1124,6 @@ void Msg5::mergeLists_r ( ) {
 	//   we would do a truncation in error eventually
 	// . use m_fileStartKey, not just m_startKey, since we may be doing
 	//   a follow-up read
-	//if ( m_prevKey >= m_fileStartKey ) m_prevCount = 0;
-	if ( KEYCMP(m_prevKey,m_fileStartKey,m_ks)>=0 ) m_prevCount = 0;
 
 	int32_t niceness = m_niceness;
 	if ( niceness > 0  ) niceness = 2;
@@ -1163,7 +1160,6 @@ void Msg5::mergeLists_r ( ) {
 		//   read boundaries
 		if ( m_list->m_listSize > 0 )
 			log(LOG_LOGIC,"db: Msg5. Last key invalid.");
-		m_prevCount = 0;
 	}
 }
 
