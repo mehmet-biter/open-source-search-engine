@@ -57,7 +57,7 @@ public:
 			// to prevent OOM errors
 			int64_t docIdStart,
 			int64_t docIdEnd,
-			int32_t *minRecSizes,
+			const int32_t *minRecSizes,
 			RdbList *lists,
 			void *state,
 			void (*callback)(void *state),
@@ -110,7 +110,7 @@ private:
 	RdbList *m_lists;
 
 	const QueryTerm *m_qterms;
-	int32_t *m_minRecSizes;
+	const int32_t *m_minRecSizes;
 	int32_t m_numLists;
 	bool m_getComponents;
 	char m_rdbId;

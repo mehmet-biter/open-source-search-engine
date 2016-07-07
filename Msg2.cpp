@@ -37,7 +37,7 @@ bool Msg2::getLists ( int32_t     rdbId       ,
 		      char *whiteList ,
 		      int64_t docIdStart,
 		      int64_t docIdEnd,
-		      int32_t    *minRecSizes ,
+		      const int32_t    *minRecSizes,
 		      // make max MAX_MSG39_LISTS
 		      RdbList *lists       ,
 		      void    *state       ,
