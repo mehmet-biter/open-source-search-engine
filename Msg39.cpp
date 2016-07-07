@@ -260,13 +260,13 @@ void Msg39::getDocIds2 ( Msg39Request *req ) {
 }
 
 
-void Msg39_controlLoopWrapper2 ( void *state, job_exit_t exit_type ) {
+static void Msg39_controlLoopWrapper2 ( void *state, job_exit_t exit_type ) {
 	Msg39 *THIS = (Msg39 *)state;
 	THIS->controlLoop();
 }
 
 
-void Msg39_controlLoopWrapper ( void *state ) {
+static void Msg39_controlLoopWrapper ( void *state ) {
 	Msg39 *THIS = (Msg39 *)state;
 	THIS->controlLoop();
 }
