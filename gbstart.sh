@@ -20,13 +20,22 @@ function get_cpu_affinity() {
 	sed -n $(expr ${host_id} % 14 + 1)p taskset.conf
 }
 
+function send_alert() {
+	# if slacktee is present, send alert using Slack
+	if [ -f "slacktee.sh" ] && [ -f "slacktee.conf" ]; then
+		echo "`hostname`:`pwd`: $1" | ./slacktee.sh --config ./slacktee.conf
+		ls -tr log*|tail -1|xargs tail -30 | ./slacktee.sh --config ./slacktee.conf
+
+	fi
+}
+
+
 # we should use working directory
 cd ${working_dir}
 
 # Don't allow startup if fatal_error file exists
 if [ -f fatal_error ]; then
-	# @todo ALC send alert
-
+    send_alert "FATAL ERROR. Cannot start."
     exit 1
 fi
 
@@ -84,11 +93,20 @@ while true; do
 		break
 	fi
 
-	# @todo ALC send alert
-
 	# stop if ./fatal_error is there
 	if [ -f "fatal_error" ]; then
+		send_alert "FATAL ERROR. Shut down."
 		break
+	fi
+
+	# alert if core exists
+	if [ -f "core" ]; then
+		send_alert "Core dumped."
+
+		cp gb lastcore.gb
+		# cp not mv to avoid potentially overwriting logs
+		cp `ls -tr log*|tail -1` lastcore.log
+		mv core lastcore.core
 	fi
 
 	ADDARGS='-r'$INC
