@@ -199,8 +199,7 @@ void Msg39::getDocIds2 ( Msg39Request *req ) {
 		return ; 
 	}
 
-	// . set our m_q class
-	// . this now calls Query::addCompoundTerms() for us
+	// . set our m_tmpq instance
 	if ( ! m_tmpq.set2 ( m_r->ptr_query  , 
 			     m_r->m_language ,
 			     m_r->m_queryExpansion ,
