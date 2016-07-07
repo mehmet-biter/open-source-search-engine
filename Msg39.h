@@ -204,9 +204,6 @@ public:
 	// . TODO: have a serialize/deserialize for Query class
 	Query       m_tmpq;
 
-	int64_t m_docIdStart ;
-	int64_t m_docIdEnd   ;
-
 	// used to get IndexLists all at once
 	Msg2        m_msg2;
 

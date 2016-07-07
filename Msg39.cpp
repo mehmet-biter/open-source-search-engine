@@ -459,15 +459,11 @@ bool Msg39::getLists () {
 	// do not go over MAX_DOCID  because it gets masked and
 	// ends up being 0!!! and we get empty lists
 	if ( docIdEnd > MAX_DOCID ) docIdEnd = MAX_DOCID;
-	// remember so Msg2.cpp can use them to restrict the termlists 
-	// from "whiteList" as well
-	m_docIdStart = docIdStart;
-	m_docIdEnd   = docIdEnd;
 
 	if ( g_conf.m_logDebugQuery )
 	{
-		log(LOG_DEBUG,"query: docId start %" PRId64, m_docIdStart);
-		log(LOG_DEBUG,"query: docId   end %" PRId64, m_docIdEnd);
+		log(LOG_DEBUG,"query: docId start %" PRId64, docIdStart);
+		log(LOG_DEBUG,"query: docId   end %" PRId64, docIdEnd);
 	}
 
 	//
@@ -631,8 +627,8 @@ bool Msg39::getLists () {
 				 // we need to restrict docid range for
 				 // whitelist as well! this is from
 				 // doDocIdSplitLoop()
-				 m_docIdStart,
-				 m_docIdEnd,
+				 docIdStart,
+				 docIdEnd,
 				 // how much of each termlist to read in bytes
 				 (int32_t *)m_r->ptr_readSizes ,
 				 //m_tmpq.getNumTerms()       , // numLists
