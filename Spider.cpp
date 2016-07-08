@@ -4070,22 +4070,7 @@ void dedupSpiderdbList ( RdbList *list ) {
 			continue;
 		}
 
-		{
-			/// @todo ALC only need this to clean out existing spiderdb records. (remove once it's cleaned up!)
-			// unwanted for indexing (direct copy from XmlDoc.cpp)
-
-			Url url;
-			// we don't need to strip parameter here, speed up
-			url.set( sreq->m_url, strlen( sreq->m_url ), false, false, 122 );
-			if ( url.hasNonIndexableExtension( TITLEREC_CURRENT_VERSION ) ||
-				 url.hasScriptExtension() ||
-				 url.hasJsonExtension() ||
-				 url.isDomainUnwantedForIndexing() ||
-				 url.isPathUnwantedForIndexing() ) {
-				logDebug( g_conf.m_logDebugSpider, "Unwanted for indexing [%s]", url.getUrl());
-				continue;
-			}
-		}
+		/// @note if we need to clean out existing spiderdb records, add it here
 
 		// shortcut
 		int64_t uh48 = sreq->getUrlHash48();
