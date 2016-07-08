@@ -496,14 +496,18 @@ int32_t RdbBase::addFile ( int32_t id, bool isNew, int32_t mergeNum, int32_t id2
 
 	// set the data file's filename
 	char name[512];
-	if ( mergeNum <= 0 && m_isTitledb ) {
-		snprintf( name, 511, "%s%04" PRId32"-%03" PRId32".dat", m_dbname, id, id2 );
-	} else if ( mergeNum <= 0 ) {
-		snprintf( name, 511, "%s%04" PRId32".dat", m_dbname, id );
-	} else if ( m_isTitledb ) {
-		snprintf( name, 511, "%s%04" PRId32"-%03" PRId32".%03" PRId32".dat", m_dbname, id, id2, mergeNum );
+	if ( mergeNum <= 0 ) {
+		if ( m_isTitledb ) {
+			snprintf( name, 511, "%s%04" PRId32"-%03" PRId32".dat", m_dbname, id, id2 );
+		} else {
+			snprintf( name, 511, "%s%04" PRId32".dat", m_dbname, id );
+		}
 	} else {
-		snprintf( name, 511, "%s%04" PRId32".%03" PRId32".dat", m_dbname, id, mergeNum );
+		if ( m_isTitledb ) {
+			snprintf( name, 511, "%s%04" PRId32"-%03" PRId32".%03" PRId32".dat", m_dbname, id, id2, mergeNum );
+		} else {
+			snprintf( name, 511, "%s%04" PRId32".%03" PRId32".dat", m_dbname, id, mergeNum );
+		}
 	}
 
 	f->set ( getDir() , name , NULL ); // g_conf.m_stripeDir );
@@ -1113,8 +1117,7 @@ void RdbBase::buryFiles ( int32_t a , int32_t b ) {
 // . now return true if we started a merge, false otherwise
 // . TODO: fix Rdb::attemptMergeAll() to not remove from linked list if
 //   we had an error in addNewFile() or rdbmerge.cpp's call to rdbbase::addFile
-bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
-			     int32_t minToMergeOverride ) {
+bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog , int32_t minToMergeOverride ) {
 
 	logTrace( g_conf.m_logTraceRdbBase, "BEGIN. minToMergeOverride: %" PRId32, minToMergeOverride);
 
@@ -1636,15 +1639,23 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 	if ( m_isTitledb && n < 50 && minToMerge > 200 ) {
 		// force it to 50 files to merge
 		n = 50;
+
 		// but must not exceed numFiles!
-		if ( n > numFiles ) n = numFiles;
+		if ( n > numFiles ) {
+			n = numFiles;
+		}
 	}
+
 	// NEVER merge more than this many files, our current merge routine
 	// does not scale well to many files
-	if ( m_absMaxFiles > 0 && n > m_absMaxFiles ) n = m_absMaxFiles;
+	if ( m_absMaxFiles > 0 && n > m_absMaxFiles ) {
+		n = m_absMaxFiles;
+	}
 
 	// but if we are forcing then merge ALL, except one being dumped
-	if ( m_nextMergeForced ) n = numFiles;
+	if ( m_nextMergeForced ) {
+		n = numFiles;
+	}
 
 	//tryAgain:
 	minr = 99999999999.0;
@@ -1660,18 +1671,32 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 			total += m_files[j]->getFileSize();
 			time_t mtime = m_files[j]->getLastModifiedTime();
 			// skip on error
-			if ( mtime < 0 ) continue;
-			if ( mtime > date ) date = mtime;
+			if ( mtime < 0 ) {
+				continue;
+			}
+
+			if ( mtime > date ) {
+				date = mtime;
+			}
 		}
 
 		// does it have a file more than 30 days old?
 		bool old = ( date < nowLocal - 30*24*3600 );
+
 		// not old if error (date will be -1)
-		if ( date < 0 ) old = false;
+		if ( date < 0 ) {
+			old = false;
+		}
+
 		// if it does, and current winner does not, force ourselves!
-		if ( old && ! minOld ) mint = 0x7fffffffffffffffLL ;
+		if ( old && ! minOld ) {
+			mint = 0x7fffffffffffffffLL ;
+		}
+
 		// and if we are not old and the min is, do not consider
-		if ( ! old && minOld ) continue;
+		if ( ! old && minOld ) {
+			continue;
+		}
 
 		// if merging titledb, just pick by the lowest total
 		if ( m_isTitledb ) {
@@ -1687,6 +1712,7 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 			}
 			continue;
 		}
+
 		// . get the average ratio between mergees
 		// . ratio in [1.0,inf)
 		// . prefer the lowest average ratio
@@ -1743,10 +1769,15 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 		// . count the next to last guy twice
 		//if ( n == 2 && i + n == numFiles && i + n - 2 >= 0 ) 
 		//	total += m_files[i+n-2]->getFileSize();
+
 		// bring back the greedy merge
-		if ( total >= mint ) continue;
+		if ( total >= mint ) {
+			continue;
+		}
+
 		//if ( adjratio > minr && mini >= 0 ) continue;
 		//if ( ratio > minr && mini >= 0 ) continue;
+
 		// . don't get TOO lopsided on me now
 		// . allow it for now! this is the true greedy method... no!
 		// . an older small file can be cut off early on by a merge
@@ -1754,7 +1785,10 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 		//   merged unless we have this.
 		// . allow a file to be 4x bigger than the one before it, this
 		//   allows a little bit of lopsidedness.
-		if (i > 0  && m_files[i-1]->getFileSize() < total/4 ) continue;
+		if (i > 0  && m_files[i-1]->getFileSize() < total/4 ) {
+			continue;
+		}
+
 		//min  = total;
 		minr   = ratio;
 		mint   = total;
@@ -1841,7 +1875,9 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 	//char rdbId = getIdFromRdb ( m_rdb );
 
 	// sanity check
-	if ( m_niceness == 0 ) { g_process.shutdownAbort(true); }
+	if ( m_niceness == 0 ) {
+		g_process.shutdownAbort(true);
+	}
 
 
 	logTrace( g_conf.m_logTraceRdbBase, "merge!" );
