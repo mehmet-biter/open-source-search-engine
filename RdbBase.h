@@ -166,7 +166,9 @@ class RdbBase {
 	bool isMerging ( ) { return m_isMerging; }
 	bool isDumping ( ) { return m_dump->isDumping(); }
 
-	bool hasMergeFile ( ) { return m_hasMergeFile; }
+	bool hasMergeFile ( ) {
+		return m_hasMergeFile;
+	}
 
 	// used for translating titledb file # 255 (as read from new tfndb)
 	// into the real file number
@@ -176,6 +178,8 @@ class RdbBase {
 	// doing is being merged, we have to include the start merge file num
 	int32_t      getMergeStartFileNum ( ) { return m_mergeStartFileNum; }
 	int32_t      getMergeNumFiles     ( ) { return m_numFilesToMerge; }
+
+	void renameFile( int32_t currentFileIdx, int32_t newFileId, int32_t newFileId2 );
 
 	// bury m_files[] in [a,b)
 	void buryFiles ( int32_t a , int32_t b );

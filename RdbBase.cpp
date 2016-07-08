@@ -1030,9 +1030,13 @@ void RdbBase::doneWrapper4 ( ) {
 	buryFiles ( a , b );
 	// sanity check
 	if ( m_numFilesToMerge != (b-a) ) {
-		log(LOG_LOGIC,"db: Bury oops."); g_process.shutdownAbort(true); }
+		log(LOG_LOGIC,"db: Bury oops.");
+		g_process.shutdownAbort(true);
+	}
+
 	// we no longer have a merge file
 	m_hasMergeFile = false;
+
 	// now unset m_mergeUrgent if we're close to our limit
 	if ( m_mergeUrgent && m_numFiles - 14 < m_minToMerge ) {
 		m_mergeUrgent = false;
@@ -1041,13 +1045,41 @@ void RdbBase::doneWrapper4 ( ) {
 			log(LOG_INFO,"merge: Exiting urgent "
 			    "merge mode for %s.",m_dbname);
 	}
+
 	// decrement this count
-	if ( m_isMerging ) m_rdb->m_numMergesOut--;
+	if ( m_isMerging ) {
+		m_rdb->m_numMergesOut--;
+	}
+
 	// exit merge mode
 	m_isMerging = false;
 
 	// try to merge more when we are done
 	attemptMergeAll2 ( );
+}
+
+void RdbBase::renameFile( int32_t currentFileIdx, int32_t newFileId, int32_t newFileId2 ) {
+	// make a fake file before us that we were merging
+	// since it got nuked on disk incorporateMerge();
+	char fbuf[256];
+
+	if ( m_isTitledb ) {
+		sprintf( fbuf, "%s%04" PRId32"-%03" PRId32".dat", m_dbname, newFileId, newFileId2 );
+	} else {
+		sprintf( fbuf, "%s%04" PRId32".dat", m_dbname, newFileId );
+	}
+	log( LOG_INFO, "merge: renaming final merged file %s", fbuf );
+	m_files[ currentFileIdx ]->rename( fbuf );
+
+	m_fileIds[ currentFileIdx ] = newFileId;
+	m_fileIds2[ currentFileIdx ] = newFileId2;
+
+	// we could potentially have a 'regenerated' map file that has already been moved.
+	// eg: merge dies after moving map file, but before moving data files.
+	//     next start up, map file will be regenerated. means we now have both even & odd map files
+	sprintf( fbuf, "%s%04" PRId32".map", m_dbname, newFileId );
+	log( LOG_INFO, "merge: renaming final merged file %s", fbuf );
+	m_maps[ currentFileIdx ]->rename( fbuf, true );
 }
 
 void RdbBase::buryFiles ( int32_t a , int32_t b ) {
@@ -1543,31 +1575,10 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 			overide = true;
 		}
 
-		// if we've already merged and already unlinked, then the
-		// process exited, now we restart with just the final 
-		// merge final and we need to do the rename
+		// if we've already merged and already unlinked, then the process exited, now we restart with just the rename
 		if ( mm == 0 && rdbId != RDB_TITLEDB ) {
 			m_isMerging = false;
-
-			// make a fake file before us that we were merging
-			// since it got nuked on disk incorporateMerge();
-			char fbuf[256];
-
-			if ( m_isTitledb ) {
-				sprintf( fbuf, "%s%04" PRId32"-%03" PRId32".dat", m_dbname, mergeFileId + 1, id2 );
-			} else {
-				sprintf( fbuf, "%s%04" PRId32".dat", m_dbname, mergeFileId + 1 );
-			}
-			log(LOG_INFO, "merge: renaming final merged file %s",fbuf);
-			m_files[j]->rename(fbuf);
-
-			sprintf( fbuf, "%s%04" PRId32".map", m_dbname, mergeFileId + 1 );
-
-			// we could potentially have a 'regenerated' map file that has already been moved.
-			// eg: merge dies after moving map file, but before moving data files.
-			//     next start up, map file will be regenerated. means we now have both even & odd map files
-			log(LOG_INFO, "merge: renaming final merged file %s",fbuf);
-			m_maps[j]->rename(fbuf, true);
+			renameFile( j, mergeFileId + 1, id2 );
 
 			return false;
 		}
