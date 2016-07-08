@@ -302,13 +302,7 @@ bool Msg39::controlLoop ( ) {
 	}
 
 	// error?
-	if ( g_errno ) {
-	hadError:
-		log(LOG_LOGIC,"query: msg39: controlLoop: %s." , 
-		    mstrerror(g_errno) );
-		sendReply ( m_slot , this , NULL , 0 , 0 , true );
-		return true; 
-	}
+	if ( g_errno ) goto hadError;
 
 	if ( m_phase == 0 ) {
 		// next phase
@@ -377,10 +371,7 @@ bool Msg39::controlLoop ( ) {
 			// we do not need to store the intersection i guess..??
 			m_posdbTable.freeMem();
 			g_errno = m_posdbTable.m_errno;
-			log("query: posdbtable had error = %s",
-			    mstrerror(g_errno));
-			sendReply ( m_slot , this , NULL , 0 , 0 ,true);
-			return true;
+			goto hadError;
 		}
 		// if we have more docid ranges remaining do more
 		if ( m_ddd < m_dddEnd ) {
@@ -408,6 +399,12 @@ bool Msg39::controlLoop ( ) {
 	// . only sends back the cluster recs if m_gotClusterRecs is true
 	estimateHitsAndSendReply();
 
+	return true;
+
+hadError:
+	log(LOG_LOGIC,"query: msg39: controlLoop: %s.",
+	    mstrerror(g_errno) );
+	sendReply ( m_slot, this, NULL, 0, 0, true );
 	return true;
 }
 
