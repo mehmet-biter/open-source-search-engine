@@ -23,13 +23,15 @@ function get_cpu_affinity() {
 function send_alert() {
 	# if slacktee is present, send alert using Slack
 	if [ -f "slacktee.sh" ] && [ -f "slacktee.conf" ]; then
-		echo "`hostname`:`pwd`: $1" | ./slacktee.sh --config ./slacktee.conf
-		ls -tr log*|tail -1|xargs tail -30 | ./slacktee.sh --config ./slacktee.conf
+		echo -e "`hostname`:`pwd`: $1\n\n" > lastcore.alert.txt
+#		ls -tr log*|tail -1|xargs tail -30 >> lastcore.alert.txt
 
 		# if core is there, send first 20 lines of backtrace
 		if [ -f "core" ]; then
-			gdb --batch --quiet -ex "bt full" -ex "quit" ./gb ./core | grep -v LWP | head -20 | ./slacktee.sh --config ./slacktee.conf
+			gdb --batch --quiet -ex "bt full" -ex "quit" ./gb ./core | grep -v LWP | head -20 >> lastcore.alert.txt
 		fi
+
+		cat lastcore.alert.txt | ./slacktee.sh --config ./slacktee.conf
 	fi
 }
 
@@ -45,6 +47,20 @@ function backup_core() {
 	fi
 }
 
+function backup_core_and_alert_if_found() {
+	if [ -f "core" ]; then
+		file core|grep ./gb
+		EXITSTATUS=$?
+		if [ $EXITSTATUS = 0 ]; then
+			# core is ours
+			send_alert "$1"
+			backup_core
+		else
+			mv core lastcore.notgb.core
+		fi
+	fi
+}
+
 
 
 # we should use working directory
@@ -57,10 +73,7 @@ if [ -f fatal_error ]; then
 fi
 
 # alert if core exists
-if [ -f "core" ]; then
-	send_alert "Core found at startup."
-	backup_core
-fi
+backup_core_and_alert_if_found "Core found at startup"
 
 
 ##################################
@@ -122,13 +135,11 @@ while true; do
 		break
 	fi
 
+	# not a clean shutdown. Give it a few seconds do finish dumping core
+	sleep 5
+
 	# alert if core exists
-	if [ -f "core" ]; then
-		# give it a chance to finish dumping
-		sleep 5
-		send_alert "Core dumped."
-		backup_core
-	fi
+	backup_core_and_alert_if_found "GB died, core dumped."
 
 	ADDARGS='-r'$INC
 	INC=$((INC+1))
