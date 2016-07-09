@@ -26,8 +26,25 @@ function send_alert() {
 		echo "`hostname`:`pwd`: $1" | ./slacktee.sh --config ./slacktee.conf
 		ls -tr log*|tail -1|xargs tail -30 | ./slacktee.sh --config ./slacktee.conf
 
+		# if core is there, send first 20 lines of backtrace
+		if [ -f "core" ]; then
+			gdb --batch --quiet -ex "bt full" -ex "quit" ./gb ./core | grep -v LWP | head -20 | ./slacktee.sh --config ./slacktee.conf
+		fi
 	fi
 }
+
+function backup_core() {
+	if [ -f "core" ]; then
+		# we only keep one copy to avoid filling up the disk if dumping repeatedly..
+		cp gb lastcore.gb
+
+		# cp not mv to avoid potentially overwriting logs
+		cp `ls -tr log*|tail -1` lastcore.log
+		gdb --batch --quiet -ex "thread apply all bt full" -ex "quit" ./gb ./core > lastcore.bt-bak$(date +%Y%m%d-%H%M%S).txt
+		mv core lastcore.core
+	fi
+}
+
 
 
 # we should use working directory
@@ -37,6 +54,12 @@ cd ${working_dir}
 if [ -f fatal_error ]; then
     send_alert "FATAL ERROR. Cannot start."
     exit 1
+fi
+
+# alert if core exists
+if [ -f "core" ]; then
+	send_alert "Core found at startup."
+	backup_core
 fi
 
 
@@ -101,12 +124,10 @@ while true; do
 
 	# alert if core exists
 	if [ -f "core" ]; then
+		# give it a chance to finish dumping
+		sleep 5
 		send_alert "Core dumped."
-
-		cp gb lastcore.gb
-		# cp not mv to avoid potentially overwriting logs
-		cp `ls -tr log*|tail -1` lastcore.log
-		mv core lastcore.core
+		backup_core
 	fi
 
 	ADDARGS='-r'$INC
