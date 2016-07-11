@@ -169,11 +169,11 @@ private:
 	PosdbTable m_posdbTable;
 
 	// keep a ptr to the request
-	Msg39Request *m_r;
+	Msg39Request *m_msg39r;
 
 	// always use top tree now
 	bool m_allocedTree;
-	TopTree    m_tt;
+	TopTree    m_toptree;
 
 	//subrange chunking controls / variables
 	int64_t m_ddd;

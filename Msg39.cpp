@@ -183,7 +183,7 @@ void Msg39::getDocIds ( UdpSlot *slot ) {
 	// reset this
 	m_errno = 0;
 	// get the request
-        m_r  = reinterpret_cast<Msg39Request*>(m_slot->m_readBuf);
+        m_msg39req  = reinterpret_cast<Msg39Request*>(m_slot->m_readBuf);
         int32_t requestSize = m_slot->m_readBufSize;
         // ensure it's size is ok
         if ( (unsigned)requestSize < sizeof(Msg39Request) ) {
@@ -196,10 +196,10 @@ void Msg39::getDocIds ( UdpSlot *slot ) {
 
 	// deserialize it before we do anything else
 	int32_t finalSize = deserializeMsg ( sizeof(Msg39Request),
-					     &m_r->size_readSizes,
-					     &m_r->size_whiteList,
-					     &m_r->ptr_readSizes,
-					     ((char*)m_r) + sizeof(*m_r) );
+					     &m_msg39req->size_readSizes,
+					     &m_msg39req->size_whiteList,
+					     &m_msg39req->ptr_readSizes,
+					     ((char*)m_msg39req) + sizeof(*m_msg39req) );
 
 	// sanity check
 	if ( finalSize != requestSize ) {
@@ -226,11 +226,11 @@ void Msg39::getDocIds2() {
 
 	// a handy thing
 	m_debug = false;
-	if ( m_r->m_debug          ) m_debug = true;
+	if ( m_msg39req->m_debug       ) m_debug = true;
 	if ( g_conf.m_logDebugQuery  ) m_debug = true;
 	if ( g_conf.m_logTimingQuery ) m_debug = true;
 
-        CollectionRec *cr = g_collectiondb.getRec ( m_r->m_collnum );
+        CollectionRec *cr = g_collectiondb.getRec ( m_msg39req->m_collnum );
         if ( ! cr ) {
 		g_errno = ENOCOLLREC;
 		log(LOG_LOGIC,"query: msg39: getDocIds: %s." , 
@@ -240,11 +240,11 @@ void Msg39::getDocIds2() {
 	}
 
 	// . set our m_query instance
-	if ( ! m_query.set2 ( m_r->ptr_query,
-			      m_r->m_language ,
-			      m_r->m_queryExpansion ,
-			      m_r->m_useQueryStopWords ,
-			      m_r->m_maxQueryTerms ) ) {
+	if ( ! m_query.set2 ( m_msg39req->ptr_query,
+			      m_msg39req->m_language ,
+			      m_msg39req->m_queryExpansion ,
+			      m_msg39req->m_useQueryStopWords ,
+			      m_msg39req->m_maxQueryTerms ) ) {
 		log("query: msg39: setQuery: %s." , 
 		    mstrerror(g_errno) );
 		sendReply ( m_slot , this , NULL , 0 , 0 , true );
@@ -254,12 +254,12 @@ void Msg39::getDocIds2() {
 	// wtf?
 	if ( g_errno ) gbshutdownLogicError();
 
-	QUICKPOLL ( m_r->m_niceness );
+	QUICKPOLL ( m_msg39req->m_niceness );
 
 	// set m_errno
 	if ( m_query.m_truncated ) m_errno = EQUERYTRUNCATED;
 	// ensure matches with the msg3a sending us this request
-	if ( m_query.getNumTerms() != m_r->m_nqt ) {
+	if ( m_query.getNumTerms() != m_msg39req->m_nqt ) {
 		g_errno = EBADENGINEER;
 		log("query: Query parsing inconsistency for q=%s. "
 		    "%i != %i. "
@@ -269,8 +269,8 @@ void Msg39::getDocIds2() {
 		    "files on two different hosts! check that!!"
 		    ,m_query.m_orig
 		    ,(int)m_query.getNumTerms()
-		    ,(int)m_r->m_nqt
-		    ,(int32_t)m_r->m_language
+		    ,(int)m_msg39req->m_nqt
+		    ,(int32_t)m_msg39req->m_language
 		    );
 		sendReply ( m_slot , this , NULL , 0 , 0 , true );
 		return ; 
@@ -281,9 +281,9 @@ void Msg39::getDocIds2() {
 		     "for q=%s", (PTRTYPE) this,m_query.m_orig);
 
 	// reset this
-	m_tt.reset();
+	m_toptree.reset();
 
-	QUICKPOLL ( m_r->m_niceness );
+	QUICKPOLL ( m_msg39req->m_niceness );
 
 	m_ddd    = 0;
 	m_dddEnd = MAX_DOCID;
@@ -317,7 +317,7 @@ void Msg39::controlLoopWrapper(void *state) {
 // 3. increment docid ranges and keep going
 // 4. when done return the top docids
 bool Msg39::controlLoop ( ) {
-	log(LOG_DEBUG,"query: Msg39::controlLoop(): m_r->m_numDocIdSplits=%d m_r->m_timeout=%" PRId64, m_r->m_numDocIdSplits, m_r->m_timeout);
+	log(LOG_DEBUG,"query: Msg39::controlLoop(): m_msg39req->m_numDocIdSplits=%d m_msg39req->m_timeout=%" PRId64, m_msg39req->m_numDocIdSplits, m_msg39req->m_timeout);
 	//log("@@@ Msg39::controlLoop: m_startTimeQuery=%" PRId64, m_startTimeQuery);
 	//log("@@@ Msg39::controlLoop: now             =%" PRId64, gettimeofdayInMilliseconds());
 	//log("@@@ Msg39::controlLoop: m_phase=%d", m_phase);
@@ -330,12 +330,12 @@ bool Msg39::controlLoop ( ) {
 		int64_t time_spent_so_far = now - m_startTimeQuery;
 		int64_t time_per_range = time_spent_so_far / m_docIdSplitNumber;
 		int64_t estimated_this_range_finish_time = now + time_per_range;
-		int64_t deadline = m_startTimeQuery + m_r->m_timeout;
+		int64_t deadline = m_startTimeQuery + m_msg39req->m_timeout;
 		log(LOG_DEBUG,"query: Msg39::controlLoop(): now=%" PRId64" time_spent_so_far=%" PRId64" time_per_range=%" PRId64" estimated_this_range_finish_time=%" PRId64" deadline=%" PRId64,
 		    now, time_spent_so_far, time_per_range, estimated_this_range_finish_time, deadline);
 		if(estimated_this_range_finish_time > deadline) {
 			//estimated completion time crosses the deadline.
-			log(LOG_INFO,"Msg39::controlLoop(): range %d/%d would cross deadline. Skipping", m_docIdSplitNumber, m_r->m_numDocIdSplits);
+			log(LOG_INFO,"Msg39::controlLoop(): range %d/%d would cross deadline. Skipping", m_docIdSplitNumber, m_msg39req->m_numDocIdSplits);
 			m_ddd = m_dddEnd;
 			m_phase = 3;
 		}
@@ -350,7 +350,7 @@ bool Msg39::controlLoop ( ) {
 		// the starting docid...
 		int64_t d0 = m_ddd;
 		// shortcut
-		int64_t delta = MAX_DOCID / (int64_t)m_r->m_numDocIdSplits;
+		int64_t delta = MAX_DOCID / (int64_t)m_msg39req->m_numDocIdSplits;
 		// advance to point to the exclusive endpoint
 		m_ddd += delta;
 		m_docIdSplitNumber++;
@@ -363,15 +363,15 @@ bool Msg39::controlLoop ( ) {
 			m_ddd = MAX_DOCID;
 		}
 		// fix it
-		m_r->m_minDocId = d0;
-		m_r->m_maxDocId = d1; // -1; // exclude d1
+		m_msg39req->m_minDocId = d0;
+		m_msg39req->m_maxDocId = d1; // -1; // exclude d1
 
 		// reset ourselves, partially, anyway, not tmpq etc.
 		reset2();
 
 		// debug log
 		if ( m_debug ) {
-			log("msg39: docid split %d/%d range %" PRId64"-%" PRId64, m_docIdSplitNumber-1, m_r->m_numDocIdSplits, d0,d1);
+			log("msg39: docid split %d/%d range %" PRId64"-%" PRId64, m_docIdSplitNumber-1, m_msg39req->m_numDocIdSplits, d0,d1);
 		}
 
 		// load termlists for these docid ranges using msg2 from posdb
@@ -421,7 +421,7 @@ bool Msg39::controlLoop ( ) {
 	if ( m_phase == 3 ) {
 		m_phase++;
 		// . this loads them using msg51 from clusterdb
-		// . if m_r->m_doSiteClustering is false it just returns true
+		// . if m_msg39req->m_doSiteClustering is false it just returns true
 		// . this sets m_gotClusterRecs to true if we get them
 		if ( ! setClusterRecs ( ) ) return false;
 		// error setting clusterrecs?
@@ -476,8 +476,8 @@ bool Msg39::getLists () {
 	// . this is set from Msg39::doDocIdSplitLoop() to compute 
 	//   search results in stages, so that we do not load massive
 	//   termlists into memory and got OOM (out of memory)
-	if ( m_r->m_minDocId != -1 ) docIdStart = m_r->m_minDocId;
-	if ( m_r->m_maxDocId != -1 ) docIdEnd   = m_r->m_maxDocId+1;
+	if ( m_msg39req->m_minDocId != -1 ) docIdStart = m_msg39req->m_minDocId;
+	if ( m_msg39req->m_maxDocId != -1 ) docIdEnd   = m_msg39req->m_maxDocId+1;
 	
 	// if we have twins, then make sure the twins read different
 	// pieces of the same docid range to make things 2x faster
@@ -506,7 +506,7 @@ bool Msg39::getLists () {
 	//
 	for ( int32_t i = 0 ; i < m_query.getNumTerms() ; i++ ) {
 		// breathe
-		QUICKPOLL ( m_r->m_niceness );
+		QUICKPOLL ( m_msg39req->m_niceness );
 		// shortcuts
 		QueryTerm *qterm = &m_query.m_qterms[i];
 		char *sk = qterm->m_startKey;
@@ -586,7 +586,7 @@ bool Msg39::getLists () {
 			     (int32_t)m_query.isPhrase(i) ,
 			     m_query.getTermId(i) ,
 			     m_query.getRawTermId(i) ,
-			     ((float *)m_r->ptr_termFreqWeights)[i] ,
+			     ((float *)m_msg39req->ptr_termFreqWeights)[i] ,
 			     sign , //c ,
 			     0 , 
 			     (int32_t)qt->m_isRequired,
@@ -598,7 +598,7 @@ bool Msg39::getLists () {
 			     wikiPhrId,
 			     (int32_t)leftwikibigram,
 			     (int32_t)rightwikibigram,
-			     ((int32_t *)m_r->ptr_readSizes)[i]         ,
+			     ((int32_t *)m_msg39req->ptr_readSizes)[i]         ,
 			     (int32_t)m_query.m_qterms[i].m_hardCount ,
 			     (int32_t)m_query.getTermLen(i) ,
 			     isSynonym,
@@ -653,25 +653,25 @@ bool Msg39::getLists () {
 
 	// call msg2
 	if ( ! m_msg2.getLists ( RDB_POSDB,
-				 m_r->m_collnum,//m_r->ptr_coll              ,
-				 m_r->m_addToCache          ,
+				 m_msg39req->m_collnum,
+				 m_msg39req->m_addToCache,
 				 m_query.m_qterms,
 				 m_query.getNumTerms(),
-				 m_r->ptr_whiteList,
+				 m_msg39req->ptr_whiteList,
 				 // we need to restrict docid range for
 				 // whitelist as well! this is from
 				 // doDocIdSplitLoop()
 				 docIdStart,
 				 docIdEnd,
 				 // how much of each termlist to read in bytes
-				 (int32_t *)m_r->ptr_readSizes ,
+				 (int32_t *)m_msg39req->ptr_readSizes,
 				 //m_query.getNumTerms(),
 				 // 1-1 with query terms
 				 m_lists                    ,
 				 this                       ,
 				 &controlLoopWrapper,
-				 m_r->m_allowHighFrequencyTermCache,
-				 m_r->m_niceness            ,
+				 m_msg39req->m_allowHighFrequencyTermCache,
+				 m_msg39req->m_niceness,
 				 m_debug                      )) {
 		return false;
 	}
@@ -703,10 +703,10 @@ bool Msg39::intersectLists ( ) { // bool updateReadInfo ) {
 	}
 
 	// breathe
-	QUICKPOLL ( m_r->m_niceness );
+	QUICKPOLL ( m_msg39req->m_niceness );
 
 	// ensure collection not deleted from under us
-	CollectionRec *cr = g_collectiondb.getRec ( m_r->m_collnum );
+	CollectionRec *cr = g_collectiondb.getRec ( m_msg39req->m_collnum );
 	if ( ! cr ) {
 		g_errno = ENOCOLLREC;
 		goto hadError;
@@ -724,15 +724,15 @@ bool Msg39::intersectLists ( ) { // bool updateReadInfo ) {
 	m_posdbTable.init ( &m_query,
 			    m_debug              ,
 			    this                   ,
-			    &m_tt                  ,
+			    &m_toptree,
 			    &m_msg2 ,
-			    m_r                              );
+			    m_msg39req);
 
 	// breathe
-	QUICKPOLL ( m_r->m_niceness );
+	QUICKPOLL ( m_msg39req->m_niceness );
 
 	// . we have to do this here now too
-	// . but if we are getting weights, we don't need m_tt!
+	// . but if we are getting weights, we don't need m_toptree!
 	// . actually we were using it before for rat=0/bool queries but
 	//   i got rid of NO_RAT_SLOTS
 	if ( ! m_allocedTree && ! m_posdbTable.allocTopTree() ) {
@@ -802,7 +802,7 @@ bool Msg39::intersectLists ( ) { // bool updateReadInfo ) {
 	// . set callback when thread done
 
 	// breathe
-	QUICKPOLL ( m_r->m_niceness );
+	QUICKPOLL ( m_msg39req->m_niceness );
 
 	// . create the thread
 	// . only one of these type of threads should be launched at a time
@@ -810,14 +810,14 @@ bool Msg39::intersectLists ( ) { // bool updateReadInfo ) {
 	                           &intersectionFinishedCallback,
 				   this,
 				   thread_type_query_intersect,
-				   m_r->m_niceness) ) {
+				   m_msg39req->m_niceness) ) {
 		return false;
 	}
 	// if it failed
 	//log(LOG_INFO,"query: Intersect thread creation failed. Doing "
 	//    "blocking. Hurts performance.");
 	// check tree
-	if ( m_tt.m_nodes == NULL ) {
+	if ( m_toptree.m_nodes == NULL ) {
 		log(LOG_LOGIC,"query: msg39: Badness."); 
 		gbshutdownLogicError();
 	}
@@ -855,11 +855,11 @@ void Msg39::intersectListsThreadFunction ( void *state ) {
 // . returns true and sets g_errno on error
 bool Msg39::setClusterRecs ( ) {
 
-	if ( ! m_r->m_doSiteClustering ) return true;
+	if ( ! m_msg39req->m_doSiteClustering ) return true;
 
 	// make buf for arrays of the docids, cluster levels and cluster recs
 	int32_t nodeSize  = 8 + 1 + 12;
-	int32_t numDocIds = m_tt.m_numUsedNodes;
+	int32_t numDocIds = m_toptree.m_numUsedNodes;
 	m_bufSize = numDocIds * nodeSize;
 	m_buf = (char *)mmalloc ( m_bufSize , "Msg39docids" );
 	// on error, return true, g_errno should be set
@@ -883,10 +883,11 @@ bool Msg39::setClusterRecs ( ) {
 	
 	// loop over all results
 	int32_t nd = 0;
-	for ( int32_t ti = m_tt.getHighNode() ; ti >= 0 ; 
-	      ti = m_tt.getPrev(ti) , nd++ ) {
+	for ( int32_t ti = m_toptree.getHighNode();
+	      ti >= 0 ;
+	      ti = m_toptree.getPrev(ti) , nd++ ) {
 		// get the guy
-		TopNode *t = &m_tt.m_nodes[ti];
+		TopNode *t = &m_toptree.m_nodes[ti];
 		// get the docid
 		//int64_t  docId = getDocIdFromPtr(t->m_docIdPtr);
 		// store in array
@@ -902,7 +903,7 @@ bool Msg39::setClusterRecs ( ) {
 	m_numClusterDocIds = nd;
 
 	// sanity check
-	if ( nd != m_tt.m_numUsedNodes ) gbshutdownLogicError();
+	if ( nd != m_toptree.m_numUsedNodes ) gbshutdownLogicError();
 
 	// . ask msg51 to get us the cluster recs
 	// . it should read it all from the local drives
@@ -911,12 +912,12 @@ bool Msg39::setClusterRecs ( ) {
 					m_clusterLevels       ,
 					m_clusterRecs         ,
 					m_numClusterDocIds    ,
-					m_r->m_collnum ,
+					m_msg39req->m_collnum,
 					0                     , // maxAge
 					false                 , // addToCache
 					this                  ,
 					&controlLoopWrapper,
-					m_r->m_niceness       ,
+					m_msg39req->m_niceness,
 					m_debug             ) )
 		// did we block? if so, return
 		return false;
@@ -938,11 +939,11 @@ bool Msg39::gotClusterRecs ( ) {
 				  m_clusterDocIds    ,
 				  m_numClusterDocIds ,
 				  2                  , // maxdocidsperhostname
-				  m_r->m_doSiteClustering ,
-				  m_r->m_familyFilter     ,
+				  m_msg39req->m_doSiteClustering,
+				  m_msg39req->m_familyFilter,
 				  // turn this off, not needed now that
 				  // we have the langid in every posdb key
-				  0,//m_r->m_language         ,
+				  0,//m_msg39req->m_language         ,
 				  m_debug          ,
 				  m_clusterLevels    )) {
 		m_errno = g_errno;
@@ -956,10 +957,11 @@ bool Msg39::gotClusterRecs ( ) {
 
 	// now put the info back into the top tree
 	int32_t nd = 0;
-	for ( int32_t ti = m_tt.getHighNode() ; ti >= 0 ; 
-	      ti = m_tt.getPrev(ti) , nd++ ) {
+	for ( int32_t ti = m_toptree.getHighNode();
+	      ti >= 0;
+	      ti = m_toptree.getPrev(ti) , nd++ ) {
 		// get the guy
-		TopNode *t = &m_tt.m_nodes[ti];
+		TopNode *t = &m_toptree.m_nodes[ti];
 		// get the docid
 		//int64_t  docId = getDocIdFromPtr(t->m_docIdPtr);
 		// sanity check
@@ -994,7 +996,7 @@ void Msg39::estimateHitsAndSendReply ( ) {
 	key_t     *topRecs;
 
 	// numDocIds counts docs in all tiers when using toptree.
-	int32_t numDocIds = m_tt.m_numUsedNodes;
+	int32_t numDocIds = m_toptree.m_numUsedNodes;
 
 	// the msg39 reply we send back
 	int32_t  replySize;
@@ -1011,7 +1013,7 @@ void Msg39::estimateHitsAndSendReply ( ) {
 		if ( m_gotClusterRecs ) numDocIds = m_numVisible;
 		
 		// don't send more than the docs that are asked for
-		if ( numDocIds > m_r->m_docsToGet) numDocIds =m_r->m_docsToGet;
+		if ( numDocIds > m_msg39req->m_docsToGet) numDocIds =m_msg39req->m_docsToGet;
 
 		// # of QueryTerms in query
 		int32_t nqt = m_query.m_numTerms;
@@ -1020,7 +1022,7 @@ void Msg39::estimateHitsAndSendReply ( ) {
 		// . total estimated hits
 		// . this is now an EXACT count!
 		mr.m_estimatedHits = m_numTotalHits;
-		mr.m_pctSearched = m_docIdSplitNumber * 100.0 / m_r->m_numDocIdSplits;
+		mr.m_pctSearched = m_docIdSplitNumber * 100.0 / m_msg39req->m_numDocIdSplits;
 		// sanity check
 		mr.m_nqt = nqt;
 		// the m_errno if any
@@ -1038,7 +1040,7 @@ void Msg39::estimateHitsAndSendReply ( ) {
 		mr.size_singleScoreBuf = pt->m_singleScoreBuf.length();
 		// save some time since seo.cpp gets from posdbtable directly,
 		// so we can avoid serializing/copying this stuff at least
-		if ( ! m_r->m_makeReply ) {
+		if ( ! m_msg39req->m_makeReply ) {
 			mr.size_scoreInfo      = 0;
 			mr.size_pairScoreBuf   = 0;
 			mr.size_singleScoreBuf = 0;
@@ -1089,10 +1091,11 @@ void Msg39::estimateHitsAndSendReply ( ) {
 
 	int32_t docCount = 0;
 	// loop over all results in the TopTree
-	for ( int32_t ti = m_tt.getHighNode() ; ti >= 0 ; 
-	      ti = m_tt.getPrev(ti) ) {
+	for ( int32_t ti = m_toptree.getHighNode();
+	      ti >= 0;
+	      ti = m_toptree.getPrev(ti) ) {
 		// get the guy
-		TopNode *t = &m_tt.m_nodes[ti];
+		TopNode *t = &m_toptree.m_nodes[ti];
 		// skip if clusterLevel is bad!
 		if ( m_gotClusterRecs && t->m_clusterLevel != CR_OK ) 
 			continue;
@@ -1102,7 +1105,7 @@ void Msg39::estimateHitsAndSendReply ( ) {
 		//add it to the reply
 		topDocIds         [docCount] = t->m_docId;
 		topScores         [docCount] = t->m_score;
-		if ( m_tt.m_useIntScores ) 
+		if ( m_toptree.m_useIntScores ) 
 			topScores[docCount] = (double)t->m_intScore;
 		// supply clusterdb rec? only for full splits
 		if ( m_gotClusterRecs ) 
@@ -1132,7 +1135,7 @@ void Msg39::estimateHitsAndSendReply ( ) {
 		    (PTRTYPE)this                        ,
 		    m_posdbTable.m_addListsTime       ,
 		    gettimeofdayInMilliseconds() - m_startTime ,
-		    m_r->m_docsToGet                       ,
+		    m_msg39req->m_docsToGet                       ,
 		    numDocIds                         ,
 		    m_query.getQuery());
 	}
