@@ -25,54 +25,7 @@ class Msg39Request {
 
 	Msg39Request () { reset(); }
 
-	void reset() {
-		memset(this, 0, sizeof(*this));
-		m_docsToGet               = 10;
-		m_niceness                = MAX_NICENESS;
-		m_maxAge                  = 0;
-		m_maxQueryTerms           = 9999;
-		//m_compoundListMaxSize     = 20000000;
-		m_language                = 0;
-		m_queryExpansion          = false;
-		m_debug                   = 0;
-		m_getDocIdScoringInfo     = true;
-		m_doSiteClustering        = true;
-		m_hideAllClustered        = false;
-		//m_doIpClustering          = true;
-		m_doDupContentRemoval     = true;
-		m_addToCache              = false;
-		m_familyFilter            = false;
-		m_timeout                 = -1; // -1 means auto-compute
-		m_stripe                  = 0;
-		m_collnum                 = -1;
-		m_useQueryStopWords       = true;
-		m_doMaxScoreAlgo          = true;
-		
-		ptr_readSizes             = NULL;
-		ptr_query                 = NULL; // in utf8?
-		ptr_whiteList             = NULL;
-		size_readSizes            = 0;
-		size_query                = 0;
-		size_whiteList            = 0;
-		m_sameLangWeight          = 20.0;
-
-		// -1 means to not to docid range restriction
-		m_minDocId = -1LL;
-		m_maxDocId = -1LL;
-
-		m_numDocIdSplits = 1;
-
-		// for widget, to only get results to append to last docid
-		m_maxSerpScore = 0.0;
-		m_minSerpDocId = 0LL;
-
-		m_makeReply = true;
-
-		// . search results knobs
-		// . accumulate the top 10 term pairs from inlink text. lower
-		//   it down from 10 here.
-		m_realMaxTop = MAX_TOP;
-	}
+	void reset();
 
 	// we are requesting that this many docids be returned. Msg40 requests
 	// of Msg3a a little more docids than it needs because it assumes
