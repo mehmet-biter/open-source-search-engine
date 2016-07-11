@@ -2240,14 +2240,12 @@ int main2 ( int argc , char *argv[] ) {
 		return 0;
 	}
 
-	// . register a callback to try to merge everything every 2 seconds
+	// . register a callback to try to merge everything every 60 seconds
 	// . do not exit if we couldn't do this, not a huge deal
-	// . put this in here instead of Rdb.cpp because we don't want
-	//   generator commands merging on us
-	// . the (void *)1 prevents gb from logging merge info every 2 seconds
+	// . put this in here instead of Rdb.cpp because we don't want generator commands merging on us
 	// . niceness is 1
 	// BR: Upped from 2 sec to 60. No need to check for merge every 2 seconds.
-	if ( !g_loop.registerSleepCallback( 60000, (void *)1, attemptMergeAllCallback, 1) ) {
+	if ( !g_loop.registerSleepCallback( 60000, (void *)1, attemptMergeAllCallback, 1, true ) ) {
 		log( LOG_WARN, "db: Failed to init merge sleep callback." );
 	}
 

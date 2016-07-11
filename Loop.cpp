@@ -193,8 +193,9 @@ bool Loop::registerWriteCallback ( int fd, void *state, void (* callback)(int fd
 }
 
 // tick is in milliseconds
-bool Loop::registerSleepCallback ( int32_t tick, void *state, void (* callback)(int fd,void *state ), int32_t niceness ) {
-	if ( ! addSlot ( true, MAX_NUM_FDS, state, callback , niceness ,tick) ) {
+bool Loop::registerSleepCallback ( int32_t tick, void *state, void (* callback)(int fd,void *state ),
+                                   int32_t niceness, bool immediate ) {
+	if ( ! addSlot ( true, MAX_NUM_FDS, state, callback, niceness, tick, immediate ) ) {
 		log( LOG_WARN, "loop: Unable to register sleep callback" );
 		return false;
 	}
@@ -207,10 +208,8 @@ bool Loop::registerSleepCallback ( int32_t tick, void *state, void (* callback)(
 }
 
 // . returns false and sets g_errno on error
-bool Loop::addSlot ( bool forReading , int fd, void *state,
-		     void (* callback)(int fd, void *state), int32_t niceness ,
-		     int32_t tick ) {
-
+bool Loop::addSlot ( bool forReading , int fd, void *state, void (* callback)(int fd, void *state),
+                     int32_t niceness , int32_t tick, bool immediate ) {
 	// ensure fd is >= 0
 	if ( fd < 0 ) {
 		g_errno = EBADENGINEER;
@@ -301,7 +300,7 @@ bool Loop::addSlot ( bool forReading , int fd, void *state,
 	s->m_tick      = tick;
 
 	// the last called time
-	s->m_lastCall = gettimeofdayInMilliseconds();
+	s->m_lastCall = immediate ? 0 : gettimeofdayInMilliseconds();
 
 	// debug msg
 	//log("Loop::registered fd=%i state=%" PRIu32,fd,state);

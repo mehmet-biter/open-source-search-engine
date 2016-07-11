@@ -121,10 +121,8 @@ class Loop {
 
 	// . register this callback to be called every second
 	// . TODO: implement "seconds" parameter
-	bool registerSleepCallback ( int32_t milliseconds ,
-				     void *state, 
-				     void (* callback)(int fd,void *state ) ,
-				     int32_t niceness = 1 );
+	bool registerSleepCallback ( int32_t milliseconds, void *state, void (* callback)(int fd,void *state ),
+	                             int32_t niceness = 1, bool immediate = false );
 
 	// unregister call back for reading, writing or sleeping
 	void unregisterReadCallback  ( int fd, void *state , void (* callback)(int fd,void *state), bool silent = false );
@@ -173,9 +171,8 @@ class Loop {
 				  bool silent , // = false );
 				  bool forReading );
 
-	bool addSlot ( bool forReading , int fd , void *state , 
-		       void (* callback)(int fd , void *state ) ,
-		       int32_t niceness , int32_t tick = 0x7fffffff ) ;
+	bool addSlot ( bool forReading , int fd , void *state , void (* callback)(int fd , void *state ),
+	               int32_t niceness , int32_t tick = 0x7fffffff, bool immediate = false ) ;
 
 	// set how long to pause waiting for singals (in milliseconds)
 	void setSigWaitTime ( int32_t ms ) ;
