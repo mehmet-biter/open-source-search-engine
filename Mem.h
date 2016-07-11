@@ -97,24 +97,24 @@ extern class Mem g_mem;
 //#define mmalloc(size,note) malloc(size)
 //#define mfree(ptr,size,note) free(ptr)
 //#define mrealloc(oldPtr,oldSize,newSize,note) realloc(oldPtr,newSize)
-inline void *mmalloc ( int size , const char *note ) { 
+static inline void *mmalloc ( int size , const char *note ) {
 	return g_mem.gbmalloc(size,note); }
-inline void *mcalloc ( int size , const char *note ) { 
+static inline void *mcalloc ( int size , const char *note ) {
 	return g_mem.gbcalloc(size,note); }
-inline void *mrealloc (void *oldPtr, int oldSize, int newSize,
-			const char *note) {
+static inline void *mrealloc (void *oldPtr, int oldSize, int newSize,
+			      const char *note) {
 	return g_mem.gbrealloc(oldPtr,oldSize,newSize,note);}
-inline void  mfree    ( void *ptr , int size , const char *note) {
+static inline void  mfree    ( void *ptr , int size , const char *note) {
 	return g_mem.gbfree(ptr,size,note);}
-inline char *mdup     ( const void *data , int32_t dataSize , const char *note) {
+static inline char *mdup     ( const void *data , int32_t dataSize , const char *note) {
 	return g_mem.dup(data,dataSize,note);}
-inline char *mstrdup  ( const char *string , const char *note ) {
+static inline char *mstrdup  ( const char *string , const char *note ) {
 	return g_mem.strdup(string,note);}
-inline void mnew ( void *ptr , int32_t size , const char *note ) {
+static inline void mnew ( void *ptr , int32_t size , const char *note ) {
 	return g_mem.addnew ( ptr , size , note );}
-inline void mdelete ( void *ptr , int32_t size , const char *note ) {
+static inline void mdelete ( void *ptr , int32_t size , const char *note ) {
 	return g_mem.delnew ( ptr , size , note ); }
-inline bool relabel   ( void *ptr , int32_t size , const char *note ) {
+static inline bool relabel   ( void *ptr , int32_t size , const char *note ) {
 	return g_mem.lblMem( ptr, size, note ); }
 
 
