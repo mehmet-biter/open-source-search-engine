@@ -8,6 +8,7 @@
 #define GB_PARMS_H
 
 #include "Rdb.h"
+#include "HttpRequest.h"
 
 void handleRequest3e ( UdpSlot *slot , int32_t niceness ) ;
 void handleRequest3f ( UdpSlot *slot , int32_t niceness ) ;

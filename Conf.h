@@ -13,14 +13,8 @@
 #ifndef GB_CONF_H
 #define GB_CONF_H
 
-#include "Xml.h"         // Xml class
-#include "File.h"        // File class
-#include "ip.h"          // atoip()
-#include "Hostdb.h"      // g_hostdb.makeGroupId(),makeGroupMask()
-#include "HttpRequest.h"
-#include "TcpSocket.h"
-#include "Url.h"  // MAX_COLL_LEN
-#include "Collectiondb.h"
+#include "Collectiondb.h"     // MAX_COLL_LEN
+#include "SafeBuf.h"
 
 #define USERAGENTMAXSIZE      128
 
@@ -32,6 +26,9 @@
 //Publicly accessible and generallyy HA / reachable DNS servers. Use Google's servers - works reasonably well
 #define PUBLICLY_AVAILABLE_DNS1 "8.8.8.8"
 #define PUBLICLY_AVAILABLE_DNS2 "8.8.4.4"
+
+class TcpSocket;
+class HttpRequest;
 
 
 mode_t getFileCreationFlags();

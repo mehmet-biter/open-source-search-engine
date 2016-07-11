@@ -8,6 +8,7 @@
 #include "Loop.h"
 #include "Conf.h"
 #include "Process.h"
+#include "File.h"
 
 // a global class extern'd in Log.h
 Log g_log;
