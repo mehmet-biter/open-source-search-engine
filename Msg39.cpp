@@ -23,8 +23,6 @@ static void  sendReply         ( UdpSlot *slot         ,
 				 int32_t     replySize    ,
 				 int32_t     replyMaxSize ,
 				 bool     hadError     );
-// thread wrappers
-static void Msg39_addListsWrapper   ( void *state );
 
 
 
@@ -312,15 +310,15 @@ void Msg39::getDocIds2 ( Msg39Request *req ) {
 }
 
 
-static void Msg39_controlLoopWrapper2 ( void *state, job_exit_t exit_type ) {
-	Msg39 *THIS = (Msg39 *)state;
-	THIS->controlLoop();
+void Msg39::intersectionFinishedCallback(void *state, job_exit_t exit_type) {
+	Msg39 *that = static_cast<Msg39*>(state);
+	that->controlLoop();
 }
 
 
-static void Msg39_controlLoopWrapper ( void *state ) {
-	Msg39 *THIS = (Msg39 *)state;
-	THIS->controlLoop();
+void Msg39::controlLoopWrapper(void *state) {
+	Msg39 *that = static_cast<Msg39*>(state);
+	that->controlLoop();
 }
 
 // . returns false if blocks true otherwise
@@ -684,7 +682,7 @@ bool Msg39::getLists () {
 				 // 1-1 with query terms
 				 m_lists                    ,
 				 this                       ,
-				 Msg39_controlLoopWrapper,
+				 &controlLoopWrapper,
 				 m_r->m_allowHighFrequencyTermCache,
 				 m_r->m_niceness            ,
 				 m_debug                      )) {
@@ -829,8 +827,8 @@ bool Msg39::intersectLists ( ) { // bool updateReadInfo ) {
 
 	// . create the thread
 	// . only one of these type of threads should be launched at a time
-	if ( g_jobScheduler.submit(Msg39_addListsWrapper,
-	                           Msg39_controlLoopWrapper2,
+	if ( g_jobScheduler.submit(&intersectListsThreadFunction,
+	                           &intersectionFinishedCallback,
 				   this,
 				   thread_type_query_intersect,
 				   m_r->m_niceness) ) {
@@ -855,16 +853,16 @@ bool Msg39::intersectLists ( ) { // bool updateReadInfo ) {
 }
 
 // Use of ThreadEntry parameter is NOT thread safe
-static void Msg39_addListsWrapper ( void *state ) {
+void Msg39::intersectListsThreadFunction ( void *state ) {
 	// we're in a thread now!
-	Msg39 *THIS = (Msg39 *)state;
+	Msg39 *that = static_cast<Msg39*>(state);
 	// . do the add
 	// . addLists() returns false and sets errno on error
 	// . hash the lists into our table
 	// . this returns false and sets g_errno on error
 	// . Msg2 always compresses the lists so be aware that the termId
 	//   has been discarded
-	THIS->m_posdbTable.intersectLists10_r ( );
+	that->m_posdbTable.intersectLists10_r ( );
 	// . exit the thread
 	// . top 4 bytes of "state" ptr should be our done callback
 	// . threadDoneWrapper will be called by g_loop when he gets the 
@@ -936,7 +934,7 @@ bool Msg39::setClusterRecs ( ) {
 					0                     , // maxAge
 					false                 , // addToCache
 					this                  ,
-					Msg39_controlLoopWrapper,
+					&controlLoopWrapper,
 					m_r->m_niceness       ,
 					m_debug             ) )
 		// did we block? if so, return

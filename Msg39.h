@@ -15,6 +15,7 @@
 #include "TopTree.h"
 #include "Msg51.h"
 #include "HashTableX.h"
+#include "JobScheduler.h"
 
 
 void  handleRequest39 ( UdpSlot *slot , int32_t netnice ) ;
@@ -146,12 +147,14 @@ public:
 	// bool registerHandler ( );
 	// called by handler when a request for docids arrives
 	void getDocIds ( UdpSlot *slot ) ;
+
+private:
 	// XmlDoc.cpp seo pipeline uses this call
-	void getDocIds2 ( class Msg39Request *req ) ;
+	void getDocIds2 ( Msg39Request *req ) ;
 	// retrieves the lists needed as specified by termIds and PosdbTable
 	bool getLists () ;
 	// called when lists have been retrieved, uses PosdbTable to hash lists
-	bool intersectLists ( );//bool updateReadInfo ) ;
+	bool intersectLists ( );
 
 	// . this is used by handler to reconstruct the incoming Query class
 	// . TODO: have a serialize/deserialize for Query class
@@ -171,12 +174,14 @@ public:
 	// keep a ptr to the request
 	Msg39Request *m_r;
 
-
-	//int32_t m_numDocIdSplits;
+	// always use top tree now
 	bool m_allocedTree;
+	TopTree    m_tt;
+
+	//subrange chunking controls / variables
 	int64_t m_ddd;
 	int64_t m_dddEnd;
-
+	
 	// . we hold our IndexLists here for passing to PosdbTable
 	// . one array for each of the tiers
 	RdbList *m_lists;
@@ -189,12 +194,8 @@ public:
 	// this is set if PosdbTable::addLists() had an error
 	int32_t       m_errno;
 
-	// always use top tree now
-	TopTree    m_tt;
-
 	int64_t  m_numTotalHits;
 
-private:
 	int32_t        m_bufSize;
 	char       *m_buf;
 	int64_t  *m_clusterDocIds;
@@ -204,11 +205,15 @@ private:
 	int32_t        m_numVisible;
 	Msg51       m_msg51;
 	bool        m_gotClusterRecs;
-public:
+
+	static void intersectionFinishedCallback(void *state, job_exit_t exit_type);
+	static void controlLoopWrapper(void *state);
 	bool        controlLoop();
-private:
+	static void intersectListsThreadFunction(void *state);
+
 	int32_t m_phase;
 	int32_t m_docIdSplitNumber; //next split range to do
+	
 	void        estimateHitsAndSendReply   ();
 	bool        setClusterRecs ();
 	bool        gotClusterRecs ();
