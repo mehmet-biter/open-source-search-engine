@@ -252,8 +252,6 @@ void Msg39::getDocIds2() {
 	// wtf?
 	if ( g_errno ) gbshutdownLogicError();
 
-	QUICKPOLL ( m_msg39req->m_niceness );
-
 	// set m_errno
 	if ( m_query.m_truncated ) m_errno = EQUERYTRUNCATED;
 	// ensure matches with the msg3a sending us this request
@@ -280,8 +278,6 @@ void Msg39::getDocIds2() {
 
 	// reset this
 	m_toptree.reset();
-
-	QUICKPOLL ( m_msg39req->m_niceness );
 
 	m_ddd    = 0;
 	m_dddEnd = MAX_DOCID;
@@ -503,8 +499,6 @@ bool Msg39::getLists () {
 	// set startkey/endkey for each term/termlist
 	//
 	for ( int32_t i = 0 ; i < m_query.getNumTerms() ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_msg39req->m_niceness );
 		// shortcuts
 		QueryTerm *qterm = &m_query.m_qterms[i];
 		char *sk = qterm->m_startKey;
@@ -700,9 +694,6 @@ bool Msg39::intersectLists ( ) { // bool updateReadInfo ) {
 		m_startTime = gettimeofdayInMilliseconds();
 	}
 
-	// breathe
-	QUICKPOLL ( m_msg39req->m_niceness );
-
 	// ensure collection not deleted from under us
 	CollectionRec *cr = g_collectiondb.getRec ( m_msg39req->m_collnum );
 	if ( ! cr ) {
@@ -725,9 +716,6 @@ bool Msg39::intersectLists ( ) { // bool updateReadInfo ) {
 			    &m_toptree,
 			    &m_msg2 ,
 			    m_msg39req);
-
-	// breathe
-	QUICKPOLL ( m_msg39req->m_niceness );
 
 	// . we have to do this here now too
 	// . but if we are getting weights, we don't need m_toptree!
@@ -798,9 +786,6 @@ bool Msg39::intersectLists ( ) { // bool updateReadInfo ) {
 	//   incoming requests
 	// . don't launch more than 1 thread at a time for this
 	// . set callback when thread done
-
-	// breathe
-	QUICKPOLL ( m_msg39req->m_niceness );
 
 	// . create the thread
 	// . only one of these type of threads should be launched at a time
