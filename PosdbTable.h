@@ -3,6 +3,7 @@
 
 #include "Rdb.h"
 #include "HashTableX.h"
+#include "Query.h"         // MAX_QUERY_TERMS, qvec_t
 
 
 float getDiversityWeight ( unsigned char diversityRank );
@@ -27,7 +28,6 @@ void printTermList ( int32_t i, const char *list, int32_t listSize ) ;
 #define WIKI_BIGRAM_WEIGHT 1.40
 
 
-#include "Query.h"         // MAX_QUERY_TERMS, qvec_t
 
 //forward declarations
 class TopTree;
