@@ -18,11 +18,6 @@
 #include "hash.h"
 #include "JobScheduler.h"
 
-void attemptMergeAll ( int fd , void *state ) ;
-
-//static char  s_tfndbHadOppKey ;
-//static key_t s_tfndbOppKey    ;
-
 Rdb::Rdb ( ) {
 
 	m_lastReclaim = -1;
@@ -1518,7 +1513,7 @@ void Rdb::doneDumping ( ) {
 	// don't attempt merge if we're niceness 0
 	if ( !m_niceness ) return;
 	//attemptMerge ( 1 , false );
-	attemptMergeAll(0,NULL);
+	attemptMergeAllCallback(0,NULL);
 }
 
 void forceMergeAll ( char rdbId , char niceness ) {
@@ -1544,18 +1539,18 @@ void forceMergeAll ( char rdbId , char niceness ) {
 	}
 
 	// and try to merge now
-	attemptMergeAll2 ();
+	attemptMergeAll();
 }
 
 // this should be called every few seconds by the sleep callback, too
-void attemptMergeAll ( int fd , void *state ) {
-	attemptMergeAll2 ( );
+void attemptMergeAllCallback ( int fd , void *state ) {
+	attemptMergeAll();
 }
 
 // called by main.cpp
 // . TODO: if rdbbase::attemptMerge() needs to launch a merge but can't
 //   then do NOT remove from linked list. maybe set a flag like 'needsMerge'
-void attemptMergeAll2 ( ) {
+void attemptMergeAll() {
 
 	// wait for any current merge to stop!
 	if ( g_merge.isMerging() ) {

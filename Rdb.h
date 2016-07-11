@@ -83,8 +83,8 @@ int32_t getDataSizeFromRdbId ( uint8_t rdbId );
 void forceMergeAll ( char rdbId , char niceness ) ;
 
 // main.cpp calls this
-void attemptMergeAll ( int fd , void *state ) ;
-void attemptMergeAll2 ( );
+void attemptMergeAllCallback ( int fd , void *state ) ;
+void attemptMergeAll ( );
 
 class Rdb {
 public:

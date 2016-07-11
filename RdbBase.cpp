@@ -1060,7 +1060,7 @@ void RdbBase::doneWrapper4 ( ) {
 	m_isMerging = false;
 
 	// try to merge more when we are done
-	attemptMergeAll2 ( );
+	attemptMergeAll();
 }
 
 void RdbBase::renameFile( int32_t currentFileIdx, int32_t newFileId, int32_t newFileId2 ) {
