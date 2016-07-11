@@ -241,6 +241,7 @@ public:
 
 	int64_t  m_numTotalHits;
 
+private:
 	int32_t        m_bufSize;
 	char       *m_buf;
 	int64_t  *m_clusterDocIds;
@@ -250,7 +251,9 @@ public:
 	int32_t        m_numVisible;
 	Msg51       m_msg51;
 	bool        m_gotClusterRecs;
+public:
 	bool        controlLoop();
+private:
 	int32_t m_phase;
 	int32_t m_docIdSplitNumber; //next split range to do
 	void        estimateHitsAndSendReply   ();
