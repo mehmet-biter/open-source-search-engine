@@ -58,6 +58,7 @@
 #include "Msg17.h"
 #include "Parms.h"
 #include "Pages.h"
+#include "PageInject.h"
 #include "Unicode.h"
 
 #include "Msg1f.h"

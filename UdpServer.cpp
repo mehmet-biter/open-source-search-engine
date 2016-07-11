@@ -9,6 +9,8 @@
 #include "Loop.h"
 #include "IPAddressChecks.h"
 #include "BitOperations.h"
+#include "Msg0.h" //RDBIDOFFSET
+#include "max_niceness.h"
 
 // . any changes made to the slots should only be done without risk of
 //   interruption because makeCallbacks_ass() reads from the slots to call

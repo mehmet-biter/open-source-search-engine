@@ -6,6 +6,7 @@
 
 #include "File.h"
 #include "Process.h"
+#include "Conf.h"
 
 // THE FOLLOWING IS ALL STATIC 'CUZ IT'S THE FD POOL
 // if someone is using a file we must make sure this is true...
