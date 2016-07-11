@@ -82,14 +82,17 @@ bool Msg39::registerHandler ( ) {
 	return true;
 }
 
+
 Msg39::Msg39 () {
 	m_inUse = false;
 	reset();
 }
 
+
 Msg39::~Msg39 () {
 	reset();
 }
+
 
 void Msg39::reset() {
 	if ( m_inUse ) gbshutdownLogicError();
@@ -102,14 +105,11 @@ void Msg39::reset() {
 	reset2();
 }
 
+
 void Msg39::reset2() {
 	// reset lists
 	int32_t nqt = m_stackBuf.getLength() / sizeof(RdbList);
-	//for ( int32_t j = 0 ; j < m_msg2.m_numLists && m_lists ; j++ ) {
 	for ( int32_t j = 0 ; j < nqt && m_lists ; j++ ) {
-		//m_lists[j].freeList();
-		//log("msg39: destroy list @ 0x%" PTRFMT,(PTRTYPE)&m_lists[j]);
-		// same thing but more generic
 		m_lists[j].destructor();
 	}
 	m_stackBuf.purge();
@@ -117,6 +117,7 @@ void Msg39::reset2() {
 	m_msg2.reset();
 	m_posdbTable.reset();
 }
+
 
 // . handle a request to get a the search results, list of docids only
 // . returns false if slot should be nuked and no reply sent
@@ -155,23 +156,15 @@ static void sendReply ( UdpSlot *slot , Msg39 *msg39 , char *reply , int32_t rep
 	// no longer in use. msg39 will be NULL if ENOMEM or something
 	if ( msg39 ) msg39->m_inUse = false;
 
-	// . now we can free the lists before sending
-	// . may help a little bit...
-	//if ( msg39 ) {
-	//	for ( int32_t j = 0 ; j < msg39->m_msg2.m_numLists ; j++ ) 
-	//		msg39->m_lists[j].freeList();
-	//}
-	// get the appropriate UdpServer for this niceness level
-	UdpServer *us = &g_udpServer;
 	// i guess clear this
 	int32_t err = g_errno;
 	g_errno = 0;
 	// send an error reply if g_errno is set
 	if ( err ) {
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
-		us->sendErrorReply( slot, err );
+		g_udpServer.sendErrorReply( slot, err );
 	} else {
-		us->sendReply_ass( reply, replyLen, reply, replyMaxSize, slot );
+		g_udpServer.sendReply_ass( reply, replyLen, reply, replyMaxSize, slot );
 	}
 
 	// always delete ourselves when done handling the request
@@ -297,7 +290,6 @@ void Msg39::getDocIds2() {
 
 	m_phase = 0;
 
-	// . return false if it blocks true otherwise
 	// . it will send a reply when done
 	if ( ! controlLoop() ) return;
 
@@ -317,6 +309,7 @@ void Msg39::controlLoopWrapper(void *state) {
 	Msg39 *that = static_cast<Msg39*>(state);
 	that->controlLoop();
 }
+
 
 // . returns false if blocks true otherwise
 // 1. read all termlists for docid range
@@ -451,6 +444,7 @@ hadError:
 	sendReply ( m_slot, this, NULL, 0, 0, true );
 	return true;
 }
+
 
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
@@ -644,7 +638,6 @@ bool Msg39::getLists () {
 	//   and the reply buf should now always be <= minRecSizes so we can
 	//   pre-allocate one better, and, 3) this should fix the yahoo.com 
 	//   reindex bug
-	char rdbId = RDB_POSDB;
 
 
 	int32_t nqt = m_query.getNumTerms();
@@ -659,7 +652,7 @@ bool Msg39::getLists () {
 	}
 
 	// call msg2
-	if ( ! m_msg2.getLists ( rdbId                      ,
+	if ( ! m_msg2.getLists ( RDB_POSDB,
 				 m_r->m_collnum,//m_r->ptr_coll              ,
 				 m_r->m_addToCache          ,
 				 m_query.m_qterms,
@@ -685,6 +678,7 @@ bool Msg39::getLists () {
 
 	return true;
 }
+
 
 // . now come here when we got the necessary index lists
 // . returns false if blocked, true otherwise
@@ -777,7 +771,6 @@ bool Msg39::intersectLists ( ) { // bool updateReadInfo ) {
 	// print query term bit numbers here
 	for ( int32_t i = 0 ; m_debug && i < m_query.getNumTerms() ; i++ ) {
 		const QueryTerm *qt = &m_query.m_qterms[i];
-		//utf16ToUtf8(bb, 256, qt->m_term, qt->m_termLen);
 		SafeBuf sb;
 		sb.safePrintf("query: msg39: BITNUM query term #%" PRId32" \"%*.*s\" "
 			      "termid=%" PRId64" bitnum=%" PRId32" ",
@@ -802,14 +795,6 @@ bool Msg39::intersectLists ( ) { // bool updateReadInfo ) {
 	// time it
 	int64_t start = gettimeofdayInMilliseconds();
 	int64_t diff;
-
-	// . don't bother making a thread if lists are small
-	// . look at STAGE? in IndexReadInfo.cpp to see how we read in stages
-	// . it's always saying msg39 handler is hogging cpu...could this be it
-	//if ( m_msg2.getTotalRead() < 2000*8 ) goto skipThread;
-
-	// debug
-	//goto skipThread;
 
 	// . NOW! let's do this in a thread so we can continue to service
 	//   incoming requests
@@ -847,6 +832,7 @@ bool Msg39::intersectLists ( ) { // bool updateReadInfo ) {
 	return true;
 }
 
+
 // Use of ThreadEntry parameter is NOT thread safe
 void Msg39::intersectListsThreadFunction ( void *state ) {
 	// we're in a thread now!
@@ -859,10 +845,10 @@ void Msg39::intersectListsThreadFunction ( void *state ) {
 	//   has been discarded
 	that->m_posdbTable.intersectLists10_r ( );
 	// . exit the thread
-	// . top 4 bytes of "state" ptr should be our done callback
 	// . threadDoneWrapper will be called by g_loop when he gets the 
-	//   thread's termination signal, sig niceness is m_niceness
+	//   thread's termination signal
 }
+
 
 // . set the clusterdb recs in the top tree
 // . returns false if blocked, true otherwise
@@ -941,6 +927,7 @@ bool Msg39::setClusterRecs ( ) {
 	return true;
 }
 
+
 // return false and set g_errno on error
 bool Msg39::gotClusterRecs ( ) {
 
@@ -991,18 +978,10 @@ bool Msg39::gotClusterRecs ( ) {
 	mfree ( m_buf , m_bufSize , "Msg39cluster");
 	m_buf = NULL;
 
-	// accumulate total hit count over each docid split!
-	//m_numTotalHits += m_posdbTable.m_docIdVoteBuf.length() / 6;
-
-	// before wrapping up, complete our docid split loops!
-	// so do not send the reply back yet... send reply back from
-	// the docid loop function... doDocIdSplitLoop()
-	//if ( m_numDocIdSplits >= 2 ) return;
-
 	// finish up and send back the reply
-	//estimateHitsAndSendReply ();
 	return true;
 }	
+
 
 void Msg39::estimateHitsAndSendReply ( ) {
 
@@ -1038,12 +1017,6 @@ void Msg39::estimateHitsAndSendReply ( ) {
 		int32_t nqt = m_query.m_numTerms;
 		// start setting the stuff
 		mr.m_numDocIds = numDocIds;
-		// copy # estiamted hits into 8 bytes of reply
-		//int64_t est = m_posdbTable.m_estimatedTotalHits;
-		// ensure it has at least as many results as we got
-		//if ( est < numDocIds ) est = numDocIds;
-		// or if too big...
-		//if ( numDocIds < m_r->m_docsToGet ) est = numDocIds;
 		// . total estimated hits
 		// . this is now an EXACT count!
 		mr.m_estimatedHits = m_numTotalHits;
@@ -1124,9 +1097,6 @@ void Msg39::estimateHitsAndSendReply ( ) {
 		if ( m_gotClusterRecs && t->m_clusterLevel != CR_OK ) 
 			continue;
 
-		// get the docid ptr
-		//char      *diptr = t->m_docIdPtr;
-		//int64_t  docId = getDocIdFromPtr(diptr);
 		// sanity check
 		if ( t->m_docId < 0 ) gbshutdownLogicError();
 		//add it to the reply
@@ -1137,8 +1107,6 @@ void Msg39::estimateHitsAndSendReply ( ) {
 		// supply clusterdb rec? only for full splits
 		if ( m_gotClusterRecs ) 
 			topRecs [docCount] = t->m_clusterRec;
-		//topExplicits      [docCount] = 
-		//	getNumBitsOn(t->m_explicits)
 		docCount++;
 
 		if ( m_debug ) {
