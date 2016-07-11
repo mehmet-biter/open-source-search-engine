@@ -181,7 +181,7 @@ static void sendReply ( UdpSlot *slot , Msg39 *msg39 , char *reply , int32_t rep
 	}
 }
 
-// . returns false if blocked, true otherwise
+
 // . sets g_errno on error
 // . calls gotDocIds to send a reply
 void Msg39::getDocIds ( UdpSlot *slot ) {
@@ -190,47 +190,46 @@ void Msg39::getDocIds ( UdpSlot *slot ) {
 	// reset this
 	m_errno = 0;
 	// get the request
-        m_r  = (Msg39Request *) m_slot->m_readBuf;
+        m_r  = reinterpret_cast<Msg39Request*>(m_slot->m_readBuf);
         int32_t requestSize = m_slot->m_readBufSize;
         // ensure it's size is ok
-        if ( requestSize < 8 ) { 
-	BadReq:
-		g_errno = EBADREQUESTSIZE; 
-		log(LOG_LOGIC,"query: msg39: getDocIds: %s." , 
-		    mstrerror(g_errno) );
+        if ( (unsigned)requestSize < sizeof(Msg39Request) ) {
+		g_errno = EBADREQUESTSIZE;
+		log(LOG_ERROR,"query: msg39: getDocIds: msg39request is too small (%d bytes): %s.",
+		    requestSize, mstrerror(g_errno) );
 		sendReply ( m_slot , this , NULL , 0 , 0 , true );
-		return ; 
+		return;
 	}
 
 	// deserialize it before we do anything else
-	int32_t finalSize = deserializeMsg ( sizeof(Msg39Request) ,
-					  &m_r->size_readSizes ,
-					  &m_r->size_whiteList,//coll ,
-					  &m_r->ptr_readSizes,
-					  ((char*)m_r) + sizeof(*m_r) );
+	int32_t finalSize = deserializeMsg ( sizeof(Msg39Request),
+					     &m_r->size_readSizes,
+					     &m_r->size_whiteList,
+					     &m_r->ptr_readSizes,
+					     ((char*)m_r) + sizeof(*m_r) );
 
 	// sanity check
 	if ( finalSize != requestSize ) {
 		log("msg39: sending bad request.");
-		goto BadReq;
-		//gbshutdownLogicError(); }
+		g_errno = EBADREQUESTSIZE;
+		log(LOG_ERROR,"query: msg39: getDocIds: msg39request deserialization size mismatch (%d != %d): %s.",
+		    finalSize, requestSize, mstrerror(g_errno) );
+		sendReply ( m_slot , this , NULL , 0 , 0 , true );
+		return;
 	}
 
-	getDocIds2 ( m_r );
+	getDocIds2();
 }
 
 // . the main function to get the docids for the provided query in "req"
 // . it always blocks i guess
-void Msg39::getDocIds2 ( Msg39Request *req ) {
+void Msg39::getDocIds2() {
 
 	// flag it as in use
 	m_inUse = true;
 	
 	//record start time of the query
 	m_startTimeQuery = gettimeofdayInMilliseconds();
-
-	// store it, might be redundant if called from getDocIds() above
-	m_r = req;
 
 	// a handy thing
 	m_debug = false;

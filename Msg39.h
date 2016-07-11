@@ -147,8 +147,7 @@ private:
 
 	void reset();
 	void reset2();
-	// XmlDoc.cpp seo pipeline uses this call
-	void getDocIds2 ( Msg39Request *req ) ;
+	void getDocIds2();
 	// retrieves the lists needed as specified by termIds and PosdbTable
 	bool getLists () ;
 	// called when lists have been retrieved, uses PosdbTable to hash lists
