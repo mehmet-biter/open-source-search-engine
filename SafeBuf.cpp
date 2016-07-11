@@ -1,12 +1,11 @@
-#include "gb-include.h"
-
-#include <sys/stat.h>
-#include "iana_charset.h"
-#include "Unicode.h"
 #include "SafeBuf.h"
+#include "gb-include.h"
+#include "Mem.h"
+#include "Conf.h"
 #include "Words.h"
-#include "Sections.h"
 #include "Sanity.h"
+#include <sys/stat.h> //O_CREAT etc.
+#include <fcntl.h>    //open()
 
 
 SafeBuf::SafeBuf(int32_t initSize, const char *label ) {
@@ -544,8 +543,6 @@ bool SafeBuf::safeReplace2 (const char *s, int32_t slen,
 	char *pend2 = m_buf + m_length - slen + 1;
 	int32_t count = 0;
 	for ( char *p = m_buf + startOff ; p < pend2 ; p++ ) {
-		// breathe
-		QUICKPOLL(niceness);
 		// search
 		if ( p[0] != s[0] ) continue;
 		// compare 2nd char
@@ -572,8 +569,6 @@ bool SafeBuf::safeReplace2 (const char *s, int32_t slen,
 	for ( char *p = m_buf ; p < pend ; p++ , dst++ ) {
 		// assume not a match
 		*dst = *p;
-		// breathe
-		QUICKPOLL(niceness);
 		// search
 		if ( p[0] != s[0] ) continue;
 		// must be big enough
@@ -677,8 +672,6 @@ bool  SafeBuf::htmlEncode(const char *s, int32_t lenArg, bool encodePoundSign ,
 	const char *send = s + len;
 
 	for ( ; s < send ; s++ ) {
-		// breathe
-		QUICKPOLL ( niceness );
 		// ensure we have enough room
 		if ( t + 12 >= tend ) {
 			// save progress
@@ -761,8 +754,6 @@ bool SafeBuf::htmlEncode(const char *s) {
 // scan the last "len" characters for entities to encode
 bool SafeBuf::htmlEncode(int32_t len, int32_t niceness ){
 	for (int32_t i = m_length-len; i < m_length ; i++){
-
-		QUICKPOLL ( niceness );
 
 		if ( m_buf[i] == '"' ) {
 			if (!safeReplace("&#34;", 4, i, 1))
@@ -1119,7 +1110,6 @@ bool SafeBuf::safeDecodeJSONToUtf8 ( const char *json,
 	char *dst = m_buf + m_length;
 
 	for ( ; src < srcEnd ; ) {
-		QUICKPOLL(niceness);
 		if ( *src == '\\' ) {
 			// \n? (from json.org homepage)
 			if ( src[1] == 'n' ) {
@@ -1346,7 +1336,6 @@ bool SafeBuf::brify( const char *s, int32_t slen, int32_t niceness, int32_t maxC
 redo:
 
 	for ( ; p < pend ; p += cs ) {
-		QUICKPOLL(niceness);
 		cs = getUtf8CharSize(p);
 
 		// do not inc count if in a tag
@@ -1522,8 +1511,6 @@ bool SafeBuf::csvEncode ( const char *s , int32_t len , int32_t niceness ) {
 	// scan through all 
 	const char *send = s + len;
 	for ( ; s < send ; s++ ) {
-		// breathe
-		QUICKPOLL ( niceness );
 		// convert it?
 		if ( *s == '\"' ) {
 			*dst++ = '\"';
@@ -1574,8 +1561,6 @@ bool SafeBuf::base64Encode ( const char *sx , int32_t len , int32_t niceness ) {
 	// scan through all 
 	const unsigned char *send = s + len;
 	for ( ; s < send ; ) {
-		// breathe
-		QUICKPOLL ( niceness );
 
 		unsigned char c1 = s[0];
 		unsigned char c2 = 0;
@@ -1668,7 +1653,6 @@ bool SafeBuf::base64Decode ( const char *src , int32_t srcLen , int32_t niceness
 	unsigned char *p    = (unsigned char *)src;
 	unsigned char val;
 	for ( ; ; ) {
-		QUICKPOLL(niceness);
 		if ( *p ) {val = s_bmap[*p]; p++; } else val = 0;
 		// copy 6 bits
 		*dst <<= 6;
