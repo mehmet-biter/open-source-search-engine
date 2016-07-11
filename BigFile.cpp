@@ -440,7 +440,9 @@ int BigFile::getfd ( int32_t n , bool forReading ) {
 
 	// get it's file descriptor
 	int fd = f->getfd ( ) ;
-	if ( fd >= -1 ) return fd;
+	if ( fd >= -1 ) {
+		return fd;
+	}
 
 	// otherwise, fd is -2 and it's never been opened?!?!
 	g_errno = EBADENGINEER;
@@ -455,7 +457,9 @@ int BigFile::getfd ( int32_t n , bool forReading ) {
 // . otherwise return the big file's complete file size (can be well over 2gb)
 int64_t BigFile::getFileSize ( ) {
 	// return if already computed
-	if ( m_fileSize >= 0 ) return m_fileSize;
+	if ( m_fileSize >= 0 ) {
+		return m_fileSize;
+	}
 
 	// add up the sizes of each file
 	int64_t totalSize = 0;
@@ -698,8 +702,13 @@ bool BigFile::readwrite ( void         *buf      ,
 
 	// . if we're blocking then do it now
 	// . this should return false and set g_errno on error, true otherwise
-	if ( ! isNonBlocking ) 	goto skipThread;
-	if ( ! g_jobScheduler.are_new_jobs_allowed() ) goto skipThread;
+	if ( ! isNonBlocking ) 	{
+		goto skipThread;
+	}
+
+	if ( ! g_jobScheduler.are_new_jobs_allowed() ) {
+		goto skipThread;
+	}
 
 
 #ifdef ASYNCIO
@@ -710,13 +719,9 @@ bool BigFile::readwrite ( void         *buf      ,
 	// . this returns false and sets g_errno on error, true on success
 	// . we should return false cuz we blocked
 	// . thread will add signal to g_loop on completion to call
-	if ( g_jobScheduler.submit_io(readwriteWrapper_r,
-	                              doneWrapper,
-	                              fstate,
-				      thread_type_unspecified_io,
-				      niceness,
-				      doWrite) )
+	if ( g_jobScheduler.submit_io(readwriteWrapper_r, doneWrapper, fstate, thread_type_unspecified_io, niceness, doWrite) ) {
 		return false;
+	}
 
 	saved = g_errno;
 
@@ -725,13 +730,16 @@ bool BigFile::readwrite ( void         *buf      ,
 		static time_t s_time  = 0;
 		time_t now = getTime();
 		if ( now - s_time > 5 ) {
-			log (LOG_INFO,"disk: Thread call failed: %s.", 
-			     mstrerror(g_errno));
+			log (LOG_INFO,"disk: Thread call failed: %s.", mstrerror(g_errno));
 			s_time = now;
 		}
 	}
+
 	// sanity check
-	if ( ! callback ) gbshutdownLogicError();
+	if ( ! callback ) {
+		gbshutdownLogicError();
+	}
+
 	// NOW we return on error because if we already have 5000 disk threads
 	// queued up, what is the point in blocking ourselves off? that makes
 	// us look like a dead host and very unresponsive. As int32_t as this
@@ -1138,8 +1146,12 @@ static void readwriteWrapper_r ( void *state ) {
 	//   and errno will be EINTR
  again:
 	bool status = readwrite_r ( fstate );
+
 	// set errno
-	if ( ! status ) fstate->m_errno = errno;
+	if ( ! status ) {
+		fstate->m_errno = errno;
+	}
+
 	// test again here
 	//pthread_testcancel();
 

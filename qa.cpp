@@ -26,10 +26,7 @@ void wait( float seconds ) {
 	// put into milliseconds
 	int32_t delay = (int32_t)(seconds * 1000.0);
 
-	if ( g_loop.registerSleepCallback ( delay         ,
-					    NULL , // state
-					    qatestWrapper,//m_masterLoop
-					    0    )) {// niceness
+	if ( g_loop.registerSleepCallback( delay, NULL, qatestWrapper, 0 ) ) {
 		log("qa: waiting %i milliseconds",(int)delay);
 		s_registered = true;
 		// wait for it, return -1 since we blocked

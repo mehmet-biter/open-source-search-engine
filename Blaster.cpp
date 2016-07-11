@@ -237,9 +237,7 @@ void Blaster::runBlaster(char *file1,char *file2,
 				urlStart++;
 				m_wait=atoll(lineStart)-start;
 				// register it here
-				g_loop.registerSleepCallback(m_wait , 
-							     urlStart, 
-							     sleepWrapperLog);
+				g_loop.registerSleepCallback(m_wait, urlStart, sleepWrapperLog);
 				m_totalUrls++;
 				p+=gbstrlen(p)+1;
 			}
@@ -264,8 +262,7 @@ void Blaster::runBlaster(char *file1,char *file2,
 		//startSpidering( );
 		
 		// wakeup wrapper every X ms
-		g_loop.registerSleepCallback ( m_wait , NULL , 
-					       sleepWrapper );
+		g_loop.registerSleepCallback ( m_wait , NULL , sleepWrapper );
 	}
 	// this print to print how many docs have been processed
 	m_print=false;

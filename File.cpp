@@ -527,9 +527,17 @@ int File::getfd () {
 	// . a real fd of -1 means it's been closed and we gotta reopen it
 	// . we have to close someone if we don't have enough room
 	while ( s_numOpenFiles >= s_maxNumOpenFiles )  {
-		if ( g_conf.m_logDebugDisk ) sanityCheck();
-		if ( ! closeLeastUsed() ) return -1;
-		if ( g_conf.m_logDebugDisk ) sanityCheck();
+		if ( g_conf.m_logDebugDisk ) {
+			sanityCheck();
+		}
+
+		if ( ! closeLeastUsed() ) {
+			return -1;
+		}
+
+		if ( g_conf.m_logDebugDisk ) {
+			sanityCheck();
+		}
 	}
 
 	// time the calls to open just in case they are hurting us
@@ -569,12 +577,16 @@ int File::getfd () {
 			s_numOpenFiles--;
 			s_open[fd] = 0;
 			s_filePtrs[fd] = NULL;
-			if ( g_conf.m_logDebugDisk ) sanityCheck();
+			if ( g_conf.m_logDebugDisk ) {
+				sanityCheck();
+			}
 		}
 
 		// sanity. how can we get an fd already opened?
 		// because it was closed in a thread in close1_r()
-		if ( fd >= 0 && s_open[fd] ) { g_process.shutdownAbort(true); }
+		if ( fd >= 0 && s_open[fd] ) {
+			g_process.shutdownAbort(true);
+		}
 
 		// . now inc that count in case there was someone reading on
 		//   that fd right before it was closed and we got it
@@ -611,7 +623,9 @@ int File::getfd () {
 		return -1;
 	}
 
-	if ( g_conf.m_logDebugDisk ) sanityCheck();
+	if ( g_conf.m_logDebugDisk ) {
+		sanityCheck();
+	}
 
 	// we're another open file
 	s_numOpenFiles++;

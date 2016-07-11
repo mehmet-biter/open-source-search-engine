@@ -81,10 +81,10 @@ bool PingServer::registerHandler ( ) {
 	//   every second to keep on top of things
 	// . so in a network of 128 hosts we'll cycle through in 12.8 seconds
 	//   and set a host to dead on avg will take about 13 seconds
-	if ( ! g_loop.registerSleepCallback ( g_conf.m_pingSpacer , // ~100ms
-					      (void *)(PTRTYPE)m_callnum,//NULL
-					      sleepWrapper , 0 ) )
+	if ( ! g_loop.registerSleepCallback ( g_conf.m_pingSpacer , (void *)(PTRTYPE)m_callnum, sleepWrapper , 0 ) ) {
 		return false;
+	}
+
 	// if not host #0, we're done
 	if ( g_hostdb.m_hostId != 0 ) return true;
 
@@ -233,9 +233,7 @@ void PingServer::sendPingsToAll ( ) {
 	// update pingSpacer callback tick if it changed since last time
 	if ( m_pingSpacer == g_conf.m_pingSpacer ) return;
 	// register new one
-	if ( ! g_loop.registerSleepCallback ( m_pingSpacer , // ~100ms
-					      (void *)(PTRTYPE)(m_callnum+1) ,
-					      sleepWrapper , 0 ) ) {
+	if ( ! g_loop.registerSleepCallback ( m_pingSpacer , (void *)(PTRTYPE)(m_callnum+1) , sleepWrapper , 0 ) ) {
 		static char logged = 0;
 		if ( ! logged )
 			log("net: Could not update ping spacer.");

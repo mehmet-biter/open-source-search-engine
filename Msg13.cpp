@@ -1327,9 +1327,9 @@ void gotHttpReply2 ( void *state ,
 	// . if g_errno is set to something like "TCP Timed Out" then
 	//   we end up saving a blank robots.txt or doc here...
 	
-	if ( r->m_useTestCache && r->m_addToTestCache )
-		addTestDoc ( r->m_urlHash64,reply,replySize,
-			     savedErr , r );
+	if ( r->m_useTestCache && r->m_addToTestCache ) {
+		addTestDoc( r->m_urlHash64, reply, replySize, savedErr, r );
+	}
 
 	// note it
 	if ( r->m_useTestCache && 
