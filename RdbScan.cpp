@@ -28,9 +28,9 @@ bool RdbScan::setRead ( BigFile  *file         ,
 			bool      allowPageCache ,
 			bool      hitDisk        ) {
 	// remember list
-	m_list = list;
+	m_rdblist = list;
 	// reset the list
-	m_list->reset();
+	m_rdblist->reset();
 	// save keySize
 	m_ks = keySize;
 	m_rdbId = rdbId;
@@ -43,7 +43,7 @@ bool RdbScan::setRead ( BigFile  *file         ,
 	//if ( (endKey.n0   & 0x01) == 0x00 ) 
 	//	log("RdbScan::setRead: warning endKey lastbit clear"); 
 	// set list now
-	m_list->set ( NULL          , 
+	m_rdblist->set ( NULL          , 
 		      0             ,
 		      NULL          ,
 		      0             ,
@@ -113,7 +113,7 @@ bool RdbScan::setRead ( BigFile  *file         ,
 	//	return true;
 	//}
 	// note
-	//logf(LOG_DEBUG,"db: list %" PRIu32" has buf %" PRIu32".",(int32_t)m_list,(int32_t)buf);
+	//logf(LOG_DEBUG,"db: list %" PRIu32" has buf %" PRIu32".",(int32_t)m_rdblist,(int32_t)buf);
 	// . set up the list
 	// . set min/max keys on list if we're done reading
 	// . the min/maxKey defines the range of keys we read
@@ -122,7 +122,7 @@ bool RdbScan::setRead ( BigFile  *file         ,
 	// . it's used to make it easy to find the actual biggest key that is
 	//   <= m_endKey
 	/*
-	m_list->set ( buf + pad + m_off , 
+	m_rdblist->set ( buf + pad + m_off , 
 		      bytesToRead   , 
 		      buf           ,
 		      bufSize       , 
@@ -138,7 +138,7 @@ bool RdbScan::setRead ( BigFile  *file         ,
 	m_state    = state;
 	// save the first key in the list
 	//m_startKey = startKey;
-	KEYSET(m_startKey,startKey,m_ks);//m_list->m_ks);
+	KEYSET(m_startKey,startKey,m_ks);//m_rdblist->m_ks);
 	KEYSET(m_endKey,endKey,m_ks);
 	m_fixedDataSize = fixedDataSize;
 	m_useHalfKeys   = useHalfKeys;
@@ -223,7 +223,7 @@ void RdbScan::gotList ( ) {
 	//   DiskPageCache.cpp or Threads.cpp to save memory.
 	// . only set the list if there was a buffer. if not, it s probably 
 	//   due to a failed alloc and we'll just end up using the empty
-	//   m_list we set way above.
+	//   m_rdblist we set way above.
 	if ( m_fstate.m_allocBuf ) {
 		// get the buffer info for setting the list
 		//char *allocBuf  = m_fstate.m_allocBuf;
@@ -237,7 +237,7 @@ void RdbScan::gotList ( ) {
 		if ( allocOff != m_off + 16                ) { 
 			g_process.shutdownAbort(true); }
 		// now set this list. this always succeeds.
-		m_list->set ( allocBuf + allocOff , // buf + pad + m_off , 
+		m_rdblist->set ( allocBuf + allocOff , // buf + pad + m_off , 
 			      m_bytesToRead   , // bytesToRead   , 
 			      allocBuf        ,
 			      allocSize       ,
@@ -289,10 +289,10 @@ void RdbScan::gotList ( ) {
 		// if file got unlinked from under us, or whatever, we get
 		// an error
 		if ( ! g_errno ) {
-			char *buf = m_list->getList();
+			char *buf = m_rdblist->getList();
 			if ( memcmp ( bb , buf , m_bytesToRead) != 0 ) {
 				g_process.shutdownAbort(true); }
-			if ( m_bytesToRead != m_list->getListSize() ) {
+			if ( m_bytesToRead != m_rdblist->getListSize() ) {
 				g_process.shutdownAbort(true); }
 		}
 		// compare
@@ -314,30 +314,39 @@ void RdbScan::gotList ( ) {
 	// assume we did not shift it
 	m_shifted = 0;//false;
 	// if we were doing a cache only read, and got nothing, bail now
-	if ( ! m_hitDisk && m_list->isEmpty() ) return;
+	if ( ! m_hitDisk && m_rdblist->isEmpty() ) return;
 	// if first key in list is half, make it full
-	char *p = m_list->getList();
+	char *p = m_rdblist->getList();
+	
+	//@@@ BR: Cores seen here. Added NULL-check. For now dump core until 
+	// we figure out why this is happening.
+	if( !p )
+	{
+		log(LOG_ERROR,"%s:%d: Returned list is NULL", __FILE__, __LINE__);
+		g_process.shutdownAbort(true);
+	}
+
 	// . bitch if we read too much!
 	// . i think a read overflow might be causing a segv in malloc
 	// . NOTE: BigFile's call to DiskPageCache alters these values
 	if ( m_fstate.m_bytesDone != m_fstate.m_bytesToGo && m_hitDisk )
-		log(LOG_INFO,"disk: Read %" PRId64" bytes but needed %" PRId64".",
-		     m_fstate.m_bytesDone , m_fstate.m_bytesToGo );
+		log(LOG_INFO,"disk: Read %" PRId64" bytes but needed %" PRId64".", m_fstate.m_bytesDone , m_fstate.m_bytesToGo );
+		
 	// adjust the list size for biased page cache if necessary
 	//if ( m_file->m_pc && m_allowPageCache &&
 	//     m_file->m_pc->m_isOverriden &&
-	//     m_fstate.m_bytesDone < m_list->m_listSize )
-	//	m_list->m_listSize = m_fstate.m_bytesDone;
+	//     m_fstate.m_bytesDone < m_rdblist->m_listSize )
+	//	m_rdblist->m_listSize = m_fstate.m_bytesDone;
 	// bail if we don't do the 6 byte thing
 	if ( m_off == 0 ) return;
 	// posdb double compression?
 	if ( (m_rdbId == RDB_POSDB || m_rdbId == RDB2_POSDB2)
 	     && (p[0] & 0x04) ) {
 		// make it full
-		m_list->m_list     -= 12;
-		m_list->m_listSize += 12;
+		m_rdblist->m_list     -= 12;
+		m_rdblist->m_listSize += 12;
 		p                  -= 12;
-		KEYSET(p,m_startKey,m_list->m_ks);
+		KEYSET(p,m_startKey,m_rdblist->m_ks);
 		// clear the compression bits
 		*p &= 0xf9;
 		// let em know we shifted it so they can shift the hint offset
@@ -345,13 +354,13 @@ void RdbScan::gotList ( ) {
 		m_shifted = 12;
 	}
 	// if first key is already full (12 bytes) no need to do anything
-	else if ( m_list->isHalfBitOn ( p ) ) {
+	else if ( m_rdblist->isHalfBitOn ( p ) ) {
 		// otherwise, make it full
-		m_list->m_list     -= 6;
-		m_list->m_listSize += 6;
+		m_rdblist->m_list     -= 6;
+		m_rdblist->m_listSize += 6;
 		p                  -= 6;
 		//*(key_t *)p = m_startKey;
-		KEYSET(p,m_startKey,m_list->m_ks);
+		KEYSET(p,m_startKey,m_rdblist->m_ks);
 		// clear the half bit in case it is set
 		*p &= 0xfd;
 		// let em know we shifted it so they can shift the hint offset

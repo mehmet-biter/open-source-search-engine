@@ -46,7 +46,7 @@ class RdbScan {
 		       bool       hitDisk        ); // = true );
 
 	// RdbGet likes to get our list
-	RdbList *getList ( ) { return m_list; }
+	RdbList *getList ( ) { return m_rdblist; }
 
 	// was buffer shifted down 6 bytes to turn first key into a 12 byter?
 	bool wasShifted () { return m_shifted; }
@@ -55,7 +55,7 @@ class RdbScan {
 	void gotList ( );
 
 	// we set this list with the read buffer on read completion
-	RdbList  *m_list;
+	RdbList  *m_rdblist;
 
 	// for doing non-blocking reads with BigFile::read()
 	FileState m_fstate;
