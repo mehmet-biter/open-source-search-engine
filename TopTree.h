@@ -1,14 +1,12 @@
 // Matt Wells, copyright Jul 2004
 
 // . class used to hold the top scoring search results
-// . filled by IndexTable.cpp
 // . used by Msg38 to get cluster info for each TopNode
 // . used by Msg39 to serialize into a reply
 
 #ifndef GB_TOPTREE_H
 #define GB_TOPTREE_H
 
-#include "Clusterdb.h"   // SAMPLE_VECTOR_SIZE, 48 bytes for now
 #include "RdbTree.h"
 
 class TopNode {
