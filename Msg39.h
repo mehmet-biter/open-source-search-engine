@@ -137,14 +137,14 @@ public:
 	Msg39();
 	~Msg39();
 
-	void reset();
-	void reset2();
 	// register our request handler for Msg39's
 	static bool registerHandler();
 	// called by handler when a request for docids arrives
 	void getDocIds ( UdpSlot *slot ) ;
 
 private:
+	void reset();
+	void reset2();
 	// XmlDoc.cpp seo pipeline uses this call
 	void getDocIds2 ( Msg39Request *req ) ;
 	// retrieves the lists needed as specified by termIds and PosdbTable
