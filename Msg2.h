@@ -3,9 +3,8 @@
 #ifndef GB_MSG2_H
 #define GB_MSG2_H
 
-#include "Query.h"
-#include "Msg0.h"
 #include "Msg5.h"
+#include "RdbList.h"
 #include "max_niceness.h"
 
 /** define the max # of lists you can get as the max # of query terms for now */
@@ -15,6 +14,9 @@
 #define MSG2_MAX_REQUESTS 32
 /** support the &sites=xyz.com+abc.com+... to restrict search results to provided sites.*/
 #define MAX_WHITELISTS 500
+
+
+class QueryTerm;
 
 
 /**

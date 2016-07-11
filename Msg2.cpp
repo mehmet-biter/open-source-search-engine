@@ -7,7 +7,7 @@
 #include "Posdb.h" // getTermId()
 #include "Msg3a.h" // DEFAULT_POSDB_READ_SIZE
 #include "HighFrequencyTermShortcuts.h"
-#include "Process.h"
+#include "Sanity.h"
 
 
 static void  gotListWrapper ( void *state , RdbList *list , Msg5 *msg5 ) ;
@@ -103,7 +103,7 @@ bool Msg2::getLists ( ) {
 	// . make slots for all
 	for (  ; m_i < m_numLists ; m_i++ ) {
 		// sanity for Msg39's sake. do no breach m_lists[].
-		if ( m_i >= ABS_MAX_QUERY_TERMS ) { g_process.shutdownAbort(true); }
+		if ( m_i >= ABS_MAX_QUERY_TERMS ) gbshutdownLogicError();
 		// if any had error, forget the rest. do not launch any more
 		if ( m_errno ) break;
 		// skip if no bytes requested
@@ -287,7 +287,7 @@ bool Msg2::getLists ( ) {
 		m_p = p;
 
 		// sanity for Msg39's sake. do no breach m_lists[].
-		if ( m_w >= MAX_WHITELISTS ) { g_process.shutdownAbort(true); }
+		if ( m_w >= MAX_WHITELISTS ) gbshutdownLogicError();
 
 		// like 90MB last time i checked. so it won't read more
 		// than that...
@@ -366,7 +366,7 @@ void Msg2::returnMsg5 ( Msg5 *msg5 ) {
 	int32_t i; for ( i = 0 ; i < MSG2_MAX_REQUESTS ; i++ ) 
 		if ( &m_msg5[i] == msg5 ) break;
 	// wtf?
-	if ( i >= MSG2_MAX_REQUESTS ) { g_process.shutdownAbort(true); }
+	if ( i >= MSG2_MAX_REQUESTS ) gbshutdownLogicError();
 	// make it available
 	m_avail[i] = true;
 	// reset it
