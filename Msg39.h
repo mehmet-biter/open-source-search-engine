@@ -16,8 +16,6 @@
 
 class UdpSlot;
 
-void  handleRequest39 ( UdpSlot *slot , int32_t netnice ) ;
-
 class Msg39Request {
 
  public:
@@ -142,7 +140,7 @@ public:
 	void reset();
 	void reset2();
 	// register our request handler for Msg39's
-	// bool registerHandler ( );
+	static bool registerHandler();
 	// called by handler when a request for docids arrives
 	void getDocIds ( UdpSlot *slot ) ;
 
