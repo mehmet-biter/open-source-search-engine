@@ -290,8 +290,7 @@ void Multicast::sendToGroup ( ) {
 		// continue if we're already registered for sleep callbacks
 		if ( m_registeredSleep ) continue;
 		// otherwise register for sleep callback to try again
-		g_loop.registerSleepCallback  (5000/*ms*/,this,sleepWrapper2,
-					       m_niceness);
+		g_loop.registerSleepCallback( 5000/*ms*/, this, sleepWrapper2, m_niceness );
 		m_registeredSleep = true;
 	}
 	// if we had an error then we'll be called again in a second
@@ -401,8 +400,7 @@ void Multicast::gotReply2 ( UdpSlot *slot ) {
 	if ( m_registeredSleep ) return ;
 	// . otherwise register for sleep callback to try again
 	// . sleepWrapper2() will call sendToGroup() for us
-	g_loop.registerSleepCallback  (5000/*ms*/,this,sleepWrapper2,
-				       m_niceness);
+	g_loop.registerSleepCallback( 5000/*ms*/, this, sleepWrapper2, m_niceness );
 	m_registeredSleep = true;
 	// . this was bad cause it looped incessantly quickly!
 	// . when we finally return, udpServer destroy this slot
@@ -761,7 +759,7 @@ bool Multicast::sendToHost ( int32_t i ) {
 	if ( m_registeredSleep ) return true;
 	// . otherwise register for sleep callback to try again
 	// . sleepWrapper1() will call sendToHostLoop() for us
-	g_loop.registerSleepCallback  (50/*ms*/,this,sleepWrapper1,m_niceness);
+	g_loop.registerSleepCallback(50/*ms*/, this, sleepWrapper1, m_niceness );
 	m_registeredSleep = true;
 	// successful launch
 	return true;

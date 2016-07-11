@@ -1558,8 +1558,7 @@ void attemptMergeAll ( int fd , void *state ) {
 void attemptMergeAll2 ( ) {
 
 	// wait for any current merge to stop!
-	if ( g_merge.isMerging() ) 
-	{
+	if ( g_merge.isMerging() ) {
 		log(LOG_INFO,"Attempted merge, but merge already running");
 		return;
 	}
@@ -1643,7 +1642,8 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list, int32_t niceness/*, bool 
 	// pick it
 	if ( collnum < 0 || collnum > getNumBases() || ! getBase(collnum) ) {
 		g_errno = ENOCOLLREC;
-		return log("db: %s bad collnum of %i.",m_dbname,collnum);
+		log(LOG_WARN, "db: %s bad collnum of %i.",m_dbname,collnum);
+		return false;
 	}
 	// make sure list is reset
 	list->resetListPtr();

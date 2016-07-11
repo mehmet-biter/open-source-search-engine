@@ -906,19 +906,26 @@ bool Msg3::doneScanning ( ) {
 			m_lists[i].destructor();
 		// count retries
 		m_retryNum++;
-		// backoff scheme, wait 100ms more each time
+
+		// backoff scheme, wait 200ms more each time
 		int32_t wait ;
-		if ( m_retryNum == 1 ) wait = 10;
-		else                   wait = 200 * m_retryNum;
+		if ( m_retryNum == 1 ) {
+			wait = 10;
+		} else {
+			wait = 200 * m_retryNum;
+		}
+
 		// . don't wait more than 10 secs between tries
 		// . i've seen gf0 and gf16 get mega saturated
-		if ( wait > 10000 ) wait = 10000;
-		// wait 500 ms
-		if ( g_loop.registerSleepCallback ( wait  , // ms
-						    this  ,
-						    doneSleepingWrapper3,
-						    m_niceness))
+		if ( wait > 10000 ) {
+			wait = 10000;
+		}
+
+		// wait
+		if ( g_loop.registerSleepCallback ( wait, this, doneSleepingWrapper3, m_niceness ) ) {
 			return false;
+		}
+
 		// otherwise, registration failed
 		log(
 		    "net: Failed to register sleep callback for retry. "

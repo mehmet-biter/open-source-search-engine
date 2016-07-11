@@ -38,16 +38,26 @@ void dailyMergeWrapper ( int fd , void *state ) {
 }
 
 void DailyMerge::dailyMergeLoop ( ) {
-	// disable for now!
-	//return;
 	// if in repair mode, do not do daily merge
-	if ( g_repairMode ) return;
+	if ( g_repairMode ) {
+		return;
+	}
+
 	// or if in read only mode
-	if ( g_conf.m_readOnlyMode ) return;
+	if ( g_conf.m_readOnlyMode ) {
+		return;
+	}
+
 	// skip if proxy, a proxy can be hostid 0!
-	if ( g_proxy.isProxy() ) return;
+	if ( g_proxy.isProxy() ) {
+		return;
+	}
+
 	// wait for clock to be synced with host #0
-	if ( ! isClockInSync() ) return;
+	if ( ! isClockInSync() ) {
+		return;
+	}
+
 	// get local time
 	int64_t nowLocalMS = gettimeofdayInMillisecondsLocal();
 	// get our hostid

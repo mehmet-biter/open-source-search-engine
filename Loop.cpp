@@ -200,13 +200,16 @@ bool Loop::registerWriteCallback ( int fd,
 }
 
 // tick is in milliseconds
-bool Loop::registerSleepCallback ( int32_t tick ,
-				   void *state,
-				   void (* callback)(int fd,void *state ) ,
-				   int32_t niceness ) {
-	if ( ! addSlot ( true, MAX_NUM_FDS, state, callback , niceness ,tick) )
-		return log("loop: Unable to register sleep callback");
-	if ( tick < m_minTick ) m_minTick = tick;
+bool Loop::registerSleepCallback ( int32_t tick, void *state, void (* callback)(int fd,void *state ), int32_t niceness ) {
+	if ( ! addSlot ( true, MAX_NUM_FDS, state, callback , niceness ,tick) ) {
+		log( LOG_WARN, "loop: Unable to register sleep callback" );
+		return false;
+	}
+
+	if ( tick < m_minTick ) {
+		m_minTick = tick;
+	}
+
 	return true;
 }
 
@@ -291,22 +294,32 @@ bool Loop::addSlot ( bool forReading , int fd, void *state,
 	// set our callback and state
 	s->m_callback  = callback;
 	s->m_state     = state;
+
 	// point to the guy that was registered for fd before us
 	s->m_next      = next;
+
 	// save our niceness for doPoll()
 	s->m_niceness  = niceness;
+
 	// store the tick for sleep wrappers (should be max for others)
 	s->m_tick      = tick;
-	// and the last called time for sleep wrappers only really
-	if ( fd == MAX_NUM_FDS ) s->m_lastCall = gettimeofdayInMilliseconds();
-	//isj: above comment is bogus. Proved with valgrind
+
+	// the last called time
 	s->m_lastCall = gettimeofdayInMilliseconds();
+
 	// debug msg
 	//log("Loop::registered fd=%i state=%" PRIu32,fd,state);
+
 	// if fd == MAX_NUM_FDS if it's a sleep callback
-	if ( fd == MAX_NUM_FDS ) return true;
+	if ( fd == MAX_NUM_FDS ) {
+		return true;
+	}
+
 	// watch out for big bogus fds used for thread exit callbacks
-	if ( fd >  MAX_NUM_FDS ) return true;
+	if ( fd >  MAX_NUM_FDS ) {
+		return true;
+	}
+
 	// set fd non-blocking
 	return setNonBlocking ( fd , niceness ) ;
 }

@@ -2247,14 +2247,16 @@ int main2 ( int argc , char *argv[] ) {
 	// . the (void *)1 prevents gb from logging merge info every 2 seconds
 	// . niceness is 1
 	// BR: Upped from 2 sec to 60. No need to check for merge every 2 seconds.
-	if ( ! g_loop.registerSleepCallback(60000,(void *)1,attemptMergeAll,1))
-		log("db: Failed to init merge sleep callback.");
+	if ( !g_loop.registerSleepCallback( 60000, (void *)1, attemptMergeAll, 1) ) {
+		log( LOG_WARN, "db: Failed to init merge sleep callback." );
+	}
 
 	// try to sync parms (and collection recs) with host 0
-	if ( ! g_loop.registerSleepCallback(1000,NULL,tryToSyncWrapper,0))
+	if ( !g_loop.registerSleepCallback(1000, NULL, tryToSyncWrapper, 0 ) ) {
 		return false;
+	}
 
-	if(!Statistics::initialize()) {
+	if ( !Statistics::initialize() ) {
 		return false;
 	}
 

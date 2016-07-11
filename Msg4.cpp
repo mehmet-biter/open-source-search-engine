@@ -114,11 +114,11 @@ bool registerHandler4 ( ) {
 	}
 
 	// . register sleep handler every 5 seconds = 5000 ms
-	// . right now MSG4_WAIT is 500ms... i lowered it from 5s
+	// . right now MSG4_WAIT is 100ms... i lowered it from 5s
 	//   to speed up spidering so it would harvest outlinks
 	//   faster and be able to spider them right away.
 	// . returns false on failure
-	bool rc = g_loop.registerSleepCallback(MSG4_WAIT,NULL,sleepCallback4 );
+	bool rc = g_loop.registerSleepCallback( MSG4_WAIT, NULL, sleepCallback4 );
 
 	logTrace( g_conf.m_logTraceMsg4, "END - returning %s", rc?"true":"false");
 

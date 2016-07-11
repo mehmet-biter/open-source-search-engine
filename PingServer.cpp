@@ -172,8 +172,9 @@ void PingServer::initKernelErrorCheck(){
 		g_hostdb.m_hosts[i].m_kernelErrorReported = false;
 	}
 
-	if ( !g_loop.registerSleepCallback( 30000, NULL, checkKernelErrors,0))
-		log ("registering kern.log failed");
+	if ( !g_loop.registerSleepCallback( 30000, NULL, checkKernelErrors,0)) {
+		log( LOG_WARN, "registering kern.log failed" );
+	}
 	return;
 }
 

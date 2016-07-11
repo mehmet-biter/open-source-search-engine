@@ -114,9 +114,10 @@ bool Msg13::registerHandler ( ) {
 	if ( ! s_rt.set ( 8 ,sizeof(UdpSlot *),0,NULL,0,true,0,"wait13tbl") )
 		return false;
 
-	if ( ! g_loop.registerSleepCallback(10,NULL,scanHammerQueue) )
-		return log("build: Failed to register timer callback for "
-			   "hammer queue.");
+	if ( ! g_loop.registerSleepCallback(10, NULL, scanHammerQueue ) ) {
+		log( "build: Failed to register timer callback for hammer queue." );
+		return false;
+	}
 
 
 	// success

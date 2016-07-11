@@ -11951,9 +11951,9 @@ bool Parms::doParmSendingLoop ( ) {
 
 	s_inLoop = true;
 
-	if ( ! s_registeredSleep &&
-	     ! g_loop.registerSleepCallback(2000,NULL,parmLoop,0) )
-		log("parms: failed to reg parm loop");
+	if ( !s_registeredSleep && !g_loop.registerSleepCallback( 2000, NULL, parmLoop, 0 ) ) {
+		log( LOG_WARN, "parms: failed to reg parm loop" );
+	}
 
 	// do not re-register
 	s_registeredSleep = true;
@@ -12162,13 +12162,11 @@ static void handleRequest3fLoop ( void *weArg ) {
 			// . try again in 100ms
 			//
 			////////////
-			if(!g_loop.registerSleepCallback(100,
-							 we ,
-							 handleRequest3fLoop3,
-							 0 ) ){// niceness
-				log("parms: failed to reg sleeper");
+			if( !g_loop.registerSleepCallback( 100, we, handleRequest3fLoop3, 0 ) ){
+				log( LOG_WARN, "parms: failed to reg sleeper");
 				return;
 			}
+
 			log("parms: updateParm blocked. waiting.");
 			return;
 		}
