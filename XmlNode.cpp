@@ -2,7 +2,7 @@
 
 #include "XmlNode.h"
 #include "Mem.h"
-#include "Process.h"
+#include "Sanity.h"
 
 
 // . Here's a nice list of all the html nodes names, lengths, whether they're
@@ -228,7 +228,7 @@ int32_t XmlNode::set( char *node, bool pureXml ) {
 		// set the hash table
 		for ( int32_t i = 0 ; i < nn ; i++ ) {
 			// sanity
-			if ( g_nodes[i].m_nodeId != i ) { g_process.shutdownAbort(true);}
+			if ( g_nodes[i].m_nodeId != i ) gbshutdownLogicError();
 		}
 	}
 
@@ -893,17 +893,17 @@ nodeid_t getTagId ( const char *s , NodeType **retp ) {
 			int64_t h = hash64Upper_a ( name,nlen,0LL );
 			NodeType *nt = &g_nodes[i];
 			if ( ! s_ht.addKey(&h,&nt) ) {
-				g_process.shutdownAbort(true);
+				gbshutdownLogicError();
 			}
 		}
 
 		// sanity
-		if ( s_ht.m_numSlots != 1024 ) { g_process.shutdownAbort(true); }
+		if ( s_ht.m_numSlots != 1024 ) gbshutdownLogicError();
 
 		// sanity test
 		nodeid_t tt = getTagId ( "br" );
 		if ( tt != TAG_BR ) {
-			g_process.shutdownAbort(true);
+			gbshutdownLogicError();
 		}
 	}
 

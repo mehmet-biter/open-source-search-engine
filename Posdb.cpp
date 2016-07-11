@@ -5,7 +5,7 @@
 #include "Posdb.h"
 #include "JobScheduler.h"
 #include "Rebalance.h"
-#include "Process.h"
+#include "Sanity.h"
 
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
@@ -56,36 +56,36 @@ bool Posdb::init ( ) {
 			  false , // delkey?
 			  shardedByTermId );
 	// test it out
-	if ( g_posdb.getTermId ( &k ) != termId ) { g_process.shutdownAbort(true); }
+	if ( g_posdb.getTermId ( &k ) != termId ) gbshutdownLogicError();
 	//int64_t d2 = g_posdb.getDocId(&k);
-	if ( g_posdb.getDocId (&k ) != docId ) { g_process.shutdownAbort(true); }
-	if ( g_posdb.getHashGroup ( &k ) !=hashGroup) { g_process.shutdownAbort(true); }
-	if ( g_posdb.getWordPos ( &k ) !=  dist ) { g_process.shutdownAbort(true); }
-	if ( g_posdb.getDensityRank (&k)!=densityRank){ g_process.shutdownAbort(true); }
-	if ( g_posdb.getDiversityRank(&k)!=diversityRank){g_process.shutdownAbort(true);}
-	if ( g_posdb.getWordSpamRank(&k)!=wordSpamRank){ g_process.shutdownAbort(true); }
-	if ( g_posdb.getSiteRank (&k) != siteRank ) { g_process.shutdownAbort(true); }
-	if ( g_posdb.getLangId ( &k ) != langId ) { g_process.shutdownAbort(true); }
-	if ( g_posdb.getMultiplier ( &k ) !=multiplier){g_process.shutdownAbort(true); }
-	if ( g_posdb.getIsSynonym ( &k ) != isSynonym) { g_process.shutdownAbort(true); }
-	if ( g_posdb.isShardedByTermId(&k)!=shardedByTermId){g_process.shutdownAbort(true); }
+	if ( g_posdb.getDocId (&k ) != docId ) gbshutdownLogicError();
+	if ( g_posdb.getHashGroup ( &k ) !=hashGroup) gbshutdownLogicError();
+	if ( g_posdb.getWordPos ( &k ) !=  dist ) gbshutdownLogicError();
+	if ( g_posdb.getDensityRank (&k)!=densityRank)gbshutdownLogicError();
+	if ( g_posdb.getDiversityRank(&k)!=diversityRank)gbshutdownLogicError();
+	if ( g_posdb.getWordSpamRank(&k)!=wordSpamRank)gbshutdownLogicError();
+	if ( g_posdb.getSiteRank (&k) != siteRank ) gbshutdownLogicError();
+	if ( g_posdb.getLangId ( &k ) != langId ) gbshutdownLogicError();
+	if ( g_posdb.getMultiplier ( &k ) !=multiplier)gbshutdownLogicError();
+	if ( g_posdb.getIsSynonym ( &k ) != isSynonym) gbshutdownLogicError();
+	if ( g_posdb.isShardedByTermId(&k)!=shardedByTermId)gbshutdownLogicError();
 	// more tests
 	setDocIdBits ( &k, docId );
 	setMultiplierBits ( &k, multiplier );
 	setSiteRankBits ( &k, siteRank );
 	setLangIdBits ( &k, langId );
 	// test it out
-	if ( g_posdb.getTermId ( &k ) != termId ) { g_process.shutdownAbort(true); }
-	if ( g_posdb.getDocId (&k ) != docId ) { g_process.shutdownAbort(true); }
-	if ( g_posdb.getWordPos ( &k ) !=  dist ) { g_process.shutdownAbort(true); }
-	if ( g_posdb.getDensityRank (&k)!=densityRank){ g_process.shutdownAbort(true); }
-	if ( g_posdb.getDiversityRank(&k)!=diversityRank){g_process.shutdownAbort(true);}
-	if ( g_posdb.getWordSpamRank(&k)!=wordSpamRank){ g_process.shutdownAbort(true); }
-	if ( g_posdb.getSiteRank (&k) != siteRank ) { g_process.shutdownAbort(true); }
-	if ( g_posdb.getHashGroup ( &k ) !=hashGroup) { g_process.shutdownAbort(true); }
-	if ( g_posdb.getLangId ( &k ) != langId ) { g_process.shutdownAbort(true); }
-	if ( g_posdb.getMultiplier ( &k ) !=multiplier){g_process.shutdownAbort(true); }
-	if ( g_posdb.getIsSynonym ( &k ) != isSynonym) { g_process.shutdownAbort(true); }
+	if ( g_posdb.getTermId ( &k ) != termId ) gbshutdownLogicError();
+	if ( g_posdb.getDocId (&k ) != docId ) gbshutdownLogicError();
+	if ( g_posdb.getWordPos ( &k ) !=  dist ) gbshutdownLogicError();
+	if ( g_posdb.getDensityRank (&k)!=densityRank)gbshutdownLogicError();
+	if ( g_posdb.getDiversityRank(&k)!=diversityRank)gbshutdownLogicError();
+	if ( g_posdb.getWordSpamRank(&k)!=wordSpamRank)gbshutdownLogicError();
+	if ( g_posdb.getSiteRank (&k) != siteRank ) gbshutdownLogicError();
+	if ( g_posdb.getHashGroup ( &k ) !=hashGroup) gbshutdownLogicError();
+	if ( g_posdb.getLangId ( &k ) != langId ) gbshutdownLogicError();
+	if ( g_posdb.getMultiplier ( &k ) !=multiplier)gbshutdownLogicError();
+	if ( g_posdb.getIsSynonym ( &k ) != isSynonym) gbshutdownLogicError();
 
 	/*
 	// more tests
@@ -114,7 +114,7 @@ bool Posdb::init ( ) {
 		    (int32_t)(*(unsigned char *)p));
 	list.resetListPtr();
 	list.checkList_r(false,true,RDB_POSDB);
-	g_process.shutdownAbort(true);
+	gbshutdownLogicError();
 	*/
 
 	// make it lower now for debugging
@@ -319,14 +319,14 @@ void Posdb::makeKey ( void              *vkp            ,
 		      bool shardedByTermId ) {
 
 	// sanity
-	if ( siteRank      > MAXSITERANK      ) { g_process.shutdownAbort(true); }
-	if ( wordSpamRank  > MAXWORDSPAMRANK  ) { g_process.shutdownAbort(true); }
-	if ( densityRank   > MAXDENSITYRANK   ) { g_process.shutdownAbort(true); }
-	if ( diversityRank > MAXDIVERSITYRANK ) { g_process.shutdownAbort(true); }
-	if ( langId        > MAXLANGID        ) { g_process.shutdownAbort(true); }
-	if ( hashGroup     > MAXHASHGROUP     ) { g_process.shutdownAbort(true); }
-	if ( wordPos       > MAXWORDPOS       ) { g_process.shutdownAbort(true); }
-	if ( multiplier    > MAXMULTIPLIER    ) { g_process.shutdownAbort(true); }
+	if ( siteRank      > MAXSITERANK      ) gbshutdownLogicError();
+	if ( wordSpamRank  > MAXWORDSPAMRANK  ) gbshutdownLogicError();
+	if ( densityRank   > MAXDENSITYRANK   ) gbshutdownLogicError();
+	if ( diversityRank > MAXDIVERSITYRANK ) gbshutdownLogicError();
+	if ( langId        > MAXLANGID        ) gbshutdownLogicError();
+	if ( hashGroup     > MAXHASHGROUP     ) gbshutdownLogicError();
+	if ( wordPos       > MAXWORDPOS       ) gbshutdownLogicError();
+	if ( multiplier    > MAXMULTIPLIER    ) gbshutdownLogicError();
 
 	key144_t *kp = (key144_t *)vkp;
 
@@ -561,7 +561,7 @@ int64_t Posdb::getTermFreq ( collnum_t collnum, int64_t termId ) {
 	// 			  &numNeg,
 	// 			  true );
 	// if ( numPos*18 != numBytes ) {
-	// 	g_process.shutdownAbort(true); }
+	// 	gbshutdownLogicError(); }
 
 	
 
@@ -620,10 +620,10 @@ void printTermList ( int32_t i, const char *list, int32_t listSize ) {
 		    , getHashGroupString(hg)
 		    , syn
 		    );
-		if ( firstKey && g_posdb.getKeySize(px)!=12) {
-			g_process.shutdownAbort(true); }
-		else if ( ! firstKey&& g_posdb.getKeySize(px)!=6) {
-			g_process.shutdownAbort(true); }
+		if ( firstKey && g_posdb.getKeySize(px)!=12)
+			gbshutdownLogicError();
+		else if ( ! firstKey&& g_posdb.getKeySize(px)!=6)
+			gbshutdownLogicError();
 		if ( firstKey ) px += 12;
 		else            px += 6;
 		firstKey = false;
@@ -678,7 +678,7 @@ int Posdb::printList ( RdbList &list ) {
 			// seems like 12 bytes
 			//log("debug1: d=%" PRId64" nd1=%" PRId64" nd2=%" PRId64" nd3=%" PRId64,
 			//d,nd1,nd2,nd3);
-			//if ( nd2 < d ) { g_process.shutdownAbort(true); }
+			//if ( nd2 < d ) gbshutdownLogicError();
 			//g_process.shutdownAbort(true);
 			err = " (alignerror2)";
 			if ( nd2 < d ) err = " (alignorderrror2)";

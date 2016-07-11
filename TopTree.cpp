@@ -5,7 +5,7 @@
 #include "Errno.h"
 #include "Titledb.h" // DOCID_MASK
 #include "Msg40.h" // MAXDOCIDSTOCOMPUTE
-#include "Process.h"
+#include "Sanity.h"
 
 
 /*
@@ -357,7 +357,7 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 	// do not even try to add if ridiculous count for this domain
 	if ( m_domCount[domHash] >= m_ridiculousMax ) {
 		// sanity check
-		//if ( min < 0 ) { g_process.shutdownAbort(true); }
+		//if ( min < 0 ) gbshutdownLogicError();
 		// if we are lesser or dup of min, just don't add!
 		if ( k <= *((key_t *)m_t2.getKey(min)) ) return false;
 		// . add ourselves. use 0 for collnum.
@@ -368,12 +368,12 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 		// the next node before the current min will be the next min
 		int32_t next = m_t2.getNextNode(min);
 		// sanity check
-		//if ( next < 0 ) { g_process.shutdownAbort(true); }
+		//if ( next < 0 ) gbshutdownLogicError();
 		// sanity check
 		//key_t *kp1 = (key_t *)m_t2.getKey(min);
-		//if ( (kp1->n1) >>24 != domHash ) {g_process.shutdownAbort(true);}
+		//if ( (kp1->n1) >>24 != domHash ) gbshutdownLogicError();
 		//key_t *kp2 = (key_t *)m_t2.getKey(next);
-		//if ( (kp2->n1) >>24 != domHash ) {g_process.shutdownAbort(true);}
+		//if ( (kp2->n1) >>24 != domHash ) gbshutdownLogicError();
 		// the new min is the "next" of the old min
 		m_domMinNode[domHash] = next;
 		// get his "node number" in the top tree, "nn" so we can
@@ -394,7 +394,7 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 		// sanity check
 		//if ( min > 0 ) {
 		//	key_t *kp1 = (key_t *)m_t2.getKey(min);
-		//	if ( (kp1->n1) >>24 != domHash ) {g_process.shutdownAbort(true);}
+		//	if ( (kp1->n1) >>24 != domHash ) gbshutdownLogicError();
 		//}
 		// are we the new min? if so, assign it
 		if ( min == -1 || k < *((key_t *)m_t2.getKey(min)) )
@@ -404,7 +404,7 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 	if ( m_doSiteClustering ) {
 		// update the dataPtr so every node in m_t2 has a reference
 		// to the equivalent node in this top tree
-		if ( n < 0 || n > m_t2.m_numNodes ) { g_process.shutdownAbort(true); }
+		if ( n < 0 || n > m_t2.m_numNodes ) gbshutdownLogicError();
 		m_t2.m_data[n] = (char *)(PTRTYPE)tnn;
 	}
 
@@ -450,9 +450,9 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 		// he becomes the new empty node
 		int32_t tn = m_lowNode;
 		// sanity check
-		if ( tn < 0 ) { g_process.shutdownAbort(true); }
+		if ( tn < 0 ) gbshutdownLogicError();
 		// sanity check
-		//if ( getNext(tn) == -1 ) { g_process.shutdownAbort(true); }
+		//if ( getNext(tn) == -1 ) gbshutdownLogicError();
 		// get the min node
 		TopNode *t = &m_nodes[tn];
 		// get its docid ptr
@@ -488,7 +488,7 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 		if ( min < 0 ) { break; }
 		// sanity check
 		//key_t *kp1 = (key_t *)m_t2.getKey(min);
-		//if ( (kp1->n1) >>24 != domHash2 ) {g_process.shutdownAbort(true);}
+		//if ( (kp1->n1) >>24 != domHash2 ) gbshutdownLogicError();
 		// get next node from t2
 		int32_t next = m_t2.getNextNode ( min );
 		// delete from m_t2
@@ -502,15 +502,15 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 			// sanity check
 			//if ( next > 0 ) {
 			//key_t *kp2 = (key_t *)m_t2.getKey(next);
-			//if ( (kp2->n1) >>24 == domHash2 ) {g_process.shutdownAbort(true);}
+			//if ( (kp2->n1) >>24 == domHash2 ) gbshutdownLogicError();
 			//}
 			continue;
 		}
 		// sanity check
-		//if ( next < 0 ) { g_process.shutdownAbort(true); }
+		//if ( next < 0 ) gbshutdownLogicError();
 		// sanity check
 		//key_t *kp2 = (key_t *)m_t2.getKey(next);
-		//if ( (kp2->n1) >>24 != domHash2 ) {g_process.shutdownAbort(true);}
+		//if ( (kp2->n1) >>24 != domHash2 ) gbshutdownLogicError();
 		// the new min is the "next" of the old min
 		m_domMinNode[domHash2] = next;
 		//logf(LOG_DEBUG,"deleting %" PRId32,on);
@@ -523,11 +523,11 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 // . used to remove the last node and replace it with a higher scorer
 void TopTree::deleteNode ( int32_t i , uint8_t domHash ) {
 	// sanity check
-	if ( PARENT(i) == -2 ) { g_process.shutdownAbort(true); }
+	if ( PARENT(i) == -2 ) gbshutdownLogicError();
 	// get node
 	//TopNode *t = &m_nodes[i];
 	// debug
-	//if ( ! checkTree ( false ) ) { g_process.shutdownAbort(true); }
+	//if ( ! checkTree ( false ) ) gbshutdownLogicError();
 	//if ( i == 262 )
 	//	log("HEY");
 
@@ -538,7 +538,7 @@ void TopTree::deleteNode ( int32_t i , uint8_t domHash ) {
 			log("toptree: toptree delete error node #%" PRId32" "
 			    "domHash=%" PRId32" because next node is -1 numnodes=%" PRId32,
 			    i,(int32_t)domHash,m_numUsedNodes);
-		//g_process.shutdownAbort(true); }
+		//gbshutdownLogicError();
 			//return;
 		}
 	}
@@ -602,7 +602,7 @@ void TopTree::deleteNode ( int32_t i , uint8_t domHash ) {
 	setDepths ( iparent );
 
 	// debug
-	//if ( ! checkTree ( false ) ) { g_process.shutdownAbort(true); }
+	//if ( ! checkTree ( false ) ) gbshutdownLogicError();
 
 	goto done;
 
@@ -681,7 +681,7 @@ void TopTree::deleteNode ( int32_t i , uint8_t domHash ) {
 	m_kickedOutDocIds = true;
 
 	// debug
-	//if ( ! checkTree ( true ) ) { g_process.shutdownAbort(true); }
+	//if ( ! checkTree ( true ) ) gbshutdownLogicError();
 }
 	
 int32_t TopTree::getPrev ( int32_t i ) { 

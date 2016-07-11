@@ -6,7 +6,7 @@
 #include "SafeBuf.h"
 #include "Words.h"
 #include "Sections.h"
-#include "Process.h"
+#include "Sanity.h"
 
 
 SafeBuf::SafeBuf(int32_t initSize, const char *label ) {
@@ -195,14 +195,14 @@ bool SafeBuf::pushFloat ( float i) {
 }
 
 int32_t SafeBuf::popLong ( ) {
-	if ( m_length < 4 ) { g_process.shutdownAbort(true); }
+	if ( m_length < 4 ) gbshutdownLogicError();
 	int32_t ret = *(int32_t *)(m_buf+m_length-4);
 	m_length -= 4;
 	return ret;
 }
 
 float SafeBuf::popFloat ( ) {
-	if ( m_length < 4 ) { g_process.shutdownAbort(true); }
+	if ( m_length < 4 ) gbshutdownLogicError();
 	float ret = *(float *)(m_buf+m_length-4);
 	m_length -= 4;
 	return ret;
@@ -653,7 +653,7 @@ bool  SafeBuf::htmlEncode(const char *s, int32_t lenArg, bool encodePoundSign ,
 			  int32_t niceness , int32_t truncateLen ) {
 	// . we assume we are encoding into utf8
 	// . sanity check
-	if ( m_encoding == csUTF16 ) { g_process.shutdownAbort(true); }
+	if ( m_encoding == csUTF16 ) gbshutdownLogicError();
 
 	// the new truncation logic
 	int32_t len = lenArg;
@@ -1062,7 +1062,7 @@ Tag *SafeBuf::addTag ( const char *mysite ,
 	Tag *tag = (Tag *)getBuf();
 	tag->set(mysite,tagname,now,user,ip,data,dsize);
 	incrementLength ( tag->getRecSize() );
-	if ( tag->getRecSize() > need ) { g_process.shutdownAbort(true); }
+	if ( tag->getRecSize() > need ) gbshutdownLogicError();
 	return tag;
 }
 
@@ -1653,7 +1653,7 @@ bool SafeBuf::base64Decode ( const char *src , int32_t srcLen , int32_t niceness
 			s_bmap[c] = val++;
 		for ( unsigned char c = '0' ; c <= '9'; c++ ) 
 			s_bmap[c] = val++;
-		if ( val != 62 ) { g_process.shutdownAbort(true); }
+		if ( val != 62 ) gbshutdownLogicError();
 		s_bmap[(unsigned char)'+'] = 62;
 		s_bmap[(unsigned char)'/'] = 63;
 	}

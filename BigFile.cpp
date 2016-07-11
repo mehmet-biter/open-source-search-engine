@@ -9,7 +9,7 @@
 #include "JobScheduler.h"
 #include "Stats.h"
 #include "Statsdb.h"
-#include "Process.h"
+#include "Sanity.h"
 
 #ifdef ASYNCIO
 #include <aio.h>
@@ -254,7 +254,7 @@ bool BigFile::addPart ( int32_t n ) {
 	if ( m_filePtrsBuf.getCapacity() != m_filePtrsBuf.getLength() ) {
 		log(LOG_ERROR, "%s:%s:%d: Capacity/Length mismatch when adding part %" PRId32, __FILE__, __func__, __LINE__, n);
 		logAllData(LOG_ERROR);
-		g_process.shutdownAbort(true);
+		gbshutdownLogicError();
 	}
 
 	// init using tiny buf to save a malloc for small files
@@ -291,7 +291,7 @@ bool BigFile::addPart ( int32_t n ) {
 		if ( LITTLEBUFSIZE < sizeof(File) ) {
 			log(LOG_ERROR, "%s:%s:%d: LITTLEBUFSIZE too small", __FILE__, __func__, __LINE__ );
 			logAllData(LOG_ERROR);
-			g_process.shutdownAbort(true); 
+			gbshutdownLogicError();
 		}
 		f->constructor();
 	} else {
@@ -383,7 +383,7 @@ void BigFile::makeFilename_r ( char *baseFilename    ,
 	// int32_t dirLen = gbstrlen(dir);
 	// int32_t baseLen = gbstrlen(baseFilename);
 	// int32_t need = dirLen + 1 + baseLen + 1;
-	// if ( need < bufSize ) { g_process.shutdownAbort(true); }
+	// if ( need < bufSize ) gbshutdownLogicError();
 	//static char s[1024];
 	// if ( (n % 2) == 0 || ! m_stripeDir[0] ) 
 	// 	sprintf ( buf, "%s/%s",   dir      , baseFilename );
@@ -392,13 +392,13 @@ void BigFile::makeFilename_r ( char *baseFilename    ,
 		r = snprintf ( buf, bufSize, "%s/%s",dir,baseFilename);
 		if ( r < bufSize ) return;
 		// truncation is bad
-		g_process.shutdownAbort(true);
+		gbshutdownLogicError();
 	}
 	// return if it fit into "buf"
 	r = snprintf ( buf, bufSize, "%s/%s.part%" PRId32,dir,baseFilename,n);
 	if ( r < bufSize ) return;
 	// truncation is bad
-	g_process.shutdownAbort(true);
+	gbshutdownLogicError();
 }
 
 
@@ -597,7 +597,7 @@ bool BigFile::readwrite ( void         *buf      ,
 		    "< 0. filename=%s/%s. dumping core. try deleting "
 		    "the .map file for it and restarting.",offset,
 		    m_dir.getBufStart(),m_baseFilename.getBufStart());
-		g_process.shutdownAbort(true);
+		gbshutdownLogicError();
 	}
 	// if we're not blocking use a fake fstate
 	FileState tmp;
@@ -611,7 +611,7 @@ bool BigFile::readwrite ( void         *buf      ,
 	fstate->m_inPageCache = false;
 	// sanity check. if you set hitDisk to false, you must allow
 	// us to check the page cache! silly bean!
-	if ( ! allowPageCache && ! hitDisk ) { g_process.shutdownAbort(true); }
+	if ( ! allowPageCache && ! hitDisk ) gbshutdownLogicError();
 	// set up fstate
 	fstate->m_this        = this;
 	// buf may be NULL if caller passed in a NULL "buf" and it did not hit 
@@ -731,7 +731,7 @@ bool BigFile::readwrite ( void         *buf      ,
 		}
 	}
 	// sanity check
-	if ( ! callback ) { g_process.shutdownAbort(true); }
+	if ( ! callback ) gbshutdownLogicError();
 	// NOW we return on error because if we already have 5000 disk threads
 	// queued up, what is the point in blocking ourselves off? that makes
 	// us look like a dead host and very unresponsive. As int32_t as this
