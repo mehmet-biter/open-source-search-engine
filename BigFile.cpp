@@ -9,6 +9,7 @@
 #include "JobScheduler.h"
 #include "Stats.h"
 #include "Statsdb.h"
+#include "Process.h"
 
 #ifdef ASYNCIO
 #include <aio.h>

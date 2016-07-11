@@ -8,6 +8,7 @@
 #include "Statsdb.h"
 #include "hash.h"
 #include "Parms.h"
+#include "Process.h"
 
 Statsdb g_statsdb;
 

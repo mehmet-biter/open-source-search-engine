@@ -24,6 +24,7 @@
 #include "Proxy.h"
 #include "Json.h"
 #include "Images.h" //Thumbnail*
+#include "Process.h"
 
 static bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) ;
 static bool printMenu ( SafeBuf *sb , int32_t menuNum , HttpRequest *hr ) ;

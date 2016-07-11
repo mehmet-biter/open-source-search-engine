@@ -2,6 +2,7 @@
 
 #include "Proxy.h"
 #include "Statsdb.h"
+#include "Process.h"
 #include "Msg13.h"
 #include "XmlDoc.h"
 
