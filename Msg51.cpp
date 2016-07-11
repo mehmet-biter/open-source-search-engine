@@ -1,15 +1,15 @@
 // TODO: if the first 20 or so do NOT have the same hostname, then stop
 // and set all clusterRecs to CR_OK
 
+#include "Msg51.h"
+
 #include "gb-include.h"
 
-#include "Msg51.h"
 #include "Clusterdb.h"
-//#include "CollectionRec.h"
 #include "Stats.h"
 #include "HashTableT.h"
 #include "HashTableX.h"
-#include "Process.h"
+#include "Sanity.h"
 
 
 // . these must be 1-1 with the enums above
@@ -98,7 +98,7 @@ bool Msg51::getClusterRecs ( int64_t     *docIds                   ,
 		log("db: msg51. Collection rec null for collnum %" PRId32".",
 		    (int32_t)collnum);
 		g_errno = EBADENGINEER;
-		g_process.shutdownAbort(true);
+		gbshutdownLogicError();
 	}
 	// keep a pointer for the caller
 	m_maxCacheAge   = maxCacheAge;
@@ -169,7 +169,7 @@ bool Msg51::sendRequests ( int32_t k ) {
 	// sanity check
 	if ( m_clusterLevels[m_nexti] <  0      ||
 	     m_clusterLevels[m_nexti] >= CR_END   ) {
-		g_process.shutdownAbort(true); }
+		gbshutdownLogicError(); }
 
 	// skip if we already got the rec for this guy!
 	if ( m_clusterLevels[m_nexti] != CR_UNINIT ) {
@@ -200,7 +200,7 @@ bool Msg51::sendRequests ( int32_t k ) {
 				       NULL      );// cachedTime
 	if ( found ) {
 		// sanity check
-		if ( crecSize != sizeof(key_t) ) { g_process.shutdownAbort(true); }
+		if ( crecSize != sizeof(key_t) ) gbshutdownLogicError();
 		m_clusterRecs[m_nexti] = *(key_t *)crecPtr;
 		// it is no longer CR_UNINIT, we got the rec now
 		m_clusterLevels[m_nexti] = CR_GOT_REC;
@@ -233,7 +233,7 @@ bool Msg51::sendRequests ( int32_t k ) {
 	}
 
 	// sanity check -- must have one!!
-	if ( slot >= MSG51_MAX_REQUESTS ) { g_process.shutdownAbort(true); }
+	if ( slot >= MSG51_MAX_REQUESTS ) gbshutdownLogicError();
 
 	// send it, returns false if blocked, true otherwise
 	sendRequest ( slot );
@@ -279,7 +279,7 @@ bool Msg51::sendRequest ( int32_t    i ) {
 	int32_t           numHosts     = g_hostdb.getNumHostsPerShard();
 	uint32_t  shardNum     = getShardNum(RDB_CLUSTERDB,&startKey);
 	Host          *hosts        = g_hostdb.getShard ( shardNum );
-	if ( hostNum >= numHosts ) { g_process.shutdownAbort(true); }
+	if ( hostNum >= numHosts ) gbshutdownLogicError();
 	int32_t firstHostId = hosts [ hostNum ].m_hostId ;
 
 	// if we are doing a full split, keep it local, going across the net
@@ -338,8 +338,8 @@ void gotClusterRecWrapper51 ( void *state ) {//, RdbList *rdblist ) {
 	// extract our class form him -- a hack
 	Msg51 *THIS = (Msg51 *)msg0->m_parent;
 	// sanity check
-	if ( &THIS->m_msg0[msg0->m_slot51] != msg0 ) {
-		g_process.shutdownAbort(true); }
+	if ( &THIS->m_msg0[msg0->m_slot51] != msg0 )
+		gbshutdownLogicError();
 	// process it
 	THIS->gotClusterRec ( msg0 ) ;
 	// get slot number for re-send on this slot
@@ -505,7 +505,7 @@ loop:
 	level = &clusterLevels[i];
 
 	// sanity check
-	if ( *level == CR_UNINIT ) { g_process.shutdownAbort(true); }
+	if ( *level == CR_UNINIT ) gbshutdownLogicError();
 	// and the adult bit, for cleaning the results
 	if ( familyFilter && g_clusterdb.hasAdultContent ( crec ) ) {
 		*level = CR_DIRTY; goto loop; }
