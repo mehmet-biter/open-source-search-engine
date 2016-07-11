@@ -47,7 +47,7 @@ void Msg39::reset() {
 	if ( m_inUse ) { g_process.shutdownAbort(true); }
 	m_allocedTree = false;
 	//m_numDocIdSplits = 1;
-	m_tmpq.reset();
+	m_query.reset();
 	m_numTotalHits = 0;
 	m_gotClusterRecs = 0;
 	m_docIdSplitNumber = 0;
@@ -199,12 +199,12 @@ void Msg39::getDocIds2 ( Msg39Request *req ) {
 		return ; 
 	}
 
-	// . set our m_tmpq instance
-	if ( ! m_tmpq.set2 ( m_r->ptr_query  , 
-			     m_r->m_language ,
-			     m_r->m_queryExpansion ,
-			     m_r->m_useQueryStopWords ,
-			     m_r->m_maxQueryTerms ) ) {
+	// . set our m_query instance
+	if ( ! m_query.set2 ( m_r->ptr_query,
+			      m_r->m_language ,
+			      m_r->m_queryExpansion ,
+			      m_r->m_useQueryStopWords ,
+			      m_r->m_maxQueryTerms ) ) {
 		log("query: msg39: setQuery: %s." , 
 		    mstrerror(g_errno) );
 		sendReply ( m_slot , this , NULL , 0 , 0 , true );
@@ -217,9 +217,9 @@ void Msg39::getDocIds2 ( Msg39Request *req ) {
 	QUICKPOLL ( m_r->m_niceness );
 
 	// set m_errno
-	if ( m_tmpq.m_truncated ) m_errno = EQUERYTRUNCATED;
+	if ( m_query.m_truncated ) m_errno = EQUERYTRUNCATED;
 	// ensure matches with the msg3a sending us this request
-	if ( m_tmpq.getNumTerms() != m_r->m_nqt ) {
+	if ( m_query.getNumTerms() != m_r->m_nqt ) {
 		g_errno = EBADENGINEER;
 		log("query: Query parsing inconsistency for q=%s. "
 		    "%i != %i. "
@@ -227,8 +227,8 @@ void Msg39::getDocIds2 ( Msg39Request *req ) {
 		    "which are the only parms that could be different in "
 		    "Query::set2(). You probably have different mysynoyms.txt "
 		    "files on two different hosts! check that!!"
-		    ,m_tmpq.m_orig
-		    ,(int)m_tmpq.getNumTerms()
+		    ,m_query.m_orig
+		    ,(int)m_query.getNumTerms()
 		    ,(int)m_r->m_nqt
 		    ,(int32_t)m_r->m_language
 		    );
@@ -238,7 +238,7 @@ void Msg39::getDocIds2 ( Msg39Request *req ) {
 	// debug
 	if ( m_debug )
 		logf(LOG_DEBUG,"query: msg39: [%" PTRFMT"] Got request "
-		     "for q=%s", (PTRTYPE) this,m_tmpq.m_orig);
+		     "for q=%s", (PTRTYPE) this,m_query.m_orig);
 
 	// reset this
 	m_tt.reset();
@@ -429,7 +429,7 @@ bool Msg39::getLists () {
 	int64_t docIdEnd = MAX_DOCID;
 	// . restrict to this docid?
 	// . will really make gbdocid:| searches much faster!
-	int64_t dr = m_tmpq.m_docIdRestriction;
+	int64_t dr = m_query.m_docIdRestriction;
 	if ( dr ) {
 		docIdStart = dr;
 		docIdEnd   = dr + 1;
@@ -466,15 +466,15 @@ bool Msg39::getLists () {
 	//
 	// set startkey/endkey for each term/termlist
 	//
-	for ( int32_t i = 0 ; i < m_tmpq.getNumTerms() ; i++ ) {
+	for ( int32_t i = 0 ; i < m_query.getNumTerms() ; i++ ) {
 		// breathe
 		QUICKPOLL ( m_r->m_niceness );
 		// shortcuts
-		QueryTerm *qterm = &m_tmpq.m_qterms[i];
+		QueryTerm *qterm = &m_query.m_qterms[i];
 		char *sk = qterm->m_startKey;
 		char *ek = qterm->m_endKey;
 		// get the term id
-		int64_t tid = m_tmpq.getTermId(i);
+		int64_t tid = m_query.getTermId(i);
 		// if only 1 stripe
 		//if ( g_hostdb.getNumStripes() == 1 ) {
 		//	docIdStart = 0;
@@ -496,17 +496,17 @@ bool Msg39::getLists () {
 
 	// debug msg
 	if ( m_debug || g_conf.m_logDebugQuery ) {
-		for ( int32_t i = 0 ; i < m_tmpq.getNumTerms() ; i++ ) {
+		for ( int32_t i = 0 ; i < m_query.getNumTerms() ; i++ ) {
 			// get the term in utf8
 			//char bb[256];
-			const QueryTerm *qt = &m_tmpq.m_qterms[i];
+			const QueryTerm *qt = &m_query.m_qterms[i];
 			//utf16ToUtf8(bb, 256, qt->m_term, qt->m_termLen);
 			//char *tpc = qt->m_term + qt->m_termLen;
 			char sign = qt->m_termSign;
 			if ( sign == 0 ) sign = '0';
 			QueryWord *qw = qt->m_qword;
 			int32_t wikiPhrId = qw->m_wikiPhraseId;
-			if ( m_tmpq.isPhrase(i) ) wikiPhrId = 0;
+			if ( m_query.isPhrase(i) ) wikiPhrId = 0;
 			char leftwikibigram = 0;
 			char rightwikibigram = 0;
 			if ( qt->m_leftPhraseTerm &&
@@ -545,9 +545,9 @@ bool Msg39::getLists () {
 			     (PTRTYPE)this ,
 			     i          ,
 			     (int)qt->m_termLen, (int)qt->m_termLen, qt->m_term,
-			     (int32_t)m_tmpq.isPhrase (i) ,
-			     m_tmpq.getTermId      (i) ,
-			     m_tmpq.getRawTermId   (i) ,
+			     (int32_t)m_query.isPhrase(i) ,
+			     m_query.getTermId(i) ,
+			     m_query.getRawTermId(i) ,
 			     ((float *)m_r->ptr_termFreqWeights)[i] ,
 			     sign , //c ,
 			     0 , 
@@ -561,12 +561,12 @@ bool Msg39::getLists () {
 			     (int32_t)leftwikibigram,
 			     (int32_t)rightwikibigram,
 			     ((int32_t *)m_r->ptr_readSizes)[i]         ,
-			     (int32_t)m_tmpq.m_qterms[i].m_hardCount ,
-			     (int32_t)m_tmpq.getTermLen(i) ,
+			     (int32_t)m_query.m_qterms[i].m_hardCount ,
+			     (int32_t)m_query.getTermLen(i) ,
 			     isSynonym,
-			     (int32_t)m_tmpq.m_langId ); // ,tt
+			     (int32_t)m_query.m_langId );
 			if ( synterm ) {
-				int32_t stnum = synterm - m_tmpq.m_qterms;
+				int32_t stnum = synterm - m_query.m_qterms;
 				sb.safePrintf("synofterm#=%" PRId32,stnum);
 				//sb.safeMemcpy(st->m_term,st->m_termLen);
 				sb.pushChar(' ');
@@ -588,7 +588,7 @@ bool Msg39::getLists () {
 	if ( m_debug ) 
 		log(LOG_DEBUG,"query: msg39: [%" PTRFMT"] "
 		    "Getting %" PRId32" index lists ",
-		     (PTRTYPE)this,m_tmpq.getNumTerms());
+		     (PTRTYPE)this,m_query.getNumTerms());
 	// . now get the index lists themselves
 	// . return if it blocked
 	// . not doing a merge (last parm) means that the lists we receive
@@ -603,7 +603,7 @@ bool Msg39::getLists () {
 	char rdbId = RDB_POSDB;
 
 
-	int32_t nqt = m_tmpq.getNumTerms();
+	int32_t nqt = m_query.getNumTerms();
 	int32_t need = sizeof(RdbList) * nqt ;
 	m_stackBuf.setLabel("stkbuf2");
 	if ( ! m_stackBuf.reserve ( need ) ) return true;
@@ -618,8 +618,8 @@ bool Msg39::getLists () {
 	if ( ! m_msg2.getLists ( rdbId                      ,
 				 m_r->m_collnum,//m_r->ptr_coll              ,
 				 m_r->m_addToCache          ,
-				 m_tmpq.m_qterms,
-				 m_tmpq.getNumTerms(),
+				 m_query.m_qterms,
+				 m_query.getNumTerms(),
 				 m_r->ptr_whiteList,
 				 // we need to restrict docid range for
 				 // whitelist as well! this is from
@@ -628,7 +628,7 @@ bool Msg39::getLists () {
 				 docIdEnd,
 				 // how much of each termlist to read in bytes
 				 (int32_t *)m_r->ptr_readSizes ,
-				 //m_tmpq.getNumTerms()       , // numLists
+				 //m_query.getNumTerms(),
 				 // 1-1 with query terms
 				 m_lists                    ,
 				 this                       ,
@@ -659,7 +659,7 @@ bool Msg39::intersectLists ( ) { // bool updateReadInfo ) {
 	if ( m_debug ) {
 		log(LOG_DEBUG,"query: msg39: [%" PTRFMT"] "
 		    "Got %" PRId32" lists in %" PRId64" ms"
-		    , (PTRTYPE)this,m_tmpq.getNumTerms(),
+		    , (PTRTYPE)this,m_query.getNumTerms(),
 		     gettimeofdayInMilliseconds() - m_startTime);
 		m_startTime = gettimeofdayInMilliseconds();
 	}
@@ -681,9 +681,9 @@ bool Msg39::intersectLists ( ) { // bool updateReadInfo ) {
 	// . it should weight them so much so that the summation of scores
 	//   from other query terms cannot make up for a lower date score
 	// . this will actually calculate the top
-	// . this might also change m_tmpq.m_termSigns 
+	// . this might also change m_query.m_termSigns
 	// . this won't do anything if it was already called
-	m_posdbTable.init ( &m_tmpq                ,
+	m_posdbTable.init ( &m_query,
 			    m_debug              ,
 			    this                   ,
 			    &m_tt                  ,
@@ -731,8 +731,8 @@ bool Msg39::intersectLists ( ) { // bool updateReadInfo ) {
 	if ( ! m_posdbTable.setQueryTermInfo () ) return true;
 
 	// print query term bit numbers here
-	for ( int32_t i = 0 ; m_debug && i < m_tmpq.getNumTerms() ; i++ ) {
-		const QueryTerm *qt = &m_tmpq.m_qterms[i];
+	for ( int32_t i = 0 ; m_debug && i < m_query.getNumTerms() ; i++ ) {
+		const QueryTerm *qt = &m_query.m_qterms[i];
 		//utf16ToUtf8(bb, 256, qt->m_term, qt->m_termLen);
 		SafeBuf sb;
 		sb.safePrintf("query: msg39: BITNUM query term #%" PRId32" \"%*.*s\" "
@@ -990,7 +990,7 @@ void Msg39::estimateHitsAndSendReply ( ) {
 		if ( numDocIds > m_r->m_docsToGet) numDocIds =m_r->m_docsToGet;
 
 		// # of QueryTerms in query
-		int32_t nqt = m_tmpq.m_numTerms;
+		int32_t nqt = m_query.m_numTerms;
 		// start setting the stuff
 		mr.m_numDocIds = numDocIds;
 		// copy # estiamted hits into 8 bytes of reply
@@ -1066,7 +1066,7 @@ void Msg39::estimateHitsAndSendReply ( ) {
 
 		// sanity
 		if ( nqt != m_msg2.getNumLists() )
-			log("query: nqt mismatch for q=%s",m_tmpq.m_orig);
+			log("query: nqt mismatch for q=%s",m_query.m_orig);
 	}
 
 	int32_t docCount = 0;
@@ -1121,7 +1121,7 @@ void Msg39::estimateHitsAndSendReply ( ) {
 		    gettimeofdayInMilliseconds() - m_startTime ,
 		    m_r->m_docsToGet                       ,
 		    numDocIds                         ,
-		    m_tmpq.getQuery()                 );
+		    m_query.getQuery());
 	}
 
 

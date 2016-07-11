@@ -202,7 +202,7 @@ public:
 
 	// . this is used by handler to reconstruct the incoming Query class
 	// . TODO: have a serialize/deserialize for Query class
-	Query       m_tmpq;
+	Query       m_query;
 
 	// used to get IndexLists all at once
 	Msg2        m_msg2;
