@@ -139,10 +139,12 @@ public:
 
 	// register our request handler for Msg39's
 	static bool registerHandler();
+
+private:
+	static void handleRequest39(UdpSlot *slot, int32_t netnice);
 	// called by handler when a request for docids arrives
 	void getDocIds ( UdpSlot *slot ) ;
 
-private:
 	void reset();
 	void reset2();
 	// XmlDoc.cpp seo pipeline uses this call
