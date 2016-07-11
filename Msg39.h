@@ -61,7 +61,6 @@ class Msg39Request {
 
 	int64_t m_minDocId;
 	int64_t m_maxDocId;
-	bool      m_makeReply;
 
 	// for widget, to only get results to append to last docid
 	double    m_maxSerpScore;
@@ -169,7 +168,7 @@ private:
 	PosdbTable m_posdbTable;
 
 	// keep a ptr to the request
-	Msg39Request *m_msg39r;
+	Msg39Request *m_msg39req;
 
 	// always use top tree now
 	bool m_allocedTree;

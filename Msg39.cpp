@@ -65,8 +65,6 @@ void Msg39Request::reset() {
 	m_maxSerpScore = 0.0;
 	m_minSerpDocId = 0LL;
 
-	m_makeReply = true;
-
 	// . search results knobs
 	// . accumulate the top 10 term pairs from inlink text. lower
 	//   it down from 10 here.
@@ -1038,13 +1036,6 @@ void Msg39::estimateHitsAndSendReply ( ) {
 		mr.size_pairScoreBuf   = pt->m_pairScoreBuf.length();
 		mr.ptr_singleScoreBuf  = pt->m_singleScoreBuf.getBufStart();
 		mr.size_singleScoreBuf = pt->m_singleScoreBuf.length();
-		// save some time since seo.cpp gets from posdbtable directly,
-		// so we can avoid serializing/copying this stuff at least
-		if ( ! m_msg39req->m_makeReply ) {
-			mr.size_scoreInfo      = 0;
-			mr.size_pairScoreBuf   = 0;
-			mr.size_singleScoreBuf = 0;
-		}
 
 		// reserve space for these guys, we fill them in below
 		mr.ptr_docIds       = NULL;
