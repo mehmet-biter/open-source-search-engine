@@ -6,17 +6,15 @@
 #ifndef GB_MSG39_H
 #define GB_MSG39_H
 
-#include "UdpServer.h"      // UdpSlot type
-#include "Multicast.h"      // multicast send
 #include "Query.h"          // Query::set()
 #include "Msg2.h"           // getLists()
 #include "PosdbTable.h"
-#include "IndexList.h"
 #include "TopTree.h"
 #include "Msg51.h"
-#include "HashTableX.h"
 #include "JobScheduler.h"
 
+
+class UdpSlot;
 
 void  handleRequest39 ( UdpSlot *slot , int32_t netnice ) ;
 
