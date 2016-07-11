@@ -16,6 +16,8 @@ static void createFile( BigFile *file, const char *file_name ) {
 		ASSERT_TRUE( file->open( O_RDWR | O_CREAT | O_SYNC ) );
 	}
 	ASSERT_TRUE( file->write(buf, bufSize, 0) );
+
+	free( buf );
 }
 
 TEST( BigFileTest, FileRenameDestExist ) {
