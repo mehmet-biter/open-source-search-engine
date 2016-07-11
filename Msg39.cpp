@@ -8,7 +8,7 @@
 #include "SearchInput.h"
 #include "RdbList.h"
 #include "Msg5.h"
-#include "Process.h"
+#include "Sanity.h"
 #include "Posdb.h"
 
 
@@ -94,7 +94,7 @@ Msg39::~Msg39 () {
 }
 
 void Msg39::reset() {
-	if ( m_inUse ) { g_process.shutdownAbort(true); }
+	if ( m_inUse ) gbshutdownLogicError();
 	m_allocedTree = false;
 	//m_numDocIdSplits = 1;
 	m_query.reset();
@@ -152,7 +152,7 @@ static void sendReply ( UdpSlot *slot , Msg39 *msg39 , char *reply , int32_t rep
 		     (PTRTYPE)msg39,replyLen);
 
 	// sanity
-	if ( hadError && ! g_errno ) { g_process.shutdownAbort(true); }
+	if ( hadError && ! g_errno ) gbshutdownLogicError();
 
 	// no longer in use. msg39 will be NULL if ENOMEM or something
 	if ( msg39 ) msg39->m_inUse = false;
@@ -215,7 +215,7 @@ void Msg39::getDocIds ( UdpSlot *slot ) {
 	if ( finalSize != requestSize ) {
 		log("msg39: sending bad request.");
 		goto BadReq;
-		//g_process.shutdownAbort(true); }
+		//gbshutdownLogicError(); }
 	}
 
 	getDocIds2 ( m_r );
@@ -262,7 +262,7 @@ void Msg39::getDocIds2 ( Msg39Request *req ) {
 	}
 
 	// wtf?
-	if ( g_errno ) { g_process.shutdownAbort(true); }
+	if ( g_errno ) gbshutdownLogicError();
 
 	QUICKPOLL ( m_r->m_niceness );
 
@@ -502,7 +502,7 @@ bool Msg39::getLists () {
 	docIdEnd++;
 	// TODO: add triplet support later for this to split the
 	// read 3 ways. 4 ways for quads, etc.
-	//if ( g_hostdb.getNumStripes() >= 3 ) { g_process.shutdownAbort(true);}
+	//if ( g_hostdb.getNumStripes() >= 3 ) gbshutdownLogicError();
 	// do not go over MAX_DOCID  because it gets masked and
 	// ends up being 0!!! and we get empty lists
 	if ( docIdEnd > MAX_DOCID ) docIdEnd = MAX_DOCID;
@@ -701,7 +701,7 @@ bool Msg39::intersectLists ( ) { // bool updateReadInfo ) {
 	hadError:
 		log("msg39: Had error getting termlists: %s.",
 		    mstrerror(g_errno));
-		if ( ! g_errno ) { g_process.shutdownAbort(true); }
+		if ( ! g_errno ) gbshutdownLogicError();
 		//sendReply (m_slot,this,NULL,0,0,true);
 		return true; 
 	}
@@ -748,7 +748,7 @@ bool Msg39::intersectLists ( ) { // bool updateReadInfo ) {
 	// . actually we were using it before for rat=0/bool queries but
 	//   i got rid of NO_RAT_SLOTS
 	if ( ! m_allocedTree && ! m_posdbTable.allocTopTree() ) {
-		if ( ! g_errno ) { g_process.shutdownAbort(true); }
+		if ( ! g_errno ) gbshutdownLogicError();
 		//sendReply ( m_slot , this , NULL , 0 , 0 , true);
 		return true;
 	}
@@ -765,7 +765,7 @@ bool Msg39::intersectLists ( ) { // bool updateReadInfo ) {
 	if ( ! m_posdbTable.allocWhiteListTable() ) {
 		log("msg39: Had error allocating white list table: %s.",
 		    mstrerror(g_errno));
-		if ( ! g_errno ) { g_process.shutdownAbort(true); }
+		if ( ! g_errno ) gbshutdownLogicError();
 		//sendReply (m_slot,this,NULL,0,0,true);
 		return true; 
 	}
@@ -840,7 +840,8 @@ bool Msg39::intersectLists ( ) { // bool updateReadInfo ) {
 	// check tree
 	if ( m_tt.m_nodes == NULL ) {
 		log(LOG_LOGIC,"query: msg39: Badness."); 
-		g_process.shutdownAbort(true); }
+		gbshutdownLogicError();
+	}
 
 	m_posdbTable.intersectLists10_r ( );
 
@@ -898,7 +899,7 @@ bool Msg39::setClusterRecs ( ) {
 	m_clusterLevels = (char      *)p; p += numDocIds * 1;
 	m_clusterRecs   = (key_t     *)p; p += numDocIds * 12;
 	// sanity check
-	if ( p > m_buf + m_bufSize ) { g_process.shutdownAbort(true); }
+	if ( p > m_buf + m_bufSize ) gbshutdownLogicError();
 	
 	// loop over all results
 	int32_t nd = 0;
@@ -921,7 +922,7 @@ bool Msg39::setClusterRecs ( ) {
 	m_numClusterDocIds = nd;
 
 	// sanity check
-	if ( nd != m_tt.m_numUsedNodes ) { g_process.shutdownAbort(true); }
+	if ( nd != m_tt.m_numUsedNodes ) gbshutdownLogicError();
 
 	// . ask msg51 to get us the cluster recs
 	// . it should read it all from the local drives
@@ -981,7 +982,7 @@ bool Msg39::gotClusterRecs ( ) {
 		// get the docid
 		//int64_t  docId = getDocIdFromPtr(t->m_docIdPtr);
 		// sanity check
-		if ( t->m_docId != m_clusterDocIds[nd] ) {g_process.shutdownAbort(true);}
+		if ( t->m_docId != m_clusterDocIds[nd] ) gbshutdownLogicError();
 		// set it
 		t->m_clusterLevel = m_clusterLevels[nd];
 		t->m_clusterRec   = m_clusterRecs  [nd];
@@ -1133,7 +1134,7 @@ void Msg39::estimateHitsAndSendReply ( ) {
 		//char      *diptr = t->m_docIdPtr;
 		//int64_t  docId = getDocIdFromPtr(diptr);
 		// sanity check
-		if ( t->m_docId < 0 ) { g_process.shutdownAbort(true); }
+		if ( t->m_docId < 0 ) gbshutdownLogicError();
 		//add it to the reply
 		topDocIds         [docCount] = t->m_docId;
 		topScores         [docCount] = t->m_score;
