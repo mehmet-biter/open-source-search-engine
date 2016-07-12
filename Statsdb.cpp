@@ -1,6 +1,4 @@
 #include <errno.h>
-//#define X_DISPLAY_MISSING 1
-//#include <plotter.h>
 #include <math.h>
 #include "Conf.h"
 #include "PingServer.h"
@@ -9,6 +7,7 @@
 #include "hash.h"
 #include "Parms.h"
 #include "Process.h"
+#include "max_niceness.h"
 
 Statsdb g_statsdb;
 

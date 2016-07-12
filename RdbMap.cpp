@@ -2,9 +2,9 @@
 
 #include "RdbMap.h"
 #include "BigFile.h"
-#include "IndexList.h"
 #include "Process.h"
 #include "BitOperations.h"
+#include "Conf.h"
 
 RdbMap::RdbMap() {
 	m_numSegments = 0;

@@ -358,9 +358,6 @@ hash.o:
 fctypes.o:
 	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 
-IndexList.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
-
 Matches.o:
 	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 

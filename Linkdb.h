@@ -354,7 +354,6 @@ extern class Linkdb g_linkdb2;
 // . gets the LinkText, customized for our url, from each docId in that list
 // . merge them into a final LinkInfo class for your url
 
-#include "Msg2.h"      // for getting IndexLists from Indexdb
 #include "Msg20.h"     // for getting this url's LinkInfo from another cluster
 #include "SafeBuf.h"
 #include "HashTableX.h"

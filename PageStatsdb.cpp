@@ -1,14 +1,12 @@
 #include "gb-include.h"
 
-//#include <plotter.h>
-//#include <fstream.h>
 #include <math.h>
 
-//#include "CollectionRec.h"
 #include "Pages.h"
 #include "Statsdb.h"
 #include "Hostdb.h"
 #include "SafeBuf.h"
+#include "max_niceness.h"
 
 class StateStatsdb {
  public:

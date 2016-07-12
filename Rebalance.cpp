@@ -17,6 +17,7 @@
 #include "Spider.h"
 #include "Process.h"
 #include "Parms.h"
+#include "max_niceness.h"
 
 Rebalance g_rebalance;
 

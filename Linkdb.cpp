@@ -2962,7 +2962,6 @@ bool Msg25::addNote ( const char *note , int32_t noteLen , int64_t docId ) {
 #include "Words.h"
 #include "Titledb.h"
 #include "Msge0.h"
-#include "IndexList.h"
 #include "XmlDoc.h" // score8to32()
 
 // . after Msg25 calls LinkInfo::set() (was merge()) make it call
