@@ -156,23 +156,31 @@ bool UdpServer::init ( uint16_t port, UdpProtocol *proto,
 
 	// save this
 	m_isDns = isDns;
+
 	// we now alloc so we don't blow up stack
-	if ( m_slots ) { g_process.shutdownAbort(true); }
-	//if ( maxSlots > MAX_UDP_SLOTS ) maxSlots = MAX_UDP_SLOTS;
+	if ( m_slots ) {
+		g_process.shutdownAbort(true);
+	}
+
 	if ( maxSlots < 100           ) maxSlots = 100;
 	m_slots =(UdpSlot *)mmalloc(maxSlots*sizeof(UdpSlot),"UdpServer");
-	if ( ! m_slots ) return log("udp: Failed to allocate %" PRId32" bytes.",
-				    maxSlots*(int32_t)sizeof(UdpSlot));
+	if ( ! m_slots ) {
+		log("udp: Failed to allocate %" PRId32" bytes.", maxSlots*(int32_t)sizeof(UdpSlot));
+		return false;
+	}
+
 	log(LOG_DEBUG,"udp: Allocated %" PRId32" bytes for %" PRId32" sockets.",
 	     maxSlots*(int32_t)sizeof(UdpSlot),maxSlots);
 	m_maxSlots = maxSlots;
+
 	// dgram size
-	log(LOG_DEBUG,"udp: Using dgram size of %" PRId32" bytes.",
-	    (int32_t)DGRAM_SIZE);
+	log(LOG_DEBUG,"udp: Using dgram size of %" PRId32" bytes.", (int32_t)DGRAM_SIZE);
+
 	// set up linked list of available slots
 	m_head = &m_slots[0];
-	for ( int32_t i = 0 ; i < m_maxSlots - 1 ; i++ )
-		m_slots[i].m_next = &m_slots[i+1];
+	for ( int32_t i = 0 ; i < m_maxSlots - 1 ; i++ ) {
+		m_slots[ i ].m_next = &m_slots[ i + 1 ];
+	}
 	m_slots [ m_maxSlots - 1].m_next = NULL;
 	// the linked list of slots in use
 	m_head2 = NULL;
@@ -186,9 +194,13 @@ bool UdpServer::init ( uint16_t port, UdpProtocol *proto,
 	// alloc space for hash table
 	m_bufSize = m_numBuckets * sizeof(UdpSlot *);
 	m_buf     = (char *)mmalloc ( m_bufSize , "UdpServer" );
-	if ( ! m_buf ) return log("udp: Failed to allocate %" PRId32" bytes for "
-				  "table.",m_bufSize);
+	if ( ! m_buf ) {
+		log("udp: Failed to allocate %" PRId32" bytes for table.",m_bufSize);
+		return false;
+	}
+
 	m_ptrs = (UdpSlot **)m_buf;
+
 	// clear
 	memset ( m_ptrs , 0 , sizeof(UdpSlot *)*m_numBuckets );
 	log(LOG_DEBUG,"udp: Allocated %" PRId32" bytes for table.",m_bufSize);
@@ -204,8 +216,8 @@ bool UdpServer::init ( uint16_t port, UdpProtocol *proto,
 	memset ( m_handlers, 0 , sizeof(void(* )(UdpSlot *slot,int32_t)) * 128);
 	//memset ( m_droppedNiceness0 , 0 , sizeof(int32_t) * 128);
 	//memset ( m_droppedNiceness1 , 0 , sizeof(int32_t) * 128);
-        // save the port in case we need it later
-        m_port    = port;
+    // save the port in case we need it later
+    m_port    = port;
 	// no requests waiting yet
 	m_requestsInWaiting = 0;
 	// special count
@@ -224,34 +236,33 @@ bool UdpServer::init ( uint16_t port, UdpProtocol *proto,
 	// maintain a ptr to the protocol
 	m_proto   = proto;
 	// sanity test so we can peek at the rdbid in a msg0 request
-	if( ! m_isDns &&
-	    RDBIDOFFSET +1 > m_proto->getMaxPeekSize() ) {
-		g_process.shutdownAbort(true); }
-	
-        // set up our socket
-        m_sock  = socket ( AF_INET, SOCK_DGRAM , 0 );
-
-        if ( m_sock < 0 ) {
-		// copy errno to g_errno
-		g_errno = errno;
-		return log("udp: Failed to create socket: %s.",
-			   mstrerror(g_errno));
+	if( ! m_isDns && RDBIDOFFSET +1 > m_proto->getMaxPeekSize() ) {
+		g_process.shutdownAbort(true);
 	}
-        // sockaddr_in provides interface to sockaddr
-        struct sockaddr_in name; 
-        // reset it all just to be safe
-        memset(&name,0,sizeof(name));
-        name.sin_family      = AF_INET;
-        name.sin_addr.s_addr = INADDR_ANY;
-        name.sin_port        = htons(port);
-        // we want to re-use port it if we need to restart
-        int options ;
-	options = 1;
-        if ( setsockopt(m_sock, SOL_SOCKET, SO_REUSEADDR,
-			&options,sizeof(options)) < 0 ) {
+
+	// set up our socket
+	m_sock  = socket ( AF_INET, SOCK_DGRAM , 0 );
+
+	if ( m_sock < 0 ) {
 		// copy errno to g_errno
 		g_errno = errno;
-		return log("udp: Call to  setsockopt: %s.",mstrerror(g_errno));
+		log(LOG_WARN, "udp: Failed to create socket: %s.", mstrerror(g_errno));
+		return false;
+	}
+	// sockaddr_in provides interface to sockaddr
+	struct sockaddr_in name;
+	// reset it all just to be safe
+	memset(&name,0,sizeof(name));
+	name.sin_family      = AF_INET;
+	name.sin_addr.s_addr = INADDR_ANY;
+	name.sin_port        = htons(port);
+	// we want to re-use port it if we need to restart
+	int options  = 1;
+	if ( setsockopt(m_sock, SOL_SOCKET, SO_REUSEADDR, &options,sizeof(options)) < 0 ) {
+		// copy errno to g_errno
+		g_errno = errno;
+		log( LOG_WARN, "udp: Call to  setsockopt: %s.",mstrerror(g_errno));
+	    return false;
 	}
 	// only do this if not dns!!! some dns servers require it and will
 	// just drop the packets if it doesn't match, because this will make
@@ -259,42 +270,40 @@ bool UdpServer::init ( uint16_t port, UdpProtocol *proto,
 	// NO! we really need this now that we use roadrunner wirless which
 	// has bad udp packet checksums all the time!
 	// options = 1;
-	//if ( ! m_isDns && setsockopt(m_sock, SOL_SOCKET, SO_NO_CHECK, 
-	//		&options,sizeof(options)) < 0 ) {
+	//if ( ! m_isDns && setsockopt(m_sock, SOL_SOCKET, SO_NO_CHECK, &options,sizeof(options)) < 0 ) {
 	//	// copy errno to g_errno
 	//	g_errno = errno;
-	//	return log("udp: Call to  setsockopt: %s.",mstrerror(g_errno));
+	//	log("udp: Call to  setsockopt: %s.",mstrerror(g_errno));
+	//  return false;
 	//}
+
 	// the lower the RT signal we use, the higher our priority
 
 	// . before we start getting signals on this socket let's make sure
 	//   we have a handler registered with the Loop class
 	// . this makes m_sock non-blocking, too
 	// . use the original niceness for this
-	if ( ! g_loop.registerReadCallback ( m_sock,
-					     this,
-					     readPollWrapper_ass,
-					     0 )) //niceness ) )
+	if ( ! g_loop.registerReadCallback ( m_sock, this, readPollWrapper_ass, 0 )) {
 		return false;
+	}
+
 	// . also register for writing to the socket, when it's ready
 	// . use the original niceness for this, too
 	// . what does this really mean? shouldn't we only use it
 	//   when we try to write but the write buf is full so we have
 	//   to try again later when it becomes unfull?
-	// if ( ! g_loop.registerWriteCallback ( m_sock,
-	// 					     this,
-	// 					     sendPollWrapper_ass,
-	// 					     0 )) // niceness ) )
-	// 		return false;	
+	// if ( ! g_loop.registerWriteCallback ( m_sock, this, sendPollWrapper_ass, 0 ))
+	// 		return false;
+
 	// . also register for 30 ms tix (was 15ms)
-        //   but we aren't using tokens any more so I raised it
+	//   but we aren't using tokens any more so I raised it
 	// . it's low so we can claim any unclaimed tokens!
-        // . now resends are at 20ms... i'd go lower, but sigtimedqueue() only
-        //   has a timer resolution of 20ms, probably due to kernel time slicin
-	if ( ! g_loop.registerSleepCallback ( pollTime,
-					      this,
-					      timePollWrapper , 0 ))
-		return false;	
+	// . now resends are at 20ms... i'd go lower, but sigtimedqueue() only
+	//   has a timer resolution of 20ms, probably due to kernel time slicin
+	if ( ! g_loop.registerSleepCallback ( pollTime, this, timePollWrapper, 0 )) {
+		return false;
+	}
+
 	// . set the read buffer size to 256k for high priority socket
 	//   so our indexlists don't have to be re-transmitted so much in case
 	//   we delay a bit
@@ -307,28 +316,29 @@ bool UdpServer::init ( uint16_t port, UdpProtocol *proto,
 	// print the size of the buffers
 	enlargeUdpSocketBufffer(m_sock, "Receive", SO_RCVBUF, readBufSize);
 	enlargeUdpSocketBufffer(m_sock, "Send", SO_SNDBUF, writeBufSize);
-        // bind this name to the socket
-        if ( bind ( m_sock, (struct sockaddr *)(void*)&name, sizeof(name)) < 0) {
+
+	// bind this name to the socket
+	if ( bind ( m_sock, (struct sockaddr *)(void*)&name, sizeof(name)) < 0) {
 		// copy errno to g_errno
 		g_errno = errno;
-                //if ( g_errno == EINVAL ) { port++; goto again; }
-                close ( m_sock );
-                return log("udp: Failed to bind to port %hu: %s.",
-			     port,strerror(g_errno));
-        }
+	    //if ( g_errno == EINVAL ) { port++; goto again; }
+	    close ( m_sock );
+	    log( LOG_WARN, "udp: Failed to bind to port %hu: %s.", port,strerror(g_errno));
+	    return false;
+	}
 
 	// get ip address of socket
 	/*
 	struct ifreq ifr;
 	int fd = socket (AF_INET, SOCK_PACKET, htons (3050));
 	ioctl ( fd , SIOCGIFADDR, &ifr );
-	struct in_addr ip_source;	
-	gbmemcpy (&ip_source, &((struct sockaddr_in *) &ifr.ifr_ifru.ifru_addr)->sin_addr, sizeof (struct sockaddr_in)); 
-	log ("My IP address: %s\n", inet_ntoa (ip_source)); 
-        //struct sockaddr_in *me = (sockaddr_in *)&ifr.ifr_ifru.ifru_addr;
-	//struct in_addr *me = &((struct sockaddr_in *) 
+	struct in_addr ip_source;
+	gbmemcpy (&ip_source, &((struct sockaddr_in *) &ifr.ifr_ifru.ifru_addr)->sin_addr, sizeof (struct sockaddr_in));
+	log ("My IP address: %s\n", inet_ntoa (ip_source));
+	    //struct sockaddr_in *me = (sockaddr_in *)&ifr.ifr_ifru.ifru_addr;
+	//struct in_addr *me = &((struct sockaddr_in *)
 	//		       &ifr.ifr_ifru.ifru_addr)->sin_addr;
-	//log ("My IP address: %s", inet_ntoa (*me)); 
+	//log ("My IP address: %s", inet_ntoa (*me));
 	uint32_t myip1 = 0; //me->sin_addr.s_addr;
 	int32_t myip2 = g_hostdb.getHost ( g_hostdb.m_hostId )->m_ip;
 	int32_t myip3 = g_hostdb.getHost ( g_hostdb.m_hostId )->m_externalIp;
@@ -364,8 +374,7 @@ bool UdpServer::init ( uint16_t port, UdpProtocol *proto,
 	// log an innocent msg
 	//log ( 0, "udp: listening on port %hu with sd=%" PRId32" and "
 	//      , m_port, m_sock );
-	log ( LOG_INIT, "udp: Listening on UDP port %hu with fd=%i.", 
-	      m_port, m_sock );
+	log ( LOG_INIT, "udp: Listening on UDP port %hu with fd=%i.", m_port, m_sock );
 	// print dgram sizes
 	//log("udp:  using max dgram size of %" PRId32" bytes", DGRAM_SIZE );
 	return true;
@@ -446,20 +455,14 @@ bool UdpServer::sendRequest ( char     *msg          ,
 	// . should set g_errno on failure
 	UdpSlot *slot = getEmptyUdpSlot_ass ( key , false );
 	if ( ! slot ) {
-		return log("udp: All %" PRId32" slots are in use.",m_maxSlots);
+		log( LOG_WARN, "udp: All %" PRId32" slots are in use.",m_maxSlots);
+		return false;
 	}
-	// announce it
-	if ( g_conf.m_logDebugUdp )
-		log(LOG_DEBUG,
-		    "udp: sendrequest: ip2=%s port=%" PRId32" "
-		    "msgType=0x%hhx msgSize=%" PRId32" "
-		    "transId=%" PRId32" (niceness=%" PRId32") slot=%" PTRFMT".",
-		    iptoa(ip2),(int32_t)port,
-		    (unsigned char)msgType, 
-		    (int32_t)msgSize, 
-		    (int32_t)transId, 
-		    (int32_t)niceness ,
-		    (PTRTYPE)slot );
+
+	logDebug( g_conf.m_logDebugUdp, "udp: sendrequest: ip2=%s port=%" PRId32" msgType=0x%hhx msgSize=%" PRId32" "
+			  "transId=%" PRId32" (niceness=%" PRId32") slot=%" PTRFMT".",
+	          iptoa(ip2),(int32_t)port, (unsigned char)msgType, (int32_t)msgSize,
+	          (int32_t)transId, (int32_t)niceness , (PTRTYPE)slot );
 	
 	// . get time 
 	int64_t now = gettimeofdayInMillisecondsLocal();
@@ -484,8 +487,8 @@ bool UdpServer::sendRequest ( char     *msg          ,
 				replyBuf        , 
 				replyBufMaxSize ) ) {
 		freeUdpSlot_ass ( slot );
-		return log("udp: Failed to initialize udp socket for "
-			   "sending req: %s",mstrerror(g_errno));
+		log( LOG_WARN, "udp: Failed to initialize udp socket for sending req: %s",mstrerror(g_errno));
+		return false;
 	}
 
 	if ( slot->m_next3 || slot->m_prev3 ) { g_process.shutdownAbort(true); }
@@ -494,7 +497,8 @@ bool UdpServer::sendRequest ( char     *msg          ,
 	// keep sending dgrams until we have no more or hit ACK_WINDOW limit
 	if ( ! doSending_ass ( slot , true /*allow resends?*/ , now ) ) {
 		freeUdpSlot_ass ( slot );
-		return log("udp: Failed to send dgrams for udp socket.");
+		log(LOG_WARN, "udp: Failed to send dgrams for udp socket.");
+		return false;
 	}
 
 	// debug msg
@@ -552,9 +556,10 @@ void UdpServer::sendReply_ass ( char    *msg        ,
 		log(LOG_LOGIC,"udp: sendReply_ass: Callback is non-NULL.");
 		return;
 	}
-	if ( ! msg && msgSize > 0 )
-		log("udp: calling sendreply with null send buffer and "
-		    "positive size! will probably core.");
+	if ( ! msg && msgSize > 0 ) {
+		log( LOG_WARN, "udp: calling sendreply with null send buffer and positive size! will probably core." );
+	}
+
 	// record some statistics on how long these msg handlers are taking
 	int64_t now = gettimeofdayInMillisecondsLocal();
 	// m_queuedTime should have been set before m_handlers[] was called
@@ -588,10 +593,8 @@ void UdpServer::sendReply_ass ( char    *msg        ,
 
 	// discount this
 	if ( slot->m_convertedNiceness == 1 && slot->m_niceness == 0 ) {
-		// note it
-		if ( g_conf.m_logDebugUdp )
-			log("udp: unconverting slot=%" PTRFMT"",
-			    (PTRTYPE)slot);
+		logDebug(g_conf.m_logDebugUdp, "udp: unconverting slot=%" PTRFMT"", (PTRTYPE)slot);
+
 		// go back to niceness 1 for sending back, otherwise their
 		// the callback will be called with niceness 0!!
 		//slot->m_niceness = 1;
@@ -620,8 +623,7 @@ void UdpServer::sendReply_ass ( char    *msg        ,
 				 maxWait    ,
 				 NULL       , 
 				 0          ) ) {
-		log("udp: Failed to initialize udp socket for sending "
-		    "reply: %s", mstrerror(g_errno));
+		log( LOG_WARN, "udp: Failed to initialize udp socket for sending reply: %s", mstrerror(g_errno));
 		mfree ( alloc , allocSize , "UdpServer");
 		// was EBADENGINEER
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
@@ -635,11 +637,9 @@ void UdpServer::sendReply_ass ( char    *msg        ,
 	slot->m_isCallback2Hot = isCallback2Hot;
 	// set this
 	slot->m_maxResends = -1;
-	// log it
-	if ( g_conf.m_logDebugUdp )
-		log("udp: Sending reply transId=%" PRId32" msgType=0x%hhx "
-		     "(niceness=%" PRId32").", slot->m_transId,msgType,
-		    (int32_t)slot->m_niceness);
+
+	logDebug(g_conf.m_logDebugUdp, "udp: Sending reply transId=%" PRId32" msgType=0x%hhx (niceness=%" PRId32").",
+	         slot->m_transId,msgType, (int32_t)slot->m_niceness);
 	// keep sending dgrams until we have no more or hit ACK_WINDOW limit
 	if ( ! doSending_ass ( slot , true /*allow resends?*/, now) ) {
 		// . on error deal with that
@@ -647,7 +647,7 @@ void UdpServer::sendReply_ass ( char    *msg        ,
 		//   UdpSlot::sendDatagramOrAck()
 		//   which are usually errors from sendto() or something
 		// . TODO: we may have to destroy this slot ourselves now...
-		log("udp: Got error sending dgrams.");
+		log(LOG_WARN, "udp: Got error sending dgrams.");
 		// destroy it i guess
 		destroySlot ( slot );
 	}
@@ -735,10 +735,7 @@ bool UdpServer::doSending_ass (UdpSlot *slot,bool allowResends,int64_t now) {
 		m_needToSend = true;
 		// ok, now it should
 		if ( ! m_writeRegistered ) {
-			g_loop.registerWriteCallback ( m_sock,
-						       this,
-						       sendPollWrapper_ass,
-						       0 ); // niceness
+			g_loop.registerWriteCallback ( m_sock, this, sendPollWrapper_ass, 0 ); // niceness
 			m_writeRegistered = true;
 		}
 		goto done;
@@ -747,7 +744,9 @@ bool UdpServer::doSending_ass (UdpSlot *slot,bool allowResends,int64_t now) {
 	goto loop;
 	// come here to turn the interrupts back on if we turned them off
  done:
-	if ( status == -1 ) return false;
+	if ( status == -1 ) {
+		return false;
+	}
 	return true;
 }
 
@@ -784,9 +783,7 @@ bool UdpServer::sendPoll_ass ( bool allowResends , int64_t now ) {
 			// if nobody needs to send now unregister write callback
 			// so select() loop in Loop.cpp does not keep freaking out
 			if ( ! m_needToSend && m_writeRegistered ) {
-				g_loop.unregisterWriteCallback(m_sock,
-							       this,
-							       sendPollWrapper_ass);
+				g_loop.unregisterWriteCallback(m_sock, this, sendPollWrapper_ass);
 				m_writeRegistered = false;
 			}
 			return something;
@@ -869,8 +866,10 @@ UdpSlot *UdpServer::getBestSlotToSend ( int64_t now ) {
 bool UdpServer::registerHandler ( unsigned char msgType , 
 				  void (* handler)(UdpSlot *, int32_t niceness) ,
 				  bool isHandlerHot ){
-	if ( m_handlers[msgType] ) 
-	   return log(LOG_LOGIC,"udp: msgType %02x already in use.",msgType);
+	if ( m_handlers[msgType] ) {
+		log( LOG_LOGIC, "udp: msgType %02x already in use.", msgType );
+		return false;
+	}
 	// we now support types 0x00 to 0xff
 	//if ( msgType >= 0x40 ) {
 	//	log(LOG_LOGIC,"udp: msg type must be <= 0x3f.");
