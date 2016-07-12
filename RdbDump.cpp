@@ -145,10 +145,9 @@ bool RdbDump::set ( //char     *coll          ,
 		nr = m_buckets->getNumKeys();
 		structureName = "buckets";
 	}
-	// debug msg
-	log(LOG_INFO,"db: Dumping %" PRId32" recs from %s to files.",
-	    nr, structureName);
-	//    nr , m_file->getFilename() );
+
+	log(LOG_INFO,"db: Dumping %" PRId32" recs from %s to files.", nr, structureName);
+
 	// keep a total count for reporting when done
 	m_totalPosDumped = 0;
 	m_totalNegDumped = 0;

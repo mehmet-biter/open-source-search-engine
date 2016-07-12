@@ -29,7 +29,6 @@ void RdbMerge::reset () { m_isMerging = false; m_isSuspended = false; }
 //   there's too much contention from spider lookups on disk for the merge
 //   to finish in a decent amount of time and we end up getting too many files!
 bool RdbMerge::merge ( char     rdbId        ,
-		       //char    *coll         , //RdbBase *base         , 
 		       collnum_t collnum,
 		       BigFile *target       , 
 		       RdbMap  *targetMap    ,
@@ -62,7 +61,9 @@ bool RdbMerge::merge ( char     rdbId        ,
 	//	strcpy ( m_coll , coll );
 
 	m_collnum = collnum;
-	if ( rdb->m_isCollectionLess ) m_collnum = 0;
+	if ( rdb->m_isCollectionLess ) {
+		m_collnum = 0;
+	}
 
 	m_target          = target;
 	m_targetMap       = targetMap;
@@ -76,12 +77,12 @@ bool RdbMerge::merge ( char     rdbId        ,
 	m_maxTargetFileSize = maxTargetFileSize;
 	m_doneMerging     = false;
 	m_ks              = keySize;
+
 	// . set the key range we want to retrieve from the files
 	// . just get from the files, not tree (not cache?)
-	//m_startKey.setMin();
-	//m_endKey.setMax();
 	KEYMIN(m_startKey,m_ks);
 	KEYMAX(m_endKey,m_ks);
+
 	// if we're resuming a killed merge, set m_startKey to last
 	// key the map knows about.
 	// the dump will start dumping at the end of the targetMap's data file.
@@ -260,14 +261,24 @@ bool RdbMerge::resumeMerge ( ) {
 	// . this returns false if blocked, true otherwise
 	// . sets g_errno on error
 	// . we return true if it blocked
-	if ( ! getNextList ( ) ) return false;
+	if ( ! getNextList ( ) ) {
+		return false;
+	}
+
 	// if g_errno is out of memory then msg3 wasn't able to get the lists
 	// so we should sleep and retry...
 	// or if no thread slots were available...
 	if ( g_errno == ENOMEM || g_errno == ENOTHREADSLOTS ) { 
-		doSleep(); return false; }
+		doSleep();
+		return false;
+	}
+
 	// if list is empty or we had an error then we're done
-	if ( g_errno || m_doneMerging ) { doneMerging(); return true; }
+	if ( g_errno || m_doneMerging ) {
+		doneMerging();
+		return true;
+	}
+
 	// . otherwise dump the list we read to our target file
 	// . this returns false if blocked, true otherwise
 	if ( ! dumpList ( ) ) return false;

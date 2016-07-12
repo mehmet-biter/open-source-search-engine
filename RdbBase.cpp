@@ -642,10 +642,12 @@ int32_t RdbBase::addFile ( int32_t id, bool isNew, int32_t mergeNum, int32_t id2
 
 		// this returns false and sets g_errno on error
 		if ( ! m->generateMap ( f ) ) {
-			log("db: Map generation failed.");
-			log("db: Moving .dat and .map file to trash dir");
+			log( LOG_ERROR, "db: Map generation failed.");
+			log( LOG_ERROR, "db: Moving .dat and .map file to trash dir");
+
 			SafeBuf tmp;
 			tmp.safePrintf("%s",f->getFilename());
+
 			// take off .dat and make it * so we can move map file
 			int32_t len = tmp.getLength();
 			char *str = tmp.getBufStart();
@@ -653,13 +655,13 @@ int32_t RdbBase::addFile ( int32_t id, bool isNew, int32_t mergeNum, int32_t id2
 			str[len-2] = '\0';
 			SafeBuf cmd;
 			cmd.safePrintf("mv %s/%s %s/trash/", m_dir.getDir(), str, g_hostdb.m_dir);
-			log("db: %s",cmd.getBufStart() );
+			log( LOG_INFO, "db: %s", cmd.getBufStart() );
 			gbsystem ( cmd.getBufStart() );
 
 			gbshutdownCorrupted();
 		}
 
-		log("db: Map generation succeeded.");
+		log( LOG_INFO, "db: Map generation succeeded." );
 
 		// . save it
 		// . if we're an even #'d file a merge will follow
@@ -1953,9 +1955,9 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog , 
 	// can pre-alloc it's lists in it's s_msg3 class
 	//		       g_conf.m_mergeMaxBufSize ) ) return ;
 	// bitch on g_errno then clear it
-	if ( g_errno ) 
-		log("merge: Had error getting merge token for %s: %s.",
-		    m_dbname,mstrerror(g_errno));
+	if ( g_errno ) {
+		log( LOG_WARN, "merge: Had error getting merge token for %s: %s.", m_dbname, mstrerror( g_errno ) );
+	}
 	g_errno = 0;
 
 	// try again
@@ -2194,11 +2196,8 @@ bool RdbBase::verifyFileSharding ( ) {
 	char rdbId = m_rdb->m_rdbId;
 	if ( rdbId == RDB_TITLEDB ) minRecSizes = 640000;
 	
-	log ( "db: Verifying shard parity for %s of %" PRId32" bytes "
-	      "for coll %s (collnum=%" PRId32")...",
-	      m_dbname , 
-	      minRecSizes,
-	      m_coll , (int32_t)m_collnum );
+	log ( LOG_DEBUG, "db: Verifying shard parity for %s of %" PRId32" bytes for coll %s (collnum=%" PRId32")...",
+	      m_dbname , minRecSizes, m_coll , (int32_t)m_collnum );
 
 	if ( ! msg5.getList ( m_rdb->m_rdbId, //RDB_POSDB   ,
 			      m_collnum       ,
@@ -2231,8 +2230,7 @@ bool RdbBase::verifyFileSharding ( ) {
 	int32_t printed = 0;
 	char k[MAX_KEY_BYTES];
 
-	for ( list.resetListPtr() ; ! list.isExhausted() ;
-	      list.skipCurrentRecord() ) {
+	for ( list.resetListPtr() ; ! list.isExhausted() ; list.skipCurrentRecord() ) {
 		//key144_t k;
 		list.getCurrentKey(k);
 
@@ -2253,8 +2251,7 @@ bool RdbBase::verifyFileSharding ( ) {
 		if ( ++printed > 100 ) continue;
 
 		// avoid log spam... comment this out. nah print out 1st 100.
-		log ( "db: Found bad key in list belongs to shard %" PRId32,
-		      shardNum);
+		log ( "db: Found bad key in list belongs to shard %" PRId32, shardNum);
 	}
 
 	g_jobScheduler.allow_new_jobs();
@@ -2265,8 +2262,8 @@ bool RdbBase::verifyFileSharding ( ) {
 
 	// tally it up
 	g_rebalance.m_numForeignRecs += count - got;
-	log ("db: Out of first %" PRId32" records in %s for %s.%" PRId32", only %" PRId32" belong "
-	     "to our group.",count,m_dbname,m_coll,(int32_t)m_collnum,got);
+	log ( LOG_INFO, "db: Out of first %" PRId32" records in %s for %s.%" PRId32", only %" PRId32" belong "
+	      "to our group.",count,m_dbname,m_coll,(int32_t)m_collnum,got);
 
 	//log ( "db: Exiting due to Posdb inconsistency." );
 	return true;//g_conf.m_bypassValidation;
