@@ -90,8 +90,12 @@ bool RdbBase::init ( char  *dir            ,
  top:
 	// reset all
 	reset();
+
 	// sanity
-	if ( ! dir ) { g_process.shutdownAbort(true); }
+	if ( ! dir ) {
+		g_process.shutdownAbort(true);
+	}
+
 	// set all our contained classes
 	//m_dir.set ( dir );
 	// set all our contained classes
@@ -101,15 +105,14 @@ bool RdbBase::init ( char  *dir            ,
 	sprintf ( tmp , "%scoll.%s.%" PRId32 , dir , coll , (int32_t)collnum );
 
 	// logDebugAdmin
-	log(LOG_DEBUG,"db: "
-	    "adding new base for dir=%s coll=%s collnum=%" PRId32" db=%s",
+	log(LOG_DEBUG,"db: adding new base for dir=%s coll=%s collnum=%" PRId32" db=%s",
 	    dir,coll,(int32_t)collnum,dbname);
 
 	// make a special subdir to store the map and data files in if
 	// the db is not associated with a collection. /statsdb etc.
 	if ( rdb->m_isCollectionLess ) {
 		if ( collnum != (collnum_t) 0 ) {
-			log("db: collnum not zero for catdb.");
+			log( LOG_ERROR, "db: collnum not zero for catdb.");
 			g_process.shutdownAbort(true);
 		}
 
@@ -348,40 +351,61 @@ bool RdbBase::setFiles ( ) {
 			log("gb: bad title filename of %s. Halting.",filename);
 			g_errno = EBADENGINEER;
 			return false;
+		} else if ( m_isTitledb ) {
+			id2 = atol2 ( s + 1 , 3 );
+			s += 4;
 		}
-		else if ( m_isTitledb ) { id2 = atol2 ( s + 1 , 3 ); s += 4; }
+
 		// don't add if already in there
 		int32_t i ;
-		for ( i = 0 ; i < m_numFiles ; i++ ) 
-			if ( m_fileIds[i] >= id ) break;
-		if ( i < m_numFiles && m_fileIds[i] == id ) continue;
+		for ( i = 0 ; i < m_numFiles ; i++ ) {
+			if ( m_fileIds[ i ] >= id ) {
+				break;
+			}
+		}
+
+		if ( i < m_numFiles && m_fileIds[i] == id ) {
+			continue;
+		}
+
 		// assume no mergNum
 		int32_t mergeNum = -1;
+
 		// if file id is even, we need the # of files being merged
 		// otherwise, if it is odd, we do not
-		if ( (id & 0x01) == 0x01 ) goto addIt;
-		if ( *s != '.' ) continue; 
-		s++;
-		if ( ! isdigit(*(s+0)) ) continue;
-		if ( ! isdigit(*(s+1)) ) continue;
-		if ( ! isdigit(*(s+2)) ) continue;
-		mergeNum = atol2 ( s , 3 );
- addIt:
+		if ( (id & 0x01) == 0x00 ) {
+			if ( *s != '.' ) {
+				continue;
+			}
+			s++;
+
+			if ( !isdigit(*(s+0)) || !isdigit(*(s+1)) || !isdigit(*(s+2)) ) {
+				continue;
+			}
+
+			mergeNum = atol2 ( s , 3 );
+		}
 
 		// sometimes an unlink() does not complete properly and we
 		// end up with remnant files that are 0 bytes. so let's skip
 		// those guys.
 		File ff;
 		ff.set ( m_dir.getDir() , filename );
+
 		// does this file exist?
 		int32_t exists = ff.doesExist() ;
+
 		// core if does not exist (sanity check)
 		if ( exists == 0 ) {
 			log( LOG_WARN, "db: File %s does not exist.", filename );
 			return false;
 		}
+
 		// bail on error calling ff.doesExist()
-		if ( exists == -1 ) return false;
+		if ( exists == -1 ) {
+			return false;
+		}
+
 		// skip if 0 bytes or had error calling ff.getFileSize()
 		if ( ff.getFileSize() == 0 ) {
 			// actually, we have to move to trash because
@@ -412,7 +436,7 @@ bool RdbBase::setFiles ( ) {
 
 	// everyone should start with file 0001.dat or 0000.dat
 	if ( m_numFiles > 0 && m_fileIds[0] > 1 && m_rdb->m_rdbId == RDB_SPIDERDB ) {
-		log("db: missing file id 0001.dat for %s in coll %s. "
+		log( LOG_WARN, "db: missing file id 0001.dat for %s in coll %s. "
 		    "Fix this or it'll core later. Just rename the next file "
 		    "in line to 0001.dat/map. We probably cored at a "
 		    "really bad time during the end of a merge process.",
