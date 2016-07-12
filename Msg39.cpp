@@ -122,21 +122,21 @@ void Msg39::reset2() {
 // . sometimes sets g_errno on error
 void Msg39::handleRequest39(UdpSlot *slot, int32_t netnice) {
 	// use Msg39 to get the lists and intersect them
-	Msg39 *that = new(std::nothrow) Msg39;
-	if(!that) {
+	try {
+		Msg39 *that = new Msg39;
+		//register msg39 memory
+		mnew ( that, sizeof(Msg39) , "Msg39" );
+		// clear it
+		g_errno = 0;
+		// . get the resulting docIds, usually blocks
+		// . sets g_errno on error
+		that->getDocIds ( slot ) ;
+	} catch(std::bad_alloc) {
 		g_errno = ENOMEM;
 		log("msg39: new(%" PRId32"): %s", 
 		    (int32_t)sizeof(Msg39),mstrerror(g_errno));
 		sendReply ( slot , NULL , NULL , 0 , 0 ,true);
-		return;
 	}
-	//register msg39 memory
-	mnew ( that, sizeof(Msg39) , "Msg39" );
-	// clear it
-	g_errno = 0;
-	// . get the resulting docIds, usually blocks
-	// . sets g_errno on error
-	that->getDocIds ( slot ) ;
 }
 
 // this must always be called sometime AFTER handleRequest() is called
