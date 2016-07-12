@@ -593,7 +593,8 @@ int32_t RdbBase::addFile ( int32_t id, bool isNew, int32_t mergeNum, int32_t id2
 		      ff->getFilename() ,
 		      (int64_t)ff->getFileSize(),
 		      (int64_t)MAX_PART_SIZE);
-		exit(0);
+
+		gbshutdownCorrupted();
 	}
 
 	// set the map file's  filename
@@ -630,7 +631,8 @@ int32_t RdbBase::addFile ( int32_t id, bool isNew, int32_t mergeNum, int32_t id2
 			cmd.safePrintf("mv %s/%s %s/trash/", m_dir.getDir(), str, g_hostdb.m_dir);
 			log("db: %s",cmd.getBufStart() );
 			gbsystem ( cmd.getBufStart() );
-			exit(0);
+
+			gbshutdownCorrupted();
 		}
 
 		log("db: Map generation succeeded.");
@@ -713,7 +715,8 @@ int32_t RdbBase::addFile ( int32_t id, bool isNew, int32_t mergeNum, int32_t id2
 		log("db: Cannot start in read only mode with an incomplete "
 		    "merge, because we might be a temporary cluster and "
 		    "the merge might be active.");
-		exit(-1);
+
+		gbshutdownCorrupted();
 	}
 
 	// inc # of files we have
