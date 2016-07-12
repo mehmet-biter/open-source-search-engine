@@ -1374,7 +1374,6 @@ bool Rdb::dumpCollLoop ( ) {
 	if ( ! m_dump.set (  base->m_collnum   ,
 			     base->m_files[m_fn]  ,
 			     id2            , // to set tfndb recs for titledb
-			     m_isTitledb,
 			     buckets       ,
 			     tree          ,
 			     base->m_maps[m_fn], // RdbMap

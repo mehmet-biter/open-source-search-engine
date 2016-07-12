@@ -188,8 +188,6 @@ bool RdbMerge::gotLock ( ) {
 	m_dump.set ( m_collnum          ,
 		     m_target           ,
 		     m_id2              ,
-		     //m_startFileNum - 1 , // merge fileNum in Rdb::m_files[]
-		     (m_rdbId == RDB_TITLEDB||m_rdbId== RDB2_TITLEDB2) ,
 		     NULL         , // buckets to dump is NULL, we call dumpList
 		     NULL         , // tree to dump is NULL, we call dumpList
 		     m_targetMap  ,

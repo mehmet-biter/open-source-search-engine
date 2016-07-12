@@ -34,7 +34,6 @@ class RdbDump {
 		   collnum_t collnum ,
 		    BigFile   *file          ,
 		    int32_t       id2           , // in Rdb::m_files[] array
-		    bool       isTitledb     , // are we dumping TitleRecs?
 		    RdbBuckets *buckets      , // optional buckets to dump
 		    RdbTree   *tree          , // optional tree to dump
 		    RdbMap    *map           ,
@@ -158,9 +157,6 @@ class RdbDump {
 	int64_t m_t1;
 	int32_t      m_numPosRecs;
 	int32_t      m_numNegRecs;
-
-	// are we dumping a list of TitleRecs?
-	bool m_isTitledb;
 
 	// for setting m_rdb->m_needsSave after deleting list from tree
 	class Rdb *m_rdb;

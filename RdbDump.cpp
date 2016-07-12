@@ -12,11 +12,10 @@ void doneReadingForVerifyWrapper ( void *state ) ;
 
 // . return false if blocked, true otherwise
 // . sets g_errno on error
-bool RdbDump::set ( //char     *coll          ,
+bool RdbDump::set (
 		   collnum_t collnum ,
 		    BigFile  *file          ,
 		    int32_t      id2           , // in Rdb::m_files[] array
-		    bool      isTitledb     ,
 		    RdbBuckets *buckets     , // optional buckets to dump
 		    RdbTree  *tree          , // optional tree to dump
 		    RdbMap   *map           ,
@@ -54,7 +53,6 @@ bool RdbDump::set ( //char     *coll          ,
 
 	m_file          = file;
 	m_id2           = id2;
-	m_isTitledb     = isTitledb;
 	m_buckets       = buckets;
 	m_tree          = tree;
 	m_map           = map;
