@@ -1034,9 +1034,9 @@ void RdbBase::doneWrapper4 ( ) {
 	}
 	if ( wait ) {
 		log("db: waiting for read thread to exit on unlinked file");
-		if (!g_loop.registerSleepCallback(100,this,
-						  checkThreadsAgainWrapper)){
-			g_process.shutdownAbort(true); }
+		if ( !g_loop.registerSleepCallback( 100, this, checkThreadsAgainWrapper ) ) {
+			g_process.shutdownAbort(true);
+		}
 		return;
 	}
 
@@ -1278,14 +1278,14 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog , 
 
 	// always obey the override
 	if ( minToMergeOverride >= 2 ) {
-		log("merge: Overriding min files to merge of %" PRId32" with %" PRId32, m_minToMerge, minToMergeOverride );
+		log( LOG_INFO, "merge: Overriding min files to merge of %" PRId32" with %" PRId32, m_minToMerge, minToMergeOverride );
 		m_minToMerge = minToMergeOverride;
 		logTrace( g_conf.m_logTraceRdbBase, "Overriding. m_minToMerge: %" PRId32, m_minToMerge );
 	}
 
 	// if still -1 that is a problem
 	if ( m_minToMerge <= 0 ) {
-		log("Got bad minToMerge of %" PRId32" for %s. Set its default to "
+		log( LOG_WARN, "Got bad minToMerge of %" PRId32" for %s. Set its default to "
 		    "something besides -1 in Parms.cpp or add it to "
 		    "CollectionRec.h.",
 		    m_minToMerge,m_dbname);
@@ -1294,10 +1294,11 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog , 
 	}
 	// mdw: comment this out to reduce log spam when we have 800 colls!
 	// print it
-	if ( doLog ) 
-		log(LOG_INFO,"merge: Attempting to merge %" PRId32" %s files on disk."
-		    " %" PRId32" files needed to trigger a merge.",
-		    numFiles,m_dbname,m_minToMerge);
+	if ( doLog ) {
+		log( LOG_INFO, "merge: Attempting to merge %" PRId32" %s files on disk."
+				     " %" PRId32" files needed to trigger a merge.",
+		     numFiles, m_dbname, m_minToMerge );
+	}
 	
 	// . even though another merge may be going on, we can speed it up
 	//   by entering urgent merge mode. this will prefer the merge disk
