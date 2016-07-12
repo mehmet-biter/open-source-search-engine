@@ -2127,13 +2127,11 @@ int main2 ( int argc , char *argv[] ) {
 		CollectionRec *cr = g_collectiondb.m_recs[i];
 		if ( ! cr ) continue;
 		if ( ++pcount >= 100 ) {
-			log("rdb: not checking directory permission for "
-			    "more than first 100 collections to save time.");
+			log("rdb: not checking directory permission for more than first 100 collections to save time.");
 			break;
 		}
 		char tt[1024 + MAX_COLL_LEN ];
-		sprintf ( tt , "%scoll.%s.%" PRId32,
-			  g_hostdb.m_dir, cr->m_coll , (int32_t)cr->m_collnum );
+		sprintf ( tt , "%scoll.%s.%" PRId32, g_hostdb.m_dir, cr->m_coll , (int32_t)cr->m_collnum );
 		checkDirPerms ( tt ) ;
 	}
 
@@ -2211,8 +2209,7 @@ int main2 ( int argc , char *argv[] ) {
 	// . then webserver
 	// . server should listen to a socket and register with g_loop
 	if ( ! g_httpServer.init( h9->m_httpPort, h9->m_httpsPort ) ) {
-		log("db: HttpServer init failed. Another gb already "
-		    "running?" ); 
+		log("db: HttpServer init failed. Another gb already running?" );
 		// this is dangerous!!! do not do the shutdown thing
 		return 1;
 	}

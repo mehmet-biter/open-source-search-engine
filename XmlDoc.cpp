@@ -3664,8 +3664,12 @@ char XmlDoc::computeLangId ( Sections *sections , Words *words, char *lv ) {
 	// skip langUnknown by starting at 1, langEnglish
 	for ( int32_t i = 1 ; i < MAX_LANGUAGES ; i++ ) {
 		// skip translingual
-		if ( i == langTranslingual ) continue;
-		if ( counts[i] <= max ) continue;
+		if ( i == langTranslingual ) {
+			continue;
+		}
+		if ( counts[i] <= max ) {
+			continue;
+		}
 		max = counts[i];
 		maxi = i;
 	}
