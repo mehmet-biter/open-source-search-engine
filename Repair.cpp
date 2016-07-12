@@ -1507,58 +1507,6 @@ bool Repair::injectTitleRec ( ) {
 	return true;
 }
 
-/*
-bool Repair::addToTfndb2 ( ) {
-
-	// only do this for adding recs to tfndb
-	if ( ! m_rebuildTfndb ) return true;
-	// if doing a full rebuild, skip this, already done
-	//if ( m_fullRebuild ) return true;
-
-	// . this is broken!!! figure out why the rebuild doesn't work...
-	// . seems like the tfns are off...
-	//g_process.shutdownAbort(true);
-
-	QUICKPOLL(MAX_NICENESS);
-
-	// sanity check, must have a valid m_ext
-	//if ( m_ext == -1 ) { g_process.shutdownAbort(true); }
-	if ( ! m_uh48 ) { g_process.shutdownAbort(true); }
-
-	// m_docId should already have been set!
-	m_tfndbKey = g_tfndb.makeKey ( m_docId    , // tr->getDocId()
-				       m_uh48 ,
-				       m_tfn      , 
-				       m_isDelete );// isDelete?
-        // set the list from the buffer
-        m_addlist.set ( (char *)&m_tfndbKey    ,
-			sizeof(key_t) ,
-			(char *)&m_tfndbKey    ,
-			sizeof(key_t) ,
-			(char *)&m_tfndbKey    , // start key
-			(char *)&m_tfndbKey    , // end   key
-			0             , // fixedDataSize
-			false         , // ownData?
-			false         , // use half keys? not when adding.
-			12            );// tfndb key size
-
-        // this returns false if it blocks
-        g_errno = 0;
-	// . keep these local, because the tfn in the tfndb rec
-	//   make not be the same between twins!!
-	// . returns true on success, so go on to next stage
-	if ( g_tfndb2.getRdb()->addList(m_collnum,&m_addlist,
-					MAX_NICENESS) )
-		return true;
-	// keep retrying, might be OOM, auto-saving, etc.
-	m_stage = STAGE_TITLEDB_4 ;
-	// sleep 1 second and retry
-	m_isRetrying = true;
-	// must need to dump, so wait for that!
-	return log("repair: addToTfndb2: %s",mstrerror(g_errno));
-}
-*/
-
 // . returns false if fails cuz buffer cannot be grown (oom)
 // . this is called by Parms.cpp
 bool Repair::printRepairStatus ( SafeBuf *sb , int32_t fromIp ) {

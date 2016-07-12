@@ -2325,32 +2325,6 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 		// all done
 		return true;
 	}
-	// . rollback the add to tfndb if the titledb add failed
-	// . MDW: likewise, this is not needed
-	/*
-	if ( m_rdbId == RDB_TITLEDB ) {
-		// get the tree directly
-		RdbTree *tree = g_tfndb.getRdb()->getTree();
-		// remove the key we added
-		int32_t n = tree->deleteNode ( collnum, (char *)&uk , true ) ;
-		// sanity check
-		if ( n < 0 ) {
-			log("db: Did not find tfndb key to rollback.");
-			g_process.shutdownAbort(true);
-		}
-		// did we have an "oppKey"?
-		if ( s_tfndbHadOppKey ) {
-			// add it back
-			int32_t n = tree->addNode(collnum,(char *)&s_tfndbOppKey);
-			// see if this can ever fail, i do not see why it
-			// would since we deleted it above
-			if ( n < 0 ) {
-				log("db: Failed to re-add tfndb key.");
-				g_process.shutdownAbort(true);
-			}
-		}
-	}
-	*/
 
 	// enhance the error message
 	const char *ss ="";

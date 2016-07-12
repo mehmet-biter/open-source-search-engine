@@ -368,7 +368,7 @@ bool RdbBase::setFiles ( ) {
 			continue;
 		}
 
-		// assume no mergNum
+		// assume no mergeNum
 		int32_t mergeNum = -1;
 
 		// if file id is even, we need the # of files being merged
@@ -1644,10 +1644,6 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog , 
 	//     // another was merging... so do this anyway...
 	//     g_rebalance.m_collnum == m_collnum )
 	//	minToMerge = 2;
-
-
-	//if (m_rdb==g_tfndb.getRdb()&& g_merge.isMerging() && minToMerge <=2 )
-	//	minToMerge = 3;
 
 	// look at this merge:
 	// indexdb0003.dat.part1

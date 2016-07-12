@@ -168,7 +168,6 @@ int main ( int argc , char *argv[] ) {
 	int64_t pd = g_titledb.getProbableDocId(&u);
 	printf("pdocid: %"UINT64"\n", pd );
 	printf("dom8: 0x%"XINT32"\n", (int32_t)g_titledb.getDomHash8FromDocId(pd) );
-	//printf("ext23: 0x%"XINT32"\n",g_tfndb.makeExt(&u));
 	if ( u.isLinkLoop() ) printf("islinkloop: yes\n");
 	else                  printf("islinkloop: no\n");
 	int64_t hh64 = u.getHostHash64();
