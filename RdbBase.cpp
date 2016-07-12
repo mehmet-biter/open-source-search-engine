@@ -581,7 +581,10 @@ int32_t RdbBase::addFile ( int32_t id, bool isNew, int32_t mergeNum, int32_t id2
 			continue;
 		}
 
-		if ( ff->getFileSize() == MAX_PART_SIZE ) continue;
+		if ( ff->getFileSize() == MAX_PART_SIZE ) {
+			continue;
+		}
+
 		log ( LOG_WARN, "db: File %s %s has length %" PRId64", but it should be %" PRId64". "
 		      "You should move it to a temporary directory "
 		      "and restart. It probably happened when the power went "
@@ -609,8 +612,8 @@ int32_t RdbBase::addFile ( int32_t id, bool isNew, int32_t mergeNum, int32_t id2
 		// want to write any data
 		if ( g_dumpMode ) return -1;
 
-		log("db: Attempting to generate map file for data file %s* of %" PRId64" bytes. May take a while.",
-		    f->getFilename(), f->getFileSize() );
+		log( LOG_INFO, "db: Attempting to generate map file for data file %s* of %" PRId64" bytes. May take a while.",
+		     f->getFilename(), f->getFileSize() );
 
 		// this returns false and sets g_errno on error
 		if ( ! m->generateMap ( f ) ) {
@@ -658,20 +661,29 @@ int32_t RdbBase::addFile ( int32_t id, bool isNew, int32_t mergeNum, int32_t id2
 
 	// open this big data file for reading only
 	if ( ! isNew ) {
-		if ( mergeNum < 0 ) 
-			f->open ( O_RDONLY | O_NONBLOCK | O_ASYNC , NULL );
-		// otherwise, merge will have to be resumed so this file
-		// should be writable
-		else
-			f->open ( O_RDWR | O_NONBLOCK | O_ASYNC , NULL );//pc
+		if ( mergeNum < 0 ) {
+			f->open( O_RDONLY | O_NONBLOCK | O_ASYNC, NULL );
+		} else {
+			// otherwise, merge will have to be resumed so this file
+			// should be writable
+			f->open( O_RDWR | O_NONBLOCK | O_ASYNC, NULL );
+		}
 	}
 
 	// find the position to add so we maintain order by fileId
 	int32_t i ;
-	for ( i = 0 ; i < m_numFiles ; i++ ) if ( m_fileIds[i] >= id ) break;
+	for ( i = 0 ; i < m_numFiles ; i++ ) {
+		if ( m_fileIds[i] >= id ) {
+			break;
+		}
+	}
+
 	// cannot collide here
 	if ( i < m_numFiles && m_fileIds[i] == id ) { 
-		log(LOG_LOGIC,"db: addFile: fileId collided."); return -1; }
+		log(LOG_LOGIC,"db: addFile: fileId collided.");
+		return -1;
+	}
+
 	// shift everyone up if we need to fit this file in the middle somewher
 	if ( i < m_numFiles ) {
 		int nn = m_numFiles-i;
