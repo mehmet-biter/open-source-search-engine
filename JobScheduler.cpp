@@ -378,6 +378,8 @@ bool JobScheduler_impl::submit(start_routine_t   start_routine,
                                uint64_t          start_deadline)
 {
 	JobEntry e;
+	
+	memset(&e, 0, sizeof(JobEntry));
 	e.start_routine = start_routine;
 	e.finish_callback = finish_callback;
 	e.state = state;
@@ -397,6 +399,8 @@ bool JobScheduler_impl::submit_io(start_routine_t   start_routine,
                                   uint64_t          start_deadline)
 {
 	JobEntry e;
+	
+	memset(&e, 0, sizeof(JobEntry));
 	e.start_routine = start_routine;
 	e.finish_callback = finish_callback;
 	e.state = fstate;

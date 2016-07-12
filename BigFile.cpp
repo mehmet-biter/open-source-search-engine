@@ -966,6 +966,12 @@ void doneWrapper ( void *state, job_exit_t exit_type ) {
 
 	FileState *fstate = (FileState *)state;
 
+	if( exit_type != job_exit_normal ) {
+		log(LOG_INFO, "disk: Read canceled due to JobScheduler exit type %d.", (int)exit_type);
+		return;
+	}
+
+
 	// any writes we did in the disk read thread were done to the
 	// "tmp" FileState class on the stack, so now we have the real deal
 	// we can update all this junk.
