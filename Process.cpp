@@ -293,16 +293,19 @@ bool Process::init ( ) {
 	m_calledSave = false;
 
 	// heartbeat check
-	if ( ! g_loop.registerSleepCallback(100,NULL,heartbeatWrapper,0))
+	if ( ! g_loop.registerSleepCallback(100,NULL,heartbeatWrapper,0)) {
 		return false;
+	}
 
 	// get first snapshot of load average...
 	//update_load_average(gettimeofdayInMillisecondsLocal());
+
 	// . continually call this once per second
 	// . once every half second now so that autosaves are closer together
 	//   in time between all hosts
-	if ( ! g_loop.registerSleepCallback(500,NULL,processSleepWrapper))
+	if ( ! g_loop.registerSleepCallback(500,NULL,processSleepWrapper)) {
 		return false;
+	}
 
 	// . hard drive temperature
 	// . now that we use intel ssds that do not support smart, ignore this
@@ -466,17 +469,17 @@ void heartbeatWrapper ( int fd , void *state ) {
 	// . log when we've gone 100+ ms over our scheduled beat
 	// . this is a sign things are jammed up
 	int64_t elapsed = now - s_last;
-	if ( elapsed > 200 ) 
+	if ( elapsed > 200 ) {
 		// now we print the # of elapsed alarms. that way we will
 		// know if the alarms were going off or not...
 		// this happens if the rt sig queue is overflowed.
 		// check the "cat /proc/<pid>/status | grep SigQ" output
 		// to see if its overflowed. hopefully i will fix this by
 		// queue the signals myself in Loop.cpp.
-		log("db: missed calling niceness 0 heartbeatWrapper "
-		    "function by %" PRId64" ms. Either you need a quickpoll "
-		    "somewhere or a niceness 0 function is taking too long. "
-		    , elapsed-100);
+		log( LOG_WARN, "db: missed calling niceness 0 heartbeatWrapper "
+				"function by %" PRId64" ms. Either you need a quickpoll "
+				"somewhere or a niceness 0 function is taking too long. ", elapsed - 100 );
+	}
 	s_last = now;
 
 	// save this time so the sig alarm handler can see how long
@@ -548,8 +551,8 @@ void processSleepWrapper ( int fd , void *state ) {
 	if ( g_repairMode == 7 ) return;
 
 	// autosave? override this if power is off, we need to save the data!
-	//if (g_conf.m_autoSaveFrequency <= 0 && g_process.m_powerIsOn) return;
 	if ( g_conf.m_autoSaveFrequency <= 0 ) return;
+
 	// never if in read only mode
 	if ( g_conf.m_readOnlyMode ) return;
 
@@ -562,10 +565,13 @@ void processSleepWrapper ( int fd , void *state ) {
 
 	// get time the day started
 	int32_t now;
-	if ( g_hostdb.m_myHost->m_isProxy ) now = getTimeLocal();
-	else {
+	if ( g_hostdb.m_myHost->m_isProxy ) {
+		now = getTimeLocal();
+	} else {
 		// need to be in sync with host #0's clock
-		if ( ! isClockInSync() ) return;
+		if ( ! isClockInSync() ) {
+			return;
+		}
 		// that way autosaves all happen at about the same time
 		now = getTimeGlobal();
 	}
