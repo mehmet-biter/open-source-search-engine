@@ -13331,6 +13331,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	}
 
 	// why call this way down here? it ends up downloading the doc!
+	// @todo: BR: Eh, what? ^^^
 	int32_t *indexCode = getIndexCode();
 	if ( ! indexCode || indexCode ==(void *)-1)
 	{
