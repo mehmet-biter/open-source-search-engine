@@ -761,12 +761,17 @@ int32_t htmlDecode( char *dst, const char *src, int32_t srcLen, bool doSpecial, 
 			// store decoded entity char into dst[j]
 			uint32_t codepoint[2];
 			int32_t codepointCount;
+			int32_t utf8Len=0;
 
 			// "skip" is how many bytes the entites was in "src"
-			int32_t skip = getEntity_a( src, srcEnd - src, codepoint, &codepointCount );
-	
+			int32_t skip = getEntity_a( src, srcEnd - src, codepoint, &codepointCount, &utf8Len );
+
 			// If the entity is invalid/unknown then store it as text
-			if ( skip == 0 ) {
+
+			//@todo BR: Temporary fix for named html entities where the utf8 length is 
+			// longer than the html entity name. This causes problems for XmlDoc that
+			// calls this function with the same buffer as input and output
+			if ( skip == 0 || utf8Len > skip) {
 				//todo: if doSpecial then make it an &amp;
 				// but the decoding is done in-place (bad idea) so we cannot expand the output
 				*dst++ = *src++;
