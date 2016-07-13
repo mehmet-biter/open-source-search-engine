@@ -151,7 +151,7 @@ class RdbBase {
 	// . add a (new) file to the m_files/m_maps/m_fileIds arrays
 	// . both return array position we added it to
 	// . both return -1 and set errno on error
-	int32_t addFile     ( int32_t fileId, bool isNew, int32_t mergeNum, int32_t id2 ) ;
+	int32_t addFile     ( bool isNew, int32_t fileId, int32_t fileId2, int32_t mergeNum, int32_t endMergeFileId ) ;
 	int32_t addNewFile  ( int32_t id2 ) ;
 
 	// used by the high priority udp server to suspend merging for ALL
