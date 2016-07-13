@@ -70,8 +70,8 @@ bool RdbMerge::merge ( char     rdbId        ,
 	m_id2             = id2;
 	m_startFileNum    = startFileNum;
 	m_numFiles        = numFiles;
-	m_dedup           = base->m_dedup;
-	m_fixedDataSize   = base->m_fixedDataSize;
+	m_dedup           = base->getDedup();
+	m_fixedDataSize   = base->getFixedDataSize();
 	m_niceness        = niceness;
 	//m_pc              = pc;
 	m_maxTargetFileSize = maxTargetFileSize;
@@ -323,10 +323,10 @@ bool RdbMerge::getNextList ( ) {
 	// . if a contributor has just surpassed a "part" in his BigFile
 	//   then we can delete that part from the BigFile and the map
 	for ( int32_t i = m_startFileNum ; i < m_startFileNum + m_numFiles; i++ ){
-		RdbMap    *map    = base->m_maps[i];
+		RdbMap    *map    = base->getMap(i);
 		int32_t       page   = map->getPage ( m_startKey );
 		int64_t  offset = map->getAbsoluteOffset ( page );
-		BigFile   *file   = base->m_files[i];
+		BigFile   *file   = base->getFile(i);
 		int32_t       part   = file->getPartNum ( offset ) ;
 		if ( part == 0 ) {
 			continue;

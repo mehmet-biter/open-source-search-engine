@@ -852,7 +852,9 @@ bool Msg5::gotList2 ( ) {
 	// . if we're reading from root and tmp merge file of root
 	// . should we keep this out of the thread in case a file created?
 	int32_t fn = 0;
-	if ( base->m_numFiles > 0 ) fn = base->m_fileIds[m_startFileNum];
+	if ( base->getNumFiles() > 0 ) {
+		fn = base->getFileId(m_startFileNum);
+	}
 
 	m_removeNegRecs = ( fn == 0 || fn == 1 );
 

@@ -191,7 +191,7 @@ bool SpiderColl::load ( ) {
 
 	// delete the files and doledb-saved.dat and the waitingtree
 	// and set the waitingtree into rebuild mode.
-	if ( base && base->m_numFiles > 0 ) {
+	if ( base && base->getNumFiles() > 0 ) {
 		nukeDoledb ( m_collnum );
 		return true;
 	}

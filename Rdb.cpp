@@ -510,8 +510,8 @@ bool Rdb::deleteAllRecs ( collnum_t collnum ) {
 	if ( ! base ) return true;
 
 	// scan files in there
-	for ( int32_t i = 0 ; i < base->m_numFiles ; i++ ) {
-		BigFile *f = base->m_files[i];
+	for ( int32_t i = 0 ; i < base->getNumFiles() ; i++ ) {
+		BigFile *f = base->getFile(i);
 		// move to trash
 		char newdir[1024];
 		sprintf(newdir, "%strash/",g_hostdb.m_dir);
@@ -1209,9 +1209,9 @@ bool Rdb::dumpCollLoop ( ) {
 		log( LOG_ERROR, "build: Error dumping collection: %s.",mstrerror(g_errno));
 		// . if we wrote nothing, remove the file
 		// . if coll was deleted under us, base will be NULL!
-		if ( base &&   (! base->m_files[m_fn]->doesExist() ||
-		      base->m_files[m_fn]->getFileSize() <= 0) ) {
-			log("build: File %s is zero bytes, removing from memory.",base->m_files[m_fn]->getFilename());
+		if ( base &&   (! base->getFile(m_fn)->doesExist() ||
+		      base->getFile(m_fn)->getFileSize() <= 0) ) {
+			log("build: File %s is zero bytes, removing from memory.",base->getFile(m_fn)->getFilename());
 			base->buryFiles ( m_fn , m_fn+1 );
 		}
 
@@ -1280,12 +1280,12 @@ bool Rdb::dumpCollLoop ( ) {
 	// if we add to many files then we can not merge, because merge op
 	// needs to add a file and it calls addNewFile() too
 	static int32_t s_flag = 0;
-	if ( base->m_numFiles + 1 >= MAX_RDB_FILES ) {
+	if ( base->getNumFiles() + 1 >= MAX_RDB_FILES ) {
 		if ( s_flag < 10 )
 			log( LOG_WARN, "db: could not dump tree to disk for cn="
 			    "%i %s because it has %" PRId32" files on disk. "
 			    "Need to wait for merge operation.",
-			    (int)m_dumpCollnum,m_dbname,base->m_numFiles);
+			    (int)m_dumpCollnum,m_dbname,base->getNumFiles());
 		s_flag++;
 		goto loop;
 	}
@@ -1297,8 +1297,8 @@ bool Rdb::dumpCollLoop ( ) {
 	}
 
 	log(LOG_INFO,"build: Dumping to %s/%s for coll \"%s\".",
-	    base->m_files[m_fn]->getDir(),
-	    base->m_files[m_fn]->getFilename() , 
+	    base->getFile(m_fn)->getDir(),
+	    base->getFile(m_fn)->getFilename() ,
 	    g_collectiondb.getCollName ( m_dumpCollnum ) );
 
 	// turn this shit off for now, it's STILL taking forever when dumping
@@ -1372,11 +1372,11 @@ bool Rdb::dumpCollLoop ( ) {
 	// . it returns false if blocked, true otherwise & sets g_errno on err
 	// . but we only return false on error here
 	if ( ! m_dump.set (  base->m_collnum   ,
-			     base->m_files[m_fn]  ,
+			     base->getFile(m_fn)  ,
 			     id2            , // to set tfndb recs for titledb
 			     buckets       ,
 			     tree          ,
-			     base->m_maps[m_fn], // RdbMap
+			     base->getMap(m_fn), // RdbMap
 			     NULL           , // integrate into cache b4 delete
 			     //&m_cache     , // integrate into cache b4 delete
 			     bufSize        , // write buf size
@@ -2160,7 +2160,7 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 		//   i commented this out.
 		//if ( m_fixedDataSize == 0 ) return true;
 		// return if all data is in the tree
-		if ( getBase(collnum)->m_numFiles == 0 ) return true;
+		if ( getBase(collnum)->getNumFiles() == 0 ) return true;
 		// . otherwise, assume we match a positive...
 	}
 

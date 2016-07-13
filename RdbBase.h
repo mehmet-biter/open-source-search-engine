@@ -87,6 +87,7 @@ class RdbBase {
 	// get the directory name where this rdb stores it's files
 	const char *getDir ( ) { return m_dir.getDirname(); }
 
+	bool getDedup() {return m_dedup; }
 	int32_t getFixedDataSize ( ) { return m_fixedDataSize; }
 
 	bool useHalfKeys ( ) { return m_useHalfKeys; }
