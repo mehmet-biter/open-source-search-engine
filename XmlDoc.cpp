@@ -3534,7 +3534,12 @@ uint8_t *XmlDoc::getLangVector ( ) {
 
 // returns -1 and sets g_errno on error
 uint8_t *XmlDoc::getLangId ( ) {
-	if ( m_langIdValid ) return &m_langId;
+	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );
+
+	if ( m_langIdValid ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END, already valid" );
+		return &m_langId;
+	}
 	setStatus ( "getting lang id");
 
 	// get the stuff we need
@@ -3547,6 +3552,7 @@ uint8_t *XmlDoc::getLangId ( ) {
 	if ( *ip == 0 || *ip == -1 ) {
 		m_langId = langUnknown;
 		m_langIdValid = true;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, IP unknown" );
 		return &m_langId;
 	}
 
@@ -3558,12 +3564,14 @@ uint8_t *XmlDoc::getLangId ( ) {
 	Sections *sections = getSections();
 	// did it block?
 	if ( sections==(Sections *)-1) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END, invalid section" );
 		return(uint8_t *)sections;
 	}
 
 	// well, it still calls Dates::parseDates which can return g_errno
 	// set to EBUFOVERFLOW...
 	if ( ! sections && g_errno != EBUFOVERFLOW ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END, invalid section" );
 		return NULL;
 	}
 
@@ -3573,6 +3581,7 @@ uint8_t *XmlDoc::getLangId ( ) {
 
 	uint8_t *lv = getLangVector();
 	if ( ! lv || lv == (void *)-1 ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END, invalid lang vector" );
 		return (uint8_t *)lv;
 	}
 
@@ -3581,6 +3590,7 @@ uint8_t *XmlDoc::getLangId ( ) {
 	// compute langid from vector
 	m_langId = computeLangId ( sections , words, (char *)lv );
 	if ( m_langId != langUnknown ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END, returning langid=%s from langVector", getLanguageAbbr(m_langId) );
 		m_langIdValid = true;
 		return &m_langId;
 	}
@@ -3598,6 +3608,7 @@ uint8_t *XmlDoc::getLangId ( ) {
 	char *tmpLangVec = langBuf.getBufStart();
 	m_langId = computeLangId ( NULL , &mdw , tmpLangVec );
 	if ( m_langId != langUnknown ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END, returning langid=%s from metaDescription", getLanguageAbbr(m_langId) );
 		m_langIdValid = true;
 		return &m_langId;
 	}
@@ -3610,6 +3621,7 @@ uint8_t *XmlDoc::getLangId ( ) {
 	setLangVec ( &mdw,&langBuf,NULL,m_niceness);
 	tmpLangVec = langBuf.getBufStart();
 	m_langId = computeLangId ( NULL , &mdw , tmpLangVec );
+	logTrace( g_conf.m_logTraceXmlDoc, "END, returning langid=%s from metaKeywords", getLanguageAbbr(m_langId) );
 	m_langIdValid = true;
 	return &m_langId;
 }
