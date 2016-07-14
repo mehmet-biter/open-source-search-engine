@@ -47,13 +47,13 @@ class File {
 
 	friend class BigFile;
 
+	void constructor();
+	void destructor ();
+
  public:
 
 	 File ( );
 	~File ( );
-
-	void constructor();
-	void destructor ();
 
 	// . if you don't need to do a full open then just set the filename
 	// . useful for unlink/rename/reserve/...
@@ -75,8 +75,6 @@ class File {
 
 	bool calledOpen () { return m_calledOpen; }
 	bool calledSet  () { return m_calledSet; }
-
-	bool isNonBlocking () ;
 
 	// . get the file extension of this file
 	// . return NULL if none
@@ -110,9 +108,6 @@ class File {
 	// . this will really close this file
 	bool close   ( );  
 
-	// . flush the output
-	bool flush   ( );
-
 	// used by threaded unlinks and renames by BigFile.cpp
 	bool m_closedIt;
 	void close1_r ();
@@ -135,16 +130,6 @@ class File {
 	// . static so you don't need an instant of this class to call it
 	// . returns false and sets errno on error
 	bool unlink ( );
-
-	// . file position seeking -- just a wrapper for lseek
-	// . returns -1 on error
-	// . used by reserve/write/read/getFileSize()
-	int32_t lseek ( int32_t offset , int whence = SEEK_SET );
-
-	// . interface so BigFile and others can access the static member info
-	//char *getName        ( ) ;
-	//int   getMode        ( ) ;
-	//int   getPermissions ( ) ;
 
 	// . will try to REopen the file to get the fd if necessary
 	// . used by BigFile
@@ -171,19 +156,20 @@ class File {
 	BigFile *m_bigfile;
 	int32_t  m_i;
 
-	int32_t m_closeCount;
-
 	// private: 
 
+	// THIS file's VIRTUAL descriptor
+	//int m_vfd;
+
+private:
 	// initializes the fd pool
-	bool initialize ();
+	static bool initialize ();
 
 	// free the least-used file.
 	bool closeLeastUsed ( );
 
-	// THIS file's VIRTUAL descriptor
-	//int m_vfd;
-private:
+	int32_t m_closeCount;
+
 	// now just the real fd. is -1 if not opened
 	int m_fd;
 

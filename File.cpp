@@ -54,7 +54,7 @@ static int       s_numOpenFiles    = 0;
 #include "Loop.h" // MAX_NUM_FDS
 static int32_t s_closeCounts [ MAX_NUM_FDS ];
 
-void sanityCheck ( ) {
+static void sanityCheck ( ) {
 	if ( ! g_conf.m_logDebugDisk ) {
 		log("disk: sanity check called but not in debug mode");
 		return;
@@ -273,12 +273,6 @@ int32_t File::getCurrentPos ( ) {
 	return (int32_t) ::lseek ( m_fd , 0 , SEEK_CUR );
 }
 
-bool File::isNonBlocking () {
-	// always block on a close
-	int flags = fcntl ( m_fd , F_GETFL ) ;
-	// return true if non-blocking
-	return ( flags & O_NONBLOCK );
-}
 
 // . BigFile calls this from inside a rename or unlink thread
 // . it calls File::close() proper when out of the thread
@@ -976,34 +970,6 @@ bool File::unlink() {
 	return false;
 }
 
-
-
-bool File::flush ( ) {
-	//int fd =s_fds[m_vfd];
-	if ( m_fd < 0 ) return false;
-	//return log("file::flush(%s): no fd", getFilename() );
-	int status = fsync ( m_fd );
-	if ( status == 0 ) return true;
-	// copy errno to g_errno
-	g_errno = errno;
-	return log("disk: fsync(%s): %s" ,getFilename(),strerror ( g_errno ) );
-}
-
-// a wrapper for lseek
-int32_t File::lseek ( int32_t offset , int whence ) {
-
-	int32_t position = (int32_t) ::lseek ( m_fd , offset , whence );
-
-	if ( position >= 0 ) return position;
-
-	// copy errno to g_errno
-	g_errno = errno;
-
-	log("disk: lseek ( %s(%i) , %" PRId32" , whence ): %s" , getFilename() ,
-	      m_fd, offset , strerror ( g_errno ) );
-
-	return -1;
-}
 
 // called by File::open() when it's found out that we're not initialized.
 bool File::initialize ( ) {
