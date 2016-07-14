@@ -785,10 +785,6 @@ again:
 
 int64_t getFileSize ( const char *filename ) {
 
-#ifdef CYGWIN
-	return getFileSize_cygwin ( filename );
-#endif
-
 	//
 	// CAUTION: i think this fails in cygwin... so for cygwin use the
 	// old slower code
@@ -820,23 +816,6 @@ int64_t getFileSize ( const char *filename ) {
 	return -1;
 }
 
-// this solution is quite slow, but i think cygwin needs it
-int64_t getFileSize_cygwin ( char *filename ) {
-
-	FILE *fd = fopen ( filename , "r" );
-	if ( ! fd ) {
-		//log("disk: error getFileSize(%s) : %s",
-		//    filename , strerror(g_errno));
-		return 0;//-1;
-	}
-
-	fseek(fd,0,SEEK_END);
-	int64_t fileSize = ftell ( fd );
-
-	fclose ( fd );
-
-	return fileSize;
-}
 
 // . returns -2 on error
 // . returns -1 if does not exist

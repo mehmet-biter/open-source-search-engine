@@ -1,7 +1,7 @@
 #include "gb-include.h"
 
-// cygwin and apple mac os x does not support klogctl
-#if defined(CYGWIN) || defined(__APPLE__)
+// apple mac os x does not support klogctl
+#if defined(__APPLE__)
 // use a stub
 int32_t klogctl( int, char *,int ) { return 0; }
 #else

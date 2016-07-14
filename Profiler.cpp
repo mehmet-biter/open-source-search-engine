@@ -1,19 +1,3 @@
-#ifdef CYGWIN
-
-#include "Profiler.h"
-Profiler::Profiler(){return;}
-Profiler::~Profiler(){return;}
-bool Profiler::reset(){return true;}
-bool Profiler::init(){return true;}
-char *Profiler::getFnName(PTRTYPE address,int32_t *nameLen){return NULL;}
-void Profiler::stopRealTimeProfiler(bool keepData){return;}
-void Profiler::cleanup(){return;}
-bool Profiler:: readSymbolTable(){return true;}
-bool sendPageProfiler ( class TcpSocket *s,class HttpRequest *r){return true;}
-Profiler g_profiler;	
-
-#else
-
 #include <execinfo.h>
 #include "gb-include.h"
 #include "Profiler.h"
@@ -1672,5 +1656,3 @@ Profiler::getNewFrameTrace(const uint32_t addr) {
 	}
 	return m_frameTraces[m_numUsedFrameTraces++].set(addr);
 }
-
-#endif
