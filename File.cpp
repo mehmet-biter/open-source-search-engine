@@ -142,9 +142,8 @@ void File::set ( const char *filename ) {
 		close();
 	}
 
-	// copy into m_filename and NULL terminate
-	gbmemcpy ( m_filename , filename , len );
-	m_filename [ len ] = '\0';
+	// copy into m_filename
+	memcpy ( m_filename, filename, len+1 );
 
 	m_calledSet  = true;
 	// TODO: make this a bool returning function if ( ! m_filename ) g_log
