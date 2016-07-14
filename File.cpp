@@ -22,9 +22,9 @@ static int       s_fds           [ MAX_NUM_VFDS ]; // the real fd
 */
 //static char   *s_filenames     [ MAX_NUM_VFDS ]; // in case we gotta re-open
 static int64_t s_timestamps [ MAX_NUM_FDS ]; // when was it last accessed
-static char    s_writing    [ MAX_NUM_FDS ]; // is it being written to?
-static char    s_unlinking  [ MAX_NUM_FDS ]; // is being unlinked/renamed
-static char    s_open       [ MAX_NUM_FDS ]; // is opened?
+static bool    s_writing    [ MAX_NUM_FDS ]; // is it being written to?
+static bool    s_unlinking  [ MAX_NUM_FDS ]; // is being unlinked/renamed
+static bool    s_open       [ MAX_NUM_FDS ]; // is opened?
 static File   *s_filePtrs   [ MAX_NUM_FDS ];
 
 // . how many open files are we allowed?? hardcode it!
@@ -327,7 +327,7 @@ void File::close1_r ( ) {
 	// . 3. closeLeastUsed closes it again and sets our s_fds[m_vfd] to -1
 	//      this leaving the other file with a seemingly valid fd that
 	//      always gives EBADF errors cuz it was closed.
-	s_unlinking [ m_fd ] = 1;
+	s_unlinking [ m_fd ] = true;
 
  again:
 	if ( m_fd == 0 ) {
@@ -360,7 +360,7 @@ void File::close2() {
 	// clear for later, but only if nobody else got our fd when opening
 	// a file... because we called close() in a thread in close1_r()
 	if ( s_filePtrs [ m_fd ] == this )
-		s_unlinking [ m_fd ] = 0;
+		s_unlinking [ m_fd ] = false;
 
 	// return if we did not actually do a close in close1_r()
 	if ( ! m_closedIt ) {
@@ -387,7 +387,7 @@ void File::close2() {
 	// we should skip everything below here.
 	if ( s_filePtrs [ fd ] != this ) return;
 
-	s_open        [ fd ] = 0;
+	s_open        [ fd ] = false;
 	s_filePtrs    [ fd ] = NULL;
 	// i guess there is no need to do this close count inc
 	// if we lost our fd already shortly after our thread closed
@@ -464,7 +464,7 @@ bool File::close ( ) {
 	// sanity
 	if ( ! s_open[m_fd] ) { g_process.shutdownAbort(true); }
 	// mark it as closed
-	s_open        [ m_fd ] = 0;
+	s_open        [ m_fd ] = false;
 	s_filePtrs    [ m_fd ] = NULL;
 	s_closeCounts [ m_fd ]++;
 	// otherwise decrease the # of open files
@@ -569,7 +569,7 @@ int File::getfd () {
 			// he only incs/decs his counters if he owns it so in
 			// close2() so dec this global counter here
 			s_numOpenFiles--;
-			s_open[fd] = 0;
+			s_open[fd] = false;
 			s_filePtrs[fd] = NULL;
 			if ( g_conf.m_logDebugDisk ) {
 				sanityCheck();
@@ -636,8 +636,8 @@ int File::getfd () {
 		log( LOG_WARN, "disk: Found fd of 0 when opening %s.", getFilename() );
 	}
 	// reset
-	s_writing   [ fd ] = 0;
-	s_unlinking [ fd ] = 0;
+	s_writing   [ fd ] = false;
+	s_unlinking [ fd ] = false;
 	// update the time stamp
 	s_timestamps [ fd ] = gettimeofdayInMillisecondsLocal();
 	s_open       [ fd ] = true;
@@ -739,7 +739,7 @@ again:
 	// if the real close was successful then decrement the # of open files
 	if ( status == 0 ) {
 		// it's not open
-		s_open     [ fd ] = 0;
+		s_open     [ fd ] = false;
 		// if someone is trying to read on this let them know
 		s_closeCounts [ fd ]++;
 
@@ -983,9 +983,9 @@ bool File::initialize ( ) {
 		//s_fds         [ i ] = -2;    // -2 means vfd #i is available
 		//s_filenames   [ i ] = NULL;
 		s_timestamps  [ i ] = 0LL;
-		s_writing     [ i ] = 0;
-		s_unlinking   [ i ] = 0;
-		s_open        [ i ] = 0;
+		s_writing     [ i ] = false;
+		s_unlinking   [ i ] = false;
+		s_open        [ i ] = false;
 		s_closeCounts [ i ] = 0;
 		s_filePtrs    [ i ] = NULL;
 	}
@@ -1019,10 +1019,10 @@ char *File::getExtension ( ) {
 // dump, so when the dump thread lets its write go it writes into the merge
 // file.
 void enterWriteMode ( int fd ) {
-	if ( fd >= 0 ) s_writing [ fd ] = 1;
+	if ( fd >= 0 ) s_writing [ fd ] = true;
 }
 void exitWriteMode ( int fd ) {
-	if ( fd >= 0 ) s_writing [ fd ] = 0;
+	if ( fd >= 0 ) s_writing [ fd ] = false;
 }
 // error correction routine used by BigFile.cpp
 // void releaseVfd ( int32_t vfd ) {
