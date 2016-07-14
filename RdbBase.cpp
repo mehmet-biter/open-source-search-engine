@@ -298,6 +298,64 @@ bool RdbBase::removeRebuildFromFilename ( BigFile *f ) {
 	return true;
 }
 
+bool RdbBase::parseFilename( const char* filename, int32_t *p_fileId, int32_t *p_fileId2,
+                             int32_t *p_mergeNum, int32_t *p_endMergeFileId ) {
+	// then a 4 digit number should follow filename
+	const char *s = filename + m_dbnameLen;
+	if ( !isdigit(*(s+0)) || !isdigit(*(s+1)) || !isdigit(*(s+2)) || !isdigit(*(s+3)) ) {
+		return false;
+	}
+
+	// optional 5th digit
+	int32_t len = 4;
+	if ( isdigit(*(s+4)) ) {
+		len = 5;
+	}
+
+	// . read that id
+	// . older files have lower numbers
+	*p_fileId = atol2 ( s , len );
+	s += len;
+
+
+	*p_fileId2 = -1;
+
+	// if we are titledb, we got the secondary id
+	if ( *s == '-' ) {
+		*p_fileId2 = atol2 ( s + 1 , 3 );
+		s += 4;
+	}
+
+	// assume no mergeNum
+	*p_mergeNum = -1;
+	*p_endMergeFileId = -1;
+
+	// if file id is even, we need the # of files being merged
+	// otherwise, if it is odd, we do not
+	if ( ( *p_fileId & 0x01 ) == 0x00 ) {
+		if ( *s != '.' ) {
+			return false;
+		}
+		++s;
+
+		// 3 digit number (mergeNum)
+		if ( !isdigit(*(s+0)) || !isdigit(*(s+1)) || !isdigit(*(s+2)) ) {
+			return false;
+		}
+
+		*p_mergeNum = atol2( s , 3 );
+		s += 4;
+
+		// 4 digit number (endMergeNum)
+		if ( !isdigit(*(s+0)) || !isdigit(*(s+1)) || !isdigit(*(s+2)) || !isdigit(*(s+3)) ) {
+			return false;
+		}
+		*p_endMergeFileId = atol2( s, 4 );
+	}
+
+	return true;
+}
+
 // . this is called to open the initial rdb data and map files we have
 // . first file is always the merge file (may be empty)
 // . returns false on error
@@ -323,71 +381,48 @@ bool RdbBase::setFiles ( ) {
 	while ( ( filename = m_dir.getNextFilename ( "*.dat*" ) ) ) {
 		// filename must be a certain length
 		int32_t filenameLen = gbstrlen(filename);
+
 		// we need at least "indexdb0000.dat"
-		if ( filenameLen < m_dbnameLen + 8 ) continue;
-		// ensure filename starts w/ our m_dbname
-		if ( strncmp ( filename , m_dbname , m_dbnameLen ) != 0 )
+		if ( filenameLen < m_dbnameLen + 8 ) {
 			continue;
-		// then a 4 digit number should follow
-		const char *s = filename + m_dbnameLen;
-		if ( ! isdigit(*(s+0)) ) continue;
-		if ( ! isdigit(*(s+1)) ) continue;
-		if ( ! isdigit(*(s+2)) ) continue;
-		if ( ! isdigit(*(s+3)) ) continue;
-		// optional 5th digit
-		int32_t len = 4;
-		if (   isdigit(*(s+4)) ) len = 5;
-		// . read that id
-		// . older files have lower numbers
-		int32_t id = atol2 ( s , len );
-		// skip it
-		s += len;
+		}
+
+		// ensure filename starts w/ our m_dbname
+		if ( strncmp ( filename , m_dbname , m_dbnameLen ) != 0 ) {
+			continue;
+		}
+
+		int32_t fileId;
+		int32_t fileId2;
+		int32_t mergeNum;
+		int32_t endMergeFileId;
+
+		if ( !parseFilename( filename, &fileId, &fileId2, &mergeNum, &endMergeFileId ) ) {
+			continue;
+		}
+
+		// validation
+
 		// if we are titledb, we got the secondary id
-		int32_t id2 = -1;
 		// . if we are titledb we should have a -xxx after
 		// . if none is there it needs to be converted!
-		if ( m_isTitledb && *s != '-' ) {
+		if ( m_isTitledb && fileId2 == -1 ) {
 			// critical
 			log("gb: bad title filename of %s. Halting.",filename);
 			g_errno = EBADENGINEER;
 			return false;
-		} else if ( m_isTitledb ) {
-			id2 = atol2 ( s + 1 , 3 );
-			s += 4;
 		}
 
 		// don't add if already in there
 		int32_t i ;
 		for ( i = 0 ; i < m_numFiles ; i++ ) {
-			if ( m_fileIds[ i ] >= id ) {
+			if ( m_fileIds[ i ] >= fileId ) {
 				break;
 			}
 		}
 
-		if ( i < m_numFiles && m_fileIds[i] == id ) {
+		if ( i < m_numFiles && m_fileIds[i] == fileId ) {
 			continue;
-		}
-
-		// assume no mergeNum
-		int32_t mergeNum = -1;
-		int32_t endMergeFileId = -1;
-
-		// if file id is even, we need the # of files being merged
-		// otherwise, if it is odd, we do not
-		if ( (id & 0x01) == 0x00 ) {
-			if ( *s != '.' ) {
-				continue;
-			}
-			s++;
-
-			if ( !isdigit(*(s+0)) || !isdigit(*(s+1)) || !isdigit(*(s+2)) ) {
-				continue;
-			}
-
-			mergeNum = atol2( s , 3 );
-			s += 4;
-
-			endMergeFileId = atol2( s, 4 );
 		}
 
 		// sometimes an unlink() does not complete properly and we
@@ -433,7 +468,7 @@ bool RdbBase::setFiles ( ) {
 		// . MUST be in order of fileId for merging purposes
 		// . we assume older files come first so newer can override
 		//   in RdbList::merge() routine
-		if ( addFile( false, id, id2, mergeNum, endMergeFileId ) < 0 ) {
+		if ( addFile( false, fileId, fileId2, mergeNum, endMergeFileId ) < 0 ) {
 			return false;
 		}
 	}
@@ -763,22 +798,37 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 		m_hasMergeFile      = true;
 		m_mergeStartFileNum = i + 1 ; //merge was starting w/ this file
 	}
+
 	return i;
 }
 
 int32_t RdbBase::addNewFile ( int32_t id2 ) {
-	int32_t fileId = 0;
+	int32_t maxFileId = 0;
 	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) {
-		if ( m_fileIds[i] >= fileId ) {
-			fileId = m_fileIds[ i ] + 1;
+		if ( m_fileIds[i] > maxFileId ) {
+			int32_t currentFileId = m_fileIds[ i ];
+			if ( ( currentFileId & 0x01 ) == 0 ) {
+				// merge file
+				const char* filename = m_files[ i ]->getFilename();
+
+				int32_t mergeFileId;
+				int32_t mergeFileId2;
+				int32_t mergeNum;
+				int32_t endMergeFileId;
+				if ( parseFilename( filename, &mergeFileId, &mergeFileId2, &mergeNum, &endMergeFileId ) ) {
+					maxFileId = endMergeFileId;
+				} else {
+					// error parsing file, fallback to previous behaviour
+					maxFileId = currentFileId;
+				}
+			} else {
+				maxFileId = currentFileId;
+			}
 		}
 	}
 
-	// . if not odd number then add one
 	// . we like to keep even #'s for merge file names
-	if ( (fileId & 0x01) == 0 ) {
-		++fileId;
-	}
+	int32_t fileId = maxFileId + ( ( ( maxFileId & 0x01 ) == 0 ) ? 1 : 2 );
 
 	// otherwise, set it
 	return addFile( true, fileId, id2, -1, -1 );
@@ -1032,8 +1082,7 @@ void RdbBase::doneWrapper2 ( ) {
 
 void doneWrapper3 ( void *state ) {
 	RdbBase *THIS = (RdbBase *)state;
-	log("rdb: thread completed rename operation for collnum=%" PRId32" "
-	    "#thisbaserenamethreads=%" PRId32,
+	log(LOG_DEBUG, "rdb: thread completed rename operation for collnum=%" PRId32" #thisbaserenamethreads=%" PRId32,
 	    (int32_t)THIS->m_collnum,THIS->m_numThreads-1);
 	THIS->doneWrapper4 ( );
 }
@@ -1164,7 +1213,7 @@ void RdbBase::buryFiles ( int32_t a , int32_t b ) {
 // . now return true if we started a merge, false otherwise
 // . TODO: fix Rdb::attemptMergeAll() to not remove from linked list if
 //   we had an error in addNewFile() or rdbmerge.cpp's call to rdbbase::addFile
-bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog , int32_t minToMergeOverride ) {
+bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , int32_t minToMergeOverride ) {
 	logTrace( g_conf.m_logTraceRdbBase, "BEGIN. minToMergeOverride: %" PRId32, minToMergeOverride);
 
 	// don't do merge if we're in read only mode
@@ -1521,7 +1570,7 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog , 
 	//   then merge F and E, but if D is < E merged D too, etc...
 	// . this merge algorithm is definitely better than merging everything
 	//   if we don't do much reading to the db, only writing
-	int32_t n = 0;
+	int32_t mergeNum = 0;
 	int32_t mergeFileId;
 	int32_t mergeFileNum;
 	int32_t endMergeFileId;
@@ -1530,7 +1579,7 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog , 
 	int64_t mint ;
 	int32_t      mini ;
 	bool      minOld ;
-	int32_t      id2  = -1;
+	int32_t      fileId2  = -1;
 	bool      overide = false;
 	int32_t      nowLocal = getTimeLocal();
 
@@ -1553,35 +1602,26 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog , 
 
 		// files being merged into have a filename like
 		// indexdb0000.003.dat where the 003 indicates how many files
-		// is is merging in case we have to resume them due to power 
-		// loss or whatever
-		char *s = m_files[j]->getFilename();
-
-		// skip "indexdb0001."
-		s += gbstrlen ( m_dbname ) + 5;
-
-		// if titledb we got a "-023" part now
-		if ( m_isTitledb ) {
-			id2 = atol2 ( s , 3 );
-			if ( id2 < 0 ) {
-				g_process.shutdownAbort(true);
-			}
-			s += 4;
+		// is is merging in case we have to resume them due to power loss or whatever
+		int32_t fileId;
+		if ( !parseFilename( m_files[j]->getFilename(), &fileId, &fileId2, &mergeNum, &endMergeFileId ) ) {
+			continue;
 		}
 
-		// get the "003" part
-		n = atol2 ( s , 3 );
-		s += 4;
+		// validation
 
-		// get end merge fileNum
-		int32_t endMergeFileId = atol2( s, 4 );
-		int32_t endMergeFileNum = 0;
+		// if titledb we got a "-023" part now
+		if ( m_isTitledb && fileId2 < 0 ) {
+			g_process.shutdownAbort(true);
+		}
+
 		if ( !endMergeFileId ) {
 			// bad file name (should not happen after the first run)
 			gbshutdownCorrupted();
 		}
 
-		int32_t kEnd = j + 1 + n;
+		int32_t endMergeFileNum = 0;
+		int32_t kEnd = j + 1 + mergeNum;
 		for ( int32_t k = j + 1; k < kEnd; ++k ) {
 			if ( m_fileIds[ k ] == endMergeFileId ) {
 				endMergeFileNum = k;
@@ -1595,11 +1635,11 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog , 
 		}
 
 		// sanity check
-		if ( n <= 1 ) {
+		if ( mergeNum <= 1 ) {
 			log(LOG_LOGIC,"merge: attemptMerge: Resuming. bad "
 			    "engineer for %s coll=%s",m_dbname,m_coll);
 			if ( m_mergeUrgent ) {
-				log("merge: leaving urgent merge mode");
+				log(LOG_WARN, "merge: leaving urgent merge mode");
 				g_numUrgentMerges--;
 				m_mergeUrgent = false;
 			}
@@ -1619,7 +1659,7 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog , 
 				    "last merge. Probably because those files "
 				    "were deleted because they were "
 				    "exhausted and had no recs to offer."
-				    ,n,m_numFiles);
+				    ,mergeNum,m_numFiles);
 				//g_process.shutdownAbort(true);
 				break;
 			}
@@ -1637,12 +1677,12 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog , 
 			mint += m_files[i]->getFileSize();
 		}
 
-		if ( mm != n ) {
-			log( LOG_INFO, "merge: Only merging %" PRId32" instead of the original %" PRId32" files.", mm, n );
+		if ( mm != mergeNum ) {
+			log( LOG_INFO, "merge: Only merging %" PRId32" instead of the original %" PRId32" files.", mm, mergeNum );
 		}
 
 		// how many files to merge?
-		n = mm;
+		mergeNum = mm;
 
 		// allow a single file to continue merging if the other
 		// file got merged out already
@@ -1653,7 +1693,7 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog , 
 		// if we've already merged and already unlinked, then the process exited, now we restart with just the rename
 		if ( mm == 0 && rdbId != RDB_TITLEDB ) {
 			m_isMerging = false;
-			renameFile( j, mergeFileId + 1, id2 );
+			renameFile( j, mergeFileId + 1, fileId2 );
 
 			return false;
 		}
@@ -1696,32 +1736,32 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog , 
 	// . just merge the minimum # of files to stay under m_minToMerge
 	// . files must be consecutive, however
 	// . but ALWAYS make sure file i-1 is bigger than file i
-	n = numFiles - minToMerge + 2 ;
+	mergeNum = numFiles - minToMerge + 2 ;
 
 	// titledb should always merge at least 50 files no matter what though
 	// cuz i don't want it merging its huge root file and just one
 	// other file... i've seen that happen... but don't know why it didn't
 	// merge two small files! i guess because the root file was the
 	// oldest file! (38.80 days old)???
-	if ( m_isTitledb && n < 50 && minToMerge > 200 ) {
+	if ( m_isTitledb && mergeNum < 50 && minToMerge > 200 ) {
 		// force it to 50 files to merge
-		n = 50;
+		mergeNum = 50;
 
 		// but must not exceed numFiles!
-		if ( n > numFiles ) {
-			n = numFiles;
+		if ( mergeNum > numFiles ) {
+			mergeNum = numFiles;
 		}
 	}
 
 	// NEVER merge more than this many files, our current merge routine
 	// does not scale well to many files
-	if ( m_absMaxFiles > 0 && n > m_absMaxFiles ) {
-		n = m_absMaxFiles;
+	if ( m_absMaxFiles > 0 && mergeNum > m_absMaxFiles ) {
+		mergeNum = m_absMaxFiles;
 	}
 
 	// but if we are forcing then merge ALL, except one being dumped
 	if ( m_nextMergeForced ) {
-		n = numFiles;
+		mergeNum = numFiles;
 	}
 
 	//tryAgain:
@@ -1729,12 +1769,12 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog , 
 	mint = 0x7fffffffffffffffLL ;
 	mini = -1;
 	minOld = false;
-	for ( int32_t i = 0 ; i + n <= numFiles ; i++ ) {
+	for ( int32_t i = 0 ; i + mergeNum <= numFiles ; i++ ) {
 		// oldest file
 		time_t date = -1;
 		// add up the string
 		int64_t total = 0;
-		for ( int32_t j = i ; j < i + n ; j++ ) {
+		for ( int32_t j = i ; j < i + mergeNum ; j++ ) {
 			total += m_files[j]->getFileSize();
 			time_t mtime = m_files[j]->getLastModifiedTime();
 			// skip on error
@@ -1774,7 +1814,7 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog , 
 				log(LOG_INFO,"merge: titledb i=%" PRId32" n=%" PRId32" "
 				    "mint=%" PRId64" mini=%" PRId32" "
 				    "oldestfile=%.02fdays",
-				    i,n,mint,mini,
+				    i,mergeNum,mint,mini,
 				    ((float)nowLocal-date)/(24*3600.0) );
 			}
 			continue;
@@ -1784,7 +1824,7 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog , 
 		// . ratio in [1.0,inf)
 		// . prefer the lowest average ratio
 		double ratio = 0.0;
-		for ( int32_t j = i ; j < i + n - 1 ; j++ ) {
+		for ( int32_t j = i ; j < i + mergeNum - 1 ; j++ ) {
 			int64_t s1 = m_files[j  ]->getFileSize();
 			int64_t s2 = m_files[j+1]->getFileSize();
 			int64_t tmp;
@@ -1792,7 +1832,7 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog , 
 			if ( s1 < s2 ) { tmp = s1; s1 = s2 ; s2 = tmp; }
 			ratio += (double)s1 / (double)s2 ;
 		}
-		if ( n >= 2 ) ratio /= (double)(n-1);
+		if ( mergeNum >= 2 ) ratio /= (double)(mergeNum-1);
 		// sanity check
 		if ( ratio < 0.0 ) {
 			logf(LOG_LOGIC,"merge: ratio is negative %.02f",ratio);
@@ -1822,7 +1862,7 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog , 
 		    "minr=%.2f mint=%" PRId64" mini=%" PRId32" prevFileSize=%" PRId64" "
 		    "mergeFileSize=%" PRId64" tooBig=%" PRId32" oldestfile=%.02fdays "
 		    "collnum=%" PRId32,
-		    i,n,ratio,adjratio,minr,mint,mini,
+		    i,mergeNum,ratio,adjratio,minr,mint,mini,
 		    prevSize , total ,(int32_t)tooBig,
 		    ((float)nowLocal-date)/(24*3600.0) ,
 		    (int32_t)m_collnum);
@@ -1874,7 +1914,7 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog , 
 	mergeFileId = m_fileIds[mini] - 1;
 
 	// get new id, -1 on error
-	id2 = m_isTitledb ? 0 : -1;
+	fileId2 = m_isTitledb ? 0 : -1;
 
 	// . make a filename for the merge
 	// . always starts with file #0
@@ -1883,12 +1923,12 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog , 
 	// . this now also sets m_mergeStartFileNum for us... but we override
 	//   below anyway. we have to set it there in case we startup and
 	//   are resuming a merge.
-	endMergeFileNum = mini + n - 1;
+	endMergeFileNum = mini + mergeNum - 1;
 	endMergeFileId = m_fileIds[ endMergeFileNum ];
 	log( LOG_INFO, "merge: n=%d mini=%d mergeFileId=%d endMergeFileNum=%d endMergeFileId=%d",
-	     n, mini, mergeFileId, endMergeFileNum, endMergeFileId );
+	     mergeNum, mini, mergeFileId, endMergeFileNum, endMergeFileId );
 
-	mergeFileNum = addFile ( true, mergeFileId , id2, n, endMergeFileId );
+	mergeFileNum = addFile ( true, mergeFileId , fileId2, mergeNum, endMergeFileId );
 	if ( mergeFileNum < 0 ) {
 		log(LOG_LOGIC,"merge: attemptMerge: Could not add new file."); 
 		g_errno = 0;
@@ -1904,14 +1944,14 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog , 
 
  startMerge:
 	// sanity check
-	if ( n <= 1 && ! overide ) {
-		log(LOG_LOGIC,"merge: gotTokenForMerge: Not merging %" PRId32" files.", n);
+	if ( mergeNum <= 1 && ! overide ) {
+		log(LOG_LOGIC,"merge: gotTokenForMerge: Not merging %" PRId32" files.", mergeNum);
 		return false; 
 	}
 
 	// . save the # of files we're merging for the cleanup process
 	// . don't include the first file, which is now file #0
-	m_numFilesToMerge   = n  ; // numFiles - 1;
+	m_numFilesToMerge   = mergeNum  ; // numFiles - 1;
 	m_mergeStartFileNum = mergeFileNum + 1; // 1
 
 	const char *coll = "";
@@ -1920,7 +1960,7 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog , 
 	// log merge parms
 	log(LOG_INFO,"merge: Merging %" PRId32" %s files to file id %" PRId32" now. "
 	    "collnum=%" PRId32" coll=%s",
-	    n,m_dbname,mergeFileId,(int32_t)m_collnum,coll);
+	    mergeNum,m_dbname,mergeFileId,(int32_t)m_collnum,coll);
 
 	// print out file info
 	m_numPos = 0;
@@ -1950,7 +1990,6 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog , 
 		g_process.shutdownAbort(true);
 	}
 
-
 	logTrace( g_conf.m_logTraceRdbBase, "merge!" );
 	// . start the merge
 	// . returns false if blocked, true otherwise & sets g_errno
@@ -1958,7 +1997,7 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog , 
 			  m_collnum ,
 			  m_files[mergeFileNum] ,
 			  m_maps [mergeFileNum] ,
-			  id2                   ,
+			  fileId2                   ,
 			  m_mergeStartFileNum   ,
 			  m_numFilesToMerge     ,
 			  m_niceness            ,

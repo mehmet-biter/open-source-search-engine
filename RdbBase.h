@@ -203,6 +203,10 @@ class RdbBase {
 	bool removeRebuildFromFilenames ( ) ;
 	bool removeRebuildFromFilename  ( BigFile *f ) ;
 
+private:
+	bool parseFilename( const char* filename, int32_t *p_fileId, int32_t *p_fileId2,
+	                    int32_t *p_mergeNum, int32_t *p_endMergeFileId );
+
 	// . we try to minimize the number of files to minimize disk seeks
 	// . records that end up as not found will hit all these files
 	// . when we get "m_minToMerge" or more files a merge kicks in
@@ -217,6 +221,7 @@ class RdbBase {
 	RdbMap   *m_maps      [ MAX_RDB_FILES+1 ];
 	int32_t      m_numFiles;
 
+public:
 	// this class contains a ptr to us
 	class Rdb           *m_rdb;
 
