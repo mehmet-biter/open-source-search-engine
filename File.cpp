@@ -1023,11 +1023,3 @@ void enterWriteMode ( int fd ) {
 void exitWriteMode ( int fd ) {
 	if ( fd >= 0 ) s_writing [ fd ] = false;
 }
-// error correction routine used by BigFile.cpp
-// void releaseVfd ( int32_t vfd ) {
-// 	if ( vfd >= 0 && s_fds [ vfd ] >= 0 ) s_fds [ vfd ] = -1;
-// }
-// int  getfdFromVfd ( int32_t vfd ) {
-// 	if ( vfd <= 0 ) return -1;
-// 	return s_fds [ vfd ];
-// }
