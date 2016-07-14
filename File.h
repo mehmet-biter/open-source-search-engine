@@ -49,8 +49,6 @@ public:
 
 	// . if you don't need to do a full open then just set the filename
 	// . useful for unlink/rename/reserve/...
-	// . IMPORTANT: if bytes were already reserved can only increase the 
-	//   reserve, not decrease
 	void set ( const char *dir , const char *filename );
 	void set ( const char *filename );
 
