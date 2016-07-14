@@ -31,8 +31,6 @@ bool doesFileExist ( const char *filename ) ;
 
 int64_t getFileSize ( const char *filename ) ;
 
-int64_t getFileSize_cygwin ( const char *filename ) ;
-
 // for avoiding unlink/opens that mess up our threaded read
 int32_t getCloseCount_r ( int fd );
 
@@ -78,10 +76,10 @@ class File {
 
 	// . get the file extension of this file
 	// . return NULL if none
-	char *getExtension ( ) ;
+	const char *getExtension() const;
 	
 	// uses lseek to get file's current position
-	int32_t getCurrentPos ( ) ;
+	int32_t getCurrentPos() const;
 
 	// . open() returns true on success, false on failure, errno is set.
 	// . opens for reading/writing only
@@ -109,23 +107,22 @@ class File {
 	bool close   ( );  
 
 	// used by threaded unlinks and renames by BigFile.cpp
-	bool m_closedIt;
 	void close1_r ();
 	void close2   ();
 
 	// . returns -1 on error
 	// . otherwise returns file size in bytes
 	// . returns 0 if does not exist
-	int64_t getFileSize ( );
+	int64_t getFileSize() const;
 
 	// . when was it last touched?
-	time_t getLastModifiedTime ( );
+	time_t getLastModifiedTime() const;
 
 	// . returns -1 on error and sets errno
 	// . returns  0 if does not exist
 	// . returns  1 if it exists
 	// . a simple stat check
-	int32_t doesExist ( );
+	int32_t doesExist() const;
 
 	// . static so you don't need an instant of this class to call it
 	// . returns false and sets errno on error
@@ -138,8 +135,8 @@ class File {
 	// . must call open() before calling this
 	int   getfd          ( ) ;
 
-	//char *getFilename ( ) { return m_filename.getBufStart(); }
-	char *getFilename ( ) { return m_filename; }
+	char       *getFilename()       { return m_filename; }
+	const char *getFilename() const { return m_filename; }
 
 	// our filename allocated with strdup
 	// we publicize for ease of use
@@ -156,12 +153,9 @@ class File {
 	BigFile *m_bigfile;
 	int32_t  m_i;
 
-	// private: 
-
-	// THIS file's VIRTUAL descriptor
-	//int m_vfd;
-
 private:
+	bool m_closedIt;
+	
 	// initializes the fd pool
 	static bool initialize ();
 

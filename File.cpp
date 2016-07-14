@@ -12,15 +12,6 @@
 // if someone is using a file we must make sure this is true...
 static int       s_isInitialized = false;
 
-/*
-// We have up to 5k virtual descriptors, each is mapped to a real descriptor
-// or -1. We gotta store the filename to re-open one if it was closed.
-// 5 ints = 20 bytes = 20k
-static int       s_fds           [ MAX_NUM_VFDS ]; // the real fd
-                                                   // -1 means not opened
-                                                   // -2 means available
-*/
-//static char   *s_filenames     [ MAX_NUM_VFDS ]; // in case we gotta re-open
 static int64_t s_timestamps [ MAX_NUM_FDS ]; // when was it last accessed
 static bool    s_writing    [ MAX_NUM_FDS ]; // is it being written to?
 static bool    s_unlinking  [ MAX_NUM_FDS ]; // is being unlinked/renamed
@@ -268,7 +259,7 @@ int File::read ( void *buf            ,
 }
 
 // uses lseek to get file's current position
-int32_t File::getCurrentPos ( ) {
+int32_t File::getCurrentPos() const {
 	return (int32_t) ::lseek ( m_fd , 0 , SEEK_CUR );
 }
 
@@ -414,12 +405,6 @@ void File::close2() {
 bool File::close ( ) {
 	// return true if not open
 	if ( m_fd < 0 ) return true;
-
-	// flush any changes
-	//flush ( );
-
-	// if it was already closed or available then return true
-	//if ( fd < 0 ) return true;
 
 	// panic!
 	if ( s_writing [ m_fd ] )
@@ -784,16 +769,7 @@ again:
 
 
 int64_t getFileSize ( const char *filename ) {
-
-	//
-	// CAUTION: i think this fails in cygwin... so for cygwin use the
-	// old slower code
-	//
-
-	// allow the substitution of another filename
 	struct stat stats;
-
-	stats.st_size = 0;
 
 	int status = stat ( filename , &stats );
 
@@ -808,9 +784,6 @@ int64_t getFileSize ( const char *filename ) {
         // return 0 and reset g_errno if it just does not exist
 	if ( g_errno == ENOENT ) { g_errno = 0; return 0; }
 
-        // resource temporarily unavailable (for newer libc)
-	if ( g_errno == EAGAIN ) { g_errno = 0; return 0; }
-
 	// log & return -1 on any other error
 	log( LOG_ERROR, "disk: error getFileSize(%s) : %s", filename, strerror( g_errno ) );
 	return -1;
@@ -820,46 +793,32 @@ int64_t getFileSize ( const char *filename ) {
 // . returns -2 on error
 // . returns -1 if does not exist
 // . otherwise returns file size in bytes
-int64_t File::getFileSize() {
+int64_t File::getFileSize() const {
 	return ::getFileSize( getFilename() );
 }
 
 // . return 0 on error
-time_t File::getLastModifiedTime ( ) {
-	// allow the substitution of another filename
+time_t File::getLastModifiedTime() const {
 	struct stat stats;
-
-	stats.st_size = 0;
-
-	// bitch & return 0 on error (stat returns 0 on success)
 	if ( stat ( getFilename() , &stats ) == 0 ) {
 		return stats.st_mtime;
-	}
-
-	// resource temporarily unavailable (for newer libc)
-	if ( errno == EAGAIN ) {
+	} else {
+		g_errno = errno;
+		log( LOG_WARN, "disk: error stat2(%s) : %s", getFilename(), strerror( g_errno ) );
 		return 0;
 	}
-
-	// copy errno to g_errno
-	g_errno = errno;
-	log( LOG_WARN, "disk: error stat2(%s) : %s", getFilename(), strerror( g_errno ) );
-	return 0;
 }
 
 
 bool doesFileExist ( const char *filename ) {
-	// allow the substitution of another filename
 	struct stat stats;
-
-	// return true if it exists
-	return ( stat ( filename , &stats ) == 0 );
+	return stat ( filename, &stats ) == 0;
 }
 
 // . returns -1 on error
 // . returns  0 if does not exist
 // . returns  1 if it exists
-int32_t File::doesExist ( ) {
+int32_t File::doesExist() const {
 	// preserve g_errno
 	int old_errno = g_errno;
 
@@ -951,8 +910,6 @@ bool File::initialize ( ) {
 
 	// reset all the virtual file descriptos
 	for ( int i = 0 ; i < MAX_NUM_FDS ; i++ ) {
-		//s_fds         [ i ] = -2;    // -2 means vfd #i is available
-		//s_filenames   [ i ] = NULL;
 		s_timestamps  [ i ] = 0LL;
 		s_writing     [ i ] = false;
 		s_unlinking   [ i ] = false;
@@ -961,18 +918,15 @@ bool File::initialize ( ) {
 		s_filePtrs    [ i ] = NULL;
 	}
 
-	// for ( int32_t i = 0 ; i < MAX_NUM_FDS ; i++ )
-	// 	s_closeCounts[i] = 0;
-
 	s_isInitialized = true;
 
 	return true;
 }
 
-char *File::getExtension ( ) {
+const char *File::getExtension() const {
 	// keep backing up over m_filename till we hit a . or / or beginning
-	char *f = getFilename();
-	int32_t i = gbstrlen(m_filename);//m_filename.getLength();
+	const char *f = getFilename();
+	int32_t i = gbstrlen(m_filename);
 	while ( --i > 0 ) {
 		if ( f[i] == '.' ) break;
 		if ( f[i] == '/' ) break;
