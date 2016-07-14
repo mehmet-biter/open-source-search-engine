@@ -10,6 +10,7 @@
 #include "Stats.h"
 #include "Statsdb.h"
 #include "Sanity.h"
+#include <new>
 
 #ifdef ASYNCIO
 #include <aio.h>
@@ -287,13 +288,12 @@ bool BigFile::addPart ( int32_t n ) {
 	File *f = NULL;
 
 	if ( m_numParts == 0 ) {
-		f = (File *)m_littleBuf;
 		if ( LITTLEBUFSIZE < sizeof(File) ) {
 			log(LOG_ERROR, "%s:%s:%d: LITTLEBUFSIZE too small", __FILE__, __func__, __LINE__ );
 			logAllData(LOG_ERROR);
 			gbshutdownLogicError();
 		}
-		f->constructor();
+		f = new(m_littleBuf) File();
 	} else {
 		try {
 			f = new (File); 
@@ -2001,7 +2001,7 @@ bool BigFile::close ( ) {
 		// if we were using the stack buf in BigFile then just
 		// call File::destructor()
 		if ( f == (File *)m_littleBuf ) {
-			f->destructor();
+			f->~File();
 			continue;
 		}
 		// otherwise, delete as we normally would
