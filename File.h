@@ -162,6 +162,9 @@ private:
 	// free the least-used file.
 	bool closeLeastUsed ( );
 
+	void close1_r_unlocked();
+	void close2_unlocked();
+
 	int32_t m_closeCount;
 
 	// now just the real fd. is -1 if not opened

@@ -5,13 +5,16 @@
 #include "gb-include.h"
 
 #include "File.h"
-#include "Process.h"
 #include "Conf.h"
+#include "Sanity.h"
+#include "ScopedLock.h"
+#include <pthread.h>
 
 // THE FOLLOWING IS ALL STATIC 'CUZ IT'S THE FD POOL
 // if someone is using a file we must make sure this is true...
 static int       s_isInitialized = false;
 
+static pthread_mutex_t s_mtx = PTHREAD_MUTEX_INITIALIZER;
 static int64_t s_timestamps [ MAX_NUM_FDS ]; // when was it last accessed
 static bool    s_writing    [ MAX_NUM_FDS ]; // is it being written to?
 static bool    s_unlinking  [ MAX_NUM_FDS ]; // is being unlinked/renamed
@@ -53,7 +56,7 @@ static void sanityCheck ( ) {
 	int32_t openCount = 0;
 	for ( int i = 0 ; i < MAX_NUM_FDS ; i++ )
 		if ( s_open[i] ) openCount++;
-	if ( openCount != s_numOpenFiles ) { g_process.shutdownAbort(true); }
+	if ( openCount != s_numOpenFiles ) gbshutdownCorrupted();
 }
 
 
@@ -264,6 +267,13 @@ int32_t File::getCurrentPos() const {
 }
 
 
+
+void File::close1_r ( ) {
+	ScopedLock sl(s_mtx);
+	return close1_r_unlocked();
+}
+
+
 // . BigFile calls this from inside a rename or unlink thread
 // . it calls File::close() proper when out of the thread
 // . PROBLEM #1: we close this fd, an open happens for the fd we just closed
@@ -279,7 +289,7 @@ int32_t File::getCurrentPos() const {
 //               their fds closed in closedLeastUsed(), then merge reopens his
 //               file but with dumps fd, and a dump in mid thread using the
 //               same old fd writes, he will write to the merge file!!!
-void File::close1_r ( ) {
+void File::close1_r_unlocked() {
 	// assume no close
 	m_closedIt = false;
 
@@ -335,9 +345,17 @@ void File::close1_r ( ) {
 	if ( errno == EINTR ) goto again;
 }
 
+
+
+void File::close2() {
+	ScopedLock sl(s_mtx);
+	return close2_unlocked();
+}
+
+
 // . just update the counts
 // . BigFile.cpp calls this when done unlinking/renaming this file
-void File::close2() {
+void File::close2_unlocked() {
 	// if already gone, bail. this could be a closed map file, m_vfd=-1.
 	if ( m_fd < 0 ) {
 		// -1 just means it was already closed, probably this is
@@ -406,6 +424,8 @@ bool File::close ( ) {
 	// return true if not open
 	if ( m_fd < 0 ) return true;
 
+	ScopedLock sl(s_mtx);
+
 	// panic!
 	if ( s_writing [ m_fd ] )
 		return log(LOG_LOGIC,"disk: In write mode and closing 2.");
@@ -446,7 +466,7 @@ bool File::close ( ) {
 		return false;
 	}
 	// sanity
-	if ( ! s_open[m_fd] ) { g_process.shutdownAbort(true); }
+	if ( ! s_open[m_fd] ) gbshutdownCorrupted();
 	// mark it as closed
 	s_open        [ m_fd ] = false;
 	s_filePtrs    [ m_fd ] = NULL;
@@ -478,7 +498,7 @@ int File::getfd () {
 	if ( ! m_calledOpen ) { // m_vfd < 0 ) {
 		g_errno = EBADENGINEER;
 		log(LOG_LOGIC,"disk: getfd: Must call open() first.");
-		g_process.shutdownAbort(true);
+		gbshutdownLogicError();
 	}
 
 	// if someone closed our fd, why didn't our m_fd get set to -1 ??!?!?!!
@@ -496,12 +516,13 @@ int File::getfd () {
 		logDebug( g_conf.m_logDebugDisk, "disk: returning existing fd %i for %s this=0x%" PTRFMT" ccSaved=%i ccNow=%i",
 		          m_fd,getFilename(),(PTRTYPE)this, (int)m_closeCount, (int)s_closeCounts[m_fd] );
 
-		if ( m_fd >= MAX_NUM_FDS ) { g_process.shutdownAbort(true); }
+		if ( m_fd >= MAX_NUM_FDS ) gbshutdownCorrupted();
 		// but update the timestamp to reduce chance it closes on us
 		s_timestamps [ m_fd ] = gettimeofdayInMillisecondsLocal();
 		return m_fd;
 	}
 
+	ScopedLock sl(s_mtx);
 	// . a real fd of -1 means it's been closed and we gotta reopen it
 	// . we have to close someone if we don't have enough room
 	while ( s_numOpenFiles >= s_maxNumOpenFiles )  {
@@ -563,7 +584,7 @@ int File::getfd () {
 		// sanity. how can we get an fd already opened?
 		// because it was closed in a thread in close1_r()
 		if ( fd >= 0 && s_open[fd] ) {
-			g_process.shutdownAbort(true);
+			gbshutdownCorrupted();
 		}
 
 		// . now inc that count in case there was someone reading on
