@@ -158,8 +158,6 @@ const char *mstrerror ( int errnum ) {
 				return "Doc is error page";
 			case EINJECTIONSDISABLED:
 				return "Injection is disabled in Master Controls";
-			case EDISKSTUCK       :
-				return "Disk is stuck";
 			case EDOCREPEATSPAMMER:
 				return "Doc is repetitive spam";
 			case EDOCBADSECTIONS  :
@@ -340,7 +338,7 @@ static const char* s_errname[] {
 	STRINGIFY( EUNUSED40 ),
 	STRINGIFY( EINJECTIONSDISABLED ),
 	STRINGIFY( EUNUSED41 ),
-	STRINGIFY( EDISKSTUCK ),
+	STRINGIFY( EUNUSED41A ),
 	STRINGIFY( EDOCREPEATSPAMMER ),
 	STRINGIFY( EUNUSED42 ),
 	STRINGIFY( EDOCBADSECTIONS ),

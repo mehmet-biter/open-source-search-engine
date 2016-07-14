@@ -198,12 +198,6 @@ void RdbScan::gotList ( ) {
 	int32_t  allocOff  = m_fstate.m_allocOff; //buf=allocBuf+allocOff
 	int32_t  allocSize = m_fstate.m_allocSize;
 
-	// do not free the allocated buf for when the actual thread
-	// does the read and finally completes in this case. we free it
-	// in Threads.cpp::ohcrap()
-	if ( m_fstate.m_errno == EDISKSTUCK )
-		return;
-
 	// just return on error, do nothing
 	if ( g_errno ) {
 		// free buffer though!! don't forget!

@@ -135,7 +135,7 @@ enum {
 	EUNUSED40        ,
 	EINJECTIONSDISABLED        , // injection is disabled
 	EUNUSED41        ,
-	EDISKSTUCK       ,
+	EUNUSED41A       ,
 	EDOCREPEATSPAMMER,
 	EUNUSED42        , // 32890
 	EDOCBADSECTIONS  ,

@@ -905,12 +905,8 @@ void doneWrapper ( void *state, job_exit_t exit_type ) {
 	if ( took > 500 ) rate = fstate->m_bytesDone / took ;
 	bool slow = false;
 	if ( rate < 8000 ) slow = true;
-	if ( fstate->m_errno == EDISKSTUCK ) slow = true;
 	if ( slow && fstate->m_niceness <= 0 ) {
-		if ( fstate->m_errno != EDISKSTUCK )
-		  log(LOG_INFO, "disk: Read %" PRId64" bytes in %" PRId64" "
-		      "ms (%" PRId32"KB/s).",
-		    fstate->m_bytesDone,took,rate);
+		log(LOG_INFO, "disk: Read %" PRId64" bytes in %" PRId64" ms (%" PRId32"KB/s).", fstate->m_bytesDone,took,rate);
 		g_stats.m_slowDiskReads++;
 	}
 	// get the BigFIle
@@ -963,7 +959,7 @@ void doneWrapper ( void *state, job_exit_t exit_type ) {
 	// now log our stuff here
 	int32_t tt = LOG_WARN;
 	if ( g_errno == EFILECLOSED ) tt = LOG_INFO;
-	if ( g_errno && g_errno != EDISKSTUCK ) 
+	if ( g_errno )
 		log (tt,"disk: %s. fd1=%" PRId32" fd2=%" PRId32" "
 		     "off=%" PRId64" toread=%" PRId32,
 		     mstrerror(g_errno),
@@ -973,8 +969,8 @@ void doneWrapper ( void *state, job_exit_t exit_type ) {
 		     (int32_t)fstate->m_bytesToGo
 		     );
 	// someone is closing our fd without setting File::s_vfds[fd] to -1
-	if ( g_errno && g_errno != EDISKSTUCK ) {
-		log( LOG_WARN, "disk: nondstuckerr=%s", mstrerror(g_errno) );
+	if ( g_errno ) {
+		log( LOG_WARN, "disk: err=%s", mstrerror(g_errno) );
 	}
 
 	// . this EBADENGINEER can happen right after a merge if

@@ -788,12 +788,7 @@ bool Msg3::doneScanning ( ) {
 	// kernel ring buffer complains...
 	if ( g_errno == EIO ) g_numIOErrors++;
 	// bail early on high priority reads for these errors
-	if ( g_errno == EDISKSTUCK && m_niceness == 0 ) max = 0;
 	if ( g_errno == EIO        && m_niceness == 0 ) max = 0;
-
-	// how does this happen? we should never bail out on a low priority
-	// disk read... we just wait for it to complete...
-	if ( g_errno == EDISKSTUCK && m_niceness != 0 ) { g_process.shutdownAbort(true);}
 
 	// on I/O, give up at call it corrupt after a while. some hitachis
 	// have I/O errros on little spots, like gk88, maybe we can fix him
@@ -876,16 +871,12 @@ bool Msg3::doneScanning ( ) {
 	//   off file heads
 	// . now that we have threads i'd imagine we'd get EBADFD or something
 	// . i've also seen "illegal seek" as well
-	if ( m_errno && (m_retryNum < max || max < 0) &&
-	     // this will complete in due time, we can't call a sleep wrapper
-	     // on it because the read is really still pending...
-	     m_errno != EDISKSTUCK ) {
+	if ( m_errno && (m_retryNum < max || max < 0) ) {
 		// print the error
 		static time_t s_time  = 0;
 		time_t now = getTime();
 		if ( now - s_time > 5 || g_errno != ENOTHREADSLOTS ) {
-			log("net: Had error reading %s: %s. Retrying. "
-			    "(retry #%" PRId32")", 
+			log(LOG_WARN, "net: Had error reading %s: %s. Retrying. (retry #%" PRId32")",
 			    base->m_dbname,mstrerror(m_errno) , m_retryNum );
 			s_time = now;
 		}
