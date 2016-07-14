@@ -678,13 +678,8 @@ bool RdbDump::dumpList ( RdbList *list , int32_t niceness , bool recall ) {
 	// . otherwise, use doneWritingWrapper() which will call dumpTree()
 	// . BigFile::write() return 0 if blocked,-1 on error,>0 on completion
 	// . it also sets g_errno on error
-	bool isDone = m_file->write ( m_buf          ,
-				      m_bytesToWrite ,
-				      offset         ,
-				      &m_fstate      ,
-				      this           ,
-				      doneWritingWrapper ,
-				      niceness         );
+	bool isDone = m_file->write ( m_buf, m_bytesToWrite, offset, &m_fstate, this, doneWritingWrapper, niceness );
+
 	// debug msg
 	//log("RdbDump dumped %" PRId32" bytes, done=%" PRId32"\n",
 	//	m_bytesToWrite,isDone);
@@ -786,13 +781,8 @@ bool RdbDump::doneDumpingList ( bool addToMap ) {
 		// out of mem? if so, skip the write verify
 		if ( ! m_verifyBuf ) return doneReadingForVerify();
 		// read what we wrote
-		bool isDone = m_file->read ( m_verifyBuf    ,
-					     m_bytesToWrite ,
-					     m_offset - m_bytesToWrite ,
-					     &m_fstate      ,
-					     this           ,
-					     doneReadingForVerifyWrapper ,
-					     m_niceness      );
+		bool isDone = m_file->read ( m_verifyBuf, m_bytesToWrite, m_offset - m_bytesToWrite, &m_fstate, this,
+		                             doneReadingForVerifyWrapper, m_niceness );
 
 		// return false if it blocked
 		if ( ! isDone ) {
@@ -1065,15 +1055,20 @@ bool RdbDump::doneReadingForVerify ( ) {
 void doneWritingWrapper ( void *state ) {
 	// get THIS ptr from state
 	RdbDump *THIS = (RdbDump *)state;
+
 	// done writing
 	THIS->m_writing = false;
+
 	// bitch about errors
-	if ( g_errno && THIS->m_file ) 
-		log("db: Dump to %s had write error: %s.", 
-			THIS->m_file->getFilename(),mstrerror(g_errno));
+	if ( g_errno && THIS->m_file ) {
+		log( LOG_WARN, "db: Dump to %s had write error: %s.", THIS->m_file->getFilename(), mstrerror( g_errno ) );
+	}
 		
 	// delete list from tree, incorporate list into cache, add to map
-	if ( ! THIS->doneDumpingList( true ) ) return;
+	if ( ! THIS->doneDumpingList( true ) ) {
+		return;
+	}
+
 	// continue
 	THIS->continueDumping ( );
 }

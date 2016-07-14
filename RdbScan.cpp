@@ -159,16 +159,8 @@ bool RdbScan::setRead ( BigFile  *file         ,
 	//   memory. i've seen like 19000 unlaunched threads each allocating
 	//   32KB for a tfndb read, hogging up all the memory.
 	//if ( ! file->read ( buf + pad + m_off ,
-	if ( ! file->read ( NULL           ,
-			    bytesToRead    ,
-			    offset         ,
-			    &m_fstate      ,
-			    this           ,
-			    gotListWrapper ,
-			    niceness       ,
-			    m_allowPageCache ,
-			    m_hitDisk        ,
-			    pad + m_off )) // allocOff, buf offset to read into
+	if ( ! file->read ( NULL, bytesToRead, offset, &m_fstate, this, gotListWrapper, niceness, m_allowPageCache,
+	                    m_hitDisk, pad + m_off )) // allocOff, buf offset to read into
 		return false;
 
 	/*
@@ -205,11 +197,13 @@ void RdbScan::gotList ( ) {
 	char *allocBuf  = m_fstate.m_allocBuf;
 	int32_t  allocOff  = m_fstate.m_allocOff; //buf=allocBuf+allocOff
 	int32_t  allocSize = m_fstate.m_allocSize;
+
 	// do not free the allocated buf for when the actual thread
 	// does the read and finally completes in this case. we free it
 	// in Threads.cpp::ohcrap()
 	if ( m_fstate.m_errno == EDISKSTUCK )
 		return;
+
 	// just return on error, do nothing
 	if ( g_errno ) {
 		// free buffer though!! don't forget!
@@ -219,6 +213,7 @@ void RdbScan::gotList ( ) {
 		m_fstate.m_allocSize = 0;
 		return;
 	}
+
 	// . set our list here now since the buffer was allocated in
 	//   DiskPageCache.cpp or Threads.cpp to save memory.
 	// . only set the list if there was a buffer. if not, it s probably 
