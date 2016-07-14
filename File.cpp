@@ -886,13 +886,6 @@ int32_t File::doesExist ( ) {
 		return 0;
 	}
 
-	// log & return -1 on any other error
-	if ( ! g_errno ) {
-		log(LOG_ERROR, "process: you tried to overload __errno_location() "
-		    "but were unsuccessful. you need to be using pthreads.");
-		g_process.shutdownAbort(true);
-	}
-
 	log( LOG_ERROR, "disk: error stat3(%s): %s", getFilename() , strerror(g_errno));
 	return -1;
 }
