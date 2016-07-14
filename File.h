@@ -42,13 +42,7 @@ class BigFile;
 
 
 class File {
-
-	friend class BigFile;
-
-	void constructor();
-	void destructor ();
-
- public:
+public:
 
 	 File ( );
 	~File ( );

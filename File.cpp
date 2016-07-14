@@ -70,15 +70,8 @@ int32_t getCloseCount_r ( int fd ) {
 	return s_closeCounts [ fd ];
 }
 
+
 File::File ( ) {
-	constructor();
-}
-
-File::~File ( ) {
-	destructor();
-}
-
-void File::constructor ( ) {
 	m_fd = -1;
 
 	// initialize m_maxFileSize and the virtual fd table
@@ -92,7 +85,8 @@ void File::constructor ( ) {
 	logDebug( g_conf.m_logDebugDisk, "disk: constructor fd %i this=0x%" PTRFMT, m_fd, (PTRTYPE)this );
 }
 
-void File::destructor ( ) {
+
+File::~File ( ) {
 	logDebug( g_conf.m_logDebugDisk, "disk: destructor fd %i this=0x%" PTRFMT, m_fd, (PTRTYPE)this );
 
 	close ();
@@ -101,6 +95,7 @@ void File::destructor ( ) {
 	m_calledSet  = false;
 	m_calledOpen = false;
 }
+
 
 void File::set ( const char *dir , const char *filename ) {
 	if ( ! dir ) { set ( filename ); return; }
