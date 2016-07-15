@@ -24,10 +24,6 @@
 
 #define LITTLEBUFSIZE sizeof(File)
 
-// use this state class for doing non-blocking reads/writes
-#ifdef ASYNCIO
-#include <aio.h> // TODO: use kaio, uses only 4 threads
-#endif
 
 class FileState {
 public:
@@ -91,9 +87,6 @@ public:
 	int64_t  m_allocOff;
 	// do not call pthread_create() for every read we do. use async io
 	// because it should be much much faster
-#ifdef ASYNCIO
-	struct aiocb m_aiocb[2];
-#endif
 };
 
 
