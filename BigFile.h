@@ -207,6 +207,7 @@ class BigFile {
 	// WARNING: some may have been unlinked from call to unlinkPart()
 	int32_t getNumParts ( ) { return m_numParts; }
 
+private:
 	// makes the filename of part file #n
 	void makeFilename_r ( char *baseFilename    , 
 			      char *baseFilenameDir ,
@@ -229,7 +230,6 @@ class BigFile {
 	// number of parts remaining to be unlinked/renamed
 	int32_t   m_partsRemaining;
 
-private:
 	char m_tinyBuf[8];
 
 	// to hold the array of Files
@@ -286,7 +286,8 @@ private:
 	//int32_t m_permissions;
 	int32_t m_flags;
 
-public:
+	int32_t             m_vfd;
+
 	// our most important the directory and filename
 	SafeBuf m_dir      ;
 	SafeBuf m_baseFilename ;
@@ -298,6 +299,7 @@ public:
 	// if first char in this dir is 0 then use m_dir
 	SafeBuf m_newBaseFilenameDir ;
 
+public:
 	File *getFile2 ( int32_t n ) { 
 		if ( n >= m_maxParts ) return NULL;
 		File **filePtrs = (File **)m_filePtrsBuf.getBufStart();
@@ -313,8 +315,6 @@ public:
 	int       m_numParts;
 	// maximum part #
 	int32_t      m_maxParts;
-
-	int32_t             m_vfd;
 
 	// prevent circular calls to BigFile::close() with this
 	bool m_isClosing;

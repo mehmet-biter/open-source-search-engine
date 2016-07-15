@@ -1065,7 +1065,7 @@ bool Msg3::doneScanning ( ) {
 			    "This is likely caused by corrupted "
 			    "data on disk.", 
 			    mstrerror(g_errno), ff->getDir(),
-			    ff->getFilename(), ff->m_vfd , 
+			    ff->getFilename(), ff->getVfd(),
 			    (int32_t)ff->m_numParts );
 			continue;
 		}
