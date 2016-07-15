@@ -1614,64 +1614,16 @@ void BigFile::renameWrapper(File *f) {
 	logTrace( g_conf.m_logTraceBigFile, "BEGIN" );
 
 	// get the ith file we just unlinked
-	int32_t      i = f->m_i;
-	bool forceRename = f->getForceRename();
+	int32_t i = f->m_i;
 
 	// . get the new full name for this file
 	// . based on m_dir/m_stripeDir and m_baseFilename
 	char newFilename [ 1024 ];
-	makeFilename_r ( m_newBaseFilename.getBufStart(),
-			 m_newBaseFilenameDir.getBufStart(),
-			 i,
-			 newFilename,
-			 1024 );
-			       
-	char oldFilename [ 1024 ];
-	makeFilename_r ( m_baseFilename.getBufStart(),
-			 NULL,
-			 i,
-			 oldFilename,
-			 1024 );
+	makeFilename_r ( m_newBaseFilename.getBufStart(), m_newBaseFilenameDir.getBufStart(), i, newFilename, 1024 );
 
+	log( LOG_TRACE,"%s:%s:%d: disk: rename [%s] to [%s]", __FILE__, __func__, __LINE__, f->getFilename(), newFilename );
 
-	log(LOG_TRACE,"%s:%s:%d: disk: rename [%s] to [%s]", 
-	   __FILE__, __func__, __LINE__,oldFilename,newFilename);
-
-	if ( forceRename || ::access( newFilename, F_OK ) != 0 ) {
-		// suppress error (we will catch it in rename anyway)
-		errno = 0;
-
-		// this returns 0 on success
-		if ( ::rename( oldFilename, newFilename ) ) {
-			// reset errno and return true if file does not exist
-			if ( errno == ENOENT ) {
-				log( LOG_ERROR, "%s:%s:%d: disk: file [%s] does not exist.", __FILE__, __func__, __LINE__, oldFilename );
-				logAllData( LOG_ERROR );
-				errno = 0;
-			} else {
-				log( LOG_ERROR, "%s:%s:%d: disk: rename [%s] to [%s]: [%s]",
-				     __FILE__, __func__, __LINE__, oldFilename, newFilename, mstrerror( errno ) );
-				logAllData( LOG_ERROR );
-			}
-
-			logTrace( g_conf.m_logTraceBigFile, "END" );
-			return;
-		}
-	} else {
-		// new file exists
-		log( LOG_ERROR, "%s:%s:%d: disk: trying to rename [%s] to [%s] which exists.", __FILE__, __func__, __LINE__,
-		     oldFilename, newFilename );
-		gbshutdownAbort( true );
-	}
-
-	// sync to disk in case power goes out
-	// when i gdb gb during its slow unlink on morph it is in the
-	// sync() function, so let's take this out...
-	//sync();
-
-	// . this might be safe to call in a thread
-	// . but we do it right after the thread exits now
-	//THIS->m_files[i]->set ( THIS->m_newBaseFilename );
+	f->rename( newFilename );
 
 	logTrace( g_conf.m_logTraceBigFile, "END" );
 }
@@ -1713,6 +1665,7 @@ void BigFile::doneRenameWrapper(File *f, job_exit_t /*exit_type*/) {
 
 	// clear thread's errno
 	errno = 0;
+
 	// one less
 	m_numThreads--;
 	g_unlinkRenameThreads--;
@@ -1720,36 +1673,15 @@ void BigFile::doneRenameWrapper(File *f, job_exit_t /*exit_type*/) {
 	// reset g_errno and return true if file does not exist
 	//if ( g_errno == ENOENT ) g_errno = 0 ;
 	// otherwise, it's a more serious error i guess
-	if ( g_errno ) 
-	{
+	if ( g_errno ) {
 		log(LOG_ERROR, "%s:%s:%d: doneRenameWrapper. rename failed: [%s] [%s]", __FILE__, __func__, __LINE__, getFilename(), mstrerror(g_errno));
 		logAllData(LOG_ERROR);
 		//@@@ BR: Why continue??
 	}
-			     
-	// get the ith file we just unlinked
-	int32_t      i = f->m_i;
-	File *fi = getFile2 ( i );
-	
-	// rename the part if it checks out
-	if ( f == fi ) 
-	{
-		// set his new name
-		char newFilename [ 1024 ];
-		makeFilename_r (m_newBaseFilename.getBufStart(),
-				m_newBaseFilenameDir.getBufStart(),
-				i,
-				newFilename,
-				1024 );
-		fi->set ( newFilename );
-	}
-	else
-	{
-		log(LOG_LOGIC,"disk: Rename had bad file ptr.");
-	}
 	
 	// bail if more to do
 	//if ( m_numThreads > 0 ) return;
+
 	// one less part to do
 	m_partsRemaining--;
 	
@@ -1767,8 +1699,7 @@ void BigFile::doneRenameWrapper(File *f, job_exit_t /*exit_type*/) {
 	m_baseFilename.safeStrcpy(m_newBaseFilename.getBufStart());
 	// . all done, call the main callback
 	// . this is NULL if we were not called in a thread
-	if ( m_callback )
-	{
+	if ( m_callback ) {
 		m_callback ( m_state );
 	}
 

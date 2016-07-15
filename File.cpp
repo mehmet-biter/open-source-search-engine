@@ -125,14 +125,9 @@ void File::set ( const char *filename ) {
 	int32_t len = gbstrlen ( filename );
 	// account for terminating '\0'
 	if ( len + 1 >= MAX_FILENAME_LEN ) {
-		log ( LOG_ERROR, "disk: Provdied filename %s length of %" PRId32" is bigger than %" PRId32".",
+		log ( LOG_ERROR, "disk: Provided filename %s length of %" PRId32" is bigger than %" PRId32".",
 	          filename, len, (int32_t)MAX_FILENAME_LEN-1);
 	 	return;
-	}
-
-	// if we already had another file open then we must close it first.
-	if ( m_fd >= 0 ) {
-		close();
 	}
 
 	// copy into m_filename
@@ -143,13 +138,30 @@ void File::set ( const char *filename ) {
 }
 
 bool File::rename ( const char *newFilename ) {
-	// do the rename
-	if ( ::rename ( getFilename() , newFilename ) != 0 ) {
-		return false;
-	}
+	if ( getForceRename() || ::access( newFilename, F_OK ) != 0 ) {
+		// suppress error (we will catch it in rename anyway)
+		errno = 0;
 
-	// sync it to disk in case power goes out
-	sync();
+		// this returns 0 on success
+		if ( ::rename( getFilename(), newFilename ) ) {
+			// reset errno and return true if file does not exist
+			if ( errno == ENOENT ) {
+				log( LOG_ERROR, "%s:%s:%d: disk: file [%s] does not exist.", __FILE__, __func__, __LINE__, getFilename() );
+				errno = 0;
+			} else {
+				log( LOG_ERROR, "%s:%s:%d: disk: rename [%s] to [%s]: [%s]",
+				     __FILE__, __func__, __LINE__, getFilename(), newFilename, mstrerror( errno ) );
+			}
+
+			logTrace( g_conf.m_logTraceFile, "END" );
+			return false;
+		}
+	} else {
+		// new file exists
+		log( LOG_ERROR, "%s:%s:%d: disk: trying to rename [%s] to [%s] which exists.", __FILE__, __func__, __LINE__,
+		     getFilename(), newFilename );
+		gbshutdownAbort( true );
+	}
 
 	// set to our new name
 	set ( newFilename );
