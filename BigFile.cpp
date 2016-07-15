@@ -10,7 +10,10 @@
 #include "Stats.h"
 #include "Statsdb.h"
 #include "Sanity.h"
+#include "ScopedLock.h"
 #include <new>
+#include <vector>
+#include <pthread.h>
 
 // main.cpp will wait for this to be zero before exiting so all unlink/renames
 // can complete
@@ -22,6 +25,51 @@ static void readwriteWrapper_r  ( void *state );
 
 static void  doneWrapper        ( void *state, job_exit_t exit_type );
 static bool  readwrite_r        ( FileState *fstate );
+
+
+//A set (list in this case) of filenames that we intend to unlink or rename (src name).
+//it is needed for preventing queued read operations from working on deleted files.
+struct UnlinkFilename {
+	char filename[1024];
+};
+static std::vector<UnlinkFilename> s_pendingFileMetaOperations;
+static pthread_mutex_t s_pending_mtx = PTHREAD_MUTEX_INITIALIZER;
+
+
+
+static bool isPendingUnlink(const char *filename) {
+	ScopedLock sl(s_pending_mtx);
+	for(std::vector<UnlinkFilename>::const_iterator iter=s_pendingFileMetaOperations.begin(); iter!=s_pendingFileMetaOperations.end(); ++iter) {
+		if(strcmp(iter->filename,filename)==0)
+			return true;
+	}
+	return false;
+}
+
+static void addPendingUnlink(const char *filename) {
+	ScopedLock sl(s_pending_mtx);
+	//we cannot have two simultaenous operations on a file
+	for(std::vector<UnlinkFilename>::const_iterator iter=s_pendingFileMetaOperations.begin(); iter!=s_pendingFileMetaOperations.end(); ++iter) {
+		if(strcmp(iter->filename,filename)==0)
+			gbshutdownLogicError();
+	}
+	UnlinkFilename ruf;
+	strcpy(ruf.filename,filename);
+	s_pendingFileMetaOperations.push_back(ruf);
+}
+
+static void removePendingUnlink(const char *filename) {
+	ScopedLock sl(s_pending_mtx);
+	//double-remove is allowed.
+	for(std::vector<UnlinkFilename>::iterator iter=s_pendingFileMetaOperations.begin(); iter!=s_pendingFileMetaOperations.end(); ++iter) {
+		if(strcmp(iter->filename,filename)==0) {
+			s_pendingFileMetaOperations.erase(iter);
+			return;
+		}
+	}
+}
+
+
 
 BigFile::~BigFile () {
 	close();
@@ -680,6 +728,15 @@ bool BigFile::readwrite ( void         *buf      ,
 		fstate->m_closeCount1 = getCloseCount_r ( fstate->m_fd1 );
 		fstate->m_closeCount2 = getCloseCount_r ( fstate->m_fd2 );
 	}
+	//grab the filenames of the associated files so we later can check for pending deletion
+	if(fstate->m_filenum1<m_maxParts)
+		strcpy(fstate->m_filename1, getFile2(fstate->m_filenum1)->getFilename());
+	else
+		fstate->m_filename1[0] = '\0';
+	if(fstate->m_filenum2<m_maxParts)
+		strcpy(fstate->m_filename2, getFile2(fstate->m_filenum2)->getFilename());
+	else
+		fstate->m_filename2[0] = '\0';
 
 	// get the close counts after calling getfd() since if getfd() calls
 	// File::open() that will inc the counts
@@ -1014,6 +1071,20 @@ static void readwriteWrapper_r ( void *state ) {
 	// extract our class
 	FileState *fstate = (FileState *)state;
 
+	//check if the file (part) is scheduled to be deleted. If so, abort.
+	if(fstate->m_filename1[0] && isPendingUnlink(fstate->m_filename1)) {
+		log(LOG_WARN,"readwriteWrapper_r: file %s is marked for unlinking; aborting read/write",fstate->m_filename1);
+		fstate->m_errno = EFILECLOSED;
+		fstate->m_doneTime = gettimeofdayInMilliseconds();
+		return;
+	}
+	if(fstate->m_filename2[0] && isPendingUnlink(fstate->m_filename2)) {
+		log(LOG_WARN,"readwriteWrapper_r: file %s is marked for unlinking; aborting read/write",fstate->m_filename2);
+		fstate->m_errno = EFILECLOSED;
+		fstate->m_doneTime = gettimeofdayInMilliseconds();
+		return;
+	}
+	
 	if( !fstate->m_doWrite && !fstate->m_buf && fstate->m_bytesToGo>0 ) {
 		int32_t need = fstate->m_allocOff + fstate->m_bytesToGo;
 		char *p = (char *) mmalloc ( need , "ThreadReadBuf" );
@@ -1490,10 +1561,7 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 	void (*startRoutine)(void *state);
 	void (*doneRoutine )(void *state, job_exit_t exit_type);
 
-	int32_t i = 0;
-	if ( m_part >= 0 ) {
-		i = m_part;
-	}
+	const int32_t startPartNumber = m_part>=0 ? m_part : 0;
 
 	// how many parts have we done?
 	m_partsRemaining = m_maxParts;
@@ -1502,7 +1570,28 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 		m_partsRemaining = 1;
 	}
 
-	for ( ; i < m_maxParts ; i++ ) {
+	if(m_isUnlink) {
+		//First mark the files for unlink so no further read-jobs will be submitted for those parts
+		for ( int32_t i = startPartNumber ; i < m_maxParts ; i++ ) {
+			if ( m_part >= 0 && i != m_part )
+				break;
+			File *f = getFile2(i);
+			if ( !f )
+				continue;
+			addPendingUnlink(f->getFilename());
+		}
+	
+		//then cancel all queued read jobs for this bigfile
+		if(part == -1 ) {
+			// remove all queued threads that point to us that have not
+			// yet been launched
+			g_jobScheduler.cancel_file_read_jobs(this);
+		}
+	}
+
+	
+	//then prepare/submit the rename/unlink
+	for ( int32_t i = startPartNumber; i < m_maxParts ; i++ ) {
 		// break out if we should only unlink one part
 		if ( m_part >= 0 && i != m_part ) break;
 		// get the ith file to rename/unlink
@@ -1578,11 +1667,6 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 		doneRoutine  ( f , job_exit_normal );
 	}
 
-	if ( m_isUnlink && part == -1 ) {
-		// remove all queued threads that point to us that have not
-		// yet been launched
-		g_jobScheduler.cancel_file_read_jobs(this);
-	}
 	// close em up
 	//close();
 	// if one blocked, we block, but never return false if !useThread
@@ -1640,6 +1724,23 @@ void BigFile::unlinkWrapper(void *state) {
 void BigFile::unlinkWrapper(File *f) {
 	logTrace( g_conf.m_logTraceBigFile, "BEGIN" );
 
+	//We have to wait for all running io-jobs reading from that File to
+	//finish before unlinking+closing. otherwise the read threads will
+	//refer toc losed file descriptors or get unhappy when they can't
+	//re-open the file. The problem is that JobScheudler doesn't have an
+	//API for checking that, and FileState doesn't have a File* member
+	//(because they can become invalid/deleted), so there is no easy correct
+	//way of waiting for read jobs using that file to finishes. Insteads we
+	//do it the hackish way: check if someone is reading the bigfile every
+	//100ms, break after 5 seconds because then it is highly unlikely that
+	//any unfinished job refers to that area/file anymore.
+	for(int i=0; i<50; i++) {
+		if(!g_jobScheduler.is_reading_file(f->m_bigfile))
+			break;
+		usleep(100); //sleep 100ms
+	}
+	
+	//now real unlink
 	::unlink ( f->getFilename() );
 	// we must close the file descriptor in the thread otherwise the
 	// file will not actually be unlinked in this thread
@@ -1648,6 +1749,8 @@ void BigFile::unlinkWrapper(File *f) {
 	// when i gdb gb during its slow unlink on morph it is in the
 	// sync() function, so let's take this out...
 	//sync();
+
+	removePendingUnlink(f->getFilename());
 
 	logTrace( g_conf.m_logTraceBigFile, "END" );
 }
@@ -1715,6 +1818,9 @@ void BigFile::doneUnlinkWrapper(void *state, job_exit_t exit_type) {
 
 void BigFile::doneUnlinkWrapper(File *f, job_exit_t /*exit_type*/) {
 	logTrace( g_conf.m_logTraceBigFile, "BEGIN" );
+
+	//unmark file for deletion since it already has
+	removePendingUnlink(f->getFilename());
 
 	// finish the close
 	f->close2();

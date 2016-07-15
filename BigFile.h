@@ -58,6 +58,8 @@ public:
 	int32_t            m_filenum2;
 	int             m_fd1 ;
 	int             m_fd2 ;
+	char            m_filename1[1024];
+	char            m_filename2[1024];
 	// hold the errno from the threaded read/write here
 	int32_t            m_errno;
 	// just for flagging unlinked/renamed thread ops
