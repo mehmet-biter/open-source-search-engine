@@ -139,9 +139,6 @@ void File::set ( const char *filename ) {
 }
 
 bool File::rename ( const char *newFilename ) {
-	// close ourselves if we were open... why? historical reasons?
-	close();
-
 	// do the rename
 	if ( ::rename ( getFilename() , newFilename ) != 0 ) {
 		return false;

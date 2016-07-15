@@ -1663,14 +1663,12 @@ void BigFile::renameWrapper(File *f) {
 		     oldFilename, newFilename );
 		gbshutdownAbort( true );
 	}
-	
-	// we must close the file descriptor in the thread otherwise the
-	// file will not actually be renamed in this thread
-	f->close1_r();
+
 	// sync to disk in case power goes out
 	// when i gdb gb during its slow unlink on morph it is in the
 	// sync() function, so let's take this out...
 	//sync();
+
 	// . this might be safe to call in a thread
 	// . but we do it right after the thread exits now
 	//THIS->m_files[i]->set ( THIS->m_newBaseFilename );
@@ -1713,12 +1711,6 @@ void BigFile::doneRenameWrapper(void *state, job_exit_t exit_type) {
 void BigFile::doneRenameWrapper(File *f, job_exit_t /*exit_type*/) {
 	logTrace( g_conf.m_logTraceBigFile, "BEGIN" );
 
-	// . finish the close
-	// . for some reason renaming invalidates our fd so if someone wants
-	//   to read from us they'll have to re-open
-	// . this may bitch about a bad file descriptor since we call
-	//   ::close1_r(fd) in the thread
-	f->close2();
 	// clear thread's errno
 	errno = 0;
 	// one less
