@@ -1151,7 +1151,7 @@ static void readwriteWrapper_r ( void *state ) {
 // . if we receive a cancel sig while in pread/pwrite it will return -1
 //   and set errno to EINTR
 // Use of ThreadEntry parameter is NOT thread safe
-bool readwrite_r ( FileState *fstate ) {
+static bool readwrite_r ( FileState *fstate ) {
 	// if no buffer to read into the alloc in Threads.cpp failed
 	if ( ! fstate->m_buf ) {
 		errno = EBUFTOOSMALL;
