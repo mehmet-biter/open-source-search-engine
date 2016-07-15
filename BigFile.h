@@ -12,7 +12,6 @@
 
 #include "File.h"
 
-ssize_t gbpwrite(int fd, const void *buf, size_t count, off_t offset);
 
 #ifndef PRIVACORE_TEST_VERSION
 // . use 512 disk megs per part file

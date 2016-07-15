@@ -1413,25 +1413,25 @@ bool RdbCache::save2_r ( int fd ) {
 	int n;
 	int32_t off = 0;
 	// general info
-	n = gbpwrite ( fd , &m_numPtrsMax  , 4 , off ); off += 4;
+	n = pwrite ( fd , &m_numPtrsMax  , 4 , off ); off += 4;
 	if ( n != 4 ) return false;
-	n = gbpwrite ( fd , &m_maxMem      , 4 , off ); off += 4;
+	n = pwrite ( fd , &m_maxMem      , 4 , off ); off += 4;
 	if ( n != 4 ) return false;
 	// mem stuff
-	n = gbpwrite ( fd , &m_memAlloced  , 4 , off ); off += 4;
+	n = pwrite ( fd , &m_memAlloced  , 4 , off ); off += 4;
 	if ( n != 4 ) return false;
-	n = gbpwrite ( fd , &m_memOccupied , 4 , off ); off += 4;
+	n = pwrite ( fd , &m_memOccupied , 4 , off ); off += 4;
 	if ( n != 4 ) return false;
 	// save the buffer stuff
-	n = gbpwrite ( fd , &m_numBufs     , 4 , off ); off += 4;
+	n = pwrite ( fd , &m_numBufs     , 4 , off ); off += 4;
 	if ( n != 4 ) return false;
-	n = gbpwrite ( fd , &m_totalBufSize, 4 , off ); off += 4;
+	n = pwrite ( fd , &m_totalBufSize, 4 , off ); off += 4;
 	if ( n != 4 ) return false;
-	n = gbpwrite ( fd , &m_offset      , 4 , off ); off += 4;
+	n = pwrite ( fd , &m_offset      , 4 , off ); off += 4;
 	if ( n != 4 ) return false;
-	n = gbpwrite ( fd , &m_tail        , 4 , off ); off += 4;
+	n = pwrite ( fd , &m_tail        , 4 , off ); off += 4;
 	if ( n != 4 ) return false;
-	n = gbpwrite ( fd , &m_wrapped     , 1 , off ); off += 1;
+	n = pwrite ( fd , &m_wrapped     , 1 , off ); off += 1;
 	if ( n!= 1 ) return false;
 	// write each buf
 	for ( int32_t i = 0 ; i < m_numBufs ; i++ ) {
@@ -1442,16 +1442,16 @@ bool RdbCache::save2_r ( int fd ) {
 		//if ( n != 4 ) return false;
 		// and buf size
 		int32_t bufSize = m_bufSizes[i];
-		n = gbpwrite ( fd , &bufSize , 4 , off ); off += 4;
+		n = pwrite ( fd , &bufSize , 4 , off ); off += 4;
 		if ( n != 4 ) return false;
 		// then write contents of buffer #i
-		n = gbpwrite ( fd, m_bufs[i] , bufSize , off ); off += bufSize;
+		n = pwrite ( fd, m_bufs[i] , bufSize , off ); off += bufSize;
 		if ( n != bufSize ) return false;
 	}
 	// save the hash table stuff
-	n = gbpwrite ( fd , &m_numPtrsUsed , 4 , off ); off += 4;
+	n = pwrite ( fd , &m_numPtrsUsed , 4 , off ); off += 4;
 	if ( n != 4 ) return false;
-	n = gbpwrite ( fd , &m_threshold   , 4 , off ); off += 4;
+	n = pwrite ( fd , &m_threshold   , 4 , off ); off += 4;
 	if ( n != 4 ) return false;
 	// save 100k at a time
 	int32_t i = 0;
@@ -1509,7 +1509,7 @@ bool RdbCache::saveSome_r ( int fd , int32_t *iptr , int32_t *off ) {
 	}
 	// now write it all at once
 	int32_t size = bp - buf;
-	int32_t n = gbpwrite ( fd , buf , size , *off );  *off = *off + size;
+	int32_t n = pwrite ( fd , buf , size , *off );  *off = *off + size;
 	if ( n != size ) return false;
 	return true;
 }

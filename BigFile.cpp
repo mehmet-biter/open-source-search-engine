@@ -2016,8 +2016,3 @@ bool BigFile::close ( ) {
 	g_jobScheduler.cancel_file_read_jobs(this);
 	return true;
 }
-
-
-ssize_t gbpwrite(int fd, const void *buf, size_t count, off_t offset) {
-	return pwrite ( fd , buf , count , offset );
-}

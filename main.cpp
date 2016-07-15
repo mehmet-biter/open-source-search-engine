@@ -7099,7 +7099,7 @@ bool ramdiskTest() {
 	}
 
 	char *buf[1000];
-	gbpwrite ( fd , buf , 1000, 0 );
+	pwrite ( fd , buf , 1000, 0 );
 
 	close ( fd);
 	return true;
