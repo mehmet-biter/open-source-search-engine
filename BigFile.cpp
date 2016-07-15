@@ -613,7 +613,7 @@ bool BigFile::readwrite ( void         *buf      ,
 	// us to check the page cache! silly bean!
 	if ( ! allowPageCache && ! hitDisk ) gbshutdownLogicError();
 	// set up fstate
-	fstate->m_this        = this;
+	fstate->m_bigfile     = this;
 	// buf may be NULL if caller passed in a NULL "buf" and it did not hit 
 	// the disk page cache. Threads.cpp will have to allocate it right
 	// before it launches the thread.
@@ -891,7 +891,7 @@ void doneWrapper ( void *state, job_exit_t exit_type ) {
 	// exit write mode
 	if ( fstate->m_doWrite ) {
 		// THIS could have been deleted!!
-		//BigFile *THIS = fstate->m_this;
+		//BigFile *THIS = fstate->m_bigfile;
 		//File *f1 = THIS->m_files [ fstate->m_filenum1 ];
 		//File *f2 = THIS->m_files [ fstate->m_filenum2 ];
 		//f1->exitWriteMode();
@@ -914,7 +914,7 @@ void doneWrapper ( void *state, job_exit_t exit_type ) {
 		g_stats.m_slowDiskReads++;
 	}
 	// get the BigFIle
-	//BigFile *THIS = fs->m_this;
+	//BigFile *THIS = fs->m_bigfile;
 	// recall g_errno from state's m_errno
 	g_errno = fstate->m_errno;
 	// might have had the file renamed/unlinked from under us
@@ -950,7 +950,7 @@ void doneWrapper ( void *state, job_exit_t exit_type ) {
 	//char *s = "read";
 	//if ( fstate->m_doWrite ) s = "wrote";
 	//char *t = "no";	// are we blocking?
-	//if ( fstate->m_this->getFlags() & O_NONBLOCK ) t = "yes";
+	//if ( fstate->m_bigfile->getFlags() & O_NONBLOCK ) t = "yes";
 	// this is bad for real-time threads cuz our unlink() routine may
 	// have been called by RdbMerge and our m_files may be altered 
 	//log("disk::readwrite: %s %" PRId32" bytes from %s(nonBlock=%s)",s,n,
@@ -991,7 +991,7 @@ void doneWrapper ( void *state, job_exit_t exit_type ) {
 		int32_t fn1 = fstate->m_filenum1;
 		int32_t fn2 = fstate->m_filenum2;
 		// CAUTION: if file got delete THIS will be invalid!!!
-		BigFile *THIS = fstate->m_this;
+		BigFile *THIS = fstate->m_bigfile;
 		char *s = THIS->getFilename();
 		log(LOG_DEBUG,"disk: Closing old fd1 (%s,%" PRId32")",s,fn1);
 		log(LOG_DEBUG,"disk: Closing old fd2 (%s,%" PRId32")",s,fn2);
@@ -1029,22 +1029,22 @@ static void readwriteWrapper_r ( void *state ) {
 			log( LOG_WARN, "thread: read buf alloc failed for %" PRId32" bytes.", need );
 		}
 	}
-	fstate->m_fd1 = fstate->m_this->getfd (fstate->m_filenum1,!fstate->m_doWrite);
-	fstate->m_fd2 = fstate->m_this->getfd (fstate->m_filenum2,!fstate->m_doWrite);
+	fstate->m_fd1 = fstate->m_bigfile->getfd (fstate->m_filenum1,!fstate->m_doWrite);
+	fstate->m_fd2 = fstate->m_bigfile->getfd (fstate->m_filenum2,!fstate->m_doWrite);
 	// is this bad?
 	if ( fstate->m_fd1 < 0 ) {
-		log( LOG_WARN, "disk: fd1 is %i for %s", fstate->m_fd1, fstate->m_this->getFilename() );
+		log( LOG_WARN, "disk: fd1 is %i for %s", fstate->m_fd1, fstate->m_bigfile->getFilename() );
 	}
 
 	if ( fstate->m_fd2 < 0 ) {
-		log( LOG_WARN, "disk: fd2 is %i for %s", fstate->m_fd2, fstate->m_this->getFilename() );
+		log( LOG_WARN, "disk: fd2 is %i for %s", fstate->m_fd2, fstate->m_bigfile->getFilename() );
 	}
 
 	fstate->m_closeCount1 = getCloseCount_r ( fstate->m_fd1 );
 	fstate->m_closeCount2 = getCloseCount_r ( fstate->m_fd2 );
 	
 	// get THIS
-	//BigFile *THIS = fstate->m_this;
+	//BigFile *THIS = fstate->m_bigfile;
 	// clear thread's errno
 	errno = 0;
 	// . make it so we go away immediately upon receiving a cancellation 
@@ -1076,11 +1076,11 @@ static void readwriteWrapper_r ( void *state ) {
 	// mdw: no we can't access bigfile it might be deleted!
 	// File *f1 = NULL;
 	// File *f2 = NULL;
-	// // when we exit, m_this is invalid!!!
-	// if ( fstate->m_filenum1 < fstate->m_this->m_maxParts )
-	// 	f1 = fstate->m_this->getFile2(fstate->m_filenum1);
-	// if ( fstate->m_filenum2 < fstate->m_this->m_maxParts )
-	// 	f2 = fstate->m_this->getFile2(fstate->m_filenum2);
+	// // when we exit, m_bigfile is invalid!!!
+	// if ( fstate->m_filenum1 < fstate->m_bigfile->m_maxParts )
+	// 	f1 = fstate->m_bigfile->getFile2(fstate->m_filenum1);
+	// if ( fstate->m_filenum2 < fstate->m_bigfile->m_maxParts )
+	// 	f2 = fstate->m_bigfile->getFile2(fstate->m_filenum2);
 
 	// . if open count changed on us our file got unlinked from under us
 	//   and another file was opened with that same fd!!! 
@@ -1221,7 +1221,7 @@ static bool readwrite_r ( FileState *fstate ) {
 		// this is bad for real-time threads cuz our unlink() routine 
 		// may have been called by RdbMerge and our m_files may be 
 		// altered 
-		// MDW: don't access m_this in case bigfile was deleted
+		// MDW: don't access m_bigfile in case bigfile was deleted
 		// since we are in a thread
 		log(LOG_DEBUG, "disk::readwrite: %s %i bytes of %i @ offset %i "
 		    //"from BASEfile=%s "
@@ -1229,7 +1229,7 @@ static bool readwrite_r ( FileState *fstate ) {
 		    "fd %i "
 		    "cc1=%i=?%i cc2=%i=?%i errno=%s",
 		    s,n,len,localOffset,
-		    //fstate->m_this->getFilename(),
+		    //fstate->m_bigfile->getFilename(),
 		    t,
 		    fd,
 		    (int)fstate->m_closeCount1 , 
@@ -1253,7 +1253,7 @@ static bool readwrite_r ( FileState *fstate ) {
 	// . i think the fd will have been closed and re-opened on us if this
 	//   happens... usually
 	if (n==0 && len > 0 ) {
-		// MDW: don't access m_this in case bigfile was deleted
+		// MDW: don't access m_bigfile in case bigfile was deleted
 		// since we are in a thread
 		log(LOG_WARN, "disk: Read of %" PRId32" bytes at offset %" PRId64" "
 		    " failed because file is too short for that "
@@ -1261,8 +1261,8 @@ static bool readwrite_r ( FileState *fstate ) {
 		    "thread. fd1=%i fd2=%i len=%i filenum=%i "
 		    "localoffset=%i. error=%s.",
 		    (int32_t)len,fstate->m_offset,
-		    //fstate->m_this->getDir(),
-		    //fstate->m_this->getFilename(),
+		    //fstate->m_bigfile->getDir(),
+		    //fstate->m_bigfile->getFilename(),
 		    fstate->m_fd1,
 		    fstate->m_fd2,
 		    len,
@@ -1526,7 +1526,7 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 			doneRoutine  = doneRenameWrapper;
 		}
 
-		// base in ptr to file, but set f->m_this and f->m_i 
+		// base in ptr to file, but set f->m_bigfile and f->m_i
 		f->m_bigfile = this;
 		f->m_i    = i;
 		f->setForceRename( force );

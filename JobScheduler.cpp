@@ -428,7 +428,7 @@ void JobScheduler_impl::cancel_file_read_jobs(const BigFile *bf)
 	for(JobQueue::iterator iter = io_job_queue.begin(); iter!=io_job_queue.end(); ) {
 		if(iter->is_io_job && !iter->is_io_write_job) {
 			const FileState *fstate = reinterpret_cast<const FileState*>(iter->state);
-			if(fstate->m_this==bf) {
+			if(fstate->m_bigfile==bf) {
 				exit_set.push_back(std::make_pair(*iter,job_exit_cancelled));
 				iter = io_job_queue.erase(iter);
 				continue;
@@ -448,14 +448,14 @@ bool JobScheduler_impl::is_reading_file(const BigFile *bf)
 	for(const auto &e : io_job_queue) {
 		if(e.is_io_job && !e.is_io_write_job) {
 			const FileState *fstate = reinterpret_cast<const FileState*>(e.state);
-			if(fstate->m_this==bf)
+			if(fstate->m_bigfile==bf)
 				return true;
 		}
 	}
 	for(const auto &e : running_set) {
 		if(e.is_io_job && !e.is_io_write_job) {
 			const FileState *fstate = reinterpret_cast<const FileState*>(e.state);
-			if(fstate->m_this==bf)
+			if(fstate->m_bigfile==bf)
 				return true;
 		}
 	}

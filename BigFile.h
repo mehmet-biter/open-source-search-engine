@@ -30,7 +30,7 @@ class FileState {
 public:
 	// callback must be top 4 bytes of the state class we give to g_loop
 	// callback must be first X bytes
-	class BigFile  *m_this;
+	class BigFile  *m_bigfile;
 
 	char           *m_buf;
 	int64_t            m_bytesToGo;
