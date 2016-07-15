@@ -228,6 +228,7 @@ class BigFile {
 	// number of parts remaining to be unlinked/renamed
 	int32_t   m_partsRemaining;
 
+private:
 	char m_tinyBuf[8];
 
 	// to hold the array of Files
@@ -235,8 +236,6 @@ class BigFile {
 
 	// enough mem for our first File so we can avoid a malloc
 	char m_littleBuf[LITTLEBUFSIZE];
-
-	// private: 
 
 	// . wrapper for all reads and writes
 	// . if doWrite is true then we'll do a write, otherwise we do a read
@@ -255,7 +254,6 @@ class BigFile {
 
 	// . returns false if blocked, true otherwise
 	// . sets g_errno on error
-private:	
 	bool unlinkRename ( const char *newBaseFilename,
 			    int32_t  part                        ,
 			    bool  useThread                   ,
