@@ -86,8 +86,6 @@ public:
 	// m_allocOff is offset into m_allocBuf where we start reading into 
 	// from the file
 	int64_t  m_allocOff;
-	// do not call pthread_create() for every read we do. use async io
-	// because it should be much much faster
 };
 
 
