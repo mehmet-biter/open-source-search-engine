@@ -82,6 +82,8 @@ File::File ( ) {
 	m_calledOpen = false;
 	m_calledSet  = false;
 
+	pthread_mutex_init(&m_mtxFdManipulation,NULL);
+	
 	logDebug( g_conf.m_logDebugDisk, "disk: constructor fd %i this=0x%" PTRFMT, m_fd, (PTRTYPE)this );
 }
 
@@ -94,6 +96,8 @@ File::~File ( ) {
 	// set m_calledSet to false so BigFile.cpp see it as 'empty'
 	m_calledSet  = false;
 	m_calledOpen = false;
+	
+	pthread_mutex_destroy(&m_mtxFdManipulation);
 }
 
 
@@ -153,13 +157,19 @@ bool File::rename ( const char *newFilename ) {
 	return true;
 }
 
+
 // . open the file
 // . only call once per File after calling set()
 bool File::open ( int flags , int permissions ) {
+	ScopedLock sl(m_mtxFdManipulation);
+	return open_unlocked(flags,permissions);
+}
+
+bool File::open_unlocked(int flags, int permissions) {
 	// if we already had another file open then we must close it first.
 	if ( m_fd >= 0 ) {
 		log( LOG_LOGIC, "disk: Open already called. Closing and re-opening." );
-		close();
+		close_unlocked();
 	}
 
 	// save these in case we need to reopen in getfd()
@@ -177,7 +187,7 @@ bool File::open ( int flags , int permissions ) {
 	// . close the virtual fd so we can call open again
 	// . sets s_fds [ m_vfd ] to -2 (available)
 	// . and sets our m_vfd to -1
-	close();
+	close_unlocked();
 
 	// otherwise bitch and return false
 	return false;
@@ -413,6 +423,11 @@ void File::close2_unlocked() {
 // . closes the file for real!
 // . analogous to a reset() routine
 bool File::close ( ) {
+	ScopedLock sl(m_mtxFdManipulation);
+	return close_unlocked();
+}
+
+bool File::close_unlocked() {
 	// return true if not open
 	if ( m_fd < 0 ) return true;
 

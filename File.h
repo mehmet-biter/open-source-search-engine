@@ -26,6 +26,8 @@
 #include "Mem.h"             // for g_mem
 #include "Loop.h"            // for g_loop.setNonBlocking(int fd)
 #include "SafeBuf.h"
+#include <pthread.h>
+
 
 bool doesFileExist ( const char *filename ) ;
 
@@ -170,6 +172,10 @@ private:
 	char m_calledSet;
 
 	bool m_forceRename;
+	
+	pthread_mutex_t m_mtxFdManipulation;
+	bool open_unlocked(int flags, int permissions);
+	bool close_unlocked();
 };
 
 #endif // GB_FILE_H
