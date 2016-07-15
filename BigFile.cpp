@@ -1407,11 +1407,6 @@ bool BigFile::unlinkPart(int32_t part, void (*callback)(void *state), void *stat
 
 
 
-static void renameWrapper_r   ( void *state );
-static void unlinkWrapper_r   ( void *state );
-static void doneRenameWrapper ( void *state, job_exit_t exit_type );
-static void doneUnlinkWrapper ( void *state, job_exit_t exit_type );
-
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
 // . ser "part" to -1 to remove or unlink all part files
@@ -1524,11 +1519,11 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 
 		// remove it from disk
 		if (  m_isUnlink ) {
-			startRoutine = unlinkWrapper_r ;
-			doneRoutine  = doneUnlinkWrapper ;
+			startRoutine = unlinkWrapper;
+			doneRoutine  = doneUnlinkWrapper;
 		} else {
-			startRoutine = renameWrapper_r ;
-			doneRoutine  = doneRenameWrapper ;
+			startRoutine = renameWrapper;
+			doneRoutine  = doneRenameWrapper;
 		}
 
 		// base in ptr to file, but set f->m_this and f->m_i 
@@ -1610,19 +1605,18 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 	return true;
 }
 
-static void renameWrapper_r ( void *state ) {
+
+
+void BigFile::renameWrapper(void *state) {
+	File *f = static_cast<File*>(state);
+	BigFile *that = f->m_bigfile;
+	that->renameWrapper(f);
+}
+
+
+void BigFile::renameWrapper(File *f) {
 	logTrace( g_conf.m_logTraceBigFile, "BEGIN" );
 
-	// extract our class
-	File *f = (File *)state;
-	// . by getting the inode in the cache space the call to f->close()
-	//   in doneRenameWrapper() should not block
-	// . fd is < 0 if invalid, >= 0 if valid
-	//int fd = f->getfdNoOpen ();
-	// hey, it still blocks
-	//if ( fd >= 0 ) fsync ( fd );
-	// get the big guy and the i in m_files[i]
-	BigFile *THIS = f->m_bigfile;
 	// get the ith file we just unlinked
 	int32_t      i = f->m_i;
 	bool forceRename = f->getForceRename();
@@ -1630,18 +1624,18 @@ static void renameWrapper_r ( void *state ) {
 	// . get the new full name for this file
 	// . based on m_dir/m_stripeDir and m_baseFilename
 	char newFilename [ 1024 ];
-	THIS->makeFilename_r ( THIS->m_newBaseFilename.getBufStart(), 
-			       THIS->m_newBaseFilenameDir.getBufStart(), 
-			       i, 
-			       newFilename,
-			       1024 );
+	makeFilename_r ( m_newBaseFilename.getBufStart(),
+			 m_newBaseFilenameDir.getBufStart(),
+			 i,
+			 newFilename,
+			 1024 );
 			       
 	char oldFilename [ 1024 ];
-	THIS->makeFilename_r ( THIS->m_baseFilename.getBufStart(),
-			       NULL,
-			       i, 
-			       oldFilename,
-			       1024 );
+	makeFilename_r ( m_baseFilename.getBufStart(),
+			 NULL,
+			 i,
+			 oldFilename,
+			 1024 );
 
 
 	log(LOG_TRACE,"%s:%s:%d: disk: rename [%s] to [%s]", 
@@ -1656,12 +1650,12 @@ static void renameWrapper_r ( void *state ) {
 			// reset errno and return true if file does not exist
 			if ( errno == ENOENT ) {
 				log( LOG_ERROR, "%s:%s:%d: disk: file [%s] does not exist.", __FILE__, __func__, __LINE__, oldFilename );
-				THIS->logAllData( LOG_ERROR );
+				logAllData( LOG_ERROR );
 				errno = 0;
 			} else {
 				log( LOG_ERROR, "%s:%s:%d: disk: rename [%s] to [%s]: [%s]",
 				     __FILE__, __func__, __LINE__, oldFilename, newFilename, mstrerror( errno ) );
-				THIS->logAllData( LOG_ERROR );
+				logAllData( LOG_ERROR );
 			}
 
 			logTrace( g_conf.m_logTraceBigFile, "END" );
@@ -1686,22 +1680,19 @@ static void renameWrapper_r ( void *state ) {
 	//THIS->m_files[i]->set ( THIS->m_newBaseFilename );
 
 	logTrace( g_conf.m_logTraceBigFile, "END" );
-	return;
 }
 
 
-static void unlinkWrapper_r ( void *state ) {
-	logTrace( g_conf.m_logTraceBigFile, "BEGIN" );
 
-	// get ourselves
-	File *f = (File *)state;
-	// . by getting the inode in the cache space the call to delete(f) 
-	//   below should not block
-	// . fd is < 0 if invalid, >= 0 if valid
-	//int fd = f->getfdNoOpen ();
-	// hey, it still blocks
-	//if ( fd >= 0 ) fsync ( fd );
-	// and unlink it
+void BigFile::unlinkWrapper(void *state) {
+	File *f = static_cast<File*>(state);
+	BigFile *that = f->m_bigfile;
+	that->unlinkWrapper(f);
+}
+
+
+void BigFile::unlinkWrapper(File *f) {
+	logTrace( g_conf.m_logTraceBigFile, "BEGIN" );
 
 	::unlink ( f->getFilename() );
 	// we must close the file descriptor in the thread otherwise the
@@ -1713,29 +1704,29 @@ static void unlinkWrapper_r ( void *state ) {
 	//sync();
 
 	logTrace( g_conf.m_logTraceBigFile, "END" );
-	return;
 }
 
 
-// Use of ThreadEntry parameter is NOT thread safe 
-static void doneRenameWrapper ( void *state, job_exit_t /*exit_type*/ ) {
+
+void BigFile::doneRenameWrapper(void *state, job_exit_t exit_type) {
+	File *f = static_cast<File*>(state);
+	BigFile *that = f->m_bigfile;
+	that->doneRenameWrapper(f,exit_type);
+}
+
+void BigFile::doneRenameWrapper(File *f, job_exit_t /*exit_type*/) {
 	logTrace( g_conf.m_logTraceBigFile, "BEGIN" );
 
-	// extract our class
-	File *f = (File *)state;
-	
 	// . finish the close
 	// . for some reason renaming invalidates our fd so if someone wants
 	//   to read from us they'll have to re-open
 	// . this may bitch about a bad file descriptor since we call
 	//   ::close1_r(fd) in the thread
 	f->close2();
-	// get the big guy and the i in m_files[i]
-	BigFile *THIS = f->m_bigfile;
 	// clear thread's errno
 	errno = 0;
 	// one less
-	THIS->m_numThreads--;
+	m_numThreads--;
 	g_unlinkRenameThreads--;
 	
 	// reset g_errno and return true if file does not exist
@@ -1743,25 +1734,25 @@ static void doneRenameWrapper ( void *state, job_exit_t /*exit_type*/ ) {
 	// otherwise, it's a more serious error i guess
 	if ( g_errno ) 
 	{
-		log(LOG_ERROR, "%s:%s:%d: doneRenameWrapper. rename failed: [%s] [%s]", __FILE__, __func__, __LINE__, THIS->getFilename(), mstrerror(g_errno));
-		THIS->logAllData(LOG_ERROR);
+		log(LOG_ERROR, "%s:%s:%d: doneRenameWrapper. rename failed: [%s] [%s]", __FILE__, __func__, __LINE__, getFilename(), mstrerror(g_errno));
+		logAllData(LOG_ERROR);
 		//@@@ BR: Why continue??
 	}
 			     
 	// get the ith file we just unlinked
 	int32_t      i = f->m_i;
-	File *fi = THIS->getFile2 ( i );
+	File *fi = getFile2 ( i );
 	
 	// rename the part if it checks out
 	if ( f == fi ) 
 	{
 		// set his new name
 		char newFilename [ 1024 ];
-		THIS->makeFilename_r (THIS->m_newBaseFilename.getBufStart(),
-				      THIS->m_newBaseFilenameDir.getBufStart(),
-				      i,
-				      newFilename ,
-				      1024 );
+		makeFilename_r (m_newBaseFilename.getBufStart(),
+				m_newBaseFilenameDir.getBufStart(),
+				i,
+				newFilename,
+				1024 );
 		fi->set ( newFilename );
 	}
 	else
@@ -1770,53 +1761,54 @@ static void doneRenameWrapper ( void *state, job_exit_t /*exit_type*/ ) {
 	}
 	
 	// bail if more to do
-	//if ( THIS->m_numThreads > 0 ) return;
+	//if ( m_numThreads > 0 ) return;
 	// one less part to do
-	THIS->m_partsRemaining--;
+	m_partsRemaining--;
 	
 	// return if more to do
-	if ( THIS->m_partsRemaining > 0 ) {
+	if ( m_partsRemaining > 0 ) {
 		logTrace( g_conf.m_logTraceBigFile, "END - still more parts" );
 		return;
 	}
 		
 		
 	// update OUR base filename now after all Files are renamed
-	//strcpy ( THIS->m_baseFilename , THIS->m_newBaseFilename );
-	THIS->m_baseFilename.reset();
-	THIS->m_baseFilename.setLabel("nbfnn");
-	THIS->m_baseFilename.safeStrcpy(THIS->m_newBaseFilename.getBufStart());
+	//strcpy ( m_baseFilename , m_newBaseFilename );
+	m_baseFilename.reset();
+	m_baseFilename.setLabel("nbfnn");
+	m_baseFilename.safeStrcpy(m_newBaseFilename.getBufStart());
 	// . all done, call the main callback
 	// . this is NULL if we were not called in a thread
-	if ( THIS->m_callback ) 
+	if ( m_callback )
 	{
-		THIS->m_callback ( THIS->m_state );
+		m_callback ( m_state );
 	}
 
 	logTrace( g_conf.m_logTraceBigFile, "END" );
 }
 
 
-// Use of ThreadEntry parameter is NOT thread safe 
-static void doneUnlinkWrapper ( void *state, job_exit_t /*exit_type*/ ) {
+void BigFile::doneUnlinkWrapper(void *state, job_exit_t exit_type) {
+	File *f = static_cast<File*>(state);
+	BigFile *that = f->m_bigfile;
+	that->doneUnlinkWrapper(f,exit_type);
+}
+
+void BigFile::doneUnlinkWrapper(File *f, job_exit_t /*exit_type*/) {
 	logTrace( g_conf.m_logTraceBigFile, "BEGIN" );
 
-	// extract our class
-	File *f = (File *)state;
 	// finish the close
 	f->close2();
-	// get the big guy and the i in m_files[i]
-	BigFile *THIS = f->m_bigfile;
 	// clear thread's errno
 	errno = 0;
 	// one less
-	THIS->m_numThreads--;
+	m_numThreads--;
 	g_unlinkRenameThreads--;
 	// otherwise, it's a more serious error i guess
 	if ( g_errno ) 
 	{
 		log(LOG_ERROR, "%s:%s:%d: doneUnlinkWrapper. unlink failed: %s", __FILE__, __func__, __LINE__, mstrerror(g_errno));
-		THIS->logAllData(LOG_ERROR);
+		logAllData(LOG_ERROR);
 		//@@@ BR: Why continue??
 	}
 		
@@ -1824,32 +1816,32 @@ static void doneUnlinkWrapper ( void *state, job_exit_t /*exit_type*/ ) {
 	int32_t      i = f->m_i;
 	// . remove the part if it checks out
 	// . this will also close the file when it deletes it
-	File *fi = THIS->getFile2(i);
+	File *fi = getFile2(i);
 	if ( f == fi ) 
 	{
-		THIS->removePart ( i );
+		removePart ( i );
 	}
 	else 
 	{
 		log(LOG_ERROR, "%s:%s:%d: doneUnlinkWrapper. unlink had bad file ptr.", __FILE__, __func__, __LINE__ );
-		THIS->logAllData(LOG_ERROR);
+		logAllData(LOG_ERROR);
 
 	}
 	
 	// bail if more to do
-	if ( THIS->m_numThreads > 0 ) {
+	if ( m_numThreads > 0 ) {
 		logTrace( g_conf.m_logTraceBigFile, "END - still more threads" );
 		return;
 	}
 		
 		
 	// return if more to do
-	//if ( THIS->m_partsRemaining > 0 ) return;
+	//if ( m_partsRemaining > 0 ) return;
 	// . all done, call the main callback
 	// . this is NULL if we were not called in a thread
-	if ( THIS->m_callback ) 
+	if ( m_callback )
 	{
-		THIS->m_callback ( THIS->m_state );
+		m_callback ( m_state );
 	}
 
 	logTrace( g_conf.m_logTraceBigFile, "END" );

@@ -11,6 +11,7 @@
 #define GB_BIGFILE_H
 
 #include "File.h"
+#include "JobScheduler.h" //for job_exit_t
 
 
 #ifndef PRIVACORE_TEST_VERSION
@@ -261,7 +262,15 @@ private:
 			    void *state                       ,
 			    const char *newBaseFilenameDir = NULL,
 				bool force = false );
-
+	//job/thread worker functions helping unlinkrename()
+	static void renameWrapper(void *state);
+	static void doneRenameWrapper(void *state, job_exit_t exit_type);
+	void doneRenameWrapper(File *f, job_exit_t exit_type);
+	void renameWrapper(File *f);
+	static void unlinkWrapper(void *state);
+	void unlinkWrapper(File *f);
+	static void doneUnlinkWrapper(void *state, job_exit_t exit_type);
+	void doneUnlinkWrapper(File *f, job_exit_t exit_type);
 
 	// . add all parts from this directory
 	// . called by set() above for normal dir as well as stripe dir
