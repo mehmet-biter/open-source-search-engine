@@ -1342,7 +1342,8 @@ static bool readwrite_r ( FileState *fstate ) {
 
 	// on other errno, return -1
 	if ( n < 0 ) { 
-		log( LOG_WARN, "disk::readwrite_r: %s", mstrerror( errno ) );
+		log( LOG_ERROR, "disk::readwrite_r: %s", mstrerror( errno ) );
+		gbshutdownAbort(true);
 		return false; 
 	}
 
