@@ -89,7 +89,12 @@ bool Msg22::getTitleRec ( Msg22Request  *r              ,
 	//if ( url ) log(LOG_DEBUG,"build: getting TitleRec for %s",url);
 	// sanity checks
 	if ( url    && docId!=0LL ) { g_process.shutdownAbort(true); }
-	if ( url    && !url[0]    ) { g_process.shutdownAbort(true); }
+	if ( url    && !url[0]    ) { 
+                log("msg22: BAD URL! It is empty!");
+                m_errno = g_errno = EBADENGINEER;
+                return true;
+//g_process.shutdownAbort(true); 
+	}
 	if ( docId!=0LL && url    ) { g_process.shutdownAbort(true); }
 	if ( ! coll               ) { g_process.shutdownAbort(true); }
 	if ( ! callback           ) { g_process.shutdownAbort(true); }
