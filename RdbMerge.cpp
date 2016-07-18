@@ -284,7 +284,7 @@ bool RdbMerge::resumeMerge ( ) {
 	goto loop;
 }
 
-static void chopWrapper ( void *state );
+static void unlinkPartWrapper ( void *state );
 
 // . return false if blocked, true otherwise
 // . sets g_errno on error
@@ -360,7 +360,7 @@ bool RdbMerge::getNextList ( ) {
 		// . this returns false if it blocked, true otherwise
 		// . this sets g_errno on error
 		// . now we just unlink part file #(part-1) explicitly
-		if ( ! file->unlinkPart ( part - 1 , chopWrapper , this ) ) {
+		if ( ! file->unlinkPart ( part - 1 , unlinkPartWrapper , this ) ) {
 			m_numThreads++;
 		}
 
@@ -381,7 +381,7 @@ bool RdbMerge::getNextList ( ) {
 	return getAnotherList ( );
 }
 
-void chopWrapper ( void *state ) {
+void unlinkPartWrapper ( void *state ) {
 	RdbMerge *THIS = (RdbMerge *)state;
 	// wait for all threads to complete
 	if ( --THIS->m_numThreads > 0 ) return;
