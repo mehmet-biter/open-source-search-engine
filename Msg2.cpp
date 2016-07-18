@@ -416,8 +416,9 @@ void Msg2::gotListWrapper( Msg5 *msg5 ) {
 			logf(LOG_DEBUG,"query: got list #%" PRId32" size=%" PRId32,
 			     i,list->getListSize() );
 	}
-	// try to launch more
-	if ( ! getLists ( ) ) return;
+	
+	if ( m_numRequests > m_numReplies )
+		return; //still more to go
 	// set g_errno if any one list read had error
 	if ( m_errno ) g_errno = m_errno;
 	// now call callback, we're done
