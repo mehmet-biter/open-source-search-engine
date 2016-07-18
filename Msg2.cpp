@@ -244,16 +244,14 @@ bool Msg2::getLists ( ) {
 		// return the msg5 now
 		returnMsg5 ( msg5 );
 		// note it
-		//if ( m_isDebug )
-		//	logf(LOG_DEBUG,"query: got list #%" PRId32" size=%" PRId32,
-		//	     i,m_lists[i].getListSize() );
+		
 		// break out on error and wait for replies if we blocked
-		if ( ! g_errno ) continue;
-		// report the error and return
-		m_errno = g_errno;
-		log("query: Got error reading termlist: %s.",
-		    mstrerror(g_errno));
-		goto skip;
+		if ( g_errno!=0 ) {
+			// report the error and return
+			m_errno = g_errno;
+			log("query: Got error reading termlist: %s.", mstrerror(g_errno));
+			goto skip;
+		}
 	}
 
 	//
@@ -348,13 +346,14 @@ bool Msg2::getLists ( ) {
 		m_numRequests++; 
 		// . return the msg5 now
 		returnMsg5 ( msg5 );
+		
 		// break out on error and wait for replies if we blocked
-		if ( ! g_errno ) continue;
-		// report the error and return
-		m_errno = g_errno;
-		log("query: Got error reading termlist: %s.",
-		    mstrerror(g_errno));
-		goto skip;
+		if ( g_errno!=0 ) {
+			// report the error and return
+			m_errno = g_errno;
+			log("query: Got error reading termlist: %s.", mstrerror(g_errno));
+			goto skip;
+		}
 	}
 		
  skip:
