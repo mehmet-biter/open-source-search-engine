@@ -363,31 +363,6 @@ bool RdbCache::getRecord ( const char    *coll       ,
 			   maxAge , incCounts , cachedTime, promoteRecord );
 }
 
-// returns false if was not in the cache, true otherwise
-bool RdbCache::setTimeStamp ( collnum_t  collnum      ,
-			      const char      *cacheKey     ,
-			      int32_t       newTimeStamp ) {
-
-	// return now if table empty
-	if ( m_numPtrsMax <= 0 ) return false;
-	// look up in hash table
-	int32_t n = hash32 ( cacheKey , m_cks ) % m_numPtrsMax;
-	// chain
-	while ( m_ptrs[n] && 
-		( *(collnum_t *)(m_ptrs[n]+0                ) != collnum ||
-		  KEYCMP(m_ptrs[n]+sizeof(collnum_t),cacheKey,m_cks) != 0 ) )
-		if ( ++n >= m_numPtrsMax ) n = 0;
-	// return ptr to rec
-	char *p = m_ptrs[n];
-	// return false if not found
-	if ( ! p ) return false;
-	// skip over collnum and key
-	p += sizeof(collnum_t) + m_cks;
-	// set the timestamp
-	*(int32_t *)p = newTimeStamp;
-	return true;
-}
-
 // . returns true if found, false if not found in cache
 // . sets *rec and *recSize iff found
 bool RdbCache::getRecord ( collnum_t collnum   ,

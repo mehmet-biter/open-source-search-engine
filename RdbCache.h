@@ -167,18 +167,6 @@ class RdbCache {
 				  maxAge,incCounts,cachedTime, promoteRecord);
 	}
 
-	bool setTimeStamp ( collnum_t  collnum      ,
-			    key_t      cacheKey     ,
-			    int32_t       newTimeStamp ) {
-		return setTimeStamp ( collnum           ,
-				      (char *)&cacheKey ,
-				      newTimeStamp      );
-	}
-
-	bool setTimeStamp ( collnum_t  collnum      ,
-			    const char      *cacheKey     ,
-			    int32_t       newTimeStamp );
-
 	// . returns true if found, false if not found
 	// . sets errno no error
 	// . if "copyRecords" is true then COPIES into a new buffer
