@@ -42,8 +42,8 @@
 //#define MEM_LIMIT (256*1024)
 
 #include <time.h>       // time_t
-#include "Mem.h"        // g_mem.calloc()
-#include "RdbList.h"
+
+class RdbList;
 
 extern bool g_cacheWritesEnabled;
 
@@ -308,6 +308,11 @@ class RdbCache {
 	void markDeletedRecord(char *ptr);
 
 	bool convertCache ( int32_t numPtrsMax , int32_t maxMem ) ;
+
+	int64_t getNumAdds() const { return m_adds; }
+	int64_t getNumDeletes() const { return m_deletes; }
+
+private:
 	bool m_convert;
 	int32_t m_convertNumPtrsMax;
 	int32_t m_convertMaxMem;
@@ -365,10 +370,6 @@ class RdbCache {
 	int64_t m_deletes;
 
 	char m_needsSave;
-
-	char m_corruptionDetected;
-
-	int64_t m_maxColls;
 };	
 
 #endif // GB_RDBCACHE_H

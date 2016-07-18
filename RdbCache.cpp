@@ -16,6 +16,9 @@
 
 bool g_cacheWritesEnabled = true;
 
+static const int64_t m_maxColls = (1LL << (sizeof(collnum_t)*8));
+
+
 RdbCache::RdbCache () {
 	m_totalBufSize = 0;
 	m_numBufs      = 0;
@@ -24,7 +27,6 @@ RdbCache::RdbCache () {
 	m_numPtrsMax   = 0;
 	reset();
 	m_needsSave    = false;
-	m_corruptionDetected = false;
 }
 
 RdbCache::~RdbCache ( ) { reset (); }
@@ -85,8 +87,6 @@ bool RdbCache::init ( int32_t  maxMem        ,
 				       "negative maxRecs.",  dbname);
 	// don't use more mem than this
 	m_maxMem     = maxMem;
-
-	m_maxColls = (1LL << (sizeof(collnum_t)*8));
 
 	RdbCache *robots = Msg13::getHttpCacheRobots();
 	RdbCache *others = Msg13::getHttpCacheOthers();
@@ -1324,8 +1324,6 @@ bool RdbCache::save ( bool useThreads ) {
 	if ( g_conf.m_readOnlyMode ) return true;
 	// if we do not need it, don't bother
 	if ( ! m_needsSave ) return true;
-	// if corruption was detected, don't bother
-	if ( m_corruptionDetected ) return true;
 	// return true if already in the middle of saving
 	if ( m_isSaving ) return false;
 

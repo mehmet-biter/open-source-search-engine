@@ -96,7 +96,7 @@ class RdbCache *getDiskPageCache ( char rdbId ) {
 	if ( maxMem < 0 ) maxMem = 0;
 
 	// did size change? if not, return it
-	if ( rpc->m_maxMem == maxMem )
+	if ( rpc->getMaxMem() == maxMem )
 		return rpc;
 
 	// re-init or init for the first time here

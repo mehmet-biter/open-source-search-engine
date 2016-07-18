@@ -694,13 +694,13 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 
 	p.safePrintf ("</tr>\n<tr class=poo><td><b><nobr>dropped recs</td>" );
 	for ( int32_t i = 0 ; i < numCaches ; i++ ) {
-		int64_t a = caches[i]->m_deletes;
+		int64_t a = caches[i]->getNumDeletes();
 		p.safePrintf("<td>%" PRId64"</td>",a);
 	}
 
 	p.safePrintf ("</tr>\n<tr class=poo><td><b><nobr>added recs</td>" );
 	for ( int32_t i = 0 ; i < numCaches ; i++ ) {
-		int64_t a = caches[i]->m_adds;
+		int64_t a = caches[i]->getNumAdds();
 		p.safePrintf("<td>%" PRId64"</td>",a);
 	}
 
@@ -2104,7 +2104,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 			p.safePrintf("<td>--</td>");
 			continue;
 		}
-		p.safePrintf("<td>%" PRIu64"</td>",rpc->m_adds);
+		p.safePrintf("<td>%" PRIu64"</td>",rpc->getNumAdds());
 	}
 	p.safePrintf("<td>%" PRIu64"</td></tr>\n",total);
 
@@ -2118,7 +2118,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 			p.safePrintf("<td>--</td>");
 			continue;
 		}
-		p.safePrintf("<td>%" PRIu64"</td>",rpc->m_deletes);
+		p.safePrintf("<td>%" PRIu64"</td>",rpc->getNumDeletes());
 	}
 	p.safePrintf("<td>%" PRIu64"</td></tr>\n",total);
 
