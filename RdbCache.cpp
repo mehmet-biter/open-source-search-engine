@@ -190,36 +190,6 @@ bool RdbCache::init ( int32_t  maxMem        ,
 	return true;
 }
 
-//bool RdbCache::isInCache ( collnum_t collnum, key_t cacheKey, int32_t maxAge ) {
-bool RdbCache::isInCache ( collnum_t collnum, const char *cacheKey, int32_t maxAge ) const {
-	// maxAge of 0 means don't check cache
-	if ( maxAge == 0 ) return false;
-	// bail if no cache
-	if ( m_numPtrsMax <= 0 ) return false;
-	// look up in hash table
-	//int32_t n=(cacheKey.n0 + (uint64_t)cacheKey.n1)% m_numPtrsMax;
-	int32_t n = hash32 ( cacheKey , m_cks ) % m_numPtrsMax;
-	// chain
-	while ( m_ptrs[n] && 
-		( *(collnum_t *)(m_ptrs[n]+0                ) != collnum ||
-		  //*(key_t     *)(m_ptrs[n]+sizeof(collnum_t)) != cacheKey ) )
-		  KEYCMP(m_ptrs[n]+sizeof(collnum_t),cacheKey,m_cks) != 0 ) )
-		if ( ++n >= m_numPtrsMax ) n = 0;
-	// return false if not found
-	if ( ! m_ptrs[n] ) return false;
-	// get timestamp
-	char *p = m_ptrs[n];
-	// skip over collnum_t and key
-	//p += sizeof(collnum_t) + sizeof(key_t);
-	p += sizeof(collnum_t) + m_cks;
-	// get time stamp
-	int32_t timestamp = *(int32_t *)p;
-	// return false if too old
-	if ( maxAge > 0 && getTimeLocal() - timestamp > maxAge ) return false;
-	// return true if found
-	return true;
-}
-
 // . a quick hack for SpiderCache.cpp
 // . if your record is always a 4 byte int32_t call this
 // . returns -1 if not found, so don't store -1 in there then

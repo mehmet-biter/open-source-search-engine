@@ -245,14 +245,6 @@ class RdbCache {
 
 	void verify();
 
-	// . just checks to see if a record is in the cache
-	// . does not promote record
-	bool isInCache ( collnum_t collnum , const char *cacheKey , int32_t maxAge ) const;
-
-	bool isInCache ( collnum_t collnum , key_t cacheKey , int32_t maxAge ) const {
-		return isInCache(collnum,(const char *)&cacheKey,maxAge);
-	}
-
 	// these include our mem AND our tree's mem combined
 	int32_t getMemOccupied () const {
 		return m_memOccupied ;
