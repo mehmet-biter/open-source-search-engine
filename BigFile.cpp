@@ -948,11 +948,6 @@ void doneWrapper ( void *state, job_exit_t exit_type ) {
 	// exit write mode
 	if ( fstate->m_doWrite ) {
 		// THIS could have been deleted!!
-		//BigFile *THIS = fstate->m_bigfile;
-		//File *f1 = THIS->m_files [ fstate->m_filenum1 ];
-		//File *f2 = THIS->m_files [ fstate->m_filenum2 ];
-		//f1->exitWriteMode();
-		//f2->exitWriteMode();
 		exitWriteMode( fstate->m_fd1 );
 		exitWriteMode( fstate->m_fd2 );
 	}
@@ -966,8 +961,7 @@ void doneWrapper ( void *state, job_exit_t exit_type ) {
 		log(LOG_INFO, "disk: Read %" PRId64" bytes in %" PRId64" ms (%" PRId32"KB/s).", fstate->m_bytesDone,took,rate);
 		g_stats.m_slowDiskReads++;
 	}
-	// get the BigFIle
-	//BigFile *THIS = fs->m_bigfile;
+
 	// recall g_errno from state's m_errno
 	g_errno = fstate->m_errno;
 	// might have had the file renamed/unlinked from under us
@@ -975,28 +969,17 @@ void doneWrapper ( void *state, job_exit_t exit_type ) {
 
 	// add the stat
 	if ( ! g_errno ) {
-		// default graph color is black
-		int color = 0x00000000; 
-		const char *label = "disk_read";
-		// use red for writes, though
+		// default graph color is black (disk read)
+		int color = 0x00000000;
 		if ( fstate->m_doWrite ) {
+			// use red for writes
 			color = 0x00ff0000;
-			label = "disk_write";
+		} else if ( fstate->m_niceness > 0 ) {
+			// but gray for low priority reads
+			color = 0x00808080;
 		}
-		// but gray for low priority reads
-		else if ( fstate->m_niceness > 0 ) color = 0x00808080;
 		// add it
-		g_stats.addStat_r ( fstate->m_bytesDone          ,
-				    fstate->m_startTime          ,
-				    fstate->m_doneTime           ,
-				    //label                        ,
-				    color                        );
-		// add to statsdb as well
-		//g_statsdb.addStat ( fstate->m_niceness,
-		//		    label,
-		//		    fstate->m_startTime,
-		//		    fstate->m_doneTime,
-		//		    fstate->m_bytesDone);
+		g_stats.addStat_r ( fstate->m_bytesDone, fstate->m_startTime, fstate->m_doneTime, color );
 	}
 
 	// debug msg
@@ -1014,20 +997,16 @@ void doneWrapper ( void *state, job_exit_t exit_type ) {
 	//int32_t took = gettimeofdayInMilliseconds() - fstate->m_startTime ;
 	//log("read of %" PRId32" bytes took %" PRId32" ms",fstate->m_bytesDone, took);
 	// now log our stuff here
-	int32_t tt = LOG_WARN;
-	if ( g_errno == EFILECLOSED ) tt = LOG_INFO;
-	if ( g_errno )
-		log (tt,"disk: %s. fd1=%" PRId32" fd2=%" PRId32" "
-		     "off=%" PRId64" toread=%" PRId32,
-		     mstrerror(g_errno),
-		     (int32_t)fstate->m_fd1,
-		     (int32_t)fstate->m_fd2,
-		     (int64_t)fstate->m_offset , 
-		     (int32_t)fstate->m_bytesToGo
-		     );
-	// someone is closing our fd without setting File::s_vfds[fd] to -1
+	int32_t tt = ( g_errno == EFILECLOSED ) ? LOG_INFO : LOG_WARN;
 	if ( g_errno ) {
-		log( LOG_WARN, "disk: err=%s", mstrerror(g_errno) );
+		log( tt, "disk: err=%s. fd1=%" PRId32" fd2=%" PRId32" "
+				     "off=%" PRId64" toread=%" PRId32,
+		     mstrerror( g_errno ),
+		     ( int32_t ) fstate->m_fd1,
+		     ( int32_t ) fstate->m_fd2,
+		     ( int64_t ) fstate->m_offset,
+		     ( int32_t ) fstate->m_bytesToGo
+		);
 	}
 
 	// . this EBADENGINEER can happen right after a merge if
@@ -1066,7 +1045,6 @@ static void readwriteWrapper_r ( void *state ) {
 	//log("disk: this thread id = %" PRId32,(int32_t)pthread_self());
 
 	int64_t time_start = gettimeofdayInMilliseconds();
-	int64_t time_took;
 
 	// extract our class
 	FileState *fstate = (FileState *)state;
@@ -1187,28 +1165,12 @@ static void readwriteWrapper_r ( void *state ) {
 		goto again; 
 	}
 
-	// turn off the cancel-ability of this thread
-	//pthread_setcancelstate ( PTHREAD_CANCEL_DISABLE , NULL );
-	// set done time even if errno set
-	// - mdw, can't set this here now because fstate might be invalid...
-	//int64_t now = gettimeofdayInMilliseconds() ;
-	//fstate->m_doneTime = now;
-
-	// . we're all done, tell g_threads
-	// . this never returns
-	// . the state must be unique per thread so we know what thread this is
-	// . i tried using pthread_self() but we'd have to store it in
-	//   g_thread's ThreadEntry ourselves, as a thread
-	// . the thread's cleanUp handler should call g_threads.exit(fstate)
-	//g_threads.exit ( fstate );
-	//pthread_exit ( NULL );
-
-	time_took = gettimeofdayInMilliseconds() - time_start;
+	int64_t time_took = gettimeofdayInMilliseconds() - time_start;
 
 	if ( !fstate->m_doWrite && time_took >= g_conf.m_logDiskReadTimeThreshold ) {
-		log(LOG_WARN, "Disk read of %" PRId64" bytes took %" PRId64" ms", fstate->m_bytesDone, gettimeofdayInMilliseconds() - time_start);
+		log( LOG_WARN, "Disk read of %" PRId64" bytes took %" PRId64" ms", fstate->m_bytesDone, time_took );
 	}
-	
+
 	fstate->m_doneTime = gettimeofdayInMilliseconds();
 }
 
