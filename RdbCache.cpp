@@ -1315,8 +1315,6 @@ bool RdbCache::load ( ) {
 	return load ( m_dbname );
 }
 
-static void saveWrapper       ( void *state );
-static void threadDoneWrapper ( void *state, job_exit_t exit_type );
 
 // . just like RdbTree::fastSave()
 // . returns false if blocked and is saving
@@ -1356,10 +1354,10 @@ bool RdbCache::save ( bool useThreads ) {
 }
 
 // Use of ThreadEntry parameter is NOT thread safe
-void threadDoneWrapper ( void *state, job_exit_t exit_type ) {
+void RdbCache::threadDoneWrapper ( void *state, job_exit_t exit_type ) {
 	if (state) {
-		RdbCache *THIS = (RdbCache *)state;
-		THIS->threadDone ( );
+		RdbCache *that = static_cast<RdbCache*>(state);
+		that->threadDone ( );
 	}
 }
 
@@ -1375,14 +1373,14 @@ void RdbCache::threadDone ( ) {
 }
 
 // Use of ThreadEntry parameter is NOT thread safe
-void saveWrapper ( void *state ) {
-	RdbCache *THIS = (RdbCache *)state;
+void RdbCache::saveWrapper(void *state) {
+	RdbCache *that = static_cast<RdbCache*>(state);
 	// assume no error
-	THIS->m_saveError = 0;
+	that->m_saveError = 0;
 	// do it
-	if ( THIS->save_r () ) return;
+	if ( that->save_r () ) return;
 	// we got an error, save it
-	THIS->m_saveError = errno;
+	that->m_saveError = errno;
 }
 
 // returns false withe rrno set on error
@@ -1660,56 +1658,6 @@ bool RdbCache::load ( const char *dbname ) {
 	}
 	m_needsSave = false;
 	return true;
-}
-
-// remove a key range from the cache
-void RdbCache::removeKeyRange ( collnum_t collnum ,
-				const char *startKey ,
-				const char *endKey ) {
-	//int32_t n = (key.n0 + (uint64_t)key.n1)% m_numPtrsMax;
-	// unused now!!
-	int32_t n = hash32 ( startKey , m_cks ) % m_numPtrsMax;
-	int32_t startn = n;
-	// chain
-	for ( ; n+1 != startn; n++ ) {
-		// check for wrap
-		if ( n >= m_numPtrsMax )
-			n = 0;
-		// make sure it's not null
-		if ( !m_ptrs[n] )
-			return;
-		// check collection number
-		if ( *(collnum_t *)(m_ptrs[n]) != collnum )
-			continue;
-		// check the range
-		if ( KEYCMP ( m_ptrs[n]+sizeof(collnum_t),
-			      startKey,
-			      m_cks ) >= 0 &&
-		     KEYCMP ( m_ptrs[n]+sizeof(collnum_t),
-			      endKey,
-			      m_cks ) <= 0 ) {
-			// remove the key
-			int32_t rem = n;
-			m_ptrs[rem] = NULL;
-			m_numPtrsUsed--;
-			m_memOccupied -= sizeof(char *);
-			if ( ++rem >= m_numPtrsMax ) rem = 0;
-			// keep looping until we hit an empty slot
-			while ( m_ptrs[rem] ) {
-				char *ptr = m_ptrs[rem];
-				m_ptrs[rem] = NULL;
-				m_numPtrsUsed--;
-				m_memOccupied -= sizeof(char *);
-				char k[MAX_KEY_BYTES];
-				KEYSET(k,ptr+sizeof(collnum_t),m_cks);
-				addKey ( *(collnum_t *)ptr ,
-			 		 k   ,
-			 		 ptr );
-				if ( ++rem >= m_numPtrsMax ) rem = 0;
-			}
-		}
-	}
-	m_needsSave = true;
 }
 
 bool RdbCache::convertCache ( int32_t numPtrsMax , int32_t maxMem ) {

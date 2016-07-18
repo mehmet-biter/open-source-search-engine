@@ -41,6 +41,7 @@
 //   and free the tailing memory buffer to make room for a large unbuffered rec
 //#define MEM_LIMIT (256*1024)
 
+#include "JobScheduler.h" //job_exit_t
 #include <time.h>       // time_t
 
 class RdbList;
@@ -269,29 +270,19 @@ class RdbCache {
 	int64_t getHitBytes  () const { return m_hitBytes; }
 	int32_t getNumUsedNodes  () const { return m_numPtrsUsed; }
 	int32_t getNumTotalNodes () const { return m_numPtrsMax ; }
+	int64_t getNumAdds() const { return m_adds; }
+	int64_t getNumDeletes() const { return m_deletes; }
 
 	bool useDisk ( ) const { return m_useDisk; }
 	bool load ( const char *dbname );
 	bool save ( bool useThreads );
 	bool save_r ( );
 	bool save2_r ( int fd );
-	void threadDone ( );
 	bool load   ( );
-	int32_t m_saveError;
-
-	// called internally by save()
-	bool saveSome_r ( int fd, int32_t *iptr , int32_t *off ) ;
-
-	// remove a key range from the cache
-	void removeKeyRange ( collnum_t collnum,
-			      const char *startKey,
-			      const char *endKey );
 
 	const char *getDbname () const { return m_dbname ; }
 
 	const char *m_dbname;
-
-	// private:
 
 	bool addRecord ( collnum_t collnum ,
 			 const char *cacheKey ,
@@ -302,22 +293,28 @@ class RdbCache {
 			 int32_t  timestamp ,
 			 char **retRecPtr = NULL ) ;
 
+
+private:
+	static void saveWrapper(void *state);
+	static void threadDoneWrapper(void *state, job_exit_t exit_type);
+	void threadDone();
+	
+	// called internally by save()
+	bool saveSome_r ( int fd, int32_t *iptr , int32_t *off ) ;
+
 	bool deleteRec ( );
 	void addKey     ( collnum_t collnum, const char *key, char *ptr );
 	void removeKey  ( collnum_t collnum, const char *key, const char *rec );
-	void markDeletedRecord(char *ptr);
 
+	void markDeletedRecord(char *ptr);
 	bool convertCache ( int32_t numPtrsMax , int32_t maxMem ) ;
 
-	int64_t getNumAdds() const { return m_adds; }
-	int64_t getNumDeletes() const { return m_deletes; }
-
-private:
 	bool m_convert;
 	int32_t m_convertNumPtrsMax;
 	int32_t m_convertMaxMem;
 
 	bool m_isSaving;
+	int32_t m_saveError;
 
 	// . mem stats -- just for arrays we contain -- not in tree
 	// . memory that is allocated and in use, including dataSizes
