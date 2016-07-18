@@ -7,12 +7,7 @@
 #include "RdbList.h"
 #include "max_niceness.h"
 
-/** define the max # of lists you can get as the max # of query terms for now */
-//#define MAX_NUM_LISTS MAX_QUERY_TERMS
-/** how many outstanding msg5 requests at one time? */
-//#define MSG2_MAX_REQUESTS MAX_QUERY_TERMS
-#define MSG2_MAX_REQUESTS 32
-/** support the &sites=xyz.com+abc.com+... to restrict search results to provided sites.*/
+// support the &sites=xyz.com+abc.com+... to restrict search results to provided sites.
 #define MAX_WHITELISTS 500
 
 
@@ -39,6 +34,7 @@ class Msg2 {
 public:
 
 	Msg2();
+	~Msg2();
 	void reset();
 
 	/** main function of Msg2. Fetch the term list (one per query term), and store them
@@ -104,8 +100,8 @@ private:
 	bool gotList(RdbList *list);
 
 	// we can get up to MAX_QUERY_TERMS term frequencies at the same time
-	Msg5 m_msg5[ MSG2_MAX_REQUESTS];
-	bool m_avail[ MSG2_MAX_REQUESTS]; // which msg0s are available?
+	Msg5 *m_msg5;
+	bool *m_avail; // which msg5s are available?
 
 	int32_t m_errno;
 

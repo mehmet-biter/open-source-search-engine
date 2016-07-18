@@ -12,12 +12,26 @@
 
 static void  gotListWrapper ( void *state , RdbList *list , Msg5 *msg5 ) ;
 
-Msg2::Msg2() {
-	m_numLists = 0;
+Msg2::Msg2()
+  : m_msg5(0),
+    m_avail(0),
+    m_numLists(0)
+{
+}
+
+Msg2::~Msg2() {
+	reset();
 }
 
 void Msg2::reset ( ) {
 	m_numLists = 0;
+	m_whiteList = 0;
+	m_p = 0;
+	delete[] m_msg5;
+	m_msg5 = 0;
+	delete[] m_avail;
+	m_avail = 0;
+	m_lists = 0;
 }
 
 // . returns false if blocked, true otherwise
@@ -80,8 +94,11 @@ bool Msg2::getLists ( int32_t     rdbId       ,
 	// set this
 	m_numLists = numQterms;
 
-	// all msg5 available for use
-	for ( int32_t i = 0 ; i < MSG2_MAX_REQUESTS ; i++ ) m_avail[i] = true;
+	m_msg5 = new Msg5[m_numLists+MAX_WHITELISTS];
+	m_avail = new bool[m_numLists+MAX_WHITELISTS];
+	for ( int32_t i = 0; i < m_numLists+MAX_WHITELISTS; i++ )
+		m_avail[i] = true;
+		
 	if ( m_isDebug ) {
 		if ( m_getComponents ) log ("query: Getting components.");
 		else                   log ("query: Getting lists.");
@@ -186,8 +203,7 @@ bool Msg2::getLists ( ) {
 		}
 
 		Msg5 *msg5 = getAvailMsg5();
-		// return if all are in use
-		if ( ! msg5 ) return false;
+		if(!msg5) gbshutdownLogicError();
 
 		// . start up a Msg5 to get it
 		// . this will return false if blocks
@@ -280,8 +296,7 @@ bool Msg2::getLists ( ) {
 		g_posdb.makeEndKey   ( ek3 , finalTermId , m_docIdEnd );
 		// get one
 		Msg5 *msg5 = getAvailMsg5();
-		// return if all are in use
-		if ( ! msg5 ) return false;
+		if(!msg5) gbshutdownLogicError();
 
 		// advance cursor
 		m_p = p;
@@ -354,7 +369,7 @@ bool Msg2::getLists ( ) {
 }
 
 Msg5 *Msg2::getAvailMsg5 ( ) {
-	for ( int32_t i = 0 ; i < MSG2_MAX_REQUESTS ; i++ ) {
+	for ( int32_t i = 0; i < m_numLists+MAX_WHITELISTS; i++ ) {
 		if ( ! m_avail[i] ) continue;
 		m_avail[i] = false;
 		return &m_msg5[i];
@@ -363,10 +378,11 @@ Msg5 *Msg2::getAvailMsg5 ( ) {
 }
 
 void Msg2::returnMsg5 ( Msg5 *msg5 ) {
-	int32_t i; for ( i = 0 ; i < MSG2_MAX_REQUESTS ; i++ ) 
+	int32_t i;
+	for ( i = 0 ; i < m_numLists+MAX_WHITELISTS ; i++ )
 		if ( &m_msg5[i] == msg5 ) break;
 	// wtf?
-	if ( i >= MSG2_MAX_REQUESTS ) gbshutdownLogicError();
+	if ( i >= m_numLists+MAX_WHITELISTS ) gbshutdownLogicError();
 	// make it available
 	m_avail[i] = true;
 	// reset it
