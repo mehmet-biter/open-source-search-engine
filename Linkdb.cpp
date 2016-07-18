@@ -646,7 +646,7 @@ static void sendReplyWrapper ( void *state ) {
 		if ( ! err ) err = g_errno;
 		if ( ! err ) { g_process.shutdownAbort(true); }
 		
-		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. error=%s", __FILE__, __func__, __LINE__, mstrerror(err));
 		g_udpServer.sendErrorReply(udpSlot,err);
 	}
 	else {
@@ -721,7 +721,7 @@ void  handleRequest25 ( UdpSlot *slot , int32_t netnice ) {
 	try { m25 = new ( Msg25 ); }
 	catch ( ... ) {
 		g_errno = ENOMEM;
-		log("build: msg25: new(%" PRId32"): %s", 
+		log(LOG_WARN, "build: msg25: new(%" PRId32"): %s",
 		    (int32_t)sizeof(Msg25),mstrerror(g_errno));
 		    
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);

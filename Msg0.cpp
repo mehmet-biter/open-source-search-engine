@@ -660,7 +660,7 @@ void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 	if ( g_errno ) {
 		logTrace( g_conf.m_logTraceMsg0, "END. Invalid collection" );
 
-		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. Invalid collection", __FILE__, __func__, __LINE__);
 		us->sendErrorReply ( slot , EBADRDBID ); 
 		return;
 	}
@@ -673,7 +673,7 @@ void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 	if ( ! rdb ) {
 		logTrace( g_conf.m_logTraceMsg0, "END. Invalid rdbId" );
 		
-		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. Invalid rdbId", __FILE__, __func__, __LINE__);
 		us->sendErrorReply ( slot , EBADRDBID ); 
 		return;
 	}
@@ -687,7 +687,7 @@ void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 	try { st0 = new (State00); }
 	catch ( ... ) { 
 		g_errno = ENOMEM;
-		log("Msg0: new(%" PRId32"): %s", 
+		log(LOG_WARN, "Msg0: new(%" PRId32"): %s",
 		    (int32_t)sizeof(State00),mstrerror(g_errno));
 		    
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
@@ -789,7 +789,7 @@ void gotListWrapper ( void *state , RdbList *listb , Msg5 *msg5xx ) {
 		delete (st0);
 		// TODO: free "slot" if this send fails
 		
-		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. error=%s", __FILE__, __func__, __LINE__, mstrerror(g_errno));
 		us->sendErrorReply ( slot , g_errno );
 		return;
 	}

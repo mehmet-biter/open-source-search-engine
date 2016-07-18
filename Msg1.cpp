@@ -568,7 +568,7 @@ void handleRequest1 ( UdpSlot *slot , int32_t netnice ) {
 	// must at least have an rdbId
 	if ( readBufSize <= 4 ) {
 		g_errno = EREQUESTTOOSHORT;
-		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. Request too short", __FILE__, __func__, __LINE__);
 		us->sendErrorReply ( slot , g_errno );
 		return;
 	}
@@ -579,7 +579,7 @@ void handleRequest1 ( UdpSlot *slot , int32_t netnice ) {
 	// get the rdb to which it belongs, use Msg0::getRdb()
 	Rdb *rdb = getRdbFromId ( (char) rdbId );
 	if ( ! rdb ) { 
-		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. Bad rdbid", __FILE__, __func__, __LINE__);
 		us->sendErrorReply ( slot, EBADRDBID ); 
 		return;
 	}
@@ -680,7 +680,7 @@ void addedList ( UdpSlot *slot , Rdb *rdb ) {
 		return;
 	}
 	// on other errors just send the err code back
-	log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
+	log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. error=%s", __FILE__, __func__, __LINE__, mstrerror(g_errno));
 	us->sendErrorReply ( slot , g_errno );
 }
 

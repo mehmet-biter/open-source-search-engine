@@ -330,7 +330,7 @@ void handleRequest20 ( UdpSlot *slot , int32_t netnice ) {
 	//   buf i'm assuming. and the slot was saved in a line below here...
 	//   state20->m_msg22.m_parent = slot;
 	if ( g_errno ) {
-		log("net: Msg20 handler got error: %s.",mstrerror(g_errno));
+		log(LOG_WARN, "net: Msg20 handler got error: %s.",mstrerror(g_errno));
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		g_udpServer.sendErrorReply ( slot , g_errno );
 		return;
@@ -338,7 +338,7 @@ void handleRequest20 ( UdpSlot *slot , int32_t netnice ) {
 
 	// ensure request is big enough
 	if ( slot->m_readBufSize < (int32_t)sizeof(Msg20Request) ) {
-		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. Bad request size", __FILE__, __func__, __LINE__);
 		g_udpServer.sendErrorReply ( slot , EBADREQUESTSIZE );
 		return;
 	}
@@ -354,7 +354,7 @@ void handleRequest20 ( UdpSlot *slot , int32_t netnice ) {
 
 	// sanity check, the size include the \0
 	if ( req->m_collnum < 0 ) {
-		log("query: Got empty collection in msg20 handler. FIX! "
+		log(LOG_WARN, "query: Got empty collection in msg20 handler. FIX! "
 		    "from ip=%s port=%i",iptoa(slot->m_ip),(int)slot->m_port);
 		    
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
@@ -376,8 +376,7 @@ void handleRequest20 ( UdpSlot *slot , int32_t netnice ) {
 
 	// if it's not stored locally that's an error
 	if ( req->m_docId >= 0 && ! g_titledb.isLocal ( req->m_docId ) ) {
-		log("query: Got msg20 request for non-local docId %" PRId64,
-		    req->m_docId);
+		log(LOG_WARN, "query: Got msg20 request for non-local docId %" PRId64, req->m_docId);
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		g_udpServer.sendErrorReply ( slot , ENOTLOCAL ); 
 		return; 
@@ -385,9 +384,9 @@ void handleRequest20 ( UdpSlot *slot , int32_t netnice ) {
 
 	// sanity
 	if ( req->m_docId == 0 && ! req->ptr_ubuf ) { //g_process.shutdownAbort(true); }
-		log("query: Got msg20 request for docid of 0 and no url for "
+		log( LOG_WARN, "query: Got msg20 request for docid of 0 and no url for "
 		    "collnum=%" PRId32" query %s",(int32_t)req->m_collnum,req->ptr_qbuf);
-		    
+
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		g_udpServer.sendErrorReply ( slot , ENOTFOUND );
 		return; 
@@ -403,7 +402,7 @@ void handleRequest20 ( UdpSlot *slot , int32_t netnice ) {
 		g_errno = ENOMEM;
 		log("query: msg20 new(%" PRId32"): %s", (int32_t)sizeof(XmlDoc),
 		    mstrerror(g_errno));
-		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. error=%s", __FILE__, __func__, __LINE__, mstrerror( g_errno ));
 		g_udpServer.sendErrorReply ( slot, g_errno ); 
 		return; 
 	}
@@ -510,13 +509,12 @@ bool Msg20Reply::sendReply ( Msg20Request *req, XmlDoc *xd ) {
 
 	if ( g_errno ) {
 		// extract titleRec ptr
-		log("query: Had error generating msg20 reply for d=%" PRId64": "
-		    "%s",xd->m_docId, mstrerror(g_errno));
+		log(LOG_ERROR, "query: Had error generating msg20 reply for d=%" PRId64": %s",xd->m_docId, mstrerror(g_errno));
 		// don't forget to delete this list
 	haderror:
 		mdelete ( xd, sizeof(XmlDoc) , "Msg20" );
 		delete ( xd );
-		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. error=%s", __FILE__, __func__, __LINE__, mstrerror( g_errno ));
 		g_udpServer.sendErrorReply ( slot , g_errno ) ;
 		return true;
 	}
@@ -574,7 +572,7 @@ static bool sendCachedReply ( Msg20Request *req, const void *cached_summary, siz
 	//copy the cached summary to a new temporary buffer, so that UDPSlot/Server can free it when possible
 	char *buf  = (char *)mmalloc ( cached_summary_len , "Msg20Reply" );
 	if(!buf) {
-		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. error=%s", __FILE__, __func__, __LINE__, mstrerror( g_errno ));
 		g_udpServer.sendErrorReply ( slot , g_errno ) ;
 		return true;
 	}

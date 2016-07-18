@@ -177,10 +177,13 @@ bool RdbScan::setRead ( BigFile  *file         ,
 		g_process.shutdownAbort(true); }
 	*/
 
-	if ( m_fstate.m_errno && ! g_errno ) { g_process.shutdownAbort(true); }
+	if ( m_fstate.m_errno && ! g_errno ) {
+		g_process.shutdownAbort(true);
+	}
 
 	// fix the list if we need to
 	gotList();
+
 	// we did not block
 	return true;
 }
@@ -201,8 +204,9 @@ void RdbScan::gotList ( ) {
 	// just return on error, do nothing
 	if ( g_errno ) {
 		// free buffer though!! don't forget!
-		if ( allocBuf ) 
-			mfree ( allocBuf , allocSize , "RdbScan" );
+		if ( allocBuf ) {
+			mfree( allocBuf, allocSize, "RdbScan" );
+		}
 		m_fstate.m_allocBuf = NULL;
 		m_fstate.m_allocSize = 0;
 		return;

@@ -780,7 +780,10 @@ bool RdbDump::doneDumpingList ( bool addToMap ) {
 			m_verifyBufSize = m_bytesToWrite;
 		}
 		// out of mem? if so, skip the write verify
-		if ( ! m_verifyBuf ) return doneReadingForVerify();
+		if ( ! m_verifyBuf ) {
+			return doneReadingForVerify();
+		}
+
 		// read what we wrote
 		bool isDone = m_file->read ( m_verifyBuf, m_bytesToWrite, m_offset - m_bytesToWrite, &m_fstate, this,
 		                             doneReadingForVerifyWrapper, m_niceness );
@@ -803,9 +806,13 @@ bool RdbDump::doneDumpingList ( bool addToMap ) {
 void doneReadingForVerifyWrapper ( void *state ) {
 	RdbDump *THIS = (RdbDump *)state;
 	// return if this blocks
-	if ( ! THIS->doneReadingForVerify() ) return;
+	if ( ! THIS->doneReadingForVerify() ) {
+		return;
+	}
+
 	// delete list from tree, incorporate list into cache, add to map
 	//if ( ! THIS->doneDumpingList( true ) ) return;
+
 	// continue
 	THIS->continueDumping ( );
 }
@@ -833,9 +840,7 @@ bool RdbDump::doneReadingForVerify ( ) {
 
 
 	// see if what we wrote is the same as what we read back
-	if ( m_verifyBuf && g_conf.m_verifyWrites &&
-	     memcmp(m_verifyBuf,m_buf,m_bytesToWrite) != 0 &&
-	     ! g_errno ) {
+	if ( m_verifyBuf && g_conf.m_verifyWrites && memcmp(m_verifyBuf,m_buf,m_bytesToWrite) != 0 && ! g_errno ) {
 		log(LOG_ERROR, "%s:%s: disk: Write verification of %" PRId32" bytes to file %s "
 		    "failed at offset=%" PRId64". Retrying.",
 		    __FILE__,
@@ -854,7 +859,10 @@ bool RdbDump::doneReadingForVerify ( ) {
 	// time dump to disk (and tfndb bins)
 	int64_t t ;
 	// start timing on first call only
-	if ( m_addToMap ) t = gettimeofdayInMilliseconds();
+	if ( m_addToMap ) {
+		t = gettimeofdayInMilliseconds();
+	}
+
 	// sanity check
 	if ( m_list->m_ks != m_ks ) {
 		log(LOG_ERROR,"%s:%s: Sanity check failed. m_list->m_ks [%02x]!= m_ks [%02x]",
@@ -873,12 +881,10 @@ bool RdbDump::doneReadingForVerify ( ) {
 	// . careful, map is NULL if we're doing unordered dump
 	if ( m_addToMap && m_map && ! m_map->addList ( m_list ) ) {
 		// keys  out of order in list from tree?
-		if ( g_errno == ECORRUPTDATA )
-		{
+		if ( g_errno == ECORRUPTDATA ) {
 			log(LOG_ERROR,"%s:%s: m_map->addList resulted in ECORRUPTDATA", __FILE__, __func__);
 
-			if ( m_tree )
-			{
+			if ( m_tree ) {
 				log(LOG_ERROR,"%s:%s: trying to fix tree", __FILE__, __func__);
 				m_tree->fixTree();
 			}

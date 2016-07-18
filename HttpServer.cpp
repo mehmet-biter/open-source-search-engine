@@ -2790,7 +2790,7 @@ void gotSquidProxiedContent ( void *state ) {
 
 	// if it timed out or something...
 	if ( g_errno ) {
-		log("proxy: proxy reply had error=%s",mstrerror(g_errno));
+		log(LOG_WARN, "proxy: proxy reply had error=%s",mstrerror(g_errno));
 		mdelete ( sqs, sizeof(SquidState), "sqs");
 		delete (sqs);
 		// what is ip lookup failure for proxy?

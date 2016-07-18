@@ -159,7 +159,7 @@ static void sendReply ( UdpSlot *slot , Msg39 *msg39 , char *reply , int32_t rep
 	g_errno = 0;
 	// send an error reply if g_errno is set
 	if ( err ) {
-		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. error=%s", __FILE__, __func__, __LINE__, mstrerror(err));
 		g_udpServer.sendErrorReply( slot, err );
 	} else {
 		g_udpServer.sendReply_ass( reply, replyLen, reply, replyMaxSize, slot );

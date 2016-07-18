@@ -653,21 +653,10 @@ bool Msg3::readList  ( char           rdbId         ,
 		// . do the scan/read of file #i
 		// . this returns false if blocked, true otherwise
 		// . this will set g_errno on error
-		bool done = m_scans[i].setRead (base->getFile(m_fileNums[i]),
-						base->m_fixedDataSize ,
-						 offset                 ,
-						 bytesToRead            ,
-						 startKey2              ,
-						 endKey2                ,
-						m_ks                    ,
-						 &m_lists[i]            ,
-						 this                   ,
-						 doneScanningWrapper    ,
-						 base->useHalfKeys()    ,
-						m_rdbId,
-						 m_niceness             ,
-						 m_allowPageCache       ,
-						 m_hitDisk              ) ;
+		bool done = m_scans[i].setRead( base->getFile(m_fileNums[i]), base->m_fixedDataSize, offset, bytesToRead,
+		                                startKey2, endKey2, m_ks, &m_lists[i], this, doneScanningWrapper,
+		                                base->useHalfKeys(), m_rdbId, m_niceness, m_allowPageCache, m_hitDisk ) ;
+
 		// . damn, usually the above will indirectly launch a thread
 		//   to do the reading, but it sets g_errno to EINTR,
 		//   "interrupted system call"!
@@ -675,8 +664,7 @@ bool Msg3::readList  ( char           rdbId         ,
 		//   queues the signal on g_loop's queue before it exits
 		// . try ignoring, and keep going
 		if ( g_errno == EINTR ) {
-			log("net: Interrupted system call while reading file. "
-			    "Ignoring.");
+			log("net: Interrupted system call while reading file. Ignoring.");
 			g_errno = 0;
 		}
 		// debug msg
@@ -689,7 +677,10 @@ bool Msg3::readList  ( char           rdbId         ,
 		//if ( bytesToRead == 0 )
 		//	fprintf(stderr,"shit\n");
 		// if it did not block then it completed, so count it
-		if ( done ) m_numScansCompleted++;
+		if ( done ) {
+			m_numScansCompleted++;
+		}
+
 		// break on an error, and remember g_errno in case we block
 		if ( g_errno && g_errno != ENOTHREADSLOTS ) { 
 			int32_t tt = LOG_WARN;
@@ -713,35 +704,51 @@ bool Msg3::readList  ( char           rdbId         ,
 
 void doneScanningWrapper ( void *state ) {
 	Msg3 *THIS = (Msg3 *) state;
+
 	// inc the scan count
 	THIS->m_numScansCompleted++;
+
 	// we decided to try to ignore these errors
 	if ( g_errno == EINTR ) {
-		log("net: Interrupted system call while reading file. "
-		    "Ignoring.");
+		log("net: Interrupted system call while reading file. Ignoring.");
 		g_errno = 0;
 	}
+
 	// if we had an error, remember it
-	if ( g_errno ) { 
+	if ( g_errno ) {
 		// get base, returns NULL and sets g_errno to ENOCOLLREC on err
 		RdbBase *base = getRdbBase( THIS->m_rdbId, THIS->m_collnum );
 		const char *dbname = "NOT FOUND";
-		if ( base ) dbname = base->m_dbname;
+		if ( base ) {
+			dbname = base->m_dbname;
+		}
+
 		int32_t tt = LOG_WARN;
-		if ( g_errno == EFILECLOSED ) tt = LOG_INFO;
-		log(tt,"net: Reading %s had error: %s.",
-		    dbname,mstrerror(g_errno));
+		if ( g_errno == EFILECLOSED ) {
+			tt = LOG_INFO;
+		}
+		log(tt,"net: Reading %s had error: %s.", dbname,mstrerror(g_errno));
 		THIS->m_errno = g_errno; 
 		g_errno = 0; 
 	}
+
 	// return now if we're awaiting more scan completions
-	if ( THIS->m_numScansCompleted < THIS->m_numScansStarted ) return;
+	if ( THIS->m_numScansCompleted < THIS->m_numScansStarted ) {
+		return;
+	}
+
 	// . give control to doneScanning
 	// . return if it blocks
-	if ( ! THIS->doneScanning() ) return;
+	if ( ! THIS->doneScanning() ) {
+		return;
+	}
+
 	// if one of our lists was *huge* and could not alloc mem, it was
 	// due to corruption
-	if ( THIS->m_hadCorruption ) g_errno = ECORRUPTDATA;
+	if ( THIS->m_hadCorruption ) {
+		g_errno = ECORRUPTDATA;
+	}
+
 	// if it doesn't block call the callback, g_errno may be set
 	THIS->m_callback ( THIS->m_state );
 }

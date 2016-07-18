@@ -483,7 +483,7 @@ void handleRequest13 ( UdpSlot *slot , int32_t niceness  ) {
 		// . pages are now /admin/* not any /master/* any more.
 		if ( ( //strncasecmp ( url.getPath() , "/master/" , 8 ) == 0 ||
 		       strncasecmp ( url.getPath() , "/admin/"  , 7 ) == 0 )) {
-			log("spider: Got request to download possible "
+			log(LOG_WARN, "spider: Got request to download possible "
 			    "gigablast control page %s. Sending back "
 			    "ERESTRICTEDPAGE.",
 			    url.getUrl());
@@ -570,7 +570,7 @@ void handleRequest13 ( UdpSlot *slot , int32_t niceness  ) {
 		// store the request so gotHttpReply can reply to it
 		if ( ! s_rt.addKey ( &r->m_cacheKey , &r ) ) {
 			
-			log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
+			log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. error=%s", __FILE__, __func__, __LINE__, mstrerror(g_errno));
 			g_udpServer.sendErrorReply(slot,g_errno);
 			return;
 		}
@@ -623,7 +623,7 @@ void handleRequest13 ( UdpSlot *slot , int32_t niceness  ) {
 						 niceness)) {
 			// g_errno should be set
 			
-			log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
+			log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. error=%s", __FILE__, __func__, __LINE__, mstrerror(g_errno));
 			g_udpServer.sendErrorReply(slot,g_errno);
 			return;
 		}
@@ -653,7 +653,7 @@ void downloadTheDocForReals ( Msg13Request *r ) {
 	bool firstInLine = s_rt.isEmpty ( &r->m_cacheKey );
 	// wait in line cuz someone else downloading it now
 	if ( ! s_rt.addKey ( &r->m_cacheKey , &r ) ) {
-		log("spider: error adding to waiting table %s",r->ptr_url);
+		log(LOG_WARN, "spider: error adding to waiting table %s",r->ptr_url);
 		
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		g_udpServer.sendErrorReply(r->m_udpSlot,g_errno);
@@ -732,7 +732,7 @@ void downloadTheDocForReals2 ( Msg13Request *r ) {
 		// sanity check
 		if ( ! g_errno ) { g_process.shutdownAbort(true); }
 		// report it
-		log("spider: msg54 request1: %s %s",
+		log(LOG_WARN, "spider: msg54 request1: %s %s",
 		    mstrerror(g_errno),r->ptr_url);
 		// crap we gotta send back a reply i guess
 		
@@ -754,7 +754,7 @@ void gotProxyHostReplyWrapper ( void *state , UdpSlot *slot ) {
 	// error getting spider proxy to use?
 	if ( g_errno ) {
 		// note it
-		log("sproxy: got proxy request error: %s",mstrerror(g_errno));
+		log(LOG_WARN, "sproxy: got proxy request error: %s",mstrerror(g_errno));
 		
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		g_udpServer.sendErrorReply(r->m_udpSlot,g_errno);
@@ -769,7 +769,7 @@ void gotProxyHostReplyWrapper ( void *state , UdpSlot *slot ) {
 	//int32_t  replyAllocSize = slot->m_readBufMaxSize;
 	// bad reply? ip/port/LBid
 	if ( replySize != sizeof(ProxyReply) ) {
-		log("sproxy: bad 54 reply size of %" PRId32" != %" PRId32" %s",
+		log(LOG_WARN, "sproxy: bad 54 reply size of %" PRId32" != %" PRId32" %s",
 		    replySize,(int32_t)sizeof(ProxyReply),r->ptr_url);
 		    
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
@@ -1611,7 +1611,7 @@ void gotHttpReply2 ( void *state ,
 		char *compressedBuf = (char*)mmalloc(need, "Msg13Zip");
 		if ( ! compressedBuf ) {
 			g_errno = ENOMEM;
-			log("msg13: compression failed1 %s",r->ptr_url);
+			log(LOG_WARN, "msg13: compression failed1 %s",r->ptr_url);
 			
 			log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 			g_udpServer.sendErrorReply(slot,g_errno);
@@ -1634,7 +1634,7 @@ void gotHttpReply2 ( void *state ,
 			    zError(zipErr),(int32_t)zipErr,r->ptr_url);
 			mfree (compressedBuf, need, "Msg13ZipError");
 			g_errno = ECORRUPTDATA;
-			log("msg13: compression failed2 %s",r->ptr_url);
+			log(LOG_WARN, "msg13: compression failed2 %s",r->ptr_url);
 			
 			log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 			g_udpServer.sendErrorReply(slot,g_errno);
@@ -1758,7 +1758,7 @@ void gotHttpReply2 ( void *state ,
 				    r2->ptr_url,
 				    iptoa(r2->m_urlIp));
 				    
-			log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
+			log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. error=%s", __FILE__, __func__, __LINE__, mstrerror(err));
 			g_udpServer.sendErrorReply ( slot , err );
 			continue;
 		}
@@ -1790,7 +1790,7 @@ void passOnReply ( void *state , UdpSlot *slot ) {
 	slot->m_sendBufAlloc = NULL;
 
 	if ( g_errno ) {
-		log("spider: error from proxy for %s: %s",
+		log(LOG_WARN, "spider: error from proxy for %s: %s",
 		    r->ptr_url,mstrerror(g_errno));
 		    
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);

@@ -325,7 +325,7 @@ void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
 	// sanity check
 	int32_t  requestSize = slot->m_readBufSize;
 	if ( requestSize < r->getMinSize() ) {
-		log("db: Got bad request size of %" PRId32" bytes for title record. "
+		log(LOG_WARN, "db: Got bad request size of %" PRId32" bytes for title record. "
 		    "Need at least 28.",  requestSize );
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		us->sendErrorReply ( slot , EBADREQUESTSIZE );
@@ -335,7 +335,7 @@ void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
 	// get base, returns NULL and sets g_errno to ENOCOLLREC on error
 	RdbBase *tbase = getRdbBase( RDB_TITLEDB, r->m_collnum );
 	if ( ! tbase ) {
-		log("db: Could not get title rec in collection # %" PRId32" because rdbbase is null.", (int32_t)r->m_collnum);
+		log(LOG_WARN, "db: Could not get title rec in collection # %" PRId32" because rdbbase is null.", (int32_t)r->m_collnum);
 		g_errno = EBADENGINEER;
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		us->sendErrorReply ( slot , g_errno ); 
@@ -364,7 +364,7 @@ void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
 	try { st = new (State22); }
 	catch ( ... ) {
 		g_errno = ENOMEM;
-		log("query: Msg22: new(%" PRId32"): %s", (int32_t)sizeof(State22),
+		log(LOG_WARN, "query: Msg22: new(%" PRId32"): %s", (int32_t)sizeof(State22),
 		mstrerror(g_errno));
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		us->sendErrorReply ( slot , g_errno );
@@ -413,7 +413,7 @@ void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
 	   char *dom  = getDomFast ( r->m_url , &dlen );
 	   // bogus url?
 	   if ( ! dom ) {
-	       log("msg22: got bad url in request: %s from "
+	       log(LOG_WARN, "msg22: got bad url in request: %s from "
 		   "hostid %" PRId32" for msg22 call ",
 		   r->m_url,slot->m_host->m_hostId);
 	       g_errno = EBADURL;
@@ -486,7 +486,7 @@ void gotTitleList ( void *state , RdbList *list , Msg5 *msg5 ) {
 	// send error reply on error
 	if ( g_errno ) { 
 	hadError:
-		log("db: Had error getting title record from titledb: %s.",
+		log(LOG_WARN, "db: Had error getting title record from titledb: %s.",
 		    mstrerror(g_errno));
 		if ( ! g_errno ) { g_process.shutdownAbort(true); }
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
