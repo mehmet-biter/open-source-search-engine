@@ -4,6 +4,7 @@
 #include "Rdb.h"
 #include "Stats.h"     // for timing and graphing merge time
 #include "PingServer.h"
+#include "RdbCache.h"
 #include "Process.h"
 
 static void  doneScanningWrapper ( void *state ) ;

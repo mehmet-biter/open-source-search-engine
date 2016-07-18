@@ -182,6 +182,8 @@ class Msg51 {
 	Msg5       m_msg5  [ MSG51_MAX_REQUESTS ];
 };
 
+
+class RdbCache;
 extern RdbCache s_clusterdbQuickCache;
 
 #endif // GB_MSG51_H

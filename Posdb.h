@@ -340,13 +340,14 @@ class Posdb {
 
 	int64_t getTermFreq ( collnum_t collnum, int64_t termId ) ;
 
-	//RdbCache *getCache ( ) { return &m_rdb.m_cache; }
 	Rdb      *getRdb   ( ) { return &m_rdb; }
 
 private:
 	Rdb m_rdb;
 };
 
+
+class RdbCache;
 
 extern Posdb g_posdb;
 extern Posdb g_posdb2;

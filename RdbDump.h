@@ -15,8 +15,11 @@
 #include "RdbTree.h"
 #include "RdbBuckets.h"
 #include "RdbMap.h"
-#include "RdbCache.h"
 #include "Msg5.h"
+
+
+class RdbCache;
+
 
 class RdbDump {
 

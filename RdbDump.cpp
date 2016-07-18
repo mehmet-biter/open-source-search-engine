@@ -2,6 +2,7 @@
 
 #include "RdbDump.h"
 #include "Rdb.h"
+#include "RdbCache.h"
 #include "Collectiondb.h"
 #include "Tagdb.h"
 #include "Statsdb.h"

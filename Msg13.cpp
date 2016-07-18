@@ -7,6 +7,7 @@
 #include "HashTableX.h"
 #include "XmlDoc.h"
 #include "SpiderProxy.h" // OP_GETPROXY OP_RETPROXY
+#include "RdbCache.h"
 #include "Process.h"
 #include "zlib.h"
 

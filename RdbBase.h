@@ -32,7 +32,6 @@
 #include "RdbDump.h"
 #include "RdbTree.h"
 #include "RdbBuckets.h"
-#include "RdbCache.h"
 #include "RdbMerge.h"
 #include "Msg3.h"               // MAX_RDB_FILES definition
 #include "Dir.h"
@@ -237,7 +236,6 @@ public:
 
 	bool m_didRepair;
 
-	//RdbCache  m_cache;
 	// for storing records in memory
 	RdbTree    *m_tree;  
 	RdbBuckets *m_buckets;  

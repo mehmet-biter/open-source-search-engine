@@ -11,10 +11,11 @@
 
 #include "Url.h" // MAX_URL_LEN
 #include "SpiderProxy.h" // MAXUSERNAMEPWD
-#include "RdbCache.h"
 
 // max crawl delay form proxy backoff of 1 minute (60 seconds)
 #define MAX_PROXYCRAWLDELAYMS 60000
+
+class RdbCache;
 
 void resetMsg13Caches ( ) ;
 bool printHammerQueueTable ( SafeBuf *sb ) ;
@@ -152,8 +153,8 @@ class Msg13 {
 	// register our request handler with g_udpServer (called by main.cpp)
 	static bool registerHandler();
 
-	static class RdbCache *getHttpCacheRobots();
-	static class RdbCache *getHttpCacheOthers();
+	static RdbCache *getHttpCacheRobots();
+	static RdbCache *getHttpCacheOthers();
 
 	bool getDoc ( Msg13Request *r ,
 		      bool isTestColl ,

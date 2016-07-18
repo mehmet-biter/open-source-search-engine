@@ -5,6 +5,7 @@
 #include "Posdb.h"
 #include "JobScheduler.h"
 #include "Rebalance.h"
+#include "RdbCache.h"
 #include "Sanity.h"
 
 #ifdef _VALGRIND_

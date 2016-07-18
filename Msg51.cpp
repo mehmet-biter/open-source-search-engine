@@ -9,6 +9,7 @@
 #include "Stats.h"
 #include "HashTableT.h"
 #include "HashTableX.h"
+#include "RdbCache.h"
 #include "Sanity.h"
 
 

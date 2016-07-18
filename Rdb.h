@@ -8,7 +8,6 @@
 #include "RdbBase.h"
 #include "RdbTree.h"
 #include "RdbMem.h"
-#include "RdbCache.h"
 #include "RdbDump.h"
 #include "RdbBuckets.h"
 
@@ -180,7 +179,6 @@ public:
 	char getKeySize  ( ) { return m_ks; }
 
 	RdbTree    *getTree    ( ) { if(!m_useTree) return NULL; return &m_tree; }
-	//RdbCache   *getCache   ( ) { return &m_cache; }
 	RdbMem     *getRdbMem  ( ) { return &m_mem; }
 	bool       useTree     ( ) { return m_useTree;}
 
@@ -316,8 +314,6 @@ public:
 
 	// for g_statsdb, etc.
 	RdbBase *m_collectionlessBase;
-
-	//RdbCache  m_cache;
 
 	// for storing records in memory
 	RdbTree    m_tree;  
