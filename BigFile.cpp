@@ -755,14 +755,9 @@ bool BigFile::readwrite ( void         *buf      ,
 
 	// . if we're blocking then do it now
 	// . this should return false and set g_errno on error, true otherwise
-	if ( ! isNonBlocking ) 	{
+	if ( !isNonBlocking || !g_jobScheduler.are_new_jobs_allowed() ) 	{
 		goto skipThread;
 	}
-
-	if ( ! g_jobScheduler.are_new_jobs_allowed() ) {
-		goto skipThread;
-	}
-
 
 	// . otherwise, spawn a thread to do this i/o
 	// . this returns false and sets g_errno on error, true on success
@@ -801,6 +796,7 @@ bool BigFile::readwrite ( void         *buf      ,
 	//	log (LOG_INFO,"disk: May retry later.");
 	//	return true;
 	//}
+
 	// otherwise, thread spawn failed, do it blocking then
 	g_errno = 0;
 	// if threads are manually disabled don't print these msgs because
@@ -852,10 +848,6 @@ bool BigFile::readwrite ( void         *buf      ,
 
 	// exit write mode
 	if ( doWrite ) {
-		//File *f1 = m_files [ fstate->m_filenum1 ];
-		//File *f2 = m_files [ fstate->m_filenum2 ];
-		//f1->exitWriteMode();
-		//f2->exitWriteMode();
 		exitWriteMode( fstate->m_fd1 );
 		exitWriteMode( fstate->m_fd2 );
 	}
@@ -1511,9 +1503,6 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 		logTrace( g_conf.m_logTraceBigFile, "Unlink mode" );
 	}
 
-	// close all files
-	//close ();
-
 	// . unlink likes to sometimes just unlink one part at a time
 	// . this should be -1 to unlink all at once
 	m_part = part;
@@ -1687,8 +1676,8 @@ void BigFile::unlinkWrapper(File *f) {
 
 	//We have to wait for all running io-jobs reading from that File to
 	//finish before unlinking+closing. otherwise the read threads will
-	//refer toc losed file descriptors or get unhappy when they can't
-	//re-open the file. The problem is that JobScheudler doesn't have an
+	//refer to closed file descriptors or get unhappy when they can't
+	//re-open the file. The problem is that JobScheduler doesn't have an
 	//API for checking that, and FileState doesn't have a File* member
 	//(because they can become invalid/deleted), so there is no easy correct
 	//way of waiting for read jobs using that file to finishes. Insteads we
@@ -1703,13 +1692,10 @@ void BigFile::unlinkWrapper(File *f) {
 	
 	//now real unlink
 	::unlink ( f->getFilename() );
+
 	// we must close the file descriptor in the thread otherwise the
 	// file will not actually be unlinked in this thread
 	f->close1_r();
-	// sync to disk in case power goes out
-	// when i gdb gb during its slow unlink on morph it is in the
-	// sync() function, so let's take this out...
-	//sync();
 
 	removePendingUnlink(f->getFilename());
 
@@ -1736,6 +1722,7 @@ void BigFile::doneRenameWrapper(File *f, job_exit_t /*exit_type*/) {
 	
 	// reset g_errno and return true if file does not exist
 	//if ( g_errno == ENOENT ) g_errno = 0 ;
+
 	// otherwise, it's a more serious error i guess
 	if ( g_errno ) {
 		log(LOG_ERROR, "%s:%s:%d: doneRenameWrapper. rename failed: [%s] [%s]", __FILE__, __func__, __LINE__, getFilename(), mstrerror(g_errno));
@@ -1785,14 +1772,16 @@ void BigFile::doneUnlinkWrapper(File *f, job_exit_t /*exit_type*/) {
 
 	// finish the close
 	f->close2();
+
 	// clear thread's errno
 	errno = 0;
+
 	// one less
 	m_numThreads--;
 	g_unlinkRenameThreads--;
+
 	// otherwise, it's a more serious error i guess
-	if ( g_errno ) 
-	{
+	if ( g_errno ) {
 		log(LOG_ERROR, "%s:%s:%d: doneUnlinkWrapper. unlink failed: %s", __FILE__, __func__, __LINE__, mstrerror(g_errno));
 		logAllData(LOG_ERROR);
 		//@@@ BR: Why continue??
