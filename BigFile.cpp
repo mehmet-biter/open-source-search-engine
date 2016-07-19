@@ -744,8 +744,8 @@ bool BigFile::readwrite ( void         *buf      ,
 	// open the fd right before we launch the thread.
 	//fstate->m_closeCount1 = getCloseCount_r ( fstate->m_fd1 );
 	//fstate->m_closeCount2 = getCloseCount_r ( fstate->m_fd2 );
+
 	fstate->m_errno       = 0;
-	fstate->m_errno2      = 0;
 	fstate->m_startTime   = gettimeofdayInMilliseconds();
 	fstate->m_vfd         = m_vfd;
 	// if hitDisk was false we only check the page cache!
@@ -964,8 +964,6 @@ void doneWrapper ( void *state, job_exit_t exit_type ) {
 
 	// recall g_errno from state's m_errno
 	g_errno = fstate->m_errno;
-	// might have had the file renamed/unlinked from under us
-	if ( ! g_errno ) g_errno = fstate->m_errno2;
 
 	// add the stat
 	if ( ! g_errno ) {

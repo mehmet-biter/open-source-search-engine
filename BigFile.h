@@ -62,8 +62,6 @@ public:
 	char            m_filename2[1024];
 	// hold the errno from the threaded read/write here
 	int32_t            m_errno;
-	// just for flagging unlinked/renamed thread ops
-	int32_t            m_errno2;
 	// when we started for graphing purposes (in milliseconds)
 	int64_t       m_startTime;
 	int64_t       m_doneTime;
