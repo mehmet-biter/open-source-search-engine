@@ -143,8 +143,8 @@ bool File::rename ( const char *newFilename ) {
 		errno = 0;
 
 		// this returns 0 on success
-		if ( ::rename( getFilename(), newFilename ) ) {
-			// reset errno and return true if file does not exist
+		if ( ::rename( getFilename(), newFilename ) != 0 ) {
+			// reset errno if file does not exist
 			if ( errno == ENOENT ) {
 				log( LOG_ERROR, "%s:%s:%d: disk: file [%s] does not exist.", __FILE__, __func__, __LINE__, getFilename() );
 				errno = 0;

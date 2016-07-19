@@ -1815,8 +1815,7 @@ bool RdbMap::truncateFile ( BigFile *f )
 	}
 	
 	// do the truncation
-	if ( truncate ( p->getFilename() , newSize ) )
-	{
+	if ( truncate ( p->getFilename() , newSize ) ) {
 		// return false if had an error
 		log(LOG_ERROR, "%s:%s:%d: truncate(%s,%" PRId32"): %s.",
 			   __FILE__, __func__, __LINE__, p->getFilename(),newSize,mstrerror(errno));
@@ -1824,20 +1823,23 @@ bool RdbMap::truncateFile ( BigFile *f )
 	}
 			   
 	// if we are not the last part, remove it
-	if ( partnum == numParts-2 ) 
-	{
-		log("db: Removing tiny last part. unlink (%s).",
-		    p2->getFilename());
+	if ( partnum == numParts-2 ) {
+		log( LOG_DEBUG, "db: Removing tiny last part. unlink (%s).", p2->getFilename());
 		    
 		// ensure it is smaller than 1k
-		if ( ! p2->unlink() )
-			return log("db: Unlink of tiny last part failed.");
+		if ( ! p2->unlink() ) {
+			log( LOG_WARN, "db: Unlink of tiny last part failed." );
+			return false;
+		}
 	}
 
 	// reset file size, parts, etc on the big file since we truncated
 	// a part file and possibly removed another part file
-	if ( ! f->reset() )
-		return log("db: Failed to reset %s.",f->getFilename());
+	if ( ! f->reset() ) {
+		log( LOG_WARN, "db: Failed to reset %s.", f->getFilename() );
+		return false;
+	}
+
 	// success
 	return true;
 }

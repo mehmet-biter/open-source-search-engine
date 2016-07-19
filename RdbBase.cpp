@@ -514,7 +514,6 @@ bool RdbBase::setFiles ( ) {
 		// replace that first file then
 		m_didRepair = true;
 		return true;
-		//g_process.shutdownAbort(true);
 	}
 
 

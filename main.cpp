@@ -1803,10 +1803,14 @@ int main2 ( int argc , char *argv[] ) {
 	//list.testIndexMerge();
 
 	// file creation test, make sure we have dir control
-	if ( checkDirPerms ( g_hostdb.m_dir ) < 0 ) return 1;
+	if ( checkDirPerms ( g_hostdb.m_dir ) < 0 ) {
+		return 1;
+	}
 
 	// . make sure we have critical files
-	if ( ! g_process.checkFiles ( g_hostdb.m_dir ) ) return 1;
+	if ( ! g_process.checkFiles ( g_hostdb.m_dir ) ) {
+		return 1;
+	}
 
 	// load the appropriate dictionaries
 	//g_speller.init();
@@ -2285,18 +2289,20 @@ int main2 ( int argc , char *argv[] ) {
 	g_loop.runLoop();
 }
 
+/// @todo ALC wouldn't it be faster to actually check the dir permission instead of trying to write a tmp file?
 int32_t checkDirPerms ( char *dir ) {
-	if ( g_conf.m_readOnlyMode ) return 0;
+	if ( g_conf.m_readOnlyMode ) {
+		return 0;
+	}
+
 	File f;
 	f.set ( dir , "tmpfile" );
 	if ( ! f.open ( O_RDWR | O_CREAT | O_TRUNC ) ) {
-		log("disk: Unable to create %stmpfile. Need write permission "
-		    "in this directory.",dir);
+		log( LOG_ERROR, "disk: Unable to create %stmpfile. Need write permission in this directory.", dir );
 		return -1;
 	}
 	if ( ! f.unlink() ) {
-		log("disk: Unable to delete %stmpfile. Need write permission "
-		    "in this directory.",dir);
+		log( LOG_ERROR, "disk: Unable to delete %stmpfile. Need write permission in this directory.", dir );
 		return -1;
 	}
 	return 0;
@@ -7923,8 +7929,7 @@ bool isRecoveryFutile ( ) {
 	// do not consider futile
 	if ( fails < 5 ) return false;
 
-	log("process: KEEP ALIVE LOOP GIVING UP. Five or more cores in "
-	    "last 60 seconds.");
+	log( LOG_WARN, "process: KEEP ALIVE LOOP GIVING UP. Five or more cores in last 60 seconds.");
 
 	// otherwise, give up!
 	return true;
