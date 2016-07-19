@@ -930,8 +930,6 @@ bool File::unlink() {
 		return true;
 	}
 
-	// sync it to disk in case power goes out
-	sync();
 	// copy errno to g_errno
 	g_errno = errno;
 
