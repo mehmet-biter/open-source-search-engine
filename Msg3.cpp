@@ -7,7 +7,6 @@
 #include "RdbCache.h"
 #include "Process.h"
 
-static void  doneScanningWrapper ( void *state ) ;
 
 int32_t g_numIOErrors = 0;
 
@@ -683,7 +682,7 @@ bool Msg3::readList  ( char           rdbId         ,
 	return doneScanning();
 }
 
-void doneScanningWrapper ( void *state ) {
+void Msg3::doneScanningWrapper(void *state) {
 	Msg3 *THIS = (Msg3 *) state;
 
 	// inc the scan count

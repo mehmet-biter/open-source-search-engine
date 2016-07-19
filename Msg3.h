@@ -93,6 +93,17 @@ class Msg3 {
 			      char      *endKey       ,
 			      int32_t       minRecSizes  );
 
+	bool isListChecked() const { return m_listsChecked; }
+	bool listHadCorruption() const { return m_hadCorruption; }
+	int32_t getFileNums() const { return m_numFileNums; }
+	int32_t getFileNum(int32_t i) const { return m_fileNums[i]; }
+
+	// end key to use when calling constrain_r()
+	char      m_constrainKey[MAX_KEY_BYTES];
+
+private:
+	static void doneScanningWrapper(void *state);
+
 	// the rdb we're scanning for
 	char  m_rdbId;
 	//char *m_coll;
@@ -101,33 +112,28 @@ class Msg3 {
 	bool m_validateCache;
 
 	// the scan classes, 1 per file, used to read from that file
-	RdbScan *m_scans ; // [ MAX_RDB_FILES ];
+	RdbScan *m_scans ;
 
 	// page ranges for each scan computed in setPageRanges()
-	int32_t    *m_startpg ; //    [ MAX_RDB_FILES ];
-	int32_t    *m_endpg   ; //    [ MAX_RDB_FILES ];
+	int32_t    *m_startpg ;
+	int32_t    *m_endpg   ;
 
-	//key_t   *m_hintKeys    ; // [ MAX_RDB_FILES ];
-	char    *m_hintKeys    ; // [ MAX_RDB_FILES ];
-	int32_t    *m_hintOffsets ; // [ MAX_RDB_FILES ];
+	char    *m_hintKeys    ;
+	int32_t    *m_hintOffsets ;
 
 	int32_t     m_startFileNum;
 	int32_t     m_numFiles    ;
 
-	int32_t    *m_fileNums    ; // [ MAX_RDB_FILES ];
+	int32_t    *m_fileNums    ;
 	int32_t     m_numFileNums;
 
 	// hold the lists we read from disk here
-	RdbList  *m_lists ; // [ MAX_RDB_FILES ];
+	RdbList  *m_lists ;
 
 	// key range to read
 	const char     *m_fileStartKey;
 	char      m_startKey[MAX_KEY_BYTES];
 	char      m_endKey[MAX_KEY_BYTES];
-
-	// end key to use when calling constrain_r()
-	//key_t     m_constrainKey;
-	char      m_constrainKey[MAX_KEY_BYTES];
 
 	// min bytes to read
 	int32_t      m_minRecSizes;

@@ -1043,13 +1043,13 @@ void Msg5::repairLists_r ( ) {
 	// return if no need to
 	if ( ! m_doErrorCorrection ) return;
 	// or if msg3 already check them and they were ok
-	if ( m_msg3.m_listsChecked ) return;
+	if ( m_msg3.isListChecked() ) return;
 	// if msg3 said they were corrupt... this happens when the map
 	// is generated over a bad data file and ends up writing the same key
 	// on more than 500MB worth of data. so when we try to read a list
 	// that has the startkey/endkey covering that key, the read size
 	// is too big to ever happen...
-	if ( m_msg3.m_hadCorruption ) m_hadCorruption = true;
+	if ( m_msg3.listHadCorruption() ) m_hadCorruption = true;
 	// time it
 	//m_checkTime = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < m_numListPtrs ; i++ ) {
@@ -1083,12 +1083,12 @@ void Msg5::repairLists_r ( ) {
 		// . show the culprit file
 		// . logging the key ranges gives us an idea of how long
 		//   it will take to patch the bad data
-		int32_t nn = m_msg3.m_numFileNums;
+		int32_t nn = m_msg3.getFileNums();
 
 		// TODO: fix this. can't call Collectiondb::getBase from within a thread!
 		RdbBase *base = getRdbBase ( m_rdbId , m_collnum );
 		if ( i < nn && base ) {
-			BigFile *bf = base->getFile ( m_msg3.m_fileNums[i] );
+			BigFile *bf = base->getFile ( m_msg3.getFileNum(i) );
 			log( LOG_WARN, "db: Corrupt filename is %s in collnum %" PRId32".", bf->getFilename(), (int32_t)m_collnum );
 			log( LOG_WARN, "db: startKey=%s endKey=%s",
 			     KEYSTR( m_listPtrs[i]->getStartKey(), m_ks ),
