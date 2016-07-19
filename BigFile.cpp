@@ -1666,6 +1666,7 @@ void BigFile::unlinkWrapper(void *state) {
 }
 
 
+/// @todo ALC we could we use f->unlink here?
 void BigFile::unlinkWrapper(File *f) {
 	logTrace( g_conf.m_logTraceBigFile, "BEGIN" );
 
