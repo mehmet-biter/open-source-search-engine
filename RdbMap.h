@@ -69,8 +69,6 @@
 #define PAGES_PER_SEGMENT (1*1024)
 #endif
 #define PAGES_PER_SEG     (PAGES_PER_SEGMENT)
-// MAX_SEGMENTS of 16*1024 allows for 32 million pages = 256gigs of disk data
-//#define MAX_SEGMENTS      (16*1024)  
 
 class RdbMap {
 
@@ -337,14 +335,11 @@ class RdbMap {
 	// . see explanation at top of this file for map description
 	// . IMPORTANT: if growing m_pageSize might need to change m_offsets 
 	//   from int16_t to int32_t
-	//key_t         *m_keys    [ MAX_SEGMENTS ]; 
-	//char          *m_keys    [ MAX_SEGMENTS ]; 
 	char          **m_keys;
 	int32_t            m_numSegmentPtrs;
 	//key96_t      **m_keys96; // set to m_keys
 	//key128_t     **m_keys128; // set to m_keys
 
-	//int16_t         *m_offsets [ MAX_SEGMENTS ]; 
 	int16_t         **m_offsets;
 	int32_t            m_numSegmentOffs;
 
