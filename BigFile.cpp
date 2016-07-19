@@ -1684,9 +1684,16 @@ void BigFile::unlinkWrapper(File *f) {
 			break;
 		usleep(100); //sleep 100ms
 	}
-	
+
+	log( LOG_TRACE,"%s:%s:%d: disk: unlink [%s]", __FILE__, __func__, __LINE__, f->getFilename() );
+
 	//now real unlink
 	::unlink ( f->getFilename() );
+
+	if ( errno != 0 ) {
+		log( LOG_TRACE,"%s:%s:%d: disk: unlink [%s] has error [%s]", __FILE__, __func__, __LINE__,
+		     f->getFilename(), mstrerror( errno ) );
+	}
 
 	// we must close the file descriptor in the thread otherwise the
 	// file will not actually be unlinked in this thread
