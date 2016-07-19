@@ -733,7 +733,6 @@ void Msg3::doneScanningWrapper(void *state) {
 	THIS->m_callback ( THIS->m_state );
 }
 
-static void doneSleepingWrapper3 ( int fd , void *state ) ;
 
 // . but now that we may get a list remotely to fix data corruption,
 //   this may indeed block
@@ -1062,7 +1061,7 @@ bool Msg3::doneScanning ( ) {
 	return true;
 }
 
-void doneSleepingWrapper3 ( int fd , void *state ) {
+void Msg3::doneSleepingWrapper3 ( int fd , void *state ) {
 	Msg3 *THIS = (Msg3 *)state;
 	// now try reading again
 	if ( ! THIS->doneSleeping ( ) ) return;

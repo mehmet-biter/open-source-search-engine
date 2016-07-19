@@ -65,21 +65,30 @@ class Msg3 {
 			 bool           hitDisk        = true );
 
 	// for retrieving unmerged lists
-	RdbList *getList       ( int32_t i ) {return &m_lists[i];}
-	int32_t     getNumLists   (        ) {return m_numScansCompleted; }
+	RdbList        *getList ( int32_t i )       { return &m_lists[i]; }
+	const RdbList  *getList ( int32_t i ) const { return &m_lists[i]; }
+	int32_t         getNumLists() const { return m_numScansCompleted; }
 
+	int32_t      m_numScansStarted;
+	int32_t      m_numScansCompleted;
+	void     *m_state;
+	void    (* m_callback )( void *state );
+
+
+	bool isListChecked() const { return m_listsChecked; }
+	bool listHadCorruption() const { return m_hadCorruption; }
+	int32_t getFileNums() const { return m_numFileNums; }
+	int32_t getFileNum(int32_t i) const { return m_fileNums[i]; }
+
+	// end key to use when calling constrain_r()
+	char      m_constrainKey[MAX_KEY_BYTES];
+
+private:
 	// keep public for doneScanningWrapper to use
 	bool      doneScanning    ( );
 
 	// on read/write error we sleep and retry
 	bool doneSleeping ();
-
-	int32_t      m_numScansStarted;
-	int32_t      m_numScansCompleted;
-	void     *m_state       ;
-	void    (* m_callback )( void *state );
-
-	//private:
 
 	// this might increase m_minRecSizes
 	void compensateForNegativeRecs ( class RdbBase *base ) ;
@@ -93,20 +102,11 @@ class Msg3 {
 			      char      *endKey       ,
 			      int32_t       minRecSizes  );
 
-	bool isListChecked() const { return m_listsChecked; }
-	bool listHadCorruption() const { return m_hadCorruption; }
-	int32_t getFileNums() const { return m_numFileNums; }
-	int32_t getFileNum(int32_t i) const { return m_fileNums[i]; }
-
-	// end key to use when calling constrain_r()
-	char      m_constrainKey[MAX_KEY_BYTES];
-
-private:
 	static void doneScanningWrapper(void *state);
+	static void doneSleepingWrapper3(int fd, void *state);
 
 	// the rdb we're scanning for
 	char  m_rdbId;
-	//char *m_coll;
 	collnum_t m_collnum;
 
 	bool m_validateCache;
@@ -158,7 +158,6 @@ private:
 	// . these hints make a call to constrain() fast
 	// . used to quickly contrain the tail of a 1-list read
 	int32_t        m_hintOffset;
-	//key_t       m_hintKey;
 	char        m_hintKey[MAX_KEY_BYTES];
 
 	bool        m_compensateForMerge;
