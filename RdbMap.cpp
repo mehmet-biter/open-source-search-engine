@@ -566,46 +566,63 @@ bool RdbMap::readMap2 ( ) {
 	// keep track of read offset
 	int64_t offset = 0;
 	g_errno = 0;
+
 	// first 8 bytes are the size of the DATA file we're mapping
 	m_file.read ( &m_offset , 8 , offset );
-	if ( g_errno ) return log("db: Had error reading %s: %s.",
-				  m_file.getFilename(),mstrerror(g_errno));
+	if ( g_errno ) {
+		log( LOG_WARN, "db: Had error reading %s: %s.", m_file.getFilename(),mstrerror(g_errno));
+		return false;
+	}
 	offset += 8;
+
 	// when a BigFile gets chopped, keep up a start offset for it
 	m_file.read ( &m_fileStartOffset , 8 , offset );
-	if ( g_errno ) return log("db: Had error reading %s: %s.",
-				  m_file.getFilename(),mstrerror(g_errno));
+	if ( g_errno ) {
+		log( LOG_WARN, "db: Had error reading %s: %s.", m_file.getFilename(),mstrerror(g_errno));
+		return false;
+	}
 	offset += 8;
+
 	// read total number of non-deleted records
 	m_file.read ( &m_numPositiveRecs , 8 , offset );
-	if ( g_errno ) return log("db: Had error reading %s: %s.",
-				  m_file.getFilename(),mstrerror(g_errno));
+	if ( g_errno ) {
+		log( LOG_WARN, "db: Had error reading %s: %s.", m_file.getFilename(),mstrerror(g_errno));
+		return false;
+	}
 	offset += 8;
+
 	// read total number of deleted records
 	m_file.read ( &m_numNegativeRecs , 8 , offset );
-	if ( g_errno ) return log("db: Had error reading %s: %s.",
-				  m_file.getFilename(),mstrerror(g_errno));
+	if ( g_errno ) {
+		log( LOG_WARN, "db: Had error reading %s: %s.", m_file.getFilename(),mstrerror(g_errno));
+		return false;
+	}
 	offset += 8;
+
 	// read total number of deleted records
-	//m_file.read ( &m_lastKey , 12 , offset );
 	m_file.read ( m_lastKey , m_ks , offset );
-	if ( g_errno ) return log("db: Had error reading %s: %s.",
-				  m_file.getFilename(),mstrerror(g_errno));
-	//offset += 12;
+	if ( g_errno ) {
+		log( LOG_WARN, "db: Had error reading %s: %s.", m_file.getFilename(),mstrerror(g_errno));
+		return false;
+	}
 	offset += m_ks;
+
 	// get the total size of this map file from our derived file class
 	int32_t fileSize = m_file.getFileSize () ;
-	if ( fileSize < 0 ) return log("db: getFileSize failed on %s: %s.",
-				  m_file.getFilename(),mstrerror(g_errno));
+	if ( fileSize < 0 ) {
+		log( LOG_WARN, "db: getFileSize failed on %s: %s.", m_file.getFilename(),mstrerror(g_errno));
+		return false;
+	}
+
 	// read in the segments
 	for ( int32_t i = 0 ; offset < fileSize ; i++ ) {
 		// . this advance offset passed the read segment
 		// . it uses fileSize for reading the last partial segment
 		offset = readSegment ( i , offset , fileSize ) ;
-		if ( offset<=0 ) return log("db: Had error reading "
-					    "%s: %s.",
-					    m_file.getFilename(),
-					    mstrerror(g_errno));
+		if ( offset<=0 ) {
+			log( LOG_WARN, "db: Had error reading %s: %s.", m_file.getFilename(), mstrerror(g_errno));
+			return false;
+		}
 	}
 	return true;
 }
@@ -828,9 +845,10 @@ bool RdbMap::prealloc ( RdbList *list ) {
 	// . need to pre-alloc up here so malloc does not fail mid stream
 	// . TODO: only do it if list is big enough
 	while ( lastPageNum + 2 >= m_maxNumPages ) {
-		if ( ! addSegment() )
-			return log("db: Failed to add segment to map file %s.",
-				   m_file.getFilename());
+		if ( ! addSegment() ) {
+			log( LOG_WARN, "db: Failed to add segment to map file %s.", m_file.getFilename() );
+			return false;
+		}
 	}
 	return true;
 }
@@ -858,9 +876,10 @@ bool RdbMap::addList ( RdbList *list ) {
 	// . need to pre-alloc up here so malloc does not fail mid stream
 	// . TODO: only do it if list is big enough
 	while ( lastPageNum + 2 >= m_maxNumPages ) {
-		if ( ! addSegment() )
-			return log("db: Failed to add segment to map file %s.",
-				   m_file.getFilename());
+		if ( ! addSegment() ) {
+			log( LOG_WARN, "db: Failed to add segment to map file %s.", m_file.getFilename() );
+			return false;
+		}
 	}
 
 	// disabled until addKey() works correctly
@@ -890,12 +909,9 @@ bool RdbMap::addList ( RdbList *list ) {
 	recSize = list->getCurrentRecSize();
 	rec     = list->getCurrentRec ();
 	if ( ! addRecord ( key , rec , recSize ) ) {
-		log("db: Failed to add record to map: %s.",
-		    mstrerror(g_errno));
-		// allow caller to try to fix the tree in the case of dumping
-		// a tree to a file on disk
+		log( LOG_WARN, "db: Failed to add record to map: %s.", mstrerror(g_errno));
+		// allow caller to try to fix the tree in the case of dumpinga tree to a file on disk
 		return false;
-		//g_process.shutdownAbort(true);
 	}
 	if ( list->skipCurrentRecord() ) goto top2;
 
@@ -1304,49 +1320,55 @@ void RdbMap::reduceMemFootPrint () {
 // . returns false and sets g_errno on error
 bool RdbMap::addSegment (  ) {
 	// a helper variable
-	//int32_t ks = sizeof(key_t);
 	int32_t ks = m_ks;
+
 	// easy variables
 	int32_t n   = m_numSegments;
 	int32_t pps = PAGES_PER_SEGMENT;
-	// ensure doesn't exceed the max
-	//if ( n >= MAX_SEGMENTS ) return log("db: Mapped file is "
-	//				    "too big. Critical error.");
 
-	if ( m_reducedMem ) { g_process.shutdownAbort(true); }
+	if ( m_reducedMem ) {
+		g_process.shutdownAbort(true);
+	}
 
 	// the array of up to MAX_SEGMENT pool ptrs is now dynamic too!
 	// because diffbot uses thousands of collections, this will save
 	// over 1GB of ram!
-	if ( ! addSegmentPtr ( n ) )
-		return log("db: Failed to allocate memory for adding seg ptr "
-			   "for map file %s.", m_file.getFilename());
-
+	if ( ! addSegmentPtr ( n ) ) {
+		log( LOG_WARN, "db: Failed to allocate memory for adding seg ptr for map file %s.", m_file.getFilename() );
+		return false;
+	}
 
 	// alloc spaces for each key segment
 	// allocate new segments now
-	//m_keys[n]    = (key_t         *) mmalloc ( ks * pps , "RdbMap" );
-	m_keys[n]    = (char          *) mmalloc ( ks * pps , "RdbMap" );
+	m_keys[n]    = (char*) mmalloc ( ks * pps , "RdbMap" );
 	m_offsets[n] = (int16_t         *) mmalloc ( 2  * pps , "RdbMap" );
-	bool hadProblem = false;
+
 	// free up the segment on any problem
-	if ( ! m_offsets[n] ) hadProblem = true;
-	if ( ! m_keys   [n] ) hadProblem = true;
-	if ( hadProblem ) {
-		if ( m_keys   [n] ) mfree ( m_keys[n]   , ks*pps, "RdbMap" );
-		if ( m_offsets[n] ) mfree ( m_offsets[n], 2*pps , "RdbMap" );
+	if ( ! m_offsets[n] || ! m_keys[n] ) {
 		// set to NULL so we know if accessed illegally
-		m_keys   [n] = NULL;
-		m_offsets[n] = NULL;
-		return log(
-			   "db: Failed to allocate memory for adding to "
-			   "map file %s.", m_file.getFilename());
+		if ( m_keys   [n] ) {
+			mfree ( m_keys[n]   , ks*pps, "RdbMap" );
+			m_keys   [n] = NULL;
+		}
+
+		if ( m_offsets[n] ) {
+			mfree ( m_offsets[n], 2*pps , "RdbMap" );
+			m_offsets[n] = NULL;
+		}
+
+		log( LOG_WARN, "db: Failed to allocate memory for adding to map file %s.", m_file.getFilename());
+		return false;
 	}
+
 	// set all new offsets to -1
-	for ( int32_t j = 0 ; j < PAGES_PER_SEGMENT ; j++ ) m_offsets[n][j] = -1;
+	for ( int32_t j = 0 ; j < PAGES_PER_SEGMENT ; j++ ) {
+		m_offsets[n][j] = -1;
+	}
+
 	// reset m_maxNumPages and m_numSegments
 	m_numSegments++;
 	m_maxNumPages += PAGES_PER_SEGMENT;
+
 	return true;
 }
 
@@ -1356,11 +1378,14 @@ bool RdbMap::addSegment (  ) {
 // . MAX_PART_SIZE is the max size of a little file that is part of a BigFile
 bool RdbMap::chopHead ( int32_t fileHeadSize ) {
 	// ensure fileHeadSize is valid
-	if ( fileHeadSize != MAX_PART_SIZE )
-		return log(LOG_LOGIC,"db: rdbmap: chopHead: fileHeadSize of "
-			   "%" PRId32" is invalid.", fileHeadSize );
+	if ( fileHeadSize != MAX_PART_SIZE ) {
+		log( LOG_LOGIC, "db: rdbmap: chopHead: fileHeadSize of %" PRId32" is invalid.", fileHeadSize );
+		return false;
+	}
+
 	// what segment does this page fall on?
 	int32_t segNum = (fileHeadSize / m_pageSize) / PAGES_PER_SEGMENT;
+
 	// . must match exactly
 	// . not any more i guess, we can still have a segment that
 	//   corresponds in part to a PART file no longer with us
@@ -1409,20 +1434,24 @@ bool RdbMap::chopHead ( int32_t fileHeadSize ) {
 // . returns false and sets g_errno on error
 bool RdbMap::generateMap ( BigFile *f ) {
 	reset();
-	if ( g_conf.m_readOnlyMode ) return false;
+	if ( g_conf.m_readOnlyMode ) {
+		return false;
+	}
 
-	log("db: Generating map for %s/%s",f->getDir(),f->getFilename());
+	log( LOG_INFO, "db: Generating map for %s/%s",f->getDir(),f->getFilename());
 
 	// we don't support headless datafiles right now
 	bool allowHeadless = true;
 	if ( m_fixedDataSize != 0 ) allowHeadless = false;
 	if ( m_ks != 18 ) allowHeadless = false;
+
 	// allow posdb to go through
 	if ( ! f->doesPartExist(0) && ! allowHeadless ) {
 	 	g_errno = EBADENGINEER;
-	 	return log("db: Cannot generate map for "
-	 		   "this headless data file yet");
+		log( LOG_WARN, "db: Cannot generate map for this headless data file yet");
+		return false;
 	}
+
 	// scan through all the recs in f
 	int64_t offset = 0;
 	int64_t fileSize = f->getFileSize();
@@ -1501,9 +1530,9 @@ bool RdbMap::generateMap ( BigFile *f ) {
 	// otherwise, read it in
 	if ( ! f->read ( buf , readSize , offset ) ) {
 		mfree ( buf , bufSize , "RdbMap");
-		return log("db: Failed to read %" PRId64" bytes of %s at "
-			   "offset=%" PRId64". Map generation failed.",
-			   bufSize,f->getFilename(),offset);
+		log( LOG_WARN, "db: Failed to read %" PRId64" bytes of %s at offset=%" PRId64". Map generation failed.",
+		     bufSize,f->getFilename(),offset);
+		return false;
 	}
 
 	RdbList list;
@@ -1514,8 +1543,7 @@ bool RdbMap::generateMap ( BigFile *f ) {
 		// scan the buffer to find the right key.
 		int32_t fullKeyOff = findNextFullPosdbKeyOffset (buf,readSize);
 		// if none found, bail
-		if ( fullKeyOff < 0 )
-		{
+		if ( fullKeyOff < 0 ) {
 			log(LOG_ERROR,"%s:%s:%d: Could not get a full key in the first %" PRId64" bytes read of headless file [%s]",
 				__FILE__,
 				__func__,
@@ -1599,11 +1627,13 @@ bool RdbMap::generateMap ( BigFile *f ) {
 	// don't chop keys
 	//if ( recSize > 1000000 ) { g_process.shutdownAbort(true); }
 	if ( recSize < 6 ) {
-		log("db: Got negative recsize of %" PRId32" at offset=%" PRId64" "
-		    "lastgoodoff=%" PRId64,
+		log( LOG_WARN, "db: Got negative recsize of %" PRId32" at offset=%" PRId64" lastgoodoff=%" PRId64,
 		    recSize , offset + (rec-buf), m_offset );
+
 		// it truncates to m_offset!
-		if ( truncateFile(f) ) goto done;
+		if ( truncateFile(f) ) {
+			goto done;
+		}
 		return false;
 	}
 	// do we have a breech?
@@ -1618,11 +1648,9 @@ bool RdbMap::generateMap ( BigFile *f ) {
 		// . this can happen if merge dumped out half-ass
 		// . the write split a record...
 		if ( rec - buf == 0 && recSize <= bufSize  ) {
-			log(
-			    "db: Map generation failed because last record "
-			    "in data file was split. Power failure while "
-			    "writing? Truncating file to %" PRId64" bytes. "
-			    "(lost %" PRId64" bytes)", offset,fileSize-offset);
+			log( LOG_WARN, "db: Map generation failed because last record in data file was split. Power failure while "
+				 "writing? Truncating file to %" PRId64" bytes. (lost %" PRId64" bytes)", offset,fileSize-offset);
+
 			// when merge resumes it call our getFileSize()
 			// in RdbMerge.cpp::gotLock() to set the dump offset
 			// otherwise, if we don't do this and write data
@@ -1654,11 +1682,11 @@ bool RdbMap::generateMap ( BigFile *f ) {
 			mfree ( buf , bufSize , "RdbMap");
 			bufSize = recSize;
 			buf = (char *)mmalloc ( bufSize , "RdbMap" );
-			if ( ! buf )
-				return log("db: Got error while "
-					   "generating the map file: %s. "
-					   "offset=%" PRIu64".",
-					   mstrerror(g_errno),oldOffset);
+			if ( ! buf ) {
+				log( LOG_WARN, "db: Got error while generating the map file: %s. offset=%" PRIu64".",
+				     mstrerror( g_errno ), oldOffset );
+				return false;
+			}
 		}
 		// read agin starting at the adjusted offset
 		goto readLoop;
@@ -1669,12 +1697,16 @@ bool RdbMap::generateMap ( BigFile *f ) {
 		// power went out and we ended up writing a a few bytes of
 		// garbage then a bunch of 0's at the end of the file.
 		// if the truncate works out then we are done.
-		if ( g_errno == ECORRUPTDATA && truncateFile(f) ) goto done;
+		if ( g_errno == ECORRUPTDATA && truncateFile(f) ) {
+			goto done;
+		}
+
 		// otherwise, give it up
 		mfree ( buf , bufSize , "RdbMap");
-		return log("db: Map generation failed: %s.",
-			   mstrerror(g_errno));
+		log( LOG_WARN, "db: Map generation failed: %s.", mstrerror(g_errno));
+		return false;
 	}
+
 	// skip current good record now
 	if ( list.skipCurrentRecord() ) goto nextRec;
 	// advance offset
@@ -1686,8 +1718,7 @@ done:
 	mfree ( buf , bufSize , "RdbMap");
 	
 	// if there was bad data we probably added out of order keys
-	if ( m_needVerify ) 
-	{
+	if ( m_needVerify ) {
 		log(LOG_ERROR,"%s:%s:%d: Fixing map for [%s]. Added at least %" PRId64" bad keys.",
 			__FILE__,
 			__func__,
