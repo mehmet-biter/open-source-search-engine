@@ -109,9 +109,6 @@ class Msg0 {
 	// ptr to passed list we're to fill
 	class RdbList  *m_list;
 
-	// use this list if you don't want to malloc one
-	RdbList m_handyList;
-
 	// . local rdb as specified by m_rdbId and gotten by getRdb(char rdbId)
 	// . also, it's fixedDataSize
 	//class Rdb      *m_rdb;

@@ -35,12 +35,10 @@ void Msg0::constructor ( ) {
 	// reply buf
 	m_replyBuf     = NULL;
 	m_replyBufSize = 0;
-	m_handyList.constructor();
 }
 
 Msg0::~Msg0 ( ) {
 	reset();
-	m_handyList.freeList();
 }
 
 void Msg0::reset ( ) {
@@ -58,10 +56,6 @@ void Msg0::reset ( ) {
 		mfree(m_mcasts,sizeof(Multicast),"msg0mcast");
 		m_mcasts = NULL;
 	}
-	// no longer do this because we call reset after the msg5 completes
-	// and it was destroying our handylist... so just call freelist
-	// in the destructor now
-	//m_handyList.freeList();
 }
 
 bool Msg0::registerHandler ( ) {
