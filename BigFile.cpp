@@ -1570,37 +1570,33 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 		m_numThreads++; 
 		g_unlinkRenameThreads++;
 		
-		// skip thread?
-		if ( ! useThread ) {
-			goto skipThread;
-		}
-			
-		// save callback for when all parts are unlinked or renamed
-		m_callback = callback;
-		m_state    = state;
+		// use thread?
+		if ( useThread ) {
+			// save callback for when all parts are unlinked or renamed
+			m_callback = callback;
+			m_state    = state;
 
-		// . we spawn the thread here now
-		// . returns true on successful spawning
-		// . we can't make a disk thread cuz Threads.cpp checks its
-		//   FileState member for readSize for thread throttling
-		if ( g_jobScheduler.submit(startRoutine, doneRoutine, f, thread_type_unlink, 1/*niceness*/) ) {
-			logTrace( g_conf.m_logTraceBigFile, "Thread function called OK" );
-			continue;
+			// . we spawn the thread here now
+			// . returns true on successful spawning
+			// . we can't make a disk thread cuz Threads.cpp checks its
+			//   FileState member for readSize for thread throttling
+			if ( g_jobScheduler.submit(startRoutine, doneRoutine, f, thread_type_unlink, 1/*niceness*/) ) {
+				logTrace( g_conf.m_logTraceBigFile, "Thread function called OK" );
+				continue;
+			}
+
+			// otherwise, thread spawn failed, do it blocking then
+			log( LOG_INFO, "disk: Failed to launch unlink/rename thread for %s. Doing blocking unlink. "
+				 "part=%" PRId32"/%" PRId32". This will hurt performance. %s.",
+			     f->getFilename(),i,m_part,mstrerror(g_errno));
 		}
-		
-		// otherwise, thread spawn failed, do it blocking then
-		log(LOG_INFO,
-		    "disk: Failed to launch unlink/rename thread for %s. "
-		    "Doing blocking unlink. part=%" PRId32"/%" PRId32". "
-		    "This will hurt performance. "
-		    "%s.",f->getFilename(),i,m_part,mstrerror(g_errno));
-		    
-	skipThread:
+
 		// log these for now, remove later
-		log(LOG_DEBUG,"disk: Unlinking/renaming %s without thread.",
-		     f->getFilename());
+		log(LOG_DEBUG,"disk: Unlinking/renaming %s without thread.", f->getFilename());
+
 		// before we call doneRoutine(), we must NULLify the callback 
 		m_callback = NULL;
+
 		// clear errno, cause startRoutine() may set it
 		errno = 0;
 		
@@ -1608,8 +1604,7 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 		startRoutine ( f );
 		
 		// copy errno over to g_errno
-		if ( errno ) 
-		{
+		if ( errno ) {
 			g_errno = errno;
 		}
 			
