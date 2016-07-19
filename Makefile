@@ -107,7 +107,7 @@ else ifeq ($(config),test)
 DEFS += -D_VALGRIND_
 DEFS += -DPRIVACORE_TEST_VERSION
 
-else ifeq ($(config), coverage)
+else ifeq ($(config),coverage)
 CONFIG_CPPFLAGS += --coverage
 
 else ifeq ($(config),sanitize)
@@ -194,13 +194,17 @@ all: gb
 
 
 # third party libraries
-LIBFILES = libcld2_full.so
+LIBFILES = libcld2_full.so slacktee.sh
 LIBS += -Wl,-rpath=. -L. -lcld2_full
 
 
 libcld2_full.so:
 	cd third-party/cld2/internal && CPPFLAGS="-ggdb -std=c++98" ./compile_libs.sh
 	ln -s third-party/cld2/internal/libcld2_full.so libcld2_full.so
+
+
+slacktee.sh:
+	ln -s third-party/slacktee/slacktee.sh slacktee.sh
 
 
 .PHONY: vclean
@@ -281,6 +285,7 @@ dist: all
 	.valgrindrc \
 	$(DIST_DIR)
 	@cp third-party/cld2/LICENSE $(DIST_DIR)/LICENSE-3RD-PARTY-CLD2
+	@cp third-party/slacktee/LICENSE $(DIST_DIR)/LICENSE-3RD-PARTY-SLACKTEE
 	@tar -czvf $(DIST_DIR).tar.gz $(DIST_DIR)
 	@rm -rf $(DIST_DIR)
 
