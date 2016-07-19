@@ -634,6 +634,7 @@ bool Msg39::getLists () {
 		m_lists = new RdbList[nqt];
 	} catch(std::bad_alloc) {
 		log(LOG_ERROR,"new[%d] RdbList failed", nqt);
+		g_errno = ENOMEM;
 		return true;
 	}
 
