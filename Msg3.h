@@ -25,10 +25,6 @@ class RdbCache *getDiskPageCache ( char rdbId ) ;
 // 500 sites in the whitelist.
 #define MAX_RDB_FILES 1024
 
-//#define MSG3_BUF_SIZE ((sizeof(RdbScan)+sizeof(key_t)+sizeof(RdbList)+20)*6)
-//#define MSG3_BUF_SIZE ((sizeof(RdbScan)+MAX_KEY_BYTES+sizeof(RdbList)+20)*6)
-#define MSG3_BUF_SIZE 64
-
 #include "RdbList.h"
 #include "RdbScan.h"
 
@@ -161,7 +157,6 @@ class Msg3 {
 
 	bool        m_compensateForMerge;
 
-	char  m_buf[MSG3_BUF_SIZE];
 	char *m_alloc;
 	int32_t  m_allocSize;
 	int32_t  m_numChunks;

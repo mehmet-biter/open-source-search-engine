@@ -30,7 +30,6 @@ void Msg3::reset() {
 	if ( ! m_alloc        ) return;
 	// call destructors
 	for ( int32_t i = 0 ; i < m_numChunks ; i++ ) m_lists[i].destructor();
-	if ( m_alloc == m_buf ) return;
 	mfree ( m_alloc , m_allocSize , "Msg3" );
 	m_alloc = NULL;
 }
@@ -308,15 +307,12 @@ bool Msg3::readList  ( char           rdbId         ,
 	if ( pre != -10 ) nn++;
 	m_numChunks = nn;
 	int32_t need = nn * (chunk);
-	m_alloc = m_buf;
-	if ( need > (int32_t)MSG3_BUF_SIZE ) {
-		m_allocSize = need;
-		m_alloc = (char *)mcalloc ( need , "Msg3" );
-		if ( ! m_alloc ) {
-			log("disk: Could not allocate %" PRId32" bytes read "
-			    "structures to read %s.",need,base->m_dbname);
-			return true;
-		}
+	m_allocSize = need;
+	m_alloc = (char *)mcalloc ( need , "Msg3" );
+	if ( ! m_alloc ) {
+		log("disk: Could not allocate %" PRId32" bytes read "
+		    "structures to read %s.",need,base->m_dbname);
+		return true;
 	}
 	char *p = m_alloc;
 	m_scans       = (RdbScan *)p; p += nn * sizeof(RdbScan);
