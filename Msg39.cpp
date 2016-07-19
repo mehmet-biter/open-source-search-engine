@@ -81,7 +81,9 @@ bool Msg39::registerHandler ( ) {
 }
 
 
-Msg39::Msg39 () {
+Msg39::Msg39 ()
+  : m_lists(NULL)
+{
 	m_inUse = false;
 	reset();
 }
@@ -105,12 +107,7 @@ void Msg39::reset() {
 
 
 void Msg39::reset2() {
-	// reset lists
-	int32_t nqt = m_stackBuf.getLength() / sizeof(RdbList);
-	for ( int32_t j = 0 ; j < nqt && m_lists ; j++ ) {
-		m_lists[j].destructor();
-	}
-	m_stackBuf.purge();
+	delete[] m_lists;
 	m_lists = NULL;
 	m_msg2.reset();
 	m_posdbTable.reset();
@@ -633,14 +630,11 @@ bool Msg39::getLists () {
 
 
 	int32_t nqt = m_query.getNumTerms();
-	int32_t need = sizeof(RdbList) * nqt ;
-	m_stackBuf.setLabel("stkbuf2");
-	if ( ! m_stackBuf.reserve ( need ) ) return true;
-	m_lists = (RdbList *)m_stackBuf.getBufStart();
-	m_stackBuf.setLength ( need );
-	for ( int32_t i = 0 ; i < nqt ; i++ ) {
-		m_lists[i].constructor();
-		//log("msg39: constructlist @ 0x%" PTRFMT,(PTRTYPE)&m_lists[i]);
+	try {
+		m_lists = new RdbList[nqt];
+	} catch(std::bad_alloc) {
+		log(LOG_ERROR,"new[%d] RdbList failed", nqt);
+		return true;
 	}
 
 	// call msg2

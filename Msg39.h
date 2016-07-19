@@ -179,7 +179,6 @@ private:
 	// . we hold our IndexLists here for passing to PosdbTable
 	// . one array for each of the tiers
 	RdbList *m_lists;
-	SafeBuf m_stackBuf;
 	
 	// used for timing
 	int64_t  m_startTime;
