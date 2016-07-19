@@ -6,19 +6,24 @@
 #include "PingServer.h"
 #include "RdbCache.h"
 #include "Process.h"
+#include <new>
 
 
 int32_t g_numIOErrors = 0;
 
-Msg3::Msg3() {
-	m_alloc = NULL;
-	m_numScansCompleted = 0;
-	m_numScansStarted = 0;
+Msg3::Msg3()
+  : m_numScansStarted(0),
+    m_numScansCompleted(0),
+    m_lists(NULL),
+    m_alloc(NULL)
+{
 }
+
 
 Msg3::~Msg3() {
 	reset();
 }
+
 
 void Msg3::reset() {
 	if ( m_numScansCompleted < m_numScansStarted ) { g_process.shutdownAbort(true); }
@@ -26,11 +31,12 @@ void Msg3::reset() {
 	// reset # of lists to 0
 	m_numScansCompleted = 0;
 	m_numScansStarted = 0;
-	if ( ! m_alloc        ) return;
-	// call destructors
-	for ( int32_t i = 0 ; i < m_numChunks ; i++ ) m_lists[i].destructor();
-	mfree ( m_alloc , m_allocSize , "Msg3" );
-	m_alloc = NULL;
+	if ( m_alloc ) {
+		mfree ( m_alloc , m_allocSize , "Msg3" );
+		m_alloc = NULL;
+	}
+	delete[] m_lists;
+	m_lists = NULL;
 }
 
 key192_t makeCacheKey ( int64_t vfd ,
@@ -294,17 +300,24 @@ bool Msg3::readList  ( char           rdbId         ,
 
 	// . allocate buffer space
 	// . m_scans, m_startpg, m_endpg, m_hintKeys, m_hintOffsets,
-	//   m_fileNums, m_lists
+	//   m_fileNums
 	int32_t chunk = sizeof(RdbScan) + // m_scans
 		4 +                    // m_startpg
 		4 +                    // m_endpg
 		m_ks +                 // m_hintKeys
 		4 +                    // m_hintOffsets
-		4 +                    // m_fileNums
-		sizeof(RdbList) ;      // m_lists
+		4;                     // m_fileNums
 	int32_t nn   = numFiles;
 	if ( pre != -10 ) nn++;
 	m_numChunks = nn;
+	try {
+		m_lists = new RdbList[m_numChunks];
+	} catch(std::bad_alloc) {
+		log("disk: Msg3::readList: Could not allocate %d RdbList", m_numChunks);
+		g_errno = ENOMEM;
+		return true;
+	}
+
 	int32_t need = nn * (chunk);
 	m_allocSize = need;
 	m_alloc = (char *)mcalloc ( need , "Msg3" );
@@ -321,14 +334,11 @@ bool Msg3::readList  ( char           rdbId         ,
 	m_hintKeys    = (char    *)p; p += nn * m_ks;
 	m_hintOffsets = (int32_t    *)p; p += nn * 4;
 	m_fileNums    = (int32_t    *)p; p += nn * 4;
-	m_lists       = (RdbList *)p; p += nn * sizeof(RdbList);
 	// sanity check
 	if ( p - m_alloc != need ) {
 		log(LOG_LOGIC,"disk: Bad malloc in Msg3.cpp.");
 		g_process.shutdownAbort(true);
 	}
-	// call constructors
-	for ( int32_t i = 0 ; i < nn ; i++ ) m_lists[i].constructor();
 	// make fix from up top
 	if ( pre != -10 ) m_fileNums [ m_numFileNums++ ] = pre;
 
