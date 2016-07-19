@@ -21,10 +21,8 @@ RdbMap::~RdbMap() {
 
 void RdbMap::set ( const char *dir, const char *mapFilename,
 		   int32_t fixedDataSize , bool useHalfKeys , char keySize ,
-		   int32_t pageSize )
-{
-	if( g_conf.m_logTraceRdbMap ) log(LOG_TRACE,"%s:%s:%d: BEGIN. dir [%s], mapFilename [%s]", __FILE__, __func__, __LINE__,  dir, mapFilename);
-
+		   int32_t pageSize ) {
+	logTrace( g_conf.m_logTraceRdbMap, "BEGIN. dir [%s], mapFilename [%s]", dir, mapFilename );
 
 	reset();
 	m_fixedDataSize = fixedDataSize;
@@ -33,11 +31,13 @@ void RdbMap::set ( const char *dir, const char *mapFilename,
 	m_ks = keySize;
 	m_pageSize = pageSize;
 	m_pageSizeBits = getNumBitsOn32(pageSize-1);
+
 	// m_pageSize -1 must be able to be stored in m_offsets[][] (a int16_t)
 	if ( m_pageSize > 32768 ) {
 	      log(LOG_LOGIC,"db: rdbmap: m_pageSize too big for m_offsets.");
 	      g_process.shutdownAbort(true);
 	}
+
 	// . we remove the head part files of a BigFile when merging it
 	// . this keeps the required merge space down to a small amount
 	// . when we chop off a part file from a BigFile we must also
@@ -45,9 +45,8 @@ void RdbMap::set ( const char *dir, const char *mapFilename,
 	// . the match must be EXACT
 	// . therefore, PAGES_PER_SEGMENT * m_pageSize must evenly divide
 	//   MAX_PART_SIZE #define'd in BigFile.h
-	if ( (MAX_PART_SIZE % (PAGES_PER_SEGMENT*m_pageSize)) == 0 )
-	{
-		if( g_conf.m_logTraceRdbMap ) log(LOG_TRACE,"%s:%s:%d: END", __FILE__, __func__, __LINE__);
+	if ( (MAX_PART_SIZE % (PAGES_PER_SEGMENT*m_pageSize)) == 0 ) {
+		logTrace( g_conf.m_logTraceRdbMap, "END" );
 		return;
 	}
 
@@ -119,24 +118,17 @@ void RdbMap::reset ( ) {
 
 
 bool RdbMap::writeMap ( bool allDone ) {
-	if ( g_conf.m_logTraceRdbMap ) {
-		log(LOG_TRACE, "%s:%s:d: BEGIN. filename [%s]", __FILE__, __func__, m_file.getFilename());
-	}
-
+	logTrace( g_conf.m_logTraceRdbMap, "BEGIN. filename [%s]", m_file.getFilename());
 
 	if ( g_conf.m_readOnlyMode ) {
-		if ( g_conf.m_logTraceRdbMap ) {
-			log( LOG_TRACE, "%s:%s:d: END. Read-only mode, not writing map. filename [%s]. Returning true.",
-			     __FILE__, __func__, m_file.getFilename());
-		}
+		logTrace( g_conf.m_logTraceRdbMap, "END. Read-only mode, not writing map. filename [%s]. Returning true.",
+		          m_file.getFilename());
 		return true;
 	}
 
 	if ( ! m_needToWrite ) {
-		if ( g_conf.m_logTraceRdbMap ) {
-			log( LOG_TRACE, "%s:%s:d: END. no need, not writing map. filename [%s]. Returning true.",
-			     __FILE__, __func__, m_file.getFilename());
-		}
+		logTrace( g_conf.m_logTraceRdbMap, "END. no need, not writing map. filename [%s]. Returning true.",
+		          m_file.getFilename());
 		return true;
 	}
 
@@ -161,19 +153,14 @@ bool RdbMap::writeMap ( bool allDone ) {
 		reduceMemFootPrint ();
 	}
 
-	if( g_conf.m_logTraceRdbMap ) {
-		log(LOG_TRACE, "%s:%s:d: END. filename [%s], returning %s",
-		    __FILE__, __func__, m_file.getFilename(), status ? "true" : "false");
-	}
+	logTrace( g_conf.m_logTraceRdbMap, "END. filename [%s], returning %s", m_file.getFilename(), status ? "true" : "false");
 
 	return status;
 }
 
 
 bool RdbMap::writeMap2 ( ) {
-	if( g_conf.m_logTraceRdbMap ) {
-		log(LOG_TRACE, "%s:%s:d: BEGIN. filename [%s]", __FILE__, __func__, m_file.getFilename());
-	}
+	logTrace( g_conf.m_logTraceRdbMap, "BEGIN. filename [%s]", m_file.getFilename());
 	
 	// the current disk offset
 	int64_t offset = 0LL;
@@ -238,11 +225,7 @@ bool RdbMap::writeMap2 ( ) {
 
 	offset += m_ks;
 
-
-	if( g_conf.m_logTraceRdbMap ) {
-		log(LOG_TRACE, "%s:%s:d: Writing %" PRId32" segments", __FILE__, __func__, m_numSegments);
-	}
-
+	logTrace( g_conf.m_logTraceRdbMap, "Writing %" PRId32" segments", m_numSegments);
 
 	// . now store the map itself
 	// . write the segments (keys/offsets) from the map file
@@ -255,9 +238,7 @@ bool RdbMap::writeMap2 ( ) {
 		}
 	}
 
-	if( g_conf.m_logTraceRdbMap ) {
-		log(LOG_TRACE, "%s:%s:d: END - OK, returning true.", __FILE__, __func__);
-	}
+	logTrace( g_conf.m_logTraceRdbMap, "END - OK, returning true." );
 
 	return true;
 }
@@ -301,14 +282,13 @@ int64_t RdbMap::writeSegment ( int32_t seg , int64_t offset ) {
 // . now we pass in ptr to the data file we map so verifyMap() can use it
 bool RdbMap::readMap ( BigFile *dataFile ) 
 {
-	if( g_conf.m_logTraceRdbMap ) log(LOG_TRACE,"%s:%s:%d: BEGIN. filename [%s]", __FILE__, __func__, __LINE__,  m_file.getFilename());
+	logTrace( g_conf.m_logTraceRdbMap, "BEGIN. filename [%s]", m_file.getFilename());
 	
 	// bail if does not exist
-	if ( ! m_file.doesExist() )
-	{
+	if ( ! m_file.doesExist() ) {
 		log(LOG_ERROR,"%s:%s:%d: Map file [%s] does not exist.", __FILE__, __func__, __LINE__,  m_file.getFilename());			
 		
-		if( g_conf.m_logTraceRdbMap ) log(LOG_TRACE,"%s:%s:%d: END. Returning false", __FILE__, __func__, __LINE__);	
+		logTrace( g_conf.m_logTraceRdbMap, "END. Returning false" );
 		return false;
 	}
 
@@ -316,11 +296,10 @@ bool RdbMap::readMap ( BigFile *dataFile )
 	// . open the file
 	// . do not open O_RDONLY because if we are resuming a killed merge
 	//   we will add to this map and write it back out.
-	if ( ! m_file.open ( O_RDWR ) )
-	{
+	if ( ! m_file.open ( O_RDWR ) ) {
 		log(LOG_ERROR,"%s:%s:%d: Could not open map file %s for reading: %s.",__FILE__, __func__, __LINE__, m_file.getFilename(),mstrerror(g_errno));
 			   
-		if( g_conf.m_logTraceRdbMap ) log(LOG_TRACE,"%s:%s:%d: END. Returning false", __FILE__, __func__, __LINE__);
+		logTrace( g_conf.m_logTraceRdbMap, "END. Returning false" );
 		return false;
 	}
 			   
@@ -334,47 +313,41 @@ bool RdbMap::readMap ( BigFile *dataFile )
 	//   used in the loop in BigFile::unlinkRename().
 	m_file.closeFds ( );
 	// verify and fix map, data on disk could be corrupted
-	if ( ! verifyMap ( dataFile ) ) 
-	{
+	if ( ! verifyMap ( dataFile ) ) {
 		log(LOG_ERROR,"%s:%s:%d: END. Could not verify map. filename [%s]. Returning false", __FILE__, __func__, __LINE__,  m_file.getFilename());
 		return false;
 	}
 	
-	if( g_conf.m_logTraceRdbMap ) log(LOG_TRACE,"%s:%s:%d: END. Returning %s", __FILE__, __func__, __LINE__,  status?"true":"false");
+	logTrace( g_conf.m_logTraceRdbMap, "END. Returning %s", status?"true":"false");
 	// return status
 	return status;
 }
 
-bool RdbMap::verifyMap ( BigFile *dataFile ) 
-{
-	if( g_conf.m_logTraceRdbMap ) log(LOG_TRACE,"%s:%s:%d: BEGIN. filename [%s]", __FILE__, __func__, __LINE__,  m_file.getFilename());
+bool RdbMap::verifyMap ( BigFile *dataFile ) {
+	logTrace( g_conf.m_logTraceRdbMap, "BEGIN. filename [%s]", m_file.getFilename());
 	
 	int64_t diff = m_offset - m_fileStartOffset;
 	diff -= dataFile->getFileSize();
 	// make it positive
-	if ( diff < 0 ) 
-	{
+	if ( diff < 0 ) {
 		diff = diff * -1LL;
 	}
 
-	if( g_conf.m_logTraceRdbMap ) log(LOG_TRACE,"%s:%s:%d: diff: %" PRId64, __FILE__, __func__, __LINE__,  diff);
+	logTrace( g_conf.m_logTraceRdbMap, "diff: %" PRId64, diff );
 
 	// . return false if file size does not match
 	// . i've seen this happen before
-	if ( diff ) 
-	{
+	if ( diff ) {
 		log(LOG_WARN, "%s:%s:%d: Map file [%s] says that file [%s] should be %" PRId64" bytes long, but it is %" PRId64" bytes.",
 			__FILE__, __func__, __LINE__, m_file.getFilename(), dataFile->getFilename(), m_offset - m_fileStartOffset, dataFile->getFileSize() );
 		    
 		// we let headless files squeak by on this because we cannot
 		// generate a map for them yet. if power went out a key can be
 		// caught in the middle of a write... thus limit to 12 bytes
-		if ( dataFile->doesPartExist(0) || diff >= 12 ) 
-		{
+		if ( dataFile->doesPartExist(0) || diff >= 12 ) {
 			return false;
 		}
-			
-			
+
 		// explain it
 		log(LOG_WARN, "db: Datafile is headless (so the map can not be regenerated right now) and the difference is < 12, so we will let this one squeak by.");
 		
@@ -449,7 +422,7 @@ bool RdbMap::verifyMap ( BigFile *dataFile )
 	}
 	// now fix the map if it had out of order keys in it
 	bool status = verifyMap2 ( );
-	if( g_conf.m_logTraceRdbMap ) log(LOG_TRACE,"%s:%s:%d: END. Returning %s", __FILE__, __func__, __LINE__,  status?"true":"false");
+	logTrace( g_conf.m_logTraceRdbMap, "END. Returning %s", status?"true":"false" );
 		
 	return status;
 }
@@ -469,7 +442,7 @@ bool RdbMap::verifyMap2 ( ) {
 		if ( KEYCMP(k,lastKey,m_ks)>=0 ) {
 			KEYSET(lastKey,k,m_ks); continue; }
 		// just bitch for now
-		log(
+		log( LOG_WARN,
 		    "db: Key out of order in map file %s/%s. "
 		    "page = %" PRId32". key offset = %" PRId64". "
 		    "Map or data file is "
@@ -481,10 +454,10 @@ bool RdbMap::verifyMap2 ( ) {
 		//log("db: oldk.n1=%08" PRIx32" n0=%016" PRIx64,
 		//    lastKey.n1,lastKey.n0);
 		//log("db: k.n1=%08" PRIx32" n0=%016" PRIx64,k.n1 ,k.n0);
-		log("db: oldk.n1=%016" PRIx64" n0=%016" PRIx64,
+		log( LOG_WARN, "db: oldk.n1=%016" PRIx64" n0=%016" PRIx64,
 		    KEY1(lastKey,m_ks),KEY0(lastKey));
-		log("db:    k.n1=%016" PRIx64" n0=%016" PRIx64,KEY1(k,m_ks),KEY0(k));
-		log("db: m_numPages = %" PRId32,m_numPages);
+		log( LOG_WARN, "db:    k.n1=%016" PRIx64" n0=%016" PRIx64,KEY1(k,m_ks),KEY0(k));
+		log( LOG_WARN, "db: m_numPages = %" PRId32,m_numPages);
 
 		log(LOG_ERROR,"%s:%s: Previous versions would have move %s/%s to trash!!", 
 			__FILE__,__func__,m_file.getDir(), m_file.getFilename());
@@ -1280,20 +1253,34 @@ bool RdbMap::addSegmentPtr ( int32_t n ) {
 
 // try to save memory when there are many collections with tiny files on disk
 void RdbMap::reduceMemFootPrint () {
-	if ( m_numSegments != 1 ) return;
-	if ( m_numPages >= 100 ) return;
+	if ( m_numSegments != 1 ) {
+		return;
+	}
+
+	if ( m_numPages >= 100 ) {
+		return;
+	}
+
 	// if already reduced, return now
-	if ( m_newPagesPerSegment > 0 ) return;
+	if ( m_newPagesPerSegment > 0 ) {
+		return;
+	}
 
 	// if it is like posdb0054.map then it is being merged into and
-	// we'll resume a killed merge, so don't mess with it, we'll need to
-	// add more pages.
+	// we'll resume a killed merge, so don't mess with it, we'll need to add more pages.
 	char *s = m_file.getFilename();
-	for ( ; s && *s && ! is_digit(*s) ; s++ );
+	for ( ; s && *s && ! is_digit(*s) ; s++ )
+		;
+
 	int id = 0;
-	if ( s ) id = atoi(s);
+	if ( s ) {
+		id = atoi(s);
+	}
+
 	// id can be zero like for spiderdb0000.map
-	if ( (id % 2) == 0 ) return;
+	if ( (id % 2) == 0 ) {
+		return;
+	}
 
 	 // log("map: reducing mem footprint for %s/%s",
 	 //     m_file.getDir(),
@@ -1301,18 +1288,22 @@ void RdbMap::reduceMemFootPrint () {
 
 	// seems kinda buggy now..
 	m_reducedMem = true;
-	//return;
+
 	char *oldKeys = m_keys[0];
 	short *oldOffsets = m_offsets[0];
 	int pps = m_numPages;
+
 	m_keys   [0] = (char *)mmalloc ( m_ks * pps , "RdbMap" );
 	m_offsets[0] = (short *)mmalloc ( 2 * pps , "RdbMap" );
+
 	// copy over
 	gbmemcpy ( m_keys   [0] , oldKeys    , m_ks * pps );
 	gbmemcpy ( m_offsets[0] , oldOffsets , 2    * pps );
+
 	int oldPPS = PAGES_PER_SEGMENT;
 	mfree ( oldKeys    , m_ks * oldPPS , "RdbMap" );
 	mfree ( oldOffsets ,    2 * oldPPS , "RdbMap" );
+
 	m_newPagesPerSegment = m_numPages;
 }
 
@@ -1604,10 +1595,14 @@ bool RdbMap::generateMap ( BigFile *f ) {
 	// . HACK to fix useHalfKeys compression thing from one read to the nxt
 	// . "key" should still be set to the last record we read last read
 	//if ( offset > 0 ) list.m_listPtrHi = ((char *)&key)+6;
-	if ( offset > 0 ) list.m_listPtrHi = key+(m_ks-6);
+	if ( offset > 0 ) {
+		list.m_listPtrHi = key+(m_ks-6);
+	}
 
 	// ... fix for posdb!!!
-	if ( offset > 0 && m_ks == 18 ) list.m_listPtrLo = key+(m_ks-12);
+	if ( offset > 0 && m_ks == 18 ) {
+		list.m_listPtrLo = key+(m_ks-12);
+	}
 
 	// . parse through the records in the list
 	// . stolen from RdbMap::addList()
@@ -1662,21 +1657,7 @@ bool RdbMap::generateMap ( BigFile *f ) {
 			m_offset = offset;
 			goto done;
 		}
-		// ...we can now have huge titlerecs...
-		// is it something absurd? (over 40 Megabytes?)
-		/*
-		if ( recSize > 40*1024*1024 ) {
-			// now just cut it short
-			//g_errno = ECORRUPTDATA;
-			log(
-			    "RdbMap::generateMap: Insane rec size of "
-			    "%" PRId32" bytes encountered. off=%" PRId64". "
-			    "data corruption? ignoring.",
-			    recSize, offset);
-			//log("RdbMap::generateMap: truncating the file.");
-			//goto done;
-		}
-		*/
+
 		// is our buf big enough to hold this type of rec?
 		if ( recSize > bufSize ) {
 			mfree ( buf , bufSize , "RdbMap");
