@@ -462,14 +462,6 @@ bool RdbMap::verifyMap2 ( ) {
 		log(LOG_ERROR,"%s:%s: Previous versions would have move %s/%s to trash!!", 
 			__FILE__,__func__,m_file.getDir(), m_file.getFilename());
 
-//ORG		SafeBuf cmd;
-//ORG		cmd.safePrintf("mv %s/%s %s/trash/",
-//ORG			       m_file.getDir(),
-//ORG			       m_file.getFilename(),
-//ORG			       g_hostdb.m_dir);
-//ORG		log("db: %s",cmd.getBufStart() );
-//ORG		gbsystem ( cmd.getBufStart() );
-
 		// make the bash shell restart us by returning a 1 error code
 		g_process.shutdownAbort(false);
 

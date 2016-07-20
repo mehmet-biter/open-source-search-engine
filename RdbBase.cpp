@@ -675,7 +675,9 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 
 		// if 'gb dump X collname' was called, bail, we do not
 		// want to write any data
-		if ( g_dumpMode ) return -1;
+		if ( g_dumpMode ) {
+			return -1;
+		}
 
 		log( LOG_INFO, "db: Attempting to generate map file for data file %s* of %" PRId64" bytes. May take a while.",
 		     f->getFilename(), f->getFileSize() );
@@ -683,7 +685,6 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 		// this returns false and sets g_errno on error
 		if ( ! m->generateMap ( f ) ) {
 			log( LOG_ERROR, "db: Map generation failed.");
-			log( LOG_ERROR, "db: Moving .dat and .map file to trash dir");
 
 			SafeBuf tmp;
 			tmp.safePrintf("%s",f->getFilename());
@@ -693,10 +694,9 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 			char *str = tmp.getBufStart();
 			str[len-3] = '*';
 			str[len-2] = '\0';
-			SafeBuf cmd;
-			cmd.safePrintf("mv %s/%s %s/trash/", m_dir.getDir(), str, g_hostdb.m_dir);
-			log( LOG_INFO, "db: %s", cmd.getBufStart() );
-			gbsystem ( cmd.getBufStart() );
+
+			log(LOG_ERROR,"%s:%s: Previous versions would have move %s/%s to trash!!",
+			    __FILE__,__func__,m_dir.getDir(), str);
 
 			gbshutdownCorrupted();
 		}
