@@ -10034,48 +10034,41 @@ void XmlDoc::filterStart_r ( bool amThread ) {
 
 	// execute it
 	int retVal = gbsystem ( cmd );
-	if ( retVal == -1 )
-		log("gb: system(%s) : %s",
-		    cmd,mstrerror(g_errno));
+	if ( retVal == -1 ) {
+		log( LOG_WARN, "gb: system(%s) : %s", cmd, mstrerror( g_errno ) );
+	}
 
 	// all done with input file
 	// clean up the binary input file from disk
 	if ( unlink ( in ) != 0 ) {
 		// log error
-		log("gbfilter: unlink (%s): %s\n",in, strerror(errno));
+		log( LOG_WARN, "gbfilter: unlink(%s): %s",in, strerror(errno));
+
 		// ignore it, since it was not a processing error per se
 		errno = 0;
 	}
 
-	// don't use too much memory, i think xhtml uses so much that it
-	// swaps out all the gb processes?
-	//struct rlimit lim;
-	//lim.rlim_cur = lim.rlim_max = 24 * 1024 * 1024 ;
-	//if ( setrlimit ( RLIMIT_AS , &lim ) )
-	//	fprintf (stderr,"gbfilter:setrlimit: %s", strerror(errno) );
-
- retry13:
+retry13:
 	fd = open ( out , O_RDONLY );
 	if ( fd < 0 ) {
 		// valgrind
 		if ( errno == EINTR ) goto retry13;
 		m_errno = errno;
-		log("gbfilter: Could not open file %s for reading: %s.",
-		    out,mstrerror(m_errno));
+		log( LOG_WARN, "gbfilter: Could not open file %s for reading: %s.", out,mstrerror(m_errno));
 		return;
 	}
 	// sanity -- need room to store a \0
 	if ( m_filteredContentAllocSize < 2 ) { g_process.shutdownAbort(true); }
 	// to read - leave room for \0
 	int32_t toRead = m_filteredContentAllocSize - 1;
- retry14:
+retry14:
 	// read right from pipe descriptor
 	int32_t r = read (fd, m_filteredContent,toRead);
 	// note errors
 	if ( r < 0 ) {
 		// valgrind
 		if ( errno == EINTR ) goto retry14;
-		log("gbfilter: reading output: %s",mstrerror(errno));
+		log( LOG_WARN, "gbfilter: reading output: %s",mstrerror(errno));
 		// this is often bad fd from an oom error, so ignore it
 		//m_errno = errno;
 		errno = 0;
@@ -10091,7 +10084,9 @@ void XmlDoc::filterStart_r ( bool amThread ) {
 	// save the new buf len
 	m_filteredContentLen = r;
 	// ensure enough room for null term
-	if ( r >= m_filteredContentAllocSize ) { g_process.shutdownAbort(true); }
+	if ( r >= m_filteredContentAllocSize ) {
+		g_process.shutdownAbort(true);
+	}
 	// ensure filtered stuff is NULL terminated so we can set the Xml class
 	m_filteredContent [ m_filteredContentLen ] = '\0';
 	// it is good
