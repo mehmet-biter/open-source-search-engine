@@ -15,11 +15,14 @@ urlinfo
 create_ucd_tables
 libcld2_full.so
 libgb.a
-file_state_before_run.txt
 rebalance.txt
 unifiedDict-buf.txt
 # log files
 log000*
+file_state*.txt
+# slacktee
+slacktee.sh
+slacktee.conf
 # kdevelop
 .kdev4/
 # clion
