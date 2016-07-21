@@ -409,8 +409,7 @@ class CollectionRec {
 	SafeBuf m_diffbotCrawlName;
 	// email for emailing when crawl limit hit
 	SafeBuf m_notifyEmail;
-	// fetch this url when crawl limit hit
-	SafeBuf m_notifyUrl;
+
 	// the default respider frequency for all rows in url filters
 	float   m_collectiveRespiderFrequency;
 	float   m_collectiveCrawlDelay;//SpiderWait;

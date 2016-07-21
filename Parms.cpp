@@ -3647,17 +3647,6 @@ void Parms::init ( ) {
 	m->m_flags = PF_DIFFBOT;
 	m++;
 
-	m->m_cgi   = "notifyWebhook";
-	m->m_xml   = "notifyWebhook";
-	m->m_title = "notify webhook";
-	m->m_off   = offsetof(CollectionRec,m_notifyUrl);
-	m->m_type  = TYPE_SAFEBUF;
-	m->m_page  = PAGE_NONE;
-	m->m_obj   = OBJ_COLL;
-	m->m_def   = "";
-	m->m_flags = PF_DIFFBOT;
-	m++;
-
 	// collective respider frequency (for pagecrawlbot.cpp)
 	m->m_title = "collective respider frequency (days)";
 	m->m_cgi   = "repeat";

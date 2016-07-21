@@ -2041,15 +2041,15 @@ bool sendNotification ( EmailInfo *ei ) {
 	CollectionRec *cr = g_collectiondb.m_recs[ei->m_collnum];
 
 	const char *email = "";
-	char *url = NULL;
 	const char *crawl = "unknown2";
 
 	if ( cr ) email = cr->m_notifyEmail.getBufStart();
-	if ( cr ) url   = cr->m_notifyUrl.getBufStart();
 	if ( cr ) crawl = cr->m_diffbotCrawlName.getBufStart();
 
 	// sanity check, can only call once
-	if ( ei->m_notifyBlocked != 0 ) { g_process.shutdownAbort(true); }
+	if ( ei->m_notifyBlocked != 0 ) {
+		g_process.shutdownAbort(true);
+	}
 
 	if ( email && email[0] ) {
 		log("build: sending email notification to %s for "
@@ -2073,65 +2073,6 @@ bool sendNotification ( EmailInfo *ei ) {
 		ei->m_callback = doneSendingNotifyEmailWrapper;
 		// this will usually block, unless error maybe
 		if ( ! sendEmailThroughMandrill ( ei ) )
-			ei->m_notifyBlocked++;
-	}
-
-	if ( url && url[0] ) {
-		log("build: sending url notification to %s for coll \"%s\"",
-		    url,crawl);
-
-		Url uu; uu.set ( url );
-
-		SafeBuf fullReq;
-		fullReq.safePrintf("POST %s HTTP/1.0\r\n"
-				   "User-Agent: Crawlbot/2.0\r\n"
-				   "Accept: */*\r\n"
-				   "Host: "
-				   , uu.getPath()
-				   );
-		fullReq.safeMemcpy ( uu.getHost() , uu.getHostLen() );
-		fullReq.safePrintf("\r\n");
-		// make custom headers
-		fullReq.safePrintf ("X-Crawl-Name: %s\r\n"
-				    // last \r\n is added in HttpRequest.cpp
-				    "X-Crawl-Status: %s\r\n" // hdrs
-				    , cr->m_diffbotCrawlName.getBufStart()
-				    , ei->m_spiderStatusMsg.getBufStart()
-				    );
-		// also in post body
-		SafeBuf postContent;
-		// the collection details
-		printCrawlDetailsInJson ( &postContent , cr );
-		// content-length of it
-		fullReq.safePrintf("Content-Length: %" PRId32"\r\n",
-				   postContent.length());
-		// type is json
-		fullReq.safePrintf("Content-Type: application/json\r\n");
-		fullReq.safePrintf("\r\n");
-		// then the post content
-		fullReq.safeMemcpy ( &postContent );
-		fullReq.nullTerm();
-
-		// GET request
-		if ( ! g_httpServer.getDoc ( url ,
-					     0 , // ip
-					     0 , // offset
-					    -1 , // size
-					     false, // ifmodsince
-					     ei,//this ,
-					     doneGettingNotifyUrlWrapper ,
-					     60*1000 , // timeout
-					     0, // proxyip
-					     0 , // proxyport
-					     10000, // maxTextDocLen
-					     10000, // maxOtherDocLen
-					     "Crawlbot/2.0", // user agent
-					     "HTTP/1.0", // proto
-					     true , // doPost
-					     NULL, // cookie
-					     NULL , // custom hdrs
-					     fullReq.getBufStart() ,
-					     NULL ) )
 			ei->m_notifyBlocked++;
 	}
 
