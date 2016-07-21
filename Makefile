@@ -204,7 +204,7 @@ libcld2_full.so:
 
 
 slacktee.sh:
-	ln -s third-party/slacktee/slacktee.sh slacktee.sh
+	ln -sf third-party/slacktee/slacktee.sh slacktee.sh 2>/dev/null
 
 
 .PHONY: vclean
