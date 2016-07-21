@@ -184,10 +184,7 @@ void SpiderLoop::startLoop ( ) {
 	// let's move back down to 1 second
 	// . make it 20 seconds because handlerequestc1 is always on
 	//   profiler when we have thousands of collections
-	if ( !g_loop.registerSleepCallback(20000,
-					   this,
-					   updateAllCrawlInfosSleepWrapper))
-	{
+	if ( !g_loop.registerSleepCallback(20000, this, updateAllCrawlInfosSleepWrapper)) {
 		log(LOG_ERROR, "build: failed to register updatecrawlinfowrapper");
 	}
 		
@@ -2408,9 +2405,8 @@ void gotCrawlInfoReply ( void *state , UdpSlot *slot ) {
 	// reply is error? then use the last known good reply we had from him
 	// assuming udp reply timed out. empty buf just means no update now!
 	if ( ! slot->m_readBuf && g_errno ) {
-		log("spider: got crawlinfo reply error from host %" PRId32": %s. "
-		    "spidering will be paused.",
-		    h->m_hostId,mstrerror(g_errno));
+		log( LOG_WARN, "spider: got crawlinfo reply error from host %" PRId32": %s. spidering will be paused.",
+		     h->m_hostId,mstrerror(g_errno));
 		// just clear it
 		g_errno = 0;
 		// if never had any reply... can't be valid then
@@ -2420,7 +2416,9 @@ void gotCrawlInfoReply ( void *state , UdpSlot *slot ) {
 	// inc it
 	s_replies++;
 
-	if ( s_replies > s_requests ) { g_process.shutdownAbort(true); }
+	if ( s_replies > s_requests ) {
+		g_process.shutdownAbort(true);
+	}
 
 
 	// crap, if any host is dead and not reporting it's number then
@@ -2536,11 +2534,10 @@ void gotCrawlInfoReply ( void *state , UdpSlot *slot ) {
 			for ( int32_t j = 0 ; j < NUMCRAWLSTATS ; j++ ) {
 				*gs = *gs + *ss;
 				// crazy stat?
-				if ( *ss > 1000000000LL ||
-				     *ss < -1000000000LL ) 
-					log("spider: crazy stats %" PRId64" "
-					    "from host #%" PRId32" coll=%s",
-					    *ss,k,cr->m_coll);
+				if ( *ss > 1000000000LL || *ss < -1000000000LL ) {
+					log( LOG_WARN, "spider: crazy stats %" PRId64" from host #%" PRId32" coll=%s",
+					     *ss, k, cr->m_coll );
+				}
 				gs++;
 				ss++;
 			}
