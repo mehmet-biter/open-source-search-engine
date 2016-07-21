@@ -1630,10 +1630,6 @@ bool Parms::printParm ( SafeBuf* sb,
 		sb->safePrintf ( "</tr>\n" ); // mdw added
 	}
 
-	// skip if hidden. diffbot api url only for custom crawls.
-	//if(cr && ! cr->m_isCustomCrawl && (m->m_flags & PF_DIFFBOT) )
-	//	return true;
-
 	// print row start for single parm
 	if ( m->m_max <= 1 && ! m->m_hdrs ) {
 		if ( firstInRow ) {
@@ -11182,14 +11178,6 @@ bool Parms::convertHttpRequestToParmList (HttpRequest *hr, SafeBuf *parmList,
 
 	// does this user have permission to update the parms?
 	bool isCollAdmin = g_conf.isCollAdmin ( sock , hr ) ;
-
-
-	// might be g_conf specific, not coll specific
-	//bool hasPerm = false;
-	// just knowing the collection name of a custom crawl means you
-	// know the token, so you have permission
-	//if ( cr && cr->m_isCustomCrawl ) hasPerm = true;
-	//if ( hr->isLocal() ) hasPerm = true;
 
 	// fix jenkins "GET /v2/crawl?token=crawlbottesting" request
 	const char *name  = hr->getString("name");

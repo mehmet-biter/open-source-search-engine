@@ -7872,13 +7872,6 @@ LinkInfo *XmlDoc::getLinkInfo1 ( ) {
 		// because we need the anchor text to pass in to diffbot
 		bool doLinkSpamCheck = cr->m_doLinkSpamCheck;
 		bool oneVotePerIpDom = cr->m_oneVotePerIpDom;
-		// this seems to overdo it when we have a ton of linktext
-		// perhaps, so take this out...
-		//if ( cr->m_isCustomCrawl && cr->m_restrictDomain ) {
-		//	doLinkSpamCheck     = false;
-		//	oneVotePerIpDom     = false;
-		//	onlyNeedGoodInlinks = false;
-		//}
 
 		// call it. this is defined in Linkdb.cpp
 		char *url = getFirstUrl()->getUrl();
@@ -11816,14 +11809,6 @@ char *XmlDoc::getSpiderLinks ( ) {
 		m_spiderLinks  = false;
 		return &m_spiderLinks2;
 	}
-
-	// hack for bulk job detection. never spider links
-	//if ( cr->m_isCustomCrawl == 2 ) {
-	//	m_spiderLinks  = false;
-	//	m_spiderLinks2 = false;
-	//	m_spiderLinksValid = true;
-	//	return &m_spiderLinks2;
-	//}
 
 	// check the xml for a meta robots tag
 	Xml *xml = getXml();

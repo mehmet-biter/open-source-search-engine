@@ -980,11 +980,6 @@ bool Collectiondb::resetColl2( collnum_t oldCollnum, collnum_t newCollnum, bool 
 		    "%s.", dname,mstrerror(g_errno));
 	}
 
-	// be sure to copy back the bulk urls for bulk jobs
-	// MDW: now i just store that file in the root working dir
-	//if (cr->m_isCustomCrawl == 2)
-	//	mv( tmpbulkurlsname, newbulkurlsname );
-
 	// . unlink all the *.dat and *.map files for this coll in its subdir
 	// . remove all recs from this collnum from m_tree/m_buckets
 	// . updates RdbBase::m_collnum
@@ -2702,11 +2697,6 @@ bool CollectionRec::rebuildUrlFilters ( ) {
 	if ( ! g_conf.m_doingCommandLine && ! g_collectiondb.m_initializing )
 		log("coll: Rebuilding url filters for %s ufp=%s",m_coll,
 		    m_urlFiltersProfile.getBufStart());
-
-	// if not a custom crawl, and no expressions, add a default one
-	//if ( m_numRegExs == 0 && ! m_isCustomCrawl ) {
-	//	setUrlFiltersToDefaults();
-	//}
 
 	// if not a custom crawl then set the url filters based on
 	// the url filter profile, if any

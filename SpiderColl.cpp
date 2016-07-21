@@ -1991,7 +1991,6 @@ void SpiderColl::populateDoledbFromWaitingTree ( ) { // bool reentry ) {
 
 	// reset this
 	int32_t maxWinners = (int32_t)MAX_WINNER_NODES;
-	//if ( ! m_cr->m_isCustomCrawl ) maxWinners = 1;
 
 	if ( m_winnerTree.m_numNodes == 0 &&
 	     ! m_winnerTree.set ( -1 , // fixeddatasize
@@ -3205,7 +3204,6 @@ bool SpiderColl::scanListForWinners ( ) {
 
 		// get the top 100 spider requests by priority/time/etc.
 		int32_t maxWinners = (int32_t)MAX_WINNER_NODES; // 40
-		//if ( ! m_cr->m_isCustomCrawl ) maxWinners = 1;
 
 
 //@todo BR: Why max winners based on bytes scanned??
