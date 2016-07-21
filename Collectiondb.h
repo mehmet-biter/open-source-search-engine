@@ -88,7 +88,7 @@ class Collectiondb  {
 
 	bool addExistingColl ( const char *coll, collnum_t collnum );
 
-	bool addNewColl( const char *coll, char customCrawl, bool saveIt, collnum_t newCollnum ) ;
+	bool addNewColl( const char *coll, bool saveIt, collnum_t newCollnum ) ;
 
 	bool registerCollRec ( CollectionRec *cr ,  bool isNew ) ;
 

@@ -278,13 +278,9 @@ static bool CommandCloneColl ( char *rec ) {
 #endif
 
 
-// customCrawl:
-// 0 for regular collection
-// 1 for custom crawl
-// 2 for bulk job
 // . returns false if blocks true otherwise
 #ifndef PRIVACORE_SAFE_VERSION
-static bool CommandAddColl ( char *rec , char customCrawl ) {
+static bool CommandAddColl ( char *rec ) {
 
 	// caller must specify collnum
 	collnum_t newCollnum = getCollnumFromParmRec ( rec );
@@ -310,16 +306,11 @@ static bool CommandAddColl ( char *rec , char customCrawl ) {
 	}
 
 	// this saves it to disk! returns false and sets g_errno on error.
-	if ( ! g_collectiondb.addNewColl ( collName, customCrawl, true, newCollnum ) )
+	if ( ! g_collectiondb.addNewColl ( collName, true, newCollnum ) )
 		// error! g_errno should be set
 		return true;
 
 	return true;
-}
-
-// all nodes are guaranteed to add the same collnum for the given name
-static bool CommandAddColl0 ( char *rec ) { // regular collection
-	return CommandAddColl ( rec , 0 );
 }
 
 #endif
@@ -3878,7 +3869,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_CMD;
 	m->m_page  = PAGE_NONE;
 	m->m_obj   = OBJ_COLL;
-	m->m_func  = CommandAddColl0;
+	m->m_func  = CommandAddColl;
 	m->m_cast  = 1;
 	m++;
 
@@ -3890,7 +3881,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_CMD;
 	m->m_page  = PAGE_ADDCOLL;
 	m->m_obj   = OBJ_COLL;
-	m->m_func  = CommandAddColl0;
+	m->m_func  = CommandAddColl;
 	m->m_cast  = 1;
 	m->m_flags = PF_API | PF_REQUIRED;
 	m++;

@@ -159,7 +159,7 @@ bool Collectiondb::loadAllCollRecs ( ) {
 	// if no existing recs added... add coll.main.0 always at startup
 	if ( m_numRecs == 0 ) {
 		log("admin: adding main collection.");
-		addNewColl ( "main", 0, true, 0 );
+		addNewColl ( "main", true, 0 );
 	}
 
 	m_initializing = false;
@@ -297,9 +297,7 @@ bool Collectiondb::addExistingColl ( const char *coll, collnum_t collnum ) {
 //   because we are doing a './gb dump ...' cmd to dump out data from
 //   one Rdb which we will custom initialize in main.cpp where the dump
 //   code is. like for instance, posdb.
-// . "customCrawl" is 0 for a regular collection, 1 for a simple crawl
-//   2 for a bulk job. diffbot terminology.
-bool Collectiondb::addNewColl ( const char *coll, char customCrawl, bool saveIt,
+bool Collectiondb::addNewColl ( const char *coll, bool saveIt,
 				// Parms.cpp reserves this so it can be sure
 				// to add the same collnum to every shard
 				collnum_t newCollnum ) {
@@ -386,94 +384,9 @@ bool Collectiondb::addNewColl ( const char *coll, char customCrawl, bool saveIt,
 	// BEGIN NEW CODE
 	//
 
-	//
-	// get token and crawlname if customCrawl is 1 or 2
-	//
-	char *token = NULL;
-	char *crawl = NULL;
-	SafeBuf tmp;
-	// . return true with g_errno set on error
-	// . if we fail to set a parm right we should force ourselves
-	//   out sync
-	if ( customCrawl ) {
-		if ( ! tmp.safeStrcpy ( coll ) ) return true;
-		token = tmp.getBufStart();
-		// diffbot coll name format is <token>-<crawlname>
-		char *h = strchr ( tmp.getBufStart() , '-' );
-		if ( ! h ) {
-			log( LOG_WARN, "crawlbot: bad custom collname");
-			g_errno = EBADENGINEER;
-			mdelete ( cr, sizeof(CollectionRec), "CollectionRec" );
-			delete ( cr );
-			return true;
-		}
-		*h = '\0';
-		crawl = h + 1;
-		if ( ! crawl[0] ) {
-			log( LOG_WARN, "crawlbot: bad custom crawl name");
-			mdelete ( cr, sizeof(CollectionRec), "CollectionRec" );
-			delete ( cr );
-			g_errno = EBADENGINEER;
-			return true;
-		}
-		// or if too big!
-		if ( gbstrlen(crawl) > 30 ) {
-			log( LOG_WARN, "crawlbot: crawlbot crawl NAME is over 30 chars");
-			mdelete ( cr, sizeof(CollectionRec), "CollectionRec" );
-			delete ( cr );
-			g_errno = EBADENGINEER;
-			return true;
-		}
-	}
-
-	//log("parms: added new collection \"%s\"", collName );
-
 	cr->m_maxToCrawl = -1;
 	cr->m_maxToProcess = -1;
 
-
-	if ( customCrawl ) {
-		// always index spider status docs now
-		cr->m_indexSpiderReplies = true;
-		// remember the token
-		cr->m_diffbotToken.set ( token );
-		cr->m_diffbotCrawlName.set ( crawl );
-		// bring this back
-		cr->m_diffbotApiUrl.set ( "" );
-		cr->m_diffbotUrlCrawlPattern.set ( "" );
-		cr->m_diffbotUrlProcessPattern.set ( "" );
-		cr->m_diffbotPageProcessPattern.set ( "" );
-		cr->m_diffbotUrlCrawlRegEx.set ( "" );
-		cr->m_diffbotUrlProcessRegEx.set ( "" );
-		cr->m_diffbotMaxHops = -1;
-
-		cr->m_spiderStatus = SP_INITIALIZING;
-		// do not spider more than this many urls total.
-		// -1 means no max.
-		cr->m_maxToCrawl = 100000;
-		// do not process more than this. -1 means no max.
-		cr->m_maxToProcess = 100000;
-		// -1 means no max
-		cr->m_maxCrawlRounds = -1;
-		// diffbot download docs up to 10MB so we don't truncate
-		// things like sitemap.xml
-		cr->m_maxTextDocLen  = 1024*1024 * 5;
-		cr->m_maxOtherDocLen = 1024*1024 * 10;
-		// john want's deduping on by default to avoid
-		// processing similar pgs
-		cr->m_dedupingEnabled = true;
-		// show the ban links in the search results. the
-		// collection name is cryptographic enough to show that
-		cr->m_isCustomCrawl = customCrawl;
-		cr->m_diffbotOnlyProcessIfNewUrl = true;
-		// default respider to off
-		cr->m_collectiveRespiderFrequency = 0.0;
-		//cr->m_restrictDomain = true;
-		// reset the crawl stats
-		// turn off link voting, etc. to speed up
-		cr->m_getLinkInfo = false;
-		cr->m_computeSiteNumInlinks = false;
-	}
 
 	// . this will core if a host was dead and then when it came
 	//   back up host #0's parms.cpp told it to add a new coll
