@@ -259,8 +259,7 @@ int64_t RdbCache::getLongLong2 ( collnum_t collnum ,
 	
 // this puts a int32_t in there
 void RdbCache::addLongLong2 ( collnum_t collnum ,
-			      uint64_t key , int64_t value ,
-			      char **retRecPtr ) {
+			      uint64_t key , int64_t value ) {
 	key_t k;
 	k.n0 = (uint64_t)key;
 	k.n1 = 0;
@@ -269,15 +268,14 @@ void RdbCache::addLongLong2 ( collnum_t collnum ,
 	if ( m_dks != 0 ) gbshutdownLogicError();
 	addRecord ( collnum , (char *)&k , NULL , 0 , (char *)&value , 8 ,
 		    0 , // timestamp=now
-		    retRecPtr );
+		    NULL );
 	// clear error in case addRecord set it
 	g_errno = 0;
 }
 
 // this puts a int32_t in there
 void RdbCache::addLongLong ( collnum_t collnum ,
-			     uint32_t key , int64_t value ,
-			     char **retRecPtr ) {
+			     uint32_t key , int64_t value ) {
 	key_t k;
 	k.n0 = 0;
 	k.n1 = (uint64_t)key;
@@ -290,7 +288,7 @@ void RdbCache::addLongLong ( collnum_t collnum ,
 	//addRecord ( collnum , (char *)&key , NULL , 0 , (char *)&value , 8 ,
 	addRecord ( collnum , (char *)&k , NULL , 0 , (char *)&value , 8 ,
 		    0 , // timestamp=now
-		    retRecPtr );
+		    NULL );
 	// clear error in case addRecord set it
 	g_errno = 0;
 }
@@ -328,8 +326,7 @@ int32_t RdbCache::getLong ( collnum_t collnum ,
 
 // this puts a int32_t in there
 void RdbCache::addLong ( collnum_t collnum ,
-			 uint64_t key , int32_t value ,
-			 char **retRecPtr ) {
+			 uint64_t key , int32_t value ) {
 	key_t k;
 	k.n0 = 0;
 	k.n1 = key;
@@ -338,8 +335,7 @@ void RdbCache::addLong ( collnum_t collnum ,
 	addRecord ( collnum , (char *)&k , NULL , 0 , (char *)&value , 
 		    // by long we really mean 32 bits!
 		    4,//sizeof(char *), // 4 , now 8 for 64 bit archs
-		    0 , // timestamp=now
-		    retRecPtr );
+		    0 ); // timestamp=now
 	// clear error in case addRecord set it
 	g_errno = 0;
 }

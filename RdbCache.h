@@ -94,8 +94,7 @@ class RdbCache {
 
 	// this puts a int32_t in there
         void addLongLong ( collnum_t collnum ,
-			   uint32_t key , int64_t value ,
-			   char **retRecPtr = NULL ) ;
+			   uint32_t key , int64_t value ) ;
 
 	// . both key and data are int64_ts here
 	// . returns -1 if not found
@@ -106,16 +105,14 @@ class RdbCache {
 
 	// this puts a int32_t in there
         void addLongLong2 ( collnum_t collnum ,
-			   uint64_t key , int64_t value ,
-			   char **retRecPtr = NULL ) ;
+			   uint64_t key , int64_t value ) ;
 
 	// same routines for int32_ts now, but key is a int64_t
 	int32_t getLong ( collnum_t collnum ,
 		       uint64_t key , int32_t maxAge , // in seconds
 		       bool promoteRecord );
         void addLong ( collnum_t collnum ,
-		       uint64_t key , int32_t value ,
-		       char **retRecPtr = NULL ) ;
+		       uint64_t key , int32_t value ) ;
 
 	// . returns true if found, false if not found in cache
 	// . sets *rec and *recSize iff found
@@ -264,6 +261,17 @@ class RdbCache {
 
 	const char *m_dbname;
 
+	bool addRecord(collnum_t collnum,
+		       const char *cacheKey,
+		       const char *rec1,
+		       int32_t  recSize1,
+		       const char *rec2,
+		       int32_t  recSize2,
+		       int32_t  timestamp) {
+		return addRecord(collnum,cacheKey,rec1,recSize1,rec2,recSize2,timestamp,NULL);
+	}
+
+private:
 	bool addRecord ( collnum_t collnum ,
 			 const char *cacheKey ,
 			 const char *rec1     ,
@@ -271,10 +279,9 @@ class RdbCache {
 			 const char *rec2     ,
 			 int32_t  recSize2 ,
 			 int32_t  timestamp ,
-			 char **retRecPtr = NULL ) ;
+			 char **retRecPtr );
 
 
-private:
 	static void saveWrapper(void *state);
 	static void threadDoneWrapper(void *state, job_exit_t exit_type);
 	void threadDone();
