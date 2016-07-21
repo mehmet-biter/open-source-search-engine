@@ -1498,38 +1498,12 @@ bool CollectionRec::rebuildUrlFilters2 ( ) {
 	// tell spider loop to update active list
 	g_spiderLoop.m_activeListValid = false;
 
-	bool rebuild = true;
-	if ( m_numRegExs == 0 )
-		rebuild = true;
-	// don't touch it if not supposed to as int32_t as we have some already
-	//if ( m_urlFiltersProfile != UFP_NONE )
-	//	rebuild = true;
-	// never for custom crawls however
-	if ( m_isCustomCrawl )
-		rebuild = false;
-
 	const char *s = m_urlFiltersProfile.getBufStart();
 
-	// support the old UFP_CUSTOM, etc. numeric values
-	if ( !strcmp(s,"0" ) )
-		s = "custom";
-	// UFP_WEB SUPPORT
-	if ( !strcmp(s,"1" ) )
-		s = "web";
-	// UFP_NEWS
-	if ( !strcmp(s,"2" ) )
-		s = "shallow";
-
-
-
-	// leave custom profiles alone
-	if ( !strcmp(s,"custom" ) )
-		rebuild = false;
-
-
-	//if ( m_numRegExs > 0 && strcmp(m_regExs[m_numRegExs-1],"default") )
-	//	addDefault = true;
-	if ( ! rebuild ) return true;
+	// never for custom crawls & leave custom profiles alone
+	if ( m_isCustomCrawl || strcmp(s,"custom" ) == 0 ) {
+		return true;
+	}
 
 
 	// Bugfix. Make sure all arrays are cleared so e.g. ForceDelete 
@@ -1538,12 +1512,13 @@ bool CollectionRec::rebuildUrlFilters2 ( ) {
 	clearUrlFilters();
 
 
-	if ( !strcmp(s,"privacore" ) )
+	if ( !strcmp(s,"privacore" ) ) {
 		return rebuildPrivacoreRules();
+	}
 
-
-	if ( !strcmp(s,"shallow" ) )
+	if ( !strcmp(s,"shallow" ) ) {
 		return rebuildShallowRules();
+	}
 
 	//if ( strcmp(s,"web") )
 	// just fall through for that
@@ -1564,20 +1539,8 @@ bool CollectionRec::rebuildUrlFilters2 ( ) {
 	if ( !strcmp(s,"spanish") )
 		return rebuildLangRules( "es","es");
 
-	//if ( m_urlFiltersProfile == UFP_EURO )
-	//	return rebuildLangRules( "de,fr,nl,es,sv,no,it",
-	//				 "com,gov,org,de,fr,nl,es,sv,no,it");
-
-
 	if ( !strcmp(s,"romantic") )
-		return rebuildLangRules("en,de,fr,nl,es,sv,no,it,fi,pt",
-					"de,fr,nl,es,sv,no,it,fi,pt,"
-					"com,gov,org"
-					);
-
-	if ( !strcmp(s,"chinese") )
-		return rebuildLangRules( "zh_cn,zh_tw","cn");
-
+		return rebuildLangRules("en,de,fr,nl,es,sv,no,it,fi,pt", "de,fr,nl,es,sv,no,it,fi,pt,com,gov,org" );
 
 	int32_t n = 0;
 
