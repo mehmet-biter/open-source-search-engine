@@ -327,33 +327,6 @@ bool UdpServer::init ( uint16_t port, UdpProtocol *proto,
 	    return false;
 	}
 
-	// get ip address of socket
-	/*
-	struct ifreq ifr;
-	int fd = socket (AF_INET, SOCK_PACKET, htons (3050));
-	ioctl ( fd , SIOCGIFADDR, &ifr );
-	struct in_addr ip_source;
-	gbmemcpy (&ip_source, &((struct sockaddr_in *) &ifr.ifr_ifru.ifru_addr)->sin_addr, sizeof (struct sockaddr_in));
-	log ("My IP address: %s\n", inet_ntoa (ip_source));
-	    //struct sockaddr_in *me = (sockaddr_in *)&ifr.ifr_ifru.ifru_addr;
-	//struct in_addr *me = &((struct sockaddr_in *)
-	//		       &ifr.ifr_ifru.ifru_addr)->sin_addr;
-	//log ("My IP address: %s", inet_ntoa (*me));
-	uint32_t myip1 = 0; //me->sin_addr.s_addr;
-	int32_t myip2 = g_hostdb.getHost ( g_hostdb.m_hostId )->m_ip;
-	int32_t myip3 = g_hostdb.getHost ( g_hostdb.m_hostId )->m_externalIp;
-	if ( myip1 != myip2 && myip1 != myip3 ) {
-		log("conf: Ip address of machine, %s, does not agree "
-		    "with ip address %s or %s in hosts.conf for hostId #%" PRId32".",
-		    iptoa(myip1),"foo","boo",
-		    //iptoa(myip2),iptoa(myip3),
-		    g_hostdb.m_hostId);
-		//return false;
-		sleep(10);
-		exit(0);
-	}
-	*/
-
 	// init stats
 	m_eth0BytesIn    = 0LL;
 	m_eth0BytesOut   = 0LL;
