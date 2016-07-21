@@ -1873,7 +1873,7 @@ int32_t getMsgPiece ( TcpSocket *s ) {
 	}
 	// . TODO: deal with this better
 	// . if the register failed then panic
-	log("http: Registration failed.");
+	log(LOG_ERROR,"http: Registration failed.");
 	exit ( -1 );
 }
 
