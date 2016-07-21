@@ -771,9 +771,6 @@ bool sendPageWidgets ( TcpSocket *socket , HttpRequest *hr ) {
 
 
 
-// from pagecrawlbot.cpp for printCrawlDetails()
-#include "PageCrawlBot.h"
-
 ///////////
 //
 // main > Basic > Status

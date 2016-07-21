@@ -2033,9 +2033,6 @@ void doneGettingNotifyUrlWrapper ( void *state , TcpSocket *sock ) {
 	mfree ( ei , sizeof(EmailInfo) ,"eialrt" );
 }
 
-// for printCrawlDetailsInJson()
-#include "PageCrawlBot.h"
-
 // . return false if would block, true otherwise
 // . used to send email and get a url when a crawl hits a maxToCrawl
 //   or maxToProcess limitation.

@@ -8,7 +8,6 @@
 #include "XmlDoc.h" // gbzip
 #include "UdpServer.h"
 #include "Proxy.h"
-#include "PageCrawlBot.h"
 #include "Parms.h"
 #include "PageRoot.h"
 #include "Process.h"
@@ -799,27 +798,12 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 	char *path    = r->getFilename();
 	int32_t  pathLen = r->getFilenameLen();
 	// paths with ..'s are from hackers!
-	for ( char *p = path ; *p ; p++ )
-		if ( *p == '.' && *(p+1) == '.' )
-		{
-			log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. Bad request", __FILE__, __func__, __LINE__);
-			return sendErrorReply(s,404,"bad request");
+	for ( char *p = path ; *p ; p++ ) {
+		if ( *p == '.' && *( p + 1 ) == '.' ) {
+			log( LOG_ERROR, "%s:%s:%d: call sendErrorReply. Bad request", __FILE__, __func__, __LINE__ );
+			return sendErrorReply( s, 404, "bad request" );
 		}
-
-	// dump urls or json objects or pages? 
-	// "GET /crawlbot/downloadurls"
-	// "GET /crawlbot/downloadobjects"
-	// "GET /crawlbot/downloadpages"
-	if ( strncmp ( path , "/crawlbot/download/" ,19 ) == 0 ||
-	     // add 4 to length of needle to account for /vXX.
-	     // GET /v3/crawl/download/
-	     (pathLen >= 20 && strnstr( path, "/crawl/download/", 20 )) ||
-	     (pathLen >= 19 && strnstr( path, "/bulk/download/", 19 )) )
-		return sendBackDump ( s , r );
-
-	// "GET /download/mycoll_urls.csv"
-	if ( strncmp ( path , "/download/", 10 ) == 0 )
-		return sendBackDump ( s , r );
+	}
 
 	// get the dynamic page number, is -1 if not a dynamic page
 	int32_t n = g_pages.getDynamicPageNumber ( r );
@@ -831,9 +815,6 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 
 	// the new cached page format. for twitter.
 	if ( ! strncmp ( path , "/?id=" , 5 ) ) n = PAGE_RESULTS;
-	if ( strncmp(path,"/crawlbot",9) == 0 ) n = PAGE_CRAWLBOT;
-	if (endsWith(path, pathLen, "/crawl", 6)) n = PAGE_CRAWLBOT;
-	if (endsWith(path, pathLen, "/bulk", 5)) n = PAGE_CRAWLBOT;
 	if (endsWith(path, pathLen, "/search", 6)) n = PAGE_RESULTS;
 
 	bool isProxy = g_proxy.isProxy();

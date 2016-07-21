@@ -5,7 +5,6 @@
 #include "Msg4.h"
 #include "Spider.h"
 #include "Parms.h"
-#include "PageCrawlBot.h" // getSpiderRequestMetaList
 
 static bool sendReply( void *state );
 

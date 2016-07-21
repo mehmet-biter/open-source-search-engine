@@ -217,11 +217,6 @@ static WebPage s_pages[] = {
 	  PG_NOAPI|PG_MASTERADMIN},
 	// 1 = usePost
 
-	{ PAGE_CRAWLBOT    , "crawlbot"   , 0 , "crawlbot" ,  1 , 0,
-	  "simplified spider controls",
-	  sendPageCrawlbot , 0 ,NULL,NULL,
-	  PG_NOAPI|PG_MASTERADMIN|PG_ACTIVE},
-
 	{ PAGE_SPIDERDB  , "admin/spiderdb" , 0 , "spider queue" ,  0 , 0 ,
 	  "spider queue",
 	  sendPageSpiderdb , 0 ,NULL,NULL,
@@ -354,7 +349,6 @@ bool Pages::sendDynamicReply ( TcpSocket *s , HttpRequest *r , int32_t page ) {
 	if ( page == PAGE_RESULTS ) publicPage = true;
 	if ( page == PAGE_ADDURL ) publicPage = true;
 	if ( page == PAGE_GET ) publicPage = true;
-	if ( page == PAGE_CRAWLBOT ) publicPage = true;
 	if ( page == PAGE_HEALTHCHECK ) publicPage = true;
 
 	// now use this...
@@ -385,10 +379,6 @@ bool Pages::sendDynamicReply ( TcpSocket *s , HttpRequest *r , int32_t page ) {
 		return g_httpServer.sendErrorReply ( s , 505 , 
 						     "Page not active");
 	}
-
-	if ( page == PAGE_CRAWLBOT && ! isMasterAdmin )
-		log("pages: accessing a crawlbot page without admin privs. "
-		    "no parms can be changed.");
 
 	if ( ! g_conf.m_allowCloudUsers &&
 	     ! publicPage &&
@@ -1209,8 +1199,6 @@ bool  Pages::printAdminLinks ( SafeBuf *sb,
 
 	bool status = true;
 
-	CollectionRec *cr = g_collectiondb.getRec ( coll );
-
 	// soemtimes we do not want to be USER_MASTER for testing
 	char buf [ 64 ];
 	buf[0] = '\0';
@@ -1250,9 +1238,6 @@ bool  Pages::printAdminLinks ( SafeBuf *sb,
 		// g_conf.m_useCollectionPasswords is false
 		if ( ! g_conf.m_useCollectionPasswords &&
 		     (i == PAGE_COLLPASSWORDS||i == PAGE_COLLPASSWORDS2) )
-			continue;
-
-		if ( cr && ! cr->m_isCustomCrawl && i == PAGE_CRAWLBOT )
 			continue;
 
 		// print it out

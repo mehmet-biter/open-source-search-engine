@@ -220,8 +220,6 @@ enum {
 	PAGE_API ,
 
 	PAGE_TITLEDB     ,
-
-	PAGE_CRAWLBOT    ,
 	PAGE_SPIDERDB    ,
 	PAGE_SEARCHBOX   ,
 	PAGE_PARSER      ,
