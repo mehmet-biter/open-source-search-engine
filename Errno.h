@@ -161,8 +161,8 @@ enum {
 	EBADHOSTSCONF,
 	EWAITINGTOSYNCHOSTSCONF,
 	EDOCNONCANONICAL,
-	ECUSTOMCRAWLMISMATCH, // a crawl request was made with a name that already existed for bulk request (or the other way around)
 	EUNUSED48,
+	EUNUSED48A,
 	EBADIMG,
 	EUNUSED49,
 	ETOOMANYPARENS,

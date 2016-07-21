@@ -186,8 +186,6 @@ const char *mstrerror ( int errnum ) {
 				return "Wait to ensure hosts.conf in sync";
 			case EDOCNONCANONICAL:
 				return "Url was dup of canonical page";
-			case ECUSTOMCRAWLMISMATCH:
-				return "Job name/type mismatch. Job name has already been used for a crawl or bulk job.";
 			case EBADIMG:
 				return "Bad image";
 			case ETOOMANYPARENS:
@@ -364,8 +362,8 @@ static const char* s_errname[] {
 	STRINGIFY( EBADHOSTSCONF ),
 	STRINGIFY( EWAITINGTOSYNCHOSTSCONF ),
 	STRINGIFY( EDOCNONCANONICAL ),
-	STRINGIFY( ECUSTOMCRAWLMISMATCH ),
 	STRINGIFY( EUNUSED48 ),
+	STRINGIFY( EUNUSED48A ),
 	STRINGIFY( EBADIMG ),
 	STRINGIFY( EUNUSED49 ),
 	STRINGIFY( ETOOMANYPARENS ),
