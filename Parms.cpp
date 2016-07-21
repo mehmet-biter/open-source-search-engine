@@ -1129,14 +1129,12 @@ static DropLangs g_drops[] = {
 	{"english","en","com,us.gov,org"},
 	{"german","de","de"},
 	{"french","fr","fr"},
-	{"norweigian","nl","nl"},
+	{"norwegian","nl","nl"},
 	{"spanish","es","es"},
 	{"italian","it","it"},
 	{"romantic","en,de,fr,nl,es,it","com,us.gov,org,de,fr,nl,es,it"},
-	{"privacore",NULL,NULL}
-#else
-	{"privacore",NULL,NULL}
 #endif
+	{"privacore",NULL,NULL}
 };
 
 // "url filters profile" values. used to set default crawl rules
