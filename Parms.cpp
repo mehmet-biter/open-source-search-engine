@@ -322,13 +322,6 @@ static bool CommandAddColl0 ( char *rec ) { // regular collection
 	return CommandAddColl ( rec , 0 );
 }
 
-static bool CommandAddColl1 ( char *rec ) { // custom crawl
-	return CommandAddColl ( rec , 1 );
-}
-
-static bool CommandAddColl2 ( char *rec ) { // bulk job
-	return CommandAddColl ( rec , 2 );
-}
 #endif
 
 static bool CommandResetProxyTable ( char *rec ) {
@@ -3903,32 +3896,6 @@ void Parms::init ( ) {
 	m++;
 #endif
 
-
-#ifndef PRIVACORE_SAFE_VERSION
-	//
-	// CLOUD SEARCH ENGINE SUPPORT
-	//
-
-	m->m_title = "add custom crawl";
-	m->m_desc  = "add custom crawl";
-	m->m_cgi   = "addCrawl";
-	m->m_type  = TYPE_CMD;
-	m->m_page  = PAGE_NONE;
-	m->m_obj   = OBJ_COLL;
-	m->m_func  = CommandAddColl1;
-	m->m_cast  = 1;
-	m++;
-
-	m->m_title = "add bulk job";
-	m->m_desc  = "add bulk job";
-	m->m_cgi   = "addBulk";
-	m->m_type  = TYPE_CMD;
-	m->m_page  = PAGE_NONE;
-	m->m_obj   = OBJ_COLL;
-	m->m_func  = CommandAddColl2;
-	m->m_cast  = 1;
-	m++;
-#endif
 
 	m->m_title = "in sync";
 	m->m_desc  = "signify in sync with host 0";
@@ -10948,26 +10915,6 @@ bool Parms::addNewParmToList2 ( SafeBuf *parmList ,
 	char val8;
 	float valf;
 
-	/*
-	char *obj = NULL;
-	// we might be adding a collnum if a collection that is being
-	// added via the CommandAddColl0() "addColl" or "addCrawl" or
-	// "addBulk" commands. they will reserve the collnum, so it might
-	// not be ready yet.
-	if ( collnum != -1 ) {
-		CollectionRec *cr = g_collectiondb.getRec ( collnum );
-		if ( cr ) obj = (char *)cr;
-		//	log("parms: no coll rec for %" PRId32,(int32_t)collnum);
-		//	return false;
-		//}
-		//obj = (char *)cr;
-	}
-	else {
-		obj = (char *)&g_conf;
-	}
-	*/
-
-
 	if ( m->m_type == TYPE_STRING ||
 	     m->m_type == TYPE_STRINGBOX ||
 	     m->m_type == TYPE_SAFEBUF ||
@@ -11168,19 +11115,6 @@ bool Parms::convertHttpRequestToParmList (HttpRequest *hr, SafeBuf *parmList,
 	// does this user have permission to update the parms?
 	bool isCollAdmin = g_conf.isCollAdmin ( sock , hr ) ;
 
-	// fix jenkins "GET /v2/crawl?token=crawlbottesting" request
-	const char *name  = hr->getString("name");
-	const char *token = hr->getString("token");
-	//if ( ! cr && token ) hasPerm = true;
-
-	//if ( ! hasPerm ) {
-	//	//log("parms: no permission to set parms");
-	//	//g_errno = ENOPERM;
-	//	//return false;
-	//	// just leave the parm list empty and fail silently
-	//	return true;
-	//}
-
 	// we set the parms in this collnum
 	collnum_t parmCollnum = -1;
 	if ( cr ) parmCollnum = cr->m_collnum;
@@ -11192,75 +11126,6 @@ bool Parms::convertHttpRequestToParmList (HttpRequest *hr, SafeBuf *parmList,
 	oldCollName[0] = '\0';
 	if ( cr ) sprintf(oldCollName,"%" PRId32,(int32_t)cr->m_collnum);
 
-
-	////////
-	//
-	// HACK: if crawlbot user supplies a token, name, and seeds, and the
-	// corresponding collection does not exist then assume it is an add
-	//
-	////////
-	char customCrawl = 0;
-	char *path = hr->getPath();
-	// i think /crawlbot is only used by me to see PageCrawlBot.cpp
-	// so don't bother...
-	if ( strncmp(path,"/crawlbot",9) == 0 ) customCrawl = 0;
-	if ( strncmp(path,"/v2/crawl",9) == 0 ) customCrawl = 1;
-	if ( strncmp(path,"/v2/bulk" ,8) == 0 ) customCrawl = 2;
-	if ( strncmp(path,"/v3/crawl",9) == 0 ) customCrawl = 1;
-	if ( strncmp(path,"/v3/bulk" ,8) == 0 ) customCrawl = 2;
-
-        // throw error if collection record custom crawl type doesn't equal
-	// the crawl type of current request
-	if (cr && customCrawl && customCrawl != cr->m_isCustomCrawl ) {
-		g_errno = ECUSTOMCRAWLMISMATCH;
-		return false;
-        }
-
-	bool hasAddCrawl = hr->hasField("addCrawl");
-	bool hasAddBulk  = hr->hasField("addBulk");
-	bool hasAddColl  = hr->hasField("addColl");
-	// sometimes they try to delete a collection that is not there so do
-	// not apply this logic in that case!
-	bool hasDelete   = hr->hasField("delete");
-	bool hasRestart  = hr->hasField("restart");
-	bool hasReset    = hr->hasField("reset");
-	bool hasSeeds    = hr->hasField("seeds");
-	// check for bulk jobs as well
-	if ( ! hasSeeds ) hasSeeds = hr->hasField("urls");
-	if ( ! cr          &&
-	     token         &&
-	     name          &&
-	     customCrawl   &&
-	     hasSeeds      &&
-	     ! hasDelete   &&
-	     ! hasRestart  &&
-	     ! hasReset    &&
-	     ! hasAddCrawl &&
-	     ! hasAddBulk  &&
-	     ! hasAddColl     ) {
-		// reserve a new collnum for adding this crawl
-		parmCollnum = g_collectiondb.reserveCollNum();
-		// must be there!
-		if ( parmCollnum == -1 ) {
-			g_errno = EBADENGINEER;
-			return false;
-		}
-		// log it for now
-		log("parms: trying to add custom crawl (%" PRId32")",
-		    (int32_t)parmCollnum);
-		// formulate name
-		char newName[MAX_COLL_LEN+1];
-		snprintf(newName,MAX_COLL_LEN,"%s-%s",token,name);
-		const char *cmdStr = "addCrawl";
-		if ( customCrawl == 2 ) cmdStr = "addBulk";
-		// add to parm list
-		if ( ! addNewParmToList1 ( parmList ,
-					   parmCollnum ,
-					   newName ,
-					   -1 , // occNum
-					   cmdStr ) )
-			return false;
-	}
 
 	// loop through cgi parms
 	for ( int32_t i = 0 ; i < hr->getNumFields() ; i++ ) {
@@ -11290,8 +11155,6 @@ bool Parms::convertHttpRequestToParmList (HttpRequest *hr, SafeBuf *parmList,
 		if ( strcmp(m->m_cgi,"addColl") == 0 ||
 		     // lowercase support. camelcase is obsolete.
 		     strcmp(m->m_cgi,"addcoll") == 0 ||
-		     strcmp(m->m_cgi,"addCrawl") == 0 ||
-		     strcmp(m->m_cgi,"addBulk" ) == 0 ||
 		     strcmp(m->m_cgi,"reset" ) == 0 ||
 		     strcmp(m->m_cgi,"restart" ) == 0 ) {
 			// if we wanted to we could make the data the
@@ -11443,31 +11306,6 @@ bool Parms::convertHttpRequestToParmList (HttpRequest *hr, SafeBuf *parmList,
 	//					   i,
 	//	}
 	//}
-
-
-	//
-	// CLOUD SEARCH ENGINE SUPPORT
-	//
-	// provide userip so when adding a new collection we can
-	// store it in the collection rec to ensure that the same
-	// IP address cannot add more than one collection.
-	//
-#ifndef PRIVACORE_SAFE_VERSION
-	if ( sock && page == PAGE_ADDCOLL ) {
-		char *ipStr = iptoa(sock->m_ip);
-		int32_t occNum;
-		Parm *um = getParmFast1 ( "userip" , &occNum); // NULL = occNum
-		if ( ! addNewParmToList2 ( parmList ,
-					   // HACK! operate on the to-be-added
-					   // collrec, if there was an addcoll
-					   // reset or restart coll cmd...
-					   parmCollnum ,
-					   ipStr, // val ,
-					   occNum ,
-					   um ) )
-			return false;
-	}
-#endif
 
 
 	//
@@ -12465,11 +12303,8 @@ void handleRequest3e ( UdpSlot *slot , int32_t niceness ) {
 		if ( ! cr ) continue;
 		// clear flag
 		if ( cr->m_hackFlag ) continue;
-		//char *cmdStr = "addColl";
 		// now use lowercase, not camelcase
 		const char *cmdStr = "addcoll";
-		if ( cr->m_isCustomCrawl == 1 ) cmdStr = "addCrawl";
-		if ( cr->m_isCustomCrawl == 2 ) cmdStr = "addBulk";
 		// note in log
 		logf(LOG_INFO,"sync: telling host #%" PRId32" to add "
 		     "collnum %" PRId32" coll=%s", hostId,(int32_t)cr->m_collnum,
