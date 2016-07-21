@@ -306,10 +306,6 @@ bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
 
 	int32_t defHdr = 1;
 
-	// default is no header for diffbot only
-	if ( cr->m_isCustomCrawl ||  strcmp(cr->m_coll,"GLOBAL-INDEX") == 0 )
-		defHdr = 0;
-
 	// you have to say "&header=1" to get back the header for json now.
 	// later on maybe it will default to on.
 	st->m_header = hr->getLong("header",defHdr);
@@ -1206,18 +1202,6 @@ bool printSearchResultsHeader ( State0 *st ) {
 		}
 		sb->safePrintf("\t]\n"); // end "terms":[]
 		sb->safePrintf("},\n");
-	}
-
-	// global-index is not a custom crawl but we should use "objects"
-	bool isDiffbot = cr->m_isCustomCrawl;
-	if ( strcmp(cr->m_coll,"GLOBAL-INDEX") == 0 ) isDiffbot = true;
-
-	// for diffbot collections only...
-	if ( st->m_header &&
-	     si->m_format == FORMAT_JSON &&
-	     isDiffbot ) {
-		sb->safePrintf("\"objects\":[\n");
-		return true;
 	}
 
 	if ( si->m_format == FORMAT_JSON && st->m_header ) {
@@ -3195,7 +3179,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	}
 
 
-	if (si->m_format == FORMAT_HTML && ( isAdmin || cr->m_isCustomCrawl)){
+	if (si->m_format == FORMAT_HTML && isAdmin ){
 		const char *un = "";
 		int32_t  banVal = 1;
 		if ( mr->m_isBanned ) {

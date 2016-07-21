@@ -630,8 +630,6 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 		g_process.shutdownAbort(true);
 	}
 
-	CollectionRec *cr = NULL;
-
 	// debug help
 	if ( isNew ) {
 		log( LOG_DEBUG, "rdb: adding new file %s/%s", f->getDir(), f->getFilename() );
@@ -770,11 +768,6 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	// debug point
 	//log("map #0 is %s ptr=%llx (nf=%i)",
 	//    m_maps[0]->getFilename(),(long long)m_maps[0],m_numFiles);
-
-	// to free up mem for diffbot's many collections...
-	cr = g_collectiondb.getRec ( m_collnum );
-	if ( ! isNew && cr && cr->m_isCustomCrawl )
-		m->reduceMemFootPrint();
 
 	// are we resuming a killed merge?
 	if ( g_conf.m_readOnlyMode && ((fileId & 0x01)==0) ) {

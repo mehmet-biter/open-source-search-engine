@@ -2734,7 +2734,6 @@ void gotSquidProxiedUrlIp ( void *state , int32_t ip ) {
 	// turn off
 	r->m_useCompressionProxy = false;
 	r->m_compressReply       = false;
-	r->m_isCustomCrawl       = 0;
 
 	// force the use of the floaters now otherwise they might not be used
 	// if you have the floaters disabled on the 'proxy' page

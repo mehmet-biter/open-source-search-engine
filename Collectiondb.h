@@ -438,7 +438,6 @@ class CollectionRec {
 
 	char    m_diffbotOnlyProcessIfNewUrl;
 
-	char m_isCustomCrawl;
 	int64_t m_maxToCrawl;
 	int64_t m_maxToProcess;
 	int32_t      m_maxCrawlRounds;

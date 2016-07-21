@@ -75,14 +75,6 @@ bool Collectiondb::save ( ) {
 			continue;
 		}
 
-		// if we core in malloc we won't be able to save the
-		// coll.conf files
-		if ( m_recs[i]->m_isCustomCrawl &&
-		     g_inMemFunction &&
-		     g_hostdb.m_hostId != 0 ) {
-			continue;
-		}
-
 		//log(LOG_INFO,"admin: Saving collection #%" PRId32".",i);
 		m_recs[i]->save ( );
 	}
@@ -264,26 +256,6 @@ bool Collectiondb::addExistingColl ( const char *coll, collnum_t collnum ) {
 	}
 
 	if ( ! registerCollRec ( cr , false ) ) return false;
-
-	// always index spider status docs now for custom crawls
-	if ( cr->m_isCustomCrawl )
-		cr->m_indexSpiderReplies = true;
-
-	// and don't do link voting, will help speed up
-	if ( cr->m_isCustomCrawl ) {
-		cr->m_getLinkInfo = false;
-		cr->m_computeSiteNumInlinks = false;
-		// limit each shard to 5 spiders per collection to prevent
-		// ppl from spidering the web and hogging up resources
-		cr->m_maxNumSpiders = 5;
-
- 		// diffbot download docs up to 50MB so we don't truncate
-		// things like sitemap.xml. but keep regular html pages
-		// 1MB
-		cr->m_maxTextDocLen  = 1024*1024;
-		// xml, pdf, etc can be this. 50MB
-		cr->m_maxOtherDocLen = 50000000;
-	}
 
 	// we need to compile the regular expressions or update the url
 	// filters with new logic that maps crawlbot parms to url filters
@@ -620,17 +592,6 @@ bool Collectiondb::deleteRec2 ( collnum_t collnum ) { //, WaitEntry *we ) {
 		// don't let cr reference us anymore, sc is on deathrow
 		// and "cr" is delete below!
 		cr->m_spiderColl = NULL;
-	}
-
-
-	// the bulk urls file too i guess
-	if ( cr->m_isCustomCrawl == 2 && g_hostdb.m_hostId == 0 ) {
-		SafeBuf bu;
-		bu.safePrintf("%sbulkurls-%s.txt",
-			      g_hostdb.m_dir , cr->m_coll );
-		File bf;
-		bf.set ( bu.getBufStart() );
-		if ( bf.doesExist() ) bf.unlink();
 	}
 
 	// now remove from list of collections that might need a disk merge
@@ -1383,20 +1344,6 @@ bool CollectionRec::load ( const char *coll , int32_t i ) {
 	// ignore errors i guess
 	g_errno = 0;
 
-
-	// fix for diffbot, spider time deduping
-	if ( m_isCustomCrawl ) m_dedupingEnabled = true;
-
-	// make min to merge smaller than normal since most collections are
-	// small and we want to reduce the # of vfds (files) we have
-	if ( m_isCustomCrawl ) {
-		m_posdbMinFilesToMerge   = 6;
-		m_titledbMinFilesToMerge = 4;
-		m_linkdbMinFilesToMerge  = 3;
-		m_tagdbMinFilesToMerge   = 2;
-		m_spiderdbMinFilesToMerge = 4;
-	}
-
 	return true;
 }
 
@@ -1408,8 +1355,8 @@ bool CollectionRec::rebuildUrlFilters2 ( ) {
 
 	const char *s = m_urlFiltersProfile.getBufStart();
 
-	// never for custom crawls & leave custom profiles alone
-	if ( m_isCustomCrawl || strcmp(s,"custom" ) == 0 ) {
+	// leave custom profiles alone
+	if ( strcmp(s,"custom" ) == 0 ) {
 		return true;
 	}
 
@@ -2611,10 +2558,8 @@ bool CollectionRec::rebuildUrlFilters ( ) {
 		log("coll: Rebuilding url filters for %s ufp=%s",m_coll,
 		    m_urlFiltersProfile.getBufStart());
 
-	// if not a custom crawl then set the url filters based on
-	// the url filter profile, if any
-	if ( ! m_isCustomCrawl )
-		rebuildUrlFilters2();
+	// set the url filters based on the url filter profile, if any
+	rebuildUrlFilters2();
 
 	// set this so we know whether we have to keep track of page counts
 	// per subdomain/site and per domain. if the url filters have

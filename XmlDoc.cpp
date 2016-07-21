@@ -2259,7 +2259,7 @@ int32_t *XmlDoc::getIndexCode ( ) {
 	// "url is repeating path components" error?
 	if ( ! m_check1 ) {
 		m_check1         = true;
-		if ( cr->m_isCustomCrawl == 0 && m_firstUrl.isLinkLoop() ) {
+		if ( m_firstUrl.isLinkLoop() ) {
 			m_indexCode      = ELINKLOOP;
 			m_indexCodeValid = true;
 
@@ -2581,13 +2581,6 @@ int32_t *XmlDoc::getIndexCode ( ) {
 
 	bool check = true;
 	if ( ! od ) check = false;
-	// do not do this logic for diffbot because it might want to get
-	// the diffbot reply even if page content is the same, because it
-	// might have an ajax call that updates the product price.
-	// onlyProcessIfNewUrl defaults to true, so typically even diffbot
-	// crawls will do this check.
-	if ( cr->m_isCustomCrawl && ! cr->m_diffbotOnlyProcessIfNewUrl )
-		check = false;
 
 	// or if recycling content turn this off as well! otherwise
 	// it will always be 100% the same
@@ -2715,9 +2708,6 @@ int32_t *XmlDoc::getIndexCode ( ) {
 	if ( gr->getLong("deep",0) ) {
 		spamCheck = false;
 	}
-
-	// not for crawlbot
-	if ( cr->m_isCustomCrawl ) spamCheck = false;
 
 	// only html for now
 	if ( m_contentTypeValid && m_contentType != CT_HTML ) spamCheck =false;
@@ -4081,10 +4071,6 @@ Links *XmlDoc::getLinks ( bool doQuickSet ) {
 	if ( ! cr->m_obeyRelNoFollowLinks ) {
 		useRelNoFollow = false;
 	}
-	// to keep things simple, for diffbot custom crawls, if robots.txt
-	// is not used then do not use rel no follow
-	if ( ! cr->m_useRobotsTxt && cr->m_isCustomCrawl )
-		useRelNoFollow = false;
 
 	// . set it
 	// . if parent is a permalink we can avoid its suburl outlinks
@@ -5137,47 +5123,13 @@ char *XmlDoc::getIsDup ( ) {
 	}
 
 	// skip if we should
-	if ( ! cr->m_dedupingEnabled ||
-	     // bulk jobs never dedup
-	     cr->m_isCustomCrawl == 2 ) {
+	if ( ! cr->m_dedupingEnabled ) {
 		m_isDupValid = true;
-		logTrace( g_conf.m_logTraceXmlDoc, "END, deduping not enabled or custom crawl (2)" );;
+		logTrace( g_conf.m_logTraceXmlDoc, "END, deduping not enabled" );;
 		return &m_isDup;
 	}
-
-
-	// do not dedup seeds
-	bool isSeed = ( m_sreqValid && m_sreq.m_isAddUrl );
-	if ( cr->m_isCustomCrawl && isSeed ) {
-		m_isDupValid = true;
-		m_isDup = false;
-		return &m_isDup;
-	}
-
 
 	setStatus ( "checking for dups" );
-
-	// BUT if we are already indexed and a a crawlbot/bulk diffbot job
-	// then do not kick us out just because another indexed doc is
-	// a dup of us because it messes up the TestOnlyProcessIfNew smoketests
-	// because in the 2nd round we end up deleting article1.html after
-	// indexing it in the first round, then we add article11.html's
-	// diffbot reply in the 2nd round because article1.html and its
-	// diffbot reply was deleted. thereby giving it a new timestamp and
-	// makeing the smoke fail.
-	if ( cr->m_isCustomCrawl ) {
-		char *isIndexed = getIsIndexed();
-		if ( ! isIndexed || isIndexed == (char *)-1)
-		{
-			logTrace( g_conf.m_logTraceXmlDoc, "END, custom crawl and not indexed" );;
-			return (char *)isIndexed;
-		}
-		if ( *isIndexed ) {
-			m_isDupValid = true;
-			logTrace( g_conf.m_logTraceXmlDoc, "END, custom crawl and already indexed" );;
-			return &m_isDup;
-		}
-	}
 
 	// get our docid
 	int64_t *mydocid = getDocId();
@@ -5765,10 +5717,7 @@ Url **XmlDoc::getRedirUrl() {
 	// . 301 means moved PERMANENTLY...
 	// . many people use 301 on their root pages though, so treat
 	//   it like a temporary redirect, like exclusivelyequine.com
-	if ( simplifiedRedir && ! allowSimplifiedRedirs &&
-	     // no, we need this for custom crawls because otherwise we
-	     // get too many dups in the index. so for nyt we need something else
-	     cr->m_isCustomCrawl != 2 ) {
+	if ( simplifiedRedir && ! allowSimplifiedRedirs ) {
 		m_redirError = EDOCSIMPLIFIEDREDIR;
 
 		// set this because getLinks() treats this redirUrl
@@ -7235,11 +7184,6 @@ int32_t *XmlDoc::gotIp ( bool save ) {
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) return NULL;
 
-	// note it for crawlbot
-	if ( cr->m_isCustomCrawl && ( m_ip == 0 || m_ip == -1 ) )
-		log("db: got ip %" PRId32" for %s",
-		    m_ip,getCurrentUrl()->getUrl());
-
 	bool useTestCache = false;
 	if ( ! strcmp(cr->m_coll,"qatest123") ) useTestCache = true;
 	// unless its the pagesubmit.cpp event submission tool
@@ -7289,47 +7233,10 @@ int32_t *XmlDoc::getFinalCrawlDelay() {
 	m_finalCrawlDelayValid = true;
 
 	// getIsAllowed already sets m_crawlDelayValid to true
-	if ( ! cr->m_isCustomCrawl ) {
-		m_finalCrawlDelay = m_crawlDelay;
-		// default to 250ms i guess if none specified in robots
-		// just to be somewhat nice by default
-		if ( m_crawlDelay < 0 )	m_finalCrawlDelay = 250;
-		return &m_finalCrawlDelay;
-	}
-
-	// get manually specified crawl delay in seconds. convert to ms.
-	int32_t manual = (int32_t)(cr->m_collectiveCrawlDelay * 1000.0);
-	// negative means -1 means unknown or not specified
-	if ( manual < 0 ) manual = -1;
-
-	// if both are unknown...
-	if ( m_crawlDelay == -1 && manual == -1 ) {
-		m_finalCrawlDelay = -1;
-		return &m_finalCrawlDelay;
-	}
-
-	// if not in robots.txt use manual
-	if ( m_crawlDelay == -1 ) {
-		m_finalCrawlDelay = manual;
-		return &m_finalCrawlDelay;
-	}
-
-	// if manually provided crawldelay is -1, use robots.txt then
-	if ( manual == -1 ) {
-		m_finalCrawlDelay = m_crawlDelay;
-		return &m_finalCrawlDelay;
-	}
-
-	// let robots.txt dictate if both are >= 0
-	if ( m_useRobotsTxt ) {
-		m_finalCrawlDelay = m_crawlDelay;
-		return &m_finalCrawlDelay;
-	}
-
-	// if not using robots.txt, pick the smallest
-	if ( m_crawlDelay < manual ) m_finalCrawlDelay = m_crawlDelay;
-	else                         m_finalCrawlDelay = manual;
-
+	m_finalCrawlDelay = m_crawlDelay;
+	// default to 250ms i guess if none specified in robots
+	// just to be somewhat nice by default
+	if ( m_crawlDelay < 0 )	m_finalCrawlDelay = 250;
 	return &m_finalCrawlDelay;
 }
 
@@ -7771,16 +7678,6 @@ LinkInfo *XmlDoc::getLinkInfo1 ( ) {
 	}
 	char *mysite = getSite();
 	if ( ! mysite || mysite == (void *)-1 ) return (LinkInfo *)mysite;
-
-	// no linkinfo for diffbot custom crawls to speed up
-	if ( cr->m_isCustomCrawl ) {
-		m_linkInfo1Valid = true;
-		memset ( &s_dummy2 , 0 , sizeof(LinkInfo) );
-		s_dummy2.m_lisize = sizeof(LinkInfo);
-		ptr_linkInfo1  = &s_dummy2;
-		size_linkInfo1 = sizeof(LinkInfo);
-		return ptr_linkInfo1;
-	}
 
 	// grab a ptr to the LinkInfo contained in our Doc class
 	LinkInfo  *oldLinkInfo1 = NULL;
@@ -8395,7 +8292,6 @@ char **XmlDoc::getHttpReply2 ( ) {
 	// turn off
 	r->m_useCompressionProxy = false;
 	r->m_compressReply       = false;
-	r->m_isCustomCrawl       = cr->m_isCustomCrawl;
 
 	// set it for this too
 	if ( g_conf.m_useCompressionProxy &&
@@ -9022,12 +8918,6 @@ Url **XmlDoc::getCanonicalRedirUrl ( ) {
 
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) return NULL;
-
-	// disable for crawlbot, not good really for deduping
-	if ( cr->m_isCustomCrawl ) {
-		m_canonicalRedirUrlValid = true;
-		return &m_canonicalRedirUrlPtr;
-	}
 
 	if ( ! cr->m_useCanonicalRedirects ) {
 		m_canonicalRedirUrlValid = true;
@@ -11177,12 +11067,6 @@ Images *XmlDoc::getImages ( ) {
 		return &m_images;
 	}
 
-	if ( cr->m_isCustomCrawl ) {
-		m_images.reset();
-		m_imagesValid = true;
-		return &m_images;
-	}
-
 	setStatus ( "getting thumbnail" );
 
 	Words *words = getWords();
@@ -11652,37 +11536,6 @@ int8_t *XmlDoc::getHopCount ( ) {
 
 	setStatus ( "getting hop count" );
 
-	CollectionRec *cr = this->getCollRec();
-	if(cr && cr->m_isCustomCrawl ) {
-		// for diffbot collections, compute hopcount without casting
-		// site/rss to 0 hopcount -- copied from below
-
-		LinkInfo *info1 = getLinkInfo1();
-		if (!info1 || info1 == (LinkInfo *)-1 ) return (int8_t *)info1;
-		int32_t origHopCount = -1;
-		if ( m_sreqValid ) {
-			origHopCount = m_sreq.m_hopCount;
-		}
-		int32_t hc = -1;
-		// if(m_minInlinkerHopCount+1 < hc && m_minInlinkerHopCount>=0)
-		// 	hc = m_minInlinkerHopCount + 1;
-		// if ( hc == -1 && m_minInlinkerHopCount >= 0 )
-		// 	hc = m_minInlinkerHopCount + 1;
-		if ( origHopCount < hc && origHopCount >= 0 )
-			hc = origHopCount;
-		if ( hc == -1 && origHopCount >= 0 )
-			hc = origHopCount;
-		if ( hc == -1 )
-			hc = 1;
-		if ( hc > 0x7f ) hc = 0x7f;
-		m_hopCountValid = true;
-		m_hopCount      = hc;
-
-		//printf("Custom hopcount: %d for url: %s",
-		//m_hopCount, this->ptr_firstUrl);
-		return &m_hopCount;
-	}
-
 	// the unredirected url
 	Url *f = getFirstUrl();
 	// get url as string, skip "http://" or "https://"
@@ -11831,8 +11684,8 @@ char *XmlDoc::getSpiderLinks ( ) {
 	     strstr ( buf2 , "none"     ) )
 		m_spiderLinks = false;
 
-	// spider links if doing custom crawl or not using robots.txt
-	if ( ! m_useRobotsTxt || cr->m_isCustomCrawl )
+	// spider links if not using robots.txt
+	if ( ! m_useRobotsTxt )
 		m_spiderLinks = true;
 
 	// spider request forbade it? diffbot.cpp crawlbot api when
@@ -13591,9 +13444,6 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		// because it might hurt us?
 		m_useTagdb = false;
 	}
-
-	if ( cr->m_isCustomCrawl )
-		m_useLinkdb = false;
 
 	// . need this if useTitledb is true
 	// . otherwise XmlDoc::getTitleRecBuf() cores because its invalid
@@ -15720,12 +15570,8 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		       m_indexCode == EDOCNONCANONICAL ) )
 			ksr.m_hopCount = m_hopCount;
 
-		// for diffbot custom crawls we keep the computed hopcount
-		if ( ! cr->m_isCustomCrawl ) {
-			if ( issiteroot   ) ksr.m_hopCount = 0;
-			if ( ispingserver ) ksr.m_hopCount = 0;
-			//if ( isrss        ) ksr.m_hopCount = 0;
-		}
+		if ( issiteroot   ) ksr.m_hopCount = 0;
+		if ( ispingserver ) ksr.m_hopCount = 0;
 
 		// validate it
 		ksr.m_hopCountValid = true;
@@ -16229,11 +16075,6 @@ SafeBuf *XmlDoc::getSpiderStatusDocMetaList2 ( SpiderReply *reply1 ) {
 		//jd.safePrintf("\"gbssHopCount\":%" PRId32",\n",(int32_t)*hc);
 		jd.safePrintf("\"gbssHopCount\":%" PRId32",\n",(int32_t)m_hopCount);
 
-	// crawlbot round
-	if ( cr->m_isCustomCrawl )
-		jd.safePrintf("\"gbssCrawlRound\":%" PRId32",\n",
-			      cr->m_spiderRoundNum);
-
 	// for -diffbotxyz fake docs addedtime is 0
 	if ( m_sreqValid && m_sreq.m_discoveryTime != 0 ) {
 		// in Spider.cpp we try to set m_sreq's m_addedTime to the
@@ -16368,49 +16209,6 @@ SafeBuf *XmlDoc::getSpiderStatusDocMetaList2 ( SpiderReply *reply1 ) {
 		// -1 if none?
 		jd.safePrintf("\"gbssCrawlDelayMS\":%" PRId32",\n",
 			      (int32_t)m_crawlDelay);
-
-	if ( cr->m_isCustomCrawl && m_firstUrlValid ){
-
-		char *url = getFirstUrl()->getUrl();
-
-		// the crawl regex
-		int match = 1;
-		regex_t *ucr = &cr->m_ucr;
-		if ( ! cr->m_hasucr ) ucr = NULL;
-		if ( ucr && regexec(ucr,url,0,NULL,0) ) match = 0;
-		if ( ucr )
-			jd.safePrintf("\"gbssMatchesUrlCrawlRegEx\":%i,\n",
-				      match);
-
-		// now the substring pattern
-		match = 1;
-		char *ucp = cr->m_diffbotUrlCrawlPattern.getBufStart();
-		if ( ucp && ! ucp[0] ) ucp = NULL;
-		if ( ucp && ! doesStringContainPattern(url,ucp) ) match = 0;
-		if ( ucp )
-			jd.safePrintf("\"gbssMatchesUrlCrawlPattern\":%i,\n",
-				      match);
-
-		// now process regex
-		match = 1;
-		regex_t *upr = &cr->m_upr;
-		if ( ! cr->m_hasupr ) upr = NULL;
-		if ( upr && regexec(upr,url,0,NULL,0) ) match = 0;
-		if ( upr )
-			jd.safePrintf("\"gbssMatchesUrlCrawlRegEx\":%i,\n",
-				      match);
-
-		// now process pattern
-		match = 1;
-		char *upp = cr->m_diffbotUrlProcessPattern.getBufStart();
-		if ( upp && ! upp[0] ) upp = NULL;
-		if ( upp && ! doesStringContainPattern(url,upp) ) match = 0;
-		if ( upp )
-			jd.safePrintf("\"gbssMatchesUrlProcessPattern\":%i,\n",
-				      match);
-
-	}
-
 
 
 	// remove last ,\n

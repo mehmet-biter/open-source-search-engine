@@ -1579,8 +1579,7 @@ bool Parms::printParm ( SafeBuf* sb,
 			// not if printing json
 			//if ( format != FORMAT_HTML )continue;//isJSON )
 			// skip if hidden
-			if ( cr && ! cr->m_isCustomCrawl &&
-			     (mk->m_flags & PF_DIFFBOT) )
+			if ( cr && (mk->m_flags & PF_DIFFBOT) )
 				continue;
 
 			// . hide table column headers that are too advanced
@@ -3102,9 +3101,7 @@ bool Parms::saveToXml ( char *THIS , char *f , char objType ) {
 		// since spiderroundnum/starttime is hidden but should be saved
 		if ( m->m_flags & PF_NOSAVE ) continue;
 		// ignore if diffbot and we are not a diffbot/custom crawl
-		if ( cr &&
-		     ! cr->m_isCustomCrawl &&
-		     (m->m_flags & PF_DIFFBOT) ) continue;
+		if ( cr && (m->m_flags & PF_DIFFBOT) ) continue;
 		// skip if we should not save to xml
 		if ( ! m->m_save ) continue;
 		// allow comments though
@@ -3741,16 +3738,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_COLL;
 	m->m_flags = PF_DIFFBOT;
 	m->m_def   = "";
-	m++;
-
-	m->m_xml   = "isCustomCrawl";
-	m->m_off   = offsetof(CollectionRec,m_isCustomCrawl);
-	m->m_type  = TYPE_CHAR;
-	m->m_page  = PAGE_NONE;
-	m->m_obj   = OBJ_COLL;
-	m->m_cgi   = "isCustomCrawl";
-	m->m_def   = "0";
-	m->m_flags = PF_DIFFBOT;
 	m++;
 
 	m->m_cgi   = "maxToCrawl";

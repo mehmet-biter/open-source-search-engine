@@ -446,7 +446,6 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 
 	// stop indexing xml docs
 	bool indexDoc = true;
-	if ( cr->m_isCustomCrawl ) indexDoc = false;
 	if ( ! cr->m_indexBody   ) indexDoc = false;
 
 
@@ -869,11 +868,6 @@ bool XmlDoc::hashContentType ( HashTableX *tt ) {
 	}
 	// bail if unrecognized content type
 	if ( ! s ) return true;
-
-	// hack for diffbot. do not hash type:json because diffbot uses
-	// that for searching diffbot json objects
-	if ( cr->m_isCustomCrawl && ctype==CT_JSON )
-		return true;
 
 	// . now hash it
 	// . use a score of 1 for all

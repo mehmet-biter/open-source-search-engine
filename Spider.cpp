@@ -4278,7 +4278,7 @@ void dedupSpiderdbList ( RdbList *list ) {
 
 bool getSpiderStatusMsg ( CollectionRec *cx , SafeBuf *msg , int32_t *status ) {
 
-	if ( ! g_conf.m_spideringEnabled && ! cx->m_isCustomCrawl ) {
+	if ( ! g_conf.m_spideringEnabled ) {
 		*status = SP_ADMIN_PAUSED;
 		return msg->safePrintf("Spidering disabled in "
 				       "master controls. You can turn it "
@@ -4381,11 +4381,7 @@ bool getSpiderStatusMsg ( CollectionRec *cx , SafeBuf *msg , int32_t *status ) {
 
 	if ( ! cx->m_spideringEnabled ) {
 		*status = SP_PAUSED;
-		if ( cx->m_isCustomCrawl )
-			return msg->safePrintf("Job paused.");
-		else
-			return msg->safePrintf("Spidering disabled "
-					       "in spider controls.");
+		return msg->safePrintf("Spidering disabled in spider controls.");
 	}
 
 	// . 0 means not to RE-crawl
@@ -4412,28 +4408,7 @@ bool getSpiderStatusMsg ( CollectionRec *cx , SafeBuf *msg , int32_t *status ) {
 		return msg->safePrintf("Job is initializing.");
 	}
 
-	// if we had seeds and none were successfully crawled, do not just
-	// print that the crawl completed.
-	if ( cx->m_collectiveRespiderFrequency <= 0.0 &&
-	     cx->m_isCustomCrawl &&
-	     ! cx->m_globalCrawlInfo.m_hasUrlsReadyToSpider &&
-	     cx->m_globalCrawlInfo.m_pageDownloadAttempts > 0 &&
-	     cx->m_globalCrawlInfo.m_pageDownloadSuccesses == 0 ) {
-		*status = SP_SEEDSERROR;
-		return msg->safePrintf("Failed to crawl any seed.");
-	}
-
-	// if we sent an email simply because no urls
-	// were left and we are not recrawling!
-	if ( cx->m_collectiveRespiderFrequency <= 0.0 &&
-	     cx->m_isCustomCrawl &&
-	     ! cx->m_globalCrawlInfo.m_hasUrlsReadyToSpider ) {
-		*status = SP_COMPLETED;
-		return msg->safePrintf("Job has completed and no "
-			"repeat is scheduled.");
-	}
-
-	if ( cx->m_spiderStatus == SP_ROUNDDONE && ! cx->m_isCustomCrawl ) {
+	if ( cx->m_spiderStatus == SP_ROUNDDONE ) {
 		*status = SP_ROUNDDONE;
 		return msg->safePrintf ( "Nothing currently "
 					 "available to spider. "
@@ -4444,8 +4419,7 @@ bool getSpiderStatusMsg ( CollectionRec *cx , SafeBuf *msg , int32_t *status ) {
 
 	// let's pass the qareindex() test in qa.cpp... it wasn't updating
 	// the status to done. it kept saying in progress.
-	if ( ! cx->m_isCustomCrawl && 
-	     ! cx->m_globalCrawlInfo.m_hasUrlsReadyToSpider ) {
+	if ( ! cx->m_globalCrawlInfo.m_hasUrlsReadyToSpider ) {
 		//*status = SP_COMPLETED;
 		*status = SP_INPROGRESS;
 		return msg->safePrintf ( "Nothing currently "
@@ -4482,10 +4456,7 @@ bool getSpiderStatusMsg ( CollectionRec *cx , SafeBuf *msg , int32_t *status ) {
 
 	// otherwise in progress?
 	*status = SP_INPROGRESS;
-	if ( cx->m_isCustomCrawl )
-		return msg->safePrintf("Job is in progress.");
-	else
-		return msg->safePrintf("Spider is in progress.");
+	return msg->safePrintf("Spider is in progress.");
 }
 
 

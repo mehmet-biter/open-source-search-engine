@@ -347,11 +347,6 @@ bool Msg40::federatedLoop ( ) {
 	if ( cr ) mr.m_maxQueryTerms = cr->m_maxQueryTerms; 
 	else      mr.m_maxQueryTerms = 100;
 
-	// prevent going OOM for type:article AND html
-	// special oom hack fix
-	if ( cr && cr->m_isCustomCrawl && numDocIdSplits < 4 ) 
-		numDocIdSplits = 4;
-
 	// limit numDocIdSplits to the range specified in the configuration
 	if ( numDocIdSplits < g_conf.min_docid_splits ) 
 		numDocIdSplits = g_conf.min_docid_splits;
@@ -830,11 +825,7 @@ bool Msg40::launchMsg20s ( bool recalled ) {
 		// get the collection rec
 		CollectionRec *cr = g_collectiondb.getRec(m_firstCollnum);
 		// if shard is dead then do not send to it if not crawlbot
-		if ( g_hostdb.isShardDead ( shardNum ) &&
-		     cr &&
-		     // diffbot urls.csv downloads often encounter dead
-		     // hosts that are not really dead, so wait for it
-		     ! cr->m_isCustomCrawl &&
+		if ( g_hostdb.isShardDead ( shardNum ) && cr &&
 		     // this is causing us to truncate streamed results
 		     // too early when we have false positives that a 
 		     // host is dead because the server is locking up 

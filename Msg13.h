@@ -80,8 +80,6 @@ public:
 	// if doing spider compression, compute contentHash32 of document
 	// downloaded, and if it matches this then send back EDOCUNCHANGED
 	int32_t  m_contentHash32;
-	// copy of CollectionRec::m_customCrawl, 0 1 for crawls or 2 for bulks
-	char m_isCustomCrawl;
 
 	unsigned  m_compressReply:1;
 	unsigned  m_useCompressionProxy:1;

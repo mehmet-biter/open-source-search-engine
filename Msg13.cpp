@@ -880,23 +880,6 @@ void downloadTheDocForReals3b ( Msg13Request *r ) {
 
 	char *agent = g_conf.m_spiderUserAgent;
 
-	// . for bulk jobs avoid actual downloads of the page for efficiency
-	// . g_fakeReply is just a simple mostly empty 200 http reply
-	if ( r->m_isCustomCrawl == 2 ) {
-		int32_t slen = gbstrlen(g_fakeReply);
-		int32_t fakeBufSize = slen + 1;
-		// try to fix memleak
-		char *fakeBuf = g_fakeReply;
-
-		gotHttpReply2 ( r , 
-				fakeBuf,
-				fakeBufSize, // include \0
-				fakeBufSize, // allocsize
-				NULL ); // tcpsock
-		return;
-	}
-
-
 	// after downloading the doc call this callback
 	void (* callback) ( void *,TcpSocket *);
 
