@@ -17,6 +17,7 @@ libcld2_full.so
 libgb.a
 rebalance.txt
 unifiedDict-buf.txt
+statistics.txt
 # log files
 log000*
 file_state*.txt
