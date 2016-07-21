@@ -160,13 +160,10 @@ extern class Collectiondb g_collectiondb;
 // how many url filtering patterns?
 #define MAX_FILTERS    96  // up to 96 url regular expression patterns
 //#define MAX_PRIORITY_QUEUES MAX_SPIDER_PRIORITIES * 2//each can be old or new
-#define MAX_REGEX_LEN  256 // each regex can be up to this many bytes
 // max chars the executable path+name can be
 #define MAX_FILTER_LEN 64
 
 #define SUMMARYHIGHLIGHTTAGMAXSIZE 128
-
-#include "regex.h"
 
 #include "Url.h"  // MAX_COLL_LEN
 #include "HashTableX.h"
@@ -424,14 +421,6 @@ class CollectionRec {
 	SafeBuf m_diffbotUrlProcessPattern;
 	// only CRAWL urls that match this pattern
 	SafeBuf m_diffbotUrlCrawlPattern;
-
-	// regex support
-	SafeBuf m_diffbotUrlCrawlRegEx;
-	SafeBuf m_diffbotUrlProcessRegEx;
-	regex_t m_ucr;
-	regex_t m_upr;
-	bool m_hasucr;
-	bool m_hasupr;
 
 	// only crawl pages within hopcount of a seed. 0 for no limit
 	int32_t m_diffbotMaxHops;

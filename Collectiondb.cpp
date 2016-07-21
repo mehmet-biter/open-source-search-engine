@@ -1141,10 +1141,6 @@ CollectionRec::CollectionRec() {
 
 	m_lastResetCount = 0;
 
-	// regex_t types
-	m_hasucr = false;
-	m_hasupr = false;
-
 	// for diffbot caching the global spider stats
 	reset();
 
@@ -1187,13 +1183,6 @@ void CollectionRec::reset() {
 	// . grows dynamically
 	// . setting to 0 buckets should never have error
 	//m_pageCountTable.set ( 4,4,0,NULL,0,false,MAX_NICENESS,"pctbl" );
-
-	// regex_t types
-	if ( m_hasucr ) regfree ( &m_ucr );
-	if ( m_hasupr ) regfree ( &m_upr );
-
-	m_hasucr = false;
-	m_hasupr = false;
 
 	m_sendingAlertInProgress = false;
 

@@ -3686,28 +3686,6 @@ void Parms::init ( ) {
 	m->m_flags = PF_REBUILDURLFILTERS | PF_DIFFBOT;
 	m++;
 
-	m->m_cgi   = "urlCrawlRegEx";
-	m->m_xml   = "diffbotUrlCrawlRegEx";
-	m->m_title = "url crawl regex";
-	m->m_off   = offsetof(CollectionRec,m_diffbotUrlCrawlRegEx);
-	m->m_type  = TYPE_SAFEBUF;
-	m->m_page  = PAGE_NONE;
-	m->m_obj   = OBJ_COLL;
-	m->m_def   = "";
-	m->m_flags = PF_REBUILDURLFILTERS | PF_DIFFBOT;
-	m++;
-
-	m->m_cgi   = "urlProcessRegEx";
-	m->m_xml   = "diffbotUrlProcessRegEx";
-	m->m_title = "url process regex";
-	m->m_off   = offsetof(CollectionRec,m_diffbotUrlProcessRegEx);
-	m->m_type  = TYPE_SAFEBUF;
-	m->m_page  = PAGE_NONE;
-	m->m_obj   = OBJ_COLL;
-	m->m_def   = "";
-	m->m_flags = PF_REBUILDURLFILTERS | PF_DIFFBOT;
-	m++;
-
 	m->m_cgi   = "maxHops";
 	m->m_xml   = "diffbotHopcount";
 	m->m_title = "diffbot max hopcount";
@@ -6982,7 +6960,7 @@ void Parms::init ( ) {
 	// this is a safebuf, dynamically allocated string really
 	m->m_type  = TYPE_SAFEBUF;//STRINGNONEMPTY
 	// the size of each element in the array:
-	m->m_size  = sizeof(SafeBuf);//MAX_REGEX_LEN+1;
+	m->m_size  = sizeof(SafeBuf);
 	m->m_page  = PAGE_FILTERS;
 	m->m_rowid = 1; // if we START a new row
 	m->m_def   = "";
@@ -9323,21 +9301,6 @@ void Parms::init ( ) {
 	m->m_xml   = "diffbotUrlProcessPattern";
 	m->m_title = "diffbot url process pattern";
 	m->m_off   = offsetof(CollectionRec,m_diffbotUrlProcessPattern);
-	m->m_type  = TYPE_SAFEBUF;
-	m->m_page  = PAGE_SPIDER;
-	m->m_obj   = OBJ_COLL;
-	m->m_def   = "";
-	m->m_group = false;
-	m->m_flags = PF_REBUILDURLFILTERS | PF_CLONE;
-	m++;
-
-	m->m_cgi   = "urlProcessRegExTwo";
-	m->m_desc  = "Only send urls that match this regular expression "
-		"to Diffbot. "
-		"Leave empty for no restrictions.";
-	m->m_xml   = "diffbotUrlProcessRegEx";
-	m->m_title = "diffbot url process regex";
-	m->m_off   = offsetof(CollectionRec,m_diffbotUrlProcessRegEx);
 	m->m_type  = TYPE_SAFEBUF;
 	m->m_page  = PAGE_SPIDER;
 	m->m_obj   = OBJ_COLL;

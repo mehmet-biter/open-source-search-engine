@@ -2497,12 +2497,6 @@ int32_t getUrlFilterNum ( 	SpiderRequest	*sreq,
 	if ( upp && ! upp[0] ) upp = NULL;
 	if ( ucp && ! ucp[0] ) ucp = NULL;
 
-	// get the compiled regular expressions
-	regex_t *ucr = &cr->m_ucr;
-	regex_t *upr = &cr->m_upr;
-	if ( ! cr->m_hasucr ) ucr = NULL;
-	if ( ! cr->m_hasupr ) upr = NULL;
-
 	// CONSIDER COMPILING FOR SPEED:
 	// 1) each command can be combined into a bitmask on the spiderRequest
 	//    bits, or an access to m_siteNumInlinks, or a substring match
