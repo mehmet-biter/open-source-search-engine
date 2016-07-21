@@ -60,8 +60,8 @@ class Mem {
 	int64_t getNumTotalAllocated() { return m_numTotalAllocated; }
 
 	// who underan/overran their buffers?
-	int  printBreech   ( int32_t i , char core ) ;
-	int  printBreeches ( char core ) ;
+	int  printBreech   ( int32_t i ) ;
+	int  printBreeches () ;
 	// print mem usage stats
 	int  printMem      ( ) ;
 	void addMem ( void *mem , int32_t size , const char *note, char isnew);

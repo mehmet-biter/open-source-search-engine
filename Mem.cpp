@@ -294,7 +294,7 @@ void Mem::addMem ( void *mem , int32_t size , const char *note , char isnew ) {
 	// check for breech after every call to alloc or free in order to
 	// more easily isolate breeching code.. this slows things down a lot
 	// though.
-	if ( g_conf.m_logDebugMem ) printBreeches(1);
+	if ( g_conf.m_logDebugMem ) printBreeches();
 
 	// copy the magic character, iff not a new() call
 	if ( size == 0 ) { g_process.shutdownAbort(true); }
@@ -637,7 +637,7 @@ bool Mem::rmMem  ( void *mem , int32_t size , const char *note ) {
 	// check for breech after every call to alloc or free in order to
 	// more easily isolate breeching code.. this slows things down a lot
 	// though.
-	if ( g_conf.m_logDebugMem ) printBreeches(1);
+	if ( g_conf.m_logDebugMem ) printBreeches();
 
 	// don't free 0 bytes
 	if ( size == 0 ) return true;
@@ -697,7 +697,7 @@ bool Mem::rmMem  ( void *mem , int32_t size , const char *note ) {
 	// check for breeches, if we don't do it here, we won't be able
 	// to check this guy for breeches later, cuz he's getting 
 	// removed
-	if ( ! isnew ) printBreech ( h , 1 );
+	if ( ! isnew ) printBreech(h);
 	// empty our bucket, and point to next bucket after us
 	s_mptrs[h++] = NULL;
 	// dec the count
@@ -774,7 +774,7 @@ int32_t Mem::getMemSlot ( void *mem ) {
 }
 
 
-int Mem::printBreech ( int32_t i , char core ) {
+int Mem::printBreech ( int32_t i) {
 	// skip if empty
 	if ( ! s_mptrs    ) return 0;
 	if ( ! s_mptrs[i] ) return 0;
@@ -873,15 +873,11 @@ int Mem::printBreech ( int32_t i , char core ) {
 	// return now if no breach
 	if ( flag == 0 ) return 1;
 
-	// need this
-	if ( ! bp ) { g_process.shutdownAbort(true); }
-
-	if ( flag && core ) { g_process.shutdownAbort(true); }
-	return 1;
+	g_process.shutdownAbort(true);
 }
 
 // check all allocated memory for buffer under/overruns
-int Mem::printBreeches ( char core ) {
+int Mem::printBreeches() {
 	if ( ! s_mptrs ) return 0;
 	// do not bother if no padding at all
 	if ( (int32_t)UNDERPAD == 0 && (int32_t)OVERPAD == 0 ) return 0;
@@ -891,14 +887,14 @@ int Mem::printBreeches ( char core ) {
 	// loop through the whole mem table
 	for ( int32_t i = 0 ; i < (int32_t)m_memtablesize ; i++ )
 		// only check if non-empty
-		if ( s_mptrs[i] ) printBreech ( i , core );
+		if ( s_mptrs[i] ) printBreech(i);
 	return 0;
 }
 
 
 int Mem::printMem ( ) {
 	// has anyone breeched their buffer?
-	printBreeches ( 0 ) ;
+	printBreeches();
 
 	// print table entries sorted by most mem first
 	int32_t *p = (int32_t *)sysmalloc ( m_memtablesize * 4 );

@@ -684,7 +684,7 @@ bool Process::shutdown ( bool urgent, void  *state, void (*callback) (void *stat
 
 	// check memory buffers for overruns/underrunds to see if that caused this core
 	if ( urgent ) {
-		g_mem.printBreeches(false);
+		g_mem.printBreeches();
 	}
 
 	if (!shutdown2()) {
