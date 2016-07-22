@@ -37,7 +37,6 @@ bool printCrawlDetails2 (SafeBuf *sb , CollectionRec *cx , char format ) {
 	SafeBuf tmp;
 	int32_t crawlStatus = -1;
 	getSpiderStatusMsg ( cx , &tmp , &crawlStatus );
-	CrawlInfo *ci = &cx->m_localCrawlInfo;
 
 	// don't print completed time if spidering is going on
 	uint32_t completed = cx->m_diffbotCrawlEndTime;
