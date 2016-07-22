@@ -487,11 +487,6 @@ bool printLeftColumnRocketAndTabs ( SafeBuf *sb ,
 		// just show search, directort and advanced tab in serps
 		if ( isSearchResultsPage && i >= 3 ) break;
 
-		// what was this for?
-		// if ( i >= 1 && i <= 4 &&
-		//      cr->m_diffbotApiUrl.length() >= 0 )
-		// 	continue;
-
 		char delim = '?';
 		if ( strstr ( mi[i].m_url,"?") ) delim = '&';
 

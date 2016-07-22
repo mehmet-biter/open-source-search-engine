@@ -34,26 +34,6 @@ bool sendPageAddDelColl ( TcpSocket *s , HttpRequest *r , bool add ) {
 	// if any host in network is dead, do not do this
 	//if ( g_hostdb.hasDeadHost() ) msg = "A host in the network is dead.";
 
-	// . are we adding a collection?
-	// . return if error adding, might already exist!
-	// . g_errno should be set
-	// . WE DO NOT NEED THIS ANYMORE. Pages.cpp now broadcasts
-	//   addcoll as CommandAddColl() parm.
-	/*
-	if ( nclen > 0 && add && ! cast ) {
-		// do not allow "main" that is used for the "" collection
-		// for backwards compatibility
-		//if ( strcmp ( nc , "main" ) != 0 ) 
-		g_collectiondb.addRec (nc,cpc,cpclen,true,(collnum_t)-1,
-				       false , // isdump?
-				       true  ) ;// save it?
-		//else 
-		//	log("admin: \"main\" collection is forbidden.");
-	}
-
-	if ( ! add && ! cast ) g_collectiondb.deleteRecs ( r )   ;
-	*/
-
 	char format = r->getReplyFormat();
 
 
@@ -80,10 +60,6 @@ bool sendPageAddDelColl ( TcpSocket *s , HttpRequest *r , bool add ) {
 	// error?
 	const char *action = r->getString("action",NULL);
 	const char *addColl = r->getString("addcoll",NULL);
-
-	// add our ip to the list
-	//char *ips = r->getString("collips",NULL);
-	//char *pwds = r->getString("collpwd",NULL);
 
 
 	char  buf [ 64*1024 ];

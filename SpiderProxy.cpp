@@ -742,13 +742,11 @@ void handleRequest54 ( UdpSlot *udpSlot , int32_t niceness ) {
 	bb.m_proxyPort = winnersp->m_port;
 	// a new id. we use this to update the downloadEndTime when done
 	static int32_t s_lbid = 0;
-	// add it now, iff not for passing to diffbot backend
-	if ( preq->m_opCode != OP_GETPROXYFORDIFFBOT ) {
-		bb.m_id = s_lbid++;
-		s_loadTable.addKey ( &urlIp , &bb );
-		// winner count update
-		winnersp->m_timesUsed++;
-	}
+	// add it now
+	bb.m_id = s_lbid++;
+	s_loadTable.addKey ( &urlIp , &bb );
+	// winner count update
+	winnersp->m_timesUsed++;
 
 	// sanity
 	if ( (int32_t)sizeof(ProxyReply) > TMPBUFSIZE ){g_process.shutdownAbort(true);}

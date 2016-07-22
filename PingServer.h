@@ -144,10 +144,4 @@ extern int32_t g_recoveryLevel;
 // . use this for sending generic emails
 bool sendEmail ( class EmailInfo *ei ) ;
 
-// use mailchimp's mandrill email http api
-bool sendEmailThroughMandrill ( class EmailInfo *ei ) ;
-
-// send email and webhook notification
-bool sendNotification ( class EmailInfo *ei );
-
 #endif // GB_PINGSERVER_H

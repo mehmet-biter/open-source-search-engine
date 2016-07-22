@@ -355,9 +355,6 @@ bool Pages::sendDynamicReply ( TcpSocket *s , HttpRequest *r , int32_t page ) {
 	bool isMasterAdmin = g_conf.isMasterAdmin ( s , r );
 
 
-	CollectionRec *cr = g_collectiondb.getRec ( r , true );
-
-
 	////////////////////
 	////////////////////
 	//
@@ -376,8 +373,7 @@ bool Pages::sendDynamicReply ( TcpSocket *s , HttpRequest *r , int32_t page ) {
 	if ( ! publicPage && 
 	     ! isMasterAdmin && 
 	     ! (pg->m_pgflags & PG_ACTIVE) ) {
-		return g_httpServer.sendErrorReply ( s , 505 , 
-						     "Page not active");
+		return g_httpServer.sendErrorReply ( s , 505 , "Page not active");
 	}
 
 	if ( ! g_conf.m_allowCloudUsers &&
@@ -386,17 +382,6 @@ bool Pages::sendDynamicReply ( TcpSocket *s , HttpRequest *r , int32_t page ) {
 	     ! g_conf.isCollAdmin ( s , r ) ) {
 		return sendPageLogin ( s , r );
 	}
-
-	//
-	// CLOUD SEARCH ENGINE SUPPORT
-	//
-	// if not the root admin only all user to change settings, etc.
-	// if the collection rec is a guest collection. i.e. in the cloud.
-	//
-	bool isRootColl = false;
-	if ( cr && strcmp(cr->m_coll,"main")==0 ) isRootColl = true;
-	if ( cr && strcmp(cr->m_coll,"demo")==0 ) isRootColl = true;
-
 
 	// get safebuf stored in TcpSocket class
 	SafeBuf *parmList = &s->m_handyBuf;

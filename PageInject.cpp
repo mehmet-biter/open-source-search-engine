@@ -1464,7 +1464,6 @@ bool ImportState::importLoop ( ) {
 	// gr->m_contentTypeStr = g_contentTypeStrings [xd.m_contentType];
 	// gr->m_contentFile = NULL;
 	// gr->m_content = xd.ptr_utf8Content;
-	// gr->m_diffbotReply = NULL;
 	// gr->m_injectLinks = false;
 	// gr->m_spiderLinks = true;
 	// gr->m_shortReply = false;

@@ -2490,13 +2490,6 @@ int32_t getUrlFilterNum ( 	SpiderRequest	*sreq,
 
 	if ( ! quotaTable ) quotaTable = &sc->m_localTable;
 
-	// shortcut
-	char *ucp = cr->m_diffbotUrlCrawlPattern.getBufStart();
-	char *upp = cr->m_diffbotUrlProcessPattern.getBufStart();
-
-	if ( upp && ! upp[0] ) upp = NULL;
-	if ( ucp && ! ucp[0] ) ucp = NULL;
-
 	// CONSIDER COMPILING FOR SPEED:
 	// 1) each command can be combined into a bitmask on the spiderRequest
 	//    bits, or an access to m_siteNumInlinks, or a substring match
@@ -4316,77 +4309,9 @@ bool getSpiderStatusMsg ( CollectionRec *cx , SafeBuf *msg , int32_t *status ) {
 				       "spidering paused.");
 	}
 
-	uint32_t now = (uint32_t)getTimeGlobal();
-
-	// try to fix crawlbot nightly test complaining about job status
-	// for TestRepeatCrawlWithMaxToCrawl
-	if ( (cx->m_spiderStatus == SP_MAXTOCRAWL ||
-	      cx->m_spiderStatus == SP_MAXTOPROCESS ) &&
-	     cx->m_collectiveRespiderFrequency > 0.0 &&
-	     now < cx->m_spiderRoundStartTime &&
-	     cx->m_spiderRoundNum >= cx->m_maxCrawlRounds ) {
-		*status = SP_MAXROUNDS;
-		return msg->safePrintf ( "Job has reached maxRounds "
-					 "limit." );
-	}		
-
-	// . 0 means not to RE-crawl
-	// . indicate if we are WAITING for next round...
-	if ( cx->m_spiderStatus == SP_MAXTOCRAWL &&
-	     cx->m_collectiveRespiderFrequency > 0.0 &&
-	     now < cx->m_spiderRoundStartTime ) {
-		*status = SP_ROUNDDONE;
-		return msg->safePrintf("Jobs has reached maxToCrawl limit. "
-				       "Next crawl round to start "
-				       "in %" PRId32" seconds.",
-				       (int32_t)(cx->m_spiderRoundStartTime-
-						 now));
-	}
-
-	if ( cx->m_spiderStatus == SP_MAXTOPROCESS &&
-	     cx->m_collectiveRespiderFrequency > 0.0 &&
-	     now < cx->m_spiderRoundStartTime ) {
-		*status = SP_ROUNDDONE;
-		return msg->safePrintf("Jobs has reached maxToProcess limit. "
-				       "Next crawl round to start "
-				       "in %" PRId32" seconds.",
-				       (int32_t)(cx->m_spiderRoundStartTime-
-						 now));
-	}
-
-
-	if ( cx->m_spiderStatus == SP_MAXTOCRAWL ) {
-		*status = SP_MAXTOCRAWL;
-		return msg->safePrintf ( "Job has reached maxToCrawl "
-					 "limit." );
-	}
-
-	if ( cx->m_spiderStatus == SP_MAXTOPROCESS ) {
-		*status = SP_MAXTOPROCESS;
-		return msg->safePrintf ( "Job has reached maxToProcess "
-					 "limit." );
-	}
-
-	if ( cx->m_spiderStatus == SP_MAXROUNDS ) {
-		*status = SP_MAXROUNDS;
-		return msg->safePrintf ( "Job has reached maxRounds "
-					 "limit." );
-	}
-
 	if ( ! cx->m_spideringEnabled ) {
 		*status = SP_PAUSED;
 		return msg->safePrintf("Spidering disabled in spider controls.");
-	}
-
-	// . 0 means not to RE-crawl
-	// . indicate if we are WAITING for next round...
-	if ( cx->m_collectiveRespiderFrequency > 0.0 &&
-	     now < cx->m_spiderRoundStartTime ) {
-		*status = SP_ROUNDDONE;
-		return msg->safePrintf("Next crawl round to start "
-				       "in %" PRId32" seconds.",
-				       (int32_t)(cx->m_spiderRoundStartTime-
-						 now) );
 	}
 
 	// if spiderdb is empty for this coll, then no url

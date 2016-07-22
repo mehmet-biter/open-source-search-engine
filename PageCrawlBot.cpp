@@ -38,16 +38,12 @@ bool printCrawlDetails2 (SafeBuf *sb , CollectionRec *cx , char format ) {
 	int32_t crawlStatus = -1;
 	getSpiderStatusMsg ( cx , &tmp , &crawlStatus );
 	CrawlInfo *ci = &cx->m_localCrawlInfo;
-	int32_t sentAlert = (int32_t)ci->m_sentCrawlDoneAlert;
-	if ( sentAlert ) sentAlert = 1;
 
 	// don't print completed time if spidering is going on
-	uint32_t completed = cx->m_diffbotCrawlEndTime; // time_t
+	uint32_t completed = cx->m_diffbotCrawlEndTime;
 	// if not yet done, make this zero
 	if ( crawlStatus == SP_INITIALIZING ) completed = 0;
 	if ( crawlStatus == SP_NOURLS ) completed = 0;
-	//if ( crawlStatus == SP_PAUSED ) completed = 0;
-	//if ( crawlStatus == SP_ADMIN_PAUSED ) completed = 0;
 	if ( crawlStatus == SP_INPROGRESS ) completed = 0;
 
 	if ( format == FORMAT_JSON ) {
@@ -57,7 +53,6 @@ bool printCrawlDetails2 (SafeBuf *sb , CollectionRec *cx , char format ) {
 			       "\t\"statusMsg\":\"%s\",\n"
 			       "\t\"jobCreationTimeUTC\":%" PRId32",\n"
 			       "\t\"jobCompletionTimeUTC\":%" PRId32",\n"
-			       "\t\"sentJobDoneNotification\":%" PRId32",\n"
 			       "\t\"urlsHarvested\":%" PRId64",\n"
 			       "\t\"pageCrawlAttempts\":%" PRId64",\n"
 			       "\t\"pageCrawlSuccesses\":%" PRId64",\n"
@@ -65,7 +60,6 @@ bool printCrawlDetails2 (SafeBuf *sb , CollectionRec *cx , char format ) {
 			       , tmp.getBufStart()
 			       , cx->m_diffbotCrawlStartTime
 			       , completed
-			       , sentAlert
 			       , cx->m_globalCrawlInfo.m_urlsHarvested
 			       , cx->m_globalCrawlInfo.m_pageDownloadAttempts
 			       , cx->m_globalCrawlInfo.m_pageDownloadSuccesses
@@ -94,9 +88,6 @@ bool printCrawlDetails2 (SafeBuf *sb , CollectionRec *cx , char format ) {
 			       "\t<jobCompletionTimeUTC>%" PRId32
 			       "</jobCompletionTimeUTC>\n"
 
-			       "\t<sentJobDoneNotification>%" PRId32
-			       "</sentJobDoneNotification>\n"
-
 			       "\t<urlsHarvested>%" PRId64"</urlsHarvested>\n"
 
 			       "\t<pageCrawlAttempts>%" PRId64
@@ -106,7 +97,6 @@ bool printCrawlDetails2 (SafeBuf *sb , CollectionRec *cx , char format ) {
 			       "</pageCrawlSuccesses>\n"
 
 			       , completed
-			       , sentAlert
 			       , cx->m_globalCrawlInfo.m_urlsHarvested
 			       , cx->m_globalCrawlInfo.m_pageDownloadAttempts
 			       , cx->m_globalCrawlInfo.m_pageDownloadSuccesses

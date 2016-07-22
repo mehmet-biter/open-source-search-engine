@@ -208,12 +208,8 @@ class CrawlInfo {
 
 	int32_t m_collnum;
 
-	// have we sent out email/webhook notifications crawl has no urls
-	// currently in the ready queue (doledb) to spider?
-	char m_sentCrawlDoneAlert;
-
-	//int32_t m_numUrlsLaunched;
-	int32_t m_dummy1;
+	char m_reserved1;
+	int32_t m_reserved2;
 
 	// keep separate because when we receive a crawlinfo struct from
 	// a host we only add these in if it matches our round #
@@ -402,34 +398,7 @@ class CollectionRec {
    * !! Start Diffbot paramamters !! *
    *****/
 
-  SafeBuf m_diffbotToken;
-	SafeBuf m_diffbotCrawlName;
-	// email for emailing when crawl limit hit
-	SafeBuf m_notifyEmail;
-
-	// the default respider frequency for all rows in url filters
-	float   m_collectiveRespiderFrequency;
-	float   m_collectiveCrawlDelay;//SpiderWait;
 	SafeBuf m_diffbotSeeds;
-
-	// use for all now...
-	SafeBuf m_diffbotApiUrl;
-
-	// only process pages whose content matches this pattern
-	SafeBuf m_diffbotPageProcessPattern;
-	// only process urls that match this pattern
-	SafeBuf m_diffbotUrlProcessPattern;
-	// only CRAWL urls that match this pattern
-	SafeBuf m_diffbotUrlCrawlPattern;
-
-	// only crawl pages within hopcount of a seed. 0 for no limit
-	int32_t m_diffbotMaxHops;
-
-	char    m_diffbotOnlyProcessIfNewUrl;
-
-	int64_t m_maxToCrawl;
-	int64_t m_maxToProcess;
-	int32_t      m_maxCrawlRounds;
 
 	// in seconds now
 	uint32_t m_diffbotCrawlStartTime;

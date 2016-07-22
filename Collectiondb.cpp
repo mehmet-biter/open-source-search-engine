@@ -356,9 +356,6 @@ bool Collectiondb::addNewColl ( const char *coll, bool saveIt,
 	// BEGIN NEW CODE
 	//
 
-	cr->m_maxToCrawl = -1;
-	cr->m_maxToProcess = -1;
-
 
 	// . this will core if a host was dead and then when it came
 	//   back up host #0's parms.cpp told it to add a new coll
@@ -382,8 +379,7 @@ bool Collectiondb::addNewColl ( const char *coll, bool saveIt,
 
 	// . assume we got some urls ready to spider
 	// . Spider.cpp will wait SPIDER_DONE_TIME seconds and if it has no
-	//   urls it spidered in that time these will get set to 0 and it
-	//   will send out an email alert if m_sentCrawlDoneAlert is not true.
+	//   urls it spidered in that time these will get set to 0
 	cr->m_localCrawlInfo.m_hasUrlsReadyToSpider = 1;
 	cr->m_globalCrawlInfo.m_hasUrlsReadyToSpider = 1;
 

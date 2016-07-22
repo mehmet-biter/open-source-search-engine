@@ -2263,8 +2263,6 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		return true;
 	}
 
-	const char *diffbotSuffix = strstr(url,"-diffbotxyz");
-
 	// if we have a thumbnail show it next to the search result,
 	// base64 encoded. do NOT do this for the WIDGET, only for search
 	// results in html/xml.
@@ -2405,7 +2403,6 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 
 		// truncate off -diffbotxyz%" PRId32"
 		int32_t newLen = urlLen;
-		if ( diffbotSuffix ) newLen = diffbotSuffix - url;
 		// print the url in the href tag
 		sb->safeMemcpy ( url , newLen ); 
 		// then finish the a href tag and start a bold for title
@@ -2442,7 +2439,6 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 				 "href=" );
 		// truncate off -diffbotxyz%" PRId32"
 		int32_t newLen = urlLen;
-		if ( diffbotSuffix ) newLen = diffbotSuffix - url;
 		// print the url in the href tag
 		sb->safeMemcpy ( url , newLen ); 
 		// then finish the a href tag and start a bold for title
@@ -2469,7 +2465,6 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		sb->safePrintf ( "<a href=" );
 		// truncate off -diffbotxyz%" PRId32"
 		int32_t newLen = urlLen;
-		if ( diffbotSuffix ) newLen = diffbotSuffix - url;
 		// print the url in the href tag
 		sb->safeMemcpy ( url , newLen ); 
 		// then finish the a href tag and start a bold for title

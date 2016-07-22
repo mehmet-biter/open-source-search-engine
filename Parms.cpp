@@ -3560,12 +3560,6 @@ void Parms::init ( ) {
 	m++;
 #endif
 
-	/////////////////////
-	//
-	// DIFFBOT CRAWLBOT PARMS
-	//
-	//////////////////////
-
 	///////////
 	//
 	// DO NOT INSERT parms above here, unless you set
@@ -3574,15 +3568,11 @@ void Parms::init ( ) {
 	//
 	///////////
 
-	m->m_cgi   = "dbtoken";
-	m->m_xml   = "diffbotToken";
-	m->m_off   = offsetof(CollectionRec,m_diffbotToken);
-	m->m_type  = TYPE_SAFEBUF;
-	m->m_page  = PAGE_NONE;
-	m->m_obj   = OBJ_COLL;
-	m->m_def   = "";
-	m->m_flags = PF_DIFFBOT;
-	m++;
+	/////////////////////
+	//
+	// DIFFBOT CRAWLBOT PARMS
+	//
+	//////////////////////
 
 	m->m_cgi   = "createdtime";
 	m->m_xml   = "collectionCreatedTime";
@@ -3607,107 +3597,6 @@ void Parms::init ( ) {
 	m->m_flags = PF_NOAPI;//PF_DIFFBOT; no i want to saveToXml
 	m++;
 
-	m->m_cgi   = "dbcrawlname";
-	m->m_xml   = "diffbotCrawlName";
-	m->m_off   = offsetof(CollectionRec,m_diffbotCrawlName);
-	m->m_type  = TYPE_SAFEBUF;
-	m->m_page  = PAGE_NONE;
-	m->m_obj   = OBJ_COLL;
-	m->m_def   = "";
-	m->m_flags = PF_DIFFBOT;
-	m++;
-
-	m->m_cgi   = "notifyEmail";
-	m->m_title = "notify email";
-	m->m_xml   = "notifyEmail";
-	m->m_off   = offsetof(CollectionRec,m_notifyEmail);
-	m->m_type  = TYPE_SAFEBUF;
-	m->m_page  = PAGE_NONE;
-	m->m_obj   = OBJ_COLL;
-	m->m_def   = "";
-	m->m_flags = PF_DIFFBOT;
-	m++;
-
-	// collective respider frequency (for pagecrawlbot.cpp)
-	m->m_title = "collective respider frequency (days)";
-	m->m_cgi   = "repeat";
-	m->m_xml   = "collectiveRespiderFrequency";
-	m->m_off   = offsetof(CollectionRec,m_collectiveRespiderFrequency);
-	m->m_type  = TYPE_FLOAT;
-	m->m_def   = "0.0"; // 0.0
-	m->m_page  = PAGE_NONE;
-	m->m_obj   = OBJ_COLL;
-	m->m_units = "days";
-	m->m_flags = PF_REBUILDURLFILTERS | PF_DIFFBOT;
-	m++;
-
-	m->m_title = "collective crawl delay (seconds)";
-	m->m_cgi   = "crawlDelay";
-	m->m_xml   = "collectiveCrawlDelay";
-	m->m_off   = offsetof(CollectionRec,m_collectiveCrawlDelay);
-	m->m_type  = TYPE_FLOAT;
-	m->m_def   = ".250"; // 250 ms
-	m->m_page  = PAGE_NONE;
-	m->m_obj   = OBJ_COLL;
-	m->m_flags = PF_REBUILDURLFILTERS | PF_DIFFBOT;
-	m->m_units = "seconds";
-	m++;
-
-	m->m_cgi   = "urlCrawlPattern";
-	m->m_xml   = "diffbotUrlCrawlPattern";
-	m->m_title = "url crawl pattern";
-	m->m_off   = offsetof(CollectionRec,m_diffbotUrlCrawlPattern);
-	m->m_type  = TYPE_SAFEBUF;
-	m->m_page  = PAGE_NONE;
-	m->m_obj   = OBJ_COLL;
-	m->m_def   = "";
-	m->m_flags = PF_REBUILDURLFILTERS | PF_DIFFBOT;
-	m++;
-
-	m->m_cgi   = "urlProcessPattern";
-	m->m_xml   = "diffbotUrlProcessPattern";
-	m->m_title = "url process pattern";
-	m->m_off   = offsetof(CollectionRec,m_diffbotUrlProcessPattern);
-	m->m_type  = TYPE_SAFEBUF;
-	m->m_page  = PAGE_NONE;
-	m->m_obj   = OBJ_COLL;
-	m->m_def   = "";
-	m->m_flags = PF_REBUILDURLFILTERS | PF_DIFFBOT;
-	m++;
-
-	m->m_cgi   = "pageProcessPattern";
-	m->m_xml   = "diffbotPageProcessPattern";
-	m->m_title = "page process pattern";
-	m->m_off   = offsetof(CollectionRec,m_diffbotPageProcessPattern);
-	m->m_type  = TYPE_SAFEBUF;
-	m->m_page  = PAGE_NONE;
-	m->m_obj   = OBJ_COLL;
-	m->m_def   = "";
-	m->m_flags = PF_REBUILDURLFILTERS | PF_DIFFBOT;
-	m++;
-
-	m->m_cgi   = "maxHops";
-	m->m_xml   = "diffbotHopcount";
-	m->m_title = "diffbot max hopcount";
-	m->m_off   = offsetof(CollectionRec,m_diffbotMaxHops);
-	m->m_type  = TYPE_LONG;
-	m->m_page  = PAGE_NONE;
-	m->m_obj   = OBJ_COLL;
-	m->m_def   = "-1";
-	m->m_flags = PF_REBUILDURLFILTERS | PF_DIFFBOT;
-	m++;
-
-	m->m_cgi   = "onlyProcessIfNew";
-	m->m_xml   = "diffbotOnlyProcessIfNew";
-	m->m_title = "onlyProcessIfNew";
-	m->m_off   = offsetof(CollectionRec,m_diffbotOnlyProcessIfNewUrl);
-	m->m_type  = TYPE_BOOL;
-	m->m_page  = PAGE_NONE;
-	m->m_obj   = OBJ_COLL;
-	m->m_def   = "1";
-	m->m_flags = PF_REBUILDURLFILTERS | PF_DIFFBOT;
-	m++;
-
 	m->m_cgi   = "seeds";
 	m->m_xml   = "diffbotSeeds";
 	m->m_off   = offsetof(CollectionRec,m_diffbotSeeds);
@@ -3716,39 +3605,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_COLL;
 	m->m_flags = PF_DIFFBOT;
 	m->m_def   = "";
-	m++;
-
-	m->m_cgi   = "maxToCrawl";
-	m->m_title = "max to crawl";
-	m->m_xml   = "maxToCrawl";
-	m->m_off   = offsetof(CollectionRec,m_maxToCrawl);
-	m->m_type  = TYPE_LONG_LONG;
-	m->m_page  = PAGE_NONE;
-	m->m_obj   = OBJ_COLL;
-	m->m_def   = "100000";
-	m->m_flags = PF_DIFFBOT;
-	m++;
-
-	m->m_cgi   = "maxToProcess";
-	m->m_title = "max to process";
-	m->m_xml   = "maxToProcess";
-	m->m_off   = offsetof(CollectionRec,m_maxToProcess);
-	m->m_type  = TYPE_LONG_LONG;
-	m->m_page  = PAGE_NONE;
-	m->m_obj   = OBJ_COLL;
-	m->m_def   = "-1";
-	m->m_flags = PF_DIFFBOT;
-	m++;
-
-	m->m_cgi   = "maxRounds";
-	m->m_title = "max crawl rounds";
-	m->m_xml   = "maxCrawlRounds";
-	m->m_off   = offsetof(CollectionRec,m_maxCrawlRounds);
-	m->m_type  = TYPE_LONG;
-	m->m_page  = PAGE_NONE;
-	m->m_obj   = OBJ_COLL;
-	m->m_def   = "-1";
-	m->m_flags = PF_DIFFBOT;
 	m++;
 
 	/////////////////////
@@ -9273,60 +9129,6 @@ void Parms::init ( ) {
 	m->m_flags = PF_CLONE ;//| PF_HIDDEN;
 	m++;
 
-	m->m_cgi   = "apiUrl";
-	m->m_desc  = "Send every spidered url to this url and index "
-		"the reply in addition to the normal indexing process. "
-		"Example: by specifying http://api.diffbot.com/v3/"
-		"analyze?mode=high-precision&token=<yourDiffbotToken> here "
-		"you can index the structured JSON replies from diffbot for "
-		"every url that is spidered. "
-		"Gigablast will automatically "
-		"append a &url=<urlBeingSpidered> to this url "
-		"before sending it to diffbot.";
-	m->m_xml   = "diffbotApiUrl";
-	m->m_title = "diffbot api url";
-	m->m_off   = offsetof(CollectionRec,m_diffbotApiUrl);
-	m->m_type  = TYPE_SAFEBUF;
-	m->m_page  = PAGE_SPIDER;
-	m->m_flags = PF_REBUILDURLFILTERS | PF_CLONE;
-	m->m_def   = "";
-	m->m_page  = PAGE_SPIDER;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_cgi   = "urlProcessPatternTwo";
-	m->m_desc  = "Only send urls that match this simple substring "
-		"pattern to Diffbot. Separate substrings with two pipe "
-		"operators, ||. Leave empty for no restrictions.";
-	m->m_xml   = "diffbotUrlProcessPattern";
-	m->m_title = "diffbot url process pattern";
-	m->m_off   = offsetof(CollectionRec,m_diffbotUrlProcessPattern);
-	m->m_type  = TYPE_SAFEBUF;
-	m->m_page  = PAGE_SPIDER;
-	m->m_obj   = OBJ_COLL;
-	m->m_def   = "";
-	m->m_group = false;
-	m->m_flags = PF_REBUILDURLFILTERS | PF_CLONE;
-	m++;
-
-	m->m_cgi   = "pageProcessPatternTwo";
-	m->m_desc  = "Only send urls whose content matches this simple "
-		"substring "
-		"pattern to Diffbot. Separate substrings with two pipe "
-		"operators, ||. "
-		"Leave empty for no restrictions.";
-	m->m_xml   = "diffbotPageProcessPattern";
-	m->m_title = "diffbot page process pattern";
-	m->m_off   = offsetof(CollectionRec,m_diffbotPageProcessPattern);
-	m->m_type  = TYPE_SAFEBUF;
-	m->m_page  = PAGE_SPIDER;
-	m->m_obj   = OBJ_COLL;
-	m->m_def   = "";
-	m->m_group = false;
-	m->m_flags = PF_REBUILDURLFILTERS | PF_CLONE;
-	m++;
-
-
 
 	m->m_title = "spider start time";
 	m->m_desc  = "Only spider URLs scheduled to be spidered "
@@ -12629,40 +12431,6 @@ bool Parms::updateParm ( char *rec , WaitEntry *we ) {
 			if ( ! cr2 ) continue;
 			cr2->m_localCrawlInfo.m_lastSpiderAttempt = 0;
 		}
-	}
-
-	//
-	// if user changed the crawl/process max then reset here so
-	// spiders will resume
-	//
-	if ( base == cr &&
-	     dst == (char *)&cr->m_maxToCrawl &&
-	     cr->m_spiderStatus == SP_MAXTOCRAWL ) {
-		// reset this for rebuilding of active spider collections
-		// so this collection can be in the linked list again
-		cr->m_spiderStatus = SP_INPROGRESS;
-		// rebuild list of active spider collections then
-		g_spiderLoop.m_activeListValid = false;
-	}
-
-	if ( base == cr &&
-	     dst == (char *)&cr->m_maxToProcess &&
-	     cr->m_spiderStatus == SP_MAXTOPROCESS ) {
-		// reset this for rebuilding of active spider collections
-		// so this collection can be in the linked list again
-		cr->m_spiderStatus = SP_INPROGRESS;
-		// rebuild list of active spider collections then
-		g_spiderLoop.m_activeListValid = false;
-	}
-
-	if ( base == cr &&
-	     dst == (char *)&cr->m_maxCrawlRounds &&
-	     cr->m_spiderStatus == SP_MAXROUNDS ) {
-		// reset this for rebuilding of active spider collections
-		// so this collection can be in the linked list again
-		cr->m_spiderStatus = SP_INPROGRESS;
-		// rebuild list of active spider collections then
-		g_spiderLoop.m_activeListValid = false;
 	}
 
 	//

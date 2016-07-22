@@ -591,11 +591,6 @@ subloopNextPriority:
 
 	//
 	// . if doing respider with roundstarttime....
-	// . roundstarttime is > 0 if m_collectiveRespiderFrequency
-	//   is > 0, unless it has not been set to current time yet
-	// . if m_collectiveRespiderFrequency was set to 0.0 then
-	//   PageCrawlBot.cpp also sets m_roundStartTime to 0.
-	//
 	if ( nowGlobal < cr->m_spiderRoundStartTime ) {
 		logTrace( g_conf.m_logTraceSpider, "Loop, Spider start time not reached" );
 		goto subloop;
@@ -1959,15 +1954,8 @@ void SpiderLoop::buildActiveList ( ) {
 		// stop if not enabled
 		bool active = true;
 		if ( ! cr->m_spideringEnabled ) active = false;
-		if ( cr->m_spiderStatus == SP_MAXROUNDS ) active = false;
-		if ( cr->m_spiderStatus == SP_MAXTOCRAWL ) active = false;
-		if ( cr->m_spiderStatus == SP_MAXTOPROCESS ) active = false;
 
 		// . if doing respider with roundstarttime....
-		// . roundstarttime is > 0 if m_collectiveRespiderFrequency
-		//   is > 0, unless it has not been set to current time yet
-		// . if m_collectiveRespiderFrequency was set to 0.0 then
-		//   PageCrawlBot.cpp also sets m_roundStartTime to 0.
 		if ( nowGlobal < cr->m_spiderRoundStartTime ) {
 			active = false;
 		}
@@ -2006,150 +1994,6 @@ void SpiderLoop::buildActiveList ( ) {
 	
 	logTrace( g_conf.m_logTraceSpider, "END" );
 }
-
-
-
-void doneSendingNotification ( void *state ) {
-	EmailInfo *ei = (EmailInfo *)state;
-	collnum_t collnum = ei->m_collnum;
-	CollectionRec *cr = g_collectiondb.m_recs[collnum];
-	if ( cr != ei->m_collRec ) cr = NULL;
-	const char *coll = "lostcoll";
-	if ( cr ) coll = cr->m_coll;
-	log(LOG_INFO,"spider: done sending notifications for coll=%s (%i)", 
-	    coll,(int)ei->m_collnum);
-
-	// all done if collection was deleted from under us
-	if ( ! cr ) return;
-
-	// do not re-call this stuff
-	cr->m_sendingAlertInProgress = false;
-
-	// mark it as sent. anytime a new url is spidered will mark this
-	// as false again! use LOCAL crawlInfo, since global is reset often.
-	cr->m_localCrawlInfo.m_sentCrawlDoneAlert = 1;//cr->m_spiderStatus;//1;
-
-	// be sure to save state so we do not re-send emails
-	cr->m_needsSave = 1;
-
-	// sanity
-	if ( cr->m_spiderStatus == 0 ) { g_process.shutdownAbort(true); }
-
-	float respiderFreq = cr->m_collectiveRespiderFrequency;
-
-	// if not REcrawling, set this to 0 so we at least update our
-	// round # and round start time...
-	if ( respiderFreq < 0.0 ) {
-		respiderFreq = 0.0;
-	}
-	
-	////////
-	//
-	// . we are here because hasUrlsReadyToSpider is false
-	// . we just got done sending an email alert
-	// . now increment the round only if doing rounds!
-	//
-	///////
-
-
-	// if not doing rounds, keep the round 0. they might want to up
-	// their maxToCrawl limit or something.
-	if ( respiderFreq <= 0.0 ) return;
-
-	// if we hit the max to crawl rounds, then stop!!! do not
-	// increment the round...
-	if ( cr->m_spiderRoundNum >= cr->m_maxCrawlRounds &&
-	     // there was a bug when maxCrawlRounds was 0, which should
-	     // mean NO max, so fix that here:
-	     cr->m_maxCrawlRounds > 0 ) return;
-
-	int32_t seconds = (int32_t)(respiderFreq * 24*3600);
-	// add 1 for lastspidertime round off errors so we can be assured
-	// all spiders have a lastspidertime LESS than the new
-	// m_spiderRoundStartTime we set below.
-	if ( seconds <= 0 ) seconds = 1;
-
-	// now update this round start time. all the other hosts should
-	// sync with us using the parm sync code, msg3e, every 13.5 seconds.
-	//cr->m_spiderRoundStartTime += respiderFreq;
-	char roundTime[128];
-	sprintf(roundTime,"%" PRIu32, (uint32_t)(getTimeGlobal() + seconds));
-	char roundStr[128];
-	sprintf(roundStr,"%" PRId32, cr->m_spiderRoundNum + 1);
-
-	// we have to send these two parms to all in cluster now INCLUDING
-	// ourselves, when we get it in Parms.cpp there's special
-	// code to set this *ThisRound counts to 0!!!
-	SafeBuf parmList;
-	g_parms.addNewParmToList1 ( &parmList,cr->m_collnum,roundStr,-1 ,
-				    "spiderRoundNum");
-	g_parms.addNewParmToList1 ( &parmList,cr->m_collnum,roundTime, -1 ,
-				    "spiderRoundStart");
-
-	//g_parms.addParmToList1 ( &parmList , cr , "spiderRoundNum" ); 
-	//g_parms.addParmToList1 ( &parmList , cr , "spiderRoundStart" ); 
-	// this uses msg4 so parm ordering is guaranteed
-	g_parms.broadcastParmList ( &parmList , NULL , NULL );
-
-	// log it
-	log("spider: new round #%" PRId32" starttime = %" PRIu32" for %s"
-	    , cr->m_spiderRoundNum
-	    , (uint32_t)cr->m_spiderRoundStartTime
-	    , cr->m_coll
-	    );
-}
-
-bool sendNotificationForCollRec ( CollectionRec *cr )  {
-	// wtf? caller must set this
-	if ( ! cr->m_spiderStatus ) { g_process.shutdownAbort(true); }
-
-	log(LOG_INFO,
-	    "spider: sending notification for crawl status %" PRId32" in "
-	    "coll %s. "
-	    ,(int32_t)cr->m_spiderStatus
-	    ,cr->m_coll
-	    );
-
-	if ( cr->m_sendingAlertInProgress ) return true;
-
-	// ok, send it
-	EmailInfo *ei = (EmailInfo *)mcalloc ( sizeof(EmailInfo),"eialrt");
-	if ( ! ei ) {
-		log("spider: could not send email alert: %s",
-		    mstrerror(g_errno));
-		return true;
-	}
-
-	// set it up
-	ei->m_finalCallback = doneSendingNotification;
-	ei->m_finalState    = ei;
-	ei->m_collnum       = cr->m_collnum;
-	// collnums can be recycled, so ensure collection with the ptr
-	ei->m_collRec       = cr;
-
-	SafeBuf *buf = &ei->m_spiderStatusMsg;
-	// stop it from accumulating status msgs
-	buf->reset();
-	int32_t status = -1;
-	getSpiderStatusMsg ( cr , buf , &status );
-					 
-	// if no email address or webhook provided this will not block!
-	// DISABLE THIS UNTIL FIXED
-
-	// do not re-call this stuff
-	cr->m_sendingAlertInProgress = true;
-
-	// ok, put it back...
-	if ( ! sendNotification ( ei ) ) return false;
-
-	// so handle this ourselves in that case:
-	doneSendingNotification ( ei );
-	
-	mfree ( ei , sizeof(EmailInfo) ,"eialrt" );
-
-	return true;
-}
-
 
 // hostId is the remote hostid sending us the lock request
 void removeExpiredLocks ( int32_t hostId ) {
@@ -2428,8 +2272,7 @@ void gotCrawlInfoReply ( void *state , UdpSlot *slot ) {
 		s_countsAreValid = false;
 	} else {
 		if ( ! s_countsAreValid )
-			log("spider: got all crawlinfo replies. all shards "
-			    "up. spidering back on.");
+			log("spider: got all crawlinfo replies. all shards up. spidering back on.");
 		s_countsAreValid = true;
 	}
 
@@ -2492,8 +2335,7 @@ void gotCrawlInfoReply ( void *state , UdpSlot *slot ) {
 			if ( cr->m_spiderStatus == SP_INITIALIZING )
 				cr->m_spiderStatus = SP_INPROGRESS;
 			// i guess we are back in business even if
-			// m_spiderStatus was SP_MAXTOCRAWL or 
-			// SP_ROUNDDONE...
+			// m_spiderStatus was SP_ROUNDDONE...
 			cr->m_spiderStatus = SP_INPROGRESS;
 
 			// revival?
@@ -2513,28 +2355,7 @@ void gotCrawlInfoReply ( void *state , UdpSlot *slot ) {
 			cr->m_diffbotCrawlEndTime = getTimeGlobalNoCore();
 		}
 
-		// should we reset our "sent email" flag?
-		bool reset = false;
-
-		// can't reset if we've never sent an email out yet
-		if ( cr->m_localCrawlInfo.m_sentCrawlDoneAlert ) reset = true;
-		    
-		// must have some urls ready to spider now so we can send
-		// another email after another round of spidering
-		if (!cr->m_globalCrawlInfo.m_hasUrlsReadyToSpider) reset=false;
-
-		// . if we have urls ready to be spidered then prepare to send
-		//   another email/webhook notification.
-		// . do not reset this flag if SP_MAXTOCRAWL etc otherwise we 
-		//   end up sending multiple notifications, so this logic here
-		//   is only for when we are done spidering a round, which 
-		//   happens when hasUrlsReadyToSpider goes false for all 
-		//   shards.
-		if ( reset ) {
-			log("spider: resetting sent crawl done alert to 0 "
-			    "for coll %s",cr->m_coll);
-			cr->m_localCrawlInfo.m_sentCrawlDoneAlert = 0;
-		}
+		// crawl notification: reset done alert flag here if cr->m_globalCrawlInfo.m_hasUrlsReadyToSpider is true
 
 		// update cache time
 		cr->m_globalCrawlInfo.m_lastUpdateTime = getTime();
@@ -2567,36 +2388,17 @@ void gotCrawlInfoReply ( void *state , UdpSlot *slot ) {
 		if ( cr->m_globalCrawlInfo.m_hasUrlsReadyToSpider ) 
 			continue;
 
-		// update status if nto already SP_MAXTOCRAWL, etc. we might
-		// just be flat out of urls
+		// update status
 		if ( ! cr->m_spiderStatus || 
 		     cr->m_spiderStatus == SP_INPROGRESS ||
 		     cr->m_spiderStatus == SP_INITIALIZING )
 			cr->m_spiderStatus = SP_ROUNDDONE;
 
-		//
-		// TODO: set the spiderstatus outright here...
-		// maxtocrawl, maxtoprocess, etc. based on the counts.
-		//
-
 		// only host #0 sends emails
 		if ( g_hostdb.m_myHost->m_hostId != 0 )
 			continue;
 
-		// . if already sent email for this, skip
-		// . localCrawlInfo stores this value on disk so persistent
-		// . we do it this way so SP_ROUNDDONE can be emailed and then
-		//   we'd email SP_MAXROUNDS to indicate we've hit the maximum
-		//   round count. 
-		if ( cr->m_localCrawlInfo.m_sentCrawlDoneAlert ) {
-			// debug
-			logf(LOG_DEBUG,"spider: already sent alert for %s"
-			     , cr->m_coll);
-			continue;
-		}
-
-		// do email and web hook...
-		sendNotificationForCollRec ( cr );
+		// crawl notification: send notification here if necessary
 
 		// deal with next collection rec
 	}
