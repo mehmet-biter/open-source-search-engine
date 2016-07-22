@@ -443,7 +443,6 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 			desc = tt;
 		}
 		if ( msgType == 0x0c ) desc = "getting ip";
-		if ( msgType == 0x0d ) desc = "get outlink ips/qualities";
 		if ( msgType == 0x11 ) desc = "ping";
 		if ( msgType == 0x12 ) desc = "get lock";
 		if ( msgType == 0x06 ) desc = "spider lock";
