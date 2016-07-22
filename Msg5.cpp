@@ -550,7 +550,6 @@ bool Msg5::readList ( ) {
 }
 
 bool Msg5::needsRecall ( ) {
-	bool logIt;
 	// get base, returns NULL and sets g_errno to ENOCOLLREC on error
 	RdbBase *base = getRdbBase ( m_rdbId , m_collnum );
 	// if collection was deleted from under us, base will be NULL
@@ -567,26 +566,24 @@ bool Msg5::needsRecall ( ) {
 	//   endKey to better meat m_minRecSizes but because of 
 	//   positive/negative record annihilation on variable-length
 	//   records it won't read enough
-	if ( g_errno                         ) goto done;
-	if ( m_newMinRecSizes    <= 0        ) goto done;
+	if ( g_errno                         ) return false;
+	if ( m_newMinRecSizes    <= 0        ) return false;
 	// limit to just doledb for now in case it results in data loss
 	if(m_readAbsolutelyNothing&&
 	   (m_rdbId==RDB_DOLEDB||m_rdbId==RDB_SPIDERDB ) ) 
-		goto done;
+		return false;
 	// seems to be ok, let's open it up to fix this bug where we try
 	// to read too many bytes a small titledb and it does an infinite loop
 	if ( m_readAbsolutelyNothing ) {
 		log("rdb: read absolutely nothing more for dbname=%s on cn=%" PRId32,
 		    base->m_dbname,(int32_t)m_collnum);
-		goto done;
+		return false;
 	}
-	if ( KEYCMP(m_list->getEndKey(),m_endKey,m_ks)>=0 ) goto done;
+	if ( KEYCMP(m_list->getEndKey(),m_endKey,m_ks)>=0 ) return false;
 
 	// this is kinda important. we have to know if we are abusing
 	// the disk... we should really keep stats on this...
-	logIt = true;
-	// seems to be very common for doledb, so don't log unless extreme
-	//if ( m_rdbId == RDB_DOLEDB && m_round < 15 ) logIt = false;
+	bool logIt = true;
 	if ( m_round > 100 && (m_round % 1000) != 0 ) logIt = false;
 	// seems very common when doing rebalancing then merging to have
 	// to do at least one round of re-reading, so note that
@@ -608,10 +605,6 @@ bool Msg5::needsRecall ( ) {
 
 	// try to read more from disk
 	return true;
- done:
-
-	// return false cuz we don't need a recall
-	return false;
 }
 
 
