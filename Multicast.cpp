@@ -881,8 +881,6 @@ void sleepWrapper1 ( int bogusfd , void    *state ) {
 		//if ( wait < 120000 ) wait = 120000;
 		if ( elapsed < wait ) return; 
 		break;
-	// these tagdb lookups are usually lickety split, should all be in mem
-	case 0x08: if ( elapsed <    10 ) return; break;
 	// don't relaunch anything else unless over 8 secs
 	default:   if ( elapsed <  8000 ) return; break;
 	}
@@ -898,17 +896,9 @@ void sleepWrapper1 ( int bogusfd , void    *state ) {
 		hd = THIS->m_hostPtrs[1];
 	// 11/21/06: now we only reroute if the host we sent to is marked as
 	// dead unless it is a msg type that takes little reply generation time
-	if ( hd && // hid >= 0 && 
-	     //! g_hostdb.isDead(hid) && 
-	     ! g_hostdb.isDead(hd) && 
-	     //m_msgType != 0x36      && (see above)
-	     //m_msgType != 0x17      &&
-	     // hosts freezeup sometimes and we don't get a summary in time...
-	     // no! we got EDISKSTUCK now and this was causing a problem
-	     // dumping core in the parse cache logic
-	     //THIS->m_msgType != 0x20  &&
-	     THIS->m_msgType != 0x08 )
-	         return;
+	if ( hd && ! g_hostdb.isDead(hd)  ) {
+		return;
+	}
 
 redirectTimedout:
 	// cancel any outstanding transactions iff we have a m_replyBuf
@@ -945,8 +935,6 @@ redirectTimedout:
 		// flood the logs with it
 		int32_t logtype = LOG_WARN;
 		if ( THIS->m_msgType == 0x36 ) logtype = LOG_DEBUG;
-		// same goes for msg8
-		if ( THIS->m_msgType == 0x08 ) logtype = LOG_DEBUG;
 		// log msg that we were successful
 		int32_t hid = -1;
 		if ( hd ) hid = hd->m_hostId;
