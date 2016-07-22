@@ -331,10 +331,7 @@ class UdpServer {
 
 	// like m_requestsInWaiting but requests which spawn other requests
 	int32_t   m_msg07sInWaiting;
-	int32_t   m_msg10sInWaiting;
 	int32_t   m_msgc1sInWaiting;
-	//int32_t   m_msgDsInWaiting;
-	//int32_t   m_msg23sInWaiting;
 	int32_t   m_msg25sInWaiting;
 	int32_t   m_msg50sInWaiting;
 	int32_t   m_msg39sInWaiting;

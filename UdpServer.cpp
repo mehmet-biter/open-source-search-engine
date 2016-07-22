@@ -180,10 +180,7 @@ bool UdpServer::init ( uint16_t port, UdpProtocol *proto,
 	m_requestsInWaiting = 0;
 	// special count
 	m_msg07sInWaiting = 0;
-	m_msg10sInWaiting = 0;
 	m_msgc1sInWaiting = 0;
-	//m_msgDsInWaiting = 0;
-	//m_msg23sInWaiting = 0;
 	m_msg25sInWaiting = 0;
 	m_msg50sInWaiting = 0;
 	m_msg39sInWaiting = 0;
@@ -1124,19 +1121,11 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 		bool isProxy = g_proxy.isProxy();
 		// do not read any incoming request if half the slots are
 		// being used for incoming requests right now. we don't want
-		// to lose all of our memory just to hold Msg10 requests
-		// which are about 25k each. restrict this to Msg10s fo rnow.
-		// these are like 1MB each NOW!!! WHY??? reduce from 100 to 20.
-		// these seem to be 227k each now, so raised from 20 to 50
-		// especially since the g_alreadyAdded cache has a 84% hit
-		// rate, these are pretty lightweight. msg 0x10 reply gen times
-		// are VERY low. MDW
+		// to lose all of our memory. MDW
 		bool getSlot = true;
 		if ( msgType == 0x07 && m_msg07sInWaiting >= 100 )
 			getSlot = false;
 
-		if ( msgType == 0x10 && m_msg10sInWaiting >= 50 ) 
-			getSlot = false;
 		// crawl update info from Spider.cpp
 		if ( msgType == 0xc1 && m_msgc1sInWaiting >= 100 ) 
 			getSlot = false;
@@ -1326,7 +1315,6 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 			m_requestsInWaiting++;
 			// special count
 			if ( msgType == 0x07 ) m_msg07sInWaiting++;
-			if ( msgType == 0x10 ) m_msg10sInWaiting++;
 			if ( msgType == 0xc1 ) m_msgc1sInWaiting++;
 			//if ( msgType == 0xd  ) m_msgDsInWaiting++;
 			//if ( msgType == 0x23 ) m_msg23sInWaiting++;
@@ -2431,7 +2419,6 @@ void UdpServer::destroySlot ( UdpSlot *slot ) {
 		m_requestsInWaiting--;
 		// special count
 		if ( slot->m_msgType == 0x07 ) m_msg07sInWaiting--;
-		if ( slot->m_msgType == 0x10 ) m_msg10sInWaiting--;
 		if ( slot->m_msgType == 0xc1 ) m_msgc1sInWaiting--;
 		//if ( slot->m_msgType == 0xd  ) m_msgDsInWaiting--;
 		//if ( slot->m_msgType == 0x23 ) m_msg23sInWaiting--;
