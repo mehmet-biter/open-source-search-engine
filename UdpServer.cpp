@@ -776,20 +776,13 @@ UdpSlot *UdpServer::getBestSlotToSend ( int64_t now ) {
 }
 
 // . must give level of niceness for continuing the transaction at that lvl
-bool UdpServer::registerHandler ( unsigned char msgType , 
-				  void (* handler)(UdpSlot *, int32_t niceness) ,
-				  bool isHandlerHot ){
+bool UdpServer::registerHandler( unsigned char msgType, void (* handler)(UdpSlot *, int32_t niceness) ) {
 	if ( m_handlers[msgType] ) {
 		log( LOG_LOGIC, "udp: msgType %02x already in use.", msgType );
 		return false;
 	}
-	// we now support types 0x00 to 0xff
-	//if ( msgType >= 0x40 ) {
-	//	log(LOG_LOGIC,"udp: msg type must be <= 0x3f.");
-	//	g_process.shutdownAbort(true);
-	//}
-	m_handlers     [ msgType ] = handler; 
-	m_isHandlerHot [ msgType ] = isHandlerHot;
+
+	m_handlers     [ msgType ] = handler;
 	return true;
 }
 

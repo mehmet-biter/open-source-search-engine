@@ -173,9 +173,7 @@ class UdpServer {
 	// . returns false on error
 	// . if you want the handler to be called while in an async signal
 	//   handler then set "isHandlerHot" to true
-	bool registerHandler ( unsigned char msgType, 
-			       void(* handler)(UdpSlot *,int32_t) ,
-			       bool isHandlerHot = false );
+	bool registerHandler ( unsigned char msgType, void(* handler)(UdpSlot *,int32_t) );
 
 	// . frees the m_readBuf and m_sendBuf
 	// . marks the slot as available
@@ -304,9 +302,6 @@ class UdpServer {
 
 	// for defining your own protocol on top of udp
 	UdpProtocol *m_proto;
-
-	// is the handler meant to be called from an async signal handler?
-	bool m_isHandlerHot [ MAX_MSG_TYPES ];
 
 	// . we need a transaction id for every transaction so we can match
 	//   incoming reply msgs with their corresponding request msgs
