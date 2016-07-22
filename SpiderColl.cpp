@@ -3259,7 +3259,9 @@ bool SpiderColl::scanListForWinners ( ) {
 		// . add to table which allows us to ensure same url not 
 		//   repeated in tree
 		// . just skip if fail to add...
-		if ( m_winnerTable.addKey ( &uh48 , &wk ) < 0 ) continue;
+		if ( ! m_winnerTable.addKey ( &uh48 , &wk ) ) {
+			continue;
+		}
 
 		// use an individually allocated buffer for each spiderrequest
 		// so if it gets removed from tree the memory can be freed by 
@@ -3271,76 +3273,7 @@ bool SpiderColl::scanListForWinners ( ) {
 		if ( ! newMem ) continue;
 
 		// add it to the tree of the top urls to spider
-		m_winnerTree.addNode( 0, 
-				      (char *)&wk ,
-				      (char *)newMem ,
-				      need );
-
-		// log("adding wk uh48=%llu #usednodes=%i",
-		//     uh48,m_winnerTree.m_numUsedNodes);
-
-		// sanity
-		//SpiderRequest *sreq2 = (SpiderRequest *)m_winnerTree.
-		//getData ( nn );
-
-		// //////////////////////
-		// // MDW dedup test
-		// HashTableX dedup;
-		// int32_t ntn = m_winnerTree.getNumNodes();
-		// char dbuf[3*MAX_WINNER_NODES*(8+1)];
-		// dedup.set ( 8,
-		// 	    0,
-		// 	    (int32_t)2*ntn, // # slots to initialize to
-		// 	    dbuf,
-		// 	    (int32_t)(3*MAX_WINNER_NODES*(8+1)),
-		// 	    false,
-		// 	    MAX_NICENESS,
-		// 	    "windt");
-		// for ( int32_t node = m_winnerTree.getFirstNode() ; 
-		//       node >= 0 ; 
-		//       node = m_winnerTree.getNextNode ( node ) ) {
-		// // get data for that
-		// SpiderRequest *sreq2;
-		// sreq2 = (SpiderRequest *)m_winnerTree.getData ( node );
-		// // parse it up
-		// int32_t winIp;
-		// int32_t winPriority;
-		// int32_t winHopCount;
-		// int64_t winSpiderTimeMS;
-		// int64_t winUh48;
-		// key192_t *winKey = (key192_t *)m_winnerTree.getKey ( node );
-		// parseWinnerTreeKey ( winKey ,
-		// 		     &winIp ,
-		// 		     &winPriority,
-		// 		     &winHopCount,
-		// 		     &winSpiderTimeMS ,
-		// 		     &winUh48 );
-		// // sanity
-		//if(winUh48 != sreq2->getUrlHash48() ) { g_process.shutdownAbort(true);}
-		// // make the doledb key
-		// key_t doleKey = g_doledb.makeKey ( winPriority,
-		// 				   // convert to secs from ms
-		// 				   winSpiderTimeMS / 1000     ,
-		// 				   winUh48 ,
-		// 				   false                    );
-		// // dedup. if we add dups the problem is is that they
-		// // overwrite the key in doledb yet the doleiptable count
-		// // remains undecremented and doledb is empty and never
-		// // replenished because the firstip can not be added to
-		// // waitingTree because doleiptable count is > 0. this was
-		// // causing spiders to hang for collections. i am not sure
-		// // why we should be getting dups in winnertree because they
-		// // have the same uh48 and that is the key in the tree.
-		// if ( dedup.isInTable ( &winUh48 ) ) {
-		// 	log("spider: got dup uh48=%" PRIu64" dammit", winUh48);
-		// 	g_process.shutdownAbort(true);
-		// 	continue;
-		// }
-		// // do not allow dups
-		// dedup.addKey ( &winUh48 );
-		// }
-		// // end dedup test
-		//////////////////////////
+		m_winnerTree.addNode( 0, (char *)&wk, (char *)newMem, need );
 
 		// set new tail priority and time for next compare
 		if ( m_winnerTree.getNumUsedNodes() >= maxWinners ) {
@@ -3351,14 +3284,12 @@ bool SpiderColl::scanListForWinners ( ) {
 			key192_t *tailKey;
 			tailKey = (key192_t *)m_winnerTree.getKey ( tailNode );
 			// convert to char first then to signed int32_t
-			parseWinnerTreeKey ( tailKey ,
-					     &m_tailIp ,
-					     &m_tailPriority,
-					     &m_tailHopCount,
-					     &m_tailTimeMS ,
-					     &m_tailUh48 );
+			parseWinnerTreeKey ( tailKey, &m_tailIp, &m_tailPriority, &m_tailHopCount, &m_tailTimeMS, &m_tailUh48 );
+
 			// sanity
-			if ( m_tailIp != firstIp ) { g_process.shutdownAbort(true);}
+			if ( m_tailIp != firstIp ) {
+				g_process.shutdownAbort(true);
+			}
 		}
 
 		/*
