@@ -1773,7 +1773,6 @@ uint32_t Hostdb::getShardNum ( char rdbId, const void *k ) {
 
 	// core -- must be provided
 	g_process.shutdownAbort(true);
-	return 0;
 }
 
 uint32_t Hostdb::getShardNumFromDocId ( int64_t d ) {
