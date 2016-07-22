@@ -696,19 +696,6 @@ void printStackTrace (bool print_location) {
 		char cmd[256];
 		sprintf(cmd,"addr2line -e %s 0x%" PRIx64, process, (uint64_t)s_bt[i]);
 		logf(LOG_ERROR, "%s", cmd);
-
-		if (print_location) {
-			FILE *output = gbpopen(cmd);
-			if ( output ) {
-				while ( ! feof(output) ) {
-					char buf[256];
-					if ( fgets(buf, 256, output) ) {
-						buf[strlen(buf) - 1] = '\0';
-						logf(LOG_ERROR, "%s", buf);
-					}
-				}
-			}
-		}
 	}
 }
 
