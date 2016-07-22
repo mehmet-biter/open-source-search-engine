@@ -607,9 +607,6 @@ bool Msg5::needsRecall ( ) {
 	// try to read more from disk
 	return true;
  done:
-	// . reset merged list ptr
-	// . merge_r() never rests the list ptr, m_listPtr
-	if ( m_list ) m_list->resetListPtr();
 
 	// return false cuz we don't need a recall
 	return false;
@@ -1159,6 +1156,7 @@ void Msg5::mergeLists_r ( ) {
 	//   to do the merge to do the annihilation
 	//else
 	m_list->merge_r ( m_listPtrs, m_numListPtrs, m_startKey, m_minEndKey, m_minRecSizes, m_removeNegRecs, m_rdbId, niceness );
+	m_list->resetListPtr(); //merge_r() doesn't rewind the list iterator/pointer (?)
 	
 	// maintain this info for truncation purposes
 	if ( m_list->isLastKeyValid() ) 
