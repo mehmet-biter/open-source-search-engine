@@ -76,14 +76,6 @@ bool Proxy::initHttpServer ( uint16_t httpPort,
 
 bool Proxy::initProxy ( int32_t proxyId, uint16_t udpPort,
 			uint16_t udpPort2,UdpProtocol *dp ) {
-	// let's ensure our core file can dump
-	struct rlimit lim;
-	lim.rlim_cur = lim.rlim_max = RLIM_INFINITY;
-	if ( setrlimit(RLIMIT_CORE,&lim) ){
-		log("proxy: setrlimit: core: %s", mstrerror(errno) );
-		return false;
-	}
-
 	m_proxyId = proxyId;
 
 	// set this in Hostdb too!

@@ -770,13 +770,7 @@ int main2 ( int argc , char *argv[] ) {
 	log(LOG_INFO,"db: Stack size is %" PRId64".", (int64_t)rl.rlim_cur);
 
 
-	// let's ensure our core file can dump
 	struct rlimit lim;
-	lim.rlim_cur = lim.rlim_max = RLIM_INFINITY;
-	if ( setrlimit(RLIMIT_CORE,&lim) ) {
-		log("db: setrlimit: %s.", mstrerror(errno) );
-	}
-
 	// limit fds
 	// try to prevent core from systems where it is above 1024
 	// because our FD_ISSET() libc function will core! (it's older)

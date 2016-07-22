@@ -1,7 +1,7 @@
 #include "gb-include.h"
 
 #include "Mem.h"
-#include <sys/time.h>      // setrlimit()
+#include <sys/time.h>
 
 #include "SafeBuf.h"
 #include "Pages.h"

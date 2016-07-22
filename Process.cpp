@@ -653,13 +653,6 @@ void Process::shutdownAbort ( bool save_on_abort ) {
 		shutdown(true);
 	}
 
-	// let's ensure our core file can dump
-	rlimit lim;
-	lim.rlim_cur = lim.rlim_max = RLIM_INFINITY;
-	if ( setrlimit(RLIMIT_CORE, &lim) ) {
-		log(LOG_ERROR, "gb: setrlimit: %s", mstrerror(errno) );
-	}
-
 	abort();
 }
 
@@ -947,13 +940,6 @@ bool Process::shutdown2() {
 		// at least destroy the page caches that have shared memory
 		// because they seem to not clean it up
 		//resetPageCaches();
-
-		// let's ensure our core file can dump
-		struct rlimit lim;
-		lim.rlim_cur = lim.rlim_max = RLIM_INFINITY;
-		if ( setrlimit(RLIMIT_CORE, &lim) ) {
-			log( LOG_WARN, "gb: setrlimit: %s.", mstrerror(errno) );
-		}
 
 		// this is the trick: it will trigger the core dump by
 		// calling the original SIGSEGV handler.

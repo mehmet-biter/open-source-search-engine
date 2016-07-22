@@ -28,12 +28,6 @@ Blaster::~Blaster() {
 
 
 bool Blaster::init(){
-	// let's ensure our core file can dump
-	struct rlimit lim;
-	lim.rlim_cur = lim.rlim_max = RLIM_INFINITY;
-	if ( setrlimit(RLIMIT_CORE,&lim) )
-		log("blaster::setrlimit: %s", mstrerror(errno) );
-	
 	g_conf.m_maxMem = 500000000;
 	
 	// init our table for doing zobrist hashing
