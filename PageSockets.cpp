@@ -461,7 +461,6 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 		}
 		if ( msgType == 0x09 ) desc = "add site";
 		if ( msgType == 0x08 ) desc = "get site";
-		if ( msgType == 0x8b ) desc = "get catid";
 		if ( msgType == 0x34 ) desc = "get load";
 		if ( msgType == 0x02 ) desc = "get lists";
 		if ( msgType == 0x22 ) desc = "get titlerec";

@@ -883,9 +883,6 @@ void sleepWrapper1 ( int bogusfd , void    *state ) {
 		break;
 	// these tagdb lookups are usually lickety split, should all be in mem
 	case 0x08: if ( elapsed <    10 ) return; break;
-	// this no longer exists! it uses msg0
-	//case 0x8a: if ( elapsed <    200 ) return; break;
-	case 0x8b: if ( elapsed <    10 ) return; break;
 	// don't relaunch anything else unless over 8 secs
 	default:   if ( elapsed <  8000 ) return; break;
 	}
@@ -910,9 +907,7 @@ void sleepWrapper1 ( int bogusfd , void    *state ) {
 	     // no! we got EDISKSTUCK now and this was causing a problem
 	     // dumping core in the parse cache logic
 	     //THIS->m_msgType != 0x20  &&
-	     THIS->m_msgType != 0x08  &&
-	     //THIS->m_msgType != 0x8a  &&
-	     THIS->m_msgType != 0x8b    )
+	     THIS->m_msgType != 0x08 )
 	         return;
 
 redirectTimedout:
@@ -952,8 +947,6 @@ redirectTimedout:
 		if ( THIS->m_msgType == 0x36 ) logtype = LOG_DEBUG;
 		// same goes for msg8
 		if ( THIS->m_msgType == 0x08 ) logtype = LOG_DEBUG;
-		//if ( THIS->m_msgType == 0x8a ) logtype = LOG_DEBUG;
-		if ( THIS->m_msgType == 0x8b ) logtype = LOG_DEBUG;
 		// log msg that we were successful
 		int32_t hid = -1;
 		if ( hd ) hid = hd->m_hostId;
