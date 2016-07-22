@@ -12,7 +12,6 @@
 
 //#define GBSANITYCHECK
 
-static void gotListWrapper ( void *state ) ;
 
 int32_t g_numCorrupt = 0;
 
@@ -615,28 +614,32 @@ bool Msg5::needsRecall ( ) {
 	return false;
 }
 
-static void gotListWrapper ( void *state ) {
-	Msg5 *THIS = (Msg5 *) state;
+
+void Msg5::gotListWrapper(void *state) {
+	Msg5 *that = static_cast<Msg5*>(state);
+	that->gotListWrapper();
+}
+
+void Msg5::gotListWrapper() {
 	// . this sets g_errno on error
 	// . this will merge cache/tree and disk lists into m_list
 	// . it will update m_newMinRecSizes
 	// . it will also update m_fileStartKey to the endKey of m_list + 1
 	// . returns false if it blocks
-	if ( ! THIS->gotList ( ) ) return;
+	if ( ! gotList ( ) ) return;
 	// . throw it back into the loop if necessary
 	// . only returns true if COMPLETELY done
-	if ( THIS->needsRecall() && ! THIS->readList() ) return;
+	if ( needsRecall() && ! readList() ) return;
 	// sanity check
-	if ( THIS->m_calledCallback ) { g_process.shutdownAbort(true); }
+	if ( m_calledCallback ) { g_process.shutdownAbort(true); }
 	// set it now
-	THIS->m_calledCallback = 1;
+	m_calledCallback = 1;
 	// we are no longer waiting for the list
-	THIS->m_waitingForList = false;
+	m_waitingForList = false;
 	// when completely done call the callback
-	THIS->m_callback ( THIS->m_state , THIS->m_list , THIS );
+	m_callback ( m_state, m_list, this );
 }
 
-static void threadDoneWrapper   ( void *state, job_exit_t exit_type );
 static void mergeListsWrapper_r ( void *state );
 
 
@@ -1005,9 +1008,13 @@ void mergeListsWrapper_r ( void *state ) {
 // . now we're done merging
 // . when the thread is done we get control back here, in the main process
 // Use of ThreadEntry parameter is NOT thread safe
-static void threadDoneWrapper ( void *state, job_exit_t /*exit_type*/ ) {
+void Msg5::threadDoneWrapper ( void *state, job_exit_t exit_type) {
+	Msg5 *that = static_cast<Msg5*>(state);
+	that->threadDoneWrapper(exit_type);
+}
+
+void Msg5::threadDoneWrapper(job_exit_t /*exit_type*/) {
 	// we MAY be in a thread now
-	Msg5 *THIS = (Msg5 *)state;
 
 	// debug msg
 	//log("msg3 back from merge thread (msg5=%" PRIu32")",THIS->m_state);
@@ -1017,23 +1024,23 @@ static void threadDoneWrapper ( void *state, job_exit_t /*exit_type*/ ) {
 	// . sets g_errno on error
 	// . only blocks if calls msg0 to patch a corrupted list
 	// . it will handle calling callback if that happens
-	if ( ! THIS->doneMerging() ) return;
+	if ( ! doneMerging() ) return;
 
 	// . throw it back into the loop if necessary
 	// . only returns true if COMPLETELY done
-	if ( THIS->needsRecall() && ! THIS->readList() ) return;
+	if ( needsRecall() && ! readList() ) return;
 
 	// sanity check
-	if ( THIS->m_calledCallback ) { g_process.shutdownAbort(true); }
+	if ( m_calledCallback ) { g_process.shutdownAbort(true); }
 
 	// we are no longer waiting for the list
-	THIS->m_waitingForList = false;
+	m_waitingForList = false;
 
 	// set it now
-	THIS->m_calledCallback = 3;
+	m_calledCallback = 3;
 
 	// when completely done call the callback
-	THIS->m_callback ( THIS->m_state , THIS->m_list , THIS );
+	m_callback ( m_state, m_list, this );
 }
 
 // check lists in the thread
@@ -1359,7 +1366,7 @@ bool Msg5::doneMerging ( ) {
 	return true;
 }
 
-void gotRemoteListWrapper( void *state );//, RdbList *list ) ;
+
 
 int32_t g_isDumpingRdbFromMain = 0;
 
@@ -1467,7 +1474,7 @@ bool Msg5::getRemoteList ( ) {
 	return gotRemoteList ( ) ;
 }
 
-void gotRemoteListWrapper( void *state ) { // , RdbList *list ) {
+void Msg5::gotRemoteListWrapper( void *state ) {
 	Msg5 *THIS = (Msg5 *)state;
 	// return if this blocks
 	if ( ! THIS->gotRemoteList() ) return;

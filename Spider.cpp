@@ -843,7 +843,7 @@ bool tryToDeleteSpiderColl ( SpiderColl *sc , const char *msg ) {
 	// if not being deleted return false
 	if ( ! sc->m_deleteMyself ) return false;
 	// otherwise always return true
-	if ( sc->m_msg5b.m_waitingForList ) {
+	if ( sc->m_msg5b.isWaitingForList() ) {
 		log("spider: deleting sc=0x%" PTRFMT" for collnum=%" PRId32" "
 		    "waiting1",
 		    (PTRTYPE)sc,(int32_t)sc->m_collnum);
@@ -862,7 +862,7 @@ bool tryToDeleteSpiderColl ( SpiderColl *sc , const char *msg ) {
 		return true;
 	}
 	// this means msg5 is out
-	if ( sc->m_msg5.m_waitingForList ) {
+	if ( sc->m_msg5.isWaitingForList() ) {
 		log("spider: deleting sc=0x%" PTRFMT" for collnum=%" PRId32" "
 		    "waiting4",
 		    (PTRTYPE)sc,(int32_t)sc->m_collnum);

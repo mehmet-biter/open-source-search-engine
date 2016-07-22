@@ -805,8 +805,8 @@ void gotListWrapper ( void *state , RdbList *listb , Msg5 *msg5xx ) {
 	// keep track of how long it takes to complete the send
 	st0->m_startTime = gettimeofdayInMilliseconds();
 	// debug point
-	int32_t oldSize = msg5->m_minRecSizes;
-	int32_t newSize = msg5->m_minRecSizes + 20;
+	int32_t oldSize = msg5->minRecSizes();
+	int32_t newSize = msg5->minRecSizes() + 20;
 	// watch for wrap around
 	if ( newSize < oldSize ) newSize = 0x7fffffff;
 	if ( dataSize > newSize && list->getFixedDataSize() == 0 &&

@@ -8,6 +8,8 @@
 #include "Msg3.h"
 #include "RdbList.h"
 #include "HashTableX.h"
+#include "JobScheduler.h" //job_exit_t
+
 
 extern int32_t g_numCorrupt;
 
@@ -132,27 +134,33 @@ class Msg5 {
 	bool getRemoteList  ( );
 	bool gotRemoteList  ( );
 
+	bool isWaitingForList() const { return m_waitingForList; }
+
+	int32_t minRecSizes() const { return m_minRecSizes; }
+
 	// we add our m_finalList(s) to this, the user's list
 	RdbList  *m_list;
-
-	// hold the caller of getList()'s callback here
-	void    (* m_callback )( void *state , RdbList *list , Msg5 *msg );
-	void    *m_state       ;
-	char     m_calledCallback;
 
 	// private:
 
 	// holds all RdbLists from disk
 	Msg3      m_msg3;
 
+	// holds list parms
+	char      m_startKey[MAX_KEY_BYTES];
+	char      m_endKey[MAX_KEY_BYTES];
+
+private:
+	// hold the caller of getList()'s callback here
+	void    (* m_callback )( void *state , RdbList *list , Msg5 *msg );
+	void    *m_state       ;
+	char     m_calledCallback;
+
 	// holds list from tree
 	RdbList   m_treeList;
 
 	RdbList   m_dummy;
 
-	// holds list parms
-	char      m_startKey[MAX_KEY_BYTES];
-	char      m_endKey[MAX_KEY_BYTES];
 	bool      m_includeTree;
 	bool      m_addToCache;
 	int32_t      m_maxCacheAge;
@@ -205,6 +213,13 @@ class Msg5 {
 
 	bool m_waitingForList;
 	collnum_t m_collnum;
+
+	static void gotListWrapper(void *state);
+	void gotListWrapper();
+	
+	static void threadDoneWrapper(void *state, job_exit_t exit_type);
+	void threadDoneWrapper(job_exit_t exit_type);
+	static void gotRemoteListWrapper(void *state);
 };
 
 #endif // GB_MSG5_H
