@@ -386,6 +386,10 @@ class UdpServer {
 
 	// stats
  public:
+	static void readPollWrapper(int fd, void *state);
+	static void timePollWrapper(int fd, void *state);
+	static void sendPollWrapper(int fd, void *state);
+
 	int64_t       m_eth0BytesIn;
 	int64_t       m_eth0BytesOut;
 	int64_t       m_eth0PacketsIn;

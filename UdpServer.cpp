@@ -68,13 +68,8 @@ UdpServer g_udpServer;
 //static uint32_t  *s_tokenTime;
 
 
-static void readPollWrapper_ass ( int fd , void *state ) ;
-//static void sendPollWrapper_ass ( int fd , void *state ) ;
-static void timePollWrapper     ( int fd , void *state ) ;
-static void defaultCallbackWrapper ( void *state , UdpSlot *slot );
-
 // used when sendRequest() is called with a NULL callback
-void defaultCallbackWrapper ( void *state , UdpSlot *slot ) {
+static void defaultCallbackWrapper(void * /*state*/, UdpSlot * /*slot*/) {
 }
 
 
@@ -283,7 +278,7 @@ bool UdpServer::init ( uint16_t port, UdpProtocol *proto,
 	//   we have a handler registered with the Loop class
 	// . this makes m_sock non-blocking, too
 	// . use the original niceness for this
-	if ( ! g_loop.registerReadCallback ( m_sock, this, readPollWrapper_ass, 0 )) {
+	if ( ! g_loop.registerReadCallback ( m_sock, this, readPollWrapper, 0 )) {
 		return false;
 	}
 
@@ -292,7 +287,7 @@ bool UdpServer::init ( uint16_t port, UdpProtocol *proto,
 	// . what does this really mean? shouldn't we only use it
 	//   when we try to write but the write buf is full so we have
 	//   to try again later when it becomes unfull?
-	// if ( ! g_loop.registerWriteCallback ( m_sock, this, sendPollWrapper_ass, 0 ))
+	// if ( ! g_loop.registerWriteCallback ( m_sock, this, sendPollWrapper, 0 ))
 	// 		return false;
 
 	// . also register for 30 ms tix (was 15ms)
@@ -636,19 +631,19 @@ void UdpServer::sendReply_ass ( char    *msg        ,
 // . this wrapper is called when m_sock is ready for writing
 // . should only be called by Loop.cpp since it calls callbacks
 // . should only be called if in an interrupt or interrupts are off!!
-static void sendPollWrapper_ass ( int fd , void *state ) { 
-	UdpServer *THIS  = (UdpServer *)state;
+void UdpServer::sendPollWrapper(int fd, void *state) {
+	UdpServer *that = static_cast<UdpServer*>(state);
 	// begin the read/send/callback loop
-	THIS->sendPoll_ass ( true , gettimeofdayInMilliseconds() );
+	that->sendPoll_ass ( true, gettimeofdayInMilliseconds() );
 }
 
 // . returns false and sets g_errno on error, true otherwise
 // . will send an ACK or dgram
 // . you need to occupy s_token  to do large reads/sends on a slot
 // . this is called by sendRequest() which is not async safe
-//   and by sendPollWrapper_ass()
+//   and by sendPollWrapper()
 // . that means we can be calling doSending() on a slot made in
-//   sendRequest() and then be interrupted by sendPollWrapper_ass()
+//   sendRequest() and then be interrupted by sendPollWrapper()
 // . Fortunately, we have a lock around it in sendRequest()!
 bool UdpServer::doSending_ass (UdpSlot *slot,bool allowResends,int64_t now) {
 
@@ -708,7 +703,7 @@ bool UdpServer::doSending_ass (UdpSlot *slot,bool allowResends,int64_t now) {
 		m_needToSend = true;
 		// ok, now it should
 		if ( ! m_writeRegistered ) {
-			g_loop.registerWriteCallback ( m_sock, this, sendPollWrapper_ass, 0 ); // niceness
+			g_loop.registerWriteCallback ( m_sock, this, sendPollWrapper, 0 ); // niceness
 			m_writeRegistered = true;
 		}
 		goto done;
@@ -756,7 +751,7 @@ bool UdpServer::sendPoll_ass ( bool allowResends , int64_t now ) {
 			// if nobody needs to send now unregister write callback
 			// so select() loop in Loop.cpp does not keep freaking out
 			if ( ! m_needToSend && m_writeRegistered ) {
-				g_loop.unregisterWriteCallback(m_sock, this, sendPollWrapper_ass);
+				g_loop.unregisterWriteCallback(m_sock, this, sendPollWrapper);
 				m_writeRegistered = false;
 			}
 			return something;
@@ -958,11 +953,10 @@ void UdpServer::process_ass ( int64_t now , int32_t maxNiceness) {
 // . this wrapper is called when the Loop class has found that m_sock
 //   needs to be read from (it got a SIGIO/GB_SIGRTMIN signal for it)
 // . should only be called if in an interrupt or interrupts are off!!
-void readPollWrapper_ass ( int fd , void *state ) { 
-	// let everyone we're in a sigHandler
-	UdpServer *THIS  = (UdpServer *)state;
+void UdpServer::readPollWrapper(int fd, void *state) {
+	UdpServer *that = static_cast<UdpServer*>(state);
 	// begin the read/send/callback loop
-	THIS->process_ass ( gettimeofdayInMilliseconds() );
+	that->process_ass ( gettimeofdayInMilliseconds() );
 }
 
 
@@ -2215,9 +2209,9 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 }
 
 // this wrapper is called every 15 ms by the Loop class
-void timePollWrapper ( int fd , void *state ) { 
-	UdpServer *THIS  = (UdpServer *)state;
-	THIS->timePoll();
+void UdpServer::timePollWrapper(int fd, void *state) {
+	UdpServer *that  = static_cast<UdpServer*>(state);
+	that->timePoll();
 }
 
 void UdpServer::timePoll ( ) {
