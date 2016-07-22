@@ -187,7 +187,8 @@ wbit_t Bits::getAlnumBits( int32_t i ) const {
 
 // this table maps a tagId to a #define'd bit from Bits.h which describes
 // the format of the following text in the page. like bold or italics, etc.
-static nodeid_t s_bt [ 1000 ];
+static nodeid_t s_bt [ 512 ];
+static bool s_init = false;
 
 // . set bits for each word
 // . these bits are used for phrasing and by spam detector
@@ -197,13 +198,15 @@ bool Bits::setForSummary ( const Words *words ) {
 	reset();
 
 	// set our s_bt[] table
-	bool s_init = false;
 	if ( ! s_init ) {
 		// only do this once
 		s_init = true;
+
 		// clear table
-		if ( 1000 < getNumXmlNodes() ) { g_process.shutdownAbort(true); }
-		memset ( s_bt , 0 , 1000 * sizeof(nodeid_t) );
+		if ( getNumXmlNodes() > 512 ) {
+			g_process.shutdownAbort(true);
+		}
+		memset ( s_bt , 0 , 512 * sizeof(nodeid_t) );
 		// set just those that have bits #defined in Bits.h
 		s_bt [ TAG_TITLE      ] = D_IN_TITLE;
 		s_bt [ TAG_A          ] = D_IN_HYPERLINK;
