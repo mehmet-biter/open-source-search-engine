@@ -829,8 +829,6 @@ void sleepWrapper1 ( int bogusfd , void    *state ) {
 	case 0x22: if ( elapsed <  1000 ) return; break;
 	// a request to get the score of a docid, can be *very* intensive
 	case 0x3b: if ( elapsed < 500000 ) return; break;
-	// related topics request, calls many Msg22 to get titlerecs...
-	case 0x24: if ( elapsed <  2000 ) return; break;
 	// . msg to get an index list over the net
 	// . this limit should really be based on length of the index list
 	// . this was 15 then 12 now it is 4

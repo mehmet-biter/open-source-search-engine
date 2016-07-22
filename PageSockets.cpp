@@ -456,7 +456,6 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 		}
 		if ( msgType == 0x22 ) desc = "get titlerec";
 		if ( msgType == 0x20 ) desc = "get summary";
-		if ( msgType == 0x24 ) desc = "get gigabits";
 		if ( msgType == 0x39 ) desc = "get docids";
 		if ( msgType == 0x17 ) desc = "cache access";
 		if ( msgType == 0x23 ) desc = "get linktext";
