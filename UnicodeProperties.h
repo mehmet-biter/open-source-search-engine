@@ -26,19 +26,6 @@ bool     setKDValue(UChar32 c, UChar32* decomp, int32_t decompCount,
 const UChar32 *getKDValue(UChar32 c, int32_t *decompCount, bool *fullComp = NULL);
 int32_t     recursiveKDExpand(UChar32 c, UChar32 *buf, int32_t bufSize);
 
-static UCProps ucProperties(UChar32 c);
-static bool    ucIsAlpha(UChar32 c);
-static bool    ucIsDigit(UChar32 c);
-static bool    ucIsAlnum(UChar32 c);
-
-static bool    ucIsUpper(UChar32 c);
-static bool    ucIsLower(UChar32 c);
-
-static int32_t ucDigitValue(UChar32 c);
-
-static UChar32 ucToLower(UChar32 c);
-static UChar32 ucToUpper(UChar32 c);
-
 unsigned char ucCombiningClass(UChar32 c);
 
 
@@ -50,8 +37,6 @@ static inline bool is_punct_uc(UChar32 c);
 static inline bool ucIsWordChar(UChar32 c);
 static inline bool ucIsIgnorable(UChar32 c);
 static inline bool ucIsExtend(UChar32 c);
-
-static UCScript ucGetScript(UChar32 c);
 
 
 // Parse Properties
