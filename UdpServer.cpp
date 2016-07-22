@@ -182,7 +182,6 @@ bool UdpServer::init ( uint16_t port, UdpProtocol *proto,
 	m_msg07sInWaiting = 0;
 	m_msgc1sInWaiting = 0;
 	m_msg25sInWaiting = 0;
-	m_msg50sInWaiting = 0;
 	m_msg39sInWaiting = 0;
 	m_msg20sInWaiting = 0;
 	m_msg0csInWaiting = 0;
@@ -1139,15 +1138,7 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 		// to answer the msg0 indexdb lookups!
 		if ( msgType == 0x25 && m_msg25sInWaiting >= 70 )
 			getSlot = false;
-		// . Msg50 can spawn Msg25s to compute the root quality if it
-		//   does not have it in its cache...
-		// . each one of these can take 10's of MBs of memory for
-		//   holding the inlinker termlist. i had 29 out taking 364MB
-		//   of mem, so stop that! only allow 15, tops.
-		// . TODO: make this more efficient some how... it should be
-		//   less of a problem on slingshot, the mem prob was on gk
-		if ( msgType == 0x50 && m_msg50sInWaiting >= 10 )
-			getSlot = false;
+
 		// . i've seen us freeze up from this too
 		// . but only drop spider's msg39s
 		if ( msgType == 0x39 && m_msg39sInWaiting >= 10 && niceness )
@@ -1300,7 +1291,6 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 			if ( msgType == 0x07 ) m_msg07sInWaiting++;
 			if ( msgType == 0xc1 ) m_msgc1sInWaiting++;
 			if ( msgType == 0x25 ) m_msg25sInWaiting++;
-			if ( msgType == 0x50 ) m_msg50sInWaiting++;
 			if ( msgType == 0x39 ) m_msg39sInWaiting++;
 			if ( msgType == 0x20 ) m_msg20sInWaiting++;
 			if ( msgType == 0x0c ) m_msg0csInWaiting++;
@@ -2399,7 +2389,6 @@ void UdpServer::destroySlot ( UdpSlot *slot ) {
 		if ( slot->m_msgType == 0x07 ) m_msg07sInWaiting--;
 		if ( slot->m_msgType == 0xc1 ) m_msgc1sInWaiting--;
 		if ( slot->m_msgType == 0x25 ) m_msg25sInWaiting--;
-		if ( slot->m_msgType == 0x50 ) m_msg50sInWaiting--;
 		if ( slot->m_msgType == 0x39 ) m_msg39sInWaiting--;
 		if ( slot->m_msgType == 0x20 ) m_msg20sInWaiting--;
 		if ( slot->m_msgType == 0x0c ) m_msg0csInWaiting--;

@@ -333,7 +333,6 @@ class UdpServer {
 	int32_t   m_msg07sInWaiting;
 	int32_t   m_msgc1sInWaiting;
 	int32_t   m_msg25sInWaiting;
-	int32_t   m_msg50sInWaiting;
 	int32_t   m_msg39sInWaiting;
 	int32_t   m_msg20sInWaiting;
 	int32_t   m_msg0csInWaiting;
