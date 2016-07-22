@@ -502,36 +502,18 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 		}
 
 		if ( isDns ) {
-			//p->safePrintf("<td>%s</td>",iptoa(s->m_ip));
-			char *hostname = s->m_tmpVar;
-			p->safePrintf("<td><nobr>%s"
-				      ,hostname);
+			p->safePrintf("<td><nobr>%s", s->m_hostname);
 			// get the domain from the hostname
 			int32_t dlen;
-			char *dbuf = ::getDomFast ( hostname,&dlen,false);
-			p->safePrintf(
-			      " <a href=\"/admin/tagdb?"
-			      "user=admin&"
-			      "tagtype0=manualban&"
-			      "tagdata0=1&"
-			      "u=%s&c=%s\">"
-			      "[<font color=red><b>BAN %s</b></font>]"
-			      "</nobr></a> " ,
-			      dbuf , coll , dbuf );
-			p->safePrintf("</td>"
-				      "<td>%s%" PRId32"%s</td>",
-				      cf1,
-				      (int32_t)s->m_niceness,
-				      cf2);
-		}
-
-		if ( ! isDns ) {
-			//"<td>%s</td>"  // ip
-			//"<td>%hu</td>" // port
+			char *dbuf = ::getDomFast ( s->m_hostname,&dlen,false);
+			p->safePrintf( " <a href=\"/admin/tagdb?user=admin&tagtype0=manualban&tagdata0=1&u=%s&c=%s\">"
+					       "[<font color=red><b>BAN %s</b></font>]</nobr></a> " ,
+			               dbuf , coll , dbuf );
+			p->safePrintf("</td><td>%s%" PRId32"%s</td>", cf1, (int32_t)s->m_niceness, cf2);
+		} else {
 			// clickable hostId
 			const char *toFrom = "to";
 			if ( ! s->m_callback ) toFrom = "from";
-			//"<td><a href=http://%s:%hu/cgi/15.cgi>%" PRId32"</a></td>"
 			p->safePrintf (	"<td>0x%hhx</td>"  // msgtype
 					"<td><nobr>%s</nobr></td>"  // desc
 					"<td><nobr>%s <a href=http://%s:%hu/"
@@ -540,8 +522,6 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 					"<td>%s%" PRId32"%s</td>" , // niceness
 					s->m_msgType ,
 					desc,
-					//iptoa(s->m_ip) ,
-					//s->m_port ,
 					// begin clickable hostId
 					toFrom,
 					eip     ,

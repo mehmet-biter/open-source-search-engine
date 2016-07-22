@@ -448,12 +448,8 @@ class UdpSlot {
 	// . incoming requests simply cannot be bigger than this for the
 	//   hot udp server
 	char           m_tmpBuf [ TMPBUFSIZE ];
-	
-	// used by Msg50 to keep a ptr to the new state created by 
-	// handleRequest50() so we can spy on it in case it forgets to
-	// call a callback and hangs...
-	//int32_t m_tmpVar;
-	char *m_tmpVar;
+
+	char *m_hostname;
 };
 
 extern int32_t g_cancelAcksSent;
