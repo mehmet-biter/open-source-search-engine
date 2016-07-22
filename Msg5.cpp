@@ -257,292 +257,294 @@ bool Msg5::readList ( ) {
 		return true;
 	}
 
-readMore:
-	// . reset our tree list
-	// . sets fixedDataSize here in case m_includeTree is false because
-	//   we don't want merge to have incompatible lists
-	m_treeList.reset();
-	m_treeList.setFixedDataSize ( base->getFixedDataSize() );
-	m_treeList.m_ks = m_ks;
-	// reset Msg3 in case gotList() is called without calling 
-	// Msg3::readList() first
-	m_msg3.reset();
+	do { //until no more read is needed
+	
+		// . reset our tree list
+		// . sets fixedDataSize here in case m_includeTree is false because
+		//   we don't want merge to have incompatible lists
+		m_treeList.reset();
+		m_treeList.setFixedDataSize ( base->getFixedDataSize() );
+		m_treeList.m_ks = m_ks;
+		// reset Msg3 in case gotList() is called without calling
+		// Msg3::readList() first
+		m_msg3.reset();
 
-	// assume lists have no errors in them
-	m_hadCorruption = false;
+		// assume lists have no errors in them
+		m_hadCorruption = false;
 
-	// . restrict tree's endkey by calling msg3 now...
-	// . this saves us from spending 1000ms to read 100k of negative 
-	//   spiderdb recs from the tree only to have most of the for naught
-	// . this call will ONLY set m_msg3.m_endKey
-	// . but only do this if dealing with spiderdb really
-	// . also now for tfndb, since we scan that in RdbDump.cpp to dedup
-	//   the spiderdb list we are dumping to disk. it is really for any
-	//   time when the endKey is unbounded, so check that now
-	const char *treeEndKey = m_endKey;
-	bool compute = true;
+		// . restrict tree's endkey by calling msg3 now...
+		// . this saves us from spending 1000ms to read 100k of negative
+		//   spiderdb recs from the tree only to have most of the for naught
+		// . this call will ONLY set m_msg3.m_endKey
+		// . but only do this if dealing with spiderdb really
+		// . also now for tfndb, since we scan that in RdbDump.cpp to dedup
+		//   the spiderdb list we are dumping to disk. it is really for any
+		//   time when the endKey is unbounded, so check that now
+		const char *treeEndKey = m_endKey;
+		bool compute = true;
 
-	if ( ! m_includeTree           ) compute = false;
+		if ( ! m_includeTree           ) compute = false;
 
-	// if endKey is "unbounded" then bound it...
-	char max[MAX_KEY_BYTES]; KEYMAX(max,m_ks);
-	if ( KEYCMP(m_endKey,max,m_ks) != 0 ) compute = false;
+		// if endKey is "unbounded" then bound it...
+		char max[MAX_KEY_BYTES]; KEYMAX(max,m_ks);
+		if ( KEYCMP(m_endKey,max,m_ks) != 0 ) compute = false;
 
-	// BUT don't bother if a small list, probably faster just to get it
-	if ( m_newMinRecSizes < 1024   ) compute = false;
+		// BUT don't bother if a small list, probably faster just to get it
+		if ( m_newMinRecSizes < 1024   ) compute = false;
 
-	// try to make merge read threads higher priority than
-	// regular spider read threads
-	int32_t niceness = m_niceness;
-	if ( niceness > 0  ) niceness = 2;
-	if ( m_isRealMerge ) niceness = 1;
-	bool allowPageCache = true;
-	// just in case cache is corrupted, do not use it for doing real
-	// merges, also it would kick out good lists we have in there already
-	if ( m_isRealMerge ) allowPageCache = false;
-	if ( compute ) {
-		m_msg3.readList  ( m_rdbId          ,
-				   m_collnum        , 
-				   m_fileStartKey   , // modified by gotList()
-				   m_endKey         ,
-				   m_newMinRecSizes , // modified by gotList()
-				   m_startFileNum   ,
-				   m_numFiles       ,
-				   this             ,
-				   gotListWrapper   ,
-				   niceness         ,
-				   0                , // retry num
-				   m_maxRetries     , // -1=def
-				   m_compensateForMerge ,
-				   true                 , // just get endKey?
-				   allowPageCache     );
-		if ( g_errno ) {
-			log("db: Msg5: getting endKey: %s",mstrerror(g_errno));
-			return true;
-		}
-		treeEndKey = m_msg3.m_constrainKey;
-	}
-
-	QUICKPOLL((m_niceness));
-	// . get the list from our tree
-	// . set g_errno and return true on error
-	// . it is crucial that we get tree list before spawning a thread
-	//   because Msg22 will assume that if the TitleRec is in the tree
-	//   now we'll get it, because we need to have the latest version
-	//   of a particular document and this guarantees it. Otherwise, if
-	//   the doc is not in the tree then tfndb must tell its file number.
-	//   I just don't want to think its in the tree then have it get 
-	//   dumped out right before we read it, then we end up getting the
-	//   older version rather than the new one in the tree which tfndb
-	//   does not know about until it is dumped out. so we could lose
-	//   recs between the in-memory and on-disk phases this way.
-	// . however, if we are getting a titlerec, we first read the tfndb 
-	//   list from the tree then disk. if the merge replaces the tfndb rec
-	//   we want with another while we are reading the tfndb list from
-	//   disk, then the tfndb rec we got from the tree was overwritten!
-	//   so then we'd read from the wrong title file number (tfn) and
-	//   not find the rec because the merge just removed it. so keeping
-	//   the tfndb recs truly in sync with the titledb recs requires
-	//   some dancing. the simplest way is to just scan all titleRecs
-	//   in the event of a disagreement... so turn on m_scanAllIfNotFound,
-	//   which essentially disregards tfndb and searches all the titledb
-	//   files for the titleRec.
-	if ( m_includeTree ) {
-		// get the mem tree for this rdb
-		RdbTree *tree = base->m_rdb->getTree();
-		// how many recs are deletes in this list?
-		int32_t numNegativeRecs = 0;
-		int32_t numPositiveRecs = 0;
-		// set start time
-		int64_t start ;
-		if ( m_newMinRecSizes > 64 ) 
-			start = gettimeofdayInMilliseconds();
-		// . returns false on error and sets g_errno
-		// . endKey of m_treeList may be less than m_endKey
-		const char *structName;
-
-		if(base->m_rdb->useTree()) {
-			if ( ! tree->getList ( base->m_collnum    ,
-					       m_fileStartKey       ,
-					       treeEndKey           ,
-					       m_newMinRecSizes     ,
-					       &m_treeList          ,
-					       &numPositiveRecs     , // # pos
-					       &numNegativeRecs     , // # neg
-					       base->useHalfKeys() ) ) 
-				return true;
-			structName = "tree";
-		}
-		else {
-			RdbBuckets *buckets = &base->m_rdb->m_buckets;
-			if ( ! buckets->getList ( base->m_collnum    ,
-						  m_fileStartKey       ,
-						  treeEndKey           ,
-						  m_newMinRecSizes     ,
-						  &m_treeList          ,
-						  &numPositiveRecs     , 
-						  &numNegativeRecs     ,
-						  base->useHalfKeys() )) {
+		// try to make merge read threads higher priority than
+		// regular spider read threads
+		int32_t niceness = m_niceness;
+		if ( niceness > 0  ) niceness = 2;
+		if ( m_isRealMerge ) niceness = 1;
+		bool allowPageCache = true;
+		// just in case cache is corrupted, do not use it for doing real
+		// merges, also it would kick out good lists we have in there already
+		if ( m_isRealMerge ) allowPageCache = false;
+		if ( compute ) {
+			m_msg3.readList  ( m_rdbId          ,
+					   m_collnum        ,
+					   m_fileStartKey   , // modified by gotList()
+					   m_endKey         ,
+					   m_newMinRecSizes , // modified by gotList()
+					   m_startFileNum   ,
+					   m_numFiles       ,
+					   this             ,
+					   gotListWrapper   ,
+					   niceness         ,
+					   0                , // retry num
+					   m_maxRetries     , // -1=def
+					   m_compensateForMerge ,
+					   true                 , // just get endKey?
+					   allowPageCache     );
+			if ( g_errno ) {
+				log("db: Msg5: getting endKey: %s",mstrerror(g_errno));
 				return true;
 			}
-			structName = "buckets";
+			treeEndKey = m_msg3.m_constrainKey;
 		}
 
-		int64_t now  ;
-		if ( m_newMinRecSizes > 64 ) {
-			now  = gettimeofdayInMilliseconds();
-			int64_t took = now - start ;
-			if ( took > 9 )
-				logf(LOG_INFO,"net: Got list from %s "
-				     "in %" PRIu64" ms. size=%" PRId32" db=%s "
-				     "niceness=%" PRId32".",
-				     structName, took,m_treeList.getListSize(),
-				     base->m_dbname,m_niceness);
-		}
-		// if our recSize is fixed we can boost m_minRecSizes to
-		// compensate for these deletes when we call m_msg3.readList()
-		int32_t rs = base->getRecSize() ;
-		// . use an avg. rec size for variable-length records
-		// . just use tree to estimate avg. rec size
-		if ( rs == -1) {
+		QUICKPOLL((m_niceness));
+		// . get the list from our tree
+		// . set g_errno and return true on error
+		// . it is crucial that we get tree list before spawning a thread
+		//   because Msg22 will assume that if the TitleRec is in the tree
+		//   now we'll get it, because we need to have the latest version
+		//   of a particular document and this guarantees it. Otherwise, if
+		//   the doc is not in the tree then tfndb must tell its file number.
+		//   I just don't want to think its in the tree then have it get
+		//   dumped out right before we read it, then we end up getting the
+		//   older version rather than the new one in the tree which tfndb
+		//   does not know about until it is dumped out. so we could lose
+		//   recs between the in-memory and on-disk phases this way.
+		// . however, if we are getting a titlerec, we first read the tfndb
+		//   list from the tree then disk. if the merge replaces the tfndb rec
+		//   we want with another while we are reading the tfndb list from
+		//   disk, then the tfndb rec we got from the tree was overwritten!
+		//   so then we'd read from the wrong title file number (tfn) and
+		//   not find the rec because the merge just removed it. so keeping
+		//   the tfndb recs truly in sync with the titledb recs requires
+		//   some dancing. the simplest way is to just scan all titleRecs
+		//   in the event of a disagreement... so turn on m_scanAllIfNotFound,
+		//   which essentially disregards tfndb and searches all the titledb
+		//   files for the titleRec.
+		if ( m_includeTree ) {
+			// get the mem tree for this rdb
+			RdbTree *tree = base->m_rdb->getTree();
+			// how many recs are deletes in this list?
+			int32_t numNegativeRecs = 0;
+			int32_t numPositiveRecs = 0;
+			// set start time
+			int64_t start ;
+			if ( m_newMinRecSizes > 64 )
+				start = gettimeofdayInMilliseconds();
+			// . returns false on error and sets g_errno
+			// . endKey of m_treeList may be less than m_endKey
+			const char *structName;
+
 			if(base->m_rdb->useTree()) {
-				// how much space do all recs take up in the tree?
-				int32_t totalSize = tree->getMemOccupiedForList();
-				// how many recs in the tree
-				int32_t numRecs   = tree->getNumUsedNodes();
-				// get avg record size
-				if ( numRecs > 0 ) rs = totalSize / numRecs; 
-				// add 10% for deviations
-				rs = (rs * 110) / 100;
-				// what is the minimal record size?
-				int32_t minrs     = sizeof(key_t) + 4; 
-				// ensure a minimal record size
-				if ( rs < minrs ) rs = minrs;
+				if ( ! tree->getList ( base->m_collnum    ,
+						       m_fileStartKey       ,
+						       treeEndKey           ,
+						       m_newMinRecSizes     ,
+						       &m_treeList          ,
+						       &numPositiveRecs     , // # pos
+						       &numNegativeRecs     , // # neg
+						       base->useHalfKeys() ) )
+					return true;
+				structName = "tree";
 			}
 			else {
 				RdbBuckets *buckets = &base->m_rdb->m_buckets;
-				
-				rs = buckets->getNumKeys() / 
-					buckets->getMemOccupied();
-				int32_t minrs = buckets->getRecSize() + 4; 
-				// ensure a minimal record size
-				if ( rs < minrs ) rs = minrs;
+				if ( ! buckets->getList ( base->m_collnum    ,
+							  m_fileStartKey       ,
+							  treeEndKey           ,
+							  m_newMinRecSizes     ,
+							  &m_treeList          ,
+							  &numPositiveRecs     ,
+							  &numNegativeRecs     ,
+							  base->useHalfKeys() )) {
+					return true;
+				}
+				structName = "buckets";
+			}
+
+			int64_t now  ;
+			if ( m_newMinRecSizes > 64 ) {
+				now  = gettimeofdayInMilliseconds();
+				int64_t took = now - start ;
+				if ( took > 9 )
+					logf(LOG_INFO,"net: Got list from %s "
+					     "in %" PRIu64" ms. size=%" PRId32" db=%s "
+					     "niceness=%" PRId32".",
+					     structName, took,m_treeList.getListSize(),
+					     base->m_dbname,m_niceness);
+			}
+			// if our recSize is fixed we can boost m_minRecSizes to
+			// compensate for these deletes when we call m_msg3.readList()
+			int32_t rs = base->getRecSize() ;
+			// . use an avg. rec size for variable-length records
+			// . just use tree to estimate avg. rec size
+			if ( rs == -1) {
+				if(base->m_rdb->useTree()) {
+					// how much space do all recs take up in the tree?
+					int32_t totalSize = tree->getMemOccupiedForList();
+					// how many recs in the tree
+					int32_t numRecs   = tree->getNumUsedNodes();
+					// get avg record size
+					if ( numRecs > 0 ) rs = totalSize / numRecs;
+					// add 10% for deviations
+					rs = (rs * 110) / 100;
+					// what is the minimal record size?
+					int32_t minrs     = sizeof(key_t) + 4;
+					// ensure a minimal record size
+					if ( rs < minrs ) rs = minrs;
+				}
+				else {
+					RdbBuckets *buckets = &base->m_rdb->m_buckets;
+
+					rs = buckets->getNumKeys() /
+						buckets->getMemOccupied();
+					int32_t minrs = buckets->getRecSize() + 4;
+					// ensure a minimal record size
+					if ( rs < minrs ) rs = minrs;
+				}
+			}
+
+			// . TODO: get avg recSize in this rdb (avgRecSize*numNeg..)
+			// . don't do this if we're not merging because it makes
+			//   it harder to compute the # of bytes to read used to
+			//   pre-allocate a reply buf for Msg0 when !m_doMerge
+			// . we set endKey for spiderdb when reading from tree above
+			//   based on the current minRecSizes so do not mess with it
+			//   in that case.
+			if ( m_rdbId != RDB_SPIDERDB ) {
+				//m_newMinRecSizes += rs * numNegativeRecs;
+				int32_t nn = m_newMinRecSizes + rs * numNegativeRecs;
+				if ( rs > 0 && nn < m_newMinRecSizes ) nn = 0x7fffffff;
+				m_newMinRecSizes = nn;
+			}
+
+			// . if m_endKey = m_startKey + 1 and our list has a rec
+			//   then no need to check the disk, it was in the tree
+			// . it could be a negative or positive record
+			// . tree can contain both negative/positive recs for the key
+			//   so we should do the final merge in gotList()
+			// . that can happen because we don't do an annihilation
+			//   because the positive key may be being dumped out to disk
+			//   but it really wasn't and we get stuck with it
+			char kk[MAX_KEY_BYTES];
+			KEYSET(kk,m_startKey,m_ks);
+			KEYADD(kk,m_ks);
+			if ( KEYCMP(m_endKey,kk,m_ks)==0 && ! m_treeList.isEmpty() ) {
+				return gotList();
+			}
+		}
+		// if we don't use the tree then at least set the key bounds cuz we
+		// pick the min endKey between diskList and treeList below
+		else {
+			m_treeList.set ( m_fileStartKey , m_endKey );
+		}
+
+		// . if we're reading indexlists from 2 or more sources then some
+		//   will probably be compressed from 12 byte keys to 6 byte keys
+		// . it is typically only about 1% when files are small,
+		//   and smaller than that when a file is large
+		// . but just to be save reading an extra 2% won't hurt too much
+		if ( base->useHalfKeys() ) {
+			int32_t numSources = m_numFiles;
+			if ( numSources == -1 )
+				numSources = base->getNumFiles();
+			// if tree is empty, don't count it
+			if ( m_includeTree && ! m_treeList.isEmpty() ) numSources++;
+			// . if we don't do a merge then we return the list directly
+			//   (see condition where m_numListPtrs == 1 below)
+			//   from Msg3 (or tree) and we must hit minRecSizes as
+			//   close as possible for Msg3's call to constrain() so
+			//   we don't overflow the UdpSlot's TMPBUFSIZE buffer
+			// . if we just arbitrarily boost m_newMinRecSizes then
+			//   the single list we get back from Msg3 will not have
+			//   been constrained with m_minRecSizes, but constrained
+			//   with m_newMinRecSizes (x2%) and be too big for our UdpSlot
+			if ( numSources >= 2 ) {
+				int64_t newmin = (int64_t)m_newMinRecSizes ;
+				newmin = (newmin * 50LL) / 49LL ;
+				// watch out for wrap around
+				if ( (int32_t)newmin < m_newMinRecSizes )
+					m_newMinRecSizes = 0x7fffffff;
+				else    m_newMinRecSizes = (int32_t)newmin;
 			}
 		}
 
-		// . TODO: get avg recSize in this rdb (avgRecSize*numNeg..)
-		// . don't do this if we're not merging because it makes
-		//   it harder to compute the # of bytes to read used to
-		//   pre-allocate a reply buf for Msg0 when !m_doMerge
-		// . we set endKey for spiderdb when reading from tree above
-		//   based on the current minRecSizes so do not mess with it
-		//   in that case.
-		if ( m_rdbId != RDB_SPIDERDB ) {
-			//m_newMinRecSizes += rs * numNegativeRecs;
-			int32_t nn = m_newMinRecSizes + rs * numNegativeRecs;
-			if ( rs > 0 && nn < m_newMinRecSizes ) nn = 0x7fffffff;
-			m_newMinRecSizes = nn;
-		}
+		// limit to 20MB so we don't go OOM!
+		if ( m_newMinRecSizes > 2 * m_minRecSizes &&
+		     m_newMinRecSizes > 20000000 )
+			m_newMinRecSizes = 20000000;
 
-		// . if m_endKey = m_startKey + 1 and our list has a rec
-		//   then no need to check the disk, it was in the tree
-		// . it could be a negative or positive record
-		// . tree can contain both negative/positive recs for the key
-		//   so we should do the final merge in gotList()
-		// . that can happen because we don't do an annihilation
-		//   because the positive key may be being dumped out to disk
-		//   but it really wasn't and we get stuck with it
-		char kk[MAX_KEY_BYTES];
-		KEYSET(kk,m_startKey,m_ks);
-		KEYADD(kk,m_ks);
-		if ( KEYCMP(m_endKey,kk,m_ks)==0 && ! m_treeList.isEmpty() ) {
-			return gotList();
-		}
-	}
-	// if we don't use the tree then at least set the key bounds cuz we
-	// pick the min endKey between diskList and treeList below
-	else {
-		m_treeList.set ( m_fileStartKey , m_endKey );
-	}
 
-	// . if we're reading indexlists from 2 or more sources then some 
-	//   will probably be compressed from 12 byte keys to 6 byte keys
-	// . it is typically only about 1% when files are small,
-	//   and smaller than that when a file is large
-	// . but just to be save reading an extra 2% won't hurt too much
-	if ( base->useHalfKeys() ) {
-		int32_t numSources = m_numFiles;
-		if ( numSources == -1 ) 
-			numSources = base->getNumFiles();
-		// if tree is empty, don't count it
-		if ( m_includeTree && ! m_treeList.isEmpty() ) numSources++;
-		// . if we don't do a merge then we return the list directly
-		//   (see condition where m_numListPtrs == 1 below)
-		//   from Msg3 (or tree) and we must hit minRecSizes as
-		//   close as possible for Msg3's call to constrain() so
-		//   we don't overflow the UdpSlot's TMPBUFSIZE buffer
-		// . if we just arbitrarily boost m_newMinRecSizes then
-		//   the single list we get back from Msg3 will not have
-		//   been constrained with m_minRecSizes, but constrained
-		//   with m_newMinRecSizes (x2%) and be too big for our UdpSlot
-		if ( numSources >= 2 ) {
-			int64_t newmin = (int64_t)m_newMinRecSizes ;
-			newmin = (newmin * 50LL) / 49LL ;
-			// watch out for wrap around
-			if ( (int32_t)newmin < m_newMinRecSizes ) 
-				m_newMinRecSizes = 0x7fffffff;
-			else    m_newMinRecSizes = (int32_t)newmin;
-		}
-	}
+		QUICKPOLL((m_niceness));
+		const char *diskEndKey = m_treeList.getEndKey();
+		// sanity check
+		if ( m_treeList.m_ks != m_ks ) { g_process.shutdownAbort(true); }
 
-	// limit to 20MB so we don't go OOM!
-	if ( m_newMinRecSizes > 2 * m_minRecSizes &&
-	     m_newMinRecSizes > 20000000 )
-		m_newMinRecSizes = 20000000;
-	     
+		// we are waiting for the list
+		//m_waitingForList = true;
 
-	QUICKPOLL((m_niceness));
-	const char *diskEndKey = m_treeList.getEndKey();
-	// sanity check
-	if ( m_treeList.m_ks != m_ks ) { g_process.shutdownAbort(true); }
+		// clear just in case
+		g_errno = 0;
 
-	// we are waiting for the list
-	//m_waitingForList = true;
+		// . now get from disk
+		// . use the cache-modified constraints to reduce reading time
+		// . return false if it blocked
+		// . if compensateForMerge is true then m_startFileNum/m_numFiles
+		//   will be appropriately mapped around the merge
+		if ( ! m_msg3.readList  ( m_rdbId          ,
+					  m_collnum        ,
+					  m_fileStartKey   , // modified by gotList()
+					  diskEndKey       ,
+					  m_newMinRecSizes , // modified by gotList()
+					  m_startFileNum   ,
+					  m_numFiles       ,
+					  this             ,
+					  gotListWrapper   ,
+					  niceness         ,
+					  0                , // retry num
+					  m_maxRetries     , // max retries (-1=def)
+					  m_compensateForMerge ,
+					  false                ,
+					  m_allowPageCache     ,
+					  true             ))
+			return false;
+		// . this returns false if blocked, true otherwise
+		// . sets g_errno on error
+		// . updates m_newMinRecSizes
+		// . updates m_fileStartKey to the endKey of m_list + 1
+		if ( ! gotList () ) return false;
+		// bail on error from gotList() or Msg3::readList()
+		if ( g_errno ) return true;
 
-	// clear just in case
-	g_errno = 0;
-
-	// . now get from disk
-	// . use the cache-modified constraints to reduce reading time
-	// . return false if it blocked
-	// . if compensateForMerge is true then m_startFileNum/m_numFiles
-	//   will be appropriately mapped around the merge
-	if ( ! m_msg3.readList  ( m_rdbId          ,
-				  m_collnum        , 
-				  m_fileStartKey   , // modified by gotList()
-				  diskEndKey       ,
-				  m_newMinRecSizes , // modified by gotList()
-				  m_startFileNum   ,
-				  m_numFiles       ,
-				  this             ,
-				  gotListWrapper   ,
-				  niceness         ,
-				  0                , // retry num
-				  m_maxRetries     , // max retries (-1=def)
-				  m_compensateForMerge ,
-				  false                ,
-				  m_allowPageCache     ,
-				  true             ))
-		return false;
-	// . this returns false if blocked, true otherwise
-	// . sets g_errno on error
-	// . updates m_newMinRecSizes
-	// . updates m_fileStartKey to the endKey of m_list + 1
-	if ( ! gotList () ) return false;
-	// bail on error from gotList() or Msg3::readList()
-	if ( g_errno ) return true;
-	// we may need to re-call getList
-	if ( needsRecall() ) goto readMore;
+		// we may need to re-call getList
+	} while(needsRecall());
 	// we did not block
 	return true;
 }
