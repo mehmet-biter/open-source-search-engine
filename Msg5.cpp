@@ -638,8 +638,6 @@ void Msg5::gotListWrapper() {
 	m_callback ( m_state, m_list, this );
 }
 
-static void mergeListsWrapper_r ( void *state );
-
 
 
 // . this is the NEW gotList() !!! mdw
@@ -844,7 +842,7 @@ bool Msg5::gotList2 ( ) {
 
 		// assume nothing is wrong
 		g_errno = 0;
-		// if m_doErrorCorrection is true, repairLists_r() should fix
+		// if m_doErrorCorrection is true, repairLists() should fix
 	}
 
 	QUICKPOLL((m_niceness));
@@ -959,7 +957,7 @@ bool Msg5::gotList2 ( ) {
 		// . if size is big, make a thread
 		// . let's always make niceness 0 since it wasn't being very
 		//   aggressive before
-		if ( g_jobScheduler.submit(mergeListsWrapper_r, threadDoneWrapper, this, thread_type_query_merge, m_niceness) ) {
+		if ( g_jobScheduler.submit(mergeListsWrapper, threadDoneWrapper, this, thread_type_query_merge, m_niceness) ) {
 			return false;
 		}
 
@@ -975,10 +973,10 @@ bool Msg5::gotList2 ( ) {
 	}
 
 	// repair any corruption
-	repairLists_r();
+	repairLists();
 
 	// do it
-	mergeLists_r ();
+	mergeLists();
 
 	// . add m_list to our cache if we should
 	// . this returns false if blocked, true otherwise
@@ -988,20 +986,19 @@ bool Msg5::gotList2 ( ) {
 	return doneMerging();
 }
 
+
 // thread will run this first
-// Use of ThreadEntry parameter is NOT thread safe
-void mergeListsWrapper_r ( void *state ) {
+void Msg5::mergeListsWrapper(void *state) {
 	// we're in a thread now!
-	Msg5 *THIS = (Msg5 *)state;
+	Msg5 *that = static_cast<Msg5*>(state);
 
 	// repair any corruption
-	THIS->repairLists_r();
+	that->repairLists();
 
 	// do the merge
-	THIS->mergeLists_r();
-
-	// now cleanUp wrapper will call it
+	that->mergeLists();
 }
+
 
 // . now we're done merging
 // . when the thread is done we get control back here, in the main process
@@ -1042,7 +1039,7 @@ void Msg5::threadDoneWrapper(job_exit_t /*exit_type*/) {
 }
 
 // check lists in the thread
-void Msg5::repairLists_r ( ) {
+void Msg5::repairLists() {
 	// assume none
 	m_hadCorruption = false;
 	// return if no need to
@@ -1115,7 +1112,7 @@ void Msg5::repairLists_r ( ) {
 	}
 }
 
-void Msg5::mergeLists_r ( ) {
+void Msg5::mergeLists() {
 
 	// . don't do any merge if this is true
 	// . if our fetch of remote list fails, then we'll be called
@@ -1249,7 +1246,7 @@ bool Msg5::doneMerging ( ) {
 			// . merge the modified lists again
 			// . this is not in a thread
 			// . it should not block
-			mergeLists_r();
+			mergeLists();
 		}
 	}
 
@@ -1574,7 +1571,7 @@ bool Msg5::gotRemoteList ( ) {
 	g_errno = 0;
 	// . we have the lists ready to merge
 	// . hadCorruption should be false at this point
-	mergeLists_r();
+	mergeLists();
 	// process the result
 	return doneMerging();
 }

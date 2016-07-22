@@ -123,8 +123,6 @@ class Msg5 {
 	// annihilation?
 	bool needsRecall();
 
-	void repairLists_r ();
-	void mergeLists_r  ();
 	bool doneMerging   ();
 
 	// . when a list is bad we try to patch it by getting a list from
@@ -220,6 +218,11 @@ private:
 	static void threadDoneWrapper(void *state, job_exit_t exit_type);
 	void threadDoneWrapper(job_exit_t exit_type);
 	static void gotRemoteListWrapper(void *state);
+	
+	static void mergeListsWrapper(void *state);
+
+	void repairLists();
+	void mergeLists();
 };
 
 #endif // GB_MSG5_H
