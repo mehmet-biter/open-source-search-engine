@@ -1252,11 +1252,7 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 		if ( msgType == 0x17 ) getSlot = true;
 		// spellchecker is fast
 		if ( msgType == 0x3d ) getSlot = true;
-		// . msg36 is done quickly and does not send out a 2nd request
-		// . iff "exact" (the first byte) is false, because if it 
-		//   requires an exact count it may have to hit disk
-		// . use niceness of 0 instead of "exact count", same thing
-		if ( msgType == 0x36 && niceness == 0 )	getSlot = true;
+
 		// getting a titlerec does not send out a 2nd request. i really
 		// hate those title rec timeout msgs.
 		if ( msgType == 0x22 && niceness == 0 ) getSlot = true;
@@ -1494,8 +1490,7 @@ bool UdpServer::makeCallbacks_ass ( int32_t niceness ) {
 			// only call handlers in pass 0, not reply callbacks
 			if ( slot->m_callback ) continue;
 			// only call certain msg handlers...
-			if ( slot->m_msgType != 0x36 &&  // getTermFreq()
-			     slot->m_msgType != 0x11 &&  // ping
+			if ( slot->m_msgType != 0x11 &&  // ping
 			     slot->m_msgType != 0x3d &&  // speller.cpp
 			     slot->m_msgType != 0x17 &&  // serp/dist cache
 			     slot->m_msgType != 0x01 &&  // add  RdbList

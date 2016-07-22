@@ -455,7 +455,6 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 			else               desc = "get web page";
 		}
 		if ( msgType == 0x22 ) desc = "get titlerec";
-		if ( msgType == 0x36 ) desc = "get termFreq";
 		if ( msgType == 0x20 ) desc = "get summary";
 		if ( msgType == 0x2c ) desc = "get address";
 		if ( msgType == 0x24 ) desc = "get gigabits";

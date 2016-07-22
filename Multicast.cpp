@@ -531,8 +531,7 @@ int32_t Multicast::pickBestHost ( uint32_t key , int32_t firstHostId ) {
 	bool   balance   = g_conf.m_doStripeBalancing;
 	// always turn off stripe balancing for all but these 3 msgTypes
 	if ( m_msgType != 0x39 &&
-	     m_msgType != 0x37 &&
-	     m_msgType != 0x36  ) 
+	     m_msgType != 0x37 )
 		balance = false;
 	// . pick the guy in our "stripe" first if we are doing these msgs
 	// . this will prevent a ton of msg39s from hitting one host and
@@ -820,19 +819,6 @@ void sleepWrapper1 ( int bogusfd , void    *state ) {
 		goto redirectTimedout;
 	}
 	switch ( THIS->m_msgType ) {
-	// term freqs are msg 0x36 and don't hit disk, so reroute all the time
-	case 0x36: 
-		exact = 0;
-		// first byte is 1 if caller wants an *exact* termlist size
-		// lookup which requires hitting disk and is *much* slower
-		if ( THIS->m_msg ) exact = *(char *)(THIS->m_msg);
-		// these don't take any resources... unless exact i guess,
-		// so let them fly... 10ms or more to reroute
-		if ( ! exact && elapsed < 10    ) return; 
-		//if (   exact && elapsed < 20000 ) return;
-		// never re-reoute these, they may be incrementing/decrementing
-		// a count, and we only store that count on one host!!
-		return;
 	// msg to get a summary from a query (calls msg22)
 	// buzz takes extra long! it calls Msg25 sometimes.
 	// no more buzz.. put back to 8 seconds.
@@ -934,7 +920,7 @@ redirectTimedout:
 		// low because it is an easy request to satisfy... so don't
 		// flood the logs with it
 		int32_t logtype = LOG_WARN;
-		if ( THIS->m_msgType == 0x36 ) logtype = LOG_DEBUG;
+
 		// log msg that we were successful
 		int32_t hid = -1;
 		if ( hd ) hid = hd->m_hostId;
