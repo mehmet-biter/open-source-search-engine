@@ -88,16 +88,16 @@
 const char *getHashGroupString ( unsigned char hg );
 float getTermFreqWeight  ( int64_t termFreq , int64_t numDocsInColl );
 
+#ifndef POSDBKEY
 #define POSDBKEY key144_t
+#endif
 
+#ifndef TERMID_MASK
 #define TERMID_MASK (0x0000ffffffffffffLL)
+#endif
 
 void printTermList ( int32_t i, const char *list, int32_t listSize ) ;
 
-// if query is 'the tigers' we weight bigram "the tigers" x 1.20 because
-// its in wikipedia.
-// up this to 1.40 for 'the time machine' query
-#define WIKI_BIGRAM_WEIGHT 1.40
 
 class Posdb {
 

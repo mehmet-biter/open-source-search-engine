@@ -16,9 +16,13 @@ float getHashGroupWeight ( unsigned char hg );
 #define SITERANKDIVISOR 3.0
 #define SITERANKMULTIPLIER 0.33333333
 
+#ifndef POSDBKEY
 #define POSDBKEY key144_t
+#endif
 
+#ifndef TERMID_MASK
 #define TERMID_MASK (0x0000ffffffffffffLL)
+#endif
 
 void printTermList ( int32_t i, const char *list, int32_t listSize ) ;
 

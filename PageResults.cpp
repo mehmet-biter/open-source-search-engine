@@ -18,7 +18,8 @@
 #include "sort.h"
 #include "CountryCode.h"
 #include "Unicode.h"
-#include "Posdb.h" // MAX_TOP definition
+#include "Posdb.h"
+#include "PosdbTable.h"
 #include "PageResults.h"
 #include "PageRoot.h"
 #include "Proxy.h"
