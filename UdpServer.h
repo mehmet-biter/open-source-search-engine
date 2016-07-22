@@ -210,11 +210,6 @@ class UdpServer {
 	//   or timed a slot out so it's callback should be called
 	bool readTimeoutPoll ( int64_t now ) ;
 
-	// . sets *s_token and *s_token2 to NULL
-	// . resets bits and bit counts on all big-reply slots so they
-	//   send dgrams or acks in attempt to get the newly available token
-	//void releaseTokens ( UdpSlot *slot = NULL ) ;
-
 	// . this will wait until all fully received requests have had their
 	//   reply sent to them
 	// . in the meantime it will send back error replies to all new 

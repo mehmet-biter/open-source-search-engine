@@ -28,45 +28,8 @@ bool g_inHandler = false;
 // . timepoll should turn off interrupts, too
 // . we should call sigqueue if a callback needs to be made if we're hot
 
-
-// the philosophy for sending/receiving LARGE replies:
-// 1. sender sends 1 dgram passed the last ack he got 
-// 2. recevier sends ack back iff s_token is free
-// 3. sender gets ack, claims his s_token, and blasts away
-// 4. recevier gets dgrams and claims s_token if it's free
-// rules:
-// 1. you cannot send more than 1 dgram passed # of acks you got if you
-//    do not have s_token
-// 2. you can send up to the ack window limit if you have the token
-// 3. local transactions should follow these rules NOW TODO!
-// 4. you can only send an ack back for large reply if token is not in use
-//    or you possess it
-// problems:
-// 1. if A needs to send to B. and B needs to send to C. and C to D.
-//    if B sends to C. then A->B and C->D must wait. it's better if
-//    A sends to B and C sends to D.  integer programming contest?
-
-
 // a global class extern'd in .h file
 UdpServer g_udpServer;
-
-// . how many dgrams constitute a big msg that should use the token system?
-// . if msg use this or more dgrams, use the token system
-// . i've effectively disabled the token scheme by setting this to 1000
-// . seems like performace is better w/o tokens!!! damn it!!!!!!!!
-//#define LARGE_MSG 4
-//#define LARGE_MSG 6
-//#define LARGE_MSG 100000
-//#define LARGE_MSG 64
-
-// . TODO: we should at least ack these guys even though s_token not for them
-// . TODO: FIX! token can be stolen by local processes cuz we have no locking!
-// . TODO: resendCount goes up without actually resending!!!
-// . the startTime of the slot that has the token 
-// . the last 4 bytes of the time of day in milliseconds
-//static UdpSlot       **s_token;
-//static uint32_t  *s_tokenTime;
-
 
 // used when sendRequest() is called with a NULL callback
 static void defaultCallbackWrapper(void * /*state*/, UdpSlot * /*slot*/) {
@@ -639,7 +602,6 @@ void UdpServer::sendPollWrapper(int fd, void *state) {
 
 // . returns false and sets g_errno on error, true otherwise
 // . will send an ACK or dgram
-// . you need to occupy s_token  to do large reads/sends on a slot
 // . this is called by sendRequest() which is not async safe
 //   and by sendPollWrapper()
 // . that means we can be calling doSending() on a slot made in
@@ -655,18 +617,6 @@ bool UdpServer::doSending_ass (UdpSlot *slot,bool allowResends,int64_t now) {
 		return true;
 	}
 
-	// get time
-	//int64_t now = gettimeofdayInMilliseconds();
-	// . TODO: why this bug?
-	// . before we had dead lock, I guess *s_tokenTime was fucked up
-	// . this will ensure that it doesn't happend again
-	/*
-	uint32_t now2 = (uint32_t) now;
-	if ( *s_token && now2 < *s_tokenTime && *s_tokenTime - now2 > 5000 ) 
-		*s_token = NULL;
-	if ( *s_token && now2 > *s_tokenTime && now2 - *s_tokenTime > 5000 ) 
-		*s_token = NULL;
-	*/
  loop:
 	int32_t status = 0;
 	// . don't do any sending until we leave the wait state
