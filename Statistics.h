@@ -1,5 +1,5 @@
-#ifndef STATISTICS_H__
-#define STATISTICS_H__
+#ifndef GB_STATISTICS_H
+#define GB_STATISTICS_H
 
 namespace Statistics {
 
