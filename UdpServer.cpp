@@ -185,7 +185,6 @@ bool UdpServer::init ( uint16_t port, UdpProtocol *proto,
 	m_msg50sInWaiting = 0;
 	m_msg39sInWaiting = 0;
 	m_msg20sInWaiting = 0;
-	m_msg2csInWaiting = 0;
 	m_msg0csInWaiting = 0;
 	m_msg0sInWaiting  = 0;
 	// maintain a ptr to the protocol
@@ -1179,9 +1178,6 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 		if ( msgType == 0x13 && m_numUsedSlotsIncoming>400 && 
 		     m_numUsedSlots>800 && !isProxy)
 			getSlot = false;
-		// 2c is clogging crap up
-		if ( msgType == 0x2c && m_msg2csInWaiting >= 100 && niceness )
-			getSlot = false;
 
 		// . avoid slamming thread queues with sectiondb disk reads
 		// . mdw 1/22/2014 take this out now too, we got ssds
@@ -1316,7 +1312,6 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 			if ( msgType == 0x50 ) m_msg50sInWaiting++;
 			if ( msgType == 0x39 ) m_msg39sInWaiting++;
 			if ( msgType == 0x20 ) m_msg20sInWaiting++;
-			if ( msgType == 0x2c ) m_msg2csInWaiting++;
 			if ( msgType == 0x0c ) m_msg0csInWaiting++;
 			if ( msgType == 0x00 ) m_msg0sInWaiting++;
 			// debug msg
@@ -2418,7 +2413,6 @@ void UdpServer::destroySlot ( UdpSlot *slot ) {
 		if ( slot->m_msgType == 0x50 ) m_msg50sInWaiting--;
 		if ( slot->m_msgType == 0x39 ) m_msg39sInWaiting--;
 		if ( slot->m_msgType == 0x20 ) m_msg20sInWaiting--;
-		if ( slot->m_msgType == 0x2c ) m_msg2csInWaiting--;
 		if ( slot->m_msgType == 0x0c ) m_msg0csInWaiting--;
 		if ( slot->m_msgType == 0x00 ) m_msg0sInWaiting--;
 		// debug msg, good for msg routing distribution, too
