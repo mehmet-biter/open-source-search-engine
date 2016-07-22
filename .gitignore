@@ -24,6 +24,8 @@ file_state*.txt
 # slacktee
 slacktee.sh
 slacktee.conf
+# core file
+lastcore.*
 # kdevelop
 .kdev4/
 # clion
