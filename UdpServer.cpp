@@ -1257,8 +1257,6 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 		//   requires an exact count it may have to hit disk
 		// . use niceness of 0 instead of "exact count", same thing
 		if ( msgType == 0x36 && niceness == 0 )	getSlot = true;
-		// getting the "load" does not send out a 2nd request
-		if ( msgType == 0x34 ) getSlot = true;
 		// getting a titlerec does not send out a 2nd request. i really
 		// hate those title rec timeout msgs.
 		if ( msgType == 0x22 && niceness == 0 ) getSlot = true;
@@ -1499,7 +1497,6 @@ bool UdpServer::makeCallbacks_ass ( int32_t niceness ) {
 			if ( slot->m_msgType != 0x36 &&  // getTermFreq()
 			     slot->m_msgType != 0x11 &&  // ping
 			     slot->m_msgType != 0x3d &&  // speller.cpp
-			     slot->m_msgType != 0x34 &&  // getLoad()
 			     slot->m_msgType != 0x17 &&  // serp/dist cache
 			     slot->m_msgType != 0x01 &&  // add  RdbList
 			     slot->m_msgType != 0x00   ) // read RdbList
