@@ -8,6 +8,7 @@
 #include "Msg0.h"
 #include "PingServer.h"
 #include "Process.h"
+#include "Sanity.h"
 
 
 //#define GBSANITYCHECK
@@ -102,7 +103,7 @@ bool Msg5::getList ( char     rdbId         ,
 	g_errno = 0;
 
 	// sanity
-	if ( ! list && true ) { g_process.shutdownAbort(true); }
+	if ( ! list ) gbshutdownLogicError();
 
 	// warning
 	if ( collnum < 0 ) log(LOG_LOGIC,"net: bad collection. msg5.");
@@ -110,7 +111,7 @@ bool Msg5::getList ( char     rdbId         ,
 	// . reset the provided list
 	// . this will not free any mem it may have alloc'd but it will set
 	//   m_listSize to 0 so list->isEmpty() will return true
-	if ( list ) list->reset();
+	list->reset();
 
 	// key size set
 	m_ks = getKeySizeFromRdbId(rdbId);
