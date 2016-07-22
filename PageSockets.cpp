@@ -454,7 +454,6 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 			if ( isRobotsTxt ) desc = "get robots.txt";
 			else               desc = "get web page";
 		}
-		if ( msgType == 0x02 ) desc = "get lists";
 		if ( msgType == 0x22 ) desc = "get titlerec";
 		if ( msgType == 0x36 ) desc = "get termFreq";
 		if ( msgType == 0x20 ) desc = "get summary";
