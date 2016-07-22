@@ -15,7 +15,7 @@ Msg22Request::Msg22Request() {
 
 bool Msg22::registerHandler ( ) {
 	// . register ourselves with the udp server
-	// . it calls our callback when it receives a msg of type 0x23
+	// . it calls our callback when it receives a msg of type 0x22
 	return g_udpServer.registerHandler ( 0x22, handleRequest22 );
 }
 

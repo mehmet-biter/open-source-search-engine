@@ -1132,12 +1132,7 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 		//msg8 and msgc and msg50
 		//if ( msgType == 0xd && m_msgDsInWaiting >= 100 ) 
 		//	getSlot = false;
-		// . a request to get link text, msg23, will spawn a msg22
-		//   which often comes back to us
-		// . don't accept any requests if over half full, because we
-		//   may have to forward them, and we'll need a slot for that
-		//if ( msgType == 0x23 && m_msg23sInWaiting >= 100 ) 
-		//	getSlot = false;
+
 		// msg25 spawns an indexdb request lookup and unless we limit
 		// the msg25 requests we can jam ourslves if all the indexdb
 		// lookups hit ourselves... we won't have enough free slots
@@ -1161,9 +1156,7 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 		// a msg22 request to self but failing...
 		if ( msgType == 0x20 && m_msg20sInWaiting >= 50 && niceness )
 			getSlot = false;
-		// if running int16_t on mem, do not accept any more requests
-		// because we can lock up from that, too
-		//if ( msgType == 0x23 && g_mem.m_memAvail < 10*1024*1024 )
+
 		//if ( g_mem.m_maxMem - g_mem.m_used < 20*1024*1024 &&
 		//     // let adds slide through, otherwise, msg10 chokes up
 		//     // trying to add to is own tfndb. we end up with a 
@@ -1306,8 +1299,6 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 			// special count
 			if ( msgType == 0x07 ) m_msg07sInWaiting++;
 			if ( msgType == 0xc1 ) m_msgc1sInWaiting++;
-			//if ( msgType == 0xd  ) m_msgDsInWaiting++;
-			//if ( msgType == 0x23 ) m_msg23sInWaiting++;
 			if ( msgType == 0x25 ) m_msg25sInWaiting++;
 			if ( msgType == 0x50 ) m_msg50sInWaiting++;
 			if ( msgType == 0x39 ) m_msg39sInWaiting++;
@@ -2407,8 +2398,6 @@ void UdpServer::destroySlot ( UdpSlot *slot ) {
 		// special count
 		if ( slot->m_msgType == 0x07 ) m_msg07sInWaiting--;
 		if ( slot->m_msgType == 0xc1 ) m_msgc1sInWaiting--;
-		//if ( slot->m_msgType == 0xd  ) m_msgDsInWaiting--;
-		//if ( slot->m_msgType == 0x23 ) m_msg23sInWaiting--;
 		if ( slot->m_msgType == 0x25 ) m_msg25sInWaiting--;
 		if ( slot->m_msgType == 0x50 ) m_msg50sInWaiting--;
 		if ( slot->m_msgType == 0x39 ) m_msg39sInWaiting--;
