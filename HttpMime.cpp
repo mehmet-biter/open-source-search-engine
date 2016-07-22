@@ -680,7 +680,7 @@ int32_t HttpMime::getContentTypePrivate ( char *s ) {
 
 // the table that maps a file extension to a content type
 static HashTableX s_mimeTable;
-bool s_init = false;
+static bool s_init = false;
 
 void resetHttpMime ( ) {
 	s_mimeTable.reset();
