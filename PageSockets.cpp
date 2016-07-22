@@ -429,7 +429,6 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 		if ( buf ) {
 			int32_t rdbId = -1;
 			if (msgType == 0x01) rdbId = buf[0];
-			//else               rdbId = buf[8+sizeof(key_t)*2+16];
 			else                 rdbId = buf[24];
 			Rdb *rdb = NULL;
 			if ( rdbId >= 0 && ! isDns ) 
