@@ -2337,7 +2337,7 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 			// let caller know we did something
 			something = true;
 			// note it
-			log("udp: Timing out slot (msgType=0x%" PRIx32") "
+			log(LOG_INFO, "udp: Timing out slot (msgType=0x%" PRIx32") "
 			    "after %" PRId32" resends. hostid=%" PRId32" "
 			    "(elapsed=%" PRId64")" ,
 			    (int32_t)slot->m_msgType, 

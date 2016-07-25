@@ -591,8 +591,7 @@ bool getLinkInfo ( SafeBuf   *reqBuf              ,
 			    multicast_infinite_send_timeout     , // timeout
 			    req->m_niceness ,
 			    hostId )) {// firstHostId  ,
-		log("linkdb: Failed to send multicast for %s err=%s",
-		    u.getUrl(),mstrerror(g_errno));
+		log( LOG_WARN, "linkdb: Failed to send multicast for %s err=%s", u.getUrl(),mstrerror(g_errno));
 		return true;
 	}
 

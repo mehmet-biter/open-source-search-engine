@@ -1345,14 +1345,16 @@ bool UdpSlot::readDatagramOrAck ( const void *readBuffer_,
 		g_errno = EBADENGINEER;
 		// remove dgram from queue
 		discardDgram();
-		return log("UdpSlot::readDgram: read undersend") ;
+		log("UdpSlot::readDgram: read undersend") ;
+	    return false;
 	}
 	// this checks for oversends, dgrams that fall outside our readBuf
 	if ( offset + dgramSize - headerSize > m_readBufSize ) {
 		g_errno = EBADENGINEER;
 		// remove dgram from queue
 		discardDgram();
-		return log("UdpSlot::readDgram: read buf overflow") ;
+		log("UdpSlot::readDgram: read buf overflow") ;
+	    return false;
 	}
 	*/
 
@@ -1409,9 +1411,10 @@ bool UdpSlot::readDatagramOrAck ( const void *readBuffer_,
 	// . we may already have a read buf if caller passed one in
  retry:
 	if ( ! m_readBuf ) {
-		if ( ! makeReadBuf ( msgSize , m_dgramsToRead ) )
-			return log("udp: Failed to allocate %" PRId32" bytes to read "
-				   "request or reply for udp socket.",msgSize);
+		if ( ! makeReadBuf ( msgSize , m_dgramsToRead ) ) {
+			log(LOG_WARN, "udp: Failed to allocate %" PRId32" bytes to read request or reply for udp socket.", msgSize);
+			return false;
+		}
 		// track down the mem leak.
 		// someone is not freeing their read buf!!
 		//logf(LOG_DEBUG,"udpslot alloc %" PRId32" at 0x%" PRIx32" msgType=%hhx",
@@ -1428,44 +1431,11 @@ bool UdpSlot::readDatagramOrAck ( const void *readBuffer_,
 	// return false if we have no room for the entire reply
 	if ( msgSize > m_readBufMaxSize ) {
 		g_errno = EBUFTOOSMALL;
-		return log("udp: Msg size of %" PRId32" bytes is too big for the "
+		log( LOG_WARN, "udp: Msg size of %" PRId32" bytes is too big for the "
 			   "buffer size, %" PRId32", we allocated. msgType=0x%hhx.",
 			   msgSize, m_readBufMaxSize , m_msgType );
+		return false;
 	}
-
-	// if its a msg 0x0c reply from a proxy ove roadrunner wireless
-	// they tend to damage our packets for some reason so i repeat
-	// the ip for a total of an 8 byte reply
-	/*
-	  MDW: this seems to be causing problems on local networks
-	  so taking it out. 4/7/2015.
-	if ( m_msgType == 0x0c && msgSize == 12 && readSize == 24 &&
-	     // must be reply! not request.
-	     m_callback ) {
-		// sanity
-		if ( m_proto->getMaxPeekSize() < 24 ) { g_process.shutdownAbort(true);}
-		if ( headerSize != 12 )               { g_process.shutdownAbort(true);}
-		// ips must match. like a checksum kinda.
-		int32_t ip1 = *(int32_t *)(readBuffer+headerSize);
-		int32_t ip2 = *(int32_t *)(readBuffer+headerSize+4);
-		int32_t crc = *(int32_t *)(readBuffer+headerSize+8);
-		// one more check since ip1 seems to equal ip2 sometimes
-		// when it should not!
-		int32_t h32 = hash32h ( ip1 , 0 );
-		if ( ip1 != ip2 || h32 != crc ) {
-			static int32_t s_lastTime = 0;
-			g_corruptPackets++;
-			int32_t tt = getTimeLocal();
-			if ( tt > s_lastTime + 5 ) {
-				s_lastTime = tt;
-				log("dns: dropping corrupt msgc reply dgram. "
-				    "count=%" PRId32".",g_corruptPackets);
-				return true;
-			}
-			return true;
-		}
-	}	
-	*/
 
 	// we're doing the call to recvfrom() for sure now
 	*discard = false;
@@ -1730,9 +1700,8 @@ bool UdpSlot::makeReadBuf ( int32_t msgSize , int32_t numDgrams ) {
 	m_readBuf = (char *) mmalloc ( msgSize , bb ); // "UdpSlot") ;
 	if ( ! m_readBuf ) {
 		m_readBufSize = 0;
-		return log("udp: Failed to allocate %" PRId32" bytes to "
-			   "read request or reply on udp socket.",
-			   msgSize);
+		log(LOG_WARN, "udp: Failed to allocate %" PRId32" bytes to read request or reply on udp socket.", msgSize);
+		return false;
 	}
 	m_readBufMaxSize = msgSize;
 	// let the caller know we're good

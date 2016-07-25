@@ -96,7 +96,7 @@ bool Multicast::send ( char         *msg              ,
 		       class Host   *firstHost        ) {
 	// make sure not being re-used!
 	if ( m_inUse ) {
-		log("net: Attempt to re-use active multicast");
+		log( LOG_ERROR, "net: Attempt to re-use active multicast");
 		g_process.shutdownAbort(true);
 	}
 	// reset to free "m_msg" in case we are being re-used (like by Msg14)
@@ -927,15 +927,10 @@ redirectTimedout:
 	// . returns true if we successfully sent to another host
 	// . returns false and sets g_errno if no hosts left or other error
 	if ( THIS->sendToHostLoop(0,-1,-1) ) {
-		// msgtype 0x36 is always rerouting because the timeout is so
-		// low because it is an easy request to satisfy... so don't
-		// flood the logs with it
-		int32_t logtype = LOG_WARN;
-
 		// log msg that we were successful
 		int32_t hid = -1;
 		if ( hd ) hid = hd->m_hostId;
-		log(logtype,
+		log(LOG_WARN,
 		    "net: Multicast::sleepWrapper1: rerouted msgType=0x%hhx "
 		    "from host #%" PRId32" "
 		    "to new host after waiting %" PRId32" ms",
@@ -1029,7 +1024,7 @@ void Multicast::gotReply1 ( UdpSlot *slot ) {
 		     ! ((Msg20 *)m_state)->m_expected )
 			logIt = false;
 		if ( h && logIt )
-			log("net: Multicast got error in reply from "
+			log( LOG_WARN, "net: Multicast got error in reply from "
 			    "hostId %" PRId32
 			    " (msgType=0x%hhx transId=%" PRId32" "
 			    "nice=%" PRId32" net=%s): "
@@ -1038,7 +1033,7 @@ void Multicast::gotReply1 ( UdpSlot *slot ) {
 			    m_niceness,
 			    g_hostdb.getNetName(),mstrerror(g_errno ));
 		else if ( logIt )
-			log("net: Multicast got error in reply from %s:%" PRId32" "
+			log( LOG_WARN, "net: Multicast got error in reply from %s:%" PRId32" "
 			    "(msgType=0x%hhx transId=%" PRId32" nice =%" PRId32" net=%s): "
 			    "%s.",
 			    iptoa(slot->m_ip), (int32_t)slot->m_port, 
