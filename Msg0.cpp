@@ -377,7 +377,7 @@ skip:
 		// . we return true if it returns false
 		if ( ! us->sendRequest ( m_request     ,
 					 m_requestSize ,
-					 msg_type_0          , // msgType
+					 msg_type_0          ,
 					 h->m_ip       ,
 					 port          ,
 					 m_hostId      ,

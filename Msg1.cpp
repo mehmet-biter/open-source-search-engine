@@ -474,7 +474,7 @@ skip:
 	key_t k; k.setMin();
 	if ( m_mcast.send ( request    , // sets mcast->m_msg    to this
 			    requestLen , // sets mcast->m_msgLen to this
-			    msg_type_1       , // msgType for add rdb record
+			    msg_type_1       ,
 			    true       , // does multicast own msg?
 			    shardNum   , // group to send to (groupKey)
 			    true       , // send to whole group?

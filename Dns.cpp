@@ -1185,7 +1185,7 @@ bool Dns::sendToNextDNS ( DnsState *ds ) {
 	if ( ! m_udpServer.sendRequest ( ds->m_request     ,//copy , 
 					 ds->m_requestSize,//msgSize ,
 					 /// @todo ALC don't think dns should be using msg_type_0, create another msgtype for dns
-					 msg_type_0              , // msgType
+					 msg_type_0              ,
 					 //g_conf.m_dnsIps  [n] , 
 					 ip , // ds->m_dnsIps[depth][n] ,
 					 53       ,//g_conf.m_dnsPorts[n], 

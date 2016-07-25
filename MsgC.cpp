@@ -197,7 +197,7 @@ bool MsgC::getIp(const char  *hostname    , int32_t   hostnameLen ,
 	                : multicast_infinite_send_timeout;
 	if ( !m_mcast.send (m_request    , // sets mcast->m_msg to this
 			    requestSize, // sets mcast->m_msgLen to this
-			    msg_type_c       , // msgType for add rdb record
+			    msg_type_c       ,
 			    false       , // does multicast own msg?
 			    host->m_shardNum , // group to send to (groupKey)
 			    false      , // send to whole group?

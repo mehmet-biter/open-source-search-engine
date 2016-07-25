@@ -691,7 +691,7 @@ bool sendBuffer ( int32_t hostId , int32_t niceness ) {
 	key_t k; k.setMin();
 	if ( mcast->send ( request    , // sets mcast->m_msg    to this
 			   requestSize, // sets mcast->m_msgLen to this
-			   msg_type_4       , // msgType for add rdb record
+			   msg_type_4       ,
 			   false      , // does multicast own msg?
 			   shardNum,//groupId , // group to send to (groupKey)
 			   true       , // send to whole group?
