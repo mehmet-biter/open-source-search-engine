@@ -1288,7 +1288,7 @@ bool Msg25::sendRequests ( ) {
 	//char *coll = cr->m_coll;
 
 	// if more than 300 sockets in use max this 1. prevent udp socket clog.
-	if ( g_udpServer.m_numUsedSlots >= 300 ) ourMax = 1;
+	if ( g_udpServer.getNumUsedSlots() >= 300 ) ourMax = 1;
 
 	// keep sending requests
 	for ( ;; ) {

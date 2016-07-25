@@ -222,7 +222,7 @@ bool flushMsg4Buffers ( void *state , void (* callback) (void *) ) {
 	int64_t max = 0LL;
 	for ( ; slot ; slot = slot->m_next ) {
 		// get its time stamp 
-		if ( slot->m_msgType != 0x04 ) continue;
+		if ( slot->getMsgType() != msg_type_4 ) continue;
 		// must be initiated by us
 		if ( ! slot->m_callback ) continue;
 		// get it
@@ -803,7 +803,7 @@ void gotReplyWrapper4 ( void *state , void *state2 ) {
 	int64_t min = 0LL;
 	for ( ; slot ; slot = slot->m_next ) {
 		// get its time stamp
-		if ( slot->m_msgType != 0x04 ) continue;
+		if ( slot->getMsgType() != msg_type_4 ) continue;
 		// must be initiated by us
 		if ( ! slot->m_callback ) continue;
 		// if it is this replying slot or already had the callback
@@ -1222,10 +1222,10 @@ bool saveAddsInProgress ( const char *prefix ) {
 	}
 
 	// scan in progress msg4 requests too!
-	UdpSlot *slot = g_udpServer.m_head2;
+	UdpSlot *slot = g_udpServer.getActiveHead();
 	for ( ; slot ; slot = slot->m_next2 ) {
 		// skip if not msg4
-		if ( slot->m_msgType != 0x04 ) continue;
+		if ( slot->getMsgType() != msg_type_4 ) continue;
 		// skip if we did not initiate it
 		if ( ! slot->m_callback ) continue;
 		// skip if got reply

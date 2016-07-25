@@ -124,7 +124,7 @@ bool Msge0::launchRequests ( int32_t starti ) {
 	// udp sockets, so use this to limit... i've seen the whole
 	// spider tables stuck with "getting outlink tag rec vector"statuses
 	int32_t maxOut = MAX_OUTSTANDING_MSGE0;
-	if ( g_udpServer.m_numUsedSlots > 500 ) maxOut = 1;
+	if ( g_udpServer.getNumUsedSlots() > 500 ) maxOut = 1;
 	// if we are maxed out, we basically blocked!
 	if (m_numRequests - m_numReplies >= maxOut ) return false;
 	// . skip if "old"

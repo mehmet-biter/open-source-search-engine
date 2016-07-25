@@ -436,16 +436,15 @@ loop:
 	
 	// do not resend to retired hosts
 	if ( m_retired[i] ) i = -1;
-	// debug msg
-	//if ( m_msgType == 0x39 || m_msgType == 0x00 )
-	//	log("Multicast:: routing msgType=0x%hhx to hostId %" PRId32,
-	//	     m_msgType,m_hosts[i].m_hostId);
+
 	// . if no more hosts return FALSE
 	// . we need to return false to the caller of us below
 	if ( i < 0 ) { 
 		// debug msg
 		//log("Multicast:: no hosts left to send to");
-		g_errno = ENOHOSTS; return false; }
+		g_errno = ENOHOSTS;
+		return false;
+	}
 
 	// log("build: msg %x sent to host %" PRId32 " first hostId is %" PRId32 ,
 	// 	m_msgType, i, firstHostId);
@@ -528,10 +527,10 @@ int32_t Multicast::pickBestHost ( uint32_t key , int32_t firstHostId ) {
 	int32_t   n         = 0;
 	//int32_t   count     = 0;
 	bool   balance   = g_conf.m_doStripeBalancing;
-	// always turn off stripe balancing for all but these 3 msgTypes
-	if ( m_msgType != 0x39 &&
-	     m_msgType != 0x37 )
+	// always turn off stripe balancing for all but these msgTypes
+	if ( m_msgType != msg_type_39 ) {
 		balance = false;
+	}
 	// . pick the guy in our "stripe" first if we are doing these msgs
 	// . this will prevent a ton of msg39s from hitting one host and
 	//   "spiking" it.
@@ -787,8 +786,6 @@ void sleepWrapper1 ( int bogusfd , void    *state ) {
 	int32_t firstResultNum;
 	int32_t nqterms;
 	int32_t wait;
-	char exact;
-	//int32_t hid = -1;
 	Host *hd;
 	//log("elapsed = %" PRId32" type=0x%hhx",elapsed,THIS->m_msgType);
 
@@ -900,7 +897,9 @@ void sleepWrapper1 ( int bogusfd , void    *state ) {
 redirectTimedout:
 	// cancel any outstanding transactions iff we have a m_replyBuf
 	// that we must read the reply into because we cannot share!!
-	if ( THIS->m_readBuf ) THIS->destroySlotsInProgress ( NULL );
+	if ( THIS->m_readBuf ) {
+		THIS->destroySlotsInProgress ( NULL );
+	}
 	//if ( THIS->m_replyBuf ) 
 	//	THIS->destroySlotsInProgress ( NULL );
 
@@ -908,15 +907,15 @@ redirectTimedout:
 	// . if a whole group of twins is down this will loop forever here
 	//   every Xms, based the sleepWrapper timer for the msgType
 	if ( g_conf.m_logDebugQuery ) {
-	for (int32_t i = 0 ; i < THIS->m_numHosts ; i++ ) {
-		if ( ! THIS->m_slots[i]         ) continue;
-		// transaction is not in progress if m_errnos[i] is set
-		const char *ee = "";
-		if ( THIS->m_errnos[i] ) ee = mstrerror(THIS->m_errnos[i]);
-		log("net: Multicast::sleepWrapper1: tried host "
-		    "%s:%" PRId32" %s" ,iptoa(THIS->m_slots[i]->m_ip),
-		    (int32_t)THIS->m_slots[i]->m_port , ee );
-	}		
+		for (int32_t i = 0 ; i < THIS->m_numHosts ; i++ ) {
+			if ( ! THIS->m_slots[i]         ) continue;
+			// transaction is not in progress if m_errnos[i] is set
+			const char *ee = "";
+			if ( THIS->m_errnos[i] ) ee = mstrerror(THIS->m_errnos[i]);
+			log( LOG_DEBUG, "net: Multicast::sleepWrapper1: tried host "
+			    "%s:%" PRId32" %s" ,iptoa(THIS->m_slots[i]->m_ip),
+			    (int32_t)THIS->m_slots[i]->m_port , ee );
+		}
 	}
 
 	// log msg that we are trying to re-route
@@ -1020,16 +1019,16 @@ void Multicast::gotReply1 ( UdpSlot *slot ) {
 		// log the error
 		h = g_hostdb.getHost ( slot->m_ip ,slot->m_port );
 		// do not log if not expected msg20
-		if ( slot->m_msgType == 0x20 && g_errno == ENOTFOUND &&
-		     ! ((Msg20 *)m_state)->m_expected )
+		if ( slot->getMsgType() == msg_type_20 && g_errno == ENOTFOUND && ! ((Msg20 *)m_state)->m_expected ) {
 			logIt = false;
+		}
 		if ( h && logIt )
 			log( LOG_WARN, "net: Multicast got error in reply from "
 			    "hostId %" PRId32
 			    " (msgType=0x%hhx transId=%" PRId32" "
 			    "nice=%" PRId32" net=%s): "
 			    "%s.",
-			    h->m_hostId, slot->m_msgType, slot->m_transId, 
+			    h->m_hostId, slot->getMsgType(), slot->m_transId,
 			    m_niceness,
 			    g_hostdb.getNetName(),mstrerror(g_errno ));
 		else if ( logIt )
@@ -1037,7 +1036,7 @@ void Multicast::gotReply1 ( UdpSlot *slot ) {
 			    "(msgType=0x%hhx transId=%" PRId32" nice =%" PRId32" net=%s): "
 			    "%s.",
 			    iptoa(slot->m_ip), (int32_t)slot->m_port, 
-			    slot->m_msgType, slot->m_transId,  m_niceness,
+			    slot->getMsgType(), slot->m_transId,  m_niceness,
 			    g_hostdb.getNetName(),mstrerror(g_errno) );
 	skip:
 		// if this slot had an error we may have to tell UdpServer
@@ -1074,10 +1073,10 @@ void Multicast::gotReply1 ( UdpSlot *slot ) {
 		if ( g_errno == EUNCOMPRESSERROR   ) sendToTwin = false;
 		// ok, let's give up on ENOTFOUND, because the vast majority
 		// of time it seems it is really not on the twin either...
-		if ( g_errno == ENOTFOUND && m_msgType == 0x020 ) 
+		if (g_errno == ENOTFOUND && (m_msgType == msg_type_20 || m_msgType == msg_type_22)) {
 			sendToTwin = false;
-		if ( g_errno == ENOTFOUND && m_msgType == 0x022 ) 
-			sendToTwin = false;
+		}
+
 		// do not worry if it was a not found msg20 for a titleRec
 		// which was not expected to be there
 		if ( ! logIt                       ) sendToTwin = false;
@@ -1207,29 +1206,13 @@ void Multicast::destroySlotsInProgress ( UdpSlot *slot ) {
 		//if ( m_slots[i]->m_state != this ) continue;
 		// don't free his sendBuf, readBuf is ok to free, however
 		m_slots[i]->m_sendBufAlloc = NULL;
-		// if niceness is 0, use the higher priority udpServer
-		UdpServer *us = &g_udpServer;
-		// . stamp him so he doesn't have a better ping than host of #i
-		// . timedOut=true -->only stamp him if it makes his ping worse
-		//int32_t      hostId       = m_slots[i]->m_hostId;
-		//int64_t lastSendTime = m_slots[i]->m_lastSendTime;
-		//int64_t now          = gettimeofdayInMilliseconds() ;
-		//int64_t tripTime     = now - lastSendTime;
-		// . we no longer stamp hosts here, leave that up to
-		//   Hostdb::pingHost()
-		// tripTime is always in milliseconds
-		//g_hostdb.stampHost ( hostId , tripTime , true/*timedOut?*/);
-		//#ifdef _DEBUG_
-		//fprintf(stderr,"stamping host #%" PRId32" w/ tripTime=%" PRId64"ms\n",
-		//	hostId, tripTime);
-		//#endif
 
 		// if caller provided the buffer, don't free it cuz "slot"
 		// contains it (or m_readBuf)
 		if ( m_replyBuf == m_slots[i]->m_readBuf )
 			m_slots[i]->m_readBuf = NULL;
 		// destroy this slot that's in progress
-		us->destroySlot ( m_slots[i] );
+		g_udpServer.destroySlot ( m_slots[i] );
 		// do not re-destroy. consider no longer in progress.
 		m_inProgress[i] = 0;
 	}
@@ -1237,10 +1220,7 @@ void Multicast::destroySlotsInProgress ( UdpSlot *slot ) {
 
 
 // we set *freeReply to true if you'll need to free it
-char *Multicast::getBestReply ( int32_t *replySize , 
-				int32_t *replyMaxSize , 
-				bool *freeReply, 
-				bool  steal) {
+char *Multicast::getBestReply(int32_t *replySize, int32_t *replyMaxSize, bool *freeReply, bool steal) {
 	*replySize    = m_readBufSize;
 	*replyMaxSize = m_readBufMaxSize;
 	if(steal) m_freeReadBuf = false;

@@ -1160,22 +1160,6 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 			      g_corruptPackets
 			       );
 
-
-	// break dropped dgrams down by msg type
-	//for ( int32_t i = 0 ; i < 128 ; i++ ) {
-	//	if ( ! g_udpServer.m_droppedNiceness0[i] ) continue;
-	//	p.safePrintf("<tr class=poo><td>msg%x niceness 0 dropped</td>"
-	//		     "<td>%" PRId32"</td></tr>\n",
-	//		     i,g_udpServer.m_droppedNiceness0[i]);
-	//}
-	//for ( int32_t i = 0 ; i < 128 ; i++ ) {
-	//	if ( ! g_udpServer.m_droppedNiceness1[i] ) continue;
-	//	p.safePrintf("<tr class=poo><td>msg%x dropped</td>"
-	//		     "<td>%" PRId32"</td></tr>\n",
-	//		     i,g_udpServer.m_droppedNiceness1[i]);
-	//}
-
-
 	if ( format == FORMAT_HTML ) 
 		p.safePrintf ( "</table><br><br>\n" );
 

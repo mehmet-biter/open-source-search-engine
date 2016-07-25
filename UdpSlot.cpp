@@ -295,12 +295,8 @@ bool UdpSlot::sendSetup(char *msg,
 		//g_process.shutdownAbort(true);
 		g_errno = EMSGTOOBIG;//EBADENGINEER;
 		return false;
-		//msgSize = MAX_DGRAMS * DGRAM_SIZE;
-		//sleep(50000);
-		//return false;
 	}
-	// get the timestamp in milliseconds
-	//int64_t  now = gettimeofdayInMilliseconds();
+
 	// fill in the supplied parameters
 	m_sendBuf          = msg;
 	m_sendBufSize      = msgSize;
@@ -314,6 +310,7 @@ bool UdpSlot::sendSetup(char *msg,
 	m_niceness         = niceness;
 	m_backoff          = backoff;
 	m_maxWait          = maxWait;
+
 	// . only set m_readBuf if we should
 	// . sendSetup() is called by slots sending a request
 	// . sendSetup() is called by slots sending a reply
@@ -323,33 +320,48 @@ bool UdpSlot::sendSetup(char *msg,
 	if ( replyBuf ) {
 		if ( m_readBuf ) {
 			g_errno = EBADENGINEER;
-			return log(LOG_LOGIC,"udp: Trying to initialize a udp "
-				   "socket for sending, but its read buffer "
-				   "is not empty.");
+			log(LOG_LOGIC,"udp: Trying to initialize a udp socket for sending, but its read buffer is not empty.");
+			return false;
 		}
+
 		m_readBuf          = replyBuf;
 		m_readBufSize      = 0;
 		m_readBufMaxSize   = replyBufMaxSize;
 	}
+
 	// we haven't sent anything yet so reset this to -1
 	m_firstSendTime    = -1;
+
 	// creation time
 	//m_sendSetupCalled  = now;
+
 	// set m_resendTime, based on m_resendCount and m_niceness
 	setResendTime();
+
 	// . set m_dgramsToSend
 	// . similar to UdpProtocol::getNumDgrams(char *dgram,int32_t dgramSize)
 	int32_t dataSpace  = m_maxDgramSize ;
-	if ( m_proto->stripHeaders() ) 
-		dataSpace -= m_proto->getHeaderSize ( msgSize );
+	if ( m_proto->stripHeaders() ) {
+		dataSpace -= m_proto->getHeaderSize(msgSize);
+	}
+
 	m_dgramsToSend  = msgSize / dataSpace;
-	if ( msgSize % dataSpace != 0 ) m_dgramsToSend++;
+	if ( msgSize % dataSpace != 0 ) {
+		m_dgramsToSend++;
+	}
+
 	// if msgSize was given as 0 force a dgram to be sent
-	if ( msgSize == 0 ) m_dgramsToSend = 1;
+	if ( msgSize == 0 ) {
+		m_dgramsToSend = 1;
+	}
 
 	// send to particular ip, but not for pings
-	if ( m_msgType == 0x11 ) return true;
-	if ( ! m_host          ) return true;
+	if ( m_msgType == msg_type_11 ) {
+		return true;
+	}
+	if ( ! m_host          ) {
+		return true;
+	}
 	// inherit this from the last transactions
 	m_preferEth = m_host->m_preferEth;
 	// and set our ip accordingly
@@ -409,7 +421,7 @@ void UdpSlot::prepareForResend ( int64_t now , bool resendAll ) {
 	     // shotgun ip (eth1) must be different than eth0 ip
 	     m_host->m_ip != m_host->m_ipShotgun &&
 	     // pingserver.cpp sends to the exact ips it needs to
-	     m_msgType != 0x11 ) {
+	     m_msgType != msg_type_11 ) {
 		// . were we using the eth0 ip? if so, switch to eth1
 		// . do not switch though if the ping is really bad for eth1
 		if ( m_preferEth == 0 &&  m_host->m_pingShotgun<3000 ){
@@ -453,22 +465,18 @@ void UdpSlot::prepareForResend ( int64_t now , bool resendAll ) {
 	// . need to increment since won't resend to eth1 unless this is 2
 	m_resendCount++; 
 	// debug msg
-	if ( g_conf.m_logDebugUdp || 
-	     (g_conf.m_logDebugDns && !m_proto->useAcks()) ) 
-		logf(LOG_DEBUG,"udp: resending slot "
-		    "all=%" PRId32" "
-		    "tid=%" PRId32" "
-		    "dst=%s:%hu "
-		     "count=%" PRId32" "
-		     "host=0x%" PTRFMT" "
-		    "cleared=%" PRId32 ,
-		    (int32_t)resendAll ,
-		    (int32_t)m_transId ,
+	if ( g_conf.m_logDebugUdp || (g_conf.m_logDebugDns && !m_proto->useAcks()) ) {
+		logf(LOG_DEBUG, "udp: resending slot all=%" PRId32" tid=%" PRId32" dst=%s:%hu count=%" PRId32" host=0x%" PTRFMT
+		     " cleared=%" PRId32,
+		     (int32_t) resendAll,
+		     (int32_t) m_transId,
 		     iptoa(m_ip),//+9,
-		    (uint16_t)m_port,
-		     (int32_t)m_resendCount,
-		     (PTRTYPE)m_host,
-		     (int32_t)cleared);
+		     (uint16_t) m_port,
+		     (int32_t) m_resendCount,
+		     (PTRTYPE) m_host,
+		     (int32_t) cleared);
+	}
+
 	// . after UdpServer::readTimeOutPoll() calls this prepareForResend()
 	//   he then calls doSending()
 	// . but we cannot send unless the token is free or we're older (500ms)
@@ -476,38 +484,14 @@ void UdpSlot::prepareForResend ( int64_t now , bool resendAll ) {
 	// . therefore let's update the m_lastSentTime if we didn't send
 	//   anything, just so readTimeoutPoll() quits calling us every time
 	m_lastSendTime = now;
+
 	// . don't increase our m_resendTime if we didn't resend anything
 	// . that way when the token is available or 500ms younger than us
 	//   we won't be waiting 600ms until we can check that!
-	if ( cleared == 0 ) return;
-	// otheriwise, calculate how much time since our last send
-	// these values are computed, but not used, it seems as though
-	//the functionality was moved into setResendTime.
-	// 	int32_t max ;
-	// 	if      ( m_maxWait  >= 0 ) max = m_maxWait;
-	// 	else if ( m_niceness == 0 ) max = MAX_RESEND_0;
-	// 	else                        max = MAX_RESEND_1;
-	// 	// . how many milliseconds have we been trying to send to it?
-	// 	// . each retry doubles the previous (up to 30,000ms)
-	// 	int32_t elapsed = m_resendCount;
-	// 	for ( int32_t i = 0 ; i < m_resendCount ; i++ ) {
-	// 		int32_t step = m_resendCount << (i+1) ;
-	// 		// watch out for huge numbers
-	// 		if ( i >= 16    ) step = max;
-	// 		if ( step > max ) step = max;
-	// 		elapsed += step;
-	// 	}
-	// debug msg
-	//log("(resend) tripTime = %" PRId32, m_resendTime );
-	// . we haven't gotten a read in m_resendTime milliseconds!
-	// . stamp host's times to show the affect of the slowdown
-	// . "timedOut" being true means host will only be stamped if it makes
-	//   his avg ping time WORSE 
-	// . use this when we didn't actually get a response from him
-	// . this is now handled by g_hostdb::pingHost()
-	//g_hostdb.stampHost( m_hostId , elapsed , true/*timedOut?*/ );
-	// tally the count
-	//m_resendCount++; 
+	if ( cleared == 0 ) {
+		return;
+	}
+
 	// update stats for this host for the PageHosts.cpp table
 	Host *h = m_host;
 	if ( ! h && m_hostId >= 0 ) h = g_hostdb.getHost ( m_hostId );
@@ -721,7 +705,9 @@ int32_t UdpSlot::sendDatagramOrAck ( int sock, bool allowResends, int64_t now ){
 
 		// don't fuck with it if we are ping though, because that
 		// needs to specify the exact ip!
-		if ( m_msgType == 0x11 ) to.sin_addr.s_addr = ip;
+		if ( m_msgType == msg_type_11 ) {
+			to.sin_addr.s_addr = ip;
+		}
 
 		//if ( m_host ) m_host->m_shotgunBit = 1;
 		// update stats, just put them all in g_udpServer
@@ -1030,16 +1016,6 @@ int32_t UdpSlot::sendAck ( int sock , int64_t now ,
 	to.sin_family = AF_INET;
 	to.sin_addr.s_addr =         ip;
 	to.sin_port        = htons ( m_port );
-
-	// . respect the shotgun. ping though does not! (0x11)
-	// . NO! send ack back on the same eth port as the request we recvd
-	//if ( m_host && m_msgType != 0x11 ) {
-	//	// send ack back on the same eth port as the request we recvd
-	//	if ( m_host->m_preferEth == 1 ) 
-	//		to.sin_addr.s_addr = m_host->m_ipShotgun;
-	//	else
-	//		to.sin_addr.s_addr = m_host->m_ip;
-	//}
 
 	// stat count
 	if ( cancelTrans ) g_cancelAcksSent++;
@@ -1583,8 +1559,6 @@ void UdpSlot::readAck ( int32_t dgramNum, int64_t now ) {
 	// if the reply or request was fully acknowledged by the receiver
 	// then record some statistics
 	if ( ! hasAcksToRead() ) {
-		//if ( m_msgType == 0x39 )
-		//	log("jey");
 		now = gettimeofdayInMilliseconds();
 		int32_t delta = now - m_startTime;
 		// but if we were sending a reply, use m_queuedTime
@@ -1660,26 +1634,20 @@ bool UdpSlot::makeReadBuf ( int32_t msgSize , int32_t numDgrams ) {
 	// bitch if it's already there
 	if ( m_readBuf ) {
 		g_errno = EBADENGINEER;
-		return log(LOG_LOGIC,
-			   "udp: makereadbuf: Read buf already there.");
+		log(LOG_LOGIC, "udp: makereadbuf: Read buf already there.");
+		return false;
 	}
 	// ensure msg not too big
 	if ( msgSize > m_proto->getMaxMsgSize() ) {
 		g_errno = EMSGTOOBIG;
-		return log(LOG_LOGIC,"udp: makereadbuf: msg size of %" PRId32" is "
+		log(LOG_LOGIC,"udp: makereadbuf: msg size of %" PRId32" is "
 			   "too big. Max is %" PRId32".",msgSize,
 			   (int32_t)m_proto->getMaxMsgSize());
+		return false;
 	}
 	// if msgSize is -1 then it is under 1 dgram, but assume the worst
 	if ( msgSize == -1 ) msgSize = m_maxDgramSize;
-	// . if it is small enough, no need to malloc
-	// . but Msg0 requests like to set list to contents, so make it 
-	// . we'll have to check everything before doing this...
-	//if ( msgSize <= TMPBUFSIZE && m_msgType != 0x00 ) {
-	//	m_readBuf        = m_tmpBuf;
-	//	m_readBufMaxSize = TMPBUFSIZE;
-	//	return true;
-	//}		
+
 	// . create a msg buf to hold msg, zero out everything...
 	// . label it "umsg" so we can grep the *.cpp files for it
 	char bb[10];
@@ -1687,6 +1655,8 @@ bool UdpSlot::makeReadBuf ( int32_t msgSize , int32_t numDgrams ) {
 	bb[1] = 'm';
 	bb[2] = 's';
 	bb[3] = 'g';
+
+	/// @todo ALC simpler method to convert to hex?
 	// msgType is 8 bits
 	char val ;
 	val = ((m_msgType >> 4) & 0x0f);

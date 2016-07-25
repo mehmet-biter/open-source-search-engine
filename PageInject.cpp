@@ -148,11 +148,11 @@ Host *getHostToHandleInjection ( char *url ) {
 		Host *h = g_hostdb.getHost(i);
 		h->m_tmpCount = 0;
 	}
-	for ( UdpSlot *slot = g_udpServer.m_head2 ; 
+	for ( UdpSlot *slot = g_udpServer.getActiveHead() ;
 	      slot ; 
 	      slot = slot->m_next2 ) {
 		// skip if not injection request
-		if ( slot->m_msgType != 0x07 ) continue;
+		if ( slot->getMsgType() != msg_type_7 ) continue;
 		//if ( ! slot->m_weInitiated ) continue;
 		// if we did not initiate the injection request, i.e. if
 		// it is to us, skip it

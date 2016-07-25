@@ -159,9 +159,13 @@ class UdpServer {
 	// . his callback will be called with errno set to "errnum"
 	void sendErrorReply( UdpSlot *slot, int32_t errnum );
 
-	int32_t getNumUsedSlots  () { return m_numUsedSlots; }
+	int32_t getNumUsedSlots() {
+		return m_numUsedSlots;
+	}
 
-	int32_t getNumUsedSlotsIncoming  () { return m_numUsedSlotsIncoming; }
+	int32_t getNumUsedSlotsIncoming  () {
+		return m_numUsedSlotsIncoming;
+	}
 	
 
 	// . when a request/msg of type "msgType" is received we call the
@@ -239,7 +243,7 @@ class UdpServer {
 	void removeFromCallbackLinkedList ( UdpSlot *slot ) ;
 
 	// cancel a transaction
-	void cancel ( void *state , unsigned char msgType ) ;
+	void cancel(void *state, msg_type_t msgType);
 
 	// replace ips and ports in outstanding slots
 	void replaceHost ( Host *oldHost, Host *newHost );

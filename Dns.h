@@ -21,11 +21,9 @@
 #define MAX_DNS_IPS 32
 #define MAX_TRIED_IPS 32 // stop after asking 32 nameservers, return timed out
 #define LOOP_BUF_SIZE 26100
-//#define LOOP_BUF_SIZE (64*1024)
 
 // use a default of 1 day for both caches
 #define DNS_CACHE_MAX_AGE       (60*60*24)
-#define DNS_CACHE_MAX_AGE_LOCAL (60*60*24)
 
 // structure for TLD root name servers
 typedef struct {

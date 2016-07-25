@@ -248,6 +248,7 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 	}
 	if ( didSwap ) goto keepSorting;
 
+	/// @todo ALC we're missing a few msg counts
 	// count how many of each msg we have
 	int32_t msgCount0[96];
 	int32_t msgCount1[96];
@@ -404,7 +405,7 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 			eip     = tmpHostId;
 		}
 		// set description of the msg
-		int32_t msgType        = s->m_msgType;
+		msg_type_t msgType        = s->getMsgType();
 		const char *desc          = "";
 		char *rbuf          = s->m_readBuf;
 		char *sbuf          = s->m_sendBuf;
@@ -416,51 +417,69 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 		char *buf     = NULL;
 		int32_t  bufSize = 0;
 		char tt [ 64 ];
-		if ( msgType == 0x00 &&   weInit ) buf = sbuf;
-		if ( msgType == 0x00 && ! weInit ) buf = rbuf;
-		if ( msgType == 0x01 &&   weInit ) buf = sbuf;
-		if ( msgType == 0x01 && ! weInit ) buf = rbuf;
-		// . if callback was called this slot's sendbuf can be bogus
-		// . i put this here to try to avoid a core dump
-		if ( msgType == 0x13 &&   weInit && ! s->m_calledCallback ) {
-			buf = sbuf; bufSize = sbufSize; }
-		if ( msgType == 0x13 && ! weInit ) {
-			buf = rbuf; bufSize = rbufSize; }
+
+		if (msgType == msg_type_0) {
+			buf = weInit ? sbuf : rbuf;
+		} else if (msgType == msg_type_1) {
+			buf = weInit ? sbuf : rbuf;
+		} else if (msgType == msg_type_13) {
+			// . if callback was called this slot's sendbuf can be bogus
+			// . i put this here to try to avoid a core dump
+			if (weInit) {
+				if (!s->m_calledCallback) {
+					buf = sbuf;
+					bufSize = sbufSize;
+				}
+			} else {
+				buf = rbuf;
+				bufSize = rbufSize;
+			}
+		}
+
 		if ( buf ) {
-			int32_t rdbId = -1;
-			if (msgType == 0x01) rdbId = buf[0];
-			else                 rdbId = buf[24];
+			int32_t rdbId = (msgType == msg_type_1) ? buf[0] : buf[24];
 			Rdb *rdb = NULL;
-			if ( rdbId >= 0 && ! isDns ) 
-				rdb = getRdbFromId ((uint8_t)rdbId );
-			const char *cmd;
-			if ( msgType == 0x01 ) cmd = "add to";
-			else                   cmd = "get from";
-			tt[0] = ' '; tt[1]='\0';
-			if ( rdb ) sprintf ( tt , "%s %s" ,
-					     cmd,rdb->m_dbname );
+			if (rdbId >= 0 && !isDns) {
+				rdb = getRdbFromId((uint8_t) rdbId);
+			}
+
+			tt[0] = ' ';
+			tt[1] = '\0';
+			if (rdb) {
+				const char *cmd = ( msgType == msg_type_1 ) ? "add to" : "get from";
+				sprintf(tt, "%s %s", cmd, rdb->m_dbname);
+			}
 			desc = tt;
 		}
-		if ( msgType == 0x0c ) desc = "getting ip";
-		if ( msgType == 0x11 ) desc = "ping";
-		if ( msgType == 0x04 ) desc = "meta add";
-		if ( msgType == 0x13 ) {
-			char isRobotsTxt = 1;
-			if ( buf && bufSize >= 
-			     (int32_t)sizeof(Msg13Request)-(int32_t)MAX_URL_LEN ) {
+
+		if ( msgType == msg_type_c ) {
+			desc = "getting ip";
+		} else if ( msgType == msg_type_11 ) {
+			desc = "ping";
+		} else if ( msgType == msg_type_4 ) {
+			desc = "meta add";
+		} else if ( msgType == msg_type_13 ) {
+			bool isRobotsTxt = true;
+			if ( buf && bufSize >= (int32_t)sizeof(Msg13Request)-(int32_t)MAX_URL_LEN ) {
 				Msg13Request *r = (Msg13Request *)buf;
 				isRobotsTxt = r->m_isRobotsTxt;
 			}
-			if ( isRobotsTxt ) desc = "get robots.txt";
-			else               desc = "get web page";
+			desc = isRobotsTxt ? "get robots.txt" : "get web page";
+		} else if ( msgType == msg_type_22 ) {
+			desc = "get titlerec";
+		} else if ( msgType == msg_type_20 ) {
+			desc = "get summary";
+		} else if ( msgType == msg_type_39 ) {
+			desc = "get docids";
+		} else if ( msgType == msg_type_17 ) {
+			desc = "cache access";
+		} else if ( msgType == msg_type_7 ) {
+			desc = "inject";
+		} else if ( msgType == msg_type_25 ) {
+			desc = "get link info";
+		} else if ( msgType == msg_type_fd ) {
+			desc = "proxy forward";
 		}
-		if ( msgType == 0x22 ) desc = "get titlerec";
-		if ( msgType == 0x20 ) desc = "get summary";
-		if ( msgType == 0x39 ) desc = "get docids";
-		if ( msgType == 0x17 ) desc = "cache access";
-		if ( msgType == 0x07 ) desc = "inject";
-		if ( msgType == 0x25 ) desc = "get link info";
-		if ( msgType == 0xfd ) desc = "proxy forward";
 		
 		p->safePrintf ( "<tr bgcolor=#%s>"
 				"<td>%s</td>"  // age

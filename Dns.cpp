@@ -1051,6 +1051,7 @@ bool Dns::sendToNextDNS ( DnsState *ds ) {
         // . u_int16_t dns_auth_count;  /* number of authority RRs */
         // . u_int16_t dns_add_count;   /* number of additional RRs */
 
+	/// @todo ALC something fishy is going on here. investigate!
 	// HACK: if udpserver's transId is too big for us, reset it
 	if(m_udpServer.m_nextTransId > 65535 ) 
 		m_udpServer.m_nextTransId =0;

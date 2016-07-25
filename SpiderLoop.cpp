@@ -1306,7 +1306,7 @@ bool SpiderLoop::spiderUrl9 ( SpiderRequest *sreq ,
 			// HttpServer::getDoc() then this will have no effect.
 			g_httpServer.cancel ( xd );//, g_msg13RobotsWrapper );
 			// cancel any Msg13 that xd might have been waiting for
-			g_udpServer.cancel ( &xd->m_msg13 , 0x13 );
+			g_udpServer.cancel ( &xd->m_msg13 , msg_type_13 );
 		}
 		return true;
 	}

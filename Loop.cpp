@@ -841,7 +841,9 @@ void Loop::doPoll ( ) {
 
 	logDebug( g_conf.m_logDebugLoop, "loop: Entered doPoll." );
 
-	if(g_udpServer.needBottom()) g_udpServer.makeCallbacks_ass ( 1 );
+	if(g_udpServer.needBottom()) {
+		g_udpServer.makeCallbacks_ass ( 1 );
+	}
 
 	int32_t n;
 
