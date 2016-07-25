@@ -79,7 +79,6 @@ public:
 	bool init(uint16_t port, UdpProtocol *proto, int32_t readBufSize, int32_t writeBufSize, int32_t pollTime,
 	          int32_t maxSlots, bool isDns);
 
-
 	// . sends a request
 	// . returns false and sets g_errno on error, true on success
 	// . callback will be called on reception of reply or on error
@@ -212,6 +211,10 @@ public:
 	// changes timeout to very low on dead hosts
 	bool timeoutDeadHosts ( class Host *h );
 
+	static void readPollWrapper(int fd, void *state);
+	static void timePollWrapper(int fd, void *state);
+	static void sendPollWrapper(int fd, void *state);
+
 	// . we need a transaction id for every transaction so we can match
 	//   incoming reply msgs with their corresponding request msgs
 	// . TODO: should be stored to disk on shutdown and every 1024 sends
@@ -286,9 +289,6 @@ private:
 	// . called by readPoll()
 	int32_t readSock_ass ( UdpSlot **slot , int64_t now );
 
-
-	bool m_isDns;
-
 	// when a call to sendto() blocks we set this to true so Loop.cpp
 	// will know to manually call sendPoll_ass() rather than counting
 	// on receiving a fd-ready-for-writing signal for this UdpServer
@@ -341,6 +341,8 @@ private:
 	// turn them interrupts off before calling this
 	UdpSlot *getUdpSlot(key_t k);
 
+
+
 	// . hash table for converting keys to slots
 	// . if m_ptrs[i] is NULL, ith bucket is empty
 	UdpSlot **m_ptrs;
@@ -363,11 +365,10 @@ private:
 	int32_t m_numUsedSlots;
 	int32_t m_numUsedSlotsIncoming;
 
-public:
-	static void readPollWrapper(int fd, void *state);
-	static void timePollWrapper(int fd, void *state);
-	static void sendPollWrapper(int fd, void *state);
 
+	bool m_isDns;
+
+public:
 	// stats
 	int64_t       m_eth0BytesIn;
 	int64_t       m_eth0BytesOut;

@@ -172,8 +172,7 @@ bool UdpServer::init ( uint16_t port, UdpProtocol *proto,
 	m_nextTransId = 0;
 	// clear handlers
 	memset ( m_handlers, 0 , sizeof(void(* )(UdpSlot *slot,int32_t)) * 128);
-	//memset ( m_droppedNiceness0 , 0 , sizeof(int32_t) * 128);
-	//memset ( m_droppedNiceness1 , 0 , sizeof(int32_t) * 128);
+
     // save the port in case we need it later
     m_port    = port;
 	// no requests waiting yet
