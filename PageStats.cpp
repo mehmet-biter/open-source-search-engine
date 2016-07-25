@@ -21,7 +21,6 @@
 #include "Sections.h"
 #include "Msg13.h"
 #include "Msg3.h"
-#include "Msg17.h"
 
 bool printNumAbbr ( SafeBuf &p, int64_t vvv ) {
 	float val = (float)vvv;
@@ -553,15 +552,12 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 	// columns are the caches
 	//
 
-	RdbCache *resultsCache  = &g_genericCache[SEARCHRESULTS_CACHEID];
-
 	int32_t numCaches = 0;
 	RdbCache *caches[20];
 	caches[numCaches++] = Msg13::getHttpCacheRobots();
 	caches[numCaches++] = Msg13::getHttpCacheOthers();
 	caches[numCaches++] = g_dns.getCache();
 	caches[numCaches++] = g_dns.getCacheLocal();
-	caches[numCaches++] = resultsCache;
 	caches[numCaches++] = &g_spiderLoop.m_winnerListCache;
 	caches[numCaches++] = Msg8a::getCache();
 

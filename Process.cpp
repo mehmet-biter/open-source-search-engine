@@ -25,7 +25,6 @@
 #include "Profiler.h"
 #include "Msg4.h"
 #include "Msg5.h"
-#include "Msg17.h"
 #include "Wiki.h"
 #include "Wiktionary.h"
 #include "Proxy.h"
@@ -1240,14 +1239,6 @@ bool Process::saveBlockingFiles2 ( ) {
 	// the robots.txt cache
 	Msg13::getHttpCacheRobots()->save( false ); // use threads?
 
-	// save our caches
-	for ( int32_t i = 0; i < MAX_GENERIC_CACHES; i++ ) {
-		if ( g_genericCache[i].useDisk() ) {
-			// do not use threads
-			g_genericCache[i].save( false );
-		}
-	}
-
 	// save dns caches
 	RdbCache *c = g_dns.getCache();
 	if (c && c->useDisk()) {
@@ -1287,9 +1278,6 @@ void Process::resetAll ( ) {
 	g_ucProps         .reset();
 	g_ucScripts       .reset();
 	g_profiler        .reset();
-
-	for ( int32_t i = 0; i < MAX_GENERIC_CACHES; i++ )
-		g_genericCache[i].reset();
 
 	// reset disk page caches
 	resetPageCaches();

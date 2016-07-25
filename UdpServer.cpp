@@ -1177,8 +1177,6 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 		if ( m_numUsedSlots >= 2300 && ! isProxy ) getSlot = false;
 		// never drop ping packets! they do not send out requests
 		if ( msgType == msg_type_11 ) getSlot = true;
-		// and getting results from the cache is always zippy
-		if ( msgType == msg_type_17 ) getSlot = true;
 		// getting a titlerec does not send out a 2nd request. i really
 		// hate those title rec timeout msgs.
 		if ( msgType == msg_type_22 && niceness == 0 ) getSlot = true;
@@ -1410,7 +1408,6 @@ bool UdpServer::makeCallbacks_ass ( int32_t niceness ) {
 			if ( slot->m_callback ) continue;
 			// only call certain msg handlers...
 			if ( slot->getMsgType() != msg_type_11 &&  // ping
-			     slot->getMsgType() != msg_type_17 &&  // serp/dist cache
 			     slot->getMsgType() != msg_type_1 &&  // add  RdbList
 			     slot->getMsgType() != msg_type_0   ) // read RdbList
 				continue;

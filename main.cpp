@@ -55,7 +55,6 @@
 #include "Msg22.h"
 #include "Msg39.h"
 #include "Msg40.h"    // g_resultsCache
-#include "Msg17.h"
 #include "Parms.h"
 #include "Pages.h"
 #include "PageInject.h"
@@ -2145,21 +2144,6 @@ int main2 ( int argc , char *argv[] ) {
 	// Load the category language table
 	g_countryCode.loadHashTable();
 
-	// init the cache in Msg40 for caching search results
-	// if cache not initialized now then do it now
-	int32_t maxMem = g_conf.m_searchResultsMaxCacheMem;
-	if ( ! g_genericCache[SEARCHRESULTS_CACHEID].init (
-				     maxMem      ,   // max cache mem
-				     -1          ,   // fixedDataSize
-				     false       ,   // support lists of recs?
-				     maxMem/2048 ,   // max cache nodes 
-				     false       ,   // use half keys?
-				     "results"   ,   // filename
-				     true)) {
-		log("db: ResultsCache: %s",mstrerror(g_errno)); 
-		return 1;
-	}
-
 	// init minsitenuminlinks buffer
 	if ( ! g_tagdb.loadMinSiteInlinksBuffer() ) {
 		log("db: failed to load sitelinks.txt data");
@@ -2947,7 +2931,6 @@ bool registerMsgHandlers2(){
 }
 
 bool registerMsgHandlers3(){
-	Msg17 msg17;    if ( ! msg17.registerHandler () ) return false;
 	if ( ! Msg40::registerHandler() ) return false;
 	return true;
 }

@@ -9,7 +9,6 @@ enum msg_type_t {
 	msg_type_c = 0x0c,
 	msg_type_11 = 0x11,
 	msg_type_13 = 0x13,
-	msg_type_17 = 0x17,
 	msg_type_1f = 0x1f,
 	msg_type_20 = 0x20,
 	msg_type_22 = 0x22,

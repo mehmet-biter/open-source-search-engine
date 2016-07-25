@@ -465,8 +465,6 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 			desc = "get summary";
 		} else if ( msgType == msg_type_39 ) {
 			desc = "get docids";
-		} else if ( msgType == msg_type_17 ) {
-			desc = "cache access";
 		} else if ( msgType == msg_type_7 ) {
 			desc = "inject";
 		} else if ( msgType == msg_type_25 ) {
