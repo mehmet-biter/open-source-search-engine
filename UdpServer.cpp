@@ -1198,7 +1198,7 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 			else                 g_stats.m_dropped[msgType][1]++;
 			if ( now - s_lastTime >= 1000 ) {
 				s_lastTime = now;
-				log("udp: No udp slots to handle datagram.  "
+				log(LOG_INFO, "udp: No udp slots to handle datagram.  "
 				    "(msgType=0x%x niceness=%" PRId32") "
 				    "Discarding. It should be resent. Dropped "
 				    "dgrams=%" PRId32".", msgType,niceness,g_dropped);
