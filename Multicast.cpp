@@ -382,14 +382,14 @@ void Multicast::gotReply2 ( UdpSlot *slot ) {
 			log("net: Got error sending request to hostId %" PRId32" "
 			    "(msgType=0x%hhx transId=%" PRId32" net=%s): "
 			    "%s. Retrying.",
-			    h->m_hostId, slot->m_msgType, slot->m_transId, 
+			    h->m_hostId, slot->getMsgType(), slot->m_transId,
 			    g_hostdb.getNetName(),mstrerror(m_errnos[i]) );
 		else
 			log("net: Got error sending request to %s:%" PRId32" "
 			    "(msgType=0x%hhx transId=%" PRId32" net=%s): "
 			    "%s. Retrying.",
 			    iptoa(slot->m_ip), (int32_t)slot->m_port, 
-			    slot->m_msgType, slot->m_transId, 
+			    slot->getMsgType(), slot->m_transId,
 			    g_hostdb.getNetName(),mstrerror(m_errnos[i]) );
 	}
 	// . let's sleep for a second before retrying the send

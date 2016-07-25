@@ -5187,7 +5187,7 @@ bool pingTest ( int32_t hid , uint16_t clientPort ) {
 	}
 	transId++;
 	int32_t msgSize = 3; // indicates a debug ping packet to PingServer.cpp
-	up->setHeader ( dgram, msgSize, 0x11, dnum, transId, true, false , 0 );
+	up->setHeader ( dgram, msgSize, msg_type_11, dnum, transId, true, false , 0 );
 	int32_t size = up->getHeaderSize(0) + msgSize;
 	int64_t start = gettimeofdayInMilliseconds();
 	n = sendto(sock,dgram,size,0,(struct sockaddr *)(void*)&to,sizeof(to));

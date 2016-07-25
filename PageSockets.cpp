@@ -522,7 +522,7 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 					"admin/sockets?"
 					"c=%s>%s</a></nobr></td>"
 					"<td>%s%" PRId32"%s</td>" , // niceness
-					s->m_msgType ,
+					s->getMsgType() ,
 					desc,
 					// begin clickable hostId
 					toFrom,

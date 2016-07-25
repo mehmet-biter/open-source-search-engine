@@ -495,14 +495,14 @@ void UdpServer::sendReply_ass ( char    *msg        ,
 	if ( n < 0 ) n = 0;
 	if ( n > 1 ) n = 1;
 	// add to average, this is now the reply GENERATION, not handler time
-	g_stats.m_msgTotalOfHandlerTimes [slot->m_msgType][n] += delta;
-	g_stats.m_msgTotalHandlersCalled [slot->m_msgType][n]++;
+	g_stats.m_msgTotalOfHandlerTimes [slot->getMsgType()][n] += delta;
+	g_stats.m_msgTotalHandlersCalled [slot->getMsgType()][n]++;
 	// bucket number is log base 2 of the delta
 	if ( delta > 64000 ) delta = 64000;
 	int32_t bucket = getHighestLitBit ( (uint16_t)delta );
 	// MAX_BUCKETS is probably 16 and #define'd in Stats.h
 	if ( bucket >= MAX_BUCKETS ) bucket = MAX_BUCKETS-1;
-	g_stats.m_msgTotalHandlersByTime [slot->m_msgType][n][bucket]++;
+	g_stats.m_msgTotalHandlersByTime [slot->getMsgType()][n][bucket]++;
 	// we have to use a different clock for measuring how long to
 	// send the reply now
 	slot->m_queuedTime = now;
@@ -2691,11 +2691,11 @@ void UdpServer::cancel ( void *state , msg_type_t msgType ) {
 	// . but if we're waiting for a reply, don't bother
 	for ( UdpSlot *slot = m_head2 ; slot ; slot = slot->m_next2 ) {
 		// skip if not a match
-		if (slot->m_state != state || slot->m_msgType != msgType) {
+		if (slot->m_state != state || slot->getMsgType() != msgType) {
 			continue;
 		}
 		// note it
-		log(LOG_INFO,"udp: cancelled udp socket. msgType=0x%hhx.", slot->m_msgType);
+		log(LOG_INFO,"udp: cancelled udp socket. msgType=0x%hhx.", slot->getMsgType());
 		// let them know why we are calling the callback prematurely
 		g_errno = ECANCELLED;
 		// stop waiting for reply, this will call destroySlot(), too
@@ -2778,9 +2778,8 @@ void UdpServer::replaceHost ( Host *oldHost, Host *newHost ) {
 		slot->m_key = key;
 		slot->resetConnect();
 		// log it
-		log ( LOG_INFO, "udp: Reset Slot For Replaced Host: "
-				"transId=%" PRId32" msgType=%i",
-				slot->m_transId, slot->m_msgType );
+		log ( LOG_INFO, "udp: Reset Slot For Replaced Host: transId=%" PRId32" msgType=%i",
+		      slot->m_transId, slot->getMsgType() );
 	}
 }
 
