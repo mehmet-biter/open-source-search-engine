@@ -662,18 +662,14 @@ bool Msg5::gotList2 ( ) {
 	int32_t n = 0;
 	// all the disk lists
 	for ( int32_t i = 0 ; n < MAX_RDB_FILES && i < m_msg3.getNumLists(); ++i ) {
+		RdbList *list = m_msg3.getList(i);
+		if(list==NULL) gbshutdownLogicError();
 		// . skip list if empty
 		// . was this causing problems?
 		if ( ! m_isRealMerge ) {
-			RdbList *list = m_msg3.getList(i);
 			if ( list->isEmpty() ) continue;
 		}
-		// . remember the tfn, the secondary id
-		// . the tfn is used by tfndb to map a docid to a titledb
-		//   file. each tfndb record has the tfn. each titledb file
-		//   has a tfn (secondary id, aka id2)
-		//if ( m_rdbId == RDB_TITLEDB ) m_tfns [n] = m_msg3.getTfn(i); 
-		m_listPtrs [ n++ ] = m_msg3.getList(i);
+		m_listPtrs [ n++ ] = list;
 	}
 	QUICKPOLL(m_niceness);
 
