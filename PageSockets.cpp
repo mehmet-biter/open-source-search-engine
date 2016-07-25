@@ -248,21 +248,15 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 	}
 	if ( didSwap ) goto keepSorting;
 
-	/// @todo ALC we're missing a few msg counts
 	// count how many of each msg we have
-	int32_t msgCount0[96];
-	int32_t msgCount1[96];
-	for ( int32_t i = 0; i < 96; i++ ) {
-		msgCount0[i] = 0;
-		msgCount1[i] = 0;
-	}
+	int32_t msgCount0[MAX_MSG_TYPES] = {};
+	int32_t msgCount1[MAX_MSG_TYPES] = {};
 	for ( int32_t i = 0; i < nn; i++ ) {
 		UdpSlot *s = slots[i];
-		if ( s->m_msgType >= 96 ) continue;
 		if ( s->m_niceness == 0 )
-			msgCount0[s->m_msgType]++;
+			msgCount0[s->getMsgType()]++;
 		else
-			msgCount1[s->m_msgType]++;
+			msgCount1[s->getMsgType()]++;
 	}
 
 	const char *wr = "";
