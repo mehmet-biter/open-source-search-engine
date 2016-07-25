@@ -377,7 +377,7 @@ skip:
 		// . we return true if it returns false
 		if ( ! us->sendRequest ( m_request     ,
 					 m_requestSize ,
-					 0x00          , // msgType
+					 msg_type_0          , // msgType
 					 h->m_ip       ,
 					 port          ,
 					 m_hostId      ,
@@ -428,7 +428,7 @@ skip:
 
         if ( ! m->send ( m_request    , 
 			      m_requestSize,
-			      0x00         , // msgType 0x00
+			      msg_type_0         ,
 			      false        , // does multicast own request?
 			 m_shardNum ,
 			      false        , // send to whole group?

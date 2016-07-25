@@ -1720,39 +1720,45 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 
 	// loop over niceness
 	for ( int32_t i3 = 0 ; i3 < 2 ; i3++ ) {
-	// print each msg stat
-	for ( int32_t i1 = 0 ; i1 < MAX_MSG_TYPES ; i1++ ) {
-		// only hyml
-		if ( format != FORMAT_HTML ) break;
-		// skip it if has no handler
-		if ( i1 != 0x41 && ! g_udpServer.m_handlers[i1] ) continue;
-		// print it all out
-		int64_t total = g_stats.m_msgTotalOfHandlerTimes[i1][i3];
-		int64_t nt    = g_stats.m_msgTotalHandlersCalled[i1][i3];
-		// skip if no stat
-		if ( nt == 0 ) continue;
-		int32_t      avg   = 0;
-		if ( nt > 0 ) avg = total / nt;
-		p.safePrintf( 
-			     "<tr class=poo>"
-			      "<td>%" PRId32"</td>"    // niceness, 0 or 1
-			     "<td>0x%hhx</td>" // msgType
-			      //"<td>%" PRId32"</td>"    // request?
-			      "<td>%" PRId64"</td>" // total called
-			      "<td>%" PRId32"ms</td>" ,// avg handler time in ms
-			      i3, // niceness
-			      (unsigned char)i1, // msgType
-			      //i2, // request?
-			      nt ,
-			      avg );
-		// print buckets
-		for ( int32_t i4 = 0 ; i4 < MAX_BUCKETS ; i4++ ) {
-			int64_t count ;
-			count = g_stats.m_msgTotalHandlersByTime[i1][i3][i4];
-			p.safePrintf("<td>%" PRId64"</td>",count);
+		// print each msg stat
+		for ( int32_t i1 = 0 ; i1 < MAX_MSG_TYPES ; i1++ ) {
+			// only hyml
+			if ( format != FORMAT_HTML ) {
+				break;
+			}
+
+			// skip it if has no handler
+			if ( ! g_udpServer.m_handlers[i1] ) {
+				continue;
+			}
+
+			// print it all out
+			int64_t total = g_stats.m_msgTotalOfHandlerTimes[i1][i3];
+			int64_t nt    = g_stats.m_msgTotalHandlersCalled[i1][i3];
+			// skip if no stat
+			if ( nt == 0 ) continue;
+			int32_t      avg   = 0;
+			if ( nt > 0 ) avg = total / nt;
+			p.safePrintf(
+				     "<tr class=poo>"
+				      "<td>%" PRId32"</td>"    // niceness, 0 or 1
+				     "<td>0x%hhx</td>" // msgType
+				      //"<td>%" PRId32"</td>"    // request?
+				      "<td>%" PRId64"</td>" // total called
+				      "<td>%" PRId32"ms</td>" ,// avg handler time in ms
+				      i3, // niceness
+				      (unsigned char)i1, // msgType
+				      //i2, // request?
+				      nt ,
+				      avg );
+			// print buckets
+			for ( int32_t i4 = 0 ; i4 < MAX_BUCKETS ; i4++ ) {
+				int64_t count ;
+				count = g_stats.m_msgTotalHandlersByTime[i1][i3][i4];
+				p.safePrintf("<td>%" PRId64"</td>",count);
+			}
+			p.safePrintf("</tr>\n");
 		}
-		p.safePrintf("</tr>\n");
-	}
 	}
 
 

@@ -407,7 +407,7 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
         if ( h->m_isProxy ) hostId = -1;
 	if (  g_udpServer.sendRequest ( (char *)pi , //request       ,
 					sizeof(PingInfo),//requestSize   ,
-					0x11          ,
+					msg_type_11          ,
 					ip            ,//h->m_ip       ,
 					port          ,//h->m_port     ,
 					hostId        ,
@@ -611,7 +611,7 @@ void gotReplyWrapperP ( void *state , UdpSlot *slot ) {
 	if ( g_udpServer.sendRequest (h->m_tmpBuf,//RequestBuf,
 				      //h->m_requestBuf ,
 				       4               , // 4 byte request
-				       0x11          ,
+				       msg_type_11          ,
 				       slot->m_ip    , // h->m_ip       ,
 				       slot->m_port  , // h->m_port2    ,
 				       hid   ,
@@ -1381,7 +1381,7 @@ bool PingServer::broadcastShutdownNotes ( bool    sendEmailAlert          ,
 		// send it right now
 		if ( g_udpServer.sendRequest ( s_buf         ,
 						5             , // rqstSz
-						0x11          , // msgType
+						msg_type_11          ,
 						h->m_ip       ,
 						h->m_port     ,
 					       // we are sending to a proxy!
@@ -1418,7 +1418,7 @@ bool PingServer::broadcastShutdownNotes ( bool    sendEmailAlert          ,
 		// send it right now
 		if ( g_udpServer.sendRequest ( s_buf         ,
 						5             , // rqstSz
-						0x11          , // msgType
+						msg_type_11          ,
 						h->m_ip       ,
 						h->m_port     ,
 						h->m_hostId   ,
@@ -1538,7 +1538,7 @@ void PingServer::tapHost ( int32_t hostId ) {
 	//   spidering and spidering is suspended if a host is down
 	if ( g_udpServer.sendRequest ( s_lastSyncPoint ,
 					9               ,
-					0x11            ,
+					msg_type_11            ,
 					h->m_ip         ,
 					h->m_port       ,
 					h->m_hostId     ,

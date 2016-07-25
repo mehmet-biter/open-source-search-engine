@@ -167,7 +167,7 @@ bool Msg22::getTitleRec ( Msg22Request  *r              ,
 	// . TMPBUFSIZE is how much a UdpSlot can hold w/o allocating
         if ( ! m_mcast.send ( (char *)r       , 
 			      r->getSize()    ,
-			      0x22            , // msgType 0x22
+			      msg_type_22            ,
 			      false           , // m_mcast own m_request?
 			      shardNum        , // send to group (groupKey)
 			      false           , // send to whole group?

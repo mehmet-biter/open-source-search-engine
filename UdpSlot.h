@@ -9,6 +9,7 @@
 #include "Mem.h"
 #include "UdpProtocol.h"
 #include "Hostdb.h"
+#include "MsgType.h"
 
 #define SMALLDGRAMS
 
@@ -129,19 +130,19 @@ class UdpSlot {
 	// . set up this slot for a send (call after connect() above)
 	// . returns false and sets errno on error
 	// . use a backoff of -1 for the default
-	bool sendSetup ( char      *msg         ,  
-			 int32_t       msgSize     ,
-			 char      *alloc       ,
-			 int32_t       allocSize   ,
-			 unsigned char msgType     ,
-			 int64_t  now         ,
-			 void      *state       ,
-			 void      (*callback)(void *state,class UdpSlot *) ,
-			 int32_t       niceness    ,
-			 int16_t      backoff     ,
-			 int16_t      maxWait     ,
-			 char      *replyBuf    ,
-			 int32_t       replyBufMaxSize );
+	bool sendSetup(char *msg,
+	               int32_t msgSize,
+	               char *alloc,
+	               int32_t allocSize,
+	               msg_type_t msgType,
+	               int64_t now,
+	               void *state,
+	               void      (*callback)(void *state, class UdpSlot *),
+	               int32_t niceness,
+	               int16_t backoff,
+	               int16_t maxWait,
+	               char *replyBuf,
+	               int32_t replyBufMaxSize);
 
 	// . send a datagram from this slot on "sock" (call after sendSetup())
 	// . returns -2 if nothing to send, -1 on error, 0 if blocked, 
@@ -220,7 +221,7 @@ class UdpSlot {
 		return true;
 	}
 
-	unsigned char  getMsgType ( ) { return m_msgType; }
+	msg_type_t  getMsgType ( ) { return m_msgType; }
 
 	key_t getKey ( ) { return m_proto->makeKey ( m_ip, m_port , 
 						     m_transId ,
@@ -330,7 +331,7 @@ class UdpSlot {
 	Host *m_host;
 
 	int32_t        m_hostId;        // the endpoint host's hostId in hostmap
-	unsigned char m_msgType;       // i like to use this for class routing
+	msg_type_t m_msgType;       // i like to use this for class routing
 
 	int64_t        m_timeout;       // deltaT in milliseconds
 	int32_t        m_errno;         // anything go wrong?  0 means ok.

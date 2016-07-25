@@ -121,22 +121,22 @@ class UdpServer {
 	//   probably at least 300 ms of resending tries.
 	// . use an ip of 0 and port of 0 if you provide a hostId. use a hostid
 	//   of -1 to indicate no hostid.
-	bool sendRequest ( char     *msg          ,
-			   int32_t      msgSize      ,
-			   unsigned char    msgType      ,
-			   uint32_t   ip     ,
-			   uint16_t  port   ,
-			   int32_t      hostId       ,
-			   UdpSlot **retSlot      , // can be NULL
-			   void     *state        , // callback state
-			   void    (* callback ) (void *state, UdpSlot *slot) ,
-			   int64_t      timeout      = 60000 , // milliseconds
-			   int16_t     backoff      = -1 ,
-			   int16_t     maxWait      = -1   , // ms
-			   char     *replyBuf     = NULL ,
-			   int32_t      replyBufMaxSize = 0 ,
-			   int32_t      niceness = 1 , 
-			   int32_t      maxResends = -1 );
+	bool sendRequest(char *msg,
+	                 int32_t msgSize,
+	                 msg_type_t msgType,
+	                 uint32_t ip,
+	                 uint16_t port,
+	                 int32_t hostId,
+	                 UdpSlot **retSlot, // can be NULL
+	                 void *state, // callback state
+	                 void (*callback )(void *state, UdpSlot *slot),
+	                 int64_t timeout = 60000, // milliseconds
+	                 int16_t backoff = -1,
+	                 int16_t maxWait = -1, // ms
+	                 char *replyBuf = NULL,
+	                 int32_t replyBufMaxSize = 0,
+	                 int32_t niceness = 1,
+	                 int32_t maxResends = -1);
 
 	// . send a reply to the host specified in "slot"
 	// . slot is destroyed on error or completion of the send

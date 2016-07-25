@@ -72,9 +72,8 @@ void Multicast::reset ( ) {
 //   otherwise, it's probably on the stack or part of a larger allocate class.
 bool Multicast::send ( char         *msg              ,
 		       int32_t          msgSize          ,
-		       uint8_t       msgType          ,
+		       msg_type_t       msgType          ,
 		       bool          ownMsg           ,
-		       //uint32_t groupId          ,
 		       uint32_t shardNum,
 		       bool          sendToWholeGroup ,
 		       int32_t          key              ,
@@ -819,63 +818,79 @@ void sleepWrapper1 ( int bogusfd , void    *state ) {
 		goto redirectTimedout;
 	}
 	switch ( THIS->m_msgType ) {
-	// msg to get a summary from a query (calls msg22)
-	// buzz takes extra long! it calls Msg25 sometimes.
-	// no more buzz.. put back to 8 seconds.
-	// put to 5 seconds now since some hosts freezeup still it seems
-	// and i haven't seen a summary generation of 5 seconds
-	case 0x20: if ( elapsed <  5000 ) return; break;
-	// msg 0x20 calls this to get the title rec
-	case 0x22: if ( elapsed <  1000 ) return; break;
-	// . msg to get an index list over the net
-	// . this limit should really be based on length of the index list
-	// . this was 15 then 12 now it is 4
-	case 0x00: 
-		// this should just be for when a host goes down, not for
-		// performance reasons, cuz we do pretty good load balancing
-		// and when things get saturated, rerouting excacerbates it
-		if ( elapsed <  8000 ) return;
-		break;
-	// msg to get a clusterdb rec
-	case 0x38: if ( elapsed <  2000 ) return; break;
-	// msg to get docIds from a query, may take a while
-	case 0x39: 
-		// how many docsids request? first 4 bytes of request.
-		docsWanted = 10;
-		firstResultNum = 0;
-		nqterms        = 0;
-		if ( THIS->m_msg ) docsWanted     = *(int32_t *)(THIS->m_msg);
-		if ( THIS->m_msg ) firstResultNum = *(int32_t *)(THIS->m_msg+4);
-		if ( THIS->m_msg ) nqterms        = *(int32_t *)(THIS->m_msg+8);
-		// never re-route if it has a rerank, those take forever
-		// . how many milliseconds of waiting before we re-route?
-		// . 100 ms per doc wanted, but if they all end up 
-		//   clustering then docsWanted is no indication of the
-		//   actual number of titleRecs (or title keys) read
-		// . it may take a while to do dup removal on 1 million docs
-		wait = 5000 + 100  * (docsWanted+firstResultNum);
-		// those big UOR queries should not get re-routed all the time
-		if ( nqterms > 0 ) wait += 1000 * nqterms;
-		if ( wait < 8000 ) wait = 8000;
-		// seems like buzz is hammering the cluster and 0x39'saretiming
-		// out too much because of huge title recs taking forever with
-		// Msg20
-		//if ( wait < 120000 ) wait = 120000;
-		if ( elapsed < wait ) return; 
-		break;
-	// don't relaunch anything else unless over 8 secs
-	default:   if ( elapsed <  8000 ) return; break;
+		// msg to get a summary from a query (calls msg22)
+		// buzz takes extra long! it calls Msg25 sometimes.
+		// no more buzz.. put back to 8 seconds.
+		// put to 5 seconds now since some hosts freezeup still it seems
+		// and i haven't seen a summary generation of 5 seconds
+		case msg_type_20:
+			if ( elapsed <  5000 ) {
+				return;
+			}
+			break;
+		// msg 0x20 calls this to get the title rec
+		case msg_type_22:
+			if ( elapsed <  1000 ) {
+				return;
+			}
+			break;
+		// . msg to get an index list over the net
+		// . this limit should really be based on length of the index list
+		// . this was 15 then 12 now it is 4
+		case msg_type_0:
+			// this should just be for when a host goes down, not for
+			// performance reasons, cuz we do pretty good load balancing
+			// and when things get saturated, rerouting excacerbates it
+			if ( elapsed <  8000 ) {
+				return;
+			}
+			break;
+		// msg to get docIds from a query, may take a while
+		case msg_type_39:
+			// how many docsids request? first 4 bytes of request.
+			docsWanted = 10;
+			firstResultNum = 0;
+			nqterms        = 0;
+			if ( THIS->m_msg ) {
+				docsWanted     = *(int32_t *)(THIS->m_msg);
+				firstResultNum = *(int32_t *)(THIS->m_msg+4);
+				nqterms        = *(int32_t *)(THIS->m_msg+8);
+			}
+
+			// never re-route if it has a rerank, those take forever
+			// . how many milliseconds of waiting before we re-route?
+			// . 100 ms per doc wanted, but if they all end up
+			//   clustering then docsWanted is no indication of the
+			//   actual number of titleRecs (or title keys) read
+			// . it may take a while to do dup removal on 1 million docs
+			wait = 5000 + 100  * (docsWanted+firstResultNum);
+			// those big UOR queries should not get re-routed all the time
+			if ( nqterms > 0 ) {
+				wait += 1000 * nqterms;
+			}
+			if ( wait < 8000 ) {
+				wait = 8000;
+			}
+			if ( elapsed < wait ) {
+				return;
+			}
+			break;
+		// don't relaunch anything else unless over 8 secs
+		default:
+			if ( elapsed <  8000 ) {
+				return;
+			}
+			break;
 	}
 
 	// find out which host timedout
-	//hid = -1;
 	hd = NULL;
-	//if ( THIS->m_retired[0] && THIS->m_hosts && THIS->m_numHosts >= 1 )
-	if ( THIS->m_retired[0] && THIS->m_numHosts >= 1 )
+	if ( THIS->m_retired[0] && THIS->m_numHosts >= 1 ) {
 		hd = THIS->m_hostPtrs[0];
-	//if ( THIS->m_retired[1] && THIS->m_hosts && THIS->m_numHosts >= 2 )
-	if ( THIS->m_retired[1] && THIS->m_numHosts >= 2 )
+	}
+	if ( THIS->m_retired[1] && THIS->m_numHosts >= 2 ) {
 		hd = THIS->m_hostPtrs[1];
+	}
 	// 11/21/06: now we only reroute if the host we sent to is marked as
 	// dead unless it is a msg type that takes little reply generation time
 	if ( hd && ! g_hostdb.isDead(hd)  ) {

@@ -490,7 +490,7 @@ bool Proxy::forwardRequest ( StateControl *stC ) {
 	bool status;
 	status = g_udpServer.sendRequest ( req         ,
 					   reqSize     ,
-					   0xfd        , //msgType 0xfd for fwd
+					   msg_type_fd        ,
 					   dstIp , // h->m_ip     ,
 					   dstPort , // h->m_port   ,
 					   dstId , // h->m_hostId ,

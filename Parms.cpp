@@ -11587,7 +11587,7 @@ bool Parms::doParmSendingLoop ( ) {
 		if ( ! g_udpServer.sendRequest ( pn->m_parmList.getBufStart(),
 						 pn->m_parmList.length() ,
 						 // a new msgtype
-						 0x3f,
+						 msg_type_3f,
 						 h->m_ip, // ip
 						 h->m_port, // port
 						 h->m_hostId ,
@@ -11926,7 +11926,7 @@ bool Parms::syncParmsWithHost0 ( ) {
 	//   that we set g_parms.m_inSyncWithHost0 to true
 	if ( ! g_udpServer.sendRequest ( request ,//hashList.getBufStart() ,
 					 requestLen, //hashList.length() ,
-					 0x3e , // msgtype
+					 msg_type_3e , // msgtype
 					 h->m_ip, // ip
 					 h->m_port, // port
 					 h->m_hostId , // hostid , host #0!!!

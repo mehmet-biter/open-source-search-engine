@@ -577,7 +577,7 @@ bool getLinkInfo ( SafeBuf   *reqBuf              ,
 	if ( ! mcast->send ( 
 			    (char *)req ,
 			    req->getStoredSize() ,
-			    0x25 ,
+			    msg_type_25 ,
 			    false        , // does multicast own request?
 			    shardNum ,
 			    false        , // send to whole group?

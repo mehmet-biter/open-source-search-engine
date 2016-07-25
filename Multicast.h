@@ -69,13 +69,10 @@ class Multicast {
 	// . "doDiskLoadBalancing" is no longer used.
 	bool send ( char       *msg             ,
 		    int32_t        msgSize         ,
-		    uint8_t     msgType         ,
+		    msg_type_t     msgType         ,
 		    // does this Multicast own this "msg"? if so, it will
 		    // free it when done with it.
-		    bool        ownMsg          , 
-		    // send this request to a host or hosts who have
-		    // m_groupId equal to this
-		    //uint32_t groupId       , 
+		    bool        ownMsg          ,
 		    uint32_t shardNum ,
 		    // should the request be sent to all hosts in the group
 		    // "groupId", or just one host. Msg1 adds data to all 
@@ -130,7 +127,7 @@ class Multicast {
 	// . stuff set directly by send() parameters
 	char       *m_msg;
 	int32_t        m_msgSize;
-	uint8_t     m_msgType;
+	msg_type_t     m_msgType;
 	bool        m_ownMsg;
 	//uint32_t m_groupId;
 	void       *m_state;

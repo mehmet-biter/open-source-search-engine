@@ -29,7 +29,7 @@ bool Msg1f::getLog(int32_t hostId,
 	UdpSlot *slot;
 	g_udpServer.sendRequest(sendBuf,
 				p - sendBuf,
-				0x1f,
+				msg_type_1f,
 				g_hostdb.m_hostPtrs[hostId]->m_ip,
 				g_hostdb.m_hostPtrs[hostId]->m_port,
 				g_hostdb.m_hostPtrs[hostId]->m_hostId,

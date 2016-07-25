@@ -2106,7 +2106,7 @@ void updateAllCrawlInfosSleepWrapper ( int fd , void *state ) {
 		// launch it
 		if ( ! g_udpServer.sendRequest ( request,
 						 requestSize,
-						 0xc1 , // msgtype
+						 msg_type_c1 ,
 						 h->m_ip      ,
 						 h->m_port    ,
 						 h->m_hostId  ,

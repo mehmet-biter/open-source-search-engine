@@ -215,7 +215,7 @@ bool Msg20::getSummary ( Msg20Request *req ) {
 	// . TMPBUFSIZE is how much a UdpSlot can hold w/o allocating
 	if ( ! m_mcast.send ( m_request         ,
 			      m_requestSize     , 
-			      0x20              , // msgType 0x20
+			      msg_type_20              ,
 			      false             , // m_mcast own m_request?
 			      shardNum          , // send to group (groupKey)
 			      false             , // send to whole group?

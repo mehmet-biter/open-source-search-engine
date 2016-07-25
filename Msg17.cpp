@@ -157,7 +157,7 @@ bool Msg17::getFromCache ( char   cacheId,
 	// . TODO: change timeout to 50ms instead of 1 second
         if ( ! g_udpServer.sendRequest ( m_request         ,
 					 p - m_request     ,
-					 0x17              , // msgType 0x17
+					 msg_type_17              ,
 					 host->m_ip        ,
 					 host->m_port      ,
 					 host->m_hostId    ,
@@ -526,7 +526,7 @@ bool Msg17::storeInCache ( char   cacheId ,
 	// . returns true if it blocks
         if ( !  g_udpServer.sendRequest ( request        , // request
 					  requestSize    , // request size
-					  0x17           , // msgType 0x17
+					  msg_type_17           ,
 					  host->m_ip     ,
 					  host->m_port   , // low priority
 					  host->m_hostId ,

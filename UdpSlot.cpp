@@ -264,19 +264,19 @@ void UdpSlot::resetConnect ( ) {
 // . callback is non-NULL iff you're sending a request
 // . callback is NULL     ifd you're sending a reply
 // . returns false and sets g_errno on error
-bool UdpSlot::sendSetup ( char      *msg         , 
-			  int32_t       msgSize     ,
-			  char      *alloc       ,
-			  int32_t       allocSize   ,
-			  unsigned char     msgType     ,
-			  int64_t  now         ,
-			  void      *state       ,
-			  void      (*callback)(void *state, UdpSlot *slot) ,
-			  int32_t       niceness    ,
-			  int16_t      backoff     ,
-			  int16_t      maxWait     ,
-			  char      *replyBuf    ,
-			  int32_t       replyBufMaxSize ) {
+bool UdpSlot::sendSetup(char *msg,
+                        int32_t msgSize,
+                        char *alloc,
+                        int32_t allocSize,
+                        msg_type_t msgType,
+                        int64_t now,
+                        void *state,
+                        void      (*callback)(void *state, UdpSlot *slot),
+                        int32_t niceness,
+                        int16_t backoff,
+                        int16_t maxWait,
+                        char *replyBuf,
+                        int32_t replyBufMaxSize) {
 
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(msg,msgSize);
@@ -1368,7 +1368,7 @@ bool UdpSlot::readDatagramOrAck ( const void *readBuffer_,
 		// how many dgrams are we reading for this msg?
 		m_dgramsToRead = m_proto->getNumDgrams(msgSize,m_maxDgramSize);
 		// set the msgType from the dgram header
-		m_msgType = m_proto->getMsgType ( readBuffer, readSize );
+		m_msgType = static_cast<msg_type_t>(m_proto->getMsgType(readBuffer, readSize));
 		// how big is the msg? remember it
 		m_readBufSize = msgSize;
 		// . set the cback niceness

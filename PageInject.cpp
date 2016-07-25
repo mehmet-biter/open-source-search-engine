@@ -265,7 +265,7 @@ bool Msg7::sendInjectionRequestToHost ( InjectionRequest *ir ,
 	// . returns true on success
 	if ( g_udpServer.sendRequest ( sir , // req ,
 					 sirSize,
-					 0x07 , // msgtype
+					 msg_type_7 ,
 					 host->m_ip , // ip
 					 host->m_port , // port
 					 host->m_hostId,
@@ -1522,7 +1522,7 @@ bool ImportState::importLoop ( ) {
 
 	if ( ! mcast->send ( req ,
 			     reqSize ,
-			     0x07 ,
+			     msg_type_7 ,
 			     true , // ownmsg?
 			     shardNum,
 			     false, // send to whole shard?

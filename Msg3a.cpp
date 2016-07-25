@@ -412,7 +412,7 @@ bool Msg3a::getDocIds ( Msg39Request *r          ,
 		bool status;
 		status = m->send ( req , // m_rbufPtr         ,
 				   m_rbufSize        , // request size
-				   0x39              , // msgType 0x39
+				   msg_type_39              ,
 				   false             , // mcast owns m_request?
 				   shardNum          , // group to send to
 				   false             , // send to whole group?

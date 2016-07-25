@@ -311,27 +311,28 @@ bool UdpServer::init ( uint16_t port, UdpProtocol *proto,
 // . returns false and sets g_errno on error
 // . returns true on success
 // . TODO: this is actually async signal safe... TODO: append _ass
-bool UdpServer::sendRequest ( char     *msg          ,
-			      int32_t      msgSize      ,
-			      unsigned char    msgType      ,
-			      uint32_t      ip           ,
-			      uint16_t     port         ,
-			      int32_t      hostId       ,
-			      UdpSlot **retslot      , // can be NULL
-			      void     *state        ,
-			      void    (* callback)(void *state,UdpSlot *slot),
-			      int64_t      timeout      , // in milliseconds
-			      int16_t     backoff      ,
-			      int16_t     maxWait      ,
-			      char     *replyBuf     ,
-			      int32_t      replyBufMaxSize ,
-			      int32_t      niceness     ,
-			      int32_t      maxResends   ) {
+bool UdpServer::sendRequest(char *msg,
+                            int32_t msgSize,
+                            msg_type_t msgType,
+                            uint32_t ip,
+                            uint16_t port,
+                            int32_t hostId,
+                            UdpSlot **retslot, // can be NULL
+                            void *state,
+                            void    (*callback)(void *state, UdpSlot *slot),
+                            int64_t timeout, // in milliseconds
+                            int16_t backoff,
+                            int16_t maxWait,
+                            char *replyBuf,
+                            int32_t replyBufMaxSize,
+                            int32_t niceness,
+                            int32_t maxResends) {
 	// sanity check
 	if ( ! m_handlers[msgType] && this == &g_udpServer &&
 	     // proxy forwards the msg10 to a host in the cluster
 	     ! g_proxy.isProxy() ) { 
-		g_process.shutdownAbort(true); }
+		g_process.shutdownAbort(true);
+	}
 	// NULLify slot if any
 	if ( retslot ) *retslot = NULL;
 	// if shutting down return an error
@@ -530,17 +531,14 @@ void UdpServer::sendReply_ass ( char    *msg        ,
 
 	// if msgMaxSize is -1 use msgSize
 	//if ( msgMaxSize == -1 ) msgMaxSize = msgSize;
-	// use the msg type that's already in there
-	unsigned char msgType = slot->getMsgType();
-	// get time 
-	//int64_t now = gettimeofdayInMilliseconds();
+
 	// . use a NULL callback since we're sending a reply
 	// . set up for a send
 	if ( ! slot->sendSetup ( msg        ,
 				 msgSize    ,
 				 alloc      ,
 				 allocSize  ,
-				 msgType    ,
+				 slot->getMsgType()    ,
 				 now        ,
 				 NULL       ,
 				 NULL       ,
@@ -565,7 +563,7 @@ void UdpServer::sendReply_ass ( char    *msg        ,
 	slot->m_maxResends = -1;
 
 	logDebug(g_conf.m_logDebugUdp, "udp: Sending reply transId=%" PRId32" msgType=0x%hhx (niceness=%" PRId32").",
-	         slot->m_transId,msgType, (int32_t)slot->m_niceness);
+	         slot->m_transId,slot->getMsgType(), (int32_t)slot->m_niceness);
 	// keep sending dgrams until we have no more or hit ACK_WINDOW limit
 	if ( ! doSending_ass ( slot , true /*allow resends?*/, now) ) {
 		// . on error deal with that

@@ -277,8 +277,8 @@ bool Msg13::forwardRequest ( ) {
 	// . returns false and sets g_errno on error
 	// . now wait for 2 minutes before timing out
 	if ( ! g_udpServer.sendRequest ( requestBuf, // (char *)r    ,
-					 requestBufSize  , 
-					 0x13         , // msgType 0x13
+					 requestBufSize  ,
+					 msg_type_13         ,
 					 h->m_ip      ,
 					 h->m_port    ,
 					 // it was not using the proxy! because
@@ -606,7 +606,7 @@ void handleRequest13 ( UdpSlot *slot , int32_t niceness  ) {
 		// . now wait for 2 minutes before timing out
 		if ( ! g_udpServer.sendRequest ( (char *)r    ,
 						 r->getSize() ,
-						 0x13         , // msgType 0x13
+						 msg_type_13         ,
 						 h->m_ip      ,
 						 h->m_port    ,
 						 // we are sending to the proxy
@@ -721,7 +721,7 @@ void downloadTheDocForReals2 ( Msg13Request *r ) {
 					 // Msg13Request is sent to
 					 // handleRequest54() now
 					 r->getProxyRequestSize() ,
-					 0x54         , // msgType 0x54
+					 msg_type_54         ,
 					 h->m_ip      ,
 					 h->m_port    ,
 					 -1 , // h->m_hostId  ,
@@ -1144,7 +1144,7 @@ void gotHttpReply9 ( void *state , TcpSocket *ts ) {
 	// host "h" for this proxy.
 	if ( g_udpServer.sendRequest ( (char *)r,
 				       r->getProxyRequestSize(),
-				       0x54 ,
+				       msg_type_54 ,
 				       h->m_ip      ,
 				       h->m_port    ,
 				       -1 , // h->m_hostId  ,
