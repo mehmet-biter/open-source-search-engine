@@ -11775,9 +11775,6 @@ bool XmlDoc::logIt (SafeBuf *bb ) {
 	// keep track of stats
 	Statistics::register_spider_time( isNew, errCode, m_httpStatus, took );
 
-	/// @todo ALC remove g_stats.addSpiderPoint
-	g_stats.addSpiderPoint ( errCode, isNew );
-
 	// do not log if we should not, saves some time
 	if ( ! g_conf.m_logSpideredUrls ) return true;
 

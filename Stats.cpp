@@ -36,14 +36,7 @@ Stats::Stats ( ) {
 	m_startTime = m_lastQueryLogTime;
         m_upTime = 0;
 	m_closedSockets = 0;
-	m_spiderSample = 0;
-	m_spiderErrors = 0;
-	m_spiderNew = 0;
-	m_spiderErrorsNew = 0;
-	m_totalSpiderSuccessNew = 0;
-	m_totalSpiderErrorsNew = 0;
-	m_totalSpiderSuccessOld = 0;
-	m_totalSpiderErrorsOld = 0;
+
 	m_msg3aRecallCnt = 0;
 	// m_tierHits[0] = 0;
 	// m_tierHits[1] = 0;
@@ -68,10 +61,6 @@ Stats::Stats ( ) {
 	m_msg3aRecalls[4] = 0;
 	m_msg3aRecalls[5] = 0;
 
-	memset(m_errCodes, 0, 1000*4);
-	memset(m_isSampleNew, 0, 1000);
-	memset(m_allErrorsNew, 0, 65536*8);
-	memset(m_allErrorsOld, 0, 65536*8);
 	clearMsgStats();
 };
 
@@ -252,32 +241,6 @@ void Stats::logAvgQueryTime(int64_t startTime) {
 	m_queryTimes = 0;
 	m_numSuccess = 0;
 	m_numFails = 0;
-}
-
-void Stats::addSpiderPoint ( int32_t errCode, bool isNew ) {
-	// keep track of last 1000 urls spidered
-	int32_t i = m_spiderSample % 1000;
-	if ( m_errCodes[i] ) m_spiderErrors--;
-	if ( m_isSampleNew[i] ) m_spiderNew--;
-	if ( m_errCodes[i] && m_isSampleNew[i] ) m_spiderErrorsNew--;
-	m_errCodes[i] = errCode;
-	m_isSampleNew[i] = (char)isNew;
-	if ( m_errCodes[i] ) m_spiderErrors++;
-	if ( m_isSampleNew[i] ) m_spiderNew++;
-	if ( m_errCodes[i] && m_isSampleNew[i] ) m_spiderErrorsNew++;
-	m_spiderSample++;
-
-	// keep track of total spiders
-	if ( isNew ) {
-		if ( errCode ) m_totalSpiderErrorsNew++;
-		else           m_totalSpiderSuccessNew++;
-		m_allErrorsNew[errCode]++;
-	}
-	else {
-		if ( errCode ) m_totalSpiderErrorsOld++;
-		else           m_totalSpiderSuccessOld++;
-		m_allErrorsOld[errCode]++;
-	}
 }
 
 // draw a HORIZONTAL line in html

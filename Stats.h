@@ -94,21 +94,6 @@ class Stats {
 	// when we have to close a socket because too many are open.. count it
 	int32_t      m_closedSockets;
 
-	// keep track of last 1000 urls spidered for reporting spider stats
-	void addSpiderPoint ( int32_t errCode, bool isNew ) ;
-	int32_t m_spiderSample;
-	int32_t m_spiderErrors;
-	int32_t m_spiderNew;
-	int32_t m_spiderErrorsNew;
-	int32_t m_errCodes[1000];
-	char m_isSampleNew[1000];
-	int64_t m_totalSpiderSuccessNew;
-	int64_t m_totalSpiderErrorsNew;
-	int64_t m_totalSpiderSuccessOld;
-	int64_t m_totalSpiderErrorsOld;
-	int64_t m_allErrorsNew[65536];
-	int64_t m_allErrorsOld[65536];
-
 	time_t m_uptimeStart;
 
 	// Deduped stats
