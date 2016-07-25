@@ -941,15 +941,7 @@ bool Process::shutdown2() {
 		// because they seem to not clean it up
 		//resetPageCaches();
 
-		// this is the trick: it will trigger the core dump by
-		// calling the original SIGSEGV handler.
-		int signum = SIGSEGV;
-		signal(signum, SIG_DFL);
-		kill(getpid(), signum);
-		// default handler should be called after we return now
-
-		// keep compiler happy
-		return true;
+		abort();
 	}
 
 
