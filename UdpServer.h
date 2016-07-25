@@ -61,11 +61,7 @@
 static const int64_t udpserver_sendrequest_infinite_timeout = 999999999999;
 
 class UdpServer {
-
- public:
-
-	friend class Dns;
-
+public:
 	UdpServer() ;
 	~UdpServer() ;
 
@@ -80,15 +76,9 @@ class UdpServer {
 	// . read/writeBufSize are the socket buf's size
 	// . pollTime is how often to call timePollWrapper() (in milliseconds)
 	// . it should be at least the minimal slot timeout
-	bool init ( uint16_t  port         , 
-		    UdpProtocol    *proto        , 
-		    int32_t            readBufSize  ,
-		    int32_t            writeBufSize ,
-		    int32_t            pollTime     ,
-		    int32_t            maxSlots     ,
-		    bool            isDns        );
+	bool init(uint16_t port, UdpProtocol *proto, int32_t readBufSize, int32_t writeBufSize, int32_t pollTime,
+	          int32_t maxSlots, bool isDns);
 
-	bool m_isDns;
 
 	// . sends a request
 	// . returns false and sets g_errno on error, true on success
@@ -144,16 +134,16 @@ class UdpServer {
 	// . backoff is how long to wait for an ACK in ms before we resend
 	// . we double backoff each time we wait w/o getting any ACK
 	// . don't wait longer than maxWait for a resend
-	void sendReply_ass (char     *msg        ,
-			    int32_t      msgSize    ,
-			    char     *alloc      ,
-			    int32_t      allocSize  ,
-			    UdpSlot  *slot       , // in seconds
-			    void     *state      = NULL , // callback state
-			    void (* callback2)(void *state,UdpSlot *slot)=NULL,
-			    int16_t     backoff    = -1 ,
-			    int16_t     maxWait    = -1 ,
-			    bool      isCallback2Hot = false );
+	void sendReply_ass (char *msg,
+	                    int32_t msgSize,
+	                    char *alloc,
+	                    int32_t allocSize,
+	                    UdpSlot *slot, // in seconds
+	                    void *state = NULL, // callback state
+	                    void (*callback2)(void *state, UdpSlot *slot) = NULL,
+			            int16_t backoff = -1,
+			            int16_t maxWait = -1,
+			            bool isCallback2Hot = false);
 
 	// . propagate an errno to the requesting machine
 	// . his callback will be called with errno set to "errnum"
@@ -177,7 +167,7 @@ class UdpServer {
 	// . returns false on error
 	// . if you want the handler to be called while in an async signal
 	//   handler then set "isHandlerHot" to true
-	bool registerHandler ( unsigned char msgType, void(* handler)(UdpSlot *,int32_t) );
+	bool registerHandler ( msg_type_t msgType, void(* handler)(UdpSlot *,int32_t) );
 
 	// . frees the m_readBuf and m_sendBuf
 	// . marks the slot as available
@@ -185,6 +175,52 @@ class UdpServer {
 	// . called after sendReply()/sendErrorReply() completes or has error
 	void destroySlot ( UdpSlot *slot );
 
+	// . this will wait until all fully received requests have had their
+	//   reply sent to them
+	// . in the meantime it will send back error replies to all new 
+	//   incoming requests
+	// . this will do a blocking close on the listening socket descriptor
+	// . returns false if blocked, true otherwise if shutdown immediate
+	// . set g_errno on error
+	bool shutdown ( bool urgent );
+
+	bool needBottom         () { return m_needBottom; }
+
+	// try calling makeCallback() on all slots
+	bool makeCallbacks_ass ( int32_t niceness );
+
+
+	bool m_writeRegistered;
+
+	UdpSlot *getActiveHead ( ) {
+		return m_head2;
+	}
+
+	// cancel a transaction
+	void cancel(void *state, msg_type_t msgType);
+
+	// replace ips and ports in outstanding slots
+	void replaceHost ( Host *oldHost, Host *newHost );
+
+	void printState();
+
+	// . we have up to 1 handler routine for each msg type
+	// . call these handlers for the corresponding msgType
+	// . msgTypes go from 0 to 64 i think (see UdpProtocol.h dgram header)
+	void (* m_handlers[MAX_MSG_TYPES])(UdpSlot *slot, int32_t niceness);
+
+	// changes timeout to very low on dead hosts
+	bool timeoutDeadHosts ( class Host *h );
+
+	// . we need a transaction id for every transaction so we can match
+	//   incoming reply msgs with their corresponding request msgs
+	// . TODO: should be stored to disk on shutdown and every 1024 sends
+	// . store a shutdown bit with it so we know if we crashed
+	// . on crashes add 1024 or so to the read value
+	// . TODO: make somewhat random cuz it's easy to spoof like it is now
+	int32_t m_nextTransId;
+
+private:
 	// . take a slot that we made from sendRequest() above and reset it
 	// . you request will be sent again w/ the original parameters
 	// void resendSlot ( UdpSlot *slot );
@@ -194,7 +230,7 @@ class UdpServer {
 	// . this is called by main/Loop.cpp when m_sock is ready for writing
 	// . actually it calls sendPollWrapper()
 	// . it sends as much as it can from all UdpSlots until one blocks
-	//   or until it's done 
+	//   or until it's done
 	// . sends both dgrams AND ACKs
 	bool sendPoll_ass ( bool allowResends , int64_t now );
 
@@ -212,58 +248,10 @@ class UdpServer {
 	//   or timed a slot out so it's callback should be called
 	bool readTimeoutPoll ( int64_t now ) ;
 
-	// . this will wait until all fully received requests have had their
-	//   reply sent to them
-	// . in the meantime it will send back error replies to all new 
-	//   incoming requests
-	// . this will do a blocking close on the listening socket descriptor
-	// . returns false if blocked, true otherwise if shutdown immediate
-	// . set g_errno on error
-	bool shutdown ( bool urgent );
-
-	bool needBottom         () { return m_needBottom; }   
-
-	UdpSlot *getUdpSlotNum   ( int32_t  i ) { return &m_slots[i]; }
-
-	// try calling makeCallback() on all slots
-	bool makeCallbacks_ass ( int32_t niceness );
-
-	// when a call to sendto() blocks we set this to true so Loop.cpp
-	// will know to manually call sendPoll_ass() rather than counting
-	// on receiving a fd-ready-for-writing signal for this UdpServer
-	bool m_needToSend;
-
-	bool m_writeRegistered;
-
-	UdpSlot *getActiveHead ( ) { return m_head2; }
-
 	// callback linked list functions (m_head3)
 	void addToCallbackLinkedList ( UdpSlot *slot ) ;
 	bool isInCallbackLinkedList ( UdpSlot *slot );
 	void removeFromCallbackLinkedList ( UdpSlot *slot ) ;
-
-	// cancel a transaction
-	void cancel(void *state, msg_type_t msgType);
-
-	// replace ips and ports in outstanding slots
-	void replaceHost ( Host *oldHost, Host *newHost );
-
-
-	void printState();
-
-	// count how many of each msgType we drop, report on PageStats.cpp
-	//int32_t m_droppedNiceness0[128];
-	//int32_t m_droppedNiceness1[128];
-
-	// . we have up to 1 handler routine for each msg type
-	// . call these handlers for the corresponding msgType
-	// . msgTypes go from 0 to 64 i think (see UdpProtocol.h dgram header)
-	void (* m_handlers[MAX_MSG_TYPES])(UdpSlot *slot, int32_t niceness);
-
-	// changes timeout to very low on dead hosts
-	bool timeoutDeadHosts ( class Host *h );
-
-	// private:
 
 	// . we maintain a sequential list of transaction ids to guarantee
 	//   uniquness to a point
@@ -271,9 +259,10 @@ class UdpServer {
 	// . the key of a UdpSlot is based on this, the endpoint ip/port and
 	//   whether it's a request/reply by/from us
 	int32_t getTransId ( ) { 
-		int32_t tid = m_nextTransId;
-		m_nextTransId++;
-		if ( m_nextTransId >= UDP_MAX_TRANSID ) m_nextTransId = 0; 
+		int32_t tid = m_nextTransId++;
+		if ( m_nextTransId >= UDP_MAX_TRANSID ) {
+			m_nextTransId = 0;
+		}
 		return tid;
 	}
 
@@ -297,88 +286,89 @@ class UdpServer {
 	// . called by readPoll()
 	int32_t readSock_ass ( UdpSlot **slot , int64_t now );
 
-	// returns false if cannot shutdown right now due to pending traffic
-	//bool tryShuttingDown ( bool callCallback ) ;
+
+	bool m_isDns;
+
+	// when a call to sendto() blocks we set this to true so Loop.cpp
+	// will know to manually call sendPoll_ass() rather than counting
+	// on receiving a fd-ready-for-writing signal for this UdpServer
+	bool m_needToSend;
 
 	// our listening/sending udp socket and port
-        int            m_sock ;  
-        uint16_t m_port ;
+	int m_sock;
+	uint16_t m_port;
 
 	// for defining your own protocol on top of udp
 	UdpProtocol *m_proto;
 
-	// . we need a transaction id for every transaction so we can match
-	//   incoming reply msgs with their corresponding request msgs
-	// . TODO: should be stored to disk on shutdown and every 1024 sends
-	// . store a shutdown bit with it so we know if we crashed
-	// . on crashes add 1024 or so to the read value 
-	// . TODO: make somewhat random cuz it's easy to spoof like it is now
-	int32_t         m_nextTransId;
-
 	// called when shutdown completes
-	void (*m_shutdownCallback )( void *state );
-	void  *m_shutdownState;
-	bool   m_isShuttingDown;
+	void (*m_shutdownCallback )(void *state);
 
-	//did we have to give back control before we called all of the 
-	bool   m_needBottom;
+	void *m_shutdownState;
+	bool m_isShuttingDown;
+
+	// did we have to give back control before we called all of the
+	bool m_needBottom;
+
 	// . how many requests are we handling at this momment
 	// . does not include requests whose replies we are sending, only
 	//   those whose replies have not yet been generated
 	// . starts counting as soon as first dgram of request is recvd
-	int32_t   m_requestsInWaiting;
+	int32_t m_requestsInWaiting;
 
 	// like m_requestsInWaiting but requests which spawn other requests
-	int32_t   m_msg07sInWaiting;
-	int32_t   m_msgc1sInWaiting;
-	int32_t   m_msg25sInWaiting;
-	int32_t   m_msg39sInWaiting;
-	int32_t   m_msg20sInWaiting;
-	int32_t   m_msg0csInWaiting;
-	int32_t   m_msg0sInWaiting;
+	int32_t m_msg07sInWaiting;
+	int32_t m_msgc1sInWaiting;
+	int32_t m_msg25sInWaiting;
+	int32_t m_msg39sInWaiting;
+	int32_t m_msg20sInWaiting;
+	int32_t m_msg0csInWaiting;
+	int32_t m_msg0sInWaiting;
 
 	int32_t m_outstandingConverts;
 
 	// but alloc MAX_UDP_SLOTS of these in init so we don't blow the stack
-	UdpSlot *m_slots    ;
-	int32_t     m_maxSlots;
+	UdpSlot *m_slots;
+	int32_t m_maxSlots;
 
 	// routines
-	UdpSlot *getEmptyUdpSlot_ass ( key_t k , bool incoming );
-	void     freeUdpSlot_ass     ( UdpSlot *slot );
+	UdpSlot *getEmptyUdpSlot_ass(key_t k , bool incoming);
+	void freeUdpSlot_ass(UdpSlot *slot);
 
-	void addKey ( key_t key , UdpSlot *ptr ) ;
+	void addKey(key_t key , UdpSlot *ptr);
 
 	// verified these are only called from within _ass routines that
 	// turn them interrupts off before calling this
-	UdpSlot *getUdpSlot      ( key_t k );
+	UdpSlot *getUdpSlot(key_t k);
 
 	// . hash table for converting keys to slots
 	// . if m_ptrs[i] is NULL, ith bucket is empty
-	UdpSlot       **m_ptrs;
-	int32_t            m_numBuckets;
-	uint32_t   m_bucketMask;
-	char           *m_buf;     // memory to hold m_ptrs
-	int32_t            m_bufSize;
+	UdpSlot **m_ptrs;
+	int32_t m_numBuckets;
+	uint32_t m_bucketMask;
+	char *m_buf;     // memory to hold m_ptrs
+	int32_t m_bufSize;
 
 	// linked list of available slots (uses UdpSlot::m_next)
-	UdpSlot        *m_head;
+	UdpSlot *m_head;
+
 	// linked list of slots in use
-	UdpSlot        *m_head2;
-	UdpSlot        *m_tail2;
+	UdpSlot *m_head2;
+	UdpSlot *m_tail2;
+
 	// linked list of callback candidates
-	UdpSlot        *m_head3;
-	UdpSlot        *m_tail3;
+	UdpSlot *m_head3;
+	UdpSlot *m_tail3;
 
-	int32_t            m_numUsedSlots;
-	int32_t            m_numUsedSlotsIncoming;
+	int32_t m_numUsedSlots;
+	int32_t m_numUsedSlotsIncoming;
 
-	// stats
- public:
+public:
 	static void readPollWrapper(int fd, void *state);
 	static void timePollWrapper(int fd, void *state);
 	static void sendPollWrapper(int fd, void *state);
 
+	// stats
 	int64_t       m_eth0BytesIn;
 	int64_t       m_eth0BytesOut;
 	int64_t       m_eth0PacketsIn;
