@@ -178,13 +178,7 @@ class Dns {
 	RdbCache *getCacheLocal () { return &m_rdbCacheLocal; }
 
 	// . pull the hostname out of a dns reply packet's query resource rec.
-	bool extractHostname ( const char *dgram,
-			       const char *record,
-			       char *hostname );
-
-	void cancel ( void *state ) { m_udpServer.cancel ( state , -1 ); }
-
-
+	bool extractHostname ( const char *dgram, const char *record, char *hostname );
 
 	// returns true if in cache, and sets *ip
 	bool isInCache (key_t key , int32_t *ip );

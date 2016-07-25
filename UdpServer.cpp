@@ -2727,9 +2727,9 @@ void UdpServer::cancel ( void *state , unsigned char msgType ) {
 	// . but if we're waiting for a reply, don't bother
 	for ( UdpSlot *slot = m_head2 ; slot ; slot = slot->m_next2 ) {
 		// skip if not a match
-		if ( slot->m_state  != state ) continue;
-		// -1 (0xff) means all messages from this state
-		if ( msgType != 0xff && slot->m_msgType != msgType ) continue;
+		if (slot->m_state != state || slot->m_msgType != msgType) {
+			continue;
+		}
 		// note it
 		log(LOG_INFO,"udp: cancelled udp socket. msgType=0x%hhx.",
 		    slot->m_msgType);
