@@ -75,7 +75,7 @@ void Msg39Request::reset() {
 bool Msg39::registerHandler ( ) {
 	// . register ourselves with the udp server
 	// . it calls our callback when it receives a msg of type 0x39
-	if ( ! g_udpServer.registerHandler ( 0x39, &handleRequest39 ))
+	if ( ! g_udpServer.registerHandler ( msg_type_39, &handleRequest39 ))
 		return false;
 	return true;
 }

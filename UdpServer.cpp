@@ -763,13 +763,13 @@ UdpSlot *UdpServer::getBestSlotToSend ( int64_t now ) {
 }
 
 // . must give level of niceness for continuing the transaction at that lvl
-bool UdpServer::registerHandler( unsigned char msgType, void (* handler)(UdpSlot *, int32_t niceness) ) {
-	if ( m_handlers[msgType] ) {
-		log( LOG_LOGIC, "udp: msgType %02x already in use.", msgType );
+bool UdpServer::registerHandler( msg_type_t msgType, void (* handler)(UdpSlot *, int32_t niceness) ) {
+	if (m_handlers[msgType]) {
+		log(LOG_LOGIC, "udp: msgType %02x already in use.", msgType);
 		return false;
 	}
 
-	m_handlers     [ msgType ] = handler;
+	m_handlers[msgType] = handler;
 	return true;
 }
 
@@ -920,17 +920,17 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 		return -1;
 	}
 
-	uint32_t ip2 ;
-	Host    *h        ;
-	key_t    key      ;
-	UdpSlot *slot     ;
-	int32_t     dgramNum ;
-	bool     wasAck   ;
-	int32_t     transId  ;
-	bool     discard  = true;
-	bool     status   ;
-	unsigned char msgType  ;
-	int32_t          niceness ;
+	uint32_t ip2;
+	Host *h;
+	key_t key;
+	UdpSlot *slot;
+	int32_t dgramNum;
+	bool wasAck;
+	int32_t transId;
+	bool discard = true;
+	bool status;
+	msg_type_t msgType;
+	int32_t niceness;
 
 	// get the ip
 	uint32_t ip = from.sin_addr.s_addr;
@@ -1005,7 +1005,7 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 	// #2) a reply we ACKed but it didn't get our ACK and we've closed
 	// #3) a stray ACK???
 	// #4) a reply but we timed out and our slot is gone
-	msgType  = m_proto->getMsgType ( readBuffer, readSize );
+	msgType = static_cast<msg_type_t>(m_proto->getMsgType(readBuffer, readSize));
 	niceness = m_proto->isNice     ( readBuffer, readSize );
 	// general count
 	if ( niceness == 0 ) {
@@ -1101,45 +1101,34 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 		// being used for incoming requests right now. we don't want
 		// to lose all of our memory. MDW
 		bool getSlot = true;
-		if ( msgType == 0x07 && m_msg07sInWaiting >= 100 )
+		if ( msgType == msg_type_7 && m_msg07sInWaiting >= 100 )
 			getSlot = false;
 
 		// crawl update info from Spider.cpp
-		if ( msgType == 0xc1 && m_msgc1sInWaiting >= 100 ) 
+		if ( msgType == msg_type_c1 && m_msgc1sInWaiting >= 100 )
 			getSlot = false;
-		//batch url lookup for siterec, rootQuality and ips, so spawns 
-		//msg8 and msgc and msg50
-		//if ( msgType == 0xd && m_msgDsInWaiting >= 100 ) 
-		//	getSlot = false;
 
 		// msg25 spawns an indexdb request lookup and unless we limit
 		// the msg25 requests we can jam ourslves if all the indexdb
 		// lookups hit ourselves... we won't have enough free slots
 		// to answer the msg0 indexdb lookups!
-		if ( msgType == 0x25 && m_msg25sInWaiting >= 70 )
+		if ( msgType == msg_type_25 && m_msg25sInWaiting >= 70 )
 			getSlot = false;
 
 		// . i've seen us freeze up from this too
 		// . but only drop spider's msg39s
-		if ( msgType == 0x39 && m_msg39sInWaiting >= 10 && niceness )
+		if ( msgType == msg_type_39 && m_msg39sInWaiting >= 10 && niceness )
 			getSlot = false;
 		// try to prevent another lockup condition of msg20 spawing
 		// a msg22 request to self but failing...
-		if ( msgType == 0x20 && m_msg20sInWaiting >= 50 && niceness )
+		if ( msgType == msg_type_20 && m_msg20sInWaiting >= 50 && niceness )
 			getSlot = false;
 
-		//if ( g_mem.m_maxMem - g_mem.m_used < 20*1024*1024 &&
-		//     // let adds slide through, otherwise, msg10 chokes up
-		//     // trying to add to is own tfndb. we end up with a 
-		//     // bunch of msg10s repeatedly sending msg1's to add to
-		//     // the tfndb.
-		//     msgType != 0x01 )
-		//	getSlot = false;
 		// . msg13 is clogging thiings up when we synchost a host
 		//   and it comes back up
 		// . allow spider compression proxy to have a bunch
 		// . MDW: do we need this one anymore? relax it a little.
-		if ( msgType == 0x13 && m_numUsedSlotsIncoming>400 && 
+		if ( msgType == msg_type_13 && m_numUsedSlotsIncoming>400 &&
 		     m_numUsedSlots>800 && !isProxy)
 			getSlot = false;
 
@@ -1162,7 +1151,7 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 		// . tagdb lookups were being dropped because of this being
 		//   500 so i raised to 900. a lot of them were from
 		//   'get outlink tag recs' or 'get link info' (0x20)
-		if ( msgType == 0x00 && m_numUsedSlots > 1500 && niceness ) {
+		if ( msgType == msg_type_0 && m_numUsedSlots > 1500 && niceness ) {
 			// allow a ton of those tagdb lookups to come in
 			char rdbId = 0;
 			if ( readSize > RDBIDOFFSET )
@@ -1171,31 +1160,11 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 				getSlot = false;
 		}
 
-		// added this because host #14 was clogging on
-		// State00's and ThreadReadBuf taking all the mem.
-		//
-		// mdw 1/22/2014 seems to be jamming up now with 50 crawlers
-		// per host on 16 hosts on tagdb lookups using msg8a so
-		// take this out for now...
-		//if ( msgType == 0x00 && m_msg0sInWaiting> 70 && niceness )
-		//	getSlot = false;
-
-		// really avoid slamming if we're trying to merge some stuff
-		//if ( msgType == 0x00 && m_numUsedSlots > 100 && niceness &&
-		//     g_numUrgentMerges )
-		//	getSlot = false;
-		// msgc for getting ip 
-		//if ( msgType == 0x0c && m_msg0csInWaiting >= 200 && niceness)
-		//	getSlot = false;
-		// we always need to reserve some slots for sending our
-		// requests out on. do this regardless of msg23 or not.
-		//if ( m_numUsedSlots >= (m_maxSlots>>1) ) getSlot = false;
-		//int32_t niceness = m_proto->isNice ( readBuffer, readSize );
 		// lower priorty slots are dropped first
 		if ( m_numUsedSlots >= 1300 && niceness > 0 && ! isProxy &&
 		     // we dealt with special tagdb msg00's above so
 		     // do not deal with them here
-		     msgType != 0x00 ) 
+		     msgType != msg_type_0 )
 			getSlot = false;
 
 		// . reserve 300 slots for outgoing query-related requests
@@ -1207,15 +1176,12 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 		//   will know if this is hurting us.
 		if ( m_numUsedSlots >= 2300 && ! isProxy ) getSlot = false;
 		// never drop ping packets! they do not send out requests
-		if ( msgType == 0x11 ) getSlot = true;
+		if ( msgType == msg_type_11 ) getSlot = true;
 		// and getting results from the cache is always zippy
-		if ( msgType == 0x17 ) getSlot = true;
-		// spellchecker is fast
-		if ( msgType == 0x3d ) getSlot = true;
-
+		if ( msgType == msg_type_17 ) getSlot = true;
 		// getting a titlerec does not send out a 2nd request. i really
 		// hate those title rec timeout msgs.
-		if ( msgType == 0x22 && niceness == 0 ) getSlot = true;
+		if ( msgType == msg_type_22 && niceness == 0 ) getSlot = true;
 		
 		if ( getSlot ) 
 			// get a new UdpSlot
@@ -1243,9 +1209,6 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 		}
 		// default timeout, sender has 60 seconds to send request!
 		int64_t timeout = 60000;
-		// not if msg8e! they are huge requests!
-		if ( msgType == 0x8e )
-			timeout = udpslot_connect_infinite_timeout;
 		// connect this slot (callback should be NULL)
 		slot->connect ( m_proto ,  
 				&from   ,  // ip/port
@@ -1264,17 +1227,17 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 				//   but it should be correct now...
 				niceness ); // 0 // m_niceness );
 		// don't count ping towards this
-		if ( msgType != 0x11 ) {
+		if ( msgType != msg_type_11 ) {
 			// if we connected to a request slot, count it
 			m_requestsInWaiting++;
 			// special count
-			if ( msgType == 0x07 ) m_msg07sInWaiting++;
-			if ( msgType == 0xc1 ) m_msgc1sInWaiting++;
-			if ( msgType == 0x25 ) m_msg25sInWaiting++;
-			if ( msgType == 0x39 ) m_msg39sInWaiting++;
-			if ( msgType == 0x20 ) m_msg20sInWaiting++;
-			if ( msgType == 0x0c ) m_msg0csInWaiting++;
-			if ( msgType == 0x00 ) m_msg0sInWaiting++;
+			if ( msgType == msg_type_7 ) m_msg07sInWaiting++;
+			if ( msgType == msg_type_c1 ) m_msgc1sInWaiting++;
+			if ( msgType == msg_type_25 ) m_msg25sInWaiting++;
+			if ( msgType == msg_type_39 ) m_msg39sInWaiting++;
+			if ( msgType == msg_type_20 ) m_msg20sInWaiting++;
+			if ( msgType == msg_type_c ) m_msg0csInWaiting++;
+			if ( msgType == msg_type_0 ) m_msg0sInWaiting++;
 			// debug msg
 			//log("in waiting up to %" PRId32,m_requestsInWaiting );
 			//log("in waiting up to %" PRId32" (0x%hhx) ",

@@ -1377,7 +1377,7 @@ bool UdpSlot::readDatagramOrAck ( const void *readBuffer_,
 	// to free it.
 	// i'm commenting this out to find the rdbtree corruption bug
 	//if ( ! m_sendBuf && ! m_readBuf &&
-	//     msgSize < TMPBUFSIZE && m_msgType != 0x17 ) {
+	//     msgSize < TMPBUFSIZE && m_msgType != msg_type_17 ) {
 	//	m_readBuf        = m_tmpBuf;
 	//	m_readBufMaxSize = TMPBUFSIZE;
 	//}

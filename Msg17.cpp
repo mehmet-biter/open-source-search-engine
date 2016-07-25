@@ -56,7 +56,7 @@ bool Msg17::registerHandler ( ) {
 	// . it calls our callback when it receives a msg of type 0x17
 	//if ( ! g_udpServer2.registerHandler ( 0x17, handleRequest17 )) 
 	//	return false;
-	if ( ! g_udpServer.registerHandler ( 0x17, handleRequest17 )) 
+	if ( ! g_udpServer.registerHandler ( msg_type_17, handleRequest17 ))
 		return false;
 	return true;
 }

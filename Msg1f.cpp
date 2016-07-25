@@ -9,7 +9,7 @@ static void handleRequest ( UdpSlot *slot , int32_t netnice );
 
 
 bool Msg1f::init() {
-        if ( ! g_udpServer.registerHandler ( 0x1f, handleRequest )) {
+        if ( ! g_udpServer.registerHandler ( msg_type_1f, handleRequest )) {
 		log(LOG_WARN, "db: logview initialization failed"); 
 		return false;
 	}

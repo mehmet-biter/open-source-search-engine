@@ -15,7 +15,7 @@ static void handleRequest1   ( UdpSlot *slot  , int32_t niceness ) ;
 // . all these parameters should be preset
 bool Msg1::registerHandler ( ) {
 	// register ourselves with the udp server
-	if ( ! g_udpServer.registerHandler ( 0x01, handleRequest1 ) )
+	if ( ! g_udpServer.registerHandler ( msg_type_1, handleRequest1 ) )
 		return false;
 	return true;
 }

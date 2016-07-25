@@ -81,7 +81,7 @@ void Msg13::reset() {
 bool Msg13::registerHandler ( ) {
 	// . register ourselves with the udp server
 	// . it calls our callback when it receives a msg of type 0x0A
-	if ( ! g_udpServer.registerHandler ( 0x13, handleRequest13 )) 
+	if ( ! g_udpServer.registerHandler ( msg_type_13, handleRequest13 ))
 		return false;
 
 	// use 3MB per cache

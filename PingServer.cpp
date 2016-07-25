@@ -66,7 +66,7 @@ bool PingServer::registerHandler ( ) {
 	//if ( ! g_udpServer2.registerHandler ( 0x11, handleRequest11 )) 
 	//	return false;
 	// register on low priority server to make transition easier
-	if ( ! g_udpServer.registerHandler ( 0x11, handleRequest11 )) 
+	if ( ! g_udpServer.registerHandler ( msg_type_11, handleRequest11 ))
 		return false;
 	// limit this to 1000ms
 	if ( g_conf.m_pingSpacer > 1000 ) g_conf.m_pingSpacer = 1000;

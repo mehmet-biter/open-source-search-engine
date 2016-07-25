@@ -2374,7 +2374,7 @@ void doCmdAll ( int fd, void *state ) {
 
 	// udpserver::sendRequest() checks we have a handle for msgs we send!
 	// so fake it out with this lest it cores
-	g_udpServer.registerHandler(0x3f,handleRequest3f);
+	g_udpServer.registerHandler(msg_type_3f,handleRequest3f);
 	
 
 	SafeBuf parmList;
@@ -2932,16 +2932,16 @@ bool registerMsgHandlers2(){
 
 	if ( ! Msg13::registerHandler() ) return false;
 
-	if ( ! g_udpServer.registerHandler(0xc1,handleRequestc1)) return false;
+	if ( ! g_udpServer.registerHandler(msg_type_c1,handleRequestc1)) return false;
 	if ( ! Msg39::registerHandler()) return false;
 
 	if ( ! registerHandler4  () ) return false;
 
-	if(! g_udpServer.registerHandler(0x3e,handleRequest3e)) return false;
-	if(! g_udpServer.registerHandler(0x3f,handleRequest3f)) return false;
+	if(! g_udpServer.registerHandler(msg_type_3e,handleRequest3e)) return false;
+	if(! g_udpServer.registerHandler(msg_type_3f,handleRequest3f)) return false;
 
-	if ( ! g_udpServer.registerHandler(0x25,handleRequest25)) return false;
-	if ( ! g_udpServer.registerHandler(0x07,handleRequest7)) return false;
+	if ( ! g_udpServer.registerHandler(msg_type_25,handleRequest25)) return false;
+	if ( ! g_udpServer.registerHandler(msg_type_7,handleRequest7)) return false;
 
 	return true;
 }

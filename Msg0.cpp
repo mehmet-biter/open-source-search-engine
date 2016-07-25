@@ -61,7 +61,7 @@ void Msg0::reset ( ) {
 bool Msg0::registerHandler ( ) {
 	// . register ourselves with the udp server
 	// . it calls our callback when it receives a msg of type 0x0A
-	if ( ! g_udpServer.registerHandler ( 0x00, handleRequest0 )) 
+	if ( ! g_udpServer.registerHandler ( msg_type_0, handleRequest0 ))
 		return false;
 	//if ( ! g_udpServer2.registerHandler ( 0x00, handleRequest0 )) 
 	//	return false;

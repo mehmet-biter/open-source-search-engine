@@ -84,7 +84,7 @@ bool registerHandler4 ( ) {
 	logTrace( g_conf.m_logTraceMsg4, "BEGIN" );
 	
 	// register ourselves with the udp server
-	if ( ! g_udpServer.registerHandler ( 0x04, handleRequest4 ) ) {
+	if ( ! g_udpServer.registerHandler ( msg_type_4, handleRequest4 ) ) {
 		log(LOG_ERROR,"%s:%s: Could not register with UDP server!", __FILE__, __func__ );
 		return false;
 	}

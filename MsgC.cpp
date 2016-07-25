@@ -20,7 +20,7 @@ bool MsgC::registerHandler ( ) {
 	// . it calls our callback when it receives a msg of type 0x0c
 	//if ( ! g_udpServer2.registerHandler ( 0x0c, handleRequest )) 
 	//	return false;
-	if ( ! g_udpServer.registerHandler ( 0x0c, handleRequest )) 
+	if ( ! g_udpServer.registerHandler ( msg_type_c, handleRequest ))
 		return false;
 	return true;
 }

@@ -881,7 +881,7 @@ bool initSpiderProxyStuff() {
 	//if ( g_hostdb.m_myHostId != 0 ) return true;
 
 	// only host #0 has handlers
-	if ( ! g_udpServer.registerHandler ( 0x54, handleRequest54 )) 
+	if ( ! g_udpServer.registerHandler ( msg_type_54, handleRequest54 ))
 		return false;
 
 	// key is ip/port

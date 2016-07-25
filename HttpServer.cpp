@@ -72,7 +72,7 @@ bool HttpServer::init ( int16_t port,
 	if (!handlerWrapper && (port || sslPort))
 		handlerWrapper = requestHandlerWrapper;
 
-	if ( ! g_udpServer.registerHandler ( 0xfd , handleRequestfd ) )
+	if ( ! g_udpServer.registerHandler ( msg_type_fd , handleRequestfd ) )
 		return false;
 
 	// set our base TcpServer class

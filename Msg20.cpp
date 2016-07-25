@@ -80,7 +80,7 @@ void Msg20::reset() {
 bool Msg20::registerHandler ( ) {
 	// . register ourselves with the udp server
     // . it calls our callback when it receives a msg of type 0x20
-    if ( ! g_udpServer.registerHandler ( 0x20, handleRequest20 ))
+    if ( ! g_udpServer.registerHandler ( msg_type_20, handleRequest20 ))
 		return false;
 
 	return true;
