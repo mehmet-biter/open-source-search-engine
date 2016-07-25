@@ -122,9 +122,9 @@ private:
 	int32_t m_numReplies;
 	int32_t m_numRequests;
 
-public: //public for callback
-	void gotListWrapper( Msg5 *msg5 );
-private:
+	static void gotListWrapper(void *state, RdbList *list, Msg5 *msg5);
+	void gotListWrapper(Msg5 *msg5);
+	
 	void *m_state;
 	void (*m_callback)(void *state);
 	int32_t m_niceness;

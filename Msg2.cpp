@@ -10,7 +10,6 @@
 #include "Sanity.h"
 
 
-static void  gotListWrapper ( void *state , RdbList *list , Msg5 *msg5 ) ;
 
 Msg2::Msg2()
   : m_msg5(0),
@@ -224,7 +223,7 @@ bool Msg2::getLists ( ) {
 					   0              , // start file num
 					   numFiles, // num files
 					   this,
-					   ::gotListWrapper ,
+					   gotListWrapper ,
 					   m_niceness     ,
 					   false          , // error correction
 					   NULL , // cachekeyptr
@@ -328,7 +327,7 @@ bool Msg2::getLists ( ) {
 					   0              , // start file num
 					   numFiles,//-1    , // num files
 					   this,
-					   ::gotListWrapper ,
+					   gotListWrapper ,
 					   m_niceness     ,
 					   false          , // error correction
 					   NULL , // cachekeyptr
@@ -389,9 +388,9 @@ void Msg2::returnMsg5 ( Msg5 *msg5 ) {
 }
 
 
-void gotListWrapper ( void *state , RdbList *rdblist, Msg5 *msg5 ) {
-	Msg2 *msg2 = (Msg2*)state;
-	msg2->gotListWrapper(msg5);
+void Msg2::gotListWrapper(void *state, RdbList *rdblist, Msg5 *msg5) {
+	Msg2 *that = static_cast<Msg2*>(state);
+	that->gotListWrapper(msg5);
 }
 
 
