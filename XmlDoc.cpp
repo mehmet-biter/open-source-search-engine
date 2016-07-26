@@ -11201,8 +11201,14 @@ int32_t **XmlDoc::getOutlinkFirstIpVector () {
 }
 
 int32_t *XmlDoc::getUrlFilterNum ( ) {
+	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );
+
 	// return it if already set
-	if ( m_urlFilterNumValid ) return &m_urlFilterNum;
+	if ( m_urlFilterNumValid ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END. already valid: %" PRId32, m_urlFilterNum );
+		return &m_urlFilterNum;
+	}
+
 	// note that
 	setStatus ( "getting url filter row num");
 
@@ -11223,6 +11229,7 @@ int32_t *XmlDoc::getUrlFilterNum ( ) {
 	if ( ! langId || langId == (uint8_t *)-1 ) {
 //		log("build: failed to get url filter for xmldoc %s - could not get language id",
 //		    m_firstUrl.getUrl());
+		logTrace( g_conf.m_logTraceXmlDoc, "END. unable to get langId" );
 		return (int32_t *)langId;
 	}
 
@@ -11289,7 +11296,7 @@ int32_t *XmlDoc::getUrlFilterNum ( ) {
 	m_urlFilterNum      = ufn;
 	m_urlFilterNumValid = true;
 
-
+	logTrace( g_conf.m_logTraceXmlDoc, "END. returning %" PRId32, m_urlFilterNum );
 
 	return &m_urlFilterNum;
 }
