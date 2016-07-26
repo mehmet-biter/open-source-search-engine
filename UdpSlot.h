@@ -59,135 +59,141 @@
 #define TMPBUFSIZE (250)
 
 class UdpSlot {
-	
- public:
-
+public:
 	// set the UdpSlot's protocol, endpoint info, transId, timeout
-	void connect ( UdpProtocol *proto    , 
-		       sockaddr_in *endPoint ,
-		       Host        *host     ,
-		       int32_t         hostId   ,
-		       int32_t         transId  ,
-		       int64_t         timeout  , // in milliseconds
-		       int64_t    now      ,
-		       int32_t         niceness );
+	void connect(UdpProtocol *proto, sockaddr_in *endPoint, Host *host, int32_t hostId, int32_t transId,
+	             int64_t timeout, int64_t now, int32_t niceness);
 
 	// same as above
-	void connect ( UdpProtocol    *proto    ,
-		       uint32_t   ip       ,
-		       uint16_t  port     ,
-		       Host           *host     ,
-		       int32_t            hostId   ,
-		       int32_t            transId  ,
-		       int64_t            timeout  , // in milliseconds
-		       int64_t       now      ,
-		       int32_t            niceness );
+	void connect(UdpProtocol *proto, uint32_t ip, uint16_t port, Host *host, int32_t hostId, int32_t transId,
+	             int64_t timeout, int64_t now, int32_t niceness);
 
 	// reset the slot if ip/port has changed
-	void resetConnect ( );
+	void resetConnect();
 
 	// . set up this slot for a send (call after connect() above)
 	// . returns false and sets errno on error
 	// . use a backoff of -1 for the default
-	bool sendSetup(char *msg,
-	               int32_t msgSize,
-	               char *alloc,
-	               int32_t allocSize,
-	               msg_type_t msgType,
-	               int64_t now,
-	               void *state,
-	               void      (*callback)(void *state, class UdpSlot *),
-	               int32_t niceness,
-	               int16_t backoff,
-	               int16_t maxWait,
-	               char *replyBuf,
-	               int32_t replyBufMaxSize);
+	bool sendSetup(char *msg, int32_t msgSize, char *alloc, int32_t allocSize, msg_type_t msgType, int64_t now,
+	               void *state, void (*callback)(void *state, class UdpSlot *), int32_t niceness, int16_t backoff,
+	               int16_t maxWait, char *replyBuf, int32_t replyBufMaxSize);
 
 	// . send a datagram from this slot on "sock" (call after sendSetup())
 	// . returns -2 if nothing to send, -1 on error, 0 if blocked, 
 	//   1 if sent something
-	int32_t sendDatagramOrAck ( int sock , bool allowResends , int64_t now);
+	int32_t sendDatagramOrAck(int sock, bool allowResends, int64_t now);
 
 	// . returns false and sets errno on error, true otherwise
 	// . tries to send ACK on "sock" if we read a dgram
 	// . tries to send a dgram if we read an ACK
 	// . sets *discard to true if caller should discard the dgram
-	bool readDatagramOrAck ( const void *buf, int32_t numRead,
-				 int64_t now, bool *discard);
+	bool readDatagramOrAck(const void *buf, int32_t numRead, int64_t now, bool *discard);
 
 	// . send an ACK
 	// . returns -2 if nothing to send, -1 on error, 0 if blocked, 
 	//   1 if sent something
 	// . should only be called by sendDatagramOrAck() above
-	int32_t sendAck ( int sock , int64_t now ,
-		       int32_t dgramNum = -1, int32_t weInitiated = -2 ,
-		       bool cancelTrans = false );
-	//, bool reset = false );
+	int32_t sendAck(int sock, int64_t now, int32_t dgramNum = -1, int32_t weInitiated = -2, bool cancelTrans = false);
 
 	// . or by readDataGramOrAck() to read a faked ack for protocols that 
 	//   don't use ACKs
-	void readAck  ( int32_t dgramNum, int64_t now );
+	void readAck(int32_t dgramNum, int64_t now);
 
 	// . will reset to send() will start sending at the first unacked dgram
 	// . if "reset" is true then will resend ALL dgrams
-	void prepareForResend ( int64_t now , bool resendAll ) ;
+	void prepareForResend(int64_t now, bool resendAll);
 
 	// reset/set m_resendTime based on m_resendCount
-	void setResendTime ();
+	void setResendTime();
 
 	// . returns false and sets errno on error
 	// . like sendSetup() but setting up for reading
 	// . called when an incoming request arrives
 	// . we create a new UdpSlot and call this to handle the request
-	bool makeReadBuf ( int32_t msgSize , int32_t numDgrams );
+	bool makeReadBuf(int32_t msgSize, int32_t numDgrams);
 
-	bool hasDgramsToRead ( ) {
-		return ( m_readBitsOn < m_dgramsToRead ); }
+	bool hasDgramsToRead() {
+		return (m_readBitsOn < m_dgramsToRead);
+	}
 
-	bool hasDgramsToSend ( ) {
-		return ( m_sentBitsOn < m_dgramsToSend ); }
+	bool hasDgramsToSend() {
+		return (m_sentBitsOn < m_dgramsToSend);
+	}
 
-	bool hasAcksToSend ( ) {
-		if ( ! m_proto->useAcks()  ) return false;
-		return ( m_sentAckBitsOn  < m_dgramsToRead ) ; }
+	bool hasAcksToSend() {
+		if (!m_proto->useAcks()) {
+			return false;
+		}
+		return (m_sentAckBitsOn < m_dgramsToRead);
+	}
 
-	bool hasAcksToRead ( ) {
-		if ( ! m_proto->useAcks()    ) return false;
-		return ( m_readAckBitsOn < m_dgramsToSend ); }
+	bool hasAcksToRead() {
+		if (!m_proto->useAcks()) {
+			return false;
+		}
+		return (m_readAckBitsOn < m_dgramsToSend);
+	}
 
-	int32_t getNumDgramsRead () { return m_readBitsOn;    }
-	int32_t getNumDgramsSent () { return m_sentBitsOn;    }
-	int32_t getNumAcksRead   () { return m_readAckBitsOn; }
-	int32_t getNumAcksSent   () { return m_sentAckBitsOn; }
+	int32_t getNumDgramsRead() {
+		return m_readBitsOn;
+	}
+
+	int32_t getNumDgramsSent() {
+		return m_sentBitsOn;
+	}
+
+	int32_t getNumAcksRead() {
+		return m_readAckBitsOn;
+	}
+
+	int32_t getNumAcksSent() {
+		return m_sentAckBitsOn;
+	}
 
 	// this does not include ACKs to read
-	bool isDoneReading ( ) { 
-		if ( m_dgramsToRead == 0 ) return false;
-		if ( hasDgramsToRead()   ) return false;
-		return true; }
-
-	// this does not include ACKs to send
-	bool isDoneSending ( ) { 
-		if ( m_dgramsToSend == 0 ) return false;
-		if ( hasDgramsToSend()   ) return false;
-		return true; }
-
-	bool isTransactionComplete ( ) {
-		if ( ! isDoneReading ()  ) return false;
-		if ( ! isDoneSending ()  ) return false;
-		if (   hasAcksToRead ()  ) return false;
-		if (   hasAcksToSend ()  ) return false;
+	bool isDoneReading() {
+		if (m_dgramsToRead == 0) return false;
+		if (hasDgramsToRead()) return false;
 		return true;
 	}
 
-	msg_type_t  getMsgType ( ) { return m_msgType; }
+	// this does not include ACKs to send
+	bool isDoneSending() {
+		if (m_dgramsToSend == 0) {
+			return false;
+		}
+		if (hasDgramsToSend()) {
+			return false;
+		}
+		return true;
+	}
 
-	key_t getKey ( ) { return m_proto->makeKey ( m_ip, m_port , 
-						     m_transId ,
-						 m_callback/*weInitaited?*/);}
+	bool isTransactionComplete() {
+		if (!isDoneReading()) {
+			return false;
+		}
+		if (!isDoneSending()) {
+			return false;
+		}
+		if (hasAcksToRead()) {
+			return false;
+		}
+		if (hasAcksToSend()) {
+			return false;
+		}
+		return true;
+	}
+
+	msg_type_t getMsgType() {
+		return m_msgType;
+	}
+
+	key_t getKey() {
+		return m_proto->makeKey(m_ip, m_port, m_transId, m_callback);
+	}
 	// . for internal use
 	// . set a window bit
-	void setBit ( int32_t dgramNum , unsigned char *bits ) {
+	void setBit(int32_t dgramNum, unsigned char *bits) {
 		// lazy initialize,since initializing all bits is too expensive
 		if ( dgramNum >= m_numBitsInitialized ) {
 			m_sentBits2   [dgramNum>>3] = 0;
@@ -196,10 +202,11 @@ class UdpSlot {
 			m_readAckBits2[dgramNum>>3] = 0;
 			m_numBitsInitialized += 8;
 		}
-		bits [ dgramNum >> 3 ] |= (1 << (dgramNum & 0x07)); 
+		bits [ dgramNum >> 3 ] |= (1 << (dgramNum & 0x07));
 	}
+
 	// clear a window bit
-	void clrBit ( int32_t dgramNum , unsigned char *bits ) {
+	void clrBit(int32_t dgramNum, unsigned char *bits) {
 		// lazy initialize,since initializing all bits is too expensive
 		if ( dgramNum >= m_numBitsInitialized ) {
 			m_sentBits2   [dgramNum>>3] = 0;
@@ -208,10 +215,11 @@ class UdpSlot {
 			m_readAckBits2[dgramNum>>3] = 0;
 			m_numBitsInitialized += 8;
 		}
-		bits [ dgramNum >> 3 ] &= ~(1 << (dgramNum & 0x07)); 
+		bits [ dgramNum >> 3 ] &= ~(1 << (dgramNum & 0x07));
 	}
+
 	// get value of a window bit
-	bool isOn   ( int32_t dgramNum , unsigned char *bits ) {
+	bool isOn(int32_t dgramNum, unsigned char *bits) {
 		// lazy initialize,since initializing all bits is too expensive
 		if ( dgramNum >= m_numBitsInitialized ) {
 			m_sentBits2   [dgramNum>>3] = 0;
@@ -220,33 +228,22 @@ class UdpSlot {
 			m_readAckBits2[dgramNum>>3] = 0;
 			m_numBitsInitialized += 8;
 		}
-		return bits [ dgramNum >> 3 ] & (1 << (dgramNum & 0x07)); 
+		return bits [ dgramNum >> 3 ] & (1 << (dgramNum & 0x07));
 	}
-
-	// clear all the bits
-	//void clrAllBits ( unsigned char *bits , int32_t numBits ) {
-	//	memset ( bits , 0 , (numBits >> 3) + 1 ); }
-
-	// set the time we first sent this dgram
-	//void      setSendTime ( int32_t dgramNum , int64_t now ) {
-	//	m_sendTimes [ dgramNum ] = (now - m_startTime); }
-	// get the time we first sent this dgram
-	//int64_t getSendTime ( int32_t dgramNum ) {
-	//	return (int64_t)m_sendTimes [ dgramNum ] + m_startTime ; }
 
 	// . get the first lit bit position after bit #i
 	// . returns numBits if no bits AFTER i are lit
 	int32_t getNextLitBit ( int32_t i , unsigned char *bits , int32_t numBits ) {
-		for ( int32_t j = i + 1 ; j < numBits ; j++ ) 
-			if ( isOn ( j , bits ) ) return j; 
+		for ( int32_t j = i + 1 ; j < numBits ; j++ )
+			if ( isOn ( j , bits ) ) return j;
 		return numBits;
 	}
 
 	// . get the first unlit bit position after bit #i
 	// . returns numBits if no bits AFTER i are unlit
 	int32_t getNextUnlitBit ( int32_t i , unsigned char *bits , int32_t numBits ) {
-		for ( int32_t j = i + 1 ; j < numBits ; j++ ) 
-			if ( ! isOn ( j , bits ) ) return j; 
+		for ( int32_t j = i + 1 ; j < numBits ; j++ )
+			if ( ! isOn ( j , bits ) ) return j;
 		return numBits;
 	}
 
@@ -267,44 +264,44 @@ class UdpSlot {
 	// Typically, you should just have your callback here return true
 	// so you don't have to call deleteSlot(slot) and don't have to 
 	// worry about wasting memory.
-	void      (*m_callback )( void *state , class UdpSlot *slot );
+	void (*m_callback )(void *state, class UdpSlot *slot);
 
 	// this callback is used for letting caller know when his reply has
 	// been sent (it's kinda a hack)
-	void      (*m_callback2 )( void *state , class UdpSlot *slot );
+	void (*m_callback2 )(void *state, class UdpSlot *slot);
 
 	// if callback2 can be called from a signal handler then make this true
-	bool        m_isCallback2Hot;
+	bool m_isCallback2Hot;
 
 	// . save a POINTER to caller's state;
 	// . caller must ensure it's not on the stack
-	void       *m_state;
+	void *m_state;
 
-	int32_t        m_transId;       // unique transaction ID (like socket fd)
-	uint32_t        m_ip;            // the endpoint host's address
-	uint16_t       m_port;          // the endpoint host's address
+	int32_t m_transId;       // unique transaction ID (like socket fd)
+	uint32_t m_ip;            // the endpoint host's address
+	uint16_t m_port;          // the endpoint host's address
 
 	// a ptr to the Host class for shotgun info
 	Host *m_host;
 
-	int32_t        m_hostId;        // the endpoint host's hostId in hostmap
+	int32_t m_hostId;        // the endpoint host's hostId in hostmap
 	msg_type_t m_msgType;       // i like to use this for class routing
 
-	int64_t        m_timeout;       // deltaT in milliseconds
-	int32_t        m_errno;         // anything go wrong?  0 means ok.
-	int32_t        m_localErrno;    // are we sending back an error reply?
+	int64_t m_timeout;       // deltaT in milliseconds
+	int32_t m_errno;         // anything go wrong?  0 means ok.
+	int32_t m_localErrno;    // are we sending back an error reply?
 
 	UdpProtocol *m_proto;
 
 	// . transmission-related variables
 	// . send/ack times are when they were put on the udp stack by sendto()
 	//   and may not be the time they were actually sent
-	char          *m_sendBuf;          
-	int32_t           m_sendBufSize;
-	char          *m_sendBufAlloc ;
-	int32_t           m_sendBufAllocSize;
-	int32_t           m_dgramsToSend;      
-	int32_t           m_resendTime;        // resend after this (in ms)
+	char *m_sendBuf;
+	int32_t m_sendBufSize;
+	char *m_sendBufAlloc;
+	int32_t m_sendBufAllocSize;
+	int32_t m_dgramsToSend;
+	int32_t m_resendTime;        // resend after this (in ms)
 
 	// the counts of lit bits for the bits above
 	int32_t m_readBitsOn;
@@ -317,54 +314,48 @@ class UdpSlot {
 	int32_t m_firstUnlitSentAckBit;
 
 	// how many times we've tried to resend
-        char           m_resendCount; 
-
-	// . we record the start time of each dgram transmission (in millisecs)
-	// . it's relative to m_startTime
-	// . when an ACK arrives we can compute the roundtrip time 4 that dgram
-	// . to save mem we only record times for dgrams 0,8,16 ... 4*n
-	//uint16_t m_sendTimes [ MAX_DGRAMS / 8 ];
+	char m_resendCount;
 
 	// . birth time of the udpslot
 	// . m_sendTimes are relative to this
-	int64_t      m_startTime;
+	int64_t m_startTime;
 
 	// when the request/reply was read, we set this to the current time so
 	// we can measure how long it sits in the queue until the handler
 	// or callback is called
-	int64_t      m_queuedTime;
+	int64_t m_queuedTime;
 
 	// reception-related variables
-	char          *m_readBuf;      // store recv'd msg in here.
-	int32_t           m_readBufSize;  // w/o the dgram headers.
-	int32_t           m_readBufMaxSize;
-	int32_t           m_dgramsToRead; // closely related to m_bytesToRead.
+	char *m_readBuf;      // store recv'd msg in here.
+	int32_t m_readBufSize;  // w/o the dgram headers.
+	int32_t m_readBufMaxSize;
+	int32_t m_dgramsToRead; // closely related to m_bytesToRead.
 
 	// last times of a read/send on this slot in milliseconds since epoch
-	int64_t      m_lastReadTime;
-	int64_t      m_lastSendTime;
+	int64_t m_lastReadTime;
+	int64_t m_lastSendTime;
 
 	// remember our niceness level
-	int32_t           m_niceness;
+	int32_t m_niceness;
 
 	// these are for measuring bps (bandwidth) for g_stats
-	int64_t      m_firstSendTime;
+	int64_t m_firstSendTime;
 
 	// . this is bigger for loopback sends/reads
 	// . we set it just low enough to avoid IP layer fragmentation
-	int32_t           m_maxDgramSize;
+	int32_t m_maxDgramSize;
 
 	// did we call the handler for this?
-	char           m_calledHandler;
-	char           m_calledCallback;
-	char           m_convertedNiceness;
+	char m_calledHandler;
+	char m_calledCallback;
+	char m_convertedNiceness;
 	// has a sig been queued to call our callback
-	bool           m_isQueued;
+	bool m_isQueued;
 
 	// now caller can decide initial backoff, doubles each time no ack rcvd
-	int16_t          m_backoff;
+	int16_t m_backoff;
 	// don't wait longer than this, however
-	int16_t          m_maxWait;
+	int16_t m_maxWait;
 
 	// save cpu by not having to call memset() on m_sentBits et al
 	int32_t m_numBitsInitialized;
@@ -405,7 +396,7 @@ class UdpSlot {
 	//   if he expects a large reply
 	// . incoming requests simply cannot be bigger than this for the
 	//   hot udp server
-	char           m_tmpBuf [ TMPBUFSIZE ];
+	char m_tmpBuf[TMPBUFSIZE];
 
 	char *m_hostname;
 };
