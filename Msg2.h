@@ -114,8 +114,6 @@ private:
 	char m_rdbId;
 	bool m_addToCache;
 	collnum_t m_collnum;
-	bool m_checkCache;
-	int32_t m_k;
 
 	bool m_allowHighFrequencyTermCache;
 

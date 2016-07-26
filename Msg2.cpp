@@ -476,8 +476,6 @@ bool Msg2::gotList ( RdbList *list ) {
 		g_stats.addStat_r ( 0, m_startTime, now, 0x00ffff00 );
 	}
 
-	m_k = -1;
-
 	// set this i guess
 	g_errno = m_errno;
 
