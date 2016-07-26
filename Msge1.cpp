@@ -36,8 +36,7 @@ bool Msge1::getFirstIps ( TagRec **grv ,
 			  void    *state                  ,
 			  void   (*callback)(void *state) ,
 			  int32_t     nowGlobal              ,
-			  bool     addTags                ,
-			  const char    *testDir                ) {
+			  bool     addTags                ) {
 
 	reset();
 	// bail if no urls or linkee
@@ -55,7 +54,6 @@ bool Msge1::getFirstIps ( TagRec **grv ,
 	m_callback         = callback;
 	m_nowGlobal        = nowGlobal;
 	m_addTags          = addTags;
-	m_testDir          = testDir;
 
 	// . how much mem to alloc?
 	// . include an extra 4 bytes for each one to hold possible errno
@@ -199,38 +197,6 @@ bool Msge1::launchRequests ( int32_t starti ) {
 		goto loop; 
 	}
 
-	// use domain, we are "firstip" only now!!!
-	//int32_t  dlen = 0;
-	//char *dom  = getDomFast ( p , &dlen );
-
-	// get the length
-	//int32_t  plen = gbstrlen(p);
-
-	/*
-	// look up in our m_testBuf.
-	if ( m_coll && ! strcmp(m_coll,"qatest123") ) {
-		bool found = false;
-		// do we got it?
-		int32_t quickIp ; bool status = getTestIp ( p , &quickIp, &found);
-		// error?
-		if ( ! status ) { 
-			// save it
-			m_errno = g_errno;
-			// hard exit
-			g_process.shutdownAbort(true); 
-		}
-		// an ip of 0 means we could not find it
-		if ( found ) { // quickIp != 0 ) {
-			// set it
-			m_ipBuf[m_n] = quickIp;
-			m_numRequests++; 
-			m_numReplies++; 
-			m_n++; 
-			goto loop; 
-		}
-	}
-	*/
-
 	// . grab a slot
 	// . m_msg8as[i], m_msgCs[i], m_msg50s[i], m_msg20s[i]
 	int32_t i;
@@ -279,38 +245,6 @@ bool Msge1::sendMsgC ( int32_t i , const char *host , int32_t hlen ) {
 	m->m_state2 = this;
 	m->m_state3 = (void *)(PTRTYPE)i;
 
-	// note it
-	//if ( g_conf.m_logDebugSpider )
-	//	logf(LOG_DEBUG,"spider: msge1: getting ip for %s",
-	//	     m_urlPtrs[n]);
-
-	//int32_t  hlen = 0;
-	//char *host = getHostFast ( m_urlPtrs[n] , &hlen );
-
-
-	// look up in our m_testBuf.
-	if ( m_coll && ! strcmp(m_coll,"qatest123") ) {
-		bool found = false;
-		// shortcut
-		//char *p = m_urlPtrs[n];
-		// do we got it?
-		//bool status = getTestIp ( p , &m_ipBuf[n], &found);
-		bool status = getTestIp ( host, &m_ipBuf[n],&found,m_niceness,
-					  m_testDir );
-		// error?
-		if ( ! status ) { 
-			// save it
-			m_errno = g_errno;
-			// hard exit
-			g_process.shutdownAbort(true); 
-		}
-		// an ip of 0 means we could not find it
-		if ( found ) 
-			return addTag(i);
-	}
-
-	//g_process.shutdownAbort(true);
-
 	if ( ! m->getIp ( host           ,
 			  hlen           ,
 			  &m_ipBuf[n]    ,
@@ -342,39 +276,6 @@ bool Msge1::doneSending ( int32_t i ) {
 	if ( g_errno && ! m_errno ) m_errno = g_errno;
 	// clear it
 	g_errno = 0;
-	// get ip we got
-	int32_t ip = m_ipBuf[n];
-	// what is this?
-	//if ( ip == 3 ) { g_process.shutdownAbort(true); }
-	//log ( LOG_DEBUG, "build: Finished Msge1 for url [%" PRId32",%" PRId32"]: %s ip=%s",
-	//      n, i,  m_urls[i].getUrl() ,iptoa(ip));
-
-	// store it?
-	if ( ! strcmp(m_coll,"qatest123") ) {
-		// get host
-		int32_t  hlen = 0;
-		const char *host = getHostFast ( m_urlPtrs[n] , &hlen );
-		// use domain, we are "firstip" only now!!!
-		//int32_t  dlen = 0;
-		//char *dom  = getDomFast ( m_urlPtrs[n] , &dlen );
-		// add it to "./test/ips.txt"
-		addTestIp ( host , hlen ,ip);
-		//addTestIp ( dom,dlen ,ip);
-	}
-
-	// . all done if invalid
-	// . otherwise, add the "firstip" tag to this the domain in tagdb
-	// . we now add invalid ips to keep doConsistencyCheck() from 
-	//   blocking as well as to keep performance fast so we do not
-	//   have to keep re-looking up bad ips to get their "firstip",
-	//   but we only respect bad "firstips" for 1 day (see above)
-	//   before we try to recompute them
-	//if ( ip == 0 || ip == -1 ) {
-	//	// close it up
-	//	doneAddingTag ( i );
-	//	return true;
-	//}
-
 	return addTag ( i );
 }
 
@@ -409,7 +310,6 @@ bool Msge1::addTag ( int32_t i ) {
 
 
 	// if invalid or ip-based, skip it!
-	//if ( ! dom || dlen <= 0 ) 
 	if ( ! host || hlen <= 0 ) 
 		return doneAddingTag ( i );
 
@@ -441,218 +341,5 @@ bool Msge1::doneAddingTag ( int32_t i ) {
 	// free it
 	m_used[i] = false;
 	// we did not block
-	return true;
-}
-
-#include "HashTableX.h"
-static char *s_testBuf      = NULL ;
-static char *s_testBufPtr          ;
-static int32_t  s_testBufSize         ;
-static char *s_testBufEnd          ;
-static char  s_needsReload  = true ;
-static char *s_last         = NULL ;
-static int32_t  s_lastLen      = 0    ;
-static HashTableX s_ht;
-
-// . only call this if the collection is "qatest123"
-// . we try to get the ip by accessing the "./test/ips.txt" file
-// . we also ad ips we lookup to that file in the collection is "qatest123"
-// . returns false and sets g_errno on error, true on success
-bool getTestIp ( const char *url, int32_t *retIp, bool *found, int32_t niceness,
-		 const char *testDir ) {
-
-	// set the url from the url string, "us"
-	Url u; u.set ( url );
-	// get host of the url
-	char *host = u.getHost();
-	int32_t  hlen = u.getHostLen();
-
-	// if it is an ip, that is easy!
-	if ( is_digit(host[0]) ) {
-		int32_t aip = atoip(host,hlen);
-		if ( aip ) return aip;
-	}
-
-	// assume not found
-	*found = false;
-
-	// . if we are the "qatestq123" collection, check for "./test/ips.txt"
-	//   file that gives us the ips of the given urls. 
-	// . if we end up doing some lookups we should append to that file
-	if ( ! s_testBuf || s_needsReload ) {
-		// assume needs reload now
-		s_needsReload = true;
-		// free it
-		if ( s_testBuf ) mfree ( s_testBuf , s_testBufSize, "msge1" );
-		// hashtable set, map urlhash32 to ip
-		if ( !s_ht.set(4,4,400000,NULL,0,false,niceness,"msge1tab")) { 
-			g_process.shutdownAbort(true); }
-		// null it out now, we freed it
-		s_testBuf = NULL;
-		// filename
-		char fn[100]; 
-		sprintf(fn,"%s/%s/ips.txt",g_hostdb.m_dir,testDir);
-		// set it
-		File f; f.set ( fn );
-		// get size
-		int32_t fsize = f.getFileSize ( );
-		// < 0 means error? does not exist?
-		if ( fsize < 0 ) fsize = 0;
-		// how much to alloc? 1MB for all for now
-		int32_t need = 3000001;
-		// and what we had
-		need += fsize;
-		// make buf big enough to hold the read
-		s_testBuf = (char *)mmalloc ( need , "tmsge1" );
-		// this for freeing
-		s_testBufSize = need;
-		s_testBufEnd  = s_testBuf + need;
-		// error?
-		if ( ! s_testBuf ) {
-			// note it
-			log("test: failed to alloc %" PRId32" bytes for ip buf",need);
-			// error out
-			return false;
-		}
-		// assign end to the beginning, assume nothing to read
-		s_testBufPtr = s_testBuf;
-		// read in the file, if it was there
-		if ( fsize > 0 ) {
-			// open it
-			f.open ( O_RDWR );
-			// read it in
-			int32_t rs = f.read ( s_testBuf , fsize , 0 ) ;
-			// check it
-			if ( rs != fsize ) {
-				// note it
-				log("test: failed to read %" PRId32" bytes of "
-				    "./%s/ips.txt file",fsize,testDir);
-				// close it
-				f.close();
-				// error out
-				return false;
-			}
-			// recompute the end of s_testBuf
-			s_testBufPtr = s_testBuf + fsize;
-			// trim off ending punct like \n
-			for ( ; is_punct_a(s_testBufPtr[-1]) ; s_testBufPtr--);
-			// and null term
-			*s_testBufPtr = '\0';
-		}
-		// close it
-		f.close();
-		// good to go
-		s_needsReload = false;
-
-		//
-		// fill hashtable, s_ht
-		//
-
-		char *p = s_testBuf;
-	loop:
-		// breathe
-		QUICKPOLL(niceness);
-		// skip over spaces
-		for ( ; p < s_testBufPtr && is_wspace_a(*p) ; p++ );
-		// assign the url string, "us" to "p"
-		char *us = p;
-		// skip over that url
-		char *next = p; 
-		for (;next<s_testBufPtr && !is_wspace_a(*next);next++);
-		// update
-		p = next;
-		// get hash of that host
-		int32_t u32 = hash32 ( us,next-us);
-		// if no match, try the next hostname in s_testBuf
-		//if ( strncasecmp ( us , host , hlen ) )  goto loop;
-		// the url in the buf must be same length to be a match
-		//if ( ! is_wspace_a(us[hlen]) ) goto loop;
-		char *ips = next;
-		// skip spaces
-		for ( ; ips < s_testBufPtr && is_wspace_a(*ips) ; ips++ );
-		// all done? not found...
-		if ( ! ips[0] ) { *retIp = 0; return true; }
-		// sanity check, each line must have an IP!
-		if ( ips >= s_testBufPtr ) { g_process.shutdownAbort(true); }
-		// must be number
-		if ( ! is_digit(*ips) ) { 
-			// there is a single line that is \0 0.0.0.\n
-			// so let's fix this by skipping until \n
-			for ( ; p<s_testBufPtr&& *p!='\n';p++);
-			goto loop;
-			//g_process.shutdownAbort(true); }
-		}
-		// advance to end
-		char *ie = ips; 
-		for ( ; *ie && ie < s_testBufPtr ; ie++ ) 
-			// stop if not good char
-			if ( ! is_digit(*ie) && *ie != '.' ) break;
-		// get it
-		int32_t ip = atoip ( ips , ie - ips );
-		// store in hash table for lookup below
-		if ( u32 && ! s_ht.addKey ( &u32 , &ip ) ) { 
-			g_process.shutdownAbort(true); }
-		// advance p for next round
-		p = ie;
-		// skip over spaces
-		for ( ; p < s_testBufPtr && is_wspace_a(*p) ; p++ );
-		// do more if we should
-		if ( p < s_testBufPtr ) goto loop;
-	}
-
-	// assume none found
-	*retIp = 0;
-	// return 0 if no ips.txt data
-	//if ( ! s_testBuf || s_testBufPtr == s_testBuf ) return true;
-	// look it up in hash table now
-	int32_t h = hash32 ( host,hlen);
-	int32_t *ipPtr = (int32_t *)s_ht.getValue(&h);
-	// if missed, return now
-	if ( ! ipPtr ) 
-		return true;
-	// set it
-	*retIp = *ipPtr;
-	// flag it
-	*found = true;
-	// note it
-	//log("test: found ip %s for %s in ips.txt",iptoa(ip),url);
-	// that is it
-	return true;
-}
-
-void resetTestIpTable ( ) {
-	s_ht.reset();
-}
-
-// returns false if unable to add, returns true if added
-bool addTestIp ( const char *host, int32_t hostLen, int32_t ip ) {
-	// must have first tried to get it
-	if ( s_needsReload ) { g_process.shutdownAbort(true); }
-	// must have allocated this
-	if ( ! s_testBuf )
-		return log("test: no test buf to add ip %s",iptoa(ip));
-	// make sure enough room
-	int32_t need = 1 + hostLen + 1 + (4*3+3) + 1;
-	// add it to test buf
-	if ( s_testBufPtr + need >= s_testBufEnd ) 
-		return log("test: no room to add ip %s",iptoa(ip));
-	// did we just add this one? prevent dups this way...
-	if ( s_last && hostLen==s_lastLen && !strncmp(s_last,host,hostLen))
-		return true;
-	// preserve ptr to last one we added
-	s_last    = s_testBufPtr;
-	s_lastLen = hostLen;
-	// print it
-	gbmemcpy ( s_testBufPtr , host , hostLen );
-	// skip it
-	s_testBufPtr += hostLen;
-	// then space and ip
-	int32_t ps = sprintf ( s_testBufPtr , " %s\n",iptoa(ip));
-	// skip that
-	s_testBufPtr += ps;
-	// add to hash table too
-	int32_t u32 = hash32 ( host , hostLen );
-	if ( ! s_ht.addKey ( &u32 , &ip ) ) { g_process.shutdownAbort(true); }
-	// success
 	return true;
 }

@@ -340,10 +340,6 @@ bool Collectiondb::addNewColl ( const char *coll, bool saveIt,
 	// get the default.conf from working dir if there
 	g_parms.setToDefault( (char *)cr , OBJ_COLL , cr );
 
-	// put search results back so it doesn't mess up results in qatest123
-	if ( strcmp(coll,"qatest123") == 0 )
-		cr->m_sameLangWeight = 20.0;
-
 	// set coll id and coll name for coll id #i
 	strcpy ( cr->m_coll , coll );
 	cr->m_collLen = gbstrlen ( coll );

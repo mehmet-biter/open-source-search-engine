@@ -85,11 +85,7 @@ public:
 	unsigned  m_useCompressionProxy:1;
 
 	// does url end in /robots.txt ?
-	unsigned  m_isRobotsTxt:1; 
-	// should we call getTestDoc()/addTestDoc() like for the "test" coll
-	// and for Test.cpp?
-	unsigned  m_useTestCache:1; 
-	unsigned  m_addToTestCache:1;
+	unsigned  m_isRobotsTxt:1;
 	unsigned  m_skipHammerCheck:1;
 	unsigned  m_attemptedIframeExpansion:1;
 	unsigned  m_crawlDelayFromEnd:1;
@@ -115,7 +111,6 @@ public:
 	int32_t      m_spideredTime;
 	// used for caching (and for request table, wait in line table)
 	int64_t m_cacheKey;
-	char      m_testDir[32];
 
 	char *ptr_url;
 	char *ptr_cookie;
@@ -155,7 +150,6 @@ class Msg13 {
 	static RdbCache *getHttpCacheOthers();
 
 	bool getDoc ( Msg13Request *r ,
-		      bool isTestColl ,
 		      void   *state             ,
 		      void  (*callback)(void *state) );
 
@@ -176,9 +170,6 @@ class Msg13 {
 	// point to it
 	Msg13Request *m_request;
 };
-
-bool getTestSpideredDate ( Url *u , int32_t *origSpideredDate , const char *testDir ) ;
-bool addTestSpideredDate ( Url *u , int32_t  spideredTime     , const char *testDir ) ;
 
 extern RdbCache s_hammerCache;
 

@@ -606,21 +606,6 @@ subloopNextPriority:
 
 	// get max spiders
 	int32_t maxSpiders = cr->m_maxNumSpiders;
-	if ( m_sc->m_isTestColl ) {
-		// parser does one at a time for consistency
-		if ( g_conf.m_testParserEnabled ) {
-			maxSpiders = 1;
-		}
-
-		// need to make it 6 since some priorities essentially
-		// lock the ips up that have urls in higher
-		// priorities. i.e. once we dole a url out for ip X,
-		// then if later we add a high priority url for IP X it
-		// can't get spidered until the one that is doled does.
-		if ( g_conf.m_testSpiderEnabled ) {
-			maxSpiders = 6;
-		}
-	}
 
 	logTrace( g_conf.m_logTraceSpider, "maxSpiders: %" PRId32 , maxSpiders );
 
@@ -1259,12 +1244,6 @@ bool SpiderLoop::spiderUrl9 ( SpiderRequest *sreq ,
 	// sanity
 	if ( ! m_sc ) { g_process.shutdownAbort(true); }
 
-	// sanity check
-	// core dump? just re-run gb and restart the parser test...
-	if ( g_conf.m_testParserEnabled &&
-	     ! sreq->m_isInjecting ) { 
-		g_process.shutdownAbort(true); }
-
 	// wait until our clock is synced with host #0 before spidering since
 	// we store time stamps in the domain and ip wait tables in 
 	// SpiderCache.cpp. We don't want to freeze domain for a int32_t time
@@ -1543,14 +1522,6 @@ bool SpiderLoop::spiderUrl2 ( ) {
 	const char *coll = "collnumwasinvalid";
 	if ( cr ) coll = cr->m_coll;
 
-	// . pass in a pbuf if this is the "qatest123" collection
-	// . we will dump the SafeBuf output into a file in the
-	//   test subdir for comparison with previous versions of gb
-	//   in order to see what changed
-	SafeBuf *pbuf = NULL;
-	if ( !strcmp( coll,"qatest123") && g_conf.m_testParserEnabled ) 
-		pbuf = &xd->m_sbuf;
-
 	//
 	// sanity checks
 	//
@@ -1581,13 +1552,8 @@ bool SpiderLoop::spiderUrl2 ( ) {
 		     m_sreq->m_key.n1,
 		     m_sreq->m_key.n0);
 
-
 	// this returns false and sets g_errno on error
-	if ( ! xd->set4 ( m_sreq       ,
-			  m_doledbKey  ,
-			  coll       ,
-			  pbuf         ,
-			  MAX_NICENESS ) ) {
+	if (!xd->set4(m_sreq, m_doledbKey, coll, NULL, MAX_NICENESS)) {
 		// i guess m_coll is no longer valid?
 		mdelete ( m_docs[i] , sizeof(XmlDoc) , "Doc" );
 		delete (m_docs[i]);
@@ -2455,12 +2421,7 @@ void handleRequestc1 ( UdpSlot *slot , int32_t niceness ) {
 		//
 		/////////
 
-		// speed up qa pipeline
 		uint32_t spiderDoneTimer = (uint32_t)SPIDER_DONE_TIMER;
-		if ( cr->m_coll[0] == 'q' &&
-		     cr->m_coll[1] == 'a' &&
-		     strcmp(cr->m_coll,"qatest123")==0)
-			spiderDoneTimer = 10;
 
 		// if we haven't spidered anything in 1 min assume the
 		// queue is basically empty...

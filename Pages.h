@@ -65,7 +65,6 @@ bool sendPageThreads    ( TcpSocket *s , HttpRequest *r );
 bool sendPageAPI        ( TcpSocket *s , HttpRequest *r );
 bool sendPageHelp       ( TcpSocket *s , HttpRequest *r );
 bool sendPageGraph      ( TcpSocket *s , HttpRequest *r );
-bool sendPageQA ( TcpSocket *sock , HttpRequest *hr ) ;
 bool sendPageHealthCheck ( TcpSocket *sock , HttpRequest *hr ) ;
 
 

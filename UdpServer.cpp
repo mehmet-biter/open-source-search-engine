@@ -1354,15 +1354,7 @@ bool UdpServer::makeCallbacks_ass ( int32_t niceness ) {
 	int32_t numCalled = 0;
 	if(niceness > 0) m_needBottom = false;
 
-	// do not do niceness conversion if doing a qa.html run because it
-	// messes up the order of writing/reading to/from placedb causing
-	// like 30 pages to have inconsistencies in their addresses.
-	// default this to off for now!
 	bool doNicenessConversion = true;
-	if ( g_conf.m_testParserEnabled ||
-	     g_conf.m_testSpiderEnabled ||
-	     g_conf.m_testSearchEnabled )
-		doNicenessConversion = false;
 
 	// this stops merges from getting done because the write threads never
 	// get launched

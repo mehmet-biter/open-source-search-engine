@@ -24,11 +24,6 @@ bool addToHammerQueue ( Msg13Request *r ) ;
 void scanHammerQueue ( int fd , void *state );
 void downloadTheDocForReals ( Msg13Request *r ) ;
 
-// utility functions
-bool getTestDoc ( char *u , class TcpSocket *ts , Msg13Request *r );
-bool addTestDoc ( int64_t urlHash64 , char *httpReply , int32_t httpReplySize ,
-		  int32_t err , Msg13Request *r ) ;
-
 static void gotForwardedReplyWrapper ( void *state , UdpSlot *slot ) ;
 static void handleRequest13 ( UdpSlot *slot , int32_t niceness ) ;
 static void gotHttpReply    ( void *state , TcpSocket *ts ) ;
@@ -127,7 +122,7 @@ bool Msg13::registerHandler ( ) {
 
 // . returns false if blocked, returns true otherwise
 // . returns true and sets g_errno on error
-bool Msg13::getDoc ( Msg13Request *r, bool isTestColl, void *state, void(*callback)(void *) ) {
+bool Msg13::getDoc ( Msg13Request *r, void *state, void(*callback)(void *) ) {
 	// reset in case we are being reused
 	reset();
 
@@ -142,19 +137,6 @@ bool Msg13::getDoc ( Msg13Request *r, bool isTestColl, void *state, void(*callba
 
 	// set this
 	r->m_urlHash64 = hash64 ( r->ptr_url , r->size_url-1);
-
-	// default to 'qa' test coll if non given
-	if ( r->m_useTestCache && ! r->m_testDir[0] ) {
-		r->m_testDir[0] = 'q';
-		r->m_testDir[1] = 'a';
-	}
-
-	// sanity check, if spidering the test coll make sure one of 
-	// these is true!! this prevents us from mistakenly turning it off
-	// and not using the doc cache on disk like we should
-	if ( isTestColl && !r->m_testDir[0] && r->m_useTestCache ) {
-		g_process.shutdownAbort(true);
-	}
 
 	// is this a /robots.txt url?
 	if ( r->size_url - 1 > 12 && 
@@ -252,9 +234,6 @@ bool Msg13::forwardRequest ( ) {
 		       "host %" PRId32" (child=%" PRId32")", r->ptr_url, iptoa(r->m_firstIp), 
 		       r->m_urlHash48, hostId,
 		       r->m_skipHammerCheck);
-
-	// sanity
-	if ( r->m_useTestCache && ! r->m_testDir[0] ) { g_process.shutdownAbort(true);}
 
 	// fill up the request
 	int32_t requestBufSize = r->getSize();
@@ -542,9 +521,6 @@ void handleRequest13 ( UdpSlot *slot , int32_t niceness  ) {
 	// temporary hack
 	if ( r->m_parent ) { g_process.shutdownAbort(true); }
 
-	// assume we do not add it!
-	//r->m_addToTestCache = false;
-
 	if ( ! s_flag ) {
 		s_flag = true;
 		s_hammerCache.init ( 15000       , // maxcachemem,
@@ -558,36 +534,6 @@ void handleRequest13 ( UdpSlot *slot , int32_t niceness  ) {
 				     12         , // data key size?
 				     -1         );// numPtrsMax
 	}
-
-	// sanity
-	if ( r->m_useTestCache && ! r->m_testDir[0] ) { g_process.shutdownAbort(true);}
-
-	// try to get it from the test cache?
-	TcpSocket ts;
-	if ( r->m_useTestCache && getTestDoc ( r->ptr_url, &ts , r ) ) {
-		// save this
-		r->m_udpSlot = slot;
-		// store the request so gotHttpReply can reply to it
-		if ( ! s_rt.addKey ( &r->m_cacheKey , &r ) ) {
-			
-			log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. error=%s", __FILE__, __func__, __LINE__, mstrerror(g_errno));
-			g_udpServer.sendErrorReply(slot,g_errno);
-			return;
-		}
-		// sanity check
-		if ( ts.m_readOffset  < 0 ) { g_process.shutdownAbort(true); }
-		if ( ts.m_readBufSize < 0 ) { g_process.shutdownAbort(true); }
-		// reply to it right away
-		gotHttpReply ( r , &ts );
-		// done
-		return;
-	}
-
-	// if wanted it to be in test cache but it was not, we have to 
-	// download it, so use a fresh ip! we ran into a problem when
-	// downloading a new doc from an old ip in ips.txt!!
-	if ( r->m_useTestCache )
-		r->m_urlIp = 0;
 
 	// save this
 	r->m_udpSlot = slot;
@@ -1307,21 +1253,6 @@ void gotHttpReply2 ( void *state ,
 	// save original size
 	int32_t originalSize = replySize;
 
-	// . add the reply to our test cache
-	// . if g_errno is set to something like "TCP Timed Out" then
-	//   we end up saving a blank robots.txt or doc here...
-	
-	if ( r->m_useTestCache && r->m_addToTestCache ) {
-		addTestDoc( r->m_urlHash64, reply, replySize, savedErr, r );
-	}
-
-	// note it
-	if ( r->m_useTestCache && 
-	     ( g_conf.m_logDebugSpider || g_conf.m_logDebugMsg13 ) )
-		logf(LOG_DEBUG,"spider: got reply for %s "
-		     "firstIp=%s uh48=%" PRIu64,
-		     r->ptr_url,iptoa(r->m_firstIp),r->m_urlHash48);
-
 	int32_t niceness = r->m_niceness;
 
 	// sanity check
@@ -1796,214 +1727,6 @@ void passOnReply ( void *state , UdpSlot *slot ) {
 	g_udpServer.sendReply_ass( reply, replySize, reply, replyAllocSize, r->m_udpSlot );
 }
 
-//
-//
-// . UTILITY FUNCTIONS for injecting into the "qatest123" collection
-// . we need to ensure that the web pages remain constant so we store them
-//
-//
-
-// . returns true if found on disk in the test subdir
-// . returns false with g_errno set on error
-// . now that we are lower level in Msg13.cpp, set "ts" not "slot"
-bool getTestDoc ( char *u , TcpSocket *ts , Msg13Request *r ) {
-	// sanity check
-	//if ( strcmp(m_coll,"qatest123") ) { g_process.shutdownAbort(true); }
-	// hash the url into 64 bits
-	int64_t h = hash64 ( u , gbstrlen(u) );
-	// read the spider date file first
-	char fn[300]; 
-	File f;
-
-	// default to being from PageInject
-	//char *td = "test-page-inject";
-	//if ( r->m_testSpiderEnabled ) td = "test-spider";
-	//if ( r->m_testParserEnabled ) td = "test-parser";
-	//if ( r->m_isPageParser      ) td = "test-page-parser";
-	char *td = r->m_testDir;
-	//if ( ! td ) td = "test-page-parser";
-	if ( ! td[0] ) { g_process.shutdownAbort(true); }
-	// make http reply filename
-	sprintf(fn,"%s/%s/doc.%" PRIu64".html",g_hostdb.m_dir,td,h);
-	// look it up
-	f.set ( fn );
-	// try to get it
-	if ( ! f.doesExist() ) {
-		//if ( g_conf.m_logDebugSpider )
-			log("test: doc not found in test cache: %s (%" PRIu64")",
-			    u,h);
-		return false;
-	}
-	// get size
-	int32_t fs = f.getFileSize();
-	// error?
-	if ( fs == -1 ) 
-		return log("test: error getting file size from test");
-	// make a buf
-	char *buf = (char *)mmalloc ( fs + 1 , "gtd");
-	// no mem?
-	if ( ! buf ) return log("test: no mem to get html file");
-	// open it
-	f.open ( O_RDWR );
-	// read the HTTP REPLY in
-	int32_t rs = f.read ( buf , fs , 0 );
-	// not read enough?
-	if ( rs != fs ) {
-		mfree ( buf,fs,"gtd");
-		return log("test: read returned %" PRId32" != %" PRId32,rs,fs);
-	}
-	f.close();
-	// null term it
-	buf[fs] = '\0';
-
-	// was it error=%" PRIu32" ?
-	if ( ! strncmp(buf,"errno=",6) ) {
-		ts->m_readBuf     = NULL;
-		ts->m_readBufSize = 0;
-		ts->m_readOffset  = 0;
-		g_errno = atol(buf+6);
-		// fix mem leak
-		mfree ( buf , fs+1 , "gtd" );
-		// log it for now
-		if ( g_conf.m_logDebugSpider )
-			log("test: GOT ERROR doc in test cache: %s (%" PRIu64") "
-			    "[%s]",u,h, mstrerror(g_errno));
-		if ( ! g_errno ) { g_process.shutdownAbort(true); }
-		return true;
-	}
-
-	// log it for now
-	//if ( g_conf.m_logDebugSpider )
-		log("test: GOT doc in test cache: %s (qa/doc.%" PRIu64".html)",
-		    u,h);
-		
-	//fprintf(stderr,"scp gk252:/e/test-spider/doc.%" PRIu64".* /home/mwells/gigablast/test-parser/\n",h);
-
-	// set the slot up now
-	//slot->m_readBuf        = buf;
-	//slot->m_readBufSize    = fs;
-	//slot->m_readBufMaxSize = fs;
-	ts->m_readBuf     = buf;
-	ts->m_readOffset  = fs ;
-	// if we had something, trim off the \0 so msg13.cpp can add it back
-	if ( fs > 0 ) ts->m_readOffset--;
-	ts->m_readBufSize = fs + 1;
-	return true;
-}
-
-bool getTestSpideredDate ( Url *u , int32_t *origSpideredDate , const char *testDir ) {
-	// hash the url into 64 bits
-	int64_t uh64 = hash64(u->getUrl(),u->getUrlLen());
-	// read the spider date file first
-	char fn[2000]; 
-	File f;
-	// get the spider date then
-	sprintf(fn,"%s/%s/doc.%" PRIu64".spiderdate.txt",
-		g_hostdb.m_dir,testDir,uh64);
-	// look it up
-	f.set ( fn );
-	// try to get it
-	if ( ! f.doesExist() ) return false;
-	// get size
-	int32_t fs = f.getFileSize();
-	// error?
-	if ( fs == -1 ) return log("test: error getting file size from test");
-	// open it
-	f.open ( O_RDWR );
-	// make a buf
-	char dbuf[200];
-	// read the date in (int format)
-	int32_t rs = f.read ( dbuf , fs , 0 );
-	// sanity check
-	if ( rs <= 0 ) { g_process.shutdownAbort(true); }
-	// get it
-	*origSpideredDate = atoi ( dbuf );
-	// close it
-	f.close();
-	// note it
-	//log("test: read spiderdate of %" PRIu32" for %s",*origSpideredDate,
-	//    u->getUrl());
-	// good to go
-	return true;
-}
-
-bool addTestSpideredDate ( Url *u , int32_t spideredTime , const char *testDir ) {
-
-	// ensure dir exists
-	::mkdir(testDir,getDirCreationFlags());
-
-	// set this
-	int64_t uh64 = hash64(u->getUrl(),u->getUrlLen());
-	// make that into a filename
-	char fn[300]; 
-	sprintf(fn,"%s/%s/doc.%" PRIu64".spiderdate.txt",
-		g_hostdb.m_dir,testDir,uh64);
-	// look it up
-	File f; f.set ( fn );
-	// if already there, return now
-	if ( f.doesExist() ) return true;
-	// make it into buf
-	char dbuf[200]; sprintf ( dbuf ,"%" PRId32"\n",spideredTime);
-	// open it
-	f.open ( O_RDWR | O_CREAT );
-	// write it now
-	int32_t ws = f.write ( dbuf , gbstrlen(dbuf) , 0 );
-	// close it
-	f.close();
-	// panic?
-	if ( ws != (int32_t)gbstrlen(dbuf) )
-		return log("test: error writing %" PRId32" != %" PRId32" to %s",ws,
-			   (int32_t)gbstrlen(dbuf),fn);
-	// close it up
-	//f.close();
-	return true;
-}
-
-// add it to our "qatest123" subdir
-bool addTestDoc ( int64_t urlHash64 , char *httpReply , int32_t httpReplySize ,
-		  int32_t err , Msg13Request *r ) {
-
-	char fn[300];
-	// default to being from PageInject
-	//char *td = "test-page-inject";
-	//if ( r->m_testSpiderEnabled ) td = "test-spider";
-	//if ( r->m_testParserEnabled ) td = "test-parser";
-	//if ( r->m_isPageParser      ) td = "test-page-parser";
-	char *td = r->m_testDir;
-	if ( ! td[0] ) { g_process.shutdownAbort(true); }
-	// make that into a filename
-	sprintf(fn,"%s/%s/doc.%" PRIu64".html",g_hostdb.m_dir,td,urlHash64);
-	// look it up
-	File f; f.set ( fn );
-	// if already there, return now
-	if ( f.doesExist() ) return true;
-	// open it
-	f.open ( O_RDWR | O_CREAT );
-	// log it for now
-	//if ( g_conf.m_logDebugSpider )
-	log("test: ADDING doc to test cache: %" PRIu64,urlHash64);
-
-	// write error only?
-	if ( err ) {
-		char ebuf[256];
-		sprintf(ebuf,"errno=%" PRId32"\n",err);
-		f.write(ebuf,gbstrlen(ebuf),0);
-		f.close();
-		return true;
-	}
-
-	// write it now
-	int32_t ws = f.write ( httpReply , httpReplySize , 0 );
-	// close it
-	f.close();
-	// panic?
-	if ( ws != httpReplySize )
-		return log("test: error writing %" PRId32" != %" PRId32" to %s",ws,
-			   httpReplySize,fn);
-	// all done, success
-	return true;
-}
-
 // returns true if <iframe> tag in there
 bool hasIframe ( char *reply, int32_t replySize , int32_t niceness ) {
 	if ( ! reply || replySize <= 0 ) return false;
@@ -2394,9 +2117,6 @@ bool addToHammerQueue ( Msg13Request *r ) {
 		// collection
 		// for now disable it seems like 99.9% good... but
 		// still cores on some wierd stuff...
-		// if doing this on qatest123 then core
-		if(r->m_useTestCache ) { // && r->m_firstIp!=-1944679785 ) {
-			g_process.shutdownAbort(true); }
 	}
 	// store time now
 	//s_hammerCache.addLongLong(0,r->m_firstIp,nowms);

@@ -802,9 +802,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 		goto doagain2;
 	}
 
-
-	m_isTestColl = ! strcmp(m_coll,"qatest123") ;
-
 	//
 	//
 	// now assign m_sectionPtrs[] which map a word to the first
@@ -838,15 +835,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 		}
 		// assign
 		m_sectionPtrs[i] = current;
-	}
-
-	if ( m_isTestColl ) {
-		// map each word to a section that contains it at least
-		for ( int32_t i = 0 ; i < m_nw ; i++ ) {
-			Section *si = m_sectionPtrs[i];
-			if ( si->m_a >  i ) { g_process.shutdownAbort(true); }
-			if ( si->m_b <= i ) { g_process.shutdownAbort(true); }
-		}
 	}
 
 	// . addImpliedSections() requires Section::m_baseHash
@@ -2138,26 +2126,6 @@ Section *Sections::insertSubSection ( int32_t a, int32_t b, int32_t newBaseHash 
 	sk->m_alnumPosB    = -1;
 	sk->m_senta        = -1;
 	sk->m_sentb        = -1;
-
-
-#ifdef _DEBUG_SECTIONS_
-	// interlaced section detection
-	if ( m_isTestColl ) {
-		// scan from words and telescope up
-		Section *s1 = m_sectionPtrs[a];
-		Section *s2 = m_sectionPtrs[b-1];
-		// check for interlace
-		for ( ; s1 ; s1 = s1->m_parent ) 
-			if ( s1->m_a < a && 
-			     s1->m_b > a &&
-			     s1->m_b < b    ) {g_process.shutdownAbort(true);}
-		// check for interlace
-		for ( ; s2 ; s2 = s2->m_parent ) 
-			if ( s2->m_a < b && 
-			     s2->m_b > b &&
-			     s2->m_a > a    ) {g_process.shutdownAbort(true);}
-	}
-#endif
 
 	// set sk->m_firstWordPos
 	for ( int32_t i = a ; i < b ; i++ ) {

@@ -410,59 +410,18 @@ void XmlDoc::logQueryTimingEnd(const char* function, int64_t startTime) {
 	//}
 }
 
-const char *XmlDoc::getTestDir ( ) {
-	CollectionRec *cr = getCollRec();
-	if ( ! cr ) return NULL;
-
-	// return NULL if we are not the "qatest123" collection
-	if ( strcmp(cr->m_coll,"qatest123") ) return NULL;
-
-	return "qa";
-}
-
 int32_t XmlDoc::getSpideredTime ( ) {
 	// stop if already set
 	if ( m_spideredTimeValid ) return m_spideredTime;
 
-	// tmp var
-	int32_t date = 0;
-
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) return 0;
 
-	// if not test collection keep it simple
-	if ( strcmp(cr->m_coll,"qatest123") || cr->m_useTimeAxis) {
-		// . set spider time to current time
-		// . this might already be valid if we set it in
-		//   getTestSpideredDate()
-		m_spideredTime      = getTimeGlobal();
-		m_spideredTimeValid = true;
-		return m_spideredTime;
-	}
-
-	const char *testDir = getTestDir();
-
-	// get url
-	Url *cu = getCurrentUrl();
-	if ( ! cu || cu == (void *)-1 ) { g_process.shutdownAbort(true); }
-
-	// this returns false if not in there, in which case, add it
-	if ( ! getTestSpideredDate(cu,&date,testDir) ) {
-		m_spideredTime      = getTimeGlobal();
-		m_spideredTimeValid = true;
-		addTestSpideredDate ( cu , m_spideredTime , testDir );
-		return m_spideredTime;
-	}
-
-	// if we are injecting into the test coll for the 2nd+ time
-	// we need to use the spidered date from the first time we
-	// injected the doc in order to ensure things are parsed
-	// exactly the same way since some things depend on the
-	// spideredTime, like Dates (for setting "in future"
-	// flags)
+	// . set spider time to current time
+	// . this might already be valid if we set it in
+	//   getTestSpideredDate()
+	m_spideredTime      = getTimeGlobal();
 	m_spideredTimeValid = true;
-	m_spideredTime      = date;
-
 	return m_spideredTime;
 }
 
@@ -2107,10 +2066,6 @@ bool XmlDoc::indexDoc2 ( ) {
 
 		// do it
 		if ( ! m_msg4.addMetaList( m_metaList, m_metaListSize, m_collnum, m_masterState, m_masterLoop, m_niceness ) ) {
-			// spider hang bug
-			if ( g_conf.m_testSpiderEnabled )
-				logf(LOG_DEBUG,"build: msg4 meta add blocked"
-				     "msg4=0x%" PTRFMT"" ,(PTRTYPE)&m_msg4);
 			m_msg4Waiting = true;
 			logTrace( g_conf.m_logTraceXmlDoc, "END, return false. addMetaList blocked" );
 			return false;
@@ -2129,10 +2084,6 @@ bool XmlDoc::indexDoc2 ( ) {
 	// make sure our msg4 is no longer in the linked list!
 	if (m_msg4Waiting && isInMsg4LinkedList(&m_msg4)){g_process.shutdownAbort(true);}
 
-	if ( m_msg4Waiting && g_conf.m_testSpiderEnabled )
-		logf(LOG_DEBUG,"build: msg4=0x%" PTRFMT" returned"
-		     ,(PTRTYPE)&m_msg4);
-
 	// we are not waiting for the msg4 to return
 	m_msg4Waiting = false;
 
@@ -2143,9 +2094,6 @@ bool XmlDoc::indexDoc2 ( ) {
 	// case, but for now disable to make things faster. profiler
 	// indicates too much msg4 activity.
 	//if ( m_contentInjected ) flush = true;
-
-	// to keep our qa runs consistent
-	if ( strcmp(cr->m_coll,"qatest123") == 0 ) flush = true;
 
 	if ( ! m_listAdded ) flush = false;
 	if ( m_listFlushed ) flush = false;
@@ -2793,18 +2741,6 @@ char *XmlDoc::prepareToMakeTitleRec ( ) {
 
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) return NULL;
-
-	// if we are injecting into the "qatest123" coll, then we need to have
-	// m_spideredTimeValid be true before calling getIsSpam() which calls
-	// getSiteNumInlinks() which adds tags to tagdb using that date, but
-	// only for the "qatest123" coll!
-	// that keeps our parser output consistent across runs!
-	char **content = NULL;
-	if ( ! strcmp ( cr->m_coll,"qatest123") ) {
-		content = getContent ( );
-		if ( ! content || content == (void *)-1 )
-			return (char *)content;
-	}
 
 	// get our site root
 	char *mysite = getSite();
@@ -6726,11 +6662,7 @@ int32_t *XmlDoc::getSiteNumInlinks ( ) {
 	bool valid = true;
 	// current time
 	int32_t now = getTimeGlobal();
-	// use the spidered time for the test collection for consistency
-	if ( !strcmp(cr->m_coll,"qatest123") ) {
-		//if ( ! m_spideredTimeValid ) { g_process.shutdownAbort(true); }
-		now = getSpideredTime();//m_spideredTime;
-	}
+
 	// get tag age in days
 	int32_t age = 0; if ( tag ) age = (now - tag->m_timestamp) ;
 	// add in some flutter to avoid having all hsots in the network
@@ -6932,11 +6864,6 @@ LinkInfo *XmlDoc::getSiteLinkInfo() {
 	// get from spider request if there
 	//bool injected = false;
 	//if ( m_sreqValid && m_sreq.m_isInjecting ) injected = true;
-	// but be consistent if doing the "qatest123" collection
-	if ( ! strcmp(cr->m_coll,"qatest123") ) {
-		//if ( ! m_spideredTimeValid ) {g_process.shutdownAbort(true);}
-		lastUpdateTime = getSpideredTime();//m_spideredTime;
-	}
 
 	bool onlyNeedGoodInlinks = true;
 	// so if steve wants to display all links then set this
@@ -7046,52 +6973,10 @@ int32_t *XmlDoc::getIp ( ) {
 		return NULL;
 	}
 
-	bool useTestCache = false;
-	if ( ! strcmp(cr->m_coll,"qatest123") ) useTestCache = true;
-	// unless its the pagesubmit.cpp event submission tool
-	//if ( m_sreqValid && m_sreq.m_isPageSubmit ) useTestCache = false;
-
-
-	// when building the "qatest123" collection try to get the ip from
-	// "./test/ips.txt" so our injections are consistent every time
-	// Test.cpp runs its injection loop into the "qatest123" collection
-	if ( useTestCache ) { // && m_useIpsTxtFile ) {
-		// stolen from msgc.cpp:
-		// if url is already in a.b.c.d format return that
-		int32_t ip2 = 0;
-		const char *host = u->getHost();
-		if ( host ) ip2 = atoip ( host,u->getHostLen() );
-		if ( ip2 != 0 ) {
-			m_ip = ip2;
-			m_ipValid = true;
-			logTrace( g_conf.m_logTraceXmlDoc, "END, got from getHost [%s]", iptoa(m_ip));
-			return &m_ip;
-		}
-		// assume not found in our file
-		bool found = false;
-		// get test dir
-		const char *testDir = getTestDir();
-		// get it from "./test/ips.txt"
-		getTestIp ( u->getUrl() , &m_ip , &found , m_niceness,testDir);
-		// if we found a match...
-		if ( found ) { // m_ip != 0 ) {
-			// we are valid now
-
-			int32_t *rval = gotIp ( false );
-			logTrace( g_conf.m_logTraceXmlDoc, "END, got from getTestIp [%s]", iptoa(*rval));
-			return rval;
-			//m_ipValid = true;
-			// return it
-			//return &m_ip;
-		}
-	}
-
 	// we need the ip before we download the page, but before we get
 	// the IP and download the page, wait for this many milliseconds.
 	// this basically slows the spider down.
 	int32_t delay = cr->m_spiderDelayInMilliseconds;
-	// ignore for testing
-	if ( ! strcmp(cr->m_coll,"qatest123") ) delay = 0;
 	// injected?
 	if ( m_sreqValid && m_sreq.m_isInjecting  ) delay = 0;
 	if ( m_sreqValid && m_sreq.m_isPageParser ) delay = 0;
@@ -7280,13 +7165,6 @@ bool *XmlDoc::getIsAllowed ( ) {
 		logTrace( g_conf.m_logTraceSpider, "END. Allowed, WE are robots.txt" );;
 		return &m_isAllowed;
 	}
-
-	// or if using the "qatest123" collection, assume yes!
-	//if ( ! strcmp ( m_coll , "qatest123" ) ) {
-	//	m_isAllowed      = true;
-	//	m_isAllowedValid = true;
-	//	return &m_isAllowed;
-	//}
 
 	// update status msg
 	setStatus ( "getting robots.txt" );
@@ -7696,11 +7574,7 @@ LinkInfo *XmlDoc::getLinkInfo1 ( ) {
 	if ( ! m_calledMsg25 ) {
 		// get this
 		int32_t lastUpdateTime = getTimeGlobal();
-		// but be consistent if doing the "qatest123" collection
-		if ( ! strcmp(cr->m_coll,"qatest123") ) {
-			//if ( ! m_spideredTimeValid ) {g_process.shutdownAbort(true);}
-			lastUpdateTime = getSpideredTime();//m_spideredTime;
-		}
+
 		// do not redo it
 		m_calledMsg25 = true;
 		// shortcut
@@ -8172,9 +8046,6 @@ char **XmlDoc::getHttpReply2 ( ) {
 		return (char **)cu;
 	}
 
-	bool useTestCache = false;
-	if ( ! strcmp(cr->m_coll,"qatest123") ) useTestCache = true;
-
 	// set parms
 	Msg13Request *r = &m_msg13Request;
 	// clear it first
@@ -8208,12 +8079,9 @@ char **XmlDoc::getHttpReply2 ( ) {
 	r->m_urlHash48              = getFirstUrlHash48();
  	if ( r->m_maxTextDocLen  < 100000 ) r->m_maxTextDocLen  = 100000;
 	if ( r->m_maxOtherDocLen < 200000 ) r->m_maxOtherDocLen = 200000;
-	r->m_useTestCache           = (bool)useTestCache;
 	r->m_spideredTime           = getSpideredTime();//m_spideredTime;
 	r->m_ifModifiedSince        = 0;
 	r->m_skipHammerCheck        = 0;
-
-	r->m_addToTestCache = (bool)useTestCache;
 
 	if ( m_redirCookieBufValid && m_redirCookieBuf.length() ) {
 		r->ptr_cookie  = m_redirCookieBuf.getBufStart();
@@ -8264,15 +8132,10 @@ char **XmlDoc::getHttpReply2 ( ) {
 	r->m_compressReply       = false;
 
 	// set it for this too
-	if ( g_conf.m_useCompressionProxy &&
-	     // do not use for the test collection ever, that is qa'ing
-	     strcmp(cr->m_coll,"qatest123") ) {
+	if ( g_conf.m_useCompressionProxy ) {
 		r->m_useCompressionProxy = true;
 		r->m_compressReply       = true;
 	}
-
-	const char *td = getTestDir();
-	if ( td ) strncpy ( r->m_testDir, td, 31);
 
 	logTrace( g_conf.m_logTraceXmlDoc, "cu->m_url [%s]", cu->getUrl());
 	logTrace( g_conf.m_logTraceXmlDoc, "m_firstUrl.m_url [%s]", m_firstUrl.getUrl());
@@ -8319,8 +8182,6 @@ char **XmlDoc::getHttpReply2 ( ) {
 	//   sending it back to you via udp (compression proxy)
 	// . msg13 uses XmlDoc::getHttpReply() function to handle
 	//   redirects, etc.? no...
-	bool isTestColl = false;
-	if ( ! strcmp(cr->m_coll,"qatest123") ) isTestColl = true;
 
 	// sanity check. keep injections fast. no downloading!
 	if ( m_wasContentInjected ) {
@@ -8339,7 +8200,7 @@ char **XmlDoc::getHttpReply2 ( ) {
 
 	logTrace( g_conf.m_logTraceXmlDoc, "Calling msg13.getDoc" );;
 
-	if ( ! m_msg13.getDoc ( r , isTestColl,this , gotHttpReplyWrapper ) )
+	if ( ! m_msg13.getDoc ( r,this , gotHttpReplyWrapper ) )
 	{
 		logTrace( g_conf.m_logTraceXmlDoc, "END, return -1. msg13.getDoc blocked" );;
 		// return -1 if blocked
@@ -8401,11 +8262,12 @@ char **XmlDoc::gotHttpReply ( ) {
 		return NULL;
 	}
 
-	// . sanity test -- only if not the test collection
+	// . sanity test
 	// . i.e. what are you doing downloading the page if there was
 	//   a problem with the page we already know about
-	if ( m_indexCode && m_indexCodeValid &&
-	     strcmp(cr->m_coll,"qatest123") ) { g_process.shutdownAbort(true); }
+	if ( m_indexCode && m_indexCodeValid ) {
+		g_process.shutdownAbort(true);
+	}
 
 	// fix this
 	if ( saved == EDOCUNCHANGED ) {
@@ -10332,7 +10194,6 @@ char **XmlDoc::getExpandedUtf8Content ( ) {
 	gotMime:
 		// make it not use the ips.txt cache
 		//ed->m_useIpsTxtFile     = false;
-		//ed->m_readFromTestCache = false;
 		// get the mime
 		HttpMime *mime = ed->getMime();
 		if ( ! mime || mime == (void *)-1 ) return (char **)mime;
@@ -11308,15 +11169,11 @@ int32_t **XmlDoc::getOutlinkFirstIpVector () {
 	bool addTags = true;
 	//if ( m_sreqValid && m_sreq.m_isPageParser ) addTags = false;
 	if ( getIsPageParser() ) addTags = false;
-	// get this
-	const char *testDir = getTestDir();
 
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) return NULL;
 
 	// . go get it
-	// . if coll is "qatest123" then try to use the file ./test/ips.txt to
-	//   see if the ip is in there for the given url hostname
 	// . this will now update Tagdb with the "firstip" tags if it should!!
 	// . this just dns looks up the DOMAINS of each outlink because these
 	//   are *first* ips and ONLY used by Spider.cpp for throttling!!!
@@ -11330,8 +11187,7 @@ int32_t **XmlDoc::getOutlinkFirstIpVector () {
 				     m_masterState      ,
 				     m_masterLoop       ,
 				     nowGlobal          ,
-				     addTags            ,
-				     testDir            )) {
+				     addTags            )) {
 		// sanity check
 		if ( m_doingConsistencyCheck ) { g_process.shutdownAbort(true); }
 		// we blocked
@@ -11610,14 +11466,6 @@ char *XmlDoc::getSpiderLinks ( ) {
 	if ( m_spiderLinksValid ) return &m_spiderLinks2;
 
 	setStatus ( "getting spider links flag");
-
-	// do not add links now if doing the parser test
-	if ( g_conf.m_testParserEnabled ) {
-		m_spiderLinks  = false;
-		m_spiderLinks2 = false;
-		m_spiderLinksValid = true;
-		return &m_spiderLinks2;
-	}
 
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) return (char *)cr;
@@ -12241,7 +12089,7 @@ bool XmlDoc::doConsistencyTest ( bool forceTest ) {
 	if ( ! cr )
 		return true;
 
-	if ( ! m_doConsistencyTesting && strcmp(cr->m_coll,"qatest123") != 0 )
+	if ( ! m_doConsistencyTesting )
 		return true;
 
 	// if we had an old doc then our meta list will have removed
@@ -12582,9 +12430,6 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 			sb->safePrintf("</nobr></td>");
 		}
 		else if ( rdbId == RDB_TITLEDB ) {
-			//XmlDoc tr;
-			//SafeBuf tmp;
-			//tr.set2 ( rec,recSize ,"qatest123",&tmp,m_niceness);
 			// print each offset and size for the variable crap
 			sb->safePrintf("<td><nobr>titlerec datasize=%" PRId32" "
 				       //"sizeofxmldoc=%" PRId32" "
@@ -12621,12 +12466,15 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 
 
 bool XmlDoc::verifyMetaList ( char *p , char *pend , bool forDelete ) {
+	return true;
 
+#if 0
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) return true;
 
 	// do not do this if not test collection for now
 	if ( strcmp(cr->m_coll,"qatest123") ) return true;
+
 
 	log(LOG_DEBUG, "xmldoc: VERIFYING METALIST");
 
@@ -12726,6 +12574,7 @@ bool XmlDoc::verifyMetaList ( char *p , char *pend , bool forDelete ) {
 	// must be exactly equal to end
 	if ( p != pend ) return false;
 	return true;
+#endif
 }
 
 bool XmlDoc::hashMetaList ( HashTableX *ht        ,
@@ -13890,13 +13739,6 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 			log( LOG_WARN, "xmldoc: checksum parsing inconsistency for %s (old)%i != %i(new). "
 			     "Uncomment tt1.print() above to debug.",
 			     m_firstUrl.getUrl(), (int)m_metaListCheckSum8, (int)currentMetaListCheckSum8 );
-
-			// if doing qa test drop core
-			CollectionRec *cr = getCollRec();
-			if ( cr && strcmp(cr->m_coll,"qatest123") == 0 ) {
-				log("xmldoc: sleep 1000");
-				sleep(1000);
-				exit(0);}//g_process.shutdownAbort(true); }
 		}
 
 		// assign the new one, getTitleRecBuf() call below needs this
@@ -14804,12 +14646,6 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) return NULL;
 
-	// crap, for the test coll this is often a very old time and it
-	// causes the spider request to be repeatedly executed, so let's
-	// fix that
-	if ( ! strcmp(cr->m_coll,"qatest123") )
-		m_srep.m_spideredTime = getTimeGlobal();
-
 
 	// TODO: expire these when "ownershipchanged" tag is newer!!
 
@@ -15348,19 +15184,12 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 	// count how many we add
 	int32_t numAdded = 0;
 
-	//bool useTestSpiderDir = (m_sreqValid && m_sreq.m_useTestSpiderDir);
-
 	CollectionRec *cr = getCollRec();
 	if ( ! cr )
 	{
 		logTrace( g_conf.m_logTraceXmlDoc, "END, getCollRec failed" );
 		return NULL;
 	}
-
-	// do not do this if not test collection for now
-	//bool isTestColl = (! strcmp(cr->m_coll,"qatest123") );
-	// turn off for now
-	bool isTestColl = false;
 
 	bool avoid = false;
 
@@ -15670,13 +15499,7 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		// store the rdbId
 		if ( m_useSecondaryRdbs ) *p++ = RDB2_SPIDERDB2;
 		else                      *p++ = RDB_SPIDERDB;
-		// print it for debug
-		if ( isTestColl ) {
-			SafeBuf tmp;
-			ksr.print(&tmp);
-			log("spider: attempting to add outlink "
-			    "%s",tmp.getBufStart());
-		}
+
 		// store the spider rec
 		gbmemcpy ( p , &ksr , need );
 		// skip it
@@ -20643,12 +20466,7 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 	//TagRec *tr = &m_newTagRec;
 	// current time
 	int32_t now = getTimeGlobal();
-	// actually, use spider download time if we can. that way
-	// Test.cpp's injection runs will be more consistent!
-	if ( ! strcmp(cr->m_coll,"qatest123") ) {
-		//if ( ! m_spideredTimeValid ) { g_process.shutdownAbort(true); }
-		now = getSpideredTime();//m_spideredTime;
-	}
+
 	// store tags into here
 	SafeBuf *tbuf = &m_newTagBuf;
 	// allocate space to hold the tags we will add

@@ -462,18 +462,7 @@ int64_t Posdb::getTermFreq ( collnum_t collnum, int64_t termId ) {
 					    oldTrunc );
 
 
-	int64_t numBytes = 0;
-
-	// get the # more slowly but exact for qa tests so it agrees
-	// with the results of the last time we ran it
-	// if ( qaTest )
-	// 	// TODO: just get the actual list and count unique docids
-	// 	// with a blocking msg5...
-	// 	numBytes += m_rdb.m_buckets.getListSizeExact(collnum,
-	// 						(char *)&startKey,
-	// 						(char *)&endKey);
-	// else
-	numBytes += m_rdb.m_buckets.getListSize(collnum,
+	int64_t numBytes = m_rdb.m_buckets.getListSize(collnum,
 						(char *)&startKey,
 						(char *)&endKey,
 						NULL,NULL);

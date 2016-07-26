@@ -187,7 +187,6 @@ class SpiderColl {
 	char  m_coll [ MAX_COLL_LEN + 1 ] ;
 	class CollectionRec *getCollRec();
 	const char *getCollName();
-	bool     m_isTestColl;
 
 	HashTableX m_doleIpTable;
 

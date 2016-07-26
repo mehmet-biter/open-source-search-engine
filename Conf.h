@@ -171,10 +171,7 @@ class Conf {
 	bool  m_injectionsEnabled     ;
 	bool  m_queryingEnabled ;
 	bool  m_returnResultsAnyway;
-	// qa testing loop going on? uses "test" subdir
-	bool  m_testParserEnabled     ;
-	bool  m_testSpiderEnabled     ;
-	bool  m_testSearchEnabled     ;
+
 	bool  m_addUrlEnabled        ; // TODO: use at http interface level
 	bool  m_doStripeBalancing    ;
 

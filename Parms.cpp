@@ -524,24 +524,6 @@ static bool CommandResetColl ( char *rec , WaitEntry *we ) {
 }
 #endif
 
-
-static bool CommandSpiderTestCont ( char *rec ) {
-	// enable testing for all other hosts
-	g_conf.m_testSpiderEnabled = 1;
-	// turn spiders on globally
-	g_conf.m_spideringEnabled = 1;
-	//g_conf.m_webSpideringEnabled = 1;
-	// turn on for test coll too
-	CollectionRec *cr = g_collectiondb.getRec("qatest123");
-	// turn on spiders
-	if ( cr ) cr->m_spideringEnabled = 1;
-	// tell spider loop to update active list
-	g_spiderLoop.m_activeListValid = false;
-	// done
-	return true;
-}
-
-
 static bool CommandMergePosdb ( char *rec ) {
 	forceMergeAll ( RDB_POSDB ,1);
 	// set this for each posdb base
@@ -5244,34 +5226,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
         m++;
 
-	m->m_title = "continue spider test run";
-	m->m_desc  = "Resumes the test.";
-	m->m_cgi   = "qaspter";
-	m->m_type  = TYPE_CMD;
-	m->m_func  = CommandSpiderTestCont;
-	m->m_def   = "1";
-	m->m_cast  = 1;
-	m->m_group = false;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	m->m_title = "qa search test enabled";
-	m->m_desc  = "If enabled gb does the search queries in "
-		"./test-search/queries.txt and compares to the last run and "
-		"outputs the diffs for inspection and validation.";
-	m->m_cgi   = "qasste";
-	m->m_off   = offsetof(Conf,m_testSearchEnabled);
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "1";
-	//m->m_cast  = 0;
-	m->m_group = false;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
 	m->m_title = "save";
 	m->m_desc  = "Saves in-memory data for ALL hosts. Does Not exit.";
 	m->m_cgi   = "js";
@@ -6747,9 +6701,7 @@ void Parms::init ( ) {
 	m->m_desc  = "Rather than editing the table below, you can select "
 		"a predefined set of url instructions in this drop down menu "
 		"that will update the table for you. "
-#ifdef PRIVACORE_SAFE_VERSION
-		"<br><b>Important: You cannot change this setting in Safe Mode</b><br>";
-#else
+#ifndef PRIVACORE_SAFE_VERSION
 		"Selecting <i>custom</i> "
 		"allows you to make custom changes to the table. "
 		"Selecting <i>web</i> configures the table for spidering "
@@ -6764,6 +6716,8 @@ void Parms::init ( ) {
 		"<br><b>Important: "
 		"If you select a profile other than <i>custom</i> "
 		"then your changes to the table will be lost.</b><br>";
+#else
+		"<br><b>Important: You cannot change this setting in Safe Mode</b><br>";
 #endif
 	m->m_off   = offsetof(CollectionRec,m_urlFiltersProfile);
 	m->m_colspan = 3;

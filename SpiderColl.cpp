@@ -2684,19 +2684,6 @@ bool SpiderColl::scanListForWinners ( ) {
 			srep = NULL;
 		}
 
-		// if we are doing parser test, ignore all but initially
-		// injected requests. NEVER DOLE OUT non-injected urls
-		// when doing parser test
-		if ( g_conf.m_testParserEnabled ) {
-			// skip if already did it
-			if ( srep ) continue;
-			// skip if not injected
-			if ( ! sreq->m_isInjecting ) {
-				logDebug( g_conf.m_logDebugSpider, "spider: skipping8 %s", sreq->m_url );
-				continue;
-			}
-		}
-
 		// . ignore docid-based requests if spidered the url afterwards
 		// . these are one-hit wonders
 		// . once done they can be deleted

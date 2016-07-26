@@ -38,8 +38,7 @@ public:
 			   void         *state                  ,
 			   void        (*callback)(void *state) ,
 			   int32_t          nowGlobal              ,
-			   bool          addTags                ,
-			   const char         *testDir                );
+			   bool          addTags                );
 
 	bool launchRequests ( int32_t starti ) ;
 
@@ -88,18 +87,8 @@ public:
 
 	int32_t m_nowGlobal;
 
-	const char *m_testDir;
-
 	// for errors
 	int32_t      m_errno;
 };
-
-// utility functions
-extern bool getTestIp ( const char *url, int32_t *retIp, bool *found, int32_t niceness,
-			const char *testDir );
-extern bool addTestIp ( const char *host, int32_t hostLen, int32_t ip );
-extern bool saveTestBuf ( const char *testDir ) ;
-
-void resetTestIpTable ( ) ;
 
 #endif // GB_MSGE1_H

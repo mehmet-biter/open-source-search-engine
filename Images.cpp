@@ -673,20 +673,12 @@ bool Images::downloadImage ( ) {
 	r->m_maxTextDocLen  = 200000;
 	r->m_maxOtherDocLen = 500000;
 	r->m_urlIp = m_latestIp;
-	// no, this slows down image stuff too much for now!! so take out
-	// MDW 9/10/14
-	// if ( ! strcmp(cr->m_coll,"qatest123")) {
-	// 	r->m_useTestCache   = 1;
-	// 	//if ( g_conf.m_qaBuildMode ) r->m_addToTestCache = 1;
-	// 	r->m_addToTestCache = 1;
-	// }
 	// url is the most important
-	//strcpy(r->m_url,m_imageUrl.getUrl());
 	r-> ptr_url = m_imageUrl.getUrl();
 	r->size_url = m_imageUrl.getUrlLen()+1; // include \0
 	// . try to download it
 	// . i guess we are ignoring hammers at this point
-	if ( ! m_msg13.getDoc(r,false,this,downloadImageWrapper)) 
+	if ( ! m_msg13.getDoc(r,this,downloadImageWrapper))
 		return false;
 
 	return true;

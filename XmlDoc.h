@@ -1166,8 +1166,6 @@ public:
 	// Msg20 uses this to stash its TcpSlot
 	void *m_slot;
 
-	const char *getTestDir();
-
 	bool m_freed;
 
 	bool m_msg4Waiting;

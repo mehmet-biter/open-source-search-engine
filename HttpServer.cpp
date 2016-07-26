@@ -961,7 +961,6 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 	}
 	// set the filepath/name
 	char fullPath[512];
-	bool isQAFile = false;
 
 	// otherwise, look for special host
 	sprintf(fullPath,"%s/%s/%s", g_hostdb.m_httpRootDir, h, path );
@@ -982,12 +981,6 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 		}
 		// otherwise, use default html dir
 		sprintf(fullPath,"%s/%s", g_hostdb.m_httpRootDir , path );
-
-		// special hack for /qa/content.* stuff, do not use /html/
-		if ( strncmp(path,"/qa/",4) == 0 ) {
-			isQAFile = true;
-			sprintf(fullPath,"%s%s", g_hostdb.m_dir, path );
-		}
 
 		// now retrieve the file
 		f->set ( fullPath );
@@ -1054,8 +1047,6 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 	// if no extension assume charset utf8
 	const char *charset = NULL;
 	if ( ! ext || ext[0] == 0 ) charset = "utf-8";
-
-	if ( isQAFile ) ext = "txt";
 
 	if ( partialContent )
 		m.makeMime (fileSize,ct,lastModified,offset,bytesToSend,ext,
@@ -2714,7 +2705,6 @@ void gotSquidProxiedUrlIp ( void *state , int32_t ip ) {
 	r->m_urlHash48              = 0LL;
 	r->m_maxTextDocLen          = -1;//maxDownload;
 	r->m_maxOtherDocLen         = -1;//maxDownload;
-	r->m_useTestCache           = false;
 	r->m_spideredTime           = 0;
 	r->m_ifModifiedSince        = 0;
 	r->m_skipHammerCheck        = 0;
@@ -2743,7 +2733,7 @@ void gotSquidProxiedUrlIp ( void *state , int32_t ip ) {
 	log("proxy: getting proxied content for req=%s",r->ptr_url);
 
 	// isTestColl = false. return if blocked.
-	if ( ! sqs->m_msg13.getDoc ( r, false ,sqs, gotSquidProxiedContent ) ) 
+	if ( ! sqs->m_msg13.getDoc ( r ,sqs, gotSquidProxiedContent ) )
 		return;
 
 	// we did not block, send back the content

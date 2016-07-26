@@ -255,8 +255,6 @@ public:
 	// see what section a word is in.
 	SafeBuf m_sectionPtrBuf;
 
-	bool m_isTestColl;
-
 	// assume no malloc
 	char  m_localBuf [ SECTIONS_LOCALBUFSIZE ];
 

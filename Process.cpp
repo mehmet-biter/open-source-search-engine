@@ -1312,7 +1312,6 @@ void Process::resetAll ( ) {
 	resetMsg13Caches();
 	resetStopWordTables();
 	resetTimezoneTables();
-	resetTestIpTable();
 }
 
 #include "Msg3.h"

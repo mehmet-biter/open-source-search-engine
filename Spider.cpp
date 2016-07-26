@@ -938,9 +938,6 @@ SpiderColl *SpiderCache::getSpiderColl ( collnum_t collnum ) {
 	sc->m_collnum = collnum;
 	// save this
 	strcpy ( sc->m_coll , cr->m_coll );
-	// set this
-	if ( ! strcmp ( cr->m_coll,"qatest123" ) ) sc->m_isTestColl = true;
-	else                                  sc->m_isTestColl = false;
 	
 	// set this
 	sc->setCollectionRec ( cr ); // sc->m_cr = cr;
