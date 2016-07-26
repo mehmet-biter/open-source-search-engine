@@ -1522,7 +1522,7 @@ bool HttpRequest::getCurrentUrl ( SafeBuf &cu ) {
 bool HttpRequest::getCurrentUrlPath ( SafeBuf &cup ) {
 	// makre sure we got enough room
 	if ( ! cup.reserve ( m_plen + 1 + 1 ) ) return false;
-	char *path = m_path;
+	const char *path = m_path;
 	int32_t  plen = m_plen;
 	if ( ! path ) {
 		path = "/";
@@ -1532,8 +1532,8 @@ bool HttpRequest::getCurrentUrlPath ( SafeBuf &cup ) {
 	// . similar logic in HttpServer.cpp for logging!
 	char *dst = cup.getBuf();
 	char *start = dst;
-	char *src = path;
-	char *srcEnd = path + plen;
+	const char *src = path;
+	const char *srcEnd = path + plen;
 	// stop if we hit '?'
 	for ( ; src < srcEnd && *src != '?' ; src++ , dst++ ) {
 		*dst = *src;
