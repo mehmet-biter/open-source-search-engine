@@ -408,70 +408,6 @@ int64_t Posdb::getTermFreq ( collnum_t collnum, int64_t termId ) {
 	makeEndKey   ( &endKey  , termId );
 
 
-	// doint qa test?
-	bool qaTest = false;
-	CollectionRec *cr = g_collectiondb.getRec ( collnum );
-	if ( cr && strcmp(cr->m_coll,"qatest123") == 0 )
-		qaTest = true;
-
-	// if so, use the exact size
-	if ( qaTest ) {
-		Msg5 msg5;
-		RdbList list;
-		g_jobScheduler.disallow_new_jobs();
-		msg5.getList ( RDB_POSDB   ,
-			       collnum      ,
-			      &list         ,
-			       &startKey      ,
-			       &endKey        ,
-			      64000000      , // minRecSizes   ,
-			      true          , // includeTree   ,
-			      false         , // add to cache?
-			      0             , // max cache age
-			      0             , // startFileNum  ,
-			      -1            , // numFiles      ,
-			      NULL          , // state
-			      NULL          , // callback
-			      0             , // niceness
-			      false         , // err correction?
-			      NULL          ,
-			      0             ,
-			      -1            ,
-			      true          ,
-			      -1LL          ,
-			       true          );
-		// re-enable threads
-		g_jobScheduler.allow_new_jobs();
-		//int64_t numBytes = list.getListSize();
-		// see how many diff docids we have... easier to debug this
-		// loop over entries in list
-		int64_t docId = 0;
-		int64_t count = 0;
-		for ( list.resetListPtr() ; ! list.isExhausted() ;
-		      list.skipCurrentRecord() ) {
-			key144_t k; list.getCurrentKey(&k);
-			// is it a delete?
-			if ( (k.n0 & 0x01) == 0x00 ) continue;
-			int64_t d = g_posdb.getDocId(&k);
-			if ( d == docId ) continue;
-			docId = d;
-			count++;
-		}		
-		// convert to # keys, approx. just an estimate since
-		// some keys are compressed...
-		// none except first key are full size. they are all just
-		// 12 bytes etc.
-		int64_t numKeys = count;
-		if ( numKeys < 0 ) numKeys = 0;
-		// and assume each shard has about the same #
-		numKeys *= g_hostdb.m_numShards;
-		return numKeys;
-	}
- 
-	
-
-	//collnum_t collnum = g_collectiondb.getCollnum ( coll );
-
 	if ( ! s_cacheInit ) {
 		int32_t maxMem = 5000000; // 5MB now... save mem (was: 20000000)
 		int32_t maxNodes = maxMem / 17; // 8+8+1
@@ -503,8 +439,7 @@ int64_t Posdb::getTermFreq ( collnum_t collnum, int64_t termId ) {
 
 
 	// -1 means not found in cache. if found, return it though.
-	// do not return even if found if we are doing a qa test.
-	if ( val >= 0 && ! qaTest ) {
+	if ( val >= 0 ) {
 		//log("posdb: got %" PRId64" in cache",val);
 		return val;
 	}
