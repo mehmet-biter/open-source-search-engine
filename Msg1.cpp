@@ -626,7 +626,7 @@ void handleRequest1 ( UdpSlot *slot , int32_t netnice ) {
 	addedList ( slot , rdb );
 }
 
-static void tryAgainWrapper ( int fd , void *state ) ;
+//static void tryAgainWrapper ( int fd , void *state ) ;
 
 // g_errno may be set when this is called
 void addedList ( UdpSlot *slot , Rdb *rdb ) {
@@ -683,7 +683,7 @@ void addedList ( UdpSlot *slot , Rdb *rdb ) {
 	log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. error=%s", __FILE__, __func__, __LINE__, mstrerror(g_errno));
 	us->sendErrorReply ( slot , g_errno );
 }
-
+/*
 void tryAgainWrapper ( int fd , void *state ) {
 	// stop waiting
 	g_loop.unregisterSleepCallback ( state , tryAgainWrapper );
@@ -695,3 +695,4 @@ void tryAgainWrapper ( int fd , void *state ) {
 	handleRequest1 ( slot , -2 ); // slot->getNiceness() );
 	return;
 }
+*/
