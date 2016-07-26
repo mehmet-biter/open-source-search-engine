@@ -783,8 +783,7 @@ void  handleRequest25 ( UdpSlot *slot , int32_t netnice ) {
 	}
 
 	// sanity
-	if ( m25->m_msg5.m_msg3.m_numScansCompleted < 
-	     m25->m_msg5.m_msg3.m_numScansStarted ) { g_process.shutdownAbort(true); }
+	if ( !m25->m_msg5.m_msg3.areAllScansCompleted()) { g_process.shutdownAbort(true); }
 
 	if ( g_errno )
 		log("linkdb: error getting linkinfo: %s",mstrerror(g_errno));
@@ -1108,8 +1107,7 @@ bool Msg25::doReadLoop ( ) {
 		log("build: msg25 call to msg5 did not block");
 
 	// sanity
-	if ( m_msg5.m_msg3.m_numScansCompleted < 
-	     m_msg5.m_msg3.m_numScansStarted ) { g_process.shutdownAbort(true); }
+	if ( !m_msg5.m_msg3.areAllScansCompleted()) { g_process.shutdownAbort(true); }
 
 	// return true on error
 	if ( g_errno ) {
@@ -1168,8 +1166,7 @@ bool Msg25::gotList() {
 	//m_numDocIds = 0;
 
 	// sanity
-	if ( m_msg5.m_msg3.m_numScansCompleted < 
-	     m_msg5.m_msg3.m_numScansStarted ) { g_process.shutdownAbort(true); }
+	if ( !m_msg5.m_msg3.areAllScansCompleted()) { g_process.shutdownAbort(true); }
 
 	//log("debug: entering gotlist this=%" PRIx32,(int32_t)this);
 
