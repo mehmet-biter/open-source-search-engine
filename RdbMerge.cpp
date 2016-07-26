@@ -6,10 +6,6 @@
 #include "Process.h"
 #include "Spider.h"
 
-// declare the lock unlocked
-//static bool s_isMergeLocked = false;
-
-static void getLockWrapper  ( int fd , void *state ) ;
 static void dumpListWrapper ( void *state ) ;
 static void gotListWrapper  ( void *state , RdbList *list , Msg5 *msg5 ) ;
 static void tryAgainWrapper ( int fd , void *state ) ;
@@ -124,36 +120,8 @@ bool RdbMerge::merge ( char     rdbId        ,
 	}
 	// free our list's memory, just in case
 	//m_list.freeList();
-	// . we may have multiple hosts running on the same cpu/hardDrive
-	// . therefore, to maximize disk space, we should only have 1 merge
-	//   at a time going on between these hosts
-	// . now tfndb has own merge class since titledb merge writes url recs
-	/*
-	if ( s_isMergeLocked ) {
-		//log("RdbMerge::merge: someone else merging sleeping.");
-		log("RdbMerge::merge: someone else merging. bad engineer.");
-		return false;
-		// if it fails then sleep until it works
-		//returng_loop.registerSleepCallback(5000,this,getLockWrapper);
-	}
-	*/
-	return gotLock();
-}
 
-// . called once every 5 seconds or so (might be 1 second)
-void getLockWrapper ( int fd , void *state ) {
-	RdbMerge *THIS = (RdbMerge *) state;
-	// . try getting the file again
-	// . now tfndb has own merge class since titledb merge writes url recs
-	//if ( s_isMergeLocked ) {
-	//	log("RdbMerge::merge: someone else merging sleeping.");
-	//	return;
-	//}
-	// if we got the file then unregister this callback
-	g_loop.unregisterSleepCallback ( THIS, getLockWrapper );
-	// . and call gotLock(), return if it succeeded
-	// . it returns false if it blocked
-	if ( ! THIS->gotLock() ) return;
+	return gotLock();
 }
 
 // . returns false if blocked, true otherwise
@@ -220,8 +188,7 @@ bool RdbMerge::gotLock ( ) {
 	m_isMerging     = true;
 	// make it suspended for now
 	m_isSuspended   = true;
-	// grab the lock
-	//s_isMergeLocked = true;
+
 	// . this unsuspends it
 	// . this returns false on error and sets g_errno
 	// . it returns true if blocked or merge completed successfully
@@ -631,6 +598,4 @@ void RdbMerge::doneMerging ( ) {
 	}
 	// pass g_errno on to incorporate merge so merged file can be unlinked
 	base->incorporateMerge ( );
-	// nuke the lock so others can merge
-	//s_isMergeLocked = false;
 }
