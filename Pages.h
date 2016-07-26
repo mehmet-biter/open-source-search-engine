@@ -214,7 +214,6 @@ enum {
 	PAGE_PROFILER    ,
 	PAGE_THREADS     ,
 
-	PAGE_QA,
 	PAGE_IMPORT,
 
 	PAGE_API ,

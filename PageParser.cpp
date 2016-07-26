@@ -649,13 +649,6 @@ bool processLoop ( void *state ) {
 	SafeBuf *xbuf = &st->m_xbuf;
 
 	if ( st->m_u && st->m_u[0] ) {
-		// . save the ips.txt file if we are the test coll
-		// . saveTestBuf() is a function in Msge1.cpp
-		CollectionRec *cr = xd->getCollRec();
-		if ( cr && !strcmp(cr->m_coll,"qatest123"))
-			// use same dir that XmlDoc::getTestDir() would use
-			//saveTestBuf ( "test-page-parser" );
-			saveTestBuf("qa");
 		// now get the meta list, in the process it will print out a 
 		// bunch of junk into st->m_xbuf
 		char *metalist = xd->getMetaList ( );
@@ -943,13 +936,6 @@ bool gotXmlDoc ( void *state ) {
 	XmlDoc *xd = &st->m_xd;
 
 	// if we loaded from old title rec, it should be there!
-
-
-	// . save the ips.txt file if we are the test coll
-	// . saveTestBuf() is a function in Msge1.cpp
-	//if ( xd && xd->m_coll && ! strcmp ( xd->m_coll , "qatest123")) 
-	//	// use same dir that XmlDoc::getTestDir() would use
-	//	saveTestBuf ( "test-page-parser" );
 
 	// error?
 	if ( g_errno ) return sendErrorReply ( st , g_errno );

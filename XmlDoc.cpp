@@ -7181,36 +7181,6 @@ int32_t *XmlDoc::gotIp ( bool save ) {
 
 	setStatus ("got ip");
 
-	CollectionRec *cr = getCollRec();
-	if ( ! cr ) return NULL;
-
-	bool useTestCache = false;
-	if ( ! strcmp(cr->m_coll,"qatest123") ) useTestCache = true;
-	// unless its the pagesubmit.cpp event submission tool
-	//if ( m_sreqValid && m_sreq.m_isPageSubmit ) useTestCache = false;
-
-
-	// when building the "qatest123" collection try to get the ip from
-	// "./test/ips.txt" so our injections are consistent every time
-	// Test.cpp runs its injection loop into the "qatest123" collection
-	if ( save && useTestCache ) {
-		// ip of 0 means NXDOMAIN i think (-1 means error)
-		//if ( m_ip == 0 ) {
-		//	log("waiting for debug break");
-		//	sleep(3600);
-		//}
-		// get the best url
-		Url *u = getCurrentUrl();
-		if ( !u || u == (void *)-1 ) { g_process.shutdownAbort(true); }
-		// . add it to "./test/ips.txt"
-		// . this function is in Msge1.cpp
-		addTestIp ( u->getHost() , u->getHostLen() , m_ip );
-		// get test dir
-		const char *testDir = getTestDir();
-		// save it
-		saveTestBuf ( testDir );
-	}
-
 	// we got it
 	m_ipValid = true;
 	// give it to them

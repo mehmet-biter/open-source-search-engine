@@ -196,11 +196,6 @@ static WebPage s_pages[] = {
 	  sendPageThreads  , 0 ,NULL,NULL,
 	  PG_STATUS|PG_NOAPI|PG_MASTERADMIN|PG_ACTIVE},
 
-	{ PAGE_QA , "admin/qa"         , 0 , "qa" , 0 , 0 ,
-	  "quality assurance", 
-	  sendPageQA , 0 ,NULL,NULL,
-	  PG_NOAPI|PG_MASTERADMIN|PG_ACTIVE},
-
 	{ PAGE_IMPORT , "admin/import"         , 0 , "import" , 0 , 0 ,
 	  "import documents from another cluster", 
 	  sendPageGeneric , 0 ,NULL,NULL,

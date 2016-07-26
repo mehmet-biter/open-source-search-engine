@@ -107,9 +107,6 @@ bool Msge1::getFirstIps ( TagRec **grv ,
 	// . we can have up to MAX_ACTIVE urls active
 	if ( ! launchRequests ( 0 ) ) return false;
 
-	// save it? might be a page parser
-	if ( m_coll && ! strcmp(m_coll,"qatest123") ) saveTestBuf("qa");
-
 	// none blocked, we are done
 	return true;
 }
@@ -330,9 +327,6 @@ void gotMsgCWrapper ( void *state , int32_t ip ) {
 	if ( ! THIS->doneSending ( i ) ) return;
 	// try to launch more, returns false if not done
 	if ( ! THIS->launchRequests(i) ) return;
-	// . save it if we should. might be a page parser
-	// . mdw i uncommented this when we cored all the time
-	if ( THIS->m_coll&&!strcmp(THIS->m_coll,"qatest123"))saveTestBuf("qa");
 	// must be all done, call the callback
 	THIS->m_callback ( THIS->m_state );
 }
@@ -660,33 +654,5 @@ bool addTestIp ( const char *host, int32_t hostLen, int32_t ip ) {
 	int32_t u32 = hash32 ( host , hostLen );
 	if ( ! s_ht.addKey ( &u32 , &ip ) ) { g_process.shutdownAbort(true); }
 	// success
-	return true;
-}
-
-void makeQADir();
-
-// . save it back to disk
-// . we should call this from Test.cpp when the run is completed!!
-bool saveTestBuf ( const char *testDir ) {
-	// ensure ./qa/ subdir exsts. in qa.cpp
-	makeQADir();
-	// filename
-	char fn[100]; sprintf(fn,"%s/%s/ips.txt",g_hostdb.m_dir, testDir);
-	// set it
-	File f; f.set ( fn );
-	// open it
-	f.open ( O_RDWR | O_CREAT );
-	// how much to write?
-	int32_t size = s_testBufPtr - s_testBuf;
-	// write it out
-	int32_t ws = f.write ( s_testBuf , size , 0 );
-	// close it
-	f.close();
-	// bitch?
-	if ( ws != size ) 
-		return log("test: failed to write %" PRId32" bytes to %s",size,fn);
-	// note it
-	log("test: saved ips.txt");
-	// ok
 	return true;
 }
