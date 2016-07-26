@@ -26,7 +26,7 @@ Msg3::~Msg3() {
 
 
 void Msg3::reset() {
-	if ( m_numScansCompleted < m_numScansStarted ) { g_process.shutdownAbort(true); }
+	if ( !areAllScansCompleted() ) { g_process.shutdownAbort(true); }
 	m_hadCorruption = false;
 	// reset # of lists to 0
 	m_numScansCompleted = 0;
@@ -685,7 +685,7 @@ bool Msg3::readList  ( char           rdbId         ,
 	//if ( rand() % 100 <= 10 ) m_errno = EIO;
 
 	// if we blocked, return false
-	if ( m_numScansCompleted < m_numScansStarted ) return false;
+	if ( !areAllScansCompleted() ) return false;
 	// . if all scans completed without blocking then wrap it up & ret true
 	// . doneScanning may now block if it finds data corruption and must
 	//   get the list remotely
@@ -723,7 +723,7 @@ void Msg3::doneScanningWrapper(void *state) {
 	}
 
 	// return now if we're awaiting more scan completions
-	if ( THIS->m_numScansCompleted < THIS->m_numScansStarted ) {
+	if ( !THIS->areAllScansCompleted() ) {
 		return;
 	}
 
