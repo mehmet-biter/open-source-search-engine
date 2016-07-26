@@ -946,7 +946,7 @@ bool Msg5::gotList2 ( ) {
 		// . if size is big, make a thread
 		// . let's always make niceness 0 since it wasn't being very
 		//   aggressive before
-		if ( g_jobScheduler.submit(mergeListsWrapper, threadDoneWrapper, this, thread_type_query_merge, m_niceness) ) {
+		if ( g_jobScheduler.submit(mergeListsWrapper, mergeDoneWrapper, this, thread_type_query_merge, m_niceness) ) {
 			return false;
 		}
 
@@ -992,12 +992,12 @@ void Msg5::mergeListsWrapper(void *state) {
 // . now we're done merging
 // . when the thread is done we get control back here, in the main process
 // Use of ThreadEntry parameter is NOT thread safe
-void Msg5::threadDoneWrapper ( void *state, job_exit_t exit_type) {
+void Msg5::mergeDoneWrapper ( void *state, job_exit_t exit_type) {
 	Msg5 *that = static_cast<Msg5*>(state);
-	that->threadDoneWrapper(exit_type);
+	that->mergeDone(exit_type);
 }
 
-void Msg5::threadDoneWrapper(job_exit_t /*exit_type*/) {
+void Msg5::mergeDone(job_exit_t /*exit_type*/) {
 	// we MAY be in a thread now
 
 	// debug msg

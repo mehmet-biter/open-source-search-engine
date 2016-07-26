@@ -215,8 +215,8 @@ private:
 	static void gotListWrapper(void *state);
 	void gotListWrapper();
 	
-	static void threadDoneWrapper(void *state, job_exit_t exit_type);
-	void threadDoneWrapper(job_exit_t exit_type);
+	static void mergeDoneWrapper(void *state, job_exit_t exit_type);
+	void mergeDone(job_exit_t exit_type);
 	static void gotRemoteListWrapper(void *state);
 	
 	static void mergeListsWrapper(void *state);
