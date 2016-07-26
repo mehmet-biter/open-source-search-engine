@@ -136,6 +136,9 @@ CPPFLAGS += -Wno-invalid-offsetof
 else ifeq ($(CXX), clang++)
 CPPFLAGS += -Weverything
 
+# enable colour
+CPPFLAGS += -fcolor-diagnostics
+
 # disable offsetof warnings
 CPPFLAGS += -Wno-invalid-offsetof -Wno-extended-offsetof
 
@@ -150,7 +153,7 @@ CPPFLAGS += -Wno-unused-parameter -Wno-missing-prototypes
 CPPFLAGS += -Wno-sometimes-uninitialized -Wno-conditional-uninitialized
 CPPFLAGS += -Wno-packed -Wno-padded
 CPPFLAGS += -Wno-c++98-compat-pedantic
-CPPFLAGS += -Wno-writable-strings -Wno-c++11-compat-deprecated-writable-strings
+CPPFLAGS += -Wno-writable-strings
 CPPFLAGS += -Wno-deprecated
 
 endif
