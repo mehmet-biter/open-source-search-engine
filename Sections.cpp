@@ -2641,7 +2641,8 @@ bool Sections::setMenus ( ) {
 		//
 		// get word before first item in list
 		int32_t r = sk->m_a - 1;
-		for ( ; r >= 0 && !m_wids[r]; r-- );
+		for ( ; r >= 0 && !m_wids[r]; r-- )
+			;
 
 		QUICKPOLL( m_niceness );
 
