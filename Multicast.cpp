@@ -20,7 +20,6 @@
 //       slots to disk for sending later??
 
 static void sleepWrapper1       ( int bogusfd , void    *state ) ;
-static void sleepWrapper1b      ( int bogusfd , void    *state ) ;
 static void sleepWrapper2       ( int bogusfd , void    *state ) ;
 static void gotReplyWrapperM1    ( void *state , UdpSlot *slot  ) ;
 static void gotReplyWrapperM2    ( void *state , UdpSlot *slot  ) ;
@@ -1167,24 +1166,6 @@ void Multicast::closeUpShop ( UdpSlot *slot ) {
 	if ( m_callback ) {
 		m_callback ( m_state , m_state2 );
 	}
-}
-
-void sleepWrapper1b ( int bogusfd , void *state ) {
-	Multicast *THIS = (Multicast *)state;
-	// clear m_retired, m_errnos, m_slots
-	memset ( THIS->m_retired, 0, sizeof(char     ) * MAX_HOSTS_PER_GROUP );
-	memset ( THIS->m_errnos , 0, sizeof(int32_t  ) * MAX_HOSTS_PER_GROUP );
-	memset ( THIS->m_slots  , 0, sizeof(UdpSlot *) * MAX_HOSTS_PER_GROUP );
-	memset ( THIS->m_inProgress,0,sizeof(char    ) * MAX_HOSTS_PER_GROUP );
-	// retry the whole she-bang
-	if ( THIS->sendToHostLoop ( THIS->m_key , -1 , -1 ) ) {
-		// if call succeeded, unregister our sleep callback
-		g_loop.unregisterSleepCallback ( THIS , sleepWrapper1b );
-		return;
-	}
-	// otherwise, retry forever
-	log("net: Failed to launch multicast request. THIS=%" PTRFMT". Waiting "
-	    "and retrying.",(PTRTYPE)THIS);
 }
 
 // destroy all slots that may be in progress (except "slot")
