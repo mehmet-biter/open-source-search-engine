@@ -2258,7 +2258,6 @@ int32_t getUrlFilterNum ( 	SpiderRequest	*sreq,
 		char *p = sb->getBufStart();
 
 checkNextRule:
-
 		// skip leading whitespace
 		while ( *p && isspace(*p) ) p++;
 
@@ -2859,7 +2858,6 @@ checkNextRule:
 
 		// skip whitespace after the operator
 		while ( *s && is_wspace_a(*s) ) s++;
-
 
 		// seed counts. how many seeds this subdomain has. 'siteadds'
 		if ( *p == 's' &&
@@ -3809,6 +3807,7 @@ void dedupSpiderdbList ( RdbList *list ) {
 
 		/// @note if we need to clean out existing spiderdb records, add it here
 		{
+#ifdef PRIVACORE_SAFE_VERSION
 			/// @todo ALC only need this to clean out existing spiderdb records. (remove once it's cleaned up!)
 			Url url;
 			// we don't need to strip parameter here, speed up
@@ -3818,6 +3817,7 @@ void dedupSpiderdbList ( RdbList *list ) {
 				continue;
 			}
 		}
+#endif
 
 		// shortcut
 		int64_t uh48 = sreq->getUrlHash48();
