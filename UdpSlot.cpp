@@ -286,7 +286,7 @@ bool UdpSlot::sendSetup(char *msg,
 		int32_t maxMsgSize = m_maxDgramSize * MAX_DGRAMS;
 		log(LOG_LOGIC,"udp: Msg size of %" PRId32" bytes is too big "
 		    "to send. Max dgram size = %" PRId32". Max dgrams = "
-		    "%" PRId32". Max msg size = %" PRId32" msgtype=0x%hhx. Please "
+		    "%" PRId32". Max msg size = %" PRId32" msgtype=0x%02x. Please "
 		    "increase the #define MAX_DGRAMS in UdpSlot.h and "
 		    "recompile to fix this.",
 		    (int32_t)msgSize,(int32_t)m_maxDgramSize,
@@ -528,6 +528,7 @@ void UdpSlot::setResendTime() {
 		if ( m_resendTime > max ) m_resendTime = max;
 		return;
 	}
+
 	// is it a local ip?
 	bool isLocal = ip_distance(m_ip)<=ip_distance_nearby;
 	// . keep our resend times up-to-date
@@ -550,8 +551,7 @@ void UdpSlot::setResendTime() {
 		if ( m_resendTime > max ) m_resendTime = max;
 		// quick and somewhat incorrect overflow check
 		if ( m_resendTime <= 0 ) m_resendTime = max;
-	}
-	else {
+	} else {
 		int32_t base = RESEND_1;
 		if ( isLocal ) base = RESEND_1_LOCAL;
 		m_resendTime = base * ( 1 << m_resendCount );
@@ -571,8 +571,11 @@ void UdpSlot::setResendTime() {
 	// . inc up to 6 ms
 	// . this was a rand() statement, but that's not async signal safe
 	//if ( ++s_incDelay > 6 ) s_incDelay = 0;
+
 	// if we're dns protocol, always use resendTime of 4 seconds
-	if ( ! m_proto->useAcks() ) m_resendTime = 4000;
+	if ( ! m_proto->useAcks() ) {
+		m_resendTime = 4000;
+	}
 }
 
 // . returns values:
@@ -818,7 +821,7 @@ int32_t UdpSlot::sendDatagramOrAck ( int sock, bool allowResends, int64_t now ){
 		    "udp: sent dgram "
 		    "dgram=%" PRId32" "
 		    "dgrams=%" PRId32" "
-		    "msg=0x%hx "
+		    "msg=0x%02x "
 		    "tid=%" PRId32" "
 		    "dst=%s:%hu "
 		    "eth=%" PRId32" "
@@ -1090,7 +1093,7 @@ int32_t UdpSlot::sendAck ( int sock , int64_t now ,
 		logf(LOG_DEBUG,
 		    "udp: sent ACK   "
 		    "dgram=%" PRId32" "
-		    "msg=0x%hx "
+		    "msg=0x%02x "
 		    "tid=%" PRId32" "
 		    "src=%s:%hu "
 		    "init=%" PRId32" "
@@ -1143,7 +1146,7 @@ bool UdpSlot::readDatagramOrAck ( const void *readBuffer_,
 		//logf(LOG_INFO,//LOG_DEBUG,
 		log(LOG_DEBUG,
 		     "udp: Read cancel ack hdrlen=%" PRId32" tid=%" PRId32" "
-		     "src=%s:%hu msgType=0x%hhx weInitiated=%" PTRFMT" "
+		     "src=%s:%hu msgType=0x%02x weInitiated=%" PTRFMT" "
 		    "sent=%" PRId32" "
 		    "sendbufalloc=%" PTRFMT" sendbufsize=%" PRIu32,
 		     readSize , m_proto->getTransId ( readBuffer,readSize ),
@@ -1214,7 +1217,7 @@ bool UdpSlot::readDatagramOrAck ( const void *readBuffer_,
 		log(LOG_DEBUG,
 		    "udp: Read dgram "
 		    "dgram=%" PRId32" "
-		    "msg=0x%hx "
+		    "msg=0x%02x "
 		    "tid=%" PRId32" "
 		    "src=%s:%hu "
 		    "init=%" PRId32" "
@@ -1393,7 +1396,7 @@ bool UdpSlot::readDatagramOrAck ( const void *readBuffer_,
 		}
 		// track down the mem leak.
 		// someone is not freeing their read buf!!
-		//logf(LOG_DEBUG,"udpslot alloc %" PRId32" at 0x%" PRIx32" msgType=%hhx",
+		//logf(LOG_DEBUG,"udpslot alloc %" PRId32" at 0x%" PRIx32" msgType=%02x",
 		//     msgSize,m_readBuf,m_msgType);
 	}
 	
@@ -1408,7 +1411,7 @@ bool UdpSlot::readDatagramOrAck ( const void *readBuffer_,
 	if ( msgSize > m_readBufMaxSize ) {
 		g_errno = EBUFTOOSMALL;
 		log( LOG_WARN, "udp: Msg size of %" PRId32" bytes is too big for the "
-			   "buffer size, %" PRId32", we allocated. msgType=0x%hhx.",
+			   "buffer size, %" PRId32", we allocated. msgType=0x%02x.",
 			   msgSize, m_readBufMaxSize , m_msgType );
 		return false;
 	}
@@ -1607,7 +1610,7 @@ void UdpSlot::readAck ( int32_t dgramNum, int64_t now ) {
 		log(LOG_DEBUG,
 		    "udp: Read ACK   "
 		    "dgram=%" PRId32" "
-		    "msg=0x%hx "
+		    "msg=0x%02x "
 		    "tid=%" PRId32" "
 		    "src=%s:%hu "
 		    "init=%" PRId32" "
@@ -1666,7 +1669,7 @@ bool UdpSlot::makeReadBuf ( int32_t msgSize , int32_t numDgrams ) {
 	if ( val <= 9 ) bb[5] = '0' + val;
 	else            bb[5] = 'a' + val - 10;
 	bb[6] = '\0';
-	//sprintf(bb,"UdpSlot 0x%hx",m_msgType);
+	//sprintf(bb,"UdpSlot 0x%02x",m_msgType);
 	m_readBuf = (char *) mmalloc ( msgSize , bb ); // "UdpSlot") ;
 	if ( ! m_readBuf ) {
 		m_readBufSize = 0;
