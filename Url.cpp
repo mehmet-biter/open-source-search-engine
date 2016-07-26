@@ -8,6 +8,9 @@
 #include "Punycode.h"
 #include "Unicode.h"
 #include "Sanity.h"
+#include <vector>
+#include <algorithm>
+#include <sstream>
 
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
@@ -2089,6 +2092,27 @@ bool Url::isPathUnwantedForIndexing() const {
 	}
 
 	return false;
+}
+
+static std::vector<std::string> split(const std::string &str, char delimiter) {
+	std::vector<std::string> elements;
+	std::stringstream ss(str);
+	std::string element;
+	while (std::getline(ss, element, delimiter)) {
+		elements.push_back(element);
+	}
+	return elements;
+}
+
+bool Url::isTLDInPrivacoreBlacklist() const {
+	static const std::vector<std::string> s_blacklist = split(getPrivacoreBlacklistedTLD(), ',');
+
+	if ( ! m_tld || m_tldLen > 2 ) {
+		return false;
+	}
+
+	std::string tld(m_tld, 2);
+	return (std::find(s_blacklist.begin(), s_blacklist.end(), tld) != s_blacklist.end());
 }
 
 bool Url::hasXmlExtension ( ) const {

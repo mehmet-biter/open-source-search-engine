@@ -901,6 +901,14 @@ bool XmlDoc::hashLinks ( HashTableX *tt ) {
 	HashTableX dedup;
 	dedup.set( 8,0,1024,dbuf,8*4*1024,false,m_niceness,"hldt");
 
+	CollectionRec *cr = getCollRec();
+	if ( ! cr ) {
+		logTrace( g_conf.m_logTraceXmlDoc, "END, getCollRec failed" );
+		return false;
+	}
+
+	bool is_privacore = (strcmp(cr->m_urlFiltersProfile.getBufStart(), "privacore") == 0);
+
 	// see ../url/Url2.cpp for hashAsLink() algorithm
 	for ( int32_t i = 0 ; i < m_links.m_numLinks ; i++ ) {
 		// skip links with zero 0 length
@@ -945,6 +953,14 @@ bool XmlDoc::hashLinks ( HashTableX *tt ) {
 			link.isPathUnwantedForIndexing() ) {
 			if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: Unwanted for indexing [%s]", __FILE__, __func__, __LINE__, link.getUrl());
 			continue;			
+		}
+
+		if (is_privacore) {
+			// tld
+			if (link.isTLDInPrivacoreBlacklist()) {
+				logTrace( g_conf.m_logTraceXmlDoc, "Blacklisted by privacore [%s]", link.getUrl());
+				continue;
+			}
 		}
 
 		// breathe

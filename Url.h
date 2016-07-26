@@ -101,6 +101,7 @@ public:
 	bool hasNonIndexableExtension(int32_t xxx) const;
 	bool isDomainUnwantedForIndexing() const;
 	bool isPathUnwantedForIndexing() const;
+	bool isTLDInPrivacoreBlacklist() const;
 
 	// is it http://rpc.weblogs.com/shortChanges.xml, etc.?
 	bool isPingServer ( ) const;

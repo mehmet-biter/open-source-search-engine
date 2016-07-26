@@ -3808,6 +3808,16 @@ void dedupSpiderdbList ( RdbList *list ) {
 		}
 
 		/// @note if we need to clean out existing spiderdb records, add it here
+		{
+			/// @todo ALC only need this to clean out existing spiderdb records. (remove once it's cleaned up!)
+			Url url;
+			// we don't need to strip parameter here, speed up
+			url.set( sreq->m_url, strlen( sreq->m_url ), false, false, 122 );
+			if ( url.isTLDInPrivacoreBlacklist() ) {
+				logDebug( g_conf.m_logDebugSpider, "Blacklisted by privacore [%s]", url.getUrl());
+				continue;
+			}
+		}
 
 		// shortcut
 		int64_t uh48 = sreq->getUrlHash48();

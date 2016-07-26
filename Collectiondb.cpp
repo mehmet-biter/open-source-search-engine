@@ -1096,6 +1096,7 @@ collnum_t Collectiondb::reserveCollNum ( ) {
 #include "Msg5.h"
 #include "Spider.h"
 #include "Process.h"
+#include "Domains.h"
 
 
 CollectionRec::CollectionRec() {
@@ -1639,7 +1640,6 @@ bool CollectionRec::rebuildUrlFilters2 ( ) {
 
 bool CollectionRec::rebuildPrivacoreRules () {
 	const char *langWhitelistStr = "xx,en,bg,sr,ca,cs,da,et,fi,fr,de,el,hu,is,ga,it,lv,lt,lb,nl,pl,pt,ro,es,sv,no,vv";
-	const char *tldBlacklistStr = "cn,vn,kr,my,in,pk,ru,ua,jp,th";
 
 	// max spiders per ip
 	int32_t ipms = 7;
@@ -1667,7 +1667,7 @@ bool CollectionRec::rebuildPrivacoreRules () {
 	n++;
 
 	m_regExs[n].reset();
-	m_regExs[n].safePrintf("tld==%s", tldBlacklistStr);
+	m_regExs[n].safePrintf("tld==%s", getPrivacoreBlacklistedTLD());
 	m_harvestLinks       [n] = 0;
 	m_spiderFreqs        [n] = 0; 		// 0 days default
 	m_maxSpidersPerRule  [n] = 99; 		// max spiders
