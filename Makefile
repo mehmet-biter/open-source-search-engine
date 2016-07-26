@@ -224,27 +224,6 @@ static: vclean $(OBJS) main.o $(LIBFILES)
 	$(CXX) $(DEFS) $(CPPFLAGS) -static -o gb main.o $(OBJS) $(LIBS)
 
 
-# use this for compiling on CYGWIN:
-# only for 32bit cygwin right now and
-# you have to install the packages that have these libs.
-# you have to get these packages from cygwin:
-# 1. LIBS  > zlib-devel: Gzip de/compression library (development)
-# 2. LIBS  > libiconv: GNU character set conversion library and utlities
-
-# 3. DEVEL > openssl: cygwin32-openssl: OpenSSL for Cygwin 32bit toolchain
-
-# 3. NET   > openssl: A general purpose cryptographt toolkit with TLS impl...
-
-# 4. DEVEL > mingw-pthreads: Libpthread for MinGW.org Wind32 toolchain
-# 5. DEVEL > gcc-g++: GNU Compiler Collection (C++)
-# 6. DEVEL > make: The GNU version of the 'make' utility
-# 7. DEVEL > git: Distributed version control system
-# 8. EDITORS > emacs
-.PHONY: cygwin
-cygwin:
-	make DEFS="-DCYGWIN -D_REENTRANT_ -I." LIBS=" -lz -lm -lpthread -lssl -lcrypto -liconv" gb
-
-
 .PHONY: gb32
 gb32:
 	make CPPFLAGS="-m32 -g -Wall -pipe -fno-stack-protector -Wno-write-strings -Wstrict-aliasing=0 -Wno-uninitialized -DPTHREADS -Wno-unused-but-set-variable" LIBS=" -L. ./libssl.a ./libcrypto.a ./libiconv.a ./libm.a ./libstdc++.a -lpthread " gb
