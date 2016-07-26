@@ -6,28 +6,18 @@
 #ifndef GB_MSG1F_H
 #define GB_MSG1F_H
 
-#include "UdpSlot.h"
-#include "UdpServer.h"
-#include "TcpSocket.h"
+#include <stdint.h>
+
+class UdpSlot;
 
 class Msg1f {
- public:
-        Msg1f();
-        ~Msg1f();
+public:
+	Msg1f();
+	~Msg1f();
 	
 	static bool init();
 
-	static bool getLog(int32_t hostId, 
-			   int32_t numBytes, 
-			   void *state, 
-			   void ( *callback) (void *state, UdpSlot* slot));
-
-	
- private:
-/* 	TcpSocket *m_socket; */
-/* 	void *m_state; */
-/* 	void ( *m_callback) (void *state)); */
+	static bool getLog(int32_t hostId, int32_t numBytes, void *state, void ( *callback) (void *state, UdpSlot* slot));
 };
-
 
 #endif // GB_MSG1F_H

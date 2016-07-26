@@ -1,6 +1,5 @@
-#include "gb-include.h"
-
 #include "Msg1f.h"
+#include "UdpServer.h"
 #include "Conf.h"
 
 static void handleRequest ( UdpSlot *slot , int32_t netnice );
