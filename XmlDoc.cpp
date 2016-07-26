@@ -15302,7 +15302,7 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		if (is_privacore) {
 			// tld
 			if (url.isTLDInPrivacoreBlacklist()) {
-				logTrace( g_conf.m_logTraceXmlDoc, "Blacklisted by privacore [%s]", url.getUrl());
+				logTrace( g_conf.m_logTraceXmlDoc, "Unwanted for indexing [%s]", url.getUrl());
 				continue;
 			}
 		}

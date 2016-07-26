@@ -3814,7 +3814,7 @@ void dedupSpiderdbList ( RdbList *list ) {
 			// we don't need to strip parameter here, speed up
 			url.set( sreq->m_url, strlen( sreq->m_url ), false, false, 122 );
 			if ( url.isTLDInPrivacoreBlacklist() ) {
-				logDebug( g_conf.m_logDebugSpider, "Blacklisted by privacore [%s]", url.getUrl());
+				logDebug( g_conf.m_logDebugSpider, "Unwanted for indexing [%s]", url.getUrl());
 				continue;
 			}
 		}

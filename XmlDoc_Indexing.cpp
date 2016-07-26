@@ -951,14 +951,15 @@ bool XmlDoc::hashLinks ( HashTableX *tt ) {
 			link.hasXmlExtension() ||
 			link.isDomainUnwantedForIndexing() ||
 			link.isPathUnwantedForIndexing() ) {
-			if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: Unwanted for indexing [%s]", __FILE__, __func__, __LINE__, link.getUrl());
+
+			logTrace( g_conf.m_logTraceXmlDoc, "Unwanted for indexing [%s]", link.getUrl());
 			continue;			
 		}
 
 		if (is_privacore) {
 			// tld
 			if (link.isTLDInPrivacoreBlacklist()) {
-				logTrace( g_conf.m_logTraceXmlDoc, "Blacklisted by privacore [%s]", link.getUrl());
+				logTrace( g_conf.m_logTraceXmlDoc, "Unwanted for indexing [%s]", link.getUrl());
 				continue;
 			}
 		}
