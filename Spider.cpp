@@ -3806,8 +3806,9 @@ void dedupSpiderdbList ( RdbList *list ) {
 		}
 
 		/// @note if we need to clean out existing spiderdb records, add it here
-		{
 #ifdef PRIVACORE_SAFE_VERSION
+		{
+
 			/// @todo ALC only need this to clean out existing spiderdb records. (remove once it's cleaned up!)
 			Url url;
 			// we don't need to strip parameter here, speed up
