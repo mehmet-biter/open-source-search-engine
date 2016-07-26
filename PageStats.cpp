@@ -1427,7 +1427,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 			p.safePrintf( 
 				     "<tr class=poo>"
 				     "<td>%" PRId32"</td>"    // niceness, 0 or 1
-				     "<td>0x%hhx</td>" // msgType
+				     "<td>0x%02x</td>" // msgType
 				     //"<td>%" PRId32"</td>"    // request?
 				     "<td>%" PRId32"</td>" // packets in
 				     "<td>%" PRId32"</td>" // packets out
@@ -1458,7 +1458,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 			p.safePrintf(
 				     "\t<messageStat>\n"
 				     "\t\t<niceness>%" PRId32"</niceness>\n"
-				     "\t\t<msgType>0x%hhx</msgType>\n"
+				     "\t\t<msgType>0x%02x</msgType>\n"
 				     "\t\t<packetsIn>%" PRId32"</packetsIn>\n"
 				     "\t\t<packetsOut>%" PRId32"</packetsOut>\n"
 				     "\t\t<acksIn>%" PRId32"</acksIn>\n"
@@ -1487,7 +1487,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 			p.safePrintf(
 				     "\t\"messageStat\":{\n"
 				     "\t\t\"niceness\":%" PRId32",\n"
-				     "\t\t\"msgType\":\"0x%hhx\",\n"
+				     "\t\t\"msgType\":\"0x%02x\",\n"
 				     "\t\t\"packetsIn\":%" PRId32",\n"
 				     "\t\t\"packetsOut\":%" PRId32",\n"
 				     "\t\t\"acksIn\":%" PRId32",\n"
@@ -1587,7 +1587,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 			     "<tr class=poo>"
 			      "<td>%" PRId32"</td>"    // niceness, 0 or 1
 			      "<td>%" PRId32"</td>"    // request?
-			      "<td>0x%hhx</td>" // msgType
+			      "<td>0x%02x</td>" // msgType
 			      "<td>%" PRId64"</td>" // total sent
 			      "<td>%" PRId32"ms</td>" ,// avg send time in ms
 			      i3, // niceness
@@ -1651,7 +1651,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 		p.safePrintf( 
 			     "<tr class=poo>"
 			      "<td>%" PRId32"</td>"    // niceness, 0 or 1
-			     "<td>0x%hhx</td>" // msgType
+			     "<td>0x%02x</td>" // msgType
 			      //"<td>%" PRId32"</td>"    // request?
 			      "<td>%" PRId64"</td>" // total done
 			      "<td>%" PRId32"ms</td>" ,// avg handler time in ms
@@ -1722,7 +1722,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 			p.safePrintf(
 				     "<tr class=poo>"
 				      "<td>%" PRId32"</td>"    // niceness, 0 or 1
-				     "<td>0x%hhx</td>" // msgType
+				     "<td>0x%02x</td>" // msgType
 				      //"<td>%" PRId32"</td>"    // request?
 				      "<td>%" PRId64"</td>" // total called
 				      "<td>%" PRId32"ms</td>" ,// avg handler time in ms

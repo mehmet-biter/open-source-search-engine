@@ -508,7 +508,7 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 			// clickable hostId
 			const char *toFrom = "to";
 			if ( ! s->m_callback ) toFrom = "from";
-			p->safePrintf (	"<td>0x%hhx</td>"  // msgtype
+			p->safePrintf (	"<td>0x%02x</td>"  // msgtype
 					"<td><nobr>%s</nobr></td>"  // desc
 					"<td><nobr>%s <a href=http://%s:%hu/"
 					"admin/sockets?"
