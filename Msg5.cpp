@@ -559,8 +559,6 @@ bool Msg5::needsRecall ( ) {
 		g_errno = ENOCOLLREC;
 		return false;
 	}
-	// sanity check
-	if ( ! base && ! g_errno ) { g_process.shutdownAbort(true); }
 	// . return true if we're done reading
 	// . sometimes we'll need to read more because Msg3 will shorten the
 	//   endKey to better meat m_minRecSizes but because of 
