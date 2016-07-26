@@ -138,9 +138,9 @@ bool HttpServer::getDoc ( char   *url      ,
 			  const char    *postContent ,
 			  const char    *proxyUsernamePwdAuth ) {
 	// sanity
-	if ( ip == -1 ) 
-		log("http: you probably didn't mean to set ip=-1 did you? "
-		    "try setting to 0.");
+	if ( ip == -1 ) {
+		log(LOG_WARN, "http: you probably didn't mean to set ip=-1 did you? try setting to 0.");
+	}
 
 	// ignore if -1 as well
 	if ( proxyIp == -1 ) proxyIp = 0;
@@ -172,9 +172,7 @@ bool HttpServer::getDoc ( char   *url      ,
 	// proxy to us here.
 	if ( urlIsHttps && ! proxyIp ) {
 		if (!m_ssltcp.m_ready) {
-			// TODO: set an error here
-			log("https: Trying to get HTTPS site when SSL "
-			    "TcpServer not ready: %s",url);
+			log(LOG_WARN, "https: Trying to get HTTPS site when SSL TcpServer not ready: %s",url);
 			g_errno = ESSLNOTREADY;
 			return true;
 		}
@@ -209,7 +207,7 @@ bool HttpServer::getDoc ( char   *url      ,
 			       // url, not just a relative path.
 			       additionalHeader , pcLen , proxyIp ,
 			       proxyUsernamePwdAuth ) ) {
-			log("http: http req error: %s",mstrerror(g_errno));
+			log(LOG_WARN, "http: http req error: %s",mstrerror(g_errno));
 			// TODO: ensure we close the socket on this error!
 			return true;
 		}
@@ -305,7 +303,7 @@ bool HttpServer::getDoc ( char   *url      ,
 	if ( s_numOutgoingSockets >= MAX_DOWNLOADS ) {
 		mfree ( req, reqSize, "HttpServer" );
 		g_errno = ETOOMANYDOWNLOADS;
-		log("http: already have %" PRId32" sockets downloading. Sending "
+		log(LOG_WARN, "http: already have %" PRId32" sockets downloading. Sending "
 		    "back ETOOMANYDOWNLOADS.",(int32_t)MAX_DOWNLOADS);
 		return true;
 	}
@@ -317,7 +315,7 @@ bool HttpServer::getDoc ( char   *url      ,
 		if ( n >= MAX_DOWNLOADS ) {
 			mfree ( req, reqSize, "HttpServer" );
 			g_errno = ETOOMANYDOWNLOADS;
-			log("http: already have %" PRId32" sockets downloading",
+			log(LOG_WARN, "http: already have %" PRId32" sockets downloading",
 			    (int32_t)MAX_DOWNLOADS);
 			return true;
 		}
