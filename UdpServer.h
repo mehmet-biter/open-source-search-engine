@@ -301,10 +301,6 @@ private:
 	// for defining your own protocol on top of udp
 	UdpProtocol *m_proto;
 
-	// called when shutdown completes
-	void (*m_shutdownCallback )(void *state);
-
-	void *m_shutdownState;
 	bool m_isShuttingDown;
 
 	// did we have to give back control before we called all of the
