@@ -16,20 +16,10 @@
 // . we want to avoid the overhead of IP level fragmentation
 // . so for an MTU of 1500 we got 28 bytes overhead (IP and UDP headers)
 // . later we can try large DGRAM_SIZE values to see if faster
-//#define DGRAM_SIZE 33000
-//#define DGRAM_SIZE 32772
-//#define DGRAM_SIZE 63000
-//#define DGRAM_SIZE 7500
-//#define DGRAM_SIZE ((1500-28)*5)
-// this was the most stable size, but now, 4/8/04, i'm trying bigger...
 #ifdef SMALLDGRAMS
 // newspaperarchive machines need this smaller size
 #define DGRAM_SIZE (1500-28-10)
 #else
-// . here's the new size, 4/8/04, about 20x bigger
-// . only use this for our machines
-// . this will save memory too, since we use a few bits of mem per dgram
-//#define DGRAM_SIZE (30*1492)
 // . let's see if smaller dgrams fix the ping spike problem on gk0c
 // . this is in addition to lower the ack windows from 12 to 4
 #define DGRAM_SIZE 16400
@@ -39,19 +29,6 @@
 //   to do that for the "interface client" code
 #define DGRAM_SIZE_INTERNET (1500-28-10)
 
-// i'd like to have less dgram to decrease interrupts and
-// to decrease the MAX_DGRAMS define which decrease UdpSlot size
-// BUT it may result in extra copying inthe kernel's IP layer...?
-//#define DGRAM_SIZE (64*1024-256)
-// . that was too big, so Msg0x21 wasn't called that much!
-// . just make it 10k in anticipation of jumbo frames for gigabit nets
-//#define DGRAM_SIZE (6*1492)
-
-
-// loop back can do bigger dgram w/o fragmenting at the IP layer
-//#define DGRAM_SIZE_LB (16436-28)
-// let it do fragmenting
-//#define DGRAM_SIZE_LB (64*1024-256)
 // . kernel 2.6.8.1 does not like big dgram sizes for loopback
 // . can not go above the MTU for the lo device in ifconfig -a
 #define DGRAM_SIZE_LB (16400)
@@ -71,33 +48,15 @@
 // . newspaper archive has s0=20000000 which is up to 180MB termlists!
 // . newspaper archive was hitting the wall at 600MB so i upped to 900MB, the
 //   downside is that it uses more memory per UdpSlot
-//#ifdef _BIGMSGS_
-//#define MAX_DGRAMS (((900*1024*1024) / DGRAM_SIZE) + 1)
-//#else
-//#define MAX_DGRAMS (((7*1024*1024) / DGRAM_SIZE) + 1)
-// now we use this for our machines too
-//#define MAX_DGRAMS (((85*1024*1024) / DGRAM_SIZE) + 1)
 // raised from 50MB to 80MB so Msg13 compression proxy can send back big replies > 5MB
-// raised from 80MB to 180MB since we could be sending back a Msg95Reply
-// which is a list of QueryChanges. 3/29/13.
-//#define MAX_DGRAMS (((180*1024*1024) / DGRAM_SIZE_LB) + 1)
 #define MAX_DGRAMS (((80*1024*1024) / DGRAM_SIZE) + 1)
-//#endif
 
 #define MAX_ABSDOCLEN ((MAX_DGRAMS * DGRAM_SIZE)-50000)
 
 // . the max size of an incoming request for a hot udp server
 // . we cannot call malloc so it must fit in here
-// . i increased this from 5k to 10k to better support Msg17's caching requests
-//#define TMPBUFSIZE (10*1024)
-// . now Msg17 uses low priority udp server to store cached pages, hi to get
-//#define TMPBUFSIZE (10*1024)
 // . now we need tens of thousands of udp slots, so keep this small
-//#define TMPBUFSIZE (1024)
 #define TMPBUFSIZE (250)
-
-static const int64_t udpslot_connect_infinite_timeout = 999999999999;
-
 
 class UdpSlot {
 	
@@ -293,8 +252,6 @@ class UdpSlot {
 
 	// . for sending purposes, the max scoring UdpSlot sends first
 	// . return < 0 if nothing to send
-	//int32_t getScore ( int64_t now , UdpSlot *s_token , 
-	//		uint32_t s_tokenTime , int32_t LARGE_MSG ) ;
 	int32_t getScore ( int64_t now );
 
 	// what is our niceness level?

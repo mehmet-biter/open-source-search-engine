@@ -1682,33 +1682,7 @@ bool UdpSlot::makeReadBuf ( int32_t msgSize , int32_t numDgrams ) {
 // . higher scoring slots will do their sending first
 // . may have ACKs to send or plain old dgrams to send
 // . now is current time in milliseconds since the epoch
-// . returns -2 if token required to send more
-//int32_t UdpSlot::getScore (int64_t now, UdpSlot *s_token , 
-//			uint32_t s_tokenTime , int32_t LARGE_MSG ) {
 int32_t UdpSlot::getScore ( int64_t now ) {
-	// . allow tokens 500ms older than the current possessor of the token
-	//   to send with an ack window of 1
-	// . if you change the 500 here change it in UdpServer::readSock() too
-	//bool old = ( (uint32_t)m_startTime + 100 < s_tokenTime );
-	// . do not send acks back for any large reply if s_token is in use
-	// . m_callback is non-NULL if we initiated the transaction
-	// . but it's ok if it's local, on the same host. NO!!! FIX!
-	// . don't send ack if either slot is taken!
-	/*
-	if ( m_callback && m_dgramsToRead   >= LARGE_MSG &&
-	     //g_hostdb.getMyIp() != m_ip &&
-	     s_token && s_token != this && ! old ) 
-		return -1;
-	*/
-	// . we cannot send anything if someone already has s_token
-	// . or if someone has s_token (we're being blasted)
-	/*
-	if ( ! m_callback && m_dgramsToSend >= LARGE_MSG && 
-	     //g_hostdb.getMyIp() != m_ip &&
-	     s_token && s_token != this && ! old )
-		return -1;
-	*/
-
 	// do not do sends if callback was called. maybe cancelled?
 	// this was causing us to get into an infinite loop in 
 	// UdpServer.cpp's sendPoll_ass(). there wasn't anything to send i
@@ -1722,15 +1696,7 @@ int32_t UdpSlot::getScore ( int64_t now ) {
 		return 0x7fffffff;
 	// return a score of -1 if we've sent all dgrams (and no acks to send)
 	if ( m_sentBitsOn    >= m_dgramsToSend ) return -1;
-	// . if token is available (or you're older) you can always send one 
-	//   dgram passed the last ack you got (ack window of 1)
-	// . when receiver's token opens up he'll send you an ack for it
-	//   and when you get that ack you can grab your token and send back!
-	/*
-	if ( (old || ! s_token) && 
-	     ! m_callback && m_dgramsToSend >= LARGE_MSG && 
-	     getNumDgramsSent() > getNumAcksRead() ) return -1;
-	*/
+
 	// . let's use a window now, give acks a chance to catch up somewhat
 	// . if send is local, use a larger ack window of ?64? dgrams
 	//if ( ( m_ip != g_hostdb.getMyIp() || g_conf.m_interfaceMachine ) &&
@@ -1742,16 +1708,7 @@ int32_t UdpSlot::getScore ( int64_t now ) {
 	//if ( ( g_hostdb.isMyIp(m_ip) && !g_conf.m_interfaceMachine ) &&
 	if ( ip_distance(m_ip)==ip_distance_ourselves &&
 	     m_sentBitsOn >= m_readAckBitsOn + ACK_WINDOW_SIZE_LB ) return -1;
-	// . if we don't have s_token, but it is available, then our window 
-	//   size is only 1
-	// . when we read an ACK we'll try to claim s_token then and our
-	//   window size will be back to ACK_WINDOW_SIZE 
-	// . so you can only send 1 dgram more than acks read if you don't have
-	//   the token!
-	/*
-	if ( ! s_token && ! m_callback && m_dgramsToSend >= LARGE_MSG && 
-	     getNumAcksRead() + 1 <= getNumDgramsSent() ) return -1;
-	*/
+
 	// return 1 if now is 0
 	if ( now == 0LL ) return 1;
 	// sort regular sends by the last send time
