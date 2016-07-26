@@ -8,6 +8,8 @@ ARCH=$(uname_m)
 BASE_DIR=$(shell pwd)
 export BASE_DIR
 
+undefine CONFIG_CPPFLAGS
+
 OBJS =  UdpSlot.o Rebalance.o \
 	Msg13.o \
 	PageGet.o PageHosts.o \
@@ -79,7 +81,7 @@ OBJS =  UdpSlot.o Rebalance.o \
 
 # common flags
 DEFS = -D_REENTRANT_ -I.
-CPPFLAGS = -g -fno-stack-protector -DPTHREADS -Wstrict-aliasing=0
+CPPFLAGS = -g -fno-stack-protector -DPTHREADS
 CPPFLAGS += -std=c++11
 
 # optimization
@@ -123,15 +125,21 @@ DEFS += -DPRIVACORE_SAFE_VERSION
 
 endif
 
+CPPFLAGS += $(CONFIG_CPPFLAGS)
+
 # export to sub-make
 export CONFIG_CPPFLAGS
 
-CPPFLAGS += $(CONFIG_CPPFLAGS)
-
 ifeq ($(CXX), g++)
 CPPFLAGS += -Wall
-CPPFLAGS += -Wno-write-strings -Wno-maybe-uninitialized -Wno-unused-but-set-variable
+
+# disable offsetof warnings
 CPPFLAGS += -Wno-invalid-offsetof
+
+CPPFLAGS += -Wstrict-aliasing=0
+CPPFLAGS += -Wno-write-strings
+CPPFLAGS += -Wno-maybe-uninitialized
+CPPFLAGS += -Wno-unused-but-set-variable
 
 else ifeq ($(CXX), clang++)
 CPPFLAGS += -Weverything
@@ -146,15 +154,21 @@ CPPFLAGS += -Wno-invalid-offsetof -Wno-extended-offsetof
 CPPFLAGS += -Wno-gnu-zero-variadic-macro-arguments -Wno-gnu-conditional-omitted-operand
 CPPFLAGS += -Wno-zero-length-array -Wno-c99-extensions
 
+# compability (we're using c++11)
+CPPFLAGS += -Wno-c++98-compat-pedantic
+
 # other warnings (to be moved above or re-enabled when we have cleaned up the code sufficiently)
 CPPFLAGS += -Wno-cast-align -Wno-tautological-undefined-compare -Wno-float-equal -Wno-weak-vtables -Wno-global-constructors -Wno-exit-time-destructors
 CPPFLAGS += -Wno-shadow -Wno-conversion -Wno-sign-conversion -Wno-old-style-cast -Wno-shorten-64-to-32 -Wno-double-promotion
 CPPFLAGS += -Wno-unused-parameter -Wno-missing-prototypes
 CPPFLAGS += -Wno-sometimes-uninitialized -Wno-conditional-uninitialized
 CPPFLAGS += -Wno-packed -Wno-padded
-CPPFLAGS += -Wno-c++98-compat-pedantic
 CPPFLAGS += -Wno-writable-strings
 CPPFLAGS += -Wno-deprecated
+CPPFLAGS += -Wno-reserved-id-macro -Wno-unused-macros
+CPPFLAGS += -Wno-missing-field-initializers
+CPPFLAGS += -Wno-covered-switch-default
+CPPFLAGS += -Wno-date-time
 
 endif
 
