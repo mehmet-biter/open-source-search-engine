@@ -53,8 +53,6 @@ void Collectiondb::reset() {
 	g_collTable.reset();
 }
 
-extern bool g_inAutoSave;
-
 // . save to disk
 // . returns false if blocked, true otherwise
 bool Collectiondb::save ( ) {

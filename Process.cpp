@@ -614,9 +614,9 @@ void processSleepWrapper ( int fd , void *state ) {
 	g_process.m_lastSaveTime = nextLastSaveTime;//now;
 	// save everything
 	logf(LOG_INFO,"db: Autosaving.");
-	g_inAutoSave = 1;
+	g_inAutoSave = true;
 	g_process.save();
-	g_inAutoSave = 0;
+	g_inAutoSave = false;
 }
 
 bool Process::save ( ) {

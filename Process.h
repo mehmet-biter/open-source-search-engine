@@ -95,6 +95,7 @@ class Process {
 	int64_t m_diskAvail;
 };
 
+extern bool g_inAutoSave;
 extern Process g_process;
 
 #endif // GB_PROCESS_H
