@@ -145,7 +145,7 @@ CPPFLAGS += -Wno-zero-length-array -Wno-c99-extensions
 
 # other warnings (to be moved above or re-enabled when we have cleaned up the code sufficiently)
 CPPFLAGS += -Wno-cast-align -Wno-tautological-undefined-compare -Wno-float-equal -Wno-weak-vtables -Wno-global-constructors -Wno-exit-time-destructors
-CPPFLAGS += -Wno-shadow -Wno-conversion -Wno-sign-conversion -Wno-old-style-cast -Wno-shorten-64-to-32
+CPPFLAGS += -Wno-shadow -Wno-conversion -Wno-sign-conversion -Wno-old-style-cast -Wno-shorten-64-to-32 -Wno-double-promotion
 CPPFLAGS += -Wno-unused-parameter -Wno-missing-prototypes
 CPPFLAGS += -Wno-sometimes-uninitialized -Wno-conditional-uninitialized
 CPPFLAGS += -Wno-packed -Wno-padded
