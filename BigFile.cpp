@@ -1604,7 +1604,7 @@ void BigFile::unlinkWrapper(File *f) {
 	for(int i=0; i<50; i++) {
 		if(!g_jobScheduler.is_reading_file(f->m_bigfile))
 			break;
-		usleep(100); //sleep 100ms
+		usleep(100000); //sleep 100ms
 	}
 
 	log( LOG_TRACE,"%s:%s:%d: disk: unlink [%s]", __FILE__, __func__, __LINE__, f->getFilename() );
