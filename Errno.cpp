@@ -26,6 +26,7 @@ int* g_errno_location() {
 		gb_errno = static_cast<int*>(malloc(sizeof(*gb_errno)));
 		pthread_setspecific(s_g_errno_key, gb_errno);
 	}
+	return gb_errno;
 }
 
 const char *mstrerror ( int errnum ) {

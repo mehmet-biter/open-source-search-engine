@@ -4406,9 +4406,11 @@ void PosdbTable::intersectLists10_r ( ) {
 		goto advance;
 
 
+	float effectiveSiteRank;
+
  boolJump2:
 
-	float effectiveSiteRank = siteRank;
+	effectiveSiteRank = siteRank;
 	if( highestInlinkSiteRank > siteRank ) {
 		//adjust effective siterank because a high-rank site linked to it. Don't adjust it too much though.
 		effectiveSiteRank = siteRank + (highestInlinkSiteRank-siteRank)/3.0;
