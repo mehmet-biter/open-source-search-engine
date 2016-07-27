@@ -2467,9 +2467,10 @@ UdpSlot *UdpServer::getEmptyUdpSlot_ass ( key_t k , bool incoming ) {
 	// return NULL if none left
 	if ( ! m_head ) { 
 		g_errno = ENOSLOTS;
-		log("udp: %" PRId32" of %" PRId32" udp slots occupied. None available to "
-		    "handle this new transaction.",
-		    (int32_t)m_numUsedSlots,(int32_t)m_maxSlots);
+		if (g_conf.m_logNetCongestion) {
+			log(LOG_WARN, "udp: %" PRId32" of %" PRId32" udp slots occupied. None available to handle this new transaction.",
+			    (int32_t) m_numUsedSlots, (int32_t) m_maxSlots);
+		}
 		return NULL;
 	}
 	UdpSlot *slot = m_head;

@@ -359,9 +359,6 @@ bool log ( int32_t type , const char *formatString , ...) {
 	// do not log it if we should not
 	if ( ! g_log.shouldLog ( type , formatString ) ) return false;
 
-	// is it congestion?
-	if ( g_errno == ENOSLOTS && ! g_conf.m_logNetCongestion ) return false;
-
 	// this is the argument list (variable list)
 	va_list   ap;
 
@@ -390,9 +387,6 @@ bool log ( const char *formatString , ... ) {
 	// do not log it if we should not
 	if ( ! g_log.shouldLog ( LOG_WARN , formatString ) ) return false;
 
-	// is it congestion?
-	if ( g_errno == ENOSLOTS && ! g_conf.m_logNetCongestion ) return false;
-
 	// this is the argument list (variable list)
 	va_list   ap;
 
@@ -419,9 +413,6 @@ bool log ( const char *formatString , ... ) {
 
 bool logf ( int32_t type , const char *formatString , ...) {
 	if ( g_log.m_disabled ) return false;
-
-	// is it congestion?
-	if ( g_errno == ENOSLOTS && ! g_conf.m_logNetCongestion ) return false;
 
 	// this is the argument list (variable list)
 	va_list   ap;
@@ -529,11 +520,7 @@ static void hexdump(void const *data, const unsigned int len, char *dest, const 
 
 bool loghex( int32_t type, void const *data, const unsigned int len, const char *formatString , ...) {
 	if ( g_log.m_disabled ) return false;
-		
-	// do not log it if we should not
-	// is it congestion?
-	if ( g_errno == ENOSLOTS && ! g_conf.m_logNetCongestion ) return false;
-		
+
 	// this is the argument list (variable list)
 	va_list   ap;
 	// can we log if we're a sig handler? don't take changes
