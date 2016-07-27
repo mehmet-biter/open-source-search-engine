@@ -1,9 +1,32 @@
 #include "gb-include.h"
 #include "Errno.h"
 #include <string>
+#include <pthread.h>
 
-// use our own errno so threads don't fuck with it
-int g_errno;
+static pthread_key_t s_g_errno_key;
+
+extern "C" {
+static void g_errno_destroy(void *key) {
+	int *gb_errno = static_cast<int *>(key);
+	free(gb_errno);
+}
+}
+
+void g_errno_init() {
+	static bool s_init = false;
+	if (!s_init) {
+		s_init = true;
+		pthread_key_create(&s_g_errno_key, g_errno_destroy);
+	}
+}
+
+int* g_errno_location() {
+	int *gb_errno = static_cast<int*>(pthread_getspecific(s_g_errno_key));
+	if (!gb_errno) {
+		gb_errno = static_cast<int*>(malloc(sizeof(*gb_errno)));
+		pthread_setspecific(s_g_errno_key, gb_errno);
+	}
+}
 
 const char *mstrerror ( int errnum ) {
 	if ( errnum >= GB_ERRNO_BEGIN ) {

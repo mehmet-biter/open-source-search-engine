@@ -1467,6 +1467,9 @@ int main2 ( int argc , char *argv[] ) {
 		return 1;
 	}
 
+	// initialize thread specific errno before jobscheduler
+	gb_errno_init();
+
 	if ( ! g_jobScheduler.initialize(g_conf.m_maxCpuThreads, g_conf.m_maxIOThreads, g_conf.m_maxExternalThreads, wakeupPollLoop)) {
 		log( LOG_ERROR, "db: JobScheduler init failed." );
 		return 1;

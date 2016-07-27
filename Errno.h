@@ -6,8 +6,11 @@
 #ifndef GB_ERRNO_H
 #define GB_ERRNO_H
 
-// use our own errno so threads don't fuck with it
-extern int g_errno;
+// use thread specific g_errno
+#define g_errno (*(g_errno_location()))
+
+void g_errno_init();
+int* g_errno_location();
 
 const char* mstrerror ( int errnum );
 const char* merrname( int errnum );
