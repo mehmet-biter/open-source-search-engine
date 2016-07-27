@@ -246,9 +246,7 @@ int File::write ( void *buf             ,
 	return n;
 }
 
-int File::read ( void *buf            ,
-		 int32_t  numBytesToRead ,
-		 int32_t  offset         ) {
+int File::read(void *buf, int32_t numBytesToRead, int32_t offset) {
 	// this return -2 if never opened, -1 on error, fd on success
 	int fd = getfd();
 	if ( fd < 0 ) {

@@ -898,12 +898,7 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 				  (sockaddr *)(void*)&from,
 				  &fromLen);
 
-	// note it
-	if ( g_conf.m_logDebugLoop )
-		log("loop: readsock_ass: readSize=%i m_sock/fd=%i",
-		    readSize,m_sock);
-
-	//static int s_ss = 0;
+	logDebug(g_conf.m_logDebugLoop, "loop: readsock_ass: readSize=%i m_sock/fd=%i", readSize,m_sock);
 
 	// cancel silly g_errnos and return 0 since we blocked
 	if ( readSize < 0 ) {
@@ -949,8 +944,7 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 		s_count++;
 		if ( getTime() - s_lastTime > 5 ) {
 			s_lastTime = getTime();
-			log("udp: Received unauthorized udp packet from %s. "
-			    "Count=%" PRId64".",iptoa(ip),s_count);
+			log(LOG_WARN, "udp: Received unauthorized udp packet from %s. Count=%" PRId64".",iptoa(ip),s_count);
 		}
 		// make it return 1 cuz we did read something
 		status = true;
@@ -1197,10 +1191,8 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 			else                 g_stats.m_dropped[msgType][1]++;
 			if ( now - s_lastTime >= 1000 ) {
 				s_lastTime = now;
-				log(LOG_INFO, "udp: No udp slots to handle datagram.  "
-				    "(msgType=0x%x niceness=%" PRId32") "
-				    "Discarding. It should be resent. Dropped "
-				    "dgrams=%" PRId32".", msgType,niceness,g_dropped);
+				log(LOG_INFO, "udp: No udp slots to handle datagram. (msgType=0x%x niceness=%" PRId32") "
+				    "Discarding. It should be resent. Dropped dgrams=%" PRId32".", msgType,niceness,g_dropped);
 			}
 			goto discard;
 		}
