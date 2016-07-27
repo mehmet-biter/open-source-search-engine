@@ -705,19 +705,16 @@ bool Msg39::intersectLists ( ) { // bool updateReadInfo ) {
 	// . this will actually calculate the top
 	// . this might also change m_query.m_termSigns
 	// . this won't do anything if it was already called
-	m_posdbTable.init ( &m_query,
-			    m_debug              ,
-			    this                   ,
-			    &m_toptree,
-			    &m_msg2 ,
-			    m_msg39req);
+	m_posdbTable.init ( &m_query, m_debug, this, &m_toptree, &m_msg2, m_msg39req);
 
 	// . we have to do this here now too
 	// . but if we are getting weights, we don't need m_toptree!
 	// . actually we were using it before for rat=0/bool queries but
 	//   i got rid of NO_RAT_SLOTS
 	if ( ! m_allocedTree && ! m_posdbTable.allocTopTree() ) {
-		if ( ! g_errno ) gbshutdownLogicError();
+		if ( ! g_errno ) {
+			gbshutdownLogicError();
+		}
 		//sendReply ( m_slot , this , NULL , 0 , 0 , true);
 		return true;
 	}
@@ -727,27 +724,27 @@ bool Msg39::intersectLists ( ) { // bool updateReadInfo ) {
 		//estimateHitsAndSendReply ( );
 		return true;
 	}
-		
 
 	// we have to allocate this with each call because each call can
 	// be a different docid range from doDocIdSplitLoop.
 	if ( ! m_posdbTable.allocWhiteListTable() ) {
-		log("msg39: Had error allocating white list table: %s.",
-		    mstrerror(g_errno));
-		if ( ! g_errno ) gbshutdownLogicError();
+		log(LOG_WARN,"msg39: Had error allocating white list table: %s.", mstrerror(g_errno));
+		if ( ! g_errno ) {
+			gbshutdownLogicError();
+		}
 		//sendReply (m_slot,this,NULL,0,0,true);
 		return true; 
 	}
 
-
 	// do not re do it if doing docid range splitting
 	m_allocedTree = true;
-
 
 	// . now we must call this separately here, not in allocTopTree()
 	// . we have to re-set the QueryTermInfos with each docid range split
 	//   since it will set the list ptrs from the msg2 lists
-	if ( ! m_posdbTable.setQueryTermInfo () ) return true;
+	if ( ! m_posdbTable.setQueryTermInfo () ) {
+		return true;
+	}
 
 	// print query term bit numbers here
 	for ( int32_t i = 0 ; m_debug && i < m_query.getNumTerms() ; i++ ) {
@@ -784,13 +781,11 @@ bool Msg39::intersectLists ( ) { // bool updateReadInfo ) {
 
 	// . create the thread
 	// . only one of these type of threads should be launched at a time
-	if ( g_jobScheduler.submit(&intersectListsThreadFunction,
-	                           &intersectionFinishedCallback,
-				   this,
-				   thread_type_query_intersect,
-				   m_msg39req->m_niceness) ) {
+	if ( g_jobScheduler.submit(&intersectListsThreadFunction, &intersectionFinishedCallback, this,
+	                           thread_type_query_intersect, m_msg39req->m_niceness) ) {
 		return false;
 	}
+
 	// if it failed
 	//log(LOG_INFO,"query: Intersect thread creation failed. Doing "
 	//    "blocking. Hurts performance.");
@@ -815,6 +810,7 @@ bool Msg39::intersectLists ( ) { // bool updateReadInfo ) {
 void Msg39::intersectListsThreadFunction ( void *state ) {
 	// we're in a thread now!
 	Msg39 *that = static_cast<Msg39*>(state);
+
 	// . do the add
 	// . addLists() returns false and sets errno on error
 	// . hash the lists into our table
@@ -822,6 +818,7 @@ void Msg39::intersectListsThreadFunction ( void *state ) {
 	// . Msg2 always compresses the lists so be aware that the termId
 	//   has been discarded
 	that->m_posdbTable.intersectLists10_r ( );
+
 	// . exit the thread
 	// . threadDoneWrapper will be called by g_loop when he gets the 
 	//   thread's termination signal
