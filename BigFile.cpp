@@ -992,9 +992,6 @@ void doneWrapper ( void *state, job_exit_t exit_type ) {
 
 
 static void readwriteWrapper_r ( void *state ) {
-	// debug msg
-	//log("disk: this thread id = %" PRId32,(int32_t)pthread_self());
-
 	int64_t time_start = gettimeofdayInMilliseconds();
 
 	// extract our class
@@ -1027,6 +1024,7 @@ static void readwriteWrapper_r ( void *state ) {
 	}
 	fstate->m_fd1 = fstate->m_bigfile->getfd (fstate->m_filenum1,!fstate->m_doWrite);
 	fstate->m_fd2 = fstate->m_bigfile->getfd (fstate->m_filenum2,!fstate->m_doWrite);
+
 	// is this bad?
 	if ( fstate->m_fd1 < 0 ) {
 		log( LOG_WARN, "disk: fd1 is %i for %s", fstate->m_fd1, fstate->m_bigfile->getFilename() );
@@ -1039,19 +1037,9 @@ static void readwriteWrapper_r ( void *state ) {
 	fstate->m_closeCount1 = getCloseCount_r ( fstate->m_fd1 );
 	fstate->m_closeCount2 = getCloseCount_r ( fstate->m_fd2 );
 	
-	// get THIS
-	//BigFile *THIS = fstate->m_bigfile;
 	// clear thread's errno
 	errno = 0;
-	// . make it so we go away immediately upon receiving a cancellation 
-	//   signal rather than queing the signal until we call 
-	//   pthread_testcancel()
-	// . this allows us to immediately hault disk reads/writes that are
-	//   lower priority than i/o's we're about to do
-	// . this is so merging won't affect queries per second so much
-	//int err = pthread_setcanceltype ( PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
-	//if ( err != 0 ) log("readwriteWrapper: pthread_setcanceltype: %s",
-	//		      mstrerror(err) );
+
 	// . do the readwrite_r() since we're a thread now
 	// . this SHOULD NOT set g_errno, we're a thread!
 	// . it does have it's own errno however
@@ -1355,31 +1343,30 @@ bool BigFile::rename(const char *newBaseFilename, void (*callback)(void *state),
 
 
 bool BigFile::unlinkPart(int32_t part, void (*callback)(void *state), void *state) {
-	bool rc;
-
 	logTrace( g_conf.m_logTraceBigFile, "BEGIN. part %" PRId32, part);
 
-	//for ( int32_t i = 0 ; i < part ; i++ ) 
 	// set return value to false if we blocked somewhere
-	rc=unlinkRename ( NULL, part, true, callback, state );
+	bool rc = unlinkRename ( NULL, part, true, callback, state );
 	// rc indicates blocked/unblocked
 	
 	logTrace( g_conf.m_logTraceBigFile, "END. returning [%s]", rc?"true":"false");
 	return rc;
 }
 
-
-
-// . returns false if blocked, true otherwise
+/**
+ *
+ * @param newBaseFilename non-NULL for renames, NULL for unlinks
+ * @param part part num to unlink, -1 for all (or rename)
+ * @param useThread
+ * @param callback
+ * @param state
+ * @param newBaseFilenameDir if NULL, defaults to m_dir, the current dir in which this file already exists
+ * @param force
+ * @return false if blocked, true otherwise
+ */
 // . sets g_errno on error
-// . ser "part" to -1 to remove or unlink all part files
-// . "newBaseFilenameDir" if NULL, defaults to m_dir, the current dir
-//   in which this file already exists
-bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
-			     const char *newBaseFilename             ,
-			     // part num to unlink, -1 for all (or rename)
-			     int32_t  part, bool  useThread, void (* callback) ( void *state ),
-			     void *state, const char *newBaseFilenameDir, bool force ) {
+bool BigFile::unlinkRename(const char *newBaseFilename, int32_t part, bool useThread,
+                           void (*callback)(void *state), void *state, const char *newBaseFilenameDir, bool force) {
 	logTrace( g_conf.m_logTraceBigFile, "BEGIN" );
 
 	// fail in read only mode
@@ -1392,8 +1379,7 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 	// . wait for any previous unlink to finish
 	// . we can only store one callback at a time, m_callback, so we
 	//   must do this for now
-	if ( m_numThreads > 0 && 
-	     ( callback != m_callback || state != m_state ) ) {
+	if ( m_numThreads > 0 && ( callback != m_callback || state != m_state ) ) {
 		g_errno = EBADENGINEER;
 		log(LOG_ERROR, "%s:%s:%d: END. Unlink/rename threads already in progress. ", __FILE__, __func__, __LINE__ );
 		return true;
@@ -1410,22 +1396,20 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 		}
 
 		// now this is dynamic to save mem when we have 100,000+ files
-		m_newBaseFilename   .reset();
+		m_newBaseFilename.reset();
 		m_newBaseFilenameDir.reset();
 
-		m_newBaseFilename   .setLabel("nbfn");
+		m_newBaseFilename.setLabel("nbfn");
 		m_newBaseFilenameDir.setLabel("nbfnd");
 
-		if ( ! m_newBaseFilename.safeStrcpy ( newBaseFilename ) )
-		{
-			log(LOG_ERROR,"%s:%s:%d: set m_newBaseFilename failed", __FILE__, __func__, __LINE__ );
+		if (!m_newBaseFilename.safeStrcpy(newBaseFilename)) {
+			log(LOG_ERROR, "%s:%s:%d: set m_newBaseFilename failed", __FILE__, __func__, __LINE__);
 			logAllData(LOG_ERROR);
 			return false;
 		}
-		
-		if ( ! m_newBaseFilenameDir.safeStrcpy ( newBaseFilenameDir ) )
-		{
-			log(LOG_ERROR,"%s:%s:%d: set m_newBaseFilenameDir failed", __FILE__, __func__, __LINE__ );
+
+		if (!m_newBaseFilenameDir.safeStrcpy(newBaseFilenameDir)) {
+			log(LOG_ERROR, "%s:%s:%d: set m_newBaseFilenameDir failed", __FILE__, __func__, __LINE__);
 			logAllData(LOG_ERROR);
 			return false;
 		}
@@ -1433,15 +1417,11 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 		// in case newBaseFilenameDir was NULL
 		m_newBaseFilenameDir.nullTerm();
 		
-		// close all files -- they close themselves when we call rename
-		// close ();
-
 		// set the op flag
 		m_isUnlink = false;
 
 		logTrace( g_conf.m_logTraceBigFile, "Rename mode" );
-	}
-	else {
+	} else {
 		m_isUnlink = true;
 		logTrace( g_conf.m_logTraceBigFile, "Unlink mode" );
 	}
@@ -1454,17 +1434,18 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 	void (*startRoutine)(void *state);
 	void (*doneRoutine )(void *state, job_exit_t exit_type);
 
-	const int32_t startPartNumber = m_part>=0 ? m_part : 0;
+	const int32_t startPartNumber = (m_part >= 0) ? m_part : 0;
 
 	// how many parts have we done?
 	m_partsRemaining = m_maxParts;
+
 	// is it only 1 to be unlinked?
 	if ( m_part >= 0 ) {
 		m_partsRemaining = 1;
 	}
 
-	if(m_isUnlink) {
-		//First mark the files for unlink so no further read-jobs will be submitted for those parts
+	if (m_isUnlink) {
+		// First mark the files for unlink so no further read-jobs will be submitted for those parts
 		for ( int32_t i = startPartNumber ; i < m_maxParts ; i++ ) {
 			if ( m_part >= 0 && i != m_part )
 				break;
@@ -1475,7 +1456,7 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 		}
 	
 		//then cancel all queued read jobs for this bigfile
-		if(part == -1 ) {
+		if (part == -1 ) {
 			// remove all queued threads that point to us that have not
 			// yet been launched
 			g_jobScheduler.cancel_file_read_jobs(this);
@@ -1554,8 +1535,6 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 		doneRoutine  ( f , job_exit_normal );
 	}
 
-	// close em up
-	//close();
 	// if one blocked, we block, but never return false if !useThread
 	if ( m_numThreads > 0 && useThread ) {
 		logTrace( g_conf.m_logTraceBigFile, "m_numThreads [%" PRId32"] && useThread", m_numThreads );
