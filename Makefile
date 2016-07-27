@@ -8,7 +8,7 @@ ARCH=$(uname_m)
 BASE_DIR=$(shell pwd)
 export BASE_DIR
 
-undefine CONFIG_CPPFLAGS
+unexport CONFIG_CPPFLAGS
 
 OBJS =  UdpSlot.o Rebalance.o \
 	Msg13.o \
