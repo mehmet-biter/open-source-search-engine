@@ -171,12 +171,7 @@ void PosdbTable::freeMem ( ) {
 //         quickly using Msg36!
 // . we now support multiple plus signs before the query term
 // . lists[] and termFreqs[] must be 1-1 with q->m_qterms[]
-void PosdbTable::init ( Query     *q, 
-			char       debug,
-			void      *logstate,
-			TopTree   *topTree,
-			Msg2 *msg2,
-			Msg39Request *r) {
+void PosdbTable::init(Query *q, bool debug, void *logstate, TopTree *topTree, Msg2 *msg2, Msg39Request *r) {
 	// sanity check -- watch out for double calls
 	if ( m_initialized )
 		gbshutdownAbort(true);
@@ -185,9 +180,7 @@ void PosdbTable::init ( Query     *q,
 	// we are now
 	m_initialized = true;
 	// set debug flag
-	m_debug = debug;
-	// this mean to do it too!
-	if ( g_conf.m_logDebugQuery ) m_debug = 1;//true;
+	m_debug = (debug || g_conf.m_logDebugQuery);
 	// we should save the lists!
 	//m_lists    = msg2->m_lists;//lists;
 	//m_numLists = q->m_numTerms;
@@ -338,8 +331,7 @@ bool PosdbTable::allocTopTree ( ) {
 		if ( list->isEmpty() ) continue;
 		// show if debug
 		if ( m_debug )
-			log(LOG_INFO, "toptree: adding listsize %" PRId32" to nn2",
-			    list->m_listSize);
+			log(LOG_INFO, "toptree: adding listsize %" PRId32" to nn2", list->m_listSize);
 		// tally. each new docid in this termlist will compress
 		// the 6 byte termid out, so reduce by 6.
 		nn2 += list->m_listSize / ( sizeof(POSDBKEY) -6 );
@@ -1850,7 +1842,7 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 	for ( int32_t k = 0 ; k < numTop ; k++ )
 		sum += bestScores[k];
 
-	if ( m_debug >= 2 ) {
+	if (m_debug) {
 		for ( int32_t k = 0 ; k < numTop ; k++ )
 			log(LOG_INFO, "posdb: best score #%" PRId32" = %f",k,bestScores[k]);
 		log(LOG_INFO, "posdb: best score sum = %f",sum);
@@ -1863,7 +1855,7 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 	sum *= m_freqWeights[i];
 	sum *= m_freqWeights[j];
 
-	if ( m_debug >= 2 )
+	if (m_debug)
 		log(LOG_INFO, "posdb: best score final = %f",sum);
 
 	// wiki bigram weight
@@ -1963,59 +1955,41 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 	VALGRIND_CHECK_MEM_IS_DEFINED(px,sizeof(*px));
 #endif
 		// only log for debug if it is one result
-		if ( m_debug < 2 ) continue;
-		// log each one for debug
-		log(LOG_INFO, "posdb: result #%" PRId32" "
-		    "i=%" PRId32" "
-		    "j=%" PRId32" "
-		    "termNum0=%" PRId32" "
-		    "termNum1=%" PRId32" "
-		    "finalscore=%f "
-		    "tfw0=%f "
-		    "tfw1=%f "
-		    "fixeddist=%" PRId32" " // bool
-		    "wts=%f "
-		    "bflags0=%" PRId32" "
-		    "bflags1=%" PRId32" "
-		    "syn0=%" PRId32" "
-		    "syn1=%" PRId32" "
-		    "div0=%" PRId32" "
-		    "div1=%" PRId32" "
-		    "wspam0=%" PRId32" "
-		    "wspam1=%" PRId32" "
-		    "hgrp0=%s "
-		    "hgrp1=%s "
-		    "qdist=%" PRId32" "
-		    "wpos0=%" PRId32" "
-		    "wpos1=%" PRId32" "
-		    "dens0=%" PRId32" "
-		    "dens1=%" PRId32" "
-		    ,k
-		    ,i
-		    ,j
-		    ,px->m_qtermNum1
-		    ,px->m_qtermNum2
-		    ,score
-		    ,m_freqWeights[i]
-		    ,m_freqWeights[j]
-		    ,(int32_t)bestFixed[k]
-		    ,wts
-		    , (int32_t)m_bflags[i]
-		    , (int32_t)m_bflags[j]
-		    , (int32_t)px->m_isSynonym1
-		    , (int32_t)px->m_isSynonym2
-		    , (int32_t)px->m_diversityRank1
-		    , (int32_t)px->m_diversityRank2
-		    , (int32_t)px->m_wordSpamRank1
-		    , (int32_t)px->m_wordSpamRank2
-		    , getHashGroupString(px->m_hashGroup1)
-		    , getHashGroupString(px->m_hashGroup2)
-		    , (int32_t)px->m_qdist
-		    , (int32_t)px->m_wordPos1
-		    , (int32_t)px->m_wordPos2
-		    , (int32_t)px->m_densityRank1
-		    , (int32_t)px->m_densityRank2
-		    );
+		if ( m_debug ) {
+			// log each one for debug
+			log(LOG_INFO, "posdb: result #%" PRId32" "
+					    "i=%" PRId32" "
+					    "j=%" PRId32" "
+					    "termNum0=%" PRId32" "
+					    "termNum1=%" PRId32" "
+					    "finalscore=%f "
+					    "tfw0=%f "
+					    "tfw1=%f "
+					    "fixeddist=%" PRId32" " // bool
+					    "wts=%f "
+					    "bflags0=%" PRId32" "
+					    "bflags1=%" PRId32" "
+					    "syn0=%" PRId32" "
+					    "syn1=%" PRId32" "
+					    "div0=%" PRId32" "
+					    "div1=%" PRId32" "
+					    "wspam0=%" PRId32" "
+					    "wspam1=%" PRId32" "
+					    "hgrp0=%s "
+					    "hgrp1=%s "
+					    "qdist=%" PRId32" "
+					    "wpos0=%" PRId32" "
+					    "wpos1=%" PRId32" "
+					    "dens0=%" PRId32" "
+					    "dens1=%" PRId32" ", k, i, j, px->m_qtermNum1, px->m_qtermNum2, score, m_freqWeights[i],
+			    m_freqWeights[j], (int32_t) bestFixed[k], wts, (int32_t) m_bflags[i], (int32_t) m_bflags[j],
+			    (int32_t) px->m_isSynonym1, (int32_t) px->m_isSynonym2, (int32_t) px->m_diversityRank1,
+			    (int32_t) px->m_diversityRank2, (int32_t) px->m_wordSpamRank1, (int32_t) px->m_wordSpamRank2,
+			    getHashGroupString(px->m_hashGroup1), getHashGroupString(px->m_hashGroup2), (int32_t) px->m_qdist,
+			    (int32_t) px->m_wordPos1, (int32_t) px->m_wordPos2, (int32_t) px->m_densityRank1,
+			    (int32_t) px->m_densityRank2
+			);
+		}
 	}
 
 	// do the same but for second bests! so seo.cpp's top term pairs
