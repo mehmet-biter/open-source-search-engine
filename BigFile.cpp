@@ -751,8 +751,6 @@ bool BigFile::readwrite ( void         *buf      ,
 	// if hitDisk was false we only check the page cache!
 	if ( ! hitDisk ) return true;
 
-	int32_t saved;
-
 	// . if we're blocking then do it now
 	// . this should return false and set g_errno on error, true otherwise
 	if ( !isNonBlocking || !g_jobScheduler.are_new_jobs_allowed() ) 	{
@@ -767,60 +765,23 @@ bool BigFile::readwrite ( void         *buf      ,
 		return false;
 	}
 
-	saved = g_errno;
-
-	// note it
-	if ( g_errno ) {
-		static time_t s_time  = 0;
-		time_t now = getTime();
-		if ( now - s_time > 5 ) {
-			log (LOG_INFO,"disk: Thread call failed: %s.", mstrerror(g_errno));
-			s_time = now;
-		}
-	}
-
 	// sanity check
 	if ( ! callback ) {
 		gbshutdownLogicError();
 	}
 
-	// NOW we return on error because if we already have 5000 disk threads
-	// queued up, what is the point in blocking ourselves off? that makes
-	// us look like a dead host and very unresponsive. As int32_t as this
-	// request originated through Multicast, then multicast will sleep
-	// and retry. Msg3 could retry, the multicast thing should be more
-	// for running out of udp slots though...
-	// crap, call to clone() now fails a lot since we use pthreads
-	// library ... so assume that is it i guess (MDW 3/15/2014)
-	//if ( g_errno && ! doWrite && g_errno != ENOTHREADSLOTS ) {
-	//	log (LOG_INFO,"disk: May retry later.");
-	//	return true;
-	//}
+	// thread spawn failed, do it blocking then
 
-	// otherwise, thread spawn failed, do it blocking then
-	g_errno = 0;
-	// if threads are manually disabled don't print these msgs because
-	// we redbox the fact above the controls in Pages.cpp
-	if ( saved ) { // g_jobScheduler.are_new_jobs_allowed() ) {
-		static int32_t s_lastTime = 0;
-		int32_t now = getTime();
-		if ( now - s_lastTime >= 1 ) {
-			s_lastTime = now;
-			log (LOG_INFO,
-			     "disk: Doing blocking disk access. "
-			     //"This will hurt "
-			     //"performance. "
-			     "isWrite=%" PRId32". (%s)",(int32_t)doWrite,
-			     mstrerror(saved));
-		}
-	}
 	// come here if we haven't spawned a thread
- skipThread:
+skipThread:
+	log(LOG_INFO, "disk: Doing blocking disk access. This will hurt performance. isWrite=%" PRId32".",(int32_t)doWrite);
+
 	// if there was no room in the thread queue, then we must do this here
 	fstate->m_fd1         = getfd ( fstate->m_filenum1 , !doWrite );
 	fstate->m_fd2         = getfd ( fstate->m_filenum2 , !doWrite );
 	fstate->m_closeCount1 = getCloseCount_r ( fstate->m_fd1 );
 	fstate->m_closeCount2 = getCloseCount_r ( fstate->m_fd2 );
+
 	// clear g_errno from the failed thread spawn
 	g_errno = 0;
 
@@ -1586,8 +1547,7 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 
 			// otherwise, thread spawn failed, do it blocking then
 			log( LOG_INFO, "disk: Failed to launch unlink/rename thread for %s. Doing blocking unlink. "
-				 "part=%" PRId32"/%" PRId32". This will hurt performance. %s.",
-			     f->getFilename(),i,m_part,mstrerror(g_errno));
+				 "part=%" PRId32"/%" PRId32". This will hurt performance.", f->getFilename(),i,m_part);
 		}
 
 		// log these for now, remove later
