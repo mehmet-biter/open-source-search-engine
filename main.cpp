@@ -4016,12 +4016,7 @@ skip:
 	g_jobScheduler.allow_new_jobs();
 	//int pid;
 	for ( int32_t i = 0 ; i < s_numThreads ; i++ ) {
-		//int err = pthread_create ( &tid1,&s_attr,startUp,(void *)i) ;
-		if ( !g_jobScheduler.submit(startUp,
-		                            NULL,
-					    (void *)(PTRTYPE)i,
-					    thread_type_unspecified_io,
-					    0)){
+		if ( !g_jobScheduler.submit(startUp, NULL, (void *)(PTRTYPE)i, thread_type_unspecified_io, 0)){
 			log("test: Thread launch failed."); return; }
 		log(LOG_INIT,"test: Launched thread #%" PRId32".",i);
 	}
