@@ -292,6 +292,10 @@ void Msg39::getDocIds2() {
 
 void Msg39::intersectionFinishedCallback(void *state, job_exit_t exit_type) {
 	Msg39 *that = static_cast<Msg39*>(state);
+	if (that->m_errno) {
+		g_errno = that->m_errno;
+	}
+
 	that->controlLoop();
 }
 
@@ -822,6 +826,9 @@ void Msg39::intersectListsThreadFunction ( void *state ) {
 	// . exit the thread
 	// . threadDoneWrapper will be called by g_loop when he gets the 
 	//   thread's termination signal
+	if (g_errno) {
+		that->m_errno = g_errno;
+	}
 }
 
 
