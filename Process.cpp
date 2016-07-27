@@ -355,16 +355,16 @@ void hdtempWrapper ( int fd , void *state ) {
 
 	// set it
 	g_process.m_threadOut = true;
+
 	// . call thread to call popen
 	// . callThread returns true on success, in which case we block
-	if ( g_jobScheduler.submit(hdtempStartWrapper_r,
-	                           hdtempDoneWrapper,
-				   NULL,
-				   thread_type_hdtemp,
-				   MAX_NICENESS) )
+	if ( g_jobScheduler.submit(hdtempStartWrapper_r, hdtempDoneWrapper, NULL, thread_type_hdtemp, MAX_NICENESS) ) {
 		return;
+	}
+
 	// back
 	g_process.m_threadOut = false;
+
 	// . call it directly
 	// . only mention once to avoid log spam
 	static bool s_first = true;
@@ -373,11 +373,6 @@ void hdtempWrapper ( int fd , void *state ) {
 		log("build: Could not spawn thread for call to get hd temps. "
 		    "Ignoring hd temps. Only logging once.");
 	}
-	// MDW: comment these two guys out to avoid calling it for now
-	// get the data
-	//hdtempStartWrapper_r ( false , NULL ); // am thread?
-	// and finish it off
-	//hdtempDoneWrapper ( NULL , NULL );
 }
 
 // come back here
