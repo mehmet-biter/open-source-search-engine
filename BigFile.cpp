@@ -1140,151 +1140,146 @@ static bool readwrite_r ( FileState *fstate ) {
 	}
 
 	// how many total bytes to write?
-	int32_t       bytesToGo = fstate->m_bytesToGo;
+	int32_t bytesToGo = fstate->m_bytesToGo;
 	// how many bytes we've written so far
-	int32_t       bytesDone = fstate->m_bytesDone;
+	int32_t bytesDone = fstate->m_bytesDone;
 	// get current offset
-	int64_t  offset    = fstate->m_offset + fstate->m_bytesDone;
+	int64_t offset = fstate->m_offset + fstate->m_bytesDone;
 	// are we writing? or reading?
-	bool       doWrite   = fstate->m_doWrite;
+	bool doWrite = fstate->m_doWrite;
 	// point to buf
-	char      *p         = fstate->m_buf + bytesDone ;
- loop:
-	// return here if done
-	if ( bytesDone >= bytesToGo ) return true;
+	char *p = fstate->m_buf + bytesDone;
 
-	// translate offset to a filenum and offset
-	int32_t filenum     = offset / MAX_PART_SIZE;
-	int32_t localOffset = offset % MAX_PART_SIZE;
+	for (;;) {
+		// return here if done
+		if (bytesDone >= bytesToGo) {
+			return true;
+		}
 
-	// how many bytes to read/write to first little file?
-	int32_t avail = MAX_PART_SIZE - localOffset;
+		// translate offset to a filenum and offset
+		int32_t filenum = offset / MAX_PART_SIZE;
+		int32_t localOffset = offset % MAX_PART_SIZE;
 
-	// how may bytes do we have left to read/write
-	int32_t len   = bytesToGo - bytesDone;
+		// how many bytes to read/write to first little file?
+		int32_t avail = MAX_PART_SIZE - localOffset;
 
-	// how many bytes can we write to it now
-	if ( len > avail ) len = avail;
+		// how may bytes do we have left to read/write
+		int32_t len = bytesToGo - bytesDone;
 
-	// get the fd for this filenum
-	int fd = -1;
-	if ( filenum == fstate->m_filenum1 ) {
-		fd = fstate->m_fd1;
-	} else if ( filenum == fstate->m_filenum2 ) {
-		fd = fstate->m_fd2;
-	}
+		// how many bytes can we write to it now
+		if (len > avail) {
+			len = avail;
+		}
 
-	// return -1 on error 
-	if ( fd < 0 ) {
-		errno = EBADENGINEER;
-		log( LOG_LOGIC, "disk: fd < 0 for filenum %d. Bad engineer.", filenum );
-		return false;
-	}
+		// get the fd for this filenum
+		int fd = -1;
+		if (filenum == fstate->m_filenum1) {
+			fd = fstate->m_fd1;
+		} else if (filenum == fstate->m_filenum2) {
+			fd = fstate->m_fd2;
+		}
 
-	// reset this
-	errno = 0;
+		// return -1 on error
+		if (fd < 0) {
+			errno = EBADENGINEER;
+			log(LOG_LOGIC, "disk: fd < 0 for filenum %d. Bad engineer.", filenum);
+			return false;
+		}
 
-	// n holds how many bytes read/written
-	int n ;
- retry25:
-
-	// do the read/write blocking 
-	if ( doWrite ) 	n = pwrite ( fd , p , len , localOffset );
-	else           	n = pread  ( fd , p , len , localOffset );
-
-	// debug msg
-	if ( g_conf.m_logDebugDisk ) {
-		const char *s = "read";
-		if ( fstate->m_doWrite ) s = "wrote";
-		const char *t = "no";	// are we blocking?
-		if ( fstate->m_flags & O_NONBLOCK ) t = "yes";
-		// this is bad for real-time threads cuz our unlink() routine 
-		// may have been called by RdbMerge and our m_files may be 
-		// altered 
-		// MDW: don't access m_bigfile in case bigfile was deleted
-		// since we are in a thread
-		log(LOG_DEBUG, "disk::readwrite: %s %i bytes of %i @ offset %i "
-		    //"from BASEfile=%s "
-		    "(nonBlock=%s) "
-		    "fd %i "
-		    "cc1=%i=?%i cc2=%i=?%i errno=%s",
-		    s,n,len,localOffset,
-		    //fstate->m_bigfile->getFilename(),
-		    t,
-		    fd,
-		    (int)fstate->m_closeCount1 , 
-		    (int)getCloseCount_r ( fstate->m_fd1 ) ,
-		    (int)fstate->m_closeCount2 ,
-		    (int)getCloseCount_r ( fstate->m_fd2 ) ,
-		    mstrerror(errno) );
-		//log("disk::readwrite_r: %s %" PRId32" bytes (nonBlock=%s)",
-		//s,n,t);
-		//log("disk::readwrite_r: did %" PRId32" bytes", n);
-	}
-
-	// interrupted system call?
-	if ( n < 0 && errno == EINTR ) 
-		goto retry25;
-
-	// this is thread safe...
-	g_lastDiskReadCompleted = gettimeofdayInMilliseconds();
-
-	// . if n is 0 that's strange!!
-	// . i think the fd will have been closed and re-opened on us if this
-	//   happens... usually
-	if (n==0 && len > 0 ) {
-		// MDW: don't access m_bigfile in case bigfile was deleted
-		// since we are in a thread
-		log(LOG_WARN, "disk: Read of %" PRId32" bytes at offset %" PRId64" "
-		    " failed because file is too short for that "
-		    "offset? Our fd was probably stolen from us by another "
-		    "thread. fd1=%i fd2=%i len=%i filenum=%i "
-		    "localoffset=%i. error=%s.",
-		    (int32_t)len,fstate->m_offset,
-		    //fstate->m_bigfile->getDir(),
-		    //fstate->m_bigfile->getFilename(),
-		    fstate->m_fd1,
-		    fstate->m_fd2,
-		    len,
-		    filenum,
-		    localOffset,
-		    mstrerror(errno));
-		errno = EBADENGINEER;
-		return false;
-	}
-
-	// on other errno, return -1
-	if ( n < 0 ) { 
-		log( LOG_ERROR, "disk::readwrite_r: %s", mstrerror( errno ) );
-		gbshutdownAbort(true);
-	}
-
-	// . flush the write
-	// . linux's write cache may be messing with my data!
-	// . no, turns out write errors (garbage written) happens anyway...
-	// . now we flush all writes! skip bdflush man.
-	// . only allow syncing if file is non-blocking, because blocking
-	//   writes are used for when we call RdbTree::fastSave_r() and it
-	//   takes forever to dump Spiderdb if we sync each little write
-#ifndef __APPLE_
-	if ( g_conf.m_flushWrites   && 
-	     doWrite                && 
-	     (fstate->m_flags & O_NONBLOCK) && 
-	     fdatasync ( fd ) < 0  ) {
-		log( LOG_WARN, "disk: fdatasync: %s", mstrerror(errno));
-		// ignore an error here
+		// reset this
 		errno = 0;
-	}
+
+		// n holds how many bytes read/written
+		int n;
+
+		do {
+			// do the read/write blocking
+			if (doWrite) {
+				n = pwrite(fd, p, len, localOffset);
+			} else {
+				n = pread(fd, p, len, localOffset);
+			}
+
+			// debug msg
+			if (g_conf.m_logDebugDisk) {
+				const char *s = (fstate->m_doWrite) ? "wrote" : "read";
+				const char *t = (fstate->m_flags & O_NONBLOCK) ? "yes" : "no";    // are we blocking?
+
+				// this is bad for real-time threads cuz our unlink() routine
+				// may have been called by RdbMerge and our m_files may be
+				// altered
+				// MDW: don't access m_bigfile in case bigfile was deleted
+				// since we are in a thread
+				log(LOG_DEBUG, "disk::readwrite: %s %i bytes of %i @ offset %i "
+						    "(nonBlock=%s) "
+						    "fd %i "
+						    "cc1=%i=?%i cc2=%i=?%i errno=%s",
+				    s, n, len, localOffset,
+				    t,
+				    fd,
+				    (int) fstate->m_closeCount1,
+				    (int) getCloseCount_r(fstate->m_fd1),
+				    (int) fstate->m_closeCount2,
+				    (int) getCloseCount_r(fstate->m_fd2),
+				    mstrerror(errno));
+			}
+
+			// interrupted system call?
+		} while (n < 0 && errno == EINTR);
+
+		// this is thread safe...
+		g_lastDiskReadCompleted = gettimeofdayInMilliseconds();
+
+		// . if n is 0 that's strange!!
+		// . i think the fd will have been closed and re-opened on us if this
+		//   happens... usually
+		if (n == 0 && len > 0) {
+			// MDW: don't access m_bigfile in case bigfile was deleted
+			// since we are in a thread
+			log(LOG_WARN, "disk: Read of %" PRId32" bytes at offset %" PRId64" "
+					    " failed because file is too short for that "
+					    "offset? Our fd was probably stolen from us by another "
+					    "thread. fd1=%i fd2=%i len=%i filenum=%i "
+					    "localoffset=%i. error=%s.",
+			    (int32_t) len, fstate->m_offset,
+                fstate->m_fd1,
+                fstate->m_fd2,
+                len,
+                filenum,
+                localOffset,
+                mstrerror(errno));
+			errno = EBADENGINEER;
+			return false;
+		}
+
+		// on other errno, return -1
+		if (n < 0) {
+			log(LOG_ERROR, "disk::readwrite_r: %s", mstrerror(errno));
+			gbshutdownAbort(true);
+		}
+
+		// . flush the write
+		// . linux's write cache may be messing with my data!
+		// . no, turns out write errors (garbage written) happens anyway...
+		// . now we flush all writes! skip bdflush man.
+		// . only allow syncing if file is non-blocking, because blocking
+		//   writes are used for when we call RdbTree::fastSave_r() and it
+		//   takes forever to dump Spiderdb if we sync each little write
+#ifndef __APPLE_
+		if (g_conf.m_flushWrites && doWrite && (fstate->m_flags & O_NONBLOCK) && fdatasync(fd) < 0) {
+			log(LOG_WARN, "disk: fdatasync: %s", mstrerror(errno));
+			// ignore an error here
+			errno = 0;
+		}
 #endif
-	// update the count
-	bytesDone += n;
-	// inc the main offset and the buffer ptr, "p"
-	offset    += n; 
-	p         += n;
-	// add to fileState
-	fstate->m_bytesDone += n;
-	// loop back
-	goto loop;
+		// update the count
+		bytesDone += n;
+		// inc the main offset and the buffer ptr, "p"
+		offset += n;
+		p += n;
+		// add to fileState
+		fstate->m_bytesDone += n;
+	}
 }
 
 
