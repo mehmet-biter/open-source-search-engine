@@ -6,10 +6,8 @@
 #ifndef GB_ERRNO_H
 #define GB_ERRNO_H
 
-extern int g_errno;
-
 // use thread specific g_errno
-//#define g_errno (*(g_errno_location()))
+#define g_errno (*(g_errno_location()))
 
 void g_errno_init();
 int* g_errno_location();

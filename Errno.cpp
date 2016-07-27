@@ -5,8 +5,6 @@
 
 static pthread_key_t s_g_errno_key;
 
-int g_errno;
-
 extern "C" {
 static void g_errno_destroy(void *key) {
 	int *gb_errno = static_cast<int *>(key);
