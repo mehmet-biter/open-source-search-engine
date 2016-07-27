@@ -1626,8 +1626,6 @@ void BigFile::unlinkWrapper(File *f) {
 	logTrace( g_conf.m_logTraceBigFile, "END" );
 }
 
-
-
 void BigFile::doneRenameWrapper(void *state, job_exit_t exit_type) {
 	File *f = static_cast<File*>(state);
 	BigFile *that = f->m_bigfile;
@@ -1643,9 +1641,6 @@ void BigFile::doneRenameWrapper(File *f, job_exit_t /*exit_type*/) {
 	// one less
 	m_numThreads--;
 	g_unlinkRenameThreads--;
-	
-	// reset g_errno and return true if file does not exist
-	//if ( g_errno == ENOENT ) g_errno = 0 ;
 
 	// otherwise, it's a more serious error i guess
 	if ( g_errno ) {
