@@ -5,6 +5,8 @@
 
 static pthread_key_t s_g_errno_key;
 
+int g_errno;
+
 extern "C" {
 static void g_errno_destroy(void *key) {
 	int *gb_errno = static_cast<int *>(key);
@@ -24,6 +26,7 @@ int* g_errno_location() {
 	int *gb_errno = static_cast<int*>(pthread_getspecific(s_g_errno_key));
 	if (!gb_errno) {
 		gb_errno = static_cast<int*>(malloc(sizeof(*gb_errno)));
+		*gb_errno = 0;
 		pthread_setspecific(s_g_errno_key, gb_errno);
 	}
 	return gb_errno;
