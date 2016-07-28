@@ -504,7 +504,7 @@ bool HashTableX::save ( const char *dir ,
 			  // S_IRUSR | S_IWUSR | 
 			  // S_IRGRP | S_IWGRP | S_IROTH);
 	if ( fd < 0 ) {
-		//m_saveErrno = errno;
+		//m_errno = errno;
 		return log("db: Could not open %s for writing: %s.",
 			   s,mstrerror(errno));
 	}

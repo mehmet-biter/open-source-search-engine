@@ -2481,7 +2481,7 @@ bool RdbTree::fastSave ( const char *dir, const char *dbname, bool useThread, vo
 	m_callback = callback;
 
 	// assume no error
-	m_saveErrno = 0;
+	m_errno = 0;
 
 	// no adding to the tree now
 	m_isSaving = true;
@@ -2504,7 +2504,7 @@ bool RdbTree::fastSave ( const char *dir, const char *dbname, bool useThread, vo
 	fastSave_r ();
 
 	// store save error into g_errno
-	g_errno = m_saveErrno;
+	g_errno = m_errno;
 
 	// resume adding to the tree
 	m_isSaving = false;
@@ -2532,7 +2532,7 @@ void threadDoneWrapper ( void *state, job_exit_t exit_type ) {
 	RdbTree *THIS = (RdbTree *)state;
 
 	// store save error into g_errno
-	g_errno = THIS->m_saveErrno;
+	g_errno = THIS->m_errno;
 
 	// . resume adding to the tree
 	// . this will also allow other threads to be queued
@@ -2573,7 +2573,7 @@ bool RdbTree::fastSave_r() {
 	sprintf ( s , "%s/%s-saving.dat", m_dir , m_dbname );
 	int fd = ::open ( s , O_RDWR | O_CREAT | O_TRUNC , getFileCreationFlags() );
 	if ( fd < 0 ) {
-		m_saveErrno = errno;
+		m_errno = errno;
 		log( LOG_ERROR, "db: Could not open %s for writing: %s.", s, mstrerror( errno ) );
 		return false;
 	}
@@ -2609,7 +2609,7 @@ bool RdbTree::fastSave_r() {
 	offset += sizeof(m_ownData);
 	// bitch on error
 	if ( br != offset ) {
-		m_saveErrno = errno;
+		m_errno = errno;
 		close ( fd );
 		return log("db: Failed to save tree1 for %s: %s.",
 			   m_dbname,mstrerror(errno));
@@ -2624,7 +2624,7 @@ bool RdbTree::fastSave_r() {
 		// returns -1 on error
 		if ( bytesWritten < 0 ) {
 			close ( fd );
-			m_saveErrno = errno;
+			m_errno = errno;
 			return log("db: Failed to save tree2 for %s: %s.",
 				   m_dbname,mstrerror(errno));
 		}
