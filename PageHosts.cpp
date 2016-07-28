@@ -362,21 +362,6 @@ skipReplaceHost:
 		strcpy(ipbuf1,iptoa(h->m_ip));
 		strcpy(ipbuf2,iptoa(h->m_ipShotgun));
 
-		/*
-		char  hdbuf[128];
-		char *hp = hdbuf;
-		for ( int32_t k = 0 ; k < 4 ; k++ ) {
-			int32_t temp = h->m_hdtemps[k];
-			if ( temp > 50 && format == FORMAT_HTML )
-				hp += sprintf(hp,"<font color=red><b>%" PRId32
-					      "</b></font>",
-					      temp);
-			else
-				hp += sprintf(hp,"%" PRId32,temp);
-			if ( k < 3 ) *hp++ = '/';
-			*hp = '\0';
-		}
-		*/
 		char *vbuf = h->m_pingInfo.m_gbVersionStr;//m_gbVersionStrBuf;
 		// get hash
 		int32_t vhash32 = hash32n ( vbuf );

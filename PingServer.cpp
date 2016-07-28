@@ -694,14 +694,6 @@ void handleRequest11 ( UdpSlot *slot , int32_t niceness ) {
 		// now we just copy the class
 		gbmemcpy ( &h->m_pingInfo , request , requestSize );
 
-		// if any one of them is overheating, then turn off
-		// spiders on ourselves (and thus the full cluster)
-		for ( int32_t k = 0 ; k < 4 ; k++ )
-			if ( h->m_pingInfo.m_hdtemps[k] > 
-			     g_conf.m_maxHardDriveTemp )
-				g_conf.m_spideringEnabled = 0;
-			
-
 		// we finally got a ping reply from him
 		h->m_gotPingReply = true;
 

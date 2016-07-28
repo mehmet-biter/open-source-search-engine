@@ -485,8 +485,6 @@ class Conf {
 	char  m_giveupOnDeadHosts;
 	char  m_bypassValidation;
 
-	int32_t  m_maxHardDriveTemp;
-
 	int32_t  m_maxHeartbeatDelay;
 	int32_t  m_maxCallbackDelay;
 

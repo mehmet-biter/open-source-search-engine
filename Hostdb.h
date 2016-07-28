@@ -77,7 +77,7 @@ class PingInfo {
 
 	int16_t m_currentSpiders;
 	collnum_t m_dailyMergeCollnum;
-	int16_t m_hdtemps[4];
+
 	char m_gbVersionStr[21];
 	char m_repairMode;
 	char m_kernelErrors;

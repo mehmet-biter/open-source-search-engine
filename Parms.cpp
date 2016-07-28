@@ -5669,17 +5669,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
-	m->m_title = "max hard drive temperature";
-	m->m_desc  = "At what temperature in Celsius should we send "
-		"an email alert if a hard drive reaches it?";
-	m->m_cgi   = "mhdt";
-	m->m_off   = offsetof(Conf,m_maxHardDriveTemp);
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "45";
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
 	m->m_title = "error string 1";
 	m->m_desc  = "Look for this string in the kernel buffer for sending "
 		"email alert. Useful for detecting some strange "

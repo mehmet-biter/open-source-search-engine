@@ -380,49 +380,6 @@ void hdtempWrapper ( int fd , void *state ) {
 void hdtempDoneWrapper ( void *state, job_exit_t /*exit_type*/ ) {
 	// we are back
 	g_process.m_threadOut = false;
-	// current local time
-	int32_t now = getTime();
-	// if we had an error, do not schedule again for an hour
-	//if ( s_flag ) s_nextTime = now + 3600;
-	// reset it
-	//s_flag = 0;
-	// send email alert if too hot
-	Host *h = g_hostdb.m_myHost;
-	// get max temp
-	int32_t max = 0;
-	for ( int32_t i = 0 ; i < 4 ; i++ ) {
-		int16_t t = h->m_pingInfo.m_hdtemps[i];
-		if ( t > max ) max = t;
-	}
-	// . leave if ok
-	// . the seagates tend to have a max CASE TEMP of 69 C
-	// . it says the operating temps are 0 to 60 though, so
-	//   i am assuming that is ambient?
-	// . but this temp is probably the case temp that we are measuring
-	if ( max <= g_conf.m_maxHardDriveTemp ) return;
-	// leave if we already sent and alert within 5 mins
-	static int32_t s_lasttime = 0;
-	if ( now - s_lasttime < 5*60 ) return;
-	// prepare msg to send
-	char msgbuf[1024];
-	Host *h0 = g_hostdb.getHost ( 0 );
-	snprintf(msgbuf, 1024,
-		 "hostid %" PRId32" has overheated HD at %" PRId32" C "
-		 "cluster=%s (%s). Disabling spiders.",
-		 h->m_hostId,
-		 (int32_t)max,
-		 g_conf.m_clusterName,
-		 iptoa(h0->m_ip));
-	// send it, force it, so even if email alerts off, it sends it
-	g_pingServer.sendEmail ( NULL   , // Host *h
-				 msgbuf , // char *errmsg = NULL , 
-				 true   , // bool sendToAdmin = true ,
-				 false  , // bool oom = false ,
-				 false  , // bool kernelErrors = false ,
-				 false  , // bool parmChanged  = false ,
-				 true   );// bool forceIt      = false );
-
-	s_lasttime = now;
 }
 
 
@@ -430,7 +387,7 @@ void hdtempDoneWrapper ( void *state, job_exit_t /*exit_type*/ ) {
 static float getDiskUsage ( int64_t *diskAvail ) {
 	struct statvfs s;
 	if(statvfs(g_hostdb.m_dir,&s)!=0) {
-		log("build: statvfs(%s) failed: %s.", g_hostdb.m_dir, mstrerror(errno));
+		log(LOG_WARN, "build: statvfs(%s) failed: %s.", g_hostdb.m_dir, mstrerror(errno));
 		return -1;
 	}
 	
@@ -446,7 +403,6 @@ void hdtempStartWrapper_r ( void *state ) {
 	// run the df -ka cmd
 	g_process.m_diskUsage = getDiskUsage( &g_process.m_diskAvail );
 
-	// ignore temps now. ssds don't have it
 }
 
 void Process::callHeartbeat () {
