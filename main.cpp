@@ -184,6 +184,9 @@ extern void tryToSyncWrapper ( int fd , void *state ) ;
 int main2 ( int argc , char *argv[] ) ;
 
 int main ( int argc , char *argv[] ) {
+	// initialize thread specific errno before everything else
+	g_errno_init();
+
 	int ret = main2 ( argc , argv );
 
 	// returns 1 if failed, 0 on successful/graceful exit
@@ -1466,9 +1469,6 @@ int main2 ( int argc , char *argv[] ) {
 		log( LOG_ERROR, "db: Conf init failed." );
 		return 1;
 	}
-
-	// initialize thread specific errno before jobscheduler
-	g_errno_init();
 
 	if ( ! g_jobScheduler.initialize(g_conf.m_maxCpuThreads, g_conf.m_maxIOThreads, g_conf.m_maxExternalThreads, wakeupPollLoop)) {
 		log( LOG_ERROR, "db: JobScheduler init failed." );
