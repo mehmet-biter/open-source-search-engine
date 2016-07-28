@@ -2519,41 +2519,48 @@ bool RdbTree::fastSave ( const char *dir, const char *dbname, bool useThread, vo
 // Use of ThreadEntry parameter is NOT thread safe
 void saveWrapper ( void *state ) {
 	// get this class
-	RdbTree *THIS = (RdbTree *)state;
+	RdbTree *that = (RdbTree *)state;
+
+	// assume no error
+	that->m_errno = 0;
 
 	// this returns false and sets g_errno on error
-	THIS->fastSave_r();
+	that->fastSave_r();
+
+	if (g_errno && !that->m_errno) {
+		that->m_errno = g_errno;
+	}
 }
 
 // we come here after thread exits
 // Use of ThreadEntry parameter is NOT thread safe
 void threadDoneWrapper ( void *state, job_exit_t exit_type ) {
 	// get this class
-	RdbTree *THIS = (RdbTree *)state;
+	RdbTree *that = (RdbTree *)state;
 
 	// store save error into g_errno
-	g_errno = THIS->m_errno;
+	g_errno = that->m_errno;
 
 	// . resume adding to the tree
 	// . this will also allow other threads to be queued
 	// . if we did this at the end of the thread we could end up with
 	//   an overflow of queued SAVETHREADs
-	THIS->m_isSaving = false;
+	that->m_isSaving = false;
 
 	// we do not need to be saved now?
-	THIS->m_needsSave = false;
+	that->m_needsSave = false;
 
 	// g_errno should be preserved from the thread so if fastSave_r()
 	// had an error it will be set
 	if ( g_errno ) {
-		log( LOG_ERROR, "db: Had error saving tree to disk for %s: %s.", THIS->m_dbname, mstrerror( g_errno ) );
+		log( LOG_ERROR, "db: Had error saving tree to disk for %s: %s.", that->m_dbname, mstrerror( g_errno ) );
 	} else {
 		// log it
 		log( LOG_INFO, "db: Done saving %s%s-saved.dat (wrote %" PRId64" bytes)",
-		     THIS->m_dir, THIS->m_dbname, THIS->m_bytesWritten );
+		     that->m_dir, that->m_dbname, that->m_bytesWritten );
 	}
 	// . call callback
-	if ( THIS->m_callback ) THIS->m_callback ( THIS->m_state );
+	if ( that->m_callback ) that->m_callback ( that->m_state );
 }
 
 // . returns false and sets g_errno on error
