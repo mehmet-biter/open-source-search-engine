@@ -1523,9 +1523,10 @@ bool Hostdb::syncHost ( int32_t syncHostId, bool useSecondaryIps ) {
 	log ( LOG_INFO, "init: %s", cmd );
 	gbsystem(cmd);
 	int32_t fd = open ( "./synccheck.txt", O_RDONLY );
-	if ( fd < 0 )
-		return log(LOG_WARN, "conf: Unable to open synccheck.txt. "
-				     "Aborting.");
+	if ( fd < 0 ) {
+		log(LOG_WARN, "conf: Unable to open synccheck.txt. Aborting.");
+		return false;
+	}
 	int32_t len = read ( fd, cmd, 1023 );
 	cmd[len] = '\0';
 	close(fd);
@@ -1533,27 +1534,25 @@ bool Hostdb::syncHost ( int32_t syncHostId, bool useSecondaryIps ) {
 	gbsystem ( "rm ./synccheck.txt" );
 	// check the size
 	int32_t checkSize = atol(cmd);
-	if ( checkSize > 4096 || checkSize <= 0 )
-		return log(LOG_WARN, "conf: Detected %" PRId32" bytes in "
-			   "directory to "
-			   "sync.  Must be empty.  Aborting.",
-			   checkSize);
-        // set the sync host
-        m_syncHost = h;
-        m_syncSecondaryIps = useSecondaryIps;
-        h->m_doingSync = 1;
+	if ( checkSize > 4096 || checkSize <= 0 ) {
+		log(LOG_WARN, "conf: Detected %" PRId32" bytes in directory to sync.  Must be empty.  Aborting.", checkSize);
+		return false;
+	}
+    // set the sync host
+    m_syncHost = h;
+    m_syncSecondaryIps = useSecondaryIps;
+    h->m_doingSync = 1;
+
 	// start the sync in a thread, complete when it's done
-	if ( g_jobScheduler.submit(syncStartWrapper_r,
-	                           syncDoneWrapper,
-				   this,
-				   thread_type_twin_sync,
-				   MAX_NICENESS) )
+	if ( g_jobScheduler.submit(syncStartWrapper_r, syncDoneWrapper, this, thread_type_twin_sync, MAX_NICENESS) ) {
 		return true;
+	}
+
 	// error
-        h->m_doingSync = 0;
+    h->m_doingSync = 0;
 	m_syncHost = NULL;
-        return log ( LOG_WARN, "conf: Could not spawn thread for call to sync "
-		     "host. Aborting." );
+	log ( LOG_WARN, "conf: Could not spawn thread for call to sync host. Aborting." );
+	return false;
 }
 
 
@@ -1565,7 +1564,7 @@ void Hostdb::syncStart_r ( bool amThread ) {
 	if ( numHostsInShard == 1 ) {
 		m_syncHost->m_doingSync = 0;
 		m_syncHost = NULL;
-                log (LOG_WARN, "sync: Could not Sync, Host has no twin.");
+        log (LOG_WARN, "sync: Could not Sync, Host has no twin.");
 		return;
 	}
 	Host *srcHost = &shard[numHostsInShard - 1];

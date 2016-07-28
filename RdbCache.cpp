@@ -1274,23 +1274,25 @@ bool RdbCache::save ( bool useThreads ) {
 	if ( useThreads ) {
 		// lock cache while saving
 		m_isSaving = true;
+
 		// make a thread. returns true on success, in which case
 		// we return false to indicate we blocked.
-		if ( g_jobScheduler.submit(saveWrapper,
-		                           threadDoneWrapper,
-					   this,
-					   thread_type_unspecified_io,
-					   1/*niceness*/) )
+		if ( g_jobScheduler.submit(saveWrapper, threadDoneWrapper, this, thread_type_unspecified_io, 1/*niceness*/) ) {
 			return false;
+		}
+
 		// crap had an error spawning thread
-		if ( g_jobScheduler.are_new_jobs_allowed() )
-			log("db: Error spawning cache write thread. "
-			    "Not using threads.");
+		if ( g_jobScheduler.are_new_jobs_allowed() ) {
+			log(LOG_WARN, "db: Error spawning cache write thread. Not using threads.");
+		}
 	}
+
 	// do it directly with no thread
 	save_r();
+
 	// wrap it up
 	threadDone ();
+
 	return true;
 }
 
@@ -1305,8 +1307,10 @@ void RdbCache::threadDoneWrapper ( void *state, job_exit_t exit_type ) {
 void RdbCache::threadDone ( ) {
 	// allow cache to change now
 	m_isSaving  = false;
+
 	// and we are in sync with that data saved on disk
 	m_needsSave = false;
+
 	// report
 	if ( m_saveError )
 		log("db: Had error saving cache to disk for %s: %s.",
@@ -1316,10 +1320,14 @@ void RdbCache::threadDone ( ) {
 // Use of ThreadEntry parameter is NOT thread safe
 void RdbCache::saveWrapper(void *state) {
 	RdbCache *that = static_cast<RdbCache*>(state);
+
 	// assume no error
 	that->m_saveError = 0;
 	// do it
-	if ( that->save_r () ) return;
+	if ( that->save_r () ) {
+		return;
+	}
+
 	// we got an error, save it
 	that->m_saveError = errno;
 }
@@ -1328,17 +1336,21 @@ void RdbCache::saveWrapper(void *state) {
 bool RdbCache::save_r ( ) {
 	// append .cache to "dbname" to get cache filename
 	char filename [ 64 ];
-	if ( gbstrlen(m_dbname) > 50 )
-		return log("db: Dbname too long. Could not save cache.");
+	if ( gbstrlen(m_dbname) > 50 ) {
+		log(LOG_ERROR, "db: Dbname too long. Could not save cache.");
+		return false;
+	}
+
 	sprintf ( filename , "%s%s.cache" , g_hostdb.m_dir , m_dbname );
 	//File f;
 	//f.set ( g_hostdb.m_dir , filename );
 	// open the file
 	//if ( ! f.open ( O_RDWR | O_CREAT ) ) 
 	int fd = open ( filename , O_RDWR | O_CREAT , getFileCreationFlags() );
-	if ( fd < 0 )
-		return log("db: Had opening file to save cache to: %s.", 
-		    mstrerror(errno));
+	if ( fd < 0 ) {
+		log(LOG_ERROR, "db: Had opening file to save cache to: %s.", mstrerror(errno));
+		return false;
+	}
 
 	bool status = save2_r ( fd );
 	
@@ -1430,9 +1442,10 @@ bool RdbCache::saveSome_r ( int fd , int32_t *iptr , int32_t *off ) {
 				break;
 			}
 		// bitch if not found
-		if ( converted == -1 ) 
-			return log(LOG_LOGIC,"db: cache: save: Bad "
-				   "engineer");
+		if ( converted == -1 ) {
+			log(LOG_LOGIC, "db: cache: save: Bad engineer");
+			return false;
+		}
 		// store that as it is
 		*(int32_t *)bp = converted; bp += 4;
 		used++;
@@ -1440,14 +1453,14 @@ bool RdbCache::saveSome_r ( int fd , int32_t *iptr , int32_t *off ) {
 		//if ( n != 4 ) return false;
 	}
 	if ( used != m_numPtrsUsed ) { 
-		log("cache: error saving cache. %" PRId32" != %" PRId32
-		    , used , m_numPtrsUsed );
+		log(LOG_ERROR, "cache: error saving cache. %" PRId32" != %" PRId32, used , m_numPtrsUsed );
 		//gbshutdownLogicError();
 		return false;
 	}
 	// now write it all at once
 	int32_t size = bp - buf;
-	int32_t n = pwrite ( fd , buf , size , *off );  *off = *off + size;
+	int32_t n = pwrite ( fd , buf , size , *off );
+	*off = *off + size;
 	if ( n != size ) return false;
 	return true;
 }

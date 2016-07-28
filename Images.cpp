@@ -845,12 +845,9 @@ bool Images::makeThumb ( ) {
 	// reset this since filterStart_r() will set it on error
 	m_errno = 0;
 	// callThread returns true on success, in which case we block
-	if ( g_jobScheduler.submit(thumbStartWrapper_r,
-	                           makeThumbWrapper,
-				   this,
-				   thread_type_generate_thumbnail,
-				   MAX_NICENESS) )
+	if ( g_jobScheduler.submit(thumbStartWrapper_r, makeThumbWrapper, this, thread_type_generate_thumbnail, MAX_NICENESS) ) {
 		return false;
+	}
 	// threads might be off
 	logf ( LOG_DEBUG, "image: Calling thumbnail gen without thread.");
 	thumbStartWrapper_r ( this );

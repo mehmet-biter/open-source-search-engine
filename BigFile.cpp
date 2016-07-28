@@ -647,13 +647,13 @@ bool BigFile::readwrite ( void         *buf      ,
 		    m_dir.getBufStart(),m_baseFilename.getBufStart());
 		gbshutdownLogicError();
 	}
+
 	// if we're not blocking use a fake fstate
 	FileState tmp;
-	if ( ! fstate ) fstate = &tmp;
-	// . no error yet
-	// . need this up here in case it is a cache hit from a re-call
-	//   due to a EFILECLOSED error
-	//fstate->m_errno = 0;
+	if ( ! fstate ) {
+		fstate = &tmp;
+	}
+
 	// reset this
 	fstate->m_errno = 0;
 	fstate->m_inPageCache = false;

@@ -9598,18 +9598,16 @@ char **XmlDoc::getFilteredContent ( ) {
 	if ( ! m_mimeValid ) { g_process.shutdownAbort(true); }
 
 	// do it
-	if ( g_jobScheduler.submit(filterStartWrapper_r,
-	                           filterDoneWrapper,
-				   this,
-				   thread_type_spider_filter,
-				   MAX_NICENESS) )
+	if ( g_jobScheduler.submit(filterStartWrapper_r, filterDoneWrapper, this, thread_type_spider_filter, MAX_NICENESS) ) {
 		// return -1 if blocked
-		return (char **)-1;
+		return (char **) -1;
+	}
+
 	// clear error!
 	g_errno = 0;
+
 	// note it
-	log("build: Could not spawn thread for call to "
-	    "content filter.");
+	log(LOG_INFO, "build: Could not spawn thread for call to content filter.");
 	// get the data
 	filterStart_r ( false ); // am thread?
 
@@ -9618,8 +9616,7 @@ skip:
 
 	// if size is 0, free the buf
 	if ( m_filteredContentLen <= 0 ) {
-		mfree ( m_filteredContent ,
-			m_filteredContentAllocSize,"fcas");
+		mfree ( m_filteredContent , m_filteredContentAllocSize,"fcas");
 		m_filteredContent          = NULL;
 		m_filteredContentLen       = 0;
 		m_filteredContentAllocSize = 0;
@@ -9644,8 +9641,7 @@ static void filterDoneWrapper ( void *state, job_exit_t /*exit_type*/ ) {
 	// if size is 0, free the buf. have to do this outside the thread
 	// since malloc/free cannot be called in thread
 	if ( THIS->m_filteredContentLen <= 0 ) {
-		mfree ( THIS->m_filteredContent ,
-			THIS->m_filteredContentAllocSize,"fcas");
+		mfree ( THIS->m_filteredContent, THIS->m_filteredContentAllocSize,"fcas");
 		THIS->m_filteredContent          = NULL;
 		THIS->m_filteredContentLen       = 0;
 		THIS->m_filteredContentAllocSize = 0;
