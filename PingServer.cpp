@@ -585,12 +585,6 @@ void gotReplyWrapperP ( void *state , UdpSlot *slot ) {
 	g_errno = 0;
 
 	Host *myHost = g_hostdb.m_myHost;
-	// . the one byte response has the sync status
-	// . i think we cored on this when it wasn't checking to see if
-	//   slot->m_readBuf was NULL. how can that happen? it seemed to have,
-	//   when it tried to allocate one byte of mem and failed...
-	if ( slot->m_readBufSize == 1 && slot->m_readBuf ) 
-		h->m_syncStatus = *(slot->m_readBuf);
 
 	if (myHost && myHost->m_isProxy) return;
 	if ( g_hostdb.m_hostId != 0 ) return;

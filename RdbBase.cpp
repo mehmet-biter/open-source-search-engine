@@ -1213,9 +1213,6 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 		logTrace( g_conf.m_logTraceRdbBase, "END, in read-only mode" );
 		return false;
 	}
-	
-	// or if we are copying our files to a new host
-	//if ( g_hostdb.m_syncHost == g_hostdb.m_myHost ) return;
 
 	// nor if EITHER of the merge classes are suspended
 	if ( g_merge.m_isSuspended  ) {

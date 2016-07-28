@@ -1425,24 +1425,6 @@ int main2 ( int argc , char *argv[] ) {
 		return doCmd( replaceCmd, -1, "admin/hosts", true, true );
 	}
 
-	// gb synchost <hostid>
-	if ( strcmp ( cmd, "synchost" ) == 0 ) {
-		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
-		else return false;
-		char syncCmd[256];
-		sprintf(syncCmd, "synchost=1&shost=%" PRId32, hostId);
-		return doCmd( syncCmd, g_hostdb.m_hostId, "admin/hosts", true, false );
-	}
-	if ( strcmp ( cmd, "synchost2" ) == 0 ) {
-		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
-		else return false;
-		char syncCmd[256];
-		sprintf(syncCmd, "synchost=2&shost=%" PRId32, hostId);
-		return doCmd( syncCmd, g_hostdb.m_hostId, "admin/hosts" , true, false );
-	}
-
 	// once we are in recoverymode, that means we are being restarted
 	// from having cored, so to prevent immediate core and restart
 	// ad inifinitum, look got "sigbadhandler" at the end of the 

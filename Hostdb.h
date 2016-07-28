@@ -151,8 +151,6 @@ public:
 	// . -4 means we are currently in progress sending an email for him
 	// . -5 means he went down before host we alerted admin about revived
 	int32_t           m_emailCode;
-	// 0 means no, 1 means yes, 2 means unknown
-	char           m_syncStatus;
 
 	// we now include the working dir in the hosts.conf file
 	// so main.cpp can do gb --install and gb --allstart
@@ -181,7 +179,6 @@ public:
 
 	// now include a note for every host
 	char           m_note[128];
-	char           m_doingSync;
 
 	bool           m_isProxy;
 
@@ -376,11 +373,6 @@ class Hostdb {
 	// write a hosts.conf file
 	bool saveHostsConf ( );
 
-	// sync a host with its twin
-	bool syncHost ( int32_t syncHostId, bool useSecondaryIps );
-	void syncStart_r ( bool amThread );
-	void syncDone ( );
-
 	int32_t getBestIp ( Host *h , int32_t fromIp ) ;
 	
 	Host *getBestSpiderCompressionProxy ( int32_t *key ) ;
@@ -462,10 +454,6 @@ class Hostdb {
 
 	int32_t m_crc;
 	int32_t m_crcValid;
-
-	// for sync
-	Host *m_syncHost;
-	bool  m_syncSecondaryIps;
 
 	char  m_useTmpCluster;
 

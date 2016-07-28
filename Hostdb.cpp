@@ -45,7 +45,6 @@ Hostdb::Hostdb ( ) {
 	m_hosts = NULL;
 	m_numHosts = 0;
 	m_ips = NULL;
-	m_syncHost = NULL;
 	m_initialized = false;
 	m_crcValid = false;
 	m_crc = 0;
@@ -64,7 +63,6 @@ void Hostdb::reset ( ) {
 	m_hosts = NULL;
 	m_ips               = NULL;
 	m_numIps            = 0;
-	m_syncHost          = NULL;
 }
 
 const char *Hostdb::getNetName ( ) {
@@ -633,10 +631,6 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 		m_hosts[i].m_lastPing = 0LL;
 		// and don't send emails on him until we got a good ping
 		m_hosts[i].m_emailCode = -2;
-		// we do not know if it is in sync
-		m_hosts[i].m_syncStatus = 2;
-		// not doing a sync right now
-		m_hosts[i].m_doingSync = 0;
 		// so UdpServer.cpp knows if we are in g_hostdb or g_hostdb2
 		m_hosts[i].m_hostdb = this;
 		// reset these
@@ -1471,169 +1465,6 @@ bool Hostdb::saveHostsConf ( ) {
 	// close	else the file
 	close(fd);
 	return true;
-}
-
-// Use of ThreadEntry parameter is NOT thread safe
-static void syncDoneWrapper ( void *state, job_exit_t exit_type ) {
-	Hostdb *THIS = (Hostdb*)state;
-	THIS->syncDone();
-}
-
-static void syncStartWrapper_r ( void *state ) {
-	Hostdb *THIS = (Hostdb*)state;
-	THIS->syncStart_r(true);
-}
-
-// sync a host with its twin
-bool Hostdb::syncHost ( int32_t syncHostId, bool useSecondaryIps ) {
-
-	// can't do two syncs
-	if ( m_syncHost )
-		return log(LOG_WARN, "conf: Cannot manage two syncs on this "
-				     "host. Aborting.");
-	// log the start
-	log ( LOG_INFO, "init: Syncing host %" PRId32" with twin.", syncHostId );
-	// if no twins, can't do it
-	if ( m_numHostsPerShard == 1 )
-		return log(LOG_WARN, "conf: Cannot sync host, no twins. "
-				     "Aborting.");
-        // spiders must be off
-        if ( g_conf.m_spideringEnabled )
-                return log(LOG_WARN, "conf: Syncing while spiders are on is "
-                                     "disallowed. Aborting.");
-	// first, the host must be marked as dead
-	Host *h = getHost(syncHostId);
-	if ( ! h )
-		log("conf: Cannot get host with host id #%" PRId32,
-		    (int32_t)syncHostId);
-	if ( !isDead(h) )
-		return log(LOG_WARN, "conf: Cannot sync live host. Aborting.");
-	// now check it for a clean directory
-	int32_t ip1 = h->m_ip;
-	if ( useSecondaryIps ) ip1 = h->m_ipShotgun;
-	char ip1str[32];
-	sprintf ( ip1str, "%hhu.%hhu.%hhu.%hhu",
-		  (unsigned char)(ip1 >>  0)&0xff,
-		  (unsigned char)(ip1 >>  8)&0xff,
-		  (unsigned char)(ip1 >> 16)&0xff,
-		  (unsigned char)(ip1 >> 24)&0xff );
-	char cmd[1024];
-	sprintf ( cmd, "ssh %s \"cd %s; du -b | tail -n 1\" > ./synccheck.txt",
-		  ip1str, h->m_dir );
-	log ( LOG_INFO, "init: %s", cmd );
-	gbsystem(cmd);
-	int32_t fd = open ( "./synccheck.txt", O_RDONLY );
-	if ( fd < 0 ) {
-		log(LOG_WARN, "conf: Unable to open synccheck.txt. Aborting.");
-		return false;
-	}
-	int32_t len = read ( fd, cmd, 1023 );
-	cmd[len] = '\0';
-	close(fd);
-	// delete the file to make sure we don't reuse it
-	gbsystem ( "rm ./synccheck.txt" );
-	// check the size
-	int32_t checkSize = atol(cmd);
-	if ( checkSize > 4096 || checkSize <= 0 ) {
-		log(LOG_WARN, "conf: Detected %" PRId32" bytes in directory to sync.  Must be empty.  Aborting.", checkSize);
-		return false;
-	}
-    // set the sync host
-    m_syncHost = h;
-    m_syncSecondaryIps = useSecondaryIps;
-    h->m_doingSync = 1;
-
-	// start the sync in a thread, complete when it's done
-	if ( g_jobScheduler.submit(syncStartWrapper_r, syncDoneWrapper, this, thread_type_twin_sync, MAX_NICENESS) ) {
-		return true;
-	}
-
-	// error
-    h->m_doingSync = 0;
-	m_syncHost = NULL;
-	log ( LOG_WARN, "conf: Could not spawn thread for call to sync host. Aborting." );
-	return false;
-}
-
-
-void Hostdb::syncStart_r ( bool amThread ) {
-	// get the twin we'll copy from
-	int32_t numHostsInShard;
-	//Host *hostGroup = getGroup(m_syncHost->m_groupId, &numHostsInGroup);
-	Host *shard = getShard(m_syncHost->m_shardNum, &numHostsInShard);
-	if ( numHostsInShard == 1 ) {
-		m_syncHost->m_doingSync = 0;
-		m_syncHost = NULL;
-        log (LOG_WARN, "sync: Could not Sync, Host has no twin.");
-		return;
-	}
-	Host *srcHost = &shard[numHostsInShard - 1];
-	if ( srcHost == m_syncHost ) srcHost = &shard[numHostsInShard-2];
-	// create the rcp command
-	char cmd[1024];
-	int32_t ip1 = m_syncHost->m_ip;
-	if ( m_syncSecondaryIps ) ip1 = m_syncHost->m_ipShotgun;
-	char ip1str[32];
-	sprintf ( ip1str, "%hhu.%hhu.%hhu.%hhu",
-		  (unsigned char)(ip1 >>  0)&0xff,
-		  (unsigned char)(ip1 >>  8)&0xff,
-		  (unsigned char)(ip1 >> 16)&0xff,
-		  (unsigned char)(ip1 >> 24)&0xff );
-	int32_t ip2 = srcHost->m_ip;
-	if ( m_syncSecondaryIps ) ip2 = srcHost->m_ipShotgun;
-	char ip2str[32];
-	sprintf ( ip2str, "%hhu.%hhu.%hhu.%hhu",
-		  (unsigned char)(ip2 >>  0)&0xff,
-		  (unsigned char)(ip2 >>  8)&0xff,
-		  (unsigned char)(ip2 >> 16)&0xff,
-		  (unsigned char)(ip2 >> 24)&0xff );
-	// now we also remove the old log files and *.cache files because
-	// they do not apply to this new host
-	// . TODO :
-	// need the -f flag for rm in case those files do not exist, it
-	// would error out then
-	sprintf ( cmd, "ssh %s \"rcp -pr %s:%s* %s ; "
-		  "rcp -pr %s:%s.antiword %s ; "
-		  "rm -f %slog* %s*.cache %s*~ %stmplog* ; "
-		  "rm -f %scoll.*.*/waiting* ;" // waitingtree & waitingtable
-		  "rm -f %scoll.*.*/doleiptable.dat* ;"
-		  // the new guy is NOT in sync!
-		  "echo 0 > %sinsync.dat\"",
-		  ip1str,
-
-		  ip2str,
-		  srcHost->m_dir,
-		  m_syncHost->m_dir ,
-
-		  ip2str,
-		  srcHost->m_dir,
-		  m_syncHost->m_dir ,
-
-		  m_syncHost->m_dir ,
-		  m_syncHost->m_dir ,
-		  m_syncHost->m_dir ,
-		  m_syncHost->m_dir ,
-		  m_syncHost->m_dir ,
-		  m_syncHost->m_dir ,
-		  m_syncHost->m_dir );
-
-	log ( LOG_INFO, "init: %s", cmd );
-}
-
-void Hostdb::syncDone ( ) {
-	// now make a call to startup the newly synced host
-	if ( !m_syncHost ) {
-		log ( "conf: SyncHost is invalid. Most likely a problem "
-		      "during the sync. Ending synchost." );
-		return;
-	}
-	log ( LOG_INFO, "init: Sync copy done.  Starting host." );
-	m_syncHost->m_doingSync = 0;
-	char cmd[1024];
-	sprintf(cmd, "./gb start %" PRId32, m_syncHost->m_hostId);
-	log ( LOG_INFO, "init: %s", cmd );
-	gbsystem(cmd);
-	m_syncHost = NULL;
 }
 
 // use the ip that is not dead, prefer eth0
