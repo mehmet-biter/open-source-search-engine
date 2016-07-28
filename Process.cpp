@@ -218,11 +218,10 @@ bool Process::checkFiles ( const char *dir ) {
 	return true;
 }
 
-static void hdtempWrapper        ( int fd , void *state ) ;
-static void hdtempDoneWrapper    ( void *state, job_exit_t exit_type );
-static void hdtempStartWrapper_r ( void *state );
-static void heartbeatWrapper    ( int fd , void *state ) ;
-static void processSleepWrapper ( int fd , void *state ) ;
+static void heartbeatWrapper(int fd, void *state);
+static void processSleepWrapper(int fd, void *state);
+static void diskUsageWrapper(int fd, void *state);
+
 
 Process::Process ( ) {
 	m_mode = NO_MODE;
@@ -237,7 +236,6 @@ bool Process::init ( ) {
 	// -1 means unknown
 	m_diskUsage = -1.0;
 	m_diskAvail = -1LL;
-	m_threadOut = false;
 	m_powerIsOn = true;
 	m_numRdbs = 0;
 	m_suspendAutoSave = false;
@@ -306,11 +304,9 @@ bool Process::init ( ) {
 		return false;
 	}
 
-	// . hard drive temperature
-	// . now that we use intel ssds that do not support smart, ignore this
-	// . well use it for disk usage i guess
-	if ( ! g_loop.registerSleepCallback(10000,NULL,hdtempWrapper,0))
+	if (!g_loop.registerSleepCallback(10000, NULL, diskUsageWrapper, 0)) {
 		return false;
+	}
 
 	// success
 	return true;
@@ -330,59 +326,6 @@ bool Process::isAnyTreeSaving ( ) {
 	return false;
 }
 
-void hdtempWrapper ( int fd , void *state ) {
-
-	// current local time
-	int32_t now = getTime();
-
-	// from SpiderProxy.h
-	static int32_t s_lastTime = 0;
-	if ( ! s_lastTime ) s_lastTime = now;
-	// reset spider proxy stats every hour to alleviate false positives
-	if ( now - s_lastTime >= 3600 ) {
-		s_lastTime = now;
-		resetProxyStats();
-	}
-
-	// reset this... why?
-	g_errno = 0;
-	// do not get if already getting
-	if ( g_process.m_threadOut ) return;
-	// skip if exiting
-	if ( g_process.m_mode == EXIT_MODE ) return;
-	// or if haven't waited int32_t enough
-	if ( now < s_nextTime ) return;
-
-	// set it
-	g_process.m_threadOut = true;
-
-	// . call thread to call popen
-	// . callThread returns true on success, in which case we block
-	if ( g_jobScheduler.submit(hdtempStartWrapper_r, hdtempDoneWrapper, NULL, thread_type_hdtemp, MAX_NICENESS) ) {
-		return;
-	}
-
-	// back
-	g_process.m_threadOut = false;
-
-	// . call it directly
-	// . only mention once to avoid log spam
-	static bool s_first = true;
-	if ( s_first ) {
-		s_first = false;
-		log("build: Could not spawn thread for call to get hd temps. "
-		    "Ignoring hd temps. Only logging once.");
-	}
-}
-
-// come back here
-// Use of ThreadEntry parameter is NOT thread safe
-void hdtempDoneWrapper ( void *state, job_exit_t /*exit_type*/ ) {
-	// we are back
-	g_process.m_threadOut = false;
-}
-
-
 // set Process::m_diskUsage
 static float getDiskUsage ( int64_t *diskAvail ) {
 	struct statvfs s;
@@ -393,6 +336,15 @@ static float getDiskUsage ( int64_t *diskAvail ) {
 	
 	*diskAvail = s.f_bavail * s.f_frsize;
 	return (s.f_blocks-s.f_bavail)*100.0/s.f_blocks;
+}
+
+void diskUsageWrapper(int fd, void *state) {
+	// skip if exiting
+	if ( g_process.m_mode == EXIT_MODE ) {
+		return;
+	}
+
+	g_process.m_diskUsage = getDiskUsage( &g_process.m_diskAvail );
 }
 
 // . sets m_errno on error
@@ -897,12 +849,6 @@ bool Process::shutdown2() {
 
 	// show what mem was not freed
 	g_mem.printMem();
-
-	// kill any outstanding hd temp thread?
-	if ( g_process.m_threadOut ) {
-		log( LOG_INFO, "gb: still has hdtemp thread" );
-	}
-
 
 	log("gb. EXITING GRACEFULLY.");
 

@@ -252,6 +252,11 @@ bool resetProxyStats ( ) {
 	return buildProxyTable();
 }
 
+
+void resetProxyStatWrapper(int fd, void *state) {
+	resetProxyStats();
+}
+
 // save the stats
 bool saveSpiderProxyStats ( ) {
 
@@ -288,6 +293,7 @@ bool loadSpiderProxyStats ( ) {
 		SpiderProxy *sp = (SpiderProxy *)s_iptab.getValueFromSlot(i);
 		sp->m_isWaiting = false;
 	}
+
 	return true;
 }
 
@@ -889,6 +895,11 @@ bool initSpiderProxyStuff() {
 
 	// build the s_iptab hashtable for the first time
 	buildProxyTable ();
+
+	// reset spider proxy stats every hour to alleviate false positives (moved from Process.cpp)
+	if (!g_loop.registerSleepCallback(3600000, NULL, resetProxyStatWrapper, 0)) {
+		gbshutdownResourceError();
+	}
 
 	// make the loadtable hashtable
 	static bool s_flag = 0;
