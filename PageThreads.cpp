@@ -25,7 +25,6 @@ static const char *thread_type_name(thread_type_t tt) {
 		case thread_type_statistics:         return "statistis";
 		case thread_type_unspecified_io:     return "unspecified IO";
 		case thread_type_unlink:             return "unlink()";
-		case thread_type_twin_sync:          return "twin-sync";
 		case thread_type_generate_thumbnail: return "generate-thumbnail";
 		default: return "?";
 	}
