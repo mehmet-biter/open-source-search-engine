@@ -981,19 +981,28 @@ void Msg5::mergeListsWrapper(void *state) {
 	// we're in a thread now!
 	Msg5 *that = static_cast<Msg5*>(state);
 
+	// assume no error
+	that->m_errno = 0;
+
 	// repair any corruption
 	that->repairLists();
 
 	// do the merge
 	that->mergeLists();
+
+	if (g_errno && !that->m_errno) {
+		that->m_errno = g_errno;
+	}
 }
 
 
 // . now we're done merging
 // . when the thread is done we get control back here, in the main process
 // Use of ThreadEntry parameter is NOT thread safe
-void Msg5::mergeDoneWrapper ( void *state, job_exit_t exit_type) {
-	Msg5 *that = static_cast<Msg5*>(state);
+void Msg5::mergeDoneWrapper(void *state, job_exit_t exit_type) {
+	Msg5 *that = static_cast<Msg5 *>(state);
+
+	g_errno = that->m_errno;
 	that->mergeDone(exit_type);
 }
 

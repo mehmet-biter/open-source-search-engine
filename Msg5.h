@@ -212,6 +212,8 @@ private:
 	bool m_waitingForList;
 	collnum_t m_collnum;
 
+	int32_t m_errno;
+
 	static void gotListWrapper(void *state);
 	void gotListWrapper();
 	
