@@ -1312,9 +1312,9 @@ void RdbCache::threadDone ( ) {
 	m_needsSave = false;
 
 	// report
-	if ( m_saveError )
-		log("db: Had error saving cache to disk for %s: %s.",
-		    m_dbname,mstrerror(m_saveError));
+	if ( m_errno ) {
+		log(LOG_WARN, "db: Had error saving cache to disk for %s: %s.", m_dbname, mstrerror(m_errno));
+	}
 }
 
 // Use of ThreadEntry parameter is NOT thread safe
@@ -1322,14 +1322,15 @@ void RdbCache::saveWrapper(void *state) {
 	RdbCache *that = static_cast<RdbCache*>(state);
 
 	// assume no error
-	that->m_saveError = 0;
+	that->m_errno = 0;
+
 	// do it
 	if ( that->save_r () ) {
 		return;
 	}
 
 	// we got an error, save it
-	that->m_saveError = errno;
+	that->m_errno = errno;
 }
 
 // returns false withe rrno set on error

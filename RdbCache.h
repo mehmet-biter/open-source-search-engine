@@ -301,7 +301,7 @@ private:
 	int32_t m_convertMaxMem;
 
 	bool m_isSaving;
-	int32_t m_saveError;
+	int32_t m_errno;
 
 	// . mem stats -- just for arrays we contain -- not in tree
 	// . memory that is allocated and in use, including dataSizes
