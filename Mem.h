@@ -36,8 +36,7 @@ class Mem {
 				const char *note);
 	void  gbfree    ( void *ptr , int size , const char *note);
 	char *dup     ( const void *data , int32_t dataSize , const char *note);
-	char *strdup  ( const char *string , const char *note ) {
-		return dup ( string, strlen( string ) + 1, note ); }
+	char *strdup  ( const char *string, const char *note );
 
 	int32_t validate();
 

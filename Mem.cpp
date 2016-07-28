@@ -1151,6 +1151,11 @@ char *Mem::dup ( const void *data , int32_t dataSize , const char *note ) {
 	return mem;
 }
 
+char *Mem::strdup( const char *string, const char *note ) {
+	return dup(string, strlen(string) + 1, note);
+}
+
+
 void Mem::gbfree ( void *ptr , int size , const char *note ) {
 	logTrace( g_conf.m_logTraceMem, "ptr=%p size=%d note='%s'", ptr, size, note );
 
