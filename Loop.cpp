@@ -681,11 +681,6 @@ void sigpwrHandler ( int x , siginfo_t *info , void *y ) {
 void printStackTrace (bool print_location) {
 	logf(LOG_ERROR, "gb: Printing stack trace");
 
-	if ( g_inMemFunction ) {
-		logf(LOG_ERROR, "gb: in mem function not doing backtrace");
-		return;
-	}
-
 	static void *s_bt[200];
 	size_t sz = backtrace(s_bt, 200);
 

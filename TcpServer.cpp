@@ -2764,10 +2764,7 @@ int TcpServer::sslHandshake ( TcpSocket *s ) {
 		SSL_set_tlsext_host_name(s->m_ssl, s->m_hostname);
 	}
 
-	// SSL_connect() calls malloc()
-	g_inMemFunction = true;
 	int r = SSL_connect(s->m_ssl);
-	g_inMemFunction = false;
 
 	if ( g_conf.m_logDebugTcp ) {
 		log( "tcp: ssl handshake on sd=%" PRId32 " r=%i", (int32_t)s->m_sd, r );

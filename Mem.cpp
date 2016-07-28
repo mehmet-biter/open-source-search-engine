@@ -13,7 +13,6 @@
 // only Mem.cpp should call ::malloc, everyone else must call mmalloc() so
 // we can keep tabs on memory usage.
 
-bool g_inMemFunction = false;
 
 #define sysmalloc ::malloc
 #define syscalloc ::calloc
@@ -117,11 +116,7 @@ void * operator new (size_t size) throw (std::bad_alloc) {
 		//throw 1;
 	}
 
-	g_inMemFunction = true;
-
 	void *mem = sysmalloc ( size );
-
-	g_inMemFunction = false;
 
 	int32_t  memLoop = 0;
 newmemloop:
@@ -183,11 +178,7 @@ void * operator new [] (size_t size) throw (std::bad_alloc) {
 		//throw 1;
 	}
 
-	g_inMemFunction = true;
-
 	void *mem = sysmalloc ( size );
-
-	g_inMemFunction = false;
 
 
 	int32_t  memLoop = 0;
@@ -968,11 +959,7 @@ retry:
 
 	void *mem;
 
-	g_inMemFunction = true;
-
 	mem = (void *)sysmalloc ( size + UNDERPAD + OVERPAD );
-
-	g_inMemFunction = false;
 
 	int32_t memLoop = 0;
 mallocmemloop:
@@ -1184,10 +1171,8 @@ void Mem::gbfree ( void *ptr , int size , const char *note ) {
 	// if this returns false it was an unbalanced free
 	if ( ! rmMem ( ptr , size , note ) ) return;
 
-	g_inMemFunction = true;
 	if ( isnew ) sysfree ( (char *)ptr );
 	else         sysfree ( (char *)ptr - UNDERPAD );
-	g_inMemFunction = false;
 }
 
 

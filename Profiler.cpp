@@ -940,11 +940,6 @@ Profiler::getStackFrame() {
 		return;
 	}
 
-	// prevent cores.
-	// TODO: hack this to a function somehow...
-	// not if in system malloc since backtrace() mallocs
-	if ( g_inMemFunction ) return;
-
 	//void *trace[32];
 
 	// the innermost line number

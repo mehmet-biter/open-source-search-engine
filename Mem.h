@@ -15,8 +15,6 @@
 #include "Sanity.h"
 
 
-extern bool g_inMemFunction;
-
 class SafeBuf;
 
 

@@ -50,10 +50,7 @@ bool Dir::open ( ) {
 	close ( );
 	if ( ! m_dirname ) return false;
 	do {
-		// opendir() calls malloc
-		g_inMemFunction = true;
 		m_dir = opendir ( m_dirname );
-		g_inMemFunction = false;
 		// interrupted system call
 	} while( ! m_dir && errno == EINTR );
 
