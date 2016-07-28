@@ -745,16 +745,6 @@ bool Process::save2 ( ) {
 		saveBlockingFiles2() ;
 	}
 
-	// until all caches have saved, disable them
-	g_cacheWritesEnabled = false;
-
-	// . save caches
-	// . returns true if NO cache needs to be saved
-	//if ( ! saveRdbCaches ( useThreads ) ) return false;
-
-	// bring them back
-	g_cacheWritesEnabled = true;
-
 	// reenable tree writes since saves were completed
 	enableTreeWrites( false );
 
@@ -915,12 +905,6 @@ bool Process::shutdown2() {
 		saveBlockingFiles1() ;
 		saveBlockingFiles2() ;
 	}
-
-	// . save all rdb caches if they need it
-	// . do this AFTER udp server is shut down so cache should not
-	//   be accessed any more
-	// . will return true if no rdb cache needs a save
-	//if ( ! saveRdbCaches ( useThreads ) ) return false;
 
 	// always disable threads at this point so g_jobScheduler.submit() will
 	// always return false and we do not queue any new jobs for spawning
@@ -1159,27 +1143,6 @@ bool Process::saveRdbMaps() {
 	// everyone is done saving
 	return true;
 }
-
-// . returns false if blocked, true otherwise
-// . calls callback when done saving
-/*
-bool Process::saveRdbCaches ( bool useThread ) {
-	// never if in read only mode
-	if ( g_conf.m_readOnlyMode ) return true;
-	//useThread = false;
-	// loop over all Rdbs and save them
-	for ( int32_t i = 0 ; i < m_numRdbs ; i++ ) {
-		Rdb *rdb = m_rdbs[i];
-		// . returns true if cache does not need save
-		// . returns false if blocked and is saving
-		// . returns true if useThreads is false
-		// . we return false if it blocks
-		if ( ! rdb->saveCache ( useThread ) ) return false;
-	}
-	// everyone is done saving
-	return true;
-}
-*/
 
 bool Process::saveBlockingFiles1 ( ) {
 	// never if in read only mode
