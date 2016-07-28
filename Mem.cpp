@@ -294,7 +294,7 @@ void Mem::addMem ( void *mem , int32_t size , const char *note , char isnew ) {
 	// check for breech after every call to alloc or free in order to
 	// more easily isolate breeching code.. this slows things down a lot
 	// though.
-	if ( g_conf.m_logDebugMem ) printBreeches();
+	if ( g_conf.m_logDebugMem ) printBreeches_unlocked();
 
 	// copy the magic character, iff not a new() call
 	if ( size == 0 ) { g_process.shutdownAbort(true); }
@@ -637,7 +637,7 @@ bool Mem::rmMem  ( void *mem , int32_t size , const char *note ) {
 	// check for breech after every call to alloc or free in order to
 	// more easily isolate breeching code.. this slows things down a lot
 	// though.
-	if ( g_conf.m_logDebugMem ) printBreeches();
+	if ( g_conf.m_logDebugMem ) printBreeches_unlocked();
 
 	// don't free 0 bytes
 	if ( size == 0 ) return true;
@@ -878,6 +878,11 @@ int Mem::printBreech ( int32_t i) {
 
 // check all allocated memory for buffer under/overruns
 int Mem::printBreeches() {
+	ScopedLock sl(s_lock);
+	return printBreeches_unlocked();
+}
+
+int Mem::printBreeches_unlocked() {
 	if ( ! s_mptrs ) return 0;
 	// do not bother if no padding at all
 	if ( (int32_t)UNDERPAD == 0 && (int32_t)OVERPAD == 0 ) return 0;
@@ -894,7 +899,7 @@ int Mem::printBreeches() {
 
 int Mem::printMem ( ) {
 	// has anyone breeched their buffer?
-	printBreeches();
+	printBreeches_unlocked();
 
 	// print table entries sorted by most mem first
 	int32_t *p = (int32_t *)sysmalloc ( m_memtablesize * 4 );

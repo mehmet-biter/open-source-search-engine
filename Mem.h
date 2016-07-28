@@ -90,6 +90,9 @@ class Mem {
 	int32_t          m_numAllocated;
 	int64_t     m_numTotalAllocated;
 	uint32_t m_memtablesize;
+
+private:
+	int printBreeches_unlocked();
 };
 
 extern class Mem g_mem;
