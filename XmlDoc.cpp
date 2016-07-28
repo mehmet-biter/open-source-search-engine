@@ -9655,8 +9655,15 @@ static void filterDoneWrapper ( void *state, job_exit_t /*exit_type*/ ) {
 // thread starts here
 // Use of ThreadEntry parameter is NOT thread safe
 static void filterStartWrapper_r ( void *state ) {
-	XmlDoc *THIS = (XmlDoc *)state;
-	THIS->filterStart_r ( true ); // am thread?
+	XmlDoc *that = (XmlDoc *)state;
+	// assume no error
+	that->m_errno = 0;
+
+	that->filterStart_r ( true ); // am thread?
+
+	if (g_errno && !that->m_errno) {
+		that->m_errno = g_errno;
+	}
 }
 
 
@@ -9672,8 +9679,6 @@ void XmlDoc::filterStart_r ( bool amThread ) {
 	// assume none
 	m_filteredContentLen = 0;
 
-	//if ( amThread ) id = pthread_self();
-	//else            id = getpid();
 	// pass the input to the program through this file
 	// rather than a pipe, since popen() seems broken
 	char in[1024];
@@ -9692,8 +9697,7 @@ void XmlDoc::filterStart_r ( bool amThread ) {
 		// valgrind
 		if ( errno == EINTR ) goto retry11;
 		m_errno = errno;
-		log("build: Could not open file %s for writing: %s.",
-		    in,mstrerror(m_errno));
+		log(LOG_WARN, "build: Could not open file %s for writing: %s.", in,mstrerror(m_errno));
 		return;
 	}
 	// we are in a thread, this must be valid!
@@ -9709,8 +9713,7 @@ void XmlDoc::filterStart_r ( bool amThread ) {
 		//int32_t w = fwrite ( m_buf , 1 , m_bufLen , pd );
 		//if ( w != m_bufLen ) {
 		m_errno = errno;
-		log("build: Error writing to %s: %s.",in,
-		    mstrerror(m_errno));
+		log(LOG_WARN, "build: Error writing to %s: %s.",in, mstrerror(m_errno));
 		close(fd);
 		return;
 	}
@@ -9737,7 +9740,7 @@ void XmlDoc::filterStart_r ( bool amThread ) {
 	} else if ( ctype == CT_PS  ) {
 		snprintf(cmd, 2047, "ulimit -v 25000 ; ulimit -t 30; timeout 10s nice -n 19 %s/pstotext %s > %s" , wdir , in , out );
 	} else {
-		g_process.shutdownAbort(true);
+		gbshutdownLogicError();
 	}
 
 	// breach sanity check
@@ -9810,15 +9813,6 @@ retry14:
 		    "because did not allocate enough space for filter. "
 		    "This should never happen. It is a hack that should be "
 		    "fixed right.", toRead );
-
-	// if we got something, then we're done
-	//if ( r > 0 ) return;
-	// otherwise, free it up
-	// . NO! not in a thread!!
-	//mfree ( m_filteredContent , m_filteredContentAllocSize, "fcas" );
-	//m_filteredContent          = NULL;
-	//m_filteredContentLen       = 0;
-	//m_filteredContentAllocSize = 0;
 }
 
 
