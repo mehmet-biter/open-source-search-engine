@@ -39,7 +39,6 @@ enum thread_type_t {
 	thread_type_unspecified_io,     //until we can be more specific
 	thread_type_unlink,             //unlnk()
 	thread_type_twin_sync,
-	thread_type_hdtemp,
 	thread_type_generate_thumbnail,
 };
 

@@ -347,16 +347,6 @@ void diskUsageWrapper(int fd, void *state) {
 	g_process.m_diskUsage = getDiskUsage( &g_process.m_diskAvail );
 }
 
-// . sets m_errno on error
-// . taken from Msg16.cpp
-// Use of ThreadEntry parameter is NOT thread safe
-void hdtempStartWrapper_r ( void *state ) {
-
-	// run the df -ka cmd
-	g_process.m_diskUsage = getDiskUsage( &g_process.m_diskAvail );
-
-}
-
 void Process::callHeartbeat () {
 	heartbeatWrapper ( 0 , NULL );
 }

@@ -620,7 +620,6 @@ skipReplaceHost:
 			sb.safePrintf("\t\t<dnsPort>%" PRId32"</dnsPort>\n",
 				      (int32_t)h->m_dnsClientPort);
 
-			//sb.safePrintf("\t\t<hdTemp>%s</hdTemp>\n",hdbuf);
 			sb.safePrintf("\t\t<gbVersion>%s</gbVersion>\n",vbuf);
 
 			sb.safePrintf("\t\t<resends>%" PRId32"</resends>\n",
@@ -744,7 +743,6 @@ skipReplaceHost:
 			sb.safePrintf("\t\t\"dnsPort\":%" PRId32",\n",
 				      (int32_t)h->m_dnsClientPort);
 
-			//sb.safePrintf("\t\t\"hdTemp\":\"%s\",\n",hdbuf);
 			sb.safePrintf("\t\t\"gbVersion\":\"%s\",\n",vbuf);
 
 			sb.safePrintf("\t\t\"resends\":%" PRId32",\n",
