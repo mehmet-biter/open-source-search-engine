@@ -813,7 +813,7 @@ void Msg39::intersectListsThreadFunction ( void *state ) {
 	// we're in a thread now!
 	Msg39 *that = static_cast<Msg39*>(state);
 
-	// assume no error
+	// assume no error since we're at the start of thread call
 	that->m_errno = 0;
 
 	// . do the add

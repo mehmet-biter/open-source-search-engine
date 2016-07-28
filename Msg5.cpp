@@ -981,7 +981,7 @@ void Msg5::mergeListsWrapper(void *state) {
 	// we're in a thread now!
 	Msg5 *that = static_cast<Msg5*>(state);
 
-	// assume no error
+	// assume no error since we're at the start of thread call
 	that->m_errno = 0;
 
 	// repair any corruption

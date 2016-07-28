@@ -9656,7 +9656,8 @@ static void filterDoneWrapper ( void *state, job_exit_t /*exit_type*/ ) {
 // Use of ThreadEntry parameter is NOT thread safe
 static void filterStartWrapper_r ( void *state ) {
 	XmlDoc *that = (XmlDoc *)state;
-	// assume no error
+
+	// assume no error since we're at the start of thread call
 	that->m_errno = 0;
 
 	that->filterStart_r ( true ); // am thread?

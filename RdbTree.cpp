@@ -2521,7 +2521,7 @@ void saveWrapper ( void *state ) {
 	// get this class
 	RdbTree *that = (RdbTree *)state;
 
-	// assume no error
+	// assume no error since we're at the start of thread call
 	that->m_errno = 0;
 
 	// this returns false and sets g_errno on error
