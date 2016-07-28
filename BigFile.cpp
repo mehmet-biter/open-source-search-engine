@@ -242,7 +242,7 @@ bool BigFile::addParts ( const char *dirname ) {
 	sprintf(pattern,"%s*", m_baseFilename.getBufStart() );
 
 	// length of the base filename
-	int32_t blen = gbstrlen ( m_baseFilename.getBufStart() );
+	int32_t blen = strlen ( m_baseFilename.getBufStart() );
 
 	// . set our m_files array
 	// . addFile() will return false on problems
@@ -255,7 +255,7 @@ bool BigFile::addParts ( const char *dirname ) {
 		logTrace( g_conf.m_logTraceBigFile, "  Checking [%s]", filename);
 		
 		// if filename len is exactly blen it's part 0
-		int32_t flen = gbstrlen(filename);
+		int32_t flen = strlen(filename);
 		int32_t part = -1;
 		if ( flen == blen ) {
 			part = 0;
@@ -424,8 +424,8 @@ void BigFile::makeFilename_r ( char *baseFilename    ,
 	if ( baseFilenameDir && baseFilenameDir[0] ) dir = baseFilenameDir;
 	int32_t r;
 	// ensure we do not breach the buffer
-	// int32_t dirLen = gbstrlen(dir);
-	// int32_t baseLen = gbstrlen(baseFilename);
+	// int32_t dirLen = strlen(dir);
+	// int32_t baseLen = strlen(baseFilename);
 	// int32_t need = dirLen + 1 + baseLen + 1;
 	// if ( need < bufSize ) gbshutdownLogicError();
 	//static char s[1024];

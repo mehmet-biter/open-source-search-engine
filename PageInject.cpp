@@ -130,7 +130,7 @@ Host *getHostToHandleInjection ( char *url ) {
 
 
 	bool isWarcInjection = false;
-	int32_t ulen = gbstrlen(url);
+	int32_t ulen = strlen(url);
 	if ( ulen > 10 && strcmp(url+ulen-8,".warc.gz") == 0 )
 		isWarcInjection = true;
 	if ( ulen > 10 && strcmp(url+ulen-5,".warc") == 0 )
@@ -221,7 +221,7 @@ bool Msg7::sendInjectionRequestToHost ( InjectionRequest *ir ,
 
 	// ensure url not beyond limit
 	if ( ir->ptr_url &&
-	     gbstrlen(ir->ptr_url) > MAX_URL_LEN ) {
+	     strlen(ir->ptr_url) > MAX_URL_LEN ) {
 		g_errno = EURLTOOBIG;
 		return log("inject: url too big.");
 	}
@@ -576,7 +576,7 @@ bool sendHttpReply ( void *state ) {
 		p += sprintf ( p , "%s", mstrerror(g_errno));
 		mdelete ( msg7, sizeof(Msg7) , "PageInject" );
 		delete (msg7);
-		return g_httpServer.sendDynamicPage ( sock,buf, gbstrlen(buf) ,
+		return g_httpServer.sendDynamicPage ( sock,buf, strlen(buf) ,
 						      -1/*cachetime*/);
 	}
 
@@ -1164,7 +1164,7 @@ bool ImportState::setCurrentTitleFileAndOffset ( ) {
 	const char *filename;
 	while ( ( filename = dir.getNextFilename ( "titledb*" ) ) ) {
 		// filename must be a certain length
-		int32_t filenameLen = gbstrlen(filename);
+		int32_t filenameLen = strlen(filename);
 		// we need at least "titledb0001.dat"
 		if ( filenameLen < 15 ) continue;
 		// ensure filename starts w/ our m_dbname

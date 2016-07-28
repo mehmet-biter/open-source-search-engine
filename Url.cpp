@@ -1202,7 +1202,7 @@ void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripParams, bool 
 	// . uses thorough list of tlds in Domains.cpp
 	else if ( ( m_tld = ::getTLD ( m_host, m_hlen ) ) && m_tld > m_host ) {
 		// set m_domain if we had a tld that's not equal to our host
-		m_tldLen = gbstrlen ( m_tld  );
+		m_tldLen = strlen ( m_tld  );
 		m_domain = ::getDomain ( m_host , m_hlen , m_tld , &m_dlen );
 		// set the mid domain length (-1 for the '.')
 		m_mdlen  = m_dlen - m_tldLen - 1;
@@ -1542,7 +1542,7 @@ bool Url::isSpam ( char *s , int32_t slen ) const {
 		}
 		p++;
 		a = p;
-		splitp += gbstrlen(splitp);
+		splitp += strlen(splitp);
 	}
 	// if we found a clean sequence, its not porn
 	if ( foundCleanSequence ) {
@@ -1750,7 +1750,7 @@ bool Url::hasNonIndexableExtension( int32_t version ) const {
 		int32_t i=0;
 		//version 72 and before.
 		do {
-			int tlen = gbstrlen(s_badExtensions[i]);
+			int tlen = strlen(s_badExtensions[i]);
 			int64_t swh = hash64Lower_a(s_badExtensions[i],tlen);
 			if(!s_badExtTable.addKey(swh,(int32_t)50))
 			{

@@ -73,7 +73,7 @@ bool sendPageAddDelColl ( TcpSocket *s , HttpRequest *r , bool add ) {
 	SafeBuf gtmp;
 	char *gmsg = NULL;
 	// is it too big?
-	if ( action && addColl && gbstrlen(addColl) > MAX_COLL_LEN ) {
+	if ( action && addColl && strlen(addColl) > MAX_COLL_LEN ) {
 		gtmp.safePrintf("search engine name is too long");
 		gmsg = gtmp.getBufStart();
 	}

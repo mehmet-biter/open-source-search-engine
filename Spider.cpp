@@ -58,7 +58,7 @@ void SpiderRequest::setKey (int32_t firstIp, int64_t parentDocId, int64_t uh48, 
 }
 
 void SpiderRequest::setDataSize ( ) {
-	m_dataSize = (m_url - (char *)this) + gbstrlen(m_url) + 1 
+	m_dataSize = (m_url - (char *)this) + strlen(m_url) + 1 
 		// subtract m_key and m_dataSize
 		- sizeof(key128_t) - 4 ;
 }
@@ -2223,7 +2223,7 @@ int32_t getUrlFilterNum ( 	SpiderRequest	*sreq,
 	if ( langId >= 0 ) { // if ( srep ) {
 		// this is NULL on corruption
 		lang = getLanguageAbbr ( langId );//srep->m_langId );	
-		if (lang) langLen = gbstrlen(lang);
+		if (lang) langLen = strlen(lang);
 	}
 
 	const char *tld = (char *)-1;
@@ -4315,7 +4315,7 @@ bool SpiderRequest::setFromAddUrl ( char *url ) {
 	Url uu; uu.set ( url );
 	if ( uu.isRoot() ) m_hopCountValid = true;
 	// too big?
-	if ( gbstrlen(url) > MAX_URL_LEN ) {
+	if ( strlen(url) > MAX_URL_LEN ) {
 		g_errno = EURLTOOLONG;
 		logTrace( g_conf.m_logTraceSpider, "END, EURLTOOLONG" );
 		return false;

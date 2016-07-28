@@ -148,7 +148,7 @@ bool Msge0::launchRequests ( int32_t starti ) {
 	// . if m_xd is set, create the url from the ad id
 	char *p = m_urlPtrs[m_n];
 	// get the length
-	int32_t  plen = gbstrlen(p);
+	int32_t  plen = strlen(p);
 	// . grab a slot
 	// . m_msg8as[i], m_msgCs[i], m_msg50s[i], m_msg20s[i]
 	int32_t i;

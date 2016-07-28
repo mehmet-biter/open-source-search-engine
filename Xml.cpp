@@ -47,7 +47,7 @@ char *Xml::getTextForXmlTag ( int32_t n0, int32_t n1, const char *tagName, int32
 	// assume len is 0
 	*len = 0;
 	// get a matching xml TAG
-	int32_t num = getNodeNum ( n0 , n1 , tagName , gbstrlen(tagName) );
+	int32_t num = getNodeNum ( n0 , n1 , tagName , strlen(tagName) );
 	if ( num < 0                 ) return NULL;
 	return getString ( num , skipLeadingSpaces , len );
 }

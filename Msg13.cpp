@@ -738,7 +738,7 @@ void gotProxyHostReplyWrapper ( void *state , UdpSlot *slot ) {
 
 	// if proxy had one copy into the buf
 	if ( prep->m_usernamePwd[0] ) {
-		int32_t len = gbstrlen(prep->m_usernamePwd);
+		int32_t len = strlen(prep->m_usernamePwd);
 		gbmemcpy ( r->m_proxyUsernamePwdAuth , 
 			   prep->m_usernamePwd ,
 			   len );
@@ -2279,7 +2279,7 @@ void stripProxyAuthorization ( char *squidProxiedReqBuf ) {
 	// bury the \r\n as well
 	end += 2;
 	// bury that string
-	int32_t reqLen = gbstrlen(squidProxiedReqBuf);
+	int32_t reqLen = strlen(squidProxiedReqBuf);
 	const char *reqEnd = squidProxiedReqBuf + reqLen;
 	// include \0, so add +1
 	memmove ( s ,end , reqEnd-end + 1);
@@ -2314,7 +2314,7 @@ void fixGETorPOST ( char *squidProxiedReqBuf ) {
 	// skip until / or space or \r or \n or \0
 	for ( ; *s && ! is_wspace_a(*s) && *s != '/' ; s++ );
 	// bury the http://xyz.com part now
-	char *reqEnd = squidProxiedReqBuf + gbstrlen(squidProxiedReqBuf);
+	char *reqEnd = squidProxiedReqBuf + strlen(squidProxiedReqBuf);
 	// include the terminating \0, so add +1
 	gbmemcpy ( httpStart , s , reqEnd - s + 1 );
 	// now make HTTP/1.1 into HTTP/1.0

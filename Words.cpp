@@ -687,7 +687,7 @@ char *getFieldValue( char *s, int32_t slen, const char *field, int32_t *valueLen
 	// reset this to 0
 	*valueLen = 0;
 	// scan for the field name in our node
-	int32_t flen = gbstrlen(field);
+	int32_t flen = strlen(field);
 	char inQuotes = '\0';
 	int32_t i;
 

@@ -66,7 +66,7 @@ void Tag::set ( const char *site, const char *tagname, int32_t  timestamp, const
 	m_ip        = ip;
 	int32_t userLen = 0;
 	if ( user ) {
-		userLen = gbstrlen( user );
+		userLen = strlen( user );
 	}
 
 	// truncate to 127 byte int32_t
@@ -713,7 +713,7 @@ bool TagRec::setFromHttpRequest ( HttpRequest *r, TcpSocket *s ) {
 		}
 
 		// everything is now a string
-		int32_t dataSize = gbstrlen(dataPtr) + 1;
+		int32_t dataSize = strlen(dataPtr) + 1;
 
 		// loop over all urls in the url file if provided
 		char *up = fou.getBufStart();
@@ -1030,7 +1030,7 @@ bool Tagdb::setHashTable ( ) {
 	for ( int32_t i = 0 ; i < n ; i++ ) {
 		TagDesc *td = &s_tagDesc[i];
 		const char *s    = td->m_name;
-		int32_t  slen = gbstrlen(s);
+		int32_t  slen = strlen(s);
 
 		// use the same algo that Words.cpp computeWordIds does 
 		int32_t h = hash64Lower_a ( s , slen );
@@ -1326,7 +1326,7 @@ bool Msg8a::getTagRec( Url *url, collnum_t collnum, int32_t niceness, void *stat
 	}
 
 	// url cannot have NULLs in it because handleRequest8a() uses
-	// gbstrlen() on it to get its size
+	// strlen() on it to get its size
 	for ( int32_t i = 0 ; i < ulen ; i++ ) {
 		if ( u[i] ) continue;
 		log("TagRec: got bad url with NULL in it %s",u);

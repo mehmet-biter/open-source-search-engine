@@ -180,7 +180,7 @@ bool HttpServer::getDoc ( char   *url      ,
 	}
 
 	int32_t pcLen = 0;
-	if ( postContent ) pcLen = gbstrlen(postContent);
+	if ( postContent ) pcLen = strlen(postContent);
 
 	char *req = NULL;
 	int32_t reqSize;
@@ -235,7 +235,7 @@ bool HttpServer::getDoc ( char   *url      ,
 			if ( proxyUsernamePwdAuth && proxyUsernamePwdAuth[0] ){
 				sb.safePrintf("Proxy-Authorization: Basic ");
 				sb.base64Encode(proxyUsernamePwdAuth,
-						gbstrlen(proxyUsernamePwdAuth)
+						strlen(proxyUsernamePwdAuth)
 						);
 				sb.safePrintf("\r\n");
 			}
@@ -261,7 +261,7 @@ bool HttpServer::getDoc ( char   *url      ,
 	}
 	else {
 		// does not contain \0 i guess
-		reqSize = gbstrlen(fullRequest);
+		reqSize = strlen(fullRequest);
 		req = (char *) mdup ( fullRequest , reqSize,"HttpServer");
 	}
 
@@ -777,7 +777,7 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 		 r->getString("sites") == NULL) {
 		//direct all non-raw, non admin traffic away.
 		redir = g_conf.m_redirect;
-		redirLen = gbstrlen(g_conf.m_redirect);
+		redirLen = strlen(g_conf.m_redirect);
 	}
 
 	if ( redirLen > 0 ) {
@@ -1340,7 +1340,7 @@ bool HttpServer::sendSuccessReply ( TcpSocket *s , char format, const char *addM
 	SafeBuf sb(msg,1524,0,false);
 
 	char *tt = asctime(gmtime ( &now ));
-	tt [ gbstrlen(tt) - 1 ] = '\0';
+	tt [ strlen(tt) - 1 ] = '\0';
 
 	const char *ct = "text/html";
 	if ( format == FORMAT_XML  ) ct = "text/xml";
@@ -1412,7 +1412,7 @@ bool HttpServer::sendErrorReply ( GigablastRequest *gr ) {
 	char msg[1524];
 	SafeBuf sb(msg,1524,0,false);
 	char *tt = asctime(gmtime ( &now ));
-	tt [ gbstrlen(tt) - 1 ] = '\0';
+	tt [ strlen(tt) - 1 ] = '\0';
 
 	const char *ct = "text/html";
 	if ( format == FORMAT_XML  ) ct = "text/xml";
@@ -1504,7 +1504,7 @@ bool HttpServer::sendErrorReply ( TcpSocket *s , int32_t error , const char *err
 	else 
 	*/
 	char *tt = asctime(gmtime ( &now ));
-	tt [ gbstrlen(tt) - 1 ] = '\0';
+	tt [ strlen(tt) - 1 ] = '\0';
 
 	const char *ct = "text/html";
 	if ( format == FORMAT_XML  ) ct = "text/xml";
@@ -1554,7 +1554,7 @@ bool HttpServer::sendErrorReply ( TcpSocket *s , int32_t error , const char *err
 
 	// . move the reply to a send buffer
 	// . don't make sendBuf bigger than g_conf.m_httpMaxSendBufSize
-	//int32_t msgSize    = gbstrlen ( msg );
+	//int32_t msgSize    = strlen ( msg );
 	// record it
 	if ( bytesSent ) *bytesSent = sb.length();//sendBufSize;
 	// use this new function that will compress the reply now if the
@@ -1599,7 +1599,7 @@ bool HttpServer::sendQueryErrorReply( TcpSocket *s , int32_t error ,
 	// . NOTE: ctime appends a \n to the time, so we don't need to
 	char msg[2048];
 	char *tt = asctime(gmtime ( &now ));
-	tt [ gbstrlen(tt) - 1 ] = '\0';
+	tt [ strlen(tt) - 1 ] = '\0';
 	// fix empty strings
 	if (!content) content = "";
 
@@ -1625,7 +1625,7 @@ bool HttpServer::sendQueryErrorReply( TcpSocket *s , int32_t error ,
 			  "%s",
 			  error  ,
 			  errmsg ,
-			  gbstrlen(cbuf),
+			  strlen(cbuf),
 			  tt , 
 			  cbuf );
 	}
@@ -1648,14 +1648,14 @@ bool HttpServer::sendQueryErrorReply( TcpSocket *s , int32_t error ,
 			  "%s",
 			  error  ,
 			  errmsg ,
-			  gbstrlen(cbuf),
+			  strlen(cbuf),
 			  tt , // ctime ( &now ) ,
 			  cbuf );
 
 	}
 	// . move the reply to a send buffer
 	// . don't make sendBuf bigger than g_conf.m_httpMaxSendBufSize
-	int32_t msgSize    = gbstrlen ( msg );
+	int32_t msgSize    = strlen ( msg );
 
 	return sendReply2 ( msg , msgSize , NULL , 0 , s );
 	*/

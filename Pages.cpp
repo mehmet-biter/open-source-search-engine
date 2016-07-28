@@ -264,7 +264,7 @@ void Pages::init ( ) {
 		}
 	// set the m_flen member
 	for ( int32_t i = 0 ; i < s_numPages ; i++ ) 
-		s_pages[i].m_flen = gbstrlen ( s_pages[i].m_filename );
+		s_pages[i].m_flen = strlen ( s_pages[i].m_filename );
 }
 
 // return the PAGE_* number thingy
@@ -279,23 +279,23 @@ int32_t Pages::getDynamicPageNumber ( HttpRequest *r ) {
 	// historical backwards compatibility fix
 	if ( pathLen == 9 && strncmp ( path , "cgi/0.cgi" , 9 ) == 0 ) {
 		path = "search";
-		pathLen = gbstrlen(path);
+		pathLen = strlen(path);
 	}
 	if ( pathLen == 9 && strncmp ( path , "cgi/1.cgi" , 9 ) == 0 ) {
 		path = "addurl";
-		pathLen = gbstrlen(path);
+		pathLen = strlen(path);
 	}
 	if ( pathLen == 6 && strncmp ( path , "inject" , 6 ) == 0 ) {
 		path = "admin/inject";
-		pathLen = gbstrlen(path);
+		pathLen = strlen(path);
 	}
 	if ( pathLen == 9 && strncmp ( path , "index.php" , 9 ) == 0 ) {
 		path = "search";
-		pathLen = gbstrlen(path);
+		pathLen = strlen(path);
 	}
 	if ( pathLen == 10 && strncmp ( path , "search.csv" , 10 ) == 0 ) {
 		path = "search";
-		pathLen = gbstrlen(path);
+		pathLen = strlen(path);
 	}
 
 	// go down the list comparing the pathname to dynamic page names

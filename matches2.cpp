@@ -40,7 +40,7 @@ bool fast_highlight ( // highlight these query terms:
 	getMatches2 ( nbuf ,
 		      q->m_numTerms,
 		      stringToHighlight,
-		      gbstrlen(stringToHighlight),
+		      strlen(stringToHighlight),
 		      NULL, // linkpos
 		      &needleNum,
 		      false, // stopatfirstmatch?
@@ -104,7 +104,7 @@ char *getMatches2 ( Needle *needles          ,
 		needles[i].m_firstMatch = NULL;
 		// set the string size in bytes if not provided
 		if ( needles[i].m_stringSize == 0 )
-			needles[i].m_stringSize = gbstrlen(needles[i].m_string);
+			needles[i].m_stringSize = strlen(needles[i].m_string);
 	}
 
 	// . set up the quick tables.

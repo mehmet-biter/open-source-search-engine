@@ -21,11 +21,6 @@ extern bool g_inMemFunction;
 class SafeBuf;
 
 
-inline int gbstrlen ( const char *s ) {
-	if ( ! s ) { gbshutdownAbort(true); }
-	return strlen(s);
-}
-
 class Mem {
 
  public:
@@ -42,7 +37,7 @@ class Mem {
 	void  gbfree    ( void *ptr , int size , const char *note);
 	char *dup     ( const void *data , int32_t dataSize , const char *note);
 	char *strdup  ( const char *string , const char *note ) {
-		return dup ( string , gbstrlen ( string ) + 1 , note ); }
+		return dup ( string, strlen( string ) + 1, note ); }
 
 	int32_t validate();
 

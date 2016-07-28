@@ -205,7 +205,7 @@ bool Log::logR ( int64_t now, int32_t type, const char *msg, bool forced ) {
 	}
 
 	// get "msg"'s length
-	int32_t msgLen = gbstrlen ( msg );
+	int32_t msgLen = strlen ( msg );
 
 	// lock for threads
 	pthread_mutex_lock ( &s_lock );
@@ -271,7 +271,7 @@ bool Log::logR ( int64_t now, int32_t type, const char *msg, bool forced ) {
 	strncpy ( p , x , avail );
 	// capitalize for consistency. no, makes grepping log msgs harder.
 	//if ( is_alpha_a(*p) ) *p = to_upper_a(*p);
-	p += gbstrlen(p);
+	p += strlen(p);
 	// back up over spaces
 	while ( p[-1] == ' ' ) p--;
 	// end in period or ? or !

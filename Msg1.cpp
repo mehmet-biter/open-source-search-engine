@@ -429,7 +429,7 @@ skip:
 	// . this will alloc new space, returns NULL on failure
 	//char *request = makeRequest ( listData, listSize, groupId , 
 	//m_rdbId , &requestLen );
-	//int32_t collLen = gbstrlen ( m_coll );
+	//int32_t collLen = strlen ( m_coll );
 	// . returns NULL and sets g_errno on error
 	// . calculate total size of the record
 	// . 1 byte for rdbId, 1 byte for flags,
@@ -594,7 +594,7 @@ void handleRequest1 ( UdpSlot *slot , int32_t netnice ) {
 	p++;
 	// then collection
 	//char *coll = p;
-	//p += gbstrlen (p) + 1;
+	//p += strlen (p) + 1;
 	collnum_t collnum = *(collnum_t *)p;
 	p += sizeof(collnum_t);
 	// . make a list from this data

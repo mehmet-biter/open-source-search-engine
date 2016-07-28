@@ -203,7 +203,7 @@ bool HttpMime::parse ( char *mime , int32_t mimeLen , Url *url ) {
 			if ( ! m_firstCookie ) m_firstCookie = p;
 			m_cookie = p + 11;
 			if ( m_cookie[0] == ' ' ) m_cookie++;
-			m_cookieLen = gbstrlen ( m_cookie );
+			m_cookieLen = strlen ( m_cookie );
 		}
 		else if ( strncasecmp ( p , "Location:"       , 9) == 0 ) {
 			// point to it
@@ -213,7 +213,7 @@ bool HttpMime::parse ( char *mime , int32_t mimeLen , Url *url ) {
 			if ( *tt == ' ' ) tt++;
 			// at least set this for Msg13.cpp to use
 			m_locationField    = tt;
-			m_locationFieldLen = gbstrlen(tt);
+			m_locationFieldLen = strlen(tt);
 			// . we skip initial spaces in this Url::set() routine
 			if(url)
 				m_locUrl.set( url, p + 9, len - 9 );
@@ -540,14 +540,14 @@ void getTime ( const char *s , int *sec , int *min , int *hour ) {
 
 int32_t getContentTypeFromStr ( const char *s ) {
 
-	int32_t slen = gbstrlen(s);
+	int32_t slen = strlen(s);
 
 	// trim off spaces at the end
 	char tmp[64];
 	if ( s[slen-1] == ' ' ) {
 		strncpy(tmp,s,63);
 		tmp[63] = '\0';
-		int32_t newLen = gbstrlen(tmp);
+		int32_t newLen = strlen(tmp);
 		s = tmp;
 		char *send = tmp + newLen;
 		for ( ; send>s && send[-1] == ' '; send-- );
@@ -748,7 +748,7 @@ void HttpMime::makeRedirMime ( const char *redir , int32_t redirLen ) {
 	m_bufLen = p - m_buf;
 	if ( m_bufLen > 1023 ) { g_process.shutdownAbort(true); }
 	// set the mime's length
-	//m_bufLen = gbstrlen ( m_buf );
+	//m_bufLen = strlen ( m_buf );
 }
 
 // a cacheTime of -1 means browser should not cache at all
@@ -949,7 +949,7 @@ void HttpMime::makeMime  ( int32_t    totalContentLen    ,
 	// write another line to end the mime
 	p += sprintf(p, "\r\n");
 	// set the mime's length
-	//m_bufLen = gbstrlen ( m_buf );
+	//m_bufLen = strlen ( m_buf );
 	m_bufLen = p - m_buf;
 }
 

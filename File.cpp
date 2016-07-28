@@ -104,7 +104,7 @@ File::~File ( ) {
 void File::set ( const char *dir , const char *filename ) {
 	if ( ! dir ) { set ( filename ); return; }
 	char buf[1024];
-	if ( dir[gbstrlen(dir)-1] == '/' )
+	if ( dir[strlen(dir)-1] == '/' )
 		snprintf ( buf , 1020, "%s%s" , dir , filename );
 	else
 		snprintf ( buf , 1020, "%s/%s" , dir , filename );
@@ -122,7 +122,7 @@ void File::set ( const char *filename ) {
 	}
 
 	// bail if too long
-	int32_t len = gbstrlen ( filename );
+	int32_t len = strlen ( filename );
 	// account for terminating '\0'
 	if ( len + 1 >= MAX_FILENAME_LEN ) {
 		log ( LOG_ERROR, "disk: Provided filename %s length of %" PRId32" is bigger than %" PRId32".",
@@ -962,7 +962,7 @@ bool File::initialize ( ) {
 const char *File::getExtension() const {
 	// keep backing up over m_filename till we hit a . or / or beginning
 	const char *f = getFilename();
-	int32_t i = gbstrlen(m_filename);
+	int32_t i = strlen(m_filename);
 	while ( --i > 0 ) {
 		if ( f[i] == '.' ) break;
 		if ( f[i] == '/' ) break;

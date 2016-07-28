@@ -469,8 +469,8 @@ bool getLinkInfo ( SafeBuf   *reqBuf              ,
 		   int32_t       ourDomHash32        ,
 		   SafeBuf   *linkInfoBuf         ) {
 
-	int32_t siteLen = gbstrlen(site);
-	int32_t urlLen  = gbstrlen(url);
+	int32_t siteLen = strlen(site);
+	int32_t urlLen  = strlen(url);
 
 	int32_t oldLinkSize = 0;
 	if ( oldLinkInfo )
@@ -1472,12 +1472,12 @@ bool Msg25::sendRequests ( ) {
 		if ( m_mode == MODE_PAGELINKINFO ) {
 			r->m_isSiteLinkInfo = false;
 			r-> ptr_linkee = m_url;
-			r->size_linkee = gbstrlen(m_url)+1; // include \0
+			r->size_linkee = strlen(m_url)+1; // include \0
 		}
 		else {
 			r->m_isSiteLinkInfo = true;
 			r-> ptr_linkee = m_site;
-			r->size_linkee = gbstrlen(m_site)+1; // include \0
+			r->size_linkee = strlen(m_site)+1; // include \0
 		}
 		r->m_collnum = cr->m_collnum;
 		r->m_docId           = docId;
@@ -1980,7 +1980,7 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 	// compile the reason it could not vote
 	if ( r && ! good ) {
 		// set "noteLen" if not yet set
-		if ( note && noteLen == 0 ) noteLen = gbstrlen ( note );
+		if ( note && noteLen == 0 ) noteLen = strlen ( note );
 		// add it to our table
 		addNote ( note , noteLen , r->m_docId );
 		// . free the reply since it cannot vote
@@ -2300,7 +2300,7 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 		if ( m_printInXml ) {
 			m_pbuf->safePrintf ( "\t<inlinkStat>\n");
 			m_pbuf->safePrintf ( "\t\t<name><![CDATA[" );
-			//m_pbuf->htmlEncode(e->m_note,gbstrlen(e->m_note),0);
+			//m_pbuf->htmlEncode(e->m_note,strlen(e->m_note),0);
 			m_pbuf->safeStrcpy ( e->m_note );
 			m_pbuf->safePrintf ( "]]></name>\n");
 			if ( exp )
@@ -4454,7 +4454,7 @@ int32_t Links::getLinkText ( const char  *linkee ,
 		if ( pp ) linkee = pp + 3;
 	}
 
-	int32_t linkeeLen = gbstrlen(linkee);
+	int32_t linkeeLen = strlen(linkee);
 
 	// find the link point to our url
 	int32_t i;
@@ -4528,7 +4528,7 @@ int32_t Links::getLinkText2 ( int32_t i ,
 		// . can also be an <enclosure> tag now too
 		if ( xmlNodes[node1].m_nodeId == TAG_A ) goto skipItem;
 		// get item delimeter length
-		//int32_t dlen = gbstrlen(del);
+		//int32_t dlen = strlen(del);
 		// back pedal node until we hit <item> or <entry> tag
 		int32_t j ;
 		for ( j = node1 ; j > 0 ; j-- ) {

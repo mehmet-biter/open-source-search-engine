@@ -1337,7 +1337,7 @@ void RdbCache::saveWrapper(void *state) {
 bool RdbCache::save_r ( ) {
 	// append .cache to "dbname" to get cache filename
 	char filename [ 64 ];
-	if ( gbstrlen(m_dbname) > 50 ) {
+	if ( strlen(m_dbname) > 50 ) {
 		log(LOG_ERROR, "db: Dbname too long. Could not save cache.");
 		return false;
 	}
@@ -1469,7 +1469,7 @@ bool RdbCache::saveSome_r ( int fd , int32_t *iptr , int32_t *off ) {
 bool RdbCache::load ( const char *dbname ) {
 	// append .cache to "dbname" to get cache filename
 	char filename [ 64 ];
-	if ( gbstrlen(dbname) > 50 )
+	if ( strlen(dbname) > 50 )
 		return log(LOG_LOGIC,"db: cache: load: dbname too long.");
 	sprintf ( filename , "%s.cache" , dbname );
 	// does the file exist?

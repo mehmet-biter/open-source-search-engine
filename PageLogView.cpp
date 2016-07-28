@@ -308,7 +308,7 @@ void gotRemoteLogWrapper(void *state, UdpSlot *slot) {
 		char *nextLine = strchr(st->m_readBufPtrs[ndx], '\n');
 		int32_t lineLen;
 		if(!nextLine)
-			lineLen = gbstrlen(st->m_readBufPtrs[ndx]);
+			lineLen = strlen(st->m_readBufPtrs[ndx]);
 		else
 			lineLen = nextLine - st->m_readBufPtrs[ndx];
 

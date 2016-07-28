@@ -107,7 +107,7 @@ bool Msg51::getClusterRecs ( int64_t     *docIds                   ,
 	m_state         = state;
 	m_callback      = callback;
 	//m_coll          = coll;
-	//m_collLen       = gbstrlen(coll);
+	//m_collLen       = strlen(coll);
 	m_collnum = collnum;
 	// these are storage for the requester
 	m_docIds        = docIds;

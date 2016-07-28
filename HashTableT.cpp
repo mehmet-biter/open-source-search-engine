@@ -478,7 +478,7 @@ bool HashTableT<Key_t, Val_t>::save ( char* filename , char *tbuf , int32_t tsiz
 //bool HashTableT<Key_t,Val_t>::hashFromString ( HashTableT *ht , char *x ) {
 bool hashFromString ( HashTableT<int64_t,char> *ht , char *x ) {
 	if ( ! x ) return true;
-	char *xend = x + gbstrlen(x);
+	char *xend = x + strlen(x);
 	int32_t  n    = 1;
 	for ( char *s = x ; s < xend ; s++ ) 
 		// i am assuming this is ascii here!

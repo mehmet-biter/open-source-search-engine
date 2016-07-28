@@ -24,7 +24,7 @@ public:
 	Msg22Request();
 	
 	int32_t getSize () {
-		return (m_url - (char *)&m_docId) + 1+gbstrlen(m_url); }
+		return (m_url - (char *)&m_docId) + 1+strlen(m_url); }
 	int32_t getMinSize() {
 		return (m_url - (char *)&m_docId) + 1; }
 };

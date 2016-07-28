@@ -135,7 +135,7 @@ bool RdbBase::init ( char  *dir            ,
 	m_rdb     = rdb;
 
 	// save the dbname NULL terminated into m_dbname/m_dbnameLen
-	m_dbnameLen = gbstrlen ( dbname );
+	m_dbnameLen = strlen ( dbname );
 	gbmemcpy ( m_dbname , dbname , m_dbnameLen );
 	m_dbname [ m_dbnameLen ] = '\0';
 	// store the other parameters
@@ -283,8 +283,8 @@ bool RdbBase::removeRebuildFromFilename ( BigFile *f ) {
 		return false;
 	}
 	// bury it
-	int32_t  rlen = gbstrlen("Rebuild");
-	char *end  = buf + gbstrlen(buf);
+	int32_t  rlen = strlen("Rebuild");
+	char *end  = buf + strlen(buf);
 	int32_t  size = end - (p + rlen);
 	// +1 to include the ending \0
 	memmove ( p , p + rlen , size + 1 );
@@ -380,7 +380,7 @@ bool RdbBase::setFiles ( ) {
 
 	while ( ( filename = m_dir.getNextFilename ( "*.dat*" ) ) ) {
 		// filename must be a certain length
-		int32_t filenameLen = gbstrlen(filename);
+		int32_t filenameLen = strlen(filename);
 
 		// we need at least "indexdb0000.dat"
 		if ( filenameLen < m_dbnameLen + 8 ) {

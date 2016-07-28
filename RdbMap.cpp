@@ -1176,7 +1176,7 @@ void RdbMap::printMap () {
 		sprintf(buf,"page=%i) key=%" PRIx64" %" PRIx64", offset=%hi",
 		    i,KEY1(getKeyPtr(i),m_ks),KEY0(getKeyPtr(i)),
 		    getOffset(i));
-		h = hash32 ( buf , gbstrlen(buf) , h );
+		h = hash32 ( buf , strlen(buf) , h );
 		log(LOG_INFO,"%s",buf);
 	}
 	log(LOG_INFO,"map checksum = 0x%" PRIx32,h);

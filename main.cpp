@@ -1388,7 +1388,7 @@ int main2 ( int argc , char *argv[] ) {
 		if ( cmdarg + 2 < argc ) note = argv[cmdarg+2];
 		else return false;
 		char urlnote[1024];
-		urlEncode(urlnote, 1024, note, gbstrlen(note));
+		urlEncode(urlnote, 1024, note, strlen(note));
 		log ( LOG_INIT, "conf: setnote %" PRId32": %s", hostId, urlnote );
 		char setnoteCmd[256];
 		sprintf(setnoteCmd, "setnote=1&host=%" PRId32"&note=%s",
@@ -1405,7 +1405,7 @@ int main2 ( int argc , char *argv[] ) {
 		if ( cmdarg + 2 < argc ) note = argv[cmdarg+2];
 		else return false;
 		char urlnote[1024];
-		urlEncode(urlnote, 1024, note, gbstrlen(note));
+		urlEncode(urlnote, 1024, note, strlen(note));
 		log(LOG_INIT, "conf: setsparenote %" PRId32": %s", spareId, urlnote);
 		char setnoteCmd[256];
 		sprintf(setnoteCmd, "setsparenote=1&spare=%" PRId32"&note=%s",
@@ -1713,9 +1713,9 @@ int main2 ( int argc , char *argv[] ) {
  spellLoop:
 	test[0] = '\0';
 	gets ( test );
-	if ( test[gbstrlen(test)-1] == '\n' ) test[gbstrlen(test)-1] = '\0';
+	if ( test[strlen(test)-1] == '\n' ) test[strlen(test)-1] = '\0';
 	Query qq;
-	qq.set ( test , gbstrlen(test) , NULL , 0 , false );
+	qq.set ( test , strlen(test) , NULL , 0 , false );
 	if ( g_speller.getRecommendation ( &qq , dst , 1000 ) )
 		log("spelling suggestion: %s", dst );
 	goto spellLoop;
@@ -2218,7 +2218,7 @@ bool doCmd ( const char *cmd , int32_t hostId , const char *filename ,
 	// make it local loopback so it passes the permission test in
 	// doCmdAll()'s call to convertHttpRequestToParmList
 	sock.m_ip = atoip("127.0.0.1");
-	s_r.set ( s_buffer , gbstrlen ( s_buffer ) , &sock );
+	s_r.set ( s_buffer , strlen ( s_buffer ) , &sock );
 	// do not do sig alarms! for now just set this to null so
 	// the sigalarmhandler doesn't core
 	//g_hostdb.m_myHost = NULL;
@@ -2956,7 +2956,7 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 		char ipbuf [ 32 ];
 		strcpy ( ipbuf , iptoa(u->getIp() ) );
 		// pad with spaces
-		int32_t blen = gbstrlen(ipbuf);
+		int32_t blen = strlen(ipbuf);
 		while ( blen < 15 ) ipbuf[blen++]=' ';
 		ipbuf[blen]='\0';
 		//int32_t nc = xd->size_catIds / 4;//tr.getNumCatids();
@@ -4197,7 +4197,7 @@ void dumpTagdb( const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 			}
 			// ends in :?
 			int slen = 0;
-			if ( site ) slen = gbstrlen(site);
+			if ( site ) slen = strlen(site);
 			if ( site && site[slen-1] == ':' )
 				site = NULL;
 			// port bug
@@ -4214,7 +4214,7 @@ void dumpTagdb( const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 				site = NULL;
 			if ( site && strstr(site,".teen-model-24.") )
 				site = NULL;
-			if ( site && ! is_ascii2_a ( site, gbstrlen(site) ) ) {
+			if ( site && ! is_ascii2_a ( site, strlen(site) ) ) {
 				site = NULL;
 				continue;
 			}
@@ -4894,7 +4894,7 @@ void dumpLinkdb ( const char *coll,
 	// set to docid
 	if ( url ) {
 		Url u;
-		u.set( url, gbstrlen( url ), true, false );
+		u.set( url, strlen( url ), true, false );
 		uint32_t h32 = u.getHostHash32();//g_linkdb.getUrlHash(&u)
 		int64_t uh64 = hash64n(url,0);
 		startKey = g_linkdb.makeStartKey_uk ( h32 , uh64 );
@@ -5118,7 +5118,7 @@ int injectFileTest ( int32_t reqLen , int32_t hid ) {
 		  "Content-Type: text/html\r\n"
 		  "Connection: Close\r\n"
 		  "\r\n" );
-	p += gbstrlen(p);
+	p += strlen(p);
 	char *content = p;
 	sprintf ( p , 
 		  "u=%" PRIu32".injecttest.com&c=&"
@@ -5131,12 +5131,12 @@ int injectFileTest ( int32_t reqLen , int32_t hid ) {
 		  "Content-Type: text/html\r\n"
 		  "\r\n" , 
 		  (uint32_t)time(NULL) );
-	p += gbstrlen(p);
+	p += strlen(p);
 	// now store random words (just numbers of 8 digits each)
 	while ( p + 12 < pend ) {
 		int32_t r ; r = rand(); 
 		sprintf ( p , "%010" PRIu32" " , r );
-		p += gbstrlen ( p );
+		p += strlen ( p );
 	}
 	// set content length
 	int32_t clen = p - content;
@@ -5146,7 +5146,7 @@ int injectFileTest ( int32_t reqLen , int32_t hid ) {
 	// store length there
 	sprintf ( ptr , "%09" PRIu32 , clen );
 	// remove the \0
-	ptr += gbstrlen(ptr); *ptr = '\r';
+	ptr += strlen(ptr); *ptr = '\r';
 
 	// what is total request length?
 	int32_t rlen = p - req;
@@ -5203,7 +5203,7 @@ static int64_t s_endDocId;
 
 int injectFile ( const char *filename , char *ips , const char *coll ) {
 	// or part of an itemlist.txt-N
-	int flen2 = gbstrlen(filename);
+	int flen2 = strlen(filename);
 	if ( flen2>=14 && strncmp(filename,"itemlist.txt",12)==0 ) {
 	        // must have -N
 		int split = atoi(filename+13);
@@ -5251,7 +5251,7 @@ int injectFile ( const char *filename , char *ips , const char *coll ) {
 				// download the next archive using 'ia'
 				continue;
 			}
-			int32_t flen = gbstrlen(xarcFilename);
+			int32_t flen = strlen(xarcFilename);
 			const char *ext = xarcFilename + flen -7;
 			// gunzip to foo.warc or foo.arc depending!
 			const char *es = "";
@@ -5399,7 +5399,7 @@ int injectFile ( const char *filename , char *ips , const char *coll ) {
 		sprintf(g_hostdb.m_dir , "./" );
 		rdb->loadTree();
 		// titledb-
-		if ( gbstrlen(filename)<=8 )
+		if ( strlen(filename)<=8 )
 			return log("build: need titledb-coll.main.0 or "
 			    "titledb-gk144 not just 'titledb'");
 		const char *coll2 = filename + 8;
@@ -5408,7 +5408,7 @@ int injectFile ( const char *filename , char *ips , const char *coll ) {
 		sprintf(tmp,"./%s",coll2);
 		s_base->m_dir.set(tmp);
 		strcpy(s_base->m_dbname,rdb->m_dbname);
-		s_base->m_dbnameLen = gbstrlen(rdb->m_dbname);
+		s_base->m_dbnameLen = strlen(rdb->m_dbname);
 		s_base->m_coll = "main";
 		s_base->m_collnum = (collnum_t)0;
 		s_base->m_rdb = rdb;
@@ -5433,7 +5433,7 @@ int injectFile ( const char *filename , char *ips , const char *coll ) {
 	// this might be a compressed warc like .warc.gz
 	s_injectWarc = false;
 	s_injectArc  = false;
-	int flen = gbstrlen(filename);
+	int flen = strlen(filename);
 	if ( flen>5 && strcasecmp(filename+flen-5,".warc")==0 ) {
 		s_injectWarc = true;
 	}
@@ -5761,7 +5761,7 @@ void doInject ( int fd , void *state ) {
 			      ipStr,
 			      (int32_t)s_isDelete);
 		// url encode the url
-		rp += urlEncode ( rp , 4000 , url , gbstrlen(url) );
+		rp += urlEncode ( rp , 4000 , url , strlen(url) );
 		// finish it up
 		rp += sprintf(rp,"&ucontent=");
 
@@ -5782,7 +5782,7 @@ void doInject ( int fd , void *state ) {
 
 		// set content length
 		char *start = strstr(req,"c=");
-		int32_t realContentLen = gbstrlen(start);
+		int32_t realContentLen = strlen(start);
 		char *ptr = req ;
 		// find start of the 9 zeroes
 		while ( *ptr != '0' || ptr[1] !='0' ) ptr++;
@@ -6143,7 +6143,7 @@ void doInjectWarc ( int64_t fsize ) {
 
 	// replace 00000 with the REAL content length
 	char *start = strstr(req.getBufStart(),"c=");
-	int32_t realContentLen = gbstrlen(start);
+	int32_t realContentLen = strlen(start);
 	char *ptr = req.getBufStart() ;
 	// find start of the 9 zeroes
 	while ( *ptr != '0' || ptr[1] !='0' ) ptr++;
@@ -6465,7 +6465,7 @@ void doInjectArc ( int64_t fsize ) {
 
 	// replace 00000 with the REAL content length
 	char *start = strstr(req.getBufStart(),"c=");
-	int32_t realContentLen = gbstrlen(start);
+	int32_t realContentLen = strlen(start);
 	char *ptr = req.getBufStart() ;
 	// find start of the 9 zeroes
 	while ( *ptr != '0' || ptr[1] !='0' ) ptr++;
@@ -7747,7 +7747,7 @@ bool isRecoveryFutile ( ) {
 
 	while ( ( filename = dir.getNextFilename ( "*" ) ) ) {
 		// filename must be a certain length
-		//int32_t filenameLen = gbstrlen(filename);
+		//int32_t filenameLen = strlen(filename);
 
 		const char *p = filename;
 
@@ -7826,8 +7826,8 @@ const char *getcwd2 ( char *arg2 ) {
 			// store original path (/bin/gb --> ../../var/gigablast/data/gb)
 			strcpy(arg,arg2); // /bin/gb
 			// back up to /
-			while(arg[gbstrlen(arg)-1] != '/' ) arg[gbstrlen(arg)-1] = '\0';
-			int32_t len2 = gbstrlen(arg);
+			while(arg[strlen(arg)-1] != '/' ) arg[strlen(arg)-1] = '\0';
+			int32_t len2 = strlen(arg);
 			strcpy(arg+len2,tmp);
 		}
 		else {
@@ -7846,7 +7846,7 @@ const char *getcwd2 ( char *arg2 ) {
 		if (p[0] != '.' || p[1] !='.' ) continue;
 		// if .. is at start of string
 		if ( p == arg ) {
-			gbmemcpy ( arg , p+2,gbstrlen(p+2)+1);
+			gbmemcpy ( arg , p+2,strlen(p+2)+1);
 			goto again;
 		}
 		// find previous /
@@ -7855,7 +7855,7 @@ const char *getcwd2 ( char *arg2 ) {
 		slash--;
 		for ( ; slash > arg && *slash != '/' ; slash-- );
 		if ( slash<arg) slash=arg;
-		gbmemcpy(slash,p+2,gbstrlen(p+2)+1);
+		gbmemcpy(slash,p+2,strlen(p+2)+1);
 		goto again;
 		// if can't back up anymore...
 	}
@@ -7882,10 +7882,10 @@ const char *getcwd2 ( char *arg2 ) {
 	// with . at this point
 	static char s_cwdBuf[1025];
 	getcwd ( s_cwdBuf , 1020 );
-	char *end = s_cwdBuf + gbstrlen(s_cwdBuf);
+	char *end = s_cwdBuf + strlen(s_cwdBuf);
 	// make sure that shit ends in /
-	if ( s_cwdBuf[gbstrlen(s_cwdBuf)-1] != '/' ) {
-		int32_t len = gbstrlen(s_cwdBuf);
+	if ( s_cwdBuf[strlen(s_cwdBuf)-1] != '/' ) {
+		int32_t len = strlen(s_cwdBuf);
 		s_cwdBuf[len] = '/';
 		s_cwdBuf[len+1] = '\0';
 		end++;
@@ -7910,7 +7910,7 @@ const char *getcwd2 ( char *arg2 ) {
 	}
 
 	// make sure it ends in / for consistency
-	int32_t clen = gbstrlen(s_cwdBuf);
+	int32_t clen = strlen(s_cwdBuf);
 	if ( s_cwdBuf[clen-1] != '/' ) {
 		s_cwdBuf[clen-1] = '/';
 		s_cwdBuf[clen] = '\0';
@@ -7919,7 +7919,7 @@ const char *getcwd2 ( char *arg2 ) {
 
 	// ensure 'gb' binary exists in that dir. 
 	// binaryCmd is usually gb but use this just in case
-	char *binaryCmd = arg2 + gbstrlen(arg2) - 1;
+	char *binaryCmd = arg2 + strlen(arg2) - 1;
 	for ( ; binaryCmd[-1] && binaryCmd[-1] != '/' ; binaryCmd-- );
 	File fff;
 	fff.set (s_cwdBuf,binaryCmd);

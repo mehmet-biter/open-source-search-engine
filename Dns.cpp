@@ -163,7 +163,7 @@ bool isTimedOut(int32_t ip) {
 inline bool parseTLD(DnsState* ds, char* buf, int32_t* len) {
 	// parse out the TLD
 	const char*	hostname=	ds->m_hostname;
-	const char*	cbeg	=	hostname + gbstrlen(hostname);
+	const char*	cbeg	=	hostname + strlen(hostname);
 	const char*	cend	=	cbeg;
 	bool		found	=	false;
 	char*		curs;
@@ -382,7 +382,7 @@ bool Dns::getIp ( const char *hostname,
 	if ( ptr && 
 	     // we do not store hostnameLen in ds, so make sure this is 0 
 	     ! ptr->m_ds->m_hostname[hostnameLen] &&
-	     (int32_t)gbstrlen(ptr->m_ds->m_hostname) == hostnameLen && 
+	     (int32_t)strlen(ptr->m_ds->m_hostname) == hostnameLen && 
 	     strncmp ( ptr->m_ds->m_hostname, hostname, hostnameLen ) != 0 ) {
 		g_errno = EBADENGINEER;
 		log("dns: Found key collision in wait queue. host %s has "
@@ -729,7 +729,7 @@ bool Dns::getIpOfDNS ( DnsState *ds ) {
 	int32_t  depth       = ds->m_depth;
 	int32_t  numNames    = ds->m_numDnsNames[depth];
 	char *hostname    = ds->m_dnsNames[depth][n];
-	int32_t  hostnameLen = gbstrlen(hostname);
+	int32_t  hostnameLen = strlen(hostname);
 	int32_t  ip          = 0;
 	// loop over all dnsnames in case one causes a circular dependency
 	// . remove him from the array so we do not do him again
@@ -1119,7 +1119,7 @@ bool Dns::sendToNextDNS ( DnsState *ds ) {
 	// . now make the query entry
 	// . break the hostname into labels and store in dns record style.
 	// . basically store length/label pairs
-	char *hostEnd = hostname + gbstrlen(hostname);
+	char *hostEnd = hostname + strlen(hostname);
 	while ( start < hostEnd ) {
 		while ( *start != '.'  && *start && start < hostEnd ) {
 			//log(LOG_DEBUG,"dns: name: %c", *start);
@@ -2010,7 +2010,7 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 				// we will fail looking up www.astronomy.org.nz
 				ds->m_numTried = 0;
 				// hostname changes now
-				int32_t len = gbstrlen(ds->m_nameBufPtr);
+				int32_t len = strlen(ds->m_nameBufPtr);
 				if ( len > 127 ) {
 					/*
 					  this spams the log!

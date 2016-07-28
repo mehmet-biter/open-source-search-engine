@@ -600,7 +600,7 @@ bool Wiktionary::generateHashTableFromWiktionaryTxt ( int32_t sizen ) {
 			  "====Translations====\n"
 		"<title>Poo</title>\n"
 			  ;
-	readSize = gbstrlen(hack);
+	readSize = strlen(hack);
 	gbmemcpy(buf,hack,readSize+1);
 	*/
 
@@ -1507,7 +1507,7 @@ bool Wiktionary::generateHashTableFromWiktionaryTxt ( int32_t sizen ) {
 	      start++ );
 	
 	// and ]'s
-	char *wend = start + gbstrlen(start);
+	char *wend = start + strlen(start);
 	for ( ; wend && wend>start && wend[-1] == ']' ;wend--);
 	*wend = '\0';
 	
@@ -1533,7 +1533,7 @@ bool Wiktionary::generateHashTableFromWiktionaryTxt ( int32_t sizen ) {
 	char *a = start;
 	for ( ; *a ; a++ ) if ( *a == '#' ) { *a = '\0'; break; }
 	// do not add huge words
-	if ( gbstrlen(start) > 1000 ) goto lineLoop;
+	if ( strlen(start) > 1000 ) goto lineLoop;
 	// skip that
 	wp = end + 1;
 	
@@ -1619,7 +1619,7 @@ bool Wiktionary::generateHashTableFromWiktionaryTxt ( int32_t sizen ) {
 	}
 	*dst = '\0';
 	// trim off spaces
-	wend = normBuf + gbstrlen(normBuf);
+	wend = normBuf + strlen(normBuf);
 	// fix ''sadden''
 	for ( ; wend && wend>normBuf && 
 		      (wend[-1] == ']' ||
@@ -1688,7 +1688,7 @@ bool Wiktionary::addWord ( char *word ,
 
 	// store word so we can map word it to a string
 	int32_t len = m_debugBuf.length();
-	int32_t wlen = gbstrlen(word);
+	int32_t wlen = strlen(word);
 	if ( ! m_debugMap.isInTable ( &wid ) ) {
 		m_debugBuf.safeMemcpy ( word, wlen );
 		m_debugBuf.pushChar('\0');
@@ -1863,10 +1863,10 @@ bool Wiktionary::compile ( ) {
 			int32_t stripLen = stripAccentMarks(a,
 							 1023,
 							 (unsigned char *)word,
-							 gbstrlen(word));
+							 strlen(word));
 			if ( stripLen <= 0 ) continue;
 			// if same as original word, skip
-			int32_t wlen = gbstrlen(word);
+			int32_t wlen = strlen(word);
 			if ( wlen==stripLen && strncmp(a,word,wlen)==0) 
 				continue;
 			// count as additional form
@@ -1963,7 +1963,7 @@ bool Wiktionary::compile ( ) {
 			int32_t stripLen = stripAccentMarks(a,
 							 1023,
 							 (unsigned char *)word,
-							 gbstrlen(word));
+							 strlen(word));
 			// debug time
 			if ( stripLen > 0 ) a[stripLen] = 0;
 			//if ( stripLen > 0 ) 
@@ -1971,7 +1971,7 @@ bool Wiktionary::compile ( ) {
 
 			// if same as original word, ignore it
 			if ( stripLen > 0 ) {
-				int32_t wlen = gbstrlen(word);
+				int32_t wlen = strlen(word);
 				if ( wlen==stripLen && 
 				     strncmp(a,word,wlen) == 0 ) 
 					stripLen = 0;

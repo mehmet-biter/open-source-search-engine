@@ -62,7 +62,7 @@ bool Blaster::init(){
 		// if this is not a digit, continue
 		if ( ! isdigit(*p) ) continue;
 		// get ip
-		g_conf.m_dnsIps[0] = atoip ( p , gbstrlen(p) );
+		g_conf.m_dnsIps[0] = atoip ( p , strlen(p) );
 		// done
 		break;
 	}
@@ -225,7 +225,7 @@ void Blaster::runBlaster(char *file1,char *file2,
 				if (!urlStart)
 					urlStart=strstr(p," POST /search");
 				if(!urlStart){
-					p+=gbstrlen(p)+1; //goto next line
+					p+=strlen(p)+1; //goto next line
 					continue;
 				}
 				urlStart++;
@@ -233,7 +233,7 @@ void Blaster::runBlaster(char *file1,char *file2,
 				// register it here
 				g_loop.registerSleepCallback(m_wait, urlStart, sleepWrapperLog);
 				m_totalUrls++;
-				p+=gbstrlen(p)+1;
+				p+=strlen(p)+1;
 			}
 		}
 	}
@@ -313,7 +313,7 @@ void Blaster:: processLogFile(void *state){
 		return;
 	}
 	mnew ( st , sizeof(StateBD) , "BlasterDiff3" );
-	//st->m_u1.set(tmp,gbstrlen(tmp));
+	//st->m_u1.set(tmp,strlen(tmp));
 	st->m_buf1=NULL;
 	// get it
 	bool status = g_httpServer.getDoc ( tmp, // &(st->m_u1) , // url
@@ -362,7 +362,7 @@ void Blaster::startBlastering(){
 		st->m_buf1=NULL;
 		m_totalUrls--;
 		// make into a url class. Set both u1 and u2 here.
-		//st->m_u1.set ( m_p1 , gbstrlen(m_p1) );
+		//st->m_u1.set ( m_p1 , strlen(m_p1) );
 		st->m_u1 = m_p1;
 		// is it an injection url
 		if ( m_doInjection || m_doInjectionWithLinks ) {
@@ -393,11 +393,11 @@ void Blaster::startBlastering(){
 			st->m_u1 = st->m_injectUrl.getBufStart();
 		}
 		// skip to next url
-		m_p1 += gbstrlen ( m_p1 ) + 1;
+		m_p1 += strlen ( m_p1 ) + 1;
 		if (m_blasterDiff){
-			//st->m_u2.set ( m_p2 , gbstrlen(m_p2) );
+			//st->m_u2.set ( m_p2 , strlen(m_p2) );
 			st->m_u2 = m_p2;
-			m_p2 += gbstrlen ( m_p2 ) + 1;
+			m_p2 += strlen ( m_p2 ) + 1;
 		}
 
 		//		log(LOG_WARN,"\n");
@@ -525,7 +525,7 @@ void Blaster::gotDoc1( void *state, TcpSocket *s){
 	
 	log(LOG_WARN,"blaster: Downloading %s",st->m_u2);
 	//char *ss="www.gigablast.com/search?q=hoopla&code=gbmonitor";
-	//	st->m_u2.set(ss,gbstrlen(ss));
+	//	st->m_u2.set(ss,strlen(ss));
 	// get it
 	bool status = g_httpServer.getDoc ( st->m_u2 , // url
 					    0,//ip
@@ -1041,7 +1041,7 @@ void Blaster::gotDoc3 ( void *state, TcpSocket *s){
 		}
 
 		//Url u;
-		//u.set(tmp,gbstrlen(tmp));
+		//u.set(tmp,strlen(tmp));
 		//Now get the doc
 		bool status = g_httpServer.getDoc ( tmp,//&u,
 						    0,//ip
@@ -1187,7 +1187,7 @@ void Blaster::gotDoc4 ( void *state, TcpSocket *s){
 		// So now we search for tmp in the links
 		for (int32_t i=0;i<links.getNumLinks();i++){
 			if(strstr(links.getLink(i),tmp) && 
-			   links.getLinkLen(i)==(int)gbstrlen(tmp)){
+			   links.getLinkLen(i)==(int)strlen(tmp)){
 				isFound=true;
 				log(LOG_WARN,"blaster: %s in results1 but not"
 				    " in results2 for query %s but does exist"

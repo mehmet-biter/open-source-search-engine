@@ -512,7 +512,7 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 		
 		// this is the same
 		wdir = wdir2;
-		wdirlen = wdirlen2; // gbstrlen ( wdir2 );
+		wdirlen = wdirlen2; // strlen ( wdir2 );
 		// check for working dir override
 		if ( *p == '/' ) {
 			wdir = p;
@@ -1435,7 +1435,7 @@ bool Hostdb::saveHostsConf ( ) {
 		g_hostdb.m_dir,
 		//(int32_t)g_hostdb.m_myHost->m_httpPort - 8000,
 		g_hostdb.m_indexSplits );
-	write(fd, temp, gbstrlen(temp));
+	write(fd, temp, strlen(temp));
 	// loop over each host and write the conf line
 	for ( int32_t i = 0; i < m_numTotalHosts; i++ ) {
 		Host *h;
@@ -1457,14 +1457,14 @@ bool Hostdb::saveHostsConf ( ) {
 			sprintf(temp, "0%" PRId32"   ", i);
 		else
 			sprintf(temp, "%" PRId32"   ", i);
-		write(fd, temp, gbstrlen(temp));
+		write(fd, temp, strlen(temp));
 
 		// the new format is just the hostname then note
 		sprintf(temp,"%s ",h->m_hostname);
-		write(fd, temp, gbstrlen(temp));
+		write(fd, temp, strlen(temp));
 
 		// note
-		write(fd, h->m_note, gbstrlen(h->m_note));
+		write(fd, h->m_note, strlen(h->m_note));
 		// end line
 		write(fd, "\n", 1);
 	}

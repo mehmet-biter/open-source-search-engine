@@ -204,7 +204,7 @@ bool Proxy::handleRequest (TcpSocket *s){
 	     hr.getString("sites") == NULL) {
 		//direct all non-raw, non admin traffic away.
 		redir = g_conf.m_redirect;
-		redirLen = gbstrlen(g_conf.m_redirect);
+		redirLen = strlen(g_conf.m_redirect);
 	}
 
 	// . just requesting a static file, like rants.html or logo.gif?

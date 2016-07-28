@@ -346,7 +346,7 @@ bool expandHtml (  SafeBuf& sb,
 			// 		     10);
 			//sprintf (p , "<input type=hidden name=%s value=%" PRId32">",
 			//	  kname,key);
-			//p += gbstrlen ( p );
+			//p += strlen ( p );
 			// sb.safePrintf( "<input type=hidden name=%s "
 			//"value=%" PRId32">",
 			// 	       kname,key);
@@ -363,14 +363,14 @@ bool expandHtml (  SafeBuf& sb,
 			if ( collLen > 0 && collLen < MAX_COLL_LEN ) {
 			        //sprintf (p,"<input type=hidden name=c "
 				//	 "value=\"");
-				//p += gbstrlen ( p );	
+				//p += strlen ( p );	
 				sb.safePrintf("<input type=hidden name=c "
 					      "value=\"");
 				//gbmemcpy ( p , coll , collLen );
 				//p += collLen;
 				sb.safeMemcpy(coll, collLen);
 				//sprintf ( p , "\">\n");
-				//p += gbstrlen ( p );	
+				//p += strlen ( p );	
 				sb.safePrintf("\">\n");
 			}
 
@@ -723,7 +723,7 @@ static bool printWebHomePage ( SafeBuf &sb , HttpRequest *r , TcpSocket *sock ) 
 	// they won't fit into the http request, the browser will reject
 	// sending such a large request with "GET"
 	const char *method = "GET";
-	if ( si.m_sites && gbstrlen(si.m_sites)>800 ) {
+	if ( si.m_sites && strlen(si.m_sites)>800 ) {
 		method = "POST";
 	}
 
@@ -1164,7 +1164,7 @@ bool sendPageAddUrl ( TcpSocket *sock , HttpRequest *hr ) {
 	//if ( ! coll || ! coll[0] ) {
 	//	//coll    = g_conf.m_defaultColl;
 	//	coll = g_conf.getDefaultColl( r->getHost(), r->getHostLen() );
-	//	collLen = gbstrlen(coll);
+	//	collLen = strlen(coll);
 	//}
 	// get collection rec
 
@@ -1361,7 +1361,7 @@ bool sendPageAddUrl ( TcpSocket *sock , HttpRequest *hr ) {
 	ir->ptr_url = st1->m_url;
 
 	// include \0 in size
-	ir->size_url = gbstrlen(ir->ptr_url)+1;
+	ir->size_url = strlen(ir->ptr_url)+1;
 
 	// get back a short reply so we can show the status code easily
 	ir->m_shortReply = 1;

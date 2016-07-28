@@ -63,7 +63,7 @@ bool sendPageGet ( TcpSocket *s , HttpRequest *r ) {
 	if ( ! coll || ! coll[0] ) {
 		//coll    = g_conf.m_defaultColl;
 		coll = g_conf.getDefaultColl( r->getHost(), r->getHostLen() );
-		collLen = gbstrlen(coll);
+		collLen = strlen(coll);
 	}
 	// ensure collection not too big
 	if ( collLen >= MAX_COLL_LEN ) { 
@@ -221,7 +221,7 @@ bool sendErrorReply ( void *state , int32_t err ) {
 	// erase g_errno for sending
 	//g_errno = 0;
 	// . now encapsulate it in html head/tail and send it off
-	//return g_httpServer.sendDynamicPage ( s , tmp , gbstrlen(tmp) );
+	//return g_httpServer.sendDynamicPage ( s , tmp , strlen(tmp) );
 	return g_httpServer.sendErrorReply ( s, err, mstrerror(err) );
 }
 
@@ -366,7 +366,7 @@ bool processLoop ( void *state ) {
 	//Url *redir = *xd->getRedirUrl();
 	if ( strip != 2 ) {
 		sb->safePrintf ( "<BASE HREF=\"%s\">" , base );
-		//p += gbstrlen ( p );
+		//p += strlen ( p );
 	}
 
 	// default colors in case css files missing
@@ -374,7 +374,7 @@ bool processLoop ( void *state ) {
 		sb->safePrintf( "\n<style type=\"text/css\">\n"
 			  "body{background-color:white;color:black;}\n"
 			  "</style>\n");
-		//p += gbstrlen ( p );
+		//p += strlen ( p );
 	}
 
 	//char format = st->m_format;
@@ -450,27 +450,27 @@ bool processLoop ( void *state ) {
 			  "<a href=\"%s\" style=\"%s\">%s</a>"
 			  "" , styleTitle, f->getUrl(), styleLink,
 			  f->getUrl() );
-		//p += gbstrlen ( p );
+		//p += strlen ( p );
 		// then the rest
 		//sprintf(p , 
 		sb->safePrintf(
 			"<span style=\"%s\">. "
 			"Gigablast is not responsible for the content of "
 			"this page.</span>", styleTitle );
-		//p += gbstrlen ( p );
+		//p += strlen ( p );
 
 		sb->safePrintf ( "<br/><span style=\"%s\">"
 			  "Cached: </span>"
 			  "<span style=\"%s\">",
 			  styleTitle, styleText );
-		//p += gbstrlen ( p );
+		//p += strlen ( p );
 
 		// then the spider date in GMT
 		// time_t lastSpiderDate = xd->m_spideredTime;
 		// struct tm *timeStruct = gmtime ( &lastSpiderDate );
 		// char tbuf[100];
 		// strftime ( tbuf, 100,"%b %d, %Y UTC", timeStruct);
-		//p += gbstrlen ( p );
+		//p += strlen ( p );
 		sb->safeStrcpy(tbuf);
 
 		// Moved over from PageResults.cpp
@@ -510,7 +510,7 @@ bool processLoop ( void *state ) {
 				   "These search terms have been "
 				   "highlighted:  ",
 				   styleText );
-			//p += gbstrlen ( p );
+			//p += strlen ( p );
 		}
 		
 	}
@@ -538,7 +538,7 @@ bool processLoop ( void *state ) {
 	// . but still need http:// since we use <base href=>
 	if (port == 80) sprintf(x,"http://%s/get?q=",iptoa(ip));
 	else            sprintf(x,"http://%s:%hu/get?q=",iptoa(ip),port);
-	x += gbstrlen ( x );
+	x += strlen ( x );
 	// the query url encoded
 	int32_t elen = urlEncode ( x , thisUrlEnd - x , q , qlen );
 	x += elen;
@@ -546,7 +546,7 @@ bool processLoop ( void *state ) {
 	//sprintf ( x, "&seq=%" PRId32"&rtq=%" PRId32"d=%" PRId64,
 	//	  (int32_t)st->m_seq,(int32_t)st->m_rtq,st->m_msg22.getDocId());
 	sprintf ( x, "&d=%" PRId64,st->m_docId );
-	x += gbstrlen(x);		
+	x += strlen(x);		
 	// set our query for highlighting
 	Query qq;
 	qq.set2 ( q, st->m_langId , true );

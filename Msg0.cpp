@@ -352,7 +352,7 @@ skip:
 	KEYSET(p,m_startKey,m_ks);          ; p+=m_ks;
 	KEYSET(p,m_endKey,m_ks);            ; p+=m_ks;
 	// NULL terminated collection name
-	//strcpy ( p , coll ); p += gbstrlen ( coll ); *p++ = '\0';
+	//strcpy ( p , coll ); p += strlen ( coll ); *p++ = '\0';
 	*(collnum_t *)p = m_collnum; p += sizeof(collnum_t);
 	m_requestSize    = p - m_request;
 	// ask an individual host for this list if hostId is NOT -1

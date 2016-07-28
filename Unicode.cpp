@@ -10,8 +10,8 @@ static HashTableX s_convTable;
 
 iconv_t gbiconv_open( const char *tocode, const char *fromcode) {
 	// get hash for to/from
-	uint32_t hash1 = hash32Lower_a(tocode, gbstrlen(tocode), 0);
-	uint32_t hash2 = hash32Lower_a(fromcode, gbstrlen(fromcode),0);
+	uint32_t hash1 = hash32Lower_a(tocode, strlen(tocode), 0);
+	uint32_t hash2 = hash32Lower_a(fromcode, strlen(fromcode),0);
 	uint32_t hash = hash32h(hash1, hash2);
 
 	g_errno = 0;

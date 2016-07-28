@@ -153,7 +153,7 @@ bool initWordTable( HashTableX *table, const char *words[], const char *label ) 
 	for ( int32_t i = 0 ; i < n ; i++ ) {
 		const char      *sw    = words[i];
 		if ( ! sw ) break;
-		int32_t       swlen = gbstrlen ( sw );
+		int32_t       swlen = strlen ( sw );
 		int64_t  swh   = hash64Lower_utf8 ( sw , swlen );
 		//log("ii: #%" PRId32"  %s",i,sw);
 		if ( ! table->addTerm (&swh,i+1) ) return false;
@@ -3830,7 +3830,7 @@ int32_t isCommonWord ( int64_t h ) {
 		int32_t n = (int32_t)sizeof(s_commonWords)/ sizeof(char *); 
 		for ( int32_t i = 0 ; i < n ; i++ ) {
 			const char *sw    = s_commonWords[i];
-			int32_t  swlen = gbstrlen ( sw );
+			int32_t  swlen = strlen ( sw );
 			// use the same algo that Words.cpp computeWordIds does
 			int64_t swh = hash64Lower_utf8 ( sw , swlen );
 			if ( ! s_commonWordTable.addTerm ( &swh,i+1 ) )

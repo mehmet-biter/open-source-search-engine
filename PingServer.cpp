@@ -1264,7 +1264,7 @@ bool sendAdminEmail ( Host  *h,
 	TcpServer *ts = g_httpServer.getTcp();
 	log ( LOG_WARN, "PingServer: Sending email to sysadmin:\n %s", buf );
 	//if ( !ts->sendMsg ( g_conf.m_smtpHost,
-	//		    gbstrlen(g_conf.m_smtpHost),
+	//		    strlen(g_conf.m_smtpHost),
 	//		    g_conf.m_smtpPort,
 	const char *ip = emailServIp; // gf39, mail server ip
 	// use backup if there
@@ -1273,7 +1273,7 @@ bool sendAdminEmail ( Host  *h,
 	//	iptoa(ipString,g_emailMX1IPBackup);
 	//	ip = ipString;
 	//}
-	if ( !ts->sendMsg( ip, gbstrlen( ip ), 25, buf, PAGER_BUF_SIZE, buffLen, buffLen, h, gotDocWrapper,
+	if ( !ts->sendMsg( ip, strlen( ip ), 25, buf, PAGER_BUF_SIZE, buffLen, buffLen, h, gotDocWrapper,
 	                   60 * 1000, 100 * 1024, 100 * 1024 ) ) {
 		return false;
 	}
@@ -1654,7 +1654,7 @@ void checkKernelErrors( int fd, void *state ){
 	int32_t oldKernBufLen = s_kernelRingBufLen;
 	if ( s_kernelRingBufLen > 3 * 1024 ){
 		oldKernBuf = s_kernelRingBuf + s_kernelRingBufLen / 2;
-		oldKernBufLen = gbstrlen( oldKernBuf );
+		oldKernBufLen = strlen( oldKernBuf );
 	}
 
 	// somethings changed. find out what part has changed
@@ -1665,7 +1665,7 @@ void checkKernelErrors( int fd, void *state ){
 	// we couldn't find the old buf in the new buf!
 	else 
 		changedBuf = buf;
-	int32_t changedBufLen = gbstrlen(changedBuf);
+	int32_t changedBufLen = strlen(changedBuf);
 	
 	// copy the new buf over to the old buf 
 	strcpy ( s_kernelRingBuf, buf );
@@ -1681,13 +1681,13 @@ void checkKernelErrors( int fd, void *state ){
 
 	// check if we match any error strings in master controls
 	char *p = NULL;
-	if ( gbstrlen(g_conf.m_errstr1) > 0 )
+	if ( strlen(g_conf.m_errstr1) > 0 )
 		p = strstr( changedBuf, g_conf.m_errstr1 );
 
-	if ( !p && gbstrlen(g_conf.m_errstr2) > 0 )
+	if ( !p && strlen(g_conf.m_errstr2) > 0 )
 		p = strstr( changedBuf, g_conf.m_errstr2 );
 
-	if ( !p && gbstrlen(g_conf.m_errstr3) > 0 )
+	if ( !p && strlen(g_conf.m_errstr3) > 0 )
 		p = strstr( changedBuf, g_conf.m_errstr3 );
 
 	if ( p ){
@@ -1701,12 +1701,12 @@ void checkKernelErrors( int fd, void *state ){
 		while ( p > changedBuf && *(p-1) != '\n' )
 			p--;
 	
-		if ( strncasestr ( p, gbstrlen(p) , "scsi" ) &&
+		if ( strncasestr ( p, strlen(p) , "scsi" ) &&
 		     g_numIOErrors > s_lastCount ) {
 			me->m_pingInfo.m_kernelErrors = ME_IOERR;
 			s_lastCount = g_numIOErrors;
 		}
-		else if ( strncasestr ( p, gbstrlen(p), "100 mbps" ) )
+		else if ( strncasestr ( p, strlen(p), "100 mbps" ) )
 			me->m_pingInfo.m_kernelErrors = ME_100MBPS;
 		// assume an I/O IO error here otherwise
 		else if ( g_numIOErrors > s_lastCount ) {

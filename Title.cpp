@@ -857,7 +857,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 			// since it is the "filtered" list of root titles...
 			// if not, fix it in xmldoc then.
 			rootTitles   [nr] = pr;
-			rootTitleLens[nr] = gbstrlen(pr);
+			rootTitleLens[nr] = strlen(pr);
 			// advance
 			nr++;
 			// no breaching

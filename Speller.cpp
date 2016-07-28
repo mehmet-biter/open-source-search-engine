@@ -53,7 +53,7 @@ void Speller::test ( char *ff ) {
 	// go through the words in dict/words
 	while ( fgets ( buf , MAX_FRAG_SIZE , fd ) ) {
 		// length of word(s), including the terminating \n
-		int32_t wlen = gbstrlen(buf) ;
+		int32_t wlen = strlen(buf) ;
 		// skip if empty
 		if ( wlen <= 0 ) continue;
 		buf[wlen-1]='\0';
@@ -220,7 +220,7 @@ bool Speller::loadUnifiedDict() {
 		char *phrase = p;
 		// if line is a comment skip it
 		if ( *p == '#' ){
-			p += gbstrlen(p) + 1;
+			p += strlen(p) + 1;
 			continue;
 		}
 		// skip phrase
@@ -230,23 +230,23 @@ bool Speller::loadUnifiedDict() {
 		*p = '\0';
 
 		// skip empty phrases
-		if(gbstrlen(phrase) < 1) {
+		if(strlen(phrase) < 1) {
 			log(LOG_WARN,
 				"spell: Got zero length entry in unifiedDict "
 			    "at line %" PRIu64", skipping\n",
 				atline);
-			p += gbstrlen(p) + 1;
+			p += strlen(p) + 1;
 			continue;
 		}
 
 		// skip single byte words that are not alphabetic
 		// Anything over 'Z' is likely unicode, so don't bother
-		if(gbstrlen(phrase) == 1 && (phrase[0] < 'a')) {
+		if(strlen(phrase) == 1 && (phrase[0] < 'a')) {
 			log(LOG_WARN,
 				"spell: Got questionable entry in "
 			    "unifiedDict at line %" PRIu64", skipping: %s\n",
 				atline,p);
-			p += gbstrlen(p) + 1;
+			p += strlen(p) + 1;
 			continue;
 		}
 		// . i need to move everything over to utf8!!!
@@ -261,12 +261,12 @@ bool Speller::loadUnifiedDict() {
 		*p = '\0';
 		p++;
 
-		uint64_t key = hash64d(phrase,gbstrlen(phrase));
+		uint64_t key = hash64d(phrase,strlen(phrase));
 
 		// make sure we haven't added this word/phrase yet
 		if ( m_unifiedDict.isInTable ( &key ) ) {
 			totalCollisions++;
-			p += gbstrlen(p) + 1;
+			p += strlen(p) + 1;
 			continue;
 		}
 
@@ -337,7 +337,7 @@ bool Speller::loadUnifiedDict() {
 		if ( count == 0 ) {
 			m_unifiedBuf.setLength(offset);
 			// skip "p" to next line in unifiedBuf.txt
-			p += gbstrlen(p) + 1;
+			p += strlen(p) + 1;
 			continue;
 		}
 
@@ -350,7 +350,7 @@ bool Speller::loadUnifiedDict() {
 		m_unifiedDict.addKey(&key, &offset);
 
 		// skip "p" to next line in unifiedBuf.txt
-		p += gbstrlen(p) + 1;
+		p += strlen(p) + 1;
 	}
 
 	log (LOG_WARN,"spell: got %" PRId32" TOTAL collisions in unified dict",
@@ -490,7 +490,7 @@ int32_t Speller::getPhrasePopularity( const char *str, uint64_t h, unsigned char
 	//char *p = *(char **)m_unifiedDict.getValueFromSlot(slot);
 	int32_t offset =  *(int32_t *)m_unifiedDict.getValueFromSlot(slot);
 	char *p = m_unifiedBuf.getBufStart() + offset;
-	char *pend = p + gbstrlen(p);
+	char *pend = p + strlen(p);
 
 	// skip word itself
 	while ( *p != '\t' ) p++;
@@ -907,11 +907,11 @@ void Speller::dictLookupTest ( char *ff ){
 	// go through the words
 	while ( fgets ( buf , MAX_FRAG_SIZE , fd ) ) {
 		// length of word(s), including the terminating \n
-		int32_t wlen = gbstrlen(buf) ;
+		int32_t wlen = strlen(buf) ;
 		// skip if empty
 		if ( wlen <= 0 ) continue;
 		buf[wlen-1]='\0';
-		uint64_t h = hash64d ( buf, gbstrlen(buf));
+		uint64_t h = hash64d ( buf, strlen(buf));
 		int32_t pop = g_speller.getPhrasePopularity( buf, h, 0 );
 		if ( pop < 0 ){
 			g_process.shutdownAbort(true);

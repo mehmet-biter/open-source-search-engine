@@ -109,7 +109,7 @@ bool Query::set2 ( const char *query        ,
 
 	m_queryExpansion = queryExpansion;
 
-	int32_t queryLen = gbstrlen(query);
+	int32_t queryLen = strlen(query);
 
 	// truncate query if too big
 	if ( queryLen >= ABS_MAX_QUERY_LEN ) {

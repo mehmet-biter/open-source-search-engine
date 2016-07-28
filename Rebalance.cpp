@@ -126,7 +126,7 @@ const char *Rebalance::getNeedsRebalance ( ) {
 	       );
 
 	// convert m_nextKey into an ascii string and store into keyStr
-	hexToBin(keyStr,gbstrlen(keyStr), (char *)&m_nextKey);
+	hexToBin(keyStr,strlen(keyStr), (char *)&m_nextKey);
 
 	m_collnum = cn;
 	//m_collnum = 4695; //debug skip

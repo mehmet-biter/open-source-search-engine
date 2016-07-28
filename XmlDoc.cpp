@@ -516,7 +516,7 @@ bool XmlDoc::loadFromOldTitleRec ( ) {
 
 bool XmlDoc::setCollNum ( const char *coll ) {
 	CollectionRec *cr;
-	cr = g_collectiondb.getRec ( coll , gbstrlen(coll) );
+	cr = g_collectiondb.getRec ( coll , strlen(coll) );
 	if ( ! cr ) {
 		g_errno = ENOCOLLREC;
 		return log("build: collrec not found for %s",coll);
@@ -591,7 +591,7 @@ bool XmlDoc::set4 ( SpiderRequest *sreq      ,
 
 	if ( utf8Content ) {
 		// get length of it all
-		int32_t clen = gbstrlen(utf8Content);
+		int32_t clen = strlen(utf8Content);
 		// return true on error with g_errno set
 		if ( ! m_mime.set ( utf8ContentArg , clen , NULL ) ) {
 			if ( ! g_errno ) g_errno = EBADMIME;
@@ -624,7 +624,7 @@ bool XmlDoc::set4 ( SpiderRequest *sreq      ,
 		if ( m_mimeValid && m_mime.m_contentLen > 0) {
 			m_contentLen = m_mime.m_contentLen;
 		} else {
-			m_contentLen = gbstrlen(utf8Content);
+			m_contentLen = strlen(utf8Content);
 		}
 
 		m_contentValid        = true;
@@ -1188,7 +1188,7 @@ bool XmlDoc::setFirstUrl ( char *u ) {
 		return true;
 	}
 
-	//if ( gbstrlen (u) + 1 > MAX_URL_LEN )
+	//if ( strlen (u) + 1 > MAX_URL_LEN )
 	//	m_indexCode = EURLTOOLONG;
 
 	m_firstUrl.set( u );
@@ -7772,7 +7772,7 @@ int32_t *XmlDoc::getSiteHash32 ( ) {
 	if ( m_siteHash32Valid ) return &m_siteHash32;
 	char *site = getSite();
 	if ( ! site || site == (void *)-1) return (int32_t *)site;
-	m_siteHash32 = hash32 ( site , gbstrlen(site) );
+	m_siteHash32 = hash32 ( site , strlen(site) );
 	m_siteHash32Valid = true;
 	return &m_siteHash32;
 }
@@ -9204,7 +9204,7 @@ uint16_t getCharsetFast ( HttpMime *mime,
 	cs = ucDetectBOM ( pstart , pend - pstart );
 	if ( cs && charset == csUnknown ) {
 		log(LOG_DEBUG, "build: Unicode BOM signature detected: %s",cs);
-		int32_t len = gbstrlen(cs);	if ( len > 31 ) len = 31;
+		int32_t len = strlen(cs);	if ( len > 31 ) len = 31;
 		charset = get_iana_charset ( cs , len );
 	}
 
@@ -9345,7 +9345,7 @@ uint16_t getCharsetFast ( HttpMime *mime,
 		// do the actual NULL termination
 		*p = 0;
 		// get the character set
-		int16_t metaCs = get_iana_charset(csString, gbstrlen(csString));
+		int16_t metaCs = get_iana_charset(csString, strlen(csString));
 		// put it back
 		*p = d;
 		// update "charset" to "metaCs" if known, it overrides all
@@ -9741,7 +9741,7 @@ void XmlDoc::filterStart_r ( bool amThread ) {
 	}
 
 	// breach sanity check
-	//if ( gbstrlen(cmd) > 2040 ) { g_process.shutdownAbort(true); }
+	//if ( strlen(cmd) > 2040 ) { g_process.shutdownAbort(true); }
 
 	// execute it
 	int retVal = gbsystem ( cmd );
@@ -10923,7 +10923,7 @@ Images *XmlDoc::getImages ( ) {
 
 	// now get the thumbnail
 	if ( ! m_images.getThumbnail ( site         ,
-				       gbstrlen(site) ,
+				       strlen(site) ,
 				       *d           ,
 				       this         ,
 				       cr->m_collnum       ,
@@ -11073,7 +11073,7 @@ char *XmlDoc::hasNoIndexMetaTag() {
 	char mbuf[16];
 	mbuf[0] = '\0';
 	const char *tag = "noindex";
-	int32_t tlen = gbstrlen(tag);
+	int32_t tlen = strlen(tag);
 	// check the xml for a meta tag
 	Xml *xml = getXml();
 	if ( ! xml || xml == (Xml *)-1 ) return (char *)xml;
@@ -11090,7 +11090,7 @@ char *XmlDoc::hasFakeIpsMetaTag ( ) {
 	char mbuf[16];
 	mbuf[0] = '\0';
 	const char *tag = "usefakeips";
-	int32_t tlen = gbstrlen(tag);
+	int32_t tlen = strlen(tag);
 
 	// check the xml for a meta tag
 	Xml *xml = getXml();
@@ -11300,8 +11300,8 @@ int32_t *XmlDoc::getUrlFilterNum ( ) {
 // . both "u" and "site" must not start with http:// or https:// or protocol
 static bool isSiteRootFunc ( const char *u , const char *site ) {
 	// get length of each
-	int32_t slen = gbstrlen(site);//m_siteLen;
-	int32_t ulen = gbstrlen(u);
+	int32_t slen = strlen(site);//m_siteLen;
+	int32_t ulen = strlen(u);
 	// "site" may or may not end in /, so remove that
 	if ( site[slen-1] == '/' ) slen--;
 	// same for url
@@ -11326,7 +11326,7 @@ static bool isSiteRootFunc ( const char *u , const char *site ) {
 
 static bool isSiteRootFunc3 ( const char *u , int32_t siteRootHash32 ) {
 	// get length of each
-	int32_t ulen = gbstrlen(u);
+	int32_t ulen = strlen(u);
 	// remove trailing /
 	if ( u[ulen-1] == '/' ) ulen--;
 	// skip http:// or https://
@@ -11497,7 +11497,7 @@ char *XmlDoc::getSpiderLinks ( ) {
 	buf1[0] = '\0';
 	buf2[0] = '\0';
 	xml->getMetaContent ( buf1, 255 , "robots" , 6 );
-	xml->getMetaContent ( buf2, 255 , g_conf.m_spiderBotName, gbstrlen(g_conf.m_spiderBotName) );
+	xml->getMetaContent ( buf2, 255 , g_conf.m_spiderBotName, strlen(g_conf.m_spiderBotName) );
 
 	if ( strstr ( buf1 , "nofollow" ) ||
 	     strstr ( buf2 , "nofollow" ) ||
@@ -12904,7 +12904,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		m_httpStatus = 200;
 		m_siteValid = true;
 		ptr_site = "";
-		size_site = gbstrlen(ptr_site)+1;
+		size_site = strlen(ptr_site)+1;
 		m_isSiteRootValid = true;
 		m_isSiteRoot2 = 1;
 		//m_tagHash32Valid = true;
@@ -16735,7 +16735,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		if ( hsum == (char *)0x01 ) hsum = NULL;
 
 		// get len. this is the HIGHLIGHTED summary so it is ok.
-		if ( hsum ) hsumLen = gbstrlen(hsum);
+		if ( hsum ) hsumLen = strlen(hsum);
 
 		// must be \0 terminated. not any more, it can be a subset
 		// of a larger summary used for deduping
@@ -16871,7 +16871,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 
 	char *ru = ptr_redirUrl;
 	int32_t  rulen = 0;
-	if ( ru ) rulen = gbstrlen(ru)+1;
+	if ( ru ) rulen = strlen(ru)+1;
 
 	// need full cached page of each search result?
 	// include it always for spider status docs.
@@ -17124,7 +17124,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		reply->m_isLinkSpam = false;
 
 	if ( m_req->m_doLinkSpamCheck ) {
-		// reset to NULL to avoid gbstrlen segfault
+		// reset to NULL to avoid strlen segfault
 		const char *note = NULL;
 		// need this
 		if ( ! m_xmlValid ) { g_process.shutdownAbort(true); }
@@ -17152,7 +17152,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		if ( note ) {
 			// include the \0
 			reply->ptr_note  = note;
-			reply->size_note = gbstrlen(note)+1;
+			reply->size_note = strlen(note)+1;
 		}
 		// log the reason why it is a log page
 		if ( reply->m_isLinkSpam )
@@ -17404,7 +17404,7 @@ char *XmlDoc::getDescriptionBuf ( char *displayMetas , int32_t *dsize ) {
 	char *dbufEnd = m_dbuf + 1024;//1024*64;
 	char *dptr    = m_dbuf;
 	char *pp      = displayMetas;
-	char *ppend   = pp + gbstrlen(displayMetas);
+	char *ppend   = pp + strlen(displayMetas);
 	// loop over the list of requested meta tag names
 	while ( pp < ppend && dptr < dbufEnd ) {
 		// skip initial spaces. meta tag names are ascii always i guess
@@ -17434,7 +17434,7 @@ char *XmlDoc::getDescriptionBuf ( char *displayMetas , int32_t *dsize ) {
 		int32_t avail = dbufEnd - dptr - 1;
 		if ( maxLen > avail ) maxLen = avail;
 		// store the content at "dptr" (do not exceed "maxLen" bytes)
-		int32_t wlen = xml->getMetaContent( dptr, maxLen, s, gbstrlen( s ) );
+		int32_t wlen = xml->getMetaContent( dptr, maxLen, s, strlen( s ) );
 		dptr[wlen] = '\0';
 
 		// test it out
@@ -17783,7 +17783,7 @@ char *XmlDoc::getIsNoArchive ( ) {
 		while ( att < end && *att && is_wspace_a(*att) ) att++;
 		// must be robots or <configured botname>. skip if not
 		if ( strncasecmp(att,"robots" ,6) &&
-		     strncasecmp(att,g_conf.m_spiderBotName,gbstrlen(g_conf.m_spiderBotName))   ) continue;
+		     strncasecmp(att,g_conf.m_spiderBotName,strlen(g_conf.m_spiderBotName))   ) continue;
 
 		// get the content vaue
 		att = nodes[i].getFieldValue("content",&alen);
@@ -18015,7 +18015,7 @@ char *XmlDoc::getIsErrorPage ( ) {
 		if(errMsg || numChecked > 1) break;
 	}
 	if(!errMsg) return &m_isErrorPage;
-	len = gbstrlen(errMsg);
+	len = strlen(errMsg);
 
 	// make sure the error message was not present in the link text
 	if ( li && li->getNumGoodInlinks() > 5 ) return &m_isErrorPage;
@@ -18180,8 +18180,8 @@ static int cmptp (const void *v1, const void *v2) {
 	char *ps2 = start + t2->m_prefixOff;
 	if ( t1->m_prefixOff < 0 ) ps1 = NULL;
 	if ( t2->m_prefixOff < 0 ) ps2 = NULL;
-	int32_t plen1 = 0; if ( ps1 ) plen1 = gbstrlen(ps1);
-	int32_t plen2 = 0; if ( ps2 ) plen2 = gbstrlen(ps2);
+	int32_t plen1 = 0; if ( ps1 ) plen1 = strlen(ps1);
+	int32_t plen2 = 0; if ( ps2 ) plen2 = strlen(ps2);
 	int32_t pmin = plen1;
 	if ( plen2 < pmin ) pmin = plen2;
 	int32_t pn = strncmp ( ps1 , ps2 , pmin );

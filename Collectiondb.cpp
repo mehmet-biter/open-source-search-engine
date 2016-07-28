@@ -107,7 +107,7 @@ bool Collectiondb::loadAllCollRecs ( ) {
 		// skip if first char not "coll."
 		if ( strncmp ( f , "coll." , 5 ) != 0 ) continue;
 		// must end on a digit (i.e. coll.main.0)
-		if ( ! is_digit (f[gbstrlen(f)-1]) ) continue;
+		if ( ! is_digit (f[strlen(f)-1]) ) continue;
 		// count them
 		count++;
 	}
@@ -127,7 +127,7 @@ bool Collectiondb::loadAllCollRecs ( ) {
 		// skip if first char not "coll."
 		if ( strncmp ( f , "coll." , 5 ) != 0 ) continue;
 		// must end on a digit (i.e. coll.main.0)
-		if ( ! is_digit (f[gbstrlen(f)-1]) ) continue;
+		if ( ! is_digit (f[strlen(f)-1]) ) continue;
 		// point to collection
 		const char *coll = f + 5;
 		// NULL terminate at .
@@ -235,7 +235,7 @@ bool Collectiondb::addExistingColl ( const char *coll, collnum_t collnum ) {
 	g_parms.setToDefault( (char *)cr , OBJ_COLL , cr );
 
 	strcpy ( cr->m_coll , coll );
-	cr->m_collLen = gbstrlen ( coll );
+	cr->m_collLen = strlen ( coll );
 	cr->m_collnum = i;
 
 	// point to this, so Rdb and RdbBase can reference it
@@ -297,10 +297,10 @@ bool Collectiondb::addNewColl ( const char *coll, bool saveIt,
 		return false;
 	}
 	// or if too big
-	if ( gbstrlen(coll) > MAX_COLL_LEN ) {
+	if ( strlen(coll) > MAX_COLL_LEN ) {
 		g_errno = ENOBUFS;
-		log( LOG_WARN, "admin: Trying to create a new collection whose name '%s' of %i chars is longer than the "
-		     "max of %" PRId32" chars.", coll, gbstrlen(coll), (int32_t)MAX_COLL_LEN );
+		log( LOG_WARN, "admin: Trying to create a new collection whose name '%s' of %zd chars is longer than the "
+		     "max of %" PRId32" chars.", coll, strlen(coll), (int32_t)MAX_COLL_LEN );
 		return false;
 	}
 
@@ -340,7 +340,7 @@ bool Collectiondb::addNewColl ( const char *coll, bool saveIt,
 
 	// set coll id and coll name for coll id #i
 	strcpy ( cr->m_coll , coll );
-	cr->m_collLen = gbstrlen ( coll );
+	cr->m_collLen = strlen ( coll );
 	cr->m_collnum = newCollnum;
 
 	// point to this, so Rdb and RdbBase can reference it
@@ -957,7 +957,7 @@ const char *Collectiondb::getDefaultColl ( HttpRequest *r ) {
 // . returns NULL if not available
 CollectionRec *Collectiondb::getRec ( const char *coll ) {
 	if ( ! coll ) coll = "";
-	return getRec ( coll , gbstrlen(coll) );
+	return getRec ( coll , strlen(coll) );
 }
 
 CollectionRec *Collectiondb::getRec ( const char *coll , int32_t collLen ) {
@@ -1008,7 +1008,7 @@ char *Collectiondb::getCollName ( collnum_t collnum ) {
 collnum_t Collectiondb::getCollnum ( const char *coll ) {
 
 	int32_t clen = 0;
-	if ( coll ) clen = gbstrlen(coll );
+	if ( coll ) clen = strlen(coll );
 	return getCollnum ( coll , clen );
 }
 
@@ -1018,12 +1018,12 @@ collnum_t Collectiondb::getCollnum ( const char *coll , int32_t clen ) {
 	if ( coll && ! coll[0] ) coll = NULL;
 	if ( ! coll ) {
 		coll = g_conf.m_defaultColl;
-		if ( coll ) clen = gbstrlen(coll);
+		if ( coll ) clen = strlen(coll);
 		else clen = 0;
 	}
 	if ( ! coll || ! coll[0] ) {
 		coll = "main";
-		clen = gbstrlen(coll);
+		clen = strlen(coll);
 	}
 
 	// not associated with any collection. Is this
@@ -1234,7 +1234,7 @@ bool CollectionRec::load ( const char *coll , int32_t i ) {
 	// set our collection number
 	m_collnum = i;
 	// set our collection name
-	m_collLen = gbstrlen ( coll );
+	m_collLen = strlen ( coll );
 	if ( coll != m_coll)
 		strcpy ( m_coll , coll );
 

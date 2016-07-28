@@ -1576,7 +1576,7 @@ static int32_t generatePingMsg( Host *h, int64_t nowms, char *buf ) {
 
 	if ( ! g_conf.m_useShotgun ) return pingAge;
 
-	char *p = buf + gbstrlen(buf);
+	char *p = buf + strlen(buf);
 
 	p += sprintf ( p , "</td><td>" );
 

@@ -132,7 +132,7 @@ bool Rdb::init ( const char     *dir                  ,
 	m_isCollectionLess = isCollectionLess;
 
 	// save the dbname NULL terminated into m_dbname/m_dbnameLen
-	m_dbnameLen = gbstrlen ( dbname );
+	m_dbnameLen = strlen ( dbname );
 	gbmemcpy ( m_dbname , dbname , m_dbnameLen );
 	m_dbname [ m_dbnameLen ] = '\0';
 

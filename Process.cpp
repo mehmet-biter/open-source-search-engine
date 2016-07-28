@@ -160,7 +160,7 @@ static const char * const g_files[] = {
 bool Process::getFilesToCopy ( const char *srcDir , SafeBuf *buf ) {
 
 	// sanirty
-	int32_t slen = gbstrlen(srcDir);
+	int32_t slen = strlen(srcDir);
 	if ( srcDir[slen-1] != '/' ) { g_process.shutdownAbort(true); }
 
 	for ( int32_t i = 0 ; i < (int32_t)sizeof(g_files)/4 ; i++ ) {

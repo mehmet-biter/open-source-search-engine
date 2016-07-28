@@ -290,7 +290,7 @@ uint8_t getCountryId ( char *cc ) {
 		int32_t n = (int32_t) sizeof(s_countryCode) / sizeof(char *); 
 		for ( int32_t i = 0 ; i < n ; i++ ) {
 			char *s    = (char *)s_countryCode[i];
-			//int32_t  slen = gbstrlen ( s );
+			//int32_t  slen = strlen ( s );
 			// sanity check
 			if ( !s[0] || !s[1] || s[2]) { g_process.shutdownAbort(true); }
 			// map it to a 4 byte key

@@ -43,7 +43,7 @@ static bool isInWhiteSpaceList ( const char *p , const char *buf ) {
 	const char *match = strstr ( buf , p );
 	if ( ! match ) return false;
 	
-	int32_t len = gbstrlen(p);
+	int32_t len = strlen(p);
 
 	// ensure book-ended by whitespace
 	if (  match && 
@@ -266,7 +266,7 @@ void Conf::setRootIps ( ) {
 	if ( h->m_type & HT_PROXY ) ipStr = PUBLICLY_AVAILABLE_DNS1; 
 
 	if ( m_numDns == 0 ) {
-		m_dnsIps[0] = atoip( ipStr , gbstrlen(ipStr) );
+		m_dnsIps[0] = atoip( ipStr , strlen(ipStr) );
 		m_dnsPorts[0] = 53;
 		m_numDns = 1;
 	}

@@ -311,7 +311,7 @@ bool Msg40::federatedLoop ( ) {
 	mr.m_language                  = (unsigned char)m_si->m_queryLangId;
 	mr.ptr_query                   = m_si->m_q.m_orig;
 	mr.size_query                  = m_si->m_q.m_origLen+1;
-	int32_t slen = 0; if ( m_si->m_sites ) slen=gbstrlen(m_si->m_sites)+1;
+	int32_t slen = 0; if ( m_si->m_sites ) slen=strlen(m_si->m_sites)+1;
 	mr.ptr_whiteList               = m_si->m_sites;
 	mr.size_whiteList              = slen;
 	mr.m_timeout                   = g_conf.m_msg40_msg39_timeout;
@@ -888,7 +888,7 @@ bool Msg40::launchMsg20s ( bool recalled ) {
 		req.m_isDebug            = (bool)m_si->m_debug;
 
 		if ( m_si->m_displayMetas && m_si->m_displayMetas[0] ) {
-			int32_t dlen = gbstrlen(m_si->m_displayMetas);
+			int32_t dlen = strlen(m_si->m_displayMetas);
 			req.ptr_displayMetas     = m_si->m_displayMetas;
 			req.size_displayMetas    = dlen+1;
 		}
@@ -1999,7 +1999,7 @@ static bool initSubDomTable(HashTable *table, const char *words[], int32_t size 
 	int32_t n = (int32_t)size/ sizeof(char *); 
 	for ( int32_t i = 0 ; i < n ; i++ ) {
 		const char      *sw    = words[i];
-		int32_t       swlen = gbstrlen ( sw );
+		int32_t       swlen = strlen ( sw );
                 int32_t h = hash32Lower_a(sw, swlen);
                 int32_t slot = table->getSlot(h);
                 // if there is no slot, this url doesn't exist => add it

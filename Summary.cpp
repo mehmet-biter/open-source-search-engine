@@ -339,7 +339,7 @@ bool Summary::setSummary ( Xml *xml, Words *words, Sections *sections, Pos *pos,
 				log (LOG_WARN,"=-=-=-=-=-=-=-=-=-=-=-=-=-=-=");
 			sprintf(xp, "score=%08" PRId32" a=%05" PRId32" b=%05" PRId32" ",
 				(int32_t)score,(int32_t)a,(int32_t)b);
-			xp += gbstrlen(xp);
+			xp += strlen(xp);
 			for ( int32_t j = a; j < b; j++ ){
 				//int32_t s = scores->m_scores[j];
 				int32_t s = 0;
@@ -352,10 +352,10 @@ bool Summary::setSummary ( Xml *xml, Words *words, Sections *sections, Pos *pos,
 					*xp = c;
 					xp++;
 				}
-				//p += gbstrlen(p);
+				//p += strlen(p);
 				if ( s == 0 ) continue;
 				sprintf ( xp ,"(%" PRId32")",s);
-				xp += gbstrlen(xp);
+				xp += strlen(xp);
 			}
 			log (LOG_WARN,"query: summary: %s", buf);
 			//}

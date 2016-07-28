@@ -200,7 +200,7 @@ bool HttpRequest::set (char *url,int32_t offset,int32_t size,time_t ifModifiedSi
 	//uint16_t port = url->getPort();
 	if ( port != 80 ) {
 		sprintf ( host + hlen , ":%" PRIu32 , (uint32_t)port );
-		hlen += gbstrlen ( host + hlen );
+		hlen += strlen ( host + hlen );
 	}
 	// the if-modified-since field
 	char  ibuf[64];
@@ -210,7 +210,7 @@ bool HttpRequest::set (char *url,int32_t offset,int32_t size,time_t ifModifiedSi
 		sprintf(ibuf,"If-Modified-Since: %s UTC",
 			asctime(gmtime(&ifModifiedSince)));
 		// get the length
-		int32_t ilen = gbstrlen(ibuf);
+		int32_t ilen = strlen(ibuf);
 		// hack off \n from ctime - replace with \r\n\0
 		ibuf [ ilen - 1 ] = '\r';
 		ibuf [ ilen     ] = '\n';
@@ -250,7 +250,7 @@ bool HttpRequest::set (char *url,int32_t offset,int32_t size,time_t ifModifiedSi
 	const char *up = "";
 	if ( proxyUsernamePwd && proxyUsernamePwd[0] ) {
 		tmp.safePrintf("Proxy-Authorization: Basic ");
-		tmp.base64Encode (proxyUsernamePwd,gbstrlen(proxyUsernamePwd));
+		tmp.base64Encode (proxyUsernamePwd,strlen(proxyUsernamePwd));
 		tmp.safePrintf("\r\n");
 		up = tmp.getBufStart();
 	}
@@ -412,7 +412,7 @@ bool HttpRequest::set (char *url,int32_t offset,int32_t size,time_t ifModifiedSi
 	 }
 
 	 // set m_bufLen
-	 //m_bufLen = p - m_buf;//gbstrlen ( m_buf );
+	 //m_bufLen = p - m_buf;//strlen ( m_buf );
 	 // sanity check
 	 // if ( m_bufLen + 1 > MAX_REQ_LEN ) {
 	 //	 log("build: HttpRequest buf is too small.");
@@ -698,7 +698,7 @@ bool HttpRequest::set ( char *origReq , int32_t origReqLen , TcpSocket *sock ) {
 	 // if it has no file extension append a /index.html
 	 if ( ! hasExtension && m_filename [ m_filenameLen - 1 ] == '/' ) {
 		 strcat ( m_filename , "index.html" );
-		 m_filenameLen = gbstrlen ( m_filename );
+		 m_filenameLen = strlen ( m_filename );
 	 }
 
 
@@ -1098,7 +1098,7 @@ const char *HttpRequest::getStringFromCookie ( const char *field      ,
                                                const char *defaultStr ,
                                                int32_t *next       ) {
 	// get field len
-	int32_t flen = gbstrlen(field);
+	int32_t flen = strlen(field);
 	// assume none
 	if ( len ) *len = 0;
 	// if no cookie, forget it
@@ -1124,7 +1124,7 @@ const char *HttpRequest::getStringFromCookie ( const char *field      ,
 	goto entryPoint;
 	// . loop over all xxx=yyy\0 thingies in the cookie
 	// . we converted every '&' to a \0 when the cookiebuf was set above
-	//for ( char *p = m_cookieBuf ; *p ; p += gbstrlen(p) + 1 ) {
+	//for ( char *p = m_cookieBuf ; *p ; p += strlen(p) + 1 ) {
 	// . no, we just keep them as &'s because seems like cookies use ;'s
 	//   as delimeters not so much &'s. and when we log the cookie in the
 	//   log, i wanted to see the whole cookie, so having \0's in the
@@ -1180,7 +1180,7 @@ const char *HttpRequest::getStringFromCookie ( const char *field      ,
 		// otherwise, save it and try to get from meta cookie
 		savedVal = val;
 		// length
-		//if ( len ) *len = gbstrlen(val);
+		//if ( len ) *len = strlen(val);
 		// this is the value!
 		//return val;
 	}
@@ -1199,7 +1199,7 @@ const char *HttpRequest::getString ( const char *field, int32_t *len, const char
 	 // return default if no match
 	 if ( ! value ) { 
 		 if ( ! len ) return defaultStr;
-		 if ( defaultStr ) *len = gbstrlen ( defaultStr );
+		 if ( defaultStr ) *len = strlen ( defaultStr );
 		 else              *len = 0;
 		 return defaultStr; 
 	 }
@@ -1299,7 +1299,7 @@ double HttpRequest::getDouble ( const char *field, double defaultDouble ) const 
 
 bool HttpRequest::hasField ( const char *field ) const {
 	// how long is it?
-	int32_t fieldLen = gbstrlen ( field );
+	int32_t fieldLen = strlen ( field );
 	// scan the field table directly
 	int32_t i = 0;
 	for (  ; i < m_numFields ; i++ ) {
@@ -1314,7 +1314,7 @@ bool HttpRequest::hasField ( const char *field ) const {
 
 const char *HttpRequest::getValue ( const char *field , int32_t *len, int32_t *next ) const {
 	// how long is it?
-	int32_t fieldLen = gbstrlen ( field );
+	int32_t fieldLen = strlen ( field );
 	// scan the field table directly
 	int32_t i = 0;
 	if ( next ) i = *next ;
@@ -1323,7 +1323,7 @@ const char *HttpRequest::getValue ( const char *field , int32_t *len, int32_t *n
 		if ( strncmp ( field, m_fields[i], fieldLen ) != 0 ) continue;
 		// got a match return the value
 		if ( next ) *next = i + 1;
-		if ( len ) *len = gbstrlen(m_fieldValues[i]);
+		if ( len ) *len = strlen(m_fieldValues[i]);
 		return m_fieldValues[i];
 	}
 	// return NULL if no match
@@ -1333,7 +1333,7 @@ const char *HttpRequest::getValue ( const char *field , int32_t *len, int32_t *n
 
 const char *HttpRequest::getValue ( int32_t i, int32_t *len ) const {
 	if ( i >= m_numFields ) return NULL;
-	if (len) *len = gbstrlen(m_fieldValues[i]);
+	if (len) *len = strlen(m_fieldValues[i]);
 	return m_fieldValues[i];
 }
 
@@ -1368,14 +1368,14 @@ void HttpRequest::parseFields ( char *s , int32_t slen ) {
 		// point to = sign
 		char *equal = strchr ( s , '=' );
 		// try next field if none here
-		if ( ! equal ) { s += gbstrlen ( s ) + 1; continue; }
+		if ( ! equal ) { s += strlen ( s ) + 1; continue; }
 		// if no equal sign, maybe it is one of diffbot's valueless
 		// fields, so support that now
 		if ( ! equal ) { 
 			// just set value to NULL
 			char *end = strchr(s,'&');
 			int32_t len = end - s;
-			if ( ! end ) len = gbstrlen(s);
+			if ( ! end ) len = strlen(s);
 			m_fieldLens[n] = len;
 			s[len] = '\0';
 			m_fieldValues[n] = NULL;
@@ -1394,7 +1394,7 @@ void HttpRequest::parseFields ( char *s , int32_t slen ) {
 		n++;
 		//	skip:
 		// point to next field
-		s = equal + 1 + gbstrlen ( equal + 1 ) + 1 ;
+		s = equal + 1 + strlen ( equal + 1 ) + 1 ;
 	}
 	m_numFields = n;
 }

@@ -300,7 +300,7 @@ static bool CommandAddColl ( char *rec ) {
 	// then collname, \0 terminated
 	char *collName = data;
 
-	if ( gbstrlen(collName) > MAX_COLL_LEN ) {
+	if ( strlen(collName) > MAX_COLL_LEN ) {
 		log("crawlbot: collection name too long");
 		return true;
 	}
@@ -825,7 +825,7 @@ bool Parms::sendPageGeneric ( TcpSocket *s , HttpRequest *r ) {
 	     ! isMasterAdmin &&
 	     ! isCollAdmin ) {
 		const char *msg = "NO PERMISSION";
-		return g_httpServer.sendDynamicPage (s, msg,gbstrlen(msg));
+		return g_httpServer.sendDynamicPage (s, msg,strlen(msg));
 	}
 
 	//
@@ -1492,7 +1492,7 @@ bool Parms::printParm ( SafeBuf* sb,
 	// . make at least as big as a int64_t
 	if ( j >= jend ) s = "\0\0\0\0\0\0\0\0";
 	// delimit each cgi var if we need to
-	if ( m->m_cgi && gbstrlen(m->m_cgi) > 45 ) {
+	if ( m->m_cgi && strlen(m->m_cgi) > 45 ) {
 		log(LOG_LOGIC,"admin: Cgi variable is TOO big.");
 		g_process.shutdownAbort(true);
 	}
@@ -1540,7 +1540,7 @@ bool Parms::printParm ( SafeBuf* sb,
 					 "<font size=-1>\n" , DARK_BLUE);
 
 			//p = htmlEncode ( p , pend , m->m_desc ,
-			//		 m->m_desc + gbstrlen ( m->m_desc ) );
+			//		 m->m_desc + strlen ( m->m_desc ) );
 			sb->safePrintf ( "%s" , m->m_desc );
 			sb->safePrintf ( "</font></td></tr>"
 					 // for "#,expression,harvestlinks.."
@@ -1628,7 +1628,7 @@ bool Parms::printParm ( SafeBuf* sb,
 				  "<b>%s</b><br><font size=-1>",m->m_title );
 			if ( pd ) {
 				status &= sb->htmlEncode (m->m_desc,
-							  gbstrlen(m->m_desc),
+							  strlen(m->m_desc),
 							  false);
 				// is it required?
 				if ( m->m_flags & PF_REQUIRED )
@@ -1653,7 +1653,7 @@ bool Parms::printParm ( SafeBuf* sb,
 			if ( pd ) {
 				status &= sb->safeStrcpy(m->m_desc);
 				//status &= sb->htmlEncode (m->m_desc,
-				//			  gbstrlen(m->m_desc),
+				//			  strlen(m->m_desc),
 				//			  false);
 				// is it required?
 				if ( m->m_flags & PF_REQUIRED )
@@ -1690,7 +1690,7 @@ bool Parms::printParm ( SafeBuf* sb,
 				else {
 					sb->safePrintf (" Default: ");
 					status &= sb->htmlEncode (d,
-								  gbstrlen(d),
+								  strlen(d),
 								  false);
 				}
 			}
@@ -1923,7 +1923,7 @@ bool Parms::printParm ( SafeBuf* sb,
 		if ( cr && (m->m_flags & PF_COLLDEFAULT) )
 			sb->safePrintf("%s",cr->m_coll);
 		else
-			sb->dequote ( s , gbstrlen(s) );
+			sb->dequote ( s , strlen(s) );
 
 		sb->safePrintf ("\">");
 	}
@@ -1936,7 +1936,7 @@ bool Parms::printParm ( SafeBuf* sb,
 			sb->safePrintf ("<textarea name=%s rows=10 cols=80>",
 					cgi);
 			if ( m->m_obj != OBJ_NONE )
-				sb->htmlEncode(sp,gbstrlen(sp),false);
+				sb->htmlEncode(sp,strlen(sp),false);
 			sb->safePrintf ("</textarea>");
 		}
 		else {
@@ -1946,7 +1946,7 @@ bool Parms::printParm ( SafeBuf* sb,
 			if ( cr && (m->m_flags & PF_COLLDEFAULT) )
 				sb->safePrintf("%s",cr->m_coll);
 			else if ( sp )
-				sb->dequote ( sp , gbstrlen(sp) );
+				sb->dequote ( sp , strlen(sp) );
 			sb->safePrintf ("\">");
 		}
 	}
@@ -1991,7 +1991,7 @@ bool Parms::printParm ( SafeBuf* sb,
 			sb->safePrintf ("<textarea id=tabox "
 					"name=%s rows=%i cols=80>",
 					cgi,rows);
-			//sb->dequote ( s , gbstrlen(s) );
+			//sb->dequote ( s , strlen(s) );
 			// note it
 			//log("hack: %s",sx->getBufStart());
 			//sb->dequote ( sx->getBufStart() , sx->length() );
@@ -2004,7 +2004,7 @@ bool Parms::printParm ( SafeBuf* sb,
 			sb->safePrintf ("<input type=text name=%s size=%" PRId32" "
 					"value=\"",
 					cgi,size);
-			//sb->dequote ( s , gbstrlen(s) );
+			//sb->dequote ( s , strlen(s) );
 			// note it
 			//log("hack: %s",sx->getBufStart());
 
@@ -2013,7 +2013,7 @@ bool Parms::printParm ( SafeBuf* sb,
 			     (m->m_flags & PF_COLLDEFAULT) &&
 			     sx &&
 			     sx->length() <= 0 )
-				sb->dequote ( cr->m_coll,gbstrlen(cr->m_coll));
+				sb->dequote ( cr->m_coll,strlen(cr->m_coll));
 
 			// if parm is OBJ_NONE there is no stored valued
 			else if ( m->m_obj != OBJ_NONE )
@@ -2025,11 +2025,11 @@ bool Parms::printParm ( SafeBuf* sb,
 	else if ( t == TYPE_STRINGBOX ) {
 		sb->safePrintf("<textarea id=tabox rows=10 cols=64 name=%s>",
 			       cgi);
-		//p += urlEncode ( p , pend - p , s , gbstrlen(s) );
-		//p += htmlDecode ( p , s , gbstrlen(s) );
-		sb->htmlEncode ( s , gbstrlen(s), false );
+		//p += urlEncode ( p , pend - p , s , strlen(s) );
+		//p += htmlDecode ( p , s , strlen(s) );
+		sb->htmlEncode ( s , strlen(s), false );
 		//sprintf ( p , "%s" , s );
-		//p += gbstrlen(p);
+		//p += strlen(p);
 		sb->safePrintf ("</textarea>\n");
 	}
 	else if ( t == TYPE_CONSTANT )
@@ -2128,7 +2128,7 @@ bool Parms::printParm ( SafeBuf* sb,
 			(int32_t)tp->tm_sec  );
 		/*
 		if ( t == TYPE_DATE2 ) {
-			p += gbstrlen ( p );
+			p += strlen ( p );
 			// a int32_t after the int32_t is used for this
 			int32_t ct = *(int32_t *)(THIS+m->m_off+4);
 			char *ss = "";
@@ -2482,9 +2482,9 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 		goto changed; }
 	else if ( t == TYPE_IP ) {
 		if ( fromRequest && *(int32_t *)(THIS + m->m_off + 4*j) ==
-		     (int32_t)atoip (s,gbstrlen(s) ) )
+		     (int32_t)atoip (s,strlen(s) ) )
 			return;
-		*(int32_t *)(THIS + m->m_off + 4*j) = (int32_t)atoip (s,gbstrlen(s) );
+		*(int32_t *)(THIS + m->m_off + 4*j) = (int32_t)atoip (s,strlen(s) );
 		goto changed; }
 	else if ( t == TYPE_LONG || t == TYPE_LONG_CONST || t == TYPE_RULESET||
 		  t == TYPE_SITERULE ) {
@@ -2506,7 +2506,7 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 		goto changed; }
 	// like TYPE_STRING but dynamically allocates
 	else if ( t == TYPE_SAFEBUF ) {
-		int32_t len = gbstrlen(s);
+		int32_t len = strlen(s);
 		// no need to truncate since safebuf is dynamic
 		//if ( len >= m->m_size ) len = m->m_size - 1; // truncate!!
 		//char *dst = THIS + m->m_off + m->m_size*j ;
@@ -2548,13 +2548,13 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 		  t == TYPE_STRINGBOX      ||
 		  t == TYPE_STRINGNONEMPTY ||
 		  t == TYPE_TIME            ) {
-		int32_t len = gbstrlen(s);
+		int32_t len = strlen(s);
 		if ( len >= m->m_size ) len = m->m_size - 1; // truncate!!
 		char *dst = THIS + m->m_off + m->m_size*j ;
 		// why was this commented out??? we need it now that we
 		// send email alerts when parms change!
 		if ( fromRequest &&
-		     ! isHtmlEncoded && (int32_t)gbstrlen(dst) == len &&
+		     ! isHtmlEncoded && (int32_t)strlen(dst) == len &&
 		     memcmp ( dst , s , len ) == 0 ) {
 			return;
 		}
@@ -2803,7 +2803,7 @@ bool Parms::setFromFile ( void *THIS        ,
 	loop:
 		if ( m->m_obj == OBJ_NONE ) { g_process.shutdownAbort(true); }
 		// get xml node number of m->m_xml in the "xml" file
-		newnn = xml.getNodeNum(nn,1000000,m->m_xml,gbstrlen(m->m_xml));
+		newnn = xml.getNodeNum(nn,1000000,m->m_xml,strlen(m->m_xml));
 
 		// debug
 		//log("%s --> %" PRId32,m->m_xml,nn);
@@ -2886,7 +2886,7 @@ bool Parms::setFromFile ( void *THIS        ,
 		continue;
 	try2:
 		// get xml node number of m->m_xml in the "m_xml" file
-		nn = m_xml2.getNodeNum(nn,1000000,m->m_xml,gbstrlen(m->m_xml));
+		nn = m_xml2.getNodeNum(nn,1000000,m->m_xml,strlen(m->m_xml));
 		// otherwise, we had one in file, but now we're out
 		if ( nn < 0 ) {
 			continue;
@@ -3111,14 +3111,14 @@ skip2:
 		const char *d = m->m_desc;
 		// if empty array mod description to include the tag name
 		char tmp [10*1024];
-		if ( m->m_max > 1 && count == 0 && gbstrlen(d) < 9000 &&
+		if ( m->m_max > 1 && count == 0 && strlen(d) < 9000 &&
 		     m->m_xml && m->m_xml[0] ) {
 			const char *cc = "";
 			if ( d && d[0] ) cc = "\n";
 			sprintf ( tmp , "%s%sUse <%s> tag.",d,cc,m->m_xml);
 			d = tmp;
 		}
-		const char *END  = d + gbstrlen(d);
+		const char *END  = d + strlen(d);
 		const char *dend;
 		const char *last;
 		const char *start;
@@ -3234,7 +3234,7 @@ bool Parms::getParmHtmlEncoded ( SafeBuf *sb , Parm *m , char *s ) {
 		SafeBuf *sb2 = (SafeBuf *)s;
 		char *buf = sb2->getBufStart();
 		//int32_t blen = 0;
-		//if ( buf ) blen = gbstrlen(buf);
+		//if ( buf ) blen = strlen(buf);
 		//p = htmlEncode ( p , pend , buf , buf + blen , true ); // #?*
 		// we can't do proper cdata and be backwards compatible
 		//sb->cdataEncode ( buf );//, blen );//, true ); // #?*
@@ -3244,7 +3244,7 @@ bool Parms::getParmHtmlEncoded ( SafeBuf *sb , Parm *m , char *s ) {
 		  t == TYPE_STRINGBOX      ||
 		  t == TYPE_STRINGNONEMPTY ||
 		  t == TYPE_TIME) {
-		//int32_t slen = gbstrlen ( s );
+		//int32_t slen = strlen ( s );
 		// this returns the length of what was written, it may
 		// not have converted everything if pend-p was too small...
 		//p += saftenTags2 ( p , pend - p , s , len );
@@ -3265,7 +3265,7 @@ bool Parms::getParmHtmlEncoded ( SafeBuf *sb , Parm *m , char *s ) {
 		sb->safeStrcpy ( tmp );
 		sb->setLabel("parm3");
 	}
-	//p += gbstrlen ( p );
+	//p += strlen ( p );
 	//return p;
 	return true;
 }
@@ -10345,7 +10345,7 @@ void Parms::init ( ) {
 
 		// set xml based on title
 		const char *tt = m_parms[i].m_title;
-		if ( p + gbstrlen(tt) >= pend ) {
+		if ( p + strlen(tt) >= pend ) {
 			log(LOG_LOGIC,"conf: Not enough room to store xml "
 			    "tag name in buffer.");
 			exit(-1);
@@ -10625,7 +10625,7 @@ bool Parms::addNewParmToList2 ( SafeBuf *parmList ,
 		//valSize = m->m_max;
 		val = parmValString;
 		// include \0
-		valSize = gbstrlen(val)+1;
+		valSize = strlen(val)+1;
 		// sanity
 		if ( val[valSize-1] != '\0' ) { g_process.shutdownAbort(true); }
 	}
@@ -10664,7 +10664,7 @@ bool Parms::addNewParmToList2 ( SafeBuf *parmList ,
 	// will be NULL
 	else if ( m->m_type == TYPE_CMD ) {
 		val = parmValString;
-		if ( val ) valSize = gbstrlen(val)+1;
+		if ( val ) valSize = strlen(val)+1;
 		// . addcoll collection can not be too long
 		// . TODO: supply a Parm::m_checkValFunc to ensure val is
 		//   legitimate, and set g_errno on error
@@ -10738,7 +10738,7 @@ bool Parms::addCurrentParmToList2 ( SafeBuf *parmList ,
 	     m->m_type == TYPE_SAFEBUF ||
 	     m->m_type == TYPE_STRINGNONEMPTY )
 		// include \0 in string
-		dataSize = gbstrlen(data) + 1;
+		dataSize = strlen(data) + 1;
 
 	// if a safebuf, point to the string within
 	if ( m->m_type == TYPE_SAFEBUF ) {
@@ -11159,7 +11159,7 @@ Parm *Parms::getParmFast2 ( int32_t cgiHash32 ) {
 Parm *Parms::getParmFast1 ( const char *cgi , int32_t *occNum ) {
 	// strip off the %" PRId32" for things like 'fe3' for example
 	// because that is the occurence # for parm arrays.
-	int32_t clen = gbstrlen(cgi);
+	int32_t clen = strlen(cgi);
 
 	const char *d = NULL;
 

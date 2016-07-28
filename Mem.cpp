@@ -423,7 +423,7 @@ void Mem::addMem ( void *mem , int32_t size , const char *note , char isnew ) {
 
 
  skipMe:
-	int32_t len = gbstrlen(note);
+	int32_t len = strlen(note);
 	if ( len > 15 ) len = 15;
 	char *here = &s_labels [ h * 16 ];
 	memcpy ( here , note , len );
@@ -604,7 +604,7 @@ bool Mem::lblMem( void *mem, int32_t size, const char *note ) {
 				     s_sizes[ h ] - size );
 				break;
 			}
-			int32_t len = gbstrlen( note );
+			int32_t len = strlen( note );
 			if ( len > 15 ) len = 15;
 			char *here = &s_labels[ h * 16 ];
 			gbmemcpy ( here, note, len );
