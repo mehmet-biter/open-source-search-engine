@@ -12,21 +12,22 @@ static void g_errno_destroy(void *key) {
 }
 }
 
-void g_errno_init() {
-	static bool s_init = false;
+int* g_errno_location() {
+	static int s_init = false;
 	if (!s_init) {
 		s_init = true;
-		pthread_key_create(&s_g_errno_key, g_errno_destroy);
+		if (pthread_key_create(&s_g_errno_key, g_errno_destroy) != 0) {
+			gbshutdownResourceError();
+		}
 	}
-}
 
-int* g_errno_location() {
 	int *gb_errno = static_cast<int*>(pthread_getspecific(s_g_errno_key));
 	if (!gb_errno) {
 		gb_errno = static_cast<int*>(malloc(sizeof(*gb_errno)));
 		*gb_errno = 0;
 		pthread_setspecific(s_g_errno_key, gb_errno);
 	}
+
 	return gb_errno;
 }
 

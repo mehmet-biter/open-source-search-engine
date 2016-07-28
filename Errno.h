@@ -9,7 +9,6 @@
 // use thread specific g_errno
 #define g_errno (*(g_errno_location()))
 
-void g_errno_init();
 int* g_errno_location();
 
 const char* mstrerror ( int errnum );
