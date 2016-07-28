@@ -813,6 +813,9 @@ void Msg39::intersectListsThreadFunction ( void *state ) {
 	// we're in a thread now!
 	Msg39 *that = static_cast<Msg39*>(state);
 
+	// assume no error
+	that->m_errno = 0;
+
 	// . do the add
 	// . addLists() returns false and sets errno on error
 	// . hash the lists into our table
