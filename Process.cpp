@@ -49,15 +49,10 @@ extern void resetStopWords     ( );
 extern void resetAbbrTable     ( );
 extern void resetUnicode       ( );
 
-
 // our global instance
 Process g_process;
 
-//static int32_t s_flag = 1;
-static int32_t s_nextTime = 0;
-
 static pthread_t s_mainThreadTid;
-
 
 static const char * const g_files[] = {
 	//"gb.conf",
