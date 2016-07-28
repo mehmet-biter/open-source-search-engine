@@ -17,6 +17,8 @@
 #include "Xml.h" // host file in xml
 #include "Sanity.h"
 
+/// @note ALC there used to be a sync host functionality that was removed
+/// in commit 08e8eeb2a53b41763b5d7f97a0b953bebb04517a because it wasn't working
 
 enum {
 	ME_IOERR = 1,
