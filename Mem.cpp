@@ -7,6 +7,7 @@
 #include "Pages.h"
 #include "ScopedLock.h"
 #include "Process.h"
+#include <string.h>            //for strlen()
 
 
 // only Mem.cpp should call ::malloc, everyone else must call mmalloc() so

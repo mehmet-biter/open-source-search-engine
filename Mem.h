@@ -11,7 +11,6 @@
 
 #include <new>
 #include <stddef.h>            //for NULL
-#include <string.h>            //for strlen()
 #include <inttypes.h>
 #include "Sanity.h"
 
