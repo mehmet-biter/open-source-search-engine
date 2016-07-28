@@ -132,6 +132,9 @@ static void *job_pool_thread_function(void *pv) {
 		uint64_t now = now_ms();
 		iter->start_time = now;
 		if(iter->start_deadline==0 || iter->start_deadline>now) {
+			// clear thread specific g_errno
+			g_errno = 0;
+
 			iter->start_routine(iter->state);
 			iter->stop_time = now_ms();
 			job_exit = job_exit_normal;
