@@ -686,11 +686,16 @@ bool Images::downloadImage ( ) {
 
 // Use of ThreadEntry parameter is NOT thread safe
 static void makeThumbWrapper ( void *state, job_exit_t exit_type ) {
-	Images *THIS = (Images *)state;
+	Images *that = (Images *)state;
+
+	// store saved error into g_errno
+	g_errno = that->m_errno;
+
 	// control loop
-	if ( ! THIS->downloadImages() ) return;
+	if ( ! that->downloadImages() ) return;
+
 	// all done
-	THIS->m_callback ( THIS->m_state );
+	that->m_callback ( that->m_state );
 }
 
 bool Images::makeThumb ( ) {
@@ -856,8 +861,15 @@ bool Images::makeThumb ( ) {
 
 // Use of ThreadEntry parameter is NOT thread safe
 void thumbStartWrapper_r ( void *state ) {
-	Images *THIS = (Images *)state;
-	THIS->thumbStart_r ( true /* am thread?*/ );
+	Images *that = (Images *)state;
+	// assume no error
+	that->m_errno = 0;
+
+	that->thumbStart_r ( true /* am thread?*/ );
+
+	if (g_errno && !that->m_errno) {
+		that->m_errno = g_errno;
+	}
 }
 
 void Images::thumbStart_r ( bool amThread ) {
