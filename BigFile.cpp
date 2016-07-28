@@ -800,7 +800,6 @@ skipThread:
 		}
 	}
 
-
 	// . this returns false and sets errno on error
 	// . set g_errno to the errno
 	if ( ! readwrite_r ( fstate ) ) {
@@ -884,14 +883,12 @@ skipThread:
 // . this should be called from the main process after getting our call OUR callback here
 // Use of ThreadEntry parameter is NOT thread safe
 void doneWrapper ( void *state, job_exit_t exit_type ) {
-
 	FileState *fstate = (FileState *)state;
 
 	if( exit_type != job_exit_normal ) {
 		log(LOG_INFO, "disk: Read canceled due to JobScheduler exit type %d.", (int)exit_type);
 		return;
 	}
-
 
 	// any writes we did in the disk read thread were done to the
 	// "tmp" FileState class on the stack, so now we have the real deal
@@ -933,20 +930,6 @@ void doneWrapper ( void *state, job_exit_t exit_type ) {
 		g_stats.addStat_r ( fstate->m_bytesDone, fstate->m_startTime, fstate->m_doneTime, color );
 	}
 
-	// debug msg
-	//char *s = "read";
-	//if ( fstate->m_doWrite ) s = "wrote";
-	//char *t = "no";	// are we blocking?
-	//if ( fstate->m_bigfile->getFlags() & O_NONBLOCK ) t = "yes";
-	// this is bad for real-time threads cuz our unlink() routine may
-	// have been called by RdbMerge and our m_files may be altered 
-	//log("disk::readwrite: %s %" PRId32" bytes from %s(nonBlock=%s)",s,n,
-	//    m_files[filenum]->getFilename(),t);
-	//log("disk::readwrite_r: %s %" PRId32" bytes (nonBlock=%s)",
-	//     s,fstate->m_bytesDone/*n*/,t);
-	// debug msg
-	//int32_t took = gettimeofdayInMilliseconds() - fstate->m_startTime ;
-	//log("read of %" PRId32" bytes took %" PRId32" ms",fstate->m_bytesDone, took);
 	// now log our stuff here
 	int32_t tt = ( g_errno == EFILECLOSED ) ? LOG_INFO : LOG_WARN;
 	if ( g_errno ) {
@@ -1051,19 +1034,6 @@ static void readwriteWrapper_r ( void *state ) {
 		fstate->m_errno = errno;
 	}
 
-	// test again here
-	//pthread_testcancel();
-
-	// get the two files
-	// mdw: no we can't access bigfile it might be deleted!
-	// File *f1 = NULL;
-	// File *f2 = NULL;
-	// // when we exit, m_bigfile is invalid!!!
-	// if ( fstate->m_filenum1 < fstate->m_bigfile->m_maxParts )
-	// 	f1 = fstate->m_bigfile->getFile2(fstate->m_filenum1);
-	// if ( fstate->m_filenum2 < fstate->m_bigfile->m_maxParts )
-	// 	f2 = fstate->m_bigfile->getFile2(fstate->m_filenum2);
-
 	// . if open count changed on us our file got unlinked from under us
 	//   and another file was opened with that same fd!!! 
 	// . just fail the read so caller knows it is bad
@@ -1080,8 +1050,7 @@ static void readwriteWrapper_r ( void *state ) {
 	// might have been deleted or closed on us, i saw this before.
 	int32_t cc1 = getCloseCount_r ( fstate->m_fd1 );
 	int32_t cc2 = getCloseCount_r ( fstate->m_fd2 );
-	if ( cc1 != fstate->m_closeCount1 ||
-	     cc2 != fstate->m_closeCount2  ) {
+	if ( cc1 != fstate->m_closeCount1 || cc2 != fstate->m_closeCount2  ) {
 		log( LOG_WARN, "file: c1a=%" PRId32" c1b=%" PRId32" c2a=%" PRId32" c2b=%" PRId32,
 		    cc1, fstate->m_closeCount1, cc2, fstate->m_closeCount2 );
 
