@@ -771,10 +771,10 @@ bool BigFile::readwrite ( void         *buf      ,
 	}
 
 	// thread spawn failed, do it blocking then
+	log(LOG_INFO, "disk: Doing blocking disk access. This will hurt performance. isWrite=%" PRId32".",(int32_t)doWrite);
 
 	// come here if we haven't spawned a thread
 skipThread:
-	log(LOG_INFO, "disk: Doing blocking disk access. This will hurt performance. isWrite=%" PRId32".",(int32_t)doWrite);
 
 	// if there was no room in the thread queue, then we must do this here
 	fstate->m_fd1         = getfd ( fstate->m_filenum1 , !doWrite );
