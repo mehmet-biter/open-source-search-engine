@@ -1232,12 +1232,12 @@ bool Process::saveBlockingFiles2 ( ) {
 	//g_templateTable.save( g_hostdb.m_dir , "turkedtemplates.dat" );
 
 	// the robots.txt cache
-	Msg13::getHttpCacheRobots()->save( false ); // use threads?
+	Msg13::getHttpCacheRobots()->save();
 
 	// save dns caches
 	RdbCache *c = g_dns.getCache();
 	if (c && c->useDisk()) {
-		c->save( false ); // use threads?
+		c->save();
 	}
 
 	// save current spidering process, "spiderrestore.dat"

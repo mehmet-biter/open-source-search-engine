@@ -64,8 +64,6 @@ void RdbCache::reset ( ) {
 
 	// assume no need to call convertCache()
 	m_convert = false;
-
-	m_isSaving = false;
 }
 
 bool RdbCache::init ( int32_t  maxMem        ,
@@ -530,7 +528,7 @@ bool RdbCache::getRecord ( collnum_t collnum   ,
 	// . do this after mdup as there is a chance it will overwrite
 	//   the original record with the copy of the same record
 	// . Process.cpp turns off g_cacheWritesEnabled while it saves them
-	if ( promoteRecord && ! m_isSaving && g_cacheWritesEnabled ) {
+	if ( promoteRecord && g_cacheWritesEnabled ) {
 		//char *ptr = m_ptrs[n];
 		//removeKey ( collnum , cacheKey , ptr );
 		//markDeletedRecord(ptr);
@@ -736,7 +734,7 @@ bool RdbCache::addRecord ( collnum_t collnum ,
 			   "key/timestamp.");
 	// bail if no writing ops allowed now
 	if ( ! g_cacheWritesEnabled ) return false;
-	if (   m_isSaving           ) return false;
+
 	// collnum_t and cache key
 	//need += sizeof(collnum_t) + sizeof(key_t);
 	need += sizeof(collnum_t) + m_cks;
@@ -1236,7 +1234,6 @@ void RdbCache::clearAll ( ) {
 void RdbCache::clear ( collnum_t collnum ) {
 	// bail if no writing ops allowed now
 	if ( ! g_cacheWritesEnabled ) gbshutdownLogicError();
-	if (   m_isSaving           ) gbshutdownLogicError();
 
 	for ( int32_t i = 0 ; i < m_numPtrsMax ; i++ ) {
 		// skip if empty bucket
@@ -1259,54 +1256,21 @@ bool RdbCache::load ( ) {
 
 // . just like RdbTree::fastSave()
 // . returns false if blocked and is saving
-bool RdbCache::save ( bool useThreads ) {
-	if ( g_conf.m_readOnlyMode ) return true;
+bool RdbCache::save () {
+	if ( g_conf.m_readOnlyMode ) {
+		return true;
+	}
+
 	// if we do not need it, don't bother
-	if ( ! m_needsSave ) return true;
-	// return true if already in the middle of saving
-	if ( m_isSaving ) return false;
+	if ( ! m_needsSave ) {
+		return true;
+	}
 
 	// log
-	log(LOG_INIT,"db: Saving %" PRId32" bytes of cache to %s/%s.cache",
-	     m_memAlloced,g_hostdb.m_dir,m_dbname);
+	log(LOG_INIT,"db: Saving %" PRId32" bytes of cache to %s/%s.cache", m_memAlloced,g_hostdb.m_dir,m_dbname);
 
-	// spawn the thread
-	if ( useThreads ) {
-		// lock cache while saving
-		m_isSaving = true;
-
-		// make a thread. returns true on success, in which case
-		// we return false to indicate we blocked.
-		if ( g_jobScheduler.submit(saveWrapper, threadDoneWrapper, this, thread_type_unspecified_io, 1/*niceness*/) ) {
-			return false;
-		}
-
-		// crap had an error spawning thread
-		if ( g_jobScheduler.are_new_jobs_allowed() ) {
-			log(LOG_WARN, "db: Error spawning cache write thread. Not using threads.");
-		}
-	}
-
-	// do it directly with no thread
+	// do it directly
 	save_r();
-
-	// wrap it up
-	threadDone ();
-
-	return true;
-}
-
-// Use of ThreadEntry parameter is NOT thread safe
-void RdbCache::threadDoneWrapper ( void *state, job_exit_t exit_type ) {
-	if (state) {
-		RdbCache *that = static_cast<RdbCache*>(state);
-		that->threadDone ( );
-	}
-}
-
-void RdbCache::threadDone ( ) {
-	// allow cache to change now
-	m_isSaving  = false;
 
 	// and we are in sync with that data saved on disk
 	m_needsSave = false;
@@ -1315,22 +1279,8 @@ void RdbCache::threadDone ( ) {
 	if ( m_errno ) {
 		log(LOG_WARN, "db: Had error saving cache to disk for %s: %s.", m_dbname, mstrerror(m_errno));
 	}
-}
 
-// Use of ThreadEntry parameter is NOT thread safe
-void RdbCache::saveWrapper(void *state) {
-	RdbCache *that = static_cast<RdbCache*>(state);
-
-	// assume no error
-	that->m_errno = 0;
-
-	// do it
-	if ( that->save_r () ) {
-		return;
-	}
-
-	// we got an error, save it
-	that->m_errno = errno;
+	return true;
 }
 
 // returns false withe rrno set on error
