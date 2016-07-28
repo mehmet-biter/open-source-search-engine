@@ -648,8 +648,7 @@ static void closeSleepWrapper ( int fd , void *state );
 // . returns false if blocked true otherwise
 // . sets g_errno on error
 // . CAUTION: only set urgent to true if we got a SIGSEGV or SIGPWR...
-bool Rdb::close ( void *state , void (* callback)(void *state ), bool urgent ,
-		  bool isReallyClosing ) {
+bool Rdb::close ( void *state , void (* callback)(void *state ), bool urgent , bool isReallyClosing ) {
 	// unregister in case already registered
 	if ( m_registered )
 		g_loop.unregisterSleepCallback (this,closeSleepWrapper);
@@ -750,27 +749,19 @@ bool Rdb::close ( void *state , void (* callback)(void *state ), bool urgent ,
 	}
 
 	// save it using a thread?
-	bool useThread ;
-	if      ( m_urgent          ) useThread = false;
-	else if ( m_isReallyClosing ) useThread = false;
-	else                          useThread = true ;
+	bool useThread = !(m_urgent || m_isReallyClosing);
 
 	// . returns false if blocked, true otherwise
 	// . sets g_errno on error
 	if(m_useTree) {
-		if ( ! m_tree.fastSave ( getDir()    ,
-					 m_dbname    , // &m_saveFile ,
-					 useThread   ,
-					 this        ,
-					 doneSavingWrapper ) ) 
+		if (!m_tree.fastSave(getDir(), m_dbname, useThread, this, doneSavingWrapper)) {
 			return false;
+		}
 	}
 	else {
-		if ( ! m_buckets.fastSave ( getDir()    ,
-					    useThread   ,
-					    this        ,
-					    doneSavingWrapper ) ) 
+		if (!m_buckets.fastSave(getDir(), useThread, this, doneSavingWrapper)) {
 			return false;
+		}
 	}
 
 	// we saved it w/o blocking OR we had an g_errno
@@ -783,10 +774,9 @@ void closeSleepWrapper ( int fd , void *state ) {
 	// sanity check
 	if ( ! THIS->m_isClosing ) { g_process.shutdownAbort(true); }
 	// continue closing, this returns false if blocked
-	if ( ! THIS->close ( THIS->m_closeState, 
-			     THIS->m_closeCallback ,
-			     false ,
-			     true  ) ) return;
+	if (!THIS->close(THIS->m_closeState, THIS->m_closeCallback, false, true)) {
+		return;
+	}
 	// otherwise, we call the callback
 	THIS->m_closeCallback ( THIS->m_closeState );
 }
@@ -1499,10 +1489,9 @@ void Rdb::doneDumping ( ) {
 	// if we're closing shop then return
 	if ( m_isClosing ) { 
 		// continue closing, this returns false if blocked
-		if ( ! close ( m_closeState, 
-			       m_closeCallback ,
-			       false ,
-			       true  ) ) return;
+		if (!close(m_closeState, m_closeCallback, false, true)) {
+			return;
+		}
 		// otherwise, we call the callback
 		m_closeCallback ( m_closeState );
 		return; 
@@ -2330,13 +2319,16 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 	const char *ss ="";
 	if ( m_tree.m_isSaving ) ss = " Tree is saving.";
 	if ( !m_useTree && m_buckets.isSaving() ) ss = " Buckets are saving.";
+
 	// return ETRYAGAIN if out of memory, this should tell
 	// addList to call the dump routine
 	//if ( g_errno == ENOMEM ) g_errno = ETRYAGAIN;
 	// log the error
 	//g_errno = EBADENGINEER;
-	return log(LOG_INFO,"db: Had error adding data to %s: %s.%s", 
-		   m_dbname,mstrerror(g_errno),ss);
+
+	log(LOG_INFO,"db: Had error adding data to %s: %s.%s", m_dbname,mstrerror(g_errno),ss);
+	return false;
+
 	// if we flubbed then free the data, if any
 	//if ( doCopy && data ) mfree ( data , dataSize ,"Rdb");
 	//return false;
