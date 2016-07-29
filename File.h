@@ -40,9 +40,6 @@ int32_t getCloseCount_r ( int fd );
 void enterWriteMode ( int fd ) ;
 void exitWriteMode  ( int fd ) ;
 
-class BigFile;
-
-
 class File {
 public:
 
@@ -135,17 +132,6 @@ public:
 	// our filename allocated with strdup
 	// we publicize for ease of use
 	char m_filename [ MAX_FILENAME_LEN ];
-	//SafeBuf m_filename;
-
-	//char m_filenameBuf [ MAX_FILENAME_LEN ];
-
-	// File::rename() uses this
-	//char m_oldFilename [ MAX_FILENAME_LEN ];
-
-	// BigFile uses these when passing us to a thread for unlink/rename
-	// so it can store its THIS ptr and the i in BigFile::m_files[i]
-	BigFile *m_bigfile;
-	int32_t  m_i;
 
 private:
 	bool m_closedIt;

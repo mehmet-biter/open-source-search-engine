@@ -300,8 +300,7 @@ void File::close1_r_unlocked() {
 	m_closedIt = false;
 
 	// debug. don't log in thread - might hurt us
-	log(LOG_DEBUG,"disk: close1_r: Closing  fd %i for %s after "
-	    "unlink/rename.",m_fd,getFilename());
+	log(LOG_DEBUG,"disk: close1_r: Closing fd %i for %s after unlink/rename.",m_fd,getFilename());
 
 	// problem. this could be a closed map file, m_vfd=-1.
 	if ( m_fd < 0 ) {
@@ -311,6 +310,7 @@ void File::close1_r_unlocked() {
 		log(LOG_DEBUG,"disk: close1_r: fd %i < 0",m_fd);
 		return ;
 	}
+
 	// panic!
 	if ( s_writing [ m_fd ] ) {
 		log(LOG_LOGIC,"disk: close1_r: In write mode and closing.");
@@ -319,10 +319,6 @@ void File::close1_r_unlocked() {
 	// if already being unlinked, skip
 	if ( s_unlinking [ m_fd ] ) {
 		log(LOG_LOGIC,"disk: close1_r: In unlink mode and closing.");
-		return;
-	}
-
-	if ( m_fd < 0 ) {
 		return;
 	}
 
@@ -382,7 +378,9 @@ void File::close2_unlocked() {
 		return;
 	}
 
-	if ( g_conf.m_logDebugDisk ) sanityCheck();
+	if ( g_conf.m_logDebugDisk ) {
+		sanityCheck();
+	}
 
 	// save this for stuff below
 	int fd = m_fd;

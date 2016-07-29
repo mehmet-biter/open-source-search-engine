@@ -1307,6 +1307,20 @@ bool BigFile::unlinkPart(int32_t part, void (*callback)(void *state), void *stat
 	return rc;
 }
 
+struct UnlinkRenameState {
+	UnlinkRenameState(BigFile *bigfile, File *file, int32_t i)
+		: m_bigfile(bigfile)
+		, m_file(file)
+		, m_i(i)
+		, m_errno(0) {
+	}
+
+	BigFile *m_bigfile;
+	File *m_file;
+	int32_t m_i;
+	int32_t m_errno;
+};
+
 /**
  *
  * @param newBaseFilename non-NULL for renames, NULL for unlinks
@@ -1421,7 +1435,10 @@ bool BigFile::unlinkRename(const char *newBaseFilename, int32_t part, bool useTh
 	//then prepare/submit the rename/unlink
 	for ( int32_t i = startPartNumber; i < m_maxParts ; i++ ) {
 		// break out if we should only unlink one part
-		if ( m_part >= 0 && i != m_part ) break;
+		if ( m_part >= 0 && i != m_part ) {
+			break;
+		}
+
 		// get the ith file to rename/unlink
 		File *f = getFile2(i);
 		if ( ! f ) {
@@ -1439,15 +1456,23 @@ bool BigFile::unlinkRename(const char *newBaseFilename, int32_t part, bool useTh
 			doneRoutine  = doneRenameWrapper;
 		}
 
-		// base in ptr to file, but set f->m_bigfile and f->m_i
-		f->m_bigfile = this;
-		f->m_i    = i;
 		f->setForceRename( force );
 
 		// assume thread launched, doneRoutine() will decrement these
 		m_numThreads++; 
 		g_unlinkRenameThreads++;
-		
+
+		UnlinkRenameState *job_state;
+		try {
+			job_state = new UnlinkRenameState(this, f, i);
+		} catch (...) {
+			g_errno = ENOMEM;
+			log(LOG_WARN, "disk: Failed to allocate memory for unlink/rename for %s.", f->getFilename());
+			return false;
+		}
+
+		mnew(job_state, sizeof(UnlinkRenameState), "UnlinkRenameState");
+
 		// use thread?
 		if ( useThread ) {
 			// save callback for when all parts are unlinked or renamed
@@ -1458,14 +1483,14 @@ bool BigFile::unlinkRename(const char *newBaseFilename, int32_t part, bool useTh
 			// . returns true on successful spawning
 			// . we can't make a disk thread cuz Threads.cpp checks its
 			//   FileState member for readSize for thread throttling
-			if ( g_jobScheduler.submit(startRoutine, doneRoutine, f, thread_type_unlink, 1/*niceness*/) ) {
+			if ( g_jobScheduler.submit(startRoutine, doneRoutine, job_state, thread_type_unlink, 1/*niceness*/) ) {
 				logTrace( g_conf.m_logTraceBigFile, "Thread function called OK" );
 				continue;
 			}
 
 			// otherwise, thread spawn failed, do it blocking then
 			log( LOG_INFO, "disk: Failed to launch unlink/rename thread for %s. Doing blocking unlink. "
-				 "part=%" PRId32"/%" PRId32". This will hurt performance.", f->getFilename(),i,m_part);
+					"part=%" PRId32"/%" PRId32". This will hurt performance.", f->getFilename(),i,m_part);
 		}
 
 		// log these for now, remove later
@@ -1478,7 +1503,7 @@ bool BigFile::unlinkRename(const char *newBaseFilename, int32_t part, bool useTh
 		errno = 0;
 		
 		// these are normally called from a thread
-		startRoutine ( f );
+		startRoutine ( job_state );
 		
 		// copy errno over to g_errno
 		if ( errno ) {
@@ -1486,7 +1511,10 @@ bool BigFile::unlinkRename(const char *newBaseFilename, int32_t part, bool useTh
 		}
 			
 		// wrap it up
-		doneRoutine  ( f , job_exit_normal );
+		doneRoutine  ( job_state , job_exit_normal );
+
+		mdelete(job_state, sizeof(FileState), "FileState");
+		delete job_state;
 	}
 
 	// if one blocked, we block, but never return false if !useThread
@@ -1508,17 +1536,19 @@ bool BigFile::unlinkRename(const char *newBaseFilename, int32_t part, bool useTh
 
 
 void BigFile::renameWrapper(void *state) {
-	File *f = static_cast<File*>(state);
-	BigFile *that = f->m_bigfile;
-	that->renameWrapper(f);
+	UnlinkRenameState *job_state = static_cast<UnlinkRenameState*>(state);
+	BigFile *that = job_state->m_bigfile;
+
+	that->renameWrapper(job_state->m_file, job_state->m_i);
+
+	if (g_errno && !job_state->m_errno) {
+		job_state->m_errno = g_errno;
+	}
 }
 
 
-void BigFile::renameWrapper(File *f) {
+void BigFile::renameWrapper(File *f, int32_t i) {
 	logTrace( g_conf.m_logTraceBigFile, "BEGIN" );
-
-	// get the ith file we just unlinked
-	int32_t i = f->m_i;
 
 	// . get the new full name for this file
 	// . based on m_dir/m_stripeDir and m_baseFilename
@@ -1527,7 +1557,9 @@ void BigFile::renameWrapper(File *f) {
 
 	log( LOG_TRACE,"%s:%s:%d: disk: rename [%s] to [%s]", __FILE__, __func__, __LINE__, f->getFilename(), newFilename );
 
-	f->rename( newFilename );
+	if (!f->rename(newFilename)) {
+		g_errno = errno;
+	}
 
 	logTrace( g_conf.m_logTraceBigFile, "END" );
 }
@@ -1535,9 +1567,14 @@ void BigFile::renameWrapper(File *f) {
 
 
 void BigFile::unlinkWrapper(void *state) {
-	File *f = static_cast<File*>(state);
-	BigFile *that = f->m_bigfile;
-	that->unlinkWrapper(f);
+	UnlinkRenameState *job_state = static_cast<UnlinkRenameState*>(state);
+	BigFile *that = job_state->m_bigfile;
+
+	that->unlinkWrapper(job_state->m_file);
+
+	if (g_errno && !job_state->m_errno) {
+		job_state->m_errno = g_errno;
+	}
 }
 
 
@@ -1556,7 +1593,7 @@ void BigFile::unlinkWrapper(File *f) {
 	//100ms, break after 5 seconds because then it is highly unlikely that
 	//any unfinished job refers to that area/file anymore.
 	for(int i=0; i<50; i++) {
-		if(!g_jobScheduler.is_reading_file(f->m_bigfile))
+		if(!g_jobScheduler.is_reading_file(this))
 			break;
 		usleep(100000); //sleep 100ms
 	}
@@ -1569,6 +1606,7 @@ void BigFile::unlinkWrapper(File *f) {
 	if ( errno != 0 ) {
 		log( LOG_TRACE,"%s:%s:%d: disk: unlink [%s] has error [%s]", __FILE__, __func__, __LINE__,
 		     f->getFilename(), mstrerror( errno ) );
+		g_errno = errno;
 	}
 
 	// we must close the file descriptor in the thread otherwise the
@@ -1580,17 +1618,20 @@ void BigFile::unlinkWrapper(File *f) {
 	logTrace( g_conf.m_logTraceBigFile, "END" );
 }
 
-void BigFile::doneRenameWrapper(void *state, job_exit_t exit_type) {
-	File *f = static_cast<File*>(state);
-	BigFile *that = f->m_bigfile;
-	that->doneRenameWrapper(f,exit_type);
+void BigFile::doneRenameWrapper(void *state, job_exit_t /*exit_type*/) {
+	UnlinkRenameState *job_state = static_cast<UnlinkRenameState*>(state);
+
+	g_errno = job_state->m_errno;
+
+	BigFile *that = job_state->m_bigfile;
+	that->doneRenameWrapper(job_state->m_file);
+
+	mdelete(job_state, sizeof(FileState), "FileState");
+	delete job_state;
 }
 
-void BigFile::doneRenameWrapper(File *f, job_exit_t /*exit_type*/) {
+void BigFile::doneRenameWrapper(File *f) {
 	logTrace( g_conf.m_logTraceBigFile, "BEGIN" );
-
-	// clear thread's errno
-	errno = 0;
 
 	// one less
 	m_numThreads--;
@@ -1602,9 +1643,6 @@ void BigFile::doneRenameWrapper(File *f, job_exit_t /*exit_type*/) {
 		logAllData(LOG_ERROR);
 		//@@@ BR: Why continue??
 	}
-	
-	// bail if more to do
-	//if ( m_numThreads > 0 ) return;
 
 	// one less part to do
 	m_partsRemaining--;
@@ -1614,13 +1652,12 @@ void BigFile::doneRenameWrapper(File *f, job_exit_t /*exit_type*/) {
 		logTrace( g_conf.m_logTraceBigFile, "END - still more parts" );
 		return;
 	}
-		
-		
+
 	// update OUR base filename now after all Files are renamed
-	//strcpy ( m_baseFilename , m_newBaseFilename );
 	m_baseFilename.reset();
 	m_baseFilename.setLabel("nbfnn");
 	m_baseFilename.safeStrcpy(m_newBaseFilename.getBufStart());
+
 	// . all done, call the main callback
 	// . this is NULL if we were not called in a thread
 	if ( m_callback ) {
@@ -1631,13 +1668,19 @@ void BigFile::doneRenameWrapper(File *f, job_exit_t /*exit_type*/) {
 }
 
 
-void BigFile::doneUnlinkWrapper(void *state, job_exit_t exit_type) {
-	File *f = static_cast<File*>(state);
-	BigFile *that = f->m_bigfile;
-	that->doneUnlinkWrapper(f,exit_type);
+void BigFile::doneUnlinkWrapper(void *state, job_exit_t /*exit_type*/) {
+	UnlinkRenameState *job_state = static_cast<UnlinkRenameState*>(state);
+
+	g_errno = job_state->m_errno;
+
+	BigFile *that = job_state->m_bigfile;
+	that->doneUnlinkWrapper(job_state->m_file, job_state->m_i);
+
+	mdelete(job_state, sizeof(FileState), "FileState");
+	delete job_state;
 }
 
-void BigFile::doneUnlinkWrapper(File *f, job_exit_t /*exit_type*/) {
+void BigFile::doneUnlinkWrapper(File *f, int32_t i) {
 	logTrace( g_conf.m_logTraceBigFile, "BEGIN" );
 
 	//unmark file for deletion since it already has
@@ -1645,9 +1688,6 @@ void BigFile::doneUnlinkWrapper(File *f, job_exit_t /*exit_type*/) {
 
 	// finish the close
 	f->close2();
-
-	// clear thread's errno
-	errno = 0;
 
 	// one less
 	m_numThreads--;
@@ -1659,43 +1699,34 @@ void BigFile::doneUnlinkWrapper(File *f, job_exit_t /*exit_type*/) {
 		logAllData(LOG_ERROR);
 		//@@@ BR: Why continue??
 	}
-		
-	// get the ith file we just unlinked
-	int32_t      i = f->m_i;
+
 	// . remove the part if it checks out
 	// . this will also close the file when it deletes it
 	File *fi = getFile2(i);
-	if ( f == fi ) 
-	{
+	if ( f == fi ) {
 		removePart ( i );
-	}
-	else 
-	{
+	} else {
 		log(LOG_ERROR, "%s:%s:%d: doneUnlinkWrapper. unlink had bad file ptr.", __FILE__, __func__, __LINE__ );
 		logAllData(LOG_ERROR);
-
 	}
-	
-	// bail if more to do
-	if ( m_numThreads > 0 ) {
-		logTrace( g_conf.m_logTraceBigFile, "END - still more threads" );
+
+	// one less part to do
+	m_partsRemaining--;
+
+	// return if more to do
+	if ( m_partsRemaining > 0 ) {
+		logTrace( g_conf.m_logTraceBigFile, "END - still more parts" );
 		return;
 	}
-		
-		
-	// return if more to do
-	//if ( m_partsRemaining > 0 ) return;
+
 	// . all done, call the main callback
 	// . this is NULL if we were not called in a thread
-	if ( m_callback )
-	{
+	if ( m_callback ) {
 		m_callback ( m_state );
 	}
 
 	logTrace( g_conf.m_logTraceBigFile, "END" );
 }
-
-
 
 void BigFile::removePart ( int32_t i ) {
 	//File *f = getFile2(i);

@@ -263,12 +263,12 @@ private:
 	//job/thread worker functions helping unlinkrename()
 	static void renameWrapper(void *state);
 	static void doneRenameWrapper(void *state, job_exit_t exit_type);
-	void doneRenameWrapper(File *f, job_exit_t exit_type);
-	void renameWrapper(File *f);
+	void doneRenameWrapper(File *f);
+	void renameWrapper(File *f, int32_t i);
 	static void unlinkWrapper(void *state);
 	void unlinkWrapper(File *f);
 	static void doneUnlinkWrapper(void *state, job_exit_t exit_type);
-	void doneUnlinkWrapper(File *f, job_exit_t exit_type);
+	void doneUnlinkWrapper(File *f, int32_t i);
 
 	// . add all parts from this directory
 	// . called by set() above for normal dir as well as stripe dir
