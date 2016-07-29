@@ -487,43 +487,6 @@ void Loop::returnSlot ( Slot *s ) {
 }
 
 
-// . come here when we get a GB_SIGRTMIN+X signal etc.
-// . do not call anything from here because the purpose of this is to just
-//   queue the signals up and DO DEDUPING which linux does not do causing
-//   the sigqueue to overflow.
-// . we should break out of the sleep loop after the signal is handled
-//   so we can handle/process the queued signals properly. 'man sleep'
-//   states "sleep()  makes  the  calling  process  sleep until seconds
-//   seconds have elapsed or a signal arrives which is not ignored."
-void sigHandlerQueue_r ( int x , siginfo_t *info , void *v ) {
-
-	// if we just needed to cleanup a thread
-	if ( info->si_signo == SIGCHLD ) {
-		g_numSigChlds++;
-		return;
-	}
-
-	if ( info->si_signo == SIGIO ) {
-		g_numSigIOs++;
-		return;
-	}
-
-	if ( info->si_code == SI_QUEUE ) {
-		g_numSigQueues++;
-		//log("admin: got sigqueue");
-		return;
-	}
-
-	// wtf is this?
-	g_numSigOthers++;
-
-	// the stuff below should no longer be used since we
-	// do not use F_SETSIG now
-	return;
-}
-
-
-
 bool Loop::init ( ) {
 
 	// clear this up here before using in doPoll()
@@ -578,51 +541,6 @@ bool Loop::init ( ) {
 	sigemptyset(&actSigPipe.sa_mask);
 	actSigPipe.sa_flags = 0;
 	sigaction(SIGPIPE,&actSigPipe,0);
-
-	// set of signals to block
-	sigset_t sigs;
-	sigemptyset ( &sigs                );
-	sigaddset   ( &sigs , SIGCHLD      );
-
-	// now since we took out SIGIO... (see below)
-	// we should ignore this signal so it doesn't suddenly stop the gb
-	// process since we took out the SIGIO handler because newer kernels
-	// were throwing SIGIO signals ALL the time, on every datagram
-	// send/receive it seemed and bogged us down.
-	sigaddset   ( &sigs , SIGIO );
-	// . block on any signals in this set (in addition to current sigs)
-	// . use SIG_UNBLOCK to remove signals from block list
-	// . this returns -1 and sets g_errno on error
-	// . we block a signal so it does not interrupt us, then we can
-	//   take it off using our call to sigtimedwait()
-	// . allow it to interrupt us now and we will queue it ourselves
-	//   to prevent the linux queue from overflowing
-	// . see 'cat /proc/<pid>/status | grep SigQ' output to see if
-	//   overflow occurs. linux does not dedup the signals so when a
-	//   host cpu usage hits 100% it seems to miss a ton of signals.
-	//   i suspect the culprit is pthread_create() so we need to get
-	//   thread pools out soon.
-	// . now we are handling the signals and queueing them ourselves
-	//   so comment out this sigprocmask() call
-	// if ( sigprocmask ( SIG_BLOCK, &sigs, 0 ) < 0 ) {
-	// 	g_errno = errno;
-	// 	return log("loop: sigprocmask: %s.",strerror(g_errno));
-	// }
-	struct sigaction sa2;
-	// . sa_mask is the set of signals that should be blocked when
-	//   we're handling the GB_SIGRTMIN, make this empty
-	// . GB_SIGRTMIN signals will be automatically blocked while we're
-	//   handling a SIGIO signal, so don't worry about that
-	// . what sigs should be blocked when in our handler? the same
-	//   sigs we are handling i guess
-	sa2.sa_mask = sigs;
-	sa2.sa_flags = SA_SIGINFO ; //| SA_ONESHOT;
-	// call this function
-	sa2.sa_sigaction = sigHandlerQueue_r;
-	g_errno = 0;
-	if ( sigaction ( SIGCHLD, &sa2, 0 ) < 0 ) g_errno = errno;
-	if ( sigaction ( SIGIO, &sa2, 0 ) < 0 ) g_errno = errno;
-	if ( g_errno ) log("loop: sigaction(): %s.", mstrerror(g_errno) );
 
 	struct sigaction sa;
 	// . sa_mask is the set of signals that should be blocked when

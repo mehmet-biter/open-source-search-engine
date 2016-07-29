@@ -804,11 +804,6 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 			      "<tr class=poo><td><b>Process ID</b></td><td>%" PRIu32"</td></tr>\n"
 			      "<tr class=poo><td><b>Corrupted Disk Reads</b></td><td>%" PRId32"</td></tr>\n"
 
-			      "<tr class=poo><td><b>SIGCHLDS</b></td><td>%" PRId32"</td></tr>\n"
-			      "<tr class=poo><td><b>SIGQUEUES</b></td><td>%" PRId32"</td></tr>\n"
-			      "<tr class=poo><td><b>SIGIOS</b></td><td>%" PRId32"</td></tr>\n"
-			      "<tr class=poo><td><b>SIGOTHERS</b></td><td>%" PRId32"</td></tr>\n"
-
 			      //"<tr class=poo><td><b>read signals</b></td><td>%" PRId64"</td></tr>\n"
 			      //"<tr class=poo><td><b>write signals</b></td><td>%" PRId64"</td></tr>\n"
 			      "<tr class=poo><td><b>Kernel Version</b></td><td>%s</td></tr>\n"
@@ -834,11 +829,6 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 			      ubuf.getBufStart(),
 			      (uint32_t)getpid(),
 			      g_numCorrupt,
-
-			      g_numSigChlds,
-			      g_numSigQueues,
-			      g_numSigIOs,
-			      g_numSigOthers,
 
 			      //g_stats.m_readSignals,
 			      //g_stats.m_writeSignals,
