@@ -545,7 +545,7 @@ bool Loop::init ( ) {
 	// handle SIGHUP and SIGTERM signals gracefully by saving and shutting down
 	struct sigaction saShutdown;
 	sigemptyset(&saShutdown.sa_mask);
-	saShutdown.sa_flags = SA_SIGINFO;
+	saShutdown.sa_flags = SA_SIGINFO | SA_RESTART;
 	saShutdown.sa_sigaction = sighupHandler;
 	sigaction(SIGHUP, &saShutdown, NULL);
 	sigaction(SIGTERM, &saShutdown, NULL);
@@ -554,7 +554,7 @@ bool Loop::init ( ) {
 	// we should save our data on segv, sigill, sigfpe, sigbus
 	struct sigaction saBad;
 	sigemptyset(&saBad.sa_mask);
-	saBad.sa_flags = SA_SIGINFO;
+	saBad.sa_flags = SA_SIGINFO | SA_RESTART;
 	saBad.sa_sigaction = sigbadHandler;
 	sigaction(SIGSEGV, &saBad, NULL);
 	sigaction(SIGILL, &saBad, NULL);
@@ -564,13 +564,14 @@ bool Loop::init ( ) {
 	// if the UPS is about to go off it sends a SIGPWR
 	struct sigaction saPower;
 	sigemptyset(&saPower.sa_mask);
-	saPower.sa_flags = SA_SIGINFO;
+	saPower.sa_flags = SA_SIGINFO | SA_RESTART;
 	saPower.sa_sigaction = sigpwrHandler;
 	sigaction(SIGPWR, &saPower, NULL);
 
 	//SIGPROF is used by the profiler
 	struct sigaction saProfile;
 	sigemptyset(&saProfile.sa_mask);
+	saProfile.sa_flags  = SA_SIGINFO | SA_RESTART;
 	saProfile.sa_sigaction = sigprofHandler;
 	sigaction(SIGPROF, &saProfile, NULL);
 	// setitimer(ITIMER_PROF...) is called when profiling is enabled/disabled
