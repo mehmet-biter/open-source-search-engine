@@ -35,7 +35,6 @@
 
 static int32_t g_missedQuickPolls = 0;
 int32_t g_numSigChlds = 0;
-int32_t g_numSigPipes = 0;
 int32_t g_numSigIOs = 0;
 int32_t g_numSigQueues = 0;
 int32_t g_numSigOthers = 0;
@@ -504,11 +503,6 @@ void sigHandlerQueue_r ( int x , siginfo_t *info , void *v ) {
 		return;
 	}
 
-	if ( info->si_signo == SIGPIPE ) {
-		g_numSigPipes++;
-		return;
-	}
-
 	if ( info->si_signo == SIGIO ) {
 		g_numSigIOs++;
 		return;
@@ -577,10 +571,17 @@ bool Loop::init ( ) {
 	// . sigtimedwait() selects the lowest signo first for handling
 	// . therefore, GB_SIGRTMIN is higher priority than (GB_SIGRTMIN + 1)
 	//sigfillset ( &sigs );
+
+	struct sigaction actSigPipe;
+	//Ignore SIGPIPE. We want a plain error return instead from system calls,.
+	actSigPipe.sa_handler = SIG_IGN;
+	sigemptyset(&actSigPipe.sa_mask);
+	actSigPipe.sa_flags = 0;
+	sigaction(SIGPIPE,&actSigPipe,0);
+
 	// set of signals to block
 	sigset_t sigs;
 	sigemptyset ( &sigs                );
-	sigaddset   ( &sigs , SIGPIPE      ); //if we write to a close socket
 	sigaddset   ( &sigs , SIGCHLD      );
 
 	// now since we took out SIGIO... (see below)
@@ -619,7 +620,6 @@ bool Loop::init ( ) {
 	// call this function
 	sa2.sa_sigaction = sigHandlerQueue_r;
 	g_errno = 0;
-	if ( sigaction ( SIGPIPE, &sa2, 0 ) < 0 ) g_errno = errno;
 	if ( sigaction ( SIGCHLD, &sa2, 0 ) < 0 ) g_errno = errno;
 	if ( sigaction ( SIGIO, &sa2, 0 ) < 0 ) g_errno = errno;
 	if ( g_errno ) log("loop: sigaction(): %s.", mstrerror(g_errno) );
@@ -760,7 +760,6 @@ void Loop::runLoop ( ) {
 
 	// . set sigs on which sigtimedwait() listens for
 	// . add this signal to our set of signals to watch (currently NONE)
-	sigaddset ( &sigs0, SIGPIPE      );
 	sigaddset ( &sigs0, SIGCHLD      );
 	// . TODO: do we need to mask SIGIO too? (sig queue overflow?)
 	// . i would think so, because what if we tried to queue an important

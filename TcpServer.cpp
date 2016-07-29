@@ -69,8 +69,6 @@ void TcpServer::reset() {
 	}
 }
 
-static void sigpipe_handle(int x) {
-}
 
 // . port will be incremented if already in use
 // . use 1 socket for receiving and sending
@@ -207,7 +205,6 @@ retry16:
 		SSL_load_error_strings();
 		//SSLeay_add_all_algorithms();
 		//SSLeay_add_ssl_algorithms();
-		signal(SIGPIPE, sigpipe_handle);
 		const SSL_METHOD *meth = SSLv23_method();
 		m_ctx = SSL_CTX_new(meth);
 		// get the certificate location

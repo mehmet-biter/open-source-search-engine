@@ -806,7 +806,6 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 
 			      "<tr class=poo><td><b>SIGCHLDS</b></td><td>%" PRId32"</td></tr>\n"
 			      "<tr class=poo><td><b>SIGQUEUES</b></td><td>%" PRId32"</td></tr>\n"
-			      "<tr class=poo><td><b>SIGPIPES</b></td><td>%" PRId32"</td></tr>\n"
 			      "<tr class=poo><td><b>SIGIOS</b></td><td>%" PRId32"</td></tr>\n"
 			      "<tr class=poo><td><b>SIGOTHERS</b></td><td>%" PRId32"</td></tr>\n"
 
@@ -838,7 +837,6 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 
 			      g_numSigChlds,
 			      g_numSigQueues,
-			      g_numSigPipes,
 			      g_numSigIOs,
 			      g_numSigOthers,
 
