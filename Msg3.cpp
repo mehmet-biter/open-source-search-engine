@@ -647,16 +647,6 @@ bool Msg3::readList  ( char           rdbId         ,
 		                                startKey2, endKey2, m_ks, &m_lists[i], this, doneScanningWrapper,
 		                                base->useHalfKeys(), m_rdbId, m_niceness, m_allowPageCache, m_hitDisk ) ;
 
-		// . damn, usually the above will indirectly launch a thread
-		//   to do the reading, but it sets g_errno to EINTR,
-		//   "interrupted system call"!
-		// . i guess the thread does the read w/o blocking and then
-		//   queues the signal on g_loop's queue before it exits
-		// . try ignoring, and keep going
-		if ( g_errno == EINTR ) {
-			log("net: Interrupted system call while reading file. Ignoring.");
-			g_errno = 0;
-		}
 		// debug msg
 		//fprintf(stderr,"Msg3:: reading %" PRId32" bytes from file #%" PRId32","
 		//	"done=%" PRId32",offset=%" PRId64",g_errno=%s,"
@@ -697,12 +687,6 @@ void Msg3::doneScanningWrapper(void *state) {
 
 	// inc the scan count
 	THIS->m_numScansCompleted++;
-
-	// we decided to try to ignore these errors
-	if ( g_errno == EINTR ) {
-		log("net: Interrupted system call while reading file. Ignoring.");
-		g_errno = 0;
-	}
 
 	// if we had an error, remember it
 	if ( g_errno ) {
