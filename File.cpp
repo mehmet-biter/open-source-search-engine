@@ -226,11 +226,8 @@ int File::write ( void *buf             ,
 	}
 	// write it
 	int n;
- retry21:
 	if ( offset < 0 ) n = ::write ( fd , buf , numBytesToWrite );
 	else              n =  pwrite ( fd , buf , numBytesToWrite , offset );
-	// valgrind
-	if ( n < 0 && errno == EINTR ) goto retry21;
 	// update linked list
 	//promoteInLinkedList ( this );
 	// copy errno to g_errno
@@ -256,11 +253,8 @@ int File::read(void *buf, int32_t numBytesToRead, int32_t offset) {
 	}
 	// do the read
 	int n ;
- retry9:
 	if ( offset < 0 ) n = ::read  ( fd , buf , numBytesToRead );
 	else              n =  pread  ( fd , buf , numBytesToRead , offset );
-	// valgrind
-	if ( n < 0 && errno == EINTR ) goto retry9;
 	// update linked list
 	//promoteInLinkedList ( this );
 	// copy errno to g_errno
@@ -341,7 +335,6 @@ void File::close1_r_unlocked() {
 	//      always gives EBADF errors cuz it was closed.
 	s_unlinking [ m_fd ] = true;
 
- again:
 	if ( m_fd == 0 ) {
 		log( LOG_WARN, "disk: closing1 fd of 0" );
 	}
@@ -354,7 +347,6 @@ void File::close1_r_unlocked() {
 		return;
 	}
 	log( LOG_WARN, "disk: close(%i): %s.", m_fd, strerror(errno) );
-	if ( errno == EINTR ) goto again;
 }
 
 
@@ -454,10 +446,7 @@ bool File::close_unlocked() {
 	// turn off these 2 flags on fd to make sure
 	flags &= ~( O_NONBLOCK | O_ASYNC );
 	// return false on error
- retry26:
 	if ( fcntl ( m_fd, F_SETFL, flags ) < 0 ) {
-		// valgrind
-		if ( errno == EINTR ) goto retry26;
 		// copy errno to g_errno
 		g_errno = errno;
 		return log( LOG_WARN, "disk: fcntl(%s) : %s", getFilename(), strerror( g_errno ) );
@@ -472,10 +461,8 @@ bool File::close_unlocked() {
 
 	if ( g_conf.m_logDebugDisk ) sanityCheck();
 
- again:
 	if ( m_fd == 0 ) log("disk: closing2 fd of 0");
 	int status = ::close ( m_fd );
-	if ( status == -1 && errno == EINTR ) goto again;
 	// there was a closing error if status is non-zero. --- not checking
 	// the error may lead to silent loss of data --- see "man 2 close"
 	if ( status != 0 ) {
@@ -562,10 +549,7 @@ int File::getfd () {
 	// then try to open the new name
 	if ( fd == -1 ) {
 		t1 = gettimeofdayInMilliseconds();
- retry7:
 		fd = ::open ( getFilename() , m_flags,getFileCreationFlags());
-		// valgrind
-		if ( fd == -1 && errno == EINTR ) goto retry7;
 		// 0 means stdout, right? why am i seeing it get assigned???
 		if ( fd == 0 )
 			log(LOG_WARN, "disk: Got fd of 0 when opening %s.", getFilename());
@@ -728,14 +712,8 @@ bool File::closeLeastUsed () {
 	// turn off these 2 flags on fd to make sure
 	flags &= ~( O_NONBLOCK | O_ASYNC );
 
-retry27:
 	// return false on error
 	if ( fcntl ( fd, F_SETFL, flags ) < 0 ) {
-		// valgrind
-		if ( errno == EINTR ) {
-			goto retry27;
-		}
-
 		log( LOG_WARN, "disk: fcntl(%i): %s", fd, mstrerror( errno ) );
 
 		// return false;
@@ -749,10 +727,8 @@ retry27:
 	//s_closeCounts [ fd ]++;
 
 	// otherwise we gotta really close it
-again:
 	if ( fd == 0 ) log("disk: closing3 fd of 0");
 	int status = ::close ( fd );
-	if ( status == -1 && errno == EINTR ) goto again;
 
 	// -1 means can be reopened because File::close() wasn't called.
 	// we're just conserving file descriptors

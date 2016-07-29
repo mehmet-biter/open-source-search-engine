@@ -1043,8 +1043,6 @@ static void readwriteWrapper_r ( void *state ) {
 	// . do the readwrite_r() since we're a thread now
 	// . this SHOULD NOT set g_errno, we're a thread!
 	// . it does have it's own errno however
-	// . if this gets a cancel signal in the read() it will stop blocking
-	//   and errno will be EINTR
  again:
 	bool status = readwrite_r ( fstate );
 
@@ -1097,13 +1095,6 @@ static void readwriteWrapper_r ( void *state ) {
 		}
 	}
 	
-	// if it wasn't cancelled, just interrupted, try again
-	if ( errno == EINTR ) {
-		errno           = 0;
-		fstate->m_errno = 0;
-		goto again; 
-	}
-
 	int64_t time_took = gettimeofdayInMilliseconds() - time_start;
 
 	if ( !fstate->m_doWrite && time_took >= g_conf.m_logDiskReadTimeThreshold ) {
@@ -1116,8 +1107,6 @@ static void readwriteWrapper_r ( void *state ) {
 
 // . returns false and sets errno on error, true on success
 // . don't log shit when you're in a thread anymore
-// . if we receive a cancel sig while in pread/pwrite it will return -1
-//   and set errno to EINTR
 // Use of ThreadEntry parameter is NOT thread safe
 static bool readwrite_r ( FileState *fstate ) {
 	// if no buffer to read into the alloc in Threads.cpp failed
@@ -1180,40 +1169,36 @@ static bool readwrite_r ( FileState *fstate ) {
 		// n holds how many bytes read/written
 		int n;
 
-		do {
-			// do the read/write blocking
-			if (doWrite) {
-				n = pwrite(fd, p, len, localOffset);
-			} else {
-				n = pread(fd, p, len, localOffset);
-			}
+		// do the read/write blocking
+		if (doWrite) {
+			n = pwrite(fd, p, len, localOffset);
+		} else {
+			n = pread(fd, p, len, localOffset);
+		}
 
-			// debug msg
-			if (g_conf.m_logDebugDisk) {
-				const char *s = (fstate->m_doWrite) ? "wrote" : "read";
-				const char *t = (fstate->m_flags & O_NONBLOCK) ? "yes" : "no";    // are we blocking?
+		// debug msg
+		if (g_conf.m_logDebugDisk) {
+			const char *s = (fstate->m_doWrite) ? "wrote" : "read";
+			const char *t = (fstate->m_flags & O_NONBLOCK) ? "yes" : "no";    // are we blocking?
 
-				// this is bad for real-time threads cuz our unlink() routine
-				// may have been called by RdbMerge and our m_files may be
-				// altered
-				// MDW: don't access m_bigfile in case bigfile was deleted
-				// since we are in a thread
-				log(LOG_DEBUG, "disk::readwrite: %s %i bytes of %i @ offset %i "
-						    "(nonBlock=%s) "
-						    "fd %i "
-						    "cc1=%i=?%i cc2=%i=?%i errno=%s",
-				    s, n, len, localOffset,
-				    t,
-				    fd,
-				    (int) fstate->m_closeCount1,
-				    (int) getCloseCount_r(fstate->m_fd1),
-				    (int) fstate->m_closeCount2,
-				    (int) getCloseCount_r(fstate->m_fd2),
-				    mstrerror(errno));
-			}
-
-			// interrupted system call?
-		} while (n < 0 && errno == EINTR);
+			// this is bad for real-time threads cuz our unlink() routine
+			// may have been called by RdbMerge and our m_files may be
+			// altered
+			// MDW: don't access m_bigfile in case bigfile was deleted
+			// since we are in a thread
+			log(LOG_DEBUG, "disk::readwrite: %s %i bytes of %i @ offset %i "
+					    "(nonBlock=%s) "
+					    "fd %i "
+					    "cc1=%i=?%i cc2=%i=?%i errno=%s",
+			    s, n, len, localOffset,
+			    t,
+			    fd,
+			    (int) fstate->m_closeCount1,
+			    (int) getCloseCount_r(fstate->m_fd1),
+			    (int) fstate->m_closeCount2,
+			    (int) getCloseCount_r(fstate->m_fd2),
+			    mstrerror(errno));
+		}
 
 		// this is thread safe...
 		g_lastDiskReadCompleted = gettimeofdayInMilliseconds();
@@ -1229,13 +1214,13 @@ static bool readwrite_r ( FileState *fstate ) {
 					    "offset? Our fd was probably stolen from us by another "
 					    "thread. fd1=%i fd2=%i len=%i filenum=%i "
 					    "localoffset=%i. error=%s.",
-			    (int32_t) len, fstate->m_offset,
-                fstate->m_fd1,
-                fstate->m_fd2,
-                len,
-                filenum,
-                localOffset,
-                mstrerror(errno));
+					    (int32_t) len, fstate->m_offset,
+					    fstate->m_fd1,
+					    fstate->m_fd2,
+					    len,
+					    filenum,
+					    localOffset,
+					    mstrerror(errno));
 			errno = EBADENGINEER;
 			return false;
 		}
