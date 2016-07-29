@@ -540,49 +540,39 @@ bool Loop::init ( ) {
 	actSigPipe.sa_handler = SIG_IGN;
 	sigemptyset(&actSigPipe.sa_mask);
 	actSigPipe.sa_flags = 0;
-	sigaction(SIGPIPE,&actSigPipe,0);
+	sigaction(SIGPIPE,&actSigPipe,NULL);
 
-	struct sigaction sa;
-	// . sa_mask is the set of signals that should be blocked when
-	//   we're handling the signal, make this empty
-	// . GB_SIGRTMIN signals will be automatically blocked while we're
-	//   handling a SIGIO signal, so don't worry about that
-	sigemptyset (&sa.sa_mask);
-	sa.sa_flags = SA_SIGINFO ; // | SA_ONESHOT;
-
-	// handle HUP signals gracefully by saving and shutting down
-	sa.sa_sigaction = sighupHandler;
-	if ( sigaction ( SIGHUP , &sa, 0 ) < 0 ) g_errno = errno;
-	if ( g_errno ) log("loop: sigaction SIGHUP: %s.", mstrerror(errno));
-	if ( sigaction ( SIGTERM, &sa, 0 ) < 0 ) g_errno = errno;
-	if ( g_errno ) log("loop: sigaction SIGTERM: %s.", mstrerror(errno));
-	// if ( sigaction ( SIGABRT, &sa, 0 ) < 0 ) g_errno = errno;
-	// if ( g_errno ) log("loop: sigaction SIGTERM: %s.",mstrerror(errno));
+	// handle SIGHUP and SIGTERM signals gracefully by saving and shutting down
+	struct sigaction saShutdown;
+	sigemptyset(&saShutdown.sa_mask);
+	saShutdown.sa_flags = SA_SIGINFO;
+	saShutdown.sa_sigaction = sighupHandler;
+	sigaction(SIGHUP, &saShutdown, NULL);
+	sigaction(SIGTERM, &saShutdown, NULL);
+	//sigaction(SIGABRT, &sa, NULL);
 
 	// we should save our data on segv, sigill, sigfpe, sigbus
-	sa.sa_sigaction = sigbadHandler;
-	if ( sigaction ( SIGSEGV, &sa, 0 ) < 0 ) g_errno = errno;
-	if ( g_errno ) log("loop: sigaction SIGSEGV: %s.", mstrerror(errno));
-	if ( sigaction ( SIGILL , &sa, 0 ) < 0 ) g_errno = errno;
-	if ( g_errno ) log("loop: sigaction SIGILL: %s.", mstrerror(errno));
-	if ( sigaction ( SIGFPE , &sa, 0 ) < 0 ) g_errno = errno;
-	if ( g_errno ) log("loop: sigaction SIGFPE: %s.", mstrerror(errno));
-	if ( sigaction ( SIGBUS , &sa, 0 ) < 0 ) g_errno = errno;
-	if ( g_errno ) log("loop: sigaction SIGBUS: %s.", mstrerror(errno));
-	// if ( sigaction ( SIGQUIT , &sa, 0 ) < 0 ) g_errno = errno;
-	// if ( g_errno ) log("loop: sigaction SIGBUS: %s.", mstrerror(errno));
-	// if ( sigaction ( SIGSYS , &sa, 0 ) < 0 ) g_errno = errno;
-	// if ( g_errno ) log("loop: sigaction SIGBUS: %s.", mstrerror(errno));
-
+	struct sigaction saBad;
+	sigemptyset(&saBad.sa_mask);
+	saBad.sa_flags = SA_SIGINFO;
+	saBad.sa_sigaction = sigbadHandler;
+	sigaction(SIGSEGV, &saBad, NULL);
+	sigaction(SIGILL, &saBad, NULL);
+	sigaction(SIGFPE, &saBad, NULL);
+	sigaction(SIGBUS, &saBad, NULL);
 
 	// if the UPS is about to go off it sends a SIGPWR
-	sa.sa_sigaction = sigpwrHandler;
-	if ( sigaction ( SIGPWR, &sa, 0 ) < 0 ) g_errno = errno;
-
+	struct sigaction saPower;
+	sigemptyset(&saPower.sa_mask);
+	saPower.sa_flags = SA_SIGINFO;
+	saPower.sa_sigaction = sigpwrHandler;
+	sigaction(SIGPWR, &saPower, NULL);
 
 	//SIGPROF is used by the profiler
-	sa.sa_sigaction = sigprofHandler;
-	if ( sigaction ( SIGPROF, &sa, NULL ) < 0 ) g_errno = errno;
+	struct sigaction saProfile;
+	sigemptyset(&saProfile.sa_mask);
+	saProfile.sa_sigaction = sigprofHandler;
+	sigaction(SIGPROF, &saProfile, NULL);
 	// setitimer(ITIMER_PROF...) is called when profiling is enabled/disabled
 	// it has noticeable overhead so it must not be enabled by default.
 
@@ -626,12 +616,12 @@ void sigbadHandler ( int x , siginfo_t *info , void *y ) {
 	sigemptyset (&sa.sa_mask);
 	sa.sa_flags = SA_SIGINFO ; //| SA_ONESHOT;
 	sa.sa_sigaction = NULL;
-	sigaction ( SIGSEGV, &sa, 0 ) ;
-	sigaction ( SIGILL , &sa, 0 ) ;
-	sigaction ( SIGFPE , &sa, 0 ) ;
-	sigaction ( SIGBUS , &sa, 0 ) ;
-	sigaction ( SIGQUIT, &sa, 0 ) ;
-	sigaction ( SIGSYS , &sa, 0 ) ;
+	sigaction(SIGSEGV, &sa, NULL);
+	sigaction(SIGILL, &sa, NULL);
+	sigaction(SIGFPE, &sa, NULL);
+	sigaction(SIGBUS, &sa, NULL);
+	sigaction(SIGQUIT, &sa, NULL);
+	sigaction(SIGSYS, &sa, NULL);
 	// if we've already been here, or don't need to be, then bail
 	if ( g_loop.m_shutdown ) {
 		log("loop: sigbadhandler. shutdown already called.");
