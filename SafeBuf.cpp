@@ -296,24 +296,18 @@ int32_t SafeBuf::save ( const char *fullFilename ) {
 }
 
 int32_t SafeBuf::dumpToFile(const char *filename ) {
- retry22:
 	int32_t fd = open ( filename , O_CREAT | O_WRONLY | O_TRUNC ,
 			    getFileCreationFlags() );
 			    //S_IRUSR |S_IWUSR |S_IRGRP |S_IWGRP| S_IROTH );
 	if ( fd < 0 ) {
-		// valgrind
-		if ( errno == EINTR ) goto retry22;
 		log("safebuf: Failed to open %s for writing: %s", 
 		    filename,mstrerror(errno));
 		return -1;
 	}
 	//logf(LOG_DEBUG, "test: safebuf %" PRId32" bytes written to %s",m_length,
 	//     filename);
- retry23:
 	int32_t bytes = write(fd, (char*)m_buf, m_length) ;
 	if ( bytes != m_length ) {
-		// valgrind
-		if ( bytes <= 0 && errno == EINTR ) goto retry23;
 		logf(LOG_DEBUG,"test: safebuf bad write %" PRId32" != %" PRId32": %s",
 		     bytes,m_length,mstrerror(errno));
 		close(fd);
@@ -325,7 +319,6 @@ int32_t SafeBuf::dumpToFile(const char *filename ) {
 
 // return -1 on error
 int32_t SafeBuf::safeSave (char *filename ) {
- retry22:
 
 	// first write to tmp file
 	char tmp[1024];
@@ -337,19 +330,14 @@ int32_t SafeBuf::safeSave (char *filename ) {
 			    getFileCreationFlags() );
 			 // S_IRUSR |S_IWUSR |S_IRGRP |S_IWGRP| S_IROTH );
 	if ( fd < 0 ) {
-		// valgrind
-		if ( errno == EINTR ) goto retry22;
 		log("safebuf: Failed to open %s for writing: %s", 
 		    fn.getBufStart(), mstrerror(errno));
 		return -1;
 	}
 	//logf(LOG_DEBUG, "test: safebuf %" PRId32" bytes written to %s",m_length,
 	//     filename);
- retry23:
 	int32_t bytes = write(fd, (char*)m_buf, m_length) ;
 	if ( bytes != m_length ) {
-		// valgrind
-		if ( bytes <= 0 && errno == EINTR ) goto retry23;
 		logf(LOG_DEBUG,"test: safebuf bad write %" PRId32" != %" PRId32": %s",
 		     bytes,m_length,mstrerror(errno));
 		close(fd);
@@ -420,20 +408,14 @@ int32_t SafeBuf::fillFromFile(const char *filename) {
 	// results.st_size
 	reserve(results.st_size+1);
 	
- retry:
 	int32_t fd = open ( filename , O_RDONLY , getFileCreationFlags() );
 	if ( ! fd ) {
-		// valgrind
-		if ( errno == EINTR ) goto retry;
 		log(LOG_DEBUG, "query: Failed to open %s for reading: ",
 		    filename);
 		// -1 means there was a read error of some sorts
 		return -1;//false;
 	}
-retry2:
 	int32_t numRead = read(fd, m_buf+m_length, results.st_size);
-	// valgrind
-	if ( numRead<0 && errno == EINTR ) goto retry2;
 	close(fd);
 	// add a \0 for good meaure
 	if ( numRead >= 0 ) {
