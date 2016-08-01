@@ -190,6 +190,8 @@ int main ( int argc , char *argv[] ) {
 	if ( ret ) {
 		fprintf( stderr, "Failed to start gb. Exiting.\n" );
 	}
+
+	return ret;
 }
 
 int main2 ( int argc , char *argv[] ) {
