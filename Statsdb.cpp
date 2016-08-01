@@ -590,7 +590,9 @@ bool Statsdb::gifLoop ( ) {
 				    0		, // # retries
 				    -1		, // max # retries
 				    true	, // compensate for merge?
-				    -1		) ) // sync point
+				    -1		, // sync point
+				    false,        // isRealMerge
+				    true))        // allowPageCache
 			return false;
 		// . process list
 		// . returns false with g_errno set on error

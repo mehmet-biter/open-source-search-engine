@@ -2271,12 +2271,13 @@ bool RdbBase::verifyFileSharding ( ) {
 			      NULL          , // callback
 			      0             , // niceness
 			      false         , // err correction?
-			      NULL          ,
-			      0             ,
-			      -1            ,
-			      true          ,
-			      -1LL          ,
-			      true          )) {
+			      NULL          , // cachekey
+			      0             , // retryNum
+			      -1            , // maxRetries
+			      true          , // compenstateForMerge
+			      -1LL          , // syncPint
+			      true          , // isRealMerge
+			      true)) {        // allowPageCache
 		g_jobScheduler.allow_new_jobs();
 		log( LOG_DEBUG, "db: HEY! it did not block");
 		return false;

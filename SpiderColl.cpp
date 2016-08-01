@@ -246,7 +246,10 @@ bool SpiderColl::makeDoleIPTable ( ) {
 			      0             , // retry num
 			      -1            , // maxRetries
 			      true          , // compensate for merge
-			      -1LL          )){ // sync point
+			      -1LL          , // sync point
+			      false,          // isRealMerge
+			      true))          // allowPageCache
+	{
 		log(LOG_LOGIC,"spider: getList did not block.");
 		return false;
 	}
@@ -341,7 +344,10 @@ bool SpiderColl::makeWaitingTree ( ) {
 			      0             , // retry num
 			      -1            , // maxRetries
 			      true          , // compensate for merge
-			      -1LL          )){ // sync point
+			      -1LL          , // sync point
+			      false,          // isRealMerge
+			      true))          // allowPageCache
+	{
 		log(LOG_LOGIC,"spider: getList did not block.");
 		return false;
 	}
@@ -1543,7 +1549,14 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 					 this,//(void *)state2,//this//state
 					 gotSpiderdbListWrapper2 ,
 					 MAX_NICENESS   , // niceness
-					 true          )) // do error correct?
+					 true           , // do error correct?
+					 NULL,            // cachekey
+					 0,               // retryNum
+					 -1,              // maxRetries
+					 true,            // compensateForMerge
+					 -1,              // syncPoint
+					 false,           // isRealMerge
+					 true))           // allowPageCache
 		{
 			// return if blocked
 			logTrace( g_conf.m_logTraceSpider, "END, msg5b.getList blocked" );
@@ -2462,7 +2475,14 @@ bool SpiderColl::readListFromSpiderdb ( ) {
 				this,//(void *)state2,//this,//state 
 				gotSpiderdbListWrapper ,
 				MAX_NICENESS   , // niceness
-				true          )) // do error correct?
+				true,            // do error correct?
+				NULL,            // cachekey
+				0,               // retryNum
+				-1,              // maxRetries
+				true,            // compensateForMerge
+				-1,              // syncPoint
+				false,           // isRealMerge
+				true ))          // allowPageCache
 	{
 		// return false if blocked
 		logTrace( g_conf.m_logTraceSpider, "END, msg5.getList blocked" );

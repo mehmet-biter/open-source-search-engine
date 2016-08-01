@@ -1115,8 +1115,10 @@ bool Tagdb::verify ( const char *coll ) {
 			      0             ,
 			      -1            ,
 			      true          ,
-			      -1LL          ,
-			      true          )) {
+			      -1LL          , // syncPoint
+			      true          , // isRealMerge
+			      true))          // allowPageCache
+	{
 		g_jobScheduler.allow_new_jobs();
 		return log("tagdb: HEY! it did not block");
 	}

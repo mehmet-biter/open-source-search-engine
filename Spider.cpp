@@ -593,12 +593,13 @@ bool Spiderdb::verify ( char *coll ) {
 			      NULL          , // callback
 			      0             , // niceness
 			      false         , // err correction?
-			      NULL          ,
-			      0             ,
-			      -1            ,
-			      true          ,
-			      -1LL          ,
-			      true          )) {
+			      NULL          , // cache key
+			      0             , // retryNum
+			      -1            , // maxRetries
+			      true          , // compenstateForMerge
+			      -1LL          , // syncPoint
+			      true          , // isRealMerge
+			      true          )) { // allowPageCache
 		g_jobScheduler.allow_new_jobs();
 		return log("db: HEY! it did not block");
 	}

@@ -210,12 +210,14 @@ bool Linkdb::verify ( char *coll ) {
 			      NULL          , // callback
 			      0             , // niceness
 			      false         , // err correction?
-			      NULL          ,
-			      0             ,
-			      -1            ,
-			      true          ,
-			      -1LL          ,
-			      true          )) {
+			      NULL          , // cacheKey
+			      0             , // retryNum
+			      -1            , // maxRetries
+			      true          , // compensateForMerge
+			      -1LL          , // syncPoint
+			      true          , // isRealMerge
+			      true))          // allowPageCache
+	{
 		g_jobScheduler.allow_new_jobs();
 		return log("db: HEY! it did not block");
 	}
@@ -1096,7 +1098,15 @@ bool Msg25::doReadLoop ( ) {
 				this            ,
 				gotListWrapper  ,
 				m_niceness      ,
-				true            )){ // error correct?
+				true            , // error correct?
+				NULL, //cachekey
+				0,                //retryNum
+				-1,               //maxRetries
+				true,             //comp-for-merge
+				-1,               //syncPoint
+				false,            //isRealMerge
+				true))            //allowPageCache
+	{
 		//log("debug: msg0 blocked this=%" PRIx32,(int32_t)this);
 		return false;
 	}

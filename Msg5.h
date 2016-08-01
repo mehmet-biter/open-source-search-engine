@@ -51,13 +51,13 @@ class Msg5 {
 		       void (* callback ) ( void *state, RdbList *list, Msg5 *msg5 ),
 		       int32_t       niceness      ,
 		       bool       doErrorCorrection  ,
-		       char      *cacheKeyPtr  = NULL ,
-		       int32_t       retryNum     =  0  ,
-		       int32_t       maxRetries   = -1  ,
-		       bool       compensateForMerge = true ,
-		       int64_t      syncPoint = -1 ,
-		       bool        isRealMerge = false ,
-		       bool        allowPageCache = true );
+		       char         *cacheKeyPtr,
+		       int32_t       retryNum,
+		       int32_t       maxRetries,
+		       bool          compensateForMerge,
+		       int64_t       syncPoint,
+		       bool          isRealMerge,
+		       bool          allowPageCache);
 
 	bool getList ( char       rdbId         ,
 		       collnum_t collnum ,

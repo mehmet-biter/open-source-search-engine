@@ -411,7 +411,9 @@ bool Rebalance::scanRdb ( ) {
 				0                , // retry num
 				-1               , // maxRetries
 				true             , // compensate for merge
-				-1LL         ))    // sync point
+				-1LL             , // sync point
+				false,             // isRealMerge
+				true))             // allowPageCache
 		return false;
 
 	//

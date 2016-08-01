@@ -3398,7 +3398,15 @@ int32_t dumpSpiderdb ( const char *coll, int32_t startFileNum, int32_t numFiles,
 			      NULL          , // state
 			      NULL          , // callback
 			      0             , // niceness
-			      false         )){// err correction?
+			      false         , // err correction?
+			      NULL,           // cacheKeyPtr
+			      0,              // retryNum
+			      -1,             // maxRetries
+			      true,           // compensateForMerge
+			      -1,             // syncPoint
+			      false,          // isRealMerge
+			      true))          // allowPageCache
+	{
 		log(LOG_LOGIC,"db: getList did not block.");
 		return -1;
 	}
@@ -4101,7 +4109,15 @@ void dumpTagdb( const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 			      NULL          , // state
 			      NULL          , // callback
 			      0             , // niceness
-			      false         )){// err correction?
+			      false         , // err correction?
+			      NULL,           // cacheKeyPtr
+			      0,              // retryNum
+			      -1,             // maxRetries
+			      true,           // compensateForMerge
+			      -1,             // syncPoint
+			      false,          // isRealMerge
+			      true))          // allowPageCache
+	{
 		log(LOG_LOGIC,"db: getList did not block.");
 		return;
 	}
@@ -4633,7 +4649,15 @@ void dumpPosdb (const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 			      NULL          , // state
 			      NULL          , // callback
 			      0             , // niceness
-			      true )) { // to debug RdbList::removeBadData_r()
+			      true,           // to debug RdbList::removeBadData_r()
+			      NULL,           // cacheKeyPtr
+			      0,              // retryNum
+			      -1,             // maxRetries
+			      true,           // compensateForMerge
+			      -1,             // syncPoint
+			      false,          // isRealMerge
+			      true))          // allowPageCache
+	{
 		            //false         )){// err correction?
 		log(LOG_LOGIC,"db: getList did not block.");
 		return;
@@ -4915,7 +4939,15 @@ void dumpLinkdb ( const char *coll,
 			      NULL          , // state
 			      NULL          , // callback
 			      0             , // niceness
-			      false         )){// err correction?
+			      false         , // err correction?
+			      NULL,           // cacheKeyPtr
+			      0,              // retryNum
+			      -1,             // maxRetries
+			      true,           // compensateForMerge
+			      -1,             // syncPoint
+			      false,          // isRealMerge
+			      true))          // allowPageCache
+	{
 		log(LOG_LOGIC,"db: getList did not block.");
 		return;
 	}
@@ -5499,7 +5531,9 @@ void doInject ( int fd , void *state ) {
 			       0              , // retry num
 			       -1             , // maxRetries
 			       true           , // compensate for merge
-			       -1LL           ); // sync point
+			       -1LL,            // sync point
+			       false,           // isRealMerge
+			       true);           // allowPageCache
 		// all done if empty
 		if ( list.isEmpty() ) { g_loop.reset();  exit(0); }
 		// loop over entries in list
