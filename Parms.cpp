@@ -6479,21 +6479,6 @@ void Parms::init ( ) {
 	m++;
 
 
-	m->m_title = "max coordinator threads";
-	m->m_desc  = "Maximum number of threads to use per Gigablast process "
-		"for coordinating a query.";
-	m->m_cgi   = "mcct";
-	m->m_off   = offsetof(Conf,m_maxCoordinatorThreads);
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "2";
-	m->m_units = "threads";
-	m->m_min   = 0;
-	m->m_flags = 0;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m->m_group = false;
-	m++;
-
 	m->m_title = "max cpu threads";
 	m->m_desc  = "Maximum number of threads to use per Gigablast process "
 		"for merging and intersecting.";
@@ -8432,7 +8417,7 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(CollectionRec,m_maxNumSpiders);
 	m->m_type  = TYPE_LONG;
 	// make it the hard max so control is really in the master controls
-	m->m_def   = "1";
+	m->m_def   = "300";
 	m->m_page  = PAGE_SPIDER;
 	m->m_obj   = OBJ_COLL;
 	m->m_flags = PF_CLONE;
@@ -8444,7 +8429,7 @@ void Parms::init ( ) {
 	m->m_cgi  = "sdms";
 	m->m_off   = offsetof(CollectionRec,m_spiderDelayInMilliseconds );
 	m->m_type  = TYPE_LONG;
-	m->m_def   = "1000";
+	m->m_def   = "0";
 	m->m_group = false;
 	m->m_page  = PAGE_SPIDER;
 	m->m_obj   = OBJ_COLL;

@@ -136,8 +136,6 @@ class Msg5 {
 
 	int32_t minRecSizes() const { return m_minRecSizes; }
 
-	int magic;
-
 	// we add our m_finalList(s) to this, the user's list
 	RdbList  *m_list;
 

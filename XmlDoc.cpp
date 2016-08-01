@@ -6811,8 +6811,6 @@ int32_t *XmlDoc::getSiteNumInlinks ( ) {
 
 // TODO: can we have a NULL LinkInfo without having had an error?
 LinkInfo *XmlDoc::getSiteLinkInfo() {
-log("@@@@ XmlDoc::getSiteLinkInfo() ->");
-if(ptr_firstUrl) log("@@@ ptr_firstUrl=%s",ptr_firstUrl);
 	// lookup problem?
 	if ( g_errno ) {
 		log("build: error getting link info: %s",
@@ -7465,8 +7463,7 @@ static LinkInfo s_dummy2;
 // . returns NULL and sets g_errno on error
 // . returns -1 if blocked, will re-call m_callback
 LinkInfo *XmlDoc::getLinkInfo1 ( ) {
-log("@@@@ XmlDoc::getLinkInfo1() ->");
-if(ptr_firstUrl) log("@@@ ptr_firstUrl=%s",ptr_firstUrl);
+
 	if ( m_linkInfo1Valid && ptr_linkInfo1 )
 		return ptr_linkInfo1;
 
@@ -16524,9 +16521,6 @@ static void getMsg20ReplyWrapper ( void *state ) {
 // . returns NULL with g_errno set on error
 // . returns -1 if blocked
 Msg20Reply *XmlDoc::getMsg20Reply ( ) {
-log("@@@@ XmlDoc::getMsg20Reply() ->");
-if(ptr_firstUrl) log("@@@ ptr_firstUrl=%s",ptr_firstUrl);
-if(m_replyValid) log("@@@@ XmlDoc::getMsg20Reply(): m_reply = %p, %d", m_reply.ptr_linkInfo, m_reply.size_linkInfo);
 	// return it right away if valid
 	if ( m_replyValid ) return &m_reply;
 
@@ -16888,7 +16882,6 @@ if(m_replyValid) log("@@@@ XmlDoc::getMsg20Reply(): m_reply = %p, %d", m_reply.p
 	// that has the provided site and domain hash, Msg20Request::
 	// m_ourHostHash32 and m_ourDomHash32?
 	int32_t nl = 0;
-log("@@@@ XmlDoc::getMsg20Reply(): links=%p", links);
 	if ( links ) nl = links->getNumLinks();
 	// scan all outlinks we have on this page
 	int32_t i ; for ( i = 0 ; i < nl ; i++ ) {
@@ -16941,7 +16934,6 @@ log("@@@@ XmlDoc::getMsg20Reply(): links=%p", links);
 	// . this is so fast, just do it for all Msg20 requests
 	// . no! think about it -- this can be huge for pages like
 	//   google.com!!!
-log("@@@@ XmlDoc::getMsg20Reply(): ptr_linkInfo1=%p",ptr_linkInfo1);
 	LinkInfo *info1 = ptr_linkInfo1;
 	if ( info1 ) {
 		reply->m_pageNumInlinks        = info1->m_totalInlinkingDocIds;
@@ -16957,7 +16949,6 @@ log("@@@@ XmlDoc::getMsg20Reply(): ptr_linkInfo1=%p",ptr_linkInfo1);
 	// getLinkText is true if we are getting the anchor text for a
 	// supplied url as part of the SPIDER process..
 	// this was done by Msg23 before
-log("@@@@ XmlDoc::getMsg20Reply(): m_req->m_getLinkText=%d", m_req->m_getLinkText);
 	if ( ! m_req->m_getLinkText ) {
 		m_replyValid = true;
 		return &m_reply;
@@ -17041,8 +17032,7 @@ log("@@@@ XmlDoc::getMsg20Reply(): m_req->m_getLinkText=%d", m_req->m_getLinkTex
 					 &linkNode           ,
 					 &linkNum            ,
 					 m_niceness          );
-log("@@@@ XmlDoc::getMsg20Reply(): blen=%d",blen);
-loghex(LOG_INFO,m_linkTextBuf,blen,"@@@@ m_linkTextBuf:");
+
 
 	// . BUT this skips the news topic stuff too. bad?
 	// . THIS HAPPENED before because we were truncating the xml(see above)

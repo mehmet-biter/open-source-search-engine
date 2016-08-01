@@ -6,7 +6,6 @@
 #include "Msg5.h"
 #include "RdbList.h"
 #include "max_niceness.h"
-#include <pthread.h>
 
 // support the &sites=xyz.com+abc.com+... to restrict search results to provided sites.
 #define MAX_WHITELISTS 500
@@ -103,7 +102,6 @@ private:
 	// we can get up to MAX_QUERY_TERMS term frequencies at the same time
 	Msg5 *m_msg5;
 	bool *m_avail; // which msg5s are available?
-	pthread_mutex_t m_mtxMsg5;
 
 	int32_t m_errno;
 
@@ -121,7 +119,6 @@ private:
 
 	int32_t m_numReplies;
 	int32_t m_numRequests;
-	pthread_mutex_t m_mtxCounters; //protects the two counters above
 
 	static void gotListWrapper(void *state, RdbList *list, Msg5 *msg5);
 	void gotListWrapper(Msg5 *msg5);

@@ -104,8 +104,6 @@ private:
 	static void doneScanningWrapper(void *state);
 	static void doneSleepingWrapper3(int fd, void *state);
 
-	int magic;
-
 	// the rdb we're scanning for
 	char  m_rdbId;
 	collnum_t m_collnum;
@@ -130,7 +128,6 @@ private:
 
 	int32_t      m_numScansStarted;
 	int32_t      m_numScansCompleted;
-	pthread_mutex_t m_mtxScanCounters;
 
 	// hold the lists we read from disk here
 	RdbList  *m_lists ;

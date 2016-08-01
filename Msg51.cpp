@@ -189,9 +189,9 @@ bool Msg51::sendRequests ( int32_t k ) {
 	// key_t     crec;
 	char     *crecPtr = NULL;
 	key_t     ckey = (key_t)m_docIds[m_nexti];
-	if ( c ) {
-		RdbCacheLock rcl(*c);
-		bool found = c->getRecord ( m_collnum    ,
+	bool found = false;
+	if ( c )
+		found = c->getRecord ( m_collnum    ,
 				       ckey      , // cache key
 				       &crecPtr  , // pointer to it
 				       &crecSize ,
@@ -199,18 +199,17 @@ bool Msg51::sendRequests ( int32_t k ) {
 				       3600      , // max age in secs
 				       true      , // inc counts?
 				       NULL      );// cachedTime
-		if ( found ) {
-			// sanity check
-			if ( crecSize != sizeof(key_t) ) gbshutdownLogicError();
-			m_clusterRecs[m_nexti] = *(key_t *)crecPtr;
-			// it is no longer CR_UNINIT, we got the rec now
-			m_clusterLevels[m_nexti] = CR_GOT_REC;
-			// debug msg
-			//logf(LOG_DEBUG,"query: msg51 getRec k.n0=%" PRIu64" rec.n0=%" PRIu64,
-			//     ckey.n0,m_clusterRecs[m_nexti].n0);
-			m_nexti++;
-			goto sendLoop;
-		}
+	if ( found ) {
+		// sanity check
+		if ( crecSize != sizeof(key_t) ) gbshutdownLogicError();
+		m_clusterRecs[m_nexti] = *(key_t *)crecPtr;
+		// it is no longer CR_UNINIT, we got the rec now
+		m_clusterLevels[m_nexti] = CR_GOT_REC;
+		// debug msg
+		//logf(LOG_DEBUG,"query: msg51 getRec k.n0=%" PRIu64" rec.n0=%" PRIu64,
+		//     ckey.n0,m_clusterRecs[m_nexti].n0);
+		m_nexti++;
+		goto sendLoop;
 	}
 
 	// . do not hog all the udpserver's slots!
@@ -441,14 +440,12 @@ void Msg51::gotClusterRec ( Msg0 *msg0 ) { //, RdbList *list ) {
 
 	// . add the record to our quick cache as a int64_t
 	// . ignore any error
-	if ( s_cacheInit ) {
-		RdbCacheLock rcl(*c);
+	if ( s_cacheInit )
 		c->addRecord ( m_collnum        ,
 			       (key_t)docId  , // docid is key
 			       (char *)rec   ,
 			       sizeof(key_t) , // recSize
 			       0             );// timestamp
-	}
 
 	// clear it in case the cache set it, we don't care
 	g_errno = 0;

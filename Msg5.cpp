@@ -9,34 +9,26 @@
 #include "PingServer.h"
 #include "Process.h"
 #include "Sanity.h"
-#include <assert.h>
+
 
 //#define GBSANITYCHECK
 
 
-static const int MAGIC = 0x2c3a4f5d;
 int32_t g_numCorrupt = 0;
 
 Msg5::Msg5() {
-	log(LOG_TRACE,"Msg5(%p)::Msg5()",this);
 	m_waitingForList = false;
 	//m_waitingForMerge = false;
 	m_numListPtrs = 0;
-	magic=MAGIC;
 	reset();
 }
 
 Msg5::~Msg5() {
-	assert(magic==MAGIC);
-	log(LOG_TRACE,"Msg5(%p)::~Msg5()",this);
 	reset();
-	magic=0;
 }
 
 // frees m_treeList
 void Msg5::reset() {
-	assert(magic==MAGIC);
-//	log(LOG_TRACE,"msg5(%p)::reset()",this);
 	if ( m_waitingForList ) { // || m_waitingForMerge ) {
 		log("disk: Trying to reset a class waiting for a reply.");
 		// might being doing an urgent exit (mainShutdown(1)) or
@@ -48,8 +40,6 @@ void Msg5::reset() {
 	m_numListPtrs = 0;
 	// and the tree list
 	m_treeList.freeList();
-	log(LOG_TRACE,"msg5(%p)::reset() done",this);
-	assert(magic==MAGIC);
 }
 
 // . return false if blocked, true otherwise
@@ -88,8 +78,6 @@ bool Msg5::getList ( char     rdbId         ,
 		     int64_t syncPoint ,
 		     bool        isRealMerge ,
 		     bool        allowPageCache ) {
-	assert(magic==MAGIC);
-	log(LOG_TRACE,"Msg5(%p)::getList(): list=%p",this,list);
 	const char *startKey = static_cast<const char*>(startKey_);
 	const char *endKey = static_cast<const char*>(endKey_);
 
@@ -263,8 +251,6 @@ bool Msg5::getList ( char     rdbId         ,
 // . calls gotList() to do the merge if we need to
 // . loops until m_minRecSizes is satisfied OR m_endKey is reached
 bool Msg5::readList ( ) {
-	assert(magic==MAGIC);
-	log(LOG_TRACE,"Msg5(%p)::readList(), m_list=%p",this,m_list);
 	// get base, returns NULL and sets g_errno to ENOCOLLREC on error
 	RdbBase *base = getRdbBase( m_rdbId, m_collnum );
 	if ( ! base ) {
@@ -558,19 +544,12 @@ bool Msg5::readList ( ) {
 		if ( g_errno ) return true;
 
 		// we may need to re-call getList
-		assert(magic==MAGIC);
 	} while(needsRecall());
 	// we did not block
 	return true;
 }
 
 bool Msg5::needsRecall ( ) {
-	assert(magic==MAGIC);
-	log(LOG_TRACE,"Msg5(%p)::needsRecall(): m_list=%p",this,m_list);
-	log(LOG_TRACE,"Msg5(%p)::needsRecall(): g_errno=%d",this,g_errno);
-	log(LOG_TRACE,"Msg5(%p)::needsRecall(): m_newMinRecSizes=%d",this,m_newMinRecSizes);
-	log(LOG_TRACE,"Msg5(%p)::needsRecall(): m_readAbsolutelyNothing=%d",this,m_readAbsolutelyNothing);
-	log(LOG_TRACE,"Msg5(%p)::needsRecall(): m_round=%d",this,m_round);
 	// get base, returns NULL and sets g_errno to ENOCOLLREC on error
 	RdbBase *base = getRdbBase ( m_rdbId , m_collnum );
 	// if collection was deleted from under us, base will be NULL
@@ -598,11 +577,8 @@ bool Msg5::needsRecall ( ) {
 		    base->m_dbname,(int32_t)m_collnum);
 		return false;
 	}
-	loghex(LOG_TRACE,m_list->getEndKey(),m_ks,"Msg5(%p)::needsRecall(): m_list->getEndKey()=",this);
-	loghex(LOG_TRACE,m_endKey,m_ks,"Msg5(%p)::needsRecall(): m_endKey=",this);
 	if ( KEYCMP(m_list->getEndKey(),m_endKey,m_ks)>=0 ) return false;
 
-	log(LOG_TRACE,"Msg5(%p)::needsRecall(): yes, m_list=%p",this,m_list);
 	// this is kinda important. we have to know if we are abusing
 	// the disk... we should really keep stats on this...
 	bool logIt = true;
@@ -621,7 +597,7 @@ bool Msg5::needsRecall ( ) {
 		     m_totalSize,
 		     KEYSTR(m_startKey,m_ks),
 		     (int32_t)m_collnum,(PTRTYPE)this, m_round );
-		m_round++;
+	m_round++;
 	// record how many screw ups we had so we know if it hurts performance
 	base->m_rdb->didReSeek ( );
 
@@ -636,8 +612,6 @@ void Msg5::gotListWrapper(void *state) {
 }
 
 void Msg5::gotListWrapper() {
-	assert(magic==MAGIC);
-	log(LOG_TRACE,"Msg5(%p)::gotListWrapper()",this);
 	// . this sets g_errno on error
 	// . this will merge cache/tree and disk lists into m_list
 	// . it will update m_newMinRecSizes
@@ -654,9 +628,7 @@ void Msg5::gotListWrapper() {
 	// we are no longer waiting for the list
 	m_waitingForList = false;
 	// when completely done call the callback
-	log(LOG_TRACE,"Msg5(%p)::gotLostWrapper(): calling callback",this);
 	m_callback ( m_state, m_list, this );
-	log(LOG_TRACE,"Msg5(%p)::gotListWrapper(): returning",this);
 }
 
 
@@ -665,7 +637,6 @@ void Msg5::gotListWrapper() {
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
 bool Msg5::gotList ( ) {
-	assert(magic==MAGIC);
 
 	// we are no longer waiting for the list
 	//m_waitingForList = false;
@@ -681,8 +652,6 @@ bool Msg5::gotList ( ) {
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
 bool Msg5::gotList2 ( ) {
-	assert(magic==MAGIC);
-	log(LOG_TRACE,"Msg5(%p)::gotList2()",this);
 	// reset this
 	m_startTime = 0LL;
 	// return if g_errno is set
@@ -990,9 +959,7 @@ bool Msg5::gotList2 ( ) {
 			    "blocking merge. (%s)",mstrerror(g_errno));
 		// clear g_errno because it really isn't a problem, we just block
 		g_errno = 0;
-	} else
-		log(LOG_TRACE,"Msg5(%p)::gotList2(): small lists",this);
-	log(LOG_TRACE,"Msg5(%p)::gotList2():Merging directly in this thread",this);
+	}
 
 	// repair any corruption
 	repairLists();
@@ -1013,8 +980,6 @@ bool Msg5::gotList2 ( ) {
 void Msg5::mergeListsWrapper(void *state) {
 	// we're in a thread now!
 	Msg5 *that = static_cast<Msg5*>(state);
-	assert(that->magic==MAGIC);
-	log(LOG_TRACE,"Msg5(%p)::mergeListWrapper()",that);
 
 	// assume no error since we're at the start of thread call
 	that->m_errno = 0;
@@ -1042,9 +1007,6 @@ void Msg5::mergeDoneWrapper(void *state, job_exit_t exit_type) {
 }
 
 void Msg5::mergeDone(job_exit_t /*exit_type*/) {
-	log(LOG_TRACE,"Msg5(%p)::mergeDone()",this);
-	assert(magic==MAGIC);
-	
 	// we MAY be in a thread now
 
 	// debug msg
@@ -1070,16 +1032,12 @@ void Msg5::mergeDone(job_exit_t /*exit_type*/) {
 	// set it now
 	m_calledCallback = 3;
 
-	assert(magic==MAGIC);
 	// when completely done call the callback
-	log(LOG_TRACE,"Msg5(%p)::mergeDone():calling callback",this);
 	m_callback ( m_state, m_list, this );
-	log(LOG_TRACE,"Msg5(%p)::mergeDone():returning",this);
 }
 
 // check lists in the thread
 void Msg5::repairLists() {
-	assert(magic==MAGIC);
 	// assume none
 	m_hadCorruption = false;
 	// return if no need to
@@ -1153,7 +1111,6 @@ void Msg5::repairLists() {
 }
 
 void Msg5::mergeLists() {
-	assert(magic==MAGIC);
 
 	// . don't do any merge if this is true
 	// . if our fetch of remote list fails, then we'll be called
@@ -1223,7 +1180,6 @@ void Msg5::mergeLists() {
 // . all recs in tree are negative and annihilate the 1000 recs from disk
 // . we are left with an empty list
 bool Msg5::doneMerging ( ) {
-	assert(magic==MAGIC);
 
 	//m_waitingForMerge = false;
 
@@ -1333,10 +1289,8 @@ bool Msg5::doneMerging ( ) {
 	// . free all lists we used
 	// . some of these may be from Msg3, some from cache, some from tree
 	for ( int32_t i = 0 ; i < m_numListPtrs ; i++ ) {
-		if(m_listPtrs[i]) {
-			m_listPtrs[i]->freeList();
-			m_listPtrs[i] = NULL;
-		}
+		m_listPtrs[i]->freeList();
+		m_listPtrs[i] = NULL;
 	}
 	// and the tree list
 	m_treeList.freeList();
@@ -1413,7 +1367,6 @@ int32_t g_isDumpingRdbFromMain = 0;
 // . if we discover one of the lists we read from a file is corrupt we go here
 // . uses Msg5 to try to get list remotely
 bool Msg5::getRemoteList ( ) {
-	assert(magic==MAGIC);
 
 	// skip this part if doing a cmd line 'gb dump p main 0 -1 1' cmd or
 	// similar to dump out a local rdb.
@@ -1476,7 +1429,6 @@ bool Msg5::getRemoteList ( ) {
 	// . wait forever for this host to reply... well, at least a day that
 	//   way if he's dead we'll wait for him to come back up to save our
 	//   data
-	assert(magic==MAGIC);
 	if ( ! m_msg0->getList ( h->m_hostId          ,
 				 h->m_ip              ,
 				 h->m_port            ,
@@ -1513,13 +1465,11 @@ bool Msg5::getRemoteList ( ) {
 	log("msg5: call to msg0 did not block");
 	// . if we did not block then call this directly
 	// . return false if it blocks
-	assert(magic==MAGIC);
 	return gotRemoteList ( ) ;
 }
 
 void Msg5::gotRemoteListWrapper( void *state ) {
 	Msg5 *THIS = (Msg5 *)state;
-	assert(THIS->magic==MAGIC);
 	// return if this blocks
 	if ( ! THIS->gotRemoteList() ) return;
 	// sanity check
@@ -1534,7 +1484,6 @@ void Msg5::gotRemoteListWrapper( void *state ) {
 
 // returns false if it blocks
 bool Msg5::gotRemoteList ( ) {
-	assert(magic==MAGIC);
 	// free the Msg0
 	mdelete ( m_msg0 , sizeof(Msg0) , "Msg5" );
 	delete ( m_msg0 );

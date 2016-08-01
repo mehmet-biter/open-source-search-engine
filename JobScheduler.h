@@ -22,7 +22,6 @@ typedef void (*finish_routine_t)(void *state, job_exit_t exit_type);
 
 
 enum thread_type_t {
-	thread_type_query_coordinator,
 	thread_type_query_read,
 	thread_type_query_constrain,
 	thread_type_query_merge,
@@ -72,7 +71,7 @@ public:
 	JobScheduler();
 	~JobScheduler();
 	
-	bool initialize(unsigned num_coordinator_threads, unsigned num_cpu_threads, unsigned num_io_threads, unsigned num_external_threads, job_done_notify_t job_done_notify=0);
+	bool initialize(unsigned num_cpu_threads, unsigned num_io_threads, unsigned num_external_threads, job_done_notify_t job_done_notify=0);
 	void finalize();
 	
 	bool submit(start_routine_t   start_routine,

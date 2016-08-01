@@ -551,7 +551,6 @@ bool Loop::init ( ) {
 	sigaction(SIGTERM, &saShutdown, NULL);
 	//sigaction(SIGABRT, &sa, NULL);
 
-/*
 	// we should save our data on segv, sigill, sigfpe, sigbus
 	struct sigaction saBad;
 	sigemptyset(&saBad.sa_mask);
@@ -561,7 +560,6 @@ bool Loop::init ( ) {
 	sigaction(SIGILL, &saBad, NULL);
 	sigaction(SIGFPE, &saBad, NULL);
 	sigaction(SIGBUS, &saBad, NULL);
-*/
 
 	// if the UPS is about to go off it sends a SIGPWR
 	struct sigaction saPower;

@@ -11,7 +11,6 @@
 #include "Dns.h"
 #include "BigFile.h"
 #include "Spider.h"
-#include "ScopedLock.h"
 #include "Sanity.h"
 
 
@@ -28,13 +27,9 @@ RdbCache::RdbCache () {
 	m_numPtrsMax   = 0;
 	reset();
 	m_needsSave    = false;
-	pthread_mutex_init(&m_mtx,NULL);
 }
 
-RdbCache::~RdbCache ( ) {
-	reset ();
-	pthread_mutex_destroy(&m_mtx);
-}
+RdbCache::~RdbCache ( ) { reset (); }
 
 #define BUFSIZE (128*1024*1024)
 //#define BUFSIZE (100000)
@@ -1308,7 +1303,6 @@ bool RdbCache::save_r ( ) {
 		return false;
 	}
 
-	RdbCacheLock rcl(*this);
 	bool status = save2_r ( fd );
 	
 	close ( fd );
@@ -1696,24 +1690,4 @@ void RdbCache::verify(){
 	 if ( count != m_numPtrsUsed ) {
 		 gbshutdownLogicError();
 	 }
-}
-
-
-
-RdbCacheLock::RdbCacheLock(RdbCache &rdc_)
-  : rdc(rdc_),
-    locked(true)
-{
-	pthread_mutex_lock(&rdc.m_mtx);
-}
-
-RdbCacheLock::~RdbCacheLock() {
-	unlock();
-}
-
-void RdbCacheLock::unlock() {
-	if(locked) {
-		pthread_mutex_unlock(&rdc.m_mtx);
-		locked = false;
-	}
 }
