@@ -43,8 +43,7 @@ public:
 	 *  sets "errno" on error.
 	 *  "termIds/termFreqs" should NOT be on the stack in case we block
 	 */
-	bool getLists(int32_t rdbId,
-			collnum_t collnum,			//char    *coll        ,
+	bool getLists(collnum_t collnum,			//char    *coll        ,
 			bool addToCache,
 			const QueryTerm *qterms,
 			int32_t numQterms,
@@ -109,7 +108,6 @@ private:
 	const QueryTerm *m_qterms;
 	int32_t m_numLists;
 	bool m_getComponents;
-	char m_rdbId;
 	bool m_addToCache;
 	collnum_t m_collnum;
 

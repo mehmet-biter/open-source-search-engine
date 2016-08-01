@@ -40,8 +40,7 @@ void Msg2::reset ( ) {
 //   as their componentCode, compound termlists have a componentCode of -1,
 //   other termlists have a componentCode of -2. These are typically taken
 //   from the Query.cpp class.
-bool Msg2::getLists ( int32_t     rdbId       ,
-		      collnum_t collnum , // char    *coll        ,
+bool Msg2::getLists ( collnum_t collnum , // char    *coll        ,
 		      bool     addToCache  ,
 		      const QueryTerm *qterms,
 		      int32_t numQterms,
@@ -75,7 +74,6 @@ bool Msg2::getLists ( int32_t     rdbId       ,
 	m_allowHighFrequencyTermCache = allowHighFrequencyTermCache;
 	m_qterms              = qterms;
 	m_getComponents       = false;
-	m_rdbId               = rdbId;
 	m_addToCache          = addToCache;
 	m_collnum             = collnum;
 	// we haven't got any responses as of yet or sent any requests
@@ -200,7 +198,7 @@ bool Msg2::getLists ( ) {
 		// . this is really only used to get IndexLists
 		// . we now always compress the list for 2x faster transmits
 		if ( ! msg5->getList ( 
-					   m_rdbId         , // rdbid
+					   RDB_POSDB,
 					   m_collnum      ,
 					   &m_lists[m_i], // listPtr
 					   sk2,
@@ -304,7 +302,7 @@ bool Msg2::getLists ( ) {
 
 		// start up the read. thread will wait in thread queue to 
 		// launch if too many threads are out.
-		if ( ! msg5->getList ( 	   m_rdbId         , // rdbid
+		if ( ! msg5->getList ( 	   RDB_POSDB,
 					   m_collnum        ,
 					   &m_whiteLists[m_w], // listPtr
 					   &sk3,
@@ -430,7 +428,7 @@ bool Msg2::gotList ( RdbList *list ) {
 	//if ( g_errno ) return true;
 	if ( m_errno )
 		log("net: Had error fetching data from %s: %s.", 
-		    getDbnameFromId(m_rdbId),
+		    getDbnameFromId(RDB_POSDB),
 		    mstrerror(m_errno) );
 
 	// note it
