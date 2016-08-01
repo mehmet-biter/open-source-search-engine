@@ -106,7 +106,9 @@ bool Clusterdb::verify ( char *coll ) {
 			      -1            ,
 			      true          ,
 			      -1LL          ,
-			      true          )) {
+			      true,           // isRealMerge
+			      true))          // allowPageCache
+	{
 		g_jobScheduler.allow_new_jobs();
 		log("db: HEY! it did not block");
 		return false;

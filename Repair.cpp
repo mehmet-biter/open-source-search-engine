@@ -1104,7 +1104,9 @@ bool Repair::scanRecs ( ) {
 			      0                , // retry num
 			      -1               , // maxRetries
 			      true             , // compensate for merge
-			      -1LL             )) // sync point
+			      -1LL,              // sync point
+			      false,             // isRealMerge
+			      true))             // allowPageCache
 		return true;
 	m_msg5InUse = true;
 	return false;

@@ -466,7 +466,9 @@ void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
 				    0                 , // retry num
 				    -1                , // maxRetries
 				    true              , // compensate for merge
-				    -1LL              ) ) // sync point
+				    -1LL,               // sync point
+				    false,              // isRealMerge
+				    true))              // allowPageCache
 		return ;
 
 	// we did not block, nice... in cache?

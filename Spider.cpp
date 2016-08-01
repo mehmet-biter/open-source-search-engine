@@ -1226,7 +1226,14 @@ bool loadLoop ( State11 *st ) {
 				     st                  , // callback state
 				     gotListWrapper3     ,
 				     0                   , // niceness
-				     true               )) // do err correction
+				     true,                 // do err correction
+				     NULL,                 // cacheKeyPtr
+			             0,                    // retryNum
+			             -1,                   // maxRetries
+			             true,                 // compensateForMerge
+			             -1,                   // syncPoint
+			             false,                // isRealMerge
+			             true))                // allowPageCache
 		return false;
 	// print it. returns false on error
 	if ( ! printList ( st ) ) st->m_done = true;

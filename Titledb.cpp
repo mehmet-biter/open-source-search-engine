@@ -142,7 +142,9 @@ bool Titledb::verify ( char *coll ) {
 			      -1            , // maxRetries
 			      true          , // compensate for merge
 			      -1LL          , // sync point
-			      false         )) {
+			      false         , // isRealMerge
+			      true))          // allowPageCache
+	{
 		g_jobScheduler.allow_new_jobs();
 		return log("db: HEY! it did not block");
 	}

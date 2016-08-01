@@ -776,7 +776,15 @@ subloopNextPriority:
 				this            , // state 
 				gotDoledbListWrapper2 ,
 				MAX_NICENESS    , // niceness
-				true            )) { // do error correction?
+				true,             // do err correction
+				NULL,             // cacheKeyPtr
+			        0,                // retryNum
+			        -1,               // maxRetries
+			        true,             // compensateForMerge
+			        -1,               // syncPoint
+			        false,            // isRealMerge
+			        true))            // allowPageCache
+	{
 		// return if it blocked
 		logTrace( g_conf.m_logTraceSpider, "END, getList blocked" );
 

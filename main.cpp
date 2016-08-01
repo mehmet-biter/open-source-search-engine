@@ -2895,7 +2895,10 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 			      0             , // retry num
 			      -1            , // maxRetries
 			      true          , // compensate for merge
-			      -1LL          )){ // sync point
+			      -1LL,           // sync point
+			      false,          // isRealMerge
+			      true))          // allowPageCache
+	{
 		log(LOG_LOGIC,"db: getList did not block.");
 		return;
 	}
@@ -3163,7 +3166,15 @@ void dumpDoledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool 
 			      NULL          , // state
 			      NULL          , // callback
 			      0             , // niceness
-			      false         )){// err correction?
+			      false         , // err correction?
+			      NULL,           // cacheKeyPtr
+			      0,              // retryNum
+			      -1,             // maxRetries
+			      true,           // compensateForMerge
+			      -1,             // syncPoint
+			      false,          // isRealMerge
+			      true))          // allowPageCache
+	{
 		log(LOG_LOGIC,"db: getList did not block.");
 		return;
 	}
@@ -4295,7 +4306,9 @@ bool parseTest ( const char *coll, int64_t docId, const char *query ) {
 			      0              , // retry num
 			      -1             , // maxRetries
 			      true           , // compensate for merge
-			      -1LL           )) // sync point
+			      -1LL,            // sync point
+			      false,           // isRealMerge
+			      true))           // allowPageCache
 		return log(LOG_LOGIC,"build: getList did not block.");
 	// get the title rec
 	if ( tlist.isEmpty() ) 
@@ -4838,7 +4851,15 @@ void dumpClusterdb ( const char *coll,
 			      NULL          , // state
 			      NULL          , // callback
 			      0             , // niceness
-			      false         )){// err correction?
+			      false         , // err correction?
+			      NULL,           // cacheKeyPtr
+			      0,              // retryNum
+			      -1,             // maxRetries
+			      true,           // compensateForMerge
+			      -1,             // syncPoint
+			      false,          // isRealMerge
+			      true))          // allowPageCache
+	{
 		log(LOG_LOGIC,"db: getList did not block.");
 		return;
 	}
@@ -7087,7 +7108,10 @@ void countdomains( const char* coll, int32_t numRecs, int32_t verbosity, int32_t
 			      0             , // retry num
 			      -1            , // maxRetries
 			      true          , // compensate for merge
-			      -1LL          )){ // sync point
+			      -1LL,           // syncPoint
+			      false,          // isRealMerge
+			      true))          // allowPageCache
+	{
 		log(LOG_LOGIC,"db: getList did not block.");
 		return;
 	}
