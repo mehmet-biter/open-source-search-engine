@@ -47,10 +47,8 @@ void Msg39Request::reset() {
 	m_useQueryStopWords       = true;
 	m_doMaxScoreAlgo          = true;
 
-	ptr_readSizes             = NULL;
 	ptr_query                 = NULL; // in utf8?
 	ptr_whiteList             = NULL;
-	size_readSizes            = 0;
 	size_query                = 0;
 	size_whiteList            = 0;
 	m_sameLangWeight          = 20.0;
@@ -191,9 +189,9 @@ void Msg39::getDocIds ( UdpSlot *slot ) {
 
 	// deserialize it before we do anything else
 	int32_t finalSize = deserializeMsg ( sizeof(Msg39Request),
-					     &m_msg39req->size_readSizes,
+					     &m_msg39req->size_termFreqWeights,
 					     &m_msg39req->size_whiteList,
-					     &m_msg39req->ptr_readSizes,
+					     &m_msg39req->ptr_termFreqWeights,
 					     ((char*)m_msg39req) + sizeof(*m_msg39req) );
 
 	// sanity check
@@ -566,7 +564,6 @@ bool Msg39::getLists () {
 			     "wikiphrid=%" PRId32" "
 			     "leftwikibigram=%" PRId32" "
 			     "rightwikibigram=%" PRId32" "
-			     "readSizeInBytes=%" PRId32" "
 			     "hc=%" PRId32" "
 			     "otermLen=%" PRId32" "
 			     "isSynonym=%" PRId32" "
@@ -589,7 +586,6 @@ bool Msg39::getLists () {
 			     wikiPhrId,
 			     (int32_t)leftwikibigram,
 			     (int32_t)rightwikibigram,
-			     ((int32_t *)m_msg39req->ptr_readSizes)[i]         ,
 			     (int32_t)m_query.m_qterms[i].m_hardCount ,
 			     (int32_t)m_query.getTermLen(i) ,
 			     isSynonym,
@@ -652,8 +648,6 @@ bool Msg39::getLists () {
 				 // doDocIdSplitLoop()
 				 docIdStart,
 				 docIdEnd,
-				 // how much of each termlist to read in bytes
-				 (int32_t *)m_msg39req->ptr_readSizes,
 				 //m_query.getNumTerms(),
 				 // 1-1 with query terms
 				 m_lists                    ,

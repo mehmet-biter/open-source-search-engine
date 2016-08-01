@@ -71,7 +71,6 @@ class Msg39Request {
 
 	// do not add new string parms before ptr_readSizes or
 	// after ptr_whiteList so serializeMsg() calls still work
-	char   *ptr_readSizes;
 	char   *ptr_termFreqWeights;
 	char   *ptr_query; // in utf8?
 	char   *ptr_whiteList;
@@ -79,7 +78,6 @@ class Msg39Request {
 	
 	// do not add new string parms before size_readSizes or
 	// after size_whiteList so serializeMsg() calls still work
-	int32_t    size_readSizes;
 	int32_t    size_termFreqWeights;
 	int32_t    size_query;
 	int32_t    size_whiteList;
