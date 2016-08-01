@@ -111,10 +111,6 @@ bool Msg2::getLists ( int32_t     rdbId       ,
 }
 
 bool Msg2::getLists ( ) {
-	// if we're just using the root file of indexdb to save seeks
-	int32_t numFiles = -1;
-	bool includeTree = true;
-
 	// . send out a bunch of msg5 requests
 	// . make slots for all
 	for (  ; m_i < m_numLists ; m_i++ ) {
@@ -217,11 +213,11 @@ bool Msg2::getLists ( ) {
 					   sk2,
 					   ek2,
 					   minRecSize  ,
-					   includeTree, // include tree?
+					   true, // include tree?
 					   false , // addtocache
 					   0, // maxcacheage
 					   0              , // start file num
-					   numFiles, // num files
+					   -1,              // num files
 					   this,
 					   gotListWrapper ,
 					   m_niceness     ,
@@ -321,11 +317,11 @@ bool Msg2::getLists ( ) {
 					   &sk3,
 					   &ek3,
 					   minRecSizes,
-					   includeTree,//true, // include tree?
+					   true, // include tree?
 					   false , // addtocache
 					   0, // maxcacheage
 					   0              , // start file num
-					   numFiles,//-1    , // num files
+					   -1,              // num files
 					   this,
 					   gotListWrapper ,
 					   m_niceness     ,
