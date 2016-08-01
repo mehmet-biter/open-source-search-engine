@@ -151,8 +151,8 @@ bool ucInit(const char *path) {
 	return true;
 	
 failed:
-	return log(LOG_WARN, 
-		   "uni: unable to load all property tables");
+	log(LOG_WARN, "uni: unable to load all property tables");
+	return false;
 }
 
 const char *ucDetectBOM(char *buf, int32_t bufsize){

@@ -5418,8 +5418,10 @@ static bool replaceParm2 ( const char *cgi , SafeBuf *newUrl ,
 	const char *srcEnd = src + srcLen;
 
 	const char *equal = strstr(cgi,"=");
-	if ( ! equal ) 
-		return log("results: %s has no equal sign",cgi);
+	if ( ! equal ) {
+		log(LOG_WARN, "results: %s has no equal sign", cgi);
+		return false;
+	}
 	int32_t cgiLen = equal - cgi;
 
 	const char *p = src;

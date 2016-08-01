@@ -167,13 +167,15 @@ bool Summary::setSummary ( Xml *xml, Words *words, Sections *sections, Pos *pos,
 	// . leave room for tailing \0
 	if ( maxSummaryLen >= MAX_SUMMARY_LEN ) {
 		g_errno = EBUFTOOSMALL;
-		return log("query: Summary too big to hold in buffer of %" PRId32" bytes.",(int32_t)MAX_SUMMARY_LEN);
+		log(LOG_WARN, "query: Summary too big to hold in buffer of %" PRId32" bytes.",(int32_t)MAX_SUMMARY_LEN);
+		return false;
 	}
 
 	// do not overrun the final*[] buffers
 	if ( maxNumLines > 256 ) { 
 		g_errno = EBUFTOOSMALL; 
-		return log("query: More than 256 summary lines requested.");
+		log(LOG_WARN, "query: More than 256 summary lines requested.");
+		return false;
 	}
 
 	// Nothing to match...print beginning of content as summary

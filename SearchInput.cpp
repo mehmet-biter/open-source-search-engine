@@ -260,7 +260,8 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) {
 	//   m_rtl (right to left like hebrew)
 	//   m_highlightQuery
 	if ( ! setQueryBuffers (r) ) {
-		return log("query: setQueryBuffers: %s",mstrerror(g_errno));
+		log(LOG_WARN, "query: setQueryBuffers: %s",mstrerror(g_errno));
+		return false;
 	}
 
 	// this parm is in Parms.cpp and should be set

@@ -212,7 +212,8 @@ bool Loop::addSlot ( bool forReading , int fd, void *state, void (* callback)(in
 	// ensure fd is >= 0
 	if ( fd < 0 ) {
 		g_errno = EBADENGINEER;
-		return log(LOG_LOGIC,"loop: fd to register is negative.");
+		log(LOG_LOGIC,"loop: fd to register is negative.");
+		return false;
 	}
 	// sanity
 	if ( fd > MAX_NUM_FDS ) {

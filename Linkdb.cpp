@@ -219,7 +219,8 @@ bool Linkdb::verify ( char *coll ) {
 			      true))          // allowPageCache
 	{
 		g_jobScheduler.allow_new_jobs();
-		return log("db: HEY! it did not block");
+		log(LOG_DEBUG, "db: HEY! it did not block");
+		return false;
 	}
 
 	int32_t count = 0;
@@ -4146,7 +4147,10 @@ bool Links::addLink ( const char *link , int32_t linkLen , int32_t nodeNum ,
 		// MDW: a realloc would be more efficient here.
 		QUICKPOLL(niceness);
 		char *newBuf = (char*)mmalloc(newAllocSize, "Links");
-		if ( ! newBuf ) return log("build: Links failed to realloc.");
+		if ( ! newBuf ) {
+			log(LOG_WARN, "build: Links failed to realloc.");
+			return false;
+		}
 		log(LOG_DEBUG, "build: resizing Links text buffer to %" PRId32,
 		    newAllocSize);
 		QUICKPOLL(niceness);

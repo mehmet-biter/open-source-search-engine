@@ -146,7 +146,8 @@ bool Titledb::verify ( char *coll ) {
 			      true))          // allowPageCache
 	{
 		g_jobScheduler.allow_new_jobs();
-		return log("db: HEY! it did not block");
+		log(LOG_DEBUG, "db: HEY! it did not block");
+		return false;
 	}
 
 	int32_t count = 0;

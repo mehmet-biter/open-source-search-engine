@@ -385,10 +385,10 @@ bool UdpServer::sendRequest(char *msg,
 		return false;
 	}
 
-	logDebug( g_conf.m_logDebugUdp, "udp: sendrequest: ip2=%s port=%" PRId32" msgType=0x%02x msgSize=%" PRId32" "
-			  "transId=%" PRId32" (niceness=%" PRId32") slot=%" PTRFMT".",
-	          iptoa(ip2),(int32_t)port, (unsigned char)msgType, (int32_t)msgSize,
-	          (int32_t)transId, (int32_t)niceness , (PTRTYPE)slot );
+	logDebug(g_conf.m_logDebugUdp, "udp: sendrequest: ip2=%s port=%" PRId32" msgType=0x%02x msgSize=%" PRId32" "
+			 "transId=%" PRId32" (niceness=%" PRId32") slot=%" PTRFMT".",
+	         iptoa(ip2),(int32_t)port, (unsigned char)msgType, (int32_t)msgSize,
+	         (int32_t)transId, (int32_t)niceness , (PTRTYPE)slot );
 	
 	// . get time 
 	int64_t now = gettimeofdayInMillisecondsLocal();

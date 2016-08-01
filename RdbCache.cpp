@@ -79,10 +79,14 @@ bool RdbCache::init ( int32_t  maxMem        ,
 	// reset all
 	reset();
 	// watch out 
-	if ( maxMem   < 0 ) return log(LOG_LOGIC,"db: cache for %s had "
-				       "negative maxMem." ,  dbname);
-	if ( maxRecs  < 0 ) return log(LOG_LOGIC,"db: cache for %s had "
-				       "negative maxRecs.",  dbname);
+	if ( maxMem   < 0 ) {
+		log(LOG_LOGIC,"db: cache for %s had negative maxMem." ,  dbname);
+		return false;
+	}
+	if ( maxRecs  < 0 ) {
+		log(LOG_LOGIC,"db: cache for %s had negative maxRecs.",  dbname);
+		return false;
+	}
 	// don't use more mem than this
 	m_maxMem     = maxMem;
 
@@ -135,7 +139,10 @@ bool RdbCache::init ( int32_t  maxMem        ,
 	char ttt[128];
 	sprintf(ttt,"cptrs-%s",m_dbname);
 	m_ptrs = (char **) mcalloc (sizeof(char *)*m_numPtrsMax , ttt );
-	if ( ! m_ptrs ) return log("RdbCache::init: %s", mstrerror(g_errno));
+	if ( ! m_ptrs ) {
+		log(LOG_WARN, "RdbCache::init: %s", mstrerror(g_errno));
+		return false;
+	}
 	// debug testing -- remove later
 	//m_crcs=(int32_t *)mcalloc(4*m_numPtrsMax,"RdbCache");
 	//if (!m_crcs)return log("RdbCache::init: %s", mstrerror(g_errno));
@@ -172,8 +179,8 @@ bool RdbCache::init ( int32_t  maxMem        ,
 		//m_bufEnds  [ m_numBufs ] = NULL;
 		if ( ! m_bufs [ m_numBufs ] ) {
 			reset();
-			return log("db: Could not allocate %" PRId32" bytes for "
-				   "cache for %s.",size,dbname);
+			log(LOG_WARN, "db: Could not allocate %" PRId32" bytes for cache for %s.",size,dbname);
+			return false;
 		}
 		m_numBufs++;
 		bufMem         -= size;
@@ -373,17 +380,20 @@ bool RdbCache::getRecord ( collnum_t collnum   ,
 	// bail if no cache
 	if ( m_numPtrsMax <= 0 ) return false;
 	// if init() called failed because of oom...
-	if ( ! m_ptrs )
+	if ( ! m_ptrs ) {
 		//return log("cache: getRecord: failed because oom");
 		return false;
+	}
 	// time it -- debug
 	int64_t t = 0LL ;
 	if ( g_conf.m_logTimingDb ) t = gettimeofdayInMillisecondsLocal();
 	// reset this
 	if ( cachedTime ) *cachedTime = 0;
 	// only do copy supported
-	//if ( ! doCopy ) 
-	//	return log("RdbCache::getRecord: only doCopy supported");
+	//if ( ! doCopy ) {
+	//	log("RdbCache::getRecord: only doCopy supported");
+	//  return false;
+	//}
 	// look up in hash table
 	//int32_t n =(cacheKey.n0 + (uint64_t)cacheKey.n1)%m_numPtrsMax;
 	int32_t n = hash32 ( cacheKey , m_cks ) % m_numPtrsMax;
@@ -460,9 +470,9 @@ bool RdbCache::getRecord ( collnum_t collnum   ,
 	if ( doCopy && *recSize > 0 ) {
 		*rec = mdup ( p , *recSize , "RdbCache3" );
 		if ( ! *rec ) {
-			return log("db: Could not allocate space for "
-				   "cached record for %s of %" PRId32" bytes.",
-				   m_dbname,*recSize);
+			log(LOG_WARN, "db: Could not allocate space for cached record for %s of %" PRId32" bytes.",
+			    m_dbname,*recSize);
+			return false;
 		}
 	}
 
@@ -604,8 +614,10 @@ bool RdbCache::getList ( collnum_t collnum  ,
 	// use NULL if empty
 	if ( dataSize == 0 ) data = NULL;
 	// how could this happen
-	if ( dataSize <  0 ) return log(LOG_LOGIC,"db: cache: getList: "
-					"Bad data size.");
+	if ( dataSize <  0 ) {
+		log(LOG_LOGIC,"db: cache: getList: Bad data size.");
+		return false;
+	}
 	// . set the list!
 	// . data is NULL if it's a cached not found (empty list)
 	list->set ( data            ,
@@ -645,8 +657,8 @@ bool RdbCache::addList ( collnum_t collnum, const char *cacheKey, RdbList *list 
 	// . msg2 sometimes fails this check when it adds to the cache
 	if ( list->m_ks != m_dks ) { 
 		//g_errno = EBADENGINEER;
-		return log("cache: key size %" PRId32" != %" PRId32,
-			   (int32_t)list->m_ks,(int32_t)m_dks);
+		log(LOG_WARN, "cache: key size %" PRId32" != %" PRId32, (int32_t)list->m_ks,(int32_t)m_dks);
+		return false;
 		//gbshutdownLogicError();
 	}
 	// store endkey then list data in the record data slot
@@ -729,9 +741,10 @@ bool RdbCache::addRecord ( collnum_t collnum ,
 	// don't allow 0 timestamps, those are special indicators
 	if ( timestamp == 0 ) timestamp = getTimeLocal();
 	//if ( timestamp == 0 && cacheKey.n0 == 0LL && cacheKey.n1 == 0 )
-	if ( timestamp == 0 && KEYCMP(cacheKey,KEYMIN(),m_cks)==0 )
-		return log(LOG_LOGIC,"db: cache: addRecord: Bad "
-			   "key/timestamp.");
+	if ( timestamp == 0 && KEYCMP(cacheKey,KEYMIN(),m_cks)==0 ) {
+		log(LOG_LOGIC, "db: cache: addRecord: Bad key/timestamp.");
+		return false;
+	}
 	// bail if no writing ops allowed now
 	if ( ! g_cacheWritesEnabled ) return false;
 
@@ -747,15 +760,16 @@ bool RdbCache::addRecord ( collnum_t collnum ,
 	// and size, if not fixed or we support lists
 	if ( m_fixedDataSize == -1 || m_supportLists ) need += 4;
 	// watch out
-	if ( need >= m_totalBufSize )
-		return log(LOG_INFO,
-			   "db: Could not fit record of %" PRId32" bytes into %s "
-			   "cache. Max size is %" PRId32".",need,m_dbname,
-			   m_totalBufSize);
-	if ( need >= BUFSIZE )
-		return log(LOG_INFO,
-			   "db: Could not fit record of %" PRId32" bytes into %s "
-			   "cache. Max size is %i.",need,m_dbname,BUFSIZE);
+	if ( need >= m_totalBufSize ) {
+		log(LOG_INFO, "db: Could not fit record of %" PRId32" bytes into %s cache. Max size is %" PRId32".",
+		    need, m_dbname, m_totalBufSize);
+		return false;
+	}
+	if ( need >= BUFSIZE ) {
+		log(LOG_INFO, "db: Could not fit record of %" PRId32" bytes into %s cache. Max size is %i.",
+		    need, m_dbname, BUFSIZE);
+		return false;
+	}
 
 	// if too many slots in hash table used free one up
 	while ( m_numPtrsUsed >= m_threshold ) {
@@ -1419,22 +1433,27 @@ bool RdbCache::saveSome_r ( int fd , int32_t *iptr , int32_t *off ) {
 bool RdbCache::load ( const char *dbname ) {
 	// append .cache to "dbname" to get cache filename
 	char filename [ 64 ];
-	if ( strlen(dbname) > 50 )
-		return log(LOG_LOGIC,"db: cache: load: dbname too long.");
+	if ( strlen(dbname) > 50 ) {
+		log(LOG_LOGIC, "db: cache: load: dbname too long.");
+		return false;
+	}
 	sprintf ( filename , "%s.cache" , dbname );
 	// does the file exist?
 	File f;
 	f.set ( g_hostdb.m_dir , filename );
 	// having cache file not existing on disk is not so bad, it's a cache
-	if ( ! f.doesExist() )
+	if ( ! f.doesExist() ) {
+		//	log("db: Could not load cache from %s: does not exist.",
+		//		   f.getFilename());
 		return false;
-	//	return log("db: Could not load cache from %s: does not exist.",
-	//		   f.getFilename());
+	}
 
 	// open the file
-	if ( ! f.open ( O_RDWR ) ) 
-		return log("db: Could not open cache save file for %s: %s.", 
-			   dbname,mstrerror(g_errno));
+	if ( ! f.open ( O_RDWR ) ) {
+		log(LOG_WARN, "db: Could not open cache save file for %s: %s.", dbname, mstrerror(g_errno));
+		return false;
+	}
+
 	// log
 	log(LOG_INIT,"db: Loading cache from %s/%s.cache",
 	     g_hostdb.m_dir,dbname);

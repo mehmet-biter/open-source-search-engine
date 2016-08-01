@@ -233,13 +233,13 @@ bool Wiktionary::load() {
 	// if no text file that is bad
 	if ( errno1 ) { 
 		g_errno = errno1 ; 
-		return log ("gb: could not open %s for reading: %s",ff1,
-			    mstrerror(g_errno));
+		log (LOG_WARN, "gb: could not open %s for reading: %s",ff1, mstrerror(g_errno));
+		return false;
 	}
 	//if ( errno2 ) { 
 	//	g_errno = errno2 ; 
-	//	return log ("gb: could not open %s for reading: %s",ff2,
-	//		    mstrerror(g_errno));
+	//	log (LOG_WARN, "gb: could not open %s for reading: %s",ff2,mstrerror(g_errno));
+	//  return false;
 	//}
 	// init table slot sizes
 	//m_langTable.setTableSize ( 16777216 , NULL , 0 );
@@ -312,9 +312,10 @@ bool Wiktionary::addSynsets ( const char *filename ) {
 
 	// load it up
 	//SafeBuf sb;
-	if ( m_localBuf.fillFromFile ( g_hostdb.m_dir , filename ) < 0 ) 
-		// log it
-		return log("wikt: error loading %s",filename);
+	if ( m_localBuf.fillFromFile ( g_hostdb.m_dir , filename ) < 0 ) {
+		log(LOG_WARN, "wikt: error loading %s", filename);
+		return false;
+	}
 
 	if ( ! m_localTable.set ( 8 ,4,9000,NULL,0,false,0,"synloc") )
 		return false;
@@ -352,8 +353,10 @@ bool Wiktionary::addSynsets ( const char *filename ) {
 	// is it like zh_ch?
 	if ( *p == '_' ) p += 3;
 	// sanity
-	if ( *p != '|' )
-		return log("wikt: bad %s file! no lang",filename);
+	if ( *p != '|' ) {
+		log(LOG_WARN, "wikt: bad %s file! no lang", filename);
+		return false;
+	}
 	// null term now
 	*p = '\0';
 	// skip that
@@ -363,8 +366,10 @@ bool Wiktionary::addSynsets ( const char *filename ) {
 	// skip the pipe then
 	p++;
 	// must be there
-	if ( langId == 0 ) 
-		return log("wikt: bad language abbr in %s",filename);
+	if ( langId == 0 ) {
+		log(LOG_WARN, "wikt: bad language abbr in %s", filename);
+		return false;
+	}
 
 	//
 	// JUST ADD THESE SYNSETS as separate form wiktionary-buf.txt

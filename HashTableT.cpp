@@ -204,7 +204,8 @@ bool HashTableT<Key_t, Val_t>::addKey (Key_t key , Val_t value , int32_t *slot) 
 	// bail if not found
 	if ( count >= m_numSlots ) {
 		g_errno = ENOMEM;
-		return log("hashtable: Could not add key. Table is full.");
+		log(LOG_WARN, "hashtable: Could not add key. Table is full.");
+		return false;
 	}
 	if ( m_keys [ n ] == (Key_t)0 ) {
 		// inc count if we're the first

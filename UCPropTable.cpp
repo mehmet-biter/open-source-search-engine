@@ -47,15 +47,19 @@ bool UCPropTable::setValue(u_int32_t c, const void* value) {
 		m_data = (u_char**)
 			mmalloc(m_numTables * sizeof(u_char*), 
 				"UCPropTable");
-		if (m_data == NULL) 
-			return log(LOG_WARN, "UCPropTable: out of memory");
+		if (m_data == NULL) {
+			log(LOG_WARN, "UCPropTable: out of memory");
+			return false;
+		}
 		memset(m_data, '\0', m_numTables*sizeof(u_char**));
 	}
 	if (m_data[prefix] == NULL){
 		m_data[prefix] = (u_char*) 
 			mmalloc(m_tableSize, "UCPropTable");
-		if (m_data[prefix] == NULL) 
-			return log(LOG_WARN, "UCPropTable: out of memory");
+		if (m_data[prefix] == NULL) {
+			log(LOG_WARN, "UCPropTable: out of memory");
+			return false;
+		}
 		
 		memset(m_data[prefix], '\0', m_tableSize);
 	}
@@ -101,10 +105,11 @@ size_t UCPropTable::serialize(char *buf, size_t bufSize) const {
 		}
 	*(uint32_t*)p = RECORD_END; p += sizeof(u_int32_t);
 	// sanity check
-	if (p != buf + size)
-		return log(LOG_WARN,
-			   "UCPropTable: size mismatch: expected %" PRId32" bytes, "
-			   "but wrote %" PRId32" instead", (int32_t)size, (int32_t)(p-buf));
+	if (p != buf + size) {
+		log(LOG_WARN, "UCPropTable: size mismatch: expected %" PRId32" bytes, "
+			"but wrote %" PRId32" instead", (int32_t) size, (int32_t) (p - buf));
+		return false;
+	}
 	return p-buf;
 }
 
@@ -126,26 +131,30 @@ size_t UCPropTable::deserialize(const char *buf, size_t bufSize) {
 	m_data = (u_char**)
 		mmalloc(m_numTables * sizeof(u_char*), 
 			"UCPropTable");
-	if (m_data == NULL) 
-		return log(LOG_WARN, "UCPropTable: out of memory");
+	if (m_data == NULL) {
+		log(LOG_WARN, "UCPropTable: out of memory");
+		return false;
+	}
 	memset(m_data, '\0', m_numTables*sizeof(u_char**));
 	
 	//load tables
 	while (p < buf+size) {
 		u_int32_t prefix = *(u_int32_t*)p; p += sizeof(u_int32_t);
 		if ( prefix == RECORD_END ){
-			if (p != buf+size )
-				return log(LOG_WARN, 
-					   "UCPropTable: "
-					   "unexpected end of record");
+			if (p != buf+size ) {
+				log(LOG_WARN, "UCPropTable: unexpected end of record");
+				return false;
+			}
 			//printf ("Read %d bytes after footer\n", p-buf);
 			return size;
 
 		}
 		m_data[prefix] = (u_char*) 
 			mmalloc(m_tableSize, "UCPropTable");
-		if (m_data[prefix] == NULL) 
-			return log(LOG_WARN, "UCPropTable: out of memory");
+		if (m_data[prefix] == NULL) {
+			log(LOG_WARN, "UCPropTable: out of memory");
+			return false;
+		}
 		gbmemcpy(m_data[prefix], p, m_tableSize); p += m_tableSize;
 		//printf ("Read %d bytes after table %d\n", p-buf, prefix);
 	}

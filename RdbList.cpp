@@ -1226,18 +1226,15 @@ int RdbList::printList ( int32_t logtype ) {
 // . CAUTION: ensure we update m_lastKey and make it valid if m_listSize > 0
 // . mincRecSizes is really only important when we read just 1 list
 // . it's a really good idea to keep it as -1 otherwise
-bool RdbList::constrain ( const char   *startKey    ,
-			  char   *endKey      ,
-			  int32_t    minRecSizes ,
-			  int32_t    hintOffset  ,
-			  const char   *hintKey     ,
-			  const char   *filename    ,
-			  int32_t    niceness    ) {
+bool RdbList::constrain(const char *startKey, char *endKey, int32_t minRecSizes,
+                        int32_t hintOffset, const char *hintKey, const char *filename, int32_t niceness) {
 	// return false if we don't own the data
 	if ( ! m_ownData ) {
 		g_errno = EBADLIST;
-		return log("db: constrain: Data not owned.");
+		log(LOG_WARN, "db: constrain: Data not owned.");
+		return false;
 	}
+
 	// bail if empty
 	if ( m_listSize == 0 ) {
 		// tighten the keys
@@ -1248,22 +1245,21 @@ bool RdbList::constrain ( const char   *startKey    ,
 	// ensure we our first key is 12 bytes if m_useHalfKeys is true
 	if ( m_useHalfKeys && isHalfBitOn ( m_list ) ) {
 		g_errno = ECORRUPTDATA;
-		return log("db: First key is 6 bytes. Corrupt data "
-			   "file.");
+		log(LOG_WARN, "db: First key is 6 bytes. Corrupt data file.");
+		return false;
 	}
 
 	// sanity. hint key should be full key
 	if ( m_ks == 18 && hintKey && (hintKey[0]&0x06)){
 		g_errno = ECORRUPTDATA;
-		return log("db: Hint key is corrupt.");
-		//g_process.shutdownAbort(true);}
+		log(LOG_WARN, "db: Hint key is corrupt.");
+		return false;
 	}
 
 	if ( hintOffset > m_listSize ) { //g_process.shutdownAbort(true); }
 		g_errno = ECORRUPTDATA;
-		return log("db: Hint offset %" PRId32" > %" PRId32" is corrupt."
-			   ,hintOffset,
-			   m_listSize);
+		log(LOG_WARN, "db: Hint offset %" PRId32" > %" PRId32" is corrupt.", hintOffset, m_listSize);
+		return false;
 	}
 
 	// save original stuff in case we encounter corruption so we can
@@ -1321,8 +1317,8 @@ bool RdbList::constrain ( const char   *startKey    ,
 			m_listPtrHi = savelistPtrHi ;
 			m_listPtrLo = savelistPtrLo ;
 			g_errno = ECORRUPTDATA;
-			return log("db: Got record size of %" PRId32" < 0. "
-				   "Corrupt data file.",recSize);
+			log(LOG_WARN, "db: Got record size of %" PRId32" < 0. Corrupt data file.",recSize);
+			return false;
 		}
 		p += recSize;
 	}
@@ -1404,7 +1400,7 @@ bool RdbList::constrain ( const char   *startKey    ,
 	// . reset "p" to beginning if hint is bad
 	//else if ( getKey(p) != hintKey || hintKey > endKey ) {
 	else if ( KEYCMP(k,hintKey,m_ks)!=0 || KEYCMP(hintKey,endKey,m_ks)>0) {
-		log("db: Corrupt data or map file. Bad hint for %s.",filename);
+		log(LOG_WARN, "db: Corrupt data or map file. Bad hint for %s.", filename);
 		// . until we fix the corruption, drop a core
 		// . no, a lot of files could be corrupt, just do it for merge
 		//g_process.shutdownAbort(true);
@@ -1439,8 +1435,8 @@ bool RdbList::constrain ( const char   *startKey    ,
 			m_listPtrLo = savelistPtrLo;
 			m_listPtr   = savelist;
 			g_errno = ECORRUPTDATA;
-			return log("db: Corrupt record size of %" PRId32" "
-				   "bytes in %s.",size,filename);
+			log(LOG_WARN, "db: Corrupt record size of %" PRId32" bytes in %s.", size, filename);
+			return false;
 		}
 		// set hiKey in case m_useHalfKeys is true for this list
 		//if ( size == 12 ) m_listPtrHi = p + 6 ;
@@ -1458,8 +1454,8 @@ bool RdbList::constrain ( const char   *startKey    ,
 			m_listPtrLo = savelistPtrLo;
 			m_listPtr   = savelist;
 			g_errno = ECORRUPTDATA;
-			return log("db: Corrupt record size of %" PRId32" "
-				   "bytes in %s.",size,filename);
+			log(LOG_WARN, "db: Corrupt record size of %" PRId32" bytes in %s.",size,filename);
+			return false;
 		}
 	}
 	// . if minRecSizes was limiting constraint, reset m_endKey to lastKey
@@ -1479,8 +1475,8 @@ bool RdbList::constrain ( const char   *startKey    ,
 			m_listPtrLo = savelistPtrLo;
 			m_listPtr   = savelist;
 			g_errno = ECORRUPTDATA;
-			return log("db: Corrupt record size of %" PRId32" "
-				   "bytes in %s.",size,filename);
+			log(LOG_WARN, "db: Corrupt record size of %" PRId32" bytes in %s.",size,filename);
+			return false;
 		}
 		// set endKey to last key in our constrained list
 		//endKey = getKey ( p - size );
@@ -1491,8 +1487,7 @@ bool RdbList::constrain ( const char   *startKey    ,
 	m_listSize  = m_listEnd - m_list;
 	// bitch if size is -1 still
 	if ( size == -1 ) {
-		log("db: Encountered bad endkey in %s. listSize=%" PRId32,
-		    filename,m_listSize);
+		log(LOG_ERROR, "db: Encountered bad endkey in %s. listSize=%" PRId32, filename, m_listSize);
 		g_process.shutdownAbort(true);
 	}
 	// otherwise store the last key if size is not -1

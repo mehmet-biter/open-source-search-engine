@@ -155,8 +155,8 @@ bool TcpServer::init ( void (* requestHandler)(TcpSocket *s) ,
 		if ( errno == EINTR ) goto retry13;
 		// copy errno to g_errno
 		g_errno = errno;
-		return log("tcp: Failed to create socket for "
-		   	"listening :%s.",mstrerror(g_errno));
+		log(LOG_WARN,"tcp: Failed to create socket for listening :%s.",mstrerror(g_errno));
+		return false;
 	}
 	// reset it all just to be safe
 	memset(&name,0,sizeof(name));
@@ -182,8 +182,8 @@ bool TcpServer::init ( void (* requestHandler)(TcpSocket *s) ,
 		g_errno = errno;
 		//if ( g_errno == EINVAL ) { port++; goto again; }
 		close ( m_sock );
-		return log("tcp: Failed to bind socket on port %" PRId32": %s.",
-			   (int32_t)port,mstrerror(g_errno));
+		log(LOG_WARN, "tcp: Failed to bind socket on port %" PRId32": %s.", (int32_t)port,mstrerror(g_errno));
+		return false;
 	}
 retry16:
 	// now listen for connections
@@ -193,8 +193,8 @@ retry16:
 		// copy errno to g_errno
 		g_errno = errno;
 		close ( m_sock );
-		return log("tcp: Failed to listen on socket: %s.",
-		   	mstrerror(g_errno));
+		log(LOG_WARN, "tcp: Failed to listen on socket: %s.", mstrerror(g_errno));
+		return false;
 	}
 
 	// setup SSL
@@ -215,23 +215,22 @@ retry16:
 		log(LOG_INFO, "https: Reading SSL certificate from: %s", 
 		    sslCertificate);
 		// Load the keys
-		if (m_ctx == NULL)
-			return log("ssl: Failed to set up an SSL context\n");
-		if (!SSL_CTX_use_certificate_chain_file ( m_ctx,
-							  sslCertificate ) )
-			return log("ssl: Failed to read certificate file");
-		//if ( !SSL_CTX_add_extra_chain_cert ( m_ctx, 
-		//				       sslBundleFilename ) )
-		//	return log("ssl: Failed to add extra "
-		//		   "certificate chain");
-		if (!SSL_CTX_use_PrivateKey_file ( m_ctx,
-						   sslCertificate,
-						   SSL_FILETYPE_PEM ) )
-			return log("ssl: Failed to read Private Key File");
-		if (!SSL_CTX_load_verify_locations( m_ctx,
-						    sslCertificate,
-						    0 ) )
-			return log("ssl: Failed to read Certificate");
+		if (m_ctx == NULL) {
+			log(LOG_WARN, "ssl: Failed to set up an SSL context\n");
+			return false;
+		}
+		if (!SSL_CTX_use_certificate_chain_file(m_ctx, sslCertificate)) {
+			log(LOG_WARN, "ssl: Failed to read certificate file");
+			return false;
+		}
+		if (!SSL_CTX_use_PrivateKey_file(m_ctx, sslCertificate, SSL_FILETYPE_PEM)) {
+			log(LOG_WARN, "ssl: Failed to read Private Key File");
+			return false;
+		}
+		if (!SSL_CTX_load_verify_locations(m_ctx, sslCertificate, 0)) {
+			log(LOG_WARN, "ssl: Failed to read Certificate");
+			return false;
+		}
 	}
 	// . register this fd with the Loop class
 	// . this will make it nonBlocking and sigio based 
@@ -290,8 +289,8 @@ bool TcpServer::testBind ( uint16_t port , bool printMsg ) {
 		if ( errno == EINTR ) goto retry17;
 		// copy errno to g_errno
 		g_errno = errno;
-		return log("tcp: Failed to create socket for "
-		   	"listening :%s.",mstrerror(g_errno));
+		log(LOG_WARN, "tcp: Failed to create socket for listening :%s.",mstrerror(g_errno));
+		return false;
 	}
 	// reset it all just to be safe
 	memset(&name,0,sizeof(name));
@@ -1581,10 +1580,11 @@ bool TcpServer::setTotalToRead ( TcpSocket *s ) {
 	*/
 	newBuf = (char * ) mrealloc(s->m_readBuf,s->m_readBufSize,size,
 				    "TcpServerR");
-	if ( ! newBuf )
-		return log("tcp: Failed to reallocate from %" PRId32" to %" PRId32" "
-				   "bytes to read from socket.",
-				   s->m_readBufSize,size);
+	if ( ! newBuf ) {
+		log(LOG_WARN, "tcp: Failed to reallocate from %" PRId32" to %" PRId32" bytes to read from socket.",
+		    s->m_readBufSize, size);
+		return false;
+	}
 	// set the new buffer
 	s->m_readBuf       =  newBuf;
 	s->m_readBufSize   =  size;

@@ -87,18 +87,18 @@
 
 // may also syslog and fprintf the msg.
 // ALWAYS returns FALSE (i.e. 0)!!!! so you can say return log.log(...)
-bool log ( int32_t type , const char *formatString , ... )
+void log ( int32_t type , const char *formatString , ... )
 	__attribute__ ((format(printf, 2, 3)));
 
 // this defaults to type of LOG_WARN
-bool log ( const char *formatString , ... )
+void log ( const char *formatString , ... )
 	__attribute__ ((format(printf, 1, 2)));
 
 // force it to be logged, even if off on log controls panel
-bool logf ( int32_t type , const char *formatString , ... )
+void logf ( int32_t type , const char *formatString , ... )
 	__attribute__ ((format(printf, 2, 3)));
 
-bool loghex( int32_t type, void const *data, const unsigned int len, const char *formatString , ...)
+void loghex( int32_t type, void const *data, const unsigned int len, const char *formatString , ...)
 	__attribute__ ((format(printf, 4, 5)));
 
 #define logDebug( condition, ... ) \

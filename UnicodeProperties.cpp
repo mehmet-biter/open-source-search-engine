@@ -167,9 +167,10 @@ bool setKDValue(UChar32 c, UChar32* decomp, int32_t decompCount, bool fullComp) 
 		if (!s_ucKDData) {
 			s_ucKDData = (char*)mmalloc(4096, 
 						    "UnicodeProperties");
-			if (!s_ucKDData)
-				return log(LOG_WARN, "uni: "
-					   "Out of Memory");
+			if (!s_ucKDData) {
+				log(LOG_WARN, "uni: Out of Memory");
+				return false;
+			}
 			s_ucKDAllocSize = 4096;			
 			//dummy value for 0 index
 			*(int32_t*)s_ucKDData = 0xffffffff;
@@ -181,9 +182,10 @@ bool setKDValue(UChar32 c, UChar32* decomp, int32_t decompCount, bool fullComp) 
 						       s_ucKDAllocSize,
 						       newSize, 
 						       "UnicodeProperties");
-			if (!newBuf)
-				return log(LOG_WARN, "uni: "
-					   "Out of Memory");
+			if (!newBuf) {
+				log(LOG_WARN, "uni: Out of Memory");
+				return false;
+			}
 			s_ucKDAllocSize = newSize;
 			s_ucKDData = newBuf;
 		}
@@ -284,25 +286,25 @@ static bool loadKDecompTable(const char *baseDir) {
 	strcat(filename, "/ucdata/kd_data.dat");
 
 	FILE *fp = fopen(filename, "r");
-	if (!fp) 
-		return log(LOG_WARN, "uni: "
-			   "Couldn't open %s for reading: %s",
-			   filename, strerror(errno));
+	if (!fp) {
+		log(LOG_WARN, "uni: Couldn't open %s for reading: %s", filename, strerror(errno));
+		return false;
+	}
 	fseek(fp,0,SEEK_END);
 	size_t fileSize = ftell(fp);
 	rewind(fp);
 	char *buf = (char*)mmalloc(fileSize, "UnicodeProperties");
 	if (!buf) {
 		fclose(fp);
-		return log(LOG_WARN, 
-			   "uni: No memory to load %s", filename);
+		log(LOG_WARN, "uni: No memory to load %s", filename);
+		return false;
 	}
 	size_t nread = fread(buf, 1, fileSize, fp);
 	if (nread != fileSize) {
 		fclose(fp);
 		mfree(buf, fileSize, "UnicodeProperties");
-		return log(LOG_WARN, 
-			   "uni: error reading %s", filename);
+		log(LOG_WARN, "uni: error reading %s", filename);
+		return false;
 	}
 	fclose(fp);
 	

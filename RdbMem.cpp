@@ -55,7 +55,10 @@ bool RdbMem::init ( Rdb *rdb , int32_t memToAlloc , char keySize ,
 	if ( memToAlloc <= 0 ) return true;
 	// get the initial mem
 	m_mem = (char *) mmalloc ( memToAlloc , m_allocName );
-	if ( ! m_mem ) 	return log("RdbMem::init: %s", mstrerror(g_errno));
+	if ( ! m_mem ) 	{
+		log(LOG_WARN, "RdbMem::init: %s", mstrerror(g_errno));
+		return false;
+	}
 	m_memSize = memToAlloc;
 	// rush it into mem for real
 	memset(m_mem, 0, memToAlloc);

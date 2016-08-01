@@ -162,8 +162,10 @@ bool Statsdb::init ( ) {
 	//if ( ts.getLabelHash() != -246356284      ) { g_process.shutdownAbort(true); }
 
 	// call this twice per second
-	if ( ! g_loop.registerSleepCallback(500,NULL,flushStatsWrapper))
-		return log("statsdb: Failed to initialize timer callback2.");
+	if ( ! g_loop.registerSleepCallback(500,NULL,flushStatsWrapper)) {
+		log(LOG_WARN, "statsdb: Failed to initialize timer callback2.");
+		return false;
+	}
 
 	m_init   = true;
 
