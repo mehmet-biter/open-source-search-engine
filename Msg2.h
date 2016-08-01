@@ -49,7 +49,7 @@ public:
 			int32_t numQterms,
 			// restrict search results to this list of sites,
 			// i.e. "abc.com+xyz.com+..." (Custom Search)
-			char *whiteList,
+			const char *whiteList,
 			// for intersecting ranges of docids separately
 			// to prevent OOM errors
 			int64_t docIdStart,
@@ -82,10 +82,10 @@ private:
 	int32_t m_i;
 
 	// list of sites to restrict search results to. space separated
-	char *m_whiteList;
+	const char *m_whiteList;
 	int64_t m_docIdStart;
 	int64_t m_docIdEnd;
-	char *m_p;
+	const char *m_p;
 	int32_t m_w;
 	RdbList m_whiteLists[ MAX_WHITELISTS];
 

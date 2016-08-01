@@ -46,7 +46,7 @@ bool Msg2::getLists ( collnum_t collnum , // char    *coll        ,
 		      int32_t numQterms,
 		      // put list of sites to restrict to in here
 		      // or perhaps make it collections for federated search?
-		      char *whiteList ,
+		      const char *whiteList ,
 		      int64_t docIdStart,
 		      int64_t docIdEnd,
 		      // make max MAX_MSG39_LISTS
@@ -246,12 +246,12 @@ bool Msg2::getLists ( ) {
 
 	// . loop over terms in the whitelist, space separated. 
 	// . m_whiteList is NULL if none provided.
-	for ( char *p = m_p ; m_whiteList && *p ; m_w++ ) {
+	for ( const char *p = m_p ; m_whiteList && *p ; m_w++ ) {
 		// advance
-		char *current = p;
+		const char *current = p;
 		for ( ; *p && *p != ' ' ; p++ );
 		// save end of "current"
-		char *end = p;
+		const char *end = p;
 		// advance to point to next item in whiteList
 		for ( ; *p == ' ' ; p++ );
 		// . convert whiteList term into key
