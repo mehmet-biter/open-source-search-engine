@@ -66,7 +66,10 @@ void nukeDoledb ( collnum_t collnum ) {
 
 	//g_spiderLoop.m_winnerListCache.verify();	
 	// in case we changed url filters for this collection #
-	g_spiderLoop.m_winnerListCache.clear ( collnum );
+	{
+		RdbCacheLock rcl(g_spiderLoop.m_winnerListCache);
+		g_spiderLoop.m_winnerListCache.clear ( collnum );
+	}
 
 	//g_spiderLoop.m_winnerListCache.verify();	
 

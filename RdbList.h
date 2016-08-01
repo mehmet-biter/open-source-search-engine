@@ -43,7 +43,8 @@
  * additional support routines for IndexLists
  */
 class RdbList {
-
+	
+	int32_t magic;
  public:
 
 	// IndexList sees keys as termId/score/docId tuples

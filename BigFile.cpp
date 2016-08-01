@@ -1026,7 +1026,7 @@ static void readwriteWrapper_r ( void *state ) {
 	// . do the readwrite_r() since we're a thread now
 	// . this SHOULD NOT set g_errno, we're a thread!
 	// . it does have it's own errno however
-
+	
 	bool status = readwrite_r ( fstate );
 
 	// set errno

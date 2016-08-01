@@ -8,6 +8,11 @@
 #include "Msg3a.h" // DEFAULT_POSDB_READ_SIZE
 #include "HighFrequencyTermShortcuts.h"
 #include "Sanity.h"
+#include "ScopedLock.h"
+
+#ifdef _VALGRIND_
+#include <valgrind/memcheck.h>
+#endif
 
 
 
@@ -16,10 +21,14 @@ Msg2::Msg2()
     m_avail(0),
     m_numLists(0)
 {
+	pthread_mutex_init(&m_mtxCounters,NULL);
+	pthread_mutex_init(&m_mtxMsg5,NULL);
 }
 
 Msg2::~Msg2() {
 	reset();
+	pthread_mutex_destroy(&m_mtxCounters);
+	pthread_mutex_destroy(&m_mtxMsg5);
 }
 
 void Msg2::reset ( ) {
@@ -58,6 +67,9 @@ bool Msg2::getLists ( int32_t     rdbId       ,
 		      bool allowHighFrequencyTermCache,
 		      int32_t     niceness    ,
 		      bool     isDebug ) {
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_ADDRESSABLE(qterms,numQterms*sizeof(*qterms));
+#endif
 	// warning
 	if ( collnum < 0 ) log(LOG_LOGIC,"net: bad collection. msg2.");
 	if ( ! minRecSizes ) { 
@@ -111,9 +123,24 @@ bool Msg2::getLists ( int32_t     rdbId       ,
 }
 
 bool Msg2::getLists ( ) {
+	log(LOG_TRACE,"Msg2(%p)::getLists()",this);
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_ADDRESSABLE(m_qterms,m_numLists*sizeof(*m_qterms));
+#endif
+log("@@@ msg2::getLists: m_numLists = %d", m_numLists);
+	// Artifically inflate m_numRequests by one so the callback doesn't conclude everything is
+	// done. If we don't then we will increment m_numRequests and the callback could be called
+	// immediately thereby incrementing m_numReplies and conclude that the job is done.
+	m_numRequests = 1;
+
 	// . send out a bunch of msg5 requests
 	// . make slots for all
+log("@@@ msg2::getLists: before loop 1");
 	for (  ; m_i < m_numLists ; m_i++ ) {
+log("@@@ msg2::getLists: m_i=%d  m_qterms=%p",m_i,m_qterms);
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_ADDRESSABLE(m_qterms,m_numLists*sizeof(*m_qterms));
+#endif
 		// sanity for Msg39's sake. do no breach m_lists[].
 		if ( m_i >= ABS_MAX_QUERY_TERMS ) gbshutdownLogicError();
 		// if any had error, forget the rest. do not launch any more
@@ -148,7 +175,10 @@ bool Msg2::getLists ( ) {
 		
 		int32_t minRecSize = m_minRecSizes[m_i];
 
+log("@@@ msg2::getLists(2): m_i=%d m_numLists = %d",m_i,m_numLists);
 		const QueryTerm *qt = &m_qterms[m_i];
+log("@@@ msg2::getLists: qt=%p",qt);
+
 
 		const char *sk2 = NULL;
 		const char *ek2 = NULL;
@@ -229,14 +259,20 @@ bool Msg2::getLists ( ) {
 					   -1, // syncpoint
 					   false, // isrealmerge?
 					   true) ) { // allow disk page cache?
+			ScopedLock sl(m_mtxCounters);
 			m_numRequests++;
 			continue;
 		}
 
+		log(LOG_TRACE,"Msg2::getLists(): msg5::getList() returned immediately");
 		// we didn't block, so do this
-		m_numReplies++; 
-		m_numRequests++; 
+		{
+			ScopedLock sl(m_mtxCounters);
+			m_numReplies++;
+			m_numRequests++;
+		}
 		// return the msg5 now
+		msg5->reset();
 		returnMsg5 ( msg5 );
 		// note it
 		
@@ -248,6 +284,7 @@ bool Msg2::getLists ( ) {
 			goto skip;
 		}
 	}
+log("@@@ msg2::getLists: end of loop 1");
 
 	//
 	// now read in lists from the terms in the "whiteList"
@@ -317,7 +354,7 @@ bool Msg2::getLists ( ) {
 					   &sk3,
 					   &ek3,
 					   minRecSizes,
-					   true, // include tree?
+					   true,//true, // include tree?
 					   false , // addtocache
 					   0, // maxcacheage
 					   0              , // start file num
@@ -333,13 +370,18 @@ bool Msg2::getLists ( ) {
 					   -1, // syncpoint
 					   false, // isrealmerge?
 					   true ) ) { // allow disk page cache?
+			ScopedLock sl(m_mtxCounters);
 			m_numRequests++;
 			continue;
 		}
-		// return it!
-		m_numReplies++; 
-		m_numRequests++; 
+
+		{
+			ScopedLock sl(m_mtxCounters);
+			m_numReplies++;
+			m_numRequests++;
+		}
 		// . return the msg5 now
+		msg5->reset();
 		returnMsg5 ( msg5 );
 		
 		// break out on error and wait for replies if we blocked
@@ -351,27 +393,39 @@ bool Msg2::getLists ( ) {
 		}
 	}
 		
+log("@@@ msg2::getLists:end of whitelist loop. finishing up");
  skip:
 
 	// . did anyone block? if so, return false for now
-	if ( m_numRequests > m_numReplies ) return false;
+	{
+		ScopedLock sl(m_mtxCounters);
+log("@@@ msg2::getLists: m_numRequests=%d m_numReplies=%d",m_numRequests,m_numReplies);
+		m_numRequests--;    //subtract one to adjust for the initial 1-count (see earlier in this function)
+		if ( m_numRequests > m_numReplies )
+			return false;
+	}
 	// . otherwise, we got everyone, so go right to the merge routine
 	// . returns false if not all replies have been received 
 	// . returns true if done
 	// . sets g_errno on error
+log("@@@ msg2::getLists: calling gotList()");
 	return gotList ( NULL );
 }
 
 Msg5 *Msg2::getAvailMsg5 ( ) {
+	ScopedLock sl(m_mtxMsg5);
 	for ( int32_t i = 0; i < m_numLists+MAX_WHITELISTS; i++ ) {
 		if ( ! m_avail[i] ) continue;
 		m_avail[i] = false;
+log(LOG_TRACE,"@@@Msg2::getAvailMsg5: allocated %p",&m_msg5[i]);
 		return &m_msg5[i];
 	}
 	return NULL;
 }
 
 void Msg2::returnMsg5 ( Msg5 *msg5 ) {
+log(LOG_TRACE,"@@@Msg2::returnMsg5: freeing %p",msg5);
+	ScopedLock sl(m_mtxMsg5);
 	int32_t i;
 	for ( i = 0 ; i < m_numLists+MAX_WHITELISTS ; i++ )
 		if ( &m_msg5[i] == msg5 ) break;
@@ -379,13 +433,12 @@ void Msg2::returnMsg5 ( Msg5 *msg5 ) {
 	if ( i >= m_numLists+MAX_WHITELISTS ) gbshutdownLogicError();
 	// make it available
 	m_avail[i] = true;
-	// reset it
-	msg5->reset();
 }
 
 
 void Msg2::gotListWrapper(void *state, RdbList *rdblist, Msg5 *msg5) {
 	Msg2 *that = static_cast<Msg2*>(state);
+	log(LOG_TRACE,"Msg2(%p)::gotListWrapper(): rdblist=%p msg5=%p",that,rdblist,msg5);
 	that->gotListWrapper(msg5);
 }
 
@@ -400,8 +453,8 @@ void Msg2::gotListWrapper( Msg5 *msg5 ) {
 	}
 	// identify the msg0 slot we use
 	int32_t i  = list - m_lists;
+	msg5->reset();
 	returnMsg5 ( msg5 );
-	m_numReplies++;
 	// note it
 	if ( m_isDebug ) {
 		if ( ! list )
@@ -411,12 +464,18 @@ void Msg2::gotListWrapper( Msg5 *msg5 ) {
 			     i,list->getListSize() );
 	}
 	
+	ScopedLock sl(m_mtxCounters);
+log("@@@ Msg2:.getListWrapper(): m_numRequests=%d m_numReplies=%d", m_numRequests, m_numReplies);
+	m_numReplies++;
 	if ( m_numRequests > m_numReplies )
 		return; //still more to go
+	sl.unlock();
 	// set g_errno if any one list read had error
 	if ( m_errno ) g_errno = m_errno;
 	// now call callback, we're done
+log("@@@ Msg2:.getListWrapper(): calling callback");
 	m_callback ( m_state );
+log("@@@ Msg2:.getListWrapper(): called callback, returning");
 }
 
 
@@ -475,6 +534,7 @@ bool Msg2::gotList ( RdbList *list ) {
 	// set this i guess
 	g_errno = m_errno;
 
+log("@@@@ Msg2::gotList(): returning true");
 	// all done
 	return true;
 }

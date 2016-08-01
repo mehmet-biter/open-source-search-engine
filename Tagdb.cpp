@@ -1434,14 +1434,17 @@ bool Msg8a::launchGetRequests ( ) {
 	RdbList *listPtr = &m_tagRec->m_lists[m_requests];
 
 	// try to get from cache
+	RdbCacheLock rcl(s_cache);
 	if ( s_cache.getList( m_collnum, (char*)&startKey, (char*)&startKey, listPtr, true,
 	                      g_conf.m_tagRecCacheMaxAge, true) ) {
 		// got from cache
 		log( LOG_DEBUG, "tagdb: got key=%s from cache", KEYSTR(&startKey, sizeof(startKey)) );
 
+		rcl.unlock();
 		m_requests++;
 		m_replies++;
 	} else {
+		rcl.unlock();
 		// bias based on the top 64 bits which is the hash of the "site" now
 		int32_t shardNum = getShardNum ( RDB_TAGDB , &startKey );
 		Host *firstHost ;
@@ -1544,6 +1547,7 @@ void gotMsg0ReplyWrapper ( void *state ) {
 		/// @todo hack to get addList working (verify if there will be issue)
 		list->setLastKey((char*)&endKey);
 
+		RdbCacheLock rcl(s_cache);
 		s_cache.addList( msg8a->m_collnum, (char*)&startKey, list);
 	}
 

@@ -149,6 +149,7 @@ class Conf {
 	// which case we do not want to log certain things
 	bool m_doingCommandLine;
 
+	int32_t  m_maxCoordinatorThreads;
 	int32_t  m_maxCpuThreads;
 	int32_t  m_maxIOThreads;
 	int32_t  m_maxExternalThreads;
