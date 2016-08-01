@@ -59,7 +59,6 @@ bool Msg2::getLists ( int32_t     rdbId       ,
 		      char *whiteList ,
 		      int64_t docIdStart,
 		      int64_t docIdEnd,
-		      const int32_t    *minRecSizes,
 		      // make max MAX_MSG39_LISTS
 		      RdbList *lists       ,
 		      void    *state       ,
@@ -72,11 +71,6 @@ bool Msg2::getLists ( int32_t     rdbId       ,
 #endif
 	// warning
 	if ( collnum < 0 ) log(LOG_LOGIC,"net: bad collection. msg2.");
-	if ( ! minRecSizes ) { 
-		g_errno = EBADENGINEER;
-		log(LOG_LOGIC,"net: MinRecSizes is NULL.");
-		return true;
-	}
 	// save callback and state
 	m_state       = state;
 	m_callback    = callback;
@@ -92,7 +86,6 @@ bool Msg2::getLists ( int32_t     rdbId       ,
 	m_docIdEnd   = docIdEnd;
 	m_allowHighFrequencyTermCache = allowHighFrequencyTermCache;
 	m_qterms              = qterms;
-	m_minRecSizes         = minRecSizes;
 	m_getComponents       = false;
 	m_rdbId               = rdbId;
 	m_addToCache          = addToCache;
@@ -145,8 +138,10 @@ log("@@@ msg2::getLists: m_i=%d  m_qterms=%p",m_i,m_qterms);
 		if ( m_i >= ABS_MAX_QUERY_TERMS ) gbshutdownLogicError();
 		// if any had error, forget the rest. do not launch any more
 		if ( m_errno ) break;
-		// skip if no bytes requested
-		if ( m_minRecSizes[m_i] == 0 ) continue;
+		
+		const QueryTerm *qt = &m_qterms[m_i];
+		if ( qt->m_ignored ) //skip ignored terms
+			continue;
 
 		if ( m_isDebug ) {
 			key144_t *sk ;
@@ -158,7 +153,7 @@ log("@@@ msg2::getLists: m_i=%d  m_qterms=%p",m_i,m_qterms);
 			log("query: reading termlist #%" PRId32" "//from "
 			    //"distributed cache on host #%" PRId32". "
 			    "termId=%" PRId64". sk=%s ek=%s "
-			    "mr=%" PRId32" (docid0=%" PRId64" to "
+			    " (docid0=%" PRId64" to "
 			    "docid1=%" PRId64").",
 			    m_i,
 			    //hostId, 
@@ -168,12 +163,11 @@ log("@@@ msg2::getLists: m_i=%d  m_qterms=%p",m_i,m_qterms);
 			    //sk->n2,
 			    //sk->n1,
 			    //(int32_t)sk->n0,
-			    m_minRecSizes[m_i],
 			    docId0,
 			    docId1);
 		}
 		
-		int32_t minRecSize = m_minRecSizes[m_i];
+		int32_t minRecSize = DEFAULT_POSDB_READSIZE;
 
 log("@@@ msg2::getLists(2): m_i=%d m_numLists = %d",m_i,m_numLists);
 		const QueryTerm *qt = &m_qterms[m_i];
@@ -509,13 +503,12 @@ bool Msg2::gotList ( RdbList *list ) {
 
 	// bitch if we hit our max read sizes limit, we are losing docids!
 	for ( int32_t i = 0 ; i < m_numLists ; i++ ) {
-		if ( m_lists[i].m_listSize < m_minRecSizes[i] ) continue;
-		if ( m_minRecSizes[i] == 0 ) continue;
-		if ( m_minRecSizes[i] == -1 ) continue;
+		if ( m_lists[i].m_listSize < DEFAULT_POSDB_READSIZE ) continue;
+		if ( m_lists[i].m_listSize == 0 ) continue;
 
 		log("msg2: read termlist #%" PRId32" size=%" PRId32" "
 		    "maxSize=%" PRId32". losing docIds!",
-		    i,m_lists[i].m_listSize,m_minRecSizes[i]);
+		    i,m_lists[i].m_listSize,DEFAULT_POSDB_READSIZE);
 	}
 
 	// debug msg
