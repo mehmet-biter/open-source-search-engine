@@ -44,14 +44,13 @@ public:
 	 *  sets "errno" on error.
 	 *  "termIds/termFreqs" should NOT be on the stack in case we block
 	 */
-	bool getLists(int32_t rdbId,
-			collnum_t collnum,			//char    *coll        ,
+	bool getLists(collnum_t collnum,			//char    *coll        ,
 			bool addToCache,
 			const QueryTerm *qterms,
 			int32_t numQterms,
 			// restrict search results to this list of sites,
 			// i.e. "abc.com+xyz.com+..." (Custom Search)
-			char *whiteList,
+			const char *whiteList,
 			// for intersecting ranges of docids separately
 			// to prevent OOM errors
 			int64_t docIdStart,
@@ -84,10 +83,10 @@ private:
 	int32_t m_i;
 
 	// list of sites to restrict search results to. space separated
-	char *m_whiteList;
+	const char *m_whiteList;
 	int64_t m_docIdStart;
 	int64_t m_docIdEnd;
-	char *m_p;
+	const char *m_p;
 	int32_t m_w;
 	RdbList m_whiteLists[ MAX_WHITELISTS];
 
@@ -111,7 +110,6 @@ private:
 	const QueryTerm *m_qterms;
 	int32_t m_numLists;
 	bool m_getComponents;
-	char m_rdbId;
 	bool m_addToCache;
 	collnum_t m_collnum;
 
