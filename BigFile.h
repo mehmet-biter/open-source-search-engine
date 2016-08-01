@@ -131,7 +131,8 @@ class BigFile {
 	int64_t getSize     ( ) { return getFileSize(); }
 
 	// use the base filename as our filename
-	char *getFilename() { return m_baseFilename.getBufStart(); }
+	char       *getFilename()       { return m_baseFilename.getBufStart(); }
+	const char *getFilename() const { return m_baseFilename.getBufStart(); }
 
 	char *getDir() { return m_dir.getBufStart(); }
 

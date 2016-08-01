@@ -2134,12 +2134,12 @@ int64_t RdbBase::getListSize ( char *startKey , char *endKey , char *max ,
 	return totalBytes;
 }
 
-int64_t RdbBase::getNumGlobalRecs ( ) {
+int64_t RdbBase::getNumGlobalRecs() const {
 	return getNumTotalRecs() * g_hostdb.m_numShards;
 }
 
 // . return number of positive records - negative records
-int64_t RdbBase::getNumTotalRecs ( ) {
+int64_t RdbBase::getNumTotalRecs() const {
 	int64_t numPositiveRecs = 0;
 	int64_t numNegativeRecs = 0;
 	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) {
@@ -2168,7 +2168,7 @@ int64_t RdbBase::getNumTotalRecs ( ) {
 
 // . how much mem is alloced for all of our maps?
 // . we have one map per file
-int64_t RdbBase::getMapMemAlloced () {
+int64_t RdbBase::getMapMemAlloced() const {
 	int64_t alloced = 0;
 	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) 
 		alloced += m_maps[i]->getMemAlloced();
@@ -2176,14 +2176,14 @@ int64_t RdbBase::getMapMemAlloced () {
 }
 
 // sum of all parts of all big files
-int32_t RdbBase::getNumSmallFiles ( ) {
+int32_t RdbBase::getNumSmallFiles() const {
 	int32_t count = 0;
 	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) 
 		count += m_files[i]->getNumParts();
 	return count;
 }
 
-int64_t RdbBase::getDiskSpaceUsed ( ) {
+int64_t RdbBase::getDiskSpaceUsed() const {
 	int64_t count = 0;
 	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) 
 		count += m_files[i]->getFileSize();
@@ -2327,7 +2327,7 @@ bool RdbBase::verifyFileSharding ( ) {
 	return true;//g_conf.m_bypassValidation;
 }
 
-float RdbBase::getPercentNegativeRecsOnDisk ( int64_t *totalArg ) {
+float RdbBase::getPercentNegativeRecsOnDisk ( int64_t *totalArg ) const {
 	// scan the maps
 	int64_t numPos = 0LL;
 	int64_t numNeg = 0LL;

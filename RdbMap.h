@@ -95,7 +95,8 @@ class RdbMap {
 		return m_file.rename ( newMapFilename , callback , state, force );
 	}
 
-	char *getFilename ( ) { return m_file.getFilename(); }
+	char       *getFilename()       { return m_file.getFilename(); }
+	const char *getFilename() const { return m_file.getFilename(); }
 
 	BigFile *getFile  ( ) { return &m_file; }
 
@@ -137,14 +138,13 @@ class RdbMap {
 	//	bool addKey  ( key_t &key );
 
 	// get the number of non-deleted records in the data file we map
-	int64_t getNumPositiveRecs  ( ) { return m_numPositiveRecs; }
+	int64_t getNumPositiveRecs() const { return m_numPositiveRecs; }
 	// get the number of "delete" records in the data file we map
-	int64_t getNumNegativeRecs  ( ) { return m_numNegativeRecs; }
+	int64_t getNumNegativeRecs() const { return m_numNegativeRecs; }
 	// total
-	int64_t getNumRecs          ( ) { return m_numPositiveRecs +
-						    m_numNegativeRecs; }
+	int64_t getNumRecs() const { return m_numPositiveRecs + m_numNegativeRecs; }
 	// get the size of the file we are mapping
-	int64_t getFileSize () { return m_offset; }
+	int64_t getFileSize () const { return m_offset; }
 
 	int64_t findNextFullPosdbKeyOffset ( char *buf, int32_t bufSize ) ;
 
@@ -205,17 +205,17 @@ class RdbMap {
 
 	//key_t getLastKey ( ) { return m_lastKey; }
 	//char *getLastKey ( ) { return m_lastKey; }
-	void  getLastKey ( char *key ) { KEYSET(key,m_lastKey,m_ks); }
+	void  getLastKey(char *key) const { KEYSET(key,m_lastKey,m_ks); }
 
 	// . these functions operate on one page
 	// . get the first key wholly on page # "page"
 	// . if page >= m_numPages use the lastKey in the file
 	//key_t getKey              ( int32_t page ) { 
-	void getKey ( int32_t page , char *k ) { 
+	void getKey(int32_t page, char *k) const {
 		if ( page >= m_numPages ) {KEYSET(k,m_lastKey,m_ks);return;}
 		//return m_keys[page/PAGES_PER_SEG][page%PAGES_PER_SEG];
-	 KEYSET(k,&m_keys[page/PAGES_PER_SEG][(page%PAGES_PER_SEG)*m_ks],m_ks);
-	 return;
+		KEYSET(k,&m_keys[page/PAGES_PER_SEG][(page%PAGES_PER_SEG)*m_ks],m_ks);
+		return;
 	}
 	//const key_t *getKeyPtr ( int32_t page ) { 
 	char *getKeyPtr ( int32_t page ) { 
@@ -272,7 +272,7 @@ class RdbMap {
 	bool unlink ( void (* callback)(void *state) , void *state ) { 
 		return m_file.unlink ( callback , state ); }
 
-	int32_t getNumPages ( ) { return m_numPages; }
+	int32_t getNumPages() const { return m_numPages; }
 
 	// . return first page #, "N",  to read to get the record w/ this key
 	//   if it exists
@@ -307,7 +307,7 @@ class RdbMap {
 	bool chopHead (int32_t fileSize );
 
 	// how much mem is being used by this map?
-	int64_t getMemAlloced ();
+	int64_t getMemAlloced() const;
 
 	// . attempts to auto-generate from data file, f
 	// . returns false and sets g_errno on error

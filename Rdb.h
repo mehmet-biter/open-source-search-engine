@@ -131,8 +131,8 @@ public:
 		     bool exitAfterClosing );
 	//bool close ( ) { return close ( NULL , NULL ); }
 	// used by PageMaster.cpp to check to see if all rdb's are closed yet
-	bool isClosed ( ) { return m_isClosed; }
-	bool needsSave();
+	bool isClosed() const { return m_isClosed; }
+	bool needsSave() const;
 
 	// . returns false and sets g_errno on error
 	// . caller should retry later on g_errno of ENOMEM or ETRYAGAIN
@@ -164,29 +164,30 @@ public:
 	// calls addList above
 	bool addList ( const char *coll , RdbList *list, int32_t niceness );
 
-	bool isSecondaryRdb () {
+	bool isSecondaryRdb() const {
 		return ::isSecondaryRdb((unsigned char)m_rdbId);
 	}
 	
-	bool isInitialized () { return m_initialized; }
+	bool isInitialized() const { return m_initialized; }
 
 	// get the directory name where this rdb stores it's files
-	char *getDir       ( ) { return g_hostdb.m_dir; }
+	char       *getDir       ( ) { return g_hostdb.m_dir; }
+	const char *getDir() const { return g_hostdb.m_dir; }
 
-	int32_t getFixedDataSize ( ) { return m_fixedDataSize; }
+	int32_t getFixedDataSize() const { return m_fixedDataSize; }
 
-	bool useHalfKeys ( ) { return m_useHalfKeys; }
-	char getKeySize  ( ) { return m_ks; }
+	bool useHalfKeys() const { return m_useHalfKeys; }
+	char getKeySize() const { return m_ks; }
 
 	RdbTree    *getTree    ( ) { if(!m_useTree) return NULL; return &m_tree; }
 	RdbMem     *getRdbMem  ( ) { return &m_mem; }
-	bool       useTree     ( ) { return m_useTree;}
+	bool       useTree() const { return m_useTree;}
 
 	int32_t       getNumUsedNodes() const;
-	int32_t       getMaxTreeMem();
-	int32_t       getTreeMemOccupied() ;
-	int32_t       getTreeMemAlloced () ;
-	int32_t       getNumNegativeKeys();
+	int32_t       getMaxTreeMem() const;
+	int32_t       getTreeMemOccupied() const;
+	int32_t       getTreeMemAlloced() const;
+	int32_t       getNumNegativeKeys() const;
 	
 	void disableWrites ();
 	void enableWrites  ();

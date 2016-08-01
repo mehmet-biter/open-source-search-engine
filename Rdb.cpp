@@ -2707,23 +2707,23 @@ int32_t Rdb::getNumUsedNodes ( ) const {
 	 return m_buckets.getNumKeys();
 }
 
-int32_t Rdb::getMaxTreeMem() {
+int32_t Rdb::getMaxTreeMem() const {
 	if(m_useTree) return m_tree.getMaxMem();
 	return m_buckets.getMaxMem();
 }
 
-int32_t Rdb::getNumNegativeKeys() {
+int32_t Rdb::getNumNegativeKeys() const {
 	 if(m_useTree) return m_tree.getNumNegativeKeys(); 
 	 return m_buckets.getNumNegativeKeys();
 }
 
 
-int32_t Rdb::getTreeMemOccupied() {
+int32_t Rdb::getTreeMemOccupied() const {
 	 if(m_useTree) return m_tree.getMemOccupied(); 
 	 return m_buckets.getMemOccupied();
 }
 
-int32_t Rdb::getTreeMemAlloced () {
+int32_t Rdb::getTreeMemAlloced () const {
 	 if(m_useTree) return m_tree.getMemAlloced(); 
 	 return m_buckets.getMemAlloced();
 }
@@ -2743,7 +2743,7 @@ bool Rdb::isWritable ( ) {
 }
 
 
-bool Rdb::needsSave() {
+bool Rdb::needsSave() const {
 	if(m_useTree) return m_tree.m_needsSave; 
 	else return m_buckets.needsSave();
 }
