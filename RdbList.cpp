@@ -1227,7 +1227,7 @@ int RdbList::printList ( int32_t logtype ) {
 // . mincRecSizes is really only important when we read just 1 list
 // . it's a really good idea to keep it as -1 otherwise
 bool RdbList::constrain(const char *startKey, char *endKey, int32_t minRecSizes,
-                        int32_t hintOffset, const char *hintKey, const char *filename, int32_t niceness) {
+                        int32_t hintOffset, const char *hintKey, const char *filename) {
 	// return false if we don't own the data
 	if ( ! m_ownData ) {
 		g_errno = EBADLIST;
@@ -1285,7 +1285,6 @@ bool RdbList::constrain(const char *startKey, char *endKey, int32_t minRecSizes,
 	char k[MAX_KEY_BYTES];
 	//while ( p < m_listEnd && getKey(p) < startKey ) {
 	while ( p < m_listEnd ) {
-		QUICKPOLL(niceness);
 		getKey(p,k);
 #ifdef GBSANITYCHECK
 		// check key order!
@@ -1423,7 +1422,6 @@ bool RdbList::constrain(const char *startKey, char *endKey, int32_t minRecSizes,
 	// advance until endKey or minRecSizes kicks us out
 	//while ( p < m_listEnd && getKey(p) <= endKey && p < maxPtr ) {
 	while ( p < m_listEnd ) {
-		QUICKPOLL(niceness);
 		getKey(p,k);
 		if ( KEYCMP(k,endKey,m_ks)>0 ) break;
 		if ( p >= maxPtr ) break;

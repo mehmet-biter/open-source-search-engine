@@ -178,13 +178,7 @@ bool Msg2::getLists ( ) {
 			                 18);                                  //keysize
 			char ek2_copy[18];
 			memcpy(ek2_copy, ek2, sizeof(ek2_copy)); //RdbList::constrain() modifies endkey, so give it a copy
-			m_lists[m_i].constrain(sk2,            //startKey
-			                       ek2_copy,       //endKey
-			                       -1,             //minRecSizes
-			                       0,              //hintOffset
-			                       NULL,           //hintKey
-			                       "",             //filename
-			                       0);             //niceness
+			m_lists[m_i].constrain(sk2, ek2_copy, -1, 0, NULL, "highfrequencyterm");
 			continue;
 		}
 
