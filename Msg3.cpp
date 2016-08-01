@@ -322,8 +322,7 @@ bool Msg3::readList  ( char           rdbId         ,
 	m_allocSize = need;
 	m_alloc = (char *)mcalloc ( need , "Msg3" );
 	if ( ! m_alloc ) {
-		log("disk: Could not allocate %" PRId32" bytes read "
-		    "structures to read %s.",need,base->m_dbname);
+		log(LOG_WARN, "disk: Could not allocate %" PRId32" bytes read structures to read %s.",need,base->m_dbname);
 		return true;
 	}
 
