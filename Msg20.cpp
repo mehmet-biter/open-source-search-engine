@@ -744,6 +744,19 @@ int32_t Msg20Reply::deserialize ( ) {
 		return -1;
 	}
 
+log("@@@@ Msg20Reply::deserialize: ptr_linkInfo=%p",ptr_linkInfo);
+log("@@@@ Msg20Reply::deserialize: ptr_linkText=%p",ptr_linkText);
+loghex(LOG_INFO,ptr_linkText,size_linkText,"@@@@ ptr_linkText:");
+LinkInfo *li = (LinkInfo*)ptr_linkInfo;
+if(li) {
+ log("@@@@ Msg20Reply::deserialize: li->m_numInlinksInternal=%d",li->m_numInlinksInternal);
+ log("@@@@ Msg20Reply::deserialize: li->m_lisize=%d",li->m_lisize);
+ log("@@@@ Msg20Reply::deserialize: li->m_numStoredInlinks=%d",li->m_numStoredInlinks);
+ log("@@@@ Msg20Reply::deserialize: li->m_totalInlinkingDocIds=%d",li->m_totalInlinkingDocIds);
+ log("@@@@ Msg20Reply::deserialize: li->m_numGoodInlinks=%d",li->m_numGoodInlinks);
+ log("@@@@ Msg20Reply::deserialize: li->m_numUniqueCBlocks=%d",li->m_numUniqueCBlocks);
+}
+
 	// return how many bytes we used
 	return bytesParsed;
 }

@@ -431,6 +431,7 @@ int64_t Posdb::getTermFreq ( collnum_t collnum, int64_t termId ) {
 	// . check cache for super speed
 	// . TODO: make key incorporate collection
 	// . colnum is 0 for now
+	RdbCacheLock rcl(g_termFreqCache); //todo: we should really release the lock while scanning the posdb-freq
 	int64_t val = g_termFreqCache.getLongLong2 ( collnum ,
 						       termId  , // key
 						       500   , // maxage secs

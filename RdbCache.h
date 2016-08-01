@@ -43,6 +43,7 @@
 
 #include "JobScheduler.h" //job_exit_t
 #include <time.h>       // time_t
+#include <pthread.h>
 
 class RdbList;
 
@@ -295,6 +296,8 @@ private:
 	int32_t m_convertNumPtrsMax;
 	int32_t m_convertMaxMem;
 
+	pthread_mutex_t m_mtx; //big fat mutex protecting everything
+	
 	int32_t m_errno;
 
 	// . mem stats -- just for arrays we contain -- not in tree
@@ -348,6 +351,22 @@ private:
 	int64_t m_deletes;
 
 	char m_needsSave;
+	
+	friend class RdbCacheLock;
 };	
+
+
+//Lock class to hold down an rdbcache while examining/copying or modifying a cache
+class RdbCacheLock {
+	RdbCacheLock(const RdbCacheLock&);
+	RdbCacheLock& operator=(const RdbCacheLock&);
+	RdbCache &rdc;
+	bool locked;
+public:
+	RdbCacheLock(RdbCache &rdc_);
+	~RdbCacheLock();
+	void unlock();
+};
+
 
 #endif // GB_RDBCACHE_H

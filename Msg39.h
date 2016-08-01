@@ -144,11 +144,12 @@ private:
 
 	void reset();
 	void reset2();
+	static void coordinatorThreadFunc(void *state);
 	void getDocIds2();
 	// retrieves the lists needed as specified by termIds and PosdbTable
-	bool getLists () ;
+	void getLists(int64_t docIdStart, int64_t docIdEnd);
 	// called when lists have been retrieved, uses PosdbTable to hash lists
-	bool intersectLists ( );
+	void intersectLists ( );
 
 	// . this is used by handler to reconstruct the incoming Query class
 	// . TODO: have a serialize/deserialize for Query class
@@ -172,10 +173,6 @@ private:
 	bool m_allocedTree;
 	TopTree    m_toptree;
 
-	//subrange chunking controls / variables
-	int64_t m_ddd;
-	int64_t m_dddEnd;
-	
 	// . we hold our IndexLists here for passing to PosdbTable
 	// . one array for each of the tiers
 	RdbList *m_lists;
@@ -200,15 +197,13 @@ private:
 	bool        m_gotClusterRecs;
 
 	static void intersectionFinishedCallback(void *state, job_exit_t exit_type);
-	static void controlLoopWrapper(void *state);
-	bool        controlLoop();
+	void        controlLoop();
 	static void intersectListsThreadFunction(void *state);
 
-	int32_t m_phase;
 	int32_t m_docIdSplitNumber; //next split range to do
 	
 	void        estimateHitsAndSendReply   ();
-	bool        setClusterRecs ();
+	void        getClusterRecs();
 	bool        gotClusterRecs ();
 
 public:

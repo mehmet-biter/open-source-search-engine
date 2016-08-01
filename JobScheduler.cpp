@@ -132,10 +132,11 @@ static void *job_pool_thread_function(void *pv) {
 		uint64_t now = now_ms();
 		iter->start_time = now;
 		if(iter->start_deadline==0 || iter->start_deadline>now) {
-			// clear thread specific g_errno
+			// Clear g_errno so the thread/job starts with a clean slate
 			g_errno = 0;
-
+log(LOG_TRACE,"job_pool_thread_function: calling start_routine");
 			iter->start_routine(iter->state);
+log(LOG_TRACE,"job_pool_thread_function: start_routine returned");
 			iter->stop_time = now_ms();
 			job_exit = job_exit_normal;
 		} else {
@@ -234,6 +235,7 @@ ThreadPool::~ThreadPool()
 class JobScheduler_impl {
 	mutable pthread_mutex_t mtx;
 	
+	JobQueue   coordinator_job_queue;
 	JobQueue   cpu_job_queue;
 	JobQueue   io_job_queue;
 	JobQueue   external_job_queue;
@@ -244,6 +246,7 @@ class JobScheduler_impl {
 	
 	unsigned   num_io_write_jobs_running;
 	
+	ThreadPool coordinator_thread_pool;
 	ThreadPool cpu_thread_pool;
 	ThreadPool io_thread_pool;
 	ThreadPool external_thread_pool;
@@ -253,14 +256,16 @@ class JobScheduler_impl {
 	
 	bool submit(thread_type_t thread_type, JobEntry &e);
 public:
-	JobScheduler_impl(unsigned num_cpu_threads, unsigned num_io_threads, unsigned num_external_threads, job_done_notify_t job_done_notify)
+	JobScheduler_impl(unsigned num_coordinator_threads, unsigned num_cpu_threads, unsigned num_io_threads, unsigned num_external_threads, job_done_notify_t job_done_notify)
 	  : mtx PTHREAD_MUTEX_INITIALIZER,
+	    coordinator_job_queue(),
 	    cpu_job_queue(),
 	    io_job_queue(),
 	    external_job_queue(),
 	    running_set(),
 	    exit_set(),
 	    num_io_write_jobs_running(0),
+	    coordinator_thread_pool(num_coordinator_threads,&coordinator_job_queue,&running_set,&exit_set,&num_io_write_jobs_running,&mtx,job_done_notify),
 	    cpu_thread_pool(num_cpu_threads,&cpu_job_queue,&running_set,&exit_set,&num_io_write_jobs_running,&mtx,job_done_notify),
 	    io_thread_pool(num_io_threads,&io_job_queue,&running_set,&exit_set,&num_io_write_jobs_running,&mtx,job_done_notify),
 	    external_thread_pool(num_external_threads,&external_job_queue,&running_set,&exit_set,&num_io_write_jobs_running,&mtx,job_done_notify),
@@ -270,10 +275,12 @@ public:
 	}
 	
 	~JobScheduler_impl() {
+		coordinator_thread_pool.initiate_stop();
 		cpu_thread_pool.initiate_stop();
 		io_thread_pool.initiate_stop();
 		external_thread_pool.initiate_stop();
 		
+		pthread_cond_broadcast(&coordinator_job_queue.cond_not_empty);
 		pthread_cond_broadcast(&cpu_job_queue.cond_not_empty);
 		pthread_cond_broadcast(&io_job_queue.cond_not_empty);
 		pthread_cond_broadcast(&external_job_queue.cond_not_empty);
@@ -338,6 +345,7 @@ bool JobScheduler_impl::submit(thread_type_t thread_type, JobEntry &e)
 		job_queue = &io_job_queue;
 	else {
 		switch(thread_type) {
+			case thread_type_query_coordinator:  job_queue = &coordinator_job_queue; break;
 			case thread_type_query_read:         job_queue = &cpu_job_queue;      break;
 			case thread_type_query_constrain:    job_queue = &cpu_job_queue;      break;
 			case thread_type_query_merge:        job_queue = &cpu_job_queue;      break;
@@ -540,10 +548,10 @@ JobScheduler::~JobScheduler()
 }
 
 
-bool JobScheduler::initialize(unsigned num_cpu_threads, unsigned num_io_threads, unsigned num_external_threads, job_done_notify_t job_done_notify)
+bool JobScheduler::initialize(unsigned num_coordinator_threads, unsigned num_cpu_threads, unsigned num_io_threads, unsigned num_external_threads, job_done_notify_t job_done_notify)
 {
 	assert(!impl);
-	impl = new JobScheduler_impl(num_cpu_threads,num_io_threads,num_external_threads,job_done_notify);
+	impl = new JobScheduler_impl(num_coordinator_threads,num_cpu_threads,num_io_threads,num_external_threads,job_done_notify);
 	return true;
 }
 

@@ -150,6 +150,7 @@ bool isTimedOut(int32_t ip) {
 	key_t k;
 	k.n0 = 0LL;
 	k.n1 = ip;
+	RdbCacheLock rcl(g_timedoutCache);
 	bool  inCache = g_timedoutCache.getRecord ( (collnum_t)0 ,
 							k       , // key
 							&rec    ,
@@ -1304,6 +1305,7 @@ void gotIpWrapper ( void *state , UdpSlot *slot ) {
 			log(LOG_DEBUG,
 			    "dns: adding ip %s to timedout cache: %s",
 			    iptoa(slot->m_ip),mstrerror(g_errno));
+			RdbCacheLock rcl(g_timedoutCache);
 			g_timedoutCache.addRecord((collnum_t)0,
 						  k           , // key
 						  s_data      , // value
@@ -2218,6 +2220,7 @@ bool Dns::isInCache ( key_t key , int32_t *ip ) {
 	char *rec;
 	int32_t  recSize;
 	// return false if not in cache
+	RdbCacheLock rcl(m_rdbCache);
 	if ( ! m_rdbCache.getRecord ( (collnum_t)0 ,
 				      key      , 
 				      &rec     ,
@@ -2262,6 +2265,7 @@ void Dns::addToCache ( key_t hostnameKey , int32_t ip , int32_t ttl ) {
 		c = &m_rdbCache;
 
  	// just add a record to the cache
+	RdbCacheLock rcl(*c);
 	c->addRecord((collnum_t)0,hostnameKey,(char *)&ip,4,
 		     timestamp);//rec size
 	// reset g_errno in case it had an error (we don't care)
