@@ -637,8 +637,7 @@ bool Msg39::getLists () {
 	}
 
 	// call msg2
-	if ( ! m_msg2.getLists ( RDB_POSDB,
-				 m_msg39req->m_collnum,
+	if ( ! m_msg2.getLists ( m_msg39req->m_collnum,
 				 m_msg39req->m_addToCache,
 				 m_query.m_qterms,
 				 m_query.getNumTerms(),
