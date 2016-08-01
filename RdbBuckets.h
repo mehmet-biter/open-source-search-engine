@@ -140,20 +140,20 @@ class RdbBuckets {
 	bool collExists(collnum_t coll);
 
 	//MEMBER ACCESS
-	const char *getDbname() const { return m_dbname;       }
-	uint8_t   getKeySize()        { return m_ks;           }
+	const char *getDbname() const { return m_dbname; }
+	uint8_t   getKeySize() const { return m_ks; }
 	int32_t      getFixedDataSize()  { return m_fixedDataSize;}
 	int32_t      getRecSize()        { return m_recSize;      }
 	void      setSwapBuf(char *s) { m_swapBuf = s;         }
 	char     *getSwapBuf()        { return m_swapBuf;      }
-	bool      needsSave()         { return m_needsSave;    }
-	bool      isSaving()          { return m_isSaving;     }
+	bool      needsSave() const { return m_needsSave; }
+	bool      isSaving() const { return m_isSaving; }
 	char     *getSortBuf()        { return m_sortBuf;      }
-	int32_t      getSortBufSize()    { return m_sortBufSize;  }
-	bool      isWritable()        { return m_isWritable;   }
+	int32_t      getSortBufSize() const { return m_sortBufSize; }
+	bool      isWritable() const { return m_isWritable;   }
 	void      disableWrites ()    { m_isWritable = false;  }
 	void      enableWrites  ()    { m_isWritable = true ;  }
-	int32_t      getMaxMem()         { return m_maxMem;       }
+	int32_t      getMaxMem() const { return m_maxMem; }
 	void      setNeedsSave(bool s);
 
 	
