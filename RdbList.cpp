@@ -1242,6 +1242,7 @@ bool RdbList::constrain(const char *startKey, char *endKey, int32_t minRecSizes,
 		KEYSET(m_endKey,endKey,m_ks);
 		return true;
 	}
+
 	// ensure we our first key is 12 bytes if m_useHalfKeys is true
 	if ( m_useHalfKeys && isHalfBitOn ( m_list ) ) {
 		g_errno = ECORRUPTDATA;
@@ -1250,13 +1251,13 @@ bool RdbList::constrain(const char *startKey, char *endKey, int32_t minRecSizes,
 	}
 
 	// sanity. hint key should be full key
-	if ( m_ks == 18 && hintKey && (hintKey[0]&0x06)){
+	if ( m_ks == 18 && hintKey && (hintKey[0]&0x06)) {
 		g_errno = ECORRUPTDATA;
 		log(LOG_WARN, "db: Hint key is corrupt.");
 		return false;
 	}
 
-	if ( hintOffset > m_listSize ) { //g_process.shutdownAbort(true); }
+	if ( hintOffset > m_listSize ) {
 		g_errno = ECORRUPTDATA;
 		log(LOG_WARN, "db: Hint offset %" PRId32" > %" PRId32" is corrupt.", hintOffset, m_listSize);
 		return false;
@@ -1276,14 +1277,17 @@ bool RdbList::constrain(const char *startKey, char *endKey, int32_t minRecSizes,
 	// . remember the start of the list at the beginning
 	// . hint is relative to this
 	char *firstStart = m_list;
+
 	// reset our m_listPtr and m_listPtrHi
 	resetListPtr();
+
 	// point to start of this list to constrain it
 	char *p = m_list;
+
 	// . advance "p" while < startKey
 	// . getKey() needsm_listPtrHi to be correct
 	char k[MAX_KEY_BYTES];
-	//while ( p < m_listEnd && getKey(p) < startKey ) {
+
 	while ( p < m_listEnd ) {
 		getKey(p,k);
 #ifdef GBSANITYCHECK
@@ -1296,21 +1300,30 @@ bool RdbList::constrain(const char *startKey, char *endKey, int32_t minRecSizes,
 		KEYSET(lastKey,k,m_ks);
 #endif
 		// stop if we are >= startKey
-		if ( KEYCMP(k,startKey,m_ks) >= 0 ) break;
+		if ( KEYCMP(k,startKey,m_ks) >= 0 ) {
+			break;
+		}
+
 #ifdef GBSANITYCHECK
 		// debug msg
 		log("constrain: skipping key=%s rs=%" PRId32,
 		    KEYSTR(k,m_ks),getRecSize(p));
 #endif
-		// . since we don't call skipCurrentRec() we must update
-		//  m_listPtrHi ourselves
+
+		// . since we don't call skipCurrentRec() we must update m_listPtrHi ourselves
 		// . this is fruitless if m_useHalfKeys is false...
-		//if ( ! isHalfBitOn ( p ) ) m_listPtrHi = p + 6;
-		if ( ! isHalfBitOn ( p ) ) m_listPtrHi = p + (m_ks-6);
+		if (!isHalfBitOn(p)) {
+			m_listPtrHi = p + (m_ks - 6);
+		}
+
 		// posdb uses two compression bits
-		if ( m_ks == 18 && !(p[0]&0x04)) m_listPtrLo = p + (m_ks-12);
+		if (m_ks == 18 && !(p[0] & 0x04)) {
+			m_listPtrLo = p + (m_ks - 12);
+		}
+
 		// get size of this rec, this can be negative if corrupt!
 		int32_t recSize = getRecSize ( p );
+
 		// watch out for corruption, let Msg5 fix it
 		if ( recSize < 0 ) {
 			m_listPtrHi = savelistPtrHi ;
@@ -1319,6 +1332,7 @@ bool RdbList::constrain(const char *startKey, char *endKey, int32_t minRecSizes,
 			log(LOG_WARN, "db: Got record size of %" PRId32" < 0. Corrupt data file.",recSize);
 			return false;
 		}
+
 		p += recSize;
 	}
 
@@ -1327,10 +1341,10 @@ bool RdbList::constrain(const char *startKey, char *endKey, int32_t minRecSizes,
 	// . I don't think this call is good if p >= listEnd, it would go out
 	//   of bounds
 	//   corrupt data could send it well beyond listEnd too.
-	if ( p < m_listEnd )
-		getKey(p,k);
+	if ( p < m_listEnd ) {
+		getKey(p, k);
+	}
 
-	//if ( p >= m_listEnd || getKey(p) > endKey ) {
 	if ( p >= m_listEnd || KEYCMP(k,endKey,m_ks)>0 ) {
 		// make list empty
 		m_listSize  = 0;
@@ -1348,8 +1362,12 @@ bool RdbList::constrain(const char *startKey, char *endKey, int32_t minRecSizes,
 		// store the full key into "k" buffer
 		getKey(p,k);
 		// how far to go back?
-		if ( p[0] & 0x04 ) p -= 12;
-		else               p -= 6;
+		if ( p[0] & 0x04 ) {
+			p -= 12;
+		} else {
+			p -= 6;
+		}
+
 		// write the full key back into "p"
 		KEYSET(p,k,m_ks);
 	}
@@ -1372,18 +1390,22 @@ bool RdbList::constrain(const char *startKey, char *endKey, int32_t minRecSizes,
 
 	// inc m_list , m_alloc should remain where it is
 	m_list = p;
+
 	// . set p to the hint
 	// . this is the last key in the map before the endkey i think
 	// . saves us from having to scan the WHOLE list
 	p = firstStart + hintOffset;
+
 	// set our hi key temporarily cuz the actual key in the list may
 	// only be the lower 6 bytes
 	//m_listPtrHi = ((char *)&hintKey) + 6;
 	m_listPtrHi = hintKey + (m_ks-6);
 	m_listPtrLo = hintKey + (m_ks-12);
+
 	// . store the key @p into "k"
 	// . "k" should then equal the hint key!!! check it below
 	getKey(p,k);
+
 	// . dont' start looking for the end before our new m_list
 	// . don't start at m_list+6 either cuz we may have overwritten that
 	//   with the *(key_t *)p = k above!!!! tricky...
@@ -1397,7 +1419,6 @@ bool RdbList::constrain(const char *startKey, char *endKey, int32_t minRecSizes,
 	// . if first key is over endKey that's a bad hint!
 	// . might it be a corrupt RdbMap?
 	// . reset "p" to beginning if hint is bad
-	//else if ( getKey(p) != hintKey || hintKey > endKey ) {
 	else if ( KEYCMP(k,hintKey,m_ks)!=0 || KEYCMP(hintKey,endKey,m_ks)>0) {
 		log(LOG_WARN, "db: Corrupt data or map file. Bad hint for %s.", filename);
 		// . until we fix the corruption, drop a core
@@ -1405,22 +1426,28 @@ bool RdbList::constrain(const char *startKey, char *endKey, int32_t minRecSizes,
 		//g_process.shutdownAbort(true);
 		p           = m_list;
 		m_listPtr   = m_list;
-		//m_listPtrHi = m_list + 6;
 		m_listPtrHi = m_list + (m_ks-6);
 		m_listPtrLo = m_list + (m_ks-12);
 	}
+
 	// . max a max ptr based on minRecSizes
 	// . if p hits or exceeds this we MUST stop
 	char *maxPtr = m_list + minRecSizes;
+
 	// watch out for wrap around!
-	if ( (intptr_t)maxPtr < (intptr_t)m_list )
+	if ( (intptr_t)maxPtr < (intptr_t)m_list ) {
 		maxPtr = m_listEnd;
+	}
+
 	// if mincRecSizes is -1... do not constrain on this
-	if ( minRecSizes < 0 ) maxPtr = m_listEnd;
+	if ( minRecSizes < 0 ) {
+		maxPtr = m_listEnd;
+	}
+
 	// size of last rec we read in the list
 	int32_t size = -1 ;
+
 	// advance until endKey or minRecSizes kicks us out
-	//while ( p < m_listEnd && getKey(p) <= endKey && p < maxPtr ) {
 	while ( p < m_listEnd ) {
 		getKey(p,k);
 		if ( KEYCMP(k,endKey,m_ks)>0 ) break;
@@ -1460,8 +1487,10 @@ bool RdbList::constrain(const char *startKey, char *endKey, int32_t minRecSizes,
 	// . if p equals m_listEnd it is ok, too... this happens mostly when
 	//   we get the list from the tree so there is not *any* slack
 	//   left over.
-	//if ( p < m_listEnd && getKey(p) <= endKey && p >= maxPtr && size >0){
-	if ( p < m_listEnd ) getKey(p,k);
+	if ( p < m_listEnd ) {
+		getKey(p,k);
+	}
+
 	if ( p < m_listEnd && KEYCMP(k,endKey,m_ks)<=0 && p>=maxPtr && size>0){
 		// this line seemed to have made us make corrupt lists. So
 		// deal with the slack in Msg5 directly.
@@ -1494,11 +1523,11 @@ bool RdbList::constrain(const char *startKey, char *endKey, int32_t minRecSizes,
 		getKey(p-size,m_lastKey);
 		m_lastKeyIsValid = true;
 	}
+
 	// reset to set m_listPtr and m_listPtrHi
 	resetListPtr();
+
 	// and the keys can be tightened
-	//m_startKey  = startKey;
-	//m_endKey    = endKey;
 	KEYSET(m_startKey,startKey,m_ks);
 	KEYSET(m_endKey,endKey,m_ks);
 	return true;

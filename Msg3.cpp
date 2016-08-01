@@ -326,14 +326,27 @@ bool Msg3::readList  ( char           rdbId         ,
 		    "structures to read %s.",need,base->m_dbname);
 		return true;
 	}
+
 	char *p = m_alloc;
-	m_scans       = (RdbScan *)p; p += nn * sizeof(RdbScan);
-	m_startpg     = (int32_t    *)p; p += nn * 4;
-	m_endpg       = (int32_t    *)p; p += nn * 4;
-	//m_hintKeys    = (key_t   *)p; p += nn * sizeof(key_t);
-	m_hintKeys    = (char    *)p; p += nn * m_ks;
-	m_hintOffsets = (int32_t    *)p; p += nn * 4;
-	m_fileNums    = (int32_t    *)p; p += nn * 4;
+
+	m_scans = (RdbScan *) p;
+	p += nn * sizeof(RdbScan);
+
+	m_startpg = (int32_t *) p;
+	p += nn * 4;
+
+	m_endpg = (int32_t *) p;
+	p += nn * 4;
+
+	m_hintKeys = p;
+	p += nn * m_ks;
+
+	m_hintOffsets = (int32_t *) p;
+	p += nn * 4;
+
+	m_fileNums = (int32_t *) p;
+	p += nn * 4;
+
 	// sanity check
 	if ( p - m_alloc != need ) {
 		log(LOG_LOGIC,"disk: Bad malloc in Msg3.cpp.");
@@ -535,13 +548,13 @@ bool Msg3::readList  ( char           rdbId         ,
 		      (KEYCMP(maps[fn]->getKeyPtr(h2),m_constrainKey,m_ks)>0||
 			  maps[fn]->getOffset(h2) == -1            ||
 			  maps[fn]->getAbsoluteOffset(h2) - offset >=
-			  m_minRecSizes ) )
+			  m_minRecSizes ) ) {
 			h2--;
+		}
+
 		// now set the hint
-		m_hintOffsets [ i ] = maps[fn]->getAbsoluteOffset ( h2 ) -
-			              maps[fn]->getAbsoluteOffset ( p1 ) ;
-		//m_hintKeys    [ i ] = maps[fn]->getKey            ( h2 );
-		KEYSET(&m_hintKeys[i*m_ks],maps[fn]->getKeyPtr(h2),m_ks);
+		m_hintOffsets[i] = maps[fn]->getAbsoluteOffset(h2) - maps[fn]->getAbsoluteOffset(p1);
+		KEYSET(&m_hintKeys[i * m_ks], maps[fn]->getKeyPtr(h2), m_ks);
 
 		// reset g_errno before calling setRead()
 		g_errno = 0;
@@ -1041,6 +1054,7 @@ bool Msg3::doneScanning ( ) {
 		     " from %s (niceness=%" PRId32").",
 		     took,m_numFileNums,count,base->m_dbname,m_niceness);
 	}
+
 	return true;
 }
 
