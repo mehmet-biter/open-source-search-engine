@@ -1463,7 +1463,7 @@ bool RdbList::constrain(const char *startKey, char *endKey, int32_t minRecSizes,
 			m_listPtrLo = savelistPtrLo;
 			m_listPtr   = savelist;
 			g_errno = ECORRUPTDATA;
-			log(LOG_WARN, "db: Corrupt record size of %" PRId32" bytes in %s.", size, filename);
+			log(LOG_WARN, "db: Corrupt record size of %" PRId32" bytes in %s. line=%d", size, filename, __LINE__);
 			return false;
 		}
 		// set hiKey in case m_useHalfKeys is true for this list
@@ -1488,7 +1488,7 @@ bool RdbList::constrain(const char *startKey, char *endKey, int32_t minRecSizes,
 			m_listPtrLo = savelistPtrLo;
 			m_listPtr   = savelist;
 			g_errno = ECORRUPTDATA;
-			log(LOG_WARN, "db: Corrupt record size of %" PRId32" bytes in %s.",size,filename);
+			log(LOG_WARN, "db: Corrupt record size of %" PRId32" bytes in %s. line=%d", size, filename, __LINE__);
 			return false;
 		}
 	}
@@ -1511,7 +1511,7 @@ bool RdbList::constrain(const char *startKey, char *endKey, int32_t minRecSizes,
 			m_listPtrLo = savelistPtrLo;
 			m_listPtr   = savelist;
 			g_errno = ECORRUPTDATA;
-			log(LOG_WARN, "db: Corrupt record size of %" PRId32" bytes in %s.",size,filename);
+			log(LOG_WARN, "db: Corrupt record size of %" PRId32" bytes in %s. line=%d", size, filename, __LINE__);
 			return false;
 		}
 		// set endKey to last key in our constrained list
@@ -1738,8 +1738,21 @@ bool RdbList::posdbConstrain(const char *startKey, char *endKey, int32_t minRecS
 			m_listPtrHi = p + 12;
 			m_listPtrLo = p + 6;
 		}
-
+		// watch out for wrap
+		char *oldp = p;
 		p += recSize;
+
+		// if size is corrupt we can breech the whole list and cause
+		// m_listSize to explode!!!
+		if ( (intptr_t)p > (intptr_t)m_listEnd || (intptr_t)p < (intptr_t)oldp ) {
+			m_list      = savelist;
+			m_listPtrHi = savelistPtrHi;
+			m_listPtrLo = savelistPtrLo;
+			m_listPtr   = savelist;
+			g_errno = ECORRUPTDATA;
+			log(LOG_WARN, "db: Corrupt record size of %" PRId32" bytes in %s. line=%d", recSize, filename, __LINE__);
+			return false;
+		}
 	}
 
 	// . if minRecSizes was limiting constraint, reset m_endKey to lastKey
@@ -1750,16 +1763,6 @@ bool RdbList::posdbConstrain(const char *startKey, char *endKey, int32_t minRecS
 		getPosdbKey(p, k);
 	}
 
-	if (p >= m_listEnd) {
-		m_list      = savelist;
-		m_listPtrHi = savelistPtrHi;
-		m_listPtrLo = savelistPtrLo;
-		m_listPtr   = savelist;
-		g_errno = ECORRUPTDATA;
-		log(LOG_WARN, "db: Corrupt record size of %" PRId32" bytes in %s.", recSize, filename);
-		return false;
-	}
-
 	if (p < m_listEnd && KEYCMP(k, endKey, m_ks) <= 0 && p >= maxPtr && recSize > 0) {
 		// watch out for corruption, let Msg5 fix it
 		if ( p - recSize < m_alloc ) {
@@ -1768,7 +1771,7 @@ bool RdbList::posdbConstrain(const char *startKey, char *endKey, int32_t minRecS
 			m_listPtrLo = savelistPtrLo;
 			m_listPtr   = savelist;
 			g_errno = ECORRUPTDATA;
-			log(LOG_WARN, "db: Corrupt record size of %" PRId32" bytes in %s.", recSize, filename);
+			log(LOG_WARN, "db: Corrupt record size of %" PRId32" bytes in %s. line=%d", recSize, filename, __LINE__);
 			return false;
 		}
 
