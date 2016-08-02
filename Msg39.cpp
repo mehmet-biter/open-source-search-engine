@@ -451,14 +451,6 @@ g_mem.printBreeches();
 		// minus the shit we filtered out because of gbminint/gbmaxint/
 		// gbmin/gbmax/gbsortby/gbrevsortby/gbsortbyint/gbrevsortbyint
 		m_numTotalHits -= m_posdbTable.m_filtered;
-		// error?
-		if ( m_posdbTable.m_errno ) {
-			log(LOG_ERROR,"Msg39::controlLoop: got postdbtable error %d", m_posdbTable.m_errno);
-			// we do not need to store the intersection i guess..??
-			m_posdbTable.freeMem();
-			g_errno = m_posdbTable.m_errno;
-			goto hadError;
-		}
 	}
 
 g_mem.printBreeches();
