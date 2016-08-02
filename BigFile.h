@@ -47,9 +47,7 @@ public:
 	int32_t            m_niceness;
 	// was it found in the disk page cache?
 	char m_inPageCache;
-	// . if signal is still pending we need to know if BigFile got deleted
-	// . m_files must be NULL terminated
-	//class BigFile **m_files;
+
 	// . we get our fds before starting the read thread to avoid
 	//   problems with accessing m_files since RdbMerge may call unlinkPart
 	//   from the main thread while we're trying to get these things
