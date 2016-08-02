@@ -674,7 +674,7 @@ bool Msg3::readList  ( char           rdbId         ,
 		}
 
 		// break on an error, and remember g_errno in case we block
-		if ( g_errno && g_errno != ENOTHREADSLOTS ) { 
+		if ( g_errno ) {
 			int32_t tt = LOG_WARN;
 			if ( g_errno == EFILECLOSED ) tt = LOG_INFO;
 			log(tt,"disk: Reading %s had error: %s.",
@@ -762,13 +762,6 @@ bool Msg3::doneScanning ( ) {
 	if ( g_errno == EBUFTOOSMALL && m_maxRetries == -1 ) max = 0;
 	// msg0 sets maxRetries to 2, don't let max stay set to -1
 	if ( g_errno == EBUFTOOSMALL && m_maxRetries != -1 ) max = m_maxRetries;
-	// . if no thread slots available, that hogs up serious memory.
-	//   the size of Msg3 is 82k, so having just 5000 of them is 430MB.
-	// . i just made Msg3 alloc mem when it needs more than about 2k
-	//   so this problem is greatly reduced, therefore let's keep 
-	//   retrying... forever if no thread slots in thread queue since
-	//   we become the thread queue in a way.
-	if ( g_errno == ENOTHREADSLOTS ) max = -1;
 	// this is set above if the map has the same consecutive key repeated
 	// and the read is enormous
 	if ( g_errno == ECORRUPTDATA ) max = 0;
@@ -868,7 +861,7 @@ bool Msg3::doneScanning ( ) {
 		// print the error
 		static time_t s_time  = 0;
 		time_t now = getTime();
-		if ( now - s_time > 5 || g_errno != ENOTHREADSLOTS ) {
+		if ( now - s_time > 5 ) {
 			log(LOG_WARN, "net: Had error reading %s: %s. Retrying. (retry #%" PRId32")",
 			    base->m_dbname,mstrerror(m_errno) , m_retryNum );
 			s_time = now;

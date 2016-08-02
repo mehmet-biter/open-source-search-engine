@@ -232,8 +232,7 @@ bool RdbMerge::resumeMerge ( ) {
 
 	// if g_errno is out of memory then msg3 wasn't able to get the lists
 	// so we should sleep and retry...
-	// or if no thread slots were available...
-	if ( g_errno == ENOMEM || g_errno == ENOTHREADSLOTS ) { 
+	if ( g_errno == ENOMEM ) {
 		doSleep();
 		return false;
 	}
@@ -430,7 +429,7 @@ void gotListWrapper ( void *state , RdbList *list , Msg5 *msg5 ) {
  loop:
 	// if g_errno is out of memory then msg3 wasn't able to get the lists
 	// so we should sleep and retry
-	if ( g_errno == ENOMEM || g_errno == ENOTHREADSLOTS ) {
+	if ( g_errno == ENOMEM ) {
 		THIS->doSleep(); return; }
 	// if g_errno we're done
 	if ( g_errno || THIS->m_doneMerging ) { THIS->doneMerging(); return; }
@@ -442,7 +441,7 @@ void gotListWrapper ( void *state , RdbList *list , Msg5 *msg5 ) {
 	goto loop;
 }
 
-// called after sleeping for 1 sec because of ENOMEM or ENOTHREADSLOTS
+// called after sleeping for 1 sec because of ENOMEM
 void tryAgainWrapper ( int fd , void *state ) {
 	// if power is still off, keep things suspended
 	if ( ! g_process.m_powerIsOn ) return;
@@ -472,7 +471,7 @@ void dumpListWrapper ( void *state ) {
 	if ( ! THIS->getNextList() ) return;
 	// if g_errno is out of memory then msg3 wasn't able to get the lists
 	// so we should sleep and retry
-	if ( g_errno == ENOMEM || g_errno == ENOTHREADSLOTS ) { 
+	if ( g_errno == ENOMEM ) {
 		// if the dump failed, it should reset m_dump.m_offset of
 		// the file to what it was originally (in case it failed
 		// in adding the list to the map). we do not need to set
