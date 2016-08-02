@@ -58,8 +58,8 @@ bool Wiki::load() {
 	// if no text file that is bad
 	if ( errno1 ) { 
 		g_errno = errno1 ; 
-		return log ("gb: could not open %s for reading: %s",ff1,
-			    mstrerror(g_errno));
+		log(LOG_WARN, "gb: could not open %s for reading: %s",ff1, mstrerror(g_errno));
+		return false;
 	}
 	// get the size of it
 	int32_t size = stats1.st_size;

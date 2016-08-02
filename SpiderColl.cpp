@@ -118,8 +118,10 @@ bool SpiderColl::load ( ) {
 					  false      , // load from disk?
 					  12         , // key size (firstip)
 					  12         , // data key size?
-					  -1         ))// numPtrsMax
-		return log("spider: dcache init failed");
+					  -1         )) {// numPtrsMax
+		log(LOG_WARN, "spider: dcache init failed");
+		return false;
+	}
 
 	// this has a quickpoll in it, so that quickpoll processes
 	// a restart request from crawlbottesting for this collnum which
@@ -175,10 +177,11 @@ bool SpiderColl::load ( ) {
 	// save it
 	g_errno = err;
 	// return false on error
-	if ( g_errno ) 
+	if ( g_errno ) {
 		// note it
-		return log("spider: had error loading initial table: %s",
-			   mstrerror(g_errno));
+		log(LOG_WARN,"spider: had error loading initial table: %s", mstrerror(g_errno));
+		return false;
+	}
 
 	// if we hade doledb0001.dat files on disk then nuke doledb
 	// and waiting tree and rebuild now with a tree-only doledb.
@@ -1260,12 +1263,14 @@ bool SpiderColl::addToWaitingTree ( uint64_t spiderTimeMS, int32_t firstIp, bool
 		log("spider: growing waiting tree to from %" PRId32" to %" PRId32" nodes "
 		    "for collnum %" PRId32,
 		    max , newNum , (int32_t)m_collnum );
-		if ( ! m_waitingTree.growTree ( newNum , MAX_NICENESS ) )
-			return log("spider: failed to grow waiting tree to "
-				   "add firstip %s",iptoa(firstIp) );
-		if ( ! m_waitingTable.setTableSize ( newNum , NULL , 0 ) )
-			return log("spider: failed to grow waiting table to "
-				   "add firstip %s",iptoa(firstIp) );
+		if ( ! m_waitingTree.growTree ( newNum , MAX_NICENESS ) ) {
+			log(LOG_WARN, "spider: failed to grow waiting tree to add firstip %s", iptoa(firstIp));
+			return false;
+		}
+		if ( ! m_waitingTable.setTableSize ( newNum , NULL , 0 ) ) {
+			log(LOG_WARN, "spider: failed to grow waiting table to add firstip %s", iptoa(firstIp));
+			return false;
+		}
 	}
 
 

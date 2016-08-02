@@ -135,11 +135,9 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 	// return false if too big
 	if ( m_bufSize > (MAX_HOSTS+MAX_SPARES) * 128 ) { 
 		g_errno = EBUFTOOSMALL; 
-		return log(
-			   "conf: %s has filesize "
-			   "of %" PRId32" bytes, which is greater than %" PRId32" max.",
-			   filename,m_bufSize,
-			   (int32_t)(MAX_HOSTS+MAX_SPARES)*128);
+		log(LOG_WARN, "conf: %s has filesize of %" PRId32" bytes, which is greater than %" PRId32" max.",
+		    filename,m_bufSize, (int32_t)(MAX_HOSTS+MAX_SPARES)*128);
+		return false;
 	}
 	// open the file
 	if ( ! f.open ( O_RDONLY ) ) return false;
@@ -192,12 +190,11 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 			else if ( strncasecmp(p, "scproxy", 7) == 0 )
 				m_numProxyHosts++;
 
-			else
-				return log( LOG_WARN, "conf: %s is malformed. First "
-					   "item of each non-comment line "
-					   "must be a NUMERIC hostId, "
-					   "SPARE or PROXY. line=%s",filename,
-					   p);
+			else {
+				log(LOG_WARN, "conf: %s is malformed. First item of each non-comment line must be a NUMERIC hostId, "
+					"SPARE or PROXY. line=%s", filename, p);
+				return false;
+			}
 		}
 		else
 			// count it as a host
@@ -217,7 +214,10 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 	// save buffer size
 	m_allocSize = sizeof(Host) * i;
 	m_hosts = (Host *) mcalloc ( m_allocSize ,"Hostdb");
-	if ( ! m_hosts ) return log( LOG_WARN, "conf: Memory allocation failed.");
+	if ( ! m_hosts ) {
+		log( LOG_WARN, "conf: Memory allocation failed.");
+		return false;
+	}
 
 	int32_t numGrunts = 0;
 
@@ -568,29 +568,27 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 		// ensure they're in proper order without gaps
 		if ( h->m_type==HT_GRUNT && h->m_hostId != i ) {
 		     g_errno = EBADHOSTID; 
-		     return log(LOG_WARN, "conf: Unordered hostId of %" PRId32", should be %" PRId32" in %s line %" PRId32".",
-		                h->m_hostId,i,filename,line);
+		     log(LOG_WARN, "conf: Unordered hostId of %" PRId32", should be %" PRId32" in %s line %" PRId32".",
+		         h->m_hostId,i,filename,line);
+			return false;
 		}
 
 		// and working dir
 		if ( wdirlen > 127 ) {
-		      g_errno = EBADENGINEER;
-		      return log(LOG_WARN,
-		                 "conf: Host working dir too long in "
-				 "%s line %" PRId32".",filename,line);
+			g_errno = EBADENGINEER;
+			log(LOG_WARN, "conf: Host working dir too long in %s line %" PRId32".", filename, line);
+			return false;
 		}
 		if ( wdirlen <= 0 ) {
-		      g_errno = EBADENGINEER;
-		      return log(LOG_WARN,
-		                 "conf: No working dir supplied in "
-				 "%s line %" PRId32".",filename,line);
+			g_errno = EBADENGINEER;
+			log(LOG_WARN, "conf: No working dir supplied in %s line %" PRId32".", filename, line);
+			return false;
 		}
 		// make sure it is legit
 		if ( wdir[0] != '/' ) {
-		      g_errno = EBADENGINEER;
-		      return log(LOG_WARN,
-		                 "conf: working dir must start "
-				 "with / in %s line %" PRId32,filename,line);
+			g_errno = EBADENGINEER;
+			log(LOG_WARN, "conf: working dir must start with / in %s line %" PRId32, filename, line);
+			return false;
 		}
 
 		// take off slash if there
@@ -724,8 +722,8 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 	// must be exact fit
 	if ( hostsPerShard * m_numShards != m_numHosts ) {
 		g_errno = EBADENGINEER;
-		return log(LOG_WARN, "conf: Bad number of hosts for %" PRId32" shards "
-			   "in hosts.conf.",m_numShards);
+		log(LOG_WARN, "conf: Bad number of hosts for %" PRId32" shards in hosts.conf.",m_numShards);
+		return false;
 	}
 	// count number of hosts in each shard
 	for ( i = 0 ; i < m_numShards ; i++ ) {
@@ -735,8 +733,8 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 				count++;
 		if ( count != hostsPerShard ) {
 			g_errno = EBADENGINEER;
-			return log(LOG_WARN, "conf: Number of hosts in each shard "
-				   "in %s is not equal.",filename);
+			log(LOG_WARN, "conf: Number of hosts in each shard in %s is not equal.",filename);
+			return false;
 		}
 	}
 
@@ -811,8 +809,10 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 
 	// get IPs of this server. last entry is 0.
 	int32_t *localIps = getLocalIps();
-	if ( ! localIps )
-		return log(LOG_WARN, "conf: Failed to get local IP address. Exiting.");
+	if ( ! localIps ) {
+		log(LOG_WARN, "conf: Failed to get local IP address. Exiting.");
+		return false;
+	}
 
 	// if no cwd, then probably calling 'gb inject foo.warc <hosts.conf>'
 	if ( ! cwd ) {
@@ -826,9 +826,10 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 	// now set m_myIp, m_myPort, m_myPort2 and m_myMachineNum
 	if ( proxyHost )
 		host = getProxy2 ( cwd , localIps ); //hostId );
-	if ( ! host ) 
-		return log(LOG_WARN, "conf: Could not find host with path %s and "
-			   "local ip in %s",cwd,filename);
+	if ( ! host ) {
+		log(LOG_WARN, "conf: Could not find host with path %s and local ip in %s", cwd, filename);
+		return false;
+	}
 	m_myIp         = host->m_ip;    // internal IP
 	m_myIpShotgun  = host->m_ipShotgun;
 	m_myPort       = host->m_port;  // low priority udp port
@@ -878,9 +879,10 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 	Host *h = getHost ( m_hostId );
 	if ( proxyHost )
 		h = getProxy ( m_hostId );
-	if ( ! h ) return log(LOG_WARN,
-	                      "conf: HostId %" PRId32" not found in %s.",
-			      m_hostId,filename);
+	if ( ! h ) {
+		log(LOG_WARN, "conf: HostId %" PRId32" not found in %s.", m_hostId,filename);
+		return false;
+	}
 	// set m_dir to THIS host's working dir
 	strcpy ( m_dir , h->m_dir );
 	// likewise, set m_htmlDir to this host's html dir
@@ -1070,10 +1072,10 @@ bool Hostdb::hashHost (	bool udp , Host *h , uint32_t ip , uint16_t port ) {
 		// to make isIpInNetwork() function work.
 		if ( port == 0 ) return true;
 		old = *(Host **)t->getValueFromSlot(slot);
-		return log("db: Got collision between hostId %" PRId32" and "
-			   "%" PRId32"(proxy=%" PRId32"). Both have same ip/port. Does "
-			   "hosts.conf match hosts2.conf?",
-			   old->m_hostId,h->m_hostId,(int32_t)h->m_isProxy);
+		log(LOG_WARN, "db: Got collision between hostId %" PRId32" and %" PRId32"(proxy=%" PRId32"). "
+			"Both have same ip/port. Does hosts.conf match hosts2.conf?",
+		    old->m_hostId,h->m_hostId,(int32_t)h->m_isProxy);
+		return false;
 	}
 	// add the new key with a ptr to host using m_port
 	return t->addKey ( &key , &h ); // (uint32_t)h ) ;
@@ -1322,11 +1324,15 @@ bool Hostdb::setSpareNote ( int32_t spareId, const char *note, int32_t noteLen )
 bool Hostdb::replaceHost ( int32_t origHostId, int32_t spareHostId ) {
 	Host *oldHost = getHost(origHostId);
 	Host *spareHost = getSpare(spareHostId);
-	if ( !oldHost || !spareHost )
-		return log ( "init: Bad Host or Spare given. Aborting." );
+	if ( !oldHost || !spareHost ) {
+		log(LOG_WARN, "init: Bad Host or Spare given. Aborting.");
+		return false;
+	}
 	// host must be dead
-	if ( !isDead(oldHost) )
-		return log ( "init: Cannot replace live host. Aborting." );
+	if ( !isDead(oldHost) ) {
+		log(LOG_WARN, "init: Cannot replace live host. Aborting.");
+		return false;
+	}
 
 
 	Host tmp;

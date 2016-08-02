@@ -88,8 +88,10 @@ bool Repair::init ( ) {
 	m_isRetrying      = false;
 	m_needsCallback   = false;
 	m_completed       = false;
-	if( ! g_loop.registerSleepCallback( 1 , NULL , repairWrapper ) )
-		return log("repair: Failed register callback.");
+	if( ! g_loop.registerSleepCallback( 1 , NULL , repairWrapper ) ) {
+		log(LOG_WARN, "repair: Failed register callback.");
+		return false;
+	}
 	return true;
 }
 
@@ -712,9 +714,10 @@ bool Repair::save ( ) {
 	sprintf ( tmp , "%s/repair.dat", g_hostdb.m_dir );
 	File ff;
 	ff.set ( tmp );
-	if ( ! ff.open ( O_RDWR | O_CREAT | O_TRUNC ) )
-		return log("repair: Could not open %s : %s",
-			   ff.getFilename(),mstrerror(g_errno));
+	if ( ! ff.open ( O_RDWR | O_CREAT | O_TRUNC ) ) {
+		log(LOG_WARN, "repair: Could not open %s : %s", ff.getFilename(), mstrerror(g_errno));
+		return false;
+	}
 	// first 8 bytes are the size of the DATA file we're mapping
 	g_errno = 0;
 	int32_t      size   = &m_SAVE_END - &m_SAVE_START;
@@ -733,9 +736,10 @@ bool Repair::load ( ) {
 
 	logf(LOG_INIT,"repair: Loading %s to resume repair.",tmp);
 
-	if ( ! ff.open ( O_RDONLY ) )
-		return log("repair: Could not open %s : %s",
-			   ff.getFilename(),mstrerror(g_errno));
+	if ( ! ff.open ( O_RDONLY ) ) {
+		log(LOG_WARN, "repair: Could not open %s : %s", ff.getFilename(), mstrerror(g_errno));
+		return false;
+	}
 	// first 8 bytes are the size of the DATA file we're mapping
 	g_errno = 0;
 	int32_t      size   = &m_SAVE_END - &m_SAVE_START;

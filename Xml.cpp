@@ -320,8 +320,9 @@ bool Xml::set( char *s, int32_t slen, int32_t version, int32_t niceness, char co
 	m_nodes = (XmlNode *)mmalloc( sizeof( XmlNode ) * m_maxNumNodes, "Xml1" );
 	if ( ! m_nodes ) { 
 		reset();
-		return log( "build: Could not allocate %" PRId32 " bytes need to parse document.",
-					(int32_t)sizeof( XmlNode ) * m_maxNumNodes );
+		log(LOG_WARN, "build: Could not allocate %" PRId32 " bytes need to parse document.",
+		    (int32_t) sizeof(XmlNode) * m_maxNumNodes);
+		return false;
 	}
 
 	// debug msg time

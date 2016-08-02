@@ -882,8 +882,8 @@ bool RdbBuckets::getList ( collnum_t collnum ,
 	// bitch if list does not own his own data
 	if ( ! list->getOwnData() ) {
 		g_errno = EBADENGINEER;
-		return log(LOG_LOGIC,"db: rdbbuckets: getList: List does not "
-			   "own data");
+		log(LOG_LOGIC,"db: rdbbuckets: getList: List does not own data");
+		return false;
 	}
 	// bail if minRecSizes is 0
 	if ( minRecSizes == 0 ) return true;
@@ -917,11 +917,11 @@ bool RdbBuckets::getList ( collnum_t collnum ,
 	if(startBucket == endBucket) {
 		growth = m_buckets[startBucket]->getNumKeys() * m_recSize;
 		if(growth > minRecSizes) growth = minRecSizes + m_recSize;
-		if(!list->growList(growth))
-			return log("db: Failed to grow list to %" PRId32" bytes "
-				   "for storing "
-				   "records from buckets: %s.",
-				   growth,mstrerror(g_errno));
+		if(!list->growList(growth)) {
+			log(LOG_WARN, "db: Failed to grow list to %" PRId32" bytes for storing records from buckets: %s.",
+			    growth, mstrerror(g_errno));
+			return false;
+		}
 
 		if(!m_buckets[startBucket]->getList(list, 
 						    startKey, 
@@ -939,10 +939,11 @@ bool RdbBuckets::getList ( collnum_t collnum ,
 		growth += m_buckets[i]->getNumKeys() * m_recSize;
 
 	if(growth > minRecSizes) growth = minRecSizes + m_recSize;
-	if(!list->growList(growth))
-		return log("db: Failed to grow list to %" PRId32" bytes for storing "
-			   "records from buckets: %s.",
-			   growth, mstrerror(g_errno));
+	if(!list->growList(growth)) {
+		log(LOG_WARN, "db: Failed to grow list to %" PRId32" bytes for storing records from buckets: %s.",
+		    growth, mstrerror(g_errno));
+		return false;
+	}
 
 	// separate into 3 different calls so we don't have 
 	// to search for the start and end keys within the buckets
@@ -1382,26 +1383,22 @@ bool RdbBucket::getList(RdbList* list,
 	    i <= end && list->getListSize() < minRecSizes; 
 	    i++, currKey += recSize) {
 		if ( fixedDataSize == 0 ) {
-			if ( ! list->addRecord(currKey, 0, NULL))
-				return log("db: Failed to add record "
-					   "to list for %s: %s. "
-					   "Fix the growList algo.",
-					   m_parent->getDbname(),
-					   mstrerror(g_errno));
+			if ( ! list->addRecord(currKey, 0, NULL)) {
+				log(LOG_WARN, "db: Failed to add record to list for %s: %s. Fix the growList algo.",
+				    m_parent->getDbname(), mstrerror(g_errno));
+				return false;
+			}
 		} 
 		else {
 			int32_t dataSize = fixedDataSize;
 			if ( fixedDataSize == -1 ) 
 				dataSize = *(int32_t*)(currKey + 
 						    ks + sizeof(char*));
-			if ( ! list->addRecord ( currKey ,
-						 dataSize,
-						 currKey + ks) )
-				return log("db: Failed to add record "
-					   "to list for %s: %s. "
-					   "Fix the growList algo.",
-					   m_parent->getDbname(),
-					   mstrerror(g_errno));
+			if ( ! list->addRecord ( currKey , dataSize, currKey + ks) ) {
+				log(LOG_WARN, "db: Failed to add record to list for %s: %s. Fix the growList algo.",
+				    m_parent->getDbname(), mstrerror(g_errno));
+				return false;
+			}
 		}
 		if ( KEYNEG(currKey) ) numNeg++;
 		else                   numPos++;
@@ -1975,8 +1972,10 @@ bool RdbBuckets::fastSave_r() {
 	// recover the file
 	//BigFile *f = m_saveFile;
 	// open it up
-	//if ( ! f->open ( O_RDWR | O_CREAT ) ) 
-	//	return log("RdbTree::fastSave_r: %s",mstrerror(g_errno));
+	//if ( ! f->open ( O_RDWR | O_CREAT ) ) {
+	//	log("RdbTree::fastSave_r: %s",mstrerror(g_errno));
+	//  return false;
+	//}
 	// cannot use the BigFile class, since we may be in a thread and it 
 	// messes with g_errno
 	//char *s = m_saveFile->getFilename();

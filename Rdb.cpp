@@ -273,8 +273,8 @@ bool Rdb::updateToRebuildFiles ( Rdb *rdb2 , char *coll ) {
 	status = ::mkdir ( dstDir , getDirCreationFlags() );
 	if ( status && errno != EEXIST ) {
 		g_errno = errno;
-		return log("repair: Could not mkdir(%s): %s",dstDir,
-			   mstrerror(errno));
+		log(LOG_WARN, "repair: Could not mkdir(%s): %s",dstDir, mstrerror(errno));
+		return false;
 	}
 
 	// clear it in case it existed
@@ -288,20 +288,28 @@ bool Rdb::updateToRebuildFiles ( Rdb *rdb2 , char *coll ) {
 	//if ( m_needsSave ) { g_process.shutdownAbort(true); }
 	// delete old collection recs
 	CollectionRec *cr = g_collectiondb.getRec ( coll );
-	if ( ! cr ) return log("db: Exchange could not find coll, %s.",coll);
+	if ( ! cr ) {
+		log(LOG_WARN, "db: Exchange could not find coll, %s.",coll);
+		return false;
+	}
 	collnum_t collnum = cr->m_collnum;
 
 	RdbBase *base = getBase ( collnum );
-	if ( ! base ) 
-		return log("repair: Could not find old base for %s.",coll);
+	if ( ! base ) {
+		log(LOG_WARN, "repair: Could not find old base for %s.", coll);
+		return false;
+	}
 
 	RdbBase *base2 = rdb2->getBase ( collnum );
-	if ( ! base2 )
-		return log("repair: Could not find new base for %s.",coll);
+	if ( ! base2 ) {
+		log(LOG_WARN, "repair: Could not find new base for %s.", coll);
+		return false;
+	}
 
-	if ( rdb2->getNumUsedNodes() != 0 ) 
-		return log("repair: Recs present in rebuilt tree for db %s "
-			   "and collection %s.",m_dbname,coll);
+	if ( rdb2->getNumUsedNodes() != 0 ) {
+		log(LOG_WARN, "repair: Recs present in rebuilt tree for db %s and collection %s.", m_dbname, coll);
+		return false;
+	}
 
 	logf(LOG_INFO,"repair: Updating rdb %s for collection %s.",
 	     m_dbname,coll);
@@ -334,14 +342,18 @@ bool Rdb::updateToRebuildFiles ( Rdb *rdb2 , char *coll ) {
 
 	// now move our map and data files to the "trash" subdir, "dstDir"
 	logf(LOG_INFO,"repair: Moving old data and map files to trash.");
-	if ( ! base->moveToTrash(dstDir) )
-		return log("repair: Trashing new rdb for %s failed.",coll);
+	if ( ! base->moveToTrash(dstDir) ) {
+		log(LOG_WARN, "repair: Trashing new rdb for %s failed.", coll);
+		return false;
+	}
 
 	// . now rename the newly rebuilt files to our filenames
 	// . just removes the "Rebuild" from their filenames
 	logf(LOG_INFO,"repair: Renaming new data and map files.");
-	if ( ! base2->removeRebuildFromFilenames() )
-		return log("repair: Renaming old rdb for %s failed.",coll);
+	if ( ! base2->removeRebuildFromFilenames() ) {
+		log(LOG_WARN, "repair: Renaming old rdb for %s failed.", coll);
+		return false;
+	}
 
 	// reset the rdb bases (clears out files and maps from mem)
 	base->reset ();
@@ -349,8 +361,10 @@ bool Rdb::updateToRebuildFiles ( Rdb *rdb2 , char *coll ) {
 
 	// reload the newly rebuilt files into the primary rdb
 	logf(LOG_INFO,"repair: Loading new data and map files.");
-	if ( ! base->setFiles() )
-		return log("repair: Failed to set new files for %s.",coll);
+	if ( ! base->setFiles() ) {
+		log(LOG_WARN, "repair: Failed to set new files for %s.", coll);
+		return false;
+	}
 
 	// allow rdb2->reset() to succeed without dumping core
 	rdb2->m_tree.m_needsSave = false;
@@ -381,7 +395,8 @@ bool Rdb::addRdbBase2 ( collnum_t collnum ) { // addColl2()
 
 	if ( ! m_initialized ) {
 		g_errno = EBADENGINEER;
-		return log("db: adding coll to uninitialized rdb!");
+		log(LOG_WARN, "db: adding coll to uninitialized rdb!");
+		return false;
 	}
 
 	// catdb,statsbaccessdb,facebookdb,syncdb
@@ -391,9 +406,9 @@ bool Rdb::addRdbBase2 ( collnum_t collnum ) { // addColl2()
 	if ( collnum < (collnum_t) 0 ) {
 		g_errno = ENOBUFS;
 		int64_t maxColls = 1LL << (sizeof(collnum_t)*8);
-		return log("db: %s: Failed to add collection #%i. Would "
-			   "breech maximum number of collections, %" PRId64".",
-			   m_dbname,collnum,maxColls);
+		log(LOG_WARN, "db: %s: Failed to add collection #%i. Would breech maximum number of collections, %" PRId64".",
+		    m_dbname,collnum,maxColls);
+		return false;
 	}
 
 
@@ -411,18 +426,18 @@ bool Rdb::addRdbBase2 ( collnum_t collnum ) { // addColl2()
 	if ( cr ) base = cr->getBasePtr ( m_rdbId );
 	if ( base ) { // m_bases [ collnum ] ) {
 		g_errno = EBADENGINEER;
-		return log("db: Rdb for db \"%s\" and "
-			   "collection \"%s\" (collnum %" PRId32") exists.",
-			   m_dbname,coll,(int32_t)collnum);
+		log(LOG_WARN, "db: Rdb for db \"%s\" and collection \"%s\" (collnum %" PRId32") exists.",
+		    m_dbname,coll,(int32_t)collnum);
+		return false;
 	}
 	// make a new one
 	RdbBase *newColl = NULL;
 	try {newColl= new(RdbBase);}
 	catch(...){
 		g_errno = ENOMEM;
-		return log("db: %s: Failed to allocate %" PRId32" bytes for "
-			   "collection \"%s\".",
-			   m_dbname,(int32_t)sizeof(Rdb),coll);
+		log(LOG_WARN, "db: %s: Failed to allocate %" PRId32" bytes for collection \"%s\".",
+		    m_dbname,(int32_t)sizeof(Rdb),coll);
+		return false;
 	}
 	mnew(newColl, sizeof(RdbBase), "Rdb Coll");
 	//m_bases [ collnum ] = newColl;
@@ -622,8 +637,8 @@ bool Rdb::delColl ( const char *coll ) {
 	// ensure its there
 	if ( collnum < (collnum_t)0 || ! base ) { // m_bases [ collnum ] ) {
 		g_errno = EBADENGINEER;
-		return log("db: %s: Failed to delete collection #%i. Does "
-			   "not exist.", m_dbname,collnum);
+		log(LOG_WARN, "db: %s: Failed to delete collection #%i. Does not exist.", m_dbname,collnum);
+		return false;
 	}
 
 	// move all files to trash and clear the tree/buckets
@@ -685,8 +700,8 @@ bool Rdb::close ( void *state , void (* callback)(void *state ), bool urgent , b
 		m_isSaving = false;
 		const char *tt = "save";
 		if ( m_isReallyClosing ) tt = "close";
-		return log ( LOG_INFO,"db: Cannot %s %s until dump finishes.",
-			     tt,m_dbname);
+		log(LOG_INFO, "db: Cannot %s %s until dump finishes.", tt, m_dbname);
+		return false;
 	}
 
 
@@ -1283,7 +1298,8 @@ bool Rdb::dumpCollLoop ( ) {
 	// this file must not exist already, we are dumping the tree into it
 	m_fn = base->addNewFile ( id2 ) ;
 	if ( m_fn < 0 ) {
-		return log( LOG_LOGIC, "db: rdb: Failed to add new file to dump %s: %s.", m_dbname, mstrerror( g_errno ) );
+		log( LOG_LOGIC, "db: rdb: Failed to add new file to dump %s: %s.", m_dbname, mstrerror( g_errno ) );
+		return false;
 	}
 
 	log(LOG_INFO,"build: Dumping to %s/%s for coll \"%s\".",
@@ -1976,8 +1992,8 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 		data = (char *) m_mem.dupData ( key, data, dataSize, collnum);
 		if ( ! data ) { 
 			g_errno = ETRYAGAIN; 
-			return log("db: Could not allocate %" PRId32" bytes to add "
-				   "data to %s. Retrying.",dataSize,m_dbname);
+			log(LOG_WARN, "db: Could not allocate %" PRId32" bytes to add data to %s. Retrying.",dataSize,m_dbname);
+			return false;
 		}
 	}
 
@@ -2342,8 +2358,10 @@ int64_t Rdb::getListSize ( collnum_t collnum,
 			int64_t oldTruncationLimit ) {
 	// pick it
 	//collnum_t collnum = g_collectiondb.getCollnum ( coll );
-	if ( collnum < 0 || collnum > getNumBases() || ! getBase(collnum) )
-		return log("db: %s bad collnum of %i",m_dbname,collnum);
+	if ( collnum < 0 || collnum > getNumBases() || ! getBase(collnum) ) {
+		log(LOG_WARN, "db: %s bad collnum of %i", m_dbname, collnum);
+		return false;
+	}
 	return getBase(collnum)->getListSize(startKey,endKey,max,
 					    oldTruncationLimit);
 }
@@ -2678,8 +2696,8 @@ bool Rdb::addList ( const char *coll , RdbList *list, int32_t niceness ) {
 	collnum_t collnum = g_collectiondb.getCollnum ( coll );
 	if ( collnum < (collnum_t) 0 ) {
 		g_errno = ENOCOLLREC;
-		return log("db: Could not add list because collection \"%s\" "
-			   "does not exist.",coll);
+		log(LOG_WARN, "db: Could not add list because collection \"%s\" does not exist.",coll);
+		return false;
 	}
 	return addList ( collnum , list, niceness );
 }
@@ -2695,8 +2713,8 @@ bool Rdb::addRecord ( const char *coll , char *key, char *data, int32_t dataSize
 	collnum_t collnum = g_collectiondb.getCollnum ( coll );
 	if ( collnum < (collnum_t) 0 ) {
 		g_errno = ENOCOLLREC;
-		return log("db: Could not add rec because collection \"%s\" "
-			   "does not exist.",coll);
+		log(LOG_WARN, "db: Could not add rec because collection \"%s\" does not exist.",coll);
+		return false;
 	}
 	return addRecord ( collnum , key , data , dataSize,niceness );
 }

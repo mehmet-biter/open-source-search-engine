@@ -186,13 +186,8 @@ class RdbList {
 	// . only called by Msg3.cpp for 1 list reads to avoid memmov()'ing
 	//   and malloc()'ing
 	// . may change m_list and/or m_listSize
-	bool constrain ( const char   *startKey    ,
-			 char   *endKey      ,
-			 int32_t    minRecSizes ,
-			 int32_t    hintOffset  ,
-			 const char   *hintKey     ,
-			 const char   *filename    ,
-			 int32_t    niceness    ) ;
+	bool constrain(const char *startKey, char *endKey, int32_t minRecSizes,
+	               int32_t hintOffset, const char *hintKey, const char *filename);
 
 	// . this MUST be called before calling merge_r() 
 	// . will alloc enough space for m_listSize + sizes of "lists"

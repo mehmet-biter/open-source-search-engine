@@ -1143,21 +1143,25 @@ bool HttpMime::init ( ) {
 	// set table from internal list
 	for ( uint32_t i = 0 ; i < sizeof(s_ext)/sizeof(char *) ; i+=2 ) {
 		int32_t key = hash32n ( s_ext[i] );
-		if ( ! s_mimeTable.addKey ( &key , &s_ext[i+1] ) ) 
-			return log("HttpMime::init: failed to set table.");
+		if ( ! s_mimeTable.addKey ( &key , &s_ext[i+1] ) ) {
+			log(LOG_WARN, "HttpMime::init: failed to set table.");
+			return false;
+		}
 	}
 	// quick text
 	const char *tt = getContentTypeFromExtension ( "zip" );
 	if ( strcmp(tt,"application/zip") != 0 ) {
 		g_errno = EBADENGINEER;
-		return log("http: Failed to init mime table correctly.");
+		log(LOG_WARN, "http: Failed to init mime table correctly.");
+		return false;
 	}
 	// a more thorough test
 	for ( uint32_t i = 0 ; i < sizeof(s_ext)/sizeof(char *) ; i+=2) {
 		tt = getContentTypeFromExtension ( s_ext[i] );
 		if ( strcmp(tt,s_ext[i+1]) == 0 ) continue;
 		g_errno = EBADENGINEER;
-		return log("http: Failed to do mime table correctly. i=%" PRId32,i);
+		log(LOG_WARN, "http: Failed to do mime table correctly. i=%" PRId32,i);
+		return false;
 	}
 
 	// TODO: set it from a user supplied file here

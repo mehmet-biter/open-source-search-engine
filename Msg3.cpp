@@ -337,18 +337,30 @@ bool Msg3::readList  ( char           rdbId         ,
 	m_allocSize = need;
 	m_alloc = (char *)mcalloc ( need , "Msg3" );
 	if ( ! m_alloc ) {
-		log("disk: Could not allocate %" PRId32" bytes read "
-		    "structures to read %s.",need,base->m_dbname);
+		log(LOG_WARN, "disk: Could not allocate %" PRId32" bytes read structures to read %s.",need,base->m_dbname);
 		return true;
 	}
+
 	char *p = m_alloc;
-	m_scans       = (RdbScan *)p; p += nn * sizeof(RdbScan);
-	m_startpg     = (int32_t    *)p; p += nn * 4;
-	m_endpg       = (int32_t    *)p; p += nn * 4;
-	//m_hintKeys    = (key_t   *)p; p += nn * sizeof(key_t);
-	m_hintKeys    = (char    *)p; p += nn * m_ks;
-	m_hintOffsets = (int32_t    *)p; p += nn * 4;
-	m_fileNums    = (int32_t    *)p; p += nn * 4;
+
+	m_scans = (RdbScan *) p;
+	p += nn * sizeof(RdbScan);
+
+	m_startpg = (int32_t *) p;
+	p += nn * 4;
+
+	m_endpg = (int32_t *) p;
+	p += nn * 4;
+
+	m_hintKeys = p;
+	p += nn * m_ks;
+
+	m_hintOffsets = (int32_t *) p;
+	p += nn * 4;
+
+	m_fileNums = (int32_t *) p;
+	p += nn * 4;
+
 	// sanity check
 	if ( p - m_alloc != need ) {
 		log(LOG_LOGIC,"disk: Bad malloc in Msg3.cpp.");
@@ -557,13 +569,13 @@ bool Msg3::readList  ( char           rdbId         ,
 		      (KEYCMP(maps[fn]->getKeyPtr(h2),m_constrainKey,m_ks)>0||
 			  maps[fn]->getOffset(h2) == -1            ||
 			  maps[fn]->getAbsoluteOffset(h2) - offset >=
-			  m_minRecSizes ) )
+			  m_minRecSizes ) ) {
 			h2--;
+		}
+
 		// now set the hint
-		m_hintOffsets [ i ] = maps[fn]->getAbsoluteOffset ( h2 ) -
-			              maps[fn]->getAbsoluteOffset ( p1 ) ;
-		//m_hintKeys    [ i ] = maps[fn]->getKey            ( h2 );
-		KEYSET(&m_hintKeys[i*m_ks],maps[fn]->getKeyPtr(h2),m_ks);
+		m_hintOffsets[i] = maps[fn]->getAbsoluteOffset(h2) - maps[fn]->getAbsoluteOffset(p1);
+		KEYSET(&m_hintKeys[i * m_ks], maps[fn]->getKeyPtr(h2), m_ks);
 
 		// reset g_errno before calling setRead()
 		g_errno = 0;
@@ -1074,21 +1086,10 @@ bool Msg3::doneScanning ( ) {
 		QUICKPOLL(m_niceness);
 
 		// if from our 'page' cache, no need to constrain
-		if ( ! m_lists[i].constrain ( m_startKey       ,
-					      m_constrainKey   , // m_endKey
-					      mrs           , // m_minRecSizes
-					      m_hintOffsets[i] ,
-					      //m_hintKeys   [i] ,
-					      &m_hintKeys   [i*m_ks] ,
-					      filename,//ff->getFilename() ,
-					      m_niceness ) ) {
-			log("net: Had error while constraining list read from "
-			    "%s: %s/%s. vfd=%" PRId32" parts=%" PRId32". "
-			    "This is likely caused by corrupted "
-			    "data on disk.", 
-			    mstrerror(g_errno), ff->getDir(),
-			    ff->getFilename(), ff->getVfd(),
-			    (int32_t)ff->m_numParts );
+		if (!m_lists[i].constrain(m_startKey, m_constrainKey, mrs, m_hintOffsets[i], &m_hintKeys[i * m_ks], filename)) {
+			log(LOG_WARN, "net: Had error while constraining list read from %s: %s/%s. vfd=%" PRId32" parts=%" PRId32". "
+			    "This is likely caused by corrupted data on disk.",
+			    mstrerror(g_errno), ff->getDir(), ff->getFilename(), ff->getVfd(), (int32_t)ff->m_numParts );
 			continue;
 		}
 	}

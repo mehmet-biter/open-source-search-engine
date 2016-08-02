@@ -1044,8 +1044,8 @@ bool SafeBuf::addTag ( Tag *tag ) {
 	//tag->setDataSize();
 	if ( tag->m_recDataSize <= 16 ) { 
 		// note it
-		return log("safebuf: encountered corrupted tag datasize=%" PRId32".",
-			   tag->m_recDataSize);
+		log(LOG_WARN, "safebuf: encountered corrupted tag datasize=%" PRId32".", tag->m_recDataSize);
+		return false;
 		//g_process.shutdownAbort(true); }
 	}
 	return safeMemcpy ( (char *)tag , recSize );

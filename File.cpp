@@ -434,11 +434,15 @@ bool File::close_unlocked() {
 	ScopedLock sl(s_mtx);
 
 	// panic!
-	if ( s_writing [ m_fd ] )
-		return log(LOG_LOGIC,"disk: In write mode and closing 2.");
+	if ( s_writing [ m_fd ] ) {
+		log(LOG_LOGIC, "disk: In write mode and closing 2.");
+		return false;
+	}
 	// if already being unlinked, skip
-	if ( s_unlinking [ m_fd ] )
-		return log(LOG_LOGIC,"disk: In unlink mode and closing 2.");
+	if ( s_unlinking [ m_fd ] ) {
+		log(LOG_LOGIC, "disk: In unlink mode and closing 2.");
+		return false;
+	}
 	// always block on a close
 	int flags = fcntl ( m_fd , F_GETFL ) ;
 	// turn off these 2 flags on fd to make sure
@@ -447,7 +451,8 @@ bool File::close_unlocked() {
 	if ( fcntl ( m_fd, F_SETFL, flags ) < 0 ) {
 		// copy errno to g_errno
 		g_errno = errno;
-		return log( LOG_WARN, "disk: fcntl(%s) : %s", getFilename(), strerror( g_errno ) );
+		log( LOG_WARN, "disk: fcntl(%s) : %s", getFilename(), strerror( g_errno ) );
+		return false;
 	}
 	// . tally up another close for this fd, if any
 	// . so if an open happens shortly here after, and
@@ -696,9 +701,10 @@ bool File::closeLeastUsed () {
 
 	// if nothing to free then return false
 	if ( mini == -1 ) {
-		return log( LOG_WARN, "File: closeLeastUsed: failed. All %" PRId32" descriptors are unavailable to be "
+		log( LOG_WARN, "File: closeLeastUsed: failed. All %" PRId32" descriptors are unavailable to be "
 		            "closed and re-used to read from another file. notopen=%i writing=%i unlinking=%i young=%i",
 		            ( int32_t ) s_maxNumOpenFiles, notopen, writing, unlinking, young );
+		return false;
 	}
 
 

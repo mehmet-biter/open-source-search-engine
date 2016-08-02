@@ -1992,9 +1992,10 @@ static HashTable  s_subDomTable;
 static bool       s_subDomInitialized = false;
 static bool initSubDomTable(HashTable *table, const char *words[], int32_t size ){
 	// set up the hash table
-	if ( ! table->set ( size * 2 ) ) 
-		return log(LOG_INIT,"build: Could not init sub-domain "
-			   "table." );
+	if ( ! table->set ( size * 2 ) ) {
+		log(LOG_INIT, "build: Could not init sub-domain table.");
+		return false;
+	}
 	// now add in all the stop words
 	int32_t n = (int32_t)size/ sizeof(char *); 
 	for ( int32_t i = 0 ; i < n ; i++ ) {

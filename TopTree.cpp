@@ -137,8 +137,10 @@ bool TopTree::setNumNodes ( int32_t docsWanted , bool doSiteClustering ) {
 		nn=(char *)mrealloc(m_nodes,oldsize,newsize,"TopTree");
 		updated = true;
 	}
-	if ( ! nn ) return log("query: Can not allocate %" PRId64" bytes for "
-			       "holding resulting docids.",  newsize);
+	if ( ! nn ) {
+		log(LOG_WARN, "query: Can not allocate %" PRId64" bytes for holding resulting docids.",  newsize);
+		return false;
+	}
 	// save this for freeing
 	m_allocSize = newsize;
 	// success
@@ -1013,46 +1015,54 @@ bool TopTree::checkTree ( bool printMsgs ) {
 		// skip node if parents is -2 (unoccupied)
 		if ( PARENT(i) == -2 ) continue;
 		// if no left/right kid it MUST be -1
-		if ( LEFT(i) < -1 )
-			return log("query: toptree: checktree: left "
-				   "kid %" PRId32" < -1",i);
-		if ( RIGHT(i) < -1 )
-			return log("query: toptree: checktree: right "
-				   "kid %" PRId32" < -1",i);
+		if ( LEFT(i) < -1 ) {
+			log(LOG_WARN, "query: toptree: checktree: left kid %" PRId32" < -1", i);
+			return false;
+		}
+		if ( RIGHT(i) < -1 ) {
+			log(LOG_WARN, "query: toptree: checktree: right kid %" PRId32" < -1", i);
+			return false;
+		}
 		// check left kid
-		if ( LEFT(i) >= 0 && PARENT(LEFT(i)) != i ) 
-			return log("query: toptree: checktree: tree has "
-				   "error %" PRId32,i);
+		if ( LEFT(i) >= 0 && PARENT(LEFT(i)) != i ) {
+			log(LOG_WARN, "query: toptree: checktree: tree has error %" PRId32, i);
+			return false;
+		}
 		// then right kid
-		if ( RIGHT(i) >= 0 && PARENT(RIGHT(i)) != i )
-                       return log("query: toptree: checktree: tree has "
-				  "error2 %" PRId32,i);
+		if ( RIGHT(i) >= 0 && PARENT(RIGHT(i)) != i ) {
+			log(LOG_WARN, "query: toptree: checktree: tree has error2 %" PRId32, i);
+			return false;
+		}
 	}
 	// now return if we aren't doing active balancing
 	//if ( ! DEPTH ) return true;
 	// debug -- just always return now
-	if ( printMsgs ) log("***m_headNode=%" PRId32", m_numUsedNodes=%" PRId32,
-			      m_headNode,m_numUsedNodes);
+	if ( printMsgs ) {
+		log(LOG_DEBUG, "***m_headNode=%" PRId32", m_numUsedNodes=%" PRId32, m_headNode,m_numUsedNodes);
+	}
 	// verify that parent links correspond to kids
 	for ( int32_t i = 0 ; i < m_numUsedNodes ; i++ ) {
 		int32_t P = PARENT (i);
 		if ( P == -2 ) continue; // deleted node
-		if ( P == -1 && i != m_headNode ) 
-			return log("query: toptree: checktree: node %" PRId32" has "
-				   "no parent",i);
+		if ( P == -1 && i != m_headNode ) {
+			log(LOG_WARN, "query: toptree: checktree: node %" PRId32" has no parent", i);
+			return false;
+		}
 		// check kids
-		if ( P>=0 && LEFT(P) != i && RIGHT(P) != i ) 
-			return log("query: toptree: checktree: node %" PRId32"'s "
-				    "parent disowned",i);
+		if ( P>=0 && LEFT(P) != i && RIGHT(P) != i ) {
+			log(LOG_WARN, "query: toptree: checktree: node %" PRId32"'s parent disowned", i);
+			return false;
+		}
 		// ensure i goes back to head node
 		int32_t j = i;
 		while ( j >= 0 ) { 
 			if ( j == m_headNode ) break;
 			j = PARENT(j);
 		}
-		if ( j != m_headNode ) 
-			return log("query: toptree: checktree: node %" PRId32"'s no "
-				   "head node above",i);
+		if ( j != m_headNode ) {
+			log(LOG_WARN, "query: toptree: checktree: node %" PRId32"'s no head node above", i);
+			return false;
+		}
 		if ( printMsgs ) 
 			fprintf(stderr,"***node=%" PRId32" left=%" PRId32" rght=%" PRId32" "
 				"prnt=%" PRId32", depth=%" PRId32"\n",
@@ -1060,9 +1070,10 @@ bool TopTree::checkTree ( bool printMsgs ) {
 				(int32_t)DEPTH(i));
 		//ensure depth
 		int32_t newDepth = computeDepth ( i );
-		if ( DEPTH(i) != newDepth ) 
-			return log("query: toptree: checktree: node %" PRId32"'s "
-				   "depth should be %" PRId32,i,newDepth);
+		if ( DEPTH(i) != newDepth ) {
+			log(LOG_WARN, "query: toptree: checktree: node %" PRId32"'s depth should be %" PRId32, i, newDepth);
+			return false;
+		}
 	}
 	if ( printMsgs ) log("query: ---------------");
 	// no problems found

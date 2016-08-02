@@ -233,7 +233,8 @@ bool HashTableX::addKey ( const void *key , const void *val , int32_t *slot ) {
 	// bail if not found
 	if ( count >= m_numSlots ) {
 		g_errno = ENOMEM;
-		return log("htable: Could not add key. Table is full.");
+		log(LOG_WARN, "htable: Could not add key. Table is full.");
+		return false;
 	}
 	if ( m_flags [ n ] == 0 ) {
 		// inc count if we're the first
@@ -505,8 +506,8 @@ bool HashTableX::save ( const char *dir ,
 			  // S_IRGRP | S_IWGRP | S_IROTH);
 	if ( fd < 0 ) {
 		//m_errno = errno;
-		return log("db: Could not open %s for writing: %s.",
-			   s,mstrerror(errno));
+		log(LOG_WARN, "db: Could not open %s for writing: %s.", s,mstrerror(errno));
+		return false;
 	}
 	// clear our own errno
 	errno = 0;
@@ -519,39 +520,65 @@ bool HashTableX::save ( const char *dir ,
 	int32_t err;
 
 	err = pwrite ( fd,  &numSlots     , 4 , off ) ; off += 4;
-	if ( err == -1 ) return log("htblx: write error");
+	if ( err == -1 ) {
+		log(LOG_WARN, "htblx: write error");
+		return false;
+	}
 
 	err = pwrite ( fd,  &numSlotsUsed , 4 , off ) ; off += 4;
-	if ( err == -1 ) return log("htblx: write error");
+	if ( err == -1 ) {
+		log(LOG_WARN, "htblx: write error");
+		return false;
+	}
 	
 	err = pwrite ( fd,  &m_ks         , 4 , off ) ; off += 4;
-	if ( err == -1 ) return log("htblx: write error");
+	if ( err == -1 ) {
+		log(LOG_WARN, "htblx: write error");
+		return false;
+	}
 
 	err = pwrite ( fd,  &m_ds         , 4 , off ) ; off += 4;
-	if ( err == -1 ) return log("htblx: write error");
+	if ( err == -1 ) {
+		log(LOG_WARN, "htblx: write error");
+		return false;
+	}
 
 	err = pwrite ( fd,  m_keys , numSlots * m_ks , off ); 
 	off += numSlots * m_ks;
-	if ( err == -1 ) return log("htblx: write error");
-
+	if ( err == -1 ) {
+		log(LOG_WARN, "htblx: write error");
+		return false;
+	}
 
 	if ( m_ds ) {
 		err = pwrite (fd,m_vals,numSlots*m_ds,off); 
 		off += numSlots * m_ds;
-		if ( err == -1 ) return log("htblx: write error");
+		if ( err == -1 ) {
+			log(LOG_WARN, "htblx: write error");
+			return false;
+		}
 	}
 
 	// whether the slot is empty or not!
 	err = pwrite ( fd,  m_flags , numSlots , off ); off += numSlots ;
-	if ( err == -1 ) return log("htblx: write error");
+	if ( err == -1 ) {
+		log(LOG_WARN, "htblx: write error");
+		return false;
+	}
 
-        if ( tbuf ) {
+    if ( tbuf ) {
 		// save the text buf size
 		err = pwrite ( fd,  &tsize        , 4 , off ) ; off += 4;
-		if ( err == -1 ) return log("htblx: write error");
+		if ( err == -1 ) {
+			log(LOG_WARN, "htblx: write error");
+			return false;
+		}
 		// save the text buf content
 		err = pwrite ( fd,  tbuf          , tsize , off ) ; off+=tsize;
-		if ( err == -1 ) return log("htblx: write error");
+		if ( err == -1 ) {
+			log(LOG_WARN, "htblx: write error");
+			return false;
+		}
 	}
 	close ( fd );
 

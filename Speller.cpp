@@ -25,9 +25,10 @@ bool Speller::init(){
 	if ( s_init ) return true;
 	s_init = true;
 
-	if ( !loadUnifiedDict() )
-		return log("spell: Could not load unified dict from "
-			   "unifiedDict-buf.txt and unifiedDict-map.dat");
+	if ( !loadUnifiedDict() ) {
+		log(LOG_WARN, "spell: Could not load unified dict from unifiedDict-buf.txt and unifiedDict-map.dat");
+		return false;
+	}
 
 	// this seems to slow our startup way down!!!
 	log("speller: turning off spell checking for now");

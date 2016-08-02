@@ -261,12 +261,14 @@ static bool CommandCloneColl ( char *rec ) {
 	srcRec = g_collectiondb.getRec ( srcColl    ); // get from name
 	dstRec = g_collectiondb.getRec ( dstCollnum ); // get from #
 
-	if ( ! srcRec )
-		return log("parms: invalid coll %s to clone from",
-			   srcColl);
-	if ( ! dstRec )
-		return log("parms: invalid collnum %" PRId32" to clone to",
-			   (int32_t)dstCollnum);
+	if ( ! srcRec ) {
+		log(LOG_WARN, "parms: invalid coll %s to clone from", srcColl);
+		return false;
+	}
+	if ( ! dstRec ) {
+		log(LOG_WARN, "parms: invalid collnum %" PRId32" to clone to", (int32_t) dstCollnum);
+		return false;
+	}
 
 	log ("parms: cloning parms from collection %s to %s",
 	      srcRec->m_coll,dstRec->m_coll);
@@ -3007,9 +3009,10 @@ bool Parms::setFromFile ( void *THIS        ,
 bool Parms::setXmlFromFile(Xml *xml, char *filename, SafeBuf *sb ) {
 	sb->load ( filename );
 	char *buf = sb->getBufStart();
-	if ( ! buf )
-		return log ("conf: Could not read %s : %s.",
-			    filename,mstrerror(g_errno));
+	if ( ! buf ) {
+		log(LOG_WARN, "conf: Could not read %s : %s.", filename, mstrerror(g_errno));
+		return false;
+	}
 
 	// . remove all comments in case they contain tags
 	// . if you have a # as part of your string, it must be html encoded,
@@ -3198,9 +3201,12 @@ skip2:
 	if ( sb.safeSave ( f ) >= 0 )
 		return true;
 
-	return log("admin: Could not write to file %s.",f);
+	log(LOG_WARN, "admin: Could not write to file %s.",f);
+	return false;
+
  hadError:
-	return log("admin: Error writing to %s: %s",f,mstrerror(g_errno));
+	log(LOG_WARN, "admin: Error writing to %s: %s",f,mstrerror(g_errno));
+	return false;
 
 	//File bigger than %" PRId32" bytes."
 	//	   "  Please increase #define in Parms.cpp.",
@@ -10592,7 +10598,10 @@ bool Parms::addNewParmToList1 ( SafeBuf *parmList ,
 				const char *parmName ) {
 	// get the parm descriptor
 	Parm *m = getParmFast1 ( parmName , NULL );
-	if ( ! m ) return log("parms: got bogus parm2 %s",parmName );
+	if ( ! m ) {
+		log(LOG_WARN, "parms: got bogus parm2 %s",parmName );
+		return false;
+	}
 	return addNewParmToList2 ( parmList,collnum,parmValString,occNum,m );
 }
 

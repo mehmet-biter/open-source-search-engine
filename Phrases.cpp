@@ -43,7 +43,8 @@ bool Phrases::set( const Words *words, const Bits *bits, int32_t niceness ) {
 		m_buf = m_localBuf;
 
 	if ( ! m_buf ) {
-		return log("query: Phrases::set: %s",mstrerror(g_errno));
+		log(LOG_WARN, "query: Phrases::set: %s",mstrerror(g_errno));
+		return false;
 	}
 
 	m_bufSize = need;

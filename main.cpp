@@ -190,6 +190,8 @@ int main ( int argc , char *argv[] ) {
 	if ( ret ) {
 		fprintf( stderr, "Failed to start gb. Exiting.\n" );
 	}
+
+	return ret;
 }
 
 int main2 ( int argc , char *argv[] ) {
@@ -2174,7 +2176,10 @@ static HttpRequest s_r;
 bool doCmd ( const char *cmd , int32_t hostId , const char *filename ,
 	     bool sendToHosts , bool sendToProxies , int32_t hostId2 ) {
 	// need loop to work
-	if ( ! g_loop.init() ) return log("db: Loop init failed." ); 
+	if ( ! g_loop.init() ) {
+		log(LOG_WARN, "db: Loop init failed." );
+		return false;
+	}
 	// save it
 	// we are no part of it
 	//g_hostdb.m_hostId = -1;
@@ -2190,8 +2195,10 @@ bool doCmd ( const char *cmd , int32_t hostId , const char *filename ,
 
 
 	// register sleep callback to get started
-	if ( ! g_loop.registerSleepCallback(1, NULL, doCmdAll , 0 ) )
-		return log("admin: Loop init failed.");
+	if ( ! g_loop.registerSleepCallback(1, NULL, doCmdAll , 0 ) ) {
+		log(LOG_WARN, "admin: Loop init failed.");
+		return false;
+	}
 	// not it
 	log(LOG_INFO,"admin: broadcasting %s",cmd);
 	// make a fake http request
@@ -3733,7 +3740,10 @@ bool treetest ( ) {
 	srand ( (int32_t)gettimeofdayInMilliseconds() );
 	// make list of one million random keys
 	key_t *k = (key_t *)mmalloc ( sizeof(key_t) * numKeys , "main" );
-	if ( ! k ) return log("speedtest: malloc failed");
+	if ( ! k ) {
+		log(LOG_WARN, "speedtest: malloc failed");
+		return false;
+	}
 	int32_t *r = (int32_t *)(void*)k;
 	int32_t size = 0;
 	int32_t first = 0;
@@ -3752,16 +3762,19 @@ bool treetest ( ) {
 			false          , // isTreeBalanced , 
 			numKeys * 28   , // maxTreeMem     ,
 			false          , // own data?
-			"tree-test"    ) )
-		return log("speedTest: tree init failed.");
+			"tree-test"    ) ) {
+		log(LOG_WARN, "speedTest: tree init failed.");
+		return false;
+	}
 	// add to regular tree
 	int64_t t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < numKeys ; i++ ) {
 		//if ( k[i].n1 == 1234567 )
 		//	fprintf(stderr,"i=%" PRId32"\n",i);
-		if ( rt.addNode ( (collnum_t)0 , k[i] , NULL , 0 ) < 0 )
-			return log("speedTest: rdb tree addNode "
-				   "failed");
+		if ( rt.addNode ( (collnum_t)0 , k[i] , NULL , 0 ) < 0 ) {
+			log(LOG_WARN, "speedTest: rdb tree addNode failed");
+			return false;
+		}
 	}
 	// print time it took
 	int64_t e = gettimeofdayInMilliseconds();
@@ -3802,7 +3815,10 @@ bool hashtest ( ) {
 	srand ( (int32_t)gettimeofdayInMilliseconds() );
 	// make list of one million random keys
 	key_t *k = (key_t *)mmalloc ( sizeof(key_t) * numKeys , "main" );
-	if ( ! k ) return log("speedtest: malloc failed");
+	if ( ! k ) {
+		log(LOG_WARN, "hashtest: malloc failed");
+		return false;
+	}
 	int32_t *r = (int32_t *)(void*)k;
 	for ( int32_t i = 0 ; i < numKeys * 3 ; i++ ) r[i] = rand();
 	// init the tree
@@ -3812,8 +3828,10 @@ bool hashtest ( ) {
 	// add to regular tree
 	int64_t t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < numKeys ; i++ ) 
-		if ( ! ht.addKey ( r[i] , 1 ) )
-			return log("hashtest: add key failed.");
+		if ( ! ht.addKey ( r[i] , 1 ) ) {
+			log(LOG_WARN, "hashtest: add key failed.");
+			return false;
+		}
 	// print time it took
 	int64_t e = gettimeofdayInMilliseconds();
 	// add times
@@ -3822,8 +3840,10 @@ bool hashtest ( ) {
 	// do the delete test
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < numKeys ; i++ ) 
-		if ( ! ht.removeKey ( r[i] ) )
-			return log("hashtest: add key failed.");
+		if ( ! ht.removeKey ( r[i] ) ) {
+			log(LOG_WARN, "hashtest: add key failed.");
+			return false;
+		}
 	// print time it took
 	e = gettimeofdayInMilliseconds();
 	// add times
@@ -3843,7 +3863,10 @@ bool thrutest ( char *testdir , int64_t fileSize ) {
 	int32_t bufSize = 30000000;  // 30M
 	//int64_t fileSize = 4000000000LL; // 4G
 	char *buf = (char *) malloc ( bufSize );
-	if ( ! buf ) return log("speedtestdisk: %s",strerror(errno));
+	if ( ! buf ) {
+		log(LOG_WARN, "speedtestdisk: %s",strerror(errno));
+		return false;
+	}
 	// store stuff in there
 	for ( int32_t i = 0 ; i < bufSize ; i++ ) buf[i] = (char)i;
 
@@ -3851,14 +3874,15 @@ bool thrutest ( char *testdir , int64_t fileSize ) {
 	// try a read test from speedtest*.dat*
 	f.set (testdir,"speedtest");
 	if ( f.doesExist() ) {
-		if ( ! f.open ( O_RDONLY ) )
-			return log("speedtestdisk: cannot open %s/%s",
-				   testdir,"speedtest");
+		if ( ! f.open ( O_RDONLY ) ) {
+			log(LOG_WARN, "speedtestdisk: cannot open %s/%s", testdir, "speedtest");
+			return false;
+		}
 		// ensure big enough
-		if ( f.getFileSize() < fileSize ) 
-			return log("speedtestdisk: File %s/%s is too small "
-				   "for requested read size.",
-				   testdir,"speedtest");
+		if ( f.getFileSize() < fileSize ) {
+			log(LOG_WARN, "speedtestdisk: File %s/%s is too small for requested read size.", testdir, "speedtest");
+			return false;
+		}
 		log("db: reading from speedtest0001.dat");
 		f.setBlocking();
 		goto doreadtest;
@@ -3866,9 +3890,10 @@ bool thrutest ( char *testdir , int64_t fileSize ) {
 	// try a read test from indexdb*.dat*
 	f.set (testdir,"indexdb0001.dat");
 	if ( f.doesExist() ) {
-		if ( ! f.open ( O_RDONLY ) )
-			return log("speedtestdisk: cannot open %s/%s",
-				   testdir,"indexdb0001.dat");
+		if ( ! f.open ( O_RDONLY ) ) {
+			log(LOG_WARN, "speedtestdisk: cannot open %s/%s", testdir, "indexdb0001.dat");
+			return false;
+		}
 		log("db: reading from indexdb0001.dat");
 		f.setBlocking();
 		goto doreadtest;
@@ -3876,9 +3901,10 @@ bool thrutest ( char *testdir , int64_t fileSize ) {
 	// try a write test to speedtest*.dat*
 	f.set (testdir,"speedtest");
 	if ( ! f.doesExist() ) {
-		if ( ! f.open ( O_RDWR | O_CREAT | O_SYNC ) )
-			return log("speedtestdisk: cannot open %s/%s",
-				   testdir,"speedtest");
+		if ( ! f.open ( O_RDWR | O_CREAT | O_SYNC ) ) {
+			log(LOG_WARN, "speedtestdisk: cannot open %s/%s", testdir, "speedtest");
+			return false;
+		}
 		log("db: writing to speedtest0001.dat");
 		f.setBlocking();
 	}
@@ -4308,23 +4334,29 @@ bool parseTest ( const char *coll, int64_t docId, const char *query ) {
 			      true           , // compensate for merge
 			      -1LL,            // sync point
 			      false,           // isRealMerge
-			      true))           // allowPageCache
-		return log(LOG_LOGIC,"build: getList did not block.");
+			      true))         { // allowPageCache
+		log(LOG_LOGIC, "build: getList did not block.");
+		return false;
+	}
+
 	// get the title rec
-	if ( tlist.isEmpty() ) 
-		return log("build: speedtestxml: "
-			   "docId %" PRId64" not found.",
-			   docId );
-	if (!ucInit(g_hostdb.m_dir))
-		return log("Unicode initialization failed!");
+	if ( tlist.isEmpty() ) {
+		log(LOG_WARN, "build: speedtestxml: docId %" PRId64" not found.", docId);
+		return false;
+	}
+	if (!ucInit(g_hostdb.m_dir)) {
+		log(LOG_WARN, "Unicode initialization failed!");
+		return false;
+	}
 
 	// get raw rec from list
 	char *rec      = tlist.getCurrentRec();
 	int32_t  listSize = tlist.getListSize ();
 	XmlDoc xd;
-	if ( ! xd.set2 ( rec , listSize , coll , NULL , 0 ) )
-		return log("build: speedtestxml: Error setting "
-			   "xml doc." );
+	if ( ! xd.set2 ( rec , listSize , coll , NULL , 0 ) ) {
+		log(LOG_WARN, "build: speedtestxml: Error setting xml doc.");
+		return false;
+	}
 	log("build: Doc url is %s",xd.ptr_firstUrl);//tr.getUrl()->getUrl());
 	log("build: Doc is %" PRId32" bytes long.",xd.size_utf8Content-1);
 	log("build: Doc charset is %s",get_charset_str(xd.m_charset));
@@ -4370,8 +4402,8 @@ bool parseTest ( const char *coll, int64_t docId, const char *query ) {
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) {
 		if ( !xml.set( content, contentLen, xd.m_version, 0, CT_HTML ) ) {
-			return log("build: speedtestxml: xml set: %s",
-				   mstrerror(g_errno));
+			log(LOG_WARN, "build: speedtestxml: xml set: %s", mstrerror(g_errno));
+			return false;
 		}
 	}
 
@@ -4388,8 +4420,8 @@ bool parseTest ( const char *coll, int64_t docId, const char *query ) {
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) {
 		if ( !xml.set( content, contentLen, xd.m_version, 0, CT_HTML ) ) {
-			return log("build: xml(setparents=false): %s",
-				   mstrerror(g_errno));
+			log(LOG_WARN, "build: xml(setparents=false): %s", mstrerror(g_errno));
+			return false;
 		}
 	}
 
@@ -4407,9 +4439,10 @@ bool parseTest ( const char *coll, int64_t docId, const char *query ) {
 
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) 
-		if ( ! words.set ( &xml , true , true ) )
-			return log("build: speedtestxml: words set: %s",
-				   mstrerror(g_errno));
+		if ( ! words.set ( &xml , true , true ) ) {
+			log(LOG_WARN, "build: speedtestxml: words set: %s", mstrerror(g_errno));
+			return false;
+		}
 	// print time it took
 	e = gettimeofdayInMilliseconds();
 	log("build: Words::set(xml,computeIds=true) took %.3f ms for %" PRId32" words"
@@ -4419,9 +4452,10 @@ bool parseTest ( const char *coll, int64_t docId, const char *query ) {
 
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) 
-		if ( ! words.set ( &xml , true , false ) )
-			return log("build: speedtestxml: words set: %s",
-				   mstrerror(g_errno));
+		if ( ! words.set ( &xml , true , false ) ) {
+			log(LOG_WARN, "build: speedtestxml: words set: %s", mstrerror(g_errno));
+			return false;
+		}
 	// print time it took
 	e = gettimeofdayInMilliseconds();
 	log("build: Words::set(xml,computeIds=false) "
@@ -4433,10 +4467,10 @@ bool parseTest ( const char *coll, int64_t docId, const char *query ) {
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) 
 		//if ( ! words.set ( &xml , true , true ) )
-		if ( ! words.set ( content ,
-				   true, 0 ) )
-			return log("build: speedtestxml: words set: %s",
-				   mstrerror(g_errno));
+		if ( ! words.set ( content , true, 0 ) ) {
+			log(LOG_WARN, "build: speedtestxml: words set: %s", mstrerror(g_errno));
+			return false;
+		}
 	// print time it took
 	e = gettimeofdayInMilliseconds();
 	log("build: Words::set(content,computeIds=true) "
@@ -4451,9 +4485,10 @@ bool parseTest ( const char *coll, int64_t docId, const char *query ) {
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) 
 		//if ( ! words.set ( &xml , true , true ) )
-		if ( ! pos.set ( &words ) )
-			return log("build: speedtestxml: pos set: %s",
-				   mstrerror(g_errno));
+		if ( ! pos.set ( &words ) ) {
+			log(LOG_WARN, "build: speedtestxml: pos set: %s", mstrerror(g_errno));
+			return false;
+		}
 	// print time it took
 	e = gettimeofdayInMilliseconds();
 	log("build: Pos::set() "
@@ -4468,9 +4503,10 @@ bool parseTest ( const char *coll, int64_t docId, const char *query ) {
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) 
 		//if ( ! words.set ( &xml , true , true ) )
-		if ( ! bits.setForSummary ( &words ) )
-			return log("build: speedtestxml: Bits set: %s",
-				   mstrerror(g_errno));
+		if ( ! bits.setForSummary ( &words ) ) {
+			log(LOG_WARN, "build: speedtestxml: Bits set: %s", mstrerror(g_errno));
+			return false;
+		}
 	// print time it took
 	e = gettimeofdayInMilliseconds();
 	log("build: Bits::setForSummary() "
@@ -4487,9 +4523,10 @@ bool parseTest ( const char *coll, int64_t docId, const char *query ) {
 	for ( int32_t i = 0 ; i < 100 ; i++ ) 
 		//if ( ! words.set ( &xml , true , true ) )
 		// do not supply xd so it will be set from scratch
-		if ( !sections.set( &words, &bits, NULL, NULL, 0, 0 ) )
-			return log("build: speedtestxml: sections set: %s",
-				   mstrerror(g_errno));
+		if ( !sections.set( &words, &bits, NULL, NULL, 0, 0 ) ) {
+			log(LOG_WARN, "build: speedtestxml: sections set: %s", mstrerror(g_errno));
+			return false;
+		}
 
 	// print time it took
 	e = gettimeofdayInMilliseconds();
@@ -4504,9 +4541,10 @@ bool parseTest ( const char *coll, int64_t docId, const char *query ) {
 	Phrases phrases;
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < 100 ; i++ )
-		if ( !phrases.set( &words, &bits, 0 ) )
-			return log("build: speedtestxml: Phrases set: %s",
-				   mstrerror(g_errno));
+		if ( !phrases.set( &words, &bits, 0 ) ) {
+			log(LOG_WARN, "build: speedtestxml: Phrases set: %s", mstrerror(g_errno));
+			return false;
+		}
 	// print time it took
 	e = gettimeofdayInMilliseconds();
 	log("build: Phrases::set() "
@@ -4517,9 +4555,10 @@ bool parseTest ( const char *coll, int64_t docId, const char *query ) {
 	char *buf = (char *)mmalloc(contentLen*2+1,"main");
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < 100 ; i++ )
-		if ( !xml.getText( buf, contentLen * 2 + 1, 0, 9999999, true ) )
-			return log("build: speedtestxml: getText: %s",
-				   mstrerror(g_errno));
+		if ( !xml.getText( buf, contentLen * 2 + 1, 0, 9999999, true ) ) {
+			log(LOG_WARN, "build: speedtestxml: getText: %s", mstrerror(g_errno));
+			return false;
+		}
 	// print time it took
 	e = gettimeofdayInMilliseconds();
 	log("build: Xml::getText(computeIds=false) took %.3f ms for docId "
@@ -4530,11 +4569,14 @@ bool parseTest ( const char *coll, int64_t docId, const char *query ) {
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) {
 		int32_t bufLen = xml.getText( buf, contentLen * 2 + 1, 0, 9999999, true );
-		if ( ! bufLen ) return log("build: speedtestxml: getText: %s",
-					   mstrerror(g_errno));
-		if ( ! words.set ( buf,true,0) )
-			return log("build: speedtestxml: words set: %s",
-				   mstrerror(g_errno));
+		if ( ! bufLen ) {
+			log(LOG_WARN, "build: speedtestxml: getText: %s", mstrerror(g_errno));
+			return false;
+		}
+		if ( ! words.set ( buf,true,0) ) {
+			log(LOG_WARN, "build: speedtestxml: words set: %s", mstrerror(g_errno));
+			return false;
+		}
 	}
 
 	// print time it took
@@ -4553,9 +4595,10 @@ bool parseTest ( const char *coll, int64_t docId, const char *query ) {
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) {
 		matches.reset();
-		if ( ! matches.addMatches ( &words ) )
-			return log("build: speedtestxml: matches set: %s",
-				   mstrerror(g_errno));
+		if ( ! matches.addMatches ( &words ) ) {
+			log(LOG_WARN, "build: speedtestxml: matches set: %s", mstrerror(g_errno));
+			return false;
+		}
 	}
 	// print time it took
 	e = gettimeofdayInMilliseconds();
@@ -5022,38 +5065,43 @@ void dumpLinkdb ( const char *coll,
 
 bool pingTest ( int32_t hid , uint16_t clientPort ) {
 	Host *h = g_hostdb.getHost ( hid );
-	if ( ! h ) return log("net: pingtest: hostId %" PRId32" is "
-			      "invalid.",hid);
-        // set up our socket
-        int sock  = socket ( AF_INET, SOCK_DGRAM , 0 );
-        if ( sock < 0 ) return log("net: pingtest: socket: %s.",
-				   strerror(errno));
+	if ( ! h ) {
+		log(LOG_WARN, "net: pingtest: hostId %" PRId32" is invalid.",hid);
+		return false;
+	}
+    // set up our socket
+    int sock  = socket ( AF_INET, SOCK_DGRAM , 0 );
+    if ( sock < 0 ) {
+	    log(LOG_WARN, "net: pingtest: socket: %s.", strerror(errno));
+	    return false;
+    }
 
-        // sockaddr_in provides interface to sockaddr
-        struct sockaddr_in name; 
-        // reset it all just to be safe
-        memset((char *)&name, 0,sizeof(name));
-        name.sin_family      = AF_INET;
-        name.sin_addr.s_addr = INADDR_ANY;
-        name.sin_port        = htons(clientPort);
-        // we want to re-use port it if we need to restart
-        int options = 1;
-        if ( setsockopt(sock, SOL_SOCKET, SO_REUSEADDR ,
-			&options,sizeof(options)) < 0 ) 
-		return log("net: pingtest: setsockopt: %s.", 
-			   strerror(errno));
-        // bind this name to the socket
-        if ( bind ( sock, (struct sockaddr *)(void*)&name, sizeof(name)) < 0) {
-               close ( sock );
-               return log("net: pingtest: Bind on port %hu: %s.",
-			  clientPort,strerror(errno));
+    // sockaddr_in provides interface to sockaddr
+    struct sockaddr_in name;
+    // reset it all just to be safe
+    memset((char *)&name, 0,sizeof(name));
+    name.sin_family      = AF_INET;
+    name.sin_addr.s_addr = INADDR_ANY;
+    name.sin_port        = htons(clientPort);
+    // we want to re-use port it if we need to restart
+    int options = 1;
+    if ( setsockopt(sock, SOL_SOCKET, SO_REUSEADDR , &options,sizeof(options)) < 0 ) {
+	    log(LOG_WARN, "net: pingtest: setsockopt: %s.", strerror(errno));
+	    return false;
+    }
+    // bind this name to the socket
+    if ( bind ( sock, (struct sockaddr *)(void*)&name, sizeof(name)) < 0) {
+		close ( sock );
+		log(LOG_WARN, "net: pingtest: Bind on port %hu: %s.", clientPort,strerror(errno));
+	    return false;
 	}
 
 	int fd = sock;
 	int flags = fcntl ( fd , F_GETFL ) ;
-	if ( flags < 0 )
-		return log("net: pingtest: fcntl(F_GETFL): %s.",
-			   strerror(errno));
+	if ( flags < 0 ) {
+		log(LOG_WARN, "net: pingtest: fcntl(F_GETFL): %s.", strerror(errno));
+		return false;
+	}
 
 	char dgram[1450];
 	int n;
@@ -5099,9 +5147,10 @@ bool pingTest ( int32_t hid , uint16_t clientPort ) {
 	int32_t size = up->getHeaderSize(0) + msgSize;
 	int64_t start = gettimeofdayInMilliseconds();
 	n = sendto(sock,dgram,size,0,(struct sockaddr *)(void*)&to,sizeof(to));
-	if ( n != size ) return log("net: pingtest: sendto returned "
-				    "%i "
-				    "(should have returned %" PRId32")",n,size);
+	if ( n != size ) {
+		log(LOG_WARN, "net: pingtest: sendto returned %i (should have returned %" PRId32")",n,size);
+		return false;
+	}
 	sends++;
  readLoop2:
 	// loop until we read something
@@ -5111,7 +5160,10 @@ bool pingTest ( int32_t hid , uint16_t clientPort ) {
 	// for what transId?
 	int32_t tid = up->getTransId ( dgram , n );
 	// -1 is error
-	if ( tid < 0 ) return log("net: pingtest: Bad transId.");
+	if ( tid < 0 ) {
+		log(LOG_WARN, "net: pingtest: Bad transId.");
+		return false;
+	}
 	// if no match, it was recovered, keep reading
 	if ( tid != transId ) { 
 		log("net: pingTest: Recovered tid=%" PRId32", current tid=%" PRId32". "
@@ -5143,8 +5195,10 @@ int injectFileTest ( int32_t reqLen , int32_t hid ) {
 
 	// make a mime
 	char *req = (char *)mmalloc ( reqLen , "injecttest");
-	if ( ! req ) return log("build: injecttest: malloc(%" PRId32") "
-				"failed", reqLen)-1;
+	if ( ! req ) {
+		log(LOG_WARN, "build: injecttest: malloc(%" PRId32") failed", reqLen);
+		return -1;
+	}
 	char *p    = req;
 	char *pend = req + reqLen;
 	sprintf ( p , 
@@ -5191,13 +5245,15 @@ int injectFileTest ( int32_t reqLen , int32_t hid ) {
 	File f; 
 	f.set ( filename );
 	f.unlink();
-	if ( ! f.open ( O_RDWR | O_CREAT ) )
-		return log("build: injecttest: Failed to create file "
-			   "%s for testing", filename) - 1;
+	if ( ! f.open ( O_RDWR | O_CREAT ) ) {
+		log(LOG_WARN, "build: injecttest: Failed to create file %s for testing", filename);
+		return -1;
+	}
 
-	if ( rlen != f.write ( req , rlen , 0 ) ) 
-		return log("build: injecttest: Failed to write %" PRId32" "
-			   "bytes to %s", rlen,filename) - 1;
+	if ( rlen != f.write ( req , rlen , 0 ) ) {
+		log(LOG_WARN, "build: injecttest: Failed to write %" PRId32" bytes to %s", rlen, filename);
+		return -1;
+	}
 	f.close();
 
 	mfree ( req , reqLen , "injecttest" );
@@ -5315,8 +5371,10 @@ int injectFile ( const char *filename , char *ips , const char *coll ) {
 	g_mem.init ( );//4000000000LL );
 
 	// set up the loop
-	if ( ! g_loop.init() ) return log("build: inject: Loop init "
-					  "failed.")-1;
+	if ( ! g_loop.init() ) {
+		log(LOG_WARN, "build: inject: Loop init failed.");
+		return false;
+	}
 	// init the tcp server, client side only
 	if ( ! s_tcp.init( NULL , // requestHandlerWrapper       ,
 			   getMsgSize, 
@@ -5434,9 +5492,10 @@ int injectFile ( const char *filename , char *ips , const char *coll ) {
 		sprintf(g_hostdb.m_dir , "./" );
 		rdb->loadTree();
 		// titledb-
-		if ( strlen(filename)<=8 )
-			return log("build: need titledb-coll.main.0 or "
-			    "titledb-gk144 not just 'titledb'");
+		if ( strlen(filename)<=8 ) {
+			log(LOG_WARN, "build: need titledb-coll.main.0 or titledb-gk144 not just 'titledb'");
+			return false;
+		}
 		const char *coll2 = filename + 8;
 
 		char tmp[1024];
@@ -5459,9 +5518,10 @@ int injectFile ( const char *filename , char *ips , const char *coll ) {
 	else {
 		// open file
 		s_file.set ( filename );
-		if ( ! s_file.open ( O_RDONLY ) )
-			return log("build: inject: Failed to open file %s "
-				   "for reading.", filename) - 1;
+		if ( ! s_file.open ( O_RDONLY ) ) {
+			log(LOG_WARN, "build: inject: Failed to open file %s for reading.", filename);
+			return -1;
+		}
 		s_off = 0;
 	}
 
@@ -6842,8 +6902,10 @@ bool cacheTest() {
 			maxCacheNodes ,
 			false         ,  // use half keys?
 			"cachetest"        ,  // dbname
-			false         )) // save cache to disk?
-		return log("test: Cache init failed.");
+			false         )) {// save cache to disk?
+		log(LOG_WARN, "test: Cache init failed.");
+		return false;
+	}
 
 	int32_t numRecs = 0 * maxCacheNodes;
 	logf(LOG_DEBUG,"test: Adding %" PRId32" recs to cache.",numRecs);
@@ -6915,8 +6977,10 @@ bool cacheTest() {
 			maxCacheNodes ,
 			false         ,  // use half keys?
 			"cachetest"        ,  // dbname
-			false         )) // save cache to disk?
-		return log("test: Cache init failed.");
+			false         )) { // save cache to disk?
+		log(LOG_WARN, "test: Cache init failed.");
+		return false;
+	}
 
 	numRecs = 30 * maxCacheNodes;
 	logf(LOG_DEBUG,"test: Adding %" PRId32" recs to cache.",numRecs);

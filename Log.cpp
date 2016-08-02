@@ -354,11 +354,15 @@ bool Log::makeNewLogFile ( ) {
 }
 
 
-bool log ( int32_t type , const char *formatString , ...) {
-	if ( g_log.m_disabled ) return false;
+void log ( int32_t type , const char *formatString , ...) {
+	if ( g_log.m_disabled ) {
+		return;
+	}
 
 	// do not log it if we should not
-	if ( ! g_log.shouldLog ( type , formatString ) ) return false;
+	if ( ! g_log.shouldLog ( type , formatString ) ) {
+		return;
+	}
 
 	// this is the argument list (variable list)
 	va_list   ap;
@@ -377,16 +381,17 @@ bool log ( int32_t type , const char *formatString , ...) {
 
 	// pass buf to g_log
 	g_log.logR ( 0, type, buf );
-
-	// always return false
-	return false;
 }
 
-bool log ( const char *formatString , ... ) {
-	if ( g_log.m_disabled ) return false;
+void log ( const char *formatString , ... ) {
+	if ( g_log.m_disabled ) {
+		return;
+	}
 
 	// do not log it if we should not
-	if ( ! g_log.shouldLog ( LOG_WARN , formatString ) ) return false;
+	if ( ! g_log.shouldLog ( LOG_WARN , formatString ) ) {
+		return;
+	}
 
 	// this is the argument list (variable list)
 	va_list   ap;
@@ -407,13 +412,12 @@ bool log ( const char *formatString , ... ) {
 	// ### BR 20151217: Default to DEBUG if no log level given
 	/// @todo ALC shouldn't this be LOG_WARN?
 	g_log.logR ( 0 , LOG_DEBUG , buf , false );
-
-	// always return false
-	return false;
 }
 
-bool logf ( int32_t type , const char *formatString , ...) {
-	if ( g_log.m_disabled ) return false;
+void logf ( int32_t type , const char *formatString , ...) {
+	if ( g_log.m_disabled ) {
+		return;
+	}
 
 	// this is the argument list (variable list)
 	va_list   ap;
@@ -432,9 +436,6 @@ bool logf ( int32_t type , const char *formatString , ...) {
 
 	// pass buf to g_log
 	g_log.logR ( 0, type, buf, true );
-
-	// always return false
-	return false;
 }
 
 
@@ -519,8 +520,10 @@ static void hexdump(void const *data, const unsigned int len, char *dest, const 
 }
 
 
-bool loghex( int32_t type, void const *data, const unsigned int len, const char *formatString , ...) {
-	if ( g_log.m_disabled ) return false;
+void loghex( int32_t type, void const *data, const unsigned int len, const char *formatString , ...) {
+	if ( g_log.m_disabled ) {
+		return;
+	}
 
 	// this is the argument list (variable list)
 	va_list   ap;
@@ -538,7 +541,4 @@ bool loghex( int32_t type, void const *data, const unsigned int len, const char 
 	
 	// pass buf to g_log
 	g_log.logR ( 0 , type , buf );
-
-	// always return false
-	return false;
 }

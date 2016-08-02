@@ -519,7 +519,8 @@ bool XmlDoc::setCollNum ( const char *coll ) {
 	cr = g_collectiondb.getRec ( coll , strlen(coll) );
 	if ( ! cr ) {
 		g_errno = ENOCOLLREC;
-		return log("build: collrec not found for %s",coll);
+		log(LOG_WARN, "build: collrec not found for %s",coll);
+		return false;
 	}
 	// we can store this safely:
 	m_collnum = cr->m_collnum;
@@ -926,10 +927,9 @@ bool XmlDoc::set2 ( char    *titleRec ,
 	// bail on error
 	if ( dataSize < 4 ) {
 		g_errno = EBADTITLEREC;
-		return log("db: Titledb record has size of %" PRId32" which "
-			   "is less then 4. Probable disk corruption in a "
-			   "titledb file.",
-			   dataSize);
+		log(LOG_WARN, "db: Titledb record has size of %" PRId32" which is less then 4. Probable disk corruption in a "
+			"titledb file.", dataSize);
+		return false;
 	}
 	// what is the size of cbuf/titleRec in bytes?
 	int32_t cbufSize = dataSize + 4 + sizeof(key_t);
@@ -940,16 +940,16 @@ bool XmlDoc::set2 ( char    *titleRec ,
 	// . we can now have absolutely huge titlerecs...
 	if ( m_ubufSize <= 0 ) { //m_ubufSize > 2*1024*1024 || m_ubufSize < 0 )
 		g_errno = EBADTITLEREC;
-		return log("db: TitleRec::set: uncompress uncompressed "
-			   "size=%" PRId32".",m_ubufSize );
+		log(LOG_WARN, "db: TitleRec::set: uncompress uncompressed size=%" PRId32".",m_ubufSize );
+		return false;
 	}
 	// trying to uncompress corrupt titlerecs sometimes results in
 	// a seg fault... watch out
 	if ( m_ubufSize > 100*1024*1024 ) {
 		g_errno = EBADTITLEREC;
-		return log("db: TitleRec::set: uncompress uncompressed "
-			   "size=%" PRId32" > 100MB. unacceptable, probable "
-			   "corruption.",m_ubufSize );
+		log(LOG_WARN, "db: TitleRec::set: uncompress uncompressed size=%" PRId32" > 100MB. unacceptable, probable "
+			"corruption.", m_ubufSize);
+		return false;
 	}
 	// make buf space for holding the uncompressed stuff
 	m_ubufAlloc = m_ubufSize;
@@ -983,23 +983,22 @@ bool XmlDoc::set2 ( char    *titleRec ,
 				 (uint32_t  ) (dataSize - 4) );
 	// hmmmm...
 	if ( err == Z_BUF_ERROR ) {
-		log("db: Buffer is too small to hold uncompressed "
-		    "document. Probable disk corruption in a titledb file.");
+		log(LOG_WARN, "db: Buffer is too small to hold uncompressed document. Probable disk corruption in a titledb file.");
 		g_errno = EUNCOMPRESSERROR;
 		return false;
 	}
 	// set g_errno and return false on error
 	if ( err != Z_OK ) {
 		g_errno = EUNCOMPRESSERROR;
-		return log("db: Uncompress of document failed. ZG_ERRNO=%i. "
-			   "cbufSize=%" PRId32" ubufsize=%" PRId32" realSize=%" PRId32,
-			   err , cbufSize , m_ubufSize , realSize );
+		log(LOG_WARN, "db: Uncompress of document failed. ZG_ERRNO=%i. cbufSize=%" PRId32" ubufsize=%" PRId32" realSize=%" PRId32,
+		    err , cbufSize , m_ubufSize , realSize );
+		return false;
 	}
 	if ( realSize != m_ubufSize ) {
 		g_errno = EBADENGINEER;
-		return log("db: Uncompressed document size is not what we "
-			   "recorded it to be. Probable disk corruption in "
+		log(LOG_WARN, "db: Uncompressed document size is not what we recorded it to be. Probable disk corruption in "
 			   "a titledb file.");
+		return false;
 	}
 	// . add the stat
 	// . use white for the stat
@@ -1015,7 +1014,8 @@ bool XmlDoc::set2 ( char    *titleRec ,
 
 	if ( headerSize != shouldbe ) {
 		g_errno = ECORRUPTDATA;
-		return log("doc: bad header size in title rec");
+		log(LOG_WARN, "doc: bad header size in title rec");
+		return false;
 	}
 
 	// set our easy stuff
@@ -1058,7 +1058,8 @@ bool XmlDoc::set2 ( char    *titleRec ,
 		// watch out for corruption
 		if ( up > upend ) {
 			g_errno = ECORRUPTDATA;
-			return log("doc: corrupt titlerec.");
+			log(LOG_WARN, "doc: corrupt titlerec.");
+			return false;
 		}
 		// get the size
 		*ps = *(int32_t *)up;
@@ -1079,7 +1080,8 @@ bool XmlDoc::set2 ( char    *titleRec ,
 		// watch out for corruption
 		if ( up > upend ) {
 			g_errno = ECORRUPTDATA;
-			return log("doc: corrupt titlerec.");
+			log(LOG_WARN, "doc: corrupt titlerec.");
+			return false;
 		}
 	}
 	// cap it
@@ -12207,13 +12209,15 @@ bool XmlDoc::doConsistencyTest ( bool forceTest ) {
 		g_process.shutdownAbort(true);
 		mdelete ( doc , sizeof(XmlDoc) , "xdnuke");
 		delete ( doc );
-		return log("doc: failed consistency test for %s",ptr_firstUrl);
+		log(LOG_WARN, "doc: failed consistency test for %s",ptr_firstUrl);
+		return false;
 	}
 	if ( ! hashMetaList ( &ht2 , p2 , pend2 , false ) ) {
 		g_process.shutdownAbort(true);
 		mdelete ( doc , sizeof(XmlDoc) , "xdnuke");
 		delete ( doc );
-		return log("doc: failed consistency test for %s",ptr_firstUrl);
+		log(LOG_WARN, "doc: failed consistency test for %s",ptr_firstUrl);
+		return false;
 	}
 
 	// . now make sure each list matches the other

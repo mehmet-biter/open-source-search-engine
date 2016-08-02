@@ -1211,8 +1211,6 @@ bool UdpSlot::readDatagramOrAck ( const void *readBuffer_,
 		int32_t hid = -1;
 		if ( m_host && m_host->m_hostdb == &g_hostdb ) 
 			hid = m_host->m_hostId;
-		//#ifdef _UDPDEBUG_
-		//if ( ! m_proto->useAcks() ) {
 		int32_t kk = 0; if ( m_callback ) kk = 1;
 		log(LOG_DEBUG,
 		    "udp: Read dgram "
@@ -1241,8 +1239,6 @@ bool UdpSlot::readDatagramOrAck ( const void *readBuffer_,
 		    (int32_t)m_proto->getMsgSize(readBuffer,readSize) ,
 		    (int32_t)(m_proto->hadError(readBuffer,readSize)),
 		    hid);
-		//	}
-		//#endif
 	}
 	// update time of last read
 	m_lastReadTime = gettimeofdayInMilliseconds();
@@ -1436,13 +1432,13 @@ bool UdpSlot::readDatagramOrAck ( const void *readBuffer_,
 			// do not spam the logs
 			static int32_t s_badCount = 0;
 			s_badCount++;
-			// only log it once every 1024 times it happens
-			//if ( ((s_badCount++) & 1023 ) == 0 )
-			log("udp: got %" PRId32" bad dgram headers. "
+
+			log(LOG_WARN, "udp: got %" PRId32" bad dgram headers. "
 			    "dgramNum=%" PRId32" offset=%" PRId32" "
 			    "readBufMaxSize=%" PRId32". IS hosts.conf OUT OF SYNC???",
 			    s_badCount,(int32_t)dgramNum,(int32_t)offset,
 			    (int32_t)m_readBufMaxSize);
+
 			// this actually helps us to identify when hosts.conf
 			// is out of sync between hosts, so core
 			// SEEMS like the roadrunner wireless connection

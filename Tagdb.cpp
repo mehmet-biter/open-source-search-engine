@@ -1022,7 +1022,8 @@ bool Tagdb::setHashTable ( ) {
 
 	// the hashtable of TagDescriptors
 	if ( ! s_ht.set ( 4, sizeof(TagDesc *), 1024, NULL, 0, false, 0, "tgdbtb" ) ) {
-		return log( "tagdb: Tagdb hash init failed." );
+		log( LOG_WARN, "tagdb: Tagdb hash init failed." );
+		return false;
 	}
 
 	// stock it
@@ -1038,8 +1039,8 @@ bool Tagdb::setHashTable ( ) {
 		// call it a bad name if already in there
 		TagDesc **petd = (TagDesc **)s_ht.getValue ( &h );
 		if ( petd ) {
-			return log( "tagdb: Tag %s collides with old tag %s",
-			            td->m_name, (*petd)->m_name );
+			log( LOG_WARN, "tagdb: Tag %s collides with old tag %s", td->m_name, (*petd)->m_name );
+			return false;
 		}
 
 		// set the type
@@ -1120,7 +1121,8 @@ bool Tagdb::verify ( const char *coll ) {
 			      true))          // allowPageCache
 	{
 		g_jobScheduler.allow_new_jobs();
-		return log("tagdb: HEY! it did not block");
+		log(LOG_DEBUG, "tagdb: HEY! it did not block");
+		return false;
 	}
 
 	int32_t count  = 0;

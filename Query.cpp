@@ -180,7 +180,8 @@ bool Query::set2 ( const char *query        ,
 		// dst buf must be big enough
 		// if ( p + 8 >= pend ) {
 		// 	g_errno = EBUFTOOSMALL;
-		// 	return log(LOG_LOGIC,"query: query: query too big.");
+		// 	log(LOG_LOGIC,"query: query: query too big.");
+		//  return false;
 		// }
 		// translate ( and )
 		if ( boolFlag == 1 && query[i] == '(' ) {
@@ -1218,9 +1219,10 @@ bool Query::setQWords ( char boolFlag ,
 	// . break query up into Words and phrases
 	// . because we now deal with boolean queries, we make parentheses
 	//   their own separate Word, so tell "words" we're setting a query
-	if ( !words.set( m_sb.getBufStart(), m_sb.length(), true, 1 ) )
-		return log("query: Had error parsing query: %s.",
-			   mstrerror(g_errno));
+	if ( !words.set( m_sb.getBufStart(), m_sb.length(), true, 1 ) ) {
+		log(LOG_WARN, "query: Had error parsing query: %s.", mstrerror(g_errno));
+		return false;
+	}
 	int32_t numWords = words.getNumWords();
 	// truncate it
 	if ( numWords > ABS_MAX_QUERY_WORDS ) {
@@ -1244,8 +1246,10 @@ bool Query::setQWords ( char boolFlag ,
 	// otherwise, we must allocate memory for it
 	else {
 		m_qwords = (QueryWord *)mmalloc ( need , "Query4" );
-		if ( ! m_qwords ) 
-			return log("query: Could not allocate mem for query.");
+		if ( ! m_qwords ) {
+			log(LOG_WARN, "query: Could not allocate mem for query.");
+			return false;
+		}
 		m_qwordsAllocSize = need;
 	}
 	// reset safebuf in there
@@ -1338,9 +1342,10 @@ bool Query::setQWords ( char boolFlag ,
 
 	// set the Bits used for making phrases from the Words class
 	Bits bits;
-	if ( !bits.set(&words, 0))
-		return log("query: Had error processing query: %s.",
-			   mstrerror(g_errno));
+	if ( !bits.set(&words, 0)) {
+		log(LOG_WARN, "query: Had error processing query: %s.", mstrerror(g_errno));
+		return false;
+	}
 
 	int32_t userWeight       = 1;
 	char userType         = 'r';
@@ -3074,9 +3079,10 @@ static bool initFieldTable(){
 
 	if ( ! s_isInitialized ) {
 		// set up the hash table
-		if ( ! s_table.set ( 8 , 4 , 255,NULL,0,false,0,"qryfldtbl" ) )
-			return log("build: Could not init table of "
-					   "query fields.");
+		if ( ! s_table.set ( 8 , 4 , 255,NULL,0,false,0,"qryfldtbl" ) ) {
+			log(LOG_WARN, "build: Could not init table of query fields.");
+			return false;
+		}
 		// now add in all the stop words
 		int32_t n = getNumFieldCodes();
 		for ( int32_t i = 0 ; i < n ; i++ ) {
