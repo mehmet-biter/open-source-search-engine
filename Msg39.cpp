@@ -394,13 +394,6 @@ bool Msg39::controlLoop ( ) {
 		// minus the shit we filtered out because of gbminint/gbmaxint/
 		// gbmin/gbmax/gbsortby/gbrevsortby/gbsortbyint/gbrevsortbyint
 		m_numTotalHits -= m_posdbTable.m_filtered;
-		// error?
-		if ( m_posdbTable.m_errno ) {
-			// we do not need to store the intersection i guess..??
-			m_posdbTable.freeMem();
-			g_errno = m_posdbTable.m_errno;
-			goto hadError;
-		}
 		// if we have more docid ranges remaining do more
 		if ( m_ddd < m_dddEnd ) {
 			m_phase = 0;

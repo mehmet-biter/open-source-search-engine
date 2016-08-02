@@ -145,7 +145,6 @@ void PosdbTable::reset() {
 	// has init() been called?
 	m_initialized          = false;
 	m_estimatedTotalHits   = -1;
-	m_errno                   = 0;
 	freeMem();
 	// does not free the mem of this safebuf, only resets length
 	m_docIdVoteBuf.reset();
@@ -3049,9 +3048,6 @@ void PosdbTable::intersectLists10_r ( ) {
 	prepareWhiteListTable();
 
 	initWeights();
-
-	// clear, set to ECORRUPTDATA below
-	m_errno = 0;
 
 	// assume no-op
 	m_t1 = 0LL;
