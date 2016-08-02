@@ -2786,8 +2786,8 @@ bool registerMsgHandlers ( ) {
 }
 
 bool registerMsgHandlers1(){
-	Msg20 msg20;	if ( ! msg20.registerHandler () ) return false;
-	MsgC  msgC ;    if ( ! msgC.registerHandler  () ) return false;
+	if ( ! Msg20::registerHandler()) return false;
+	if ( ! MsgC::registerHandler()) return false;
 
 	if ( ! Msg22::registerHandler() ) return false;
 
@@ -2795,15 +2795,15 @@ bool registerMsgHandlers1(){
 }
 
 bool registerMsgHandlers2(){
-	Msg0  msg0 ;	if ( ! msg0.registerHandler  () ) return false;
-	Msg1  msg1 ;	if ( ! msg1.registerHandler  () ) return false;
+	if ( ! Msg0::registerHandler()) return false;
+	if ( ! Msg1::registerHandler()) return false;
 
 	if ( ! Msg13::registerHandler() ) return false;
 
 	if ( ! g_udpServer.registerHandler(msg_type_c1,handleRequestc1)) return false;
 	if ( ! Msg39::registerHandler()) return false;
 
-	if ( ! registerHandler4  () ) return false;
+	if ( ! Msg4::registerHandler() ) return false;
 
 	if(! g_udpServer.registerHandler(msg_type_3e,handleRequest3e)) return false;
 	if(! g_udpServer.registerHandler(msg_type_3f,handleRequest3f)) return false;
