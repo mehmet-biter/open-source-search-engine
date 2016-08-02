@@ -721,7 +721,7 @@ bool Msg5::gotList2 ( ) {
 		if ( n > 0 ) {
 			char k[MAX_KEY_BYTES];
 			m_treeList.getCurrentKey(k);
-			m_treeList.constrain(m_startKey, m_minEndKey, -1, 0, k, "tree");
+			m_treeList.constrain(m_startKey, m_minEndKey, -1, 0, k, m_rdbId, "tree");
 		}
 		m_listPtrs [ n++ ] = &m_treeList;
 	}

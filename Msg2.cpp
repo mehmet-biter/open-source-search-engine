@@ -159,7 +159,8 @@ bool Msg2::getLists ( ) {
 		   m_allowHighFrequencyTermCache &&
 		   g_hfts.query_term_shortcut(m_qterms[m_i].m_termId,&hfterm_shortcut_posdb_buffer,&hfterm_shortcut_buffer_bytes))
 		{
-			log("query: term %" PRId64" (%*.*s) is a high-frequency term",m_qterms[m_i].m_termId,qt->m_qword->m_wordLen,qt->m_qword->m_wordLen,qt->m_qword->m_word);
+			log("query: term %" PRId64" (%*.*s) is a high-frequency term",
+			    m_qterms[m_i].m_termId,qt->m_qword->m_wordLen,qt->m_qword->m_wordLen,qt->m_qword->m_word);
 			//use PosDB shortcut buffer, put into RdbList and avoid actually going into PosDB
 			char *startKey = (char*)hfterm_shortcut_posdb_buffer;
 			char *endKey = ((char*)hfterm_shortcut_posdb_buffer)+hfterm_shortcut_buffer_bytes-18;
@@ -178,7 +179,7 @@ bool Msg2::getLists ( ) {
 			                 18);                                  //keysize
 			char ek2_copy[18];
 			memcpy(ek2_copy, ek2, sizeof(ek2_copy)); //RdbList::constrain() modifies endkey, so give it a copy
-			m_lists[m_i].constrain(sk2, ek2_copy, -1, 0, NULL, "highfrequencyterm");
+			m_lists[m_i].constrain(sk2, ek2_copy, -1, 0, NULL, RDB_POSDB, "highfrequencyterm");
 			continue;
 		}
 

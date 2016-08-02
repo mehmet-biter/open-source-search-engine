@@ -1028,7 +1028,7 @@ bool Msg3::doneScanning ( ) {
 
 		QUICKPOLL(m_niceness);
 
-		if (!m_lists[i].constrain(m_startKey, m_constrainKey, mrs, m_hintOffsets[i], &m_hintKeys[i * m_ks], filename)) {
+		if (!m_lists[i].constrain(m_startKey, m_constrainKey, mrs, m_hintOffsets[i], &m_hintKeys[i * m_ks], m_rdbId, filename)) {
 			log(LOG_WARN, "net: Had error while constraining list read from %s: %s/%s. vfd=%" PRId32" parts=%" PRId32". "
 			    "This is likely caused by corrupted data on disk.",
 			    mstrerror(g_errno), ff->getDir(), ff->getFilename(), ff->getVfd(), (int32_t)ff->m_numParts );
