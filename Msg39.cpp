@@ -153,7 +153,6 @@ void Msg39::reset() {
 	m_query.reset();
 	m_numTotalHits = 0;
 	m_gotClusterRecs = 0;
-	m_docIdSplitNumber = 0;
 	reset2();
 }
 
@@ -365,93 +364,87 @@ void Msg39::controlLoop ( ) {
 g_mem.printBreeches();
 //log("@@@ Msg39::controlLoop: m_startTimeQuery=%" PRId64, m_startTimeQuery);
 	//log("@@@ Msg39::controlLoop: now             =%" PRId64, gettimeofdayInMilliseconds());
-
-	int64_t docidRangeStart = 0;
-	for(int splitNumber = 0; splitNumber < m_msg39req->m_numDocIdSplits; splitNumber++) {
-		log(LOG_DEBUG, "query: msg39: splitNumber = %d (of %d)", splitNumber, m_msg39req->m_numDocIdSplits);
-g_mem.printBreeches();
-
-		if(m_docIdSplitNumber!=0) {
-			//Estimate if we can do this and next ranges within the deadline
-			int64_t now = gettimeofdayInMilliseconds();
-			int64_t time_spent_so_far = now - m_startTimeQuery;
-			int64_t time_per_range = time_spent_so_far / m_docIdSplitNumber;
-			int64_t estimated_this_range_finish_time = now + time_per_range;
-			int64_t deadline = m_startTimeQuery + m_msg39req->m_timeout;
-			log(LOG_DEBUG,"query: Msg39::controlLoop(): now=%" PRId64" time_spent_so_far=%" PRId64" time_per_range=%" PRId64" estimated_this_range_finish_time=%" PRId64" deadline=%" PRId64,
-			    now, time_spent_so_far, time_per_range, estimated_this_range_finish_time, deadline);
-			if(estimated_this_range_finish_time > deadline) {
-				//estimated completion time crosses the deadline.
-				log(LOG_INFO,"Msg39::controlLoop(): range %d/%d would cross deadline. Skipping", m_docIdSplitNumber, m_msg39req->m_numDocIdSplits);
-				break;
+	
+	const int numFiles = getRdbBase(RDB_POSDB,m_msg39req->m_collnum)->getNumFiles();
+	log(LOG_DEBUG,"controlLoop(): numFiles=%d",numFiles);
+	
+	//todo: choose docid splits based on expected largest rdblist / most common term
+	int numDocIdSplits = 2;
+	log(LOG_DEBUG,"controlLoop(): numDocIdSplits=%d",numDocIdSplits);
+	
+	const int totalChunks = (numFiles+1)*numDocIdSplits;
+	int chunksSearched = 0;
+	
+	for(int fileNum = 0; fileNum<numFiles; fileNum++) {
+		log(LOG_DEBUG,"controlLoop(): fileNume=%d (of %d)", fileNum, numFiles);
+		
+		int64_t docidRangeStart = 0;
+		const int64_t docidRangeDelta = MAX_DOCID / (int64_t)numDocIdSplits;
+		
+		for(int docIdSplitNumber = 0; docIdSplitNumber < numDocIdSplits; docIdSplitNumber++) {
+			log(LOG_DEBUG,"controlLoop(): splitNumber=%d (of %d)", docIdSplitNumber, numDocIdSplits);
+			
+			if(docIdSplitNumber!=0) {
+				//Estimate if we can do this and next ranges within the deadline
+				int64_t now = gettimeofdayInMilliseconds();
+				int64_t time_spent_so_far = now - m_startTimeQuery;
+				int64_t time_per_range = time_spent_so_far / docIdSplitNumber;
+				int64_t estimated_this_range_finish_time = now + time_per_range;
+				int64_t deadline = m_startTimeQuery + m_msg39req->m_timeout;
+				log(LOG_DEBUG,"query: Msg39::controlLoop(): now=%" PRId64" time_spent_so_far=%" PRId64" time_per_range=%" PRId64" estimated_this_range_finish_time=%" PRId64" deadline=%" PRId64,
+				    now, time_spent_so_far, time_per_range, estimated_this_range_finish_time, deadline);
+				if(estimated_this_range_finish_time > deadline) {
+					//estimated completion time crosses the deadline.
+					log(LOG_INFO,"Msg39::controlLoop(): range %d/%d would cross deadline. Skipping", docIdSplitNumber, m_msg39req->m_numDocIdSplits);
+					goto skipRest;
+				}
 			}
+			
+			// Reset ourselves, partially, anyway, not m_query etc.
+			reset2();
+			
+			// Calculate docid range and fetch lists
+			int64_t d0 = docidRangeStart;
+			docidRangeStart += docidRangeDelta;
+			if(docIdSplitNumber+1 == numDocIdSplits)
+				docidRangeStart = MAX_DOCID;
+			else if(docidRangeStart + 20 > MAX_DOCID)
+				docidRangeStart = MAX_DOCID;
+			int64_t d1 = docidRangeStart;
+			
+			log(LOG_DEBUG,"docid range: [%" PRId64"..%" PRIu64")", d0,d1);
+			getLists(fileNum,d0,d1);
+			if ( g_errno ) {
+				log(LOG_ERROR,"Msg39::controlLoop: got error %d after getLists()", g_errno);
+				goto hadError;
+			}
+
+			// Intersect the lists we loaded (using a thread)
+			intersectLists();
+			if ( g_errno ) {
+				log(LOG_ERROR,"Msg39::controlLoop: got error %d after intersectLists()", g_errno);
+				goto hadError;
+			}
+			
+			// Sum up stats
+			if ( m_posdbTable.m_t1 ) {
+				// . measure time to add the lists in bright green
+				// . use darker green if rat is false (default OR)
+				g_stats.addStat_r ( 0, m_posdbTable.m_t1, m_posdbTable.m_t2, 0x0000ff00 );
+			}
+			// accumulate total hits count over each docid split
+			m_numTotalHits += m_posdbTable.m_docIdVoteBuf.length() / 6;
+			// minus the shit we filtered out because of gbminint/gbmaxint/
+			// gbmin/gbmax/gbsortby/gbrevsortby/gbsortbyint/gbrevsortbyint
+			m_numTotalHits -= m_posdbTable.m_filtered;
+			
+			chunksSearched++;
 		}
-
-		// error?
-		if ( g_errno ) {
-			log(LOG_ERROR,"Msg39::controlLoop: got error %d", g_errno);
-			goto hadError;
-		}
-
-
-		// Step 1: calculate docid range and fetch lists
-		// the starting docid...
-		int64_t d0 = docidRangeStart;
-		// shortcut
-		int64_t delta = MAX_DOCID / (int64_t)m_msg39req->m_numDocIdSplits;
-		// advance to point to the exclusive endpoint
-		docidRangeStart += delta;
-		m_docIdSplitNumber++;
-		// fix rounding errors
-		if ( splitNumber + 1 == m_msg39req->m_numDocIdSplits) {
-			docidRangeStart = MAX_DOCID;
-		} else if ( docidRangeStart + 20LL > MAX_DOCID ) {
-			docidRangeStart = MAX_DOCID;
-		}
-		int64_t d1 = docidRangeStart;
-
-g_mem.printBreeches();
-		// reset ourselves, partially, anyway, not m_query etc.
-		reset2();
-
-		// debug log
-		if ( m_debug ) {
-			log("msg39: docid split %d/%d range %" PRId64"-%" PRId64, m_docIdSplitNumber-1, m_msg39req->m_numDocIdSplits, d0,d1);
-		}
-
-g_mem.printBreeches();
-		// load termlists for these docid ranges using msg2 from posdb
-		getLists(d0,d1);
-		if ( g_errno ) {
-			log(LOG_ERROR,"Msg39::controlLoop: got error %d after getLists()", g_errno);
-			goto hadError;
-		}
-
-
-g_mem.printBreeches();
-		// Step 2: intersect the lists
-		// intersect the lists we loaded using a thread
-		intersectLists();
-		// error?
-		if ( g_errno ) {
-			log(LOG_ERROR,"Msg39::controlLoop: got error %d after intersectLists()", g_errno);
-			goto hadError;
-		}
-
-
-g_mem.printBreeches();
-		// Step 3: sum up some stats
-		if ( m_posdbTable.m_t1 ) {
-			// . measure time to add the lists in bright green
-			// . use darker green if rat is false (default OR)
-			g_stats.addStat_r ( 0, m_posdbTable.m_t1, m_posdbTable.m_t2, 0x0000ff00 );
-		}
-		// accumulate total hits count over each docid split
-		m_numTotalHits += m_posdbTable.m_docIdVoteBuf.length() / 6;
-		// minus the shit we filtered out because of gbminint/gbmaxint/
-		// gbmin/gbmax/gbsortby/gbrevsortby/gbsortbyint/gbrevsortbyint
-		m_numTotalHits -= m_posdbTable.m_filtered;
+		log(LOG_DEBUG,"controlLoop(): End of docid-split loop");
 	}
+skipRest:
+	log(LOG_DEBUG,"controlLoop(): End of file loop");
+	
 
 g_mem.printBreeches();
 	log(LOG_DEBUG, "query: msg39(this=%p): All chunks done. Now getting cluster records",this);
@@ -475,7 +468,7 @@ g_mem.printBreeches();
 
 	// . all done! set stats and send back reply
 	// . only sends back the cluster recs if m_gotClusterRecs is true
-	estimateHitsAndSendReply();
+	estimateHitsAndSendReply(chunksSearched/(double)totalChunks);
 
 	return;
 
@@ -491,7 +484,7 @@ hadError:
 // . called either from 
 //   1) doDocIdSplitLoop
 //   2) or getDocIds2() if only 1 docidsplit
-void Msg39::getLists(int64_t docIdStart, int64_t docIdEnd) {
+void Msg39::getLists(int fileNum, int64_t docIdStart, int64_t docIdEnd) {
 	log(LOG_DEBUG, "query: msg39(this=%p)::getLists()",this);
 
 	if ( m_debug ) m_startTime = gettimeofdayInMilliseconds();
@@ -686,6 +679,7 @@ log("@@@ Msg39: getLists: m_query.getNumTerms()=%d", m_query.getNumTerms());
 				 // we need to restrict docid range for
 				 // whitelist as well! this is from
 				 // doDocIdSplitLoop()
+				 fileNum,
 				 docIdStart,
 				 docIdEnd,
 				 //m_query.getNumTerms(),
@@ -996,7 +990,7 @@ bool Msg39::gotClusterRecs ( ) {
 }	
 
 
-void Msg39::estimateHitsAndSendReply ( ) {
+void Msg39::estimateHitsAndSendReply(double pctSearched) {
 
 	// no longer in use
 	m_inUse = false;
@@ -1033,7 +1027,7 @@ void Msg39::estimateHitsAndSendReply ( ) {
 		// . total estimated hits
 		// . this is now an EXACT count!
 		mr.m_estimatedHits = m_numTotalHits;
-		mr.m_pctSearched = m_docIdSplitNumber * 100.0 / m_msg39req->m_numDocIdSplits;
+		mr.m_pctSearched = pctSearched;
 		// sanity check
 		mr.m_nqt = nqt;
 		// the m_errno if any

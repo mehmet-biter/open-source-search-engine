@@ -145,7 +145,7 @@ private:
 	static void coordinatorThreadFunc(void *state);
 	void getDocIds2();
 	// retrieves the lists needed as specified by termIds and PosdbTable
-	void getLists(int64_t docIdStart, int64_t docIdEnd);
+	void getLists(int fileNum, int64_t docIdStart, int64_t docIdEnd);
 	// called when lists have been retrieved, uses PosdbTable to hash lists
 	void intersectLists ( );
 
@@ -200,7 +200,7 @@ private:
 
 	int32_t m_docIdSplitNumber; //next split range to do
 	
-	void        estimateHitsAndSendReply   ();
+	void        estimateHitsAndSendReply(double pctSearched);
 	void        getClusterRecs();
 	bool        gotClusterRecs ();
 

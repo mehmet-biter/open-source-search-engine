@@ -56,6 +56,7 @@ bool Msg2::getLists ( collnum_t collnum , // char    *coll        ,
 		      // put list of sites to restrict to in here
 		      // or perhaps make it collections for federated search?
 		      const char *whiteList ,
+		      int fileNum,
 		      int64_t docIdStart,
 		      int64_t docIdEnd,
 		      // make max MAX_MSG39_LISTS
@@ -81,6 +82,7 @@ bool Msg2::getLists ( collnum_t collnum , // char    *coll        ,
 	m_w = 0;
 	m_p = whiteList;
 
+	m_fileNum    = fileNum;
 	m_docIdStart = docIdStart;
 	m_docIdEnd   = docIdEnd;
 	m_allowHighFrequencyTermCache = allowHighFrequencyTermCache;
@@ -168,7 +170,6 @@ log("@@@ msg2::getLists: m_i=%d  m_qterms=%p",m_i,m_qterms);
 		int32_t minRecSize = DEFAULT_POSDB_READSIZE;
 
 log("@@@ msg2::getLists(2): m_i=%d m_numLists = %d",m_i,m_numLists);
-		const QueryTerm *qt = &m_qterms[m_i];
 log("@@@ msg2::getLists: qt=%p",qt);
 
 
@@ -232,8 +233,8 @@ log("@@@ msg2::getLists: qt=%p",qt);
 					   true, // include tree?
 					   false , // addtocache
 					   0, // maxcacheage
-					   0              , // start file num
-					   -1,              // num files
+					   m_fileNum,      // start file num
+					   1,              // num files
 					   this,
 					   gotListWrapper ,
 					   m_niceness     ,

@@ -44,7 +44,7 @@ public:
 	 *  sets "errno" on error.
 	 *  "termIds/termFreqs" should NOT be on the stack in case we block
 	 */
-	bool getLists(collnum_t collnum,			//char    *coll        ,
+	bool getLists(collnum_t collnum,
 			bool addToCache,
 			const QueryTerm *qterms,
 			int32_t numQterms,
@@ -53,6 +53,7 @@ public:
 			const char *whiteList,
 			// for intersecting ranges of docids separately
 			// to prevent OOM errors
+			int fileNum,
 			int64_t docIdStart,
 			int64_t docIdEnd,
 			RdbList *lists,
@@ -83,6 +84,7 @@ private:
 	int32_t m_i;
 
 	// list of sites to restrict search results to. space separated
+	int m_fileNum;
 	const char *m_whiteList;
 	int64_t m_docIdStart;
 	int64_t m_docIdEnd;
