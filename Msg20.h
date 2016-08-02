@@ -248,7 +248,7 @@ public:
 
 	// . this should only be called once
 	// . should also register our get record handlers with the udpServer
-	bool registerHandler ( );
+	static bool registerHandler();
 
 	// see definition of Msg20Request below
 	bool getSummary ( class Msg20Request *r );

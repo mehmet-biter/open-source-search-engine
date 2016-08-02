@@ -5,7 +5,6 @@
 #ifndef GB_MSG4_H
 #define GB_MSG4_H
 
-bool registerHandler4   ( ) ;
 bool saveAddsInProgress ( const char *filenamePrefix );
 bool loadAddsInProgress ( const char *filenamePrefix );
 // used by Repair.cpp to make sure we are not adding any more data ("writing")
@@ -18,6 +17,7 @@ bool isInMsg4LinkedList ( class Msg4 *msg4 ) ;
 class Msg4 {
 
  public:
+	static bool registerHandler();
 	// meta list format =
 	// (rdbId | 0x08) then rdb record [if nosplit]
 	// (rdbId | 0x00) then rdb record [if split  ]

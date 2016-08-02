@@ -80,7 +80,7 @@ static bool storeRec   ( collnum_t      collnum ,
 			 int32_t           niceness ) ;
 
 // all these parameters should be preset
-bool registerHandler4 ( ) {
+bool Msg4::registerHandler() {
 	logTrace( g_conf.m_logTraceMsg4, "BEGIN" );
 	
 	// register ourselves with the udp server

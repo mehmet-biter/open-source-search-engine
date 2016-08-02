@@ -28,7 +28,7 @@ class Msg0 {
 
 	// . this should only be called once
 	// . should also register our get record handlers with the udpServer
-	bool registerHandler();
+	static bool registerHandler();
 
 	// . returns false if blocked, true otherwise
 	// . sets errno on error
