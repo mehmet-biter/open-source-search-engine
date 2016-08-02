@@ -47,7 +47,7 @@ enum {
 	ENODOCID         , // used in titledb/Msg24.cpp
 	ENOHOSTS         , // multicast can't find any hosts
 	ENOSLOTS         , // multicast can't use more than X slots
-	ENOTHREADSLOTS   , // no more room in thread queue
+	EUNUSED52        ,
 	EUNUSED7         ,
 	EUNUSED8         , // 32800
 	EURLTOOLONG      ,

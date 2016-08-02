@@ -80,8 +80,6 @@ const char *mstrerror ( int errnum ) {
 				return "Multicast can not find any hosts";
 			case ENOSLOTS         :
 				return "No udp slots available";
-			case ENOTHREADSLOTS   :
-				return "No room for thread in thread queue";
 			case EURLTOOLONG      :
 				return "Url too long";
 			case EDOCADULT        :
@@ -272,7 +270,7 @@ static const char* s_errname[] {
 	STRINGIFY( ENODOCID ),
 	STRINGIFY( ENOHOSTS ),
 	STRINGIFY( ENOSLOTS ),
-	STRINGIFY( ENOTHREADSLOTS ),
+	STRINGIFY( EUNUSED52 ),
 	STRINGIFY( EUNUSED7 ),
 	STRINGIFY( EUNUSED8 ),
 	STRINGIFY( EURLTOOLONG ),
