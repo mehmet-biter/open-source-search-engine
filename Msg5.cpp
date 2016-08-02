@@ -932,28 +932,17 @@ bool Msg5::gotList2 ( ) {
 
 	QUICKPOLL((m_niceness));
 
-	// . if size < 32k of don't bother with thread, should be < ~1 ms
-	// . it seems to be about 1ms per 10k for tfndb recs
-	// . it seems to core dump if we spawn a thread with totalSizes too low
-	// . why???
-	if ( m_totalSize >= 32*1024 ) {
-		// . if size is big, make a thread
-		// . let's always make niceness 0 since it wasn't being very
-		//   aggressive before
-		if ( g_jobScheduler.submit(mergeListsWrapper, mergeDoneWrapper, this, thread_type_query_merge, m_niceness) ) {
-			return false;
-		}
-
-		//m_waitingForMerge = false;
-
-		// thread creation failed
-		if ( g_jobScheduler.are_new_jobs_allowed() )
-			log(LOG_INFO,
-			    "net: Failed to create thread to merge lists. Doing "
-			    "blocking merge. (%s)",mstrerror(g_errno));
-		// clear g_errno because it really isn't a problem, we just block
-		g_errno = 0;
+	if ( g_jobScheduler.submit(mergeListsWrapper, mergeDoneWrapper, this, thread_type_query_merge, m_niceness) ) {
+		return false;
 	}
+
+	// thread creation failed
+	if ( g_jobScheduler.are_new_jobs_allowed() )
+		log(LOG_INFO,
+		    "net: Failed to create thread to merge lists. Doing "
+		    "blocking merge. (%s)",mstrerror(g_errno));
+	// clear g_errno because it really isn't a problem, we just block
+	g_errno = 0;
 
 	// repair any corruption
 	repairLists();
