@@ -138,7 +138,10 @@ bool MsgC::getIp(const char *hostname, int32_t hostnameLen, int32_t *ip, void *s
 		// ok, we blocked, call callback when done
 		return false;
 	}
-	
+
+	// there was logic for getting ip from a proxy here
+	// removed in commit bab9e9da06a8edeb8a7677c2e90f72766f6ba782 as it was never used
+
 	host = g_dns.getResponsibleHost ( key );
 
 	if ( g_conf.m_logDebugDns ) {
