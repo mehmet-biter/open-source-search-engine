@@ -767,7 +767,6 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 	if(redirLen > 0) redir = r->getRedir();
 	else if (!isAdmin && 
 		 *g_conf.m_redirect != '\0' &&
-		 // was "raw"
 		 r->getLong("xml", -1) == -1 &&
 		 // do not redirect a 'gb proxy stop' request away,
 		 // which POSTS cast=0&save=1. that is done from the

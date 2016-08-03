@@ -19897,11 +19897,8 @@ bool XmlDoc::printCachedPage ( SafeBuf *sb , HttpRequest *hr ) {
 
 	int32_t isXml = hr->getLong("xml",0);
 
-	int32_t raw = hr->getLong("raw",0);
-
-	if ( ! isXml && ! raw ) printMenu ( sb );
-
 	if ( ! isXml ) {
+		printMenu ( sb );
 		// just copy it otherwise
 		if ( ptr_utf8Content )
 			sb->safeMemcpy ( ptr_utf8Content ,size_utf8Content -1);
