@@ -85,12 +85,9 @@ bool Multicast::send ( char         *msg              ,
 		       char         *replyBuf         ,
 		       int32_t          replyBufMaxSize  ,
 		       bool          freeReplyBuf     ,
-		       bool          doDiskLoadBalancing  ,
-		       int32_t          maxCacheAge      ,
-		       key_t         cacheKey         ,
-		       char          rdbId            ,
-		       int32_t          minRecSizes      ,
-		       bool          sendToSelf) {
+		       char          rdbId            ) {
+	bool sendToSelf = true;
+
 	// make sure not being re-used!
 	if ( m_inUse ) {
 		log( LOG_ERROR, "net: Attempt to re-use active multicast");
@@ -137,9 +134,6 @@ bool Multicast::send ( char         *msg              ,
 	// breathe
 	QUICKPOLL(m_niceness);
 
-
-	int32_t hostNumToTry = -1;
-
 	// . get the list of hosts in this group
 	// . returns false if blocked, true otherwise
 	// . sets g_errno on error
@@ -158,7 +152,7 @@ bool Multicast::send ( char         *msg              ,
 	// . pick the fastest host in the group
 	// . this should pick the fastest one we haven't already sent to yet
 	if ( ! sendToWholeGroup ) {
-		bool retVal = sendToHostLoop (key,hostNumToTry,firstHostId) ;
+		bool retVal = sendToHostLoop (key,-1,firstHostId) ;
 		// on error, un-use this class
 		if ( ! retVal ) m_inUse = false;
 		return retVal;

@@ -408,20 +408,7 @@ bool Msg3a::getDocIds ( Msg39Request *r          ,
 				   gotReplyWrapper3a ,
 				   timeout           , // timeout
 				   m_r->m_niceness   ,
-				   firstHostId, // -1// bestHandlingHostId ,
-				   NULL              , // m_replyBuf   ,
-				   0                 , // MSG39REPLYSIZE,
-				   // this is true if multicast should free the
-				   // reply, otherwise caller is responsible
-				   // for freeing it after calling
-				   // getBestReply().
-				   // actually, this should always be false,
-				   // there is a bug in Multicast.cpp.
-				   // no, if we error out and never steal
-				   // the buffers then they will go unfreed
-				   // so they are freed by multicast by default
-				   // then we steal control explicitly
-				   true             );
+				   firstHostId      ); // -1// bestHandlingHostId
 		// if successfully launch, do the next one
 		if ( status ) continue;
 		// . this serious error should make the whole query fail

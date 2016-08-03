@@ -440,18 +440,7 @@ skip:
 			      buf             ,
 			      replyBufMaxSize ,
 			      freeReply       , // free reply buf?
-			      true            , // do disk load balancing?
-			      maxCacheAge     ,
-			      //(key_t *)cacheKey        ,
-			      // multicast uses it for determining the best
-			      // host to send the request to when doing 
-			      // disk load balancing. if the host has our 
-			      // data cached, then it will probably get to
-			      // handle the request. for now let's just assume
-			      // this is a 96-bit key. TODO: fix...
-			 0 , // *(key_t *)cacheKey        ,
-			      rdbId           ,
-			      minRecSizes     ) ) 
+			      rdbId           ) )
 	{
 		log(LOG_ERROR, "net: Failed to send request for data from %s in shard "
 		    "#%" PRIu32" over network: %s.",

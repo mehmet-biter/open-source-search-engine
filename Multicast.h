@@ -90,12 +90,7 @@ class Multicast {
 		    char       *replyBuf        = NULL ,
 		    int32_t        replyBufMaxSize = 0 ,
 		    bool        freeReplyBuf    = true ,
-		    bool        doDiskLoadBalancing = false ,
-		    int32_t        maxCacheAge     = -1   , // no age limit
-		    key_t       cacheKey        =  0   ,
-		    char        rdbId           =  0   , // bogus rdbId
-		    int32_t        minRecSizes     = -1   ,// unknown read size
-		    bool        sendToSelf      = true);
+		    char        rdbId           =  0   ); // bogus rdbId
 
 	// . get the reply from your NON groupSend
 	// . if *freeReply is true then you are responsible for freeing this 

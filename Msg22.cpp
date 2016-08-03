@@ -144,18 +144,10 @@ bool Msg22::getTitleRec ( Msg22Request  *r              ,
 
 	// get groupId from docId
 	uint32_t shardNum = getShardNumFromDocId ( docId );
-	// generate cacheKey, just use docid now
-	key_t cacheKey ; cacheKey.n1 = 0; cacheKey.n0 = docId;
-	// do load balancing iff we're the spider because if we send this
-	// request to a merging host, and prefer local reads is true, the
-	// resulting disk read will be starved somewhat. otherwise, we save
-	// time by not having to cast a Msg36
-	bool balance = false;
 
-	Host *firstHost ;
 	// if niceness 0 can't pick noquery host.
 	// if niceness 1 can't pick nospider host.
-	firstHost = g_hostdb.getLeastLoadedInShard ( shardNum, r->m_niceness );
+	Host *firstHost = g_hostdb.getLeastLoadedInShard ( shardNum, r->m_niceness );
 	int32_t firstHostId = firstHost->m_hostId;
 
 	m_outstanding = true;
@@ -182,11 +174,7 @@ bool Msg22::getTitleRec ( Msg22Request  *r              ,
 			      NULL            , // replyBuf
 			      0               , // replyBufMaxSize
 			      false           , // free reply buf?
-			      balance         , // do disk load balancing?
-			      maxCacheAge     , // maxCacheAge
-			      cacheKey        , // cacheKey
-			      RDB_TITLEDB     , // rdbId of titledb
-			      32*1024       ) ){// minRecSizes avg
+			      RDB_TITLEDB     ) ){ // rdbId of titledb
 		log("db: Requesting title record had error: %s.",
 		    mstrerror(g_errno) );
 		// set m_errno

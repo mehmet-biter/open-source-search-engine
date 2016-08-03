@@ -688,7 +688,6 @@ bool sendBuffer ( int32_t hostId , int32_t niceness ) {
 	// . in that case we should restart from the top and we will add
 	//   the dead host ids to the top, and multicast will avoid sending
 	//   to hostids that are dead now
-	key_t k; k.setMin();
 	if ( mcast->send ( request    , // sets mcast->m_msg    to this
 			   requestSize, // sets mcast->m_msgLen to this
 			   msg_type_4       ,
@@ -704,17 +703,7 @@ bool sendBuffer ( int32_t hostId , int32_t niceness ) {
 			   // it when its between having timed out and
 			   // having been resent by us!
 			   multicast_infinite_send_timeout   , // timeout
-			   MAX_NICENESS, // niceness
-			   -1         , // first host to try
-			   NULL       , // replyBuf        = NULL ,
-			   0          , // replyBufMaxSize = 0 ,
-			   true       , // freeReplyBuf    = true ,
-			   false      , // doDiskLoadBalancing = false ,
-			   -1         , // no max cache age limit
-			   k          , // cache key
-			   RDB_NONE   , // bogus rdbId
-			   -1         , // unknown minRecSizes read size
-			   true      )) { // sendToSelf?
+			   MAX_NICENESS)) {   // niceness
 		// . let storeRec() do all the allocating...
 		// . only let the buffer go once multicast succeeds
 		s_hostBufs [ hostId ] = NULL;

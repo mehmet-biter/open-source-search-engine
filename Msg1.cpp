@@ -471,7 +471,6 @@ skip:
 	// . multicast::send() returns false and sets g_errno on error
 	// . we return false if we block, true otherwise
 	// . will loop indefinitely if a host in this group is down
-	key_t k; k.setMin();
 	if ( m_mcast.send ( request    , // sets mcast->m_msg    to this
 			    requestLen , // sets mcast->m_msgLen to this
 			    msg_type_1       ,
@@ -483,19 +482,9 @@ skip:
 			    NULL       , // state data
 			    gotReplyWrapper1 ,
 			    multicast_msg1_senddata_timeout         , // timeout
-			    m_niceness , // niceness 
-			    -1    , // first host to try
-			    NULL  , // replyBuf        = NULL ,
-			    0     , // replyBufMaxSize = 0 ,
-			    true  , // freeReplyBuf    = true ,
-			    false , // doDiskLoadBalancing = false ,
-			    -1    , // no max cache age limit
-			    //(key_t)0 , // cache key
-			    k    , // cache key
-			    RDB_NONE , // bogus rdbId
-			    -1    , // unknown minRecSizes read size
-			    true )) // sendToSelf ))
+			    m_niceness )) {  // niceness
 		return false;
+	}
 
  	QUICKPOLL(m_niceness);
 	// g_errno should be set

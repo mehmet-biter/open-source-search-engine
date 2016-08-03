@@ -121,8 +121,6 @@ bool MsgC::getIp(const char *hostname, int32_t hostnameLen, int32_t *ip, void *s
 	//uint32_t groupId=g_hostdb.getGroupId(groupNum);
 	// get a hostid that should house this ip in its local cache
 	Host *host = NULL; // g_dns.getResponsibleHost ( key );
-	Host *firstHost;
-
 
 	// with the new iframe tag expansion logic in Msg13.cpp, the
 	// spider proxy will create a newXmlDoc to do that and will call
@@ -182,13 +180,7 @@ bool MsgC::getIp(const char *hostname, int32_t hostnameLen, int32_t *ip, void *s
 			    firstHostId,// first host to try
 			    NULL       , // reply buf
 			    0          , // replybuf max size
-			    false      , // free reply buf?
-			    false      , // diskloadbalancing?
-			    -1         , // maxCacheAge
-			    0          , // cacheKey
-			    0          , // rdbId
-			    -1         , // minRecSizes
-			    true    )) { // sendtoself
+			    false   )) { // free reply buf?
 		//did not block, error
 		log(LOG_DEBUG,"dns: msgc: mcast had error: %s",
 		    mstrerror(g_errno));
