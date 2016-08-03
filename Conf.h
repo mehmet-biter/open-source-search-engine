@@ -224,9 +224,6 @@ class Conf {
 	
 	float m_synonymWeight;
 
-	// use sendmail to forward emails we send out
-	char   m_sendmailIp[MAX_MX_LEN];
-
 	// send emails when a host goes down?
 	bool   m_sendEmailAlerts;
 	//should we delay when only 1 host goes down out of twins till 9 30 am?

@@ -5462,20 +5462,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
-
-	m->m_title = "sendmail IP";
-	m->m_desc  = "We send crawlbot notification emails to this sendmail "
-		"server which forwards them to the specified email address.";
-		m->m_cgi   = "smip";
-	m->m_off   = offsetof(Conf,m_sendmailIp);
-	m->m_type  = TYPE_STRING;
-	m->m_def   = "";
-	m->m_size  = sizeof(Conf::m_sendmailIp);
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
 	m->m_title = "send email alerts";
 	m->m_desc  = "Sends emails to admin if a host goes down.";
 	m->m_cgi   = "sea";
