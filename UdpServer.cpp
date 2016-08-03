@@ -322,10 +322,9 @@ bool UdpServer::sendRequest(char *msg,
                             int64_t timeout, // in milliseconds
                             int16_t backoff,
                             int16_t maxWait,
-                            char *replyBuf,
-                            int32_t replyBufMaxSize,
                             int32_t niceness,
                             int32_t maxResends) {
+
 	// sanity check
 	// proxy forwards the msg10 to a host in the cluster
 	if ( ! m_handlers[msgType] && this == &g_udpServer && ! g_proxy.isProxy() ) {
@@ -415,8 +414,7 @@ bool UdpServer::sendRequest(char *msg,
 	}
 
 	// set up for a send
-	if (!slot->sendSetup(msg, msgSize, msg, msgSize, msgType, now, state, callback, niceness, backoff, maxWait,
-	                     replyBuf, replyBufMaxSize)) {
+	if (!slot->sendSetup(msg, msgSize, msg, msgSize, msgType, now, state, callback, niceness, backoff, maxWait)) {
 		freeUdpSlot_ass ( slot );
 		log( LOG_WARN, "udp: Failed to initialize udp socket for sending req: %s",mstrerror(g_errno));
 		return false;
@@ -536,19 +534,7 @@ void UdpServer::sendReply_ass ( char    *msg        ,
 
 	// . use a NULL callback since we're sending a reply
 	// . set up for a send
-	if ( ! slot->sendSetup ( msg        ,
-				 msgSize    ,
-				 alloc      ,
-				 allocSize  ,
-				 slot->getMsgType()    ,
-				 now        ,
-				 NULL       ,
-				 NULL       ,
-				 slot->m_niceness   , 
-				 backoff    ,
-				 maxWait    ,
-				 NULL       , 
-				 0          ) ) {
+	if (!slot->sendSetup(msg, msgSize, alloc, allocSize, slot->getMsgType(), now, NULL, NULL, slot->m_niceness, backoff, maxWait)) {
 		log( LOG_WARN, "udp: Failed to initialize udp socket for sending reply: %s", mstrerror(g_errno));
 		mfree ( alloc , allocSize , "UdpServer");
 		// was EBADENGINEER

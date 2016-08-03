@@ -500,8 +500,6 @@ bool Proxy::forwardRequest ( StateControl *stC ) {
 					   stC->m_timeout ,
 					   -1          , // backoff
 					   -1          , // maxwait
-					   NULL        , // replyBuf
-					   0           , // replyBufMaxSize
 					   0           , // niceness
 					   4           );// maxResends
 

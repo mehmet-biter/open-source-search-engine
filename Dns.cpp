@@ -1194,8 +1194,6 @@ bool Dns::sendToNextDNS ( DnsState *ds ) {
 					 TIMEOUT_SINGLE_HOST*1000 , // 20 secs?
 					 -1, // backoff
 					 -1, // maxWait
-					 NULL, // replyBuf
-					 0, // replyBufMaxSize
 					 // use niceness 0 now so if the
 					 // msgC slot gets converted from 1
 					 // to 0 this will not hold it up!

@@ -11535,8 +11535,6 @@ bool Parms::doParmSendingLoop ( ) {
 						 30*1000 , // timeout msecs
 						 -1 , // backoff
 						 -1 , // maxwait
-						 NULL , // replybuf
-						 0 , // replybufmaxsize
 						 0 ) ) { // niceness
 			log("parms: faild to send: %s",mstrerror(g_errno));
 			continue;

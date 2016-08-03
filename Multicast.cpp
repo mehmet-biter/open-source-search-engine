@@ -231,8 +231,6 @@ void Multicast::sendToGroup ( ) {
 				       m_totalTimeout   ,
 				       -1               , // backoff
 				       -1               , // max wait in ms
-				       m_replyBuf       ,
-				       m_replyBufMaxSize ,
 				       m_niceness )) {  // cback niceness
 			continue;
 		}
@@ -671,8 +669,6 @@ bool Multicast::sendToHost ( int32_t i ) {
 				  timeRemaining    , // timeout
 				  -1               , // backoff
 				  -1               , // max wait in ms
-				  m_replyBuf       ,
-				  m_replyBufMaxSize ,
 				  m_niceness        , // cback niceness
 				  maxResends        )) {
 		log(LOG_WARN, "net: Had error sending msgtype 0x%02x to host #%" PRId32": %s. Not retrying.",

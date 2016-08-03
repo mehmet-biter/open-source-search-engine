@@ -418,8 +418,6 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 					g_conf.m_deadHostTimeout ,
 					1000          ,           // backoff
 					2000          ,  // max wait
-					NULL          ,  // reply buf
-					0             ,  // reply buf size
 					0             )) // niceness
 		return;
 	// it had an error, so dec the count
@@ -616,8 +614,6 @@ void gotReplyWrapperP ( void *state , UdpSlot *slot ) {
 				       g_conf.m_deadHostTimeout , 
 				       1000          ,           // backoff
 				       2000          ,  // max wait
-				       NULL          ,  // reply buf
-				       0             ,  // reply buf size
 				       0             )) // niceness
 		return;
 	// he came back right away
@@ -1378,8 +1374,6 @@ bool PingServer::broadcastShutdownNotes ( bool    sendEmailAlert          ,
 						3000     , // 3 sec timeout
 						-1    , // default backoff
 						-1    , // default maxwait
-						NULL  , // reply buf
-						0     , // reply buf size
 						0     ))// niceness
 			continue;
 		// otherwise, had an error
@@ -1414,8 +1408,6 @@ bool PingServer::broadcastShutdownNotes ( bool    sendEmailAlert          ,
 						3000     , // 3 sec timeout
 						-1    , // default backoff
 						-1    , // default maxwait
-						NULL  , // reply buf
-						0     , // reply buf size
 						0     ))// niceness
 			continue;
 		// otherwise, had an error
@@ -1534,8 +1526,6 @@ void PingServer::tapHost ( int32_t hostId ) {
 					30000           , // timeout
 					1000            , // backoff
 					10000           , // max wait
-					NULL            , // reply buf
-					0               , // reply buf size
 					0               ))// niceness
 		return;
 	// it had an error, so dec the count

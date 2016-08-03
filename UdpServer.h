@@ -122,8 +122,6 @@ public:
 	                 int64_t timeout = 60000, // milliseconds
 	                 int16_t backoff = -1,
 	                 int16_t maxWait = -1, // ms
-	                 char *replyBuf = NULL,
-	                 int32_t replyBufMaxSize = 0,
 	                 int32_t niceness = 1,
 	                 int32_t maxResends = -1);
 
