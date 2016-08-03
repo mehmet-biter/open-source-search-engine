@@ -245,12 +245,9 @@ bool Msge1::sendMsgC ( int32_t i , const char *host , int32_t hlen ) {
 	m->m_state2 = this;
 	m->m_state3 = (void *)(PTRTYPE)i;
 
-	if ( ! m->getIp ( host           ,
-			  hlen           ,
-			  &m_ipBuf[n]    ,
-			  m              , // state
-			  gotMsgCWrapper ))// callback
+	if (!m->getIp(host, hlen, &m_ipBuf[n], m, gotMsgCWrapper)) {
 		return false;
+	}
 	return doneSending ( i );
 }	
 

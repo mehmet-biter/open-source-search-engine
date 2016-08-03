@@ -7023,12 +7023,7 @@ int32_t *XmlDoc::getIp ( ) {
 	//m_ipValid = true;
 	// get it
 	logTrace( g_conf.m_logTraceXmlDoc, "Calling MsgC.getIp [%s]", u->getHost());
-	if ( ! m_msgc.getIp ( u->getHost   () ,
-			      u->getHostLen() ,
-			      &m_ip           ,
-			      this            ,
-			      gotIpWrapper    ))
-	{
+	if (!m_msgc.getIp(u->getHost(), u->getHostLen(), &m_ip, this, gotIpWrapper)) {
 		// we blocked
 		logTrace( g_conf.m_logTraceXmlDoc, "END, return -1. Blocked." );
     	return (int32_t *)-1;
