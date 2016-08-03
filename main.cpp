@@ -100,8 +100,6 @@ void dumpClusterdb       ( const char *coll,int32_t sfn,int32_t numFiles,bool in
 void dumpLinkdb          ( const char *coll, int32_t sfn, int32_t numFiles, bool includeTree,
 			   const char *url );
 
-bool isRecoveryFutile ( ) ;
-
 int copyFiles ( const char *dstDir ) ;
 
 
@@ -1425,17 +1423,6 @@ int main2 ( int argc , char *argv[] ) {
 		sprintf(replaceCmd, "replacehost=1&rhost=%" PRId32"&rspare=%" PRId32,
 				    hostId, spareId);
 		return doCmd( replaceCmd, -1, "admin/hosts", true, true );
-	}
-
-	// once we are in recoverymode, that means we are being restarted
-	// from having cored, so to prevent immediate core and restart
-	// ad inifinitum, look got "sigbadhandler" at the end of the 
-	// last 5 logs in the last 60 seconds. if we see that then something
-	// is prevent is from starting up so give up and exit gracefully
-	if ( g_recoveryMode && isRecoveryFutile () ) {
-		// exiting with 0 means no error and should tell our
-		// keep alive loop to not restart us and exit himself.
-		exit (0);
 	}
 
 	// HACK: enable logging for Conf.cpp, etc.
@@ -7833,77 +7820,6 @@ int collinject ( char *newHostsConf ) {
 		       );
 	}
 	return 1;
-}
-
-bool isRecoveryFutile ( ) {
-
-	// scan logs in last 60 seconds
-	Dir dir;
-	dir.set ( g_hostdb.m_dir );
-	dir.open ();
-
-	// scan files in dir
-	const char *filename;
-
-	int32_t now = getTimeLocal();
-
-	int32_t fails = 0;
-
-	while ( ( filename = dir.getNextFilename ( "*" ) ) ) {
-		// filename must be a certain length
-		//int32_t filenameLen = strlen(filename);
-
-		const char *p = filename;
-
-		if ( !strstr ( filename,"log") ) continue;
-
-		// skip "log"
-		p += 3;
-		// skip digits for hostid
-		while ( isdigit(*p) ) p++;
-
-		// skip hyphen
-		if ( *p != '-' ) continue;
-		p++;
-
-		// open file
-		File ff;
-		ff.set ( dir.getDir() , filename );
-		// skip if 0 bytes or had error calling ff.getFileSize()
-		int32_t fsize = ff.getFileSize();
-		if ( fsize == 0 ) continue;
-		ff.open ( O_RDONLY );
-		// get time stamp
-		int32_t timestamp = ff.getLastModifiedTime ( );
-
-		// skip if not iwthin 2 minutes
-		if ( timestamp < now - 2*60 ) continue;
-
-		// open it up to see if ends with sighandle
-		int32_t toRead = 3000;
-		if ( toRead > fsize ) toRead = fsize;
-		char mbuf[3002];
-		ff.read ( mbuf , toRead , fsize - toRead );
-
-		bool failedToStart = false;
-
-		if ( strstr (mbuf,"sigbadhandler") ) failedToStart = true;
-		if ( strstr (mbuf,"Failed to bind") ) failedToStart = true;
-
-		if ( ! failedToStart ) continue;
-
-		// count it otherwise
-		fails++;
-	}
-
-	// if we had less than 5 failures to start in last 60 secs
-	// do not consider futile
-	if ( fails < 5 ) return false;
-
-	log( LOG_WARN, "process: KEEP ALIVE LOOP GIVING UP. Five or more cores in last 60 seconds.");
-
-	// otherwise, give up!
-	return true;
 }
 
 const char *getcwd2 ( char *arg2 ) {
