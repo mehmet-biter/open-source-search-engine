@@ -11,7 +11,6 @@ int32_t klogctl( int, char *,int ) { return 0; }
 
 #include "PingServer.h"
 #include "UdpServer.h"
-//#include "Sync.h"
 #include "Conf.h"
 #include "HttpServer.h"
 #include "HttpMime.h"
@@ -44,16 +43,7 @@ static void handleRequest11 ( UdpSlot *slot , int32_t niceness ) ;
 static void gotReplyWrapperP2 ( void *state , UdpSlot *slot );
 static void gotReplyWrapperP3 ( void *state , UdpSlot *slot );
 static void updatePingTime ( Host *h , int32_t *pingPtr , int32_t tripTime ) ;
-// JAB: warning abatement
-//static bool pageTMobile ( Host *h , char *errmsg ) ;
-//static bool pageAlltel  ( Host *h , char *errmsg , char *num ) ;
-//static bool pageVerizon ( Host *h , char *errmsg ) ;
-//static void verizonWrapper ( void *state , TcpSocket *ts ) ;
-//static bool pageVerizon2 ( void *state , TcpSocket *s ) ;
-// JAB: warning abatement
-//static bool pageSprintPCS ( Host *h , char *errmsg , char *num ) ;
-//static void sprintPCSWrapper ( void *state , TcpSocket *ts ) ;
-//static bool pageSprintPCS2 ( void *state , TcpSocket *ts ) ;
+
 static bool sendAdminEmail ( Host  *h, const char  *fromAddress,
                              const char  *toAddress, char  *body ,
 			     const char  *emailServIp );
@@ -62,18 +52,21 @@ bool PingServer::registerHandler ( ) {
 	// . we'll handle msgTypes of 0x11 for pings
 	// . register ourselves with the udp server
 	// . it calls our callback when it receives a msg of type 0x0A
-	// . it is now hot..., no, not hot anymore
-	//if ( ! g_udpServer2.registerHandler ( 0x11, handleRequest11 )) 
-	//	return false;
-	// register on low priority server to make transition easier
-	if ( ! g_udpServer.registerHandler ( msg_type_11, handleRequest11 ))
+	if ( ! g_udpServer.registerHandler ( msg_type_11, handleRequest11 )) {
 		return false;
+	}
+
 	// limit this to 1000ms
-	if ( g_conf.m_pingSpacer > 1000 ) g_conf.m_pingSpacer = 1000;
+	if ( g_conf.m_pingSpacer > 1000 ) {
+		g_conf.m_pingSpacer = 1000;
+	}
+
 	// save this
 	m_pingSpacer = g_conf.m_pingSpacer;
+
 	// this starts off at zero
 	m_callnum = 0;
+
 	// . this was 500ms but now when a host shuts downs it sends all other
 	//   hosts a msg saying so... PingServer::broadcastShutdownNotes() ...
 	// . so i put it up to 2000ms to save bandwidth some
@@ -85,23 +78,8 @@ bool PingServer::registerHandler ( ) {
 		return false;
 	}
 
-	// if not host #0, we're done
-	if ( g_hostdb.m_hostId != 0 ) return true;
-
 	// we have disabled syncing for now
 	return true;
-
-	// . this is called ever 10 minutes
-	// . it tells all hosts to store a sync point at about the same time
-	// . the sync point is a fixed value in time used as a reference
-	//   for performing incremental synchronization by Sync.cpp should
-	//   a host go down without saving. one of its twins must of course
-	//   remain up in order to sync him.
-	//if ( ! g_loop.registerSleepCallback ( SYNC_TIME*1000     , // ms
-	//				      NULL           , 
-	//				      sleepWrapper10 ) )
-	//	return false;
-	//return true;
 }
 
 static int32_t s_outstandingPings = 0;
