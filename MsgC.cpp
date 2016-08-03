@@ -178,8 +178,6 @@ bool MsgC::getIp(const char *hostname, int32_t hostnameLen, int32_t *ip, void *s
 			    timeout    , // timeout
 			    niceness   , // niceness
 			    firstHostId,// first host to try
-			    NULL       , // reply buf
-			    0          , // replybuf max size
 			    false   )) { // free reply buf?
 		//did not block, error
 		log(LOG_DEBUG,"dns: msgc: mcast had error: %s",

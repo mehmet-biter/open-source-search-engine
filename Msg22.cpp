@@ -171,10 +171,7 @@ bool Msg22::getTitleRec ( Msg22Request  *r              ,
 			      timeout*1000    , // timeout
 			      r->m_niceness   , // nice, reply size can be huge
 			      firstHostId     , // first hostid
-			      NULL            , // replyBuf
-			      0               , // replyBufMaxSize
-			      false           , // free reply buf?
-			      RDB_TITLEDB     ) ){ // rdbId of titledb
+			      false           ) ){ // free reply buf?
 		log("db: Requesting title record had error: %s.",
 		    mstrerror(g_errno) );
 		// set m_errno

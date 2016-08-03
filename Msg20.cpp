@@ -226,8 +226,6 @@ bool Msg20::getSummary ( Msg20Request *req ) {
 			      timeout           , // timeout
 			      req->m_niceness   ,
 			      firstHostId       , // first hostid
-			      NULL              , // reply buffer
-			      0                 , // reply buffer size
 			      false          )) { // free reply buf?
 		// sendto() sometimes returns "Network is down" so i guess
 		// we just had an "error reply".

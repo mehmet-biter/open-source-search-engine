@@ -87,10 +87,7 @@ class Multicast {
 		    int64_t        totalTimeout    , //relative timeout in milliseconds
 		    int32_t        niceness        ,
 		    int32_t        firstHostId     = -1 ,// first host to try
-		    char       *replyBuf        = NULL ,
-		    int32_t        replyBufMaxSize = 0 ,
-		    bool        freeReplyBuf    = true ,
-		    char        rdbId           =  0   ); // bogus rdbId
+		    bool        freeReplyBuf    = true );
 
 	// . get the reply from your NON groupSend
 	// . if *freeReply is true then you are responsible for freeing this 
@@ -181,9 +178,6 @@ class Multicast {
 	bool        m_freeReadBuf;
 
 	int32_t        m_key;
-
-	//bool  m_doDiskLoadBalancing;
-	char  m_rdbId              ;
 
 	// Msg1 might be able to add data to our tree to save a net trans.
 	bool        m_sendToSelf;

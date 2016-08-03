@@ -82,10 +82,7 @@ bool Multicast::send ( char         *msg              ,
 		       int64_t          totalTimeout     , // in millseconds
 		       int32_t          niceness         ,
 		       int32_t          firstHostId      ,
-		       char         *replyBuf         ,
-		       int32_t          replyBufMaxSize  ,
-		       bool          freeReplyBuf     ,
-		       char          rdbId            ) {
+		       bool          freeReplyBuf     ) {
 	bool sendToSelf = true;
 
 	// make sure not being re-used!
@@ -113,8 +110,8 @@ bool Multicast::send ( char         *msg              ,
 	m_niceness         = niceness;
 	// this can't be -1 i guess
 	if ( totalTimeout <= 0 ) { g_process.shutdownAbort(true); }
-	m_replyBuf         = replyBuf;
-	m_replyBufMaxSize  = replyBufMaxSize;
+	m_replyBuf         = NULL;
+	m_replyBufMaxSize  = 0;
 	m_startTime        = gettimeofdayInMilliseconds();
 	m_numReplies       = 0;
 	m_readBuf          = NULL;
@@ -125,7 +122,7 @@ bool Multicast::send ( char         *msg              ,
 	m_sentToTwin       = false;
 	m_retryCount       = 0;
 	m_key              = key;
-	m_rdbId               = rdbId;
+
 	// clear m_retired, m_errnos, m_slots
 	memset ( m_retired    , 0 , sizeof(bool     ) * MAX_HOSTS_PER_GROUP );
 	memset ( m_errnos     , 0 , sizeof(int32_t     ) * MAX_HOSTS_PER_GROUP );
@@ -573,30 +570,6 @@ int32_t Multicast::pickBestHost ( uint32_t key , int32_t firstHostId ) {
 	// otherwise return i
 	//return i;
 }
-
-// . pick the fastest host from m_hosts based on avg roundtrip time for ACKs
-// . skip hosts in our m_retired[] list of hostIds
-// . returns -1 if none left to pick
-/*
-int32_t Multicast::pickBestHost ( ) {
-	int32_t mini    = -1;
-	int32_t minPing = 0x7fffffff;
-	// TODO: reset the sublist ptr????
-	// cast the msg to "hostsPerGroup" hosts in group "groupId"
-	for ( int32_t i = 0 ; i < m_numHosts ; i++ ) {
-		// skip host if we've retired it
-		if ( m_retired[i] ) continue;
-		// get the host
-		Host *h = &m_hosts[i];
-		// see if we got a new fastest host, continue if not
-		if ( h->m_pingAvg > minPing ) continue;
-		minPing = h->m_pingAvg;
-		mini    = i;
-	}
-	// return our candidate, may be -1 if all were picked before
-	return mini;
-}
-*/
 
 // . returns false and sets error on g_errno
 // . returns true if kicked of the request (m_msg)
@@ -1109,7 +1082,9 @@ void Multicast::closeUpShop ( UdpSlot *slot ) {
 	// . this happens if the udp server is hot (async signal based) and
 	//   m_replyBuf is NULL because he cannot malloc a buf to read into
 	//   because malloc is not async signal safe
-	if ( slot->m_tmpBuf == slot->m_readBuf ) m_freeReadBuf = false;
+	if ( slot->m_tmpBuf == slot->m_readBuf ) {
+		m_freeReadBuf = false;
+	}
 	// don't let UdpServer free the readBuf now that we point to it
 	slot->m_readBuf = NULL;
 
@@ -1168,7 +1143,9 @@ void Multicast::destroySlotsInProgress ( UdpSlot *slot ) {
 char *Multicast::getBestReply(int32_t *replySize, int32_t *replyMaxSize, bool *freeReply, bool steal) {
 	*replySize    = m_readBufSize;
 	*replyMaxSize = m_readBufMaxSize;
-	if(steal) m_freeReadBuf = false;
+	if(steal) {
+		m_freeReadBuf = false;
+	}
 	*freeReply    = m_freeReadBuf;
 	// this can be NULL if we destroyed the slot in progress only to
 	// try another host who was dead!

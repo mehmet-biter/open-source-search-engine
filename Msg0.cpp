@@ -326,8 +326,6 @@ skip:
 		    KEY1(m_startKey,m_ks),KEY0(m_startKey),
 		    (int32_t)m_niceness);
 
-	char *replyBuf = NULL;
-	int32_t  replyBufMaxSize = 0;
 	bool  freeReply = true;
 
 	// . make a request with the info above (note: not in network order)
@@ -384,8 +382,8 @@ skip:
 					 timeout       ,
 					 -1            , // backoff
 					 -1            , // maxwait
-					 replyBuf      ,
-					 replyBufMaxSize ,
+					 NULL      ,
+					 0 ,
 					 m_niceness     ) ) { // cback niceness
 			logTrace( g_conf.m_logTraceMsg0, "END, return true. Request sent" );
 			return true;
@@ -416,9 +414,6 @@ skip:
 	//for ( int32_t i = 0; i < m_numSplit; i++ ) {
 
 	QUICKPOLL(m_niceness);
-	//int32_t gr;
-	char *buf;
-	buf = replyBuf;
 
 	// get the multicast
 	Multicast *m = &m_mcast;
@@ -437,10 +432,7 @@ skip:
 			      timeout*1000 , // timeout
 			      niceness     ,
 			      firstHostId  ,
-			      buf             ,
-			      replyBufMaxSize ,
-			      freeReply       , // free reply buf?
-			      rdbId           ) )
+			      freeReply       ) ) // free reply buf?
 	{
 		log(LOG_ERROR, "net: Failed to send request for data from %s in shard "
 		    "#%" PRIu32" over network: %s.",
