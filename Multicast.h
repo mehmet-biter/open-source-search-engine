@@ -95,8 +95,7 @@ class Multicast {
 		    key_t       cacheKey        =  0   ,
 		    char        rdbId           =  0   , // bogus rdbId
 		    int32_t        minRecSizes     = -1   ,// unknown read size
-		    bool        sendToSelf      = true ,// if we should.
-		    int32_t        redirectTimeout = -1);
+		    bool        sendToSelf      = true);
 
 	// . get the reply from your NON groupSend
 	// . if *freeReply is true then you are responsible for freeing this 
@@ -198,7 +197,6 @@ class Multicast {
 
 	char        m_sentToTwin;
 
-	int32_t        m_redirectTimeout;
 	char        m_inUse;
 
 	// for linked list of available Multicasts in Msg4.cpp

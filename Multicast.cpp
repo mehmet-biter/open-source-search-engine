@@ -90,8 +90,7 @@ bool Multicast::send ( char         *msg              ,
 		       key_t         cacheKey         ,
 		       char          rdbId            ,
 		       int32_t          minRecSizes      ,
-		       bool          sendToSelf       ,
-		       int32_t          redirectTimeout) {
+		       bool          sendToSelf) {
 	// make sure not being re-used!
 	if ( m_inUse ) {
 		log( LOG_ERROR, "net: Attempt to re-use active multicast");
@@ -130,7 +129,6 @@ bool Multicast::send ( char         *msg              ,
 	m_retryCount       = 0;
 	m_key              = key;
 	m_rdbId               = rdbId;
-	m_redirectTimeout     = redirectTimeout;
 	// clear m_retired, m_errnos, m_slots
 	memset ( m_retired    , 0 , sizeof(bool     ) * MAX_HOSTS_PER_GROUP );
 	memset ( m_errnos     , 0 , sizeof(int32_t     ) * MAX_HOSTS_PER_GROUP );
@@ -785,11 +783,7 @@ void sleepWrapper1 ( int bogusfd , void    *state ) {
 	//   too much on an already saturated network of drives just 
 	//   excacerbates the problem. this stuff was originally put here
 	//   to reroute for when a host went down... let's keep it that way
-	//int32_t ta , nb;
-	if ( THIS->m_redirectTimeout != -1 ) {
-		if ( elapsed < THIS->m_redirectTimeout ) return;
-		goto redirectTimedout;
-	}
+
 	switch ( THIS->m_msgType ) {
 		// msg to get a summary from a query (calls msg22)
 		// buzz takes extra long! it calls Msg25 sometimes.
@@ -870,7 +864,6 @@ void sleepWrapper1 ( int bogusfd , void    *state ) {
 		return;
 	}
 
-redirectTimedout:
 	// cancel any outstanding transactions iff we have a m_replyBuf
 	// that we must read the reply into because we cannot share!!
 	if ( THIS->m_readBuf ) {

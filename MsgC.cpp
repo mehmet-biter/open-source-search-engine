@@ -188,8 +188,7 @@ bool MsgC::getIp(const char *hostname, int32_t hostnameLen, int32_t *ip, void *s
 			    0          , // cacheKey
 			    0          , // rdbId
 			    -1         , // minRecSizes
-			    true       , // sendtoself
-			    -1         )) { // redirecttimeout
+			    true    )) { // sendtoself
 		//did not block, error
 		log(LOG_DEBUG,"dns: msgc: mcast had error: %s",
 		    mstrerror(g_errno));
