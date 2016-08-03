@@ -5045,6 +5045,18 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
+	m->m_title = "Use new no-in-memory-merge feature";
+	m->m_desc  = "Posdb will no longer contain delete keys, and the entire document is indexed every time a change is found.";
+	m->m_cgi   = "noinmemmerge";
+	m->m_off   = offsetof(Conf,m_noInMemoryPosdbMerge);
+	m->m_type  = TYPE_BOOL;
+	m->m_def   = "0";
+	m->m_page  = PAGE_MASTER;
+	m->m_obj   = OBJ_CONF;
+	m++;
+
+
+
 	m->m_title = "injections enabled";
 	m->m_desc  = "Controls injecting for all collections";
 	m->m_cgi   = "injen";
@@ -6000,20 +6012,6 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(Conf,m_useEtcHosts);
 	m->m_def   = "1";
 	m->m_type  = TYPE_BOOL;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	m->m_title = "twins are split";
-	m->m_desc  = "If enabled, Gigablast assumes the first half of "
-		"machines in hosts.conf "
-		"are on a different network switch than the second half, "
-		"and minimizes transmits between the switches.";
-	m->m_cgi   = "stw";
-	m->m_off   = offsetof(Conf,m_splitTwins);
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;

@@ -14192,8 +14192,16 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 			     m_docId ) {
 				g_process.shutdownAbort(true); }
 
-			if ( ! dt8.addKey(&hk,&rec) )
-			{
+			if( g_conf.m_noInMemoryPosdbMerge && rdbId == RDB_POSDB ) {
+				// NEW 20160803.
+				// Do not store records for POSDB in the hash table of old
+				// values. This makes sure that no delete records are 
+				// stored in posdb for existing terms, which is needed for 
+				// the new no-merge feature.
+				continue;
+			}
+
+			if ( ! dt8.addKey(&hk,&rec) ) {
 				logTrace( g_conf.m_logTraceXmlDoc, "addKey failed" );
 				return NULL;
 			}

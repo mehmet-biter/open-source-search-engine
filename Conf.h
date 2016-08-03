@@ -312,10 +312,8 @@ class Conf {
 	//bool   m_onlyAddUnchangedTermIds;
 	bool   m_doIncrementalUpdating;
 
-	// always true unless entire indexdb was deleted and we are rebuilding
-	bool   m_indexDeletes;
-
-	bool   m_splitTwins;
+	// Temporary (?) setting for new Posdb no-in-memory-merge feature
+	bool   m_noInMemoryPosdbMerge;
 
 	bool   m_useQuickpoll;
 
