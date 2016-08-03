@@ -2466,8 +2466,7 @@ UdpSlot *UdpServer::getEmptyUdpSlot_ass ( key_t k , bool incoming ) {
 		slot->m_prev2    = m_tail2;
 		m_tail2->m_next2 = slot;
 		m_tail2          = slot;
-	}
-	else {
+	} else {
 		slot->m_next2    = NULL;
 		slot->m_prev2    = NULL;
 		m_head2          = slot;
@@ -2477,13 +2476,16 @@ UdpSlot *UdpServer::getEmptyUdpSlot_ass ( key_t k , bool incoming ) {
 	// count it
 	m_numUsedSlots++;
 
-	if ( incoming ) m_numUsedSlotsIncoming++;
+	if ( incoming ) {
+		m_numUsedSlotsIncoming++;
+	}
 
 	slot->m_incoming = incoming;
 
 	// now store ptr in hash table
 	slot->m_key = k;
-	addKey ( k , slot );
+	addKey(k, slot);
+
 	return slot;
 }
 
@@ -2512,11 +2514,10 @@ UdpSlot *UdpServer::getUdpSlot ( key_t k ) {
 void UdpServer::addToCallbackLinkedList ( UdpSlot *slot ) {
 	// debug log
 	if ( g_conf.m_logDebugUdp && slot->m_errno )
-		log("udp: adding slot with err = %s to callback list"
-		    , mstrerror(slot->m_errno) );
+		log("udp: adding slot with err = %s to callback list", mstrerror(slot->m_errno) );
 	if ( g_conf.m_logDebugUdp )
-		log("udp: adding slot=%" PTRFMT" to callback list"
-		    ,(PTRTYPE)slot);
+		log("udp: adding slot=%" PTRFMT" to callback list", (PTRTYPE)slot);
+
 	// must not be in there already, lest we double add it
 	if ( isInCallbackLinkedList ( slot ) ) {
 		if ( g_conf.m_logDebugUdp )
@@ -2524,13 +2525,13 @@ void UdpServer::addToCallbackLinkedList ( UdpSlot *slot ) {
 			    ,(PTRTYPE)slot);
 		return;
 	}
+
 	slot->m_next3 = NULL;
 	slot->m_prev3 = NULL;
 	if ( ! m_tail3 ) {
 		m_head3 = slot;
 		m_tail3 = slot;
-	}
-	else {
+	} else {
 		// insert at end of linked list otherwise
 		m_tail3->m_next3 = slot;
 		slot->m_prev3 = m_tail3;
@@ -2633,8 +2634,10 @@ void UdpServer::cancel ( void *state , msg_type_t msgType ) {
 		if (slot->m_state != state || slot->getMsgType() != msgType) {
 			continue;
 		}
+
 		// note it
 		log(LOG_INFO,"udp: cancelled udp socket. msgType=0x%02x.", slot->getMsgType());
+
 		// let them know why we are calling the callback prematurely
 		g_errno = ECANCELLED;
 		// stop waiting for reply, this will call destroySlot(), too
@@ -2669,8 +2672,7 @@ void UdpServer::replaceHost ( Host *oldHost, Host *newHost ) {
 			if ( ++i >= m_numBuckets ) i = 0;
 		// sanity check
 		if ( ! m_ptrs[i] ) {
-			log(LOG_LOGIC,"udp: replaceHost: Slot not in hash "
-				      "table.");
+			log(LOG_LOGIC,"udp: replaceHost: Slot not in hash table.");
 			g_process.shutdownAbort(true);
 		}
 		if ( g_conf.m_logDebugUdp )
