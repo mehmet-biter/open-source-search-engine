@@ -27,7 +27,6 @@ static void gotReplyWrapperM2    ( void *state , UdpSlot *slot  ) ;
 void Multicast::constructor ( ) {
 	m_msg      = NULL;
 	m_readBuf  = NULL;
-	m_replyBuf = NULL;
 	m_inUse    = false;
 }
 void Multicast::destructor  ( ) { reset(); }
@@ -49,16 +48,9 @@ void Multicast::reset ( ) {
 		mfree ( m_msg   , m_msgSize   , "Multicast" );
 	if ( m_readBuf && m_ownReadBuf && m_freeReadBuf ) 
 		mfree ( m_readBuf , m_readBufMaxSize , "Multicast" );
-	// . replyBuf can be separate from m_readBuf if g_errno gets set
-	//   and sets the slot's m_readBuf to NULL, then calls closeUpShop()
-	//   which sets m_readBuf to the slot's readBuf, which is now NULL!
-	// . this was causing the "bad engineer" errors from Msg22 to leak mem
-	if ( m_replyBuf && m_ownReadBuf && m_freeReadBuf && 
-	     m_replyBuf != m_readBuf ) 
-		mfree ( m_replyBuf , m_replyBufMaxSize , "Multicast" );
+
 	m_msg      = NULL;
 	m_readBuf  = NULL;
-	m_replyBuf = NULL;
 	m_inUse    = false;
 	m_replyingHost = NULL;
 }
@@ -110,8 +102,6 @@ bool Multicast::send ( char         *msg              ,
 	m_niceness         = niceness;
 	// this can't be -1 i guess
 	if ( totalTimeout <= 0 ) { g_process.shutdownAbort(true); }
-	m_replyBuf         = NULL;
-	m_replyBufMaxSize  = 0;
 	m_startTime        = gettimeofdayInMilliseconds();
 	m_numReplies       = 0;
 	m_readBuf          = NULL;
@@ -971,9 +961,7 @@ void Multicast::gotReply1 ( UdpSlot *slot ) {
 			    slot->getMsgType(), slot->m_transId,  m_niceness,
 			    g_hostdb.getNetName(),mstrerror(g_errno) );
 	skip:
-		// if this slot had an error we may have to tell UdpServer
-		// not to free the read buf
-		if ( m_replyBuf == slot->m_readBuf ) slot->m_readBuf = NULL;
+
 		// . try to send to another host
 		// . on successful sending return, we'll be called on reply
 		// . this also returns false if no new hosts left to send to
@@ -1123,10 +1111,6 @@ void Multicast::destroySlotsInProgress ( UdpSlot *slot ) {
 		// don't free his sendBuf, readBuf is ok to free, however
 		m_slots[i]->m_sendBufAlloc = NULL;
 
-		// if caller provided the buffer, don't free it cuz "slot"
-		// contains it (or m_readBuf)
-		if ( m_replyBuf == m_slots[i]->m_readBuf )
-			m_slots[i]->m_readBuf = NULL;
 		// destroy this slot that's in progress
 		g_udpServer.destroySlot ( m_slots[i] );
 		// do not re-destroy. consider no longer in progress.

@@ -157,11 +157,6 @@ class Multicast {
 	int32_t        m_readBufSize;
 	int32_t        m_readBufMaxSize;
 
-	// if caller passes in a reply buf then we reference it here
-	char       *m_replyBuf;
-	int32_t        m_replyBufSize;
-	int32_t        m_replyBufMaxSize;
-
 	// we own it until caller calls getBestReply()
 	bool        m_ownReadBuf;
 	// are we registered for a callback every 1 second
