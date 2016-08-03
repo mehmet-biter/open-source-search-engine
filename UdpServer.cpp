@@ -2443,8 +2443,6 @@ bool UdpServer::timeoutDeadHosts ( Host *h ) {
 
 // verified that this is not interruptible
 UdpSlot *UdpServer::getEmptyUdpSlot_ass ( key_t k , bool incoming ) {
-	// tmp debug
-	//if ( (rand() % 10) == 1 ) slot = NULL
 	// return NULL if none left
 	if ( ! m_head ) { 
 		g_errno = ENOSLOTS;
@@ -2454,14 +2452,12 @@ UdpSlot *UdpServer::getEmptyUdpSlot_ass ( key_t k , bool incoming ) {
 		}
 		return NULL;
 	}
+
 	UdpSlot *slot = m_head;
+
 	// remove from linked list of available slots
 	m_head = m_head->m_next;
-	// add to linked list of used slots
-	//slot->m_next2    = m_head2;
-	//slot->m_prev2    = NULL;
-	//if ( m_head2 ) m_head2->m_prev2 = slot;
-	//m_head2          = slot;
+
 	// put the used slot at the tail so older slots are at the head and
 	// makeCallbacks() can take care of the callbacks that have been
 	// waiting the longest first...
@@ -2477,13 +2473,7 @@ UdpSlot *UdpServer::getEmptyUdpSlot_ass ( key_t k , bool incoming ) {
 		m_head2          = slot;
 		m_tail2          = slot;
 	}
-	// also to callback candidates if we should
-	// if ( hasCallback ) {
-	// 	slot->m_next3    = m_head3;
-	// 	slot->m_prev3    = NULL;
-	// 	if ( m_head3 ) m_head3->m_prev3 = slot;
-	// 	m_head3          = slot;
-	// }
+
 	// count it
 	m_numUsedSlots++;
 
