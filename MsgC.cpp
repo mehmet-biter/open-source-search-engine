@@ -25,18 +25,12 @@ bool MsgC::registerHandler ( ) {
 	return true;
 }
 
-
 // returns false if blocked, true otherwise
-bool MsgC::getIp(const char  *hostname    , int32_t   hostnameLen ,
-		 int32_t  *ip ,
-		 void  *state ,
-		 void (* callback) ( void *state , int32_t ip ),
-		 int32_t  niceness ,
-		 bool  forwardToProxy ){
+bool MsgC::getIp(const char *hostname, int32_t hostnameLen, int32_t *ip, void *state,
+                 void (*callback)(void *state, int32_t ip), int32_t niceness) {
 	m_mcast.reset();
 	m_callback=callback;
 	m_ipPtr = ip;
-	m_forwardToProxy = forwardToProxy;
 	// sanity check
 	if ( ! m_ipPtr ) { g_process.shutdownAbort(true); }
 	// First check if g_dns has it. This function is a part of the 
@@ -60,8 +54,7 @@ bool MsgC::getIp(const char  *hostname    , int32_t   hostnameLen ,
 	// debug
 	//char c = hostname[hostnameLen];
 	//if ( c != 0 ) hostname[hostnameLen] = 0;
-	log(LOG_DEBUG,"dns: msgc: getting ip (sendtoproxy=%" PRId32") for [%s]",
-	    (int32_t)forwardToProxy, hostname);
+	log(LOG_DEBUG,"dns: msgc: getting ip for [%s]", hostname);
 	    
 	    
 	//if ( c != 0 ) hostname[hostnameLen] = c;
@@ -145,32 +138,8 @@ bool MsgC::getIp(const char  *hostname    , int32_t   hostnameLen ,
 		// ok, we blocked, call callback when done
 		return false;
 	}
-
-	// . use scproxy if we should
-	// . so if we are behind a nat this should make the nat table overflow 
-	//   a moot point, because we are now tunneling via msgC to a
-	//   server that has its own IP address and does not use NAT. 
-	// . and if the msgc packets got screwed up by NAT that is ok because
-	//   it will re-send forever using our reliable udp protocol
-	// . if we are hitting a bind9 server then askRootNameservers will be
-	//   false. so if we are using a bind9 server then do not send the
-	//   request to an scproxy, but send it to a grunt with a cache.
-	//if ( g_conf.m_useCompressionProxy && g_conf.m_askRootNameservers ) {
-	if ( forwardToProxy ) {
-		host = g_hostdb.getBestSpiderCompressionProxy((int32_t *)&key.n1);
-		if ( ! host && ! g_errno ) {
-			log("msgc: using compression proxy and asking root "
-			    "name servers, but no compression proxy was "
-			    "given in hosts.conf");
-			g_errno = EBADENGINEER;
-		}
-		if ( ! host ) return true;
-		firstHost = host;
-	}
-	else {
-		host = g_dns.getResponsibleHost ( key );
-		firstHost = NULL;
-	}
+	
+	host = g_dns.getResponsibleHost ( key );
 
 	if ( g_conf.m_logDebugDns ) {
 		int32_t fip = 0;
@@ -185,7 +154,7 @@ bool MsgC::getIp(const char  *hostname    , int32_t   hostnameLen ,
 		if ( ! g_errno ) { g_process.shutdownAbort(true); }
 		return true;
 	}
-	//uint32_t groupId     = host->m_groupId;
+
 	int32_t          firstHostId = host->m_hostId;
 	// the handling server will timeout its dns algorithm and send us
 	// back an EDNSTIMEDOUT error, so we do not need to have any timeout
@@ -217,8 +186,7 @@ bool MsgC::getIp(const char  *hostname    , int32_t   hostnameLen ,
 			    0          , // rdbId
 			    -1         , // minRecSizes
 			    true       , // sendtoself
-			    -1         , // redirecttimeout
-			    firstHost  )){ // firstProxyHost
+			    -1         )) { // redirecttimeout
 		//did not block, error
 		log(LOG_DEBUG,"dns: msgc: mcast had error: %s",
 		    mstrerror(g_errno));
@@ -235,11 +203,9 @@ void gotReplyWrapper ( void *state , void *state2 ) {
 	int32_t ip = THIS->gotReply();
 	// debug
 	if ( g_conf.m_logDebugDns ) {
-		const char *s ="";
-		if ( THIS->m_forwardToProxy ) s = "from proxy ";
-		logf(LOG_DEBUG,"dns: msgc: got reply %sof %s for %s. "
+		logf(LOG_DEBUG,"dns: msgc: got reply of %s for %s. "
 		     "state=0x%" PTRFMT" mcast=0x%" PTRFMT"",
-		     s,iptoa(*THIS->m_ipPtr),THIS->m_u.getUrl(),(PTRTYPE)state2,
+		     iptoa(*THIS->m_ipPtr),THIS->m_u.getUrl(),(PTRTYPE)state2,
 		     (PTRTYPE)&THIS->m_mcast);
 	}
 	THIS->m_callback(state2,ip);
@@ -279,10 +245,7 @@ int32_t MsgC::gotReply(){
 
 	// . if we have to free the buffer
 	// . if freeIt is false that maeans we own the reply buffer
-	// . if not sending to a proxy this means we got the ip from
-	//   another host that is not a proxy and we should free it...
-	// . but if we got this reply froma proxy, do not free it
-	if ( ! freeIt && ! m_forwardToProxy ) {
+	if (!freeIt) {
 		//log (LOG_DEBUG,"msgC: Multicast asked to free buffer");
 		mfree(reply,maxSize,"MulticastMsgC");
 	}
@@ -312,98 +275,25 @@ int32_t MsgC::gotReply(){
 	return *m_ipPtr;
 }
 
-// like gotReply() but it is a reply from the proxy, so we gotta free our
-// msgc before sending back a reply to the first guy's msgc
-void gotProxyReplyWrapper ( void *state , int32_t ipArg ) {
-	// get the msgc we used to send to proxy
-	MsgC *THIS = (MsgC *)state;
-	// get ip from the proxy reply
-	int32_t ip = THIS->gotReply();
-	// debug
-	log(LOG_DEBUG,"dns: msgc: got reply from proxy of %s for %s [%s].",
-	    iptoa(*THIS->m_ipPtr),
-	    THIS->m_u.getUrl(), 
-	    THIS->m_u.getScheme());
-	    
-	UdpSlot *slot = THIS->m_slot;
-	// free the msgc we used to communicate with the proxy
-	mdelete ( THIS , sizeof(MsgC), "proxmsgc");
-	delete  ( THIS );
-	// send ip back to the first guy to launch a msgc request
-	gotMsgCIpWrapper ( slot , ip );
-}	
-	
 // . only return false if you want slot to be nuked w/o replying
 // . MUST always call g_udpServer::sendReply() or sendErrorReply()
-void handleRequest ( UdpSlot *slot , int32_t niceness  ) {
-
+void handleRequest(UdpSlot *slot, int32_t niceness) {
 	// get the request, should be the hostname
-	char *hostname     = slot->m_readBuf;
+	char *hostname = slot->m_readBuf;
+
 	// do not include the \0 at the end in the length
 	int32_t  hostnameLen = slot->m_readBufSize - 1;
 
 	int32_t ip=0;
 
-	//char c = hostname[hostnameLen];
-	//if ( c != 0 ) hostname[hostnameLen] = 0;
-	log(LOG_DEBUG,"dns: msgc: handle request called for %s state=%" PTRFMT"",
-	    hostname,(PTRTYPE)slot);
-	//if ( c != 0 ) hostname[hostnameLen] = c;
-
-
-	bool useProxy = g_conf.m_useCompressionProxy;
-	// not if we are though
-	if ( g_hostdb.m_myHost->m_isProxy ) useProxy = false;
-	// . turn off for now for testing
-	// . roadrunner wireless injects garbage into our msgc replies
-	//   which makes our checksum fail in UdpSlot.cpp, however, it really
-	//   slows everything down when we are silently dropping so many
-	//   packets. so do not forward requests to the spider proxy for
-	//   now. re-enable this later perhaps when we have cogent installed.
-	useProxy = false;
+	log(LOG_DEBUG,"dns: msgc: handle request called for %s state=%" PTRFMT, hostname,(PTRTYPE)slot);
 
 	// check dns cache for the hostname. This should also send to
 	// the dnsServer. If it is not in the cache, getIp puts it in.
-	if ( ! useProxy ) {
-		if ( g_dns.getIp( hostname, 
-				  hostnameLen, 
-				  &ip, 
-				  slot,
-				  gotMsgCIpWrapper ))
-			gotMsgCIpWrapper(slot,ip);
-		return;
+	if (g_dns.getIp(hostname, hostnameLen, &ip, slot, gotMsgCIpWrapper)) {
+		gotMsgCIpWrapper(slot, ip);
 	}
-
-	// . if we need to go to proxy, forward it now with a new msgC
-	// . before sending off to compression proxy, check the cache
-	// . gotProxyReplyWrapper shold add it to our cache
-	key_t key = g_dns.getKey ( hostname , hostnameLen );
-	if ( g_dns.isInCache ( key , &ip ) ) {
-		gotMsgCIpWrapper ( slot , ip );
-		return;
-	}
-
-	// ok, not in cache, send request to proxy now
-	MsgC *msgc;
-	try { msgc = new ( MsgC ); }
-	catch ( ... ) {
-		g_errno = ENOMEM;
-		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
-		g_udpServer.sendErrorReply ( slot , g_errno );
-		return;
-	}
-	mnew ( msgc , sizeof(MsgC), "proxmsgc" );
-
-	// save this for sending back to request
-	msgc->m_slot = slot;
-	// send request to proxy now
-        msgc->getIp ( hostname , 
-		      hostnameLen ,
-		      &msgc->m_tmpIp,
-		      msgc, // state
-		      gotProxyReplyWrapper, // callback
-		      niceness,
-		      true ); // forwardToProxy?
+	return;
 }
 	
 

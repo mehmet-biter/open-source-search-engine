@@ -91,8 +91,7 @@ bool Multicast::send ( char         *msg              ,
 		       char          rdbId            ,
 		       int32_t          minRecSizes      ,
 		       bool          sendToSelf       ,
-		       int32_t          redirectTimeout  ,
-		       class Host   *firstHost        ) {
+		       int32_t          redirectTimeout) {
 	// make sure not being re-used!
 	if ( m_inUse ) {
 		log( LOG_ERROR, "net: Attempt to re-use active multicast");
@@ -143,40 +142,19 @@ bool Multicast::send ( char         *msg              ,
 
 	int32_t hostNumToTry = -1;
 
-	if ( ! firstHost ) {
-		// . get the list of hosts in this group
-		// . returns false if blocked, true otherwise
-		// . sets g_errno on error
-		//Host *hostList = g_hostdb.getGroup ( groupId , &m_numHosts);
-		Host *hostList = g_hostdb.getShard ( shardNum , &m_numHosts );
-		if ( ! hostList ) {
-			log("mcast: no group");g_errno=ENOHOSTS;return false;}
-		// now copy the ptr into our array
-		for ( int32_t i = 0 ; i < m_numHosts ; i++ )
-			m_hostPtrs[i] = &hostList[i];
+	// . get the list of hosts in this group
+	// . returns false if blocked, true otherwise
+	// . sets g_errno on error
+	Host *hostList = g_hostdb.getShard ( shardNum , &m_numHosts );
+	if ( ! hostList ) {
+		log(LOG_WARN, "mcast: no group");
+		g_errno=ENOHOSTS;
+		return false;
 	}
-	//
-	// if we are sending to an scproxy then put all scproxies into the
-	// list of hosts
-	//
-	else { // if ( firstHost && (firstHost->m_type & HT_SCPROXY) ) {
-		int32_t np = 0;
-		for ( int32_t i = 0 ; i < g_hostdb.m_numProxyHosts ; i++ ) {
-			// shortcut
-			Host *h = g_hostdb.getProxy(i);
-			if ( ! (h->m_type & HT_SCPROXY ) ) continue;
-			// stop breaching
-			if ( np >= 32 ) { g_process.shutdownAbort(true); }
-			// assign this
-			if ( h == firstHost ) hostNumToTry = np;
-			// set our array of ptrs of valid hosts to send to
-			m_hostPtrs[np++] = h;
-		}
-		// assign
-		m_numHosts  = np;
-		firstHostId = -1;
-		// panic
-		if ( ! np ) { g_process.shutdownAbort(true); }
+
+	// now copy the ptr into our array
+	for ( int32_t i = 0 ; i < m_numHosts ; i++ ) {
+		m_hostPtrs[i] = &hostList[i];
 	}
 
 	// . pick the fastest host in the group

@@ -96,8 +96,7 @@ class Multicast {
 		    char        rdbId           =  0   , // bogus rdbId
 		    int32_t        minRecSizes     = -1   ,// unknown read size
 		    bool        sendToSelf      = true ,// if we should.
-		    int32_t        redirectTimeout = -1 ,
-		    class Host *firstProxyHost  = NULL );
+		    int32_t        redirectTimeout = -1);
 
 	// . get the reply from your NON groupSend
 	// . if *freeReply is true then you are responsible for freeing this 
