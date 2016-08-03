@@ -2520,9 +2520,7 @@ void UdpServer::addToCallbackLinkedList ( UdpSlot *slot ) {
 
 	// must not be in there already, lest we double add it
 	if ( isInCallbackLinkedList ( slot ) ) {
-		if ( g_conf.m_logDebugUdp )
-			log("udp: avoided double add slot=%" PTRFMT
-			    ,(PTRTYPE)slot);
+		logDebug(g_conf.m_logDebugUdp, "udp: avoided double add slot=%" PTRFMT,(PTRTYPE)slot);
 		return;
 	}
 
@@ -2548,10 +2546,7 @@ bool UdpServer::isInCallbackLinkedList ( UdpSlot *slot ) {
 }
 
 void UdpServer::removeFromCallbackLinkedList ( UdpSlot *slot ) {
-
-	if ( g_conf.m_logDebugUdp )
-		log("udp: removing slot=%" PTRFMT" from callback list"
-		    ,(PTRTYPE)slot);
+	logDebug(g_conf.m_logDebugUdp, "udp: removing slot=%" PTRFMT" from callback list",(PTRTYPE)slot);
 
 	// return if not in the linked list
 	if ( slot->m_prev3 == NULL && 
@@ -2675,15 +2670,10 @@ void UdpServer::replaceHost ( Host *oldHost, Host *newHost ) {
 			log(LOG_LOGIC,"udp: replaceHost: Slot not in hash table.");
 			g_process.shutdownAbort(true);
 		}
-		if ( g_conf.m_logDebugUdp )
-			log(LOG_DEBUG,
-			    "udp: replaceHost: Rehashing slot "
-			    "tid=%" PRId32" dst=%s:%" PRIu32" "
-			    "slot=%" PTRFMT"",
-				      slot->m_transId,
-				      iptoa(slot->m_ip)+6,
-				      (uint32_t)slot->m_port,
-				      (PTRTYPE)slot);
+
+		logDebug(g_conf.m_logDebugUdp, "udp: replaceHost: Rehashing slot tid=%" PRId32" dst=%s:%" PRIu32" slot=%" PTRFMT,
+		         slot->m_transId, iptoa(slot->m_ip)+6, (uint32_t)slot->m_port, (PTRTYPE)slot);
+
 		// remove the bucket
 		m_ptrs [ i ] = NULL;
 		// rehash all buckets below
