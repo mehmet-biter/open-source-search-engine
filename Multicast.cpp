@@ -140,14 +140,20 @@ bool Multicast::send ( char         *msg              ,
 	// . this should pick the fastest one we haven't already sent to yet
 	if ( ! sendToWholeGroup ) {
 		bool retVal = sendToHostLoop (key,-1,firstHostId) ;
+
 		// on error, un-use this class
-		if ( ! retVal ) m_inUse = false;
+		if ( ! retVal ) {
+			m_inUse = false;
+		}
+
 		return retVal;
 	}
+
 	//if ( ! sendToWholeGroup ) return sendToHostLoop ( key , -1 );
 	// . send to ALL hosts in this group if sendToWholeGroup is true
 	// . blocks forever until sends to all hosts are successfull
-	sendToGroup ( ); 
+	sendToGroup ( );
+
 	// . sendToGroup() always blocks, but we return true if no g_errno
 	// . we actually keep looping until all hosts get the msg w/o error
 	return true;
@@ -375,55 +381,52 @@ void Multicast::gotReply2 ( UdpSlot *slot ) {
 // . uses key to pick the first host to send to (for consistency)
 // . after we pick a host and launch the request to him the sleepWrapper1
 //   will call this at regular intervals, so be careful,
-bool Multicast::sendToHostLoop ( int32_t key , int32_t hostNumToTry ,
-				 int32_t firstHostId ) {
+bool Multicast::sendToHostLoop(int32_t key, int32_t hostNumToTry, int32_t firstHostId) {
 	// erase any errors we may have got
 	g_errno = 0 ;
-loop:
 
-	int32_t i;
+	for (;;) {
+		// what if this host is dead?!?!?
+		int32_t i = (hostNumToTry >= 0) ? hostNumToTry : pickBestHost(key, firstHostId);
 
-	// what if this host is dead?!?!?
-	if ( hostNumToTry >= 0 ) // && ! g_hostdb.isDead(hostNumToTry) ) 
-		i = hostNumToTry;
-	else i = pickBestHost ( key , firstHostId );
-	
-	// do not resend to retired hosts
-	if ( m_retired[i] ) i = -1;
+		// do not resend to retired hosts
+		if (m_retired[i]) {
+			i = -1;
+		}
 
-	// . if no more hosts return FALSE
-	// . we need to return false to the caller of us below
-	if ( i < 0 ) { 
-		// debug msg
-		//log("Multicast:: no hosts left to send to");
-		g_errno = ENOHOSTS;
-		return false;
+		// . if no more hosts return FALSE
+		// . we need to return false to the caller of us below
+		if (i < 0) {
+			g_errno = ENOHOSTS;
+			return false;
+		}
+
+		// . send to this guy, if we haven't yet
+		// . returns false and sets g_errno on error
+		// . if it returns true, we sent ok, so we should return true
+		// . will return false if the whole thing is timed out and g_errno
+		//   will be set to ETIMEDOUT
+		// . i guess ENOSLOTS means the udp server has no slots available
+		//   for sending, so its pointless to try to send to another host
+		if (sendToHost(i)) {
+			return true;
+		}
+
+		// . if no more slots, we're done, don't loop!
+		// . pointless as well if no time left in the multicast
+		// . or if shutting down the server! otherwise it loops forever and
+		//   won't exit when sending a msg20 request. i've seen this...
+		if (g_errno == ENOSLOTS || g_errno == EUDPTIMEDOUT || g_errno == ESHUTTINGDOWN) {
+			return false;
+		}
+
+		// otherwise try another host and hope for the best
+		g_errno = 0;
+		key = 0;
+
+		// what kind of error leads us here? EBUFTOOSMALL or EBADENGINEER...
+		hostNumToTry = -1;
 	}
-
-	// log("build: msg %x sent to host %" PRId32 " first hostId is %" PRId32 ,
-	// 	m_msgType, i, firstHostId);
-
-	// . send to this guy, if we haven't yet
-	// . returns false and sets g_errno on error
-	// . if it returns true, we sent ok, so we should return true
-	// . will return false if the whole thing is timed out and g_errno
-	//   will be set to ETIMEDOUT
-	// . i guess ENOSLOTS means the udp server has no slots available
-	//   for sending, so its pointless to try to send to another host
-	if ( sendToHost ( i ) ) return true;
-	// if no more slots, we're done, don't loop!
-	if ( g_errno == ENOSLOTS ) return false;
-	// pointless as well if no time left in the multicast
-	if ( g_errno == EUDPTIMEDOUT ) return false;
-	// or if shutting down the server! otherwise it loops forever and
-	// won't exit when sending a msg20 request. i've seen this...
-	if ( g_errno == ESHUTTINGDOWN ) return false;
-	// otherwise try another host and hope for the best
-	g_errno = 0;
-	key = 0 ; 
-	// what kind of error leads us here? EBUFTOOSMALL or EBADENGINEER...
-	hostNumToTry = -1;
-	goto loop;
 }
 
 // . pick the fastest host from m_hosts based on avg roundtrip time for ACKs
@@ -888,18 +891,18 @@ void sleepWrapper1 ( int bogusfd , void    *state ) {
 // C wrapper for the C++ callback
 void gotReplyWrapperM1 ( void *state , UdpSlot *slot ) {
 	Multicast *THIS = (Multicast *)state;
-	// debug msg
-	//log("gotReplyWrapperM1 for msg34=%" PRId32,(int32_t)(&THIS->m_msg34));
-        THIS->gotReply1 ( slot );
+    THIS->gotReply1 ( slot );
 }
 
 // come here if we've got a reply from a host that's not part of a group send
 void Multicast::gotReply1 ( UdpSlot *slot ) {		
 	// don't ever let UdpServer free this send buf (it is m_msg)
 	slot->m_sendBufAlloc = NULL;
+
 	// remove the slot from m_slots so it doesn't get nuked in
 	// gotSlot(slot) routine above
 	int32_t i = 0;
+
 	// careful! we might have recycled a slot!!! start with top and go down
 	// because UdpServer might give us the same slot ptr on our 3rd try
 	// that we had on our first try!
@@ -914,8 +917,11 @@ void Multicast::gotReply1 ( UdpSlot *slot ) {
 		log(LOG_LOGIC,"net: multicast: Not our slot 2."); 
 		g_process.shutdownAbort(true);
 	}
+
 	// set m_errnos[i], if any
-	if ( g_errno ) m_errnos[i] = g_errno;
+	if ( g_errno ) {
+		m_errnos[i] = g_errno;
+	}
 
 	// mark it as no longer in progress
 	m_inProgress[i] = 0;
@@ -926,41 +932,36 @@ void Multicast::gotReply1 ( UdpSlot *slot ) {
 	m_replyingHost    = h;
 	m_replyLaunchTime = m_launchTime[i];
 
-	if ( m_sentToTwin ) 
-		log("net: Twin msgType=0x%" PRIx32" (this=0x%" PTRFMT") "
-		    "reply: %s.",
-		    (int32_t)m_msgType,(PTRTYPE)this,mstrerror(g_errno));
+	if ( m_sentToTwin ) {
+		log(LOG_DEBUG, "net: Twin msgType=0x%" PRIx32" (this=0x%" PTRFMT") reply: %s.",
+		    (int32_t) m_msgType, (PTRTYPE) this, mstrerror(g_errno));
+	}
 
 	// on error try sending the request to another host
 	// return if we kicked another request off ok
 	if ( g_errno ) {
-		Host *h;
-		char logIt = true;
 		// do not log not found on an external network
-		if ( g_errno == ENOTFOUND ) goto skip;
-		// log the error
-		h = g_hostdb.getHost ( slot->m_ip ,slot->m_port );
-		// do not log if not expected msg20
-		if ( slot->getMsgType() == msg_type_20 && g_errno == ENOTFOUND && ! ((Msg20 *)m_state)->m_expected ) {
-			logIt = false;
+		if ( g_errno != ENOTFOUND ) {
+			// log the error
+			Host *h = g_hostdb.getHost(slot->m_ip, slot->m_port);
+			if (h) {
+				log(LOG_WARN, "net: Multicast got error in reply from "
+						    "hostId %" PRId32
+						    " (msgType=0x%02x transId=%" PRId32" "
+						    "nice=%" PRId32" net=%s): "
+						    "%s.",
+				    h->m_hostId, slot->getMsgType(), slot->m_transId,
+				    m_niceness,
+				    g_hostdb.getNetName(), mstrerror(g_errno));
+			} else {
+				log(LOG_WARN, "net: Multicast got error in reply from %s:%" PRId32" "
+						    "(msgType=0x%02x transId=%" PRId32" nice =%" PRId32" net=%s): "
+						    "%s.",
+				    iptoa(slot->m_ip), (int32_t) slot->m_port,
+				    slot->getMsgType(), slot->m_transId, m_niceness,
+				    g_hostdb.getNetName(), mstrerror(g_errno));
+			}
 		}
-		if ( h && logIt )
-			log( LOG_WARN, "net: Multicast got error in reply from "
-			    "hostId %" PRId32
-			    " (msgType=0x%02x transId=%" PRId32" "
-			    "nice=%" PRId32" net=%s): "
-			    "%s.",
-			    h->m_hostId, slot->getMsgType(), slot->m_transId,
-			    m_niceness,
-			    g_hostdb.getNetName(),mstrerror(g_errno ));
-		else if ( logIt )
-			log( LOG_WARN, "net: Multicast got error in reply from %s:%" PRId32" "
-			    "(msgType=0x%02x transId=%" PRId32" nice =%" PRId32" net=%s): "
-			    "%s.",
-			    iptoa(slot->m_ip), (int32_t)slot->m_port, 
-			    slot->getMsgType(), slot->m_transId,  m_niceness,
-			    g_hostdb.getNetName(),mstrerror(g_errno) );
-	skip:
 
 		// . try to send to another host
 		// . on successful sending return, we'll be called on reply
@@ -997,22 +998,13 @@ void Multicast::gotReply1 ( UdpSlot *slot ) {
 			sendToTwin = false;
 		}
 
-		// do not worry if it was a not found msg20 for a titleRec
-		// which was not expected to be there
-		if ( ! logIt                       ) sendToTwin = false;
-		// no longer do this for titledb, too common since msg4
-		// cached stuff can make us slightly out of sync
-		//if ( g_errno == ENOTFOUND )
-		//	sendToTwin = false;
-
 		// do not send to twin if we are out of time
 		time_t now           = getTime();
 		int32_t   timeRemaining = m_startTime + m_totalTimeout - now;
 		if ( timeRemaining <= 0 ) sendToTwin = false;
 		// send to the twin
 		if ( sendToTwin && sendToHostLoop(0,-1,-1) ) {
-			log("net: Trying to send request msgType=0x%" PRIx32" "
-			    "to a twin. (this=0x%" PTRFMT")",
+			log(LOG_INFO, "net: Trying to send request msgType=0x%" PRIx32" to a twin. (this=0x%" PTRFMT")",
 			    (int32_t)m_msgType,(PTRTYPE)this);
 			m_sentToTwin = true;
 			// . keep stats
@@ -1026,66 +1018,66 @@ void Multicast::gotReply1 ( UdpSlot *slot ) {
 		// . otherwise we've failed on all hosts
 		// . re-instate g_errno,might have been set by sendToHostLoop()
 		g_errno = m_errnos[i];
-		// unregister our sleep wrapper if we did
-		//if ( m_registeredSleep ) {
-		//	g_loop.unregisterSleepCallback ( this, sleepWrapper1 );
-		//	m_registeredSleep = false;
-		//}
-		// destroy all slots that may be in progress (except "slot")
-		//destroySlotsInProgress ( slot );
-		// call callback with g_errno set
-		//if ( m_callback ) m_callback ( m_state );
-		// we're done, all slots should be destroyed by UdpServer
-		//return;
 	}
 	closeUpShop ( slot );
 }
 
 void Multicast::closeUpShop ( UdpSlot *slot ) {
 	// sanity check
-	if ( ! m_inUse ) { g_process.shutdownAbort(true); }
+	if (!m_inUse) {
+		g_process.shutdownAbort(true);
+	}
+
 	// destroy the OTHER slots we've spawned that are in progress
 	destroySlotsInProgress ( slot );
-	// if we have no slot per se, skip this stuff
-	if ( ! slot ) goto skip;
-	// . now we have a good reply... but not if g_errno is set
-	// . save the reply of this slot here
-	// . this is bad if we got an g_errno above, it will set the slot's
-	//   readBuf to NULL up there, and that will make m_readBuf NULL here
-	//   causing a mem leak. i fixed by adding an mfree on m_replyBuf 
-	//   in Multicast::reset() routine. 
-	// . i fixed again by ensuring we do not set m_ownReadBuf to false
-	//   in getBestReply() below if m_readBuf is NULL
-	m_readBuf        = slot->m_readBuf;
-	m_readBufSize    = slot->m_readBufSize;
-	m_readBufMaxSize = slot->m_readBufMaxSize;
-	// . if the slot had an error, propagate it so it will be set when
-	//   we call the callback.
-	if(!g_errno) g_errno = slot->m_errno;
-	// . sometimes UdpServer will read the reply into a temporary buffer
-	// . this happens if the udp server is hot (async signal based) and
-	//   m_replyBuf is NULL because he cannot malloc a buf to read into
-	//   because malloc is not async signal safe
-	if ( slot->m_tmpBuf == slot->m_readBuf ) {
-		m_freeReadBuf = false;
+
+	if (slot) {
+		// . now we have a good reply... but not if g_errno is set
+		// . save the reply of this slot here
+		// . this is bad if we got an g_errno above, it will set the slot's
+		//   readBuf to NULL up there, and that will make m_readBuf NULL here
+		//   causing a mem leak. i fixed by adding an mfree on m_replyBuf
+		//   in Multicast::reset() routine.
+		// . i fixed again by ensuring we do not set m_ownReadBuf to false
+		//   in getBestReply() below if m_readBuf is NULL
+		m_readBuf = slot->m_readBuf;
+		m_readBufSize = slot->m_readBufSize;
+		m_readBufMaxSize = slot->m_readBufMaxSize;
+
+		// . if the slot had an error, propagate it so it will be set when
+		//   we call the callback.
+		if (!g_errno) {
+			g_errno = slot->m_errno;
+		}
+
+		// . sometimes UdpServer will read the reply into a temporary buffer
+		// . this happens if the udp server is hot (async signal based) and
+		//   m_replyBuf is NULL because he cannot malloc a buf to read into
+		//   because malloc is not async signal safe
+		if (slot->m_tmpBuf == slot->m_readBuf) {
+			m_freeReadBuf = false;
+		}
+		// don't let UdpServer free the readBuf now that we point to it
+		slot->m_readBuf = NULL;
+
+		// save slot so msg4 knows what slot replied in udpserver
+		// for doing its flush callback logic
+		m_slot = slot;
 	}
-	// don't let UdpServer free the readBuf now that we point to it
-	slot->m_readBuf = NULL;
 
-	// save slot so msg4 knows what slot replied in udpserver
-	// for doing its flush callback logic
-	m_slot = slot;
-
- skip:
 	// unregister our sleep wrapper if we did
 	if ( m_registeredSleep ) {
 		g_loop.unregisterSleepCallback ( this , sleepWrapper1 );
 		m_registeredSleep = false;
 	}
-	if ( ! g_errno && m_retryCount > 0 ) 
-	       log("net: Multicast succeeded after %" PRId32" retries.",m_retryCount);
+
+	if ( ! g_errno && m_retryCount > 0 ) {
+		log(LOG_INFO, "net: Multicast succeeded after %" PRId32" retries.", m_retryCount);
+	}
+
 	// allow us to be re-used now, callback might relaunch
 	m_inUse = false;
+
 	// now call the user callback if it exists
 	if ( m_callback ) {
 		m_callback ( m_state , m_state2 );
