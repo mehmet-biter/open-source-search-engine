@@ -326,8 +326,6 @@ skip:
 		    KEY1(m_startKey,m_ks),KEY0(m_startKey),
 		    (int32_t)m_niceness);
 
-	bool  freeReply = true;
-
 	// . make a request with the info above (note: not in network order)
 	// . IMPORTANT!!!!! if you change this change 
 	//   Multicast.cpp::sleepWrapper1 too!!!!!!!!!!!!
@@ -382,8 +380,6 @@ skip:
 					 timeout       ,
 					 -1            , // backoff
 					 -1            , // maxwait
-					 NULL      ,
-					 0 ,
 					 m_niceness     ) ) { // cback niceness
 			logTrace( g_conf.m_logTraceMsg0, "END, return true. Request sent" );
 			return true;
@@ -418,7 +414,7 @@ skip:
 	// get the multicast
 	Multicast *m = &m_mcast;
 
-        if ( ! m->send ( m_request    , 
+    if ( ! m->send ( m_request    ,
 			      m_requestSize,
 			      msg_type_0         ,
 			      false        , // does multicast own request?
@@ -431,9 +427,7 @@ skip:
 			      gotMulticastReplyWrapper0 ,
 			      timeout*1000 , // timeout
 			      niceness     ,
-			      firstHostId  ,
-			      freeReply       ) ) // free reply buf?
-	{
+			      firstHostId) ) {
 		log(LOG_ERROR, "net: Failed to send request for data from %s in shard "
 		    "#%" PRIu32" over network: %s.",
 		    getDbnameFromId(m_rdbId),m_shardNum, mstrerror(g_errno));
