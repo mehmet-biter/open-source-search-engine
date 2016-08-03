@@ -327,52 +327,64 @@ bool UdpServer::sendRequest(char *msg,
                             int32_t niceness,
                             int32_t maxResends) {
 	// sanity check
-	if ( ! m_handlers[msgType] && this == &g_udpServer &&
-	     // proxy forwards the msg10 to a host in the cluster
-	     ! g_proxy.isProxy() ) { 
+	// proxy forwards the msg10 to a host in the cluster
+	if ( ! m_handlers[msgType] && this == &g_udpServer && ! g_proxy.isProxy() ) {
 		g_process.shutdownAbort(true);
 	}
+
 	// NULLify slot if any
-	if ( retslot ) *retslot = NULL;
+	if ( retslot ) {
+		*retslot = NULL;
+	}
+
 	// if shutting down return an error
 	if ( m_isShuttingDown ) { 
 		g_errno = ESHUTTINGDOWN; 
 		return false; 
 	}
+
 	// ensure timeout ok
 	if ( timeout < 0 ) { 
 		//g_errno = EBADENGINEER;
 		log(LOG_LOGIC,"udp: sendrequest: Timeout is negative. ");
 		g_process.shutdownAbort(true);
 	}
+
 	// . we only allow niceness 0 or 1 now
 	// . this niceness is only used for makeCallbacks_ass()
 	if ( niceness > 1 ) niceness = 1;
 	if ( niceness < 0 ) niceness = 0;
+
 	// get a new transId
 	int32_t transId = getTransId();
 
 	// set up shotgunning for this hostId
 	Host *h = NULL;
 	uint32_t ip2 = ip;
-	//if ( g_conf.m_useShotgun && hostId >= 0 ) {
+
 	// . now we always set UdpSlot::m_host
 	// . hostId is -1 when sending to a host in g_hostdb2 (hosts2.conf)
-	if ( hostId >= 0 ) h = g_hostdb.getHost ( hostId );
+	if ( hostId >= 0 ) {
+		h = g_hostdb.getHost ( hostId );
+	}
+
 	// get it from g_hostdb2 then via ip lookup if still NULL
-	if ( ! h ) h = g_hostdb.getHost ( ip , port );
+	if ( ! h ) {
+		h = g_hostdb.getHost ( ip , port );
+	}
+
 	// sanity check
-	if ( h && ip && ip != (uint32_t)-1 && h->m_ip != ip &&
-	     h->m_ipShotgun != ip && ip != 0x0100007f ) { // "127.0.0.1"
+	if ( h && ip && ip != (uint32_t)-1 && h->m_ip != ip && h->m_ipShotgun != ip && ip != 0x0100007f ) { // "127.0.0.1"
 		log(LOG_LOGIC,"udp: provided hostid does not match ip");
 		g_process.shutdownAbort(true);
 	}
-	// ok, we are probably sending a dns request to a dns server...
-	//if ( ! h ) { g_process.shutdownAbort(true); }
+
 	// always use the primary ip for making the key, 
 	// do not use the shotgun ip. because we can be getting packets
 	// from either ip for the same transaction.
-	if ( h ) ip2 = h->m_ip;
+	if ( h ) {
+		ip2 = h->m_ip;
+	}
 
 	// make a key for this new slot
 	key_t key = m_proto->makeKey (ip2,port,transId,true/*weInitiated?*/);
@@ -392,34 +404,31 @@ bool UdpServer::sendRequest(char *msg,
 	
 	// . get time 
 	int64_t now = gettimeofdayInMillisecondsLocal();
+
 	// connect to the ip/port (udp-style: does not do much)
-	slot->connect ( m_proto, ip, port, h, hostId, transId, timeout, now ,
-			niceness );
+	slot->connect(m_proto, ip, port, h, hostId, transId, timeout, now, niceness);
+
 	// . use default callback if none provided
 	// . slot has a callback iff it's an outgoing request
-	if ( ! callback ) callback = defaultCallbackWrapper;
+	if ( ! callback ) {
+		callback = defaultCallbackWrapper;
+	}
+
 	// set up for a send
-	if ( ! slot->sendSetup( msg             ,
-				msgSize         ,
-				msg             ,
-				msgSize         ,
-				msgType         ,
-				now             ,
-				state           ,
-				callback        ,
-				niceness        , 
-				backoff         , 
-				maxWait         ,
-				replyBuf        , 
-				replyBufMaxSize ) ) {
+	if (!slot->sendSetup(msg, msgSize, msg, msgSize, msgType, now, state, callback, niceness, backoff, maxWait,
+	                     replyBuf, replyBufMaxSize)) {
 		freeUdpSlot_ass ( slot );
 		log( LOG_WARN, "udp: Failed to initialize udp socket for sending req: %s",mstrerror(g_errno));
 		return false;
 	}
 
-	if ( slot->m_next3 || slot->m_prev3 ) { g_process.shutdownAbort(true); }
+	if (slot->m_next3 || slot->m_prev3) {
+		g_process.shutdownAbort(true);
+	}
+
 	// set this
 	slot->m_maxResends = maxResends;
+
 	// keep sending dgrams until we have no more or hit ACK_WINDOW limit
 	if ( ! doSending_ass ( slot , true /*allow resends?*/ , now ) ) {
 		freeUdpSlot_ass ( slot );
@@ -427,17 +436,11 @@ bool UdpServer::sendRequest(char *msg,
 		return false;
 	}
 
-	// debug msg
-	//int64_t  now = gettimeofdayInMilliseconds();
-	//log("***added node #%" PRId32", isTimedOut=%" PRId32"\n",node,
-	//slot->isTimedOut(now));
 	// let caller know the slot if he wants to
-	if ( retslot ) *retslot = slot;
-	// debug msg
-	//log("UdpServer added slot to send on, key={%" PRId32",%" PRId64"},"
-	//"msgType=0x%02x\n",
-	//key.n1,key.n0, msgType );
-	// success
+	if ( retslot ) {
+		*retslot = slot;
+	}
+
 	return true;
 }
 
