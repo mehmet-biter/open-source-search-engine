@@ -1325,11 +1325,11 @@ struct UnlinkRenameState {
  *
  * @param newBaseFilename non-NULL for renames, NULL for unlinks
  * @param part part num to unlink, -1 for all (or rename)
- * @param useThread
- * @param callback
- * @param state
+ * @param useThread should thread be used
+ * @param callback function to call when operation is done
+ * @param state state to be passed to callback function
  * @param newBaseFilenameDir if NULL, defaults to m_dir, the current dir in which this file already exists
- * @param force
+ * @param force should rename be done even if destination file exists
  * @return false if blocked, true otherwise
  */
 // . sets g_errno on error
