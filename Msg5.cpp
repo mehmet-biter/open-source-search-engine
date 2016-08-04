@@ -49,6 +49,7 @@ bool Msg5::getTreeList(RdbList *result,
 {
 	m_rdbId = rdbId;
 	m_collnum = collnum;
+	m_newMinRecSizes = -1;
 	int32_t dummy1,dummy2,dummy3,dummy4;
 	return getTreeList(result,startKey,endKey,&dummy1,&dummy2,&dummy3,&dummy4);
 }
