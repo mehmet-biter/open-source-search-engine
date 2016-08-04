@@ -406,7 +406,6 @@ bool RdbMerge::getAnotherList ( ) {
 				newEndKey      , // usually is maxed!
 				bufSize        ,
 				false          , // includeTree?
-				false          , // add to cache?
 				0              , // max cache age for lookup
 				m_startFileNum , // startFileNum
 				m_numFiles     ,

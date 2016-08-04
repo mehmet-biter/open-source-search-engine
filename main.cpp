@@ -2877,7 +2877,6 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 			      endKey        ,
 			      minRecSizes   ,
 			      includeTree   ,
-			      false         , // add to cache?
 			      0             , // max cache age
 			      startFileNum  ,
 			      numFiles      ,
@@ -3153,7 +3152,6 @@ void dumpDoledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool 
 			      endKey        ,
 			      minRecSizes   ,
 			      includeTree   ,
-			      false         , // add to cache?
 			      0             , // max cache age
 			      startFileNum  ,
 			      numFiles      ,
@@ -3396,7 +3394,6 @@ int32_t dumpSpiderdb ( const char *coll, int32_t startFileNum, int32_t numFiles,
 			      (char *)&endKey        ,
 			      minRecSizes   ,
 			      includeTree   ,
-			      false         , // add to cache?
 			      0             , // max cache age
 			      startFileNum  ,
 			      numFiles      ,
@@ -4126,7 +4123,6 @@ void dumpTagdb( const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 			      (char *)&endKey        ,
 			      minRecSizes   ,
 			      includeTree   ,
-			      false         , // add to cache?
 			      0             , // max cache age
 			      startFileNum  ,
 			      numFiles      ,
@@ -4308,7 +4304,6 @@ bool parseTest ( const char *coll, int64_t docId, const char *query ) {
 			      9999999        , // min rec sizes
 			      true           , // include tree?
 			      false          , // includeCache
-			      false          , // addToCache
 			      0              , // startFileNum
 			      -1             , // m_numFiles   
 			      NULL           , // state 
@@ -4685,7 +4680,6 @@ void dumpPosdb (const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 			      &endKey        ,
 			      minRecSizes   ,
 			      includeTree   ,
-			      false         , // add to cache?
 			      0             , // max cache age
 			      startFileNum  ,
 			      numFiles      ,
@@ -4874,7 +4868,6 @@ void dumpClusterdb ( const char *coll,
 			      endKey        ,
 			      minRecSizes   ,
 			      includeTree   ,
-			      false         , // add to cache?
 			      0             , // max cache age
 			      startFileNum  ,
 			      numFiles      ,
@@ -4983,7 +4976,6 @@ void dumpLinkdb ( const char *coll,
 			      (char *)&endKey        ,
 			      minRecSizes   ,
 			      includeTree   ,
-			      false         , // add to cache?
 			      0             , // max cache age
 			      startFileNum  ,
 			      numFiles      ,
@@ -5587,7 +5579,6 @@ void doInject ( int fd , void *state ) {
 			       (char *)&endKey        ,
 			       100 , // minRecSizes   ,
 			       true , // includeTree   ,
-			       false         , // add to cache?
 			       0             , // max cache age
 			       0 , // startFileNum  ,
 			       -1, // numFiles      ,
@@ -7147,7 +7138,6 @@ void countdomains( const char* coll, int32_t numRecs, int32_t verbosity, int32_t
 			      endKey        ,
 			      minRecSizes   ,
 			      true         , // Do we need to include tree?
-			      false         , // add to cache?
 			      0             , // max cache age
 			      0             ,
 			      -1            ,

@@ -200,7 +200,6 @@ bool Msg2::getLists ( ) {
 					   ek2,
 					   minRecSize  ,
 					   true, // include tree?
-					   false , // addtocache
 					   0, // maxcacheage
 					   0              , // start file num
 					   -1,              // num files
@@ -304,7 +303,6 @@ bool Msg2::getLists ( ) {
 					   &ek3,
 					   minRecSizes,
 					   true, // include tree?
-					   false , // addtocache
 					   0, // maxcacheage
 					   0              , // start file num
 					   -1,              // num files

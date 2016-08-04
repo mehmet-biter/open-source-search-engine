@@ -580,7 +580,6 @@ bool Statsdb::gifLoop ( ) {
 				    (char *)&m_endKey	,
 				    32000	, // requested scan size
 				    true 	, // include tree?
-				    false	, // add to cache?
 				    0		, // max cache age
 				    0		, // start file number
 				    -1		, // number of files
