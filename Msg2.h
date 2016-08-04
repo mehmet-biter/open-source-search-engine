@@ -80,9 +80,6 @@ public:
 	RdbList *getWhiteList(int32_t i) { return &(m_whiteLists[i]); }
 
 private:
-	// helper (handles index of list)
-	int32_t m_i;
-
 	// list of sites to restrict search results to. space separated
 	int m_fileNum;
 	const char *m_whiteList;

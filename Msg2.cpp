@@ -109,8 +109,6 @@ bool Msg2::getLists ( collnum_t collnum , // char    *coll        ,
 	}
 	// reset error
 	m_errno = 0;
-	// reset list counter
-	m_i = 0;
 	// fetch what we need
 	return getLists ( );
 }
@@ -129,7 +127,7 @@ log("@@@ msg2::getLists: m_numLists = %d", m_numLists);
 	// . send out a bunch of msg5 requests
 	// . make slots for all
 log("@@@ msg2::getLists: before loop 1");
-	for (  ; m_i < m_numLists ; m_i++ ) {
+	for(int m_i=0; m_i < m_numLists; m_i++) {
 log("@@@ msg2::getLists: m_i=%d  m_qterms=%p",m_i,m_qterms);
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_ADDRESSABLE(m_qterms,m_numLists*sizeof(*m_qterms));
