@@ -471,7 +471,7 @@ bool Msg5::readList ( ) {
 			//   but it really wasn't and we get stuck with it
 			char kk[MAX_KEY_BYTES];
 			KEYSET(kk,m_startKey,m_ks);
-			KEYADD(kk,m_ks);
+			KEYINC(kk,m_ks);
 			if ( KEYCMP(m_endKey,kk,m_ks)==0 && ! m_treeList.isEmpty() ) {
 				return gotList();
 			}
@@ -1396,7 +1396,7 @@ bool Msg5::doneMerging ( ) {
 	//m_fileStartKey  = m_list->getEndKey() ;
 	//m_fileStartKey += (uint32_t)1;
 	KEYSET(m_fileStartKey,m_list->getEndKey(),m_ks);
-	KEYADD(m_fileStartKey,m_ks);
+	KEYINC(m_fileStartKey,m_ks);
 	return true;
 }
 

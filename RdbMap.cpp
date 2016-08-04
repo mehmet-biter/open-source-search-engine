@@ -475,7 +475,7 @@ bool RdbMap::verifyMap2 ( ) {
 			KEYSET(f,lastKey,m_ks);
 			//if ( lastKey != getKey(i+1) ) f += (uint32_t)1;
 			if (KEYCMP(lastKey,getKeyPtr(i+1),m_ks)!=0)
-				KEYADD(f,m_ks);
+				KEYINC(f,m_ks);
 			setKey(i,f);
 			log("db: Key in map was too small. Fixed.");
 			goto top;
@@ -486,7 +486,7 @@ bool RdbMap::verifyMap2 ( ) {
 			//key_t f = getKey(i-2);
 			char *f = getKeyPtr(i-2);
 			//if ( f != k ) f += (uint32_t)1;
-			if ( KEYCMP(f,k,m_ks)!=0) KEYADD(f,m_ks);
+			if ( KEYCMP(f,k,m_ks)!=0) KEYINC(f,m_ks);
 			setKey(i-1,f);
 			log("db: LastKey in map was too big. Fixed.");
 			goto top;

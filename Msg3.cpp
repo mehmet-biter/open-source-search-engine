@@ -442,7 +442,7 @@ bool Msg3::readList  ( char           rdbId         ,
 	//	m_constrainKey -= (uint32_t)1;
 	KEYSET(m_constrainKey,m_endKey,m_ks);
 	if ( KEYNEG(m_constrainKey) )
-		KEYSUB(m_constrainKey,m_ks);
+		KEYDEC(m_constrainKey,m_ks);
 
 	// Msg5 likes to get the endkey for getting the list from the tree
 	if ( justGetEndKey ) return true;
@@ -544,7 +544,7 @@ bool Msg3::readList  ( char           rdbId         ,
 		// . maps[fn]->getKey(lastPage) will return the LAST KEY
 		//   and maps[fn]->getOffset(lastPage) the length of the file
 		//if ( maps[fn]->getNumPages()!=p2) endKey -=(uint32_t)1;
-		if ( maps[fn]->getNumPages() != p2 ) KEYSUB(endKey2,m_ks);
+		if ( maps[fn]->getNumPages() != p2 ) KEYDEC(endKey2,m_ks);
 		// otherwise, if we're reading all pages, then force the
 		// endKey to virtual inifinite
 		else KEYMAX(endKey2,m_ks);
@@ -1200,7 +1200,7 @@ void  Msg3::setPageRanges ( RdbBase *base ,
 		if ( KEYCMP(minKey,maps[fn]->getKeyPtr(m_endpg[i]),m_ks)!=0) 
 			continue;
 		//minKey += (uint32_t) 1;
-		KEYADD(minKey,m_ks);
+		KEYINC(minKey,m_ks);
 	}
 	// . we're done if we hit the end of all maps in the race
 	// . return the max end key
@@ -1230,12 +1230,12 @@ void  Msg3::setPageRanges ( RdbBase *base ,
 	if ( KEYCMP(minKey,endKey,m_ks)>0 ) {
 		//lastMinKey  = endKey;
 		KEYSET(minKey,endKey,m_ks);
-		KEYADD(minKey,m_ks);
+		KEYINC(minKey,m_ks);
 		KEYSET(lastMinKey,endKey,m_ks);
 	}
 	else {
 		KEYSET(lastMinKey,minKey,m_ks);
-		KEYSUB(lastMinKey,m_ks);
+		KEYDEC(lastMinKey,m_ks);
 	}
 	// it is now valid
 	lastMinKeyIsValid = 1;
