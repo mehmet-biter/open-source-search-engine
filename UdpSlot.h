@@ -133,6 +133,10 @@ public:
 		return m_startTime;
 	}
 
+	int64_t getFirstSendTime() const {
+		return m_firstSendTime;
+	}
+
 	int64_t getLastReadTime() const {
 		return m_lastReadTime;
 	}

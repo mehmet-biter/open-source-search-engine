@@ -434,7 +434,7 @@ void gotReplyWrapperP ( void *state , UdpSlot *slot ) {
 	slot->m_sendBufAlloc = NULL;
 	// update ping time
 	int64_t nowms    = gettimeofdayInMillisecondsLocal();
-	int64_t tripTime = nowms - slot->m_firstSendTime ;
+	int64_t tripTime = nowms - slot->getFirstSendTime() ;
 	// ensure not negative, clock might have been adjusted!
 	if ( tripTime < 0 ) tripTime = 0;
 	// bail if none
