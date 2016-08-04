@@ -223,7 +223,7 @@ bool flushMsg4Buffers ( void *state , void (* callback) (void *) ) {
 		// get its time stamp 
 		if ( slot->getMsgType() != msg_type_4 ) continue;
 		// must be initiated by us
-		if ( ! slot->m_callback ) continue;
+		if ( ! slot->hasCallback() ) continue;
 		// get it
 		if ( max && slot->getStartTime() < max ) continue;
 		// got a new max
@@ -792,7 +792,7 @@ void gotReplyWrapper4 ( void *state , void *state2 ) {
 		// get its time stamp
 		if ( slot->getMsgType() != msg_type_4 ) continue;
 		// must be initiated by us
-		if ( ! slot->m_callback ) continue;
+		if ( ! slot->hasCallback() ) continue;
 		// if it is this replying slot or already had the callback
 		// called, then ignore it...
 		if ( slot->m_calledCallback ) continue;
@@ -1213,7 +1213,7 @@ bool saveAddsInProgress ( const char *prefix ) {
 		// skip if not msg4
 		if ( slot->getMsgType() != msg_type_4 ) continue;
 		// skip if we did not initiate it
-		if ( ! slot->m_callback ) continue;
+		if ( ! slot->hasCallback() ) continue;
 		// skip if got reply
 		if ( slot->m_readBuf ) continue;
 		// write hostid sent to

@@ -363,7 +363,7 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 		// bgcolor is lighter for incoming requests
 		const char *bg = LIGHT_BLUE;//"c0c0f0";
 		// is it incoming
-		if ( ! s->m_callback ) bg = LIGHTER_BLUE;//"e8e8ff";
+		if ( ! s->hasCallback() ) bg = LIGHTER_BLUE;//"e8e8ff";
 		Host *h = g_hostdb.getHost ( s->getIp() , s->getPort() );
 		const char           *eip     = "??";
 		uint16_t  eport   =  0 ;
@@ -401,7 +401,7 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 		char *sbuf          = s->m_sendBuf;
 		int32_t  rbufSize      = s->m_readBufSize;
 		int32_t  sbufSize      = s->m_sendBufSize;
-		bool  weInit        = s->m_callback;
+		bool  weInit        = s->hasCallback();
 		char  calledHandler = s->m_calledHandler;
 		if ( weInit ) calledHandler = s->m_calledCallback;
 		char *buf     = NULL;
@@ -503,7 +503,7 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 		} else {
 			// clickable hostId
 			const char *toFrom = "to";
-			if ( ! s->m_callback ) toFrom = "from";
+			if ( ! s->hasCallback() ) toFrom = "from";
 			p->safePrintf (	"<td>0x%02x</td>"  // msgtype
 					"<td><nobr>%s</nobr></td>"  // desc
 					"<td><nobr>%s <a href=http://%s:%hu/"

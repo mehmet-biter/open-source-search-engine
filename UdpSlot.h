@@ -66,6 +66,10 @@ public:
 		return m_niceness;
 	}
 
+	bool hasCallback() const {
+		return (m_callback);
+	}
+
 	int32_t getTransId() const {
 		return m_transId;
 	}

@@ -154,7 +154,7 @@ Host *getHostToHandleInjection ( char *url ) {
 		//if ( ! slot->m_weInitiated ) continue;
 		// if we did not initiate the injection request, i.e. if
 		// it is to us, skip it
-		if ( ! slot->m_callback ) continue;
+		if ( ! slot->hasCallback() ) continue;
 		// who is it from?
 		int32_t hostId = slot->getHostId();
 		if ( hostId < 0 ) continue;

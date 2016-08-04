@@ -481,7 +481,7 @@ void UdpServer::sendReply_ass ( char    *msg        ,
 				int16_t    maxWait    ,
 				bool     isCallback2Hot) {
 	// the callback should be NULL
-	if ( slot->m_callback ) {
+	if ( slot->hasCallback() ) {
 		g_errno = EBADENGINEER;
 		log(LOG_LOGIC,"udp: sendReply_ass: Callback is non-NULL.");
 		return;
@@ -1377,7 +1377,7 @@ bool UdpServer::makeCallbacks_ass ( int32_t niceness ) {
 			if ( g_loop.m_inQuickPoll &&
 			     slot->getMsgType() == msg_type_4 ) continue;
 			// only call handlers in pass 0, not reply callbacks
-			if ( slot->m_callback ) continue;
+			if ( slot->hasCallback() ) continue;
 			// only call certain msg handlers...
 			if ( slot->getMsgType() != msg_type_11 &&  // ping
 			     slot->getMsgType() != msg_type_1 &&  // add  RdbList
@@ -1410,7 +1410,7 @@ bool UdpServer::makeCallbacks_ass ( int32_t niceness ) {
 		// popular niceness 1 requests and not hold all the other
 		// spiders up.
 		if ( g_loop.m_inQuickPoll &&  
-		     ! slot->m_callback && // must be a handler request
+		     ! slot->hasCallback() && // must be a handler request
 		     // must have been sitting there for 500ms+
 		     // also consider using slot->m_lastActionTime
 		     startTime - slot->getStartTime() > 500 &&
@@ -1450,7 +1450,7 @@ bool UdpServer::makeCallbacks_ass ( int32_t niceness ) {
 		if ( g_loop.m_inQuickPoll &&  
 		     ! slot->m_convertedNiceness &&
 		     this == &g_dns.m_udpServer &&
-		     slot->m_callback &&
+		     slot->hasCallback() &&
 		     slot->getNiceness() == 1 &&
 		     // can't be in a quickpoll in its own handler!!!
 		     // we now set this to true BEFORE calling the handler
@@ -1620,7 +1620,7 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 	bool oom = ((((float)g_mem.getUsedMem())/(float)g_mem.getMaxMem()) >= .990);
 
 	// callback is non-NULL if we initiated the transaction 
-	if ( slot->m_callback ) { 
+	if ( slot->hasCallback() ) {
 
 		// assume the slot's error when making callback
 		// like EUDPTIMEDOUT
@@ -2250,7 +2250,7 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 		     // respect slot's timeout too!
 		     elapsed > timeout &&
 		     // only do this when sending a request
-		     slot->m_callback ) {
+		     slot->hasCallback() ) {
 			// should this be ENOACK or something?
 			slot->m_errno = EUDPTIMEDOUT;
 			// prepare to call the callback by adding it to this
@@ -2295,7 +2295,7 @@ void UdpServer::destroySlot ( UdpSlot *slot ) {
 	if ( ! slot ) return;
 	// if we're deleting a slot that was an incoming request then
 	// decrement m_requestsInWaiting (exclude pings)
-	if ( ! slot->m_callback && slot->getMsgType() != msg_type_11 ) {
+	if ( ! slot->hasCallback() && slot->getMsgType() != msg_type_11 ) {
 		// one less request in waiting
 		m_requestsInWaiting--;
 		// special count
@@ -2368,7 +2368,7 @@ bool UdpServer::shutdown ( bool urgent ) {
 		//if ( m_head && m_activeListHead->m_activeListNext ) return false;
 		for ( UdpSlot *slot = m_activeListHead ; slot ; slot = slot->m_activeListNext ) {
 			// if we initiated, then don't count it
-			if ( slot->m_callback ) continue;
+			if ( slot->hasCallback() ) continue;
 			// don't bother with pings or other hosts shutdown 
 			if ( slot->getMsgType() == msg_type_11 ) continue;
 			// set all timeouts to 3 secs
@@ -2430,7 +2430,7 @@ bool UdpServer::timeoutDeadHosts ( Host *h ) {
 		//! g_hostdb.isDead(slot->m_hostId) ) continue;
 		if ( slot->getHostId() != h->m_hostId ) continue;
 		// if we didn't initiate, then don't count it
-		if ( ! slot->m_callback ) continue;
+		if ( ! slot->hasCallback() ) continue;
 		// don't bother with pings or other hosts shutdown broadcasts
 		if ( slot->getMsgType() == msg_type_11 ) continue;
 		// set all timeouts to 5 secs
@@ -2663,7 +2663,7 @@ void UdpServer::replaceHost ( Host *oldHost, Host *newHost ) {
 	// . loop over outstanding transactions looking for ones to oldHost
 	for ( UdpSlot *slot = m_activeListHead; slot; slot = slot->m_activeListNext ) {
 		// ignore incoming
-		if ( ! slot->m_callback ) continue;
+		if ( ! slot->hasCallback() ) continue;
 		// check for ip match
 		if ( slot->getIp() != oldHost->m_ip &&
 		     slot->getIp() != oldHost->m_ipShotgun )
