@@ -101,7 +101,7 @@ class Msg5 {
 				 compensateForMerge ,
 				 syncPoint     ,
 				 isRealMerge   ,
-				 allowPageCache ); }	}
+				 allowPageCache ); }
 
 
 	bool getSingleUnmergedList(char          rdbId,
