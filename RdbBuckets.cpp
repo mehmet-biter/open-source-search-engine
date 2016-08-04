@@ -1476,7 +1476,7 @@ bool RdbBucket::getList(RdbList* list,
 		//   tree, then it's ok because we'd annihilate him anyway,
 		//   so we might as well ignore him
 		// we are little endian
-		if ( KEYNEG(newEndKey,0,ks) ) KEYADD(newEndKey,ks);
+		if ( KEYNEG(newEndKey,0,ks) ) KEYINC(newEndKey,ks);
 		// if we're using half keys set his half key bit
 		if ( useHalfKeys ) KEYOR(newEndKey,0x02);
 		if ( m_parent->m_rdbId == RDB_POSDB ||

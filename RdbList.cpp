@@ -699,7 +699,7 @@ bool RdbList::checkList_r ( bool removeNegRecs , bool sleepOnProblem ,
 	//acceptable += (uint32_t) 1;
 	char acceptable[MAX_KEY_BYTES];
 	KEYSET ( acceptable , m_endKey , m_ks );
-	KEYADD ( acceptable , m_ks );
+	KEYINC ( acceptable , m_ks );
 	// watch out for wrap around...
 	//if ( acceptable.n0 == 0 && acceptable.n1 == 0 ) {
 	//	acceptable.n1 = m_endKey.n1 ;
@@ -1884,7 +1884,7 @@ abort();
 		// log(LOG_LOGIC,"db: rdblist: merge_r: Illegal endKey for "
 		//     "merging rdb=%s. fixing.",getDbnameFromId(rdbId));
 		// make it legal so it will be read first NEXT time
-		KEYSUB(m_endKey,m_ks);
+		KEYDEC(m_endKey,m_ks);
 	}
 
 	// do nothing if no lists passed in
@@ -2263,7 +2263,7 @@ skip:
 		//if ( (*(char *)&endKey & 0x01) == 0x00 )
 		if ( KEYNEG(endKey) )
 			//endKey += (uint32_t)1;
-			KEYADD(endKey,m_ks);
+			KEYINC(endKey,m_ks);
 		// be careful not to increase original endkey, though
 		//if ( endKey < m_endKey ) m_endKey = endKey;
 		if ( KEYCMP(endKey,m_endKey,m_ks)<0 )
@@ -2642,7 +2642,7 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 	// if endkey is now negative we must have a dangling negative
 	// so make it positive (dangling = unmatched)
 	if ( KEYNEG(m_endKey) )
-		KEYADD(m_endKey, sizeof(key144_t));
+		KEYINC(m_endKey, sizeof(key144_t));
 	// be careful not to increase original endkey, though
 	if ( KEYCMP(orig,m_endKey,sizeof(key144_t))<0 )
 		KEYSET(m_endKey, orig, sizeof(key144_t));

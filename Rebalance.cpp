@@ -530,7 +530,7 @@ bool Rebalance::gotList ( ) {
 		// if it is not maxxed out, then incremenet it for the
 		// next scan round
 		if ( KEYCMP ( m_nextKey , KEYMAX() , ks ) != 0 )
-			KEYADD ( m_nextKey , ks );
+			KEYINC ( m_nextKey , ks );
 	}
 
 	if ( ! m_msg4a.addMetaList( &m_posMetaList, m_collnum, this, doneAddingMetaWrapper, MAX_NICENESS, rdb->m_rdbId, -1 ) ) { // shard override, not!
