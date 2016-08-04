@@ -106,6 +106,20 @@ class Msg5 {
 				 isRealMerge   ,
 				 allowPageCache ); }
 
+	bool getSingleUnmergedList(char          rdbId,
+				   collnum_t     collnum,
+				   RdbList      *list,
+				   const void   *startKey,
+				   const void   *endKey,
+				   int32_t       recSizes, // requested scan size(-1 all)
+				   bool          includeTree,
+				   bool          addToCache,
+				   int32_t       maxCacheAge, // in secs for cache lookup
+				   int32_t       fileNum, // file to scan
+				   void         *state, // for callback
+				   void        (*callback)(void *state, RdbList *list, Msg5 *msg5),
+				   int32_t       niceness);
+
 	// need niceness to pass on to others
 	int32_t getNiceness ( ) { return m_niceness; }
 
@@ -215,6 +229,8 @@ private:
 	collnum_t m_collnum;
 
 	int32_t m_errno;
+
+	bool m_isSingleUnmergedListGet;
 
 	static void gotListWrapper(void *state);
 	void gotListWrapper();

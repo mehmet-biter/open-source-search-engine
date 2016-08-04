@@ -224,29 +224,20 @@ log("@@@ msg2::getLists: qt=%p",qt);
 		//   really needs to do it and he doesn't call Msg2
 		// . this is really only used to get IndexLists
 		// . we now always compress the list for 2x faster transmits
-		if ( ! msg5->getList ( 
-					   RDB_POSDB,
-					   m_collnum      ,
-					   &m_lists[m_i], // listPtr
-					   sk2,
-					   ek2,
-					   minRecSize  ,
-					   true, // include tree?
-					   false , // addtocache
-					   0, // maxcacheage
-					   m_fileNum,      // start file num
-					   1,              // num files
-					   this,
-					   gotListWrapper ,
-					   m_niceness     ,
-					   false          , // error correction
-					   NULL , // cachekeyptr
-					   0, // retrynum
-					   -1, // maxretries
-					   true, // compensateformerge?
-					   -1, // syncpoint
-					   false, // isrealmerge?
-					   true) ) { // allow disk page cache?
+		if ( ! msg5->getSingleUnmergedList ( RDB_POSDB,
+						     m_collnum,
+						     &m_lists[m_i],  // listPtr
+						     sk2,
+						     ek2,
+						     minRecSize,
+						     true,           // include tree?
+						     false,          // addtocache
+						     0,              // maxcacheage
+						     m_fileNum,      // file num
+						     this,
+						     gotListWrapper,
+						     m_niceness) )
+		{
 			ScopedLock sl(m_mtxCounters);
 			m_numRequests++;
 			continue;
@@ -336,28 +327,20 @@ log("@@@ msg2::getLists: end of loop 1");
 
 		// start up the read. thread will wait in thread queue to 
 		// launch if too many threads are out.
-		if ( ! msg5->getList ( 	   RDB_POSDB,
-					   m_collnum        ,
-					   &m_whiteLists[m_w], // listPtr
-					   &sk3,
-					   &ek3,
-					   minRecSizes,
-					   true,//true, // include tree?
-					   false , // addtocache
-					   0, // maxcacheage
-					   0              , // start file num
-					   -1,              // num files
-					   this,
-					   gotListWrapper ,
-					   m_niceness     ,
-					   false          , // error correction
-					   NULL , // cachekeyptr
-					   0, // retrynum
-					   -1, // maxretries
-					   true, // compensateformerge?
-					   -1, // syncpoint
-					   false, // isrealmerge?
-					   true ) ) { // allow disk page cache?
+		if ( ! msg5->getSingleUnmergedList ( RDB_POSDB,
+						     m_collnum,
+						     &m_whiteLists[m_w], // listPtr
+						     &sk3,
+						     &ek3,
+						     minRecSizes,
+						     true,              // include tree?
+						     false,             // addtocache
+						     0,                 // maxcacheage
+						     m_fileNum,         // file num
+						     this,
+						     gotListWrapper,
+						     m_niceness ) )
+		{
 			ScopedLock sl(m_mtxCounters);
 			m_numRequests++;
 			continue;

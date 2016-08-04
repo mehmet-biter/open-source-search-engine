@@ -92,6 +92,8 @@ class RdbList {
 
 	void setFromPtr ( char *p , int32_t psize , char rdbId ) ;
 
+	void stealFromOtherList(RdbList *other_list);
+
 	// just set the start and end keys
 	void set ( const char *startKey, const char *endKey );
 

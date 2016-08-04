@@ -212,6 +212,37 @@ void RdbList::set (char *list          ,
 	      keySize       );
 }
 
+
+void RdbList::stealFromOtherList(RdbList *other_list)
+{
+	if(other_list==this) gbshutdownLogicError();
+	if(!other_list->m_ownData) gbshutdownLogicError();
+	
+	freeList();
+	
+	m_list             = other_list->m_list;
+	m_listSize         = other_list->m_listSize;
+	m_alloc            = other_list->m_alloc;
+	m_allocSize        = other_list->m_allocSize;
+	m_listEnd          = other_list->m_listEnd;
+	KEYSET(m_startKey,   other_list->m_startKey,other_list->m_ks);
+	KEYSET(m_endKey,     other_list->m_endKey,  other_list->m_ks);
+	m_fixedDataSize    = other_list->m_fixedDataSize;
+	m_ownData          = other_list->m_ownData;
+	m_useHalfKeys      = other_list->m_useHalfKeys;
+	KEYSET(m_lastKey,    other_list->m_lastKey,  other_list->m_ks);
+	m_lastKeyIsValid   = other_list->m_lastKeyIsValid;
+	m_mergeMinListSize = other_list->m_mergeMinListSize;
+	m_ks               = other_list->m_ks;
+	resetListPtr();
+	
+	other_list->m_list      = NULL;
+	other_list->m_alloc     = NULL;
+	other_list->m_allocSize = 0;
+	other_list->reset();
+}
+
+
 // just set the start and end keys
 //void RdbList::set ( key_t startKey , key_t endKey ) {
 void RdbList::set ( const char *startKey, const char *endKey ) {

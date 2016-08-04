@@ -17,7 +17,9 @@
 static const int MAGIC = 0x2c3a4f5d;
 int32_t g_numCorrupt = 0;
 
-Msg5::Msg5() {
+Msg5::Msg5()
+  : m_isSingleUnmergedListGet(false)
+{
 	log(LOG_TRACE,"Msg5(%p)::Msg5()",this);
 	m_waitingForList = false;
 	//m_waitingForMerge = false;
@@ -51,6 +53,32 @@ void Msg5::reset() {
 	log(LOG_TRACE,"msg5(%p)::reset() done",this);
 	assert(magic==MAGIC);
 }
+
+
+bool Msg5::getSingleUnmergedList(char          rdbId,
+				 collnum_t     collnum,
+				 RdbList      *list,
+				 const void   *startKey,
+				 const void   *endKey,
+				 int32_t       recSizes, // requested scan size(-1 all)
+				 bool          includeTree,
+				 bool          addToCache,
+				 int32_t       maxCacheAge, // in secs for cache lookup
+				 int32_t       fileNum, // file to scan
+				 void         *state, // for callback
+				 void        (*callback)(void *state, RdbList *list, Msg5 *msg5),
+				 int32_t       niceness)
+{
+	m_isSingleUnmergedListGet = true;
+	return getList(rdbId,collnum, list,
+	               startKey, endKey,
+		       recSizes, includeTree, addToCache, maxCacheAge,
+		       fileNum, 1, //startFileNum, numFiles
+		       state, callback,
+		       niceness,
+		       false,NULL,0,-1,true,-1,false,true);
+}
+
 
 // . return false if blocked, true otherwise
 // . set g_errno on error
@@ -953,12 +981,17 @@ bool Msg5::gotList2 ( ) {
 	// . older list goes first so newer list can override
 	// . remove all negative-keyed recs since Msg5 is a high level msg call
 
-	// . prepare for the merge, grows the buffer
-	// . this returns false and sets g_errno on error
-	// . should not affect the current list in m_list, only build on top
-	if ( ! m_list->prepareForMerge ( m_listPtrs, m_numListPtrs, m_minRecSizes ) ) {
-		log( LOG_WARN, "net: Had error preparing to merge lists from %s: %s", base->m_dbname,mstrerror(g_errno));
-		return true;
+	
+	if(!m_isSingleUnmergedListGet) {
+		// . prepare for the merge, grows the buffer
+		// . this returns false and sets g_errno on error
+		// . should not affect the current list in m_list, only build on top
+		if ( ! m_list->prepareForMerge ( m_listPtrs, m_numListPtrs, m_minRecSizes ) ) {
+			log( LOG_WARN, "net: Had error preparing to merge lists from %s: %s", base->m_dbname,mstrerror(g_errno));
+			return true;
+		}
+	} else {
+		//no need to prepare for merge. We'll just steal the one-and-only list in mergeLists()
 	}
 
 	QUICKPOLL((m_niceness));
@@ -1140,6 +1173,15 @@ void Msg5::mergeLists() {
 	// . if our fetch of remote list fails, then we'll be called
 	//   again with this set to false
 	if ( m_hadCorruption ) return;
+
+	if ( m_isSingleUnmergedListGet ) {
+		if(m_numFiles>1) gbshutdownLogicError();
+		if(m_numFiles<0) gbshutdownLogicError();
+		if(!m_listPtrs[0]) gbshutdownLogicError();
+		//just move move the m_msg3.list[0] over to the resulting list
+		m_list->stealFromOtherList(m_listPtrs[0]);
+
+	}
 
 	// start the timer
 	//int64_t startTime = gettimeofdayInMilliseconds();
