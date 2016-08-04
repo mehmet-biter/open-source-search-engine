@@ -230,7 +230,6 @@ log("@@@ msg2::getLists: qt=%p",qt);
 						     sk2,
 						     ek2,
 						     minRecSize,
-						     true,           // include tree?
 						     false,          // addtocache
 						     0,              // maxcacheage
 						     m_fileNum,      // file num
@@ -333,7 +332,6 @@ log("@@@ msg2::getLists: end of loop 1");
 						     &sk3,
 						     &ek3,
 						     minRecSizes,
-						     true,              // include tree?
 						     false,             // addtocache
 						     0,                 // maxcacheage
 						     m_fileNum,         // file num
