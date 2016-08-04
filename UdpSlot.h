@@ -105,6 +105,14 @@ public:
 		return m_hostId;
 	}
 
+	int32_t getDatagramsToSend() const {
+		return m_dgramsToSend;
+	}
+
+	int32_t getDatagramsToRead() const {
+		return m_dgramsToRead;
+	}
+
 	int64_t getStartTime() const {
 		return m_startTime;
 	}

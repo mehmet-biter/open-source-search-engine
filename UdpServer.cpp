@@ -2088,7 +2088,7 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 			    iptoa(slot->getIp()),
 			    (uint16_t) slot->getPort(),
 			    (int32_t) slot->isDoneReading(),
-			    slot->m_dgramsToSend,
+			    slot->getDatagramsToSend(),
 			    slot->m_resendTime,
 			    (uint64_t) slot->m_lastReadTime,
 			    (uint64_t) (now - slot->m_lastReadTime),
@@ -2105,7 +2105,7 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 		// reply yet, then continue because when reply is generated
 		// UdpServer::sendReply(slot) will be called and we don't
 		// want slot to be destroyed because it timed out...
-		if ( slot->isDoneReading() && slot->m_dgramsToSend <= 0 ) {
+		if ( slot->isDoneReading() && slot->getDatagramsToSend() <= 0 ) {
 			continue;
 		}
 
@@ -2186,7 +2186,7 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 		}
 		*/
 		// if we don't have anything ready to send continue
-		if ( slot->m_dgramsToSend <= 0 ) continue;
+		if ( slot->getDatagramsToSend() <= 0 ) continue;
 		// if shutting down, rather than resending the reply, just
 		// force it as if it were sent. then makeCallbacks can 
 		// destroy it.
