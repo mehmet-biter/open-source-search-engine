@@ -238,7 +238,7 @@ private:
 	//   or timed a slot out so it's callback should be called
 	bool readTimeoutPoll ( int64_t now ) ;
 
-	// callback linked list functions (m_head3)
+	// callback linked list functions (m_callbackListHead)
 	void addToCallbackLinkedList ( UdpSlot *slot ) ;
 	bool isInCallbackLinkedList ( UdpSlot *slot );
 	void removeFromCallbackLinkedList ( UdpSlot *slot ) ;
@@ -345,8 +345,8 @@ private:
 	UdpSlot *m_tail2;
 
 	// linked list of callback candidates
-	UdpSlot *m_head3;
-	UdpSlot *m_tail3;
+	UdpSlot *m_callbackListHead;
+	UdpSlot *m_callbackListTail;
 
 	int32_t m_numUsedSlots;
 	int32_t m_numUsedSlotsIncoming;

@@ -140,11 +140,14 @@ bool UdpServer::init ( uint16_t port, UdpProtocol *proto,
 		m_slots[ i ].m_next = &m_slots[ i + 1 ];
 	}
 	m_slots [ m_maxSlots - 1].m_next = NULL;
+
 	// the linked list of slots in use
 	m_head2 = NULL;
 	m_tail2 = NULL;
+
 	// linked list of callback candidates
-	m_head3 = NULL;
+	m_callbackListHead = NULL;
+
 	// . set up hash table that converts key (ip/port/transId) to a slot
 	// . m_numBuckets must be power of 2
 	m_numBuckets = getHighestLitBitValue ( m_maxSlots * 6 );
@@ -420,7 +423,7 @@ bool UdpServer::sendRequest(char *msg,
 		return false;
 	}
 
-	if (slot->m_next3 || slot->m_prev3) {
+	if (slot->m_callbackListNext || slot->m_callbackListPrev) {
 		g_process.shutdownAbort(true);
 	}
 
@@ -1253,12 +1256,12 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 	// we we could not allocate a read buffer to hold the request/reply
 	// just send a cancel ack so the send will call its callback with
 	// g_errno set
-	// MDW: it won't make it into the m_head3 callback linked list with
+	// MDW: it won't make it into the m_callbackListHead linked list with
 	// this logic.... maybe it just times out or resends later...
 	if ( ! status && g_errno == ENOMEM ) goto cancelTrans;
 
 	// if it is now a complete REPLY, callback will need to be called
-	// so insert into the callback linked list, m_head3.
+	// so insert into the callback linked list, m_callbackListHead.
 	// we have to put slots with NULL callbacks in here since they
 	// are incoming requests to handle.
 	if ( //slot->m_callback && 
@@ -1322,9 +1325,10 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 // . the problem is when we call this with niceness 1 and we convert
 //   a niceness 1 callback to 0...
 bool UdpServer::makeCallbacks_ass ( int32_t niceness ) {
-
 	// if nothing to call, forget it
-	if ( ! m_head3 ) return false;
+	if (!m_callbackListHead) {
+		return false;
+	}
 
  	//if ( g_conf.m_logDebugUdp )
 		log(LOG_DEBUG,"udp: makeCallbacks_ass: start. nice=%" PRId32" "
@@ -1359,10 +1363,9 @@ bool UdpServer::makeCallbacks_ass ( int32_t niceness ) {
 	UdpSlot *nextSlot = NULL;
 
 	// only scan those slots that are ready
-	//for ( UdpSlot *slot = m_head2 ; slot ; slot = slot->m_next2 ) {
-	for ( UdpSlot *slot = m_head3 ; slot ; slot = nextSlot ) {
+	for ( UdpSlot *slot = m_callbackListHead ; slot ; slot = nextSlot ) {
 		// because makeCallback_ass() can delete the slot, use this
-		nextSlot = slot->m_next3;
+		nextSlot = slot->m_callbackListNext;
 		// call quick handlers in pass 0, they do not take any time
 		// and if they do not get called right away can cause this host
 		// to bottleneck many hosts
@@ -2513,10 +2516,13 @@ UdpSlot *UdpServer::getUdpSlot ( key_t k ) {
 
 void UdpServer::addToCallbackLinkedList ( UdpSlot *slot ) {
 	// debug log
-	if ( g_conf.m_logDebugUdp && slot->m_errno )
-		log("udp: adding slot with err = %s to callback list", mstrerror(slot->m_errno) );
-	if ( g_conf.m_logDebugUdp )
-		log("udp: adding slot=%" PTRFMT" to callback list", (PTRTYPE)slot);
+	if (g_conf.m_logDebugUdp) {
+		if (slot->m_errno) {
+			log(LOG_DEBUG, "udp: adding slot with err=%s to callback list", mstrerror(slot->m_errno) );
+		} else {
+			log(LOG_DEBUG, "udp: adding slot=%" PTRFMT" to callback list", (PTRTYPE)slot);
+		}
+	}
 
 	// must not be in there already, lest we double add it
 	if ( isInCallbackLinkedList ( slot ) ) {
@@ -2524,24 +2530,25 @@ void UdpServer::addToCallbackLinkedList ( UdpSlot *slot ) {
 		return;
 	}
 
-	slot->m_next3 = NULL;
-	slot->m_prev3 = NULL;
-	if ( ! m_tail3 ) {
-		m_head3 = slot;
-		m_tail3 = slot;
+	slot->m_callbackListNext = NULL;
+	slot->m_callbackListPrev = NULL;
+
+	if ( ! m_callbackListTail ) {
+		m_callbackListHead = slot;
+		m_callbackListTail = slot;
 	} else {
 		// insert at end of linked list otherwise
-		m_tail3->m_next3 = slot;
-		slot->m_prev3 = m_tail3;
-		m_tail3 = slot;
+		m_callbackListTail->m_callbackListNext = slot;
+		slot->m_callbackListPrev = m_callbackListTail;
+		m_callbackListTail = slot;
 	}
 }
 
 bool UdpServer::isInCallbackLinkedList ( UdpSlot *slot ) {
 	// return if not in the linked list
-	if ( slot->m_prev3 ) return true;
-	if ( slot->m_next3 ) return true;
-	if ( m_head3 == slot ) return true;
+	if ( slot->m_callbackListPrev || slot->m_callbackListNext || m_callbackListHead == slot ) {
+		return true;
+	}
 	return false;
 }
 
@@ -2549,25 +2556,26 @@ void UdpServer::removeFromCallbackLinkedList ( UdpSlot *slot ) {
 	logDebug(g_conf.m_logDebugUdp, "udp: removing slot=%" PTRFMT" from callback list",(PTRTYPE)slot);
 
 	// return if not in the linked list
-	if ( slot->m_prev3 == NULL && 
-	     slot->m_next3 == NULL && 
-	     m_head3 != slot )
+	if ( slot->m_callbackListPrev == NULL &&
+	     slot->m_callbackListNext == NULL &&
+			m_callbackListHead != slot )
 		return;
 
 	// excise from linked list otherwise
-	if ( m_head3 == slot )
-		m_head3 = slot->m_next3;
-	if ( m_tail3 == slot )
-		m_tail3 = slot->m_prev3;
+	if ( m_callbackListHead == slot ) {
+		m_callbackListHead = slot->m_callbackListNext;
+	}
+	if ( m_callbackListTail == slot )
+		m_callbackListTail = slot->m_callbackListPrev;
 
-	if ( slot->m_prev3 ) 
-		slot->m_prev3->m_next3 = slot->m_next3;
-	if ( slot->m_next3 ) 
-		slot->m_next3->m_prev3 = slot->m_prev3;
+	if ( slot->m_callbackListPrev )
+		slot->m_callbackListPrev->m_callbackListNext = slot->m_callbackListNext;
+	if ( slot->m_callbackListNext )
+		slot->m_callbackListNext->m_callbackListPrev = slot->m_callbackListPrev;
 
 	// and so we do not try to re-excise it
-	slot->m_prev3 = NULL;
-	slot->m_next3 = NULL;
+	slot->m_callbackListPrev = NULL;
+	slot->m_callbackListNext = NULL;
 }
 
 // verified that this is not interruptible

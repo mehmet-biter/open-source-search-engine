@@ -302,10 +302,6 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 		     "<td><b>hostname</b></td>";
 	}
 
-	//UdpSlot *slot = server->m_head3;
-	//int32_t callbackReadyCount = 0;
-	//for ( ; slot ; slot = slot->m_next3 , callbackReadyCount++ ); 
-
 	p->safePrintf ( "<table %s>"
 			"<tr class=hdrow><td colspan=19>"
 			"<center>"
