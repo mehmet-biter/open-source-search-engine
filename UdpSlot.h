@@ -6,9 +6,7 @@
 #ifndef GB_UDPSLOT_H
 #define GB_UDPSLOT_H
 
-#include "Mem.h"
 #include "UdpProtocol.h"
-#include "Hostdb.h"
 #include "MsgType.h"
 
 #define SMALLDGRAMS
@@ -57,6 +55,8 @@
 // . we cannot call malloc so it must fit in here
 // . now we need tens of thousands of udp slots, so keep this small
 #define TMPBUFSIZE (250)
+
+class Host;
 
 class UdpSlot {
 	// this will help to hide more of UdpSlot implementation from the rest of the codebase
