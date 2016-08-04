@@ -1486,8 +1486,8 @@ bool UdpServer::makeCallbacks_ass ( int32_t niceness ) {
 		g_errno = slot->m_errno;
 		// if we got an error from him, set his stats
 		Host *h = NULL;
-		if ( g_errno && slot->m_hostId >= 0 ) 
-			h = g_hostdb.getHost ( slot->m_hostId );
+		if ( g_errno && slot->getHostId() >= 0 )
+			h = g_hostdb.getHost ( slot->getHostId() );
 		if ( h ) {
 			h->m_errorReplies++;
 			if ( g_errno == ETRYAGAIN ) 
@@ -2264,7 +2264,7 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 			    "(elapsed=%" PRId64")" ,
 			    (int32_t)slot->getMsgType(),
 			    (int32_t)slot->m_resendCount ,
-			    slot->m_hostId,elapsed);
+			    slot->getHostId(),elapsed);
 			// keep going
 			continue;
 		}			
@@ -2426,9 +2426,9 @@ bool UdpServer::timeoutDeadHosts ( Host *h ) {
 	// find sockets out to dead hosts and change the timeout
 	for ( UdpSlot *slot = m_activeListHead ; slot ; slot = slot->m_activeListNext ) {
 		// only change requests to dead hosts
-		if ( slot->m_hostId < 0 ) continue;
+		if ( slot->getHostId() < 0 ) continue;
 		//! g_hostdb.isDead(slot->m_hostId) ) continue;
-		if ( slot->m_hostId != h->m_hostId ) continue;
+		if ( slot->getHostId() != h->m_hostId ) continue;
 		// if we didn't initiate, then don't count it
 		if ( ! slot->m_callback ) continue;
 		// don't bother with pings or other hosts shutdown broadcasts

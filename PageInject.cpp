@@ -156,7 +156,7 @@ Host *getHostToHandleInjection ( char *url ) {
 		// it is to us, skip it
 		if ( ! slot->m_callback ) continue;
 		// who is it from?
-		int32_t hostId = slot->m_hostId;
+		int32_t hostId = slot->getHostId();
 		if ( hostId < 0 ) continue;
 		Host *h = g_hostdb.getHost ( hostId );
 		if ( ! h ) continue;

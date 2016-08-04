@@ -1217,7 +1217,8 @@ bool saveAddsInProgress ( const char *prefix ) {
 		// skip if got reply
 		if ( slot->m_readBuf ) continue;
 		// write hostid sent to
-		write ( fd , &slot->m_hostId , 4 );
+		int32_t hostId = slot->getHostId();
+		write ( fd , &hostId , 4 );
 		// write that
 		write ( fd , &slot->m_sendBufSize , 4 );
 		// then the buf data itself

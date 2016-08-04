@@ -78,6 +78,10 @@ public:
 		return m_port;
 	}
 
+	int32_t getHostId() const {
+		return m_hostId;
+	}
+
 	// set the UdpSlot's protocol, endpoint info, transId, timeout
 	void connect(UdpProtocol *proto, sockaddr_in *endPoint, Host *host, int32_t hostId, int32_t transId,
 	             int64_t timeout, int64_t now, int32_t niceness);

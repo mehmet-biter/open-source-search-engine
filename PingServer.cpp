@@ -634,7 +634,7 @@ void handleRequest11 ( UdpSlot *slot , int32_t niceness ) {
 		if ( requestSize != 3 && ! g_conf.isConnectIp(ip) )
 			log(LOG_LOGIC,"net: pingserver: No host for "
 			    "dstip=%s port=%hu tid=%" PRId32" fromhostid=%" PRId32,
-			    iptoa(ip),port,slot->getTransId(),slot->m_hostId);
+			    iptoa(ip),port,slot->getTransId(),slot->getHostId());
 		// set "useSameSwitch" to true so even if shotgunning is on
 		// the udp server will send the reply back to the same ip/port
 		// from which we got the request
