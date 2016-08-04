@@ -218,9 +218,8 @@ bool flushMsg4Buffers ( void *state , void (* callback) (void *) ) {
 	// call the flush done callback when all msg4 slots in udpserver
 	// have start times STRICTLY GREATER THAN that, then we will
 	// be guaranteed that everything we added has been replied to!
-	UdpSlot *slot = g_udpServer.getActiveHead();
 	int64_t max = 0LL;
-	for ( ; slot ; slot = slot->m_availableListNext ) {
+	for (UdpSlot *slot = g_udpServer.getActiveHead(); slot; slot = slot->m_activeListNext) {
 		// get its time stamp 
 		if ( slot->getMsgType() != msg_type_4 ) continue;
 		// must be initiated by us
@@ -788,9 +787,8 @@ void gotReplyWrapper4 ( void *state , void *state2 ) {
 	//    replyingSlot->m_startTime,(int32_t)replyingSlot);
 
 	// get the oldest msg4 slot starttime
-	UdpSlot *slot = g_udpServer.getActiveHead();
 	int64_t min = 0LL;
-	for ( ; slot ; slot = slot->m_availableListNext ) {
+	for (UdpSlot *slot = g_udpServer.getActiveHead(); slot; slot = slot->m_activeListNext) {
 		// get its time stamp
 		if ( slot->getMsgType() != msg_type_4 ) continue;
 		// must be initiated by us
