@@ -1177,12 +1177,9 @@ bool saveAddsInProgress ( const char *prefix ) {
 	sprintf ( filename , "%s%saddsinprogress.saving", 
 		  g_hostdb.m_dir , prefix );
 
-	int32_t fd = open ( filename, O_RDWR | O_CREAT | O_TRUNC ,
-			    getFileCreationFlags() );
-			 // S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH );
-	if ( fd < 0 ) {
-		log ("build: Failed to open %s for writing: %s",
-		     filename,strerror(errno));
+	int32_t fd = open(filename, O_RDWR | O_CREAT | O_TRUNC, getFileCreationFlags());
+	if (fd < 0) {
+		log(LOG_WARN, "build: Failed to open %s for writing: %s", filename, strerror(errno));
 		return false;
 	}
 
@@ -1250,10 +1247,10 @@ bool saveAddsInProgress ( const char *prefix ) {
 	// must associated with the repair. if we send out these add requests
 	// when we restart and not in repair mode then we try to add to an
 	// rdb2 which has not been initialized and it does not work.
-	sprintf ( newFilename , "%s%saddsinprogress.dat",
-		  g_hostdb.m_dir , prefix );
+	sprintf(newFilename, "%s%saddsinprogress.dat", g_hostdb.m_dir, prefix);
 
 	::rename ( filename , newFilename );
+
 	return true;
 }
 
