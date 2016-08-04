@@ -866,10 +866,10 @@ void doneSending_ass ( void *state , UdpSlot *slot ) {
 	if ( g_conf.m_logTimingNet ) {
 		double mbps ;
 		mbps = (((double)slot->m_sendBufSize) * 8.0 / (1024.0*1024.0))/
-			(((double)slot->m_startTime)/1000.0);
-		log("net: msg0: Sent %" PRId32" bytes of data in %" PRId64" ms (%3.1fMbps) "
+			(((double)slot->getStartTime())/1000.0);
+		log(LOG_DEBUG, "net: msg0: Sent %" PRId32" bytes of data in %" PRId64" ms (%3.1fMbps) "
 		      "(niceness=%" PRId32").",
-		      slot->m_sendBufSize , now - slot->m_startTime , mbps ,
+		      slot->m_sendBufSize , now - slot->getStartTime() , mbps ,
 		      st0->m_niceness );
 	}
 	// . mark it in pinkish purple

@@ -225,9 +225,9 @@ bool flushMsg4Buffers ( void *state , void (* callback) (void *) ) {
 		// must be initiated by us
 		if ( ! slot->m_callback ) continue;
 		// get it
-		if ( max && slot->m_startTime < max ) continue;
+		if ( max && slot->getStartTime() < max ) continue;
 		// got a new max
-		max = slot->m_startTime;
+		max = slot->getStartTime();
 	}
 
 	// set time AFTER the udpslot gets its m_startTime set so
@@ -803,9 +803,9 @@ void gotReplyWrapper4 ( void *state , void *state2 ) {
 		// log it
 		//log("msg4: slot starttime = %" PRId64" ",slot->m_startTime);
 		// get it
-		if ( min && slot->m_startTime >= min ) continue;
+		if ( min && slot->getStartTime() >= min ) continue;
 		// got a new min
-		min = slot->m_startTime;
+		min = slot->getStartTime();
 	}
 
 	// log it

@@ -1413,7 +1413,7 @@ bool UdpServer::makeCallbacks_ass ( int32_t niceness ) {
 		     ! slot->m_callback && // must be a handler request
 		     // must have been sitting there for 500ms+
 		     // also consider using slot->m_lastActionTime
-		     startTime - slot->m_startTime > 500 &&
+		     startTime - slot->getStartTime() > 500 &&
 		     // only do it for these guys now to make sure it
 		     // doesn't hurt the queries coming in
 		     (slot->getMsgType() == msg_type_13 ||
@@ -1637,7 +1637,7 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 		// debug msg
 		if ( g_conf.m_logDebugUdp ) {
 			int64_t now  = gettimeofdayInMillisecondsLocal();
-			int64_t took = now - slot->m_startTime;
+			int64_t took = now - slot->getStartTime();
 			//if ( took > 10 )
 			int32_t Mbps = 0;
 			if ( took > 0 ) Mbps = slot->m_readBufSize / took;

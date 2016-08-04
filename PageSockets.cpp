@@ -228,7 +228,7 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 		// if data is NULL that's an error
 		//if ( ! s ) continue;
 		// store it
-		times[nn] = now - s->m_startTime;
+		times[nn] = now - s->getStartTime();
 		slots[nn] = s;
 		nn++;
 	}
@@ -350,14 +350,14 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 		//if ( ! s->isDoneReading() ) st = "reading";
 		//if ( ! s->isDoneSending() ) st = "reading";
 		// times
-		int64_t elapsed0 = (now - s->m_startTime    ) ;
+		int64_t elapsed0 = (now - s->getStartTime()    ) ;
 		int64_t elapsed1 = (now - s->m_lastReadTime ) ;
 		int64_t elapsed2 = (now - s->m_lastSendTime ) ;
 		char e0[32],e1[32], e2[32];
 		sprintf ( e0 , "%" PRId64"ms" , elapsed0 );
 		sprintf ( e1 , "%" PRId64"ms" , elapsed1 );
 		sprintf ( e2 , "%" PRId64"ms" , elapsed2 );
-		if ( s->m_startTime    == 0LL ) strcpy ( e0 , "--" );
+		if ( s->getStartTime()    == 0LL ) strcpy ( e0 , "--" );
 		if ( s->m_lastReadTime == 0LL ) strcpy ( e1 , "--" );
 		if ( s->m_lastSendTime == 0LL ) strcpy ( e2 , "--" );
 		// bgcolor is lighter for incoming requests
