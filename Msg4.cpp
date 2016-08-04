@@ -1209,8 +1209,7 @@ bool saveAddsInProgress ( const char *prefix ) {
 	}
 
 	// scan in progress msg4 requests too!
-	UdpSlot *slot = g_udpServer.getActiveHead();
-	for ( ; slot ; slot = slot->m_activeListNext ) {
+	for (UdpSlot *slot = g_udpServer.getActiveHead(); slot; slot = slot->m_activeListNext) {
 		// skip if not msg4
 		if ( slot->getMsgType() != msg_type_4 ) continue;
 		// skip if we did not initiate it
