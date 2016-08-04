@@ -42,6 +42,73 @@ void Msg5::reset() {
 	m_treeList.freeList();
 }
 
+
+bool Msg5::getTreeList(RdbList *result, const void *startKey, const void *endKey) {
+	int32_t dummy1,dummy2,dummy3,dummy4;
+	return getTreeList(result,startKey,endKey,&dummy1,&dummy2,&dummy3,&dummy4);
+}
+
+bool Msg5::getTreeList(RdbList *result,
+		       const void *startKey, const void *endKey,
+		       int32_t *numNegativeRecs, int32_t *numPositiveRecs,
+		       int32_t *memUsedByTree, int32_t *numUsedNodes)
+{
+	RdbBase *base = getRdbBase(m_rdbId, m_collnum);
+	if(!base)
+		return false;
+	// set start time
+	int64_t start ;
+	if(m_newMinRecSizes > 64)
+		start = gettimeofdayInMilliseconds();
+	// . returns false on error and sets g_errno
+	// . endKey of m_treeList may be less than m_endKey
+	const char *structName;
+
+	if(base->m_rdb->useTree()) {
+		// get the mem tree for this rdb
+		RdbTree *tree = base->m_rdb->getTree();
+		if(!tree->getList(base->m_collnum,
+				  static_cast<const char*>(startKey),
+				  static_cast<const char*>(endKey),
+				  m_newMinRecSizes,
+				  result,
+				  numPositiveRecs,
+				  numNegativeRecs,
+				  base->useHalfKeys() ) )
+			return true;
+		structName = "tree";
+		*memUsedByTree = tree->getMemOccupiedForList();
+		*numUsedNodes = tree->getNumUsedNodes();
+	} else {
+		RdbBuckets *buckets = &base->m_rdb->m_buckets;
+		if(!buckets->getList(base->m_collnum,
+				     static_cast<const char*>(startKey),
+				     static_cast<const char*>(endKey),
+				     m_newMinRecSizes,
+				     result,
+				     numPositiveRecs,
+				     numNegativeRecs,
+				     base->useHalfKeys()))
+			return true;
+		structName = "buckets";
+	}
+
+	if(m_newMinRecSizes > 64) {
+		int64_t now  = gettimeofdayInMilliseconds();
+		int64_t took = now - start;
+		if(took > 9)
+			logf(LOG_INFO,"net: Got list from %s "
+			     "in %" PRIu64" ms. size=%" PRId32" db=%s "
+			     "niceness=%" PRId32".",
+			     structName, took,m_treeList.getListSize(),
+			     base->m_dbname,m_niceness);
+	}
+
+	return true;
+}
+
+
+
 // . return false if blocked, true otherwise
 // . set g_errno on error
 // . fills "list" with the requested list
@@ -325,57 +392,15 @@ bool Msg5::readList ( ) {
 		//   which essentially disregards tfndb and searches all the titledb
 		//   files for the titleRec.
 		if ( m_includeTree ) {
-			// get the mem tree for this rdb
-			RdbTree *tree = base->m_rdb->getTree();
-			// how many recs are deletes in this list?
 			int32_t numNegativeRecs = 0;
 			int32_t numPositiveRecs = 0;
-			// set start time
-			int64_t start ;
-			if ( m_newMinRecSizes > 64 )
-				start = gettimeofdayInMilliseconds();
-			// . returns false on error and sets g_errno
-			// . endKey of m_treeList may be less than m_endKey
-			const char *structName;
-
-			if(base->m_rdb->useTree()) {
-				if ( ! tree->getList ( base->m_collnum    ,
-						       m_fileStartKey       ,
-						       treeEndKey           ,
-						       m_newMinRecSizes     ,
-						       &m_treeList          ,
-						       &numPositiveRecs     , // # pos
-						       &numNegativeRecs     , // # neg
-						       base->useHalfKeys() ) )
-					return true;
-				structName = "tree";
-			}
-			else {
-				RdbBuckets *buckets = &base->m_rdb->m_buckets;
-				if ( ! buckets->getList ( base->m_collnum    ,
-							  m_fileStartKey       ,
-							  treeEndKey           ,
-							  m_newMinRecSizes     ,
-							  &m_treeList          ,
-							  &numPositiveRecs     ,
-							  &numNegativeRecs     ,
-							  base->useHalfKeys() )) {
-					return true;
-				}
-				structName = "buckets";
-			}
-
-			int64_t now  ;
-			if ( m_newMinRecSizes > 64 ) {
-				now  = gettimeofdayInMilliseconds();
-				int64_t took = now - start ;
-				if ( took > 9 )
-					logf(LOG_INFO,"net: Got list from %s "
-					     "in %" PRIu64" ms. size=%" PRId32" db=%s "
-					     "niceness=%" PRId32".",
-					     structName, took,m_treeList.getListSize(),
-					     base->m_dbname,m_niceness);
-			}
+			int32_t memUsedByTree = 0;
+			int32_t numRecs = 0;
+			if(!getTreeList(&m_treeList,
+			                m_fileStartKey, treeEndKey,
+				        &numPositiveRecs, &numNegativeRecs,
+					&memUsedByTree, &numRecs))
+				return true;
 			// if our recSize is fixed we can boost m_minRecSizes to
 			// compensate for these deletes when we call m_msg3.readList()
 			int32_t rs = base->getRecSize() ;
@@ -383,12 +408,8 @@ bool Msg5::readList ( ) {
 			// . just use tree to estimate avg. rec size
 			if ( rs == -1) {
 				if(base->m_rdb->useTree()) {
-					// how much space do all recs take up in the tree?
-					int32_t totalSize = tree->getMemOccupiedForList();
-					// how many recs in the tree
-					int32_t numRecs   = tree->getNumUsedNodes();
 					// get avg record size
-					if ( numRecs > 0 ) rs = totalSize / numRecs;
+					if ( numRecs > 0 ) rs = memUsedByTree / numRecs;
 					// add 10% for deviations
 					rs = (rs * 110) / 100;
 					// what is the minimal record size?

@@ -103,6 +103,12 @@ class Msg5 {
 				 isRealMerge   ,
 				 allowPageCache ); }
 
+	bool getTreeList(RdbList *result, const void *startKey, const void *endKey);
+	bool getTreeList(RdbList *result,
+			 const void *startKey, const void *endKey,
+			 int32_t *numNegativeRecs, int32_t *numPositiveRecs,
+			 int32_t *memUsedByTree, int32_t *numUsedNodes);
+
 	// need niceness to pass on to others
 	int32_t getNiceness ( ) { return m_niceness; }
 
