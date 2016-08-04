@@ -222,22 +222,31 @@ log("@@@ msg2::getLists: qt=%p",qt);
 		//   really needs to do it and he doesn't call Msg2
 		// . this is really only used to get IndexLists
 		// . we now always compress the list for 2x faster transmits
-		if ( ! msg5->getSingleUnmergedList ( RDB_POSDB,
-						     m_collnum,
-						     &m_lists[m_i],  // listPtr
-						     sk2,
-						     ek2,
-						     minRecSize,
-						     0,              // maxcacheage
-						     m_fileNum,      // file num
-						     this,
-						     gotListWrapper,
-						     m_niceness) )
-		{
-			ScopedLock sl(m_mtxCounters);
-			m_numRequests++;
-			continue;
-		}
+		if(m_fileNum>=0) {
+			if ( ! msg5->getSingleUnmergedList ( RDB_POSDB,
+							m_collnum,
+							&m_lists[m_i],  // listPtr
+							sk2,
+							ek2,
+							minRecSize,
+							0,              // maxcacheage
+							m_fileNum,      // file num
+							this,
+							gotListWrapper,
+							m_niceness) )
+			{
+				ScopedLock sl(m_mtxCounters);
+				m_numRequests++;
+				continue;
+			}
+		} else if(m_fileNum==-1) {
+			//get the tree
+			if(!msg5->getTreeList(&m_lists[m_i],RDB_POSDB,m_collnum,sk2,ek2)) {
+				log("query: Msg5::getTreeList() failed");
+				goto skip;
+			}
+		} else
+			gbshutdownLogicError();
 
 		log(LOG_TRACE,"Msg2::getLists(): msg5::getList() returned immediately");
 		// we didn't block, so do this

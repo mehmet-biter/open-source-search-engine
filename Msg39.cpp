@@ -375,8 +375,11 @@ g_mem.printBreeches();
 	const int totalChunks = (numFiles+1)*numDocIdSplits;
 	int chunksSearched = 0;
 	
-	for(int fileNum = 0; fileNum<numFiles; fileNum++) {
-		log(LOG_DEBUG,"controlLoop(): fileNume=%d (of %d)", fileNum, numFiles);
+	for(int fileNum = 0; fileNum<numFiles+1; fileNum++) {
+		if(fileNum!=numFiles)
+			log(LOG_DEBUG,"controlLoop(): fileNum=%d (of %d)", fileNum, numFiles);
+		else
+			log(LOG_DEBUG,"controlLoop(): fileNum=tree");
 		
 		int64_t docidRangeStart = 0;
 		const int64_t docidRangeDelta = MAX_DOCID / (int64_t)numDocIdSplits;
@@ -413,7 +416,10 @@ g_mem.printBreeches();
 			int64_t d1 = docidRangeStart;
 			
 			log(LOG_DEBUG,"docid range: [%" PRId64"..%" PRIu64")", d0,d1);
-			getLists(fileNum,d0,d1);
+			if(fileNum!=numFiles)
+				getLists(fileNum,d0,d1);
+			else
+				getLists(-1,d0,d1);
 			if ( g_errno ) {
 				log(LOG_ERROR,"Msg39::controlLoop: got error %d after getLists()", g_errno);
 				goto hadError;
