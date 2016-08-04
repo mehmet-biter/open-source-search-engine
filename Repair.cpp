@@ -1097,7 +1097,6 @@ bool Repair::scanRecs ( ) {
 			      1024             , // min rec sizes
 			      true             , // include tree?
 			      false            , // includeCache
-			      false            , // addToCache
 			      0                , // startFileNum
 			      -1               , // m_numFiles   
 			      this             , // state 

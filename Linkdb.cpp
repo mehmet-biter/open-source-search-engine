@@ -202,7 +202,6 @@ bool Linkdb::verify ( char *coll ) {
 			      (char*)&endKey        ,
 			      minRecSizes   ,
 			      true          , // includeTree   ,
-			      false         , // add to cache?
 			      0             , // max cache age
 			      0             , // startFileNum  ,
 			      -1            , // numFiles      ,
@@ -1103,7 +1102,6 @@ bool Msg25::doReadLoop ( ) {
 				(char*)&endKey  ,
 				m_minRecSizes   ,
 				includeTree     ,
-				false , // add to cache?
 				0 , // maxcacheage
 				0               , // startFileNum
 				numFiles        ,

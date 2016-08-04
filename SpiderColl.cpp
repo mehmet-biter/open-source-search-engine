@@ -237,7 +237,6 @@ bool SpiderColl::makeDoleIPTable ( ) {
 			      endKey        ,
 			      minRecSizes   ,
 			      true          , // includeTree?
-			      false         , // add to cache?
 			      0             , // max cache age
 			      0             , // startFileNum  ,
 			      -1            , // numFiles      ,
@@ -335,7 +334,6 @@ bool SpiderColl::makeWaitingTree ( ) {
 			      &endKey       ,
 			      minRecSizes   ,
 			      true          , // includeTree?
-			      false         , // add to cache?
 			      0             , // max cache age
 			      0             , // startFileNum  ,
 			      -1            , // numFiles      ,
@@ -1551,7 +1549,6 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 					 &m_endKey2     ,
 					 SR_READ_SIZE   , // minRecSizes (512k)
 					 true           , // includeTree
-					 false          , // addToCache
 					 0              , // max cache age
 					 0              , // startFileNum
 					 -1             , // numFiles (all)
@@ -2461,7 +2458,6 @@ bool SpiderColl::readListFromSpiderdb ( ) {
 				&m_endKey       ,
 				SR_READ_SIZE   , // minRecSizes (512k)
 				true           , // includeTree
-				false          , // addToCache
 				0              , // max cache age
 				0              , // startFileNum
 				-1             , // numFiles (all)

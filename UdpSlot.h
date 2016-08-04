@@ -361,8 +361,8 @@ public:
 	int32_t m_numBitsInitialized;
 
 	// and for doubly linked list of callback candidates
- 	class UdpSlot *m_next3;
-	class UdpSlot *m_prev3;
+	UdpSlot *m_callbackListNext;
+	UdpSlot *m_callbackListPrev;
 
 	// memset clears from here and above. so put anything that needs to
 	// be set to zero above this line.
@@ -376,10 +376,11 @@ public:
 	unsigned char m_readAckBits2 [ (MAX_DGRAMS / 8) + 1 ];
 
 	// we keep the unused slots in a linked list in UdpServer
-	class UdpSlot *m_next;
+	UdpSlot *m_availableListNext;
+
 	// and for doubly linked list of used slots
-	class UdpSlot *m_next2;
-	class UdpSlot *m_prev2;
+	UdpSlot *m_activeListNext;
+	UdpSlot *m_activeListPrev;
 
 	// store the key so when returning slot we can remove from hash table
 	key_t m_key;

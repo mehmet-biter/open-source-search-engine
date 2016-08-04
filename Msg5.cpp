@@ -98,7 +98,6 @@ bool Msg5::getList ( char     rdbId         ,
 		     const void    *endKey_        ,
 		     int32_t     minRecSizes   , // requested scan size(-1 none)
 		     bool     includeTree   ,
-		     bool     addToCache    ,
 		     int32_t     maxCacheAge   , // in secs for cache lookup
 		     int32_t     startFileNum  , // first file to scan
 		     int32_t     numFiles      , // rel. to startFileNum,-1 all
@@ -133,10 +132,6 @@ bool Msg5::getList ( char     rdbId         ,
 		g_errno = ENOCOLLREC;
 		return true;
 	}
-
-	// sanity check. we no longer have record caches!
-	// now we do again for posdb gbdocid:xxx| restricted queries
-	//if ( addToCache || maxCacheAge ) {g_process.shutdownAbort(true); }
 
 	// assume no error
 	g_errno = 0;
@@ -204,7 +199,6 @@ bool Msg5::getList ( char     rdbId         ,
 	KEYSET(m_endKey,endKey,m_ks);
 	m_minRecSizes   = minRecSizes;
 	m_includeTree   = includeTree;
-	m_addToCache    = addToCache;
 	m_maxCacheAge   = maxCacheAge;
 	m_startFileNum  = startFileNum;
 	m_numFiles      = numFiles;
@@ -245,24 +239,6 @@ bool Msg5::getList ( char     rdbId         ,
 	// hack it down
 	if ( numFiles > base->getNumFiles() ) 
 		numFiles = base->getNumFiles();
-
-	/*
-	// if we're storing or reading from cache.. make the cache key now
-	if ( m_maxCacheAge != 0 || m_addToCache ) {
-		//if ( cacheKeyPtr ) m_cacheKey = *cacheKeyPtr;
-		if ( cacheKeyPtr ) KEYSET(m_cacheKey,cacheKeyPtr,m_ks);
-		//else m_cacheKey = makeCacheKey ( m_startKey     ,
-		else makeCacheKey              ( m_startKey     ,
-						 m_endKey       ,
-						 m_includeTree  ,
-						 m_minRecSizes  ,
-						 m_startFileNum ,
-						 //m_numFiles     );
-						 m_numFiles     ,
-						 m_cacheKey     ,
-						 m_ks           );
-	}
-	*/
 
 	// . make sure we set base above so Msg0.cpp:268 doesn't freak out
 	// . if startKey is > endKey list is empty
@@ -1159,9 +1135,6 @@ void Msg5::repairLists() {
 
 		// otherwise we have a patchable error
 		m_hadCorruption = true;
-
-		// don't add a list with errors to cache, please
-		m_addToCache = false;
 	}
 }
 

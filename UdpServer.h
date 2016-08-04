@@ -188,7 +188,7 @@ public:
 	bool m_writeRegistered;
 
 	UdpSlot *getActiveHead ( ) {
-		return m_head2;
+		return m_activeListHead;
 	}
 
 	bool hasHandler(int i) {
@@ -238,7 +238,7 @@ private:
 	//   or timed a slot out so it's callback should be called
 	bool readTimeoutPoll ( int64_t now ) ;
 
-	// callback linked list functions (m_head3)
+	// callback linked list functions (m_callbackListHead)
 	void addToCallbackLinkedList ( UdpSlot *slot ) ;
 	bool isInCallbackLinkedList ( UdpSlot *slot );
 	void removeFromCallbackLinkedList ( UdpSlot *slot ) ;
@@ -338,15 +338,15 @@ private:
 	int32_t m_bufSize;
 
 	// linked list of available slots (uses UdpSlot::m_next)
-	UdpSlot *m_head;
+	UdpSlot *m_availableListHead;
 
 	// linked list of slots in use
-	UdpSlot *m_head2;
-	UdpSlot *m_tail2;
+	UdpSlot *m_activeListHead;
+	UdpSlot *m_activeListTail;
 
 	// linked list of callback candidates
-	UdpSlot *m_head3;
-	UdpSlot *m_tail3;
+	UdpSlot *m_callbackListHead;
+	UdpSlot *m_callbackListTail;
 
 	int32_t m_numUsedSlots;
 	int32_t m_numUsedSlotsIncoming;

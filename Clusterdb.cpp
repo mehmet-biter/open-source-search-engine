@@ -93,7 +93,6 @@ bool Clusterdb::verify ( char *coll ) {
 			      endKey        ,
 			      64000         , // minRecSizes   ,
 			      true          , // includeTree   ,
-			      false         , // add to cache?
 			      0             , // max cache age
 			      0             , // startFileNum  ,
 			      -1            , // numFiles      ,
