@@ -157,9 +157,6 @@ void UdpSlot::connect ( UdpProtocol    *proto    ,
 			int64_t            timeout  , // in milliseconds
 			int64_t       now      ,
 			int32_t            niceness ) {
-	// clear bufs
-	//m_sendBuf  = NULL;
-	//m_readBuf  = NULL;
 	// clear everything
 	//memset ( this , 0 , sizeof(UdpSlot) );
 	// . make async signal safe

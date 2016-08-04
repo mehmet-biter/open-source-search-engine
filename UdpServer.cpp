@@ -1696,11 +1696,13 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 
 		// sanity check. has this slot been excised from linked list?
 		if ( slot->m_activeListPrev && slot->m_activeListPrev->m_activeListNext != slot ) {
-			g_process.shutdownAbort(true); }
+			g_process.shutdownAbort(true);
+		}
 
 		// sanity check. has this slot been excised from linked list?
 		if ( slot->m_activeListPrev && slot->m_activeListPrev->m_activeListNext != slot ) {
-			g_process.shutdownAbort(true); }
+			g_process.shutdownAbort(true);
+		}
 
 		// save niceness
 		saved = g_niceness;
@@ -1714,7 +1716,7 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 		// use the transId of the slot to count!
 		g_callSlot = slot;
 
-		slot->m_callback ( slot->m_state , slot ); 
+		slot->m_callback(slot->m_state, slot);
 
 		g_callSlot = NULL;
 
@@ -1939,6 +1941,7 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 		// set this here now so it doesn't get its niceness converted
 		// then it re-enters the same handler here but in a quickpoll!
 		slot->m_calledHandler = true;
+
 		// sanity so msg0.cpp hack works
 		if ( slot->getNiceness() == 99 ) { g_process.shutdownAbort(true); }
 		// . this is the niceness of the server, not the slot
@@ -1959,12 +1962,6 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 
 	// we called the handler, don't call it again
 	slot->m_calledHandler = true;
-
-	//if (g_conf.m_profilingEnabled){
-	//	if(!g_profiler.endTimer(address, __PRETTY_FUNCTION__))
-	//		log(LOG_WARN,"admin: Couldn't add the fn %" PRId32,
-	//		    (int32_t)address);
-	//}
 
 	// i've seen a bunch of msg20 handlers called in a row take over 
 	// 10 seconds and the heartbeat gets starved and dumps core
