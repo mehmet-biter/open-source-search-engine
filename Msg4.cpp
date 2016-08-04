@@ -795,7 +795,7 @@ void gotReplyWrapper4 ( void *state , void *state2 ) {
 		if ( ! slot->hasCallback() ) continue;
 		// if it is this replying slot or already had the callback
 		// called, then ignore it...
-		if ( slot->m_calledCallback ) continue;
+		if ( slot->hasCalledCallback() ) continue;
 		// ignore incoming slot! that could be the slot we were
 		// waiting for to complete so its starttime will always
 		// be less than our callback's m_timestamp

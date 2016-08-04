@@ -402,8 +402,7 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 		int32_t  rbufSize      = s->m_readBufSize;
 		int32_t  sbufSize      = s->m_sendBufSize;
 		bool  weInit        = s->hasCallback();
-		char  calledHandler = s->m_calledHandler;
-		if ( weInit ) calledHandler = s->m_calledCallback;
+		bool  calledHandler = weInit ? s->hasCalledCallback() : s->hasCalledHandler();
 		char *buf     = NULL;
 		int32_t  bufSize = 0;
 		char tt [ 64 ];
@@ -416,7 +415,7 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 			// . if callback was called this slot's sendbuf can be bogus
 			// . i put this here to try to avoid a core dump
 			if (weInit) {
-				if (!s->m_calledCallback) {
+				if (!s->hasCalledCallback()) {
 					buf = sbuf;
 					bufSize = sbufSize;
 				}

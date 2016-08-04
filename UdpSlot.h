@@ -145,6 +145,14 @@ public:
 		return m_lastSendTime;
 	}
 
+	bool hasCalledHandler() const {
+		return m_calledHandler;
+	}
+
+	bool hasCalledCallback() const {
+		return m_calledCallback;
+	}
+
 	// set the UdpSlot's protocol, endpoint info, transId, timeout
 	void connect(UdpProtocol *proto, sockaddr_in *endPoint, Host *host, int32_t hostId, int32_t transId,
 	             int64_t timeout, int64_t now, int32_t niceness);
@@ -403,14 +411,14 @@ public:
 
 	// these are for measuring bps (bandwidth) for g_stats
 	int64_t m_firstSendTime;
+	// did we call the handler for this?
+	bool m_calledHandler;
+	bool m_calledCallback;
 
 	// . this is bigger for loopback sends/reads
 	// . we set it just low enough to avoid IP layer fragmentation
 	int32_t m_maxDgramSize;
 
-	// did we call the handler for this?
-	char m_calledHandler;
-	char m_calledCallback;
 	char m_convertedNiceness;
 	// has a sig been queued to call our callback
 	bool m_isQueued;

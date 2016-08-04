@@ -596,7 +596,7 @@ bool UdpServer::doSending_ass (UdpSlot *slot,bool allowResends,int64_t now) {
 	// if UdpServer::cancel() was called and this slot's callback was
 	// called, make sure to hault sending if we are in a quickpoll
 	// interrupt...
-	if ( slot->m_calledCallback ) {
+	if ( slot->hasCalledCallback() ) {
 		log("udp: trying to send on called callback slot");
 		return true;
 	}
@@ -1425,7 +1425,7 @@ bool UdpServer::makeCallbacks_ass ( int32_t niceness ) {
 		     // we now set this to true BEFORE calling the handler
 		     // so if we are in the handler now but in a quickpoll
 		     // then we do not re-enter the handler!! 
-		     ! slot->m_calledHandler &&
+		     ! slot->hasCalledHandler() &&
 		     slot->m_readBufSize > 0 &&
 		     slot->m_sendBufSize == 0 &&
 		     doNicenessConversion &&
@@ -1456,7 +1456,7 @@ bool UdpServer::makeCallbacks_ass ( int32_t niceness ) {
 		     // we now set this to true BEFORE calling the handler
 		     // so if we are in the handler now but in a quickpoll
 		     // then we do not re-enter the handler!! 
-		     ! slot->m_calledCallback &&
+		     ! slot->hasCalledCallback() &&
 		     slot->m_readBufSize > 0 &&
 		     slot->m_sendBufSize > 0 &&
 		     doNicenessConversion &&
@@ -1669,7 +1669,11 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 			start = gettimeofdayInMillisecondsLocal();
 
 		// sanity check for double callbacks
-		if ( slot->m_calledCallback ) { g_process.shutdownAbort(true); }
+		if ( slot->hasCalledCallback() ) {
+			g_process.shutdownAbort(true);
+		}
+
+		slot->m_calledCallback = true;
 
 		// now we got a reply or an g_errno so call the callback
 
@@ -1677,13 +1681,6 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 			log(LOG_DEBUG,"loop: enter callback for 0x%" PRIx32" "
 			    "nice=%" PRId32,(int32_t)slot->getMsgType(),slot->getNiceness());
 
-		// sanity check -- avoid double calls
-		if ( slot->m_calledCallback ) { g_process.shutdownAbort(true); }
-
-		slot->m_calledCallback++;
-
-		// sanity check -- avoid double calls
-		if ( slot->m_calledCallback != 1 ) { g_process.shutdownAbort(true); }
 
 		// . sanity check - if in a high niceness callback, we should
 		//   only be calling niceness 0 callbacks here
@@ -1751,7 +1748,7 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 		return true;
 	}
 	// don't repeat call the handler if we already called it
-	if ( slot->m_calledHandler ) {
+	if ( slot->hasCalledHandler() ) {
 		// . if transaction has not fully completed, keep sending
 		// . unless there was an error
 		if ( ! g_errno && 
@@ -1937,7 +1934,10 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 		// flag it so Loop.cpp does not re-nice quickpoll niceness
 		g_inHandler = true;
 		// sanity
-		if ( slot->m_calledHandler ) { g_process.shutdownAbort(true); }
+		if ( slot->hasCalledHandler() ) {
+			g_process.shutdownAbort(true);
+		}
+
 		// set this here now so it doesn't get its niceness converted
 		// then it re-enters the same handler here but in a quickpoll!
 		slot->m_calledHandler = true;
