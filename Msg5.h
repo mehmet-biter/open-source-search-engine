@@ -103,7 +103,7 @@ class Msg5 {
 				 isRealMerge   ,
 				 allowPageCache ); }
 
-	bool getTreeList(RdbList *result, const void *startKey, const void *endKey);
+	bool getTreeList(RdbList *result, char rdbId, collnum_t collnum, const void *startKey, const void *endKey);
 	bool getTreeList(RdbList *result,
 			 const void *startKey, const void *endKey,
 			 int32_t *numNegativeRecs, int32_t *numPositiveRecs,
