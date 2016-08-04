@@ -121,6 +121,14 @@ public:
 		return m_startTime;
 	}
 
+	int64_t getLastReadTime() const {
+		return m_lastReadTime;
+	}
+
+	int64_t getLastSendTime() const {
+		return m_lastSendTime;
+	}
+
 	// set the UdpSlot's protocol, endpoint info, transId, timeout
 	void connect(UdpProtocol *proto, sockaddr_in *endPoint, Host *host, int32_t hostId, int32_t transId,
 	             int64_t timeout, int64_t now, int32_t niceness);

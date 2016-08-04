@@ -2092,10 +2092,10 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 			    (int32_t) slot->isDoneReading(),
 			    slot->getDatagramsToSend(),
 			    slot->m_resendTime,
-			    (uint64_t) slot->m_lastReadTime,
-			    (uint64_t) (now - slot->m_lastReadTime),
-			    (uint64_t) slot->m_lastSendTime,
-			    (uint64_t) (now - slot->m_lastSendTime),
+			    (uint64_t) slot->getLastReadTime(),
+			    (uint64_t) (now - slot->getLastReadTime()),
+			    (uint64_t) slot->getLastSendTime(),
+			    (uint64_t) (now - slot->getLastSendTime()),
 			    (uint64_t) slot->m_timeout,
 			    slot->m_sentBitsOn,
 			    slot->m_readAckBitsOn);
@@ -2112,15 +2112,15 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 		}
 
 		// fix if clock changed!
-		if ( slot->m_lastReadTime > now ) {
+		if ( slot->getLastReadTime() > now ) {
 			slot->m_lastReadTime = now;
 		}
-		if ( slot->m_lastSendTime > now ) {
+		if ( slot->getLastSendTime() > now ) {
 			slot->m_lastSendTime = now;
 		}
 
 		// get time elapsed since last read
-		int64_t elapsed = now - slot->m_lastReadTime;
+		int64_t elapsed = now - slot->getLastReadTime();
 		// set all timeouts to 4 secs if we are shutting down
 		if ( m_isShuttingDown && slot->m_timeout > 4000 ) {
 			slot->m_timeout = 4000;
@@ -2147,7 +2147,7 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 		}
 
 		// how long since last send?
-		int64_t delta = now - slot->m_lastSendTime;
+		int64_t delta = now - slot->getLastSendTime();
 
 		// if elapsed is negative, then someone changed the system
 		// clock on us, so it won't hurt to resend just to update
@@ -2377,9 +2377,9 @@ bool UdpServer::shutdown ( bool urgent ) {
 			if ( slot->m_timeout > 3000 ) slot->m_timeout = 3000;
 			// . don't count lagging slots that haven't got 
 			//   a read in 5 sec
-			if ( now - slot->m_lastReadTime > 5 ) continue;
+			if ( now - slot->getLastReadTime() > 5 ) continue;
 			// don't count if timer fucked up
-			if ( now - slot->m_lastReadTime < 0 ) continue;
+			if ( now - slot->getLastReadTime() < 0 ) continue;
 			// count it
 			count++;
 		}
