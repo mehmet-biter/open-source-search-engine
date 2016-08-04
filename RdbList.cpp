@@ -1935,7 +1935,6 @@ void RdbList::merge_r ( RdbList **lists         ,
 	if ( m_listPtr != m_listEnd ) {
 		log( LOG_LOGIC, "db: rdblist: merge_r: warning. merge not storing at end of list for %s.",
 		     getDbnameFromId( ( uint8_t ) rdbId ) );
-abort();
 	}
 	// set our key range
 	KEYSET(m_startKey,startKey,m_ks);
