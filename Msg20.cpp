@@ -226,15 +226,7 @@ bool Msg20::getSummary ( Msg20Request *req ) {
 			      timeout           , // timeout
 			      req->m_niceness   ,
 			      firstHostId       , // first hostid
-			      NULL              , // reply buffer
-			      0                 , // reply buffer size
-			      false             , // free reply buf?
-			      false             , // do disk load balancing?
-			      -1                , // max cache age
-			      0                 , // cacheKey
-			      0                 , // bogus rdbId
-			      -1                , // minRecSizes(unknownRDsize)
-			      true              )) { // sendToSelf
+			      false          )) { // free reply buf?
 		// sendto() sometimes returns "Network is down" so i guess
 		// we just had an "error reply".
 		log("msg20: error sending mcast %s",mstrerror(g_errno));

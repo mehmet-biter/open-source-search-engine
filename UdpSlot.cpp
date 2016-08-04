@@ -274,9 +274,7 @@ bool UdpSlot::sendSetup(char *msg,
                         void      (*callback)(void *state, UdpSlot *slot),
                         int32_t niceness,
                         int16_t backoff,
-                        int16_t maxWait,
-                        char *replyBuf,
-                        int32_t replyBufMaxSize) {
+                        int16_t maxWait) {
 
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(msg,msgSize);
@@ -310,24 +308,6 @@ bool UdpSlot::sendSetup(char *msg,
 	m_niceness         = niceness;
 	m_backoff          = backoff;
 	m_maxWait          = maxWait;
-
-	// . only set m_readBuf if we should
-	// . sendSetup() is called by slots sending a request
-	// . sendSetup() is called by slots sending a reply
-	// . so m_readBuf may have info in it if we're sending a reply so
-	//   just don't NULLify it, it needs to be freed. This was causing
-	//   a memleak for receivers of Msg0x01s
-	if ( replyBuf ) {
-		if ( m_readBuf ) {
-			g_errno = EBADENGINEER;
-			log(LOG_LOGIC,"udp: Trying to initialize a udp socket for sending, but its read buffer is not empty.");
-			return false;
-		}
-
-		m_readBuf          = replyBuf;
-		m_readBufSize      = 0;
-		m_readBufMaxSize   = replyBufMaxSize;
-	}
 
 	// we haven't sent anything yet so reset this to -1
 	m_firstSendTime    = -1;

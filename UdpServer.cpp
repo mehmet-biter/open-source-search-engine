@@ -322,57 +322,68 @@ bool UdpServer::sendRequest(char *msg,
                             int64_t timeout, // in milliseconds
                             int16_t backoff,
                             int16_t maxWait,
-                            char *replyBuf,
-                            int32_t replyBufMaxSize,
                             int32_t niceness,
                             int32_t maxResends) {
+
 	// sanity check
-	if ( ! m_handlers[msgType] && this == &g_udpServer &&
-	     // proxy forwards the msg10 to a host in the cluster
-	     ! g_proxy.isProxy() ) { 
+	// proxy forwards the msg10 to a host in the cluster
+	if ( ! m_handlers[msgType] && this == &g_udpServer && ! g_proxy.isProxy() ) {
 		g_process.shutdownAbort(true);
 	}
+
 	// NULLify slot if any
-	if ( retslot ) *retslot = NULL;
+	if ( retslot ) {
+		*retslot = NULL;
+	}
+
 	// if shutting down return an error
 	if ( m_isShuttingDown ) { 
 		g_errno = ESHUTTINGDOWN; 
 		return false; 
 	}
+
 	// ensure timeout ok
 	if ( timeout < 0 ) { 
 		//g_errno = EBADENGINEER;
 		log(LOG_LOGIC,"udp: sendrequest: Timeout is negative. ");
 		g_process.shutdownAbort(true);
 	}
+
 	// . we only allow niceness 0 or 1 now
 	// . this niceness is only used for makeCallbacks_ass()
 	if ( niceness > 1 ) niceness = 1;
 	if ( niceness < 0 ) niceness = 0;
+
 	// get a new transId
 	int32_t transId = getTransId();
 
 	// set up shotgunning for this hostId
 	Host *h = NULL;
 	uint32_t ip2 = ip;
-	//if ( g_conf.m_useShotgun && hostId >= 0 ) {
+
 	// . now we always set UdpSlot::m_host
 	// . hostId is -1 when sending to a host in g_hostdb2 (hosts2.conf)
-	if ( hostId >= 0 ) h = g_hostdb.getHost ( hostId );
+	if ( hostId >= 0 ) {
+		h = g_hostdb.getHost ( hostId );
+	}
+
 	// get it from g_hostdb2 then via ip lookup if still NULL
-	if ( ! h ) h = g_hostdb.getHost ( ip , port );
+	if ( ! h ) {
+		h = g_hostdb.getHost ( ip , port );
+	}
+
 	// sanity check
-	if ( h && ip && ip != (uint32_t)-1 && h->m_ip != ip &&
-	     h->m_ipShotgun != ip && ip != 0x0100007f ) { // "127.0.0.1"
+	if ( h && ip && ip != (uint32_t)-1 && h->m_ip != ip && h->m_ipShotgun != ip && ip != 0x0100007f ) { // "127.0.0.1"
 		log(LOG_LOGIC,"udp: provided hostid does not match ip");
 		g_process.shutdownAbort(true);
 	}
-	// ok, we are probably sending a dns request to a dns server...
-	//if ( ! h ) { g_process.shutdownAbort(true); }
+
 	// always use the primary ip for making the key, 
 	// do not use the shotgun ip. because we can be getting packets
 	// from either ip for the same transaction.
-	if ( h ) ip2 = h->m_ip;
+	if ( h ) {
+		ip2 = h->m_ip;
+	}
 
 	// make a key for this new slot
 	key_t key = m_proto->makeKey (ip2,port,transId,true/*weInitiated?*/);
@@ -392,34 +403,30 @@ bool UdpServer::sendRequest(char *msg,
 	
 	// . get time 
 	int64_t now = gettimeofdayInMillisecondsLocal();
+
 	// connect to the ip/port (udp-style: does not do much)
-	slot->connect ( m_proto, ip, port, h, hostId, transId, timeout, now ,
-			niceness );
+	slot->connect(m_proto, ip, port, h, hostId, transId, timeout, now, niceness);
+
 	// . use default callback if none provided
 	// . slot has a callback iff it's an outgoing request
-	if ( ! callback ) callback = defaultCallbackWrapper;
+	if ( ! callback ) {
+		callback = defaultCallbackWrapper;
+	}
+
 	// set up for a send
-	if ( ! slot->sendSetup( msg             ,
-				msgSize         ,
-				msg             ,
-				msgSize         ,
-				msgType         ,
-				now             ,
-				state           ,
-				callback        ,
-				niceness        , 
-				backoff         , 
-				maxWait         ,
-				replyBuf        , 
-				replyBufMaxSize ) ) {
+	if (!slot->sendSetup(msg, msgSize, msg, msgSize, msgType, now, state, callback, niceness, backoff, maxWait)) {
 		freeUdpSlot_ass ( slot );
 		log( LOG_WARN, "udp: Failed to initialize udp socket for sending req: %s",mstrerror(g_errno));
 		return false;
 	}
 
-	if ( slot->m_next3 || slot->m_prev3 ) { g_process.shutdownAbort(true); }
+	if (slot->m_next3 || slot->m_prev3) {
+		g_process.shutdownAbort(true);
+	}
+
 	// set this
 	slot->m_maxResends = maxResends;
+
 	// keep sending dgrams until we have no more or hit ACK_WINDOW limit
 	if ( ! doSending_ass ( slot , true /*allow resends?*/ , now ) ) {
 		freeUdpSlot_ass ( slot );
@@ -427,17 +434,11 @@ bool UdpServer::sendRequest(char *msg,
 		return false;
 	}
 
-	// debug msg
-	//int64_t  now = gettimeofdayInMilliseconds();
-	//log("***added node #%" PRId32", isTimedOut=%" PRId32"\n",node,
-	//slot->isTimedOut(now));
 	// let caller know the slot if he wants to
-	if ( retslot ) *retslot = slot;
-	// debug msg
-	//log("UdpServer added slot to send on, key={%" PRId32",%" PRId64"},"
-	//"msgType=0x%02x\n",
-	//key.n1,key.n0, msgType );
-	// success
+	if ( retslot ) {
+		*retslot = slot;
+	}
+
 	return true;
 }
 
@@ -533,19 +534,7 @@ void UdpServer::sendReply_ass ( char    *msg        ,
 
 	// . use a NULL callback since we're sending a reply
 	// . set up for a send
-	if ( ! slot->sendSetup ( msg        ,
-				 msgSize    ,
-				 alloc      ,
-				 allocSize  ,
-				 slot->getMsgType()    ,
-				 now        ,
-				 NULL       ,
-				 NULL       ,
-				 slot->m_niceness   , 
-				 backoff    ,
-				 maxWait    ,
-				 NULL       , 
-				 0          ) ) {
+	if (!slot->sendSetup(msg, msgSize, alloc, allocSize, slot->getMsgType(), now, NULL, NULL, slot->m_niceness, backoff, maxWait)) {
 		log( LOG_WARN, "udp: Failed to initialize udp socket for sending reply: %s", mstrerror(g_errno));
 		mfree ( alloc , allocSize , "UdpServer");
 		// was EBADENGINEER
@@ -2454,8 +2443,6 @@ bool UdpServer::timeoutDeadHosts ( Host *h ) {
 
 // verified that this is not interruptible
 UdpSlot *UdpServer::getEmptyUdpSlot_ass ( key_t k , bool incoming ) {
-	// tmp debug
-	//if ( (rand() % 10) == 1 ) slot = NULL
 	// return NULL if none left
 	if ( ! m_head ) { 
 		g_errno = ENOSLOTS;
@@ -2465,14 +2452,12 @@ UdpSlot *UdpServer::getEmptyUdpSlot_ass ( key_t k , bool incoming ) {
 		}
 		return NULL;
 	}
+
 	UdpSlot *slot = m_head;
+
 	// remove from linked list of available slots
 	m_head = m_head->m_next;
-	// add to linked list of used slots
-	//slot->m_next2    = m_head2;
-	//slot->m_prev2    = NULL;
-	//if ( m_head2 ) m_head2->m_prev2 = slot;
-	//m_head2          = slot;
+
 	// put the used slot at the tail so older slots are at the head and
 	// makeCallbacks() can take care of the callbacks that have been
 	// waiting the longest first...
@@ -2481,30 +2466,26 @@ UdpSlot *UdpServer::getEmptyUdpSlot_ass ( key_t k , bool incoming ) {
 		slot->m_prev2    = m_tail2;
 		m_tail2->m_next2 = slot;
 		m_tail2          = slot;
-	}
-	else {
+	} else {
 		slot->m_next2    = NULL;
 		slot->m_prev2    = NULL;
 		m_head2          = slot;
 		m_tail2          = slot;
 	}
-	// also to callback candidates if we should
-	// if ( hasCallback ) {
-	// 	slot->m_next3    = m_head3;
-	// 	slot->m_prev3    = NULL;
-	// 	if ( m_head3 ) m_head3->m_prev3 = slot;
-	// 	m_head3          = slot;
-	// }
+
 	// count it
 	m_numUsedSlots++;
 
-	if ( incoming ) m_numUsedSlotsIncoming++;
+	if ( incoming ) {
+		m_numUsedSlotsIncoming++;
+	}
 
 	slot->m_incoming = incoming;
 
 	// now store ptr in hash table
 	slot->m_key = k;
-	addKey ( k , slot );
+	addKey(k, slot);
+
 	return slot;
 }
 
@@ -2533,25 +2514,22 @@ UdpSlot *UdpServer::getUdpSlot ( key_t k ) {
 void UdpServer::addToCallbackLinkedList ( UdpSlot *slot ) {
 	// debug log
 	if ( g_conf.m_logDebugUdp && slot->m_errno )
-		log("udp: adding slot with err = %s to callback list"
-		    , mstrerror(slot->m_errno) );
+		log("udp: adding slot with err = %s to callback list", mstrerror(slot->m_errno) );
 	if ( g_conf.m_logDebugUdp )
-		log("udp: adding slot=%" PTRFMT" to callback list"
-		    ,(PTRTYPE)slot);
+		log("udp: adding slot=%" PTRFMT" to callback list", (PTRTYPE)slot);
+
 	// must not be in there already, lest we double add it
 	if ( isInCallbackLinkedList ( slot ) ) {
-		if ( g_conf.m_logDebugUdp )
-			log("udp: avoided double add slot=%" PTRFMT
-			    ,(PTRTYPE)slot);
+		logDebug(g_conf.m_logDebugUdp, "udp: avoided double add slot=%" PTRFMT,(PTRTYPE)slot);
 		return;
 	}
+
 	slot->m_next3 = NULL;
 	slot->m_prev3 = NULL;
 	if ( ! m_tail3 ) {
 		m_head3 = slot;
 		m_tail3 = slot;
-	}
-	else {
+	} else {
 		// insert at end of linked list otherwise
 		m_tail3->m_next3 = slot;
 		slot->m_prev3 = m_tail3;
@@ -2568,10 +2546,7 @@ bool UdpServer::isInCallbackLinkedList ( UdpSlot *slot ) {
 }
 
 void UdpServer::removeFromCallbackLinkedList ( UdpSlot *slot ) {
-
-	if ( g_conf.m_logDebugUdp )
-		log("udp: removing slot=%" PTRFMT" from callback list"
-		    ,(PTRTYPE)slot);
+	logDebug(g_conf.m_logDebugUdp, "udp: removing slot=%" PTRFMT" from callback list",(PTRTYPE)slot);
 
 	// return if not in the linked list
 	if ( slot->m_prev3 == NULL && 
@@ -2654,8 +2629,10 @@ void UdpServer::cancel ( void *state , msg_type_t msgType ) {
 		if (slot->m_state != state || slot->getMsgType() != msgType) {
 			continue;
 		}
+
 		// note it
 		log(LOG_INFO,"udp: cancelled udp socket. msgType=0x%02x.", slot->getMsgType());
+
 		// let them know why we are calling the callback prematurely
 		g_errno = ECANCELLED;
 		// stop waiting for reply, this will call destroySlot(), too
@@ -2690,19 +2667,13 @@ void UdpServer::replaceHost ( Host *oldHost, Host *newHost ) {
 			if ( ++i >= m_numBuckets ) i = 0;
 		// sanity check
 		if ( ! m_ptrs[i] ) {
-			log(LOG_LOGIC,"udp: replaceHost: Slot not in hash "
-				      "table.");
+			log(LOG_LOGIC,"udp: replaceHost: Slot not in hash table.");
 			g_process.shutdownAbort(true);
 		}
-		if ( g_conf.m_logDebugUdp )
-			log(LOG_DEBUG,
-			    "udp: replaceHost: Rehashing slot "
-			    "tid=%" PRId32" dst=%s:%" PRIu32" "
-			    "slot=%" PTRFMT"",
-				      slot->m_transId,
-				      iptoa(slot->m_ip)+6,
-				      (uint32_t)slot->m_port,
-				      (PTRTYPE)slot);
+
+		logDebug(g_conf.m_logDebugUdp, "udp: replaceHost: Rehashing slot tid=%" PRId32" dst=%s:%" PRIu32" slot=%" PTRFMT,
+		         slot->m_transId, iptoa(slot->m_ip)+6, (uint32_t)slot->m_port, (PTRTYPE)slot);
+
 		// remove the bucket
 		m_ptrs [ i ] = NULL;
 		// rehash all buckets below

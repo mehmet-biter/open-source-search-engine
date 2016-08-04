@@ -11,7 +11,6 @@ int32_t klogctl( int, char *,int ) { return 0; }
 
 #include "PingServer.h"
 #include "UdpServer.h"
-//#include "Sync.h"
 #include "Conf.h"
 #include "HttpServer.h"
 #include "HttpMime.h"
@@ -44,16 +43,7 @@ static void handleRequest11 ( UdpSlot *slot , int32_t niceness ) ;
 static void gotReplyWrapperP2 ( void *state , UdpSlot *slot );
 static void gotReplyWrapperP3 ( void *state , UdpSlot *slot );
 static void updatePingTime ( Host *h , int32_t *pingPtr , int32_t tripTime ) ;
-// JAB: warning abatement
-//static bool pageTMobile ( Host *h , char *errmsg ) ;
-//static bool pageAlltel  ( Host *h , char *errmsg , char *num ) ;
-//static bool pageVerizon ( Host *h , char *errmsg ) ;
-//static void verizonWrapper ( void *state , TcpSocket *ts ) ;
-//static bool pageVerizon2 ( void *state , TcpSocket *s ) ;
-// JAB: warning abatement
-//static bool pageSprintPCS ( Host *h , char *errmsg , char *num ) ;
-//static void sprintPCSWrapper ( void *state , TcpSocket *ts ) ;
-//static bool pageSprintPCS2 ( void *state , TcpSocket *ts ) ;
+
 static bool sendAdminEmail ( Host  *h, const char  *fromAddress,
                              const char  *toAddress, char  *body ,
 			     const char  *emailServIp );
@@ -62,18 +52,21 @@ bool PingServer::registerHandler ( ) {
 	// . we'll handle msgTypes of 0x11 for pings
 	// . register ourselves with the udp server
 	// . it calls our callback when it receives a msg of type 0x0A
-	// . it is now hot..., no, not hot anymore
-	//if ( ! g_udpServer2.registerHandler ( 0x11, handleRequest11 )) 
-	//	return false;
-	// register on low priority server to make transition easier
-	if ( ! g_udpServer.registerHandler ( msg_type_11, handleRequest11 ))
+	if ( ! g_udpServer.registerHandler ( msg_type_11, handleRequest11 )) {
 		return false;
+	}
+
 	// limit this to 1000ms
-	if ( g_conf.m_pingSpacer > 1000 ) g_conf.m_pingSpacer = 1000;
+	if ( g_conf.m_pingSpacer > 1000 ) {
+		g_conf.m_pingSpacer = 1000;
+	}
+
 	// save this
 	m_pingSpacer = g_conf.m_pingSpacer;
+
 	// this starts off at zero
 	m_callnum = 0;
+
 	// . this was 500ms but now when a host shuts downs it sends all other
 	//   hosts a msg saying so... PingServer::broadcastShutdownNotes() ...
 	// . so i put it up to 2000ms to save bandwidth some
@@ -85,23 +78,8 @@ bool PingServer::registerHandler ( ) {
 		return false;
 	}
 
-	// if not host #0, we're done
-	if ( g_hostdb.m_hostId != 0 ) return true;
-
 	// we have disabled syncing for now
 	return true;
-
-	// . this is called ever 10 minutes
-	// . it tells all hosts to store a sync point at about the same time
-	// . the sync point is a fixed value in time used as a reference
-	//   for performing incremental synchronization by Sync.cpp should
-	//   a host go down without saving. one of its twins must of course
-	//   remain up in order to sync him.
-	//if ( ! g_loop.registerSleepCallback ( SYNC_TIME*1000     , // ms
-	//				      NULL           , 
-	//				      sleepWrapper10 ) )
-	//	return false;
-	//return true;
 }
 
 static int32_t s_outstandingPings = 0;
@@ -418,8 +396,6 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 					g_conf.m_deadHostTimeout ,
 					1000          ,           // backoff
 					2000          ,  // max wait
-					NULL          ,  // reply buf
-					0             ,  // reply buf size
 					0             )) // niceness
 		return;
 	// it had an error, so dec the count
@@ -616,8 +592,6 @@ void gotReplyWrapperP ( void *state , UdpSlot *slot ) {
 				       g_conf.m_deadHostTimeout , 
 				       1000          ,           // backoff
 				       2000          ,  // max wait
-				       NULL          ,  // reply buf
-				       0             ,  // reply buf size
 				       0             )) // niceness
 		return;
 	// he came back right away
@@ -1378,8 +1352,6 @@ bool PingServer::broadcastShutdownNotes ( bool    sendEmailAlert          ,
 						3000     , // 3 sec timeout
 						-1    , // default backoff
 						-1    , // default maxwait
-						NULL  , // reply buf
-						0     , // reply buf size
 						0     ))// niceness
 			continue;
 		// otherwise, had an error
@@ -1414,8 +1386,6 @@ bool PingServer::broadcastShutdownNotes ( bool    sendEmailAlert          ,
 						3000     , // 3 sec timeout
 						-1    , // default backoff
 						-1    , // default maxwait
-						NULL  , // reply buf
-						0     , // reply buf size
 						0     ))// niceness
 			continue;
 		// otherwise, had an error
@@ -1454,100 +1424,6 @@ void gotReplyWrapperP2 ( void *state , UdpSlot *slot ) {
 // will be appened to the list so we know at what approximate times all
 // the files were created. this if for doing incremental synchronization.
 // all "sync points" are from host #0's clock.
-
-// ensure not too many sync point store requests off at once
-static int32_t s_outstandingTaps = 0;
-static char s_lastSyncPoint [ 9 ];
-static int32_t s_nextTapHostId ;
-
-static void tapLoop ( ) ;
-static void gotTapReplyWrapper ( void *state , UdpSlot *slot ) ;
-
-void tapLoop ( ) {
-	// . don't use more than 16       UdpSlots for tapping
-	// . don't use more than numHosts UdpSlots for tapping
-	int32_t max = g_hostdb.getNumHosts();
-	if ( max > 16 ) max = 16;
- loop:
-	if ( s_outstandingTaps >= max ) return;
-	// cycle through pinging different hosts
-	int32_t n = g_hostdb.getNumHosts();
- 	// if done sending requests then just return
-	if ( s_nextTapHostId >= n ) return;
-	// otherwise, tap this guy
-	g_pingServer.tapHost ( s_nextTapHostId );
-	// inc next host to ping
-	s_nextTapHostId++;
-	// do as many in a row as we can
-	goto loop;
-}
-
-void gotTapReplyWrapper ( void *state , UdpSlot *slot ) {
-	// it came back
-	s_outstandingTaps--;
-	// don't let udp server free our send buf, we own it
-	slot->m_sendBufAlloc = NULL;
-	// discard errors
-	g_errno = 0;
-	// loop to do more if we need to
-	tapLoop ( );
-}
-
-// ping host #i
-void PingServer::tapHost ( int32_t hostId ) {
-	// don't ping on interface machines
-	if ( g_conf.m_interfaceMachine ) return;
-	// don't tap ourselves
-	//if ( hostId == g_hostdb.m_hostId ) return;
-	// watch for out of bounds
-	if ( hostId < 0 || hostId >= g_hostdb.getNumHosts() ) return;
-	// get host ptr
-	Host *h = g_hostdb.getHost ( hostId );
-	// return if NULL
-	if ( ! h ) return;
-	// don't tap again if already in progress
-	//if ( h->m_inTapProgress ) return;
-	// count it
-	s_outstandingTaps++;
-	// consider it in progress
-	//h->m_inProgress = true;
-	// . launch one
-	// . returns false and sets errno on error
-	// . returns true if request sent and it blocked
-	// . size of 2 is unique to a tap
-	// . use MsgType of 0x11 for pinging
-	// . we now use the high-prioirty server, g_udpServer2
-	// . now we send over our current time so remote host will sync up
-	//   with us
-	// . only sync up with hostId #0
-	// . if he goes down its ok because time is mostly important for 
-	//   spidering and spidering is suspended if a host is down
-	if ( g_udpServer.sendRequest ( s_lastSyncPoint ,
-					9               ,
-					msg_type_11            ,
-					h->m_ip         ,
-					h->m_port       ,
-					h->m_hostId     ,
-					NULL            ,
-				       (void *)(PTRTYPE)h->m_hostId,// cb state
-					gotTapReplyWrapper ,
-					30000           , // timeout
-					1000            , // backoff
-					10000           , // max wait
-					NULL            , // reply buf
-					0               , // reply buf size
-					0               ))// niceness
-		return;
-	// it had an error, so dec the count
-	s_outstandingTaps--;
-	// consider it out of progress
-	//h->m_inTapProgress = false;
-	// had an error
-	log("net: Had error sending sync point request to host #%" PRId32": %s.",
-	    h->m_hostId,mstrerror(g_errno) );
-	// reset it cuz it's not a showstopper
-	g_errno = 0;
-}
 
 // if its status changes from dead to alive or vice versa, we have to
 // update g_hostdb.m_numHostsAlive. Dns.cpp and Msg17 will use this count
@@ -1731,112 +1607,3 @@ void PingServer::sendEmailMsg ( int32_t *lastTimeStamp , const char *msg ) {
 	*lastTimeStamp = now;
 	return;
 }
-
-/////////////////
-//
-// for sending email notifications to external addresses
-//
-///////////////////
-
-/*
-bool gotMxIp ( EmailInfo *ei ) ;
-
-void gotMxIpWrapper ( void *state , int32_t ip ) {
-	EmailInfo *ei = (EmailInfo *)state;
-	// i guess set it
-	ei->m_mxIp = ip;
-	// handle it
-	if ( ! gotMxIp ( ei ) ) return;
-	// did not block, call callback
-	ei->m_callback ( ei->m_state );
-}
-*/
-
-void doneSendingEmailWrapper ( void *state , TcpSocket *sock ) {
-	if ( g_errno )
-		log("crawlbot: error sending email = %s",mstrerror(g_errno));
-	// log the reply
-	if ( sock && sock->m_readBuf )
-		log("crawlbot: got socket reply=%s", sock->m_readBuf);
-	EmailInfo *ei = (EmailInfo *)state;
-	ei->m_callback ( ei->m_state );
-}
-
-
-// returns false if blocked, true otherwise
-bool sendEmail ( class EmailInfo *ei ) {
-
-	// this is often set from XmlDoc.cpp::indexDoc()
-	g_errno = 0;
-
-	char *to = ei->m_toAddress.getBufStart();
-	char *dom = strstr(to,"@");
-	if ( ! dom || ! dom[1] ) {
-		g_errno = EBADENGINEER;
-		log("email: missing @ sign in email %s",to);
-		return true;
-	}
-	// point to domain
-	dom++;
-	// ref that for printing HELO line
-	ei->m_dom = dom;
-
-	// just send it to a sendmail server which will forward it,
-	// because a lot of email servers don't like us connecting directly
-	// beause i think our IP address does not match that of our 
-	// MX ip for our domain? sendmail must be configured to allow
-	// forwarding if it receives an email from the IP of host #0
-	// in the cluster.
-	ei->m_mxIp = atoip(g_conf.m_sendmailIp);
-
-	// wtf?
-	if ( ei->m_mxIp == 0 ) {
-		log("crawlbot: got bad MX ip of 0 for %s",
-		    ei->m_mxDomain.getBufStart());
-		return true;
-	}
-
-	// label alloc'd mem with gotmxip in case of mem leak
-	SafeBuf sb;//("gotmxip");
-	// helo line
-	sb.safePrintf("HELO %s\r\n",ei->m_dom);
-	// mail line
-	sb.safePrintf( "MAIL FROM:<%s>\r\n", ei->m_fromAddress.getBufStart());
-	// to line
-	sb.safePrintf( "RCPT TO:<%s>\r\n", ei->m_toAddress.getBufStart());
-	// data
-	sb.safePrintf( "DATA\r\n");
-	// body
-	sb.safePrintf( "To: %s\r\n", ei->m_toAddress.getBufStart());
-	sb.safePrintf( "Subject: %s\r\n",ei->m_subject.getBufStart());
-	// mime header must be separated from body by an extra \r\n
-	sb.safePrintf( "\r\n");
-	sb.safePrintf( "%s", ei->m_body.getBufStart() );
-	// quit
-	sb.safePrintf( "\r\n.\r\nQUIT\r\n\r\n");
-	// send the message
-	TcpServer *ts = g_httpServer.getTcp();
-	log ( LOG_WARN, "crawlbot: Sending email to %s (MX IP=%s):\n %s", 
-	      ei->m_toAddress.getBufStart(),
-	      iptoa(ei->m_mxIp),
-	      sb.getBufStart() );
-	// make a temp string
-	SafeBuf mxIpStr;
-	mxIpStr.safePrintf("%s",iptoa(ei->m_mxIp) );
-	if ( !ts->sendMsg( mxIpStr.getBufStart(), mxIpStr.length(), 25, sb.getBufStart(), sb.getCapacity(),
-					   sb.getLength(), sb.getLength(), ei, doneSendingEmailWrapper, 60 * 1000, 100 * 1024,
-					   100 * 1024 ) ) {
-		// tcpserver will free it, so prevent double free with detach
-		sb.detachBuf();
-		return false;
-	}
-	// error? if no error, it was a successful write and it done,
-	// otherwise we will want to free the sendbuf here so do not
-	// call detachBuf()
-	if ( ! g_errno )
-		// tcpserver will free it, so prevent double free with detach
-		sb.detachBuf();
-	// we did not block
-	return true;
-}
-

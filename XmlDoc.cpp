@@ -7025,12 +7025,7 @@ int32_t *XmlDoc::getIp ( ) {
 	//m_ipValid = true;
 	// get it
 	logTrace( g_conf.m_logTraceXmlDoc, "Calling MsgC.getIp [%s]", u->getHost());
-	if ( ! m_msgc.getIp ( u->getHost   () ,
-			      u->getHostLen() ,
-			      &m_ip           ,
-			      this            ,
-			      gotIpWrapper    ))
-	{
+	if (!m_msgc.getIp(u->getHost(), u->getHostLen(), &m_ip, this, gotIpWrapper)) {
 		// we blocked
 		logTrace( g_conf.m_logTraceXmlDoc, "END, return -1. Blocked." );
     	return (int32_t *)-1;
@@ -14200,8 +14195,16 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 			     m_docId ) {
 				g_process.shutdownAbort(true); }
 
-			if ( ! dt8.addKey(&hk,&rec) )
-			{
+			if( g_conf.m_noInMemoryPosdbMerge && rdbId == RDB_POSDB ) {
+				// NEW 20160803.
+				// Do not store records for POSDB in the hash table of old
+				// values. This makes sure that no delete records are 
+				// stored in posdb for existing terms, which is needed for 
+				// the new no-merge feature.
+				continue;
+			}
+
+			if ( ! dt8.addKey(&hk,&rec) ) {
 				logTrace( g_conf.m_logTraceXmlDoc, "addKey failed" );
 				return NULL;
 			}
@@ -19904,11 +19907,8 @@ bool XmlDoc::printCachedPage ( SafeBuf *sb , HttpRequest *hr ) {
 
 	int32_t isXml = hr->getLong("xml",0);
 
-	int32_t raw = hr->getLong("raw",0);
-
-	if ( ! isXml && ! raw ) printMenu ( sb );
-
 	if ( ! isXml ) {
+		printMenu ( sb );
 		// just copy it otherwise
 		if ( ptr_utf8Content )
 			sb->safeMemcpy ( ptr_utf8Content ,size_utf8Content -1);

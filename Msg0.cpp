@@ -326,10 +326,6 @@ skip:
 		    KEY1(m_startKey,m_ks),KEY0(m_startKey),
 		    (int32_t)m_niceness);
 
-	char *replyBuf = NULL;
-	int32_t  replyBufMaxSize = 0;
-	bool  freeReply = true;
-
 	// . make a request with the info above (note: not in network order)
 	// . IMPORTANT!!!!! if you change this change 
 	//   Multicast.cpp::sleepWrapper1 too!!!!!!!!!!!!
@@ -384,8 +380,6 @@ skip:
 					 timeout       ,
 					 -1            , // backoff
 					 -1            , // maxwait
-					 replyBuf      ,
-					 replyBufMaxSize ,
 					 m_niceness     ) ) { // cback niceness
 			logTrace( g_conf.m_logTraceMsg0, "END, return true. Request sent" );
 			return true;
@@ -416,14 +410,11 @@ skip:
 	//for ( int32_t i = 0; i < m_numSplit; i++ ) {
 
 	QUICKPOLL(m_niceness);
-	//int32_t gr;
-	char *buf;
-	buf = replyBuf;
 
 	// get the multicast
 	Multicast *m = &m_mcast;
 
-        if ( ! m->send ( m_request    , 
+    if ( ! m->send ( m_request    ,
 			      m_requestSize,
 			      msg_type_0         ,
 			      false        , // does multicast own request?
@@ -436,23 +427,7 @@ skip:
 			      gotMulticastReplyWrapper0 ,
 			      timeout*1000 , // timeout
 			      niceness     ,
-			      firstHostId  ,
-			      buf             ,
-			      replyBufMaxSize ,
-			      freeReply       , // free reply buf?
-			      true            , // do disk load balancing?
-			      maxCacheAge     ,
-			      //(key_t *)cacheKey        ,
-			      // multicast uses it for determining the best
-			      // host to send the request to when doing 
-			      // disk load balancing. if the host has our 
-			      // data cached, then it will probably get to
-			      // handle the request. for now let's just assume
-			      // this is a 96-bit key. TODO: fix...
-			 0 , // *(key_t *)cacheKey        ,
-			      rdbId           ,
-			      minRecSizes     ) ) 
-	{
+			      firstHostId) ) {
 		log(LOG_ERROR, "net: Failed to send request for data from %s in shard "
 		    "#%" PRIu32" over network: %s.",
 		    getDbnameFromId(m_rdbId),m_shardNum, mstrerror(g_errno));

@@ -636,13 +636,10 @@ static void gotImgIpWrapper ( void *state , int32_t ip ) {
 }
 
 bool Images::getImageIp ( ) {
-	if ( ! m_msgc.getIp ( m_imageUrl.getHost   () , 
-			      m_imageUrl.getHostLen() ,
-			      &m_latestIp     ,
-			      this            , 
-			      gotImgIpWrapper    ))
+	if (!m_msgc.getIp(m_imageUrl.getHost(), m_imageUrl.getHostLen(), &m_latestIp, this, gotImgIpWrapper)) {
 		// we blocked
 		return false;
+	}
 	return true;
 }
 

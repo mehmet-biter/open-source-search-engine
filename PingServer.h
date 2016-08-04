@@ -9,26 +9,6 @@
 
 extern char g_repairMode;
 
-class EmailInfo {
-public:
-	SafeBuf m_toAddress;
-	SafeBuf m_fromAddress;
-	SafeBuf m_subject;
-	SafeBuf m_body;
-	SafeBuf m_spiderStatusMsg;
-	collnum_t m_collnum;
-	char *m_dom; // ref into m_toAddress of the domain in email addr
-	SafeBuf m_mxDomain; // just the domain with a "gbmxrec-" prepended
-	void *m_state;
-	void (* m_callback ) (void *state);
-	void *m_finalState;
-	void (* m_finalCallback ) (void *state);
-	// ip address of MX record for this domain
-	int32_t m_mxIp;
-	int32_t m_notifyBlocked;
-	class CollectionRec *m_collRec;
-};
-
 class PingServer {
 
  public:

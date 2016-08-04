@@ -215,9 +215,6 @@ bool Conf::init ( char *dir ) { // , int32_t hostId ) {
 	// and this, in case you forgot to turn it off
 	if ( g_conf.m_isLive ) g_conf.m_doConsistencyTesting = false;
 
-	// and this on
-	g_conf.m_indexDeletes = true;
-
 	// this off
 	g_conf.m_repairingEnabled = false;
 

@@ -566,8 +566,6 @@ void handleRequest13 ( UdpSlot *slot , int32_t niceness  ) {
 						 200000 , // 200 sec timeout
 						 -1,//backoff
 						 -1,//maxwait
-						 NULL,//replybuf
-						 0,//replybufmaxsize
 						 niceness)) {
 			// g_errno should be set
 			

@@ -278,8 +278,6 @@ bool Msg7::sendInjectionRequestToHost ( InjectionRequest *ir ,
 					 udpserver_sendrequest_infinite_timeout , // timeout
 					 -1 , // backoff
 					 -1 , // maxwait
-					 NULL, // replybuf
-					 0, // replybufmaxsize
 					 MAX_NICENESS // niceness
 				       ) )
 		// we also return true on success, false on error
