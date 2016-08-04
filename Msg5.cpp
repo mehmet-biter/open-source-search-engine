@@ -78,7 +78,12 @@ bool Msg5::getSingleUnmergedList(char          rdbId,
 }
 
 
-bool Msg5::getTreeList(RdbList *result, const void *startKey, const void *endKey) {
+bool Msg5::getTreeList(RdbList *result,
+		       char rdbId, collnum_t collnum,
+		       const void *startKey, const void *endKey)
+{
+	m_rdbId = rdbId;
+	m_collnum = collnum;
 	int32_t dummy1,dummy2,dummy3,dummy4;
 	return getTreeList(result,startKey,endKey,&dummy1,&dummy2,&dummy3,&dummy4);
 }
@@ -89,8 +94,10 @@ bool Msg5::getTreeList(RdbList *result,
 		       int32_t *memUsedByTree, int32_t *numUsedNodes)
 {
 	RdbBase *base = getRdbBase(m_rdbId, m_collnum);
-	if(!base)
+	if(!base) {
+		log(LOG_DEBUG,"Msg5::getTreeList(): base %d/%d unknown",m_rdbId,m_collnum);
 		return false;
+	}
 	// set start time
 	int64_t start ;
 	if(m_newMinRecSizes > 64)

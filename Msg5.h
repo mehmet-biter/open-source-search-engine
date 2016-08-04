@@ -101,7 +101,8 @@ class Msg5 {
 				 compensateForMerge ,
 				 syncPoint     ,
 				 isRealMerge   ,
-				 allowPageCache ); }
+				 allowPageCache ); }	}
+
 
 	bool getSingleUnmergedList(char          rdbId,
 				   collnum_t     collnum,
@@ -115,7 +116,7 @@ class Msg5 {
 				   void        (*callback)(void *state, RdbList *list, Msg5 *msg5),
 				   int32_t       niceness);
 
-	bool getTreeList(RdbList *result, const void *startKey, const void *endKey);
+	bool getTreeList(RdbList *result, char rdbId, collnum_t collnum, const void *startKey, const void *endKey);
 	bool getTreeList(RdbList *result,
 			 const void *startKey, const void *endKey,
 			 int32_t *numNegativeRecs, int32_t *numPositiveRecs,
