@@ -253,7 +253,7 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 	int32_t msgCount1[MAX_MSG_TYPES] = {};
 	for ( int32_t i = 0; i < nn; i++ ) {
 		UdpSlot *s = slots[i];
-		if ( s->m_niceness == 0 )
+		if ( s->getNiceness() == 0 )
 			msgCount0[s->getMsgType()]++;
 		else
 			msgCount1[s->getMsgType()]++;
@@ -499,7 +499,7 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 			p->safePrintf( " <a href=\"/admin/tagdb?user=admin&tagtype0=manualban&tagdata0=1&u=%s&c=%s\">"
 					       "[<font color=red><b>BAN %s</b></font>]</nobr></a> " ,
 			               dbuf , coll , dbuf );
-			p->safePrintf("</td><td>%s%" PRId32"%s</td>", cf1, (int32_t)s->m_niceness, cf2);
+			p->safePrintf("</td><td>%s%" PRId32"%s</td>", cf1, (int32_t)s->getNiceness(), cf2);
 		} else {
 			// clickable hostId
 			const char *toFrom = "to";
@@ -519,7 +519,7 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 					coll ,
 					ehostId ,
 					cf1,
-					(int32_t)s->m_niceness,
+					(int32_t)s->getNiceness(),
 					cf2
 					// end clickable hostId
 					);

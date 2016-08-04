@@ -602,7 +602,7 @@ void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 	char      doErrorCorrection  = *p++;
 	char      includeTree        = *p++;
 	// this was messing up our niceness conversion logic
-	int32_t      niceness           = slot->m_niceness;//(int32_t)(*p++);
+	int32_t      niceness           = slot->getNiceness();
 	// still need to skip it though!
 	p++;
 	bool      allowPageCache     = (bool)(*p++);
@@ -877,7 +877,7 @@ void doneSending_ass ( void *state , UdpSlot *slot ) {
 	//   and it clutters the performance graph
 	if ( st0->m_rdbId == RDB_TAGDB ) {
 	}
-	else if(slot->m_niceness > 0) {
+	else if(slot->getNiceness() > 0) {
 		g_stats.addStat_r ( slot->m_sendBufSize , 
 				    st0->m_startTime ,
 				    now ,

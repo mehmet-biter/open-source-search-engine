@@ -61,6 +61,11 @@
 class UdpSlot {
 public:
 
+	// what is our niceness level?
+	int32_t getNiceness() const {
+		return m_niceness;
+	}
+
 	int32_t getTransId() const {
 		return m_transId;
 	}
@@ -264,8 +269,6 @@ public:
 	// . return < 0 if nothing to send
 	int32_t getScore ( int64_t now );
 
-	// what is our niceness level?
-	int32_t getNiceness ( ) { return m_niceness; }
 
 	void fixSlot ( ) ;
 
