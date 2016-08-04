@@ -60,6 +60,25 @@
 
 class UdpSlot {
 public:
+	int32_t getNumDgramsRead() const {
+		return m_readBitsOn;
+	}
+
+	int32_t getNumDgramsSent() const {
+		return m_sentBitsOn;
+	}
+
+	int32_t getNumAcksRead() const {
+		return m_readAckBitsOn;
+	}
+
+	int32_t getNumAcksSent() const {
+		return m_sentAckBitsOn;
+	}
+
+	msg_type_t getMsgType() const {
+		return m_msgType;
+	}
 
 	// what is our niceness level?
 	int32_t getNiceness() const {
@@ -164,22 +183,6 @@ public:
 		return (m_readAckBitsOn < m_dgramsToSend);
 	}
 
-	int32_t getNumDgramsRead() {
-		return m_readBitsOn;
-	}
-
-	int32_t getNumDgramsSent() {
-		return m_sentBitsOn;
-	}
-
-	int32_t getNumAcksRead() {
-		return m_readAckBitsOn;
-	}
-
-	int32_t getNumAcksSent() {
-		return m_sentAckBitsOn;
-	}
-
 	// this does not include ACKs to read
 	bool isDoneReading() {
 		if (m_dgramsToRead == 0) return false;
@@ -212,10 +215,6 @@ public:
 			return false;
 		}
 		return true;
-	}
-
-	msg_type_t getMsgType() {
-		return m_msgType;
 	}
 
 	key_t getKey() {
