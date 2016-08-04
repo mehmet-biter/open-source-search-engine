@@ -105,6 +105,10 @@ public:
 		return m_hostId;
 	}
 
+	int32_t getErrno() const {
+		return m_errno;
+	}
+
 	int32_t getDatagramsToSend() const {
 		return m_dgramsToSend;
 	}

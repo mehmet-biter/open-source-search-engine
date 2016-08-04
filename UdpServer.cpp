@@ -1268,7 +1268,7 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 	     // if we got an error reading the reply (or sending req?) then
 	     // consider it completed too?
 	     // ( slot->isTransactionComplete() || slot->m_errno ) &&
-	    ( slot->isDoneReading() || slot->m_errno ) ) {
+	    ( slot->isDoneReading() || slot->getErrno() ) ) {
 		// prepare to call the callback by adding it to this
 		// special linked list
 		addToCallbackLinkedList ( slot );
@@ -1483,7 +1483,7 @@ bool UdpServer::makeCallbacks_ass ( int32_t niceness ) {
 		// skip if not level we want
 		if ( niceness <= 0 && slot->getNiceness() > 0 && pass>0) continue;
 		// set g_errno before calling
-		g_errno = slot->m_errno;
+		g_errno = slot->getErrno();
 		// if we got an error from him, set his stats
 		Host *h = NULL;
 		if ( g_errno && slot->getHostId() >= 0 )
@@ -1624,7 +1624,9 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 
 		// assume the slot's error when making callback
 		// like EUDPTIMEDOUT
-		if ( ! g_errno ) g_errno = slot->m_errno;
+		if ( ! g_errno ) {
+			g_errno = slot->getErrno();
+		}
 
 		// . if transaction has not fully completed, bail
 		// . unless there was an error
@@ -1752,7 +1754,7 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 		// . unless there was an error
 		if ( ! g_errno && 
 		     ! slot->isTransactionComplete() &&
-		     ! slot->m_errno ) {
+		     ! slot->getErrno() ) {
 			if ( g_conf.m_logDebugUdp )
 				log("udp: why calling handler "
 				    "when not ready?");
@@ -2131,7 +2133,7 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 		// . 3. they take too long to ACK our reply 
 		// . 4. they take too long to ACK our request
 		// . only flag it if we haven't already...
-		if ( elapsed >= slot->m_timeout && slot->m_errno != EUDPTIMEDOUT ) {
+		if ( elapsed >= slot->m_timeout && slot->getErrno() != EUDPTIMEDOUT ) {
 			// . set slot's m_errno field
 			// . makeCallbacks_ass() should call its callback
 			slot->m_errno = EUDPTIMEDOUT;
@@ -2513,7 +2515,7 @@ UdpSlot *UdpServer::getUdpSlot ( key_t k ) {
 void UdpServer::addToCallbackLinkedList ( UdpSlot *slot ) {
 	// debug log
 	if (g_conf.m_logDebugUdp) {
-		if (slot->m_errno) {
+		if (slot->getErrno()) {
 			log(LOG_DEBUG, "udp: adding slot with err=%s to callback list", mstrerror(slot->m_errno) );
 		} else {
 			log(LOG_DEBUG, "udp: adding slot=%" PTRFMT" to callback list", (PTRTYPE)slot);

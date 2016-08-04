@@ -1047,7 +1047,7 @@ void Multicast::closeUpShop ( UdpSlot *slot ) {
 		// . if the slot had an error, propagate it so it will be set when
 		//   we call the callback.
 		if (!g_errno) {
-			g_errno = slot->m_errno;
+			g_errno = slot->getErrno();
 		}
 
 		// . sometimes UdpServer will read the reply into a temporary buffer
