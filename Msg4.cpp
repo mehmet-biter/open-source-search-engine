@@ -223,11 +223,11 @@ bool flushMsg4Buffers ( void *state , void (* callback) (void *) ) {
 		// get its time stamp 
 		if ( slot->getMsgType() != msg_type_4 ) continue;
 		// must be initiated by us
-		if ( ! slot->m_callback ) continue;
+		if ( ! slot->hasCallback() ) continue;
 		// get it
-		if ( max && slot->m_startTime < max ) continue;
+		if ( max && slot->getStartTime() < max ) continue;
 		// got a new max
-		max = slot->m_startTime;
+		max = slot->getStartTime();
 	}
 
 	// set time AFTER the udpslot gets its m_startTime set so
@@ -792,10 +792,10 @@ void gotReplyWrapper4 ( void *state , void *state2 ) {
 		// get its time stamp
 		if ( slot->getMsgType() != msg_type_4 ) continue;
 		// must be initiated by us
-		if ( ! slot->m_callback ) continue;
+		if ( ! slot->hasCallback() ) continue;
 		// if it is this replying slot or already had the callback
 		// called, then ignore it...
-		if ( slot->m_calledCallback ) continue;
+		if ( slot->hasCalledCallback() ) continue;
 		// ignore incoming slot! that could be the slot we were
 		// waiting for to complete so its starttime will always
 		// be less than our callback's m_timestamp
@@ -803,9 +803,9 @@ void gotReplyWrapper4 ( void *state , void *state2 ) {
 		// log it
 		//log("msg4: slot starttime = %" PRId64" ",slot->m_startTime);
 		// get it
-		if ( min && slot->m_startTime >= min ) continue;
+		if ( min && slot->getStartTime() >= min ) continue;
 		// got a new min
-		min = slot->m_startTime;
+		min = slot->getStartTime();
 	}
 
 	// log it
@@ -1068,7 +1068,7 @@ bool addMetaList ( const char *p , UdpSlot *slot ) {
 				log( LOG_WARN, "msg4: rdbId of %" PRId32" unrecognized "
 				    "from hostip=%s. "
 				    "dropping WHOLE request", (int32_t)rdbId,
-				    iptoa(slot->m_ip));
+				    iptoa(slot->getIp()));
 			else
 				log( LOG_WARN, "msg4: rdbId of %" PRId32" unrecognized. "
 				    "dropping WHOLE request", (int32_t)rdbId);
@@ -1177,12 +1177,9 @@ bool saveAddsInProgress ( const char *prefix ) {
 	sprintf ( filename , "%s%saddsinprogress.saving", 
 		  g_hostdb.m_dir , prefix );
 
-	int32_t fd = open ( filename, O_RDWR | O_CREAT | O_TRUNC ,
-			    getFileCreationFlags() );
-			 // S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH );
-	if ( fd < 0 ) {
-		log ("build: Failed to open %s for writing: %s",
-		     filename,strerror(errno));
+	int32_t fd = open(filename, O_RDWR | O_CREAT | O_TRUNC, getFileCreationFlags());
+	if (fd < 0) {
+		log(LOG_WARN, "build: Failed to open %s for writing: %s", filename, strerror(errno));
 		return false;
 	}
 
@@ -1213,11 +1210,12 @@ bool saveAddsInProgress ( const char *prefix ) {
 		// skip if not msg4
 		if ( slot->getMsgType() != msg_type_4 ) continue;
 		// skip if we did not initiate it
-		if ( ! slot->m_callback ) continue;
+		if ( ! slot->hasCallback() ) continue;
 		// skip if got reply
 		if ( slot->m_readBuf ) continue;
 		// write hostid sent to
-		write ( fd , &slot->m_hostId , 4 );
+		int32_t hostId = slot->getHostId();
+		write ( fd , &hostId , 4 );
 		// write that
 		write ( fd , &slot->m_sendBufSize , 4 );
 		// then the buf data itself
@@ -1249,10 +1247,10 @@ bool saveAddsInProgress ( const char *prefix ) {
 	// must associated with the repair. if we send out these add requests
 	// when we restart and not in repair mode then we try to add to an
 	// rdb2 which has not been initialized and it does not work.
-	sprintf ( newFilename , "%s%saddsinprogress.dat",
-		  g_hostdb.m_dir , prefix );
+	sprintf(newFilename, "%s%saddsinprogress.dat", g_hostdb.m_dir, prefix);
 
 	::rename ( filename , newFilename );
+
 	return true;
 }
 

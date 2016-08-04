@@ -337,19 +337,19 @@ void Multicast::gotReply2 ( UdpSlot *slot ) {
 	//logIt = true;
 	// log a failure msg
 	if ( logIt ) { // m_errnos[i] != ETRYAGAIN ) {
-		Host *h = g_hostdb.getHost ( slot->m_ip ,slot->m_port );
+		Host *h = g_hostdb.getHost ( slot->getIp() ,slot->getPort() );
 		if ( h ) 
 			log("net: Got error sending request to hostId %" PRId32" "
 			    "(msgType=0x%02x transId=%" PRId32" net=%s): "
 			    "%s. Retrying.",
-			    h->m_hostId, slot->getMsgType(), slot->m_transId,
+			    h->m_hostId, slot->getMsgType(), slot->getTransId(),
 			    g_hostdb.getNetName(),mstrerror(m_errnos[i]) );
 		else
 			log("net: Got error sending request to %s:%" PRId32" "
 			    "(msgType=0x%02x transId=%" PRId32" net=%s): "
 			    "%s. Retrying.",
-			    iptoa(slot->m_ip), (int32_t)slot->m_port, 
-			    slot->getMsgType(), slot->m_transId,
+			    iptoa(slot->getIp()), (int32_t)slot->getPort(),
+			    slot->getMsgType(), slot->getTransId(),
 			    g_hostdb.getNetName(),mstrerror(m_errnos[i]) );
 	}
 	// . let's sleep for a second before retrying the send
@@ -838,8 +838,8 @@ void sleepWrapper1 ( int bogusfd , void    *state ) {
 			const char *ee = "";
 			if ( THIS->m_errnos[i] ) ee = mstrerror(THIS->m_errnos[i]);
 			log( LOG_DEBUG, "net: Multicast::sleepWrapper1: tried host "
-			    "%s:%" PRId32" %s" ,iptoa(THIS->m_slots[i]->m_ip),
-			    (int32_t)THIS->m_slots[i]->m_port , ee );
+			    "%s:%" PRId32" %s" ,iptoa(THIS->m_slots[i]->getIp()),
+			    (int32_t)THIS->m_slots[i]->getPort() , ee );
 		}
 	}
 
@@ -943,22 +943,22 @@ void Multicast::gotReply1 ( UdpSlot *slot ) {
 		// do not log not found on an external network
 		if ( g_errno != ENOTFOUND ) {
 			// log the error
-			Host *h = g_hostdb.getHost(slot->m_ip, slot->m_port);
+			Host *h = g_hostdb.getHost(slot->getIp(), slot->getPort());
 			if (h) {
 				log(LOG_WARN, "net: Multicast got error in reply from "
 						    "hostId %" PRId32
 						    " (msgType=0x%02x transId=%" PRId32" "
 						    "nice=%" PRId32" net=%s): "
 						    "%s.",
-				    h->m_hostId, slot->getMsgType(), slot->m_transId,
+				    h->m_hostId, slot->getMsgType(), slot->getTransId(),
 				    m_niceness,
 				    g_hostdb.getNetName(), mstrerror(g_errno));
 			} else {
 				log(LOG_WARN, "net: Multicast got error in reply from %s:%" PRId32" "
 						    "(msgType=0x%02x transId=%" PRId32" nice =%" PRId32" net=%s): "
 						    "%s.",
-				    iptoa(slot->m_ip), (int32_t) slot->m_port,
-				    slot->getMsgType(), slot->m_transId, m_niceness,
+				    iptoa(slot->getIp()), (int32_t) slot->getPort(),
+				    slot->getMsgType(), slot->getTransId(), m_niceness,
 				    g_hostdb.getNetName(), mstrerror(g_errno));
 			}
 		}
@@ -1047,7 +1047,7 @@ void Multicast::closeUpShop ( UdpSlot *slot ) {
 		// . if the slot had an error, propagate it so it will be set when
 		//   we call the callback.
 		if (!g_errno) {
-			g_errno = slot->m_errno;
+			g_errno = slot->getErrno();
 		}
 
 		// . sometimes UdpServer will read the reply into a temporary buffer

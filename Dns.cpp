@@ -1246,12 +1246,12 @@ void gotIpWrapper ( void *state , UdpSlot *slot ) {
 		// log it so we know which dns server had the problem
 		if ( g_errno ) {
 			log(LOG_DEBUG,"dns: dns server at %s timed out.",
-			    iptoa(slot->m_ip));
+			    iptoa(slot->getIp()));
 			g_errno = EDNSTIMEDOUT;
 		}
 		else {
 			log(LOG_DEBUG,"dns: dns server at %s failed.",
-			    iptoa(slot->m_ip));
+			    iptoa(slot->getIp()));
 		}
 		// try again? yes, if we timed out on router1's bind9
 		if ( ds->m_dnsIps[0][0] != atoip(PUBLICLY_AVAILABLE_DNS1) ) {
@@ -1296,11 +1296,11 @@ void gotIpWrapper ( void *state , UdpSlot *slot ) {
 			int32_t timestamp = getTime();
 			key_t k;
 			k.n0 = 0LL;
-			k.n1 = slot->m_ip;
+			k.n1 = slot->getIp();
 			static const char *s_data = "1111";
 			log(LOG_DEBUG,
 			    "dns: adding ip %s to timedout cache: %s",
-			    iptoa(slot->m_ip),mstrerror(g_errno));
+			    iptoa(slot->getIp()),mstrerror(g_errno));
 			RdbCacheLock rcl(g_timedoutCache);
 			g_timedoutCache.addRecord((collnum_t)0,
 						  k           , // key
@@ -1598,7 +1598,7 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 	if ( ! dgram ) { 
 		g_errno = EBADREPLY; 
 		log("dns: Nameserver (%s) returned empty."
-		    "reply", iptoa(slot->m_ip));
+		    "reply", iptoa(slot->getIp()));
 		return -1; 
 	}
 	// get the size of the read buf
@@ -1607,7 +1607,7 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 	if ( dgramSize < 12 ) { 
 		log(LOG_INFO,"dns: Nameserver (%s) returned bad "
 		    "reply size of %" PRId32" bytes which is less than 12 bytes.",
-		    iptoa(slot->m_ip),dgramSize);
+		    iptoa(slot->getIp()),dgramSize);
 		g_errno = EBADREPLY; 
 		return -1; 
 	}
@@ -1618,7 +1618,7 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 	switch ( rcode ) {
 	case 0: break; // valid
 	case 1: log(LOG_DEBUG,"dns: Nameserver (%s) returned request "
-		    "format error.", iptoa(slot->m_ip));
+		    "format error.", iptoa(slot->getIp()));
 		g_errno = EBADREQUEST;
 		return -1;
 	case 2: //log("dns::gotIp: dns server failure"              ); 
@@ -1628,7 +1628,7 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 		//	"/etc/bind/named.conf?");
 		// we have to try another dns if we get this message!
 		log(LOG_DEBUG,"dns: Nameserver (%s) returned SERVFAIL.",
-		    iptoa(slot->m_ip));
+		    iptoa(slot->getIp()));
 		//g_errno = ETRYAGAIN;
 		//break;
 		return -1;
@@ -1640,11 +1640,11 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 		addToCache ( ds->m_hostnameKey , 0 );
 		return 0;
 	case 4: log(LOG_DEBUG,"dns: Nameserver (%s) does not support query.",
-		    iptoa(slot->m_ip));
+		    iptoa(slot->getIp()));
 		g_errno = EBADREQUEST;
 		return -1;
 	case 5: log(LOG_DEBUG,"dns: Nameserver (%s) refused request.",
-		    iptoa(slot->m_ip));
+		    iptoa(slot->getIp()));
 		// www.fsis.usda.gov will error here if recursion bit is set
 		// so restart from the beginning with it turned off
 		if ( ds->m_recursionDesired ) {
@@ -1660,7 +1660,7 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 		return -1;
 	default: log(LOG_INFO,"dns: Nameserver (%s) returned unknown "
 		    "return code = %" PRId32".",
-		    iptoa(slot->m_ip), rcode ); 
+		    iptoa(slot->getIp()), rcode );
 		g_errno = EBADREPLY;
 		return -1;
 	}
@@ -1671,7 +1671,7 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 	if ( ! supportRecursion && rcode == 3 ) {
 		g_errno = EDNSBAD;
 		log(LOG_INFO,"dns: Nameserver (%s) will not not recurse.",
-		    iptoa(slot->m_ip));
+		    iptoa(slot->getIp()));
 		return -1;
 	}
 	// otherwise if rcode is 3 then the name really does not exist so ret 0
@@ -1683,7 +1683,7 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 	if ( qdcount != 1 ) { 
 		g_errno = EBADREPLY; 
 		log (LOG_INFO,"dns: Nameserver (%s) returned query count "
-		     "of %" PRId32" (not 1).", iptoa(slot->m_ip),(int32_t)qdcount);
+		     "of %" PRId32" (not 1).", iptoa(slot->getIp()),(int32_t)qdcount);
 		return -1; 
 	}
 	// . now we should have our answer here
@@ -1698,7 +1698,7 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
  	if ( ancount < 0 ) { 
 		g_errno = EBADREPLY; 
 		log ("dns: Nameserver (%s) returned a negative answer count "
-		     "of %" PRId32".", iptoa(slot->m_ip),(int32_t)ancount);
+		     "of %" PRId32".", iptoa(slot->getIp()),(int32_t)ancount);
 		return -1; 
 	}
 
@@ -1769,7 +1769,7 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 		g_errno = EBADREPLY;
 		log(LOG_INFO,"dns: Nameserver (%s) returned a "
 		    "corrupt reply [0] for %s.",
-		    iptoa(slot->m_ip),ds->m_hostname);
+		    iptoa(slot->getIp()),ds->m_hostname);
 		return -1;
 	}
 	// jump over each label
@@ -1792,7 +1792,7 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 		g_errno = EBADREPLY;
 		log(LOG_INFO,"dns: Nameserver (%s) returned a "
 		    "corrupt reply [1] for %s.",
-		    iptoa(slot->m_ip),ds->m_hostname);
+		    iptoa(slot->getIp()),ds->m_hostname);
 		return -1;
 	}
 	// . store the ips of the nameservers we have to ask into "ips"
@@ -1862,7 +1862,7 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 			g_errno = EBADREPLY;
 			log(LOG_INFO,"dns: Nameserver (%s) returned a "
 			    "corrupt reply [2] for %s.", 
-			    iptoa(slot->m_ip),ds->m_hostname);
+			    iptoa(slot->getIp()),ds->m_hostname);
 			return -1;
 		}
 		// the type (A=1,CNAME=5,...)
@@ -1894,7 +1894,7 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 		if ( rlen < 0 ) {
 			g_errno = EBADREPLY;
 			log(LOG_INFO,"dns: Nameserver (%s) returned "
-			    "a negative resource len.", iptoa(slot->m_ip) );
+			    "a negative resource len.", iptoa(slot->getIp()) );
 			return -1;
 			
 		}
@@ -1953,7 +1953,7 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 					log(LOG_INFO,
 						"dns: Nameserver (%s) returned"
 						" a corrupt reply [3] for %s.",
-			    			iptoa(slot->m_ip),
+						iptoa(slot->getIp()),
 						ds->m_hostname);
 					return -1;
 				}
@@ -1964,7 +1964,7 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 					log(LOG_INFO,
 						"dns: Nameserver (%s) returned"
 						" a corrupt reply [4] for %s.",
-			    			iptoa(slot->m_ip),
+						iptoa(slot->getIp()),
 						ds->m_hostname);
 					return -1;
 				}

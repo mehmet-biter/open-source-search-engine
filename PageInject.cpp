@@ -154,9 +154,9 @@ Host *getHostToHandleInjection ( char *url ) {
 		//if ( ! slot->m_weInitiated ) continue;
 		// if we did not initiate the injection request, i.e. if
 		// it is to us, skip it
-		if ( ! slot->m_callback ) continue;
+		if ( ! slot->hasCallback() ) continue;
 		// who is it from?
-		int32_t hostId = slot->m_hostId;
+		int32_t hostId = slot->getHostId();
 		if ( hostId < 0 ) continue;
 		Host *h = g_hostdb.getHost ( hostId );
 		if ( ! h ) continue;
@@ -686,7 +686,7 @@ void handleRequest7 ( UdpSlot *slot , int32_t netnice ) {
 	// now just supply the first guy's char ** and size ptr
 	if ( ! deserializeMsg2 ( &ir->ptr_url, &ir->size_url ) ) {
 		log("inject: error deserializing inject request from "
-		    "host ip %s port %i",iptoa(slot->m_ip),(int)slot->m_port);
+		    "host ip %s port %i",iptoa(slot->getIp()),(int)slot->getPort());
 		g_errno = EBADREQUEST;
 		g_udpServer.sendErrorReply(slot,g_errno);
 		return;

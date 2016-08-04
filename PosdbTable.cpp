@@ -108,7 +108,7 @@ static inline char *getWordPosList ( int64_t docId, char *list, int32_t listSize
 	// go up or down then
 	if ( d < docId ) { 
 		p = origp + step;
-		if ( p > listEnd ) p = listEnd - 6;
+		if ( p >= listEnd ) p = listEnd - 6;
 	}
 	else {
 		p = origp - step;

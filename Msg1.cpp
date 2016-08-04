@@ -550,7 +550,7 @@ void handleRequest1 ( UdpSlot *slot , int32_t netnice ) {
 	// extract what we read
 	char *readBuf     = slot->m_readBuf;
 	int32_t  readBufSize = slot->m_readBufSize;
-	int32_t niceness = slot->m_niceness;
+	int32_t niceness = slot->getNiceness();
 
 	// select udp server based on niceness
 	UdpServer *us = &g_udpServer;

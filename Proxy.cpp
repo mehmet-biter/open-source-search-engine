@@ -506,7 +506,7 @@ void Proxy::gotReplyPage ( void *state, UdpSlot *slot ) {
 	//   we will get slot->m_errno set to EUDPTIMEDOUT
 	// . it will also set the errno to EUDPTIMEDOUT if the timeout we
 	//   gave sendRequest() above is reached.
-	if ( slot->m_errno == EUDPTIMEDOUT && //stC->m_forward < 0 &&
+	if ( slot->getErrno() == EUDPTIMEDOUT && //stC->m_forward < 0 &&
 	     // try this thrice i guess... hopefully we won't pick the same
 	     // host we did before!
 	     ++stC->m_retries <= 3 ) {

@@ -157,9 +157,6 @@ void UdpSlot::connect ( UdpProtocol    *proto    ,
 			int64_t            timeout  , // in milliseconds
 			int64_t       now      ,
 			int32_t            niceness ) {
-	// clear bufs
-	//m_sendBuf  = NULL;
-	//m_readBuf  = NULL;
 	// clear everything
 	//memset ( this , 0 , sizeof(UdpSlot) );
 	// . make async signal safe
@@ -428,11 +425,8 @@ void UdpSlot::prepareForResend ( int64_t now , bool resendAll ) {
 			m_host->m_preferEth = 0;
 			// use eth0 to talk to this guy for this tid
 			m_preferEth = 0;
-			// log it
-			if ( g_conf.m_logDebugUdp )
-				logf(LOG_DEBUG,
-				     "udp: switching to eth0 for host #%" PRId32" "
-				     "tid=%" PRId32,m_host->m_hostId,m_transId);
+			logDebug(g_conf.m_logDebugUdp, "udp: switching to eth0 for host #%" PRId32" tid=%" PRId32,
+			         m_host->m_hostId, m_transId);
 		}
 		// . just some debug notes
 		// . this happens when host cores and both eth0 and eth1 r dead
@@ -449,7 +443,7 @@ void UdpSlot::prepareForResend ( int64_t now , bool resendAll ) {
 		logf(LOG_DEBUG, "udp: resending slot all=%" PRId32" tid=%" PRId32" dst=%s:%hu count=%" PRId32" host=0x%" PTRFMT
 		     " cleared=%" PRId32,
 		     (int32_t) resendAll,
-		     (int32_t) m_transId,
+		     m_transId,
 		     iptoa(m_ip),//+9,
 		     (uint16_t) m_port,
 		     (int32_t) m_resendCount,
@@ -820,7 +814,7 @@ int32_t UdpSlot::sendDatagramOrAck ( int sock, bool allowResends, int64_t now ){
 		    (int32_t)dgramNum, 
 		    (int32_t)m_dgramsToSend,
 		    (int16_t)m_msgType,
-		    (int32_t)m_transId,
+		    m_transId,
 		    //iptoa(m_ip),//+9,
 		    iptoa(to.sin_addr.s_addr),
 		    (uint16_t)m_port,
@@ -1084,7 +1078,7 @@ int32_t UdpSlot::sendAck ( int sock , int64_t now ,
 		     "hid=%" PRId32,
 		    (int32_t)dgramNum, 
 		    (int16_t)m_msgType , 
-		    (int32_t)m_transId, 
+		    m_transId,
 		     iptoa(m_ip),//+9 , 
 		    (uint16_t)m_port, 
 		    (int32_t)kk , 
@@ -1255,7 +1249,7 @@ bool UdpSlot::readDatagramOrAck ( const void *readBuffer_,
 			log(LOG_DEBUG,"udp: Cramming ACKs "
 			    "tid=%" PRId32" "
 			    "dst=%s:%hu" ,
-			    (int32_t)m_transId ,
+			    m_transId ,
 			    iptoa(m_ip),
 			    (uint16_t)m_port);
 	}
@@ -1596,7 +1590,7 @@ void UdpSlot::readAck ( int32_t dgramNum, int64_t now ) {
 		    "hid=%" PRId32,
 		    (int32_t)dgramNum, 
 		    (int16_t)m_msgType , 
-		    (int32_t)m_transId, 
+		    m_transId,
 		    iptoa(m_ip) , 
 		    (uint16_t)m_port, 
 		    (int32_t)kk , 
