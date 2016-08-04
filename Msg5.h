@@ -109,7 +109,6 @@ class Msg5 {
 				   const void   *startKey,
 				   const void   *endKey,
 				   int32_t       recSizes, // requested scan size(-1 all)
-				   bool          addToCache,
 				   int32_t       maxCacheAge, // in secs for cache lookup
 				   int32_t       fileNum, // file to scan
 				   void         *state, // for callback

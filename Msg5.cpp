@@ -61,7 +61,6 @@ bool Msg5::getSingleUnmergedList(char          rdbId,
 				 const void   *startKey,
 				 const void   *endKey,
 				 int32_t       recSizes, // requested scan size(-1 all)
-				 bool          addToCache,
 				 int32_t       maxCacheAge, // in secs for cache lookup
 				 int32_t       fileNum, // file to scan
 				 void         *state, // for callback
@@ -71,7 +70,7 @@ bool Msg5::getSingleUnmergedList(char          rdbId,
 	m_isSingleUnmergedListGet = true;
 	return getList(rdbId,collnum, list,
 	               startKey, endKey,
-		       recSizes, true, addToCache, maxCacheAge,
+		       recSizes, true, maxCacheAge,
 		       fileNum, 1, //startFileNum, numFiles
 		       state, callback,
 		       niceness,
