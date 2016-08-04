@@ -449,10 +449,7 @@ void handleRequestfd ( UdpSlot *slot , int32_t niceness ) {
 		return;
 	}
 
-	// log this out on gk144 to see why dropping
-	if ( g_conf.m_logDebugBuild )
-		log("fd: handling request transid=%" PRId32" %s", 
-		    slot->m_transId, request );
+	logDebug(g_conf.m_logDebugBuild, "fd: handling request transid=%" PRId32" %s", slot->getTransId(), request);
 
 	// ultimately, Tcp::sendMsg() should be called which will free "s"
 	g_httpServer.requestHandler ( s );

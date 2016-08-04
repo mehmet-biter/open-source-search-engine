@@ -518,7 +518,7 @@ void UdpServer::sendReply_ass ( char    *msg        ,
 	//   ip/port that sent to us.
 	//if ( g_conf.m_useShotgun && ! useSameSwitch )
 	// now we always set m_host, we use s_shotgun to toggle
-	slot->m_host = g_hostdb.getHost ( slot->m_ip , slot->m_port );
+	slot->m_host = g_hostdb.getHost ( slot->getIp() , slot->getPort() );
 	//else slot->m_host = NULL;
 
 	// discount this
@@ -554,7 +554,7 @@ void UdpServer::sendReply_ass ( char    *msg        ,
 	slot->m_maxResends = -1;
 
 	logDebug(g_conf.m_logDebugUdp, "udp: Sending reply transId=%" PRId32" msgType=0x%02x (niceness=%" PRId32").",
-	         slot->m_transId,slot->getMsgType(), (int32_t)slot->m_niceness);
+	         slot->getTransId(),slot->getMsgType(), (int32_t)slot->m_niceness);
 	// keep sending dgrams until we have no more or hit ACK_WINDOW limit
 	if ( ! doSending_ass ( slot , true /*allow resends?*/, now) ) {
 		// . on error deal with that
@@ -1243,7 +1243,7 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 	// . pings should never switch ips though... this was causing
 	//   Host::m_inProgress1 to be unset instead of m_inProgress2 and
 	//   we were never able to regain a dead host on eth1 in PingServer.cpp
-	if ( ip != slot->m_ip && slot->getMsgType() != msg_type_11 ) {
+	if ( ip != slot->getIp() && slot->getMsgType() != msg_type_11 ) {
 		if ( g_conf.m_logDebugUdp )
 			log(LOG_DEBUG,"udp: changing ip to %s for acking",
 			    iptoa(ip));
@@ -1648,7 +1648,7 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 			    "niceness=%" PRId32" "
 			    "callback=%08" PTRFMT" "
 			    "took %" PRId64" ms (%" PRId32" Mbps).",
-			    slot->m_transId,msgType,
+			    slot->getTransId(),msgType,
 			    mstrerror(g_errno),
 			    slot->m_niceness,
 			    (PTRTYPE)slot->m_callback ,
@@ -1797,7 +1797,7 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 					    "msgType=0x%02x "
 					    "g_errno=%s callback2=%08" PTRFMT""
 					    " took %" PRId64" ms.",
-					    slot->m_transId,msgType,
+					    slot->getTransId(),msgType,
 					    mstrerror(g_errno),
 					    (PTRTYPE)slot->m_callback2,
 					    took );
@@ -1853,7 +1853,7 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 	// debug msg
 	if ( g_conf.m_logDebugUdp )
 		log(LOG_DEBUG,"udp: Calling handler for transId=%" PRId32" "
-		    "msgType=0x%02x.", slot->m_transId , msgType );
+		    "msgType=0x%02x.", slot->getTransId() , msgType );
 
 
 	// record some statistics on how long this was waiting to be called
@@ -1997,7 +1997,7 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 		    "g_errno=%s callback=%08" PTRFMT" "
 		    "niceness=%" PRId32" "
 		    "took %" PRId64" ms.",
-		    (int32_t)slot->m_transId , (PTRTYPE)slot,
+		    (int32_t)slot->getTransId() , (PTRTYPE)slot,
 		    msgType, (int32_t)slot->m_readBufSize , mstrerror(g_errno),
 		    (PTRTYPE)slot->m_callback,
 		    (int32_t)slot->m_niceness,
@@ -2084,9 +2084,9 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 			    "timeout=%" PRIu64" "
 			    "sentBitsOn=%" PRId32" "
 			    "readAckBitsOn=%" PRId32" ",
-			    slot->m_transId,
-			    iptoa(slot->m_ip) + 6,
-			    (uint16_t) slot->m_port,
+			    slot->getTransId(),
+			    iptoa(slot->getIp()),
+			    (uint16_t) slot->getPort(),
 			    (int32_t) slot->isDoneReading(),
 			    slot->m_dgramsToSend,
 			    slot->m_resendTime,
@@ -2615,9 +2615,9 @@ void UdpServer::freeUdpSlot_ass ( UdpSlot *slot ) {
 		log(LOG_DEBUG,"udp: freeUdpSlot_ass: Freeing slot "
 		    "tid=%" PRId32" "
 		    "dst=%s:%" PRIu32" slot=%" PTRFMT"",
-		    slot->m_transId,
-		    iptoa(slot->m_ip)+6,
-		    (uint32_t)slot->m_port,
+		    slot->getTransId(),
+		    iptoa(slot->getIp()),
+		    (uint32_t)slot->getPort(),
 		    (PTRTYPE)slot);
 	// remove the bucket
 	m_ptrs [ i ] = NULL;
@@ -2663,11 +2663,11 @@ void UdpServer::replaceHost ( Host *oldHost, Host *newHost ) {
 		// ignore incoming
 		if ( ! slot->m_callback ) continue;
 		// check for ip match
-		if ( slot->m_ip != oldHost->m_ip &&
-		     slot->m_ip != oldHost->m_ipShotgun )
+		if ( slot->getIp() != oldHost->m_ip &&
+		     slot->getIp() != oldHost->m_ipShotgun )
 			continue;
 		// check for port match
-		if ( this == &g_udpServer && slot->m_port != oldHost->m_port )
+		if ( this == &g_udpServer && slot->getPort() != oldHost->m_port )
 			continue;
 		// . match, replace the slot ip/port with the newHost
 		// . first remove the old hashed key for this slot
@@ -2684,7 +2684,7 @@ void UdpServer::replaceHost ( Host *oldHost, Host *newHost ) {
 		}
 
 		logDebug(g_conf.m_logDebugUdp, "udp: replaceHost: Rehashing slot tid=%" PRId32" dst=%s:%" PRIu32" slot=%" PTRFMT,
-		         slot->m_transId, iptoa(slot->m_ip)+6, (uint32_t)slot->m_port, (PTRTYPE)slot);
+		         slot->getTransId(), iptoa(slot->getIp()), (uint32_t)slot->getPort(), (PTRTYPE)slot);
 
 		// remove the bucket
 		m_ptrs [ i ] = NULL;
@@ -2702,7 +2702,7 @@ void UdpServer::replaceHost ( Host *oldHost, Host *newHost ) {
 		// careful with this! if we were using shotgun, use that
 		// otherwise We core in PingServer because the 
 		// m_inProgress[1-2] does net mesh
-		if ( slot->m_ip == oldHost->m_ip )
+		if ( slot->getIp() == oldHost->m_ip )
 			slot->m_ip = newHost->m_ip;
 		else
 			slot->m_ip = newHost->m_ipShotgun;
@@ -2713,16 +2713,16 @@ void UdpServer::replaceHost ( Host *oldHost, Host *newHost ) {
 		//else			      slot->m_port = newHost->m_port2;
 		//slot->m_transId = getTransId();
 		// . now readd the slot to the hash table
-		key_t key = m_proto->makeKey ( slot->m_ip,
-					       slot->m_port,
-					       slot->m_transId,
+		key_t key = m_proto->makeKey ( slot->getIp(),
+					       slot->getPort(),
+					       slot->getTransId(),
 					       true/*weInitiated?*/);
 		addKey ( key, slot );
 		slot->m_key = key;
 		slot->resetConnect();
 		// log it
-		log ( LOG_INFO, "udp: Reset Slot For Replaced Host: transId=%" PRId32" msgType=%i",
-		      slot->m_transId, slot->getMsgType() );
+		log(LOG_INFO, "udp: Reset Slot For Replaced Host: transId=%" PRId32" msgType=%i",
+		    slot->getTransId(), slot->getMsgType());
 	}
 }
 

@@ -1068,7 +1068,7 @@ bool addMetaList ( const char *p , UdpSlot *slot ) {
 				log( LOG_WARN, "msg4: rdbId of %" PRId32" unrecognized "
 				    "from hostip=%s. "
 				    "dropping WHOLE request", (int32_t)rdbId,
-				    iptoa(slot->m_ip));
+				    iptoa(slot->getIp()));
 			else
 				log( LOG_WARN, "msg4: rdbId of %" PRId32" unrecognized. "
 				    "dropping WHOLE request", (int32_t)rdbId);

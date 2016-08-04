@@ -741,8 +741,8 @@ void gotListWrapper ( void *state , RdbList *listb , Msg5 *msg5xx ) {
 		    " transId=%" PRId32" ip=%s port=%i took=%" PRId64" "
 		    "(niceness=%" PRId32").",
 		    g_posdb.getTermId(msg5->m_startKey),
-		    size,slot->m_transId,
-		    iptoa(slot->m_ip),slot->m_port,
+		    size,slot->getTransId(),
+		    iptoa(slot->getIp()),slot->getPort(),
 		    gettimeofdayInMilliseconds() - st0->m_startTime ,
 		    st0->m_niceness );
 	}

@@ -364,7 +364,7 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 		const char *bg = LIGHT_BLUE;//"c0c0f0";
 		// is it incoming
 		if ( ! s->m_callback ) bg = LIGHTER_BLUE;//"e8e8ff";
-		Host *h = g_hostdb.getHost ( s->m_ip , s->m_port );
+		Host *h = g_hostdb.getHost ( s->getIp() , s->getPort() );
 		const char           *eip     = "??";
 		uint16_t  eport   =  0 ;
 		//int32_t          ehostId = -1 ;
@@ -390,7 +390,7 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 		// if no corresponding host, it could be a request from an external
 		// cluster, so just show the ip
 		else {
-		        sprintf ( tmpHostId , "%s" , iptoa(s->m_ip) );
+		        sprintf ( tmpHostId , "%s" , iptoa(s->getIp()) );
 			ehostId = tmpHostId;
 			eip     = tmpHostId;
 		}
@@ -482,7 +482,7 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 
 		// now use the ip for dns and hosts
 		p->safePrintf("<td>%s:%" PRIu32"</td>",
-			      iptoa(s->m_ip),(uint32_t)s->m_port);
+			      iptoa(s->getIp()),(uint32_t)s->getPort());
 
 		const char *cf1 = "";
 		const char *cf2 = "";
@@ -542,7 +542,7 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 				"<td>%" PRId32"</td>" // acks read
 				"<td>%s%hhu%s</td>" // resend count
 				"</tr>\n" ,
-				(uint32_t)s->m_transId,
+				(uint32_t)s->getTransId(),
 				calledHandler,
 				s->getNumDgramsRead() ,
 				s->m_dgramsToRead ,

@@ -60,6 +60,19 @@
 
 class UdpSlot {
 public:
+
+	int32_t getTransId() const {
+		return m_transId;
+	}
+
+	uint32_t getIp() const {
+		return m_ip;
+	}
+
+	uint16_t getPort() const {
+		return m_port;
+	}
+
 	// set the UdpSlot's protocol, endpoint info, transId, timeout
 	void connect(UdpProtocol *proto, sockaddr_in *endPoint, Host *host, int32_t hostId, int32_t transId,
 	             int64_t timeout, int64_t now, int32_t niceness);

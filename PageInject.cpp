@@ -686,7 +686,7 @@ void handleRequest7 ( UdpSlot *slot , int32_t netnice ) {
 	// now just supply the first guy's char ** and size ptr
 	if ( ! deserializeMsg2 ( &ir->ptr_url, &ir->size_url ) ) {
 		log("inject: error deserializing inject request from "
-		    "host ip %s port %i",iptoa(slot->m_ip),(int)slot->m_port);
+		    "host ip %s port %i",iptoa(slot->getIp()),(int)slot->getPort());
 		g_errno = EBADREQUEST;
 		g_udpServer.sendErrorReply(slot,g_errno);
 		return;

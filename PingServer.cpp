@@ -442,18 +442,18 @@ void gotReplyWrapperP ( void *state , UdpSlot *slot ) {
 	// point to the right ping time, for the original port or for the 
 	// shotgun port
 	int32_t *pingPtr = NULL;
-	if ( slot->m_ip == h->m_ipShotgun ) pingPtr = &h->m_pingShotgun;
+	if ( slot->getIp() == h->m_ipShotgun ) pingPtr = &h->m_pingShotgun;
 	// original overrides shotgun, in case ips match
-	if ( slot->m_ip == h->m_ip        ) pingPtr = &h->m_ping;
+	if ( slot->getIp() == h->m_ip        ) pingPtr = &h->m_ping;
 	// otherwise... wierd!!
 	if ( ! pingPtr ) pingPtr = &h->m_ping;
 	if ( g_errno == EUDPTIMEDOUT ) tripTime = g_conf.m_deadHostTimeout;
 	updatePingTime ( h , pingPtr , tripTime );
 	// sanity checks
-	if ( slot->m_ip==h->m_ip && !h->m_inProgress1) {g_process.shutdownAbort(true);}
-	if ( slot->m_ip!=h->m_ip && !h->m_inProgress2) {g_process.shutdownAbort(true);}
+	if ( slot->getIp()==h->m_ip && !h->m_inProgress1) {g_process.shutdownAbort(true);}
+	if ( slot->getIp()!=h->m_ip && !h->m_inProgress2) {g_process.shutdownAbort(true);}
 	// consider it out of progress
-	if ( slot->m_ip == h->m_ip ) h->m_inProgress1 = false;
+	if ( slot->getIp() == h->m_ip ) h->m_inProgress1 = false;
 	else                         h->m_inProgress2 = false;
 	// count all replies
 	if ( ! g_errno ) h->m_numPingReplies++;
@@ -492,7 +492,7 @@ void gotReplyWrapperP ( void *state , UdpSlot *slot ) {
                                 buf = "Proxy";
 			log("net: %s #%" PRId32" ip=%s is dead. Has not responded to "
 			    "ping in %" PRId32" ms.", buf, h->m_hostId,
-			    iptoa(slot->m_ip),
+			    iptoa(slot->getIp()),
 			    (int32_t)g_conf.m_deadHostTimeout);
 			// set dead time
 			h->m_timeOfDeath = nowms;
@@ -582,8 +582,8 @@ void gotReplyWrapperP ( void *state , UdpSlot *slot ) {
 				      //h->m_requestBuf ,
 				       4               , // 4 byte request
 				       msg_type_11          ,
-				       slot->m_ip    , // h->m_ip       ,
-				       slot->m_port  , // h->m_port2    ,
+				       slot->getIp()    , // h->m_ip       ,
+				       slot->getPort()  , // h->m_port2    ,
 				       hid   ,
 				       NULL          ,
 				       (void *)(PTRTYPE)h->m_hostId, //cb state
@@ -620,8 +620,8 @@ void handleRequest11 ( UdpSlot *slot , int32_t niceness ) {
 	int32_t  requestSize = slot->m_readBufSize;
 	char *request     = slot->m_readBuf;
 	// get the ip/port of requester
-	uint32_t ip    = slot->m_ip;
-	uint16_t port = slot->m_port;
+	uint32_t ip    = slot->getIp();
+	uint16_t port = slot->getPort();
 	// get the host entry
 	Host *h = g_hostdb.getHost ( ip , port );
 	// we may be the temporary cluster (grep for useTmpCluster) and
@@ -634,7 +634,7 @@ void handleRequest11 ( UdpSlot *slot , int32_t niceness ) {
 		if ( requestSize != 3 && ! g_conf.isConnectIp(ip) )
 			log(LOG_LOGIC,"net: pingserver: No host for "
 			    "dstip=%s port=%hu tid=%" PRId32" fromhostid=%" PRId32,
-			    iptoa(ip),port,slot->m_transId,slot->m_hostId);
+			    iptoa(ip),port,slot->getTransId(),slot->m_hostId);
 		// set "useSameSwitch" to true so even if shotgunning is on
 		// the udp server will send the reply back to the same ip/port
 		// from which we got the request
@@ -647,9 +647,9 @@ void handleRequest11 ( UdpSlot *slot , int32_t niceness ) {
 	// point to the correct ping time. this request may have come from
 	// the shotgun network, or the primary network.
 	int32_t *pingPtr = NULL;
-	if ( slot->m_ip == h->m_ipShotgun ) pingPtr = &h->m_pingShotgun;
+	if ( slot->getIp() == h->m_ipShotgun ) pingPtr = &h->m_pingShotgun;
 	// original overrides shotgun, in case ips match
-	if ( slot->m_ip == h->m_ip        ) pingPtr = &h->m_ping;
+	if ( slot->getIp() == h->m_ip        ) pingPtr = &h->m_ping;
 	// otherwise... wierd!!
 	if ( ! pingPtr ) pingPtr = &h->m_ping;
 	// reply msg
