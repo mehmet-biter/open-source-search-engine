@@ -425,11 +425,8 @@ void UdpSlot::prepareForResend ( int64_t now , bool resendAll ) {
 			m_host->m_preferEth = 0;
 			// use eth0 to talk to this guy for this tid
 			m_preferEth = 0;
-			// log it
-			if ( g_conf.m_logDebugUdp )
-				logf(LOG_DEBUG,
-				     "udp: switching to eth0 for host #%" PRId32" "
-				     "tid=%" PRId32,m_host->m_hostId,m_transId);
+			logDebug(g_conf.m_logDebugUdp, "udp: switching to eth0 for host #%" PRId32" tid=%" PRId32,
+			         m_host->m_hostId, m_transId);
 		}
 		// . just some debug notes
 		// . this happens when host cores and both eth0 and eth1 r dead
