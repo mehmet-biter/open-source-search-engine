@@ -527,7 +527,7 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 
 		const char *rf1 = "";
 		const char *rf2 = "";
-		if ( s->m_resendCount ) {
+		if ( s->getResendCount() ) {
 			rf1 = "<b style=color:red;>";
 			rf2 = "</b>";
 		}
@@ -551,7 +551,7 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 				s->getDatagramsToSend() ,
 				s->getNumAcksRead() ,
 				rf1 ,
-				s->m_resendCount ,
+				s->getResendCount() ,
 				rf2
 				);
 	}

@@ -105,6 +105,14 @@ public:
 		return m_hostId;
 	}
 
+	int32_t getResendTime() const {
+		return m_resendTime;
+	}
+
+	char getResendCount() const {
+		return m_resendCount;
+	}
+
 	int32_t getErrno() const {
 		return m_errno;
 	}

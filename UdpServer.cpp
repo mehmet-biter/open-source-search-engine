@@ -2091,7 +2091,7 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 			    (uint16_t) slot->getPort(),
 			    (int32_t) slot->isDoneReading(),
 			    slot->getDatagramsToSend(),
-			    slot->m_resendTime,
+			    slot->getResendTime(),
 			    (uint64_t) slot->getLastReadTime(),
 			    (uint64_t) (now - slot->getLastReadTime()),
 			    (uint64_t) slot->getLastSendTime(),
@@ -2153,11 +2153,11 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 		// clock on us, so it won't hurt to resend just to update
 		// otherwise, we could be waiting years to resend
 		if ( delta < 0 ) {
-			delta = slot->m_resendTime;
+			delta = slot->getResendTime();
 		}
 
 		// continue if we just sent something
-		if ( delta < slot->m_resendTime ) {
+		if ( delta < slot->getResendTime() ) {
 			continue;
 		}
 
@@ -2243,7 +2243,7 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 		// check it
 		if ( slot->m_maxResends >= 0 &&
 		     // if maxResends it 0, do not do ANY resend! just err out.
-		     slot->m_resendCount >= slot->m_maxResends &&
+		     slot->getResendCount() >= slot->m_maxResends &&
 		     // did not get all acks
 		     slot->m_sentBitsOn > slot->m_readAckBitsOn &&
 		     // fix too many timing out slot msgs when a host is
@@ -2265,7 +2265,7 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 			    "after %" PRId32" resends. hostid=%" PRId32" "
 			    "(elapsed=%" PRId64")" ,
 			    (int32_t)slot->getMsgType(),
-			    (int32_t)slot->m_resendCount ,
+			    (int32_t)slot->getResendCount() ,
 			    slot->getHostId(),elapsed);
 			// keep going
 			continue;
