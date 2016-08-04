@@ -2093,7 +2093,7 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 			    (uint64_t) (now - slot->getLastReadTime()),
 			    (uint64_t) slot->getLastSendTime(),
 			    (uint64_t) (now - slot->getLastSendTime()),
-			    (uint64_t) slot->m_timeout,
+			    (uint64_t) slot->getTimeout(),
 			    slot->m_sentBitsOn,
 			    slot->m_readAckBitsOn);
 		}
@@ -2119,7 +2119,7 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 		// get time elapsed since last read
 		int64_t elapsed = now - slot->getLastReadTime();
 		// set all timeouts to 4 secs if we are shutting down
-		if ( m_isShuttingDown && slot->m_timeout > 4000 ) {
+		if ( m_isShuttingDown && slot->getTimeout() > 4000 ) {
 			slot->m_timeout = 4000;
 		}
 		
@@ -2130,7 +2130,7 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 		// . 3. they take too long to ACK our reply 
 		// . 4. they take too long to ACK our request
 		// . only flag it if we haven't already...
-		if ( elapsed >= slot->m_timeout && slot->getErrno() != EUDPTIMEDOUT ) {
+		if ( elapsed >= slot->getTimeout() && slot->getErrno() != EUDPTIMEDOUT ) {
 			// . set slot's m_errno field
 			// . makeCallbacks_ass() should call its callback
 			slot->m_errno = EUDPTIMEDOUT;
@@ -2234,7 +2234,7 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 		// so we end up waiting for the host to come back online
 		// before the spider can proceed.
 		if ( slot->getNiceness() ) {
-			timeout = slot->m_timeout;
+			timeout = slot->getTimeout();
 		}
 
 		// check it
@@ -2371,7 +2371,9 @@ bool UdpServer::shutdown ( bool urgent ) {
 			// don't bother with pings or other hosts shutdown 
 			if ( slot->getMsgType() == msg_type_11 ) continue;
 			// set all timeouts to 3 secs
-			if ( slot->m_timeout > 3000 ) slot->m_timeout = 3000;
+			if ( slot->getTimeout() > 3000 ) {
+				slot->m_timeout = 3000;
+			}
 			// . don't count lagging slots that haven't got 
 			//   a read in 5 sec
 			if ( now - slot->getLastReadTime() > 5 ) continue;

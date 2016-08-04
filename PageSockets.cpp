@@ -478,7 +478,7 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 				e0 ,
 				e1 ,
 				e2 ,
-				s->m_timeout );
+				s->getTimeout() );
 
 		// now use the ip for dns and hosts
 		p->safePrintf("<td>%s:%" PRIu32"</td>",

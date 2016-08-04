@@ -105,6 +105,10 @@ public:
 		return m_hostId;
 	}
 
+	int64_t getTimeout() const {
+		return m_timeout;
+	}
+
 	int32_t getResendTime() const {
 		return m_resendTime;
 	}
