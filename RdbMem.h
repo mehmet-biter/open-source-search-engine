@@ -7,6 +7,10 @@
 #ifndef GB_RDBMEM_H
 #define GB_RDBMEM_H
 
+class RdbTree;
+class Rdb;
+
+
 class RdbMem {
 
  public:
@@ -49,10 +53,12 @@ class RdbMem {
 
 	// . when a dump completes we free the primary mem space and make
 	//   the secondary mem space the new primary mem space
-	void  freeDumpedMem( class RdbTree *tree );
+	void  freeDumpedMem(RdbTree *tree);
 
+private:
+	friend class Rdb;
 	// keep hold of this class
-	class Rdb *m_rdb;
+	Rdb *m_rdb;
 
 	// the primary mem
 	char *m_ptr1;
