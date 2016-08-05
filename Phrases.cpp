@@ -1,8 +1,10 @@
-#include "gb-include.h"
+//#include "gb-include.h"
 
 #include "Phrases.h"
+#include "Words.h"
+#include "Bits.h"
 #include "Mem.h"
-#include "Process.h"
+#include "Sanity.h"
 
 
 Phrases::Phrases ( ) {
@@ -37,7 +39,7 @@ bool Phrases::set( const Words *words, const Bits *bits, int32_t niceness ) {
 	int32_t need = m_numPhrases * (8+1);
 
 	// alloc if we need to
-	if ( need > PHRASE_BUF_SIZE ) 
+	if ( (unsigned)need > sizeof(m_localBuf) )
 		m_buf = (char *)mmalloc ( need , "Phrases" );
 	else
 		m_buf = m_localBuf;
@@ -60,7 +62,7 @@ bool Phrases::set( const Words *words, const Bits *bits, int32_t niceness ) {
 	p += m_numPhrases * 1;
 
 	// sanity
-	if ( p != m_buf + need ) { g_process.shutdownAbort(true); }
+	if ( p != m_buf + need ) gbshutdownLogicError();
 
 	// point to this info while we parse
 	m_words        = words;
@@ -200,10 +202,10 @@ void Phrases::setPhrase ( int32_t i ) {
 	}
 
 	// sanity check
-	if ( lastWordj == -1 ) { g_process.shutdownAbort(true); }
+	if ( lastWordj == -1 ) gbshutdownLogicError();
 
 	// sanity check
-	if ( lastWordj - i + 1 > 255 ) { g_process.shutdownAbort(true); }
+	if ( lastWordj - i + 1 > 255 ) gbshutdownLogicError();
 
 	// hyphen between numbers does not count (so 1-2 != 12)
 	if ( isNum ) hasHyphen = false;

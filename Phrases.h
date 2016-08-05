@@ -8,10 +8,13 @@
 #ifndef GB_PHRASES_H
 #define GB_PHRASES_H
 
-#include "Bits.h"
-#include "Words.h"
+#include <inttypes.h>
+#include <stddef.h>
+#include "max_words.h"
 
-#define PHRASE_BUF_SIZE (MAX_WORDS * 14)
+class Words;
+class Bits;
+
 
 class Phrases {
 public:
@@ -47,7 +50,7 @@ private:
 	// . we set phraseSpam to PSKIP if word #i cannot start a phrase
 	void setPhrase(int32_t i);
 
-	char  m_localBuf [ PHRASE_BUF_SIZE ];
+	char  m_localBuf [ MAX_WORDS * 14 ];
 
 	char *m_buf;
 	int32_t  m_bufSize;
