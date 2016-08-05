@@ -81,7 +81,7 @@ void *RdbMem::dupData(const char *key, const char *data, int32_t dataSize, colln
 	char *s = (char*)allocData(key, dataSize, collnum);
 	if(!s)
 		return NULL;
-	gbmemcpy(s, data, dataSize);
+	memcpy(s, data, dataSize);
 	return s;
 }
 
@@ -179,7 +179,6 @@ void RdbMem::freeDumpedMem( RdbTree *tree ) {
 	int32_t count = 0;
 	int32_t scanned = 0;
 	for(int32_t i = 0; i < tree->m_minUnusedNode; i++) {
-		// give up control to handle search query stuff of niceness 0
 		// skip node if parents is -2 (unoccupied)
 		if(tree->m_parents[i]==-2)
 			continue;
