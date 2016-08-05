@@ -132,6 +132,7 @@ Host *getHostToHandleInjection ( char *url ) {
 
 	// new logic:
 	// replaced with simpler logic of hashing the url and mod it with number of shards
+	/// @todo ALC we may want to replace this with logic to pick least loaded shard instead of least loaded in shard
 	return g_hostdb.getLeastLoadedInShard(static_cast<uint32_t>(norm.getUrlHash64() % g_hostdb.getNumShards()), 0);
 }
 
