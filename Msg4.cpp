@@ -219,7 +219,7 @@ bool flushMsg4Buffers ( void *state , void (* callback) (void *) ) {
 	// have start times STRICTLY GREATER THAN that, then we will
 	// be guaranteed that everything we added has been replied to!
 	int64_t max = 0LL;
-	for (UdpSlot *slot = g_udpServer.getActiveHead(); slot; slot = slot->getActiveListNext()) {
+	for (UdpSlot *slot = g_udpServer.getActiveHead(); slot; slot = slot->m_activeListNext) {
 		// get its time stamp 
 		if ( slot->getMsgType() != msg_type_4 ) continue;
 		// must be initiated by us
@@ -788,7 +788,7 @@ void gotReplyWrapper4 ( void *state , void *state2 ) {
 
 	// get the oldest msg4 slot starttime
 	int64_t min = 0LL;
-	for (UdpSlot *slot = g_udpServer.getActiveHead(); slot; slot = slot->getActiveListNext()) {
+	for (UdpSlot *slot = g_udpServer.getActiveHead(); slot; slot = slot->m_activeListNext) {
 		// get its time stamp
 		if ( slot->getMsgType() != msg_type_4 ) continue;
 		// must be initiated by us
@@ -1206,7 +1206,7 @@ bool saveAddsInProgress ( const char *prefix ) {
 	}
 
 	// scan in progress msg4 requests too!
-	for (UdpSlot *slot = g_udpServer.getActiveHead(); slot; slot = slot->getActiveListNext()) {
+	for (UdpSlot *slot = g_udpServer.getActiveHead(); slot; slot = slot->m_activeListNext) {
 		// skip if not msg4
 		if ( slot->getMsgType() != msg_type_4 ) continue;
 		// skip if we did not initiate it
