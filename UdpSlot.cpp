@@ -668,28 +668,22 @@ int32_t UdpSlot::sendDatagramOrAck ( int sock, bool allowResends, int64_t now ){
 		// update stats, just put them all in g_udpServer
 		g_udpServer.m_eth0PacketsOut += 1;
 		g_udpServer.m_eth0BytesOut   += dgramSize;
-	}
-	else if ( m_host && m_host->m_hostdb == &g_hostdb ) {
-		// we now pick ip based on this. if we fail to get a timely ACK
-		// then we set switch eth preferences. helps when a switch
-		// crashes.
-		if ( m_preferEth == 1 ) 
-			to.sin_addr.s_addr = m_host->m_ipShotgun;
-		else    
-			to.sin_addr.s_addr = m_host->m_ip;
-
-		// don't fuck with it if we are ping though, because that
-		// needs to specify the exact ip!
+	} else if ( m_host && m_host->m_hostdb == &g_hostdb ) {
+		// don't fuck with it if we are ping though, because that needs to specify the exact ip!
 		if ( m_msgType == msg_type_11 ) {
 			to.sin_addr.s_addr = ip;
+		} else if ( m_preferEth == 1 ) {
+			// we now pick ip based on this. if we fail to get a timely ACK
+			// then we set switch eth preferences. helps when a switch crashes.
+			to.sin_addr.s_addr = m_host->m_ipShotgun;
+		} else {
+			to.sin_addr.s_addr = m_host->m_ip;
 		}
 
-		//if ( m_host ) m_host->m_shotgunBit = 1;
 		// update stats, just put them all in g_udpServer
 		g_udpServer.m_eth0PacketsOut += 1;
 		g_udpServer.m_eth0BytesOut   += dgramSize;
-	}
-	else {
+	} else {
 		// count packets to/from hosts outside the cluster separately
 		// these guys are importing link text usually
 		to.sin_addr.s_addr = ip;
@@ -725,16 +719,14 @@ int32_t UdpSlot::sendDatagramOrAck ( int sock, bool allowResends, int64_t now ){
 			if ( t - s_lastTime > 3 ||
 			     s_lastTime - t > 3   ) { // clock skew?
 				s_lastTime = getTime();
-				log("udp: got ENOBUFS kernel bug %" PRId32" times.",
-				    ++s_count);
+				log(LOG_WARN, "udp: got ENOBUFS kernel bug %" PRId32" times.", ++s_count);
 			}
 			//g_errno = 0; 
 			//return 0;
 			return -1;
 		} 
 		// log the error
-		log("udp: Call to sendto had error (ignoring): %s.", 
-		    mstrerror(g_errno)) ;
+		log(LOG_WARN, "udp: Call to sendto had error (ignoring): %s.", mstrerror(g_errno)) ;
 		// . now immediately switch the eth port to see if that helps!
 		// . actually, just pretend we sent it. we won't get an ack
 		//   and the resend algo will switch ports
@@ -744,8 +736,7 @@ int32_t UdpSlot::sendDatagramOrAck ( int sock, bool allowResends, int64_t now ){
 	// this should not happen
 	if ( bytesSent != dgramSize ) {
 		g_errno = EBADENGINEER;
-		log("udp: sendto only sent %i bytes, not %" PRId32". Undersend.",
-		    bytesSent,dgramSize);
+		log(LOG_WARN, "udp: sendto only sent %i bytes, not %" PRId32". Undersend.", bytesSent,dgramSize);
 		return -1;
 	}
 	// general count
@@ -823,12 +814,7 @@ int32_t UdpSlot::sendDatagramOrAck ( int sock, bool allowResends, int64_t now ){
 		    m_maxDgramSize ,
 		    hid );
 	}
-	// bail now if we're a re-send
-	if ( m_resendCount > 0 ) return 1;
-	// to save UdpSlot mem we only track every 8th dgram
-	if ( (dgramNum & 0x07) != 0 ) return 1;
-	// set the time
-	//setSendTime ( dgramNum >> 3 , now );
+
 	// return 1 cuz we didn't block
 	return 1;
 }
