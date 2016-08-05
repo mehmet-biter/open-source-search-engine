@@ -36,6 +36,7 @@
 #include "Msg3.h"               // MAX_RDB_FILES definition
 #include "Dir.h"
 #include "RdbMem.h"
+#include "RdbIndex.h"
 
 // how many rdbs are in "urgent merge" mode?
 extern int32_t g_numUrgentMerges;
@@ -78,10 +79,17 @@ class RdbBase {
 		    void *pc = NULL,
 		    bool                 isTitledb = false , // use fileIds2[]?
 		    bool                 preloadDiskPageCache = false ,
-		    bool                 biasDiskPageCache    = false );
+		    bool                 biasDiskPageCache    = false,
+		    bool				useIndexFile = false );
 
 	void closeMaps ( bool urgent );
 	void saveMaps  ();
+
+//@@@ BR: no-merge index begin
+	void closeIndexes ( bool urgent );
+	void saveIndexes  ();
+//@@@ BR: no-merge index end
+
 
 	// get the directory name where this rdb stores it's files
 	const char *getDir ( ) { return m_dir.getDirname(); }
@@ -92,12 +100,14 @@ class RdbBase {
 	bool useHalfKeys ( ) const { return m_useHalfKeys; }
 
 	RdbMap   **getMaps  ( ) { return m_maps; }
+	RdbIndex	**getIndexes() { return m_indexes;}
 	BigFile  **getFiles ( ) { return m_files; }
 
 	BigFile   *getFile   ( int32_t n ) { return m_files   [n]; }
 	int32_t       getFileId ( int32_t n ) { return m_fileIds [n]; }
 	int32_t       getFileId2( int32_t n ) { return m_fileIds2[n]; }
 	RdbMap    *getMap    ( int32_t n ) { return m_maps    [n]; }
+	RdbIndex  *getIndex  ( int32_t n ) { return m_indexes [n]; }
 
 	float getPercentNegativeRecsOnDisk ( int64_t *totalArg ) const;
 
@@ -219,6 +229,7 @@ private:
 	int32_t      m_fileIds   [ MAX_RDB_FILES+1 ];
 	int32_t      m_fileIds2  [ MAX_RDB_FILES+1 ]; // for titledb/tfndb linking
 	RdbMap   *m_maps      [ MAX_RDB_FILES+1 ];
+	RdbIndex *m_indexes	[ MAX_RDB_FILES+1 ];
 	int32_t      m_numFiles;
 
 public:
@@ -260,6 +271,8 @@ public:
 	// . when we dump list to an rdb file, can we use short keys?
 	// . currently exclusively used by indexdb
 	bool      m_useHalfKeys;
+
+	bool	m_useIndexFile;	//@@@ BR: no-merge index
 
 	// key size
 	char      m_ks;

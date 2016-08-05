@@ -26,7 +26,7 @@ OBJS =  UdpSlot.o Rebalance.o \
 	Titledb.o HashTable.o \
 	TcpServer.o Summary.o \
 	Spider.o SpiderColl.o SpiderLoop.o Doledb.o \
-	RdbTree.o RdbScan.o RdbMerge.o RdbMap.o RdbMem.o RdbBuckets.o \
+	RdbTree.o RdbScan.o RdbMerge.o RdbMap.o RdbIndex.o RdbMem.o RdbBuckets.o \
 	RdbList.o RdbDump.o RdbCache.o Rdb.o RdbBase.o \
 	Query.o Phrases.o Multicast.o \
 	Msg5.o \
@@ -383,6 +383,9 @@ UrlComponent.o:
 
 # when making a new file, add the recs to the map fast
 RdbMap.o:
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O3) -c $*.cpp
+
+RdbIndex.o:
 	$(CXX) $(DEFS) $(CPPFLAGS) $(O3) -c $*.cpp
 
 # this was getting corruption, was it cuz we used $(O2) compiler option?

@@ -28,6 +28,7 @@
 #define GB_RDBMERGE_H
 
 #include "RdbDump.h"
+#include "RdbIndex.h"
 #include "Msg5.h"
 
 // . we try to read this many bytes at a time then dump to a file
@@ -62,6 +63,7 @@ class RdbMerge {
 		     collnum_t collnum ,
 		     BigFile   *target       ,
 		     RdbMap    *targetMap    ,
+		     RdbIndex	*targetIndex,		//@@@ BR: no-merge index
 		     int32_t       id2          ,
 		     int32_t       startFileNum ,
 		     int32_t       numFiles     ,
@@ -113,6 +115,7 @@ class RdbMerge {
 	int32_t        m_fixedDataSize;
 	BigFile    *m_target;
 	RdbMap     *m_targetMap;
+	RdbIndex   *m_targetIndex;
 
 	char        m_startKey[MAX_KEY_BYTES];
 	char        m_endKey[MAX_KEY_BYTES];

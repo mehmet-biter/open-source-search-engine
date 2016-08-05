@@ -10,6 +10,7 @@
 #include "RdbMem.h"
 #include "RdbDump.h"
 #include "RdbBuckets.h"
+#include "RdbIndex.h"
 
 bool makeTrashDir() ;
 
@@ -116,7 +117,8 @@ public:
 		    bool   preloadDiskPageCache = false ,
 		    char   keySize = 12    ,
 		    bool   biasDiskPageCache    = false ,
-		    bool   isCollectionLess = false );
+		    bool   isCollectionLess = false,
+		    bool	useIndexFile = false );
 	// . frees up all the memory and closes all files
 	// . suspends any current merge (saves state to disk)
 	// . calls reset() for each file
@@ -138,14 +140,9 @@ public:
 	// . caller should retry later on g_errno of ENOMEM or ETRYAGAIN
 	// . returns the node # in the tree it added the record to
 	// . key low bit must be set (otherwise it indicates a delete)
-	bool addRecord ( collnum_t collnum , 
-			 //key_t &key, char *data, int32_t dataSize );
-			 char *key, char *data, int32_t dataSize,
-			 int32_t niceness);
-	bool addRecord ( const char *coll , char *key, char *data, int32_t dataSize,
-			 int32_t niceness);
-	bool addRecord (const char *coll , key_t &key, char *data, int32_t dataSize,
-			int32_t niceness) {
+	bool addRecord ( collnum_t collnum, char *key, char *data, int32_t dataSize, int32_t niceness);
+	bool addRecord ( const char *coll , char *key, char *data, int32_t dataSize, int32_t niceness);
+	bool addRecord (const char *coll , key_t &key, char *data, int32_t dataSize, int32_t niceness) {
 		return addRecord(coll,(char *)&key,data,dataSize, niceness);}
 
 	// returns false if no room in tree or m_mem for a list to add
@@ -159,7 +156,7 @@ public:
 	// . if we can't handle all records in list we don't add any and
 	//   set errno to ETRYAGAIN or ENOMEM
 	// . we copy all data so you can free your list when we're done
-	bool addList ( collnum_t collnum , RdbList *list, int32_t niceness );
+	bool addList ( collnum_t collnum , RdbList *list, int32_t niceness);
 
 	// calls addList above
 	bool addList ( const char *coll , RdbList *list, int32_t niceness );
@@ -180,8 +177,10 @@ public:
 	char getKeySize() const { return m_ks; }
 
 	RdbTree    *getTree    ( ) { if(!m_useTree) return NULL; return &m_tree; }
+	RdbIndex   *getIndex   ( ) { if(!m_useIndexFile) return NULL; return &m_index; }
 	RdbMem     *getRdbMem  ( ) { return &m_mem; }
 	bool       useTree() const { return m_useTree;}
+	bool       useIndexFile() const { return m_useIndexFile;}
 
 	int32_t       getNumUsedNodes() const;
 	int32_t       getMaxTreeMem() const;
@@ -275,6 +274,8 @@ public:
 
 	bool saveTree  ( bool useThread ) ;
 	bool saveMaps();
+	bool saveIndex( bool useThread );
+
 	//bool saveCache ( bool useThread ) ;
 
 	// . load the tree named "saved.dat", keys must be out of order because
@@ -312,6 +313,8 @@ public:
 	int32_t      m_dbnameLen;
 
 	bool      m_isCollectionLess;
+	bool		m_useIndexFile;
+	
 
 	// for g_statsdb, etc.
 	RdbBase *m_collectionlessBase;
@@ -319,6 +322,7 @@ public:
 	// for storing records in memory
 	RdbTree    m_tree;  
 	RdbBuckets m_buckets;
+	RdbIndex	m_index;		// For now only DocID index for PosDB data files.
 	bool       m_useTree;
 
 	// for dumping a table to an rdb file
@@ -390,6 +394,7 @@ public:
 	int32_t  m_fn;
 	
 	char m_treeName [64];
+	char m_indexName [64];
 	char m_memName  [64];
 
 	int64_t m_lastWrite;

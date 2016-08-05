@@ -48,6 +48,8 @@ void RdbBase::reset ( ) {
 		delete (m_files[i]);
 		mdelete ( m_maps[i] , sizeof(RdbMap),"RdbBMap");
 		delete (m_maps[i]);
+		mdelete ( m_indexes[i] , sizeof(RdbIndex),"RdbBIndex");
+		delete (m_indexes[i]);
 	}
 	m_numFiles  = 0;
 	m_files [ m_numFiles ] = NULL;
@@ -83,7 +85,8 @@ bool RdbBase::init ( char  *dir            ,
 		     void *pc , // DiskPageCache *pc      ,
 		     bool           isTitledb            ,
 		     bool           preloadDiskPageCache ,
-		     bool           biasDiskPageCache    ) {
+		     bool           biasDiskPageCache,
+		     bool			useIndexFile    ) {
 
 
 	m_didRepair = false;
@@ -147,6 +150,9 @@ bool RdbBase::init ( char  *dir            ,
 	m_pageSize         = pageSize;
 	//m_pc               = pc;
 	m_isTitledb        = isTitledb;
+	
+	m_useIndexFile		= useIndexFile;	//@@@ BR: no-merge index
+	
 	//m_groupMask        = groupMask;
 	//m_groupId          = groupId;
 	// . set up our cache
@@ -225,6 +231,25 @@ bool RdbBase::moveToTrash ( char *dstDir ) {
 			return false;
 		}
 
+
+//@@@ BR no-merge index begin
+		if( m_useIndexFile ) {
+			f = m_indexes[i]->getFile();
+			sprintf ( dstFilename , "%s" , f->getFilename());
+
+			if( f->doesExist() ) {
+				// ALWAYS log what we are doing
+				logf(LOG_INFO,"repair: Renaming %s to %s%s", f->getFilename(),dstDir,dstFilename);
+
+				if ( ! f->rename ( dstFilename , dstDir ) ) {
+					log( LOG_WARN, "repair: Moving file had error: %s.", mstrerror( errno ) );
+					return false;
+				}
+			}
+		}
+//@@@ BR no-merge index end
+
+
 		// move the data file
 		f = m_files[i];
 		sprintf ( dstFilename , "%s" , f->getFilename());
@@ -263,6 +288,17 @@ bool RdbBase::removeRebuildFromFilenames ( ) {
 		//if ( ! removeRebuildFromFilename(f) ) return false;
 		// DON'T STOP IF ONE FAILS
 		removeRebuildFromFilename(f);
+
+//@@@ BR: no-merge index begin
+		if( m_useIndexFile ) {
+			// rename the index file now too!
+			f = m_indexes[i]->getFile();
+			// return false if it fails
+			//if ( ! removeRebuildFromFilename(f) ) return false;
+			// DON'T STOP IF ONE FAILS
+			removeRebuildFromFilename(f);
+		}
+//@@@ BR: no-merge index end
 	}
 	// reset all now
 	reset();
@@ -511,6 +547,29 @@ bool RdbBase::setFiles ( ) {
 		// rename to spiderdb0081.map to spiderdb0001.map
 		cmf.rename ( oldMap.getBufStart() );
 
+
+
+//@@@ BR: no-merge index begin
+		if( m_useIndexFile ) {
+			// and delete the old index
+			SafeBuf oldIndex;
+			oldIndex.safePrintf("%s/%s0001.idx",m_dir.getDir(),m_dbname);
+			File oif;
+			oif.set ( oldIndex.getBufStart() );
+			oif.unlink();
+
+			// get the index file name we want to move to 0001.idx
+			BigFile cif;
+			SafeBuf curIndex;
+			curIndex.safePrintf("%s%04" PRId32".idx",m_dbname,m_fileIds[0]);
+			cif.set ( m_dir.getDir(), curIndex.getBufStart());
+
+			// rename to spiderdb0081.map to spiderdb0001.map
+			cif.rename ( oldIndex.getBufStart() );
+		}
+//@@@ BR: no-merge index end
+
+
 		// replace that first file then
 		m_didRepair = true;
 		return true;
@@ -621,6 +680,30 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	}
 
 	mnew ( m , sizeof(RdbMap) , "RdbBMap" );
+	
+	
+//@@@ BR: no-merge index begin	
+	RdbIndex  *in = NULL;
+	if( m_useIndexFile ) {
+		try {
+			in = new (RdbIndex);
+		} catch ( ... ) {
+			g_conf.m_maxMem = mm;
+			g_errno = ENOMEM;
+			log( LOG_WARN, "RdbBase: new(%i): %s", (int)sizeof(RdbIndex), mstrerror(g_errno) );
+			mdelete ( f , sizeof(BigFile),"RdbBFile");
+			delete (f); 
+			mdelete ( m , sizeof(RdbMap),"RdbBMap");
+			delete (m); 
+			return -1; 
+		}
+
+		mnew ( in , sizeof(RdbIndex) , "RdbBIndex" );
+	}
+	
+//@@@ BR: no-merge index end
+	
+	
 
 	// reinstate the memory limit
 	g_conf.m_maxMem = mm;
@@ -720,6 +803,73 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 		}
 	}
 
+
+
+//@@@ BR: no-merge index begin
+	if( m_useIndexFile ) {
+		// set the index file's  filename
+		sprintf ( name , "%s%04" PRId32".idx", m_dbname, fileId );
+		in->set ( getDir(), name );
+		if ( ! isNew && ! in->readIndex () ) {
+			// if out of memory, do not try to regen for that
+			if ( g_errno == ENOMEM ) {
+				return -1;
+			}
+
+			g_errno = 0;
+			log("db: Could not read index file %s",name);
+
+			// if 'gb dump X collname' was called, bail, we do not
+			// want to write any data
+			if ( g_dumpMode ) {
+				return -1;
+			}
+
+			log( LOG_INFO, "db: Attempting to generate index file for data file %s* of %" PRId64" bytes. May take a while.",
+			     f->getFilename(), f->getFileSize() );
+
+			// this returns false and sets g_errno on error
+			if ( ! in->generateIndex ( f ) ) {
+				log( LOG_ERROR, "db: Index generation failed.");
+
+				SafeBuf tmp;
+				tmp.safePrintf("%s",f->getFilename());
+
+				// take off .dat and make it * so we can move index file
+				int32_t len = tmp.getLength();
+				char *str = tmp.getBufStart();
+				str[len-3] = '*';
+				str[len-2] = '\0';
+
+				log(LOG_ERROR,"%s:%s: Previous versions would have move %s/%s to trash!!",
+				    __FILE__,__func__,m_dir.getDir(), str);
+
+				gbshutdownCorrupted();
+			}
+
+			log( LOG_INFO, "db: Index generation succeeded." );
+
+			// . save it
+			// . if we're an even #'d file a merge will follow
+			//   when main.cpp calls attemptMerge()
+			log("db: Saving generated index file to disk.");
+
+			// turn off statsdb so it does not try to add records for
+			// these writes because it is not initialized yet and will
+			// cause this write to fail!
+			g_statsdb.m_disabled = true;
+
+			bool status = in->writeIndex();
+			g_statsdb.m_disabled = false;
+			if ( ! status ) {
+				log( LOG_ERROR, "db: Save failed." );
+				return false;
+			}
+		}
+	}
+//@@@ BR: no-merge index end
+
+
 	if ( ! isNew ) {
 		log( LOG_DEBUG, "db: Added %s for collnum=%" PRId32" pages=%" PRId32,
 		     name, ( int32_t ) m_collnum, m->getNumPages() );
@@ -757,6 +907,11 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 		memmove ( &m_fileIds[i+1] , &m_fileIds[i],nn*sizeof(int32_t));
 		memmove ( &m_fileIds2[i+1], &m_fileIds2[i],nn*sizeof(int32_t));
 		memmove ( &m_maps   [i+1] , &m_maps   [i],nn*sizeof(RdbMap *));
+//@@@ BR: no-merge index begin
+		if( m_useIndexFile ) {
+			memmove ( &m_indexes [i+1] , &m_indexes[i],nn*sizeof(RdbIndex *));
+		}
+//@@@ BR: no-merge index end
 	}
 
 	// insert this file into position #i
@@ -764,6 +919,15 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	m_fileIds2 [i] = fileId2;
 	m_files    [i] = f;
 	m_maps     [i] = m;
+//@@@ BR: no-merge index begin
+	if( m_useIndexFile ) {
+		m_indexes  [i] = in;
+	}
+	else {
+		m_indexes[i] = NULL;
+	}
+//@@@ BR: no-merge index end
+
 
 	// debug point
 	//log("map #0 is %s ptr=%llx (nf=%i)",
@@ -880,6 +1044,19 @@ bool RdbBase::incorporateMerge ( ) {
 	log(LOG_INFO, "merge: Merge succeeded. %s (#%" PRId32") has %" PRId64" positive "
 	    "and %" PRId64" negative recs.", m_files[x]->getFilename(), x, tp, tn);
 
+
+//@@@ BR: no-merge index begin
+	if( m_useIndexFile ) {
+		status = m_indexes[x]->writeIndex();
+		if ( !status ) {
+			// unable to write, let's abort
+			log( LOG_ERROR, "db: Could not write index for %s, Exiting.", m_dbname);
+			g_process.shutdownAbort();
+		}
+	}
+//@@@ BR: no-merge index end
+
+
 	// . bitch if bad news
 	// . sanity checks to make sure we didn't mess up our data from merging
 	// . these cause a seg fault on problem, seg fault should save and
@@ -966,6 +1143,21 @@ bool RdbBase::incorporateMerge ( ) {
 			// debug msg
 			log(LOG_INFO,"merge: Unlinked %s (#%" PRId32").", m_maps[i]->getFilename(), i);
 		}
+		
+		
+//@@@ BR: no-merge index begin
+		if( m_useIndexFile ) {
+			log(LOG_INFO,"merge: Unlinking index file %s (#%" PRId32").", m_indexes[i]->getFilename(),i);
+
+			if ( ! m_indexes[i]->unlink  ( doneWrapper , this ) ) {
+				m_numThreads++;
+				g_numThreads++;
+			} else {
+				// debug msg
+				log(LOG_INFO,"merge: Unlinked %s (#%" PRId32").", m_indexes[i]->getFilename(), i);
+			}
+		}
+//@@@ BR: no-merge index end
 	}
 
 	// save for re-use
@@ -1023,6 +1215,15 @@ void RdbBase::doneWrapper2 ( ) {
 		m_numThreads++;
 		g_numThreads++;
 	}
+
+//@@@ BR: no-merge index begin
+	if( m_useIndexFile ) {
+		if ( ! m_indexes[x]->rename( m_indexes[a]->getFilename(), doneWrapper3, this ) ) {
+			m_numThreads++;
+			g_numThreads++;
+		}
+	}
+//@@@ BR: no-merge index end
 
 	// sanity check
 	m_files[x]->m_fileSize = -1;
@@ -1173,7 +1374,16 @@ void RdbBase::renameFile( int32_t currentFileIdx, int32_t newFileId, int32_t new
 	sprintf( fbuf, "%s%04" PRId32".map", m_dbname, newFileId );
 	log( LOG_INFO, "merge: renaming final merged file %s", fbuf );
 	m_maps[ currentFileIdx ]->rename( fbuf, true );
+	
+//@@@ BR: no-merge index begin
+	if( m_useIndexFile ) {
+		sprintf( fbuf, "%s%04" PRId32".idx", m_dbname, newFileId );
+		log( LOG_INFO, "merge: renaming final merged file %s", fbuf );
+		m_indexes[ currentFileIdx ]->rename( fbuf, true );
+	}
+//@@@ BR: no-merge index end
 }
+
 
 void RdbBase::buryFiles ( int32_t a , int32_t b ) {
 	// on succes unlink the files we merged and free them
@@ -1182,11 +1392,22 @@ void RdbBase::buryFiles ( int32_t a , int32_t b ) {
 		delete (m_files[i]);
 		mdelete ( m_maps[i] , sizeof(RdbMap),"RdbBase");
 		delete (m_maps [i]);
+//@@@ BR: no-merge index begin
+		if( m_useIndexFile ) {
+			mdelete ( m_indexes[i] , sizeof(RdbIndex),"RdbBase");
+			delete (m_indexes [i]);
+		}
+//@@@ BR: no-merge index end
 	}
 	// bury the merged files
 	int32_t n = m_numFiles - b;
 	gbmemcpy (&m_files   [a], &m_files   [b], n*sizeof(BigFile *));
 	gbmemcpy (&m_maps    [a], &m_maps    [b], n*sizeof(RdbMap  *));
+//@@@ BR: no-merge index begin
+	if( m_useIndexFile ) {
+		gbmemcpy (&m_indexes [a], &m_indexes [b], n*sizeof(RdbIndex  *));
+	}
+//@@@ BR: no-merge index end
 	gbmemcpy (&m_fileIds [a], &m_fileIds [b], n*sizeof(int32_t     ));
 	gbmemcpy (&m_fileIds2[a], &m_fileIds2[b], n*sizeof(int32_t     ));
 	// decrement the file count appropriately
@@ -1986,6 +2207,7 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 			  m_collnum ,
 			  m_files[mergeFileNum] ,
 			  m_maps [mergeFileNum] ,
+			  m_indexes[mergeFileNum],		//@@@ BR: no-merge index 
 			  fileId2                   ,
 			  m_mergeStartFileNum   ,
 			  m_numFilesToMerge     ,
@@ -2200,6 +2422,20 @@ void RdbBase::closeMaps ( bool urgent ) {
 	}
 }
 
+//@@@ BR: no-merge index begin
+void RdbBase::closeIndexes ( bool urgent ) {
+	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) {
+		if( m_useIndexFile && m_indexes[i] ) {
+			bool status = m_indexes[i]->close ( urgent );
+			if ( !status ) {
+				// unable to write, let's abort
+				g_process.shutdownAbort();
+			}
+		}
+	}
+}
+//@@@ BR: no-merge index end
+
 void RdbBase::saveMaps() {
 	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) {
 		if ( ! m_maps[i] ) {
@@ -2214,6 +2450,24 @@ void RdbBase::saveMaps() {
 		}
 	}
 }
+
+//@@@ BR: no-merge index begin
+void RdbBase::saveIndexes() {
+	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) {
+		if ( !m_useIndexFile || !m_indexes[i] ) {
+			continue;
+		}
+
+		bool status = m_indexes[i]->writeIndex();
+		if ( !status ) {
+			// unable to write, let's abort
+			g_process.shutdownAbort();
+		}
+	}
+}
+//@@@ BR: no-merge index end
+
+
 
 void RdbBase::verifyDiskPageCache ( ) {
 	//if ( !m_pc ) return;
@@ -2340,3 +2594,8 @@ float RdbBase::getPercentNegativeRecsOnDisk ( int64_t *totalArg ) const {
 	float percent = (float)numNeg / (float)total;
 	return percent;
 }
+
+
+
+
+
