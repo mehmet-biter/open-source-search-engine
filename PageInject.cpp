@@ -118,25 +118,21 @@ Host *getHostToHandleInjection ( char *url ) {
 	Url norm;
 	norm.set ( url );
 	int64_t docId = g_titledb.getProbableDocId ( &norm );
+
 	// get iroupId from docId
 	uint32_t shardNum = getShardNumFromDocId ( docId );
-	// from Msg22.cpp
-//	Host *group = g_hostdb.getShard ( shardNum );
-//	int32_t hostNum = docId % g_hostdb.m_numHostsPerShard;
-//	Host *host = &group[hostNum];
 
 	Host *host = g_hostdb.getHostWithSpideringEnabled (shardNum);
 
-
-
 	bool isWarcInjection = false;
-	int32_t ulen = strlen(url);
-	if ( ulen > 10 && strcmp(url+ulen-8,".warc.gz") == 0 )
+	size_t ulen = strlen(url);
+	if (ulen > 10 && (strcmp(url + ulen - 8, ".warc.gz") == 0 || strcmp(url + ulen - 5, ".warc") == 0)) {
 		isWarcInjection = true;
-	if ( ulen > 10 && strcmp(url+ulen-5,".warc") == 0 )
-		isWarcInjection = true;
+	}
 
-	if ( ! isWarcInjection ) return host;
+	if (!isWarcInjection) {
+		return host;
+	}
 
 	// warc files end up calling XmlDoc::indexWarcOrArc() which spawns
 	// a msg7 injection request for each doc in the warc/arc file
@@ -148,6 +144,7 @@ Host *getHostToHandleInjection ( char *url ) {
 		Host *h = g_hostdb.getHost(i);
 		h->m_tmpCount = 0;
 	}
+
 	for (UdpSlot *slot = g_udpServer.getActiveHead(); slot; slot = slot->getActiveListNext()) {
 		// skip if not injection request
 		if ( slot->getMsgType() != msg_type_7 ) continue;
