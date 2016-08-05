@@ -10,6 +10,7 @@
 #include "Proxy.h"
 #include "Parms.h"
 #include "PageRoot.h"
+#include "GigablastRequest.h"
 #include "Process.h"
 
 #ifdef _VALGRIND_

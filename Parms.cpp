@@ -25,6 +25,7 @@
 #include "SpiderProxy.h" // buildProxyTable()
 #include "PageInject.h" // InjectionRequest
 #include "Posdb.h"
+#include "GigablastRequest.h"
 
 
 Parms g_parms;

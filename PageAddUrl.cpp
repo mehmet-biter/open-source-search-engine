@@ -5,6 +5,7 @@
 #include "Msg4.h"
 #include "Spider.h"
 #include "Parms.h"
+#include "GigablastRequest.h"
 
 static bool sendReply( void *state );
 
