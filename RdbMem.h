@@ -30,11 +30,10 @@ class RdbMem {
 	// . if a dump is going on and this key has already been dumped
 	//   (we check RdbDump::getFirstKey()/getLastKey()) add it to the
 	//   secondary mem space, otherwise add it to the primary mem space
-	void *dupData ( char *key , char *data , int32_t dataSize ,
-			collnum_t collnum );
+	void *dupData(const char *key, const char *data, int32_t dataSize, collnum_t collnum);
 
 	// used by dupData
-	void *allocData ( char *key , int32_t dataSize , collnum_t collnum );
+	void *allocData(const char *key, int32_t dataSize, collnum_t collnum);
 
 	// how much mem is available?
 	int32_t getAvailMem() const {
