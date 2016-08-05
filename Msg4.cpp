@@ -865,35 +865,48 @@ void gotReplyWrapper4 ( void *state , void *state2 ) {
 
 void storeLineWaiters ( ) {
 	// try to store all the msg4's lists that are waiting in line
- loop:
-	Msg4 *msg4 = s_msg4Head;
-	// now were we waiting on a multicast to return in order to send
-	// another request?  return if not.
-	if ( ! msg4 ) return;
-	// grab the first Msg4 in line. ret fls if blocked adding more of list.
-	if ( ! msg4->addMetaList2 ( ) ) return;
-	// hey, we were able to store that Msg4's list, remove him
-	s_msg4Head = msg4->m_next;
-	// empty? make tail NULL too then
-	if ( ! s_msg4Head ) s_msg4Tail = NULL;
-	// . if his callback was NULL, then was loaded in loadAddsInProgress()
-	// . we no longer do that so callback should never be null now
-	if ( ! msg4->m_callback ) { g_process.shutdownAbort(true); }
-	// log this now i guess. seems to happen a lot if not using threads
-	if ( g_jobScheduler.are_new_jobs_allowed() )
-		logf(LOG_DEBUG,"msg4: calling callback for msg4=0x%" PTRFMT"",
-		     (PTRTYPE)msg4);
-	// release it
-	msg4->m_inUse = false;
-	// call his callback
-	msg4->m_callback ( msg4->m_state );
-	// ensure not re-added - no, msg4 might be freed now!
-	//msg4->m_next = NULL;
-	// try the next Msg4 in line
-	goto loop;
-}
+	for (;;) {
+		Msg4 *msg4 = s_msg4Head;
 
-#include "Process.h"
+		// now were we waiting on a multicast to return in order to send
+		// another request?  return if not.
+		if (!msg4) {
+			return;
+		}
+
+		// grab the first Msg4 in line. ret fls if blocked adding more of list.
+		if (!msg4->addMetaList2()) {
+			return;
+		}
+
+		// hey, we were able to store that Msg4's list, remove him
+		s_msg4Head = msg4->m_next;
+
+		// empty? make tail NULL too then
+		if (!s_msg4Head) {
+			s_msg4Tail = NULL;
+		}
+
+		// . if his callback was NULL, then was loaded in loadAddsInProgress()
+		// . we no longer do that so callback should never be null now
+		if (!msg4->m_callback) {
+			g_process.shutdownAbort(true);
+		}
+
+		// log this now i guess. seems to happen a lot if not using threads
+		if (g_jobScheduler.are_new_jobs_allowed()) {
+			logf(LOG_DEBUG, "msg4: calling callback for msg4=0x%" PTRFMT"", (PTRTYPE) msg4);
+		}
+
+		// release it
+		msg4->m_inUse = false;
+
+		// call his callback
+		msg4->m_callback(msg4->m_state);
+
+		// try the next Msg4 in line
+	}
+}
 
 // . destroys the slot if false is returned
 // . this is registered in Msg4::set() to handle add rdb record msgs
