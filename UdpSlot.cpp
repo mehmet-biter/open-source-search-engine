@@ -593,8 +593,7 @@ int32_t UdpSlot::sendDatagramOrAck ( int sock, bool allowResends, int64_t now ){
 		ip = g_hostdb.getLoopbackIp();
 	// pick a dgram to send
 	int32_t dgramNum = m_nextToSend;
-	// debug msg
-	//log("setDgram");
+
 	// . store dgram #dgramNum from this send buf into "dgram"
 	// . let the protocol set the dgram from the m_sendBuf for us
 	char buf [ DGRAM_SIZE_CEILING ];
@@ -647,7 +646,6 @@ int32_t UdpSlot::sendDatagramOrAck ( int sock, bool allowResends, int64_t now ){
 	// . copy data into dgram if we're the 1st dgram
 	if ( dgramNum == 0 ) 
 		memcpy_ass ( dgram + headerSize , send , sendSize );
-	//log("done set");
 
 	// if we are the proxy sending a udp packet to our flock, then make
 	// sure that we send to tmp cluster if we should
@@ -699,22 +697,16 @@ int32_t UdpSlot::sendDatagramOrAck ( int sock, bool allowResends, int64_t now ){
 		g_udpServer.m_outsiderBytesOut   += dgramSize;
 	}
 
-	// debug msg
-	//log("sendto");
-	// debug msg
-	//log("sending dgram of size=%" PRId32" (max=%" PRId32")",dgramSize,m_maxDgramSize);
 	// . this socket should be non-blocking (i.e. return immediately)
 	// . this should set g_errno on error!
-	int bytesSent = sendto ( sock      , 
-				 dgram     ,
-				 dgramSize ,
-				 0         , // makes dns fail->MSG_DONTROUTE ,
-				 (struct sockaddr *)(void*)&to , 
-				 sizeof ( to ) );
+	// MSG_DONTROUTE makes dns fail
+	int bytesSent = sendto(sock, dgram, dgramSize, 0, (struct sockaddr *) (void *) &to, sizeof(to));
+
 	// restore what we overwrote
-	if ( dgramNum != 0 ) memcpy_ass ( dgram , saved , headerSize );
-	// debug msg
-	//log("back");
+	if ( dgramNum != 0 ) {
+		memcpy_ass ( dgram , saved , headerSize );
+	}
+
 	// return -1 on error or 0 if blocked
 	if ( bytesSent < 0 ) {
 		// copy errno to g_errno
@@ -788,8 +780,7 @@ int32_t UdpSlot::sendDatagramOrAck ( int sock, bool allowResends, int64_t now ){
 		int32_t hid = -1;
 		if ( m_host && m_host->m_hostdb == &g_hostdb ) 
 			hid = m_host->m_hostId;
-		//#ifdef _UDPDEBUG_
-		//if ( ! m_proto->useAcks() ) {
+
 		int32_t kk = 0; if ( m_callback ) kk = 1;
 		log(LOG_DEBUG,
 		    "udp: sent dgram "
@@ -831,8 +822,6 @@ int32_t UdpSlot::sendDatagramOrAck ( int sock, bool allowResends, int64_t now ){
 		    m_key.n1,m_key.n0 ,
 		    m_maxDgramSize ,
 		    hid );
-		//}
-		//#endif
 	}
 	// bail now if we're a re-send
 	if ( m_resendCount > 0 ) return 1;
