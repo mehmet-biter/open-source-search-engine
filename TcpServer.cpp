@@ -420,7 +420,7 @@ bool TcpServer::sendMsg( const char *hostname, int32_t hostnameLen, int16_t port
 
 	int32_t status;
 	// if no hosts we are being called by monitor.cpp or if we are spider proxy...
-	if ( g_hostdb.m_numHosts == 0 || g_hostdb.m_myHost->m_isProxy ) {
+	if ( g_hostdb.getNumHosts() == 0 || g_hostdb.m_myHost->m_isProxy ) {
 		status = g_dns.getIp( hostname, hostnameLen, &( tst->m_ip ), tst, gotTcpServerIpWrapper );
 	} else {
 		// . this returns false if blocks, true otherwise

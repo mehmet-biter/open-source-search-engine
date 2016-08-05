@@ -2072,7 +2072,7 @@ void updateAllCrawlInfosSleepWrapper ( int fd , void *state ) {
 	s_inUse = true;
 
 	// send out the msg request
-	for ( int32_t i = 0 ; i < g_hostdb.m_numHosts ; i++ ) {
+	for ( int32_t i = 0 ; i < g_hostdb.getNumHosts() ; i++ ) {
 		Host *h = g_hostdb.getHost(i);
 		// count it as launched
 		s_requests++;
@@ -2211,7 +2211,7 @@ void gotCrawlInfoReply ( void *state , UdpSlot *slot ) {
 
 		// just copy into the stats buf
 		if ( ! cr->m_crawlInfoBuf.getBufStart() ) {
-			int32_t need = sizeof(CrawlInfo) * g_hostdb.m_numHosts;
+			int32_t need = sizeof(CrawlInfo) * g_hostdb.getNumHosts();
 			cr->m_crawlInfoBuf.setLabel("cibuf");
 			cr->m_crawlInfoBuf.reserve(need);
 			// in case one was udp server timed out or something
@@ -2270,7 +2270,7 @@ void gotCrawlInfoReply ( void *state , UdpSlot *slot ) {
 		// if empty for all hosts, i guess no stats...
 		if ( ! cia ) continue;
 
-		for ( int32_t k = 0 ; k < g_hostdb.m_numHosts; k++ ) {
+		for ( int32_t k = 0 ; k < g_hostdb.getNumHosts(); k++ ) {
 			// get the CrawlInfo for the ith host
 			CrawlInfo *stats = &cia[k];
 			// point to the stats for that host

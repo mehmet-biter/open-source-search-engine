@@ -165,7 +165,7 @@ void DailyMerge::dailyMergeLoop ( ) {
 		//   satisfied our "second time around" (so we must complete
 		//   one daily merge before checking this again). that is why
 		//   i added "m_didDaily". -- MDW
-		for ( int32_t i = 0 ; m_didDaily && i<g_hostdb.m_numHosts ; i++){
+		for ( int32_t i = 0 ; m_didDaily && i<g_hostdb.getNumHosts() ; i++){
 			// skip ourselves, obviously we are in merge mode 2
 			if ( &g_hostdb.m_hosts[i] == g_hostdb.m_myHost )
 				continue;
@@ -206,7 +206,7 @@ void DailyMerge::dailyMergeLoop ( ) {
 	// wait for everyone to make it to mode 1+ before going on
 	if ( m_mergeMode == 2 ) {
 		// check the ping packet flags
-		for ( int32_t i = 0 ; i < g_hostdb.m_numHosts ; i++ ) {
+		for ( int32_t i = 0 ; i < g_hostdb.getNumHosts() ; i++ ) {
 			// get the host
 			Host *h = &g_hostdb.m_hosts[i];
 			// skip ourselves, obviously we are in merge mode 2
@@ -232,7 +232,7 @@ void DailyMerge::dailyMergeLoop ( ) {
 		if ( g_spiderLoop.m_numSpidersOut > 0 )
 			return;
 		// check the ping packet flags
-		for ( int32_t i = 0 ; i < g_hostdb.m_numHosts ; i++ ) {
+		for ( int32_t i = 0 ; i < g_hostdb.getNumHosts() ; i++ ) {
 			// skip ourselves, obviously we are in merge mode 2
 			if ( &g_hostdb.m_hosts[i] == g_hostdb.m_myHost )
 				continue;
@@ -311,7 +311,7 @@ void DailyMerge::dailyMergeLoop ( ) {
 	// wait for all to finish before re-enabling spiders
 	if ( m_mergeMode == 6 ) {
 		// check the ping packet flags
-		for ( int32_t i = 0 ; i < g_hostdb.m_numHosts ; i++ ) {
+		for ( int32_t i = 0 ; i < g_hostdb.getNumHosts() ; i++ ) {
 			// skip ourselves, obviously we are ok
 			if ( &g_hostdb.m_hosts[i] == g_hostdb.m_myHost )
 				continue;

@@ -145,7 +145,7 @@ void PingServer::initKernelErrorCheck(){
 	}
 
 	// clear the kernel Errors 
-	for ( int32_t i = 0; i < g_hostdb.m_numHosts; i++ ){
+	for ( int32_t i = 0; i < g_hostdb.getNumHosts(); i++ ){
 		g_hostdb.m_hosts[i].m_pingInfo.m_kernelErrors = 0;
 		g_hostdb.m_hosts[i].m_kernelErrorReported = false;
 	}
@@ -1470,7 +1470,7 @@ void updatePingTime ( Host *h , int32_t *pingPtr , int32_t tripTime ) {
 
 		// sanity check, this should be at least 1 since we are alive
 		if ( g_hostdb.m_numHostsAlive < 0 ||
-		     g_hostdb.m_numHostsAlive > g_hostdb.m_numHosts ) {
+		     g_hostdb.m_numHostsAlive > g_hostdb.getNumHosts() ) {
 			g_process.shutdownAbort(true); }
 	}
 }

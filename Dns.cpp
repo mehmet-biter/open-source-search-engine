@@ -2494,7 +2494,7 @@ Host *Dns::getResponsibleHost ( key_t key ) {
 	
 	// otherwise, chain to him
 	int32_t count = 0;
-	for ( int32_t i = 0 ; i < hostdb->m_numHosts ; i++ ) {
+	for ( int32_t i = 0 ; i < hostdb->getNumHosts() ; i++ ) {
 		// get the ith host
 		Host *host = &hostdb->m_hosts[i];
 		if ( !host->m_spiderEnabled ) {

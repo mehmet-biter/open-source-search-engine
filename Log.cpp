@@ -240,13 +240,13 @@ bool Log::logR ( int64_t now, int32_t type, const char *msg, bool forced ) {
         }
         else
         {
-            if ( g_hostdb.m_numHosts <= 999 )
+            if ( g_hostdb.getNumHosts() <= 999 )
                     p += sprintf ( p , "%" PRIu64" %03" PRId32" ",
                               now , g_hostdb.m_hostId );
-            else if ( g_hostdb.m_numHosts <= 9999 )
+            else if ( g_hostdb.getNumHosts() <= 9999 )
                     p += sprintf ( p , "%" PRIu64" %04" PRId32" ",
                               now , g_hostdb.m_hostId );
-            else if ( g_hostdb.m_numHosts <= 99999 )
+            else if ( g_hostdb.getNumHosts() <= 99999 )
                     p += sprintf ( p , "%" PRIu64" %05" PRId32" ",
                               now , g_hostdb.m_hostId );
         }

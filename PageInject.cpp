@@ -127,7 +127,7 @@ Host *getHostToHandleInjection ( char *url ) {
 	// doesn't end up doing a bunch of wget/gunzips on warc files 
 	// thereby bottlenecking the cluster. get the first hostid that
 	// we have not sent a msg7 injection request to that is still out
-	for ( int32_t i = 0 ; i < g_hostdb.m_numHosts ; i++ ) {
+	for ( int32_t i = 0 ; i < g_hostdb.getNumHosts() ; i++ ) {
 		Host *h = g_hostdb.getHost(i);
 		h->m_tmpCount = 0;
 	}
@@ -148,7 +148,7 @@ Host *getHostToHandleInjection ( char *url ) {
 	}
 	int32_t min = 999999;
 	Host *minh = NULL;
-	for ( int32_t i = 0 ; i < g_hostdb.m_numHosts ; i++ ) {
+	for ( int32_t i = 0 ; i < g_hostdb.getNumHosts() ; i++ ) {
 		Host *h = g_hostdb.getHost(i);
 		if ( h->m_tmpCount == 0 ) return h;
 		if ( h->m_tmpCount >= min ) continue;

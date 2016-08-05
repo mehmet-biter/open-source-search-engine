@@ -187,7 +187,7 @@ bool Msg13::forwardRequest ( ) {
 	//
 	// forward this request to the host responsible for this url's ip
 	//
-	int32_t nh     = g_hostdb.m_numHosts;
+	int32_t nh     = g_hostdb.getNumHosts();
 	int32_t hostId = hash32h(((uint32_t)r->m_firstIp >> 8), 0) % nh;
 
 	if((uint32_t)r->m_firstIp >> 8 == 0) {
