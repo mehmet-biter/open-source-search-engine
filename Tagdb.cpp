@@ -1104,7 +1104,6 @@ bool Tagdb::verify ( const char *coll ) {
 			      (char *)&endKey        ,
 			      64000         , // minRecSizes   ,
 			      true          , // includeTree   ,
-			      false         , // add to cache?
 			      0             , // max cache age
 			      0             , // startFileNum  ,
 			      -1            , // numFiles      ,
@@ -1863,7 +1862,7 @@ bool sendReply2 ( void *state ) {
 	char buf[1024*32];
 	SafeBuf sb(buf, 1024*32);
 	// do they want an xml reply?
-	if( r->getLong("xml",0) ) { // was "raw"
+	if( r->getLong("xml",0) ) {
 		sb.safePrintf("<?xml version=\"1.0\" "
 			      "encoding=\"ISO-8859-1\"?>\n"
 			      "<response>\n");

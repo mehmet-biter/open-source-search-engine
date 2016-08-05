@@ -480,7 +480,7 @@ bool HttpRequest::set ( char *origReq , int32_t origReqLen , TcpSocket *sock ) {
 	 // m_bufLen = urlNormCode ( m_buf , MAX_REQ_LEN - 1 , req , i );
 	 // ensure it's big enough to be a valid request
 	 if ( reqLen < 5 ) { 
-		 log("http: got reqlen %" PRId32"<5 = %s",reqLen,req);
+		 log(LOG_WARN, "http: got reqlen %" PRId32"<5 = %s",reqLen,req);
 		 g_errno = EBADREQUEST; 
 		 return false; 
 	 }
@@ -888,7 +888,7 @@ bool HttpRequest::set ( char *origReq , int32_t origReqLen , TcpSocket *sock ) {
 	 // if we are coming from any of our own hosts.conf c blocks
 	 // consider ourselves local
 	 uint32_t last = 0;
-	 for ( int32_t i = 0 ; i < g_hostdb.m_numHosts ; i++ ) {
+	 for ( int32_t i = 0 ; i < g_hostdb.getNumHosts() ; i++ ) {
 		 Host *h = g_hostdb.getHost(i);
 		 // save time with this check
 		 if ( h->m_ip == last ) continue;

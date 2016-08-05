@@ -429,7 +429,7 @@ bool HashTableX::load ( const char *dir, const char *filename, char **tbuf, int3
 	off += 4;
 
 	if ( numSlots < 0 || numSlotsUsed < 0 ) {
-		log("htable: bogus saved hashtable file %s%s.",pdir,filename);
+		log(LOG_WARN, "htable: bogus saved hashtable file %s%s.",pdir,filename);
 		return false;
 	}
 
@@ -438,7 +438,7 @@ bool HashTableX::load ( const char *dir, const char *filename, char **tbuf, int3
 		// is very common for this file so skip it
 		if ( strstr(filename,"ipstouseproxiesfor.dat") )
 			return false;
-		log("htable: reading hashtable from %s%s: "
+		log(LOG_WARN, "htable: reading hashtable from %s%s: "
 		    "bogus keysize of %" PRId32,
 		    pdir,filename,ks );
 		return false;

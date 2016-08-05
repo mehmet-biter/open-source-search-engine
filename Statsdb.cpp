@@ -246,7 +246,7 @@ void Statsdb::addDocsIndexed ( ) {
 	int64_t total = 0LL;
 	static int64_t s_lastTotal = 0LL;
 	// every 5 seconds update docs indexed count
-	for ( int32_t i = 0 ; i < g_hostdb.m_numHosts ; i++ ) {
+	for ( int32_t i = 0 ; i < g_hostdb.getNumHosts() ; i++ ) {
 		Host *h = &g_hostdb.m_hosts[i];
 		// must have something
 		if ( h->m_pingInfo.m_totalDocsIndexed <= 0 ) continue;
@@ -580,7 +580,6 @@ bool Statsdb::gifLoop ( ) {
 				    (char *)&m_endKey	,
 				    32000	, // requested scan size
 				    true 	, // include tree?
-				    false	, // add to cache?
 				    0		, // max cache age
 				    0		, // start file number
 				    -1		, // number of files

@@ -439,7 +439,6 @@ void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
 				    endKey            , // endKey
 				    500000000         , // minRecSizes
 				    true              , // includeTree
-				    false,//r->m_addToCache   , // addToCache?
 				    0,//r->m_maxCacheAge  , // max cache age
 				    0,//startFileNum      ,
 				    -1                 , // numFiles

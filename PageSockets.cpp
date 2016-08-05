@@ -216,7 +216,7 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 	int32_t     times[50000];//MAX_UDP_SLOTS];
 	UdpSlot *slots[50000];//MAX_UDP_SLOTS];
 	int32_t nn = 0;
-	for ( UdpSlot *s = server->getActiveHead() ; s ; s = s->m_next2 ) {
+	for (UdpSlot *s = server->getActiveHead(); s; s = s->getActiveListNext()) {
 		if ( nn >= 50000 ) {
 			log("admin: Too many udp sockets.");
 			break;
@@ -228,7 +228,7 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 		// if data is NULL that's an error
 		//if ( ! s ) continue;
 		// store it
-		times[nn] = now - s->m_startTime;
+		times[nn] = now - s->getStartTime();
 		slots[nn] = s;
 		nn++;
 	}
@@ -253,7 +253,7 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 	int32_t msgCount1[MAX_MSG_TYPES] = {};
 	for ( int32_t i = 0; i < nn; i++ ) {
 		UdpSlot *s = slots[i];
-		if ( s->m_niceness == 0 )
+		if ( s->getNiceness() == 0 )
 			msgCount0[s->getMsgType()]++;
 		else
 			msgCount1[s->getMsgType()]++;
@@ -301,10 +301,6 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 		dd = //"<td><b>dns ip</b></td>"
 		     "<td><b>hostname</b></td>";
 	}
-
-	//UdpSlot *slot = server->m_head3;
-	//int32_t callbackReadyCount = 0;
-	//for ( ; slot ; slot = slot->m_next3 , callbackReadyCount++ ); 
 
 	p->safePrintf ( "<table %s>"
 			"<tr class=hdrow><td colspan=19>"
@@ -354,21 +350,21 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 		//if ( ! s->isDoneReading() ) st = "reading";
 		//if ( ! s->isDoneSending() ) st = "reading";
 		// times
-		int64_t elapsed0 = (now - s->m_startTime    ) ;
-		int64_t elapsed1 = (now - s->m_lastReadTime ) ;
-		int64_t elapsed2 = (now - s->m_lastSendTime ) ;
+		int64_t elapsed0 = (now - s->getStartTime()    ) ;
+		int64_t elapsed1 = (now - s->getLastReadTime() ) ;
+		int64_t elapsed2 = (now - s->getLastSendTime() ) ;
 		char e0[32],e1[32], e2[32];
 		sprintf ( e0 , "%" PRId64"ms" , elapsed0 );
 		sprintf ( e1 , "%" PRId64"ms" , elapsed1 );
 		sprintf ( e2 , "%" PRId64"ms" , elapsed2 );
-		if ( s->m_startTime    == 0LL ) strcpy ( e0 , "--" );
-		if ( s->m_lastReadTime == 0LL ) strcpy ( e1 , "--" );
-		if ( s->m_lastSendTime == 0LL ) strcpy ( e2 , "--" );
+		if ( s->getStartTime()    == 0LL ) strcpy ( e0 , "--" );
+		if ( s->getLastReadTime() == 0LL ) strcpy ( e1 , "--" );
+		if ( s->getLastSendTime() == 0LL ) strcpy ( e2 , "--" );
 		// bgcolor is lighter for incoming requests
 		const char *bg = LIGHT_BLUE;//"c0c0f0";
 		// is it incoming
-		if ( ! s->m_callback ) bg = LIGHTER_BLUE;//"e8e8ff";
-		Host *h = g_hostdb.getHost ( s->m_ip , s->m_port );
+		if ( ! s->hasCallback() ) bg = LIGHTER_BLUE;//"e8e8ff";
+		Host *h = g_hostdb.getHost ( s->getIp() , s->getPort() );
 		const char           *eip     = "??";
 		uint16_t  eport   =  0 ;
 		//int32_t          ehostId = -1 ;
@@ -394,7 +390,7 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 		// if no corresponding host, it could be a request from an external
 		// cluster, so just show the ip
 		else {
-		        sprintf ( tmpHostId , "%s" , iptoa(s->m_ip) );
+		        sprintf ( tmpHostId , "%s" , iptoa(s->getIp()) );
 			ehostId = tmpHostId;
 			eip     = tmpHostId;
 		}
@@ -405,9 +401,8 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 		char *sbuf          = s->m_sendBuf;
 		int32_t  rbufSize      = s->m_readBufSize;
 		int32_t  sbufSize      = s->m_sendBufSize;
-		bool  weInit        = s->m_callback;
-		char  calledHandler = s->m_calledHandler;
-		if ( weInit ) calledHandler = s->m_calledCallback;
+		bool  weInit        = s->hasCallback();
+		bool  calledHandler = weInit ? s->hasCalledCallback() : s->hasCalledHandler();
 		char *buf     = NULL;
 		int32_t  bufSize = 0;
 		char tt [ 64 ];
@@ -420,7 +415,7 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 			// . if callback was called this slot's sendbuf can be bogus
 			// . i put this here to try to avoid a core dump
 			if (weInit) {
-				if (!s->m_calledCallback) {
+				if (!s->hasCalledCallback()) {
 					buf = sbuf;
 					bufSize = sbufSize;
 				}
@@ -482,11 +477,11 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 				e0 ,
 				e1 ,
 				e2 ,
-				s->m_timeout );
+				s->getTimeout() );
 
 		// now use the ip for dns and hosts
 		p->safePrintf("<td>%s:%" PRIu32"</td>",
-			      iptoa(s->m_ip),(uint32_t)s->m_port);
+			      iptoa(s->getIp()),(uint32_t)s->getPort());
 
 		const char *cf1 = "";
 		const char *cf2 = "";
@@ -503,11 +498,11 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 			p->safePrintf( " <a href=\"/admin/tagdb?user=admin&tagtype0=manualban&tagdata0=1&u=%s&c=%s\">"
 					       "[<font color=red><b>BAN %s</b></font>]</nobr></a> " ,
 			               dbuf , coll , dbuf );
-			p->safePrintf("</td><td>%s%" PRId32"%s</td>", cf1, (int32_t)s->m_niceness, cf2);
+			p->safePrintf("</td><td>%s%" PRId32"%s</td>", cf1, (int32_t)s->getNiceness(), cf2);
 		} else {
 			// clickable hostId
 			const char *toFrom = "to";
-			if ( ! s->m_callback ) toFrom = "from";
+			if ( ! s->hasCallback() ) toFrom = "from";
 			p->safePrintf (	"<td>0x%02x</td>"  // msgtype
 					"<td><nobr>%s</nobr></td>"  // desc
 					"<td><nobr>%s <a href=http://%s:%hu/"
@@ -523,7 +518,7 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 					coll ,
 					ehostId ,
 					cf1,
-					(int32_t)s->m_niceness,
+					(int32_t)s->getNiceness(),
 					cf2
 					// end clickable hostId
 					);
@@ -531,7 +526,7 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 
 		const char *rf1 = "";
 		const char *rf2 = "";
-		if ( s->m_resendCount ) {
+		if ( s->getResendCount() ) {
 			rf1 = "<b style=color:red;>";
 			rf2 = "</b>";
 		}
@@ -546,16 +541,16 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 				"<td>%" PRId32"</td>" // acks read
 				"<td>%s%hhu%s</td>" // resend count
 				"</tr>\n" ,
-				(uint32_t)s->m_transId,
+				(uint32_t)s->getTransId(),
 				calledHandler,
 				s->getNumDgramsRead() ,
-				s->m_dgramsToRead ,
+				s->getDatagramsToRead() ,
 				s->getNumAcksSent() ,
 				s->getNumDgramsSent() ,
-				s->m_dgramsToSend ,
+				s->getDatagramsToSend() ,
 				s->getNumAcksRead() ,
 				rf1 ,
-				s->m_resendCount ,
+				s->getResendCount() ,
 				rf2
 				);
 	}

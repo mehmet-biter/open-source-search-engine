@@ -121,7 +121,7 @@ void Blaster::runBlaster(char *file1,char *file2,
 
 	// open files
 	if ( ! f1.open ( O_RDONLY ) ) {
-		log("blaster:open: %s %s",file1,mstrerror(g_errno)); 
+		log(LOG_WARN, "blaster:open: %s %s",file1,mstrerror(g_errno));
 		return; 
 	}
 
@@ -148,7 +148,7 @@ void Blaster::runBlaster(char *file1,char *file2,
 
 	// read em all in
 	if ( ! f1.read ( m_buf1 , fileSize1 , 0 ) ) {
-		log("blaster:read: %s %s",file1,mstrerror(g_errno));
+		log(LOG_WARN, "blaster:read: %s %s",file1,mstrerror(g_errno));
 		return;
 	}
 
@@ -166,21 +166,21 @@ void Blaster::runBlaster(char *file1,char *file2,
 		File f2;
 		f2.set ( file2 );
 		if ( ! f2.open ( O_RDONLY ) ) {
-			log("blaster:open: %s %s",file2,mstrerror(g_errno)); 
+			log(LOG_WARN, "blaster:open: %s %s",file2,mstrerror(g_errno));
 			return; 
 		}
 		int32_t fileSize2 = f2.getFileSize() ;
 		int32_t m_bufSize2 = fileSize2 + 1;
 		m_buf2 = (char *) mmalloc ( m_bufSize2 , "blaster2" );
 		if ( ! m_buf2) {
-			log("blaster:mmalloc: %s",mstrerror(errno));
+			log(LOG_WARN, "blaster:mmalloc: %s",mstrerror(errno));
 			return;
 		}
 		// set m_p2
 		m_p2    = m_buf2;
 		m_p2end = m_buf2 + m_bufSize2 - 1;
 		if ( ! f2.read ( m_buf2 , fileSize2 , 0 ) ) {
-			log("blaster:read: %s %s",file2,mstrerror(g_errno));
+			log(LOG_WARN, "blaster:read: %s %s",file2,mstrerror(g_errno));
 			return;
 		}
 		int32_t m=0;
@@ -329,9 +329,11 @@ void Blaster:: processLogFile(void *state){
 					    30*1024*1024, //maxLen
 					    30*1024*1024);//maxOtherLen
 	// continue if it blocked
-	if ( status )
+	if ( status ) {
 		// else there was error
-		log("blaster: got doc %s: %s", urlStart,mstrerror(g_errno) );
+		log(LOG_WARN, "blaster: got doc %s: %s", urlStart, mstrerror(g_errno));
+	}
+
 	return;
 }
 	
@@ -339,7 +341,7 @@ void Blaster:: processLogFile(void *state){
 void Blaster::startBlastering(){
 	int64_t now=gettimeofdayInMilliseconds();
 	if(m_print && m_totalDone>0 && (m_totalDone % 20)==0){
-		log("blaster: Processed %" PRId32" urls in %" PRId32" ms",m_totalDone,
+		log(LOG_INFO, "blaster: Processed %" PRId32" urls in %" PRId32" ms",m_totalDone,
 		    (int32_t) (now-m_startTime));
 		m_print=false;
 	}
@@ -352,7 +354,7 @@ void Blaster::startBlastering(){
 		try { st = new (StateBD); }
 		catch ( ... ) {
 			g_errno = ENOMEM;
-			log("blaster: Failed. "
+			log(LOG_WARN, "blaster: Failed. "
 			    "Could not allocate %" PRId32" bytes for query. "
 			    "Returning HTTP status of 500.",
 			    (int32_t)sizeof(StateBD));
@@ -372,7 +374,7 @@ void Blaster::startBlastering(){
 			static bool s_flag = true;
 			if ( s_flag ) {
 				s_flag = false;
-				log("blaster: injecting to host #0 at %s on "
+				log(LOG_INFO, "blaster: injecting to host #0 at %s on "
 				    "http/tcp port %" PRId32,
 				    iptoa(h0->m_ip),
 				    (int32_t)h0->m_httpPort);
@@ -433,9 +435,8 @@ void Blaster::startBlastering(){
 		if ( ! status ) continue;
 		// If not blocked, there is an error.
 		m_launched--;
-		// log msg
-		log("From file1, got doc1 %s: %s", st->m_u1 , 
-		    mstrerror(g_errno) );
+
+		log(LOG_WARN, "From file1, got doc1 %s: %s", st->m_u1 , mstrerror(g_errno) );
 		// we gotta wait
 		break;
 	}
@@ -543,9 +544,9 @@ void Blaster::gotDoc1( void *state, TcpSocket *s){
 	if ( ! status ) return;
 	// If not blocked, there is an error.
 	m_launched--;
-	// log msg
-	log("From file2, gotdoc2 %s: %s", st->m_u2,
-	    mstrerror(g_errno) );
+
+	log(LOG_WARN, "From file2, gotdoc2 %s: %s", st->m_u2, mstrerror(g_errno));
+
 	// No need to point p2 ahead because already been done
 	// Free stateBD
 	freeStateBD(st);

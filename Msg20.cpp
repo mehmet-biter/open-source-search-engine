@@ -347,7 +347,7 @@ void handleRequest20 ( UdpSlot *slot , int32_t netnice ) {
 	// sanity check, the size include the \0
 	if ( req->m_collnum < 0 ) {
 		log(LOG_WARN, "query: Got empty collection in msg20 handler. FIX! "
-		    "from ip=%s port=%i",iptoa(slot->m_ip),(int)slot->m_port);
+		    "from ip=%s port=%i",iptoa(slot->getIp()),(int)slot->getPort());
 		    
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		g_udpServer.sendErrorReply ( slot , ENOTFOUND );
@@ -642,8 +642,7 @@ int64_t Msg20Request::makeCacheKey() const
 	hash_buffer.pushLong(m_getLinkInfo);
 	hash_buffer.pushLong(m_onlyNeedGoodInlinks);
 	hash_buffer.pushLong(m_getLinkText);
-	if(m_highlightQueryTerms)
-		hash_buffer.safeMemcpy(ptr_qbuf,size_qbuf);
+	hash_buffer.safeMemcpy(ptr_qbuf,size_qbuf);
 	hash_buffer.safeMemcpy(ptr_ubuf,size_ubuf);
 	hash_buffer.safeMemcpy(ptr_linkee,size_linkee);
 	hash_buffer.safeMemcpy(ptr_displayMetas,size_displayMetas);

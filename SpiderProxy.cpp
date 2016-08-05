@@ -738,7 +738,7 @@ void handleRequest54 ( UdpSlot *udpSlot , int32_t niceness ) {
 	// download has not ended yet
 	bb.m_downloadEndTimeMS = 0LL;
 	// the host using the proxy
-	bb.m_hostId = udpSlot->m_hostId;
+	bb.m_hostId = udpSlot->getHostId();
 	// key is this for m_prTable
 	bb.m_proxyIp   = winnersp->m_ip;
 	bb.m_proxyPort = winnersp->m_port;

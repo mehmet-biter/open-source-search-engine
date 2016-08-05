@@ -25,6 +25,7 @@
 #include "SpiderProxy.h" // buildProxyTable()
 #include "PageInject.h" // InjectionRequest
 #include "Posdb.h"
+#include "GigablastRequest.h"
 
 
 Parms g_parms;
@@ -11462,7 +11463,7 @@ bool Parms::doParmSendingLoop ( ) {
 	int32_t now = getTimeLocal();
 
 	// try to send a parm update request to each host
-	for ( int32_t i = 0 ; i < g_hostdb.m_numHosts ; i++ ) {
+	for ( int32_t i = 0 ; i < g_hostdb.getNumHosts() ; i++ ) {
 		// get it
 		Host *h = g_hostdb.getHost(i);
 		// skip ourselves, host #0. we now send to ourselves

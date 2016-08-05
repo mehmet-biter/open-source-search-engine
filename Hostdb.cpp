@@ -431,13 +431,7 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 			hostname2 = NULL;
 			//goto retired;
 		}
-		// if no secondary hostname for "gk2" (e.g.) try "gki2"
-		char tmp2[32];
-		if ( ! hostname2 && host[0]=='g' && host[1]=='k') {
-			int32_t hn = atol(host+2);
-			sprintf(tmp2,"gki%" PRId32,hn);
-			hostname2 = tmp2;
-		}
+
 		// limit
 		if ( hlen2 > 15 ) {
 			g_errno = EBADENGINEER;
@@ -1023,9 +1017,9 @@ bool Hostdb::hashHost (	bool udp , Host *h , uint32_t ip , uint16_t port ) {
 	if ( udp ) hh = getHost ( ip , port );
 
 	if ( hh && port ) { 
-		log("db: Must hash hosts.conf first, then hosts2.conf.");
-		log("db: or there is a repeated ip/port in hosts.conf.");
-		log("db: repeated host ip=%s port=%" PRId32" "
+		log(LOG_WARN, "db: Must hash hosts.conf first, then hosts2.conf.");
+		log(LOG_WARN, "db: or there is a repeated ip/port in hosts.conf.");
+		log(LOG_WARN, "db: repeated host ip=%s port=%" PRId32" "
 		    "name=%s",iptoa(ip),(int32_t)port,h->m_hostname);
 		return false;//g_process.shutdownAbort(true);
 	}

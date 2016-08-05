@@ -15,6 +15,7 @@
 #include "XmlDoc.h"
 #include "PageInject.h" // Msg7
 #include "PageReindex.h"
+#include "GigablastRequest.h"
 #include "Process.h"
 
 

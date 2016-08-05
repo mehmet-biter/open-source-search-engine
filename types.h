@@ -659,7 +659,7 @@ static inline bool KEYNEG ( key_t k ) {
 	return false;
 }
 
-static inline void KEYADD ( char *k , char keySize ) {
+static inline void KEYINC(char *k, char keySize) {
 	// posdb
 	if ( keySize == 18 ) { *((key144_t *)k) += (int32_t)1; return; }
 	if ( keySize == 12 ) { *((key96_t  *)k) += (int32_t)1; return; }
@@ -670,7 +670,7 @@ static inline void KEYADD ( char *k , char keySize ) {
 	gbshutdownAbort(true);
 }
 
-static inline void KEYSUB ( char *k , char keySize ) {
+static inline void KEYDEC(char *k, char keySize) {
 	if ( keySize == 18 ) { *((key144_t *)k) -= (int32_t)1; return; }
 	if ( keySize == 12 ) { *((key96_t  *)k) -= (int32_t)1; return; }
 	if ( keySize == 16 ) { *((key128_t *)k) -= (int32_t)1; return; }

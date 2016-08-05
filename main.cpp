@@ -2280,14 +2280,14 @@ int collcopy ( char *newHostsConf , char *coll , int32_t collnum ) {
 		return -1;
 	}
 	// host checks
-	for ( int32_t i = 0 ; i < g_hostdb.m_numHosts ; i++ ) {
+	for ( int32_t i = 0 ; i < g_hostdb.getNumHosts() ; i++ ) {
 		Host *h = &g_hostdb.m_hosts[i];
 		fprintf(stderr,"ssh %s '",iptoa(h->m_ip));
 		fprintf(stderr,"du -skc %scoll.%s.%" PRId32" | tail -1 '\n",
 			h->m_dir,coll,collnum);
 	}
 	// loop over dst hosts
-	for ( int32_t i = 0 ; i < g_hostdb.m_numHosts ; i++ ) {
+	for ( int32_t i = 0 ; i < g_hostdb.getNumHosts() ; i++ ) {
 		Host *h = &g_hostdb.m_hosts[i];
 		// get the src host from the provided hosts.conf
 		Host *h2 = &hdb.m_hosts[i];
@@ -2326,7 +2326,7 @@ int scale ( char *newHostsConf , bool useShotgunIp) {
 
 	// this function was made to scale UP, but if scaling down
 	// then swap them!
-	if ( hdb1->m_numHosts > hdb2->m_numHosts ) {
+	if ( hdb1->getNumHosts() > hdb2->getNumHosts() ) {
 		Hostdb *tmp = hdb1;
 		hdb1 = hdb2;
 		hdb2 = tmp;
@@ -2337,10 +2337,10 @@ int scale ( char *newHostsConf , bool useShotgunIp) {
 	// . old hosts may not even be present! consider them the same host,
 	//   though, if have same ip and working dir, because that would
 	//   interfere with a file copy.
-	for ( int32_t i = 0 ; i < hdb1->m_numHosts ; i++ ) {
+	for ( int32_t i = 0 ; i < hdb1->getNumHosts() ; i++ ) {
 	Host *h = &hdb1->m_hosts[i];
 	// look in new guy
-	for ( int32_t j = 0 ; j < hdb2->m_numHosts ; j++ ) {
+	for ( int32_t j = 0 ; j < hdb2->getNumHosts() ; j++ ) {
 		Host *h2 = &hdb2->m_hosts[j];
 		// if a match, ensure same group
 		if ( h2->m_ip != h->m_ip ) continue;
@@ -2376,11 +2376,11 @@ int scale ( char *newHostsConf , bool useShotgunIp) {
 	//   000 --> 00000, 00001, 00010, 00011
 	char done [ 8196 ];
 	memset ( done , 0 , 8196 );
-	for ( int32_t i = 0 ; i < hdb1->m_numHosts ; i++ ) {
+	for ( int32_t i = 0 ; i < hdb1->getNumHosts() ; i++ ) {
 	Host *h = &hdb1->m_hosts[i];
 	char flag = 0;
 	// look in new guy
-	for ( int32_t j = 0 ; j < hdb2->m_numHosts ; j++ ) {
+	for ( int32_t j = 0 ; j < hdb2->getNumHosts() ; j++ ) {
 		Host *h2 = &hdb2->m_hosts[j];
 		// do not copy to oneself
 		if ( h2->m_ip == h->m_ip &&
@@ -2877,7 +2877,6 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 			      endKey        ,
 			      minRecSizes   ,
 			      includeTree   ,
-			      false         , // add to cache?
 			      0             , // max cache age
 			      startFileNum  ,
 			      numFiles      ,
@@ -3153,7 +3152,6 @@ void dumpDoledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool 
 			      endKey        ,
 			      minRecSizes   ,
 			      includeTree   ,
-			      false         , // add to cache?
 			      0             , // max cache age
 			      startFileNum  ,
 			      numFiles      ,
@@ -3396,7 +3394,6 @@ int32_t dumpSpiderdb ( const char *coll, int32_t startFileNum, int32_t numFiles,
 			      (char *)&endKey        ,
 			      minRecSizes   ,
 			      includeTree   ,
-			      false         , // add to cache?
 			      0             , // max cache age
 			      startFileNum  ,
 			      numFiles      ,
@@ -4126,7 +4123,6 @@ void dumpTagdb( const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 			      (char *)&endKey        ,
 			      minRecSizes   ,
 			      includeTree   ,
-			      false         , // add to cache?
 			      0             , // max cache age
 			      startFileNum  ,
 			      numFiles      ,
@@ -4308,7 +4304,6 @@ bool parseTest ( const char *coll, int64_t docId, const char *query ) {
 			      9999999        , // min rec sizes
 			      true           , // include tree?
 			      false          , // includeCache
-			      false          , // addToCache
 			      0              , // startFileNum
 			      -1             , // m_numFiles   
 			      NULL           , // state 
@@ -4685,7 +4680,6 @@ void dumpPosdb (const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 			      &endKey        ,
 			      minRecSizes   ,
 			      includeTree   ,
-			      false         , // add to cache?
 			      0             , // max cache age
 			      startFileNum  ,
 			      numFiles      ,
@@ -4874,7 +4868,6 @@ void dumpClusterdb ( const char *coll,
 			      endKey        ,
 			      minRecSizes   ,
 			      includeTree   ,
-			      false         , // add to cache?
 			      0             , // max cache age
 			      startFileNum  ,
 			      numFiles      ,
@@ -4983,7 +4976,6 @@ void dumpLinkdb ( const char *coll,
 			      (char *)&endKey        ,
 			      minRecSizes   ,
 			      includeTree   ,
-			      false         , // add to cache?
 			      0             , // max cache age
 			      startFileNum  ,
 			      numFiles      ,
@@ -5495,8 +5487,8 @@ int injectFile ( const char *filename , char *ips , const char *coll ) {
 		s_base->m_rdb = rdb;
 		s_base->m_fixedDataSize = rdb->m_fixedDataSize;
 		s_base->m_useHalfKeys = rdb->m_useHalfKeys;
-		s_base->m_ks = rdb->m_ks;
-		s_base->m_pageSize = rdb->m_pageSize;
+		s_base->m_ks = rdb->getKeySize();
+		s_base->m_pageSize = rdb->getPageSize();
 		s_base->m_isTitledb = rdb->m_isTitledb;
 		s_base->m_minToMerge = 99999;
 		// try to set the file info now!
@@ -5587,7 +5579,6 @@ void doInject ( int fd , void *state ) {
 			       (char *)&endKey        ,
 			       100 , // minRecSizes   ,
 			       true , // includeTree   ,
-			       false         , // add to cache?
 			       0             , // max cache age
 			       0 , // startFileNum  ,
 			       -1, // numFiles      ,
@@ -7147,7 +7138,6 @@ void countdomains( const char* coll, int32_t numRecs, int32_t verbosity, int32_t
 			      endKey        ,
 			      minRecSizes   ,
 			      true         , // Do we need to include tree?
-			      false         , // add to cache?
 			      0             , // max cache age
 			      0             ,
 			      -1            ,
@@ -7793,7 +7783,7 @@ int collinject ( char *newHostsConf ) {
 	Hostdb *hdb1 = &g_hostdb;
 	Hostdb *hdb2 = &hdb;
 
-	if ( hdb1->m_numHosts != hdb2->m_numHosts ) {
+	if ( hdb1->getNumHosts() != hdb2->getNumHosts() ) {
 		log("collinject: num hosts differ!");
 		return -1;
 	}

@@ -585,7 +585,6 @@ bool Spiderdb::verify ( char *coll ) {
 			      (char *)&endKey        ,
 			      64000         , // minRecSizes   ,
 			      true          , // includeTree   ,
-			      false         , // add to cache?
 			      0             , // max cache age
 			      0             , // startFileNum  ,
 			      -1            , // numFiles      ,
@@ -1220,7 +1219,6 @@ bool loadLoop ( State11 *st ) {
 				     st->m_endKey        ,
 				     st->m_minRecSizes   ,
 				     true                , // include tree
-				     false               , // add to cache
 				     0                   , // max age
 				     0                   , // start file #
 				     -1                  , // # files

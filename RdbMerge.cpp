@@ -89,7 +89,7 @@ bool RdbMerge::merge ( char     rdbId        ,
 		//m_startKey = m_targetMap->getLastKey();
 		m_targetMap->getLastKey(m_startKey);
 		//m_startKey += (uint32_t) 1;
-		KEYADD(m_startKey,m_ks);
+		KEYINC(m_startKey,m_ks);
 		// if power goes out and we are not doing synchronous writes
 		// then we could have completely lost some data and unlinked
 		// a part file from the file being merged, so that the data is
@@ -412,7 +412,6 @@ bool RdbMerge::getAnotherList ( ) {
 				newEndKey      , // usually is maxed!
 				bufSize        ,
 				false          , // includeTree?
-				false          , // add to cache?
 				0              , // max cache age for lookup
 				m_startFileNum , // startFileNum
 				m_numFiles     ,
@@ -526,7 +525,7 @@ bool RdbMerge::dumpList ( ) {
 	// doing the merge.
 	m_list.getEndKey(m_startKey) ;
 	//m_startKey += (uint32_t)1;
-	KEYADD(m_startKey,m_ks);
+	KEYINC(m_startKey,m_ks);
 
 	/////
 	//

@@ -175,6 +175,7 @@ public:
 
 	bool useHalfKeys() const { return m_useHalfKeys; }
 	char getKeySize() const { return m_ks; }
+	int32_t getPageSize() const { return m_pageSize; }
 
 	RdbTree    *getTree    ( ) { if(!m_useTree) return NULL; return &m_tree; }
 	RdbIndex   *getIndex   ( ) { if(!m_useIndexFile) return NULL; return &m_index; }
@@ -234,36 +235,32 @@ public:
 	int64_t getNumGlobalRecs ( );
 
 	// used for keeping track of stats
-	void      didSeek       (            ) { m_numSeeks++; }
-	void      didRead       ( int64_t bytes ) { m_numRead += bytes; }
-	void      didReSeek     (            ) { m_numReSeeks++; }
-	int64_t getNumSeeks   (            ) { return m_numSeeks; }
-	int64_t getNumReSeeks (            ) { return m_numReSeeks; }
-	int64_t getNumRead    (            ) { return m_numRead ; }
+	void    didSeek() { m_numSeeks++; }
+	void    didRead(int64_t bytes) { m_numRead += bytes; }
+	void    didReSeek() { m_numReSeeks++; }
+	int64_t getNumSeeks()   const { return m_numSeeks; }
+	int64_t getNumReSeeks() const { return m_numReSeeks; }
+	int64_t getNumRead()    const { return m_numRead ; }
 
 	// net stats for "get" requests
-	void      readRequestGet ( int32_t bytes ) { 
-		m_numReqsGet++    ; m_numNetReadGet += bytes; }
-	void      sentReplyGet     ( int32_t bytes ) {
-		m_numRepliesGet++ ; m_numNetSentGet += bytes; }
-	int64_t getNumRequestsGet ( ) { return m_numReqsGet;    }
-	int64_t getNetReadGet     ( ) { return m_numNetReadGet; }
-	int64_t getNumRepliesGet  ( ) { return m_numRepliesGet; }
-	int64_t getNetSentGet     ( ) { return m_numNetSentGet; }
+	void    readRequestGet(int32_t bytes) { m_numReqsGet++; m_numNetReadGet += bytes; }
+	void    sentReplyGet(int32_t bytes) { m_numRepliesGet++; m_numNetSentGet += bytes; }
+	int64_t getNumRequestsGet() const { return m_numReqsGet; }
+	int64_t getNetReadGet()     const { return m_numNetReadGet; }
+	int64_t getNumRepliesGet()  const { return m_numRepliesGet; }
+	int64_t getNetSentGet()     const { return m_numNetSentGet; }
 
 	// net stats for "add" requests
-	void      readRequestAdd ( int32_t bytes ) { 
-		m_numReqsAdd++    ; m_numNetReadAdd += bytes; }
-	void      sentReplyAdd     ( int32_t bytes ) {
-		m_numRepliesAdd++ ; m_numNetSentAdd += bytes; }
-	int64_t getNumRequestsAdd ( ) { return m_numReqsAdd;    }
-	int64_t getNetReadAdd     ( ) { return m_numNetReadAdd; }
-	int64_t getNumRepliesAdd  ( ) { return m_numRepliesAdd; }
-	int64_t getNetSentAdd     ( ) { return m_numNetSentAdd; }
+	void    readRequestAdd(int32_t bytes) { m_numReqsAdd++; m_numNetReadAdd += bytes; }
+	void    sentReplyAdd(int32_t bytes) { m_numRepliesAdd++ ; m_numNetSentAdd += bytes; }
+	int64_t getNumRequestsAdd() const { return m_numReqsAdd; }
+	int64_t getNetReadAdd()     const { return m_numNetReadAdd; }
+	int64_t getNumRepliesAdd()  const { return m_numRepliesAdd; }
+	int64_t getNetSentAdd()     const { return m_numNetSentAdd; }
 
 	// used by main.cpp to periodically save us if we haven't dumped
 	// in a while
-	int64_t getLastWriteTime   ( ) { return m_lastWrite; }
+	int64_t getLastWriteTime() const { return m_lastWrite; }
 	
 	// private:
 
@@ -295,11 +292,11 @@ public:
 	// . called when we've dumped the tree to disk w/ keys ordered
 	void doneDumping ( );
 
-	bool needsDump ( );
+	bool needsDump() const;
 
 	// these are used for computing load on a machine
-	bool isMerging ( ) ;
-	bool isDumping ( ) { return m_dump.isDumping(); }
+	bool isMerging() const;
+	bool isDumping() const { return m_dump.isDumping(); }
 
 	// PageRepair.cpp calls this when it is done rebuilding an rdb
 	// and wants to tell the primary rdb to reload itself using the newly
@@ -409,6 +406,8 @@ public:
 	char m_inDumpLoop;
 
 	char m_rdbId;
+
+private:
 	char m_ks; // key size
 	int32_t m_pageSize;
 

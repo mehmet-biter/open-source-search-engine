@@ -10,6 +10,7 @@
 #include "Proxy.h"
 #include "Parms.h"
 #include "PageRoot.h"
+#include "GigablastRequest.h"
 #include "Process.h"
 
 #ifdef _VALGRIND_
@@ -449,10 +450,7 @@ void handleRequestfd ( UdpSlot *slot , int32_t niceness ) {
 		return;
 	}
 
-	// log this out on gk144 to see why dropping
-	if ( g_conf.m_logDebugBuild )
-		log("fd: handling request transid=%" PRId32" %s", 
-		    slot->m_transId, request );
+	logDebug(g_conf.m_logDebugBuild, "fd: handling request transid=%" PRId32" %s", slot->getTransId(), request);
 
 	// ultimately, Tcp::sendMsg() should be called which will free "s"
 	g_httpServer.requestHandler ( s );
@@ -542,7 +540,7 @@ void HttpServer::requestHandler ( TcpSocket *s ) {
 		if ( now - s_last < 5 ) 
 			s_count++;
 		else {
-			log("query: Too many sockets open. Sending 500 "
+			log(LOG_WARN, "query: Too many sockets open. Sending 500 "
 			    "http status code to %s. (msgslogged=%" PRId32")",
 			    iptoa(s->m_ip),s_count);
 			s_count = 0;
@@ -566,7 +564,7 @@ void HttpServer::requestHandler ( TcpSocket *s ) {
 	// if the HttpRequest was bogus come here
 	if ( ! status ) {
 		// log a bad request
-		log("http: Got bad request from %s: %s",
+		log(LOG_INFO, "http: Got bad request from %s: %s",
 		    iptoa(s->m_ip),mstrerror(g_errno));
 		// cancel the g_errno, we'll send a BAD REQUEST reply to them
 		g_errno = 0;
@@ -767,7 +765,6 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 	if(redirLen > 0) redir = r->getRedir();
 	else if (!isAdmin && 
 		 *g_conf.m_redirect != '\0' &&
-		 // was "raw"
 		 r->getLong("xml", -1) == -1 &&
 		 // do not redirect a 'gb proxy stop' request away,
 		 // which POSTS cast=0&save=1. that is done from the
@@ -1311,9 +1308,9 @@ void cleanUp ( void *state , TcpSocket *s ) {
 							getMsgPieceWrapper , 
 							true );
 	}
-	if ( g_conf.m_logDebugTcp )
-		log("tcp: deleting filestate=0x%" PTRFMT" fd=%" PRId32" [7] "
-		    "s=0x%" PTRFMT"", (PTRTYPE)f,fd,(PTRTYPE)s);
+
+	logDebug(g_conf.m_logDebugTcp, "tcp: deleting filestate=0x%" PTRFMT" fd=%" PRId32" [7] s=0x%" PTRFMT"", (PTRTYPE)f,fd,(PTRTYPE)s);
+
 	// . i guess this is the file state!?!?!
 	// . it seems the socket sometimes is not destroyed when we return
 	//   and we get a sig hangup and call this again!! so make this NULL
@@ -2045,15 +2042,14 @@ int32_t getMsgSize ( char *buf, int32_t bufSize, TcpSocket *s ) {
 	}
 	// warn if we received a post that was truncated
 	if ( totalReplySize > max && isPost ) {
-		log("http: Truncated POST request from %" PRId32" "
+		log(LOG_WARN, "http: Truncated POST request from %" PRId32" "
 		    "to %" PRId32" bytes. Increase \"max other/text doc "
 		    "len\" in Spider Controls page to prevent this.",
 		    totalReplySize,max);
 	}
 	// truncate the reply if we have to
 	if ( totalReplySize > max ) {
-		log("http: truncating reply of %" PRId32" to %" PRId32" bytes",
-		    totalReplySize,max);
+		log(LOG_WARN, "http: truncating reply of %" PRId32" to %" PRId32" bytes", totalReplySize,max);
 		totalReplySize = max;
 	}
 	// truncate if we need to
@@ -2601,7 +2597,7 @@ bool HttpServer::processSquidProxyRequest ( TcpSocket *sock, HttpRequest *hr) {
 	// return true and set g_errno if couldn't make a new File class
 	catch ( ... ) { 
 		g_errno = ENOMEM;
-		log("squid: new(%" PRId32"): %s",
+		log(LOG_WARN, "squid: new(%" PRId32"): %s",
 		    (int32_t)sizeof(SquidState),mstrerror(g_errno));
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. Could not alloc SquidState (%" PRId32")", __FILE__, __func__, __LINE__, (int32_t)sizeof(SquidState));
 		return sendErrorReply(sock,500,mstrerror(g_errno)); 

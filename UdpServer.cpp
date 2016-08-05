@@ -135,16 +135,19 @@ bool UdpServer::init ( uint16_t port, UdpProtocol *proto,
 	log(LOG_DEBUG,"udp: Using dgram size of %" PRId32" bytes.", (int32_t)DGRAM_SIZE);
 
 	// set up linked list of available slots
-	m_head = &m_slots[0];
+	m_availableListHead = &m_slots[0];
 	for ( int32_t i = 0 ; i < m_maxSlots - 1 ; i++ ) {
-		m_slots[ i ].m_next = &m_slots[ i + 1 ];
+		m_slots[ i ].m_availableListNext = &m_slots[ i + 1 ];
 	}
-	m_slots [ m_maxSlots - 1].m_next = NULL;
+	m_slots [ m_maxSlots - 1].m_availableListNext = NULL;
+
 	// the linked list of slots in use
-	m_head2 = NULL;
-	m_tail2 = NULL;
+	m_activeListHead = NULL;
+	m_activeListTail = NULL;
+
 	// linked list of callback candidates
-	m_head3 = NULL;
+	m_callbackListHead = NULL;
+
 	// . set up hash table that converts key (ip/port/transId) to a slot
 	// . m_numBuckets must be power of 2
 	m_numBuckets = getHighestLitBitValue ( m_maxSlots * 6 );
@@ -420,7 +423,7 @@ bool UdpServer::sendRequest(char *msg,
 		return false;
 	}
 
-	if (slot->m_next3 || slot->m_prev3) {
+	if (slot->m_callbackListNext || slot->m_callbackListPrev) {
 		g_process.shutdownAbort(true);
 	}
 
@@ -478,7 +481,7 @@ void UdpServer::sendReply_ass ( char    *msg        ,
 				int16_t    maxWait    ,
 				bool     isCallback2Hot) {
 	// the callback should be NULL
-	if ( slot->m_callback ) {
+	if ( slot->hasCallback() ) {
 		g_errno = EBADENGINEER;
 		log(LOG_LOGIC,"udp: sendReply_ass: Callback is non-NULL.");
 		return;
@@ -491,7 +494,7 @@ void UdpServer::sendReply_ass ( char    *msg        ,
 	int64_t now = gettimeofdayInMillisecondsLocal();
 	// m_queuedTime should have been set before m_handlers[] was called
 	int32_t delta = now - slot->m_queuedTime;
-	int32_t n = slot->m_niceness;
+	int32_t n = slot->getNiceness();
 	if ( n < 0 ) n = 0;
 	if ( n > 1 ) n = 1;
 	// add to average, this is now the reply GENERATION, not handler time
@@ -515,11 +518,11 @@ void UdpServer::sendReply_ass ( char    *msg        ,
 	//   ip/port that sent to us.
 	//if ( g_conf.m_useShotgun && ! useSameSwitch )
 	// now we always set m_host, we use s_shotgun to toggle
-	slot->m_host = g_hostdb.getHost ( slot->m_ip , slot->m_port );
+	slot->m_host = g_hostdb.getHost ( slot->getIp() , slot->getPort() );
 	//else slot->m_host = NULL;
 
 	// discount this
-	if ( slot->m_convertedNiceness == 1 && slot->m_niceness == 0 ) {
+	if ( slot->m_convertedNiceness == 1 && slot->getNiceness() == 0 ) {
 		logDebug(g_conf.m_logDebugUdp, "udp: unconverting slot=%" PTRFMT"", (PTRTYPE)slot);
 
 		// go back to niceness 1 for sending back, otherwise their
@@ -534,7 +537,7 @@ void UdpServer::sendReply_ass ( char    *msg        ,
 
 	// . use a NULL callback since we're sending a reply
 	// . set up for a send
-	if (!slot->sendSetup(msg, msgSize, alloc, allocSize, slot->getMsgType(), now, NULL, NULL, slot->m_niceness, backoff, maxWait)) {
+	if (!slot->sendSetup(msg, msgSize, alloc, allocSize, slot->getMsgType(), now, NULL, NULL, slot->getNiceness(), backoff, maxWait)) {
 		log( LOG_WARN, "udp: Failed to initialize udp socket for sending reply: %s", mstrerror(g_errno));
 		mfree ( alloc , allocSize , "UdpServer");
 		// was EBADENGINEER
@@ -551,7 +554,7 @@ void UdpServer::sendReply_ass ( char    *msg        ,
 	slot->m_maxResends = -1;
 
 	logDebug(g_conf.m_logDebugUdp, "udp: Sending reply transId=%" PRId32" msgType=0x%02x (niceness=%" PRId32").",
-	         slot->m_transId,slot->getMsgType(), (int32_t)slot->m_niceness);
+	         slot->getTransId(),slot->getMsgType(), (int32_t)slot->getNiceness());
 	// keep sending dgrams until we have no more or hit ACK_WINDOW limit
 	if ( ! doSending_ass ( slot , true /*allow resends?*/, now) ) {
 		// . on error deal with that
@@ -593,7 +596,7 @@ bool UdpServer::doSending_ass (UdpSlot *slot,bool allowResends,int64_t now) {
 	// if UdpServer::cancel() was called and this slot's callback was
 	// called, make sure to hault sending if we are in a quickpoll
 	// interrupt...
-	if ( slot->m_calledCallback ) {
+	if ( slot->hasCalledCallback() ) {
 		log("udp: trying to send on called callback slot");
 		return true;
 	}
@@ -724,7 +727,7 @@ UdpSlot *UdpServer::getBestSlotToSend ( int64_t now ) {
 	//   are considered faster so we send to them first
 	// . we set the hi bit in the score for non-resends so dgrams that 
 	//   are being resent take precedence
-	for ( UdpSlot *slot = m_head2 ; slot ; slot = slot->m_next2 ) {
+	for ( UdpSlot *slot = m_activeListHead ; slot ; slot = slot->m_activeListNext ) {
 		// . we don't allow time out on slots waiting for us to send
 		//   stuff, because we'd just end up calling the handler
 		//   too many times. we could invent a "stop" cmd or something.
@@ -1240,7 +1243,7 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 	// . pings should never switch ips though... this was causing
 	//   Host::m_inProgress1 to be unset instead of m_inProgress2 and
 	//   we were never able to regain a dead host on eth1 in PingServer.cpp
-	if ( ip != slot->m_ip && slot->getMsgType() != msg_type_11 ) {
+	if ( ip != slot->getIp() && slot->getMsgType() != msg_type_11 ) {
 		if ( g_conf.m_logDebugUdp )
 			log(LOG_DEBUG,"udp: changing ip to %s for acking",
 			    iptoa(ip));
@@ -1253,19 +1256,19 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 	// we we could not allocate a read buffer to hold the request/reply
 	// just send a cancel ack so the send will call its callback with
 	// g_errno set
-	// MDW: it won't make it into the m_head3 callback linked list with
+	// MDW: it won't make it into the m_callbackListHead linked list with
 	// this logic.... maybe it just times out or resends later...
 	if ( ! status && g_errno == ENOMEM ) goto cancelTrans;
 
 	// if it is now a complete REPLY, callback will need to be called
-	// so insert into the callback linked list, m_head3.
+	// so insert into the callback linked list, m_callbackListHead.
 	// we have to put slots with NULL callbacks in here since they
 	// are incoming requests to handle.
 	if ( //slot->m_callback && 
 	     // if we got an error reading the reply (or sending req?) then
 	     // consider it completed too?
 	     // ( slot->isTransactionComplete() || slot->m_errno ) &&
-	    ( slot->isDoneReading() || slot->m_errno ) ) {
+	    ( slot->isDoneReading() || slot->getErrno() ) ) {
 		// prepare to call the callback by adding it to this
 		// special linked list
 		addToCallbackLinkedList ( slot );
@@ -1322,14 +1325,12 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 // . the problem is when we call this with niceness 1 and we convert
 //   a niceness 1 callback to 0...
 bool UdpServer::makeCallbacks_ass ( int32_t niceness ) {
-
 	// if nothing to call, forget it
-	if ( ! m_head3 ) return false;
+	if (!m_callbackListHead) {
+		return false;
+	}
 
- 	//if ( g_conf.m_logDebugUdp )
-		log(LOG_DEBUG,"udp: makeCallbacks_ass: start. nice=%" PRId32" "
-		    "inquickpoll=%" PRId32,
-		    niceness,(int32_t)g_loop.m_inQuickPoll);
+	logDebug(g_conf.m_logDebugUdp, "udp: makeCallbacks_ass: start. nice=%" PRId32" inquickpoll=%" PRId32, niceness,(int32_t)g_loop.m_inQuickPoll);
 
 	// assume noone called
 	int32_t numCalled = 0;
@@ -1359,10 +1360,9 @@ bool UdpServer::makeCallbacks_ass ( int32_t niceness ) {
 	UdpSlot *nextSlot = NULL;
 
 	// only scan those slots that are ready
-	//for ( UdpSlot *slot = m_head2 ; slot ; slot = slot->m_next2 ) {
-	for ( UdpSlot *slot = m_head3 ; slot ; slot = nextSlot ) {
+	for ( UdpSlot *slot = m_callbackListHead ; slot ; slot = nextSlot ) {
 		// because makeCallback_ass() can delete the slot, use this
-		nextSlot = slot->m_next3;
+		nextSlot = slot->m_callbackListNext;
 		// call quick handlers in pass 0, they do not take any time
 		// and if they do not get called right away can cause this host
 		// to bottleneck many hosts
@@ -1370,14 +1370,14 @@ bool UdpServer::makeCallbacks_ass ( int32_t niceness ) {
 			// never call any high niceness handler/callback when
 			// we are already in quickpoll
 			if ( g_loop.m_inQuickPoll && 
-			     slot->m_niceness != 0 ) continue;
+			     slot->getNiceness() != 0 ) continue;
 			// never call a msg4 handler even if it has niceness 0
 			// if we are in quickpoll, because we might be in 
 			// the Msg4.cpp code already!
 			if ( g_loop.m_inQuickPoll &&
 			     slot->getMsgType() == msg_type_4 ) continue;
 			// only call handlers in pass 0, not reply callbacks
-			if ( slot->m_callback ) continue;
+			if ( slot->hasCallback() ) continue;
 			// only call certain msg handlers...
 			if ( slot->getMsgType() != msg_type_11 &&  // ping
 			     slot->getMsgType() != msg_type_1 &&  // add  RdbList
@@ -1390,7 +1390,7 @@ bool UdpServer::makeCallbacks_ass ( int32_t niceness ) {
 			// only allow niceness 0 msg 0x00 requests here since
 			// we call a msg8a from msg20.cpp summary generation
 			// which uses msg0 to read tagdb list from disk
-			if ( slot->getMsgType() == msg_type_0 && slot->m_niceness ) {
+			if ( slot->getMsgType() == msg_type_0 && slot->getNiceness() ) {
 				// to keep udp slots from clogging up with 
 				// tagdb reads allow even niceness 1 tagdb 
 				// reads through. cache rate should be super
@@ -1410,22 +1410,22 @@ bool UdpServer::makeCallbacks_ass ( int32_t niceness ) {
 		// popular niceness 1 requests and not hold all the other
 		// spiders up.
 		if ( g_loop.m_inQuickPoll &&  
-		     ! slot->m_callback && // must be a handler request
+		     ! slot->hasCallback() && // must be a handler request
 		     // must have been sitting there for 500ms+
 		     // also consider using slot->m_lastActionTime
-		     startTime - slot->m_startTime > 500 &&
+		     startTime - slot->getStartTime() > 500 &&
 		     // only do it for these guys now to make sure it
 		     // doesn't hurt the queries coming in
 		     (slot->getMsgType() == msg_type_13 ||
 		      slot->getMsgType() == msg_type_c) &&
 		     this != &g_dns.m_udpServer &&
-		     slot->m_niceness == 1 &&
+		     slot->getNiceness() == 1 &&
 		     ! slot->m_convertedNiceness &&
 		     // can't be in a quickpoll in its own handler!!!
 		     // we now set this to true BEFORE calling the handler
 		     // so if we are in the handler now but in a quickpoll
 		     // then we do not re-enter the handler!! 
-		     ! slot->m_calledHandler &&
+		     ! slot->hasCalledHandler() &&
 		     slot->m_readBufSize > 0 &&
 		     slot->m_sendBufSize == 0 &&
 		     doNicenessConversion &&
@@ -1450,13 +1450,13 @@ bool UdpServer::makeCallbacks_ass ( int32_t niceness ) {
 		if ( g_loop.m_inQuickPoll &&  
 		     ! slot->m_convertedNiceness &&
 		     this == &g_dns.m_udpServer &&
-		     slot->m_callback &&
-		     slot->m_niceness == 1 &&
+		     slot->hasCallback() &&
+		     slot->getNiceness() == 1 &&
 		     // can't be in a quickpoll in its own handler!!!
 		     // we now set this to true BEFORE calling the handler
 		     // so if we are in the handler now but in a quickpoll
 		     // then we do not re-enter the handler!! 
-		     ! slot->m_calledCallback &&
+		     ! slot->hasCalledCallback() &&
 		     slot->m_readBufSize > 0 &&
 		     slot->m_sendBufSize > 0 &&
 		     doNicenessConversion &&
@@ -1479,15 +1479,15 @@ bool UdpServer::makeCallbacks_ass ( int32_t niceness ) {
 
 		// never call any high niceness handler/callback when
 		// we are already in quickpoll
-		if ( g_loop.m_inQuickPoll &&  slot->m_niceness != 0 ) continue;
+		if ( g_loop.m_inQuickPoll &&  slot->getNiceness() != 0 ) continue;
 		// skip if not level we want
-		if ( niceness <= 0 && slot->m_niceness > 0 && pass>0) continue;
+		if ( niceness <= 0 && slot->getNiceness() > 0 && pass>0) continue;
 		// set g_errno before calling
-		g_errno = slot->m_errno;
+		g_errno = slot->getErrno();
 		// if we got an error from him, set his stats
 		Host *h = NULL;
-		if ( g_errno && slot->m_hostId >= 0 ) 
-			h = g_hostdb.getHost ( slot->m_hostId );
+		if ( g_errno && slot->getHostId() >= 0 )
+			h = g_hostdb.getHost ( slot->getHostId() );
 		if ( h ) {
 			h->m_errorReplies++;
 			if ( g_errno == ETRYAGAIN ) 
@@ -1498,17 +1498,14 @@ bool UdpServer::makeCallbacks_ass ( int32_t niceness ) {
 		// time it now
 		int64_t start2 = 0;
 		bool logIt = false;
-		if ( slot->m_niceness == 0 ) logIt = true;
+		if ( slot->getNiceness() == 0 ) logIt = true;
 		if ( logIt ) start2 = gettimeofdayInMillisecondsLocal();
 		// log that
 		if ( g_conf.m_logDebugUdp )
 			log(LOG_DEBUG,"udp: calling callback/handler for "
 			    "slot=%" PTRFMT" pass=%" PRId32" nice=%" PRId32,
 			    (PTRTYPE)slot,
-			    (int32_t)pass,(int32_t)slot->m_niceness);
-
-		// save it
-		//UdpSlot *next3 = slot->m_next2;
+			    (int32_t)pass,(int32_t)slot->getNiceness());
 
 		// . crap, this can alter the linked list we are scanning
 		//   if it deletes the slot! yes, but now we use "nextSlot"
@@ -1523,7 +1520,7 @@ bool UdpServer::makeCallbacks_ass ( int32_t niceness ) {
 		int64_t took = 0;
 		if ( logIt )
 			took = gettimeofdayInMillisecondsLocal()-start2;
-		if ( took > 1000 || (slot->m_niceness==0 && took>100))
+		if ( took > 1000 || (slot->getNiceness()==0 && took>100))
 			logf(LOG_DEBUG,"udp: took %" PRId64" ms to call "
 			     "callback/handler for "
 			     "msgtype=0x%" PRIx32" "
@@ -1531,7 +1528,7 @@ bool UdpServer::makeCallbacks_ass ( int32_t niceness ) {
 			     "callback=%" PTRFMT"",
 			     took,
 			     (int32_t)slot->getMsgType(),
-			     (int32_t)slot->m_niceness,
+			     (int32_t)slot->getNiceness(),
 			     (PTRTYPE)slot->m_callback);
 		numCalled++;
 
@@ -1623,11 +1620,13 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 	bool oom = ((((float)g_mem.getUsedMem())/(float)g_mem.getMaxMem()) >= .990);
 
 	// callback is non-NULL if we initiated the transaction 
-	if ( slot->m_callback ) { 
+	if ( slot->hasCallback() ) {
 
 		// assume the slot's error when making callback
 		// like EUDPTIMEDOUT
-		if ( ! g_errno ) g_errno = slot->m_errno;
+		if ( ! g_errno ) {
+			g_errno = slot->getErrno();
+		}
 
 		// . if transaction has not fully completed, bail
 		// . unless there was an error
@@ -1640,7 +1639,7 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 		// debug msg
 		if ( g_conf.m_logDebugUdp ) {
 			int64_t now  = gettimeofdayInMillisecondsLocal();
-			int64_t took = now - slot->m_startTime;
+			int64_t took = now - slot->getStartTime();
 			//if ( took > 10 )
 			int32_t Mbps = 0;
 			if ( took > 0 ) Mbps = slot->m_readBufSize / took;
@@ -1651,40 +1650,37 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 			    "niceness=%" PRId32" "
 			    "callback=%08" PTRFMT" "
 			    "took %" PRId64" ms (%" PRId32" Mbps).",
-			    slot->m_transId,msgType,
+			    slot->getTransId(),msgType,
 			    mstrerror(g_errno),
-			    slot->m_niceness,
+			    slot->getNiceness(),
 			    (PTRTYPE)slot->m_callback ,
 			    took , Mbps );
 			start = now;
 		}
 		// mark it in the stats for PageStats.cpp
 		if      ( g_errno == EUDPTIMEDOUT )
-			g_stats.m_timeouts[msgType][slot->m_niceness]++;
+			g_stats.m_timeouts[msgType][slot->getNiceness()]++;
 		else if ( g_errno == ENOMEM ) 
-			g_stats.m_nomem[msgType][slot->m_niceness]++;
+			g_stats.m_nomem[msgType][slot->getNiceness()]++;
 		else if ( g_errno ) 
-			g_stats.m_errors[msgType][slot->m_niceness]++;
+			g_stats.m_errors[msgType][slot->getNiceness()]++;
 
 		if ( g_conf.m_maxCallbackDelay >= 0 )//&&slot->m_niceness==0) 
 			start = gettimeofdayInMillisecondsLocal();
 
 		// sanity check for double callbacks
-		if ( slot->m_calledCallback ) { g_process.shutdownAbort(true); }
+		if ( slot->hasCalledCallback() ) {
+			g_process.shutdownAbort(true);
+		}
+
+		slot->m_calledCallback = true;
 
 		// now we got a reply or an g_errno so call the callback
 
 		if ( g_conf.m_logDebugLoop && slot->getMsgType() != msg_type_11 )
 			log(LOG_DEBUG,"loop: enter callback for 0x%" PRIx32" "
-			    "nice=%" PRId32,(int32_t)slot->getMsgType(),slot->m_niceness);
+			    "nice=%" PRId32,(int32_t)slot->getMsgType(),slot->getNiceness());
 
-		// sanity check -- avoid double calls
-		if ( slot->m_calledCallback ) { g_process.shutdownAbort(true); }
-
-		slot->m_calledCallback++;
-
-		// sanity check -- avoid double calls
-		if ( slot->m_calledCallback != 1 ) { g_process.shutdownAbort(true); }
 
 		// . sanity check - if in a high niceness callback, we should
 		//   only be calling niceness 0 callbacks here
@@ -1696,17 +1692,19 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 		//	g_process.shutdownAbort(true);}
 
 		// sanity check. has this slot been excised from linked list?
-		if ( slot->m_prev2 && slot->m_prev2->m_next2 != slot ) {
-			g_process.shutdownAbort(true); }
+		if ( slot->m_activeListPrev && slot->m_activeListPrev->m_activeListNext != slot ) {
+			g_process.shutdownAbort(true);
+		}
 
 		// sanity check. has this slot been excised from linked list?
-		if ( slot->m_prev2 && slot->m_prev2->m_next2 != slot ) {
-			g_process.shutdownAbort(true); }
+		if ( slot->m_activeListPrev && slot->m_activeListPrev->m_activeListNext != slot ) {
+			g_process.shutdownAbort(true);
+		}
 
 		// save niceness
 		saved = g_niceness;
 		// set it
-		g_niceness = slot->m_niceness;
+		g_niceness = slot->getNiceness();
 		// make sure not 2
 		if ( g_niceness >= 2 ) g_niceness = 1;
 
@@ -1715,7 +1713,7 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 		// use the transId of the slot to count!
 		g_callSlot = slot;
 
-		slot->m_callback ( slot->m_state , slot ); 
+		slot->m_callback(slot->m_state, slot);
 
 		g_callSlot = NULL;
 
@@ -1724,17 +1722,17 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 
 		if ( g_conf.m_logDebugLoop && slot->getMsgType() != msg_type_11 )
 			log(LOG_DEBUG,"loop: exit callback for 0x%" PRIx32" "
-			    "nice=%" PRId32,(int32_t)slot->getMsgType(),slot->m_niceness);
+			    "nice=%" PRId32,(int32_t)slot->getMsgType(),slot->getNiceness());
 
 		if ( g_conf.m_maxCallbackDelay >= 0 ) {
 			int64_t elapsed = gettimeofdayInMillisecondsLocal()-
 				start;
-			if ( slot->m_niceness == 0 &&
+			if ( slot->getNiceness() == 0 &&
 			     elapsed >= g_conf.m_maxCallbackDelay )
 				log("udp: Took %" PRId64" ms to call "
 				    "callback for msgType=0x%02x niceness=%" PRId32,
 				    elapsed,slot->getMsgType(),
-				    (int32_t)slot->m_niceness);
+				    (int32_t)slot->getNiceness());
 		}
 
 		// time it
@@ -1750,12 +1748,12 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 		return true;
 	}
 	// don't repeat call the handler if we already called it
-	if ( slot->m_calledHandler ) {
+	if ( slot->hasCalledHandler() ) {
 		// . if transaction has not fully completed, keep sending
 		// . unless there was an error
 		if ( ! g_errno && 
 		     ! slot->isTransactionComplete() &&
-		     ! slot->m_errno ) {
+		     ! slot->getErrno() ) {
 			if ( g_conf.m_logDebugUdp )
 				log("udp: why calling handler "
 				    "when not ready?");
@@ -1800,7 +1798,7 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 					    "msgType=0x%02x "
 					    "g_errno=%s callback2=%08" PTRFMT""
 					    " took %" PRId64" ms.",
-					    slot->m_transId,msgType,
+					    slot->getTransId(),msgType,
 					    mstrerror(g_errno),
 					    (PTRTYPE)slot->m_callback2,
 					    took );
@@ -1856,7 +1854,7 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 	// debug msg
 	if ( g_conf.m_logDebugUdp )
 		log(LOG_DEBUG,"udp: Calling handler for transId=%" PRId32" "
-		    "msgType=0x%02x.", slot->m_transId , msgType );
+		    "msgType=0x%02x.", slot->getTransId() , msgType );
 
 
 	// record some statistics on how long this was waiting to be called
@@ -1864,7 +1862,7 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 	delta = now - slot->m_queuedTime;
 	// sanity check
 	if ( slot->m_queuedTime == -1 ) { g_process.shutdownAbort(true); }
-	n = slot->m_niceness;
+	n = slot->getNiceness();
 	if ( n < 0 ) n = 0;
 	if ( n > 1 ) n = 1;
 	// add to average
@@ -1887,7 +1885,7 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 	// log it now
 	if ( slot->getMsgType() != msg_type_11 && g_conf.m_logDebugLoop )
 		log(LOG_DEBUG,"loop: enter handler for 0x%" PRIx32" nice=%" PRId32,
-		    (int32_t)slot->getMsgType(),(int32_t)slot->m_niceness);
+		    (int32_t)slot->getMsgType(),(int32_t)slot->getNiceness());
 
 	// . sanity check - if in a high niceness callback, we should
 	//   only be calling niceness 0 callbacks here.
@@ -1898,7 +1896,7 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 	// save niceness
 	saved = g_niceness;
 	// set it
-	g_niceness = slot->m_niceness;
+	g_niceness = slot->getNiceness();
 	// make sure not 2
 	if ( g_niceness >= 2 ) g_niceness = 1;
 
@@ -1908,7 +1906,7 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 	g_callSlot = slot;
 
 	// if we are out of mem basically, do not waste time fucking around
-	if ( slot->getMsgType() != msg_type_11 && slot->m_niceness == 0 && oom ) {
+	if ( slot->getMsgType() != msg_type_11 && slot->getNiceness() == 0 && oom ) {
 		// log it
 		static int32_t lcount = 0;
 		if ( lcount == 0 )
@@ -1936,15 +1934,19 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 		// flag it so Loop.cpp does not re-nice quickpoll niceness
 		g_inHandler = true;
 		// sanity
-		if ( slot->m_calledHandler ) { g_process.shutdownAbort(true); }
+		if ( slot->hasCalledHandler() ) {
+			g_process.shutdownAbort(true);
+		}
+
 		// set this here now so it doesn't get its niceness converted
 		// then it re-enters the same handler here but in a quickpoll!
 		slot->m_calledHandler = true;
+
 		// sanity so msg0.cpp hack works
-		if ( slot->m_niceness == 99 ) { g_process.shutdownAbort(true); }
+		if ( slot->getNiceness() == 99 ) { g_process.shutdownAbort(true); }
 		// . this is the niceness of the server, not the slot
 		// . NO, now it is the slot's niceness. that makes sense.
-		m_handlers [ slot->getMsgType() ] ( slot , slot->m_niceness ) ;
+		m_handlers [ slot->getMsgType() ] ( slot , slot->getNiceness() ) ;
 		// let loop.cpp know we're done then
 		g_inHandler = saved2;
 	}
@@ -1956,16 +1958,10 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 
 	if ( slot->getMsgType() != msg_type_11 && g_conf.m_logDebugLoop )
 		log(LOG_DEBUG,"loop: exit handler for 0x%" PRIx32" nice=%" PRId32,
-		    (int32_t)slot->getMsgType(),(int32_t)slot->m_niceness);
+		    (int32_t)slot->getMsgType(),(int32_t)slot->getNiceness());
 
 	// we called the handler, don't call it again
 	slot->m_calledHandler = true;
-
-	//if (g_conf.m_profilingEnabled){
-	//	if(!g_profiler.endTimer(address, __PRETTY_FUNCTION__))
-	//		log(LOG_WARN,"admin: Couldn't add the fn %" PRId32,
-	//		    (int32_t)address);
-	//}
 
 	// i've seen a bunch of msg20 handlers called in a row take over 
 	// 10 seconds and the heartbeat gets starved and dumps core
@@ -1980,10 +1976,10 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 	if ( g_conf.m_maxCallbackDelay >= 0 ) {
 		int64_t elapsed = gettimeofdayInMillisecondsLocal() - start;
 		if ( elapsed >= g_conf.m_maxCallbackDelay &&
-		     slot->m_niceness == 0 )
+		     slot->getNiceness() == 0 )
 			log("udp: Took %" PRId64" ms to call "
 			    "HANDLER for msgType=0x%02x niceness=%" PRId32,
-			    elapsed,slot->getMsgType(),(int32_t)slot->m_niceness);
+			    elapsed,slot->getMsgType(),(int32_t)slot->getNiceness());
 	}
 
 	// bitch if it blocked for too long
@@ -2000,10 +1996,10 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 		    "g_errno=%s callback=%08" PTRFMT" "
 		    "niceness=%" PRId32" "
 		    "took %" PRId64" ms.",
-		    (int32_t)slot->m_transId , (PTRTYPE)slot,
+		    (int32_t)slot->getTransId() , (PTRTYPE)slot,
 		    msgType, (int32_t)slot->m_readBufSize , mstrerror(g_errno),
 		    (PTRTYPE)slot->m_callback,
-		    (int32_t)slot->m_niceness,
+		    (int32_t)slot->getNiceness(),
 		    took );
 	}
 	// clear any g_errno that may have been set
@@ -2021,12 +2017,12 @@ void UdpServer::timePollWrapper(int fd, void *state) {
 void UdpServer::timePoll ( ) {
 	// debug msg
 	//if ( g_conf.m_logDebugUdp ) 
-	//	log(LOG_DEBUG,"udp: timepoll: inSigHandler=%" PRId32", m_head2=%" PRId32".",
-	//	    (int32_t)g_inSigHandler,(int32_t)m_head2);
+	//	log(LOG_DEBUG,"udp: timepoll: inSigHandler=%" PRId32", m_activeListHead=%" PRId32".",
+	//	    (int32_t)g_inSigHandler,(int32_t)m_activeListHead);
 	// timeout dead hosts if we should
 	//if ( g_conf.m_giveupOnDeadHosts ) timeoutDeadHosts ( );
 
-	if ( ! m_head2 ) return;
+	if ( ! m_activeListHead ) return;
 	// debug msg
 	//if ( g_conf.m_logDebugUdp ) log("enter timePoll");
 	// only repeat once
@@ -2067,11 +2063,11 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 	// did we do something? assume not.
 	bool something = false;
 	// loop over occupied slots
-	for ( UdpSlot *slot = m_head2 ; slot ; slot = slot->m_next2 ) {
+	for ( UdpSlot *slot = m_activeListHead ; slot ; slot = slot->m_activeListNext ) {
 		// clear g_errno
 		g_errno = 0;
 		// only deal with niceness 0 slots when in a quickpoll
-		if ( g_loop.m_inQuickPoll && slot->m_niceness != 0 ) continue;
+		if ( g_loop.m_inQuickPoll && slot->getNiceness() != 0 ) continue;
 		// debug msg
 		if ( g_conf.m_logDebugUdp ) {
 			log(LOG_DEBUG,
@@ -2087,17 +2083,17 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 			    "timeout=%" PRIu64" "
 			    "sentBitsOn=%" PRId32" "
 			    "readAckBitsOn=%" PRId32" ",
-			    slot->m_transId,
-			    iptoa(slot->m_ip) + 6,
-			    (uint16_t) slot->m_port,
+			    slot->getTransId(),
+			    iptoa(slot->getIp()),
+			    (uint16_t) slot->getPort(),
 			    (int32_t) slot->isDoneReading(),
-			    slot->m_dgramsToSend,
-			    slot->m_resendTime,
-			    (uint64_t) slot->m_lastReadTime,
-			    (uint64_t) (now - slot->m_lastReadTime),
-			    (uint64_t) slot->m_lastSendTime,
-			    (uint64_t) (now - slot->m_lastSendTime),
-			    (uint64_t) slot->m_timeout,
+			    slot->getDatagramsToSend(),
+			    slot->getResendTime(),
+			    (uint64_t) slot->getLastReadTime(),
+			    (uint64_t) (now - slot->getLastReadTime()),
+			    (uint64_t) slot->getLastSendTime(),
+			    (uint64_t) (now - slot->getLastSendTime()),
+			    (uint64_t) slot->getTimeout(),
 			    slot->m_sentBitsOn,
 			    slot->m_readAckBitsOn);
 		}
@@ -2108,22 +2104,22 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 		// reply yet, then continue because when reply is generated
 		// UdpServer::sendReply(slot) will be called and we don't
 		// want slot to be destroyed because it timed out...
-		if ( slot->isDoneReading() && slot->m_dgramsToSend <= 0 ) {
+		if ( slot->isDoneReading() && slot->getDatagramsToSend() <= 0 ) {
 			continue;
 		}
 
 		// fix if clock changed!
-		if ( slot->m_lastReadTime > now ) {
+		if ( slot->getLastReadTime() > now ) {
 			slot->m_lastReadTime = now;
 		}
-		if ( slot->m_lastSendTime > now ) {
+		if ( slot->getLastSendTime() > now ) {
 			slot->m_lastSendTime = now;
 		}
 
 		// get time elapsed since last read
-		int64_t elapsed = now - slot->m_lastReadTime;
+		int64_t elapsed = now - slot->getLastReadTime();
 		// set all timeouts to 4 secs if we are shutting down
-		if ( m_isShuttingDown && slot->m_timeout > 4000 ) {
+		if ( m_isShuttingDown && slot->getTimeout() > 4000 ) {
 			slot->m_timeout = 4000;
 		}
 		
@@ -2134,7 +2130,7 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 		// . 3. they take too long to ACK our reply 
 		// . 4. they take too long to ACK our request
 		// . only flag it if we haven't already...
-		if ( elapsed >= slot->m_timeout && slot->m_errno != EUDPTIMEDOUT ) {
+		if ( elapsed >= slot->getTimeout() && slot->getErrno() != EUDPTIMEDOUT ) {
 			// . set slot's m_errno field
 			// . makeCallbacks_ass() should call its callback
 			slot->m_errno = EUDPTIMEDOUT;
@@ -2148,17 +2144,17 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 		}
 
 		// how long since last send?
-		int64_t delta = now - slot->m_lastSendTime;
+		int64_t delta = now - slot->getLastSendTime();
 
 		// if elapsed is negative, then someone changed the system
 		// clock on us, so it won't hurt to resend just to update
 		// otherwise, we could be waiting years to resend
 		if ( delta < 0 ) {
-			delta = slot->m_resendTime;
+			delta = slot->getResendTime();
 		}
 
 		// continue if we just sent something
-		if ( delta < slot->m_resendTime ) {
+		if ( delta < slot->getResendTime() ) {
 			continue;
 		}
 
@@ -2189,7 +2185,7 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 		}
 		*/
 		// if we don't have anything ready to send continue
-		if ( slot->m_dgramsToSend <= 0 ) continue;
+		if ( slot->getDatagramsToSend() <= 0 ) continue;
 		// if shutting down, rather than resending the reply, just
 		// force it as if it were sent. then makeCallbacks can 
 		// destroy it.
@@ -2237,12 +2233,14 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 		// spider time requests typically have timeouts of 1 year!
 		// so we end up waiting for the host to come back online
 		// before the spider can proceed.
-		if ( slot->m_niceness ) timeout = slot->m_timeout;
+		if ( slot->getNiceness() ) {
+			timeout = slot->getTimeout();
+		}
 
 		// check it
 		if ( slot->m_maxResends >= 0 &&
 		     // if maxResends it 0, do not do ANY resend! just err out.
-		     slot->m_resendCount >= slot->m_maxResends &&
+		     slot->getResendCount() >= slot->m_maxResends &&
 		     // did not get all acks
 		     slot->m_sentBitsOn > slot->m_readAckBitsOn &&
 		     // fix too many timing out slot msgs when a host is
@@ -2251,7 +2249,7 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 		     // respect slot's timeout too!
 		     elapsed > timeout &&
 		     // only do this when sending a request
-		     slot->m_callback ) {
+		     slot->hasCallback() ) {
 			// should this be ENOACK or something?
 			slot->m_errno = EUDPTIMEDOUT;
 			// prepare to call the callback by adding it to this
@@ -2264,8 +2262,8 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 			    "after %" PRId32" resends. hostid=%" PRId32" "
 			    "(elapsed=%" PRId64")" ,
 			    (int32_t)slot->getMsgType(),
-			    (int32_t)slot->m_resendCount ,
-			    slot->m_hostId,elapsed);
+			    (int32_t)slot->getResendCount() ,
+			    slot->getHostId(),elapsed);
 			// keep going
 			continue;
 		}			
@@ -2296,7 +2294,7 @@ void UdpServer::destroySlot ( UdpSlot *slot ) {
 	if ( ! slot ) return;
 	// if we're deleting a slot that was an incoming request then
 	// decrement m_requestsInWaiting (exclude pings)
-	if ( ! slot->m_callback && slot->getMsgType() != msg_type_11 ) {
+	if ( ! slot->hasCallback() && slot->getMsgType() != msg_type_11 ) {
 		// one less request in waiting
 		m_requestsInWaiting--;
 		// special count
@@ -2366,19 +2364,21 @@ bool UdpServer::shutdown ( bool urgent ) {
 	time_t now = getTime();
 	int32_t count = 0;
 	if(!urgent) {
-		//if ( m_head && m_head2->m_next2 ) return false;	      
-		for ( UdpSlot *slot = m_head2 ; slot ; slot = slot->m_next2 ) {
+		//if ( m_head && m_activeListHead->m_activeListNext ) return false;
+		for ( UdpSlot *slot = m_activeListHead ; slot ; slot = slot->m_activeListNext ) {
 			// if we initiated, then don't count it
-			if ( slot->m_callback ) continue;
+			if ( slot->hasCallback() ) continue;
 			// don't bother with pings or other hosts shutdown 
 			if ( slot->getMsgType() == msg_type_11 ) continue;
 			// set all timeouts to 3 secs
-			if ( slot->m_timeout > 3000 ) slot->m_timeout = 3000;
+			if ( slot->getTimeout() > 3000 ) {
+				slot->m_timeout = 3000;
+			}
 			// . don't count lagging slots that haven't got 
 			//   a read in 5 sec
-			if ( now - slot->m_lastReadTime > 5 ) continue;
+			if ( now - slot->getLastReadTime() > 5 ) continue;
 			// don't count if timer fucked up
-			if ( now - slot->m_lastReadTime < 0 ) continue;
+			if ( now - slot->getLastReadTime() < 0 ) continue;
 			// count it
 			count++;
 		}
@@ -2425,13 +2425,13 @@ bool UdpServer::timeoutDeadHosts ( Host *h ) {
 	// get time now
 	//time_t now = getTime();
 	// find sockets out to dead hosts and change the timeout
-	for ( UdpSlot *slot = m_head2 ; slot ; slot = slot->m_next2 ) {
+	for ( UdpSlot *slot = m_activeListHead ; slot ; slot = slot->m_activeListNext ) {
 		// only change requests to dead hosts
-		if ( slot->m_hostId < 0 ) continue;
+		if ( slot->getHostId() < 0 ) continue;
 		//! g_hostdb.isDead(slot->m_hostId) ) continue;
-		if ( slot->m_hostId != h->m_hostId ) continue;
+		if ( slot->getHostId() != h->m_hostId ) continue;
 		// if we didn't initiate, then don't count it
-		if ( ! slot->m_callback ) continue;
+		if ( ! slot->hasCallback() ) continue;
 		// don't bother with pings or other hosts shutdown broadcasts
 		if ( slot->getMsgType() == msg_type_11 ) continue;
 		// set all timeouts to 5 secs
@@ -2443,10 +2443,8 @@ bool UdpServer::timeoutDeadHosts ( Host *h ) {
 
 // verified that this is not interruptible
 UdpSlot *UdpServer::getEmptyUdpSlot_ass ( key_t k , bool incoming ) {
-	// tmp debug
-	//if ( (rand() % 10) == 1 ) slot = NULL
 	// return NULL if none left
-	if ( ! m_head ) { 
+	if ( ! m_availableListHead ) {
 		g_errno = ENOSLOTS;
 		if (g_conf.m_logNetCongestion) {
 			log(LOG_WARN, "udp: %" PRId32" of %" PRId32" udp slots occupied. None available to handle this new transaction.",
@@ -2454,46 +2452,40 @@ UdpSlot *UdpServer::getEmptyUdpSlot_ass ( key_t k , bool incoming ) {
 		}
 		return NULL;
 	}
-	UdpSlot *slot = m_head;
+
+	UdpSlot *slot = m_availableListHead;
+
 	// remove from linked list of available slots
-	m_head = m_head->m_next;
-	// add to linked list of used slots
-	//slot->m_next2    = m_head2;
-	//slot->m_prev2    = NULL;
-	//if ( m_head2 ) m_head2->m_prev2 = slot;
-	//m_head2          = slot;
+	m_availableListHead = m_availableListHead->m_availableListNext;
+
 	// put the used slot at the tail so older slots are at the head and
 	// makeCallbacks() can take care of the callbacks that have been
 	// waiting the longest first...
-	if ( m_tail2 ) {
-		slot->m_next2    = NULL;
-		slot->m_prev2    = m_tail2;
-		m_tail2->m_next2 = slot;
-		m_tail2          = slot;
+	if (m_activeListTail) {
+		slot->m_activeListNext = NULL;
+		slot->m_activeListPrev = m_activeListTail;
+		m_activeListTail->m_activeListNext = slot;
+		m_activeListTail = slot;
+	} else {
+		slot->m_activeListNext = NULL;
+		slot->m_activeListPrev = NULL;
+		m_activeListHead = slot;
+		m_activeListTail = slot;
 	}
-	else {
-		slot->m_next2    = NULL;
-		slot->m_prev2    = NULL;
-		m_head2          = slot;
-		m_tail2          = slot;
-	}
-	// also to callback candidates if we should
-	// if ( hasCallback ) {
-	// 	slot->m_next3    = m_head3;
-	// 	slot->m_prev3    = NULL;
-	// 	if ( m_head3 ) m_head3->m_prev3 = slot;
-	// 	m_head3          = slot;
-	// }
+
 	// count it
 	m_numUsedSlots++;
 
-	if ( incoming ) m_numUsedSlotsIncoming++;
+	if ( incoming ) {
+		m_numUsedSlotsIncoming++;
+	}
 
 	slot->m_incoming = incoming;
 
 	// now store ptr in hash table
 	slot->m_key = k;
-	addKey ( k , slot );
+	addKey(k, slot);
+
 	return slot;
 }
 
@@ -2521,87 +2513,96 @@ UdpSlot *UdpServer::getUdpSlot ( key_t k ) {
 
 void UdpServer::addToCallbackLinkedList ( UdpSlot *slot ) {
 	// debug log
-	if ( g_conf.m_logDebugUdp && slot->m_errno )
-		log("udp: adding slot with err = %s to callback list"
-		    , mstrerror(slot->m_errno) );
-	if ( g_conf.m_logDebugUdp )
-		log("udp: adding slot=%" PTRFMT" to callback list"
-		    ,(PTRTYPE)slot);
+	if (g_conf.m_logDebugUdp) {
+		if (slot->getErrno()) {
+			log(LOG_DEBUG, "udp: adding slot with err=%s to callback list", mstrerror(slot->m_errno) );
+		} else {
+			log(LOG_DEBUG, "udp: adding slot=%" PTRFMT" to callback list", (PTRTYPE)slot);
+		}
+	}
+
 	// must not be in there already, lest we double add it
 	if ( isInCallbackLinkedList ( slot ) ) {
-		if ( g_conf.m_logDebugUdp )
-			log("udp: avoided double add slot=%" PTRFMT
-			    ,(PTRTYPE)slot);
+		logDebug(g_conf.m_logDebugUdp, "udp: avoided double add slot=%" PTRFMT,(PTRTYPE)slot);
 		return;
 	}
-	slot->m_next3 = NULL;
-	slot->m_prev3 = NULL;
-	if ( ! m_tail3 ) {
-		m_head3 = slot;
-		m_tail3 = slot;
-	}
-	else {
+
+	slot->m_callbackListNext = NULL;
+	slot->m_callbackListPrev = NULL;
+
+	if ( ! m_callbackListTail ) {
+		m_callbackListHead = slot;
+		m_callbackListTail = slot;
+	} else {
 		// insert at end of linked list otherwise
-		m_tail3->m_next3 = slot;
-		slot->m_prev3 = m_tail3;
-		m_tail3 = slot;
+		m_callbackListTail->m_callbackListNext = slot;
+		slot->m_callbackListPrev = m_callbackListTail;
+		m_callbackListTail = slot;
 	}
 }
 
 bool UdpServer::isInCallbackLinkedList ( UdpSlot *slot ) {
 	// return if not in the linked list
-	if ( slot->m_prev3 ) return true;
-	if ( slot->m_next3 ) return true;
-	if ( m_head3 == slot ) return true;
+	if ( slot->m_callbackListPrev || slot->m_callbackListNext || m_callbackListHead == slot ) {
+		return true;
+	}
 	return false;
 }
 
 void UdpServer::removeFromCallbackLinkedList ( UdpSlot *slot ) {
-
-	if ( g_conf.m_logDebugUdp )
-		log("udp: removing slot=%" PTRFMT" from callback list"
-		    ,(PTRTYPE)slot);
+	logDebug(g_conf.m_logDebugUdp, "udp: removing slot=%" PTRFMT" from callback list",(PTRTYPE)slot);
 
 	// return if not in the linked list
-	if ( slot->m_prev3 == NULL && 
-	     slot->m_next3 == NULL && 
-	     m_head3 != slot )
+	if ( slot->m_callbackListPrev == NULL &&
+	     slot->m_callbackListNext == NULL &&
+			m_callbackListHead != slot )
 		return;
 
 	// excise from linked list otherwise
-	if ( m_head3 == slot )
-		m_head3 = slot->m_next3;
-	if ( m_tail3 == slot )
-		m_tail3 = slot->m_prev3;
+	if ( m_callbackListHead == slot ) {
+		m_callbackListHead = slot->m_callbackListNext;
+	}
+	if ( m_callbackListTail == slot )
+		m_callbackListTail = slot->m_callbackListPrev;
 
-	if ( slot->m_prev3 ) 
-		slot->m_prev3->m_next3 = slot->m_next3;
-	if ( slot->m_next3 ) 
-		slot->m_next3->m_prev3 = slot->m_prev3;
+	if ( slot->m_callbackListPrev )
+		slot->m_callbackListPrev->m_callbackListNext = slot->m_callbackListNext;
+	if ( slot->m_callbackListNext )
+		slot->m_callbackListNext->m_callbackListPrev = slot->m_callbackListPrev;
 
 	// and so we do not try to re-excise it
-	slot->m_prev3 = NULL;
-	slot->m_next3 = NULL;
+	slot->m_callbackListPrev = NULL;
+	slot->m_callbackListNext = NULL;
 }
 
 // verified that this is not interruptible
 void UdpServer::freeUdpSlot_ass ( UdpSlot *slot ) {
 	// set the new head/tail if we were it
-	if ( slot == m_tail2 ) m_tail2 = slot->m_prev2;
-	if ( slot == m_head2 ) m_head2 = slot->m_next2;
+	if ( slot == m_activeListTail ) {
+		m_activeListTail = slot->m_activeListPrev;
+	}
+	if ( slot == m_activeListHead ) {
+		m_activeListHead = slot->m_activeListNext;
+	}
 	// remove from linked list of used slots
-	if ( slot->m_prev2 ) slot->m_prev2->m_next2 = slot->m_next2;
-	if ( slot->m_next2 ) slot->m_next2->m_prev2 = slot->m_prev2;
+	if ( slot->m_activeListPrev ) {
+		slot->m_activeListPrev->m_activeListNext = slot->m_activeListNext;
+	}
+	if ( slot->m_activeListNext ) {
+		slot->m_activeListNext->m_activeListPrev = slot->m_activeListPrev;
+	}
+
 	// also from callback candidates if we should
 	removeFromCallbackLinkedList ( slot );
+
 	// discount it
 	m_numUsedSlots--;
 
 	if ( slot->m_incoming ) m_numUsedSlotsIncoming--;
 
 	// add to linked list of available slots
-	slot->m_next = m_head;
-	m_head = slot;
+	slot->m_availableListNext = m_availableListHead;
+	m_availableListHead = slot;
 	// . get bucket number in hash table
 	// . may have change since table often gets rehashed
 	key_t k = slot->m_key;
@@ -2617,9 +2618,9 @@ void UdpServer::freeUdpSlot_ass ( UdpSlot *slot ) {
 		log(LOG_DEBUG,"udp: freeUdpSlot_ass: Freeing slot "
 		    "tid=%" PRId32" "
 		    "dst=%s:%" PRIu32" slot=%" PTRFMT"",
-		    slot->m_transId,
-		    iptoa(slot->m_ip)+6,
-		    (uint32_t)slot->m_port,
+		    slot->getTransId(),
+		    iptoa(slot->getIp()),
+		    (uint32_t)slot->getPort(),
 		    (PTRTYPE)slot);
 	// remove the bucket
 	m_ptrs [ i ] = NULL;
@@ -2638,13 +2639,15 @@ void UdpServer::freeUdpSlot_ass ( UdpSlot *slot ) {
 void UdpServer::cancel ( void *state , msg_type_t msgType ) {
 	// . if we have transactions in progress wait
 	// . but if we're waiting for a reply, don't bother
-	for ( UdpSlot *slot = m_head2 ; slot ; slot = slot->m_next2 ) {
+	for ( UdpSlot *slot = m_activeListHead ; slot ; slot = slot->m_activeListNext ) {
 		// skip if not a match
 		if (slot->m_state != state || slot->getMsgType() != msgType) {
 			continue;
 		}
+
 		// note it
 		log(LOG_INFO,"udp: cancelled udp socket. msgType=0x%02x.", slot->getMsgType());
+
 		// let them know why we are calling the callback prematurely
 		g_errno = ECANCELLED;
 		// stop waiting for reply, this will call destroySlot(), too
@@ -2659,15 +2662,15 @@ void UdpServer::replaceHost ( Host *oldHost, Host *newHost ) {
 	      (uint32_t)oldHost->m_ipShotgun,
 	      (uint32_t)oldHost->m_port );//, oldHost->m_port2 );
 	// . loop over outstanding transactions looking for ones to oldHost
-	for ( UdpSlot *slot = m_head2; slot; slot = slot->m_next2 ) {
+	for ( UdpSlot *slot = m_activeListHead; slot; slot = slot->m_activeListNext ) {
 		// ignore incoming
-		if ( ! slot->m_callback ) continue;
+		if ( ! slot->hasCallback() ) continue;
 		// check for ip match
-		if ( slot->m_ip != oldHost->m_ip &&
-		     slot->m_ip != oldHost->m_ipShotgun )
+		if ( slot->getIp() != oldHost->m_ip &&
+		     slot->getIp() != oldHost->m_ipShotgun )
 			continue;
 		// check for port match
-		if ( this == &g_udpServer && slot->m_port != oldHost->m_port )
+		if ( this == &g_udpServer && slot->getPort() != oldHost->m_port )
 			continue;
 		// . match, replace the slot ip/port with the newHost
 		// . first remove the old hashed key for this slot
@@ -2679,19 +2682,13 @@ void UdpServer::replaceHost ( Host *oldHost, Host *newHost ) {
 			if ( ++i >= m_numBuckets ) i = 0;
 		// sanity check
 		if ( ! m_ptrs[i] ) {
-			log(LOG_LOGIC,"udp: replaceHost: Slot not in hash "
-				      "table.");
+			log(LOG_LOGIC,"udp: replaceHost: Slot not in hash table.");
 			g_process.shutdownAbort(true);
 		}
-		if ( g_conf.m_logDebugUdp )
-			log(LOG_DEBUG,
-			    "udp: replaceHost: Rehashing slot "
-			    "tid=%" PRId32" dst=%s:%" PRIu32" "
-			    "slot=%" PTRFMT"",
-				      slot->m_transId,
-				      iptoa(slot->m_ip)+6,
-				      (uint32_t)slot->m_port,
-				      (PTRTYPE)slot);
+
+		logDebug(g_conf.m_logDebugUdp, "udp: replaceHost: Rehashing slot tid=%" PRId32" dst=%s:%" PRIu32" slot=%" PTRFMT,
+		         slot->getTransId(), iptoa(slot->getIp()), (uint32_t)slot->getPort(), (PTRTYPE)slot);
+
 		// remove the bucket
 		m_ptrs [ i ] = NULL;
 		// rehash all buckets below
@@ -2708,7 +2705,7 @@ void UdpServer::replaceHost ( Host *oldHost, Host *newHost ) {
 		// careful with this! if we were using shotgun, use that
 		// otherwise We core in PingServer because the 
 		// m_inProgress[1-2] does net mesh
-		if ( slot->m_ip == oldHost->m_ip )
+		if ( slot->getIp() == oldHost->m_ip )
 			slot->m_ip = newHost->m_ip;
 		else
 			slot->m_ip = newHost->m_ipShotgun;
@@ -2719,16 +2716,16 @@ void UdpServer::replaceHost ( Host *oldHost, Host *newHost ) {
 		//else			      slot->m_port = newHost->m_port2;
 		//slot->m_transId = getTransId();
 		// . now readd the slot to the hash table
-		key_t key = m_proto->makeKey ( slot->m_ip,
-					       slot->m_port,
-					       slot->m_transId,
+		key_t key = m_proto->makeKey ( slot->getIp(),
+					       slot->getPort(),
+					       slot->getTransId(),
 					       true/*weInitiated?*/);
 		addKey ( key, slot );
 		slot->m_key = key;
 		slot->resetConnect();
 		// log it
-		log ( LOG_INFO, "udp: Reset Slot For Replaced Host: transId=%" PRId32" msgType=%i",
-		      slot->m_transId, slot->getMsgType() );
+		log(LOG_INFO, "udp: Reset Slot For Replaced Host: transId=%" PRId32" msgType=%i",
+		    slot->getTransId(), slot->getMsgType());
 	}
 }
 
@@ -2737,7 +2734,7 @@ void UdpServer::printState() {
 	log(LOG_TIMING, 
 	    "admin: UdpServer - ");
 
-	for ( UdpSlot *slot = m_head2 ; slot ; slot = slot->m_next2 ) {
+	for ( UdpSlot *slot = m_activeListHead ; slot ; slot = slot->m_activeListNext ) {
 		slot->printState();
 	}	
 }

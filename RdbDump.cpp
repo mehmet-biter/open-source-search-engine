@@ -439,7 +439,7 @@ bool RdbDump::dumpTree ( bool recall ) {
 		//m_nextKey += (uint32_t)1;
 		//if ( m_nextKey < lastKey ) m_rolledOver = true;
 		KEYSET(m_nextKey,lastKey,m_ks);
-		KEYADD(m_nextKey,m_ks);
+		KEYINC(m_nextKey,m_ks);
 		if (KEYCMP(m_nextKey,lastKey,m_ks)<0) m_rolledOver = true;
 	      // debug msg
 	      //log(0,"RdbDump:lastKey.n1=%" PRIu32",n0=%" PRIu64,lastKey.n1,lastKey.n0);

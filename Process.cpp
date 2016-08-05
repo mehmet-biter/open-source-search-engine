@@ -1057,8 +1057,11 @@ bool Process::saveBlockingFiles1 ( ) {
 	//   the cluster
 	// . saves to "addsinprogress.saving" and moves to .saved
 	// . eventually this may replace "spiderrestore.dat"
-	if ( g_repair.isRepairActive() ) saveAddsInProgress ( "repair-" );
-	else                             saveAddsInProgress ( NULL      );
+	if (g_repair.isRepairActive()) {
+		saveAddsInProgress("repair-");
+	} else {
+		saveAddsInProgress(NULL);
+	}
 
 	// in fctypes.cpp. save the clock offset from host #0's clock so
 	// our startup is fast again
@@ -1073,15 +1076,6 @@ bool Process::saveBlockingFiles2 ( ) {
 		return true;
 	}
 
-	// the spider dup request cache
-	//g_spiderCache.m_dupCache.save( false ); // use threads?
-
-	// save waitingtrees for each collection, blocks.
-	//if ( ! g_spiderCache.save() ) return false;
-
-	// save what templates each turk has turked
-	//g_templateTable.save( g_hostdb.m_dir , "turkedtemplates.dat" );
-
 	// the robots.txt cache
 	Msg13::getHttpCacheRobots()->save();
 
@@ -1090,9 +1084,6 @@ bool Process::saveBlockingFiles2 ( ) {
 	if (c && c->useDisk()) {
 		c->save();
 	}
-
-	// save current spidering process, "spiderrestore.dat"
-	//g_spiderLoop.saveCurrentSpidering();
 
 	// if doing titlerec imports in PageInject.cpp, save cursors,
 	// i.e. file offsets
