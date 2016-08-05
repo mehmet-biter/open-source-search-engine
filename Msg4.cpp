@@ -164,8 +164,7 @@ bool flushMsg4Buffers ( void *state , void (* callback) (void *) ) {
 	logTrace( g_conf.m_logTraceMsg4, "BEGIN" );
 
 	// if all empty, return true now
-	if ( ! hasAddsInQueue () ) 
-	{
+	if (!hasAddsInQueue()) {
 		logTrace( g_conf.m_logTraceMsg4, "END - nothing queued, returning true" );
 		return true;
 	}
@@ -173,9 +172,9 @@ bool flushMsg4Buffers ( void *state , void (* callback) (void *) ) {
 	// how much per callback?
 	int32_t cbackSize = sizeof(CBEntry);
 	// ensure big enough for first call
-	if ( s_callbackBuf.m_capacity == 0 ) { // length() == 0 ) {
+	if (s_callbackBuf.m_capacity == 0) {
 		// make big
-		if ( ! s_callbackBuf.reserve ( 300 * cbackSize ) ) {
+		if (!s_callbackBuf.reserve(300 * cbackSize)) {
 			// return true with g_errno set on error
 			log(LOG_ERROR,"%s:%s: END - error allocating space for flush callback, returning true", __FILE__, __func__ );
 			return true;
@@ -187,11 +186,12 @@ bool flushMsg4Buffers ( void *state , void (* callback) (void *) ) {
 
 	// scan for empty slot
 	char *buf = s_callbackBuf.getBufStart();
-	CBEntry *cb    = (CBEntry *)buf;
+	CBEntry *cb = (CBEntry *)buf;
 	CBEntry *cbEnd = (CBEntry *)(buf + s_callbackBuf.getCapacity());
 
 	// find empty slot
-	for ( ; cb < cbEnd && cb->m_callback ;  cb++ ) ;
+	for (; cb < cbEnd && cb->m_callback; cb++)
+		;
 
 	// no room?
 	if ( cb >= cbEnd ) {
@@ -210,7 +210,6 @@ bool flushMsg4Buffers ( void *state , void (* callback) (void *) ) {
 	// inc count
 	s_numCallbacks++;
 
-	//if ( s_flushCallback ) { g_process.shutdownAbort(true); }
 	// start it up
 	flushLocal();
 
@@ -221,11 +220,20 @@ bool flushMsg4Buffers ( void *state , void (* callback) (void *) ) {
 	int64_t max = 0LL;
 	for (UdpSlot *slot = g_udpServer.getActiveHead(); slot; slot = slot->getActiveListNext()) {
 		// get its time stamp 
-		if ( slot->getMsgType() != msg_type_4 ) continue;
+		if (slot->getMsgType() != msg_type_4) {
+			continue;
+		}
+
 		// must be initiated by us
-		if ( ! slot->hasCallback() ) continue;
+		if (!slot->hasCallback()) {
+			continue;
+		}
+
 		// get it
-		if ( max && slot->getStartTime() < max ) continue;
+		if (max && slot->getStartTime() < max) {
+			continue;
+		}
+
 		// got a new max
 		max = slot->getStartTime();
 	}
@@ -1207,18 +1215,29 @@ bool saveAddsInProgress ( const char *prefix ) {
 	// scan in progress msg4 requests too!
 	for (UdpSlot *slot = g_udpServer.getActiveHead(); slot; slot = slot->getActiveListNext()) {
 		// skip if not msg4
-		if ( slot->getMsgType() != msg_type_4 ) continue;
+		if (slot->getMsgType() != msg_type_4) {
+			continue;
+		}
+
 		// skip if we did not initiate it
-		if ( ! slot->hasCallback() ) continue;
+		if (!slot->hasCallback()) {
+			continue;
+		}
+
 		// skip if got reply
-		if ( slot->m_readBuf ) continue;
+		if (slot->m_readBuf) {
+			continue;
+		}
+
 		// write hostid sent to
 		int32_t hostId = slot->getHostId();
-		write ( fd , &hostId , 4 );
+		write(fd, &hostId, 4);
+
 		// write that
-		write ( fd , &slot->m_sendBufSize , 4 );
+		write(fd, &slot->m_sendBufSize, 4);
+
 		// then the buf data itself
-		write ( fd , slot->m_sendBuf , slot->m_sendBufSize );
+		write(fd, slot->m_sendBuf, slot->m_sendBufSize);
 	}
 	
 
