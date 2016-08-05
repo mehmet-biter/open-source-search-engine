@@ -29,25 +29,10 @@ void RdbMem::clear ( ) {
 	m_ptr2 = m_mem + m_memSize;
 }	
 
-/*
-#include <asm/page.h> // PAGE_SIZE
-
-// return #of bytes scanned for timing purposes
-int32_t RdbMem::scanMem ( ) {
-	// ahh.. just scan the whole thing to keep it simple
-	char *p    = m_mem + 64 ;
-	char *pend = m_mem + m_memSize;
-	char  c;
-	while ( p < pend ) { c = *p; p += PAGE_SIZE; }
-	return m_memSize;
-}
-*/
 
 // initialize us with the RdbDump class your rdb is using
 bool RdbMem::init ( Rdb *rdb , int32_t memToAlloc , char keySize ,
 		    char *allocName ) {
-	// hold on to this so we know if dump is going on
-	//m_dump = dump;
 	m_rdb  = rdb;
 	m_ks   = keySize;
 	m_allocName = allocName;
@@ -80,7 +65,6 @@ bool RdbMem::init ( Rdb *rdb , int32_t memToAlloc , char keySize ,
 // . if a dump is going on and this key has already been dumped
 //   (we check RdbDump::getFirstKey()/getLastKey()) add it to the
 //   secondary mem space, otherwise add it to the primary mem space
-//void *RdbMem::dupData ( key_t key , char *data , int32_t dataSize ) {
 void *RdbMem::dupData ( char *key , char *data , int32_t dataSize ,
 			collnum_t collnum ) {
 	char *s = (char *) allocData ( key , dataSize , collnum );
@@ -89,7 +73,7 @@ void *RdbMem::dupData ( char *key , char *data , int32_t dataSize ,
 	return s;
 }
 
-//void *RdbMem::allocData ( key_t key , int32_t dataSize ) {
+
 void *RdbMem::allocData ( char *key , int32_t dataSize , collnum_t collnum ) {
 	// if we're dumping and key has been dumped, use the secondary mem
 	//if ( m_dump->isDumping() && key < m_dump->getLastKeyInQueue() ) {

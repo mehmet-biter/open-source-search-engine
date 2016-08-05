@@ -15,7 +15,6 @@ class RdbMem {
 	~RdbMem();
 
 	// initialize us with the RdbDump class your rdb is using
-	//bool init ( class RdbDump *rdb , int32_t memToAlloc , char keySize );
 	bool init ( class Rdb *rdb , int32_t memToAlloc , char keySize ,
 		    char *allocName );
 
@@ -27,12 +26,10 @@ class RdbMem {
 	// . if a dump is going on and this key has already been dumped
 	//   (we check RdbDump::getFirstKey()/getLastKey()) add it to the
 	//   secondary mem space, otherwise add it to the primary mem space
-	//void *dupData ( key_t key , char *data , int32_t dataSize );
 	void *dupData ( char *key , char *data , int32_t dataSize ,
 			collnum_t collnum );
 
 	// used by dupData
-	//void *allocData ( key_t key , int32_t dataSize );
 	void *allocData ( char *key , int32_t dataSize , collnum_t collnum );
 
 	// how much mem is available?
@@ -54,12 +51,7 @@ class RdbMem {
 	//   the secondary mem space the new primary mem space
 	void  freeDumpedMem( class RdbTree *tree );
 
-	// Rdb which contains this class calls this to prevent swap-out once
-	// per minute or so
-	//int32_t scanMem ( ) ;
-
 	// keep hold of this class
-	//class RdbDump *m_dump;
 	class Rdb *m_rdb;
 
 	// the primary mem
