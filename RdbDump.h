@@ -29,7 +29,7 @@ class RdbDump {
 
 	void reset ( ) ;
 
-	bool isDumping () { return m_isDumping; }
+	bool isDumping() const { return m_isDumping; }
 
 	// . set up for a dump of rdb records to a file
 	// . returns false and sets errno on error

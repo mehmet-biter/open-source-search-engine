@@ -36,19 +36,19 @@ class RdbMem {
 	void *allocData ( char *key , int32_t dataSize , collnum_t collnum );
 
 	// how much mem is available?
-	int32_t getAvailMem() {
+	int32_t getAvailMem() const {
 		// don't allow ptrs to equal each other...
 		if ( m_ptr1 == m_ptr2 ) return 0;
 		if ( m_ptr1 <  m_ptr2 ) return m_ptr2 - m_ptr1 - 1;
 		return m_ptr1 - m_ptr2 - 1;
 	}
 
-	int32_t getTotalMem() { return m_memSize; }
+	int32_t getTotalMem() const { return m_memSize; }
 
-	int32_t getUsedMem() { return m_memSize - getAvailMem(); }
+	int32_t getUsedMem() const { return m_memSize - getAvailMem(); }
 
 	// used to determine when to dump
-	bool is90PercentFull () { return m_is90PercentFull; }
+	bool is90PercentFull() const { return m_is90PercentFull; }
 
 	// . when a dump completes we free the primary mem space and make
 	//   the secondary mem space the new primary mem space
