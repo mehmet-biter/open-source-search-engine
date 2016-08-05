@@ -385,7 +385,7 @@ bool Dns::getIp ( const char *hostname,
 	     (int32_t)strlen(ptr->m_ds->m_hostname) == hostnameLen && 
 	     strncmp ( ptr->m_ds->m_hostname, hostname, hostnameLen ) != 0 ) {
 		g_errno = EBADENGINEER;
-		log("dns: Found key collision in wait queue. host %s has "
+		log(LOG_WARN, "dns: Found key collision in wait queue. host %s has "
 		    "same key as %s. key=%" PRIu64".",
 		    ptr->m_ds->m_hostname, tmp, hostKey64);
 		//g_process.shutdownAbort(true);
@@ -716,7 +716,7 @@ bool Dns::getIpOfDNS ( DnsState *ds ) {
 	ds2->m_startTime = ds->m_startTime;
 	// or if we have too many ips already, do not bother adding more
 	if (ds->m_numDnsIps[ds->m_depth]>=MAX_DNS_IPS){
-		log("dns: Already have %" PRId32" ips at depth %" PRId32".",
+		log(LOG_WARN, "dns: Already have %" PRId32" ips at depth %" PRId32".",
 		    (int32_t)MAX_DNS_IPS,(int32_t)ds->m_depth);
 		g_errno=EBUFTOOSMALL;
 		return true;
@@ -1257,7 +1257,7 @@ void gotIpWrapper ( void *state , UdpSlot *slot ) {
 			g_errno = ETRYAGAIN;
 			//ds->m_depth++;
 			// note it
-			log("dns: trying backup-dns %s (old=%s)",
+			log(LOG_DEBUG, "dns: trying backup-dns %s (old=%s)",
 			    PUBLICLY_AVAILABLE_DNS1,iptoa(ds->m_dnsIps[0][0]));
 			// try google's public dns
 			ds->m_dnsIps[0][0] = atoip(PUBLICLY_AVAILABLE_DNS1);
@@ -1695,7 +1695,7 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
         int16_t arcount = ntohs (*(int16_t *)(dgram + 10 )); // additional
  	if ( ancount < 0 ) { 
 		g_errno = EBADREPLY; 
-		log ("dns: Nameserver (%s) returned a negative answer count "
+		log (LOG_WARN, "dns: Nameserver (%s) returned a negative answer count "
 		     "of %" PRId32".", iptoa(slot->getIp()),(int32_t)ancount);
 		return -1; 
 	}

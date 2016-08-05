@@ -256,8 +256,7 @@ bool Msg7::sendInjectionRequestToHost ( InjectionRequest *ir ,
 	// forward it to another shard?
 	Host *host = getHostToHandleInjection ( ir->ptr_url );
 
-	log("inject: sending injection request of url %s reqsize=%i "
-	    "to host #%" PRId32,
+	log(LOG_DEBUG, "inject: sending injection request of url %s reqsize=%i to host #%" PRId32,
 	    ir->ptr_url,(int)sirSize,host->m_hostId);
 
 	// . ok, forward it to another host now
@@ -403,13 +402,13 @@ bool sendPageInject ( TcpSocket *sock , HttpRequest *hr ) {
 		return false;
 
 	if ( ! g_errno ) {
-		log("inject: blocked with no error!");
+		log(LOG_ERROR, "inject: blocked with no error!");
 		g_process.shutdownAbort(true); 
 	}
 		
 	// error?
-	log("inject: error forwarding reply: %s (%i)",  mstrerror(g_errno),
-	    (int)g_errno);
+	log(LOG_INFO, "inject: error forwarding reply: %s (%i)", mstrerror(g_errno), g_errno);
+
 	// it did not block, i gues we are done
 	return sendHttpReply ( msg7 );
 }

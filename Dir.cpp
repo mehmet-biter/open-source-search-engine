@@ -22,7 +22,7 @@ bool Dir::set ( const char *d1, const char *d2 ) {
 	reset ();
 	char tmp[1024];
 	if ( strlen(d1) + strlen(d2) + 1 > 1024 ) {
-		log("disk: Could not set directory, directory name \"%s/%s\" "
+		log(LOG_WARN, "disk: Could not set directory, directory name \"%s/%s\" "
 		    "is too big.",d1,d2);
 		return false;
 	}
@@ -34,7 +34,7 @@ bool Dir::set ( const char *dirname ) {
 	reset ();
 	m_dirname = strdup ( dirname );
 	if ( m_dirname ) return true;
-	log("disk: Could not set directory, directory name to \"%s\": %s.",
+	log(LOG_WARN, "disk: Could not set directory, directory name to \"%s\": %s.",
 	    dirname,mstrerror(g_errno));
 	return false;
 }

@@ -306,8 +306,7 @@ bool Images::getThumbnail ( char *pageSite ,
 	// see XmlDoc.cpp::hashNoSplit() where it hashes gbsitetemplate: term)
 	int32_t shardNum = g_hostdb.getShardNumByTermId ( &startKey );
 
-	if ( g_conf.m_logDebugImage )
-		log("image: image checking %s list on shard %" PRId32,buf,shardNum);
+	logDebug(g_conf.m_logDebugImage, "image: image checking %s list on shard %" PRId32,buf,shardNum);
 
 	// if ( ! m_msg36.getTermFreq ( m_collnum               ,
 	// 			     0                  , // maxAge
@@ -408,11 +407,8 @@ bool Images::launchRequests ( ) {
 		// assume to be for posdb here
 		shardNum = g_hostdb.getShardNumByTermId ( &startKey );
 
-		// debug msg
-		if ( g_conf.m_logDebugImage )
-			log("image: image checking shardnum %" PRId32" (termid0=%" PRIu64")"
-			    " for image url #%" PRId32,
-			    shardNum ,m_termIds[i],i);
+		logDebug(g_conf.m_logDebugImage, "image: image checking shardnum %" PRId32" (termid0=%" PRIu64")for image url #%" PRId32,
+		         shardNum ,m_termIds[i],i);
 
 		// get the termlist
 		if ( ! m_msg0.getList ( -1    , // hostid
@@ -699,7 +695,7 @@ bool Images::makeThumb ( ) {
 	// did it have an error?
 	if ( g_errno ) {
 		// just give up on all of them if one has an error
-		log ( "image: had error downloading image on page %s: %s. "
+		log ( LOG_WARN, "image: had error downloading image on page %s: %s. "
 		      "Not downloading any more.",
 		      m_pageUrl->getUrl(),mstrerror(g_errno));
 		// stop it
@@ -918,7 +914,7 @@ void Images::thumbStart_r ( bool amThread ) {
 			   getFileCreationFlags()
 			   // //			   S_IWUSR+S_IRUSR 
 			   )) < 0 ) {
-               log( "image: Could not open file, %s, for writing: %s - %d.",
+               log(LOG_WARN,  "image: Could not open file, %s, for writing: %s - %d.",
        		    in, mstrerror( m_errno ), fhndl );
 	       m_imgDataSize = 0;
        	       return;
@@ -926,7 +922,7 @@ void Images::thumbStart_r ( bool amThread ) {
 
         // Write image data into temporary file
         if( write( fhndl, m_imgData, m_imgDataSize ) < 0 ) {
-               log( "image: Could not write to file, %s: %s.",
+               log(LOG_WARN,  "image: Could not write to file, %s: %s.",
        		    in, mstrerror( m_errno ) );
        	       close( fhndl );
 	       unlink( in );
@@ -936,7 +932,7 @@ void Images::thumbStart_r ( bool amThread ) {
 
         // Close temporary image file now that we have finished writing
         if( close( fhndl ) < 0 ) {
-               log( "image: Could not close file, %s, for writing: %s.",
+               log(LOG_WARN,  "image: Could not close file, %s, for writing: %s.",
        	            in, mstrerror( m_errno ) );
 	       unlink( in );
 	       m_imgDataSize = 0;
@@ -1019,7 +1015,7 @@ void Images::thumbStart_r ( bool amThread ) {
 	// this will happen if you don't upgrade glibc to 2.2.4-32 or above
 	if ( err != 0 ) {
 		m_errno = EBADENGINEER;
-		log("image: Call to system(\"%s\") had error.",cmd);
+		log(LOG_WARN, "image: Call to system(\"%s\") had error.",cmd);
 		unlink ( out );
 		m_stopDownloading = true;
 		return;
@@ -1027,7 +1023,7 @@ void Images::thumbStart_r ( bool amThread ) {
 
         // Open new file with thumbnail image
         if( (fhndl = open( out, O_RDONLY )) < 0 ) {
-               log( "image: Could not open file, %s, for reading: %s.",
+               log(LOG_WARN,  "image: Could not open file, %s, for reading: %s.",
 		    out, mstrerror( m_errno ) );
 		unlink ( out );
 		m_stopDownloading = true;
@@ -1035,7 +1031,7 @@ void Images::thumbStart_r ( bool amThread ) {
         }
 
 	if( (m_thumbnailSize = lseek( fhndl, 0, SEEK_END )) < 0 ) {
-		log( "image: Seek of file, %s, returned invalid size: %" PRId32,
+		log( LOG_WARN, "image: Seek of file, %s, returned invalid size: %" PRId32,
 		     out, m_thumbnailSize );
 		m_stopDownloading = true;
 		close(fhndl);
@@ -1067,7 +1063,7 @@ void Images::thumbStart_r ( bool amThread ) {
         // . Read contents back into image ptr
 	// . this is somewhat of a hack since it overwrites the original img
         if( (m_thumbnailSize = read( fhndl, m_imgData, m_imgDataSize )) < 0 ) {
-                log( "image: Could not read from file, %s: %s.",
+                log( LOG_WARN, "image: Could not read from file, %s: %s.",
  		     out, mstrerror( m_errno ) );
 	        close( fhndl );
 		m_stopDownloading = true;
@@ -1076,7 +1072,7 @@ void Images::thumbStart_r ( bool amThread ) {
         }
 
         if( close( fhndl ) < 0 ) {
-                log( "image: Could not close file, %s, for reading: %s.",
+                log( LOG_WARN, "image: Could not close file, %s, for reading: %s.",
  		     out, mstrerror( m_errno ) );
 		unlink( out );
 		m_stopDownloading = true;
