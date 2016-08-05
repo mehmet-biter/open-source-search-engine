@@ -28,7 +28,7 @@ void setInjectionRequestFromParms ( TcpSocket *sock ,
 	memset ( ir , 0 , sizeof(InjectionRequest ));
 
 	if ( ! cr ) {
-		log("inject: no coll rec");
+		log(LOG_WARN, "inject: no coll rec");
 		return;
 	}
 
@@ -297,8 +297,8 @@ void sendHttpReplyWrapper ( void *state ) {
 bool sendPageInject ( TcpSocket *sock , HttpRequest *hr ) {
 
 	if ( ! g_conf.m_injectionsEnabled ) {
-		g_errno = EINJECTIONSDISABLED;//BADENGINEER;
-		log("inject: injection disabled");
+		g_errno = EINJECTIONSDISABLED;
+		log(LOG_WARN, "inject: injection disabled");
 		return g_httpServer.sendErrorReply(sock,500,"injection is "
 						   "disabled by "
 						   "the administrator in "
@@ -344,9 +344,8 @@ bool sendPageInject ( TcpSocket *sock , HttpRequest *hr ) {
 	try { msg7= new (Msg7); }
 	catch ( ... ) { 
 		g_errno = ENOMEM;
-		log("PageInject: new(%i): %s", 
-		    (int)sizeof(Msg7),mstrerror(g_errno));
-	       return g_httpServer.sendErrorReply(sock,500,mstrerror(g_errno));
+		log(LOG_WARN, "PageInject: new(%i): %s", (int)sizeof(Msg7),mstrerror(g_errno));
+		return g_httpServer.sendErrorReply(sock,500,mstrerror(g_errno));
 	}
 	mnew ( msg7, sizeof(Msg7) , "PageInject" );
 
@@ -673,15 +672,13 @@ void sendUdpReply7 ( void *state ) {
 
 	g_udpServer.sendReply_ass(tmp,(p-tmp),NULL,0,slot);
 }
-	
 
 void handleRequest7 ( UdpSlot *slot , int32_t netnice ) {
-
 	InjectionRequest *ir = (InjectionRequest *)slot->m_readBuf;
 
 	// now just supply the first guy's char ** and size ptr
 	if ( ! deserializeMsg2 ( &ir->ptr_url, &ir->size_url ) ) {
-		log("inject: error deserializing inject request from "
+		log(LOG_WARN, "inject: error deserializing inject request from "
 		    "host ip %s port %i",iptoa(slot->getIp()),(int)slot->getPort());
 		g_errno = EBADREQUEST;
 		g_udpServer.sendErrorReply(slot,g_errno);
@@ -689,19 +686,17 @@ void handleRequest7 ( UdpSlot *slot , int32_t netnice ) {
 	}
 		
 
-	// the url can be like xyz.com. so need to do another corruption
-	// test for ia
-	if ( ! ir->ptr_url ) { // || strncmp(ir->ptr_url,"http",4) != 0 ) {
-		//log("inject: trying to inject NULL or non http url.");
-		log("inject: trying to inject NULL url.");
+	// the url can be like xyz.com. so need to do another corruption test for ia
+	if (!ir->ptr_url) {
+		log(LOG_WARN, "inject: trying to inject NULL url.");
 		g_errno = EBADURL;
 		g_udpServer.sendErrorReply(slot,g_errno);
 		return;
 	}
 
 	CollectionRec *cr = g_collectiondb.getRec ( ir->m_collnum );
-	if ( ! cr ) {
-		log("inject: cr rec is null %i", ir->m_collnum);
+	if (!cr) {
+		log(LOG_WARN, "inject: cr rec is null %i", ir->m_collnum);
 		g_errno = ENOCOLLREC;
 		g_udpServer.sendErrorReply(slot,g_errno);
 		return;
@@ -711,8 +706,7 @@ void handleRequest7 ( UdpSlot *slot , int32_t netnice ) {
 	try { xd = new (XmlDoc); }
 	catch ( ... ) { 
 		g_errno = ENOMEM;
-		log("PageInject: import failed: new(%i): %s", 
-		    (int)sizeof(XmlDoc),mstrerror(g_errno));
+		log(LOG_WARN, "PageInject: import failed: new(%i): %s", (int)sizeof(XmlDoc),mstrerror(g_errno));
 		g_udpServer.sendErrorReply(slot,g_errno);
 		return;
 	}
@@ -1095,8 +1089,7 @@ bool resumeImports ( ) {
 		try { is = new (ImportState); }
 		catch ( ... ) { 
 			g_errno = ENOMEM;
-			log("PageInject: new(%" PRId32"): %s", 
-			    (int32_t)sizeof(ImportState),mstrerror(g_errno));
+			log(LOG_WARN, "PageInject: new(%" PRId32"): %s", (int32_t)sizeof(ImportState),mstrerror(g_errno));
 			return false;
 		}
 		mnew ( is, sizeof(ImportState) , "isstate");
@@ -1212,8 +1205,7 @@ bool ImportState::setCurrentTitleFileAndOffset ( ) {
 		       ,minFileId);
 	m_bf.set ( dir.getDirname() ,tmp.getBufStart() );
 	if ( ! m_bf.open( O_RDONLY ) ) {
-		log("inject: import: could not open %s%s for reading",
-		    dir.getDirname(),tmp.getBufStart());
+		log(LOG_WARN, "inject: import: could not open %s%s for reading", dir.getDirname(),tmp.getBufStart());
 		return false;
 	}
 	m_bfFileId = minFileId;
@@ -1329,8 +1321,7 @@ bool ImportState::importLoop ( ) {
 	int32_t reqSize;
 
 	if ( m_fileOffset >= m_bfFileSize ) {
-		log("inject: import: done processing file %" PRId32" %s",
-		    m_bfFileId,m_bf.getFilename());
+		log(LOG_INFO, "inject: import: done processing file %" PRId32" %s", m_bfFileId,m_bf.getFilename());
 		goto nextFile;
 	}
 	
@@ -1339,7 +1330,7 @@ bool ImportState::importLoop ( ) {
 	
 	//if ( n != 12 ) goto nextFile;
 	if ( g_errno ) {
-		log("inject: import: reading file error: %s. advancing "
+		log(LOG_WARN, "inject: import: reading file error: %s. advancing "
 		    "to next file",mstrerror(g_errno));
 		goto nextFile;
 	}
@@ -1354,9 +1345,7 @@ bool ImportState::importLoop ( ) {
 	// if non-negative then read in size
 	status = m_bf.read ( &dataSize , 4 , m_fileOffset );
 	if ( g_errno ) {
-		log("main: failed to read in title rec "
-		    "file. %s. Skipping file %s",
-		    mstrerror(g_errno),m_bf.getFilename());
+		log(LOG_WARN, "main: failed to read in title rec file. %s. Skipping file %s", mstrerror(g_errno),m_bf.getFilename());
 		goto nextFile;
 	}
 	m_fileOffset += 4;
@@ -1364,7 +1353,7 @@ bool ImportState::importLoop ( ) {
 	need += dataSize;
 	need += 4; // collnum, first 4 bytes
 	if ( dataSize < 0 || dataSize > 500000000 ) {
-		log("main: could not scan in titledb rec of "
+		log(LOG_WARN, "main: could not scan in titledb rec of "
 		    "corrupt dataSize of %" PRId32". BAILING ENTIRE "
 		    "SCAN of file %s",dataSize,m_bf.getFilename());
 		goto nextFile;
@@ -1527,7 +1516,7 @@ bool ImportState::importLoop ( ) {
 			     gotMulticastReplyWrapper ,
 			     multicast_infinite_send_timeout,
 			     MAX_NICENESS ) ) {
-		log("import: import mcast had error: %s",mstrerror(g_errno));
+		log(LOG_WARN, "import: import mcast had error: %s",mstrerror(g_errno));
 		m_numIn++;
 	}
 
@@ -1547,13 +1536,12 @@ bool ImportState::importLoop ( ) {
 	}
 
 	// if it returns NULL we are done!
-	log("main: titledb injection loop completed. waiting for "
-	    "outstanding injects to return.");
+	log(LOG_DEBUG, "main: titledb injection loop completed. waiting for outstanding injects to return.");
 		
 	if ( m_numOut > m_numIn )
 		return false;
 
-	log("main: all injects have returned. DONE.");
+	log(LOG_DEBUG, "main: all injects have returned. DONE.");
 
 	// dummy return
 	return true;
@@ -1568,15 +1556,14 @@ void gotMulticastReplyWrapper ( void *state , void *state2 ) {
 
 	is->m_numIn++;
 
-	log("import: imported %" PRId64" docs (off=%" PRId64")",
-	    is->m_numIn,is->m_fileOffset);
+	log(LOG_DEBUG, "import: imported %" PRId64" docs (off=%" PRId64")", is->m_numIn,is->m_fileOffset);
 
 	if ( ! is->importLoop() ) return;
 
 	// we will be called again when this multicast reply comes in...
 	if ( is->m_numIn < is->m_numOut ) return;
 
-	log("inject: import is done");
+	log(LOG_DEBUG, "inject: import is done");
 
 	CollectionRec *cr = g_collectiondb.getRec ( is->m_collnum );
 	// signify to qa.cpp that we are done
