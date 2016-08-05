@@ -15,27 +15,17 @@ int32_t g_cancelAcksSent = 0;
 int32_t g_cancelAcksRead = 0;
 
 // max resend time (max backoff) for niceness 0
-//#define MAX_RESEND_0 700
 // . i lowered this because the wire supports 1 full packet about every 120
 //   MICROSECONDS. so in 40ms we could send ~350 1500-byte packets!!!
 // . i also lowered the ack window down to 2 dgrams so this makes more sense
-//#define MAX_RESEND_0 40
 // let's not clog everybody up
 #define MAX_RESEND_0 200
 
 // max resend time (max backoff) for niceness 1+
-//#define MAX_RESEND_1 30000
-// since high priority udp server can suspend lower, make this zippier
-//#define MAX_RESEND_1 400
-// let's not clog everybody up
-//#define MAX_RESEND_1 800
 // let's not clog up our network switch internet port
 #define MAX_RESEND_1 15000
 
 // start resend time for niceness 0
-//#define RESEND_0 30
-//#define RESEND_0 60
-//#define RESEND_0 120
 
 // . now i increase resend time from 120 to 250  because packets don't seem
 //   to be getting lost as much as before since i increase 
@@ -51,36 +41,23 @@ int32_t g_cancelAcksRead = 0;
 // . i lowered this down to 20 since our window is much smaller now
 // . there's typically about 120 microseconds between full packets so we
 //   should resend quickly!!
-//#define RESEND_0 250
-//#define RESEND_0 120
-//#define RESEND_0 20
-// keep it to 40ms due to kernel time slicing problems
-//#define RESEND_0 33
-// but now that we have our query compression proxy over the internet, we got
-// pings that are like 50ms...
-// this was at 70 but gk0 pings to scproxy1 at like 150ms a lot via 
-// the roadrunner wireless link, so lets crank this up
+// . keep it to 40ms due to kernel time slicing problems
+// . but now that we have our query compression proxy over the internet, we got
+//   pings that are like 50ms...
+// . this was at 70 but gk0 pings to scproxy1 at like 150ms a lot via
+//   the roadrunner wireless link, so lets crank this up
 #define RESEND_0 170
-
-// let it all spray out like a wild hose
-//#define RESEND_0 30
 
 // . for short msgs we can resend more rapidly
 // . it doesn't help to go lower than 20ms cuz that's sigtimedwait()'s limit
-//#define RESEND_0_SHORT 20
-// keep it to 40ms due to kernel time slicing problems
-//#define RESEND_0_SHORT 33
+// . keep it to 40ms due to kernel time slicing problems
 // we are going over the internet to our query compression proxy now
 #define RESEND_0_SHORT 170
 
 // start resend time for niceness 1+
-//#define RESEND_1 2000
-// we now suspend the low priority udp server when the high one is
-// processing an incoming request, so this can be zippier here
-//#define RESEND_1 200
-//#define RESEND_1 100
 // because of roadrunner... (See above)
 #define RESEND_1 200
+
 // try to fix a bunch of msg99 replies coming into host 0 at once
 #define RESEND_1_LOCAL 100
 
@@ -88,38 +65,14 @@ int32_t g_cancelAcksRead = 0;
 // . the ack window is back and bigger, now 100 dgrams
 // . this gives the receives a chance to respond to being blasted
 // . without this acks being sent back are often lost for some reason,
-//   ?maybe it's just loopback sends? 
-//#define ACK_WINDOW_SIZE    50
-//#define ACK_WINDOW_SIZE    14
-//#define ACK_WINDOW_SIZE    30
-//#define ACK_WINDOW_SIZE    40
-//#define ACK_WINDOW_SIZE    4
-// spider (low priority udp server) is having troubles finishing some trans
-// so let's make this a bit bigger to alleviate the problem
-//#define ACK_WINDOW_SIZE    12
+//   ?maybe it's just loopback sends?
 // i don't know if that was the cause of it, i think it might be something
-// else, so to try to prevent from dropping packets (ifconfig) let's put
-// this down again.
+// else, so to try to prevent from dropping packets (ifconfig) let's put this down again.
 #define ACK_WINDOW_SIZE    4
 
-// . since we're not hot yet, make this bigger than 4
-// . go all out --- assuming dgram size of ~64k this should cover a 1.5 meg msg
-//#define ACK_WINDOW_SIZE    250
-//#define ACK_WINDOW_SIZE    20
-
 // size of window for local transactions over loopback interface
-//#define ACK_WINDOW_SIZE_LB 40
-//#define ACK_WINDOW_SIZE_LB 250
-//#define ACK_WINDOW_SIZE_LB 4
-// spider (low priority udp server) is having troubles finishing some trans
-// so let's make this a bit bigger to alleviate the problem
-//#define ACK_WINDOW_SIZE_LB    12
 // see comment above for why we put this back from 12 to 4
 #define ACK_WINDOW_SIZE_LB    4
-
-
-// i add this to resend time to jiggle it so it doesn't collide as much
-//static int32_t s_incDelay = 0;
 
 void UdpSlot::connect ( UdpProtocol *proto    ,
 			sockaddr_in *endPoint ,
