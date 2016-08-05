@@ -63,102 +63,43 @@ class UdpSlot {
 	friend class UdpServer;
 
 public:
-	int32_t getNumDgramsRead() const {
-		return m_readBitsOn;
-	}
+	int32_t getNumDgramsRead() const { return m_readBitsOn; }
+	int32_t getNumDgramsSent() const { return m_sentBitsOn; }
+	int32_t getNumAcksRead() const { return m_readAckBitsOn; }
+	int32_t getNumAcksSent() const { return m_sentAckBitsOn; }
 
-	int32_t getNumDgramsSent() const {
-		return m_sentBitsOn;
-	}
-
-	int32_t getNumAcksRead() const {
-		return m_readAckBitsOn;
-	}
-
-	int32_t getNumAcksSent() const {
-		return m_sentAckBitsOn;
-	}
-
-	msg_type_t getMsgType() const {
-		return m_msgType;
-	}
+	msg_type_t getMsgType() const { return m_msgType; }
 
 	// what is our niceness level?
-	int32_t getNiceness() const {
-		return m_niceness;
-	}
+	int32_t getNiceness() const { return m_niceness; }
 
-	bool hasCallback() const {
-		return (m_callback);
-	}
+	bool hasCallback() const { return (m_callback); }
 
-	int32_t getTransId() const {
-		return m_transId;
-	}
+	int32_t getTransId() const { return m_transId; }
 
-	uint32_t getIp() const {
-		return m_ip;
-	}
+	uint32_t getIp() const { return m_ip; }
+	uint16_t getPort() const { return m_port; }
+	int32_t getHostId() const { return m_hostId; }
 
-	uint16_t getPort() const {
-		return m_port;
-	}
+	int64_t getTimeout() const { return m_timeout; }
 
-	int32_t getHostId() const {
-		return m_hostId;
-	}
+	int32_t getResendTime() const { return m_resendTime; }
+	char getResendCount() const { return m_resendCount; }
 
-	int64_t getTimeout() const {
-		return m_timeout;
-	}
+	int32_t getErrno() const { return m_errno; }
 
-	int32_t getResendTime() const {
-		return m_resendTime;
-	}
+	int32_t getDatagramsToSend() const { return m_dgramsToSend; }
+	int32_t getDatagramsToRead() const { return m_dgramsToRead; }
 
-	char getResendCount() const {
-		return m_resendCount;
-	}
+	int64_t getStartTime() const { return m_startTime; }
+	int64_t getFirstSendTime() const { return m_firstSendTime; }
+	int64_t getLastReadTime() const { return m_lastReadTime; }
+	int64_t getLastSendTime() const { return m_lastSendTime; }
 
-	int32_t getErrno() const {
-		return m_errno;
-	}
+	bool hasCalledHandler() const { return m_calledHandler; }
+	bool hasCalledCallback() const { return m_calledCallback; }
 
-	int32_t getDatagramsToSend() const {
-		return m_dgramsToSend;
-	}
-
-	int32_t getDatagramsToRead() const {
-		return m_dgramsToRead;
-	}
-
-	int64_t getStartTime() const {
-		return m_startTime;
-	}
-
-	int64_t getFirstSendTime() const {
-		return m_firstSendTime;
-	}
-
-	int64_t getLastReadTime() const {
-		return m_lastReadTime;
-	}
-
-	int64_t getLastSendTime() const {
-		return m_lastSendTime;
-	}
-
-	bool hasCalledHandler() const {
-		return m_calledHandler;
-	}
-
-	bool hasCalledCallback() const {
-		return m_calledCallback;
-	}
-
-	UdpSlot* getActiveListNext() {
-		return m_activeListNext;
-	}
+	UdpSlot* getActiveListNext() { return m_activeListNext; }
 
 	// a ptr to the Host class for shotgun info
 	Host *m_host;
