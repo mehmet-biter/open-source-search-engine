@@ -164,8 +164,7 @@ bool flushMsg4Buffers ( void *state , void (* callback) (void *) ) {
 	logTrace( g_conf.m_logTraceMsg4, "BEGIN" );
 
 	// if all empty, return true now
-	if ( ! hasAddsInQueue () ) 
-	{
+	if (!hasAddsInQueue()) {
 		logTrace( g_conf.m_logTraceMsg4, "END - nothing queued, returning true" );
 		return true;
 	}
@@ -173,9 +172,9 @@ bool flushMsg4Buffers ( void *state , void (* callback) (void *) ) {
 	// how much per callback?
 	int32_t cbackSize = sizeof(CBEntry);
 	// ensure big enough for first call
-	if ( s_callbackBuf.m_capacity == 0 ) { // length() == 0 ) {
+	if (s_callbackBuf.m_capacity == 0) {
 		// make big
-		if ( ! s_callbackBuf.reserve ( 300 * cbackSize ) ) {
+		if (!s_callbackBuf.reserve(300 * cbackSize)) {
 			// return true with g_errno set on error
 			log(LOG_ERROR,"%s:%s: END - error allocating space for flush callback, returning true", __FILE__, __func__ );
 			return true;
@@ -187,11 +186,12 @@ bool flushMsg4Buffers ( void *state , void (* callback) (void *) ) {
 
 	// scan for empty slot
 	char *buf = s_callbackBuf.getBufStart();
-	CBEntry *cb    = (CBEntry *)buf;
+	CBEntry *cb = (CBEntry *)buf;
 	CBEntry *cbEnd = (CBEntry *)(buf + s_callbackBuf.getCapacity());
 
 	// find empty slot
-	for ( ; cb < cbEnd && cb->m_callback ;  cb++ ) ;
+	for (; cb < cbEnd && cb->m_callback; cb++)
+		;
 
 	// no room?
 	if ( cb >= cbEnd ) {
@@ -210,7 +210,6 @@ bool flushMsg4Buffers ( void *state , void (* callback) (void *) ) {
 	// inc count
 	s_numCallbacks++;
 
-	//if ( s_flushCallback ) { g_process.shutdownAbort(true); }
 	// start it up
 	flushLocal();
 
@@ -221,11 +220,20 @@ bool flushMsg4Buffers ( void *state , void (* callback) (void *) ) {
 	int64_t max = 0LL;
 	for (UdpSlot *slot = g_udpServer.getActiveHead(); slot; slot = slot->getActiveListNext()) {
 		// get its time stamp 
-		if ( slot->getMsgType() != msg_type_4 ) continue;
+		if (slot->getMsgType() != msg_type_4) {
+			continue;
+		}
+
 		// must be initiated by us
-		if ( ! slot->hasCallback() ) continue;
+		if (!slot->hasCallback()) {
+			continue;
+		}
+
 		// get it
-		if ( max && slot->getStartTime() < max ) continue;
+		if (max && slot->getStartTime() < max) {
+			continue;
+		}
+
 		// got a new max
 		max = slot->getStartTime();
 	}
@@ -755,132 +763,150 @@ void returnMulticast ( Multicast *mcast ) {
 
 // just free the request
 void gotReplyWrapper4 ( void *state , void *state2 ) {
-	//logf(LOG_DEBUG,"build: got msg4 reply");
-	int32_t       allocSize = (int32_t)(PTRTYPE)state;
-	Multicast *mcast     = (Multicast *)state2;
+	int32_t allocSize = (int32_t) (PTRTYPE) state;
+	Multicast *mcast = (Multicast *) state2;
+
 	// get the request we sent
-	char *request     = mcast->m_msg;
-	//int32_t  requestSize = mcast->m_msgSize;
-	// get the buffer alloc size
-	//int32_t allocSize = requestSize;
-	//if ( allocSize < MAXHOSTBUFSIZE ) allocSize = MAXHOSTBUFSIZE;
-	if ( request ) mfree ( request , allocSize , "Msg4" );
+	char *request = mcast->m_msg;
+
+	if (request) {
+		mfree(request, allocSize, "Msg4");
+	}
+
 	// make sure no one else can free it!
 	mcast->m_msg = NULL;
 
 	// get the udpslot that is replying here
 	UdpSlot *replyingSlot = mcast->m_slot;
-	if ( ! replyingSlot ) { g_process.shutdownAbort(true); }
+	if (!replyingSlot) {
+		g_process.shutdownAbort(true);
+	}
 
-	returnMulticast ( mcast );
+	returnMulticast(mcast);
 
-	storeLineWaiters ( ); // try to launch more msg4 requests in waiting
+	storeLineWaiters(); // try to launch more msg4 requests in waiting
 
 	//
 	// now if all buffers are empty, let any flush request know that
 	//
 
 	// bail if no callbacks to call
-	if ( s_numCallbacks == 0 ) return;
-
-	//log("msg4: got msg4 reply. replyslot starttime=%" PRId64" slot=0x%" PRIx32,
-	//    replyingSlot->m_startTime,(int32_t)replyingSlot);
+	if (s_numCallbacks == 0) {
+		return;
+	}
 
 	// get the oldest msg4 slot starttime
 	int64_t min = 0LL;
 	for (UdpSlot *slot = g_udpServer.getActiveHead(); slot; slot = slot->getActiveListNext()) {
 		// get its time stamp
-		if ( slot->getMsgType() != msg_type_4 ) continue;
+		if (slot->getMsgType() != msg_type_4) {
+			continue;
+		}
+
 		// must be initiated by us
-		if ( ! slot->hasCallback() ) continue;
+		if (!slot->hasCallback()) {
+			continue;
+		}
+
 		// if it is this replying slot or already had the callback
 		// called, then ignore it...
-		if ( slot->hasCalledCallback() ) continue;
-		// ignore incoming slot! that could be the slot we were
-		// waiting for to complete so its starttime will always
-		// be less than our callback's m_timestamp
-		//if ( slot == replyingSlot ) continue;
-		// log it
-		//log("msg4: slot starttime = %" PRId64" ",slot->m_startTime);
+		if (slot->hasCalledCallback()) {
+			continue;
+		}
+
 		// get it
-		if ( min && slot->getStartTime() >= min ) continue;
+		if (min && slot->getStartTime() >= min) {
+			continue;
+		}
+
 		// got a new min
 		min = slot->getStartTime();
 	}
 
-	// log it
-	//log("msg4: slots min = %" PRId64" ",min);
-
 	// scan for slots whose callbacks we can call now
 	char *buf = s_callbackBuf.getBufStart();
-	CBEntry *cb    = (CBEntry *)buf;
-	CBEntry *cbEnd = (CBEntry *)(buf + s_callbackBuf.getCapacity());
+	CBEntry *cb = (CBEntry *) buf;
+	CBEntry *cbEnd = (CBEntry *) (buf + s_callbackBuf.getCapacity());
 
 	// find empty slot
-	for ( ; cb < cbEnd ;  cb++ ) {
+	for (; cb < cbEnd; cb++) {
 		// skip if empty
-		if ( ! cb->m_callback ) continue;
-		// debug
-		//log("msg4: cb timestamp = %" PRId64,cb->m_timestamp);
+		if (!cb->m_callback) {
+			continue;
+		}
+
 		// wait until callback's stored time is <= all msg4
 		// slot's start times, then we can guarantee that all the
 		// msg4s required for this callback have replied.
 		// min will be zero if no msg4s in there, so call callback.
-		if ( min && cb->m_timestamp >= min ) continue;
+		if (min && cb->m_timestamp >= min) {
+			continue;
+		}
+
 		// otherwise, call the callback!
-		cb->m_callback ( cb->m_callbackState );
+		cb->m_callback(cb->m_callbackState);
+
 		// take out of queue now by setting callback ptr to 0
 		cb->m_callback = NULL;
+
 		// discount
 		s_numCallbacks--;
 	}
 
-	// of course, skip this part if nobody called a flush
-	//if ( ! s_flushCallback ) return;
 	// if not completely empty, wait!
 	if ( hasAddsInQueue () ) {
 		// flush away some more just in case
 		flushLocal();
+
 		// and wait
 		return;
 	}
-	// seems good to go!
-	//s_flushCallback ( s_flushState );
-	// nuke it
-	//s_flushCallback = NULL;
 }
 
 void storeLineWaiters ( ) {
 	// try to store all the msg4's lists that are waiting in line
- loop:
-	Msg4 *msg4 = s_msg4Head;
-	// now were we waiting on a multicast to return in order to send
-	// another request?  return if not.
-	if ( ! msg4 ) return;
-	// grab the first Msg4 in line. ret fls if blocked adding more of list.
-	if ( ! msg4->addMetaList2 ( ) ) return;
-	// hey, we were able to store that Msg4's list, remove him
-	s_msg4Head = msg4->m_next;
-	// empty? make tail NULL too then
-	if ( ! s_msg4Head ) s_msg4Tail = NULL;
-	// . if his callback was NULL, then was loaded in loadAddsInProgress()
-	// . we no longer do that so callback should never be null now
-	if ( ! msg4->m_callback ) { g_process.shutdownAbort(true); }
-	// log this now i guess. seems to happen a lot if not using threads
-	if ( g_jobScheduler.are_new_jobs_allowed() )
-		logf(LOG_DEBUG,"msg4: calling callback for msg4=0x%" PTRFMT"",
-		     (PTRTYPE)msg4);
-	// release it
-	msg4->m_inUse = false;
-	// call his callback
-	msg4->m_callback ( msg4->m_state );
-	// ensure not re-added - no, msg4 might be freed now!
-	//msg4->m_next = NULL;
-	// try the next Msg4 in line
-	goto loop;
-}
+	for (;;) {
+		Msg4 *msg4 = s_msg4Head;
 
-#include "Process.h"
+		// now were we waiting on a multicast to return in order to send
+		// another request?  return if not.
+		if (!msg4) {
+			return;
+		}
+
+		// grab the first Msg4 in line. ret fls if blocked adding more of list.
+		if (!msg4->addMetaList2()) {
+			return;
+		}
+
+		// hey, we were able to store that Msg4's list, remove him
+		s_msg4Head = msg4->m_next;
+
+		// empty? make tail NULL too then
+		if (!s_msg4Head) {
+			s_msg4Tail = NULL;
+		}
+
+		// . if his callback was NULL, then was loaded in loadAddsInProgress()
+		// . we no longer do that so callback should never be null now
+		if (!msg4->m_callback) {
+			g_process.shutdownAbort(true);
+		}
+
+		// log this now i guess. seems to happen a lot if not using threads
+		if (g_jobScheduler.are_new_jobs_allowed()) {
+			logf(LOG_DEBUG, "msg4: calling callback for msg4=0x%" PTRFMT"", (PTRTYPE) msg4);
+		}
+
+		// release it
+		msg4->m_inUse = false;
+
+		// call his callback
+		msg4->m_callback(msg4->m_state);
+
+		// try the next Msg4 in line
+	}
+}
 
 // . destroys the slot if false is returned
 // . this is registered in Msg4::set() to handle add rdb record msgs
@@ -912,7 +938,7 @@ void handleRequest4 ( UdpSlot *slot , int32_t netnice ) {
 	if ( ! g_pingServer.m_hostsConfInAgreement ) {
 		// . if we do not know the sender's hosts.conf crc, wait 4 it
 		// . this is 0 if not received yet
-		if ( ! slot->m_host->m_pingInfo.m_hostsConfCRC ) {
+		if (!slot->m_host->m_pingInfo.m_hostsConfCRC) {
 			g_errno = EWAITINGTOSYNCHOSTSCONF;
 			log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 			us->sendErrorReply ( slot , g_errno );
@@ -922,8 +948,7 @@ void handleRequest4 ( UdpSlot *slot , int32_t netnice ) {
 		}
 		
 		// compare our hosts.conf to sender's otherwise
-		if ( slot->m_host->m_pingInfo.m_hostsConfCRC != 
-		     g_hostdb.getCRC() ) {
+		if (slot->m_host->m_pingInfo.m_hostsConfCRC != g_hostdb.getCRC()) {
 			g_errno = EBADHOSTSCONF;
 			log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 			us->sendErrorReply ( slot , g_errno );
@@ -933,14 +958,12 @@ void handleRequest4 ( UdpSlot *slot , int32_t netnice ) {
 		}
 	}
 
-
-	//logf(LOG_DEBUG,"build: handling msg4 request");
 	// extract what we read
 	char *readBuf     = slot->m_readBuf;
 	int32_t  readBufSize = slot->m_readBufSize;
 	
 	// must at least have an rdbId
-	if ( readBufSize < 7 ) {
+	if (readBufSize < 7) {
 		g_errno = EREQUESTTOOSHORT;
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		us->sendErrorReply ( slot , g_errno );
@@ -981,7 +1004,7 @@ void handleRequest4 ( UdpSlot *slot , int32_t netnice ) {
 		int32_t now = getTimeLocal();
 		if ( now - s_lastTime >= 1 ) {
 			s_lastTime = now;
-			log("msg4: waiting to sync with host #0 before accepting data");
+			log(LOG_INFO, "msg4: waiting to sync with host #0 before accepting data");
 		}
 		// tell send to try again shortly
 		g_errno = ETRYAGAIN;
@@ -993,18 +1016,18 @@ void handleRequest4 ( UdpSlot *slot , int32_t netnice ) {
 	}
 
 	// this returns false with g_errno set on error
-	if ( ! addMetaList ( readBuf , slot ) ) {
-		log( LOG_ERROR, "%s:%s:%d: call sendErrorReply. error='%s'", __FILE__, __func__, __LINE__, mstrerror( g_errno ) );
+	if (!addMetaList(readBuf, slot)) {
+		log(LOG_ERROR, "%s:%s:%d: call sendErrorReply. error='%s'", __FILE__, __func__, __LINE__, mstrerror(g_errno));
 		us->sendErrorReply(slot,g_errno);
-		
-		logTrace( g_conf.m_logTraceMsg4, "END - addMetaList returned false. g_errno=%d", g_errno);
+
+		logTrace(g_conf.m_logTraceMsg4, "END - addMetaList returned false. g_errno=%d", g_errno);
 		return;
 	}
 
 	// good to go
-	us->sendReply_ass ( NULL , 0 , NULL , 0 , slot ) ;
+	us->sendReply_ass(NULL, 0, NULL, 0, slot);
 
-	logTrace( g_conf.m_logTraceMsg4, "END - OK" );
+	logTrace(g_conf.m_logTraceMsg4, "END - OK");
 }
 
 
@@ -1012,10 +1035,7 @@ void handleRequest4 ( UdpSlot *slot , int32_t netnice ) {
 //   all the alive hosts for this zid/sid
 // . returns false and sets g_errno on error, returns true otherwise
 bool addMetaList ( const char *p , UdpSlot *slot ) {
-
-	if ( g_conf.m_logDebugSpider )
-		logf(LOG_DEBUG,"syncdb: calling addMetalist zid=%" PRIu64,
-		     *(int64_t *)(p+4));
+	logDebug(g_conf.m_logDebugSpider, "syncdb: calling addMetalist zid=%" PRIu64, *(int64_t *) (p + 4));
 
 	// get total buf used
 	int32_t used = *(int32_t *)p;
@@ -1050,7 +1070,7 @@ bool addMetaList ( const char *p , UdpSlot *slot ) {
 		// g_conf.m_repairingEnabled to '1' so it can start its
 		// Repair.cpp repairWrapper() loop and init the secondary
 		// rdbs so "rdb" here won't be NULL any more.
-		if ( rdb && rdb->m_ks <= 0 ) {
+		if ( rdb && rdb->getKeySize() <= 0 ) {
 			time_t currentTime = getTime();
 			static time_t s_lastTime = 0;
 			if ( currentTime > s_lastTime + 10 ) {
@@ -1208,18 +1228,29 @@ bool saveAddsInProgress ( const char *prefix ) {
 	// scan in progress msg4 requests too!
 	for (UdpSlot *slot = g_udpServer.getActiveHead(); slot; slot = slot->getActiveListNext()) {
 		// skip if not msg4
-		if ( slot->getMsgType() != msg_type_4 ) continue;
+		if (slot->getMsgType() != msg_type_4) {
+			continue;
+		}
+
 		// skip if we did not initiate it
-		if ( ! slot->hasCallback() ) continue;
+		if (!slot->hasCallback()) {
+			continue;
+		}
+
 		// skip if got reply
-		if ( slot->m_readBuf ) continue;
+		if (slot->m_readBuf) {
+			continue;
+		}
+
 		// write hostid sent to
 		int32_t hostId = slot->getHostId();
-		write ( fd , &hostId , 4 );
+		write(fd, &hostId, 4);
+
 		// write that
-		write ( fd , &slot->m_sendBufSize , 4 );
+		write(fd, &slot->m_sendBufSize, 4);
+
 		// then the buf data itself
-		write ( fd , slot->m_sendBuf , slot->m_sendBufSize );
+		write(fd, slot->m_sendBuf, slot->m_sendBufSize);
 	}
 	
 

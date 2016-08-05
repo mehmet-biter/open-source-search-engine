@@ -642,8 +642,7 @@ int64_t Msg20Request::makeCacheKey() const
 	hash_buffer.pushLong(m_getLinkInfo);
 	hash_buffer.pushLong(m_onlyNeedGoodInlinks);
 	hash_buffer.pushLong(m_getLinkText);
-	if(m_highlightQueryTerms)
-		hash_buffer.safeMemcpy(ptr_qbuf,size_qbuf);
+	hash_buffer.safeMemcpy(ptr_qbuf,size_qbuf);
 	hash_buffer.safeMemcpy(ptr_ubuf,size_ubuf);
 	hash_buffer.safeMemcpy(ptr_linkee,size_linkee);
 	hash_buffer.safeMemcpy(ptr_displayMetas,size_displayMetas);

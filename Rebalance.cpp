@@ -246,7 +246,7 @@ void Rebalance::scanLoop ( ) {
 
 			}
 			// percent update?
-			int32_t percent = (unsigned char)m_nextKey[rdb->m_ks-1];
+			int32_t percent = (unsigned char)m_nextKey[rdb->getKeySize()-1];
 			percent *= 100;
 			percent /= 256;
 			if ( percent != m_lastPercent && percent ) {
@@ -447,7 +447,7 @@ bool Rebalance::gotList ( ) {
 
 	char rdbId = rdb->m_rdbId;
 
-	int32_t ks = rdb->m_ks;//getKeySize();
+	int32_t ks = rdb->getKeySize();
 
 	int32_t myShard = g_hostdb.m_myHost->m_shardNum;
 

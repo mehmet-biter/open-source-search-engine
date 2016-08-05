@@ -1825,7 +1825,7 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list, int32_t niceness/*, bool 
 	return true;
 }
 
-bool Rdb::needsDump ( ) {
+bool Rdb::needsDump ( ) const {
 	if ( m_mem.is90PercentFull () ) {
 		return true;
 	}
@@ -2491,7 +2491,7 @@ int64_t Rdb::getDiskSpaceUsed ( ) {
 	return total;
 }
 
-bool Rdb::isMerging ( ) {
+bool Rdb::isMerging() const {
 	// use this for speed
 	return (bool)m_numMergesOut;
 }

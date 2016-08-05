@@ -7,6 +7,10 @@
 #ifndef GB_RDBMEM_H
 #define GB_RDBMEM_H
 
+class RdbTree;
+class Rdb;
+
+
 class RdbMem {
 
  public:
@@ -15,7 +19,6 @@ class RdbMem {
 	~RdbMem();
 
 	// initialize us with the RdbDump class your rdb is using
-	//bool init ( class RdbDump *rdb , int32_t memToAlloc , char keySize );
 	bool init ( class Rdb *rdb , int32_t memToAlloc , char keySize ,
 		    char *allocName );
 
@@ -27,40 +30,34 @@ class RdbMem {
 	// . if a dump is going on and this key has already been dumped
 	//   (we check RdbDump::getFirstKey()/getLastKey()) add it to the
 	//   secondary mem space, otherwise add it to the primary mem space
-	//void *dupData ( key_t key , char *data , int32_t dataSize );
-	void *dupData ( char *key , char *data , int32_t dataSize ,
-			collnum_t collnum );
+	void *dupData(const char *key, const char *data, int32_t dataSize, collnum_t collnum);
 
 	// used by dupData
-	//void *allocData ( key_t key , int32_t dataSize );
-	void *allocData ( char *key , int32_t dataSize , collnum_t collnum );
+	void *allocData(const char *key, int32_t dataSize, collnum_t collnum);
 
 	// how much mem is available?
-	int32_t getAvailMem() {
+	int32_t getAvailMem() const {
 		// don't allow ptrs to equal each other...
 		if ( m_ptr1 == m_ptr2 ) return 0;
 		if ( m_ptr1 <  m_ptr2 ) return m_ptr2 - m_ptr1 - 1;
 		return m_ptr1 - m_ptr2 - 1;
 	}
 
-	int32_t getTotalMem() { return m_memSize; }
+	int32_t getTotalMem() const { return m_memSize; }
 
-	int32_t getUsedMem() { return m_memSize - getAvailMem(); }
+	int32_t getUsedMem() const { return m_memSize - getAvailMem(); }
 
 	// used to determine when to dump
-	bool is90PercentFull () { return m_is90PercentFull; }
+	bool is90PercentFull() const { return m_is90PercentFull; }
 
 	// . when a dump completes we free the primary mem space and make
 	//   the secondary mem space the new primary mem space
-	void  freeDumpedMem( class RdbTree *tree );
+	void  freeDumpedMem(RdbTree *tree);
 
-	// Rdb which contains this class calls this to prevent swap-out once
-	// per minute or so
-	//int32_t scanMem ( ) ;
-
+private:
+	friend class Rdb;
 	// keep hold of this class
-	//class RdbDump *m_dump;
-	class Rdb *m_rdb;
+	Rdb *m_rdb;
 
 	// the primary mem
 	char *m_ptr1;
