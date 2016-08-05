@@ -103,17 +103,6 @@ void setInjectionRequestFromParms ( TcpSocket *sock ,
 		ir->ptr_contentDelim = NULL;
 }
 
-// void doneLocalInjectWrapper ( void *state ) {
-// 	XmlDoc *xd = (XmlDoc *)state;
-// 	Msg7 *msg7 = (Msg7 *)THIS->m_injectionState;
-// 	void (* callback ) (void *) = xd->m_injectionCallback;
-// 	void *state = xd->m_injectionState;
-// 	mdelete ( xd, sizeof(XmlDoc) , "PageInject" );
-// 	delete (xd);
-// 	// now call the callback since the local inject is done
-// 	callback ( state );
-// }
-
 Host *getHostToHandleInjection ( char *url ) {
 	Url norm;
 	norm.set ( url );
@@ -169,16 +158,10 @@ Host *getHostToHandleInjection ( char *url ) {
 		minh = h;
 	}
 	if ( minh ) return minh;
+
 	// how can this happen?
 	return host;
 }
-
-// void gotForwardedReplyWrapper ( void *state ) {
-// 	Msg7 *THIS = (Msg7 *)state;
-// 	if ( g_errno ) 
-// 		log("inject: error from remote host: %s",mstrerror(g_errno));
-// 	THIS->m_callback ( THIS->m_state );
-// }
 
 static void gotUdpReplyWrapper ( void *state , UdpSlot *slot ) {
 	Msg7 *THIS = (Msg7 *)state;
@@ -210,9 +193,6 @@ bool Msg7::sendInjectionRequestToHost ( InjectionRequest *ir ,
 
 	// ensure it is our own
 	if ( &m_injectionRequest != ir ) { g_process.shutdownAbort(true); }
-
-	//if ( strcmp ( ir->ptr_url , "http://www.indyweek.com/durham/current/news.html" )  == 0 )
-	//	fprintf(stderr,"ey\n");
 
 	// ensure url not beyond limit
 	if ( ir->ptr_url &&
@@ -368,30 +348,6 @@ bool sendPageInject ( TcpSocket *sock , HttpRequest *hr ) {
 	if ( ! ir->ptr_url )
 		return sendHttpReply ( msg7 );
 
-	// this will be NULL if the "content" was empty or not given
-	//char *content = ir->ptr_content;
-
-	// . try the uploaded file if nothing in the text area
-	// . this will be NULL if the "content" was empty or not given
-	//if ( ! content ) content = ir->ptr_contentFile;
-
-	// forward it to another shard?
-	//Host *host = getHostToHandleInjection ( ir->ptr_url );
-	// if we are the responsible host, continue onwards with the injection
-	// if ( host == g_hostdb.m_myHost ) {
-	// 	// just do it now
-	// 	if ( ! injectForReals ( ir , this , doneLocalInjectWrapper ) ) 
-	// 		// if it would block, return false
-	// 		return false;
-	// 	// all done already...
-	// 	log("inject: did not block");
-	// 	mdelete ( msg7, sizeof(Msg7) , "PageInject" );
-	// 	delete (msg7);
-	// 	g_errno = EBADENGINEER;
-	// 	char *msg = mstrerror(g_errno);
-	// 	return g_httpServer.sendErrorReply(sock,g_errno,msg,NULL);
-	// }
-
 	// when we receive the udp reply then send back the http reply
 	// we return true on success, which means it blocked... so return false
 	if ( msg7->sendInjectionRequestToHost(ir,msg7,sendHttpReplyWrapper)) 
@@ -418,19 +374,12 @@ bool sendHttpReply ( void *state ) {
 	// extract info from state
 	TcpSocket *sock = msg7->m_socket;
 
-	//XmlDoc *xd = msg7->m_xd;
-
 	int64_t docId  = msg7->m_replyDocId; // xd->m_docId;
 
 	// might already be EURLTOOBIG set from above
 	if ( ! g_errno ) g_errno = msg7->m_replyIndexCode;
 
 	int32_t      hostId = 0;//msg7->m_msg7.m_hostId;
-
-	// set g_errno to index code
-	//if ( xd->m_indexCodeValid && xd->m_indexCode && ! g_errno )
-	//	g_errno = xd->m_indexCode;
-
 
 	char format = msg7->m_format;
 
@@ -460,24 +409,9 @@ bool sendHttpReply ( void *state ) {
 		am.safePrintf("\t<statusMsg><![CDATA[");
 		am.cdataEncode(mstrerror(g_errno));
 		am.safePrintf("]]></statusMsg>\n");
-		// if xmldoc was a container of subdocs that XmlDoc::indexDoc()
-		// call indexWarcOrArc() on then docid is not valid since
-		// we do not index container docs.
-		//int64_t docId = xd->m_docId;
-		//if ( ! xd->m_docIdValid ) docId = 0;
+
 		am.safePrintf("\t<docId>%" PRId64"</docId>\n",docId);
-		// this will have to be re-tooled if we deem necessary.
-		// was being use to do section voting for diffbot
-		// upon a url being injected.
-		/*
-		if ( ir->m_getSections ) {
-			SafeBuf *secBuf = xd->getInlineSectionVotingBuf();
-			am.safePrintf("\t<htmlSrc><![CDATA[");
-			if ( secBuf->length() ) 
-				am.cdataEncode(secBuf->getBufStart());
-			am.safePrintf("]]></htmlSrc>\n");
-		}
-		*/
+
 		am.safePrintf("</response>\n");
 		ct = "text/xml";
 	}
@@ -489,19 +423,7 @@ bool sendHttpReply ( void *state ) {
 		am.jsonEncode(mstrerror(g_errno));
 		am.safePrintf("\",\n");
 		am.safePrintf("\t\"docId\":%" PRId64",\n",docId);//xd->m_docId);
-		// this will have to be re-tooled if we deem necessary.
-		// was being use to do section voting for diffbot
-		// upon a url being injected.
-		/*
 
-		if ( ir->m_getSections ) {
-			SafeBuf *secBuf = xd->getInlineSectionVotingBuf();
-			am.safePrintf("\t\"htmlSrc\":\"");
-			if ( secBuf->length() ) 
-				am.jsonEncode(secBuf->getBufStart());
-			am.safePrintf("\",\n");
-		}
-		*/
 		// subtract ",\n"
 		am.m_length -= 2;
 		am.safePrintf("\n}\n}\n");
@@ -518,39 +440,6 @@ bool sendHttpReply ( void *state ) {
 						    false,
 						    ct );
 	}
-
-	//
-	// debug
-	//
-
-	/*
-	// now get the meta list, in the process it will print out a 
-	// bunch of junk into msg7->m_pbuf
-	if ( xd->m_docId ) {
-		char *metalist = xd->getMetaList ( 1,1,1,1,1,1 );
-		if ( ! metalist || metalist==(void *)-1){g_process.shutdownAbort(true);}
-		// print it out
-		SafeBuf *pbuf = &msg7->m_sbuf;
-		xd->printDoc( pbuf );
-		bool status = g_httpServer.sendDynamicPage( msg7->m_socket , 
-							   pbuf->getBufStart(),
-							    pbuf->length() ,
-							    -1, //cachtime
-							    false ,//postreply?
-							    NULL, //ctype
-							    -1 , //httpstatus
-							    NULL,//cookie
-							    "utf-8");
-		// delete the state now
-		mdelete ( st , sizeof(Msg7) , "PageInject" );
-		delete (st);
-		// return the status
-		return status;
-	}
-	*/
-	//
-	// end debug
-	//
 
 	char *url = ir->ptr_url;
 	
@@ -587,15 +476,12 @@ bool sendHttpReply ( void *state ) {
 		sb.safePrintf ( "<center><b>Sucessfully injected %s</center><br>", ir->ptr_url);
 	}
 
-
 	// print the table of injection parms
 	g_parms.printParmTable ( &sb , sock , &msg7->m_hr );
 
-
 	// clear g_errno, if any, so our reply send goes through
 	g_errno = 0;
-	// calculate buffer length
-	//int32_t bufLen = p - buf;
+
 	// nuke state
 	mdelete ( msg7, sizeof(Msg7) , "PageInject" );
 	delete (msg7);
@@ -636,7 +522,6 @@ void sendUdpReply7 ( void *state ) {
 		s_injectTail = xd->m_prevInject;
 	xd->m_nextInject = NULL;
 	xd->m_prevInject = NULL;
-
 
 	UdpSlot *slot = xd->m_injectionSlot;
 
@@ -785,197 +670,20 @@ Msg7::~Msg7 () {
 	reset();
 }
 
-//void Msg7::constructor () {
-//	reset();
-//}
-
 void Msg7::reset() { 
 	m_round = 0;
-	//if ( m_inUse ) { g_process.shutdownAbort(true); }
-	//m_firstTime = true;
-	//m_fixMe = false;
-	//m_injectCount = 0;
-	//m_start = NULL;
 	m_sbuf.reset();
-	//m_isDoneInjecting = false;
+
 	if ( m_xd ) {
 		mdelete ( m_xd, sizeof(XmlDoc) , "PageInject" );
 		delete (m_xd);
 		m_xd = NULL;
 	}
+
 	if ( m_sir ) {
 		mfree ( m_sir , m_sirSize , "m7ir" );
 		m_sir = NULL;
 	}
-}
-
-// when XmlDoc::inject() complets it calls this
-//void doneInjectingWrapper9 ( void *state ) {
-/*
-void injectLoopWrapper9 ( void *state ) {
-
-	Msg7 *msg7 = (Msg7 *)state;
-
-	msg7->m_inUse = false;
-	
-	XmlDoc *xd = &msg7->m_xd;
-
-	GigablastRequest *gr = &msg7->m_gr;
-
-	if ( gr->m_getSections && ! gr->m_gotSections ) {
-		// do not re-call
-		gr->m_gotSections = true;
-		// new callback now, same state
-		xd->m_callback1 = injectLoopWrapper9;
-		// and if it blocks internally, it will call 
-		// getInlineSectionVotingBuf until it completes then it will 
-		// call xd->m_callback
-		xd->m_masterLoop = NULL;
-		// get sections
-		SafeBuf *buf = xd->getInlineSectionVotingBuf();
-		// if it returns -1 wait for it to call wrapper10 when done
-		if ( buf == (void *)-1 ) return;
-		// error?
-		if ( ! buf ) log("inject: error getting sections: %s",
-				 mstrerror(g_errno));
-	}
-
- loop:
-
-	// if we were injecting delimterized documents...
-	char *delim = gr->m_contentDelim;
-	if ( delim && ! delim[0] ) delim = NULL;
-	bool loopIt = false;
-	if ( delim ) loopIt = true;
-
-	if ( loopIt ) { // && msg7->m_start ) {
-		// do another injection. returns false if it blocks
-		if ( ! msg7->inject ( msg7->m_state , msg7->m_callback ) )
-			return;
-	}
-
-	// if we don't check 'loopIt' here single url injects will loop
-	if ( loopIt && ! msg7->m_isDoneInjecting )
-		goto loop;
-
-	// and we call the original caller
-	msg7->m_callback ( msg7->m_state );
-}
-*/
-
-/*
-bool Msg7::inject ( char *coll ,
-		    char *proxiedUrl ,
-		    int32_t  proxiedUrlLen ,
-		    char *content ,
-		    void *state ,
-		    void (*callback)(void *state) ) {
-
-	GigablastRequest *gr = &m_gr;
-	// reset THIS to defaults. use NULL for cr since mostly for SearchInput
-	g_parms.setToDefault ( (char *)gr , OBJ_GBREQUEST , NULL);
-
-	// copy into safebufs in case the underlying data gets deleted.
-	gr->m_tmpBuf1.safeStrcpy ( coll );
-	gr->m_coll = gr->m_tmpBuf1.getBufStart();
-	
-	// copy into safebufs in case the underlying data gets deleted.
-	gr->m_tmpBuf2.safeMemcpy ( proxiedUrl , proxiedUrlLen );
-	gr->m_tmpBuf2.nullTerm();
-
-	gr->m_url = gr->m_tmpBuf2.getBufStart();
-
-	// copy into safebufs in case the underlying data gets deleted.
-	gr->m_tmpBuf3.safeStrcpy ( content );
-	gr->m_content = gr->m_tmpBuf3.getBufStart();
-	
-	gr->m_hasMime = true;
-
-	return inject2 ( state , callback );
-}
-*/
-
-// returns false if would block
-// bool Msg7::injectTitleRec ( void *state ,
-// 			    void (*callback)(void *state) ,
-// 			    CollectionRec *cr ) {
-
-
-// when XmlDoc::inject() complets it calls this
-void doneInjectingWrapper10 ( void *state ) {
-	XmlDoc *xd = (XmlDoc *)state;
-	UdpSlot *slot = (UdpSlot *)xd->m_slot;
-	int32_t err = g_errno;
-	mdelete ( xd, sizeof(XmlDoc) , "PageInject" );
-	delete (xd);
-	g_errno = err;
-	if ( g_errno ) g_udpServer.sendErrorReply(slot,g_errno);
-	else           g_udpServer.sendReply_ass(NULL,0,NULL,0,slot);
-}
-
-void handleRequest7Import ( UdpSlot *slot , int32_t netnice ) {
-
-	//m_state = state;
-	//m_callback = callback;
-
-
-	XmlDoc *xd;
-	try { xd = new (XmlDoc); }
-	catch ( ... ) { 
-		g_errno = ENOMEM;
-		log("PageInject: import failed: new(%i): %s", 
-		    (int)sizeof(XmlDoc),mstrerror(g_errno));
-		g_udpServer.sendErrorReply(slot,g_errno);
-		return;
-	}
-	mnew ( xd, sizeof(XmlDoc) , "PageInject" );
-
-	//xd->reset();
-	char *titleRec = slot->m_readBuf;
-	int32_t titleRecSize = slot->m_readBufSize;
-
-	int32_t collnum = *(int32_t *)titleRec;
-
-	titleRec += 4;
-	titleRecSize -= 4;
-
-	CollectionRec *cr = g_collectiondb.m_recs[collnum];
-	if ( ! cr ) {
-		g_udpServer.sendErrorReply(slot,g_errno);
-		return;
-	}
-
-	// if injecting a titlerec from an import operation use set2()
-	//if ( m_sbuf.length() > 0 ) {
-	xd->set2 ( titleRec,//m_sbuf.getBufStart() ,
-		   titleRecSize,//m_sbuf.length() ,
-		   cr->m_coll ,
-		   NULL, // pbuf
-		   MAX_NICENESS ,
-		   NULL ); // sreq
-	// log it i guess
-	log("inject: importing %s",xd->m_firstUrl.getUrl());
-	// call this when done indexing
-	//xd->m_masterState = this;
-	//xd->m_masterLoop  = injectLoopWrapper9;
-	xd->m_state = xd;//this;
-	xd->m_callback1  = doneInjectingWrapper10;
-	xd->m_isImporting = true;
-	xd->m_isImportingValid = true;
-	// hack this
-	xd->m_slot = slot;
-	// then index it
-	
-	if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: Calling XmlDoc->indexDoc", __FILE__, __func__, __LINE__);
-		
-	if ( ! xd->indexDoc() )
-		// return if would block
-		return;
-
-	// all done?
-	//return true;
-	if ( g_errno ) g_udpServer.sendErrorReply(slot,g_errno);
-	else           g_udpServer.sendReply_ass(NULL,0,NULL,0,slot);
 }
 
 ///////////////////////////////////////
@@ -1104,13 +812,10 @@ bool resumeImports ( ) {
 	return true;
 }
 
-
-
 // . sets m_fileOffset and m_bf
 // . returns false and sets g_errno on error
 // . returns false if nothing to read too... but does not set g_errno
 bool ImportState::setCurrentTitleFileAndOffset ( ) {
-
 	// leave m_bf and m_fileOffset alone if there is more to read
 	if ( m_fileOffset < m_bfFileSize )
 		return true;
@@ -1119,12 +824,6 @@ bool ImportState::setCurrentTitleFileAndOffset ( ) {
 	if ( ! cr ) return false;
 
 	log("import: import finding next file");
-	
-	// if ( m_offIsValid ) {
-	// 	//*off = m_fileOffset;
-	// 	return &m_bf; 
-	// }
-	//m_offIsValid = true;
 
 	// look for titledb0001.dat etc. files in the 
 	// workingDir/inject/ subdir
@@ -1197,8 +896,6 @@ bool ImportState::setCurrentTitleFileAndOffset ( ) {
 	// if no files! return false to indicate we are done
 	if ( minFileId == -1 ) return false;
 
-	// set up s_bf then
-	//if ( m_bfFileId != minFileId ) {
 	SafeBuf tmp;
 	tmp.safePrintf("titledb%04" PRId32"-000.dat"
 		       //,dir.getDirname()
@@ -1239,7 +936,6 @@ void gotMulticastReplyWrapper ( void *state , void *state2 ) ;
 // . returns false if would block (outstanding injects), true otherwise
 // . sets g_errno on error
 bool ImportState::importLoop ( ) {
-
 	CollectionRec *cr = g_collectiondb.getRec ( m_collnum );
 
 	if ( ! cr || g_hostdb.m_hostId != 0 ) { 
@@ -1276,23 +972,17 @@ bool ImportState::importLoop ( ) {
 		return true;
 	}
 
-
-
-
 	// scan each titledb file scanning titledb0001.dat first,
 	// titledb0003.dat second etc.
 
-	//int64_t offset = -1;
 	// . when offset is too big for current m_bigFile file then
 	//   we go to the next and set offset to 0.
 	// . sets m_bf and m_fileOffset
-	if ( ! setCurrentTitleFileAndOffset ( ) ) {//cr  , -1 );
+	if (!setCurrentTitleFileAndOffset()) {
 		log("import: import: no files to read");
 		//goto INJECTLOOP;
 		return true;
 	}
-
-
 
 	// this is -1 if none remain!
 	if ( m_fileOffset == -1 ) {
@@ -1301,10 +991,6 @@ bool ImportState::importLoop ( ) {
 	}
 
 	int64_t saved = m_fileOffset;
-
-	//Msg7 *msg7;
-	//GigablastRequest *gr;
-	//SafeBuf *sbuf = NULL;
 
 	int32_t need = 12;
 	int32_t dataSize = -1;
@@ -1359,10 +1045,6 @@ bool ImportState::importLoop ( ) {
 		goto nextFile;
 	}
 
-	//gr = &msg7->m_gr;
-
-	//XmlDoc *xd = getAvailXmlDoc();
-	//msg7 = getAvailMsg7();
 	mcast = getAvailMulticast();
 
 	// if none, must have to wait for some to come back to us
@@ -1373,9 +1055,6 @@ bool ImportState::importLoop ( ) {
 		log("import: import no mcast available");
 		return true;//false;
 	}
-	
-	// this is for holding a compressed titlerec
-	//sbuf = &mcast->m_sbuf;//&gr->m_sbuf;
 
 	// point to start of buf
 	sbuf->reset();
@@ -1411,62 +1090,11 @@ bool ImportState::importLoop ( ) {
 		sbuf->m_length += dataSize;
 	}
 
-	// set xmldoc from the title rec
-	//xd->set ( sbuf.getBufStart() );
-	//xd->m_masterState = NULL;
-	//xd->m_masterCallback ( titledbInjectLoop );
-
 	// we use this so we know where the doc we are injecting
 	// was in the foregien titledb file. so we can update our bookmark
 	// code.
 	mcast->m_hackFileOff = saved;//m_fileOffset;
 	mcast->m_hackFileId  = m_bfFileId;
-
-	//
-	// inject a title rec buf this time, we are doing an import
-	// FROM A TITLEDB FILE!!!
-	//
-	//gr->m_titleRecBuf = &sbuf;
-
-	// break it down into gw
-	// xd.set2 ( sbuf.getBufStart() ,
-	// 	  sbuf.length() , // max size
-	// 	  cr->m_coll, // use our coll
-	// 	  NULL , // pbuf for page parser
-	// 	  1 , // niceness
-	// 	  NULL ); //sreq );
-
-	// // note it
-	// log("import: importing %s",xd.m_firstUrl.getUrl());
-
-	// now we can set gr for the injection
-	// TODO: inject the whole "sbuf" so we get sitenuminlinks etc
-	// all exactly the same...
-	// gr->m_url = xd.getFirstUrl()->getUrl();
-	// gr->m_queryToScrape = NULL;
-	// gr->m_contentDelim = 0;
-	// gr->m_contentTypeStr = g_contentTypeStrings [xd.m_contentType];
-	// gr->m_contentFile = NULL;
-	// gr->m_content = xd.ptr_utf8Content;
-	// gr->m_injectLinks = false;
-	// gr->m_spiderLinks = true;
-	// gr->m_shortReply = false;
-	// gr->m_newOnly = false;
-	// gr->m_deleteUrl = false;
-	// gr->m_recycle = true; // recycle content? or sitelinks?
-	// gr->m_dedup = false;
-	// gr->m_hasMime = false;
-	// gr->m_doConsistencyTesting = false;
-	// gr->m_getSections = false;
-	// gr->m_gotSections = false;
-	// gr->m_charset = xd.m_charset;
-	// gr->m_hopCount = xd.m_hopCount;
-
-
-	//
-	// point to next doc in the titledb file
-	//
-	//m_fileOffset += need;
 
 	// get docid from key
 	docId = g_titledb.getDocIdFromKey ( &tkey );
@@ -1480,21 +1108,6 @@ bool ImportState::importLoop ( ) {
 
 	m_numOut++;
 
-	// then index it. master callback will be called
-	//if ( ! xd->index() ) return false;
-
-	// TODO: make this forward the request to an appropriate host!!
-	// . gr->m_sbuf is set to the titlerec so this should handle that
-	//   and use XmlDoc::set4() or whatever
-	// if ( msg7->injectTitleRec ( msg7 , // state
-	// 			    gotMsg7ReplyWrapper , // callback
-	// 			    cr )) {
-	// 	// it didn't block somehow...
-	// 	msg7->m_inUse = false;
-	// 	msg7->gotMsg7Reply();
-	// }
-
-
 	req = sbuf->getBufStart();
 	reqSize = sbuf->length();
 
@@ -1502,7 +1115,6 @@ bool ImportState::importLoop ( ) {
 
 	// do not free it, let multicast free it after sending it
 	sbuf->detachBuf();
-
 
 	if ( ! mcast->send ( req ,
 			     reqSize ,
@@ -1523,8 +1135,6 @@ bool ImportState::importLoop ( ) {
 	goto INJECTLOOP;
 
  nextFile:
-	// invalidate this flag
-	//m_offIsValid = false;
 	// . and call this function. we add one to m_bfFileId so we
 	//   do not re-get the file we just injected.
 	// . sets m_bf and m_fileOffset
@@ -1625,8 +1235,7 @@ void saveImportStates ( ) {
 }
 
 // "xd" is the XmlDoc that just completed injecting
-void ImportState::saveFileBookMark ( ) { //Msg7 *msg7 ) {
-
+void ImportState::saveFileBookMark ( ) {
 	int64_t minOff = -1LL;
 	int32_t minFileId = -1;
 
@@ -1652,6 +1261,6 @@ void ImportState::saveFileBookMark ( ) { //Msg7 *msg7 ) {
 	char fname[256];
 	sprintf(fname,"%slasttitledbinjectinfo.dat",g_hostdb.m_dir);
 	SafeBuf ff;
-	ff.safePrintf("%" PRId64",%" PRId32,minOff,minFileId);//_fileOffset,m_bfFileId);
+	ff.safePrintf("%" PRId64",%" PRId32,minOff,minFileId);
 	ff.save ( fname );
 }
