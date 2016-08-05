@@ -83,19 +83,12 @@ void UdpSlot::connect ( UdpProtocol *proto    ,
 			int64_t    now      ,
 			int32_t         niceness ) {
 	// map loopback ip to our ip
-	uint32_t ip = endPoint->sin_addr.s_addr ;
-	if ( //!g_conf.m_interfaceMachine &&
-	      ip == g_hostdb.getLoopbackIp() )
+	uint32_t ip = endPoint->sin_addr.s_addr;
+	if (ip == g_hostdb.getLoopbackIp()) {
 		ip = g_hostdb.getMyIp();
-	connect ( proto                        ,
-		  ip                           ,
-		  ntohs ( endPoint->sin_port ) ,
-		  host                         ,
-		  hostId                       ,
-		  transId                      ,
-		  timeout                      ,
-		  now                          ,
-		  niceness                     );
+	}
+
+	connect(proto, ip, ntohs(endPoint->sin_port), host, hostId, transId, timeout, now, niceness);
 }
 
 // . call this after you make a new UdpSlot
@@ -110,18 +103,10 @@ void UdpSlot::connect ( UdpProtocol    *proto    ,
 			int64_t            timeout  , // in milliseconds
 			int64_t       now      ,
 			int32_t            niceness ) {
-	// clear everything
-	//memset ( this , 0 , sizeof(UdpSlot) );
-	// . make async signal safe
-	// . TODO: this is slow to clear all those m_*bits, we got 1.7k of slot
-	//int32_t size = (uint32_t)m_tmpBuf - (uint32_t)this ;
-	//int32_t size = (uint32_t)&m_next - (uint32_t)this ;
-	//memset_ass ( (char *)this , 0 , size );
 	// avoid that heavy memset_ass() call using this logic.
-	// we will clear on demand using m_numBitsInitialized logic
-	// in UdpSlot.h
+	// we will clear on demand using m_numBitsInitialized logic in UdpSlot.h
 	int32_t size = offsetof(UdpSlot,m_sentBits2);
-	memset ( (void*)this , 0 , size );
+	memset((void *) this, 0, size);
 	// store this info
 	m_proto    = proto    ;
 	m_ip       = ip       ; // keep in network order
@@ -137,9 +122,9 @@ void UdpSlot::connect ( UdpProtocol    *proto    ,
 	m_queuedTime = -1;
 	
 	//determine datagram size
-	if ( ! m_proto->useAcks() )
+	if (!m_proto->useAcks()) {
 		m_maxDgramSize = DGRAM_SIZE_DNS;
-	else {
+	} else {
 		switch(ip_distance(m_ip)) {
 			case ip_distance_ourselves:
 				m_maxDgramSize = DGRAM_SIZE_LB;
@@ -158,33 +143,27 @@ void UdpSlot::connect ( UdpProtocol    *proto    ,
 }
 
 void UdpSlot::resetConnect ( ) {
-	if ( //!g_conf.m_interfaceMachine &&
-	      m_ip == g_hostdb.getLoopbackIp() )
+	if (m_ip == g_hostdb.getLoopbackIp()) {
 		m_ip = g_hostdb.getMyIp();
+	}
+
 	// . compute max dgram size
 	// . if we're sending to loopback make bigger
 	// . dns has its own max size (DNS_DGRAM_SIZE)
 	// . if we're going over the internet (interface machine)
 	//   use a smaller DGRAM so it makes it
-	if      ( ! m_proto->useAcks()     )
+	if (!m_proto->useAcks()) {
 		m_maxDgramSize = DGRAM_SIZE_DNS;
-	else if ( //g_conf.m_interfaceMachine ||
-		  // now that we use hosts2.conf so we can get link text
-		  // via Msg20 from an external gb cluster, it need not come
-		  // from the admin ip...
-		  //( ! g_hostdb.isIpInNetwork ( ip ) &&
-		  //    g_conf.isAdminIp ( ip ) ) )
-		 // this as 0x0000ffff but we use 10.5.* and 10.6.* addresses
-		  (m_ip & 0x000000ff) != (g_hostdb.m_myIp & 0x000000ff) ||
-		  ! g_hostdb.isIpInNetwork ( m_ip ) ) {
+	} else if ((m_ip & 0x000000ff) != (g_hostdb.m_myIp & 0x000000ff) || !g_hostdb.isIpInNetwork(m_ip)) {
+		// this as 0x0000ffff but we use 10.5.* and 10.6.* addresses
 		m_maxDgramSize = DGRAM_SIZE_INTERNET;
 		g_process.shutdownAbort(true);
-	}
-	//else if ( m_ip == g_hostdb.getMyIp() )
-	else if ( ip_distance(m_ip)==ip_distance_ourselves )
+	} else if ( ip_distance(m_ip)==ip_distance_ourselves ) {
 		m_maxDgramSize = DGRAM_SIZE_LB;
-	else
+	} else {
 		m_maxDgramSize = DGRAM_SIZE;
+	}
+
 	// reset the slot
 	m_readBitsOn = 0;
 	m_sentBitsOn = 0;
@@ -193,21 +172,24 @@ void UdpSlot::resetConnect ( ) {
 	m_nextToSend = 0;
 	m_firstUnlitSentAckBit = 0;
 	m_numBitsInitialized = 0;
-	// for ( int32_t b = 0; b < m_dgramsToSend; b++ ) {
-	// 	clrBit(b, m_sentBits2);
-	// 	clrBit(b, m_readBits2);
-	// 	clrBit(b, m_sentAckBits2);
-	// 	clrBit(b, m_readAckBits2);
-	// }
+
 	// . set m_dgramsToSend
 	// . similar to UdpProtocol::getNumDgrams(char *dgram,int32_t dgramSize)
 	int32_t dataSpace  = m_maxDgramSize ;
-	if ( m_proto->stripHeaders() ) 
-		dataSpace -= m_proto->getHeaderSize ( m_sendBufSize );
+
+	if (m_proto->stripHeaders()) {
+		dataSpace -= m_proto->getHeaderSize(m_sendBufSize);
+	}
+
 	m_dgramsToSend  = m_sendBufSize / dataSpace;
-	if ( m_sendBufSize % dataSpace != 0 ) m_dgramsToSend++;
+	if ( m_sendBufSize % dataSpace != 0 ) {
+		m_dgramsToSend++;
+	}
+
 	// if msgSize was given as 0 force a dgram to be sent
-	if ( m_sendBufSize == 0 ) m_dgramsToSend = 1;
+	if ( m_sendBufSize == 0 ) {
+		m_dgramsToSend = 1;
+	}
 }
 
 // . call this only AFTER calling connect() above
@@ -240,8 +222,7 @@ bool UdpSlot::sendSetup(char *msg,
 		    (int32_t)msgSize,(int32_t)m_maxDgramSize,
 		    (int32_t)MAX_DGRAMS,maxMsgSize,
 		    msgType);
-		//g_process.shutdownAbort(true);
-		g_errno = EMSGTOOBIG;//EBADENGINEER;
+		g_errno = EMSGTOOBIG;
 		return false;
 	}
 
@@ -303,16 +284,6 @@ bool UdpSlot::sendSetup(char *msg,
 
 // resets a UdpSlot for a resend
 void UdpSlot::prepareForResend ( int64_t now , bool resendAll ) {
-	// debug msg
-	//if ( g_conf.m_logDebugUdp ) 
-	//	log(LOG_DEBUG,"udp: resending slot "
-	//	    "all=%" PRId32" "
-	//	    "tid=%" PRId32" "
-	//	    "dst=%s:%hu." ,
-	//	    (int32_t)resendAll ,
-	//	    (int32_t)m_transId ,
-	//	    iptoa(m_ip),
-	//	    (uint16_t)m_port);
 	// clear all if reset is true
 	if ( resendAll ) {
 		for ( int32_t i = 0 ; i < m_dgramsToSend ; i++ ) 
@@ -341,11 +312,7 @@ void UdpSlot::prepareForResend ( int64_t now , bool resendAll ) {
 	// . those linksys switches seem to go down all the time and come
 	//   back up after a few hours
 	// . only do this on the 2nd resend
-	if ( g_conf.m_useShotgun && 
-	     // . only do this on 2nd resend. 
-	     // . MDW: no, i like flip flopping with each resend, 
-	     //        it is like doing it in parallel
-	     // m_resendCount == 1 && 
+	if ( g_conf.m_useShotgun &&
 	     // need to be sending to a host in the network
 	     m_host &&
 	     // shotgun ip (eth1) must be different than eth0 ip
@@ -362,11 +329,8 @@ void UdpSlot::prepareForResend ( int64_t now , bool resendAll ) {
 			m_host->m_preferEth = 1;
 			// use eth1 to talk to this guy for this tid
 			m_preferEth = 1;
-			// log it if changing
-			if ( g_conf.m_logDebugUdp )
-				logf(LOG_DEBUG,
-				     "udp: switching to eth1 for host #%" PRId32" "
-				    "tid=%" PRId32, m_host->m_hostId,m_transId);
+			logDebug(g_conf.m_logDebugUdp, "udp: switching to eth1 for host #%" PRId32" tid=%" PRId32,
+			         m_host->m_hostId, m_transId);
 		}
 		// . otherwise, we were using the eth1 (shotgun) ip
 		// . do not switch though if the ping is really bad for eth0
@@ -492,12 +456,6 @@ void UdpSlot::setResendTime() {
 		// quick and somewhat incorrect overflow check
 		if ( m_resendTime <= 0 ) m_resendTime = max;
 	}
-	// add a rand amount of time to avoid collisions with
-	// other streams that will probably resend, max of 6 ms
-	//m_resendTime += s_incDelay;
-	// . inc up to 6 ms
-	// . this was a rand() statement, but that's not async signal safe
-	//if ( ++s_incDelay > 6 ) s_incDelay = 0;
 
 	// if we're dns protocol, always use resendTime of 4 seconds
 	if ( ! m_proto->useAcks() ) {
@@ -540,8 +498,6 @@ int32_t UdpSlot::sendDatagramOrAck ( int sock, bool allowResends, int64_t now ){
 	int32_t ip = m_ip;
 	// . if this is a send to our ip use the loopback interface
 	// . MTU is very high here
-	//if ( !g_conf.m_interfaceMachine && m_ip == g_hostdb.getMyIp() )
-	//if ( !g_conf.m_interfaceMachine && g_hostdb.isMyIp(m_ip) )
 	if ( ip_distance(m_ip)==ip_distance_ourselves )
 		ip = g_hostdb.getLoopbackIp();
 	// pick a dgram to send
@@ -584,14 +540,7 @@ int32_t UdpSlot::sendDatagramOrAck ( int sock, bool allowResends, int64_t now ){
 		memcpy_ass ( saved , dgram , headerSize );
 	}
 	// store header into "dgram"
-	m_proto->setHeader ( dgram         ,
-			     m_sendBufSize ,
-			     m_msgType     ,
-			     dgramNum      , 
-			     m_transId     ,
-			     m_callback    ,  // weInitiated?
-			     m_localErrno  ,  // hadError?
-			     m_niceness    );  
+	m_proto->setHeader(dgram, m_sendBufSize, m_msgType, dgramNum, m_transId, m_callback, m_localErrno, m_niceness);
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(dgram,headerSize);
 #endif
