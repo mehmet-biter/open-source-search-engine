@@ -1049,7 +1049,7 @@ bool addMetaList ( const char *p , UdpSlot *slot ) {
 		// g_conf.m_repairingEnabled to '1' so it can start its
 		// Repair.cpp repairWrapper() loop and init the secondary
 		// rdbs so "rdb" here won't be NULL any more.
-		if ( rdb && rdb->m_ks <= 0 ) {
+		if ( rdb && rdb->getKeySize() <= 0 ) {
 			time_t currentTime = getTime();
 			static time_t s_lastTime = 0;
 			if ( currentTime > s_lastTime + 10 ) {

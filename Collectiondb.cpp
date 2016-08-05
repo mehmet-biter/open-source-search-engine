@@ -2564,7 +2564,7 @@ bool CollectionRec::rebuildUrlFilters ( ) {
 
 	// . do not do this at startup
 	// . this essentially resets doledb
-	if ( g_doledb.m_rdb.m_initialized &&
+	if ( g_doledb.m_rdb.isInitialized() &&
 	     // somehow this is initialized before we set m_recs[m_collnum]
 	     // so we gotta do the two checks below...
 	     sc &&

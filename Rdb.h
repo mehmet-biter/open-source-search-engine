@@ -178,6 +178,7 @@ public:
 
 	bool useHalfKeys() const { return m_useHalfKeys; }
 	char getKeySize() const { return m_ks; }
+	int32_t getPageSize() const { return m_pageSize; }
 
 	RdbTree    *getTree    ( ) { if(!m_useTree) return NULL; return &m_tree; }
 	RdbMem     *getRdbMem  ( ) { return &m_mem; }
@@ -404,6 +405,8 @@ public:
 	char m_inDumpLoop;
 
 	char m_rdbId;
+
+private:
 	char m_ks; // key size
 	int32_t m_pageSize;
 
