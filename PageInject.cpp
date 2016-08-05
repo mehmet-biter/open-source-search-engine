@@ -105,13 +105,11 @@ void setInjectionRequestFromParms ( TcpSocket *sock ,
 
 Host *getHostToHandleInjection ( char *url ) {
 	Url norm;
-	norm.set ( url );
+	norm.set(url);
+
 	int64_t docId = g_titledb.getProbableDocId ( &norm );
-
-	// get iroupId from docId
-	uint32_t shardNum = getShardNumFromDocId ( docId );
-
-	Host *host = g_hostdb.getHostWithSpideringEnabled (shardNum);
+	uint32_t shardNum = getShardNumFromDocId(docId);
+	Host *host = g_hostdb.getHostWithSpideringEnabled(shardNum);
 
 	bool isWarcInjection = false;
 	size_t ulen = strlen(url);
@@ -504,11 +502,10 @@ bool sendHttpReply ( void *state ) {
 static XmlDoc *s_injectHead = NULL;
 static XmlDoc *s_injectTail = NULL;
 
-XmlDoc *getInjectHead ( ) { return s_injectHead; }
+XmlDoc *getInjectHead() { return s_injectHead; }
 
 // send back a reply to the originator of the msg7 injection request
 void sendUdpReply7 ( void *state ) {
-
 	XmlDoc *xd = (XmlDoc *)state;
 
 	// remove from linked list
