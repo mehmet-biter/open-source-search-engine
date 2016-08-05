@@ -178,8 +178,6 @@ public:
 
 	char m_convertedNiceness;
 
-	char *m_hostname;
-
 protected:
 	// set the UdpSlot's protocol, endpoint info, transId, timeout
 	void connect(UdpProtocol *proto, sockaddr_in *endPoint, Host *host, int32_t hostId, int32_t transId,
@@ -312,19 +310,6 @@ protected:
 	UdpSlot *m_callbackListNext;
 	UdpSlot *m_callbackListPrev;
 
-	// we keep the unused slots in a linked list in UdpServer
-	UdpSlot *m_availableListNext;
-
-	// and for doubly linked list of used slots
-	UdpSlot *m_activeListNext;
-	UdpSlot *m_activeListPrev;
-
-	// store the key so when returning slot we can remove from hash table
-	key_t m_key;
-
-	char m_maxResends;
-
-	bool m_incoming;
 
 private:
 	// . send an ACK
@@ -469,7 +454,6 @@ private:
 	// don't wait longer than this, however
 	int16_t m_maxWait;
 
-	char m_preferEth;
 
 	// save cpu by not having to call memset() on m_sentBits et al
 	int32_t m_numBitsInitialized;
@@ -485,12 +469,31 @@ private:
 	unsigned char m_sentAckBits2 [ (MAX_DGRAMS / 8) + 1 ];
 	unsigned char m_readAckBits2 [ (MAX_DGRAMS / 8) + 1 ];
 
+	char m_preferEth;
+
+protected:
+	// we keep the unused slots in a linked list in UdpServer
+	UdpSlot *m_availableListNext;
+
+	// and for doubly linked list of used slots
+	UdpSlot *m_activeListNext;
+	UdpSlot *m_activeListPrev;
+
+	// store the key so when returning slot we can remove from hash table
+	key_t m_key;
+
+	char m_maxResends;
+
+	bool m_incoming;
+
 public:
 	// . for the hot udp server, we cannot call malloc in the sig handler
 	//   so we set m_readBuf to this to read in int16_t requests
 	// . caller should pre-allocated m_readBuf when calling sendRequest() if he expects a large reply
 	// . incoming requests simply cannot be bigger than this for the hot udp server
 	char m_tmpBuf[TMPBUFSIZE];
+
+	char *m_hostname;
 };
 
 extern int32_t g_cancelAcksSent;
