@@ -146,7 +146,7 @@ void DailyMerge::dailyMergeLoop ( ) {
 		int32_t todayDOW = tt->tm_wday + 1;
 		// make sure 1 to 7
 		if ( todayDOW < 0 || todayDOW > 6 ) { 
-			log("merge: bad today dow of %i for coll %s",
+			log(LOG_WARN, "merge: bad today dow of %i for coll %s",
 			    (int)todayDOW,cr->m_coll);
 			return;
 		}

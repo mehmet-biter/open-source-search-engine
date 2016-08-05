@@ -682,7 +682,7 @@ void  handleRequest25 ( UdpSlot *slot , int32_t netnice ) {
 	req->m_udpSlot = slot;
 
 	if ( g_conf.m_logDebugLinkInfo && req->m_mode == MODE_SITELINKINFO ) {
-		log("linkdb: got msg25 request sitehash64=%" PRId64" "
+		log(LOG_DEBUG, "linkdb: got msg25 request sitehash64=%" PRId64" "
 		    "site=%s "
 		    ,req->m_siteHash64
 		    ,req->ptr_site
@@ -1064,13 +1064,13 @@ bool Msg25::doReadLoop ( ) {
 	if ( g_conf.m_logDebugLinkInfo ) {
 		const char *ms = "page";
 		if ( m_mode == MODE_SITELINKINFO ) ms = "site";
-		log("msg25: reading linkdb list mode=%s site=%s url=%s "
+		log(LOG_DEBUG, "msg25: reading linkdb list mode=%s site=%s url=%s "
 		    "docid=%" PRId64" linkdbstartkey=%s",
 		    ms,m_site,m_url,m_docId,KEYSTR(&startKey,LDBKS));
 	}
 
         if ( g_process.m_mode == EXIT_MODE ) {
-		log("linkdb: shutting down. exiting link text loop.");
+		log(LOG_DEBUG, "linkdb: shutting down. exiting link text loop.");
 		g_errno = ESHUTTINGDOWN;
 		return false;
 	}
@@ -1079,7 +1079,7 @@ bool Msg25::doReadLoop ( ) {
 
 	CollectionRec *cr = g_collectiondb.getRec ( m_collnum );
 	if ( ! cr ) {
-		log("linkdb: no coll for collnum %" PRId32,(int32_t)m_collnum);
+		log(LOG_WARN, "linkdb: no coll for collnum %" PRId32,(int32_t)m_collnum);
 		g_errno = ENOCOLLREC;
 		return true;
 	}
@@ -1131,7 +1131,7 @@ bool Msg25::doReadLoop ( ) {
 
 	// return true on error
 	if ( g_errno ) {
-		log("build: Had error getting linkers to url %s : %s.",
+		log(LOG_WARN, "build: Had error getting linkers to url %s : %s.",
 		    m_url,mstrerror(g_errno));
 		return true;
 	}
@@ -1155,7 +1155,7 @@ void gotListWrapper ( void *state , RdbList *list , Msg5 *msg5 ) {
 
 	// error? wait for all replies to come in...
 	if ( THIS->m_numRequests > THIS->m_numReplies ) {
-		log("msg25: had error %s numreplies=%" PRId32" numrequests=%" PRId32" "
+		log(LOG_WARN, "msg25: had error %s numreplies=%" PRId32" numrequests=%" PRId32" "
 		    "round=%" PRId32,
 		    mstrerror(g_errno),THIS->m_numReplies,THIS->m_numRequests,
 		    THIS->m_round);
@@ -1192,7 +1192,7 @@ bool Msg25::gotList() {
 
 	// return true on error
 	if ( g_errno ) {
-		log("build: Had error getting linkers to url %s : %s.",
+		log(LOG_WARN, "build: Had error getting linkers to url %s : %s.",
 		    m_url,mstrerror(g_errno));
 		return true;
 	}
@@ -1810,7 +1810,7 @@ log("@@@@ Msg25::gotLinkText() ->");
 		if ( r && r->m_errno && ! g_errno ) g_errno = r->m_errno;
 		// if it had an error print it for now
 		if ( r && r->m_errno )
-			log("query: msg25: msg20 had error for docid %" PRId64" : "
+			log(LOG_WARN, "query: msg25: msg20 had error for docid %" PRId64" : "
 			    "%s",r->m_docId, mstrerror(r->m_errno));
 	}
 	
@@ -1896,7 +1896,7 @@ log("@@@@ %d: good=%s",__LINE__,good?"true":"false");
 log("@@@@ %d: good=%s",__LINE__,good?"true":"false");
 	// sanity check, Xml::set() requires this...
 	if ( r&&r->size_rssItem > 0 && r->ptr_rssItem[r->size_rssItem-1]!=0 ) {
-		log("admin: received corrupt rss item of size "
+		log(LOG_WARN, "admin: received corrupt rss item of size "
 		    "%" PRId32" not null terminated  from linker %s",
 		    r->size_rssItem,r->ptr_ubuf);
 		// ignore it for now
@@ -2123,12 +2123,10 @@ log("@@@@ Msg25::gotLinkText(): store=%s", store?"true":"false");
 		if ( m_mode == MODE_SITELINKINFO ) {
 			ms = "site";
 		}
-		// debug
-		if ( g_conf.m_logDebugLinkInfo ) {
-			log("linkdb: recalling round=%" PRId32" for %s=%s "
-			    "req=0x%" PTRFMT" numlinkerreplies=%" PRId32,
-			    m_round,ms,m_site,(PTRTYPE)m_req25,m_numReplyPtrs);
-		}
+
+		logDebug(g_conf.m_logDebugLinkInfo, "linkdb: recalling round=%" PRId32" for %s=%s "
+		    "req=0x%" PTRFMT" numlinkerreplies=%" PRId32,
+		    m_round,ms,m_site,(PTRTYPE)m_req25,m_numReplyPtrs);
 		// and re-call. returns true if did not block.
 		// returns true with g_errno set on error.
 		if ( ! doReadLoop() ) return false;
@@ -2151,14 +2149,14 @@ log("@@@@ Msg25::gotLinkText(): store=%s", store?"true":"false");
 	if ( g_conf.m_logDebugLinkInfo ) {
 		const char *ms = "page";
 		if ( m_mode == MODE_SITELINKINFO ) ms = "site";
-		log("msg25: making final linkinfo mode=%s site=%s url=%s "
+		log(LOG_DEBUG, "msg25: making final linkinfo mode=%s site=%s url=%s "
 		    "docid=%" PRId64,
 		    ms,m_site,m_url,m_docId);
 	}
 
 	const CollectionRec *cr = g_collectiondb.getRec ( m_collnum );
 	if ( ! cr ) {
-		log("linkdb: collnum %" PRId32" is gone 2",(int32_t)m_collnum);
+		log(LOG_WARN, "linkdb: collnum %" PRId32" is gone 2",(int32_t)m_collnum);
 		// that func doesn't set g_errno so we must
 		g_errno = ENOCOLLREC;
 		return true;
@@ -2213,7 +2211,7 @@ log("@@@@ m_linkInfoBuf->length()=%d", m_linkInfoBuf->length());
 			int64_t d1 = m_replyPtrs[i-1]->m_docId;
 			int64_t d2 = m_replyPtrs[i  ]->m_docId;
 			if ( d1 == d2 )
-				log("build: got same docid in msg25 "
+				log(LOG_DEBUG, "build: got same docid in msg25 "
 				    "d=%" PRId64" url=%s",d1,
 				    m_replyPtrs[i]->ptr_ubuf);
 			if ( q1 == q2 && d1 <= d2 ) continue;

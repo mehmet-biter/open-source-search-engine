@@ -216,7 +216,7 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 	int32_t     times[50000];//MAX_UDP_SLOTS];
 	UdpSlot *slots[50000];//MAX_UDP_SLOTS];
 	int32_t nn = 0;
-	for (UdpSlot *s = server->getActiveHead(); s; s = s->m_activeListNext) {
+	for (UdpSlot *s = server->getActiveHead(); s; s = s->getActiveListNext()) {
 		if ( nn >= 50000 ) {
 			log("admin: Too many udp sockets.");
 			break;

@@ -6,9 +6,7 @@
 #ifndef GB_UDPSLOT_H
 #define GB_UDPSLOT_H
 
-#include "Mem.h"
 #include "UdpProtocol.h"
-#include "Hostdb.h"
 #include "MsgType.h"
 
 #define SMALLDGRAMS
@@ -57,6 +55,8 @@
 // . we cannot call malloc so it must fit in here
 // . now we need tens of thousands of udp slots, so keep this small
 #define TMPBUFSIZE (250)
+
+class Host;
 
 class UdpSlot {
 	// this will help to hide more of UdpSlot implementation from the rest of the codebase
@@ -156,6 +156,10 @@ public:
 		return m_calledCallback;
 	}
 
+	UdpSlot* getActiveListNext() {
+		return m_activeListNext;
+	}
+
 	// a ptr to the Host class for shotgun info
 	Host *m_host;
 
@@ -171,6 +175,8 @@ public:
 	char *m_readBuf;      // store recv'd msg in here.
 	int32_t m_readBufSize;  // w/o the dgram headers.
 	int32_t m_readBufMaxSize;
+
+	char m_convertedNiceness;
 
 protected:
 	// set the UdpSlot's protocol, endpoint info, transId, timeout
@@ -296,11 +302,6 @@ protected:
 	// remember our niceness level
 	int32_t m_niceness;
 
-public:
-
-	char m_convertedNiceness;
-
-protected:
 	// did we call the handler for this?
 	bool m_calledHandler;
 	bool m_calledCallback;
@@ -308,6 +309,7 @@ protected:
 	// and for doubly linked list of callback candidates
 	UdpSlot *m_callbackListNext;
 	UdpSlot *m_callbackListPrev;
+
 
 private:
 	// . send an ACK
@@ -448,8 +450,10 @@ private:
 
 	// now caller can decide initial backoff, doubles each time no ack rcvd
 	int16_t m_backoff;
+
 	// don't wait longer than this, however
 	int16_t m_maxWait;
+
 
 	// save cpu by not having to call memset() on m_sentBits et al
 	int32_t m_numBitsInitialized;
@@ -465,7 +469,9 @@ private:
 	unsigned char m_sentAckBits2 [ (MAX_DGRAMS / 8) + 1 ];
 	unsigned char m_readAckBits2 [ (MAX_DGRAMS / 8) + 1 ];
 
-public:
+	char m_preferEth;
+
+protected:
 	// we keep the unused slots in a linked list in UdpServer
 	UdpSlot *m_availableListNext;
 
@@ -480,19 +486,14 @@ public:
 
 	bool m_incoming;
 
+public:
 	// . for the hot udp server, we cannot call malloc in the sig handler
 	//   so we set m_readBuf to this to read in int16_t requests
-	// . caller should pre-allocated m_readBuf when calling sendRequest()
-	//   if he expects a large reply
-	// . incoming requests simply cannot be bigger than this for the
-	//   hot udp server
+	// . caller should pre-allocated m_readBuf when calling sendRequest() if he expects a large reply
+	// . incoming requests simply cannot be bigger than this for the hot udp server
 	char m_tmpBuf[TMPBUFSIZE];
 
 	char *m_hostname;
-
-private:
-
-	char m_preferEth;
 };
 
 extern int32_t g_cancelAcksSent;
