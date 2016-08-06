@@ -8,7 +8,7 @@ static bool isTLD ( char *tld, int32_t tldLen );
 
 char *getDomainOfIp ( char *host , int32_t hostLen , int32_t *dlen ) {
 	// get host length
-	//int32_t hostLen = gbstrlen(host);
+	//int32_t hostLen = strlen(host);
 	// if ip != 0 then host is a numeric ip, point to first 3 #'s
 	char *s = host + hostLen - 1;
 	while ( s > host && *s!='.' ) s--;
@@ -25,7 +25,7 @@ char *getDomain ( char *host , int32_t hostLen , char *tld , int32_t *dlen ) {
 	// assume no domain 
 	*dlen = 0;
 	// get host length
-	//int32_t hostLen = gbstrlen(host);
+	//int32_t hostLen = strlen(host);
 	// get the tld in host, if any, if not, it returns NULL
 	char *s = tld; // getTLD ( host , hostLen );
 	// return NULL if host contains no valid tld
@@ -54,7 +54,7 @@ char *getTLD ( char *host , int32_t hostLen ) {
 	if(hostLen==0)
 		return NULL;
 	// make "s" point to last period in the host
-	//char *s = host + gbstrlen(host) - 1;
+	//char *s = host + strlen(host) - 1;
 	char *hostEnd = host + hostLen;
 	char *s       = hostEnd - 1;
 	while ( s > host && *s !='.' ) s--;
@@ -1882,7 +1882,7 @@ static bool isTLD ( char *tld , int32_t tldLen ) {
 		int32_t n = (int32_t)sizeof(s_tlds)/ sizeof(char *); 
 		for ( int32_t i = 0 ; i < n ; i++ ) {
 			const char      *d    = s_tlds[i];
-			int32_t       dlen = gbstrlen ( d );
+			int32_t       dlen = strlen ( d );
 			int64_t  dh   = hash64Lower_a ( d , dlen );
 			if ( ! s_table.addKey (&dh,NULL) ) {
 				log( LOG_WARN, "build: dom table failed");
@@ -1891,7 +1891,7 @@ static bool isTLD ( char *tld , int32_t tldLen ) {
 		}
 		s_isInitialized = true;
 	} 
-	int64_t h = hash64Lower_a ( tld , tldLen ); // gbstrlen(tld));
+	int64_t h = hash64Lower_a ( tld , tldLen ); // strlen(tld));
 	return s_table.isInTable ( &h );//getScoreFromTermId ( h );
 }		
 

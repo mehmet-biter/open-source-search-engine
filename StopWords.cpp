@@ -145,15 +145,16 @@ bool initWordTable( HashTableX *table, const char *words[], const char *label ) 
 	// count them
 	int32_t count; for ( count = 0 ; words[count] ; count++ );
 	// set up the hash table
-	if ( ! table->set ( 8,4,count * 2,NULL,0,false,0,label ) ) 
-		return log(LOG_INIT,"build: Could not init stop words "
-			   "table." );
+	if ( ! table->set ( 8,4,count * 2,NULL,0,false,0,label ) ) {
+		log(LOG_INIT, "build: Could not init stop words table.");
+		return false;
+	}
 	// now add in all the stop words
 	int32_t n = count;//(int32_t)size/ sizeof(char *); 
 	for ( int32_t i = 0 ; i < n ; i++ ) {
 		const char      *sw    = words[i];
 		if ( ! sw ) break;
-		int32_t       swlen = gbstrlen ( sw );
+		int32_t       swlen = strlen ( sw );
 		int64_t  swh   = hash64Lower_utf8 ( sw , swlen );
 		//log("ii: #%" PRId32"  %s",i,sw);
 		if ( ! table->addTerm (&swh,i+1) ) return false;
@@ -3821,16 +3822,15 @@ int32_t isCommonWord ( int64_t h ) {
 	// by the bitScores in IndexTable.cpp
 	if ( ! s_commonWordsInitialized ) {
 		// set up the hash table
-		if ( ! s_commonWordTable.set (8,4,sizeof(s_commonWords)*2,
-					      NULL,0,false,0,"commonwrds") ) 
-			return log(LOG_INIT,
-				   "query: Could not init common words "
-				   "table.");
+		if ( ! s_commonWordTable.set (8,4,sizeof(s_commonWords)*2, NULL,0,false,0,"commonwrds") ) {
+			log(LOG_INIT, "query: Could not init common words table.");
+			return false;
+		}
 		// now add in all the stop words
 		int32_t n = (int32_t)sizeof(s_commonWords)/ sizeof(char *); 
 		for ( int32_t i = 0 ; i < n ; i++ ) {
 			const char *sw    = s_commonWords[i];
-			int32_t  swlen = gbstrlen ( sw );
+			int32_t  swlen = strlen ( sw );
 			// use the same algo that Words.cpp computeWordIds does
 			int64_t swh = hash64Lower_utf8 ( sw , swlen );
 			if ( ! s_commonWordTable.addTerm ( &swh,i+1 ) )

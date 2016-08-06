@@ -35,10 +35,9 @@ class MsgC {
 		   int32_t  *ip ,
 		   void  *state ,
 		   void (* callback) ( void *state , int32_t ip ),
-		   int32_t  niceness = 2,
-		   bool  forwardToProxy = false );
+		   int32_t  niceness = 2);
 	// register our request handle with g_udp server
-	bool registerHandler ( );
+	static bool registerHandler();
 
 	int32_t gotReply();
 

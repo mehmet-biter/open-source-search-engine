@@ -10,6 +10,7 @@
 #include "RdbMem.h"
 #include "RdbDump.h"
 #include "RdbBuckets.h"
+#include "RdbIndex.h"
 
 bool makeTrashDir() ;
 
@@ -116,7 +117,8 @@ public:
 		    bool   preloadDiskPageCache = false ,
 		    char   keySize = 12    ,
 		    bool   biasDiskPageCache    = false ,
-		    bool   isCollectionLess = false );
+		    bool   isCollectionLess = false,
+		    bool	useIndexFile = false );
 	// . frees up all the memory and closes all files
 	// . suspends any current merge (saves state to disk)
 	// . calls reset() for each file
@@ -131,21 +133,16 @@ public:
 		     bool exitAfterClosing );
 	//bool close ( ) { return close ( NULL , NULL ); }
 	// used by PageMaster.cpp to check to see if all rdb's are closed yet
-	bool isClosed ( ) { return m_isClosed; }
-	bool needsSave();
+	bool isClosed() const { return m_isClosed; }
+	bool needsSave() const;
 
 	// . returns false and sets g_errno on error
 	// . caller should retry later on g_errno of ENOMEM or ETRYAGAIN
 	// . returns the node # in the tree it added the record to
 	// . key low bit must be set (otherwise it indicates a delete)
-	bool addRecord ( collnum_t collnum , 
-			 //key_t &key, char *data, int32_t dataSize );
-			 char *key, char *data, int32_t dataSize,
-			 int32_t niceness);
-	bool addRecord ( const char *coll , char *key, char *data, int32_t dataSize,
-			 int32_t niceness);
-	bool addRecord (const char *coll , key_t &key, char *data, int32_t dataSize,
-			int32_t niceness) {
+	bool addRecord ( collnum_t collnum, char *key, char *data, int32_t dataSize, int32_t niceness);
+	bool addRecord ( const char *coll , char *key, char *data, int32_t dataSize, int32_t niceness);
+	bool addRecord (const char *coll , key_t &key, char *data, int32_t dataSize, int32_t niceness) {
 		return addRecord(coll,(char *)&key,data,dataSize, niceness);}
 
 	// returns false if no room in tree or m_mem for a list to add
@@ -159,34 +156,38 @@ public:
 	// . if we can't handle all records in list we don't add any and
 	//   set errno to ETRYAGAIN or ENOMEM
 	// . we copy all data so you can free your list when we're done
-	bool addList ( collnum_t collnum , RdbList *list, int32_t niceness );
+	bool addList ( collnum_t collnum , RdbList *list, int32_t niceness);
 
 	// calls addList above
 	bool addList ( const char *coll , RdbList *list, int32_t niceness );
 
-	bool isSecondaryRdb () {
+	bool isSecondaryRdb() const {
 		return ::isSecondaryRdb((unsigned char)m_rdbId);
 	}
 	
-	bool isInitialized () { return m_initialized; }
+	bool isInitialized() const { return m_initialized; }
 
 	// get the directory name where this rdb stores it's files
-	char *getDir       ( ) { return g_hostdb.m_dir; }
+	char       *getDir       ( ) { return g_hostdb.m_dir; }
+	const char *getDir() const { return g_hostdb.m_dir; }
 
-	int32_t getFixedDataSize ( ) { return m_fixedDataSize; }
+	int32_t getFixedDataSize() const { return m_fixedDataSize; }
 
-	bool useHalfKeys ( ) { return m_useHalfKeys; }
-	char getKeySize  ( ) { return m_ks; }
+	bool useHalfKeys() const { return m_useHalfKeys; }
+	char getKeySize() const { return m_ks; }
+	int32_t getPageSize() const { return m_pageSize; }
 
 	RdbTree    *getTree    ( ) { if(!m_useTree) return NULL; return &m_tree; }
+	RdbIndex   *getIndex   ( ) { if(!m_useIndexFile) return NULL; return &m_index; }
 	RdbMem     *getRdbMem  ( ) { return &m_mem; }
-	bool       useTree     ( ) { return m_useTree;}
+	bool       useTree() const { return m_useTree;}
+	bool       useIndexFile() const { return m_useIndexFile;}
 
 	int32_t       getNumUsedNodes() const;
-	int32_t       getMaxTreeMem();
-	int32_t       getTreeMemOccupied() ;
-	int32_t       getTreeMemAlloced () ;
-	int32_t       getNumNegativeKeys();
+	int32_t       getMaxTreeMem() const;
+	int32_t       getTreeMemOccupied() const;
+	int32_t       getTreeMemAlloced() const;
+	int32_t       getNumNegativeKeys() const;
 	
 	void disableWrites ();
 	void enableWrites  ();
@@ -234,36 +235,32 @@ public:
 	int64_t getNumGlobalRecs ( );
 
 	// used for keeping track of stats
-	void      didSeek       (            ) { m_numSeeks++; }
-	void      didRead       ( int64_t bytes ) { m_numRead += bytes; }
-	void      didReSeek     (            ) { m_numReSeeks++; }
-	int64_t getNumSeeks   (            ) { return m_numSeeks; }
-	int64_t getNumReSeeks (            ) { return m_numReSeeks; }
-	int64_t getNumRead    (            ) { return m_numRead ; }
+	void    didSeek() { m_numSeeks++; }
+	void    didRead(int64_t bytes) { m_numRead += bytes; }
+	void    didReSeek() { m_numReSeeks++; }
+	int64_t getNumSeeks()   const { return m_numSeeks; }
+	int64_t getNumReSeeks() const { return m_numReSeeks; }
+	int64_t getNumRead()    const { return m_numRead ; }
 
 	// net stats for "get" requests
-	void      readRequestGet ( int32_t bytes ) { 
-		m_numReqsGet++    ; m_numNetReadGet += bytes; }
-	void      sentReplyGet     ( int32_t bytes ) {
-		m_numRepliesGet++ ; m_numNetSentGet += bytes; }
-	int64_t getNumRequestsGet ( ) { return m_numReqsGet;    }
-	int64_t getNetReadGet     ( ) { return m_numNetReadGet; }
-	int64_t getNumRepliesGet  ( ) { return m_numRepliesGet; }
-	int64_t getNetSentGet     ( ) { return m_numNetSentGet; }
+	void    readRequestGet(int32_t bytes) { m_numReqsGet++; m_numNetReadGet += bytes; }
+	void    sentReplyGet(int32_t bytes) { m_numRepliesGet++; m_numNetSentGet += bytes; }
+	int64_t getNumRequestsGet() const { return m_numReqsGet; }
+	int64_t getNetReadGet()     const { return m_numNetReadGet; }
+	int64_t getNumRepliesGet()  const { return m_numRepliesGet; }
+	int64_t getNetSentGet()     const { return m_numNetSentGet; }
 
 	// net stats for "add" requests
-	void      readRequestAdd ( int32_t bytes ) { 
-		m_numReqsAdd++    ; m_numNetReadAdd += bytes; }
-	void      sentReplyAdd     ( int32_t bytes ) {
-		m_numRepliesAdd++ ; m_numNetSentAdd += bytes; }
-	int64_t getNumRequestsAdd ( ) { return m_numReqsAdd;    }
-	int64_t getNetReadAdd     ( ) { return m_numNetReadAdd; }
-	int64_t getNumRepliesAdd  ( ) { return m_numRepliesAdd; }
-	int64_t getNetSentAdd     ( ) { return m_numNetSentAdd; }
+	void    readRequestAdd(int32_t bytes) { m_numReqsAdd++; m_numNetReadAdd += bytes; }
+	void    sentReplyAdd(int32_t bytes) { m_numRepliesAdd++ ; m_numNetSentAdd += bytes; }
+	int64_t getNumRequestsAdd() const { return m_numReqsAdd; }
+	int64_t getNetReadAdd()     const { return m_numNetReadAdd; }
+	int64_t getNumRepliesAdd()  const { return m_numRepliesAdd; }
+	int64_t getNetSentAdd()     const { return m_numNetSentAdd; }
 
 	// used by main.cpp to periodically save us if we haven't dumped
 	// in a while
-	int64_t getLastWriteTime   ( ) { return m_lastWrite; }
+	int64_t getLastWriteTime() const { return m_lastWrite; }
 	
 	// private:
 
@@ -274,6 +271,8 @@ public:
 
 	bool saveTree  ( bool useThread ) ;
 	bool saveMaps();
+	bool saveIndex( bool useThread );
+
 	//bool saveCache ( bool useThread ) ;
 
 	// . load the tree named "saved.dat", keys must be out of order because
@@ -293,11 +292,11 @@ public:
 	// . called when we've dumped the tree to disk w/ keys ordered
 	void doneDumping ( );
 
-	bool needsDump ( );
+	bool needsDump() const;
 
 	// these are used for computing load on a machine
-	bool isMerging ( ) ;
-	bool isDumping ( ) { return m_dump.isDumping(); }
+	bool isMerging() const;
+	bool isDumping() const { return m_dump.isDumping(); }
 
 	// PageRepair.cpp calls this when it is done rebuilding an rdb
 	// and wants to tell the primary rdb to reload itself using the newly
@@ -311,6 +310,8 @@ public:
 	int32_t      m_dbnameLen;
 
 	bool      m_isCollectionLess;
+	bool		m_useIndexFile;
+	
 
 	// for g_statsdb, etc.
 	RdbBase *m_collectionlessBase;
@@ -318,6 +319,7 @@ public:
 	// for storing records in memory
 	RdbTree    m_tree;  
 	RdbBuckets m_buckets;
+	RdbIndex	m_index;		// For now only DocID index for PosDB data files.
 	bool       m_useTree;
 
 	// for dumping a table to an rdb file
@@ -389,6 +391,7 @@ public:
 	int32_t  m_fn;
 	
 	char m_treeName [64];
+	char m_indexName [64];
 	char m_memName  [64];
 
 	int64_t m_lastWrite;
@@ -403,6 +406,8 @@ public:
 	char m_inDumpLoop;
 
 	char m_rdbId;
+
+private:
 	char m_ks; // key size
 	int32_t m_pageSize;
 

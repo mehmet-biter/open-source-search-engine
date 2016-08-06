@@ -224,9 +224,6 @@ class Conf {
 	
 	float m_synonymWeight;
 
-	// use sendmail to forward emails we send out
-	char   m_sendmailIp[MAX_MX_LEN];
-
 	// send emails when a host goes down?
 	bool   m_sendEmailAlerts;
 	//should we delay when only 1 host goes down out of twins till 9 30 am?
@@ -315,10 +312,8 @@ class Conf {
 	//bool   m_onlyAddUnchangedTermIds;
 	bool   m_doIncrementalUpdating;
 
-	// always true unless entire indexdb was deleted and we are rebuilding
-	bool   m_indexDeletes;
-
-	bool   m_splitTwins;
+	// Temporary (?) setting for new Posdb no-in-memory-merge feature
+	bool   m_noInMemoryPosdbMerge;
 
 	bool   m_useQuickpoll;
 
@@ -430,6 +425,7 @@ class Conf {
 	bool m_logTraceRdbBuckets;
 	bool m_logTraceRdbDump;
 	bool m_logTraceRdbMap;
+	bool m_logTraceRdbIndex;
 	bool m_logTraceRepairs;
 	bool m_logTraceRobots;
 	bool m_logTraceSpider;
@@ -484,8 +480,6 @@ class Conf {
 	//   to the twin
 	char  m_giveupOnDeadHosts;
 	char  m_bypassValidation;
-
-	int32_t  m_maxHardDriveTemp;
 
 	int32_t  m_maxHeartbeatDelay;
 	int32_t  m_maxCallbackDelay;

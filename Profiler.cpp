@@ -314,7 +314,7 @@ bool Profiler::processSymbolTable (FILE * file){
 					if ( end ) {
 						*end = '\0';
 					} else {
-						fnInfoTmp.m_fnName[gbstrlen( strtab + psym->st_name )] = '\0';
+						fnInfoTmp.m_fnName[strlen( strtab + psym->st_name )] = '\0';
 					}
 					
 					fnInfoTmp.m_timesCalled=0;
@@ -715,7 +715,7 @@ char* Profiler::getFnName( PTRTYPE address,int32_t *nameLen){
 	else 
 		return NULL;
 	if (nameLen)
-	*nameLen=gbstrlen(fnInfo->m_fnName);
+	*nameLen=strlen(fnInfo->m_fnName);
 	return fnInfo->m_fnName;
 }
 	
@@ -730,7 +730,7 @@ bool sendPageProfiler ( TcpSocket *s , HttpRequest *r ) {
 		coll = g_conf.getDefaultColl( r->getHost(), r->getHostLen() );
 	}
 
-	collLen = gbstrlen(coll);
+	collLen = strlen(coll);
 	int startRt=(int)r->getLong("rtstart",0);
 	int stopRt=(int)r->getLong("rtstop",0);
 	
@@ -817,7 +817,7 @@ FrameTrace::dump(	SafeBuf *out,
 		char *name = g_profiler.getFnName(address);
 		out->pad(' ', level);
 		uint32_t l;
-		if(name && (l = gbstrlen(name))) {
+		if(name && (l = strlen(name))) {
 			out->safePrintf("%s ", name);
 		} else {
 			l = sizeof("Unknown ") - 2;
@@ -858,7 +858,7 @@ FrameTrace::getPrintLen(const uint32_t level) const {
 	if(level) {
 		char *name = g_profiler.getFnName(address);
 		uint32_t l;
-		if(!(name && (l = gbstrlen(name)))) {
+		if(!(name && (l = strlen(name)))) {
 			l = sizeof("Unknown");
 		}
 		ret += l;
@@ -939,11 +939,6 @@ Profiler::getStackFrame() {
 		stopRealTimeProfiler(false);
 		return;
 	}
-
-	// prevent cores.
-	// TODO: hack this to a function somehow...
-	// not if in system malloc since backtrace() mallocs
-	if ( g_inMemFunction ) return;
 
 	//void *trace[32];
 
@@ -1581,7 +1576,7 @@ Profiler::printRealTimeInfo(SafeBuf *sb, const char *coll) {
 		if(entry.baseAddress == lastBaseAddress) continue;
 		if(!(maxEntries--)) break;
 		char * funcName;
-		if(!entry.funcName || !gbstrlen(entry.funcName))
+		if(!entry.funcName || !strlen(entry.funcName))
 			funcName = "Unknown";
 		else funcName = entry.funcName;
 		sb->safePrintf("<tr><td valign=\"top\">%s</td>"

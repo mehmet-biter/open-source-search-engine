@@ -58,7 +58,7 @@ void SpiderRequest::setKey (int32_t firstIp, int64_t parentDocId, int64_t uh48, 
 }
 
 void SpiderRequest::setDataSize ( ) {
-	m_dataSize = (m_url - (char *)this) + gbstrlen(m_url) + 1 
+	m_dataSize = (m_url - (char *)this) + strlen(m_url) + 1 
 		// subtract m_key and m_dataSize
 		- sizeof(key128_t) - 4 ;
 }
@@ -585,7 +585,6 @@ bool Spiderdb::verify ( char *coll ) {
 			      (char *)&endKey        ,
 			      64000         , // minRecSizes   ,
 			      true          , // includeTree   ,
-			      false         , // add to cache?
 			      0             , // max cache age
 			      0             , // startFileNum  ,
 			      -1            , // numFiles      ,
@@ -593,14 +592,16 @@ bool Spiderdb::verify ( char *coll ) {
 			      NULL          , // callback
 			      0             , // niceness
 			      false         , // err correction?
-			      NULL          ,
-			      0             ,
-			      -1            ,
-			      true          ,
-			      -1LL          ,
-			      true          )) {
+			      NULL          , // cache key
+			      0             , // retryNum
+			      -1            , // maxRetries
+			      true          , // compenstateForMerge
+			      -1LL          , // syncPoint
+			      true          , // isRealMerge
+			      true          )) { // allowPageCache
 		g_jobScheduler.allow_new_jobs();
-		return log("db: HEY! it did not block");
+		log(LOG_DEBUG, "db: HEY! it did not block");
+		return false;
 	}
 
 	int32_t count = 0;
@@ -1218,14 +1219,20 @@ bool loadLoop ( State11 *st ) {
 				     st->m_endKey        ,
 				     st->m_minRecSizes   ,
 				     true                , // include tree
-				     false               , // add to cache
 				     0                   , // max age
 				     0                   , // start file #
 				     -1                  , // # files
 				     st                  , // callback state
 				     gotListWrapper3     ,
 				     0                   , // niceness
-				     true               )) // do err correction
+				     true,                 // do err correction
+				     NULL,                 // cacheKeyPtr
+			             0,                    // retryNum
+			             -1,                   // maxRetries
+			             true,                 // compensateForMerge
+			             -1,                   // syncPoint
+			             false,                // isRealMerge
+			             true))                // allowPageCache
 		return false;
 	// print it. returns false on error
 	if ( ! printList ( st ) ) st->m_done = true;
@@ -2223,7 +2230,7 @@ int32_t getUrlFilterNum ( 	SpiderRequest	*sreq,
 	if ( langId >= 0 ) { // if ( srep ) {
 		// this is NULL on corruption
 		lang = getLanguageAbbr ( langId );//srep->m_langId );	
-		if (lang) langLen = gbstrlen(lang);
+		if (lang) langLen = strlen(lang);
 	}
 
 	const char *tld = (char *)-1;
@@ -4315,7 +4322,7 @@ bool SpiderRequest::setFromAddUrl ( char *url ) {
 	Url uu; uu.set ( url );
 	if ( uu.isRoot() ) m_hopCountValid = true;
 	// too big?
-	if ( gbstrlen(url) > MAX_URL_LEN ) {
+	if ( strlen(url) > MAX_URL_LEN ) {
 		g_errno = EURLTOOLONG;
 		logTrace( g_conf.m_logTraceSpider, "END, EURLTOOLONG" );
 		return false;

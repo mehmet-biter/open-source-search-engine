@@ -62,7 +62,7 @@ JsonItem *Json::getItem ( char *name ) {
 	return NULL;
 }
 
-#include "Mem.h" // gbstrlen()
+#include "Mem.h" // strlen()
 
 JsonItem *Json::parseJsonStringIntoJsonItems (const char *json , int32_t niceness ) {
 
@@ -121,7 +121,7 @@ JsonItem *Json::parseJsonStringIntoJsonItems (const char *json , int32_t nicenes
 	// reset p
 	p = json;
 	// json maybe bad utf8 causing us to miss the \0 char, so use "pend"
-	const char *pend = json + gbstrlen(json);
+	const char *pend = json + strlen(json);
 
 	// scan
 	for ( ; p < pend ; p += size ) {

@@ -77,10 +77,10 @@ int32_t Highlight::set( SafeBuf *sb, const Words *words, const Matches *matches,
 
 	// set lengths of provided front/back highlight tags
 	if ( m_frontTag ) {
-		m_frontTagLen = gbstrlen ( frontTag );
+		m_frontTagLen = strlen ( frontTag );
 	}
 	if ( m_backTag  ) {
-		m_backTagLen  = gbstrlen ( backTag  );
+		m_backTagLen  = strlen ( backTag  );
 	}
 
 	m_sb = sb;

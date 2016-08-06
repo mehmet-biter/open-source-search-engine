@@ -11,20 +11,12 @@
 
 #include <new>
 #include <stddef.h>            //for NULL
-#include <string.h>            //for strlen()
 #include <inttypes.h>
 #include "Sanity.h"
 
 
-extern bool g_inMemFunction;
-
 class SafeBuf;
 
-
-inline int gbstrlen ( const char *s ) {
-	if ( ! s ) { gbshutdownAbort(true); }
-	return strlen(s);
-}
 
 class Mem {
 
@@ -41,8 +33,7 @@ class Mem {
 				const char *note);
 	void  gbfree    ( void *ptr , int size , const char *note);
 	char *dup     ( const void *data , int32_t dataSize , const char *note);
-	char *strdup  ( const char *string , const char *note ) {
-		return dup ( string , gbstrlen ( string ) + 1 , note ); }
+	char *strdup  ( const char *string, const char *note );
 
 	int32_t validate();
 
@@ -90,6 +81,9 @@ class Mem {
 	int32_t          m_numAllocated;
 	int64_t     m_numTotalAllocated;
 	uint32_t m_memtablesize;
+
+private:
+	int printBreeches_unlocked();
 };
 
 extern class Mem g_mem;

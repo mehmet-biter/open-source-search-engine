@@ -322,18 +322,30 @@ bool Msg3::readList  ( char           rdbId         ,
 	m_allocSize = need;
 	m_alloc = (char *)mcalloc ( need , "Msg3" );
 	if ( ! m_alloc ) {
-		log("disk: Could not allocate %" PRId32" bytes read "
-		    "structures to read %s.",need,base->m_dbname);
+		log(LOG_WARN, "disk: Could not allocate %" PRId32" bytes read structures to read %s.",need,base->m_dbname);
 		return true;
 	}
+
 	char *p = m_alloc;
-	m_scans       = (RdbScan *)p; p += nn * sizeof(RdbScan);
-	m_startpg     = (int32_t    *)p; p += nn * 4;
-	m_endpg       = (int32_t    *)p; p += nn * 4;
-	//m_hintKeys    = (key_t   *)p; p += nn * sizeof(key_t);
-	m_hintKeys    = (char    *)p; p += nn * m_ks;
-	m_hintOffsets = (int32_t    *)p; p += nn * 4;
-	m_fileNums    = (int32_t    *)p; p += nn * 4;
+
+	m_scans = (RdbScan *) p;
+	p += nn * sizeof(RdbScan);
+
+	m_startpg = (int32_t *) p;
+	p += nn * 4;
+
+	m_endpg = (int32_t *) p;
+	p += nn * 4;
+
+	m_hintKeys = p;
+	p += nn * m_ks;
+
+	m_hintOffsets = (int32_t *) p;
+	p += nn * 4;
+
+	m_fileNums = (int32_t *) p;
+	p += nn * 4;
+
 	// sanity check
 	if ( p - m_alloc != need ) {
 		log(LOG_LOGIC,"disk: Bad malloc in Msg3.cpp.");
@@ -414,7 +426,7 @@ bool Msg3::readList  ( char           rdbId         ,
 	//	m_constrainKey -= (uint32_t)1;
 	KEYSET(m_constrainKey,m_endKey,m_ks);
 	if ( KEYNEG(m_constrainKey) )
-		KEYSUB(m_constrainKey,m_ks);
+		KEYDEC(m_constrainKey,m_ks);
 
 	// Msg5 likes to get the endkey for getting the list from the tree
 	if ( justGetEndKey ) return true;
@@ -510,7 +522,7 @@ bool Msg3::readList  ( char           rdbId         ,
 		// . maps[fn]->getKey(lastPage) will return the LAST KEY
 		//   and maps[fn]->getOffset(lastPage) the length of the file
 		//if ( maps[fn]->getNumPages()!=p2) endKey -=(uint32_t)1;
-		if ( maps[fn]->getNumPages() != p2 ) KEYSUB(endKey2,m_ks);
+		if ( maps[fn]->getNumPages() != p2 ) KEYDEC(endKey2,m_ks);
 		// otherwise, if we're reading all pages, then force the
 		// endKey to virtual inifinite
 		else KEYMAX(endKey2,m_ks);
@@ -535,13 +547,13 @@ bool Msg3::readList  ( char           rdbId         ,
 		      (KEYCMP(maps[fn]->getKeyPtr(h2),m_constrainKey,m_ks)>0||
 			  maps[fn]->getOffset(h2) == -1            ||
 			  maps[fn]->getAbsoluteOffset(h2) - offset >=
-			  m_minRecSizes ) )
+			  m_minRecSizes ) ) {
 			h2--;
+		}
+
 		// now set the hint
-		m_hintOffsets [ i ] = maps[fn]->getAbsoluteOffset ( h2 ) -
-			              maps[fn]->getAbsoluteOffset ( p1 ) ;
-		//m_hintKeys    [ i ] = maps[fn]->getKey            ( h2 );
-		KEYSET(&m_hintKeys[i*m_ks],maps[fn]->getKeyPtr(h2),m_ks);
+		m_hintOffsets[i] = maps[fn]->getAbsoluteOffset(h2) - maps[fn]->getAbsoluteOffset(p1);
+		KEYSET(&m_hintKeys[i * m_ks], maps[fn]->getKeyPtr(h2), m_ks);
 
 		// reset g_errno before calling setRead()
 		g_errno = 0;
@@ -647,16 +659,6 @@ bool Msg3::readList  ( char           rdbId         ,
 		                                startKey2, endKey2, m_ks, &m_lists[i], this, doneScanningWrapper,
 		                                base->useHalfKeys(), m_rdbId, m_niceness, m_allowPageCache, m_hitDisk ) ;
 
-		// . damn, usually the above will indirectly launch a thread
-		//   to do the reading, but it sets g_errno to EINTR,
-		//   "interrupted system call"!
-		// . i guess the thread does the read w/o blocking and then
-		//   queues the signal on g_loop's queue before it exits
-		// . try ignoring, and keep going
-		if ( g_errno == EINTR ) {
-			log("net: Interrupted system call while reading file. Ignoring.");
-			g_errno = 0;
-		}
 		// debug msg
 		//fprintf(stderr,"Msg3:: reading %" PRId32" bytes from file #%" PRId32","
 		//	"done=%" PRId32",offset=%" PRId64",g_errno=%s,"
@@ -672,7 +674,7 @@ bool Msg3::readList  ( char           rdbId         ,
 		}
 
 		// break on an error, and remember g_errno in case we block
-		if ( g_errno && g_errno != ENOTHREADSLOTS ) { 
+		if ( g_errno ) {
 			int32_t tt = LOG_WARN;
 			if ( g_errno == EFILECLOSED ) tt = LOG_INFO;
 			log(tt,"disk: Reading %s had error: %s.",
@@ -697,12 +699,6 @@ void Msg3::doneScanningWrapper(void *state) {
 
 	// inc the scan count
 	THIS->m_numScansCompleted++;
-
-	// we decided to try to ignore these errors
-	if ( g_errno == EINTR ) {
-		log("net: Interrupted system call while reading file. Ignoring.");
-		g_errno = 0;
-	}
 
 	// if we had an error, remember it
 	if ( g_errno ) {
@@ -766,13 +762,6 @@ bool Msg3::doneScanning ( ) {
 	if ( g_errno == EBUFTOOSMALL && m_maxRetries == -1 ) max = 0;
 	// msg0 sets maxRetries to 2, don't let max stay set to -1
 	if ( g_errno == EBUFTOOSMALL && m_maxRetries != -1 ) max = m_maxRetries;
-	// . if no thread slots available, that hogs up serious memory.
-	//   the size of Msg3 is 82k, so having just 5000 of them is 430MB.
-	// . i just made Msg3 alloc mem when it needs more than about 2k
-	//   so this problem is greatly reduced, therefore let's keep 
-	//   retrying... forever if no thread slots in thread queue since
-	//   we become the thread queue in a way.
-	if ( g_errno == ENOTHREADSLOTS ) max = -1;
 	// this is set above if the map has the same consecutive key repeated
 	// and the read is enormous
 	if ( g_errno == ECORRUPTDATA ) max = 0;
@@ -872,7 +861,7 @@ bool Msg3::doneScanning ( ) {
 		// print the error
 		static time_t s_time  = 0;
 		time_t now = getTime();
-		if ( now - s_time > 5 || g_errno != ENOTHREADSLOTS ) {
+		if ( now - s_time > 5 ) {
 			log(LOG_WARN, "net: Had error reading %s: %s. Retrying. (retry #%" PRId32")",
 			    base->m_dbname,mstrerror(m_errno) , m_retryNum );
 			s_time = now;
@@ -1039,22 +1028,10 @@ bool Msg3::doneScanning ( ) {
 
 		QUICKPOLL(m_niceness);
 
-		// if from our 'page' cache, no need to constrain
-		if ( ! m_lists[i].constrain ( m_startKey       ,
-					      m_constrainKey   , // m_endKey
-					      mrs           , // m_minRecSizes
-					      m_hintOffsets[i] ,
-					      //m_hintKeys   [i] ,
-					      &m_hintKeys   [i*m_ks] ,
-					      filename,//ff->getFilename() ,
-					      m_niceness ) ) {
-			log("net: Had error while constraining list read from "
-			    "%s: %s/%s. vfd=%" PRId32" parts=%" PRId32". "
-			    "This is likely caused by corrupted "
-			    "data on disk.", 
-			    mstrerror(g_errno), ff->getDir(),
-			    ff->getFilename(), ff->getVfd(),
-			    (int32_t)ff->m_numParts );
+		if (!m_lists[i].constrain(m_startKey, m_constrainKey, mrs, m_hintOffsets[i], &m_hintKeys[i * m_ks], m_rdbId, filename)) {
+			log(LOG_WARN, "net: Had error while constraining list read from %s: %s/%s. vfd=%" PRId32" parts=%" PRId32". "
+			    "This is likely caused by corrupted data on disk.",
+			    mstrerror(g_errno), ff->getDir(), ff->getFilename(), ff->getVfd(), (int32_t)ff->m_numParts );
 			continue;
 		}
 	}
@@ -1068,6 +1045,7 @@ bool Msg3::doneScanning ( ) {
 		     " from %s (niceness=%" PRId32").",
 		     took,m_numFileNums,count,base->m_dbname,m_niceness);
 	}
+
 	return true;
 }
 
@@ -1169,7 +1147,7 @@ void  Msg3::setPageRanges ( RdbBase *base ,
 		if ( KEYCMP(minKey,maps[fn]->getKeyPtr(m_endpg[i]),m_ks)!=0) 
 			continue;
 		//minKey += (uint32_t) 1;
-		KEYADD(minKey,m_ks);
+		KEYINC(minKey,m_ks);
 	}
 	// . we're done if we hit the end of all maps in the race
 	// . return the max end key
@@ -1199,12 +1177,12 @@ void  Msg3::setPageRanges ( RdbBase *base ,
 	if ( KEYCMP(minKey,endKey,m_ks)>0 ) {
 		//lastMinKey  = endKey;
 		KEYSET(minKey,endKey,m_ks);
-		KEYADD(minKey,m_ks);
+		KEYINC(minKey,m_ks);
 		KEYSET(lastMinKey,endKey,m_ks);
 	}
 	else {
 		KEYSET(lastMinKey,minKey,m_ks);
-		KEYSUB(lastMinKey,m_ks);
+		KEYDEC(lastMinKey,m_ks);
 	}
 	// it is now valid
 	lastMinKeyIsValid = 1;

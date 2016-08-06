@@ -47,9 +47,7 @@ public:
 	int32_t            m_niceness;
 	// was it found in the disk page cache?
 	char m_inPageCache;
-	// . if signal is still pending we need to know if BigFile got deleted
-	// . m_files must be NULL terminated
-	//class BigFile **m_files;
+
 	// . we get our fds before starting the read thread to avoid
 	//   problems with accessing m_files since RdbMerge may call unlinkPart
 	//   from the main thread while we're trying to get these things
@@ -131,7 +129,8 @@ class BigFile {
 	int64_t getSize     ( ) { return getFileSize(); }
 
 	// use the base filename as our filename
-	char *getFilename() { return m_baseFilename.getBufStart(); }
+	char       *getFilename()       { return m_baseFilename.getBufStart(); }
+	const char *getFilename() const { return m_baseFilename.getBufStart(); }
 
 	char *getDir() { return m_dir.getBufStart(); }
 
@@ -263,12 +262,12 @@ private:
 	//job/thread worker functions helping unlinkrename()
 	static void renameWrapper(void *state);
 	static void doneRenameWrapper(void *state, job_exit_t exit_type);
-	void doneRenameWrapper(File *f, job_exit_t exit_type);
-	void renameWrapper(File *f);
+	void doneRenameWrapper(File *f);
+	void renameWrapper(File *f, int32_t i);
 	static void unlinkWrapper(void *state);
 	void unlinkWrapper(File *f);
 	static void doneUnlinkWrapper(void *state, job_exit_t exit_type);
-	void doneUnlinkWrapper(File *f, job_exit_t exit_type);
+	void doneUnlinkWrapper(File *f, int32_t i);
 
 	// . add all parts from this directory
 	// . called by set() above for normal dir as well as stripe dir

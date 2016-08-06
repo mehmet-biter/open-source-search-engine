@@ -81,7 +81,7 @@ static bool storeTerm ( const char	*s        ,
 	// shortcut
 	const char *p = hi->m_prefix;
 	// add the prefix too!
-	if ( p  && ! wbuf->safeMemcpy(p,gbstrlen(p)+1)) return false;
+	if ( p  && ! wbuf->safeMemcpy(p,strlen(p)+1)) return false;
 	// none?
 	if ( ! p ) poff = -1;
 
@@ -91,7 +91,7 @@ static bool storeTerm ( const char	*s        ,
 	// shortcut
 	const char *d = hi->m_desc;
 	// add the desc too!
-	if ( d && ! wbuf->safeMemcpy(d,gbstrlen(d)+1) ) return false;
+	if ( d && ! wbuf->safeMemcpy(d,strlen(d)+1) ) return false;
 	// none?
 	if ( ! d ) doff = -1;
 
@@ -849,7 +849,7 @@ bool XmlDoc::hashContentType ( HashTableX *tt ) {
 
 	char tmp[6];
 	sprintf(tmp,"%" PRIu32,(uint32_t)ctype);
-	if ( ! hashString (tmp,gbstrlen(tmp),&hi ) ) return false;
+	if ( ! hashString (tmp,strlen(tmp),&hi ) ) return false;
 
 
 	// these ctypes are defined in HttpMime.h
@@ -873,7 +873,7 @@ bool XmlDoc::hashContentType ( HashTableX *tt ) {
 	// . use a score of 1 for all
 	// . TODO: ensure doc counting works ok with this when it does
 	//   it's interpolation
-	return hashString (s,gbstrlen(s),&hi );
+	return hashString (s,strlen(s),&hi );
 }
 
 // . hash the link: terms
@@ -1391,7 +1391,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 	//if ( isStatusDoc ) hi.m_prefix = "gbdocid2";
 	char buf2[32];
 	sprintf(buf2,"%" PRIu64,(m_docId) );
-	if ( ! hashSingleTerm(buf2,gbstrlen(buf2),&hi) ) return false;
+	if ( ! hashSingleTerm(buf2,strlen(buf2),&hi) ) return false;
 
 	//if ( isStatusDoc ) return true;
 
@@ -1540,7 +1540,7 @@ bool XmlDoc::hashIncomingLinkText ( HashTableX *tt               ,
 	//
 
 	int32_t noteLen = 0;
-	if ( note ) noteLen = gbstrlen ( note );
+	if ( note ) noteLen = strlen ( note );
 	// count "external" inlinkers
 	int32_t ecount = 0;
 
@@ -2147,7 +2147,7 @@ bool XmlDoc::hashWords3( HashInfo *hi, const Words *words, Phrases *phrases, Sec
 	// hash in the prefix
 	uint64_t prefixHash = 0LL;
 	int32_t plen = 0;
-	if ( hi->m_prefix ) plen = gbstrlen ( hi->m_prefix );
+	if ( hi->m_prefix ) plen = strlen ( hi->m_prefix );
 	if ( hi->m_prefix && plen ) {
 		// we gotta make this case insensitive, and skip spaces
 		// because if it is 'focal length' we can't search
@@ -2437,7 +2437,7 @@ bool XmlDoc::hashWords3( HashInfo *hi, const Words *words, Phrases *phrases, Sec
 			if ( ! wts ) continue;
 			// print the synonym
 			if ( ! storeTerm(wptrs[i], // synWord,
-					 wlens[i] -2, // gbstrlen(synWord),
+					 wlens[i] -2, // strlen(synWord),
 					 nah,  // termid
 					 hi,
 					 i, // wordnum
@@ -2689,7 +2689,7 @@ bool XmlDoc::hashNumberForSortingAsInt32 ( int32_t n , HashInfo *hi , const char
 	// the json name with dots in it like "product.info.price" or something
 	int64_t nameHash = 0LL;
 	int32_t nameLen = 0;
-	if ( hi->m_prefix ) nameLen = gbstrlen ( hi->m_prefix );
+	if ( hi->m_prefix ) nameLen = strlen ( hi->m_prefix );
 	if ( hi->m_prefix && nameLen )
 		nameHash = hash64Lower_utf8_nospaces( hi->m_prefix , nameLen );
 	// need a prefix for hashing numbers... for now
@@ -2765,7 +2765,7 @@ bool XmlDoc::hashNumberForSortingAsInt32 ( int32_t n , HashInfo *hi , const char
 	// store in buffer
 	char buf[128];
 	snprintf(buf,126,"%s:%s int32=%" PRId32,sortByStr, hi->m_prefix,n);
-	int32_t bufLen = gbstrlen(buf);
+	int32_t bufLen = strlen(buf);
 
 	// add to wts for PageParser.cpp display
 	// store it

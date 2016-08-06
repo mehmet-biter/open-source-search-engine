@@ -40,17 +40,15 @@ void Msg2::reset ( ) {
 //   as their componentCode, compound termlists have a componentCode of -1,
 //   other termlists have a componentCode of -2. These are typically taken
 //   from the Query.cpp class.
-bool Msg2::getLists ( int32_t     rdbId       ,
-		      collnum_t collnum , // char    *coll        ,
+bool Msg2::getLists ( collnum_t collnum , // char    *coll        ,
 		      bool     addToCache  ,
 		      const QueryTerm *qterms,
 		      int32_t numQterms,
 		      // put list of sites to restrict to in here
 		      // or perhaps make it collections for federated search?
-		      char *whiteList ,
+		      const char *whiteList ,
 		      int64_t docIdStart,
 		      int64_t docIdEnd,
-		      const int32_t    *minRecSizes,
 		      // make max MAX_MSG39_LISTS
 		      RdbList *lists       ,
 		      void    *state       ,
@@ -60,11 +58,6 @@ bool Msg2::getLists ( int32_t     rdbId       ,
 		      bool     isDebug ) {
 	// warning
 	if ( collnum < 0 ) log(LOG_LOGIC,"net: bad collection. msg2.");
-	if ( ! minRecSizes ) { 
-		g_errno = EBADENGINEER;
-		log(LOG_LOGIC,"net: MinRecSizes is NULL.");
-		return true;
-	}
 	// save callback and state
 	m_state       = state;
 	m_callback    = callback;
@@ -80,9 +73,7 @@ bool Msg2::getLists ( int32_t     rdbId       ,
 	m_docIdEnd   = docIdEnd;
 	m_allowHighFrequencyTermCache = allowHighFrequencyTermCache;
 	m_qterms              = qterms;
-	m_minRecSizes         = minRecSizes;
 	m_getComponents       = false;
-	m_rdbId               = rdbId;
 	m_addToCache          = addToCache;
 	m_collnum             = collnum;
 	// we haven't got any responses as of yet or sent any requests
@@ -111,10 +102,6 @@ bool Msg2::getLists ( int32_t     rdbId       ,
 }
 
 bool Msg2::getLists ( ) {
-	// if we're just using the root file of indexdb to save seeks
-	int32_t numFiles = -1;
-	bool includeTree = true;
-
 	// . send out a bunch of msg5 requests
 	// . make slots for all
 	for (  ; m_i < m_numLists ; m_i++ ) {
@@ -122,8 +109,10 @@ bool Msg2::getLists ( ) {
 		if ( m_i >= ABS_MAX_QUERY_TERMS ) gbshutdownLogicError();
 		// if any had error, forget the rest. do not launch any more
 		if ( m_errno ) break;
-		// skip if no bytes requested
-		if ( m_minRecSizes[m_i] == 0 ) continue;
+		
+		const QueryTerm *qt = &m_qterms[m_i];
+		if ( qt->m_ignored ) //skip ignored terms
+			continue;
 
 		if ( m_isDebug ) {
 			key144_t *sk ;
@@ -135,7 +124,7 @@ bool Msg2::getLists ( ) {
 			log("query: reading termlist #%" PRId32" "//from "
 			    //"distributed cache on host #%" PRId32". "
 			    "termId=%" PRId64". sk=%s ek=%s "
-			    "mr=%" PRId32" (docid0=%" PRId64" to "
+			    " (docid0=%" PRId64" to "
 			    "docid1=%" PRId64").",
 			    m_i,
 			    //hostId, 
@@ -145,14 +134,12 @@ bool Msg2::getLists ( ) {
 			    //sk->n2,
 			    //sk->n1,
 			    //(int32_t)sk->n0,
-			    m_minRecSizes[m_i],
 			    docId0,
 			    docId1);
 		}
 		
-		int32_t minRecSize = m_minRecSizes[m_i];
+		int32_t minRecSize = DEFAULT_POSDB_READSIZE;
 
-		const QueryTerm *qt = &m_qterms[m_i];
 
 		const char *sk2 = NULL;
 		const char *ek2 = NULL;
@@ -172,7 +159,8 @@ bool Msg2::getLists ( ) {
 		   m_allowHighFrequencyTermCache &&
 		   g_hfts.query_term_shortcut(m_qterms[m_i].m_termId,&hfterm_shortcut_posdb_buffer,&hfterm_shortcut_buffer_bytes))
 		{
-			log("query: term %" PRId64" (%*.*s) is a high-frequency term",m_qterms[m_i].m_termId,qt->m_qword->m_wordLen,qt->m_qword->m_wordLen,qt->m_qword->m_word);
+			log("query: term %" PRId64" (%*.*s) is a high-frequency term",
+			    m_qterms[m_i].m_termId,qt->m_qword->m_wordLen,qt->m_qword->m_wordLen,qt->m_qword->m_word);
 			//use PosDB shortcut buffer, put into RdbList and avoid actually going into PosDB
 			char *startKey = (char*)hfterm_shortcut_posdb_buffer;
 			char *endKey = ((char*)hfterm_shortcut_posdb_buffer)+hfterm_shortcut_buffer_bytes-18;
@@ -191,13 +179,7 @@ bool Msg2::getLists ( ) {
 			                 18);                                  //keysize
 			char ek2_copy[18];
 			memcpy(ek2_copy, ek2, sizeof(ek2_copy)); //RdbList::constrain() modifies endkey, so give it a copy
-			m_lists[m_i].constrain(sk2,            //startKey
-			                       ek2_copy,       //endKey
-			                       -1,             //minRecSizes
-			                       0,              //hintOffset
-			                       NULL,           //hintKey
-			                       "",             //filename
-			                       0);             //niceness
+			m_lists[m_i].constrain(sk2, ek2_copy, -1, 0, NULL, RDB_POSDB, "highfrequencyterm");
 			continue;
 		}
 
@@ -211,17 +193,16 @@ bool Msg2::getLists ( ) {
 		// . this is really only used to get IndexLists
 		// . we now always compress the list for 2x faster transmits
 		if ( ! msg5->getList ( 
-					   m_rdbId         , // rdbid
+					   RDB_POSDB,
 					   m_collnum      ,
 					   &m_lists[m_i], // listPtr
 					   sk2,
 					   ek2,
 					   minRecSize  ,
-					   includeTree, // include tree?
-					   false , // addtocache
+					   true, // include tree?
 					   0, // maxcacheage
 					   0              , // start file num
-					   numFiles, // num files
+					   -1,              // num files
 					   this,
 					   gotListWrapper ,
 					   m_niceness     ,
@@ -259,12 +240,12 @@ bool Msg2::getLists ( ) {
 
 	// . loop over terms in the whitelist, space separated. 
 	// . m_whiteList is NULL if none provided.
-	for ( char *p = m_p ; m_whiteList && *p ; m_w++ ) {
+	for ( const char *p = m_p ; m_whiteList && *p ; m_w++ ) {
 		// advance
-		char *current = p;
+		const char *current = p;
 		for ( ; *p && *p != ' ' ; p++ );
 		// save end of "current"
-		char *end = p;
+		const char *end = p;
 		// advance to point to next item in whiteList
 		for ( ; *p == ' ' ; p++ );
 		// . convert whiteList term into key
@@ -315,17 +296,16 @@ bool Msg2::getLists ( ) {
 
 		// start up the read. thread will wait in thread queue to 
 		// launch if too many threads are out.
-		if ( ! msg5->getList ( 	   m_rdbId         , // rdbid
+		if ( ! msg5->getList ( 	   RDB_POSDB,
 					   m_collnum        ,
 					   &m_whiteLists[m_w], // listPtr
 					   &sk3,
 					   &ek3,
 					   minRecSizes,
-					   includeTree,//true, // include tree?
-					   false , // addtocache
+					   true, // include tree?
 					   0, // maxcacheage
 					   0              , // start file num
-					   numFiles,//-1    , // num files
+					   -1,              // num files
 					   this,
 					   gotListWrapper ,
 					   m_niceness     ,
@@ -441,7 +421,7 @@ bool Msg2::gotList ( RdbList *list ) {
 	//if ( g_errno ) return true;
 	if ( m_errno )
 		log("net: Had error fetching data from %s: %s.", 
-		    getDbnameFromId(m_rdbId),
+		    getDbnameFromId(RDB_POSDB),
 		    mstrerror(m_errno) );
 
 	// note it
@@ -454,13 +434,12 @@ bool Msg2::gotList ( RdbList *list ) {
 
 	// bitch if we hit our max read sizes limit, we are losing docids!
 	for ( int32_t i = 0 ; i < m_numLists ; i++ ) {
-		if ( m_lists[i].m_listSize < m_minRecSizes[i] ) continue;
-		if ( m_minRecSizes[i] == 0 ) continue;
-		if ( m_minRecSizes[i] == -1 ) continue;
+		if ( m_lists[i].m_listSize < DEFAULT_POSDB_READSIZE ) continue;
+		if ( m_lists[i].m_listSize == 0 ) continue;
 
 		log("msg2: read termlist #%" PRId32" size=%" PRId32" "
 		    "maxSize=%" PRId32". losing docIds!",
-		    i,m_lists[i].m_listSize,m_minRecSizes[i]);
+		    i,m_lists[i].m_listSize,DEFAULT_POSDB_READSIZE);
 	}
 
 	// debug msg

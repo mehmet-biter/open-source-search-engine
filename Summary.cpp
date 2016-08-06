@@ -167,13 +167,15 @@ bool Summary::setSummary ( Xml *xml, Words *words, Sections *sections, Pos *pos,
 	// . leave room for tailing \0
 	if ( maxSummaryLen >= MAX_SUMMARY_LEN ) {
 		g_errno = EBUFTOOSMALL;
-		return log("query: Summary too big to hold in buffer of %" PRId32" bytes.",(int32_t)MAX_SUMMARY_LEN);
+		log(LOG_WARN, "query: Summary too big to hold in buffer of %" PRId32" bytes.",(int32_t)MAX_SUMMARY_LEN);
+		return false;
 	}
 
 	// do not overrun the final*[] buffers
 	if ( maxNumLines > 256 ) { 
 		g_errno = EBUFTOOSMALL; 
-		return log("query: More than 256 summary lines requested.");
+		log(LOG_WARN, "query: More than 256 summary lines requested.");
+		return false;
 	}
 
 	// Nothing to match...print beginning of content as summary
@@ -339,7 +341,7 @@ bool Summary::setSummary ( Xml *xml, Words *words, Sections *sections, Pos *pos,
 				log (LOG_WARN,"=-=-=-=-=-=-=-=-=-=-=-=-=-=-=");
 			sprintf(xp, "score=%08" PRId32" a=%05" PRId32" b=%05" PRId32" ",
 				(int32_t)score,(int32_t)a,(int32_t)b);
-			xp += gbstrlen(xp);
+			xp += strlen(xp);
 			for ( int32_t j = a; j < b; j++ ){
 				//int32_t s = scores->m_scores[j];
 				int32_t s = 0;
@@ -352,10 +354,10 @@ bool Summary::setSummary ( Xml *xml, Words *words, Sections *sections, Pos *pos,
 					*xp = c;
 					xp++;
 				}
-				//p += gbstrlen(p);
+				//p += strlen(p);
 				if ( s == 0 ) continue;
 				sprintf ( xp ,"(%" PRId32")",s);
-				xp += gbstrlen(xp);
+				xp += strlen(xp);
 			}
 			log (LOG_WARN,"query: summary: %s", buf);
 			//}

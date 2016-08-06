@@ -202,7 +202,6 @@ bool Linkdb::verify ( char *coll ) {
 			      (char*)&endKey        ,
 			      minRecSizes   ,
 			      true          , // includeTree   ,
-			      false         , // add to cache?
 			      0             , // max cache age
 			      0             , // startFileNum  ,
 			      -1            , // numFiles      ,
@@ -210,14 +209,17 @@ bool Linkdb::verify ( char *coll ) {
 			      NULL          , // callback
 			      0             , // niceness
 			      false         , // err correction?
-			      NULL          ,
-			      0             ,
-			      -1            ,
-			      true          ,
-			      -1LL          ,
-			      true          )) {
+			      NULL          , // cacheKey
+			      0             , // retryNum
+			      -1            , // maxRetries
+			      true          , // compensateForMerge
+			      -1LL          , // syncPoint
+			      true          , // isRealMerge
+			      true))          // allowPageCache
+	{
 		g_jobScheduler.allow_new_jobs();
-		return log("db: HEY! it did not block");
+		log(LOG_DEBUG, "db: HEY! it did not block");
+		return false;
 	}
 
 	int32_t count = 0;
@@ -469,8 +471,8 @@ bool getLinkInfo ( SafeBuf   *reqBuf              ,
 		   int32_t       ourDomHash32        ,
 		   SafeBuf   *linkInfoBuf         ) {
 
-	int32_t siteLen = gbstrlen(site);
-	int32_t urlLen  = gbstrlen(url);
+	int32_t siteLen = strlen(site);
+	int32_t urlLen  = strlen(url);
 
 	int32_t oldLinkSize = 0;
 	if ( oldLinkInfo )
@@ -676,7 +678,7 @@ void  handleRequest25 ( UdpSlot *slot , int32_t netnice ) {
 	req->m_udpSlot = slot;
 
 	if ( g_conf.m_logDebugLinkInfo && req->m_mode == MODE_SITELINKINFO ) {
-		log("linkdb: got msg25 request sitehash64=%" PRId64" "
+		log(LOG_DEBUG, "linkdb: got msg25 request sitehash64=%" PRId64" "
 		    "site=%s "
 		    ,req->m_siteHash64
 		    ,req->ptr_site
@@ -1051,13 +1053,13 @@ bool Msg25::doReadLoop ( ) {
 	if ( g_conf.m_logDebugLinkInfo ) {
 		const char *ms = "page";
 		if ( m_mode == MODE_SITELINKINFO ) ms = "site";
-		log("msg25: reading linkdb list mode=%s site=%s url=%s "
+		log(LOG_DEBUG, "msg25: reading linkdb list mode=%s site=%s url=%s "
 		    "docid=%" PRId64" linkdbstartkey=%s",
 		    ms,m_site,m_url,m_docId,KEYSTR(&startKey,LDBKS));
 	}
 
         if ( g_process.m_mode == EXIT_MODE ) {
-		log("linkdb: shutting down. exiting link text loop.");
+		log(LOG_DEBUG, "linkdb: shutting down. exiting link text loop.");
 		g_errno = ESHUTTINGDOWN;
 		return false;
 	}
@@ -1066,7 +1068,7 @@ bool Msg25::doReadLoop ( ) {
 
 	CollectionRec *cr = g_collectiondb.getRec ( m_collnum );
 	if ( ! cr ) {
-		log("linkdb: no coll for collnum %" PRId32,(int32_t)m_collnum);
+		log(LOG_WARN, "linkdb: no coll for collnum %" PRId32,(int32_t)m_collnum);
 		g_errno = ENOCOLLREC;
 		return true;
 	}
@@ -1089,14 +1091,21 @@ bool Msg25::doReadLoop ( ) {
 				(char*)&endKey  ,
 				m_minRecSizes   ,
 				includeTree     ,
-				false , // add to cache?
 				0 , // maxcacheage
 				0               , // startFileNum
 				numFiles        ,
 				this            ,
 				gotListWrapper  ,
 				m_niceness      ,
-				true            )){ // error correct?
+				true            , // error correct?
+				NULL, //cachekey
+				0,                //retryNum
+				-1,               //maxRetries
+				true,             //comp-for-merge
+				-1,               //syncPoint
+				false,            //isRealMerge
+				true))            //allowPageCache
+	{
 		//log("debug: msg0 blocked this=%" PRIx32,(int32_t)this);
 		return false;
 	}
@@ -1111,7 +1120,7 @@ bool Msg25::doReadLoop ( ) {
 
 	// return true on error
 	if ( g_errno ) {
-		log("build: Had error getting linkers to url %s : %s.",
+		log(LOG_WARN, "build: Had error getting linkers to url %s : %s.",
 		    m_url,mstrerror(g_errno));
 		return true;
 	}
@@ -1135,7 +1144,7 @@ void gotListWrapper ( void *state , RdbList *list , Msg5 *msg5 ) {
 
 	// error? wait for all replies to come in...
 	if ( THIS->m_numRequests > THIS->m_numReplies ) {
-		log("msg25: had error %s numreplies=%" PRId32" numrequests=%" PRId32" "
+		log(LOG_WARN, "msg25: had error %s numreplies=%" PRId32" numrequests=%" PRId32" "
 		    "round=%" PRId32,
 		    mstrerror(g_errno),THIS->m_numReplies,THIS->m_numRequests,
 		    THIS->m_round);
@@ -1172,7 +1181,7 @@ bool Msg25::gotList() {
 
 	// return true on error
 	if ( g_errno ) {
-		log("build: Had error getting linkers to url %s : %s.",
+		log(LOG_WARN, "build: Had error getting linkers to url %s : %s.",
 		    m_url,mstrerror(g_errno));
 		return true;
 	}
@@ -1472,12 +1481,12 @@ bool Msg25::sendRequests ( ) {
 		if ( m_mode == MODE_PAGELINKINFO ) {
 			r->m_isSiteLinkInfo = false;
 			r-> ptr_linkee = m_url;
-			r->size_linkee = gbstrlen(m_url)+1; // include \0
+			r->size_linkee = strlen(m_url)+1; // include \0
 		}
 		else {
 			r->m_isSiteLinkInfo = true;
 			r-> ptr_linkee = m_site;
-			r->size_linkee = gbstrlen(m_site)+1; // include \0
+			r->size_linkee = strlen(m_site)+1; // include \0
 		}
 		r->m_collnum = cr->m_collnum;
 		r->m_docId           = docId;
@@ -1760,7 +1769,7 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 		if ( r && r->m_errno && ! g_errno ) g_errno = r->m_errno;
 		// if it had an error print it for now
 		if ( r && r->m_errno )
-			log("query: msg25: msg20 had error for docid %" PRId64" : "
+			log(LOG_WARN, "query: msg25: msg20 had error for docid %" PRId64" : "
 			    "%s",r->m_docId, mstrerror(r->m_errno));
 	}
 	
@@ -1841,7 +1850,7 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 
 	// sanity check, Xml::set() requires this...
 	if ( r&&r->size_rssItem > 0 && r->ptr_rssItem[r->size_rssItem-1]!=0 ) {
-		log("admin: received corrupt rss item of size "
+		log(LOG_WARN, "admin: received corrupt rss item of size "
 		    "%" PRId32" not null terminated  from linker %s",
 		    r->size_rssItem,r->ptr_ubuf);
 		// ignore it for now
@@ -1980,7 +1989,7 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 	// compile the reason it could not vote
 	if ( r && ! good ) {
 		// set "noteLen" if not yet set
-		if ( note && noteLen == 0 ) noteLen = gbstrlen ( note );
+		if ( note && noteLen == 0 ) noteLen = strlen ( note );
 		// add it to our table
 		addNote ( note , noteLen , r->m_docId );
 		// . free the reply since it cannot vote
@@ -2055,12 +2064,10 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 		if ( m_mode == MODE_SITELINKINFO ) {
 			ms = "site";
 		}
-		// debug
-		if ( g_conf.m_logDebugLinkInfo ) {
-			log("linkdb: recalling round=%" PRId32" for %s=%s "
-			    "req=0x%" PTRFMT" numlinkerreplies=%" PRId32,
-			    m_round,ms,m_site,(PTRTYPE)m_req25,m_numReplyPtrs);
-		}
+
+		logDebug(g_conf.m_logDebugLinkInfo, "linkdb: recalling round=%" PRId32" for %s=%s "
+		    "req=0x%" PTRFMT" numlinkerreplies=%" PRId32,
+		    m_round,ms,m_site,(PTRTYPE)m_req25,m_numReplyPtrs);
 		// and re-call. returns true if did not block.
 		// returns true with g_errno set on error.
 		if ( ! doReadLoop() ) return false;
@@ -2083,14 +2090,14 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 	if ( g_conf.m_logDebugLinkInfo ) {
 		const char *ms = "page";
 		if ( m_mode == MODE_SITELINKINFO ) ms = "site";
-		log("msg25: making final linkinfo mode=%s site=%s url=%s "
+		log(LOG_DEBUG, "msg25: making final linkinfo mode=%s site=%s url=%s "
 		    "docid=%" PRId64,
 		    ms,m_site,m_url,m_docId);
 	}
 
 	const CollectionRec *cr = g_collectiondb.getRec ( m_collnum );
 	if ( ! cr ) {
-		log("linkdb: collnum %" PRId32" is gone 2",(int32_t)m_collnum);
+		log(LOG_WARN, "linkdb: collnum %" PRId32" is gone 2",(int32_t)m_collnum);
 		// that func doesn't set g_errno so we must
 		g_errno = ENOCOLLREC;
 		return true;
@@ -2144,7 +2151,7 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 			int64_t d1 = m_replyPtrs[i-1]->m_docId;
 			int64_t d2 = m_replyPtrs[i  ]->m_docId;
 			if ( d1 == d2 )
-				log("build: got same docid in msg25 "
+				log(LOG_DEBUG, "build: got same docid in msg25 "
 				    "d=%" PRId64" url=%s",d1,
 				    m_replyPtrs[i]->ptr_ubuf);
 			if ( q1 == q2 && d1 <= d2 ) continue;
@@ -2300,7 +2307,7 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 		if ( m_printInXml ) {
 			m_pbuf->safePrintf ( "\t<inlinkStat>\n");
 			m_pbuf->safePrintf ( "\t\t<name><![CDATA[" );
-			//m_pbuf->htmlEncode(e->m_note,gbstrlen(e->m_note),0);
+			//m_pbuf->htmlEncode(e->m_note,strlen(e->m_note),0);
 			m_pbuf->safeStrcpy ( e->m_note );
 			m_pbuf->safePrintf ( "]]></name>\n");
 			if ( exp )
@@ -4136,7 +4143,10 @@ bool Links::addLink ( const char *link , int32_t linkLen , int32_t nodeNum ,
 		// MDW: a realloc would be more efficient here.
 		QUICKPOLL(niceness);
 		char *newBuf = (char*)mmalloc(newAllocSize, "Links");
-		if ( ! newBuf ) return log("build: Links failed to realloc.");
+		if ( ! newBuf ) {
+			log(LOG_WARN, "build: Links failed to realloc.");
+			return false;
+		}
 		log(LOG_DEBUG, "build: resizing Links text buffer to %" PRId32,
 		    newAllocSize);
 		QUICKPOLL(niceness);
@@ -4438,7 +4448,8 @@ int32_t Links::getLinkText ( const char  *linkee ,
 			  int32_t  *retNode1  ,
 			  int32_t  *retLinkNum ,
 			  int32_t   niceness  ) {
-	log(LOG_DEBUG, "Links::getLinkText: linkee=%s", linkee);
+	log(LOG_DEBUG, "build: Links::getLinkText: linkee=%s", linkee);
+
 	// assume none
 	if ( retNode1   ) *retNode1 = -1;
 	// assume no link text
@@ -4454,7 +4465,7 @@ int32_t Links::getLinkText ( const char  *linkee ,
 		if ( pp ) linkee = pp + 3;
 	}
 
-	int32_t linkeeLen = gbstrlen(linkee);
+	int32_t linkeeLen = strlen(linkee);
 
 	// find the link point to our url
 	int32_t i;
@@ -4528,7 +4539,7 @@ int32_t Links::getLinkText2 ( int32_t i ,
 		// . can also be an <enclosure> tag now too
 		if ( xmlNodes[node1].m_nodeId == TAG_A ) goto skipItem;
 		// get item delimeter length
-		//int32_t dlen = gbstrlen(del);
+		//int32_t dlen = strlen(del);
 		// back pedal node until we hit <item> or <entry> tag
 		int32_t j ;
 		for ( j = node1 ; j > 0 ; j-- ) {

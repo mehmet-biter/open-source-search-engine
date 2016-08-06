@@ -84,7 +84,7 @@ bool sendReply ( State0 *st , char *reply ) {
 
 
 	int32_t rlen = 0;
-	if ( reply ) rlen = gbstrlen(reply);
+	if ( reply ) rlen = strlen(reply);
 	logf(LOG_DEBUG,"gb: sending back %" PRId32" bytes",rlen);
 
 	// . use light brown if coming directly from an end user
@@ -143,7 +143,7 @@ bool sendReply ( State0 *st , char *reply ) {
 		if ( sock )
 		g_httpServer.sendDynamicPage(sock,
 					     reply,
-					     rlen,//gbstrlen(reply),
+					     rlen,//strlen(reply),
 					     // don't let the ajax re-gen
 					     // if they hit the back button!
 					     // so make this 1 hour, not 0
@@ -719,7 +719,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 	// they won't fit into the http request, the browser will reject
 	// sending such a large request with "GET"
 	const char *method = "GET";
-	if ( si->m_sites && gbstrlen(si->m_sites)>800 ) method = "POST";
+	if ( si->m_sites && strlen(si->m_sites)>800 ) method = "POST";
 
 
 	if ( si->m_format == FORMAT_HTML &&
@@ -772,7 +772,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 
 	// the calling function checked this so it should be non-null
 	const char *coll = cr->m_coll;
-	int32_t collLen = gbstrlen(coll);
+	int32_t collLen = strlen(coll);
 
 	if ( si->m_format == FORMAT_WIDGET_IFRAME ||
 	     si->m_format == FORMAT_WIDGET_AJAX ) {
@@ -1403,7 +1403,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 	// did we get a spelling recommendation?
 	if ( si->m_format == FORMAT_HTML && st->m_spell[0] ) {
 		// encode the spelling recommendation
-		int32_t len = gbstrlen ( st->m_spell );
+		int32_t len = strlen ( st->m_spell );
 		char qe2[MAX_FRAG_SIZE];
 		urlEncode(qe2, MAX_FRAG_SIZE, st->m_spell, len);
 		sb->safePrintf ("<font size=+0 color=\"#c62939\">Did you mean:"
@@ -2518,7 +2518,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	// . msg20 should supply the dmoz title if it can
 	if ( strLen == 0 &&  si->m_format != FORMAT_XML &&  si->m_format != FORMAT_JSON ) {
 		str = "<i>UNTITLED</i>";
-		strLen = gbstrlen(str);
+		strLen = strlen(str);
 	}
 
 	if ( str &&  strLen &&
@@ -2578,7 +2578,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 			sb->safePrintf("\",\n");
 		}
 		// it is a \0 separated list of headers generated from XmlDoc::getHeaderTagBuf()
-		hp += gbstrlen(hp) + 1;
+		hp += strlen(hp) + 1;
 	}
 
 	// print the [cached] link?
@@ -2727,7 +2727,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	}
 	if ( si->m_format == FORMAT_HTML ) {
 		sb->safePrintf ("<font color=gray>" );
-		//sb->htmlEncode ( url , gbstrlen(url) , false );
+		//sb->htmlEncode ( url , strlen(url) , false );
 		// 20 for the date after it
 		sb->safeTruncateEllipsis ( displayUrl , 50 ); // cols - 30 );
 		// turn off the color
@@ -3022,7 +3022,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		// reindex
 		sb->safePrintf(" - <a style=color:blue; href=\"/addurl?"
 			       "urls=");
-		sb->urlEncode ( url , gbstrlen(url) , false );
+		sb->urlEncode ( url , strlen(url) , false );
 		uint64_t rand64 = gettimeofdayInMillisecondsLocal();
 		sb->safePrintf("&c=%s&rand64=%" PRIu64"\">respider</a>\n",
 			       coll,rand64);
@@ -4711,7 +4711,7 @@ static bool printLogoAndSearchBox ( SafeBuf *sb, HttpRequest *hr, SearchInput *s
 	// they won't fit into the http request, the browser will reject
 	// sending such a large request with "GET"
 	const char *method = "GET";
-	if ( si && si->m_sites && gbstrlen(si->m_sites)>800 ) {
+	if ( si && si->m_sites && strlen(si->m_sites)>800 ) {
 		method = "POST";
 	}
 
@@ -4731,7 +4731,7 @@ static bool printLogoAndSearchBox ( SafeBuf *sb, HttpRequest *hr, SearchInput *s
 	const char *prepend = hr->getString("prepend");
 	if ( prepend ) {
 		sb->safePrintf("<input name=prepend type=hidden value=\"");
-		sb->htmlEncode ( prepend, gbstrlen(prepend), false);
+		sb->htmlEncode ( prepend, strlen(prepend), false);
 		sb->safePrintf("\">");
 	}
 	
@@ -5240,7 +5240,7 @@ static bool printMenu ( SafeBuf *sb , int32_t menuNum , HttpRequest *hr ) {
 		if ( match > src && match[-1] != '?' && match[-1] != '&' )
 			continue;
 		// and \0 or & follows
-		int32_t milen = gbstrlen(mi->m_cgi);
+		int32_t milen = strlen(mi->m_cgi);
 		if ( match+milen > src+srcLen ) continue;
 		if ( ! is_wspace_a(match[milen]) && match[milen] != '&' ) 
 			continue;
@@ -5418,8 +5418,10 @@ static bool replaceParm2 ( const char *cgi , SafeBuf *newUrl ,
 	const char *srcEnd = src + srcLen;
 
 	const char *equal = strstr(cgi,"=");
-	if ( ! equal ) 
-		return log("results: %s has no equal sign",cgi);
+	if ( ! equal ) {
+		log(LOG_WARN, "results: %s has no equal sign", cgi);
+		return false;
+	}
 	int32_t cgiLen = equal - cgi;
 
 	const char *p = src;
@@ -5474,7 +5476,7 @@ static bool printMetaContent ( Msg40 *msg40 , int32_t i , State0 *st, SafeBuf *s
 	// store the user-requested meta tags content
 	SearchInput *si = &st->m_si;
 	char *pp      =      si->m_displayMetas;
-	char *ppend   = pp + gbstrlen(si->m_displayMetas);
+	char *ppend   = pp + strlen(si->m_displayMetas);
 	Msg20 *m = msg40->m_msg20[i];//getMsg20(i);
 	Msg20Reply *mr = m->m_r;
 	char *dbuf    = mr->ptr_dbuf;//msg40->getDisplayBuf(i);
@@ -5486,7 +5488,7 @@ static bool printMetaContent ( Msg40 *msg40 , int32_t i , State0 *st, SafeBuf *s
 	while ( pp < ppend && dptr < dbufEnd ) {
 		// . assure last byte of dbuf is \0
 		//   provided dbufLen > 0
-		// . this insures sprintf and gbstrlen won't
+		// . this insures sprintf and strlen won't
 		//   crash on dbuf/dptr
 		if ( dbuf [ dbufLen ] != '\0' ) {
 			log(LOG_LOGIC,"query: Meta tag buffer has no \\0.");
@@ -5510,8 +5512,8 @@ static bool printMetaContent ( Msg40 *msg40 , int32_t i , State0 *st, SafeBuf *s
 		// if ':' was specified, skip the rest
 		if ( c == ':' ) while ( pp < ppend && ! is_wspace_a(*pp)) pp++;
 		// print the name
-		//int32_t sslen = gbstrlen ( ss   );
-		//int32_t ddlen = gbstrlen ( dptr );
+		//int32_t sslen = strlen ( ss   );
+		//int32_t ddlen = strlen ( dptr );
 		int32_t ddlen = dbufLen;
 		//if ( p + sslen + ddlen + 100 > pend ) continue;
 		// newspaperarchive wants tags printed even if no value

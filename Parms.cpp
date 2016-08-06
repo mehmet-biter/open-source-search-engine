@@ -25,6 +25,7 @@
 #include "SpiderProxy.h" // buildProxyTable()
 #include "PageInject.h" // InjectionRequest
 #include "Posdb.h"
+#include "GigablastRequest.h"
 
 
 Parms g_parms;
@@ -261,12 +262,14 @@ static bool CommandCloneColl ( char *rec ) {
 	srcRec = g_collectiondb.getRec ( srcColl    ); // get from name
 	dstRec = g_collectiondb.getRec ( dstCollnum ); // get from #
 
-	if ( ! srcRec )
-		return log("parms: invalid coll %s to clone from",
-			   srcColl);
-	if ( ! dstRec )
-		return log("parms: invalid collnum %" PRId32" to clone to",
-			   (int32_t)dstCollnum);
+	if ( ! srcRec ) {
+		log(LOG_WARN, "parms: invalid coll %s to clone from", srcColl);
+		return false;
+	}
+	if ( ! dstRec ) {
+		log(LOG_WARN, "parms: invalid collnum %" PRId32" to clone to", (int32_t) dstCollnum);
+		return false;
+	}
 
 	log ("parms: cloning parms from collection %s to %s",
 	      srcRec->m_coll,dstRec->m_coll);
@@ -300,7 +303,7 @@ static bool CommandAddColl ( char *rec ) {
 	// then collname, \0 terminated
 	char *collName = data;
 
-	if ( gbstrlen(collName) > MAX_COLL_LEN ) {
+	if ( strlen(collName) > MAX_COLL_LEN ) {
 		log("crawlbot: collection name too long");
 		return true;
 	}
@@ -825,7 +828,7 @@ bool Parms::sendPageGeneric ( TcpSocket *s , HttpRequest *r ) {
 	     ! isMasterAdmin &&
 	     ! isCollAdmin ) {
 		const char *msg = "NO PERMISSION";
-		return g_httpServer.sendDynamicPage (s, msg,gbstrlen(msg));
+		return g_httpServer.sendDynamicPage (s, msg,strlen(msg));
 	}
 
 	//
@@ -1492,7 +1495,7 @@ bool Parms::printParm ( SafeBuf* sb,
 	// . make at least as big as a int64_t
 	if ( j >= jend ) s = "\0\0\0\0\0\0\0\0";
 	// delimit each cgi var if we need to
-	if ( m->m_cgi && gbstrlen(m->m_cgi) > 45 ) {
+	if ( m->m_cgi && strlen(m->m_cgi) > 45 ) {
 		log(LOG_LOGIC,"admin: Cgi variable is TOO big.");
 		g_process.shutdownAbort(true);
 	}
@@ -1540,7 +1543,7 @@ bool Parms::printParm ( SafeBuf* sb,
 					 "<font size=-1>\n" , DARK_BLUE);
 
 			//p = htmlEncode ( p , pend , m->m_desc ,
-			//		 m->m_desc + gbstrlen ( m->m_desc ) );
+			//		 m->m_desc + strlen ( m->m_desc ) );
 			sb->safePrintf ( "%s" , m->m_desc );
 			sb->safePrintf ( "</font></td></tr>"
 					 // for "#,expression,harvestlinks.."
@@ -1628,7 +1631,7 @@ bool Parms::printParm ( SafeBuf* sb,
 				  "<b>%s</b><br><font size=-1>",m->m_title );
 			if ( pd ) {
 				status &= sb->htmlEncode (m->m_desc,
-							  gbstrlen(m->m_desc),
+							  strlen(m->m_desc),
 							  false);
 				// is it required?
 				if ( m->m_flags & PF_REQUIRED )
@@ -1653,7 +1656,7 @@ bool Parms::printParm ( SafeBuf* sb,
 			if ( pd ) {
 				status &= sb->safeStrcpy(m->m_desc);
 				//status &= sb->htmlEncode (m->m_desc,
-				//			  gbstrlen(m->m_desc),
+				//			  strlen(m->m_desc),
 				//			  false);
 				// is it required?
 				if ( m->m_flags & PF_REQUIRED )
@@ -1690,7 +1693,7 @@ bool Parms::printParm ( SafeBuf* sb,
 				else {
 					sb->safePrintf (" Default: ");
 					status &= sb->htmlEncode (d,
-								  gbstrlen(d),
+								  strlen(d),
 								  false);
 				}
 			}
@@ -1923,7 +1926,7 @@ bool Parms::printParm ( SafeBuf* sb,
 		if ( cr && (m->m_flags & PF_COLLDEFAULT) )
 			sb->safePrintf("%s",cr->m_coll);
 		else
-			sb->dequote ( s , gbstrlen(s) );
+			sb->dequote ( s , strlen(s) );
 
 		sb->safePrintf ("\">");
 	}
@@ -1936,7 +1939,7 @@ bool Parms::printParm ( SafeBuf* sb,
 			sb->safePrintf ("<textarea name=%s rows=10 cols=80>",
 					cgi);
 			if ( m->m_obj != OBJ_NONE )
-				sb->htmlEncode(sp,gbstrlen(sp),false);
+				sb->htmlEncode(sp,strlen(sp),false);
 			sb->safePrintf ("</textarea>");
 		}
 		else {
@@ -1946,7 +1949,7 @@ bool Parms::printParm ( SafeBuf* sb,
 			if ( cr && (m->m_flags & PF_COLLDEFAULT) )
 				sb->safePrintf("%s",cr->m_coll);
 			else if ( sp )
-				sb->dequote ( sp , gbstrlen(sp) );
+				sb->dequote ( sp , strlen(sp) );
 			sb->safePrintf ("\">");
 		}
 	}
@@ -1991,7 +1994,7 @@ bool Parms::printParm ( SafeBuf* sb,
 			sb->safePrintf ("<textarea id=tabox "
 					"name=%s rows=%i cols=80>",
 					cgi,rows);
-			//sb->dequote ( s , gbstrlen(s) );
+			//sb->dequote ( s , strlen(s) );
 			// note it
 			//log("hack: %s",sx->getBufStart());
 			//sb->dequote ( sx->getBufStart() , sx->length() );
@@ -2004,7 +2007,7 @@ bool Parms::printParm ( SafeBuf* sb,
 			sb->safePrintf ("<input type=text name=%s size=%" PRId32" "
 					"value=\"",
 					cgi,size);
-			//sb->dequote ( s , gbstrlen(s) );
+			//sb->dequote ( s , strlen(s) );
 			// note it
 			//log("hack: %s",sx->getBufStart());
 
@@ -2013,7 +2016,7 @@ bool Parms::printParm ( SafeBuf* sb,
 			     (m->m_flags & PF_COLLDEFAULT) &&
 			     sx &&
 			     sx->length() <= 0 )
-				sb->dequote ( cr->m_coll,gbstrlen(cr->m_coll));
+				sb->dequote ( cr->m_coll,strlen(cr->m_coll));
 
 			// if parm is OBJ_NONE there is no stored valued
 			else if ( m->m_obj != OBJ_NONE )
@@ -2025,11 +2028,11 @@ bool Parms::printParm ( SafeBuf* sb,
 	else if ( t == TYPE_STRINGBOX ) {
 		sb->safePrintf("<textarea id=tabox rows=10 cols=64 name=%s>",
 			       cgi);
-		//p += urlEncode ( p , pend - p , s , gbstrlen(s) );
-		//p += htmlDecode ( p , s , gbstrlen(s) );
-		sb->htmlEncode ( s , gbstrlen(s), false );
+		//p += urlEncode ( p , pend - p , s , strlen(s) );
+		//p += htmlDecode ( p , s , strlen(s) );
+		sb->htmlEncode ( s , strlen(s), false );
 		//sprintf ( p , "%s" , s );
-		//p += gbstrlen(p);
+		//p += strlen(p);
 		sb->safePrintf ("</textarea>\n");
 	}
 	else if ( t == TYPE_CONSTANT )
@@ -2128,7 +2131,7 @@ bool Parms::printParm ( SafeBuf* sb,
 			(int32_t)tp->tm_sec  );
 		/*
 		if ( t == TYPE_DATE2 ) {
-			p += gbstrlen ( p );
+			p += strlen ( p );
 			// a int32_t after the int32_t is used for this
 			int32_t ct = *(int32_t *)(THIS+m->m_off+4);
 			char *ss = "";
@@ -2482,9 +2485,9 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 		goto changed; }
 	else if ( t == TYPE_IP ) {
 		if ( fromRequest && *(int32_t *)(THIS + m->m_off + 4*j) ==
-		     (int32_t)atoip (s,gbstrlen(s) ) )
+		     (int32_t)atoip (s,strlen(s) ) )
 			return;
-		*(int32_t *)(THIS + m->m_off + 4*j) = (int32_t)atoip (s,gbstrlen(s) );
+		*(int32_t *)(THIS + m->m_off + 4*j) = (int32_t)atoip (s,strlen(s) );
 		goto changed; }
 	else if ( t == TYPE_LONG || t == TYPE_LONG_CONST || t == TYPE_RULESET||
 		  t == TYPE_SITERULE ) {
@@ -2506,7 +2509,7 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 		goto changed; }
 	// like TYPE_STRING but dynamically allocates
 	else if ( t == TYPE_SAFEBUF ) {
-		int32_t len = gbstrlen(s);
+		int32_t len = strlen(s);
 		// no need to truncate since safebuf is dynamic
 		//if ( len >= m->m_size ) len = m->m_size - 1; // truncate!!
 		//char *dst = THIS + m->m_off + m->m_size*j ;
@@ -2548,13 +2551,13 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 		  t == TYPE_STRINGBOX      ||
 		  t == TYPE_STRINGNONEMPTY ||
 		  t == TYPE_TIME            ) {
-		int32_t len = gbstrlen(s);
+		int32_t len = strlen(s);
 		if ( len >= m->m_size ) len = m->m_size - 1; // truncate!!
 		char *dst = THIS + m->m_off + m->m_size*j ;
 		// why was this commented out??? we need it now that we
 		// send email alerts when parms change!
 		if ( fromRequest &&
-		     ! isHtmlEncoded && (int32_t)gbstrlen(dst) == len &&
+		     ! isHtmlEncoded && (int32_t)strlen(dst) == len &&
 		     memcmp ( dst , s , len ) == 0 ) {
 			return;
 		}
@@ -2803,7 +2806,7 @@ bool Parms::setFromFile ( void *THIS        ,
 	loop:
 		if ( m->m_obj == OBJ_NONE ) { g_process.shutdownAbort(true); }
 		// get xml node number of m->m_xml in the "xml" file
-		newnn = xml.getNodeNum(nn,1000000,m->m_xml,gbstrlen(m->m_xml));
+		newnn = xml.getNodeNum(nn,1000000,m->m_xml,strlen(m->m_xml));
 
 		// debug
 		//log("%s --> %" PRId32,m->m_xml,nn);
@@ -2886,7 +2889,7 @@ bool Parms::setFromFile ( void *THIS        ,
 		continue;
 	try2:
 		// get xml node number of m->m_xml in the "m_xml" file
-		nn = m_xml2.getNodeNum(nn,1000000,m->m_xml,gbstrlen(m->m_xml));
+		nn = m_xml2.getNodeNum(nn,1000000,m->m_xml,strlen(m->m_xml));
 		// otherwise, we had one in file, but now we're out
 		if ( nn < 0 ) {
 			continue;
@@ -3007,9 +3010,10 @@ bool Parms::setFromFile ( void *THIS        ,
 bool Parms::setXmlFromFile(Xml *xml, char *filename, SafeBuf *sb ) {
 	sb->load ( filename );
 	char *buf = sb->getBufStart();
-	if ( ! buf )
-		return log ("conf: Could not read %s : %s.",
-			    filename,mstrerror(g_errno));
+	if ( ! buf ) {
+		log(LOG_WARN, "conf: Could not read %s : %s.", filename, mstrerror(g_errno));
+		return false;
+	}
 
 	// . remove all comments in case they contain tags
 	// . if you have a # as part of your string, it must be html encoded,
@@ -3111,14 +3115,14 @@ skip2:
 		const char *d = m->m_desc;
 		// if empty array mod description to include the tag name
 		char tmp [10*1024];
-		if ( m->m_max > 1 && count == 0 && gbstrlen(d) < 9000 &&
+		if ( m->m_max > 1 && count == 0 && strlen(d) < 9000 &&
 		     m->m_xml && m->m_xml[0] ) {
 			const char *cc = "";
 			if ( d && d[0] ) cc = "\n";
 			sprintf ( tmp , "%s%sUse <%s> tag.",d,cc,m->m_xml);
 			d = tmp;
 		}
-		const char *END  = d + gbstrlen(d);
+		const char *END  = d + strlen(d);
 		const char *dend;
 		const char *last;
 		const char *start;
@@ -3198,9 +3202,12 @@ skip2:
 	if ( sb.safeSave ( f ) >= 0 )
 		return true;
 
-	return log("admin: Could not write to file %s.",f);
+	log(LOG_WARN, "admin: Could not write to file %s.",f);
+	return false;
+
  hadError:
-	return log("admin: Error writing to %s: %s",f,mstrerror(g_errno));
+	log(LOG_WARN, "admin: Error writing to %s: %s",f,mstrerror(g_errno));
+	return false;
 
 	//File bigger than %" PRId32" bytes."
 	//	   "  Please increase #define in Parms.cpp.",
@@ -3234,7 +3241,7 @@ bool Parms::getParmHtmlEncoded ( SafeBuf *sb , Parm *m , char *s ) {
 		SafeBuf *sb2 = (SafeBuf *)s;
 		char *buf = sb2->getBufStart();
 		//int32_t blen = 0;
-		//if ( buf ) blen = gbstrlen(buf);
+		//if ( buf ) blen = strlen(buf);
 		//p = htmlEncode ( p , pend , buf , buf + blen , true ); // #?*
 		// we can't do proper cdata and be backwards compatible
 		//sb->cdataEncode ( buf );//, blen );//, true ); // #?*
@@ -3244,7 +3251,7 @@ bool Parms::getParmHtmlEncoded ( SafeBuf *sb , Parm *m , char *s ) {
 		  t == TYPE_STRINGBOX      ||
 		  t == TYPE_STRINGNONEMPTY ||
 		  t == TYPE_TIME) {
-		//int32_t slen = gbstrlen ( s );
+		//int32_t slen = strlen ( s );
 		// this returns the length of what was written, it may
 		// not have converted everything if pend-p was too small...
 		//p += saftenTags2 ( p , pend - p , s , len );
@@ -3265,7 +3272,7 @@ bool Parms::getParmHtmlEncoded ( SafeBuf *sb , Parm *m , char *s ) {
 		sb->safeStrcpy ( tmp );
 		sb->setLabel("parm3");
 	}
-	//p += gbstrlen ( p );
+	//p += strlen ( p );
 	//return p;
 	return true;
 }
@@ -5039,6 +5046,18 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
+	m->m_title = "Use new no-in-memory-merge feature";
+	m->m_desc  = "Posdb will no longer contain delete keys, and the entire document is indexed every time a change is found.";
+	m->m_cgi   = "noinmemmerge";
+	m->m_off   = offsetof(Conf,m_noInMemoryPosdbMerge);
+	m->m_type  = TYPE_BOOL;
+	m->m_def   = "0";
+	m->m_page  = PAGE_MASTER;
+	m->m_obj   = OBJ_CONF;
+	m++;
+
+
+
 	m->m_title = "injections enabled";
 	m->m_desc  = "Controls injecting for all collections";
 	m->m_cgi   = "injen";
@@ -5456,20 +5475,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
-
-	m->m_title = "sendmail IP";
-	m->m_desc  = "We send crawlbot notification emails to this sendmail "
-		"server which forwards them to the specified email address.";
-		m->m_cgi   = "smip";
-	m->m_off   = offsetof(Conf,m_sendmailIp);
-	m->m_type  = TYPE_STRING;
-	m->m_def   = "";
-	m->m_size  = sizeof(Conf::m_sendmailIp);
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
 	m->m_title = "send email alerts";
 	m->m_desc  = "Sends emails to admin if a host goes down.";
 	m->m_cgi   = "sea";
@@ -5665,17 +5670,6 @@ void Parms::init ( ) {
 	m->m_def   = "5";
 	m->m_group = false;
 	m->m_flags = PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	m->m_title = "max hard drive temperature";
-	m->m_desc  = "At what temperature in Celsius should we send "
-		"an email alert if a hard drive reaches it?";
-	m->m_cgi   = "mhdt";
-	m->m_off   = offsetof(Conf,m_maxHardDriveTemp);
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "45";
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -6019,20 +6013,6 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(Conf,m_useEtcHosts);
 	m->m_def   = "1";
 	m->m_type  = TYPE_BOOL;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	m->m_title = "twins are split";
-	m->m_desc  = "If enabled, Gigablast assumes the first half of "
-		"machines in hosts.conf "
-		"are on a different network switch than the second half, "
-		"and minimizes transmits between the switches.";
-	m->m_cgi   = "stw";
-	m->m_off   = offsetof(Conf,m_splitTwins);
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -9994,6 +9974,15 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
+	m->m_title = "log trace info for RdbIndex";
+	m->m_cgi   = "ltrc_ridx";
+	m->m_off   = offsetof(Conf,m_logTraceRdbIndex);
+	m->m_type  = TYPE_BOOL;
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m->m_obj   = OBJ_CONF;
+	m++;
+
 	m->m_title = "log trace info for Repairs";
 	m->m_cgi   = "ltrc_rp";
 	m->m_off   = offsetof(Conf,m_logTraceRepairs);
@@ -10345,7 +10334,7 @@ void Parms::init ( ) {
 
 		// set xml based on title
 		const char *tt = m_parms[i].m_title;
-		if ( p + gbstrlen(tt) >= pend ) {
+		if ( p + strlen(tt) >= pend ) {
 			log(LOG_LOGIC,"conf: Not enough room to store xml "
 			    "tag name in buffer.");
 			exit(-1);
@@ -10588,7 +10577,10 @@ bool Parms::addNewParmToList1 ( SafeBuf *parmList ,
 				const char *parmName ) {
 	// get the parm descriptor
 	Parm *m = getParmFast1 ( parmName , NULL );
-	if ( ! m ) return log("parms: got bogus parm2 %s",parmName );
+	if ( ! m ) {
+		log(LOG_WARN, "parms: got bogus parm2 %s",parmName );
+		return false;
+	}
 	return addNewParmToList2 ( parmList,collnum,parmValString,occNum,m );
 }
 
@@ -10625,7 +10617,7 @@ bool Parms::addNewParmToList2 ( SafeBuf *parmList ,
 		//valSize = m->m_max;
 		val = parmValString;
 		// include \0
-		valSize = gbstrlen(val)+1;
+		valSize = strlen(val)+1;
 		// sanity
 		if ( val[valSize-1] != '\0' ) { g_process.shutdownAbort(true); }
 	}
@@ -10664,7 +10656,7 @@ bool Parms::addNewParmToList2 ( SafeBuf *parmList ,
 	// will be NULL
 	else if ( m->m_type == TYPE_CMD ) {
 		val = parmValString;
-		if ( val ) valSize = gbstrlen(val)+1;
+		if ( val ) valSize = strlen(val)+1;
 		// . addcoll collection can not be too long
 		// . TODO: supply a Parm::m_checkValFunc to ensure val is
 		//   legitimate, and set g_errno on error
@@ -10738,7 +10730,7 @@ bool Parms::addCurrentParmToList2 ( SafeBuf *parmList ,
 	     m->m_type == TYPE_SAFEBUF ||
 	     m->m_type == TYPE_STRINGNONEMPTY )
 		// include \0 in string
-		dataSize = gbstrlen(data) + 1;
+		dataSize = strlen(data) + 1;
 
 	// if a safebuf, point to the string within
 	if ( m->m_type == TYPE_SAFEBUF ) {
@@ -11159,7 +11151,7 @@ Parm *Parms::getParmFast2 ( int32_t cgiHash32 ) {
 Parm *Parms::getParmFast1 ( const char *cgi , int32_t *occNum ) {
 	// strip off the %" PRId32" for things like 'fe3' for example
 	// because that is the occurence # for parm arrays.
-	int32_t clen = gbstrlen(cgi);
+	int32_t clen = strlen(cgi);
 
 	const char *d = NULL;
 
@@ -11471,7 +11463,7 @@ bool Parms::doParmSendingLoop ( ) {
 	int32_t now = getTimeLocal();
 
 	// try to send a parm update request to each host
-	for ( int32_t i = 0 ; i < g_hostdb.m_numHosts ; i++ ) {
+	for ( int32_t i = 0 ; i < g_hostdb.getNumHosts() ; i++ ) {
 		// get it
 		Host *h = g_hostdb.getHost(i);
 		// skip ourselves, host #0. we now send to ourselves
@@ -11551,8 +11543,6 @@ bool Parms::doParmSendingLoop ( ) {
 						 30*1000 , // timeout msecs
 						 -1 , // backoff
 						 -1 , // maxwait
-						 NULL , // replybuf
-						 0 , // replybufmaxsize
 						 0 ) ) { // niceness
 			log("parms: faild to send: %s",mstrerror(g_errno));
 			continue;

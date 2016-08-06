@@ -47,7 +47,7 @@ char *Xml::getTextForXmlTag ( int32_t n0, int32_t n1, const char *tagName, int32
 	// assume len is 0
 	*len = 0;
 	// get a matching xml TAG
-	int32_t num = getNodeNum ( n0 , n1 , tagName , gbstrlen(tagName) );
+	int32_t num = getNodeNum ( n0 , n1 , tagName , strlen(tagName) );
 	if ( num < 0                 ) return NULL;
 	return getString ( num , skipLeadingSpaces , len );
 }
@@ -320,8 +320,9 @@ bool Xml::set( char *s, int32_t slen, int32_t version, int32_t niceness, char co
 	m_nodes = (XmlNode *)mmalloc( sizeof( XmlNode ) * m_maxNumNodes, "Xml1" );
 	if ( ! m_nodes ) { 
 		reset();
-		return log( "build: Could not allocate %" PRId32 " bytes need to parse document.",
-					(int32_t)sizeof( XmlNode ) * m_maxNumNodes );
+		log(LOG_WARN, "build: Could not allocate %" PRId32 " bytes need to parse document.",
+		    (int32_t) sizeof(XmlNode) * m_maxNumNodes);
+		return false;
 	}
 
 	// debug msg time

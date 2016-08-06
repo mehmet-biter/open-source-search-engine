@@ -132,6 +132,9 @@ static void *job_pool_thread_function(void *pv) {
 		uint64_t now = now_ms();
 		iter->start_time = now;
 		if(iter->start_deadline==0 || iter->start_deadline>now) {
+			// clear thread specific g_errno
+			g_errno = 0;
+
 			iter->start_routine(iter->state);
 			iter->stop_time = now_ms();
 			job_exit = job_exit_normal;
@@ -351,8 +354,6 @@ bool JobScheduler_impl::submit(thread_type_t thread_type, JobEntry &e)
 			case thread_type_statistics:         job_queue = &cpu_job_queue;      break;
 			case thread_type_unspecified_io:     job_queue = &cpu_job_queue;      break;
 			case thread_type_unlink:             job_queue = &cpu_job_queue;      break;
-			case thread_type_twin_sync:          job_queue = &cpu_job_queue;      break;
-			case thread_type_hdtemp:             job_queue = &cpu_job_queue;      break;
 			case thread_type_generate_thumbnail: job_queue = &external_job_queue; break;
 			default:
 				assert(false);

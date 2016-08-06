@@ -303,7 +303,7 @@ static bool initTimeZoneTable ( ) {
 	// load time zone names and their modifiers into hashtable
 	for ( int32_t i = 0 ; *tzs[i].m_name ; i++ ) {
 		char *t    = tzs[i].m_name;
-		int32_t  tlen = gbstrlen(t);
+		int32_t  tlen = strlen(t);
 		// hash like Words.cpp computeWordIds
 		uint64_t h    = hash64Lower_utf8( t , tlen );
 		// use the ptr as the value

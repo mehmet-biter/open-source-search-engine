@@ -233,13 +233,13 @@ bool Wiktionary::load() {
 	// if no text file that is bad
 	if ( errno1 ) { 
 		g_errno = errno1 ; 
-		return log ("gb: could not open %s for reading: %s",ff1,
-			    mstrerror(g_errno));
+		log (LOG_WARN, "gb: could not open %s for reading: %s",ff1, mstrerror(g_errno));
+		return false;
 	}
 	//if ( errno2 ) { 
 	//	g_errno = errno2 ; 
-	//	return log ("gb: could not open %s for reading: %s",ff2,
-	//		    mstrerror(g_errno));
+	//	log (LOG_WARN, "gb: could not open %s for reading: %s",ff2,mstrerror(g_errno));
+	//  return false;
 	//}
 	// init table slot sizes
 	//m_langTable.setTableSize ( 16777216 , NULL , 0 );
@@ -312,9 +312,10 @@ bool Wiktionary::addSynsets ( const char *filename ) {
 
 	// load it up
 	//SafeBuf sb;
-	if ( m_localBuf.fillFromFile ( g_hostdb.m_dir , filename ) < 0 ) 
-		// log it
-		return log("wikt: error loading %s",filename);
+	if ( m_localBuf.fillFromFile ( g_hostdb.m_dir , filename ) < 0 ) {
+		log(LOG_WARN, "wikt: error loading %s", filename);
+		return false;
+	}
 
 	if ( ! m_localTable.set ( 8 ,4,9000,NULL,0,false,0,"synloc") )
 		return false;
@@ -352,8 +353,10 @@ bool Wiktionary::addSynsets ( const char *filename ) {
 	// is it like zh_ch?
 	if ( *p == '_' ) p += 3;
 	// sanity
-	if ( *p != '|' )
-		return log("wikt: bad %s file! no lang",filename);
+	if ( *p != '|' ) {
+		log(LOG_WARN, "wikt: bad %s file! no lang", filename);
+		return false;
+	}
 	// null term now
 	*p = '\0';
 	// skip that
@@ -363,8 +366,10 @@ bool Wiktionary::addSynsets ( const char *filename ) {
 	// skip the pipe then
 	p++;
 	// must be there
-	if ( langId == 0 ) 
-		return log("wikt: bad language abbr in %s",filename);
+	if ( langId == 0 ) {
+		log(LOG_WARN, "wikt: bad language abbr in %s", filename);
+		return false;
+	}
 
 	//
 	// JUST ADD THESE SYNSETS as separate form wiktionary-buf.txt
@@ -600,7 +605,7 @@ bool Wiktionary::generateHashTableFromWiktionaryTxt ( int32_t sizen ) {
 			  "====Translations====\n"
 		"<title>Poo</title>\n"
 			  ;
-	readSize = gbstrlen(hack);
+	readSize = strlen(hack);
 	gbmemcpy(buf,hack,readSize+1);
 	*/
 
@@ -1507,7 +1512,7 @@ bool Wiktionary::generateHashTableFromWiktionaryTxt ( int32_t sizen ) {
 	      start++ );
 	
 	// and ]'s
-	char *wend = start + gbstrlen(start);
+	char *wend = start + strlen(start);
 	for ( ; wend && wend>start && wend[-1] == ']' ;wend--);
 	*wend = '\0';
 	
@@ -1533,7 +1538,7 @@ bool Wiktionary::generateHashTableFromWiktionaryTxt ( int32_t sizen ) {
 	char *a = start;
 	for ( ; *a ; a++ ) if ( *a == '#' ) { *a = '\0'; break; }
 	// do not add huge words
-	if ( gbstrlen(start) > 1000 ) goto lineLoop;
+	if ( strlen(start) > 1000 ) goto lineLoop;
 	// skip that
 	wp = end + 1;
 	
@@ -1619,7 +1624,7 @@ bool Wiktionary::generateHashTableFromWiktionaryTxt ( int32_t sizen ) {
 	}
 	*dst = '\0';
 	// trim off spaces
-	wend = normBuf + gbstrlen(normBuf);
+	wend = normBuf + strlen(normBuf);
 	// fix ''sadden''
 	for ( ; wend && wend>normBuf && 
 		      (wend[-1] == ']' ||
@@ -1688,7 +1693,7 @@ bool Wiktionary::addWord ( char *word ,
 
 	// store word so we can map word it to a string
 	int32_t len = m_debugBuf.length();
-	int32_t wlen = gbstrlen(word);
+	int32_t wlen = strlen(word);
 	if ( ! m_debugMap.isInTable ( &wid ) ) {
 		m_debugBuf.safeMemcpy ( word, wlen );
 		m_debugBuf.pushChar('\0');
@@ -1863,10 +1868,10 @@ bool Wiktionary::compile ( ) {
 			int32_t stripLen = stripAccentMarks(a,
 							 1023,
 							 (unsigned char *)word,
-							 gbstrlen(word));
+							 strlen(word));
 			if ( stripLen <= 0 ) continue;
 			// if same as original word, skip
-			int32_t wlen = gbstrlen(word);
+			int32_t wlen = strlen(word);
 			if ( wlen==stripLen && strncmp(a,word,wlen)==0) 
 				continue;
 			// count as additional form
@@ -1963,7 +1968,7 @@ bool Wiktionary::compile ( ) {
 			int32_t stripLen = stripAccentMarks(a,
 							 1023,
 							 (unsigned char *)word,
-							 gbstrlen(word));
+							 strlen(word));
 			// debug time
 			if ( stripLen > 0 ) a[stripLen] = 0;
 			//if ( stripLen > 0 ) 
@@ -1971,7 +1976,7 @@ bool Wiktionary::compile ( ) {
 
 			// if same as original word, ignore it
 			if ( stripLen > 0 ) {
-				int32_t wlen = gbstrlen(word);
+				int32_t wlen = strlen(word);
 				if ( wlen==stripLen && 
 				     strncmp(a,word,wlen) == 0 ) 
 					stripLen = 0;

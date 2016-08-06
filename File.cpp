@@ -104,7 +104,7 @@ File::~File ( ) {
 void File::set ( const char *dir , const char *filename ) {
 	if ( ! dir ) { set ( filename ); return; }
 	char buf[1024];
-	if ( dir[gbstrlen(dir)-1] == '/' )
+	if ( dir[strlen(dir)-1] == '/' )
 		snprintf ( buf , 1020, "%s%s" , dir , filename );
 	else
 		snprintf ( buf , 1020, "%s/%s" , dir , filename );
@@ -122,7 +122,7 @@ void File::set ( const char *filename ) {
 	}
 
 	// bail if too long
-	int32_t len = gbstrlen ( filename );
+	int32_t len = strlen ( filename );
 	// account for terminating '\0'
 	if ( len + 1 >= MAX_FILENAME_LEN ) {
 		log ( LOG_ERROR, "disk: Provided filename %s length of %" PRId32" is bigger than %" PRId32".",
@@ -226,11 +226,8 @@ int File::write ( void *buf             ,
 	}
 	// write it
 	int n;
- retry21:
 	if ( offset < 0 ) n = ::write ( fd , buf , numBytesToWrite );
 	else              n =  pwrite ( fd , buf , numBytesToWrite , offset );
-	// valgrind
-	if ( n < 0 && errno == EINTR ) goto retry21;
 	// update linked list
 	//promoteInLinkedList ( this );
 	// copy errno to g_errno
@@ -246,9 +243,7 @@ int File::write ( void *buf             ,
 	return n;
 }
 
-int File::read ( void *buf            ,
-		 int32_t  numBytesToRead ,
-		 int32_t  offset         ) {
+int File::read(void *buf, int32_t numBytesToRead, int32_t offset) {
 	// this return -2 if never opened, -1 on error, fd on success
 	int fd = getfd();
 	if ( fd < 0 ) {
@@ -258,11 +253,8 @@ int File::read ( void *buf            ,
 	}
 	// do the read
 	int n ;
- retry9:
 	if ( offset < 0 ) n = ::read  ( fd , buf , numBytesToRead );
 	else              n =  pread  ( fd , buf , numBytesToRead , offset );
-	// valgrind
-	if ( n < 0 && errno == EINTR ) goto retry9;
 	// update linked list
 	//promoteInLinkedList ( this );
 	// copy errno to g_errno
@@ -308,8 +300,7 @@ void File::close1_r_unlocked() {
 	m_closedIt = false;
 
 	// debug. don't log in thread - might hurt us
-	log(LOG_DEBUG,"disk: close1_r: Closing  fd %i for %s after "
-	    "unlink/rename.",m_fd,getFilename());
+	log(LOG_DEBUG,"disk: close1_r: Closing fd %i for %s after unlink/rename.",m_fd,getFilename());
 
 	// problem. this could be a closed map file, m_vfd=-1.
 	if ( m_fd < 0 ) {
@@ -319,6 +310,7 @@ void File::close1_r_unlocked() {
 		log(LOG_DEBUG,"disk: close1_r: fd %i < 0",m_fd);
 		return ;
 	}
+
 	// panic!
 	if ( s_writing [ m_fd ] ) {
 		log(LOG_LOGIC,"disk: close1_r: In write mode and closing.");
@@ -327,10 +319,6 @@ void File::close1_r_unlocked() {
 	// if already being unlinked, skip
 	if ( s_unlinking [ m_fd ] ) {
 		log(LOG_LOGIC,"disk: close1_r: In unlink mode and closing.");
-		return;
-	}
-
-	if ( m_fd < 0 ) {
 		return;
 	}
 
@@ -343,7 +331,6 @@ void File::close1_r_unlocked() {
 	//      always gives EBADF errors cuz it was closed.
 	s_unlinking [ m_fd ] = true;
 
- again:
 	if ( m_fd == 0 ) {
 		log( LOG_WARN, "disk: closing1 fd of 0" );
 	}
@@ -356,7 +343,6 @@ void File::close1_r_unlocked() {
 		return;
 	}
 	log( LOG_WARN, "disk: close(%i): %s.", m_fd, strerror(errno) );
-	if ( errno == EINTR ) goto again;
 }
 
 
@@ -392,7 +378,9 @@ void File::close2_unlocked() {
 		return;
 	}
 
-	if ( g_conf.m_logDebugDisk ) sanityCheck();
+	if ( g_conf.m_logDebugDisk ) {
+		sanityCheck();
+	}
 
 	// save this for stuff below
 	int fd = m_fd;
@@ -446,23 +434,25 @@ bool File::close_unlocked() {
 	ScopedLock sl(s_mtx);
 
 	// panic!
-	if ( s_writing [ m_fd ] )
-		return log(LOG_LOGIC,"disk: In write mode and closing 2.");
+	if ( s_writing [ m_fd ] ) {
+		log(LOG_LOGIC, "disk: In write mode and closing 2.");
+		return false;
+	}
 	// if already being unlinked, skip
-	if ( s_unlinking [ m_fd ] )
-		return log(LOG_LOGIC,"disk: In unlink mode and closing 2.");
+	if ( s_unlinking [ m_fd ] ) {
+		log(LOG_LOGIC, "disk: In unlink mode and closing 2.");
+		return false;
+	}
 	// always block on a close
 	int flags = fcntl ( m_fd , F_GETFL ) ;
 	// turn off these 2 flags on fd to make sure
 	flags &= ~( O_NONBLOCK | O_ASYNC );
 	// return false on error
- retry26:
 	if ( fcntl ( m_fd, F_SETFL, flags ) < 0 ) {
-		// valgrind
-		if ( errno == EINTR ) goto retry26;
 		// copy errno to g_errno
 		g_errno = errno;
-		return log( LOG_WARN, "disk: fcntl(%s) : %s", getFilename(), strerror( g_errno ) );
+		log( LOG_WARN, "disk: fcntl(%s) : %s", getFilename(), strerror( g_errno ) );
+		return false;
 	}
 	// . tally up another close for this fd, if any
 	// . so if an open happens shortly here after, and
@@ -474,10 +464,8 @@ bool File::close_unlocked() {
 
 	if ( g_conf.m_logDebugDisk ) sanityCheck();
 
- again:
 	if ( m_fd == 0 ) log("disk: closing2 fd of 0");
 	int status = ::close ( m_fd );
-	if ( status == -1 && errno == EINTR ) goto again;
 	// there was a closing error if status is non-zero. --- not checking
 	// the error may lead to silent loss of data --- see "man 2 close"
 	if ( status != 0 ) {
@@ -564,10 +552,7 @@ int File::getfd () {
 	// then try to open the new name
 	if ( fd == -1 ) {
 		t1 = gettimeofdayInMilliseconds();
- retry7:
 		fd = ::open ( getFilename() , m_flags,getFileCreationFlags());
-		// valgrind
-		if ( fd == -1 && errno == EINTR ) goto retry7;
 		// 0 means stdout, right? why am i seeing it get assigned???
 		if ( fd == 0 )
 			log(LOG_WARN, "disk: Got fd of 0 when opening %s.", getFilename());
@@ -716,9 +701,10 @@ bool File::closeLeastUsed () {
 
 	// if nothing to free then return false
 	if ( mini == -1 ) {
-		return log( LOG_WARN, "File: closeLeastUsed: failed. All %" PRId32" descriptors are unavailable to be "
+		log( LOG_WARN, "File: closeLeastUsed: failed. All %" PRId32" descriptors are unavailable to be "
 		            "closed and re-used to read from another file. notopen=%i writing=%i unlinking=%i young=%i",
 		            ( int32_t ) s_maxNumOpenFiles, notopen, writing, unlinking, young );
+		return false;
 	}
 
 
@@ -730,14 +716,8 @@ bool File::closeLeastUsed () {
 	// turn off these 2 flags on fd to make sure
 	flags &= ~( O_NONBLOCK | O_ASYNC );
 
-retry27:
 	// return false on error
 	if ( fcntl ( fd, F_SETFL, flags ) < 0 ) {
-		// valgrind
-		if ( errno == EINTR ) {
-			goto retry27;
-		}
-
 		log( LOG_WARN, "disk: fcntl(%i): %s", fd, mstrerror( errno ) );
 
 		// return false;
@@ -751,10 +731,8 @@ retry27:
 	//s_closeCounts [ fd ]++;
 
 	// otherwise we gotta really close it
-again:
 	if ( fd == 0 ) log("disk: closing3 fd of 0");
 	int status = ::close ( fd );
-	if ( status == -1 && errno == EINTR ) goto again;
 
 	// -1 means can be reopened because File::close() wasn't called.
 	// we're just conserving file descriptors
@@ -964,7 +942,7 @@ bool File::initialize ( ) {
 const char *File::getExtension() const {
 	// keep backing up over m_filename till we hit a . or / or beginning
 	const char *f = getFilename();
-	int32_t i = gbstrlen(m_filename);
+	int32_t i = strlen(m_filename);
 	while ( --i > 0 ) {
 		if ( f[i] == '.' ) break;
 		if ( f[i] == '/' ) break;

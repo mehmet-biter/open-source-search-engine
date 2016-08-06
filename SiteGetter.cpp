@@ -258,7 +258,7 @@ bool SiteGetter::getSiteList ( ) {
 		const char *prefix = "siteterm";
 
 		// hash that and we will incorporate it to match XmlDoc::hashNoSplit()
-		int64_t ph = hash64( prefix, gbstrlen( prefix ));
+		int64_t ph = hash64( prefix, strlen( prefix ));
 
 		// . this should match basically what is in XmlDoc.cpp::hash()
 		// . and this now does not include pages that have no outlinks

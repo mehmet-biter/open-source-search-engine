@@ -187,7 +187,7 @@ bool Msg13::forwardRequest ( ) {
 	//
 	// forward this request to the host responsible for this url's ip
 	//
-	int32_t nh     = g_hostdb.m_numHosts;
+	int32_t nh     = g_hostdb.getNumHosts();
 	int32_t hostId = hash32h(((uint32_t)r->m_firstIp >> 8), 0) % nh;
 
 	if((uint32_t)r->m_firstIp >> 8 == 0) {
@@ -564,8 +564,6 @@ void handleRequest13 ( UdpSlot *slot , int32_t niceness  ) {
 						 200000 , // 200 sec timeout
 						 -1,//backoff
 						 -1,//maxwait
-						 NULL,//replybuf
-						 0,//replybufmaxsize
 						 niceness)) {
 			// g_errno should be set
 			
@@ -738,7 +736,7 @@ void gotProxyHostReplyWrapper ( void *state , UdpSlot *slot ) {
 
 	// if proxy had one copy into the buf
 	if ( prep->m_usernamePwd[0] ) {
-		int32_t len = gbstrlen(prep->m_usernamePwd);
+		int32_t len = strlen(prep->m_usernamePwd);
 		gbmemcpy ( r->m_proxyUsernamePwdAuth , 
 			   prep->m_usernamePwd ,
 			   len );
@@ -2279,7 +2277,7 @@ void stripProxyAuthorization ( char *squidProxiedReqBuf ) {
 	// bury the \r\n as well
 	end += 2;
 	// bury that string
-	int32_t reqLen = gbstrlen(squidProxiedReqBuf);
+	int32_t reqLen = strlen(squidProxiedReqBuf);
 	const char *reqEnd = squidProxiedReqBuf + reqLen;
 	// include \0, so add +1
 	memmove ( s ,end , reqEnd-end + 1);
@@ -2314,7 +2312,7 @@ void fixGETorPOST ( char *squidProxiedReqBuf ) {
 	// skip until / or space or \r or \n or \0
 	for ( ; *s && ! is_wspace_a(*s) && *s != '/' ; s++ );
 	// bury the http://xyz.com part now
-	char *reqEnd = squidProxiedReqBuf + gbstrlen(squidProxiedReqBuf);
+	char *reqEnd = squidProxiedReqBuf + strlen(squidProxiedReqBuf);
 	// include the terminating \0, so add +1
 	gbmemcpy ( httpStart , s , reqEnd - s + 1 );
 	// now make HTTP/1.1 into HTTP/1.0

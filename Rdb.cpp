@@ -121,7 +121,8 @@ bool Rdb::init ( const char     *dir                  ,
 		  bool           preloadDiskPageCache ,
 		  char           keySize              ,
 		  bool           biasDiskPageCache    ,
-		 bool            isCollectionLess ) {
+		 bool            isCollectionLess,
+		 bool			useIndexFile ) {
 	// reset all
 	reset();
 
@@ -132,7 +133,7 @@ bool Rdb::init ( const char     *dir                  ,
 	m_isCollectionLess = isCollectionLess;
 
 	// save the dbname NULL terminated into m_dbname/m_dbnameLen
-	m_dbnameLen = gbstrlen ( dbname );
+	m_dbnameLen = strlen ( dbname );
 	gbmemcpy ( m_dbname , dbname , m_dbnameLen );
 	m_dbname [ m_dbnameLen ] = '\0';
 
@@ -147,6 +148,8 @@ bool Rdb::init ( const char     *dir                  ,
 	m_biasDiskPageCache = biasDiskPageCache;
 	m_ks               = keySize;
 	m_inDumpLoop       = false;
+	
+	m_useIndexFile		= useIndexFile;
 
 	// set our id
 	m_rdbId = getIdFromRdb ( this );
@@ -237,6 +240,15 @@ bool Rdb::init ( const char     *dir                  ,
 		return false;
 	}
 
+//@@@ BR: no-merge index begin
+	if( m_useIndexFile ) {
+		sprintf(m_indexName,"%s.idx", m_dbname);
+		m_index.set(dir, m_indexName);
+		
+		m_index.readIndex();
+	}
+//@@@ BR: no-merge index end
+
 	m_initialized = true;
 
 	// success
@@ -273,8 +285,8 @@ bool Rdb::updateToRebuildFiles ( Rdb *rdb2 , char *coll ) {
 	status = ::mkdir ( dstDir , getDirCreationFlags() );
 	if ( status && errno != EEXIST ) {
 		g_errno = errno;
-		return log("repair: Could not mkdir(%s): %s",dstDir,
-			   mstrerror(errno));
+		log(LOG_WARN, "repair: Could not mkdir(%s): %s",dstDir, mstrerror(errno));
+		return false;
 	}
 
 	// clear it in case it existed
@@ -288,20 +300,28 @@ bool Rdb::updateToRebuildFiles ( Rdb *rdb2 , char *coll ) {
 	//if ( m_needsSave ) { g_process.shutdownAbort(true); }
 	// delete old collection recs
 	CollectionRec *cr = g_collectiondb.getRec ( coll );
-	if ( ! cr ) return log("db: Exchange could not find coll, %s.",coll);
+	if ( ! cr ) {
+		log(LOG_WARN, "db: Exchange could not find coll, %s.",coll);
+		return false;
+	}
 	collnum_t collnum = cr->m_collnum;
 
 	RdbBase *base = getBase ( collnum );
-	if ( ! base ) 
-		return log("repair: Could not find old base for %s.",coll);
+	if ( ! base ) {
+		log(LOG_WARN, "repair: Could not find old base for %s.", coll);
+		return false;
+	}
 
 	RdbBase *base2 = rdb2->getBase ( collnum );
-	if ( ! base2 )
-		return log("repair: Could not find new base for %s.",coll);
+	if ( ! base2 ) {
+		log(LOG_WARN, "repair: Could not find new base for %s.", coll);
+		return false;
+	}
 
-	if ( rdb2->getNumUsedNodes() != 0 ) 
-		return log("repair: Recs present in rebuilt tree for db %s "
-			   "and collection %s.",m_dbname,coll);
+	if ( rdb2->getNumUsedNodes() != 0 ) {
+		log(LOG_WARN, "repair: Recs present in rebuilt tree for db %s and collection %s.", m_dbname, coll);
+		return false;
+	}
 
 	logf(LOG_INFO,"repair: Updating rdb %s for collection %s.",
 	     m_dbname,coll);
@@ -334,14 +354,18 @@ bool Rdb::updateToRebuildFiles ( Rdb *rdb2 , char *coll ) {
 
 	// now move our map and data files to the "trash" subdir, "dstDir"
 	logf(LOG_INFO,"repair: Moving old data and map files to trash.");
-	if ( ! base->moveToTrash(dstDir) )
-		return log("repair: Trashing new rdb for %s failed.",coll);
+	if ( ! base->moveToTrash(dstDir) ) {
+		log(LOG_WARN, "repair: Trashing new rdb for %s failed.", coll);
+		return false;
+	}
 
 	// . now rename the newly rebuilt files to our filenames
 	// . just removes the "Rebuild" from their filenames
 	logf(LOG_INFO,"repair: Renaming new data and map files.");
-	if ( ! base2->removeRebuildFromFilenames() )
-		return log("repair: Renaming old rdb for %s failed.",coll);
+	if ( ! base2->removeRebuildFromFilenames() ) {
+		log(LOG_WARN, "repair: Renaming old rdb for %s failed.", coll);
+		return false;
+	}
 
 	// reset the rdb bases (clears out files and maps from mem)
 	base->reset ();
@@ -349,8 +373,10 @@ bool Rdb::updateToRebuildFiles ( Rdb *rdb2 , char *coll ) {
 
 	// reload the newly rebuilt files into the primary rdb
 	logf(LOG_INFO,"repair: Loading new data and map files.");
-	if ( ! base->setFiles() )
-		return log("repair: Failed to set new files for %s.",coll);
+	if ( ! base->setFiles() ) {
+		log(LOG_WARN, "repair: Failed to set new files for %s.", coll);
+		return false;
+	}
 
 	// allow rdb2->reset() to succeed without dumping core
 	rdb2->m_tree.m_needsSave = false;
@@ -381,7 +407,8 @@ bool Rdb::addRdbBase2 ( collnum_t collnum ) { // addColl2()
 
 	if ( ! m_initialized ) {
 		g_errno = EBADENGINEER;
-		return log("db: adding coll to uninitialized rdb!");
+		log(LOG_WARN, "db: adding coll to uninitialized rdb!");
+		return false;
 	}
 
 	// catdb,statsbaccessdb,facebookdb,syncdb
@@ -391,9 +418,9 @@ bool Rdb::addRdbBase2 ( collnum_t collnum ) { // addColl2()
 	if ( collnum < (collnum_t) 0 ) {
 		g_errno = ENOBUFS;
 		int64_t maxColls = 1LL << (sizeof(collnum_t)*8);
-		return log("db: %s: Failed to add collection #%i. Would "
-			   "breech maximum number of collections, %" PRId64".",
-			   m_dbname,collnum,maxColls);
+		log(LOG_WARN, "db: %s: Failed to add collection #%i. Would breech maximum number of collections, %" PRId64".",
+		    m_dbname,collnum,maxColls);
+		return false;
 	}
 
 
@@ -411,18 +438,18 @@ bool Rdb::addRdbBase2 ( collnum_t collnum ) { // addColl2()
 	if ( cr ) base = cr->getBasePtr ( m_rdbId );
 	if ( base ) { // m_bases [ collnum ] ) {
 		g_errno = EBADENGINEER;
-		return log("db: Rdb for db \"%s\" and "
-			   "collection \"%s\" (collnum %" PRId32") exists.",
-			   m_dbname,coll,(int32_t)collnum);
+		log(LOG_WARN, "db: Rdb for db \"%s\" and collection \"%s\" (collnum %" PRId32") exists.",
+		    m_dbname,coll,(int32_t)collnum);
+		return false;
 	}
 	// make a new one
 	RdbBase *newColl = NULL;
 	try {newColl= new(RdbBase);}
 	catch(...){
 		g_errno = ENOMEM;
-		return log("db: %s: Failed to allocate %" PRId32" bytes for "
-			   "collection \"%s\".",
-			   m_dbname,(int32_t)sizeof(Rdb),coll);
+		log(LOG_WARN, "db: %s: Failed to allocate %" PRId32" bytes for collection \"%s\".",
+		    m_dbname,(int32_t)sizeof(Rdb),coll);
+		return false;
 	}
 	mnew(newColl, sizeof(RdbBase), "Rdb Coll");
 	//m_bases [ collnum ] = newColl;
@@ -463,7 +490,8 @@ bool Rdb::addRdbBase2 ( collnum_t collnum ) { // addColl2()
 					NULL            ,
 					m_isTitledb     ,
 					m_preloadCache  ,
-					m_biasDiskPageCache ) ) {
+					m_biasDiskPageCache,
+					m_useIndexFile ) ) {
 		logf(LOG_INFO,"db: %s: Failed to initialize db for "
 		     "collection \"%s\".", m_dbname,coll);
 		//exit(-1);
@@ -622,8 +650,8 @@ bool Rdb::delColl ( const char *coll ) {
 	// ensure its there
 	if ( collnum < (collnum_t)0 || ! base ) { // m_bases [ collnum ] ) {
 		g_errno = EBADENGINEER;
-		return log("db: %s: Failed to delete collection #%i. Does "
-			   "not exist.", m_dbname,collnum);
+		log(LOG_WARN, "db: %s: Failed to delete collection #%i. Does not exist.", m_dbname,collnum);
+		return false;
 	}
 
 	// move all files to trash and clear the tree/buckets
@@ -648,8 +676,7 @@ static void closeSleepWrapper ( int fd , void *state );
 // . returns false if blocked true otherwise
 // . sets g_errno on error
 // . CAUTION: only set urgent to true if we got a SIGSEGV or SIGPWR...
-bool Rdb::close ( void *state , void (* callback)(void *state ), bool urgent ,
-		  bool isReallyClosing ) {
+bool Rdb::close ( void *state , void (* callback)(void *state ), bool urgent , bool isReallyClosing ) {
 	// unregister in case already registered
 	if ( m_registered )
 		g_loop.unregisterSleepCallback (this,closeSleepWrapper);
@@ -686,8 +713,8 @@ bool Rdb::close ( void *state , void (* callback)(void *state ), bool urgent ,
 		m_isSaving = false;
 		const char *tt = "save";
 		if ( m_isReallyClosing ) tt = "close";
-		return log ( LOG_INFO,"db: Cannot %s %s until dump finishes.",
-			     tt,m_dbname);
+		log(LOG_INFO, "db: Cannot %s %s until dump finishes.", tt, m_dbname);
+		return false;
 	}
 
 
@@ -750,27 +777,19 @@ bool Rdb::close ( void *state , void (* callback)(void *state ), bool urgent ,
 	}
 
 	// save it using a thread?
-	bool useThread ;
-	if      ( m_urgent          ) useThread = false;
-	else if ( m_isReallyClosing ) useThread = false;
-	else                          useThread = true ;
+	bool useThread = !(m_urgent || m_isReallyClosing);
 
 	// . returns false if blocked, true otherwise
 	// . sets g_errno on error
 	if(m_useTree) {
-		if ( ! m_tree.fastSave ( getDir()    ,
-					 m_dbname    , // &m_saveFile ,
-					 useThread   ,
-					 this        ,
-					 doneSavingWrapper ) ) 
+		if (!m_tree.fastSave(getDir(), m_dbname, useThread, this, doneSavingWrapper)) {
 			return false;
+		}
 	}
 	else {
-		if ( ! m_buckets.fastSave ( getDir()    ,
-					    useThread   ,
-					    this        ,
-					    doneSavingWrapper ) ) 
+		if (!m_buckets.fastSave(getDir(), useThread, this, doneSavingWrapper)) {
 			return false;
+		}
 	}
 
 	// we saved it w/o blocking OR we had an g_errno
@@ -783,10 +802,9 @@ void closeSleepWrapper ( int fd , void *state ) {
 	// sanity check
 	if ( ! THIS->m_isClosing ) { g_process.shutdownAbort(true); }
 	// continue closing, this returns false if blocked
-	if ( ! THIS->close ( THIS->m_closeState, 
-			     THIS->m_closeCallback ,
-			     false ,
-			     true  ) ) return;
+	if (!THIS->close(THIS->m_closeState, THIS->m_closeCallback, false, true)) {
+		return;
+	}
 	// otherwise, we call the callback
 	THIS->m_closeCallback ( THIS->m_closeState );
 }
@@ -881,6 +899,22 @@ bool Rdb::saveTree ( bool useThread ) {
 		return m_buckets.fastSave ( getDir(), useThread, NULL, NULL );
 	}
 }
+
+//@@@ BR: no-merge index begin
+bool Rdb::saveIndex( bool /* useThread */) {
+	if( !m_useIndexFile ) {
+		return true;
+	}
+
+	const char *dbn = m_dbname;
+	if ( ! dbn || ! dbn[0] ) {
+		dbn = "unknown";
+	}
+
+
+	return m_index.writeIndex();
+}
+//@@@ BR: no-merge index end
 
 bool Rdb::saveMaps () {
 	// now loop over bases
@@ -982,6 +1016,7 @@ bool Rdb::loadTree ( ) {
 
 		}
 	}
+
 	return true;
 }
 
@@ -1293,7 +1328,8 @@ bool Rdb::dumpCollLoop ( ) {
 	// this file must not exist already, we are dumping the tree into it
 	m_fn = base->addNewFile ( id2 ) ;
 	if ( m_fn < 0 ) {
-		return log( LOG_LOGIC, "db: rdb: Failed to add new file to dump %s: %s.", m_dbname, mstrerror( g_errno ) );
+		log( LOG_LOGIC, "db: rdb: Failed to add new file to dump %s: %s.", m_dbname, mstrerror( g_errno ) );
+		return false;
 	}
 
 	log(LOG_INFO,"build: Dumping to %s/%s for coll \"%s\".",
@@ -1499,10 +1535,9 @@ void Rdb::doneDumping ( ) {
 	// if we're closing shop then return
 	if ( m_isClosing ) { 
 		// continue closing, this returns false if blocked
-		if ( ! close ( m_closeState, 
-			       m_closeCallback ,
-			       false ,
-			       true  ) ) return;
+		if (!close(m_closeState, m_closeCallback, false, true)) {
+			return;
+		}
 		// otherwise, we call the callback
 		m_closeCallback ( m_closeState );
 		return; 
@@ -1632,7 +1667,7 @@ void attemptMergeAll() {
 
 // . return false and set g_errno on error
 // . TODO: speedup with m_tree.addSortedKeys() already partially written
-bool Rdb::addList ( collnum_t collnum , RdbList *list, int32_t niceness/*, bool isSorted*/ ) {
+bool Rdb::addList ( collnum_t collnum , RdbList *list, int32_t niceness ) {
 	// pick it
 	if ( collnum < 0 || collnum > getNumBases() || ! getBase(collnum) ) {
 		g_errno = ENOCOLLREC;
@@ -1820,7 +1855,7 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list, int32_t niceness/*, bool 
 	return true;
 }
 
-bool Rdb::needsDump ( ) {
+bool Rdb::needsDump ( ) const {
 	if ( m_mem.is90PercentFull () ) {
 		return true;
 	}
@@ -1987,8 +2022,8 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 		data = (char *) m_mem.dupData ( key, data, dataSize, collnum);
 		if ( ! data ) { 
 			g_errno = ETRYAGAIN; 
-			return log("db: Could not allocate %" PRId32" bytes to add "
-				   "data to %s. Retrying.",dataSize,m_dbname);
+			log(LOG_WARN, "db: Could not allocate %" PRId32" bytes to add data to %s. Retrying.",dataSize,m_dbname);
+			return false;
 		}
 	}
 
@@ -2170,6 +2205,18 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 	//	m_needsSave = true;
 	//}
 
+//@@@ BR no-merge index begin
+	if( !KEYNEG(key) && m_useIndexFile && g_conf.m_noInMemoryPosdbMerge ) {
+		//
+		// Add data record to the current index file for the -saved.dat file.
+		// This index is stored in the Rdb record- the individual part file 
+		// indexes are in RdbBase and are read-only except when merging).
+		//
+		m_index.addRecord(m_rdbId, key);
+	}
+//@@@ BR no-merge index end
+
+
 	// . TODO: add using "lastNode" as a start node for the insertion point
 	// . should set g_errno if failed
 	// . caller should retry on g_errno of ETRYAGAIN or ENOMEM
@@ -2330,13 +2377,16 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 	const char *ss ="";
 	if ( m_tree.m_isSaving ) ss = " Tree is saving.";
 	if ( !m_useTree && m_buckets.isSaving() ) ss = " Buckets are saving.";
+
 	// return ETRYAGAIN if out of memory, this should tell
 	// addList to call the dump routine
 	//if ( g_errno == ENOMEM ) g_errno = ETRYAGAIN;
 	// log the error
 	//g_errno = EBADENGINEER;
-	return log(LOG_INFO,"db: Had error adding data to %s: %s.%s", 
-		   m_dbname,mstrerror(g_errno),ss);
+
+	log(LOG_INFO,"db: Had error adding data to %s: %s.%s", m_dbname,mstrerror(g_errno),ss);
+	return false;
+
 	// if we flubbed then free the data, if any
 	//if ( doCopy && data ) mfree ( data , dataSize ,"Rdb");
 	//return false;
@@ -2350,8 +2400,10 @@ int64_t Rdb::getListSize ( collnum_t collnum,
 			int64_t oldTruncationLimit ) {
 	// pick it
 	//collnum_t collnum = g_collectiondb.getCollnum ( coll );
-	if ( collnum < 0 || collnum > getNumBases() || ! getBase(collnum) )
-		return log("db: %s bad collnum of %i",m_dbname,collnum);
+	if ( collnum < 0 || collnum > getNumBases() || ! getBase(collnum) ) {
+		log(LOG_WARN, "db: %s bad collnum of %i", m_dbname, collnum);
+		return false;
+	}
 	return getBase(collnum)->getListSize(startKey,endKey,max,
 					    oldTruncationLimit);
 }
@@ -2481,7 +2533,7 @@ int64_t Rdb::getDiskSpaceUsed ( ) {
 	return total;
 }
 
-bool Rdb::isMerging ( ) {
+bool Rdb::isMerging() const {
 	// use this for speed
 	return (bool)m_numMergesOut;
 }
@@ -2686,8 +2738,8 @@ bool Rdb::addList ( const char *coll , RdbList *list, int32_t niceness ) {
 	collnum_t collnum = g_collectiondb.getCollnum ( coll );
 	if ( collnum < (collnum_t) 0 ) {
 		g_errno = ENOCOLLREC;
-		return log("db: Could not add list because collection \"%s\" "
-			   "does not exist.",coll);
+		log(LOG_WARN, "db: Could not add list because collection \"%s\" does not exist.",coll);
+		return false;
 	}
 	return addList ( collnum , list, niceness );
 }
@@ -2703,8 +2755,8 @@ bool Rdb::addRecord ( const char *coll , char *key, char *data, int32_t dataSize
 	collnum_t collnum = g_collectiondb.getCollnum ( coll );
 	if ( collnum < (collnum_t) 0 ) {
 		g_errno = ENOCOLLREC;
-		return log("db: Could not add rec because collection \"%s\" "
-			   "does not exist.",coll);
+		log(LOG_WARN, "db: Could not add rec because collection \"%s\" does not exist.",coll);
+		return false;
 	}
 	return addRecord ( collnum , key , data , dataSize,niceness );
 }
@@ -2715,23 +2767,23 @@ int32_t Rdb::getNumUsedNodes ( ) const {
 	 return m_buckets.getNumKeys();
 }
 
-int32_t Rdb::getMaxTreeMem() {
+int32_t Rdb::getMaxTreeMem() const {
 	if(m_useTree) return m_tree.getMaxMem();
 	return m_buckets.getMaxMem();
 }
 
-int32_t Rdb::getNumNegativeKeys() {
+int32_t Rdb::getNumNegativeKeys() const {
 	 if(m_useTree) return m_tree.getNumNegativeKeys(); 
 	 return m_buckets.getNumNegativeKeys();
 }
 
 
-int32_t Rdb::getTreeMemOccupied() {
+int32_t Rdb::getTreeMemOccupied() const {
 	 if(m_useTree) return m_tree.getMemOccupied(); 
 	 return m_buckets.getMemOccupied();
 }
 
-int32_t Rdb::getTreeMemAlloced () {
+int32_t Rdb::getTreeMemAlloced () const {
 	 if(m_useTree) return m_tree.getMemAlloced(); 
 	 return m_buckets.getMemAlloced();
 }
@@ -2751,7 +2803,7 @@ bool Rdb::isWritable ( ) {
 }
 
 
-bool Rdb::needsSave() {
+bool Rdb::needsSave() const {
 	if(m_useTree) return m_tree.m_needsSave; 
 	else return m_buckets.needsSave();
 }

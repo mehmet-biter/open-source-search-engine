@@ -440,7 +440,7 @@ bool isClockInSync() {
 
 char *strncasestr( char *haystack, int32_t haylen, const char *needle){
 	int32_t matchLen = 0;
-	int32_t needleLen = gbstrlen(needle);
+	int32_t needleLen = strlen(needle);
 	for (int32_t i = 0; i < haylen;i++){
 		char c1 = to_lower_a(haystack[i]);
 		char c2 = to_lower_a(needle[matchLen]);
@@ -461,7 +461,7 @@ char *strncasestr( char *haystack, int32_t haylen, const char *needle){
 
 char *strnstr( const char *haystack, const char *needle, int32_t len ) {
 	int32_t matchLen = 0;
-	int32_t needleLen = gbstrlen( needle );
+	int32_t needleLen = strlen( needle );
 	for ( int32_t i = 0; i < len; ++i ) {
 		char c1 = ( haystack[ i ] );
 		char c2 = ( needle[ matchLen ] );
@@ -529,7 +529,7 @@ int32_t ulltoa ( char *s , uint64_t n ) {
 		// pad all hunks except highest hunk with zeroes
 		if ( i != lastHunk ) sprintf ( s , "%03" PRId32 , hunks[i] );
 		else                 sprintf ( s , "%" PRId32 , hunks[i] );
-		s += gbstrlen(s);
+		s += strlen(s);
 		// comma after all hunks but lowest hunk
 		if ( i != 0 ) *s++ = ',';
 	}
@@ -642,7 +642,7 @@ void binToHex ( const unsigned char *src , int32_t srcLen , char *dst ) {
 // . like strstr but haystack may not be NULL terminated
 // . needle, however, IS null terminated
 char *strncasestr ( char *haystack , const char *needle , int32_t haystackSize ) {
-	int32_t needleSize = gbstrlen(needle);
+	int32_t needleSize = strlen(needle);
 	int32_t n = haystackSize - needleSize ;
 	for ( int32_t i = 0 ; i <= n ; i++ ) {
 		// keep looping if first chars do not match
@@ -683,8 +683,8 @@ char *strncasestr ( char *haystack , const char *needle ,
 
 // independent of case
 char *gb_strcasestr ( char *haystack , const char *needle ) {
-	int32_t needleSize   = gbstrlen(needle);
-	int32_t haystackSize = gbstrlen(haystack);
+	int32_t needleSize   = strlen(needle);
+	int32_t haystackSize = strlen(haystack);
 	int32_t n = haystackSize - needleSize ;
 	for ( int32_t i = 0 ; i <= n ; i++ ) {
 		// keep looping if first chars do not match
@@ -1045,8 +1045,8 @@ static bool s_hasFileName = false;
 // returns false and sets g_errno on error
 bool setTimeAdjustmentFilename ( const char *dir, const char *filename ) {
 	s_hasFileName = true;
-	int32_t len1 = gbstrlen(dir);
-	int32_t len2 = gbstrlen(filename);
+	int32_t len1 = strlen(dir);
+	int32_t len2 = strlen(filename);
 	if ( len1 + len2 > 1000 ) { g_process.shutdownAbort(true); }
 	sprintf(s_tafile,"%s/%s",dir,filename);
 	return true;
@@ -1068,7 +1068,7 @@ bool loadTimeAdjustment ( ) {
 	// read in max bytes
 	ssize_t bytes_read = read ( fd , rbuf , sizeof(rbuf)-1 );
 	if ( bytes_read < 0 ) {
-		log("util: reading %s had error: %s",s_tafile,
+		log(LOG_WARN, "util: reading %s had error: %s",s_tafile,
 		    mstrerror(errno));
 		close(fd);
 		g_errno = errno;
@@ -1097,7 +1097,7 @@ bool loadTimeAdjustment ( ) {
 	// and really slow down loadups
 	g_clockInSync = true;
 	// note it
-	log("util: loaded %s and put clock in sync. age=%" PRIu64" adj=%" PRId64,
+	log(LOG_DEBUG, "util: loaded %s and put clock in sync. age=%" PRIu64" adj=%" PRId64,
 	    s_tafile,stampAge,clockAdj);
 	return true;
 }
@@ -1121,11 +1121,11 @@ bool saveTimeAdjustment ( ) {
 		return false;
 	}
 	// how many bytes to write?
-	int32_t len = gbstrlen(wbuf);
+	int32_t len = strlen(wbuf);
 	// read in max bytes
 	int nw = write ( fd , wbuf , len );
 	if ( nw != len ) {
-		log("util: writing %s had error: %s",s_tafile,
+		log(LOG_WARN, "util: writing %s had error: %s",s_tafile,
 		    mstrerror(errno));
 		close(fd);
 		g_errno = errno;
@@ -1133,7 +1133,7 @@ bool saveTimeAdjustment ( ) {
 	}
 	close(fd);
 	// note it
-	log("util: saved %s",s_tafile);
+	log(LOG_DEBUG, "util: saved %s",s_tafile);
 	// it was written ok
 	return true;
 }
@@ -1601,10 +1601,10 @@ char *serializeMsg2 ( void *thisPtr ,
 			goto skip;
 		// if this is valid then size can't be 0! fix upstream.
 		if ( ! *srcSizePtr ) { g_process.shutdownAbort(true); }
-		// if size is 0 use gbstrlen. helps with InjectionRequest
+		// if size is 0 use strlen. helps with InjectionRequest
 		// where we set ptr_url or ptr_content but not size_url, etc.
 		//if ( ! *srcSizePtr )
-		//	*srcSizePtr = gbstrlen(*strPtr);
+		//	*srcSizePtr = strlen(*strPtr);
 		// sanity check -- cannot copy onto ourselves
 		if ( p > *srcStrPtr && p < *srcStrPtr + *srcSizePtr ) {
 			g_process.shutdownAbort(true); }
@@ -1714,6 +1714,6 @@ bool verifyUtf8 ( const char *txt , int32_t tlen ) {
 }
 
 bool verifyUtf8 ( const char *txt ) {
-	int32_t tlen = gbstrlen(txt);
+	int32_t tlen = strlen(txt);
 	return verifyUtf8(txt,tlen);
 }

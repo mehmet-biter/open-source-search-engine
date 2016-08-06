@@ -769,14 +769,21 @@ subloopNextPriority:
 				// doledb it would cork us up too!
 				50000            , // minRecSizes
 				true            , // includeTree
-				false           , // addToCache
 				0               , // max cache age
 				0               , // startFileNum
 				-1              , // numFiles (all)
 				this            , // state 
 				gotDoledbListWrapper2 ,
 				MAX_NICENESS    , // niceness
-				true            )) { // do error correction?
+				true,             // do err correction
+				NULL,             // cacheKeyPtr
+			        0,                // retryNum
+			        -1,               // maxRetries
+			        true,             // compensateForMerge
+			        -1,               // syncPoint
+			        false,            // isRealMerge
+			        true))            // allowPageCache
+	{
 		// return if it blocked
 		logTrace( g_conf.m_logTraceSpider, "END, getList blocked" );
 
@@ -2065,7 +2072,7 @@ void updateAllCrawlInfosSleepWrapper ( int fd , void *state ) {
 	s_inUse = true;
 
 	// send out the msg request
-	for ( int32_t i = 0 ; i < g_hostdb.m_numHosts ; i++ ) {
+	for ( int32_t i = 0 ; i < g_hostdb.getNumHosts() ; i++ ) {
 		Host *h = g_hostdb.getHost(i);
 		// count it as launched
 		s_requests++;
@@ -2190,9 +2197,6 @@ void gotCrawlInfoReply ( void *state , UdpSlot *slot ) {
 	// . readBuf is null on an error, so check for that...
 	// . TODO: do not update on error???
 	for ( ; ptr < end ; ptr++ ) {
-
-		QUICKPOLL ( slot->m_niceness );
-
 		// get collnum
 		collnum_t collnum = (collnum_t)(ptr->m_collnum);
 
@@ -2207,7 +2211,7 @@ void gotCrawlInfoReply ( void *state , UdpSlot *slot ) {
 
 		// just copy into the stats buf
 		if ( ! cr->m_crawlInfoBuf.getBufStart() ) {
-			int32_t need = sizeof(CrawlInfo) * g_hostdb.m_numHosts;
+			int32_t need = sizeof(CrawlInfo) * g_hostdb.getNumHosts();
 			cr->m_crawlInfoBuf.setLabel("cibuf");
 			cr->m_crawlInfoBuf.reserve(need);
 			// in case one was udp server timed out or something
@@ -2244,8 +2248,6 @@ void gotCrawlInfoReply ( void *state , UdpSlot *slot ) {
 
 	// loop over 
 	for ( int32_t x = 0 ; x < g_collectiondb.m_numRecs ; x++ ) {
-		QUICKPOLL ( slot->m_niceness );
-
 		// a niceness 0 routine could have nuked it?
 		if ( x >= g_collectiondb.m_numRecs )
 			break;
@@ -2268,8 +2270,7 @@ void gotCrawlInfoReply ( void *state , UdpSlot *slot ) {
 		// if empty for all hosts, i guess no stats...
 		if ( ! cia ) continue;
 
-		for ( int32_t k = 0 ; k < g_hostdb.m_numHosts; k++ ) {
-			QUICKPOLL ( slot->m_niceness );
+		for ( int32_t k = 0 ; k < g_hostdb.getNumHosts(); k++ ) {
 			// get the CrawlInfo for the ith host
 			CrawlInfo *stats = &cia[k];
 			// point to the stats for that host
@@ -2385,7 +2386,7 @@ void handleRequestc1 ( UdpSlot *slot , int32_t niceness ) {
 
 	if ( ! slot->m_host ) {
 		log("handc1: no slot->m_host from ip=%s udpport=%i",
-		    iptoa(slot->m_ip),(int)slot->m_port);
+		    iptoa(slot->getIp()),(int)slot->getPort());
 		g_errno = ENOHOSTS;
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__ );
 		g_udpServer.sendErrorReply ( slot , g_errno );
@@ -2401,9 +2402,6 @@ void handleRequestc1 ( UdpSlot *slot , int32_t niceness ) {
 	//SpiderColl *sc = g_spiderCache.getSpiderColl(collnum);
 
 	for ( int32_t i = 0 ; i < g_collectiondb.m_numRecs ; i++ ) {
-
-		QUICKPOLL(slot->m_niceness);
-
 		CollectionRec *cr = g_collectiondb.m_recs[i];
 		if ( ! cr ) continue;
 

@@ -126,7 +126,7 @@ const char *Rebalance::getNeedsRebalance ( ) {
 	       );
 
 	// convert m_nextKey into an ascii string and store into keyStr
-	hexToBin(keyStr,gbstrlen(keyStr), (char *)&m_nextKey);
+	hexToBin(keyStr,strlen(keyStr), (char *)&m_nextKey);
 
 	m_collnum = cn;
 	//m_collnum = 4695; //debug skip
@@ -246,7 +246,7 @@ void Rebalance::scanLoop ( ) {
 
 			}
 			// percent update?
-			int32_t percent = (unsigned char)m_nextKey[rdb->m_ks-1];
+			int32_t percent = (unsigned char)m_nextKey[rdb->getKeySize()-1];
 			percent *= 100;
 			percent /= 256;
 			if ( percent != m_lastPercent && percent ) {
@@ -399,7 +399,6 @@ bool Rebalance::scanRdb ( ) {
 				m_endKey         , // should be maxed!
 				100024             , // min rec sizes
 				true             , // include tree?
-				false            , // addToCache
 				0                , // maxCacheAge
 				0                , // startFileNum
 				-1               , // m_numFiles   
@@ -411,7 +410,9 @@ bool Rebalance::scanRdb ( ) {
 				0                , // retry num
 				-1               , // maxRetries
 				true             , // compensate for merge
-				-1LL         ))    // sync point
+				-1LL             , // sync point
+				false,             // isRealMerge
+				true))             // allowPageCache
 		return false;
 
 	//
@@ -446,7 +447,7 @@ bool Rebalance::gotList ( ) {
 
 	char rdbId = rdb->m_rdbId;
 
-	int32_t ks = rdb->m_ks;//getKeySize();
+	int32_t ks = rdb->getKeySize();
 
 	int32_t myShard = g_hostdb.m_myHost->m_shardNum;
 
@@ -529,7 +530,7 @@ bool Rebalance::gotList ( ) {
 		// if it is not maxxed out, then incremenet it for the
 		// next scan round
 		if ( KEYCMP ( m_nextKey , KEYMAX() , ks ) != 0 )
-			KEYADD ( m_nextKey , ks );
+			KEYINC ( m_nextKey , ks );
 	}
 
 	if ( ! m_msg4a.addMetaList( &m_posMetaList, m_collnum, this, doneAddingMetaWrapper, MAX_NICENESS, rdb->m_rdbId, -1 ) ) { // shard override, not!

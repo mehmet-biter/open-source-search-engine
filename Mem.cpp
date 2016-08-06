@@ -7,12 +7,12 @@
 #include "Pages.h"
 #include "ScopedLock.h"
 #include "Process.h"
+#include <string.h>            //for strlen()
 
 
 // only Mem.cpp should call ::malloc, everyone else must call mmalloc() so
 // we can keep tabs on memory usage.
 
-bool g_inMemFunction = false;
 
 #define sysmalloc ::malloc
 #define syscalloc ::calloc
@@ -116,11 +116,7 @@ void * operator new (size_t size) throw (std::bad_alloc) {
 		//throw 1;
 	}
 
-	g_inMemFunction = true;
-
 	void *mem = sysmalloc ( size );
-
-	g_inMemFunction = false;
 
 	int32_t  memLoop = 0;
 newmemloop:
@@ -182,11 +178,7 @@ void * operator new [] (size_t size) throw (std::bad_alloc) {
 		//throw 1;
 	}
 
-	g_inMemFunction = true;
-
 	void *mem = sysmalloc ( size );
-
-	g_inMemFunction = false;
 
 
 	int32_t  memLoop = 0;
@@ -294,7 +286,7 @@ void Mem::addMem ( void *mem , int32_t size , const char *note , char isnew ) {
 	// check for breech after every call to alloc or free in order to
 	// more easily isolate breeching code.. this slows things down a lot
 	// though.
-	if ( g_conf.m_logDebugMem ) printBreeches();
+	if ( g_conf.m_logDebugMem ) printBreeches_unlocked();
 
 	// copy the magic character, iff not a new() call
 	if ( size == 0 ) { g_process.shutdownAbort(true); }
@@ -423,7 +415,7 @@ void Mem::addMem ( void *mem , int32_t size , const char *note , char isnew ) {
 
 
  skipMe:
-	int32_t len = gbstrlen(note);
+	int32_t len = strlen(note);
 	if ( len > 15 ) len = 15;
 	char *here = &s_labels [ h * 16 ];
 	memcpy ( here , note , len );
@@ -604,7 +596,7 @@ bool Mem::lblMem( void *mem, int32_t size, const char *note ) {
 				     s_sizes[ h ] - size );
 				break;
 			}
-			int32_t len = gbstrlen( note );
+			int32_t len = strlen( note );
 			if ( len > 15 ) len = 15;
 			char *here = &s_labels[ h * 16 ];
 			gbmemcpy ( here, note, len );
@@ -637,7 +629,7 @@ bool Mem::rmMem  ( void *mem , int32_t size , const char *note ) {
 	// check for breech after every call to alloc or free in order to
 	// more easily isolate breeching code.. this slows things down a lot
 	// though.
-	if ( g_conf.m_logDebugMem ) printBreeches();
+	if ( g_conf.m_logDebugMem ) printBreeches_unlocked();
 
 	// don't free 0 bytes
 	if ( size == 0 ) return true;
@@ -878,6 +870,11 @@ int Mem::printBreech ( int32_t i) {
 
 // check all allocated memory for buffer under/overruns
 int Mem::printBreeches() {
+	ScopedLock sl(s_lock);
+	return printBreeches_unlocked();
+}
+
+int Mem::printBreeches_unlocked() {
 	if ( ! s_mptrs ) return 0;
 	// do not bother if no padding at all
 	if ( (int32_t)UNDERPAD == 0 && (int32_t)OVERPAD == 0 ) return 0;
@@ -894,7 +891,7 @@ int Mem::printBreeches() {
 
 int Mem::printMem ( ) {
 	// has anyone breeched their buffer?
-	printBreeches();
+	printBreeches_unlocked();
 
 	// print table entries sorted by most mem first
 	int32_t *p = (int32_t *)sysmalloc ( m_memtablesize * 4 );
@@ -962,11 +959,7 @@ retry:
 
 	void *mem;
 
-	g_inMemFunction = true;
-
 	mem = (void *)sysmalloc ( size + UNDERPAD + OVERPAD );
-
-	g_inMemFunction = false;
 
 	int32_t memLoop = 0;
 mallocmemloop:
@@ -1146,6 +1139,11 @@ char *Mem::dup ( const void *data , int32_t dataSize , const char *note ) {
 	return mem;
 }
 
+char *Mem::strdup( const char *string, const char *note ) {
+	return dup(string, strlen(string) + 1, note);
+}
+
+
 void Mem::gbfree ( void *ptr , int size , const char *note ) {
 	logTrace( g_conf.m_logTraceMem, "ptr=%p size=%d note='%s'", ptr, size, note );
 
@@ -1173,10 +1171,8 @@ void Mem::gbfree ( void *ptr , int size , const char *note ) {
 	// if this returns false it was an unbalanced free
 	if ( ! rmMem ( ptr , size , note ) ) return;
 
-	g_inMemFunction = true;
 	if ( isnew ) sysfree ( (char *)ptr );
 	else         sysfree ( (char *)ptr - UNDERPAD );
-	g_inMemFunction = false;
 }
 
 

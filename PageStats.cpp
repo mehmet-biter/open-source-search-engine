@@ -804,12 +804,6 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 			      "<tr class=poo><td><b>Process ID</b></td><td>%" PRIu32"</td></tr>\n"
 			      "<tr class=poo><td><b>Corrupted Disk Reads</b></td><td>%" PRId32"</td></tr>\n"
 
-			      "<tr class=poo><td><b>SIGCHLDS</b></td><td>%" PRId32"</td></tr>\n"
-			      "<tr class=poo><td><b>SIGQUEUES</b></td><td>%" PRId32"</td></tr>\n"
-			      "<tr class=poo><td><b>SIGPIPES</b></td><td>%" PRId32"</td></tr>\n"
-			      "<tr class=poo><td><b>SIGIOS</b></td><td>%" PRId32"</td></tr>\n"
-			      "<tr class=poo><td><b>SIGOTHERS</b></td><td>%" PRId32"</td></tr>\n"
-
 			      //"<tr class=poo><td><b>read signals</b></td><td>%" PRId64"</td></tr>\n"
 			      //"<tr class=poo><td><b>write signals</b></td><td>%" PRId64"</td></tr>\n"
 			      "<tr class=poo><td><b>Kernel Version</b></td><td>%s</td></tr>\n"
@@ -835,12 +829,6 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 			      ubuf.getBufStart(),
 			      (uint32_t)getpid(),
 			      g_numCorrupt,
-
-			      g_numSigChlds,
-			      g_numSigQueues,
-			      g_numSigPipes,
-			      g_numSigIOs,
-			      g_numSigOthers,
 
 			      //g_stats.m_readSignals,
 			      //g_stats.m_writeSignals,
@@ -1412,7 +1400,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 	// print each msg stat
 	for ( int32_t i1 = 0 ; i1 < MAX_MSG_TYPES ; i1++ ) {
 		// skip it if has no handler
-		if ( ! g_udpServer.m_handlers[i1] ) continue;
+		if ( ! g_udpServer.hasHandler(i1) ) continue;
 		if ( ! g_stats.m_reroutes   [i1][i3] &&
 		     ! g_stats.m_packetsIn  [i1][i3] &&
 		     ! g_stats.m_packetsOut [i1][i3] &&
@@ -1571,7 +1559,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 	// print each msg stat
 	for ( int32_t i1 = 0 ; i1 < MAX_MSG_TYPES ; i1++ ) {
 	// skip it if has no handler
-	if ( ! g_udpServer.m_handlers[i1] ) continue;
+	if ( ! g_udpServer.hasHandler(i1) ) continue;
 	// skip if xml
 	if ( format != FORMAT_HTML ) continue;
 		// print it all out.
@@ -1640,7 +1628,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 		// only html
 		if ( format != FORMAT_HTML ) break;
 		// skip it if has no handler
-		if ( ! g_udpServer.m_handlers[i1] ) continue;
+		if ( ! g_udpServer.hasHandler(i1) ) continue;
 		// print it all out
 		int64_t total = g_stats.m_msgTotalOfQueuedTimes[i1][i3];
 		int64_t nt    = g_stats.m_msgTotalQueued       [i1][i3];
@@ -1708,7 +1696,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 			}
 
 			// skip it if has no handler
-			if ( ! g_udpServer.m_handlers[i1] ) {
+			if ( ! g_udpServer.hasHandler(i1) ) {
 				continue;
 			}
 

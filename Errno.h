@@ -6,8 +6,10 @@
 #ifndef GB_ERRNO_H
 #define GB_ERRNO_H
 
-// use our own errno so threads don't fuck with it
-extern int g_errno;
+// use thread specific g_errno
+#define g_errno (*(g_errno_location()))
+
+int* g_errno_location();
 
 const char* mstrerror ( int errnum );
 const char* merrname( int errnum );
@@ -45,7 +47,7 @@ enum {
 	ENODOCID         , // used in titledb/Msg24.cpp
 	ENOHOSTS         , // multicast can't find any hosts
 	ENOSLOTS         , // multicast can't use more than X slots
-	ENOTHREADSLOTS   , // no more room in thread queue
+	EUNUSED52        ,
 	EUNUSED7         ,
 	EUNUSED8         , // 32800
 	EURLTOOLONG      ,

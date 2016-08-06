@@ -35,7 +35,6 @@
 
 static int32_t g_missedQuickPolls = 0;
 int32_t g_numSigChlds = 0;
-int32_t g_numSigPipes = 0;
 int32_t g_numSigIOs = 0;
 int32_t g_numSigQueues = 0;
 int32_t g_numSigOthers = 0;
@@ -213,7 +212,8 @@ bool Loop::addSlot ( bool forReading , int fd, void *state, void (* callback)(in
 	// ensure fd is >= 0
 	if ( fd < 0 ) {
 		g_errno = EBADENGINEER;
-		return log(LOG_LOGIC,"loop: fd to register is negative.");
+		log(LOG_LOGIC,"loop: fd to register is negative.");
+		return false;
 	}
 	// sanity
 	if ( fd > MAX_NUM_FDS ) {
@@ -488,48 +488,6 @@ void Loop::returnSlot ( Slot *s ) {
 }
 
 
-// . come here when we get a GB_SIGRTMIN+X signal etc.
-// . do not call anything from here because the purpose of this is to just
-//   queue the signals up and DO DEDUPING which linux does not do causing
-//   the sigqueue to overflow.
-// . we should break out of the sleep loop after the signal is handled
-//   so we can handle/process the queued signals properly. 'man sleep'
-//   states "sleep()  makes  the  calling  process  sleep until seconds
-//   seconds have elapsed or a signal arrives which is not ignored."
-void sigHandlerQueue_r ( int x , siginfo_t *info , void *v ) {
-
-	// if we just needed to cleanup a thread
-	if ( info->si_signo == SIGCHLD ) {
-		g_numSigChlds++;
-		return;
-	}
-
-	if ( info->si_signo == SIGPIPE ) {
-		g_numSigPipes++;
-		return;
-	}
-
-	if ( info->si_signo == SIGIO ) {
-		g_numSigIOs++;
-		return;
-	}
-
-	if ( info->si_code == SI_QUEUE ) {
-		g_numSigQueues++;
-		//log("admin: got sigqueue");
-		return;
-	}
-
-	// wtf is this?
-	g_numSigOthers++;
-
-	// the stuff below should no longer be used since we
-	// do not use F_SETSIG now
-	return;
-}
-
-
-
 bool Loop::init ( ) {
 
 	// clear this up here before using in doPoll()
@@ -577,94 +535,46 @@ bool Loop::init ( ) {
 	// . sigtimedwait() selects the lowest signo first for handling
 	// . therefore, GB_SIGRTMIN is higher priority than (GB_SIGRTMIN + 1)
 	//sigfillset ( &sigs );
-	// set of signals to block
-	sigset_t sigs;
-	sigemptyset ( &sigs                );
-	sigaddset   ( &sigs , SIGPIPE      ); //if we write to a close socket
-	sigaddset   ( &sigs , SIGCHLD      );
 
-	// now since we took out SIGIO... (see below)
-	// we should ignore this signal so it doesn't suddenly stop the gb
-	// process since we took out the SIGIO handler because newer kernels
-	// were throwing SIGIO signals ALL the time, on every datagram
-	// send/receive it seemed and bogged us down.
-	sigaddset   ( &sigs , SIGIO );
-	// . block on any signals in this set (in addition to current sigs)
-	// . use SIG_UNBLOCK to remove signals from block list
-	// . this returns -1 and sets g_errno on error
-	// . we block a signal so it does not interrupt us, then we can
-	//   take it off using our call to sigtimedwait()
-	// . allow it to interrupt us now and we will queue it ourselves
-	//   to prevent the linux queue from overflowing
-	// . see 'cat /proc/<pid>/status | grep SigQ' output to see if
-	//   overflow occurs. linux does not dedup the signals so when a
-	//   host cpu usage hits 100% it seems to miss a ton of signals.
-	//   i suspect the culprit is pthread_create() so we need to get
-	//   thread pools out soon.
-	// . now we are handling the signals and queueing them ourselves
-	//   so comment out this sigprocmask() call
-	// if ( sigprocmask ( SIG_BLOCK, &sigs, 0 ) < 0 ) {
-	// 	g_errno = errno;
-	// 	return log("loop: sigprocmask: %s.",strerror(g_errno));
-	// }
-	struct sigaction sa2;
-	// . sa_mask is the set of signals that should be blocked when
-	//   we're handling the GB_SIGRTMIN, make this empty
-	// . GB_SIGRTMIN signals will be automatically blocked while we're
-	//   handling a SIGIO signal, so don't worry about that
-	// . what sigs should be blocked when in our handler? the same
-	//   sigs we are handling i guess
-	sa2.sa_mask = sigs;
-	sa2.sa_flags = SA_SIGINFO ; //| SA_ONESHOT;
-	// call this function
-	sa2.sa_sigaction = sigHandlerQueue_r;
-	g_errno = 0;
-	if ( sigaction ( SIGPIPE, &sa2, 0 ) < 0 ) g_errno = errno;
-	if ( sigaction ( SIGCHLD, &sa2, 0 ) < 0 ) g_errno = errno;
-	if ( sigaction ( SIGIO, &sa2, 0 ) < 0 ) g_errno = errno;
-	if ( g_errno ) log("loop: sigaction(): %s.", mstrerror(g_errno) );
+	struct sigaction actSigPipe;
+	//Ignore SIGPIPE. We want a plain error return instead from system calls,.
+	actSigPipe.sa_handler = SIG_IGN;
+	sigemptyset(&actSigPipe.sa_mask);
+	actSigPipe.sa_flags = 0;
+	sigaction(SIGPIPE,&actSigPipe,NULL);
 
-	struct sigaction sa;
-	// . sa_mask is the set of signals that should be blocked when
-	//   we're handling the signal, make this empty
-	// . GB_SIGRTMIN signals will be automatically blocked while we're
-	//   handling a SIGIO signal, so don't worry about that
-	sigemptyset (&sa.sa_mask);
-	sa.sa_flags = SA_SIGINFO ; // | SA_ONESHOT;
-
-	// handle HUP signals gracefully by saving and shutting down
-	sa.sa_sigaction = sighupHandler;
-	if ( sigaction ( SIGHUP , &sa, 0 ) < 0 ) g_errno = errno;
-	if ( g_errno ) log("loop: sigaction SIGHUP: %s.", mstrerror(errno));
-	if ( sigaction ( SIGTERM, &sa, 0 ) < 0 ) g_errno = errno;
-	if ( g_errno ) log("loop: sigaction SIGTERM: %s.", mstrerror(errno));
-	// if ( sigaction ( SIGABRT, &sa, 0 ) < 0 ) g_errno = errno;
-	// if ( g_errno ) log("loop: sigaction SIGTERM: %s.",mstrerror(errno));
+	// handle SIGHUP and SIGTERM signals gracefully by saving and shutting down
+	struct sigaction saShutdown;
+	sigemptyset(&saShutdown.sa_mask);
+	saShutdown.sa_flags = SA_SIGINFO | SA_RESTART;
+	saShutdown.sa_sigaction = sighupHandler;
+	sigaction(SIGHUP, &saShutdown, NULL);
+	sigaction(SIGTERM, &saShutdown, NULL);
+	//sigaction(SIGABRT, &sa, NULL);
 
 	// we should save our data on segv, sigill, sigfpe, sigbus
-	sa.sa_sigaction = sigbadHandler;
-	if ( sigaction ( SIGSEGV, &sa, 0 ) < 0 ) g_errno = errno;
-	if ( g_errno ) log("loop: sigaction SIGSEGV: %s.", mstrerror(errno));
-	if ( sigaction ( SIGILL , &sa, 0 ) < 0 ) g_errno = errno;
-	if ( g_errno ) log("loop: sigaction SIGILL: %s.", mstrerror(errno));
-	if ( sigaction ( SIGFPE , &sa, 0 ) < 0 ) g_errno = errno;
-	if ( g_errno ) log("loop: sigaction SIGFPE: %s.", mstrerror(errno));
-	if ( sigaction ( SIGBUS , &sa, 0 ) < 0 ) g_errno = errno;
-	if ( g_errno ) log("loop: sigaction SIGBUS: %s.", mstrerror(errno));
-	// if ( sigaction ( SIGQUIT , &sa, 0 ) < 0 ) g_errno = errno;
-	// if ( g_errno ) log("loop: sigaction SIGBUS: %s.", mstrerror(errno));
-	// if ( sigaction ( SIGSYS , &sa, 0 ) < 0 ) g_errno = errno;
-	// if ( g_errno ) log("loop: sigaction SIGBUS: %s.", mstrerror(errno));
-
+	struct sigaction saBad;
+	sigemptyset(&saBad.sa_mask);
+	saBad.sa_flags = SA_SIGINFO | SA_RESTART;
+	saBad.sa_sigaction = sigbadHandler;
+	sigaction(SIGSEGV, &saBad, NULL);
+	sigaction(SIGILL, &saBad, NULL);
+	sigaction(SIGFPE, &saBad, NULL);
+	sigaction(SIGBUS, &saBad, NULL);
 
 	// if the UPS is about to go off it sends a SIGPWR
-	sa.sa_sigaction = sigpwrHandler;
-	if ( sigaction ( SIGPWR, &sa, 0 ) < 0 ) g_errno = errno;
-
+	struct sigaction saPower;
+	sigemptyset(&saPower.sa_mask);
+	saPower.sa_flags = SA_SIGINFO | SA_RESTART;
+	saPower.sa_sigaction = sigpwrHandler;
+	sigaction(SIGPWR, &saPower, NULL);
 
 	//SIGPROF is used by the profiler
-	sa.sa_sigaction = sigprofHandler;
-	if ( sigaction ( SIGPROF, &sa, NULL ) < 0 ) g_errno = errno;
+	struct sigaction saProfile;
+	sigemptyset(&saProfile.sa_mask);
+	saProfile.sa_flags  = SA_SIGINFO | SA_RESTART;
+	saProfile.sa_sigaction = sigprofHandler;
+	sigaction(SIGPROF, &saProfile, NULL);
 	// setitimer(ITIMER_PROF...) is called when profiling is enabled/disabled
 	// it has noticeable overhead so it must not be enabled by default.
 
@@ -680,11 +590,6 @@ void sigpwrHandler ( int x , siginfo_t *info , void *y ) {
 
 void printStackTrace (bool print_location) {
 	logf(LOG_ERROR, "gb: Printing stack trace");
-
-	if ( g_inMemFunction ) {
-		logf(LOG_ERROR, "gb: in mem function not doing backtrace");
-		return;
-	}
 
 	static void *s_bt[200];
 	size_t sz = backtrace(s_bt, 200);
@@ -713,12 +618,12 @@ void sigbadHandler ( int x , siginfo_t *info , void *y ) {
 	sigemptyset (&sa.sa_mask);
 	sa.sa_flags = SA_SIGINFO ; //| SA_ONESHOT;
 	sa.sa_sigaction = NULL;
-	sigaction ( SIGSEGV, &sa, 0 ) ;
-	sigaction ( SIGILL , &sa, 0 ) ;
-	sigaction ( SIGFPE , &sa, 0 ) ;
-	sigaction ( SIGBUS , &sa, 0 ) ;
-	sigaction ( SIGQUIT, &sa, 0 ) ;
-	sigaction ( SIGSYS , &sa, 0 ) ;
+	sigaction(SIGSEGV, &sa, NULL);
+	sigaction(SIGILL, &sa, NULL);
+	sigaction(SIGFPE, &sa, NULL);
+	sigaction(SIGBUS, &sa, NULL);
+	sigaction(SIGQUIT, &sa, NULL);
+	sigaction(SIGSYS, &sa, NULL);
 	// if we've already been here, or don't need to be, then bail
 	if ( g_loop.m_shutdown ) {
 		log("loop: sigbadhandler. shutdown already called.");
@@ -765,7 +670,6 @@ void Loop::runLoop ( ) {
 
 	// . set sigs on which sigtimedwait() listens for
 	// . add this signal to our set of signals to watch (currently NONE)
-	sigaddset ( &sigs0, SIGPIPE      );
 	sigaddset ( &sigs0, SIGCHLD      );
 	// . TODO: do we need to mask SIGIO too? (sig queue overflow?)
 	// . i would think so, because what if we tried to queue an important

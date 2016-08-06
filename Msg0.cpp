@@ -286,7 +286,6 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 					 m_endKey   ,
 					 m_minRecSizes ,
 					 includeTree   , // include Tree?
-					 addToCache    , // addToCache?
 					 maxCacheAge   ,
 					 startFileNum  , 
 					 numFiles      ,
@@ -326,10 +325,6 @@ skip:
 		    KEY1(m_startKey,m_ks),KEY0(m_startKey),
 		    (int32_t)m_niceness);
 
-	char *replyBuf = NULL;
-	int32_t  replyBufMaxSize = 0;
-	bool  freeReply = true;
-
 	// . make a request with the info above (note: not in network order)
 	// . IMPORTANT!!!!! if you change this change 
 	//   Multicast.cpp::sleepWrapper1 too!!!!!!!!!!!!
@@ -352,7 +347,7 @@ skip:
 	KEYSET(p,m_startKey,m_ks);          ; p+=m_ks;
 	KEYSET(p,m_endKey,m_ks);            ; p+=m_ks;
 	// NULL terminated collection name
-	//strcpy ( p , coll ); p += gbstrlen ( coll ); *p++ = '\0';
+	//strcpy ( p , coll ); p += strlen ( coll ); *p++ = '\0';
 	*(collnum_t *)p = m_collnum; p += sizeof(collnum_t);
 	m_requestSize    = p - m_request;
 	// ask an individual host for this list if hostId is NOT -1
@@ -384,8 +379,6 @@ skip:
 					 timeout       ,
 					 -1            , // backoff
 					 -1            , // maxwait
-					 replyBuf      ,
-					 replyBufMaxSize ,
 					 m_niceness     ) ) { // cback niceness
 			logTrace( g_conf.m_logTraceMsg0, "END, return true. Request sent" );
 			return true;
@@ -416,14 +409,11 @@ skip:
 	//for ( int32_t i = 0; i < m_numSplit; i++ ) {
 
 	QUICKPOLL(m_niceness);
-	//int32_t gr;
-	char *buf;
-	buf = replyBuf;
 
 	// get the multicast
 	Multicast *m = &m_mcast;
 
-        if ( ! m->send ( m_request    , 
+    if ( ! m->send ( m_request    ,
 			      m_requestSize,
 			      msg_type_0         ,
 			      false        , // does multicast own request?
@@ -436,23 +426,7 @@ skip:
 			      gotMulticastReplyWrapper0 ,
 			      timeout*1000 , // timeout
 			      niceness     ,
-			      firstHostId  ,
-			      buf             ,
-			      replyBufMaxSize ,
-			      freeReply       , // free reply buf?
-			      true            , // do disk load balancing?
-			      maxCacheAge     ,
-			      //(key_t *)cacheKey        ,
-			      // multicast uses it for determining the best
-			      // host to send the request to when doing 
-			      // disk load balancing. if the host has our 
-			      // data cached, then it will probably get to
-			      // handle the request. for now let's just assume
-			      // this is a 96-bit key. TODO: fix...
-			 0 , // *(key_t *)cacheKey        ,
-			      rdbId           ,
-			      minRecSizes     ) ) 
-	{
+			      firstHostId) ) {
 		log(LOG_ERROR, "net: Failed to send request for data from %s in shard "
 		    "#%" PRIu32" over network: %s.",
 		    getDbnameFromId(m_rdbId),m_shardNum, mstrerror(g_errno));
@@ -628,7 +602,7 @@ void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 	char      doErrorCorrection  = *p++;
 	char      includeTree        = *p++;
 	// this was messing up our niceness conversion logic
-	int32_t      niceness           = slot->m_niceness;//(int32_t)(*p++);
+	int32_t      niceness           = slot->getNiceness();
 	// still need to skip it though!
 	p++;
 	bool      allowPageCache     = (bool)(*p++);
@@ -715,7 +689,6 @@ void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 				     endKey            ,
 				     minRecSizes       ,
 				     includeTree       , // include tree?
-				     addToCache        , // addToCache?
 				     maxCacheAge       ,
 				     startFileNum      , 
 				     numFiles          ,
@@ -768,8 +741,8 @@ void gotListWrapper ( void *state , RdbList *listb , Msg5 *msg5xx ) {
 		    " transId=%" PRId32" ip=%s port=%i took=%" PRId64" "
 		    "(niceness=%" PRId32").",
 		    g_posdb.getTermId(msg5->m_startKey),
-		    size,slot->m_transId,
-		    iptoa(slot->m_ip),slot->m_port,
+		    size,slot->getTransId(),
+		    iptoa(slot->getIp()),slot->getPort(),
 		    gettimeofdayInMilliseconds() - st0->m_startTime ,
 		    st0->m_niceness );
 	}
@@ -893,10 +866,10 @@ void doneSending_ass ( void *state , UdpSlot *slot ) {
 	if ( g_conf.m_logTimingNet ) {
 		double mbps ;
 		mbps = (((double)slot->m_sendBufSize) * 8.0 / (1024.0*1024.0))/
-			(((double)slot->m_startTime)/1000.0);
-		log("net: msg0: Sent %" PRId32" bytes of data in %" PRId64" ms (%3.1fMbps) "
+			(((double)slot->getStartTime())/1000.0);
+		log(LOG_DEBUG, "net: msg0: Sent %" PRId32" bytes of data in %" PRId64" ms (%3.1fMbps) "
 		      "(niceness=%" PRId32").",
-		      slot->m_sendBufSize , now - slot->m_startTime , mbps ,
+		      slot->m_sendBufSize , now - slot->getStartTime() , mbps ,
 		      st0->m_niceness );
 	}
 	// . mark it in pinkish purple
@@ -904,7 +877,7 @@ void doneSending_ass ( void *state , UdpSlot *slot ) {
 	//   and it clutters the performance graph
 	if ( st0->m_rdbId == RDB_TAGDB ) {
 	}
-	else if(slot->m_niceness > 0) {
+	else if(slot->getNiceness() > 0) {
 		g_stats.addStat_r ( slot->m_sendBufSize , 
 				    st0->m_startTime ,
 				    now ,

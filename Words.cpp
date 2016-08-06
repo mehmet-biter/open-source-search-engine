@@ -445,9 +445,11 @@ bool Words::allocateWordBuffers(int32_t count, bool tagIds) {
 	wordSize += sizeof(int32_t);
 	if ( tagIds ) wordSize += sizeof(nodeid_t);
 	m_bufSize = wordSize * count;
-	if(m_bufSize < 0) return log("build: word count overflow %" PRId32" "
-				     "bytes wordSize=%" PRId32" count=%" PRId32".",
-				     m_bufSize, wordSize, count);
+	if(m_bufSize < 0) {
+		log(LOG_WARN, "build: word count overflow %" PRId32" bytes wordSize=%" PRId32" count=%" PRId32".",
+		    m_bufSize, wordSize, count);
+		return false;
+	}
 	if ( m_bufSize <= m_localBufSize2 && m_localBuf2 ) {
 		m_buf = m_localBuf2;
 	}
@@ -456,9 +458,10 @@ bool Words::allocateWordBuffers(int32_t count, bool tagIds) {
 	}
 	else {
 		m_buf = (char *)mmalloc ( m_bufSize , "Words" );
-		if ( ! m_buf ) return log("build: Could not allocate %" PRId32" "
-					  "bytes for parsing document.",
-					  m_bufSize);
+		if ( ! m_buf ) {
+			log(LOG_WARN, "build: Could not allocate %" PRId32" bytes for parsing document.", m_bufSize);
+			return false;
+		}
 	}
 
 	// set ptrs
@@ -687,7 +690,7 @@ char *getFieldValue( char *s, int32_t slen, const char *field, int32_t *valueLen
 	// reset this to 0
 	*valueLen = 0;
 	// scan for the field name in our node
-	int32_t flen = gbstrlen(field);
+	int32_t flen = strlen(field);
 	char inQuotes = '\0';
 	int32_t i;
 

@@ -252,7 +252,7 @@ class RdbCache {
 
 	bool useDisk ( ) const { return m_useDisk; }
 	bool load ( const char *dbname );
-	bool save ( bool useThreads );
+	bool save ();
 	bool save_r ( );
 	bool save2_r ( int fd );
 	bool load   ( );
@@ -281,11 +281,6 @@ private:
 			 int32_t  timestamp ,
 			 char **retRecPtr );
 
-
-	static void saveWrapper(void *state);
-	static void threadDoneWrapper(void *state, job_exit_t exit_type);
-	void threadDone();
-	
 	// called internally by save()
 	bool saveSome_r ( int fd, int32_t *iptr , int32_t *off ) ;
 
@@ -300,8 +295,7 @@ private:
 	int32_t m_convertNumPtrsMax;
 	int32_t m_convertMaxMem;
 
-	bool m_isSaving;
-	int32_t m_saveError;
+	int32_t m_errno;
 
 	// . mem stats -- just for arrays we contain -- not in tree
 	// . memory that is allocated and in use, including dataSizes

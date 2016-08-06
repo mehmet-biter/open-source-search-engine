@@ -204,7 +204,8 @@ bool HashTableT<Key_t, Val_t>::addKey (Key_t key , Val_t value , int32_t *slot) 
 	// bail if not found
 	if ( count >= m_numSlots ) {
 		g_errno = ENOMEM;
-		return log("hashtable: Could not add key. Table is full.");
+		log(LOG_WARN, "hashtable: Could not add key. Table is full.");
+		return false;
 	}
 	if ( m_keys [ n ] == (Key_t)0 ) {
 		// inc count if we're the first
@@ -478,7 +479,7 @@ bool HashTableT<Key_t, Val_t>::save ( char* filename , char *tbuf , int32_t tsiz
 //bool HashTableT<Key_t,Val_t>::hashFromString ( HashTableT *ht , char *x ) {
 bool hashFromString ( HashTableT<int64_t,char> *ht , char *x ) {
 	if ( ! x ) return true;
-	char *xend = x + gbstrlen(x);
+	char *xend = x + strlen(x);
 	int32_t  n    = 1;
 	for ( char *s = x ; s < xend ; s++ ) 
 		// i am assuming this is ascii here!

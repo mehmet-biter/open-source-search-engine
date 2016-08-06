@@ -21,8 +21,8 @@ void Dir::reset ( ) {
 bool Dir::set ( const char *d1, const char *d2 ) {
 	reset ();
 	char tmp[1024];
-	if ( gbstrlen(d1) + gbstrlen(d2) + 1 > 1024 ) {
-		log("disk: Could not set directory, directory name \"%s/%s\" "
+	if ( strlen(d1) + strlen(d2) + 1 > 1024 ) {
+		log(LOG_WARN, "disk: Could not set directory, directory name \"%s/%s\" "
 		    "is too big.",d1,d2);
 		return false;
 	}
@@ -34,7 +34,7 @@ bool Dir::set ( const char *dirname ) {
 	reset ();
 	m_dirname = strdup ( dirname );
 	if ( m_dirname ) return true;
-	log("disk: Could not set directory, directory name to \"%s\": %s.",
+	log(LOG_WARN, "disk: Could not set directory, directory name to \"%s\": %s.",
 	    dirname,mstrerror(g_errno));
 	return false;
 }
@@ -50,10 +50,7 @@ bool Dir::open ( ) {
 	close ( );
 	if ( ! m_dirname ) return false;
 	do {
-		// opendir() calls malloc
-		g_inMemFunction = true;
 		m_dir = opendir ( m_dirname );
-		g_inMemFunction = false;
 		// interrupted system call
 	} while( ! m_dir && errno == EINTR );
 
@@ -80,7 +77,7 @@ const char *Dir::getNextFilename ( const char *pattern ) {
 	//be. I just take a wild guess that no paths are longer than 1024
 	//characters.
 	struct dirent *ent;
-	int32_t plen = gbstrlen ( pattern );
+	int32_t plen = strlen ( pattern );
 	while( readdir_r(m_dir,(dirent*)m_dentryBuffer,&ent)==0 && ent ) {
 		const char *filename = ent->d_name;
 		if ( ! pattern ) return filename;
@@ -92,10 +89,10 @@ const char *Dir::getNextFilename ( const char *pattern ) {
 				return filename;
 		}
 		if ( pattern[0] == '*' ) {
-			if ( gbstrlen(filename) < gbstrlen(pattern + 1) ) continue;
+			if ( strlen(filename) < strlen(pattern + 1) ) continue;
 			const char *tail = filename + 
-				gbstrlen ( filename ) - 
-				gbstrlen ( pattern ) + 1;
+				strlen ( filename ) - 
+				strlen ( pattern ) + 1;
 			if ( strcmp ( tail , pattern+1) == 0 ) return filename;
 		}
 		if ( pattern[plen-1]=='*' ) {

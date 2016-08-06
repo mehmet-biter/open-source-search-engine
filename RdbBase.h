@@ -36,6 +36,7 @@
 #include "Msg3.h"               // MAX_RDB_FILES definition
 #include "Dir.h"
 #include "RdbMem.h"
+#include "RdbIndex.h"
 
 // how many rdbs are in "urgent merge" mode?
 extern int32_t g_numUrgentMerges;
@@ -78,43 +79,53 @@ class RdbBase {
 		    void *pc = NULL,
 		    bool                 isTitledb = false , // use fileIds2[]?
 		    bool                 preloadDiskPageCache = false ,
-		    bool                 biasDiskPageCache    = false );
+		    bool                 biasDiskPageCache    = false,
+		    bool				useIndexFile = false );
 
 	void closeMaps ( bool urgent );
 	void saveMaps  ();
 
+//@@@ BR: no-merge index begin
+	void closeIndexes ( bool urgent );
+	void saveIndexes  ();
+//@@@ BR: no-merge index end
+
+
 	// get the directory name where this rdb stores it's files
 	const char *getDir ( ) { return m_dir.getDirname(); }
 
-	bool getDedup() {return m_dedup; }
-	int32_t getFixedDataSize ( ) { return m_fixedDataSize; }
+	bool getDedup() const { return m_dedup; }
+	int32_t getFixedDataSize() const { return m_fixedDataSize; }
 
-	bool useHalfKeys ( ) { return m_useHalfKeys; }
+	bool useHalfKeys ( ) const { return m_useHalfKeys; }
 
 	RdbMap   **getMaps  ( ) { return m_maps; }
+	RdbIndex	**getIndexes() { return m_indexes;}
 	BigFile  **getFiles ( ) { return m_files; }
 
 	BigFile   *getFile   ( int32_t n ) { return m_files   [n]; }
 	int32_t       getFileId ( int32_t n ) { return m_fileIds [n]; }
 	int32_t       getFileId2( int32_t n ) { return m_fileIds2[n]; }
 	RdbMap    *getMap    ( int32_t n ) { return m_maps    [n]; }
+	RdbIndex  *getIndex  ( int32_t n ) { return m_indexes [n]; }
 
-	float getPercentNegativeRecsOnDisk ( int64_t *totalArg ) ;
+	float getPercentNegativeRecsOnDisk ( int64_t *totalArg ) const;
 
 	// how much mem is alloced for our maps?
-	int64_t getMapMemAlloced ();
+	int64_t getMapMemAlloced() const;
 
-	int32_t       getNumFiles ( ) { return m_numFiles; }
+	int32_t       getNumFiles() const { return m_numFiles; }
 
 	// sum of all parts of all big files
-	int32_t      getNumSmallFiles ( ) ;
-	int64_t getDiskSpaceUsed ( );
+	int32_t      getNumSmallFiles() const;
+	int64_t getDiskSpaceUsed() const;
 
 	// returns -1 if variable (variable dataSize)
-	int32_t getRecSize ( ) {
+	int32_t getRecSize ( ) const {
 		if ( m_fixedDataSize == -1 ) return -1;
 		//return sizeof(key_t) + m_fixedDataSize; }
-		return m_ks + m_fixedDataSize; }
+		return m_ks + m_fixedDataSize;
+	}
 
 	// use the maps and tree to estimate the size of this list
 	//int32_t getListSize ( key_t startKey ,key_t endKey , key_t *maxKey ,
@@ -122,9 +133,9 @@ class RdbBase {
 			        int64_t oldTruncationLimit ) ;
 
 	// positive minus negative
-	int64_t getNumTotalRecs ( ) ;
+	int64_t getNumTotalRecs() const;
 
-	int64_t getNumGlobalRecs ( );
+	int64_t getNumGlobalRecs() const;
 	
 	// private:
 
@@ -163,21 +174,21 @@ class RdbBase {
 	//bool needsDump ( );
 
 	// these are used for computing load on a machine
-	bool isMerging ( ) { return m_isMerging; }
-	bool isDumping ( ) { return m_dump->isDumping(); }
+	bool isMerging() const { return m_isMerging; }
+	bool isDumping() const { return m_dump->isDumping(); }
 
-	bool hasMergeFile ( ) {
+	bool hasMergeFile() const {
 		return m_hasMergeFile;
 	}
 
 	// used for translating titledb file # 255 (as read from new tfndb)
 	// into the real file number
-	int32_t getNewestFileNum ( ) { return m_numFiles - 1; }
+	int32_t getNewestFileNum() const { return m_numFiles - 1; }
 
 	// Msg22 needs the merge info so if the title file # of a read we are
 	// doing is being merged, we have to include the start merge file num
-	int32_t      getMergeStartFileNum ( ) { return m_mergeStartFileNum; }
-	int32_t      getMergeNumFiles     ( ) { return m_numFilesToMerge; }
+	int32_t      getMergeStartFileNum() const { return m_mergeStartFileNum; }
+	int32_t      getMergeNumFiles() const { return m_numFilesToMerge; }
 
 	void renameFile( int32_t currentFileIdx, int32_t newFileId, int32_t newFileId2 );
 
@@ -218,6 +229,7 @@ private:
 	int32_t      m_fileIds   [ MAX_RDB_FILES+1 ];
 	int32_t      m_fileIds2  [ MAX_RDB_FILES+1 ]; // for titledb/tfndb linking
 	RdbMap   *m_maps      [ MAX_RDB_FILES+1 ];
+	RdbIndex *m_indexes	[ MAX_RDB_FILES+1 ];
 	int32_t      m_numFiles;
 
 public:
@@ -259,6 +271,8 @@ public:
 	// . when we dump list to an rdb file, can we use short keys?
 	// . currently exclusively used by indexdb
 	bool      m_useHalfKeys;
+
+	bool	m_useIndexFile;	//@@@ BR: no-merge index
 
 	// key size
 	char      m_ks;

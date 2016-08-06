@@ -72,12 +72,6 @@ class Slot {
 // . this is now the time synced with host #0
 //extern int64_t g_nowGlobal;
 
-extern int32_t g_numSigChlds;
-extern int32_t g_numSigQueues;
-extern int32_t g_numSigPipes;
-extern int32_t g_numSigIOs;
-extern int32_t g_numSigOthers;
-
 
 extern char g_niceness ;
 

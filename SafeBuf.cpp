@@ -296,24 +296,18 @@ int32_t SafeBuf::save ( const char *fullFilename ) {
 }
 
 int32_t SafeBuf::dumpToFile(const char *filename ) {
- retry22:
 	int32_t fd = open ( filename , O_CREAT | O_WRONLY | O_TRUNC ,
 			    getFileCreationFlags() );
 			    //S_IRUSR |S_IWUSR |S_IRGRP |S_IWGRP| S_IROTH );
 	if ( fd < 0 ) {
-		// valgrind
-		if ( errno == EINTR ) goto retry22;
 		log("safebuf: Failed to open %s for writing: %s", 
 		    filename,mstrerror(errno));
 		return -1;
 	}
 	//logf(LOG_DEBUG, "test: safebuf %" PRId32" bytes written to %s",m_length,
 	//     filename);
- retry23:
 	int32_t bytes = write(fd, (char*)m_buf, m_length) ;
 	if ( bytes != m_length ) {
-		// valgrind
-		if ( bytes <= 0 && errno == EINTR ) goto retry23;
 		logf(LOG_DEBUG,"test: safebuf bad write %" PRId32" != %" PRId32": %s",
 		     bytes,m_length,mstrerror(errno));
 		close(fd);
@@ -325,7 +319,6 @@ int32_t SafeBuf::dumpToFile(const char *filename ) {
 
 // return -1 on error
 int32_t SafeBuf::safeSave (char *filename ) {
- retry22:
 
 	// first write to tmp file
 	char tmp[1024];
@@ -337,19 +330,14 @@ int32_t SafeBuf::safeSave (char *filename ) {
 			    getFileCreationFlags() );
 			 // S_IRUSR |S_IWUSR |S_IRGRP |S_IWGRP| S_IROTH );
 	if ( fd < 0 ) {
-		// valgrind
-		if ( errno == EINTR ) goto retry22;
 		log("safebuf: Failed to open %s for writing: %s", 
 		    fn.getBufStart(), mstrerror(errno));
 		return -1;
 	}
 	//logf(LOG_DEBUG, "test: safebuf %" PRId32" bytes written to %s",m_length,
 	//     filename);
- retry23:
 	int32_t bytes = write(fd, (char*)m_buf, m_length) ;
 	if ( bytes != m_length ) {
-		// valgrind
-		if ( bytes <= 0 && errno == EINTR ) goto retry23;
 		logf(LOG_DEBUG,"test: safebuf bad write %" PRId32" != %" PRId32": %s",
 		     bytes,m_length,mstrerror(errno));
 		close(fd);
@@ -420,20 +408,14 @@ int32_t SafeBuf::fillFromFile(const char *filename) {
 	// results.st_size
 	reserve(results.st_size+1);
 	
- retry:
 	int32_t fd = open ( filename , O_RDONLY , getFileCreationFlags() );
 	if ( ! fd ) {
-		// valgrind
-		if ( errno == EINTR ) goto retry;
 		log(LOG_DEBUG, "query: Failed to open %s for reading: ",
 		    filename);
 		// -1 means there was a read error of some sorts
 		return -1;//false;
 	}
-retry2:
 	int32_t numRead = read(fd, m_buf+m_length, results.st_size);
-	// valgrind
-	if ( numRead<0 && errno == EINTR ) goto retry2;
 	close(fd);
 	// add a \0 for good meaure
 	if ( numRead >= 0 ) {
@@ -454,7 +436,7 @@ bool SafeBuf::insert ( const SafeBuf *c , int32_t insertPos ) {
 
 bool SafeBuf::insert ( const char *s, int32_t insertPos ) {
 	return safeReplace ( s         ,
-			     gbstrlen(s) ,
+			     strlen(s) ,
 			     insertPos ,
 			     0         );
 }
@@ -467,8 +449,8 @@ bool SafeBuf::insert2 ( const char *s, int32_t slen, int32_t insertPos ) {
 }
 
 bool SafeBuf::replace ( const char *src, const char *dst ) {
-	int32_t len1 = gbstrlen(src);
-	int32_t len2 = gbstrlen(dst);
+	int32_t len1 = strlen(src);
+	int32_t len2 = strlen(dst);
 	if ( len1 != len2 ) {
 		int32_t niceness = 0;
 		return safeReplace2 ( src , len1,
@@ -525,8 +507,8 @@ bool SafeBuf::safeReplace ( const char *s, int32_t len, int32_t pos, int32_t rep
 }
 
 bool SafeBuf::safeReplace3 ( const char *s, const char *t, int32_t niceness ) {
-	if ( ! safeReplace2 ( s , gbstrlen(s) ,
-			      t , gbstrlen(t) ,
+	if ( ! safeReplace2 ( s , strlen(s) ,
+			      t , strlen(t) ,
 			      niceness ) )
 		return false;
 	if ( ! nullTerm() ) 
@@ -620,7 +602,7 @@ bool SafeBuf::utf32Encode(UChar32* codePoints, int32_t cpLen) {
 }
 
 bool SafeBuf::cdataEncode ( const char *s ) {
-	return safeCdataMemcpy(s,gbstrlen(s));
+	return safeCdataMemcpy(s,strlen(s));
 }
 
 bool SafeBuf::cdataEncode ( const char *s , int32_t len ) {
@@ -748,7 +730,7 @@ bool  SafeBuf::htmlEncode(const char *s, int32_t lenArg, bool encodePoundSign ,
 }
 
 bool SafeBuf::htmlEncode(const char *s) {
-	return htmlEncode(s,gbstrlen(s),true,0);
+	return htmlEncode(s,strlen(s),true,0);
 }
 
 // scan the last "len" characters for entities to encode
@@ -1020,7 +1002,7 @@ Tag *SafeBuf::addTag2 ( const char *mysite ,
 			char  rdbId ) {
 	char buf[64];
 	sprintf(buf,"%" PRId32,val);
-	int32_t dsize = gbstrlen(buf) + 1;
+	int32_t dsize = strlen(buf) + 1;
 	return addTag ( mysite,tagname,now,user,ip,buf,dsize,rdbId,true);
 }
 
@@ -1032,7 +1014,7 @@ Tag *SafeBuf::addTag3 ( const char *mysite ,
 			int32_t  ip ,
 			const char *data ,
 			char  rdbId ) {
-	int32_t dsize = gbstrlen(data) + 1;
+	int32_t dsize = strlen(data) + 1;
 	return addTag ( mysite,tagname,now,user,ip,data,dsize,rdbId,true);
 }
 
@@ -1046,8 +1028,8 @@ Tag *SafeBuf::addTag ( const char *mysite ,
 		       char  rdbId ,
 		       bool  pushRdbId ) {
 	int32_t need = dsize + 32 + sizeof(Tag);
-	if ( user   ) need += gbstrlen(user);
-	if ( mysite ) need += gbstrlen(mysite);
+	if ( user   ) need += strlen(user);
+	if ( mysite ) need += strlen(mysite);
 	if ( ! reserve ( need ) ) return NULL;
 	if ( pushRdbId && ! pushChar(rdbId) ) return NULL;
 	Tag *tag = (Tag *)getBuf();
@@ -1062,8 +1044,8 @@ bool SafeBuf::addTag ( Tag *tag ) {
 	//tag->setDataSize();
 	if ( tag->m_recDataSize <= 16 ) { 
 		// note it
-		return log("safebuf: encountered corrupted tag datasize=%" PRId32".",
-			   tag->m_recDataSize);
+		log(LOG_WARN, "safebuf: encountered corrupted tag datasize=%" PRId32".", tag->m_recDataSize);
+		return false;
 		//g_process.shutdownAbort(true); }
 	}
 	return safeMemcpy ( (char *)tag , recSize );
@@ -1072,7 +1054,7 @@ bool SafeBuf::addTag ( Tag *tag ) {
 // this puts a \0 at the end but does not update m_length for the \0 
 bool  SafeBuf::safeStrcpy ( const char *s ) {
 	if ( ! s ) return true;
-	int32_t slen = gbstrlen(s);
+	int32_t slen = strlen(s);
 	if ( ! reserve ( slen+1 ) ) return false;
 	if ( ! safeMemcpy(s,slen) ) return false;
 	nullTerm();
@@ -1218,7 +1200,7 @@ bool SafeBuf::safeUtf8ToJSON ( const char *utf8 ) {
 
 	// how much space do we need?
 	// each single byte \t char for instance will need 2 bytes
-	int32_t need = gbstrlen(utf8) * 2 + 1;
+	int32_t need = strlen(utf8) * 2 + 1;
 	if ( ! reserve ( need ) ) {
 		return false;
 	}
@@ -1315,7 +1297,7 @@ bool SafeBuf::safeUtf8ToJSON ( const char *utf8 ) {
 
 
 bool SafeBuf::brify2 ( const char *s, int32_t cols, const char *sep, bool isHtml ) {
-	return brify ( s, gbstrlen(s), 0 , cols , sep , isHtml ); 
+	return brify ( s, strlen(s), 0 , cols , sep , isHtml ); 
 }
 
 bool SafeBuf::brify( const char *s, int32_t slen, int32_t niceness, int32_t maxCharsPerLine, const char *sep,
@@ -1330,7 +1312,7 @@ bool SafeBuf::brify( const char *s, int32_t slen, int32_t niceness, int32_t maxC
 	const char *pstart = s;
 	const char *breakPoint = NULL;
 	bool inTag = false;
-	int32_t sepLen = gbstrlen(sep);
+	int32_t sepLen = strlen(sep);
 	bool forced = false;
 
 redo:
@@ -1434,7 +1416,7 @@ redo:
 #include "XmlDoc.h"
 
 bool SafeBuf::safeTruncateEllipsis ( const char *src , int32_t maxLen ) {
-	int32_t  srcLen = gbstrlen(src);
+	int32_t  srcLen = strlen(src);
 	return safeTruncateEllipsis ( src , srcLen , maxLen );
 }
 
@@ -1620,7 +1602,7 @@ bool SafeBuf::base64Encode ( const char *sx , int32_t len , int32_t niceness ) {
 }
 
 bool SafeBuf::base64Encode( const char *s ) {
-	return base64Encode(s,gbstrlen(s)); 
+	return base64Encode(s,strlen(s)); 
 }
 
 bool SafeBuf::base64Decode ( const char *src , int32_t srcLen , int32_t niceness ) {

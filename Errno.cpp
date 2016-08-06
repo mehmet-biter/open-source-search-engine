@@ -1,9 +1,35 @@
 #include "gb-include.h"
 #include "Errno.h"
 #include <string>
+#include <pthread.h>
 
-// use our own errno so threads don't fuck with it
-int g_errno;
+static pthread_key_t s_g_errno_key;
+
+extern "C" {
+static void g_errno_destroy(void *key) {
+	int *gb_errno = static_cast<int *>(key);
+	free(gb_errno);
+}
+}
+
+int* g_errno_location() {
+	static int s_init = false;
+	if (!s_init) {
+		s_init = true;
+		if (pthread_key_create(&s_g_errno_key, g_errno_destroy) != 0) {
+			gbshutdownResourceError();
+		}
+	}
+
+	int *gb_errno = static_cast<int*>(pthread_getspecific(s_g_errno_key));
+	if (!gb_errno) {
+		gb_errno = static_cast<int*>(malloc(sizeof(*gb_errno)));
+		*gb_errno = 0;
+		pthread_setspecific(s_g_errno_key, gb_errno);
+	}
+
+	return gb_errno;
+}
 
 const char *mstrerror ( int errnum ) {
 	if ( errnum >= GB_ERRNO_BEGIN ) {
@@ -54,8 +80,6 @@ const char *mstrerror ( int errnum ) {
 				return "Multicast can not find any hosts";
 			case ENOSLOTS         :
 				return "No udp slots available";
-			case ENOTHREADSLOTS   :
-				return "No room for thread in thread queue";
 			case EURLTOOLONG      :
 				return "Url too long";
 			case EDOCADULT        :
@@ -246,7 +270,7 @@ static const char* s_errname[] {
 	STRINGIFY( ENODOCID ),
 	STRINGIFY( ENOHOSTS ),
 	STRINGIFY( ENOSLOTS ),
-	STRINGIFY( ENOTHREADSLOTS ),
+	STRINGIFY( EUNUSED52 ),
 	STRINGIFY( EUNUSED7 ),
 	STRINGIFY( EUNUSED8 ),
 	STRINGIFY( EURLTOOLONG ),

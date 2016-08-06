@@ -260,7 +260,8 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) {
 	//   m_rtl (right to left like hebrew)
 	//   m_highlightQuery
 	if ( ! setQueryBuffers (r) ) {
-		return log("query: setQueryBuffers: %s",mstrerror(g_errno));
+		log(LOG_WARN, "query: setQueryBuffers: %s",mstrerror(g_errno));
+		return false;
 	}
 
 	// this parm is in Parms.cpp and should be set
@@ -479,7 +480,7 @@ bool SearchInput::setQueryBuffers ( HttpRequest *hr ) {
 	int16_t qcs = csUTF8;
 	if (m_queryCharset && m_queryCharset[0]){
 		// we need to convert the query string to utf-8
-		int32_t qclen = gbstrlen(m_queryCharset);
+		int32_t qclen = strlen(m_queryCharset);
 		qcs = get_iana_charset(m_queryCharset, qclen );
 		if (qcs == csUnknown) {
 			qcs = csUTF8;
@@ -499,7 +500,7 @@ bool SearchInput::setQueryBuffers ( HttpRequest *hr ) {
 	bool first = true;
 	if ( any ) {
 		const char *s = any;
-		const char *send = any + gbstrlen(any);
+		const char *send = any + strlen(any);
 	 	if ( m_sbuf1.length() ) m_sbuf1.pushChar(' ');
 	 	if ( m_sbuf2.length() ) m_sbuf2.pushChar(' ');
 		while (s < send) {
@@ -642,7 +643,7 @@ bool SearchInput::setQueryBuffers ( HttpRequest *hr ) {
 	// append plus terms
 	if ( m_plus && m_plus[0] ) {
 		char *s = m_plus;
-		char *send = m_plus + gbstrlen(m_plus);
+		char *send = m_plus + strlen(m_plus);
 
 		if ( m_sbuf1.length() ) m_sbuf1.pushChar(' ');
 		if ( m_sbuf2.length() ) m_sbuf2.pushChar(' ');
@@ -681,7 +682,7 @@ bool SearchInput::setQueryBuffers ( HttpRequest *hr ) {
 	// append minus terms
 	if ( m_minus && m_minus[0] ) {
 		char *s = m_minus;
-		char *send = m_minus + gbstrlen(m_minus);
+		char *send = m_minus + strlen(m_minus);
 		if ( m_sbuf1.length() ) m_sbuf1.pushChar(' ');
 		if ( m_sbuf2.length() ) m_sbuf2.pushChar(' ');
 		while (s < send) {

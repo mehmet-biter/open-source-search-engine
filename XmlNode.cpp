@@ -774,7 +774,7 @@ char *XmlNode::getFieldValue ( const char *field , int32_t *valueLen ) {
 	// reset this to 0
 	*valueLen = 0;
 	// scan for the field name in our node
-	int32_t flen = gbstrlen(field);
+	int32_t flen = strlen(field);
 	char inQuotes = '\0';
 	int32_t i;
 
@@ -889,7 +889,7 @@ nodeid_t getTagId ( const char *s , NodeType **retp ) {
 		// set the hash table
 		for ( int32_t i = 0 ; i < nn ; i++ ) {
 			const char *name = g_nodes[i].m_nodeName;
-			int32_t  nlen = gbstrlen(name);
+			int32_t  nlen = strlen(name);
 			int64_t h = hash64Upper_a ( name,nlen,0LL );
 			NodeType *nt = &g_nodes[i];
 			if ( ! s_ht.addKey(&h,&nt) ) {
@@ -963,7 +963,7 @@ nodeid_t XmlNode::setNodeInfo ( int64_t  nodeHash ){
 		memset ( s_hash , 0 , 8*512 );
 		// set the hash table
 		for ( int32_t i = 0 ; i < s_numNodeTypes ; i++ ) {
-			int64_t h = hash64Upper_a( g_nodes[i].m_nodeName, gbstrlen( g_nodes[i].m_nodeName ), 0LL );
+			int64_t h = hash64Upper_a( g_nodes[i].m_nodeName, strlen( g_nodes[i].m_nodeName ), 0LL );
 			int32_t b = (uint64_t)h & 511;
 
 			while ( s_hash[b] ) {

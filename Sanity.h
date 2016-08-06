@@ -5,6 +5,7 @@
 #ifndef __lint /*flexelint cannot handle c++11 yet*/
 
 [[ noreturn ]] void gbshutdownAbort( bool save_on_abort );
+[[ noreturn ]] void gbshutdownResourceError();
 [[ noreturn ]] void gbshutdownLogicError();
 [[ noreturn ]] void gbshutdownCorrupted();
 

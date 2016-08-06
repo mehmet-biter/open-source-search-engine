@@ -62,7 +62,7 @@ bool Blaster::init(){
 		// if this is not a digit, continue
 		if ( ! isdigit(*p) ) continue;
 		// get ip
-		g_conf.m_dnsIps[0] = atoip ( p , gbstrlen(p) );
+		g_conf.m_dnsIps[0] = atoip ( p , strlen(p) );
 		// done
 		break;
 	}
@@ -121,7 +121,7 @@ void Blaster::runBlaster(char *file1,char *file2,
 
 	// open files
 	if ( ! f1.open ( O_RDONLY ) ) {
-		log("blaster:open: %s %s",file1,mstrerror(g_errno)); 
+		log(LOG_WARN, "blaster:open: %s %s",file1,mstrerror(g_errno));
 		return; 
 	}
 
@@ -148,7 +148,7 @@ void Blaster::runBlaster(char *file1,char *file2,
 
 	// read em all in
 	if ( ! f1.read ( m_buf1 , fileSize1 , 0 ) ) {
-		log("blaster:read: %s %s",file1,mstrerror(g_errno));
+		log(LOG_WARN, "blaster:read: %s %s",file1,mstrerror(g_errno));
 		return;
 	}
 
@@ -166,21 +166,21 @@ void Blaster::runBlaster(char *file1,char *file2,
 		File f2;
 		f2.set ( file2 );
 		if ( ! f2.open ( O_RDONLY ) ) {
-			log("blaster:open: %s %s",file2,mstrerror(g_errno)); 
+			log(LOG_WARN, "blaster:open: %s %s",file2,mstrerror(g_errno));
 			return; 
 		}
 		int32_t fileSize2 = f2.getFileSize() ;
 		int32_t m_bufSize2 = fileSize2 + 1;
 		m_buf2 = (char *) mmalloc ( m_bufSize2 , "blaster2" );
 		if ( ! m_buf2) {
-			log("blaster:mmalloc: %s",mstrerror(errno));
+			log(LOG_WARN, "blaster:mmalloc: %s",mstrerror(errno));
 			return;
 		}
 		// set m_p2
 		m_p2    = m_buf2;
 		m_p2end = m_buf2 + m_bufSize2 - 1;
 		if ( ! f2.read ( m_buf2 , fileSize2 , 0 ) ) {
-			log("blaster:read: %s %s",file2,mstrerror(g_errno));
+			log(LOG_WARN, "blaster:read: %s %s",file2,mstrerror(g_errno));
 			return;
 		}
 		int32_t m=0;
@@ -225,7 +225,7 @@ void Blaster::runBlaster(char *file1,char *file2,
 				if (!urlStart)
 					urlStart=strstr(p," POST /search");
 				if(!urlStart){
-					p+=gbstrlen(p)+1; //goto next line
+					p+=strlen(p)+1; //goto next line
 					continue;
 				}
 				urlStart++;
@@ -233,7 +233,7 @@ void Blaster::runBlaster(char *file1,char *file2,
 				// register it here
 				g_loop.registerSleepCallback(m_wait, urlStart, sleepWrapperLog);
 				m_totalUrls++;
-				p+=gbstrlen(p)+1;
+				p+=strlen(p)+1;
 			}
 		}
 	}
@@ -313,7 +313,7 @@ void Blaster:: processLogFile(void *state){
 		return;
 	}
 	mnew ( st , sizeof(StateBD) , "BlasterDiff3" );
-	//st->m_u1.set(tmp,gbstrlen(tmp));
+	//st->m_u1.set(tmp,strlen(tmp));
 	st->m_buf1=NULL;
 	// get it
 	bool status = g_httpServer.getDoc ( tmp, // &(st->m_u1) , // url
@@ -329,9 +329,11 @@ void Blaster:: processLogFile(void *state){
 					    30*1024*1024, //maxLen
 					    30*1024*1024);//maxOtherLen
 	// continue if it blocked
-	if ( status )
+	if ( status ) {
 		// else there was error
-		log("blaster: got doc %s: %s", urlStart,mstrerror(g_errno) );
+		log(LOG_WARN, "blaster: got doc %s: %s", urlStart, mstrerror(g_errno));
+	}
+
 	return;
 }
 	
@@ -339,7 +341,7 @@ void Blaster:: processLogFile(void *state){
 void Blaster::startBlastering(){
 	int64_t now=gettimeofdayInMilliseconds();
 	if(m_print && m_totalDone>0 && (m_totalDone % 20)==0){
-		log("blaster: Processed %" PRId32" urls in %" PRId32" ms",m_totalDone,
+		log(LOG_INFO, "blaster: Processed %" PRId32" urls in %" PRId32" ms",m_totalDone,
 		    (int32_t) (now-m_startTime));
 		m_print=false;
 	}
@@ -352,7 +354,7 @@ void Blaster::startBlastering(){
 		try { st = new (StateBD); }
 		catch ( ... ) {
 			g_errno = ENOMEM;
-			log("blaster: Failed. "
+			log(LOG_WARN, "blaster: Failed. "
 			    "Could not allocate %" PRId32" bytes for query. "
 			    "Returning HTTP status of 500.",
 			    (int32_t)sizeof(StateBD));
@@ -362,7 +364,7 @@ void Blaster::startBlastering(){
 		st->m_buf1=NULL;
 		m_totalUrls--;
 		// make into a url class. Set both u1 and u2 here.
-		//st->m_u1.set ( m_p1 , gbstrlen(m_p1) );
+		//st->m_u1.set ( m_p1 , strlen(m_p1) );
 		st->m_u1 = m_p1;
 		// is it an injection url
 		if ( m_doInjection || m_doInjectionWithLinks ) {
@@ -372,7 +374,7 @@ void Blaster::startBlastering(){
 			static bool s_flag = true;
 			if ( s_flag ) {
 				s_flag = false;
-				log("blaster: injecting to host #0 at %s on "
+				log(LOG_INFO, "blaster: injecting to host #0 at %s on "
 				    "http/tcp port %" PRId32,
 				    iptoa(h0->m_ip),
 				    (int32_t)h0->m_httpPort);
@@ -393,11 +395,11 @@ void Blaster::startBlastering(){
 			st->m_u1 = st->m_injectUrl.getBufStart();
 		}
 		// skip to next url
-		m_p1 += gbstrlen ( m_p1 ) + 1;
+		m_p1 += strlen ( m_p1 ) + 1;
 		if (m_blasterDiff){
-			//st->m_u2.set ( m_p2 , gbstrlen(m_p2) );
+			//st->m_u2.set ( m_p2 , strlen(m_p2) );
 			st->m_u2 = m_p2;
-			m_p2 += gbstrlen ( m_p2 ) + 1;
+			m_p2 += strlen ( m_p2 ) + 1;
 		}
 
 		//		log(LOG_WARN,"\n");
@@ -433,9 +435,8 @@ void Blaster::startBlastering(){
 		if ( ! status ) continue;
 		// If not blocked, there is an error.
 		m_launched--;
-		// log msg
-		log("From file1, got doc1 %s: %s", st->m_u1 , 
-		    mstrerror(g_errno) );
+
+		log(LOG_WARN, "From file1, got doc1 %s: %s", st->m_u1 , mstrerror(g_errno) );
 		// we gotta wait
 		break;
 	}
@@ -525,7 +526,7 @@ void Blaster::gotDoc1( void *state, TcpSocket *s){
 	
 	log(LOG_WARN,"blaster: Downloading %s",st->m_u2);
 	//char *ss="www.gigablast.com/search?q=hoopla&code=gbmonitor";
-	//	st->m_u2.set(ss,gbstrlen(ss));
+	//	st->m_u2.set(ss,strlen(ss));
 	// get it
 	bool status = g_httpServer.getDoc ( st->m_u2 , // url
 					    0,//ip
@@ -543,9 +544,9 @@ void Blaster::gotDoc1( void *state, TcpSocket *s){
 	if ( ! status ) return;
 	// If not blocked, there is an error.
 	m_launched--;
-	// log msg
-	log("From file2, gotdoc2 %s: %s", st->m_u2,
-	    mstrerror(g_errno) );
+
+	log(LOG_WARN, "From file2, gotdoc2 %s: %s", st->m_u2, mstrerror(g_errno));
+
 	// No need to point p2 ahead because already been done
 	// Free stateBD
 	freeStateBD(st);
@@ -1041,7 +1042,7 @@ void Blaster::gotDoc3 ( void *state, TcpSocket *s){
 		}
 
 		//Url u;
-		//u.set(tmp,gbstrlen(tmp));
+		//u.set(tmp,strlen(tmp));
 		//Now get the doc
 		bool status = g_httpServer.getDoc ( tmp,//&u,
 						    0,//ip
@@ -1187,7 +1188,7 @@ void Blaster::gotDoc4 ( void *state, TcpSocket *s){
 		// So now we search for tmp in the links
 		for (int32_t i=0;i<links.getNumLinks();i++){
 			if(strstr(links.getLink(i),tmp) && 
-			   links.getLinkLen(i)==(int)gbstrlen(tmp)){
+			   links.getLinkLen(i)==(int)strlen(tmp)){
 				isFound=true;
 				log(LOG_WARN,"blaster: %s in results1 but not"
 				    " in results2 for query %s but does exist"

@@ -242,7 +242,7 @@ bool BigFile::addParts ( const char *dirname ) {
 	sprintf(pattern,"%s*", m_baseFilename.getBufStart() );
 
 	// length of the base filename
-	int32_t blen = gbstrlen ( m_baseFilename.getBufStart() );
+	int32_t blen = strlen ( m_baseFilename.getBufStart() );
 
 	// . set our m_files array
 	// . addFile() will return false on problems
@@ -255,7 +255,7 @@ bool BigFile::addParts ( const char *dirname ) {
 		logTrace( g_conf.m_logTraceBigFile, "  Checking [%s]", filename);
 		
 		// if filename len is exactly blen it's part 0
-		int32_t flen = gbstrlen(filename);
+		int32_t flen = strlen(filename);
 		int32_t part = -1;
 		if ( flen == blen ) {
 			part = 0;
@@ -424,8 +424,8 @@ void BigFile::makeFilename_r ( char *baseFilename    ,
 	if ( baseFilenameDir && baseFilenameDir[0] ) dir = baseFilenameDir;
 	int32_t r;
 	// ensure we do not breach the buffer
-	// int32_t dirLen = gbstrlen(dir);
-	// int32_t baseLen = gbstrlen(baseFilename);
+	// int32_t dirLen = strlen(dir);
+	// int32_t baseLen = strlen(baseFilename);
 	// int32_t need = dirLen + 1 + baseLen + 1;
 	// if ( need < bufSize ) gbshutdownLogicError();
 	//static char s[1024];
@@ -647,13 +647,13 @@ bool BigFile::readwrite ( void         *buf      ,
 		    m_dir.getBufStart(),m_baseFilename.getBufStart());
 		gbshutdownLogicError();
 	}
+
 	// if we're not blocking use a fake fstate
 	FileState tmp;
-	if ( ! fstate ) fstate = &tmp;
-	// . no error yet
-	// . need this up here in case it is a cache hit from a re-call
-	//   due to a EFILECLOSED error
-	//fstate->m_errno = 0;
+	if ( ! fstate ) {
+		fstate = &tmp;
+	}
+
 	// reset this
 	fstate->m_errno = 0;
 	fstate->m_inPageCache = false;
@@ -751,8 +751,6 @@ bool BigFile::readwrite ( void         *buf      ,
 	// if hitDisk was false we only check the page cache!
 	if ( ! hitDisk ) return true;
 
-	int32_t saved;
-
 	// . if we're blocking then do it now
 	// . this should return false and set g_errno on error, true otherwise
 	if ( !isNonBlocking || !g_jobScheduler.are_new_jobs_allowed() ) 	{
@@ -767,60 +765,23 @@ bool BigFile::readwrite ( void         *buf      ,
 		return false;
 	}
 
-	saved = g_errno;
-
-	// note it
-	if ( g_errno ) {
-		static time_t s_time  = 0;
-		time_t now = getTime();
-		if ( now - s_time > 5 ) {
-			log (LOG_INFO,"disk: Thread call failed: %s.", mstrerror(g_errno));
-			s_time = now;
-		}
-	}
-
 	// sanity check
 	if ( ! callback ) {
 		gbshutdownLogicError();
 	}
 
-	// NOW we return on error because if we already have 5000 disk threads
-	// queued up, what is the point in blocking ourselves off? that makes
-	// us look like a dead host and very unresponsive. As int32_t as this
-	// request originated through Multicast, then multicast will sleep
-	// and retry. Msg3 could retry, the multicast thing should be more
-	// for running out of udp slots though...
-	// crap, call to clone() now fails a lot since we use pthreads
-	// library ... so assume that is it i guess (MDW 3/15/2014)
-	//if ( g_errno && ! doWrite && g_errno != ENOTHREADSLOTS ) {
-	//	log (LOG_INFO,"disk: May retry later.");
-	//	return true;
-	//}
+	// thread spawn failed, do it blocking then
+	log(LOG_INFO, "disk: Doing blocking disk access. This will hurt performance. isWrite=%" PRId32".",(int32_t)doWrite);
 
-	// otherwise, thread spawn failed, do it blocking then
-	g_errno = 0;
-	// if threads are manually disabled don't print these msgs because
-	// we redbox the fact above the controls in Pages.cpp
-	if ( saved ) { // g_jobScheduler.are_new_jobs_allowed() ) {
-		static int32_t s_lastTime = 0;
-		int32_t now = getTime();
-		if ( now - s_lastTime >= 1 ) {
-			s_lastTime = now;
-			log (LOG_INFO,
-			     "disk: Doing blocking disk access. "
-			     //"This will hurt "
-			     //"performance. "
-			     "isWrite=%" PRId32". (%s)",(int32_t)doWrite,
-			     mstrerror(saved));
-		}
-	}
 	// come here if we haven't spawned a thread
- skipThread:
+skipThread:
+
 	// if there was no room in the thread queue, then we must do this here
 	fstate->m_fd1         = getfd ( fstate->m_filenum1 , !doWrite );
 	fstate->m_fd2         = getfd ( fstate->m_filenum2 , !doWrite );
 	fstate->m_closeCount1 = getCloseCount_r ( fstate->m_fd1 );
 	fstate->m_closeCount2 = getCloseCount_r ( fstate->m_fd2 );
+
 	// clear g_errno from the failed thread spawn
 	g_errno = 0;
 
@@ -838,7 +799,6 @@ bool BigFile::readwrite ( void         *buf      ,
 			log( LOG_WARN, "disk: read buf alloc failed for %" PRId32" bytes.", need );
 		}
 	}
-
 
 	// . this returns false and sets errno on error
 	// . set g_errno to the errno
@@ -923,14 +883,12 @@ bool BigFile::readwrite ( void         *buf      ,
 // . this should be called from the main process after getting our call OUR callback here
 // Use of ThreadEntry parameter is NOT thread safe
 void doneWrapper ( void *state, job_exit_t exit_type ) {
-
 	FileState *fstate = (FileState *)state;
 
 	if( exit_type != job_exit_normal ) {
 		log(LOG_INFO, "disk: Read canceled due to JobScheduler exit type %d.", (int)exit_type);
 		return;
 	}
-
 
 	// any writes we did in the disk read thread were done to the
 	// "tmp" FileState class on the stack, so now we have the real deal
@@ -972,20 +930,6 @@ void doneWrapper ( void *state, job_exit_t exit_type ) {
 		g_stats.addStat_r ( fstate->m_bytesDone, fstate->m_startTime, fstate->m_doneTime, color );
 	}
 
-	// debug msg
-	//char *s = "read";
-	//if ( fstate->m_doWrite ) s = "wrote";
-	//char *t = "no";	// are we blocking?
-	//if ( fstate->m_bigfile->getFlags() & O_NONBLOCK ) t = "yes";
-	// this is bad for real-time threads cuz our unlink() routine may
-	// have been called by RdbMerge and our m_files may be altered 
-	//log("disk::readwrite: %s %" PRId32" bytes from %s(nonBlock=%s)",s,n,
-	//    m_files[filenum]->getFilename(),t);
-	//log("disk::readwrite_r: %s %" PRId32" bytes (nonBlock=%s)",
-	//     s,fstate->m_bytesDone/*n*/,t);
-	// debug msg
-	//int32_t took = gettimeofdayInMilliseconds() - fstate->m_startTime ;
-	//log("read of %" PRId32" bytes took %" PRId32" ms",fstate->m_bytesDone, took);
 	// now log our stuff here
 	int32_t tt = ( g_errno == EFILECLOSED ) ? LOG_INFO : LOG_WARN;
 	if ( g_errno ) {
@@ -1031,9 +975,6 @@ void doneWrapper ( void *state, job_exit_t exit_type ) {
 
 
 static void readwriteWrapper_r ( void *state ) {
-	// debug msg
-	//log("disk: this thread id = %" PRId32,(int32_t)pthread_self());
-
 	int64_t time_start = gettimeofdayInMilliseconds();
 
 	// extract our class
@@ -1066,6 +1007,7 @@ static void readwriteWrapper_r ( void *state ) {
 	}
 	fstate->m_fd1 = fstate->m_bigfile->getfd (fstate->m_filenum1,!fstate->m_doWrite);
 	fstate->m_fd2 = fstate->m_bigfile->getfd (fstate->m_filenum2,!fstate->m_doWrite);
+
 	// is this bad?
 	if ( fstate->m_fd1 < 0 ) {
 		log( LOG_WARN, "disk: fd1 is %i for %s", fstate->m_fd1, fstate->m_bigfile->getFilename() );
@@ -1078,44 +1020,19 @@ static void readwriteWrapper_r ( void *state ) {
 	fstate->m_closeCount1 = getCloseCount_r ( fstate->m_fd1 );
 	fstate->m_closeCount2 = getCloseCount_r ( fstate->m_fd2 );
 	
-	// get THIS
-	//BigFile *THIS = fstate->m_bigfile;
 	// clear thread's errno
 	errno = 0;
-	// . make it so we go away immediately upon receiving a cancellation 
-	//   signal rather than queing the signal until we call 
-	//   pthread_testcancel()
-	// . this allows us to immediately hault disk reads/writes that are
-	//   lower priority than i/o's we're about to do
-	// . this is so merging won't affect queries per second so much
-	//int err = pthread_setcanceltype ( PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
-	//if ( err != 0 ) log("readwriteWrapper: pthread_setcanceltype: %s",
-	//		      mstrerror(err) );
+
 	// . do the readwrite_r() since we're a thread now
 	// . this SHOULD NOT set g_errno, we're a thread!
 	// . it does have it's own errno however
-	// . if this gets a cancel signal in the read() it will stop blocking
-	//   and errno will be EINTR
- again:
+
 	bool status = readwrite_r ( fstate );
 
 	// set errno
 	if ( ! status ) {
 		fstate->m_errno = errno;
 	}
-
-	// test again here
-	//pthread_testcancel();
-
-	// get the two files
-	// mdw: no we can't access bigfile it might be deleted!
-	// File *f1 = NULL;
-	// File *f2 = NULL;
-	// // when we exit, m_bigfile is invalid!!!
-	// if ( fstate->m_filenum1 < fstate->m_bigfile->m_maxParts )
-	// 	f1 = fstate->m_bigfile->getFile2(fstate->m_filenum1);
-	// if ( fstate->m_filenum2 < fstate->m_bigfile->m_maxParts )
-	// 	f2 = fstate->m_bigfile->getFile2(fstate->m_filenum2);
 
 	// . if open count changed on us our file got unlinked from under us
 	//   and another file was opened with that same fd!!! 
@@ -1133,8 +1050,7 @@ static void readwriteWrapper_r ( void *state ) {
 	// might have been deleted or closed on us, i saw this before.
 	int32_t cc1 = getCloseCount_r ( fstate->m_fd1 );
 	int32_t cc2 = getCloseCount_r ( fstate->m_fd2 );
-	if ( cc1 != fstate->m_closeCount1 ||
-	     cc2 != fstate->m_closeCount2  ) {
+	if ( cc1 != fstate->m_closeCount1 || cc2 != fstate->m_closeCount2  ) {
 		log( LOG_WARN, "file: c1a=%" PRId32" c1b=%" PRId32" c2a=%" PRId32" c2b=%" PRId32,
 		    cc1, fstate->m_closeCount1, cc2, fstate->m_closeCount2 );
 
@@ -1148,13 +1064,6 @@ static void readwriteWrapper_r ( void *state ) {
 		}
 	}
 	
-	// if it wasn't cancelled, just interrupted, try again
-	if ( errno == EINTR ) {
-		errno           = 0;
-		fstate->m_errno = 0;
-		goto again; 
-	}
-
 	int64_t time_took = gettimeofdayInMilliseconds() - time_start;
 
 	if ( !fstate->m_doWrite && time_took >= g_conf.m_logDiskReadTimeThreshold ) {
@@ -1167,8 +1076,6 @@ static void readwriteWrapper_r ( void *state ) {
 
 // . returns false and sets errno on error, true on success
 // . don't log shit when you're in a thread anymore
-// . if we receive a cancel sig while in pread/pwrite it will return -1
-//   and set errno to EINTR
 // Use of ThreadEntry parameter is NOT thread safe
 static bool readwrite_r ( FileState *fstate ) {
 	// if no buffer to read into the alloc in Threads.cpp failed
@@ -1179,151 +1086,142 @@ static bool readwrite_r ( FileState *fstate ) {
 	}
 
 	// how many total bytes to write?
-	int32_t       bytesToGo = fstate->m_bytesToGo;
+	int32_t bytesToGo = fstate->m_bytesToGo;
 	// how many bytes we've written so far
-	int32_t       bytesDone = fstate->m_bytesDone;
+	int32_t bytesDone = fstate->m_bytesDone;
 	// get current offset
-	int64_t  offset    = fstate->m_offset + fstate->m_bytesDone;
+	int64_t offset = fstate->m_offset + fstate->m_bytesDone;
 	// are we writing? or reading?
-	bool       doWrite   = fstate->m_doWrite;
+	bool doWrite = fstate->m_doWrite;
 	// point to buf
-	char      *p         = fstate->m_buf + bytesDone ;
- loop:
-	// return here if done
-	if ( bytesDone >= bytesToGo ) return true;
+	char *p = fstate->m_buf + bytesDone;
 
-	// translate offset to a filenum and offset
-	int32_t filenum     = offset / MAX_PART_SIZE;
-	int32_t localOffset = offset % MAX_PART_SIZE;
+	for (;;) {
+		// return here if done
+		if (bytesDone >= bytesToGo) {
+			return true;
+		}
 
-	// how many bytes to read/write to first little file?
-	int32_t avail = MAX_PART_SIZE - localOffset;
+		// translate offset to a filenum and offset
+		int32_t filenum = offset / MAX_PART_SIZE;
+		int32_t localOffset = offset % MAX_PART_SIZE;
 
-	// how may bytes do we have left to read/write
-	int32_t len   = bytesToGo - bytesDone;
+		// how many bytes to read/write to first little file?
+		int32_t avail = MAX_PART_SIZE - localOffset;
 
-	// how many bytes can we write to it now
-	if ( len > avail ) len = avail;
+		// how may bytes do we have left to read/write
+		int32_t len = bytesToGo - bytesDone;
 
-	// get the fd for this filenum
-	int fd = -1;
-	if ( filenum == fstate->m_filenum1 ) {
-		fd = fstate->m_fd1;
-	} else if ( filenum == fstate->m_filenum2 ) {
-		fd = fstate->m_fd2;
-	}
+		// how many bytes can we write to it now
+		if (len > avail) {
+			len = avail;
+		}
 
-	// return -1 on error 
-	if ( fd < 0 ) {
-		errno = EBADENGINEER;
-		log( LOG_LOGIC, "disk: fd < 0 for filenum %d. Bad engineer.", filenum );
-		return false;
-	}
+		// get the fd for this filenum
+		int fd = -1;
+		if (filenum == fstate->m_filenum1) {
+			fd = fstate->m_fd1;
+		} else if (filenum == fstate->m_filenum2) {
+			fd = fstate->m_fd2;
+		}
 
-	// reset this
-	errno = 0;
+		// return -1 on error
+		if (fd < 0) {
+			errno = EBADENGINEER;
+			log(LOG_LOGIC, "disk: fd < 0 for filenum %d. Bad engineer.", filenum);
+			return false;
+		}
 
-	// n holds how many bytes read/written
-	int n ;
- retry25:
-
-	// do the read/write blocking 
-	if ( doWrite ) 	n = pwrite ( fd , p , len , localOffset );
-	else           	n = pread  ( fd , p , len , localOffset );
-
-	// debug msg
-	if ( g_conf.m_logDebugDisk ) {
-		const char *s = "read";
-		if ( fstate->m_doWrite ) s = "wrote";
-		const char *t = "no";	// are we blocking?
-		if ( fstate->m_flags & O_NONBLOCK ) t = "yes";
-		// this is bad for real-time threads cuz our unlink() routine 
-		// may have been called by RdbMerge and our m_files may be 
-		// altered 
-		// MDW: don't access m_bigfile in case bigfile was deleted
-		// since we are in a thread
-		log(LOG_DEBUG, "disk::readwrite: %s %i bytes of %i @ offset %i "
-		    //"from BASEfile=%s "
-		    "(nonBlock=%s) "
-		    "fd %i "
-		    "cc1=%i=?%i cc2=%i=?%i errno=%s",
-		    s,n,len,localOffset,
-		    //fstate->m_bigfile->getFilename(),
-		    t,
-		    fd,
-		    (int)fstate->m_closeCount1 , 
-		    (int)getCloseCount_r ( fstate->m_fd1 ) ,
-		    (int)fstate->m_closeCount2 ,
-		    (int)getCloseCount_r ( fstate->m_fd2 ) ,
-		    mstrerror(errno) );
-		//log("disk::readwrite_r: %s %" PRId32" bytes (nonBlock=%s)",
-		//s,n,t);
-		//log("disk::readwrite_r: did %" PRId32" bytes", n);
-	}
-
-	// interrupted system call?
-	if ( n < 0 && errno == EINTR ) 
-		goto retry25;
-
-	// this is thread safe...
-	g_lastDiskReadCompleted = gettimeofdayInMilliseconds();
-
-	// . if n is 0 that's strange!!
-	// . i think the fd will have been closed and re-opened on us if this
-	//   happens... usually
-	if (n==0 && len > 0 ) {
-		// MDW: don't access m_bigfile in case bigfile was deleted
-		// since we are in a thread
-		log(LOG_WARN, "disk: Read of %" PRId32" bytes at offset %" PRId64" "
-		    " failed because file is too short for that "
-		    "offset? Our fd was probably stolen from us by another "
-		    "thread. fd1=%i fd2=%i len=%i filenum=%i "
-		    "localoffset=%i. error=%s.",
-		    (int32_t)len,fstate->m_offset,
-		    //fstate->m_bigfile->getDir(),
-		    //fstate->m_bigfile->getFilename(),
-		    fstate->m_fd1,
-		    fstate->m_fd2,
-		    len,
-		    filenum,
-		    localOffset,
-		    mstrerror(errno));
-		errno = EBADENGINEER;
-		return false;
-	}
-
-	// on other errno, return -1
-	if ( n < 0 ) { 
-		log( LOG_ERROR, "disk::readwrite_r: %s", mstrerror( errno ) );
-		gbshutdownAbort(true);
-	}
-
-	// . flush the write
-	// . linux's write cache may be messing with my data!
-	// . no, turns out write errors (garbage written) happens anyway...
-	// . now we flush all writes! skip bdflush man.
-	// . only allow syncing if file is non-blocking, because blocking
-	//   writes are used for when we call RdbTree::fastSave_r() and it
-	//   takes forever to dump Spiderdb if we sync each little write
-#ifndef __APPLE_
-	if ( g_conf.m_flushWrites   && 
-	     doWrite                && 
-	     (fstate->m_flags & O_NONBLOCK) && 
-	     fdatasync ( fd ) < 0  ) {
-		log( LOG_WARN, "disk: fdatasync: %s", mstrerror(errno));
-		// ignore an error here
+		// reset this
 		errno = 0;
-	}
+
+		// n holds how many bytes read/written
+		int n;
+
+		// do the read/write blocking
+		if (doWrite) {
+			n = pwrite(fd, p, len, localOffset);
+		} else {
+			n = pread(fd, p, len, localOffset);
+		}
+
+		// debug msg
+		if (g_conf.m_logDebugDisk) {
+			const char *s = (fstate->m_doWrite) ? "wrote" : "read";
+			const char *t = (fstate->m_flags & O_NONBLOCK) ? "yes" : "no";    // are we blocking?
+
+			// this is bad for real-time threads cuz our unlink() routine
+			// may have been called by RdbMerge and our m_files may be
+			// altered
+			// MDW: don't access m_bigfile in case bigfile was deleted
+			// since we are in a thread
+			log(LOG_DEBUG, "disk::readwrite: %s %i bytes of %i @ offset %i "
+					    "(nonBlock=%s) "
+					    "fd %i "
+					    "cc1=%i=?%i cc2=%i=?%i errno=%s",
+			    s, n, len, localOffset,
+			    t,
+			    fd,
+			    (int) fstate->m_closeCount1,
+			    (int) getCloseCount_r(fstate->m_fd1),
+			    (int) fstate->m_closeCount2,
+			    (int) getCloseCount_r(fstate->m_fd2),
+			    mstrerror(errno));
+		}
+
+		// this is thread safe...
+		g_lastDiskReadCompleted = gettimeofdayInMilliseconds();
+
+		// . if n is 0 that's strange!!
+		// . i think the fd will have been closed and re-opened on us if this
+		//   happens... usually
+		if (n == 0 && len > 0) {
+			// MDW: don't access m_bigfile in case bigfile was deleted
+			// since we are in a thread
+			log(LOG_WARN, "disk: Read of %" PRId32" bytes at offset %" PRId64" "
+					    " failed because file is too short for that "
+					    "offset? Our fd was probably stolen from us by another "
+					    "thread. fd1=%i fd2=%i len=%i filenum=%i "
+					    "localoffset=%i. error=%s.",
+					    (int32_t) len, fstate->m_offset,
+					    fstate->m_fd1,
+					    fstate->m_fd2,
+					    len,
+					    filenum,
+					    localOffset,
+					    mstrerror(errno));
+			errno = EBADENGINEER;
+			return false;
+		}
+
+		// on other errno, return -1
+		if (n < 0) {
+			log(LOG_ERROR, "disk::readwrite_r: %s", mstrerror(errno));
+			gbshutdownAbort(true);
+		}
+
+		// . flush the write
+		// . linux's write cache may be messing with my data!
+		// . no, turns out write errors (garbage written) happens anyway...
+		// . now we flush all writes! skip bdflush man.
+		// . only allow syncing if file is non-blocking, because blocking
+		//   writes are used for when we call RdbTree::fastSave_r() and it
+		//   takes forever to dump Spiderdb if we sync each little write
+#ifndef __APPLE_
+		if (g_conf.m_flushWrites && doWrite && (fstate->m_flags & O_NONBLOCK) && fdatasync(fd) < 0) {
+			log(LOG_WARN, "disk: fdatasync: %s", mstrerror(errno));
+			// ignore an error here
+			errno = 0;
+		}
 #endif
-	// update the count
-	bytesDone += n;
-	// inc the main offset and the buffer ptr, "p"
-	offset    += n; 
-	p         += n;
-	// add to fileState
-	fstate->m_bytesDone += n;
-	// loop back
-	goto loop;
+		// update the count
+		bytesDone += n;
+		// inc the main offset and the buffer ptr, "p"
+		offset += n;
+		p += n;
+		// add to fileState
+		fstate->m_bytesDone += n;
+	}
 }
 
 
@@ -1332,11 +1230,9 @@ static bool readwrite_r ( FileState *fstate ) {
 ////////////////////////////////////////
 
 bool BigFile::unlink ( ) {
-	bool rc;
-	
 	logTrace( g_conf.m_logTraceBigFile, "BEGIN. filename [%s]", getFilename());
 	
-	rc=unlinkRename( NULL , -1 , false, NULL, NULL );
+	bool rc = unlinkRename( NULL , -1 , false, NULL, NULL );
 	// rc indicates blocked/unblocked
 
 	logTrace( g_conf.m_logTraceBigFile, "END. returning [%s]", rc?"true":"false");
@@ -1346,11 +1242,9 @@ bool BigFile::unlink ( ) {
 
 
 bool BigFile::move ( const char *newDir ) {
-	bool rc;
-	
 	logTrace( g_conf.m_logTraceBigFile, "BEGIN. filename [%s] newDir [%s]", getFilename(), newDir);
 
-	rc = rename( m_baseFilename.getBufStart() , newDir );
+	bool rc = rename( m_baseFilename.getBufStart() , newDir );
 	// rc indicates blocked/unblocked
 	
 	logTrace( g_conf.m_logTraceBigFile, "END. returning [%s]", rc?"true":"false");
@@ -1359,11 +1253,9 @@ bool BigFile::move ( const char *newDir ) {
 
 
 bool BigFile::rename(const char *newBaseFilename, const char *newBaseFilenameDir, bool force ) {
-	bool rc;
-
 	logTrace( g_conf.m_logTraceBigFile, "BEGIN. newBaseFilename [%s] newBaseFilenameDir [%s]", newBaseFilename, newBaseFilenameDir);
 	
-	rc=unlinkRename ( newBaseFilename, -1, false, NULL, NULL, newBaseFilenameDir, force );
+	bool rc = unlinkRename ( newBaseFilename, -1, false, NULL, NULL, newBaseFilenameDir, force );
 	// rc indicates blocked/unblocked
 	
 	logTrace( g_conf.m_logTraceBigFile, "END. returning [%s]", rc?"true":"false");
@@ -1372,11 +1264,9 @@ bool BigFile::rename(const char *newBaseFilename, const char *newBaseFilenameDir
 
 
 bool BigFile::unlinkPart(int32_t part ) {
-	bool rc;
-
 	logTrace( g_conf.m_logTraceBigFile, "BEGIN. part %" PRId32, part);
 	
-	rc=unlinkRename ( NULL, part, false, NULL, NULL );
+	bool rc = unlinkRename ( NULL, part, false, NULL, NULL );
 	// rc indicates blocked/unblocked
 	
 	logTrace( g_conf.m_logTraceBigFile, "END. returning [%s]", rc?"true":"false");
@@ -1384,12 +1274,10 @@ bool BigFile::unlinkPart(int32_t part ) {
 }
 
 
-bool BigFile::unlink(void (* callback) ( void *state ) , void *state ) {
-	bool rc;
-
+bool BigFile::unlink(void (*callback)(void *state), void *state) {
 	logTrace( g_conf.m_logTraceBigFile, "BEGIN." );
 
-	rc=unlinkRename ( NULL , -1 , true, callback , state );
+	bool rc = unlinkRename ( NULL , -1 , true, callback , state );
 	// rc indicates blocked/unblocked
 	
 	logTrace( g_conf.m_logTraceBigFile, "END. returning [%s]", rc?"true":"false");
@@ -1398,11 +1286,9 @@ bool BigFile::unlink(void (* callback) ( void *state ) , void *state ) {
 
 
 bool BigFile::rename(const char *newBaseFilename, void (*callback)(void *state), void *state, bool force) {
-	bool rc;
-
 	logTrace( g_conf.m_logTraceBigFile, "BEGIN. filename [%s] newBaseFilename [%s]", getFilename(), newBaseFilename);
 
-	rc=unlinkRename ( newBaseFilename, -1, true, callback, state, NULL, force );
+	bool rc=unlinkRename ( newBaseFilename, -1, true, callback, state, NULL, force );
 	// rc indicates blocked/unblocked
 	
 	logTrace( g_conf.m_logTraceBigFile, "END. returning [%s]", rc?"true":"false");
@@ -1411,31 +1297,44 @@ bool BigFile::rename(const char *newBaseFilename, void (*callback)(void *state),
 
 
 bool BigFile::unlinkPart(int32_t part, void (*callback)(void *state), void *state) {
-	bool rc;
-
 	logTrace( g_conf.m_logTraceBigFile, "BEGIN. part %" PRId32, part);
 
-	//for ( int32_t i = 0 ; i < part ; i++ ) 
 	// set return value to false if we blocked somewhere
-	rc=unlinkRename ( NULL, part, true, callback, state );
+	bool rc = unlinkRename ( NULL, part, true, callback, state );
 	// rc indicates blocked/unblocked
 	
 	logTrace( g_conf.m_logTraceBigFile, "END. returning [%s]", rc?"true":"false");
 	return rc;
 }
 
+struct UnlinkRenameState {
+	UnlinkRenameState(BigFile *bigfile, File *file, int32_t i)
+		: m_bigfile(bigfile)
+		, m_file(file)
+		, m_i(i)
+		, m_errno(0) {
+	}
 
+	BigFile *m_bigfile;
+	File *m_file;
+	int32_t m_i;
+	int32_t m_errno;
+};
 
-// . returns false if blocked, true otherwise
+/**
+ *
+ * @param newBaseFilename non-NULL for renames, NULL for unlinks
+ * @param part part num to unlink, -1 for all (or rename)
+ * @param useThread should thread be used
+ * @param callback function to call when operation is done
+ * @param state state to be passed to callback function
+ * @param newBaseFilenameDir if NULL, defaults to m_dir, the current dir in which this file already exists
+ * @param force should rename be done even if destination file exists
+ * @return false if blocked, true otherwise
+ */
 // . sets g_errno on error
-// . ser "part" to -1 to remove or unlink all part files
-// . "newBaseFilenameDir" if NULL, defaults to m_dir, the current dir
-//   in which this file already exists
-bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
-			     const char *newBaseFilename             ,
-			     // part num to unlink, -1 for all (or rename)
-			     int32_t  part, bool  useThread, void (* callback) ( void *state ),
-			     void *state, const char *newBaseFilenameDir, bool force ) {
+bool BigFile::unlinkRename(const char *newBaseFilename, int32_t part, bool useThread,
+                           void (*callback)(void *state), void *state, const char *newBaseFilenameDir, bool force) {
 	logTrace( g_conf.m_logTraceBigFile, "BEGIN" );
 
 	// fail in read only mode
@@ -1448,8 +1347,7 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 	// . wait for any previous unlink to finish
 	// . we can only store one callback at a time, m_callback, so we
 	//   must do this for now
-	if ( m_numThreads > 0 && 
-	     ( callback != m_callback || state != m_state ) ) {
+	if ( m_numThreads > 0 && ( callback != m_callback || state != m_state ) ) {
 		g_errno = EBADENGINEER;
 		log(LOG_ERROR, "%s:%s:%d: END. Unlink/rename threads already in progress. ", __FILE__, __func__, __LINE__ );
 		return true;
@@ -1466,22 +1364,20 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 		}
 
 		// now this is dynamic to save mem when we have 100,000+ files
-		m_newBaseFilename   .reset();
+		m_newBaseFilename.reset();
 		m_newBaseFilenameDir.reset();
 
-		m_newBaseFilename   .setLabel("nbfn");
+		m_newBaseFilename.setLabel("nbfn");
 		m_newBaseFilenameDir.setLabel("nbfnd");
 
-		if ( ! m_newBaseFilename.safeStrcpy ( newBaseFilename ) )
-		{
-			log(LOG_ERROR,"%s:%s:%d: set m_newBaseFilename failed", __FILE__, __func__, __LINE__ );
+		if (!m_newBaseFilename.safeStrcpy(newBaseFilename)) {
+			log(LOG_ERROR, "%s:%s:%d: set m_newBaseFilename failed", __FILE__, __func__, __LINE__);
 			logAllData(LOG_ERROR);
 			return false;
 		}
-		
-		if ( ! m_newBaseFilenameDir.safeStrcpy ( newBaseFilenameDir ) )
-		{
-			log(LOG_ERROR,"%s:%s:%d: set m_newBaseFilenameDir failed", __FILE__, __func__, __LINE__ );
+
+		if (!m_newBaseFilenameDir.safeStrcpy(newBaseFilenameDir)) {
+			log(LOG_ERROR, "%s:%s:%d: set m_newBaseFilenameDir failed", __FILE__, __func__, __LINE__);
 			logAllData(LOG_ERROR);
 			return false;
 		}
@@ -1489,15 +1385,11 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 		// in case newBaseFilenameDir was NULL
 		m_newBaseFilenameDir.nullTerm();
 		
-		// close all files -- they close themselves when we call rename
-		// close ();
-
 		// set the op flag
 		m_isUnlink = false;
 
 		logTrace( g_conf.m_logTraceBigFile, "Rename mode" );
-	}
-	else {
+	} else {
 		m_isUnlink = true;
 		logTrace( g_conf.m_logTraceBigFile, "Unlink mode" );
 	}
@@ -1510,17 +1402,18 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 	void (*startRoutine)(void *state);
 	void (*doneRoutine )(void *state, job_exit_t exit_type);
 
-	const int32_t startPartNumber = m_part>=0 ? m_part : 0;
+	const int32_t startPartNumber = (m_part >= 0) ? m_part : 0;
 
 	// how many parts have we done?
 	m_partsRemaining = m_maxParts;
+
 	// is it only 1 to be unlinked?
 	if ( m_part >= 0 ) {
 		m_partsRemaining = 1;
 	}
 
-	if(m_isUnlink) {
-		//First mark the files for unlink so no further read-jobs will be submitted for those parts
+	if (m_isUnlink) {
+		// First mark the files for unlink so no further read-jobs will be submitted for those parts
 		for ( int32_t i = startPartNumber ; i < m_maxParts ; i++ ) {
 			if ( m_part >= 0 && i != m_part )
 				break;
@@ -1531,7 +1424,7 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 		}
 	
 		//then cancel all queued read jobs for this bigfile
-		if(part == -1 ) {
+		if (part == -1 ) {
 			// remove all queued threads that point to us that have not
 			// yet been launched
 			g_jobScheduler.cancel_file_read_jobs(this);
@@ -1542,7 +1435,10 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 	//then prepare/submit the rename/unlink
 	for ( int32_t i = startPartNumber; i < m_maxParts ; i++ ) {
 		// break out if we should only unlink one part
-		if ( m_part >= 0 && i != m_part ) break;
+		if ( m_part >= 0 && i != m_part ) {
+			break;
+		}
+
 		// get the ith file to rename/unlink
 		File *f = getFile2(i);
 		if ( ! f ) {
@@ -1560,15 +1456,23 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 			doneRoutine  = doneRenameWrapper;
 		}
 
-		// base in ptr to file, but set f->m_bigfile and f->m_i
-		f->m_bigfile = this;
-		f->m_i    = i;
 		f->setForceRename( force );
 
 		// assume thread launched, doneRoutine() will decrement these
 		m_numThreads++; 
 		g_unlinkRenameThreads++;
-		
+
+		UnlinkRenameState *job_state;
+		try {
+			job_state = new UnlinkRenameState(this, f, i);
+		} catch (...) {
+			g_errno = ENOMEM;
+			log(LOG_WARN, "disk: Failed to allocate memory for unlink/rename for %s.", f->getFilename());
+			return false;
+		}
+
+		mnew(job_state, sizeof(UnlinkRenameState), "UnlinkRenameState");
+
 		// use thread?
 		if ( useThread ) {
 			// save callback for when all parts are unlinked or renamed
@@ -1579,15 +1483,14 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 			// . returns true on successful spawning
 			// . we can't make a disk thread cuz Threads.cpp checks its
 			//   FileState member for readSize for thread throttling
-			if ( g_jobScheduler.submit(startRoutine, doneRoutine, f, thread_type_unlink, 1/*niceness*/) ) {
+			if ( g_jobScheduler.submit(startRoutine, doneRoutine, job_state, thread_type_unlink, 1/*niceness*/) ) {
 				logTrace( g_conf.m_logTraceBigFile, "Thread function called OK" );
 				continue;
 			}
 
 			// otherwise, thread spawn failed, do it blocking then
 			log( LOG_INFO, "disk: Failed to launch unlink/rename thread for %s. Doing blocking unlink. "
-				 "part=%" PRId32"/%" PRId32". This will hurt performance. %s.",
-			     f->getFilename(),i,m_part,mstrerror(g_errno));
+					"part=%" PRId32"/%" PRId32". This will hurt performance.", f->getFilename(),i,m_part);
 		}
 
 		// log these for now, remove later
@@ -1600,7 +1503,7 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 		errno = 0;
 		
 		// these are normally called from a thread
-		startRoutine ( f );
+		startRoutine ( job_state );
 		
 		// copy errno over to g_errno
 		if ( errno ) {
@@ -1608,11 +1511,12 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 		}
 			
 		// wrap it up
-		doneRoutine  ( f , job_exit_normal );
+		doneRoutine  ( job_state , job_exit_normal );
+
+		mdelete(job_state, sizeof(FileState), "FileState");
+		delete job_state;
 	}
 
-	// close em up
-	//close();
 	// if one blocked, we block, but never return false if !useThread
 	if ( m_numThreads > 0 && useThread ) {
 		logTrace( g_conf.m_logTraceBigFile, "m_numThreads [%" PRId32"] && useThread", m_numThreads );
@@ -1632,17 +1536,19 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 
 
 void BigFile::renameWrapper(void *state) {
-	File *f = static_cast<File*>(state);
-	BigFile *that = f->m_bigfile;
-	that->renameWrapper(f);
+	UnlinkRenameState *job_state = static_cast<UnlinkRenameState*>(state);
+	BigFile *that = job_state->m_bigfile;
+
+	that->renameWrapper(job_state->m_file, job_state->m_i);
+
+	if (g_errno && !job_state->m_errno) {
+		job_state->m_errno = g_errno;
+	}
 }
 
 
-void BigFile::renameWrapper(File *f) {
+void BigFile::renameWrapper(File *f, int32_t i) {
 	logTrace( g_conf.m_logTraceBigFile, "BEGIN" );
-
-	// get the ith file we just unlinked
-	int32_t i = f->m_i;
 
 	// . get the new full name for this file
 	// . based on m_dir/m_stripeDir and m_baseFilename
@@ -1651,7 +1557,9 @@ void BigFile::renameWrapper(File *f) {
 
 	log( LOG_TRACE,"%s:%s:%d: disk: rename [%s] to [%s]", __FILE__, __func__, __LINE__, f->getFilename(), newFilename );
 
-	f->rename( newFilename );
+	if (!f->rename(newFilename)) {
+		g_errno = errno;
+	}
 
 	logTrace( g_conf.m_logTraceBigFile, "END" );
 }
@@ -1659,9 +1567,14 @@ void BigFile::renameWrapper(File *f) {
 
 
 void BigFile::unlinkWrapper(void *state) {
-	File *f = static_cast<File*>(state);
-	BigFile *that = f->m_bigfile;
-	that->unlinkWrapper(f);
+	UnlinkRenameState *job_state = static_cast<UnlinkRenameState*>(state);
+	BigFile *that = job_state->m_bigfile;
+
+	that->unlinkWrapper(job_state->m_file);
+
+	if (g_errno && !job_state->m_errno) {
+		job_state->m_errno = g_errno;
+	}
 }
 
 
@@ -1680,9 +1593,9 @@ void BigFile::unlinkWrapper(File *f) {
 	//100ms, break after 5 seconds because then it is highly unlikely that
 	//any unfinished job refers to that area/file anymore.
 	for(int i=0; i<50; i++) {
-		if(!g_jobScheduler.is_reading_file(f->m_bigfile))
+		if(!g_jobScheduler.is_reading_file(this))
 			break;
-		usleep(100); //sleep 100ms
+		usleep(100000); //sleep 100ms
 	}
 
 	log( LOG_TRACE,"%s:%s:%d: disk: unlink [%s]", __FILE__, __func__, __LINE__, f->getFilename() );
@@ -1693,6 +1606,7 @@ void BigFile::unlinkWrapper(File *f) {
 	if ( errno != 0 ) {
 		log( LOG_TRACE,"%s:%s:%d: disk: unlink [%s] has error [%s]", __FILE__, __func__, __LINE__,
 		     f->getFilename(), mstrerror( errno ) );
+		g_errno = errno;
 	}
 
 	// we must close the file descriptor in the thread otherwise the
@@ -1704,26 +1618,24 @@ void BigFile::unlinkWrapper(File *f) {
 	logTrace( g_conf.m_logTraceBigFile, "END" );
 }
 
+void BigFile::doneRenameWrapper(void *state, job_exit_t /*exit_type*/) {
+	UnlinkRenameState *job_state = static_cast<UnlinkRenameState*>(state);
 
+	g_errno = job_state->m_errno;
 
-void BigFile::doneRenameWrapper(void *state, job_exit_t exit_type) {
-	File *f = static_cast<File*>(state);
-	BigFile *that = f->m_bigfile;
-	that->doneRenameWrapper(f,exit_type);
+	BigFile *that = job_state->m_bigfile;
+	that->doneRenameWrapper(job_state->m_file);
+
+	mdelete(job_state, sizeof(FileState), "FileState");
+	delete job_state;
 }
 
-void BigFile::doneRenameWrapper(File *f, job_exit_t /*exit_type*/) {
+void BigFile::doneRenameWrapper(File *f) {
 	logTrace( g_conf.m_logTraceBigFile, "BEGIN" );
-
-	// clear thread's errno
-	errno = 0;
 
 	// one less
 	m_numThreads--;
 	g_unlinkRenameThreads--;
-	
-	// reset g_errno and return true if file does not exist
-	//if ( g_errno == ENOENT ) g_errno = 0 ;
 
 	// otherwise, it's a more serious error i guess
 	if ( g_errno ) {
@@ -1731,9 +1643,6 @@ void BigFile::doneRenameWrapper(File *f, job_exit_t /*exit_type*/) {
 		logAllData(LOG_ERROR);
 		//@@@ BR: Why continue??
 	}
-	
-	// bail if more to do
-	//if ( m_numThreads > 0 ) return;
 
 	// one less part to do
 	m_partsRemaining--;
@@ -1743,13 +1652,12 @@ void BigFile::doneRenameWrapper(File *f, job_exit_t /*exit_type*/) {
 		logTrace( g_conf.m_logTraceBigFile, "END - still more parts" );
 		return;
 	}
-		
-		
+
 	// update OUR base filename now after all Files are renamed
-	//strcpy ( m_baseFilename , m_newBaseFilename );
 	m_baseFilename.reset();
 	m_baseFilename.setLabel("nbfnn");
 	m_baseFilename.safeStrcpy(m_newBaseFilename.getBufStart());
+
 	// . all done, call the main callback
 	// . this is NULL if we were not called in a thread
 	if ( m_callback ) {
@@ -1760,13 +1668,19 @@ void BigFile::doneRenameWrapper(File *f, job_exit_t /*exit_type*/) {
 }
 
 
-void BigFile::doneUnlinkWrapper(void *state, job_exit_t exit_type) {
-	File *f = static_cast<File*>(state);
-	BigFile *that = f->m_bigfile;
-	that->doneUnlinkWrapper(f,exit_type);
+void BigFile::doneUnlinkWrapper(void *state, job_exit_t /*exit_type*/) {
+	UnlinkRenameState *job_state = static_cast<UnlinkRenameState*>(state);
+
+	g_errno = job_state->m_errno;
+
+	BigFile *that = job_state->m_bigfile;
+	that->doneUnlinkWrapper(job_state->m_file, job_state->m_i);
+
+	mdelete(job_state, sizeof(FileState), "FileState");
+	delete job_state;
 }
 
-void BigFile::doneUnlinkWrapper(File *f, job_exit_t /*exit_type*/) {
+void BigFile::doneUnlinkWrapper(File *f, int32_t i) {
 	logTrace( g_conf.m_logTraceBigFile, "BEGIN" );
 
 	//unmark file for deletion since it already has
@@ -1774,9 +1688,6 @@ void BigFile::doneUnlinkWrapper(File *f, job_exit_t /*exit_type*/) {
 
 	// finish the close
 	f->close2();
-
-	// clear thread's errno
-	errno = 0;
 
 	// one less
 	m_numThreads--;
@@ -1788,43 +1699,34 @@ void BigFile::doneUnlinkWrapper(File *f, job_exit_t /*exit_type*/) {
 		logAllData(LOG_ERROR);
 		//@@@ BR: Why continue??
 	}
-		
-	// get the ith file we just unlinked
-	int32_t      i = f->m_i;
+
 	// . remove the part if it checks out
 	// . this will also close the file when it deletes it
 	File *fi = getFile2(i);
-	if ( f == fi ) 
-	{
+	if ( f == fi ) {
 		removePart ( i );
-	}
-	else 
-	{
+	} else {
 		log(LOG_ERROR, "%s:%s:%d: doneUnlinkWrapper. unlink had bad file ptr.", __FILE__, __func__, __LINE__ );
 		logAllData(LOG_ERROR);
-
 	}
-	
-	// bail if more to do
-	if ( m_numThreads > 0 ) {
-		logTrace( g_conf.m_logTraceBigFile, "END - still more threads" );
+
+	// one less part to do
+	m_partsRemaining--;
+
+	// return if more to do
+	if ( m_partsRemaining > 0 ) {
+		logTrace( g_conf.m_logTraceBigFile, "END - still more parts" );
 		return;
 	}
-		
-		
-	// return if more to do
-	//if ( m_partsRemaining > 0 ) return;
+
 	// . all done, call the main callback
 	// . this is NULL if we were not called in a thread
-	if ( m_callback )
-	{
+	if ( m_callback ) {
 		m_callback ( m_state );
 	}
 
 	logTrace( g_conf.m_logTraceBigFile, "END" );
 }
-
-
 
 void BigFile::removePart ( int32_t i ) {
 	//File *f = getFile2(i);

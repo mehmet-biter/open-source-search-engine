@@ -516,10 +516,11 @@ bool XmlDoc::loadFromOldTitleRec ( ) {
 
 bool XmlDoc::setCollNum ( const char *coll ) {
 	CollectionRec *cr;
-	cr = g_collectiondb.getRec ( coll , gbstrlen(coll) );
+	cr = g_collectiondb.getRec ( coll , strlen(coll) );
 	if ( ! cr ) {
 		g_errno = ENOCOLLREC;
-		return log("build: collrec not found for %s",coll);
+		log(LOG_WARN, "build: collrec not found for %s",coll);
+		return false;
 	}
 	// we can store this safely:
 	m_collnum = cr->m_collnum;
@@ -591,7 +592,7 @@ bool XmlDoc::set4 ( SpiderRequest *sreq      ,
 
 	if ( utf8Content ) {
 		// get length of it all
-		int32_t clen = gbstrlen(utf8Content);
+		int32_t clen = strlen(utf8Content);
 		// return true on error with g_errno set
 		if ( ! m_mime.set ( utf8ContentArg , clen , NULL ) ) {
 			if ( ! g_errno ) g_errno = EBADMIME;
@@ -624,7 +625,7 @@ bool XmlDoc::set4 ( SpiderRequest *sreq      ,
 		if ( m_mimeValid && m_mime.m_contentLen > 0) {
 			m_contentLen = m_mime.m_contentLen;
 		} else {
-			m_contentLen = gbstrlen(utf8Content);
+			m_contentLen = strlen(utf8Content);
 		}
 
 		m_contentValid        = true;
@@ -926,10 +927,9 @@ bool XmlDoc::set2 ( char    *titleRec ,
 	// bail on error
 	if ( dataSize < 4 ) {
 		g_errno = EBADTITLEREC;
-		return log("db: Titledb record has size of %" PRId32" which "
-			   "is less then 4. Probable disk corruption in a "
-			   "titledb file.",
-			   dataSize);
+		log(LOG_WARN, "db: Titledb record has size of %" PRId32" which is less then 4. Probable disk corruption in a "
+			"titledb file.", dataSize);
+		return false;
 	}
 	// what is the size of cbuf/titleRec in bytes?
 	int32_t cbufSize = dataSize + 4 + sizeof(key_t);
@@ -940,16 +940,16 @@ bool XmlDoc::set2 ( char    *titleRec ,
 	// . we can now have absolutely huge titlerecs...
 	if ( m_ubufSize <= 0 ) { //m_ubufSize > 2*1024*1024 || m_ubufSize < 0 )
 		g_errno = EBADTITLEREC;
-		return log("db: TitleRec::set: uncompress uncompressed "
-			   "size=%" PRId32".",m_ubufSize );
+		log(LOG_WARN, "db: TitleRec::set: uncompress uncompressed size=%" PRId32".",m_ubufSize );
+		return false;
 	}
 	// trying to uncompress corrupt titlerecs sometimes results in
 	// a seg fault... watch out
 	if ( m_ubufSize > 100*1024*1024 ) {
 		g_errno = EBADTITLEREC;
-		return log("db: TitleRec::set: uncompress uncompressed "
-			   "size=%" PRId32" > 100MB. unacceptable, probable "
-			   "corruption.",m_ubufSize );
+		log(LOG_WARN, "db: TitleRec::set: uncompress uncompressed size=%" PRId32" > 100MB. unacceptable, probable "
+			"corruption.", m_ubufSize);
+		return false;
 	}
 	// make buf space for holding the uncompressed stuff
 	m_ubufAlloc = m_ubufSize;
@@ -983,23 +983,22 @@ bool XmlDoc::set2 ( char    *titleRec ,
 				 (uint32_t  ) (dataSize - 4) );
 	// hmmmm...
 	if ( err == Z_BUF_ERROR ) {
-		log("db: Buffer is too small to hold uncompressed "
-		    "document. Probable disk corruption in a titledb file.");
+		log(LOG_WARN, "db: Buffer is too small to hold uncompressed document. Probable disk corruption in a titledb file.");
 		g_errno = EUNCOMPRESSERROR;
 		return false;
 	}
 	// set g_errno and return false on error
 	if ( err != Z_OK ) {
 		g_errno = EUNCOMPRESSERROR;
-		return log("db: Uncompress of document failed. ZG_ERRNO=%i. "
-			   "cbufSize=%" PRId32" ubufsize=%" PRId32" realSize=%" PRId32,
-			   err , cbufSize , m_ubufSize , realSize );
+		log(LOG_WARN, "db: Uncompress of document failed. ZG_ERRNO=%i. cbufSize=%" PRId32" ubufsize=%" PRId32" realSize=%" PRId32,
+		    err , cbufSize , m_ubufSize , realSize );
+		return false;
 	}
 	if ( realSize != m_ubufSize ) {
 		g_errno = EBADENGINEER;
-		return log("db: Uncompressed document size is not what we "
-			   "recorded it to be. Probable disk corruption in "
+		log(LOG_WARN, "db: Uncompressed document size is not what we recorded it to be. Probable disk corruption in "
 			   "a titledb file.");
+		return false;
 	}
 	// . add the stat
 	// . use white for the stat
@@ -1015,7 +1014,8 @@ bool XmlDoc::set2 ( char    *titleRec ,
 
 	if ( headerSize != shouldbe ) {
 		g_errno = ECORRUPTDATA;
-		return log("doc: bad header size in title rec");
+		log(LOG_WARN, "doc: bad header size in title rec");
+		return false;
 	}
 
 	// set our easy stuff
@@ -1058,7 +1058,8 @@ bool XmlDoc::set2 ( char    *titleRec ,
 		// watch out for corruption
 		if ( up > upend ) {
 			g_errno = ECORRUPTDATA;
-			return log("doc: corrupt titlerec.");
+			log(LOG_WARN, "doc: corrupt titlerec.");
+			return false;
 		}
 		// get the size
 		*ps = *(int32_t *)up;
@@ -1079,7 +1080,8 @@ bool XmlDoc::set2 ( char    *titleRec ,
 		// watch out for corruption
 		if ( up > upend ) {
 			g_errno = ECORRUPTDATA;
-			return log("doc: corrupt titlerec.");
+			log(LOG_WARN, "doc: corrupt titlerec.");
+			return false;
 		}
 	}
 	// cap it
@@ -1188,7 +1190,7 @@ bool XmlDoc::setFirstUrl ( char *u ) {
 		return true;
 	}
 
-	//if ( gbstrlen (u) + 1 > MAX_URL_LEN )
+	//if ( strlen (u) + 1 > MAX_URL_LEN )
 	//	m_indexCode = EURLTOOLONG;
 
 	m_firstUrl.set( u );
@@ -7021,12 +7023,7 @@ int32_t *XmlDoc::getIp ( ) {
 	//m_ipValid = true;
 	// get it
 	logTrace( g_conf.m_logTraceXmlDoc, "Calling MsgC.getIp [%s]", u->getHost());
-	if ( ! m_msgc.getIp ( u->getHost   () ,
-			      u->getHostLen() ,
-			      &m_ip           ,
-			      this            ,
-			      gotIpWrapper    ))
-	{
+	if (!m_msgc.getIp(u->getHost(), u->getHostLen(), &m_ip, this, gotIpWrapper)) {
 		// we blocked
 		logTrace( g_conf.m_logTraceXmlDoc, "END, return -1. Blocked." );
     	return (int32_t *)-1;
@@ -7772,7 +7769,7 @@ int32_t *XmlDoc::getSiteHash32 ( ) {
 	if ( m_siteHash32Valid ) return &m_siteHash32;
 	char *site = getSite();
 	if ( ! site || site == (void *)-1) return (int32_t *)site;
-	m_siteHash32 = hash32 ( site , gbstrlen(site) );
+	m_siteHash32 = hash32 ( site , strlen(site) );
 	m_siteHash32Valid = true;
 	return &m_siteHash32;
 }
@@ -9204,7 +9201,7 @@ uint16_t getCharsetFast ( HttpMime *mime,
 	cs = ucDetectBOM ( pstart , pend - pstart );
 	if ( cs && charset == csUnknown ) {
 		log(LOG_DEBUG, "build: Unicode BOM signature detected: %s",cs);
-		int32_t len = gbstrlen(cs);	if ( len > 31 ) len = 31;
+		int32_t len = strlen(cs);	if ( len > 31 ) len = 31;
 		charset = get_iana_charset ( cs , len );
 	}
 
@@ -9345,7 +9342,7 @@ uint16_t getCharsetFast ( HttpMime *mime,
 		// do the actual NULL termination
 		*p = 0;
 		// get the character set
-		int16_t metaCs = get_iana_charset(csString, gbstrlen(csString));
+		int16_t metaCs = get_iana_charset(csString, strlen(csString));
 		// put it back
 		*p = d;
 		// update "charset" to "metaCs" if known, it overrides all
@@ -9598,18 +9595,16 @@ char **XmlDoc::getFilteredContent ( ) {
 	if ( ! m_mimeValid ) { g_process.shutdownAbort(true); }
 
 	// do it
-	if ( g_jobScheduler.submit(filterStartWrapper_r,
-	                           filterDoneWrapper,
-				   this,
-				   thread_type_spider_filter,
-				   MAX_NICENESS) )
+	if ( g_jobScheduler.submit(filterStartWrapper_r, filterDoneWrapper, this, thread_type_spider_filter, MAX_NICENESS) ) {
 		// return -1 if blocked
-		return (char **)-1;
+		return (char **) -1;
+	}
+
 	// clear error!
 	g_errno = 0;
+
 	// note it
-	log("build: Could not spawn thread for call to "
-	    "content filter.");
+	log(LOG_INFO, "build: Could not spawn thread for call to content filter.");
 	// get the data
 	filterStart_r ( false ); // am thread?
 
@@ -9618,8 +9613,7 @@ skip:
 
 	// if size is 0, free the buf
 	if ( m_filteredContentLen <= 0 ) {
-		mfree ( m_filteredContent ,
-			m_filteredContentAllocSize,"fcas");
+		mfree ( m_filteredContent , m_filteredContentAllocSize,"fcas");
 		m_filteredContent          = NULL;
 		m_filteredContentLen       = 0;
 		m_filteredContentAllocSize = 0;
@@ -9644,8 +9638,7 @@ static void filterDoneWrapper ( void *state, job_exit_t /*exit_type*/ ) {
 	// if size is 0, free the buf. have to do this outside the thread
 	// since malloc/free cannot be called in thread
 	if ( THIS->m_filteredContentLen <= 0 ) {
-		mfree ( THIS->m_filteredContent ,
-			THIS->m_filteredContentAllocSize,"fcas");
+		mfree ( THIS->m_filteredContent, THIS->m_filteredContentAllocSize,"fcas");
 		THIS->m_filteredContent          = NULL;
 		THIS->m_filteredContentLen       = 0;
 		THIS->m_filteredContentAllocSize = 0;
@@ -9659,8 +9652,16 @@ static void filterDoneWrapper ( void *state, job_exit_t /*exit_type*/ ) {
 // thread starts here
 // Use of ThreadEntry parameter is NOT thread safe
 static void filterStartWrapper_r ( void *state ) {
-	XmlDoc *THIS = (XmlDoc *)state;
-	THIS->filterStart_r ( true ); // am thread?
+	XmlDoc *that = (XmlDoc *)state;
+
+	// assume no error since we're at the start of thread call
+	that->m_errno = 0;
+
+	that->filterStart_r ( true ); // am thread?
+
+	if (g_errno && !that->m_errno) {
+		that->m_errno = g_errno;
+	}
 }
 
 
@@ -9676,8 +9677,6 @@ void XmlDoc::filterStart_r ( bool amThread ) {
 	// assume none
 	m_filteredContentLen = 0;
 
-	//if ( amThread ) id = pthread_self();
-	//else            id = getpid();
 	// pass the input to the program through this file
 	// rather than a pipe, since popen() seems broken
 	char in[1024];
@@ -9696,8 +9695,7 @@ void XmlDoc::filterStart_r ( bool amThread ) {
 		// valgrind
 		if ( errno == EINTR ) goto retry11;
 		m_errno = errno;
-		log("build: Could not open file %s for writing: %s.",
-		    in,mstrerror(m_errno));
+		log(LOG_WARN, "build: Could not open file %s for writing: %s.", in,mstrerror(m_errno));
 		return;
 	}
 	// we are in a thread, this must be valid!
@@ -9713,8 +9711,7 @@ void XmlDoc::filterStart_r ( bool amThread ) {
 		//int32_t w = fwrite ( m_buf , 1 , m_bufLen , pd );
 		//if ( w != m_bufLen ) {
 		m_errno = errno;
-		log("build: Error writing to %s: %s.",in,
-		    mstrerror(m_errno));
+		log(LOG_WARN, "build: Error writing to %s: %s.",in, mstrerror(m_errno));
 		close(fd);
 		return;
 	}
@@ -9741,11 +9738,11 @@ void XmlDoc::filterStart_r ( bool amThread ) {
 	} else if ( ctype == CT_PS  ) {
 		snprintf(cmd, 2047, "ulimit -v 25000 ; ulimit -t 30; timeout 10s nice -n 19 %s/pstotext %s > %s" , wdir , in , out );
 	} else {
-		g_process.shutdownAbort(true);
+		gbshutdownLogicError();
 	}
 
 	// breach sanity check
-	//if ( gbstrlen(cmd) > 2040 ) { g_process.shutdownAbort(true); }
+	//if ( strlen(cmd) > 2040 ) { g_process.shutdownAbort(true); }
 
 	// execute it
 	int retVal = gbsystem ( cmd );
@@ -9814,15 +9811,6 @@ retry14:
 		    "because did not allocate enough space for filter. "
 		    "This should never happen. It is a hack that should be "
 		    "fixed right.", toRead );
-
-	// if we got something, then we're done
-	//if ( r > 0 ) return;
-	// otherwise, free it up
-	// . NO! not in a thread!!
-	//mfree ( m_filteredContent , m_filteredContentAllocSize, "fcas" );
-	//m_filteredContent          = NULL;
-	//m_filteredContentLen       = 0;
-	//m_filteredContentAllocSize = 0;
 }
 
 
@@ -10927,7 +10915,7 @@ Images *XmlDoc::getImages ( ) {
 
 	// now get the thumbnail
 	if ( ! m_images.getThumbnail ( site         ,
-				       gbstrlen(site) ,
+				       strlen(site) ,
 				       *d           ,
 				       this         ,
 				       cr->m_collnum       ,
@@ -11077,7 +11065,7 @@ char *XmlDoc::hasNoIndexMetaTag() {
 	char mbuf[16];
 	mbuf[0] = '\0';
 	const char *tag = "noindex";
-	int32_t tlen = gbstrlen(tag);
+	int32_t tlen = strlen(tag);
 	// check the xml for a meta tag
 	Xml *xml = getXml();
 	if ( ! xml || xml == (Xml *)-1 ) return (char *)xml;
@@ -11094,7 +11082,7 @@ char *XmlDoc::hasFakeIpsMetaTag ( ) {
 	char mbuf[16];
 	mbuf[0] = '\0';
 	const char *tag = "usefakeips";
-	int32_t tlen = gbstrlen(tag);
+	int32_t tlen = strlen(tag);
 
 	// check the xml for a meta tag
 	Xml *xml = getXml();
@@ -11304,8 +11292,8 @@ int32_t *XmlDoc::getUrlFilterNum ( ) {
 // . both "u" and "site" must not start with http:// or https:// or protocol
 static bool isSiteRootFunc ( const char *u , const char *site ) {
 	// get length of each
-	int32_t slen = gbstrlen(site);//m_siteLen;
-	int32_t ulen = gbstrlen(u);
+	int32_t slen = strlen(site);//m_siteLen;
+	int32_t ulen = strlen(u);
 	// "site" may or may not end in /, so remove that
 	if ( site[slen-1] == '/' ) slen--;
 	// same for url
@@ -11330,7 +11318,7 @@ static bool isSiteRootFunc ( const char *u , const char *site ) {
 
 static bool isSiteRootFunc3 ( const char *u , int32_t siteRootHash32 ) {
 	// get length of each
-	int32_t ulen = gbstrlen(u);
+	int32_t ulen = strlen(u);
 	// remove trailing /
 	if ( u[ulen-1] == '/' ) ulen--;
 	// skip http:// or https://
@@ -11501,7 +11489,7 @@ char *XmlDoc::getSpiderLinks ( ) {
 	buf1[0] = '\0';
 	buf2[0] = '\0';
 	xml->getMetaContent ( buf1, 255 , "robots" , 6 );
-	xml->getMetaContent ( buf2, 255 , g_conf.m_spiderBotName, gbstrlen(g_conf.m_spiderBotName) );
+	xml->getMetaContent ( buf2, 255 , g_conf.m_spiderBotName, strlen(g_conf.m_spiderBotName) );
 
 	if ( strstr ( buf1 , "nofollow" ) ||
 	     strstr ( buf2 , "nofollow" ) ||
@@ -12213,13 +12201,15 @@ bool XmlDoc::doConsistencyTest ( bool forceTest ) {
 		g_process.shutdownAbort(true);
 		mdelete ( doc , sizeof(XmlDoc) , "xdnuke");
 		delete ( doc );
-		return log("doc: failed consistency test for %s",ptr_firstUrl);
+		log(LOG_WARN, "doc: failed consistency test for %s",ptr_firstUrl);
+		return false;
 	}
 	if ( ! hashMetaList ( &ht2 , p2 , pend2 , false ) ) {
 		g_process.shutdownAbort(true);
 		mdelete ( doc , sizeof(XmlDoc) , "xdnuke");
 		delete ( doc );
-		return log("doc: failed consistency test for %s",ptr_firstUrl);
+		log(LOG_WARN, "doc: failed consistency test for %s",ptr_firstUrl);
+		return false;
 	}
 
 	// . now make sure each list matches the other
@@ -12908,7 +12898,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		m_httpStatus = 200;
 		m_siteValid = true;
 		ptr_site = "";
-		size_site = gbstrlen(ptr_site)+1;
+		size_site = strlen(ptr_site)+1;
 		m_isSiteRootValid = true;
 		m_isSiteRoot2 = 1;
 		//m_tagHash32Valid = true;
@@ -14202,8 +14192,16 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 			     m_docId ) {
 				g_process.shutdownAbort(true); }
 
-			if ( ! dt8.addKey(&hk,&rec) )
-			{
+			if( g_conf.m_noInMemoryPosdbMerge && rdbId == RDB_POSDB ) {
+				// NEW 20160803.
+				// Do not store records for POSDB in the hash table of old
+				// values. This makes sure that no delete records are 
+				// stored in posdb for existing terms, which is needed for 
+				// the new no-merge feature.
+				continue;
+			}
+
+			if ( ! dt8.addKey(&hk,&rec) ) {
 				logTrace( g_conf.m_logTraceXmlDoc, "addKey failed" );
 				return NULL;
 			}
@@ -16739,7 +16737,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		if ( hsum == (char *)0x01 ) hsum = NULL;
 
 		// get len. this is the HIGHLIGHTED summary so it is ok.
-		if ( hsum ) hsumLen = gbstrlen(hsum);
+		if ( hsum ) hsumLen = strlen(hsum);
 
 		// must be \0 terminated. not any more, it can be a subset
 		// of a larger summary used for deduping
@@ -16875,7 +16873,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 
 	char *ru = ptr_redirUrl;
 	int32_t  rulen = 0;
-	if ( ru ) rulen = gbstrlen(ru)+1;
+	if ( ru ) rulen = strlen(ru)+1;
 
 	// need full cached page of each search result?
 	// include it always for spider status docs.
@@ -17128,7 +17126,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		reply->m_isLinkSpam = false;
 
 	if ( m_req->m_doLinkSpamCheck ) {
-		// reset to NULL to avoid gbstrlen segfault
+		// reset to NULL to avoid strlen segfault
 		const char *note = NULL;
 		// need this
 		if ( ! m_xmlValid ) { g_process.shutdownAbort(true); }
@@ -17156,7 +17154,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		if ( note ) {
 			// include the \0
 			reply->ptr_note  = note;
-			reply->size_note = gbstrlen(note)+1;
+			reply->size_note = strlen(note)+1;
 		}
 		// log the reason why it is a log page
 		if ( reply->m_isLinkSpam )
@@ -17408,7 +17406,7 @@ char *XmlDoc::getDescriptionBuf ( char *displayMetas , int32_t *dsize ) {
 	char *dbufEnd = m_dbuf + 1024;//1024*64;
 	char *dptr    = m_dbuf;
 	char *pp      = displayMetas;
-	char *ppend   = pp + gbstrlen(displayMetas);
+	char *ppend   = pp + strlen(displayMetas);
 	// loop over the list of requested meta tag names
 	while ( pp < ppend && dptr < dbufEnd ) {
 		// skip initial spaces. meta tag names are ascii always i guess
@@ -17438,7 +17436,7 @@ char *XmlDoc::getDescriptionBuf ( char *displayMetas , int32_t *dsize ) {
 		int32_t avail = dbufEnd - dptr - 1;
 		if ( maxLen > avail ) maxLen = avail;
 		// store the content at "dptr" (do not exceed "maxLen" bytes)
-		int32_t wlen = xml->getMetaContent( dptr, maxLen, s, gbstrlen( s ) );
+		int32_t wlen = xml->getMetaContent( dptr, maxLen, s, strlen( s ) );
 		dptr[wlen] = '\0';
 
 		// test it out
@@ -17787,7 +17785,7 @@ char *XmlDoc::getIsNoArchive ( ) {
 		while ( att < end && *att && is_wspace_a(*att) ) att++;
 		// must be robots or <configured botname>. skip if not
 		if ( strncasecmp(att,"robots" ,6) &&
-		     strncasecmp(att,g_conf.m_spiderBotName,gbstrlen(g_conf.m_spiderBotName))   ) continue;
+		     strncasecmp(att,g_conf.m_spiderBotName,strlen(g_conf.m_spiderBotName))   ) continue;
 
 		// get the content vaue
 		att = nodes[i].getFieldValue("content",&alen);
@@ -18019,7 +18017,7 @@ char *XmlDoc::getIsErrorPage ( ) {
 		if(errMsg || numChecked > 1) break;
 	}
 	if(!errMsg) return &m_isErrorPage;
-	len = gbstrlen(errMsg);
+	len = strlen(errMsg);
 
 	// make sure the error message was not present in the link text
 	if ( li && li->getNumGoodInlinks() > 5 ) return &m_isErrorPage;
@@ -18184,8 +18182,8 @@ static int cmptp (const void *v1, const void *v2) {
 	char *ps2 = start + t2->m_prefixOff;
 	if ( t1->m_prefixOff < 0 ) ps1 = NULL;
 	if ( t2->m_prefixOff < 0 ) ps2 = NULL;
-	int32_t plen1 = 0; if ( ps1 ) plen1 = gbstrlen(ps1);
-	int32_t plen2 = 0; if ( ps2 ) plen2 = gbstrlen(ps2);
+	int32_t plen1 = 0; if ( ps1 ) plen1 = strlen(ps1);
+	int32_t plen2 = 0; if ( ps2 ) plen2 = strlen(ps2);
 	int32_t pmin = plen1;
 	if ( plen2 < pmin ) pmin = plen2;
 	int32_t pn = strncmp ( ps1 , ps2 , pmin );
@@ -19899,11 +19897,8 @@ bool XmlDoc::printCachedPage ( SafeBuf *sb , HttpRequest *hr ) {
 
 	int32_t isXml = hr->getLong("xml",0);
 
-	int32_t raw = hr->getLong("raw",0);
-
-	if ( ! isXml && ! raw ) printMenu ( sb );
-
 	if ( ! isXml ) {
+		printMenu ( sb );
 		// just copy it otherwise
 		if ( ptr_utf8Content )
 			sb->safeMemcpy ( ptr_utf8Content ,size_utf8Content -1);

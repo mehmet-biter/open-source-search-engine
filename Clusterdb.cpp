@@ -93,7 +93,6 @@ bool Clusterdb::verify ( char *coll ) {
 			      endKey        ,
 			      64000         , // minRecSizes   ,
 			      true          , // includeTree   ,
-			      false         , // add to cache?
 			      0             , // max cache age
 			      0             , // startFileNum  ,
 			      -1            , // numFiles      ,
@@ -106,7 +105,9 @@ bool Clusterdb::verify ( char *coll ) {
 			      -1            ,
 			      true          ,
 			      -1LL          ,
-			      true          )) {
+			      true,           // isRealMerge
+			      true))          // allowPageCache
+	{
 		g_jobScheduler.allow_new_jobs();
 		log("db: HEY! it did not block");
 		return false;
@@ -128,10 +129,10 @@ bool Clusterdb::verify ( char *coll ) {
 	if ( got != count ) {
 		// tally it up
 		g_rebalance.m_numForeignRecs += count - got;
-		log ("db: Out of first %" PRId32" records in clusterdb, "
+		log (LOG_WARN, "db: Out of first %" PRId32" records in clusterdb, "
 		     "only %" PRId32" belong to our group.",count,got);
 		// exit if NONE, we probably got the wrong data
-		if ( got == 0 ) log("db: Are you sure you have the "
+		if ( got == 0 ) log(LOG_WARN, "db: Are you sure you have the "
 					   "right "
 					   "data in the right directory? "
 					   "Exiting.");

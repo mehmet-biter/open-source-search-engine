@@ -49,15 +49,10 @@ extern void resetStopWords     ( );
 extern void resetAbbrTable     ( );
 extern void resetUnicode       ( );
 
-
 // our global instance
 Process g_process;
 
-//static int32_t s_flag = 1;
-static int32_t s_nextTime = 0;
-
 static pthread_t s_mainThreadTid;
-
 
 static const char * const g_files[] = {
 	//"gb.conf",
@@ -160,7 +155,7 @@ static const char * const g_files[] = {
 bool Process::getFilesToCopy ( const char *srcDir , SafeBuf *buf ) {
 
 	// sanirty
-	int32_t slen = gbstrlen(srcDir);
+	int32_t slen = strlen(srcDir);
 	if ( srcDir[slen-1] != '/' ) { g_process.shutdownAbort(true); }
 
 	for ( int32_t i = 0 ; i < (int32_t)sizeof(g_files)/4 ; i++ ) {
@@ -218,11 +213,10 @@ bool Process::checkFiles ( const char *dir ) {
 	return true;
 }
 
-static void hdtempWrapper        ( int fd , void *state ) ;
-static void hdtempDoneWrapper    ( void *state, job_exit_t exit_type );
-static void hdtempStartWrapper_r ( void *state );
-static void heartbeatWrapper    ( int fd , void *state ) ;
-static void processSleepWrapper ( int fd , void *state ) ;
+static void heartbeatWrapper(int fd, void *state);
+static void processSleepWrapper(int fd, void *state);
+static void diskUsageWrapper(int fd, void *state);
+
 
 Process::Process ( ) {
 	m_mode = NO_MODE;
@@ -237,7 +231,6 @@ bool Process::init ( ) {
 	// -1 means unknown
 	m_diskUsage = -1.0;
 	m_diskAvail = -1LL;
-	m_threadOut = false;
 	m_powerIsOn = true;
 	m_numRdbs = 0;
 	m_suspendAutoSave = false;
@@ -306,11 +299,9 @@ bool Process::init ( ) {
 		return false;
 	}
 
-	// . hard drive temperature
-	// . now that we use intel ssds that do not support smart, ignore this
-	// . well use it for disk usage i guess
-	if ( ! g_loop.registerSleepCallback(10000,NULL,hdtempWrapper,0))
+	if (!g_loop.registerSleepCallback(10000, NULL, diskUsageWrapper, 0)) {
 		return false;
+	}
 
 	// success
 	return true;
@@ -330,112 +321,11 @@ bool Process::isAnyTreeSaving ( ) {
 	return false;
 }
 
-void hdtempWrapper ( int fd , void *state ) {
-
-	// current local time
-	int32_t now = getTime();
-
-	// from SpiderProxy.h
-	static int32_t s_lastTime = 0;
-	if ( ! s_lastTime ) s_lastTime = now;
-	// reset spider proxy stats every hour to alleviate false positives
-	if ( now - s_lastTime >= 3600 ) {
-		s_lastTime = now;
-		resetProxyStats();
-	}
-
-	// reset this... why?
-	g_errno = 0;
-	// do not get if already getting
-	if ( g_process.m_threadOut ) return;
-	// skip if exiting
-	if ( g_process.m_mode == EXIT_MODE ) return;
-	// or if haven't waited int32_t enough
-	if ( now < s_nextTime ) return;
-
-	// set it
-	g_process.m_threadOut = true;
-	// . call thread to call popen
-	// . callThread returns true on success, in which case we block
-	if ( g_jobScheduler.submit(hdtempStartWrapper_r,
-	                           hdtempDoneWrapper,
-				   NULL,
-				   thread_type_hdtemp,
-				   MAX_NICENESS) )
-		return;
-	// back
-	g_process.m_threadOut = false;
-	// . call it directly
-	// . only mention once to avoid log spam
-	static bool s_first = true;
-	if ( s_first ) {
-		s_first = false;
-		log("build: Could not spawn thread for call to get hd temps. "
-		    "Ignoring hd temps. Only logging once.");
-	}
-	// MDW: comment these two guys out to avoid calling it for now
-	// get the data
-	//hdtempStartWrapper_r ( false , NULL ); // am thread?
-	// and finish it off
-	//hdtempDoneWrapper ( NULL , NULL );
-}
-
-// come back here
-// Use of ThreadEntry parameter is NOT thread safe
-void hdtempDoneWrapper ( void *state, job_exit_t /*exit_type*/ ) {
-	// we are back
-	g_process.m_threadOut = false;
-	// current local time
-	int32_t now = getTime();
-	// if we had an error, do not schedule again for an hour
-	//if ( s_flag ) s_nextTime = now + 3600;
-	// reset it
-	//s_flag = 0;
-	// send email alert if too hot
-	Host *h = g_hostdb.m_myHost;
-	// get max temp
-	int32_t max = 0;
-	for ( int32_t i = 0 ; i < 4 ; i++ ) {
-		int16_t t = h->m_pingInfo.m_hdtemps[i];
-		if ( t > max ) max = t;
-	}
-	// . leave if ok
-	// . the seagates tend to have a max CASE TEMP of 69 C
-	// . it says the operating temps are 0 to 60 though, so
-	//   i am assuming that is ambient?
-	// . but this temp is probably the case temp that we are measuring
-	if ( max <= g_conf.m_maxHardDriveTemp ) return;
-	// leave if we already sent and alert within 5 mins
-	static int32_t s_lasttime = 0;
-	if ( now - s_lasttime < 5*60 ) return;
-	// prepare msg to send
-	char msgbuf[1024];
-	Host *h0 = g_hostdb.getHost ( 0 );
-	snprintf(msgbuf, 1024,
-		 "hostid %" PRId32" has overheated HD at %" PRId32" C "
-		 "cluster=%s (%s). Disabling spiders.",
-		 h->m_hostId,
-		 (int32_t)max,
-		 g_conf.m_clusterName,
-		 iptoa(h0->m_ip));
-	// send it, force it, so even if email alerts off, it sends it
-	g_pingServer.sendEmail ( NULL   , // Host *h
-				 msgbuf , // char *errmsg = NULL , 
-				 true   , // bool sendToAdmin = true ,
-				 false  , // bool oom = false ,
-				 false  , // bool kernelErrors = false ,
-				 false  , // bool parmChanged  = false ,
-				 true   );// bool forceIt      = false );
-
-	s_lasttime = now;
-}
-
-
 // set Process::m_diskUsage
 static float getDiskUsage ( int64_t *diskAvail ) {
 	struct statvfs s;
 	if(statvfs(g_hostdb.m_dir,&s)!=0) {
-		log("build: statvfs(%s) failed: %s.", g_hostdb.m_dir, mstrerror(errno));
+		log(LOG_WARN, "build: statvfs(%s) failed: %s.", g_hostdb.m_dir, mstrerror(errno));
 		return -1;
 	}
 	
@@ -443,15 +333,13 @@ static float getDiskUsage ( int64_t *diskAvail ) {
 	return (s.f_blocks-s.f_bavail)*100.0/s.f_blocks;
 }
 
-// . sets m_errno on error
-// . taken from Msg16.cpp
-// Use of ThreadEntry parameter is NOT thread safe
-void hdtempStartWrapper_r ( void *state ) {
+void diskUsageWrapper(int fd, void *state) {
+	// skip if exiting
+	if ( g_process.m_mode == EXIT_MODE ) {
+		return;
+	}
 
-	// run the df -ka cmd
 	g_process.m_diskUsage = getDiskUsage( &g_process.m_diskAvail );
-
-	// ignore temps now. ssds don't have it
 }
 
 void Process::callHeartbeat () {
@@ -750,16 +638,6 @@ bool Process::save2 ( ) {
 		saveBlockingFiles2() ;
 	}
 
-	// until all caches have saved, disable them
-	g_cacheWritesEnabled = false;
-
-	// . save caches
-	// . returns true if NO cache needs to be saved
-	//if ( ! saveRdbCaches ( useThreads ) ) return false;
-
-	// bring them back
-	g_cacheWritesEnabled = true;
-
 	// reenable tree writes since saves were completed
 	enableTreeWrites( false );
 
@@ -921,12 +799,6 @@ bool Process::shutdown2() {
 		saveBlockingFiles2() ;
 	}
 
-	// . save all rdb caches if they need it
-	// . do this AFTER udp server is shut down so cache should not
-	//   be accessed any more
-	// . will return true if no rdb cache needs a save
-	//if ( ! saveRdbCaches ( useThreads ) ) return false;
-
 	// always disable threads at this point so g_jobScheduler.submit() will
 	// always return false and we do not queue any new jobs for spawning
 	g_jobScheduler.disallow_new_jobs();
@@ -962,12 +834,6 @@ bool Process::shutdown2() {
 
 	// show what mem was not freed
 	g_mem.printMem();
-
-	// kill any outstanding hd temp thread?
-	if ( g_process.m_threadOut ) {
-		log( LOG_INFO, "gb: still has hdtemp thread" );
-	}
-
 
 	log("gb. EXITING GRACEFULLY.");
 
@@ -1091,6 +957,7 @@ bool Process::saveRdbTrees ( bool useThread , bool shuttingDown ) {
 		}
 
 		rdb->saveTree ( useThread );
+		rdb->saveIndex( useThread );	//@@@ BR: no-merge index
 	}
 
 	// . save waitingtrees for each collection, blocks.
@@ -1165,27 +1032,6 @@ bool Process::saveRdbMaps() {
 	return true;
 }
 
-// . returns false if blocked, true otherwise
-// . calls callback when done saving
-/*
-bool Process::saveRdbCaches ( bool useThread ) {
-	// never if in read only mode
-	if ( g_conf.m_readOnlyMode ) return true;
-	//useThread = false;
-	// loop over all Rdbs and save them
-	for ( int32_t i = 0 ; i < m_numRdbs ; i++ ) {
-		Rdb *rdb = m_rdbs[i];
-		// . returns true if cache does not need save
-		// . returns false if blocked and is saving
-		// . returns true if useThreads is false
-		// . we return false if it blocks
-		if ( ! rdb->saveCache ( useThread ) ) return false;
-	}
-	// everyone is done saving
-	return true;
-}
-*/
-
 bool Process::saveBlockingFiles1 ( ) {
 	// never if in read only mode
 	if ( g_conf.m_readOnlyMode ) return true;
@@ -1211,8 +1057,11 @@ bool Process::saveBlockingFiles1 ( ) {
 	//   the cluster
 	// . saves to "addsinprogress.saving" and moves to .saved
 	// . eventually this may replace "spiderrestore.dat"
-	if ( g_repair.isRepairActive() ) saveAddsInProgress ( "repair-" );
-	else                             saveAddsInProgress ( NULL      );
+	if (g_repair.isRepairActive()) {
+		saveAddsInProgress("repair-");
+	} else {
+		saveAddsInProgress(NULL);
+	}
 
 	// in fctypes.cpp. save the clock offset from host #0's clock so
 	// our startup is fast again
@@ -1227,26 +1076,14 @@ bool Process::saveBlockingFiles2 ( ) {
 		return true;
 	}
 
-	// the spider dup request cache
-	//g_spiderCache.m_dupCache.save( false ); // use threads?
-
-	// save waitingtrees for each collection, blocks.
-	//if ( ! g_spiderCache.save() ) return false;
-
-	// save what templates each turk has turked
-	//g_templateTable.save( g_hostdb.m_dir , "turkedtemplates.dat" );
-
 	// the robots.txt cache
-	Msg13::getHttpCacheRobots()->save( false ); // use threads?
+	Msg13::getHttpCacheRobots()->save();
 
 	// save dns caches
 	RdbCache *c = g_dns.getCache();
 	if (c && c->useDisk()) {
-		c->save( false ); // use threads?
+		c->save();
 	}
-
-	// save current spidering process, "spiderrestore.dat"
-	//g_spiderLoop.saveCurrentSpidering();
 
 	// if doing titlerec imports in PageInject.cpp, save cursors,
 	// i.e. file offsets

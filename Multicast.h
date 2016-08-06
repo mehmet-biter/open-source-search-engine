@@ -87,17 +87,7 @@ class Multicast {
 		    int64_t        totalTimeout    , //relative timeout in milliseconds
 		    int32_t        niceness        ,
 		    int32_t        firstHostId     = -1 ,// first host to try
-		    char       *replyBuf        = NULL ,
-		    int32_t        replyBufMaxSize = 0 ,
-		    bool        freeReplyBuf    = true ,
-		    bool        doDiskLoadBalancing = false ,
-		    int32_t        maxCacheAge     = -1   , // no age limit
-		    key_t       cacheKey        =  0   ,
-		    char        rdbId           =  0   , // bogus rdbId
-		    int32_t        minRecSizes     = -1   ,// unknown read size
-		    bool        sendToSelf      = true ,// if we should.
-		    int32_t        redirectTimeout = -1 ,
-		    class Host *firstProxyHost  = NULL );
+		    bool        freeReplyBuf    = true );
 
 	// . get the reply from your NON groupSend
 	// . if *freeReply is true then you are responsible for freeing this 
@@ -115,7 +105,7 @@ class Multicast {
 	void destroySlotsInProgress ( UdpSlot *slot );
 
 	// keep these public so C wrapper can call them
-	bool sendToHostLoop ( int32_t key, int32_t hostNumToTry, int32_t firstHostId );
+	bool sendToHostLoop(int32_t key, int32_t hostNumToTry, int32_t firstHostId);
 	bool sendToHost    ( int32_t i ); 
 	int32_t pickBestHost  ( uint32_t key , int32_t hostNumToTry );
 	void gotReply1     ( UdpSlot *slot ) ;
@@ -167,11 +157,6 @@ class Multicast {
 	int32_t        m_readBufSize;
 	int32_t        m_readBufMaxSize;
 
-	// if caller passes in a reply buf then we reference it here
-	char       *m_replyBuf;
-	int32_t        m_replyBufSize;
-	int32_t        m_replyBufMaxSize;
-
 	// we own it until caller calls getBestReply()
 	bool        m_ownReadBuf;
 	// are we registered for a callback every 1 second
@@ -189,9 +174,6 @@ class Multicast {
 
 	int32_t        m_key;
 
-	//bool  m_doDiskLoadBalancing;
-	char  m_rdbId              ;
-
 	// Msg1 might be able to add data to our tree to save a net trans.
 	bool        m_sendToSelf;
 
@@ -199,7 +181,6 @@ class Multicast {
 
 	char        m_sentToTwin;
 
-	int32_t        m_redirectTimeout;
 	char        m_inUse;
 
 	// for linked list of available Multicasts in Msg4.cpp

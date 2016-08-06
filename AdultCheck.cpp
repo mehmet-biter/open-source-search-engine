@@ -520,14 +520,7 @@ int32_t getAdultPoints ( char *s, int32_t slen, int32_t niceness, const char *ur
 		// . uses +2/-2 for really dirty words
 		// . uses +1/-1 for borderline dirty words
 		points += s_dirtyWords[i].m_id;
-		// log debug
-		if ( ! g_conf.m_logDebugDirty ) continue;
-		// show it in the log
-		log("dirty: %s %" PRId32" %s"
-		    ,s_dirtyWords[i].m_string
-		    ,(int32_t)s_dirtyWords[i].m_id
-		    ,url
-		    );
+		logDebug(g_conf.m_logDebugDirty, "dirty: %s %" PRId32" %s", s_dirtyWords[i].m_string, (int32_t) s_dirtyWords[i].m_id, url);
 	}
 
 	////

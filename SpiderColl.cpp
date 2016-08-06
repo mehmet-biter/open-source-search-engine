@@ -118,8 +118,10 @@ bool SpiderColl::load ( ) {
 					  false      , // load from disk?
 					  12         , // key size (firstip)
 					  12         , // data key size?
-					  -1         ))// numPtrsMax
-		return log("spider: dcache init failed");
+					  -1         )) {// numPtrsMax
+		log(LOG_WARN, "spider: dcache init failed");
+		return false;
+	}
 
 	// this has a quickpoll in it, so that quickpoll processes
 	// a restart request from crawlbottesting for this collnum which
@@ -175,10 +177,11 @@ bool SpiderColl::load ( ) {
 	// save it
 	g_errno = err;
 	// return false on error
-	if ( g_errno ) 
+	if ( g_errno ) {
 		// note it
-		return log("spider: had error loading initial table: %s",
-			   mstrerror(g_errno));
+		log(LOG_WARN,"spider: had error loading initial table: %s", mstrerror(g_errno));
+		return false;
+	}
 
 	// if we hade doledb0001.dat files on disk then nuke doledb
 	// and waiting tree and rebuild now with a tree-only doledb.
@@ -234,7 +237,6 @@ bool SpiderColl::makeDoleIPTable ( ) {
 			      endKey        ,
 			      minRecSizes   ,
 			      true          , // includeTree?
-			      false         , // add to cache?
 			      0             , // max cache age
 			      0             , // startFileNum  ,
 			      -1            , // numFiles      ,
@@ -246,7 +248,10 @@ bool SpiderColl::makeDoleIPTable ( ) {
 			      0             , // retry num
 			      -1            , // maxRetries
 			      true          , // compensate for merge
-			      -1LL          )){ // sync point
+			      -1LL          , // sync point
+			      false,          // isRealMerge
+			      true))          // allowPageCache
+	{
 		log(LOG_LOGIC,"spider: getList did not block.");
 		return false;
 	}
@@ -329,7 +334,6 @@ bool SpiderColl::makeWaitingTree ( ) {
 			      &endKey       ,
 			      minRecSizes   ,
 			      true          , // includeTree?
-			      false         , // add to cache?
 			      0             , // max cache age
 			      0             , // startFileNum  ,
 			      -1            , // numFiles      ,
@@ -341,7 +345,10 @@ bool SpiderColl::makeWaitingTree ( ) {
 			      0             , // retry num
 			      -1            , // maxRetries
 			      true          , // compensate for merge
-			      -1LL          )){ // sync point
+			      -1LL          , // sync point
+			      false,          // isRealMerge
+			      true))          // allowPageCache
+	{
 		log(LOG_LOGIC,"spider: getList did not block.");
 		return false;
 	}
@@ -1250,12 +1257,14 @@ bool SpiderColl::addToWaitingTree ( uint64_t spiderTimeMS, int32_t firstIp, bool
 		log("spider: growing waiting tree to from %" PRId32" to %" PRId32" nodes "
 		    "for collnum %" PRId32,
 		    max , newNum , (int32_t)m_collnum );
-		if ( ! m_waitingTree.growTree ( newNum , MAX_NICENESS ) )
-			return log("spider: failed to grow waiting tree to "
-				   "add firstip %s",iptoa(firstIp) );
-		if ( ! m_waitingTable.setTableSize ( newNum , NULL , 0 ) )
-			return log("spider: failed to grow waiting table to "
-				   "add firstip %s",iptoa(firstIp) );
+		if ( ! m_waitingTree.growTree ( newNum , MAX_NICENESS ) ) {
+			log(LOG_WARN, "spider: failed to grow waiting tree to add firstip %s", iptoa(firstIp));
+			return false;
+		}
+		if ( ! m_waitingTable.setTableSize ( newNum , NULL , 0 ) ) {
+			log(LOG_WARN, "spider: failed to grow waiting table to add firstip %s", iptoa(firstIp));
+			return false;
+		}
 	}
 
 
@@ -1536,14 +1545,20 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 					 &m_endKey2     ,
 					 SR_READ_SIZE   , // minRecSizes (512k)
 					 true           , // includeTree
-					 false          , // addToCache
 					 0              , // max cache age
 					 0              , // startFileNum
 					 -1             , // numFiles (all)
 					 this,//(void *)state2,//this//state
 					 gotSpiderdbListWrapper2 ,
 					 MAX_NICENESS   , // niceness
-					 true          )) // do error correct?
+					 true           , // do error correct?
+					 NULL,            // cachekey
+					 0,               // retryNum
+					 -1,              // maxRetries
+					 true,            // compensateForMerge
+					 -1,              // syncPoint
+					 false,           // isRealMerge
+					 true))           // allowPageCache
 		{
 			// return if blocked
 			logTrace( g_conf.m_logTraceSpider, "END, msg5b.getList blocked" );
@@ -2455,14 +2470,20 @@ bool SpiderColl::readListFromSpiderdb ( ) {
 				&m_endKey       ,
 				SR_READ_SIZE   , // minRecSizes (512k)
 				true           , // includeTree
-				false          , // addToCache
 				0              , // max cache age
 				0              , // startFileNum
 				-1             , // numFiles (all)
 				this,//(void *)state2,//this,//state 
 				gotSpiderdbListWrapper ,
 				MAX_NICENESS   , // niceness
-				true          )) // do error correct?
+				true,            // do error correct?
+				NULL,            // cachekey
+				0,               // retryNum
+				-1,              // maxRetries
+				true,            // compensateForMerge
+				-1,              // syncPoint
+				false,           // isRealMerge
+				true ))          // allowPageCache
 	{
 		// return false if blocked
 		logTrace( g_conf.m_logTraceSpider, "END, msg5.getList blocked" );

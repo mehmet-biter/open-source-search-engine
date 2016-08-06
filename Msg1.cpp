@@ -429,7 +429,7 @@ skip:
 	// . this will alloc new space, returns NULL on failure
 	//char *request = makeRequest ( listData, listSize, groupId , 
 	//m_rdbId , &requestLen );
-	//int32_t collLen = gbstrlen ( m_coll );
+	//int32_t collLen = strlen ( m_coll );
 	// . returns NULL and sets g_errno on error
 	// . calculate total size of the record
 	// . 1 byte for rdbId, 1 byte for flags,
@@ -471,7 +471,6 @@ skip:
 	// . multicast::send() returns false and sets g_errno on error
 	// . we return false if we block, true otherwise
 	// . will loop indefinitely if a host in this group is down
-	key_t k; k.setMin();
 	if ( m_mcast.send ( request    , // sets mcast->m_msg    to this
 			    requestLen , // sets mcast->m_msgLen to this
 			    msg_type_1       ,
@@ -483,19 +482,9 @@ skip:
 			    NULL       , // state data
 			    gotReplyWrapper1 ,
 			    multicast_msg1_senddata_timeout         , // timeout
-			    m_niceness , // niceness 
-			    -1    , // first host to try
-			    NULL  , // replyBuf        = NULL ,
-			    0     , // replyBufMaxSize = 0 ,
-			    true  , // freeReplyBuf    = true ,
-			    false , // doDiskLoadBalancing = false ,
-			    -1    , // no max cache age limit
-			    //(key_t)0 , // cache key
-			    k    , // cache key
-			    RDB_NONE , // bogus rdbId
-			    -1    , // unknown minRecSizes read size
-			    true )) // sendToSelf ))
+			    m_niceness )) {  // niceness
 		return false;
+	}
 
  	QUICKPOLL(m_niceness);
 	// g_errno should be set
@@ -561,7 +550,7 @@ void handleRequest1 ( UdpSlot *slot , int32_t netnice ) {
 	// extract what we read
 	char *readBuf     = slot->m_readBuf;
 	int32_t  readBufSize = slot->m_readBufSize;
-	int32_t niceness = slot->m_niceness;
+	int32_t niceness = slot->getNiceness();
 
 	// select udp server based on niceness
 	UdpServer *us = &g_udpServer;
@@ -594,7 +583,7 @@ void handleRequest1 ( UdpSlot *slot , int32_t netnice ) {
 	p++;
 	// then collection
 	//char *coll = p;
-	//p += gbstrlen (p) + 1;
+	//p += strlen (p) + 1;
 	collnum_t collnum = *(collnum_t *)p;
 	p += sizeof(collnum_t);
 	// . make a list from this data

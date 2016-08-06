@@ -241,30 +241,16 @@ bool Msg3a::getDocIds ( Msg39Request *r          ,
 		m_rbufPtr = NULL;
 	}
 
-	// a tmp buf
-	int32_t readSizes[ABS_MAX_QUERY_TERMS];
 	float   tfw      [ABS_MAX_QUERY_TERMS];
-	// update our read info
 	for ( int32_t j = 0; j < n ; j++ ) {
-		// the read size for THIS query term
-		int32_t rs = DEFAULT_POSDB_READSIZE;//90000000; // 90MB!
-
 		// get the jth query term
 		QueryTerm *qt = &m_q->m_qterms[j];
-
-		// if query term is ignored, skip it
-		if ( qt->m_ignored ) rs = 0;
-
-		// set it
-		readSizes[j] = rs;
 
 		// serialize these too
 		tfw[j] = qt->m_termFreqWeight;
 	}
 
 	// serialize this
-	m_r->ptr_readSizes  = (char *)readSizes;
-	m_r->size_readSizes = 4 * n;
 	m_r->ptr_termFreqWeights  = (char *)tfw;//m_termFreqWeights;
 	m_r->size_termFreqWeights = 4 * n;
 	// store query into request, might have changed since we called
@@ -285,9 +271,9 @@ bool Msg3a::getDocIds ( Msg39Request *r          ,
 	//   called a 2nd time because m_getWeights got set to 0, then we
 	//   end up copying over ourselves.
 	m_rbufPtr = serializeMsg ( sizeof(Msg39Request),
-				   &m_r->size_readSizes,
+				   &m_r->size_termFreqWeights,
 				   &m_r->size_whiteList,
-				   &m_r->ptr_readSizes,
+				   &m_r->ptr_termFreqWeights,
 				   m_r,
 				   &m_rbufSize ,
 				   m_rbuf ,
@@ -422,20 +408,7 @@ bool Msg3a::getDocIds ( Msg39Request *r          ,
 				   gotReplyWrapper3a ,
 				   timeout           , // timeout
 				   m_r->m_niceness   ,
-				   firstHostId, // -1// bestHandlingHostId ,
-				   NULL              , // m_replyBuf   ,
-				   0                 , // MSG39REPLYSIZE,
-				   // this is true if multicast should free the
-				   // reply, otherwise caller is responsible
-				   // for freeing it after calling
-				   // getBestReply().
-				   // actually, this should always be false,
-				   // there is a bug in Multicast.cpp.
-				   // no, if we error out and never steal
-				   // the buffers then they will go unfreed
-				   // so they are freed by multicast by default
-				   // then we steal control explicitly
-				   true             );
+				   firstHostId      ); // -1// bestHandlingHostId
 		// if successfully launch, do the next one
 		if ( status ) continue;
 		// . this serious error should make the whole query fail

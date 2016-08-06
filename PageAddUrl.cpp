@@ -5,6 +5,7 @@
 #include "Msg4.h"
 #include "Spider.h"
 #include "Parms.h"
+#include "GigablastRequest.h"
 
 static bool sendReply( void *state );
 
@@ -129,7 +130,7 @@ bool sendReply ( void *state ) {
 
 	int32_t ulen = 0;
 	const char *url = gr->m_urlsBuf;
-	if ( url ) ulen = gbstrlen (url);
+	if ( url ) ulen = strlen (url);
 
 	// re-null it out if just http://
 	bool printUrl = true;

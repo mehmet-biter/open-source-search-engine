@@ -7,8 +7,8 @@
 #ifndef GB_PARMS_H
 #define GB_PARMS_H
 
-#include "Rdb.h"
-#include "HttpRequest.h"
+class CollectionRec;
+class UdpSlot;
 
 void handleRequest3e ( UdpSlot *slot , int32_t niceness ) ;
 void handleRequest3f ( UdpSlot *slot , int32_t niceness ) ;
@@ -59,70 +59,6 @@ enum {
 	TYPE_CHARPTR
 };
 
-//forward decls to make compiler happy:
-class HttpRequest;
-class TcpSocket;
-
-#include "Msg4.h"
-
-// generic gigablast request. for all apis offered.
-class GigablastRequest {
- public:
-
-	//
-	// make a copy of the http request because the original is
-	// on the stack. AND the "char *" types below will reference into
-	// this because they are listed as TYPE_CHARPTR in Parms.cpp.
-	// that saves us memory as opposed to making them all SafeBufs.
-	//
-	HttpRequest m_hr;
-
-	// ptr to socket to send reply back on
-	TcpSocket *m_socket;
-
-	// TYPE_CHARPTR
-	char *m_coll;
-
-	////////////
-	//
-	// /admin/inject parms
-	//
-	////////////
-	// these all reference into m_hr or into the Parm::m_def string!
-	char *m_url; // also for /get
-
-	///////////
-	//
-	// /get parms (for getting cached web pages)
-	//
-	///////////
-	int64_t m_docId;
-	int32_t m_strip;
-	char m_includeHeader;
-
-	///////////
-	//
-	// /admin/addurl parms
-	//
-	///////////
-	char *m_urlsBuf;
-	char m_stripBox;
-	char  m_harvestLinks;
-	SafeBuf m_listBuf;
-	Msg4 m_msg4;
-
-	/////////////
-	//
-	// /admin/reindex parms
-	//
-	////////////
-	char *m_query;
-	int32_t  m_srn;
-	int32_t  m_ern;
-	char *m_qlang;
-	bool  m_forceDel;
-	char  m_recycleContent;
-};
 
 
 // bit flags for Parm::m_flags

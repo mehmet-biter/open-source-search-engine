@@ -47,10 +47,8 @@ void Msg39Request::reset() {
 	m_useQueryStopWords       = true;
 	m_doMaxScoreAlgo          = true;
 
-	ptr_readSizes             = NULL;
 	ptr_query                 = NULL; // in utf8?
 	ptr_whiteList             = NULL;
-	size_readSizes            = 0;
 	size_query                = 0;
 	size_whiteList            = 0;
 	m_sameLangWeight          = 20.0;
@@ -191,9 +189,9 @@ void Msg39::getDocIds ( UdpSlot *slot ) {
 
 	// deserialize it before we do anything else
 	int32_t finalSize = deserializeMsg ( sizeof(Msg39Request),
-					     &m_msg39req->size_readSizes,
+					     &m_msg39req->size_termFreqWeights,
 					     &m_msg39req->size_whiteList,
-					     &m_msg39req->ptr_readSizes,
+					     &m_msg39req->ptr_termFreqWeights,
 					     ((char*)m_msg39req) + sizeof(*m_msg39req) );
 
 	// sanity check
@@ -292,6 +290,8 @@ void Msg39::getDocIds2() {
 
 void Msg39::intersectionFinishedCallback(void *state, job_exit_t exit_type) {
 	Msg39 *that = static_cast<Msg39*>(state);
+	g_errno = that->m_errno;
+
 	that->controlLoop();
 }
 
@@ -394,13 +394,6 @@ bool Msg39::controlLoop ( ) {
 		// minus the shit we filtered out because of gbminint/gbmaxint/
 		// gbmin/gbmax/gbsortby/gbrevsortby/gbsortbyint/gbrevsortbyint
 		m_numTotalHits -= m_posdbTable.m_filtered;
-		// error?
-		if ( m_posdbTable.m_errno ) {
-			// we do not need to store the intersection i guess..??
-			m_posdbTable.freeMem();
-			g_errno = m_posdbTable.m_errno;
-			goto hadError;
-		}
 		// if we have more docid ranges remaining do more
 		if ( m_ddd < m_dddEnd ) {
 			m_phase = 0;
@@ -564,7 +557,6 @@ bool Msg39::getLists () {
 			     "wikiphrid=%" PRId32" "
 			     "leftwikibigram=%" PRId32" "
 			     "rightwikibigram=%" PRId32" "
-			     "readSizeInBytes=%" PRId32" "
 			     "hc=%" PRId32" "
 			     "otermLen=%" PRId32" "
 			     "isSynonym=%" PRId32" "
@@ -587,7 +579,6 @@ bool Msg39::getLists () {
 			     wikiPhrId,
 			     (int32_t)leftwikibigram,
 			     (int32_t)rightwikibigram,
-			     ((int32_t *)m_msg39req->ptr_readSizes)[i]         ,
 			     (int32_t)m_query.m_qterms[i].m_hardCount ,
 			     (int32_t)m_query.getTermLen(i) ,
 			     isSynonym,
@@ -639,8 +630,7 @@ bool Msg39::getLists () {
 	}
 
 	// call msg2
-	if ( ! m_msg2.getLists ( RDB_POSDB,
-				 m_msg39req->m_collnum,
+	if ( ! m_msg2.getLists ( m_msg39req->m_collnum,
 				 m_msg39req->m_addToCache,
 				 m_query.m_qterms,
 				 m_query.getNumTerms(),
@@ -650,8 +640,6 @@ bool Msg39::getLists () {
 				 // doDocIdSplitLoop()
 				 docIdStart,
 				 docIdEnd,
-				 // how much of each termlist to read in bytes
-				 (int32_t *)m_msg39req->ptr_readSizes,
 				 //m_query.getNumTerms(),
 				 // 1-1 with query terms
 				 m_lists                    ,
@@ -705,19 +693,16 @@ bool Msg39::intersectLists ( ) { // bool updateReadInfo ) {
 	// . this will actually calculate the top
 	// . this might also change m_query.m_termSigns
 	// . this won't do anything if it was already called
-	m_posdbTable.init ( &m_query,
-			    m_debug              ,
-			    this                   ,
-			    &m_toptree,
-			    &m_msg2 ,
-			    m_msg39req);
+	m_posdbTable.init ( &m_query, m_debug, this, &m_toptree, &m_msg2, m_msg39req);
 
 	// . we have to do this here now too
 	// . but if we are getting weights, we don't need m_toptree!
 	// . actually we were using it before for rat=0/bool queries but
 	//   i got rid of NO_RAT_SLOTS
 	if ( ! m_allocedTree && ! m_posdbTable.allocTopTree() ) {
-		if ( ! g_errno ) gbshutdownLogicError();
+		if ( ! g_errno ) {
+			gbshutdownLogicError();
+		}
 		//sendReply ( m_slot , this , NULL , 0 , 0 , true);
 		return true;
 	}
@@ -727,27 +712,27 @@ bool Msg39::intersectLists ( ) { // bool updateReadInfo ) {
 		//estimateHitsAndSendReply ( );
 		return true;
 	}
-		
 
 	// we have to allocate this with each call because each call can
 	// be a different docid range from doDocIdSplitLoop.
 	if ( ! m_posdbTable.allocWhiteListTable() ) {
-		log("msg39: Had error allocating white list table: %s.",
-		    mstrerror(g_errno));
-		if ( ! g_errno ) gbshutdownLogicError();
+		log(LOG_WARN,"msg39: Had error allocating white list table: %s.", mstrerror(g_errno));
+		if ( ! g_errno ) {
+			gbshutdownLogicError();
+		}
 		//sendReply (m_slot,this,NULL,0,0,true);
 		return true; 
 	}
 
-
 	// do not re do it if doing docid range splitting
 	m_allocedTree = true;
-
 
 	// . now we must call this separately here, not in allocTopTree()
 	// . we have to re-set the QueryTermInfos with each docid range split
 	//   since it will set the list ptrs from the msg2 lists
-	if ( ! m_posdbTable.setQueryTermInfo () ) return true;
+	if ( ! m_posdbTable.setQueryTermInfo () ) {
+		return true;
+	}
 
 	// print query term bit numbers here
 	for ( int32_t i = 0 ; m_debug && i < m_query.getNumTerms() ; i++ ) {
@@ -784,13 +769,11 @@ bool Msg39::intersectLists ( ) { // bool updateReadInfo ) {
 
 	// . create the thread
 	// . only one of these type of threads should be launched at a time
-	if ( g_jobScheduler.submit(&intersectListsThreadFunction,
-	                           &intersectionFinishedCallback,
-				   this,
-				   thread_type_query_intersect,
-				   m_msg39req->m_niceness) ) {
+	if ( g_jobScheduler.submit(&intersectListsThreadFunction, &intersectionFinishedCallback, this,
+	                           thread_type_query_intersect, m_msg39req->m_niceness) ) {
 		return false;
 	}
+
 	// if it failed
 	//log(LOG_INFO,"query: Intersect thread creation failed. Doing "
 	//    "blocking. Hurts performance.");
@@ -815,6 +798,10 @@ bool Msg39::intersectLists ( ) { // bool updateReadInfo ) {
 void Msg39::intersectListsThreadFunction ( void *state ) {
 	// we're in a thread now!
 	Msg39 *that = static_cast<Msg39*>(state);
+
+	// assume no error since we're at the start of thread call
+	that->m_errno = 0;
+
 	// . do the add
 	// . addLists() returns false and sets errno on error
 	// . hash the lists into our table
@@ -822,9 +809,13 @@ void Msg39::intersectListsThreadFunction ( void *state ) {
 	// . Msg2 always compresses the lists so be aware that the termId
 	//   has been discarded
 	that->m_posdbTable.intersectLists10_r ( );
+
 	// . exit the thread
 	// . threadDoneWrapper will be called by g_loop when he gets the 
 	//   thread's termination signal
+	if (g_errno && !that->m_errno) {
+		that->m_errno = g_errno;
+	}
 }
 
 

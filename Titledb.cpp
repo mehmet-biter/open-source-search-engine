@@ -129,7 +129,6 @@ bool Titledb::verify ( char *coll ) {
 			      endKey        ,
 			      1024*1024     , // minRecSizes   ,
 			      true          , // includeTree   ,
-			      false         , // add to cache?
 			      0             , // max cache age
 			      0             , // startFileNum  ,
 			      -1            , // numFiles      ,
@@ -142,9 +141,12 @@ bool Titledb::verify ( char *coll ) {
 			      -1            , // maxRetries
 			      true          , // compensate for merge
 			      -1LL          , // sync point
-			      false         )) {
+			      false         , // isRealMerge
+			      true))          // allowPageCache
+	{
 		g_jobScheduler.allow_new_jobs();
-		return log("db: HEY! it did not block");
+		log(LOG_DEBUG, "db: HEY! it did not block");
+		return false;
 	}
 
 	int32_t count = 0;

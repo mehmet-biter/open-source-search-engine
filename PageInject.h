@@ -5,8 +5,6 @@
 // for printing in the Spider Queue table in Spider.cpp
 class XmlDoc *getInjectHead ( ) ;
 
-void  handleRequest7Import ( class UdpSlot *slot , int32_t netnice ) ;
-
 void  handleRequest7 ( class UdpSlot *slot , int32_t netnice ) ;
 
 bool sendPageInject ( class TcpSocket *s, class HttpRequest *hr );

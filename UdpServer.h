@@ -40,23 +40,13 @@
 #include "Hostdb.h"
 #include "Loop.h"   // loop class that handles signals on our socket
 
-//#ifdef _SMALLDGRAMS_
-//#define MAX_UDP_SLOTS 1000
-//#else
-//#define MAX_UDP_SLOTS 5000
-//#endif
-
 // . The rules of Async Sig Safe functions
-
 // 1. to be safe, _ass functions should only call other _ass functions.
 //    otherwise, that function may be re-entered by the async sig handler.
-
 // 2. most _ass functions turn off interrupts or return if g_inSigHandler.
 //    otherwise, they will need to be re_entrant... i.e. while entered from the
 //    main process they might be interrupted and entered from the sig handler.
-
 // 3. only _ass functions should be called from an ASYNC signal handler.
-
 
 static const int64_t udpserver_sendrequest_infinite_timeout = 999999999999;
 
@@ -122,8 +112,6 @@ public:
 	                 int64_t timeout = 60000, // milliseconds
 	                 int16_t backoff = -1,
 	                 int16_t maxWait = -1, // ms
-	                 char *replyBuf = NULL,
-	                 int32_t replyBufMaxSize = 0,
 	                 int32_t niceness = 1,
 	                 int32_t maxResends = -1);
 
@@ -147,15 +135,6 @@ public:
 	// . propagate an errno to the requesting machine
 	// . his callback will be called with errno set to "errnum"
 	void sendErrorReply( UdpSlot *slot, int32_t errnum );
-
-	int32_t getNumUsedSlots() {
-		return m_numUsedSlots;
-	}
-
-	int32_t getNumUsedSlotsIncoming  () {
-		return m_numUsedSlotsIncoming;
-	}
-	
 
 	// . when a request/msg of type "msgType" is received we call the
 	//   corresponding request handler on this machine
@@ -183,17 +162,8 @@ public:
 	// . set g_errno on error
 	bool shutdown ( bool urgent );
 
-	bool needBottom         () { return m_needBottom; }
-
 	// try calling makeCallback() on all slots
 	bool makeCallbacks_ass ( int32_t niceness );
-
-
-	bool m_writeRegistered;
-
-	UdpSlot *getActiveHead ( ) {
-		return m_head2;
-	}
 
 	// cancel a transaction
 	void cancel(void *state, msg_type_t msgType);
@@ -203,17 +173,30 @@ public:
 
 	void printState();
 
-	// . we have up to 1 handler routine for each msg type
-	// . call these handlers for the corresponding msgType
-	// . msgTypes go from 0 to 64 i think (see UdpProtocol.h dgram header)
-	void (* m_handlers[MAX_MSG_TYPES])(UdpSlot *slot, int32_t niceness);
+	int32_t getNumUsedSlots() {
+		return m_numUsedSlots;
+	}
+
+	int32_t getNumUsedSlotsIncoming  () {
+		return m_numUsedSlotsIncoming;
+	}
+
+	bool needBottom() {
+		return m_needBottom;
+	}
+
+	bool m_writeRegistered;
+
+	UdpSlot *getActiveHead ( ) {
+		return m_activeListHead;
+	}
+
+	bool hasHandler(int i) {
+		return (m_handlers[i]);
+	}
 
 	// changes timeout to very low on dead hosts
 	bool timeoutDeadHosts ( class Host *h );
-
-	static void readPollWrapper(int fd, void *state);
-	static void timePollWrapper(int fd, void *state);
-	static void sendPollWrapper(int fd, void *state);
 
 	// . we need a transaction id for every transaction so we can match
 	//   incoming reply msgs with their corresponding request msgs
@@ -224,6 +207,10 @@ public:
 	int32_t m_nextTransId;
 
 private:
+	static void readPollWrapper(int fd, void *state);
+	static void timePollWrapper(int fd, void *state);
+	static void sendPollWrapper(int fd, void *state);
+
 	// . take a slot that we made from sendRequest() above and reset it
 	// . you request will be sent again w/ the original parameters
 	// void resendSlot ( UdpSlot *slot );
@@ -251,7 +238,7 @@ private:
 	//   or timed a slot out so it's callback should be called
 	bool readTimeoutPoll ( int64_t now ) ;
 
-	// callback linked list functions (m_head3)
+	// callback linked list functions (m_callbackListHead)
 	void addToCallbackLinkedList ( UdpSlot *slot ) ;
 	bool isInCallbackLinkedList ( UdpSlot *slot );
 	void removeFromCallbackLinkedList ( UdpSlot *slot ) ;
@@ -288,6 +275,11 @@ private:
 	// . returns -1 on error, 0 if blocked, 1 if completed reading dgram
 	// . called by readPoll()
 	int32_t readSock_ass ( UdpSlot **slot , int64_t now );
+
+	// . we have up to 1 handler routine for each msg type
+	// . call these handlers for the corresponding msgType
+	// . msgTypes go from 0 to 64 i think (see UdpProtocol.h dgram header)
+	void (* m_handlers[MAX_MSG_TYPES])(UdpSlot *slot, int32_t niceness);
 
 	// when a call to sendto() blocks we set this to true so Loop.cpp
 	// will know to manually call sendPoll_ass() rather than counting
@@ -337,8 +329,6 @@ private:
 	// turn them interrupts off before calling this
 	UdpSlot *getUdpSlot(key_t k);
 
-
-
 	// . hash table for converting keys to slots
 	// . if m_ptrs[i] is NULL, ith bucket is empty
 	UdpSlot **m_ptrs;
@@ -348,15 +338,15 @@ private:
 	int32_t m_bufSize;
 
 	// linked list of available slots (uses UdpSlot::m_next)
-	UdpSlot *m_head;
+	UdpSlot *m_availableListHead;
 
 	// linked list of slots in use
-	UdpSlot *m_head2;
-	UdpSlot *m_tail2;
+	UdpSlot *m_activeListHead;
+	UdpSlot *m_activeListTail;
 
 	// linked list of callback candidates
-	UdpSlot *m_head3;
-	UdpSlot *m_tail3;
+	UdpSlot *m_callbackListHead;
+	UdpSlot *m_callbackListTail;
 
 	int32_t m_numUsedSlots;
 	int32_t m_numUsedSlotsIncoming;

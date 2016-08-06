@@ -264,7 +264,7 @@ void Pages::init ( ) {
 		}
 	// set the m_flen member
 	for ( int32_t i = 0 ; i < s_numPages ; i++ ) 
-		s_pages[i].m_flen = gbstrlen ( s_pages[i].m_filename );
+		s_pages[i].m_flen = strlen ( s_pages[i].m_filename );
 }
 
 // return the PAGE_* number thingy
@@ -279,23 +279,23 @@ int32_t Pages::getDynamicPageNumber ( HttpRequest *r ) {
 	// historical backwards compatibility fix
 	if ( pathLen == 9 && strncmp ( path , "cgi/0.cgi" , 9 ) == 0 ) {
 		path = "search";
-		pathLen = gbstrlen(path);
+		pathLen = strlen(path);
 	}
 	if ( pathLen == 9 && strncmp ( path , "cgi/1.cgi" , 9 ) == 0 ) {
 		path = "addurl";
-		pathLen = gbstrlen(path);
+		pathLen = strlen(path);
 	}
 	if ( pathLen == 6 && strncmp ( path , "inject" , 6 ) == 0 ) {
 		path = "admin/inject";
-		pathLen = gbstrlen(path);
+		pathLen = strlen(path);
 	}
 	if ( pathLen == 9 && strncmp ( path , "index.php" , 9 ) == 0 ) {
 		path = "search";
-		pathLen = gbstrlen(path);
+		pathLen = strlen(path);
 	}
 	if ( pathLen == 10 && strncmp ( path , "search.csv" , 10 ) == 0 ) {
 		path = "search";
-		pathLen = gbstrlen(path);
+		pathLen = strlen(path);
 	}
 
 	// go down the list comparing the pathname to dynamic page names
@@ -1093,7 +1093,7 @@ bool Pages::printHostLinks ( SafeBuf* sb     ,
 
 	int32_t total = 0;
 	// add in hosts
-	total += g_hostdb.m_numHosts;
+	total += g_hostdb.getNumHosts();
 	// and proxies
 	total += g_hostdb.m_numProxyHosts;	
 
@@ -1116,14 +1116,14 @@ bool Pages::printHostLinks ( SafeBuf* sb     ,
 		a += diff; 
 		b += diff; 
 	}
-	if ( b > g_hostdb.m_numHosts ) { 
-		diff = b - g_hostdb.m_numHosts;
+	if ( b > g_hostdb.getNumHosts() ) {
+		diff = b - g_hostdb.getNumHosts();
 		a -= diff; if ( a < 0 ) a = 0;
 	}
 	for ( int32_t i = a ; i < b ; i++ ) {
 		// skip if negative
 		if ( i < 0 ) continue;
-		if ( i >= g_hostdb.m_numHosts ) continue;
+		if ( i >= g_hostdb.getNumHosts() ) continue;
 		// get it
 		Host *h = g_hostdb.getHost ( i );
 		uint16_t port = h->m_httpPort;
@@ -2518,7 +2518,7 @@ bool printRedBox ( SafeBuf *mb , TcpSocket *sock , HttpRequest *hr ) {
 
 	// out of disk space?
 	int32_t out = 0;
-	for ( int32_t i = 0 ; i < g_hostdb.m_numHosts ; i++ ) {
+	for ( int32_t i = 0 ; i < g_hostdb.getNumHosts() ; i++ ) {
 		Host *h = &g_hostdb.m_hosts[i];
 		if ( h->m_pingInfo.m_diskUsage < 98.0 ) continue;
 		out++;

@@ -252,12 +252,13 @@ bool resetProxyStats ( ) {
 	return buildProxyTable();
 }
 
+
+void resetProxyStatWrapper(int fd, void *state) {
+	resetProxyStats();
+}
+
 // save the stats
 bool saveSpiderProxyStats ( ) {
-
-	// do not save if coring in a malloc/free because we call malloc/free
-	// below to save stuff possibly
-	if ( g_inMemFunction ) return true;
 
 	// save hashtable
 	s_proxyBannedTable.save(g_hostdb.m_dir,"proxybantable.dat");
@@ -292,6 +293,7 @@ bool loadSpiderProxyStats ( ) {
 		SpiderProxy *sp = (SpiderProxy *)s_iptab.getValueFromSlot(i);
 		sp->m_isWaiting = false;
 	}
+
 	return true;
 }
 
@@ -736,7 +738,7 @@ void handleRequest54 ( UdpSlot *udpSlot , int32_t niceness ) {
 	// download has not ended yet
 	bb.m_downloadEndTimeMS = 0LL;
 	// the host using the proxy
-	bb.m_hostId = udpSlot->m_hostId;
+	bb.m_hostId = udpSlot->getHostId();
 	// key is this for m_prTable
 	bb.m_proxyIp   = winnersp->m_ip;
 	bb.m_proxyPort = winnersp->m_port;
@@ -893,6 +895,11 @@ bool initSpiderProxyStuff() {
 
 	// build the s_iptab hashtable for the first time
 	buildProxyTable ();
+
+	// reset spider proxy stats every hour to alleviate false positives (moved from Process.cpp)
+	if (!g_loop.registerSleepCallback(3600000, NULL, resetProxyStatWrapper, 0)) {
+		gbshutdownResourceError();
+	}
 
 	// make the loadtable hashtable
 	static bool s_flag = 0;

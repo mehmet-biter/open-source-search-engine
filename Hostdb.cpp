@@ -45,7 +45,6 @@ Hostdb::Hostdb ( ) {
 	m_hosts = NULL;
 	m_numHosts = 0;
 	m_ips = NULL;
-	m_syncHost = NULL;
 	m_initialized = false;
 	m_crcValid = false;
 	m_crc = 0;
@@ -64,7 +63,6 @@ void Hostdb::reset ( ) {
 	m_hosts = NULL;
 	m_ips               = NULL;
 	m_numIps            = 0;
-	m_syncHost          = NULL;
 }
 
 const char *Hostdb::getNetName ( ) {
@@ -137,11 +135,9 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 	// return false if too big
 	if ( m_bufSize > (MAX_HOSTS+MAX_SPARES) * 128 ) { 
 		g_errno = EBUFTOOSMALL; 
-		return log(
-			   "conf: %s has filesize "
-			   "of %" PRId32" bytes, which is greater than %" PRId32" max.",
-			   filename,m_bufSize,
-			   (int32_t)(MAX_HOSTS+MAX_SPARES)*128);
+		log(LOG_WARN, "conf: %s has filesize of %" PRId32" bytes, which is greater than %" PRId32" max.",
+		    filename,m_bufSize, (int32_t)(MAX_HOSTS+MAX_SPARES)*128);
+		return false;
 	}
 	// open the file
 	if ( ! f.open ( O_RDONLY ) ) return false;
@@ -194,12 +190,11 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 			else if ( strncasecmp(p, "scproxy", 7) == 0 )
 				m_numProxyHosts++;
 
-			else
-				return log( LOG_WARN, "conf: %s is malformed. First "
-					   "item of each non-comment line "
-					   "must be a NUMERIC hostId, "
-					   "SPARE or PROXY. line=%s",filename,
-					   p);
+			else {
+				log(LOG_WARN, "conf: %s is malformed. First item of each non-comment line must be a NUMERIC hostId, "
+					"SPARE or PROXY. line=%s", filename, p);
+				return false;
+			}
 		}
 		else
 			// count it as a host
@@ -219,7 +214,10 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 	// save buffer size
 	m_allocSize = sizeof(Host) * i;
 	m_hosts = (Host *) mcalloc ( m_allocSize ,"Hostdb");
-	if ( ! m_hosts ) return log( LOG_WARN, "conf: Memory allocation failed.");
+	if ( ! m_hosts ) {
+		log( LOG_WARN, "conf: Memory allocation failed.");
+		return false;
+	}
 
 	int32_t numGrunts = 0;
 
@@ -433,13 +431,7 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 			hostname2 = NULL;
 			//goto retired;
 		}
-		// if no secondary hostname for "gk2" (e.g.) try "gki2"
-		char tmp2[32];
-		if ( ! hostname2 && host[0]=='g' && host[1]=='k') {
-			int32_t hn = atol(host+2);
-			sprintf(tmp2,"gki%" PRId32,hn);
-			hostname2 = tmp2;
-		}
+
 		// limit
 		if ( hlen2 > 15 ) {
 			g_errno = EBADENGINEER;
@@ -512,7 +504,7 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 		
 		// this is the same
 		wdir = wdir2;
-		wdirlen = wdirlen2; // gbstrlen ( wdir2 );
+		wdirlen = wdirlen2; // strlen ( wdir2 );
 		// check for working dir override
 		if ( *p == '/' ) {
 			wdir = p;
@@ -570,29 +562,27 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 		// ensure they're in proper order without gaps
 		if ( h->m_type==HT_GRUNT && h->m_hostId != i ) {
 		     g_errno = EBADHOSTID; 
-		     return log(LOG_WARN, "conf: Unordered hostId of %" PRId32", should be %" PRId32" in %s line %" PRId32".",
-		                h->m_hostId,i,filename,line);
+		     log(LOG_WARN, "conf: Unordered hostId of %" PRId32", should be %" PRId32" in %s line %" PRId32".",
+		         h->m_hostId,i,filename,line);
+			return false;
 		}
 
 		// and working dir
 		if ( wdirlen > 127 ) {
-		      g_errno = EBADENGINEER;
-		      return log(LOG_WARN,
-		                 "conf: Host working dir too long in "
-				 "%s line %" PRId32".",filename,line);
+			g_errno = EBADENGINEER;
+			log(LOG_WARN, "conf: Host working dir too long in %s line %" PRId32".", filename, line);
+			return false;
 		}
 		if ( wdirlen <= 0 ) {
-		      g_errno = EBADENGINEER;
-		      return log(LOG_WARN,
-		                 "conf: No working dir supplied in "
-				 "%s line %" PRId32".",filename,line);
+			g_errno = EBADENGINEER;
+			log(LOG_WARN, "conf: No working dir supplied in %s line %" PRId32".", filename, line);
+			return false;
 		}
 		// make sure it is legit
 		if ( wdir[0] != '/' ) {
-		      g_errno = EBADENGINEER;
-		      return log(LOG_WARN,
-		                 "conf: working dir must start "
-				 "with / in %s line %" PRId32,filename,line);
+			g_errno = EBADENGINEER;
+			log(LOG_WARN, "conf: working dir must start with / in %s line %" PRId32, filename, line);
+			return false;
 		}
 
 		// take off slash if there
@@ -633,10 +623,6 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 		m_hosts[i].m_lastPing = 0LL;
 		// and don't send emails on him until we got a good ping
 		m_hosts[i].m_emailCode = -2;
-		// we do not know if it is in sync
-		m_hosts[i].m_syncStatus = 2;
-		// not doing a sync right now
-		m_hosts[i].m_doingSync = 0;
 		// so UdpServer.cpp knows if we are in g_hostdb or g_hostdb2
 		m_hosts[i].m_hostdb = this;
 		// reset these
@@ -730,8 +716,8 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 	// must be exact fit
 	if ( hostsPerShard * m_numShards != m_numHosts ) {
 		g_errno = EBADENGINEER;
-		return log(LOG_WARN, "conf: Bad number of hosts for %" PRId32" shards "
-			   "in hosts.conf.",m_numShards);
+		log(LOG_WARN, "conf: Bad number of hosts for %" PRId32" shards in hosts.conf.",m_numShards);
+		return false;
 	}
 	// count number of hosts in each shard
 	for ( i = 0 ; i < m_numShards ; i++ ) {
@@ -741,8 +727,8 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 				count++;
 		if ( count != hostsPerShard ) {
 			g_errno = EBADENGINEER;
-			return log(LOG_WARN, "conf: Number of hosts in each shard "
-				   "in %s is not equal.",filename);
+			log(LOG_WARN, "conf: Number of hosts in each shard in %s is not equal.",filename);
+			return false;
 		}
 	}
 
@@ -817,8 +803,10 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 
 	// get IPs of this server. last entry is 0.
 	int32_t *localIps = getLocalIps();
-	if ( ! localIps )
-		return log(LOG_WARN, "conf: Failed to get local IP address. Exiting.");
+	if ( ! localIps ) {
+		log(LOG_WARN, "conf: Failed to get local IP address. Exiting.");
+		return false;
+	}
 
 	// if no cwd, then probably calling 'gb inject foo.warc <hosts.conf>'
 	if ( ! cwd ) {
@@ -832,9 +820,10 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 	// now set m_myIp, m_myPort, m_myPort2 and m_myMachineNum
 	if ( proxyHost )
 		host = getProxy2 ( cwd , localIps ); //hostId );
-	if ( ! host ) 
-		return log(LOG_WARN, "conf: Could not find host with path %s and "
-			   "local ip in %s",cwd,filename);
+	if ( ! host ) {
+		log(LOG_WARN, "conf: Could not find host with path %s and local ip in %s", cwd, filename);
+		return false;
+	}
 	m_myIp         = host->m_ip;    // internal IP
 	m_myIpShotgun  = host->m_ipShotgun;
 	m_myPort       = host->m_port;  // low priority udp port
@@ -884,9 +873,10 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 	Host *h = getHost ( m_hostId );
 	if ( proxyHost )
 		h = getProxy ( m_hostId );
-	if ( ! h ) return log(LOG_WARN,
-	                      "conf: HostId %" PRId32" not found in %s.",
-			      m_hostId,filename);
+	if ( ! h ) {
+		log(LOG_WARN, "conf: HostId %" PRId32" not found in %s.", m_hostId,filename);
+		return false;
+	}
 	// set m_dir to THIS host's working dir
 	strcpy ( m_dir , h->m_dir );
 	// likewise, set m_htmlDir to this host's html dir
@@ -1027,9 +1017,9 @@ bool Hostdb::hashHost (	bool udp , Host *h , uint32_t ip , uint16_t port ) {
 	if ( udp ) hh = getHost ( ip , port );
 
 	if ( hh && port ) { 
-		log("db: Must hash hosts.conf first, then hosts2.conf.");
-		log("db: or there is a repeated ip/port in hosts.conf.");
-		log("db: repeated host ip=%s port=%" PRId32" "
+		log(LOG_WARN, "db: Must hash hosts.conf first, then hosts2.conf.");
+		log(LOG_WARN, "db: or there is a repeated ip/port in hosts.conf.");
+		log(LOG_WARN, "db: repeated host ip=%s port=%" PRId32" "
 		    "name=%s",iptoa(ip),(int32_t)port,h->m_hostname);
 		return false;//g_process.shutdownAbort(true);
 	}
@@ -1076,10 +1066,10 @@ bool Hostdb::hashHost (	bool udp , Host *h , uint32_t ip , uint16_t port ) {
 		// to make isIpInNetwork() function work.
 		if ( port == 0 ) return true;
 		old = *(Host **)t->getValueFromSlot(slot);
-		return log("db: Got collision between hostId %" PRId32" and "
-			   "%" PRId32"(proxy=%" PRId32"). Both have same ip/port. Does "
-			   "hosts.conf match hosts2.conf?",
-			   old->m_hostId,h->m_hostId,(int32_t)h->m_isProxy);
+		log(LOG_WARN, "db: Got collision between hostId %" PRId32" and %" PRId32"(proxy=%" PRId32"). "
+			"Both have same ip/port. Does hosts.conf match hosts2.conf?",
+		    old->m_hostId,h->m_hostId,(int32_t)h->m_isProxy);
+		return false;
 	}
 	// add the new key with a ptr to host using m_port
 	return t->addKey ( &key , &h ); // (uint32_t)h ) ;
@@ -1328,11 +1318,15 @@ bool Hostdb::setSpareNote ( int32_t spareId, const char *note, int32_t noteLen )
 bool Hostdb::replaceHost ( int32_t origHostId, int32_t spareHostId ) {
 	Host *oldHost = getHost(origHostId);
 	Host *spareHost = getSpare(spareHostId);
-	if ( !oldHost || !spareHost )
-		return log ( "init: Bad Host or Spare given. Aborting." );
+	if ( !oldHost || !spareHost ) {
+		log(LOG_WARN, "init: Bad Host or Spare given. Aborting.");
+		return false;
+	}
 	// host must be dead
-	if ( !isDead(oldHost) )
-		return log ( "init: Cannot replace live host. Aborting." );
+	if ( !isDead(oldHost) ) {
+		log(LOG_WARN, "init: Cannot replace live host. Aborting.");
+		return false;
+	}
 
 
 	Host tmp;
@@ -1435,7 +1429,7 @@ bool Hostdb::saveHostsConf ( ) {
 		g_hostdb.m_dir,
 		//(int32_t)g_hostdb.m_myHost->m_httpPort - 8000,
 		g_hostdb.m_indexSplits );
-	write(fd, temp, gbstrlen(temp));
+	write(fd, temp, strlen(temp));
 	// loop over each host and write the conf line
 	for ( int32_t i = 0; i < m_numTotalHosts; i++ ) {
 		Host *h;
@@ -1457,184 +1451,20 @@ bool Hostdb::saveHostsConf ( ) {
 			sprintf(temp, "0%" PRId32"   ", i);
 		else
 			sprintf(temp, "%" PRId32"   ", i);
-		write(fd, temp, gbstrlen(temp));
+		write(fd, temp, strlen(temp));
 
 		// the new format is just the hostname then note
 		sprintf(temp,"%s ",h->m_hostname);
-		write(fd, temp, gbstrlen(temp));
+		write(fd, temp, strlen(temp));
 
 		// note
-		write(fd, h->m_note, gbstrlen(h->m_note));
+		write(fd, h->m_note, strlen(h->m_note));
 		// end line
 		write(fd, "\n", 1);
 	}
 	// close	else the file
 	close(fd);
 	return true;
-}
-
-// Use of ThreadEntry parameter is NOT thread safe
-static void syncDoneWrapper ( void *state, job_exit_t exit_type ) {
-	Hostdb *THIS = (Hostdb*)state;
-	THIS->syncDone();
-}
-
-static void syncStartWrapper_r ( void *state ) {
-	Hostdb *THIS = (Hostdb*)state;
-	THIS->syncStart_r(true);
-}
-
-// sync a host with its twin
-bool Hostdb::syncHost ( int32_t syncHostId, bool useSecondaryIps ) {
-
-	// can't do two syncs
-	if ( m_syncHost )
-		return log(LOG_WARN, "conf: Cannot manage two syncs on this "
-				     "host. Aborting.");
-	// log the start
-	log ( LOG_INFO, "init: Syncing host %" PRId32" with twin.", syncHostId );
-	// if no twins, can't do it
-	if ( m_numHostsPerShard == 1 )
-		return log(LOG_WARN, "conf: Cannot sync host, no twins. "
-				     "Aborting.");
-        // spiders must be off
-        if ( g_conf.m_spideringEnabled )
-                return log(LOG_WARN, "conf: Syncing while spiders are on is "
-                                     "disallowed. Aborting.");
-	// first, the host must be marked as dead
-	Host *h = getHost(syncHostId);
-	if ( ! h )
-		log("conf: Cannot get host with host id #%" PRId32,
-		    (int32_t)syncHostId);
-	if ( !isDead(h) )
-		return log(LOG_WARN, "conf: Cannot sync live host. Aborting.");
-	// now check it for a clean directory
-	int32_t ip1 = h->m_ip;
-	if ( useSecondaryIps ) ip1 = h->m_ipShotgun;
-	char ip1str[32];
-	sprintf ( ip1str, "%hhu.%hhu.%hhu.%hhu",
-		  (unsigned char)(ip1 >>  0)&0xff,
-		  (unsigned char)(ip1 >>  8)&0xff,
-		  (unsigned char)(ip1 >> 16)&0xff,
-		  (unsigned char)(ip1 >> 24)&0xff );
-	char cmd[1024];
-	sprintf ( cmd, "ssh %s \"cd %s; du -b | tail -n 1\" > ./synccheck.txt",
-		  ip1str, h->m_dir );
-	log ( LOG_INFO, "init: %s", cmd );
-	gbsystem(cmd);
-	int32_t fd = open ( "./synccheck.txt", O_RDONLY );
-	if ( fd < 0 )
-		return log(LOG_WARN, "conf: Unable to open synccheck.txt. "
-				     "Aborting.");
-	int32_t len = read ( fd, cmd, 1023 );
-	cmd[len] = '\0';
-	close(fd);
-	// delete the file to make sure we don't reuse it
-	gbsystem ( "rm ./synccheck.txt" );
-	// check the size
-	int32_t checkSize = atol(cmd);
-	if ( checkSize > 4096 || checkSize <= 0 )
-		return log(LOG_WARN, "conf: Detected %" PRId32" bytes in "
-			   "directory to "
-			   "sync.  Must be empty.  Aborting.",
-			   checkSize);
-        // set the sync host
-        m_syncHost = h;
-        m_syncSecondaryIps = useSecondaryIps;
-        h->m_doingSync = 1;
-	// start the sync in a thread, complete when it's done
-	if ( g_jobScheduler.submit(syncStartWrapper_r,
-	                           syncDoneWrapper,
-				   this,
-				   thread_type_twin_sync,
-				   MAX_NICENESS) )
-		return true;
-	// error
-        h->m_doingSync = 0;
-	m_syncHost = NULL;
-        return log ( LOG_WARN, "conf: Could not spawn thread for call to sync "
-		     "host. Aborting." );
-}
-
-
-void Hostdb::syncStart_r ( bool amThread ) {
-	// get the twin we'll copy from
-	int32_t numHostsInShard;
-	//Host *hostGroup = getGroup(m_syncHost->m_groupId, &numHostsInGroup);
-	Host *shard = getShard(m_syncHost->m_shardNum, &numHostsInShard);
-	if ( numHostsInShard == 1 ) {
-		m_syncHost->m_doingSync = 0;
-		m_syncHost = NULL;
-                log (LOG_WARN, "sync: Could not Sync, Host has no twin.");
-		return;
-	}
-	Host *srcHost = &shard[numHostsInShard - 1];
-	if ( srcHost == m_syncHost ) srcHost = &shard[numHostsInShard-2];
-	// create the rcp command
-	char cmd[1024];
-	int32_t ip1 = m_syncHost->m_ip;
-	if ( m_syncSecondaryIps ) ip1 = m_syncHost->m_ipShotgun;
-	char ip1str[32];
-	sprintf ( ip1str, "%hhu.%hhu.%hhu.%hhu",
-		  (unsigned char)(ip1 >>  0)&0xff,
-		  (unsigned char)(ip1 >>  8)&0xff,
-		  (unsigned char)(ip1 >> 16)&0xff,
-		  (unsigned char)(ip1 >> 24)&0xff );
-	int32_t ip2 = srcHost->m_ip;
-	if ( m_syncSecondaryIps ) ip2 = srcHost->m_ipShotgun;
-	char ip2str[32];
-	sprintf ( ip2str, "%hhu.%hhu.%hhu.%hhu",
-		  (unsigned char)(ip2 >>  0)&0xff,
-		  (unsigned char)(ip2 >>  8)&0xff,
-		  (unsigned char)(ip2 >> 16)&0xff,
-		  (unsigned char)(ip2 >> 24)&0xff );
-	// now we also remove the old log files and *.cache files because
-	// they do not apply to this new host
-	// . TODO :
-	// need the -f flag for rm in case those files do not exist, it
-	// would error out then
-	sprintf ( cmd, "ssh %s \"rcp -pr %s:%s* %s ; "
-		  "rcp -pr %s:%s.antiword %s ; "
-		  "rm -f %slog* %s*.cache %s*~ %stmplog* ; "
-		  "rm -f %scoll.*.*/waiting* ;" // waitingtree & waitingtable
-		  "rm -f %scoll.*.*/doleiptable.dat* ;"
-		  // the new guy is NOT in sync!
-		  "echo 0 > %sinsync.dat\"",
-		  ip1str,
-
-		  ip2str,
-		  srcHost->m_dir,
-		  m_syncHost->m_dir ,
-
-		  ip2str,
-		  srcHost->m_dir,
-		  m_syncHost->m_dir ,
-
-		  m_syncHost->m_dir ,
-		  m_syncHost->m_dir ,
-		  m_syncHost->m_dir ,
-		  m_syncHost->m_dir ,
-		  m_syncHost->m_dir ,
-		  m_syncHost->m_dir ,
-		  m_syncHost->m_dir );
-
-	log ( LOG_INFO, "init: %s", cmd );
-}
-
-void Hostdb::syncDone ( ) {
-	// now make a call to startup the newly synced host
-	if ( !m_syncHost ) {
-		log ( "conf: SyncHost is invalid. Most likely a problem "
-		      "during the sync. Ending synchost." );
-		return;
-	}
-	log ( LOG_INFO, "init: Sync copy done.  Starting host." );
-	m_syncHost->m_doingSync = 0;
-	char cmd[1024];
-	sprintf(cmd, "./gb start %" PRId32, m_syncHost->m_hostId);
-	log ( LOG_INFO, "init: %s", cmd );
-	gbsystem(cmd);
-	m_syncHost = NULL;
 }
 
 // use the ip that is not dead, prefer eth0

@@ -43,7 +43,6 @@ class Msg5 {
 		       const void      *endKey        ,
 		       int32_t       recSizes      , // requestd scan size(-1 all)
 		       bool       includeTree   ,
-		       bool       addToCache    ,
 		       int32_t       maxCacheAge   , // in secs for cache lookup
 		       int32_t       startFileNum  , // first file to scan
 		       int32_t       numFiles      , // rel.to startFileNum,-1 all
@@ -51,13 +50,13 @@ class Msg5 {
 		       void (* callback ) ( void *state, RdbList *list, Msg5 *msg5 ),
 		       int32_t       niceness      ,
 		       bool       doErrorCorrection  ,
-		       char      *cacheKeyPtr  = NULL ,
-		       int32_t       retryNum     =  0  ,
-		       int32_t       maxRetries   = -1  ,
-		       bool       compensateForMerge = true ,
-		       int64_t      syncPoint = -1 ,
-		       bool        isRealMerge = false ,
-		       bool        allowPageCache = true );
+		       char         *cacheKeyPtr,
+		       int32_t       retryNum,
+		       int32_t       maxRetries,
+		       bool          compensateForMerge,
+		       int64_t       syncPoint,
+		       bool          isRealMerge,
+		       bool          allowPageCache);
 
 	bool getList ( char       rdbId         ,
 		       collnum_t collnum ,
@@ -66,7 +65,6 @@ class Msg5 {
 		       key_t      endKey        , 
 		       int32_t       recSizes      , // requestd scan size(-1 all)
 		       bool       includeTree   ,
-		       bool       addToCache    ,
 		       int32_t       maxCacheAge   , // in secs for cache lookup
 		       int32_t       startFileNum  , // first file to scan
 		       int32_t       numFiles      , // rel.to startFileNum,-1 all
@@ -76,13 +74,13 @@ class Msg5 {
 						Msg5    *msg5  ) ,
 		       int32_t       niceness      ,
 		       bool       doErrorCorrection  ,
-		       key_t     *cacheKeyPtr  = NULL ,
-		       int32_t       retryNum     =  0  ,
-		       int32_t       maxRetries   = -1  ,
-		       bool       compensateForMerge = true ,
-		       int64_t      syncPoint = -1 ,
-		       bool        isRealMerge = false ,
-		       bool        allowPageCache = true ) {
+		       key_t        *cacheKeyPtr,
+		       int32_t       retryNum,
+		       int32_t       maxRetries,
+		       bool          compensateForMerge,
+		       int64_t       syncPoint,
+		       bool          isRealMerge,
+		       bool          allowPageCache) {
 		return getList ( rdbId         ,
 				 collnum       ,
 				 list          ,
@@ -90,7 +88,6 @@ class Msg5 {
 				 (const void *)&endKey        ,
 				 recSizes      , 
 				 includeTree   ,
-				 addToCache    ,
 				 maxCacheAge   , 
 				 startFileNum  , 
 				 numFiles      , 
@@ -105,6 +102,12 @@ class Msg5 {
 				 syncPoint     ,
 				 isRealMerge   ,
 				 allowPageCache ); }
+
+	bool getTreeList(RdbList *result, char rdbId, collnum_t collnum, const void *startKey, const void *endKey);
+	bool getTreeList(RdbList *result,
+			 const void *startKey, const void *endKey,
+			 int32_t *numNegativeRecs, int32_t *numPositiveRecs,
+			 int32_t *memUsedByTree, int32_t *numUsedNodes);
 
 	// need niceness to pass on to others
 	int32_t getNiceness ( ) { return m_niceness; }
@@ -160,7 +163,6 @@ private:
 	RdbList   m_dummy;
 
 	bool      m_includeTree;
-	bool      m_addToCache;
 	int32_t      m_maxCacheAge;
 
 	int32_t      m_numFiles;
@@ -211,6 +213,8 @@ private:
 
 	bool m_waitingForList;
 	collnum_t m_collnum;
+
+	int32_t m_errno;
 
 	static void gotListWrapper(void *state);
 	void gotListWrapper();

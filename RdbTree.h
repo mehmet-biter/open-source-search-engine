@@ -426,7 +426,7 @@ class RdbTree {
 	int64_t m_bytesWritten;
 	int64_t m_bytesRead;
 
-	int32_t m_saveErrno;
+	int32_t m_errno;
 	char m_ks;
 
 	bool m_useProtection;

@@ -20,7 +20,7 @@ static char s_vbuf[32];
 
 // includes \0
 // "Sep 19 2014 12:10:58\0"
-int32_t getVersionSize () {
+unsigned getVersionSize () {
 	return 20 + 1;
 }
 
@@ -34,8 +34,8 @@ char *getVersion ( ) {
 	s_init = true;
 
 	// PingServer.cpp needs this exactly to be 24
-	if ( gbstrlen(s_vbuf) != getVersionSize() - 1 ) { 
-		log( LOG_ERROR, "getVersion: %s %" PRId32" != %" PRId32, s_vbuf, (int32_t)gbstrlen(s_vbuf), getVersionSize() - 1);
+	if ( strlen(s_vbuf) != getVersionSize() - 1 ) { 
+		log( LOG_ERROR, "getVersion: %s %" PRId32" != %" PRId32, s_vbuf, (int32_t)strlen(s_vbuf), getVersionSize() - 1);
 		g_process.shutdownAbort(true); 
 	}
 

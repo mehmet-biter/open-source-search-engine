@@ -226,15 +226,7 @@ bool Msg20::getSummary ( Msg20Request *req ) {
 			      timeout           , // timeout
 			      req->m_niceness   ,
 			      firstHostId       , // first hostid
-			      NULL              , // reply buffer
-			      0                 , // reply buffer size
-			      false             , // free reply buf?
-			      false             , // do disk load balancing?
-			      -1                , // max cache age
-			      0                 , // cacheKey
-			      0                 , // bogus rdbId
-			      -1                , // minRecSizes(unknownRDsize)
-			      true              )) { // sendToSelf
+			      false          )) { // free reply buf?
 		// sendto() sometimes returns "Network is down" so i guess
 		// we just had an "error reply".
 		log("msg20: error sending mcast %s",mstrerror(g_errno));
@@ -355,7 +347,7 @@ void handleRequest20 ( UdpSlot *slot , int32_t netnice ) {
 	// sanity check, the size include the \0
 	if ( req->m_collnum < 0 ) {
 		log(LOG_WARN, "query: Got empty collection in msg20 handler. FIX! "
-		    "from ip=%s port=%i",iptoa(slot->m_ip),(int)slot->m_port);
+		    "from ip=%s port=%i",iptoa(slot->getIp()),(int)slot->getPort());
 		    
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		g_udpServer.sendErrorReply ( slot , ENOTFOUND );
@@ -650,8 +642,7 @@ int64_t Msg20Request::makeCacheKey() const
 	hash_buffer.pushLong(m_getLinkInfo);
 	hash_buffer.pushLong(m_onlyNeedGoodInlinks);
 	hash_buffer.pushLong(m_getLinkText);
-	if(m_highlightQueryTerms)
-		hash_buffer.safeMemcpy(ptr_qbuf,size_qbuf);
+	hash_buffer.safeMemcpy(ptr_qbuf,size_qbuf);
 	hash_buffer.safeMemcpy(ptr_ubuf,size_ubuf);
 	hash_buffer.safeMemcpy(ptr_linkee,size_linkee);
 	hash_buffer.safeMemcpy(ptr_displayMetas,size_displayMetas);

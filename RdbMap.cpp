@@ -475,7 +475,7 @@ bool RdbMap::verifyMap2 ( ) {
 			KEYSET(f,lastKey,m_ks);
 			//if ( lastKey != getKey(i+1) ) f += (uint32_t)1;
 			if (KEYCMP(lastKey,getKeyPtr(i+1),m_ks)!=0)
-				KEYADD(f,m_ks);
+				KEYINC(f,m_ks);
 			setKey(i,f);
 			log("db: Key in map was too small. Fixed.");
 			goto top;
@@ -486,7 +486,7 @@ bool RdbMap::verifyMap2 ( ) {
 			//key_t f = getKey(i-2);
 			char *f = getKeyPtr(i-2);
 			//if ( f != k ) f += (uint32_t)1;
-			if ( KEYCMP(f,k,m_ks)!=0) KEYADD(f,m_ks);
+			if ( KEYCMP(f,k,m_ks)!=0) KEYINC(f,m_ks);
 			setKey(i-1,f);
 			log("db: LastKey in map was too big. Fixed.");
 			goto top;
@@ -1176,7 +1176,7 @@ void RdbMap::printMap () {
 		sprintf(buf,"page=%i) key=%" PRIx64" %" PRIx64", offset=%hi",
 		    i,KEY1(getKeyPtr(i),m_ks),KEY0(getKeyPtr(i)),
 		    getOffset(i));
-		h = hash32 ( buf , gbstrlen(buf) , h );
+		h = hash32 ( buf , strlen(buf) , h );
 		log(LOG_INFO,"%s",buf);
 	}
 	log(LOG_INFO,"map checksum = 0x%" PRIx32,h);
@@ -1200,7 +1200,7 @@ void RdbMap::printMap () {
 //	return true;
 //}
 
-int64_t RdbMap::getMemAlloced ( ) {
+int64_t RdbMap::getMemAlloced() const {
 	// . how much space per segment?
 	// . each page has a key and a 2 byte offset
 	//int64_t space = PAGES_PER_SEGMENT * (sizeof(key_t) + 2);

@@ -145,7 +145,7 @@ static bool sendPageParser2 ( TcpSocket   *s ,
 		// was rounding it!
 		//int64_t uh64 = atoll(uh64str);//+3);
 		// urldecode that
-		//int32_t divTagLen = gbstrlen(divTag);
+		//int32_t divTagLen = strlen(divTag);
 		//int32_t newLen  = urlDecode ( divTag , divTag , divTagLen );
 		// null term?
 		//divTag[newLen] = '\0';
@@ -157,7 +157,7 @@ static bool sendPageParser2 ( TcpSocket   *s ,
 		// that is it! send a basic reply ok
 		bool status = g_httpServer.sendDynamicPage( s , 
 							    reply,
-							    gbstrlen(reply),
+							    strlen(reply),
 							    -1, //cachtime
 							    false ,//postreply?
 							    NULL, //ctype
@@ -715,7 +715,7 @@ bool sendErrorReply ( void *state , int32_t err ) {
 	// erase g_errno for sending
 	//g_errno = 0;
 	// . now encapsulate it in html head/tail and send it off
-	//return g_httpServer.sendDynamicPage ( s , tmp , gbstrlen(tmp) );
+	//return g_httpServer.sendDynamicPage ( s , tmp , strlen(tmp) );
 	return g_httpServer.sendErrorReply ( s, err, mstrerror(err) );
 }
 
@@ -761,7 +761,7 @@ bool sendPageAnalyze ( TcpSocket *s , HttpRequest *r ) {
 	// get the collection
 	const char *coll    = r->getString ( "c" , &st->m_collLen ,NULL /*default*/);
 	if ( ! coll ) coll = g_conf.m_defaultColl;
-	int32_t collLen = gbstrlen(coll);
+	int32_t collLen = strlen(coll);
 	if ( collLen > MAX_COLL_LEN ) return sendErrorReply ( st , ENOBUFS );
 	strcpy ( st->m_coll , coll );
 
@@ -791,7 +791,7 @@ bool sendPageAnalyze ( TcpSocket *s , HttpRequest *r ) {
 	//st->m_urlLen = ulen;
 	st->m_u = u;
 	st->m_ulen = 0;
-	if ( u ) st->m_ulen = gbstrlen(u);
+	if ( u ) st->m_ulen = strlen(u);
 	// should we recycle link info?
 	st->m_recycle  = r->getLong("recycle",1);
 	st->m_recycle2 = r->getLong("recycleimp",0);

@@ -17,6 +17,8 @@
 #include "Xml.h" // host file in xml
 #include "Sanity.h"
 
+/// @note ALC there used to be a sync host functionality that was removed
+/// in commit 08e8eeb2a53b41763b5d7f97a0b953bebb04517a because it wasn't working
 
 enum {
 	ME_IOERR = 1,
@@ -75,7 +77,7 @@ class PingInfo {
 
 	int16_t m_currentSpiders;
 	collnum_t m_dailyMergeCollnum;
-	int16_t m_hdtemps[4];
+
 	char m_gbVersionStr[21];
 	char m_repairMode;
 	char m_kernelErrors;
@@ -151,8 +153,6 @@ public:
 	// . -4 means we are currently in progress sending an email for him
 	// . -5 means he went down before host we alerted admin about revived
 	int32_t           m_emailCode;
-	// 0 means no, 1 means yes, 2 means unknown
-	char           m_syncStatus;
 
 	// we now include the working dir in the hosts.conf file
 	// so main.cpp can do gb --install and gb --allstart
@@ -181,7 +181,6 @@ public:
 
 	// now include a note for every host
 	char           m_note[128];
-	char           m_doingSync;
 
 	bool           m_isProxy;
 
@@ -376,11 +375,6 @@ class Hostdb {
 	// write a hosts.conf file
 	bool saveHostsConf ( );
 
-	// sync a host with its twin
-	bool syncHost ( int32_t syncHostId, bool useSecondaryIps );
-	void syncStart_r ( bool amThread );
-	void syncDone ( );
-
 	int32_t getBestIp ( Host *h , int32_t fromIp ) ;
 	
 	Host *getBestSpiderCompressionProxy ( int32_t *key ) ;
@@ -462,10 +456,6 @@ class Hostdb {
 
 	int32_t m_crc;
 	int32_t m_crcValid;
-
-	// for sync
-	Host *m_syncHost;
-	bool  m_syncSecondaryIps;
 
 	char  m_useTmpCluster;
 

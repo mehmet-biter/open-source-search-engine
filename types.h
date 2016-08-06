@@ -508,11 +508,31 @@ typedef u_int96_t  uint96_t;
 typedef u_int128_t key128_t;
 typedef u_int128_t uint128_t;
 
-
-
-
-static inline char *KEYSTR ( const void *vk , int32_t ks ) {
+static inline char *KEYSTR(const void *vk, int32_t ks, char *buffer) {
 	const char *k = (char *)vk;
+	char *s = buffer;
+	*s++ = '0';
+	*s++ = 'x';
+	for (const unsigned char *p = (const unsigned char *) k + ks - 1; p >= (const unsigned char *) k; p--) {
+		unsigned char v = *p >> 4;
+		if (v <= 9) {
+			*s++ = v + '0';
+		} else {
+			*s++ = v - 10 + 'a';
+		}
+
+		v = *p & 0x0f;
+		if (v <= 9) {
+			*s++ = v + '0';
+		} else {
+			*s++ = v - 10 + 'a';
+		}
+	}
+	*s = '\0';
+	return buffer;
+}
+
+static inline char *KEYSTR(const void *vk, int32_t ks) {
 	static char tmp1[128];
 	static char tmp2[128];
 	static char s_flip = 0;
@@ -520,25 +540,12 @@ static inline char *KEYSTR ( const void *vk , int32_t ks ) {
 	if ( s_flip == 0 ) {
 		tmp = tmp1;
 		s_flip = 1;
-	}
-	else {
+	} else {
 		tmp = tmp2;
 		s_flip = 0;
 	}
-	char *s = tmp;
-	*s++ = '0';
-	*s++ = 'x';
-	for ( const unsigned char *p = (const unsigned char *)k + ks - 1 ; 
-	      p >= (const unsigned char *)k ; p-- ) {
-		unsigned char v = *p >> 4;
-		if ( v <= 9 ) *s++ = v + '0';
-		else          *s++ = v - 10 + 'a';
-		v = *p & 0x0f;
-		if ( v <= 9 ) *s++ = v + '0';
-		else          *s++ = v - 10 + 'a';
-	}
-	*s = '\0';
-	return tmp;
+
+	return KEYSTR(vk, ks, tmp);
 }
 
 static inline uint16_t KEY0 ( const char *k , int32_t ks ) {
@@ -652,7 +659,7 @@ static inline bool KEYNEG ( key_t k ) {
 	return false;
 }
 
-static inline void KEYADD ( char *k , char keySize ) {
+static inline void KEYINC(char *k, char keySize) {
 	// posdb
 	if ( keySize == 18 ) { *((key144_t *)k) += (int32_t)1; return; }
 	if ( keySize == 12 ) { *((key96_t  *)k) += (int32_t)1; return; }
@@ -663,7 +670,7 @@ static inline void KEYADD ( char *k , char keySize ) {
 	gbshutdownAbort(true);
 }
 
-static inline void KEYSUB ( char *k , char keySize ) {
+static inline void KEYDEC(char *k, char keySize) {
 	if ( keySize == 18 ) { *((key144_t *)k) -= (int32_t)1; return; }
 	if ( keySize == 12 ) { *((key96_t  *)k) -= (int32_t)1; return; }
 	if ( keySize == 16 ) { *((key128_t *)k) -= (int32_t)1; return; }

@@ -107,7 +107,7 @@ bool Collectiondb::loadAllCollRecs ( ) {
 		// skip if first char not "coll."
 		if ( strncmp ( f , "coll." , 5 ) != 0 ) continue;
 		// must end on a digit (i.e. coll.main.0)
-		if ( ! is_digit (f[gbstrlen(f)-1]) ) continue;
+		if ( ! is_digit (f[strlen(f)-1]) ) continue;
 		// count them
 		count++;
 	}
@@ -127,7 +127,7 @@ bool Collectiondb::loadAllCollRecs ( ) {
 		// skip if first char not "coll."
 		if ( strncmp ( f , "coll." , 5 ) != 0 ) continue;
 		// must end on a digit (i.e. coll.main.0)
-		if ( ! is_digit (f[gbstrlen(f)-1]) ) continue;
+		if ( ! is_digit (f[strlen(f)-1]) ) continue;
 		// point to collection
 		const char *coll = f + 5;
 		// NULL terminate at .
@@ -198,7 +198,7 @@ bool Collectiondb::addExistingColl ( const char *coll, collnum_t collnum ) {
 	CollectionRec *ocr = getRec ( i );
 	if ( ocr ) {
 		g_errno = EEXIST;
-		log("admin: Collection id %i is in use already by "
+		log(LOG_WARN, "admin: Collection id %i is in use already by "
 		    "%s, so we can not add %s. moving %s to trash."
 		    ,(int)i,ocr->m_coll,coll,coll);
 		SafeBuf cmd;
@@ -235,7 +235,7 @@ bool Collectiondb::addExistingColl ( const char *coll, collnum_t collnum ) {
 	g_parms.setToDefault( (char *)cr , OBJ_COLL , cr );
 
 	strcpy ( cr->m_coll , coll );
-	cr->m_collLen = gbstrlen ( coll );
+	cr->m_collLen = strlen ( coll );
 	cr->m_collnum = i;
 
 	// point to this, so Rdb and RdbBase can reference it
@@ -247,7 +247,7 @@ bool Collectiondb::addExistingColl ( const char *coll, collnum_t collnum ) {
 	// load coll.conf file
 	if ( ! cr->load ( coll , i ) ) {
 		mdelete ( cr, sizeof(CollectionRec), "CollectionRec" );
-		log("admin: Failed to load coll.%s.%" PRId32"/coll.conf",coll,i);
+		log(LOG_WARN, "admin: Failed to load coll.%s.%" PRId32"/coll.conf",coll,i);
 		delete ( cr );
 		if ( m_recs ) m_recs[i] = NULL;
 		return false;
@@ -297,10 +297,10 @@ bool Collectiondb::addNewColl ( const char *coll, bool saveIt,
 		return false;
 	}
 	// or if too big
-	if ( gbstrlen(coll) > MAX_COLL_LEN ) {
+	if ( strlen(coll) > MAX_COLL_LEN ) {
 		g_errno = ENOBUFS;
-		log( LOG_WARN, "admin: Trying to create a new collection whose name '%s' of %i chars is longer than the "
-		     "max of %" PRId32" chars.", coll, gbstrlen(coll), (int32_t)MAX_COLL_LEN );
+		log( LOG_WARN, "admin: Trying to create a new collection whose name '%s' of %zd chars is longer than the "
+		     "max of %" PRId32" chars.", coll, strlen(coll), (int32_t)MAX_COLL_LEN );
 		return false;
 	}
 
@@ -340,7 +340,7 @@ bool Collectiondb::addNewColl ( const char *coll, bool saveIt,
 
 	// set coll id and coll name for coll id #i
 	strcpy ( cr->m_coll , coll );
-	cr->m_collLen = gbstrlen ( coll );
+	cr->m_collLen = strlen ( coll );
 	cr->m_collnum = newCollnum;
 
 	// point to this, so Rdb and RdbBase can reference it
@@ -829,7 +829,7 @@ bool Collectiondb::resetColl2( collnum_t oldCollnum, collnum_t newCollnum, bool 
 	     closedir ( dir );
 	if ( dir ) {
 		//g_errno = EEXIST;
-		log("admin: Trying to create collection %s but "
+		log(LOG_WARN, "admin: Trying to create collection %s but "
 		    "directory %s already exists on disk.",cr->m_coll,dname);
 	}
 	if ( ::mkdir ( dname ,
@@ -840,7 +840,7 @@ bool Collectiondb::resetColl2( collnum_t oldCollnum, collnum_t newCollnum, bool 
 		// valgrind?
 		//if ( errno == EINTR ) goto retry22;
 		//g_errno = errno;
-		log("admin: Creating directory %s had error: "
+		log(LOG_WARN, "admin: Creating directory %s had error: "
 		    "%s.", dname,mstrerror(g_errno));
 	}
 
@@ -957,7 +957,7 @@ const char *Collectiondb::getDefaultColl ( HttpRequest *r ) {
 // . returns NULL if not available
 CollectionRec *Collectiondb::getRec ( const char *coll ) {
 	if ( ! coll ) coll = "";
-	return getRec ( coll , gbstrlen(coll) );
+	return getRec ( coll , strlen(coll) );
 }
 
 CollectionRec *Collectiondb::getRec ( const char *coll , int32_t collLen ) {
@@ -1008,7 +1008,7 @@ char *Collectiondb::getCollName ( collnum_t collnum ) {
 collnum_t Collectiondb::getCollnum ( const char *coll ) {
 
 	int32_t clen = 0;
-	if ( coll ) clen = gbstrlen(coll );
+	if ( coll ) clen = strlen(coll );
 	return getCollnum ( coll , clen );
 }
 
@@ -1018,12 +1018,12 @@ collnum_t Collectiondb::getCollnum ( const char *coll , int32_t clen ) {
 	if ( coll && ! coll[0] ) coll = NULL;
 	if ( ! coll ) {
 		coll = g_conf.m_defaultColl;
-		if ( coll ) clen = gbstrlen(coll);
+		if ( coll ) clen = strlen(coll);
 		else clen = 0;
 	}
 	if ( ! coll || ! coll[0] ) {
 		coll = "main";
-		clen = gbstrlen(coll);
+		clen = strlen(coll);
 	}
 
 	// not associated with any collection. Is this
@@ -1234,7 +1234,7 @@ bool CollectionRec::load ( const char *coll , int32_t i ) {
 	// set our collection number
 	m_collnum = i;
 	// set our collection name
-	m_collLen = gbstrlen ( coll );
+	m_collLen = strlen ( coll );
 	if ( coll != m_coll)
 		strcpy ( m_coll , coll );
 
@@ -1270,7 +1270,7 @@ bool CollectionRec::load ( const char *coll , int32_t i ) {
 
 
 	if ( ! g_conf.m_doingCommandLine && ! g_collectiondb.m_initializing )
-		log("coll: Loaded %s (%" PRId32") local hasurlsready=%" PRId32,
+		log(LOG_INFO, "coll: Loaded %s (%" PRId32") local hasurlsready=%" PRId32,
 		    m_coll,
 		    (int32_t)m_collnum,
 		    (int32_t)m_localCrawlInfo.m_hasUrlsReadyToSpider);
@@ -1280,7 +1280,7 @@ bool CollectionRec::load ( const char *coll , int32_t i ) {
 	if ( m_spiderRoundNum == 0 &&
 	     m_localCrawlInfo.m_pageDownloadSuccessesThisRound <
 	     m_localCrawlInfo.m_pageDownloadSuccesses ) {
-		log("coll: fixing process count this round for %s",m_coll);
+		log(LOG_WARN, "coll: fixing process count this round for %s",m_coll);
 		m_localCrawlInfo.m_pageDownloadSuccessesThisRound =
 			m_localCrawlInfo.m_pageDownloadSuccesses;
 	}
@@ -1289,7 +1289,7 @@ bool CollectionRec::load ( const char *coll , int32_t i ) {
 	if ( m_spiderRoundNum == 0 &&
 	     m_localCrawlInfo.m_pageProcessSuccessesThisRound <
 	     m_localCrawlInfo.m_pageProcessSuccesses ) {
-		log("coll: fixing process count this round for %s",m_coll);
+		log(LOG_WARN, "coll: fixing process count this round for %s",m_coll);
 		m_localCrawlInfo.m_pageProcessSuccessesThisRound =
 			m_localCrawlInfo.m_pageProcessSuccesses;
 	}
@@ -1306,7 +1306,7 @@ bool CollectionRec::load ( const char *coll , int32_t i ) {
 		gbmemcpy ( &m_globalCrawlInfo , sb.getBufStart(),sb.length() );
 
 	if ( ! g_conf.m_doingCommandLine && ! g_collectiondb.m_initializing )
-		log("coll: Loaded %s (%" PRId32") global hasurlsready=%" PRId32,
+		log(LOG_INFO, "coll: Loaded %s (%" PRId32") global hasurlsready=%" PRId32,
 		    m_coll,
 		    (int32_t)m_collnum,
 		    (int32_t)m_globalCrawlInfo.m_hasUrlsReadyToSpider);
@@ -2496,7 +2496,7 @@ bool CollectionRec::save ( ) {
 	// binary now
 	sb.safeMemcpy ( &m_localCrawlInfo , sizeof(CrawlInfo) );
 	if ( sb.safeSave ( tmp ) == -1 ) {
-		log("db: failed to save file %s : %s",
+		log(LOG_WARN, "db: failed to save file %s : %s",
 		    tmp,mstrerror(g_errno));
 		g_errno = 0;
 	}
@@ -2509,7 +2509,7 @@ bool CollectionRec::save ( ) {
 	// binary now
 	sb.safeMemcpy ( &m_globalCrawlInfo , sizeof(CrawlInfo) );
 	if ( sb.safeSave ( tmp ) == -1 ) {
-		log("db: failed to save file %s : %s",
+		log(LOG_WARN, "db: failed to save file %s : %s",
 		    tmp,mstrerror(g_errno));
 		g_errno = 0;
 	}
@@ -2534,7 +2534,7 @@ void nukeDoledb ( collnum_t collnum );
 bool CollectionRec::rebuildUrlFilters ( ) {
 
 	if ( ! g_conf.m_doingCommandLine && ! g_collectiondb.m_initializing )
-		log("coll: Rebuilding url filters for %s ufp=%s",m_coll,
+		log(LOG_INFO, "coll: Rebuilding url filters for %s ufp=%s",m_coll,
 		    m_urlFiltersProfile.getBufStart());
 
 	// set the url filters based on the url filter profile, if any
@@ -2564,7 +2564,7 @@ bool CollectionRec::rebuildUrlFilters ( ) {
 
 	// . do not do this at startup
 	// . this essentially resets doledb
-	if ( g_doledb.m_rdb.m_initialized &&
+	if ( g_doledb.m_rdb.isInitialized() &&
 	     // somehow this is initialized before we set m_recs[m_collnum]
 	     // so we gotta do the two checks below...
 	     sc &&
@@ -2573,8 +2573,7 @@ bool CollectionRec::rebuildUrlFilters ( ) {
 	     g_collectiondb.m_recs[m_collnum] ) {
 
 
-		log("coll: resetting doledb for %s (%li)",m_coll,
-		    (long)m_collnum);
+		log(LOG_INFO, "coll: resetting doledb for %s (%li)",m_coll, (long)m_collnum);
 
 		// clear doledb recs from tree
 		//g_doledb.getRdb()->deleteAllRecs ( m_collnum );
@@ -2617,7 +2616,7 @@ int64_t CollectionRec::getNumDocsIndexed() {
 bool CollectionRec::shouldSendLocalCrawlInfoToHost ( int32_t hostId ) {
 	if ( ! m_spiderColl ) return false;
 	if ( hostId < 0 ) { g_process.shutdownAbort(true); }
-	if ( hostId >= g_hostdb.m_numHosts ) { g_process.shutdownAbort(true); }
+	if ( hostId >= g_hostdb.getNumHosts() ) { g_process.shutdownAbort(true); }
 	// sanity
 	return m_spiderColl->m_sendLocalCrawlInfoToHost[hostId];
 }
@@ -2625,7 +2624,7 @@ bool CollectionRec::shouldSendLocalCrawlInfoToHost ( int32_t hostId ) {
 void CollectionRec::localCrawlInfoUpdate() {
 	if ( ! m_spiderColl ) return;
 	// turn on all the flags
-	memset(m_spiderColl->m_sendLocalCrawlInfoToHost,1,g_hostdb.m_numHosts);
+	memset(m_spiderColl->m_sendLocalCrawlInfoToHost,1,g_hostdb.getNumHosts());
 }
 
 // right after we send copy it for sending we set this so we do not send

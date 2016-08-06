@@ -54,8 +54,7 @@ bool sendPageHosts ( TcpSocket *s , HttpRequest *r ) {
 	int32_t setsparenote = r->getLong("setsparenote", 0);
 	// check for replace host command
 	int32_t replaceHost = r->getLong("replacehost", 0);
-	// check for sync host command
-	int32_t syncHost = r->getLong("synchost", 0);
+
 	// set note...
 	if ( setnote == 1 ) {
 		// get the host id to change
@@ -87,21 +86,6 @@ bool sendPageHosts ( TcpSocket *s , HttpRequest *r ) {
 			goto skipReplaceHost;
 		// replace
 		g_hostdb.replaceHost(rhost, rspare);
-	}
-	// sync host...
-	if ( syncHost == 1 ) {
-		// get the host id to sync
-		int32_t syncHost = r->getLong("shost", -1);
-		if ( syncHost == -1 ) goto skipReplaceHost;
-		// call sync
-		g_hostdb.syncHost(syncHost, false);
-	}
-	if ( syncHost == 2 ) {
-		// get the host id to sync
-		int32_t syncHost = r->getLong("shost", -1);
-		if ( syncHost == -1 ) goto skipReplaceHost;
-		// call sync
-		g_hostdb.syncHost(syncHost, true);
 	}
 
 skipReplaceHost:
@@ -373,35 +357,11 @@ skipReplaceHost:
 		char pms[64];
 		if ( h->m_pingMax < 0 ) sprintf(pms,"???");
 		else                    sprintf(pms,"%" PRId32"ms",h->m_pingMax);
-		// the sync status ascii-ized
-		char syncStatus = h->m_syncStatus;
-		const char *ptr2;
-		if      (syncStatus==0) 
-			ptr2 ="<b>N</b>";
-		else if (syncStatus==1) 
-			ptr2 ="Y";
-		else 
-			ptr2 ="?";
 		char ipbuf1[64];
 		char ipbuf2[64];
 		strcpy(ipbuf1,iptoa(h->m_ip));
 		strcpy(ipbuf2,iptoa(h->m_ipShotgun));
 
-		/*
-		char  hdbuf[128];
-		char *hp = hdbuf;
-		for ( int32_t k = 0 ; k < 4 ; k++ ) {
-			int32_t temp = h->m_hdtemps[k];
-			if ( temp > 50 && format == FORMAT_HTML )
-				hp += sprintf(hp,"<font color=red><b>%" PRId32
-					      "</b></font>",
-					      temp);
-			else
-				hp += sprintf(hp,"%" PRId32,temp);
-			if ( k < 3 ) *hp++ = '/';
-			*hp = '\0';
-		}
-		*/
 		char *vbuf = h->m_pingInfo.m_gbVersionStr;//m_gbVersionStrBuf;
 		// get hash
 		int32_t vhash32 = hash32n ( vbuf );
@@ -660,7 +620,6 @@ skipReplaceHost:
 			sb.safePrintf("\t\t<dnsPort>%" PRId32"</dnsPort>\n",
 				      (int32_t)h->m_dnsClientPort);
 
-			//sb.safePrintf("\t\t<hdTemp>%s</hdTemp>\n",hdbuf);
 			sb.safePrintf("\t\t<gbVersion>%s</gbVersion>\n",vbuf);
 
 			sb.safePrintf("\t\t<resends>%" PRId32"</resends>\n",
@@ -784,7 +743,6 @@ skipReplaceHost:
 			sb.safePrintf("\t\t\"dnsPort\":%" PRId32",\n",
 				      (int32_t)h->m_dnsClientPort);
 
-			//sb.safePrintf("\t\t\"hdTemp\":\"%s\",\n",hdbuf);
 			sb.safePrintf("\t\t\"gbVersion\":\"%s\",\n",vbuf);
 
 			sb.safePrintf("\t\t\"resends\":%" PRId32",\n",
@@ -1555,11 +1513,7 @@ static int32_t generatePingMsg( Host *h, int64_t nowms, char *buf ) {
         // ping time ptr
         // make it "DEAD" if > 6000
         if ( ping >= g_conf.m_deadHostTimeout ) {
-                // mark SYNC if doing a sync
-                if ( h->m_doingSync )
-                        sprintf(buf, "<font color=#ff8800><b>SYNC</b></font>");
-                else
-                        sprintf(buf, "<font color=#ff0000><b>DEAD</b></font>");
+            sprintf(buf, "<font color=#ff0000><b>DEAD</b></font>");
         }
         // for kernel errors
         else if ( h->m_pingInfo.m_kernelErrors > 0 ){
@@ -1576,23 +1530,19 @@ static int32_t generatePingMsg( Host *h, int64_t nowms, char *buf ) {
 
 	if ( ! g_conf.m_useShotgun ) return pingAge;
 
-	char *p = buf + gbstrlen(buf);
+	char *p = buf + strlen(buf);
 
 	p += sprintf ( p , "</td><td>" );
 
-        // the second eth port, ip2, the shotgun port
-        int32_t pingB = h->m_pingShotgun;
-        sprintf ( p , "%" PRId32"ms", pingB );
-        if ( pingB >= g_conf.m_deadHostTimeout ) {
-                // mark SYNC if doing a sync
-                if ( h->m_doingSync )
-                        sprintf(p,"<font color=#ff8800><b>SYNC</b></font>");
-                else
-                        sprintf(p,"<font color=#ff0000><b>DEAD</b></font>");
+    // the second eth port, ip2, the shotgun port
+    int32_t pingB = h->m_pingShotgun;
+    sprintf ( p , "%" PRId32"ms", pingB );
+    if ( pingB >= g_conf.m_deadHostTimeout ) {
+        sprintf(p,"<font color=#ff0000><b>DEAD</b></font>");
 		return pingAge;
-        }
+    }
 
-        return pingAge;
+    return pingAge;
 }
 
 int defaultSort   ( const void *i1, const void *i2 ) {

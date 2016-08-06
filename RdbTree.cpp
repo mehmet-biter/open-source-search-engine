@@ -136,10 +136,10 @@ void RdbTree::reset ( ) {
 	}
 	// unprotect it all
 	if ( m_useProtection ) unprotect ( );
-	// make sure string is NULL temrinated. this gbstrlen() should 
+	// make sure string is NULL temrinated. this strlen() should 
 	if ( m_numNodes > 0 && 
 	     m_dbname[0] && 
-	     gbstrlen(m_dbname) >= 0 &&
+	     strlen(m_dbname) >= 0 &&
 	     // don't be spammy we can have thousands of these, one per coll
 	     strcmp(m_dbname,"waitingtree") )
 		log(LOG_INFO,"db: Resetting tree for %s.",m_dbname);
@@ -1193,8 +1193,10 @@ bool RdbTree::fixTree ( ) {
 
 	log("db: Fix tree removed %" PRId32" nodes for %s.",n - count,m_dbname);
 	// esure it is still good
-	if ( ! checkTree ( false , true ) )
-		return log("db: Fix tree failed.");
+	if ( ! checkTree ( false , true ) ) {
+		log(LOG_WARN, "db: Fix tree failed.");
+		return false;
+	}
 	log("db: Fix tree succeeded for %s.",m_dbname);
 	return true;
 }
@@ -1279,61 +1281,69 @@ bool RdbTree::checkTree2 ( bool printMsgs , bool doChainTest ) {
 		// bad collnum?
 		if ( doCollRecCheck ) {
 			collnum_t cn = m_collnums[i];
-			if ( m_rdbId>=0 && 
-			     (cn >= g_collectiondb.m_numRecs || cn < 0) )
-				return log("db: bad collnum in tree");
-			if ( m_rdbId>=0 && ! g_collectiondb.m_recs[cn] )
-				return log("db: collnum is obsolete in tree");
+			if ( m_rdbId>=0 && (cn >= g_collectiondb.m_numRecs || cn < 0) ) {
+				log(LOG_WARN, "db: bad collnum in tree");
+				return false;
+			}
+			if ( m_rdbId>=0 && ! g_collectiondb.m_recs[cn] ) {
+				log(LOG_WARN, "db: collnum is obsolete in tree");
+				return false;
+			}
 		}
 
 		// if no left/right kid it MUST be -1
-		if ( m_left[i] < -1 )
-			return log(
-				   "db: Tree left kid < -1.");
-		if ( m_left[i] >= m_numNodes )
-			return log(
-				   "db: Tree left kid is %" PRId32" >= %" PRId32".",
-				   m_left[i],m_numNodes);
-		if ( m_right[i] < -1 )
-			return log(
-				   "db: Tree right kid < -1.");
-		if ( m_right[i] >= m_numNodes )
-			return log(
-				   "db: Tree left kid is %" PRId32" >= %" PRId32".",
-				   m_right[i],m_numNodes);
+		if ( m_left[i] < -1 ) {
+			log(LOG_WARN, "db: Tree left kid < -1.");
+			return false;
+		}
+		if ( m_left[i] >= m_numNodes ) {
+			log(LOG_WARN, "db: Tree left kid is %" PRId32" >= %" PRId32".", m_left[i], m_numNodes);
+			return false;
+		}
+		if ( m_right[i] < -1 ) {
+			log(LOG_WARN, "db: Tree right kid < -1.");
+			return false;
+		}
+		if ( m_right[i] >= m_numNodes ) {
+			log(LOG_WARN, "db: Tree left kid is %" PRId32" >= %" PRId32".", m_right[i], m_numNodes);
+			return false;
+		}
 		// check left kid
-		if ( m_left[i] >= 0 && m_parents[m_left[i]] != i ) 
-			return log(
-				   "db: Tree left kid and parent disagree.");
+		if ( m_left[i] >= 0 && m_parents[m_left[i]] != i ) {
+			log(LOG_WARN, "db: Tree left kid and parent disagree.");
+			return false;
+		}
 		// then right kid
-		if ( m_right[i] >= 0 && m_parents[m_right[i]] != i ) 
-			return log(
-				   "db: Tree right kid and parent disagree.");
+		if ( m_right[i] >= 0 && m_parents[m_right[i]] != i ) {
+			log(LOG_WARN, "db: Tree right kid and parent disagree.");
+			return false;
+		}
 		// MDW: why did i comment out the order checking?
 		// check order
 		if ( m_left[i] >= 0 &&
 		     m_collnums[i] == m_collnums[m_left[i]] ) {
 			char *key = &m_keys[i*m_ks];
 			char *left = &m_keys[m_left[i]*m_ks];
-			if ( KEYCMP(key,left,m_ks)<0) 
-				return log("db: Tree left kid > parent %i",i);
+			if ( KEYCMP(key,left,m_ks)<0) {
+				log(LOG_WARN, "db: Tree left kid > parent %i", i);
+				return false;
+			}
 			
 		}
 		if ( m_right[i] >= 0 &&
 		     m_collnums[i] == m_collnums[m_right[i]] ) {
 			char *key = &m_keys[i*m_ks];
 			char *right = &m_keys[m_right[i]*m_ks];
-			if ( KEYCMP(key,right,m_ks)>0) 
-				return log("db: Tree right kid < parent %i "
-					   "%s < %s",i,
-					   KEYSTR(right,m_ks),
-					   KEYSTR(key,m_ks) );
+			if ( KEYCMP(key,right,m_ks)>0) {
+				log(LOG_WARN, "db: Tree right kid < parent %i %s < %s", i, KEYSTR(right, m_ks), KEYSTR(key, m_ks));
+				return false;
+			}
 		}
 		//g_loop.quickPoll(1, __PRETTY_FUNCTION__, __LINE__);
 	}
 
 	if ( hkp > 0 ) {
-		log( "db: Had %" PRId32" half key bits on for %s.", hkp, m_dbname );
+		log( LOG_WARN, "db: Had %" PRId32" half key bits on for %s.", hkp, m_dbname );
 		return false;
 	}
 
@@ -1362,8 +1372,10 @@ bool RdbTree::checkTree2 ( bool printMsgs , bool doChainTest ) {
 
 		// we do not want to delete these nodes from the tree yet
 		// in case the collection was accidentally removed.
-		//if ( ! recs[cn] )
-		//	return log("db: Got bad collnum tree. %" PRId32".",cn);
+		//if ( ! recs[cn] ) {
+		// 	log("db: Got bad collnum tree. %" PRId32".",cn);
+		//  return false;
+		//}
 
 		int32_t P = m_parents [i];
 		if ( P == -2 ) continue; // deleted node
@@ -1711,8 +1723,8 @@ bool RdbTree::getList ( collnum_t collnum ,
 	// bitch if list does not own his own data
 	if ( ! list->getOwnData() ) {
 		g_errno = EBADENGINEER;
-		return log(LOG_LOGIC,"db: rdbtree: getList: List does not "
-			   "own data");
+		log(LOG_LOGIC,"db: rdbtree: getList: List does not own data");
+		return false;
 	}
 	// bail if minRecSizes is 0
 	if ( minRecSizes == 0 ) return true;
@@ -1773,9 +1785,11 @@ bool RdbTree::getList ( collnum_t collnum ,
 	//	     "minRecSizes=%" PRId32" db=%s.",growth,minRecSizes,m_dbname);
 
 	// grow the list now
-	if ( ! list->growList ( growth ) ) 
-		return log("db: Failed to grow list to %" PRId32" bytes for storing "
-			   "records from tree: %s.",growth,mstrerror(g_errno));
+	if ( ! list->growList ( growth ) ) {
+		log(LOG_WARN, "db: Failed to grow list to %" PRId32" bytes for storing records from tree: %s.",
+		    growth, mstrerror(g_errno));
+		return false;
+	}
 	// similar to above algorithm but we have data along with the keys
 	int32_t dataSize;
 
@@ -1822,10 +1836,9 @@ bool RdbTree::getList ( collnum_t collnum ,
 
 			if ( ! list->addRecord(&m_keys[node*m_ks],0,NULL)) {
 				m_gettingList--;
-				return log("db: Failed to add record "
-					   "to tree list for %s: %s. "
-					   "Fix the growList algo.",
-					   m_dbname,mstrerror(g_errno));
+				log(LOG_WARN, "db: Failed to add record to tree list for %s: %s. Fix the growList algo.",
+				    m_dbname,mstrerror(g_errno));
+				return false;
 			}
 		}
 		else {
@@ -1862,10 +1875,9 @@ bool RdbTree::getList ( collnum_t collnum ,
 						 dataSize     ,
 						 m_data[node] ) ) {
 				m_gettingList--;
-				return log("db: Failed to add record "
-					   "to tree list for %s: %s. "
-					   "Fix the growList algo.",
-					   m_dbname,mstrerror(g_errno));
+				log(LOG_WARN, "db: Failed to add record to tree list for %s: %s. Fix the growList algo.",
+				    m_dbname,mstrerror(g_errno));
+				return false;
 			}
 			// debug msg for detecting tagdb corruption
 			/*
@@ -1938,7 +1950,7 @@ bool RdbTree::getList ( collnum_t collnum ,
 		//if (((newEndKey.n0) & 0x01) == 0x00 ) 
 		//	newEndKey += (uint32_t)1;
 		// we are little endian
-		if ( KEYNEG(newEndKey,0,m_ks) ) KEYADD(newEndKey,m_ks);
+		if ( KEYNEG(newEndKey,0,m_ks) ) KEYINC(newEndKey,m_ks);
 		// if we're using half keys set his half key bit
 		//if ( useHalfKeys ) newEndKey.n0 |= 0x02;
 		if ( useHalfKeys ) KEYOR(newEndKey,0x02);
@@ -1987,9 +1999,11 @@ bool RdbTree::getListUnordered ( int32_t startNode , int32_t minRecSizes ,
 	// don't grow more than we need to
 	if ( minRecSizes < growth ) growth = minRecSizes;
 	// grow the list now
-	if ( ! list->growList ( growth ) ) 
-		return log("db: Failed to grow list to %" PRId32" bytes for storing "
+	if ( ! list->growList ( growth ) ) {
+		log("db: Failed to grow list to %" PRId32" bytes for storing "
 			   "records from tree: %s.",growth,mstrerror(g_errno));
+		return false;
+	}
 	// mdw fixed, this. it was node = 0 so we couldn't dump all of tree!!!
 	int32_t node = startNode ;
 
@@ -2010,10 +2024,12 @@ bool RdbTree::getListUnordered ( int32_t startNode , int32_t minRecSizes ,
 		if ( minRecSizes < 0 ) break;
 		// . add to the list
 		// . return false on error
-		if ( ! list->addRecord ( m_keys[node], dataSize , data ) )
-			return log("db: Failed to add record "
+		if ( ! list->addRecord ( m_keys[node], dataSize , data ) ) {
+			log(LOG_WARN, "db: Failed to add record "
 				   "to tree list for %s: %s.",
 				   m_dbname,mstrerror(g_errno));
+			return false;
+		}
 		// goto next node
 		node++;
 	}
@@ -2481,7 +2497,7 @@ bool RdbTree::fastSave ( const char *dir, const char *dbname, bool useThread, vo
 	m_callback = callback;
 
 	// assume no error
-	m_saveErrno = 0;
+	m_errno = 0;
 
 	// no adding to the tree now
 	m_isSaving = true;
@@ -2504,7 +2520,7 @@ bool RdbTree::fastSave ( const char *dir, const char *dbname, bool useThread, vo
 	fastSave_r ();
 
 	// store save error into g_errno
-	g_errno = m_saveErrno;
+	g_errno = m_errno;
 
 	// resume adding to the tree
 	m_isSaving = false;
@@ -2519,41 +2535,48 @@ bool RdbTree::fastSave ( const char *dir, const char *dbname, bool useThread, vo
 // Use of ThreadEntry parameter is NOT thread safe
 void saveWrapper ( void *state ) {
 	// get this class
-	RdbTree *THIS = (RdbTree *)state;
+	RdbTree *that = (RdbTree *)state;
+
+	// assume no error since we're at the start of thread call
+	that->m_errno = 0;
 
 	// this returns false and sets g_errno on error
-	THIS->fastSave_r();
+	that->fastSave_r();
+
+	if (g_errno && !that->m_errno) {
+		that->m_errno = g_errno;
+	}
 }
 
 // we come here after thread exits
 // Use of ThreadEntry parameter is NOT thread safe
 void threadDoneWrapper ( void *state, job_exit_t exit_type ) {
 	// get this class
-	RdbTree *THIS = (RdbTree *)state;
+	RdbTree *that = (RdbTree *)state;
 
 	// store save error into g_errno
-	g_errno = THIS->m_saveErrno;
+	g_errno = that->m_errno;
 
 	// . resume adding to the tree
 	// . this will also allow other threads to be queued
 	// . if we did this at the end of the thread we could end up with
 	//   an overflow of queued SAVETHREADs
-	THIS->m_isSaving = false;
+	that->m_isSaving = false;
 
 	// we do not need to be saved now?
-	THIS->m_needsSave = false;
+	that->m_needsSave = false;
 
 	// g_errno should be preserved from the thread so if fastSave_r()
 	// had an error it will be set
 	if ( g_errno ) {
-		log( LOG_ERROR, "db: Had error saving tree to disk for %s: %s.", THIS->m_dbname, mstrerror( g_errno ) );
+		log( LOG_ERROR, "db: Had error saving tree to disk for %s: %s.", that->m_dbname, mstrerror( g_errno ) );
 	} else {
 		// log it
 		log( LOG_INFO, "db: Done saving %s%s-saved.dat (wrote %" PRId64" bytes)",
-		     THIS->m_dir, THIS->m_dbname, THIS->m_bytesWritten );
+		     that->m_dir, that->m_dbname, that->m_bytesWritten );
 	}
 	// . call callback
-	if ( THIS->m_callback ) THIS->m_callback ( THIS->m_state );
+	if ( that->m_callback ) that->m_callback ( that->m_state );
 }
 
 // . returns false and sets g_errno on error
@@ -2564,8 +2587,10 @@ bool RdbTree::fastSave_r() {
 	// recover the file
 	//BigFile *f = m_saveFile;
 	// open it up
-	//if ( ! f->open ( O_RDWR | O_CREAT ) ) 
-	//	return log("RdbTree::fastSave_r: %s",mstrerror(g_errno));
+	//if ( ! f->open ( O_RDWR | O_CREAT ) ) {
+	//	log("RdbTree::fastSave_r: %s",mstrerror(g_errno));
+	//  return false;
+	//}
 	// cannot use the BigFile class, since we may be in a thread and it 
 	// messes with g_errno
 	//char *s = m_saveFile->getFilename();
@@ -2573,7 +2598,7 @@ bool RdbTree::fastSave_r() {
 	sprintf ( s , "%s/%s-saving.dat", m_dir , m_dbname );
 	int fd = ::open ( s , O_RDWR | O_CREAT | O_TRUNC , getFileCreationFlags() );
 	if ( fd < 0 ) {
-		m_saveErrno = errno;
+		m_errno = errno;
 		log( LOG_ERROR, "db: Could not open %s for writing: %s.", s, mstrerror( errno ) );
 		return false;
 	}
@@ -2609,10 +2634,10 @@ bool RdbTree::fastSave_r() {
 	offset += sizeof(m_ownData);
 	// bitch on error
 	if ( br != offset ) {
-		m_saveErrno = errno;
+		m_errno = errno;
 		close ( fd );
-		return log("db: Failed to save tree1 for %s: %s.",
-			   m_dbname,mstrerror(errno));
+		log(LOG_WARN, "db: Failed to save tree1 for %s: %s.", m_dbname,mstrerror(errno));
+		return false;
 	}
 	// position to store into m_keys, ...
 	int32_t start = 0;
@@ -2624,9 +2649,9 @@ bool RdbTree::fastSave_r() {
 		// returns -1 on error
 		if ( bytesWritten < 0 ) {
 			close ( fd );
-			m_saveErrno = errno;
-			return log("db: Failed to save tree2 for %s: %s.",
-				   m_dbname,mstrerror(errno));
+			m_errno = errno;
+			log(LOG_WARN, "db: Failed to save tree2 for %s: %s.", m_dbname,mstrerror(errno));
+			return false;
 		}
 		// point to next block to save to
 		start += BLOCK_SIZE;
@@ -2677,11 +2702,11 @@ int32_t RdbTree::fastSaveBlock_r ( int fd , int32_t start , int64_t offset ) {
 	if ( m_dataInPtrs ) {
 		br +=pwrite(fd,&m_data[start],n * 4 , offset ); offset +=n*4;}
 	// bitch on error
-	if ( br != offset - oldOffset ) 
-	  return log( LOG_WARN, "db: Failed to save tree3 for %s (%" PRId64"!=%" PRId64"): %s.",
-				m_dbname,
-		     br,offset,
-		     mstrerror(errno)) - 1;
+	if ( br != offset - oldOffset ) {
+		log(LOG_WARN, "db: Failed to save tree3 for %s (%" PRId64"!=%" PRId64"): %s.",
+		    m_dbname, br, offset, mstrerror(errno));
+		return -1;
+	}
 
 	// if no data to write then return bytes written this call
 	if ( m_fixedDataSize == 0 || m_dataInPtrs ) return offset - oldOffset ;

@@ -198,13 +198,12 @@ bool Proxy::handleRequest (TcpSocket *s){
 	     // . it only redirects there if the raw/code/site/sites is NULL
 	     *g_conf.m_redirect != '\0' &&
 	     hr.getLong("xml", -1) == -1 &&
-	     hr.getLong("raw", -1) == -1 &&
 	     hr.getString("code")  == NULL &&
 	     hr.getString("site")  == NULL &&
 	     hr.getString("sites") == NULL) {
-		//direct all non-raw, non admin traffic away.
+		//direct all non-xml, non admin traffic away.
 		redir = g_conf.m_redirect;
-		redirLen = gbstrlen(g_conf.m_redirect);
+		redirLen = strlen(g_conf.m_redirect);
 	}
 
 	// . just requesting a static file, like rants.html or logo.gif?
@@ -310,9 +309,8 @@ bool Proxy::handleRequest (TcpSocket *s){
 	stC->m_hostId = -1;
 	stC->m_slot = NULL;
 
-	// support &xml=1 or &raw=9 or &raw=8 to indicate xml output is wanted
+	// support &xml=1 to indicate xml output is wanted
 	stC->m_raw = hr.getLong ( "xml", 0 );
-	stC->m_raw = hr.getLong("raw",stC->m_raw);
 	
 	stC->m_s = s;
 
@@ -449,34 +447,6 @@ bool Proxy::forwardRequest ( StateControl *stC ) {
 		dstId   = -1;
 	}
 
-	// rewrite &xml=1 as &raw=8 so old search engine sends back xml
-	if ( req[0]=='G' &&
-	     req[1]=='E' && 
-	     req[2]=='T' &&
-	     req[3] == ' ' ) {
-		// replace &xml=1 in request with &raw=8 to support others
-		char *p = req + 4;
-		char *pend = req + reqSize;
-		// skip GET
-		for ( ; p < pend ; p++ ) {
-			// stop after url is over
-			if ( *p == ' ' ) break;
-			// match?
-			if ( p[0] != '?' && p[0] != '&' ) continue;
-			if ( p[1] != 'x' ) continue;
-			if ( p[2] != 'm' ) continue;
-			if ( p[3] != 'l' ) continue;
-			if ( p[4] != '=' ) continue;
-			if ( p[5] != '1' ) continue;
-			p[1] = 'r';
-			p[2] = 'a';
-			p[3] = 'w';
-			p[5] = '9';
-			break;
-		}
-	}
-
-
 	// . let's use the udp server instead because it quickly switches
 	//   to using eth1 if eth0 does two or more resends without an ACK,
 	//   and vice versa. this ensure that if a network switch fails then
@@ -500,8 +470,6 @@ bool Proxy::forwardRequest ( StateControl *stC ) {
 					   stC->m_timeout ,
 					   -1          , // backoff
 					   -1          , // maxwait
-					   NULL        , // replyBuf
-					   0           , // replyBufMaxSize
 					   0           , // niceness
 					   4           );// maxResends
 
@@ -538,7 +506,7 @@ void Proxy::gotReplyPage ( void *state, UdpSlot *slot ) {
 	//   we will get slot->m_errno set to EUDPTIMEDOUT
 	// . it will also set the errno to EUDPTIMEDOUT if the timeout we
 	//   gave sendRequest() above is reached.
-	if ( slot->m_errno == EUDPTIMEDOUT && //stC->m_forward < 0 &&
+	if ( slot->getErrno() == EUDPTIMEDOUT && //stC->m_forward < 0 &&
 	     // try this thrice i guess... hopefully we won't pick the same
 	     // host we did before!
 	     ++stC->m_retries <= 3 ) {
