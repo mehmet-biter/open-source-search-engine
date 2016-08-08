@@ -1903,7 +1903,7 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 	// use the transId of the slot to count!
 	g_callSlot = slot;
 
-	bool oom = ((((float)g_mem.getUsedMem())/(float)g_mem.getMaxMem()) >= .990);
+	bool oom = g_mem.getUsedMemPercentage() >= 99.0;
 
 	// if we are out of mem basically, do not waste time fucking around
 	if ( slot->getMsgType() != msg_type_11 && slot->getNiceness() == 0 && oom ) {

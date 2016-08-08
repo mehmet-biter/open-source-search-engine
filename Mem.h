@@ -38,7 +38,7 @@ class Mem {
 	int32_t validate();
 
 	// this one does not include new/delete mem, only *alloc()/free() mem
-	int64_t getUsedMem () { return m_used; }
+	int64_t getUsedMem () const;
 	// the max mem ever alloced
 	int64_t getMaxAlloced() { return m_maxAlloced; }
 	int64_t getMaxAlloc  () { return m_maxAlloc; }
@@ -49,6 +49,8 @@ class Mem {
 	int32_t getNumAllocated() { return m_numAllocated; }
 
 	int64_t getNumTotalAllocated() { return m_numTotalAllocated; }
+	
+	float getUsedMemPercentage() const;
 
 	// who underan/overran their buffers?
 	int  printBreech   ( int32_t i ) ;

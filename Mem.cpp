@@ -108,12 +108,14 @@ void * operator new (size_t size) throw (std::bad_alloc) {
 	int64_t max = g_conf.m_maxMem;
 	//if ( g_hostdb.m_hostId == 0 )  max += 2000000000;
 
-	// don't go over max
-	if ( g_mem.m_used + (int32_t)size >= max &&
-	     g_conf.m_maxMem > 1000000 ) {
-		log("mem: new(%" PRIu32"): Out of memory.", (uint32_t)size );
-		throw std::bad_alloc();
-		//throw 1;
+	{
+		ScopedLock sl(s_lock);
+		// don't go over max
+		if ( g_mem.m_used + (int32_t)size >= max &&
+		     g_conf.m_maxMem > 1000000 ) {
+			log("mem: new(%" PRIu32"): Out of memory.", (uint32_t)size );
+			throw std::bad_alloc();
+		}
 	}
 
 	void *mem = sysmalloc ( size );
@@ -234,7 +236,23 @@ Mem::~Mem() {
 	if ( getUsedMem() == 0 ) return;
 }
 
+
+int64_t Mem::getUsedMem () const {
+	ScopedLock sl(s_lock);
+	return m_used;
+}
+
+
 int64_t Mem::getMaxMem     () { return g_conf.m_maxMem; }
+
+
+float Mem::getUsedMemPercentage() const {
+	ScopedLock sl(s_lock);
+	int64_t used_mem = m_used;
+	int64_t max_mem = g_conf.m_maxMem;
+	sl.unlock();
+	return ((float)used_mem) * 100.0 / ((float)max_mem);
+}
 
 
 bool Mem::init  ( ) {

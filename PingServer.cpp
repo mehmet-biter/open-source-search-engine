@@ -310,7 +310,7 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 	pi->m_loadAvg = l_loadavg ;
 
 	// then our percent mem used
-	float mem = ((float)g_mem.getUsedMem()*100.0)/(float)g_mem.getMaxMem();
+	float mem = g_mem.getUsedMemPercentage();
 	//*(float *)p = mem ; p += sizeof(float); // 4 bytes
 	pi->m_percentMemUsed = mem;
 
