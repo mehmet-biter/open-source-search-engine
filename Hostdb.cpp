@@ -431,13 +431,7 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 			hostname2 = NULL;
 			//goto retired;
 		}
-		// if no secondary hostname for "gk2" (e.g.) try "gki2"
-		char tmp2[32];
-		if ( ! hostname2 && host[0]=='g' && host[1]=='k') {
-			int32_t hn = atol(host+2);
-			sprintf(tmp2,"gki%" PRId32,hn);
-			hostname2 = tmp2;
-		}
+
 		// limit
 		if ( hlen2 > 15 ) {
 			g_errno = EBADENGINEER;

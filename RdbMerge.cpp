@@ -28,6 +28,7 @@ bool RdbMerge::merge ( char     rdbId        ,
 		       collnum_t collnum,
 		       BigFile *target       , 
 		       RdbMap  *targetMap    ,
+		       RdbIndex *targetIndex,	//@@@ BR: no-merge index
 		       int32_t     id2          , // target's secondary id
 		       int32_t     startFileNum , 
 		       int32_t     numFiles     ,
@@ -63,6 +64,7 @@ bool RdbMerge::merge ( char     rdbId        ,
 
 	m_target          = target;
 	m_targetMap       = targetMap;
+	m_targetIndex     = targetIndex;		//@@@ BR: no-merge index
 	m_id2             = id2;
 	m_startFileNum    = startFileNum;
 	m_numFiles        = numFiles;
@@ -153,6 +155,10 @@ bool RdbMerge::gotLock ( ) {
 	// . set up a a file to dump the records into
 	// . returns false and sets g_errno on error
 	// . this will open m_target as O_RDWR | O_NONBLOCK | O_ASYNC ...
+	
+
+//@@@ BR: no-merge index NOT IMPLEMENTED HERE!!!	
+
 	m_dump.set ( m_collnum          ,
 		     m_target           ,
 		     m_id2              ,

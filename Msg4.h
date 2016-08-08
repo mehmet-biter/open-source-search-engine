@@ -57,7 +57,4 @@ class Msg4 {
 	class Msg4 *m_next;
 };
 
-// returns false if blocked and callback will be called when flush is done
-bool flushMsg4Buffers ( void *state , void (* callback) (void *) ) ;
-
 #endif // GB_MSG4_H

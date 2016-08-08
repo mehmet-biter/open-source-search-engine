@@ -25,6 +25,7 @@
 #include "SpiderProxy.h" // buildProxyTable()
 #include "PageInject.h" // InjectionRequest
 #include "Posdb.h"
+#include "GigablastRequest.h"
 
 
 Parms g_parms;
@@ -3224,7 +3225,7 @@ bool Parms::getParmHtmlEncoded ( SafeBuf *sb , Parm *m , char *s ) {
 	     //t == TYPE_DIFFBOT_DROPDOWN ||
 	     t == TYPE_UFP            ||
 	     t == TYPE_PRIORITY_BOXES || t == TYPE_RETRIES        ||
-	     t == TYPE_RETRIES        || t == TYPE_FILTER         ||
+	     t == TYPE_FILTER         ||
 	     t == TYPE_BOOL2          || t == TYPE_CHAR2           )
 		sb->safePrintf("%" PRId32,(int32_t)*s);
 	else if ( t == TYPE_FLOAT )
@@ -6012,7 +6013,7 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(Conf,m_useEtcHosts);
 	m->m_def   = "1";
 	m->m_type  = TYPE_BOOL;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
+	m->m_flags = 0;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -9988,6 +9989,15 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
+	m->m_title = "log trace info for RdbIndex";
+	m->m_cgi   = "ltrc_ridx";
+	m->m_off   = offsetof(Conf,m_logTraceRdbIndex);
+	m->m_type  = TYPE_BOOL;
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m->m_obj   = OBJ_CONF;
+	m++;
+
 	m->m_title = "log trace info for Repairs";
 	m->m_cgi   = "ltrc_rp";
 	m->m_off   = offsetof(Conf,m_logTraceRepairs);
@@ -11468,7 +11478,7 @@ bool Parms::doParmSendingLoop ( ) {
 	int32_t now = getTimeLocal();
 
 	// try to send a parm update request to each host
-	for ( int32_t i = 0 ; i < g_hostdb.m_numHosts ; i++ ) {
+	for ( int32_t i = 0 ; i < g_hostdb.getNumHosts() ; i++ ) {
 		// get it
 		Host *h = g_hostdb.getHost(i);
 		// skip ourselves, host #0. we now send to ourselves

@@ -7,8 +7,7 @@
 #ifndef GB_WORDS_H
 #define GB_WORDS_H
 
-// now keep this small and malloc if we need more... save some stack
-#define MAX_WORDS (1024)
+#include "max_words.h"
 
 // now Matches.h has 300 Words classes handy... try to do away with this
 // make sure it does not slow us down!!

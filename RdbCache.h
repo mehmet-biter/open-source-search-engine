@@ -243,9 +243,8 @@ class RdbCache {
 	int32_t getMaxMem      () const { return m_maxMem; }
 
 	// cache stats
-	int64_t getNumHits   () const { return m_numHits;   }
-	int64_t getNumMisses () const { return m_numMisses; }
-	int64_t getHitBytes  () const { return m_hitBytes; }
+	int64_t getNumHits() const;
+	int64_t getNumMisses() const;
 	int32_t getNumUsedNodes  () const { return m_numPtrsUsed; }
 	int32_t getNumTotalNodes () const { return m_numPtrsMax ; }
 	int64_t getNumAdds() const { return m_adds; }
@@ -292,6 +291,9 @@ private:
 	void markDeletedRecord(char *ptr);
 	bool convertCache ( int32_t numPtrsMax , int32_t maxMem ) ;
 
+	void incrementHits();
+	void incrementMisses();
+
 	bool m_convert;
 	int32_t m_convertNumPtrsMax;
 	int32_t m_convertMaxMem;
@@ -330,7 +332,7 @@ private:
 	// cache hits and misses
 	int64_t m_numHits; // includes partial hits & cached not-founds too
 	int64_t m_numMisses;
-	int64_t m_hitBytes;
+	pthread_mutex_t mtx_hits_misses; //mutex protecting just hits&misses
 
 	int32_t m_fixedDataSize;
 	bool m_supportLists;

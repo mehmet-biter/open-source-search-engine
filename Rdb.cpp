@@ -121,7 +121,8 @@ bool Rdb::init ( const char     *dir                  ,
 		  bool           preloadDiskPageCache ,
 		  char           keySize              ,
 		  bool           biasDiskPageCache    ,
-		 bool            isCollectionLess ) {
+		 bool            isCollectionLess,
+		 bool			useIndexFile ) {
 	// reset all
 	reset();
 
@@ -147,6 +148,8 @@ bool Rdb::init ( const char     *dir                  ,
 	m_biasDiskPageCache = biasDiskPageCache;
 	m_ks               = keySize;
 	m_inDumpLoop       = false;
+	
+	m_useIndexFile		= useIndexFile;
 
 	// set our id
 	m_rdbId = getIdFromRdb ( this );
@@ -236,6 +239,15 @@ bool Rdb::init ( const char     *dir                  ,
 		log( LOG_ERROR, "db: Failed to load tree." );
 		return false;
 	}
+
+//@@@ BR: no-merge index begin
+	if( m_useIndexFile ) {
+		sprintf(m_indexName,"%s.idx", m_dbname);
+		m_index.set(dir, m_indexName);
+		
+		m_index.readIndex();
+	}
+//@@@ BR: no-merge index end
 
 	m_initialized = true;
 
@@ -478,7 +490,8 @@ bool Rdb::addRdbBase2 ( collnum_t collnum ) { // addColl2()
 					NULL            ,
 					m_isTitledb     ,
 					m_preloadCache  ,
-					m_biasDiskPageCache ) ) {
+					m_biasDiskPageCache,
+					m_useIndexFile ) ) {
 		logf(LOG_INFO,"db: %s: Failed to initialize db for "
 		     "collection \"%s\".", m_dbname,coll);
 		//exit(-1);
@@ -887,6 +900,22 @@ bool Rdb::saveTree ( bool useThread ) {
 	}
 }
 
+//@@@ BR: no-merge index begin
+bool Rdb::saveIndex( bool /* useThread */) {
+	if( !m_useIndexFile ) {
+		return true;
+	}
+
+	const char *dbn = m_dbname;
+	if ( ! dbn || ! dbn[0] ) {
+		dbn = "unknown";
+	}
+
+
+	return m_index.writeIndex();
+}
+//@@@ BR: no-merge index end
+
 bool Rdb::saveMaps () {
 	// now loop over bases
 	for ( int32_t i = 0 ; i < getNumBases() ; i++ ) {
@@ -987,6 +1016,7 @@ bool Rdb::loadTree ( ) {
 
 		}
 	}
+
 	return true;
 }
 
@@ -1637,7 +1667,7 @@ void attemptMergeAll() {
 
 // . return false and set g_errno on error
 // . TODO: speedup with m_tree.addSortedKeys() already partially written
-bool Rdb::addList ( collnum_t collnum , RdbList *list, int32_t niceness/*, bool isSorted*/ ) {
+bool Rdb::addList ( collnum_t collnum , RdbList *list, int32_t niceness ) {
 	// pick it
 	if ( collnum < 0 || collnum > getNumBases() || ! getBase(collnum) ) {
 		g_errno = ENOCOLLREC;
@@ -2174,6 +2204,18 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 	//if ( ! m_needsSave ) {
 	//	m_needsSave = true;
 	//}
+
+//@@@ BR no-merge index begin
+	if( !KEYNEG(key) && m_useIndexFile && g_conf.m_noInMemoryPosdbMerge ) {
+		//
+		// Add data record to the current index file for the -saved.dat file.
+		// This index is stored in the Rdb record- the individual part file 
+		// indexes are in RdbBase and are read-only except when merging).
+		//
+		m_index.addRecord(m_rdbId, key);
+	}
+//@@@ BR no-merge index end
+
 
 	// . TODO: add using "lastNode" as a start node for the insertion point
 	// . should set g_errno if failed

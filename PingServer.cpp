@@ -145,7 +145,7 @@ void PingServer::initKernelErrorCheck(){
 	}
 
 	// clear the kernel Errors 
-	for ( int32_t i = 0; i < g_hostdb.m_numHosts; i++ ){
+	for ( int32_t i = 0; i < g_hostdb.getNumHosts(); i++ ){
 		g_hostdb.m_hosts[i].m_pingInfo.m_kernelErrors = 0;
 		g_hostdb.m_hosts[i].m_kernelErrorReported = false;
 	}
@@ -298,7 +298,7 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 	PingInfo *pi = &me->m_pingInfo;//RequestBuf;
 
 	pi->m_numCorruptDiskReads = g_numCorrupt;
-	pi->m_numOutOfMems = g_mem.m_outOfMems;
+	pi->m_numOutOfMems = g_mem.getOOMCount();
 	pi->m_socketsClosedFromHittingLimit = g_stats.m_closedSockets;
 	pi->m_currentSpiders = g_spiderLoop.m_numSpidersOut;
 
@@ -310,7 +310,7 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 	pi->m_loadAvg = l_loadavg ;
 
 	// then our percent mem used
-	float mem = ((float)g_mem.getUsedMem()*100.0)/(float)g_mem.getMaxMem();
+	float mem = g_mem.getUsedMemPercentage();
 	//*(float *)p = mem ; p += sizeof(float); // 4 bytes
 	pi->m_percentMemUsed = mem;
 
@@ -1470,7 +1470,7 @@ void updatePingTime ( Host *h , int32_t *pingPtr , int32_t tripTime ) {
 
 		// sanity check, this should be at least 1 since we are alive
 		if ( g_hostdb.m_numHostsAlive < 0 ||
-		     g_hostdb.m_numHostsAlive > g_hostdb.m_numHosts ) {
+		     g_hostdb.m_numHostsAlive > g_hostdb.getNumHosts() ) {
 			g_process.shutdownAbort(true); }
 	}
 }

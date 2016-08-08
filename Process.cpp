@@ -957,6 +957,7 @@ bool Process::saveRdbTrees ( bool useThread , bool shuttingDown ) {
 		}
 
 		rdb->saveTree ( useThread );
+		rdb->saveIndex( useThread );	//@@@ BR: no-merge index
 	}
 
 	// . save waitingtrees for each collection, blocks.

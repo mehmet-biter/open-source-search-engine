@@ -1617,8 +1617,6 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 	if ( g_conf.m_logDebugUdp )
 		start = gettimeofdayInMillisecondsLocal();
 
-	bool oom = ((((float)g_mem.getUsedMem())/(float)g_mem.getMaxMem()) >= .990);
-
 	// callback is non-NULL if we initiated the transaction 
 	if ( slot->hasCallback() ) {
 
@@ -1904,6 +1902,8 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 	// more than 4 ticks, it core dump to let us know!! it
 	// use the transId of the slot to count!
 	g_callSlot = slot;
+
+	bool oom = g_mem.getUsedMemPercentage() >= 99.0;
 
 	// if we are out of mem basically, do not waste time fucking around
 	if ( slot->getMsgType() != msg_type_11 && slot->getNiceness() == 0 && oom ) {

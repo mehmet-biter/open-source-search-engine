@@ -1306,7 +1306,8 @@ bool SpiderLoop::spiderUrl9 ( SpiderRequest *sreq ,
 	// this causes us to dead lock when spiders use up all the mem, and
 	// file merge operation can not get any, and spiders need to add to 
 	// titledb but can not until the merge completes!!
-	if ( g_conf.m_maxMem - g_mem.m_used < 25*1024*1024 ) {
+	int64_t freeMem = g_mem.getFreeMem();
+	if (freeMem < 25*1024*1024 ) {
 		static int32_t s_lastTime = 0;
 		static int32_t s_missed   = 0;
 		s_missed++;
@@ -1315,7 +1316,7 @@ bool SpiderLoop::spiderUrl9 ( SpiderRequest *sreq ,
 		if ( now - s_lastTime > 10 ) {
 			log("spider: Need 25MB of free mem to launch spider, "
 			    "only have %" PRId64". Failed to launch %" PRId32" times so "
-			    "far.", g_conf.m_maxMem - g_mem.m_used , s_missed );
+			    "far.", freeMem , s_missed );
 			s_lastTime = now;
 		}
 	}
@@ -2072,7 +2073,7 @@ void updateAllCrawlInfosSleepWrapper ( int fd , void *state ) {
 	s_inUse = true;
 
 	// send out the msg request
-	for ( int32_t i = 0 ; i < g_hostdb.m_numHosts ; i++ ) {
+	for ( int32_t i = 0 ; i < g_hostdb.getNumHosts() ; i++ ) {
 		Host *h = g_hostdb.getHost(i);
 		// count it as launched
 		s_requests++;
@@ -2211,7 +2212,7 @@ void gotCrawlInfoReply ( void *state , UdpSlot *slot ) {
 
 		// just copy into the stats buf
 		if ( ! cr->m_crawlInfoBuf.getBufStart() ) {
-			int32_t need = sizeof(CrawlInfo) * g_hostdb.m_numHosts;
+			int32_t need = sizeof(CrawlInfo) * g_hostdb.getNumHosts();
 			cr->m_crawlInfoBuf.setLabel("cibuf");
 			cr->m_crawlInfoBuf.reserve(need);
 			// in case one was udp server timed out or something
@@ -2270,7 +2271,7 @@ void gotCrawlInfoReply ( void *state , UdpSlot *slot ) {
 		// if empty for all hosts, i guess no stats...
 		if ( ! cia ) continue;
 
-		for ( int32_t k = 0 ; k < g_hostdb.m_numHosts; k++ ) {
+		for ( int32_t k = 0 ; k < g_hostdb.getNumHosts(); k++ ) {
 			// get the CrawlInfo for the ith host
 			CrawlInfo *stats = &cia[k];
 			// point to the stats for that host

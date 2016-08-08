@@ -2616,7 +2616,7 @@ int64_t CollectionRec::getNumDocsIndexed() {
 bool CollectionRec::shouldSendLocalCrawlInfoToHost ( int32_t hostId ) {
 	if ( ! m_spiderColl ) return false;
 	if ( hostId < 0 ) { g_process.shutdownAbort(true); }
-	if ( hostId >= g_hostdb.m_numHosts ) { g_process.shutdownAbort(true); }
+	if ( hostId >= g_hostdb.getNumHosts() ) { g_process.shutdownAbort(true); }
 	// sanity
 	return m_spiderColl->m_sendLocalCrawlInfoToHost[hostId];
 }
@@ -2624,7 +2624,7 @@ bool CollectionRec::shouldSendLocalCrawlInfoToHost ( int32_t hostId ) {
 void CollectionRec::localCrawlInfoUpdate() {
 	if ( ! m_spiderColl ) return;
 	// turn on all the flags
-	memset(m_spiderColl->m_sendLocalCrawlInfoToHost,1,g_hostdb.m_numHosts);
+	memset(m_spiderColl->m_sendLocalCrawlInfoToHost,1,g_hostdb.getNumHosts());
 }
 
 // right after we send copy it for sending we set this so we do not send

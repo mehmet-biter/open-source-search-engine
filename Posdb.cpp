@@ -152,7 +152,10 @@ bool Posdb::init ( ) {
 			            NULL,//&m_pc                       ,
 			            false , // istitledb?
 			            false , // preloaddiskpagecache?
-			            sizeof(key144_t) );
+			            sizeof(key144_t),
+			            false,
+			            false,
+						true);	//@@@ BR: no-merge index
 
 	// validate posdb
 	//return verify();
@@ -190,7 +193,8 @@ bool Posdb::init2 ( int32_t treeMem ) {
 			    NULL                        , // s_pc
 			    false ,
 			    false ,
-			    sizeof(key144_t) );
+			    sizeof(key144_t),
+			true );		// @@@ BR: no-merge index
 }
 
 
