@@ -27,6 +27,14 @@ static void  doneWrapper        ( void *state, job_exit_t exit_type );
 static bool  readwrite_r        ( FileState *fstate );
 
 
+static void updateDiskReadCompleted() {
+	//Small function for easier suppression in debug build and running with helgrind or similar
+	//Original comment: this is thread safe...
+	//Technically it isn't but the variable isn't normally torn between cache lines and most modern architectures handles this fine.
+	g_lastDiskReadCompleted = gettimeofdayInMilliseconds();
+}
+
+
 //A set (list in this case) of filenames that we intend to unlink or rename (src name).
 //it is needed for preventing queued read operations from working on deleted files.
 struct UnlinkFilename {
@@ -1169,8 +1177,7 @@ static bool readwrite_r ( FileState *fstate ) {
 			    mstrerror(errno));
 		}
 
-		// this is thread safe...
-		g_lastDiskReadCompleted = gettimeofdayInMilliseconds();
+		updateDiskReadCompleted();
 
 		// . if n is 0 that's strange!!
 		// . i think the fd will have been closed and re-opened on us if this
