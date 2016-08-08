@@ -717,10 +717,9 @@ UdpSlot *UdpServer::getBestSlotToSend ( int64_t now ) {
 	// . we send msgs that are mostly "caught up" with their acks first
 	// . the slot with the lowest score gets sent
 	// . re-sends have priority over NONre-sends(ACK was not recvd in time)
-	int32_t     maxScore = -1;
-	UdpSlot *maxi     = NULL;
-	int32_t     score;  
-	//UdpSlot *slot;
+	int32_t maxScore = -1;
+	UdpSlot *maxi = NULL;
+
   	// . we send dgrams with the lowest "score" first
 	// . the "score" is just number of ACKs you're waiting for
 	// . that way transmissions that are the most caught up to their ACKs
@@ -732,23 +731,23 @@ UdpSlot *UdpServer::getBestSlotToSend ( int64_t now ) {
 		//   stuff, because we'd just end up calling the handler
 		//   too many times. we could invent a "stop" cmd or something.
 		// . mdw
-		// if it's timedout then nuke it
-		//if ( slot->isTimedOut(now) ) {
-		//g_errno = ETIMEDOUT;
-		//return slot;
-		//}
+
 		// . how many acks are we currently waiting for from dgrams
 		//   that have already been sent?
 		// . can be up to ACK_WINDOW_SIZE (16?).
 		// . we're a "Fastest First" (FF) protocol stack.
-		score = slot->getScore ( now );
+		int32_t score = slot->getScore ( now );
 		// a negative score means it's not a candidate
-		if ( score < 0 ) continue;
+		if ( score < 0 ) {
+			continue;
+		}
 		// see if we're a winner
-		if ( score > maxScore ) { maxi = slot; maxScore = score; }
+		if ( score > maxScore ) {
+			maxi = slot;
+			maxScore = score;
+		}
 	}
-	// if nothing left to send return NULL cuz we didn't do anything
-	//if ( ! maxi ) return NULL;
+
 	// return the winning slot
 	return maxi;
 }
