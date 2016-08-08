@@ -224,9 +224,12 @@ Mem::Mem() {
 	m_maxAlloc = 0;
 	m_maxAllocBy = "";
 	m_maxAlloced = 0;
-	m_memtablesize = 0;
+
 	// count how many allocs/news failed
 	m_outOfMems = 0;
+
+	// do not initialize m_memtablesize here
+	// constructor can be called after addMem has been called (from operator new)
 }
 
 Mem::~Mem() {
