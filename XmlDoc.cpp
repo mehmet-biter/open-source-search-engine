@@ -1597,13 +1597,14 @@ void XmlDoc::getRebuiltSpiderRequest ( SpiderRequest *sreq ) {
 //   g_errnos by adding an error spider reply so we offload the
 //   logic to the url filters table
 bool XmlDoc::indexDoc ( ) {
-
-logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );
+	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );
 
 	// return from the msg4.addMetaList() below?
 	if ( m_msg4Launched ) {
 		// must have been waiting
-		if ( ! m_msg4Waiting ) { g_process.shutdownAbort(true); }
+		if ( ! m_msg4Waiting ) {
+			g_process.shutdownAbort(true);
+		}
 
 		logTrace( g_conf.m_logTraceXmlDoc, "END, returning true. m_msg4Launched" );
 		return true;
@@ -2067,15 +2068,14 @@ bool XmlDoc::indexDoc2 ( ) {
 		verifyMetaList ( m_metaList , m_metaList + m_metaListSize , false );
 
 		// do it
-		if ( ! m_msg4.addMetaList( m_metaList, m_metaListSize, m_collnum, m_masterState, m_masterLoop, m_niceness ) ) {
+		if (!m_msg4.addMetaList(m_metaList, m_metaListSize, m_collnum, m_masterState, m_masterLoop, m_niceness)) {
 			m_msg4Waiting = true;
 			logTrace( g_conf.m_logTraceXmlDoc, "END, return false. addMetaList blocked" );
 			return false;
 		}
 
 		// error with msg4? bail
-		if ( g_errno )
-		{
+		if ( g_errno ) {
 			bool rc= logIt();
 			logTrace( g_conf.m_logTraceXmlDoc, "END, return %s. g_errno %" PRId32" after addMetaList", rc?"true":"false", g_errno);
 			return rc;
@@ -2084,7 +2084,9 @@ bool XmlDoc::indexDoc2 ( ) {
 	}
 
 	// make sure our msg4 is no longer in the linked list!
-	if (m_msg4Waiting && isInMsg4LinkedList(&m_msg4)){g_process.shutdownAbort(true);}
+	if (m_msg4Waiting && isInMsg4LinkedList(&m_msg4)){
+		g_process.shutdownAbort(true);
+	}
 
 	// we are not waiting for the msg4 to return
 	m_msg4Waiting = false;
