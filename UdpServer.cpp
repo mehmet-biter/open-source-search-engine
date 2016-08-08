@@ -1604,8 +1604,6 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 
 	// for timing callbacks and handlers
 	int64_t start = 0;
-	int64_t took;
-	//int32_t mt ;
 	int64_t now ;
 	int32_t delta , n , bucket;
 	int32_t saved;
@@ -1989,7 +1987,7 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 	//	log(mt,"net: Handler transId=%" PRId32" slot=%" PRIu32" "
 	// this is kinda obsolete now that we have the stats above
 	if ( g_conf.m_logDebugNet ) {
-		took = gettimeofdayInMillisecondsLocal() - start;
+		int64_t took = gettimeofdayInMillisecondsLocal() - start;
 		log(LOG_DEBUG,"net: Handler transId=%" PRId32" slot=%" PTRFMT" "
 		    "msgType=0x%02x msgSize=%" PRId32" "
 		    "g_errno=%s callback=%08" PTRFMT" "
