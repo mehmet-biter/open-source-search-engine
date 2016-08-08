@@ -2089,32 +2089,8 @@ bool XmlDoc::indexDoc2 ( ) {
 	// we are not waiting for the msg4 to return
 	m_msg4Waiting = false;
 
-	bool flush = false;
-
-	// no longer flush injections.
-	// TODO: pass in a flush flag with injection and flush in that
-	// case, but for now disable to make things faster. profiler
-	// indicates too much msg4 activity.
-	//if ( m_contentInjected ) flush = true;
-
-	if ( ! m_listAdded ) flush = false;
-	if ( m_listFlushed ) flush = false;
-
-	// HACK: flush it if we are injecting it in case the next thing we
-	//       spider is dependent on this one
-	if ( flush ) {
-		logTrace( g_conf.m_logTraceXmlDoc, "Flushing msg4 buffers" );
-		// note it
-		setStatus ( "flushing msg4" );
-		// only do it once
-		m_listFlushed = true;
-		// do it
-		if ( ! flushMsg4Buffers ( m_masterState , m_masterLoop ) )
-		{
-			logTrace( g_conf.m_logTraceXmlDoc, "END, return false. flushMsg4Buffers returned false" );
-			return false;
-		}
-	}
+	// there used to be logic here to flush injections, but it was disabled to make things faster
+	// flush it if we are injecting it in case the next thing we spider is dependent on this one
 
 	// . all done with that. core if we block i guess.
 	// . but what if we were not the function that set this to begin w/?
