@@ -284,7 +284,6 @@ void Msg39::coordinatorThreadFunc(void *state) {
 // . it always blocks i guess
 void Msg39::getDocIds2() {
 
-g_mem.printBreeches();
 	// flag it as in use
 	m_inUse = true;
 	
@@ -306,7 +305,6 @@ g_mem.printBreeches();
 		return ; 
 	}
 
-g_mem.printBreeches();
 	// . set our m_query instance
 	if ( ! m_query.set2 ( m_msg39req->ptr_query,
 			      m_msg39req->m_language ,
@@ -318,7 +316,6 @@ g_mem.printBreeches();
 		sendReply ( m_slot , this , NULL , 0 , 0 , true );
 		return ; 
 	}
-g_mem.printBreeches();
 
 	// wtf?
 	if ( g_errno ) gbshutdownLogicError();
@@ -361,7 +358,6 @@ g_mem.printBreeches();
 // 4. when done return the top docids
 void Msg39::controlLoop ( ) {
 	log(LOG_DEBUG,"query: Msg39(%p)::controlLoop(): m_msg39req->m_numDocIdSplits=%d m_msg39req->m_timeout=%" PRId64, this, m_msg39req->m_numDocIdSplits, m_msg39req->m_timeout);
-g_mem.printBreeches();
 //log("@@@ Msg39::controlLoop: m_startTimeQuery=%" PRId64, m_startTimeQuery);
 	//log("@@@ Msg39::controlLoop: now             =%" PRId64, gettimeofdayInMilliseconds());
 	
@@ -452,7 +448,6 @@ skipRest:
 	log(LOG_DEBUG,"controlLoop(): End of file loop");
 	
 
-g_mem.printBreeches();
 	log(LOG_DEBUG, "query: msg39(this=%p): All chunks done. Now getting cluster records",this);
 	
 	// ok, we are done, get cluster recs of the winning docids
