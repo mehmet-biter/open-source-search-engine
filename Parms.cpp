@@ -6013,7 +6013,7 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(Conf,m_useEtcHosts);
 	m->m_def   = "1";
 	m->m_type  = TYPE_BOOL;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
+	m->m_flags = 0;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
