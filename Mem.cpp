@@ -961,7 +961,7 @@ retry:
 	int64_t max = g_conf.m_maxMem;
 
 	// don't go over max
-	if ( m_used + size + UNDERPAD + OVERPAD >= max ) {
+	if ( g_mem.getUsedMem() + size + UNDERPAD + OVERPAD >= max ) {
 		// try to free temp mem. returns true if it freed some.
 		if ( freeCacheMem() ) goto retry;
 		g_errno = ENOMEM;
