@@ -11,6 +11,7 @@
 #include "Dns.h"
 #include "BigFile.h"
 #include "Spider.h"
+#include "ScopedLock.h"
 #include "Sanity.h"
 
 
@@ -194,6 +195,28 @@ bool RdbCache::init ( int32_t  maxMem        ,
 
 	return true;
 }
+
+
+int64_t RdbCache::getNumHits() const {
+	ScopedLock sl(const_cast<pthread_mutex_t&>(mtx_hits_misses));
+	return m_numHits;
+}
+
+int64_t RdbCache::getNumMisses() const {
+	ScopedLock sl(const_cast<pthread_mutex_t&>(mtx_hits_misses));
+	return m_numMisses;
+}
+
+void RdbCache::incrementHits() {
+	ScopedLock sl(mtx_hits_misses);
+	m_numHits++;
+}
+
+void RdbCache::incrementMisses() {
+	ScopedLock sl(mtx_hits_misses);
+	m_numMisses++;
+}
+
 
 // . a quick hack for SpiderCache.cpp
 // . if your record is always a 4 byte int32_t call this
@@ -408,7 +431,7 @@ bool RdbCache::getRecord ( collnum_t collnum   ,
 	//	if ( ++n >= m_numPtrsMax ) n = 0;
 	// return false if not found
 	if ( ! m_ptrs[n] ) {
-		if ( incCounts ) m_numMisses++;
+		if ( incCounts ) incrementMisses();
 		return false;
 	}
 	// return ptr to rec
@@ -416,7 +439,7 @@ bool RdbCache::getRecord ( collnum_t collnum   ,
 	// if collnum is -1 then that means we set it to that in
 	// RdbCache::clear(). this is kinda hacky.
 	if ( *(collnum_t *)p == (collnum_t)-1 ) {
-		if ( incCounts ) m_numMisses++;
+		if ( incCounts ) incrementMisses();
 		return false;
 	}
 	// skip over collnum and key
@@ -437,7 +460,7 @@ bool RdbCache::getRecord ( collnum_t collnum   ,
 			    m_dbname, 
 			    (int32_t)(getTimeLocal() - timestamp) , 
 			    maxAge );
-		if ( incCounts ) m_numMisses++;
+		if ( incCounts ) incrementMisses();
 		return false;
 	}
 	// skip timestamp
@@ -561,7 +584,7 @@ bool RdbCache::getRecord ( collnum_t collnum   ,
 	}
 	// keep track of cache stats if we should
 	if ( incCounts ) {
-		m_numHits++;
+		incrementHits();
 	}
 	// debug msg time
 	if ( g_conf.m_logTimingDb )
