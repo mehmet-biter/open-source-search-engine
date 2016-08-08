@@ -262,8 +262,6 @@ void gotMsgCWrapper ( void *state , int32_t ip ) {
 	THIS->m_callback ( THIS->m_state );
 }
 
-void doneAddingTagWrapper ( void *state ) ;
-
 bool Msge1::doneSending ( int32_t i ) {
 	// we are processing the nth url
 	int32_t n = m_ns[i];
@@ -316,20 +314,6 @@ bool Msge1::addTag ( int32_t i ) {
 	// now let xmldoc add the firstip tags of each outlink!
 	return doneAddingTag ( i );
 }
-
-void doneAddingTagWrapper ( void *state ) {
-	// get the hijacked msgc
-	MsgC   *m    = (MsgC  *)state;
-	Msge1  *THIS = (Msge1 *)m->m_state2;
-	int32_t    i    = (int32_t   )(PTRTYPE)m->m_state3;
-	// return if that blocked
-	if ( ! THIS->doneAddingTag ( i ) ) return;
-	// loop back for more
-	if ( ! THIS->launchRequests ( i ) ) return;
-	// must be all done, call the callback
-	THIS->m_callback ( THIS->m_state );
-}
-
 
 bool Msge1::doneAddingTag ( int32_t i ) {
 	// unmangle
