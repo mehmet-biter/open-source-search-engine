@@ -1047,34 +1047,8 @@ bool saveAddsInProgress ( const char *prefix ) {
 		write ( fd , s_hostBufs[i] , used );
 	}
 
-	// scan in progress msg4 requests too!
-	for (UdpSlot *slot = g_udpServer.getActiveHead(); slot; slot = slot->getActiveListNext()) {
-		// skip if not msg4
-		if (slot->getMsgType() != msg_type_4) {
-			continue;
-		}
-
-		// skip if we did not initiate it
-		if (!slot->hasCallback()) {
-			continue;
-		}
-
-		// skip if got reply
-		if (slot->m_readBuf) {
-			continue;
-		}
-
-		// write hostid sent to
-		int32_t hostId = slot->getHostId();
-		write(fd, &hostId, 4);
-
-		// write that
-		write(fd, &slot->m_sendBufSize, 4);
-
-		// then the buf data itself
-		write(fd, slot->m_sendBuf, slot->m_sendBufSize);
-	}
-	
+	// save in progress msg4 requests too!
+	g_udpServer.saveActiveSlots(fd, msg_type_4);
 
 	// MDW: if msg4 was stored in the linked list then caller 
 	// never got his callback called, so the spider will redo

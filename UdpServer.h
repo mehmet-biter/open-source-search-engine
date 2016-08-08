@@ -190,6 +190,8 @@ public:
 	// changes timeout to very low on dead hosts
 	bool timeoutDeadHosts ( class Host *h );
 
+	void saveActiveSlots(int fd, msg_type_t msg_type);
+
 	// . we need a transaction id for every transaction so we can match
 	//   incoming reply msgs with their corresponding request msgs
 	// . TODO: should be stored to disk on shutdown and every 1024 sends

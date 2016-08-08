@@ -2735,3 +2735,27 @@ void UdpServer::printState() {
 		slot->printState();
 	}	
 }
+
+void UdpServer::saveActiveSlots(int fd, msg_type_t msg_type) {
+	for (UdpSlot *slot = g_udpServer.getActiveHead(); slot; slot = slot->getActiveListNext()) {
+		// skip if not wanted msg type
+		if (slot->getMsgType() != msg_type) {
+			continue;
+		}
+
+		// skip if got reply
+		if (slot->m_readBuf) {
+			continue;
+		}
+
+		// write hostid sent to
+		int32_t hostId = slot->getHostId();
+		write(fd, &hostId, 4);
+
+		// write that
+		write(fd, &slot->m_sendBufSize, 4);
+
+		// then the buf data itself
+		write(fd, slot->m_sendBuf, slot->m_sendBufSize);
+	}
+}
