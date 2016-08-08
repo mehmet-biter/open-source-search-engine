@@ -272,11 +272,11 @@ private:
 	// . we create a new UdpSlot and call this to handle the request
 	bool makeReadBuf(int32_t msgSize, int32_t numDgrams);
 
-	bool hasDgramsToRead() {
+	bool hasDgramsToRead() const {
 		return (m_readBitsOn < m_dgramsToRead);
 	}
 
-	bool hasDgramsToSend() {
+	bool hasDgramsToSend() const {
 		return (m_sentBitsOn < m_dgramsToSend);
 	}
 
