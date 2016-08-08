@@ -936,7 +936,7 @@ int Mem::printMem ( ) {
 	log(LOG_INFO,"mem: # current objects allocated now = %" PRId32, np );
 	log(LOG_INFO,"mem: totalMem alloced now = %" PRId64, total );
 	//log("mem: max alloced at one time = %" PRId32, (int32_t)(m_maxAlloced));
-	log(LOG_INFO,"mem: Memory allocated now: %" PRId64".\n", getUsedMem() );
+	log(LOG_INFO,"mem: Memory allocated now: %" PRId64".\n", m_used );
 	log(LOG_INFO,"mem: Num allocs %" PRId32".\n", m_numAllocated );
 	return 1;
 }
