@@ -108,14 +108,11 @@ void * operator new (size_t size) throw (std::bad_alloc) {
 	int64_t max = g_conf.m_maxMem;
 	//if ( g_hostdb.m_hostId == 0 )  max += 2000000000;
 
-	{
-		ScopedLock sl(s_lock);
-		// don't go over max
-		if ( g_mem.m_used + (int32_t)size >= max &&
-		     g_conf.m_maxMem > 1000000 ) {
-			log("mem: new(%" PRIu32"): Out of memory.", (uint32_t)size );
-			throw std::bad_alloc();
-		}
+	// don't go over max
+	if ( g_mem.getUsedMem() + (int32_t)size >= max &&
+	     g_conf.m_maxMem > 1000000 ) {
+		log("mem: new(%" PRIu32"): Out of memory.", (uint32_t)size );
+		throw std::bad_alloc();
 	}
 
 	void *mem = sysmalloc ( size );
@@ -123,7 +120,7 @@ void * operator new (size_t size) throw (std::bad_alloc) {
 	int32_t  memLoop = 0;
 newmemloop:
 	if ( ! mem && size > 0 ) {
-		g_mem.m_outOfMems++;
+		g_mem.incrementOOMCount();
 		g_errno = errno;
 		log( LOG_WARN, "mem: new(%" PRId32"): %s",(int32_t)size,mstrerror(g_errno));
 		throw std::bad_alloc();
@@ -173,7 +170,7 @@ void * operator new [] (size_t size) throw (std::bad_alloc) {
 	int64_t max = g_conf.m_maxMem;
 
 	// don't go over max
-	if ( g_mem.m_used + (int32_t)size >= max &&
+	if ( g_mem.getUsedMem() + (int32_t)size >= max &&
 	     g_conf.m_maxMem > 1000000 ) {
 		log("mem: new(%" PRIu32"): Out of memory.", (uint32_t)size );
 		throw std::bad_alloc();
@@ -187,7 +184,7 @@ void * operator new [] (size_t size) throw (std::bad_alloc) {
 newmemloop:
 	if ( ! mem && size > 0 ) {
 		g_errno = errno;
-		g_mem.m_outOfMems++;
+		g_mem.incrementOOMCount();
 		log( LOG_WARN, "mem: new(%" PRIu32"): %s",
 		    (uint32_t)size, mstrerror(g_errno));
 		throw std::bad_alloc();
@@ -254,6 +251,10 @@ float Mem::getUsedMemPercentage() const {
 	return ((float)used_mem) * 100.0 / ((float)max_mem);
 }
 
+int64_t Mem::getFreeMem() const {
+	ScopedLock sl(s_lock);
+	return g_conf.m_maxMem - m_used;
+}
 
 bool Mem::init  ( ) {
 	if ( g_conf.m_detectMemLeaks )

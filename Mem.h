@@ -38,7 +38,7 @@ class Mem {
 	int32_t validate();
 
 	// this one does not include new/delete mem, only *alloc()/free() mem
-	int64_t getUsedMem () const;
+	int64_t getUsedMem() const;
 	// the max mem ever alloced
 	int64_t getMaxAlloced() { return m_maxAlloced; }
 	int64_t getMaxAlloc  () { return m_maxAlloc; }
@@ -51,6 +51,12 @@ class Mem {
 	int64_t getNumTotalAllocated() { return m_numTotalAllocated; }
 	
 	float getUsedMemPercentage() const;
+	int32_t getOOMCount() const { return m_outOfMems; }
+	uint32_t getMemTableSize() const { return m_memtablesize; }
+	int64_t getFreeMem() const;
+	void setMemTableSize(uint32_t sz) { m_memtablesize = sz; }
+
+	void incrementOOMCount() { m_outOfMems++; }
 
 	// who underan/overran their buffers?
 	int  printBreech   ( int32_t i ) ;
@@ -74,6 +80,7 @@ class Mem {
 	int64_t m_maxAlloc; // the biggest single alloc ever done
 	const char *m_maxAllocBy; // the biggest single alloc ever done
 
+private:
 	// currently used mem (estimate)
 	int64_t m_used;
 
@@ -84,7 +91,6 @@ class Mem {
 	int64_t     m_numTotalAllocated;
 	uint32_t m_memtablesize;
 
-private:
 	int printBreeches_unlocked();
 };
 

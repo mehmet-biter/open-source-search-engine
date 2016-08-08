@@ -141,7 +141,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 			      g_mem.getMaxAlloc(),
 			      g_mem.getMaxAllocBy() ,
 
-			      g_mem.m_outOfMems,
+			      g_mem.getOOMCount(),
 
 			      (int64_t)ru.ru_nswap
 			      ); 
@@ -159,7 +159,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 			      "<tr class=poo><td><b>total allocations</b></td>"
 			      "<td>%" PRId64"</td></tr>\n" ,
 			      g_mem.getNumAllocated() ,
-			      g_mem.m_memtablesize ,
+			      g_mem.getMemTableSize(),
 			      (int64_t)g_mem.getNumTotalAllocated() );
 
 	}
