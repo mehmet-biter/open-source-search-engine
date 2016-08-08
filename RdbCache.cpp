@@ -562,7 +562,6 @@ bool RdbCache::getRecord ( collnum_t collnum   ,
 	// keep track of cache stats if we should
 	if ( incCounts ) {
 		m_numHits++;
-		m_hitBytes += *recSize;
 	}
 	// debug msg time
 	if ( g_conf.m_logTimingDb )

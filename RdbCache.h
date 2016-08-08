@@ -244,7 +244,6 @@ class RdbCache {
 	// cache stats
 	int64_t getNumHits   () const { return m_numHits;   }
 	int64_t getNumMisses () const { return m_numMisses; }
-	int64_t getHitBytes  () const { return m_hitBytes; }
 	int32_t getNumUsedNodes  () const { return m_numPtrsUsed; }
 	int32_t getNumTotalNodes () const { return m_numPtrsMax ; }
 	int64_t getNumAdds() const { return m_adds; }
@@ -327,7 +326,6 @@ private:
 	// cache hits and misses
 	int64_t m_numHits; // includes partial hits & cached not-founds too
 	int64_t m_numMisses;
-	int64_t m_hitBytes;
 
 	int32_t m_fixedDataSize;
 	bool m_supportLists;
