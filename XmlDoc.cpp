@@ -2091,10 +2091,7 @@ bool XmlDoc::indexDoc2 ( ) {
 
 	// there used to be logic here to flush injections, but it was disabled to make things faster
 	// flush it if we are injecting it in case the next thing we spider is dependent on this one
-
-	// . all done with that. core if we block i guess.
-	// . but what if we were not the function that set this to begin w/?
-	//m_masterLoop = NULL;
+	// remove in commit d23858c92d0d715d493a358ea69ecf77a5cc00fc
 
 	bool rc2 = logIt();
 	logTrace( g_conf.m_logTraceXmlDoc, "END, all done. Returning %s", rc2?"true":"false");
