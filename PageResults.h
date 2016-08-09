@@ -31,23 +31,17 @@ public:
 	SearchInput  m_si;
 	Msg40        m_msg40;
 	TcpSocket   *m_socket;
-	Msg0         m_msg0;
 	int64_t    m_startTime;
 	bool         m_gotResults;
 	char         m_spell  [MAX_FRAG_SIZE]; // spelling recommendation
 	bool         m_gotSpell;
 	int32_t         m_errno;
-	Query        m_qq3;
         int32_t         m_numDocIds;
 	int64_t    m_took; // how long it took to get the results
 	HttpRequest  m_hr;
 	bool         m_printedHeaderRow;
 	//char         m_qe[MAX_QUERY_LEN+1];
 	SafeBuf m_qesb;
-
-	// for printing our search result json items in csv:
-	HashTableX   m_columnTable;
-	int32_t         m_numCSVColumns;
 
 	// stuff for doing redownloads
 	bool    m_didRedownload;
