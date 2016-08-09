@@ -59,15 +59,12 @@ class Mem {
 	void incrementOOMCount() { m_outOfMems++; }
 
 	// who underan/overran their buffers?
-	int  printBreech   ( int32_t i ) ;
 	int  printBreeches () ;
 	// print mem usage stats
 	int  printMem      ( ) ;
 	void addMem ( void *mem , int32_t size , const char *note, char isnew);
 	bool rmMem  ( void *mem , int32_t size , const char *note ) ;
 	bool lblMem ( void *mem , int32_t size , const char *note );
-
-	int32_t getMemSlot  ( void *mem );
 
 	void addnew ( void *ptr , int32_t size , const char *note ) ;
 	void delnew ( void *ptr , int32_t size , const char *note ) ;
@@ -81,6 +78,8 @@ class Mem {
 	const char *m_maxAllocBy; // the biggest single alloc ever done
 
 private:
+	int32_t getMemSlot(void *mem);
+
 	// currently used mem (estimate)
 	int64_t m_used;
 
@@ -92,6 +91,7 @@ private:
 	uint32_t m_memtablesize;
 
 	int printBreeches_unlocked();
+	int printBreech(int32_t i);
 };
 
 extern class Mem g_mem;
