@@ -259,9 +259,7 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 			msgCount1[s->getMsgType()]++;
 	}
 
-	const char *wr = "";
-	if ( server->m_writeRegistered )
-		wr = " [write registered]";
+	const char *wr = server->getWriteRegistered() ? " [write registered]" : "";
 
 	// print the counts
 	p->safePrintf ( "<table %s>"
@@ -305,11 +303,8 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 	p->safePrintf ( "<table %s>"
 			"<tr class=hdrow><td colspan=19>"
 			"<center>"
-			//"<font size=+1>"
 			"<b>%s</b> (%" PRId32" transactions)"
-			//"(%" PRId32" requests waiting to processed)"
 			"(%" PRId32" incoming)"
-			//"</font>"
 			"</td></tr>"
 			"<tr bgcolor=#%s>"
 			"<td><b>age</td>"
@@ -317,10 +312,6 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 			"<td><b>last send</td>"
 			"<td><b>timeout</td>"
 			"<td><b>ip</td>"
-			//"<td><b>port</td>"
-			//"<td><b>desc</td>"
-			//"<td><b>hostId</td>"
-			//"<td><b>nice</td>";
 			"%s"
 			"<td><b>nice</td>"
 			"<td><b>transId</td>"
@@ -335,7 +326,6 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 			"</tr>\n" , 
 			TABLE_STYLE,
 			title , server->getNumUsedSlots() , 
-			//callbackReadyCount ,
 			server->getNumUsedSlotsIncoming() ,
 			DARK_BLUE ,
 			dd );
@@ -345,10 +335,6 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 	for ( int32_t i = 0 ; i < nn ; i++ ) {
 		// get from sorted list
 		UdpSlot *s = slots[i];
-		// set socket state
-		//char *st = "ERROR";
-		//if ( ! s->isDoneReading() ) st = "reading";
-		//if ( ! s->isDoneSending() ) st = "reading";
 		// times
 		int64_t elapsed0 = (now - s->getStartTime()    ) ;
 		int64_t elapsed1 = (now - s->getLastReadTime() ) ;
@@ -367,20 +353,13 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 		Host *h = g_hostdb.getHost ( s->getIp() , s->getPort() );
 		const char           *eip     = "??";
 		uint16_t  eport   =  0 ;
-		//int32_t          ehostId = -1 ;
 		const char           *ehostId = "-1";
-		//char tmpIp    [64];
-		// print the ip
-
 		char tmpHostId[64];
 		if ( h ) {
 			// host can have 2 ip addresses, get the one most
 			// similar to that of the requester
 			eip     = iptoa(g_hostdb.getBestIp ( h , fromIp ));
-			//eip     = iptoa(h->m_externalIp) ;
-			//eip     = iptoa(h->m_ip) ;
 			eport   = h->m_externalHttpPort ;
-			//ehostId = h->m_hostId ;
 			if ( h->m_isProxy )
 				sprintf(tmpHostId,"proxy%" PRId32,h->m_hostId);
 			else
