@@ -7,6 +7,7 @@
 #include "IPAddressChecks.h"
 #include "BitOperations.h"
 #include "Process.h"
+#include "Conf.h"
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
 #endif

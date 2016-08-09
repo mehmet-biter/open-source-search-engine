@@ -4,7 +4,10 @@
 #include "Statsdb.h"
 #include "Process.h"
 #include "Msg13.h"
-#include "XmlDoc.h"
+#include "XmlDoc.h" //gbuncompress()
+#include "HttpServer.h"
+#include "Pages.h"
+#include "HttpRequest.h"
 
 Proxy g_proxy;
 

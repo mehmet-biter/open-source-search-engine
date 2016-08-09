@@ -230,7 +230,7 @@ public:
 	PingInfo m_pingInfo;//RequestBuf;
 };
 
-#define MAX_HOSTS 512
+#include "max_hosts.h"
 #define MAX_SPARES 64
 #define MAX_PROXIES 6
 

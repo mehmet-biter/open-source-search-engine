@@ -1,14 +1,14 @@
 #ifndef GB_PROXY_H
 #define GB_PROXY_H
 
-#include "UdpServer.h"
-#include "Stats.h"
-#include "Pages.h"
-#include "UdpProtocol.h"
-#include "PingServer.h"
-#include <sys/resource.h>  // setrlimit
+#include "max_hosts.h"
 
 #define MAX_STRIPES 8
+
+class Host;
+class TcpSocket;
+class UdpProtocol;
+class HttpRequest;
 
 class Proxy {
  public:
