@@ -12,10 +12,6 @@ bool addCollToTable ( const char *coll , collnum_t collnum ) ;
 class WaitEntry {
 public:
 	void (* m_callback) (void *state);
-	void *m_state;
-	char *m_coll;
-	bool  m_purgeSeeds;
-	class CollectionRec *m_cr;
 	// ptr to list of parm recs for Parms.cpp
 	char *m_parmPtr;
 	char *m_parmEnd;
@@ -25,7 +21,6 @@ public:
 	bool m_doProxyRebuild;
 	bool m_updatedRound;
 	collnum_t m_collnum;
-	bool m_registered;
 	int32_t m_errno;
 	bool m_sentReply;
 };
