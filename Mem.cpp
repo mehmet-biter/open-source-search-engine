@@ -6,7 +6,7 @@
 #include "SafeBuf.h"
 #include "Pages.h"
 #include "ScopedLock.h"
-#include "Process.h"
+#include "Sanity.h"
 #include <string.h>            //for strlen()
 
 
@@ -287,7 +287,7 @@ void Mem::addMem ( void *mem , int32_t size , const char *note , char isnew ) {
 		// support 1.2M ptrs for now. good for about 8GB
 		// raise from 3000 to 8194 to fix host #1
 		m_memtablesize = 8194*1024;//m_maxMem / 6510;
-		//if ( m_maxMem < 8000000000 ) { g_process.shutdownAbort(true); }
+		//if ( m_maxMem < 8000000000 ) gbshutdownLogicError();
 	}
 
 	if ( (int32_t)m_numAllocated + 100 >= (int32_t)m_memtablesize ) { 
@@ -307,7 +307,7 @@ void Mem::addMem ( void *mem , int32_t size , const char *note , char isnew ) {
 	if ( g_conf.m_logDebugMem ) printBreeches_unlocked();
 
 	// copy the magic character, iff not a new() call
-	if ( size == 0 ) { g_process.shutdownAbort(true); }
+	if ( size == 0 ) gbshutdownLogicError();
 	// sanity check
 	if ( size < 0 ) {
 		log("mem: addMem: Negative size.");
@@ -320,7 +320,7 @@ void Mem::addMem ( void *mem , int32_t size , const char *note , char isnew ) {
 		    "%08" PTRFMT" of size %" PRId32" "
 		    "which would wrap. Bad kernel.",
 		    (PTRTYPE)mem,(int32_t)size);
-		g_process.shutdownAbort(true);
+		gbshutdownLogicError();
 	}
 
 	// umsg00
@@ -391,14 +391,14 @@ void Mem::addMem ( void *mem , int32_t size , const char *note , char isnew ) {
 			     s_labels[h*16+3],
 			     s_labels[h*16+4],
 			     s_labels[h*16+5] );
-			g_process.shutdownAbort(true);
+			gbshutdownAbort(true);
 		}
 		h++;
 		if ( h == m_memtablesize ) h = 0;
 		if ( --count == 0 ) {
 			log( LOG_ERROR, "mem: addMem: Mem table is full.");
 			printMem();
-			g_process.shutdownAbort(true);
+			gbshutdownResourceError();
 		}
 	}
 	// add to debug table
@@ -653,7 +653,7 @@ bool Mem::rmMem  ( void *mem , int32_t size , const char *note ) {
 	// if not found, bitch
 	if ( ! s_mptrs[h] ) {
 		log( LOG_ERROR, "mem: rmMem: Unbalanced free. note=%s size=%" PRId32".",note,size);
-		g_process.shutdownAbort(true);
+		gbshutdownLogicError();
 	}
 
 	// are we from the "new" operator
@@ -661,12 +661,12 @@ bool Mem::rmMem  ( void *mem , int32_t size , const char *note ) {
 	// set our size
 	if ( size == -1 ) size = s_sizes[h];
 	// must be legit now
-	if ( size <= 0 ) { g_process.shutdownAbort(true); }
+	if ( size <= 0 ) gbshutdownLogicError();
 	// . bitch is sizes don't match
 	// . delete operator does not provide a size now (it's -1)
 	if ( s_sizes[h] != size ) {
 		log( LOG_ERROR, "mem: rmMem: Freeing %" PRId32" should be %" PRId32". (%s)", size,s_sizes[h],note);
-		g_process.shutdownAbort(true);
+		gbshutdownAbort(true);
 	}
 
 	// debug
@@ -737,8 +737,8 @@ int32_t Mem::validate ( ) {
 		count++;
 	}
 	// see if it matches
-	if ( total != m_used ) { g_process.shutdownAbort(true); }
-	if ( count != m_numAllocated ) { g_process.shutdownAbort(true); }
+	if ( total != m_used ) gbshutdownAbort(true);
+	if ( count != m_numAllocated ) gbshutdownAbort(true);
 	return 1;
 }
 
@@ -858,7 +858,7 @@ int Mem::printBreech ( int32_t i) {
 	// return now if no breach
 	if ( flag == 0 ) return 1;
 
-	g_process.shutdownAbort(true);
+	gbshutdownCorrupted();
 }
 
 // check all allocated memory for buffer under/overruns
@@ -946,7 +946,7 @@ retry:
 	if ( size < 0 ) {
 		g_errno = EBADENGINEER;
 		log( LOG_ERROR, "mem: malloc(%i): Bad value.", size );
-		g_process.shutdownAbort(true);
+		gbshutdownLogicError();
 		return NULL;
 	}
 
@@ -981,7 +981,7 @@ mallocmemloop:
 			s_missed++;
 		}
 		// to debug oom issues:
-		//g_process.shutdownAbort(true);
+		//gbshutdownResourceError();
 
 		// send an email alert if this happens! it is a sign of "memory fragmentation"
 		//static bool s_sentEmail = false;
@@ -1051,7 +1051,7 @@ void *Mem::gbrealloc ( void *ptr , int oldSize , int newSize , const char *note 
 	// do nothing if size is same
 	if ( oldSize == newSize ) return ptr;
 	// crazy?
-	if ( newSize < 0 ) { g_process.shutdownAbort(true); }
+	if ( newSize < 0 ) gbshutdownLogicError();
 	// if newSize is 0...
 	if ( newSize == 0 ) { 
 		//mfree ( ptr , oldSize , note );
@@ -1156,7 +1156,7 @@ void Mem::gbfree ( void *ptr , int size , const char *note ) {
 		//log(LOG_LOGIC,"mem: FIXME!!!");
 		// return for now so procog does not core all the time!
 		return;
-		//g_process.shutdownAbort(true);
+		//gbshutdownAbort();
 	}
 
 	bool isnew = s_isnew[slot];
