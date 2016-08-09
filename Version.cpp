@@ -4,6 +4,7 @@
 #include "Mem.h"
 #include "Log.h"
 #include "Process.h"
+#include <string.h>
 
 #define STRINGIFY(x) #x
 #define TO_STRING(x) STRINGIFY(x)
