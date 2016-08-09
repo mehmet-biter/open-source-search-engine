@@ -950,7 +950,7 @@ bool Process::saveRdbTrees ( bool useThread , bool shuttingDown ) {
 		}
 
 		// note it
-		if ( ! rdb->m_dbname || ! rdb->m_dbname[0] ) {
+		if ( ! rdb->m_dbname[0] ) {
 			log( "gb: calling save tree for rdbid %i", ( int ) rdb->m_rdbId );
 		} else {
 			log( "gb: calling save tree for %s", rdb->m_dbname );
