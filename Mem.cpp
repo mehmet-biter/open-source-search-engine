@@ -217,8 +217,6 @@ newmemloop:
 
 Mem::Mem() {
 	m_used = 0;
-	// assume large max until this gets set for real
-	//m_maxMem  = 50000000;
 	m_numAllocated = 0;
 	m_numTotalAllocated = 0;
 	m_maxAlloc = 0;
@@ -267,10 +265,6 @@ bool Mem::init  ( ) {
 	// want the mem test we did above to count towards it
 	m_maxAlloced = 0;
 
-	// init or own malloc stuff in malloc.c (from doug leay)
-	//if ( mdw_init_sbrk ( maxMem ) ) return true;
-	// bitch
-	//return log("Mem::init: failed to malloc %" PRId32" bytes", maxMem);
 	return true;
 }
 
@@ -339,14 +333,6 @@ void Mem::addMem ( void *mem , int32_t size , const char *note , char isnew ) {
 	// if no label!
 	if ( ! note[0] ) log(LOG_LOGIC,"mem: addmem: NO note.");
 
-	// lock for threads
-	//pthread_mutex_lock ( &s_lock );
-	// return NULL if we'd go over our limit
-	//if ( getUsedMem() + size > s_maxMem ) {
-	//	log("Mem::addMem: max mem limit breeched");
-	//	sleep(50000); 
-	//	return;
-	//}
 	// clear mem ptrs if this is our first call
 	if ( ! s_initialized ) {
 
@@ -370,8 +356,6 @@ void Mem::addMem ( void *mem , int32_t size , const char *note , char isnew ) {
 	if ( (int32_t)s_n > (int32_t)m_memtablesize ) {
 		log( LOG_WARN, "mem: addMem: No room in table for %s size=%" PRId32".",
 		    note,size);
-		// unlock for threads
-		//pthread_mutex_unlock ( &s_lock );
 		return;
 	}
 	// hash into table
@@ -443,8 +427,6 @@ void Mem::addMem ( void *mem , int32_t size , const char *note , char isnew ) {
 	memcpy ( here , note , len );
 	// make sure NULL terminated
 	here[len] = '\0';
-	// unlock for threads
-	//pthread_mutex_unlock ( &s_lock );
 	//validate();
 }
 
@@ -655,8 +637,6 @@ bool Mem::rmMem  ( void *mem , int32_t size , const char *note ) {
 
 	// don't free 0 bytes
 	if ( size == 0 ) return true;
-	// lock for threads
-	//pthread_mutex_lock ( &s_lock );
 	// . hash by first hashing "mem" to mix it up some
 	// . balance the mallocs/frees
 	// . hash into table
@@ -671,13 +651,6 @@ bool Mem::rmMem  ( void *mem , int32_t size , const char *note ) {
 	// if not found, bitch
 	if ( ! s_mptrs[h] ) {
 		log( LOG_ERROR, "mem: rmMem: Unbalanced free. note=%s size=%" PRId32".",note,size);
-		// . return false for now to prevent coring
-		// . NOTE: but if entry was not added to table because there 
-		//   was no room, we really need to be decrementing m_used
-		//   and m_numAllocated here
-		// . no, we should core otherwise it can result in some
-		//   pretty hard to track down bugs later.
-		//return false;
 		g_process.shutdownAbort(true);
 	}
 
@@ -731,8 +704,6 @@ bool Mem::rmMem  ( void *mem , int32_t size , const char *note ) {
 		if ( k == h ) { h++; continue; }
 		// otherwise, move it back to fill the gap
 		s_mptrs[h] = NULL;
-		// dec count
-		//s_n--;
 		// if slot #k is full, chain
 		for ( ; s_mptrs[k] ; )
 			if ( ++k >= m_memtablesize ) k = 0;
@@ -749,8 +720,6 @@ bool Mem::rmMem  ( void *mem , int32_t size , const char *note ) {
 
 	//validate();
 
-	// unlock for threads
-	//pthread_mutex_unlock ( &s_lock );
 	return true;
 }
 
