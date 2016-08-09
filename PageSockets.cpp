@@ -7,6 +7,7 @@
 #include "Dns.h"
 #include "SafeBuf.h"
 #include "Msg13.h"
+#include "Msg0.h"
 
 static void printTcpTable  (SafeBuf *p, const char *title, TcpServer *server);
 static void printUdpTable  (SafeBuf *p, const char *title, UdpServer *server,
@@ -405,7 +406,7 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 		}
 
 		if ( buf ) {
-			int32_t rdbId = (msgType == msg_type_1) ? buf[0] : buf[24];
+			int32_t rdbId = (msgType == msg_type_1) ? buf[0] : buf[RDBIDOFFSET];
 			Rdb *rdb = NULL;
 			if (rdbId >= 0 && !isDns) {
 				rdb = getRdbFromId((uint8_t) rdbId);
