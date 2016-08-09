@@ -127,7 +127,6 @@ public:
 	int64_t      m_lastPing;
 
 	char m_tmpBuf[4];
-	int16_t m_tmpCount;
 
 	// . first time we sent an unanswered ping request to this host
 	// . used so we can determine when to send an email alert
