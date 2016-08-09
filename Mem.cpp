@@ -1095,7 +1095,7 @@ retry:
 	//if ( g_hostdb.m_hostId == 0 )  max += 2000000000;
 
 	// don't go over max
-	if ( m_used + newSize - oldSize >= max ) {
+	if ( g_mem.getUsedMem() + newSize - oldSize >= max ) {
 		// try to free temp mem. returns true if it freed some.
 		if ( freeCacheMem() ) goto retry;
 		g_errno = ENOMEM;
