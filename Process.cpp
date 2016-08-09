@@ -333,7 +333,7 @@ static float getDiskUsage ( int64_t *diskAvail ) {
 	return (s.f_blocks-s.f_bavail)*100.0/s.f_blocks;
 }
 
-void diskUsageWrapper(int fd, void *state) {
+void diskUsageWrapper(int /*fd*/, void * /*state*/) {
 	// skip if exiting
 	if ( g_process.m_mode == EXIT_MODE ) {
 		return;
@@ -346,7 +346,7 @@ void Process::callHeartbeat () {
 	heartbeatWrapper ( 0 , NULL );
 }
 
-void heartbeatWrapper ( int fd , void *state ) {
+void heartbeatWrapper(int /*fd*/, void * /*state*/) {
 	static int64_t s_last = 0LL;
 	int64_t now = gettimeofdayInMilliseconds();
 	if ( s_last == 0LL ) {
@@ -386,7 +386,7 @@ int64_t Process::getTotalDocsIndexed() {
 	return m_totalDocsIndexed;
 }
 
-void processSleepWrapper ( int fd , void *state ) {
+void processSleepWrapper(int /*fd*/, void * /*state*/) {
 
 	if ( g_process.m_mode == EXIT_MODE ) {
 		g_process.shutdown2();
