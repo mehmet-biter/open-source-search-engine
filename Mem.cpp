@@ -241,7 +241,9 @@ int64_t Mem::getUsedMem () const {
 }
 
 
-int64_t Mem::getMaxMem     () { return g_conf.m_maxMem; }
+int64_t Mem::getMaxMem() const {
+	return g_conf.m_maxMem;
+}
 
 
 float Mem::getUsedMemPercentage() const {
