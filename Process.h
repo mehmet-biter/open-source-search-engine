@@ -80,8 +80,6 @@ class Process {
 
 	void callHeartbeat ();
 
-	bool m_threadOut;
-
 	bool m_suspendAutoSave;
 
 	bool        m_powerIsOn;
