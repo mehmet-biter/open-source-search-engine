@@ -161,9 +161,6 @@ class Msg51 {
 
 	int32_t       m_niceness;
 
-	int32_t       m_firstNode;
-	int32_t       m_nextNode;
-
 	//char      *m_coll;
 	//int32_t       m_collLen;
 	collnum_t m_collnum;
