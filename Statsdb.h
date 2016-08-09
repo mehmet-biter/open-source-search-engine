@@ -153,7 +153,7 @@ class Statsdb {
 	key_t m_startKey;
 	key_t m_endKey;
 
-	FILE *m_fd;
+	//FILE *m_fd;
 
 	Msg5 m_msg5;
 
