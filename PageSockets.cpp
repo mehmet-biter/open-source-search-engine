@@ -318,17 +318,22 @@ void printUdpTable(SafeBuf *p, const char *title, UdpServer *server, const char 
 	for ( int32_t i = 0 ; i < nn ; i++ ) {
 		// get from sorted list
 		UdpSlot *s = slots[i];
-		// times
-		int64_t elapsed0 = (now - s->getStartTime()    ) ;
-		int64_t elapsed1 = (now - s->getLastReadTime() ) ;
-		int64_t elapsed2 = (now - s->getLastSendTime() ) ;
-		char e0[32],e1[32], e2[32];
-		sprintf ( e0 , "%" PRId64"ms" , elapsed0 );
-		sprintf ( e1 , "%" PRId64"ms" , elapsed1 );
-		sprintf ( e2 , "%" PRId64"ms" , elapsed2 );
-		if ( s->getStartTime()    == 0LL ) strcpy ( e0 , "--" );
-		if ( s->getLastReadTime() == 0LL ) strcpy ( e1 , "--" );
-		if ( s->getLastSendTime() == 0LL ) strcpy ( e2 , "--" );
+
+		char e0[32] = "--";
+		char e1[32] = "--";
+		char e2[32] = "--";
+
+		if (s->getStartTime() != 0LL) {
+			sprintf(e0, "%" PRId64"ms", (now - s->getStartTime()));
+		}
+
+		if (s->getLastReadTime() != 0LL) {
+			sprintf(e1, "%" PRId64"ms", (now - s->getLastReadTime()));
+		}
+
+		if (s->getLastSendTime() != 0LL) {
+			sprintf(e2, "%" PRId64"ms", (now - s->getLastSendTime()));
+		}
 
 		// bgcolor is lighter for incoming requests
 		const char *bg = s->hasCallback() ? LIGHT_BLUE : LIGHTER_BLUE;
@@ -351,22 +356,18 @@ void printUdpTable(SafeBuf *p, const char *title, UdpServer *server, const char 
 			ehostId = tmpHostId;
 			eip = tmpHostId;
 		}
+
 		// set description of the msg
 		msg_type_t msgType = s->getMsgType();
 		const char *desc = "";
-		char *rbuf = s->m_readBuf;
-		char *sbuf = s->m_sendBuf;
-		int32_t rbufSize = s->m_readBufSize;
-		int32_t sbufSize = s->m_sendBufSize;
-		bool weInit = s->hasCallback();
-		bool calledHandler = weInit ? s->hasCalledCallback() : s->hasCalledHandler();
+		bool calledHandler = s->hasCallback() ? s->hasCalledCallback() : s->hasCalledHandler();
 
 		char tt[64];
 		tt[0] = ' ';
 		tt[1] = '\0';
 
 		if (msgType == msg_type_0) {
-			char *buf = weInit ? sbuf : rbuf;
+			char *buf = s->hasCallback() ? s->m_sendBuf: s->m_readBuf;
 			if (buf) {
 				int32_t rdbId = buf[RDBIDOFFSET];
 				Rdb *rdb = NULL;
@@ -380,7 +381,7 @@ void printUdpTable(SafeBuf *p, const char *title, UdpServer *server, const char 
 
 			desc = tt;
 		} else if (msgType == msg_type_1) {
-			char *buf = weInit ? sbuf : rbuf;
+			char *buf = s->hasCallback() ? s->m_sendBuf: s->m_readBuf;
 			if (buf) {
 				int32_t rdbId = buf[0];
 				Rdb *rdb = NULL;
@@ -405,14 +406,14 @@ void printUdpTable(SafeBuf *p, const char *title, UdpServer *server, const char 
 
 			// . if callback was called this slot's sendbuf can be bogus
 			// . i put this here to try to avoid a core dump
-			if (weInit) {
+			if (s->hasCallback()) {
 				if (!s->hasCalledCallback()) {
-					buf = sbuf;
-					bufSize = sbufSize;
+					buf = s->m_sendBuf;
+					bufSize = s->m_sendBufSize;
 				}
 			} else {
-				buf = rbuf;
-				bufSize = rbufSize;
+				buf = s->m_readBuf;
+				bufSize = s->m_readBufSize;
 			}
 
 			bool isRobotsTxt = true;
