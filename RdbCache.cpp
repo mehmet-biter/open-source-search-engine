@@ -26,6 +26,7 @@ RdbCache::RdbCache () {
 	m_ptrs         = NULL;
 	m_maxMem       = 0;
 	m_numPtrsMax   = 0;
+	pthread_mutex_init(&mtx_hits_misses,NULL);
 	reset();
 	m_needsSave    = false;
 }
