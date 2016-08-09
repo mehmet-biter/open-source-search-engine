@@ -326,8 +326,6 @@ skip:
 	//   no, not anymore, we commented out that request peeking code
 	char *p = m_request;
 	*(int64_t *) p = syncPoint        ; p += 8;
-	//*(key_t     *) p = m_startKey       ; p += sizeof(key_t);
-	//*(key_t     *) p = m_endKey         ; p += sizeof(key_t);
 	*(int32_t      *) p = m_minRecSizes    ; p += 4;
 	*(int32_t      *) p = startFileNum     ; p += 4;
 	*(int32_t      *) p = numFiles         ; p += 4;
