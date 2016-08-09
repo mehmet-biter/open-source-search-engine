@@ -1306,7 +1306,8 @@ bool SpiderLoop::spiderUrl9 ( SpiderRequest *sreq ,
 	// this causes us to dead lock when spiders use up all the mem, and
 	// file merge operation can not get any, and spiders need to add to 
 	// titledb but can not until the merge completes!!
-	if ( g_conf.m_maxMem - g_mem.m_used < 25*1024*1024 ) {
+	int64_t freeMem = g_mem.getFreeMem();
+	if (freeMem < 25*1024*1024 ) {
 		static int32_t s_lastTime = 0;
 		static int32_t s_missed   = 0;
 		s_missed++;
@@ -1315,7 +1316,7 @@ bool SpiderLoop::spiderUrl9 ( SpiderRequest *sreq ,
 		if ( now - s_lastTime > 10 ) {
 			log("spider: Need 25MB of free mem to launch spider, "
 			    "only have %" PRId64". Failed to launch %" PRId32" times so "
-			    "far.", g_conf.m_maxMem - g_mem.m_used , s_missed );
+			    "far.", freeMem , s_missed );
 			s_lastTime = now;
 		}
 	}

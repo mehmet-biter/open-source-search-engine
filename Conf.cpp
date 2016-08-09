@@ -281,18 +281,12 @@ bool Conf::save ( ) {
 		return true;
 	}
 
-	// always reset this before saving
-	bool keep = g_conf.m_testMem ;
-	g_conf.m_testMem = false;
-
 	// fix so if we core in malloc/free we can still save conf
 	char fnbuf[1024];
 	SafeBuf fn(fnbuf,1024);
 	fn.safePrintf("%sgb.conf",g_hostdb.m_dir);
 	bool status = g_parms.saveToXml ( (char *)this , fn.getBufStart(), OBJ_CONF );
 
-	// restore
-	g_conf.m_testMem = keep;
 	return status;
 }
 

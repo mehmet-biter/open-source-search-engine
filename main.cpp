@@ -575,7 +575,7 @@ int main2 ( int argc , char *argv[] ) {
 		sb2.brify2 ( sb.getBufStart() , 60 , "\n\t" , false );
 		fprintf(stdout,"%s",sb2.getBufStart());
 		// disable printing of used memory
-		g_mem.m_used = 0;
+		//g_mem.m_used = 0;
 		return 0;
 	}
 
@@ -632,8 +632,8 @@ int main2 ( int argc , char *argv[] ) {
 
 	if( (strcmp( cmd, "countdomains" ) == 0) &&  (argc >= (cmdarg + 2)) ) {
 		uint32_t tmp = atoi( argv[cmdarg+2] );
-		if( (tmp * 10) > g_mem.m_memtablesize )
-		g_mem.m_memtablesize = tmp * 10;
+		if( (tmp * 10) > g_mem.getMemTableSize() )
+			g_mem.setMemTableSize(tmp * 10);
 	}
 
 	// these tests do not need a hosts.conf
@@ -1643,7 +1643,7 @@ int main2 ( int argc , char *argv[] ) {
 		else outpt = 0;
 
 		log( LOG_INFO, "cntDm: Allocated Larger Mem Table for: %" PRId32,
-		     g_mem.m_memtablesize );
+		     g_mem.getMemTableSize() );
 		if (!ucInit(g_hostdb.m_dir)) {
 			log("Unicode initialization failed!");
 			return 1;
@@ -6753,7 +6753,7 @@ bool memTest() {
 	fprintf(stderr, "memtest: Was able to allocate %" PRId64" bytes of a "
 		"total of "
 	    "%" PRId64" bytes of memory attempted.\n",
-	    g_mem.m_used,g_conf.m_maxMem);
+	    g_mem.getUsedMem(),g_conf.m_maxMem);
 
 	return true;
 }

@@ -331,7 +331,7 @@ extern "C" {
 
 static void *dumper_thread_function(void *)
 {
-	ScopedLock sl(mtx_dump);
+	pthread_mutex_lock(&mtx_dump);
 	while(!stop_dumping) {
 		timespec ts;
 		clock_gettime(CLOCK_REALTIME,&ts);
@@ -340,9 +340,12 @@ static void *dumper_thread_function(void *)
 		pthread_cond_timedwait(&cond_dump,&mtx_dump,&ts);
 		if(stop_dumping)
 			break;
+		pthread_mutex_unlock(&mtx_dump);
 		clock_gettime(CLOCK_REALTIME,&ts);
 		dump_statistics(ts.tv_sec);
+		pthread_mutex_lock(&mtx_dump);
 	}
+	pthread_mutex_unlock(&mtx_dump);
 	return 0;
 }
 

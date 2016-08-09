@@ -109,11 +109,10 @@ void * operator new (size_t size) throw (std::bad_alloc) {
 	//if ( g_hostdb.m_hostId == 0 )  max += 2000000000;
 
 	// don't go over max
-	if ( g_mem.m_used + (int32_t)size >= max &&
+	if ( g_mem.getUsedMem() + (int32_t)size >= max &&
 	     g_conf.m_maxMem > 1000000 ) {
 		log("mem: new(%" PRIu32"): Out of memory.", (uint32_t)size );
 		throw std::bad_alloc();
-		//throw 1;
 	}
 
 	void *mem = sysmalloc ( size );
@@ -121,7 +120,7 @@ void * operator new (size_t size) throw (std::bad_alloc) {
 	int32_t  memLoop = 0;
 newmemloop:
 	if ( ! mem && size > 0 ) {
-		g_mem.m_outOfMems++;
+		g_mem.incrementOOMCount();
 		g_errno = errno;
 		log( LOG_WARN, "mem: new(%" PRId32"): %s",(int32_t)size,mstrerror(g_errno));
 		throw std::bad_alloc();
@@ -171,7 +170,7 @@ void * operator new [] (size_t size) throw (std::bad_alloc) {
 	int64_t max = g_conf.m_maxMem;
 
 	// don't go over max
-	if ( g_mem.m_used + (int32_t)size >= max &&
+	if ( g_mem.getUsedMem() + (int32_t)size >= max &&
 	     g_conf.m_maxMem > 1000000 ) {
 		log("mem: new(%" PRIu32"): Out of memory.", (uint32_t)size );
 		throw std::bad_alloc();
@@ -185,7 +184,7 @@ void * operator new [] (size_t size) throw (std::bad_alloc) {
 newmemloop:
 	if ( ! mem && size > 0 ) {
 		g_errno = errno;
-		g_mem.m_outOfMems++;
+		g_mem.incrementOOMCount();
 		log( LOG_WARN, "mem: new(%" PRIu32"): %s",
 		    (uint32_t)size, mstrerror(g_errno));
 		throw std::bad_alloc();
@@ -225,17 +224,40 @@ Mem::Mem() {
 	m_maxAlloc = 0;
 	m_maxAllocBy = "";
 	m_maxAlloced = 0;
-	m_memtablesize = 0;
+
 	// count how many allocs/news failed
 	m_outOfMems = 0;
+
+	// do not initialize m_memtablesize here
+	// constructor can be called after addMem has been called (from operator new)
 }
 
 Mem::~Mem() {
 	if ( getUsedMem() == 0 ) return;
 }
 
+
+int64_t Mem::getUsedMem () const {
+	ScopedLock sl(s_lock);
+	return m_used;
+}
+
+
 int64_t Mem::getMaxMem     () { return g_conf.m_maxMem; }
 
+
+float Mem::getUsedMemPercentage() const {
+	ScopedLock sl(s_lock);
+	int64_t used_mem = m_used;
+	int64_t max_mem = g_conf.m_maxMem;
+	sl.unlock();
+	return ((float)used_mem) * 100.0 / ((float)max_mem);
+}
+
+int64_t Mem::getFreeMem() const {
+	ScopedLock sl(s_lock);
+	return g_conf.m_maxMem - m_used;
+}
 
 bool Mem::init  ( ) {
 	if ( g_conf.m_detectMemLeaks )
@@ -917,7 +939,7 @@ int Mem::printMem ( ) {
 	log(LOG_INFO,"mem: # current objects allocated now = %" PRId32, np );
 	log(LOG_INFO,"mem: totalMem alloced now = %" PRId64, total );
 	//log("mem: max alloced at one time = %" PRId32, (int32_t)(m_maxAlloced));
-	log(LOG_INFO,"mem: Memory allocated now: %" PRId64".\n", getUsedMem() );
+	log(LOG_INFO,"mem: Memory allocated now: %" PRId64".\n", m_used );
 	log(LOG_INFO,"mem: Num allocs %" PRId32".\n", m_numAllocated );
 	return 1;
 }
@@ -942,7 +964,7 @@ retry:
 	int64_t max = g_conf.m_maxMem;
 
 	// don't go over max
-	if ( m_used + size + UNDERPAD + OVERPAD >= max ) {
+	if ( g_mem.getUsedMem() + size + UNDERPAD + OVERPAD >= max ) {
 		// try to free temp mem. returns true if it freed some.
 		if ( freeCacheMem() ) goto retry;
 		g_errno = ENOMEM;

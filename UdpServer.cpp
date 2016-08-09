@@ -717,10 +717,9 @@ UdpSlot *UdpServer::getBestSlotToSend ( int64_t now ) {
 	// . we send msgs that are mostly "caught up" with their acks first
 	// . the slot with the lowest score gets sent
 	// . re-sends have priority over NONre-sends(ACK was not recvd in time)
-	int32_t     maxScore = -1;
-	UdpSlot *maxi     = NULL;
-	int32_t     score;  
-	//UdpSlot *slot;
+	int32_t maxScore = -1;
+	UdpSlot *maxi = NULL;
+
   	// . we send dgrams with the lowest "score" first
 	// . the "score" is just number of ACKs you're waiting for
 	// . that way transmissions that are the most caught up to their ACKs
@@ -732,23 +731,23 @@ UdpSlot *UdpServer::getBestSlotToSend ( int64_t now ) {
 		//   stuff, because we'd just end up calling the handler
 		//   too many times. we could invent a "stop" cmd or something.
 		// . mdw
-		// if it's timedout then nuke it
-		//if ( slot->isTimedOut(now) ) {
-		//g_errno = ETIMEDOUT;
-		//return slot;
-		//}
+
 		// . how many acks are we currently waiting for from dgrams
 		//   that have already been sent?
 		// . can be up to ACK_WINDOW_SIZE (16?).
 		// . we're a "Fastest First" (FF) protocol stack.
-		score = slot->getScore ( now );
+		int32_t score = slot->getScore ( now );
 		// a negative score means it's not a candidate
-		if ( score < 0 ) continue;
+		if ( score < 0 ) {
+			continue;
+		}
 		// see if we're a winner
-		if ( score > maxScore ) { maxi = slot; maxScore = score; }
+		if ( score > maxScore ) {
+			maxi = slot;
+			maxScore = score;
+		}
 	}
-	// if nothing left to send return NULL cuz we didn't do anything
-	//if ( ! maxi ) return NULL;
+
 	// return the winning slot
 	return maxi;
 }
@@ -1605,8 +1604,6 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 
 	// for timing callbacks and handlers
 	int64_t start = 0;
-	int64_t took;
-	//int32_t mt ;
 	int64_t now ;
 	int32_t delta , n , bucket;
 	int32_t saved;
@@ -1616,8 +1613,6 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 	// debug timing
 	if ( g_conf.m_logDebugUdp )
 		start = gettimeofdayInMillisecondsLocal();
-
-	bool oom = ((((float)g_mem.getUsedMem())/(float)g_mem.getMaxMem()) >= .990);
 
 	// callback is non-NULL if we initiated the transaction 
 	if ( slot->hasCallback() ) {
@@ -1905,6 +1900,8 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 	// use the transId of the slot to count!
 	g_callSlot = slot;
 
+	bool oom = g_mem.getUsedMemPercentage() >= 99.0;
+
 	// if we are out of mem basically, do not waste time fucking around
 	if ( slot->getMsgType() != msg_type_11 && slot->getNiceness() == 0 && oom ) {
 		// log it
@@ -1990,7 +1987,7 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 	//	log(mt,"net: Handler transId=%" PRId32" slot=%" PRIu32" "
 	// this is kinda obsolete now that we have the stats above
 	if ( g_conf.m_logDebugNet ) {
-		took = gettimeofdayInMillisecondsLocal() - start;
+		int64_t took = gettimeofdayInMillisecondsLocal() - start;
 		log(LOG_DEBUG,"net: Handler transId=%" PRId32" slot=%" PTRFMT" "
 		    "msgType=0x%02x msgSize=%" PRId32" "
 		    "g_errno=%s callback=%08" PTRFMT" "
@@ -2737,4 +2734,28 @@ void UdpServer::printState() {
 	for ( UdpSlot *slot = m_activeListHead ; slot ; slot = slot->m_activeListNext ) {
 		slot->printState();
 	}	
+}
+
+void UdpServer::saveActiveSlots(int fd, msg_type_t msg_type) {
+	for (UdpSlot *slot = g_udpServer.getActiveHead(); slot; slot = slot->getActiveListNext()) {
+		// skip if not wanted msg type
+		if (slot->getMsgType() != msg_type) {
+			continue;
+		}
+
+		// skip if got reply
+		if (slot->m_readBuf) {
+			continue;
+		}
+
+		// write hostid sent to
+		int32_t hostId = slot->getHostId();
+		write(fd, &hostId, 4);
+
+		// write that
+		write(fd, &slot->m_sendBufSize, 4);
+
+		// then the buf data itself
+		write(fd, slot->m_sendBuf, slot->m_sendBufSize);
+	}
 }

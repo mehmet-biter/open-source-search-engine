@@ -20,7 +20,6 @@
 #define QUICKPOLL_INTERVAL 10
 
 int gbsystem(const char *cmd);
-FILE* gbpopen(char* cmd);
 
 
 /**

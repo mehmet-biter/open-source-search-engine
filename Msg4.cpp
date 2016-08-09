@@ -146,108 +146,6 @@ void flushLocal ( ) {
 	g_errno = 0;
 }
 
-// for holding flush callback data
-static SafeBuf s_callbackBuf;
-static int32_t    s_numCallbacks = 0;
-
-class CBEntry {
-public:
-	int64_t m_timestamp;
-	void (*m_callback)(void *);
-	void *m_callbackState;
-};
-
-
-// . injecting into the "qatest123" coll flushes after each inject
-// . returns false if blocked and callback will be called
-bool flushMsg4Buffers ( void *state , void (* callback) (void *) ) {
-	logTrace( g_conf.m_logTraceMsg4, "BEGIN" );
-
-	// if all empty, return true now
-	if (!hasAddsInQueue()) {
-		logTrace( g_conf.m_logTraceMsg4, "END - nothing queued, returning true" );
-		return true;
-	}
-
-	// how much per callback?
-	int32_t cbackSize = sizeof(CBEntry);
-	// ensure big enough for first call
-	if (s_callbackBuf.m_capacity == 0) {
-		// make big
-		if (!s_callbackBuf.reserve(300 * cbackSize)) {
-			// return true with g_errno set on error
-			log(LOG_ERROR,"%s:%s: END - error allocating space for flush callback, returning true", __FILE__, __func__ );
-			return true;
-		}
-
-		// then init
-		s_callbackBuf.zeroOut();
-	}
-
-	// scan for empty slot
-	char *buf = s_callbackBuf.getBufStart();
-	CBEntry *cb = (CBEntry *)buf;
-	CBEntry *cbEnd = (CBEntry *)(buf + s_callbackBuf.getCapacity());
-
-	// find empty slot
-	for (; cb < cbEnd && cb->m_callback; cb++)
-		;
-
-	// no room?
-	if ( cb >= cbEnd ) {
-		log(LOG_ERROR, "%s:%s: END. msg4: no room for flush callback. count=%" PRId32", returning true",
-		    __FILE__,__func__,(int32_t)s_numCallbacks);
-		    
-		g_errno = EBUFTOOSMALL;
-		return true;
-	}
-	
-	// add callback to list
-	// time must be the same as used by UdpSlot::m_startTime
-	cb->m_callback = callback;
-	cb->m_callbackState = state;
-
-	// inc count
-	s_numCallbacks++;
-
-	// start it up
-	flushLocal();
-
-	// scan msg4 slots for maximum start time so we can only
-	// call the flush done callback when all msg4 slots in udpserver
-	// have start times STRICTLY GREATER THAN that, then we will
-	// be guaranteed that everything we added has been replied to!
-	int64_t max = 0LL;
-	for (UdpSlot *slot = g_udpServer.getActiveHead(); slot; slot = slot->getActiveListNext()) {
-		// get its time stamp 
-		if (slot->getMsgType() != msg_type_4) {
-			continue;
-		}
-
-		// must be initiated by us
-		if (!slot->hasCallback()) {
-			continue;
-		}
-
-		// get it
-		if (max && slot->getStartTime() < max) {
-			continue;
-		}
-
-		// got a new max
-		max = slot->getStartTime();
-	}
-
-	// set time AFTER the udpslot gets its m_startTime set so
-	// now will be >= each slot's m_startTime.
-	cb->m_timestamp = max;
-
-	// we are waiting now
-	logTrace( g_conf.m_logTraceMsg4, "END - returning false" );
-	return false;
-}
-
-
 // used by Repair.cpp to make sure we are not adding any more data ("writing")
 bool hasAddsInQueue   ( ) {
 	logTrace( g_conf.m_logTraceMsg4, "BEGIN" );
@@ -785,82 +683,6 @@ void gotReplyWrapper4 ( void *state , void *state2 ) {
 	returnMulticast(mcast);
 
 	storeLineWaiters(); // try to launch more msg4 requests in waiting
-
-	//
-	// now if all buffers are empty, let any flush request know that
-	//
-
-	// bail if no callbacks to call
-	if (s_numCallbacks == 0) {
-		return;
-	}
-
-	// get the oldest msg4 slot starttime
-	int64_t min = 0LL;
-	for (UdpSlot *slot = g_udpServer.getActiveHead(); slot; slot = slot->getActiveListNext()) {
-		// get its time stamp
-		if (slot->getMsgType() != msg_type_4) {
-			continue;
-		}
-
-		// must be initiated by us
-		if (!slot->hasCallback()) {
-			continue;
-		}
-
-		// if it is this replying slot or already had the callback
-		// called, then ignore it...
-		if (slot->hasCalledCallback()) {
-			continue;
-		}
-
-		// get it
-		if (min && slot->getStartTime() >= min) {
-			continue;
-		}
-
-		// got a new min
-		min = slot->getStartTime();
-	}
-
-	// scan for slots whose callbacks we can call now
-	char *buf = s_callbackBuf.getBufStart();
-	CBEntry *cb = (CBEntry *) buf;
-	CBEntry *cbEnd = (CBEntry *) (buf + s_callbackBuf.getCapacity());
-
-	// find empty slot
-	for (; cb < cbEnd; cb++) {
-		// skip if empty
-		if (!cb->m_callback) {
-			continue;
-		}
-
-		// wait until callback's stored time is <= all msg4
-		// slot's start times, then we can guarantee that all the
-		// msg4s required for this callback have replied.
-		// min will be zero if no msg4s in there, so call callback.
-		if (min && cb->m_timestamp >= min) {
-			continue;
-		}
-
-		// otherwise, call the callback!
-		cb->m_callback(cb->m_callbackState);
-
-		// take out of queue now by setting callback ptr to 0
-		cb->m_callback = NULL;
-
-		// discount
-		s_numCallbacks--;
-	}
-
-	// if not completely empty, wait!
-	if ( hasAddsInQueue () ) {
-		// flush away some more just in case
-		flushLocal();
-
-		// and wait
-		return;
-	}
 }
 
 void storeLineWaiters ( ) {
@@ -1225,34 +1047,8 @@ bool saveAddsInProgress ( const char *prefix ) {
 		write ( fd , s_hostBufs[i] , used );
 	}
 
-	// scan in progress msg4 requests too!
-	for (UdpSlot *slot = g_udpServer.getActiveHead(); slot; slot = slot->getActiveListNext()) {
-		// skip if not msg4
-		if (slot->getMsgType() != msg_type_4) {
-			continue;
-		}
-
-		// skip if we did not initiate it
-		if (!slot->hasCallback()) {
-			continue;
-		}
-
-		// skip if got reply
-		if (slot->m_readBuf) {
-			continue;
-		}
-
-		// write hostid sent to
-		int32_t hostId = slot->getHostId();
-		write(fd, &hostId, 4);
-
-		// write that
-		write(fd, &slot->m_sendBufSize, 4);
-
-		// then the buf data itself
-		write(fd, slot->m_sendBuf, slot->m_sendBufSize);
-	}
-	
+	// save in progress msg4 requests too!
+	g_udpServer.saveActiveSlots(fd, msg_type_4);
 
 	// MDW: if msg4 was stored in the linked list then caller 
 	// never got his callback called, so the spider will redo

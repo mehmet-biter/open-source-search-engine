@@ -72,7 +72,7 @@ static bool matchWildcard( const char *haystack, int32_t haystackLen, const char
 			isInWildcard = true;
 
 			// ignore multiple asterisk
-			while ( needle[needlePos] == '*' && ( needlePos < needleLen ) ) {
+			while ((needlePos < needleLen) && needle[needlePos] == '*') {
 				++needlePos;
 			}
 			savedHaystackPos = haystackPos;

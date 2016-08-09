@@ -173,17 +173,11 @@ public:
 
 	void printState();
 
-	int32_t getNumUsedSlots() {
-		return m_numUsedSlots;
-	}
+	int32_t getNumUsedSlots() const { return m_numUsedSlots; }
 
-	int32_t getNumUsedSlotsIncoming  () {
-		return m_numUsedSlotsIncoming;
-	}
+	int32_t getNumUsedSlotsIncoming() const { return m_numUsedSlotsIncoming; }
 
-	bool needBottom() {
-		return m_needBottom;
-	}
+	bool needBottom() const { return m_needBottom; }
 
 	bool m_writeRegistered;
 
@@ -191,12 +185,12 @@ public:
 		return m_activeListHead;
 	}
 
-	bool hasHandler(int i) {
-		return (m_handlers[i]);
-	}
+	bool hasHandler(int i) const { return (m_handlers[i]); }
 
 	// changes timeout to very low on dead hosts
 	bool timeoutDeadHosts ( class Host *h );
+
+	void saveActiveSlots(int fd, msg_type_t msg_type);
 
 	// . we need a transaction id for every transaction so we can match
 	//   incoming reply msgs with their corresponding request msgs

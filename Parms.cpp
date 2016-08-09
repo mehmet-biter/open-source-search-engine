@@ -3225,7 +3225,7 @@ bool Parms::getParmHtmlEncoded ( SafeBuf *sb , Parm *m , char *s ) {
 	     //t == TYPE_DIFFBOT_DROPDOWN ||
 	     t == TYPE_UFP            ||
 	     t == TYPE_PRIORITY_BOXES || t == TYPE_RETRIES        ||
-	     t == TYPE_RETRIES        || t == TYPE_FILTER         ||
+	     t == TYPE_FILTER         ||
 	     t == TYPE_BOOL2          || t == TYPE_CHAR2           )
 		sb->safePrintf("%" PRId32,(int32_t)*s);
 	else if ( t == TYPE_FLOAT )
@@ -6013,7 +6013,7 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(Conf,m_useEtcHosts);
 	m->m_def   = "1";
 	m->m_type  = TYPE_BOOL;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
+	m->m_flags = 0;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;

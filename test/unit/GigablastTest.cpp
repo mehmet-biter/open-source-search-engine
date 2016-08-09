@@ -9,7 +9,6 @@ int main(int argc, char **argv) {
 	// initialize Gigablast
 	g_conf.m_maxMem = 1000000000LL;
 
-	g_mem.m_memtablesize = 8194*1024;
 	g_mem.init();
 
 	g_log.init("/dev/stdout");
