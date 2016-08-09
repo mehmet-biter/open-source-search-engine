@@ -9,6 +9,27 @@
 #include "Linkdb.h"
 #include "Process.h"
 
+
+struct StateBD {
+	//Url m_u1,m_u2;
+	//Url *m_u;
+	char *m_u1,*m_u2;
+	char *m_buf1;
+	int32_t m_buf1Len;
+	int32_t m_buf1MaxLen;
+	int32_t m_numUrlDocsSent;
+	int32_t m_numUrlDocsReceived;
+	SafeBuf m_injectUrl;
+};
+
+struct StateBD2 {
+	StateBD *m_st;
+	int32_t m_numRedirects;
+	//Url m_url;
+	char *m_url;
+};
+
+
 Blaster g_blaster;
 static void gotDocWrapper1 ( void *state , TcpSocket *s ) ;
 static void gotDocWrapper2 ( void *state , TcpSocket *s ) ;

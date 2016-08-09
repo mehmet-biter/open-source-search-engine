@@ -52,10 +52,6 @@ class MsgC {
 	Url   m_u;	
 	char  m_request[MAX_URL_LEN];
 	int32_t *m_ipPtr;
-	// for proxy forwarding:
-	UdpSlot *m_slot;
-	int32_t     m_tmpIp;
-	bool     m_forwardToProxy;
 };
 
 #endif // GB_MSGC_H

@@ -9,25 +9,7 @@
 #include "iana_charset.h"
 #include <sys/resource.h>  // setrlimit
 
-struct StateBD {
-	//Url m_u1,m_u2;
-	//Url *m_u;
-	char *m_u1,*m_u2;
-	char *m_u;
-	char *m_buf1;
-	int32_t m_buf1Len;
-	int32_t m_buf1MaxLen;
-	int32_t m_numUrlDocsSent;
-	int32_t m_numUrlDocsReceived;
-	SafeBuf m_injectUrl;
-};
-
-struct StateBD2 {
-	StateBD *m_st;
-	int32_t m_numRedirects;
-	//Url m_url;
-	char *m_url;
-};
+struct StateBD;
 
 class Blaster {
  public:
@@ -83,8 +65,6 @@ class Blaster {
 	bool  m_verbose;
 	bool  m_isLogFile;
 	int64_t m_startTime;
-	int32_t m_numUrls;
-	char **m_lineStart;
 	bool m_blasterDiff;
 	bool m_print;
 };

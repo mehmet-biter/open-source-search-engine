@@ -172,18 +172,6 @@ enum ucDerivedCoreProperties {
 };
 
 
-enum HangulComposition {
-	ucSBase = 0xAC00,
-	ucLBase = 0x1100,
-	ucVBase = 0x1161,
-	ucTBase = 0x11A7,
-	ucLCount = 19,
-	ucVCount = 21,
-	ucTCount = 28,
-	ucNCount = ucVCount * ucTCount, // 588
-	ucSCount = ucLCount * ucNCount //  11172
-};
-
 // Inline Functions here
 static inline bool ucIsAlpha(UChar32 c) {
 	const void *p = g_ucProps.getValue(c);
