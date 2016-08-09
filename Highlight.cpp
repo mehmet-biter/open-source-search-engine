@@ -1,10 +1,12 @@
+#include "Highlight.h"
+#include "Words.h"
+#include "Query.h"
+#include "Matches.h"
+#include "Xml.h"
+#include "Url.h"
 #include "gb-include.h"
 
-#include "Highlight.h"
-#include "Titledb.h" // TITLEREC_CURRENT_VERSION
 #include "Phrases.h"
-#include "Synonyms.h"
-#include "XmlDoc.h"
 
 // use different front tags for matching different term #'s
 static const char *s_frontTags[] = {
