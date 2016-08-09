@@ -597,7 +597,8 @@ void HttpServer::requestHandler ( TcpSocket *s ) {
 	time_t tt ;
 	if ( isClockInSync() ) tt = getTimeGlobal();
 	else                   tt = getTimeLocal();
-	struct tm *timeStruct = localtime ( &tt );
+	struct tm tm_buf;
+	struct tm *timeStruct = localtime_r(&tt,&tm_buf);
 	char buf[64];
 	strftime ( buf , 100 , "%b %d %T", timeStruct);
 	// save ip in case "s" gets destroyed

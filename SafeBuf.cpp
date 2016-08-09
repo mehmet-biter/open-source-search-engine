@@ -1721,7 +1721,8 @@ bool SafeBuf::printTimeAgo ( int32_t ago , int32_t now , bool shorthand ) {
 
 	if ( ! printed && ago > 0 ) { // && si->m_isMasterAdmin ) {
 		time_t ts = now - ago;
-		struct tm *timeStruct = localtime ( &ts );
+		struct tm tm_buf;
+		struct tm *timeStruct = localtime_r(&ts,&tm_buf);
 		char tmp[100];
 		strftime(tmp,100,"%b %d %Y",timeStruct);
 		safeStrcpy(tmp);

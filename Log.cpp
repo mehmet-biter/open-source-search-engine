@@ -234,7 +234,8 @@ bool Log::logR ( int64_t now, int32_t type, const char *msg, bool forced ) {
         if( m_logReadableTimestamps )
         {
             time_t now_t = (time_t)(now / 1000);
-            struct tm *stm = localtime(&now_t);
+	    struct tm tm_buf;
+	    struct tm *stm = localtime_r(&now_t,&tm_buf);
 
             p += sprintf ( p , "%04d%02d%02d-%02d%02d%02d-%03d %04" PRId32" ", stm->tm_year+1900,stm->tm_mon+1,stm->tm_mday,stm->tm_hour,stm->tm_min,stm->tm_sec,(int)(now%1000), g_hostdb.m_hostId );
         }

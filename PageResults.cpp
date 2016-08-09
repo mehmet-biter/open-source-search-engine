@@ -1781,7 +1781,8 @@ static bool printTimeAgo ( SafeBuf *sb, time_t ts , const char *prefix , SearchI
 	// do not show if more than 1 wk old! we want to seem as
 	// fresh as possible
 	else if ( ts > 0 ) { // && si->m_isMasterAdmin ) {
-		struct tm *timeStruct = localtime ( &ts );
+		struct tm tm_buf;
+		struct tm *timeStruct = localtime_r(&ts,&tm_buf);
 		sb->safePrintf(" - %s: ",prefix);
 		char tmp[100];
 		strftime(tmp,100,"%b %d %Y",timeStruct);

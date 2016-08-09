@@ -322,7 +322,8 @@ time_t atotime1 ( const char *s ) {
 	// now, convert to utc
 	//time_t utc  = time(NULL);
 	// get time here locally
-	//time_t here = localtime(&utc);
+	// struct tm tm_buf;
+	//time_t here = localtime_r(&utc,&tm_buf);
 	// what is the diff?
 	//int32_t delta = here - utc;
 	// modify our time to make it into utc

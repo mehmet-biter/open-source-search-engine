@@ -37,7 +37,8 @@ bool Tag::printToBuf ( SafeBuf *sb ) {
 
 	// print the date when this tag was added
 	time_t ts = m_timestamp;
-	struct tm *timeStruct = localtime ( &ts );
+	struct tm tm_buf;
+	struct tm *timeStruct = localtime_r(&ts,&tm_buf);
 	char tmp[100];
 	strftime(tmp,100,"%b-%d-%Y-%H:%M:%S,",timeStruct);
 	sb->safePrintf("%s(%" PRIu32"),",tmp,m_timestamp);
@@ -359,7 +360,8 @@ bool Tag::printToBufAsHtml ( SafeBuf *sb , const char *prefix ) {
 	sb->safePrintf("</b> user=%s time=",getUser());
 
 	time_t ts = m_timestamp;
-	struct tm *timeStruct = localtime ( &ts );
+	struct tm tm_buf;
+	struct tm *timeStruct = localtime_r(&ts,&tm_buf);
 	char tmp[100];
 	strftime(tmp,100,"%b-%d-%Y-%H:%M:%S",timeStruct);
 	sb->safePrintf("%s(%" PRIu32")",tmp,m_timestamp);
@@ -2191,7 +2193,8 @@ bool sendReply2 ( void *state ) {
 		char tmp[64];
 		sprintf(tmp,"&nbsp;");
 		time_t ts = timestamp;
-		struct tm *timeStruct = localtime ( &ts );
+		struct tm tm_buf;
+		struct tm *timeStruct = localtime_r(&ts,&tm_buf);
 		if ( timestamp ) {
 			strftime(tmp,64,"%b-%d-%Y-%H:%M:%S",timeStruct);
 		}
