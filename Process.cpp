@@ -1163,98 +1163,12 @@ void Process::resetPageCaches ( ) {
 }
 
 // ============================================================================
-// load average shedding via /proc/loadavg and an async BigFile
-typedef struct {
-	char		buf[20];		// read buffer
-	double		load_average;		// last parsed load avg.
-	int64_t		time_req;		// time of last parse
-	int64_t		time_parse;
-	bool		waiting;		// waiting on async result?
-	bool		closing;		// shutting down...
-	BigFile		bigfile;
-	FileState	filestate;
-} loadavg_state;
-
-static loadavg_state		s_st_lavg;
-/*
-static void loadavg_callback(loadavg_state* state) {
-	if (state == NULL)
-		return;
-	if (s_st_lavg.closing)
-		return;
-	// MDW: stop doing it for now, it is not accurate
-	state->load_average = 0.00;
-	return;
-	if (s_st_lavg.filestate.m_errno != 0) {
-		// do not thrash!
-		// leave time_req alone so next open will occur in 5 seconds...
-		// do not deadlock!
-		// set load_average=0 until file can be successfully re-read.
-		s_st_lavg.load_average = 0.0;
-		s_st_lavg.bigfile.close();
-		s_st_lavg.bigfile.setNonBlocking();
-		s_st_lavg.bigfile.open(O_RDONLY);
-		log(LOG_INFO, "build: errno %" PRId32" reading /proc/loadavg",
-			s_st_lavg.filestate.m_errno);
-		s_st_lavg.filestate.m_errno = 0;
-		return;
-	}
-	state->time_parse = gettimeofdayInMilliseconds();
-	state->waiting = false;
-	state->load_average = atof(state->buf);
-	log(LOG_DEBUG, "build: loadavg currently: %.2f latency %lld ms",
-		state->load_average, state->time_parse - state->time_req);
-}
-*/
-
-static loadavg_state*		s_state_ptr	=	NULL;
-/*
-static void update_load_average(int64_t now) {
-	// initialize loadavg collection...
-	if (s_state_ptr == NULL) {
-		s_st_lavg.load_average = 0.0;
-		s_st_lavg.time_req = 0;
-		s_st_lavg.time_parse = 0;
-		s_st_lavg.waiting = false;
-		s_st_lavg.closing = false;
-		s_st_lavg.bigfile.set("/proc", "loadavg");
-		s_st_lavg.bigfile.setNonBlocking();
-		s_st_lavg.bigfile.open(O_RDONLY);
-		s_state_ptr = &s_st_lavg;
-	}
-	if (s_st_lavg.closing)
-		return;
-	if (s_st_lavg.waiting)
-		return;
-	// the 2.4 kernel updates /proc/loadavg on a 5-second interval
-	if (s_st_lavg.waiting == false && now - s_st_lavg.time_req < (5 * 1000))
-		return;
-
-	s_st_lavg.time_req = now;
-	s_st_lavg.waiting = true;
-	s_st_lavg.filestate.m_errno = 0;
-	if (!s_st_lavg.bigfile.read(	s_st_lavg.buf,
-					sizeof(s_st_lavg.buf),
-					0,
-					&s_st_lavg.filestate))
-		return;
-	// if we did not block (as is normal for _this_ file), then
-	// call callback directly and update state struct.
-	loadavg_callback(s_state_ptr);
-	return;
-}
-*/
-
 double Process::getLoadAvg() {
-	return s_st_lavg.load_average;
+	//todo: obtain load averages from /proc/loadavg
+	//(original code was disabled)
+	return 0.0;
 }
-void Process::resetLoadAvg() {
-	if (s_state_ptr == NULL)
-		return;
-	s_st_lavg.closing = true;
-	s_state_ptr = NULL;
-	s_st_lavg.bigfile.close();
-}
+
 //
 // ============================================================================
 

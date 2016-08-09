@@ -55,7 +55,6 @@ class Process {
 	void resetAll           ( ) ;
 	void resetPageCaches    ( ) ;
 	double getLoadAvg	( );
-	void resetLoadAvg	( );
 
 	int64_t getTotalDocsIndexed();
 	int64_t m_totalDocsIndexed;
