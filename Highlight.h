@@ -31,7 +31,6 @@ public:
 
 	class SafeBuf *m_sb;
 
-	Matches  m_matches;
 	const char    *m_frontTag;
 	const char    *m_backTag;
 	int32_t     m_frontTagLen;
