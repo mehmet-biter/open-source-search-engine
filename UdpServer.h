@@ -179,11 +179,9 @@ public:
 
 	bool needBottom() const { return m_needBottom; }
 
-	bool m_writeRegistered;
+	bool getWriteRegistered() const { return m_writeRegistered; }
 
-	UdpSlot *getActiveHead ( ) {
-		return m_activeListHead;
-	}
+	UdpSlot *getActiveHead() { return m_activeListHead; }
 
 	bool hasHandler(int i) const { return (m_handlers[i]); }
 
@@ -291,6 +289,8 @@ private:
 
 	// did we have to give back control before we called all of the
 	bool m_needBottom;
+
+	bool m_writeRegistered;
 
 	// . how many requests are we handling at this momment
 	// . does not include requests whose replies we are sending, only
