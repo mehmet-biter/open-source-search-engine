@@ -776,8 +776,10 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 		fclose(ff);
 	}
         time_t now = getTimeLocal();
+	struct tm tm_buf;
 	char nowStr[64];
-	sprintf ( nowStr , "%s UTC", asctime(gmtime(&now)) );
+	char buf2[64];
+	sprintf ( nowStr , "%s UTC", asctime_r(gmtime_r(&now,&tm_buf),buf2) );
 
 	// replace \n in nowstr with space
 	char *nn = strstr(nowStr,"\n");
@@ -929,7 +931,9 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 	}
 	else {
 		nowg = getTimeGlobal();
-		sprintf ( nowStr , "%s UTC", asctime(gmtime(&nowg)) );
+		struct tm tm_buf;
+		char buf[64];
+		sprintf ( nowStr , "%s UTC", asctime_r(gmtime_r(&nowg,&tm_buf),buf) );
 	}
 
 	// replace \n in nowstr with space

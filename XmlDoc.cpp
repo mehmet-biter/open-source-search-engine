@@ -11612,7 +11612,7 @@ bool XmlDoc::logIt (SafeBuf *bb ) {
 	// print when this spider request was added
 	//
 	//if ( m_sreqValid && m_sreq.m_addedTime ) {
-	//	struct tm *timeStruct = gmtime ( &m_sreq.m_addedTime );
+	//	struct tm *timeStruct = gmtime_r( &m_sreq.m_addedTime );
 	//	char tmp[64];
 	//	strftime(tmp,64,"requestadded=%b-%d-%Y(%H:%M:%S)", timeStruct);
 	//	sb->safePrintf("%s(%" PRIu32") ",tmp,m_sreq.m_addedTime);
@@ -11623,7 +11623,8 @@ bool XmlDoc::logIt (SafeBuf *bb ) {
 	//
 	//if ( m_spideredTimeValid ) {
 	time_t spideredTime = (time_t)getSpideredTime();
-	struct tm *timeStruct = gmtime ( &spideredTime );
+	struct tm tm_buf;
+	struct tm *timeStruct = gmtime_r(&spideredTime,&tm_buf);
 	char tmp[64];
 	strftime(tmp,64,"spidered=%b-%d-%Y(%H:%M:%S)", timeStruct );
 	sb->safePrintf("%s(%" PRIu32") ",tmp,(uint32_t)spideredTime);
@@ -11631,7 +11632,7 @@ bool XmlDoc::logIt (SafeBuf *bb ) {
 	// when it was scheduled to be spidered
 	if ( m_sreqValid && m_sreq.m_addedTime ) {
 		time_t ts = m_sreq.m_addedTime;
-		struct tm *timeStruct = gmtime ( &ts );
+		struct tm *timeStruct = gmtime_r(&ts,&tm_buf);
 		char tmp[64];
 		strftime ( tmp , 64 , "%b-%d-%Y(%H:%M:%S)" , timeStruct );
 		sb->safePrintf("scheduledtime=%s(%" PRIu32") ",
@@ -11641,7 +11642,7 @@ bool XmlDoc::logIt (SafeBuf *bb ) {
 	// discovery date, first time spiderrequest was added to spiderdb
 	if ( m_sreqValid && m_sreq.m_discoveryTime ) {
 		time_t ts = m_sreq.m_discoveryTime;
-		struct tm *timeStruct = gmtime ( &ts );
+		struct tm *timeStruct = gmtime_r(&ts,&tm_buf);
 		char tmp[64];
 		strftime ( tmp , 64 , "%b-%d-%Y(%H:%M:%S)" , timeStruct );
 		sb->safePrintf("discoverydate=%s(%" PRIu32") ",
@@ -11651,7 +11652,7 @@ bool XmlDoc::logIt (SafeBuf *bb ) {
 	// print first indexed time
 	if ( m_firstIndexedDateValid ) {
 		time_t ts = m_firstIndexedDate;
-		timeStruct = gmtime ( &ts );//m_firstIndexedDate );
+		timeStruct = gmtime_r(&ts,&tm_buf);//m_firstIndexedDate );
 		strftime(tmp,64,"firstindexed=%b-%d-%Y(%H:%M:%S)", timeStruct);
 		sb->safePrintf("%s(%" PRIu32") ",tmp,
 			       (uint32_t)m_firstIndexedDate);
@@ -11893,7 +11894,7 @@ bool XmlDoc::logIt (SafeBuf *bb ) {
 	// print when it was last spidered
 	if ( m_oldDocValid && m_oldDoc ) {
 		time_t spideredTime = m_oldDoc->getSpideredTime();
-		struct tm *timeStruct = gmtime ( &spideredTime );
+		struct tm *timeStruct = gmtime_r(&spideredTime,&tm_buf);
 		char tmp[64];
 		strftime(tmp,64,"lastindexed=%b-%d-%Y(%H:%M:%S)",timeStruct);
 		sb->safePrintf("%s(%" PRIu32") ", tmp,(uint32_t)spideredTime);
@@ -18364,6 +18365,8 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 			 (int32_t)g_titledb.getDomHash8FromDocId(m_docId)
 			 );
 
+	struct tm tm_buf;
+	char buf[64];
 	sb->safePrintf(
 			"<tr>"
 			"<td>coll</td>"
@@ -18376,13 +18379,13 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 			"</tr>\n"
 			,
 			cr->m_coll,
-			asctime(gmtime ( &spideredTime ))
+			asctime_r(gmtime_r(&spideredTime,&tm_buf),buf)
 			);
 
 
 	/*
 	char *ms = "-1";
-	if ( m_minPubDate != -1 ) ms = asctime(gmtime ( &m_minPubDate ));
+	if ( m_minPubDate != -1 ) ms = asctime_r(gmtime_r( &m_minPubDate ));
 	sb->safePrintf (
 			"<tr>"
 			"<td>min pub date</td>"
@@ -18390,7 +18393,7 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 			"</tr>\n" , ms );
 
 	ms = "-1";
-	if ( m_maxPubDate != -1 ) ms = asctime(gmtime ( &m_maxPubDate ));
+	if ( m_maxPubDate != -1 ) ms = asctime_r(gmtime_r( &m_maxPubDate ));
 	sb->safePrintf (
 			"<tr>"
 			"<td>max pub date</td>"
@@ -18433,7 +18436,7 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 
 		       "<tr><td>next spider priority</td>"
 		       "<td>%" PRId32"</td></tr>\n" ,
-		       asctime(gmtime( &m_nextSpiderTime )) ,
+		       asctime_r(gmtime_r( &m_nextSpiderTime )) ,
 		       (int32_t)m_nextSpiderPriority );
 	*/
 
@@ -18454,12 +18457,12 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 	time_t ts = m_firstIndexedDate;
 	sb->safePrintf("<tr><td>first indexed date</td>"
 		       "<td>%s UTC</td></tr>\n" ,
-		       asctime(gmtime(&ts )) );
+		       asctime_r(gmtime_r(&ts,&tm_buf),buf) );
 
 	ts = m_outlinksAddedDate;
 	sb->safePrintf("<tr><td>outlinks last added date</td>"
 		       "<td>%s UTC</td></tr>\n" ,
-		       asctime(gmtime(&ts )) );
+		       asctime_r(gmtime_r(&ts,&tm_buf),buf) );
 
 	// hop count
 	sb->safePrintf("<tr><td>hop count</td><td>%" PRId32"</td></tr>\n",
@@ -19060,12 +19063,14 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 	// must always start with http i guess!
 	if ( strncmp ( fu , "http" , 4 ) ) { g_process.shutdownAbort(true); }
 
+	struct tm tm_buf;
+	char buf[64];
 	time_t ts = (time_t)m_firstIndexedDate;
 
 	if ( ! isXml )
 		sb->safePrintf("<tr><td>first indexed date</td>"
 			       "<td>%s UTC</td></tr>\n" ,
-			       asctime(gmtime(&ts)) );
+			       asctime_r(gmtime_r(&ts,&tm_buf),buf) );
 	else
 		sb->safePrintf("\t<firstIndexedDateUTC>%" PRIu32
 			       "</firstIndexedDateUTC>\n",
@@ -19076,7 +19081,7 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 	if ( ! isXml )
 		sb->safePrintf("<tr><td>last indexed date</td>"
 			       "<td>%s UTC</td></tr>\n" ,
-			       asctime(gmtime(&ts )) );
+			       asctime_r(gmtime_r(&ts,&tm_buf),buf) );
 	else
 		sb->safePrintf("\t<lastIndexedDateUTC>%" PRIu32
 			       "</lastIndexedDateUTC>\n",
@@ -19087,7 +19092,7 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 	if ( ! isXml )
 		sb->safePrintf("<tr><td>outlinks last added date</td>"
 			       "<td>%s UTC</td></tr>\n" ,
-			       asctime(gmtime(&ts )) );
+			       asctime_r(gmtime_r(&ts,&tm_buf),buf) );
 	else
 		sb->safePrintf("\t<outlinksLastAddedUTC>%" PRIu32
 			       "</outlinksLastAddedUTC>\n",
@@ -19115,7 +19120,7 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 	//int32_t sni = info1->getNumGoodInlinks();
 
 	time_t tlu = info1->getLastUpdated();
-	struct tm *timeStruct3 = gmtime ( &tlu );//info1->m_lastUpdated );
+	struct tm *timeStruct3 = gmtime_r(&tlu,&tm_buf);//info1->m_lastUpdated );
 	char tmp3[64];
 	strftime ( tmp3 , 64 , "%b-%d-%Y(%H:%M:%S)" , timeStruct3 );
 
@@ -19748,7 +19753,7 @@ bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {
 			dateStr = tbbb;
 		}
 		else if ( ddd )
-			dateStr = asctime ( gmtime(&ddd ));
+			dateStr = asctime_r(gmtime_r(&ddd ));
 
 		char tmp[20];
 		if ( tp[i]->m_noSplit ) sprintf ( tmp,"<b>1</b>" );

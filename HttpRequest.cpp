@@ -206,9 +206,11 @@ bool HttpRequest::set (char *url,int32_t offset,int32_t size,time_t ifModifiedSi
 	char  ibuf[64];
 	const char *ims = "";
 	if ( ifModifiedSince ) {
+		struct tm tm_buf;
+		char buf[64];
 		// NOTE: ctime appends a \n 
 		sprintf(ibuf,"If-Modified-Since: %s UTC",
-			asctime(gmtime(&ifModifiedSince)));
+			asctime_r(gmtime_r(&ifModifiedSince,&tm_buf),buf));
 		// get the length
 		int32_t ilen = strlen(ibuf);
 		// hack off \n from ctime - replace with \r\n\0

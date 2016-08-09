@@ -422,7 +422,8 @@ bool processLoop ( void *state ) {
 	if ( printDisclaimer ||
 	     format == FORMAT_XML ||
 	     format == FORMAT_JSON ) {
-		struct tm *timeStruct = gmtime ( &lastSpiderDate );
+		struct tm tm_buf;
+		struct tm *timeStruct = gmtime_r(&lastSpiderDate,&tm_buf);
 		strftime ( tbuf, 100,"%b %d, %Y UTC", timeStruct);
 	}
 
@@ -467,7 +468,7 @@ bool processLoop ( void *state ) {
 
 		// then the spider date in GMT
 		// time_t lastSpiderDate = xd->m_spideredTime;
-		// struct tm *timeStruct = gmtime ( &lastSpiderDate );
+		// struct tm *timeStruct = gmtime_r(&lastSpiderDate,&tm_buf);
 		// char tbuf[100];
 		// strftime ( tbuf, 100,"%b %d, %Y UTC", timeStruct);
 		//p += strlen ( p );

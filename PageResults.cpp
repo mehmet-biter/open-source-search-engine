@@ -2099,7 +2099,8 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 			// also include a timestamp field with an RFC 1123 formatted date
 			char timestamp[50];
 			time_t lastSpidered = mr->m_lastSpidered;
-			struct tm *ptm =gmtime(&lastSpidered );
+			struct tm tm_buf;
+			struct tm *ptm =gmtime_r(&lastSpidered,&tm_buf);
 			strftime(timestamp, 50, "%a, %d %b %Y %X %Z", ptm);
 			sb->safePrintf(",\"timestamp\":\"%s\"}\n", timestamp);
 		}
@@ -3463,7 +3464,8 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 
 		struct tm *timeStruct3;
 		time_t pageInlinksLastUpdated = mr->m_pageInlinksLastUpdated;
-		timeStruct3 = gmtime(&pageInlinksLastUpdated);
+		struct tm tm_buf;
+		timeStruct3 = gmtime_r(&pageInlinksLastUpdated,&tm_buf);
 		char tmp3[64];
 		strftime ( tmp3 , 64 , "%b-%d-%Y(%H:%M:%S)" , timeStruct3 );
 		// -1 means unknown

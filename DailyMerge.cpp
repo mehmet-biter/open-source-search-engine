@@ -70,9 +70,9 @@ void DailyMerge::dailyMergeLoop ( ) {
 	time_t nowSynced = getTimeSynced();
 
 	// get time since midnight
-	struct tm *tt ;
+	struct tm tm_buf;
+	struct tm *tt  = gmtime_r(&nowSynced,&tm_buf);
 	// how many MINUTES into the day are we? (in UTC)
-	tt = gmtime ( &nowSynced );
 	int32_t elapsedMins = tt->tm_hour * 60 + tt->tm_min ;
 
 	// what collnum to merge?

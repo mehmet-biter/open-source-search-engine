@@ -1710,7 +1710,7 @@ int main2 ( int argc , char *argv[] ) {
 		time_t ts = getTimeLocal();
 		struct tm tm_buf;
 		struct tm *timeStruct = localtime_r(&ts,&tm_buf);
-		//struct tm *timeStruct = gmtime ( &ts );
+		//struct tm *timeStruct = gmtime_r(&ts,&tm_buf);
 		char ppp[100];
 		strftime(ppp,100,"%Y%m%d-%H%M%S",timeStruct);
 		newName.safePrintf("%s-bak%s",g_hostdb.m_logFilename, ppp );
@@ -2945,7 +2945,7 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 				time_t ts = xd->m_spideredTime;//tr.getSpiderDa
 				struct tm tm_buf;
 				struct tm *timeStruct = localtime_r(&ts,&tm_buf);
-				//struct tm *timeStruct = gmtime ( &ts );
+				//struct tm *timeStruct = gmtime_r(&ts,&tm_buf);
 				char ppp[100];
 				strftime(ppp,100,"%b-%d-%Y-%H:%M:%S",
 					 timeStruct);
@@ -3025,7 +3025,7 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 		time_t ts = xd->m_spideredTime;//tr.getSpiderDate();
 		struct tm tm_buf;
 		struct tm *timeStruct = localtime_r(&ts,&tm_buf);
-		//struct tm *timeStruct = gmtime ( &ts );
+		//struct tm *timeStruct = gmtime_r(&ts,&tm_buf);
 		char ppp[100];
 		strftime(ppp,100,"%b-%d-%Y-%H:%M:%S",timeStruct);
 

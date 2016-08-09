@@ -2563,8 +2563,10 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 		char dbuf[128];
 		if ( r->m_datedbDate > 1 ) {
 			time_t ttt = (time_t)r->m_datedbDate;
+			struct tm tm_buf;
+			char buf[64];
 			sprintf(dbuf,"%s UTC",
-				asctime (gmtime( &ttt ))  );
+				asctime_r(gmtime_r(&ttt,&tm_buf),buf)  );
 		}
 		else 
 			sprintf(dbuf,"---");
@@ -2572,7 +2574,8 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 		char discBuf[128];
 		time_t dd = (time_t)r->m_discoveryDate;
 		if ( dd ) {
-			struct tm *timeStruct = gmtime ( &dd );
+			struct tm tm_buf;
+			struct tm *timeStruct = gmtime_r(&dd,&tm_buf);
 			if ( timeStruct )
 				strftime ( discBuf, 128 , 
 					   "<nobr>%b %d %Y</nobr>" , 
