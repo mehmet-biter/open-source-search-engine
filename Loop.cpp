@@ -12,6 +12,12 @@
 
 #include <execinfo.h>
 #include <sys/auxv.h>
+#include <stdio.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <signal.h>
+#include <fcntl.h>      // fcntl()
+#include <sys/poll.h>   // POLLIN, POLLPRI, ...
 
 // raised from 5000 to 10000 because we have more UdpSlots now and Multicast
 // will call g_loop.registerSleepCallback() if it fails to get a UdpSlot to
@@ -955,9 +961,6 @@ void Loop::doPoll ( ) {
 
 	logDebug( g_conf.m_logDebugLoop, "loop: Exited doPoll.");
 }
-
-// for FileState class
-#include "BigFile.h"
 
 
 void Loop::quickPoll(int32_t niceness, const char* caller, int32_t lineno) {

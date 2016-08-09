@@ -6,17 +6,6 @@
 #ifndef GB_LOOP_H
 #define GB_LOOP_H
 
-#include <sys/time.h>
-#include <sys/types.h>
-#include <signal.h>
-#include <fcntl.h>      // fcntl()
-#include <sys/poll.h>   // POLLIN, POLLPRI, ...
-#ifndef F_SETSIG
-#define F_SETSIG 10     // F_SETSIG
-#endif
-#include "Mem.h"        // mmalloc, mfree
-#include <stdio.h>
-#define QUERYPRIORITYWEIGHT 16
 #define QUICKPOLL_INTERVAL 10
 
 int gbsystem(const char *cmd);
