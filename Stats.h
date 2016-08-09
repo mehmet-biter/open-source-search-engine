@@ -191,8 +191,8 @@ class Stats {
 	int64_t m_compressBadCTypeBytesOut;
 
 	int64_t m_compressHasIframeDocs;
-	int64_t m_compressHasIframeBytesIn;
-	int64_t m_compressHasIframeBytesOut;
+	//int64_t m_compressHasIframeBytesIn;
+	//int64_t m_compressHasIframeBytesOut;
 
 	int64_t m_compressPlainLinkDocs;
 	int64_t m_compressPlainLinkBytesIn;
