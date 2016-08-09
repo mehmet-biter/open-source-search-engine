@@ -245,8 +245,8 @@ void sendReply ( void *state ) {
 	char startTimeStr[30];
 	char endTimeStr[30];
 
-	strncpy( startTimeStr, ctime( &st->m_startDate ), 30 );
-	strncpy( endTimeStr, ctime( &st->m_endDate ), 30 );
+	ctime_r(&st->m_startDate,startTimeStr);
+	ctime_r(&st->m_endDate,endTimeStr);
 
 	buf.safePrintf(
 		       "<b>Graph of various query performance statistics.</b>"
