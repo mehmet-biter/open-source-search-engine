@@ -5,6 +5,7 @@
 #include "Titledb.h"
 #include "max_niceness.h"
 #include "Process.h"
+#include <sys/stat.h> //stat()
 
 // the global instance
 Wiki g_wiki;

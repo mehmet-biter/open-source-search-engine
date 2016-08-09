@@ -71,6 +71,7 @@
 #include "RdbBuckets.h"
 #include "SpiderProxy.h"
 #include "HashTable.h"
+#include <sys/stat.h> //umask()
 
 bool registerMsgHandlers ( ) ;
 bool registerMsgHandlers1 ( ) ;

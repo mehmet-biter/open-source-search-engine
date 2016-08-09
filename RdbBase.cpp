@@ -15,6 +15,7 @@
 #include "Rebalance.h"
 #include "JobScheduler.h"
 #include "Process.h"
+#include <sys/stat.h> //mkdir()
 
 // how many rdbs are in "urgent merge" mode?
 int32_t g_numUrgentMerges = 0;

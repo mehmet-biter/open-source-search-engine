@@ -12,6 +12,7 @@
 #include "Multicast.h"
 #include "JobScheduler.h"
 #include "Process.h"
+#include <sys/stat.h> //stat()
 
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>

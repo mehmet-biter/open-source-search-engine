@@ -7,6 +7,7 @@
 #include "TcpSocket.h"
 #include "HttpRequest.h"
 #include "Process.h"
+#include <sys/stat.h> //umask()
 
 
 Conf g_conf;

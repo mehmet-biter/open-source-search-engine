@@ -12,6 +12,7 @@
 
 #include "File.h"
 #include "JobScheduler.h" //for job_exit_t
+#include "SafeBuf.h"
 
 
 #ifndef PRIVACORE_TEST_VERSION

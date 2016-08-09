@@ -26,6 +26,8 @@
 #define GB_UDPPROTOCOL_H
 
 #include <netinet/in.h>
+#include "types.h"
+#include "Log.h"
 
 //#define MAX_MSGTYPES (0x3f+1)
 // this is for PageStats.cpp

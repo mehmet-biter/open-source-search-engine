@@ -6,9 +6,12 @@
 
 #include "File.h"
 #include "Conf.h"
+#include "Loop.h"            // MAX_NUM_FDS etc.
 #include "Sanity.h"
 #include "ScopedLock.h"
 #include <pthread.h>
+#include <sys/types.h>       // for open/lseek
+#include <sys/stat.h>        // for open
 
 // THE FOLLOWING IS ALL STATIC 'CUZ IT'S THE FD POOL
 // if someone is using a file we must make sure this is true...
