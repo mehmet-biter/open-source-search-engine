@@ -471,18 +471,8 @@ skip:
 	// . multicast::send() returns false and sets g_errno on error
 	// . we return false if we block, true otherwise
 	// . will loop indefinitely if a host in this group is down
-	if ( m_mcast.send ( request    , // sets mcast->m_msg    to this
-			    requestLen , // sets mcast->m_msgLen to this
-			    msg_type_1       ,
-			    true       , // does multicast own msg?
-			    shardNum   , // group to send to (groupKey)
-			    true       , // send to whole group?
-			    0          , // key is useless for us
-			    this       , // state data
-			    NULL       , // state data
-			    gotReplyWrapper1 ,
-			    multicast_msg1_senddata_timeout         , // timeout
-			    m_niceness )) {  // niceness
+	// key is useless for us
+	if (m_mcast.send(request, requestLen, msg_type_1, true, shardNum, true, 0, this, NULL, gotReplyWrapper1, multicast_msg1_senddata_timeout, m_niceness)) {
 		return false;
 	}
 

@@ -595,22 +595,10 @@ bool sendBuffer ( int32_t hostId , int32_t niceness ) {
 	// . in that case we should restart from the top and we will add
 	//   the dead host ids to the top, and multicast will avoid sending
 	//   to hostids that are dead now
-	if ( mcast->send ( request    , // sets mcast->m_msg    to this
-			   requestSize, // sets mcast->m_msgLen to this
-			   msg_type_4       ,
-			   false      , // does multicast own msg?
-			   shardNum,//groupId , // group to send to (groupKey)
-			   true       , // send to whole group?
-			   0          , // key is useless for us
-			   (void *)(PTRTYPE)allocSize  , // state data
-			   (void *)mcast      , // state data
-			   gotReplyWrapper4 ,
-			   // this was 60 seconds, but if we saved the
-			   // addsinprogress at the wrong time we might miss
-			   // it when its between having timed out and
-			   // having been resent by us!
-			   multicast_infinite_send_timeout   , // timeout
-			   MAX_NICENESS)) {   // niceness
+	// key is useless for us
+	// timeout was 60 seconds, but if we saved the addsinprogress at the wrong time we might miss
+	// it when its between having timed out and having been resent by us!
+	if (mcast->send(request, requestSize, msg_type_4, false, shardNum, true, 0, (void *)(PTRTYPE)allocSize, (void *)mcast, gotReplyWrapper4, multicast_infinite_send_timeout, MAX_NICENESS)) {
 		// . let storeRec() do all the allocating...
 		// . only let the buffer go once multicast succeeds
 		s_hostBufs [ hostId ] = NULL;

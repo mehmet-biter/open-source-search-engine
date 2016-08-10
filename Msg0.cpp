@@ -394,20 +394,8 @@ skip:
 	// get the multicast
 	Multicast *m = &m_mcast;
 
-    if ( ! m->send ( m_request    ,
-			      m_requestSize,
-			      msg_type_0         ,
-			      false        , // does multicast own request?
-			 m_shardNum ,
-			      false        , // send to whole group?
-			      //m_startKey.n1, // key is passed on startKey
-			      keyTop       , // key is passed on startKey
-			      this         , // state data
-			      NULL         , // state data
-			      gotMulticastReplyWrapper0 ,
-			      timeout*1000 , // timeout
-			      niceness     ,
-			      firstHostId) ) {
+	// key is passed on startKey
+	if (!m->send(m_request, m_requestSize, msg_type_0, false, m_shardNum, false, keyTop, this, NULL, gotMulticastReplyWrapper0, timeout * 1000, niceness, firstHostId)) {
 		log(LOG_ERROR, "net: Failed to send request for data from %s in shard "
 		    "#%" PRIu32" over network: %s.",
 		    getDbnameFromId(m_rdbId),m_shardNum, mstrerror(g_errno));

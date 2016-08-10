@@ -333,10 +333,11 @@ class Hostdb {
 	Host *getProxy ( int32_t proxyId ) {
 		return m_proxyHosts[proxyId]; }
 
-	int32_t  getNumHosts ( ) { return m_numHosts; }
-	int32_t  getNumProxy ( ) { return m_numProxyHosts; }
-	int32_t getNumProxies ( ) { return m_numProxyHosts; }
-	int32_t getNumGrunts  ( ) { return m_numHosts; }
+	int32_t getNumHosts() { return m_numHosts; }
+	int32_t getNumProxy() { return m_numProxyHosts; }
+	int32_t getNumProxies() { return m_numProxyHosts; }
+	int32_t getNumGrunts() { return m_numHosts; }
+
 	// how many of the hosts are non-dead?
 	int32_t  getNumHostsAlive ( ) { return m_numHostsAlive; }
 	int32_t  getNumProxyAlive ( ) { return m_numProxyAlive; }

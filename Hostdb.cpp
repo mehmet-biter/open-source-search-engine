@@ -73,8 +73,7 @@ const char *Hostdb::getNetName ( ) {
 // . gets filename that contains the hosts from the Conf file
 // . return false on errro
 // . g_errno may NOT be set
-bool Hostdb::init ( int32_t hostIdArg , char *netName ,
-		    bool proxyHost, char useTmpCluster, const char *cwd ) {
+bool Hostdb::init(int32_t hostIdArg, char *netName, bool proxyHost, char useTmpCluster, const char *cwd) {
 	// reset my ip and port
 	m_myIp             = 0;
 	m_myIpShotgun      = 0;
@@ -89,17 +88,21 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 	m_initialized = true;
 
 	const char *dir = "./";
-	if ( cwd ) dir = cwd;
+	if (cwd) {
+		dir = cwd;
+	}
 
 	const char *filename = "hosts.conf";
 
 	// for now we autodetermine
-	if ( hostIdArg != -1 ) { g_process.shutdownAbort(true); }
+	if ( hostIdArg != -1 ) {
+		g_process.shutdownAbort(true);
+	}
+
 	// init to -1
 	m_hostId = -1;
 
- retry:
-
+retry:
 	// save the name of the network... we can have multiple networks now
 	// since we need to get title recs from separate networks for getting
 	// link text for gov.gigablast.com
@@ -119,7 +122,7 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 	if ( status ==  0 ) { 
 		g_errno = ENOHOSTSFILE; 
 		// now we generate one if that is not there
-	createFile:
+createFile:
 		if ( ! m_created ) {
 			m_created = true;
 			g_errno = 0;
@@ -127,11 +130,13 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 			createHostsConf( cwd );
 			goto retry;
 		}
-		log("conf: Filename %s does not exist." ,filename);
+		log(LOG_WARN, "conf: Filename %s does not exist." ,filename);
 		return false; 
 	}
+
 	// get file size
 	m_bufSize = f.getFileSize();
+
 	// return false if too big
 	if ( m_bufSize > (MAX_HOSTS+MAX_SPARES) * 128 ) { 
 		g_errno = EBUFTOOSMALL; 
@@ -139,8 +144,12 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 		    filename,m_bufSize, (int32_t)(MAX_HOSTS+MAX_SPARES)*128);
 		return false;
 	}
+
 	// open the file
-	if ( ! f.open ( O_RDONLY ) ) return false;
+	if ( ! f.open ( O_RDONLY ) ) {
+		return false;
+	}
+
 	// read in the file
 	numRead = f.read ( m_buf , m_bufSize , 0 /*offset*/ );
 	// ensure g_errno is now set if numRead != m_bufSize
@@ -167,41 +176,38 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 		// MUST be a number
 		if ( ! is_digit ( *p ) ) {
 			// skip known directives
-			if ( ! strncmp(p,"port-offset:",12) ||
-			     ! strncmp(p,"index-splits:",13) ||
-			     ! strncmp(p,"num-mirrors:",12) ||
-			     ! strncmp(p,"working-dir:",12) )
-				p = p;
-			// check if this is a spare host
-			else if ( //pend - p < 5 && 
-			     strncasecmp(p, "spare", 5) == 0 )
-				// count as a spare
+			if (!strncmp(p, "port-offset:", 12) ||
+			    !strncmp(p, "index-splits:", 13) ||
+			    !strncmp(p, "num-mirrors:", 12) ||
+			    !strncmp(p, "working-dir:", 12)) {
+				// no op
+			}else if (strncasecmp(p, "spare", 5) == 0) {
+				// check if this is a spare host
 				m_numSpareHosts++;
-
-			// check if this is a proxy host
-			else if ( //pend - p < 5 && 
-				  strncasecmp(p, "proxy", 5) == 0 )
-				// count as a spare
+			} else if (strncasecmp(p, "proxy", 5) == 0) {
+				// check if this is a proxy host
 				m_numProxyHosts++;
-			// query compression proxies count as proxies
-			else if ( strncasecmp(p, "qcproxy", 7) == 0 )
+			} else if (strncasecmp(p, "qcproxy", 7) == 0) {
+				// query compression proxies count as proxies
 				m_numProxyHosts++;
-			// spider compression proxies count as proxies
-			else if ( strncasecmp(p, "scproxy", 7) == 0 )
+			} else if (strncasecmp(p, "scproxy", 7) == 0) {
+				// spider compression proxies count as proxies
 				m_numProxyHosts++;
-
-			else {
+			} else {
 				log(LOG_WARN, "conf: %s is malformed. First item of each non-comment line must be a NUMERIC hostId, "
 					"SPARE or PROXY. line=%s", filename, p);
 				return false;
 			}
-		}
-		else
+		} else {
 			// count it as a host
 			m_numHosts++;
+		}
 		i++;
+
 		// skip line
-		while ( *p && *p != '\n' ) p++;
+		while ( *p && *p != '\n' ) {
+			p++;
+		}
 	}
 
 	// set g_errno, log and return false if no hosts found in the file
@@ -235,7 +241,6 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 
 	int32_t num_nospider = 0;
 	int32_t num_noquery  = 0;
-//	int32_t num_fullfunc = 0;
 
 	for ( ; *p ; p++ , line++ ) {
 		if ( is_wspace_a (*p) ) continue;
@@ -455,13 +460,9 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 				    "not in /etc/hosts. Using secondary "
 				    "ethernet (eth1) ip "
 				    "of %s",hostname2,iptoa(ip));
-				//nextip = ip;
-				// just use the old ip then!
-				//g_errno = EBADENGINEER;
-				//return false;
 			}
 		}
-		//retired:		
+
 		// if none, use initial ip as shotgun as well
 		if ( ! ip2 ) ip2 = ip;
 		// store the ip, the eth1 ip
@@ -520,6 +521,7 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 
 		h->m_queryEnabled = true;
 		h->m_spiderEnabled = true;
+
 		// check for something after the working dir
 		h->m_note[0] = '\0';
 		if ( *p != '\n' ) {
@@ -540,12 +542,9 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 				h->m_spiderEnabled = false;
 				num_nospider++;
 			}
-//			else {
-//				num_fullfunc++;
-//			}
+		} else {
+			*p = '\0';
 		}
-		else
-			*p   = '\0';
 
 		// keep these the same for now
 		h->m_externalHttpPort  = h->m_httpPort;
@@ -586,7 +585,9 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 		}
 
 		// take off slash if there
-		if ( wdir[wdirlen-1]=='/' ) wdir[--wdirlen]='\0';
+		if ( wdir[wdirlen-1]=='/' ) {
+			wdir[--wdirlen]='\0';
+		}
 
 		// get real path (no symlinks symbolic links)
 		// only if on same host, which we determine based on the IP-address.
@@ -608,18 +609,15 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 			
 		// don't breach Host::m_dir[128] buffer
 		if ( wdirlen >= 128 ) {
-			log("conf: working dir %s is too long, >= 128 chars.",
-			    wdir);
+			log(LOG_WARN, "conf: working dir %s is too long, >= 128 chars.", wdir);
 			return false;
 		}
 
 		// copy it over
-		//strcpy ( m_hosts[i].m_dir , wdir );
 		gbmemcpy(m_hosts[i].m_dir, wdir, wdirlen);
 		m_hosts[i].m_dir[wdirlen] = '\0';
 		
 		// reset this
-		//m_hosts[i].m_pingInfo.m_lastPing = 0LL;
 		m_hosts[i].m_lastPing = 0LL;
 		// and don't send emails on him until we got a good ping
 		m_hosts[i].m_emailCode = -2;
@@ -632,19 +630,16 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 		// point to next one
 		i++;
 	}
-	//m_numHosts = i;
+
 	m_numTotalHosts = i;
 
 	// BR 20160313: Sanity check. I doubt the striping functionality works with an odd mix 
 	// of noquery and nospider hosts. Make sure the number of each kind is the same for now.
-	if( num_nospider && num_noquery && num_nospider != num_noquery )
-	{
+	if (num_nospider && num_noquery && num_nospider != num_noquery) {
 		g_errno = EBADENGINEER;
 		log(LOG_ERROR,"Number of nospider and noquery hosts must match in hosts.conf");
 		return false;
 	}
-
-
 
 	// # of mirrors is zero if no mirrors,
 	// if it is 1 then each host has ONE MIRROR host
@@ -1224,8 +1219,8 @@ Host *Hostdb::getHostWithSpideringEnabled ( uint32_t shardNum ) {
 }
 
 
-// if niceness 0 can't pick noquery host.
-// if niceness 1 can't pick nospider host.
+// if niceness 0 can't pick noquery host/ must pick spider host.
+// if niceness 1 can't pick nospider host/ must pick query host.
 Host *Hostdb::getLeastLoadedInShard ( uint32_t shardNum , char niceness ) {
 	int32_t minOutstandingRequests = 0x7fffffff;
 	int32_t minOutstandingRequestsIndex = -1;

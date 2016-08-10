@@ -213,20 +213,7 @@ bool Msg20::getSummary ( Msg20Request *req ) {
 	// . returns false and sets g_errno on error
 	// . use a pre-allocated buffer to hold the reply
 	// . TMPBUFSIZE is how much a UdpSlot can hold w/o allocating
-	if ( ! m_mcast.send ( m_request         ,
-			      m_requestSize     , 
-			      msg_type_20              ,
-			      false             , // m_mcast own m_request?
-			      shardNum          , // send to group (groupKey)
-			      false             , // send to whole group?
-			      probDocId         , // key is lower bits of docId
-			      this              , // state data
-			      NULL              , // state data
-			      gotReplyWrapper20 ,
-			      timeout           , // timeout
-			      req->m_niceness   ,
-			      firstHostId       , // first hostid
-			      false          )) { // free reply buf?
+	if (!m_mcast.send(m_request, m_requestSize, msg_type_20, false, shardNum, false, probDocId, this, NULL, gotReplyWrapper20, timeout, req->m_niceness, firstHostId, false)) {
 		// sendto() sometimes returns "Network is down" so i guess
 		// we just had an "error reply".
 		log("msg20: error sending mcast %s",mstrerror(g_errno));

@@ -1193,8 +1193,7 @@ bool Dns::sendToNextDNS ( DnsState *ds ) {
 	// store a hack for PageSockets.cpp to print out the hostname
 	slotPtr->m_hostname = ds->m_hostname;
 	// return 0 cuz we're blocking on the reply
-	log(LOG_DEBUG, "dns: SendToNextDNS blocking on reply for '%s'",
-		ds->m_hostname);
+	log(LOG_DEBUG, "dns: SendToNextDNS blocking on reply for '%s'", ds->m_hostname);
 	return false;
 }
 
