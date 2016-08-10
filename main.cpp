@@ -3522,7 +3522,7 @@ int32_t dumpSpiderdb ( const char *coll, int32_t startFileNum, int32_t numFiles,
 
 		// get the domain
 		int32_t  domLen = 0;
-		char *dom = getDomFast ( sreq->m_url , &domLen );
+		const char *dom = getDomFast ( sreq->m_url , &domLen );
 
 		// always need enough room...
 		if ( bufOff + 4 + domLen + 1 >= bufSize ) {
@@ -7219,7 +7219,8 @@ void countdomains( const char* coll, int32_t numRecs, int32_t verbosity, int32_t
 		}
 		
 		char *fu = xd.ptr_firstUrl;
-		int32_t dlen; char *dom = getDomFast ( fu , &dlen );
+		int32_t dlen;
+		const char *dom = getDomFast ( fu , &dlen );
 		int32_t dkey = hash32( dom , dlen );
 
 		for( i = 0; i < countDom; i++ ) {
@@ -7271,7 +7272,8 @@ void countdomains( const char* coll, int32_t numRecs, int32_t verbosity, int32_t
 		for( int32_t i = 0; i < dlinks->getNumLinks(); i++ ) {
 			//struct lnk_info *slink;
 			char *link = dlinks->getLink(i);
-			int32_t dlen; char *dom = getDomFast ( link , &dlen );
+			int32_t dlen;
+			const char *dom = getDomFast ( link , &dlen );
 			uint32_t lkey = hash32( dom , dlen );
 			int32_t j;
 			for( j = 0; j < sdomi->lnkCnt; j++ ) {

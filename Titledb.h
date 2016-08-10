@@ -66,7 +66,7 @@ class Titledb {
 	}
 
 	// a different way to do it
-	uint64_t getProbableDocId(char *url,char *dom,int32_t domLen) {
+	uint64_t getProbableDocId(const char *url,const char *dom,int32_t domLen) {
 		uint64_t probableDocId = hash64b(url,0) & 
 			DOCID_MASK;
 		// clear bits 6-13 because we want to put the domain hash there

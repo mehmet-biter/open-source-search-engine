@@ -462,7 +462,7 @@ void printUdpTable(SafeBuf *p, const char *title, UdpServer *server, const char 
 			p->safePrintf("<td><nobr>%s", s->m_hostname);
 			// get the domain from the hostname
 			int32_t dlen;
-			char *dbuf = ::getDomFast ( s->m_hostname,&dlen,false);
+			const char *dbuf = ::getDomFast ( s->m_hostname,&dlen,false);
 			p->safePrintf( " <a href=\"/admin/tagdb?user=admin&tagtype0=manualban&tagdata0=1&u=%s&c=%s\">"
 					       "[<font color=red><b>BAN %s</b></font>]</nobr></a> " ,
 			               dbuf , coll , dbuf );

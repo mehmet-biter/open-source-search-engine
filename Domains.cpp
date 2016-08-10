@@ -4,7 +4,7 @@
 #include "Domains.h"
 #include "Mem.h"
 
-static bool isTLD ( char *tld, int32_t tldLen );
+static bool isTLD ( const char *tld, int32_t tldLen );
 
 char *getDomainOfIp ( char *host , int32_t hostLen , int32_t *dlen ) {
 	// get host length
@@ -21,13 +21,13 @@ char *getDomainOfIp ( char *host , int32_t hostLen , int32_t *dlen ) {
 }
 
 
-char *getDomain ( char *host , int32_t hostLen , char *tld , int32_t *dlen ) {
+const char *getDomain ( char *host , int32_t hostLen , const char *tld , int32_t *dlen ) {
 	// assume no domain 
 	*dlen = 0;
 	// get host length
 	//int32_t hostLen = strlen(host);
 	// get the tld in host, if any, if not, it returns NULL
-	char *s = tld; // getTLD ( host , hostLen );
+	const char *s = tld; // getTLD ( host , hostLen );
 	// return NULL if host contains no valid tld
 	if ( ! s ) return NULL;
 	// if s is host we just have tld
@@ -50,19 +50,19 @@ char *getDomain ( char *host , int32_t hostLen , char *tld , int32_t *dlen ) {
 }
 
 // host must be NULL terminated
-char *getTLD ( char *host , int32_t hostLen ) {
+const char *getTLD ( const char *host , int32_t hostLen ) {
 	if(hostLen==0)
 		return NULL;
 	// make "s" point to last period in the host
 	//char *s = host + strlen(host) - 1;
-	char *hostEnd = host + hostLen;
-	char *s       = hostEnd - 1;
+	const char *hostEnd = host + hostLen;
+	const char *s       = hostEnd - 1;
 	while ( s > host && *s !='.' ) s--;
 	// point to the tld in question
-	char *t  = s;
+	const char *t  = s;
 	if ( *t == '.' ) t++; 
 	// reset our current tld ptr
-	char *tld = NULL;
+	const char *tld = NULL;
 	// is t a valid tld? if so, set "tld" to "t".
 	if ( isTLD ( t , hostEnd - t ) ) tld = t;
 	// host had no period at most we had just a tld so return NULL
@@ -102,7 +102,7 @@ const char* getPrivacoreBlacklistedTLD() {
 
 //static TermTable  s_table(false);
 static HashTableX s_table;
-static bool isTLD ( char *tld , int32_t tldLen ) {
+static bool isTLD ( const char *tld , int32_t tldLen ) {
 
 	int32_t pcount = 0;
 	// now they are random!

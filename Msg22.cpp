@@ -381,7 +381,7 @@ void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
 	   int32_t  dlen = 0;
 	   // this causes ip based urls to be inconsistent with the call
 	   // to getProbableDocId(url) below
-	   char *dom  = getDomFast ( r->m_url , &dlen );
+	   const char *dom  = getDomFast ( r->m_url , &dlen );
 	   // bogus url?
 	   if ( ! dom ) {
 	       log(LOG_WARN, "msg22: got bad url in request: %s from "

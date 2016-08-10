@@ -19,8 +19,8 @@
 class SafeBuf;
 
 char *getPathFast  ( char *url );
-char *getTLDFast   ( char *url , int32_t *tldLen  , bool hasHttp = true ) ;
-char       *getDomFast   ( char       *url, int32_t *domLen, bool hasHttp = true ) ;
+const char *getTLDFast   ( char *url , int32_t *tldLen  , bool hasHttp = true ) ;
+const char       *getDomFast   ( char       *url, int32_t *domLen, bool hasHttp = true ) ;
 static inline const char *getDomFast   ( const char *url, int32_t *domLen, bool hasHttp = true ) {
 	return getDomFast(const_cast<char*>(url),domLen,hasHttp);
 }
@@ -127,11 +127,9 @@ public:
 	const char *getHost() const { return m_host; }
 	int32_t getHostLen() const { return m_hlen; }
 
-	char       *getDomain()       { return m_domain; }
 	const char *getDomain() const { return m_domain; }
 	int32_t getDomainLen() const { return m_dlen; }
 
-	char       *getTLD()       { return m_tld; }
 	const char *getTLD() const { return m_tld; }
 	int32_t getTLDLen() const { return m_tldLen; }
 
@@ -247,10 +245,10 @@ private:
 	char *m_filename;
 	int32_t m_flen;
 
-	char *m_domain;
+	const char *m_domain;
 	int32_t m_dlen;
 
-	char *m_tld;
+	const char *m_tld;
 	int32_t m_tldLen;
 
 	// char *m_midDomain equals m_domain
