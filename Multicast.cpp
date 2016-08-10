@@ -215,19 +215,7 @@ void Multicast::sendToGroup ( ) {
 		// . send to a single host
 		// . this creates a transaction control slot, "udpSlot"
 		// . returns false and sets g_errno on error
-		if ( us->sendRequest ( m_msg       , 
-				       m_msgSize   , 
-				       m_msgType   ,
-				       bestIp      , // h->m_ip     , 
-				       destPort    ,
-				       hid ,
-				       &m_slots[i] ,
-				       this        , // state
-				       gotReplyWrapperM2 ,
-				       m_totalTimeout   ,
-				       -1               , // backoff
-				       -1               , // max wait in ms
-				       m_niceness )) {  // cback niceness
+		if (us->sendRequest(m_msg, m_msgSize, m_msgType, bestIp, destPort, hid, &m_slots[i], this, gotReplyWrapperM2, m_totalTimeout, m_niceness)) {
 			continue;
 		}
 		// g_errno must have been set, remember it
@@ -650,20 +638,7 @@ bool Multicast::sendToHost ( int32_t i ) {
 	// . this creates a transaction control slot, "udpSlot"
 	// . return false and sets g_errno on error
 	// . returns true on successful launch and calls callback on completion
-	if ( !  us->sendRequest ( m_msg       , 
-				  m_msgSize   , 
-				  m_msgType   ,
-				  bestIp      , // h->m_ip     , 
-				  destPort    ,
-				  hid ,
-				  &m_slots[i] ,
-				  this        , // state
-				  gotReplyWrapperM1 ,
-				  timeRemaining    , // timeout
-				  -1               , // backoff
-				  -1               , // max wait in ms
-				  m_niceness        , // cback niceness
-				  maxResends        )) {
+	if (!us->sendRequest(m_msg, m_msgSize, m_msgType, bestIp, destPort, hid, &m_slots[i], this, gotReplyWrapperM1, timeRemaining, m_niceness, -1, -1, maxResends)) {
 		log(LOG_WARN, "net: Had error sending msgtype 0x%02x to host #%" PRId32": %s. Not retrying.",
 		    m_msgType,h->m_hostId,mstrerror(g_errno));
 		// i've seen ENOUDPSLOTS available msg here along with oom

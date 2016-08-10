@@ -213,22 +213,10 @@ bool Msg7::sendInjectionRequestToHost ( InjectionRequest *ir ,
 	// . and call got gotForwardedReplyWrapper when reply comes in
 	// . returns false and sets g_errno on error
 	// . returns true on success
-	if ( g_udpServer.sendRequest ( sir , // req ,
-					 sirSize,
-					 msg_type_7 ,
-					 host->m_ip , // ip
-					 host->m_port , // port
-					 host->m_hostId,
-					 NULL, // retslot
-					 this,//state,
-					 gotUdpReplyWrapper,//acallback,
-					 udpserver_sendrequest_infinite_timeout , // timeout
-					 -1 , // backoff
-					 -1 , // maxwait
-					 MAX_NICENESS // niceness
-				       ) )
+	if (g_udpServer.sendRequest(sir, sirSize, msg_type_7, host->m_ip, host->m_port, host->m_hostId, NULL, this, gotUdpReplyWrapper, udpserver_sendrequest_infinite_timeout, MAX_NICENESS)) {
 		// we also return true on success, false on error
 		return true;
+	}
 
 	if ( ! g_errno ) { g_process.shutdownAbort(true); }
 	// there was an error, g_errno should be set

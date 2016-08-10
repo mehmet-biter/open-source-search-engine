@@ -22,7 +22,7 @@ static RdbCache g_timedoutCache;
 
 static int64_t s_antiLockCount = 1LL;
 
-#define TIMEOUT_SINGLE_HOST 30
+#define TIMEOUT_SINGLE_HOST_MS 30000
 #define TIMEOUT_TOTAL       90
 
 static void gotIpWrapper ( void *state , UdpSlot *slot ) ;
@@ -1182,26 +1182,12 @@ bool Dns::sendToNextDNS ( DnsState *ds ) {
 	// . well, i went back to 30 seconds after i fixed the transId overflow
 	//   bug
 	// . resend time is set to 20 seconds in UdpSlot::setResendTime()
-	if ( ! m_udpServer.sendRequest ( ds->m_request     ,//copy , 
-					 ds->m_requestSize,//msgSize ,
-					 msg_type_0              , /// @todo ALC don't think dns should be using msg_type_0
-					 ip , // ds->m_dnsIps[depth][n] ,
-					 53       ,//g_conf.m_dnsPorts[n], 
-					 -1             ,// invalid host id
-					 &slotPtr       , // slot ptr
-					 ds             , // cback state
-					 gotIpWrapper   , // callback
-					 TIMEOUT_SINGLE_HOST*1000 , // 20 secs?
-					 -1, // backoff
-					 -1, // maxWait
-					 // use niceness 0 now so if the
-					 // msgC slot gets converted from 1
-					 // to 0 this will not hold it up!
-					 0) ) {
+	// use niceness 0 now so if the msgC slot gets converted from 1 to 0 this will not hold it up!
+	/// @todo ALC don't think dns should be using msg_type_0
+	if (!m_udpServer.sendRequest(ds->m_request, ds->m_requestSize, msg_type_0, ip, 53, -1, &slotPtr, ds, gotIpWrapper, TIMEOUT_SINGLE_HOST_MS, 0)) {
 		// g_errno should be set at this point and we will not try
 		// any more nameservers because the error seemed too bad.
-		log(LOG_DEBUG, "dns: errors seemed too bad for '%s'...",
-			ds->m_hostname);
+		log(LOG_DEBUG, "dns: errors seemed too bad for '%s'...", ds->m_hostname);
 		return true;
 	}
 	// store a hack for PageSockets.cpp to print out the hostname

@@ -25,16 +25,7 @@ bool Msg1f::getLog(int32_t hostId,
 	char* p = sendBuf;
 	*(int32_t*)p = numBytes;
 	p += sizeof(int32_t);
-	g_udpServer.sendRequest(sendBuf,
-				p - sendBuf,
-				msg_type_1f,
-				g_hostdb.m_hostPtrs[hostId]->m_ip,
-				g_hostdb.m_hostPtrs[hostId]->m_port,
-				g_hostdb.m_hostPtrs[hostId]->m_hostId,
-				NULL,
-				callbackState,
-				callback,
-				5);
+	g_udpServer.sendRequest(sendBuf, p - sendBuf, msg_type_1f, g_hostdb.m_hostPtrs[hostId]->m_ip, g_hostdb.m_hostPtrs[hostId]->m_port, g_hostdb.m_hostPtrs[hostId]->m_hostId, NULL, callbackState, callback, 5000);
 
 	return false;
 }

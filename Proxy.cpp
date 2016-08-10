@@ -462,21 +462,7 @@ bool Proxy::forwardRequest ( StateControl *stC ) {
 	// . returns false and sets g_errno on error, true on success
 	// . after resending the request 4 times with no ACK recv'd, call
 	//   it a EUDPTIMEDOUT error and deal with that below...
-	bool status;
-	status = g_udpServer.sendRequest ( req         ,
-					   reqSize     ,
-					   msg_type_fd        ,
-					   dstIp , // h->m_ip     ,
-					   dstPort , // h->m_port   ,
-					   dstId , // h->m_hostId ,
-					   NULL        , // the slotPtr
-					   stC         , // state
-					   gotHttpReplyWrapper ,
-					   stC->m_timeout ,
-					   -1          , // backoff
-					   -1          , // maxwait
-					   0           , // niceness
-					   4           );// maxResends
+	bool status = g_udpServer.sendRequest(req, reqSize, msg_type_fd, dstIp, dstPort, dstId, NULL, stC, gotHttpReplyWrapper, stC->m_timeout, 0, -1, -1, 4);
 
 	// if no error, return false, we blocked
 	if ( status ) return false;

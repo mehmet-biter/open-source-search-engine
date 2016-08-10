@@ -2079,17 +2079,8 @@ void updateAllCrawlInfosSleepWrapper ( int fd , void *state ) {
 		// count it as launched
 		s_requests++;
 		// launch it
-		if ( ! g_udpServer.sendRequest ( request,
-						 requestSize,
-						 msg_type_c1 ,
-						 h->m_ip      ,
-						 h->m_port    ,
-						 h->m_hostId  ,
-						 NULL, // retslot
-						 NULL, // state
-						 gotCrawlInfoReply ) ) {
-			log("spider: error sending c1 request: %s",
-			    mstrerror(g_errno));
+		if (!g_udpServer.sendRequest(request, requestSize, msg_type_c1, h->m_ip, h->m_port, h->m_hostId, NULL, NULL, gotCrawlInfoReply)) {
+			log("spider: error sending c1 request: %s", mstrerror(g_errno));
 			s_replies++;
 		}
 	}

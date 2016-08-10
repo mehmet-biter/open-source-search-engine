@@ -1242,16 +1242,7 @@ bool loadAddsInProgress ( const char *prefix ) {
 		p += numBytes;
 
 		// send it!
-		if ( ! g_udpServer.sendRequest ( buf ,
-						 numBytes ,
-						 msg_type_4     ,
-						 h->m_ip      ,
-						 h->m_port    ,
-						 h->m_hostId  ,
-						 NULL         ,
-						 NULL         , // state data
-						 NULL , // callback
-						 udpserver_sendrequest_infinite_timeout)){// timeout
+		if (!g_udpServer.sendRequest(buf, numBytes, msg_type_4, h->m_ip, h->m_port, h->m_hostId, NULL, NULL, NULL, udpserver_sendrequest_infinite_timeout)) {
 			close ( fd );
 			// report it
 			log(LOG_WARN, "%s:%s: could not resend reload buf: %s",

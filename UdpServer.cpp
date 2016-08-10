@@ -324,9 +324,9 @@ bool UdpServer::sendRequest(char *msg,
                             void *state,
                             void    (*callback)(void *state, UdpSlot *slot),
                             int64_t timeout, // in milliseconds
+                            int32_t niceness,
                             int16_t backoff,
                             int16_t maxWait,
-                            int32_t niceness,
                             int32_t maxResends) {
 
 	// sanity check
