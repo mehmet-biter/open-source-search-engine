@@ -2,7 +2,6 @@
 
 #include "gb-include.h"
 
-#include "StopWords.h"
 #include "HashTableX.h"
 #include "max_niceness.h"
 #include "Process.h"
