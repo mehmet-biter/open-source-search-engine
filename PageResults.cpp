@@ -25,6 +25,7 @@
 #include "Proxy.h"
 #include "Json.h"
 #include "Images.h" //Thumbnail*
+#include "HttpMime.h"
 #include "Process.h"
 
 static bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) ;

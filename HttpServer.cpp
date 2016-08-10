@@ -2,6 +2,7 @@
 
 #include "HttpServer.h"
 #include "Pages.h"
+#include "HttpRequest.h"          // for parsing/forming HTTP requests
 #include "Collectiondb.h"
 #include "HashTable.h"
 #include "Stats.h"

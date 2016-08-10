@@ -23,9 +23,8 @@
 #define MAX_DOWNLOADS (MAX_TCP_SOCKS-50)
 
 #include "TcpServer.h"
-#include "Url.h"
-#include "HttpRequest.h"          // for parsing/forming HTTP requests
-#include "HttpMime.h"
+
+class HttpRequest;
 
 #define DEFAULT_HTTP_PROTO "HTTP/1.0"
 

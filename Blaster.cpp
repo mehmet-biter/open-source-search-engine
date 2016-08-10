@@ -7,6 +7,7 @@
 #include "Blaster.h"
 #include "Titledb.h" // TITLEREC_CURRENT_VERSION
 #include "Linkdb.h"
+#include "HttpMime.h"
 #include "Process.h"
 
 
