@@ -6,6 +6,12 @@
 #include "SpiderProxy.h"
 #include "max_niceness.h"
 #include "Process.h"
+#include "HashTableX.h"
+#include "Conf.h"
+#include "Hostdb.h"
+#include "UdpSlot.h"
+#include "UdpServer.h"
+
 
 
 //#define LOADPOINT_EXPIRE_MS (10*60*1000)

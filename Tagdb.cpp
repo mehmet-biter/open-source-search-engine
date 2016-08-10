@@ -12,6 +12,7 @@
 #include "HashTableX.h"
 #include "Process.h"
 #include "Rebalance.h"
+#include "RdbCache.h"
 
 static void gotMsg0ReplyWrapper ( void *state );
 

@@ -18,17 +18,10 @@
 #ifndef GB_TCPSERVER_H
 #define GB_TCPSERVER_H
 
-#include <sys/time.h>             // time()
-#include <sys/types.h>            // setsockopt()
-#include <sys/socket.h>           // setsockopt()
-#include <netinet/tcp.h>          // TCP_CORK and SOL_TCP (linux only!)
 #include <openssl/ssl.h>          // for ssl stuff
 #include <openssl/crypto.h>
 #include <openssl/err.h>
-#include "Mem.h"     // for mem routines
-#include "MsgC.h"           // for udp-only, non-blocking dns lookups
 #include "TcpSocket.h"            
-#include "Loop.h"      // g_loop.registerRead/WriteCallback()
 
 // raised from 5k to 15k in case we are a spider compression proxy
 #define MAX_TCP_SOCKS 15000

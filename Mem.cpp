@@ -7,6 +7,7 @@
 #include "Pages.h"
 #include "PingServer.h"
 #include "ScopedLock.h"
+#include "Conf.h"
 #include "Sanity.h"
 #include <string.h>            //for strlen()
 

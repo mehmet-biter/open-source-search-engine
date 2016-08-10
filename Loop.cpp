@@ -7,6 +7,7 @@
 #include "Profiler.h"
 #include "Process.h"
 #include "PageParser.h"
+#include "Conf.h"
 
 #include "Stats.h"
 
