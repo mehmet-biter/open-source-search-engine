@@ -202,7 +202,7 @@ void printTcpTable ( SafeBuf* p, const char *title, TcpServer *server ) {
 	p->safePrintf ("</table><br>\n" );
 }
 
-bool sortByStartTime(UdpStatistic &s1, UdpStatistic &s2) {
+bool sortByStartTime(const UdpStatistic &s1, const UdpStatistic &s2) {
 	return (s1.getStartTime() < s2.getStartTime());
 }
 
