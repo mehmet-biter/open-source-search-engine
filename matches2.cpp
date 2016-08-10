@@ -1,55 +1,5 @@
-#include "gb-include.h"
-
 #include "matches2.h"
-#include "Unicode.h"
-#include "Titledb.h"
-#include "HashTableT.h"
-
-//make the key, it is just the needles ptr 
-//static HashTableT<uint64_t , char*> s_quickTables;
-//static HashTableX s_quickTables;
-
-/*
-// returns false and sets g_errno on error
-bool fast_highlight ( // highlight these query terms:
-		      Query *q ,
-		      // highlight query terms in this string
-		      char *stringToHighlight ,
-		      // store highlighted string here:
-		      SafeBuf *dstBuf ) {
-
-
-	// make them into needles first
-	SafeBuf needles;
-	int32_t need = q->m_numTerms * sizeof(Needle);
-	if ( ! needles.reserve(need) ) return false;
-
-	char *p = needles.getBufStart();
-	for ( int32_t i = 0 ; i < q->m_numTerms ; i++ ) {
-		QueryTerm *qt = &q->m_qterms[i];
-		Needle *ne = (Needle *)p;
-		p += sizeof(Needle);
-		ne->m_string = qt->m_term;
-		ne->m_stringSize = qt->m_termLen;
-		ne->m_id = i;
-		ne->m_isSection = false;
-	}
-
-	Needle *nbuf = needles.getBufStart();
-	
-	getMatches2 ( nbuf ,
-		      q->m_numTerms,
-		      stringToHighlight,
-		      strlen(stringToHighlight),
-		      NULL, // linkpos
-		      &needleNum,
-		      false, // stopatfirstmatch?
-		      NULL, // hadprematch?
-		      true,// save quick tables?
-		      niceness );
-
-}
-*/
+#include "fctypes.h"
 
 
 // . get the first substring in "haystack" that matches a string in "needles"
@@ -97,8 +47,6 @@ char *getMatches2 ( Needle *needles          ,
 	// are we responsible for init'ing string lengths? this is much
 	// faster than having to specify lengths manually.
 	for ( int32_t i=0 ; i < numNeedles; i++ ) {
-		// breathe
-		QUICKPOLL(niceness);
 		// clear
 		needles[i].m_count      = 0;
 		needles[i].m_firstMatch = NULL;
@@ -173,8 +121,6 @@ char *getMatches2 ( Needle *needles          ,
 
 	// set the letter tables, s0[] through sN[], for each needle
 	for ( int32_t i = 0 ; i < numNeedlesToInit ; i++ ) {
-		// breathe
-		QUICKPOLL(niceness);
 		unsigned char *w    = (unsigned char *)needles[i].m_string;
 		unsigned char *wend = w + needles[i].m_stringSize;
 		// BITVEC is now 64 bits
@@ -233,8 +179,6 @@ char *getMatches2 ( Needle *needles          ,
 	pend -= 4;
 
 	for ( ; p < pend ; p++ ) {
-		// breathe
-		QUICKPOLL(niceness);
 
 		// analytics...
 		
@@ -370,8 +314,6 @@ char *getMatches2 ( Needle *needles          ,
 	pend += 4;
 
 	for ( ; p < pend ; p++ ) {
-		// breathe
-		QUICKPOLL(niceness);
 
 		// is this a possible match? (this should be VERY fast)
 		mask  = s0[*(p+0)];

@@ -3,6 +3,8 @@
 #ifndef GB_MATCHES2_H
 #define GB_MATCHES2_H
 
+#include <inttypes.h>
+
 // use these routines for matching any of a list of substrings in the haystack.
 // the Matches array is the list of substrings to match in the "haystack". this
 // should be *very* fast.
