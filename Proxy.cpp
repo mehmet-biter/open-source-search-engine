@@ -8,6 +8,7 @@
 #include "HttpServer.h"
 #include "Pages.h"
 #include "HttpRequest.h"
+#include "Stats.h"
 #include "PingServer.h"
 
 Proxy g_proxy;

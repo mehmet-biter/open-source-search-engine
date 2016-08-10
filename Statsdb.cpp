@@ -7,6 +7,7 @@
 #include "hash.h"
 #include "Parms.h"
 #include "Process.h"
+#include "Stats.h"
 #include "max_niceness.h"
 
 Statsdb g_statsdb;
