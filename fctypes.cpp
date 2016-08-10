@@ -7,6 +7,7 @@
 #include "XmlNode.h"
 #include "Conf.h"
 #include "Process.h"
+#include "Hostdb.h"
 #include "Mem.h"
 #include <fcntl.h>
 

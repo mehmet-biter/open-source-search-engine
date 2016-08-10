@@ -15,6 +15,7 @@
 
 #include "Collectiondb.h"     // MAX_COLL_LEN
 #include "SafeBuf.h"
+#include "Xml.h"
 
 #define USERAGENTMAXSIZE      128
 

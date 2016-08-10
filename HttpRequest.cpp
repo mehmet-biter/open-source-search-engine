@@ -4,6 +4,7 @@
 #include "ip.h"
 #include "Conf.h"
 #include "Process.h"
+#include "Hostdb.h"
 #include <stdlib.h>
 #include <float.h>
 
