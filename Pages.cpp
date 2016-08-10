@@ -10,6 +10,7 @@
 #include "Profiler.h"
 #include "PageRoot.h"
 #include "Process.h"
+#include "PingServer.h"
 
 
 // a global class extern'd in Pages.h

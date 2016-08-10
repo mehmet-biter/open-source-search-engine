@@ -35,6 +35,7 @@
 #include "Parms.h"
 #include "Rebalance.h"
 #include "PageInject.h" //getInjectHead()
+#include "PingServer.h"
 #include <list>
 
 void testWinnerTreeKey ( ) ;

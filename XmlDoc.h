@@ -51,7 +51,6 @@
 #include "Spider.h" // SpiderRequest/SpiderReply definitions
 #include "HttpMime.h" // ET_DEFLAT
 #include "Msg1.h"
-#include "PingServer.h"
 #include "Json.h"
 
 #define MAXFRAGWORDS 80000
