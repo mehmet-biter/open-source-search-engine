@@ -325,13 +325,13 @@ bool UdpServer::sendRequest(char *msg,
                             void    (*callback)(void *state, UdpSlot *slot),
                             int64_t timeout, // in milliseconds
                             int32_t niceness,
+                            const char *extraInfo,
                             int16_t backoff,
                             int16_t maxWait,
                             int32_t maxResends) {
 
 	// sanity check
-	// proxy forwards the msg10 to a host in the cluster
-	if ( ! m_handlers[msgType] && this == &g_udpServer && ! g_proxy.isProxy() ) {
+	if ( ! m_handlers[msgType] && msgType != msg_type_dns ) {
 		g_process.shutdownAbort(true);
 	}
 
@@ -2738,7 +2738,7 @@ void UdpServer::printState() {
 }
 
 void UdpServer::saveActiveSlots(int fd, msg_type_t msg_type) {
-	for (UdpSlot *slot = g_udpServer.getActiveHead(); slot; slot = slot->getActiveListNext()) {
+	for (const UdpSlot *slot = g_udpServer.getActiveHead(); slot; slot = slot->getActiveListNext()) {
 		// skip if not wanted msg type
 		if (slot->getMsgType() != msg_type) {
 			continue;
@@ -2759,4 +2759,14 @@ void UdpServer::saveActiveSlots(int fd, msg_type_t msg_type) {
 		// then the buf data itself
 		write(fd, slot->m_sendBuf, slot->m_sendBufSize);
 	}
+}
+
+std::vector<UdpStatistic> UdpServer::getStatistics() const {
+	std::vector<UdpStatistic> statistics;
+
+	for (const UdpSlot *slot = g_udpServer.getActiveHead(); slot; slot = slot->getActiveListNext()) {
+		statistics.push_back(UdpStatistic(*slot));
+	}
+
+	return statistics;
 }

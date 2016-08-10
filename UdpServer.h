@@ -39,6 +39,7 @@
 #include "UdpProtocol.h"
 #include "Hostdb.h"
 #include "Loop.h"   // loop class that handles signals on our socket
+#include "UdpStatistic.h"
 
 // . The rules of Async Sig Safe functions
 // 1. to be safe, _ass functions should only call other _ass functions.
@@ -111,6 +112,7 @@ public:
 	                 void (*callback )(void *state, UdpSlot *slot),
 	                 int64_t timeout = 60000, // milliseconds
 	                 int32_t niceness = 1,
+	                 const char *extraInfo = NULL,
 	                 int16_t backoff = -1,
 	                 int16_t maxWait = -1, // ms
 	                 int32_t maxResends = -1);
@@ -197,6 +199,8 @@ public:
 	// . on crashes add 1024 or so to the read value
 	// . TODO: make somewhat random cuz it's easy to spoof like it is now
 	int32_t m_nextTransId;
+
+	std::vector<UdpStatistic> getStatistics() const;
 
 private:
 	static void readPollWrapper(int fd, void *state);

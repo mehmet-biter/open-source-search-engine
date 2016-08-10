@@ -388,7 +388,7 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 	    hostId = -1;
     }
 
-	if (g_udpServer.sendRequest((char *)pi, sizeof(PingInfo), msg_type_11, ip, port, hostId, NULL, (void *)h, gotReplyWrapperP, g_conf.m_deadHostTimeout, 0, 1000, 2000)) {
+	if (g_udpServer.sendRequest((char *)pi, sizeof(PingInfo), msg_type_11, ip, port, hostId, NULL, (void *)h, gotReplyWrapperP, g_conf.m_deadHostTimeout, 0, NULL, 1000, 2000)) {
 		return;
 	}
 	// it had an error, so dec the count
@@ -571,7 +571,7 @@ void gotReplyWrapperP ( void *state , UdpSlot *slot ) {
 	// send back what his ping was so he knows
 	*(int32_t *)h->m_tmpBuf = *pingPtr;
 
-	if (g_udpServer.sendRequest(h->m_tmpBuf, 4, msg_type_11, slot->getIp(), slot->getPort(), hid, NULL, (void *)(PTRTYPE)h->m_hostId, gotReplyWrapperP3, g_conf.m_deadHostTimeout, 0, 1000, 2000)) {
+	if (g_udpServer.sendRequest(h->m_tmpBuf, 4, msg_type_11, slot->getIp(), slot->getPort(), hid, NULL, (void *)(PTRTYPE)h->m_hostId, gotReplyWrapperP3, g_conf.m_deadHostTimeout, 0, NULL, 1000, 2000)) {
 		return;
 	}
 	// he came back right away

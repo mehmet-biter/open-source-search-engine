@@ -7,7 +7,7 @@
 #include "Dns.h"
 #include "SafeBuf.h"
 #include "Msg13.h"
-#include "Msg0.h"
+#include <algorithm>
 
 static void printTcpTable  (SafeBuf *p, const char *title, TcpServer *server);
 static void printUdpTable  (SafeBuf *p, const char *title, UdpServer *server,
@@ -202,6 +202,10 @@ void printTcpTable ( SafeBuf* p, const char *title, TcpServer *server ) {
 	p->safePrintf ("</table><br>\n" );
 }
 
+bool sortByStartTime(UdpStatistic &s1, UdpStatistic &s2) {
+	return (s1.getStartTime() < s2.getStartTime());
+}
+
 void printUdpTable(SafeBuf *p, const char *title, UdpServer *server, const char *coll, int32_t fromIp, bool isDns) {
 	if (!coll) {
 		coll = "main";
@@ -210,45 +214,18 @@ void printUdpTable(SafeBuf *p, const char *title, UdpServer *server, const char 
 	// time now
 	int64_t now = gettimeofdayInMilliseconds();
 
-	// store in buffer for sorting
-	int32_t     times[50000];//MAX_UDP_SLOTS];
-	UdpSlot *slots[50000];//MAX_UDP_SLOTS];
-	int32_t nn = 0;
-	for (UdpSlot *s = server->getActiveHead(); s; s = s->getActiveListNext()) {
-		if ( nn >= 50000 ) {
-			log("admin: Too many udp sockets.");
-			break;
-		}
-		// store it
-		times[nn] = now - s->getStartTime();
-		slots[nn] = s;
-		nn++;
-	}
-	// bubble sort
- keepSorting:
-	// assume no swap will happen
-	bool didSwap = false;
-	for ( int32_t i = 1 ; i < nn ; i++ ) {
-		if ( times[i-1] >= times[i] ) continue;
-		int32_t     tmpTime = times[i-1];
-		UdpSlot *tmpSlot = slots[i-1]; 
-		times[i-1] = times[i];
-		slots[i-1] = slots[i];
-		times[i  ] = tmpTime;
-		slots[i  ] = tmpSlot;
-		didSwap = true;
-	}
-	if ( didSwap ) goto keepSorting;
+	std::vector<UdpStatistic> udp_statistics = server->getStatistics();
+	std::sort(udp_statistics.begin(), udp_statistics.end(), sortByStartTime);
 
 	// count how many of each msg we have
 	int32_t msgCount0[MAX_MSG_TYPES] = {};
 	int32_t msgCount1[MAX_MSG_TYPES] = {};
-	for ( int32_t i = 0; i < nn; i++ ) {
-		UdpSlot *s = slots[i];
-		if ( s->getNiceness() == 0 )
-			msgCount0[s->getMsgType()]++;
-		else
-			msgCount1[s->getMsgType()]++;
+	for (auto it = udp_statistics.begin(); it != udp_statistics.end(); ++it) {
+		if ( it->getNiceness() == 0 ) {
+			msgCount0[it->getMsgType()]++;
+		} else {
+			msgCount1[it->getMsgType()]++;
+		}
 	}
 
 	const char *wr = server->getWriteRegistered() ? " [write registered]" : "";
@@ -268,18 +245,20 @@ void printUdpTable(SafeBuf *p, const char *title, UdpServer *server, const char 
 			title , server->getNumUsedSlots() ,
 			wr ,
 			DARK_BLUE );
-	for ( int32_t i = 0; i < 96; i++ ) {
-		if ( msgCount0[i] <= 0 ) continue;
-		p->safePrintf("<tr bgcolor=#%s>"
-			      "<td>0</td><td>0x%" PRIx32"</td><td>%" PRId32"</td></tr>",
-			      LIGHT_BLUE,i, msgCount0[i]);
+	for ( int32_t i = 0; i < MAX_MSG_TYPES; i++ ) {
+		if ( msgCount0[i] <= 0 ) {
+			continue;
+		}
+		p->safePrintf("<tr bgcolor=#%s><td>0</td><td>0x%" PRIx32"</td><td>%" PRId32"</td></tr>", LIGHT_BLUE,i, msgCount0[i]);
 	}
-	for ( int32_t i = 0; i < 96; i++ ) {
-		if ( msgCount1[i] <= 0 ) continue;
-		p->safePrintf("<tr bgcolor=#%s>"
-			      "<td>1</td><td>0x%" PRIx32"</td><td>%" PRId32"</td></tr>",
-			      LIGHT_BLUE,i, msgCount1[i]);
+
+	for ( int32_t i = 0; i < MAX_MSG_TYPES; i++ ) {
+		if ( msgCount1[i] <= 0 ) {
+			continue;
+		}
+		p->safePrintf("<tr bgcolor=#%s><td>1</td><td>0x%" PRIx32"</td><td>%" PRId32"</td></tr>", LIGHT_BLUE,i, msgCount1[i]);
 	}
+
 	p->safePrintf ( "</table><br>" );
 
 	const char *dd = isDns ? "<td><b>hostname</b></td>" : "<td><b>msgType</td><td><b>desc</td><td><b>hostId</td>";
@@ -315,29 +294,26 @@ void printUdpTable(SafeBuf *p, const char *title, UdpServer *server, const char 
 
 
 	// now fill in the columns
-	for ( int32_t i = 0 ; i < nn ; i++ ) {
-		// get from sorted list
-		UdpSlot *s = slots[i];
-
+	for (auto it = udp_statistics.begin(); it != udp_statistics.end(); ++it) {
 		char e0[32] = "--";
 		char e1[32] = "--";
 		char e2[32] = "--";
 
-		if (s->getStartTime() != 0LL) {
-			sprintf(e0, "%" PRId64"ms", (now - s->getStartTime()));
+		if (it->getStartTime() != 0LL) {
+			sprintf(e0, "%" PRId64"ms", (now - it->getStartTime()));
 		}
 
-		if (s->getLastReadTime() != 0LL) {
-			sprintf(e1, "%" PRId64"ms", (now - s->getLastReadTime()));
+		if (it->getLastReadTime() != 0LL) {
+			sprintf(e1, "%" PRId64"ms", (now - it->getLastReadTime()));
 		}
 
-		if (s->getLastSendTime() != 0LL) {
-			sprintf(e2, "%" PRId64"ms", (now - s->getLastSendTime()));
+		if (it->getLastSendTime() != 0LL) {
+			sprintf(e2, "%" PRId64"ms", (now - it->getLastSendTime()));
 		}
 
 		// bgcolor is lighter for incoming requests
-		const char *bg = s->hasCallback() ? LIGHT_BLUE : LIGHTER_BLUE;
-		Host *h = g_hostdb.getHost(s->getIp(), s->getPort());
+		const char *bg = it->hasCallback() ? LIGHT_BLUE : LIGHTER_BLUE;
+		Host *h = g_hostdb.getHost(it->getIp(), it->getPort());
 		const char *eip = "??";
 		uint16_t eport = 0;
 		const char *ehostId = "-1";
@@ -352,90 +328,13 @@ void printUdpTable(SafeBuf *p, const char *title, UdpServer *server, const char 
 		} else {
 			// if no corresponding host, it could be a request from an external
 			// cluster, so just show the ip
-			sprintf(tmpHostId, "%s", iptoa(s->getIp()));
+			sprintf(tmpHostId, "%s", iptoa(it->getIp()));
 			ehostId = tmpHostId;
 			eip = tmpHostId;
 		}
 
-		// set description of the msg
-		msg_type_t msgType = s->getMsgType();
-		const char *desc = "";
-		bool calledHandler = s->hasCallback() ? s->hasCalledCallback() : s->hasCalledHandler();
+		bool calledHandler = it->hasCallback() ? it->hasCalledCallback() : it->hasCalledHandler();
 
-		char tt[64];
-		tt[0] = ' ';
-		tt[1] = '\0';
-
-		if (msgType == msg_type_0) {
-			char *buf = s->hasCallback() ? s->m_sendBuf: s->m_readBuf;
-			if (buf) {
-				int32_t rdbId = buf[RDBIDOFFSET];
-				Rdb *rdb = NULL;
-				if (rdbId >= 0 && !isDns) {
-					rdb = getRdbFromId((uint8_t) rdbId);
-					if (rdb) {
-						sprintf(tt, "get from %s", rdb->m_dbname);
-					}
-				}
-			}
-
-			desc = tt;
-		} else if (msgType == msg_type_1) {
-			char *buf = s->hasCallback() ? s->m_sendBuf: s->m_readBuf;
-			if (buf) {
-				int32_t rdbId = buf[0];
-				Rdb *rdb = NULL;
-				if (rdbId >= 0 && !isDns) {
-					rdb = getRdbFromId((uint8_t) rdbId);
-					if (rdb) {
-						sprintf(tt, "add to %s", rdb->m_dbname);
-					}
-				}
-			}
-
-			desc = tt;
-		} else if ( msgType == msg_type_c ) {
-			desc = "getting ip";
-		} else if ( msgType == msg_type_11 ) {
-			desc = "ping";
-		} else if ( msgType == msg_type_4 ) {
-			desc = "meta add";
-		} else if ( msgType == msg_type_13 ) {
-			char *buf = NULL;
-			int32_t bufSize = 0;
-
-			// . if callback was called this slot's sendbuf can be bogus
-			// . i put this here to try to avoid a core dump
-			if (s->hasCallback()) {
-				if (!s->hasCalledCallback()) {
-					buf = s->m_sendBuf;
-					bufSize = s->m_sendBufSize;
-				}
-			} else {
-				buf = s->m_readBuf;
-				bufSize = s->m_readBufSize;
-			}
-
-			bool isRobotsTxt = true;
-			if ( buf && bufSize >= (int32_t)sizeof(Msg13Request)-(int32_t)MAX_URL_LEN ) {
-				Msg13Request *r = (Msg13Request *)buf;
-				isRobotsTxt = r->m_isRobotsTxt;
-			}
-			desc = isRobotsTxt ? "get robots.txt" : "get web page";
-		} else if ( msgType == msg_type_22 ) {
-			desc = "get titlerec";
-		} else if ( msgType == msg_type_20 ) {
-			desc = "get summary";
-		} else if ( msgType == msg_type_39 ) {
-			desc = "get docids";
-		} else if ( msgType == msg_type_7 ) {
-			desc = "inject";
-		} else if ( msgType == msg_type_25 ) {
-			desc = "get link info";
-		} else if ( msgType == msg_type_fd ) {
-			desc = "proxy forward";
-		}
-		
 		p->safePrintf ( "<tr bgcolor=#%s>"
 				"<td>%s</td>"  // age
 				"<td>%s</td>"  // last read
@@ -445,39 +344,39 @@ void printUdpTable(SafeBuf *p, const char *title, UdpServer *server, const char 
 				e0 ,
 				e1 ,
 				e2 ,
-				s->getTimeout() );
+				it->getTimeout() );
 
 		// now use the ip for dns and hosts
 		p->safePrintf("<td>%s:%" PRIu32"</td>",
-			      iptoa(s->getIp()),(uint32_t)s->getPort());
+			      iptoa(it->getIp()),(uint32_t)it->getPort());
 
 		const char *cf1 = "";
 		const char *cf2 = "";
-		if ( s->m_convertedNiceness ) {
+		if ( it->getConvertedNiceness() ) {
 			cf1 = "<font color=red>";
 			cf2 = "</font>";
 		}
 
 		if ( isDns ) {
-			p->safePrintf("<td><nobr>%s", s->m_hostname);
+			p->safePrintf("<td><nobr>%s", it->getExtraInfo());
 			// get the domain from the hostname
 			int32_t dlen;
-			const char *dbuf = ::getDomFast ( s->m_hostname,&dlen,false);
+			const char *dbuf = ::getDomFast(it->getExtraInfo(), &dlen, false);
 			p->safePrintf( " <a href=\"/admin/tagdb?user=admin&tagtype0=manualban&tagdata0=1&u=%s&c=%s\">"
 					       "[<font color=red><b>BAN %s</b></font>]</nobr></a> " ,
 			               dbuf , coll , dbuf );
-			p->safePrintf("</td><td>%s%" PRId32"%s</td>", cf1, (int32_t)s->getNiceness(), cf2);
+			p->safePrintf("</td><td>%s%" PRId32"%s</td>", cf1, (int32_t)it->getNiceness(), cf2);
 		} else {
 			// clickable hostId
-			const char *toFrom = s->hasCallback() ? "to" : "from";
+			const char *toFrom = it->hasCallback() ? "to" : "from";
 			p->safePrintf (	"<td>0x%02x</td>"  // msgtype
 					"<td><nobr>%s</nobr></td>"  // desc
 					"<td><nobr>%s <a href=http://%s:%hu/"
 					"admin/sockets?"
 					"c=%s>%s</a></nobr></td>"
 					"<td>%s%" PRId32"%s</td>" , // niceness
-					s->getMsgType() ,
-					desc,
+					it->getMsgType() ,
+					it->getDescription(),
 					// begin clickable hostId
 					toFrom,
 					eip     ,
@@ -485,7 +384,7 @@ void printUdpTable(SafeBuf *p, const char *title, UdpServer *server, const char 
 					coll ,
 					ehostId ,
 					cf1,
-					(int32_t)s->getNiceness(),
+					(int32_t)it->getNiceness(),
 					cf2
 					// end clickable hostId
 					);
@@ -493,7 +392,7 @@ void printUdpTable(SafeBuf *p, const char *title, UdpServer *server, const char 
 
 		const char *rf1 = "";
 		const char *rf2 = "";
-		if ( s->getResendCount() ) {
+		if ( it->getResendCount() ) {
 			rf1 = "<b style=color:red;>";
 			rf2 = "</b>";
 		}
@@ -508,16 +407,16 @@ void printUdpTable(SafeBuf *p, const char *title, UdpServer *server, const char 
 				"<td>%" PRId32"</td>" // acks read
 				"<td>%s%hhu%s</td>" // resend count
 				"</tr>\n" ,
-				(uint32_t)s->getTransId(),
+				(uint32_t)it->getTransId(),
 				calledHandler,
-				s->getNumDgramsRead() ,
-				s->getDatagramsToRead() ,
-				s->getNumAcksSent() ,
-				s->getNumDgramsSent() ,
-				s->getDatagramsToSend() ,
-				s->getNumAcksRead() ,
+				it->getNumDatagramRead() ,
+				it->getNumPendingRead() ,
+				it->getNumAckSent() ,
+				it->getNumDatagramSent() ,
+				it->getNumPendingSend() ,
+				it->getNumAckRead() ,
 				rf1 ,
-				s->getResendCount() ,
+				it->getResendCount() ,
 				rf2
 				);
 	}

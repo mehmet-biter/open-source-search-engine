@@ -19,6 +19,7 @@ public:
 	const char* getDescription() const { return m_description; };
 
 	int32_t getNiceness() const { return m_niceness; }
+	char getConvertedNiceness() const { return m_convertedNiceness; }
 
 	int32_t getNumDatagramRead() const { return m_numDatagramRead; }
 	int32_t getNumDatagramSent() const { return m_numDatagramSent; }
@@ -38,6 +39,8 @@ public:
 	bool hasCalledHandler() const { return m_hasCalledHandler; }
 	bool hasCalledCallback() const { return m_hasCalledCallback; }
 
+	const char* getExtraInfo() const { return m_extraInfo; }
+
 private:
 	int32_t m_transId;
 	uint32_t m_ip;
@@ -47,6 +50,7 @@ private:
 	char m_description[255];
 
 	int32_t m_niceness;
+	char m_convertedNiceness;
 
 	int32_t m_numDatagramRead;
 	int32_t m_numDatagramSent;
@@ -65,6 +69,8 @@ private:
 	bool m_hasCallback;
 	bool m_hasCalledHandler;
 	bool m_hasCalledCallback;
+
+	char m_extraInfo[64];
 };
 
 #endif // GB_UDPSTATISTIC_H

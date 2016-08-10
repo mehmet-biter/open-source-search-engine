@@ -22,7 +22,7 @@ OBJS =  UdpSlot.o Rebalance.o \
 	Collectiondb.o \
 	linkspam.o ip.o sort.o \
 	fctypes.o XmlNode.o XmlDoc.o XmlDoc_Indexing.o Xml.o \
-	Words.o UdpServer.o \
+	Words.o UdpServer.o UdpStatistic.o \
 	Titledb.o HashTable.o \
 	TcpServer.o Summary.o \
 	Spider.o SpiderColl.o SpiderLoop.o Doledb.o \
@@ -410,6 +410,9 @@ TopTree.o:
 
 UdpServer.o:
 	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
+
+UdpStatistic.o:
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O3) -c $*.cpp
 
 RdbList.o:
 	$(CXX) $(DEFS) $(CPPFLAGS) $(O3) -c $*.cpp

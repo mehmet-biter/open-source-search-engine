@@ -87,7 +87,8 @@ class Multicast {
 		    int64_t        totalTimeout    , //relative timeout in milliseconds
 		    int32_t        niceness        ,
 		    int32_t        firstHostId     = -1 ,// first host to try
-		    bool        freeReplyBuf    = true );
+	        const char *extraInfo = NULL,
+            bool        freeReplyBuf    = true );
 
 	// . get the reply from your NON groupSend
 	// . if *freeReply is true then you are responsible for freeing this 

@@ -63,7 +63,7 @@ void Multicast::reset ( ) {
 //   otherwise, it's probably on the stack or part of a larger allocate class.
 bool Multicast::send(char *msg, int32_t msgSize, msg_type_t msgType, bool ownMsg, uint32_t shardNum, bool sendToWholeGroup,
                      int32_t key, void *state, void *state2, void (*callback)(void *state, void *state2),
-                     int64_t totalTimeout, int32_t niceness, int32_t firstHostId, bool freeReplyBuf) {
+                     int64_t totalTimeout, int32_t niceness, int32_t firstHostId, const char *extraInfo, bool freeReplyBuf) {
 	bool sendToSelf = true;
 
 	// make sure not being re-used!
@@ -627,7 +627,7 @@ bool Multicast::sendToHost ( int32_t i ) {
 	// . this creates a transaction control slot, "udpSlot"
 	// . return false and sets g_errno on error
 	// . returns true on successful launch and calls callback on completion
-	if (!us->sendRequest(m_msg, m_msgSize, m_msgType, bestIp, destPort, hid, &m_slots[i], this, gotReplyWrapperM1, timeRemaining, m_niceness, -1, -1, maxResends)) {
+	if (!us->sendRequest(m_msg, m_msgSize, m_msgType, bestIp, destPort, hid, &m_slots[i], this, gotReplyWrapperM1, timeRemaining, m_niceness, NULL, -1, -1, maxResends)) {
 		log(LOG_WARN, "net: Had error sending msgtype 0x%02x to host #%" PRId32": %s. Not retrying.",
 		    m_msgType,h->m_hostId,mstrerror(g_errno));
 		// i've seen ENOUDPSLOTS available msg here along with oom

@@ -1171,7 +1171,6 @@ bool Dns::sendToNextDNS ( DnsState *ds ) {
 		iptoa(ds->m_dnsIps[depth][n]), (int32_t)depth,(int32_t)n,
 		(int32_t) ds->m_numTried, ds->m_hostname , (int32_t)transId);
 
-	UdpSlot *slotPtr = NULL;
 	// . queue a send
 	// . this returns false and sets g_errno on error
 	// . calls callback when reply is received
@@ -1183,15 +1182,12 @@ bool Dns::sendToNextDNS ( DnsState *ds ) {
 	//   bug
 	// . resend time is set to 20 seconds in UdpSlot::setResendTime()
 	// use niceness 0 now so if the msgC slot gets converted from 1 to 0 this will not hold it up!
-	/// @todo ALC don't think dns should be using msg_type_0
-	if (!m_udpServer.sendRequest(ds->m_request, ds->m_requestSize, msg_type_0, ip, 53, -1, &slotPtr, ds, gotIpWrapper, TIMEOUT_SINGLE_HOST_MS, 0)) {
+	if (!m_udpServer.sendRequest(ds->m_request, ds->m_requestSize, msg_type_dns, ip, 53, -1, NULL, ds, gotIpWrapper, TIMEOUT_SINGLE_HOST_MS, 0, ds->m_hostname)) {
 		// g_errno should be set at this point and we will not try
 		// any more nameservers because the error seemed too bad.
 		log(LOG_DEBUG, "dns: errors seemed too bad for '%s'...", ds->m_hostname);
 		return true;
 	}
-	// store a hack for PageSockets.cpp to print out the hostname
-	slotPtr->m_hostname = ds->m_hostname;
 	// return 0 cuz we're blocking on the reply
 	log(LOG_DEBUG, "dns: SendToNextDNS blocking on reply for '%s'", ds->m_hostname);
 	return false;

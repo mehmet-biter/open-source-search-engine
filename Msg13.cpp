@@ -252,12 +252,14 @@ bool Msg13::forwardRequest ( ) {
 	// g_errno should be set in this case, most likely to ENOMEM
 	if ( ! requestBuf ) return true;
 
+	const char* extraInfo = r->m_isRobotsTxt ? "robots.txt" : "web page";
+
 	// . otherwise, send the request to the key host
 	// . returns false and sets g_errno on error
 	// . now wait for 2 minutes before timing out
 	// it was not using the proxy! because it thinks the hostid #0 is not the proxy... b/c ninad screwed that
 	// up by giving proxies the same ids as regular hosts!
-	if (!g_udpServer.sendRequest(requestBuf, requestBufSize, msg_type_13, h->m_ip, h->m_port, -1, NULL, this, gotForwardedReplyWrapper, 200000)) {
+	if (!g_udpServer.sendRequest(requestBuf, requestBufSize, msg_type_13, h->m_ip, h->m_port, -1, NULL, this, gotForwardedReplyWrapper, 200000, 1, extraInfo)) {
 		// sanity check
 		if ( ! g_errno ) { g_process.shutdownAbort(true); }
 		// report it
@@ -535,11 +537,14 @@ void handleRequest13 ( UdpSlot *slot , int32_t niceness  ) {
 		if ( g_conf.m_logDebugSpider || g_conf.m_logDebugMsg13 )
 			log(LOG_DEBUG,"spider: sending to compression proxy "
 			    "%s:%" PRIu32,iptoa(h->m_ip),(uint32_t)h->m_port);
+
+		const char* extraInfo = r->m_isRobotsTxt ? "robots.txt" : "web page";
+
 		// . otherwise, send the request to the key host
 		// . returns false and sets g_errno on error
 		// . now wait for 2 minutes before timing out
 		// we are sending to the proxy so make hostId -1
-		if (!g_udpServer.sendRequest((char *)r, r->getSize(), msg_type_13, h->m_ip, h->m_port, -1, NULL, r, passOnReply, 200000, niceness)) {
+		if (!g_udpServer.sendRequest((char *)r, r->getSize(), msg_type_13, h->m_ip, h->m_port, -1, NULL, r, passOnReply, 200000, niceness, extraInfo)) {
 			// g_errno should be set
 			
 			log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. error=%s", __FILE__, __func__, __LINE__, mstrerror(g_errno));

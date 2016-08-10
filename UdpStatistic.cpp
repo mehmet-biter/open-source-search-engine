@@ -1,3 +1,4 @@
+#include <cstdio>
 #include "UdpStatistic.h"
 #include "UdpSlot.h"
 
@@ -8,6 +9,7 @@ UdpStatistic::UdpStatistic(const UdpSlot &slot)
 	  m_msgType(slot.getMsgType()),
 	  m_description(),
 	  m_niceness(slot.getNiceness()),
+	  m_convertedNiceness(slot.getConvertedNiceness()),
 	  m_numDatagramRead(slot.getNumDgramsRead()),
 	  m_numDatagramSent(slot.getNumDgramsSent()),
 	  m_numAckRead(slot.getNumAcksRead()),
@@ -22,13 +24,13 @@ UdpStatistic::UdpStatistic(const UdpSlot &slot)
 	  m_hasCallback(slot.hasCallback()),
 	  m_hasCalledHandler(slot.hasCalledHandler()),
 	  m_hasCalledCallback(slot.hasCalledCallback()),
-	  m_extraInfo(slot.getExtraInfo()) {
+	  m_extraInfo() {
 	switch (m_msgType) {
 		case msg_type_0:
-			strcpy(m_description, "get from xxx"); /// @todo
+			snprintf(m_description, sizeof(m_description), "get from %s", m_extraInfo);
 			break;
 		case msg_type_1:
-			strcpy(m_description, "add to xxx"); /// @todo
+			snprintf(m_description, sizeof(m_description), "add to %s", m_extraInfo);
 			break;
 		case msg_type_4:
 			strcpy(m_description, "meta add");
@@ -43,7 +45,7 @@ UdpStatistic::UdpStatistic(const UdpSlot &slot)
 			strcpy(m_description, "ping");
 			break;
 		case msg_type_13:
-			strcpy(m_description, "get web page"); /// @todo
+			snprintf(m_description, sizeof(m_description), "get %s", m_extraInfo);
 			break;
 		case msg_type_1f:
 			strcpy(m_description, "get remote log");
@@ -74,6 +76,9 @@ UdpStatistic::UdpStatistic(const UdpSlot &slot)
 			break;
 		case msg_type_fd:
 			strcpy(m_description, "proxy forward");
+			break;
+		case msg_type_dns:
+			strcpy(m_extraInfo, slot.getExtraInfo());
 			break;
 	}
 }

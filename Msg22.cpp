@@ -157,7 +157,7 @@ bool Msg22::getTitleRec ( Msg22Request  *r              ,
 	// . returns false and sets g_errno on error
 	// . use a pre-allocated buffer to hold the reply
 	// . TMPBUFSIZE is how much a UdpSlot can hold w/o allocating
-	if (!m_mcast.send((char *)r, r->getSize(), msg_type_22, false, shardNum, false, 0, this, NULL, gotReplyWrapper22, timeout * 1000, r->m_niceness, firstHostId, false)) {
+	if (!m_mcast.send((char *)r, r->getSize(), msg_type_22, false, shardNum, false, 0, this, NULL, gotReplyWrapper22, timeout * 1000, r->m_niceness, firstHostId, NULL, false)) {
 		log("db: Requesting title record had error: %s.",
 		    mstrerror(g_errno) );
 		// set m_errno

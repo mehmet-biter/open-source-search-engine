@@ -72,6 +72,7 @@ public:
 
 	// what is our niceness level?
 	int32_t getNiceness() const { return m_niceness; }
+	char getConvertedNiceness() const { return m_convertedNiceness; }
 
 	bool hasCallback() const { return (m_callback); }
 
@@ -99,7 +100,9 @@ public:
 	bool hasCalledHandler() const { return m_calledHandler; }
 	bool hasCalledCallback() const { return m_calledCallback; }
 
-	UdpSlot* getActiveListNext() { return m_activeListNext; }
+	const UdpSlot* getActiveListNext() const { return m_activeListNext; }
+
+	const char* getExtraInfo() const { return m_extraInfo; }
 
 	// a ptr to the Host class for shotgun info
 	Host *m_host;
@@ -116,8 +119,6 @@ public:
 	char *m_readBuf;      // store recv'd msg in here.
 	int32_t m_readBufSize;  // w/o the dgram headers.
 	int32_t m_readBufMaxSize;
-
-	char m_convertedNiceness;
 
 protected:
 	// set the UdpSlot's protocol, endpoint info, transId, timeout
@@ -251,6 +252,7 @@ protected:
 	UdpSlot *m_callbackListNext;
 	UdpSlot *m_callbackListPrev;
 
+	char m_convertedNiceness;
 
 private:
 	// . send an ACK
@@ -397,6 +399,9 @@ private:
 
 	// save cpu by not having to call memset() on m_sentBits et al
 	int32_t m_numBitsInitialized;
+
+	// additional information which could be useful for statistics (specific to msgtype)
+	char m_extraInfo[64];
 
 	// memset clears from here and above. so put anything that needs to
 	// be set to zero above this line.
