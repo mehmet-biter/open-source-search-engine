@@ -78,7 +78,6 @@ bool Phrases::set( const Words *words, const Bits *bits, int32_t niceness ) {
 		if ( ! m_wids[i] ) {
 			continue;
 		}
-		QUICKPOLL(niceness);
 
 		setPhrase ( i );
 	}
