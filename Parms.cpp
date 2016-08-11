@@ -11622,7 +11622,7 @@ static void handleRequest3fLoop ( void *weArg ) {
 			// note it
 			log("parms: sending early parm update reply");
 			// wait for reply to be sent and ack'd
-			g_udpServer.sendReply_ass( NULL, 0, NULL, 0, we->m_slot, we, handleRequest3fLoop2 );
+			g_udpServer.sendReply(NULL, 0, NULL, 0, we->m_slot, we, handleRequest3fLoop2);
 			return;
 		}
 
@@ -11737,7 +11737,7 @@ static void handleRequest3fLoop ( void *weArg ) {
 	if ( we->m_errno && !we->m_sentReply ) {
 		g_udpServer.sendErrorReply( we->m_slot, we->m_errno );
 	} else if ( !we->m_sentReply ) {
-		g_udpServer.sendReply_ass( NULL, 0, NULL, 0, we->m_slot );
+		g_udpServer.sendReply(NULL, 0, NULL, 0, we->m_slot);
 	}
 
 	// all done
@@ -12022,14 +12022,14 @@ void handleRequest3e ( UdpSlot *slot , int32_t niceness ) {
 				    hostId );
 
 	// but do send back an empty reply to this 0x3e request
-	g_udpServer.sendReply_ass ( NULL,0,NULL,0,slot);
+	g_udpServer.sendReply(NULL,0,NULL,0,slot);
 
 	// send that back now
-	//g_udpServer.sendReply_ass ( replyBuf.getBufStart() ,
-	//			    replyBuf.length() ,
-	//			    replyBuf.getBufStart() ,
-	//			    replyBuf.getCapacity() ,
-	//			    slot );
+	//g_udpServer.sendReply(replyBuf.getBufStart(),
+	//			replyBuf.length(),
+	//			replyBuf.getBufStart(),
+	//			replyBuf.getCapacity(),
+	//			slot);
 	// udpserver will free it
 	//replyBuf.detachBuf();
 }

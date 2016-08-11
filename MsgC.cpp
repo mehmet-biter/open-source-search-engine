@@ -284,7 +284,7 @@ void gotMsgCIpWrapper( void *state, int32_t ip){
 
 	//to fit the ip address
 	//char reply[12];
-	// don't put it on the stack because sendReply_ass does not copy!
+	// don't put it on the stack because sendReply does not copy!
 	char *reply = slot->m_tmpBuf;
 	int32_t replySize=12;
 	if ( TMPBUFSIZE < replySize ) { g_process.shutdownAbort(true); }
@@ -296,7 +296,7 @@ void gotMsgCIpWrapper( void *state, int32_t ip){
 	// an actual checksum
 	*(int32_t *)p = hash32h ( ip , 0 ); p += 4;
 
-	g_udpServer.sendReply_ass( reply, replySize, NULL, 0, slot );
+	g_udpServer.sendReply(reply, replySize, NULL, 0, slot);
 
 	return;
 }

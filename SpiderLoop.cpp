@@ -2523,7 +2523,7 @@ void handleRequestc1 ( UdpSlot *slot , int32_t niceness ) {
 		cr->sentLocalCrawlInfoToHost ( hostId );
 	}
 
-	g_udpServer.sendReply_ass(replyBuf.getBufStart(), replyBuf.length(), replyBuf.getBufStart(), replyBuf.getCapacity(), slot);
+	g_udpServer.sendReply(replyBuf.getBufStart(), replyBuf.length(), replyBuf.getBufStart(), replyBuf.getCapacity(), slot);
 
 	// udp server will free this
 	replyBuf.detachBuf();

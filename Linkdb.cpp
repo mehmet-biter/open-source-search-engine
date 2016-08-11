@@ -641,7 +641,7 @@ static void sendReplyWrapper ( void *state ) {
 	}
 	else {
 		// send it back to requester
-		g_udpServer.sendReply_ass( reply2, replySize, reply2, replySize, udpSlot );
+		g_udpServer.sendReply(reply2, replySize, reply2, replySize, udpSlot);
 	}
 
 	// if we had a link

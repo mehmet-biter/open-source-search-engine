@@ -515,7 +515,7 @@ void sendUdpReply7 ( void *state ) {
 	memcpy ( p , (char *)&docId , 8 );
 	p += 8;
 
-	g_udpServer.sendReply_ass(tmp,(p-tmp),NULL,0,slot);
+	g_udpServer.sendReply(tmp,(p-tmp),NULL,0,slot);
 }
 
 void handleRequest7 ( UdpSlot *slot , int32_t netnice ) {

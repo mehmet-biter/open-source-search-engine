@@ -540,7 +540,7 @@ bool Msg20Reply::sendReply ( Msg20Request *req, XmlDoc *xd ) {
 	mdelete ( xd , sizeof(XmlDoc) , "xd20" );
 	delete ( xd );
 	
-	g_udpServer.sendReply_ass ( buf , need , buf , need , slot );
+	g_udpServer.sendReply(buf, need, buf, need, slot);
 
 	return true;
 }
@@ -557,7 +557,7 @@ static bool sendCachedReply ( Msg20Request *req, const void *cached_summary, siz
 	}
 	memcpy(buf,cached_summary,cached_summary_len);
 	
-	g_udpServer.sendReply_ass ( buf , cached_summary_len , buf , cached_summary_len , slot );
+	g_udpServer.sendReply(buf, cached_summary_len, buf, cached_summary_len, slot);
 	
 	return true;
 }

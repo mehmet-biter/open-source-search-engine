@@ -811,7 +811,7 @@ void gotListWrapper ( void *state , RdbList *listb , Msg5 *msg5xx ) {
 	// . now g_udpServer is responsible for freeing data/dataSize
 	// . the "true" means to call doneSending_ass() from the signal handler
 	//   if need be
-	st0->m_us->sendReply_ass(data, dataSize, alloc, allocSize, slot, st0, doneSending_ass, -1, -1, true);
+	st0->m_us->sendReply(data, dataSize, alloc, allocSize, slot, st0, doneSending_ass, -1, -1, true);
 
 	logTrace( g_conf.m_logTraceMsg0, "END" );
 }	

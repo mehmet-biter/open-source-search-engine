@@ -104,5 +104,5 @@ void handleRequest ( UdpSlot *slot , int32_t netnice ) {
 	}
 	//log(LOG_DEBUG, "bytes read! %" PRId32" ", numRead);
 
-	g_udpServer.sendReply_ass (buf, numRead, allocBuf,allocBufSize, slot); //send
+	g_udpServer.sendReply(buf, numRead, allocBuf,allocBufSize, slot); //send
 }

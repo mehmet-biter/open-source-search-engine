@@ -537,7 +537,7 @@ void gotTitleList ( void *state , RdbList *list , Msg5 *msg5 ) {
 		// ok, if just "checking tfndb" no need to go further
 		if ( r->m_justCheckTfndb ) {
 			// send back a good reply (empty means found!)
-			us->sendReply_ass ( NULL,0,NULL,0,st->m_slot);
+			us->sendReply(NULL,0,NULL,0,st->m_slot);
 			// don't forget to free the state
 			mdelete ( st , sizeof(State22) , "Msg22" );
 			delete ( st );
@@ -561,7 +561,7 @@ void gotTitleList ( void *state , RdbList *list , Msg5 *msg5 ) {
 			tlist->m_ownData = false;
 		}
 		// off ya go
-		us->sendReply_ass(reply,recSize,reply,recSize,st->m_slot);
+		us->sendReply(reply,recSize,reply,recSize,st->m_slot);
 		// don't forget to free the state
 		mdelete ( st , sizeof(State22) , "Msg22" );
 		delete ( st );
@@ -590,7 +590,7 @@ void gotTitleList ( void *state , RdbList *list , Msg5 *msg5 ) {
 		// send back the available docid
 		*(int64_t *)p = st->m_availDocId;
 		// send it
-		us->sendReply_ass ( p , 8 , p , 8 , st->m_slot );
+		us->sendReply (p, 8, p, 8, st->m_slot);
 		// don't forget to free state
 		mdelete ( st , sizeof(State22) , "Msg22" );
 		delete ( st );

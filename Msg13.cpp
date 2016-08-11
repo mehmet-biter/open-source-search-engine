@@ -493,7 +493,7 @@ void handleRequest13 ( UdpSlot *slot , int32_t niceness  ) {
 		//log("spider: %s was in cache",r->ptr_url);
 		// . send the cached reply back
 		// . this will free send/read bufs on completion/g_errno
-		g_udpServer.sendReply_ass(rec, recSize, rec, recSize, slot);
+		g_udpServer.sendReply(rec, recSize, rec, recSize, slot);
 		return;
 	}
 	rcl.unlock();
@@ -1604,7 +1604,7 @@ void gotHttpReply2 ( void *state ,
 			copy          = (char *)mdup(reply,replySize,"msg13d");
 			copyAllocSize = replySize;
 			// oom doing the mdup? i've seen this core us so fix it
-			// because calling sendreply_ass with a NULL 
+			// because calling sendreply with a NULL
 			// 'copy' cores it.
 			if ( reply && ! copy ) {
 				copyAllocSize = 0;
@@ -1638,7 +1638,7 @@ void gotHttpReply2 ( void *state ,
 			log("msg13: sending reply for %s",r->ptr_url);
 
 		// send reply
-		us->sendReply_ass(copy, replySize, copy, copyAllocSize, slot);
+		us->sendReply(copy, replySize, copy, copyAllocSize, slot);
 
 		// now final udp slot will free the reply, so tcp server
 		// no longer has to. set this tcp buf to null then.
@@ -1683,7 +1683,7 @@ void passOnReply ( void *state , UdpSlot *slot ) {
 	if ( reply == g_fakeReply ) replyAllocSize = 0;
 
 	// just forward it on
-	g_udpServer.sendReply_ass(reply, replySize, reply, replyAllocSize, r->m_udpSlot);
+	g_udpServer.sendReply(reply, replySize, reply, replyAllocSize, r->m_udpSlot);
 }
 
 // returns true if <iframe> tag in there
