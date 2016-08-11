@@ -3,7 +3,7 @@
 #ifndef GB_STOPWORDS_H
 #define GB_STOPWORDS_H
 
-#include "Unicode.h"
+#include <inttypes.h>
 
 // . this returns true if h is the hash of an ENGLISH stop word
 // . list taken from www.superjournal.ac.uk/sj/application/demo/stopword.htm 
