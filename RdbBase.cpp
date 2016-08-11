@@ -45,18 +45,18 @@ RdbBase::RdbBase ( ) {
 
 void RdbBase::reset ( ) {
 	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) {
-		mdelete ( m_files[i] , sizeof(BigFile),"RdbBFile");
+		mdelete(m_files[i], sizeof(BigFile), "RdbBFile");
 		delete (m_files[i]);
-		mdelete ( m_maps[i] , sizeof(RdbMap),"RdbBMap");
+
+		mdelete(m_maps[i], sizeof(RdbMap), "RdbBMap");
 		delete (m_maps[i]);
 
-		if( m_useIndexFile ) {
-			mdelete ( m_indexes[i] , sizeof(RdbIndex),"RdbBIndex");
-			delete (m_indexes[i]);
-		}
+		mdelete(m_indexes[i], sizeof(RdbIndex), "RdbBIndex");
+		delete (m_indexes[i]);
 	}
+
 	m_numFiles  = 0;
-	m_files [ m_numFiles ] = NULL;
+	m_files[m_numFiles] = NULL;
 	// we're not in urgent merge mode yet
 	m_mergeUrgent = false;
 	m_waitingForTokenForMerge = false;
@@ -906,16 +906,14 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 
 	// shift everyone up if we need to fit this file in the middle somewher
 	if ( i < m_numFiles ) {
-		int nn = m_numFiles-i;
-		memmove ( &m_files  [i+1] , &m_files[i],nn*sizeof(BigFile *));
-		memmove ( &m_fileIds[i+1] , &m_fileIds[i],nn*sizeof(int32_t));
-		memmove ( &m_fileIds2[i+1], &m_fileIds2[i],nn*sizeof(int32_t));
-		memmove ( &m_maps   [i+1] , &m_maps   [i],nn*sizeof(RdbMap *));
-//@@@ BR: no-merge index begin
-		if( m_useIndexFile ) {
-			memmove ( &m_indexes [i+1] , &m_indexes[i],nn*sizeof(RdbIndex *));
-		}
-//@@@ BR: no-merge index end
+		int nn = m_numFiles - i;
+		int dstIdx = i + 1;
+
+		memmove(&m_files[dstIdx], &m_files[i], nn * sizeof(BigFile *));
+		memmove(&m_fileIds[dstIdx], &m_fileIds[i], nn * sizeof(int32_t));
+		memmove(&m_fileIds2[dstIdx], &m_fileIds2[i], nn * sizeof(int32_t));
+		memmove(&m_maps[dstIdx], &m_maps[i], nn * sizeof(RdbMap *));
+		memmove(&m_indexes[dstIdx], &m_indexes[i], nn * sizeof(RdbIndex *));
 	}
 
 	// insert this file into position #i
@@ -923,19 +921,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	m_fileIds2 [i] = fileId2;
 	m_files    [i] = f;
 	m_maps     [i] = m;
-//@@@ BR: no-merge index begin
-	if( m_useIndexFile ) {
-		m_indexes  [i] = in;
-	}
-	else {
-		m_indexes[i] = NULL;
-	}
-//@@@ BR: no-merge index end
-
-
-	// debug point
-	//log("map #0 is %s ptr=%llx (nf=%i)",
-	//    m_maps[0]->getFilename(),(long long)m_maps[0],m_numFiles);
+	m_indexes  [i] = in;
 
 	// are we resuming a killed merge?
 	if ( g_conf.m_readOnlyMode && ((fileId & 0x01)==0) ) {
@@ -1042,14 +1028,7 @@ bool RdbBase::incorporateMerge ( ) {
 		g_process.shutdownAbort();
 	}
 
-	// print out info of newly merged file
-	int64_t tp = m_maps[x]->getNumPositiveRecs();
-	int64_t tn = m_maps[x]->getNumNegativeRecs();
-	log(LOG_INFO, "merge: Merge succeeded. %s (#%" PRId32") has %" PRId64" positive "
-	    "and %" PRId64" negative recs.", m_files[x]->getFilename(), x, tp, tn);
-
-
-//@@@ BR: no-merge index begin
+	//@@@ BR: no-merge index begin
 	if( m_useIndexFile ) {
 		status = m_indexes[x]->writeIndex();
 		if ( !status ) {
@@ -1058,7 +1037,13 @@ bool RdbBase::incorporateMerge ( ) {
 			g_process.shutdownAbort();
 		}
 	}
-//@@@ BR: no-merge index end
+	//@@@ BR: no-merge index end
+
+	// print out info of newly merged file
+	int64_t tp = m_maps[x]->getNumPositiveRecs();
+	int64_t tn = m_maps[x]->getNumNegativeRecs();
+	log(LOG_INFO, "merge: Merge succeeded. %s (#%" PRId32") has %" PRId64" positive "
+	    "and %" PRId64" negative recs.", m_files[x]->getFilename(), x, tp, tn);
 
 
 	// . bitch if bad news
@@ -1396,22 +1381,14 @@ void RdbBase::buryFiles ( int32_t a , int32_t b ) {
 		delete (m_files[i]);
 		mdelete ( m_maps[i] , sizeof(RdbMap),"RdbBase");
 		delete (m_maps [i]);
-//@@@ BR: no-merge index begin
-		if( m_useIndexFile ) {
-			mdelete ( m_indexes[i] , sizeof(RdbIndex),"RdbBase");
-			delete (m_indexes [i]);
-		}
-//@@@ BR: no-merge index end
+		mdelete ( m_indexes[i] , sizeof(RdbIndex),"RdbBase");
+		delete (m_indexes [i]);
 	}
 	// bury the merged files
 	int32_t n = m_numFiles - b;
 	gbmemcpy (&m_files   [a], &m_files   [b], n*sizeof(BigFile *));
 	gbmemcpy (&m_maps    [a], &m_maps    [b], n*sizeof(RdbMap  *));
-//@@@ BR: no-merge index begin
-	if( m_useIndexFile ) {
-		gbmemcpy (&m_indexes [a], &m_indexes [b], n*sizeof(RdbIndex  *));
-	}
-//@@@ BR: no-merge index end
+	gbmemcpy (&m_indexes [a], &m_indexes [b], n*sizeof(RdbIndex  *));
 	gbmemcpy (&m_fileIds [a], &m_fileIds [b], n*sizeof(int32_t     ));
 	gbmemcpy (&m_fileIds2[a], &m_fileIds2[b], n*sizeof(int32_t     ));
 	// decrement the file count appropriately
