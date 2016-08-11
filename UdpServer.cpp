@@ -448,6 +448,7 @@ bool UdpServer::sendRequest(char *msg,
 
 // returns false and sets g_errno on error, true otherwise
 void UdpServer::sendErrorReply(UdpSlot *slot, int32_t errnum) {
+	logDebug(g_conf.m_logDebugUdp, "udp: sendErrorReply slot=%p errnum=%" PRId32, slot, errnum);
 
 	// bitch if it is 0
 	if ( errnum == 0 ) {
@@ -473,6 +474,7 @@ void UdpServer::sendErrorReply(UdpSlot *slot, int32_t errnum) {
 void UdpServer::sendReply_ass(char *msg, int32_t msgSize, char *alloc, int32_t allocSize, UdpSlot *slot, void *state,
                               void (*callback2)(void *state, UdpSlot *slot), int16_t backoff, int16_t maxWait,
                               bool isCallback2Hot) {
+	logDebug(g_conf.m_logDebugUdp, "udp: sendReply_ass slot=%p", slot);
 
 	// the callback should be NULL
 	if ( slot->hasCallback() ) {

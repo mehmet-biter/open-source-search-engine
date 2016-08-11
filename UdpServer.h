@@ -123,20 +123,13 @@ public:
 	// . backoff is how long to wait for an ACK in ms before we resend
 	// . we double backoff each time we wait w/o getting any ACK
 	// . don't wait longer than maxWait for a resend
-	void sendReply_ass (char *msg,
-	                    int32_t msgSize,
-	                    char *alloc,
-	                    int32_t allocSize,
-	                    UdpSlot *slot, // in seconds
-	                    void *state = NULL, // callback state
-	                    void (*callback2)(void *state, UdpSlot *slot) = NULL,
-			            int16_t backoff = -1,
-			            int16_t maxWait = -1,
-			            bool isCallback2Hot = false);
+	void sendReply_ass(char *msg, int32_t msgSize, char *alloc, int32_t allocSize, UdpSlot *slot, void *state = NULL,
+	                   void (*callback2)(void *state, UdpSlot *slot) = NULL, int16_t backoff = -1, int16_t maxWait = -1,
+	                   bool isCallback2Hot = false);
 
 	// . propagate an errno to the requesting machine
 	// . his callback will be called with errno set to "errnum"
-	void sendErrorReply( UdpSlot *slot, int32_t errnum );
+	void sendErrorReply(UdpSlot *slot, int32_t errnum);
 
 	// . when a request/msg of type "msgType" is received we call the
 	//   corresponding request handler on this machine
@@ -182,8 +175,6 @@ public:
 	bool needBottom() const { return m_needBottom; }
 
 	bool getWriteRegistered() const { return m_writeRegistered; }
-
-	UdpSlot *getActiveHead() { return m_activeListHead; }
 
 	bool hasHandler(int i) const { return (m_handlers[i]); }
 
