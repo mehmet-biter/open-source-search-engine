@@ -2,6 +2,7 @@
 
 #include "HttpServer.h"
 #include "Pages.h"
+#include "HttpRequest.h"          // for parsing/forming HTTP requests
 #include "Collectiondb.h"
 #include "HashTable.h"
 #include "Stats.h"
@@ -597,7 +598,8 @@ void HttpServer::requestHandler ( TcpSocket *s ) {
 	time_t tt ;
 	if ( isClockInSync() ) tt = getTimeGlobal();
 	else                   tt = getTimeLocal();
-	struct tm *timeStruct = localtime ( &tt );
+	struct tm tm_buf;
+	struct tm *timeStruct = localtime_r(&tt,&tm_buf);
 	char buf[64];
 	strftime ( buf , 100 , "%b %d %T", timeStruct);
 	// save ip in case "s" gets destroyed
@@ -1336,7 +1338,9 @@ bool HttpServer::sendSuccessReply ( TcpSocket *s , char format, const char *addM
 	char msg[1524];
 	SafeBuf sb(msg,1524,0,false);
 
-	char *tt = asctime(gmtime ( &now ));
+	struct tm tm_buf;
+	char buf[64];
+	char *tt = asctime_r(gmtime_r(&now,&tm_buf),buf);
 	tt [ strlen(tt) - 1 ] = '\0';
 
 	const char *ct = "text/html";
@@ -1408,7 +1412,9 @@ bool HttpServer::sendErrorReply ( GigablastRequest *gr ) {
 	int32_t format = gr->m_hr.getReplyFormat();
 	char msg[1524];
 	SafeBuf sb(msg,1524,0,false);
-	char *tt = asctime(gmtime ( &now ));
+	struct tm tm_buf;
+	char buf[64];
+	char *tt = asctime_r(gmtime_r(&now,&tm_buf),buf);
 	tt [ strlen(tt) - 1 ] = '\0';
 
 	const char *ct = "text/html";
@@ -1500,7 +1506,9 @@ bool HttpServer::sendErrorReply ( TcpSocket *s , int32_t error , const char *err
 			  ctime ( &now ) );
 	else 
 	*/
-	char *tt = asctime(gmtime ( &now ));
+	struct tm tm_buf;
+	char buf[64];
+	char *tt = asctime_r(gmtime_r(&now,&tm_buf),buf);
 	tt [ strlen(tt) - 1 ] = '\0';
 
 	const char *ct = "text/html";
@@ -1595,7 +1603,9 @@ bool HttpServer::sendQueryErrorReply( TcpSocket *s , int32_t error ,
 	// . buffer for the MIME request and brief html err msg
 	// . NOTE: ctime appends a \n to the time, so we don't need to
 	char msg[2048];
-	char *tt = asctime(gmtime ( &now ));
+	struct tm tm_buf;
+	char buf[64];
+	char *tt = asctime_r(gmtime_r(&now,&tm_buf),buf);
 	tt [ strlen(tt) - 1 ] = '\0';
 	// fix empty strings
 	if (!content) content = "";

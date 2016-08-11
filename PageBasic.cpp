@@ -924,9 +924,9 @@ bool sendPageBasicStatus ( TcpSocket *socket , HttpRequest *hr ) {
 			      );
 
 		char tmp3[64];
-		struct tm *timeStruct;
 		time_t tt = (time_t)cr->m_diffbotCrawlStartTime;
-		timeStruct = localtime(&tt);
+		struct tm tm_buf;
+		struct tm *timeStruct = localtime_r(&tt,&tm_buf);
 		// Jan 01 1970 at 10:30:00
 		strftime ( tmp3,64 , "%b %d %Y at %H:%M:%S",timeStruct);
 		sb.safePrintf("<tr><td><b>Collection Created</b></td>"

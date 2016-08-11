@@ -52,8 +52,6 @@ public:
 	const char *getBuf() const { return m_buf + m_length; }
 	char       *getBufPtr()       { return m_buf + m_length; }
 	const char *getBufPtr() const { return m_buf + m_length; }
-	char       *getBufCursor()       { return m_buf + m_length; }
-	const char *getBufCursor() const { return m_buf + m_length; }
 	char       *getBufStart()       { return m_buf; }
 	const char *getBufStart() const { return m_buf; }
 	char       *getBufEnd()       { return m_buf + m_capacity; }
@@ -91,9 +89,6 @@ public:
 
 	bool safeDecodeJSONToUtf8 ( const char *json, int32_t jsonLen, int32_t niceness);
 
-	void truncLen ( int32_t newLen ) {
-		if ( m_length > newLen ) m_length = newLen; }
-
 	bool set ( const char *str ) {
 		purge();
 		if ( ! str ) return true;
@@ -116,14 +111,11 @@ public:
 	bool  safeMemcpy(const char *s, int32_t len);
 	bool  safeMemcpy_nospaces(const char *s, int32_t len);
 	bool  safeMemcpy(const SafeBuf *c) { return safeMemcpy(c->m_buf,c->m_length); }
-	bool  safeMemcpy ( const Words *w, int32_t a, int32_t b );
 	bool  safeStrcpy ( const char *s ) ;
 	//bool  safeStrcpyPrettyJSON ( char *decodedJson ) ;
 	bool  safeUtf8ToJSON ( const char *utf8 ) ;
 	bool jsonEncode ( const char *utf8 ) { return safeUtf8ToJSON(utf8); }
 	bool jsonEncode ( char *utf8 , int32_t utf8Len );
-
-	bool  csvEncode ( const char *s , int32_t len , int32_t niceness = 0 );
 
 	bool  base64Encode ( const char *s , int32_t len , int32_t niceness = 0 );
 	bool  base64Decode ( const char *src , int32_t srcLen , int32_t niceness = 0 ) ;
@@ -136,18 +128,10 @@ public:
 	void  reset() { m_length = 0; }
 	void  purge(); // Clear all data and free all allocated memory
 
-	bool safePrintFilterTagsAndLines ( char *p , int32_t plen ,
-					   bool oneWordPerLine ) ;
-
 	// . if clearIt is true we init the new buffer space to zeroes
 	// . used by Collectiondb.cpp
 	bool  reserve(int32_t i, const char *label=NULL , bool clearIt = false );
 	bool  reserve2x(int32_t i, const char *label = NULL );
-
-	char *makeSpace ( int32_t size ) {
-		if ( ! reserve ( size ) ) return NULL;
-		return m_buf + m_length;
-	}
 
 	void  incrementLength(int32_t i) { 
 		m_length += i; 
@@ -159,7 +143,6 @@ public:
 	int32_t  catFile(const char *filename) ;
 
 	void  detachBuf();
-	bool  insert ( const SafeBuf *c , int32_t insertPos ) ;
 	bool  insert ( const char *s , int32_t insertPos ) ;
 	bool  insert2 ( const char *s , int32_t slen, int32_t insertPos ) ;
 	bool  replace ( const char *src, const char *dst ) ; // must be same lengths!
@@ -170,7 +153,6 @@ public:
 			     const char *t, int32_t tlen,
 			     int32_t niceness ,
 			     int32_t startOff = 0 );
-	bool  safeReplace3 ( const char *s, const char *t, int32_t niceness = 0 ) ;
 	void replaceChar ( char src , char dst );
 
 	void zeroOut() { memset ( m_buf , 0 , m_capacity ); }
@@ -183,9 +165,6 @@ public:
 				bool isHtml = true );
 
 	bool hasDigits();
-
-	// treat safebuf as an array of signed int32_ts and sort them
-	void sortLongs ( int32_t niceness );
 
 	// . like "1 minute ago" "5 hours ago" "3 days ago" etc.
 	// . "ts" is the delta-t in seconds
@@ -203,11 +182,6 @@ public:
 					   int32_t dsize, char rdbId, bool pushRdbId );
 
 	bool addTag ( class Tag *tag );
-
-	//insert strings in their native encoding
-	bool encode( char *s, int32_t len, int32_t niceness = 0 ) {
-		return utf8Encode2( s, len, false, niceness );
-	}
 
 	bool utf8Encode2( char *s, int32_t len, bool htmlEncode = false, int32_t niceness = 0 );
 
@@ -235,10 +209,6 @@ public:
 
 	bool urlEncode( const char *s ) {
 		return urlEncode( s, strlen( s ), false, false );
-	}
-
-	bool urlEncode2( const char *s, bool encodeApostrophes ) { // usually false
-		return urlEncode ( s,strlen(s),false,encodeApostrophes);
 	}
 
 	bool  cdataEncode ( const char *s ) ;
@@ -270,7 +240,6 @@ public:
 	}
 
 
-	bool  pushPtr  ( void *ptr );
 	bool  pushLong (int32_t i);
 	bool  pushLongLong (int64_t i);
 	bool  pushFloat (float i);
@@ -284,18 +253,12 @@ public:
 	//useful for making lists.
 	bool  operator += (uint64_t i);
 	bool  operator += (int64_t i);
-	//bool  operator += (int32_t i);
-	//bool  operator += (uint32_t i);
-	bool  operator += (float i);
-	bool  operator += (double i);
 	bool  operator += (char i);
 
-	//bool  operator += (uint64_t i);
 	bool  operator += (uint32_t i);
 	bool  operator += (uint16_t i);
 	bool  operator += (uint8_t  i);
 
-	//bool  operator += (int64_t  i) { return *this += (uint64_t)i; }
 	bool  operator += (int32_t  i) { return *this += (uint32_t)i; }
 	bool  operator += (int16_t  i) { return *this += (uint16_t)i; }
 	bool  operator += (int8_t   i) { return *this += (uint8_t)i;  }

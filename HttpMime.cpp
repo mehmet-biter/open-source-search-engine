@@ -322,7 +322,8 @@ time_t atotime1 ( const char *s ) {
 	// now, convert to utc
 	//time_t utc  = time(NULL);
 	// get time here locally
-	//time_t here = localtime(&utc);
+	// struct tm tm_buf;
+	//time_t here = localtime_r(&utc,&tm_buf);
 	// what is the diff?
 	//int32_t delta = here - utc;
 	// modify our time to make it into utc
@@ -796,14 +797,15 @@ void HttpMime::makeMime  ( int32_t    totalContentLen    ,
 	else                   now = getTimeLocal();
 	// get the greenwhich mean time (GMT)
 	char ns[128];
-	struct tm *timeStruct = gmtime ( &now );
+	struct tm tm_buf;
+	struct tm *timeStruct = gmtime_r(&now,&tm_buf);
 	// Wed, 20 Mar 2002 16:47:30 GMT
 	strftime ( ns , 126 , "%a, %d %b %Y %T GMT" , timeStruct );
 	// if lastModified is 0 use now
 	if ( lastModified == 0 ) lastModified = now;
 	// convert lastModified greenwhich mean time (GMT)
 	char lms[128];
-	timeStruct = gmtime ( &lastModified );
+	timeStruct = gmtime_r(&lastModified,&tm_buf);
 	// Wed, 20 Mar 2002 16:47:30 GMT
 	strftime ( lms , 126 , "%a, %d %b %Y %T GMT" , timeStruct );
 	// . the pragma no cache string (used just for proxy servers?)
@@ -826,7 +828,7 @@ void HttpMime::makeMime  ( int32_t    totalContentLen    ,
 	// otherwise, expire tag: "Expires: Wed, 23 Dec 2001 10:23:01 GMT"
 	else {
 		time_t  expDate = now + cacheTime;
-		timeStruct = gmtime ( &expDate );
+		timeStruct = gmtime_r(&expDate,&tm_buf);
 		strftime ( tmp , 100 , "Expires: %a, %d %b %Y %T GMT\r\n", 
 			   timeStruct );
 		pns = tmp;

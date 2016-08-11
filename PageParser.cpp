@@ -1,11 +1,10 @@
-#include "gb-include.h"
-
 #include "PageParser.h"
+#include "XmlDoc.h"
+#include "Pages.h"
+#include "HttpRequest.h"
 #include "Process.h"
 
-//#include "IndexTable.h"
-//#include "IndexTable2.h"
-//#include "XmlDoc.h" // addCheckboxSpan()
+#define PP_NICENESS 2
 
 class State8 {
 public:
@@ -81,7 +80,6 @@ public:
 	XmlDoc m_xd;
 };
 
-bool g_inPageParser = false;
 bool g_inPageInject = false;
 
 // TODO: meta redirect tag to host if hostId not ours
@@ -196,10 +194,6 @@ static bool sendPageParser2 ( TcpSocket   *s ,
 	st->m_u               = NULL;
 	st->m_recompute       = false;
 	//st->m_url.reset();
-
-	// do not allow more than one to be launched at a time if in 
-	// a quickpoll. will cause quickpoll in quickpoll.
-	g_inPageParser = true;
 
 	// password, too
 	int32_t pwdLen = 0;
@@ -666,9 +660,6 @@ bool processLoop ( void *state ) {
 	//	xbuf->safePrintf ("<br><br><b>indexCode: %s</b>\n<br>", 
 	//			  mstrerror(st->m_indexCode));
 	//}
-
-	// we are done
-	g_inPageParser = false;
 
 	// print the final tail
 	//p += g_httpServer.printTail ( p , pend - p );

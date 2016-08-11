@@ -11,6 +11,7 @@
 #include "RdbDump.h"
 #include "RdbBuckets.h"
 #include "RdbIndex.h"
+#include "Hostdb.h"
 
 bool makeTrashDir() ;
 

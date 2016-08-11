@@ -5,6 +5,9 @@
 #include "SafeBuf.h" 
 #include "Msg1f.h"
 #include "Parms.h"
+#include "max_hosts.h"
+#include "Hostdb.h"
+#include "UdpSlot.h"
 
 static void gotRemoteLogWrapper(void *state, UdpSlot *slot);
 

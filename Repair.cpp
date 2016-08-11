@@ -1928,8 +1928,6 @@ bool Repair::printRepairStatus ( SafeBuf *sb , int32_t fromIp ) {
 }
 
 static bool   s_savingAll = false;
-static void (*s_saveCallback)(void *state) ;
-static void  *s_saveState;
 
 // . return false if blocked, true otherwise
 // . will call the callback when all have been saved
@@ -1987,6 +1985,4 @@ void doneSavingRdb ( void *state ) {
 	if ( ! anyRdbNeedsSave() ) return;
 	// all done
 	s_savingAll = false;
-	// call callback
-	if ( s_saveCallback ) s_saveCallback ( s_saveState );
 }

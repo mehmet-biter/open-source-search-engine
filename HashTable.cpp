@@ -3,7 +3,7 @@
 #include "HashTable.h"
 #include "BitOperations.h"
 #include "File.h"
-#include "Process.h"
+#include "Sanity.h"
 
 
 HashTable::HashTable () {
@@ -76,7 +76,7 @@ int32_t HashTable::getValue ( int32_t key ) {
 // . adds scores if termId already exists in table
 bool HashTable::addKey ( int32_t key , int32_t value , int32_t *slot ) {
 	// keys of 0 mean empty! they are reserved... fix that!
-	if ( key == 0 ) { g_process.shutdownAbort(true); }
+	if ( key == 0 ) gbshutdownLogicError();
 	// check to see if we should grow the table
 	if ( 100 * m_numSlotsUsed >= m_numSlots * 90 ) {
 		int32_t growTo = (m_numSlots * 120 ) / 100  + 20;
@@ -136,7 +136,7 @@ void HashTable::removeSlot ( int32_t n ) {
 	//if ( n < 0 ) return true;
 	int32_t key = m_keys[n];
 	// sanity check, must not be empty
-	if ( key == 0 ) { g_process.shutdownAbort(true); }
+	if ( key == 0 ) gbshutdownLogicError();
 	// delete it
 	m_keys[n] = 0;
 	m_numSlotsUsed--;
@@ -164,11 +164,11 @@ bool HashTable::setTableSize ( int32_t oldn , char *buf , int32_t bufSize ) {
 	// do not go negative on me
 	if ( oldn == 0 ) n = 0;
 	// sanity check
-	if ( n < oldn ) { g_process.shutdownAbort(true); }
+	if ( n < oldn ) gbshutdownLogicError();
 	// do we have a buf?
 	int32_t need = 2 * n * sizeof(int32_t);
 	// sanity check, buf should also meet what we need
-	if ( buf && bufSize < need ) { g_process.shutdownAbort(true); }
+	if ( buf && bufSize < need ) gbshutdownLogicError();
 	// set the buf
 	int32_t *newKeys ;
 	int32_t *newVals ;

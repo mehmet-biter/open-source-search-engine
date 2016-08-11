@@ -2,6 +2,7 @@
 
 #include "Stats.h"
 #include "Pages.h"
+#include "Hostdb.h"
 
 // . returns false if blocked, true otherwise
 // . sets errno on error

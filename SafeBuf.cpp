@@ -152,21 +152,6 @@ bool SafeBuf::safeMemcpy_nospaces(const char *s, int32_t len) {
 }
 
 
-bool SafeBuf::safeMemcpy ( const Words *w, int32_t a, int32_t b ) {
-	const char *p    = w->getWord(a);
-	const char *pend = w->getWord(b-1) + w->getWordLen(b-1);
-	return safeMemcpy ( p , pend - p );
-}
-
-bool SafeBuf::pushPtr ( void *ptr ) {
-	if ( m_length + (int32_t)sizeof(char *) > m_capacity ) 
-		if(!reserve(sizeof(char *)))//2*m_capacity + 1))
-			return false;
-	*(char **)(m_buf+m_length) = (char *)ptr;
-	m_length += sizeof(char *);
-	return true;
-}
-
 bool SafeBuf::pushLong ( int32_t i) {
 	if ( m_length + 4 > m_capacity ) 
 		if(!reserve(4))//2*m_capacity + 1))
@@ -426,14 +411,6 @@ int32_t SafeBuf::fillFromFile(const char *filename) {
 	return numRead;
 }
 
-// a special replace
-bool SafeBuf::insert ( const SafeBuf *c , int32_t insertPos ) {
-	return safeReplace ( c->getBufStart() ,
-			     c->length()      ,
-			     insertPos        ,
-			     0                );
-}
-
 bool SafeBuf::insert ( const char *s, int32_t insertPos ) {
 	return safeReplace ( s         ,
 			     strlen(s) ,
@@ -503,16 +480,6 @@ bool SafeBuf::safeReplace ( const char *s, int32_t len, int32_t pos, int32_t rep
 	m_length = newLen;
 	// silent terminating \0
 	m_buf[m_length] = '\0';
-	return true;
-}
-
-bool SafeBuf::safeReplace3 ( const char *s, const char *t, int32_t niceness ) {
-	if ( ! safeReplace2 ( s , strlen(s) ,
-			      t , strlen(t) ,
-			      niceness ) )
-		return false;
-	if ( ! nullTerm() ) 
-		return false;
 	return true;
 }
 
@@ -887,14 +854,6 @@ bool SafeBuf::operator += (int64_t i) {
 	return safeMemcpy((char*)&i, sizeof(int64_t));
 }
 
-bool SafeBuf::operator += (float i) {
-	return safeMemcpy((char*)&i, sizeof(float));
-}
-
-bool SafeBuf::operator += (double i) {
-	return safeMemcpy((char*)&i, sizeof(double));
-}
-
 bool SafeBuf::operator += (char c) {
 	return safeMemcpy((char*)&c, sizeof(char));
 }
@@ -918,76 +877,6 @@ bool SafeBuf::operator += (uint8_t i) {
 
 char& SafeBuf::operator[](int32_t i) {
 	return m_buf[i];
-}
-
-// . filter out tags and line breaks and extra spaces or whatever
-// . used for printing sentences from XmlDoc::printEventSentences()
-bool SafeBuf::safePrintFilterTagsAndLines ( char *p , int32_t plen ,
-					    bool oneWordPerLine ) {
-
-	// prealloc -- also for terminating \0
-	if ( ! reserve ( plen + 1 ) ) return false;
-
-	// write into here
-	char *dst = m_buf + m_length;
-
-	char *pend = p + plen;
-	char size;
-
-	// set this to true so we do not lead with a space
-	bool lastWasSpace = true;
-	for ( ; p < pend ; p += size ) {
-		// get size
-		size = getUtf8CharSize(p);
-		// if a tag, then skip till '>' (assume no comment
-		// tags are in here!)
-		if ( *p == '<' ) {
-			// count # of lost chars
-			int32_t count = 0;
-			//char *pstart = p;
-			for ( ; p < pend && *p != '>' ; p++ ) count++;
-			// add a space to represent the tag
-			if ( oneWordPerLine ) *dst++ = '\n';
-			else                  *dst++ = ' ';
-			lastWasSpace = true;
-			continue;
-		}
-		// if we are space, write a simple space
-		if ( is_wspace_utf8 ( p ) ) {
-			// no back to back spaces
-			if ( lastWasSpace ) continue;
-			if ( oneWordPerLine ) *dst++ = '\n';
-			else                  *dst++ = ' ';
-			lastWasSpace = true;
-			continue;
-		}
-		// punct to space
-		if ( oneWordPerLine &&
-		     is_punct_utf8 ( p ) ) {
-			// no back to back spaces
-			if ( lastWasSpace ) continue;
-			*dst++ = '\n';
-			lastWasSpace = true;
-			continue;
-		}
-
-		// not a space
-		lastWasSpace = false;
-		// . copy the char if not a tag char
-		// . if only 1 byte, done
-		if ( size == 1 ) { *dst++ = *p; continue; }
-		// might consist of multiple bytes in utf8
-		gbmemcpy ( dst , p , size );
-		dst += size;
-	}
-	
-	// update length now
-	m_length = dst - m_buf;
-	// this should not hurt anything
-	m_buf[m_length] = '\0';
-	// null term for printing
-	//m_buf[m_length++] = '\0';
-	return true;
 }
 
 #include "Tagdb.h"
@@ -1438,17 +1327,6 @@ bool SafeBuf::safeTruncateEllipsis ( const char *src , int32_t srcLen , int32_t 
 
 #include "sort.h"
 
-static int int32_tcmp4 ( const void *a, const void *b ) { 
-	if ( *(int32_t *)a > *(int32_t *)b ) return  1; // swap
-	if ( *(int32_t *)a < *(int32_t *)b ) return -1;
-	return 0;
-}
-
-void SafeBuf::sortLongs( int32_t niceness ) {
-	int32_t np = m_length / 4;
-	gbqsort ( m_buf , np , 4 , int32_tcmp4 , niceness );
-}
-
 bool SafeBuf::htmlDecode ( const char *src,
 			   int32_t srcLen,
 			   bool doSpecial ,
@@ -1476,43 +1354,6 @@ void SafeBuf::replaceChar ( char src , char dst ) {
 	for ( ; px < pxEnd ; px++ ) if ( *px == src ) *px = dst;
 }
 
-
-// encode a double quote char to two double quote chars
-bool SafeBuf::csvEncode ( const char *s , int32_t len , int32_t niceness ) {
-
-	if ( ! s ) return true;
-
-	// assume all chars are double quotes and will have to be encoded
-	int32_t need = len * 2 + 1;
-	if ( ! reserve ( need ) ) return false;
-
-	// tmp vars
-	char *dst  = m_buf + m_length;
-	//char *dstEnd = m_buf + m_capacity;
-
-	// scan through all 
-	const char *send = s + len;
-	for ( ; s < send ; s++ ) {
-		// convert it?
-		if ( *s == '\"' ) {
-			*dst++ = '\"';
-			*dst++ = '\"';
-			continue;
-		}
-		//if ( *s == '\\' ) {
-		//	*dst++ = '\\';
-		//	*dst++ = '\\';
-		//	continue;
-		//}
-		*dst++ = *s;
-	}
-
-	m_length += dst - (m_buf + m_length);
-
-	nullTerm();
-
-	return true;
-}
 
 bool SafeBuf::base64Encode ( const char *sx , int32_t len , int32_t niceness ) {
 
@@ -1721,7 +1562,8 @@ bool SafeBuf::printTimeAgo ( int32_t ago , int32_t now , bool shorthand ) {
 
 	if ( ! printed && ago > 0 ) { // && si->m_isMasterAdmin ) {
 		time_t ts = now - ago;
-		struct tm *timeStruct = localtime ( &ts );
+		struct tm tm_buf;
+		struct tm *timeStruct = localtime_r(&ts,&tm_buf);
 		char tmp[100];
 		strftime(tmp,100,"%b %d %Y",timeStruct);
 		safeStrcpy(tmp);

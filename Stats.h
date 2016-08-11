@@ -18,7 +18,6 @@ class StatPoint {
 	int64_t   m_startTime ;
 	int64_t   m_endTime   ;
 	int         m_color     ;
-	char        m_rdbId     ; 
 	char        m_type      ;
 };
 
@@ -152,11 +151,11 @@ class Stats {
 	int32_t m_totalOverflows;
 
 	// used by msg39
-	int32_t m_recomputeCacheMissess;
+	//int32_t m_recomputeCacheMissess;
 	// if the msg3a advances to the next tier, of course, it will be
 	// a cache miss, so don't count those, they are justified 
 	// recomputeCacheMisses
-	int32_t m_icacheTierJumps;
+	//int32_t m_icacheTierJumps;
 
 	int32_t m_compressedBytesIn;
 	int32_t m_uncompressedBytesIn;
@@ -192,8 +191,8 @@ class Stats {
 	int64_t m_compressBadCTypeBytesOut;
 
 	int64_t m_compressHasIframeDocs;
-	int64_t m_compressHasIframeBytesIn;
-	int64_t m_compressHasIframeBytesOut;
+	//int64_t m_compressHasIframeBytesIn;
+	//int64_t m_compressHasIframeBytesOut;
 
 	int64_t m_compressPlainLinkDocs;
 	int64_t m_compressPlainLinkBytesIn;

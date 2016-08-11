@@ -123,7 +123,8 @@ void BigFile::logAllData(int32_t log_type)
 {
 	log(log_type, "Dumping BigFile at %p", (void*)this);
 
-	struct tm *stm = localtime(&m_lastModified);
+	struct tm tm_buf;
+	struct tm *stm = localtime_r(&m_lastModified,&tm_buf);
 	
 	log(log_type, "m_flags................: %" PRId32, m_flags);
 	log(log_type, "m_maxParts.............: %" PRId32, m_maxParts);

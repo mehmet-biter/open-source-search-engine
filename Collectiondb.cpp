@@ -17,7 +17,7 @@
 #include "Repair.h"
 #include "Parms.h"
 #include "Process.h"
-
+#include <sys/stat.h> //mkdir()
 
 static HashTableX g_collTable;
 

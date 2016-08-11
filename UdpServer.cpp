@@ -10,6 +10,7 @@
 #include "IPAddressChecks.h"
 #include "BitOperations.h"
 #include "Msg0.h" //RDBIDOFFSET
+#include "Rdb.h" //RDB_...
 #include "max_niceness.h"
 
 // . any changes made to the slots should only be done without risk of

@@ -27,7 +27,6 @@ Msg0::Msg0 ( ) {
 void Msg0::constructor ( ) {
 	m_msg5  = NULL;
 	m_mcast.constructor();
-	m_mcasts      = NULL;
 	m_numRequests = 0;
 	m_numReplies  = 0;
 	//m_numSplit    = 1;
@@ -52,10 +51,6 @@ void Msg0::reset ( ) {
 		mfree ( m_replyBuf, m_replyBufSize, "Msg0" );
 	m_replyBuf = NULL;
 	m_replyBufSize = 0;
-	if ( m_mcasts ) {
-		mfree(m_mcasts,sizeof(Multicast),"msg0mcast");
-		m_mcasts = NULL;
-	}
 }
 
 bool Msg0::registerHandler ( ) {
@@ -331,8 +326,6 @@ skip:
 	//   no, not anymore, we commented out that request peeking code
 	char *p = m_request;
 	*(int64_t *) p = syncPoint        ; p += 8;
-	//*(key_t     *) p = m_startKey       ; p += sizeof(key_t);
-	//*(key_t     *) p = m_endKey         ; p += sizeof(key_t);
 	*(int32_t      *) p = m_minRecSizes    ; p += 4;
 	*(int32_t      *) p = startFileNum     ; p += 4;
 	*(int32_t      *) p = numFiles         ; p += 4;

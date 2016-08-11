@@ -40,15 +40,15 @@ class Mem {
 	// this one does not include new/delete mem, only *alloc()/free() mem
 	int64_t getUsedMem() const;
 	// the max mem ever alloced
-	int64_t getMaxAlloced() { return m_maxAlloced; }
-	int64_t getMaxAlloc  () { return m_maxAlloc; }
-	const char *getMaxAllocBy() { return m_maxAllocBy; }
+	int64_t getMaxAlloced() const { return m_maxAlloced; }
+	int64_t getMaxAlloc  () const { return m_maxAlloc; }
+	const char *getMaxAllocBy() const { return m_maxAllocBy; }
 	// the max mem we can use!
-	int64_t getMaxMem () ;
+	int64_t getMaxMem() const;
 
-	int32_t getNumAllocated() { return m_numAllocated; }
+	int32_t getNumAllocated() const { return m_numAllocated; }
 
-	int64_t getNumTotalAllocated() { return m_numTotalAllocated; }
+	int64_t getNumTotalAllocated() const { return m_numTotalAllocated; }
 	
 	float getUsedMemPercentage() const;
 	int32_t getOOMCount() const { return m_outOfMems; }
@@ -59,15 +59,12 @@ class Mem {
 	void incrementOOMCount() { m_outOfMems++; }
 
 	// who underan/overran their buffers?
-	int  printBreech   ( int32_t i ) ;
 	int  printBreeches () ;
 	// print mem usage stats
 	int  printMem      ( ) ;
 	void addMem ( void *mem , int32_t size , const char *note, char isnew);
 	bool rmMem  ( void *mem , int32_t size , const char *note ) ;
 	bool lblMem ( void *mem , int32_t size , const char *note );
-
-	int32_t getMemSlot  ( void *mem );
 
 	void addnew ( void *ptr , int32_t size , const char *note ) ;
 	void delnew ( void *ptr , int32_t size , const char *note ) ;
@@ -81,6 +78,8 @@ class Mem {
 	const char *m_maxAllocBy; // the biggest single alloc ever done
 
 private:
+	int32_t getMemSlot(void *mem);
+
 	// currently used mem (estimate)
 	int64_t m_used;
 
@@ -92,6 +91,7 @@ private:
 	uint32_t m_memtablesize;
 
 	int printBreeches_unlocked();
+	int printBreech(int32_t i);
 };
 
 extern class Mem g_mem;

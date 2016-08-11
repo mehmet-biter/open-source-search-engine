@@ -245,8 +245,8 @@ void sendReply ( void *state ) {
 	char startTimeStr[30];
 	char endTimeStr[30];
 
-	strncpy( startTimeStr, ctime( &st->m_startDate ), 30 );
-	strncpy( endTimeStr, ctime( &st->m_endDate ), 30 );
+	ctime_r(&st->m_startDate,startTimeStr);
+	ctime_r(&st->m_endDate,endTimeStr);
 
 	buf.safePrintf(
 		       "<b>Graph of various query performance statistics.</b>"
@@ -277,7 +277,9 @@ void sendReply ( void *state ) {
 void writeControls ( SafeBuf *buf, StateStatsdb *st ) {
 
 	// Print the controls.
+	struct tm tm_buf;
 	struct tm *tmBuild;
+
 	buf->safePrintf (
 		"<div id=\"control\">\n"
 		"<div id=\"controls\" class=\"show\">\n"
@@ -305,7 +307,7 @@ void writeControls ( SafeBuf *buf, StateStatsdb *st ) {
 		st->m_samples
 	);
 
-	tmBuild = localtime( &st->m_startDate );
+	tmBuild = localtime_r(&st->m_startDate,&tm_buf);
 	buf->safePrintf ( 
 		"<input type=\"text\" name=\"sdate\" id=\"s_date_field\" "
 		"value=\"%02d/%02d/%04d %02d:%02d\" />\n",
@@ -398,7 +400,7 @@ void writeControls ( SafeBuf *buf, StateStatsdb *st ) {
 		//st->m_datePeriod
 	);
 
-	tmBuild = localtime( &st->m_endDate );
+	tmBuild = localtime_r(&st->m_endDate,&tm_buf);
 	buf->safePrintf (
 		"<input type=\"text\" name=\"edate\" id=\"e_date_field\" "
 		"value=\"%02d/%02d/%04d %02d:%02d\" />\n",

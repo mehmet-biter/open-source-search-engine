@@ -35,6 +35,7 @@
 #include "Parms.h"
 #include "Rebalance.h"
 #include "PageInject.h" //getInjectHead()
+#include "PingServer.h"
 #include <list>
 
 void testWinnerTreeKey ( ) ;
@@ -93,7 +94,8 @@ int32_t SpiderRequest::print ( SafeBuf *sbarg ) {
 	char time[256];
 
 	time_t ts = (time_t)m_addedTime;
-	timeStruct = gmtime ( &ts );
+	struct tm tm_buf;
+	timeStruct = gmtime_r(&ts,&tm_buf);
 	strftime ( time , 256 , "%b %e %T %Y UTC", timeStruct );
 	sb->safePrintf("addedTime=%s(%" PRIu32") ",time,(uint32_t)m_addedTime );
 
@@ -101,12 +103,12 @@ int32_t SpiderRequest::print ( SafeBuf *sbarg ) {
 
 	sb->safePrintf("hopCount=%" PRId32" ",(int32_t)m_hopCount );
 
-	//timeStruct = gmtime ( &m_spiderTime );
+	//timeStruct = gmtime_r( &m_spiderTime );
 	//time[0] = 0;
 	//if ( m_spiderTime ) strftime (time,256,"%b %e %T %Y UTC",timeStruct);
 	//sb->safePrintf("spiderTime=%s(%" PRIu32") ",time,m_spiderTime);
 
-	//timeStruct = gmtime ( &m_pubDate );
+	//timeStruct = gmtime_r( &m_pubDate );
 	//time[0] = 0;
 	//if ( m_pubDate ) strftime (time,256,"%b %e %T %Y UTC",timeStruct);
 	//sb->safePrintf("pubDate=%s(%" PRIu32") ",time,m_pubDate );
@@ -191,7 +193,8 @@ int32_t SpiderReply::print ( SafeBuf *sbarg ) {
 	struct tm *timeStruct ;
 	char time[256];
 	time_t ts = (time_t)m_spideredTime;
-	timeStruct = gmtime ( &ts );
+	struct tm tm_buf;
+	timeStruct = gmtime_r(&ts,&tm_buf);
 	time[0] = 0;
 	if ( m_spideredTime ) strftime (time,256,"%b %e %T %Y UTC",timeStruct);
 	sb->safePrintf("spideredTime=%s(%" PRIu32") ",time,
@@ -200,7 +203,7 @@ int32_t SpiderReply::print ( SafeBuf *sbarg ) {
 	sb->safePrintf("siteNumInlinks=%" PRId32" ",m_siteNumInlinks );
 
 	time_t ts2 = (time_t)m_pubDate;
-	timeStruct = gmtime ( &ts2 );
+	timeStruct = gmtime_r(&ts2,&tm_buf);
 	time[0] = 0;
 	if ( m_pubDate != 0 && m_pubDate != -1 ) 
 		strftime (time,256,"%b %e %T %Y UTC",timeStruct);
@@ -287,12 +290,13 @@ int32_t SpiderRequest::printToTable ( SafeBuf *sb , const char *status ,
 	char time[256];
 
 	time_t ts3 = (time_t)m_addedTime;
-	timeStruct = gmtime ( &ts3 );
+	struct tm tm_buf;
+	timeStruct = gmtime_r(&ts3,&tm_buf);
 	strftime ( time , 256 , "%b %e %T %Y UTC", timeStruct );
 	sb->safePrintf(" <td><nobr>%s(%" PRIu32")</nobr></td>\n",time,
 		       (uint32_t)m_addedTime);
 
-	//timeStruct = gmtime ( &m_pubDate );
+	//timeStruct = gmtime_r( &m_pubDate );
 	//time[0] = 0;
 	//if ( m_pubDate ) strftime (time,256,"%b %e %T %Y UTC",timeStruct);
 	//sb->safePrintf(" <td>%s(%" PRIu32")</td>\n",time,m_pubDate );
@@ -404,7 +408,8 @@ int32_t SpiderRequest::printToTableSimple ( SafeBuf *sb , const char *status ,
 	char time[256];
 
 	time_t ts4 = (time_t)m_addedTime;
-	timeStruct = gmtime ( &ts4 );
+	struct tm tm_buf;
+	timeStruct = gmtime_r(&ts4,&tm_buf);
 	strftime ( time , 256 , "%b %e %T %Y UTC", timeStruct );
 	sb->safePrintf(" <td><nobr>%s(%" PRIu32")</nobr></td>\n",time,
 		       (uint32_t)m_addedTime);
@@ -1501,7 +1506,8 @@ bool sendPage ( State11 *st ) {
 	time_t nowUTC = getTimeGlobal();
 	struct tm *timeStruct ;
 	char time[256];
-	timeStruct = gmtime ( &nowUTC );
+	struct tm tm_buf;
+	timeStruct = gmtime_r(&nowUTC,&tm_buf);
 	strftime ( time , 256 , "%b %e %T %Y UTC", timeStruct );
 	sb.safePrintf("</b>" //  (current time = %s = %" PRIu32") "
 		      "</td></tr>\n" 

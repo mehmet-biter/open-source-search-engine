@@ -19,13 +19,7 @@
 
 #define MAX_FILENAME_LEN 128
 
-#include <sys/types.h>       // for open/lseek
-#include <sys/stat.h>        // for open
 #include <fcntl.h>           // for open
-#include <sys/stat.h>        // for stat
-#include "Mem.h"             // for g_mem
-#include "Loop.h"            // for g_loop.setNonBlocking(int fd)
-#include "SafeBuf.h"
 #include <pthread.h>
 
 

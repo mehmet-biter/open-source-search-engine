@@ -333,7 +333,7 @@ static float getDiskUsage ( int64_t *diskAvail ) {
 	return (s.f_blocks-s.f_bavail)*100.0/s.f_blocks;
 }
 
-void diskUsageWrapper(int fd, void *state) {
+void diskUsageWrapper(int /*fd*/, void * /*state*/) {
 	// skip if exiting
 	if ( g_process.m_mode == EXIT_MODE ) {
 		return;
@@ -346,7 +346,7 @@ void Process::callHeartbeat () {
 	heartbeatWrapper ( 0 , NULL );
 }
 
-void heartbeatWrapper ( int fd , void *state ) {
+void heartbeatWrapper(int /*fd*/, void * /*state*/) {
 	static int64_t s_last = 0LL;
 	int64_t now = gettimeofdayInMilliseconds();
 	if ( s_last == 0LL ) {
@@ -386,7 +386,7 @@ int64_t Process::getTotalDocsIndexed() {
 	return m_totalDocsIndexed;
 }
 
-void processSleepWrapper ( int fd , void *state ) {
+void processSleepWrapper(int /*fd*/, void * /*state*/) {
 
 	if ( g_process.m_mode == EXIT_MODE ) {
 		g_process.shutdown2();
@@ -950,7 +950,7 @@ bool Process::saveRdbTrees ( bool useThread , bool shuttingDown ) {
 		}
 
 		// note it
-		if ( ! rdb->m_dbname || ! rdb->m_dbname[0] ) {
+		if ( ! rdb->m_dbname[0] ) {
 			log( "gb: calling save tree for rdbid %i", ( int ) rdb->m_rdbId );
 		} else {
 			log( "gb: calling save tree for %s", rdb->m_dbname );
@@ -1163,98 +1163,12 @@ void Process::resetPageCaches ( ) {
 }
 
 // ============================================================================
-// load average shedding via /proc/loadavg and an async BigFile
-typedef struct {
-	char		buf[20];		// read buffer
-	double		load_average;		// last parsed load avg.
-	int64_t		time_req;		// time of last parse
-	int64_t		time_parse;
-	bool		waiting;		// waiting on async result?
-	bool		closing;		// shutting down...
-	BigFile		bigfile;
-	FileState	filestate;
-} loadavg_state;
-
-static loadavg_state		s_st_lavg;
-/*
-static void loadavg_callback(loadavg_state* state) {
-	if (state == NULL)
-		return;
-	if (s_st_lavg.closing)
-		return;
-	// MDW: stop doing it for now, it is not accurate
-	state->load_average = 0.00;
-	return;
-	if (s_st_lavg.filestate.m_errno != 0) {
-		// do not thrash!
-		// leave time_req alone so next open will occur in 5 seconds...
-		// do not deadlock!
-		// set load_average=0 until file can be successfully re-read.
-		s_st_lavg.load_average = 0.0;
-		s_st_lavg.bigfile.close();
-		s_st_lavg.bigfile.setNonBlocking();
-		s_st_lavg.bigfile.open(O_RDONLY);
-		log(LOG_INFO, "build: errno %" PRId32" reading /proc/loadavg",
-			s_st_lavg.filestate.m_errno);
-		s_st_lavg.filestate.m_errno = 0;
-		return;
-	}
-	state->time_parse = gettimeofdayInMilliseconds();
-	state->waiting = false;
-	state->load_average = atof(state->buf);
-	log(LOG_DEBUG, "build: loadavg currently: %.2f latency %lld ms",
-		state->load_average, state->time_parse - state->time_req);
-}
-*/
-
-static loadavg_state*		s_state_ptr	=	NULL;
-/*
-static void update_load_average(int64_t now) {
-	// initialize loadavg collection...
-	if (s_state_ptr == NULL) {
-		s_st_lavg.load_average = 0.0;
-		s_st_lavg.time_req = 0;
-		s_st_lavg.time_parse = 0;
-		s_st_lavg.waiting = false;
-		s_st_lavg.closing = false;
-		s_st_lavg.bigfile.set("/proc", "loadavg");
-		s_st_lavg.bigfile.setNonBlocking();
-		s_st_lavg.bigfile.open(O_RDONLY);
-		s_state_ptr = &s_st_lavg;
-	}
-	if (s_st_lavg.closing)
-		return;
-	if (s_st_lavg.waiting)
-		return;
-	// the 2.4 kernel updates /proc/loadavg on a 5-second interval
-	if (s_st_lavg.waiting == false && now - s_st_lavg.time_req < (5 * 1000))
-		return;
-
-	s_st_lavg.time_req = now;
-	s_st_lavg.waiting = true;
-	s_st_lavg.filestate.m_errno = 0;
-	if (!s_st_lavg.bigfile.read(	s_st_lavg.buf,
-					sizeof(s_st_lavg.buf),
-					0,
-					&s_st_lavg.filestate))
-		return;
-	// if we did not block (as is normal for _this_ file), then
-	// call callback directly and update state struct.
-	loadavg_callback(s_state_ptr);
-	return;
-}
-*/
-
 double Process::getLoadAvg() {
-	return s_st_lavg.load_average;
+	//todo: obtain load averages from /proc/loadavg
+	//(original code was disabled)
+	return 0.0;
 }
-void Process::resetLoadAvg() {
-	if (s_state_ptr == NULL)
-		return;
-	s_st_lavg.closing = true;
-	s_state_ptr = NULL;
-	s_st_lavg.bigfile.close();
-}
+
 //
 // ============================================================================
 

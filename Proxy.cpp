@@ -4,7 +4,12 @@
 #include "Statsdb.h"
 #include "Process.h"
 #include "Msg13.h"
-#include "XmlDoc.h"
+#include "XmlDoc.h" //gbuncompress()
+#include "HttpServer.h"
+#include "Pages.h"
+#include "HttpRequest.h"
+#include "Stats.h"
+#include "PingServer.h"
 
 Proxy g_proxy;
 
@@ -855,7 +860,8 @@ void Proxy::printRequest(TcpSocket *s, HttpRequest *r,
 
 	// get time format: 7/23/1971 10:45:32
 	time_t tt = getTimeLocal();
-	struct tm *timeStruct = localtime ( &tt );
+	struct tm tm_buf;
+	struct tm *timeStruct = localtime_r(&tt,&tm_buf);
 	char bufTime[64];
 	strftime ( bufTime , 63 , "%b %d %T", timeStruct);
 	//char *ref = r->getReferer ();

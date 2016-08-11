@@ -15,6 +15,7 @@
 #include "Rebalance.h"
 #include "JobScheduler.h"
 #include "Process.h"
+#include <sys/stat.h> //mkdir()
 
 // how many rdbs are in "urgent merge" mode?
 int32_t g_numUrgentMerges = 0;
@@ -48,8 +49,11 @@ void RdbBase::reset ( ) {
 		delete (m_files[i]);
 		mdelete ( m_maps[i] , sizeof(RdbMap),"RdbBMap");
 		delete (m_maps[i]);
-		mdelete ( m_indexes[i] , sizeof(RdbIndex),"RdbBIndex");
-		delete (m_indexes[i]);
+
+		if( m_useIndexFile ) {
+			mdelete ( m_indexes[i] , sizeof(RdbIndex),"RdbBIndex");
+			delete (m_indexes[i]);
+		}
 	}
 	m_numFiles  = 0;
 	m_files [ m_numFiles ] = NULL;

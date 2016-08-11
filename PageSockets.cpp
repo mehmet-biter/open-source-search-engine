@@ -7,6 +7,7 @@
 #include "Dns.h"
 #include "SafeBuf.h"
 #include "Msg13.h"
+#include "Msg0.h"
 
 static void printTcpTable  (SafeBuf *p, const char *title, TcpServer *server);
 static void printUdpTable  (SafeBuf *p, const char *title, UdpServer *server,
@@ -39,10 +40,8 @@ bool sendPageSockets ( TcpSocket *s , HttpRequest *r ) {
 	// now print out the sockets table for each tcp server we have
 	printTcpTable(&p,"HTTP Server"    ,g_httpServer.getTcp());
 	printTcpTable(&p,"HTTPS Server"    ,g_httpServer.getSSLTcp());
-	printUdpTable(&p,"Udp Server" , &g_udpServer,coll,s->m_ip);
-	//printUdpTable(&p,"Udp Server(async)",&g_udpServer2,coll,s->m_ip);
-	printUdpTable(&p,"Udp Server (dns)", &g_dns.m_udpServer,
-		      coll,s->m_ip,true/*isDns?*/);
+	printUdpTable(&p, "Udp Server", &g_udpServer, coll, s->m_ip);
+	printUdpTable(&p, "Udp Server (dns)", &g_dns.m_udpServer, coll, s->m_ip, true);
 
 	// from msg13.cpp print the queued url download requests
 	printHammerQueueTable ( &p );
@@ -203,15 +202,14 @@ void printTcpTable ( SafeBuf* p, const char *title, TcpServer *server ) {
 	p->safePrintf ("</table><br>\n" );
 }
 
-void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
-		     const char *coll, int32_t fromIp ,
-		     bool isDns ) {
-	if ( ! coll ) coll = "main";
+void printUdpTable(SafeBuf *p, const char *title, UdpServer *server, const char *coll, int32_t fromIp, bool isDns) {
+	if (!coll) {
+		coll = "main";
+	}
 
 	// time now
 	int64_t now = gettimeofdayInMilliseconds();
-	// get # of used nodes
-	//int32_t n = server->getTopUsedSlot();
+
 	// store in buffer for sorting
 	int32_t     times[50000];//MAX_UDP_SLOTS];
 	UdpSlot *slots[50000];//MAX_UDP_SLOTS];
@@ -221,12 +219,6 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 			log("admin: Too many udp sockets.");
 			break;
 		}
-		// if empty skip it
-		//if ( server->isEmpty ( i ) ) continue;
-		// get the UdpSlot
-		//UdpSlot *s = server->getUdpSlotNum(i);
-		// if data is NULL that's an error
-		//if ( ! s ) continue;
 		// store it
 		times[nn] = now - s->getStartTime();
 		slots[nn] = s;
@@ -259,9 +251,7 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 			msgCount1[s->getMsgType()]++;
 	}
 
-	const char *wr = "";
-	if ( server->m_writeRegistered )
-		wr = " [write registered]";
+	const char *wr = server->getWriteRegistered() ? " [write registered]" : "";
 
 	// print the counts
 	p->safePrintf ( "<table %s>"
@@ -292,24 +282,12 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 	}
 	p->safePrintf ( "</table><br>" );
 
-	const char *dd = "";
-	if ( ! isDns ) 
-		dd =    "<td><b>msgType</td>"
-			"<td><b>desc</td>"
-			"<td><b>hostId</td>";
-	else {
-		dd = //"<td><b>dns ip</b></td>"
-		     "<td><b>hostname</b></td>";
-	}
-
+	const char *dd = isDns ? "<td><b>hostname</b></td>" : "<td><b>msgType</td><td><b>desc</td><td><b>hostId</td>";
 	p->safePrintf ( "<table %s>"
 			"<tr class=hdrow><td colspan=19>"
 			"<center>"
-			//"<font size=+1>"
 			"<b>%s</b> (%" PRId32" transactions)"
-			//"(%" PRId32" requests waiting to processed)"
 			"(%" PRId32" incoming)"
-			//"</font>"
 			"</td></tr>"
 			"<tr bgcolor=#%s>"
 			"<td><b>age</td>"
@@ -317,10 +295,6 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 			"<td><b>last send</td>"
 			"<td><b>timeout</td>"
 			"<td><b>ip</td>"
-			//"<td><b>port</td>"
-			//"<td><b>desc</td>"
-			//"<td><b>hostId</td>"
-			//"<td><b>nice</td>";
 			"%s"
 			"<td><b>nice</td>"
 			"<td><b>transId</td>"
@@ -335,7 +309,6 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 			"</tr>\n" , 
 			TABLE_STYLE,
 			title , server->getNumUsedSlots() , 
-			//callbackReadyCount ,
 			server->getNumUsedSlotsIncoming() ,
 			DARK_BLUE ,
 			dd );
@@ -345,10 +318,6 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 	for ( int32_t i = 0 ; i < nn ; i++ ) {
 		// get from sorted list
 		UdpSlot *s = slots[i];
-		// set socket state
-		//char *st = "ERROR";
-		//if ( ! s->isDoneReading() ) st = "reading";
-		//if ( ! s->isDoneSending() ) st = "reading";
 		// times
 		int64_t elapsed0 = (now - s->getStartTime()    ) ;
 		int64_t elapsed1 = (now - s->getLastReadTime() ) ;
@@ -360,58 +329,80 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 		if ( s->getStartTime()    == 0LL ) strcpy ( e0 , "--" );
 		if ( s->getLastReadTime() == 0LL ) strcpy ( e1 , "--" );
 		if ( s->getLastSendTime() == 0LL ) strcpy ( e2 , "--" );
-		// bgcolor is lighter for incoming requests
-		const char *bg = LIGHT_BLUE;//"c0c0f0";
-		// is it incoming
-		if ( ! s->hasCallback() ) bg = LIGHTER_BLUE;//"e8e8ff";
-		Host *h = g_hostdb.getHost ( s->getIp() , s->getPort() );
-		const char           *eip     = "??";
-		uint16_t  eport   =  0 ;
-		//int32_t          ehostId = -1 ;
-		const char           *ehostId = "-1";
-		//char tmpIp    [64];
-		// print the ip
 
+		// bgcolor is lighter for incoming requests
+		const char *bg = s->hasCallback() ? LIGHT_BLUE : LIGHTER_BLUE;
+		Host *h = g_hostdb.getHost(s->getIp(), s->getPort());
+		const char *eip = "??";
+		uint16_t eport = 0;
+		const char *ehostId = "-1";
 		char tmpHostId[64];
 		if ( h ) {
 			// host can have 2 ip addresses, get the one most
 			// similar to that of the requester
-			eip     = iptoa(g_hostdb.getBestIp ( h , fromIp ));
-			//eip     = iptoa(h->m_externalIp) ;
-			//eip     = iptoa(h->m_ip) ;
-			eport   = h->m_externalHttpPort ;
-			//ehostId = h->m_hostId ;
-			if ( h->m_isProxy )
-				sprintf(tmpHostId,"proxy%" PRId32,h->m_hostId);
-			else
-				sprintf(tmpHostId,"%" PRId32,h->m_hostId);
+			eip = iptoa(g_hostdb.getBestIp(h, fromIp));
+			eport = h->m_externalHttpPort;
+			sprintf(tmpHostId, "%s%" PRId32, h->m_isProxy ? "proxy" : "", h->m_hostId);
 			ehostId = tmpHostId;
-		}
-		// if no corresponding host, it could be a request from an external
-		// cluster, so just show the ip
-		else {
-		        sprintf ( tmpHostId , "%s" , iptoa(s->getIp()) );
+		} else {
+			// if no corresponding host, it could be a request from an external
+			// cluster, so just show the ip
+			sprintf(tmpHostId, "%s", iptoa(s->getIp()));
 			ehostId = tmpHostId;
-			eip     = tmpHostId;
+			eip = tmpHostId;
 		}
 		// set description of the msg
-		msg_type_t msgType        = s->getMsgType();
-		const char *desc          = "";
-		char *rbuf          = s->m_readBuf;
-		char *sbuf          = s->m_sendBuf;
-		int32_t  rbufSize      = s->m_readBufSize;
-		int32_t  sbufSize      = s->m_sendBufSize;
-		bool  weInit        = s->hasCallback();
-		bool  calledHandler = weInit ? s->hasCalledCallback() : s->hasCalledHandler();
-		char *buf     = NULL;
-		int32_t  bufSize = 0;
-		char tt [ 64 ];
+		msg_type_t msgType = s->getMsgType();
+		const char *desc = "";
+		char *rbuf = s->m_readBuf;
+		char *sbuf = s->m_sendBuf;
+		int32_t rbufSize = s->m_readBufSize;
+		int32_t sbufSize = s->m_sendBufSize;
+		bool weInit = s->hasCallback();
+		bool calledHandler = weInit ? s->hasCalledCallback() : s->hasCalledHandler();
+
+		char tt[64];
+		tt[0] = ' ';
+		tt[1] = '\0';
 
 		if (msgType == msg_type_0) {
-			buf = weInit ? sbuf : rbuf;
+			char *buf = weInit ? sbuf : rbuf;
+			if (buf) {
+				int32_t rdbId = buf[RDBIDOFFSET];
+				Rdb *rdb = NULL;
+				if (rdbId >= 0 && !isDns) {
+					rdb = getRdbFromId((uint8_t) rdbId);
+					if (rdb) {
+						sprintf(tt, "get from %s", rdb->m_dbname);
+					}
+				}
+			}
+
+			desc = tt;
 		} else if (msgType == msg_type_1) {
-			buf = weInit ? sbuf : rbuf;
-		} else if (msgType == msg_type_13) {
+			char *buf = weInit ? sbuf : rbuf;
+			if (buf) {
+				int32_t rdbId = buf[0];
+				Rdb *rdb = NULL;
+				if (rdbId >= 0 && !isDns) {
+					rdb = getRdbFromId((uint8_t) rdbId);
+					if (rdb) {
+						sprintf(tt, "add to %s", rdb->m_dbname);
+					}
+				}
+			}
+
+			desc = tt;
+		} else if ( msgType == msg_type_c ) {
+			desc = "getting ip";
+		} else if ( msgType == msg_type_11 ) {
+			desc = "ping";
+		} else if ( msgType == msg_type_4 ) {
+			desc = "meta add";
+		} else if ( msgType == msg_type_13 ) {
+			char *buf = NULL;
+			int32_t bufSize = 0;
+
 			// . if callback was called this slot's sendbuf can be bogus
 			// . i put this here to try to avoid a core dump
 			if (weInit) {
@@ -423,31 +414,7 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 				buf = rbuf;
 				bufSize = rbufSize;
 			}
-		}
 
-		if ( buf ) {
-			int32_t rdbId = (msgType == msg_type_1) ? buf[0] : buf[24];
-			Rdb *rdb = NULL;
-			if (rdbId >= 0 && !isDns) {
-				rdb = getRdbFromId((uint8_t) rdbId);
-			}
-
-			tt[0] = ' ';
-			tt[1] = '\0';
-			if (rdb) {
-				const char *cmd = ( msgType == msg_type_1 ) ? "add to" : "get from";
-				sprintf(tt, "%s %s", cmd, rdb->m_dbname);
-			}
-			desc = tt;
-		}
-
-		if ( msgType == msg_type_c ) {
-			desc = "getting ip";
-		} else if ( msgType == msg_type_11 ) {
-			desc = "ping";
-		} else if ( msgType == msg_type_4 ) {
-			desc = "meta add";
-		} else if ( msgType == msg_type_13 ) {
 			bool isRobotsTxt = true;
 			if ( buf && bufSize >= (int32_t)sizeof(Msg13Request)-(int32_t)MAX_URL_LEN ) {
 				Msg13Request *r = (Msg13Request *)buf;
@@ -501,8 +468,7 @@ void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
 			p->safePrintf("</td><td>%s%" PRId32"%s</td>", cf1, (int32_t)s->getNiceness(), cf2);
 		} else {
 			// clickable hostId
-			const char *toFrom = "to";
-			if ( ! s->hasCallback() ) toFrom = "from";
+			const char *toFrom = s->hasCallback() ? "to" : "from";
 			p->safePrintf (	"<td>0x%02x</td>"  // msgtype
 					"<td><nobr>%s</nobr></td>"  // desc
 					"<td><nobr>%s <a href=http://%s:%hu/"

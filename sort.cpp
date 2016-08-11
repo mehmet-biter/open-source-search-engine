@@ -9,34 +9,13 @@
 #ifndef JAB_TEST
 
 #include "Mem.h"
-#include "Loop.h"
-#include "Sanity.h"
 
 #else
 
-// quickpoll debug code...
-/*
-static int32_t QPC = 0;
-void QUICKPOLL(int n) {
-	// shut up compiler...
-	n = n;
-	QPC++;
-	//fprintf(stderr, "QP: %d\n", QPC);
-}
-*/
 #define mmalloc(n,s) malloc(n)
 #define mfree(p,n,s) free(p)
 
 #endif
-
-/*
-#define GBSORTQP(mask)				\
-	{					\
-		qp_count++; 			\
-		if (!(qp_count & mask))		\
-			QUICKPOLL(niceness); 	\
-	}
-*/
 
 /*	$OpenBSD: qsort.c,v 1.10 2005/08/08 08:05:37 espie Exp $ */
 /*-
@@ -126,16 +105,12 @@ med3(char *a, char *b, char *c, int (*cmp)(const void *, const void *))
 void
 // JAB: avoid namespace collision with stdlib
 //qsort(void *aa, size_t n, size_t es, int (*cmp)(const void *, const void *))
-// JAB: niceness/quickpoll
-//gbqsort(void *aa, size_t n, size_t es, int (*cmp)(const void *, const void *))
 gbqsort(	void*	aa,
 		size_t	n,
 		size_t	es,
 		int	(*cmp)(const void *, const void *),
 		int	niceness)
 {
-	// JAB: quickpoll counter
-	//int qp_count = 0;
 	char *pa, *pb, *pc, *pd, *pl, *pm, *pn;
 	int d, r, swaptype, swap_cnt;
 	// JAB: cast required
@@ -180,9 +155,6 @@ loop:	SWAPINIT(a, es);
 				pa += es;
 			}
 			pb += es;
-			// JAB: quickpoll
-			//GBSORTQP(0x7FF);
-			QUICKPOLL(niceness);
 		}
 		while (pb <= pc && (r = cmp(pc, a)) >= 0) {
 			if (r == 0) {
@@ -191,9 +163,6 @@ loop:	SWAPINIT(a, es);
 				pd -= es;
 			}
 			pc -= es;
-			// JAB: quickpoll
-			//GBSORTQP(0x7FF);
-			QUICKPOLL(niceness);
 		}
 		if (pb > pc)
 			break;
@@ -332,17 +301,12 @@ static void insertionsort(u_char *, size_t, size_t,
 void
 // JAB: avoid namespace collision with stdlib on certain OS platforms
 //mergesort(void *base, size_t nmemb, size_t size,
-// JAB: niceness/quickpoll
-//gbmergesort(void *base, size_t nmemb, size_t size,
-//    int (*cmp)(const void *, const void *))
 gbmergesort(	void*	base,
 		size_t	nmemb,
 		size_t	size,
 		int	(*cmp)(const void *, const void *),
 		int	niceness,
 		char*   bufSpace, int32_t bufSpaceSize) {
-	// JAB: quickpoll
-	//int qp_count = 0;
 	int i, sense;
 	int big, iflag;
 	// JAB: track size malloc'd
@@ -406,9 +370,6 @@ gbmergesort(	void*	base,
 	    		p2 = *EVAL(p2);
 	    	l2 = list1 + (p2 - list2);
 	    	while (f1 < l1 && f2 < l2) {
-			// JAB: quickpoll
-			//GBSORTQP(0x1FFF);
-			QUICKPOLL(niceness);
 	    		if ((*cmp)(f1, f2) <= 0) {
 	    			q = f2;
 	    			b = f1, t = l1;

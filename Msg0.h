@@ -83,12 +83,7 @@ class Msg0 {
 
 	// host we sent RdbList request to 
 	int64_t m_hostId;
-	int32_t      m_ip;
-	int16_t     m_port;
-
 	uint32_t  m_shardNum;
-
-	UdpSlot  *m_slot;
 
 	// 2*4 + 1 + 2 * keySize
 	char      m_request [ MSG0_REQ_SIZE ];
@@ -97,7 +92,6 @@ class Msg0 {
 	// casting to multiple splits is obsolete, but for PageIndexdb.cpp
 	// we still need to do it, but we alloc for it
 	Multicast  m_mcast;
-	Multicast *m_mcasts;
 
 	int32_t      m_numRequests;
 	int32_t      m_numReplies;

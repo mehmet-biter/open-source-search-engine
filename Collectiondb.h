@@ -166,7 +166,6 @@ extern class Collectiondb g_collectiondb;
 // fake this for now
 #define RDB_END2 80
 
-#include "PingServer.h" // EmailInfo
 
 // how many counts are in CrawlInfo below????
 #define NUMCRAWLSTATS 8

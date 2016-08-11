@@ -10,6 +10,7 @@
 #include "Profiler.h"
 #include "PageRoot.h"
 #include "Process.h"
+#include "PingServer.h"
 
 
 // a global class extern'd in Pages.h
@@ -429,7 +430,8 @@ bool Pages::sendDynamicReply ( TcpSocket *s , HttpRequest *r , int32_t page ) {
 		time_t tt ;//= getTimeGlobal();
 		if ( isClockInSync() ) tt = getTimeGlobal();
 		else                   tt = getTimeLocal();
-		struct tm *timeStruct = localtime ( &tt );
+		struct tm tm_buf;
+		struct tm *timeStruct = localtime_r(&tt,&tm_buf);
 		char buf[100];
 		strftime ( buf , 100 , "%b %d %T", timeStruct);
 		// what url refered user to this one?

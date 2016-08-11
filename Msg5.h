@@ -7,7 +7,6 @@
 
 #include "Msg3.h"
 #include "RdbList.h"
-#include "HashTableX.h"
 #include "JobScheduler.h" //job_exit_t
 
 

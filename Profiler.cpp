@@ -4,6 +4,12 @@
 #include "Stats.h"
 #include "Process.h"
 #include "sort.h"
+#include "Conf.h"
+#include "Hostdb.h"
+#include "Loop.h"
+#include <sys/stat.h> //stat()
+#include <fcntl.h>
+
 Profiler g_profiler;
 
 #include "HashTableX.h"

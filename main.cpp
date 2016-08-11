@@ -71,6 +71,7 @@
 #include "RdbBuckets.h"
 #include "SpiderProxy.h"
 #include "HashTable.h"
+#include <sys/stat.h> //umask()
 
 bool registerMsgHandlers ( ) ;
 bool registerMsgHandlers1 ( ) ;
@@ -1708,8 +1709,9 @@ int main2 ( int argc , char *argv[] ) {
 		char tmp2[128];
 		SafeBuf newName(tmp2,128);
 		time_t ts = getTimeLocal();
-		struct tm *timeStruct = localtime ( &ts );
-		//struct tm *timeStruct = gmtime ( &ts );
+		struct tm tm_buf;
+		struct tm *timeStruct = localtime_r(&ts,&tm_buf);
+		//struct tm *timeStruct = gmtime_r(&ts,&tm_buf);
 		char ppp[100];
 		strftime(ppp,100,"%Y%m%d-%H%M%S",timeStruct);
 		newName.safePrintf("%s-bak%s",g_hostdb.m_logFilename, ppp );
@@ -2942,8 +2944,9 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 			// print into buf
 			if ( docId != prevId ) {
 				time_t ts = xd->m_spideredTime;//tr.getSpiderDa
-				struct tm *timeStruct = localtime ( &ts );
-				//struct tm *timeStruct = gmtime ( &ts );
+				struct tm tm_buf;
+				struct tm *timeStruct = localtime_r(&ts,&tm_buf);
+				//struct tm *timeStruct = gmtime_r(&ts,&tm_buf);
 				char ppp[100];
 				strftime(ppp,100,"%b-%d-%Y-%H:%M:%S",
 					 timeStruct);
@@ -3021,8 +3024,9 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 		//printf("n1=%08" PRIx32" n0=%016" PRIx64" b=0x%02hhx docId=%012" PRId64" sh=%07" PRIx32" ch=%08" PRIx32" "
 		// date indexed as local time, not GMT/UTC
 		time_t ts = xd->m_spideredTime;//tr.getSpiderDate();
-		struct tm *timeStruct = localtime ( &ts );
-		//struct tm *timeStruct = gmtime ( &ts );
+		struct tm tm_buf;
+		struct tm *timeStruct = localtime_r(&ts,&tm_buf);
+		//struct tm *timeStruct = gmtime_r(&ts,&tm_buf);
 		char ppp[100];
 		strftime(ppp,100,"%b-%d-%Y-%H:%M:%S",timeStruct);
 

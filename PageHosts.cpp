@@ -3,7 +3,9 @@
 #include "TcpSocket.h"
 #include "HttpServer.h"
 #include "Pages.h"
+#include "Hostdb.h"
 #include "sort.h"
+#include "Conf.h"
 
 static int defaultSort    ( const void *i1, const void *i2 );
 static int pingSort1      ( const void *i1, const void *i2 );

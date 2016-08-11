@@ -5,11 +5,14 @@
 #ifndef GB_HIGHLIGHT_H
 #define GB_HIGHLIGHT_H
 
-#include "Words.h"
-#include "Query.h"
-#include "Matches.h"
-#include "Xml.h"
-#include "Url.h"
+#include <inttypes.h>
+#include <stddef.h>
+
+class Query;
+class SafeBuf;
+class Words;
+class Matches;
+
 
 class Highlight {
 public:
@@ -31,7 +34,6 @@ public:
 
 	class SafeBuf *m_sb;
 
-	Matches  m_matches;
 	const char    *m_frontTag;
 	const char    *m_backTag;
 	int32_t     m_frontTagLen;

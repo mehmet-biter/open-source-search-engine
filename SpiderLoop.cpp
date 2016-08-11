@@ -17,6 +17,7 @@
 #include "HttpServer.h"
 #include "Pages.h"
 #include "Parms.h"
+#include "PingServer.h"
 #include "Rebalance.h"
 
 

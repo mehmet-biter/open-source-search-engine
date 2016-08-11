@@ -4,7 +4,10 @@
 #include "Parms.h"
 #include "Proxy.h"
 #include "Msg3a.h" // MAX_SHARDS
+#include "TcpSocket.h"
+#include "HttpRequest.h"
 #include "Process.h"
+#include <sys/stat.h> //umask()
 
 
 Conf g_conf;

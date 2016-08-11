@@ -5,6 +5,7 @@
 #include "Process.h"
 #include "BitOperations.h"
 #include "Conf.h"
+#include "Mem.h"
 
 RdbMap::RdbMap() {
 	m_numSegments = 0;

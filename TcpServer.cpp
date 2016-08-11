@@ -5,8 +5,16 @@
 #include "Profiler.h"
 #include "PingServer.h"
 #include "Hostdb.h"
+#include "Loop.h"      // g_loop.registerRead/WriteCallback()
+#include "Conf.h"
+#include "MsgC.h"           // for udp-only, non-blocking dns lookups
+#include "Mem.h"     // for mem routines
 #include "max_niceness.h"
 #include "Process.h"
+#include <sys/time.h>             // time()
+#include <sys/types.h>            // setsockopt()
+#include <sys/socket.h>           // setsockopt()
+#include <netinet/tcp.h>          // TCP_CORK and SOL_TCP (linux only!)
 
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>

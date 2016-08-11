@@ -3,13 +3,14 @@
 #ifndef GB_PROCESS_H
 #define GB_PROCESS_H
 
+#include <inttypes.h>
+#include <stddef.h>
+
 #define NO_MODE   0
 #define EXIT_MODE 1
 #define SAVE_MODE 2
 #define LOCK_MODE 3
 
-
-#include "HttpRequest.h"
 
 class Process {
 
@@ -55,7 +56,6 @@ class Process {
 	void resetAll           ( ) ;
 	void resetPageCaches    ( ) ;
 	double getLoadAvg	( );
-	void resetLoadAvg	( );
 
 	int64_t getTotalDocsIndexed();
 	int64_t m_totalDocsIndexed;
@@ -80,13 +80,10 @@ class Process {
 
 	void callHeartbeat ();
 
-	bool m_threadOut;
-
 	bool m_suspendAutoSave;
 
 	bool        m_powerIsOn;
 	int64_t   m_powerOffTime;
-	HttpRequest m_r;
 	bool        m_exiting;
 	bool        m_calledSave;
 

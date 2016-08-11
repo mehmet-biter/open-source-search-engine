@@ -8,6 +8,7 @@
 #include "Loop.h"
 #include "Conf.h"
 #include "Process.h"
+#include "Hostdb.h"
 #include "File.h"
 
 // a global class extern'd in Log.h
@@ -45,7 +46,8 @@ static bool renameCurrentLogFile ( ) {
 	f.set ( g_hostdb.m_dir , tmp );
 	// make new filename like log000-bak20131104-181932
 	time_t now = getTimeLocal();
-	tm *tm1 = gmtime((const time_t *)&now);
+	struct tm tm_buf;
+	tm *tm1 = gmtime_r(&now,&tm_buf);
 	char tmp2[64];
 	strftime(tmp2,64,"%Y%m%d-%H%M%S",tm1);
 	SafeBuf newName;
