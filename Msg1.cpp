@@ -435,6 +435,9 @@ skip:
 	// . 1 byte for rdbId, 1 byte for flags,
 	//   then collection NULL terminated, then list
 	int32_t requestLen = 1 + 1 + sizeof(collnum_t) + listSize ;
+
+	/// @warning Changing position of rdbId will require a same change in UdpStatistic
+
 	// make the request
 	char *request = (char *) mmalloc ( requestLen ,"Msg1" );
 	if ( ! request ) return true;

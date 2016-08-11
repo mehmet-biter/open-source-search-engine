@@ -28,26 +28,27 @@ UdpStatistic::UdpStatistic(const UdpSlot &slot)
 	  m_hasCalledHandler(slot.hasCalledHandler()),
 	  m_hasCalledCallback(slot.hasCalledCallback()),
 	  m_extraInfo() {
+	char *buf;
+	int32_t bufSize;
+	if (slot.isIncoming()) {
+		buf = slot.m_readBuf;
+		bufSize = slot.m_readBufSize;
+	} else {
+		buf = slot.m_sendBuf;
+		bufSize = slot.m_sendBufSize;
+	}
+
 	switch (m_msgType) {
 		case msg_type_0:
-			if (strlen(slot.getExtraInfo())) {
-				snprintf(m_description, sizeof(m_description), "get from %s", slot.getExtraInfo());
-			} else if (slot.isIncoming()) {
-				if (slot.m_readBuf && slot.m_readBufSize > RDBIDOFFSET) {
-					uint8_t rdbId = static_cast<uint8_t>(slot.m_readBuf[RDBIDOFFSET]);
-					snprintf(m_description, sizeof(m_description), "get from %s", getDbnameFromId(rdbId));
-				}
+			if (buf && bufSize > RDBIDOFFSET) {
+				uint8_t rdbId = static_cast<uint8_t>(buf[RDBIDOFFSET]);
+				snprintf(m_description, sizeof(m_description), "get from %s", getDbnameFromId(rdbId));
 			}
 			break;
 		case msg_type_1:
-			if (strlen(slot.getExtraInfo())) {
-				snprintf(m_description, sizeof(m_description), "add to %s", slot.getExtraInfo());
-			} else if (slot.isIncoming()) {
-				if (slot.m_readBuf) {
-					uint8_t rdbId = static_cast<uint8_t>(slot.m_readBuf[0]);
-					snprintf(m_description, sizeof(m_description), "add to %s", getDbnameFromId(rdbId));
-				}
-
+			if (buf) {
+				uint8_t rdbId = static_cast<uint8_t>(buf[0]);
+				snprintf(m_description, sizeof(m_description), "add to %s", getDbnameFromId(rdbId));
 			}
 			break;
 		case msg_type_4:
@@ -63,13 +64,9 @@ UdpStatistic::UdpStatistic(const UdpSlot &slot)
 			strcpy(m_description, "ping");
 			break;
 		case msg_type_13:
-			if (strlen(slot.getExtraInfo())) {
-				snprintf(m_description, sizeof(m_description), "get %s", slot.getExtraInfo());
-			} else if (slot.isIncoming()) {
-				if (slot.m_readBuf && slot.m_readBufSize >= sizeof(Msg13Request)) {
-					Msg13Request *r = reinterpret_cast<Msg13Request*>(slot.m_readBuf);
-					snprintf(m_description, sizeof(m_description), "get %s", r->m_isRobotsTxt ? "web page" : "robot.txt");
-				}
+			if (buf && static_cast<size_t>(bufSize) >= sizeof(Msg13Request)) {
+				Msg13Request *r = reinterpret_cast<Msg13Request*>(buf);
+				snprintf(m_description, sizeof(m_description), "get %s", r->m_isRobotsTxt ? "web page" : "robot.txt");
 			}
 			break;
 		case msg_type_1f:

@@ -125,7 +125,6 @@ class Multicast {
 	void       *m_state2;
 	void       (* m_callback)( void *state , void *state2 );
 	int64_t       m_totalTimeout;   // in milliseconds
-	char m_extraInfo[64];
 
 	class UdpSlot *m_slot;
 

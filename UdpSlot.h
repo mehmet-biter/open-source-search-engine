@@ -103,6 +103,7 @@ public:
 	UdpSlot* getActiveListNext() { return m_activeListNext; }
 	const UdpSlot* getActiveListNext() const { return m_activeListNext; }
 
+	bool isIncoming() const { return m_incoming; }
 	const char* getExtraInfo() const { return m_extraInfo; }
 
 	// a ptr to the Host class for shotgun info
