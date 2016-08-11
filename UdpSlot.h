@@ -439,8 +439,6 @@ public:
 	// . caller should pre-allocated m_readBuf when calling sendRequest() if he expects a large reply
 	// . incoming requests simply cannot be bigger than this for the hot udp server
 	char m_tmpBuf[TMPBUFSIZE];
-
-	char *m_hostname;
 };
 
 extern int32_t g_cancelAcksSent;
