@@ -356,17 +356,11 @@ skip:
 
 		QUICKPOLL(m_niceness);
 
-		const char* extraInfo = NULL;
-		Rdb* rdb = getRdbFromId(m_rdbId);
-		if (rdb) {
-			extraInfo = rdb->m_dbname;
-		}
-
 		uint16_t port = h->m_port ;
 		// . returns false on error and sets g_errno, true otherwise
 		// . calls callback when reply is received (or error)
 		// . we return true if it returns false
-		if (!g_udpServer.sendRequest(m_request, m_requestSize, msg_type_0, h->m_ip, port, m_hostId, NULL, this, gotSingleReplyWrapper, timeout, m_niceness, extraInfo)) {
+		if (!g_udpServer.sendRequest(m_request, m_requestSize, msg_type_0, h->m_ip, port, m_hostId, NULL, this, gotSingleReplyWrapper, timeout, m_niceness, getDbnameFromId(m_rdbId))) {
 			logTrace( g_conf.m_logTraceMsg0, "END, return true. Request sent" );
 			return true;
 		}

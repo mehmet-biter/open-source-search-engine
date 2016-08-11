@@ -468,18 +468,12 @@ skip:
 	//if ( requestLen < TMPBUFSIZE - 32 ) niceness = 0;
 	//log("msg1: sending mcast niceness=%" PRId32,m_niceness);
 
-	const char* extraInfo = NULL;
-	Rdb* rdb = getRdbFromId(m_rdbId);
-	if (rdb) {
-		extraInfo = rdb->m_dbname;
-	}
-
 	// . multicast to all hosts in group "groupId"
 	// . multicast::send() returns false and sets g_errno on error
 	// . we return false if we block, true otherwise
 	// . will loop indefinitely if a host in this group is down
 	// key is useless for us
-	if (m_mcast.send(request, requestLen, msg_type_1, true, shardNum, true, 0, this, NULL, gotReplyWrapper1, multicast_msg1_senddata_timeout, m_niceness, -1, extraInfo)) {
+	if (m_mcast.send(request, requestLen, msg_type_1, true, shardNum, true, 0, this, NULL, gotReplyWrapper1, multicast_msg1_senddata_timeout, m_niceness, -1, getDbnameFromId(m_rdbId))) {
 		return false;
 	}
 
