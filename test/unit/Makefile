@@ -8,7 +8,6 @@ OBJECTS = GigablastTest.o \
 	BitOperationsTest.o \
 	BigFileTest.o \
 	FctypesTest.o \
-	HostdbTest.o \
 	JsonTest.o \
 	PosTest.o ProcessTest.o \
 	RobotRuleTest.o RobotsTest.o \
