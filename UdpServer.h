@@ -41,13 +41,6 @@
 #include "Loop.h"   // loop class that handles signals on our socket
 #include "UdpStatistic.h"
 
-// . The rules of Async Sig Safe functions
-// 1. to be safe, _ass functions should only call other _ass functions.
-//    otherwise, that function may be re-entered by the async sig handler.
-// 2. most _ass functions turn off interrupts or return if g_inSigHandler.
-//    otherwise, they will need to be re_entrant... i.e. while entered from the
-//    main process they might be interrupted and entered from the sig handler.
-// 3. only _ass functions should be called from an ASYNC signal handler.
 
 static const int64_t udpserver_sendrequest_infinite_timeout = 999999999999;
 
@@ -123,9 +116,9 @@ public:
 	// . backoff is how long to wait for an ACK in ms before we resend
 	// . we double backoff each time we wait w/o getting any ACK
 	// . don't wait longer than maxWait for a resend
-	void sendReply_ass(char *msg, int32_t msgSize, char *alloc, int32_t allocSize, UdpSlot *slot, void *state = NULL,
-	                   void (*callback2)(void *state, UdpSlot *slot) = NULL, int16_t backoff = -1, int16_t maxWait = -1,
-	                   bool isCallback2Hot = false);
+	void sendReply(char *msg, int32_t msgSize, char *alloc, int32_t allocSize, UdpSlot *slot, void *state = NULL,
+	               void (*callback2)(void *state, UdpSlot *slot) = NULL, int16_t backoff = -1, int16_t maxWait = -1,
+	               bool isCallback2Hot = false);
 
 	// . propagate an errno to the requesting machine
 	// . his callback will be called with errno set to "errnum"
@@ -158,7 +151,7 @@ public:
 	bool shutdown ( bool urgent );
 
 	// try calling makeCallback() on all slots
-	bool makeCallbacks_ass ( int32_t niceness );
+	bool makeCallbacks(int32_t niceness);
 
 	// cancel a transaction
 	void cancel(void *state, msg_type_t msgType);
@@ -209,14 +202,14 @@ private:
 	// . it sends as much as it can from all UdpSlots until one blocks
 	//   or until it's done
 	// . sends both dgrams AND ACKs
-	bool sendPoll_ass ( bool allowResends , int64_t now );
+	bool sendPoll(bool allowResends, int64_t now);
 
 	// called every 30ms to get tokens? not any more...
 	void timePoll ( );
 
 	// called by readPoll()/sendPoll()/readTimeoutPoll() to do
 	// reading/sending/callbacks in that order until nothing left to do
-	void process_ass ( int64_t now , int32_t maxNiceness = 100);
+	void process(int64_t now, int32_t maxNiceness = 100);
 
 	// . this is called by main/Loop.cpp every second
 	// . actually it calls readTimeoutPollWrapper()
@@ -253,13 +246,13 @@ private:
 
 	// . send as many dgrams as you can from slot's m_sendBuf
 	// . returns false and sets errno on error, true otherwise
-	bool doSending_ass ( UdpSlot *slot, bool allowResends, int64_t now );
+	bool doSending(UdpSlot *slot, bool allowResends, int64_t now);
 
 	// . calls a m_handler request handler if slot->m_callback is NULL
 	//   which means it was an incoming request
 	// . otherwise calls slot->m_callback because it was an outgoing
 	//   request
-	bool makeCallback_ass ( UdpSlot *slot ) ;
+	bool makeCallback(UdpSlot *slot);
 
 	// . picks the slot that is most caught up to it's ACKs
 	// . picks resends first, however
@@ -269,7 +262,7 @@ private:
 	// . reads a pending dgram on the udp stack
 	// . returns -1 on error, 0 if blocked, 1 if completed reading dgram
 	// . called by readPoll()
-	int32_t readSock_ass ( UdpSlot **slot , int64_t now );
+	int32_t readSock(UdpSlot **slot, int64_t now);
 
 	// . we have up to 1 handler routine for each msg type
 	// . call these handlers for the corresponding msgType
@@ -277,7 +270,7 @@ private:
 	void (* m_handlers[MAX_MSG_TYPES])(UdpSlot *slot, int32_t niceness);
 
 	// when a call to sendto() blocks we set this to true so Loop.cpp
-	// will know to manually call sendPoll_ass() rather than counting
+	// will know to manually call sendPoll() rather than counting
 	// on receiving a fd-ready-for-writing signal for this UdpServer
 	bool m_needToSend;
 
@@ -317,8 +310,8 @@ private:
 	int32_t m_maxSlots;
 
 	// routines
-	UdpSlot *getEmptyUdpSlot_ass(key_t k , bool incoming);
-	void freeUdpSlot_ass(UdpSlot *slot);
+	UdpSlot *getEmptyUdpSlot(key_t k, bool incoming);
+	void freeUdpSlot(UdpSlot *slot);
 
 	void addKey(key_t key , UdpSlot *ptr);
 

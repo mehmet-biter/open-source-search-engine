@@ -618,7 +618,7 @@ void handleRequest11 ( UdpSlot *slot , int32_t niceness ) {
 		// set "useSameSwitch" to true so even if shotgunning is on
 		// the udp server will send the reply back to the same ip/port
 		// from which we got the request
-		g_udpServer.sendReply_ass( NULL, 0, NULL, 0, slot, NULL, NULL, 500, 1000, true );
+		g_udpServer.sendReply(NULL, 0, NULL, 0, slot, NULL, NULL, 500, 1000, true);
 
 		return;
 	}
@@ -837,7 +837,7 @@ void handleRequest11 ( UdpSlot *slot , int32_t niceness ) {
 		    "version info.", requestSize);
 	}
 	// always send back an empty reply
-	g_udpServer.sendReply_ass( reply, replySize, NULL, 0, slot, NULL, NULL, 500, 1000, true );
+	g_udpServer.sendReply(reply, replySize, NULL, 0, slot, NULL, NULL, 500, 1000, true);
 }
 
 // . sets m_minRepairMode

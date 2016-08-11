@@ -638,7 +638,7 @@ void addedList ( UdpSlot *slot , Rdb *rdb ) {
 		// . send an empty (non-error) reply as verification
 		// . slot should be auto-nuked on transmission/timeout of reply
 		// . udpServer should free the readBuf
-		g_udpServer.sendReply_ass(NULL, 0, NULL, 0, slot);
+		g_udpServer.sendReply(NULL, 0, NULL, 0, slot);
 		return;
 	}
 

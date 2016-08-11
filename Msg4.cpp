@@ -802,7 +802,7 @@ void handleRequest4 ( UdpSlot *slot , int32_t netnice ) {
 
 		loghex(LOG_ERROR, readBuf, (readBufSize < 160 ? readBufSize : 160), "readBuf (first max. 160 bytes)");
 		    
-		us->sendReply_ass ( NULL , 0 , NULL , 0 , slot ) ;
+		us->sendReply(NULL, 0, NULL, 0, slot);
 		//us->sendErrorReply(slot,ECORRUPTDATA);return;}
 		
 		log(LOG_ERROR,"%s:%s: END", __FILE__, __func__ );
@@ -837,7 +837,7 @@ void handleRequest4 ( UdpSlot *slot , int32_t netnice ) {
 	}
 
 	// good to go
-	us->sendReply_ass(NULL, 0, NULL, 0, slot);
+	us->sendReply(NULL, 0, NULL, 0, slot);
 
 	logTrace(g_conf.m_logTraceMsg4, "END - OK");
 }

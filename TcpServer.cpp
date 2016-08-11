@@ -665,7 +665,7 @@ bool TcpServer::sendMsg( TcpSocket *s, char *sendBuf, int32_t sendBufSize, int32
 	// HACK: the proxy encapsulates http requests in udp datagrams with
 	//       msgtype 0xfd. so do a udp reply in that case to the proxy.
 	if ( s->m_udpSlot ) {
-		g_udpServer.sendReply_ass( sendBuf, sendBufUsed, sendBuf, sendBufSize, s->m_udpSlot, state, NULL );
+		g_udpServer.sendReply( sendBuf, sendBufUsed, sendBuf, sendBufSize, s->m_udpSlot, state, NULL );
 
 		// we now free the read buffer here since PageDirectory.cpp
 		// might have reallocated it.
@@ -2125,7 +2125,7 @@ void TcpServer::destroySocket ( TcpSocket *s ) {
 		log("tcp: sending back error on udp slot err=%s", mstrerror(g_errno));
 
 		// sen back the error i guess
-		g_udpServer.sendReply_ass( NULL, 0, NULL, 0, s->m_udpSlot, NULL, NULL );
+		g_udpServer.sendReply( NULL, 0, NULL, 0, s->m_udpSlot, NULL, NULL );
 
 		// we now free the read buffer here since PageDirectory.cpp
 		// might have reallocated it.
