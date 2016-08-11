@@ -498,7 +498,7 @@ void handleRequest13 ( UdpSlot *slot , int32_t niceness  ) {
 		//log("spider: %s was in cache",r->ptr_url);
 		// . send the cached reply back
 		// . this will free send/read bufs on completion/g_errno
-		g_udpServer.sendReply_ass ( rec , recSize , rec, recSize,slot);
+		g_udpServer.sendReply_ass(rec, recSize, rec, recSize, slot);
 		return;
 	}
 
@@ -1615,8 +1615,7 @@ void gotHttpReply2 ( void *state ,
 		// this is not freeable
 		if ( copy == g_fakeReply ) copyAllocSize = 0;
 		// get request
-		Msg13Request *r2;
-		r2 = *(Msg13Request **)s_rt.getValueFromSlot(tableSlot);
+		Msg13Request *r2 = *(Msg13Request **)s_rt.getValueFromSlot(tableSlot);
 		// get udp slot for this transaction
 		UdpSlot *slot = r2->m_udpSlot;
 		// remove from list
@@ -1632,14 +1631,16 @@ void gotHttpReply2 ( void *state ,
 				    iptoa(r2->m_urlIp));
 				    
 			log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. error=%s", __FILE__, __func__, __LINE__, mstrerror(err));
-			g_udpServer.sendErrorReply ( slot , err );
+			g_udpServer.sendErrorReply(slot, err);
 			continue;
 		}
 		// for debug for now
 		if ( g_conf.m_logDebugSpider || g_conf.m_logDebugMsg13 )
 			log("msg13: sending reply for %s",r->ptr_url);
+
 		// send reply
-		us->sendReply_ass ( copy,replySize,copy,copyAllocSize, slot );
+		us->sendReply_ass(copy, replySize, copy, copyAllocSize, slot);
+
 		// now final udp slot will free the reply, so tcp server
 		// no longer has to. set this tcp buf to null then.
 		if ( ts && ts->m_readBuf == reply && count == 0 ) 
@@ -1681,9 +1682,9 @@ void passOnReply ( void *state , UdpSlot *slot ) {
 	slot->m_readBufSize = 0;
 	// prevent udpserver from trying to free g_fakeReply
 	if ( reply == g_fakeReply ) replyAllocSize = 0;
-	//int32_t  replyAllocSize = slot->m_readBufSize;
+
 	// just forward it on
-	g_udpServer.sendReply_ass( reply, replySize, reply, replyAllocSize, r->m_udpSlot );
+	g_udpServer.sendReply_ass(reply, replySize, reply, replyAllocSize, r->m_udpSlot);
 }
 
 // returns true if <iframe> tag in there

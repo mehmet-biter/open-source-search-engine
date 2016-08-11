@@ -112,7 +112,7 @@ class Multicast {
 	void gotReply1     ( UdpSlot *slot ) ;
 	void closeUpShop   ( UdpSlot *slot ) ;
 
-	void sendToGroup   ( ) ;
+	void sendToGroup();
 	void gotReply2     ( UdpSlot *slot ) ;
 
 	// . stuff set directly by send() parameters

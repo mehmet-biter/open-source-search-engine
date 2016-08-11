@@ -590,25 +590,24 @@ void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 		logTrace( g_conf.m_logTraceMsg0, "numFiles.... %" PRId32, numFiles );
 	}
 
+
 	// error set from XmlDoc::cacheTermLists()?
 	if ( g_errno ) {
 		logTrace( g_conf.m_logTraceMsg0, "END. Invalid collection" );
 
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. Invalid collection", __FILE__, __func__, __LINE__);
-		us->sendErrorReply ( slot , EBADRDBID ); 
+		us->sendErrorReply(slot, EBADRDBID);
 		return;
 	}
 
 	// . get the rdb we need to get the RdbList from
 	// . returns NULL and sets g_errno on error
-	//Msg0 msg0;
-	//Rdb *rdb = msg0.getRdb ( rdbId );
-	Rdb *rdb = getRdbFromId ( rdbId );
-	if ( ! rdb ) {
+	Rdb *rdb = getRdbFromId(rdbId);
+	if (!rdb) {
 		logTrace( g_conf.m_logTraceMsg0, "END. Invalid rdbId" );
 		
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. Invalid rdbId", __FILE__, __func__, __LINE__);
-		us->sendErrorReply ( slot , EBADRDBID ); 
+		us->sendErrorReply(slot, EBADRDBID);
 		return;
 	}
 
@@ -625,7 +624,7 @@ void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 		    (int32_t)sizeof(State00),mstrerror(g_errno));
 		    
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
-		us->sendErrorReply ( slot , g_errno ); 
+		us->sendErrorReply(slot, g_errno);
 		return; 
 	}
 	mnew ( st0 , sizeof(State00) , "State00" );
@@ -723,7 +722,7 @@ void gotListWrapper ( void *state , RdbList *listb , Msg5 *msg5xx ) {
 		// TODO: free "slot" if this send fails
 		
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. error=%s", __FILE__, __func__, __LINE__, mstrerror(g_errno));
-		us->sendErrorReply ( slot , g_errno );
+		us->sendErrorReply(slot, g_errno);
 		return;
 	}
 
@@ -736,9 +735,13 @@ void gotListWrapper ( void *state , RdbList *listb , Msg5 *msg5xx ) {
 	// tell list not to free the data since it is a reply so UdpServer
 	// will free it when it destroys the slot
 	list->setOwnData ( false );
+
 	// keep track of stats
 	Rdb *rdb = getRdbFromId ( st0->m_rdbId );
-	if ( rdb ) rdb->sentReplyGet ( dataSize );
+	if ( rdb ) {
+		rdb->sentReplyGet ( dataSize );
+	}
+
 	// TODO: can we free any memory here???
 
 	// keep track of how long it takes to complete the send
@@ -807,14 +810,11 @@ void gotListWrapper ( void *state , RdbList *listb , Msg5 *msg5xx ) {
 		dataSize  = list->getListSize();
 	}
 
-
-	//log("sending replySize=%" PRId32" min=%" PRId32,dataSize,msg5->m_minRecSizes);
-	// . TODO: dataSize may not equal list->getListMaxSize() so
-	//         Mem class may show an imblanace
+	// . TODO: dataSize may not equal list->getListMaxSize() so Mem class may show an imblanace
 	// . now g_udpServer is responsible for freeing data/dataSize
 	// . the "true" means to call doneSending_ass() from the signal handler
 	//   if need be
-	st0->m_us->sendReply_ass( data, dataSize, alloc, allocSize, slot, st0, doneSending_ass, -1, -1, true );
+	st0->m_us->sendReply_ass(data, dataSize, alloc, allocSize, slot, st0, doneSending_ass, -1, -1, true);
 
 	logTrace( g_conf.m_logTraceMsg0, "END" );
 }	

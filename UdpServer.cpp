@@ -447,7 +447,8 @@ bool UdpServer::sendRequest(char *msg,
 }
 
 // returns false and sets g_errno on error, true otherwise
-void UdpServer::sendErrorReply( UdpSlot *slot, int32_t errnum ) {
+void UdpServer::sendErrorReply(UdpSlot *slot, int32_t errnum) {
+
 	// bitch if it is 0
 	if ( errnum == 0 ) {
 		log(LOG_LOGIC,"udp: sendErrorReply: errnum is 0.");
@@ -463,27 +464,23 @@ void UdpServer::sendErrorReply( UdpSlot *slot, int32_t errnum ) {
 
 	// set the m_localErrno in "slot" so it will set the dgrams error bit
 	slot->m_localErrno = errnum;
-	sendReply_ass ( msg , 4 , msg , 4 , slot );
+
+	sendReply_ass(msg, 4, msg, 4, slot);
 }
 
 // . destroys slot on error or completion (frees m_readBuf,m_sendBuf)
 // . use a backoff of -1 for the default
-void UdpServer::sendReply_ass ( char    *msg        ,
-				int32_t     msgSize    ,
-				char    *alloc      ,
-				int32_t     allocSize  ,
-				UdpSlot *slot       ,
-				void    *state      ,
-				void (* callback2)(void *state, UdpSlot *slot),
-				int16_t    backoff    ,
-				int16_t    maxWait    ,
-				bool     isCallback2Hot) {
+void UdpServer::sendReply_ass(char *msg, int32_t msgSize, char *alloc, int32_t allocSize, UdpSlot *slot, void *state,
+                              void (*callback2)(void *state, UdpSlot *slot), int16_t backoff, int16_t maxWait,
+                              bool isCallback2Hot) {
+
 	// the callback should be NULL
 	if ( slot->hasCallback() ) {
 		g_errno = EBADENGINEER;
 		log(LOG_LOGIC,"udp: sendReply_ass: Callback is non-NULL.");
 		return;
 	}
+
 	if ( ! msg && msgSize > 0 ) {
 		log( LOG_WARN, "udp: calling sendreply with null send buffer and positive size! will probably core." );
 	}

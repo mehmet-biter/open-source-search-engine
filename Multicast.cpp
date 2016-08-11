@@ -139,9 +139,10 @@ bool Multicast::send(char *msg, int32_t msgSize, msg_type_t msgType, bool ownMsg
 	}
 
 	//if ( ! sendToWholeGroup ) return sendToHostLoop ( key , -1 );
+
 	// . send to ALL hosts in this group if sendToWholeGroup is true
 	// . blocks forever until sends to all hosts are successfull
-	sendToGroup ( );
+	sendToGroup();
 
 	// . sendToGroup() always blocks, but we return true if no g_errno
 	// . we actually keep looping until all hosts get the msg w/o error
@@ -160,7 +161,7 @@ bool Multicast::send(char *msg, int32_t msgSize, msg_type_t msgType, bool ownMsg
 // . it does not send to hosts whose m_errnos is 0
 // . TODO: deal with errors from g_udpServer::sendRequest() better
 // . returns false and sets g_errno on error
-void Multicast::sendToGroup ( ) {
+void Multicast::sendToGroup() {
 	// see if anyone gets an error
 	bool hadError = false;
 	// . cast the msg to ALL hosts in the m_hosts group of hosts
