@@ -2421,8 +2421,10 @@ bool UdpServer::timeoutDeadHosts ( Host *h ) {
 
 // verified that this is not interruptible
 UdpSlot *UdpServer::getEmptyUdpSlot_ass ( key_t k , bool incoming ) {
+	UdpSlot *slot = removeFromAvailableLinkedList();
+
 	// return NULL if none left
-	if ( ! m_availableListHead ) {
+	if (!slot) {
 		g_errno = ENOSLOTS;
 		if (g_conf.m_logNetCongestion) {
 			log(LOG_WARN, "udp: %" PRId32" of %" PRId32" udp slots occupied. None available to handle this new transaction.",
@@ -2431,25 +2433,7 @@ UdpSlot *UdpServer::getEmptyUdpSlot_ass ( key_t k , bool incoming ) {
 		return NULL;
 	}
 
-	UdpSlot *slot = m_availableListHead;
-
-	// remove from linked list of available slots
-	m_availableListHead = m_availableListHead->m_availableListNext;
-
-	// put the used slot at the tail so older slots are at the head and
-	// makeCallbacks() can take care of the callbacks that have been
-	// waiting the longest first...
-	if (m_activeListTail) {
-		slot->m_activeListNext = NULL;
-		slot->m_activeListPrev = m_activeListTail;
-		m_activeListTail->m_activeListNext = slot;
-		m_activeListTail = slot;
-	} else {
-		slot->m_activeListNext = NULL;
-		slot->m_activeListPrev = NULL;
-		m_activeListHead = slot;
-		m_activeListTail = slot;
-	}
+	addToActiveLinkedList(slot);
 
 	// count it
 	m_numUsedSlots++;
@@ -2495,7 +2479,31 @@ UdpSlot *UdpServer::getUdpSlot ( key_t k ) {
 	return m_ptrs[i];
 }
 
-void UdpServer::addToCallbackLinkedList ( UdpSlot *slot ) {
+void UdpServer::addToAvailableLinkedList(UdpSlot *slot) {
+	log(LOG_DEBUG, "udp: adding slot=%p to available list", slot);
+
+	slot->m_availableListNext = m_availableListHead;
+	m_availableListHead = slot;
+}
+
+UdpSlot* UdpServer::removeFromAvailableLinkedList() {
+	// return NULL if none left
+	if ( ! m_availableListHead ) {
+		logDebug(g_conf.m_logDebugUdp, "udp: unable to remove slot from available list");
+		return NULL;
+	}
+
+	UdpSlot *slot = m_availableListHead;
+
+	// remove from linked list of available slots
+	m_availableListHead = slot->m_availableListNext;
+
+	logDebug(g_conf.m_logDebugUdp, "udp: removing slot=%p from available list", slot);
+
+	return slot;
+}
+
+void UdpServer::addToCallbackLinkedList(UdpSlot *slot) {
 	// debug log
 	if (g_conf.m_logDebugUdp) {
 		if (slot->getErrno()) {
@@ -2548,35 +2556,76 @@ void UdpServer::removeFromCallbackLinkedList(UdpSlot *slot) {
 	if ( m_callbackListTail == slot )
 		m_callbackListTail = slot->m_callbackListPrev;
 
-	if ( slot->m_callbackListPrev )
+	if ( slot->m_callbackListPrev ) {
 		slot->m_callbackListPrev->m_callbackListNext = slot->m_callbackListNext;
-	if ( slot->m_callbackListNext )
+	}
+
+	if ( slot->m_callbackListNext ) {
 		slot->m_callbackListNext->m_callbackListPrev = slot->m_callbackListPrev;
+	}
 
 	// and so we do not try to re-excise it
 	slot->m_callbackListPrev = NULL;
 	slot->m_callbackListNext = NULL;
 }
 
-// verified that this is not interruptible
-void UdpServer::freeUdpSlot_ass ( UdpSlot *slot ) {
-	// set the new head/tail if we were it
-	if ( slot == m_activeListTail ) {
-		m_activeListTail = slot->m_activeListPrev;
+void UdpServer::addToActiveLinkedList(UdpSlot *slot) {
+	logDebug(g_conf.m_logDebugUdp, "udp: adding slot=%p to active list", slot);
+
+	// put the used slot at the tail so older slots are at the head and
+	// makeCallbacks() can take care of the callbacks that have been
+	// waiting the longest first...
+
+	slot->m_activeListNext = NULL;
+	slot->m_activeListPrev = NULL;
+
+	if (m_activeListTail) {
+		// insert at end of linked list otherwise
+		m_activeListTail->m_activeListNext = slot;
+		slot->m_activeListPrev = m_activeListTail;
+		m_activeListTail = slot;
+	} else {
+		m_activeListHead = slot;
+		m_activeListTail = slot;
 	}
-	if ( slot == m_activeListHead ) {
+}
+
+void UdpServer::removeFromActiveLinkedList(UdpSlot *slot) {
+	logDebug(g_conf.m_logDebugUdp, "udp: removing slot=%p from active list", slot);
+
+	// return if not in the linked list
+	if ( slot->m_activeListPrev == NULL && slot->m_activeListNext == NULL && m_activeListHead != slot ) {
+		return;
+	}
+
+	// excise from linked list otherwise
+	if ( m_activeListHead == slot ) {
 		m_activeListHead = slot->m_activeListNext;
 	}
-	// remove from linked list of used slots
+	if ( m_activeListTail == slot )
+		m_activeListTail = slot->m_activeListPrev;
+
 	if ( slot->m_activeListPrev ) {
 		slot->m_activeListPrev->m_activeListNext = slot->m_activeListNext;
 	}
+
 	if ( slot->m_activeListNext ) {
 		slot->m_activeListNext->m_activeListPrev = slot->m_activeListPrev;
 	}
 
+	// and so we do not try to re-excise it
+	slot->m_activeListPrev = NULL;
+	slot->m_activeListNext = NULL;
+}
+
+// verified that this is not interruptible
+void UdpServer::freeUdpSlot_ass ( UdpSlot *slot ) {
+	logDebug(g_conf.m_logDebugUdp, "udp: free slot=%p", slot);
+
+	removeFromActiveLinkedList(slot);
+
 	// also from callback candidates if we should
-	removeFromCallbackLinkedList ( slot );
+	removeFromCallbackLinkedList(slot);
 
 	// discount it
 	m_numUsedSlots--;
@@ -2584,8 +2633,8 @@ void UdpServer::freeUdpSlot_ass ( UdpSlot *slot ) {
 	if ( slot->m_incoming ) m_numUsedSlotsIncoming--;
 
 	// add to linked list of available slots
-	slot->m_availableListNext = m_availableListHead;
-	m_availableListHead = slot;
+	addToAvailableLinkedList(slot);
+
 	// . get bucket number in hash table
 	// . may have change since table often gets rehashed
 	key_t k = slot->m_key;
@@ -2719,7 +2768,7 @@ void UdpServer::printState() {
 }
 
 void UdpServer::saveActiveSlots(int fd, msg_type_t msg_type) {
-	for (const UdpSlot *slot = g_udpServer.getActiveHead(); slot; slot = slot->getActiveListNext()) {
+	for (const UdpSlot *slot = m_activeListHead; slot; slot = slot->getActiveListNext()) {
 		// skip if not wanted msg type
 		if (slot->getMsgType() != msg_type) {
 			continue;
@@ -2745,7 +2794,7 @@ void UdpServer::saveActiveSlots(int fd, msg_type_t msg_type) {
 std::vector<UdpStatistic> UdpServer::getStatistics() const {
 	std::vector<UdpStatistic> statistics;
 
-	for (const UdpSlot *slot = g_udpServer.getActiveHead(); slot; slot = slot->getActiveListNext()) {
+	for (const UdpSlot *slot = m_activeListHead; slot; slot = slot->getActiveListNext()) {
 		statistics.push_back(UdpStatistic(*slot));
 	}
 

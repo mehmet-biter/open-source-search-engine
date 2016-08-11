@@ -234,10 +234,18 @@ private:
 	//   or timed a slot out so it's callback should be called
 	bool readTimeoutPoll ( int64_t now ) ;
 
+	// available linked list functions (m_availableListHead)
+	void addToAvailableLinkedList(UdpSlot *slot);
+	UdpSlot* removeFromAvailableLinkedList();
+
 	// callback linked list functions (m_callbackListHead)
-	void addToCallbackLinkedList ( UdpSlot *slot ) ;
-	bool isInCallbackLinkedList ( UdpSlot *slot );
-	void removeFromCallbackLinkedList ( UdpSlot *slot ) ;
+	void addToCallbackLinkedList(UdpSlot *slot);
+	bool isInCallbackLinkedList(UdpSlot *slot);
+	void removeFromCallbackLinkedList(UdpSlot *slot);
+
+	// active linkedlist functions (m_activeListHead)
+	void addToActiveLinkedList(UdpSlot *slot);
+	void removeFromActiveLinkedList(UdpSlot *slot);
 
 	// . we maintain a sequential list of transaction ids to guarantee
 	//   uniquness to a point
