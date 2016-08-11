@@ -197,7 +197,7 @@ protected:
 
 	// . for sending purposes, the max scoring UdpSlot sends first
 	// . return < 0 if nothing to send
-	int32_t getScore ( int64_t now );
+	int32_t getScore ( int64_t now ) const;
 
 	void printState() ;
 

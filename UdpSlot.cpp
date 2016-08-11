@@ -1532,7 +1532,7 @@ bool UdpSlot::makeReadBuf ( int32_t msgSize , int32_t numDgrams ) {
 // . higher scoring slots will do their sending first
 // . may have ACKs to send or plain old dgrams to send
 // . now is current time in milliseconds since the epoch
-int32_t UdpSlot::getScore ( int64_t now ) {
+int32_t UdpSlot::getScore ( int64_t now ) const {
 	// do not do sends if callback was called. maybe cancelled?
 	// this was causing us to get into an infinite loop in 
 	// UdpServer.cpp's sendPoll_ass(). there wasn't anything to send i
