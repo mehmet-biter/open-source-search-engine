@@ -1681,7 +1681,6 @@ void indexedDocWrapper ( void *state ) {
 	//run at niceness 0 but most of the spider pipeline
 	//cannot.  we should really just make injection run at
 	//MAX_NICENESS. OK, done! mdw
-	//if ( g_loop.m_inQuickPoll ) return;
 	// . continue gettings Spider recs to spider
 	// . if it's already waiting for a list it'll just return
 	// . mdw: keep your eye on this, it was commented out

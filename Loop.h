@@ -122,26 +122,12 @@ class Loop {
 
 	void wakeupPollLoop();
 
-	// set to true by sigioHandler() so doPoll() will be called
-	bool m_needToPoll;
-
 	
-	int64_t   m_lastPollTime;
-	bool        m_inQuickPoll;
-	bool        m_needsToQuickPoll;
-	bool        m_canQuickPoll;
 	bool        m_isDoingLoop;
 
 	// the sighupHandler() will set this to 1 when we receive
 	// a SIGHUP, 2 if a thread crashed, 3 if we got a SIGPWR
 	char m_shutdown;
-
-	void canQuickPoll(int32_t niceness);
-
-	void enableQuickpollTimer();
-	void disableQuickpollTimer();
-
-	void quickPoll(int32_t niceness, const char* caller = NULL, int32_t lineno = 0);
 
 	// called when sigqueue overflows and we gotta do a select() or poll()
 	void doPoll ( );
@@ -189,8 +175,6 @@ class Loop {
 
 extern class Loop g_loop;
 
-//#define QUICKPOLL(a) if(g_loop.m_canQuickPoll && g_loop.m_needsToQuickPoll) g_loop.quickPoll(a, __PRETTY_FUNCTION__, __LINE__)
-//#define QUICKPOLL(a) if(g_niceness && g_loop.m_needsToQuickPoll) g_loop.quickPoll(a, __PRETTY_FUNCTION__, __LINE__)
 #define QUICKPOLL(a)
 
 #endif // GB_LOOP_H

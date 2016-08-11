@@ -914,26 +914,6 @@ Profiler::checkMissedQuickPoll( FrameTrace *frame,
 				const uint32_t stackPtr,
 				uint32_t *ptr)
 {
-	if(g_niceness == 0 || // !g_loop.m_canQuickPoll || 
-	   !g_loop.m_needsToQuickPoll ||
-	   g_loop.m_inQuickPoll) return;	
-	// Get the time difference from when the function we last saw was
-	// different. The odds are very good that this time represents the time
-	// which has been spent in this function.
-// 	const uint64_t time = gettimeofdayInMilliseconds();
-// 	const uint64_t delta = time - g_profiler.m_lastDeltaAddressTime;
-// 	const uint32_t maxDelta = QUICKPOLL_INTERVAL;
-	//log("delta %i", delta);
-	//	if(delta <= maxDelta) return;
-	//	if(time - g_loop.m_lastPollTime <= maxDelta) return;
-	// If it got here then there is a good change a quick poll call needs to
-	// be added. 
-	if(frame) ++frame->missQuickPoll;
-	//if(!ptr) ptr =(uint32_t *)realTimeProfilerData.getValuePointer(
-	//			uint32_t(stackPtr));
-	if(!ptr) ptr = (uint32_t *)realTimeProfilerData.getValue((uint32_t *)
-								 &stackPtr);
-	if(ptr) ++ptr[1];
 }
 
 
@@ -983,12 +963,6 @@ Profiler::getStackFrame() {
 		g_profiler.m_ipBuf.pushLongLong(addr);
 		continue;
 	}
-
-	// a secret # to indicate missed quickpoll
-	if ( g_niceness != 0 &&
-	     g_loop.m_needsToQuickPoll &&
-	     ! g_loop.m_inQuickPoll )
-		g_profiler.m_ipBuf.pushLongLong(0x123456789LL);
 
 	// indicate end of call stack path
 	g_profiler.m_ipBuf.pushLongLong(0LL);//addr);

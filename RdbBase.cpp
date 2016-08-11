@@ -1457,13 +1457,6 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 	}
 	
 
-	// sanity checks
-	if ( g_loop.m_inQuickPoll ) {
-		logTrace( g_conf.m_logTraceRdbBase, "END, in QuickPoll (?)" );
-		log("rdb: cant attempt merge in quickpoll");
-		return false;
-	}
-
 	if (   niceness == 0 ) { g_process.shutdownAbort(true); }
 
 	if ( forceMergeAll ) m_nextMergeForced = true;
