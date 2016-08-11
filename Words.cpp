@@ -1,6 +1,7 @@
-#include "gb-include.h"
+//#include "gb-include.h"
 
 #include "Words.h"
+#include "Xml.h"
 #include "Unicode.h" // getUtf8CharSize()
 #include "StopWords.h"
 #include "Speller.h"

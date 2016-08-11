@@ -8,6 +8,9 @@
 #define GB_WORDS_H
 
 #include "max_words.h"
+#include "StopWords.h"
+#include "XmlNode.h"
+#include <inttypes.h>
 
 // now Matches.h has 300 Words classes handy... try to do away with this
 // make sure it does not slow us down!!
@@ -17,11 +20,8 @@ char *getFieldValue ( char *s ,int32_t  slen, const char *field , int32_t *value
 
 unsigned char getCharacterLanguage ( const char *utf8Char ) ;
 
-#include "Xml.h"
-#include "SafeBuf.h"
-#include "StopWords.h"
-#include "fctypes.h"
-#include "Titledb.h"
+class Xml;
+
 
 #define NUM_LANGUAGE_SAMPLES 1000
 

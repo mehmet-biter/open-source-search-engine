@@ -2767,7 +2767,7 @@ void UdpServer::printState() {
 }
 
 void UdpServer::saveActiveSlots(int fd, msg_type_t msg_type) {
-	for (const UdpSlot *slot = m_activeListHead; slot; slot = slot->getActiveListNext()) {
+	for (const UdpSlot *slot = m_activeListHead; slot; slot = slot->m_activeListNext) {
 		// skip if not wanted msg type
 		if (slot->getMsgType() != msg_type) {
 			continue;
@@ -2793,7 +2793,7 @@ void UdpServer::saveActiveSlots(int fd, msg_type_t msg_type) {
 std::vector<UdpStatistic> UdpServer::getStatistics() const {
 	std::vector<UdpStatistic> statistics;
 
-	for (const UdpSlot *slot = m_activeListHead; slot; slot = slot->getActiveListNext()) {
+	for (const UdpSlot *slot = m_activeListHead; slot; slot = slot->m_activeListNext) {
 		statistics.push_back(UdpStatistic(*slot));
 	}
 

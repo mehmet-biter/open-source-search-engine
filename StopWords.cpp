@@ -1,8 +1,7 @@
 ﻿// Matt Wells, copyright Jul 2001
 
-#include "gb-include.h"
-
 #include "StopWords.h"
+#include "gb-include.h"
 #include "HashTableX.h"
 #include "Speller.h"
 #include "Loop.h"
