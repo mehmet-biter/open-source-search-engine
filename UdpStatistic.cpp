@@ -1,6 +1,9 @@
 #include <cstdio>
 #include "UdpStatistic.h"
 #include "UdpSlot.h"
+#include "Msg13.h"
+#include "Msg0.h"
+#include "Rdb.h"
 
 UdpStatistic::UdpStatistic(const UdpSlot &slot)
 	: m_transId(slot.getTransId()),
@@ -27,10 +30,25 @@ UdpStatistic::UdpStatistic(const UdpSlot &slot)
 	  m_extraInfo() {
 	switch (m_msgType) {
 		case msg_type_0:
-			snprintf(m_description, sizeof(m_description), "get from %s", m_extraInfo);
+			if (strlen(slot.getExtraInfo())) {
+				snprintf(m_description, sizeof(m_description), "get from %s", slot.getExtraInfo());
+			} else if (slot.isIncoming()) {
+				if (slot.m_readBuf && slot.m_readBufSize > RDBIDOFFSET) {
+					uint8_t rdbId = static_cast<uint8_t>(slot.m_readBuf[RDBIDOFFSET]);
+					snprintf(m_description, sizeof(m_description), "get from %s", getDbnameFromId(rdbId));
+				}
+			}
 			break;
 		case msg_type_1:
-			snprintf(m_description, sizeof(m_description), "add to %s", m_extraInfo);
+			if (strlen(slot.getExtraInfo())) {
+				snprintf(m_description, sizeof(m_description), "add to %s", slot.getExtraInfo());
+			} else if (slot.isIncoming()) {
+				if (slot.m_readBuf) {
+					uint8_t rdbId = static_cast<uint8_t>(slot.m_readBuf[0]);
+					snprintf(m_description, sizeof(m_description), "add to %s", getDbnameFromId(rdbId));
+				}
+
+			}
 			break;
 		case msg_type_4:
 			strcpy(m_description, "meta add");
@@ -45,7 +63,14 @@ UdpStatistic::UdpStatistic(const UdpSlot &slot)
 			strcpy(m_description, "ping");
 			break;
 		case msg_type_13:
-			snprintf(m_description, sizeof(m_description), "get %s", m_extraInfo);
+			if (strlen(slot.getExtraInfo())) {
+				snprintf(m_description, sizeof(m_description), "get %s", slot.getExtraInfo());
+			} else if (slot.isIncoming()) {
+				if (slot.m_readBuf && slot.m_readBufSize >= sizeof(Msg13Request)) {
+					Msg13Request *r = reinterpret_cast<Msg13Request*>(slot.m_readBuf);
+					snprintf(m_description, sizeof(m_description), "get %s", r->m_isRobotsTxt ? "web page" : "robot.txt");
+				}
+			}
 			break;
 		case msg_type_1f:
 			strcpy(m_description, "get remote log");
