@@ -1573,57 +1573,58 @@ readLoop:
 
 	// . HACK to fix useHalfKeys compression thing from one read to the nxt
 	// . "key" should still be set to the last record we read last read
-	//if ( offset > 0 ) list.m_listPtrHi = ((char *)&key)+6;
 	if ( offset > 0 ) {
 		list.m_listPtrHi = key+(m_ks-6);
 	}
 
 	// ... fix for posdb!!!
 	if ( offset > 0 && m_ks == 18 ) {
-		list.m_listPtrLo = key+(m_ks-12);
+		list.m_listPtrLo = key + (m_ks - 12);
 	}
 
 	// . parse through the records in the list
 	// . stolen from RdbMap::addList()
- nextRec:
+nextRec:
 	rec = list.getCurrentRec ();
-	if ( rec+64 > list.getListEnd() && offset+readSize < fileSize ) {
+	if (rec + 64 > list.getListEnd() && offset + readSize < fileSize) {
 		// set up so next read starts at this rec that MAY have been
 		// cut off
 		offset += (rec - buf);
 		goto readLoop;
 	}
+
 	// WARNING: when data is corrupted these may cause segmentation faults?
-	//key     = list.getCurrentKey ( );
 	list.getCurrentKey(key);
 	recSize = list.getCurrentRecSize();
-	//rec     = list.getCurrentRec ();
+
 	// don't chop keys
-	//if ( recSize > 1000000 ) { g_process.shutdownAbort(true); }
 	if ( recSize < 6 ) {
 		log( LOG_WARN, "db: Got negative recsize of %" PRId32" at offset=%" PRId64" lastgoodoff=%" PRId64,
 		    recSize , offset + (rec-buf), m_offset );
 
 		// it truncates to m_offset!
-		if ( truncateFile(f) ) {
+		if (truncateFile(f)) {
 			goto done;
 		}
 		return false;
 	}
+
 	// do we have a breech?
-	if ( rec + recSize > buf + readSize ) {
+	if (rec + recSize > buf + readSize) {
 		// save old
 		int64_t oldOffset = offset;
+
 		// set up so next read starts at this rec that got cut off
 		offset += (rec - buf);
+
 		// . if we advanced nothing, then we'll end up looping forever
 		// . this will == 0 too, for big recs that did not fit in our
 		//   read but we take care of that below
 		// . this can happen if merge dumped out half-ass
 		// . the write split a record...
-		if ( rec - buf == 0 && recSize <= bufSize  ) {
-			log( LOG_WARN, "db: Map generation failed because last record in data file was split. Power failure while "
-				 "writing? Truncating file to %" PRId64" bytes. (lost %" PRId64" bytes)", offset,fileSize-offset);
+		if (rec - buf == 0 && recSize <= bufSize) {
+			log(LOG_WARN, "db: Map generation failed because last record in data file was split. Power failure while "
+				"writing? Truncating file to %" PRId64" bytes. (lost %" PRId64" bytes)", offset, fileSize - offset);
 
 			// when merge resumes it call our getFileSize()
 			// in RdbMerge.cpp::gotLock() to set the dump offset
@@ -1638,53 +1639,55 @@ readLoop:
 		}
 
 		// is our buf big enough to hold this type of rec?
-		if ( recSize > bufSize ) {
-			mfree ( buf , bufSize , "RdbMap");
+		if (recSize > bufSize) {
+			mfree(buf, bufSize, "RdbMap");
 			bufSize = recSize;
-			buf = (char *)mmalloc ( bufSize , "RdbMap" );
-			if ( ! buf ) {
-				log( LOG_WARN, "db: Got error while generating the map file: %s. offset=%" PRIu64".",
-				     mstrerror( g_errno ), oldOffset );
+			buf = (char *) mmalloc(bufSize, "RdbMap");
+			if (!buf) {
+				log(LOG_WARN, "db: Got error while generating the map file: %s. offset=%" PRIu64".",
+				    mstrerror(g_errno), oldOffset);
 				return false;
 			}
 		}
 		// read agin starting at the adjusted offset
 		goto readLoop;
-
 	}
-	if ( ! addRecord ( key , rec , recSize ) ) {
+
+	if (!addRecord(key, rec, recSize)) {
 		// if it was key out of order, it might be because the
 		// power went out and we ended up writing a a few bytes of
 		// garbage then a bunch of 0's at the end of the file.
 		// if the truncate works out then we are done.
-		if ( g_errno == ECORRUPTDATA && truncateFile(f) ) {
+		if (g_errno == ECORRUPTDATA && truncateFile(f)) {
 			goto done;
 		}
 
 		// otherwise, give it up
-		mfree ( buf , bufSize , "RdbMap");
-		log( LOG_WARN, "db: Map generation failed: %s.", mstrerror(g_errno));
+		mfree(buf, bufSize, "RdbMap");
+		log(LOG_WARN, "db: Map generation failed: %s.", mstrerror(g_errno));
 		return false;
 	}
 
 	// skip current good record now
-	if ( list.skipCurrentRecord() ) goto nextRec;
+	if (list.skipCurrentRecord()) {
+		goto nextRec;
+	}
+
 	// advance offset
 	offset += readSize;
+
 	// loop if more to go
-	if ( offset < fileSize ) goto readLoop;
+	if ( offset < fileSize ) {
+		goto readLoop;
+	}
+
 done:
 	// don't forget to free this
-	mfree ( buf , bufSize , "RdbMap");
-	
+	mfree(buf, bufSize, "RdbMap");
+
 	// if there was bad data we probably added out of order keys
-	if ( m_needVerify ) {
-		log(LOG_ERROR,"%s:%s:%d: Fixing map for [%s]. Added at least %" PRId64" bad keys.",
-			__FILE__,
-			__func__,
-			__LINE__,
-			f->getFilename(),
-		    m_badKeys);
+	if (m_needVerify) {
+		logError("Fixing map for [%s]. Added at least %" PRId64" bad keys.", f->getFilename(), m_badKeys);
 
 		verifyMap2();
 		m_needVerify = false;
