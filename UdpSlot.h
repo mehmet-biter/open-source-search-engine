@@ -100,6 +100,7 @@ public:
 	bool hasCalledHandler() const { return m_calledHandler; }
 	bool hasCalledCallback() const { return m_calledCallback; }
 
+	UdpSlot* getActiveListNext() { return m_activeListNext; }
 	const UdpSlot* getActiveListNext() const { return m_activeListNext; }
 
 	const char* getExtraInfo() const { return m_extraInfo; }
@@ -137,7 +138,7 @@ protected:
 	// . use a backoff of -1 for the default
 	bool sendSetup(char *msg, int32_t msgSize, char *alloc, int32_t allocSize, msg_type_t msgType, int64_t now,
 	               void *state, void (*callback)(void *state, class UdpSlot *), int32_t niceness, int16_t backoff,
-	               int16_t maxWait);
+	               int16_t maxWait, const char* extraInfo = NULL);
 
 	// . send a datagram from this slot on "sock" (call after sendSetup())
 	// . returns -2 if nothing to send, -1 on error, 0 if blocked, 
@@ -253,6 +254,9 @@ protected:
 	UdpSlot *m_callbackListPrev;
 
 	char m_convertedNiceness;
+
+	// additional information which could be useful for statistics (specific to msgtype)
+	char m_extraInfo[64];
 
 private:
 	// . send an ACK
@@ -399,9 +403,6 @@ private:
 
 	// save cpu by not having to call memset() on m_sentBits et al
 	int32_t m_numBitsInitialized;
-
-	// additional information which could be useful for statistics (specific to msgtype)
-	char m_extraInfo[64];
 
 	// memset clears from here and above. so put anything that needs to
 	// be set to zero above this line.

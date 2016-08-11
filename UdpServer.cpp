@@ -418,7 +418,7 @@ bool UdpServer::sendRequest(char *msg,
 	}
 
 	// set up for a send
-	if (!slot->sendSetup(msg, msgSize, msg, msgSize, msgType, now, state, callback, niceness, backoff, maxWait)) {
+	if (!slot->sendSetup(msg, msgSize, msg, msgSize, msgType, now, state, callback, niceness, backoff, maxWait, extraInfo)) {
 		freeUdpSlot_ass ( slot );
 		log( LOG_WARN, "udp: Failed to initialize udp socket for sending req: %s",mstrerror(g_errno));
 		return false;

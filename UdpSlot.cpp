@@ -198,7 +198,8 @@ void UdpSlot::resetConnect ( ) {
 // . callback is NULL     ifd you're sending a reply
 // . returns false and sets g_errno on error
 bool UdpSlot::sendSetup(char *msg, int32_t msgSize, char *alloc, int32_t allocSize, msg_type_t msgType, int64_t now,
-                        void *state, void (*callback)(void *state, UdpSlot *slot), int32_t niceness, int16_t backoff, int16_t maxWait) {
+                        void *state, void (*callback)(void *state, UdpSlot *slot), int32_t niceness, int16_t backoff, int16_t maxWait,
+						const char *extraInfo) {
 
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(msg,msgSize);
@@ -256,6 +257,13 @@ bool UdpSlot::sendSetup(char *msg, int32_t msgSize, char *alloc, int32_t allocSi
 	// if msgSize was given as 0 force a dgram to be sent
 	if ( msgSize == 0 ) {
 		m_dgramsToSend = 1;
+	}
+
+	// save additional info (if present)
+	if (extraInfo) {
+		strcpy(m_extraInfo, extraInfo);
+	} else {
+		m_extraInfo[0] = '\0';
 	}
 
 	// send to particular ip, but not for pings
