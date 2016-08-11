@@ -833,8 +833,7 @@ void handleRequest54 ( UdpSlot *udpSlot , int32_t niceness ) {
 	}
 
 	// send the proxy ip/port/LBid back to user
-	g_udpServer.sendReply_ass( udpSlot->m_tmpBuf, sizeof( ProxyReply ), udpSlot->m_tmpBuf,
-							   sizeof( ProxyReply ), udpSlot );
+	g_udpServer.sendReply_ass(udpSlot->m_tmpBuf, sizeof(ProxyReply), udpSlot->m_tmpBuf, sizeof(ProxyReply), udpSlot);
 }
 	
 // . use msg 0x55 to say you are done using the proxy

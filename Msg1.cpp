@@ -435,6 +435,9 @@ skip:
 	// . 1 byte for rdbId, 1 byte for flags,
 	//   then collection NULL terminated, then list
 	int32_t requestLen = 1 + 1 + sizeof(collnum_t) + listSize ;
+
+	/// @warning Changing position of rdbId will require a same change in UdpStatistic
+
 	// make the request
 	char *request = (char *) mmalloc ( requestLen ,"Msg1" );
 	if ( ! request ) return true;
@@ -467,22 +470,13 @@ skip:
 	//int32_t niceness = 2;
 	//if ( requestLen < TMPBUFSIZE - 32 ) niceness = 0;
 	//log("msg1: sending mcast niceness=%" PRId32,m_niceness);
+
 	// . multicast to all hosts in group "groupId"
 	// . multicast::send() returns false and sets g_errno on error
 	// . we return false if we block, true otherwise
 	// . will loop indefinitely if a host in this group is down
-	if ( m_mcast.send ( request    , // sets mcast->m_msg    to this
-			    requestLen , // sets mcast->m_msgLen to this
-			    msg_type_1       ,
-			    true       , // does multicast own msg?
-			    shardNum   , // group to send to (groupKey)
-			    true       , // send to whole group?
-			    0          , // key is useless for us
-			    this       , // state data
-			    NULL       , // state data
-			    gotReplyWrapper1 ,
-			    multicast_msg1_senddata_timeout         , // timeout
-			    m_niceness )) {  // niceness
+	// key is useless for us
+	if (m_mcast.send(request, requestLen, msg_type_1, true, shardNum, true, 0, this, NULL, gotReplyWrapper1, multicast_msg1_senddata_timeout, m_niceness, -1, getDbnameFromId(m_rdbId))) {
 		return false;
 	}
 
@@ -558,7 +552,7 @@ void handleRequest1 ( UdpSlot *slot , int32_t netnice ) {
 	if ( readBufSize <= 4 ) {
 		g_errno = EREQUESTTOOSHORT;
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. Request too short", __FILE__, __func__, __LINE__);
-		us->sendErrorReply ( slot , g_errno );
+		us->sendErrorReply(slot, g_errno);
 		return;
 	}
 	char *p    = readBuf;
@@ -569,7 +563,7 @@ void handleRequest1 ( UdpSlot *slot , int32_t netnice ) {
 	Rdb *rdb = getRdbFromId ( (char) rdbId );
 	if ( ! rdb ) { 
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. Bad rdbid", __FILE__, __func__, __LINE__);
-		us->sendErrorReply ( slot, EBADRDBID ); 
+		us->sendErrorReply(slot, EBADRDBID);
 		return;
 	}
 	// keep track of stats
@@ -615,73 +609,40 @@ void handleRequest1 ( UdpSlot *slot , int32_t netnice ) {
 	addedList ( slot , rdb );
 }
 
-//static void tryAgainWrapper ( int fd , void *state ) ;
-
 // g_errno may be set when this is called
 void addedList ( UdpSlot *slot , Rdb *rdb ) {
 	// no memory means to try again
-	if ( g_errno == ENOMEM ) g_errno = ETRYAGAIN;
-	// doing a full rebuid will add collections
-	if ( g_errno == ENOCOLLREC &&
-	     g_repairMode > 0 )
-	     //g_repair.m_fullRebuild )
+	if ( g_errno == ENOMEM ) {
 		g_errno = ETRYAGAIN;
+	}
+
+	// doing a full rebuid will add collections
+	if ( g_errno == ENOCOLLREC && g_repairMode > 0 ) {
+		g_errno = ETRYAGAIN;
+	}
 
 	// it seems like someone can delete a collection and there can
 	// be adds in transit to doledb and it logs
 	// "doledb bad collnum of 30110"
 	// so just absorb those
 	if ( g_errno == ENOCOLLREC ) {
-		log("msg1: missing collrec to add to to %s. just dropping.",
-		    rdb->m_dbname);
+		log(LOG_WARN, "msg1: missing collrec to add to to %s. just dropping.", rdb->m_dbname);
 		g_errno = 0;
 	}
 
-	// . if we got a ETRYAGAIN cuz the buffer we add to was full
-	//   then we should sleep and try again!
-	// . return false cuz this blocks for a period of time
-	//   before trying again
-	// . but now to free the udp slot when we are doing an urgent merge
-	//   let's send an error back!
-	//if ( g_errno == ETRYAGAIN ) {
-		// debug msg
-		//log("REGISTERING SLEEP CALLBACK");
-		// try adding again in 1 second
-	//	g_loop.registerSleepCallback ( 1000, slot, tryAgainWrapper );
-		// return now
-	//	return;
-	//}
-	// random test
-	//if ( (rand() % 10) == 1 ) g_errno = ETRYAGAIN;
-	//int32_t niceness = slot->getNiceness() ;
-	// select udp server based on niceness
-	UdpServer *us = &g_udpServer ;
-	//if ( niceness == 0 ) us = &g_udpServer2;
-	//else                 us = &g_udpServer ;
 	// chalk it up
-	rdb->sentReplyAdd ( 0 );
+	rdb->sentReplyAdd(0);
+
 	// are we done
-	if ( ! g_errno ) {
+	if (!g_errno) {
 		// . send an empty (non-error) reply as verification
 		// . slot should be auto-nuked on transmission/timeout of reply
 		// . udpServer should free the readBuf
-		us->sendReply_ass ( NULL , 0 , NULL , 0 , slot ) ;
+		g_udpServer.sendReply_ass(NULL, 0, NULL, 0, slot);
 		return;
 	}
+
 	// on other errors just send the err code back
 	log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. error=%s", __FILE__, __func__, __LINE__, mstrerror(g_errno));
-	us->sendErrorReply ( slot , g_errno );
+	g_udpServer.sendErrorReply(slot, g_errno);
 }
-/*
-void tryAgainWrapper ( int fd , void *state ) {
-	// stop waiting
-	g_loop.unregisterSleepCallback ( state , tryAgainWrapper );
-	// clear g_errno
-	g_errno = 0;
-	// get slot
-	UdpSlot *slot = (UdpSlot *)state;
-	// try adding again
-	handleRequest1 ( slot , -2 ); // slot->getNiceness() );
-	return;
-}
-*/

@@ -157,21 +157,7 @@ bool Msg22::getTitleRec ( Msg22Request  *r              ,
 	// . returns false and sets g_errno on error
 	// . use a pre-allocated buffer to hold the reply
 	// . TMPBUFSIZE is how much a UdpSlot can hold w/o allocating
-        if ( ! m_mcast.send ( (char *)r       , 
-			      r->getSize()    ,
-			      msg_type_22            ,
-			      false           , // m_mcast own m_request?
-			      shardNum        , // send to group (groupKey)
-			      false           , // send to whole group?
-			      //hostKey         , // key is lower bits of docId
-			      0               , // key is lower bits of docId
-			      this            , // state data
-			      NULL            , // state data
-			      gotReplyWrapper22 ,
-			      timeout*1000    , // timeout
-			      r->m_niceness   , // nice, reply size can be huge
-			      firstHostId     , // first hostid
-			      false           ) ){ // free reply buf?
+	if (!m_mcast.send((char *)r, r->getSize(), msg_type_22, false, shardNum, false, 0, this, NULL, gotReplyWrapper22, timeout * 1000, r->m_niceness, firstHostId, NULL, false)) {
 		log("db: Requesting title record had error: %s.",
 		    mstrerror(g_errno) );
 		// set m_errno
@@ -395,7 +381,7 @@ void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
 	   int32_t  dlen = 0;
 	   // this causes ip based urls to be inconsistent with the call
 	   // to getProbableDocId(url) below
-	   char *dom  = getDomFast ( r->m_url , &dlen );
+	   const char *dom  = getDomFast ( r->m_url , &dlen );
 	   // bogus url?
 	   if ( ! dom ) {
 	       log(LOG_WARN, "msg22: got bad url in request: %s from "

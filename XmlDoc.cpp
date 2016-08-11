@@ -5608,7 +5608,7 @@ Url **XmlDoc::getRedirUrl() {
 	// special hack for nytimes.com. do not consider simplified redirs
 	// because it uses a cookie along with redirs to get to the final
 	// page.
-	char *dom2 = m_firstUrl.getDomain();
+	const char *dom2 = m_firstUrl.getDomain();
 	int32_t  dlen2 = m_firstUrl.getDomainLen();
 
 	//@todo BR: EEK! Improve this.

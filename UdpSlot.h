@@ -72,6 +72,7 @@ public:
 
 	// what is our niceness level?
 	int32_t getNiceness() const { return m_niceness; }
+	char getConvertedNiceness() const { return m_convertedNiceness; }
 
 	bool hasCallback() const { return (m_callback); }
 
@@ -100,6 +101,10 @@ public:
 	bool hasCalledCallback() const { return m_calledCallback; }
 
 	UdpSlot* getActiveListNext() { return m_activeListNext; }
+	const UdpSlot* getActiveListNext() const { return m_activeListNext; }
+
+	bool isIncoming() const { return m_incoming; }
+	const char* getExtraInfo() const { return m_extraInfo; }
 
 	// a ptr to the Host class for shotgun info
 	Host *m_host;
@@ -116,8 +121,6 @@ public:
 	char *m_readBuf;      // store recv'd msg in here.
 	int32_t m_readBufSize;  // w/o the dgram headers.
 	int32_t m_readBufMaxSize;
-
-	char m_convertedNiceness;
 
 protected:
 	// set the UdpSlot's protocol, endpoint info, transId, timeout
@@ -136,7 +139,7 @@ protected:
 	// . use a backoff of -1 for the default
 	bool sendSetup(char *msg, int32_t msgSize, char *alloc, int32_t allocSize, msg_type_t msgType, int64_t now,
 	               void *state, void (*callback)(void *state, class UdpSlot *), int32_t niceness, int16_t backoff,
-	               int16_t maxWait);
+	               int16_t maxWait, const char* extraInfo = NULL);
 
 	// . send a datagram from this slot on "sock" (call after sendSetup())
 	// . returns -2 if nothing to send, -1 on error, 0 if blocked, 
@@ -194,7 +197,7 @@ protected:
 
 	// . for sending purposes, the max scoring UdpSlot sends first
 	// . return < 0 if nothing to send
-	int32_t getScore ( int64_t now );
+	int32_t getScore ( int64_t now ) const;
 
 	void printState() ;
 
@@ -251,6 +254,10 @@ protected:
 	UdpSlot *m_callbackListNext;
 	UdpSlot *m_callbackListPrev;
 
+	char m_convertedNiceness;
+
+	// additional information which could be useful for statistics (specific to msgtype)
+	char m_extraInfo[64];
 
 private:
 	// . send an ACK
@@ -432,8 +439,6 @@ public:
 	// . caller should pre-allocated m_readBuf when calling sendRequest() if he expects a large reply
 	// . incoming requests simply cannot be bigger than this for the hot udp server
 	char m_tmpBuf[TMPBUFSIZE];
-
-	char *m_hostname;
 };
 
 extern int32_t g_cancelAcksSent;

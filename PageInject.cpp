@@ -213,22 +213,10 @@ bool Msg7::sendInjectionRequestToHost ( InjectionRequest *ir ,
 	// . and call got gotForwardedReplyWrapper when reply comes in
 	// . returns false and sets g_errno on error
 	// . returns true on success
-	if ( g_udpServer.sendRequest ( sir , // req ,
-					 sirSize,
-					 msg_type_7 ,
-					 host->m_ip , // ip
-					 host->m_port , // port
-					 host->m_hostId,
-					 NULL, // retslot
-					 this,//state,
-					 gotUdpReplyWrapper,//acallback,
-					 udpserver_sendrequest_infinite_timeout , // timeout
-					 -1 , // backoff
-					 -1 , // maxwait
-					 MAX_NICENESS // niceness
-				       ) )
+	if (g_udpServer.sendRequest(sir, sirSize, msg_type_7, host->m_ip, host->m_port, host->m_hostId, NULL, this, gotUdpReplyWrapper, udpserver_sendrequest_infinite_timeout, MAX_NICENESS)) {
 		// we also return true on success, false on error
 		return true;
+	}
 
 	if ( ! g_errno ) { g_process.shutdownAbort(true); }
 	// there was an error, g_errno should be set
@@ -1088,18 +1076,7 @@ bool ImportState::importLoop ( ) {
 	// do not free it, let multicast free it after sending it
 	sbuf->detachBuf();
 
-	if ( ! mcast->send ( req ,
-			     reqSize ,
-			     msg_type_7 ,
-			     true , // ownmsg?
-			     shardNum,
-			     false, // send to whole shard?
-			     key , // for selecting host in shard
-			     mcast , // state
-			     NULL , // state2
-			     gotMulticastReplyWrapper ,
-			     multicast_infinite_send_timeout,
-			     MAX_NICENESS ) ) {
+	if (!mcast->send(req, reqSize, msg_type_7, true, shardNum, false, key, mcast, NULL, gotMulticastReplyWrapper, multicast_infinite_send_timeout, MAX_NICENESS)) {
 		log(LOG_WARN, "import: import mcast had error: %s",mstrerror(g_errno));
 		m_numIn++;
 	}

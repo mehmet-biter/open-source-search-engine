@@ -61,20 +61,9 @@ void Multicast::reset ( ) {
 // . caller can now pass in his own reply buffer
 // . if "freeReplyBuf" is true that means it needs to be freed at some point
 //   otherwise, it's probably on the stack or part of a larger allocate class.
-bool Multicast::send ( char         *msg              ,
-		       int32_t          msgSize          ,
-		       msg_type_t       msgType          ,
-		       bool          ownMsg           ,
-		       uint32_t shardNum,
-		       bool          sendToWholeGroup ,
-		       int32_t          key              ,
-		       void         *state            ,
-		       void         *state2           ,
-		       void          (*callback) (void *state , void *state2),
-		       int64_t          totalTimeout     , // in millseconds
-		       int32_t          niceness         ,
-		       int32_t          firstHostId      ,
-		       bool          freeReplyBuf     ) {
+bool Multicast::send(char *msg, int32_t msgSize, msg_type_t msgType, bool ownMsg, uint32_t shardNum, bool sendToWholeGroup,
+                     int32_t key, void *state, void *state2, void (*callback)(void *state, void *state2),
+                     int64_t totalTimeout, int32_t niceness, int32_t firstHostId, const char *extraInfo, bool freeReplyBuf) {
 	bool sendToSelf = true;
 
 	// make sure not being re-used!
@@ -118,8 +107,6 @@ bool Multicast::send ( char         *msg              ,
 	memset ( m_errnos     , 0 , sizeof(int32_t     ) * MAX_HOSTS_PER_GROUP );
 	memset ( m_slots      , 0 , sizeof(UdpSlot *) * MAX_HOSTS_PER_GROUP );
 	memset ( m_inProgress , 0 , sizeof(char     ) * MAX_HOSTS_PER_GROUP );
-	// breathe
-	QUICKPOLL(m_niceness);
 
 	// . get the list of hosts in this group
 	// . returns false if blocked, true otherwise
@@ -150,9 +137,10 @@ bool Multicast::send ( char         *msg              ,
 	}
 
 	//if ( ! sendToWholeGroup ) return sendToHostLoop ( key , -1 );
+
 	// . send to ALL hosts in this group if sendToWholeGroup is true
 	// . blocks forever until sends to all hosts are successfull
-	sendToGroup ( );
+	sendToGroup();
 
 	// . sendToGroup() always blocks, but we return true if no g_errno
 	// . we actually keep looping until all hosts get the msg w/o error
@@ -171,7 +159,7 @@ bool Multicast::send ( char         *msg              ,
 // . it does not send to hosts whose m_errnos is 0
 // . TODO: deal with errors from g_udpServer::sendRequest() better
 // . returns false and sets g_errno on error
-void Multicast::sendToGroup ( ) {
+void Multicast::sendToGroup() {
 	// see if anyone gets an error
 	bool hadError = false;
 	// . cast the msg to ALL hosts in the m_hosts group of hosts
@@ -215,19 +203,7 @@ void Multicast::sendToGroup ( ) {
 		// . send to a single host
 		// . this creates a transaction control slot, "udpSlot"
 		// . returns false and sets g_errno on error
-		if ( us->sendRequest ( m_msg       , 
-				       m_msgSize   , 
-				       m_msgType   ,
-				       bestIp      , // h->m_ip     , 
-				       destPort    ,
-				       hid ,
-				       &m_slots[i] ,
-				       this        , // state
-				       gotReplyWrapperM2 ,
-				       m_totalTimeout   ,
-				       -1               , // backoff
-				       -1               , // max wait in ms
-				       m_niceness )) {  // cback niceness
+		if (us->sendRequest(m_msg, m_msgSize, m_msgType, bestIp, destPort, hid, &m_slots[i], this, gotReplyWrapperM2, m_totalTimeout, m_niceness)) {
 			continue;
 		}
 		// g_errno must have been set, remember it
@@ -650,20 +626,7 @@ bool Multicast::sendToHost ( int32_t i ) {
 	// . this creates a transaction control slot, "udpSlot"
 	// . return false and sets g_errno on error
 	// . returns true on successful launch and calls callback on completion
-	if ( !  us->sendRequest ( m_msg       , 
-				  m_msgSize   , 
-				  m_msgType   ,
-				  bestIp      , // h->m_ip     , 
-				  destPort    ,
-				  hid ,
-				  &m_slots[i] ,
-				  this        , // state
-				  gotReplyWrapperM1 ,
-				  timeRemaining    , // timeout
-				  -1               , // backoff
-				  -1               , // max wait in ms
-				  m_niceness        , // cback niceness
-				  maxResends        )) {
+	if (!us->sendRequest(m_msg, m_msgSize, m_msgType, bestIp, destPort, hid, &m_slots[i], this, gotReplyWrapperM1, timeRemaining, m_niceness, NULL, -1, -1, maxResends)) {
 		log(LOG_WARN, "net: Had error sending msgtype 0x%02x to host #%" PRId32": %s. Not retrying.",
 		    m_msgType,h->m_hostId,mstrerror(g_errno));
 		// i've seen ENOUDPSLOTS available msg here along with oom

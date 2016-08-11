@@ -2344,7 +2344,7 @@ char *getPathFast ( char *url ) {
 	return pe;
 }
 
-char *getTLDFast ( char *url , int32_t *tldLen , bool hasHttp ) {
+const char *getTLDFast ( char *url , int32_t *tldLen , bool hasHttp ) {
 	// point to the url
 	char *pp = url;
 	// only do this for some
@@ -2387,7 +2387,7 @@ char *getTLDFast ( char *url , int32_t *tldLen , bool hasHttp ) {
 	}
 
 	// get the tld
-	char *tld = ::getTLD ( uhost , uhostLen );
+	const char *tld = ::getTLD ( uhost , uhostLen );
 
 	// if none, done
 	if ( ! tld ) {
@@ -2447,12 +2447,12 @@ bool hasSubdomain ( char *url ) {
 	// if we are an ip, say yes
 	if ( ss == pp ) return true;
 	// get the tld
-	char *utld = ::getTLD ( uhost , uhostLen );
+	const char *utld = ::getTLD ( uhost , uhostLen );
 	// no tld, then no domain
 	if ( ! utld ) return false;
 	// the domain, can only be gotten once we know the TLD
 	// back up a couple chars
-	char *udom = utld - 2;
+	const char *udom = utld - 2;
 	// backup until we hit a '.' or hit the beginning
 	while ( udom > uhost && *udom != '.' ) udom--;
 	// fix http://ok/
@@ -2469,7 +2469,7 @@ bool hasSubdomain ( char *url ) {
 // was happening when a host gave us a bad redir url and xmldoc tried
 // to set extra doc's robot.txt url to it "http://2010/robots.txt" where
 // the host said "Location: 2010 ...".
-char *getDomFast ( char *url , int32_t *domLen , bool hasHttp ) {
+const char *getDomFast ( char *url , int32_t *domLen , bool hasHttp ) {
 	// point to the url
 	char *pp = url;
 	// skip http if there
@@ -2522,14 +2522,14 @@ char *getDomFast ( char *url , int32_t *domLen , bool hasHttp ) {
 		return uhost;
 	}
 	// get the tld
-	char *utld = ::getTLD ( uhost , uhostLen );
+	const char *utld = ::getTLD ( uhost , uhostLen );
 	// no tld, then no domain
 	if ( ! utld ) return NULL;
 	// the domain, can only be gotten once we know the TLD
 	// set utldLen
 	//int32_t utldLen = hostEnd - utld;
 	// back up a couple chars
-	char *udom = utld - 2;
+	const char *udom = utld - 2;
 	// backup until we hit a '.' or hit the beginning
 	while ( udom > uhost && *udom != '.' ) udom--;
 	// fix http://ok/

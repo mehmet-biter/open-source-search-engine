@@ -11547,20 +11547,7 @@ bool Parms::doParmSendingLoop ( ) {
 		// count it
 		pn->m_numRequests++;
 		// ok, he's available
-		if ( ! g_udpServer.sendRequest ( pn->m_parmList.getBufStart(),
-						 pn->m_parmList.length() ,
-						 // a new msgtype
-						 msg_type_3f,
-						 h->m_ip, // ip
-						 h->m_port, // port
-						 h->m_hostId ,
-						 NULL, // retslot
-						 (void *)(PTRTYPE)h->m_hostId , // state
-						 gotParmReplyWrapper ,
-						 30*1000 , // timeout msecs
-						 -1 , // backoff
-						 -1 , // maxwait
-						 0 ) ) { // niceness
+		if (!g_udpServer.sendRequest(pn->m_parmList.getBufStart(), pn->m_parmList.length(), msg_type_3f, h->m_ip, h->m_port, h->m_hostId, NULL, (void *)(PTRTYPE)h->m_hostId, gotParmReplyWrapper, 30000, 0)) {
 			log("parms: faild to send: %s",mstrerror(g_errno));
 			continue;
 		}
@@ -11885,16 +11872,7 @@ bool Parms::syncParmsWithHost0 ( ) {
 	// . msg4 guarantees ordering of requests
 	// . there will be a record that is CMD_INSYNC so when we get
 	//   that we set g_parms.m_inSyncWithHost0 to true
-	if ( ! g_udpServer.sendRequest ( request ,//hashList.getBufStart() ,
-					 requestLen, //hashList.length() ,
-					 msg_type_3e , // msgtype
-					 h->m_ip, // ip
-					 h->m_port, // port
-					 h->m_hostId , // hostid , host #0!!!
-					 NULL, // retslot
-					 NULL , // state
-					 gotReplyFromHost0Wrapper ,
-					 udpserver_sendrequest_infinite_timeout ) ) { // timeout in msecs
+	if (!g_udpServer.sendRequest(request, requestLen, msg_type_3e, h->m_ip, h->m_port, h->m_hostId, NULL, NULL, gotReplyFromHost0Wrapper, udpserver_sendrequest_infinite_timeout)) {
 		log("parms: error syncing with host 0: %s",mstrerror(g_errno));
 		return false;
 	}

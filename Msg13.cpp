@@ -255,21 +255,9 @@ bool Msg13::forwardRequest ( ) {
 	// . otherwise, send the request to the key host
 	// . returns false and sets g_errno on error
 	// . now wait for 2 minutes before timing out
-	if ( ! g_udpServer.sendRequest ( requestBuf, // (char *)r    ,
-					 requestBufSize  ,
-					 msg_type_13         ,
-					 h->m_ip      ,
-					 h->m_port    ,
-					 // it was not using the proxy! because
-					 // it thinks the hostid #0 is not
-					 // the proxy... b/c ninad screwed that
-					 // up by giving proxies the same ids
-					 // as regular hosts!
-					 -1 , // h->m_hostId  ,
-					 NULL         ,
-					 this         , // state data
-					 gotForwardedReplyWrapper  ,
-					 200000 )){// 200 sec timeout
+	// it was not using the proxy! because it thinks the hostid #0 is not the proxy... b/c ninad screwed that
+	// up by giving proxies the same ids as regular hosts!
+	if (!g_udpServer.sendRequest(requestBuf, requestBufSize, msg_type_13, h->m_ip, h->m_port, -1, NULL, this, gotForwardedReplyWrapper, 200000, 1)) {
 		// sanity check
 		if ( ! g_errno ) { g_process.shutdownAbort(true); }
 		// report it
@@ -496,12 +484,8 @@ void handleRequest13 ( UdpSlot *slot , int32_t niceness  ) {
 	
 	// . an empty rec is a cached not found (no robot.txt file)
 	// . therefore it's allowed, so set *reply to 1 (true)
-	if ( inCache ) {
-		// log debug?
-		//if ( r->m_isSquidProxiedUrl )
-		if ( g_conf.m_logDebugSpider )
-			log("proxy: found %" PRId32" bytes in cache for %s",
-			    recSize,r->ptr_url);
+	if (inCache) {
+		logDebug(g_conf.m_logDebugSpider, "proxy: found %" PRId32" bytes in cache for %s", recSize,r->ptr_url);
 
 		// helpful for debugging. even though you may see a robots.txt
 		// redirect and think we are downloading that each time,
@@ -509,7 +493,7 @@ void handleRequest13 ( UdpSlot *slot , int32_t niceness  ) {
 		//log("spider: %s was in cache",r->ptr_url);
 		// . send the cached reply back
 		// . this will free send/read bufs on completion/g_errno
-		g_udpServer.sendReply_ass ( rec , recSize , rec, recSize,slot);
+		g_udpServer.sendReply_ass(rec, recSize, rec, recSize, slot);
 		return;
 	}
 	rcl.unlock();
@@ -549,24 +533,12 @@ void handleRequest13 ( UdpSlot *slot , int32_t niceness  ) {
 		if ( g_conf.m_logDebugSpider || g_conf.m_logDebugMsg13 )
 			log(LOG_DEBUG,"spider: sending to compression proxy "
 			    "%s:%" PRIu32,iptoa(h->m_ip),(uint32_t)h->m_port);
+
 		// . otherwise, send the request to the key host
 		// . returns false and sets g_errno on error
 		// . now wait for 2 minutes before timing out
-		if ( ! g_udpServer.sendRequest ( (char *)r    ,
-						 r->getSize() ,
-						 msg_type_13         ,
-						 h->m_ip      ,
-						 h->m_port    ,
-						 // we are sending to the proxy
-						 // so make this -1
-						 -1 , // h->m_hostId  ,
-						 NULL         ,
-						 r            , // state data
-						 passOnReply  ,
-						 200000 , // 200 sec timeout
-						 -1,//backoff
-						 -1,//maxwait
-						 niceness)) {
+		// we are sending to the proxy so make hostId -1
+		if (!g_udpServer.sendRequest((char *)r, r->getSize(), msg_type_13, h->m_ip, h->m_port, -1, NULL, r, passOnReply, 200000, niceness)) {
 			// g_errno should be set
 			
 			log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. error=%s", __FILE__, __func__, __LINE__, mstrerror(g_errno));
@@ -661,20 +633,10 @@ void downloadTheDocForReals2 ( Msg13Request *r ) {
 	// host #1 must take over! if all are dead, it returns host #0.
 	// so we are guaranteed "h will be non-null
 	Host *h = g_hostdb.getFirstAliveHost();
+
 	// now ask that host for the best spider proxy to send to
-	if ( ! g_udpServer.sendRequest ( (char *)r,
-					 // just the top part of the
-					 // Msg13Request is sent to
-					 // handleRequest54() now
-					 r->getProxyRequestSize() ,
-					 msg_type_54         ,
-					 h->m_ip      ,
-					 h->m_port    ,
-					 -1 , // h->m_hostId  ,
-					 NULL         ,
-					 r         , // state data
-					 gotProxyHostReplyWrapper  ,
-					 udpserver_sendrequest_infinite_timeout )){
+	// just the top part of the Msg13Request is sent to handleRequest54() now
+	if (!g_udpServer.sendRequest((char *)r, r->getProxyRequestSize(), msg_type_54, h->m_ip, h->m_port, -1, NULL, r, gotProxyHostReplyWrapper, udpserver_sendrequest_infinite_timeout)) {
 		// sanity check
 		if ( ! g_errno ) { g_process.shutdownAbort(true); }
 		// report it
@@ -1090,16 +1052,7 @@ void gotHttpReply9 ( void *state , TcpSocket *ts ) {
 	Host *h = g_hostdb.getFirstAliveHost();
 	// now return the proxy. this will decrement the load count on
 	// host "h" for this proxy.
-	if ( g_udpServer.sendRequest ( (char *)r,
-				       r->getProxyRequestSize(),
-				       msg_type_54 ,
-				       h->m_ip      ,
-				       h->m_port    ,
-				       -1 , // h->m_hostId  ,
-				       NULL         ,
-				       r        , // state data
-				       doneReportingStatsWrapper  ,
-				       10000 )){// 10 sec timeout
+	if (g_udpServer.sendRequest((char *)r, r->getProxyRequestSize(), msg_type_54, h->m_ip, h->m_port, -1, NULL, r, doneReportingStatsWrapper, 10000)) {
 		// it blocked!
 		//r->m_blocked = true;
 		s_55Out++;
@@ -1661,8 +1614,7 @@ void gotHttpReply2 ( void *state ,
 		// this is not freeable
 		if ( copy == g_fakeReply ) copyAllocSize = 0;
 		// get request
-		Msg13Request *r2;
-		r2 = *(Msg13Request **)s_rt.getValueFromSlot(tableSlot);
+		Msg13Request *r2 = *(Msg13Request **)s_rt.getValueFromSlot(tableSlot);
 		// get udp slot for this transaction
 		UdpSlot *slot = r2->m_udpSlot;
 		// remove from list
@@ -1678,14 +1630,16 @@ void gotHttpReply2 ( void *state ,
 				    iptoa(r2->m_urlIp));
 				    
 			log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. error=%s", __FILE__, __func__, __LINE__, mstrerror(err));
-			g_udpServer.sendErrorReply ( slot , err );
+			g_udpServer.sendErrorReply(slot, err);
 			continue;
 		}
 		// for debug for now
 		if ( g_conf.m_logDebugSpider || g_conf.m_logDebugMsg13 )
 			log("msg13: sending reply for %s",r->ptr_url);
+
 		// send reply
-		us->sendReply_ass ( copy,replySize,copy,copyAllocSize, slot );
+		us->sendReply_ass(copy, replySize, copy, copyAllocSize, slot);
+
 		// now final udp slot will free the reply, so tcp server
 		// no longer has to. set this tcp buf to null then.
 		if ( ts && ts->m_readBuf == reply && count == 0 ) 
@@ -1727,9 +1681,9 @@ void passOnReply ( void *state , UdpSlot *slot ) {
 	slot->m_readBufSize = 0;
 	// prevent udpserver from trying to free g_fakeReply
 	if ( reply == g_fakeReply ) replyAllocSize = 0;
-	//int32_t  replyAllocSize = slot->m_readBufSize;
+
 	// just forward it on
-	g_udpServer.sendReply_ass( reply, replySize, reply, replyAllocSize, r->m_udpSlot );
+	g_udpServer.sendReply_ass(reply, replySize, reply, replyAllocSize, r->m_udpSlot);
 }
 
 // returns true if <iframe> tag in there

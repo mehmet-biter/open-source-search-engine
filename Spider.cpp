@@ -4343,7 +4343,7 @@ bool SpiderRequest::setFromAddUrl ( char *url ) {
 	// how to set m_firstIp? i guess addurl can be throttled independently
 	// of the other urls???  use the hash of the domain for it!
 	int32_t  dlen;
-	char *dom = getDomFast ( url , &dlen );
+	const char *dom = getDomFast ( url , &dlen );
 
 	// sanity
 	if ( ! dom ) {

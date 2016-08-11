@@ -395,20 +395,7 @@ bool Msg3a::getDocIds ( Msg39Request *r          ,
 		// . if that host takes more than about 5 secs then sends to
 		//   next host
 		// . key should be largest termId in group we're sending to
-		bool status;
-		status = m->send ( req , // m_rbufPtr         ,
-				   m_rbufSize        , // request size
-				   msg_type_39              ,
-				   false             , // mcast owns m_request?
-				   shardNum          , // group to send to
-				   false             , // send to whole group?
-				   (int32_t)qh          , // 0 // startKey.n1
-				   this              , // state1 data
-				   m                 , // state2 data
-				   gotReplyWrapper3a ,
-				   timeout           , // timeout
-				   m_r->m_niceness   ,
-				   firstHostId      ); // -1// bestHandlingHostId
+		bool status = m->send(req, m_rbufSize, msg_type_39, false, shardNum, false, (int32_t)qh, this, m, gotReplyWrapper3a, timeout, m_r->m_niceness, firstHostId);
 		// if successfully launch, do the next one
 		if ( status ) continue;
 		// . this serious error should make the whole query fail

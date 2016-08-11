@@ -689,7 +689,7 @@ void Blaster::gotDoc2 ( void *state, TcpSocket *s){
 	// yahoo we have to add other checks.
 	char domain2[256];
 	int32_t dlen = 0;
-	char *dom = getDomFast ( st->m_u2 , &dlen );
+	const char *dom = getDomFast ( st->m_u2 , &dlen );
 	if ( dom ) strncpy(domain2,dom,dlen);
 	domain2[dlen]='\0';
 	for (int32_t i=0;i<links2.getNumLinks();i++){

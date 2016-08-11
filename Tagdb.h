@@ -241,7 +241,7 @@ class Msg8a {
 
 	int32_t m_niceness;
 
-	char *m_dom;
+	const char *m_dom;
 	char *m_hostEnd;
 	char *m_p;
 

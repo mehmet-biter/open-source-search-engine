@@ -162,23 +162,10 @@ bool MsgC::getIp(const char *hostname, int32_t hostnameLen, int32_t *ip, void *s
 	// here unless we are niceness 0, which we need in case the handling
 	// servers goes down, we do not want to wait for it and would rather
 	// call the callback with an EUDPTIMEDOUT error after 60 seconds.
-	int64_t timeout = (niceness==0)
-	                ? multicast_msg1c_getip_default_timeout
-	                : multicast_infinite_send_timeout;
-	if ( !m_mcast.send (m_request    , // sets mcast->m_msg to this
-			    requestSize, // sets mcast->m_msgLen to this
-			    msg_type_c       ,
-			    false       , // does multicast own msg?
-			    host->m_shardNum , // group to send to (groupKey)
-			    false      , // send to whole group?
-			    0          , // key.n1 , // key is useless for us
-			    this       , // state data
-			    state       , // state data
-			    gotReplyWrapper ,
-			    timeout    , // timeout
-			    niceness   , // niceness
-			    firstHostId,// first host to try
-			    false   )) { // free reply buf?
+	int64_t timeout = (niceness==0) ? multicast_msg1c_getip_default_timeout : multicast_infinite_send_timeout;
+
+	// key is useless for us
+	if (!m_mcast.send(m_request, requestSize, msg_type_c, false, host->m_shardNum, false, 0, this, state, gotReplyWrapper, timeout, niceness, firstHostId, NULL, false)) {
 		//did not block, error
 		log(LOG_DEBUG,"dns: msgc: mcast had error: %s",
 		    mstrerror(g_errno));

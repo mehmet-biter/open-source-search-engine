@@ -39,6 +39,7 @@
 #include "UdpProtocol.h"
 #include "Hostdb.h"
 #include "Loop.h"   // loop class that handles signals on our socket
+#include "UdpStatistic.h"
 
 // . The rules of Async Sig Safe functions
 // 1. to be safe, _ass functions should only call other _ass functions.
@@ -110,9 +111,10 @@ public:
 	                 void *state, // callback state
 	                 void (*callback )(void *state, UdpSlot *slot),
 	                 int64_t timeout = 60000, // milliseconds
+	                 int32_t niceness = 1,
+	                 const char *extraInfo = NULL,
 	                 int16_t backoff = -1,
 	                 int16_t maxWait = -1, // ms
-	                 int32_t niceness = 1,
 	                 int32_t maxResends = -1);
 
 	// . send a reply to the host specified in "slot"
@@ -121,20 +123,13 @@ public:
 	// . backoff is how long to wait for an ACK in ms before we resend
 	// . we double backoff each time we wait w/o getting any ACK
 	// . don't wait longer than maxWait for a resend
-	void sendReply_ass (char *msg,
-	                    int32_t msgSize,
-	                    char *alloc,
-	                    int32_t allocSize,
-	                    UdpSlot *slot, // in seconds
-	                    void *state = NULL, // callback state
-	                    void (*callback2)(void *state, UdpSlot *slot) = NULL,
-			            int16_t backoff = -1,
-			            int16_t maxWait = -1,
-			            bool isCallback2Hot = false);
+	void sendReply_ass(char *msg, int32_t msgSize, char *alloc, int32_t allocSize, UdpSlot *slot, void *state = NULL,
+	                   void (*callback2)(void *state, UdpSlot *slot) = NULL, int16_t backoff = -1, int16_t maxWait = -1,
+	                   bool isCallback2Hot = false);
 
 	// . propagate an errno to the requesting machine
 	// . his callback will be called with errno set to "errnum"
-	void sendErrorReply( UdpSlot *slot, int32_t errnum );
+	void sendErrorReply(UdpSlot *slot, int32_t errnum);
 
 	// . when a request/msg of type "msgType" is received we call the
 	//   corresponding request handler on this machine
@@ -181,8 +176,6 @@ public:
 
 	bool getWriteRegistered() const { return m_writeRegistered; }
 
-	UdpSlot *getActiveHead() { return m_activeListHead; }
-
 	bool hasHandler(int i) const { return (m_handlers[i]); }
 
 	// changes timeout to very low on dead hosts
@@ -197,6 +190,8 @@ public:
 	// . on crashes add 1024 or so to the read value
 	// . TODO: make somewhat random cuz it's easy to spoof like it is now
 	int32_t m_nextTransId;
+
+	std::vector<UdpStatistic> getStatistics() const;
 
 private:
 	static void readPollWrapper(int fd, void *state);
@@ -230,10 +225,18 @@ private:
 	//   or timed a slot out so it's callback should be called
 	bool readTimeoutPoll ( int64_t now ) ;
 
+	// available linked list functions (m_availableListHead)
+	void addToAvailableLinkedList(UdpSlot *slot);
+	UdpSlot* removeFromAvailableLinkedList();
+
 	// callback linked list functions (m_callbackListHead)
-	void addToCallbackLinkedList ( UdpSlot *slot ) ;
-	bool isInCallbackLinkedList ( UdpSlot *slot );
-	void removeFromCallbackLinkedList ( UdpSlot *slot ) ;
+	void addToCallbackLinkedList(UdpSlot *slot);
+	bool isInCallbackLinkedList(UdpSlot *slot);
+	void removeFromCallbackLinkedList(UdpSlot *slot);
+
+	// active linkedlist functions (m_activeListHead)
+	void addToActiveLinkedList(UdpSlot *slot);
+	void removeFromActiveLinkedList(UdpSlot *slot);
 
 	// . we maintain a sequential list of transaction ids to guarantee
 	//   uniquness to a point

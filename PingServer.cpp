@@ -380,25 +380,17 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 	// the proxy may be interfacing with the temporary cluster while
 	// we update the main cluster...
 	//int32_t port = h->m_port;
-	if ( g_proxy.isProxyRunning() && g_conf.m_useTmpCluster )
+	if ( g_proxy.isProxyRunning() && g_conf.m_useTmpCluster ) {
 		port++;
+	}
 
-        if ( h->m_isProxy ) hostId = -1;
-	if (  g_udpServer.sendRequest ( (char *)pi , //request       ,
-					sizeof(PingInfo),//requestSize   ,
-					msg_type_11          ,
-					ip            ,//h->m_ip       ,
-					port          ,//h->m_port     ,
-					hostId        ,
-					NULL          ,
-					(void *)h     , // callback state
-					gotReplyWrapperP ,
-					// timeout
-					g_conf.m_deadHostTimeout ,
-					1000          ,           // backoff
-					2000          ,  // max wait
-					0             )) // niceness
+    if ( h->m_isProxy ) {
+	    hostId = -1;
+    }
+
+	if (g_udpServer.sendRequest((char *)pi, sizeof(PingInfo), msg_type_11, ip, port, hostId, NULL, (void *)h, gotReplyWrapperP, g_conf.m_deadHostTimeout, 0, NULL, 1000, 2000)) {
 		return;
+	}
 	// it had an error, so dec the count
 	s_outstandingPings--;
 	// consider it out of progress
@@ -579,22 +571,9 @@ void gotReplyWrapperP ( void *state , UdpSlot *slot ) {
 	// send back what his ping was so he knows
 	*(int32_t *)h->m_tmpBuf = *pingPtr;
 
-	if ( g_udpServer.sendRequest (h->m_tmpBuf,//RequestBuf,
-				      //h->m_requestBuf ,
-				       4               , // 4 byte request
-				       msg_type_11          ,
-				       slot->getIp()    , // h->m_ip       ,
-				       slot->getPort()  , // h->m_port2    ,
-				       hid   ,
-				       NULL          ,
-				       (void *)(PTRTYPE)h->m_hostId, //cb state
-				       gotReplyWrapperP3 ,
-				       // timeout
-				       g_conf.m_deadHostTimeout , 
-				       1000          ,           // backoff
-				       2000          ,  // max wait
-				       0             )) // niceness
+	if (g_udpServer.sendRequest(h->m_tmpBuf, 4, msg_type_11, slot->getIp(), slot->getPort(), hid, NULL, (void *)(PTRTYPE)h->m_hostId, gotReplyWrapperP3, g_conf.m_deadHostTimeout, 0, NULL, 1000, 2000)) {
 		return;
+	}
 	// he came back right away
 	s_outstandingPings--;
 	// had an error
@@ -1340,21 +1319,10 @@ bool PingServer::broadcastShutdownNotes ( bool    sendEmailAlert          ,
 		// count as sent
 		m_numRequests++;
 		// send it right now
-		if ( g_udpServer.sendRequest ( s_buf         ,
-						5             , // rqstSz
-						msg_type_11          ,
-						h->m_ip       ,
-						h->m_port     ,
-					       // we are sending to a proxy!
-					       -1 , // h->m_hostId   ,
-						NULL          , //
-						NULL          , // state
-						gotReplyWrapperP2 ,
-						3000     , // 3 sec timeout
-						-1    , // default backoff
-						-1    , // default maxwait
-						0     ))// niceness
+		// we are sending to a proxy!
+		if (g_udpServer.sendRequest(s_buf, 5, msg_type_11, h->m_ip, h->m_port, -1, NULL, NULL, gotReplyWrapperP2, 3000, 0)) {
 			continue;
+		}
 		// otherwise, had an error
 		m_numReplies++;
 		// reset g_errno
@@ -1375,20 +1343,9 @@ bool PingServer::broadcastShutdownNotes ( bool    sendEmailAlert          ,
 		//if ( ! r ) return true;
 		//gbmemcpy ( r , (char *)(&h->m_hostId) , 4 );
 		// send it right now
-		if ( g_udpServer.sendRequest ( s_buf         ,
-						5             , // rqstSz
-						msg_type_11          ,
-						h->m_ip       ,
-						h->m_port     ,
-						h->m_hostId   ,
-						NULL          , //
-						NULL          , // state
-						gotReplyWrapperP2 ,
-						3000     , // 3 sec timeout
-						-1    , // default backoff
-						-1    , // default maxwait
-						0     ))// niceness
+		if (g_udpServer.sendRequest(s_buf, 5, msg_type_11, h->m_ip, h->m_port, h->m_hostId, NULL, NULL, gotReplyWrapperP2, 3000, 0)) {
 			continue;
+		}
 		// otherwise, had an error
 		m_numReplies++;
 		// reset g_errno
