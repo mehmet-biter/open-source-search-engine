@@ -1418,6 +1418,7 @@ bool RdbMap::chopHead ( int32_t fileHeadSize ) {
 // . returns false and sets g_errno on error
 bool RdbMap::generateMap ( BigFile *f ) {
 	reset();
+
 	if ( g_conf.m_readOnlyMode ) {
 		return false;
 	}
@@ -1426,96 +1427,109 @@ bool RdbMap::generateMap ( BigFile *f ) {
 
 	// we don't support headless datafiles right now
 	bool allowHeadless = true;
-	if ( m_fixedDataSize != 0 ) allowHeadless = false;
-	if ( m_ks != 18 ) allowHeadless = false;
+	if (m_fixedDataSize != 0 || m_ks != 18) {
+		allowHeadless = false;
+	}
 
 	// allow posdb to go through
-	if ( ! f->doesPartExist(0) && ! allowHeadless ) {
-	 	g_errno = EBADENGINEER;
-		log( LOG_WARN, "db: Cannot generate map for this headless data file yet");
+	if (!f->doesPartExist(0) && !allowHeadless) {
+		g_errno = EBADENGINEER;
+		log(LOG_WARN, "db: Cannot generate map for this headless data file yet");
 		return false;
 	}
 
 	// scan through all the recs in f
 	int64_t offset = 0;
 	int64_t fileSize = f->getFileSize();
+
 	// if file is length 0, we don't need to do much
-	if ( fileSize == 0 ) return true;
+	if ( fileSize == 0 ) {
+		return true;
+	}
+
 	// g_errno should be set on error
-	if ( fileSize < 0 ) return false;
+	if ( fileSize < 0 ) {
+		return false;
+	}
 
 	// find first existing part file
 	bool firstRead = true;
 	int32_t fp = 0;
-	for ( ; ; fp++ )
+	for ( ; ; fp++ ) {
 		// stop when the part file exists
-		if ( f->doesPartExist(fp) ) break;
+		if (f->doesPartExist(fp)) {
+			break;
+		}
+	}
 
-	if ( fp > 0 ) {
-		//m_fileStartOffset = MAX_PART_SIZE * fp;
-		offset            = MAX_PART_SIZE * fp;
+	if (fp > 0) {
+		offset = MAX_PART_SIZE * fp;
 	}
 
 	// don't read in more than 10 megs at a time initially
-	int64_t  bufSize = fileSize;
-	if ( bufSize > 10*1024*1024 ) bufSize = 10*1024*1024;
-	char *buf = (char *)mmalloc ( bufSize , "RdbMap" );
+	int64_t bufSize = fileSize;
+	if (bufSize > 10 * 1024 * 1024) bufSize = 10 * 1024 * 1024;
+	char *buf = (char *)mmalloc(bufSize, "RdbMap");
+
 	// use extremes
-	//key_t endKey;
-	//key_t startKey;
-	//endKey.setMax();
-	//startKey.setMin();
 	const char *startKey = KEYMIN();
-	const char *endKey   = KEYMAX();
+	const char *endKey = KEYMAX();
+
 	// a rec needs to be at least this big
 	int32_t minRecSize = 0;
+
 	// negative keys do not have the dataSize field... so undo this
-	if ( m_fixedDataSize == -1 ) minRecSize += 0; // minRecSize += 4;
-	else                         minRecSize += m_fixedDataSize;
-	//if ( m_useHalfKeys         ) minRecSize += 6;
-	//else                         minRecSize += 12;
-	if ( m_ks == 18            ) minRecSize += 6; // POSDB
-	else if ( m_useHalfKeys    ) minRecSize += m_ks-6;
-	else                         minRecSize += m_ks;
+	if (m_fixedDataSize == -1) {
+		minRecSize += 0;
+	} else {
+		minRecSize += m_fixedDataSize;
+	}
+
+	// POSDB
+	if (m_ks == 18) {
+		minRecSize += 6;
+	} else if (m_useHalfKeys) {
+		minRecSize += m_ks - 6;
+	} else {
+		minRecSize += m_ks;
+	}
+
 	// for parsing the lists into records
-	//key_t key;
 	char key[MAX_KEY_BYTES];
 	int32_t  recSize = 0;
 	char *rec     = buf;
 	int64_t next = 0LL;
 	m_generatingMap = true;
+
 	// read in at most "bufSize" bytes with each read
- readLoop:
+readLoop:
 	// keep track of how many bytes read in the log
-	if ( offset >= next ) 
-	{
-		if ( next != 0 ) 
-		{
-			logf(LOG_INFO,"db: Read %" PRId64" bytes [%s]", next, f->getFilename() );
+	if (offset >= next) {
+		if (next != 0) {
+			logf(LOG_INFO, "db: Read %" PRId64" bytes [%s]", next, f->getFilename());
 		}
-		
+
 		next += 500000000; // 500MB
 	}
 	
 	// our reads should always block
 	int64_t readSize = fileSize - offset;
-	if ( readSize > bufSize ) readSize = bufSize;
+	if ( readSize > bufSize ) {
+		readSize = bufSize;
+	}
+
 	// if the readSize is less than the minRecSize, we got a bad cutoff
 	// so we can't go any more
-	if ( readSize < minRecSize ) {
-		mfree ( buf , bufSize , "RdbMap");
+	if (readSize < minRecSize) {
+		mfree(buf, bufSize, "RdbMap");
 		return true;
 	}
 
-	// debug msg
-	//fprintf(stderr,"reading map @ off=%" PRId64" size=%" PRId64"\n"
-	//	, offset , readSize );
-
 	// otherwise, read it in
-	if ( ! f->read ( buf , readSize , offset ) ) {
-		mfree ( buf , bufSize , "RdbMap");
-		log( LOG_WARN, "db: Failed to read %" PRId64" bytes of %s at offset=%" PRId64". Map generation failed.",
-		     bufSize,f->getFilename(),offset);
+	if (!f->read(buf, readSize, offset)) {
+		mfree(buf, bufSize, "RdbMap");
+		log(LOG_WARN, "db: Failed to read %" PRId64" bytes of %s at offset=%" PRId64". Map generation failed.",
+		    bufSize, f->getFilename(), offset);
 		return false;
 	}
 
@@ -1524,65 +1538,37 @@ bool RdbMap::generateMap ( BigFile *f ) {
 	// if we were headless then first key on that page could be cut
 	if ( fp > 0 && firstRead ) {
 		firstRead = false;
+
 		// scan the buffer to find the right key.
 		int32_t fullKeyOff = findNextFullPosdbKeyOffset (buf,readSize);
+
 		// if none found, bail
 		if ( fullKeyOff < 0 ) {
-			log(LOG_ERROR,"%s:%s:%d: Could not get a full key in the first %" PRId64" bytes read of headless file [%s]",
-				__FILE__,
-				__func__,
-				__LINE__,
-				readSize,
-				f->getFilename());
+			logError("Could not get a full key in the first %" PRId64" bytes read of headless file [%s]", readSize, f->getFilename());
 			return false;
 		}
-		
-		
+
 		// for each page before add a -1 entry i guess
 		int32_t p = 0;
 		int32_t pageNum = 0;
-		for ( ; p + m_pageSize < fullKeyOff ; p += m_pageSize ) {
+		for (; p + m_pageSize < fullKeyOff; p += m_pageSize) {
 			// add a dummy entry indicating a continuation of
 			// a previous thing. we never had the full posdb key
 			// so we don't know what the top 6 bytes were so
 			// just stick -1 in there
-			setOffset (pageNum, -1 );
-			setKey    (pageNum , key );
+			setOffset(pageNum, -1);
+			setKey(pageNum, key);
 			pageNum++;
 		}
+
 		// tell rdbmap where "list" occurs in the big file
 		m_offset = offset + fullKeyOff;
-		// now the offset on this page
-		//int32_t pageOffset = p - off;
-		// must be less than key size
-		//if ( pageOffset > m_ks ) { g_process.shutdownAbort(true); }
-		// set the list special here
-		list.set ( buf      + fullKeyOff ,
-			   readSize - fullKeyOff ,
-			   buf             ,
-			   readSize        ,
-			   startKey        ,
-			   endKey          ,
-			   m_fixedDataSize ,
-			   false           , // own data?
-			   //m_useHalfKeys   );
-			   m_useHalfKeys   ,
-			   m_ks            );
-	}
 
-	else {
+		// set the list special here
+		list.set(buf + fullKeyOff, readSize - fullKeyOff, buf, readSize, startKey, endKey, m_fixedDataSize, false, m_useHalfKeys, m_ks);
+	} else {
 		// set the list
-		list.set ( buf             ,
-			   readSize        ,
-			   buf             ,
-			   readSize        ,
-			   startKey        ,
-			   endKey          ,
-			   m_fixedDataSize ,
-			   false           , // own data?
-			   //m_useHalfKeys   );
-			   m_useHalfKeys   ,
-			   m_ks            );
+		list.set(buf, readSize, buf, readSize, startKey, endKey, m_fixedDataSize, false, m_useHalfKeys, m_ks);
 	}
 
 	// . HACK to fix useHalfKeys compression thing from one read to the nxt
