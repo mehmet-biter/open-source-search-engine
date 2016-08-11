@@ -857,7 +857,6 @@ void UdpServer::process(int64_t now, int32_t maxNiceness) {
 	}
 	else {
 		m_needBottom = true;
-		//g_loop.m_needToPoll = true;
 	}
 }
 
@@ -1325,7 +1324,7 @@ bool UdpServer::makeCallbacks(int32_t niceness) {
 		return false;
 	}
 
-	logDebug(g_conf.m_logDebugUdp, "udp: makeCallbacks: start. nice=%" PRId32" inquickpoll=%" PRId32, niceness,(int32_t)g_loop.m_inQuickPoll);
+	logDebug(g_conf.m_logDebugUdp, "udp: makeCallbacks: start. nice=%" PRId32, niceness);
 
 	// assume noone called
 	int32_t numCalled = 0;
@@ -1362,15 +1361,6 @@ bool UdpServer::makeCallbacks(int32_t niceness) {
 		// and if they do not get called right away can cause this host
 		// to bottleneck many hosts
 		if ( pass == 0 ) {
-			// never call any high niceness handler/callback when
-			// we are already in quickpoll
-			if ( g_loop.m_inQuickPoll && 
-			     slot->getNiceness() != 0 ) continue;
-			// never call a msg4 handler even if it has niceness 0
-			// if we are in quickpoll, because we might be in 
-			// the Msg4.cpp code already!
-			if ( g_loop.m_inQuickPoll &&
-			     slot->getMsgType() == msg_type_4 ) continue;
 			// only call handlers in pass 0, not reply callbacks
 			if ( slot->hasCallback() ) continue;
 			// only call certain msg handlers...
@@ -1398,77 +1388,7 @@ bool UdpServer::makeCallbacks(int32_t niceness) {
 					continue;
 			}
 		}
-		// if slot niceness is 1 and we are in a quickpoll, then
-		// change niceness to 0 if its a 0x2c or a get taglist handler
-		// request. this makes it so a spider that is deep into
-		// parsing sections or whatever will still handle some
-		// popular niceness 1 requests and not hold all the other
-		// spiders up.
-		if ( g_loop.m_inQuickPoll &&  
-		     ! slot->hasCallback() && // must be a handler request
-		     // must have been sitting there for 500ms+
-		     // also consider using slot->m_lastActionTime
-		     startTime - slot->getStartTime() > 500 &&
-		     // only do it for these guys now to make sure it
-		     // doesn't hurt the queries coming in
-		     (slot->getMsgType() == msg_type_13 ||
-		      slot->getMsgType() == msg_type_c) &&
-		     this != &g_dns.m_udpServer &&
-		     slot->getNiceness() == 1 &&
-		     ! slot->m_convertedNiceness &&
-		     // can't be in a quickpoll in its own handler!!!
-		     // we now set this to true BEFORE calling the handler
-		     // so if we are in the handler now but in a quickpoll
-		     // then we do not re-enter the handler!! 
-		     ! slot->hasCalledHandler() &&
-		     slot->m_readBufSize > 0 &&
-		     slot->m_sendBufSize == 0 &&
-		     doNicenessConversion &&
-		     m_outstandingConverts < 20 ) {
 
-			logDebug(g_conf.m_logDebugUdp, "udp: converting slot from niceness 1 to 0. slot=%p mmsgtype=0x%02x",
-			         slot, slot->getMsgType());
-
-			// convert the niceness
-			slot->m_niceness = 0;
-			// count it
-			m_outstandingConverts++;
-			// flag it somehow so we can decrement
-			// m_outstandingConverts after we call the handler
-			// and send back the reply
-			slot->m_convertedNiceness = 1;
-		}
-		// . conversion for dns callbacks
-		// . usually the callback is gotIpWrapper() in MsgC.cpp i guess
-		if ( g_loop.m_inQuickPoll &&  
-		     ! slot->m_convertedNiceness &&
-		     this == &g_dns.m_udpServer &&
-		     slot->hasCallback() &&
-		     slot->getNiceness() == 1 &&
-		     // can't be in a quickpoll in its own handler!!!
-		     // we now set this to true BEFORE calling the handler
-		     // so if we are in the handler now but in a quickpoll
-		     // then we do not re-enter the handler!! 
-		     ! slot->hasCalledCallback() &&
-		     slot->m_readBufSize > 0 &&
-		     slot->m_sendBufSize > 0 &&
-		     doNicenessConversion &&
-		     m_outstandingConverts < 20 ) {
-			logDebug(g_conf.m_logDebugUdp, "udp: converting slot2 from niceness 1 to 0. slot=%p mmsgtype=0x%02x",
-			         slot, slot->getMsgType());
-			// convert the niceness
-			slot->m_niceness = 0;
-			// count it
-			m_outstandingConverts++;
-			// flag it somehow so we can decrement
-			// m_outstandingConverts after we call the handler
-			// and send back the reply
-			slot->m_convertedNiceness = 1;
-		}
-
-		// never call any high niceness handler/callback when
-		// we are already in quickpoll
-		if ( g_loop.m_inQuickPoll &&  slot->getNiceness() != 0 ) continue;
 		// skip if not level we want
 		if ( niceness <= 0 && slot->getNiceness() > 0 && pass>0) continue;
 		// set g_errno before calling
@@ -1534,7 +1454,6 @@ bool UdpServer::makeCallbacks(int32_t niceness) {
 			//	    elapsed, numCalled, 
 			//	    g_profiler.getFnName(cbAddr));
 			//}
-			//g_loop.m_needToPoll = true;
 			m_needBottom = true;
 			// now we just finish out the list with a 
 			// lower niceness
@@ -1550,7 +1469,7 @@ bool UdpServer::makeCallbacks(int32_t niceness) {
 		// from within a quickpoll. so if we are not in a 
 		// quickpoll, we have to reset the linked list scan after
 		// calling makeCallback(slot) below.
-		if ( ! g_loop.m_inQuickPoll ) goto fullRestart;
+		goto fullRestart;
 	}
 	// clear
 	g_errno = 0;
@@ -1584,9 +1503,6 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 	//	log(LOG_LOGIC,"udp: makeCallback: Illegal msgType.");
 	//	return false; 
 	//}
-
-	//only allow a quickpoll if we are nice.
-	//g_loop.canQuickPoll(slot->m_niceness);
 
 	// for timing callbacks and handlers
 	int64_t start = 0;
@@ -2041,8 +1957,6 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 	for ( UdpSlot *slot = m_activeListHead ; slot ; slot = slot->m_activeListNext ) {
 		// clear g_errno
 		g_errno = 0;
-		// only deal with niceness 0 slots when in a quickpoll
-		if ( g_loop.m_inQuickPoll && slot->getNiceness() != 0 ) continue;
 		// debug msg
 		if ( g_conf.m_logDebugUdp ) {
 			log(LOG_DEBUG,

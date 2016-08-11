@@ -1047,14 +1047,6 @@ bool Rdb::dumpTree ( int32_t niceness ) {
 		return true;
 	}
 
-	// if we are in a quickpoll do not initiate dump.
-	// we might have been called by handleRequest4 with a niceness of 0
-	// which was niceness converted from 1
-	if ( g_loop.m_inQuickPoll ) {
-		logTrace( g_conf.m_logTraceRdb, "END. %s: In quick poll. Returning true", m_dbname );
-		return true;
-	}
-	
 	// bail if already dumping
 	//if ( m_dump.isDumping() ) return true;
 	if ( m_inDumpLoop ) {

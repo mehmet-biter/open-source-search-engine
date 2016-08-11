@@ -2352,7 +2352,7 @@ void TcpServer::readTimeoutPoll ( ) {
 		// if in a high niceness callback we can only serve 
 		// low niceness (0) sockets at this point. because we might
 		// do a double callback on a socket that have niceness 1...
-		if ( g_loop.m_inQuickPoll &&  s->m_niceness != 0 ) continue;
+
 		// close if need be. we added this delayed closing logic because
 		// the transmission was getting truncated somehow, and i even tried
 		// the SO_LINGER crap to no avail. so this is basically our own linger

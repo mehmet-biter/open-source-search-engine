@@ -657,7 +657,6 @@ bool Process::save2 ( ) {
 // . return false if blocked/waiting
 // . this is the SAVE BEFORE EXITING
 bool Process::shutdown2() {
-	g_loop.disableQuickpollTimer();
 
 	// only the main process can call this
 	if ( pthread_self() != s_mainThreadTid ) {

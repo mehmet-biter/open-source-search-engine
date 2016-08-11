@@ -368,11 +368,6 @@ void Loop::callCallbacks_ass ( bool forReading , int fd , int64_t now , int32_t 
 	// ensure we called something
 	int32_t numCalled = 0;
 
-	// a hack fix
-	if ( niceness == -1 && m_inQuickPoll ) {
-		niceness = 0;
-	}
-
 	// . now call all the callbacks
 	// . most will re-register themselves (i.e. call registerCallback...()
 	while ( s ) {
@@ -446,9 +441,6 @@ void Loop::callCallbacks_ass ( bool forReading , int fd , int64_t now , int32_t 
 }
 
 Loop::Loop ( ) {
-	m_inQuickPoll      = false;
-	m_needsToQuickPoll = false;
-	m_canQuickPoll     = false;
 	m_isDoingLoop      = false;
 
 	// set all callbacks to NULL so we know they're empty
@@ -515,8 +507,6 @@ bool Loop::init ( ) {
 	// . reset this cuz we have no sleep callbacks right now
 	// . sleep a min of 40ms so g_now is somewhat up to date
 	m_minTick = 40; //0x7fffffff;
-	// reset the need to poll flag
-	m_needToPoll = false;
 	// make slots
 	m_slots = (Slot *) mmalloc ( MAX_SLOTS * (int32_t)sizeof(Slot) , "Loop" );
 	if ( ! m_slots ) return false;
@@ -617,9 +607,6 @@ void printStackTrace (bool print_location) {
 // TODO: if we get a segfault while saving, what then?
 void sigbadHandler ( int x , siginfo_t *info , void *y ) {
 
-	// turn off sigalarms
-	g_loop.disableQuickpollTimer();
-
 	log("loop: sigbadhandler. disabling handler from recall.");
 	// . don't allow this handler to be called again
 	// . does this work if we're in a thread?
@@ -695,9 +682,6 @@ void Loop::runLoop ( ) {
 	// . now loop forever waiting for signals
 	// . but every second check for timer-based events
 	for (;;) {
-		m_lastPollTime = gettimeofdayInMilliseconds();
-		m_needsToQuickPoll = false;
-
 		g_errno = 0;
 
 		if ( m_shutdown ) {
@@ -746,12 +730,6 @@ void Loop::doPoll ( ) {
 	// set time
 	//g_now = gettimeofdayInMilliseconds();
 
-	// . turn it off here so it can be turned on again after we've
-	//   called select() so we don't lose any fd events through the cracks
-	// . some callbacks we call make trigger another SIGIO, but if they
-	//   fail they should set Loop::g_needToPoll to true
-	m_needToPoll = false;
-
 	logDebug( g_conf.m_logDebugLoop, "loop: Entered doPoll." );
 
 	if(g_udpServer.needBottom()) {
@@ -762,15 +740,11 @@ void Loop::doPoll ( ) {
 
 	timeval v;
 	v.tv_sec  = 0;
-	if ( m_inQuickPoll ) {
-		v.tv_usec = 0;
-	} else {
-		// 10ms for sleepcallbacks so they can be called...
-		// and we need this to be the same as sigalrmhandler() since we
-		// keep track of cpu usage here too, since sigalrmhandler is "VT"
-		// based it only goes off when that much "cpu time" has elapsed.
-		v.tv_usec = QUICKPOLL_INTERVAL * 1000;
-	}
+	// 10ms for sleepcallbacks so they can be called...
+	// and we need this to be the same as sigalrmhandler() since we
+	// keep track of cpu usage here too, since sigalrmhandler is "VT"
+	// based it only goes off when that much "cpu time" has elapsed.
+	v.tv_usec = QUICKPOLL_INTERVAL * 1000;
 
  again:
 
@@ -823,8 +797,6 @@ void Loop::doPoll ( ) {
 			// handle returned threads for niceness 0
 			g_jobScheduler.cleanup_finished_jobs();
 
-			if ( m_inQuickPoll ) goto again;
-
 			// high niceness threads
 			g_jobScheduler.cleanup_finished_jobs();
 
@@ -847,10 +819,10 @@ void Loop::doPoll ( ) {
 		for ( int32_t i = 0; i < MAX_NUM_FDS; i++) {
 			// continue if not set for reading
 			if ( FD_ISSET ( i, &readfds ) ) {
-				log( LOG_DEBUG, "loop: fd=%" PRId32" is on for read qp=%i", i, ( int ) m_inQuickPoll );
+				log( LOG_DEBUG, "loop: fd=%" PRId32" is on for read", i);
 			}
 			if ( FD_ISSET ( i, &writefds ) ) {
-				log( LOG_DEBUG, "loop: fd=%" PRId32" is on for write qp=%i", i, ( int ) m_inQuickPoll );
+				log( LOG_DEBUG, "loop: fd=%" PRId32" is on for write", i);
 			}
 			// if niceness is not -1, handle it below
 		}
@@ -902,13 +874,6 @@ void Loop::doPoll ( ) {
 
 	// handle returned threads for niceness 0
 	g_jobScheduler.cleanup_finished_jobs();
-
-	//
-	// the stuff below is not super urgent, do not do if in quickpoll
-	//
-	if ( m_inQuickPoll ) {
-		return;
-	}
 
 	// now for lower priority fds
 	for ( int32_t i = 0 ; i < s_numReadFds ; i++ ) {
@@ -966,98 +931,6 @@ void Loop::doPoll ( ) {
 }
 
 
-void Loop::quickPoll(int32_t niceness, const char* caller, int32_t lineno) {
-	if ( ! g_conf.m_useQuickpoll ) return;
-
-	// convert
-	//if ( niceness > 1 ) niceness = 1;
-
-	// sometimes we init HashTableX's with a niceness of 0 even though
-	// g_niceness is 1. so prevent a core below.
-	if ( niceness == 0 ) return;
-
-	// sanity check
-	if ( g_niceness > niceness ) {
-		log(LOG_WARN,"loop: niceness mismatch!");
-		//g_process.shutdownAbort(true); }
-	}
-
-	// sanity -- temporary -- no quickpoll in a thread!!!
-	//if ( g_threads.amThread() ) { g_process.shutdownAbort(true); }
-
-	// if we are niceness 1 and not in a handler, make it niceness 2
-	// so the handlers can be answered and we don't slow other
-	// spiders down and we don't slow turks' injections down as much
-	if ( ! g_inHandler && niceness == 1 ) niceness = 2;
-
-	// reset this
-	g_missedQuickPolls = 0;
-
-	if(m_inQuickPoll) {
-		log(LOG_WARN,
-		    "admin: tried to quickpoll from inside quickpoll");
-		// this happens when handleRequest3f is called from
-		// a quickpoll and it deletes a collection and BigFile::close
-		// calls ThreadQueue::removeThreads and Msg3::doneScanning()
-		// has niceness 2 and calls quickpoll again!
-		return;
-	}
-	int64_t now = gettimeofdayInMilliseconds();
-	//int64_t took = now - m_lastPollTime;
-	int64_t now2 = gettimeofdayInMilliseconds();
-	int32_t gerrno = g_errno;
-
-	m_inQuickPoll = true;
-
-	// doPoll() will since we are in quickpoll and only call niceness 0
-	// callbacks for all the fds. and it will set the timer to 0.
-	doPoll ();
-
-	// reset this again
-	g_missedQuickPolls = 0;
-
-	// . avoid quickpolls within a quickpoll
-	// . was causing seg fault in diskHeartbeatWrapper()
-	//   which call Threads::bailOnReads()
-	m_canQuickPoll = false;
-
-	// . call sleepcallbacks, like the heartbeat in Process.cpp
-	// . MAX_NUM_FDS is the fd for sleep callbacks
-	// . specify a niceness of 0 so only niceness 0 sleep callbacks
-	//   will be called
-	callCallbacks_ass ( true , MAX_NUM_FDS , now , 0 );
-	// sanity check
-	if ( g_niceness > niceness ) {
-		log("loop: niceness mismatch");
-	}
-
-	//log(LOG_WARN, "xx quickpolled took %" PRId64", waited %" PRId64" from %s",
-	//    now2 - now, now - m_lastPollTime, caller);
-	m_lastPollTime = now2;
-	m_inQuickPoll = false;
-	m_needsToQuickPoll = false;
-	m_canQuickPoll = true;
-	g_errno = gerrno;
-
-	// reset this again
-	g_missedQuickPolls = 0;
-}
-
-
-void Loop::canQuickPoll(int32_t niceness) {
-	if(niceness && !m_shutdown) m_canQuickPoll = true;
-	else         m_canQuickPoll = false;
-}
-
-void Loop::enableQuickpollTimer() {
-	m_canQuickPoll = true;
-}
-
-void Loop::disableQuickpollTimer() {
-	m_canQuickPoll = false;
-}
-
-
 void Loop::wakeupPollLoop() {
 	char dummy='d';
 	(void)write(m_pipeFd[1],&dummy,1);
@@ -1065,9 +938,7 @@ void Loop::wakeupPollLoop() {
 
 
 int gbsystem(const char *cmd ) {
-	g_loop.disableQuickpollTimer();
 	log("gb: running system(\"%s\")",cmd);
 	int ret = system(cmd);
-	g_loop.enableQuickpollTimer();
 	return ret;
 }
