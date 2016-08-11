@@ -683,8 +683,6 @@ void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 	logTrace( g_conf.m_logTraceMsg0, "END" );
 }
 
-#include "Sections.h" // SectionVote
-
 // . slot should be auto-nuked upon transmission or error
 // . TODO: ensure if this sendReply() fails does it really nuke the slot?
 void gotListWrapper ( void *state , RdbList *listb , Msg5 *msg5xx ) {
@@ -726,7 +724,6 @@ void gotListWrapper ( void *state , RdbList *listb , Msg5 *msg5xx ) {
 		return;
 	}
 
-	QUICKPOLL(st0->m_niceness);
 	// point to the serialized list in "list"
 	char *data      = list->getList();
 	int32_t  dataSize  = list->getListSize();
