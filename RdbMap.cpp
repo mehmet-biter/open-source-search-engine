@@ -1419,11 +1419,11 @@ bool RdbMap::chopHead ( int32_t fileHeadSize ) {
 bool RdbMap::generateMap ( BigFile *f ) {
 	reset();
 
-	if ( g_conf.m_readOnlyMode ) {
+	if (g_conf.m_readOnlyMode) {
 		return false;
 	}
 
-	log( LOG_INFO, "db: Generating map for %s/%s",f->getDir(),f->getFilename());
+	log(LOG_INFO, "db: Generating map for %s/%s", f->getDir(), f->getFilename());
 
 	// we don't support headless datafiles right now
 	bool allowHeadless = true;
@@ -1443,19 +1443,15 @@ bool RdbMap::generateMap ( BigFile *f ) {
 	int64_t fileSize = f->getFileSize();
 
 	// if file is length 0, we don't need to do much
-	if ( fileSize == 0 ) {
-		return true;
-	}
-
 	// g_errno should be set on error
-	if ( fileSize < 0 ) {
-		return false;
+	if (fileSize == 0 || fileSize < 0) {
+		return (fileSize == 0);
 	}
 
 	// find first existing part file
 	bool firstRead = true;
 	int32_t fp = 0;
-	for ( ; ; fp++ ) {
+	for (;; fp++) {
 		// stop when the part file exists
 		if (f->doesPartExist(fp)) {
 			break;
@@ -1468,7 +1464,9 @@ bool RdbMap::generateMap ( BigFile *f ) {
 
 	// don't read in more than 10 megs at a time initially
 	int64_t bufSize = fileSize;
-	if (bufSize > 10 * 1024 * 1024) bufSize = 10 * 1024 * 1024;
+	if (bufSize > 10 * 1024 * 1024) {
+		bufSize = 10 * 1024 * 1024;
+	}
 	char *buf = (char *)mmalloc(bufSize, "RdbMap");
 
 	// use extremes
