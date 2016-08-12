@@ -110,7 +110,6 @@ void RdbMap::reset ( ) {
 	KEYMIN(m_lastKey,MAX_KEY_BYTES); // m_ks);
 	// close up shop
 	// m_file.close ( ); this casues an error in Rdb.cpp:317 (new RdbMap)
-	m_lastLogTime = 0;
 	m_badKeys     = 0;
 	m_needVerify  = false;
 
@@ -679,11 +678,6 @@ bool RdbMap::addRecord ( char *key, char *rec , int32_t recSize ) {
 	// coincidence thingy.
 	if (KEYCMP(key, m_lastKey, m_ks) < 0 && KEYCMP(m_lastKey, KEYMIN(), m_ks) != 0) {
 		m_badKeys++;
-		// do not log more than once per second
-		if ( getTime() == m_lastLogTime ) {
-			goto skip;
-		}
-		m_lastLogTime = getTime();
 
 		log(LOG_LOGIC,"build: RdbMap: added key out of order. count=%" PRId64" file=%s/%s.",
 			m_badKeys, m_file.getDir(), m_file.getFilename());
@@ -693,7 +687,7 @@ bool RdbMap::addRecord ( char *key, char *rec , int32_t recSize ) {
 		g_errno = ECORRUPTDATA;
 		return false;
 	}
-skip:
+
 	// remember the lastKey in the whole file
 	//m_lastKey = key;
 	KEYSET(m_lastKey,key,m_ks);

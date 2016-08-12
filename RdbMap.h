@@ -393,7 +393,6 @@ class RdbMap {
 	int32_t m_pageSize;
 	int32_t m_pageSizeBits;
 
-	int32_t      m_lastLogTime ;
 	int64_t m_badKeys     ;
 	bool      m_needVerify  ;
 
