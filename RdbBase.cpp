@@ -813,7 +813,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	if( m_useIndexFile ) {
 		// set the index file's  filename
 		sprintf ( name , "%s%04" PRId32".idx", m_dbname, fileId );
-		in->set ( getDir(), name );
+		in->set ( getDir(), name, m_fixedDataSize, m_useHalfKeys, m_ks, m_rdb->m_rdbId );
 		if ( ! isNew && ! in->readIndex () ) {
 			// if out of memory, do not try to regen for that
 			if ( g_errno == ENOMEM ) {

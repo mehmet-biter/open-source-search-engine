@@ -1,11 +1,10 @@
-
 #ifndef GB_RDBINDEX_H
 #define GB_RDBINDEX_H
 
 #include "BigFile.h"
 #include "RdbList.h"
 #include "Sanity.h"
-
+#include <vector>
 
 class RdbIndex {
 
@@ -19,7 +18,7 @@ class RdbIndex {
 	void reset ( );
 
 	// set the filename, and if it's fixed data size or not
-	void set ( const char *dir, const char *indexFilename);
+	void set(const char *dir, const char *indexFilename, int32_t fixedDataSize, bool useHalfKeys, char keySize, char rdbId);
 
 	bool rename ( const char *newIndexFilename, bool force = false ) {
 		return m_file.rename ( newIndexFilename, NULL, force );
@@ -60,14 +59,19 @@ class RdbIndex {
 	void printIndex ();
 
 	// the index file
-	BigFile 	m_file;
+	BigFile m_file;
 
-	uint64_t	m_lastDocId;
+	std::vector<uint64_t> m_docIds;
+
+	int32_t m_fixedDataSize;
+	bool m_useHalfKeys;
+	char m_ks;
+	char m_rdbId;
+
+	uint64_t m_lastDocId;
 
 	// when close is called, must we write the index?
-	bool   m_needToWrite;
-
-	bool m_generatingIndex;
+	bool m_needToWrite;
 };
 
 #endif // GB_RDBINDEX_H
