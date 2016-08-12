@@ -1700,71 +1700,62 @@ done:
 // 5MB is a typical write buffer size, so do a little more than that
 #define MAX_TRUNC_SIZE 6000000
 
-bool RdbMap::truncateFile ( BigFile *f ) 
-{
-	// right now just use for indexdb, datedb, tfnb, etc.
-	//if ( m_fixedDataSize != 0 ) return false;
+bool RdbMap::truncateFile ( BigFile *f ) {
 	// how big is the big file
 	int64_t fileSize = f->getFileSize();
 	int64_t tail = fileSize - m_offset;
-
-	//if ( tail > 20*1024*1024 )
-	//	return log("db: Cannot truncate data file because bad tail is "
-	//		   "%" PRId64" bytes > %" PRId32".",tail,(int32_t)MAX_TRUNC_SIZE);
 
 	// up to 20MB is ok to remove if most just bytes that are zeroes
 	log("db: Counting bytes that are zeroes in the tail.");
 	int64_t count = 0;
 	char buf [100000];
 	int64_t off = m_offset;
-	
+
 	do {
 		int32_t readSize = fileSize - off;
-		if ( readSize > 100000 ) readSize = 100000;
+		if (readSize > 100000) {
+			readSize = 100000;
+		}
 
-		f->read ( buf , readSize , off );
-		if ( ! f->read ( buf , readSize , off ) )
-		{
-			log(LOG_ERROR,"%s:%s:%d: Failed to read %" PRId32" bytes of [%s] at offset=%" PRId64".",
-				__FILE__, __func__, __LINE__, readSize, f->getFilename(), off);
+		f->read(buf, readSize, off);
+		if (!f->read(buf, readSize, off)) {
+			logError("Failed to read %" PRId32" bytes of [%s] at offset=%" PRId64".", readSize, f->getFilename(), off);
 			return false;
 		}
-		
+
 		// count the zero bytes
-		for ( int32_t i = 0 ; i < readSize ; i++ )
-			if ( buf[i] == 0 ) count++;
-				
+		for (int32_t i = 0; i < readSize; i++) {
+			if (buf[i] == 0) {
+				count++;
+			}
+		}
+
 		// read more if we can
 		off += readSize;
-	} while( off < fileSize );
+	} while (off < fileSize);
 		
 	// remove those from the size of the tail
 	tail -= count;
 
 	// if too much remains, do not truncate it
-	if ( tail > MAX_TRUNC_SIZE )
-	{
-		log(LOG_ERROR,"%s:%s:%d: Cannot truncate data file because bad tail is %" PRId64" bytes > %" PRId32". That excludes bytes that are zero.",
-			__FILE__, __func__, __LINE__, tail, (int32_t)MAX_TRUNC_SIZE);
+	if (tail > MAX_TRUNC_SIZE) {
+		logError("Cannot truncate data file because bad tail is %" PRId64" bytes > %" PRId32". That excludes bytes that are zero.",
+		         tail, MAX_TRUNC_SIZE);
 		return false;
 	}
-	
-	
+
 	// how many parts does it have?
 	int32_t numParts = f->getNumParts();
+
 	// what part num are we on?
-	int32_t partnum = f->getPartNum ( m_offset );
-	File *p = f->getFile2 ( partnum );
-	
-	if ( ! p ) 
-	{
-		log(LOG_ERROR,"%s:%s:%d: Unable to get part %" PRId32" of file [%s]",
-			__FILE__, __func__, __LINE__, partnum, f->getFilename());
+	int32_t partnum = f->getPartNum(m_offset);
+	File *p = f->getFile2(partnum);
+
+	if (!p) {
+		logError("Unable to get part %" PRId32" of file [%s]", partnum, f->getFilename());
 		return false;
 	}
-		
-	
-		
+
 	// get offset relative to the part file
 	int32_t newSize = m_offset % (int64_t)MAX_PART_SIZE;
 
@@ -1778,10 +1769,8 @@ bool RdbMap::truncateFile ( BigFile *f )
 	log(LOG_WARN, "db: Doing a truncate(%s,%" PRId32").", p->getFilename(), newSize);
 
 	// we must always be the last part of next to last part
-	if ( partnum != numParts-1 && partnum != numParts-2 )
-	{
-		log(LOG_ERROR,"%s:%s:%d: This file is not the last part or next to last part for this file. aborting truncation.",
-			__FILE__, __func__, __LINE__);
+	if ( partnum != numParts-1 && partnum != numParts-2 ) {
+		logError("This file is not the last part or next to last part for this file. aborting truncation.");
 		return false;
 	}
 			   
@@ -1789,48 +1778,42 @@ bool RdbMap::truncateFile ( BigFile *f )
 	// to last one, then the the last part file must be less than
 	// MAX_TRUNC_SIZE bytes big
 	File *p2 = NULL;
-	if ( partnum == numParts-2 ) 
-	{
-		p2 = f->getFile2 ( partnum + 1 );
-		if ( ! p2 ) 
-		{
-			log(LOG_ERROR,"%s:%s:%d: Could not get next part %" PRId32" of file [%s]",
-				__FILE__, __func__, __LINE__, partnum+1, f->getFilename());
+	if (partnum == numParts - 2) {
+		p2 = f->getFile2(partnum + 1);
+		if (!p2) {
+			logError("Could not get next part %" PRId32" of file [%s]", partnum + 1, f->getFilename());
 			return false;
 		}
-			
-			
-		if ( p2->getFileSize() > MAX_TRUNC_SIZE )
-		{
-			log(LOG_ERROR,"%s:%s:%d: db: Next part file is bigger than %" PRId32" bytes.",
-				__FILE__, __func__, __LINE__, (int32_t)MAX_TRUNC_SIZE);
+
+
+		if (p2->getFileSize() > MAX_TRUNC_SIZE) {
+			logError("db: Next part file is bigger than %" PRId32" bytes.", MAX_TRUNC_SIZE);
 			return false;
 		}
 	}
-	
+
 	// do the truncation
-	if ( truncate ( p->getFilename() , newSize ) ) {
+	if (truncate(p->getFilename(), newSize)) {
 		// return false if had an error
-		log(LOG_ERROR, "%s:%s:%d: truncate(%s,%" PRId32"): %s.",
-			   __FILE__, __func__, __LINE__, p->getFilename(),newSize,mstrerror(errno));
+		logError("truncate(%s,%" PRId32"): %s.", p->getFilename(), newSize, mstrerror(errno));
 		return false;
 	}
 			   
 	// if we are not the last part, remove it
-	if ( partnum == numParts-2 ) {
-		log( LOG_DEBUG, "db: Removing tiny last part. unlink (%s).", p2->getFilename());
-		    
+	if (partnum == numParts - 2) {
+		log(LOG_DEBUG, "db: Removing tiny last part. unlink (%s).", p2->getFilename());
+
 		// ensure it is smaller than 1k
-		if ( ! p2->unlink() ) {
-			log( LOG_WARN, "db: Unlink of tiny last part failed." );
+		if (!p2->unlink()) {
+			log(LOG_WARN, "db: Unlink of tiny last part failed.");
 			return false;
 		}
 	}
 
 	// reset file size, parts, etc on the big file since we truncated
 	// a part file and possibly removed another part file
-	if ( ! f->reset() ) {
-		log( LOG_WARN, "db: Failed to reset %s.", f->getFilename() );
+	if (!f->reset()) {
+		log(LOG_WARN, "db: Failed to reset %s.", f->getFilename());
 		return false;
 	}
 
