@@ -74,15 +74,13 @@ enum {
 // define in Msg51.cpp
 extern const char *g_crStrings[];
 
-bool setClusterLevels ( key_t     *clusterRecs          ,
-			int64_t *docIds               ,
+bool setClusterLevels ( const key_t   *clusterRecs,
+			const int64_t *docIds,
 			int32_t       numRecs              ,
 			int32_t       maxDocIdsPerHostname ,
 			bool       doHostnameClustering ,
 			bool       familyFilter         ,
 			char       langFilter           ,
-			// blacklisted sites
-			//char      *negativeSiteHashes   ,
 			bool       isDebug              ,
 			// output to clusterLevels[]
 			char      *clusterLevels        );
@@ -98,11 +96,10 @@ class Msg51 {
 	// . returns false if blocked, true otherwise
 	// . sets g_errno on error
 	// . we just store the "int32_t" part of the cluster rec
-	bool getClusterRecs ( int64_t     *docIds                   ,
+	bool getClusterRecs ( const int64_t     *docIds,
 			      char          *clusterLevels            ,
 			      key_t         *clusterRecs              ,
 			      int32_t           numDocIds                ,
-			      //char          *coll                     ,
 			      collnum_t collnum ,
 			      int32_t           maxCacheAge              ,
 			      bool           addToCache               ,
@@ -114,29 +111,22 @@ class Msg51 {
 
 	// see Clusterdb.h for this bitmap. we store the lower 64 bits of
 	// the clusterdb key into the "clusterRecs" array
-	bool isFamilyBitOn ( uint64_t clusterRec ) {
-		return g_clusterdb.hasAdultContent((char *)&clusterRec); }
-	char     getLangId     ( uint64_t clusterRec ) {
-		return g_clusterdb.getLanguage((char *)&clusterRec); }
-	uint32_t getSiteHash26   ( uint64_t clusterRec ) {
-		return g_clusterdb.getSiteHash26((char *)&clusterRec); }
+	//bool isFamilyBitOn ( uint64_t clusterRec ) {
+	//	return g_clusterdb.hasAdultContent((char *)&clusterRec); }
+	//char     getLangId     ( uint64_t clusterRec ) {
+	//	return g_clusterdb.getLanguage((char *)&clusterRec); }
+	//uint32_t getSiteHash26   ( uint64_t clusterRec ) {
+	//	return g_clusterdb.getSiteHash26((char *)&clusterRec); }
 
 
-        key_t getClusterRec ( int32_t i ) { return m_clusterRecs[i]; }
+        key_t getClusterRec ( int32_t i ) const { return m_clusterRecs[i]; }
 
-	/*
-	bool isDocIdVisible ( int32_t i ) {
-		if ( m_clusterRecs[i] == 0     ) return false;
-		if ( m_clusterRecs[i] <= CR_OK ) return true;
-		return false;
-	}
-	*/
-
+private:
 	bool sendRequests   ( int32_t k );
 	bool sendRequest    ( int32_t i );
 
 	// docIds we're getting clusterRecs for
-	int64_t   *m_docIds;
+	const int64_t   *m_docIds;
 	int32_t         m_numDocIds;
 
 	// the lower 64 bits of each cluster rec
@@ -159,8 +149,6 @@ class Msg51 {
 
 	int32_t       m_niceness;
 
-	//char      *m_coll;
-	//int32_t       m_collLen;
 	collnum_t m_collnum;
 	
 	// cache info
@@ -169,10 +157,6 @@ class Msg51 {
 
 	bool       m_isDebug;
 
-	// for super quick disk page cache lookups
-	//Msg5       m_msg5;
-
-private:
 	struct Slot {
 		Msg51     *m_msg51; //points to self
 		Msg0       m_msg0;
