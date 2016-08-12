@@ -73,7 +73,7 @@ void Msg51::reset ( ) {
 
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
-bool Msg51::getClusterRecs ( int64_t     *docIds                   ,
+bool Msg51::getClusterRecs ( const int64_t     *docIds,
 			     char          *clusterLevels            ,
 			     key_t         *clusterRecs              ,
 			     int32_t           numDocIds                ,
@@ -450,8 +450,8 @@ void Msg51::gotClusterRec(Slot *slot) {
 // . cluster the docids based on the clusterRecs
 // . returns false and sets g_errno on error
 // . if maxDocIdsPerHostname is -1 do not do hostname clsutering
-bool setClusterLevels ( key_t     *clusterRecs          ,
-			int64_t *docIds               ,
+bool setClusterLevels ( const key_t   *clusterRecs,
+			const int64_t *docIds,
 			int32_t       numRecs              ,
 			int32_t       maxDocIdsPerHostname ,
 			bool       doHostnameClustering ,

@@ -74,15 +74,13 @@ enum {
 // define in Msg51.cpp
 extern const char *g_crStrings[];
 
-bool setClusterLevels ( key_t     *clusterRecs          ,
-			int64_t *docIds               ,
+bool setClusterLevels ( const key_t   *clusterRecs,
+			const int64_t *docIds,
 			int32_t       numRecs              ,
 			int32_t       maxDocIdsPerHostname ,
 			bool       doHostnameClustering ,
 			bool       familyFilter         ,
 			char       langFilter           ,
-			// blacklisted sites
-			//char      *negativeSiteHashes   ,
 			bool       isDebug              ,
 			// output to clusterLevels[]
 			char      *clusterLevels        );
@@ -98,11 +96,10 @@ class Msg51 {
 	// . returns false if blocked, true otherwise
 	// . sets g_errno on error
 	// . we just store the "int32_t" part of the cluster rec
-	bool getClusterRecs ( int64_t     *docIds                   ,
+	bool getClusterRecs ( const int64_t     *docIds,
 			      char          *clusterLevels            ,
 			      key_t         *clusterRecs              ,
 			      int32_t           numDocIds                ,
-			      //char          *coll                     ,
 			      collnum_t collnum ,
 			      int32_t           maxCacheAge              ,
 			      bool           addToCache               ,
@@ -129,7 +126,7 @@ private:
 	bool sendRequest    ( int32_t i );
 
 	// docIds we're getting clusterRecs for
-	int64_t   *m_docIds;
+	const int64_t   *m_docIds;
 	int32_t         m_numDocIds;
 
 	// the lower 64 bits of each cluster rec
