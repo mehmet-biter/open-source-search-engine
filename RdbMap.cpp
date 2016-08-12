@@ -1574,12 +1574,12 @@ readLoop:
 	// . HACK to fix useHalfKeys compression thing from one read to the nxt
 	// . "key" should still be set to the last record we read last read
 	if ( offset > 0 ) {
-		list.m_listPtrHi = key+(m_ks-6);
-	}
-
-	// ... fix for posdb!!!
-	if ( offset > 0 && m_ks == 18 ) {
-		list.m_listPtrLo = key + (m_ks - 12);
+		// ... fix for posdb!!!
+		if (m_ks == 18) {
+			list.m_listPtrLo = key + (m_ks - 12);
+		} else {
+			list.m_listPtrHi = key + (m_ks - 6);
+		}
 	}
 
 	// . parse through the records in the list
