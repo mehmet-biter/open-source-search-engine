@@ -108,12 +108,26 @@ class Msg5 {
 			 int32_t *numNegativeRecs, int32_t *numPositiveRecs,
 			 int32_t *memUsedByTree, int32_t *numUsedNodes);
 
-	// need niceness to pass on to others
-	int32_t getNiceness ( ) { return m_niceness; }
-
 	// frees m_treeList, m_diskList (can be quite a lot of mem 2+ megs)
 	void reset();
 
+	bool isWaitingForList() const { return m_waitingForList; }
+
+	int32_t minRecSizes() const { return m_minRecSizes; }
+
+	// we add our m_finalList(s) to this, the user's list
+	RdbList  *m_list;
+
+	// private:
+
+	// holds all RdbLists from disk
+	Msg3      m_msg3;
+
+	// holds list parms
+	char      m_startKey[MAX_KEY_BYTES];
+	char      m_endKey[MAX_KEY_BYTES];
+
+private:
 	// called to read lists from disk using Msg3
 	bool readList();
 
@@ -134,23 +148,6 @@ class Msg5 {
 	bool getRemoteList  ( );
 	bool gotRemoteList  ( );
 
-	bool isWaitingForList() const { return m_waitingForList; }
-
-	int32_t minRecSizes() const { return m_minRecSizes; }
-
-	// we add our m_finalList(s) to this, the user's list
-	RdbList  *m_list;
-
-	// private:
-
-	// holds all RdbLists from disk
-	Msg3      m_msg3;
-
-	// holds list parms
-	char      m_startKey[MAX_KEY_BYTES];
-	char      m_endKey[MAX_KEY_BYTES];
-
-private:
 	// hold the caller of getList()'s callback here
 	void    (* m_callback )( void *state , RdbList *list , Msg5 *msg );
 	void    *m_state       ;
