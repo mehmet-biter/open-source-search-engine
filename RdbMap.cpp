@@ -75,7 +75,6 @@ bool RdbMap::close ( bool urgent ) {
 
 void RdbMap::reset ( ) {
 	m_reducedMem = false;
-	m_generatingMap = false;
 	int32_t pps = PAGES_PER_SEGMENT;
 	if ( m_newPagesPerSegment > 0 ) pps = m_newPagesPerSegment;
 
@@ -1467,7 +1466,6 @@ bool RdbMap::generateMap ( BigFile *f ) {
 	int32_t  recSize = 0;
 	char *rec     = buf;
 	int64_t next = 0LL;
-	m_generatingMap = true;
 
 	// read in at most "bufSize" bytes with each read
 readLoop:
