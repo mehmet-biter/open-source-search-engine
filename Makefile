@@ -286,10 +286,13 @@ doc:
 	doxygen doxygen/doxygen_config.conf
 
 
-# used for unit testing
+# used for tools/unittest
 libgb.a: $(OBJS)
 	ar rcs $@ $^
 
+.PHONY: tools
+tools:
+	+$(MAKE) -C tools
 
 .PHONY: test
 test: unittest systemtest
