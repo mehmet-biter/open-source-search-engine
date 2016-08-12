@@ -40,6 +40,7 @@
 #include "Hostdb.h"
 #include "Loop.h"   // loop class that handles signals on our socket
 #include "UdpStatistic.h"
+#include <pthread.h>
 
 
 static const int64_t udpserver_sendrequest_infinite_timeout = 999999999999;
@@ -268,6 +269,8 @@ private:
 	// . call these handlers for the corresponding msgType
 	// . msgTypes go from 0 to 64 i think (see UdpProtocol.h dgram header)
 	void (* m_handlers[MAX_MSG_TYPES])(UdpSlot *slot, int32_t niceness);
+
+	pthread_mutex_t m_mtx; //mutex protecting this instance.
 
 	// when a call to sendto() blocks we set this to true so Loop.cpp
 	// will know to manually call sendPoll() rather than counting
