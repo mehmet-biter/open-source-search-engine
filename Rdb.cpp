@@ -244,9 +244,8 @@ bool Rdb::init ( const char     *dir                  ,
 
 //@@@ BR: no-merge index begin
 	if( m_useIndexFile ) {
-		sprintf(m_indexName,"%s.idx", m_dbname);
-		m_index.set(dir, m_indexName);
-		
+		sprintf(m_indexName, "%s%s-saved.idx", m_dbname, m_useTree ? "" : "-buckets");
+		m_index.set(dir, m_indexName, m_fixedDataSize, m_useHalfKeys, m_ks, m_rdbId);
 		m_index.readIndex();
 	}
 //@@@ BR: no-merge index end
