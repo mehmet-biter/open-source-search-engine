@@ -135,8 +135,6 @@ class Msg51 {
 	bool sendRequests   ( int32_t k );
 	bool sendRequest    ( int32_t i );
 
-	void gotClusterRec  ( class Msg0 *msg0 );
-
 	// docIds we're getting clusterRecs for
 	int64_t   *m_docIds;
 	int32_t         m_numDocIds;
@@ -174,12 +172,19 @@ class Msg51 {
 	// for super quick disk page cache lookups
 	//Msg5       m_msg5;
 
-	Msg0       m_msg0  [ MSG51_MAX_REQUESTS ];
-	RdbList    m_lists [ MSG51_MAX_REQUESTS ];
-	Msg5       m_msg5  [ MSG51_MAX_REQUESTS ];
-
 private:
+	struct Slot {
+		Msg51     *m_msg51; //points to self
+		Msg0       m_msg0;
+		RdbList    m_list;
+		Msg5       m_msg5;
+		bool       m_inUse;
+		int32_t    m_ci;
+	};
+	Slot m_slot[MSG51_MAX_REQUESTS];
+
 	static void gotClusterRecWrapper51(void *state);
+	void gotClusterRec(Slot *slot);
 };
 
 
