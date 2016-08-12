@@ -637,34 +637,30 @@ int64_t RdbMap::readSegment ( int32_t seg , int64_t offset , int32_t fileSize ) 
 // . offset is the current offset of the rdb file where the key/data was added
 // . TODO: speed this up
 // . we pass in "data" so we can compute the crc of each page
-//bool RdbMap::addRecord ( key_t &key, char *rec , int32_t recSize ) {
 bool RdbMap::addRecord ( char *key, char *rec , int32_t recSize ) {
-	// calculate size of the whole slot
-	//int32_t size = sizeof(key_t) ;
-	if ( m_reducedMem ) { g_process.shutdownAbort(true); }
-	// include the dataSize, 4 bytes, for each slot if it's not fixed
-	//if ( m_fixedDataSize == -1 ) size += 4;
-	// include the data
-	//size += dataSize;
+	if (m_reducedMem) {
+		gbshutdownAbort(true);
+	}
+
 	// what page is first byte of key on?
-	//int32_t pageNum         =  m_offset             / m_pageSize;
 	int32_t pageNum = m_offset >> m_pageSizeBits;
+
 	// what is the last page we touch?
-	//int32_t lastPageNum     = (m_offset + recSize - 1) / m_pageSize;
 	int32_t lastPageNum     = (m_offset + recSize - 1) >> m_pageSizeBits;
+
 	// . see if we need to reallocate/allocate more pages in the map.
 	// . g_errno should be set to ENOMEM
 	// . only do this if we're NOT adding to disk
 	// . should only change m_maxNumPages, not m_numPages
 	// . if the rec is HUGE it may span SEVERAL, so do a while()
-	while ( lastPageNum + 2 >= m_maxNumPages ) {
-		if ( ! addSegment() ) {
-			log("db: Failed to add segment3 to map file %s.",
-			    m_file.getFilename());
+	while (lastPageNum + 2 >= m_maxNumPages) {
+		if (!addSegment()) {
+			log(LOG_ERROR, "db: Failed to add segment3 to map file %s.", m_file.getFilename());
 			// core dump until we revert to old values
-			g_process.shutdownAbort(true);
+			gbshutdownAbort(true);
 		}
 	}
+
 	// we need to call writeMap() before we exit
 	m_needToWrite = true;
 
@@ -676,58 +672,28 @@ bool RdbMap::addRecord ( char *key, char *rec , int32_t recSize ) {
 
 	// we now call RdbList::checkList_r() in RdbDump::dumpList()
 	// and that checks the order of the keys
-	//#ifdef GBSANITYCHECK
 	// . sanity check
 	// . a key of 0 is valid, so watch out for m_lastKey's sake
-	//if ( key <= m_lastKey && (m_lastKey.n0!=0 || m_lastKey.n1!=0)) {
 	// i changed from <= to < because i saw it core when two linkdb
 	// keys were the same. no idea how that happened. maybe a timing
 	// coincidence thingy.
-	if ( KEYCMP(key,m_lastKey,m_ks)<0 &&
-	     KEYCMP(m_lastKey,KEYMIN(),m_ks)!=0 ) {
+	if (KEYCMP(key, m_lastKey, m_ks) < 0 && KEYCMP(m_lastKey, KEYMIN(), m_ks) != 0) {
 		m_badKeys++;
 		// do not log more than once per second
-		if ( getTime() == m_lastLogTime ) goto skip;
+		if ( getTime() == m_lastLogTime ) {
+			goto skip;
+		}
 		m_lastLogTime = getTime();
-		
-		//pageNum > 0 && getKey(pageNum-1) > getKey(pageNum) ) {
+
 		log(LOG_LOGIC,"build: RdbMap: added key out of order. count=%" PRId64" file=%s/%s.",
 			m_badKeys, m_file.getDir(), m_file.getFilename());
-			
-		//log(LOG_LOGIC,"build: k.n1=%" PRIx32" %" PRIx64"  lastKey.n1=%" PRIx32" %" PRIx64,
-		//    key.n1,key.n0,m_lastKey.n1,m_lastKey.n0 );
-		log(LOG_LOGIC,"build: offset=%" PRId64,
-		    m_offset);
-		log(LOG_LOGIC,"build: k1=%s",
-		    KEYSTR(m_lastKey,m_ks));
-		log(LOG_LOGIC,"build: k2=%s",
-		    KEYSTR(key,m_ks));
-		    
-		if ( m_generatingMap ) {
-			g_errno = ECORRUPTDATA;
-			return false;
-		}
+		log(LOG_LOGIC,"build: offset=%" PRId64"k1=%s k2=%s", m_offset, KEYSTR(m_lastKey,m_ks), KEYSTR(key,m_ks));
+
 		// if being called from RdbDump.cpp...
 		g_errno = ECORRUPTDATA;
 		return false;
-		
-		
-		//g_process.shutdownAbort(true);
-		// . during a merge, corruption can happen, so let's core
-		//   here until we figure out how to fix it.
-		// . any why wasn't the corruption discovered and patched
-		//   with a twin? or at least excised... because the read
-		//   list may have all keys in order, but be out of order
-		//   with respect to the previously-read list?
-		//g_process.shutdownAbort(true);
-		// let's ignore it for now and just add the corrupt
-		// record (or maybe the one before was corrupted) but we
-		// need to verify the map afterwards to fix these problems
-		//m_needVerify = true;
-	//	sleep(50000);
 	}
-	//#endif
- skip:
+skip:
 	// remember the lastKey in the whole file
 	//m_lastKey = key;
 	KEYSET(m_lastKey,key,m_ks);
@@ -1425,6 +1391,7 @@ bool RdbMap::generateMap ( BigFile *f ) {
 
 	log(LOG_INFO, "db: Generating map for %s/%s", f->getDir(), f->getFilename());
 
+	/// @todo ALC remove this when we don't remove partfile during merge anymore
 	// we don't support headless datafiles right now
 	bool allowHeadless = true;
 	if (m_fixedDataSize != 0 || m_ks != 18) {
