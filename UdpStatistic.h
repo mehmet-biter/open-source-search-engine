@@ -16,7 +16,7 @@ public:
 	uint16_t getPort() const { return m_port; }
 
 	msg_type_t getMsgType() const { return m_msgType; }
-	const char* getDescription() const { return m_description; };
+	const char* getDescription() const { return m_description; }
 
 	int32_t getNiceness() const { return m_niceness; }
 	char getConvertedNiceness() const { return m_convertedNiceness; }

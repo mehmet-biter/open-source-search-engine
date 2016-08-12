@@ -40,7 +40,6 @@
 
 // TODO: don't mask signals, catch them as they arrive? (like in phhttpd)
 
-static int32_t g_missedQuickPolls = 0;
 int32_t g_numSigChlds = 0;
 int32_t g_numSigIOs = 0;
 int32_t g_numSigQueues = 0;

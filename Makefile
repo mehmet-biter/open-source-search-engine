@@ -157,6 +157,9 @@ CPPFLAGS += -Wno-zero-length-array -Wno-c99-extensions
 # compability (we're using c++11)
 CPPFLAGS += -Wno-c++98-compat-pedantic
 
+# other warnings we don't care about
+CPPFLAGS += -Wno-format-pedantic
+
 # other warnings (to be moved above or re-enabled when we have cleaned up the code sufficiently)
 CPPFLAGS += -Wno-cast-align -Wno-tautological-undefined-compare -Wno-float-equal -Wno-weak-vtables -Wno-global-constructors -Wno-exit-time-destructors
 CPPFLAGS += -Wno-shadow -Wno-conversion -Wno-sign-conversion -Wno-old-style-cast -Wno-shorten-64-to-32 -Wno-double-promotion
