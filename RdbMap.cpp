@@ -1700,7 +1700,7 @@ done:
 // 5MB is a typical write buffer size, so do a little more than that
 #define MAX_TRUNC_SIZE 6000000
 
-bool RdbMap::truncateFile ( BigFile *f ) {
+bool RdbMap::truncateFile(BigFile *f) {
 	// how big is the big file
 	int64_t fileSize = f->getFileSize();
 	int64_t tail = fileSize - m_offset;
@@ -1717,7 +1717,6 @@ bool RdbMap::truncateFile ( BigFile *f ) {
 			readSize = 100000;
 		}
 
-		f->read(buf, readSize, off);
 		if (!f->read(buf, readSize, off)) {
 			logError("Failed to read %" PRId32" bytes of [%s] at offset=%" PRId64".", readSize, f->getFilename(), off);
 			return false;
