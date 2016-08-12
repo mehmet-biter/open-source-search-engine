@@ -50,7 +50,6 @@ const char *g_crStrings[] = {
 RdbCache s_clusterdbQuickCache;
 static bool     s_cacheInit = false;
 
-static void gotClusterRecWrapper51 ( void *state );
 
 Msg51::Msg51 ( ) {
 	m_clusterRecs     = NULL;
@@ -136,9 +135,11 @@ bool Msg51::getClusterRecs ( int64_t     *docIds                   ,
 	// reset these
 	m_numRequests = 0;
 	m_numReplies  = 0;
-	// clear these
-	for ( int32_t i = 0 ; i < MSG51_MAX_REQUESTS ; i++ )
-		m_msg0[i].m_inUse = false;
+	// clear/initialize these
+	for ( int32_t i = 0 ; i < MSG51_MAX_REQUESTS ; i++ ) {
+		m_slot[i].m_msg51 = this;
+		m_slot[i].m_inUse = false;
+	}
 	// . do gathering
 	// . returns false if blocked, true otherwise
 	// . send up to MSG51_MAX_REQUESTS requests at the same time
@@ -226,12 +227,14 @@ bool Msg51::sendRequests ( int32_t k ) {
 	if ( k >= MSG51_MAX_REQUESTS ) k = -1;
 
 	// if hint was provided use that
-	if ( k >= 0 && ! m_msg0[k].m_inUse ) slot = k;
+	if ( k >= 0 && ! m_slot[k].m_inUse )
+		slot = k;
 	// otherwise, do a scan for the empty slot
 	else {
 		for ( slot = 0 ; slot < MSG51_MAX_REQUESTS ; slot++ )
 			// break out if available
-			if ( ! m_msg0[slot].m_inUse ) break;
+			if(!m_slot[slot].m_inUse)
+				break;
 	}
 
 	// sanity check -- must have one!!
@@ -263,11 +266,8 @@ bool Msg51::sendRequest ( int32_t    i ) {
 	// advance so we do not do this docid again 
 	m_nexti++;
 
-	// use a hack to store this
-	m_msg0[i].m_parent  = this;
-	m_msg0[i].m_slot51  = i;
-	m_msg0[i].m_dataPtr = dataPtr;
-	m_msg0[i].m_inUse   = true;
+	m_slot[i].m_ci = m_nexti;
+	m_slot[i].m_inUse = true;
 	// count it
 	m_numRequests++;
 	// lookup in clusterdb, need a start and endkey
@@ -292,18 +292,18 @@ bool Msg51::sendRequest ( int32_t    i ) {
 	// . send the request for the cluster rec, use Msg0
 	// . returns false and sets g_errno on error
 	// . otherwise, it blocks and returns true
-	bool s = m_msg0[i].getList ( -1            , // hostid
+	bool s = m_slot[i].m_msg0.getList( -1            , // hostid
 				     -1            , // ip
 				     -1            , // port 
 				     m_maxCacheAge ,
 				     m_addToCache  ,
 				     RDB_CLUSTERDB ,
 				     m_collnum        ,
-				     &m_lists[i]   ,
+				     &m_slot[i].m_list,
 				     (char *)&startKey      ,
 				     (char *)&endKey        ,
 				     36            , // minRecSizes 
-				     &m_msg0[i]    , // state
+				     &m_slot[i],     // state
 				     gotClusterRecWrapper51  ,
 				     m_niceness    ,
 				     true        , // doErrorCorrection
@@ -315,7 +315,7 @@ bool Msg51::sendRequest ( int32_t    i ) {
 				     30000       , // timeout
 				     -1          , // syncPoint
 				     false       , // preferLocalReads
-				     &m_msg5[i]  , // use for local reads
+				     &m_slot[i].m_msg5, // use for local reads
 				     false       , // isRealMerge?
 				     true        , // allow page cache?
 				     false       , // force local indexdb?
@@ -331,21 +331,17 @@ bool Msg51::sendRequest ( int32_t    i ) {
 		return false; 
 	}
 	// otherwise, process the response
-	gotClusterRec ( &m_msg0[i] );
+	gotClusterRec ( &m_slot[i] );
 	return true;
 }
 
-void gotClusterRecWrapper51 ( void *state ) {//, RdbList *rdblist ) {
-	Msg0 *msg0 = (Msg0 *)state;
-	// extract our class form him -- a hack
-	Msg51 *THIS = (Msg51 *)msg0->m_parent;
-	// sanity check
-	if ( &THIS->m_msg0[msg0->m_slot51] != msg0 )
-		gbshutdownLogicError();
+void Msg51::gotClusterRecWrapper51(void *state) {
+	Slot *slot = static_cast<Slot*>(state);
+	Msg51 *THIS = slot->m_msg51;
 	// process it
-	THIS->gotClusterRec ( msg0 ) ;
+	THIS->gotClusterRec(slot);
 	// get slot number for re-send on this slot
-	int32_t    k = msg0->m_slot51;
+	int32_t    k = (int32_t)(slot-THIS->m_slot);
 	// . if not all done, launch the next one
 	// . this returns false if blocks, true otherwise
 	if ( ! THIS->sendRequests ( k ) ) return;
@@ -355,15 +351,15 @@ void gotClusterRecWrapper51 ( void *state ) {//, RdbList *rdblist ) {
 }
 
 // . sets m_errno to g_errno if not already set
-void Msg51::gotClusterRec ( Msg0 *msg0 ) { //, RdbList *list ) {
+void Msg51::gotClusterRec(Slot *slot) {
 
 	// count it
 	m_numReplies++;
 
 	// free up
-	msg0->m_inUse = false;
+	slot->m_inUse = false;
 
-	RdbList *list = msg0->m_list;
+	RdbList *list = slot->m_msg0.m_list;
 
 	// update m_errno if we had an error
 	if ( ! m_errno ) m_errno = g_errno;
@@ -379,7 +375,7 @@ void Msg51::gotClusterRec ( Msg0 *msg0 ) { //, RdbList *list ) {
 	//int64_t docId = g_clusterdb.getDocId ( *startKey );
 
 	// this doubles as a ptr to a cluster rec
-	int32_t    ci = (int32_t   )(PTRTYPE)msg0->m_dataPtr;
+	int32_t    ci = slot->m_ci;
 	// get docid
 	int64_t docId = m_docIds[ci];
 	// assume error!

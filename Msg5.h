@@ -121,31 +121,8 @@ class Msg5 {
 			 int32_t *numNegativeRecs, int32_t *numPositiveRecs,
 			 int32_t *memUsedByTree, int32_t *numUsedNodes);
 
-	// need niceness to pass on to others
-	int32_t getNiceness ( ) { return m_niceness; }
-
 	// frees m_treeList, m_diskList (can be quite a lot of mem 2+ megs)
 	void reset();
-
-	// called to read lists from disk using Msg3
-	bool readList();
-
-	// keep public for doneScanningWrapper to call
-	bool gotList();
-	bool gotList2();
-
-	// does readList() need to be called again due to negative rec
-	// annihilation?
-	bool needsRecall();
-
-	bool doneMerging   ();
-
-	// . when a list is bad we try to patch it by getting a list from
-	//   a host in our redundancy group
-	// . we also get a local list from ALL files and tree to remove
-	//   recs we already have from the remote list
-	bool getRemoteList  ( );
-	bool gotRemoteList  ( );
 
 	bool isWaitingForList() const { return m_waitingForList; }
 
@@ -166,6 +143,26 @@ class Msg5 {
 	char      m_endKey[MAX_KEY_BYTES];
 
 private:
+	// called to read lists from disk using Msg3
+	bool readList();
+
+	// keep public for doneScanningWrapper to call
+	bool gotList();
+	bool gotList2();
+
+	// does readList() need to be called again due to negative rec
+	// annihilation?
+	bool needsRecall();
+
+	bool doneMerging   ();
+
+	// . when a list is bad we try to patch it by getting a list from
+	//   a host in our redundancy group
+	// . we also get a local list from ALL files and tree to remove
+	//   recs we already have from the remote list
+	bool getRemoteList  ( );
+	bool gotRemoteList  ( );
+
 	// hold the caller of getList()'s callback here
 	void    (* m_callback )( void *state , RdbList *list , Msg5 *msg );
 	void    *m_state       ;
