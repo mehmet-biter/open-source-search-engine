@@ -50,7 +50,6 @@ const char *g_crStrings[] = {
 RdbCache s_clusterdbQuickCache;
 static bool     s_cacheInit = false;
 
-static void gotClusterRecWrapper51 ( void *state );
 
 Msg51::Msg51 ( ) {
 	m_clusterRecs     = NULL;
@@ -334,7 +333,7 @@ bool Msg51::sendRequest ( int32_t    i ) {
 	return true;
 }
 
-void gotClusterRecWrapper51 ( void *state ) {//, RdbList *rdblist ) {
+void Msg51::gotClusterRecWrapper51(void *state) {
 	Msg0 *msg0 = (Msg0 *)state;
 	// extract our class form him -- a hack
 	Msg51 *THIS = (Msg51 *)msg0->m_parent;

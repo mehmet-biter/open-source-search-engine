@@ -177,6 +177,9 @@ class Msg51 {
 	Msg0       m_msg0  [ MSG51_MAX_REQUESTS ];
 	RdbList    m_lists [ MSG51_MAX_REQUESTS ];
 	Msg5       m_msg5  [ MSG51_MAX_REQUESTS ];
+
+private:
+	static void gotClusterRecWrapper51(void *state);
 };
 
 
