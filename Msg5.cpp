@@ -318,15 +318,16 @@ bool Msg5::getList ( char     rdbId         ,
 	// same if minRecSizes is 0
 	if ( m_minRecSizes == 0    ) return true;
 
+	// tell Spider.cpp not to nuke us until we get back!!!
+	m_waitingForList = true;
+
 	// timing debug
 	//log("Msg5:getting list startKey.n1=%" PRIu32,m_startKey.n1);
 	// start the read loop - hopefully, will only loop once
 	if ( readList ( ) ) {
+		m_waitingForList = false;
 		return true;
 	}
-
-	// tell Spider.cpp not to nuke us until we get back!!!
-	m_waitingForList = true;
 
 	// we blocked!!! must call m_callback
 	return false;
@@ -550,9 +551,6 @@ bool Msg5::readList ( ) {
 		// sanity check
 		if ( m_treeList.m_ks != m_ks ) { g_process.shutdownAbort(true); }
 
-		// we are waiting for the list
-		//m_waitingForList = true;
-
 		// clear just in case
 		g_errno = 0;
 
@@ -695,9 +693,6 @@ void Msg5::gotListWrapper() {
 // . sets g_errno on error
 bool Msg5::gotList ( ) {
 	assert(magic==MAGIC);
-
-	// we are no longer waiting for the list
-	//m_waitingForList = false;
 
 	// return if g_errno is set
 	if ( g_errno && g_errno != ECORRUPTDATA ) return true;
