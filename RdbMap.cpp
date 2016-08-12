@@ -689,20 +689,22 @@ bool RdbMap::addRecord ( char *key, char *rec , int32_t recSize ) {
 	}
 
 	// remember the lastKey in the whole file
-	//m_lastKey = key;
 	KEYSET(m_lastKey,key,m_ks);
-	// debug msg
-	//log(LOG_LOGIC,"build: map add lastk.n1=%" PRIx64" %" PRIx64,
-	//    KEY1(m_lastKey,m_ks),KEY0(m_lastKey));
+
 	// set m_numPages to the last page num we touch plus one
 	m_numPages = lastPageNum + 1;
-	// keep a global tally on # of recs that are deletes (low bit cleared)
-	//if ( (key.n0 & 0x01) == 0 ) m_numNegativeRecs++;
-	if ( KEYNEG(key) ) m_numNegativeRecs++;
-	// keep a global tally on # of recs that are NOT deletes
-	else m_numPositiveRecs++;
+
+	if (KEYNEG(key)) {
+		// keep a global tally on # of recs that are deletes (low bit cleared)
+		m_numNegativeRecs++;
+	} else {
+		// keep a global tally on # of recs that are NOT deletes
+		m_numPositiveRecs++;
+	}
+
 	// increment the size of the data file
 	m_offset += recSize ;
+
 	// . reset all pages above pageNum that we touch
 	// . store -1 in offset to indicate it's continuation of key which
 	//   started on another page
@@ -710,16 +712,23 @@ bool RdbMap::addRecord ( char *key, char *rec , int32_t recSize ) {
 	//   ourselves and the next key will start on lastPageNum+1 at offset 0
 	// . also by storing -1 for offset this page becomes available for
 	//   keys/recs to follow
-	for ( int32_t i = pageNum + 1; i <= lastPageNum; i++ ) setKey ( i , key );
+	for (int32_t i = pageNum + 1; i <= lastPageNum; i++) {
+		setKey(i, key);
+	}
+
 	// . return now if we're NOT the first key wholly on page #pageNum
 	// . add crc of this rec
 	// . this offset will be -1 for unstarted pages
 	// . tally the crc until we hit a new page
-	if ( getOffset ( pageNum ) >= 0 ) return true;
+	if (getOffset(pageNum) >= 0) {
+		return true;
+	}
+
 	// . if no key has claimed this page then we'll claim it
 	// . by claiming it we are the first key to be wholly on this page
-	setOffset ( pageNum , ( m_offset - recSize ) & (m_pageSize-1) );
-	setKey    ( pageNum , key );
+	setOffset(pageNum, (m_offset - recSize) & (m_pageSize - 1));
+	setKey(pageNum, key);
+
 	// success!
 	return true;
 }
