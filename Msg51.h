@@ -14,6 +14,7 @@
 #include "Clusterdb.h"
 #include "RdbList.h"
 #include "Msg5.h"
+#include <pthread.h>
 
 // how many Msg0 requests can we launch at the same time?
 #define MSG51_MAX_REQUESTS 60
@@ -123,6 +124,7 @@ class Msg51 {
 
 private:
 	bool sendRequests   ( int32_t k );
+	bool sendRequests_unlocked(int32_t k);
 	bool sendRequest    ( int32_t i );
 
 	// docIds we're getting clusterRecs for
@@ -137,10 +139,9 @@ private:
 	void     (*m_callback ) ( void *state );
 	void      *m_state;
 
+	pthread_mutex_t m_mtx; //protects m_nexti, m_numXxxx, m_slot, etc.
 	// next cluster rec # to get (for m_docIds[m_nexti])
 	int32_t      m_nexti;
-	// so we don't re-get cluster recs we got last call
-	int32_t      m_firsti;
 
 	// use to get the cluster recs
 	int32_t       m_numRequests;

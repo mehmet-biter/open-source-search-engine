@@ -10,6 +10,7 @@
 #include "HashTableT.h"
 #include "HashTableX.h"
 #include "RdbCache.h"
+#include "ScopedLock.h"
 #include "Sanity.h"
 
 
@@ -55,6 +56,7 @@ Msg51::Msg51 ( ) {
 	m_clusterRecs     = NULL;
 	m_clusterRecsSize = 0;
 	m_clusterLevels   = NULL;
+	pthread_mutex_init(&m_mtx,NULL);
 }
 
 Msg51::~Msg51 ( ) {
@@ -146,11 +148,17 @@ bool Msg51::getClusterRecs ( const int64_t     *docIds,
 	return sendRequests ( -1 );
 }
 
+
+bool Msg51::sendRequests(int32_t k) {
+	ScopedLock sl(m_mtx);
+	return sendRequests_unlocked(k);
+}
+
 // . returns false if blocked, true otherwise
 // . sets g_errno on error (and m_errno)
 // . k is a hint of which msg0 to use
 // . if k is -1 we do a complete scan to find available m_msg0[x]
-bool Msg51::sendRequests ( int32_t k ) {
+bool Msg51::sendRequests_unlocked(int32_t k) {
 
  sendLoop:
 
@@ -338,13 +346,16 @@ bool Msg51::sendRequest ( int32_t    i ) {
 void Msg51::gotClusterRecWrapper51(void *state) {
 	Slot *slot = static_cast<Slot*>(state);
 	Msg51 *THIS = slot->m_msg51;
-	// process it
-	THIS->gotClusterRec(slot);
-	// get slot number for re-send on this slot
-	int32_t    k = (int32_t)(slot-THIS->m_slot);
-	// . if not all done, launch the next one
-	// . this returns false if blocks, true otherwise
-	if ( ! THIS->sendRequests ( k ) ) return;
+	{
+		ScopedLock sl(THIS->m_mtx);
+		// process it
+		THIS->gotClusterRec(slot);
+		// get slot number for re-send on this slot
+		int32_t    k = (int32_t)(slot-THIS->m_slot);
+		// . if not all done, launch the next one
+		// . this returns false if blocks, true otherwise
+		if ( ! THIS->sendRequests_unlocked(k) ) return;
+	}
 	// we don't need to go on if we're not doing deduping
 	THIS->m_callback ( THIS->m_state );
 	return;
