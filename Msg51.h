@@ -132,7 +132,6 @@ private:
 	// the lower 64 bits of each cluster rec
 	key_t      *m_clusterRecs;
 	char       *m_clusterLevels;
-	int32_t        m_clusterRecsSize;
 
 	void     (*m_callback ) ( void *state );
 	void      *m_state;
