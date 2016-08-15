@@ -265,7 +265,7 @@ bool Msg51::sendRequest ( int32_t    i ) {
 	// advance so we do not do this docid again 
 	m_nexti++;
 
-	m_slot[i].m_ci = m_nexti;
+	m_slot[i].m_ci = ci;
 	m_slot[i].m_inUse = true;
 	// count it
 	m_numRequests++;
