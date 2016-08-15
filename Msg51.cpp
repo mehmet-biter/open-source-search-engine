@@ -54,7 +54,6 @@ static bool     s_cacheInit = false;
 
 Msg51::Msg51 ( ) {
 	m_clusterRecs     = NULL;
-	m_clusterRecsSize = 0;
 	m_clusterLevels   = NULL;
 	pthread_mutex_init(&m_mtx,NULL);
 }
@@ -64,10 +63,6 @@ Msg51::~Msg51 ( ) {
 }
 
 void Msg51::reset ( ) {
-	// only free this if we allocated it
-	if ( m_clusterRecsSize && m_clusterRecs )
-		mfree ( m_clusterRecs , m_clusterRecsSize , "Msg51" );
-	m_clusterRecsSize = 0;
 	m_clusterRecs     = NULL;
 	m_clusterLevels   = NULL;
 }
@@ -274,7 +269,7 @@ bool Msg51::sendRequest ( int32_t    i ) {
 	// advance so we do not do this docid again 
 	m_nexti++;
 
-	m_slot[i].m_ci = m_nexti;
+	m_slot[i].m_ci = ci;
 	m_slot[i].m_inUse = true;
 	// count it
 	m_numRequests++;
