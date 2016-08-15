@@ -14,7 +14,6 @@
 
 extern char g_repairMode;
 extern bool g_callAllHostsReady;
-extern bool g_saveRepairState;
 
 class Repair {
 public:
