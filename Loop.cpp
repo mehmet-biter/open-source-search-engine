@@ -40,10 +40,6 @@
 
 // TODO: don't mask signals, catch them as they arrive? (like in phhttpd)
 
-int32_t g_numSigChlds = 0;
-int32_t g_numSigIOs = 0;
-int32_t g_numSigQueues = 0;
-int32_t g_numSigOthers = 0;
 
 // a global class extern'd in .h file
 Loop g_loop;
