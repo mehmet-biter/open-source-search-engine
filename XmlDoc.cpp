@@ -17825,8 +17825,7 @@ static void *malloc_replace (void *pf , unsigned int nitems , unsigned int size 
 }
 
 static void free_replace   ( void *pf , void *s ) {
-	// -1 means we don't know the size
-	g_mem.gbfree(s,-1,"free_replace");
+	g_mem.gbfree(s,"free_replace", 0, false);
 }
 
 int gbuncompress ( unsigned char *dest      ,

@@ -54,14 +54,14 @@ void operator delete (void *ptr) throw () {
 	logTrace( g_conf.m_logTraceMem, "ptr=%p", ptr );
 
 	// now just call this
-	g_mem.gbfree ( (char *)ptr , -1 , NULL );
+	g_mem.gbfree((char *)ptr, NULL, 0, false);
 }
 
 void operator delete [] ( void *ptr ) throw () {
 	logTrace( g_conf.m_logTraceMem, "ptr=%p", ptr );
 
 	// now just call this
-	g_mem.gbfree ( (char *)ptr , -1 , NULL );
+	g_mem.gbfree((char *)ptr, NULL, 0, false);
 }
 
 #define MINMEM 6000000
@@ -632,7 +632,7 @@ bool Mem::lblMem( void *mem, int32_t size, const char *note ) {
 }
 
 // this is called just before a memory block is freed and needs to be deregistered
-bool Mem::rmMem  ( void *mem , int32_t size , const char *note ) {
+bool Mem::rmMem(void *mem, int32_t size, const char *note) {
 	ScopedLock sl(s_lock);
 	logTrace( g_conf.m_logTraceMem, "mem=%p size=%" PRId32 "note='%s'", mem, size, note );
 
@@ -646,7 +646,10 @@ bool Mem::rmMem  ( void *mem , int32_t size , const char *note ) {
 	if ( g_conf.m_logDebugMem ) printBreeches_unlocked();
 
 	// don't free 0 bytes
-	if ( size == 0 ) return true;
+	if ( size == 0 ) {
+		return true;
+	}
+
 	// . hash by first hashing "mem" to mix it up some
 	// . balance the mallocs/frees
 	// . hash into table
@@ -667,13 +670,7 @@ bool Mem::rmMem  ( void *mem , int32_t size , const char *note ) {
 
 	// are we from the "new" operator
 	bool isnew = s_isnew[h];
-	// set our size
-	if ( size == -1 ) size = s_sizes[h];
-	// must be legit now
-	if ( size <= 0 ) {
-		sl.unlock();
-		gbshutdownLogicError();
-	}
+
 	// . bitch is sizes don't match
 	// . delete operator does not provide a size now (it's -1)
 	if ( s_sizes[h] != size ) {
@@ -1065,9 +1062,8 @@ void *Mem::gbrealloc ( void *ptr , int oldSize , int newSize , const char *note 
 	// crazy?
 	if ( newSize < 0 ) gbshutdownLogicError();
 	// if newSize is 0...
-	if ( newSize == 0 ) { 
-		//mfree ( ptr , oldSize , note );
-		gbfree ( ptr , oldSize , note );
+	if ( newSize == 0 ) {
+		gbfree(ptr, note, oldSize, true);
 		return (void *)0x7fffffff;
 	}
 
@@ -1090,15 +1086,14 @@ retry:
 		return gbmalloc ( newSize , note );
 	}
 
-	char *mem;
 	// assume it will be successful. we can't call rmMem() after
 	// calling sysrealloc() because it will mess up our MAGICCHAR buf
-	rmMem  ( ptr , oldSize , note );
+	rmMem(ptr, oldSize, note);
 
 	// . do the actual realloc
 	// . CAUTION: don't pass in 0x7fffffff in as "ptr" 
 	// . this was causing problems
-	mem = (char *)sysrealloc ( (char *)ptr - UNDERPAD , newSize + UNDERPAD + OVERPAD );
+	char *mem = (char *)sysrealloc ( (char *)ptr - UNDERPAD , newSize + UNDERPAD + OVERPAD );
 
 	// remove old guy on sucess
 	if ( mem ) {
@@ -1148,15 +1143,12 @@ char *Mem::strdup( const char *string, const char *note ) {
 	return dup(string, strlen(string) + 1, note);
 }
 
-
-void Mem::gbfree ( void *ptr , int size , const char *note ) {
+void Mem::gbfree ( void *ptr , const char *note, int size , bool checksize ) {
 	logTrace( g_conf.m_logTraceMem, "ptr=%p size=%d note='%s'", ptr, size, note );
 
-	// don't let electric fence zap us
-	//if ( size == 0 && ptr==(void *)0x7fffffff) return;
-	if ( size == 0 ) return;
-	// huh?
-	if ( ! ptr ) return;
+	if ((checksize && size == 0) || !ptr) {
+		return;
+	}
 
 	// . get how much it was from the mem table
 	// . this is used for alloc/free wrappers for zlib because it does
@@ -1164,18 +1156,22 @@ void Mem::gbfree ( void *ptr , int size , const char *note ) {
 	int32_t slot = g_mem.getMemSlot ( ptr );
 	if ( slot < 0 ) {
 		log(LOG_LOGIC,"mem: could not find slot (note=%s)",note);
-//Do NOT abort here... Let it run, otherwise it dies during merges.  abort();
-		//log(LOG_LOGIC,"mem: FIXME!!!");
+		// do NOT abort here... Let it run, otherwise it dies during merges.  abort();
 		// return for now so procog does not core all the time!
 		return;
-		//gbshutdownAbort();
+	}
+
+	// get size if not available
+	if (!checksize) {
+		size = s_sizes[slot];
+	}
+
+	// if this returns false it was an unbalanced free
+	if (!rmMem(ptr, size, note)) {
+		return;
 	}
 
 	bool isnew = s_isnew[slot];
-
-	// if this returns false it was an unbalanced free
-	if ( ! rmMem ( ptr , size , note ) ) return;
-
 	if ( isnew ) sysfree ( (char *)ptr );
 	else         sysfree ( (char *)ptr - UNDERPAD );
 }
