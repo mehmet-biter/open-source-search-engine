@@ -798,9 +798,11 @@ void UdpServer::process(int64_t now, int32_t maxNiceness) {
 	// . *slot will be NULL on some errors (read errors or alloc errors)
 	// . *slot will be NULL if we read and processed a slotless ACK
 	// . *slot will be NULL if we read nothing (0 bytes read & 0 returned)
-	pthread_mutex_lock(&m_mtx);
-	int32_t status = readSock(&slot, now);
-	pthread_mutex_unlock(&m_mtx);
+	int32_t status;
+	{
+		ScopedLock sl(m_mtx);
+		status = readSock(&slot, now);
+	}
 	// if we read something
 	if ( status != 0 ) {
 		// if no slot was set, it was a slotless read so keep looping
@@ -1359,7 +1361,7 @@ bool UdpServer::makeCallbacks(int32_t niceness) {
 
 	int64_t startTime = gettimeofdayInMillisecondsLocal();
 
-	pthread_mutex_lock(&m_mtx);
+	ScopedLock sl(m_mtx);
 
  fullRestart:
 
@@ -1497,8 +1499,6 @@ bool UdpServer::makeCallbacks(int32_t niceness) {
 
 	// if we just did pass 0 now we do pass 1
 	if ( ++pass == 1 ) goto nextPass;	
-
-	pthread_mutex_unlock(&m_mtx);
 
 	return numCalled;
 }
