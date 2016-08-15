@@ -469,65 +469,66 @@ bool setClusterLevels ( const key_t   *clusterRecs,
 	u_int64_t startTime = gettimeofdayInMilliseconds();
 
 	// init loop counter vars
-	int32_t           i     = -1;
 	int32_t           count = 0;
 	uint32_t  score = 0;
 	char          *crec ;
 	int64_t      h  ;
 	char          *level ;
 	bool           fakeIt ;
-loop:
-	// advance "i", but if done break out
-	if ( ++i >= numRecs ) goto done;
 
-	crec = (char *)&clusterRecs[i];
-	// . set this cluster level
-	// . right now will be CR_ERROR_CLUSTERDB or CR_OK...
-	level = &clusterLevels[i];
+	for(int32_t i=0; i<numRecs; i++) {
+		crec = (char *)&clusterRecs[i];
+		// . set this cluster level
+		// . right now will be CR_ERROR_CLUSTERDB or CR_OK...
+		level = &clusterLevels[i];
 
-	// sanity check
-	if ( *level == CR_UNINIT ) gbshutdownLogicError();
-	// and the adult bit, for cleaning the results
-	if ( familyFilter && g_clusterdb.hasAdultContent ( crec ) ) {
-		*level = CR_DIRTY; goto loop; }
-	// and the lang filter
-	if ( langFilter > 0 && g_clusterdb.getLanguage( crec )!= langFilter ) {
-		*level = CR_WRONG_LANG; goto loop; }
-	// if error looking up in clusterdb, use a 8 bit domainhash from docid
-	if ( *level == CR_ERROR_CLUSTERDB ) fakeIt = true;
-	else                                fakeIt = false;
-	// assume ok, show it, it is visible
-	*level = CR_OK;
-	// site hash comes next
-	if ( ! doHostnameClustering ) goto loop;
+		// sanity check
+		if ( *level == CR_UNINIT ) gbshutdownLogicError();
+		// and the adult bit, for cleaning the results
+		if ( familyFilter && g_clusterdb.hasAdultContent ( crec ) ) {
+			*level = CR_DIRTY;
+			continue;
+		}
+		// and the lang filter
+		if ( langFilter > 0 && g_clusterdb.getLanguage( crec )!= langFilter ) {
+			*level = CR_WRONG_LANG;
+			continue;
+		}
+		// if error looking up in clusterdb, use a 8 bit domainhash from docid
+		fakeIt = (*level==CR_ERROR_CLUSTERDB);
+		// assume ok, show it, it is visible
+		*level = CR_OK;
+		// site hash comes next
+		if(!doHostnameClustering)
+			continue;
 
-	// . get the site hash
-	// . these are only 32 bits!
-	if ( fakeIt ) h = g_titledb.getDomHash8FromDocId(docIds[i]);
-	else          h = g_clusterdb.getSiteHash26 ( crec );
+		// . get the site hash
+		// . these are only 32 bits!
+		if(fakeIt)
+			h = g_titledb.getDomHash8FromDocId(docIds[i]);
+		else
+			h = g_clusterdb.getSiteHash26 ( crec );
 
-	// inc this count!
-	if ( fakeIt ) {
-		g_stats.m_filterStats[CR_ERROR_CLUSTERDB]++;
+		// inc this count!
+		if ( fakeIt ) {
+			g_stats.m_filterStats[CR_ERROR_CLUSTERDB]++;
+		}
+
+		// if it matches a siteid on our black list
+		//if ( checkNegative && sht.getSlot((int64_t)h) > 0 ) {
+		//	*level = CR_BLACKLISTED_SITE; goto loop; }
+		// look it up
+		score = ctab.getScore ( &h ) ;
+		// if still visible, just continue
+		if ( score < (uint32_t)maxDocIdsPerHostname ) {
+			if ( ! ctab.addTerm(&h))
+				return false;
+			continue;
+		}
+		// otherwise, no lonegr visible
+		*level = CR_CLUSTERED;
 	}
 
-	// if it matches a siteid on our black list
-	//if ( checkNegative && sht.getSlot((int64_t)h) > 0 ) {
-	//	*level = CR_BLACKLISTED_SITE; goto loop; }
-	// look it up
-	score = ctab.getScore ( &h ) ;
-	// if still visible, just continue
-	if ( score < (uint32_t)maxDocIdsPerHostname ) {
-		if ( ! ctab.addTerm(&h))
-			return false;
-		goto loop;
-	}
-	// otherwise, no lonegr visible
-	*level = CR_CLUSTERED;
-	// get another
-	goto loop;
-
- done:
 
 	// debug
 	for ( int32_t i = 0 ; i < numRecs && isDebug ; i++ ) {
@@ -548,8 +549,8 @@ loop:
 	//    *numVisible,*numClustered,*numErrors);
 	// show time
 	uint64_t took = gettimeofdayInMilliseconds() - startTime;
-	if ( took <= 3 ) return true;
-	log(LOG_INFO,"build: Took %" PRId64" ms to do clustering.",took);
+	if ( took > 3 )
+		log(LOG_INFO,"build: Took %" PRId64" ms to do clustering.",took);
 
 	// we are all done
 	return true;
