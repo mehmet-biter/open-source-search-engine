@@ -237,8 +237,9 @@ class RdbMap {
 	void setKey ( int32_t page, const char *k ) {
 		//#ifdef GBSANITYCHECK
 		if ( page >= m_maxNumPages ) {
+			log(LOG_LOGIC,"RdbMap::setKey: bad engineer");
 			gbshutdownAbort(true);
-			log(LOG_LOGIC,"RdbMap::setKey: bad engineer");return; }
+		}
 		//#endif
 		//m_keys[page/PAGES_PER_SEG][page%PAGES_PER_SEG] = k; }
 		KEYSET(&m_keys[page/PAGES_PER_SEG][(page%PAGES_PER_SEG)*m_ks],
