@@ -77,7 +77,6 @@ bool tryToDeleteSpiderColl ( SpiderColl *sc , const char *msg ) ;
 void spiderRoundIncremented ( class CollectionRec *cr ) ;
 
 bool hasPositivePattern ( char *content ) ;
-bool doesStringContainPattern ( char *content , char *pattern ) ;
 
 bool getSpiderStatusMsg ( class CollectionRec *cx , 
 			  class SafeBuf *msg , 
