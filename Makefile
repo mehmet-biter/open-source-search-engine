@@ -82,6 +82,7 @@ OBJS =  UdpSlot.o Rebalance.o \
 
 # common flags
 DEFS = -D_REENTRANT_ -I.
+DEFS += -DDEBUG_MUTEXES
 CPPFLAGS = -g -fno-stack-protector -DPTHREADS
 CPPFLAGS += -std=c++11
 
