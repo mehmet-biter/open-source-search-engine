@@ -27,23 +27,23 @@ class Mem {
 
 	bool init ( );
 
-	void *gbmalloc  ( int size , const char *note  );
-	void *gbcalloc  ( int size , const char *note);
-	void *gbrealloc ( void *oldPtr, int oldSize, int newSize, const char *note);
-	void gbfree(void *ptr, const char *note, int size, bool checksize);
-	char *dup     ( const void *data , int32_t dataSize , const char *note);
+	void *gbmalloc  ( size_t size , const char *note  );
+	void *gbcalloc  ( size_t size , const char *note);
+	void *gbrealloc ( void *oldPtr, size_t oldSize, size_t newSize, const char *note);
+	void gbfree(void *ptr, const char *note, size_t size, bool checksize);
+	char *dup     ( const void *data , size_t dataSize , const char *note);
 	char *strdup  ( const char *string, const char *note );
 
 	int32_t validate();
 
 	// this one does not include new/delete mem, only *alloc()/free() mem
-	int64_t getUsedMem() const;
+	size_t getUsedMem() const;
 	// the max mem ever alloced
-	int64_t getMaxAlloced() const { return m_maxAlloced; }
-	int64_t getMaxAlloc  () const { return m_maxAlloc; }
+	size_t getMaxAlloced() const { return m_maxAlloced; }
+	size_t getMaxAlloc  () const { return m_maxAlloc; }
 	const char *getMaxAllocBy() const { return m_maxAllocBy; }
 	// the max mem we can use!
-	int64_t getMaxMem() const;
+	size_t getMaxMem() const;
 
 	int32_t getNumAllocated() const { return m_numAllocated; }
 
@@ -61,26 +61,26 @@ class Mem {
 	int  printBreeches () ;
 	// print mem usage stats
 	int  printMem      ( ) ;
-	void addMem ( void *mem , int32_t size , const char *note, char isnew);
-	bool rmMem(void *mem, int32_t size, const char *note);
-	bool lblMem ( void *mem , int32_t size , const char *note );
 
-	void addnew ( void *ptr , int32_t size , const char *note ) ;
-	void delnew ( void *ptr , int32_t size , const char *note ) ;
+	void addMem(void *mem, size_t size, const char *note, char isnew);
+	bool rmMem(void *mem, size_t size, const char *note);
+	bool lblMem(void *mem, size_t size, const char *note);
+	void addnew(void *ptr, size_t size, const char *note);
+	void delnew(void *ptr, size_t size, const char *note);
 
 	bool printMemBreakdownTable(SafeBuf* sb, 
 				    char *lightblue, 
 				    char *darkblue);
 
-	int64_t m_maxAlloced; // at any one time
-	int64_t m_maxAlloc; // the biggest single alloc ever done
+	size_t m_maxAlloced; // at any one time
+	size_t m_maxAlloc; // the biggest single alloc ever done
 	const char *m_maxAllocBy; // the biggest single alloc ever done
 
 private:
 	int32_t getMemSlot(void *mem);
 
 	// currently used mem (estimate)
-	int64_t m_used;
+	size_t m_used;
 
 	// count how many allocs/news failed
 	int32_t m_outOfMems;
@@ -95,24 +95,23 @@ private:
 
 extern class Mem g_mem;
 
-static inline void *mmalloc(int size, const char *note) {
+static inline void *mmalloc(size_t size, const char *note) {
 	return g_mem.gbmalloc(size, note);
 }
 
-static inline void *mcalloc(int size, const char *note) {
+static inline void *mcalloc(size_t size, const char *note) {
 	return g_mem.gbcalloc(size, note);
 }
 
-static inline void *mrealloc(void *oldPtr, int oldSize, int newSize,
-                             const char *note) {
+static inline void *mrealloc(void *oldPtr, size_t oldSize, size_t newSize, const char *note) {
 	return g_mem.gbrealloc(oldPtr, oldSize, newSize, note);
 }
 
-static inline void mfree(void *ptr, int size, const char *note) {
+static inline void mfree(void *ptr, size_t size, const char *note) {
 	return g_mem.gbfree(ptr, note, size, true);
 }
 
-static inline char *mdup(const void *data, int32_t dataSize, const char *note) {
+static inline char *mdup(const void *data, size_t dataSize, const char *note) {
 	return g_mem.dup(data, dataSize, note);
 }
 
@@ -120,15 +119,15 @@ static inline char *mstrdup(const char *string, const char *note) {
 	return g_mem.strdup(string, note);
 }
 
-static inline void mnew(void *ptr, int32_t size, const char *note) {
+static inline void mnew(void *ptr, size_t size, const char *note) {
 	return g_mem.addnew(ptr, size, note);
 }
 
-static inline void mdelete(void *ptr, int32_t size, const char *note) {
+static inline void mdelete(void *ptr, size_t size, const char *note) {
 	return g_mem.delnew(ptr, size, note);
 }
 
-static inline bool relabel(void *ptr, int32_t size, const char *note) {
+static inline bool relabel(void *ptr, size_t size, const char *note) {
 	return g_mem.lblMem(ptr, size, note);
 }
 

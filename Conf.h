@@ -69,7 +69,7 @@ class Conf {
 	const char *getDefaultColl ( char *hostname, int32_t hostnameLen );
 
 	// max amount of memory we can use
-	int64_t        m_maxMem;
+	size_t m_maxMem;
 
 	// if this is false, we do not save, used by dump routines
 	// in main.cpp so they can change parms here and not worry about

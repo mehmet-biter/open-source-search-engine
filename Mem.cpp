@@ -43,7 +43,7 @@ static GbMutex s_lock;
 
 // a table used in debug to find mem leaks
 static void **s_mptrs ;
-static int32_t  *s_sizes ;
+static size_t  *s_sizes ;
 static char  *s_labels;
 static char  *s_isnew;
 static int32_t   s_n = 0;
@@ -67,14 +67,14 @@ void operator delete [] ( void *ptr ) throw () {
 #define MINMEM 6000000
 
 
-void Mem::addnew ( void *ptr , int32_t size , const char *note ) {
-	logTrace( g_conf.m_logTraceMem, "ptr=%p size=%" PRId32" note=%s", ptr, size, note );
+void Mem::addnew ( void *ptr , size_t size , const char *note ) {
+	logTrace( g_conf.m_logTraceMem, "ptr=%p size=%zu note=%s", ptr, size, note );
 	// 1 --> isnew
 	addMem ( ptr , size , note , 1 );
 }
 
-void Mem::delnew ( void *ptr , int32_t size , const char *note ) {
-	logTrace( g_conf.m_logTraceMem, "ptr=%p size=%" PRId32" note=%s", ptr, size, note );
+void Mem::delnew ( void *ptr , size_t size , const char *note ) {
+	logTrace( g_conf.m_logTraceMem, "ptr=%p size=%zu note=%s", ptr, size, note );
 
 	// we don't need to use mdelete() if checking for leaks is enabled
 	// because the size of the allocated mem is in the hash table under
@@ -102,19 +102,19 @@ void * operator new (size_t size) throw (std::bad_alloc) {
 	//if ( s_mcount > 57 && (rand() % 1000) < 2 ) { 
 	if ( g_conf.m_testMem && (rand() % 100) < 2 ) { 
 		g_errno = ENOMEM; 
-		log(LOG_ERROR, "mem: new-fake(%" PRIu32"): %s",(uint32_t)size, mstrerror(g_errno));
+		log(LOG_ERROR, "mem: new-fake(%zu): %s",size, mstrerror(g_errno));
 		throw std::bad_alloc(); 
 		// return NULL; }
 	} 
 
 	// hack so hostid #0 can use more mem
-	int64_t max = g_conf.m_maxMem;
+	size_t max = g_conf.m_maxMem;
 	//if ( g_hostdb.m_hostId == 0 )  max += 2000000000;
 
 	// don't go over max
-	if ( g_mem.getUsedMem() + (int32_t)size >= max &&
+	if ( g_mem.getUsedMem() + size >= max &&
 	     g_conf.m_maxMem > 1000000 ) {
-		log("mem: new(%" PRIu32"): Out of memory.", (uint32_t)size );
+		log("mem: new(%zu): Out of memory.", size );
 		throw std::bad_alloc();
 	}
 
@@ -125,7 +125,7 @@ newmemloop:
 	if ( ! mem && size > 0 ) {
 		g_mem.incrementOOMCount();
 		g_errno = errno;
-		log( LOG_WARN, "mem: new(%" PRId32"): %s",(int32_t)size,mstrerror(g_errno));
+		log( LOG_WARN, "mem: new(%zu): %s",size,mstrerror(g_errno));
 		throw std::bad_alloc();
 		//return NULL;
 	}
@@ -170,12 +170,12 @@ void * operator new [] (size_t size) throw (std::bad_alloc) {
 	//	// return NULL; }
 	//} 
 	
-	int64_t max = g_conf.m_maxMem;
+	size_t max = g_conf.m_maxMem;
 
 	// don't go over max
-	if ( g_mem.getUsedMem() + (int32_t)size >= max &&
+	if ( g_mem.getUsedMem() + size >= max &&
 	     g_conf.m_maxMem > 1000000 ) {
-		log("mem: new(%" PRIu32"): Out of memory.", (uint32_t)size );
+		log("mem: new(%zu): Out of memory.", size );
 		throw std::bad_alloc();
 		//throw 1;
 	}
@@ -188,8 +188,7 @@ newmemloop:
 	if ( ! mem && size > 0 ) {
 		g_errno = errno;
 		g_mem.incrementOOMCount();
-		log( LOG_WARN, "mem: new(%" PRIu32"): %s",
-		    (uint32_t)size, mstrerror(g_errno));
+		log( LOG_WARN, "mem: new(%zu): %s", size, mstrerror(g_errno));
 		throw std::bad_alloc();
 		//return NULL;
 	}
@@ -237,13 +236,13 @@ Mem::~Mem() {
 }
 
 
-int64_t Mem::getUsedMem () const {
+size_t Mem::getUsedMem () const {
 	ScopedLock sl(s_lock);
 	return m_used;
 }
 
 
-int64_t Mem::getMaxMem() const {
+size_t Mem::getMaxMem() const {
 	return g_conf.m_maxMem;
 }
 
@@ -274,10 +273,10 @@ bool Mem::init  ( ) {
 
 
 // this is called after a memory block has been allocated and needs to be registered
-void Mem::addMem ( void *mem , int32_t size , const char *note , char isnew ) {
+void Mem::addMem ( void *mem , size_t size , const char *note , char isnew ) {
 	ScopedLock sl(s_lock);
 
-	logTrace( g_conf.m_logTraceMem, "mem=%p size=%" PRId32 " note='%s' is_new=%d", mem, size, note, isnew );
+	logTrace( g_conf.m_logTraceMem, "mem=%p size=%zu note='%s' is_new=%d", mem, size, note, isnew );
 
 	//validate();
 
@@ -301,7 +300,7 @@ void Mem::addMem ( void *mem , int32_t size , const char *note , char isnew ) {
 		}
 	}
 
-	logDebug( g_conf.m_logDebugMem, "mem: add %08" PTRFMT" %" PRId32" bytes (%" PRId64") (%s)", (PTRTYPE)mem, size, m_used, note );
+	logDebug( g_conf.m_logDebugMem, "mem: add %08" PTRFMT" %zu bytes (%" PRId64") (%s)", (PTRTYPE)mem, size, m_used, note );
 
 	// check for breech after every call to alloc or free in order to
 	// more easily isolate breeching code.. this slows things down a lot
@@ -312,11 +311,6 @@ void Mem::addMem ( void *mem , int32_t size , const char *note , char isnew ) {
 	if ( size == 0 ) {
 		sl.unlock();
 		gbshutdownLogicError();
-	}
-	// sanity check
-	if ( size < 0 ) {
-		log("mem: addMem: Negative size.");
-		return;
 	}
 
 	// sanity check -- for machines with > 4GB ram?
@@ -345,7 +339,7 @@ void Mem::addMem ( void *mem , int32_t size , const char *note , char isnew ) {
 	if ( ! s_initialized ) {
 
 		s_mptrs  = (void **)sysmalloc ( m_memtablesize*sizeof(void *));
-		s_sizes  = (int32_t  *)sysmalloc ( m_memtablesize*sizeof(int32_t  ));
+		s_sizes = (size_t *)sysmalloc(m_memtablesize * sizeof(size_t));
 		s_labels = (char  *)sysmalloc ( m_memtablesize*16            );
 		s_isnew  = (char  *)sysmalloc ( m_memtablesize               );
 		if ( ! s_mptrs || ! s_sizes || ! s_labels || ! s_isnew ) {
@@ -362,8 +356,7 @@ void Mem::addMem ( void *mem , int32_t size , const char *note , char isnew ) {
 	}
 	// try to add ptr/size/note to leak-detecting table
 	if ( (int32_t)s_n > (int32_t)m_memtablesize ) {
-		log( LOG_WARN, "mem: addMem: No room in table for %s size=%" PRId32".",
-		    note,size);
+		log( LOG_WARN, "mem: addMem: No room in table for %s size=%zu.", note,size);
 		return;
 	}
 	// hash into table
@@ -418,7 +411,7 @@ void Mem::addMem ( void *mem , int32_t size , const char *note , char isnew ) {
 	s_n++;
 	// debug
 	if ( (size > MINMEM && g_conf.m_logDebugMemUsage) || size>=100000000 )
-		log(LOG_INFO,"mem: addMem(%" PRId32"): %s. ptr=0x%" PTRFMT" "
+		log(LOG_INFO,"mem: addMem(%zu): %s. ptr=0x%" PTRFMT" "
 		    "used=%" PRId64,
 		    size,note,(PTRTYPE)mem,m_used);
 	// now update used mem
@@ -581,8 +574,8 @@ bool Mem::printMemBreakdownTable ( SafeBuf* sb,
 // Relabels memory in table.  Returns true on success, false on failure.
 // Purpose is for times when UdpSlot's buffer is not owned and freed by someone
 // else.  Now we can verify that passed memory is freed.
-bool Mem::lblMem( void *mem, int32_t size, const char *note ) {
-	logTrace( g_conf.m_logTraceMem, "mem=%p size=%" PRId32" note=%s", mem, size, note );
+bool Mem::lblMem( void *mem, size_t size, const char *note ) {
+	logTrace( g_conf.m_logTraceMem, "mem=%p size=%zu note=%s", mem, size, note );
 
 	// seems to be a bad bug in this...
 	return true;
@@ -632,13 +625,13 @@ bool Mem::lblMem( void *mem, int32_t size, const char *note ) {
 }
 
 // this is called just before a memory block is freed and needs to be deregistered
-bool Mem::rmMem(void *mem, int32_t size, const char *note) {
+bool Mem::rmMem(void *mem, size_t size, const char *note) {
 	ScopedLock sl(s_lock);
-	logTrace( g_conf.m_logTraceMem, "mem=%p size=%" PRId32 "note='%s'", mem, size, note );
+	logTrace( g_conf.m_logTraceMem, "mem=%p size=%zu note='%s'", mem, size, note );
 
 	//validate();
 
-	logDebug( g_conf.m_logDebugMem, "mem: free %08" PTRFMT" %" PRId32"bytes (%s)", (PTRTYPE)mem,size,note);
+	logDebug( g_conf.m_logDebugMem, "mem: free %08" PTRFMT" %zu bytes (%s)", (PTRTYPE)mem,size,note);
 
 	// check for breech after every call to alloc or free in order to
 	// more easily isolate breeching code.. this slows things down a lot
@@ -663,7 +656,7 @@ bool Mem::rmMem(void *mem, int32_t size, const char *note) {
 	}
 	// if not found, bitch
 	if ( ! s_mptrs[h] ) {
-		log( LOG_ERROR, "mem: rmMem: Unbalanced free. note=%s size=%" PRId32".",note,size);
+		log( LOG_ERROR, "mem: rmMem: Unbalanced free. note=%s size=%zu.",note,size);
 		sl.unlock();
 		gbshutdownLogicError();
 	}
@@ -674,13 +667,13 @@ bool Mem::rmMem(void *mem, int32_t size, const char *note) {
 	// . bitch is sizes don't match
 	// . delete operator does not provide a size now (it's -1)
 	if ( s_sizes[h] != size ) {
-		log( LOG_ERROR, "mem: rmMem: Freeing %" PRId32" should be %" PRId32". (%s)", size,s_sizes[h],note);
+		log( LOG_ERROR, "mem: rmMem: Freeing %zu should be %zu. (%s)", size,s_sizes[h],note);
 		gbshutdownAbort(true);
 	}
 
 	// debug
 	if ( (size > MINMEM && g_conf.m_logDebugMemUsage) || size>=100000000 )
-		log(LOG_INFO,"mem: rmMem (%" PRId32"): ptr=0x%" PTRFMT" %s.",size,(PTRTYPE)mem,note);
+		log(LOG_INFO,"mem: rmMem (%zu): ptr=0x%" PTRFMT" %s.",size,(PTRTYPE)mem,note);
 
 	//
 	// we do this here now since we always call rmMem() now
@@ -737,7 +730,7 @@ bool Mem::rmMem(void *mem, int32_t size, const char *note) {
 int32_t Mem::validate ( ) {
 	if ( ! s_mptrs ) return 1;
 	// stock up "p" and compute total bytes alloced
-	int64_t total = 0;
+	size_t total = 0;
 	int32_t count = 0;
 	for ( int32_t i = 0 ; i < (int32_t)m_memtablesize ; i++ ) {
 		// skip empty buckets
@@ -790,9 +783,9 @@ int Mem::printBreech ( int32_t i) {
 	for ( int32_t j = 0 ; j < UNDERPAD ; j++ ) {
 		if ( mem[0-j-1] == MAGICCHAR ) continue;
 		log(LOG_LOGIC,"mem: underrun at %" PTRFMT" loff=%" PRId32" "
-		    "size=%" PRId32" "
+		    "size=%zu "
 		    "i=%" PRId32" note=%s",
-		    (PTRTYPE)mem,0-j-1,(int32_t)s_sizes[i],i,&s_labels[i*16]);
+		    (PTRTYPE)mem,0-j-1,s_sizes[i],i,&s_labels[i*16]);
 
 		// mark it for freed mem re-use check below
 		if ( ! bp ) bp = &mem[0-j-1];
@@ -821,15 +814,15 @@ int Mem::printBreech ( int32_t i) {
 		    &s_labels[mink*16],
 		    (uint32_t)(
 		    (PTRTYPE)mem-
-		    ((PTRTYPE)s_mptrs[mink]+(uint32_t)s_sizes[mink])));
+		    ((PTRTYPE)s_mptrs[mink]+s_sizes[mink])));
 		flag = 1;
 	}		    
 
 	// check for overruns
-	int32_t size = s_sizes[i];
+	size_t size = s_sizes[i];
 	for ( int32_t j = 0 ; j < OVERPAD ; j++ ) {
 		if ( mem[size+j] == MAGICCHAR ) continue;
-		log(LOG_LOGIC,"mem: overrun  at 0x%" PTRFMT" (size=%" PRId32")"
+		log(LOG_LOGIC,"mem: overrun  at 0x%" PTRFMT" (size=%zu)"
 		    "roff=%" PRId32" note=%s",
 		    (PTRTYPE)mem,size,j,&s_labels[i*16]);
 
@@ -912,7 +905,7 @@ int Mem::printMem ( ) {
 	for ( int32_t i = 0 ; i < np ; i++ ) {
 		int32_t a = p[i];
 
-		log(LOG_INFO,"mem: %05" PRId32") %" PRId32" 0x%" PTRFMT" %s", 
+		log(LOG_INFO,"mem: %05" PRId32") %zu 0x%" PTRFMT" %s",
 		    i,s_sizes[a] , (PTRTYPE)s_mptrs[a] , &s_labels[a*16] );
 	}
 	sysfree ( p );
@@ -924,8 +917,8 @@ int Mem::printMem ( ) {
 	return 1;
 }
 
-void *Mem::gbmalloc ( int size , const char *note ) {
-	logTrace( g_conf.m_logTraceMem, "size=%d note='%s'", size, note );
+void *Mem::gbmalloc ( size_t size , const char *note ) {
+	logTrace( g_conf.m_logTraceMem, "size=%zu note='%s'", size, note );
 
 	// don't let electric fence zap us
 	if ( size == 0 ) return (void *)0x7fffffff;
@@ -936,25 +929,25 @@ void *Mem::gbmalloc ( int size , const char *note ) {
 	if ( g_conf.m_testMem && (rand() % 100) < 2 ) { 
 		//if ( s_mcount > 1055 && (rand() % 1000) < 2 ) { 
 		g_errno = ENOMEM; 
-		log( LOG_WARN, "mem: malloc-fake(%i,%s): %s",size,note, mstrerror(g_errno));
+		log( LOG_WARN, "mem: malloc-fake(%zu,%s): %s",size,note, mstrerror(g_errno));
 		return NULL;
 	} 
 
 retry:
-	int64_t max = g_conf.m_maxMem;
+	size_t max = g_conf.m_maxMem;
 
 	// don't go over max
 	if ( g_mem.getUsedMem() + size + UNDERPAD + OVERPAD >= max ) {
 		// try to free temp mem. returns true if it freed some.
 		if ( freeCacheMem() ) goto retry;
 		g_errno = ENOMEM;
-		log( LOG_WARN, "mem: malloc(%i): Out of memory", size );
+		log( LOG_WARN, "mem: malloc(%zu): Out of memory", size );
 		return NULL;
 	}
 
 	if ( size < 0 ) {
 		g_errno = EBADENGINEER;
-		log( LOG_ERROR, "mem: malloc(%i): Bad value.", size );
+		log( LOG_ERROR, "mem: malloc(%zu): Bad value.", size );
 		gbshutdownLogicError();
 		return NULL;
 	}
@@ -973,10 +966,9 @@ mallocmemloop:
 		static int64_t s_lastTime;
 		static int32_t s_missed = 0;
 		int64_t now = gettimeofdayInMillisecondsLocal();
-		int64_t avail = (int64_t)g_conf.m_maxMem - 
-			(int64_t)m_used;
+		int64_t avail = (int64_t)g_conf.m_maxMem - (int64_t)m_used;
 		if ( now - s_lastTime >= 1000LL ) {
-			log(LOG_WARN, "mem: system malloc(%i,%s) availShouldBe=%" PRId64": "
+			log(LOG_WARN, "mem: system malloc(%zu,%s) availShouldBe=%" PRId64": "
 			    "%s (%s) (ooms suppressed since last log msg = %" PRId32")",
 			    size+UNDERPAD+OVERPAD,
 			    note,
@@ -989,31 +981,7 @@ mallocmemloop:
 		} else {
 			s_missed++;
 		}
-		// to debug oom issues:
-		//gbshutdownResourceError();
 
-		// send an email alert if this happens! it is a sign of "memory fragmentation"
-		//static bool s_sentEmail = false;
-		// stop sending these now... seems to be problematic. says
-		// 160MB is avail and can't alloc 20MB...
-		static bool s_sentEmail = true;
-		// assume only 90% is really available because of 
-		// inefficient mallocing
-		avail = (int64_t)((float)avail * 0.80);
-		// but if it is within about 15MB of what is theoretically
-		// available, don't send an email, because there is always some
-		// minor fragmentation
-		if ( ! s_sentEmail && avail > size ) {
-			s_sentEmail = true;
-			char msgbuf[1024];
-			Host *h = g_hostdb.m_myHost;
-			snprintf(msgbuf, 1024,
-				 "Possible memory fragmentation "
-				 "on host #%" PRId32" %s",
-				 h->m_hostId,h->m_note);
-			log(LOG_WARN, "query: %s",msgbuf);
-			g_pingServer.sendEmail(NULL, msgbuf,true,true);
-		}
 		return NULL;
 	}
 	if ( (PTRTYPE)mem < 0x00010000 ) {
@@ -1035,32 +1003,31 @@ mallocmemloop:
 		goto mallocmemloop;
 	}
 
-	logTrace( g_conf.m_logTraceMem, "mem=%p size=%d note='%s'", mem, size, note );
+	logTrace( g_conf.m_logTraceMem, "mem=%p size=%zu note='%s'", mem, size, note );
 
 	addMem ( (char *)mem + UNDERPAD , size , note , 0 );
 	return (char *)mem + UNDERPAD;
 }
 
-void *Mem::gbcalloc ( int size , const char *note ) {
-	logTrace( g_conf.m_logTraceMem, "size=%d note='%s'", size, note );
+void *Mem::gbcalloc ( size_t size , const char *note ) {
+	logTrace( g_conf.m_logTraceMem, "size=%zu note='%s'", size, note );
 
 	void *mem = gbmalloc ( size , note );
-	logTrace( g_conf.m_logTraceMem, "mem=%p size=%d note='%s'", mem, size, note );
+	logTrace( g_conf.m_logTraceMem, "mem=%p size=%zu note='%s'", mem, size, note );
 
 	// init it
 	if ( mem ) memset ( mem , 0, size );
 	return mem;
 }
 
-void *Mem::gbrealloc ( void *ptr , int oldSize , int newSize , const char *note ) {
-	logTrace( g_conf.m_logTraceMem, "ptr=%p oldSize=%d newSize=%d note='%s'", ptr, oldSize, newSize, note );
+void *Mem::gbrealloc ( void *ptr , size_t oldSize , size_t newSize , const char *note ) {
+	logTrace( g_conf.m_logTraceMem, "ptr=%p oldSize=%zu newSize=%zu note='%s'", ptr, oldSize, newSize, note );
 
 	// return dummy values since realloc() returns NULL if failed
 	if ( oldSize == 0 && newSize == 0 ) return (void *)0x7fffffff;
 	// do nothing if size is same
 	if ( oldSize == newSize ) return ptr;
-	// crazy?
-	if ( newSize < 0 ) gbshutdownLogicError();
+
 	// if newSize is 0...
 	if ( newSize == 0 ) {
 		gbfree(ptr, note, oldSize, true);
@@ -1070,7 +1037,7 @@ void *Mem::gbrealloc ( void *ptr , int oldSize , int newSize , const char *note 
 retry:
 
 	// hack so hostid #0 can use more mem
-	int64_t max = g_conf.m_maxMem;
+	size_t max = g_conf.m_maxMem;
 	//if ( g_hostdb.m_hostId == 0 )  max += 2000000000;
 
 	// don't go over max
@@ -1078,7 +1045,7 @@ retry:
 		// try to free temp mem. returns true if it freed some.
 		if ( freeCacheMem() ) goto retry;
 		g_errno = ENOMEM;
-		log( LOG_WARN, "mem: realloc(%i,%i): Out of memory.",oldSize,newSize);
+		log( LOG_WARN, "mem: realloc(%zu,%zu): Out of memory.",oldSize,newSize);
 		return NULL;
 	}
 	// if oldSize is 0, use our malloc() instead
@@ -1128,12 +1095,12 @@ retry:
 	return mem;
 }
 
-char *Mem::dup ( const void *data , int32_t dataSize , const char *note ) {
-	logTrace( g_conf.m_logTraceMem, "data=%p dataSize=%" PRId32" note='%s'", data, dataSize, note );
+char *Mem::dup ( const void *data , size_t dataSize , const char *note ) {
+	logTrace( g_conf.m_logTraceMem, "data=%p dataSize=%zu note='%s'", data, dataSize, note );
 
 	// keep it simple
 	char *mem = (char *)mmalloc ( dataSize , note );
-	logTrace( g_conf.m_logTraceMem, "mem=%p data=%p dataSize=%" PRId32" note='%s'", (void*)mem, data, dataSize, note );
+	logTrace( g_conf.m_logTraceMem, "mem=%p data=%p dataSize=%zu note='%s'", (void*)mem, data, dataSize, note );
 
 	if ( mem ) memcpy ( mem , data , dataSize );
 	return mem;
@@ -1143,8 +1110,8 @@ char *Mem::strdup( const char *string, const char *note ) {
 	return dup(string, strlen(string) + 1, note);
 }
 
-void Mem::gbfree ( void *ptr , const char *note, int size , bool checksize ) {
-	logTrace( g_conf.m_logTraceMem, "ptr=%p size=%d note='%s'", ptr, size, note );
+void Mem::gbfree ( void *ptr , const char *note, size_t size , bool checksize ) {
+	logTrace( g_conf.m_logTraceMem, "ptr=%p size=%zu note='%s'", ptr, size, note );
 
 	if ((checksize && size == 0) || !ptr) {
 		return;
