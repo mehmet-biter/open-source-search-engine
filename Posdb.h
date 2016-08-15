@@ -239,20 +239,6 @@ class Posdb {
 		return 18;
 	}
 
-	// PosdbTable uses this to skip from one docid to the next docid
-	// in a posdblist
-	static char *getNextDocIdSublist ( char *p ,  char *listEnd ) {
-		// key must be 12
-		//if ( getKeySize(p) != 12 ) { gbshutdownAbort(true); }
-		// skip that first key
-		p += 12;
-		// skip the 6 byte keys
-		for ( ; p < listEnd && getKeySize(p) == 6 ; p += 6 );
-		// done
-		return p;
-	}
-		
-
 	static int64_t getTermId ( const void *key ) {
 		return ((const key144_t *)key)->n2 >> 16;
 	}
