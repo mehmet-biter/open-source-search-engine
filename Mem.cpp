@@ -7,6 +7,7 @@
 #include "Pages.h"
 #include "PingServer.h"
 #include "ScopedLock.h"
+#include "GbMutex.h"
 #include "Conf.h"
 #include "Sanity.h"
 #include <string.h>            //for strlen()
@@ -38,7 +39,7 @@ static bool freeCacheMem();
 
 
 
-static pthread_mutex_t s_lock = PTHREAD_MUTEX_INITIALIZER;
+static GbMutex s_lock;
 
 // a table used in debug to find mem leaks
 static void **s_mptrs ;

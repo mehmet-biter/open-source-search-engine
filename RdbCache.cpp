@@ -26,7 +26,6 @@ RdbCache::RdbCache () {
 	m_ptrs         = NULL;
 	m_maxMem       = 0;
 	m_numPtrsMax   = 0;
-	pthread_mutex_init(&mtx_hits_misses,NULL);
 	reset();
 	m_needsSave    = false;
 	pthread_mutex_init(&m_mtx,NULL);
@@ -203,12 +202,12 @@ bool RdbCache::init ( int32_t  maxMem        ,
 
 
 int64_t RdbCache::getNumHits() const {
-	ScopedLock sl(const_cast<pthread_mutex_t&>(mtx_hits_misses));
+	ScopedLock sl(const_cast<GbMutex&>(mtx_hits_misses));
 	return m_numHits;
 }
 
 int64_t RdbCache::getNumMisses() const {
-	ScopedLock sl(const_cast<pthread_mutex_t&>(mtx_hits_misses));
+	ScopedLock sl(const_cast<GbMutex&>(mtx_hits_misses));
 	return m_numMisses;
 }
 

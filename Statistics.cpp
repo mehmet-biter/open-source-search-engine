@@ -6,6 +6,7 @@
 #include "Msg3.h"            //getDiskPageCache()
 #include "RdbCache.h"
 #include "Rdb.h"
+#include "GbMutex.h"
 #include <stddef.h>
 #include <string.h>
 #include <stdio.h>
@@ -58,7 +59,7 @@ static unsigned ms_to_tr(unsigned ms) {
 // Query statistics
 
 static TimerangeStatistics query_timerange_statistics[timerange_count][max_term_count+1];
-static pthread_mutex_t mtx_query_timerange_statistics = PTHREAD_MUTEX_INITIALIZER;
+static GbMutex mtx_query_timerange_statistics;
 
 
 
@@ -114,7 +115,7 @@ static void dump_query_statistics( FILE *fp ) {
 
 static std::map<std::pair<int, int>, TimerangeStatistics[timerange_count]> old_spider_timerange_statistics;
 static std::map<std::pair<int, int>, TimerangeStatistics[timerange_count]> new_spider_timerange_statistics;
-static pthread_mutex_t mtx_spider_timerange_statistics = PTHREAD_MUTEX_INITIALIZER;
+static GbMutex mtx_spider_timerange_statistics;
 
 void Statistics::register_spider_time( bool is_new, int error_code, int http_status, unsigned ms ) {
 	{
@@ -323,7 +324,7 @@ static void dump_statistics(time_t now) {
 
 
 static bool stop_dumping = false;
-static pthread_mutex_t mtx_dump = PTHREAD_MUTEX_INITIALIZER;
+static GbMutex mtx_dump;
 static pthread_cond_t cond_dump = PTHREAD_COND_INITIALIZER;
 static pthread_t dump_thread;
 
@@ -331,21 +332,21 @@ extern "C" {
 
 static void *dumper_thread_function(void *)
 {
-	pthread_mutex_lock(&mtx_dump);
+	mtx_dump.lock();
 	while(!stop_dumping) {
 		timespec ts;
 		clock_gettime(CLOCK_REALTIME,&ts);
 		ts.tv_sec += dump_interval;
 		ts.tv_sec = (ts.tv_sec/dump_interval)*dump_interval;
-		pthread_cond_timedwait(&cond_dump,&mtx_dump,&ts);
+		pthread_cond_timedwait(&cond_dump,&mtx_dump.mtx,&ts);
 		if(stop_dumping)
 			break;
-		pthread_mutex_unlock(&mtx_dump);
+		mtx_dump.unlock();
 		clock_gettime(CLOCK_REALTIME,&ts);
 		dump_statistics(ts.tv_sec);
-		pthread_mutex_lock(&mtx_dump);
+		mtx_dump.lock();
 	}
-	pthread_mutex_unlock(&mtx_dump);
+	mtx_dump.unlock();
 	return 0;
 }
 

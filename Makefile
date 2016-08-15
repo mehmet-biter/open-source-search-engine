@@ -77,6 +77,7 @@ OBJS =  UdpSlot.o Rebalance.o \
 	AdultCheck.o \
 	Url.o UrlParser.o UrlComponent.o \
 	Statistics.o \
+	GbMutex.o \
 	Sanity.o \
 
 # common flags
