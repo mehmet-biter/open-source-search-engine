@@ -34,10 +34,10 @@ enum {
 	// had adult content
 	CR_DIRTY           ,
 	// language did not match the language filter (iff langFilter>0)
-	CR_BAD_LANG        ,
+	CR_WRONG_LANG        ,
 	// a 3rd+ result from the same hostname
 	CR_CLUSTERED       ,
-	// has xml tag syntax in the url (was 12)
+	// has xml tag syntax in the url
 	CR_BAD_URL         ,
 	// the url is banned in tagdb or url filters table
 	CR_BANNED_URL      ,
@@ -47,32 +47,25 @@ enum {
 	CR_ERROR_SUMMARY   ,
 	// a summary dup of a higher-scoring result
 	CR_DUP_SUMMARY     ,
-	// for events...
-	CR_MERGED_SUMMARY     ,
-	// a gigabit vector dup
-	CR_DUP_TOPIC       ,
 	// another error getting it... could be one of many
 	CR_ERROR_CLUSTERDB ,
 	// the url is a dup of a previous url (wiki pages capitalization)
-	CR_DUP_URL         ,  // 14
-
+	CR_DUP_URL         ,
 	// . subset of the CR_OK (visible) results are "wasted" titlerec lookup
 	// . only used for stats by Msg40.cpp/Stats.cpp
 	CR_WASTED          ,
 	// the docid is ok to display!
-	CR_OK              , // 16
-
+	CR_OK              ,
 	// from a blacklisted site hash
 	CR_BLACKLISTED_SITE  ,
 	// was filtered because of ruleset
 	CR_RULESET_FILTERED ,
-
 	// verify this is LAST entry cuz we use i<CR_END for ending for-loops
 	CR_END
 };
 
-// define in Msg51.cpp
-extern const char *g_crStrings[];
+
+extern const char * const g_crStrings[];
 
 bool setClusterLevels ( const key_t   *clusterRecs,
 			const int64_t *docIds,

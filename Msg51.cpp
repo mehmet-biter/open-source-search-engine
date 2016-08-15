@@ -15,7 +15,7 @@
 
 // . these must be 1-1 with the enums above
 // . used for titling the counts of g_stats.m_filterStats[]
-const char *g_crStrings[] = {
+const char * const g_crStrings[] = {
 	"cluster rec not found"  ,  // 0
 	"uninitialized"          ,
 	"got clusterdb record"   ,
@@ -24,26 +24,15 @@ const char *g_crStrings[] = {
 	"clustered"              ,
 	"malformed url"          ,
 	"banned url"             ,
-	"missing query terms"    ,
+	"empty title and summary",
 	"summary error"          ,
 	"duplicate"              ,
-	"dup event summary"      ,
-	"duplicate topic"        ,
 	"clusterdb error (subcount of visible)" ,
         "duplicate url",
-
-	// these are for buzzlogic (buzz)
-	//"below min date"         ,
-	//"above max date"         ,
-	//"below min inlinks"      ,
-	//"above max inlinks"      ,
-
 	"wasted summary lookup"  ,
 	"visible"                ,
-
 	"blacklisted"            ,
 	"ruleset filtered"       ,
-
 	"end -- do not use"      
 };
 	
@@ -503,7 +492,7 @@ loop:
 		*level = CR_DIRTY; goto loop; }
 	// and the lang filter
 	if ( langFilter > 0 && g_clusterdb.getLanguage( crec )!= langFilter ) {
-		*level = CR_BAD_LANG; goto loop; }
+		*level = CR_WRONG_LANG; goto loop; }
 	// if error looking up in clusterdb, use a 8 bit domainhash from docid
 	if ( *level == CR_ERROR_CLUSTERDB ) fakeIt = true;
 	else                                fakeIt = false;
