@@ -1,6 +1,7 @@
 #ifndef SCOPED_LOCK_H_
 #define SCOPED_LOCK_H_
 
+#include "GbMutex.h"
 #include <pthread.h>
 #include <assert.h>
 
@@ -13,6 +14,12 @@ class ScopedLock {
 public:
 	ScopedLock(pthread_mutex_t &mtx_)
 	  : mtx(mtx_), locked(true)
+	{
+		int rc = pthread_mutex_lock(&mtx);
+		assert(rc==0);
+	}
+	ScopedLock(GbMutex &m)
+	  : mtx(m.mtx), locked(true)
 	{
 		int rc = pthread_mutex_lock(&mtx);
 		assert(rc==0);

@@ -10,13 +10,13 @@
 #include "Process.h"
 #include "Hostdb.h"
 #include "File.h"
+#include "GbMutex.h"
+#include "ScopedLock.h"
 
 // a global class extern'd in Log.h
 Log g_log;
 
-#include <pthread.h>
-// the thread lock
-static pthread_mutex_t s_lock = PTHREAD_MUTEX_INITIALIZER;
+static GbMutex s_lock;
 
 
 Log::Log () { 
@@ -209,8 +209,7 @@ bool Log::logR ( int64_t now, int32_t type, const char *msg, bool forced ) {
 	// get "msg"'s length
 	int32_t msgLen = strlen ( msg );
 
-	// lock for threads
-	pthread_mutex_lock ( &s_lock );
+	ScopedLock sl(s_lock);
 
 	// do a timestamp, too. use the time synced with host #0 because
 	// it is easier to debug because all log timestamps are in sync.
@@ -219,7 +218,6 @@ bool Log::logR ( int64_t now, int32_t type, const char *msg, bool forced ) {
 	// . skip all logging if power out, we do not want to screw things up
 	// . allow logging for 10 seconds after power out though
 	if ( ! g_process.m_powerIsOn && now - g_process.m_powerOffTime >10000){
-		pthread_mutex_unlock ( &s_lock );
 		return false;
 	}
 
@@ -314,10 +312,6 @@ bool Log::logR ( int64_t now, int32_t type, const char *msg, bool forced ) {
 		fprintf ( stderr, "%s\n", tt );
 	}
 
-
-
-	// unlock for threads
-	pthread_mutex_unlock ( &s_lock );
 	return false;
 }
 

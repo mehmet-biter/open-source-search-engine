@@ -9,6 +9,7 @@
 #include "Loop.h"            // MAX_NUM_FDS etc.
 #include "Sanity.h"
 #include "ScopedLock.h"
+#include "GbMutex.h"
 #include <pthread.h>
 #include <sys/types.h>       // for open/lseek
 #include <sys/stat.h>        // for open
@@ -17,7 +18,7 @@
 // if someone is using a file we must make sure this is true...
 static int       s_isInitialized = false;
 
-static pthread_mutex_t s_mtx = PTHREAD_MUTEX_INITIALIZER;
+static GbMutex s_mtx;
 static int64_t s_timestamps [ MAX_NUM_FDS ]; // when was it last accessed
 static bool    s_writing    [ MAX_NUM_FDS ]; // is it being written to?
 static bool    s_unlinking  [ MAX_NUM_FDS ]; // is being unlinked/renamed

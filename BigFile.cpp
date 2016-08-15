@@ -10,6 +10,7 @@
 #include "Stats.h"
 #include "Statsdb.h"
 #include "Sanity.h"
+#include "GbMutex.h"
 #include "ScopedLock.h"
 #include <new>
 #include <vector>
@@ -41,7 +42,7 @@ struct UnlinkFilename {
 	char filename[1024];
 };
 static std::vector<UnlinkFilename> s_pendingFileMetaOperations;
-static pthread_mutex_t s_pending_mtx = PTHREAD_MUTEX_INITIALIZER;
+static GbMutex s_pending_mtx;
 
 
 

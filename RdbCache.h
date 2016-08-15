@@ -43,7 +43,7 @@
 
 #include "JobScheduler.h" //job_exit_t
 #include <time.h>       // time_t
-#include <pthread.h>
+#include "GbMutex.h"
 
 class RdbList;
 
@@ -330,7 +330,7 @@ private:
 	// cache hits and misses
 	int64_t m_numHits; // includes partial hits & cached not-founds too
 	int64_t m_numMisses;
-	pthread_mutex_t mtx_hits_misses; //mutex protecting just hits&misses
+	GbMutex mtx_hits_misses; //mutex protecting just hits&misses
 
 	int32_t m_fixedDataSize;
 	bool m_supportLists;
