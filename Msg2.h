@@ -119,6 +119,9 @@ private:
 	int32_t m_numReplies;
 	int32_t m_numRequests;
 	GbMutex m_mtxCounters; //protects the two counters above
+	void incrementRequestCount();
+	void incrementReplyCount();
+	bool allRequestsReplied();
 
 	static void gotListWrapper(void *state, RdbList *list, Msg5 *msg5);
 	void gotListWrapper(Msg5 *msg5);

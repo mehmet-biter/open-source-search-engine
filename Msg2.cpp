@@ -43,6 +43,23 @@ void Msg2::reset ( ) {
 	m_lists = 0;
 }
 
+
+void Msg2::incrementRequestCount() {
+	ScopedLock sl(m_mtxCounters);
+	m_numRequests++;
+}
+
+void Msg2::incrementReplyCount() {
+	ScopedLock sl(m_mtxCounters);
+	m_numReplies++;
+}
+
+bool Msg2::allRequestsReplied()	{
+	ScopedLock sl(m_mtxCounters);
+	return m_numReplies==m_numRequests;
+}
+
+
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
 // . componentCodes are used to collapse a series of termlists into a single
@@ -123,7 +140,7 @@ bool Msg2::getLists ( ) {
 	// Artifically inflate m_numRequests by one so the callback doesn't conclude everything is
 	// done. If we don't then we will increment m_numRequests and the callback could be called
 	// immediately thereby incrementing m_numReplies and conclude that the job is done.
-	m_numRequests = 1;
+	incrementRequestCount();
 
 	// . send out a bunch of msg5 requests
 	// . make slots for all
@@ -220,6 +237,7 @@ bool Msg2::getLists ( ) {
 		// . this is really only used to get IndexLists
 		// . we now always compress the list for 2x faster transmits
 		if(m_fileNum>=0) {
+			incrementRequestCount();
 			if ( ! msg5->getSingleUnmergedList ( RDB_POSDB,
 							m_collnum,
 							&m_lists[m_i],  // listPtr
@@ -232,10 +250,9 @@ bool Msg2::getLists ( ) {
 							gotListWrapper,
 							m_niceness) )
 			{
-				ScopedLock sl(m_mtxCounters);
-				m_numRequests++;
 				continue;
 			}
+			incrementReplyCount();
 		} else if(m_fileNum==-1) {
 			//get the tree
 			if(!msg5->getTreeList(&m_lists[m_i],RDB_POSDB,m_collnum,sk2,ek2)) {
@@ -247,11 +264,6 @@ bool Msg2::getLists ( ) {
 
 		//log(LOG_TRACE,"Msg2::getLists(): msg5::getList() returned immediately");
 		// we didn't block, so do this
-		{
-			ScopedLock sl(m_mtxCounters);
-			m_numReplies++;
-			m_numRequests++;
-		}
 		// return the msg5 now
 		msg5->reset();
 		returnMsg5 ( msg5 );
@@ -328,6 +340,7 @@ bool Msg2::getLists ( ) {
 
 		// start up the read. thread will wait in thread queue to 
 		// launch if too many threads are out.
+		incrementRequestCount();
 		if ( ! msg5->getSingleUnmergedList ( RDB_POSDB,
 						     m_collnum,
 						     &m_whiteLists[m_w], // listPtr
@@ -340,16 +353,10 @@ bool Msg2::getLists ( ) {
 						     gotListWrapper,
 						     m_niceness ) )
 		{
-			ScopedLock sl(m_mtxCounters);
-			m_numRequests++;
 			continue;
 		}
 
-		{
-			ScopedLock sl(m_mtxCounters);
-			m_numReplies++;
-			m_numRequests++;
-		}
+		incrementReplyCount();
 		// . return the msg5 now
 		msg5->reset();
 		returnMsg5 ( msg5 );
@@ -366,12 +373,9 @@ bool Msg2::getLists ( ) {
  skip:
 
 	// . did anyone block? if so, return false for now
-	{
-		ScopedLock sl(m_mtxCounters);
-		m_numRequests--;    //subtract one to adjust for the initial 1-count (see earlier in this function)
-		if ( m_numRequests > m_numReplies )
-			return false;
-	}
+	incrementReplyCount(); //increment to adjust for the initial 1-query-count (see earlier in this function)
+	if(!allRequestsReplied())
+		return false;
 	// . otherwise, we got everyone, so go right to the merge routine
 	// . returns false if not all replies have been received 
 	// . returns true if done
@@ -429,11 +433,9 @@ void Msg2::gotListWrapper( Msg5 *msg5 ) {
 			     i,list->getListSize() );
 	}
 	
-	ScopedLock sl(m_mtxCounters);
-	m_numReplies++;
-	if ( m_numRequests > m_numReplies )
+	incrementReplyCount();
+	if(!allRequestsReplied())
 		return; //still more to go
-	sl.unlock();
 	// set g_errno if any one list read had error
 	if ( m_errno ) g_errno = m_errno;
 	// now call callback, we're done
@@ -449,7 +451,8 @@ bool Msg2::gotList ( RdbList *list ) {
 	verify_signature();
 
 	// wait until we got all the replies before we attempt to merge
-	if ( m_numReplies < m_numRequests ) return false;
+	if(!allRequestsReplied())
+		return false;
 
 	// . return true on error
 	// . no, wait to get all the replies because we destroy ourselves
