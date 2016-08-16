@@ -814,26 +814,25 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 		// set the index file's  filename
 		sprintf ( name , "%s%04" PRId32".idx", m_dbname, fileId );
 		in->set ( getDir(), name, m_fixedDataSize, m_useHalfKeys, m_ks, m_rdb->m_rdbId );
-		if ( ! isNew && ! in->readIndex () ) {
+		if (!isNew && !in->readIndex()) {
 			// if out of memory, do not try to regen for that
-			if ( g_errno == ENOMEM ) {
+			if (g_errno == ENOMEM) {
 				return -1;
 			}
 
 			g_errno = 0;
-			log("db: Could not read index file %s",name);
+			log(LOG_WARN, "db: Could not read index file %s",name);
 
-			// if 'gb dump X collname' was called, bail, we do not
-			// want to write any data
-			if ( g_dumpMode ) {
+			// if 'gb dump X collname' was called, bail, we do not want to write any data
+			if (g_dumpMode) {
 				return -1;
 			}
 
-			log( LOG_INFO, "db: Attempting to generate index file for data file %s* of %" PRId64" bytes. May take a while.",
+			log(LOG_INFO, "db: Attempting to generate index file for data file %s* of %" PRId64" bytes. May take a while.",
 			     f->getFilename(), f->getFileSize() );
 
 			// this returns false and sets g_errno on error
-			if ( ! in->generateIndex ( f ) ) {
+			if (!in->generateIndex(f)) {
 				log( LOG_ERROR, "db: Index generation failed.");
 
 				SafeBuf tmp;
@@ -845,9 +844,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 				str[len-3] = '*';
 				str[len-2] = '\0';
 
-				log(LOG_ERROR,"%s:%s: Previous versions would have move %s/%s to trash!!",
-				    __FILE__,__func__,m_dir.getDir(), str);
-
+				logError("Previous versions would have move %s/%s to trash!!", m_dir.getDir(), str);
 				gbshutdownCorrupted();
 			}
 
