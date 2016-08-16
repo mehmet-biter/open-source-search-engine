@@ -577,7 +577,7 @@ time_t BigFile::getLastModifiedTime ( ) {
 // . we need a ptr to the ptr to this BigFile so if we get deleted and
 //   a signal is still pending for us, the callback will know we are nuked
 bool BigFile::read  ( void       *buf    , 
-		      int32_t        size   , 
+		      int64_t        size   ,
 		      int64_t   offset , 
 		      FileState  *fs     ,                 
 		      void       *state  ,

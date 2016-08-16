@@ -140,7 +140,7 @@ class BigFile {
 	// . otherwise, returns 1 if the read was completed
 	// . decides what 2gb part file(s) we should read from
 	bool read  ( void       *buf    , 
-		     int32_t        size   , 
+		     int64_t        size   ,
 		     int64_t   offset                         , 
 		     FileState  *fs                      = NULL , 
 		     void       *state                   = NULL , 
