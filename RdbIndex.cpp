@@ -99,31 +99,24 @@ bool RdbIndex::writeIndex() {
 bool RdbIndex::writeIndex2() {
 	logTrace(g_conf.m_logTraceRdbIndex, "BEGIN. filename [%s]", m_file.getFilename());
 
-	// the current disk offset
-	int64_t offset = 0LL;
 	g_errno = 0;
 
-	// first 8 bytes are the size of the DATA file we're indexing
-	size_t total_size = sizeof(m_docIds.front()) * m_docIds.size();
-	logTrace(g_conf.m_logTraceRdbIndex, "total_size=%zu sizeof=%zu", total_size, sizeof(total_size));
-	m_file.write(&total_size, sizeof(total_size), offset);
+	int64_t offset = 0LL;
+
+	// first 8 bytes are the total docIds in the index file
+	size_t docid_count = m_docIds.size();
+
+	m_file.write(&docid_count, sizeof(docid_count), offset);
 	if ( g_errno )  {
-		logError("Failed to write to %s (total_size): %s", m_file.getFilename(), mstrerror(g_errno))
+		logError("Failed to write to %s (docid_count): %s", m_file.getFilename(), mstrerror(g_errno))
 		return false;
 	}
-	offset += sizeof(total_size);
 
-//	static const size_t block_size = 1024 * 1024 * 10;
-//	for (size_t idx = 0; idx < m_docIds.size(); idx += block_size ) {
-//		size_t write_size = sizeof(m_docIds[0]) * (m_docIds.size() > idx ? block_size : m_docIds.size() - idx);
-//		m_file.write(&m_docIds[idx], write_size, offset);
-//		offset += write_size;
-//	}
+	offset += sizeof(docid_count);
 
-	m_file.write(&m_docIds[0], total_size, offset);
-
+	m_file.write(&m_docIds[0], docid_count * sizeof(m_docIds[0]), offset);
 	if ( g_errno )  {
-		logError("Failed to write to %s (total_size): %s", m_file.getFilename(), mstrerror(g_errno))
+		logError("Failed to write to %s (docids): %s", m_file.getFilename(), mstrerror(g_errno))
 		return false;
 	}
 
@@ -152,7 +145,6 @@ bool RdbIndex::readIndex() {
 		return false;
 	}
 
-
 	bool status = readIndex2();
 
 	m_file.closeFds();
@@ -165,31 +157,37 @@ bool RdbIndex::readIndex() {
 
 
 bool RdbIndex::readIndex2() {
+	logTrace(g_conf.m_logTraceRdbIndex, "BEGIN. filename [%s]", m_file.getFilename());
+
 	g_errno = 0;
 
-	//@todo: IMPLEMENT!
-	logError("NOT IMPLEMENTED YET");
+	int64_t offset = 0;
+	size_t docid_count = 0;
 
-#if 0
 	// first 8 bytes are the size of the DATA file we're indexing
-	m_file.read ( &m_offset , 8 , offset );
+	m_file.read(&docid_count, sizeof(docid_count), offset);
 	if ( g_errno ) {
-		log( LOG_WARN, "db: Had error reading %s: %s.", m_file.getFilename(),mstrerror(g_errno));
+		logError("Had error reading offset=%" PRId64" from %s: %s", offset, m_file.getFilename(), mstrerror(g_errno));
 		return false;
 	}
-	offset += 8;
-#endif
+
+	offset += sizeof(docid_count);
+	m_docIds.resize(docid_count);
+
+	m_file.read(&m_docIds[0], docid_count * sizeof(m_docIds[0]), offset);
+	if ( g_errno ) {
+		logError("Had error reading offset=%" PRId64" from %s: %s", offset, m_file.getFilename(), mstrerror(g_errno));
+		return false;
+	}
+
 	return true;
 }
 
 
 bool RdbIndex::addRecord(char rdbId, char *key) {
-
 	if (rdbId == RDB_POSDB) {
-
 		if (key[0] & 0x02 || !(key[0] & 0x04)) {
 			//it is a 12-byte docid+pos or 18-byte termid+docid+pos key
-
 			uint64_t doc_id = extract_bits(key, 58, 96);
 			if (doc_id != m_lastDocId) {
 				log(LOG_ERROR, "@@@ GOT DocId %" PRIu64 "", doc_id);
@@ -202,7 +200,11 @@ bool RdbIndex::addRecord(char rdbId, char *key) {
 				m_needToWrite = true;
 			}
 		}
+	} else {
+		logError("Not implemented for dbname=%s", getDbnameFromId(rdbId));
+		gbshutdownLogicError();
 	}
+
 	return true;
 }
 
