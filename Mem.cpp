@@ -131,7 +131,7 @@ newmemloop:
 	}
 	if ( (PTRTYPE)mem < 0x00010000 ) {
 		void *remem = sysmalloc(size);
-		log ( LOG_WARN, "mem: Caught low memory allocation "
+		log( LOG_WARN, "mem: Caught low memory allocation "
 		      "at %08" PTRFMT", "
 		      "reallocated to %08" PTRFMT, 
 		      (PTRTYPE)mem,
@@ -139,7 +139,7 @@ newmemloop:
 		sysfree(mem);
 		mem = remem;
 		if ( memLoop > 100 ) {
-			log ( LOG_WARN, "mem: Attempted to reallocate low "
+			log( LOG_WARN, "mem: Attempted to reallocate low "
 					"memory allocation 100 times, "
 					"aborting and returning ENOMEM." );
 			g_errno = ENOMEM;
@@ -195,14 +195,14 @@ newmemloop:
 
 	if ( (PTRTYPE)mem < 0x00010000 ) {
 		void *remem = sysmalloc(size);
-		log ( LOG_WARN, "mem: Caught low memory allocation at "
+		log( LOG_WARN, "mem: Caught low memory allocation at "
 		      "%08" PTRFMT", "
 				"reallocated to %08" PTRFMT"", 
 		      (PTRTYPE)mem, (PTRTYPE)remem );
 		sysfree(mem);
 		mem = remem;
 		if ( memLoop > 100 ) {
-			log ( LOG_WARN, "mem: Attempted to reallocate low "
+			log( LOG_WARN, "mem: Attempted to reallocate low "
 					"memory allocation 100 times, "
 					"aborting and returning ENOMEM." );
 			g_errno = ENOMEM;
@@ -294,7 +294,7 @@ void Mem::addMem ( void *mem , size_t size , const char *note , char isnew ) {
 	if ( (int32_t)m_numAllocated + 100 >= (int32_t)m_memtablesize ) { 
 		static bool s_printed = false;
 		if ( ! s_printed ) {
-			log("mem: using too many slots");
+			log(LOG_WARN, "mem: using too many slots");
 			printMem();
 			s_printed = true;
 		}
@@ -347,7 +347,7 @@ void Mem::addMem ( void *mem , size_t size , const char *note , char isnew ) {
 			if ( s_sizes  ) sysfree ( s_sizes  );
 			if ( s_labels ) sysfree ( s_labels );
 			if ( s_isnew  ) sysfree ( s_isnew );
-			log("mem: addMem: Init failed. Disabling checks.");
+			log(LOG_WARN, "mem: addMem: Init failed. Disabling checks.");
 			g_conf.m_detectMemLeaks = false;
 			return;
 		}
@@ -470,7 +470,7 @@ bool Mem::printMemBreakdownTable ( SafeBuf* sb,
 	int32_t n = m_numAllocated * 2;
 	MemEntry *e = (MemEntry *)mcalloc ( sizeof(MemEntry) * n , "Mem" );
 	if ( ! e ) {
-		log("admin: Could not alloc %" PRId32" bytes for mem table.",
+		log(LOG_WARN, "admin: Could not alloc %" PRId32" bytes for mem table.",
 		    (int32_t)sizeof(MemEntry)*n);
 		return false;
 	}
@@ -986,7 +986,7 @@ mallocmemloop:
 	}
 	if ( (PTRTYPE)mem < 0x00010000 ) {
 		void *remem = sysmalloc(size);
-		log ( LOG_WARN, "mem: Caught low memory allocation "
+		log( LOG_WARN, "mem: Caught low memory allocation "
 		      "at %08" PTRFMT", "
 		      "reallocated to %08" PTRFMT"",
 		      (PTRTYPE)mem, (PTRTYPE)remem );
@@ -994,7 +994,7 @@ mallocmemloop:
 		mem = remem;
 		memLoop++;
 		if ( memLoop > 100 ) {
-			log ( LOG_WARN, "mem: Attempted to reallocate low "
+			log( LOG_WARN, "mem: Attempted to reallocate low "
 					"memory allocation 100 times, "
 					"aborting and returning NOMEM." );
 			g_errno = ENOMEM;
