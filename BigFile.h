@@ -155,8 +155,8 @@ class BigFile {
 	// . IMPORTANT: if returns -1 it MAY have written some bytes 
 	//   successfully to OTHER parts that's why caller should be 
 	//   responsible for maintaining current write offset
-	bool  write ( void       *buf    , 
-		      int32_t        size   , 
+	bool  write ( void       *buf    ,
+	              int64_t        size   ,
 		      int64_t   offset                         , 
 		      FileState  *fs                      = NULL , 
 		      void       *state                   = NULL , 
@@ -239,8 +239,8 @@ private:
 	// . wrapper for all reads and writes
 	// . if doWrite is true then we'll do a write, otherwise we do a read
 	// . returns false and sets errno on error, true on success
-	bool readwrite ( void       *buf, 
-			 int32_t        size, 
+	bool readwrite ( void       *buf,
+	                 int64_t        size,
 			 int64_t   offset, 
 			 bool        doWrite,
 			 FileState  *fstate   ,

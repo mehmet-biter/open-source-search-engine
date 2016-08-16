@@ -590,8 +590,8 @@ bool BigFile::read  ( void       *buf    ,
 
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
-bool BigFile::write ( void       *buf    , 
-		      int32_t        size   , 
+bool BigFile::write ( void       *buf    ,
+                      int64_t        size   ,
 		      int64_t   offset , 
 		      FileState  *fs     ,
 		      void       *state  ,
@@ -622,8 +622,8 @@ bool BigFile::write ( void       *buf    ,
 // . fstate is used by aio_read/write()
 // . we need a ptr to the ptr to this BigFile so if we get deleted and
 //   a signal is still pending for us, the callback will know we are nuked
-bool BigFile::readwrite ( void         *buf      , 
-			  int32_t          size     , 
+bool BigFile::readwrite ( void         *buf      ,
+                          int64_t          size     ,
 			  int64_t     offset   , 
 			  bool          doWrite  ,
 			  FileState    *fstate   ,
@@ -799,14 +799,14 @@ skipThread:
 	// we must do it here now
 	FileState *fs = fstate;
 	if ( ! fs->m_doWrite && ! fs->m_buf && fs->m_bytesToGo > 0 ) {
-		int32_t need = fs->m_bytesToGo + fs->m_allocOff;
+		int64_t need = fs->m_bytesToGo + fs->m_allocOff;
 		char *p = (char *) mmalloc ( need , "ThreadReadBuf" );
 		if ( p ) {
 			fs->m_buf       = p + fs->m_allocOff;
 			fs->m_allocBuf  = p;
 			fs->m_allocSize = need;
 		} else {
-			log( LOG_WARN, "disk: read buf alloc failed for %" PRId32" bytes.", need );
+			log( LOG_WARN, "disk: read buf alloc failed for %" PRId64" bytes.", need );
 		}
 	}
 
@@ -830,11 +830,11 @@ skipThread:
 	// if it read less than 8MB/s bitch
 	int64_t now   = gettimeofdayInMilliseconds() ;
 	int64_t took  = now - fstate->m_startTime ;
-	int32_t      rate  = 100000;
+	int64_t      rate  = 100000;
 	if ( took  > 500 ) rate = fstate->m_bytesDone / took ;
 	if ( rate < 8000 && fstate->m_niceness <= 0 ) {
 		log(LOG_INFO,"disk: Read %" PRId64" bytes in %" PRId64" "
-		    "ms (%" PRId32"KB/s).",
+		    "ms (%" PRId64"KB/s).",
 		    fstate->m_bytesDone,took,rate);
 		g_stats.m_slowDiskReads++;
 	}
@@ -1096,9 +1096,9 @@ static bool readwrite_r ( FileState *fstate ) {
 	}
 
 	// how many total bytes to write?
-	int32_t bytesToGo = fstate->m_bytesToGo;
+	int64_t bytesToGo = fstate->m_bytesToGo;
 	// how many bytes we've written so far
-	int32_t bytesDone = fstate->m_bytesDone;
+	int64_t bytesDone = fstate->m_bytesDone;
 	// get current offset
 	int64_t offset = fstate->m_offset + fstate->m_bytesDone;
 	// are we writing? or reading?
@@ -1114,13 +1114,13 @@ static bool readwrite_r ( FileState *fstate ) {
 
 		// translate offset to a filenum and offset
 		int32_t filenum = offset / MAX_PART_SIZE;
-		int32_t localOffset = offset % MAX_PART_SIZE;
+		int64_t localOffset = offset % MAX_PART_SIZE;
 
 		// how many bytes to read/write to first little file?
-		int32_t avail = MAX_PART_SIZE - localOffset;
+		int64_t avail = MAX_PART_SIZE - localOffset;
 
 		// how may bytes do we have left to read/write
-		int32_t len = bytesToGo - bytesDone;
+		int64_t len = bytesToGo - bytesDone;
 
 		// how many bytes can we write to it now
 		if (len > avail) {
@@ -1146,7 +1146,7 @@ static bool readwrite_r ( FileState *fstate ) {
 		errno = 0;
 
 		// n holds how many bytes read/written
-		int n;
+		ssize_t n;
 
 		// do the read/write blocking
 		if (doWrite) {
@@ -1165,7 +1165,7 @@ static bool readwrite_r ( FileState *fstate ) {
 			// altered
 			// MDW: don't access m_bigfile in case bigfile was deleted
 			// since we are in a thread
-			log(LOG_DEBUG, "disk::readwrite: %s %i bytes of %i @ offset %i "
+			log(LOG_DEBUG, "disk::readwrite: %s %zi bytes of %" PRId64" @ offset %" PRId64
 					    "(nonBlock=%s) "
 					    "fd %i "
 					    "cc1=%i=?%i cc2=%i=?%i errno=%s",
@@ -1187,12 +1187,12 @@ static bool readwrite_r ( FileState *fstate ) {
 		if (n == 0 && len > 0) {
 			// MDW: don't access m_bigfile in case bigfile was deleted
 			// since we are in a thread
-			log(LOG_WARN, "disk: Read of %" PRId32" bytes at offset %" PRId64" "
+			log(LOG_WARN, "disk: Read of %" PRId64" bytes at offset %" PRId64" "
 					    " failed because file is too short for that "
 					    "offset? Our fd was probably stolen from us by another "
-					    "thread. fd1=%i fd2=%i len=%i filenum=%i "
-					    "localoffset=%i. error=%s.",
-					    (int32_t) len, fstate->m_offset,
+					    "thread. fd1=%i fd2=%i len=%" PRId64" filenum=%i "
+					    "localoffset=%" PRId64". error=%s.",
+					    len, fstate->m_offset,
 					    fstate->m_fd1,
 					    fstate->m_fd2,
 					    len,
