@@ -458,8 +458,7 @@ void BigFile::makeFilename_r ( char *baseFilename    ,
 
 // . get the fd of the nth file
 // . will try to open the file if it hasn't yet been opened
-int BigFile::getfd ( int32_t n , bool forReading ) { 
-
+int BigFile::getfd ( int32_t n , bool forReading ) {
 	// boundary check
 	if ( n >= m_maxParts && ! addPart ( n ) ) {
 		log( LOG_ERROR, "disk: Part number %" PRId32" > %" PRId32". fd not available.", n, m_maxParts );
@@ -471,30 +470,36 @@ int BigFile::getfd ( int32_t n , bool forReading ) {
 	// get the File ptr from the table
 	File *f = getFile2(n);
 	// if part does not exist then create it! addPart(n) will do that?
-	if ( ! f ) {
+	if (!f) {
 		// don't create File if we're getting it for reading
-		if ( forReading ) {
+		if (forReading) {
 			log( LOG_WARN, "disk: Don't create file when we're getting it for reading" );
 			return -1;
 		}
 
-		if ( ! addPart( n ) ) {
-			log( LOG_WARN, "disk: Unable to add part %" PRId32, n );
+		if (!addPart(n)) {
+			log(LOG_WARN, "disk: Unable to add part %" PRId32, n);
+			return -1;
+		}
+
+		f = getFile2(n);
+		if (!f) {
+			log(LOG_WARN, "disk: Unable to get part %" PRId32, n);
 			return -1;
 		}
 	}
 
 	// open it if not opened
-	if ( ! f->calledOpen() ) {
-		if ( ! f->open ( m_flags , getFileCreationFlags() ) ) {
-			log( LOG_WARN, "disk: Failed to open file part #%" PRId32".", n );
+	if (!f->calledOpen()) {
+		if (!f->open(m_flags, getFileCreationFlags())) {
+			log(LOG_WARN, "disk: Failed to open file part #%" PRId32".", n);
 			return -1;
 		}
 	}
 
 	// get it's file descriptor
-	int fd = f->getfd ( ) ;
-	if ( fd >= -1 ) {
+	int fd = f->getfd();
+	if (fd >= -1) {
 		return fd;
 	}
 
