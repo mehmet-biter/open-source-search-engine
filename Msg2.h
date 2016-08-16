@@ -95,7 +95,7 @@ private:
 	Msg5 *getAvailMsg5();
 	void returnMsg5(Msg5 *msg5);
 
-	bool gotList(RdbList *list);
+	bool gotList();
 
 	// we can get up to MAX_QUERY_TERMS term frequencies at the same time
 	Msg5 *m_msg5;
