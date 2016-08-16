@@ -155,10 +155,7 @@ bool Posdb::init ( ) {
 			            sizeof(key144_t),
 			            false,
 			            false,
-						true);	//@@@ BR: no-merge index
-
-	// validate posdb
-	//return verify();
+						true);
 }
 
 // init the rebuild/secondary rdb, used by PageRepair.cpp
@@ -194,7 +191,7 @@ bool Posdb::init2 ( int32_t treeMem ) {
 			    false ,
 			    false ,
 			    sizeof(key144_t),
-			true );		// @@@ BR: no-merge index
+			true );
 }
 
 
