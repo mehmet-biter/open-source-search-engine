@@ -1032,6 +1032,8 @@ void Msg5::mergeDoneWrapper(void *state, job_exit_t exit_type) {
 
 void Msg5::mergeDone(job_exit_t /*exit_type*/) {
 	verify_signature();
+
+	if(m_calledCallback) gbshutdownLogicError();
 	
 	// we MAY be in a thread now
 
