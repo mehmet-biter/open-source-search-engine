@@ -15,11 +15,11 @@ int32_t g_numIOErrors = 0;
 Msg3::Msg3()
   : m_numScansStarted(0),
     m_numScansCompleted(0),
+    m_scansBeingSubmitted(false),
     m_lists(NULL),
     m_alloc(NULL)
 {
 //	log(LOG_TRACE,"Msg3(%p)::Msg3()",this);
-	pthread_mutex_init(&m_mtxScanCounters,NULL);
 	set_signature();
 }
 
@@ -28,7 +28,6 @@ Msg3::~Msg3() {
 	verify_signature();
 //	log(LOG_TRACE,"Msg3(%p)::~Msg3()",this);
 	reset();
-	pthread_mutex_destroy(&m_mtxScanCounters);
 	clear_signature();
 }
 
@@ -49,6 +48,23 @@ void Msg3::reset() {
 	m_lists = NULL;
 	verify_signature();
 }
+
+
+void Msg3::incrementScansStarted() {
+	ScopedLock sl(m_mtxScanCounters);
+	m_numScansStarted++;
+}
+
+void Msg3::incrementScansCompleted() {
+	ScopedLock sl(m_mtxScanCounters);
+	m_numScansCompleted++;
+}
+
+bool Msg3::areAllScansCompleted() const {
+	ScopedLock sl(const_cast<GbMutex&>(m_mtxScanCounters));
+	return (!m_scansBeingSubmitted) && (m_numScansCompleted==m_numScansStarted);
+}
+
 
 key192_t makeCacheKey ( int64_t vfd ,
 			int64_t offset ,
@@ -453,8 +469,10 @@ bool Msg3::readList  ( char           rdbId         ,
 		g_process.shutdownAbort(true);
 	}
 
-	m_numScansStarted    = 1;
-	//note about above: we artificially have one more fictitious scan started while we start threads/jobs so they don't prematurely conclude were are done.
+	{
+		ScopedLock sl(m_mtxScanCounters);
+		m_scansBeingSubmitted = true;
+	}
 
 	// debug msg
 	//log("msg3 getting list (msg5=%" PRIu32")",m_state);
@@ -511,11 +529,7 @@ bool Msg3::readList  ( char           rdbId         ,
 		//if ( minRecSizes == 2000000 ) 
 		//log("Msg3:: reading %" PRId32" bytes from file #%" PRId32,bytesToRead,i);
 		//#endif
-		// inc our m_numScans
-		{
-			ScopedLock sl(m_mtxScanCounters);
-			m_numScansStarted++;
-		}
+		incrementScansStarted();
 		// . keep stats on our disk accesses
 		// . count disk seeks (assuming no fragmentation)
 		// . count disk bytes read
@@ -625,8 +639,7 @@ bool Msg3::readList  ( char           rdbId         ,
 			     base->m_dbname,fn,
 			     (int32_t)m_minRecSizes,
 			     (int32_t)ccount);
-			ScopedLock sl(m_mtxScanCounters);
-			m_numScansCompleted++;
+			incrementScansCompleted();
 			m_errno = ECORRUPTDATA;
 			m_hadCorruption = true;
 			//m_maxRetries = 0;
@@ -660,10 +673,7 @@ bool Msg3::readList  ( char           rdbId         ,
 								true ); // inccounts?
 				if ( inCache ) {
 					m_scans[i].m_inPageCache = true;
-					{
-						ScopedLock sl(m_mtxScanCounters);
-						m_numScansCompleted++;
-					}
+					incrementScansCompleted();
 					// now we have to store this value, 6 or 12 so
 					// we can modify the hint appropriately
 					m_scans[i].m_shifted = *rec;
@@ -700,10 +710,8 @@ bool Msg3::readList  ( char           rdbId         ,
 		//if ( bytesToRead == 0 )
 		//	fprintf(stderr,"shit\n");
 		// if it did not block then it completed, so count it
-		if ( done ) {
-			ScopedLock sl(m_mtxScanCounters);
-			m_numScansCompleted++;
-		}
+		if ( done )
+			incrementScansCompleted();
 
 		// break on an error, and remember g_errno in case we block
 		if ( g_errno ) {
@@ -718,8 +726,10 @@ bool Msg3::readList  ( char           rdbId         ,
 	// debug test
 	//if ( rand() % 100 <= 10 ) m_errno = EIO;
 
-	ScopedLock sl(m_mtxScanCounters);
-	m_numScansStarted--; //remove the ficticious scan
+	{
+		ScopedLock sl(m_mtxScanCounters);
+		m_scansBeingSubmitted = false;
+	}
 	if ( !areAllScansCompleted() )
 		return false;
 	else {
@@ -741,9 +751,7 @@ void Msg3::doneScanningWrapper() {
 	verify_signature();
 //	log(LOG_TRACE,"Msg3(%p)::doneScqanningWrapper()",THIS);
 
-	ScopedLock sl(m_mtxScanCounters);
-	// inc the scan count
-	m_numScansCompleted++;
+	incrementScansCompleted();
 
 	// if we had an error, remember it
 	if ( g_errno ) {
@@ -767,8 +775,6 @@ void Msg3::doneScanningWrapper() {
 	if ( !areAllScansCompleted() ) {
 		return;
 	}
-
-	sl.unlock();
 
 	// . give control to doneScanning
 	// . return if it blocks

@@ -28,6 +28,8 @@ class RdbCache *getDiskPageCache ( char rdbId ) ;
 #include "RdbList.h"
 #include "RdbScan.h"
 #include "GbSignature.h"
+#include "GbMutex.h"
+
 
 class Msg3 {
 
@@ -69,7 +71,7 @@ class Msg3 {
 	RdbList        *getList ( int32_t i )       { return &m_lists[i]; }
 	const RdbList  *getList ( int32_t i ) const { return &m_lists[i]; }
 	int32_t         getNumLists() const { return m_numScansCompleted; }
-	bool            areAllScansCompleted() const { return m_numScansCompleted==m_numScansStarted; }
+	bool            areAllScansCompleted() const;
 
 	void     *m_state;
 	void    (* m_callback )( void *state );
@@ -133,7 +135,10 @@ private:
 
 	int32_t      m_numScansStarted;
 	int32_t      m_numScansCompleted;
-	pthread_mutex_t m_mtxScanCounters;
+	GbMutex      m_mtxScanCounters;
+	bool         m_scansBeingSubmitted;
+	void incrementScansStarted();
+	void incrementScansCompleted();
 
 	// hold the lists we read from disk here
 	RdbList  *m_lists ;
