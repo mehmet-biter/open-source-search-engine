@@ -8,9 +8,8 @@
 #include "Process.h"
 #include "ScopedLock.h"
 #include <new>
-#include <assert.h>
 
-static const int MAGIC = 0x1f2b3a4c;
+static const int signature_init = 0x1f2b3a4c;
 int32_t g_numIOErrors = 0;
 
 Msg3::Msg3()
@@ -21,21 +20,21 @@ Msg3::Msg3()
 {
 //	log(LOG_TRACE,"Msg3(%p)::Msg3()",this);
 	pthread_mutex_init(&m_mtxScanCounters,NULL);
-	magic = MAGIC;
+	set_signature();
 }
 
 
 Msg3::~Msg3() {
-	assert(magic==MAGIC);
+	verify_signature();
 //	log(LOG_TRACE,"Msg3(%p)::~Msg3()",this);
 	reset();
 	pthread_mutex_destroy(&m_mtxScanCounters);
-	magic = 0;
+	clear_signature();
 }
 
 
 void Msg3::reset() {
-	assert(magic==MAGIC);
+	verify_signature();
 //	log(LOG_TRACE,"Msg3(%p)::reset()",this);
 	if ( !areAllScansCompleted() ) { g_process.shutdownAbort(true); }
 	m_hadCorruption = false;
@@ -48,7 +47,7 @@ void Msg3::reset() {
 	}
 	delete[] m_lists;
 	m_lists = NULL;
-	assert(magic==MAGIC);
+	verify_signature();
 }
 
 key192_t makeCacheKey ( int64_t vfd ,
@@ -170,7 +169,7 @@ bool Msg3::readList  ( char           rdbId         ,
 		       bool           justGetEndKey ,
 		       bool           allowPageCache ,
 		       bool           hitDisk        ) {
-	assert(magic==MAGIC);
+	verify_signature();
 
 	// set this to true to validate
 	m_validateCache = false;//true;
@@ -323,7 +322,7 @@ bool Msg3::readList  ( char           rdbId         ,
 	int32_t nn   = numFiles;
 	if ( pre != -10 ) nn++;
 	m_numChunks = nn;
-	log(LOG_TRACE,"Msg3(%p)::readList():allocating %d rdblists",this,m_numChunks);
+//	log(LOG_TRACE,"Msg3(%p)::readList():allocating %d rdblists",this,m_numChunks);
 	try {
 		m_lists = new RdbList[m_numChunks];
 	} catch(std::bad_alloc) {
@@ -331,7 +330,7 @@ bool Msg3::readList  ( char           rdbId         ,
 		g_errno = ENOMEM;
 		return true;
 	}
-	log(LOG_TRACE,"Msg3(%p)::readList():allocated %d rdblists [%p..%p]",this,m_numChunks,m_lists,m_lists+(m_numChunks-1));
+//	log(LOG_TRACE,"Msg3(%p)::readList():allocated %d rdblists [%p..%p]",this,m_numChunks,m_lists,m_lists+(m_numChunks-1));
 
 	int32_t need = nn * (chunk);
 	m_allocSize = need;
@@ -418,7 +417,8 @@ bool Msg3::readList  ( char           rdbId         ,
 	// . we now boost m_minRecSizes to account for negative recs 
 	// . but not if only reading one list, cuz it won't get merged and
 	//   it will be too big to send back
-	if ( m_numFileNums > 1 ) compensateForNegativeRecs ( base );	assert(magic==MAGIC);
+	if ( m_numFileNums > 1 ) compensateForNegativeRecs ( base );
+	verify_signature();
 
 	// . often endKey is too big for an efficient read of minRecSizes bytes
 	//   because we end up reading too much from all the files
@@ -726,24 +726,29 @@ bool Msg3::readList  ( char           rdbId         ,
 		// . if all scans completed without blocking then wrap it up & ret true
 		// . doneScanning may now block if it finds data corruption and must
 		//   get the list remotely
-		assert(magic==MAGIC);
+		verify_signature();
 		return doneScanning();
 	}
 }
 
+
 void Msg3::doneScanningWrapper(void *state) {
 	Msg3 *THIS = (Msg3 *) state;
-	assert(THIS->magic==MAGIC);
-	log(LOG_TRACE,"Msg3(%p)::doneScqanningWrapper()",THIS);
+	THIS->doneScanningWrapper();
+}
 
-	ScopedLock sl(THIS->m_mtxScanCounters);
+void Msg3::doneScanningWrapper() {
+	verify_signature();
+//	log(LOG_TRACE,"Msg3(%p)::doneScqanningWrapper()",THIS);
+
+	ScopedLock sl(m_mtxScanCounters);
 	// inc the scan count
-	THIS->m_numScansCompleted++;
+	m_numScansCompleted++;
 
 	// if we had an error, remember it
 	if ( g_errno ) {
 		// get base, returns NULL and sets g_errno to ENOCOLLREC on err
-		RdbBase *base = getRdbBase( THIS->m_rdbId, THIS->m_collnum );
+		RdbBase *base = getRdbBase( m_rdbId, m_collnum );
 		const char *dbname = "NOT FOUND";
 		if ( base ) {
 			dbname = base->m_dbname;
@@ -754,12 +759,12 @@ void Msg3::doneScanningWrapper(void *state) {
 			tt = LOG_INFO;
 		}
 		log(tt,"net: Reading %s had error: %s.", dbname,mstrerror(g_errno));
-		THIS->m_errno = g_errno; 
+		m_errno = g_errno;
 		g_errno = 0; 
 	}
 
 	// return now if we're awaiting more scan completions
-	if ( !THIS->areAllScansCompleted() ) {
+	if ( !areAllScansCompleted() ) {
 		return;
 	}
 
@@ -767,26 +772,26 @@ void Msg3::doneScanningWrapper(void *state) {
 
 	// . give control to doneScanning
 	// . return if it blocks
-	if ( ! THIS->doneScanning() ) {
+	if ( !doneScanning() ) {
 		return;
 	}
 
 	// if one of our lists was *huge* and could not alloc mem, it was
 	// due to corruption
-	if ( THIS->m_hadCorruption ) {
+	if ( m_hadCorruption ) {
 		g_errno = ECORRUPTDATA;
 	}
 
 	// if it doesn't block call the callback, g_errno may be set
-	assert(THIS->magic==MAGIC);
-	THIS->m_callback ( THIS->m_state );
+	verify_signature();
+	m_callback ( m_state );
 }
 
 
 // . but now that we may get a list remotely to fix data corruption,
 //   this may indeed block
 bool Msg3::doneScanning ( ) {
-	assert(magic==MAGIC);
+	verify_signature();
 	QUICKPOLL(m_niceness);
 	// . did we have any error on any scan?
 	// . if so, repeat ALL of the scans
@@ -829,7 +834,7 @@ bool Msg3::doneScanning ( ) {
 		max = 0;
 	}
 
-	assert(magic==MAGIC);
+	verify_signature();
 	// convert m_errno to ECORRUPTDATA if it is EBUFTOOSMALL and the
 	// max of the bytesToRead are over 500MB.
 	// if bytesToRead was ludicrous, then assume that the data file
@@ -891,7 +896,7 @@ bool Msg3::doneScanning ( ) {
 	}
 #endif
 
-	assert(magic==MAGIC);
+	verify_signature();
 	// try to fix this error i've seen
 	if ( g_errno == EBADENGINEER && max == -1 )
 		max = 100;
@@ -959,7 +964,7 @@ bool Msg3::doneScanning ( ) {
 		return true;
 	}
 
-	assert(magic==MAGIC);
+	verify_signature();
 	// if we got an error and should not retry any more then give up
 	if ( g_errno ) {
 		log(
@@ -1095,21 +1100,25 @@ bool Msg3::doneScanning ( ) {
 		     " from %s (niceness=%" PRId32").",
 		     took,m_numFileNums,count,base->m_dbname,m_niceness);
 	}
-	assert(magic==MAGIC);
+	verify_signature();
 	return true;
 }
 
 void Msg3::doneSleepingWrapper3 ( int fd , void *state ) {
 	Msg3 *THIS = (Msg3 *)state;
-	assert(THIS->magic==MAGIC);
+	THIS->doneSleepingWrapper3();
+}
+
+void Msg3::doneSleepingWrapper3() {
+	verify_signature();
 	// now try reading again
-	if ( ! THIS->doneSleeping ( ) ) return;
+	if ( ! doneSleeping ( ) ) return;
 	// if it doesn't block call the callback, g_errno may be set
-	THIS->m_callback ( THIS->m_state );
+	m_callback ( m_state );
 }
 
 bool Msg3::doneSleeping ( ) {
-	assert(magic==MAGIC);
+	verify_signature();
 	// unregister
 	g_loop.unregisterSleepCallback(this,doneSleepingWrapper3);
 	// read again
@@ -1143,7 +1152,7 @@ void  Msg3::setPageRanges ( RdbBase *base ,
 			    const char  *startKey   ,
 			    char  *endKey        ,
 			    int32_t   minRecSizes   ) {
-	assert(magic==MAGIC);
+	verify_signature();
 	// sanity check
 	//if ( m_ks != 12 && m_ks != 16 ) { g_process.shutdownAbort(true); }
 	// get the file maps from the rdb
@@ -1283,7 +1292,7 @@ void  Msg3::setPageRanges ( RdbBase *base ,
 // . we now boost m_minRecSizes to account for negative recs in certain files
 // . TODO: use floats for averages, not ints
 void Msg3::compensateForNegativeRecs ( RdbBase *base ) {
-	assert(magic==MAGIC);
+	verify_signature();
 	// get the file maps from the rdb
 	RdbMap **maps = base->getMaps();
 	// add up counts from each map

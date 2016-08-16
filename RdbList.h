@@ -6,6 +6,7 @@
 #define NUMTERMIDBITS 48
 
 #include "Sanity.h"
+#include "GbSignature.h"
 
 /**
  *
@@ -44,7 +45,7 @@
  */
 class RdbList {
 	
-	int32_t magic;
+	declare_signature
  public:
 
 	// IndexList sees keys as termId/score/docId tuples

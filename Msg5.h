@@ -8,6 +8,7 @@
 #include "Msg3.h"
 #include "RdbList.h"
 #include "JobScheduler.h" //job_exit_t
+#include "GbSignature.h"
 
 
 extern int32_t g_numCorrupt;
@@ -128,7 +129,7 @@ class Msg5 {
 
 	int32_t minRecSizes() const { return m_minRecSizes; }
 
-	int magic;
+	declare_signature
 
 	// we add our m_finalList(s) to this, the user's list
 	RdbList  *m_list;

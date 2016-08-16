@@ -13,7 +13,7 @@
 
 //#define _MERGEDEBUG_
 
-static const int32_t MAGIC = 0x07b39a1b;
+static const int signature_init = 0x07b39a1b;
 
 
 // . compares to keys split into 6 byte ptrs
@@ -57,7 +57,7 @@ static bool cmp_6bytes_equal(const void *p1, const void *p2)
 
 
 void RdbList::constructor () {
-	assert(magic==MAGIC);
+	verify_signature();
 	m_list        = NULL;
 	m_alloc       = NULL;
 	m_allocSize   = 0;
@@ -68,7 +68,7 @@ void RdbList::constructor () {
 
 RdbList::RdbList () {
 //	log(LOG_TRACE,"RdbList(%p)::RdbList()",this);
-	magic=MAGIC;
+	set_signature();
 	m_list        = NULL;
 	m_alloc       = NULL;
 	m_allocSize   = 0;
@@ -79,20 +79,20 @@ RdbList::RdbList () {
 
 // free m_list on destruction
 RdbList::~RdbList () {
-	assert(magic==MAGIC);
+	verify_signature();
 //	log(LOG_TRACE,"RdbList(%p)::~RdbList()",this);
 	freeList();
-	magic=0;
+	clear_signature();
 }
 
 void RdbList::destructor() {
 	assert(this);
-	assert(magic==MAGIC);
+	verify_signature();
 	freeList();
 }
 
 void RdbList::freeList () {
-	assert(magic==MAGIC);
+	verify_signature();
 	if ( m_ownData && m_alloc ) mfree ( m_alloc , m_allocSize ,"RdbList");
 	m_list      = NULL;
 	m_alloc     = NULL;
@@ -101,8 +101,7 @@ void RdbList::freeList () {
 }
 
 void RdbList::resetListPtr () {
-	assert(magic==MAGIC);
-//	log("@@@@ RdbList(%p)::resetListPtr(): m_list=%p, m_listSize=%d",this,m_list,m_listSize);
+	verify_signature();
 	m_listPtr = m_list;
 	m_listPtrHi = NULL;
 	m_listPtrLo = NULL;
@@ -117,7 +116,7 @@ void RdbList::resetListPtr () {
 // . this now just resets the size to 0, does not do any freeing
 // . free will only happen on list destruction
 void RdbList::reset ( ) {
-	assert(magic==MAGIC);
+	verify_signature();
 	// . if we don't own our data then, NULLify it
 	// . if we do own the data, don't free it
 	if ( ! m_ownData ) { m_alloc = NULL; m_allocSize = 0; }
@@ -150,7 +149,7 @@ void RdbList::set ( char  *list          ,
 		    bool   useHalfKeys   ,
 		    char   keySize       ) {
 	assert(this);
-	assert(magic==MAGIC);
+	verify_signature();
 	// free and NULLify any old m_list we had to make room for our new list
 	freeList();
 	// set this first since others depend on it
@@ -195,7 +194,7 @@ void RdbList::set (char *list          ,
 		   bool  ownData       ,
 		   bool  useHalfKeys   ,
 		   char  keySize       ) {
-	assert(magic==MAGIC);
+	verify_signature();
 	//key_t startKey = 0;
 	//key_t endKey ; endKey.setMax();
 	const char *startKey = KEYMIN();
@@ -246,14 +245,14 @@ void RdbList::stealFromOtherList(RdbList *other_list)
 // just set the start and end keys
 //void RdbList::set ( key_t startKey , key_t endKey ) {
 void RdbList::set ( const char *startKey, const char *endKey ) {
-	assert(magic==MAGIC);
+	verify_signature();
 	KEYSET ( m_startKey , startKey , m_ks );
 	KEYSET ( m_endKey   , endKey   , m_ks );
 }
 
 //key_t RdbList::getLastKey  ( ) {
 char *RdbList::getLastKey  ( ) {
-	assert(magic==MAGIC);
+	verify_signature();
 	if ( ! m_lastKeyIsValid ) {
 		log("db: rdblist: getLastKey: m_lastKey not valid.");
 		g_process.shutdownAbort(true);
@@ -263,7 +262,7 @@ char *RdbList::getLastKey  ( ) {
 
 //void RdbList::setLastKey  ( key_t k ) {
 void RdbList::setLastKey  ( const char *k ) {
-	assert(magic==MAGIC);
+	verify_signature();
 	//m_lastKey = k;
 	KEYSET ( m_lastKey , k , m_ks );
 	m_lastKeyIsValid = true;
@@ -272,7 +271,7 @@ void RdbList::setLastKey  ( const char *k ) {
 // this has to scan through each record for variable sized records and
 // if m_useHalfKeys is true
 int32_t RdbList::getNumRecs ( ) {
-	assert(magic==MAGIC);
+	verify_signature();
 	// we only keep this count for lists of variable sized records
 	if ( m_fixedDataSize == 0 && ! m_useHalfKeys )
 	//	return m_listSize / ( sizeof(key_t) + m_fixedDataSize );
@@ -301,7 +300,7 @@ int32_t RdbList::getNumRecs ( ) {
 // . used by RdbTree to construct an RdbList from branches of records
 // . NOTE: does not set m_endKey/m_startKey/ etc..
 bool RdbList::addRecord ( const char *key, int32_t dataSize, const char *data, bool bitch ) {
-	assert(magic==MAGIC);
+	verify_signature();
 	if ( m_ks == 18 ) {
 		// sanity
 		if ( key[0] & 0x06 ) {
@@ -444,7 +443,7 @@ bool RdbList::addRecord ( const char *key, int32_t dataSize, const char *data, b
 bool RdbList::prepareForMerge ( RdbList **lists         ,
 				int32_t      numLists      ,
 				int32_t      minRecSizes   ) {
-	assert(magic==MAGIC);
+	verify_signature();
 	// return false if we don't own the data
 	if ( ! m_ownData ) {
 		log("db: rdblist: prepareForMerge: Data not owned.");
@@ -531,7 +530,7 @@ bool RdbList::prepareForMerge ( RdbList **lists         ,
 //key_t RdbList::getKey ( char *rec ) {
 void RdbList::getKey ( const char *rec , char *key ) const {
 	assert(this);
-	assert(magic==MAGIC);
+	verify_signature();
 
 	// posdb?
 	if ( m_ks == 18 ) {
@@ -658,7 +657,7 @@ char *RdbList::getData ( char *rec ) {
 // returns false on error and set g_errno
 bool RdbList::growList ( int32_t newSize ) {
 	assert(this);
-	assert(magic==MAGIC);
+	verify_signature();
 	// return false if we don't own the data
 	if ( ! m_ownData ) {
 		log(LOG_LOGIC,"db: rdblist: growlist: Data not owned.");
@@ -720,7 +719,7 @@ bool RdbList::growList ( int32_t newSize ) {
 bool RdbList::checkList_r ( bool removeNegRecs , bool sleepOnProblem ,
 			    char rdbId ) {
 	assert(this);
-	assert(magic==MAGIC);
+	verify_signature();
 
 	// bail if empty
 	if ( m_listSize <= 0 || ! m_list ) return true;
@@ -1290,9 +1289,9 @@ int RdbList::printList ( int32_t logtype ) {
 // . it's a really good idea to keep it as -1 otherwise
 bool RdbList::constrain(const char *startKey, char *endKey, int32_t minRecSizes,
                         int32_t hintOffset, const char *hintKey, char rdbId, const char *filename) {
-	log(LOG_TRACE,"RdbList(%p)::constrain()",this);
+//	log(LOG_TRACE,"RdbList(%p)::constrain()",this);
 	assert(this);
-	assert(magic==MAGIC);
+	verify_signature();
 	// return false if we don't own the data
 	if ( ! m_ownData ) {
 		g_errno = EBADLIST;
@@ -1604,8 +1603,8 @@ bool RdbList::constrain(const char *startKey, char *endKey, int32_t minRecSizes,
 	// and the keys can be tightened
 	KEYSET(m_startKey,startKey,m_ks);
 	KEYSET(m_endKey,endKey,m_ks);
-	assert(magic==MAGIC);
-	log(LOG_TRACE,"RdbList(%p)::constrain(): finished",this);
+	verify_signature();
+//	log(LOG_TRACE,"RdbList(%p)::constrain(): finished",this);
 	return true;
 }
 
@@ -1895,7 +1894,7 @@ void RdbList::merge_r ( RdbList **lists         ,
 			char      rdbId         ,
 			int32_t      niceness      ) {
 	assert(this);
-	assert(magic==MAGIC);
+	verify_signature();
 	// sanity
 	if ( ! m_ownData ) {
 		log("list: merge_r data not owned");
@@ -1977,7 +1976,7 @@ void RdbList::merge_r ( RdbList **lists         ,
 
 	if ( rdbId  == RDB_POSDB ) {
 		posdbMerge_r ( lists, numLists, startKey, endKey, m_mergeMinListSize, removeNegRecs, niceness );
-		assert(magic==MAGIC);
+		verify_signature();
 		return;
 	}
 

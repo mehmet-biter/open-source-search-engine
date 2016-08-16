@@ -27,6 +27,7 @@ class RdbCache *getDiskPageCache ( char rdbId ) ;
 
 #include "RdbList.h"
 #include "RdbScan.h"
+#include "GbSignature.h"
 
 class Msg3 {
 
@@ -102,9 +103,11 @@ private:
 			      int32_t       minRecSizes  );
 
 	static void doneScanningWrapper(void *state);
+	void doneScanningWrapper();
 	static void doneSleepingWrapper3(int fd, void *state);
+	void doneSleepingWrapper3();
 
-	int magic;
+	declare_signature
 
 	// the rdb we're scanning for
 	char  m_rdbId;

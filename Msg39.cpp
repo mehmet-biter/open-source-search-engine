@@ -47,7 +47,6 @@ public:
 		pthread_cond_destroy(&cond);
 	}
 	void wait_for_finish() {
-		log("@@@@ wait_for_finish(this=%p)--->",this);
 		int rc;
 		rc = pthread_mutex_lock(&mtx);
 		assert(rc==0);
@@ -55,13 +54,11 @@ public:
 			pthread_cond_wait(&cond,&mtx);
 		rc = pthread_mutex_unlock(&mtx);
 		assert(rc==0);
-		log("@@@@ wait_for_finish(this=%p)<---",this);
 	}
 };
 
 //a simple function just signals that the job has been finished
 static void JobFinishedCallback(void *state) {
-log("@@@@ JobFinishedCallback(state=%p)-->",state);
 	JobState *js = static_cast<JobState*>(state);
 	int rc;
 	rc = pthread_mutex_lock(&js->mtx);
@@ -71,7 +68,6 @@ log("@@@@ JobFinishedCallback(state=%p)-->",state);
 	assert(rc==0);
 	rc = pthread_mutex_unlock(&js->mtx);
 	assert(rc==0);
-log("@@@ JobFinishedCallback(state=%p)<--",state);
 }
 
 } //anonymous namespace
@@ -668,9 +664,6 @@ void Msg39::getLists(int fileNum, int64_t docIdStart, int64_t docIdEnd) {
 
 	JobState jobState(this);
 	
-log("@@@ Msg39: &jobState=%p",&jobState);
-log("@@@ Msg39: getLists: m_query.m_qterms=%p", m_query.m_qterms);
-log("@@@ Msg39: getLists: m_query.getNumTerms()=%d", m_query.getNumTerms());
 	// call msg2
 	if ( ! m_msg2.getLists ( m_msg39req->m_collnum,
 				 m_msg39req->m_addToCache,
@@ -691,11 +684,10 @@ log("@@@ Msg39: getLists: m_query.getNumTerms()=%d", m_query.getNumTerms());
 				 m_msg39req->m_allowHighFrequencyTermCache,
 				 m_msg39req->m_niceness,
 				 m_debug                      )) {
-		log("@@@ m_msg2.getLists returned false - waiting for job to finish");
+		log(LOG_DEBUG,"m_msg2.getLists returned false - waiting for job to finish");
 		jobState.wait_for_finish();
 	} else
-		log("@@@ m_msg2.getLists returned true. must be done");
-	log("@@@ returning from Msg39::getLists()");
+		log(LOG_DEBUG,"m_msg2.getLists returned true. must be done");
 }
 
 
