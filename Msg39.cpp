@@ -353,16 +353,16 @@ void Msg39::getDocIds2() {
 // 3. increment docid ranges and keep going
 // 4. when done return the top docids
 void Msg39::controlLoop ( ) {
-	log(LOG_DEBUG,"query: Msg39(%p)::controlLoop(): m_msg39req->m_numDocIdSplits=%d m_msg39req->m_timeout=%" PRId64, this, m_msg39req->m_numDocIdSplits, m_msg39req->m_timeout);
+//	log(LOG_DEBUG,"query: Msg39(%p)::controlLoop(): m_msg39req->m_numDocIdSplits=%d m_msg39req->m_timeout=%" PRId64, this, m_msg39req->m_numDocIdSplits, m_msg39req->m_timeout);
 //log("@@@ Msg39::controlLoop: m_startTimeQuery=%" PRId64, m_startTimeQuery);
 	//log("@@@ Msg39::controlLoop: now             =%" PRId64, gettimeofdayInMilliseconds());
 	
 	const int numFiles = getRdbBase(RDB_POSDB,m_msg39req->m_collnum)->getNumFiles();
-	log(LOG_DEBUG,"controlLoop(): numFiles=%d",numFiles);
+//	log(LOG_DEBUG,"controlLoop(): numFiles=%d",numFiles);
 	
 	//todo: choose docid splits based on expected largest rdblist / most common term
 	int numDocIdSplits = 1;
-	log(LOG_DEBUG,"controlLoop(): numDocIdSplits=%d",numDocIdSplits);
+//	log(LOG_DEBUG,"controlLoop(): numDocIdSplits=%d",numDocIdSplits);
 	
 	const int totalChunks = (numFiles+1)*numDocIdSplits;
 	int chunksSearched = 0;
@@ -438,13 +438,13 @@ void Msg39::controlLoop ( ) {
 			
 			chunksSearched++;
 		}
-		log(LOG_DEBUG,"controlLoop(): End of docid-split loop");
+//		log(LOG_DEBUG,"controlLoop(): End of docid-split loop");
 	}
 skipRest:
-	log(LOG_DEBUG,"controlLoop(): End of file loop");
+//	log(LOG_DEBUG,"controlLoop(): End of file loop");
 	
 
-	log(LOG_DEBUG, "query: msg39(this=%p): All chunks done. Now getting cluster records",this);
+//	log(LOG_DEBUG, "query: msg39(this=%p): All chunks done. Now getting cluster records",this);
 	
 	// ok, we are done, get cluster recs of the winning docids
 	// . this loads them using msg51 from clusterdb
