@@ -1982,7 +1982,9 @@ int main2 ( int argc , char *argv[] ) {
 	// like if a collection was delete but tree never saved right it'll
 	// still have the collection's data in it
 	if ( ! g_collectiondb.addRdbBaseToAllRdbsForEachCollRec ( ) ) {
-		log("db: Collectiondb init failed." ); return 1; }
+		log("db: Collectiondb init failed." );
+		return 1;
+	}
 
 	//Load the high-frequency term shortcuts (if they exist)
 	g_hfts.load();
