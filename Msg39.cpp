@@ -361,7 +361,7 @@ void Msg39::controlLoop ( ) {
 	log(LOG_DEBUG,"controlLoop(): numFiles=%d",numFiles);
 	
 	//todo: choose docid splits based on expected largest rdblist / most common term
-	int numDocIdSplits = 2;
+	int numDocIdSplits = 1;
 	log(LOG_DEBUG,"controlLoop(): numDocIdSplits=%d",numDocIdSplits);
 	
 	const int totalChunks = (numFiles+1)*numDocIdSplits;
