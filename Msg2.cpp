@@ -15,23 +15,24 @@
 #endif
 
 
+static const int signature_init = 0x7e8a32f9;
+
 
 Msg2::Msg2()
   : m_msg5(0),
     m_avail(0),
     m_numLists(0)
 {
-	pthread_mutex_init(&m_mtxCounters,NULL);
-	pthread_mutex_init(&m_mtxMsg5,NULL);
+	set_signature();
 }
 
 Msg2::~Msg2() {
 	reset();
-	pthread_mutex_destroy(&m_mtxCounters);
-	pthread_mutex_destroy(&m_mtxMsg5);
+	clear_signature();
 }
 
 void Msg2::reset ( ) {
+	verify_signature();
 	m_numLists = 0;
 	m_whiteList = 0;
 	m_p = 0;
@@ -69,6 +70,7 @@ bool Msg2::getLists ( collnum_t collnum , // char    *coll        ,
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_ADDRESSABLE(qterms,numQterms*sizeof(*qterms));
 #endif
+	verify_signature();
 	// warning
 	if ( collnum < 0 ) log(LOG_LOGIC,"net: bad collection. msg2.");
 	// save callback and state
@@ -406,6 +408,7 @@ void Msg2::gotListWrapper(void *state, RdbList *rdblist, Msg5 *msg5) {
 
 
 void Msg2::gotListWrapper( Msg5 *msg5 ) {
+	verify_signature();
 	RdbList *list = msg5->m_list;
 	// note it
 	if ( g_errno ) {
@@ -443,6 +446,7 @@ void Msg2::gotListWrapper( Msg5 *msg5 ) {
 // . sets g_errno on error
 // . "list" is NULL if we got all lists w/o blocking and called this
 bool Msg2::gotList ( RdbList *list ) {
+	verify_signature();
 
 	// wait until we got all the replies before we attempt to merge
 	if ( m_numReplies < m_numRequests ) return false;
