@@ -12,6 +12,7 @@ extern void signature_verification_failed();
 #define set_signature() signature = signature_init
 #define clear_signature() signature = 0
 #define verify_signature() if(__builtin_expect(signature!=signature_init,0)) signature_verification_failed()
+#define verify_signature_at(signature) if(__builtin_expect(signature!=signature_init,0)) signature_verification_failed()
 
 #else
 
@@ -19,6 +20,7 @@ extern void signature_verification_failed();
 #define set_signature()
 #define clear_signature()
 #define verify_signature()
+#define verify_signature_at()
 
 #endif
 
