@@ -118,7 +118,8 @@ private:
 
 	int32_t m_numReplies;
 	int32_t m_numRequests;
-	GbMutex m_mtxCounters; //protects the two counters above
+	bool m_requestsBeingSubmitted;
+	GbMutex m_mtxCounters; //protects the two counters and flag above
 	void incrementRequestCount();
 	void incrementReplyCount();
 	bool allRequestsReplied();

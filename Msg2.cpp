@@ -21,7 +21,8 @@ static const int signature_init = 0x7e8a32f9;
 Msg2::Msg2()
   : m_msg5(0),
     m_avail(0),
-    m_numLists(0)
+    m_numLists(0),
+    m_requestsBeingSubmitted(false)
 {
 	set_signature();
 }
@@ -56,7 +57,7 @@ void Msg2::incrementReplyCount() {
 
 bool Msg2::allRequestsReplied()	{
 	ScopedLock sl(m_mtxCounters);
-	return m_numReplies==m_numRequests;
+	return (!m_requestsBeingSubmitted) && (m_numReplies==m_numRequests);
 }
 
 
@@ -137,10 +138,10 @@ bool Msg2::getLists ( ) {
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_ADDRESSABLE(m_qterms,m_numLists*sizeof(*m_qterms));
 #endif
-	// Artifically inflate m_numRequests by one so the callback doesn't conclude everything is
-	// done. If we don't then we will increment m_numRequests and the callback could be called
-	// immediately thereby incrementing m_numReplies and conclude that the job is done.
-	incrementRequestCount();
+	{
+		ScopedLock sl(m_mtxCounters);
+		m_requestsBeingSubmitted = true;
+	}
 
 	// . send out a bunch of msg5 requests
 	// . make slots for all
@@ -372,8 +373,12 @@ bool Msg2::getLists ( ) {
 		
  skip:
 
+	{
+		ScopedLock sl(m_mtxCounters);
+		m_requestsBeingSubmitted = false;
+	}
+
 	// . did anyone block? if so, return false for now
-	incrementReplyCount(); //increment to adjust for the initial 1-query-count (see earlier in this function)
 	if(!allRequestsReplied())
 		return false;
 	// . otherwise, we got everyone, so go right to the merge routine
