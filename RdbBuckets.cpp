@@ -490,8 +490,7 @@ void RdbBucket::printBucket() {
 	char* kk = m_keys;
 	int32_t recSize = m_parent->getRecSize();
  	for(int32_t i = 0; i < m_numKeys;i++) {
-		log(LOG_WARN, "rdbbuckets last key: ""%016" PRIx64"%08" PRIx32" num "
-		    "keys: %" PRId32,
+		log(LOG_WARN, "rdbbuckets last key: ""%016" PRIx64"%08" PRIx32" num keys: %" PRId32,
  		    *(int64_t*)(kk+(sizeof(int32_t))), *(int32_t*)kk, m_numKeys);
 		kk += recSize;
 	}
@@ -1740,63 +1739,45 @@ bool RdbBucket::deleteList(RdbList *list) {
 
 // remove keys from any non-existent collection
 void RdbBuckets::cleanBuckets ( ) {
-
 	// what buckets have -1 rdbid???
-	if ( m_rdbId < 0 ) return;
+	if (m_rdbId < 0) {
+		return;
+	}
 
 	// the liberation count
 	int32_t count = 0;
 
-	/*
-	char buf[50000];
-	RdbList list;
-	list.set ( NULL,
-		   0,
-		   buf,
-		   50000,
-		   0, // fixeddatasize
-		   false, // own data? should rdblist free it
-		   false, // usehalfkeys
-		   m_ks);
-	*/
+	for (;;) {
+		bool restart = false;
 
- top:
+		for (int32_t i = 0; i < m_numBuckets; i++) {
+			RdbBucket *b = m_buckets[i];
+			collnum_t collnum = b->getCollnum();
+			if (collnum < g_collectiondb.m_numRecs) {
+				if (g_collectiondb.m_recs[collnum]) {
+					continue;
+				}
+			}
 
-	for ( int32_t i = 0; i < m_numBuckets; i++ ) {
-		RdbBucket *b = m_buckets[i];
-		collnum_t collnum = b->getCollnum();
-		CollectionRec *cr = NULL;
-		if ( collnum < g_collectiondb.m_numRecs ) {
-			cr = g_collectiondb.m_recs[ collnum ];
-		}
-		if ( cr ) {
-			continue;
+			// count # deleted
+			count += b->getNumKeys();
+
+			// delete that coll
+			delColl(collnum);
+
+			// restart
+			restart = true;
+			break;
 		}
 
-		// count # deleted
-		count += b->getNumKeys();
-
-		// delete that coll
-		delColl ( collnum );
-
-		// restart
-		goto top;
-		/*
-		int32_t nk = b->getNumKeys();
-		for (int32_t j = 0 ; j < nk ; j++ ) {
-			char *kp = b->m_keys + j*m_ks;
-			// add into list. should just be a gbmemcpy()
-			list.addKey ( kp , 0 , NULL );
-		*/
-		//deleteBucket ( i );
+		if (!restart) {
+			break;
+		}
 	}
 
-	// print it
-	if ( count == 0 ) {
-		return;
+	if ( count != 0 ) {
+		log( LOG_LOGIC, "db: Removed %" PRId32" records from %s buckets for invalid collection numbers.", count, m_dbname );
 	}
-
-	log( LOG_LOGIC, "db: Removed %" PRId32" records from %s buckets for invalid collection numbers.", count, m_dbname );
 }
 
 
