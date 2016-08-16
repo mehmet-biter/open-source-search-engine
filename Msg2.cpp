@@ -401,7 +401,6 @@ void Msg2::returnMsg5 ( Msg5 *msg5 ) {
 
 void Msg2::gotListWrapper(void *state, RdbList *rdblist, Msg5 *msg5) {
 	Msg2 *that = static_cast<Msg2*>(state);
-	log(LOG_TRACE,"Msg2(%p)::gotListWrapper(): rdblist=%p msg5=%p",that,rdblist,msg5);
 	that->gotListWrapper(msg5);
 }
 
