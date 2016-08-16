@@ -7,7 +7,6 @@
 #include "SafeBuf.h"
 #include "types.h"
 
-#define HT_BUF_SIZE (4*1024)
 
 template<class Key_t, class Val_t>
 class HashTableT {
@@ -99,9 +98,6 @@ class HashTableT {
 
 	char *m_buf; //. hash table buffer points to callers buffer on stack
 	int32_t m_bufSize;
-	
-	// char m_buf1 [ HT_BUF_SIZE ];
-	// char m_buf2 [ HT_BUF_SIZE ];
 };
 
 bool hashFromString ( HashTableT<int64_t,char> *ht , char *x ) ;

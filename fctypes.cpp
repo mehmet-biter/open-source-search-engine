@@ -602,19 +602,6 @@ double atof2 ( const char *s, int32_t len ) {
 	return atof ( tmpBuf );
 }
 
-double atod2 ( char *s, int32_t len ) {
-	// point to end
-	char *end = s + len;
-	// null term temp
-	char c = *end;
-	*end = '\0';
-	// get it
-	double ret = strtod ( s , NULL );
-	// undo it
-	*end = c;
-	return ret;
-}
-
 // convert hex ascii string into binary at "dst"
 void hexToBin ( const char *src , int32_t srcLen , char *dst ) {
 	const char *srcEnd = src + srcLen;

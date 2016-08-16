@@ -27,12 +27,6 @@ HashTableT<Key_t, Val_t>::HashTableT() {
 // . clean will rehash
 template<class Key_t, class Val_t> 
 void  HashTableT<Key_t, Val_t>::reset ( ) {
-	//if ( m_keys && m_keys!=(Key_t *)m_buf1 && m_keys!=(Key_t *)m_buf2){
-	//	mfree ( m_keys, m_numSlots * sizeof(Key_t), 
-	//		"HashTableTk");
-	//	mfree ( m_vals, m_numSlots * sizeof(Val_t), 
-	//		"HashTableTv");
-	//}
 	if ( m_doFree && m_keys != (Key_t *)m_buf){
 		if (m_keys) mfree(m_keys,m_numSlots*sizeof(Key_t),"HashTablek");
 		if (m_vals) mfree(m_vals,m_numSlots*sizeof(Val_t),"HashTablev");
@@ -288,12 +282,6 @@ bool HashTableT<Key_t, Val_t>::setTableSize ( int32_t n, char *buf, int32_t bufS
 	// sanity check 
 	//if( m_buf && m_bufSize < need){ g_process.shutdownAbort(true); }
 
-	// 
-	//char *buf = m_buf1;
-	
-	//if ( (char *)m_keys == m_buf1 ) buf = m_buf2;
-	
-	//if ( need <= HT_BUF_SIZE ) {
 	//we're going to overwrite this before we have a chance to free, so...
 	bool freeThisTime = m_doFree;
 
@@ -352,7 +340,6 @@ bool HashTableT<Key_t, Val_t>::setTableSize ( int32_t n, char *buf, int32_t bufS
 		}
 	}
 	// free the old guys
-	//if ( m_keys && m_keys != (Key_t *)m_buf1 && m_keys != (Key_t *)m_buf2){
 	if ( m_keys && freeThisTime) {
 		mfree ( m_keys , m_numSlots * sizeof(Key_t) , 
 			"HashTableTk" );

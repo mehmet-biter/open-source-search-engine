@@ -32,8 +32,6 @@ uint32_t hash32h          ( uint32_t h1 , uint32_t h2 ) ;
 uint64_t      hash64h          ( uint64_t h1 , uint64_t h2 );
 uint32_t      hash32Fast       ( uint32_t h1 , uint32_t h2 ) ;
 uint32_t hash32Lower_a    ( const char *s, int32_t len,uint32_t startHash=0);
-uint32_t      hash32_cont      ( const char *s, char *slen,
-				 uint32_t startHash , int32_t *conti );
 uint64_t      hash64n          ( const char *s, uint64_t startHash =0LL);
 uint64_t      hash64           ( uint64_t h1,uint64_t h2);
 uint64_t      hash64           ( const char *s,int32_t len,uint64_t startHash=0);
