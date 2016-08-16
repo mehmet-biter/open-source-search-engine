@@ -134,9 +134,7 @@ static void *job_pool_thread_function(void *pv) {
 		if(iter->start_deadline==0 || iter->start_deadline>now) {
 			// Clear g_errno so the thread/job starts with a clean slate
 			g_errno = 0;
-log(LOG_TRACE,"job_pool_thread_function: calling start_routine");
 			iter->start_routine(iter->state);
-log(LOG_TRACE,"job_pool_thread_function: start_routine returned");
 			iter->stop_time = now_ms();
 			job_exit = job_exit_normal;
 		} else {
