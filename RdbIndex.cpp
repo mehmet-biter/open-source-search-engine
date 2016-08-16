@@ -105,6 +105,7 @@ bool RdbIndex::writeIndex2() {
 
 	// first 8 bytes are the size of the DATA file we're indexing
 	size_t total_size = sizeof(m_docIds.front()) * m_docIds.size();
+	logTrace(g_conf.m_logTraceRdbIndex, "total_size=%zu sizeof=%zu", total_size, sizeof(total_size));
 	m_file.write(&total_size, sizeof(total_size), offset);
 	if ( g_errno )  {
 		logError("Failed to write to %s (total_size): %s", m_file.getFilename(), mstrerror(g_errno))
@@ -112,7 +113,15 @@ bool RdbIndex::writeIndex2() {
 	}
 	offset += sizeof(total_size);
 
+//	static const size_t block_size = 1024 * 1024 * 10;
+//	for (size_t idx = 0; idx < m_docIds.size(); idx += block_size ) {
+//		size_t write_size = sizeof(m_docIds[0]) * (m_docIds.size() > idx ? block_size : m_docIds.size() - idx);
+//		m_file.write(&m_docIds[idx], write_size, offset);
+//		offset += write_size;
+//	}
+
 	m_file.write(&m_docIds[0], total_size, offset);
+
 	if ( g_errno )  {
 		logError("Failed to write to %s (total_size): %s", m_file.getFilename(), mstrerror(g_errno))
 		return false;
@@ -271,10 +280,15 @@ bool RdbIndex::generateIndex(BigFile *f) {
 	int64_t next = 0LL;
 
 	std::unordered_set<uint64_t> unique_docids_set;
+	//unique_docids_set.reserve(1000000);
+
 	std::pair<std::unordered_set<uint64_t>::iterator,bool> result;
+
+	m_docIds.reserve(20000000);
 
 	uint64_t docid = 0;
 	int64_t total = 0;
+	uint64_t count = 0;
 
 	// read in at most "bufSize" bytes with each read
 readLoop:
@@ -285,6 +299,13 @@ readLoop:
 		}
 
 		next += 500000000; // 500MB
+	}
+
+	// make sure our docids don't get too large
+	if (count >= 20000000) {
+		std::sort(m_docIds.begin(), m_docIds.end());
+		m_docIds.erase(std::unique(m_docIds.begin(), m_docIds.end()), m_docIds.end());
+		count = 0;
 	}
 
 	// our reads should always block
@@ -396,13 +417,24 @@ nextRec:
 		goto readLoop;
 	}
 
-	docid = extract_bits(key, 58, 96);
-	result = unique_docids_set.insert(docid);
-	if (result.second) {
-		m_docIds.push_back(docid);
-	}
+	if (m_rdbId == RDB_POSDB) {
+		if (key[0] & 0x02 || !(key[0] & 0x04)) {
+			//it is a 12-byte docid+pos or 18-byte termid+docid+pos key
+			static uint64_t prev_docid = 0;
 
-	++total;
+			docid = extract_bits(key, 58, 96);
+			//logf(LOG_DEBUG, "%lu", docid);
+			if (prev_docid != docid) {
+//				result = unique_docids_set.insert(docid);
+//				if (result.second) {
+				m_docIds.push_back(docid);
+				++total;
+				++count;
+//				}
+			}
+			prev_docid = docid;
+		}
+	}
 
 //	if (!addRecord(key, rec, recSize)) {
 //		// if it was key out of order, it might be because the
@@ -438,10 +470,12 @@ done:
 
 	if (!m_docIds.empty()) {
 		std::sort(m_docIds.begin(), m_docIds.end());
+		m_docIds.erase(std::unique(m_docIds.begin(), m_docIds.end()), m_docIds.end());
+
 		m_needToWrite = true;
 	}
 
-	logf(LOG_DEBUG, "@@@ totalRec=%lu unique=%lu", total, unique_docids_set.size());
+	logf(LOG_DEBUG, "@@@ totalRec=%lu unique=%lu", total, m_docIds.size());
 
 //	// if there was bad data we probably added out of order keys
 //	if (m_needVerify) {

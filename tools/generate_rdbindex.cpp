@@ -47,7 +47,6 @@ int main(int argc, char **argv) {
 	strcpy(strrchr(indexFilename, '.'), ".idx");
 
 	// initialize library
-	g_conf.m_maxMem = 1000000000LL;
 	g_mem.init();
 	hashinit();
 
