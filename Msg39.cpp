@@ -6,7 +6,9 @@
 #include "Sanity.h"
 #include "Posdb.h"
 #include "Mem.h"
+#include "GbSignature.h"
 #include <new>
+#include "ScopedLock.h"
 #include <pthread.h>
 #include <assert.h>
 
@@ -14,6 +16,8 @@
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
 #endif
+
+static const int signature_init = 0x2c9a3f0e;
 
 
 // called to send back the reply
@@ -31,6 +35,7 @@ namespace {
 //a structure for keeping while some sub-task is handled by a different thread/job
 class JobState {
 public:
+	declare_signature
 	Msg39 *msg39;
 	bool result_ready;
 	pthread_mutex_t mtx;
@@ -41,32 +46,31 @@ public:
 	{
 		pthread_mutex_init(&mtx,NULL);
 		pthread_cond_init(&cond,NULL);
+		set_signature();
 	}
 	~JobState() {
+		verify_signature();
 		pthread_mutex_destroy(&mtx);
 		pthread_cond_destroy(&cond);
+		clear_signature();
 	}
 	void wait_for_finish() {
-		int rc;
-		rc = pthread_mutex_lock(&mtx);
-		assert(rc==0);
+		verify_signature();
+		ScopedLock sl(mtx);
 		while(!result_ready)
 			pthread_cond_wait(&cond,&mtx);
-		rc = pthread_mutex_unlock(&mtx);
-		assert(rc==0);
+		verify_signature();
 	}
 };
 
 //a simple function just signals that the job has been finished
 static void JobFinishedCallback(void *state) {
 	JobState *js = static_cast<JobState*>(state);
-	int rc;
-	rc = pthread_mutex_lock(&js->mtx);
-	assert(rc==0);
+	verify_signature_at(js->signature);
+	ScopedLock sl(js->mtx);
+	assert(!js->result_ready); //can only be called once
 	js->result_ready = true;
-	rc = pthread_cond_signal(&js->cond);
-	assert(rc==0);
-	rc = pthread_mutex_unlock(&js->mtx);
+	int rc = pthread_cond_signal(&js->cond);
 	assert(rc==0);
 }
 
