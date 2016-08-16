@@ -146,10 +146,9 @@ public:
 	int32_t getPageSize() const { return m_pageSize; }
 
 	RdbTree    *getTree    ( ) { if(!m_useTree) return NULL; return &m_tree; }
-	RdbIndex   *getIndex   ( ) { if(!m_useIndexFile) return NULL; return &m_index; }
+
 	RdbMem     *getRdbMem  ( ) { return &m_mem; }
 	bool       useTree() const { return m_useTree;}
-	bool       useIndexFile() const { return m_useIndexFile;}
 
 	int32_t       getNumUsedNodes() const;
 	int32_t       getMaxTreeMem() const;
@@ -287,7 +286,7 @@ public:
 	// for storing records in memory
 	RdbTree    m_tree;  
 	RdbBuckets m_buckets;
-	RdbIndex	m_index;		// For now only DocID index for PosDB data files.
+
 	bool       m_useTree;
 
 	// for dumping a table to an rdb file

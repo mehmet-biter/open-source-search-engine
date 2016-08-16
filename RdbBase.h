@@ -107,6 +107,7 @@ class RdbBase {
 	int32_t       getFileId ( int32_t n ) { return m_fileIds [n]; }
 	int32_t       getFileId2( int32_t n ) { return m_fileIds2[n]; }
 	RdbMap    *getMap    ( int32_t n ) { return m_maps    [n]; }
+	RdbIndex  *getIndex  () { return &m_index; }
 	RdbIndex  *getIndex  ( int32_t n ) { return m_indexes [n]; }
 
 	float getPercentNegativeRecsOnDisk ( int64_t *totalArg ) const;
@@ -250,7 +251,10 @@ public:
 
 	// for storing records in memory
 	RdbTree    *m_tree;  
-	RdbBuckets *m_buckets;  
+	RdbBuckets *m_buckets;
+
+	RdbIndex m_index;
+
 	// for dumping a table to an rdb file
 	RdbDump    *m_dump;  
 

@@ -217,6 +217,42 @@ void RdbIndex::printIndex() {
 #include <set>
 #include <unordered_set>
 #include <algorithm>
+#include "RdbTree.h"
+#include "RdbBuckets.h"
+
+bool RdbIndex::generateIndex(RdbTree *tree, collnum_t collnum) {
+	reset();
+
+	if (g_conf.m_readOnlyMode) {
+		return false;
+	}
+
+	log(LOG_INFO, "db: Generating index for %s tree", tree->m_dbname);
+
+	logError("TODO NOT IMPLEMENTED YET");
+	return true;
+}
+
+bool RdbIndex::generateIndex(RdbBuckets *buckets, collnum_t collnum) {
+	reset();
+
+	if (g_conf.m_readOnlyMode) {
+		return false;
+	}
+
+	log(LOG_INFO, "db: Generating index for %s buckets", buckets->m_dbname);
+	buckets->printBuckets();
+
+	// use extremes
+	const char *startKey = KEYMIN();
+	const char *endKey = KEYMAX();
+
+	RdbList list;
+	buckets->getList(collnum, startKey, endKey, -1, &list, numPosRecs, numNegRecs, useHalfKeys);
+
+	logError("TODO NOT IMPLEMENTED YET");
+	return true;
+}
 
 // . attempts to auto-generate from data file, f
 // . returns false and sets g_errno on error

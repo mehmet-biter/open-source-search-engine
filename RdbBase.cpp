@@ -155,8 +155,46 @@ bool RdbBase::init ( char  *dir            ,
 	//m_pc               = pc;
 	m_isTitledb        = isTitledb;
 	
-	m_useIndexFile		= useIndexFile;	//@@@ BR: no-merge index
-	
+	m_useIndexFile		= useIndexFile;
+
+
+	if (m_useIndexFile) {
+		char indexName[64];
+		sprintf(indexName, "%s-saved.idx", m_dbname);
+		m_index.set(m_dir.getDir(), indexName, m_fixedDataSize, m_useHalfKeys, m_ks, m_rdb->m_rdbId);
+		if (!m_index.readIndex()) {
+			g_errno = 0;
+			log(LOG_WARN, "db: Could not read index file %s", indexName);
+
+			// if 'gb dump X collname' was called, bail, we do not want to write any data
+			if (g_dumpMode) {
+				return false;
+			}
+
+			log(LOG_INFO, "db: Attempting to generate index file %s/%s-saved.dat. May take a while.",
+			    m_dir.getDir(), m_dbname);
+
+			bool result = m_tree ? m_index.generateIndex(m_tree, m_collnum) : m_index.generateIndex(m_buckets, m_collnum);
+			if (!result) {
+				logError("db: Index generation failed for %s/%s-saved.dat.", m_dir.getDir(), m_dbname);
+				gbshutdownCorrupted();
+			}
+
+			log(LOG_INFO, "db: Index generation succeeded.");
+
+			// . save it
+			// . if we're an even #'d file a merge will follow
+			//   when main.cpp calls attemptMerge()
+			log("db: Saving generated index file to disk.");
+
+			bool status = m_index.writeIndex();
+			if (!status) {
+				log(LOG_ERROR, "db: Save failed.");
+				return false;
+			}
+		}
+	}
+
 	//m_groupMask        = groupMask;
 	//m_groupId          = groupId;
 	// . set up our cache
@@ -216,8 +254,6 @@ bool RdbBase::init ( char  *dir            ,
 // . change name
 // . this is part of PageRepair's repair algorithm. all this stuff blocks.
 bool RdbBase::moveToTrash ( char *dstDir ) {
-	// get current time as part of filename
-	//uint32_t t = (uint32_t)getTime();
 	// loop over all files
 	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) {
 		// . rename the map file
@@ -235,40 +271,40 @@ bool RdbBase::moveToTrash ( char *dstDir ) {
 			return false;
 		}
 
-
-//@@@ BR no-merge index begin
-		if( m_useIndexFile ) {
+		if (m_useIndexFile) {
 			f = m_indexes[i]->getFile();
-			sprintf ( dstFilename , "%s" , f->getFilename());
+			sprintf(dstFilename, "%s", f->getFilename());
 
-			if( f->doesExist() ) {
+			if (f->doesExist()) {
 				// ALWAYS log what we are doing
-				logf(LOG_INFO,"repair: Renaming %s to %s%s", f->getFilename(),dstDir,dstFilename);
+				logf(LOG_INFO, "repair: Renaming %s to %s%s", f->getFilename(), dstDir, dstFilename);
 
-				if ( ! f->rename ( dstFilename , dstDir ) ) {
-					log( LOG_WARN, "repair: Moving file had error: %s.", mstrerror( errno ) );
+				if (!f->rename(dstFilename, dstDir)) {
+					log(LOG_WARN, "repair: Moving file had error: %s.", mstrerror(errno));
 					return false;
 				}
 			}
 		}
-//@@@ BR no-merge index end
-
 
 		// move the data file
 		f = m_files[i];
 		sprintf ( dstFilename , "%s" , f->getFilename());
 		// ALWAYS log what we are doing
-		logf(LOG_INFO,"repair: Renaming %s to %s%s",
-		     f->getFilename(),dstDir,dstFilename);
+		logf(LOG_INFO,"repair: Renaming %s to %s%s", f->getFilename(),dstDir,dstFilename);
 		if ( ! f->rename ( dstFilename, dstDir  ) ) {
 			log( LOG_WARN, "repair: Moving file had error: %s.", mstrerror( errno ) );
 			return false;
 		}
 	}
+
+	if (m_useIndexFile) {
+
+	}
 	// now just reset the files so we are empty, we should have our
 	// setFiles() called again once the newly rebuilt rdb files are
 	// renamed, when RdbBase::rename() is called below
 	reset();
+
 	// success
 	return true;
 }
@@ -833,22 +869,11 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 
 			// this returns false and sets g_errno on error
 			if (!in->generateIndex(f)) {
-				log( LOG_ERROR, "db: Index generation failed.");
-
-				SafeBuf tmp;
-				tmp.safePrintf("%s",f->getFilename());
-
-				// take off .dat and make it * so we can move index file
-				int32_t len = tmp.getLength();
-				char *str = tmp.getBufStart();
-				str[len-3] = '*';
-				str[len-2] = '\0';
-
-				logError("Previous versions would have move %s/%s to trash!!", m_dir.getDir(), str);
+				logError("db: Index generation failed for %s.", f->getFilename());
 				gbshutdownCorrupted();
 			}
 
-			log( LOG_INFO, "db: Index generation succeeded." );
+			log(LOG_INFO, "db: Index generation succeeded.");
 
 			// . save it
 			// . if we're an even #'d file a merge will follow
@@ -2424,21 +2449,27 @@ void RdbBase::saveMaps() {
 
 //@@@ BR: no-merge index begin
 void RdbBase::saveIndexes() {
+	if (!m_useIndexFile) {
+		return;
+	}
+
+	if ( !m_index.writeIndex() ) {
+		// unable to write, let's abort
+		g_process.shutdownAbort();
+	}
+
 	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) {
-		if ( !m_useIndexFile || !m_indexes[i] ) {
+		if (!m_indexes[i]) {
 			continue;
 		}
 
-		bool status = m_indexes[i]->writeIndex();
-		if ( !status ) {
+		if (!m_indexes[i]->writeIndex()) {
 			// unable to write, let's abort
 			g_process.shutdownAbort();
 		}
 	}
 }
 //@@@ BR: no-merge index end
-
-
 
 void RdbBase::verifyDiskPageCache ( ) {
 	//if ( !m_pc ) return;

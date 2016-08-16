@@ -246,57 +246,6 @@ bool Rdb::init ( const char     *dir                  ,
 		return false;
 	}
 
-	if (m_useIndexFile) {
-		sprintf(m_indexName, "%s%s-saved.idx", m_dbname, m_useTree ? "" : "-buckets");
-		m_index.set(dir, m_indexName, m_fixedDataSize, m_useHalfKeys, m_ks, m_rdbId);
-		if (!m_index.readIndex()) {
-			g_errno = 0;
-			log(LOG_WARN, "db: Could not read index file %s", m_indexName);
-
-			// if 'gb dump X collname' was called, bail, we do not want to write any data
-			if (g_dumpMode) {
-				return false;
-			}
-
-			log(LOG_INFO, "db: Attempting to generate index file for data file %s%s-saved.dat. May take a while.",
-			    m_dbname, m_useTree ? "" : "-buckets");
-
-			/// @todo generate idx from tree/bucket
-			logError("TODO NOT IMPLEMENTED YET");
-
-//			// this returns false and sets g_errno on error
-//			if ( ! m_index.generateIndex ( f ) ) {
-//				log( LOG_ERROR, "db: Index generation failed.");
-//
-//				SafeBuf tmp;
-//				tmp.safePrintf("%s",f->getFilename());
-//
-//				// take off .dat and make it * so we can move index file
-//				int32_t len = tmp.getLength();
-//				char *str = tmp.getBufStart();
-//				str[len-3] = '*';
-//				str[len-2] = '\0';
-//
-//				logError("Previous versions would have move %s/%s to trash!!", m_dir.getDir(), str);
-//
-//				gbshutdownCorrupted();
-//			}
-//
-//			log( LOG_INFO, "db: Index generation succeeded." );
-//
-//			// . save it
-//			// . if we're an even #'d file a merge will follow
-//			//   when main.cpp calls attemptMerge()
-//			log("db: Saving generated index file to disk.");
-//
-//			bool status = m_index.writeIndex();
-//			if ( ! status ) {
-//				log( LOG_ERROR, "db: Save failed." );
-//				return false;
-//			}
-		}
-	}
-
 	m_initialized = true;
 
 	// success
@@ -948,21 +897,26 @@ bool Rdb::saveTree ( bool useThread ) {
 	}
 }
 
-//@@@ BR: no-merge index begin
 bool Rdb::saveIndex( bool /* useThread */) {
 	if( !m_useIndexFile ) {
 		return true;
 	}
 
-	const char *dbn = m_dbname;
-	if ( ! dbn || ! dbn[0] ) {
-		dbn = "unknown";
+	// now loop over bases
+	for ( int32_t i = 0 ; i < getNumBases() ; i++ ) {
+		CollectionRec *cr = g_collectiondb.m_recs[i];
+		if ( ! cr ) {
+			continue;
+		}
+
+		// if swapped out, this will be NULL, so skip it
+		RdbBase *base = cr->getBasePtr(m_rdbId);
+		if (base) {
+			base->saveIndexes();
+		}
 	}
-
-
-	return m_index.writeIndex();
+	return true;
 }
-//@@@ BR: no-merge index end
 
 bool Rdb::saveMaps () {
 	// now loop over bases
@@ -1007,7 +961,7 @@ bool Rdb::loadTree ( ) {
 	BigFile file;
 	char *dir = getDir();
 	file.set ( dir , filename , NULL ); // g_conf.m_stripeDir );
-	bool treeExists = file.doesExist() > 0;
+	bool treeExists = file.doesExist();
 	bool status = false ;
 	if ( treeExists ) {
 		// load the table with file named "THISDIR/saved"
@@ -1021,7 +975,6 @@ bool Rdb::loadTree ( ) {
 			log( LOG_ERROR, "db: Could not load saved tree." );
 			return false;
 		}
-
 	}
 	else {
 		if ( !m_buckets.loadBuckets( m_dbname ) ) {
@@ -2174,17 +2127,14 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 		// . otherwise, assume we match a positive...
 	}
 
-//@@@ BR no-merge index begin
-	if( !KEYNEG(key) && m_useIndexFile ) {
+	if (!KEYNEG(key) && m_useIndexFile) {
 		//
 		// Add data record to the current index file for the -saved.dat file.
 		// This index is stored in the Rdb record- the individual part file 
 		// indexes are in RdbBase and are read-only except when merging).
 		//
-		m_index.addRecord(m_rdbId, key);
+		getBase(collnum)->getIndex()->addRecord(m_rdbId, key);
 	}
-//@@@ BR no-merge index end
-
 
 	// . TODO: add using "lastNode" as a start node for the insertion point
 	// . should set g_errno if failed
