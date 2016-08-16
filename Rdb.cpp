@@ -2073,71 +2073,6 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 		}
 	}
 
-	/*
-	if ( m_rdbId == RDB_DOLEDB ) {
-		// must be 96 bits
-		if ( m_ks != 12 ) { g_process.shutdownAbort(true); }
-		// set this
-		key_t doleKey = *(key_t *)key;
-		// remove from g_spiderLoop.m_lockTable too!
-		if ( KEYNEG(key) ) {
-			// make it positive
-			doleKey.n0 |= 0x01;
-			// remove from locktable
-			g_spiderLoop.m_lockTable.removeKey ( &doleKey );
-			// get spidercoll
-			SpiderColl *sc=g_spiderCache.getSpiderColl ( collnum );
-			// remove from dole tables too - no this is done
-			// below where we call addSpiderReply()
-			//sc->removeFromDoleTables ( &doleKey );
-			// "sc" can be NULL at start up when loading
-			// the addsinprogress.dat file
-			if ( sc ) {
-				// remove the local lock on this
-				HashTableX *ht = &g_spiderLoop.m_lockTable;
-				// shortcut 
-				int64_t uh48=g_doledb.getUrlHash48(&doleKey);
-				// check tree
-				int32_t slot = ht->getSlot ( &uh48 );
-				// nuke it
-				if ( slot >= 0 ) ht->removeSlot ( slot );
-				// get coll
-				if ( g_conf.m_logDebugSpider)//sc->m_isTestCol
-					// log debug
-					logf(LOG_DEBUG,"spider: rdb: "
-					     "got negative doledb "
-					     "key for uh48=%" PRIu64" - removing "
-					     "spidering lock",
-					     g_doledb.getUrlHash48(&doleKey));
-			}
-			// make it negative again
-			doleKey.n0 &= 0xfffffffffffffffeLL;
-		}
-	*/
-		// uncomment this if we have too many "gaps"!
-		/*
-		else {
-			// get the SpiderColl, "sc"
-			SpiderColl *sc = g_spiderCache.m_spiderColls[collnum];
-			// jump start "sc" if it is waiting for the sleep 
-			// sleep wrapper to jump start it...
-			if ( sc && sc->m_didRound ) {
-				// reset it
-				sc->m_didRound = false;
-				// start doledb scan from beginning
-				sc->m_nextDoledbKey.setMin();
-				// jump start another dole loop before
-				// Spider.cpp's doneSleepingWrapperSL() does
-				sc->doleUrls();
-			}
-		}
-		*/
-	/*
-	}
-	*/
-
-	//jumpdown:
-
 	// if it exists then annihilate it
 	if ( n >= 0 ) {
 		// CAUTION: we should not annihilate with oppKey if oppKey may
@@ -2191,12 +2126,6 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 		if ( getBase(collnum)->getNumFiles() == 0 ) return true;
 		// . otherwise, assume we match a positive...
 	}
-
- //addIt:
-	// mark as changed
-	//if ( ! m_needsSave ) {
-	//	m_needsSave = true;
-	//}
 
 //@@@ BR no-merge index begin
 	if( !KEYNEG(key) && m_useIndexFile && g_conf.m_noInMemoryPosdbMerge ) {
