@@ -114,7 +114,7 @@ bool Msg2::getLists ( collnum_t collnum , // char    *coll        ,
 }
 
 bool Msg2::getLists ( ) {
-	log(LOG_TRACE,"Msg2(%p)::getLists()",this);
+	//log(LOG_TRACE,"Msg2(%p)::getLists()",this);
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_ADDRESSABLE(m_qterms,m_numLists*sizeof(*m_qterms));
 #endif
@@ -243,7 +243,7 @@ bool Msg2::getLists ( ) {
 		} else
 			gbshutdownLogicError();
 
-		log(LOG_TRACE,"Msg2::getLists(): msg5::getList() returned immediately");
+		//log(LOG_TRACE,"Msg2::getLists(): msg5::getList() returned immediately");
 		// we didn't block, so do this
 		{
 			ScopedLock sl(m_mtxCounters);
