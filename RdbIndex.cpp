@@ -185,7 +185,7 @@ bool RdbIndex::readIndex2() {
 
 
 bool RdbIndex::addRecord(char rdbId, char *key) {
-	if (rdbId == RDB_POSDB) {
+	if (rdbId == RDB_POSDB || rdbId == RDB2_POSDB2) {
 		if (key[0] & 0x02 || !(key[0] & 0x04)) {
 			//it is a 12-byte docid+pos or 18-byte termid+docid+pos key
 			uint64_t doc_id = extract_bits(key, 58, 96);
@@ -419,7 +419,7 @@ nextRec:
 		goto readLoop;
 	}
 
-	if (m_rdbId == RDB_POSDB) {
+	if (m_rdbId == RDB_POSDB || m_rdbId == RDB2_POSDB2) {
 		if (key[0] & 0x02 || !(key[0] & 0x04)) {
 			//it is a 12-byte docid+pos or 18-byte termid+docid+pos key
 			static uint64_t prev_docid = 0;

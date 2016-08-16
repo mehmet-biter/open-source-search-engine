@@ -150,8 +150,6 @@ bool Rdb::init ( const char     *dir                  ,
 	m_biasDiskPageCache = biasDiskPageCache;
 	m_ks               = keySize;
 	m_inDumpLoop       = false;
-	
-	m_useIndexFile		= useIndexFile;
 
 	// set our id
 	m_rdbId = getIdFromRdb ( this );
@@ -163,6 +161,12 @@ bool Rdb::init ( const char     *dir                  ,
 
 	// sanity check
 	if ( m_ks != getKeySizeFromRdbId(m_rdbId) ) { g_process.shutdownAbort(true);}
+
+	if (m_rdbId == RDB_POSDB || m_rdbId == RDB2_POSDB2) {
+		m_useIndexFile = g_conf.m_noInMemoryPosdbMerge ? useIndexFile : false;
+	} else {
+		m_useIndexFile = useIndexFile;
+	}
 
 	// get page size
 	m_pageSize = GB_TFNDB_PAGE_SIZE;
@@ -242,13 +246,56 @@ bool Rdb::init ( const char     *dir                  ,
 		return false;
 	}
 
-//@@@ BR: no-merge index begin
-	if( m_useIndexFile ) {
+	if (m_useIndexFile) {
 		sprintf(m_indexName, "%s%s-saved.idx", m_dbname, m_useTree ? "" : "-buckets");
 		m_index.set(dir, m_indexName, m_fixedDataSize, m_useHalfKeys, m_ks, m_rdbId);
-		m_index.readIndex();
+		if (!m_index.readIndex()) {
+			g_errno = 0;
+			log(LOG_WARN, "db: Could not read index file %s", m_indexName);
+
+			// if 'gb dump X collname' was called, bail, we do not want to write any data
+			if (g_dumpMode) {
+				return false;
+			}
+
+			log(LOG_INFO, "db: Attempting to generate index file for data file %s%s-saved.dat. May take a while.",
+			    m_dbname, m_useTree ? "" : "-buckets");
+
+			/// @todo generate idx from tree/bucket
+			logError("TODO NOT IMPLEMENTED YET");
+
+//			// this returns false and sets g_errno on error
+//			if ( ! m_index.generateIndex ( f ) ) {
+//				log( LOG_ERROR, "db: Index generation failed.");
+//
+//				SafeBuf tmp;
+//				tmp.safePrintf("%s",f->getFilename());
+//
+//				// take off .dat and make it * so we can move index file
+//				int32_t len = tmp.getLength();
+//				char *str = tmp.getBufStart();
+//				str[len-3] = '*';
+//				str[len-2] = '\0';
+//
+//				logError("Previous versions would have move %s/%s to trash!!", m_dir.getDir(), str);
+//
+//				gbshutdownCorrupted();
+//			}
+//
+//			log( LOG_INFO, "db: Index generation succeeded." );
+//
+//			// . save it
+//			// . if we're an even #'d file a merge will follow
+//			//   when main.cpp calls attemptMerge()
+//			log("db: Saving generated index file to disk.");
+//
+//			bool status = m_index.writeIndex();
+//			if ( ! status ) {
+//				log( LOG_ERROR, "db: Save failed." );
+//				return false;
+//			}
+		}
 	}
-//@@@ BR: no-merge index end
 
 	m_initialized = true;
 
@@ -2128,7 +2175,7 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 	}
 
 //@@@ BR no-merge index begin
-	if( !KEYNEG(key) && m_useIndexFile && g_conf.m_noInMemoryPosdbMerge ) {
+	if( !KEYNEG(key) && m_useIndexFile ) {
 		//
 		// Add data record to the current index file for the -saved.dat file.
 		// This index is stored in the Rdb record- the individual part file 
