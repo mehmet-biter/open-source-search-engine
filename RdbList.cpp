@@ -1668,7 +1668,7 @@ bool RdbList::posdbConstrain(const char *startKey, char *endKey, int32_t minRecS
 		KEYSET(lastKey,k,m_ks);
 #endif
 		// stop if we are >= startKey
-		if (KEYCMP(k, startKey, m_ks) >= 0) {
+		if (KEYCMP(k, startKey, 18) >= 0) {
 			break;
 		}
 
@@ -1697,14 +1697,14 @@ bool RdbList::posdbConstrain(const char *startKey, char *endKey, int32_t minRecS
 		getPosdbKey(p, k);
 	}
 
-	if (p >= m_listEnd || KEYCMP(k, endKey, m_ks) > 0) {
+	if (p >= m_listEnd || KEYCMP(k, endKey, 18) > 0) {
 		// make list empty
 		m_listSize  = 0;
 		m_listEnd   = m_list;
 
 		// tighten the keys
-		KEYSET(m_startKey, startKey, m_ks);
-		KEYSET(m_endKey, endKey, m_ks);
+		KEYSET(m_startKey, startKey, 18);
+		KEYSET(m_endKey, endKey, 18);
 
 		// reset to set m_listPtr and m_listPtrHi
 		resetListPtr();
@@ -1720,12 +1720,12 @@ bool RdbList::posdbConstrain(const char *startKey, char *endKey, int32_t minRecS
 		}
 
 		// write the full key back into "p"
-		KEYSET(p, k, m_ks);
+		KEYSET(p, k, 18);
 	} else if (p[0] & 0x02) {
 		// write the key back 6 bytes
 		p -= 6;
 
-		KEYSET(p, k, m_ks);
+		KEYSET(p, k, 18);
 	}
 
 	// inc m_list , m_alloc should remain where it is
@@ -1748,9 +1748,9 @@ bool RdbList::posdbConstrain(const char *startKey, char *endKey, int32_t minRecS
 	bool resetPtr = false;
 	// . dont' start looking for the end before our new m_list
 	// . don't start at m_list+6 either cuz we may have overwritten that with the *(key_t *)p = k above!!!! tricky...
-	if ( p < m_list + m_ks ) {
+	if ( p < m_list + 18 ) {
 		resetPtr = true;
-	} else if (KEYCMP(k, hintKey, m_ks) != 0 || KEYCMP(hintKey, endKey, m_ks) > 0) {
+	} else if (KEYCMP(k, hintKey, 18) != 0 || KEYCMP(hintKey, endKey, 18) > 0) {
 		// . if first key is over endKey that's a bad hint!
 		// . might it be a corrupt RdbMap?
 		// . reset "p" to beginning if hint is bad
@@ -1786,7 +1786,7 @@ bool RdbList::posdbConstrain(const char *startKey, char *endKey, int32_t minRecS
 	while ( p < m_listEnd ) {
 		getPosdbKey(p, k);
 
-		if (KEYCMP(k, endKey, m_ks) > 0) {
+		if (KEYCMP(k, endKey, 18) > 0) {
 			break;
 		}
 
@@ -1829,7 +1829,7 @@ bool RdbList::posdbConstrain(const char *startKey, char *endKey, int32_t minRecS
 		getPosdbKey(p, k);
 	}
 
-	if (p < m_listEnd && KEYCMP(k, endKey, m_ks) <= 0 && p >= maxPtr && recSize > 0) {
+	if (p < m_listEnd && KEYCMP(k, endKey, 18) <= 0 && p >= maxPtr && recSize > 0) {
 		// watch out for corruption, let Msg5 fix it
 		if ( p - recSize < m_alloc ) {
 			m_list      = savelist;
@@ -1863,8 +1863,8 @@ bool RdbList::posdbConstrain(const char *startKey, char *endKey, int32_t minRecS
 	resetListPtr();
 
 	// and the keys can be tightened
-	KEYSET(m_startKey,startKey,m_ks);
-	KEYSET(m_endKey,endKey,m_ks);
+	KEYSET(m_startKey,startKey,18);
+	KEYSET(m_endKey,endKey,18);
 	return true;
 }
 

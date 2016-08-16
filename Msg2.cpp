@@ -385,7 +385,7 @@ bool Msg2::getLists ( ) {
 	// . returns false if not all replies have been received 
 	// . returns true if done
 	// . sets g_errno on error
-	return gotList ( NULL );
+	return gotList();
 }
 
 Msg5 *Msg2::getAvailMsg5 ( ) {
@@ -452,7 +452,7 @@ void Msg2::gotListWrapper( Msg5 *msg5 ) {
 // . returns true if done (or an error finished us)
 // . sets g_errno on error
 // . "list" is NULL if we got all lists w/o blocking and called this
-bool Msg2::gotList ( RdbList *list ) {
+bool Msg2::gotList() {
 	verify_signature();
 
 	// wait until we got all the replies before we attempt to merge
