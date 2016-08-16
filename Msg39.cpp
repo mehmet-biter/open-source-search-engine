@@ -368,16 +368,16 @@ void Msg39::controlLoop ( ) {
 	int chunksSearched = 0;
 	
 	for(int fileNum = 0; fileNum<numFiles+1; fileNum++) {
-		if(fileNum!=numFiles)
-			log(LOG_DEBUG,"controlLoop(): fileNum=%d (of %d)", fileNum, numFiles);
-		else
-			log(LOG_DEBUG,"controlLoop(): fileNum=tree");
+//		if(fileNum!=numFiles)
+//			log(LOG_DEBUG,"controlLoop(): fileNum=%d (of %d)", fileNum, numFiles);
+//		else
+//			log(LOG_DEBUG,"controlLoop(): fileNum=tree");
 		
 		int64_t docidRangeStart = 0;
 		const int64_t docidRangeDelta = MAX_DOCID / (int64_t)numDocIdSplits;
 		
 		for(int docIdSplitNumber = 0; docIdSplitNumber < numDocIdSplits; docIdSplitNumber++) {
-			log(LOG_DEBUG,"controlLoop(): splitNumber=%d (of %d)", docIdSplitNumber, numDocIdSplits);
+//			log(LOG_DEBUG,"controlLoop(): splitNumber=%d (of %d)", docIdSplitNumber, numDocIdSplits);
 			
 			if(docIdSplitNumber!=0) {
 				//Estimate if we can do this and next ranges within the deadline
@@ -407,7 +407,7 @@ void Msg39::controlLoop ( ) {
 				docidRangeStart = MAX_DOCID;
 			int64_t d1 = docidRangeStart;
 			
-			log(LOG_DEBUG,"docid range: [%" PRId64"..%" PRIu64")", d0,d1);
+//			log(LOG_DEBUG,"docid range: [%" PRId64"..%" PRIu64")", d0,d1);
 			if(fileNum!=numFiles)
 				getLists(fileNum,d0,d1);
 			else
