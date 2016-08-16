@@ -1149,6 +1149,7 @@ void Msg5::mergeLists() {
 		if(!m_listPtrs[0]) gbshutdownLogicError();
 		//just move move the m_msg3.list[0] over to the resulting list
 		m_list->stealFromOtherList(m_listPtrs[0]);
+		return;
 
 	}
 
