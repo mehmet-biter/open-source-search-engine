@@ -6,6 +6,12 @@
 #include "Process.h"
 #include "BitOperations.h"
 #include "Conf.h"
+#include <set>
+#include <unordered_set>
+#include <algorithm>
+#include "RdbTree.h"
+#include "RdbBuckets.h"
+
 #include <iterator>
 
 RdbIndex::RdbIndex()
@@ -232,12 +238,6 @@ void RdbIndex::printIndex() {
 	logError("NOT IMPLEMENTED YET");
 }
 
-#include <set>
-#include <unordered_set>
-#include <algorithm>
-#include "RdbTree.h"
-#include "RdbBuckets.h"
-
 bool RdbIndex::generateIndex(RdbTree *tree, collnum_t collnum) {
 	reset();
 
@@ -272,7 +272,6 @@ bool RdbIndex::generateIndex(RdbBuckets *buckets, collnum_t collnum) {
 		return false;
 	}
 
-	uint64_t count = 0;
 	char key[MAX_KEY_BYTES];
 
 	for (list.resetListPtr(); !list.isExhausted(); list.skipCurrentRecord()) {
@@ -352,8 +351,6 @@ bool RdbIndex::generateIndex(BigFile *f) {
 	std::pair<std::unordered_set<uint64_t>::iterator,bool> result;
 
 	m_docIds.reserve(20000000);
-
-	uint64_t docid = 0;
 
 	// read in at most "bufSize" bytes with each read
 readLoop:

@@ -2133,7 +2133,7 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 		// This index is stored in the Rdb record- the individual part file 
 		// indexes are in RdbBase and are read-only except when merging).
 		//
-		getBase(collnum)->getIndex()->addRecord(m_rdbId, key);
+		getBase(collnum)->getIndex()->addRecord(key);
 	}
 
 	// . TODO: add using "lastNode" as a start node for the insertion point
