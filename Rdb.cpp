@@ -470,7 +470,7 @@ bool Rdb::addRdbBase2 ( collnum_t collnum ) { // addColl2()
 
 	// . init it
 	// . g_hostdb.m_dir should end in /
-	if ( ! base->init ( g_hostdb.m_dir, // m_dir.getDir() ,
+	if ( ! base->init ( g_hostdb.m_dir,
 					m_dbname        ,
 					m_dedup         ,
 					m_fixedDataSize ,
