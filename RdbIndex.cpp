@@ -250,11 +250,52 @@ bool RdbIndex::generateIndex(RdbBuckets *buckets, collnum_t collnum) {
 	int32_t numNegRecs = 0;
 
 	RdbList list;
-	if (buckets->getList(collnum, startKey, endKey, -1, &list, &numPosRecs, &numNegRecs, m_useHalfKeys)) {
-
+	if (!buckets->getList(collnum, startKey, endKey, -1, &list, &numPosRecs, &numNegRecs, m_useHalfKeys)) {
+		return false;
 	}
 
-	logError("TODO NOT IMPLEMENTED YET");
+
+	int64_t total = 0;
+	uint64_t count = 0;
+
+	char key[MAX_KEY_BYTES];
+
+	m_docIds.reserve(20000000);
+
+	for (list.resetListPtr(); !list.isExhausted(); list.skipCurrentRecord()) {
+		// make sure our docids don't get too large
+		if (count >= 20000000) {
+			std::sort(m_docIds.begin(), m_docIds.end());
+			m_docIds.erase(std::unique(m_docIds.begin(), m_docIds.end()), m_docIds.end());
+			count = 0;
+		}
+
+		list.getCurrentKey(key);
+
+		if (m_rdbId == RDB_POSDB || m_rdbId == RDB2_POSDB2) {
+			if (key[0] & 0x02 || !(key[0] & 0x04)) {
+				//it is a 12-byte docid+pos or 18-byte termid+docid+pos key
+				static uint64_t prev_docid = 0;
+
+				uint64_t docid = extract_bits(key, 58, 96);
+				if (prev_docid != docid) {
+					m_docIds.push_back(docid);
+					++total;
+					++count;
+				}
+				prev_docid = docid;
+			}
+		}
+	}
+
+	if (!m_docIds.empty()) {
+		std::sort(m_docIds.begin(), m_docIds.end());
+		m_docIds.erase(std::unique(m_docIds.begin(), m_docIds.end()), m_docIds.end());
+
+		m_needToWrite = true;
+	}
+
+	//logError("TODO NOT IMPLEMENTED YET");
 	return true;
 }
 
