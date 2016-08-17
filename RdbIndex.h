@@ -73,7 +73,7 @@ private:
 
 	bool m_needToSort;
 
-	auto m_startSortPos;
+	size_t m_startSortPos;
 	unsigned m_sortCount;
 
 	// when close is called, must we write the index?
