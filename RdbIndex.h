@@ -54,7 +54,7 @@ public:
 	bool generateIndex(RdbBuckets *buckets, collnum_t collnum);
 	bool generateIndex(RdbTree *tree, collnum_t collnum);
 
-	bool addRecord ( char rdbId, char *key);
+	void addRecord(char *key);
 
 private:
 	void printIndex();
@@ -69,7 +69,12 @@ private:
 	char m_ks;
 	char m_rdbId;
 
-	uint64_t m_lastDocId;
+	uint64_t m_prevDocId;
+
+	bool m_needToSort;
+
+	auto m_startSortPos;
+	unsigned m_sortCount;
 
 	// when close is called, must we write the index?
 	bool m_needToWrite;
