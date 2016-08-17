@@ -246,9 +246,13 @@ bool RdbIndex::generateIndex(RdbBuckets *buckets, collnum_t collnum) {
 	// use extremes
 	const char *startKey = KEYMIN();
 	const char *endKey = KEYMAX();
+	int32_t numPosRecs  = 0;
+	int32_t numNegRecs = 0;
 
 	RdbList list;
-	buckets->getList(collnum, startKey, endKey, -1, &list, numPosRecs, numNegRecs, useHalfKeys);
+	if (buckets->getList(collnum, startKey, endKey, -1, &list, &numPosRecs, &numNegRecs, m_useHalfKeys)) {
+
+	}
 
 	logError("TODO NOT IMPLEMENTED YET");
 	return true;
