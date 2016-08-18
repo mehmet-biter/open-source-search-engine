@@ -391,9 +391,10 @@ bool Msg2::getLists ( ) {
 Msg5 *Msg2::getAvailMsg5 ( ) {
 	ScopedLock sl(m_mtxMsg5);
 	for ( int32_t i = 0; i < m_numLists+MAX_WHITELISTS; i++ ) {
-		if ( ! m_avail[i] ) continue;
-		m_avail[i] = false;
-		return &m_msg5[i];
+		if(m_avail[i]) {
+			m_avail[i] = false;
+			return &m_msg5[i];
+		}
 	}
 	return NULL;
 }
@@ -401,12 +402,16 @@ Msg5 *Msg2::getAvailMsg5 ( ) {
 void Msg2::returnMsg5 ( Msg5 *msg5 ) {
 	ScopedLock sl(m_mtxMsg5);
 	int32_t i;
-	for ( i = 0 ; i < m_numLists+MAX_WHITELISTS ; i++ )
-		if ( &m_msg5[i] == msg5 ) break;
+	for(int32_t i = 0; i < m_numLists+MAX_WHITELISTS; i++) {
+		if(&m_msg5[i] == msg5) {
+			if(m_avail[i])
+				gbshutdownLogicError();
+			m_avail[i] = true;
+			return;
+		}
+	}
 	// wtf?
-	if ( i >= m_numLists+MAX_WHITELISTS ) gbshutdownLogicError();
-	// make it available
-	m_avail[i] = true;
+	gbshutdownLogicError();
 }
 
 
