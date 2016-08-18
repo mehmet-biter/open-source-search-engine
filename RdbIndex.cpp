@@ -114,6 +114,11 @@ bool RdbIndex::writeIndex2() {
 
 	int64_t offset = 0LL;
 
+	if (m_needToSort) {
+		std::sort(m_docIds.begin(), m_docIds.end());
+		m_docIds.erase(std::unique(m_docIds.begin(), m_docIds.end()), m_docIds.end());
+	}
+
 	// first 8 bytes are the total docIds in the index file
 	size_t docid_count = m_docIds.size();
 
@@ -225,6 +230,7 @@ void RdbIndex::addRecord(char *key) {
 		if (m_docIds.size() >= 20000000) {
 			std::sort(m_docIds.begin(), m_docIds.end());
 			m_docIds.erase(std::unique(m_docIds.begin(), m_docIds.end()), m_docIds.end());
+			m_needToSort = false;
 		}
 
 		m_sortCount = 0;
