@@ -56,6 +56,7 @@ public:
 
 	void addRecord(char *key);
 
+	const std::vector<uint64_t>* getDocIds() const { return &m_docIds; }
 private:
 	void printIndex();
 

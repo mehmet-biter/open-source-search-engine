@@ -57,7 +57,6 @@ void RdbIndex::set(const char *dir, const char *indexFilename,
 	m_rdbId = rdbId;
 }
 
-
 bool RdbIndex::close(bool urgent) {
 	bool status = true;
 	if (m_needToWrite) {
@@ -105,7 +104,6 @@ bool RdbIndex::writeIndex() {
 
 	return status;
 }
-
 
 bool RdbIndex::writeIndex2() {
 	logTrace(g_conf.m_logTraceRdbIndex, "BEGIN. filename [%s]", m_file.getFilename());
@@ -171,7 +169,6 @@ bool RdbIndex::readIndex() {
 	return status;
 }
 
-
 bool RdbIndex::readIndex2() {
 	logTrace(g_conf.m_logTraceRdbIndex, "BEGIN. filename [%s]", m_file.getFilename());
 
@@ -196,9 +193,9 @@ bool RdbIndex::readIndex2() {
 		return false;
 	}
 
+	logTrace(g_conf.m_logTraceRdbIndex, "END. Returning true with %zu docIds loaded", m_docIds.size());
 	return true;
 }
-
 
 void RdbIndex::addRecord(char *key) {
 	if (m_rdbId == RDB_POSDB || m_rdbId == RDB2_POSDB2) {
@@ -238,7 +235,6 @@ void RdbIndex::addRecord(char *key) {
 	}
 }
 
-
 void RdbIndex::printIndex() {
 	//@todo: IMPLEMENT!
 	logError("NOT IMPLEMENTED YET");
@@ -253,7 +249,24 @@ bool RdbIndex::generateIndex(RdbTree *tree, collnum_t collnum) {
 
 	log(LOG_INFO, "db: Generating index for %s tree", tree->m_dbname);
 
-	logError("TODO NOT IMPLEMENTED YET");
+	// use extremes
+	const char *startKey = KEYMIN();
+	const char *endKey = KEYMAX();
+	int32_t numPosRecs  = 0;
+	int32_t numNegRecs = 0;
+
+	RdbList list;
+	if (!tree->getList(collnum, startKey, endKey, -1, &list, &numPosRecs, &numNegRecs, m_useHalfKeys)) {
+		return false;
+	}
+
+	char key[MAX_KEY_BYTES];
+
+	for (list.resetListPtr(); !list.isExhausted(); list.skipCurrentRecord()) {
+		list.getCurrentKey(key);
+		addRecord(key);
+	}
+
 	return true;
 }
 
@@ -265,7 +278,6 @@ bool RdbIndex::generateIndex(RdbBuckets *buckets, collnum_t collnum) {
 	}
 
 	log(LOG_INFO, "db: Generating index for %s buckets", buckets->m_dbname);
-	buckets->printBuckets();
 
 	// use extremes
 	const char *startKey = KEYMIN();

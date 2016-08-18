@@ -233,6 +233,8 @@ private:
 	RdbIndex *m_indexes	[ MAX_RDB_FILES+1 ];
 	int32_t      m_numFiles;
 
+	void generateGlobalIndex();
+
 public:
 	// this class contains a ptr to us
 	class Rdb           *m_rdb;
@@ -253,7 +255,14 @@ public:
 	RdbTree    *m_tree;  
 	RdbBuckets *m_buckets;
 
+	// index for in memory records
 	RdbIndex m_index;
+
+	// mapping of docId to file
+	// key format
+	// ..dddddd dddddddd dddddddd dddddddd  d = docId
+	// dddddddd ........ ffffffff ffffffff  f = fileIndex
+	std::vector<uint64_t> m_docIdFileIndex;
 
 	// for dumping a table to an rdb file
 	RdbDump    *m_dump;  

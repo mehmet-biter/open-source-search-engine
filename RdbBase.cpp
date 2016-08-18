@@ -16,6 +16,7 @@
 #include "JobScheduler.h"
 #include "Process.h"
 #include <sys/stat.h> //mkdir()
+#include <algorithm>
 
 // how many rdbs are in "urgent merge" mode?
 int32_t g_numUrgentMerges = 0;
@@ -195,56 +196,25 @@ bool RdbBase::init ( char  *dir            ,
 		}
 	}
 
-	//m_groupMask        = groupMask;
-	//m_groupId          = groupId;
-	// . set up our cache
-	// . we could be adding lists so keep fixedDataSize -1 for cache
-	//if ( ! m_cache.init ( maxCacheMem   , 
-	//		      fixedDataSize , 
-	//		      true          , // support lists
-	//		      maxCacheNodes ,
-	//		      m_useHalfKeys ,
-	//		      m_dbname      ,
-	//		      loadCacheFromDisk  ) )
-	//	return false;
 	// we can't merge more than MAX_RDB_FILES files at a time
-	if ( minToMergeArg > MAX_RDB_FILES ) minToMergeArg = MAX_RDB_FILES;
+	if ( minToMergeArg > MAX_RDB_FILES ) {
+		minToMergeArg = MAX_RDB_FILES;
+	}
 	m_minToMergeArg = minToMergeArg;
+
 	// . set our m_files array
 	// . m_dir is bogus causing this to fail
 	if ( ! setFiles () ) {
 		// try again if we did a repair
-		if ( m_didRepair ) goto top;
+		if ( m_didRepair ) {
+			goto top;
+		}
 		// if no repair, give up
 		return false;
 	}
-	//int32_t dataMem;
-	// if we're in read only mode, don't bother with *ANY* trees
-	//if ( g_conf.m_readOnlyMode ) goto preload;
-	// . if maxTreeNodes is -1, means auto compute it
-	// . set tree to use our fixed data size
-	// . returns false and sets g_errno on error
-	//if ( ! m_tree.set ( fixedDataSize  , 
-	//		    maxTreeNodes   , // max # nodes in tree
-	//		    isTreeBalanced , 
-	//		    maxTreeMem     ,
-	//		    false          , // own data?
-	//		    false          , // dataInPtrs?
-	//		    m_dbname       ) )
-	//	return false;
-	// now get how much mem the tree is using (not including stored recs)
-	//dataMem = maxTreeMem - m_tree.getTreeOverhead();
-	//if ( fixedDataSize != 0 && ! m_mem.init ( &m_dump , dataMem ) ) {
-	//	log("db: Failed to initialize memory: %s.", mstrerror(g_errno));
-	//  return false;
-	//}
-	// . scan data in memory every minute to prevent swap-out
-	// . the wait here is in ms, MIN_WAIT is in seconds
-	// . call this every now and then to quickly scan our memory to
-	//   prevent swap out
 
-	// load any saved tree
-	//if ( ! loadTree ( ) ) return false;
+	// create global index
+	generateGlobalIndex();
 
 	// now diskpagecache is much simpler, just basically rdbcache...
 	return true;
@@ -720,10 +690,8 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	}
 
 	mnew ( m , sizeof(RdbMap) , "RdbBMap" );
-	
-	
-//@@@ BR: no-merge index begin	
-	RdbIndex  *in = NULL;
+
+	RdbIndex *in = NULL;
 	if( m_useIndexFile ) {
 		try {
 			in = new (RdbIndex);
@@ -740,10 +708,6 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 
 		mnew ( in , sizeof(RdbIndex) , "RdbBIndex" );
 	}
-	
-//@@@ BR: no-merge index end
-	
-	
 
 	// reinstate the memory limit
 	g_conf.m_maxMem = mm;
@@ -804,21 +768,8 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 		     f->getFilename(), f->getFileSize() );
 
 		// this returns false and sets g_errno on error
-		if ( ! m->generateMap ( f ) ) {
-			log( LOG_ERROR, "db: Map generation failed.");
-
-			SafeBuf tmp;
-			tmp.safePrintf("%s",f->getFilename());
-
-			// take off .dat and make it * so we can move map file
-			int32_t len = tmp.getLength();
-			char *str = tmp.getBufStart();
-			str[len-3] = '*';
-			str[len-2] = '\0';
-
-			log(LOG_ERROR,"%s:%s: Previous versions would have move %s/%s to trash!!",
-			    __FILE__,__func__,m_dir.getDir(), str);
-
+		if (!m->generateMap(f)) {
+			log(LOG_ERROR, "db: Map generation failed.");
 			gbshutdownCorrupted();
 		}
 
@@ -843,9 +794,6 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 		}
 	}
 
-
-
-//@@@ BR: no-merge index begin
 	if( m_useIndexFile ) {
 		// set the index file's  filename
 		sprintf ( name , "%s%04" PRId32".idx", m_dbname, fileId );
@@ -893,8 +841,6 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 			}
 		}
 	}
-//@@@ BR: no-merge index end
-
 
 	if ( ! isNew ) {
 		log( LOG_DEBUG, "db: Added %s for collnum=%" PRId32" pages=%" PRId32,
@@ -2596,7 +2542,32 @@ float RdbBase::getPercentNegativeRecsOnDisk ( int64_t *totalArg ) const {
 	return percent;
 }
 
+void RdbBase::generateGlobalIndex() {
+	if (!m_useIndexFile) {
+		return;
+	}
 
+	logf(LOG_DEBUG, "@@@ start dbname=%s coll=%s numFiles=%d", m_dbname, m_coll, m_numFiles);
 
+	const std::vector<uint64_t> *docIds = getIndex()->getDocIds();
+	m_docIdFileIndex.reserve(m_docIdFileIndex.size() + docIds->size());
 
+	std::transform(docIds->begin(), docIds->end(), std::back_inserter(m_docIdFileIndex),
+	               [this](uint64_t docId) { return ((docId << 32) | m_numFiles); });
 
+	for (int32_t i = 0; i < m_numFiles; i++) {
+		docIds = getIndex(i)->getDocIds();
+		m_docIdFileIndex.reserve(m_docIdFileIndex.size() + docIds->size());
+
+		std::transform(docIds->begin(), docIds->end(), std::back_inserter(m_docIdFileIndex),
+		               [i](uint64_t docId) { return ((docId << 32) | i); });
+	}
+
+	logf(LOG_DEBUG, "@@@ dbname=%s coll=%s size=%zu", m_dbname, m_coll, m_docIdFileIndex.size());
+
+	std::sort(m_docIdFileIndex.begin(), m_docIdFileIndex.end());
+	std::unique(m_docIdFileIndex.rbegin(), m_docIdFileIndex.rend(),
+	            [](uint64_t a, uint64_t b) { return (a & 0xffffffff00000000ULL) == (b & 0xffffffff00000000ULL); });
+	logf(LOG_DEBUG, "@@@ end dbname=%s coll=%s size=%zu", m_dbname, m_coll, m_docIdFileIndex.size());
+
+}

@@ -489,8 +489,6 @@ void RdbBuckets::printBuckets() {
 void RdbBucket::printBucket() {
 	char* kk = m_keys;
 	int32_t recSize = m_parent->getRecSize();
-	log(LOG_WARN, "numKeys=%" PRId32" collnum=%d", m_numKeys, m_collnum);
-	return;
  	for(int32_t i = 0; i < m_numKeys;i++) {
 		log(LOG_WARN, "rdbbuckets last key: ""%016" PRIx64"%08" PRIx32" num keys: %" PRId32,
  		    *(int64_t*)(kk+(sizeof(int32_t))), *(int32_t*)kk, m_numKeys);
