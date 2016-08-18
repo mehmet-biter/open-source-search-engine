@@ -2567,7 +2567,7 @@ void RdbBase::generateGlobalIndex() {
 
 	std::sort(m_docIdFileIndex.begin(), m_docIdFileIndex.end());
 	auto it = std::unique(m_docIdFileIndex.rbegin(), m_docIdFileIndex.rend(),
-	                      [](uint64_t a, uint64_t b) { return (a & 0xffffffff00000000ULL) == (b & 0xffffffff00000000ULL); })
+	                      [](uint64_t a, uint64_t b) { return (a & 0xffffffff00000000ULL) == (b & 0xffffffff00000000ULL); });
 	m_docIdFileIndex.erase(m_docIdFileIndex.begin(), it.base());
 
 	logf(LOG_DEBUG, "@@@ end dbname=%s coll=%s size=%zu", m_dbname, m_coll, m_docIdFileIndex.size());
