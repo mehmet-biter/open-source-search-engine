@@ -321,14 +321,8 @@ bool RdbIndex::generateIndex(BigFile *f) {
 	const char *endKey = KEYMAX();
 
 	// a rec needs to be at least this big
-	int32_t minRecSize = 0;
-
-	// negative keys do not have the dataSize field... so undo this
-	if (m_fixedDataSize == -1) {
-		minRecSize += 0;
-	} else {
-		minRecSize += m_fixedDataSize;
-	}
+	// negative keys do not have the dataSize field
+	int32_t minRecSize = (m_fixedDataSize == -1) ? 0 : m_fixedDataSize;
 
 	// POSDB
 	if (m_ks == 18) {
@@ -341,170 +335,129 @@ bool RdbIndex::generateIndex(BigFile *f) {
 
 	// for parsing the lists into records
 	char key[MAX_KEY_BYTES];
-	int32_t recSize = 0;
-	char *rec = buf;
 	int64_t next = 0LL;
 
-	std::unordered_set<uint64_t> unique_docids_set;
-	//unique_docids_set.reserve(1000000);
-
-	std::pair<std::unordered_set<uint64_t>::iterator,bool> result;
-
-	m_docIds.reserve(20000000);
-
 	// read in at most "bufSize" bytes with each read
-readLoop:
-	// keep track of how many bytes read in the log
-	if (offset >= next) {
-		if (next != 0) {
-			logf(LOG_INFO, "db: Read %" PRId64" bytes [%s]", next, f->getFilename());
+	for (; offset < fileSize;) {
+		// keep track of how many bytes read in the log
+		if (offset >= next) {
+			if (next != 0) {
+				logf(LOG_INFO, "db: Read %" PRId64" bytes [%s]", next, f->getFilename());
+			}
+
+			next += 500000000; // 500MB
 		}
 
-		next += 500000000; // 500MB
-	}
-
-	// our reads should always block
-	int64_t readSize = fileSize - offset;
-	if ( readSize > bufSize ) {
-		readSize = bufSize;
-	}
-
-	// if the readSize is less than the minRecSize, we got a bad cutoff
-	// so we can't go any more
-	if (readSize < minRecSize) {
-		mfree(buf, bufSize, "RdbMap");
-		return true;
-	}
-
-	// otherwise, read it in
-	if (!f->read(buf, readSize, offset)) {
-		mfree(buf, bufSize, "RdbMap");
-		log(LOG_WARN, "db: Failed to read %" PRId64" bytes of %s at offset=%" PRId64". Map generation failed.",
-		    bufSize, f->getFilename(), offset);
-		return false;
-	}
-
-	RdbList list;
-
-	// set the list
-	list.set(buf, readSize, buf, readSize, startKey, endKey, m_fixedDataSize, false, m_useHalfKeys, m_ks);
-
-	// . HACK to fix useHalfKeys compression thing from one read to the nxt
-	// . "key" should still be set to the last record we read last read
-	if ( offset > 0 ) {
-		// ... fix for posdb!!!
-		if (m_ks == 18) {
-			list.m_listPtrLo = key + (m_ks - 12);
-		} else {
-			list.m_listPtrHi = key + (m_ks - 6);
-		}
-	}
-
-	// . parse through the records in the list
-	// . stolen from RdbMap::addList()
-nextRec:
-	rec = list.getCurrentRec ();
-	if (rec + 64 > list.getListEnd() && offset + readSize < fileSize) {
-		// set up so next read starts at this rec that MAY have been
-		// cut off
-		offset += (rec - buf);
-		goto readLoop;
-	}
-
-	// WARNING: when data is corrupted these may cause segmentation faults?
-	list.getCurrentKey(key);
-	recSize = list.getCurrentRecSize();
-
-	// don't chop keys
-	if ( recSize < 6 ) {
-		log( LOG_WARN, "db: Got negative recsize of %" PRId32" at offset=%" PRId64, recSize , offset + (rec-buf));
-//		log( LOG_WARN, "db: Got negative recsize of %" PRId32" at offset=%" PRId64" lastgoodoff=%" PRId64,
-//		     recSize , offset + (rec-buf), m_offset );
-//
-//		// it truncates to m_offset!
-//		if (truncateFile(f)) {
-//			goto done;
-//		}
-		return false;
-	}
-
-	// do we have a breech?
-	if (rec + recSize > buf + readSize) {
-		// save old
-		int64_t oldOffset = offset;
-
-		// set up so next read starts at this rec that got cut off
-		offset += (rec - buf);
-
-		// . if we advanced nothing, then we'll end up looping forever
-		// . this will == 0 too, for big recs that did not fit in our
-		//   read but we take care of that below
-		// . this can happen if merge dumped out half-ass
-		// . the write split a record...
-		if (rec - buf == 0 && recSize <= bufSize) {
-			log(LOG_WARN, "db: Index generation failed because last record in data file was split. Power failure while "
-					"writing? Truncating file to %" PRId64" bytes. (lost %" PRId64" bytes)", offset, fileSize - offset);
-
-			// when merge resumes it call our getFileSize()
-			// in RdbMerge.cpp::gotLock() to set the dump offset
-			// otherwise, if we don't do this and write data
-			// in the middle of a split record AND then we crash
-			// without saving the map again, the second call to
-			// generateMap() will choke on that boundary and
-			// we'll lose a massive amount of data like we did
-			// with newspaperarchive
-//			m_offset = offset;
-			goto done;
+		// our reads should always block
+		int64_t readSize = fileSize - offset;
+		if (readSize > bufSize) {
+			readSize = bufSize;
 		}
 
-		// is our buf big enough to hold this type of rec?
-		if (recSize > bufSize) {
-			mfree(buf, bufSize, "RdbIndex");
-			bufSize = recSize;
-			buf = (char *) mmalloc(bufSize, "RdbIndex");
-			if (!buf) {
-				log(LOG_WARN, "db: Got error while generating the index file: %s. offset=%" PRIu64".",
-				    mstrerror(g_errno), oldOffset);
-				return false;
+		// if the readSize is less than the minRecSize, we got a bad cutoff
+		// so we can't go any more
+		if (readSize < minRecSize) {
+			mfree(buf, bufSize, "RdbMap");
+			return true;
+		}
+
+		// otherwise, read it in
+		if (!f->read(buf, readSize, offset)) {
+			mfree(buf, bufSize, "RdbMap");
+			log(LOG_WARN, "db: Failed to read %" PRId64" bytes of %s at offset=%" PRId64". Map generation failed.",
+			    bufSize, f->getFilename(), offset);
+			return false;
+		}
+
+		RdbList list;
+
+		// set the list
+		list.set(buf, readSize, buf, readSize, startKey, endKey, m_fixedDataSize, false, m_useHalfKeys, m_ks);
+
+		// . HACK to fix useHalfKeys compression thing from one read to the nxt
+		// . "key" should still be set to the last record we read last read
+		if (offset > 0) {
+			// ... fix for posdb!!!
+			if (m_ks == 18) {
+				list.m_listPtrLo = key + (m_ks - 12);
+			} else {
+				list.m_listPtrHi = key + (m_ks - 6);
 			}
 		}
-		// read agin starting at the adjusted offset
-		goto readLoop;
+
+		bool advanceOffset = true;
+
+		// . parse through the records in the list
+		for (; !list.isExhausted(); list.skipCurrentRecord()) {
+			char *rec = list.getCurrentRec();
+			if (rec + 64 > list.getListEnd() && offset + readSize < fileSize) {
+				// set up so next read starts at this rec that MAY have been cut off
+				offset += (rec - buf);
+
+				advanceOffset = false;
+				break;
+			}
+
+			// WARNING: when data is corrupted these may cause segmentation faults?
+			list.getCurrentKey(key);
+			int32_t recSize = list.getCurrentRecSize();
+
+			// don't chop keys
+			if (recSize < 6) {
+				log(LOG_WARN, "db: Got negative recsize of %" PRId32" at offset=%" PRId64, recSize,
+				    offset + (rec - buf));
+
+				// @todo ALC do we want to abort here?
+				return false;
+			}
+
+			// do we have a breech?
+			if (rec + recSize > buf + readSize) {
+				// save old
+				int64_t oldOffset = offset;
+
+				// set up so next read starts at this rec that got cut off
+				offset += (rec - buf);
+
+				// . if we advanced nothing, then we'll end up looping forever
+				// . this will == 0 too, for big recs that did not fit in our
+				//   read but we take care of that below
+				// . this can happen if merge dumped out half-ass
+				// . the write split a record...
+				if (rec - buf == 0 && recSize <= bufSize) {
+					log(LOG_WARN,
+					    "db: Index generation failed because last record in data file was split. Power failure while writing?");
+
+					// @todo ALC do we want to abort here?
+					return false;
+				}
+
+				// is our buf big enough to hold this type of rec?
+				if (recSize > bufSize) {
+					mfree(buf, bufSize, "RdbIndex");
+					bufSize = recSize;
+					buf = (char *)mmalloc(bufSize, "RdbIndex");
+					if (!buf) {
+						log(LOG_WARN, "db: Got error while generating the index file: %s. offset=%" PRIu64".",
+						    mstrerror(g_errno), oldOffset);
+						return false;
+					}
+				}
+				// read again starting at the adjusted offset
+				advanceOffset = false;
+				break;
+			}
+
+			addRecord(key);
+		}
+
+		if (advanceOffset) {
+			offset += readSize;
+		}
 	}
 
-	addRecord(key);
-
-	// skip current good record now
-	if (list.skipCurrentRecord()) {
-		goto nextRec;
-	}
-
-	// advance offset
-	offset += readSize;
-
-	// loop if more to go
-	if ( offset < fileSize ) {
-		goto readLoop;
-	}
-
-done:
 	// don't forget to free this
 	mfree(buf, bufSize, "RdbMap");
-
-	if (!m_docIds.empty()) {
-		std::sort(m_docIds.begin(), m_docIds.end());
-		m_docIds.erase(std::unique(m_docIds.begin(), m_docIds.end()), m_docIds.end());
-
-		m_needToWrite = true;
-	}
-
-//	// if there was bad data we probably added out of order keys
-//	if (m_needVerify) {
-//		logError("Fixing map for [%s]. Added at least %" PRId64" bad keys.", f->getFilename(), m_badKeys);
-//
-//		verifyMap2();
-//		m_needVerify = false;
-//	}
 
 	// otherwise, we're done
 	return true;
