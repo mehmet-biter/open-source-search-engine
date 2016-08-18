@@ -358,7 +358,6 @@ public:
 	int32_t  m_fn;
 	
 	char m_treeName [64];
-	char m_indexName [64];
 	char m_memName  [64];
 
 	int64_t m_lastWrite;
