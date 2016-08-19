@@ -11,7 +11,7 @@ struct TimeZone {
 };
 
 
-static TimeZone tzs[] = {
+static const TimeZone tzs[] = {
 	{ "acdt"    ,  10,  30 }, //  ACDT, +10:30
 	{ "acst"    ,   9,  30 }, //  ACST, +9:30
 	{ "adt"     ,  -3,   0 }, //  ADT, -3:00
@@ -302,12 +302,12 @@ static bool initTimeZoneTable ( ) {
 		return false;
 	// load time zone names and their modifiers into hashtable
 	for ( int32_t i = 0 ; *tzs[i].m_name ; i++ ) {
-		char *t    = tzs[i].m_name;
+		const char *t    = tzs[i].m_name;
 		int32_t  tlen = strlen(t);
 		// hash like Words.cpp computeWordIds
 		uint64_t h    = hash64Lower_utf8( t , tlen );
 		// use the ptr as the value
-		TimeZone *tmp_ptr = tzs+i;
+		const TimeZone *tmp_ptr = tzs+i;
 		if ( ! s_tzt.addKey ( &h, &tmp_ptr ) )
 			return false;
 	}
