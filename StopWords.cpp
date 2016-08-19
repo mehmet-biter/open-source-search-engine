@@ -15,7 +15,7 @@
 
 // . i shrunk this list a lot
 // . see backups for the hold list
-static const char      *s_stopWords[] = {
+static const char * const s_stopWords[] = {
 	"a",
 	"b",
 	"c",
@@ -140,7 +140,7 @@ static const char      *s_stopWords[] = {
 static HashTableX s_stopWordTable;
 static bool       s_stopWordsInitialized = false;
 
-bool initWordTable( HashTableX *table, const char *words[], const char *label ) {
+bool initWordTable( HashTableX *table, const char * const words[], const char *label ) {
 	// count them
 	int32_t count; for ( count = 0 ; words[count] ; count++ );
 	// set up the hash table
@@ -190,7 +190,7 @@ bool isStopWord ( const char *s , int32_t len , int64_t h ) {
 // . see backups for the hold list
 
 // langid 0 is for all languages, or when it lang is unknown, 'xx'
-static const char *s_queryStopWordsUnknown[] = {
+static const char * const s_queryStopWordsUnknown[] = {
 	"at",
 	//"be",
 	"by",
@@ -1979,7 +1979,7 @@ static const char *s_queryStopWordsGerman[] = {
 static HashTableX s_queryStopWordTables[MAXLANGID+1];
 static bool       s_queryStopWordsInitialized = false;
 
-static const char **s_queryStopWords2[MAXLANGID+1];
+static const char * const * s_queryStopWords2[MAXLANGID+1];
 
 bool isQueryStopWord ( const char *s , int32_t len , int64_t h , int32_t langId ) {
 
@@ -1996,7 +1996,7 @@ bool isQueryStopWord ( const char *s , int32_t len , int64_t h , int32_t langId 
 		// set up the hash table
 		for ( int32_t i = 0 ; i <= MAXLANGID ; i++ ) {
 			HashTableX *ht = &s_queryStopWordTables[i];
-			const char **words = s_queryStopWords2[i];
+			const char * const *words = s_queryStopWords2[i];
 			if ( ! words ) continue;
 			if ( ! initWordTable ( ht,//&s_queryStopWordTable, 
 					       words,
