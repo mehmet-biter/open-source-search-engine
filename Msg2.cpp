@@ -401,7 +401,6 @@ Msg5 *Msg2::getAvailMsg5 ( ) {
 
 void Msg2::returnMsg5 ( Msg5 *msg5 ) {
 	ScopedLock sl(m_mtxMsg5);
-	int32_t i;
 	for(int32_t i = 0; i < m_numLists+MAX_WHITELISTS; i++) {
 		if(&m_msg5[i] == msg5) {
 			if(m_avail[i])
