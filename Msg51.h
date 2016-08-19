@@ -15,9 +15,6 @@
 #include "RdbList.h"
 #include "Msg5.h"
 
-// how many Msg0 requests can we launch at the same time?
-#define MSG51_MAX_REQUESTS 60
-
 // . m_clusterLevels[i] takes on one of these values
 // . these describe a docid
 // . they tell us why the docid is not ok to be displayed in the search results
@@ -157,7 +154,8 @@ private:
 		bool       m_inUse;
 		int32_t    m_ci;
 	};
-	Slot m_slot[MSG51_MAX_REQUESTS];
+	Slot *m_slot;
+	int32_t m_numSlots;
 
 	static void gotClusterRecWrapper51(void *state);
 	void gotClusterRec(Slot *slot);
