@@ -15,7 +15,6 @@
 // . we can use accountability, we can merge sources, etc.
 // . we can use time-based merging
 
-bool isTagTypeUnique    ( int32_t tt ) ;
 bool isTagTypeIndexable ( int32_t tt ) ;
 
 // . Tag::m_type is this if its a dup in the TagRec

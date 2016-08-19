@@ -2256,7 +2256,7 @@ bool sendReply2 ( void *state ) {
 // . we can have multiple tags of this type per tag for a single username
 // . by default, there can be multiple tags of the same type in the Tag as
 //   int32_t as the usernames are all different. see addTag()'s deduping below.
-bool isTagTypeUnique ( int32_t tt ) {
+static bool isTagTypeUnique ( int32_t tt ) {
 	// a dup?
 	if ( tt == TT_DUP ) return false; // TT_DUP = 123456
 	// make sure table is valid
