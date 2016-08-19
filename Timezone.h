@@ -1,7 +1,7 @@
 #ifndef GB_TIMEZONE_H
 #define GB_TIMEZONE_H
 
-#include "gb-include.h"
+#include <inttypes.h>
 
 #define BADTIMEZONE 999999
 

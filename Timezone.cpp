@@ -1,6 +1,7 @@
 #include "Timezone.h"
 #include "HashTableX.h"
-#include "Mem.h"
+#include "hash.h"
+#include <ctype.h>
 
 // now time zones
 struct TimeZone {
