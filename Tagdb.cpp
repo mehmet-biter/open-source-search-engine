@@ -1523,7 +1523,7 @@ bool Msg8a::launchGetRequests ( ) {
 	return (m_requests == m_replies);
 }
 	
-void gotMsg0ReplyWrapper ( void *state ) {
+static void gotMsg0ReplyWrapper ( void *state ) {
 	Msg8aState *msg8aState = (Msg8aState*)state;
 
 	Msg8a *msg8a = msg8aState->m_msg8a;
