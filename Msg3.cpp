@@ -6,6 +6,8 @@
 #include "PingServer.h"
 #include "RdbCache.h"
 #include "Process.h"
+#include "GbMutex.h"
+#include "ScopedLock.h"
 #include <new>
 
 
@@ -50,6 +52,7 @@ key192_t makeCacheKey ( int64_t vfd ,
 }
 
 static RdbCache g_rdbCaches[5];
+static GbMutex s_rdbcacheMutex; //protects g_rdbCaches
 
 class RdbCache *getDiskPageCache ( char rdbId ) {
 
@@ -93,6 +96,7 @@ class RdbCache *getDiskPageCache ( char rdbId ) {
 
 	if ( maxMem < 0 ) maxMem = 0;
 
+	ScopedLock sl(s_rdbcacheMutex);
 	// did size change? if not, return it
 	if ( rpc->getMaxMem() == maxMem )
 		return rpc;
