@@ -11,12 +11,6 @@
 #include "SafeBuf.h"
 #include "Msg0.h"
 
-// . now we can store multiple rating by multiple users or algorithms
-// . we can use accountability, we can merge sources, etc.
-// . we can use time-based merging
-
-bool isTagTypeIndexable ( int32_t tt ) ;
-
 // . Tag::m_type is this if its a dup in the TagRec
 // . so if www.xyz.com has one tag and xyz.com has another, then
 //   the xyz.com tag should have its m_type set to TT_DUP, but only if we can only have
@@ -44,8 +38,6 @@ class Tag {
 	// just print the m_data...
 	bool printDataToBuf         ( SafeBuf *sb );
 	bool isType                 ( const char *t );
-	bool isIndexable            ( ) {
-		return isTagTypeIndexable ( m_type ); }
 
 	// for parsing output of printToBuf()
 	int32_t setFromBuf            ( char *p , char *pend ) ;

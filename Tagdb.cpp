@@ -2282,33 +2282,6 @@ static bool isTagTypeUnique ( int32_t tt ) {
 	return true;
 }
 
-bool isTagTypeIndexable ( int32_t tt ) {
-	// a dup?
-	if ( tt == TT_DUP ) return false; // TT_DUP = 123456
-	// make sure table is valid
-	if ( ! s_initialized ) g_tagdb.setHashTable();
-	// look up in hash table
-	TagDesc **tdp = (TagDesc **)s_ht.getValue ( &tt );
-	// do not core for now
-	if ( ! tdp ) {
-		log("tagdb: got unknown tag type %" PRId32" assuming "
-		    "not indexable",tt);
-		return false;
-	}
-	TagDesc *td = *tdp;
-	if ( ! td ) {
-		log("tagdb: tag desc is NULL for tag type %" PRId32" assuming "
-		    "not indexable",tt);
-		return false;
-	}
-	// if none, that is crazy MDW coring here:
-	if ( ! td ) { g_process.shutdownAbort(true); }
-	// return false if we should not index it
-	if ( td->m_flags & TDF_NOINDEX ) return false;
-	// otherwise, index it
-	return true;
-}
-
 // used to determine if one Tag should overwrite the other! if they
 // have the same dedup hash... then yes...
 int32_t Tag::getDedupHash ( ) {
