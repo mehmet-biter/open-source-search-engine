@@ -1955,7 +1955,7 @@ int32_t Msg40::deserialize ( char *buf , int32_t bufSize ) {
 }
 
 
-static const char      *s_subDoms[] = {
+static const char * const s_subDoms[] = {
         // Common Language sub-domains
         "en" ,
         "fr" ,
@@ -1987,10 +1987,11 @@ static const char      *s_subDoms[] = {
         "us" ,
         "uk" ,
         // Common web sub-domains
-        "www" };
+        "www"
+};
 static HashTable  s_subDomTable;
 static bool       s_subDomInitialized = false;
-static bool initSubDomTable(HashTable *table, const char *words[], int32_t size ){
+static bool initSubDomTable(HashTable *table, const char * const words[], int32_t size ){
 	// set up the hash table
 	if ( ! table->set ( size * 2 ) ) {
 		log(LOG_INIT, "build: Could not init sub-domain table.");
