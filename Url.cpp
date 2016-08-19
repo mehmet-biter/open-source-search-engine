@@ -8,6 +8,8 @@
 #include "Punycode.h"
 #include "Unicode.h"
 #include "Sanity.h"
+#include "GbMutex.h"
+#include "ScopedLock.h"
 #include <vector>
 #include <algorithm>
 #include <sstream>
@@ -1742,10 +1744,12 @@ static const char * const s_badExtensions[] = {
 
 static HashTable s_badExtTable;
 static bool s_badExtInitialized;
+static GbMutex s_badExtTableMutex;
 
 //returns True if the extension is listed as bad
 bool Url::hasNonIndexableExtension( int32_t version ) const {
 	if ( ! m_extension || m_elen == 0 ) return false;
+	ScopedLock sl(s_badExtTableMutex);
 	if(!s_badExtInitialized) { //if hash has not been created-create one
 		int32_t i=0;
 		//version 72 and before.
