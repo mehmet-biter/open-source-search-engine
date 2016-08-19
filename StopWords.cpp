@@ -6,6 +6,8 @@
 #include "Speller.h"
 #include "Loop.h"
 #include "Posdb.h" // MAXLANGID
+#include "GbMutex.h"
+#include "ScopedLock.h"
 
 // . h is the lower ascii 64bit hash of a word
 // . this returns true if h is the hash of an ENGLISH stop word
@@ -3804,7 +3806,7 @@ static const char      *s_commonWords[] = {
 };
 static HashTableX s_commonWordTable;
 static bool       s_commonWordsInitialized = false;
-
+static GbMutex s_commonWordtableMutex;
 
 // for Process.cpp::resetAll() to call when exiting to free all mem
 void resetStopWordTables() {
@@ -3816,7 +3818,8 @@ void resetStopWordTables() {
 
 // used by Msg24.cpp for gigabits generation
 int32_t isCommonWord ( int64_t h ) {
-
+	
+	ScopedLock sl(s_commonWordtableMutex);
 	// include a bunch of foreign prepositions so they don't get required
 	// by the bitScores in IndexTable.cpp
 	if ( ! s_commonWordsInitialized ) {
@@ -3843,6 +3846,7 @@ int32_t isCommonWord ( int64_t h ) {
 		}
 		s_commonWordsInitialized = true;
 	} 
+	sl.unlock();
 
 	// . all 1 char letter words are stop words
 	// . good for initials and some contractions
