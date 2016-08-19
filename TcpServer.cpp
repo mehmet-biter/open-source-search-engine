@@ -119,20 +119,6 @@ bool TcpServer::init ( void (* requestHandler)(TcpSocket *s) ,
 	// set the useSSL flag
 	m_useSSL = useSSL;
 
-	// claim sd 0 so it is not used
-	static FILE *s_stdinSock ;
-	static bool  s_openned = false;
-	if ( ! s_openned ) {
-		s_stdinSock = fopen ( "stdin" , "r" );
-		// sanity - make sure 0 was opened as stdin!
-		if ( s_stdinSock != NULL ) { 
-			log("tcp: stdinSock = %" PTRFMT" != 0",
-			    (PTRTYPE)s_stdinSock);
-			g_process.shutdownAbort(true);
-		}
-		s_openned = true;
-	}
-
 	// can't exceed hard limit
 	//if ( m_maxSockets > MAX_TCP_SOCKS ) m_maxSockets = MAX_TCP_SOCKS;
 	// how many bytes we can read into memory before calling putMsgPiece()

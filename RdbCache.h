@@ -257,7 +257,7 @@ class RdbCache {
 	bool save2_r ( int fd );
 	bool load   ( );
 
-	const char *getDbname () const { return m_dbname ; }
+	const char *getDbname () const { return m_dbname ? m_dbname : "unknown"; }
 
 	const char *m_dbname;
 

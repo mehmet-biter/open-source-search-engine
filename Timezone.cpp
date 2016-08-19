@@ -1,6 +1,9 @@
 #include "Timezone.h"
 #include "HashTableX.h"
-#include "Mem.h"
+#include "hash.h"
+#include "GbMutex.h"
+#include "ScopedLock.h"
+#include <ctype.h>
 
 // now time zones
 struct TimeZone {
@@ -11,7 +14,7 @@ struct TimeZone {
 };
 
 
-static TimeZone tzs[] = {
+static const TimeZone tzs[] = {
 	{ "acdt"    ,  10,  30 }, //  ACDT, +10:30
 	{ "acst"    ,   9,  30 }, //  ACST, +9:30
 	{ "adt"     ,  -3,   0 }, //  ADT, -3:00
@@ -291,9 +294,11 @@ static TimeZone tzs[] = {
 
 // hash table of timezone information
 static HashTableX s_tzt;
+static GbMutex s_mtx;
 
 
 static bool initTimeZoneTable ( ) {
+	ScopedLock sl(s_mtx);
 	// if already initalized return true
 	if ( s_tzt.m_numSlotsUsed ) return true;
 
@@ -302,12 +307,12 @@ static bool initTimeZoneTable ( ) {
 		return false;
 	// load time zone names and their modifiers into hashtable
 	for ( int32_t i = 0 ; *tzs[i].m_name ; i++ ) {
-		char *t    = tzs[i].m_name;
+		const char *t    = tzs[i].m_name;
 		int32_t  tlen = strlen(t);
 		// hash like Words.cpp computeWordIds
 		uint64_t h    = hash64Lower_utf8( t , tlen );
 		// use the ptr as the value
-		TimeZone *tmp_ptr = tzs+i;
+		const TimeZone *tmp_ptr = tzs+i;
 		if ( ! s_tzt.addKey ( &h, &tmp_ptr ) )
 			return false;
 	}
@@ -341,5 +346,6 @@ int32_t getTimeZone ( const char *s ) {
 
 
 void resetTimezoneTables() {
+	ScopedLock sl(s_mtx);
 	s_tzt.reset();
 }

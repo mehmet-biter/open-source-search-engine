@@ -5,6 +5,8 @@
 #include "HashTableX.h"
 #include "max_niceness.h"
 #include "Process.h"
+#include "GbMutex.h"
+#include "ScopedLock.h"
 
 
 class Abbr {
@@ -16,7 +18,7 @@ public:
 
 // . i shrunk this list a lot
 // . see backups for the hold list
-static class Abbr s_abbrs99[] = {
+static const class Abbr s_abbrs99[] = {
 	{"hghway",0},//highway
 	{"hway",0},//highway
 	{"hwy",0},//highway
@@ -227,8 +229,10 @@ static class Abbr s_abbrs99[] = {
 
 static HashTableX s_abbrTable;
 static bool       s_abbrInitialized = false;
+static GbMutex s_mtx;
 
 bool isAbbr ( int64_t h , bool *hasWordAfter ) {
+	ScopedLock sl(s_mtx);
 	if ( ! s_abbrInitialized ) {
 		// shortcut
 		HashTableX *t = &s_abbrTable;

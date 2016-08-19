@@ -15,7 +15,7 @@ typedef struct {
     char supported;
 } IANACharset;
 
-static IANACharset s_charsets[] = {
+static const IANACharset s_charsets[] = {
 	{"ANSI_X3.4-1968", "csASCII", 3, 1},
 	{"iso-ir-6", "csASCII", 3, 1},
 	{"ANSI_X3.4-1986", "csASCII", 3, 1},

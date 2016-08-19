@@ -8,6 +8,8 @@
 #include "Process.h"
 #include "HashTable.h"
 #include "IPAddressChecks.h"
+#include "GbMutex.h"
+#include "ScopedLock.h"
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
 #endif
@@ -588,6 +590,7 @@ bool getLinkInfo ( SafeBuf   *reqBuf              ,
 }
 
 static HashTableX g_lineTable;
+static GbMutex g_mtxLineTable;
 
 static void sendReplyWrapper ( void *state ) {
 
@@ -615,7 +618,9 @@ static void sendReplyWrapper ( void *state ) {
 	// sanity
 	if ( req->m_udpSlot != slot2 ) { g_process.shutdownAbort(true);}
 	// if in table, nuke it
+	ScopedLock sl(g_mtxLineTable);
 	g_lineTable.removeKey ( &req->m_siteHash64 );
+	sl.unlock();
 
  nextLink:
 
@@ -671,6 +676,8 @@ void  handleRequest25 ( UdpSlot *slot , int32_t netnice ) {
 		    );
 	}
 
+	ScopedLock sl(g_mtxLineTable);
+
 	// set up the hashtable if our first time
 	if ( ! g_lineTable.isInitialized() )
 		g_lineTable.set ( 8,sizeof(Msg25Request *),256,
@@ -721,6 +728,7 @@ void  handleRequest25 ( UdpSlot *slot , int32_t netnice ) {
 		// add the initial entry
 		g_lineTable.addKey ( &req->m_siteHash64 , &req );
 	}
+	sl.unlock();
 
 	// point to a real safebuf here for populating with data
 	m25->m_linkInfoBuf = &m25->m_realBuf;

@@ -493,19 +493,6 @@ bool Msg2::gotList() {
 		    i,m_lists[i].m_listSize,DEFAULT_POSDB_READSIZE);
 	}
 
-	// debug msg
-	int64_t now = gettimeofdayInMilliseconds();
-	// . add the stat
-	// . use yellow for our color (Y= g -b
-	if(m_niceness > 0) {
-		//"get_termlists_nice"
-		g_stats.addStat_r ( 0, m_startTime, now, 0x00aaaa00 );
-	}
-	else {
-		//"get_termlists"
-		g_stats.addStat_r ( 0, m_startTime, now, 0x00ffff00 );
-	}
-
 	// set this i guess
 	g_errno = m_errno;
 

@@ -45,12 +45,6 @@ static void defaultCallbackWrapper(void * /*state*/, UdpSlot * /*slot*/) {
 // free send/readBufs
 void UdpServer::reset() {
 
-	// sometimes itimer interrupt goes off in Loop.cpp when we are exiting
-	// so fix that core. it happened when running the ./gb stop cmd b/c
-	// it exited while in the middle of a udp handler, so g_callSlot
-	// was non-null but invalid and the sigalrmhander() in Loop.cpp puked.
-	g_callSlot = NULL;
-
 	// clear our slots
 	if ( ! m_slots ) return;
 	log(LOG_DEBUG,"db: resetting udp server");
@@ -1625,14 +1619,7 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 		// make sure not 2
 		if ( g_niceness >= 2 ) g_niceness = 1;
 
-		// if quickpoll notices we are in the same callback for
-		// more than 4 ticks, it core dump to let us know!! it
-		// use the transId of the slot to count!
-		g_callSlot = slot;
-
 		slot->m_callback(slot->m_state, slot);
-
-		g_callSlot = NULL;
 
 		// restore it
 		g_niceness = saved;
@@ -1817,11 +1804,6 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 	// make sure not 2
 	if ( g_niceness >= 2 ) g_niceness = 1;
 
-	// if quickpoll notices we are in the same callback for
-	// more than 4 ticks, it core dump to let us know!! it
-	// use the transId of the slot to count!
-	g_callSlot = slot;
-
 	bool oom = g_mem.getUsedMemPercentage() >= 99.0;
 
 	// if we are out of mem basically, do not waste time fucking around
@@ -1869,8 +1851,6 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 		// let loop.cpp know we're done then
 		g_inHandler = saved2;
 	}
-
-	g_callSlot = NULL;
 
 	// restore
 	g_niceness = saved;

@@ -579,7 +579,7 @@ static const char *s_countryName[] = {
 // List of languages spoken by country
 // THIS IS A GENERATED LIST -- DO NOT EDIT!
 // NOTE: if the list of countres changes, this must be regenerated
-static uint64_t s_countryLanguages[] = {
+static const uint64_t s_countryLanguages[] = {
 	0LL                                                         , // zz
 	0LL                                                         , // ad
 	(1LL<<langArabic)                                           , // ae

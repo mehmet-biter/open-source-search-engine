@@ -63,9 +63,6 @@ class Slot {
 
 extern char g_niceness ;
 
-// we make sure the same callback/handler is not hogging the cpu when it is
-// niceness 0 and we do not interrupt it, so this is a critical check
-extern class UdpSlot *g_callSlot;
 
 class Loop {
 

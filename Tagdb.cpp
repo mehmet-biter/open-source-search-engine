@@ -13,12 +13,15 @@
 #include "Process.h"
 #include "Rebalance.h"
 #include "RdbCache.h"
+#include "GbMutex.h"
+#include "ScopedLock.h"
 
 static void gotMsg0ReplyWrapper ( void *state );
 
 static HashTableX s_ht;
-
 static bool s_initialized = false;
+static GbMutex s_htMutex;
+
 
 // to stdout
 int32_t Tag::print ( ) {
@@ -971,10 +974,7 @@ int32_t getTagTypeFromStr( const char *tagname , int32_t tagnameLen ) {
 		tagType = hash32( tagname, tagnameLen );
 	}
 
-	// make sure table is valid
-	if ( ! s_initialized ) {
-		g_tagdb.setHashTable();
-	}
+	g_tagdb.setHashTable();
 
 	// sanity check, make sure it is a supported tag!
 	if ( ! s_ht.getValue ( &tagType ) ) {
@@ -989,10 +989,7 @@ int32_t getTagTypeFromStr( const char *tagname , int32_t tagnameLen ) {
 
 // . convert ST_DOMAIN_SQUATTER to "domain_squatter"
 const char *getTagStrFromType ( int32_t tagType ) {
-	// make sure table is valid
-	if ( ! s_initialized ) {
-		g_tagdb.setHashTable();
-	}
+	g_tagdb.setHashTable();
 
 	TagDesc **ptd = (TagDesc **)s_ht.getValue ( &tagType );
 	// sanity check
@@ -1016,17 +1013,18 @@ void Tagdb::reset() {
 	m_siteBuf2.purge();
 }
 
-bool Tagdb::setHashTable ( ) {
+void Tagdb::setHashTable ( ) {
+	ScopedLock sl(s_htMutex);
+
 	if ( s_initialized ) {
-		return true;
+		return;
 	}
 
-	s_initialized = true;
 
 	// the hashtable of TagDescriptors
 	if ( ! s_ht.set ( 4, sizeof(TagDesc *), 1024, NULL, 0, false, 0, "tgdbtb" ) ) {
 		log( LOG_WARN, "tagdb: Tagdb hash init failed." );
-		return false;
+		return;
 	}
 
 	// stock it
@@ -1043,7 +1041,7 @@ bool Tagdb::setHashTable ( ) {
 		TagDesc **petd = (TagDesc **)s_ht.getValue ( &h );
 		if ( petd ) {
 			log( LOG_WARN, "tagdb: Tag %s collides with old tag %s", td->m_name, (*petd)->m_name );
-			return false;
+			return;
 		}
 
 		// set the type
@@ -1053,7 +1051,7 @@ bool Tagdb::setHashTable ( ) {
 		s_ht.addKey ( &h , &td );
 	}
 
-	return true;
+	s_initialized = true;
 }
 
 bool Tagdb::init ( ) {
@@ -1212,6 +1210,7 @@ key128_t Tagdb::makeDomainEndKey ( Url *u ) {
 
 static bool s_cacheInitialized = false;
 static RdbCache s_cache;
+static GbMutex s_cacheInitializedMutex;
 
 Msg8a::Msg8a() {
 	m_replies  = 0;
@@ -1231,7 +1230,7 @@ void Msg8a::reset() {
 	m_requests = 0;
 }
 
-RdbCache* Msg8a::getCache() {
+const RdbCache* Msg8a::getCache() {
 	return &s_cache;
 }
 
@@ -1423,6 +1422,7 @@ bool Msg8a::launchGetRequests ( ) {
 	}
 
 	// initialize cache
+	ScopedLock sl(s_cacheInitializedMutex);
 	if ( !s_cacheInitialized ) {
 		int64_t maxCacheSize = g_conf.m_tagRecCacheSize;
 		int64_t maxCacheNodes = ( maxCacheSize / 200 );
@@ -1430,6 +1430,7 @@ bool Msg8a::launchGetRequests ( ) {
 		s_cacheInitialized = true;
 		s_cache.init( maxCacheSize, -1, true, maxCacheNodes, false, "tagreccache", false, 16, 16, -1 );
 	}
+	sl.unlock();
 
 	// get the next mcast
 	Msg0 *m = &m_msg0s[m_requests];
@@ -1526,7 +1527,7 @@ bool Msg8a::launchGetRequests ( ) {
 	return (m_requests == m_replies);
 }
 	
-void gotMsg0ReplyWrapper ( void *state ) {
+static void gotMsg0ReplyWrapper ( void *state ) {
 	Msg8aState *msg8aState = (Msg8aState*)state;
 
 	Msg8a *msg8a = msg8aState->m_msg8a;
@@ -2260,11 +2261,11 @@ bool sendReply2 ( void *state ) {
 // . we can have multiple tags of this type per tag for a single username
 // . by default, there can be multiple tags of the same type in the Tag as
 //   int32_t as the usernames are all different. see addTag()'s deduping below.
-bool isTagTypeUnique ( int32_t tt ) {
+static bool isTagTypeUnique ( int32_t tt ) {
 	// a dup?
 	if ( tt == TT_DUP ) return false; // TT_DUP = 123456
 	// make sure table is valid
-	if ( ! s_initialized ) g_tagdb.setHashTable();
+	g_tagdb.setHashTable();
 	// look up in hash table
 	TagDesc **tdp = (TagDesc **)s_ht.getValue ( &tt );
 	if ( ! tdp ) {
@@ -2283,33 +2284,6 @@ bool isTagTypeUnique ( int32_t tt ) {
 	if ( ! td ) { g_process.shutdownAbort(true); }
 	// return 
 	if ( td->m_flags & TDF_ARRAY) return false;
-	return true;
-}
-
-bool isTagTypeIndexable ( int32_t tt ) {
-	// a dup?
-	if ( tt == TT_DUP ) return false; // TT_DUP = 123456
-	// make sure table is valid
-	if ( ! s_initialized ) g_tagdb.setHashTable();
-	// look up in hash table
-	TagDesc **tdp = (TagDesc **)s_ht.getValue ( &tt );
-	// do not core for now
-	if ( ! tdp ) {
-		log("tagdb: got unknown tag type %" PRId32" assuming "
-		    "not indexable",tt);
-		return false;
-	}
-	TagDesc *td = *tdp;
-	if ( ! td ) {
-		log("tagdb: tag desc is NULL for tag type %" PRId32" assuming "
-		    "not indexable",tt);
-		return false;
-	}
-	// if none, that is crazy MDW coring here:
-	if ( ! td ) { g_process.shutdownAbort(true); }
-	// return false if we should not index it
-	if ( td->m_flags & TDF_NOINDEX ) return false;
-	// otherwise, index it
 	return true;
 }
 

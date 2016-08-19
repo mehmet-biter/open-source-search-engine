@@ -6,6 +6,8 @@
 #include "Speller.h"
 #include "Loop.h"
 #include "Posdb.h" // MAXLANGID
+#include "GbMutex.h"
+#include "ScopedLock.h"
 
 // . h is the lower ascii 64bit hash of a word
 // . this returns true if h is the hash of an ENGLISH stop word
@@ -15,7 +17,7 @@
 
 // . i shrunk this list a lot
 // . see backups for the hold list
-static const char      *s_stopWords[] = {
+static const char * const s_stopWords[] = {
 	"a",
 	"b",
 	"c",
@@ -140,7 +142,7 @@ static const char      *s_stopWords[] = {
 static HashTableX s_stopWordTable;
 static bool       s_stopWordsInitialized = false;
 
-bool initWordTable( HashTableX *table, const char *words[], const char *label ) {
+bool initWordTable( HashTableX *table, const char * const words[], const char *label ) {
 	// count them
 	int32_t count; for ( count = 0 ; words[count] ; count++ );
 	// set up the hash table
@@ -190,7 +192,7 @@ bool isStopWord ( const char *s , int32_t len , int64_t h ) {
 // . see backups for the hold list
 
 // langid 0 is for all languages, or when it lang is unknown, 'xx'
-static const char *s_queryStopWordsUnknown[] = {
+static const char * const s_queryStopWordsUnknown[] = {
 	"at",
 	//"be",
 	"by",
@@ -1979,7 +1981,7 @@ static const char *s_queryStopWordsGerman[] = {
 static HashTableX s_queryStopWordTables[MAXLANGID+1];
 static bool       s_queryStopWordsInitialized = false;
 
-static const char **s_queryStopWords2[MAXLANGID+1];
+static const char * const * s_queryStopWords2[MAXLANGID+1];
 
 bool isQueryStopWord ( const char *s , int32_t len , int64_t h , int32_t langId ) {
 
@@ -1996,7 +1998,7 @@ bool isQueryStopWord ( const char *s , int32_t len , int64_t h , int32_t langId 
 		// set up the hash table
 		for ( int32_t i = 0 ; i <= MAXLANGID ; i++ ) {
 			HashTableX *ht = &s_queryStopWordTables[i];
-			const char **words = s_queryStopWords2[i];
+			const char * const *words = s_queryStopWords2[i];
 			if ( ! words ) continue;
 			if ( ! initWordTable ( ht,//&s_queryStopWordTable, 
 					       words,
@@ -3804,7 +3806,7 @@ static const char      *s_commonWords[] = {
 };
 static HashTableX s_commonWordTable;
 static bool       s_commonWordsInitialized = false;
-
+static GbMutex s_commonWordtableMutex;
 
 // for Process.cpp::resetAll() to call when exiting to free all mem
 void resetStopWordTables() {
@@ -3816,7 +3818,8 @@ void resetStopWordTables() {
 
 // used by Msg24.cpp for gigabits generation
 int32_t isCommonWord ( int64_t h ) {
-
+	
+	ScopedLock sl(s_commonWordtableMutex);
 	// include a bunch of foreign prepositions so they don't get required
 	// by the bitScores in IndexTable.cpp
 	if ( ! s_commonWordsInitialized ) {
@@ -3843,6 +3846,7 @@ int32_t isCommonWord ( int64_t h ) {
 		}
 		s_commonWordsInitialized = true;
 	} 
+	sl.unlock();
 
 	// . all 1 char letter words are stop words
 	// . good for initials and some contractions

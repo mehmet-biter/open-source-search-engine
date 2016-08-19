@@ -7,7 +7,8 @@
 #include "Profiler.h"
 #include "Repair.h"
 #include "Process.h"
-
+#include "GbMutex.h"
+#include "ScopedLock.h"
 
 static void gotReplyWrapper1 ( void    *state , void *state2 ) ;
 static void handleRequest1   ( UdpSlot *slot  , int32_t niceness ) ;
@@ -31,11 +32,14 @@ static Msg1  s_msg1 [ MAX_MSG1S ];
 static int32_t  s_next [ MAX_MSG1S ];
 static int32_t  s_head = 0 ;
 static bool  s_init = false;
+static GbMutex s_mtx;
 static Msg1 *getMsg1    ( ) ;
 static void  returnMsg1 ( void *state );
 static void  init       ( );
+
 // returns NULL if none left
-Msg1 *getMsg1 ( ) {
+static Msg1 *getMsg1() {
+	ScopedLock sl(s_mtx);
 	if ( ! s_init ) { init(); s_init = true; }
 	if ( s_head == -1 ) return NULL;
 	int32_t i = s_head;
@@ -44,7 +48,8 @@ Msg1 *getMsg1 ( ) {
 	//log("got mcast=%" PRId32,(int32_t)(&s_msg1[i].m_mcast));
 	return &s_msg1[i];
 }
-void returnMsg1 ( void *state ) {
+
+static void returnMsg1(void *state) {
 	Msg1 *msg1 = (Msg1 *)state;
 	// free this if we have to
 	msg1->m_ourList.freeList();
@@ -54,10 +59,12 @@ void returnMsg1 ( void *state ) {
 	if ( i < 0 || i > MAX_MSG1S ) {
 		log(LOG_LOGIC,"net: msg1: Major problem adding data."); 
 		g_process.shutdownAbort(true); }
+	ScopedLock sl(s_mtx);
 	if ( s_head == -1 ) { s_head    = i      ; s_next[i] = -1; }
 	else                { s_next[i] = s_head ; s_head    =  i; }
 }
-void init ( ) {
+
+static void init() {
 	// init the linked list
 	for ( int32_t i = 0 ; i < MAX_MSG1S ; i++ ) {
 		if ( i == MAX_MSG1S - 1 ) s_next[i] = -1;
@@ -489,7 +496,7 @@ skip:
 
 // . this should only be called by m_mcast when it has successfully sent to
 //   ALL hosts in group "groupId"
-void gotReplyWrapper1 ( void *state , void *state2 ) {
+static void gotReplyWrapper1(void *state, void *state2) {
 	Msg1 *THIS = (Msg1 *)state;
 	// print the error if any
 	if ( g_errno && g_errno != ETRYAGAIN ) 
@@ -538,7 +545,7 @@ static void addedList   ( UdpSlot *slot , Rdb *rdb );
 // . TODO: need we send a reply back on success????
 // . NOTE: Must always call g_udpServer::sendReply or sendErrorReply() so
 //   read/send bufs can be freed
-void handleRequest1 ( UdpSlot *slot , int32_t netnice ) {
+static void handleRequest1(UdpSlot *slot, int32_t netnice) {
 
 
 	// extract what we read
@@ -610,7 +617,7 @@ void handleRequest1 ( UdpSlot *slot , int32_t netnice ) {
 }
 
 // g_errno may be set when this is called
-void addedList ( UdpSlot *slot , Rdb *rdb ) {
+static void addedList(UdpSlot *slot, Rdb *rdb) {
 	// no memory means to try again
 	if ( g_errno == ENOMEM ) {
 		g_errno = ETRYAGAIN;

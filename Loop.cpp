@@ -47,10 +47,6 @@ Loop g_loop;
 // the global niceness
 char g_niceness = 0;
 
-// we make sure the same callback/handler is not hogging the cpu when it is
-// niceness 0 and we do not interrupt it, so this is a critical check
-class UdpSlot *g_callSlot = NULL;
-
 // use this in case we unregister the "next" callback
 static Slot *s_callbacksNext;
 

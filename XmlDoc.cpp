@@ -10263,7 +10263,6 @@ char **XmlDoc::getExpandedUtf8Content ( ) {
 	return &m_expandedUtf8Content;
 }
 
-static SafeBuf s_cookieBuf;
 
 
 
