@@ -54,42 +54,36 @@ static RdbCache g_rdbCaches[5];
 class RdbCache *getDiskPageCache ( char rdbId ) {
 
 	RdbCache *rpc = NULL;
-	int64_t *maxSizePtr = NULL;
 	int64_t maxMem;
 	int64_t maxRecs;
 	const char *dbname;
 	if ( rdbId == RDB_POSDB ) {
 		rpc = &g_rdbCaches[0];
-		maxSizePtr = &g_conf.m_posdbFileCacheSize;
-		maxMem = *maxSizePtr;
+		maxMem = g_conf.m_posdbFileCacheSize;
 		maxRecs = maxMem / 5000;
 		dbname = "posdbcache";
 	}
 	if ( rdbId == RDB_TAGDB ) {
 		rpc = &g_rdbCaches[1];
-		maxSizePtr = &g_conf.m_tagdbFileCacheSize;
-		maxMem = *maxSizePtr;
+		maxMem = g_conf.m_tagdbFileCacheSize;
 		maxRecs = maxMem / 200;
 		dbname = "tagdbcache";
 	}
 	if ( rdbId == RDB_CLUSTERDB ) {
 		rpc = &g_rdbCaches[2];
-		maxSizePtr = &g_conf.m_clusterdbFileCacheSize;
-		maxMem = *maxSizePtr;
+		maxMem = g_conf.m_clusterdbFileCacheSize;
 		maxRecs = maxMem / 32;
 		dbname = "clustcache";
 	}
 	if ( rdbId == RDB_TITLEDB ) {
 		rpc = &g_rdbCaches[3];
-		maxSizePtr = &g_conf.m_titledbFileCacheSize;
-		maxMem = *maxSizePtr;
+		maxMem = g_conf.m_titledbFileCacheSize;
 		maxRecs = maxMem / 3000;
 		dbname = "titdbcache";
 	}
 	if ( rdbId == RDB_SPIDERDB ) {
 		rpc = &g_rdbCaches[4];
-		maxSizePtr = &g_conf.m_spiderdbFileCacheSize;
-		maxMem = *maxSizePtr;
+		maxMem = g_conf.m_spiderdbFileCacheSize;
 		maxRecs = maxMem / 3000;
 		dbname = "spdbcache";
 	}
