@@ -22,13 +22,13 @@ static bool createTestData(BigFile &bigFile, RdbBase *base, std::vector<uint64_t
 	}
 
 	std::unordered_set<uint64_t> docIds;
+
 	auto rdbDocIds = base->getIndex()->getDocIds();
 	for (auto it = rdbDocIds->begin(); it != rdbDocIds->end(); ++it) {
 		auto result = docIds.insert(*it);
 		if (result.second) {
 			uint64_t key = (*it << 24) | base->getNumFiles();
 			testData.push_back(key);
-			logf(LOG_DEBUG, "~~~ %d docId=%lX key=%lX", base->getNumFiles(), *it, key);
 		}
 	}
 
@@ -39,7 +39,6 @@ static bool createTestData(BigFile &bigFile, RdbBase *base, std::vector<uint64_t
 			if (result.second) {
 				uint64_t key = ((*it << 24) | i);
 				testData.push_back(key);
-				logf(LOG_DEBUG, "~~~ %d docId=%lX key=%lX", i, *it, key);
 			}
 		}
 	}
