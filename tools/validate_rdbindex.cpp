@@ -169,10 +169,12 @@ int main(int argc, char **argv) {
 	}
 
 	logf(LOG_DEBUG, "Starting test with %zu entries", testData.size());
-	int64_t start = gettimeofdayInMilliseconds();
+	uint64_t start = gettimeofdayInMicroseconds();
 	for (auto it = testData.begin(); it != testData.end(); ++it) {
 		assert(base->getFilePos(*it >> 24) == static_cast<int32_t>(*it & 0xffff));
 	}
-	logf(LOG_DEBUG, "Ending test after %ld ms", gettimeofdayInMilliseconds() - start);
+
+	uint64_t diff = gettimeofdayInMicroseconds() - start;
+	logf(LOG_DEBUG, "Ending test after %ld ms (%f us)", diff / 1000, ((double)diff / testData.size()));
 	return 0;
 }
