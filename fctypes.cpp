@@ -1182,9 +1182,9 @@ int64_t gettimeofdayInMillisecondsSynced() {
 	if ( ! isClockInSync() ) { 
 		static int s_printed = 0;
 		if ( (s_printed % 100) == 0 ) {
-			s_printed++;
 			log("xml: clock not in sync with host #0 yet!!!!!!");
 		}
+		s_printed++;
 	}
 
 	int64_t now;
