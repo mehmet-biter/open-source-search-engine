@@ -1,6 +1,8 @@
 #include "Timezone.h"
 #include "HashTableX.h"
 #include "hash.h"
+#include "GbMutex.h"
+#include "ScopedLock.h"
 #include <ctype.h>
 
 // now time zones
@@ -292,9 +294,11 @@ static const TimeZone tzs[] = {
 
 // hash table of timezone information
 static HashTableX s_tzt;
+static GbMutex s_mtx;
 
 
 static bool initTimeZoneTable ( ) {
+	ScopedLock sl(s_mtx);
 	// if already initalized return true
 	if ( s_tzt.m_numSlotsUsed ) return true;
 
@@ -342,5 +346,6 @@ int32_t getTimeZone ( const char *s ) {
 
 
 void resetTimezoneTables() {
+	ScopedLock sl(s_mtx);
 	s_tzt.reset();
 }
