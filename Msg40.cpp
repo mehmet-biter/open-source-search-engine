@@ -25,7 +25,7 @@ bool printHttpMime ( class State0 *st ) ;
 static void gotDocIdsWrapper             ( void *state );
 static bool gotSummaryWrapper            ( void *state );
 
-bool isSubDom(char *s , int32_t len);
+static bool isSubDom(char *s , int32_t len);
 
 Msg40::Msg40() {
 	m_socketHadError = 0;
@@ -2012,7 +2012,7 @@ static bool initSubDomTable(HashTable *table, const char *words[], int32_t size 
 	return true;
 }
 
-bool isSubDom(char *s , int32_t len) {
+static bool isSubDom(char *s , int32_t len) {
 	if ( ! s_subDomInitialized ) {
 		s_subDomInitialized = 
 			initSubDomTable(&s_subDomTable, s_subDoms, 
