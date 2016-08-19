@@ -1210,6 +1210,7 @@ key128_t Tagdb::makeDomainEndKey ( Url *u ) {
 
 static bool s_cacheInitialized = false;
 static RdbCache s_cache;
+static GbMutex s_cacheInitializedMutex;
 
 Msg8a::Msg8a() {
 	m_replies  = 0;
@@ -1421,6 +1422,7 @@ bool Msg8a::launchGetRequests ( ) {
 	}
 
 	// initialize cache
+	ScopedLock sl(s_cacheInitializedMutex);
 	if ( !s_cacheInitialized ) {
 		int64_t maxCacheSize = g_conf.m_tagRecCacheSize;
 		int64_t maxCacheNodes = ( maxCacheSize / 200 );
@@ -1428,6 +1430,7 @@ bool Msg8a::launchGetRequests ( ) {
 		s_cacheInitialized = true;
 		s_cache.init( maxCacheSize, -1, true, maxCacheNodes, false, "tagreccache", false, 16, 16, -1 );
 	}
+	sl.unlock();
 
 	// get the next mcast
 	Msg0 *m = &m_msg0s[m_requests];
