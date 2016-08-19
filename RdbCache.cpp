@@ -20,7 +20,9 @@ bool g_cacheWritesEnabled = true;
 static const int64_t m_maxColls = (1LL << (sizeof(collnum_t)*8));
 
 
-RdbCache::RdbCache () {
+RdbCache::RdbCache ()
+  : m_dbname(NULL)
+{
 	m_totalBufSize = 0;
 	m_numBufs      = 0;
 	m_ptrs         = NULL;

@@ -553,7 +553,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 	//
 
 	int32_t numCaches = 0;
-	RdbCache *caches[20];
+	const RdbCache *caches[20];
 	caches[numCaches++] = Msg13::getHttpCacheRobots();
 	caches[numCaches++] = Msg13::getHttpCacheOthers();
 	caches[numCaches++] = g_dns.getCache();
@@ -570,9 +570,6 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 		  "</b></td></tr>\n",
 		  TABLE_STYLE,
 		  numCaches+2 );
-
-	// hack since some are not init'd yet
-	Msg8a::getCache()->m_dbname = "tagreccache";
 
 	if ( format == FORMAT_HTML )
 		// 1st column is empty

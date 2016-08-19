@@ -1230,7 +1230,7 @@ void Msg8a::reset() {
 	m_requests = 0;
 }
 
-RdbCache* Msg8a::getCache() {
+const RdbCache* Msg8a::getCache() {
 	return &s_cache;
 }
 
