@@ -167,7 +167,7 @@ class Tagdb  {
 
 	// private:
 
-	bool setHashTable ( ) ;
+	void setHashTable ( ) ;
 
 	// . we use the cache in here also for caching tagdb records
 	//   and "not-founds" stored remotely (net cache)

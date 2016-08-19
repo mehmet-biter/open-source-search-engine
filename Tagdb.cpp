@@ -13,12 +13,15 @@
 #include "Process.h"
 #include "Rebalance.h"
 #include "RdbCache.h"
+#include "GbMutex.h"
+#include "ScopedLock.h"
 
 static void gotMsg0ReplyWrapper ( void *state );
 
 static HashTableX s_ht;
-
 static bool s_initialized = false;
+static GbMutex s_htMutex;
+
 
 // to stdout
 int32_t Tag::print ( ) {
@@ -971,10 +974,7 @@ int32_t getTagTypeFromStr( const char *tagname , int32_t tagnameLen ) {
 		tagType = hash32( tagname, tagnameLen );
 	}
 
-	// make sure table is valid
-	if ( ! s_initialized ) {
-		g_tagdb.setHashTable();
-	}
+	g_tagdb.setHashTable();
 
 	// sanity check, make sure it is a supported tag!
 	if ( ! s_ht.getValue ( &tagType ) ) {
@@ -989,10 +989,7 @@ int32_t getTagTypeFromStr( const char *tagname , int32_t tagnameLen ) {
 
 // . convert ST_DOMAIN_SQUATTER to "domain_squatter"
 const char *getTagStrFromType ( int32_t tagType ) {
-	// make sure table is valid
-	if ( ! s_initialized ) {
-		g_tagdb.setHashTable();
-	}
+	g_tagdb.setHashTable();
 
 	TagDesc **ptd = (TagDesc **)s_ht.getValue ( &tagType );
 	// sanity check
@@ -1016,17 +1013,18 @@ void Tagdb::reset() {
 	m_siteBuf2.purge();
 }
 
-bool Tagdb::setHashTable ( ) {
+void Tagdb::setHashTable ( ) {
+	ScopedLock sl(s_htMutex);
+
 	if ( s_initialized ) {
-		return true;
+		return;
 	}
 
-	s_initialized = true;
 
 	// the hashtable of TagDescriptors
 	if ( ! s_ht.set ( 4, sizeof(TagDesc *), 1024, NULL, 0, false, 0, "tgdbtb" ) ) {
 		log( LOG_WARN, "tagdb: Tagdb hash init failed." );
-		return false;
+		return;
 	}
 
 	// stock it
@@ -1043,7 +1041,7 @@ bool Tagdb::setHashTable ( ) {
 		TagDesc **petd = (TagDesc **)s_ht.getValue ( &h );
 		if ( petd ) {
 			log( LOG_WARN, "tagdb: Tag %s collides with old tag %s", td->m_name, (*petd)->m_name );
-			return false;
+			return;
 		}
 
 		// set the type
@@ -1053,7 +1051,7 @@ bool Tagdb::setHashTable ( ) {
 		s_ht.addKey ( &h , &td );
 	}
 
-	return true;
+	s_initialized = true;
 }
 
 bool Tagdb::init ( ) {
@@ -2260,7 +2258,7 @@ static bool isTagTypeUnique ( int32_t tt ) {
 	// a dup?
 	if ( tt == TT_DUP ) return false; // TT_DUP = 123456
 	// make sure table is valid
-	if ( ! s_initialized ) g_tagdb.setHashTable();
+	g_tagdb.setHashTable();
 	// look up in hash table
 	TagDesc **tdp = (TagDesc **)s_ht.getValue ( &tt );
 	if ( ! tdp ) {
