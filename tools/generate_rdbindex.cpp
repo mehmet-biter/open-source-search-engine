@@ -32,17 +32,17 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
-	char filepath[1024];
+	char filepath[PATH_MAX];
 
-	char dir[1024];
+	char dir[PATH_MAX];
 	strcpy(filepath, argv[1]);
 	strcpy(dir, dirname(filepath));
 
-	char filename[1024];
+	char filename[PATH_MAX];
 	strcpy(filepath, argv[1]);
 	strcpy(filename, basename(filepath));
 
-	char indexFilename[1024];
+	char indexFilename[PATH_MAX];
 	strcpy(indexFilename, filename);
 	strcpy(strrchr(indexFilename, '.'), ".idx");
 

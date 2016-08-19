@@ -235,7 +235,15 @@ private:
 
 	void generateGlobalIndex();
 
+	// mapping of docId to file
+	// key format
+	// ..dddddd dddddddd dddddddd dddddddd  d = docId
+	// dddddddd ........ ffffffff ffffffff  f = fileIndex
+	std::vector<uint64_t> m_docIdFileIndex;
+
 public:
+	int32_t getFilePos(uint64_t docId) const;
+
 	// this class contains a ptr to us
 	class Rdb           *m_rdb;
 
@@ -257,12 +265,6 @@ public:
 
 	// index for in memory records
 	RdbIndex m_index;
-
-	// mapping of docId to file
-	// key format
-	// ..dddddd dddddddd dddddddd dddddddd  d = docId
-	// dddddddd ........ ffffffff ffffffff  f = fileIndex
-	std::vector<uint64_t> m_docIdFileIndex;
 
 	// for dumping a table to an rdb file
 	RdbDump    *m_dump;  

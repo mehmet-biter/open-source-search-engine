@@ -2547,29 +2547,35 @@ void RdbBase::generateGlobalIndex() {
 		return;
 	}
 
-	logf(LOG_DEBUG, "@@@ start dbname=%s coll=%s numFiles=%d", m_dbname, m_coll, m_numFiles);
+	m_docIdFileIndex.clear();
 
-	const std::vector<uint64_t> *docIds = getIndex()->getDocIds();
-	m_docIdFileIndex.reserve(m_docIdFileIndex.size() + docIds->size());
-
-	std::transform(docIds->begin(), docIds->end(), std::back_inserter(m_docIdFileIndex),
-	               [this](uint64_t docId) { return ((docId << 32) | m_numFiles); });
+	// global index does not include RdbIndex from tree/buckets
 
 	for (int32_t i = 0; i < m_numFiles; i++) {
-		docIds = getIndex(i)->getDocIds();
+		const std::vector<uint64_t> *docIds = m_indexes[i]->getDocIds();
 		m_docIdFileIndex.reserve(m_docIdFileIndex.size() + docIds->size());
 
 		std::transform(docIds->begin(), docIds->end(), std::back_inserter(m_docIdFileIndex),
-		               [i](uint64_t docId) { return ((docId << 32) | i); });
+		               [i](uint64_t docId) { return ((docId << 24) | i); });
 	}
-
-	logf(LOG_DEBUG, "@@@ dbname=%s coll=%s size=%zu", m_dbname, m_coll, m_docIdFileIndex.size());
 
 	std::sort(m_docIdFileIndex.begin(), m_docIdFileIndex.end());
 	auto it = std::unique(m_docIdFileIndex.rbegin(), m_docIdFileIndex.rend(),
-	                      [](uint64_t a, uint64_t b) { return (a & 0xffffffff00000000ULL) == (b & 0xffffffff00000000ULL); });
+	                      [](uint64_t a, uint64_t b) { return (a & 0xffffffffff000000ULL) == (b & 0xffffffffff000000ULL); });
 	m_docIdFileIndex.erase(m_docIdFileIndex.begin(), it.base());
+}
 
-	logf(LOG_DEBUG, "@@@ end dbname=%s coll=%s size=%zu", m_dbname, m_coll, m_docIdFileIndex.size());
+int32_t RdbBase::getFilePos(uint64_t docId) const {
+	if (m_index.inIndex(docId)) {
+		return m_numFiles;
+	}
 
+	auto it = std::lower_bound(m_docIdFileIndex.cbegin(), m_docIdFileIndex.cend(), docId << 24);
+	if ((*it >> 24) == docId) {
+		return static_cast<int32_t>(*it & 0xffff);
+	}
+
+	// it's not possible that we can't find docId
+	logError("Unable to find docId=%lu in global index", docId);
+	gbshutdownLogicError();
 }

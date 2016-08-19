@@ -35,7 +35,6 @@ public:
 
 	bool close( bool urgent );
 
-
 	bool writeIndex();
 	bool writeIndex2();
 
@@ -56,7 +55,9 @@ public:
 
 	void addRecord(char *key);
 
+	bool inIndex(uint64_t docId) const;
 	const std::vector<uint64_t>* getDocIds() const { return &m_docIds; }
+
 private:
 	void printIndex();
 

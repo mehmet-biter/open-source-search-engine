@@ -117,6 +117,8 @@ bool RdbIndex::writeIndex2() {
 		m_docIds.erase(std::unique(m_docIds.begin(), m_docIds.end()), m_docIds.end());
 	}
 
+	/// @todo we may want to store size of data used to generate index file here so that we can validate index file
+	/// eg: store total keys in buckets/tree; size of rdb file
 	// first 8 bytes are the total docIds in the index file
 	size_t docid_count = m_docIds.size();
 
@@ -233,6 +235,10 @@ void RdbIndex::addRecord(char *key) {
 		m_sortCount = 0;
 		m_startSortPos = m_docIds.size() - 1;
 	}
+}
+
+bool RdbIndex::inIndex(uint64_t docId) const {
+	return std::binary_search(m_docIds.begin(), m_docIds.end(), docId);
 }
 
 void RdbIndex::printIndex() {
