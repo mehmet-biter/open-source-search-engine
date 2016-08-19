@@ -14,6 +14,10 @@
 #include "Sanity.h"
 
 
+// how many Msg0 requests can we launch at the same time?
+#define MSG51_MAX_REQUESTS 60
+
+
 // . these must be 1-1 with the enums above
 // . used for titling the counts of g_stats.m_filterStats[]
 const char * const g_crStrings[] = {
@@ -41,7 +45,10 @@ RdbCache s_clusterdbQuickCache;
 static bool     s_cacheInit = false;
 
 
-Msg51::Msg51 ( ) {
+Msg51::Msg51 ( )
+  : m_slot(NULL),
+    m_numSlots(0)
+{
 	m_clusterRecs     = NULL;
 	m_clusterLevels   = NULL;
 	pthread_mutex_init(&m_mtx,NULL);
@@ -54,6 +61,9 @@ Msg51::~Msg51 ( ) {
 void Msg51::reset ( ) {
 	m_clusterRecs     = NULL;
 	m_clusterLevels   = NULL;
+	m_numSlots = 0;
+	delete[] m_slot;
+	m_slot = NULL;
 }
 
 
@@ -122,7 +132,12 @@ bool Msg51::getClusterRecs ( const int64_t     *docIds,
 	m_numRequests = 0;
 	m_numReplies  = 0;
 	// clear/initialize these
-	for ( int32_t i = 0 ; i < MSG51_MAX_REQUESTS ; i++ ) {
+	if(m_numDocIds<MSG51_MAX_REQUESTS)
+		m_numSlots = m_numDocIds;
+	else
+		m_numSlots = MSG51_MAX_REQUESTS;
+	m_slot = new Slot[m_numSlots];
+	for ( int32_t i = 0 ; i < m_numSlots ; i++ ) {
 		m_slot[i].m_msg51 = this;
 		m_slot[i].m_inUse = false;
 	}
@@ -147,7 +162,7 @@ bool Msg51::sendRequests_unlocked(int32_t k) {
  sendLoop:
 
 	// bail if none left, return false if still waiting
-	if ( m_numRequests - m_numReplies >= MSG51_MAX_REQUESTS ) return false;
+	if ( m_numRequests - m_numReplies >= m_numSlots ) return false;
 
 	bool isDone = false;
 	if ( m_nexti >= m_numDocIds ) isDone = true;
@@ -216,21 +231,21 @@ bool Msg51::sendRequests_unlocked(int32_t k) {
 	int32_t slot ;
 
 	// ignore bogus hints
-	if ( k >= MSG51_MAX_REQUESTS ) k = -1;
+	if ( k >= m_numSlots ) k = -1;
 
 	// if hint was provided use that
 	if ( k >= 0 && ! m_slot[k].m_inUse )
 		slot = k;
 	// otherwise, do a scan for the empty slot
 	else {
-		for ( slot = 0 ; slot < MSG51_MAX_REQUESTS ; slot++ )
+		for ( slot = 0 ; slot < m_numSlots ; slot++ )
 			// break out if available
 			if(!m_slot[slot].m_inUse)
 				break;
 	}
 
 	// sanity check -- must have one!!
-	if ( slot >= MSG51_MAX_REQUESTS ) gbshutdownLogicError();
+	if ( slot >= m_numSlots ) gbshutdownLogicError();
 
 	// send it, returns false if blocked, true otherwise
 	sendRequest ( slot );
