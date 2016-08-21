@@ -141,7 +141,7 @@ bool Robots::getValue( const char **value, int32_t *valueLen ) {
 }
 
 bool Robots::parseUserAgent( const char *field, int32_t fieldLen, bool *isUserAgentPtr, bool *isDefaultUserAgentPtr ) {
-	static const char *s_userAgent = "user-agent";
+	static const char s_userAgent[] = "user-agent";
 	static const int32_t s_userAgentLen = 10;
 
 	if ( fieldLen == s_userAgentLen && strncasecmp( field, s_userAgent, fieldLen ) == 0 ) {
@@ -168,7 +168,7 @@ bool Robots::parseUserAgent( const char *field, int32_t fieldLen, bool *isUserAg
 }
 
 bool Robots::parseCrawlDelay( const char *field, int32_t fieldLen, bool isUserAgent ) {
-	static const char *s_crawlDelay = "crawl-delay";
+	static const char s_crawlDelay[] = "crawl-delay";
 	static const int32_t s_crawlDelayLen = 11;
 
 	if ( fieldLen == s_crawlDelayLen && strncasecmp( field, s_crawlDelay, fieldLen ) == 0 ) {
@@ -214,7 +214,7 @@ void Robots::parsePath( bool isAllow, bool isUserAgent ) {
 }
 
 bool Robots::parseAllow( const char *field, int32_t fieldLen, bool isUserAgent ) {
-	static const char *s_allow = "allow";
+	static const char s_allow[] = "allow";
 	static const int32_t s_allowLen = 5;
 
 	if ( fieldLen == s_allowLen && strncasecmp( field, s_allow, fieldLen ) == 0 ) {
@@ -227,7 +227,7 @@ bool Robots::parseAllow( const char *field, int32_t fieldLen, bool isUserAgent )
 }
 
 bool Robots::parseDisallow( const char *field, int32_t fieldLen, bool isUserAgent ) {
-	static const char *s_disallow = "disallow";
+	static const char s_disallow[] = "disallow";
 	static const int32_t s_disallowLen = 8;
 
 	if ( fieldLen == s_disallowLen && strncasecmp( field, s_disallow, fieldLen ) == 0 ) {
