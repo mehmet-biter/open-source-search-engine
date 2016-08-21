@@ -27,7 +27,7 @@ struct StateLogView {
 	int32_t       m_numSlots;
 };
 
-static const char *s_magicStr = "4j3.8x*";
+static const char s_magicStr[] = "4j3.8x*";
 
 bool sendPageLogView    ( TcpSocket *s , HttpRequest *r ) {
 
