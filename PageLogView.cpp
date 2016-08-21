@@ -278,7 +278,7 @@ void gotRemoteLogWrapper(void *state, UdpSlot *slot) {
 
 
 
-	while(1) {
+	for(;;) {
 		int64_t timeStamp = 9223372036854775807LL;
 		//int64_t timeStamp = LONG_LONG_MAX;
 		int32_t ndx = -1;
