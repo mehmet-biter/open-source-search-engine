@@ -31,7 +31,7 @@ static File   *s_filePtrs   [ MAX_NUM_FDS ];
 // . this linux kernel has 1024 fd's
 // . i saw the tcp server using 211 sockets when spidering, must be doing
 //   a lot of robots.txt lookups! let's set this down from 800 to 500
-static int       s_maxNumOpenFiles = 500;
+static const int s_maxNumOpenFiles = 500;
 static int       s_numOpenFiles    = 0;
 
 // . keep track of number of times an fd was closed

@@ -827,7 +827,7 @@ static const uint64_t s_countryLanguages[] = {
 	(1LL<<langEnglish)                                            // zw
 };
 
-static int s_numCountryCodes = sizeof(s_countryCode)/sizeof(s_countryCode[0]);
+static const int s_numCountryCodes = sizeof(s_countryCode)/sizeof(s_countryCode[0]);
 
 CountryCode::CountryCode() {
 	m_init = false;
