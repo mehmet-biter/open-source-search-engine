@@ -2419,16 +2419,6 @@ void RdbBase::saveIndexes() {
 	}
 }
 
-void RdbBase::verifyDiskPageCache ( ) {
-	//if ( !m_pc ) return;
-	// disable for now
-	return;
-	// for ( int32_t i = 0; i < m_numFiles; i++ ){
-	// 	BigFile *f = m_files[i];
-	// 	m_pc->verifyData(f);
-	// }
-}
-
 bool RdbBase::verifyFileSharding ( ) {
 
 	if ( m_rdb->m_isCollectionLess ) return true;

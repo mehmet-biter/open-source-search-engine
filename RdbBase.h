@@ -156,8 +156,6 @@ class RdbBase {
 	// . set the m_files, m_fileMaps, m_fileIds arrays and m_numFiles
 	bool setFiles ( ) ;
 
-	void verifyDiskPageCache ( );
-
 	bool verifyFileSharding ( );
 
 	// . add a (new) file to the m_files/m_maps/m_fileIds arrays
