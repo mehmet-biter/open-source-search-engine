@@ -13,6 +13,10 @@
 #define GIT_COMMIT_ID unknown
 #endif
 
+#ifndef GIT_BRANCH
+#define GIT_BRANCH unknown
+#endif
+
 #ifndef BUILD_CONFIG
 #define BUILD_CONFIG unknown
 #endif
@@ -51,9 +55,14 @@ const char* getCommitId() {
 	return TO_STRING(GIT_COMMIT_ID);
 }
 
+const char* getBranch() {
+	return TO_STRING(GIT_BRANCH);
+}
+
 void printVersion() {
 	fprintf(stdout,"Gigablast Version      : %s\n", getVersion());
 	fprintf(stdout,"Gigablast Build config : %s\n", getBuildConfig());
+	fprintf(stdout,"Gigablast Git branch   : %s\n", getBranch());
 	fprintf(stdout,"Gigablast Git commit   : %s\n", getCommitId());
 }
 

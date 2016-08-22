@@ -204,6 +204,7 @@ ifneq ($(shell git diff --shortstat 2> /dev/null),)
 	DIRTY=-dirty
 endif
 GIT_VERSION=$(shell git rev-parse HEAD)$(DIRTY)
+GIT_BRANCH=$(shell git rev-parse --abbrev-ref HEAD)
 
 
 .PHONY: all
@@ -344,7 +345,7 @@ entities.json entities.inc:
 	./generate_entities.py >entities.inc
 
 Entities.o: entities.inc
-Version.o: CPPFLAGS += -DGIT_COMMIT_ID=$(GIT_VERSION) -DBUILD_CONFIG=$(config)
+Version.o: CPPFLAGS += -DGIT_COMMIT_ID=$(GIT_VERSION) -DGIT_BRANCH=$(GIT_BRANCH) -DBUILD_CONFIG=$(config)
 
 # different optimization level
 $(OBJS_O1): CPPFLAGS += $(O1)
