@@ -224,7 +224,7 @@ bool RdbBucket::sort() {
 	int32_t dso = ks + sizeof(char*);//datasize offset
 	int32_t numNeg = 0;
 
-	while(1) {
+	for(;;) {
 		if(list1 >= list1end) {
 			// . just copy into place, deduping as we go
 			while(list2 < list2end) {
@@ -1807,7 +1807,7 @@ bool RdbBuckets::delColl(collnum_t collnum) {
 	int32_t minRecSizes = 1024*1024;
 	int32_t numPosRecs  = 0;
 	int32_t numNegRecs = 0;
-	while (1) {
+	for(;;) {
 		if(!getList(collnum, KEYMIN(), KEYMAX(), minRecSizes ,
 			    &list , &numPosRecs , &numNegRecs, false )) {
 			if(g_errno == ENOMEM && minRecSizes > 1024) {

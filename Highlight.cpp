@@ -22,7 +22,7 @@ static const char *s_frontTags[] = {
 	"<span class='gbcnst09'>"
 };
 
-static const char *s_styleSheet =
+static const char s_styleSheet[] =
 "<style type='text/css'>"
 	"span.gbcnst00{color:black;background-color:#ffff66}"
 	"span.gbcnst01{color:black;background-color:#a0ffff}"

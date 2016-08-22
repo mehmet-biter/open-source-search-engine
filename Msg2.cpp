@@ -17,9 +17,27 @@
 
 static const int signature_init = 0x7e8a32f9;
 
+static int countWhitelistItems(const char *whitelist) {
+	if(!whitelist)
+		return 0;
+	int c = 0;
+	while(*whitelist) {
+		while(*whitelist==' ')
+			whitelist++;
+		if(*whitelist)
+			c++;
+		while(*whitelist && *whitelist!=' ')
+			whitelist++;
+	}
+	return c;
+}
+
+
 
 Msg2::Msg2()
-  : m_msg5(0),
+  : m_whiteLists(NULL),
+    m_numWhitelists(0),
+    m_msg5(0),
     m_avail(0),
     m_numLists(0),
     m_requestsBeingSubmitted(false)
@@ -42,6 +60,9 @@ void Msg2::reset ( ) {
 	delete[] m_avail;
 	m_avail = 0;
 	m_lists = 0;
+	delete[] m_whiteLists;
+	m_whiteLists = NULL;
+	m_numWhitelists = 0;
 }
 
 
@@ -117,10 +138,12 @@ bool Msg2::getLists ( collnum_t collnum , // char    *coll        ,
 	m_startTime = gettimeofdayInMilliseconds();
 	// set this
 	m_numLists = numQterms;
+	m_numWhitelists = countWhitelistItems(whiteList);
 
-	m_msg5 = new Msg5[m_numLists+MAX_WHITELISTS];
-	m_avail = new bool[m_numLists+MAX_WHITELISTS];
-	for ( int32_t i = 0; i < m_numLists+MAX_WHITELISTS; i++ )
+	m_msg5 = new Msg5[m_numLists+m_numWhitelists];
+	m_avail = new bool[m_numLists+m_numWhitelists];
+	m_whiteLists = new RdbList[m_numWhitelists];
+	for ( int32_t i = 0; i < m_numLists+m_numWhitelists; i++ )
 		m_avail[i] = true;
 		
 	if ( m_isDebug ) {
@@ -325,7 +348,7 @@ bool Msg2::getLists ( ) {
 		m_p = p;
 
 		// sanity for Msg39's sake. do no breach m_lists[].
-		if ( m_w >= MAX_WHITELISTS ) gbshutdownLogicError();
+		if ( m_w >= m_numWhitelists ) gbshutdownLogicError();
 
 		// like 90MB last time i checked. so it won't read more
 		// than that...
@@ -390,7 +413,7 @@ bool Msg2::getLists ( ) {
 
 Msg5 *Msg2::getAvailMsg5 ( ) {
 	ScopedLock sl(m_mtxMsg5);
-	for ( int32_t i = 0; i < m_numLists+MAX_WHITELISTS; i++ ) {
+	for ( int32_t i = 0; i < m_numLists+m_numWhitelists; i++ ) {
 		if(m_avail[i]) {
 			m_avail[i] = false;
 			return &m_msg5[i];
@@ -401,7 +424,7 @@ Msg5 *Msg2::getAvailMsg5 ( ) {
 
 void Msg2::returnMsg5 ( Msg5 *msg5 ) {
 	ScopedLock sl(m_mtxMsg5);
-	for(int32_t i = 0; i < m_numLists+MAX_WHITELISTS; i++) {
+	for(int32_t i = 0; i < m_numLists+m_numWhitelists; i++) {
 		if(&m_msg5[i] == msg5) {
 			if(m_avail[i])
 				gbshutdownLogicError();

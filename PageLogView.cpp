@@ -27,7 +27,7 @@ struct StateLogView {
 	int32_t       m_numSlots;
 };
 
-static const char *s_magicStr = "4j3.8x*";
+static const char s_magicStr[] = "4j3.8x*";
 
 bool sendPageLogView    ( TcpSocket *s , HttpRequest *r ) {
 
@@ -278,7 +278,7 @@ void gotRemoteLogWrapper(void *state, UdpSlot *slot) {
 
 
 
-	while(1) {
+	for(;;) {
 		int64_t timeStamp = 9223372036854775807LL;
 		//int64_t timeStamp = LONG_LONG_MAX;
 		int32_t ndx = -1;

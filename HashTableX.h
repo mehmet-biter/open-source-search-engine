@@ -151,6 +151,7 @@ class HashTableX {
 		// crazy!
 		log("hash: table is full!");
 		gbshutdownAbort(true);
+		/*NOTREACHED*/
 		return true;
 	}
 

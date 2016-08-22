@@ -882,7 +882,7 @@ const char *get_charset_str(int16_t cs)
     if (cs > s_charsets[e].mib_enum) return NULL;
     
     // Binary search
-    while (1){
+    for(;;) {
 	// Check endpoints
 	if (cs == s_charsets[s].mib_enum) return s_charsets[s].mime;
 	if (cs ==s_charsets[e].mib_enum) return s_charsets[e].mime;
@@ -910,7 +910,7 @@ bool supportedCharset(int16_t cs) {
     if (cs > s_charsets[e].mib_enum) return false;
     
     // Binary search
-    while (1){
+    for(;;) {
 	// Check endpoints
 	if (cs == s_charsets[s].mib_enum) return s_charsets[s].supported;
 	if (cs ==s_charsets[e].mib_enum) return s_charsets[e].supported;
