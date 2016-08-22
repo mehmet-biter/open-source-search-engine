@@ -2115,28 +2115,10 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 	// if we have no files on disk for this db, don't bother
 	// preserving a a negative rec, it just wastes tree space
 	if ( KEYNEG(key) && m_useTree ) {
-		// . or if our rec size is 0 we don't need to keep???
-		// . is this going to be a problem?
-		// . TODO: how could this be problematic?
-		// . w/o this our IndexTable stuff doesn't work right
-		// . dup key overriding is allowed in an Rdb so you
-		//   can't NOT add a negative rec because it 
-		//   collided with one positive key BECAUSE that 
-		//   positive key may have been overriding another
-		//   positive or negative key on disk
-		// . well, i just reindexed some old pages, with
-		//   the new code they re-add all terms to the index
-		//   even if unchanged since last time in case the
-		//   truncation limit has been increased. so when
-		//   i banned the page and re-added again, the negative
-		//   key annihilated with the 2nd positive key in
-		//   the tree and left the original key on disk in 
-		//   tact resulting in a "docid not found" msg! 
-		//   so we really should add the negative now. thus 
-		//   i commented this out.
-		//if ( m_fixedDataSize == 0 ) return true;
 		// return if all data is in the tree
-		if ( getBase(collnum)->getNumFiles() == 0 ) return true;
+		if ( getBase(collnum)->getNumFiles() == 0 ) {
+			return true;
+		}
 		// . otherwise, assume we match a positive...
 	}
 
@@ -2152,7 +2134,6 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 	// . TODO: add using "lastNode" as a start node for the insertion point
 	// . should set g_errno if failed
 	// . caller should retry on g_errno of ETRYAGAIN or ENOMEM
-	int32_t tn;
 	if ( !m_useTree ) {
 		// debug indexdb
 		if ( m_buckets.addNode ( collnum , key , data , dataSize )>=0){
@@ -2200,6 +2181,7 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 		}
 	}
 
+	int32_t tn;
 	if ( m_useTree && (tn=m_tree.addNode (collnum,key,data,dataSize))>=0) {
 		// if adding to spiderdb, add to cache, too
 		if ( m_rdbId != RDB_SPIDERDB && m_rdbId != RDB_DOLEDB ) 
