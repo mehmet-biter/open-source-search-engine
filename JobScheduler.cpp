@@ -179,7 +179,6 @@ public:
 private:
 	PoolThreadParameters ptp;
 	std::vector<pthread_t> tid;
-	job_done_notify_t job_done_notify;
 };
 
 
