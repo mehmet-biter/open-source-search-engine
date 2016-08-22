@@ -162,8 +162,8 @@ bool RdbBase::init ( char  *dir            ,
 	if (m_useIndexFile) {
 		char indexName[64];
 		sprintf(indexName, "%s-saved.idx", m_dbname);
-		m_index.set(m_dir.getDir(), indexName, m_fixedDataSize, m_useHalfKeys, m_ks, m_rdb->m_rdbId);
-		if (!m_index.readIndex()) {
+		m_treeIndex.set(m_dir.getDir(), indexName, m_fixedDataSize, m_useHalfKeys, m_ks, m_rdb->m_rdbId);
+		if (!m_treeIndex.readIndex()) {
 			g_errno = 0;
 			log(LOG_WARN, "db: Could not read index file %s", indexName);
 
@@ -175,7 +175,7 @@ bool RdbBase::init ( char  *dir            ,
 			log(LOG_INFO, "db: Attempting to generate index file %s/%s-saved.dat. May take a while.",
 			    m_dir.getDir(), m_dbname);
 
-			bool result = m_tree ? m_index.generateIndex(m_tree, m_collnum) : m_index.generateIndex(m_buckets, m_collnum);
+			bool result = m_tree ? m_treeIndex.generateIndex(m_tree, m_collnum) : m_treeIndex.generateIndex(m_buckets, m_collnum);
 			if (!result) {
 				logError("db: Index generation failed for %s/%s-saved.dat.", m_dir.getDir(), m_dbname);
 				gbshutdownCorrupted();
@@ -188,7 +188,7 @@ bool RdbBase::init ( char  *dir            ,
 			//   when main.cpp calls attemptMerge()
 			log("db: Saving generated index file to disk.");
 
-			bool status = m_index.writeIndex();
+			bool status = m_treeIndex.writeIndex();
 			if (!status) {
 				log(LOG_ERROR, "db: Save failed.");
 				return false;
@@ -2393,29 +2393,31 @@ void RdbBase::saveMaps() {
 	}
 }
 
-//@@@ BR: no-merge index begin
-void RdbBase::saveIndexes() {
+void RdbBase::saveTreeIndex() {
 	if (!m_useIndexFile) {
 		return;
 	}
 
-	if ( !m_index.writeIndex() ) {
+	if (!m_treeIndex.writeIndex()) {
 		// unable to write, let's abort
 		g_process.shutdownAbort();
 	}
+}
 
-	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) {
+void RdbBase::saveIndexes() {
+	for (int32_t i = 0; i < m_numFiles; i++) {
 		if (!m_indexes[i]) {
+			log(LOG_WARN, "base: index for file #%i is null", i);
 			continue;
 		}
 
-		if (!m_indexes[i]->writeIndex()) {
+		bool status = m_indexes[i]->writeIndex();
+		if (!status) {
 			// unable to write, let's abort
 			g_process.shutdownAbort();
 		}
 	}
 }
-//@@@ BR: no-merge index end
 
 void RdbBase::verifyDiskPageCache ( ) {
 	//if ( !m_pc ) return;
@@ -2566,7 +2568,7 @@ void RdbBase::generateGlobalIndex() {
 }
 
 int32_t RdbBase::getFilePos(uint64_t docId) const {
-	if (m_index.inIndex(docId)) {
+	if (m_treeIndex.inIndex(docId)) {
 		return m_numFiles;
 	}
 

@@ -85,10 +85,10 @@ class RdbBase {
 	void closeMaps ( bool urgent );
 	void saveMaps  ();
 
-//@@@ BR: no-merge index begin
 	void closeIndexes ( bool urgent );
-	void saveIndexes  ();
-//@@@ BR: no-merge index end
+	void saveIndexes();
+
+	void saveTreeIndex();
 
 
 	// get the directory name where this rdb stores it's files
@@ -107,7 +107,7 @@ class RdbBase {
 	int32_t       getFileId ( int32_t n ) { return m_fileIds [n]; }
 	int32_t       getFileId2( int32_t n ) { return m_fileIds2[n]; }
 	RdbMap    *getMap    ( int32_t n ) { return m_maps    [n]; }
-	RdbIndex  *getIndex  () { return &m_index; }
+	RdbIndex  *getTreeIndex  () { return &m_treeIndex; }
 	RdbIndex  *getIndex  ( int32_t n ) { return m_indexes [n]; }
 
 	float getPercentNegativeRecsOnDisk ( int64_t *totalArg ) const;
@@ -264,7 +264,7 @@ public:
 	RdbBuckets *m_buckets;
 
 	// index for in memory records
-	RdbIndex m_index;
+	RdbIndex m_treeIndex;
 
 	// for dumping a table to an rdb file
 	RdbDump    *m_dump;  

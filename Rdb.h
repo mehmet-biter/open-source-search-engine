@@ -236,9 +236,10 @@ public:
 
 	bool isSavingTree ( ) ;
 
-	bool saveTree  ( bool useThread ) ;
+	bool saveTree(bool useThread);
+	bool saveTreeIndex(bool useThread);
+	bool saveIndexes();
 	bool saveMaps();
-	bool saveIndex( bool useThread );
 
 	//bool saveCache ( bool useThread ) ;
 

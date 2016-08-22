@@ -23,7 +23,7 @@ static bool createTestData(BigFile &bigFile, RdbBase *base, std::vector<uint64_t
 
 	std::unordered_set<uint64_t> docIds;
 
-	auto rdbDocIds = base->getIndex()->getDocIds();
+	auto rdbDocIds = base->getTreeIndex()->getDocIds();
 	for (auto it = rdbDocIds->begin(); it != rdbDocIds->end(); ++it) {
 		auto result = docIds.insert(*it);
 		if (result.second) {

@@ -611,14 +611,18 @@ bool Process::save2 ( ) {
 
 	// . tell all rdbs to save trees
 	// . will return true if no rdb tree needs a save
-	if ( ! saveRdbTrees ( useThreads , false ) ) {
+	if (!saveRdbTrees(useThreads, false)) {
+		return false;
+	}
+
+	if (!saveRdbIndexes()) {
 		return false;
 	}
 
 	// . save all rdb maps if they need it
 	// . will return true if no rdb map needs a save
 	// . save these last since maps can be auto-regenerated at startup
-	if ( ! saveRdbMaps() ) {
+	if (!saveRdbMaps()) {
 		return false;
 	}
 
@@ -726,8 +730,17 @@ bool Process::shutdown2() {
 
 	// . tell all rdbs to save trees
 	// . will return true if no rdb tree needs a save
-	if ( ! saveRdbTrees ( false , true ) ) 
-		if ( ! m_urgent ) return false;
+	if (!saveRdbTrees(false, true)) {
+		if (!m_urgent) {
+			return false;
+		}
+	}
+
+	if (!saveRdbIndexes()) {
+		if (!m_urgent) {
+			return false;
+		}
+	}
 
 	// save this right after the trees in case we core
 	// in saveRdbMaps() again due to the core we are
@@ -739,8 +752,8 @@ bool Process::shutdown2() {
 
 	// . save all rdb maps if they need it
 	// . will return true if no rdb map needs a save
-	if ( ! saveRdbMaps() ) {
-		if ( ! m_urgent ) {
+	if (!saveRdbMaps()) {
+		if (!m_urgent) {
 			return false;
 		}
 	}
@@ -955,8 +968,8 @@ bool Process::saveRdbTrees ( bool useThread , bool shuttingDown ) {
 			log( "gb: calling save tree for %s", rdb->m_dbname );
 		}
 
-		rdb->saveTree ( useThread );
-		rdb->saveIndex( useThread );
+		rdb->saveTree(useThread);
+		rdb->saveTreeIndex(useThread);
 	}
 
 	// . save waitingtrees for each collection, blocks.
@@ -1008,6 +1021,22 @@ bool Process::saveRdbTrees ( bool useThread , bool shuttingDown ) {
 
 	// reset for next call
 	m_calledSave = false;
+
+	// everyone is done saving
+	return true;
+}
+
+bool Process::saveRdbIndexes() {
+	// never if in read only mode
+	if (g_conf.m_readOnlyMode) {
+		return true;
+	}
+
+	// loop over all Rdbs and save them
+	for (int32_t i = 0; i < m_numRdbs; i++) {
+		Rdb *rdb = m_rdbs[i];
+		rdb->saveIndexes();
+	}
 
 	// everyone is done saving
 	return true;

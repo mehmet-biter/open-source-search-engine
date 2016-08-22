@@ -876,28 +876,24 @@ bool Rdb::saveTree ( bool useThread ) {
 		dbn = "unknown";
 	}
 
-	// note it
-	if ( m_useTree && m_tree.m_needsSave ) {
-		log( LOG_DEBUG, "db: saving tree %s", dbn );
-	}
-
-	if ( ! m_useTree && m_buckets.needsSave() ) {
-		log( LOG_DEBUG, "db: saving buckets %s", dbn );
-	}
-
 	// . if RdbTree::m_needsSave is false this will return true
 	// . if RdbTree::m_isSaving  is true this will return false
 	// . returns false if blocked, true otherwise
 	// . sets g_errno on error
-	if ( m_useTree ) {
+	if (m_useTree) {
+		if (m_tree.m_needsSave) {
+			log( LOG_DEBUG, "db: saving tree %s", dbn );
+		}
 		return m_tree.fastSave ( getDir(), m_dbname, useThread, NULL, NULL );
-	}
-	else {
+	} else {
+		if (m_buckets.needsSave()) {
+			log( LOG_DEBUG, "db: saving buckets %s", dbn );
+		}
 		return m_buckets.fastSave ( getDir(), useThread, NULL, NULL );
 	}
 }
 
-bool Rdb::saveIndex( bool /* useThread */) {
+bool Rdb::saveTreeIndex(bool /* useThread */) {
 	if( !m_useIndexFile ) {
 		return true;
 	}
@@ -906,6 +902,23 @@ bool Rdb::saveIndex( bool /* useThread */) {
 	for ( int32_t i = 0 ; i < getNumBases() ; i++ ) {
 		CollectionRec *cr = g_collectiondb.m_recs[i];
 		if ( ! cr ) {
+			continue;
+		}
+
+		// if swapped out, this will be NULL, so skip it
+		RdbBase *base = cr->getBasePtr(m_rdbId);
+		if (base) {
+			base->saveTreeIndex();
+		}
+	}
+	return true;
+}
+
+bool Rdb::saveIndexes() {
+	// now loop over bases
+	for (int32_t i = 0; i < getNumBases(); i++) {
+		CollectionRec *cr = g_collectiondb.m_recs[i];
+		if (!cr) {
 			continue;
 		}
 
@@ -2133,7 +2146,7 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 		// This index is stored in the Rdb record- the individual part file 
 		// indexes are in RdbBase and are read-only except when merging).
 		//
-		getBase(collnum)->getIndex()->addRecord(key);
+		getBase(collnum)->getTreeIndex()->addRecord(key);
 	}
 
 	// . TODO: add using "lastNode" as a start node for the insertion point
