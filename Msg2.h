@@ -87,7 +87,8 @@ private:
 	int64_t m_docIdEnd;
 	const char *m_p;
 	int32_t m_w;
-	RdbList m_whiteLists[ MAX_WHITELISTS];
+	RdbList *m_whiteLists;
+	int32_t m_numWhitelists;
 
 	// internal helper method that actually does the fetching of the lists
 	bool getLists();
