@@ -5049,7 +5049,8 @@ void Parms::init ( ) {
 	m++;
 
 	m->m_title = "Use new no-in-memory-merge feature";
-	m->m_desc  = "Posdb will no longer contain delete keys, and the entire document is indexed every time a change is found.";
+	m->m_desc  = "Posdb will no longer contain delete keys, and the entire document is indexed every time a change is found. "
+	             "(Changes requires restart)";
 	m->m_cgi   = "noinmemmerge";
 	m->m_off   = offsetof(Conf,m_noInMemoryPosdbMerge);
 	m->m_type  = TYPE_BOOL;
