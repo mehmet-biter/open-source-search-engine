@@ -1433,7 +1433,6 @@ bool Rdb::dumpCollLoop ( ) {
 			     doneDumpingCollWrapper ,
 			     m_useHalfKeys  ,
 			     0LL            ,  // dst start offset
-			     //0              ,  // prev last key
 			     KEYMIN()       ,  // prev last key
 			     m_ks           ,  // keySize
 			     NULL,

@@ -9,33 +9,31 @@
 #include "Process.h"
 
 void doneReadingForVerifyWrapper ( void *state ) ;
-//void gotTfndbListWrapper ( void *state , RdbList *list, Msg5 *msg5 ) ;
 
 // . return false if blocked, true otherwise
 // . sets g_errno on error
-bool RdbDump::set (
-		   collnum_t collnum ,
-		    BigFile  *file          ,
-		    int32_t      id2           , // in Rdb::m_files[] array
-		    RdbBuckets *buckets     , // optional buckets to dump
-		    RdbTree  *tree          , // optional tree to dump
-		    RdbMap   *map           ,
-		    RdbCache *cache         ,
-		    int32_t      maxBufSize    ,
-		    bool      orderedDump   , // dump in order of keys?
-		    bool      dedup         , // 4 RdbCache::incorporateList()
-		    int32_t      niceness      ,
-		    void     *state         ,
-		    void      (* callback) ( void *state ) ,
-		    bool      useHalfKeys   ,
-		    int64_t startOffset   ,
-		    const char     *prevLastKey   ,
-		    char      keySize       ,
-		   void *pc ,
-		    int64_t maxFileSize   ,
-		    Rdb      *rdb           ) {
+bool RdbDump::set(collnum_t collnum,
+                  BigFile *file,
+                  int32_t id2, // in Rdb::m_files[] array
+                  RdbBuckets *buckets, // optional buckets to dump
+                  RdbTree *tree, // optional tree to dump
+                  RdbMap *map,
+                  RdbCache *cache,
+                  int32_t maxBufSize,
+                  bool orderedDump, // dump in order of keys?
+                  bool dedup, // 4 RdbCache::incorporateList()
+                  int32_t niceness,
+                  void *state,
+                  void (*callback)(void *state),
+                  bool useHalfKeys,
+                  int64_t startOffset,
+                  const char *prevLastKey,
+                  char keySize,
+                  void *pc,
+                  int64_t maxFileSize,
+                  Rdb *rdb) {
 
-	if ( ! orderedDump ) {
+	if (!orderedDump) {
 		log(LOG_LOGIC,"db: RdbDump does not support non-ordered.");
 		g_process.shutdownAbort(true);
 	}
@@ -43,7 +41,9 @@ bool RdbDump::set (
 	m_collnum = collnum;
 
 	// use 0 for collectionless
-	if ( rdb && rdb->m_isCollectionLess ) m_collnum = 0;
+	if (rdb && rdb->m_isCollectionLess) {
+		m_collnum = 0;
+	}
 
 	// are we like catdb/statsdb etc.?
 	m_doCollCheck = true;
