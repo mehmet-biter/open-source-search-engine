@@ -217,6 +217,9 @@ static void sendReply ( UdpSlot *slot , Msg39 *msg39 , char *reply , int32_t rep
 	if ( msg39 ) {
 		mdelete ( msg39 , sizeof(Msg39) , "Msg39" );
 		delete (msg39);
+//msg39->~Msg39();
+//memset(msg39,-3,sizeof(*msg39));
+//::operator delete((void*)msg39);
 	}
 }
 

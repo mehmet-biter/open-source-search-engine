@@ -40,6 +40,8 @@ Msg2::Msg2()
     m_msg5(0),
     m_avail(0),
     m_numLists(0),
+    m_numReplies(0),
+    m_numRequests(0),
     m_requestsBeingSubmitted(false)
 {
 	set_signature();
@@ -52,10 +54,17 @@ Msg2::~Msg2() {
 
 void Msg2::reset ( ) {
 	verify_signature();
+	if(!allRequestsReplied())
+		gbshutdownLogicError();
 	m_numLists = 0;
 	m_whiteList = 0;
 	m_p = 0;
 	delete[] m_msg5;
+//if(m_msg5) {
+//	for(int i=0; i<m_numLists+m_numWhitelists; i++)
+//		(m_msg5+i)->~Msg5();
+//	memset(m_msg5,-4,sizeof(*m_msg5)*(m_numLists+m_numWhitelists));
+//}
 	m_msg5 = 0;
 	delete[] m_avail;
 	m_avail = 0;
@@ -73,6 +82,8 @@ void Msg2::incrementRequestCount() {
 
 void Msg2::incrementReplyCount() {
 	ScopedLock sl(m_mtxCounters);
+	if(m_numReplies>=m_numRequests)
+		abort();
 	m_numReplies++;
 }
 
@@ -412,28 +423,31 @@ bool Msg2::getLists ( ) {
 }
 
 Msg5 *Msg2::getAvailMsg5 ( ) {
+	verify_signature();
 	ScopedLock sl(m_mtxMsg5);
 	for ( int32_t i = 0; i < m_numLists+m_numWhitelists; i++ ) {
 		if(m_avail[i]) {
 			m_avail[i] = false;
 			return &m_msg5[i];
 		}
+//if(m_avail[i]!=0) abort();
 	}
 	return NULL;
 }
 
 void Msg2::returnMsg5 ( Msg5 *msg5 ) {
+	verify_signature();
 	ScopedLock sl(m_mtxMsg5);
-	for(int32_t i = 0; i < m_numLists+m_numWhitelists; i++) {
-		if(&m_msg5[i] == msg5) {
-			if(m_avail[i])
-				gbshutdownLogicError();
-			m_avail[i] = true;
-			return;
-		}
-	}
-	// wtf?
-	gbshutdownLogicError();
+	if(msg5 < m_msg5)
+		gbshutdownLogicError();
+	if(msg5 >= m_msg5+m_numLists+m_numWhitelists)
+		gbshutdownLogicError();
+	int32_t i = (int32_t)(msg5-m_msg5);
+	if(m_avail[i])
+		gbshutdownLogicError();
+	msg5->reset();
+//	m_avail[i] = true;
+	verify_signature();
 }
 
 

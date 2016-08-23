@@ -2477,6 +2477,7 @@ void RdbBase::verifyDiskPageCache ( ) {
 }
 
 bool RdbBase::verifyFileSharding ( ) {
+return true;
 
 	if ( m_rdb->m_isCollectionLess ) return true;
 

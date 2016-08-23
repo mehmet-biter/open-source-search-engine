@@ -54,11 +54,13 @@ void Msg3::reset() {
 void Msg3::incrementScansStarted() {
 	ScopedLock sl(m_mtxScanCounters);
 	m_numScansStarted++;
+	if(m_numScansCompleted>=m_numScansStarted) gbshutdownLogicError();
 }
 
 void Msg3::incrementScansCompleted() {
 	ScopedLock sl(m_mtxScanCounters);
 	m_numScansCompleted++;
+	if(m_numScansCompleted>m_numScansStarted) gbshutdownLogicError();
 }
 
 bool Msg3::areAllScansCompleted() const {
@@ -480,6 +482,7 @@ bool Msg3::readList  ( char           rdbId         ,
 	//m_endKey.n0 |= 0x01LL;
 	// . now start reading/scanning the files
 	// . our m_scans array starts at 0
+	bool anyAsyncScans = false;
 	for ( int32_t i = 0 ; i < m_numFileNums ; i++ ) {
 		// get the page range
 		//int32_t p1 = m_startpg [ i ];
@@ -697,7 +700,8 @@ bool Msg3::readList  ( char           rdbId         ,
 		                                startKey2, endKey2, m_ks, &m_lists[i], this, doneScanningWrapper,
 		                                base->useHalfKeys(), m_rdbId, m_niceness, m_allowPageCache, m_hitDisk ) ;
 
-		// debug msg
+		anyAsyncScans = anyAsyncScans || !done;
+						// debug msg
 		//fprintf(stderr,"Msg3:: reading %" PRId32" bytes from file #%" PRId32","
 		//	"done=%" PRId32",offset=%" PRId64",g_errno=%s,"
 		//	"startKey=n1=%" PRIu32",n0=%" PRIu64",  "
@@ -726,16 +730,17 @@ bool Msg3::readList  ( char           rdbId         ,
 	{
 		ScopedLock sl(m_mtxScanCounters);
 		m_scansBeingSubmitted = false;
+		//note: there is a weak race condition in this logic.
 	}
-	if ( !areAllScansCompleted() )
-		return false;
-	else {
-		// . if all scans completed without blocking then wrap it up & ret true
-		// . doneScanning may now block if it finds data corruption and must
-		//   get the list remotely
-		verify_signature();
-		return doneScanning();
-	}
+
+	if(anyAsyncScans)
+		return false; //not completed yet
+
+	// . if all scans completed without blocking then wrap it up & ret true
+	// . doneScanning may now block if it finds data corruption and must
+	//   get the list remotely
+	verify_signature();
+	return doneScanning();
 }
 
 
