@@ -179,6 +179,7 @@ bool Msg2::getLists ( ) {
 
 	// . send out a bunch of msg5 requests
 	// . make slots for all
+	bool anyAsyncGets = false;
 	for(int m_i=0; m_i < m_numLists; m_i++) {
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_ADDRESSABLE(m_qterms,m_numLists*sizeof(*m_qterms));
@@ -285,6 +286,7 @@ bool Msg2::getLists ( ) {
 							gotListWrapper,
 							m_niceness) )
 			{
+				anyAsyncGets = true;
 				continue;
 			}
 			incrementReplyCount();
@@ -388,6 +390,7 @@ bool Msg2::getLists ( ) {
 						     gotListWrapper,
 						     m_niceness ) )
 		{
+			anyAsyncGets = true;
 			continue;
 		}
 
@@ -413,7 +416,7 @@ bool Msg2::getLists ( ) {
 	}
 
 	// . did anyone block? if so, return false for now
-	if(!allRequestsReplied())
+	if(anyAsyncGets)
 		return false;
 	// . otherwise, we got everyone, so go right to the merge routine
 	// . returns false if not all replies have been received 
