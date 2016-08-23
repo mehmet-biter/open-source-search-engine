@@ -30,20 +30,9 @@ uint32_t hash32n          ( const char *s ) ;
 uint32_t hash32           ( const char *s, int32_t len,uint32_t startHash=0);
 uint32_t hash32h          ( uint32_t h1 , uint32_t h2 ) ;
 uint64_t      hash64h          ( uint64_t h1 , uint64_t h2 );
-uint32_t      hash32Fast       ( uint32_t h1 , uint32_t h2 ) ;
 uint32_t hash32Lower_a    ( const char *s, int32_t len,uint32_t startHash=0);
 uint64_t      hash64n          ( const char *s, uint64_t startHash =0LL);
-uint64_t      hash64           ( uint64_t h1,uint64_t h2);
-uint64_t      hash64           ( const char *s,int32_t len,uint64_t startHash=0);
-uint64_t      hash64_cont      ( const char *s, int32_t len, uint64_t startHash, int32_t *conti);
-uint64_t      hash64b          ( const char *s, uint64_t startHash = 0);
-uint64_t      hash64Lower_a    ( const char *s, int32_t len, uint64_t startHash = 0 );
-uint64_t      hash64Lower_utf8 ( const char *s, int32_t len, uint64_t startHash = 0 );
-uint64_t      hash64Lower_utf8_nospaces ( const char *s, int32_t len );
-uint64_t      hash64Lower_utf8 ( const char *p );
-uint64_t      hash64Lower_utf8_cont ( const char *p, int32_t len, uint64_t startHash, int32_t *conti );
 uint96_t      hash96           ( const char *s, int32_t slen);
-uint32_t hashLong         ( uint32_t x ) ;
 
 // . these convert \n to \0 when hashing
 // . these hash all punct as a space, except for hyphen and single quote!
@@ -51,10 +40,9 @@ uint32_t hashLong         ( uint32_t x ) ;
 // . these only take utf8 strings
 uint64_t hash64d ( const char *s, int32_t slen );
 
-uint64_t       hash64Upper_a    ( const char *s, int32_t len, uint64_t startHash = 0 );
 
 
-inline uint64_t hash64b ( const char *s , uint64_t startHash ) {
+static inline uint64_t hash64b ( const char *s , uint64_t startHash = 0) {
 	uint64_t h = startHash;
 	int32_t i = 0;
 	while ( s[i] ) {
@@ -64,8 +52,8 @@ inline uint64_t hash64b ( const char *s , uint64_t startHash ) {
 	return h;
 }
 
-inline uint64_t hash64 ( const char *s, int32_t len, 
-				   uint64_t startHash ) {
+static inline uint64_t hash64 ( const char *s, int32_t len,
+				   uint64_t startHash = 0 ) {
 	uint64_t h = startHash;
 	int32_t i = 0;
 	while ( i < len ) { 
@@ -75,7 +63,7 @@ inline uint64_t hash64 ( const char *s, int32_t len,
 	return h;
 }
 
-inline uint64_t hash64_cont ( const char *s, int32_t len, 
+static inline uint64_t hash64_cont ( const char *s, int32_t len,
 					uint64_t startHash ,
 					int32_t *conti ) {
 	uint64_t h = startHash;
@@ -88,14 +76,14 @@ inline uint64_t hash64_cont ( const char *s, int32_t len,
 	return h;
 }
 
-inline uint32_t hash32Fast ( uint32_t h1 , uint32_t h2 ) {
+static inline uint32_t hash32Fast ( uint32_t h1 , uint32_t h2 ) {
 	return (h2 << 1) ^ h1;
 }
 
 // . combine 2 hashes into 1
 // . TODO: ensure this is a good way
 // . used for combining words' hashes into phrases (also fields,collections)..
-inline uint64_t hash64 (uint64_t h1,uint64_t h2){
+static inline uint64_t hash64 (uint64_t h1,uint64_t h2){
 	// treat the 16 bytes as a string now instead of multiplying them
 	uint64_t h = 0;
 
@@ -121,8 +109,8 @@ inline uint64_t hash64 (uint64_t h1,uint64_t h2){
 }
 
 
-inline uint64_t hash64Lower_a ( const char *s, int32_t len, 
-					uint64_t startHash ) {
+static inline uint64_t hash64Lower_a ( const char *s, int32_t len,
+					uint64_t startHash = 0) {
 	uint64_t h = startHash;
 	int32_t i = 0;
 	while ( i < len ) {
@@ -134,7 +122,7 @@ inline uint64_t hash64Lower_a ( const char *s, int32_t len,
 }
 
 // utf8
-inline uint64_t hash64Lower_utf8 ( const char *p, int32_t len, uint64_t startHash ) {
+static inline uint64_t hash64Lower_utf8 ( const char *p, int32_t len, uint64_t startHash = 0) {
 	uint64_t h = startHash;
 	uint8_t i = 0;
 	const char *pend = p + len;
@@ -192,7 +180,7 @@ inline uint64_t hash64Lower_utf8 ( const char *p, int32_t len, uint64_t startHas
 	return h;
 }
 
-inline uint64_t hash64Lower_utf8_nospaces ( const char *p, int32_t len  ) {
+static inline uint64_t hash64Lower_utf8_nospaces ( const char *p, int32_t len  ) {
 	uint64_t h = 0LL;
 	uint8_t i = 0;
 	const char *pend = p + len;
@@ -243,7 +231,7 @@ inline uint64_t hash64Lower_utf8_nospaces ( const char *p, int32_t len  ) {
 }
 
 
-inline uint64_t hash64Lower_utf8_cont ( const char *p, 
+static inline uint64_t hash64Lower_utf8_cont ( const char *p,
 					int32_t len, 
 					uint64_t startHash ,
 					int32_t *conti ) {
@@ -304,7 +292,7 @@ inline uint64_t hash64Lower_utf8_cont ( const char *p,
 	return h;
 }
 
-inline uint32_t hash32_cont ( const char *p, int32_t plen,
+static inline uint32_t hash32_cont ( const char *p, int32_t plen,
 			      uint32_t startHash , int32_t *conti ) {
 	uint32_t h = startHash;
 	uint8_t i = *conti;
@@ -321,7 +309,7 @@ inline uint32_t hash32_cont ( const char *p, int32_t plen,
 // utf8
 
 // exactly like above but p is NULL terminated for sure
-inline uint64_t hash64Lower_utf8 ( const char *p ) {
+static inline uint64_t hash64Lower_utf8 ( const char *p ) {
 	uint64_t h = 0;
 	uint8_t i = 0;
 	UChar32 x;
@@ -369,7 +357,7 @@ inline uint64_t hash64Lower_utf8 ( const char *p ) {
 }
 
 
-inline uint64_t hash64Upper_a ( const char *s , int32_t len ,
+static inline uint64_t hash64Upper_a ( const char *s , int32_t len ,
 					  uint64_t startHash ) {
 	uint64_t h = startHash;
 	int32_t i = 0;
@@ -382,7 +370,7 @@ inline uint64_t hash64Upper_a ( const char *s , int32_t len ,
 }
 
 
-inline uint32_t hashLong ( uint32_t x ) {
+static inline uint32_t hashLong ( uint32_t x ) {
 	uint32_t h = 0;
 	unsigned char *p = (unsigned char *)&x;
 	h ^= (uint32_t) g_hashtab [0][p[0]];
