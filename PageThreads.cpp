@@ -9,6 +9,7 @@
 
 static const char *thread_type_name(thread_type_t tt) {
 	switch(tt) {
+		case thread_type_query_coordinator:  return "query-coordinator";
 		case thread_type_query_read:         return "query-read";
 		case thread_type_query_constrain:    return "query-constrain";
 		case thread_type_query_merge:        return "query-merge";
