@@ -1362,22 +1362,21 @@ bool Rdb::dumpCollLoop ( ) {
 		avgSize = m_buckets.getRecSize();
 	}
 
-	// . it really depends on the rdb, for small rec rdbs 200k is too big
-	//   because when getting an indexdb list from tree of 200k that's
-	//   a lot more recs than for titledb!! by far.
-	// . 200k takes 17ms to get list and 37ms to delete it for indexdb
-	//   on a 2.8Ghz pentium
-	//int32_t bufSize = 40*1024;
 	// . don't get more than 3000 recs from the tree because it gets slow
 	// . we'd like to write as much out as possible to reduce possible
 	//   file interlacing when synchronous writes are enabled. RdbTree::
 	//   getList() should really be sped up by doing the neighbor node
 	//   thing. would help for adding lists, too, maybe.
-	int32_t bufSize  = 300 * 1024;
-	int32_t bufSize2 = 3000 * avgSize ;
-	if ( bufSize2 < 20*1024 ) bufSize2 = 20*1024;
-	if ( bufSize2 < bufSize ) bufSize  = bufSize2;
-	if(!m_useTree) bufSize *= 4; //buckets are much faster at getting lists
+	int32_t bufSize = 300 * 1024;
+	int32_t bufSize2 = 3000 * avgSize;
+	if (bufSize2 < bufSize) {
+		bufSize = bufSize2;
+	}
+
+	if (!m_useTree) {
+		//buckets are much faster at getting lists
+		bufSize *= 4;
+	}
 
 	// how big will file be? upper bound.
 	int64_t maxFileSize;
@@ -1388,27 +1387,33 @@ bool Rdb::dumpCollLoop ( ) {
 	//         BigFile::open() based on "maxFileSize" so it can end up 
 	//         breaching its buffer! since this is somewhat rare i will
 	//         just modify DiskPageCache.cpp to ignore breaches. 
-	if ( m_useTree ) {
+	if (m_useTree) {
 		maxFileSize = m_tree.getMemOccupiedForList();
 	} else {
 		maxFileSize = m_buckets.getMemOccupied();
 	}
 
 	// sanity
-	if ( maxFileSize < 0 ) { g_process.shutdownAbort(true); }
+	if (maxFileSize < 0) {
+		g_process.shutdownAbort(true);
+	}
 
 	// because we are actively spidering the list we dump ends up
 	// being more, by like 20% or so, otherwise we do not make a
 	// big enough diskpagecache and it logs breach msgs... does not
 	// seem to happen with buckets based stuff... hmmm...
-	if ( m_useTree ) {
-		maxFileSize = ( ( int64_t ) maxFileSize ) * 120LL / 100LL;
+	if (m_useTree) {
+		maxFileSize = ((int64_t)maxFileSize) * 120LL / 100LL;
 	}
 
 	RdbBuckets *buckets = NULL;
-	RdbTree    *tree = NULL;
-	if(m_useTree) tree = &m_tree;
-	else          buckets = &m_buckets;
+	RdbTree *tree = NULL;
+	if (m_useTree) {
+		tree = &m_tree;
+	} else {
+		buckets = &m_buckets;
+	}
+
 	// . RdbDump will set the filename of the map we pass to this
 	// . RdbMap should dump itself out CLOSE!
 	// . it returns false if blocked, true otherwise & sets g_errno on err
@@ -1420,7 +1425,6 @@ bool Rdb::dumpCollLoop ( ) {
 			     tree          ,
 			     base->getMap(m_fn), // RdbMap
 			     NULL           , // integrate into cache b4 delete
-			     //&m_cache     , // integrate into cache b4 delete
 			     bufSize        , // write buf size
 			     true           , // put keys in order? yes!
 			     m_dedup        , // dedup not used for this
