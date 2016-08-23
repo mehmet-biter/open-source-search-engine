@@ -1426,7 +1426,6 @@ bool Rdb::dumpCollLoop ( ) {
 			     base->getMap(m_fn), // RdbMap
 			     NULL           , // integrate into cache b4 delete
 			     bufSize        , // write buf size
-			     true           , // put keys in order? yes!
 			     m_dedup        , // dedup not used for this
 			     m_niceness     , // niceness of 1 will NOT block
 			     this           , // state

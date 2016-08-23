@@ -42,7 +42,6 @@ class RdbDump {
 		    RdbMap    *map           ,
 		    RdbCache  *cache         , // for caching dumped tree
 		    int32_t       maxBufSize    ,
-		    bool       orderedDump   , // dump in order of keys?
 		    bool       dedup         , // for merging tree into cache
 		    int32_t       niceness      ,
 		    void      *state         ,
@@ -109,7 +108,6 @@ class RdbDump {
 	RdbMap      *m_map           ;
 	RdbCache    *m_cache         ;
 	int32_t         m_maxBufSize    ;
-	bool         m_orderedDump   ;
 	bool         m_dedup         ; // used for merging/adding tree to cache
 	void        *m_state         ;
 	void       (*m_callback)(void *state ) ;

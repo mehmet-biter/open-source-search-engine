@@ -20,7 +20,6 @@ bool RdbDump::set(collnum_t collnum,
                   RdbMap *map,
                   RdbCache *cache,
                   int32_t maxBufSize,
-                  bool orderedDump, // dump in order of keys?
                   bool dedup, // 4 RdbCache::incorporateList()
                   int32_t niceness,
                   void *state,
@@ -32,12 +31,6 @@ bool RdbDump::set(collnum_t collnum,
                   void *pc,
                   int64_t maxFileSize,
                   Rdb *rdb) {
-
-	if (!orderedDump) {
-		log(LOG_LOGIC,"db: RdbDump does not support non-ordered.");
-		g_process.shutdownAbort(true);
-	}
-
 	m_collnum = collnum;
 
 	// use 0 for collectionless
@@ -58,7 +51,6 @@ bool RdbDump::set(collnum_t collnum,
 	m_tree          = tree;
 	m_map           = map;
 	m_cache         = cache;
-	m_orderedDump   = orderedDump;
 	m_dedup         = dedup;
 	m_state         = state;
 	m_callback      = callback;
@@ -313,138 +305,124 @@ bool RdbDump::dumpTree ( bool recall ) {
 	// . NOTE: list's buffer space should be re-used!! (TODO)
 	// . "lastNode" is set to the last node # in the list
 	bool status = true;
-	//if ( ! m_orderedDump ) {
-	//	status = ((RdbTree *)m_tree)->getListUnordered ( m_nextNode ,
-	//							 m_maxBufSize ,
-	//							 m_list ,
-	//							 &nextNode );
-	//	// this is -1 when no more nodes are left
-	//	m_nextNode = nextNode;
-	//}
-	// "lastKey" is set to the last key in the list
-	//else {
-	{
 
-		// can we remove neg recs?
-		// class RdbBase *base = m_rdb->getBase(m_collnum);
-		// bool removeNegRecs = false;
-		// if ( base->m_numFiles <= 0 ) removeNegRecs = true;
+	// can we remove neg recs?
+	// class RdbBase *base = m_rdb->getBase(m_collnum);
+	// bool removeNegRecs = false;
+	// if ( base->m_numFiles <= 0 ) removeNegRecs = true;
 
-		if ( recall ) goto skip;
+	if ( recall ) goto skip;
 
-		// debug msg
-		//log("RdbDump:: getting list");
-		m_t1 = gettimeofdayInMilliseconds();
-		if(m_tree) {
-			logTrace( g_conf.m_logTraceRdbDump, "m_tree" );
+	// debug msg
+	//log("RdbDump:: getting list");
+	m_t1 = gettimeofdayInMilliseconds();
+	if(m_tree) {
+		logTrace( g_conf.m_logTraceRdbDump, "m_tree" );
 
-			status = m_tree->getList ( m_collnum       ,
-					   m_nextKey     ,
-					   maxEndKey     ,
-					   m_maxBufSize  , // max recSizes
-					   m_list        ,
-					   &m_numPosRecs   ,
-					   &m_numNegRecs   ,
-					   m_useHalfKeys ,
-						   niceness );
-		}
-		else if(m_buckets) {
-			logTrace( g_conf.m_logTraceRdbDump, "m_buckets" );
-
-			status = m_buckets->getList ( m_collnum,
-					   m_nextKey     ,
-					   maxEndKey     ,
-					   m_maxBufSize  , // max recSizes
-					   m_list        ,
-					   &m_numPosRecs   ,
-					   &m_numNegRecs   ,
-					   m_useHalfKeys );
-		}
-
-		logTrace( g_conf.m_logTraceRdbDump, "status: %s", status ? "true" : "false" );
-
-		// don't dump out any neg recs if it is our first time dumping
-		// to a file for this rdb/coll. TODO: implement this later.
-		//if ( removeNegRecs )
-		//	m_list.removeNegRecs();
-
- 		// if(!m_list->checkList_r ( false , // removeNegRecs?
- 		// 			 false , // sleep on problem?
- 		// 			 m_rdb->m_rdbId )) {
- 		// 	log("db: list to dump is not sane!");
-		// 	g_process.shutdownAbort(true);
- 		// }
-
-
-	skip:
-		int64_t t2;
-		//key_t lastKey;
-		char *lastKey;
-		// if error getting list (out of memory?)
-		if ( ! status ) goto hadError;
-		// debug msg
-		t2 = gettimeofdayInMilliseconds();
-		log(LOG_INFO,"db: Get list took %" PRId64" ms. "
-		    "%" PRId32" positive. %" PRId32" negative.",
-		    t2 - m_t1 , m_numPosRecs , m_numNegRecs );
-
-		// keep a total count for reporting when done
-		m_totalPosDumped += m_numPosRecs;
-		m_totalNegDumped += m_numNegRecs;
-
-		// . check the list we got from the tree for problems
-		// . ensures keys are ordered from lowest to highest as well
-		//#ifdef GBSANITYCHECK
-		if ( g_conf.m_verifyWrites || g_conf.m_verifyDumpedLists ) {
-			const char *s = "none";
-			if ( m_rdb ) s = getDbnameFromId(m_rdb->m_rdbId);
-			const char *ks1 = "";
-			const char *ks2 = "";
-			char tmp1[32];
-			char tmp2[32];
-			if ( m_firstKeyInQueue ) {
-				strcpy (tmp1 ,
-						KEYSTR(m_firstKeyInQueue,
-						m_list->m_ks));
-			        ks1 = tmp1;
-			}
-			if ( m_lastKeyInQueue ) {
-				strcpy ( tmp2 ,
-					KEYSTR(m_lastKeyInQueue,
-					m_list->m_ks));
-			        ks2 = tmp2;
-			}
-
-			log("dump: verifying list before dumping (rdb=%s "
-			    "collnum=%i k1=%s k2=%s)",s,
-			    (int)m_collnum,ks1,ks2);
-				
-			m_list->checkList_r ( false , // removeNegRecs?
-					      false , // sleep on problem?
-					      m_rdb->m_rdbId );
-		}
-
-		// if list is empty, we're done!
-		if ( status && m_list->isEmpty() ) {
-			// consider that a rollover?
-			if ( m_rdb->m_rdbId == RDB_STATSDB )
-				m_rolledOver = true;
-			return true;
-		}
-
-		// get the last key of the list
-		lastKey = m_list->getLastKey();
-		// advance m_nextKey
-		//m_nextKey  = lastKey ;
-		//m_nextKey += (uint32_t)1;
-		//if ( m_nextKey < lastKey ) m_rolledOver = true;
-		KEYSET(m_nextKey,lastKey,m_ks);
-		KEYINC(m_nextKey,m_ks);
-		if (KEYCMP(m_nextKey,lastKey,m_ks)<0) m_rolledOver = true;
-	      // debug msg
-	      //log(0,"RdbDump:lastKey.n1=%" PRIu32",n0=%" PRIu64,lastKey.n1,lastKey.n0);
-	      //log(0,"RdbDump:next.n1=%" PRIu32",n0=%" PRIu64,m_nextKey.n1,m_nextKey.n0);
+		status = m_tree->getList ( m_collnum       ,
+				   m_nextKey     ,
+				   maxEndKey     ,
+				   m_maxBufSize  , // max recSizes
+				   m_list        ,
+				   &m_numPosRecs   ,
+				   &m_numNegRecs   ,
+				   m_useHalfKeys ,
+					   niceness );
 	}
+	else if(m_buckets) {
+		logTrace( g_conf.m_logTraceRdbDump, "m_buckets" );
+
+		status = m_buckets->getList ( m_collnum,
+				   m_nextKey     ,
+				   maxEndKey     ,
+				   m_maxBufSize  , // max recSizes
+				   m_list        ,
+				   &m_numPosRecs   ,
+				   &m_numNegRecs   ,
+				   m_useHalfKeys );
+	}
+
+	logTrace( g_conf.m_logTraceRdbDump, "status: %s", status ? "true" : "false" );
+
+	// don't dump out any neg recs if it is our first time dumping
+	// to a file for this rdb/coll. TODO: implement this later.
+	//if ( removeNegRecs )
+	//	m_list.removeNegRecs();
+
+    // if(!m_list->checkList_r ( false , // removeNegRecs?
+    // 			 false , // sleep on problem?
+    // 			 m_rdb->m_rdbId )) {
+    // 	log("db: list to dump is not sane!");
+	// 	g_process.shutdownAbort(true);
+    // }
+
+
+skip:
+	int64_t t2;
+	//key_t lastKey;
+	char *lastKey;
+	// if error getting list (out of memory?)
+	if ( ! status ) goto hadError;
+	// debug msg
+	t2 = gettimeofdayInMilliseconds();
+	log(LOG_INFO,"db: Get list took %" PRId64" ms. "
+	    "%" PRId32" positive. %" PRId32" negative.",
+	    t2 - m_t1 , m_numPosRecs , m_numNegRecs );
+
+	// keep a total count for reporting when done
+	m_totalPosDumped += m_numPosRecs;
+	m_totalNegDumped += m_numNegRecs;
+
+	// . check the list we got from the tree for problems
+	// . ensures keys are ordered from lowest to highest as well
+	//#ifdef GBSANITYCHECK
+	if ( g_conf.m_verifyWrites || g_conf.m_verifyDumpedLists ) {
+		const char *s = "none";
+		if ( m_rdb ) s = getDbnameFromId(m_rdb->m_rdbId);
+		const char *ks1 = "";
+		const char *ks2 = "";
+		char tmp1[32];
+		char tmp2[32];
+		if ( m_firstKeyInQueue ) {
+			strcpy (tmp1 ,
+					KEYSTR(m_firstKeyInQueue,
+					m_list->m_ks));
+		        ks1 = tmp1;
+		}
+		if ( m_lastKeyInQueue ) {
+			strcpy ( tmp2 ,
+				KEYSTR(m_lastKeyInQueue,
+				m_list->m_ks));
+		        ks2 = tmp2;
+		}
+
+		log("dump: verifying list before dumping (rdb=%s "
+		    "collnum=%i k1=%s k2=%s)",s,
+		    (int)m_collnum,ks1,ks2);
+
+		m_list->checkList_r ( false , // removeNegRecs?
+				      false , // sleep on problem?
+				      m_rdb->m_rdbId );
+	}
+
+	// if list is empty, we're done!
+	if ( status && m_list->isEmpty() ) {
+		// consider that a rollover?
+		if ( m_rdb->m_rdbId == RDB_STATSDB )
+			m_rolledOver = true;
+		return true;
+	}
+
+	// get the last key of the list
+	lastKey = m_list->getLastKey();
+	// advance m_nextKey
+	//m_nextKey  = lastKey ;
+	//m_nextKey += (uint32_t)1;
+	//if ( m_nextKey < lastKey ) m_rolledOver = true;
+	KEYSET(m_nextKey,lastKey,m_ks);
+	KEYINC(m_nextKey,m_ks);
+	if (KEYCMP(m_nextKey,lastKey,m_ks)<0) m_rolledOver = true;
+
 	// . return true on error, g_errno should have been set
 	// . this is probably out of memory error
 
@@ -527,7 +505,7 @@ bool RdbDump::dumpList ( RdbList *list , int32_t niceness , bool recall ) {
 	m_isDumping = true;
 	//#ifdef GBSANITYCHECK
 	// don't check list if we're dumping an unordered list from tree!
-	if ( g_conf.m_verifyWrites && m_orderedDump ) {
+	if (g_conf.m_verifyWrites) {
 		m_list->checkList_r ( false /*removedNegRecs?*/ );
 		// print list stats
 		// log("dump: sk=%s ",KEYSTR(m_list->m_startKey,m_ks));
@@ -572,7 +550,7 @@ bool RdbDump::dumpList ( RdbList *list , int32_t niceness , bool recall ) {
 	}
 
 	// HACK! POSDB
-	if ( m_ks == 18 && m_orderedDump && m_offset > 0 ) {
+	if (m_ks == 18 && m_offset > 0) {
 		char k[MAX_KEY_BYTES];
 		m_list->getCurrentKey(k);
 		// . same top 6 bytes as last key we added?
@@ -607,7 +585,7 @@ bool RdbDump::dumpList ( RdbList *list , int32_t niceness , bool recall ) {
 	//   and RdbList::checkList_r() can expect the half bits to always be
 	//   on when they can be on
 	// . IMPORTANT: calling m_list->resetListPtr() will mess this HACK up!!
-	if ( m_useHalfKeys && m_orderedDump && m_offset > 0 && ! m_hacked12 ) {
+	if (m_useHalfKeys && m_offset > 0 && !m_hacked12) {
 		//key_t k = m_list->getCurrentKey();
 		char k[MAX_KEY_BYTES];
 		m_list->getCurrentKey(k);
@@ -748,15 +726,6 @@ bool RdbDump::doneDumpingList ( bool addToMap ) {
 
 		logTrace( g_conf.m_logTraceRdbDump, "END - returning true" );
 		return true;
-	}
-
-	// . don't delete the list if we were dumping an unordered list
-	// . we only dump unordered lists when we do a save
-	// . it saves time not having to delete the list and it also allows
-	//   us to do saves without deleting our data! good!
-	if ( ! m_orderedDump ) {
-		logTrace( g_conf.m_logTraceRdbDump, "END - not m_orderedDump. Returning true" );
-		return true; //--turn this off until save works
 	}
 
 	// save for verify routine
@@ -979,10 +948,6 @@ bool RdbDump::doneReadingForVerify ( ) {
 		m_hacked12 = false;
 	}
 
-
-	// verify keys are in order after we hack it back
-	//if ( m_orderedDump ) m_list->checkList_r ( false , true );
-
 	// if we're NOT dumping a tree then return control to RdbMerge
 	if ( ! m_tree && !m_buckets ) {
 		logTrace( g_conf.m_logTraceRdbDump, "END - !m_tree && !m_buckets, returning true" );
@@ -1120,84 +1085,3 @@ void RdbDump::continueDumping() {
 	// call the callback
 	m_callback ( m_state );
 }
-
-// . load the table from a dumped btree (unordered dump only!)
-// . must NOT have been an ordered dump cuz tree will be seriously skewed
-// . this is completely blocking cuz it used on init to recover a saved table
-// . used for recovering a table that was too small to dump to an rdbfile
-// . returns true if "filename" does not exist
-// . stored in key/dataSize/data fashion
-// . TODO: TODO: this load() routine and the m_orderedDump stuff above are
-//   just hacks until we make the tree balanced. Then we can use RdbScan
-//   to load the tree. Also, I we may not have enough mem to load the tree
-//   because it loads it all in at once!!!!!
-/*
-bool RdbDump::load ( Rdb *rdb ,  int32_t fixedDataSize, BigFile *file ,
-		     class DiskPageCache *pc ) {
-        //m_tree          = tree;
-	// return true if the file does not exist
-	if ( file->doesExist() <= 0 ) return true;
-	// open the file read only
-	if ( ! file->open ( O_RDONLY , pc ) )
-	       return log("db: Could not open %s: %s.",file->getFilename(),
-			  mstrerror(g_errno));
-	// a harmless note
-	log(LOG_INFO,"db: Loading data from %s",file->getFilename());
-	// read in all data at once since this should only be run at
-	// startup when we still have plenty of memory
-	int32_t bufSize = file->getFileSize();
-	// return true if filesize is 0
-	if ( bufSize == 0 ) return true;
-	// otherwise, alloc space to read the WHOLE file
-	char *buf  = (char *) mmalloc( bufSize ,"RdbDump");
-	if ( ! buf ) return log("db: Could not allocate %" PRId32" bytes to load "
-				"%s" , bufSize , file->getFilename());
-	//int32_t n = file->read ( buf , bufSize , m_offset );
-	file->read ( buf , bufSize , m_offset );
-	if ( g_errno ) {
-		mfree ( buf , bufSize , "RdbDump");
-		return log("db: Had error reading %s: %s.",file->getFilename(),
-			   mstrerror(g_errno));
-	}
-	char *p    = buf;
-	char *pend = buf + bufSize;
-	// now let 'er rip
-	while ( p < pend ) {
-		// get the key
-	        key_t key = *(key_t *) p;
-		// advance the buf ptr
-		p += sizeof(key_t);
-		// get dataSize
-		int32_t dataSize = fixedDataSize;
-		// we may have a datasize
-		if ( fixedDataSize == -1 ) {
-			dataSize = *(int32_t *)p;
-			p += 4;
-		}
-		// point to data if any
-		char *data ;
-		if ( dataSize > 0 ) data = p;
-		else                data = NULL;
-		// skip p over data
-		p += dataSize;
-		// add to rdb
-		if ( ! rdb->addRecord ( key , data , dataSize ) ) {
-			mfree ( buf , bufSize ,"RdbDump");
-			return log("db: Could not add record from %s: %s.",
-				   file->getFilename(),mstrerror(g_errno));
-		}
-
-		// we must dup the data so the tree can free it
-		//char *copy = mdup ( p , dataSize ,"RdbDump");
-		// add the node
-		//if ( m_tree->addNode ( key , copy , dataSize ) < 0 ) {
-		//	mfree ( buf , bufSize ,"RdbDump");
-		//		return log("RdbDump::load:addNode failed");
-		//}
-	}
-	// free the m_buffer we used
-	mfree ( buf , bufSize , "RdbDump");
-	file->close();
-	return true;
-}
-*/
