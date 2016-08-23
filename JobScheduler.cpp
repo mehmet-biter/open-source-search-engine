@@ -268,21 +268,7 @@ public:
 	{
 	}
 	
-	~JobScheduler_impl() {
-		cpu_thread_pool.initiate_stop();
-		io_thread_pool.initiate_stop();
-		external_thread_pool.initiate_stop();
-		
-		pthread_cond_broadcast(&cpu_job_queue.cond_not_empty);
-		pthread_cond_broadcast(&io_job_queue.cond_not_empty);
-		pthread_cond_broadcast(&external_job_queue.cond_not_empty);
-		
-		cpu_thread_pool.join_all();
-		io_thread_pool.join_all();
-		external_thread_pool.join_all();
-		
-		pthread_mutex_destroy(&mtx);
-	}
+	~JobScheduler_impl();
 	
 	bool submit(start_routine_t   start_routine,
 	            finish_routine_t  finish_callback,
@@ -320,6 +306,50 @@ public:
 	std::vector<JobDigest> query_job_digests() const;
 };
 
+
+
+JobScheduler_impl::~JobScheduler_impl() {
+	//First prevent new jobs from being submitted
+	new_jobs_allowed = false;
+
+	//Then tell the worker threads to stop executing more jobs
+	cpu_thread_pool.initiate_stop();
+	io_thread_pool.initiate_stop();
+	external_thread_pool.initiate_stop();
+
+	//Then wake them if they are sleeping
+	pthread_cond_broadcast(&cpu_job_queue.cond_not_empty);
+	pthread_cond_broadcast(&io_job_queue.cond_not_empty);
+	pthread_cond_broadcast(&external_job_queue.cond_not_empty);
+
+	//Then cancel all outstanding non-started jobs by moving them from the pending queues to the exit-set
+	{
+		ScopedLock sl(mtx);
+		while(!cpu_job_queue.empty()) {
+			exit_set.push_back(std::make_pair(cpu_job_queue.back(),job_exit_cancelled));
+			cpu_job_queue.pop_back();
+		}
+		while(!io_job_queue.empty()) {
+			exit_set.push_back(std::make_pair(io_job_queue.back(),job_exit_cancelled));
+			io_job_queue.pop_back();
+		}
+		while(!external_job_queue.empty()) {
+			exit_set.push_back(std::make_pair(external_job_queue.back(),job_exit_cancelled));
+			external_job_queue.pop_back();
+		}
+	}
+
+	//Call finish-callbacks for all the exited / cancelled threads
+	//We "know" that this function (finalize) is only called from the main thread, *cough* *cough*
+	cleanup_finished_jobs();
+	
+	//Then wait  for worker threads to finished
+	cpu_thread_pool.join_all();
+	io_thread_pool.join_all();
+	external_thread_pool.join_all();
+
+	pthread_mutex_destroy(&mtx);
+}
 
 
 bool JobScheduler_impl::submit(thread_type_t thread_type, JobEntry &e)
