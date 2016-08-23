@@ -392,8 +392,8 @@ bool Msg5::readList ( ) {
 					   m_newMinRecSizes , // modified by gotList()
 					   m_startFileNum   ,
 					   m_numFiles       ,
-					   this             ,
-					   gotListWrapper   ,
+					   NULL             , // state
+					   NULL             , // callback
 					   niceness         ,
 					   0                , // retry num
 					   m_maxRetries     , // -1=def

@@ -9851,8 +9851,6 @@ char **XmlDoc::getRawUtf8Content ( ) {
 			log("build: xml: not enough memory for utf8 buffer");
 			return NULL;
 		}
-		// sanity check
-		if ( ! csName ) { g_process.shutdownAbort(true); }
 		// note it
 		setStatus ( "converting doc to utf8" );
 		// returns # of bytes i guess

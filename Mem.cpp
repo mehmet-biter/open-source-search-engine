@@ -310,7 +310,10 @@ void Mem::addMem ( void *mem , int32_t size , const char *note , char isnew ) {
 	if ( g_conf.m_logDebugMem ) printBreeches_unlocked();
 
 	// copy the magic character, iff not a new() call
-	if ( size == 0 ) gbshutdownLogicError();
+	if ( size == 0 ) {
+		sl.unlock();
+		gbshutdownLogicError();
+	}
 	// sanity check
 	if ( size < 0 ) {
 		log("mem: addMem: Negative size.");
@@ -323,6 +326,7 @@ void Mem::addMem ( void *mem , int32_t size , const char *note , char isnew ) {
 		    "%08" PTRFMT" of size %" PRId32" "
 		    "which would wrap. Bad kernel.",
 		    (PTRTYPE)mem,(int32_t)size);
+		sl.unlock();
 		gbshutdownLogicError();
 	}
 
@@ -394,6 +398,7 @@ void Mem::addMem ( void *mem , int32_t size , const char *note , char isnew ) {
 			     s_labels[h*16+3],
 			     s_labels[h*16+4],
 			     s_labels[h*16+5] );
+			sl.unlock();
 			gbshutdownAbort(true);
 		}
 		h++;
@@ -401,6 +406,7 @@ void Mem::addMem ( void *mem , int32_t size , const char *note , char isnew ) {
 		if ( --count == 0 ) {
 			log( LOG_ERROR, "mem: addMem: Mem table is full.");
 			printMem();
+			sl.unlock();
 			gbshutdownResourceError();
 		}
 	}
@@ -656,6 +662,7 @@ bool Mem::rmMem  ( void *mem , int32_t size , const char *note ) {
 	// if not found, bitch
 	if ( ! s_mptrs[h] ) {
 		log( LOG_ERROR, "mem: rmMem: Unbalanced free. note=%s size=%" PRId32".",note,size);
+		sl.unlock();
 		gbshutdownLogicError();
 	}
 
@@ -664,7 +671,10 @@ bool Mem::rmMem  ( void *mem , int32_t size , const char *note ) {
 	// set our size
 	if ( size == -1 ) size = s_sizes[h];
 	// must be legit now
-	if ( size <= 0 ) gbshutdownLogicError();
+	if ( size <= 0 ) {
+		sl.unlock();
+		gbshutdownLogicError();
+	}
 	// . bitch is sizes don't match
 	// . delete operator does not provide a size now (it's -1)
 	if ( s_sizes[h] != size ) {
