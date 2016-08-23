@@ -89,38 +89,41 @@ bool RdbDump::set(collnum_t collnum,
 		    m_file->getFilename());
 		return true;
 	}
-	// . NOTE: MAX_PART_SIZE in BigFile must be defined to be bigger than
-	//   anything we actually dump since we only anticipate spanning 1 file
-	//   and so only register the first file's fd for write callbacks
-	//if ( m_tree && m_tree->getMaxMem() > MAX_PART_SIZE )
-	//return log("RdbDump::dump: tree bigger than file part size");
+
 	// . open the file nonblocking, sync with disk, read/write
 	// . NOTE: O_SYNC doesn't work too well over NFS
 	// . we need O_SYNC when dumping trees only because we delete the
 	//   nodes/records as we dump them
 	// . ensure this sets g_errno for us
 	// . TODO: open might not block! fix that!
-	int32_t flags = O_RDWR | O_CREAT ;
+	int32_t flags = O_RDWR | O_CREAT;
 	// a niceness bigger than 0 means to do non-blocking dumps
-	if ( niceness > 0 ) flags |=  O_ASYNC | O_NONBLOCK ;
-	if ( ! m_file->open ( flags , pc , maxFileSize ) ) return true;
+	if (niceness > 0) {
+		flags |= O_ASYNC | O_NONBLOCK;
+	}
+
+	if (!m_file->open(flags, pc, maxFileSize)) {
+		return true;
+	}
+
 	// . get the file descriptor of the first real file in BigFile
 	// . we should only dump to the first file in BigFile otherwise,
 	//   we'd have to juggle fd registration
-	m_fd = m_file->getfd ( 0 , false /*for reading?*/ );
-	if ( m_fd < 0 ) {
-		log(LOG_LOGIC,"db: dump: Bad fd of first file in BigFile.") ;
+	m_fd = m_file->getfd(0, false /*for reading?*/ );
+	if (m_fd < 0) {
+		log(LOG_LOGIC, "db: dump: Bad fd of first file in BigFile.");
 		return true;
 	}
-	// debug test
-	//char buf1[10*1024];
-	//int32_t n1 = m_file->write ( buf1 , 10*1024 , 0 );
-	//log("bytes written=%" PRId32"\n",n1);
+
 	// we're now considered to be in dumping state
 	m_isDumping = true;
+
 	// . if no tree was provided to dump it must be RdbMerge calling us
 	// . he'll want to call dumpList() on his own
-	if ( ! m_tree && !m_buckets ) return true;
+	if (!m_tree && !m_buckets) {
+		return true;
+	}
+
 	// how many recs in tree?
 	int32_t nr;
 	const char *structureName;
@@ -148,23 +151,26 @@ bool RdbDump::set(collnum_t collnum,
 
 	// . start dumping the tree
 	// . return false if it blocked
-	if ( ! dumpTree ( false ) ) return false;
+	if (!dumpTree(false)) {
+		return false;
+	}
+
 	// no longer dumping
 	doneDumping();
+
 	// return true since we didn't block
 	return true;
 }
 
 void RdbDump::reset ( ) {
 	// free verify buf if there
-	if ( m_verifyBuf ) {
-		mfree ( m_verifyBuf , m_verifyBufSize , "RdbDump4");
+	if (m_verifyBuf) {
+		mfree(m_verifyBuf, m_verifyBufSize, "RdbDump4");
 		m_verifyBuf = NULL;
 	}
 }
 
-void RdbDump::doneDumping ( ) {
-
+void RdbDump::doneDumping() {
 	int32_t saved = g_errno;
 
 	m_isDumping = false;
@@ -178,11 +184,9 @@ void RdbDump::doneDumping ( ) {
 	// . map verify
 	// . if continueDumping called us with no collectionrec, it got
 	//   deleted so RdbBase::m_map is nuked too i guess
-	if ( saved != ENOCOLLREC && m_map )
-		log("db: map # pos=%" PRId64" neg=%" PRId64,
-		    m_map->getNumPositiveRecs(),
-		    m_map->getNumNegativeRecs()
-		    );
+	if (saved != ENOCOLLREC && m_map) {
+		log(LOG_INFO, "db: map # pos=%" PRId64" neg=%" PRId64, m_map->getNumPositiveRecs(), m_map->getNumNegativeRecs());
+	}
 
 	// free the list's memory
 	if ( m_list ) m_list->freeList();
@@ -190,10 +194,14 @@ void RdbDump::doneDumping ( ) {
 	reset();
 
 	// did collection get deleted/reset from under us?
-	if ( saved == ENOCOLLREC ) return;
+	if (saved == ENOCOLLREC) {
+		return;
+	}
 
 	// save the map to disk. true = allDone
-	if ( m_map ) m_map->writeMap( true );
+	if (m_map) {
+		m_map->writeMap(true);
+	}
 
 	// now try to merge this collection/db again
 	// if not already in the linked list. but do not add to linked list
@@ -742,7 +750,7 @@ bool RdbDump::doneReadingForVerify ( ) {
 	}
 
 	// see if what we wrote is the same as what we read back
-	if ( m_verifyBuf && g_conf.m_verifyWrites && memcmp(m_verifyBuf,m_buf,m_bytesToWrite) != 0 && ! g_errno ) {
+	if (m_verifyBuf && g_conf.m_verifyWrites && memcmp(m_verifyBuf, m_buf, m_bytesToWrite) != 0 && !g_errno) {
 		logError("disk: Write verification of %" PRId32" bytes to file %s failed at offset=%" PRId64". Retrying.",
 		         m_bytesToWrite, m_file->getFilename(), m_offset - m_bytesToWrite);
 
@@ -780,12 +788,12 @@ tryAgain:
 		if (g_errno == ECORRUPTDATA) {
 			logError("m_map->addList resulted in ECORRUPTDATA");
 
-			if ( m_tree ) {
+			if (m_tree) {
 				logError("trying to fix tree");
 				m_tree->fixTree();
 			}
 
-			if ( m_buckets ) {
+			if (m_buckets) {
 				logError("Contains buckets, cannot fix this yet");
 				m_list->printList(LOG_ERROR);	//@@@@@@ EXCESSIVE
 				gbshutdownCorrupted();
@@ -809,7 +817,7 @@ tryAgain:
 	}
 
 	int64_t now = gettimeofdayInMilliseconds();
-	log(LOG_TIMING,"db: adding to map took %" PRIu64" ms" , now - t );
+	log(LOG_TIMING, "db: adding to map took %" PRIu64" ms", now - t);
 
 	// . HACK: fix hacked lists before deleting from tree
 	// . iff the first key has the half bit set
