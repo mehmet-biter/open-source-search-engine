@@ -90,7 +90,9 @@ private:
 
 
 class RdbBuckets {
- public:
+	friend class RdbBucket;
+
+public:
 
 	RdbBuckets( );
 	~RdbBuckets( );
@@ -141,7 +143,9 @@ class RdbBuckets {
 
 	bool collExists(collnum_t coll);
 
-	//MEMBER ACCESS
+	const RdbBucket* getBucket(int i) const { return m_buckets[i]; }
+	int32_t getNumBuckets() const { return m_numBuckets; }
+
 	const char *getDbname() const { return m_dbname; }
 	uint8_t   getKeySize() const { return m_ks; }
 	int32_t      getFixedDataSize()  { return m_fixedDataSize;}
@@ -174,10 +178,7 @@ class RdbBuckets {
  	bool      delColl            ( collnum_t collnum );
 
 	//just for this collection
-// 	int32_t      getMemOccupied     ( collnum_t collnum ) const;
  	int32_t      getNumKeys         ( collnum_t collnum ) const;
-//  	int32_t      getNumNegativeKeys ( collnum_t collnum ) const;
-//  	int32_t      getNumPositiveKeys ( collnum_t collnum ) const;
 
 	//syntactic sugar
  	RdbBucket* bucketFactory();
@@ -189,24 +190,16 @@ class RdbBuckets {
 	void printBuckets();
 	bool repair();
 	bool testAndRepair();
-	
-
 
 	//Save/Load/Dump
-	bool      fastSave      ( const char    *dir       ,
-				  bool     useThread ,
-				  void    *state     ,
-				  void    (*callback) (void *state) );
-	bool      fastSave_r    ();
-	int64_t fastSaveColl_r( int fd, int64_t offset);
-	bool      loadBuckets   ( const char* dbname);
-	bool      fastLoad      ( BigFile *f, const char* dbname);
-	int64_t fastLoadColl  ( BigFile *f,
-				  const char* dbname,
-				  int64_t offset );
+	bool fastSave(const char *dir, bool useThread, void *state, void (*callback)(void *state));
+	bool fastSave_r();
+	int64_t fastSaveColl_r(int fd, int64_t offset);
+	bool loadBuckets(const char *dbname);
+	bool fastLoad(BigFile *f, const char *dbname);
+	int64_t fastLoadColl(BigFile *f, const char *dbname, int64_t offset);
 
-
-	//private:
+private:
 	RdbBucket **m_buckets;
 	RdbBucket *m_bucketsSpace;
 	char      *m_masterPtr;

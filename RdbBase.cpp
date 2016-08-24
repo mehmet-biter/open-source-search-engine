@@ -166,7 +166,7 @@ bool RdbBase::init(char *dir,
 			log(LOG_INFO, "db: Attempting to generate index file %s/%s-saved.dat. May take a while.",
 			    m_dir.getDir(), m_dbname);
 
-			bool result = m_tree ? m_treeIndex.generateIndex(m_tree, m_collnum) : m_treeIndex.generateIndex(m_buckets, m_collnum);
+			bool result = m_tree ? m_treeIndex.generateIndex(m_tree, m_collnum, m_dbname) : m_treeIndex.generateIndex(m_buckets, m_collnum, m_dbname);
 			if (!result) {
 				logError("db: Index generation failed for %s/%s-saved.dat.", m_dir.getDir(), m_dbname);
 				gbshutdownCorrupted();

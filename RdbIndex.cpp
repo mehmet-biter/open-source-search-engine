@@ -246,14 +246,14 @@ void RdbIndex::printIndex() {
 	logError("NOT IMPLEMENTED YET");
 }
 
-bool RdbIndex::generateIndex(RdbTree *tree, collnum_t collnum) {
+bool RdbIndex::generateIndex(RdbTree *tree, collnum_t collnum, const char *dbname) {
 	reset();
 
 	if (g_conf.m_readOnlyMode) {
 		return false;
 	}
 
-	log(LOG_INFO, "db: Generating index for %s tree", tree->m_dbname);
+	log(LOG_INFO, "db: Generating index for %s tree", dbname);
 
 	// use extremes
 	const char *startKey = KEYMIN();
@@ -276,14 +276,14 @@ bool RdbIndex::generateIndex(RdbTree *tree, collnum_t collnum) {
 	return true;
 }
 
-bool RdbIndex::generateIndex(RdbBuckets *buckets, collnum_t collnum) {
+bool RdbIndex::generateIndex(RdbBuckets *buckets, collnum_t collnum, const char *dbname) {
 	reset();
 
 	if (g_conf.m_readOnlyMode) {
 		return false;
 	}
 
-	log(LOG_INFO, "db: Generating index for %s buckets", buckets->m_dbname);
+	log(LOG_INFO, "db: Generating index for %s buckets", dbname);
 
 	// use extremes
 	const char *startKey = KEYMIN();

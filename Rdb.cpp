@@ -783,7 +783,7 @@ void Rdb::doneSaving ( ) {
 
 bool Rdb::isSavingTree ( ) {
 	if ( m_useTree ) return m_tree.m_isSaving;
-	return m_buckets.m_isSaving;
+	return m_buckets.isSaving();
 }
 
 bool Rdb::saveTree ( bool useThread ) {
@@ -1089,8 +1089,8 @@ bool Rdb::dumpTree ( int32_t niceness ) {
 			}
 		}
 	} else {
-		for(int32_t i = 0; i < m_buckets.m_numBuckets; i++) {
-			RdbBucket *b = m_buckets.m_buckets[i];
+		for(int32_t i = 0; i < m_buckets.getNumBuckets(); i++) {
+			const RdbBucket *b = m_buckets.getBucket(i);
 			collnum_t cn = b->getCollnum();
 			int32_t nk = b->getNumKeys();
 			cr = g_collectiondb.m_recs[cn];
@@ -2568,7 +2568,7 @@ void Rdb::enableWrites  () {
 
 bool Rdb::isWritable ( ) {
 	if(m_useTree) return m_tree.m_isWritable;
-	return m_buckets.m_isWritable;
+	return m_buckets.isWritable();
 }
 
 
