@@ -140,15 +140,13 @@ bool RdbMerge::gotLock ( ) {
 	// . set up a a file to dump the records into
 	// . returns false and sets g_errno on error
 	// . this will open m_target as O_RDWR | O_NONBLOCK | O_ASYNC ...
-	
-
-//@@@ BR: no-merge index NOT IMPLEMENTED HERE!!!	
 
 	m_dump.set(m_collnum,
 	           m_target,
 	           NULL, // buckets to dump is NULL, we call dumpList
 	           NULL, // tree to dump is NULL, we call dumpList
 	           m_targetMap,
+	           m_targetIndex,
 	           0, // m_maxBufSize. not needed if no tree!
 	           m_dedup,
 	           m_niceness, // niceness of dump

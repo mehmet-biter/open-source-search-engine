@@ -14,10 +14,10 @@
 #include "RdbList.h"
 
 class Rdb;
+class RdbTree;
 class RdbBuckets;
 class RdbMap;
-class RdbTree;
-
+class RdbIndex;
 
 class RdbDump {
 public:
@@ -34,6 +34,7 @@ public:
 	         RdbBuckets *buckets, // optional buckets to dump
 	         RdbTree *tree, // optional tree to dump
 	         RdbMap *map,
+	         RdbIndex *index,
 	         int32_t maxBufSize,
 	         bool dedup, // for merging tree into cache
 	         int32_t niceness,
@@ -77,6 +78,7 @@ public:
 	RdbTree *m_tree;
 	RdbBuckets *m_buckets;
 	RdbMap *m_map;
+	RdbIndex *m_index;
 	int32_t m_maxBufSize;
 	bool m_dedup; // used for merging/adding tree to cache
 	void *m_state;

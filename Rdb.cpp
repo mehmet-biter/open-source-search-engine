@@ -1422,7 +1422,8 @@ bool Rdb::dumpCollLoop ( ) {
 	                base->getFile(m_fn),
 	                buckets,
 	                tree,
-	                base->getMap(m_fn), // RdbMap
+	                base->getMap(m_fn),
+	                base->getIndex(m_fn),
 	                bufSize, // write buf size
 	                m_dedup, // dedup not used for this
 	                m_niceness, // niceness of 1 will NOT block
