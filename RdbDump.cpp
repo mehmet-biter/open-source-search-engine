@@ -477,7 +477,7 @@ bool RdbDump::dumpList(RdbList *list, int32_t niceness, bool recall) {
 
 		// don't check list if we're dumping an unordered list from tree!
 		if (g_conf.m_verifyWrites) {
-			m_list->checkList_r(false /*removedNegRecs?*/ );
+			m_list->checkList_r(false);
 		}
 
 		// before calling RdbMap::addList(), always reset list ptr
@@ -721,6 +721,7 @@ bool RdbDump::doneReadingForVerify ( ) {
 
 		// m_file is probably invalid too since it is stored in cr->m_bases[i]->m_files[j]
 		m_file = NULL;
+		m_index = NULL;
 	}
 
 	// see if what we wrote is the same as what we read back
