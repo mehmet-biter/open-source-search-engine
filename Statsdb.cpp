@@ -310,7 +310,7 @@ bool Statsdb::addStat ( int32_t        niceness ,
 
 	RdbTree *tree = &m_rdb.m_tree;
 	// do not add stats to our tree if it is loading
-	if ( tree->m_isLoading ) return true;
+	if (tree->isLoading()) return true;
 
 	// convert into host #0 synced time
 	t1Arg = localToGlobalTimeMilliseconds ( t1Arg );

@@ -380,7 +380,7 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 		// get his "node number" in the top tree, "nn" so we can
 		// delete him from the top tree as well as m_t2. it is 
 		// "hidden" in the dataPtr
-		deleteMe = (SPTRTYPE)m_t2.m_data[min];
+		deleteMe = (SPTRTYPE)m_t2.getData(min);
 		// delete him from the top tree now as well
 		//deleteNode ( nn , domHash );
 		// then delete him from the m_t2 tree
@@ -405,8 +405,8 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 	if ( m_doSiteClustering ) {
 		// update the dataPtr so every node in m_t2 has a reference
 		// to the equivalent node in this top tree
-		if ( n < 0 || n > m_t2.m_numNodes ) gbshutdownLogicError();
-		m_t2.m_data[n] = (char *)(PTRTYPE)tnn;
+		if ( n < 0 || n > m_t2.getNumNodes() ) gbshutdownLogicError();
+		m_t2.setData(n, (char *)(PTRTYPE)tnn);
 	}
 
 	//

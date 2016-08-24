@@ -50,8 +50,9 @@ class RdbTree {
 	// . this RdbCache class caches scans from a startKey to an endKey
 	// . it adds an m_endKeys,m_next,m_prev,m_time to each node
 	friend class RdbCache;
+	friend void RdbMem::freeDumpedMem(RdbTree *tree); /// @todo ALC remove friend when fixed
 
- public:
+public:
 
 	 RdbTree       ( );
 	~RdbTree       ( );
@@ -186,8 +187,23 @@ class RdbTree {
 	void deleteOrderedList ( collnum_t collnum ,
 				 RdbList *list , bool doBalancing ); //= true);
 
+	bool isSaving() const { return m_isSaving; }
+	bool isWritable() const { return m_isWritable; }
+
+	bool needsSave() const { return m_needsSave; }
+	void setNeedsSave(bool needsSave) {
+		m_needsSave = needsSave;
+	}
+
+	bool isGettingList() const { return (m_gettingList != 0); }
+	bool isLoading() const { return m_isLoading; }
+
 	// since our arrays aren't public
 	char *getData      ( int32_t node ) { return m_data    [node]; }
+	void setData(int32_t node, char *data) {
+		m_data[node] = data;
+	}
+
 	int32_t  getDataSize  ( int32_t node ) const { return m_sizes   [node]; }
 	char *getKey       ( int32_t node ) { return &m_keys   [node*m_ks]; }
 	int32_t  getParentNum ( int32_t node ) const { return m_parents [node]; }
@@ -300,6 +316,33 @@ class RdbTree {
 	void disableWrites () { m_isWritable = false; }
 	void enableWrites  () { m_isWritable = true ; }
 
+	int64_t getBytesWritten() { return m_bytesWritten; }
+	int64_t getBytesRead() { return m_bytesRead; }
+
+	// . returns true if tree doesn't need to grow/shrink
+	// . re-allocs the m_keys,m_data,m_sizes,m_leftNodes,m_rightNodes
+	// . used for growing AND shrinking the table
+	bool growTree(int32_t newNumNodes);
+
+	static void saveWrapper(void *state);
+	static void threadDoneWrapper(void *state, job_exit_t exit_type);
+
+private:
+	// used by fastSave() and fastLoad()
+	int32_t fastSaveBlock_r(int fd, int32_t start, int64_t offset);
+	int32_t fastLoadBlock(BigFile *f, int32_t start, int32_t totalNodes, RdbMem *stack, int64_t offset);
+
+	void setDepths    ( int32_t bottomNode );
+	int32_t rotateRight  ( int32_t pivotNode );
+	int32_t rotateLeft   ( int32_t pivotNode );
+	int32_t rotate       ( int32_t pivotNode , int32_t *lefts , int32_t *rights );
+	int32_t computeDepth ( int32_t headNode  );
+
+	// used by getListSize() to estiamte a list size
+	int32_t getOrderOfKey ( collnum_t collnum , const char *key , char *retKey );
+	// used by getrderOfKey() (have to estimate if tree not balanced)
+	int32_t getTreeDepth  ();
+
 	// can we write to the tree?
 	bool    m_isWritable;
 	// . this stuff is accessed by thread an must be public
@@ -319,41 +362,12 @@ class RdbTree {
 	char  m_memTag[16];
 
 	// this callback called when fastSave is complete
-	void     *m_state; 
+	void     *m_state;
 	void    (* m_callback) (void *state );
 
-	int64_t getBytesWritten() { return m_bytesWritten; }
-	int64_t getBytesRead() { return m_bytesRead; }
 
-	// private:
-
-	// used by fastSave() and fastLoad()
-	int32_t fastSaveBlock_r ( int        fd         ,
-			       int32_t       start      , 
-			       int64_t  offset     ) ;
-	int32_t fastLoadBlock ( BigFile *f            , 
-			     int32_t       start      , 
-			     int32_t       totalNodes ,
-			     RdbMem    *stack      ,
-			     int64_t  offset     );
-
-	void setDepths    ( int32_t bottomNode );
-	int32_t rotateRight  ( int32_t pivotNode );
-	int32_t rotateLeft   ( int32_t pivotNode );
-	int32_t rotate       ( int32_t pivotNode , int32_t *lefts , int32_t *rights );
-	int32_t computeDepth ( int32_t headNode  );
 	// is this tree a balanced binary tree?
 	bool m_doBalancing;
-
-	// used by getListSize() to estiamte a list size
-	int32_t getOrderOfKey ( collnum_t collnum , const char *key , char *retKey );
-	// used by getrderOfKey() (have to estimate if tree not balanced)
-	int32_t getTreeDepth  ();
-
-	// . returns true if tree doesn't need to grow/shrink
-	// . re-allocs the m_keys,m_data,m_sizes,m_leftNodes,m_rightNodes
-	// . used for growing AND shrinking the table
-	bool growTree(int32_t newNumNodes);
 
 	// are we responsible for freeing nodes' data
 	bool    m_ownData;
@@ -363,7 +377,6 @@ class RdbTree {
 
 	// each node/node in the tree has these datum:
 	collnum_t *m_collnums; // each key now has a collection number
-	//key_t  *m_keys;         // 96bits each (3 int32_ts)
 	char   *m_keys;         // X bytes each
 	char  **m_data;         // NULL iff m_dataSize is 0
 	int32_t   *m_sizes;        // NULL iff m_dataSize is 0
@@ -407,6 +420,7 @@ class RdbTree {
 	int32_t m_errno;
 	char m_ks;
 
+public:
 	bool m_useProtection;
 	bool m_isProtected;
 	void protect   () { 

@@ -2303,9 +2303,6 @@ int32_t RdbTree::computeDepth ( int32_t i ) {
 
 #define BLOCK_SIZE 10000
 
-static void saveWrapper       ( void *state );
-static void threadDoneWrapper ( void *state, job_exit_t exit_type );
-
 // . caller should call f->set() himself
 // . we'll open it here
 // . returns false if blocked, true otherwise
@@ -2378,7 +2375,7 @@ bool RdbTree::fastSave ( const char *dir, const char *dbname, bool useThread, vo
 }
 
 // Use of ThreadEntry parameter is NOT thread safe
-void saveWrapper ( void *state ) {
+void RdbTree::saveWrapper ( void *state ) {
 	// get this class
 	RdbTree *that = (RdbTree *)state;
 
@@ -2395,7 +2392,7 @@ void saveWrapper ( void *state ) {
 
 // we come here after thread exits
 // Use of ThreadEntry parameter is NOT thread safe
-void threadDoneWrapper ( void *state, job_exit_t exit_type ) {
+void RdbTree::threadDoneWrapper ( void *state, job_exit_t exit_type ) {
 	// get this class
 	RdbTree *that = (RdbTree *)state;
 

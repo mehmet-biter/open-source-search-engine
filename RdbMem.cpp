@@ -178,13 +178,13 @@ void RdbMem::freeDumpedMem( RdbTree *tree ) {
 	// count how many data nodes we had to move to avoid corruption
 	int32_t count = 0;
 	int32_t scanned = 0;
-	for(int32_t i = 0; i < tree->m_minUnusedNode; i++) {
+	for(int32_t i = 0; i < tree->getMinUnusedNode(); i++) {
 		// skip node if parents is -2 (unoccupied)
-		if(tree->m_parents[i]==-2)
+		if(tree->isEmpty(i))
 			continue;
 		scanned++;
 		// get the ptr
-		char *data = tree->m_data[i];
+		char *data = tree->getData(i);
 		if(!data)
 			continue;
 		// how could it's data not be stored in here?
@@ -216,7 +216,7 @@ void RdbMem::freeDumpedMem( RdbTree *tree ) {
 		// m_ptr2
 		int32_t size;
 		if ( tree->m_sizes )
-			size = tree->m_sizes[i];
+			size = tree->getDataSize(i);
 		else
 			size = tree->m_fixedDataSize;
 			
@@ -249,7 +249,7 @@ void RdbMem::freeDumpedMem( RdbTree *tree ) {
 		}
 		count++;
 		gbmemcpy(newData,data,size);
-		tree->m_data[i] = newData;
+		tree->setData(i, newData);
 	}
 	if(count>0)
 		log("rdbmem: moved %i tree nodes for %s",(int)count,

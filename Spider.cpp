@@ -744,9 +744,9 @@ void SpiderCache::save ( bool useThread ) {
 		SpiderColl *sc = getSpiderCollIffNonNull(i);//m_spiderColls[i];
 		if ( ! sc ) continue;
 		RdbTree *tree = &sc->m_waitingTree;
-		if ( ! tree->m_needsSave ) continue;
+		if ( ! tree->needsSave() ) continue;
 		// if already saving from a thread
-		if ( tree->m_isSaving ) continue;
+		if ( tree->isSaving() ) continue;
 		const char *filename = "waitingtree";
 		char dir[1024];
 		sprintf(dir,"%scoll.%s.%" PRId32,g_hostdb.m_dir,
@@ -798,7 +798,7 @@ bool SpiderCache::needsSave ( ) {
 	for ( int32_t i = 0 ; i < g_collectiondb.m_numRecs ; i++ ) {
 		SpiderColl *sc = getSpiderCollIffNonNull(i);//m_spiderColls[i];
 		if ( ! sc ) continue;
-		if ( sc->m_waitingTree.m_needsSave ) return true;
+		if ( sc->m_waitingTree.needsSave() ) return true;
 		// also the doleIpTable
 		//if ( sc->m_doleIpTable.m_needsSave ) return true;
 	}

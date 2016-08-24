@@ -347,7 +347,7 @@ bool Rdb::updateToRebuildFiles ( Rdb *rdb2 , char *coll ) {
 	}
 
 	// allow rdb2->reset() to succeed without dumping core
-	rdb2->m_tree.m_needsSave = false;
+	rdb2->m_tree.setNeedsSave(false);
 	rdb2->m_buckets.setNeedsSave(false);
 	
 	// . make rdb2, the secondary rdb used for rebuilding, give up its mem
@@ -782,7 +782,7 @@ void Rdb::doneSaving ( ) {
 }
 
 bool Rdb::isSavingTree ( ) {
-	if ( m_useTree ) return m_tree.m_isSaving;
+	if ( m_useTree ) return m_tree.isSaving();
 	return m_buckets.isSaving();
 }
 
@@ -797,7 +797,7 @@ bool Rdb::saveTree ( bool useThread ) {
 	// . returns false if blocked, true otherwise
 	// . sets g_errno on error
 	if (m_useTree) {
-		if (m_tree.m_needsSave) {
+		if (m_tree.needsSave()) {
 			log( LOG_DEBUG, "db: saving tree %s", dbn );
 		}
 		return m_tree.fastSave ( getDir(), m_dbname, useThread, NULL, NULL );
@@ -980,7 +980,7 @@ bool Rdb::dumpTree ( int32_t niceness ) {
 	// . i think this caused a problem messing of RdbMem before when
 	//   both happened at once
 	if ( m_useTree ) {
-		if( m_tree.m_isSaving ) {
+		if( m_tree.isSaving() ) {
 			logTrace( g_conf.m_logTraceRdb, "END. %s: Rdb tree is saving. Returning true", m_dbname );
 			return true;
 		}
@@ -1076,14 +1076,14 @@ bool Rdb::dumpTree ( int32_t niceness ) {
 	}
 	if ( m_useTree ) {
 		// now scan the rdbtree and inc treecount where appropriate
-		for ( int32_t i = 0 ; i < m_tree.m_minUnusedNode ; i++ ) {
+		for ( int32_t i = 0 ; i < m_tree.getMinUnusedNode() ; i++ ) {
 			// skip node if parents is -2 (unoccupied)
-			if ( m_tree.m_parents[i] == -2 ) {
+			if ( m_tree.isEmpty() ) {
 				continue;
 			}
 
 			// get rec from tree collnum
-			cr = g_collectiondb.m_recs[m_tree.m_collnums[i]];
+			cr = g_collectiondb.m_recs[m_tree.getCollnum(i)];
 			if ( cr ) {
 				cr->m_treeCount++;
 			}
@@ -1212,7 +1212,7 @@ bool Rdb::dumpCollLoop ( ) {
 		const char *k = KEYMIN();
 		int32_t nn = m_tree.getNextNode ( m_dumpCollnum , k );
 		if ( nn < 0 ) goto loop;
-		if ( m_tree.m_collnums[nn] != m_dumpCollnum ) goto loop;
+		if ( m_tree.getCollnum(nn) != m_dumpCollnum ) goto loop;
 	} else {
 		if(!m_buckets.collExists(m_dumpCollnum)) goto loop;
 	}
@@ -1584,7 +1584,7 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list, int32_t niceness ) {
 	// if we are currently in a quickpoll, make sure we are not in
 	// RdbTree::getList(), because we could mess that loop up by adding
 	// or deleting a record into/from the tree now
-	if ( m_tree.m_gettingList ) {
+	if ( m_tree.isGettingList() ) {
 		g_errno = ETRYAGAIN;
 		return false;
 	}
@@ -1819,7 +1819,7 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 	// spiderdb and then alter the waiting tree, this statement should
 	// protect us.
 	if ( m_useTree ) {
-		if(! m_tree.m_isWritable ) { 
+		if(! m_tree.isWritable() ) {
 			g_errno = ETRYAGAIN; 
 			return false;
 		}
@@ -2150,7 +2150,7 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 
 	// enhance the error message
 	const char *ss ="";
-	if ( m_tree.m_isSaving ) ss = " Tree is saving.";
+	if ( m_tree.isSaving() ) ss = " Tree is saving.";
 	if ( !m_useTree && m_buckets.isSaving() ) ss = " Buckets are saving.";
 
 	// return ETRYAGAIN if out of memory, this should tell
@@ -2567,13 +2567,13 @@ void Rdb::enableWrites  () {
 }
 
 bool Rdb::isWritable ( ) {
-	if(m_useTree) return m_tree.m_isWritable;
+	if(m_useTree) return m_tree.isWritable();
 	return m_buckets.isWritable();
 }
 
 
 bool Rdb::needsSave() const {
-	if(m_useTree) return m_tree.m_needsSave; 
+	if(m_useTree) return m_tree.needsSave();
 	else return m_buckets.needsSave();
 }
 
@@ -2605,7 +2605,7 @@ int32_t Rdb::reclaimMemFromDeletedTreeNodes( int32_t niceness ) {
 	HashTableX ht;
 	if (!ht.set ( 4, 
 		      4, 
-		      m_tree.m_numUsedNodes*2, 
+		      m_tree.getNumUsedNodes()*2,
 		      NULL , 0 , 
 		      false , 
 		      niceness ,
@@ -2616,12 +2616,12 @@ int32_t Rdb::reclaimMemFromDeletedTreeNodes( int32_t niceness ) {
 	int32_t dups = 0;
 
 	// mark the data of unoccupied nodes somehow
-	int32_t nn = m_tree.m_minUnusedNode;
+	int32_t nn = m_tree.getMinUnusedNode();
 	for ( int32_t i = 0 ; i < nn ; i++ ) {
 		// skip empty nodes in tree
-		if ( m_tree.m_parents[i] == -2 ) {marked++; continue; }
+		if ( m_tree.isEmpty(i) ) {marked++; continue; }
 		// get data ptr
-		char *data = m_tree.m_data[i];
+		char *data = m_tree.getData(i);
 		// and key ptr, if negative skip it
 		//char *key = m_tree.getKey(i);
 		//if ( (key[0] & 0x01) == 0x00 ) { occupied++; continue; }
@@ -2648,7 +2648,7 @@ int32_t Rdb::reclaimMemFromDeletedTreeNodes( int32_t niceness ) {
 	if ( occupied + dups != m_tree.getNumUsedNodes() ) 
 		log("rdb: reclaim mismatch1");
 
-	if ( ht.getNumSlotsUsed() + dups != m_tree.m_numUsedNodes )
+	if ( ht.getNumSlotsUsed() + dups != m_tree.getNumUsedNodes() )
 		log("rdb: reclaim mismatch2");
 
 	int32_t skipped = 0;
@@ -2720,16 +2720,16 @@ int32_t Rdb::reclaimMemFromDeletedTreeNodes( int32_t niceness ) {
 	// now update data ptrs in the tree, m_data[]
 	for ( int i = 0 ; i < nn ; i++ ) {
 		// skip empty nodes in tree
-		if ( m_tree.m_parents[i] == -2 ) continue;
+		if ( m_tree.isEmpty(i)) continue;
 		// update the data otherwise
-		char *data = m_tree.m_data[i];
+		char *data = m_tree.getData(i);
 		// sanity, ensure legit
 		if ( data < pstart ) { g_process.shutdownAbort(true); }
 		int32_t offset = data - pstart;
 		int32_t *newOffsetPtr = (int32_t *)ht.getValue ( &offset );
 		if ( ! newOffsetPtr ) { g_process.shutdownAbort(true); }
 		char *newData = pstart + *newOffsetPtr;
-		m_tree.m_data[i] = newData;
+		m_tree.setData(i, newData);
 	}
 
 	log("rdb: reclaimed %" PRId32" bytes after scanning %" PRId32" "
