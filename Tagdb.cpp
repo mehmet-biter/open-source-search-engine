@@ -1072,8 +1072,6 @@ bool Tagdb::init ( ) {
 			    maxTreeNodes               ,
 			    // now we balance so Sync.cpp can ordered huge list
 			    true                        , // balance tree?
-			    0 , //g_conf.m_tagdbMaxCacheMem ,
-			    0 , //maxCacheNodes              ,
 			    false                      , // half keys?
 			    false                      , //m_tagdbSaveCache
 			    NULL,//&m_pc                      ,

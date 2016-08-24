@@ -36,8 +36,6 @@ bool Clusterdb::init ( ) {
 			    g_conf.m_clusterdbMaxTreeMem,
 			    maxTreeNodes  , // maxTreeNodes  ,
 			    true          , //false         , // balance tree?
-			    0,//maxCacheMem   , 
-			    0,//maxCacheNodes ,
 			    true          , // half keys?
 			    g_conf.m_clusterdbSaveCache,
 			    NULL,//&m_pc ,
@@ -62,8 +60,6 @@ bool Clusterdb::init2 ( int32_t treeMem ) {
 			    treeMem       , // g_conf.m_clusterdbMaxTreeMem,
 			    maxTreeNodes  , 
 			    true          , // balance tree?
-			    0             , // maxCacheMem   , 
-			    0             , // maxCacheNodes ,
 			    true          , // half keys?
 			    false         , // g_conf.m_clusterdbSaveCache,
 			    NULL          , // &m_pc ,

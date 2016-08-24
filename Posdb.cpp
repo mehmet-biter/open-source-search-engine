@@ -142,8 +142,6 @@ bool Posdb::init ( ) {
 	                    maxTreeNodes                ,
 	                    // now we balance so Sync.cpp can ordered huge lists
                         true                        , // balance tree?
-                        0 , // g_conf.m_posdbMaxCacheMem ,
-                        0 , // maxCacheNodes 	       ,
                         true                        , // use half keys?
                         false                       , // g_conf.m_posdbSav
 	                    // newer systems have tons of ram to use
@@ -183,8 +181,6 @@ bool Posdb::init2 ( int32_t treeMem ) {
 			    treeMem                     ,
 			    maxTreeNodes                ,
 			    true                        , // balance tree?
-			    0                           , // MaxCacheMem ,
-			    0                           , // maxCacheNodes
 			    true                        , // use half keys?
 			    false                       , // posdbSaveCache
 			    NULL                        , // s_pc

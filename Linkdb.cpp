@@ -146,8 +146,6 @@ bool Linkdb::init ( ) {
 			    maxTreeMem ,
 			    maxTreeNodes ,
 			    true     , //isTreeBalanced
-			    0        , // cache mem 
-			    0        , // cache nodes
 			    false, // true     , // use half keys
 			    false    , // load cache from disk
 			    NULL,//&m_pc    ,
@@ -173,8 +171,6 @@ bool Linkdb::init2 ( int32_t treeMem ) {
 			    treeMem       , // g_conf.m_clusterdbMaxTreeMem,
 			    maxTreeNodes  , 
 			    true          , // balance tree?
-			    0             , // maxCacheMem   , 
-			    0             , // maxCacheNodes ,
 			    false, // true          , // half keys?
 			    false         , // g_conf.m_clusterdbSaveCache,
 			    NULL          , // &m_pc ,

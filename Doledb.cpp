@@ -46,8 +46,6 @@ bool Doledb::init ( ) {
 			    maxTreeMem                  ,
 			    maxTreeNodes                ,
 			    true                        , // balance tree?
-			    0                           , // spiderdbMaxCacheMe
-			    0                           , // maxCacheNodes 
 			    false                       , // half keys?
 			    false                       , // save cache?
 			    NULL);

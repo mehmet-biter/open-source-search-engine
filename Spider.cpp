@@ -532,8 +532,6 @@ bool Spiderdb::init ( ) {
 			    g_conf.m_spiderdbMaxTreeMem ,
 			    maxTreeNodes                ,
 			    true                        , // balance tree?
-			    0,//g_conf.m_spiderdbMaxCacheMem,
-			    0,//maxCacheNodes               ,
 			    false                       , // half keys?
 			    false                       , // save cache?
 			    NULL,//&m_pc                       ,
@@ -559,8 +557,6 @@ bool Spiderdb::init2 ( int32_t treeMem ) {
 			    treeMem       , // g_conf.m_spiderdbMaxTreeMem ,
 			    maxTreeNodes  ,
 			    true          , // balance tree?
-			    0             , // m_spiderdbMaxCacheMem,
-			    0             , // maxCacheNodes               ,
 			    false         , // half keys?
 			    false         , // save cache?
 			    NULL          , // &m_pc 

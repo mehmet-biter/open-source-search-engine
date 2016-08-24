@@ -179,8 +179,6 @@ bool Statsdb::init ( ) {
 			    maxTreeMem                  ,
 			    maxTreeNodes		,
 			    true			, // balance tree?
-			    0                           , // m_statsdbMaxCchMem
-			    maxCacheNodes		,
 			    false			, // use half keys?
 			    false			, // cache from disk?
 			    NULL			, // page cache pointer

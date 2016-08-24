@@ -56,11 +56,6 @@ bool Titledb::init ( ) {
 			    maxTreeNodes                ,
 			    // now we balance so Sync.cpp can ordered huge list
 			    true                        , // balance tree?
-			    // turn off cache for now because the page cache
-			    // is just as fast and does not get out of date
-			    // so bad??
-			    0,//g_conf.m_titledbMaxCacheMem ,
-			    0,//maxCacheNodes               ,
 			    false                       ,// half keys?
 			    false                       ,// g_conf.m_titledbSav
 			    NULL,//&m_pc               , // page cache ptr
@@ -86,8 +81,6 @@ bool Titledb::init2 ( int32_t treeMem ) {
 			    maxTreeNodes                ,
 			    // now we balance so Sync.cpp can ordered huge list
 			    true                        , // balance tree?
-			    0                           , // MaxCacheMem ,
-			    0                           , // maxCacheNodes
 			    false                       , // half keys?
 			    false                       , // titledbSaveCache
 			    NULL                        , // page cache ptr

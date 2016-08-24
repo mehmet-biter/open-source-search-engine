@@ -76,8 +76,6 @@ public:
 		    int32_t   maxTreeMem      , //=  1024*1024*32 ,
 		    int32_t   maxTreeNodes    ,
 		    bool   isTreeBalanced  ,
-		    int32_t   maxCacheMem     , //=  1024*1024*5 );
-		    int32_t   maxCacheNodes   ,
 		    bool   useHalfKeys     ,
 		    bool   loadCacheFromDisk ,
 		    void *pc = NULL,
