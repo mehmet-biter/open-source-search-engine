@@ -74,12 +74,12 @@ public:
 	// . a fixedDataSize of -1 means each node has data of a variable size
 	// . set maxMem to -1 for no max 
 	// . returns false & sets errno if fails to alloc "maxNumNodes" nodes
-	bool set ( int32_t fixedDataSize , int32_t maxNumNodes ,
-		   bool doBalancing   , int32_t maxMem      , bool ownData ,
-		   const char *allocName,
-		   bool dataInPtrs = false ,
-		   const char *dbname = NULL , char keySize = 12 ,
-		   char rdbId = -1 );
+	bool set(int32_t fixedDataSize, int32_t maxNumNodes,
+	         int32_t maxMem, bool ownData,
+	         const char *allocName,
+	         bool dataInPtrs = false,
+	         const char *dbname = NULL, char keySize = 12,
+	         char rdbId = -1);
 
 	// . frees the used memory, etc.
 	// . override so derivatives can free up extra header arrays

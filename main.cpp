@@ -3096,7 +3096,7 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 
 void dumpWaitingTree (const char *coll ) {
 	RdbTree wt;
-	if (!wt.set(0,-1,true,20000000,true,"waittree2", false,"waitingtree",sizeof(key_t))) {
+	if (!wt.set(0,-1,20000000,true,"waittree2", false,"waitingtree",sizeof(key_t))) {
 		return;
 	}
 
@@ -3748,12 +3748,7 @@ bool treetest ( ) {
 	}
 	// init the tree
 	RdbTree rt;
-	if ( ! rt.set ( 0              , // fixedDataSize  , 
-			numKeys + 1000 , // maxTreeNodes   ,
-			false          , // isTreeBalanced , 
-			numKeys * 28   , // maxTreeMem     ,
-			false          , // own data?
-			"tree-test"    ) ) {
+	if (!rt.set(0, numKeys + 1000, numKeys * 28, false, "tree-test")) {
 		log(LOG_WARN, "speedTest: tree init failed.");
 		return false;
 	}

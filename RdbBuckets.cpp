@@ -511,9 +511,8 @@ RdbBuckets::RdbBuckets() {
 }
 
 
-
-bool RdbBuckets::set( int32_t fixedDataSize , int32_t maxMem, bool ownData, const char *allocName, rdbid_t rdbId,
-                      bool dataInPtrs, const char *dbname, char keySize, bool useProtection ) {
+bool RdbBuckets::set(int32_t fixedDataSize, int32_t maxMem, const char *allocName, rdbid_t rdbId,
+                     const char *dbname, char keySize) {
 	m_numBuckets = 0;
 	m_ks = keySize;
 	m_rdbId = rdbId;
@@ -553,43 +552,6 @@ bool RdbBuckets::set( int32_t fixedDataSize , int32_t maxMem, bool ownData, cons
 		g_errno = ENOMEM;
 		return false;
 	}
-	
-	// log("init: Successfully initialized buckets for %s, "
-	//     "keysize is %" PRId32", max mem is %" PRId32", datasize is %" PRId32,
-	//     m_dbname, (int32_t)m_ks, m_maxMem, m_fixedDataSize);
-
-
-	/*
-	RdbBuckets b;
-	b.set ( 0, // fixedDataSize, 
-		50000000 , // maxTreeMem,
-		false, //own data
-		"tbuck", // m_treeName, // allocName
-		false, //data in ptrs
-		"tbuck",//m_dbname,
-		16, // m_ks,
-		false);
-	collnum_t cn = 1;
-	key128_t k;
-	k.n1 = 12;
-	k.n0 = 11;
-	b.addNode ( cn , (char *)&k, NULL, 0 );
-	// negate it
-	k.n0 = 10;
-	b.addNode ( cn , (char *)&k, NULL, 0 );
-
-	// try that
-	key128_t k1;
-	key128_t k2;
-	k1.setMin();
-	k2.setMax();
-	RdbList list;
-	int32_t np,nn;
-	b.getList ( cn,(char *)&k1,(char *)&k2,1000,&list,&np,&nn,false);
-	if ( np != 0 || nn != 1 ) { g_process.shutdownAbort(true); }
-	// must be empty
-	if ( b.getNumKeys() != 0 ) { g_process.shutdownAbort(true); }
-	*/
 
 	return true;
 }
@@ -1957,7 +1919,7 @@ bool RdbBuckets::fastSave_r() {
 	//	log("RdbTree::fastSave_r: %s",mstrerror(g_errno));
 	//  return false;
 	//}
-	// cannot use the BigFile class, since we may be in a thread and it 
+	// cannot use the BigFile class, since we may be in a thread and it
 	// messes with g_errno
 	//char *s = m_saveFile->getFilename();
 	char s[1024];

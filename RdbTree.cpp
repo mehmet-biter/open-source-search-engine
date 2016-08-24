@@ -48,19 +48,10 @@ RdbTree::~RdbTree ( ) {
 
 
 // "memMax" includes records plus the overhead
-bool RdbTree::set ( int32_t fixedDataSize , 
-		    int32_t maxNumNodes   ,
-		    bool doBalancing   , 
-		    int32_t memMax        ,
-		    bool ownData       ,
-		    const char *allocName    ,
-		    bool dataInPtrs    ,
-		    const char *dbname       ,
-		    char  keySize      ,
-		    char  rdbId ) {
+bool RdbTree::set(int32_t fixedDataSize, int32_t maxNumNodes, int32_t memMax, bool ownData, const char *allocName, bool dataInPtrs, const char *dbname, char keySize, char rdbId) {
 	reset();
 	m_fixedDataSize   = fixedDataSize; 
-	m_doBalancing     = doBalancing;
+	m_doBalancing     = true;
 	m_maxMem          = memMax;
 	m_ownData         = ownData;
 	m_allocName       = allocName;

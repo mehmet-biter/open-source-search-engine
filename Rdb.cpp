@@ -171,29 +171,21 @@ bool Rdb::init ( const char     *dir                  ,
 	if(m_useTree) { 
 		int32_t rdbId = m_rdbId;
 		// statsdb is collectionless really so pass on to tree
-		if ( rdbId == RDB_STATSDB ) rdbId = -1;
-		if ( ! m_tree.set ( fixedDataSize  , maxTreeNodes, true, maxTreeMem, false, m_treeName, false,
-		                    m_dbname, m_ks, rdbId ) ) {
+		if ( rdbId == RDB_STATSDB ) {
+			rdbId = -1;
+		}
+
+		if (!m_tree.set(fixedDataSize, maxTreeNodes, maxTreeMem, false, m_treeName, false, m_dbname, m_ks, rdbId)) {
 			log( LOG_ERROR, "db: Failed to set tree." );
 			return false;
 		}
-	}
-	else {
+	} else {
 		if(treeFileExists()) {
-			m_tree.set ( fixedDataSize  , 
-			    maxTreeNodes   , // max # nodes in tree
-			    true ,
-			    maxTreeMem     ,
-			    false          , // own data?
-			    m_treeName     , // allocname
-			    false          , // dataInPtrs?
-			    m_dbname       ,
-			    m_ks           ,
-				     m_rdbId );
+			m_tree.set(fixedDataSize, maxTreeNodes, maxTreeMem, false, m_treeName, false, m_dbname, m_ks, m_rdbId);
 		}
 		// set this then
 		sprintf(m_treeName,"buckets-%s",m_dbname);
-		if( ! m_buckets.set ( fixedDataSize, maxTreeMem, false, m_treeName, m_rdbId, false, m_dbname, m_ks, false ) ) {
+		if (!m_buckets.set(fixedDataSize, maxTreeMem, m_treeName, m_rdbId, m_dbname, m_ks)) {
 			log( LOG_ERROR, "db: Failed to set buckets." );
 			return false;
 		}
@@ -2129,10 +2121,6 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 
 	log(LOG_INFO, "db: Had error adding data to %s: %s. %s", m_dbname, mstrerror(g_errno), ss);
 	return false;
-
-	// if we flubbed then free the data, if any
-	//if ( doCopy && data ) mfree ( data , dataSize ,"Rdb");
-	//return false;
 }
 
 // . use the maps and tree to estimate the size of this list w/o hitting disk

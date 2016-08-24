@@ -99,15 +99,7 @@ public:
 	void clear();
 	void reset();
 
-	bool set ( int32_t fixedDataSize , 
-		   int32_t maxMem, 
-		   bool ownData ,
-		   const char *allocName,
-		   rdbid_t rdbId,
-		   bool dataInPtrs ,//= false ,
-		   const char *dbname ,//= NULL,
-		   char keySize ,//= 12 ,
-		   bool useProtection );//= false );
+	bool set(int32_t fixedDataSize, int32_t maxMem, const char *allocName, rdbid_t rdbId, const char *dbname, char keySize);
 
 	bool resizeTable(int32_t numNeeded);
 
