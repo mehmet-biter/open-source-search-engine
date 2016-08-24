@@ -173,8 +173,6 @@ bool RdbMerge::gotLock ( ) {
 		     startOffset  ,
 		     prevLastKey  ,
 		     m_ks         ,
-		     NULL,//m_pc         ,
-		     m_maxTargetFileSize ,
 		     NULL                );
 	// what kind of error?
 	if ( g_errno ) {

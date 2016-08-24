@@ -43,8 +43,6 @@ public:
 	         int64_t startOffset,
 	         const char *prevLastKey,
 	         char keySize,
-	         void *pc,
-	         int64_t maxFileSize,
 	         Rdb *rdb);
 
 	// a niceness of 0 means to block on the dumping

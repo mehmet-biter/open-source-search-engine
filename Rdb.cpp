@@ -1432,8 +1432,6 @@ bool Rdb::dumpCollLoop ( ) {
 			     0LL            ,  // dst start offset
 			     KEYMIN()       ,  // prev last key
 			     m_ks           ,  // keySize
-			     NULL,
-			     maxFileSize    ,
 			     this           )) {// for setting m_needsToSave
 		logTrace( g_conf.m_logTraceRdb, "END. %s: RdbDump blocked. Returning false", m_dbname );
 		return false;

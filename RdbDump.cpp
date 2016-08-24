@@ -22,8 +22,6 @@ bool RdbDump::set(collnum_t collnum,
                   int64_t startOffset,
                   const char *prevLastKey,
                   char keySize,
-                  void *pc,
-                  int64_t maxFileSize,
                   Rdb *rdb) {
 	m_collnum = collnum;
 
