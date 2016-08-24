@@ -407,9 +407,8 @@ static int64_t s_vfd = 0;
 // . set maxFileSize when opening a new file for writing and using 
 //   DiskPageCache
 // . use maxFileSize of -1 for us to use getFileSize() to set it
-bool BigFile::open ( int flags, void *pc, int64_t maxFileSize, int permissions ) {
+bool BigFile::open(int flags) {
     m_flags       = flags;
-	//m_permissions = permissions;
 	m_isClosing   = false;
 
 	// . init the page cache for this vfd
@@ -417,9 +416,7 @@ bool BigFile::open ( int flags, void *pc, int64_t maxFileSize, int permissions )
 	// . returns -1 and sets g_errno on failure
 	// . we pass m_vfd to getPages() and addPages()
 	if ( m_vfd == -1 ) {
-		//if ( maxFileSize == -1 ) maxFileSize = getFileSize();
 		m_vfd = ++s_vfd;
-		//g_errno = 0;
 	}
 	return true;
 }

@@ -110,11 +110,7 @@ class BigFile {
 	// . waits for a read/write operation before doing that
 	// . if you set maxFileSize to -1 we set it to BigFile::getFileSize()
 	// . if you are opening a new file for writing, you need to provide it
-	bool open  ( int flags , 
-		     void *pc = NULL ,
-		     int64_t maxFileSize = -1 ,
-		     int permissions    = 
-		     S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH );
+	bool open(int flags);
 
 	void logAllData(int32_t log_type);
 

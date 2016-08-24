@@ -95,7 +95,7 @@ bool RdbDump::set(collnum_t collnum,
 		flags |= O_ASYNC | O_NONBLOCK;
 	}
 
-	if (!m_file->open(flags, pc, maxFileSize)) {
+	if (!m_file->open(flags)) {
 		return true;
 	}
 
