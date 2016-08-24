@@ -945,13 +945,6 @@ retry:
 		return NULL;
 	}
 
-	if ( size < 0 ) {
-		g_errno = EBADENGINEER;
-		log( LOG_ERROR, "mem: malloc(%zu): Bad value.", size );
-		gbshutdownLogicError();
-		return NULL;
-	}
-
 	void *mem;
 
 	mem = (void *)sysmalloc ( size + UNDERPAD + OVERPAD );
