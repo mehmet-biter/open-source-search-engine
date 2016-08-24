@@ -134,7 +134,6 @@ bool Posdb::init ( ) {
 	//   dump it to rdb files when it is 90% full (90% of bins in use)
 	return m_rdb.init ( g_hostdb.m_dir,
 	                    "posdb",
-	                    true, // dedup same keys?
 	                    0, // fixed data size
 	                    // -1 means look in CollectionRec::m_posdbMinFilesToMerge
 	                    -1,
@@ -163,7 +162,6 @@ bool Posdb::init2 ( int32_t treeMem ) {
 	//   dump it to rdb files when it is 90% full (90% of bins in use)
 	return m_rdb.init ( g_hostdb.m_dir              ,
 			    "posdbRebuild"            ,
-			    true                        , // dedup same keys?
 			    0                           , // fixed data size
 			    // change back to 200!!
 			    //2                         , // min files to merge

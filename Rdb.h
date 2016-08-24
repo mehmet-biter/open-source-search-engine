@@ -70,7 +70,6 @@ public:
 
 	bool init ( const char  *dir          , // working directory
 		    const char  *dbname       , // "indexdb","tagdb",...
-		    bool   dedup           , //= true ,
 		    int32_t   fixedDataSize   , //= -1   ,
 		    int32_t   minToMerge      , //, //=  2   ,
 		    int32_t   maxTreeMem      , //=  1024*1024*32 ,

@@ -134,7 +134,6 @@ bool Linkdb::init ( ) {
 	// init the rdb
 	return m_rdb.init ( g_hostdb.m_dir ,
 			    "linkdb" ,
-			    true     , // dedup
 			    0        , // fixeddatasize is 0 since no data
 			    // keep it high since we are mostly ssds now and
 			    // the reads are small...
@@ -160,7 +159,6 @@ bool Linkdb::init2 ( int32_t treeMem ) {
 	// initialize our own internal rdb
 	return m_rdb.init ( g_hostdb.m_dir     ,
 			    "linkdbRebuild" ,
-			    true          , // dedup
 			    0             , // no data now! just docid/s/c
 			    50            , // m_clusterdbMinFilesToMerge,
 			    treeMem       , // g_conf.m_clusterdbMaxTreeMem,

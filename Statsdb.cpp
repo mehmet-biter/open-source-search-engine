@@ -172,7 +172,6 @@ bool Statsdb::init ( ) {
 	// make the rec cache 0 bytes, cuz we are just using page cache now
 	if ( ! m_rdb.init ( g_hostdb.m_dir		, // working directory
 			    "statsdb"			, // dbname
-			    true			, // dedup keys
 			    sizeof(StatData)            , // fixed record size
 			    200,//g_conf.m_statsdbMinFilesToMerge ,
 			    maxTreeMem                  ,

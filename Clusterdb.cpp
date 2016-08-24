@@ -28,7 +28,6 @@ bool Clusterdb::init ( ) {
 	// initialize our own internal rdb
 	return m_rdb.init ( g_hostdb.m_dir  ,
 			    "clusterdb"   ,
-			    true          , // dedup
 			    //CLUSTER_REC_SIZE - sizeof(key_t),//fixedDataSize 
 			    0             , // no data now! just docid/s/c
 			    2, // g_conf.m_clusterdbMinFilesToMerge,
@@ -48,7 +47,6 @@ bool Clusterdb::init2 ( int32_t treeMem ) {
 	// initialize our own internal rdb
 	return m_rdb.init ( g_hostdb.m_dir     ,
 			    "clusterdbRebuild" ,
-			    true          , // dedup
 			    0             , // no data now! just docid/s/c
 			    50            , // m_clusterdbMinFilesToMerge,
 			    treeMem       , // g_conf.m_clusterdbMaxTreeMem,

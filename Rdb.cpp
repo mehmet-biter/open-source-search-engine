@@ -93,7 +93,6 @@ void Rdb::addBase ( collnum_t collnum , RdbBase *base ) {
 
 bool Rdb::init ( const char     *dir                  ,
 		  const char    *dbname               ,
-		  bool           dedup                ,
 		  int32_t           fixedDataSize        ,
 		  int32_t           minToMerge           ,
 		  int32_t           maxTreeMem           ,
@@ -118,7 +117,7 @@ bool Rdb::init ( const char     *dir                  ,
 	m_dbname [ m_dbnameLen ] = '\0';
 
 	// store the other parameters for initializing each Rdb
-	m_dedup            = dedup;
+	m_dedup            = true;
 	m_fixedDataSize    = fixedDataSize;
 	m_maxTreeMem       = maxTreeMem;
 	m_useHalfKeys      = useHalfKeys;

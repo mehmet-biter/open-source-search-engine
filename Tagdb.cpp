@@ -1065,7 +1065,6 @@ bool Tagdb::init ( ) {
 	// . we still use page cache however, which is good enough!
 	return m_rdb.init ( g_hostdb.m_dir               ,
 			    "tagdb"                     ,
-			    true                       , // dedup same keys?
 			    -1                         , // fixed record size
 			    -1,//g_conf.m_tagdbMinFilesToMerge   ,
 			    g_conf.m_tagdbMaxTreeMem  ,

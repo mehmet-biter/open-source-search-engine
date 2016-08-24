@@ -40,7 +40,6 @@ bool Doledb::init ( ) {
 	// initialize our own internal rdb
 	return m_rdb.init ( g_hostdb.m_dir              ,
 			    "doledb"                    ,
-			    true                        , // dedup
 			    -1                          , // fixedDataSize
 			    2                           , // MinFilesToMerge
 			    maxTreeMem                  ,

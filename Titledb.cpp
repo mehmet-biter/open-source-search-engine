@@ -47,7 +47,6 @@ bool Titledb::init ( ) {
 	// initialize our own internal rdb
 	return m_rdb.init ( g_hostdb.m_dir              ,
 			    "titledb"                   ,
-			    true                        , // dedup same keys?
 			    -1                          , // fixed record size
 			    //g_conf.m_titledbMinFilesToMerge ,
 			    // this should not really be changed...
@@ -70,7 +69,6 @@ bool Titledb::init2 ( int32_t treeMem ) {
 	// initialize our own internal rdb
 	return m_rdb.init ( g_hostdb.m_dir              ,
 			    "titledbRebuild"            ,
-			    true                        , // dedup same keys?
 			    -1                          , // fixed record size
 			    240                         , // MinFilesToMerge
 			    treeMem                     ,

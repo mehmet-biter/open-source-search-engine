@@ -522,7 +522,6 @@ bool Spiderdb::init ( ) {
 	// initialize our own internal rdb
 	return m_rdb.init ( g_hostdb.m_dir ,
 			    "spiderdb"   ,
-			    true    , // dedup
 			    -1      , // fixedDataSize
 			    // now that we have MAX_WINNER_NODES allowed in doledb
 			    // we don't have to keep spiderdb so tightly merged i guess..
@@ -547,7 +546,6 @@ bool Spiderdb::init2 ( int32_t treeMem ) {
 	// initialize our own internal rdb
 	return m_rdb.init ( g_hostdb.m_dir ,
 			    "spiderdbRebuild"   ,
-			    true          , // dedup
 			    -1            , // fixedDataSize
 			    200           , // g_conf.m_spiderdbMinFilesToMerge
 			    treeMem       , // g_conf.m_spiderdbMaxTreeMem ,
