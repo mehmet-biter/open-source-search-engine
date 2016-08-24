@@ -29,7 +29,6 @@ bool RdbMerge::merge(rdbid_t rdbId,
                      BigFile *target,
                      RdbMap *targetMap,
                      RdbIndex *targetIndex,
-                     int32_t id2, // target's secondary id
                      int32_t startFileNum,
                      int32_t numFiles,
                      int32_t niceness,
@@ -55,8 +54,7 @@ bool RdbMerge::merge(rdbid_t rdbId,
 
 	m_target          = target;
 	m_targetMap       = targetMap;
-	m_targetIndex     = targetIndex;		//@@@ BR: no-merge index
-	m_id2             = id2;
+	m_targetIndex     = targetIndex;
 	m_startFileNum    = startFileNum;
 	m_numFiles        = numFiles;
 	m_dedup           = base->getDedup();

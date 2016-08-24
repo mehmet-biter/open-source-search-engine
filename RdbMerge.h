@@ -63,7 +63,6 @@ class RdbMerge {
 	           BigFile *target,
 	           RdbMap *targetMap,
 	           RdbIndex *targetIndex,
-	           int32_t id2,
 	           int32_t startFileNum,
 	           int32_t numFiles,
 	           int32_t niceness,
@@ -130,8 +129,6 @@ class RdbMerge {
 	RdbList     m_list;
 
 	int32_t        m_niceness;
-
-	int32_t      m_id2;
 
 	// for getting the RdbBase class doing the merge
 	rdbid_t   m_rdbId;

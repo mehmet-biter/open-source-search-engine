@@ -2150,7 +2150,6 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 	              m_files[mergeFileNum],
 	              m_maps[mergeFileNum],
 	              m_indexes[mergeFileNum],
-	              fileId2,
 	              m_mergeStartFileNum,
 	              m_numFilesToMerge,
 	              m_niceness,
