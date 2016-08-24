@@ -24,41 +24,32 @@ void RdbMerge::reset () { m_isMerging = false; m_isSuspended = false; }
 // . we need the merge to take priority over spider processes on disk otherwise
 //   there's too much contention from spider lookups on disk for the merge
 //   to finish in a decent amount of time and we end up getting too many files!
-bool RdbMerge::merge ( rdbid_t     rdbId,
-		       collnum_t collnum,
-		       BigFile *target       , 
-		       RdbMap  *targetMap    ,
-		       RdbIndex *targetIndex,	//@@@ BR: no-merge index
-		       int32_t     id2          , // target's secondary id
-		       int32_t     startFileNum , 
-		       int32_t     numFiles     ,
-		       int32_t     niceness     ,
-		       void *pc ,
-		       int64_t maxTargetFileSize ,
-		       char     keySize      ) {
+bool RdbMerge::merge(rdbid_t rdbId,
+                     collnum_t collnum,
+                     BigFile *target,
+                     RdbMap *targetMap,
+                     RdbIndex *targetIndex,
+                     int32_t id2, // target's secondary id
+                     int32_t startFileNum,
+                     int32_t numFiles,
+                     int32_t niceness,
+                     char keySize) {
 	// reset ourselves
 	reset();
+
 	// set it
 	m_rdbId = rdbId;
-	Rdb *rdb = getRdbFromId ( rdbId );
+
+	Rdb *rdb = getRdbFromId(rdbId);
+
 	// get base, returns NULL and sets g_errno to ENOCOLLREC on error
-	RdbBase *base = getRdbBase( m_rdbId, collnum );
-	if ( ! base ) {
+	RdbBase *base = getRdbBase(m_rdbId, collnum);
+	if (!base) {
 		return true;
 	}
 
-	// don't breech the max
-	//if ( numFiles > m_maxFilesToMerge ) numFiles = m_maxFilesToMerge;
-	// reset this map! it's m_crcs needs to be reset
-	//targetMap->reset();
-	// remember some parms
-	//if ( ! coll && rdb->m_isCollectionLess )
-	//	strcpy ( m_coll , rdb->m_dbname );
-	//else
-	//	strcpy ( m_coll , coll );
-
 	m_collnum = collnum;
-	if ( rdb->m_isCollectionLess ) {
+	if (rdb->m_isCollectionLess) {
 		m_collnum = 0;
 	}
 
@@ -71,8 +62,6 @@ bool RdbMerge::merge ( rdbid_t     rdbId,
 	m_dedup           = base->getDedup();
 	m_fixedDataSize   = base->getFixedDataSize();
 	m_niceness        = niceness;
-	//m_pc              = pc;
-	m_maxTargetFileSize = maxTargetFileSize;
 	m_doneMerging     = false;
 	m_ks              = keySize;
 
@@ -120,8 +109,6 @@ bool RdbMerge::merge ( rdbid_t     rdbId,
 		}
 		*/
 	}
-	// free our list's memory, just in case
-	//m_list.freeList();
 
 	return gotLock();
 }
@@ -159,21 +146,21 @@ bool RdbMerge::gotLock ( ) {
 
 //@@@ BR: no-merge index NOT IMPLEMENTED HERE!!!	
 
-	m_dump.set ( m_collnum          ,
-		     m_target           ,
-		     NULL         , // buckets to dump is NULL, we call dumpList
-		     NULL         , // tree to dump is NULL, we call dumpList
-		     m_targetMap  ,
-		     0            , // m_maxBufSize. not needed if no tree!
-		     m_dedup      ,
-		     m_niceness   , // niceness of dump
-		     this         , // state
-		     dumpListWrapper ,
-		     base->useHalfKeys() ,
-		     startOffset  ,
-		     prevLastKey  ,
-		     m_ks         ,
-		     NULL                );
+	m_dump.set(m_collnum,
+	           m_target,
+	           NULL, // buckets to dump is NULL, we call dumpList
+	           NULL, // tree to dump is NULL, we call dumpList
+	           m_targetMap,
+	           0, // m_maxBufSize. not needed if no tree!
+	           m_dedup,
+	           m_niceness, // niceness of dump
+	           this, // state
+	           dumpListWrapper,
+	           base->useHalfKeys(),
+	           startOffset,
+	           prevLastKey,
+	           m_ks,
+	           NULL);
 	// what kind of error?
 	if ( g_errno ) {
 		log( LOG_WARN, "db: gotLock: %s.", mstrerror(g_errno) );

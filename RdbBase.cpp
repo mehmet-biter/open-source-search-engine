@@ -2145,20 +2145,17 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 	logTrace( g_conf.m_logTraceRdbBase, "merge!" );
 	// . start the merge
 	// . returns false if blocked, true otherwise & sets g_errno
-	if ( ! m->merge ( rdbId  ,
-			  m_collnum ,
-			  m_files[mergeFileNum] ,
-			  m_maps [mergeFileNum] ,
-			  m_indexes[mergeFileNum],		//@@@ BR: no-merge index 
-			  fileId2                   ,
-			  m_mergeStartFileNum   ,
-			  m_numFilesToMerge     ,
-			  m_niceness            ,
-			  NULL,//m_pc                  ,
-			  mint /*maxTargetFileSize*/ ,
-			  m_ks                  ) ) 
+	if (!m->merge(rdbId,
+	              m_collnum,
+	              m_files[mergeFileNum],
+	              m_maps[mergeFileNum],
+	              m_indexes[mergeFileNum],
+	              fileId2,
+	              m_mergeStartFileNum,
+	              m_numFilesToMerge,
+	              m_niceness,
+	              m_ks)) {
 		// we started the merge so return true here
-	{
 		logTrace( g_conf.m_logTraceRdbBase, "END, started OK" );
 		return true;
 	}

@@ -1418,21 +1418,21 @@ bool Rdb::dumpCollLoop ( ) {
 	// . RdbMap should dump itself out CLOSE!
 	// . it returns false if blocked, true otherwise & sets g_errno on err
 	// . but we only return false on error here
-	if ( ! m_dump.set (  base->m_collnum   ,
-			     base->getFile(m_fn)  ,
-			     buckets       ,
-			     tree          ,
-			     base->getMap(m_fn), // RdbMap
-			     bufSize        , // write buf size
-			     m_dedup        , // dedup not used for this
-			     m_niceness     , // niceness of 1 will NOT block
-			     this           , // state
-			     doneDumpingCollWrapper ,
-			     m_useHalfKeys  ,
-			     0LL            ,  // dst start offset
-			     KEYMIN()       ,  // prev last key
-			     m_ks           ,  // keySize
-			     this           )) {// for setting m_needsToSave
+	if (!m_dump.set(base->m_collnum,
+	                base->getFile(m_fn),
+	                buckets,
+	                tree,
+	                base->getMap(m_fn), // RdbMap
+	                bufSize, // write buf size
+	                m_dedup, // dedup not used for this
+	                m_niceness, // niceness of 1 will NOT block
+	                this, // state
+	                doneDumpingCollWrapper,
+	                m_useHalfKeys,
+	                0LL,  // dst start offset
+	                KEYMIN(),  // prev last key
+	                m_ks,  // keySize
+	                this)) {// for setting m_needsToSave
 		logTrace( g_conf.m_logTraceRdb, "END. %s: RdbDump blocked. Returning false", m_dbname );
 		return false;
 	}

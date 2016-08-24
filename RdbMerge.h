@@ -58,19 +58,16 @@ class RdbMerge {
 	// . new file name is stored in m_filename so Rdb can look at it
 	// . calls rdb->incorporateMerge() when done with merge or had error
 	// . "maxBufSize" is size of list to get then write (read/write buf)
-	bool merge ( rdbid_t       rdbId,
-		     //char      *coll         ,
-		     collnum_t collnum ,
-		     BigFile   *target       ,
-		     RdbMap    *targetMap    ,
-		     RdbIndex	*targetIndex,		//@@@ BR: no-merge index
-		     int32_t       id2          ,
-		     int32_t       startFileNum ,
-		     int32_t       numFiles     ,
-		     int32_t       niceness     ,
-		     void *pc ,
-		     int64_t maxTargetFileSize ,
-		     char       keySize      );
+	bool merge(rdbid_t rdbId,
+	           collnum_t collnum,
+	           BigFile *target,
+	           RdbMap *targetMap,
+	           RdbIndex *targetIndex,
+	           int32_t id2,
+	           int32_t startFileNum,
+	           int32_t numFiles,
+	           int32_t niceness,
+	           char keySize);
 
 	bool isMerging ( ) { return m_isMerging; }
 
@@ -133,8 +130,6 @@ class RdbMerge {
 	RdbList     m_list;
 
 	int32_t        m_niceness;
-
-	int64_t m_maxTargetFileSize;
 
 	int32_t      m_id2;
 
