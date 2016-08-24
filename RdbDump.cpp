@@ -69,7 +69,6 @@ bool RdbDump::set(collnum_t collnum,
 	m_maxBufSize    = maxBufSize;
 	m_offset        = startOffset ;
 	m_rolledOver    = false; // true if m_nextKey rolls over back to 0
-	//m_nextKey       = 0 ; // used in dumpTree()
 	KEYMIN(m_nextKey,m_ks);
 	m_nextNode      = 0 ; // used in dumpTree()
 	// if we're dumping indexdb, allow half keys
@@ -82,11 +81,9 @@ bool RdbDump::set(collnum_t collnum,
 	// . seems like Rdb.cpp makes a new BigFile before calling this
 	// . now we can resume merges, so we can indeed dump to the END
 	//   of a pre-exiting file, but not when dumping a tree!
-	//if ( m_file->doesExist() > 0 ) {
-	if ( (m_tree || m_buckets) && m_file->getFileSize() > 0 ) {
+	if ((m_tree || m_buckets) && m_file->getFileSize() > 0) {
 		g_errno = EEXIST;
-		log("db: Could not dump to %s. File exists.",
-		    m_file->getFilename());
+		log(LOG_WARN, "db: Could not dump to %s. File exists.", m_file->getFilename());
 		return true;
 	}
 
@@ -109,7 +106,7 @@ bool RdbDump::set(collnum_t collnum,
 	// . get the file descriptor of the first real file in BigFile
 	// . we should only dump to the first file in BigFile otherwise,
 	//   we'd have to juggle fd registration
-	m_fd = m_file->getfd(0, false /*for reading?*/ );
+	m_fd = m_file->getfd(0, false);
 	if (m_fd < 0) {
 		log(LOG_LOGIC, "db: dump: Bad fd of first file in BigFile.");
 		return true;
@@ -127,11 +124,10 @@ bool RdbDump::set(collnum_t collnum,
 	// how many recs in tree?
 	int32_t nr;
 	const char *structureName;
-	if(m_tree) {
+	if (m_tree) {
 		nr = m_tree->getNumUsedNodes();
 		structureName = "tree";
-	}
-	else if(m_buckets){
+	} else if (m_buckets) {
 		nr = m_buckets->getNumKeys();
 		structureName = "buckets";
 	}
@@ -189,7 +185,10 @@ void RdbDump::doneDumping() {
 	}
 
 	// free the list's memory
-	if ( m_list ) m_list->freeList();
+	if (m_list) {
+		m_list->freeList();
+	}
+
 	// reset verify buffer
 	reset();
 
