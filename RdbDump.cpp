@@ -448,8 +448,6 @@ bool RdbDump::dumpTree(bool recall) {
 	}
 }
 
-static void doneWritingWrapper(void *state);
-
 // . return false if blocked, true otherwise
 // . sets g_errno on error
 // . this one is also called by RdbMerge to dump lists
@@ -881,7 +879,7 @@ tryAgain:
 
 
 // continue dumping the tree
-void doneWritingWrapper(void *state) {
+void RdbDump::doneWritingWrapper(void *state) {
 	// get THIS ptr from state
 	RdbDump *THIS = (RdbDump *)state;
 

@@ -25,8 +25,6 @@ public:
 
 	void reset();
 
-	bool isDumping() const { return m_isDumping; }
-
 	// . set up for a dump of rdb records to a file
 	// . returns false and sets errno on error
 	bool set(collnum_t collnum,
@@ -45,30 +43,33 @@ public:
 	         char keySize,
 	         Rdb *rdb);
 
+	bool isDumping() const { return m_isDumping; }
+
+	const char *getFirstKeyInQueue() const { return m_firstKeyInQueue; }
+	const char *getLastKeyInQueue() const { return m_lastKeyInQueue; }
+
 	// a niceness of 0 means to block on the dumping
-	int32_t getNiceness() { return m_niceness; }
+	int32_t getNiceness() const { return m_niceness; }
+
+	collnum_t getCollNum() const { return m_collnum; }
+
+	void setSuspended() { m_isSuspended = true; }
 
 	// . dump the tree to the file
 	// . returns false if blocked, true otherwise
 	bool dumpTree(bool recall);
-
 	bool dumpList(RdbList *list, int32_t niceness, bool isRecall);
 
 	void doneDumping();
-
 	bool doneReadingForVerify();
 
 	// called when we've finished writing an RdbList to the file
 	bool doneDumpingList();
-
-	char *getFirstKeyInQueue() { return m_firstKeyInQueue; }
-
-	char *getLastKeyInQueue() { return m_lastKeyInQueue; }
-
 	void continueDumping();
 
-	// private:
+	static void doneWritingWrapper(void *state);
 
+private:
 	bool m_isDumping; // true if we're in the middle of dumping
 
 	// true if the actual write thread is outstanding

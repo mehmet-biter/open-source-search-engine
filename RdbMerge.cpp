@@ -158,7 +158,7 @@ void RdbMerge::suspendMerge ( ) {
 	// . we don't want the dump writing to an RdbMap that has been deleted
 	// . this can happen if the close is delayed because we are dumping
 	//   a tree to disk
-	m_dump.m_isSuspended = true;
+	m_dump.setSuspended();
 }
 
 void RdbMerge::doSleep() {

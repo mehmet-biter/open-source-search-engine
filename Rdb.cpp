@@ -663,7 +663,7 @@ bool Rdb::close ( void *state , void (* callback)(void *state ), bool urgent , b
 	     // if we are merging this rdb...
 	     ! m_urgent &&
 	     g_merge.m_rdbId == m_rdbId &&
-	     ( g_merge.m_numThreads || g_merge.m_dump.m_isDumping ) ) {
+	     ( g_merge.m_numThreads || g_merge.m_dump.isDumping() ) ) {
 		// do not spam this message
 		int64_t now = gettimeofdayInMilliseconds();
 		if ( now - m_lastTime >= 500 ) {
@@ -682,7 +682,7 @@ bool Rdb::close ( void *state , void (* callback)(void *state ), bool urgent , b
 	     // if we are merging this rdb...
 	     ! m_urgent &&
 	     g_merge2.m_rdbId == m_rdbId &&
-	     ( g_merge2.m_numThreads || g_merge2.m_dump.m_isDumping ) ) {
+	     ( g_merge2.m_numThreads || g_merge2.m_dump.isDumping() ) ) {
 		// do not spam this message
 		int64_t now = gettimeofdayInMilliseconds();
 		if ( now - m_lastTime >= 500 ) {
@@ -1856,8 +1856,8 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 	if ( m_dump.isDumping() &&
 		 //oppKey >= m_dump.getFirstKeyInQueue() &&
 		 // ensure the dump is dumping the collnum of this key
-		 m_dump.m_collnum == collnum &&
-		 m_dump.m_lastKeyInQueue &&
+		 m_dump.getCollNum() == collnum &&
+		 m_dump.getLastKeyInQueue() &&
 		 // the dump should not split positive/negative keys so
 		 // if our positive/negative twin should be in the dump with us
 		 // or not in the dump with us, so any positive/negative
