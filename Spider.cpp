@@ -533,8 +533,6 @@ bool Spiderdb::init ( ) {
 			    maxTreeNodes                ,
 			    true                        , // balance tree?
 			    false                       , // half keys?
-			    false                       , // save cache?
-			    NULL,//&m_pc                       ,
 			    false                       ,
 			    false                       ,
 			    sizeof(key128_t)            );
@@ -558,8 +556,6 @@ bool Spiderdb::init2 ( int32_t treeMem ) {
 			    maxTreeNodes  ,
 			    true          , // balance tree?
 			    false         , // half keys?
-			    false         , // save cache?
-			    NULL          , // &m_pc 
 			    false         , // isTitledb?
 			    false         , // preload diskpagecache
 			    sizeof(key128_t));

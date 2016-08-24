@@ -180,8 +180,6 @@ bool Statsdb::init ( ) {
 			    maxTreeNodes		,
 			    true			, // balance tree?
 			    false			, // use half keys?
-			    false			, // cache from disk?
-			    NULL			, // page cache pointer
 			    false			, // is titledb?
 			    false			,
 			    sizeof(key96_t)		, // key size

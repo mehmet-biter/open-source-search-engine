@@ -143,11 +143,6 @@ bool Posdb::init ( ) {
 	                    // now we balance so Sync.cpp can ordered huge lists
                         true                        , // balance tree?
                         true                        , // use half keys?
-                        false                       , // g_conf.m_posdbSav
-	                    // newer systems have tons of ram to use
-	                    // for their disk page cache. it is slower than
-	                    // ours but the new engine has much slower things
-			            NULL,//&m_pc                       ,
 			            false , // istitledb?
 			            false , // preloaddiskpagecache?
 			            sizeof(key144_t),
@@ -182,8 +177,6 @@ bool Posdb::init2 ( int32_t treeMem ) {
 			    maxTreeNodes                ,
 			    true                        , // balance tree?
 			    true                        , // use half keys?
-			    false                       , // posdbSaveCache
-			    NULL                        , // s_pc
 			    false ,
 			    false ,
 			    sizeof(key144_t),

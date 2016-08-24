@@ -46,9 +46,7 @@ bool Doledb::init ( ) {
 			    maxTreeMem                  ,
 			    maxTreeNodes                ,
 			    true                        , // balance tree?
-			    false                       , // half keys?
-			    false                       , // save cache?
-			    NULL);
+			    false                       ); // half keys?
 }
 
 //

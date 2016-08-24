@@ -1073,8 +1073,6 @@ bool Tagdb::init ( ) {
 			    // now we balance so Sync.cpp can ordered huge list
 			    true                        , // balance tree?
 			    false                      , // half keys?
-			    false                      , //m_tagdbSaveCache
-			    NULL,//&m_pc                      ,
 			    false,  // is titledb
 			    true ,  // preload disk page cache
 			    sizeof(key128_t),     // key size

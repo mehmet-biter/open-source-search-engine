@@ -127,7 +127,6 @@ class Conf {
 	int64_t m_clusterdbFileCacheSize;
 	int32_t  m_clusterdbMaxTreeMem;
 	int32_t  m_clusterdbMinFilesToMerge;
-	bool  m_clusterdbSaveCache;
 
 	// titledb
 	int64_t m_titledbFileCacheSize;

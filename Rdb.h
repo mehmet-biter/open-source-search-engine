@@ -77,8 +77,6 @@ public:
 		    int32_t   maxTreeNodes    ,
 		    bool   isTreeBalanced  ,
 		    bool   useHalfKeys     ,
-		    bool   loadCacheFromDisk ,
-		    void *pc = NULL,
 		    bool   isTitledb    = false , // use fileIds2[]?
 		    bool   preloadDiskPageCache = false ,
 		    char   keySize = 12    ,

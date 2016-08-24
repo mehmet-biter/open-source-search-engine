@@ -37,8 +37,6 @@ bool Clusterdb::init ( ) {
 			    maxTreeNodes  , // maxTreeNodes  ,
 			    true          , //false         , // balance tree?
 			    true          , // half keys?
-			    g_conf.m_clusterdbSaveCache,
-			    NULL,//&m_pc ,
 			    false,  // is titledb
 			    true ,  // preload disk page cache
 			    12,     // key size
@@ -61,8 +59,6 @@ bool Clusterdb::init2 ( int32_t treeMem ) {
 			    maxTreeNodes  , 
 			    true          , // balance tree?
 			    true          , // half keys?
-			    false         , // g_conf.m_clusterdbSaveCache,
-			    NULL          , // &m_pc ,
 			    false         ,  // is titledb
 			    false         ,  // preload disk page cache
 			    12            ,     // key size

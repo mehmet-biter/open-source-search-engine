@@ -8050,18 +8050,6 @@ void Parms::init ( ) {
 	m->m_group = false;
 	m++;
 
-	m->m_title = "clusterdb save cache";
-	m->m_desc  = "";
-	m->m_cgi   = "cdbsc";
-	m->m_off   = offsetof(Conf,m_clusterdbSaveCache);
-	m->m_def   = "0";
-	m->m_type  = TYPE_BOOL;
-	m->m_page  = PAGE_NONE;
-	m->m_obj   = OBJ_CONF;
-	m->m_flags = PF_NOAPI;
-	m->m_group = false;
-	m++;
-
 	////////////////////
 	// linkdb settings
 	////////////////////

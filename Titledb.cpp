@@ -57,8 +57,6 @@ bool Titledb::init ( ) {
 			    // now we balance so Sync.cpp can ordered huge list
 			    true                        , // balance tree?
 			    false                       ,// half keys?
-			    false                       ,// g_conf.m_titledbSav
-			    NULL,//&m_pc               , // page cache ptr
 			    true                        ); // is titledb?
 
 	// validate
@@ -82,8 +80,6 @@ bool Titledb::init2 ( int32_t treeMem ) {
 			    // now we balance so Sync.cpp can ordered huge list
 			    true                        , // balance tree?
 			    false                       , // half keys?
-			    false                       , // titledbSaveCache
-			    NULL                        , // page cache ptr
 			    true                        ); // is titledb?
 
 	// validate
