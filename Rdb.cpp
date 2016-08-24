@@ -1423,7 +1423,7 @@ void Rdb::doneDumping ( ) {
 	attemptMergeAllCallback(0,NULL);
 }
 
-void forceMergeAll(rdbid_t rdbId, char niceness) {
+void forceMergeAll(rdbid_t rdbId) {
 	// set flag on all RdbBases
 	for ( int32_t i = 0 ; i < g_collectiondb.m_numRecs ; i++ ) {
 		CollectionRec *cr = g_collectiondb.m_recs[i];

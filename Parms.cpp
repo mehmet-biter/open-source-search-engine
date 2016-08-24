@@ -527,30 +527,26 @@ static bool CommandResetColl ( char *rec , WaitEntry *we ) {
 }
 #endif
 
-static bool CommandMergePosdb ( char *rec ) {
-	forceMergeAll ( RDB_POSDB ,1);
-	// set this for each posdb base
+static bool CommandMergePosdb(char *rec) {
+	forceMergeAll(RDB_POSDB);
 	return true;
 }
 
 
-static bool CommandMergeTitledb ( char *rec ) {
-	forceMergeAll ( RDB_TITLEDB ,1);
-	//g_titledb.getRdb()->attemptMerge    (1,true);
+static bool CommandMergeTitledb(char *rec) {
+	forceMergeAll(RDB_TITLEDB);
 	return true;
 }
 
 
-static bool CommandMergeSpiderdb ( char *rec ) {
-	forceMergeAll ( RDB_SPIDERDB ,1);
-	//g_spiderdb.getRdb()->attemptMerge    (1,true);
+static bool CommandMergeSpiderdb(char *rec) {
+	forceMergeAll(RDB_SPIDERDB);
 	return true;
 }
 
-static bool CommandMergeLinkdb ( char *rec ) {
-        forceMergeAll ( RDB_LINKDB ,1);
-        //g_spiderdb.getRdb()->attemptMerge    (1,true);
-        return true;
+static bool CommandMergeLinkdb(char *rec) {
+	forceMergeAll(RDB_LINKDB);
+	return true;
 }
 
 

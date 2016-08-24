@@ -48,7 +48,7 @@ static inline char getKeySizeFromRdbId(uint8_t rdbId) {
 
 // and this is -1 if dataSize is variable
 int32_t getDataSizeFromRdbId ( uint8_t rdbId );
-void forceMergeAll(rdbid_t rdbId, char niceness);
+void forceMergeAll(rdbid_t rdbId);
 
 // main.cpp calls this
 void attemptMergeAllCallback ( int fd , void *state ) ;
