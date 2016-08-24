@@ -1378,34 +1378,6 @@ bool Rdb::dumpCollLoop ( ) {
 		bufSize *= 4;
 	}
 
-	// how big will file be? upper bound.
-	int64_t maxFileSize;
-
-	// . NOTE: this is NOT an upper bound, stuff can be added to the
-	//         tree WHILE we are dumping. this causes a problem because
-	//         the DiskPageCache, BigFile::m_pc, allocs mem when you call
-	//         BigFile::open() based on "maxFileSize" so it can end up 
-	//         breaching its buffer! since this is somewhat rare i will
-	//         just modify DiskPageCache.cpp to ignore breaches. 
-	if (m_useTree) {
-		maxFileSize = m_tree.getMemOccupiedForList();
-	} else {
-		maxFileSize = m_buckets.getMemOccupied();
-	}
-
-	// sanity
-	if (maxFileSize < 0) {
-		g_process.shutdownAbort(true);
-	}
-
-	// because we are actively spidering the list we dump ends up
-	// being more, by like 20% or so, otherwise we do not make a
-	// big enough diskpagecache and it logs breach msgs... does not
-	// seem to happen with buckets based stuff... hmmm...
-	if (m_useTree) {
-		maxFileSize = ((int64_t)maxFileSize) * 120LL / 100LL;
-	}
-
 	RdbBuckets *buckets = NULL;
 	RdbTree *tree = NULL;
 	if (m_useTree) {
