@@ -1426,10 +1426,8 @@ void Rdb::doneDumping ( ) {
 void forceMergeAll(rdbid_t rdbId, char niceness) {
 	// set flag on all RdbBases
 	for ( int32_t i = 0 ; i < g_collectiondb.m_numRecs ; i++ ) {
-		// we need this quickpoll for when we got 20,000+ collections
-		QUICKPOLL ( niceness );
 		CollectionRec *cr = g_collectiondb.m_recs[i];
-		if ( ! cr ) 
+		if ( ! cr )
 		{
 			log(LOG_INFO,"%s:%s:%d: coll %" PRId32" - could not get CollectionRec", __FILE__,__func__,__LINE__,i);
 			continue;
@@ -1470,8 +1468,6 @@ void attemptMergeAll() {
 	int32_t count = 0;
 
  tryLoop:
-
-	QUICKPOLL(niceness);
 
 	// if a collection got deleted, reset this to 0
 	if ( s_lastCollnum >= g_collectiondb.m_numRecs ) {
@@ -1687,8 +1683,6 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list, int32_t niceness ) {
 			// discontinue adding any more of the list
 			return false;
 		}
-
-		QUICKPOLL((niceness));
 	} while ( list->skipCurrentRecord() ); // skip to next record, returns false on end of list
 
 	// reprotect tree from writes
@@ -2624,7 +2618,6 @@ int32_t Rdb::reclaimMemFromDeletedTreeNodes( int32_t niceness ) {
 	// mark the data of unoccupied nodes somehow
 	int32_t nn = m_tree.m_minUnusedNode;
 	for ( int32_t i = 0 ; i < nn ; i++ ) {
-		//QUICKPOLL ( niceness );
 		// skip empty nodes in tree
 		if ( m_tree.m_parents[i] == -2 ) {marked++; continue; }
 		// get data ptr
@@ -2664,7 +2657,6 @@ int32_t Rdb::reclaimMemFromDeletedTreeNodes( int32_t niceness ) {
 	// them. then put their offset into a map that maps it to the new
 	// offset after doing the memmove().
 	for ( ; p < pend ; ) {
-		//QUICKPOLL ( niceness );
 		SpiderRequest *sreq = (SpiderRequest *)p;
 		int32_t oldOffset = p - pstart;
 		int32_t recSize = sreq->getRecSize();
@@ -2727,7 +2719,6 @@ int32_t Rdb::reclaimMemFromDeletedTreeNodes( int32_t niceness ) {
 
 	// now update data ptrs in the tree, m_data[]
 	for ( int i = 0 ; i < nn ; i++ ) {
-		//QUICKPOLL ( niceness );
 		// skip empty nodes in tree
 		if ( m_tree.m_parents[i] == -2 ) continue;
 		// update the data otherwise
