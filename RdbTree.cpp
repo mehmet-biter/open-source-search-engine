@@ -1626,7 +1626,6 @@ int32_t RdbTree::getMemOccupiedForList2 ( collnum_t collnum  ,
 	int32_t i = getNextNode ( collnum , startKey ) ;
 	while ( i  >= 0 ) {
 		// break out if we should
-		//if ( m_keys    [i]  > endKey  ) break;
 		if ( KEYCMP(m_keys,i,endKey,0,m_ks) > 0 ) break;
 		if ( m_collnums[i] != collnum ) break;
 		if ( size >= minRecSizes      ) break;
@@ -1784,14 +1783,12 @@ bool RdbTree::getList ( collnum_t collnum ,
 	// or we're out of nodes
 	for ( ; node >= 0 && list->getListSize() < minRecSizes ; node = getNextNode ( node ) ) {
 		// stop before exceeding endKey
-		//if ( m_keys [ node ] > endKey ) break;
 		if ( KEYCMP (m_keys,node,endKey,0,m_ks) > 0 ) break;
 		// or if we hit a different collection number
 		if ( m_collnums [ node ] != collnum ) break;
 		// if more recs were added to tree since we initialized the
 		// list then grow the list to compensate so we do not end up
 		// reallocating one key at a time.
-		
 
 		// add record to our list
 		if ( m_fixedDataSize == 0 ) {
@@ -2306,123 +2303,6 @@ int32_t RdbTree::computeDepth ( int32_t i ) {
 	// . add 1 cuz we include ourself in our m_depth
 	if ( leftDepth > rightDepth ) return leftDepth  + 1;
 	else                          return rightDepth + 1;  
-}	
-
-
-// . a quick way to add a list of sorted keys (no data)...
-// . will take care of positive/negative key annihilations
-// . returns false and sets g_errno on error
-/*
-bool RdbTree::addSortedKeys ( key_t *keys , int32_t numKeys ) {
-	// do we have enough room?
-	if ( m_numUsedNodes + numKeys >= m_numNodes) { 
-		g_errno = ENOMEM; return false; }
-	// add one key at a time
-	int32_t x = 0;
-	// some vars
-	key_t k;
-	int32_t  iparent ;
-	int32_t  rightGuy;
-	int32_t  i;
- loop:
-	// bail if x is exhausted
-	if ( x >= numKeys ) return true;
-	// get the xth key
-	k = keys[x];
-	// point x to next key
-	x++;
-	// this is -1 iff there are no nodes used in the tree
-	i = m_headNode;
-	// . find the parent of node i and call it "iparent"
-	// . if a node exists with our key then replace it
-	while ( i != -1 ) {
-		iparent = i;
-		if      ( key < m_keys[i] ) i = m_left [i]; 
-		else if ( key > m_keys[i] ) i = m_right[i]; 
-		else    goto replaceIt; 
-	}
-	// . this overhead is key/left/right/parent
-	// . we inc it by the data and sizes array if we need to below
-	m_memOccupied += m_overhead;
-	// point i to the next available node
-	i = m_nextNode;
-	// if we're the first node we become the head node and our parent is -1
-	if ( m_numUsedNodes == 0 ) {
-		m_headNode =  i;
-		iparent    = -1;
-	}
-	// stick ourselves in the next available node, "m_nextNode"
-	m_keys    [ i ] = key;
-	m_parents [ i ] = iparent;
-	// add the key
-	// set the data and size only if we need to
-	if ( m_fixedDataSize != 0 ) {
-		// ack used and occupied mem
-		m_memAlloced  += dataSize ; 
-		m_memOccupied += dataSize ;
-	}
-	// make our parent, if any, point to us
-	if ( iparent >= 0 ) {
-		if ( key < m_keys[iparent] ) m_left [iparent] = i;
-		else                         m_right[iparent] = i;
-	}
-	// . the right kid of an empty node is used as a linked list of
-	//   empty nodes formed by deleting nodes
-	// . we keep the linked list so we can re-used these vacated nodes
-	rightGuy = m_right [ i ];
-	// our kids are -1 (none)
-	m_left  [ i ] = -1;
-	m_right [ i ] = -1;
-	// . if we weren't recycling a node then advance to next
-	// . m_minUnusedNode is the lowest node number that was never filled
-	//   at any one time in the past
-	// . you might call it the brand new housing district
-	if ( m_nextNode == m_minUnusedNode ) {m_nextNode++; m_minUnusedNode++;}
-	// . otherwise, we're in a linked list of vacated used houses
-	// . we have a linked list in the right kid
-	// . make sure the new head doesn't have a left
-	else {
-		// point m_nextNode to the next available used house, if any
-		if ( rightGuy >= 0 ) m_nextNode = rightGuy;
-		// otherwise point it to the next brand new house
-		else  m_nextNode = m_minUnusedNode;
-	}
-	// we have one more used node
-	m_numUsedNodes++;
-	// if we don't have to balance return i now
-	if ( ! m_doBalancing ) return i;
-	// our depth is now 1 since we're a leaf node (we include ourself)
-	m_depth [ i ] = 1;
-	// . reset depths starting at i's parent and ascending the tree
-	// . will balance if child depths differ by 2 or more
-	setDepths ( iparent );
-	// return the node number of the node we occupied
-	return i; 
-}
-*/
-
-// how balanced is this tree? = #nodes w/ right kids / # node w/ left
-// the multiplied by 100. invereted to make smaller than 100.
-int32_t RdbTree::getBalancePercent() {
-	// count nodes w/ left kids and nodes w/ right kids
-	int32_t numRight = 0;
-	int32_t numLeft  = 0;
-	for ( int32_t i = 0 ; i < m_minUnusedNode ; i++ ) {
-		// skip nuked nodes
-		if ( m_parents[i] == -2 ) continue;
-		if ( m_left[i]  >= 0 ) numLeft++;
-		if ( m_right[i] >= 0 ) numRight++;
-	}
-	// ensure these not zero
-	numRight++;
-	numLeft++;
-	// . the ratio
-	// . flip if top heavy
-	int32_t p;
-	if ( numLeft < numRight ) p = (numLeft  * 100) / numRight;
-	else                      p = (numRight * 100) / numLeft;
-	// return the percent. from 0 to 100%.
-	return p;
 }
 
 #define BLOCK_SIZE 10000
@@ -2542,7 +2422,7 @@ void threadDoneWrapper ( void *state, job_exit_t exit_type ) {
 	} else {
 		// log it
 		log( LOG_INFO, "db: Done saving %s%s-saved.dat (wrote %" PRId64" bytes)",
-		     that->m_dir, that->m_dbname, that->m_bytesWritten );
+		     that->m_dir, that->m_dbname, that->getBytesWritten() );
 	}
 	// . call callback
 	if ( that->m_callback ) that->m_callback ( that->m_state );

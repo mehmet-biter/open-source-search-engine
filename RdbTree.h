@@ -185,13 +185,12 @@ class RdbTree {
 	// . if the list's keys are ordered from smallest to largest
 	//   this acts just like deleteList() above, but saves time by
 	//   using getNextNode() rather than lookup each key from root of tree
-	void deleteOrderedList ( collnum_t collnum , 
+	void deleteOrderedList ( collnum_t collnum ,
 				 RdbList *list , bool doBalancing ); //= true);
 
 	// since our arrays aren't public
 	char *getData      ( int32_t node ) { return m_data    [node]; }
 	int32_t  getDataSize  ( int32_t node ) const { return m_sizes   [node]; }
-	//key_t getKey       ( int32_t node ) { return m_keys    [node]; }
 	char *getKey       ( int32_t node ) { return &m_keys   [node*m_ks]; }
 	int32_t  getParentNum ( int32_t node ) const { return m_parents [node]; }
 
@@ -268,22 +267,10 @@ class RdbTree {
 			       minRecSizes,list,numPosRecs,numNegRecs,
 			       useHalfKeys);}
 
- 	// . don't order by keys, order by node #
-	// . used for saving a tree to disk temporarily so it can be re-loaded
-	//   w/o totally unbalancing the tree
-	// . sets "*lastNode" to last node # inserted into the list
-	//bool getListUnordered ( int32_t startNode , 
-	//			int32_t minRecSizes  ,
-	//			RdbList *list  , int32_t *lastNode ) ;
-
 	// estimate the size of the list defined by these keys
 	int32_t getListSize ( collnum_t collnum ,
 			   const char *startKey, const char *endKey,
 			   char *minKey   , char *maxKey );
-
-	// how balanced is this tree? = #nodes w/ right kids / # node w/ left
-	// the multiplied by 100. invereted to make smaller than 100.
-	int32_t getBalancePercent();
 
 	// . load & save the tree quickly
 	// . returns false on error, true otherwise
@@ -328,10 +315,7 @@ class RdbTree {
 
 	// true if tree was modified and needs to be saved
 	bool    m_needsSave;
-	// need to pass this file to the fastSave() thread
-	//BigFile *m_saveFile;
 	char  m_rdbId;
-	//char  m_isRealTree;
 	char  m_dir[128];
 	char  m_dbname[32];
 	char  m_memTag[16];
@@ -340,8 +324,8 @@ class RdbTree {
 	void     *m_state; 
 	void    (* m_callback) (void *state );
 
-	int64_t getBytesWritten ( ) { return m_bytesWritten; }
-	int64_t getBytesRead    ( ) { return m_bytesRead   ; }
+	int64_t getBytesWritten() { return m_bytesWritten; }
+	int64_t getBytesRead() { return m_bytesRead; }
 
 	// private:
 
@@ -440,12 +424,7 @@ class RdbTree {
 
 	bool m_allowDups;
 
-	//char m_countsInitialized;
-
 	int32_t m_corrupt;
-
-	//int32_t m_numPosKeysPerColl[MAX_COLL_RECS];
-	//int32_t m_numNegKeysPerColl[MAX_COLL_RECS];
 };
 
 #endif // GB_RDBTREE_H
