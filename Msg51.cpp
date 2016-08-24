@@ -17,6 +17,7 @@
 // how many Msg0 requests can we launch at the same time?
 #define MSG51_MAX_REQUESTS 60
 
+static const int signature_init = 0xe1d3c5b7;
 
 // . these must be 1-1 with the enums above
 // . used for titling the counts of g_stats.m_filterStats[]
@@ -52,10 +53,12 @@ Msg51::Msg51 ( )
 	m_clusterRecs     = NULL;
 	m_clusterLevels   = NULL;
 	pthread_mutex_init(&m_mtx,NULL);
+	set_signature();
 }
 
 Msg51::~Msg51 ( ) {
 	reset();
+	clear_signature();
 }
 
 void Msg51::reset ( ) {
@@ -83,6 +86,7 @@ bool Msg51::getClusterRecs ( const int64_t     *docIds,
 			     int32_t           niceness                 ,
 			     // output
 			     bool           isDebug                  ) {
+	verify_signature();
 	// reset this msg
 	reset();
 	// warning
@@ -149,6 +153,7 @@ bool Msg51::getClusterRecs ( const int64_t     *docIds,
 
 
 bool Msg51::sendRequests(int32_t k) {
+	verify_signature();
 	ScopedLock sl(m_mtx);
 	return sendRequests_unlocked(k);
 }
@@ -158,6 +163,7 @@ bool Msg51::sendRequests(int32_t k) {
 // . k is a hint of which msg0 to use
 // . if k is -1 we do a complete scan to find available m_msg0[x]
 bool Msg51::sendRequests_unlocked(int32_t k) {
+	verify_signature();
 
 	bool anyAsyncRequests = false;
  sendLoop:
@@ -346,6 +352,7 @@ bool Msg51::sendRequest ( int32_t    i ) {
 void Msg51::gotClusterRecWrapper51(void *state) {
 	Slot *slot = static_cast<Slot*>(state);
 	Msg51 *THIS = slot->m_msg51;
+	verify_signature_at(THIS->signature);
 	{
 		ScopedLock sl(THIS->m_mtx);
 		// process it
@@ -363,6 +370,7 @@ void Msg51::gotClusterRecWrapper51(void *state) {
 
 // . sets m_errno to g_errno if not already set
 void Msg51::gotClusterRec(Slot *slot) {
+	verify_signature();
 
 	// count it
 	m_numReplies++;

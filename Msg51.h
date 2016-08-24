@@ -14,6 +14,7 @@
 #include "Clusterdb.h"
 #include "RdbList.h"
 #include "Msg5.h"
+#include "GbSignature.h"
 #include <pthread.h>
 
 // . m_clusterLevels[i] takes on one of these values
@@ -116,6 +117,8 @@ private:
 	bool sendRequests   ( int32_t k );
 	bool sendRequests_unlocked(int32_t k);
 	bool sendRequest    ( int32_t i );
+
+	declare_signature
 
 	// docIds we're getting clusterRecs for
 	const int64_t   *m_docIds;
