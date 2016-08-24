@@ -159,18 +159,18 @@ bool Msg51::sendRequests(int32_t k) {
 // . if k is -1 we do a complete scan to find available m_msg0[x]
 bool Msg51::sendRequests_unlocked(int32_t k) {
 
+	bool anyAsyncRequests = false;
  sendLoop:
 
-	// bail if none left, return false if still waiting
+	// bail if no slots available
 	if ( m_numRequests - m_numReplies >= m_numSlots ) return false;
 
-	bool isDone = false;
-	if ( m_nexti >= m_numDocIds ) isDone = true;
-
 	// any requests left to send?
-	if ( isDone ) {
-		// we are still waiting on replies, so we blocked...
-		if ( m_numRequests > m_numReplies ) return false;
+	if ( m_nexti >= m_numDocIds ) {
+		if ( anyAsyncRequests ) //we started an async request
+			return false;
+		if ( m_numRequests > m_numReplies ) //still waiting for replies
+			return false;
 		// we are done!
 		return true;
 	}
@@ -248,7 +248,8 @@ bool Msg51::sendRequests_unlocked(int32_t k) {
 	if ( slot >= m_numSlots ) gbshutdownLogicError();
 
 	// send it, returns false if blocked, true otherwise
-	sendRequest ( slot );
+	if( !sendRequest(slot) )
+		anyAsyncRequests = true;
 
 	// update any hint to make our loop more efficient
 	if ( k >= 0 ) k++;
