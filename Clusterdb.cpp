@@ -34,7 +34,6 @@ bool Clusterdb::init ( ) {
 			    2, // g_conf.m_clusterdbMinFilesToMerge,
 			    g_conf.m_clusterdbMaxTreeMem,
 			    maxTreeNodes  , // maxTreeNodes  ,
-			    true          , //false         , // balance tree?
 			    true          , // half keys?
 			    false,  // is titledb
 			    12);     // key size
@@ -53,8 +52,7 @@ bool Clusterdb::init2 ( int32_t treeMem ) {
 			    0             , // no data now! just docid/s/c
 			    50            , // m_clusterdbMinFilesToMerge,
 			    treeMem       , // g_conf.m_clusterdbMaxTreeMem,
-			    maxTreeNodes  , 
-			    true          , // balance tree?
+			    maxTreeNodes  ,
 			    true          , // half keys?
 			    false         ,  // is titledb
 			    12            );     // key size

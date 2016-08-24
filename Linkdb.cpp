@@ -145,7 +145,6 @@ bool Linkdb::init ( ) {
 			    //15       , 
 			    maxTreeMem ,
 			    maxTreeNodes ,
-			    true     , //isTreeBalanced
 			    false, // true     , // use half keys
 			    false    , // false
 			    sizeof(key224_t) );
@@ -165,8 +164,7 @@ bool Linkdb::init2 ( int32_t treeMem ) {
 			    0             , // no data now! just docid/s/c
 			    50            , // m_clusterdbMinFilesToMerge,
 			    treeMem       , // g_conf.m_clusterdbMaxTreeMem,
-			    maxTreeNodes  , 
-			    true          , // balance tree?
+			    maxTreeNodes  ,
 			    false, // true          , // half keys?
 			    false         , // is titledb
 			    sizeof(key224_t)); // key size

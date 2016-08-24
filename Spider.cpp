@@ -531,7 +531,6 @@ bool Spiderdb::init ( ) {
 			    -1,//g_conf.m_spiderdbMinFilesToMerge , mintomerge
 			    g_conf.m_spiderdbMaxTreeMem ,
 			    maxTreeNodes                ,
-			    true                        , // balance tree?
 			    false                       , // half keys?
 			    false                       ,
 			    sizeof(key128_t)            );
@@ -553,7 +552,6 @@ bool Spiderdb::init2 ( int32_t treeMem ) {
 			    200           , // g_conf.m_spiderdbMinFilesToMerge
 			    treeMem       , // g_conf.m_spiderdbMaxTreeMem ,
 			    maxTreeNodes  ,
-			    true          , // balance tree?
 			    false         , // half keys?
 			    false         , // isTitledb?
 			    sizeof(key128_t));

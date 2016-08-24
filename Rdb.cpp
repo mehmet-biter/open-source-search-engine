@@ -98,7 +98,6 @@ bool Rdb::init ( const char     *dir                  ,
 		  int32_t           minToMerge           ,
 		  int32_t           maxTreeMem           ,
 		  int32_t           maxTreeNodes         ,
-		  bool           isTreeBalanced       ,
 		  bool           useHalfKeys          ,
 		  bool           isTitledb            ,
 		  char           keySize              ,
@@ -175,7 +174,7 @@ bool Rdb::init ( const char     *dir                  ,
 		int32_t rdbId = m_rdbId;
 		// statsdb is collectionless really so pass on to tree
 		if ( rdbId == RDB_STATSDB ) rdbId = -1;
-		if ( ! m_tree.set ( fixedDataSize  , maxTreeNodes, isTreeBalanced, maxTreeMem, false, m_treeName, false,
+		if ( ! m_tree.set ( fixedDataSize  , maxTreeNodes, true, maxTreeMem, false, m_treeName, false,
 		                    m_dbname, m_ks, false, false, rdbId ) ) {
 			log( LOG_ERROR, "db: Failed to set tree." );
 			return false;
@@ -185,7 +184,7 @@ bool Rdb::init ( const char     *dir                  ,
 		if(treeFileExists()) {
 			m_tree.set ( fixedDataSize  , 
 			    maxTreeNodes   , // max # nodes in tree
-			    isTreeBalanced , 
+			    true ,
 			    maxTreeMem     ,
 			    false          , // own data?
 			    m_treeName     , // allocname

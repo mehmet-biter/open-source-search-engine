@@ -54,8 +54,6 @@ bool Titledb::init ( ) {
 			    -1,
 			    g_conf.m_titledbMaxTreeMem  ,
 			    maxTreeNodes                ,
-			    // now we balance so Sync.cpp can ordered huge list
-			    true                        , // balance tree?
 			    false                       ,// half keys?
 			    true                        ); // is titledb?
 
@@ -77,8 +75,6 @@ bool Titledb::init2 ( int32_t treeMem ) {
 			    240                         , // MinFilesToMerge
 			    treeMem                     ,
 			    maxTreeNodes                ,
-			    // now we balance so Sync.cpp can ordered huge list
-			    true                        , // balance tree?
 			    false                       , // half keys?
 			    true                        ); // is titledb?
 

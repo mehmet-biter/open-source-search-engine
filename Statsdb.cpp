@@ -177,7 +177,6 @@ bool Statsdb::init ( ) {
 			    200,//g_conf.m_statsdbMinFilesToMerge ,
 			    maxTreeMem                  ,
 			    maxTreeNodes		,
-			    true			, // balance tree?
 			    false			, // use half keys?
 			    false			, // is titledb?
 			    sizeof(key96_t)		, // key size

@@ -1071,7 +1071,6 @@ bool Tagdb::init ( ) {
 			    g_conf.m_tagdbMaxTreeMem  ,
 			    maxTreeNodes               ,
 			    // now we balance so Sync.cpp can ordered huge list
-			    true                        , // balance tree?
 			    false                      , // half keys?
 			    false,  // is titledb
 			    sizeof(key128_t));     // key size

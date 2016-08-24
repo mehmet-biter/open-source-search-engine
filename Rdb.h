@@ -75,7 +75,6 @@ public:
 		    int32_t   minToMerge      , //, //=  2   ,
 		    int32_t   maxTreeMem      , //=  1024*1024*32 ,
 		    int32_t   maxTreeNodes    ,
-		    bool   isTreeBalanced  ,
 		    bool   useHalfKeys     ,
 		    bool   isTitledb    = false , // use fileIds2[]?
 		    char   keySize = 12    ,

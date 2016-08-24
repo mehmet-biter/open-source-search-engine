@@ -45,7 +45,6 @@ bool Doledb::init ( ) {
 			    2                           , // MinFilesToMerge
 			    maxTreeMem                  ,
 			    maxTreeNodes                ,
-			    true                        , // balance tree?
 			    false                       ); // half keys?
 }
 

@@ -140,8 +140,6 @@ bool Posdb::init ( ) {
 	                    -1,
 	                    g_conf.m_posdbMaxTreeMem, // g_conf.m_posdbMaxTreeMem  ,
 	                    maxTreeNodes                ,
-	                    // now we balance so Sync.cpp can ordered huge lists
-                        true                        , // balance tree?
                         true                        , // use half keys?
 			            false , // istitledb?
 			            sizeof(key144_t),
@@ -173,7 +171,6 @@ bool Posdb::init2 ( int32_t treeMem ) {
 			    1000                        , // min files to merge
 			    treeMem                     ,
 			    maxTreeNodes                ,
-			    true                        , // balance tree?
 			    true                        , // use half keys?
 			    false ,
 			    sizeof(key144_t));
