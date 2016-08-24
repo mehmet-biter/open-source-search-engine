@@ -3,10 +3,6 @@
 #include "Process.h"
 #include "Spider.h"
 
-static void dumpListWrapper ( void *state ) ;
-static void gotListWrapper  ( void *state , RdbList *list , Msg5 *msg5 ) ;
-static void tryAgainWrapper ( int fd , void *state ) ;
-
 RdbMerge::RdbMerge   () {}
 RdbMerge::~RdbMerge  () {}
 void RdbMerge::reset () { m_isMerging = false; m_isSuspended = false; }
@@ -208,8 +204,6 @@ bool RdbMerge::resumeMerge() {
 	}
 }
 
-static void unlinkPartWrapper ( void *state );
-
 // . return false if blocked, true otherwise
 // . sets g_errno on error
 bool RdbMerge::getNextList() {
@@ -306,7 +300,7 @@ bool RdbMerge::getNextList() {
 	return getAnotherList();
 }
 
-void unlinkPartWrapper(void *state) {
+void RdbMerge::unlinkPartWrapper(void *state) {
 	RdbMerge *THIS = (RdbMerge *)state;
 
 	// wait for all threads to complete
@@ -387,7 +381,7 @@ bool RdbMerge::getAnotherList() {
 				false   );
 }
 
-void gotListWrapper(void *state, RdbList *list, Msg5 *msg5) {
+void RdbMerge::gotListWrapper(void *state, RdbList *list, Msg5 *msg5) {
 	// get a ptr to ourselves
 	RdbMerge *THIS = (RdbMerge *)state;
 
@@ -420,7 +414,7 @@ void gotListWrapper(void *state, RdbList *list, Msg5 *msg5) {
 }
 
 // called after sleeping for 1 sec because of ENOMEM
-void tryAgainWrapper(int fd, void *state) {
+void RdbMerge::tryAgainWrapper(int fd, void *state) {
 	// if power is still off, keep things suspended
 	if (!g_process.m_powerIsOn) {
 		return;
@@ -445,7 +439,7 @@ void tryAgainWrapper(int fd, void *state) {
 }
 		
 // similar to gotListWrapper but we call getNextList() before dumpList()
-void dumpListWrapper(void *state) {
+void RdbMerge::dumpListWrapper(void *state) {
 	// debug msg
 	log(LOG_DEBUG,"db: Dump of list completed: %s.",mstrerror(g_errno));
 

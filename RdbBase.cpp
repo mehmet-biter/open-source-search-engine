@@ -1375,12 +1375,12 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 	}
 
 	// nor if EITHER of the merge classes are suspended
-	if ( g_merge.m_isSuspended  ) {
+	if ( g_merge.isSuspended()  ) {
 		logTrace( g_conf.m_logTraceRdbBase, "END, is suspended" );
 		return false;
 	}
 	
-	if ( g_merge2.m_isSuspended ) {
+	if ( g_merge2.isSuspended() ) {
 		logTrace( g_conf.m_logTraceRdbBase, "END, is suspended (2)" );
 		return false;
 	}

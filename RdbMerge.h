@@ -34,6 +34,9 @@ class RdbIndex;
 
 class RdbMerge {
 public:
+	RdbMerge();
+	~RdbMerge();
+	void reset();
 
 	// . selects the files to merge
 	// . uses keyMasks and files from the passed Rdb class
@@ -52,37 +55,45 @@ public:
 	           int32_t niceness,
 	           char keySize);
 
-	bool isMerging() { return m_isMerging; }
+	int32_t getNumThreads() const { return m_numThreads; }
+
+	bool isMerging() const { return m_isMerging; }
+	void setMerging(bool merging) { m_isMerging = merging; }
+
+	bool isSuspended() const { return m_isSuspended; }
+	bool isDumping() const { return m_dump.isDumping(); }
+
+	rdbid_t getRdbId() const { return m_rdbId; };
 
 	// suspend the merging until resumeMerge() is called
 	void suspendMerge();
 
-	// . return false and sets errno on error merging
-	// . returns true if blocked, or completed successfully
-	bool resumeMerge();
+	static void unlinkPartWrapper(void *state);
+	static void dumpListWrapper(void *state);
+	static void gotListWrapper(void *state, RdbList *list, Msg5 *msg5);
+	static void tryAgainWrapper(int fd, void *state);
 
-	// these must be public so wrappers can call
+private:
 	bool dumpList();
 	bool getNextList();
 	bool getAnotherList();
 	void doneMerging();
 
-	RdbMerge();
-	~RdbMerge();
-	void reset();
+	// . return false and sets errno on error merging
+	// . returns true if blocked, or completed successfully
+	bool resumeMerge();
 
 	// . called to continue merge initialization after lock is secure
 	// . lock is g_isMergingLock
 	bool gotLock();
 
+	void doSleep();
+
 	// set to true when m_startKey wraps back to 0
 	bool m_doneMerging;
 
-	void doSleep();
-
 	int32_t m_numThreads;
 
-//private:
 	// . we get the units from the master and the mergees from the units
 	int32_t m_startFileNum;
 	int32_t m_numFiles;

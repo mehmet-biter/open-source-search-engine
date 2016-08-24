@@ -662,8 +662,8 @@ bool Rdb::close ( void *state , void (* callback)(void *state ), bool urgent , b
 	     // if we cored, we are urgent and need to make sure we save even
 	     // if we are merging this rdb...
 	     ! m_urgent &&
-	     g_merge.m_rdbId == m_rdbId &&
-	     ( g_merge.m_numThreads || g_merge.m_dump.isDumping() ) ) {
+	     g_merge.getRdbId() == m_rdbId &&
+	     ( g_merge.getNumThreads() || g_merge.isDumping() ) ) {
 		// do not spam this message
 		int64_t now = gettimeofdayInMilliseconds();
 		if ( now - m_lastTime >= 500 ) {
@@ -681,8 +681,8 @@ bool Rdb::close ( void *state , void (* callback)(void *state ), bool urgent , b
 	     // if we cored, we are urgent and need to make sure we save even
 	     // if we are merging this rdb...
 	     ! m_urgent &&
-	     g_merge2.m_rdbId == m_rdbId &&
-	     ( g_merge2.m_numThreads || g_merge2.m_dump.isDumping() ) ) {
+	     g_merge2.getRdbId() == m_rdbId &&
+	     ( g_merge2.getNumThreads() || g_merge2.isDumping() ) ) {
 		// do not spam this message
 		int64_t now = gettimeofdayInMilliseconds();
 		if ( now - m_lastTime >= 500 ) {
