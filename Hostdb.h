@@ -15,6 +15,7 @@
 #include <sys/ioctl.h>            // ioctl() - get our ip address from a socket
 #include <net/if.h>               // for struct ifreq passed to ioctl()    
 #include "Xml.h" // host file in xml
+#include "rdbid_t.h"
 #include "Sanity.h"
 
 /// @note ALC there used to be a sync host functionality that was removed
@@ -459,7 +460,10 @@ class Hostdb {
 
 	char  m_useTmpCluster;
 
-	uint32_t getShardNum (char rdbId, const void *key );
+	uint32_t getShardNum(rdbid_t rdbId, const void *key);
+	uint32_t getShardNum(char rdbId, const void *key) {
+		return getShardNum((rdbid_t)rdbId,key);
+	}
 	uint32_t getShardNumFromDocId ( int64_t d ) ;
 
 	// assume to be for posdb here

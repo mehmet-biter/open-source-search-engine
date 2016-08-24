@@ -1550,7 +1550,7 @@ uint32_t Hostdb::getShardNumByTermId ( const void *k ) {
 // . this allows us to have any # of groups in a stripe, not just power of 2
 // . now we can use 3 stripes of 96 hosts each so spiders will almost never
 //   go down
-uint32_t Hostdb::getShardNum ( char rdbId, const void *k ) {
+uint32_t Hostdb::getShardNum(rdbid_t rdbId, const void *k) {
 
 	if ( (rdbId == RDB_POSDB || rdbId == RDB2_POSDB2) &&
 	     // split by termid and not docid?
