@@ -1544,7 +1544,7 @@ void Rdb::doneDumping ( ) {
 	attemptMergeAllCallback(0,NULL);
 }
 
-void forceMergeAll ( char rdbId , char niceness ) {
+void forceMergeAll(rdbid_t rdbId, char niceness) {
 	// set flag on all RdbBases
 	for ( int32_t i = 0 ; i < g_collectiondb.m_numRecs ; i++ ) {
 		// we need this quickpoll for when we got 20,000+ collections
@@ -2596,7 +2596,7 @@ bool isSecondaryRdb ( rdbid_t rdbId ) {
 }
 
 // use a quick table now...
-char getKeySizeFromRdbId ( uint8_t rdbId ) {
+char getKeySizeFromRdbId(rdbid_t rdbId) {
 	static bool s_flag = true;
 	static char s_table1[50];
 	if ( s_flag ) {
