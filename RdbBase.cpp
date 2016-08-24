@@ -87,10 +87,7 @@ bool RdbBase::init ( char  *dir            ,
 		     RdbBuckets          *buckets ,
 		     RdbDump       *dump    ,
 		     class Rdb     *rdb    ,
-		     void *pc , // DiskPageCache *pc      ,
 		     bool           isTitledb            ,
-		     bool           preloadDiskPageCache ,
-		     bool           biasDiskPageCache,
 		     bool			useIndexFile    ) {
 
 

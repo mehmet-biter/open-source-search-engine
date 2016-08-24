@@ -76,10 +76,7 @@ class RdbBase {
 		    RdbBuckets          *buckets ,
 		    RdbDump             *dump    ,
 		    class Rdb           *rdb    ,
-		    void *pc = NULL,
 		    bool                 isTitledb = false , // use fileIds2[]?
-		    bool                 preloadDiskPageCache = false ,
-		    bool                 biasDiskPageCache    = false,
 		    bool				useIndexFile = false );
 
 	void closeMaps ( bool urgent );

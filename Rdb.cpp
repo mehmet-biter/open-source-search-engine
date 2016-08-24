@@ -465,10 +465,7 @@ bool Rdb::addRdbBase2 ( collnum_t collnum ) { // addColl2()
 					buckets         ,
 					&m_dump         ,
 					this            ,
-					NULL            ,
 					m_isTitledb     ,
-					m_preloadCache  ,
-					m_biasDiskPageCache,
 					m_useIndexFile ) ) {
 		logf(LOG_INFO,"db: %s: Failed to initialize db for "
 		     "collection \"%s\".", m_dbname,coll);
