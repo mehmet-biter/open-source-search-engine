@@ -10,7 +10,6 @@ void doneReadingForVerifyWrapper(void *state);
 // . sets g_errno on error
 bool RdbDump::set(collnum_t collnum,
                   BigFile *file,
-                  int32_t id2, // in Rdb::m_files[] array
                   RdbBuckets *buckets, // optional buckets to dump
                   RdbTree *tree, // optional tree to dump
                   RdbMap *map,
@@ -42,7 +41,6 @@ bool RdbDump::set(collnum_t collnum,
 	if ( ! rdb ) m_doCollCheck = false;
 
 	m_file          = file;
-	m_id2           = id2;
 	m_buckets       = buckets;
 	m_tree          = tree;
 	m_map           = map;

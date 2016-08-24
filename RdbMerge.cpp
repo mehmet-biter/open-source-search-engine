@@ -161,7 +161,6 @@ bool RdbMerge::gotLock ( ) {
 
 	m_dump.set ( m_collnum          ,
 		     m_target           ,
-		     m_id2              ,
 		     NULL         , // buckets to dump is NULL, we call dumpList
 		     NULL         , // tree to dump is NULL, we call dumpList
 		     m_targetMap  ,

@@ -32,7 +32,6 @@ public:
 	// . returns false and sets errno on error
 	bool set(collnum_t collnum,
 	         BigFile *file,
-	         int32_t id2, // in Rdb::m_files[] array
 	         RdbBuckets *buckets, // optional buckets to dump
 	         RdbTree *tree, // optional tree to dump
 	         RdbMap *map,
@@ -92,7 +91,6 @@ public:
 	int64_t m_offset;
 
 	BigFile *m_file;
-	int32_t m_id2; // secondary id of file we are dumping to
 	RdbList *m_list; // holds list to dump
 	RdbList m_ourList; // we use for dumping a tree, point m_list
 	char *m_buf; // points into list
