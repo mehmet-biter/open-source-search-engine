@@ -21,8 +21,8 @@ void addCollnumToLinkedListOfMergeCandidates ( collnum_t dumpCollnum ) ;
 
 
 // get the RdbBase class for an rdbId and collection name
-class RdbBase *getRdbBase ( uint8_t rdbId, const char *coll );
-class RdbBase *getRdbBase ( uint8_t rdbId , collnum_t collnum );
+class RdbBase *getRdbBase(rdbid_t rdbId, const char *coll);
+class RdbBase *getRdbBase(rdbid_t rdbId, collnum_t collnum);
 
 // maps an rdbId to an Rdb
 class Rdb *getRdbFromId ( rdbid_t rdbId ) ;

@@ -2693,7 +2693,7 @@ const char *getDbnameFromId ( uint8_t rdbId ) {
 }
 
 // get the RdbBase class for an rdbId and collection name
-RdbBase *getRdbBase ( uint8_t rdbId, const char *coll ) {
+RdbBase *getRdbBase(rdbid_t rdbId, const char *coll) {
 	Rdb *rdb = getRdbFromId ( rdbId );
 	if ( ! rdb ) {
 		log("db: Collection \"%s\" does not exist.",coll);
@@ -2715,7 +2715,7 @@ RdbBase *getRdbBase ( uint8_t rdbId, const char *coll ) {
 
 
 // get the RdbBase class for an rdbId and collection name
-RdbBase *getRdbBase ( uint8_t rdbId , collnum_t collnum ) {
+RdbBase *getRdbBase(rdbid_t rdbId, collnum_t collnum) {
 	Rdb *rdb = getRdbFromId ( rdbId );
 	if ( ! rdb ) {
 		log("db: Collection #%" PRId32" does not exist.",(int32_t)collnum);
