@@ -145,8 +145,9 @@ bool SpiderColl::load ( ) {
 	//   test runs...
 	// . try going to 20M now since we hit it again...
 	// . start off at just 10 nodes since we grow dynamically now
-	if (!m_waitingTree.set(0,10,true,-1,true,"waittree2",
-			       false,"waitingtree",sizeof(key_t)))return false;
+	if (!m_waitingTree.set(0, 10, true, -1, true, "waittree2", false, "waitingtree", sizeof(key_t))) {
+		return false;
+	}
 	m_waitingTreeKeyValid = false;
 	m_scanningIp = 0;
 	// prevent core with this
@@ -2017,8 +2018,6 @@ void SpiderColl::populateDoledbFromWaitingTree ( ) { // bool reentry ) {
 				  false, // datainptrs?
 				  NULL, // dbname
 				  sizeof(key192_t), // keysize
-				  false, // useprotection?
-				  false, // allowdups?
 				  -1 ) ) { // rdbid
 		m_isPopulatingDoledb = false;
 		log("spider: winntree set: %s",mstrerror(g_errno));

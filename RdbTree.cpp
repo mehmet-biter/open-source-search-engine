@@ -57,8 +57,6 @@ bool RdbTree::set ( int32_t fixedDataSize ,
 		    bool dataInPtrs    ,
 		    const char *dbname       ,
 		    char  keySize      ,
-		    bool  useProtection ,
-		    bool  allowDups     ,
 		    char  rdbId ) {
 	reset();
 	m_fixedDataSize   = fixedDataSize; 
@@ -67,10 +65,11 @@ bool RdbTree::set ( int32_t fixedDataSize ,
 	m_ownData         = ownData;
 	m_allocName       = allocName;
 	m_dataInPtrs      = dataInPtrs;
-	//m_dbname          = dbname;
 	m_ks              = keySize;
-	m_useProtection   = useProtection;
-	m_allowDups       = allowDups;
+
+	// make useProtection true for debugging
+	m_useProtection   = false;
+
 	m_needsSave       = false;
 
 	m_dbname[0] = '\0';
@@ -484,14 +483,12 @@ int32_t RdbTree::addNode ( collnum_t collnum , const char *key , char *data , in
 		iparent = i;
 		if ( collnum < m_collnums[i] ) { i = m_left [i]; continue;}
 		if ( collnum > m_collnums[i] ) { i = m_right[i]; continue;}
-		//if      ( key < m_keys[i] ) i = m_left [i]; 
-		//else if ( key > m_keys[i] ) i = m_right[i]; 
-		if      ( KEYCMP(key,0,m_keys,i,m_ks)<0) i = m_left [i];
-		else if ( KEYCMP(key,0,m_keys,i,m_ks)>0) i = m_right[i];
-		else    {
-			if ( ! m_allowDups ) goto replaceIt; 
-			// otherwise, always go right on equal
+		if (KEYCMP(key, 0, m_keys, i, m_ks) < 0) {
+			i = m_left[i];
+		} else if (KEYCMP(key, 0, m_keys, i, m_ks) > 0) {
 			i = m_right[i];
+		} else {
+			goto replaceIt;
 		}
 	}
 
@@ -995,8 +992,7 @@ bool RdbTree::deleteKeys ( collnum_t collnum , char *keys , int32_t numKeys ) {
 
 // . TODO: speed up since keys are usually ordered (use getNextNode())
 // . returns false if a key in list was not found
-bool RdbTree::deleteList ( collnum_t collnum ,
-			   RdbList *list , bool doBalancing ) {
+bool RdbTree::deleteList(collnum_t collnum, RdbList *list, bool doBalancing) {
 	// sanity check
 	if ( list->m_ks != m_ks ) { g_process.shutdownAbort(true); }
 	// return if no non-empty nodes in the tree

@@ -78,8 +78,6 @@ class RdbTree {
 		   const char *allocName,
 		   bool dataInPtrs = false ,
 		   const char *dbname = NULL , char keySize = 12 ,
-		   bool useProtection = false ,
-		   bool allowDups     = false ,
 		   char rdbId = -1 );
 
 	// . frees the used memory, etc.
@@ -421,8 +419,6 @@ class RdbTree {
 		protect ( PROT_READ | PROT_WRITE ); }
 	void protect   ( int prot );
 	void gbmprotect ( void *p , int32_t size , int prot );
-
-	bool m_allowDups;
 
 	int32_t m_corrupt;
 };

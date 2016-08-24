@@ -183,8 +183,7 @@ bool TopTree::setNumNodes ( int32_t docsWanted , bool doSiteClustering ) {
 			  "tree-toptree"  ,
 			  true       , // dataInPtrs?
 			  NULL       , // dbname (generic)
-			  12         , // keySize
-			  false      ))// useProtection?
+			  12         )) // keySize
 		return false;
 
 	return true;

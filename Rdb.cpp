@@ -173,7 +173,7 @@ bool Rdb::init ( const char     *dir                  ,
 		// statsdb is collectionless really so pass on to tree
 		if ( rdbId == RDB_STATSDB ) rdbId = -1;
 		if ( ! m_tree.set ( fixedDataSize  , maxTreeNodes, true, maxTreeMem, false, m_treeName, false,
-		                    m_dbname, m_ks, false, false, rdbId ) ) {
+		                    m_dbname, m_ks, rdbId ) ) {
 			log( LOG_ERROR, "db: Failed to set tree." );
 			return false;
 		}
@@ -189,9 +189,6 @@ bool Rdb::init ( const char     *dir                  ,
 			    false          , // dataInPtrs?
 			    m_dbname       ,
 			    m_ks           ,
-			    // make useProtection true for debugging
-				     false          , // use protection?
-				     false , // alowdups?
 				     m_rdbId );
 		}
 		// set this then

@@ -311,7 +311,6 @@ bool RdbDump::dumpTree(bool recall) {
 			if (m_tree) {
 				logTrace(g_conf.m_logTraceRdbDump, "m_tree");
 
-				// getMemOccupiedForList2() can take some time, so breathe (niceness 1)
 				status = m_tree->getList(m_collnum, m_nextKey, maxEndKey, m_maxBufSize, m_list,
 				                         &m_numPosRecs, &m_numNegRecs, m_useHalfKeys);
 			} else if (m_buckets) {
