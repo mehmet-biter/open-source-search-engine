@@ -4,7 +4,6 @@
 #include "Collectiondb.h"
 #include "Statsdb.h"
 
-void doneReadingForVerifyWrapper(void *state);
 
 // . return false if blocked, true otherwise
 // . sets g_errno on error
@@ -227,8 +226,8 @@ void RdbDump::doneDumping() {
 #endif
 }
 
-static void tryAgainWrapper2 ( int fd , void *state ) ;
-void tryAgainWrapper2 ( int fd , void *state ) {
+
+void RdbDump::tryAgainWrapper2 ( int fd , void *state ) {
 	// debug msg
 	log(LOG_INFO,"db: Trying to get data again.");
 	// stop waiting
@@ -688,7 +687,7 @@ bool RdbDump::doneDumpingList() {
 }
 
 
-void doneReadingForVerifyWrapper ( void *state ) {
+void RdbDump::doneReadingForVerifyWrapper ( void *state ) {
 	RdbDump *THIS = (RdbDump *)state;
 
 	// return if this blocks

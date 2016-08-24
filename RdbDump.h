@@ -55,10 +55,16 @@ public:
 
 	void setSuspended() { m_isSuspended = true; }
 
+	bool dumpList(RdbList *list, int32_t niceness, bool isRecall);
+
+	static void doneWritingWrapper(void *state);
+	static void doneReadingForVerifyWrapper(void *state);
+	static void tryAgainWrapper2(int fd, void *state);
+
+private:
 	// . dump the tree to the file
 	// . returns false if blocked, true otherwise
 	bool dumpTree(bool recall);
-	bool dumpList(RdbList *list, int32_t niceness, bool isRecall);
 
 	void doneDumping();
 	bool doneReadingForVerify();
@@ -67,9 +73,6 @@ public:
 	bool doneDumpingList();
 	void continueDumping();
 
-	static void doneWritingWrapper(void *state);
-
-private:
 	bool m_isDumping; // true if we're in the middle of dumping
 
 	// true if the actual write thread is outstanding
