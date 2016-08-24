@@ -122,21 +122,21 @@ bool Rdb::init ( const char     *dir                  ,
 	m_fixedDataSize    = fixedDataSize;
 	m_maxTreeMem       = maxTreeMem;
 	m_useHalfKeys      = useHalfKeys;
-	//m_pc               = pc;
 	m_isTitledb        = isTitledb;
 	m_ks               = keySize;
 	m_inDumpLoop       = false;
 
 	// set our id
-	m_rdbId = getIdFromRdb ( this );
-
-	if ( m_rdbId <= 0 ) {
+	m_rdbId = getIdFromRdb(this);
+	if (m_rdbId <= 0) {
 		log( LOG_LOGIC, "db: dbname of %s is invalid.", dbname );
 		return false;
 	}
 
 	// sanity check
-	if ( m_ks != getKeySizeFromRdbId(m_rdbId) ) { g_process.shutdownAbort(true);}
+	if (m_ks != getKeySizeFromRdbId(m_rdbId)) {
+		g_process.shutdownAbort(true);
+	}
 
 	if (m_rdbId == RDB_POSDB || m_rdbId == RDB2_POSDB2) {
 		m_useIndexFile = g_conf.m_noInMemoryPosdbMerge ? useIndexFile : false;
@@ -2393,43 +2393,36 @@ bool isSecondaryRdb ( rdbid_t rdbId ) {
 // use a quick table now...
 char getKeySizeFromRdbId(rdbid_t rdbId) {
 	static bool s_flag = true;
-	static char s_table1[50];
+	static char s_table1[RDB_END];
 	if ( s_flag ) {
 		// only stock the table once
 		s_flag = false;
 
-		// sanity check. do not breach s_table1[]!
-		if ( RDB_END >= 50 ) {
-			g_process.shutdownAbort(true);
-		}
-
 		// . loop over all possible rdbIds
 		// . RDB_NONE is 0!
-		for ( int32_t i = 1 ; i < RDB_END ; i++ ) {
+		for (int32_t i = 1; i < RDB_END; ++i) {
 			// assume 12
 			int32_t ks = 12;
 
-			// only these are 16 as of now
-			if ( i == RDB_SPIDERDB  ||
-			     i == RDB_TAGDB     ||
-			     i == RDB2_SPIDERDB2  ||
-			     i == RDB2_TAGDB2     ) {
+			if (i == RDB_SPIDERDB || i == RDB2_SPIDERDB2 || i == RDB_TAGDB || i == RDB2_TAGDB2) {
 				ks = 16;
-			} else if ( i == RDB_POSDB || i == RDB2_POSDB2 ) {
-				ks = sizeof( key144_t );
-			} else if ( i == RDB_LINKDB || i == RDB2_LINKDB2 ) {
-				ks = sizeof( key224_t );
+			} else if (i == RDB_POSDB || i == RDB2_POSDB2) {
+				ks = sizeof(key144_t);
+			} else if (i == RDB_LINKDB || i == RDB2_LINKDB2) {
+				ks = sizeof(key224_t);
 			}
 
 			// set the table
 			s_table1[i] = ks;
 		}
 	}
+
 	// sanity check
-	if ( s_table1[rdbId] == 0 ) { 
-		log("rdb: bad lookup rdbid of %i",(int)rdbId);
+	if (s_table1[rdbId] == 0) {
+		log(LOG_ERROR, "rdb: bad lookup rdbid of %i", (int)rdbId);
 		g_process.shutdownAbort(true); 
 	}
+
 	return s_table1[rdbId];
 }
 
