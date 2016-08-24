@@ -57,7 +57,6 @@ bool RdbMerge::merge(rdbid_t rdbId,
 	m_targetIndex     = targetIndex;
 	m_startFileNum    = startFileNum;
 	m_numFiles        = numFiles;
-	m_dedup           = base->getDedup();
 	m_fixedDataSize   = base->getFixedDataSize();
 	m_niceness        = niceness;
 	m_doneMerging     = false;
@@ -148,7 +147,6 @@ bool RdbMerge::gotLock ( ) {
 	           m_targetMap,
 	           m_targetIndex,
 	           0, // m_maxBufSize. not needed if no tree!
-	           m_dedup,
 	           m_niceness, // niceness of dump
 	           this, // state
 	           dumpListWrapper,

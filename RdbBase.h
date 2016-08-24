@@ -64,7 +64,6 @@ class RdbBase {
 	// . otherwise, we mask the high int32_t in the key
 	bool init ( char  *dir             , // working directory
 		    char  *dbname          , // "indexdb","tagdb",...
-		    bool   dedup           , //= true ,
 		    int32_t   fixedDataSize   , //= -1   ,
 		    int32_t   minToMerge      , //, //=  2   ,
 		    bool   useHalfKeys     ,
@@ -91,7 +90,6 @@ class RdbBase {
 	// get the directory name where this rdb stores it's files
 	const char *getDir ( ) { return m_dir.getDirname(); }
 
-	bool getDedup() const { return m_dedup; }
 	int32_t getFixedDataSize() const { return m_fixedDataSize; }
 
 	bool useHalfKeys ( ) const { return m_useHalfKeys; }
@@ -242,7 +240,6 @@ public:
 	// this class contains a ptr to us
 	class Rdb           *m_rdb;
 
-	bool      m_dedup;
 	int32_t      m_fixedDataSize;
 
 	Dir       m_dir;

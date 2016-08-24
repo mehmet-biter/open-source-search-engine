@@ -86,7 +86,6 @@ public:
 	// . we get the units from the master and the mergees from the units
 	int32_t        m_startFileNum;
 	int32_t        m_numFiles;
-	bool        m_dedup;
 	int32_t        m_fixedDataSize;
 	BigFile    *m_target;
 	RdbMap     *m_targetMap;

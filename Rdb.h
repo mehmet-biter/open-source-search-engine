@@ -263,7 +263,6 @@ public:
 	// rebuilt files, pointed to by rdb2.
 	bool updateToRebuildFiles ( Rdb *rdb2 , char *coll ) ;
 
-	bool      m_dedup;
 	int32_t      m_fixedDataSize;
 
 	char      m_dbname [32];

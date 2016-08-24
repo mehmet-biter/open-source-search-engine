@@ -36,7 +36,6 @@ public:
 	         RdbMap *map,
 	         RdbIndex *index,
 	         int32_t maxBufSize,
-	         bool dedup, // for merging tree into cache
 	         int32_t niceness,
 	         void *state,
 	         void (*callback )(void *state),
@@ -80,7 +79,6 @@ public:
 	RdbMap *m_map;
 	RdbIndex *m_index;
 	int32_t m_maxBufSize;
-	bool m_dedup; // used for merging/adding tree to cache
 	void *m_state;
 
 	void (*m_callback)(void *state);

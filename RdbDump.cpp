@@ -15,7 +15,6 @@ bool RdbDump::set(collnum_t collnum,
                   RdbMap *map,
                   RdbIndex *index,
                   int32_t maxBufSize,
-                  bool dedup, // 4 RdbCache::incorporateList()
                   int32_t niceness,
                   void *state,
                   void (*callback)(void *state),
@@ -43,7 +42,6 @@ bool RdbDump::set(collnum_t collnum,
 	m_tree          = tree;
 	m_map           = map;
 	m_index         = index;
-	m_dedup         = dedup;
 	m_state         = state;
 	m_callback      = callback;
 	m_list          = NULL;

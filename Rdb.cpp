@@ -117,7 +117,6 @@ bool Rdb::init ( const char     *dir                  ,
 	m_dbname [ m_dbnameLen ] = '\0';
 
 	// store the other parameters for initializing each Rdb
-	m_dedup            = true;
 	m_fixedDataSize    = fixedDataSize;
 	m_maxTreeMem       = maxTreeMem;
 	m_useHalfKeys      = useHalfKeys;
@@ -447,7 +446,6 @@ bool Rdb::addRdbBase2 ( collnum_t collnum ) { // addColl2()
 	// . g_hostdb.m_dir should end in /
 	if ( ! base->init ( g_hostdb.m_dir,
 					m_dbname        ,
-					m_dedup         ,
 					m_fixedDataSize ,
 					m_minToMerge    ,
 					m_useHalfKeys   ,
@@ -1300,7 +1298,6 @@ bool Rdb::dumpCollLoop ( ) {
 	                base->getMap(m_fn),
 	                base->getIndex(m_fn),
 	                bufSize, // write buf size
-	                m_dedup, // dedup not used for this
 	                m_niceness, // niceness of 1 will NOT block
 	                this, // state
 	                doneDumpingCollWrapper,

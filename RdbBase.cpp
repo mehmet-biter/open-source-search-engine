@@ -73,22 +73,21 @@ RdbBase::~RdbBase ( ) {
 	reset();
 }
 
-bool RdbBase::init ( char  *dir            ,
-		     char  *dbname         ,
-		     bool   dedup          ,
-		     int32_t   fixedDataSize  ,
-		     int32_t   minToMergeArg     ,
-		     bool   useHalfKeys    ,
-		     char           keySize ,
-		     int32_t           pageSize,
-		     const char          *coll    ,
-		     collnum_t      collnum ,
-		     RdbTree       *tree    ,
-		     RdbBuckets          *buckets ,
-		     RdbDump       *dump    ,
-		     class Rdb     *rdb    ,
-		     bool           isTitledb            ,
-		     bool			useIndexFile    ) {
+bool RdbBase::init(char *dir,
+                   char *dbname,
+                   int32_t fixedDataSize,
+                   int32_t minToMergeArg,
+                   bool useHalfKeys,
+                   char keySize,
+                   int32_t pageSize,
+                   const char *coll,
+                   collnum_t collnum,
+                   RdbTree *tree,
+                   RdbBuckets *buckets,
+                   RdbDump *dump,
+                   Rdb *rdb,
+                   bool isTitledb,
+                   bool useIndexFile) {
 
 
 	m_didRepair = false;
@@ -144,17 +143,12 @@ bool RdbBase::init ( char  *dir            ,
 	gbmemcpy ( m_dbname , dbname , m_dbnameLen );
 	m_dbname [ m_dbnameLen ] = '\0';
 	// store the other parameters
-	m_dedup            = dedup;
 	m_fixedDataSize    = fixedDataSize;
-	//m_maxTreeMem       = maxTreeMem;
 	m_useHalfKeys      = useHalfKeys;
 	m_ks               = keySize;
 	m_pageSize         = pageSize;
-	//m_pc               = pc;
 	m_isTitledb        = isTitledb;
-	
 	m_useIndexFile		= useIndexFile;
-
 
 	if (m_useIndexFile) {
 		char indexName[64];
