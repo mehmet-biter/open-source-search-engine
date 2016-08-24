@@ -4120,7 +4120,7 @@ void dumpTagdb( const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 
  loop:
 	// use msg5 to get the list, should ALWAYS block since no threads
-	if ( ! msg5.getList ( rdbId,
+	if ( ! msg5.getList ( (rdbid_t)rdbId,
 			      cr->m_collnum      ,
 			      &list         ,
 			      (char *)&startKey      ,

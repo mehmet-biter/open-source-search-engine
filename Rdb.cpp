@@ -2536,7 +2536,7 @@ bool Rdb::isMerging() const {
 static Rdb *s_table9 [ RDB_END ];
 
 // maps an rdbId to an Rdb
-Rdb *getRdbFromId ( uint8_t rdbId ) {
+Rdb *getRdbFromId ( rdbid_t rdbId ) {
 	static bool s_init = false;
 	if ( ! s_init ) {
 		s_init = true;
@@ -2562,7 +2562,7 @@ Rdb *getRdbFromId ( uint8_t rdbId ) {
 }
 		
 // the opposite of the above
-char getIdFromRdb ( Rdb *rdb ) {
+rdbid_t getIdFromRdb ( Rdb *rdb ) {
 	if ( rdb == g_tagdb.getRdb    () ) return RDB_TAGDB;
 	if ( rdb == g_posdb.getRdb   () ) return RDB_POSDB;
 	if ( rdb == g_titledb.getRdb   () ) return RDB_TITLEDB;
@@ -2582,7 +2582,7 @@ char getIdFromRdb ( Rdb *rdb ) {
 	return RDB_NONE;
 }
 
-char isSecondaryRdb ( uint8_t rdbId ) {
+bool isSecondaryRdb ( rdbid_t rdbId ) {
 	switch ( rdbId ) {
 		case RDB2_POSDB2   : return true;
 		case RDB2_TAGDB2     : return true;
@@ -2590,8 +2590,9 @@ char isSecondaryRdb ( uint8_t rdbId ) {
 		case RDB2_SPIDERDB2  : return true;
 		case RDB2_CLUSTERDB2 : return true;
 		case RDB2_LINKDB2 : return true;
+		default:
+			return false;
 	}
-	return false;
 }
 
 // use a quick table now...

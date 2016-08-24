@@ -24,7 +24,7 @@ void RdbMerge::reset () { m_isMerging = false; m_isSuspended = false; }
 // . we need the merge to take priority over spider processes on disk otherwise
 //   there's too much contention from spider lookups on disk for the merge
 //   to finish in a decent amount of time and we end up getting too many files!
-bool RdbMerge::merge ( char     rdbId        ,
+bool RdbMerge::merge ( rdbid_t     rdbId,
 		       collnum_t collnum,
 		       BigFile *target       , 
 		       RdbMap  *targetMap    ,

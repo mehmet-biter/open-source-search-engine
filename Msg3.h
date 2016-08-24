@@ -5,8 +5,9 @@
 
 #ifndef GB_MSG3_H
 #define GB_MSG3_H
+#include "rdbid_t.h"
 
-class RdbCache *getDiskPageCache ( char rdbId ) ;
+class RdbCache *getDiskPageCache ( rdbid_t rdbId ) ;
 
 // . max # of rdb files an rdb can have w/o merging
 // . merge your files to keep the number of them low to cut down # of seeks
@@ -47,7 +48,7 @@ class Msg3 {
 	//   m_msg3.m_endKey and m_msg3.m_constrainKey. This is just used
 	//   by Msg5.cpp to constrain the endKey so it can read the recs
 	//   from the tree using that endKey, and not waste time.
-	bool readList  ( char           rdbId         ,
+	bool readList  ( rdbid_t           rdbId,
 			 collnum_t collnum ,
 			 const char       *startKey      ,
 			 const char       *endKey        ,
@@ -105,7 +106,7 @@ private:
 	static void doneSleepingWrapper3(int fd, void *state);
 
 	// the rdb we're scanning for
-	char  m_rdbId;
+	rdbid_t  m_rdbId;
 	collnum_t m_collnum;
 
 	bool m_validateCache;
