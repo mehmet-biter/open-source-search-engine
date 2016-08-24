@@ -142,7 +142,6 @@ class Conf {
 
 	// statdb
 	int32_t m_statsdbMaxTreeMem;
-	int32_t m_statsdbMaxCacheMem;
 	bool m_useStatsdb;
 
 	// are we doing a command line thing like 'gb 0 dump s ....' in

@@ -130,7 +130,6 @@ bool Statsdb::init ( ) {
 	//   after compression depending on the state of the
 	//   all errors arrays.
 	uint32_t maxTreeNodes  = maxTreeMem / nodeSize;
-	uint32_t maxCacheNodes = g_conf.m_statsdbMaxCacheMem / nodeSize;
 
 	// assume low niceness
 	m_niceness = 0;
