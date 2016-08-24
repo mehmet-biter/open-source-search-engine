@@ -59,7 +59,7 @@ public:
 	bool doneReadingForVerify();
 
 	// called when we've finished writing an RdbList to the file
-	bool doneDumpingList(bool addToMap);
+	bool doneDumpingList();
 
 	char *getFirstKeyInQueue() { return m_firstKeyInQueue; }
 
@@ -93,7 +93,6 @@ public:
 	int32_t m_verifyBufSize;
 	int32_t m_bytesToWrite;
 	int32_t m_bytesWritten;
-	char m_addToMap;
 
 	char m_firstKeyInQueue[MAX_KEY_BYTES];
 	char *m_lastKeyInQueue;

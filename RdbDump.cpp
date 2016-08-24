@@ -49,7 +49,6 @@ bool RdbDump::set(collnum_t collnum,
 	m_tried         = false;
 	m_isSuspended   = false;
 	m_ks            = keySize;
-	m_addToMap      = true;
 
 	// reset this in case we run out of mem, it doesn't get set properly
 	// and needs to be NULL for RdbMem's call to getLastKeyinQueue()
@@ -578,7 +577,7 @@ bool RdbDump::dumpList(RdbList *list, int32_t niceness, bool recall) {
 	// make sure we have enough mem to add to map after a successful
 	// dump up here, otherwise, if we write it and fail to add to map
 	// the map is not in sync if we core thereafter
-	if (m_addToMap && m_map && !m_map->prealloc(m_list)) {
+	if (m_map && !m_map->prealloc(m_list)) {
 		log(LOG_ERROR, "db: Failed to prealloc list into map: %s.", mstrerror(g_errno));
 
 		// g_errno should be set to something if that failed
@@ -618,12 +617,12 @@ bool RdbDump::dumpList(RdbList *list, int32_t niceness, bool recall) {
 	// . delete list from tree, incorporate list into cache, add to map
 	// . returns false if blocked, true otherwise, sets g_errno on error
 	// . will only block in calling updateTfndb()
-	return doneDumpingList(true);
+	return doneDumpingList();
 }
 
 // . delete list from tree, incorporate list into cache, add to map
 // . returns false if blocked, true otherwise, sets g_errno on error
-bool RdbDump::doneDumpingList(bool addToMap) {
+bool RdbDump::doneDumpingList() {
 	logTrace(g_conf.m_logTraceRdbDump, "BEGIN");
 
 	// . if error was EFILECLOSE (file got closed before we wrote to it)
@@ -647,9 +646,6 @@ bool RdbDump::doneDumpingList(bool addToMap) {
 			return rc;
 		}
 	}
-
-	// save for verify routine
-	m_addToMap = addToMap;
 
 	// should we verify what we wrote? useful for preventing disk
 	// corruption from those pesky Western Digitals and Maxtors?
@@ -735,10 +731,8 @@ bool RdbDump::doneReadingForVerify ( ) {
 	// time dump to disk (and tfndb bins)
 	int64_t t;
 
-	// start timing on first call only
-	if (m_addToMap) {
-		t = gettimeofdayInMilliseconds();
-	}
+	// start timing
+	t = gettimeofdayInMilliseconds();
 
 	// sanity check
 	if (m_list->m_ks != m_ks) {
@@ -755,7 +749,7 @@ tryAgain:
 	// . add the list to the rdb map if we have one
 	// . we don't have maps when we do unordered dumps
 	// . careful, map is NULL if we're doing unordered dump
-	if (m_addToMap && m_map && !m_map->addList(m_list)) {
+	if (m_map && !m_map->addList(m_list)) {
 		// keys  out of order in list from tree?
 		if (g_errno == ECORRUPTDATA) {
 			logError("m_map->addList resulted in ECORRUPTDATA");
@@ -896,7 +890,7 @@ void doneWritingWrapper(void *state) {
 	}
 		
 	// delete list from tree, incorporate list into cache, add to map
-	if (!THIS->doneDumpingList(true)) {
+	if (!THIS->doneDumpingList()) {
 		return;
 	}
 
