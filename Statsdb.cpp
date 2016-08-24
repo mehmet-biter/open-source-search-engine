@@ -180,9 +180,7 @@ bool Statsdb::init ( ) {
 			    true			, // balance tree?
 			    false			, // use half keys?
 			    false			, // is titledb?
-			    false			,
 			    sizeof(key96_t)		, // key size
-			    false, // bias disk page cache?
 			    true ) ) // is collectionless?
 		return false;
 

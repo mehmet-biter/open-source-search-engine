@@ -534,7 +534,6 @@ bool Spiderdb::init ( ) {
 			    true                        , // balance tree?
 			    false                       , // half keys?
 			    false                       ,
-			    false                       ,
 			    sizeof(key128_t)            );
 }
 
@@ -557,7 +556,6 @@ bool Spiderdb::init2 ( int32_t treeMem ) {
 			    true          , // balance tree?
 			    false         , // half keys?
 			    false         , // isTitledb?
-			    false         , // preload diskpagecache
 			    sizeof(key128_t));
 }
 

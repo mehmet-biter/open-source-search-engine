@@ -148,9 +148,7 @@ bool Linkdb::init ( ) {
 			    true     , //isTreeBalanced
 			    false, // true     , // use half keys
 			    false    , // false
-			    false    , // preload page cache
-			    sizeof(key224_t) ,
-			    true             ); // bias page cache? (true!)
+			    sizeof(key224_t) );
 }
 
 // init the rebuild/secondary rdb, used by PageRepair.cpp
@@ -171,9 +169,7 @@ bool Linkdb::init2 ( int32_t treeMem ) {
 			    true          , // balance tree?
 			    false, // true          , // half keys?
 			    false         , // is titledb
-			    false         , // preload disk page cache
-			    sizeof(key224_t), // key size
-			    true          );// bias disk page cache
+			    sizeof(key224_t)); // key size
 }
 
 bool Linkdb::verify ( char *coll ) {

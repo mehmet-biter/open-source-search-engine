@@ -101,9 +101,7 @@ bool Rdb::init ( const char     *dir                  ,
 		  bool           isTreeBalanced       ,
 		  bool           useHalfKeys          ,
 		  bool           isTitledb            ,
-		  bool           preloadDiskPageCache ,
 		  char           keySize              ,
-		  bool           biasDiskPageCache    ,
 		 bool            isCollectionLess,
 		 bool			useIndexFile ) {
 	// reset all
@@ -127,8 +125,6 @@ bool Rdb::init ( const char     *dir                  ,
 	m_useHalfKeys      = useHalfKeys;
 	//m_pc               = pc;
 	m_isTitledb        = isTitledb;
-	m_preloadCache     = preloadDiskPageCache;
-	m_biasDiskPageCache = biasDiskPageCache;
 	m_ks               = keySize;
 	m_inDumpLoop       = false;
 

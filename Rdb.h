@@ -78,9 +78,7 @@ public:
 		    bool   isTreeBalanced  ,
 		    bool   useHalfKeys     ,
 		    bool   isTitledb    = false , // use fileIds2[]?
-		    bool   preloadDiskPageCache = false ,
 		    char   keySize = 12    ,
-		    bool   biasDiskPageCache    = false ,
 		    bool   isCollectionLess = false,
 		    bool	useIndexFile = false );
 	// . frees up all the memory and closes all files
@@ -302,8 +300,6 @@ public:
 	BigFile   m_saveFile; // for saving the tree
 	bool      m_isClosing; 
 	bool      m_isClosed;
-	bool      m_preloadCache;
-	bool      m_biasDiskPageCache;
 
 	// this callback called when close is complete
 	void     *m_closeState; 

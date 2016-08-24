@@ -1074,9 +1074,7 @@ bool Tagdb::init ( ) {
 			    true                        , // balance tree?
 			    false                      , // half keys?
 			    false,  // is titledb
-			    true ,  // preload disk page cache
-			    sizeof(key128_t),     // key size
-			    true ); // bias disk page cache?
+			    sizeof(key128_t));     // key size
 }
 
 bool Tagdb::verify ( const char *coll ) {

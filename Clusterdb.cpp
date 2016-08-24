@@ -25,7 +25,6 @@ bool Clusterdb::init ( ) {
 	// . 28 bytes per record when in the tree
 	int32_t maxTreeNodes  = maxTreeMem / ( 16 + CLUSTER_REC_SIZE );
 
-	bool bias = false;
 	// initialize our own internal rdb
 	return m_rdb.init ( g_hostdb.m_dir  ,
 			    "clusterdb"   ,
@@ -38,9 +37,7 @@ bool Clusterdb::init ( ) {
 			    true          , //false         , // balance tree?
 			    true          , // half keys?
 			    false,  // is titledb
-			    true ,  // preload disk page cache
-			    12,     // key size
-			    bias ); // bias disk page cache?
+			    12);     // key size
 }
 
 // init the rebuild/secondary rdb, used by PageRepair.cpp
@@ -60,9 +57,7 @@ bool Clusterdb::init2 ( int32_t treeMem ) {
 			    true          , // balance tree?
 			    true          , // half keys?
 			    false         ,  // is titledb
-			    false         ,  // preload disk page cache
-			    12            ,     // key size
-			    true          ); // bias disk page cache
+			    12            );     // key size
 }
 
 bool Clusterdb::verify ( char *coll ) {

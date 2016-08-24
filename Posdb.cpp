@@ -144,9 +144,7 @@ bool Posdb::init ( ) {
                         true                        , // balance tree?
                         true                        , // use half keys?
 			            false , // istitledb?
-			            false , // preloaddiskpagecache?
 			            sizeof(key144_t),
-			            false,
 			            false,
 						true);
 }
@@ -178,9 +176,7 @@ bool Posdb::init2 ( int32_t treeMem ) {
 			    true                        , // balance tree?
 			    true                        , // use half keys?
 			    false ,
-			    false ,
-			    sizeof(key144_t),
-			true );
+			    sizeof(key144_t));
 }
 
 
