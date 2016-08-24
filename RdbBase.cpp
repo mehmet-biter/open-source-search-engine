@@ -2571,3 +2571,4 @@ int32_t RdbBase::getFilePos(uint64_t docId) const {
 	logError("Unable to find docId=%lu in global index", docId);
 	gbshutdownLogicError();
 }
+
