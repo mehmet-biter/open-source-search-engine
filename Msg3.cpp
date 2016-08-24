@@ -482,7 +482,6 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 	//m_endKey.n0 |= 0x01LL;
 	// . now start reading/scanning the files
 	// . our m_scans array starts at 0
-	bool anyAsyncScans = false;
 	for ( int32_t i = 0 ; i < m_numFileNums ; i++ ) {
 		// get the page range
 		//int32_t p1 = m_startpg [ i ];
@@ -700,7 +699,6 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		                                startKey2, endKey2, m_ks, &m_lists[i], this, doneScanningWrapper,
 		                                base->useHalfKeys(), m_rdbId, m_niceness, m_allowPageCache, m_hitDisk ) ;
 
-		anyAsyncScans = anyAsyncScans || !done;
 						// debug msg
 		//fprintf(stderr,"Msg3:: reading %" PRId32" bytes from file #%" PRId32","
 		//	"done=%" PRId32",offset=%" PRId64",g_errno=%s,"
@@ -730,11 +728,10 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 	{
 		ScopedLock sl(m_mtxScanCounters);
 		m_scansBeingSubmitted = false;
-		//note: there is a weak race condition in this logic.
+		
+		if(m_numScansStarted!=m_numScansCompleted)
+			return false; //not completed yet
 	}
-
-	if(anyAsyncScans)
-		return false; //not completed yet
 
 	// . if all scans completed without blocking then wrap it up & ret true
 	// . doneScanning may now block if it finds data corruption and must
