@@ -883,8 +883,7 @@ bool Rdb::loadTree ( ) {
 
 	// set a BigFile to this filename
 	BigFile file;
-	char *dir = getDir();
-	file.set ( dir , filename , NULL ); // g_conf.m_stripeDir );
+	file.set ( getDir(), filename , NULL ); // g_conf.m_stripeDir );
 	bool treeExists = file.doesExist();
 	bool status = false ;
 	if ( treeExists ) {

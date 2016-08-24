@@ -1900,7 +1900,7 @@ int64_t RdbBuckets::getListSize ( collnum_t collnum,
 // . we'll open it here
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
-bool RdbBuckets::fastSave ( char *dir, bool useThread, void *state, void (* callback) (void *state) ) {
+bool RdbBuckets::fastSave ( const char *dir, bool useThread, void *state, void (* callback) (void *state) ) {
 	if ( g_conf.m_readOnlyMode ) return true;
 
 	// we do not need a save

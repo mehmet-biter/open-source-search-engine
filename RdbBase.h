@@ -74,7 +74,7 @@ class RdbBase {
 		    RdbTree             *tree    ,
 		    RdbBuckets          *buckets ,
 		    RdbDump             *dump    ,
-		    class Rdb           *rdb    ,
+		    Rdb           *rdb    ,
 		    bool                 isTitledb = false , // use fileIds2[]?
 		    bool				useIndexFile = false );
 

@@ -193,7 +193,7 @@ class RdbBuckets {
 
 
 	//Save/Load/Dump
-	bool      fastSave      ( char    *dir       ,
+	bool      fastSave      ( const char    *dir       ,
 				  bool     useThread ,
 				  void    *state     ,
 				  void    (*callback) (void *state) );
@@ -234,7 +234,7 @@ class RdbBuckets {
 	bool    m_isSaving;
 	// true if buckets was modified and needs to be saved
 	bool    m_needsSave;
-	char   *m_dir;
+	const char   *m_dir;
 	void   *m_state; 
 	void  (*m_callback) (void *state);
 	int32_t    m_saveErrno;
