@@ -63,7 +63,7 @@ public:
 	bool isSuspended() const { return m_isSuspended; }
 	bool isDumping() const { return m_dump.isDumping(); }
 
-	rdbid_t getRdbId() const { return m_rdbId; };
+	rdbid_t getRdbId() const { return m_rdbId; }
 
 	// suspend the merging until resumeMerge() is called
 	void suspendMerge();
