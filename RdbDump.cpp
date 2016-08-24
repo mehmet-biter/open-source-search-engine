@@ -230,7 +230,7 @@ void RdbDump::doneDumping() {
 }
 
 static void tryAgainWrapper2 ( int fd , void *state ) ;
-void        tryAgainWrapper2 ( int fd , void *state ) {
+void tryAgainWrapper2 ( int fd , void *state ) {
 	// debug msg
 	log(LOG_INFO,"db: Trying to get data again.");
 	// stop waiting
@@ -255,18 +255,18 @@ void        tryAgainWrapper2 ( int fd , void *state ) {
 // . if a cache was provided we incorporate the list into the cache before
 //   deleting it from the tree to keep the cache in sync. NO we do NOT!
 // . called again by writeBuf() when it's done writing the whole list
-bool RdbDump::dumpTree ( bool recall ) {
-	if( g_conf.m_logTraceRdbDump ) {
-		logTrace( g_conf.m_logTraceRdbDump, "BEGIN" );
-		logTrace( g_conf.m_logTraceRdbDump, "recall.: %s", recall ? "true" : "false" );
+bool RdbDump::dumpTree(bool recall) {
+	if (g_conf.m_logTraceRdbDump) {
+		logTrace(g_conf.m_logTraceRdbDump, "BEGIN");
+		logTrace(g_conf.m_logTraceRdbDump, "recall.: %s", recall ? "true" : "false");
 
 		const char *s = "none";
-		if ( m_rdb ) {
-			s = getDbnameFromId( m_rdb->m_rdbId );
-			logTrace( g_conf.m_logTraceRdbDump, "m_rdbId: %02x", m_rdb->m_rdbId );
+		if (m_rdb) {
+			s = getDbnameFromId(m_rdb->m_rdbId);
+			logTrace(g_conf.m_logTraceRdbDump, "m_rdbId: %02x", m_rdb->m_rdbId);
 		}
 
-		logTrace( g_conf.m_logTraceRdbDump, "name...: [%s]", s );
+		logTrace(g_conf.m_logTraceRdbDump, "name...: [%s]", s);
 	}
 
 	// set up some vars
@@ -290,187 +290,165 @@ bool RdbDump::dumpTree ( bool recall ) {
 	// this list will hold the list of nodes/recs from m_tree
 	m_list = &m_ourList;
 
-	// getMemOccupiedForList2() can take some time, so breathe
-	int32_t niceness = 1;
-
- loop:
-	// if the lastKey was the max end key last time then we're done
-	if ( m_rolledOver ) {
-		logTrace( g_conf.m_logTraceRdbDump, "END - m_rolledOver, returning true" );
-		return true;
-	}
-
-	// this is set to -1 when we're done with our unordered dump
-	if ( m_nextNode == -1 ) {
-		logTrace( g_conf.m_logTraceRdbDump, "END - m_nextNode, returning true" );
-		return true;
-	}
-
-	// . NOTE: list's buffer space should be re-used!! (TODO)
-	// . "lastNode" is set to the last node # in the list
-	bool status = true;
-
-	if (!recall) {
-		m_t1 = gettimeofdayInMilliseconds();
-		if(m_tree) {
-			logTrace( g_conf.m_logTraceRdbDump, "m_tree" );
-
-			status = m_tree->getList ( m_collnum       ,
-			                           m_nextKey     ,
-			                           maxEndKey     ,
-			                           m_maxBufSize  , // max recSizes
-			                           m_list        ,
-			                           &m_numPosRecs   ,
-			                           &m_numNegRecs   ,
-			                           m_useHalfKeys ,
-			                           niceness );
-		}
-		else if(m_buckets) {
-			logTrace( g_conf.m_logTraceRdbDump, "m_buckets" );
-
-			status = m_buckets->getList ( m_collnum,
-			                              m_nextKey     ,
-			                              maxEndKey     ,
-			                              m_maxBufSize  , // max recSizes
-			                              m_list        ,
-			                              &m_numPosRecs   ,
-			                              &m_numNegRecs   ,
-			                              m_useHalfKeys );
-		}
-
-		logTrace( g_conf.m_logTraceRdbDump, "status: %s", status ? "true" : "false" );
-
-		// don't dump out any neg recs if it is our first time dumping
-		// to a file for this rdb/coll. TODO: implement this later.
-		//if ( removeNegRecs )
-		//	m_list.removeNegRecs();
-
-		// if(!m_list->checkList_r ( false , // removeNegRecs?
-		// 			 false , // sleep on problem?
-		// 			 m_rdb->m_rdbId )) {
-		// 	log("db: list to dump is not sane!");
-		// 	g_process.shutdownAbort(true);
-		// }
-	}
-
-	int64_t t2;
-	char *lastKey;
-
-	// if error getting list (out of memory?)
-	if (!status) {
-		goto hadError;
-	}
-
-	t2 = gettimeofdayInMilliseconds();
-	log(LOG_INFO, "db: Get list took %" PRId64" ms. %" PRId32" positive. %" PRId32" negative.",
-	    t2 - m_t1, m_numPosRecs, m_numNegRecs);
-
-	// keep a total count for reporting when done
-	m_totalPosDumped += m_numPosRecs;
-	m_totalNegDumped += m_numNegRecs;
-
-	// . check the list we got from the tree for problems
-	// . ensures keys are ordered from lowest to highest as well
-	if (g_conf.m_verifyWrites || g_conf.m_verifyDumpedLists) {
-		const char *s = "none";
-		if (m_rdb) {
-			s = getDbnameFromId(m_rdb->m_rdbId);
-		}
-
-		const char *ks1 = "";
-		const char *ks2 = "";
-		char tmp1[32];
-		char tmp2[32];
-
-		if (m_firstKeyInQueue) {
-			strcpy(tmp1, KEYSTR(m_firstKeyInQueue, m_list->m_ks));
-			ks1 = tmp1;
-		}
-
-		if (m_lastKeyInQueue) {
-			strcpy(tmp2, KEYSTR(m_lastKeyInQueue, m_list->m_ks));
-			ks2 = tmp2;
-		}
-
-		log(LOG_INFO, "dump: verifying list before dumping (rdb=%s collnum=%i k1=%s k2=%s)",s, (int)m_collnum,ks1,ks2);
-		m_list->checkList_r(false, false, m_rdb->m_rdbId);
-	}
-
-	// if list is empty, we're done!
-	if (status && m_list->isEmpty()) {
-		// consider that a rollover?
-		if (m_rdb->m_rdbId == RDB_STATSDB) {
-			m_rolledOver = true;
-		}
-		return true;
-	}
-
-	// get the last key of the list
-	lastKey = m_list->getLastKey();
-	// advance m_nextKey
-	KEYSET(m_nextKey,lastKey,m_ks);
-	KEYINC(m_nextKey,m_ks);
-	if (KEYCMP(m_nextKey, lastKey, m_ks) < 0) {
-		m_rolledOver = true;
-	}
-
-	// . return true on error, g_errno should have been set
-	// . this is probably out of memory error
-
-	if (!status) {
-hadError:
-		logError("db: Had error getting data for dump: %s. Retrying.", mstrerror(g_errno));
-
-		// retry for the remaining two types of errors
-		if (!g_loop.registerSleepCallback(1000, this, tryAgainWrapper2)) {
-			log(LOG_WARN, "db: Retry failed. Could not register callback.");
-
-			logTrace( g_conf.m_logTraceRdbDump, "END - retry failed, returning true" );
+	for (;;) {
+		// if the lastKey was the max end key last time then we're done
+		if (m_rolledOver) {
+			logTrace(g_conf.m_logTraceRdbDump, "END - m_rolledOver, returning true");
 			return true;
 		}
 
-		logTrace( g_conf.m_logTraceRdbDump, "END - returning false" );
+		// this is set to -1 when we're done with our unordered dump
+		if (m_nextNode == -1) {
+			logTrace(g_conf.m_logTraceRdbDump, "END - m_nextNode, returning true");
+			return true;
+		}
 
-		// wait for sleep
-		return false;
+		// . NOTE: list's buffer space should be re-used!! (TODO)
+		// . "lastNode" is set to the last node # in the list
+
+		if (!recall) {
+			bool status = true;
+
+			m_t1 = gettimeofdayInMilliseconds();
+			if (m_tree) {
+				logTrace(g_conf.m_logTraceRdbDump, "m_tree");
+
+				// getMemOccupiedForList2() can take some time, so breathe (niceness 1)
+				status = m_tree->getList(m_collnum, m_nextKey, maxEndKey, m_maxBufSize, m_list,
+				                         &m_numPosRecs, &m_numNegRecs, m_useHalfKeys, 1);
+			} else if (m_buckets) {
+				logTrace(g_conf.m_logTraceRdbDump, "m_buckets");
+
+				status = m_buckets->getList(m_collnum, m_nextKey, maxEndKey, m_maxBufSize, m_list,
+				                            &m_numPosRecs, &m_numNegRecs, m_useHalfKeys);
+			}
+
+			logTrace(g_conf.m_logTraceRdbDump, "status: %s", status ? "true" : "false");
+
+			// if error getting list (out of memory?)
+			if (!status) {
+				logError("db: Had error getting data for dump: %s. Retrying.", mstrerror(g_errno));
+
+				// retry for the remaining two types of errors
+				if (!g_loop.registerSleepCallback(1000, this, tryAgainWrapper2)) {
+					log(LOG_WARN, "db: Retry failed. Could not register callback.");
+
+					logTrace(g_conf.m_logTraceRdbDump, "END - retry failed, returning true");
+					return true;
+				}
+
+				logTrace(g_conf.m_logTraceRdbDump, "END - returning false");
+
+				// wait for sleep
+				return false;
+			}
+
+			// don't dump out any neg recs if it is our first time dumping
+			// to a file for this rdb/coll. TODO: implement this later.
+			//if ( removeNegRecs )
+			//	m_list.removeNegRecs();
+
+			// if(!m_list->checkList_r ( false , // removeNegRecs?
+			// 			 false , // sleep on problem?
+			// 			 m_rdb->m_rdbId )) {
+			// 	log("db: list to dump is not sane!");
+			// 	g_process.shutdownAbort(true);
+			// }
+		}
+
+		int64_t t2 = gettimeofdayInMilliseconds();
+
+		log(LOG_INFO, "db: Get list took %" PRId64" ms. %" PRId32" positive. %" PRId32" negative.",
+		    t2 - m_t1, m_numPosRecs, m_numNegRecs);
+
+		// keep a total count for reporting when done
+		m_totalPosDumped += m_numPosRecs;
+		m_totalNegDumped += m_numNegRecs;
+
+		// . check the list we got from the tree for problems
+		// . ensures keys are ordered from lowest to highest as well
+		if (g_conf.m_verifyWrites || g_conf.m_verifyDumpedLists) {
+			const char *s = "none";
+			if (m_rdb) {
+				s = getDbnameFromId(m_rdb->m_rdbId);
+			}
+
+			const char *ks1 = "";
+			const char *ks2 = "";
+			char tmp1[32];
+			char tmp2[32];
+
+			if (m_firstKeyInQueue) {
+				strcpy(tmp1, KEYSTR(m_firstKeyInQueue, m_list->m_ks));
+				ks1 = tmp1;
+			}
+
+			if (m_lastKeyInQueue) {
+				strcpy(tmp2, KEYSTR(m_lastKeyInQueue, m_list->m_ks));
+				ks2 = tmp2;
+			}
+
+			log(LOG_INFO, "dump: verifying list before dumping (rdb=%s collnum=%i k1=%s k2=%s)", s, (int)m_collnum, ks1,
+			    ks2);
+			m_list->checkList_r(false, false, m_rdb->m_rdbId);
+		}
+
+		// if list is empty, we're done!
+		if (m_list->isEmpty()) {
+			// consider that a rollover?
+			if (m_rdb->m_rdbId == RDB_STATSDB) {
+				m_rolledOver = true;
+			}
+			return true;
+		}
+
+		// get the last key of the list
+		char *lastKey = m_list->getLastKey();
+		// advance m_nextKey
+		KEYSET(m_nextKey, lastKey, m_ks);
+		KEYINC(m_nextKey, m_ks);
+		if (KEYCMP(m_nextKey, lastKey, m_ks) < 0) {
+			m_rolledOver = true;
+		}
+
+		// if list is empty, we're done!
+		if (m_list->isEmpty()) {
+			logTrace(g_conf.m_logTraceRdbDump, "END - list empty, returning true");
+			return true;
+		}
+
+		// . set m_firstKeyInQueue and m_lastKeyInQueue
+		// . this doesn't work if you're doing an unordered dump, but we should
+		//   not allow adds when closing
+		m_lastKeyInQueue = m_list->getLastKey();
+
+		// ensure we are getting the first key of the list
+		m_list->resetListPtr();
+
+		//m_firstKeyInQueue = m_list->getCurrentKey();
+		m_list->getCurrentKey(m_firstKeyInQueue);
+
+		// . write this list to disk
+		// . returns false if blocked, true otherwise
+		// . sets g_errno on error
+
+		// . if this blocks it should call us (dumpTree() back)
+		if (!dumpList(m_list, m_niceness, false)) {
+			logTrace(g_conf.m_logTraceRdbDump, "END - after dumpList, returning false");
+			return false;
+		}
+
+		// close up shop on a write/dumpList error
+		if (g_errno) {
+			logTrace(g_conf.m_logTraceRdbDump, "END - g_errno set [%"
+					PRId32
+					"], returning true", g_errno);
+			return true;
+		}
+
+		// . if dumpList() did not block then keep on truckin'
+		// . otherwise, wait for callback of dumpTree()
 	}
-
-	// if list is empty, we're done!
-	if (m_list->isEmpty()) {
-		logTrace( g_conf.m_logTraceRdbDump, "END - list empty, returning true" );
-		return true;
-	}
-
-	// . set m_firstKeyInQueue and m_lastKeyInQueue
-	// . this doesn't work if you're doing an unordered dump, but we should
-	//   not allow adds when closing
-	m_lastKeyInQueue = m_list->getLastKey();
-	
-	// ensure we are getting the first key of the list
-	m_list->resetListPtr();
-	
-	//m_firstKeyInQueue = m_list->getCurrentKey();
-	m_list->getCurrentKey(m_firstKeyInQueue);
-
-	// . write this list to disk
-	// . returns false if blocked, true otherwise
-	// . sets g_errno on error
-
-	// . if this blocks it should call us (dumpTree() back)
-	if (!dumpList(m_list, m_niceness, false)) {
-		logTrace(g_conf.m_logTraceRdbDump, "END - after dumpList, returning false");
-		return false;
-	}
-
-	// close up shop on a write/dumpList error
-	if (g_errno) {
-		logTrace( g_conf.m_logTraceRdbDump, "END - g_errno set [%" PRId32"], returning true", g_errno );
-		return true;
-	}
-
-	// . if dumpList() did not block then keep on truckin'
-	// . otherwise, wait for callback of dumpTree()
-	goto loop;
 }
 
 static void doneWritingWrapper(void *state);
