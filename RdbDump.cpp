@@ -13,7 +13,6 @@ bool RdbDump::set(collnum_t collnum,
                   RdbBuckets *buckets, // optional buckets to dump
                   RdbTree *tree, // optional tree to dump
                   RdbMap *map,
-                  RdbCache *cache,
                   int32_t maxBufSize,
                   bool dedup, // 4 RdbCache::incorporateList()
                   int32_t niceness,
@@ -44,7 +43,6 @@ bool RdbDump::set(collnum_t collnum,
 	m_buckets       = buckets;
 	m_tree          = tree;
 	m_map           = map;
-	m_cache         = cache;
 	m_dedup         = dedup;
 	m_state         = state;
 	m_callback      = callback;

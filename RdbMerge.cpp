@@ -164,7 +164,6 @@ bool RdbMerge::gotLock ( ) {
 		     NULL         , // buckets to dump is NULL, we call dumpList
 		     NULL         , // tree to dump is NULL, we call dumpList
 		     m_targetMap  ,
-		     NULL         , // for caching dumped tree
 		     0            , // m_maxBufSize. not needed if no tree!
 		     m_dedup      ,
 		     m_niceness   , // niceness of dump

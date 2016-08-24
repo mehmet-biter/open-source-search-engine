@@ -15,7 +15,6 @@
 
 class Rdb;
 class RdbBuckets;
-class RdbCache;
 class RdbMap;
 class RdbTree;
 
@@ -35,7 +34,6 @@ public:
 	         RdbBuckets *buckets, // optional buckets to dump
 	         RdbTree *tree, // optional tree to dump
 	         RdbMap *map,
-	         RdbCache *cache, // for caching dumped tree
 	         int32_t maxBufSize,
 	         bool dedup, // for merging tree into cache
 	         int32_t niceness,
@@ -81,7 +79,6 @@ public:
 	RdbTree *m_tree;
 	RdbBuckets *m_buckets;
 	RdbMap *m_map;
-	RdbCache *m_cache;
 	int32_t m_maxBufSize;
 	bool m_dedup; // used for merging/adding tree to cache
 	void *m_state;
