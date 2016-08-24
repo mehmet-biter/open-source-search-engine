@@ -1257,7 +1257,7 @@ bool SpiderColl::addToWaitingTree ( uint64_t spiderTimeMS, int32_t firstIp, bool
 		log("spider: growing waiting tree to from %" PRId32" to %" PRId32" nodes "
 		    "for collnum %" PRId32,
 		    max , newNum , (int32_t)m_collnum );
-		if ( ! m_waitingTree.growTree ( newNum , MAX_NICENESS ) ) {
+		if (!m_waitingTree.growTree(newNum)) {
 			log(LOG_WARN, "spider: failed to grow waiting tree to add firstip %s", iptoa(firstIp));
 			return false;
 		}

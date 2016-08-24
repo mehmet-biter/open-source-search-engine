@@ -231,8 +231,7 @@ class RdbTree {
 	int32_t getMemOccupiedForList2 ( collnum_t collnum  ,
 				      const char     *startKey,
 				      const char     *endKey  ,
-				      int32_t      minRecSizes ,
-				      int32_t      niceness ) ;
+				      int32_t      minRecSizes) ;
 
 	//  how much mem the tree would take if it were made into a list
 	int32_t getMemOccupiedForList ( );
@@ -255,10 +254,7 @@ class RdbTree {
 		       RdbList *list        ,
 		       int32_t    *numPosRecs  ,
 		       int32_t    *numNegRecs ,   // = NULL 
-		       bool     useHalfKeys ,  // = false 
-		       // RdbDump calls with niceness 1 since 
-		       // getMemOccupiedForList2() takes some time!
-		       int32_t     niceness = 0 );
+		       bool     useHalfKeys);
 
 	bool getList ( collnum_t collnum    ,
 		       const key_t    &startKey    ,
@@ -373,9 +369,9 @@ class RdbTree {
 	int32_t getTreeDepth  ();
 
 	// . returns true if tree doesn't need to grow/shrink
-        // . re-allocs the m_keys,m_data,m_sizes,m_leftNodes,m_rightNodes
+	// . re-allocs the m_keys,m_data,m_sizes,m_leftNodes,m_rightNodes
 	// . used for growing AND shrinking the table
-        bool  growTree  ( int32_t newNumNodes , int32_t niceness );
+	bool growTree(int32_t newNumNodes);
 
 	// are we responsible for freeing nodes' data
 	bool    m_ownData;

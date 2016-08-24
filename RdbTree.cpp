@@ -115,7 +115,7 @@ bool RdbTree::set ( int32_t fixedDataSize ,
 	// initiate protection
 	if ( m_useProtection ) protect();
 	// allocate the nodes
-	return growTree ( maxNumNodes , 0 );
+	return growTree(maxNumNodes);
 }
 
 void RdbTree::reset ( ) {
@@ -1237,9 +1237,6 @@ bool RdbTree::checkTree2 ( bool printMsgs , bool doChainTest ) {
 
 	// now check parent kid correlations
 	for ( int32_t i = 0 ; i < m_minUnusedNode ; i++ ) {
-		// this thing blocks for 1.5 secs for indexdb
-		// so do some quick polls!
-		QUICKPOLL(MAX_NICENESS);
 		// skip node if parents is -2 (unoccupied)
 		if ( m_parents[i] == -2 ) continue;
 		// all half key bits must be off in here
@@ -1339,7 +1336,6 @@ bool RdbTree::checkTree2 ( bool printMsgs , bool doChainTest ) {
 				return false;
 			}
 		}
-		//g_loop.quickPoll(1, __PRETTY_FUNCTION__, __LINE__);
 	}
 
 	if ( hkp > 0 ) {
@@ -1356,9 +1352,6 @@ bool RdbTree::checkTree2 ( bool printMsgs , bool doChainTest ) {
 	int32_t           max  = g_collectiondb.m_numRecs;
 	// verify that parent links correspond to kids
 	for ( int32_t i = 0 ; i < m_minUnusedNode ; i++ ) {
-		// this thing blocks for 1.5 secs for indexdb
-		// so do some quick polls!
-		QUICKPOLL(MAX_NICENESS);
 		// verify collnum
 		collnum_t cn = m_collnums[i];
 		if ( cn < 0 ) {
@@ -1391,7 +1384,6 @@ bool RdbTree::checkTree2 ( bool printMsgs , bool doChainTest ) {
 			return false;
 		}
 
-		//g_loop.quickPoll(1, __PRETTY_FUNCTION__, __LINE__);
 		// speedy tests continue
 		if ( ! doChainTest ) continue;
 		// ensure i goes back to head node
@@ -1440,7 +1432,7 @@ bool RdbTree::checkTree2 ( bool printMsgs , bool doChainTest ) {
 
 // . grow tree to "n" nodes
 // . this will now actually grow from a current size to a new one
-bool RdbTree::growTree ( int32_t nn , int32_t niceness ) {
+bool RdbTree::growTree(int32_t nn) {
 	// if we're that size, bail
 	if ( m_numNodes == nn ) return true;
 
@@ -1469,27 +1461,26 @@ bool RdbTree::growTree ( int32_t nn , int32_t niceness ) {
 	if ( ! cp ) {
 		goto error;
 	}
-	QUICKPOLL(niceness);
+
 	kp = (char  *) mrealloc ( m_keys    , on*k , nn*k , m_allocName );
 	if ( ! kp ) {
 		goto error;
 	}
-	QUICKPOLL(niceness);
+
 	lp = (int32_t  *) mrealloc ( m_left    , on*4 , nn*4 , m_allocName );
 	if ( ! lp ) {
 		goto error;
 	}
-	QUICKPOLL(niceness);
+
 	rp = (int32_t  *) mrealloc ( m_right   , on*4 , nn*4 , m_allocName );
 	if ( ! rp ) {
 		goto error;
 	}
-	QUICKPOLL(niceness);
+
 	pp = (int32_t  *) mrealloc ( m_parents , on*4 , nn*4 , m_allocName );
 	if ( ! pp ) {
 		goto error;
 	}
-	QUICKPOLL(niceness);
 
 	// deal with data, sizes and depth arrays on a basis of need
 	if ( m_fixedDataSize !=  0 ) {
@@ -1497,21 +1488,18 @@ bool RdbTree::growTree ( int32_t nn , int32_t niceness ) {
 		if ( ! dp ) {
 			goto error;
 		}
-		QUICKPOLL(niceness);
 	}
 	if ( m_fixedDataSize == -1 ) {
 		sp =(int32_t  *)mrealloc (m_sizes , on*4,nn*4,m_allocName);
 		if ( ! sp ) {
 			goto error;
 		}
-		QUICKPOLL(niceness);
 	}
 	if ( m_doBalancing         ) {
 		tp =(char  *)mrealloc (m_depth , on  ,nn  ,m_allocName);
 		if ( ! tp ) {
 			goto error;
 		}
-		QUICKPOLL(niceness);
 	}
 
 	// re-assign
@@ -1540,7 +1528,6 @@ bool RdbTree::growTree ( int32_t nn , int32_t niceness ) {
 
 	// protect it from writes
 	if ( m_useProtection ) protect ( );
-	QUICKPOLL(niceness);
 	return true;
 
  error:
@@ -1555,49 +1542,41 @@ bool RdbTree::growTree ( int32_t nn , int32_t niceness ) {
 		ss = (collnum_t *)mrealloc ( cp , nn*cs , on*cs , m_allocName);
 		if ( ! ss ) { g_process.shutdownAbort(true); }
 		m_collnums = ss;
-		QUICKPOLL(niceness);
 	}
 	if ( kp ) {
 		kk = (char *)mrealloc ( kp, nn*k, on*k, m_allocName );
 		if ( ! kk ) { g_process.shutdownAbort(true); }
 		m_keys = kk;
-		QUICKPOLL(niceness);
 	}
 	if ( lp ) {
 		x = (int32_t *)mrealloc ( lp , nn*4 , on*4 , m_allocName );
 		if ( ! x ) { g_process.shutdownAbort(true); }
 		m_left = x;
-		QUICKPOLL(niceness);
 	}
 	if ( rp ) {
 		x = (int32_t *)mrealloc ( rp , nn*4 , on*4 , m_allocName );
 		if ( ! x ) { g_process.shutdownAbort(true); }
 		m_right = x;
-		QUICKPOLL(niceness);
 	}
 	if ( pp ) {
 		x = (int32_t *)mrealloc ( pp , nn*4 , on*4 , m_allocName );
 		if ( ! x ) { g_process.shutdownAbort(true); }
 		m_parents = x;
-		QUICKPOLL(niceness);
 	}
 	if ( dp && m_fixedDataSize != 0 ) {
 		p = (char **)mrealloc ( dp , nn*d , on*d , m_allocName );
 		if ( ! p ) { g_process.shutdownAbort(true); }
 		m_data = p;
-		QUICKPOLL(niceness);
 	}
 	if ( sp && m_fixedDataSize == -1 ) {
 		x = (int32_t *)mrealloc ( sp , nn*4 , on*4 , m_allocName );
 		if ( ! x ) { g_process.shutdownAbort(true); }
 		m_sizes = x;
-		QUICKPOLL(niceness);
 	}
 	if ( tp && m_doBalancing ) {
 		s = (char *)mrealloc ( tp , nn   , on   , m_allocName );
 		if ( ! s ) { g_process.shutdownAbort(true); }
 		m_depth = s;
-		QUICKPOLL(niceness);
 	}
 
 	log( LOG_ERROR, "db: Failed to grow tree for %s from %" PRId32" to %" PRId32" bytes: %s.",
@@ -1641,15 +1620,11 @@ void RdbTree::gbmprotect ( void *p , int32_t size , int prot ) {
 int32_t RdbTree::getMemOccupiedForList2 ( collnum_t collnum  ,
 				       const char      *startKey,
 				       const char      *endKey  ,
-				       int32_t      minRecSizes ,
-				       int32_t      niceness ) {
+				       int32_t      minRecSizes) {
 	int32_t ne = 0;
 	int32_t size = 0;
 	int32_t i = getNextNode ( collnum , startKey ) ;
 	while ( i  >= 0 ) {
-		// breathe now... crap what if niceness 0 add to this tree?
-		// can that happen?
-		QUICKPOLL(niceness);
 		// break out if we should
 		//if ( m_keys    [i]  > endKey  ) break;
 		if ( KEYCMP(m_keys,i,endKey,0,m_ks) > 0 ) break;
@@ -1703,8 +1678,7 @@ int32_t RdbTree::getMemOccupiedForList ( ) {
 bool RdbTree::getList ( collnum_t collnum ,
 			const char *startKey, const char *endKey, int32_t minRecSizes,
 			RdbList *list , int32_t *numPosRecs , int32_t *numNegRecs ,
-			bool useHalfKeys ,
-			int32_t niceness ) {
+			bool useHalfKeys) {
 	// reset the counts of positive and negative recs
 	int32_t numNeg = 0;
 	int32_t numPos = 0;
@@ -1768,8 +1742,7 @@ bool RdbTree::getList ( collnum_t collnum ,
 	//   list then we should call this as well... as in Msg22.cpp's
 	//   call to msg5::getList for tfndb.
 	if ( m_fixedDataSize < 0 || minRecSizes >= 256*1024 ) //== 0x7fffffff )
-		growth = getMemOccupiedForList2 ( collnum, startKey, endKey,
-						  minRecSizes , niceness );
+		growth = getMemOccupiedForList2 ( collnum, startKey, endKey, minRecSizes );
 
 	// don't grow more than we need to
 	//if ( minRecSizes < growth ) {
@@ -1809,11 +1782,7 @@ bool RdbTree::getList ( collnum_t collnum ,
 
 	// stop when we've hit or just exceed minRecSizes
 	// or we're out of nodes
-	for ( ; node >= 0 && list->getListSize() < minRecSizes ;
-	      node = getNextNode ( node ) ) {
-		// breathe when getting big lists for dumping
-		// hopefully niceness 0 stuff will not add to this tree!
-		QUICKPOLL(niceness);
+	for ( ; node >= 0 && list->getListSize() < minRecSizes ; node = getNextNode ( node ) ) {
 		// stop before exceeding endKey
 		//if ( m_keys [ node ] > endKey ) break;
 		if ( KEYCMP (m_keys,node,endKey,0,m_ks) > 0 ) break;
@@ -2829,7 +2798,7 @@ bool RdbTree::fastLoad ( BigFile *f , RdbMem *stack ) {
 	// make room if we don't have any
 	if ( m_numNodes < minUnusedNode ) {
 		log( LOG_INIT, "db: Growing tree to make room for %s", f->getFilename() );
-		if ( ! growTree ( minUnusedNode , 0 ) ) {
+		if (!growTree(minUnusedNode)) {
 			f->close();
 			m_isLoading = false;
 			log( LOG_ERROR, "db: Failed to grow tree" );
@@ -3131,7 +3100,6 @@ void RdbTree::setNumKeys ( CollectionRec *cr ) {
 
 
 	for ( int32_t i = 0 ; i < m_numNodes ; i++ ) {
-		//QUICKPOLL(niceness);
 		// skip if empty
 		if ( m_parents[i] == -2 ) continue;
 		// or if we hit a different collection number
