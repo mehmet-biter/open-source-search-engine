@@ -41,7 +41,7 @@ bool RdbMerge::merge(rdbid_t rdbId,
 	}
 
 	m_collnum = collnum;
-	if (rdb->m_isCollectionLess) {
+	if (rdb->isCollectionless()) {
 		m_collnum = 0;
 	}
 

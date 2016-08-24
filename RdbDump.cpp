@@ -25,13 +25,13 @@ bool RdbDump::set(collnum_t collnum,
 	m_collnum = collnum;
 
 	// use 0 for collectionless
-	if (rdb && rdb->m_isCollectionLess) {
+	if (rdb && rdb->isCollectionless()) {
 		m_collnum = 0;
 	}
 
 	// are we like catdb/statsdb etc.?
 	m_doCollCheck = true;
-	if ( rdb && rdb->m_isCollectionLess ) m_doCollCheck = false;
+	if ( rdb && rdb->isCollectionless() ) m_doCollCheck = false;
 	// RdbMerge also calls us but rdb is always set to NULL and it was
 	// causing a merge on catdb (collectionless) to screw up
 	if ( ! rdb ) m_doCollCheck = false;
@@ -135,7 +135,7 @@ bool RdbDump::set(collnum_t collnum,
 	// a flag that doesn't do that... see RdbDump.cpp.
 	// this was in Rdb.cpp but when threads were turned off it was
 	// NEVER getting set and resulted in corruption in RdbMem.cpp.
-	m_rdb->m_inDumpLoop = true;
+	m_rdb->setInDumpLoop(true);
 
 	// . start dumping the tree
 	// . return false if it blocked
@@ -201,7 +201,7 @@ void RdbDump::doneDumping() {
 	// now try to merge this collection/db again
 	// if not already in the linked list. but do not add to linked list
 	// if it is statsdb or catdb.
-	if (m_rdb && !m_rdb->m_isCollectionLess) {
+	if (m_rdb && !m_rdb->isCollectionless()) {
 		addCollnumToLinkedListOfMergeCandidates(m_collnum);
 	}
 
@@ -259,8 +259,8 @@ bool RdbDump::dumpTree(bool recall) {
 
 		const char *s = "none";
 		if (m_rdb) {
-			s = getDbnameFromId(m_rdb->m_rdbId);
-			logTrace(g_conf.m_logTraceRdbDump, "m_rdbId: %02x", m_rdb->m_rdbId);
+			s = getDbnameFromId(m_rdb->getRdbId());
+			logTrace(g_conf.m_logTraceRdbDump, "m_rdbId: %02x", m_rdb->getRdbId());
 		}
 
 		logTrace(g_conf.m_logTraceRdbDump, "name...: [%s]", s);
@@ -275,7 +275,7 @@ bool RdbDump::dumpTree(bool recall) {
 	// because it may have a query that took 10 seconds come in then it
 	// needs to add a partial stat to the last 10 stats for those 10 secs.
 	// we use Global time at this juncture
-	if (m_rdb->m_rdbId == RDB_STATSDB) {
+	if (m_rdb->getRdbId() == RDB_STATSDB) {
 		int32_t nowSecs = getTimeGlobal();
 		StatKey *sk = (StatKey *)maxEndKey;
 		sk->m_zero = 0x01;
@@ -366,7 +366,7 @@ bool RdbDump::dumpTree(bool recall) {
 		if (g_conf.m_verifyWrites || g_conf.m_verifyDumpedLists) {
 			const char *s = "none";
 			if (m_rdb) {
-				s = getDbnameFromId(m_rdb->m_rdbId);
+				s = getDbnameFromId(m_rdb->getRdbId());
 			}
 
 			const char *ks1 = "";
@@ -386,13 +386,13 @@ bool RdbDump::dumpTree(bool recall) {
 
 			log(LOG_INFO, "dump: verifying list before dumping (rdb=%s collnum=%i k1=%s k2=%s)", s, (int)m_collnum, ks1,
 			    ks2);
-			m_list->checkList_r(false, false, m_rdb->m_rdbId);
+			m_list->checkList_r(false, false, m_rdb->getRdbId());
 		}
 
 		// if list is empty, we're done!
 		if (m_list->isEmpty()) {
 			// consider that a rollover?
-			if (m_rdb->m_rdbId == RDB_STATSDB) {
+			if (m_rdb->getRdbId() == RDB_STATSDB) {
 				m_rolledOver = true;
 			}
 			return true;
@@ -500,7 +500,7 @@ bool RdbDump::dumpList(RdbList *list, int32_t niceness, bool recall) {
 
 		if (g_conf.m_verifyWrites) {
 			char rdbId = 0;
-			if (m_rdb) rdbId = m_rdb->m_rdbId;
+			if (m_rdb) rdbId = m_rdb->getRdbId();
 			m_list->checkList_r(false, false, rdbId);//RDB_POSDB);
 			m_list->resetListPtr();
 		}

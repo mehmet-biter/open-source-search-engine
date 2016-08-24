@@ -88,7 +88,7 @@ bool Msg5::getTreeList(RdbList *result,
 		*memUsedByTree = tree->getMemOccupiedForList();
 		*numUsedNodes = tree->getNumUsedNodes();
 	} else {
-		RdbBuckets *buckets = &base->m_rdb->m_buckets;
+		RdbBuckets *buckets = base->m_rdb->getBuckets();
 		if(!buckets->getList(base->m_collnum,
 				     static_cast<const char*>(startKey),
 				     static_cast<const char*>(endKey),
@@ -426,10 +426,9 @@ bool Msg5::readList ( ) {
 					if ( rs < minrs ) rs = minrs;
 				}
 				else {
-					RdbBuckets *buckets = &base->m_rdb->m_buckets;
+					RdbBuckets *buckets = base->m_rdb->getBuckets();
 
-					rs = buckets->getNumKeys() /
-						buckets->getMemOccupied();
+					rs = buckets->getNumKeys() / buckets->getMemOccupied();
 					int32_t minrs = buckets->getRecSize() + 4;
 					// ensure a minimal record size
 					if ( rs < minrs ) rs = minrs;

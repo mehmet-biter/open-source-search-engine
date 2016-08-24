@@ -55,6 +55,8 @@ void attemptMergeAllCallback ( int fd , void *state ) ;
 void attemptMergeAll ( );
 
 class Rdb {
+	friend int injectFile ( const char *filename , char *ips , const char *coll ); /// @todo ALC remove this when method is fixed
+
 public:
 
 	 Rdb ( );
@@ -136,7 +138,15 @@ public:
 	char getKeySize() const { return m_ks; }
 	int32_t getPageSize() const { return m_pageSize; }
 
-	RdbTree    *getTree    ( ) { if(!m_useTree) return NULL; return &m_tree; }
+	RdbTree *getTree() {
+		if (!m_useTree) return NULL;
+		return &m_tree;
+	}
+
+	RdbBuckets* getBuckets() {
+		if (m_useTree) return NULL;
+		return &m_buckets;
+	}
 
 	RdbMem     *getRdbMem  ( ) { return &m_mem; }
 	bool       useTree() const { return m_useTree;}
@@ -146,10 +156,12 @@ public:
 	int32_t       getTreeMemOccupied() const;
 	int32_t       getTreeMemAlloced() const;
 	int32_t       getNumNegativeKeys() const;
-	
-	void disableWrites ();
-	void enableWrites  ();
-	bool isWritable ( ) ;
+
+	void disableWrites();
+	void enableWrites();
+	bool isWritable() const;
+
+	void cleanTree();
 
 	RdbBase *getBase ( collnum_t collnum ) ;
 	int32_t getNumBases ( ) { 	return g_collectiondb.m_numRecs; }
@@ -219,8 +231,17 @@ public:
 	// used by main.cpp to periodically save us if we haven't dumped
 	// in a while
 	int64_t getLastWriteTime() const { return m_lastWrite; }
-	
-	// private:
+
+	rdbid_t getRdbId() const { return m_rdbId; }
+	const char* getDbname() const { return m_dbname; }
+
+	bool isCollectionless() const { return m_isCollectionLess; }
+	bool isInDumpLoop() const { return m_inDumpLoop; }
+	void setInDumpLoop(bool inDumpLoop) {
+		m_inDumpLoop = inDumpLoop;
+	}
+
+	bool inAddList() const { return m_inAddList; }
 
 	// . you'll lose your data in this class if you call this
 	void reset();
@@ -255,6 +276,12 @@ public:
 
 	// these are used for computing load on a machine
 	bool isMerging() const;
+	void incrementNumMerges() {
+		++m_numMergesOut;
+	}
+	void decrementNumMerges() {
+		--m_numMergesOut;
+	}
 	bool isDumping() const { return m_dump.isDumping(); }
 
 	// PageRepair.cpp calls this when it is done rebuilding an rdb
@@ -262,6 +289,12 @@ public:
 	// rebuilt files, pointed to by rdb2.
 	bool updateToRebuildFiles ( Rdb *rdb2 , char *coll ) ;
 
+	static void doneSavingWrapper(void *state);
+	static void closeSleepWrapper(int fd, void *state);
+
+	static void doneDumpingCollWrapper(void *state);
+
+private:
 	int32_t      m_fixedDataSize;
 
 	char      m_dbname [32];
@@ -362,7 +395,6 @@ public:
 
 	rdbid_t m_rdbId;
 
-private:
 	char m_ks; // key size
 	int32_t m_pageSize;
 

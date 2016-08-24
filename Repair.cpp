@@ -515,14 +515,14 @@ void Repair::initScan ( ) {
 		if ( ! g_titledb2.init2    ( titledbMem    ) ) goto hadError;
 		// clean tree in case loaded from saved file
 		Rdb *r = g_titledb2.getRdb();
-		if ( r ) r->m_tree.cleanTree();
+		if ( r ) r->cleanTree();
 	}
 
 	if ( m_rebuildPosdb ) {
 		if ( ! g_posdb2.init2    ( posdbMem    ) ) goto hadError;
 		// clean tree in case loaded from saved file
 		Rdb *r = g_posdb2.getRdb();
-		if ( r ) r->m_buckets.cleanBuckets();
+		if ( r ) r->cleanTree();
 	}
 
 	if ( m_rebuildClusterdb )
@@ -1826,7 +1826,7 @@ bool Repair::printRepairStatus ( SafeBuf *sb , int32_t fromIp ) {
 			 "<tr bgcolor=#%s><td><b>%s2 recs</b></td>"
 			 "<td>%" PRId64"</td></tr>\n" ,
 			 bg,
-			 rdb->m_dbname,
+			 rdb->getDbname(),
 			 rdb->getNumTotalRecs());
 	}
 

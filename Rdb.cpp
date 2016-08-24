@@ -606,10 +606,6 @@ bool Rdb::delColl ( const char *coll ) {
 	return true;
 }
 
-static void doneSavingWrapper   ( void *state );
-
-static void closeSleepWrapper ( int fd , void *state );
-
 // . returns false if blocked true otherwise
 // . sets g_errno on error
 // . CAUTION: only set urgent to true if we got a SIGSEGV or SIGPWR...
@@ -734,7 +730,7 @@ bool Rdb::close ( void *state , void (* callback)(void *state ), bool urgent , b
 	return true;
 }
 
-void closeSleepWrapper ( int fd , void *state ) {
+void Rdb::closeSleepWrapper ( int fd , void *state ) {
 	Rdb *THIS = (Rdb *)state;
 	// sanity check
 	if ( ! THIS->m_isClosing ) { g_process.shutdownAbort(true); }
@@ -746,7 +742,7 @@ void closeSleepWrapper ( int fd , void *state ) {
 	THIS->m_closeCallback ( THIS->m_closeState );
 }
 
-void doneSavingWrapper ( void *state ) {
+void Rdb::doneSavingWrapper ( void *state ) {
 	Rdb *THIS = (Rdb *)state;
 	THIS->doneSaving();
 	// . call the callback if any
@@ -946,20 +942,13 @@ bool Rdb::loadTree ( ) {
 
 static time_t s_lastTryTime = 0;
 
-static void doneDumpingCollWrapper ( void *state ) ;
-
 // . start dumping the tree
 // . returns false and sets g_errno on error
 bool Rdb::dumpTree ( int32_t niceness ) {
 	logTrace( g_conf.m_logTraceRdb, "BEGIN %s", m_dbname );
 
-	if ( m_useTree ) {
-		if (m_tree.getNumUsedNodes() <= 0 ) {
-			logTrace( g_conf.m_logTraceRdb, "END. %s: No used tree nodes. Returning true", m_dbname );
-			return true;
-		}
-	} else if (m_buckets.getNumKeys() <= 0 ) {
-		logTrace( g_conf.m_logTraceRdb, "END. %s: No bucket keys. Returning true", m_dbname );
+	if (getNumUsedNodes() <= 0) {
+		logTrace( g_conf.m_logTraceRdb, "END. %s: No used nodes/keys. Returning true", m_dbname );
 		return true;
 	}
 
@@ -979,13 +968,8 @@ bool Rdb::dumpTree ( int32_t niceness ) {
 	// . if tree is saving do not dump it, that removes things from tree
 	// . i think this caused a problem messing of RdbMem before when
 	//   both happened at once
-	if ( m_useTree ) {
-		if( m_tree.isSaving() ) {
-			logTrace( g_conf.m_logTraceRdb, "END. %s: Rdb tree is saving. Returning true", m_dbname );
-			return true;
-		}
-	} else if( m_buckets.isSaving() ) {
-		logTrace( g_conf.m_logTraceRdb, "END. %s: Rdb bucket is saving. Returning true", m_dbname );
+	if (isSavingTree()) {
+		logTrace( g_conf.m_logTraceRdb, "END. %s: Rdb tree/bucket is saving. Returning true", m_dbname );
 		return true;
 	}
 
@@ -1247,15 +1231,13 @@ bool Rdb::dumpCollLoop ( ) {
 	    g_collectiondb.getCollName ( m_dumpCollnum ) );
 
 	// what is the avg rec size?
-	int32_t numRecs;
+	int32_t numRecs = getNumUsedNodes();
 	int32_t avgSize;
 
 	if(m_useTree) {
-		numRecs = m_tree.getNumUsedNodes(); 
 		if ( numRecs <= 0 ) numRecs = 1;
 		avgSize = m_tree.getMemOccupiedForList() / numRecs;
 	} else {
-		numRecs = m_buckets.getNumKeys();
 		avgSize = m_buckets.getRecSize();
 	}
 
@@ -1360,7 +1342,7 @@ void removeFromMergeLinkedList ( CollectionRec *cr ) {
 	if ( s_mergeHead == cr ) s_mergeHead = next;
 }
 
-void doneDumpingCollWrapper ( void *state ) {
+void Rdb::doneDumpingCollWrapper ( void *state ) {
 	Rdb *THIS = (Rdb *)state;
 
 	// we just finished dumping to a file, 
@@ -1818,17 +1800,9 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 	// them all at once as well. so since SpiderRequests are added to
 	// spiderdb and then alter the waiting tree, this statement should
 	// protect us.
-	if ( m_useTree ) {
-		if(! m_tree.isWritable() ) {
-			g_errno = ETRYAGAIN; 
-			return false;
-		}
-	}
-	else {
-		if( ! m_buckets.isWritable() ) { 
-			g_errno = ETRYAGAIN;
-			return false;
-		}
+	if (!isWritable()) {
+		g_errno = ETRYAGAIN;
+		return false;
 	}
 
 	// bail if we're closing
@@ -2153,13 +2127,7 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 	if ( m_tree.isSaving() ) ss = " Tree is saving.";
 	if ( !m_useTree && m_buckets.isSaving() ) ss = " Buckets are saving.";
 
-	// return ETRYAGAIN if out of memory, this should tell
-	// addList to call the dump routine
-	//if ( g_errno == ENOMEM ) g_errno = ETRYAGAIN;
-	// log the error
-	//g_errno = EBADENGINEER;
-
-	log(LOG_INFO,"db: Had error adding data to %s: %s.%s", m_dbname,mstrerror(g_errno),ss);
+	log(LOG_INFO, "db: Had error adding data to %s: %s. %s", m_dbname, mstrerror(g_errno), ss);
 	return false;
 
 	// if we flubbed then free the data, if any
@@ -2359,7 +2327,7 @@ rdbid_t getIdFromRdb ( Rdb *rdb ) {
 	if ( rdb == g_clusterdb2.getRdb () ) return RDB2_CLUSTERDB2;
 	if ( rdb == g_linkdb2.getRdb    () ) return RDB2_LINKDB2;
 
-	log(LOG_LOGIC,"db: getIdFromRdb: no rdbId for %s.",rdb->m_dbname);
+	log(LOG_LOGIC,"db: getIdFromRdb: no rdbId for %s.",rdb->getDbname());
 	return RDB_NONE;
 }
 
@@ -2461,7 +2429,7 @@ int32_t getDataSizeFromRdbId ( uint8_t rdbId ) {
 // get the dbname
 const char *getDbnameFromId ( uint8_t rdbId ) {
         Rdb *rdb = getRdbFromId ( rdbId );
-	if ( rdb ) return rdb->m_dbname;
+	if ( rdb ) return rdb->getDbname();
 	log(LOG_LOGIC,"db: rdbId of %" PRId32" is invalid.",(int32_t)rdbId);
 	return "INVALID";
 }
@@ -2475,7 +2443,7 @@ RdbBase *getRdbBase(rdbid_t rdbId, const char *coll) {
 	}
 	// catdb is a special case
 	collnum_t collnum ;
-	if ( rdb->m_isCollectionLess )
+	if ( rdb->isCollectionless() )
 		collnum = (collnum_t) 0;
 	else    
 		collnum = g_collectiondb.getCollnum ( coll );
@@ -2495,7 +2463,7 @@ RdbBase *getRdbBase(rdbid_t rdbId, collnum_t collnum) {
 		log("db: Collection #%" PRId32" does not exist.",(int32_t)collnum);
 		return NULL;
 	}
-	if ( rdb->m_isCollectionLess ) collnum = (collnum_t) 0;
+	if ( rdb->isCollectionless() ) collnum = (collnum_t) 0;
 	return rdb->getBase(collnum);
 }
 
@@ -2566,15 +2534,19 @@ void Rdb::enableWrites  () {
 	else m_buckets.enableWrites();
 }
 
-bool Rdb::isWritable ( ) {
+bool Rdb::isWritable ( ) const {
 	if(m_useTree) return m_tree.isWritable();
 	return m_buckets.isWritable();
 }
 
-
 bool Rdb::needsSave() const {
 	if(m_useTree) return m_tree.needsSave();
 	else return m_buckets.needsSave();
+}
+
+void Rdb::cleanTree() {
+	if(m_useTree) return m_tree.cleanTree();
+	else return m_buckets.cleanBuckets();
 }
 
 // if we are doledb, we are a tree-only rdb, so try to reclaim

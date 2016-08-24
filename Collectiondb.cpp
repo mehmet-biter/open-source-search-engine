@@ -161,10 +161,10 @@ bool Collectiondb::loadAllCollRecs ( ) {
 // our rdb trees
 bool Collectiondb::cleanTrees() {
 	// remove any nodes with illegal collnums
-	g_posdb.getRdb()->m_buckets.cleanBuckets();
-	g_titledb.getRdb()->m_tree.cleanTree();
-	g_spiderdb.getRdb()->m_tree.cleanTree();
-	g_doledb.getRdb()->m_tree.cleanTree();
+	g_posdb.getRdb()->cleanTree();
+	g_titledb.getRdb()->cleanTree();
+	g_spiderdb.getRdb()->cleanTree();
+	g_doledb.getRdb()->cleanTree();
 
 	// success
 	return true;

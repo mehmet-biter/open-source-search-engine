@@ -633,7 +633,7 @@ static void addedList(UdpSlot *slot, Rdb *rdb) {
 	// "doledb bad collnum of 30110"
 	// so just absorb those
 	if ( g_errno == ENOCOLLREC ) {
-		log(LOG_WARN, "msg1: missing collrec to add to to %s. just dropping.", rdb->m_dbname);
+		log(LOG_WARN, "msg1: missing collrec to add to to %s. just dropping.", rdb->getDbname());
 		g_errno = 0;
 	}
 

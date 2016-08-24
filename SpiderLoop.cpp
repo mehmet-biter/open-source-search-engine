@@ -1411,9 +1411,7 @@ bool SpiderLoop::spiderUrl9 ( SpiderRequest *sreq ,
 	m_processed++;
 
 	// now we just take it out of doledb instantly
-	int32_t node = g_doledb.m_rdb.m_tree.deleteNode(m_collnum,
-							(char *)m_doledbKey,
-							true);
+	int32_t node = g_doledb.m_rdb.getTree()->deleteNode(m_collnum, (char *)m_doledbKey, true);
 
 	if ( g_conf.m_logDebugSpider )
 		log("spider: deleting doledb tree node %" PRId32,node);

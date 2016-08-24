@@ -89,7 +89,7 @@ void *RdbMem::dupData(const char *key, const char *data, int32_t dataSize, colln
 void *RdbMem::allocData(const char *key, int32_t dataSize, collnum_t collnum) {
 	// if we're dumping and key has been dumped, use the secondary mem
 	//if ( m_dump->isDumping() && key < m_dump->getLastKeyInQueue() ) {
-	if ( m_rdb->m_inDumpLoop ) {
+	if ( m_rdb->isInDumpLoop() ) {
 		/////
 		// MDW: 3/15/2016
 		// if we're dumping then ALWAYS use secondary mem, wtf...
@@ -173,7 +173,7 @@ void RdbMem::freeDumpedMem( RdbTree *tree ) {
 	log("rdbmem: start freeing dumped mem");
 
 	// this should still be true so allocData() returns m_ptr2 ptrs
-	if(!m_rdb->m_inDumpLoop) g_process.shutdownAbort(true);
+	if(!m_rdb->isInDumpLoop()) g_process.shutdownAbort(true);
 
 	// count how many data nodes we had to move to avoid corruption
 	int32_t count = 0;
@@ -253,7 +253,7 @@ void RdbMem::freeDumpedMem( RdbTree *tree ) {
 	}
 	if(count>0)
 		log("rdbmem: moved %i tree nodes for %s",(int)count,
-			m_rdb->m_dbname);
+			m_rdb->getDbname());
 		
 	log("rdbmem: stop freeing dumped mem. scanned %i nodes.",(int)scanned);
 

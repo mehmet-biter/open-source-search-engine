@@ -310,7 +310,7 @@ bool Process::init ( ) {
 bool Process::isAnyTreeSaving ( ) {
 	for ( int32_t i = 0 ; i < m_numRdbs ; i++ ) {
 		Rdb *rdb = m_rdbs[i];
-		if ( rdb->m_isCollectionLess ) continue;
+		if ( rdb->isCollectionless() ) continue;
 		if ( rdb->isSavingTree() ) return true;
 		// we also just disable writing below in Process.cpp
 		// while saving other files. so hafta check that as well
@@ -873,7 +873,7 @@ void Process::disableTreeWrites ( bool shuttingDown ) {
 		// if we save doledb while spidering it screws us up
 		// because Spider.cpp can not directly write into the
 		// rdb tree and it expects that to always be available!
-		if ( ! shuttingDown && rdb->m_rdbId == RDB_DOLEDB )
+		if ( ! shuttingDown && rdb->getRdbId() == RDB_DOLEDB )
 			continue;
 		rdb->disableWrites();
 	}
@@ -916,7 +916,7 @@ bool Process::isRdbDumping ( ) {
 	// loop over all Rdbs and save them
 	for ( int32_t i = 0 ; i < m_numRdbs ; i++ ) {
 		Rdb *rdb = m_rdbs[i];
-		if ( rdb->m_dump.isDumping() ) return true;
+		if ( rdb->isDumping() ) return true;
 	}
 	return false;
 }
@@ -957,15 +957,15 @@ bool Process::saveRdbTrees ( bool useThread , bool shuttingDown ) {
 		// if we save doledb while spidering it screws us up
 		// because Spider.cpp can not directly write into the
 		// rdb tree and it expects that to always be available!
-		if ( ! shuttingDown && rdb->m_rdbId == RDB_DOLEDB ) {
+		if ( ! shuttingDown && rdb->getRdbId() == RDB_DOLEDB ) {
 			continue;
 		}
 
 		// note it
-		if ( ! rdb->m_dbname[0] ) {
-			log( "gb: calling save tree for rdbid %i", ( int ) rdb->m_rdbId );
+		if ( rdb->getDbname() ) {
+			log( "gb: calling save tree for %s", rdb->getDbname() );
 		} else {
-			log( "gb: calling save tree for %s", rdb->m_dbname );
+			log( "gb: calling save tree for rdbid %i", ( int ) rdb->getRdbId() );
 		}
 
 		rdb->saveTree(useThread);

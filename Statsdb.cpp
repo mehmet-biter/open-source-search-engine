@@ -205,12 +205,12 @@ void flushStatsWrapper ( int fd , void *state ) {
 
 	// force a statsdb tree dump if running out of room
 	Rdb     *rdb  = &g_statsdb.m_rdb;
-	RdbTree *tree = &rdb->m_tree;
+	RdbTree *tree = rdb->getTree();
 	// if we got 20% room left and 50k available mem, do not dump
 	if ( (float)tree->getNumUsedNodes() * 1.2 < 
 	     (float)tree->getNumAvailNodes () &&
 	     //tree->getNumAvailNodes () > 1000 &&
-	     rdb-> m_mem.getAvailMem() > 50000 )
+	     rdb->getRdbMem()->getAvailMem() > 50000 )
 		return;
 
 	if ( ! isClockInSync() ) return;
@@ -308,7 +308,7 @@ bool Statsdb::addStat ( int32_t        niceness ,
 	// . this is kinda a hack and it would be nice to not miss stats!
 	if ( ! isClockInSync() ) return true;
 
-	RdbTree *tree = &m_rdb.m_tree;
+	RdbTree *tree = m_rdb.getTree();
 	// do not add stats to our tree if it is loading
 	if (tree->isLoading()) return true;
 

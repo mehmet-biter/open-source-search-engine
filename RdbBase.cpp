@@ -114,7 +114,7 @@ bool RdbBase::init(char *dir,
 
 	// make a special subdir to store the map and data files in if
 	// the db is not associated with a collection. /statsdb etc.
-	if ( rdb->m_isCollectionLess ) {
+	if ( rdb->isCollectionless() ) {
 		if ( collnum != (collnum_t) 0 ) {
 			log( LOG_ERROR, "db: collnum not zero for catdb.");
 			g_process.shutdownAbort(true);
@@ -153,7 +153,7 @@ bool RdbBase::init(char *dir,
 	if (m_useIndexFile) {
 		char indexName[64];
 		sprintf(indexName, "%s-saved.idx", m_dbname);
-		m_treeIndex.set(m_dir.getDir(), indexName, m_fixedDataSize, m_useHalfKeys, m_ks, m_rdb->m_rdbId);
+		m_treeIndex.set(m_dir.getDir(), indexName, m_fixedDataSize, m_useHalfKeys, m_ks, m_rdb->getRdbId());
 		if (!m_treeIndex.readIndex()) {
 			g_errno = 0;
 			log(LOG_WARN, "db: Could not read index file %s", indexName);
@@ -511,7 +511,7 @@ bool RdbBase::setFiles ( ) {
 	}
 
 	// everyone should start with file 0001.dat or 0000.dat
-	if ( m_numFiles > 0 && m_fileIds[0] > 1 && m_rdb->m_rdbId == RDB_SPIDERDB ) {
+	if ( m_numFiles > 0 && m_fileIds[0] > 1 && m_rdb->getRdbId() == RDB_SPIDERDB ) {
 		log( LOG_WARN, "db: missing file id 0001.dat for %s in coll %s. "
 		    "Fix this or it'll core later. Just rename the next file "
 		    "in line to 0001.dat/map. We probably cored at a "
@@ -788,7 +788,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	if( m_useIndexFile ) {
 		// set the index file's  filename
 		sprintf ( name , "%s%04" PRId32".idx", m_dbname, fileId );
-		in->set ( getDir(), name, m_fixedDataSize, m_useHalfKeys, m_ks, m_rdb->m_rdbId );
+		in->set ( getDir(), name, m_fixedDataSize, m_useHalfKeys, m_ks, m_rdb->getRdbId() );
 		if (!isNew && !in->readIndex()) {
 			// if out of memory, do not try to regen for that
 			if (g_errno == ENOMEM) {
@@ -956,7 +956,7 @@ bool RdbBase::incorporateMerge ( ) {
 
 		// decrement this count
 		if ( m_isMerging ) {
-			m_rdb->m_numMergesOut--;
+			m_rdb->decrementNumMerges();
 		}
 
 		// exit merge mode
@@ -1290,7 +1290,7 @@ void RdbBase::doneWrapper4 ( ) {
 
 	// decrement this count
 	if ( m_isMerging ) {
-		m_rdb->m_numMergesOut--;
+		m_rdb->decrementNumMerges();
 	}
 
 	// exit merge mode
@@ -1406,7 +1406,7 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 	// then do not do the merge, we do not want to overwrite tfndb via
 	// RdbDump::updateTfndbLoop() 
 	rdbid_t rdbId = getIdFromRdb ( m_rdb );
-	if ( rdbId == RDB_TITLEDB && g_titledb.m_rdb.m_dump.isDumping() ) {
+	if ( rdbId == RDB_TITLEDB && g_titledb.m_rdb.isDumping() ) {
 		if ( doLog ) {
 			log( LOG_INFO, "db: Can not merge titledb while it is dumping." );
 		}
@@ -1455,7 +1455,7 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 	CollectionRec *cr = g_collectiondb.m_recs [ m_collnum ];
 	// now see if collection rec is there to override us
 	//if ( ! cr ) {
-	if ( ! cr && ! m_rdb->m_isCollectionLess ) {
+	if ( ! cr && ! m_rdb->isCollectionless() ) {
 		g_errno = 0;
 		log("merge: Could not find coll rec for %s.",m_coll);
 	}
@@ -1587,7 +1587,7 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 		    "(total=%" PRId64") for "
 		    "collnum %" PRId32" on db %s when diskAvail=%" PRId64" bytes",
 		    percentNegativeRecs,totalRecs,(int32_t)m_collnum,
-		    m_rdb->m_dbname,g_process.m_diskAvail);
+		    m_rdb->getDbname(),g_process.m_diskAvail);
 	}
 	// 2. if >40% negative recs force it
 	if ( doNegCheck && 
@@ -1598,7 +1598,7 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 		    "(total=%" PRId64") for "
 		    "collnum %" PRId32" on db %s",
 		    percentNegativeRecs,totalRecs,(int32_t)m_collnum,
-		    m_rdb->m_dbname);
+		    m_rdb->getDbname());
 	}
 
 
@@ -2083,7 +2083,7 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 	// assume we are now officially merging
 	m_isMerging = true;
 
-	m_rdb->m_numMergesOut++;
+	m_rdb->incrementNumMerges();
 
 	// sanity check
 	if ( m_niceness == 0 ) {
@@ -2110,7 +2110,8 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 	// hey, we're no longer merging i guess
 	m_isMerging = false;
 	// decerment this count
-	m_rdb->m_numMergesOut--;
+	m_rdb->decrementNumMerges();
+
 	// . if we have no g_errno that is bad!!!
 	// . we should dump core here or something cuz we have to remove the
 	//   merge file still to be correct
@@ -2365,7 +2366,7 @@ void RdbBase::saveIndexes() {
 
 bool RdbBase::verifyFileSharding ( ) {
 
-	if ( m_rdb->m_isCollectionLess ) return true;
+	if ( m_rdb->isCollectionless() ) return true;
 
 	// if swapping in from CollectionRec::getBase() then do
 	// not re-verify file sharding! only do at startup
@@ -2388,13 +2389,13 @@ bool RdbBase::verifyFileSharding ( ) {
 	KEYMIN(startKey,MAX_KEY_BYTES);
 	KEYMAX(endKey,MAX_KEY_BYTES);
 	int32_t minRecSizes = 64000;
-	char rdbId = m_rdb->m_rdbId;
+	char rdbId = m_rdb->getRdbId();
 	if ( rdbId == RDB_TITLEDB ) minRecSizes = 640000;
 	
 	log ( LOG_DEBUG, "db: Verifying shard parity for %s of %" PRId32" bytes for coll %s (collnum=%" PRId32")...",
 	      m_dbname , minRecSizes, m_coll , (int32_t)m_collnum );
 
-	if ( ! msg5.getList ( m_rdb->m_rdbId, //RDB_POSDB   ,
+	if ( ! msg5.getList ( m_rdb->getRdbId(), //RDB_POSDB   ,
 			      m_collnum       ,
 			      &list         ,
 			      startKey      ,

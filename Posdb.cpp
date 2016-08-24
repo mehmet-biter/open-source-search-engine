@@ -442,13 +442,7 @@ int64_t Posdb::getTermFreq ( collnum_t collnum, int64_t termId ) {
 					    (char *)&maxKey,
 					    oldTrunc );
 
-
-	int64_t numBytes = m_rdb.m_buckets.getListSize(collnum,
-						(char *)&startKey,
-						(char *)&endKey,
-						NULL,NULL);
-
-
+	int64_t numBytes = m_rdb.getBuckets()->getListSize(collnum, (char *)&startKey, (char *)&endKey, NULL, NULL);
 
 	// convert from size in bytes to # of recs
 	maxRecs += numBytes / sizeof(POSDBKEY);
