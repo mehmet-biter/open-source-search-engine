@@ -32,26 +32,11 @@ Rdb::Rdb ( ) {
 	m_collectionlessBase = NULL;
 	m_initialized = false;
 	m_numMergesOut = 0;
-	//memset ( m_bases , 0 , sizeof(RdbBase *) * MAX_COLLS );
 	reset();
 }
 
 void Rdb::reset ( ) {
-	//if ( m_needsSave ) {
-	//	log(LOG_LOGIC,"db: Trying to reset tree without saving.");
-	//	g_process.shutdownAbort(true);
-	//	return;
-	//}
-	/*
-	for ( int32_t i = 0 ; i < m_numBases ; i++ ) {
-		if ( ! m_bases[i] ) continue;
-		mdelete ( m_bases[i] , sizeof(RdbBase) , "Rdb Coll" );
-		delete (m_bases[i]);
-		m_bases[i] = NULL;
-	}
-	m_numBases = 0;
-	*/
-	if ( m_collectionlessBase ) {
+	if (m_collectionlessBase) {
 		RdbBase *base = m_collectionlessBase;
 		mdelete (base, sizeof(RdbBase), "Rdb Coll");
 		delete  (base);
@@ -583,27 +568,16 @@ bool Rdb::deleteColl ( collnum_t collnum , collnum_t newCollnum ) {
 	mdelete (oldBase, sizeof(RdbBase), "Rdb Coll");
 	delete  (oldBase);
 
-	//base->reset( );
-
 	// NULL it out...
 	CollectionRec *oldcr = g_collectiondb.getRec(collnum);
-	//oldcr->m_bases[(unsigned char)m_rdbId] = NULL;
 	oldcr->setBasePtr ( m_rdbId , NULL );
 	char *coll = oldcr->m_coll;
 
 	const char *msg = "deleted";
 
 	// if just resetting recycle base
-	if ( collnum != newCollnum ) {
-		addRdbBase2 ( newCollnum );
-		// make a new base now
-		//RdbBase *newBase = mnew
-		// new cr
-		//CollectionRec *newcr = g_collectiondb.getRec(newCollnum);
-		// update this as well
-		//base->m_collnum = newCollnum;
-		// and the array
-		//newcr->m_bases[(unsigned char)m_rdbId] = base;
+	if (collnum != newCollnum) {
+		addRdbBase2(newCollnum);
 		msg = "moved";
 	}
 
@@ -612,13 +586,6 @@ bool Rdb::deleteColl ( collnum_t collnum , collnum_t newCollnum ) {
 	    "rdb=%s rdbid=%" PRId32" coll=%s collnum=%" PRId32" newcollnum=%" PRId32,
 	    msg,m_dbname,(int32_t)m_rdbId,coll,(int32_t)collnum,
 	    (int32_t)newCollnum);
-
-
-	// new dir. otherwise RdbDump will try to dump out the recs to
-	// the old dir and it will end up coring
-	//char tmp[1024];
-	//sprintf(tmp , "%scoll.%s.%" PRId32,g_hostdb.m_dir,coll,(int32_t)newCollnum );
-	//m_dir.set ( tmp );
 
 	// move the files into trash
 	// nuke it on disk
@@ -644,25 +611,16 @@ bool Rdb::deleteColl ( collnum_t collnum , collnum_t newCollnum ) {
 bool Rdb::delColl ( const char *coll ) {
 	collnum_t collnum = g_collectiondb.getCollnum ( coll );
 	RdbBase *base = getBase ( collnum );
+
 	// ensure its there
-	if ( collnum < (collnum_t)0 || ! base ) { // m_bases [ collnum ] ) {
+	if (collnum < (collnum_t)0 || !base) {
 		g_errno = EBADENGINEER;
 		log(LOG_WARN, "db: %s: Failed to delete collection #%i. Does not exist.", m_dbname,collnum);
 		return false;
 	}
 
 	// move all files to trash and clear the tree/buckets
-	deleteColl ( collnum , collnum );
-
-	// remove these collnums from tree
-	//if(m_useTree) m_tree.delColl    ( collnum );
-	//else          m_buckets.delColl ( collnum );
-	// don't forget to save the tree to disk
-	//m_needsSave = true;
-	// and from cache, just clear everything out
-	//m_cache.clear ( collnum );
-	// decrement m_numBases if we need to
-	//while ( ! m_bases[m_numBases-1] ) m_numBases--;
+	deleteColl(collnum, collnum);
 	return true;
 }
 
@@ -817,52 +775,28 @@ void doneSavingWrapper ( void *state ) {
 void Rdb::doneSaving ( ) {
 	// bail if g_errno was set
 	if ( g_errno ) {
-		log("db: Had error saving %s-saved.dat: %s.",
-		    m_dbname,mstrerror(g_errno));
+		log(LOG_WARN, "db: Had error saving %s-saved.dat: %s.", m_dbname,mstrerror(g_errno));
 		g_errno = 0;
 		//m_needsSave = true;
 		m_isSaving = false;
 		return;
 	}
 
-	// a temp fix
-	//if ( strstr ( m_saveFile.getFilename() , "saved" ) ) {
-	//	m_needsSave = true;
-	//	log("Rdb::doneSaving: %s is already saved!",
-	//	     m_saveFile.getFilename());
-	//	return;
-	//}
-
 	// sanity
 	if ( m_dbname == NULL || m_dbname[0]=='\0' ) {
-		g_process.shutdownAbort(true); }
+		g_process.shutdownAbort(true);
+	}
+
 	// display any error, if any, otherwise prints "Success"
 	logf(LOG_INFO,"db: Successfully saved %s-saved.dat.", m_dbname);
-
-	// i moved the rename to within the thread
-	// create the rdb file name we dumped to: "saving"
-	//char filename[256];
-	//sprintf(filename,"%s-saved.dat",m_dbname);
-	//m_saveFile.rename ( filename );
-
-	// close up
-	//m_saveFile.close();
 
 	// mdw ---> file doesn't save right, seems like it keeps the same length as the old file...
 	// . we're now closed
 	// . keep m_isClosing set to true so no one can add data
 	if ( m_isReallyClosing ) m_isClosed = true;
-	// we're all caught up
-	//if ( ! g_errno ) m_needsSave = false;
-	// . only reset this rdb if m_urgent is false... will free memory
-	// . seems to be a bug in pthreads so we have to do this check now
-	//if ( ! m_urgent && m_isReallyClosing ) reset();
+
 	// call it again now
 	m_isSaving = false;
-	// let's reset our stuff to free the memory!
-	//reset();
-	// continue closing if we were waiting for this dump
-	//if ( m_isClosing ) close ( );
 }
 
 bool Rdb::isSavingTree ( ) {
@@ -947,11 +881,6 @@ bool Rdb::saveMaps () {
 	}
 	return true;
 }
-
-//bool Rdb::saveCache ( bool useThread ) {
-//	if ( m_cache.useDisk() ) m_cache.save ( useThread );//m_dbname );
-//	return true;
-//}
 
 bool Rdb::treeFileExists ( ) {
 	char filename[256];
@@ -1065,13 +994,6 @@ bool Rdb::dumpTree ( int32_t niceness ) {
 		logTrace( g_conf.m_logTraceRdb, "END. %s: Already dumping. Returning true", m_dbname );
 		return true;
 	}
-
-	// don't allow spiderdb and titledb to dump at same time
-	// it seems to cause corruption in rdbmem for some reason
-	// if ( m_rdbId == RDB_SPIDERDB && g_titledb.m_rdb.m_inDumpLoop )
-	//      return true;
-	// if ( m_rdbId == RDB_TITLEDB && g_spiderdb.m_rdb.m_inDumpLoop )
-	//      return true;
 
 	// . if tree is saving do not dump it, that removes things from tree
 	// . i think this caused a problem messing of RdbMem before when
@@ -1343,12 +1265,6 @@ bool Rdb::dumpCollLoop ( ) {
 	    base->getFile(m_fn)->getFilename() ,
 	    g_collectiondb.getCollName ( m_dumpCollnum ) );
 
-	// turn this shit off for now, it's STILL taking forever when dumping
-	// spiderdb -- like 2 secs sometimes!
-	//bufSize = 100*1024;
-	// . when it's getting a list from the tree almost everything is frozen
-	// . like 100ms sometimes, lower down to 25k buf size
-	//int32_t bufSize = 25*1024;
 	// what is the avg rec size?
 	int32_t numRecs;
 	int32_t avgSize;
