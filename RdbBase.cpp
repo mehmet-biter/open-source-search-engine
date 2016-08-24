@@ -1305,31 +1305,30 @@ void RdbBase::renameFile( int32_t currentFileIdx, int32_t newFileId, int32_t new
 	// since it got nuked on disk incorporateMerge();
 	char fbuf[256];
 
-	if ( m_isTitledb ) {
-		sprintf( fbuf, "%s%04" PRId32"-%03" PRId32".dat", m_dbname, newFileId, newFileId2 );
+	if (m_isTitledb) {
+		sprintf(fbuf, "%s%04" PRId32"-%03" PRId32".dat", m_dbname, newFileId, newFileId2);
 	} else {
-		sprintf( fbuf, "%s%04" PRId32".dat", m_dbname, newFileId );
+		sprintf(fbuf, "%s%04" PRId32".dat", m_dbname, newFileId);
 	}
-	log( LOG_INFO, "merge: renaming final merged file %s", fbuf );
-	m_files[ currentFileIdx ]->rename( fbuf );
 
-	m_fileIds[ currentFileIdx ] = newFileId;
-	m_fileIds2[ currentFileIdx ] = newFileId2;
+	log(LOG_INFO, "merge: renaming final merged file %s", fbuf);
+	m_files[currentFileIdx]->rename(fbuf);
+
+	m_fileIds[currentFileIdx] = newFileId;
+	m_fileIds2[currentFileIdx] = newFileId2;
 
 	// we could potentially have a 'regenerated' map file that has already been moved.
 	// eg: merge dies after moving map file, but before moving data files.
 	//     next start up, map file will be regenerated. means we now have both even & odd map files
-	sprintf( fbuf, "%s%04" PRId32".map", m_dbname, newFileId );
-	log( LOG_INFO, "merge: renaming final merged file %s", fbuf );
-	m_maps[ currentFileIdx ]->rename( fbuf, true );
-	
-//@@@ BR: no-merge index begin
-	if( m_useIndexFile ) {
-		sprintf( fbuf, "%s%04" PRId32".idx", m_dbname, newFileId );
-		log( LOG_INFO, "merge: renaming final merged file %s", fbuf );
-		m_indexes[ currentFileIdx ]->rename( fbuf, true );
+	sprintf(fbuf, "%s%04" PRId32".map", m_dbname, newFileId);
+	log(LOG_INFO, "merge: renaming final merged file %s", fbuf);
+	m_maps[currentFileIdx]->rename(fbuf, true);
+
+	if (m_useIndexFile) {
+		sprintf(fbuf, "%s%04" PRId32".idx", m_dbname, newFileId);
+		log(LOG_INFO, "merge: renaming final merged file %s", fbuf);
+		m_indexes[currentFileIdx]->rename(fbuf, true);
 	}
-//@@@ BR: no-merge index end
 }
 
 
@@ -1634,28 +1633,12 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 	}
 	// score it
 	m_waitingForTokenForMerge = true;
-	// log a note
-	//log(0,"RdbBase::attemptMerge: attempting merge for %s",m_dbname );
-	// this merge forced?
-	//m_nextMergeForced = forceMergeAll;
+
 	// remember niceness for calling g_merge.merge()
 	m_niceness = niceness;
-	// debug msg
-	//log (0,"RdbBase::attemptMerge: %s: getting token for merge", m_dbname);
-	// . get token before merging
-	// . returns true and sets g_errno on error
-	// . returns true if we always have the token (just one host in group)
-	// . returns false if blocks (the usual case)
-	// . higher priority requests always supercede lower ones
-	// . ensure we only call this once per dump we need otherwise, 
-	//   gotTokenForMergeWrapper() may be called multiple times
-	// . if a host is always in urgent mode he may starve another host
-	//   whose is too, but his old request has an low priority.
-	//int32_t priority = 0;
+
 	// save this so gotTokenForMerge() can use it
 	m_doLog = doLog;
-	//if ( m_mergeUrgent ) priority = 2;
-	//else                 priority = 0;
 
 	// bitch if we got token because there was an error somewhere
 	if ( g_errno ) {
@@ -1699,8 +1682,7 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 	}
 
 	// or if # threads out is positive
-	if ( m_numThreads > 0 ) 
-	{
+	if ( m_numThreads > 0 ) {
 		logTrace( g_conf.m_logTraceRdbBase, "END, threads already running" );
 		return false;
 	}
@@ -1846,16 +1828,6 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 	}
 
 	minToMerge = m_minToMerge;
-
-
-	// if we are reblancing this coll then keep merges tight so all
-	// the negative recs annihilate with the positive recs to free
-	// up disk space since we could be short on disk space.
-	//if ( g_rebalance.m_isScanning &&
-	//     // if might have moved on if not able to merge because
-	//     // another was merging... so do this anyway...
-	//     g_rebalance.m_collnum == m_collnum )
-	//	minToMerge = 2;
 
 	// look at this merge:
 	// indexdb0003.dat.part1
@@ -2010,23 +1982,10 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 		    ((float)nowLocal-date)/(24*3600.0) ,
 		    (int32_t)m_collnum);
 
-		// . if we are merging the last file, penalize it
-		// . otherwise, we dump little files out and almost always
-		//   merge them into the next file right away, but if we
-		//   merged two in the back instead, our next little dump would
-		//   merge with our previous little dump in no time. so we
-		//   have to look into the future a step...
-		// . count the next to last guy twice
-		//if ( n == 2 && i + n == numFiles && i + n - 2 >= 0 ) 
-		//	total += m_files[i+n-2]->getFileSize();
-
 		// bring back the greedy merge
 		if ( total >= mint ) {
 			continue;
 		}
-
-		//if ( adjratio > minr && mini >= 0 ) continue;
-		//if ( ratio > minr && mini >= 0 ) continue;
 
 		// . don't get TOO lopsided on me now
 		// . allow it for now! this is the true greedy method... no!
@@ -2125,8 +2084,6 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 	m_isMerging = true;
 
 	m_rdb->m_numMergesOut++;
-
-	//char rdbId = getIdFromRdb ( m_rdb );
 
 	// sanity check
 	if ( m_niceness == 0 ) {
