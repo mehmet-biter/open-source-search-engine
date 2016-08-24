@@ -28,28 +28,12 @@
 #define GB_RDBMERGE_H
 
 #include "RdbDump.h"
-#include "RdbIndex.h"
 #include "Msg5.h"
 
-// . we try to read this many bytes at a time then dump to a file
-// . keep it to 5 megs for now
-//#define MERGE_BUF_SIZE (5*1024*1024)
-// . i'm trying to improve query response time
-// . while merging, it seems it is directly proportional to MERGE_BUF_SIZE
-// . we also need to disable bdflush so all the writes don't spew out on
-//   some important reads
-// . i think if we do large reads the kernel commits to it and cancelling
-//   the thread does not really cancel the read, so keep reads small
-//#define MERGE_BUF_SIZE (1000*1000)
-// . now we cancel threads, try a bigger one
-// . Lars's stripe size is 1 meg i believe
-//#define MERGE_BUF_SIZE (4*1024*1024)
-// for debugging tiering, i made this small
-//#define MERGE_BUF_SIZE (1024)
+class RdbIndex;
 
 class RdbMerge {
-
- public:
+public:
 
 	// . selects the files to merge
 	// . uses keyMasks and files from the passed Rdb class
@@ -98,12 +82,7 @@ class RdbMerge {
 
 	int32_t      m_numThreads;
 
-	// private:
-
-	// . used when growing the database
-	// . removes keys that would no longer be stored by us
-	//void filterList    ( RdbList *list ) ;
-
+//private:
 	// . we get the units from the master and the mergees from the units
 	int32_t        m_startFileNum;
 	int32_t        m_numFiles;
@@ -132,7 +111,6 @@ class RdbMerge {
 
 	// for getting the RdbBase class doing the merge
 	rdbid_t   m_rdbId;
-	//char      m_coll [ MAX_COLL_LEN + 1 ];
 	collnum_t m_collnum;
 
 	char      m_ks;
