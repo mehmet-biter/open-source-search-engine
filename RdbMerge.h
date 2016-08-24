@@ -52,67 +52,67 @@ public:
 	           int32_t niceness,
 	           char keySize);
 
-	bool isMerging ( ) { return m_isMerging; }
+	bool isMerging() { return m_isMerging; }
 
 	// suspend the merging until resumeMerge() is called
-	void suspendMerge ( ) ;
+	void suspendMerge();
 
 	// . return false and sets errno on error merging
 	// . returns true if blocked, or completed successfully
-	bool resumeMerge  ( ) ;
+	bool resumeMerge();
 
 	// these must be public so wrappers can call
-	bool dumpList     ( );
-	bool getNextList  ( ) ;
-	bool getAnotherList ( ) ;
-	void doneMerging  ( ) ;
+	bool dumpList();
+	bool getNextList();
+	bool getAnotherList();
+	void doneMerging();
 
-	 RdbMerge() ;
-	~RdbMerge() ;
+	RdbMerge();
+	~RdbMerge();
 	void reset();
 
 	// . called to continue merge initialization after lock is secure
 	// . lock is g_isMergingLock
-	bool gotLock ( ) ;
+	bool gotLock();
 
 	// set to true when m_startKey wraps back to 0
-	bool        m_doneMerging;
+	bool m_doneMerging;
 
 	void doSleep();
 
-	int32_t      m_numThreads;
+	int32_t m_numThreads;
 
 //private:
 	// . we get the units from the master and the mergees from the units
-	int32_t        m_startFileNum;
-	int32_t        m_numFiles;
-	int32_t        m_fixedDataSize;
-	BigFile    *m_target;
-	RdbMap     *m_targetMap;
-	RdbIndex   *m_targetIndex;
+	int32_t m_startFileNum;
+	int32_t m_numFiles;
+	int32_t m_fixedDataSize;
+	BigFile *m_target;
+	RdbMap *m_targetMap;
+	RdbIndex *m_targetIndex;
 
-	char        m_startKey[MAX_KEY_BYTES];
-	char        m_endKey[MAX_KEY_BYTES];
+	char m_startKey[MAX_KEY_BYTES];
+	char m_endKey[MAX_KEY_BYTES];
 
-	bool        m_isMerging;
-	bool        m_isSuspended;
-	bool        m_isReadyToSave;
+	bool m_isMerging;
+	bool m_isSuspended;
+	bool m_isReadyToSave;
 
 	// for writing to target file
-	RdbDump     m_dump;
+	RdbDump m_dump;
 
 	// a Msg5 for getting RdbLists from disk/cache
-	Msg5        m_msg5;
+	Msg5 m_msg5;
 
-	RdbList     m_list;
+	RdbList m_list;
 
-	int32_t        m_niceness;
+	int32_t m_niceness;
 
 	// for getting the RdbBase class doing the merge
-	rdbid_t   m_rdbId;
+	rdbid_t m_rdbId;
 	collnum_t m_collnum;
 
-	char      m_ks;
+	char m_ks;
 };
 
 #endif // GB_RDBMERGE_H
