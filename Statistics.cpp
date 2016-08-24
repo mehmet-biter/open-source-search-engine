@@ -262,7 +262,7 @@ static void dump_spider_statistics( FILE *fp ) {
 // RdbCache keeps its own statistics so we just pull those out
 
 struct RdbCacheHistory {
-	int rdb_id;
+	rdbid_t rdb_id;
 	const char *name;
 	int64_t last_hits;
 	int64_t last_misses;
@@ -274,7 +274,7 @@ static RdbCacheHistory rdb_cache_history[] = {
 	{RDB_CLUSTERDB,"clusterdb",0,0},
 	{RDB_TITLEDB,  "titledb",  0,0},
 	{RDB_SPIDERDB, "spiderdb", 0,0},
-	{0,0,0,0}
+	{RDB_NONE,0,0,0}
 };
 
 static void dump_rdb_cache_statistics( FILE *fp ) {

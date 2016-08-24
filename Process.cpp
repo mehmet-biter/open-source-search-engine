@@ -1155,7 +1155,7 @@ void Process::resetAll ( ) {
 void Process::resetPageCaches ( ) {
 	log("gb: Resetting page caches.");
 	for ( int32_t i = 0 ; i < RDB_END ; i++ ) {
-		RdbCache *rpc = getDiskPageCache ( i ); // rdbid = i
+		RdbCache *rpc = getDiskPageCache ( (rdbid_t)i );
 		if ( ! rpc ) continue;
 		rpc->reset();
 	}

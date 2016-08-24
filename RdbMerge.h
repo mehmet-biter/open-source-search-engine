@@ -58,7 +58,7 @@ class RdbMerge {
 	// . new file name is stored in m_filename so Rdb can look at it
 	// . calls rdb->incorporateMerge() when done with merge or had error
 	// . "maxBufSize" is size of list to get then write (read/write buf)
-	bool merge ( char       rdbId        ,
+	bool merge ( rdbid_t       rdbId,
 		     //char      *coll         ,
 		     collnum_t collnum ,
 		     BigFile   *target       ,
@@ -139,7 +139,7 @@ class RdbMerge {
 	int32_t      m_id2;
 
 	// for getting the RdbBase class doing the merge
-	uint8_t   m_rdbId;
+	rdbid_t   m_rdbId;
 	//char      m_coll [ MAX_COLL_LEN + 1 ];
 	collnum_t m_collnum;
 

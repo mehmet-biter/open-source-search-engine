@@ -574,7 +574,7 @@ bool Statsdb::gifLoop ( ) {
 
 	// loop over all the lists in the time range, [m_t1,m_t2]
 	for ( ; ! m_done ; ) {
-		if ( ! m->getList ( (char)RDB_STATSDB	,
+		if ( ! m->getList ( RDB_STATSDB,
 				    (collnum_t)0,//"statsdb" , // coll
 				    &m_list		,
 				    (char *)&m_startKey	,

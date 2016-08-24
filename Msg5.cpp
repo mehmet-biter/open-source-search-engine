@@ -52,7 +52,7 @@ void Msg5::reset() {
 }
 
 
-bool Msg5::getSingleUnmergedList(char          rdbId,
+bool Msg5::getSingleUnmergedList(rdbid_t       rdbId,
 				 collnum_t     collnum,
 				 RdbList      *list,
 				 const void   *startKey,
@@ -76,7 +76,7 @@ bool Msg5::getSingleUnmergedList(char          rdbId,
 
 
 bool Msg5::getTreeList(RdbList *result,
-		       char rdbId, collnum_t collnum,
+		       rdbid_t rdbId, collnum_t collnum,
 		       const void *startKey, const void *endKey)
 {
 	m_rdbId = rdbId;
@@ -160,7 +160,7 @@ bool Msg5::getTreeList(RdbList *result,
 // . a minRecSizes of 0x7fffffff means virtual inifinty, but it also has 
 //   another special meaning. it tells msg5 to tell RdbTree's getList() to 
 //   pre-allocate the list size by counting the recs ahead of time.
-bool Msg5::getList ( char     rdbId         ,
+bool Msg5::getList ( rdbid_t     rdbId,
 		     collnum_t collnum ,
 		     RdbList *list          ,
 		     const void    *startKey_      ,

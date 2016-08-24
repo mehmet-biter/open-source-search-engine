@@ -8,6 +8,7 @@
 #include "Msg3.h"
 #include "RdbList.h"
 #include "JobScheduler.h" //job_exit_t
+#include "rdbid_t.h"
 #include "GbSignature.h"
 
 
@@ -36,7 +37,7 @@ class Msg5 {
 	//   construct us in a C wrapper so they need to delete us when 
 	//   they're done with us
 	// . if maxCacheAge is > 0, we lookup in cache first
-	bool getList ( char       rdbId         ,
+	bool getList ( rdbid_t       rdbId,
 		       collnum_t collnum ,
 		       RdbList   *list          ,
 		       const void      *startKey      ,
@@ -58,7 +59,7 @@ class Msg5 {
 		       bool          isRealMerge,
 		       bool          allowPageCache);
 
-	bool getList ( char       rdbId         ,
+	bool getList ( rdbid_t       rdbId,
 		       collnum_t collnum ,
 		       RdbList   *list          ,
 		       key_t      startKey      , 
@@ -81,7 +82,7 @@ class Msg5 {
 		       int64_t       syncPoint,
 		       bool          isRealMerge,
 		       bool          allowPageCache) {
-		return getList ( rdbId         ,
+		return getList ( rdbId,
 				 collnum       ,
 				 list          ,
 				 (const void *)&startKey      ,
@@ -104,7 +105,7 @@ class Msg5 {
 				 allowPageCache ); }
 
 
-	bool getSingleUnmergedList(char          rdbId,
+	bool getSingleUnmergedList(rdbid_t       rdbId,
 				   collnum_t     collnum,
 				   RdbList      *list,
 				   const void   *startKey,
@@ -116,7 +117,7 @@ class Msg5 {
 				   void        (*callback)(void *state, RdbList *list, Msg5 *msg5),
 				   int32_t       niceness);
 
-	bool getTreeList(RdbList *result, char rdbId, collnum_t collnum, const void *startKey, const void *endKey);
+	bool getTreeList(RdbList *result, rdbid_t rdbId, collnum_t collnum, const void *startKey, const void *endKey);
 	bool getTreeList(RdbList *result,
 			 const void *startKey, const void *endKey,
 			 int32_t *numNegativeRecs, int32_t *numPositiveRecs,
@@ -180,7 +181,7 @@ private:
 	int32_t      m_numFiles;
 	int32_t      m_startFileNum;
 	int32_t      m_minRecSizes;
-	char      m_rdbId;
+	rdbid_t      m_rdbId;
 
 	// . cache may modify these
 	// . gotLists() may modify these before reading more

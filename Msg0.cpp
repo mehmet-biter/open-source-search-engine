@@ -274,7 +274,7 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 		}
 
 		QUICKPOLL(m_niceness);
-		if ( ! m_msg5->getList ( rdbId,
+		if ( ! m_msg5->getList ( (rdbid_t)rdbId,
 					 m_collnum ,
 					 m_list ,
 					 m_startKey ,
@@ -566,7 +566,7 @@ void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 	int32_t      startFileNum       = *(int32_t      *)p ; p += 4;
 	int32_t      numFiles           = *(int32_t      *)p ; p += 4;
 	int32_t      maxCacheAge        = *(int32_t      *)p ; p += 4;
-	char      rdbId              = *p++;
+	rdbid_t   rdbId              = ((rdbid_t)*p++);
 	char      addToCache         = *p++;
 	char      doErrorCorrection  = *p++;
 	char      includeTree        = *p++;

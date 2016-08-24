@@ -82,7 +82,7 @@ key192_t makeCacheKey ( int64_t vfd ,
 static RdbCache g_rdbCaches[5];
 static GbMutex s_rdbcacheMutex; //protects g_rdbCaches
 
-class RdbCache *getDiskPageCache ( char rdbId ) {
+class RdbCache *getDiskPageCache ( rdbid_t rdbId ) {
 
 	RdbCache *rpc = NULL;
 	int64_t maxMem;
@@ -168,7 +168,7 @@ class RdbCache *getDiskPageCache ( char rdbId ) {
 // . caller can specify array of filenums to read from so incremental syncing
 //   in Sync class can just read from titledb*.dat files that were formed
 //   since the last sync point.
-bool Msg3::readList  ( char           rdbId         ,
+bool Msg3::readList  ( rdbid_t           rdbId,
 		       collnum_t collnum ,
 		       const char       *startKeyArg   ,
 		       const char       *endKeyArg     ,
