@@ -788,10 +788,11 @@ bool RdbMap::prealloc ( RdbList *list ) {
 }
 
 // . call addRecord() or addKey() for each record in this list
-bool RdbMap::addList ( RdbList *list ) {
-
+bool RdbMap::addList(RdbList *list) {
 	// sanity check
-	if ( list->m_ks != m_ks ) { g_process.shutdownAbort(true); }
+	if (list->m_ks != m_ks) {
+		g_process.shutdownAbort(true);
+	}
 
 	// . reset list to beginning to make sure
 	// . no, because of HACK in RdbDump.cpp we set m_listPtrHi < m_list
@@ -815,18 +816,6 @@ bool RdbMap::addList ( RdbList *list ) {
 			return false;
 		}
 	}
-
-	// disabled until addKey() works correctly
-	/*
-	if ( list->isDataless() ) {
-	top1:
-		key = list->getCurrentKey ( );
-		if ( ! addKey ( key ) ) return false;
-		if ( list->skipCurrentRecord() ) goto top1;
-		list->resetListPtr();
-		return true;
-	}
-	*/
 
 #ifdef GBSANITYCHECK
 	// print the last key from lasttime
