@@ -116,6 +116,7 @@ bool RdbIndex::writeIndex2() {
 		std::sort(m_docIds.begin(), m_docIds.end());
 		m_docIds.erase(std::unique(m_docIds.begin(), m_docIds.end()), m_docIds.end());
 	}
+	m_docIds.shrink_to_fit();
 
 	/// @todo we may want to store size of data used to generate index file here so that we can validate index file
 	/// eg: store total keys in buckets/tree; size of rdb file
@@ -238,6 +239,12 @@ void RdbIndex::addRecord(char *key) {
 }
 
 bool RdbIndex::inIndex(uint64_t docId) const {
+	if (m_needToSort) {
+		/// @todo ALC this should be optimized
+		// we can't use binary search for the full vector directly because we may have unsorted data at the end
+		return (std::find(m_docIds.begin(), m_docIds.end(), docId) != m_docIds.end());
+	}
+
 	return std::binary_search(m_docIds.begin(), m_docIds.end(), docId);
 }
 
