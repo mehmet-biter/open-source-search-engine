@@ -71,10 +71,6 @@ class Msg3 {
 	int32_t         getNumLists() const { return m_numScansCompleted; }
 	bool            areAllScansCompleted() const { return m_numScansCompleted==m_numScansStarted; }
 
-	void     *m_state;
-	void    (* m_callback )( void *state );
-
-
 	bool isListChecked() const { return m_listsChecked; }
 	bool listHadCorruption() const { return m_hadCorruption; }
 	int32_t getFileNums() const { return m_numFileNums; }
@@ -178,6 +174,9 @@ private:
 	bool  m_hadCorruption;
 
 	bool  m_hitDisk;
+
+	void *m_state;
+	void (*m_callback)(void *state);
 };
 
 extern int32_t g_numIOErrors;
