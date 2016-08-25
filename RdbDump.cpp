@@ -11,6 +11,7 @@ bool RdbDump::set(collnum_t collnum,
                   BigFile *file,
                   RdbBuckets *buckets, // optional buckets to dump
                   RdbTree *tree, // optional tree to dump
+                  RdbIndex *treeIndex, // only present if buckets/tree is set
                   RdbMap *map,
                   RdbIndex *index,
                   int32_t maxBufSize,
@@ -39,6 +40,7 @@ bool RdbDump::set(collnum_t collnum,
 	m_file          = file;
 	m_buckets       = buckets;
 	m_tree          = tree;
+	m_treeIndex     = treeIndex;
 	m_map           = map;
 	m_index         = index;
 	m_state         = state;
@@ -69,6 +71,7 @@ bool RdbDump::set(collnum_t collnum,
 	KEYSET(m_prevLastKey,prevLastKey,m_ks);
 	// for setting m_rdb->m_needsSave after deleting the dump list
 	m_rdb = rdb;
+
 	// . don't dump to a pre-existing file
 	// . seems like Rdb.cpp makes a new BigFile before calling this
 	// . now we can resume merges, so we can indeed dump to the END
@@ -586,6 +589,10 @@ bool RdbDump::dumpList(RdbList *list, int32_t niceness, bool recall) {
 		}
 
 		return true;
+	}
+
+	if (m_index) {
+		/// @todo ALC logic to move from m_treeIndex to m_index
 	}
 
 	// tab to the old offset

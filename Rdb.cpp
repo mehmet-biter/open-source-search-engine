@@ -1265,6 +1265,7 @@ bool Rdb::dumpCollLoop ( ) {
 	                base->getFile(m_fn),
 	                buckets,
 	                tree,
+	                base->getTreeIndex(),
 	                base->getMap(m_fn),
 	                base->getIndex(m_fn),
 	                bufSize, // write buf size
@@ -1949,13 +1950,14 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 		// . otherwise, assume we match a positive...
 	}
 
-	if (!KEYNEG(key) && m_useIndexFile) {
-		//
-		// Add data record to the current index file for the -saved.dat file.
-		// This index is stored in the Rdb record- the individual part file 
-		// indexes are in RdbBase and are read-only except when merging).
-		//
-		getBase(collnum)->getTreeIndex()->addRecord(key);
+	//
+	// Add data record to the current index file for the -saved.dat file.
+	// This index is stored in the Rdb record- the individual part file
+	// indexes are in RdbBase and are read-only except when merging).
+	//
+	RdbIndex *index = getBase(collnum)->getTreeIndex();
+	if (index) {
+		index->addRecord(key);
 	}
 
 	// . TODO: add using "lastNode" as a start node for the insertion point

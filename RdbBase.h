@@ -102,8 +102,17 @@ class RdbBase {
 	int32_t       getFileId ( int32_t n ) { return m_fileIds [n]; }
 	int32_t       getFileId2( int32_t n ) { return m_fileIds2[n]; }
 	RdbMap    *getMap    ( int32_t n ) { return m_maps    [n]; }
-	RdbIndex  *getTreeIndex  () { return &m_treeIndex; }
-	RdbIndex  *getIndex  ( int32_t n ) { return m_indexes [n]; }
+
+	RdbIndex *getTreeIndex() {
+		if (m_useIndexFile) {
+			return &m_treeIndex;
+		}
+		return NULL;
+	}
+
+	RdbIndex *getIndex(int32_t n) {
+		return m_indexes[n];
+	}
 
 	float getPercentNegativeRecsOnDisk ( int64_t *totalArg ) const;
 
