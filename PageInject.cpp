@@ -860,9 +860,9 @@ bool ImportState::setCurrentTitleFileAndOffset ( ) {
 	tmp.safePrintf("titledb%04" PRId32"-000.dat"
 		       //,dir.getDirname()
 		       ,minFileId);
-	m_bf.set ( dir.getDirname() ,tmp.getBufStart() );
+	m_bf.set ( dir.getDir() ,tmp.getBufStart() );
 	if ( ! m_bf.open( O_RDONLY ) ) {
-		log(LOG_WARN, "inject: import: could not open %s%s for reading", dir.getDirname(),tmp.getBufStart());
+		log(LOG_WARN, "inject: import: could not open %s%s for reading", dir.getDir(),tmp.getBufStart());
 		return false;
 	}
 	m_bfFileId = minFileId;

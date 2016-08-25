@@ -88,7 +88,7 @@ class RdbBase {
 
 
 	// get the directory name where this rdb stores it's files
-	const char *getDir ( ) { return m_dir.getDirname(); }
+	const char *getDir() { return m_dir.getDir(); }
 
 	int32_t getFixedDataSize() const { return m_fixedDataSize; }
 

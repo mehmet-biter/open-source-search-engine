@@ -1,37 +1,30 @@
 #ifndef GB_DIR_H
 #define GB_DIR_H
 
-#include <sys/types.h>      // for opendir
-#include <dirent.h>         // for opendir
-#include "File.h" // for File::getFileSize()
+#include <dirent.h>
+#include <cstddef>
 
 class Dir {
+public:
+	Dir();
+	~Dir();
 
- public:
+	void reset();
 
-	bool set      ( const char *dirName );
-	bool set      ( const char *d1, const char *d2 );
+	bool set(const char *dirName);
+	bool set(const char *d1, const char *d2);
 
-	void reset    ( );
+	bool open();
+	bool close();
 
-	bool open     ( );
+	const char *getNextFilename(const char *pattern = NULL);
 
-	bool close    ( );
+	const char *getDir() { return m_dirname; }
 
-	const char *getNextFilename ( const char *pattern = NULL );
-
-	const char *getDir     ( ) { return m_dirname; }
-	const char *getDirName ( ) { return m_dirname; }
-	const char *getDirname ( ) { return m_dirname; }
-
-	 Dir     ( );
-	~Dir     ( );
-
- private:
-
-	char          *m_dirname;
-	DIR           *m_dir;
-	char          m_dentryBuffer[1024];
+private:
+	char *m_dirname;
+	DIR *m_dir;
+	char m_dentryBuffer[1024];
 };
 
 #endif // GB_DIR_H
