@@ -44,6 +44,8 @@ int32_t g_corruptCount = 0;
 
 char s_countsAreValid = 1;
 
+static int32_t getFakeIpForUrl2(Url *url2);
+
 /////////////////////////
 /////////////////////////      SPIDEREC
 /////////////////////////
@@ -4156,47 +4158,7 @@ bool getSpiderStatusMsg ( CollectionRec *cx , SafeBuf *msg , int32_t *status ) {
 
 
 
-bool hasPositivePattern ( char *pattern ) {
-	char *p = pattern;
-	// scan the " || " separated substrings
-	for ( ; *p ; ) {
-		// get beginning of this string
-		char *start = p;
-		// skip white space
-		while ( *start && is_wspace_a(*start) ) start++;
-		// done?
-		if ( ! *start ) break;
-		// find end of it
-		char *end = start;
-		while ( *end && end[0] != '|' )
-			end++;
-		// advance p for next guy
-		p = end;
-		// should be two |'s
-		if ( *p ) p++;
-		if ( *p ) p++;
-		// skip if negative pattern
-		if ( start[0] == '!' && start[1] && start[1]!='|' )
-			continue;
-		// otherwise it's a positive pattern
-		return true;
-	}
-	return false;
-}
-
-
-
-int32_t getFakeIpForUrl1 ( char *url1 ) {
-	// make the probable docid
-	int64_t probDocId = g_titledb.getProbableDocId ( url1 );
-	// make one up, like we do in PageReindex.cpp
-	int32_t firstIp = (probDocId & 0xffffffff);
-	return firstIp;
-}
-
-
-
-int32_t getFakeIpForUrl2 ( Url *url2 ) {
+static int32_t getFakeIpForUrl2(Url *url2) {
 	// make the probable docid
 	int64_t probDocId = g_titledb.getProbableDocId ( url2 );
 	// make one up, like we do in PageReindex.cpp
@@ -4207,7 +4169,7 @@ int32_t getFakeIpForUrl2 ( Url *url2 ) {
 
 
 // returns false and sets g_errno on error
-bool SpiderRequest::setFromAddUrl ( char *url ) {
+bool SpiderRequest::setFromAddUrl(const char *url) {
 	logTrace( g_conf.m_logTraceSpider, "BEGIN. url [%s]", url );
 		
 	// reset it
@@ -4217,7 +4179,6 @@ bool SpiderRequest::setFromAddUrl ( char *url ) {
 
 	// make one up, like we do in PageReindex.cpp
 	int32_t firstIp = (probDocId & 0xffffffff);
-	//int32_t firstIp = getFakeIpForUrl1 ( url );
 
 	// ensure not crazy
 	if ( firstIp == -1 || firstIp == 0 ) firstIp = 1;
@@ -4277,7 +4238,7 @@ bool SpiderRequest::setFromAddUrl ( char *url ) {
 
 
 
-bool SpiderRequest::setFromInject ( char *url ) {
+bool SpiderRequest::setFromInject(const char *url) {
 	// just like add url
 	if ( ! setFromAddUrl ( url ) ) return false;
 	// but fix this

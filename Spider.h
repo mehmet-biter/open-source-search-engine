@@ -76,14 +76,9 @@ extern char s_countsAreValid;
 bool tryToDeleteSpiderColl ( SpiderColl *sc , const char *msg ) ;
 void spiderRoundIncremented ( class CollectionRec *cr ) ;
 
-bool hasPositivePattern ( char *content ) ;
-
 bool getSpiderStatusMsg ( class CollectionRec *cx , 
 			  class SafeBuf *msg , 
 			  int32_t *status ) ;
-
-int32_t getFakeIpForUrl1 ( char *url1 ) ;
-int32_t getFakeIpForUrl2 ( Url  *url2 ) ;
 
 
 
@@ -750,8 +745,8 @@ public:
 	static int32_t printTableHeaderSimple ( SafeBuf *sb, bool currentlSpidering ) ;
 
 	// returns false and sets g_errno on error
-	bool setFromAddUrl ( char *url ) ;
-	bool setFromInject ( char *url ) ;
+	bool setFromAddUrl(const char *url);
+	bool setFromInject(const char *url);
 
 	bool isCorrupt ( );
 } __attribute__((packed, aligned(4)));
