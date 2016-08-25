@@ -1144,7 +1144,8 @@ bool isAssignedToUs ( int32_t firstIp ) {
 /////////////////////////      PAGESPIDER
 /////////////////////////
 
-// don't change name to "State" cuz that might conflict with another
+namespace {
+
 class State11 {
 public:
 	int32_t          m_numRecs;
@@ -1162,6 +1163,8 @@ public:
 	SafeBuf       m_safeBuf;
 	int32_t          m_priority;
 };
+
+} //namespace
 
 static bool loadLoop ( class State11 *st ) ;
 
