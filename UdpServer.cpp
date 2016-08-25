@@ -2696,6 +2696,11 @@ void UdpServer::printState() {
 	}	
 }
 
+int32_t UdpServer::getNumUsedSlots() const {
+	ScopedLock sl(const_cast<GbMutex&>(m_mtx));
+	return m_numUsedSlots;
+}
+
 void UdpServer::saveActiveSlots(int fd, msg_type_t msg_type) {
 	ScopedLock sl(m_mtx);
 	for (const UdpSlot *slot = m_activeListHead; slot; slot = slot->m_activeListNext) {

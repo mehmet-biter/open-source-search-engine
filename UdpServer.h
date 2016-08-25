@@ -162,7 +162,7 @@ public:
 
 	void printState();
 
-	int32_t getNumUsedSlots() const { return m_numUsedSlots; }
+	int32_t getNumUsedSlots() const;
 
 	int32_t getNumUsedSlotsIncoming() const { return m_numUsedSlotsIncoming; }
 
