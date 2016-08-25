@@ -123,8 +123,8 @@ void Statistics::register_spider_time( bool is_new, int error_code, int http_sta
 		auto key = std::make_pair( error_code, http_status );
 
 		ScopedLock sl( mtx_spider_timerange_statistics );
-		TimerangeStatistics &ts = is_new ? new_spider_timerange_statistics[ key ][ i ] :
-		                          old_spider_timerange_statistics[ key ][ i ];
+		TimerangeStatistics &ts = is_new ? new_spider_timerange_statistics.at(key)[ i ] :
+		                          old_spider_timerange_statistics.at(key)[ i ];
 
 		if ( ts.count != 0 ) {
 			if ( ms < ts.min_time )
