@@ -424,7 +424,7 @@ bool Collectiondb::addNewColl ( const char *coll, bool saveIt,
 	return addRdbBasesForCollRec ( cr );
 }
 
-void CollectionRec::setBasePtr ( char rdbId , class RdbBase *base ) {
+void CollectionRec::setBasePtr(rdbid_t rdbId, class RdbBase *base) {
 	if ( rdbId < 0 || rdbId >= RDB_END ) { g_process.shutdownAbort(true); }
 	// Rdb::deleteColl() will call this even though we are swapped in
 	// but it calls it with "base" set to NULL after it nukes the RdbBase
@@ -433,7 +433,7 @@ void CollectionRec::setBasePtr ( char rdbId , class RdbBase *base ) {
 	m_bases [ (unsigned char)rdbId ] = base;
 }
 
-RdbBase *CollectionRec::getBasePtr ( char rdbId ) {
+RdbBase *CollectionRec::getBasePtr(rdbid_t rdbId) {
 	if ( rdbId < 0 || rdbId >= RDB_END ) { g_process.shutdownAbort(true); }
 	return m_bases [ (unsigned char)rdbId ];
 }
@@ -442,7 +442,7 @@ static bool s_inside = false;
 
 // . returns NULL w/ g_errno set on error.
 // . TODO: ensure not called from in thread, not thread safe
-RdbBase *CollectionRec::getBase ( char rdbId ) {
+RdbBase *CollectionRec::getBase(rdbid_t rdbId) {
 
 	if ( s_inside ) { g_process.shutdownAbort(true); }
 
