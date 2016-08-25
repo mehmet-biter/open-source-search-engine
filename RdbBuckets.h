@@ -28,7 +28,9 @@
 #include "RdbList.h"
 #include "RdbMem.h"
 #include "RdbTree.h"
+#include "rdbid_t.h"
 class RdbBuckets;
+
 class RdbBucket {
 public:
 	RdbBucket() {}
@@ -99,7 +101,7 @@ class RdbBuckets {
 		   int32_t maxMem, 
 		   bool ownData ,
 		   const char *allocName,
-		   char rdbId ,
+		   rdbid_t rdbId,
 		   bool dataInPtrs ,//= false ,
 		   const char *dbname ,//= NULL,
 		   char keySize ,//= 12 ,
@@ -221,7 +223,7 @@ class RdbBuckets {
 	int32_t       m_maxBucketsCapacity;
 	int32_t       m_dataMemOccupied;
 
-	char        m_rdbId;
+	rdbid_t     m_rdbId;
 	const char *m_dbname;
 	char       *m_swapBuf;
 	char       *m_sortBuf;
