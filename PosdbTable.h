@@ -120,7 +120,6 @@ class PosdbTable {
 					 const char *endi, const char *endj,
 					 DocIdScore *pdcs );
 
-	bool makeDocIdVoteBufForBoolQuery_r ( ) ;
 
 	// some generic stuff
 	PosdbTable();
@@ -237,6 +236,9 @@ class PosdbTable {
 
 	// for intersecting docids
 	void addDocIdVotes ( const QueryTermInfo *qti , int32_t listGroupNum );
+	void makeDocIdVoteBufForRarestTerm( const QueryTermInfo *qti , bool isRangeTerm );
+	bool makeDocIdVoteBufForBoolQuery() ;
+
 
 	// for negative query terms...
 	void rmDocIdVotes ( const QueryTermInfo *qti );
