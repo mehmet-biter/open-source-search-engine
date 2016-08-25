@@ -987,7 +987,6 @@ bool RdbBase::incorporateMerge ( ) {
 		g_process.shutdownAbort();
 	}
 
-	//@@@ BR: no-merge index begin
 	if( m_useIndexFile ) {
 		status = m_indexes[x]->writeIndex();
 		if ( !status ) {
@@ -996,7 +995,6 @@ bool RdbBase::incorporateMerge ( ) {
 			g_process.shutdownAbort();
 		}
 	}
-	//@@@ BR: no-merge index end
 
 	// print out info of newly merged file
 	int64_t tp = m_maps[x]->getNumPositiveRecs();

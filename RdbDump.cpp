@@ -504,7 +504,7 @@ bool RdbDump::dumpList(RdbList *list, int32_t niceness, bool recall) {
 		if (g_conf.m_verifyWrites) {
 			char rdbId = 0;
 			if (m_rdb) rdbId = m_rdb->getRdbId();
-			m_list->checkList_r(false, false, rdbId);//RDB_POSDB);
+			m_list->checkList_r(false, false, rdbId);
 			m_list->resetListPtr();
 		}
 
