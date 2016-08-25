@@ -4,9 +4,14 @@
 #include "BigFile.h"
 #include "Sanity.h"
 #include <vector>
+#include <memory>
 
 class RdbTree;
 class RdbBuckets;
+
+typedef std::vector<uint64_t> docids_t;
+typedef std::shared_ptr<docids_t> docids_ptr_t;
+typedef std::shared_ptr<const docids_t> docidsconst_ptr_t;
 
 class RdbIndex {
 public:
@@ -56,7 +61,7 @@ public:
 	void addRecord(char *key);
 
 	bool inIndex(uint64_t docId) const;
-	const std::vector<uint64_t>* getDocIds() const { return &m_docIds; }
+	docidsconst_ptr_t getDocIds() const { return m_docIds; }
 
 private:
 	void printIndex();
@@ -64,7 +69,7 @@ private:
 	// the index file
 	BigFile m_file;
 
-	std::vector<uint64_t> m_docIds;
+	docids_ptr_t m_docIds;
 
 	int32_t m_fixedDataSize;
 	bool m_useHalfKeys;

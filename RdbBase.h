@@ -239,7 +239,7 @@ private:
 	// key format
 	// ..dddddd dddddddd dddddddd dddddddd  d = docId
 	// dddddddd ........ ffffffff ffffffff  f = fileIndex
-	std::vector<uint64_t> m_docIdFileIndex;
+	docids_ptr_t m_docIdFileIndex;
 
 public:
 	int32_t getFilePos(uint64_t docId) const;

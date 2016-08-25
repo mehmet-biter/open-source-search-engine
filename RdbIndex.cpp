@@ -16,7 +16,7 @@
 
 RdbIndex::RdbIndex()
 	: m_file()
-	, m_docIds()
+	, m_docIds(new docids_t)
 	, m_fixedDataSize(0)
 	, m_useHalfKeys(false)
 	, m_ks(0)
@@ -26,7 +26,7 @@ RdbIndex::RdbIndex()
 	, m_startSortPos(0)
 	, m_sortCount(0)
 	, m_needToWrite(false) {
-	m_docIds.reserve(20000000);
+	m_docIds->reserve(20000000);
 }
 
 // dont save index on deletion!
@@ -35,8 +35,8 @@ RdbIndex::~RdbIndex() {
 
 void RdbIndex::reset() {
 	m_file.reset();
-	m_docIds.clear();
-	m_docIds.reserve(20000000);
+	m_docIds->clear();
+	m_docIds->reserve(20000000);
 	m_prevDocId = MAX_DOCID + 1;
 	m_needToSort = false;
 	m_startSortPos = 0;
@@ -113,15 +113,15 @@ bool RdbIndex::writeIndex2() {
 	int64_t offset = 0LL;
 
 	if (m_needToSort) {
-		std::sort(m_docIds.begin(), m_docIds.end());
-		m_docIds.erase(std::unique(m_docIds.begin(), m_docIds.end()), m_docIds.end());
+		std::sort(m_docIds->begin(), m_docIds->end());
+		m_docIds->erase(std::unique(m_docIds->begin(), m_docIds->end()), m_docIds->end());
 	}
-	m_docIds.shrink_to_fit();
+	m_docIds->shrink_to_fit();
 
 	/// @todo we may want to store size of data used to generate index file here so that we can validate index file
 	/// eg: store total keys in buckets/tree; size of rdb file
 	// first 8 bytes are the total docIds in the index file
-	size_t docid_count = m_docIds.size();
+	size_t docid_count = m_docIds->size();
 
 	m_file.write(&docid_count, sizeof(docid_count), offset);
 	if (g_errno) {
@@ -131,7 +131,7 @@ bool RdbIndex::writeIndex2() {
 
 	offset += sizeof(docid_count);
 
-	m_file.write(&m_docIds[0], docid_count * sizeof(m_docIds[0]), offset);
+	m_file.write(&(*m_docIds)[0], docid_count * sizeof((*m_docIds)[0]), offset);
 	if (g_errno) {
 		logError("Failed to write to %s (docids): %s", m_file.getFilename(), mstrerror(g_errno))
 		return false;
@@ -188,15 +188,15 @@ bool RdbIndex::readIndex2() {
 	}
 
 	offset += sizeof(docid_count);
-	m_docIds.resize(docid_count);
+	m_docIds->resize(docid_count);
 
-	m_file.read(&m_docIds[0], docid_count * sizeof(m_docIds[0]), offset);
+	m_file.read(&(*m_docIds)[0], docid_count * sizeof((*m_docIds)[0]), offset);
 	if ( g_errno ) {
 		logError("Had error reading offset=%" PRId64" from %s: %s", offset, m_file.getFilename(), mstrerror(g_errno));
 		return false;
 	}
 
-	logTrace(g_conf.m_logTraceRdbIndex, "END. Returning true with %zu docIds loaded", m_docIds.size());
+	logTrace(g_conf.m_logTraceRdbIndex, "END. Returning true with %zu docIds loaded", m_docIds->size());
 	return true;
 }
 
@@ -206,7 +206,7 @@ void RdbIndex::addRecord(char *key) {
 			//it is a 12-byte docid+pos or 18-byte termid+docid+pos key
 			uint64_t doc_id = extract_bits(key, 58, 96);
 			if (doc_id != m_prevDocId) {
-				m_docIds.push_back(doc_id);
+				m_docIds->push_back(doc_id);
 				m_prevDocId = doc_id;
 
 				m_needToSort = true;
@@ -222,19 +222,19 @@ void RdbIndex::addRecord(char *key) {
 
 	// make sure our docids don't get too large
 	if (m_sortCount >= 20000000) {
-		auto startIt = std::next(m_docIds.begin(), m_startSortPos);
-		std::sort(startIt, m_docIds.end());
-		m_docIds.erase(std::unique(startIt, m_docIds.end()), m_docIds.end());
+		auto startIt = std::next(m_docIds->begin(), m_startSortPos);
+		std::sort(startIt, m_docIds->end());
+		m_docIds->erase(std::unique(startIt, m_docIds->end()), m_docIds->end());
 
 		// do a full sort in this case
-		if (m_docIds.size() >= 20000000) {
-			std::sort(m_docIds.begin(), m_docIds.end());
-			m_docIds.erase(std::unique(m_docIds.begin(), m_docIds.end()), m_docIds.end());
+		if (m_docIds->size() >= 20000000) {
+			std::sort(m_docIds->begin(), m_docIds->end());
+			m_docIds->erase(std::unique(m_docIds->begin(), m_docIds->end()), m_docIds->end());
 			m_needToSort = false;
 		}
 
 		m_sortCount = 0;
-		m_startSortPos = m_docIds.size() - 1;
+		m_startSortPos = m_docIds->size() - 1;
 	}
 }
 
@@ -242,10 +242,10 @@ bool RdbIndex::inIndex(uint64_t docId) const {
 	if (m_needToSort) {
 		/// @todo ALC this should be optimized
 		// we can't use binary search for the full vector directly because we may have unsorted data at the end
-		return (std::find(m_docIds.begin(), m_docIds.end(), docId) != m_docIds.end());
+		return (std::find(m_docIds->begin(), m_docIds->end(), docId) != m_docIds->end());
 	}
 
-	return std::binary_search(m_docIds.begin(), m_docIds.end(), docId);
+	return std::binary_search(m_docIds->begin(), m_docIds->end(), docId);
 }
 
 void RdbIndex::printIndex() {

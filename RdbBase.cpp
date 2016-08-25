@@ -32,7 +32,8 @@ class RdbMerge g_merge;
 // merging since titledb adds a lot of tfndb records
 class RdbMerge g_merge2;
 
-RdbBase::RdbBase ( ) {
+RdbBase::RdbBase()
+	: m_docIdFileIndex(new docids_t) {
 	m_numFiles  = 0;
 	m_rdb = NULL;
 	m_nextMergeForced = false;
@@ -2482,25 +2483,24 @@ void RdbBase::generateGlobalIndex() {
 		return;
 	}
 
-	m_docIdFileIndex.clear();
+	m_docIdFileIndex->clear();
 
 	// global index does not include RdbIndex from tree/buckets
 
 	for (int32_t i = 0; i < m_numFiles; i++) {
-		const std::vector<uint64_t> *docIds = m_indexes[i]->getDocIds();
-		m_docIdFileIndex.reserve(m_docIdFileIndex.size() + docIds->size());
-
-		std::transform(docIds->begin(), docIds->end(), std::back_inserter(m_docIdFileIndex),
+		auto docIds = m_indexes[i]->getDocIds();
+		m_docIdFileIndex->reserve(m_docIdFileIndex->size() + docIds->size());
+		std::transform(docIds->begin(), docIds->end(), std::back_inserter(*m_docIdFileIndex),
 		               [i](uint64_t docId) { return ((docId << 24) | i); });
 	}
 
-	std::sort(m_docIdFileIndex.begin(), m_docIdFileIndex.end());
-	auto it = std::unique(m_docIdFileIndex.rbegin(), m_docIdFileIndex.rend(),
+	std::sort(m_docIdFileIndex->begin(), m_docIdFileIndex->end());
+	auto it = std::unique(m_docIdFileIndex->rbegin(), m_docIdFileIndex->rend(),
 	                      [](uint64_t a, uint64_t b) { return (a & 0xffffffffff000000ULL) == (b & 0xffffffffff000000ULL); });
-	m_docIdFileIndex.erase(m_docIdFileIndex.begin(), it.base());
+	m_docIdFileIndex->erase(m_docIdFileIndex->begin(), it.base());
 
 	// free up used space
-	m_docIdFileIndex.shrink_to_fit();
+	m_docIdFileIndex->shrink_to_fit();
 	/// @todo ALC free up m_indexes[i]->m_docIds as well
 }
 
@@ -2510,7 +2510,7 @@ int32_t RdbBase::getFilePos(uint64_t docId) const {
 		return m_numFiles;
 	}
 
-	auto it = std::lower_bound(m_docIdFileIndex.cbegin(), m_docIdFileIndex.cend(), docId << 24);
+	auto it = std::lower_bound(m_docIdFileIndex->cbegin(), m_docIdFileIndex->cend(), docId << 24);
 	if ((*it >> 24) == docId) {
 		return static_cast<int32_t>(*it & 0xffff);
 	}
