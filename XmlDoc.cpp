@@ -20352,7 +20352,7 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 	int32_t timestamp;
 
 	// always just use the primary tagdb so we can cache our sitenuminlinks
-	char rdbId = RDB_TAGDB;
+	rdbid_t rdbId = RDB_TAGDB;
 
 	// sitenuminlinks special for repair
 	if ( m_useSecondaryRdbs &&

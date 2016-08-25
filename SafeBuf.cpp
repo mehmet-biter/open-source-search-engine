@@ -888,7 +888,7 @@ Tag *SafeBuf::addTag2 ( const char *mysite ,
 			const char *user ,
 			int32_t  ip ,
 			int32_t  val ,
-			char  rdbId ) {
+			rdbid_t rdbId) {
 	char buf[64];
 	sprintf(buf,"%" PRId32,val);
 	int32_t dsize = strlen(buf) + 1;
@@ -902,7 +902,7 @@ Tag *SafeBuf::addTag3 ( const char *mysite ,
 			const char *user ,
 			int32_t  ip ,
 			const char *data ,
-			char  rdbId ) {
+			rdbid_t rdbId) {
 	int32_t dsize = strlen(data) + 1;
 	return addTag ( mysite,tagname,now,user,ip,data,dsize,rdbId,true);
 }
@@ -914,7 +914,7 @@ Tag *SafeBuf::addTag ( const char *mysite ,
 		       int32_t  ip ,
 		       const char *data ,
 		       int32_t  dsize ,
-		       char  rdbId ,
+		       rdbid_t rdbId,
 		       bool  pushRdbId ) {
 	int32_t need = dsize + 32 + sizeof(Tag);
 	if ( user   ) need += strlen(user);

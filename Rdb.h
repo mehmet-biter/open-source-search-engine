@@ -21,8 +21,8 @@ void addCollnumToLinkedListOfMergeCandidates ( collnum_t dumpCollnum ) ;
 
 
 // get the RdbBase class for an rdbId and collection name
-class RdbBase *getRdbBase ( uint8_t rdbId, const char *coll );
-class RdbBase *getRdbBase ( uint8_t rdbId , collnum_t collnum );
+class RdbBase *getRdbBase(rdbid_t rdbId, const char *coll);
+class RdbBase *getRdbBase(rdbid_t rdbId, collnum_t collnum);
 
 // maps an rdbId to an Rdb
 class Rdb *getRdbFromId ( rdbid_t rdbId ) ;
@@ -41,11 +41,14 @@ static inline bool isSecondaryRdb ( uint8_t rdbId ) {
 const char *getDbnameFromId ( uint8_t rdbId ) ;
 
 // size of keys
-char getKeySizeFromRdbId  ( uint8_t rdbId );
+char getKeySizeFromRdbId(rdbid_t rdbId);
+static inline char getKeySizeFromRdbId(uint8_t rdbId) {
+	return getKeySizeFromRdbId((rdbid_t)rdbId);
+}
 
 // and this is -1 if dataSize is variable
 int32_t getDataSizeFromRdbId ( uint8_t rdbId );
-void forceMergeAll ( char rdbId , char niceness ) ;
+void forceMergeAll(rdbid_t rdbId, char niceness);
 
 // main.cpp calls this
 void attemptMergeAllCallback ( int fd , void *state ) ;

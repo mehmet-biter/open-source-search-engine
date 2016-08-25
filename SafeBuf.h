@@ -10,6 +10,7 @@
  */
 
 #include "iana_charset.h"
+#include "rdbid_t.h"
 #include "Sanity.h"
 
 
@@ -173,13 +174,13 @@ public:
 	// . a function for adding Tags to buffer, like from Tagdb.cpp
 	// . if safebuf is a buffer of Tags from Tagdb.cpp
 	class Tag *addTag2( const char *mysite,const  char *tagname, int32_t now, const char *user, int32_t ip, int32_t val,
-						char rdbId );
+						rdbid_t rdbId);
 
 	class Tag *addTag3( const char *mysite, const char *tagname, int32_t now, const char *user, int32_t ip, const char *data,
-						char rdbId );
+						rdbid_t rdbId);
 
 	class Tag *addTag( const char *mysite, const char *tagname, int32_t now, const char *user, int32_t ip,const  char *data,
-					   int32_t dsize, char rdbId, bool pushRdbId );
+					   int32_t dsize, rdbid_t rdbId, bool pushRdbId);
 
 	bool addTag ( class Tag *tag );
 
