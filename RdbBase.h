@@ -92,16 +92,16 @@ class RdbBase {
 
 	int32_t getFixedDataSize() const { return m_fixedDataSize; }
 
-	bool useHalfKeys ( ) const { return m_useHalfKeys; }
+	bool useHalfKeys() const { return m_useHalfKeys; }
 
-	RdbMap   **getMaps  ( ) { return m_maps; }
-	RdbIndex	**getIndexes() { return m_indexes;}
-	BigFile  **getFiles ( ) { return m_files; }
+	BigFile **getFiles() { return m_files; }
+	RdbMap **getMaps() { return m_maps; }
+	RdbIndex **getIndexes() { return m_indexes; }
 
-	BigFile   *getFile   ( int32_t n ) { return m_files   [n]; }
-	int32_t       getFileId ( int32_t n ) { return m_fileIds [n]; }
-	int32_t       getFileId2( int32_t n ) { return m_fileIds2[n]; }
-	RdbMap    *getMap    ( int32_t n ) { return m_maps    [n]; }
+	BigFile *getFile(int32_t n) { return m_files[n]; }
+	int32_t getFileId(int32_t n) { return m_fileIds[n]; }
+	RdbMap *getMap(int32_t n) { return m_maps[n]; }
+	RdbIndex *getIndex(int32_t n) { return m_indexes[n]; }
 
 	RdbIndex *getTreeIndex() {
 		if (m_useIndexFile) {
@@ -110,9 +110,7 @@ class RdbBase {
 		return NULL;
 	}
 
-	RdbIndex *getIndex(int32_t n) {
-		return m_indexes[n];
-	}
+
 
 	float getPercentNegativeRecsOnDisk ( int64_t *totalArg ) const;
 
@@ -228,12 +226,12 @@ private:
 	// . older files are listed first (lower fileIds)
 	// . filenames should include the directory (full filenames)
 	// . TODO: RdbMgr should control what rdb gets merged?
-	BigFile  *m_files     [ MAX_RDB_FILES+1 ];
-	int32_t      m_fileIds   [ MAX_RDB_FILES+1 ];
-	int32_t      m_fileIds2  [ MAX_RDB_FILES+1 ]; // for titledb/tfndb linking
-	RdbMap   *m_maps      [ MAX_RDB_FILES+1 ];
-	RdbIndex *m_indexes	[ MAX_RDB_FILES+1 ];
-	int32_t      m_numFiles;
+	BigFile *m_files[MAX_RDB_FILES + 1];
+	int32_t m_fileIds[MAX_RDB_FILES + 1];
+	int32_t m_fileIds2[MAX_RDB_FILES + 1]; // for titledb/tfndb linking
+	RdbMap *m_maps[MAX_RDB_FILES + 1];
+	RdbIndex *m_indexes[MAX_RDB_FILES + 1];
+	int32_t m_numFiles;
 
 	void generateGlobalIndex();
 
