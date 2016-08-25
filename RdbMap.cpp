@@ -822,24 +822,20 @@ bool RdbMap::addList(RdbList *list) {
 	log("map: lastkey=%s",KEYSTR(m_lastKey,m_ks));
 #endif
 
-	//key_t key;
-	char  key[MAX_KEY_BYTES];
-	int32_t  recSize;
-	char *rec;
- top2:
-	//key     = list->getCurrentKey ( );
-	list->getCurrentKey(key);
-	recSize = list->getCurrentRecSize();
-	rec     = list->getCurrentRec ();
-	if ( ! addRecord ( key , rec , recSize ) ) {
-		log( LOG_WARN, "db: Failed to add record to map: %s.", mstrerror(g_errno));
-		// allow caller to try to fix the tree in the case of dumpinga tree to a file on disk
-		return false;
-	}
-	if ( list->skipCurrentRecord() ) goto top2;
+	char key[MAX_KEY_BYTES];
+	for (; !list->isExhausted(); list->skipCurrentRec()) {
+		list->getCurrentKey(key);
 
-	// sanity check -- i added this for debug but i think it was
-	// corrupted buckets!!
+		int32_t recSize = list->getCurrentRecSize();
+		char *rec = list->getCurrentRec();
+		if (!addRecord(key, rec, recSize)) {
+			log(LOG_WARN, "db: Failed to add record to map: %s.", mstrerror(g_errno));
+			// allow caller to try to fix the tree in the case of dumpinga tree to a file on disk
+			return false;
+		}
+	}
+
+	// sanity check -- i added this for debug but i think it was corrupted buckets!!
 	//verifyMap2();
 
 	list->resetListPtr();
