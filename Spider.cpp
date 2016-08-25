@@ -1217,7 +1217,7 @@ static void gotListWrapper3 ( void *state , RdbList *list , Msg5 *msg5 ) ;
 static bool sendPage        ( State11 *st );
 static bool printList       ( State11 *st );
 
-bool loadLoop ( State11 *st ) {
+static bool loadLoop ( State11 *st ) {
  loop:
 	// let's get the local list for THIS machine (use msg5)
 	if ( ! st->m_msg5.getList  ( RDB_DOLEDB          ,
@@ -1255,7 +1255,7 @@ bool loadLoop ( State11 *st ) {
 	goto loop;
 }
 
-void gotListWrapper3 ( void *state , RdbList *list , Msg5 *msg5 ) {
+static void gotListWrapper3 ( void *state , RdbList *list , Msg5 *msg5 ) {
 	// cast it
 	State11 *st = (State11 *)state;
 	// print it. returns false on error
@@ -1276,7 +1276,7 @@ void gotListWrapper3 ( void *state , RdbList *list , Msg5 *msg5 ) {
 // . send it on TcpSocket "s" when done
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
-bool printList ( State11 *st ) {
+static bool printList ( State11 *st ) {
 	// useful
 	time_t nowGlobal ;
 	if ( isClockInSync() ) nowGlobal = getTimeGlobal();
@@ -1345,7 +1345,7 @@ bool printList ( State11 *st ) {
 	return true;
 }
 
-bool sendPage ( State11 *st ) {
+static bool sendPage ( State11 *st ) {
 	// shortcut
 	SafeBuf *sbTable = &st->m_safeBuf;
 
