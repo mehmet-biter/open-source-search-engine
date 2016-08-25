@@ -15,6 +15,7 @@
 #include "Loop.h"
 #include "RdbMap.h"
 #include "RdbList.h"
+#include "rdbid_t.h"
 
 class RdbScan {
 	
@@ -40,7 +41,7 @@ class RdbScan {
 		       void      *state         ,
 		       void    (* callback ) ( void *state ) ,
 		       bool       useHalfKeys   ,
-		       char       rdbId,
+		       rdbid_t    rdbId,
 		       int32_t       niceness , // = MAX_NICENESS ,
 		       bool       allowPageCache , // = true ,
 		       bool       hitDisk        ); // = true );
@@ -66,7 +67,7 @@ class RdbScan {
 	// shifting it
 	char m_shifted;
 
-	char m_rdbId;
+	rdbid_t m_rdbId;
 
 	// save for call to our gotListWrapper()
 	//key_t  m_startKey;
