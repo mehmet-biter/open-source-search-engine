@@ -234,7 +234,6 @@ Mem::Mem() {
 }
 
 Mem::~Mem() {
-	if ( getUsedMem() == 0 ) return;
 }
 
 
