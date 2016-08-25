@@ -59,7 +59,7 @@ class Titledb {
 	}
 
 	// a different way to do it
-	uint64_t getProbableDocId ( char *url  ) {
+	uint64_t getProbableDocId ( const char *url  ) {
 		Url u;
 		u.set( url );
 		return getProbableDocId ( &u ); 

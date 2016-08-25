@@ -44,6 +44,8 @@ int32_t g_corruptCount = 0;
 
 char s_countsAreValid = 1;
 
+static int32_t getFakeIpForUrl2(Url *url2);
+
 /////////////////////////
 /////////////////////////      SPIDEREC
 /////////////////////////
@@ -1144,7 +1146,8 @@ bool isAssignedToUs ( int32_t firstIp ) {
 /////////////////////////      PAGESPIDER
 /////////////////////////
 
-// don't change name to "State" cuz that might conflict with another
+namespace {
+
 class State11 {
 public:
 	int32_t          m_numRecs;
@@ -1162,6 +1165,8 @@ public:
 	SafeBuf       m_safeBuf;
 	int32_t          m_priority;
 };
+
+} //namespace
 
 static bool loadLoop ( class State11 *st ) ;
 
@@ -1214,7 +1219,7 @@ static void gotListWrapper3 ( void *state , RdbList *list , Msg5 *msg5 ) ;
 static bool sendPage        ( State11 *st );
 static bool printList       ( State11 *st );
 
-bool loadLoop ( State11 *st ) {
+static bool loadLoop ( State11 *st ) {
  loop:
 	// let's get the local list for THIS machine (use msg5)
 	if ( ! st->m_msg5.getList  ( RDB_DOLEDB          ,
@@ -1252,7 +1257,7 @@ bool loadLoop ( State11 *st ) {
 	goto loop;
 }
 
-void gotListWrapper3 ( void *state , RdbList *list , Msg5 *msg5 ) {
+static void gotListWrapper3 ( void *state , RdbList *list , Msg5 *msg5 ) {
 	// cast it
 	State11 *st = (State11 *)state;
 	// print it. returns false on error
@@ -1273,7 +1278,7 @@ void gotListWrapper3 ( void *state , RdbList *list , Msg5 *msg5 ) {
 // . send it on TcpSocket "s" when done
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
-bool printList ( State11 *st ) {
+static bool printList ( State11 *st ) {
 	// useful
 	time_t nowGlobal ;
 	if ( isClockInSync() ) nowGlobal = getTimeGlobal();
@@ -1342,7 +1347,7 @@ bool printList ( State11 *st ) {
 	return true;
 }
 
-bool sendPage ( State11 *st ) {
+static bool sendPage ( State11 *st ) {
 	// shortcut
 	SafeBuf *sbTable = &st->m_safeBuf;
 
@@ -4153,47 +4158,7 @@ bool getSpiderStatusMsg ( CollectionRec *cx , SafeBuf *msg , int32_t *status ) {
 
 
 
-bool hasPositivePattern ( char *pattern ) {
-	char *p = pattern;
-	// scan the " || " separated substrings
-	for ( ; *p ; ) {
-		// get beginning of this string
-		char *start = p;
-		// skip white space
-		while ( *start && is_wspace_a(*start) ) start++;
-		// done?
-		if ( ! *start ) break;
-		// find end of it
-		char *end = start;
-		while ( *end && end[0] != '|' )
-			end++;
-		// advance p for next guy
-		p = end;
-		// should be two |'s
-		if ( *p ) p++;
-		if ( *p ) p++;
-		// skip if negative pattern
-		if ( start[0] == '!' && start[1] && start[1]!='|' )
-			continue;
-		// otherwise it's a positive pattern
-		return true;
-	}
-	return false;
-}
-
-
-
-int32_t getFakeIpForUrl1 ( char *url1 ) {
-	// make the probable docid
-	int64_t probDocId = g_titledb.getProbableDocId ( url1 );
-	// make one up, like we do in PageReindex.cpp
-	int32_t firstIp = (probDocId & 0xffffffff);
-	return firstIp;
-}
-
-
-
-int32_t getFakeIpForUrl2 ( Url *url2 ) {
+static int32_t getFakeIpForUrl2(Url *url2) {
 	// make the probable docid
 	int64_t probDocId = g_titledb.getProbableDocId ( url2 );
 	// make one up, like we do in PageReindex.cpp
@@ -4204,7 +4169,7 @@ int32_t getFakeIpForUrl2 ( Url *url2 ) {
 
 
 // returns false and sets g_errno on error
-bool SpiderRequest::setFromAddUrl ( char *url ) {
+bool SpiderRequest::setFromAddUrl(const char *url) {
 	logTrace( g_conf.m_logTraceSpider, "BEGIN. url [%s]", url );
 		
 	// reset it
@@ -4214,7 +4179,6 @@ bool SpiderRequest::setFromAddUrl ( char *url ) {
 
 	// make one up, like we do in PageReindex.cpp
 	int32_t firstIp = (probDocId & 0xffffffff);
-	//int32_t firstIp = getFakeIpForUrl1 ( url );
 
 	// ensure not crazy
 	if ( firstIp == -1 || firstIp == 0 ) firstIp = 1;
@@ -4274,7 +4238,7 @@ bool SpiderRequest::setFromAddUrl ( char *url ) {
 
 
 
-bool SpiderRequest::setFromInject ( char *url ) {
+bool SpiderRequest::setFromInject(const char *url) {
 	// just like add url
 	if ( ! setFromAddUrl ( url ) ) return false;
 	// but fix this
