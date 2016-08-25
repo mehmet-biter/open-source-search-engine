@@ -1021,6 +1021,7 @@ if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 void Msg5::mergeListsWrapper(void *state) {
 	// we're in a thread now!
 	Msg5 *that = static_cast<Msg5*>(state);
+	verify_signature_at(that->signature);
 
 	// assume no error since we're at the start of thread call
 	that->m_errno = 0;
@@ -1029,9 +1030,11 @@ void Msg5::mergeListsWrapper(void *state) {
 	that->repairLists();
 
 //log("@@@ msg5(%p)::mergeListsWrapper()",that);
+	verify_signature_at(that->signature);
 	// do the merge
 	that->mergeLists();
 
+	verify_signature_at(that->signature);
 	if (g_errno && !that->m_errno) {
 		that->m_errno = g_errno;
 	}
@@ -1043,6 +1046,7 @@ void Msg5::mergeListsWrapper(void *state) {
 // Use of ThreadEntry parameter is NOT thread safe
 void Msg5::mergeDoneWrapper(void *state, job_exit_t exit_type) {
 	Msg5 *that = static_cast<Msg5 *>(state);
+	verify_signature_at(that->signature);
 
 	g_errno = that->m_errno;
 	that->mergeDone(exit_type);
