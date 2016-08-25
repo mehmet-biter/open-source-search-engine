@@ -2498,8 +2498,13 @@ void RdbBase::generateGlobalIndex() {
 	auto it = std::unique(m_docIdFileIndex.rbegin(), m_docIdFileIndex.rend(),
 	                      [](uint64_t a, uint64_t b) { return (a & 0xffffffffff000000ULL) == (b & 0xffffffffff000000ULL); });
 	m_docIdFileIndex.erase(m_docIdFileIndex.begin(), it.base());
+
+	// free up used space
+	m_docIdFileIndex.shrink_to_fit();
+	/// @todo ALC free up m_indexes[i]->m_docIds as well
 }
 
+/// @todo ALC instead of having a mtx, we should have a reference counter for docIds and create a copy when updating
 int32_t RdbBase::getFilePos(uint64_t docId) const {
 	if (m_treeIndex.inIndex(docId)) {
 		return m_numFiles;
