@@ -10,7 +10,7 @@ export BASE_DIR
 
 unexport CONFIG_CPPFLAGS
 
-OBJS =  UdpSlot.o Rebalance.o \
+OBJS_O0 =  UdpSlot.o Rebalance.o \
 	Msg13.o \
 	PageGet.o PageHosts.o \
 	PageParser.o PageInject.o PagePerf.o PageReindex.o PageResults.o \
@@ -18,72 +18,100 @@ OBJS =  UdpSlot.o Rebalance.o \
 	PageTitledb.o \
 	PageAddColl.o \
 	PageHealthCheck.o \
-	hash.o Domains.o \
+	Domains.o \
 	Collectiondb.o \
-	linkspam.o ip.o sort.o \
-	fctypes.o XmlNode.o XmlDoc.o XmlDoc_Indexing.o Xml.o \
-	Words.o UdpServer.o UdpStatistic.o \
+	ip.o \
+	XmlDoc_Indexing.o \
 	Titledb.o HashTable.o \
-	TcpServer.o Summary.o \
-	Spider.o SpiderColl.o SpiderLoop.o Doledb.o \
-	RdbTree.o RdbScan.o RdbMerge.o RdbMap.o RdbIndex.o RdbMem.o RdbBuckets.o \
-	RdbList.o RdbDump.o RdbCache.o Rdb.o RdbBase.o \
+	TcpServer.o \
+	RdbTree.o RdbScan.o RdbMerge.o RdbMem.o \
+	RdbDump.o RdbCache.o \
 	Query.o Phrases.o Multicast.o \
-	Msg5.o \
-	Msg39.o Msg3.o \
+	Msg39.o \
 	Msg22.o \
-	Msg20.o Msg2.o \
+	Msg20.o \
 	Msg1.o \
-	Msg0.o Mem.o Matches.o Loop.o \
+	Msg0.o Mem.o \
 	Log.o Lang.o \
-	Posdb.o PosdbTable.o \
 	Clusterdb.o \
 	HttpServer.o HttpRequest.o \
 	HttpMime.o Hostdb.o \
-	Highlight.o File.o Errno.o Entities.o \
-	Dns.o Dir.o Conf.o Bits.o \
+	File.o Errno.o Entities.o \
+	Dns.o Dir.o Conf.o \
 	Stats.o BigFile.o \
 	Speller.o \
-	PingServer.o StopWords.o TopTree.o \
+	PingServer.o \
 	Parms.o Pages.o \
-	Unicode.o iana_charset.o \
+	iana_charset.o \
 	SearchInput.o \
-	SafeBuf.o \
-	UCPropTable.o UnicodeProperties.o \
-	Pops.o Title.o Pos.o \
-	Profiler.o \
-	Msg3a.o HashTableT.o HashTableX.o \
+	Msg3a.o  \
 	PageLogView.o Msg1f.o Blaster.o MsgC.o \
-	Proxy.o PageThreads.o Linkdb.o \
-	matches2.o LanguageIdentifier.o \
+	Proxy.o PageThreads.o \
+	LanguageIdentifier.o \
 	Repair.o Process.o \
 	Abbreviations.o \
 	Msg51.o \
-	Msg40.o Msg4.o SpiderProxy.o \
+	Msg4.o SpiderProxy.o \
 	Statsdb.o PageStatsdb.o \
 	Msge0.o Msge1.o \
 	CountryCode.o DailyMerge.o Tagdb.o \
 	Images.o Wiki.o Wiktionary.o \
-	Timezone.o Sections.o SiteGetter.o \
+	Timezone.o SiteGetter.o \
 	Synonyms.o \
 	PageCrawlBot.o Json.o PageBasic.o \
 	Punycode.o Version.o \
 	HighFrequencyTermShortcuts.o \
-	IPAddressChecks.o \
 	SummaryCache.o \
 	ScalingFunctions.o \
 	RobotRule.o Robots.o \
 	JobScheduler.o \
 	AdultCheck.o \
-	Url.o UrlParser.o UrlComponent.o \
-	Statistics.o \
+	Url.o \
 	GbMutex.o \
 	Sanity.o \
+
+
+OBJS_O1 = \
+
+
+OBJS_O2 = \
+	Bits.o \
+	Doledb.o \
+	fctypes.o \
+	hash.o HashTableT.o HashTableX.o Highlight.o \
+	linkspam.o Loop.o \
+	Matches.o matches2.o Msg2.o Msg3.o Msg5.o \
+	Pops.o Pos.o Posdb.o PosdbTable.o Profiler.o \
+	Rdb.o RdbBase.o \
+	Sections.o Spider.o SpiderColl.o SpiderLoop.o StopWords.o Summary.o \
+	Title.o \
+	UCPropTable.o UdpServer.o Unicode.o UnicodeProperties.o \
+	Words.o \
+	Xml.o XmlDoc.o XmlNode.o \
+
+
+OBJS_O3 = \
+	IPAddressChecks.o \
+	Linkdb.o \
+	Msg40.o \
+	RdbBuckets.o RdbIndex.o RdbList.o RdbMap.o \
+	SafeBuf.o sort.o Statistics.o \
+	TopTree.o \
+	UrlComponent.o UrlParser.o UdpStatistic.o \
+
+
+OBJS = $(OBJS_O0) $(OBJS_O1) $(OBJS_O2) $(OBJS_O3)
+
+
+# RdbTree.cpp was getting corruption, was it cuz we used $(O2) compiler option?
+# RdbCache.cpp gets "corrupted" with $(O2)... like RdbTree.cpp
+
 
 # common flags
 DEFS = -D_REENTRANT_ -I.
 CPPFLAGS = -g -fno-stack-protector -DPTHREADS
 CPPFLAGS += -std=c++11
+
 
 # optimization
 ifeq ($(config),$(filter $(config),debug test coverage))
@@ -346,170 +374,13 @@ entities.inc: entities.json generate_entities.py
 entities.json entities.inc:
 	./generate_entities.py >entities.inc
 
-StopWords.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
+Version.o: CPPFLAGS += -DGIT_COMMIT_ID=$(GIT_VERSION) -DBUILD_CONFIG=$(config)
+$(OBJS_O1): CPPFLAGS += $(O1)
+$(OBJS_O2): CPPFLAGS += $(O2)
+$(OBJS_O3): CPPFLAGS += $(O3)
 
-Loop.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
-
-hash.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
-
-fctypes.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
-
-Matches.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
-
-Highlight.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
-
-matches2.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
-
-linkspam.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
-
-# Url::set() seems to take too much time
-Url.o:
+.cpp.o:
 	$(CXX) $(DEFS) $(CPPFLAGS) -c $*.cpp
-
-UrlParser.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O3) -c $*.cpp
-
-UrlComponent.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O3) -c $*.cpp
-
-# when making a new file, add the recs to the map fast
-RdbMap.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O3) -c $*.cpp
-
-RdbIndex.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O3) -c $*.cpp
-
-# this was getting corruption, was it cuz we used $(O2) compiler option?
-# RdbTree.o:
-# 	$(CXX) $(DEFS) $(CPPFLAGS) $(O3) -c $*.cpp
-
-RdbBuckets.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O3) -c $*.cpp
-
-Linkdb.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O3) -c $*.cpp
-
-XmlDoc.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
-
-# final gigabit generation in here:
-Msg40.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O3) -c $*.cpp
-
-TopTree.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O3) -c $*.cpp
-
-UdpServer.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
-
-UdpStatistic.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O3) -c $*.cpp
-
-RdbList.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O3) -c $*.cpp
-
-Rdb.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
-
-# take this out. seems to not trigger merges when percent of
-# negative titlerecs is over 40.
-RdbBase.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
-
-# RdbCache.cpp gets "corrupted" with $(O2)... like RdbTree.cpp
-#RdbCache.o:
-#	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
-
-# fast dictionary generation and spelling recommendations
-#Speller.o:
-#	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
-
-Posdb.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
-
-PosdbTable.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
-
-# Query::setBitScores() needs this optimization
-#Query.o:
-#	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
-
-Msg3.o Msg2.o Msg5.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
-
-# fast parsing
-Xml.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
-XmlNode.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
-Words.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
-Unicode.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
-UCPropTable.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
-UnicodeProperties.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
-Pos.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
-Pops.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
-Bits.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
-Sections.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
-Summary.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
-Title.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
-
-SafeBuf.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O3) -c $*.cpp
-
-Profiler.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
-
-HashTableT.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
-
-HashTableX.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
-
-# getUrlFilterNum2()
-Spider.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
-
-SpiderColl.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
-
-SpiderLoop.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
-
-Doledb.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
-
-PostQueryRerank.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
-
-sort.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O3) -c $*.cpp
-
-IPAddressChecks.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O3) -c $*.cpp
-
-Statistics.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O3) -c $*.cpp
-
-Version.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) -DGIT_COMMIT_ID=$(GIT_VERSION) -DBUILD_CONFIG=$(config) -c $*.cpp
 
 install:
 # gigablast will copy over the necessary files. it has a list of the
@@ -528,11 +399,6 @@ install:
 	cp S99gb $(DESTDIR)/etc/init.d/gb
 	ln -s /etc/init.d/gb $(DESTDIR)/etc/rc3.d/S99gb
 
-.cpp.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) -c $*.cpp
-
-.c.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) -c $*.c
 
 .PHONY: depend
 depend: entities.inc
