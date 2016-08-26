@@ -121,6 +121,9 @@ endif
 
 CPPFLAGS += $(CONFIG_CPPFLAGS)
 
+# dependencies
+CPPFLAGS += -MMD -MP
+
 # export to sub-make
 export CONFIG_CPPFLAGS
 
@@ -304,7 +307,7 @@ systemtest:
 
 .PHONY: clean
 clean:
-	-rm -f *.o gb core core.* libgb.a
+	-rm -f *.o *.d gb core core.* libgb.a
 	-rm -f gmon.*
 	-rm -f *.gcda *.gcno coverage*.html
 	-rm -f *.ll *.ll.out pstack.txt
@@ -366,10 +369,7 @@ install:
 	ln -s /etc/init.d/gb $(DESTDIR)/etc/rc3.d/S99gb
 
 
-.PHONY: depend
-depend: entities.inc
-	@echo "generating dependency information"
-	$(CXX) -MM $(DEFS) $(DPPFLAGS) *.cpp > Make.depend
+DEPS := $(OBJS:.o=.d)
 
--include Make.depend
+-include $(DEPS)
 
