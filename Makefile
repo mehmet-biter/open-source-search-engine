@@ -21,7 +21,6 @@ OBJS_O0 =  UdpSlot.o Rebalance.o \
 	Domains.o \
 	Collectiondb.o \
 	ip.o \
-	XmlDoc_Indexing.o \
 	Titledb.o HashTable.o \
 	TcpServer.o \
 	RdbTree.o RdbScan.o RdbMerge.o RdbMem.o \
@@ -87,7 +86,7 @@ OBJS_O2 = \
 	Title.o \
 	UCPropTable.o UdpServer.o Unicode.o UnicodeProperties.o \
 	Words.o \
-	Xml.o XmlDoc.o XmlNode.o \
+	Xml.o XmlDoc.o XmlDoc_Indexing.o XmlNode.o \
 
 
 OBJS_O3 = \
