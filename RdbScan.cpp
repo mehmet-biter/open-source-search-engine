@@ -23,7 +23,7 @@ bool RdbScan::setRead ( BigFile  *file         ,
 			void     *state        ,
 			void   (* callback) ( void *state ) ,
 			bool      useHalfKeys  ,
-			char      rdbId ,
+			rdbid_t   rdbId ,
 			int32_t      niceness     ,
 			bool      allowPageCache ,
 			bool      hitDisk        ) {

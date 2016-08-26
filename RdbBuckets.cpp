@@ -513,7 +513,7 @@ RdbBuckets::RdbBuckets() {
 
 
 
-bool RdbBuckets::set( int32_t fixedDataSize , int32_t maxMem, bool ownData, const char *allocName, char rdbId,
+bool RdbBuckets::set( int32_t fixedDataSize , int32_t maxMem, bool ownData, const char *allocName, rdbid_t rdbId,
                       bool dataInPtrs, const char *dbname, char keySize, bool useProtection ) {
 	m_numBuckets = 0;
 	m_ks = keySize;

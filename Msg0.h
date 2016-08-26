@@ -10,6 +10,7 @@
 #include "Multicast.h"
 #include "Hostdb.h"
 #include "RdbList.h"
+#include "rdbid_t.h"
 
 #define RDBIDOFFSET (8+4+4+4+4)
 
@@ -46,7 +47,7 @@ class Msg0 {
 		       int16_t     port        ,
 		       int32_t      maxCacheAge , // max cached age in seconds
 		       bool      addToCache  , // add net recv'd list to cache?
-		       char      rdbId       , // specifies the rdb
+		       rdbid_t   rdbId       , // specifies the rdb
 		       collnum_t collnum ,
 		       class RdbList  *list  ,
 		       const char     *startKey    ,
@@ -117,7 +118,7 @@ class Msg0 {
 	char  m_startKey[MAX_KEY_BYTES];
 	char  m_endKey[MAX_KEY_BYTES];
 	int32_t  m_minRecSizes ;
-	char  m_rdbId       ;
+	rdbid_t  m_rdbId;
 	collnum_t m_collnum;
 
 	class Msg5  *m_msg5 ;

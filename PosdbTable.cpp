@@ -492,6 +492,8 @@ static bool  s_inBody           [HASHGROUP_END];
 
 // initialize the weights table
 static void initWeights ( ) {
+	logTrace(g_conf.m_logTracePosdb, "BEGIN.");
+	
 	if ( s_init ) return;
 	s_init = true;
 	for ( int32_t i = 0 ; i <= MAXDIVERSITYRANK ; i++ ) {
@@ -571,7 +573,10 @@ static void initWeights ( ) {
 	s_hashGroupWeights[HASHGROUP_INTERNALINLINKTEXT] = g_conf.m_hashGroupWeightInternalLinkText;
 	s_hashGroupWeights[HASHGROUP_INURL             ] = g_conf.m_hashGroupWeightInUrl;
 	s_hashGroupWeights[HASHGROUP_INMENU            ] = g_conf.m_hashGroupWeightInMenu;
+	
+	logTrace(g_conf.m_logTracePosdb, "END.");
 }
+
 
 
 // Called when ranking settings are changed. Normally called from update-parameter
@@ -649,6 +654,9 @@ void PosdbTable::evalSlidingWindow ( char    **ptrs,
 	//char *winners2[MAX_QUERY_TERMS*MAX_QUERY_TERMS];
 	//float scores  [MAX_QUERY_TERMS*MAX_QUERY_TERMS];
 	float minTermPairScoreInWindow = 999999999.0;
+
+
+	logTrace(g_conf.m_logTracePosdb, "BEGIN.");
 
 	// TODO: only do this loop on the (i,j) pairs where i or j
 	// is the term whose position got advanced in the sliding window.
@@ -836,7 +844,10 @@ void PosdbTable::evalSlidingWindow ( char    **ptrs,
 	}
 	}
 
-	if ( minTermPairScoreInWindow <= m_bestWindowScore ) return;
+	if ( minTermPairScoreInWindow <= m_bestWindowScore ) {
+		logTrace(g_conf.m_logTracePosdb, "END.");
+		return;
+	}
 
 	m_bestWindowScore = minTermPairScoreInWindow;
 
@@ -869,6 +880,7 @@ void PosdbTable::evalSlidingWindow ( char    **ptrs,
 	}
 	}
 	*/
+	logTrace(g_conf.m_logTracePosdb, "END.");
 }
 
 
@@ -884,6 +896,8 @@ float PosdbTable::getSingleTermScore ( int32_t     i,
 	float bestScores[MAX_TOP];
 	char *bestwpi   [MAX_TOP];
 	int32_t numTop = 0;
+
+	logTrace(g_conf.m_logTracePosdb, "END.");
 
 	// assume no terms!
 	*bestPos = NULL;
@@ -1020,9 +1034,17 @@ float PosdbTable::getSingleTermScore ( int32_t     i,
 	//
 	// end the loop. return now if not collecting scoring info.
 	//
-	if ( ! pdcs ) return sum;
+	if ( ! pdcs ) {
+		logTrace(g_conf.m_logTracePosdb, "END.");
+		return sum;
+	}
+		
 	// none? wtf?
-	if ( numTop <= 0 ) return sum;
+	if ( numTop <= 0 ) {
+		logTrace(g_conf.m_logTracePosdb, "END.");
+		return sum;
+	}
+	
 	// point into buf
 	SingleScore *sx = (SingleScore *)m_singleScoreBuf.getBuf();
 	int32_t need = sizeof(SingleScore) * numTop;
@@ -1036,6 +1058,7 @@ float PosdbTable::getSingleTermScore ( int32_t     i,
 		static bool s_first = true;
 		if ( s_first ) log("posdb: CRITICAL single buf overflow");
 		s_first = false;
+		logTrace(g_conf.m_logTracePosdb, "END.");
 		return sum;
 		//gbshutdownAbort(true); }
 	}
@@ -1074,8 +1097,10 @@ float PosdbTable::getSingleTermScore ( int32_t     i,
 		sx->m_bflags   = m_bflags[i];
 	}
 
+	logTrace(g_conf.m_logTracePosdb, "END. sum=%f", sum);
 	return sum;
 }
+
 
 
 // . advace two ptrs at the same time so it's just a linear scan
@@ -1085,6 +1110,8 @@ void PosdbTable::getTermPairScoreForNonBody ( int32_t i, int32_t j,
 					      const char *endi, const char *endj,
 					      int32_t qdist,
 					      float *retMax ) {
+
+	logTrace(g_conf.m_logTracePosdb, "BEGIN.");
 
 	int32_t p1 = g_posdb.getWordPos ( wpi );
 	int32_t p2 = g_posdb.getWordPos ( wpj );
@@ -1130,7 +1157,10 @@ void PosdbTable::getTermPairScoreForNonBody ( int32_t i, int32_t j,
 		// . we no longer allow either to be in the body in this
 		//   algo because we handle those cases in the sliding window
 		//   algo!
-		if ( ! s_isCompatible[hg1][hg2] ) goto skip1;
+		if ( ! s_isCompatible[hg1][hg2] ) {
+			goto skip1;
+		}
+		
 		// git distance
 		dist = p2 - p1;
 		// if zero, make sure its 2. this happens when the same bigram
@@ -1185,13 +1215,23 @@ void PosdbTable::getTermPairScoreForNonBody ( int32_t i, int32_t j,
 		}
 	skip1:
 		// first key is 12 bytes
-		if ( firsti ) { wpi += 6; firsti = false; }
+		if ( firsti ) { 
+			wpi += 6; 
+			firsti = false; 
+		}
+		
 		// advance
 		wpi += 6;
 		// end of list?
-		if ( wpi >= endi ) goto done;
+		if ( wpi >= endi ) {
+			goto done;
+		}
+		
 		// exhausted?
-		if ( g_posdb.getKeySize ( wpi ) != 6 ) goto done;
+		if ( g_posdb.getKeySize ( wpi ) != 6 ) {
+			goto done;
+		}
+		
 		// update. include G-bits?
 		p1 = g_posdb.getWordPos ( wpi );
 		// hash group update
@@ -1210,7 +1250,10 @@ void PosdbTable::getTermPairScoreForNonBody ( int32_t i, int32_t j,
 		// . we no longer allow either to be in the body in this
 		//   algo because we handle those cases in the sliding window
 		//   algo!
-		if ( ! s_isCompatible[hg1][hg2] ) goto skip2;
+		if ( ! s_isCompatible[hg1][hg2] ) {
+			goto skip2;
+		}
+		
 		// get distance
 		dist = p1 - p2;
 		// if zero, make sure its 2. this happens when the same bigram
@@ -1277,9 +1320,15 @@ void PosdbTable::getTermPairScoreForNonBody ( int32_t i, int32_t j,
 		// advance
 		wpj += 6;
 		// end of list?
-		if ( wpj >= endj ) goto done;
+		if ( wpj >= endj ) {
+			goto done;
+		}
+		
 		// exhausted?
-		if ( g_posdb.getKeySize ( wpj ) != 6 ) goto done;
+		if ( g_posdb.getKeySize ( wpj ) != 6 ) {
+			goto done;
+		}
+		
 		// update
 		p2 = g_posdb.getWordPos ( wpj );
 		// hash group update
@@ -1300,6 +1349,7 @@ void PosdbTable::getTermPairScoreForNonBody ( int32_t i, int32_t j,
 	//if ( max > 0 ) 
 	//	log("posdb: ret score = %f",max);
 	*retMax = max;
+	logTrace(g_conf.m_logTracePosdb, "END.");
 }
 
 
@@ -1309,8 +1359,17 @@ float PosdbTable::getTermPairScoreForWindow ( int32_t i,
 					      const char *wpj,
 					      int32_t fixedDistance ) {
 
-	if ( ! wpi ) return -1.00;
-	if ( ! wpj ) return -1.00;
+
+	logTrace(g_conf.m_logTracePosdb, "BEGIN.");
+
+	if ( ! wpi ) {
+		logTrace(g_conf.m_logTracePosdb, "END.");
+		return -1.00;
+	}
+	if ( ! wpj ) {
+		logTrace(g_conf.m_logTracePosdb, "END.");
+		return -1.00;
+	}
 
 	int32_t p1 = g_posdb.getWordPos ( wpi );
 	int32_t p2 = g_posdb.getWordPos ( wpj );
@@ -1370,8 +1429,11 @@ float PosdbTable::getTermPairScoreForWindow ( int32_t i,
 	score /= (dist + 1.0);
 	// tmp hack
 	//score *= (dist+1.0);
+	
+	logTrace(g_conf.m_logTracePosdb, "END. score=%f", score);
 	return score;
 }
+
 
 
 // . advance two ptrs at the same time so it's just a linear scan
@@ -1381,9 +1443,10 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 					  const char *wpi, const char *wpj,
 					  const char *endi, const char *endj,
 					   DocIdScore *pdcs ) {
-
 	// wiki phrase weight?
 	float wts;
+
+	logTrace(g_conf.m_logTracePosdb, "BEGIN.");
 
 	int32_t qdist;
 
@@ -1490,10 +1553,13 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 	// . if p1/p2 is in body and not in window, skip
 	// . this is how we restrict all body terms to the winning
 	//   sliding window
-	if ( s_inBody[hg1] && wpi != m_windowTermPtrs[i] ) 
+	if ( s_inBody[hg1] && wpi != m_windowTermPtrs[i] ) {
 		goto skip1;
-	if ( s_inBody[hg2] && wpj != m_windowTermPtrs[j] ) 
+	}
+	
+	if ( s_inBody[hg2] && wpj != m_windowTermPtrs[j] ) {
 		goto skip2;
+	}
 
 	// make this strictly < now and not <= because in the event
 	// of bigram terms, where p1==p2 we'd like to advance p2/wj to
@@ -1512,10 +1578,13 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 			// TODO: allow for off by 1
 			// if it has punct in it then dist will be 3, 
 			// just a space or similar then dist should be 2.
-			if ( dist > qdist && dist - qdist >= 2 ) 
+			if ( dist > qdist && dist - qdist >= 2 ) {
 				goto skip1;
-			if ( dist < qdist && qdist - dist >= 2 ) 
+			}
+			
+			if ( dist < qdist && qdist - dist >= 2 ) {
 				goto skip1;
+			}
 		}
 
 		// are either synonyms
@@ -1548,7 +1617,10 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 		// they are from different link texts
 		//if ( hg1 == HASHGROUP_INLINKTEXT && dist > 50 ) goto skip1;
 		// subtract from the dist the terms are apart in the query
-		if ( dist >= qdist ) dist =  dist - qdist;
+		if ( dist >= qdist ) {
+			dist =  dist - qdist;
+		}
+		
 		//else               dist = qdist -  dist;
 		// compute score based on that junk
 		//score = (MAXWORDPOS+1) - dist;
@@ -1560,14 +1632,25 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 		// hashgroup modifier
 		score *= s_hashGroupWeights[hg1];
 		score *= s_hashGroupWeights[hg2];
+
 		// if synonym or alternate word form
-		if ( syn1 ) score *= g_conf.m_synonymWeight;
-		if ( syn2 ) score *= g_conf.m_synonymWeight;
+		if ( syn1 ) {
+			score *= g_conf.m_synonymWeight;
+		}
+		
+		if ( syn2 ) {
+			score *= g_conf.m_synonymWeight;
+		}
+		
 		// the new logic
-		if ( g_posdb.getIsHalfStopWikiBigram(wpi) ) 
+		if ( g_posdb.getIsHalfStopWikiBigram(wpi) ) {
 			score *= WIKI_BIGRAM_WEIGHT;
-		if ( g_posdb.getIsHalfStopWikiBigram(wpj) ) 
+		}
+		
+		if ( g_posdb.getIsHalfStopWikiBigram(wpj) ) {
 			score *= WIKI_BIGRAM_WEIGHT;
+		}
+		
 		//if ( m_bflags[i] & BF_SYNONYM ) score *= g_conf.m_synonymWeight;
 		//if ( m_bflags[j] & BF_SYNONYM ) score *= g_conf.m_synonymWeight;
 		// word spam weights
@@ -1629,7 +1712,10 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 		if ( numTop >= m_realMaxTop ) { // MAX_TOP ) {
 			minx = 0;
 			for ( int32_t k = 1 ; k < m_realMaxTop;k++){//MAX_TOP;k++
-				if (bestScores[k]>bestScores[minx] ) continue;
+				if (bestScores[k]>bestScores[minx] ) {
+					continue;
+				}
+				
 				minx = k;
 			}
 		}
@@ -1641,7 +1727,10 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 		// advance
 		wpi += 6;
 		// end of list?
-		if ( wpi >= endi ) goto done;
+		if ( wpi >= endi ) {
+			goto done;
+		}
+		
 		// exhausted?
 		if ( g_posdb.getKeySize ( wpi ) != 6 ) {
 			// sometimes there is posdb index corruption and
@@ -1687,7 +1776,10 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 		// is used by both terms. i.e. street uses the bigram 
 		// 'street light' and so does 'light'. so the wordpositions
 		// are exactly the same!
-		if ( dist < 2 ) dist = 2;
+		if ( dist < 2 ) {
+			dist = 2;
+		}
+		
 		// fix distance if in different non-body hashgroups
 		if ( dist < 50 ) {
 			fixedDistance = false;
@@ -1729,9 +1821,16 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 		// hashgroup modifier
 		score *= s_hashGroupWeights[hg1];
 		score *= s_hashGroupWeights[hg2];
+		
 		// if synonym or alternate word form
-		if ( g_posdb.getIsSynonym(wpi) ) score *= g_conf.m_synonymWeight;
-		if ( g_posdb.getIsSynonym(wpj) ) score *= g_conf.m_synonymWeight;
+		if ( g_posdb.getIsSynonym(wpi) ) {
+			score *= g_conf.m_synonymWeight;
+		}
+		
+		if ( g_posdb.getIsSynonym(wpj) ) {
+			score *= g_conf.m_synonymWeight;
+		}
+		
 		//if ( m_bflags[i] & BF_SYNONYM ) score *= g_conf.m_synonymWeight;
 		//if ( m_bflags[j] & BF_SYNONYM ) score *= g_conf.m_synonymWeight;
 		// word spam weights
@@ -1793,18 +1892,28 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 		if ( numTop >= m_realMaxTop ) { // MAX_TOP ) {
 			minx = 0;
 			for ( int32_t k = 1 ; k < m_realMaxTop;k++){//MAX_TOP;k++
-				if (bestScores[k]>bestScores[minx] ) continue;
+				if (bestScores[k]>bestScores[minx] ) {
+					continue;
+				}
+				
 				minx = k;
 			}
 		}
 
 	skip2:
 		// first key is 12 bytes
-		if ( firstj ) { wpj += 6; firstj = false; }
+		if ( firstj ) { 
+			wpj += 6; 
+			firstj = false; 
+		}
+		
 		// advance
 		wpj += 6;
 		// end of list?
-		if ( wpj >= endj ) goto done;
+		if ( wpj >= endj ) {
+			goto done;
+		}
+		
 		// exhausted?
 		if ( g_posdb.getKeySize ( wpj ) != 6 ) {
 			// sometimes there is posdb index corruption and
@@ -1838,8 +1947,9 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 
 	// add up the top scores
 	float sum = 0.0;
-	for ( int32_t k = 0 ; k < numTop ; k++ )
+	for ( int32_t k = 0 ; k < numTop ; k++ ) {
 		sum += bestScores[k];
+	}
 
 	if (m_debug) {
 		for ( int32_t k = 0 ; k < numTop ; k++ )
@@ -1865,9 +1975,16 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 	//
 	// end the loop. return now if not collecting scoring info.
 	//
-	if ( ! pdcs ) return sum;
+	if ( ! pdcs ) {
+		logTrace(g_conf.m_logTracePosdb, "END.");
+		return sum;
+	}
+	
 	// none? wtf?
-	if ( numTop <= 0 ) return sum;
+	if ( numTop <= 0 ) {
+		logTrace(g_conf.m_logTracePosdb, "END.");
+		return sum;
+	}
 
 	//
 	// now store the PairScores into the m_pairScoreBuf for this 
@@ -1886,8 +2003,12 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 	if ( m_pairScoreBuf.getAvail() < need ) { 
 		// m_pairScores will be NULL
 		static bool s_first = true;
-		if ( s_first ) log("posdb: CRITICAL pair buf overflow");
+		if ( s_first ) {
+			log("posdb: CRITICAL pair buf overflow");
+		}
+		
 		s_first = false;
+		logTrace(g_conf.m_logTracePosdb, "END.");
 		return sum;
 	}
 	// increase buf ptr over this then
@@ -1905,10 +2026,14 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 		score *= m_freqWeights[i];
 		score *= m_freqWeights[j];
 		// we have to encode these bits into the mini merge now
-		if ( g_posdb.getIsHalfStopWikiBigram(maxp1) )
+		if ( g_posdb.getIsHalfStopWikiBigram(maxp1) ) {
 			score *= WIKI_BIGRAM_WEIGHT;
-		if ( g_posdb.getIsHalfStopWikiBigram(maxp2) )
+		}
+		
+		if ( g_posdb.getIsHalfStopWikiBigram(maxp2) ) {
 			score *= WIKI_BIGRAM_WEIGHT;
+		}
+		
 		//if ( m_bflags[i] & BF_HALFSTOPWIKIBIGRAM ) 
 		//if ( m_bflags[j] & BF_HALFSTOPWIKIBIGRAM ) 
 		// wiki phrase weight
@@ -1919,10 +2044,8 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 		char syn2 = g_posdb.getIsSynonym(maxp2);
 		px->m_isSynonym1     = syn1;
 		px->m_isSynonym2     = syn2;
-		px->m_isHalfStopWikiBigram1 = 
-			g_posdb.getIsHalfStopWikiBigram(maxp1);
-		px->m_isHalfStopWikiBigram2 = 
-			g_posdb.getIsHalfStopWikiBigram(maxp2);
+		px->m_isHalfStopWikiBigram1 = g_posdb.getIsHalfStopWikiBigram(maxp1);
+		px->m_isHalfStopWikiBigram2 = g_posdb.getIsHalfStopWikiBigram(maxp2);
 		//px->m_isSynonym1 = ( m_bflags[i] & BF_SYNONYM );
 		//px->m_isSynonym2 = ( m_bflags[j] & BF_SYNONYM );
 		px->m_diversityRank1 = g_posdb.getDiversityRank(maxp1);
@@ -1996,6 +2119,7 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 	// the 2nd best might cover for it. ideally, we'd have all the term
 	// pairs for this algo, but i think we'll have to get by on just this.
 
+	logTrace(g_conf.m_logTracePosdb, "END. sum=%f", sum);
 	return sum;
 }
 
@@ -2009,10 +2133,15 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 // returns false and sets g_errno on error
 bool PosdbTable::setQueryTermInfo ( ) {
 
+	logTrace(g_conf.m_logTracePosdb, "BEGIN.");
+
 	// alloc space. assume max
 	//int32_t qneed = sizeof(QueryTermInfo) * m_msg2->getNumLists();
 	int32_t qneed = sizeof(QueryTermInfo) * m_q->m_numTerms;
-	if ( ! m_qiBuf.reserve(qneed,"qibuf") ) return false; // label it too!
+	if ( ! m_qiBuf.reserve(qneed,"qibuf") ) {
+		return false; // label it too!
+	}
+	
 	// point to those
 	QueryTermInfo *qip = (QueryTermInfo *)m_qiBuf.getBufStart();
 
@@ -2033,14 +2162,20 @@ bool PosdbTable::setQueryTermInfo ( ) {
 	m_maxScoreTermNumInt = -1;
 
 	m_hasMaxSerpScore = false;
-	if ( m_r->m_minSerpDocId )
+	if ( m_r->m_minSerpDocId ) {
 		m_hasMaxSerpScore = true;
+	}
 
 	//for ( int32_t i = 0 ; i < m_msg2->getNumLists() ; i++ ) {
 	for ( int32_t i = 0 ; i < m_q->m_numTerms ; i++ ) {
 		QueryTerm *qt = &m_q->m_qterms[i];
 
-		if ( ! qt->m_isRequired ) continue;
+		logTrace(g_conf.m_logTracePosdb, "i=%" PRId32 ", term=[%.*s], required=%s", i, qt->m_termLen, qt->m_term, qt->m_isRequired?"true":"false");
+
+		if ( ! qt->m_isRequired ) {
+			continue;
+		}
+		
 		// set this stff
 		QueryWord     *qw =   qt->m_qword;
 		//int32_t wordNum = qw - &m_q->m_qwords[0];
@@ -2139,25 +2274,32 @@ bool PosdbTable::setQueryTermInfo ( ) {
 			//for ( int32_t k = 0 ; k < m_msg2->getNumLists() ; k++) {
 			for ( int32_t k = 0 ; k < m_q->m_numTerms ; k++ ) {
 				QueryTerm *bt = &m_q->m_qterms[k];
-				if ( bt->m_synonymOf != leftTerm ) continue;
+				if ( bt->m_synonymOf != leftTerm ) {
+					continue;
+				}
+				
 				//list = m_msg2->getList(k);
 				list = m_q->m_qterms[k].m_posdbListPtr;
 				qti->m_subLists[nn] = list;
 				qti->m_bigramFlags[nn] = BF_HALFSTOPWIKIBIGRAM;
 				qti->m_bigramFlags[nn] |= BF_SYNONYM;
-				if (qt->m_piped)
+				if (qt->m_piped) {
 					qti->m_bigramFlags[nn]|=BF_PIPED;
+				}
+				
 				// add list of member terms as well
 				//qti->m_qtermList[nn] = bt;
 				bt->m_bitNum = nrg;
-				if ( list && list->m_listSize ) nn++;
+				if ( list && list->m_listSize ) {
+					nn++;
+				}
 			}
 
 		}
 		//
 		// then the right bigram if also in a wiki half stop bigram
 		//
-		if ( right>=0 &&rightTerm &&rightTerm->m_isWikiHalfStopBigram){
+		if ( right >=0 && rightTerm && rightTerm->m_isWikiHalfStopBigram ){
 			// assume added
 			rightAlreadyAdded = true;
 			// get list
@@ -2175,28 +2317,37 @@ bool PosdbTable::setQueryTermInfo ( ) {
 			//qti->m_qtermList[nn] = &m_q->m_qterms[right];
 			m_q->m_qterms[right].m_bitNum = nrg;
 			// only really add if useful
-			if ( list && list->m_listSize ) nn++;
+			if ( list && list->m_listSize ) {
+				nn++;
+			}
 
 			// add bigram synonyms! like "new jersey" bigram
 			// has the synonym "nj"
 			//for (int32_t k = 0 ; k < m_msg2->getNumLists() ; k++ ) {
 			for ( int32_t k = 0 ; k < m_q->m_numTerms ; k++ ) {
 				QueryTerm *bt = &m_q->m_qterms[k];
-				if ( bt->m_synonymOf != rightTerm ) continue;
+				if ( bt->m_synonymOf != rightTerm ) {
+					continue;
+				}
+				
 				//list = m_msg2->getList(k);
 				list = m_q->m_qterms[k].m_posdbListPtr;
 				qti->m_subLists[nn] = list;
 				qti->m_bigramFlags[nn] = BF_HALFSTOPWIKIBIGRAM;
 				qti->m_bigramFlags[nn] |= BF_SYNONYM;
-				if (qt->m_piped)
+				if (qt->m_piped) {
 					qti->m_bigramFlags[nn]|=BF_PIPED;
+				}
+				
 				// add list of member terms as well
 				//qti->m_qtermList[nn] = bt;
 				bt->m_bitNum = nrg;
-				if ( list && list->m_listSize ) nn++;
+				if ( list && list->m_listSize ) {
+					nn++;
+				}
 			}
-
 		}
+
 		//
 		// then the non-bigram termlist
 		//
@@ -2249,11 +2400,14 @@ bool PosdbTable::setQueryTermInfo ( ) {
 		// no, because when inserting NEW (related) terms that are
 		// not currently in the document, this list may initially
 		// be empty.
-		if ( list && list->m_listSize ) nn++;
+		if ( list && list->m_listSize ) {
+			nn++;
+		}
+			
 		// 
 		// add left bigram now if not added above
 		//
-		if ( left>=0 && ! leftAlreadyAdded ) {
+		if ( left >= 0 && ! leftAlreadyAdded ) {
 			// get list
 			//list = m_msg2->getList(left);
 			list = m_q->m_qterms[left].m_posdbListPtr;
@@ -2271,14 +2425,19 @@ bool PosdbTable::setQueryTermInfo ( ) {
 			//qti->m_qtermList[nn] = &m_q->m_qterms[left];
 			m_q->m_qterms[left].m_bitNum = nrg;
 			// only really add if useful
-			if ( list && list->m_listSize ) nn++;
+			if ( list && list->m_listSize ) {
+				nn++;
+			}
 
 			// add bigram synonyms! like "new jersey" bigram
 			// has the synonym "nj"
 			//for( int32_t k = 0 ; k < m_msg2->getNumLists() ; k++ ) {
 			for ( int32_t k = 0 ; k < m_q->m_numTerms ; k++ ) {
 				QueryTerm *bt = &m_q->m_qterms[k];
-				if ( bt->m_synonymOf != leftTerm ) continue;
+				if ( bt->m_synonymOf != leftTerm ) {
+					continue;
+				}
+				
 				//list = m_msg2->getList(k);
 				list = m_q->m_qterms[k].m_posdbListPtr;
 				qti->m_subLists[nn] = list;
@@ -2288,14 +2447,17 @@ bool PosdbTable::setQueryTermInfo ( ) {
 				// add list of member terms
 				//qti->m_qtermList[nn] = bt;
 				bt->m_bitNum = nrg;
-				if ( list && list->m_listSize ) nn++;
+				if ( list && list->m_listSize ) {
+					nn++;
+				}
 			}
 
 		}
+		
 		// 
 		// add right bigram now if not added above
 		//
-		if ( right>=0 && ! rightAlreadyAdded ) {
+		if ( right >= 0 && ! rightAlreadyAdded ) {
 			// get list
 			//list = m_msg2->getList(right);
 			list = m_q->m_qterms[right].m_posdbListPtr;
@@ -2313,14 +2475,19 @@ bool PosdbTable::setQueryTermInfo ( ) {
 			//qti->m_qtermList[nn] = &m_q->m_qterms[right];
 			m_q->m_qterms[right].m_bitNum = nrg;
 			// only really add if useful
-			if ( list && list->m_listSize ) nn++;
+			if ( list && list->m_listSize ) {
+				nn++;
+			}
 
 			// add bigram synonyms! like "new jersey" bigram
 			// has the synonym "nj"
 			//for (int32_t k = 0 ; k < m_msg2->getNumLists() ; k++ ) {
 			for ( int32_t k = 0 ; k < m_q->m_numTerms ; k++ ) {
 				QueryTerm *bt = &m_q->m_qterms[k];
-				if ( bt->m_synonymOf != rightTerm ) continue;
+				if ( bt->m_synonymOf != rightTerm ) {
+					continue;
+				}
+				
 				//list = m_msg2->getList(k);
 				list = m_q->m_qterms[k].m_posdbListPtr;
 				qti->m_subLists[nn] = list;
@@ -2330,7 +2497,9 @@ bool PosdbTable::setQueryTermInfo ( ) {
 				// add list of member terms
 				//qti->m_qtermList[nn] = bt;
 				bt->m_bitNum = nrg;
-				if ( list && list->m_listSize ) nn++;
+				if ( list && list->m_listSize ) {
+					nn++;
+				}
 			}
 
 		}
@@ -2343,7 +2512,10 @@ bool PosdbTable::setQueryTermInfo ( ) {
 			QueryTerm *qt2 = &m_q->m_qterms[k];
 			QueryTerm *st = qt2->m_synonymOf;
 			// skip if not a synonym of this term
-			if ( st != qt ) continue;
+			if ( st != qt ) {
+				continue;
+			}
+			
 			// its a synonym, add it!
 			//list = m_msg2->getList(k);
 			list = m_q->m_qterms[k].m_posdbListPtr;
@@ -2358,7 +2530,9 @@ bool PosdbTable::setQueryTermInfo ( ) {
 			// set bitnum here i guess
 			qt2->m_bitNum = nrg;
 			// only really add if useful
-			if ( list && list->m_listSize ) nn++;
+			if ( list && list->m_listSize ) {
+				nn++;
+			}
 		}
 
 
@@ -2376,6 +2550,7 @@ bool PosdbTable::setQueryTermInfo ( ) {
 		if ( nn >= MAX_SUBLISTS ) {
 			log("query: too many sublists. %" PRId32" >= %" PRId32,
 			    nn,(int32_t)MAX_SUBLISTS);
+			logTrace(g_conf.m_logTracePosdb, "END.");
 			return false;
 		}
 		
@@ -2433,7 +2608,10 @@ bool PosdbTable::setQueryTermInfo ( ) {
 		// get it
 		QueryTermInfo *qti = &qip[i];
 		// do not consider for first termlist if negative
-		if ( qti->m_bigramFlags[0] & BF_NEGATIVE ) continue;
+		if ( qti->m_bigramFlags[0] & BF_NEGATIVE ) {
+			continue;
+		}
+		
 		// add to it
 		total = qti->m_totalSubListsSize;
 		// add up this now
@@ -2446,8 +2624,9 @@ bool PosdbTable::setQueryTermInfo ( ) {
 	}
 
 	// bad! ringbuf[] was not designed for this nonsense!
-	if ( m_minListi >= 255 )
+	if ( m_minListi >= 255 ) {
 		gbshutdownAbort(true);
+	}
 	
 	// set this for caller to use to loop over the queryterminfos
 	m_numQueryTermInfos = nrg;
@@ -2468,7 +2647,10 @@ bool PosdbTable::setQueryTermInfo ( ) {
 	need += 8;
 
 	// get max # of docids we got in an intersection from all the lists
-	if ( ! m_docIdVoteBuf.reserve ( need,"divbuf" ) ) return false;
+	if ( ! m_docIdVoteBuf.reserve ( need,"divbuf" ) ) {
+		logTrace(g_conf.m_logTracePosdb, "END.");
+		return false;
+	}
 
 	// i'm feeling if a boolean query put this in there too, the
 	// hashtable that maps each docid to its boolean bit vector
@@ -2493,28 +2675,35 @@ bool PosdbTable::setQueryTermInfo ( ) {
 	if ( m_numQueryTermInfos % 8 ) m_vecSize++;
 	// now preallocate the hashtable. 0 niceness.
 	if ( m_q->m_isBoolean &&  // true = useKeyMagic
-	     ! m_bt.set (8,m_vecSize,maxSlots,NULL,0,false,0,"booltbl",true))
+	     ! m_bt.set (8,m_vecSize,maxSlots,NULL,0,false,0,"booltbl",true)) {
+		logTrace(g_conf.m_logTracePosdb, "END.");
 		return false;
+	}
+	
 	// . m_ct maps a boolean "bit vector" to a true/false value
 	// . each "bit" in the "bit vector" indicates if docid has that 
 	//   particular query term
 	if ( m_q->m_isBoolean && // true = useKeyMagic
 	     ! m_ct.set (8,1,maxSlots,NULL,0,false,0,
-			 "booltbl",true))
+			 "booltbl",true)) {
+		logTrace(g_conf.m_logTracePosdb, "END.");
 		return false;
+	}
 
+	logTrace(g_conf.m_logTracePosdb, "END.");
 	return true;
 }
 
 
-void PosdbTable::rmDocIdVotes ( const QueryTermInfo *qti ) {
-	// shortcut
-	char *bufStart = m_docIdVoteBuf.getBufStart();
 
+void PosdbTable::rmDocIdVotes ( const QueryTermInfo *qti ) {
+	char *bufStart = m_docIdVoteBuf.getBufStart();
 	char *dp = NULL;
 	char *dpEnd;
 	char *recPtr     ;
 	char          *subListEnd ;
+
+	logTrace(g_conf.m_logTracePosdb, "BEGIN.");
 
 	// just scan each sublist vs. the docid list
 	for ( int32_t i = 0 ; i < qti->m_numSubLists  ; i++ ) {
@@ -2531,20 +2720,24 @@ void PosdbTable::rmDocIdVotes ( const QueryTermInfo *qti ) {
 				// if current docid in docid list is >= the docid
 				// in the sublist, stop. docid in list is 6 bytes and
 				// recPtr must be pointing to a 12 byte posdb rec.
-				if ( *(uint32_t *)(dp+1) >
-				     *(uint32_t *)(recPtr+8) ) 
+				if ( *(uint32_t *)(dp+1) > *(uint32_t *)(recPtr+8) ) {
 					break;
+				}
+				
 				// less than? keep going
-				if ( *(uint32_t *)(dp+1) <
-				     *(uint32_t *)(recPtr+8) ) 
+				if ( *(uint32_t *)(dp+1) < *(uint32_t *)(recPtr+8) ) {
 					continue;
+				}
+				
 				// top 4 bytes are equal. check lower single byte then.
-				if ( *(unsigned char *)(dp) >
-				     (*(unsigned char *)(recPtr+7) & 0xfc ) )
+				if ( *(unsigned char *)(dp) > (*(unsigned char *)(recPtr+7) & 0xfc ) ) {
 					break;
-				if ( *(unsigned char *)(dp) <
-				     (*(unsigned char *)(recPtr+7) & 0xfc ) )
+				}
+				
+				if ( *(unsigned char *)(dp) < (*(unsigned char *)(recPtr+7) & 0xfc ) ) {
 					continue;
+				}
+				
 				// . equal! mark it as nuked!
 				dp[5] = -1;//listGroupNum;
 				// skip it
@@ -2552,9 +2745,12 @@ void PosdbTable::rmDocIdVotes ( const QueryTermInfo *qti ) {
 				// advance recPtr now
 				break;
 			}
+
 			// if we've exhausted this docid list go to next sublist
-			if ( dp >= dpEnd )
+			if ( dp >= dpEnd ) {
 				goto endloop2;
+			}
+			
 			// skip that docid record in our termlist. it MUST have been
 			// 12 bytes, a docid heading record.
 			recPtr += 12;
@@ -2574,7 +2770,10 @@ void PosdbTable::rmDocIdVotes ( const QueryTermInfo *qti ) {
 	char *dst   = dp;
 	for ( ; dp < dpEnd ; dp += 6 ) {
 		// do not re-copy it if it was in this negative termlist
-		if ( dp[5] == -1 ) continue;
+		if ( dp[5] == -1 ) {
+			continue;
+		}
+		
 		// copy it over. might be the same address!
 		*(int32_t  *) dst    = *(int32_t *)  dp;
 		*(int16_t *)(dst+4) = *(int16_t *)(dp+4);
@@ -2582,9 +2781,12 @@ void PosdbTable::rmDocIdVotes ( const QueryTermInfo *qti ) {
 	}
 	// shrink the buffer size now
 	m_docIdVoteBuf.setLength ( dst - bufStart );
+	
+	logTrace(g_conf.m_logTracePosdb, "END.");
 	return;
-
 }
+
+
 
 // for boolean queries containing terms like gbmin:offerprice:190
 static inline bool isInRange( const char *p, const QueryTerm *qt ) {
@@ -2641,22 +2843,205 @@ static inline bool isInRange2 ( const char *recPtr, const char *subListEnd, cons
 }
 
 
-// . add a QueryTermInfo for a term (synonym lists,etc) to the docid vote buf
-//   "m_docIdVoteBuf"
-// . this is how we intersect all the docids to end up with the winners
-void PosdbTable::addDocIdVotes ( const QueryTermInfo *qti, int32_t listGroupNum) {
+
+//
+// Initialize the vote buffer with docids from the shortest 
+// term (rarest required term) list and initialize the scores to 0.
+// Called by addDocIdVotes
+//
+// The buffer consists of 5-byte docids and 1-byte scores. The score
+// is incremented for each term that matches the docid, and after 
+// each run, the list is "compacted" and shortened so only the 
+// matching docids are left.
+//
+void PosdbTable::makeDocIdVoteBufForRarestTerm(const QueryTermInfo *qti, bool isRangeTerm) {
+	char *cursor[MAX_SUBLISTS];
+	char *cursorEnd[MAX_SUBLISTS];
+
+	logTrace(g_conf.m_logTracePosdb, "term id [%" PRId64 "] [%.*s]", qti->m_qt->m_termId, qti->m_qt->m_termLen, qti->m_qt->m_term);
+
+	for ( int32_t i = 0 ; i < qti->m_numSubLists ; i++ ) {
+		// get that sublist
+		cursor    [i] = qti->m_subLists[i]->getList();
+		cursorEnd [i] = qti->m_subLists[i]->getListEnd();
+	}
+
+	char *bufStart = m_docIdVoteBuf.getBufStart();
+	char *dp = m_docIdVoteBuf.getBufStart();
+	char *recPtr;
+	char *minRecPtr;
+	char *lastMinRecPtr = NULL;
+	int32_t mini = -1;
+	QueryTerm *qt = qti->m_qt;
+	
+ getMin:
+
+	// reset this
+	minRecPtr = NULL;
+
+	// just scan each sublist vs. the docid list
+	for ( int32_t i = 0 ; i < qti->m_numSubLists ; i++ ) {
+		// skip if exhausted
+		if ( ! cursor[i] ) {
+			continue;
+		}
+			
+		// shortcut
+		recPtr = cursor[i];
+		
+		// get the min docid
+		if ( ! minRecPtr ) {
+			minRecPtr = recPtr;
+			mini = i;
+			continue;
+		}
+
+		// compare!
+		if ( *(uint32_t *)(recPtr   +8) >
+		     *(uint32_t *)(minRecPtr+8) ) {
+			continue;
+		}
+		
+		// a new min
+		if ( *(uint32_t *)(recPtr   +8) <
+		     *(uint32_t *)(minRecPtr+8) ) {
+			minRecPtr = recPtr;
+			mini = i;
+			continue;
+		}
+		
+		// check lowest byte
+		if ( (*(unsigned char *)(recPtr   +7) & 0xfc ) >
+		     (*(unsigned char *)(minRecPtr+7) & 0xfc ) ) {
+			continue;
+		}
+			
+		// a new min
+		if ( (*(unsigned char *)(recPtr   +7) & 0xfc ) <
+		     (*(unsigned char *)(minRecPtr+7) & 0xfc ) ) {
+			minRecPtr = recPtr;
+			mini = i;
+			continue;
+		}
+	}
+
+	// if no min then all lists exhausted!
+	if ( ! minRecPtr ) {
+		// update length
+		m_docIdVoteBuf.setLength ( dp - bufStart );
+		
+		// all done!
+		logTrace(g_conf.m_logTracePosdb, "END.");
+		return;
+	}
+
+	bool inRange;
+
+	// if we are a range term, does this subtermlist
+	// for this docid meet the min/max requirements
+	// of the range term, i.e. gbmin:offprice:190.
+	// if it doesn't then do not add this docid to the
+	// docidVoteBuf, "dp"
+	if ( isRangeTerm ) {
+		// a new docid i guess
+		inRange = false;
+		
+		// no longer in range
+		if ( isInRange2(cursor[mini],cursorEnd[mini],qt)) {
+			inRange = true;
+		}
+	}
+		
+
+	// advance that guy over that docid
+	cursor[mini] += 12;
+	// 6 byte keys follow?
+	for ( ; ; ) {
+		// end of list?
+		if ( cursor[mini] >= cursorEnd[mini] ) {
+			// use NULL to indicate list is exhausted
+			cursor[mini] = NULL;
+			break;
+		}
+		
+		// if we hit a new 12 byte key for a new docid, stop
+		if ( ! ( cursor[mini][0] & 0x04 ) ) {
+			break;
+		}
+
+		// check range again
+		if (isRangeTerm && isInRange2(cursor[mini],cursorEnd[mini],qt)) {
+			inRange = true;
+		}
+
+		// otherwise, skip this 6 byte key
+		cursor[mini] += 6;
+	}
+
+	// is it a docid dup?
+	if(lastMinRecPtr &&
+	   *(uint32_t *)(lastMinRecPtr+8) ==
+	   *(uint32_t *)(minRecPtr+8) &&
+	   (*(unsigned char *)(lastMinRecPtr+7)&0xfc) ==
+	   (*(unsigned char *)(minRecPtr+7)&0xfc)) {
+		goto getMin;
+	}
+
+	// . do not store the docid if not in the whitelist
+	// . FIX: two lower bits, what are they? at minRecPtrs[7].
+	// . well the lowest bit is the siterank upper bit and the
+	//   other bit is always 0. we should be ok with just using
+	//   the 6 bytes of the docid ptr as is though since the siterank
+	//   should be the same for the site: terms we indexed for the same
+	//   docid!!
+	if ( m_useWhiteTable && ! m_whiteListTable.isInTable(minRecPtr+7) ) {
+		goto getMin;
+	}
+		
+	if ( isRangeTerm && ! inRange ) {
+		goto getMin;
+	}
+
+	// only update this if we add the docid... that way there can be
+	// a winning "inRange" term in another sublist and the docid will
+	// get added.
+	lastMinRecPtr = minRecPtr;
+
+	// store our docid. actually it contains two lower bits not
+	// part of the docid, so we'll have to shift and mask to get
+	// the actual docid!
+	// docid is only 5 bytes for now
+	*(int32_t  *)(dp+1) = *(int32_t  *)(minRecPtr+8);
+	// the single lower byte
+	dp[0] = minRecPtr[7] & 0xfc;
+	// 0 vote count
+	dp[5] = 0;
+
+	// debug
+	//	int64_t dd = g_posdb.getDocId(minRecPtr);
+	//	log(LOG_ERROR, "%s:%s: adding docid %" PRId64 "", __FILE__, __func__, dd);
+
+	// advance
+	dp += 6;
+	
+	// get the next min from all the termlists
+	goto getMin;
+	
+}
+
+
+
+// add a QueryTermInfo for a term (synonym lists,etc) to the docid vote buf "m_docIdVoteBuf".
+// this is how we intersect all the docids to end up with the winners.
+void PosdbTable::addDocIdVotes( const QueryTermInfo *qti, int32_t listGroupNum) {
+
+	logTrace(g_conf.m_logTracePosdb, "BEGIN.");
 
 	// sanity check, we store this in a single byte below for voting
-	if ( listGroupNum >= 256 )
+	if ( listGroupNum >= 256 ) {
 		gbshutdownAbort(true);
+	}
 
-	// shortcut
-	char *bufStart = m_docIdVoteBuf.getBufStart();
-
-	char *dp = NULL;
-	char *dpEnd;
-	char *recPtr     ;
-	char          *subListEnd ;
 
 	// range terms tend to disappear if the docid's value falls outside
 	// of the specified range... gbmin:offerprice:190
@@ -2677,24 +3062,45 @@ void PosdbTable::addDocIdVotes ( const QueryTermInfo *qti, int32_t listGroupNum)
 	// if ( qt->m_fieldCode == FIELD_GBFIELDMATCH )
 	// 	isRangeTerm = true;
 
+
+	//
+	// add the first sublist's docids into the docid buf
+	//
+	if( listGroupNum == 0 ) {
+		// the first listGroup is not intersecting, just adding to
+		// the docid vote buf. that is, if the query is "jump car" we
+		// just add all the docids for "jump". Subsequent calls to 
+		// this function will intersect those docids with the docids
+		// for "car", resulting in a buffer with docids that contain 
+		// both terms.
+
+		makeDocIdVoteBufForRarestTerm( qti, isRangeTerm);
+		logTrace(g_conf.m_logTracePosdb, "END.");
+		return;
+	}
+
+
+	// shortcut
+	char *bufStart = m_docIdVoteBuf.getBufStart();
+	char *dp = NULL;
+	char *dpEnd;
+	char *recPtr;
+	char *subListEnd;
+
 	// . just scan each sublist vs. the docid list
 	// . a sublist is a termlist for a particular query term, for instance
 	//   the query term "jump" will have sublists for "jump" "jumps"
 	//   "jumping" "jumped" and maybe even "jumpy", so that could be
 	//   5 sublists, and their QueryTermInfo::m_qtermNum should be the
 	//   same for all 5.
-	// . IFF listGroupNum > 0, we handle first listgroup below, because
-	//   the first listGroup is not intersecting, just adding to
-	//   the docid vote buf. that is, if the query is "jump car" we
-	//   just add all the docids for "jump" and then intersect with the
-	//   docids for "car".
-	for ( int32_t i = 0 ; i < qti->m_numSubLists && listGroupNum > 0; i++){
+	for ( int32_t i = 0 ; i < qti->m_numSubLists; i++) {
 		// get that sublist
 		recPtr     = qti->m_subLists[i]->getList();
 		subListEnd = qti->m_subLists[i]->getListEnd();
 		// reset docid list ptrs
-		dp    =      m_docIdVoteBuf.getBufStart();
-		dpEnd = dp + m_docIdVoteBuf.length();
+		dp		= m_docIdVoteBuf.getBufStart();
+		dpEnd 	= dp + m_docIdVoteBuf.length();
+		
 		// loop it
 	subLoop:
 		// scan for his docids and inc the vote
@@ -2702,28 +3108,32 @@ void PosdbTable::addDocIdVotes ( const QueryTermInfo *qti, int32_t listGroupNum)
 			// if current docid in docid list is >= the docid
 			// in the sublist, stop. docid in list is 6 bytes and
 			// recPtr must be pointing to a 12 byte posdb rec.
-			if ( *(uint32_t *)(dp+1) >
-			     *(uint32_t *)(recPtr+8) ) 
+			if ( *(uint32_t *)(dp+1) > *(uint32_t *)(recPtr+8) ) {
 				break;
+			}
+				
 			// less than? keep going
-			if ( *(uint32_t *)(dp+1) <
-			     *(uint32_t *)(recPtr+8) ) 
+			if ( *(uint32_t *)(dp+1) < *(uint32_t *)(recPtr+8) ) {
 				continue;
+			}
+			
 			// top 4 bytes are equal. check lower single byte then.
-			if ( *(unsigned char *)(dp) >
-			     (*(unsigned char *)(recPtr+7) & 0xfc ) )
+			if ( *(unsigned char *)(dp) > (*(unsigned char *)(recPtr+7) & 0xfc ) ) {
 				break;
-			if ( *(unsigned char *)(dp) <
-			     (*(unsigned char *)(recPtr+7) & 0xfc ) )
+			}
+			
+			if ( *(unsigned char *)(dp) < (*(unsigned char *)(recPtr+7) & 0xfc ) ) {
 				continue;
+			}
 
 			// if we are a range term, does this subtermlist
 			// for this docid meet the min/max requirements
 			// of the range term, i.e. gbmin:offprice:190.
 			// if it doesn't then do not add this docid to the
 			// docidVoteBuf, "dp"
-			if ( isRangeTerm && ! isInRange2(recPtr,subListEnd,qt))
+			if ( isRangeTerm && ! isInRange2(recPtr, subListEnd, qt)) {
 				break;
+			}
 
 			// . equal! record our vote!
 			// . we start at zero for the
@@ -2732,14 +3142,16 @@ void PosdbTable::addDocIdVotes ( const QueryTermInfo *qti, int32_t listGroupNum)
 			// skip it
 			dp += 6;
 
-			// advance recPtr now
+			// break out to advance recPtr
 			break;
 		}
 
 		// if we've exhausted this docid list go to next sublist
 		// since this docid is NOT in the current/ongoing intersection
 		// of the docids for each queryterm
-		if ( dp >= dpEnd ) continue;
+		if ( dp >= dpEnd ) {
+			continue;
+		}
 
 		// skip that docid record in our termlist. it MUST have been
 		// 12 bytes, a docid heading record.
@@ -2748,197 +3160,45 @@ void PosdbTable::addDocIdVotes ( const QueryTermInfo *qti, int32_t listGroupNum)
 		// skip any following keys that are 6 bytes, that means they
 		// share the same docid
 		for ( ; recPtr < subListEnd && ((*recPtr)&0x04); recPtr += 6 );
+		
 		// if we have more posdb recs in this sublist, then keep
 		// adding our docid votes into the docid list
-		if ( recPtr < subListEnd ) goto subLoop;
+		if ( recPtr < subListEnd ) {
+			goto subLoop;
+		}
+			
 		// otherwise, advance to next sublist
 	}
 
-	// . all done if not the first group of sublists
-	// . shrink the docid list then
-	if ( listGroupNum > 0 ) {
-		// ok, shrink the docidbuf by removing docids with not enough 
-		// votes which means they are missing a query term
-		dp    =      m_docIdVoteBuf.getBufStart();
-		dpEnd = dp + m_docIdVoteBuf.length();
-		char *dst   = dp;
-		for ( ; dp < dpEnd ; dp += 6 ) {
-			// skip if it has enough votes to be in search 
-			// results so far
-			if ( dp[5] != listGroupNum ) continue;
-			// copy it over. might be the same address!
-			*(int32_t  *) dst    = *(int32_t *)  dp;
-			*(int16_t *)(dst+4) = *(int16_t *)(dp+4);
-			dst += 6;
-		}
-		// shrink the buffer size now
-		m_docIdVoteBuf.setLength ( dst - bufStart );
-		return;
-	}
 
-	//
-	// OTHERWISE add the first sublist's docids into the docid buf!!!!
-	//
-
-	// cursors
-	char *cursor[MAX_SUBLISTS];
-	char *cursorEnd[MAX_SUBLISTS];
-	for ( int32_t i = 0 ; i < qti->m_numSubLists ; i++ ) {
-		// get that sublist
-		cursor    [i] = qti->m_subLists[i]->getList();
-		cursorEnd [i] = qti->m_subLists[i]->getListEnd();
-	}
-
-	// reset docid list ptrs
-	dp = m_docIdVoteBuf.getBufStart();
-	char *minRecPtr;
-	char *lastMinRecPtr = NULL;
-	int32_t mini = -1;
-
- getMin:
-
-	// reset this
-	minRecPtr = NULL;
-
-	// just scan each sublist vs. the docid list
-	for ( int32_t i = 0 ; i < qti->m_numSubLists ; i++ ) {
-		// skip if exhausted
-		if ( ! cursor[i] ) continue;
-		// shortcut
-		recPtr = cursor[i];
-		// get the min docid
-		if ( ! minRecPtr ) {
-			minRecPtr = recPtr;
-			mini = i;
+	// ok, shrink the docidbuf by removing docids with not enough 
+	// votes which means they are missing a query term
+	dp    =      m_docIdVoteBuf.getBufStart();
+	dpEnd = dp + m_docIdVoteBuf.length();
+	char *dst   = dp;
+	for ( ; dp < dpEnd ; dp += 6 ) {
+		// skip if it has enough votes to be in search 
+		// results so far
+		if ( dp[5] != listGroupNum ) {
 			continue;
 		}
-		// compare!
-		if ( *(uint32_t *)(recPtr   +8) >
-		     *(uint32_t *)(minRecPtr+8) )
-			continue;
-		// a new min
-		if ( *(uint32_t *)(recPtr   +8) <
-		     *(uint32_t *)(minRecPtr+8) ) {
-			minRecPtr = recPtr;
-			mini = i;
-			continue;
-		}
-		// check lowest byte
-		if ( (*(unsigned char *)(recPtr   +7) & 0xfc ) >
-		     (*(unsigned char *)(minRecPtr+7) & 0xfc ) )
-			continue;
-		// a new min
-		if ( (*(unsigned char *)(recPtr   +7) & 0xfc ) <
-		     (*(unsigned char *)(minRecPtr+7) & 0xfc ) ) {
-			minRecPtr = recPtr;
-			mini = i;
-			continue;
-		}
+			
+		// copy it over. might be the same address!
+		*(int32_t  *) dst	= *(int32_t *)  dp;
+		*(int16_t *)(dst+4) = *(int16_t *)(dp+4);
+		dst += 6;
 	}
 
-	// if no min then all lists exhausted!
-	if ( ! minRecPtr ) {
-		// update length
-		m_docIdVoteBuf.setLength ( dp - bufStart );
-		// all done!
-		return;
-	}
-
-	bool inRange;
-
-	// if we are a range term, does this subtermlist
-	// for this docid meet the min/max requirements
-	// of the range term, i.e. gbmin:offprice:190.
-	// if it doesn't then do not add this docid to the
-	// docidVoteBuf, "dp"
-	if ( isRangeTerm ) {
-		// a new docid i guess
-		inRange = false;
-		// no longer in range
-		if ( isInRange2(cursor[mini],cursorEnd[mini],qt))
-			inRange = true;
-	}
-		
-
-	// advance that guy over that docid
-	cursor[mini] += 12;
-	// 6 byte keys follow?
-	for ( ; ; ) {
-		// end of list?
-		if ( cursor[mini] >= cursorEnd[mini] ) {
-			// use NULL to indicate list is exhausted
-			cursor[mini] = NULL;
-			break;
-		}
-		// if we hit a new 12 byte key for a new docid, stop
-		if ( ! ( cursor[mini][0] & 0x04 ) ) break;
-
-		// check range again
-		if (isRangeTerm && isInRange2(cursor[mini],cursorEnd[mini],qt))
-			inRange = true;
-
-		// otherwise, skip this 6 byte key
-		cursor[mini] += 6;
-	}
-
-	// is it a docid dup?
-	if(lastMinRecPtr &&
-	   *(uint32_t *)(lastMinRecPtr+8)==
-	   *(uint32_t *)(minRecPtr+8)&&
-	   (*(unsigned char *)(lastMinRecPtr+7)&0xfc)==
-	   (*(unsigned char *)(minRecPtr+7)&0xfc))
-		goto getMin;
-
-	// . do not store the docid if not in the whitelist
-	// . FIX: two lower bits, what are they? at minRecPtrs[7].
-	// . well the lowest bit is the siterank upper bit and the
-	//   other bit is always 0. we should be ok with just using
-	//   the 6 bytes of the docid ptr as is though since the siterank
-	//   should be the same for the site: terms we indexed for the same
-	//   docid!!
-	if ( m_useWhiteTable && ! m_whiteListTable.isInTable(minRecPtr+7) )
-		goto getMin;
-		
-	if ( isRangeTerm && ! inRange )
-		goto getMin;
-
-	// only update this if we add the docid... that way there can be
-	// a winning "inRange" term in another sublist and the docid will
-	// get added.
-	lastMinRecPtr = minRecPtr;
-
-	// store our docid. actually it contains two lower bits not
-	// part of the docid, so we'll have to shift and mask to get
-	// the actual docid!
-	// docid is only 5 bytes for now
-	*(int32_t  *)(dp+1) = *(int32_t  *)(minRecPtr+8);
-	// the single lower byte
-	dp[0] = minRecPtr[7] & 0xfc;
-	// 0 vote count
-	dp[5] = 0;
-
-	/*
-	// debug
-	int64_t dd = g_posdb.getDocId(minRecPtr);
-	log("posdb: adding docid %" PRId64, dd);
-	// test
-	uint64_t actualDocId;
-	actualDocId = *(uint32_t *)(dp+1);
-	actualDocId <<= 8;
-	actualDocId |= (unsigned char)dp[0];
-	actualDocId >>= 2;
-	if (  dd != actualDocId )
-		gbshutdownAbort(true);
-	*/
-
-	// advance
-	dp += 6;
-	// get the next min from all the termlists
-	goto getMin;
+	// shrink the buffer size now
+	m_docIdVoteBuf.setLength ( dst - bufStart );
+	logTrace(g_conf.m_logTracePosdb, "END.");
 }
 
 
+
 void PosdbTable::shrinkSubLists ( QueryTermInfo *qti ) {
+
+	logTrace(g_conf.m_logTracePosdb, "BEGIN.");
 
 	// reset count of new sublists
 	qti->m_numNewSubLists = 0;
@@ -2963,37 +3223,50 @@ void PosdbTable::shrinkSubLists ( QueryTermInfo *qti ) {
 		// scan the docid list for the current docid in this termlist
 		for ( ; ; dp += 6 ) {
 			// no docids in list? no need to skip any more recPtrs!
-			if ( dp >= dpEnd ) goto doneWithSubList;
+			if ( dp >= dpEnd ) {
+				goto doneWithSubList;
+			}
+				
 			// if current docid in docid list is >= the docid
 			// in the sublist, stop. docid in list is 6 bytes and
 			// recPtr must be pointing to a 12 byte posdb rec.
-			if ( *(uint32_t *)(dp+1) > 
-			     *(uint32_t *)(recPtr+8) )
+			if ( *(uint32_t *)(dp+1) > *(uint32_t *)(recPtr+8) ) {
 				break;
+			}
+			
 			// try to catch up docid if it is behind
-			if ( *(uint32_t *)(dp+1) < 
-			     *(uint32_t *)(recPtr+8) )
+			if ( *(uint32_t *)(dp+1) < *(uint32_t *)(recPtr+8) ) {
 				continue;
+			}
+
 			// check lower byte if equal
-			if ( *(unsigned char *)(dp) >
-			     (*(unsigned char *)(recPtr+7) & 0xfc ) )
+			if ( *(unsigned char *)(dp) > (*(unsigned char *)(recPtr+7) & 0xfc ) ) {
 				break;
-			if ( *(unsigned char *)(dp) <
-			     (*(unsigned char *)(recPtr+7) & 0xfc ) )
+			}
+
+			if ( *(unsigned char *)(dp) < (*(unsigned char *)(recPtr+7) & 0xfc ) ) {
 				continue;
+			}
+
 			// copy over the 12 byte key
 			*(int64_t *)dst = *(int64_t *)recPtr;
 			*(int32_t *)(dst+8) = *(int32_t *)(recPtr+8);
 			// skip that 
 			dst    += 12;
 			recPtr += 12;
+
 			// copy over any 6 bytes keys following
 			for ( ; ; ) {
-				if ( recPtr >= subListEnd ) 
+				if ( recPtr >= subListEnd ) {
 					// give up on this exhausted term list!
 					goto doneWithSubList;
+				}
+				
 				// next docid willbe next 12 bytekey
-				if ( ! ( recPtr[0] & 0x04 ) ) break;
+				if ( ! ( recPtr[0] & 0x04 ) ) {
+					break;
+				}
+				
 				// otherwise it's 6 bytes
 				*(int32_t *)dst = *(int32_t *)recPtr;
 				*(int16_t *)(dst+4) = *(int16_t *)(recPtr+4);
@@ -3007,13 +3280,20 @@ void PosdbTable::shrinkSubLists ( QueryTermInfo *qti ) {
 		// skip that docid record in our termlist. it MUST have been
 		// 12 bytes, a docid heading record.
 		recPtr += 12;
+
 		// skip any following keys that are 6 bytes, that means they
 		// share the same docid
 		for ( ; ;  ) {
 			// list exhausted?
-			if ( recPtr >= subListEnd ) goto doneWithSubList;
+			if ( recPtr >= subListEnd ) {
+				goto doneWithSubList;
+			}
+			
 			// stop if next key is 12 bytes, that is a new docid
-			if ( ! (recPtr[0] & 0x04) ) break;
+			if ( ! (recPtr[0] & 0x04) ) {
+				break;
+			}
+			
 			// skip it
 			recPtr += 6;
 		}
@@ -3030,9 +3310,15 @@ void PosdbTable::shrinkSubLists ( QueryTermInfo *qti ) {
 		qti->m_newSubListEnd   [x] = dst;
 		qti->m_cursor          [x] = savedDst;
 		qti->m_savedCursor     [x] = savedDst;
-		if ( qti->m_newSubListSize [x] ) qti->m_numNewSubLists++;
+		
+		if ( qti->m_newSubListSize [x] ) {
+			qti->m_numNewSubLists++;
+		}
 	}
+	
+	logTrace(g_conf.m_logTracePosdb, "END.");
 }
+
 
 
 // . compare the output of this to intersectLists9_r()
@@ -3043,12 +3329,13 @@ void PosdbTable::shrinkSubLists ( QueryTermInfo *qti ) {
 void PosdbTable::intersectLists10_r ( ) {
 	logTrace(g_conf.m_logTracePosdb, "BEGIN. numTerms: %" PRId32, m_q->m_numTerms);
 
+
 	m_finalScore = 0.0;
+
 
 	prepareWhiteListTable();
 
 	initWeights();
-
 	// assume no-op
 	m_t1 = 0LL;
 
@@ -3060,36 +3347,44 @@ void PosdbTable::intersectLists10_r ( ) {
 	// assume we return early
 	m_addListsTime = 0;
 
-	// . now swap the top 12 bytes of each list
-	// . this gives a contiguous list of 6-byte score/docid entries
-	//   because the first record is always 12 bytes and the rest are
-	//   6 bytes (with the half bit on) due to our termid compression
-	// . this makes the lists much much easier to work with, but we have
-	//   to remember to swap back when done!
-	//for ( int32_t k = 0 ; k < m_msg2->getNumLists() ; k++ ) {
-	// now we only do this if m_msg2 is valid, because we do this
-	// ahead of time in seo.cpp which sets msg2 to NULL. so skip in that
-	// case.
+
+	//
+	// now swap the top 6 bytes of each list.
+	// this gives a contiguous list of 12-byte docid/score entries
+	// because the first record is always 18 bytes (termid, docid, score) 
+	// and the rest are 6 bytes due to our termid compression.
+	// this makes the lists much much easier to work with, but we have
+	// to remember to swap back when done!
+	//
 	for ( int32_t k = 0 ; k < m_q->m_numTerms ; k++ ) {
 		// count
 		int64_t total = 0LL;
 		// get the list
 		RdbList *list = m_q->m_qterms[k].m_posdbListPtr;
 		// skip if null
-		if ( ! list ) continue;
+		if ( ! list ) {
+			continue;
+		}
+		
 		// skip if list is empty, too
-		if ( list->isEmpty() ) continue;
+		if ( list->isEmpty() ) {
+			continue;
+		}
+		
 		// tally
 		total += list->m_listSize;
 		// point to start
 		char *p = list->m_list;
+		
 		// remember to swap back when done!!
 		char ttt[12];
 		gbmemcpy ( ttt   , p       , 12 );
 		gbmemcpy ( p     , p + 12 , 6   );
 		gbmemcpy ( p + 6 , ttt     , 12 );
-		// point to the low "hks" bytes now
+
+		// point to the low "hks" bytes now, skipping the termid
 		p += 6;
+		
 		// turn half bit on. first key is now 12 bytes!!
 		*p |= 0x02;
 		// MANGLE the list
@@ -3104,12 +3399,13 @@ void PosdbTable::intersectLists10_r ( ) {
 		}
 	}
 
+
 	// point to our array of query term infos set in setQueryTermInfos()
 	QueryTermInfo *qip = (QueryTermInfo *)m_qiBuf.getBufStart();
 
 	// setQueryTermInfos() should have set how many we have
 	if ( m_numQueryTermInfos == 0 ) {
-		log(LOG_DEBUG, "query: NO REQUIRED TERMS IN QUERY2!");
+		log(LOG_DEBUG, "query: NO REQUIRED TERMS IN QUERY!");
 
 		logTrace(g_conf.m_logTracePosdb, "END, m_numQueryTermInfos = 0");
 		return;
@@ -3122,15 +3418,18 @@ void PosdbTable::intersectLists10_r ( ) {
 		return;
 	}
 
+
 	int64_t now;
 	int64_t took;
 	int32_t phase = 1;
 
 	int32_t listGroupNum = 0;
 
+
 	// if all non-negative query terms are in the same wikiphrase then
 	// we can apply the WIKI_WEIGHT in getMaxPossibleScore() which
 	// should help us speed things up!
+	// @@@ BR: Why should this give a boost at all.. ?
 	m_allInSameWikiPhrase = true;
 	for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
 		// get it
@@ -3140,11 +3439,12 @@ void PosdbTable::intersectLists10_r ( ) {
 		// skip if numeric field like gbsortby:price gbmin:price:1.23
 		if ( qti->m_bigramFlags[0] & BF_NUMBER ) continue;
 		// set it
-		if ( qti->m_wikiPhraseId == 1 ) continue;
+		if ( qti->m_wikiPhraseId == 1 ) continue;			//@@@ BR: Why only check for id = 1 ??
 		// stop
 		m_allInSameWikiPhrase = false;
 		break;
 	}
+
 
 
 	logTrace(g_conf.m_logTracePosdb, "m_allInSameWikiPhrase: %s", m_allInSameWikiPhrase?"true":"false");
@@ -3156,62 +3456,80 @@ void PosdbTable::intersectLists10_r ( ) {
 	// we use Query::getBitScore(qvec_t ebits) to evaluate a docid's
 	// query term explicit term bit vector.
 	if ( m_q->m_isBoolean ) {
-		logTrace(g_conf.m_logTracePosdb, "makeDocIdVoteBufForBoolQuery_r");
+		logTrace(g_conf.m_logTracePosdb, "makeDocIdVoteBufForBoolQuery");
 		// keeping the docids sorted is the challenge here...
-		makeDocIdVoteBufForBoolQuery_r();
-		goto skip3;
+		makeDocIdVoteBufForBoolQuery();
+	}
+	else {
+
+		// . create "m_docIdVoteBuf" filled with just the docids from the
+		//   smallest group of sublists 
+		// . m_minListi is the queryterminfo that had the smallest total
+		//   sublist sizes of m_minListSize. this was set in 
+		//   setQueryTermInfos()
+		// . if all these sublist termlists were 50MB i'd day 10-25ms to
+		//   add their docid votes.
+		logTrace(g_conf.m_logTracePosdb, "addDocIdVotes");
+		addDocIdVotes ( &qip[m_minListi], listGroupNum );
+		
+
+		// now repeat the docid scan for successive lists but only
+		// inc the docid count for docids we match. docids that are 
+		// in m_docIdVoteBuf but not in sublist group #i will be removed
+		// from m_docIdVoteBuf. worst case scenario with termlists limited
+		// to 30MB will be about 10MB of docid vote buf, but it should
+		// shrink quite a bit every time we call addDocIdVotes() with a 
+		// new group of sublists for a query term. but scanning 10MB should
+		// be pretty fast since gk0 does like 4GB/s of main memory reads.
+		// i would think scanning and docid voting for 200MB of termlists 
+		// should take like 50-100ms
+		for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
+			// skip if we did it above
+			if ( i == m_minListi ) {
+				continue;
+			}
+			
+			// get it
+			QueryTermInfo *qti = &qip[i];
+			// do not consider for adding if negative ('my house -home')
+			if ( qti->m_bigramFlags[0] & BF_NEGATIVE ) {
+				continue;
+			}
+			
+			// inc this
+			listGroupNum++;
+			
+			// if it hits 256 then wrap back down to 1
+			if ( listGroupNum >= 256 ) {
+				listGroupNum = 1;
+			}
+			
+			// add it
+			addDocIdVotes ( qti, listGroupNum );
+		}
+		logTrace(g_conf.m_logTracePosdb, "Added DocIdVotes");
+
+		// remove the negative query term's docids from our docid vote buf
+		for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
+			// skip if we did it above
+			if ( i == m_minListi ) {
+				continue;
+			}
+			
+			// get it
+			QueryTermInfo *qti = &qip[i];
+			
+			// do not consider for adding if negative ('my house -home')
+			if ( ! (qti->m_bigramFlags[0] & BF_NEGATIVE) ) {
+				continue;
+			}
+			
+			// add it
+			rmDocIdVotes ( qti );
+		}
+		logTrace(g_conf.m_logTracePosdb, "Removed DocIdVotes for negative query terms");
 	}
 
-	// . create "m_docIdVoteBuf" filled with just the docids from the
-	//   smallest group of sublists 
-	// . m_minListi is the queryterminfo that had the smallest total
-	//   sublist sizes of m_minListSize. this was set in 
-	//   setQueryTermInfos()
-	// . if all these sublist termlists were 50MB i'd day 10-25ms to
-	//   add their docid votes.
-	logTrace(g_conf.m_logTracePosdb, "addDocIdVotes");
-	addDocIdVotes ( &qip[m_minListi], listGroupNum );
-
-	// now repeat the docid scan for successive lists but only
-	// inc the docid count for docids we match. docids that are 
-	// in m_docIdVoteBuf but not in sublist group #i will be removed
-	// from m_docIdVoteBuf. worst case scenario with termlists limited
-	// to 30MB will be about 10MB of docid vote buf, but it should
-	// shrink quite a bit every time we call addDocIdVotes() with a 
-	// new group of sublists for a query term. but scanning 10MB should
-	// be pretty fast since gk0 does like 4GB/s of main memory reads.
-	// i would think scanning and docid voting for 200MB of termlists 
-	// should take like 50-100ms
-	for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
-		// skip if we did it above
-		if ( i == m_minListi ) continue;
-		// get it
-		QueryTermInfo *qti = &qip[i];
-		// do not consider for adding if negative ('my house -home')
-		if ( qti->m_bigramFlags[0] & BF_NEGATIVE ) continue;
-		// inc this
-		listGroupNum++;
-		// if it hits 256 then wrap back down to 1
-		if ( listGroupNum >= 256 ) listGroupNum = 1;
-		// add it
-		addDocIdVotes ( qti, listGroupNum );
-	}
-	logTrace(g_conf.m_logTracePosdb, "Added DocIdVotes");
-
-	// remove the negative query term's docids from our docid vote buf
-	for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
-		// skip if we did it above
-		if ( i == m_minListi ) continue;
-		// get it
-		QueryTermInfo *qti = &qip[i];
-		// do not consider for adding if negative ('my house -home')
-		if ( ! (qti->m_bigramFlags[0] & BF_NEGATIVE) ) continue;
-		// add it
-		rmDocIdVotes ( qti );
-	}
-	logTrace(g_conf.m_logTracePosdb, "Removed DocIdVotes for negative query terms");
-
- skip3:
 
 	if ( m_debug ) {
 		now = gettimeofdayInMilliseconds();
@@ -3418,7 +3736,9 @@ void PosdbTable::intersectLists10_r ( ) {
  docIdLoop:
 
 	// is this right?
-	if ( docIdPtr >= docIdEnd ) goto done;
+	if ( docIdPtr >= docIdEnd ) {
+		goto done;
+	}
 
 
 	// . second pass? for printing out transparency info
@@ -3427,17 +3747,26 @@ void PosdbTable::intersectLists10_r ( ) {
 		logTrace(g_conf.m_logTracePosdb, "This is the second pass");
 		
 		// did we get enough score info?
-		if ( numProcessed >= m_r->m_docsToGet ) goto done;
+		if ( numProcessed >= m_r->m_docsToGet ) {
+			goto done;
+		}
+		
 		// loop back up here if the docid is from a previous range
 	nextNode:
 		// this mean top tree empty basically
-		if ( topCursor == -1 ) goto done;
+		if ( topCursor == -1 ) {
+			goto done;
+		}
+		
 		// get the #1 docid/score node #
 		if ( topCursor == -9 ) {
 			// if our query had a quoted phrase, might have had no
 			// docids in the top tree! getHighNode() can't handle
 			// that so handle it here
-			if ( m_topTree->m_numUsedNodes == 0 ) goto done;
+			if ( m_topTree->m_numUsedNodes == 0 ) {
+				goto done;
+			}
+			
 			// otherwise, initialize topCursor
 			topCursor = m_topTree->getHighNode();
 		}
@@ -3463,7 +3792,10 @@ void PosdbTable::intersectLists10_r ( ) {
 			// get it
 			QueryTermInfo *qti = &qip[i];
 			// do not advance negative termlist cursor
-			if ( qti->m_bigramFlags[0] & BF_NEGATIVE ) continue;
+			if ( qti->m_bigramFlags[0] & BF_NEGATIVE ) {
+				continue;
+			}
+			
 			// do each sublist
 			for ( int32_t j = 0 ; j < qti->m_numNewSubLists ; j++ ) {
 				// get termlist for that docid
@@ -3481,9 +3813,15 @@ void PosdbTable::intersectLists10_r ( ) {
 				xp += 12;
 				for ( ; ; ) {
 					// do not breach sublist
-					if ( xp >= xlistEnd ) break;
+					if ( xp >= xlistEnd ) {
+						break;
+					}
+					
 					// break if 12 byte key: another docid!
-					if ( !(xp[0] & 0x04) ) break;
+					if ( !(xp[0] & 0x04) ) {
+						break;
+					}
+					
 					// skip over 6 byte key
 					xp += 6;
 				}
@@ -3491,9 +3829,11 @@ void PosdbTable::intersectLists10_r ( ) {
 				qti->m_cursor[j] = xp;
 			}
 		}
+		
 		// skip the pre-advance logic below
 		goto skipPreAdvance;
 	}
+
 
 	// . pre-advance each termlist's cursor to skip to next docid
 	// . set QueryTermInfo::m_cursor and m_savedCursor of each termlist
@@ -3505,7 +3845,10 @@ void PosdbTable::intersectLists10_r ( ) {
 		// get it
 		QueryTermInfo *qti = &qip[i];
 		// do not advance negative termlist cursor
-		if ( qti->m_bigramFlags[0] & BF_NEGATIVE ) continue;
+		if ( qti->m_bigramFlags[0] & BF_NEGATIVE ) {
+			continue;
+		}
+		
 		// do each sublist
 		for ( int32_t j = 0 ; j < qti->m_numNewSubLists ; j++ ) {
 			// shortcuts
@@ -3516,13 +3859,13 @@ void PosdbTable::intersectLists10_r ( ) {
 			// must match docid
 			if ( xc >= xcEnd ||
 			     *(int32_t *)(xc+8) != *(int32_t *)(docIdPtr+1) ||
-			     (*(char *)(xc+7)&0xfc) != 
-			     (*(char *)(docIdPtr)&0xfc) ) {
+			     (*(char *)(xc+7)&0xfc) != (*(char *)(docIdPtr)&0xfc) ) {
 				// flag it as not having the docid
 				qti->m_savedCursor[j] = NULL;
 				// skip this sublist if does not have our docid
 				continue;
 			}
+			
 			// sanity. must be 12 byte key
 			//if ( (*xc & 0x06) != 0x02 ) {
 			//	gbshutdownAbort(true);}
@@ -3536,7 +3879,10 @@ void PosdbTable::intersectLists10_r ( ) {
 			// share the same docid
 			for ( ;  ; xc += 6 ) {
 				// end of whole termlist?
-				if ( xc >= xcEnd ) break;
+				if ( xc >= xcEnd ) {
+					break;
+				}
+				
 				// sanity. no 18 byte keys allowed
 				if ( (*xc & 0x06) == 0x00 ) {
 					// i've seen this triggered on gk28.
@@ -3548,13 +3894,15 @@ void PosdbTable::intersectLists10_r ( ) {
 					// and the posdb file was never
 					// re-merged! must have been blatant
 					// disk malfunction?
-					log("posdb: encountered corrupt "
-					    "posdb list. bailing.");
+					log("posdb: encountered corrupt posdb list. bailing.");
+					logTrace(g_conf.m_logTracePosdb, "END.");
 					return;
 					//gbshutdownAbort(true);
 				}
 				// the next docid? it will be a 12 byte key.
-				if ( ! (*xc & 0x04) ) break;
+				if ( ! (*xc & 0x04) ) {
+					break;
+				}
 			}
 			// assign to next docid word position list
 			qti->m_cursor[j] = xc;
@@ -3577,7 +3925,10 @@ void PosdbTable::intersectLists10_r ( ) {
 		// . this computes an upper bound for each query term
 		for ( int32_t i = 0 ; i < nnn ; i++ ) { // m_numQueryTermInfos ; i++ ) {
 			// skip negative termlists.
-			if ( qip[i].m_bigramFlags[0]&(BF_NEGATIVE) ) continue;
+			if ( qip[i].m_bigramFlags[0]&(BF_NEGATIVE) ) {
+				continue;
+			}
+			
 			// an upper bound on the score we could get
 			float maxScore = getMaxPossibleScore ( &qip[i], 0, 0, NULL );
 			// -1 means it has inlink text so do not apply this constraint
@@ -3598,8 +3949,13 @@ void PosdbTable::intersectLists10_r ( ) {
 
 	pass0++;
 
-	if ( m_sortByTermNum >= 0 ) goto skipScoringFilter;
-	if ( m_sortByTermNumInt >= 0 ) goto skipScoringFilter;
+	if ( m_sortByTermNum >= 0 ) {
+		goto skipScoringFilter;
+	}
+	
+	if ( m_sortByTermNumInt >= 0 ) {
+		goto skipScoringFilter;
+	}
 
 	// TODO: consider skipping this pre-filter if it sucks, as it does
 	// for 'search engine'. it might save time!
@@ -3647,25 +4003,34 @@ void PosdbTable::intersectLists10_r ( ) {
 			ringBuf[wx] = m_minListi;
 		}
 	}
+	
 	// now get query term closest to query term # m_minListi which
 	// is the query term # with the shortest termlist
 	// get closest term to m_minListi and the distance
 	logTrace(g_conf.m_logTracePosdb, "Ring buffer generation 2");
 	for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
 		// skip the man
-		if ( i == m_minListi ) continue;
+		if ( i == m_minListi ) {
+			continue;
+		}
+		
 		// get the query term info
 		QueryTermInfo *qti = &qip[i];
 		// if we have a negative term, skip it
-		if ( qti->m_bigramFlags[0] & (BF_NEGATIVE) )
+		if ( qti->m_bigramFlags[0] & (BF_NEGATIVE) ) {
 			// if its empty, that's good!
 			continue;
+		}
+		
 		// store all his word positions into ring buffer AS WELL
 		for ( int32_t k = 0 ; k < qti->m_numNewSubLists ; k++ ) {
 			// scan that sublist and add word positions
 			char *sub = qti->m_savedCursor [k];
 			// skip sublist if it's cursor is exhausted
-			if ( ! sub ) continue;
+			if ( ! sub ) {
+				continue;
+			}
+			
 			char *end = qti->m_cursor      [k];
 			// add first key
 			//int32_t wx = g_posdb.getWordPos(sub);
@@ -3687,6 +4052,7 @@ void PosdbTable::intersectLists10_r ( ) {
 				ringBuf[wx] = i;
 			}
 		}
+		
 		// reset
 		int32_t ourLastPos = -1;
 		int32_t hisLastPos = -1;
@@ -3694,41 +4060,63 @@ void PosdbTable::intersectLists10_r ( ) {
 		// how far is this guy from the man?
 		for ( int32_t x = 0 ; x < (int32_t)RINGBUFSIZE ; ) {
 			// skip next 4 slots if all empty. fast?
-			if (*(uint32_t *)(ringBuf+x)==0xffffffff) {
-				x+=4;continue;}
+			if (*(uint32_t *)(ringBuf+x) == 0xffffffff) {
+				x+=4;continue;
+			}
+			
 			// skip if nobody
-			if ( ringBuf[x] == 0xff ) { x++; continue; }
+			if ( ringBuf[x] == 0xff ) { 
+				x++; 
+				continue; 
+			}
+			
 			// get query term #
 			qt = ringBuf[x];
+			
 			// if it's the man
 			if ( qt == m_minListi ) {
 				// record
 				hisLastPos = x;
 				// skip if we are not there yet
-				if ( ourLastPos == -1 ) { x++; continue; }
+				if ( ourLastPos == -1 ) { 
+					x++; 
+					continue; 
+				}
+				
 				// try distance fix
-				if ( x - ourLastPos < bestDist )
+				if ( x - ourLastPos < bestDist ) {
 					bestDist = x - ourLastPos;
+				}
 			}
 			// if us
 			else if ( qt == i ) {
 				// record
 				ourLastPos = x;
 				// skip if he's not recorded yet
-				if ( hisLastPos == -1 ) { x++; continue; }
+				if ( hisLastPos == -1 ) { 
+					x++; 
+					continue; 
+				}
+				
 				// update
 				ourLastPos = x;
+				
 				// check dist
-				if ( x - hisLastPos < bestDist )
+				if ( x - hisLastPos < bestDist ) {
 					bestDist = x - hisLastPos;
+				}
 			}
 			x++;
 			continue;
 		}
+		
 		// compare last occurence of query term #x with our first occ.
 		// since this is a RING buffer
 		int32_t wrapDist = ourFirstPos + ((int32_t)RINGBUFSIZE-hisLastPos);
-		if ( wrapDist < bestDist ) bestDist = wrapDist;
+		if ( wrapDist < bestDist ) {
+			bestDist = wrapDist;
+		}
+		
 		// query distance
 		qdist = qpos[m_minListi] - qpos[i];
 		// compute it
@@ -3739,7 +4127,10 @@ void PosdbTable::intersectLists10_r ( ) {
 		// -1 means it has inlink text so do not apply this constraint
 		// to this docid because it is too difficult because we
 		// sum up the inlink text
-		if ( maxScore2 == -1.0 ) continue;
+		if ( maxScore2 == -1.0 ) {
+			continue;
+		}
+		
 		// if any one of these terms have a max score below the
 		// worst score of the 10th result, then it can not win.
 		if ( maxScore2 <= minWinningScore && ! secondPass ) {
@@ -3822,7 +4213,10 @@ void PosdbTable::intersectLists10_r ( ) {
 		int32_t nsub = 0;
 		for ( int32_t k = 0 ; k < qti->m_numNewSubLists ; k++ ) {
 			// NULL means does not have that docid
-			if ( ! qti->m_savedCursor[k] ) continue;
+			if ( ! qti->m_savedCursor[k] ) {
+				continue;
+			}
+			
 			// getMaxPossibleScore() incremented m_cursor to
 			// the next docid so use m_savedCursor.
 			nwp      [nsub] = qti->m_savedCursor [k];
@@ -3859,20 +4253,27 @@ void PosdbTable::intersectLists10_r ( ) {
 		int32_t mink = -1;
 		for ( int32_t k = 0 ; k < nsub ; k++ ) {
 			// skip if list is exhausted
-			if ( ! nwp[k] ) continue;
+			if ( ! nwp[k] ) {
+				continue;
+			}
+			
 			// auto winner?
 			if ( mink == -1 ) {
 				mink = k;
 				continue;
 			}
-			if ( KEYCMP(nwp[k],nwp[mink],6) < 0 )
+			
+			if ( KEYCMP(nwp[k],nwp[mink],6) < 0 ) {
 				mink = k; // a new min...
+			}
 		}
+		
 		// all exhausted? merge next set of sublists then for term #j
 		if ( mink == -1 ) {
 			miniMergedEnd[j] = mptr;
 			continue;
 		}
+		
 		// get keysize
 		char ks = g_posdb.getKeySize(nwp[mink]);
 		// sanity
@@ -3889,8 +4290,10 @@ void PosdbTable::intersectLists10_r ( ) {
 		     // this means it occurred as two separate terms
 		     // or could be like bob and occurred as "bob's".
 		     // see XmlDoc::hashWords3().
-		     (nwp[mink][2] & 0x03) )
+		     (nwp[mink][2] & 0x03) ) {
 			goto skipOver;
+		}
+		
 		// if the first key in our merged list store the docid crap
 		if ( isFirstKey ) {
 			// store a 12 byte key in the merged list buffer
@@ -3898,8 +4301,10 @@ void PosdbTable::intersectLists10_r ( ) {
 			// wipe out its syn bits and re-use our way
 			mptr[2] &= 0xfc;
 			// set the synbit so we know if its a synonym of term
-			if ( nwpFlags[mink] & (BF_BIGRAM|BF_SYNONYM)) 
+			if ( nwpFlags[mink] & (BF_BIGRAM|BF_SYNONYM)) {
 				mptr[2] |= 0x02;
+			}
+			
 			// wiki half stop bigram? so for the query
 			// 'time enough for love' the phrase term "enough for"
 			// is a half stopword wiki bigram, because it is in
@@ -3907,8 +4312,10 @@ void PosdbTable::intersectLists10_r ( ) {
 			// one of the two words in the phrase term is a 
 			// stop word. therefore we give it more weight than
 			// just 'enough' by itself.
-			if ( nwpFlags[mink] & BF_HALFSTOPWIKIBIGRAM )
+			if ( nwpFlags[mink] & BF_HALFSTOPWIKIBIGRAM ) {
 				mptr[2] |= 0x01;
+			}
+			
 			// make sure its 12 bytes! it might have been
 			// the first key for the termid, and 18 bytes.
 			mptr[0] &= 0xf9;
@@ -3927,16 +4334,22 @@ void PosdbTable::intersectLists10_r ( ) {
 			// otherwise, they are added after the regular term.
 			// should fix double scoring bug for 'cheat codes'
 			// query!
-			if ( g_posdb.getWordPos(lastMptr) == g_posdb.getWordPos(nwp[mink]) )
+			if ( g_posdb.getWordPos(lastMptr) == g_posdb.getWordPos(nwp[mink]) ) {
 				goto skipOver;
+			}
+			
 			memcpy ( mptr, nwp[mink], 6 );
 			// wipe out its syn bits and re-use our way
 			mptr[2] &= 0xfc;
 			// set the synbit so we know if its a synonym of term
-			if ( nwpFlags[mink] & (BF_BIGRAM|BF_SYNONYM)) 
+			if ( nwpFlags[mink] & (BF_BIGRAM|BF_SYNONYM)) {
 				mptr[2] |= 0x02;
-			if ( nwpFlags[mink] & BF_HALFSTOPWIKIBIGRAM )
+			}
+			
+			if ( nwpFlags[mink] & BF_HALFSTOPWIKIBIGRAM ) {
 				mptr[2] |= 0x01;
+			}
+			
 			// if it was the first key of its list it may not
 			// have its bit set for being 6 bytes now! so turn
 			// on the 2 compression bits
@@ -3946,25 +4359,34 @@ void PosdbTable::intersectLists10_r ( ) {
 			lastMptr = mptr;
 			mptr += 6;
 		}
+		
 	skipOver:
 		//log("skipping ks=%" PRId32,(int32_t)ks);
 		// advance the cursor over the key we used.
 		nwp[mink] += ks; // g_posdb.getKeySize(nwp[mink]);
 		// exhausted?
-		if ( nwp[mink] >= nwpEnd[mink] ) 
+		if ( nwp[mink] >= nwpEnd[mink] ) {
 			nwp[mink] = NULL;
+		}
+		
 		// or hit a different docid
-		else if ( g_posdb.getKeySize(nwp[mink]) != 6 )
+		else if ( g_posdb.getKeySize(nwp[mink]) != 6 ) {
 			nwp[mink] = NULL;
+		}
+		
 		// avoid breach of core below now
-		if ( mptr < mptrEnd ) goto mergeMore;
+		if ( mptr < mptrEnd ) {
+			goto mergeMore;
+		}
+		
 		// wrap it up here since done merging
 		miniMergedEnd[j] = mptr;		
 	}
 
 	// breach?
-	if ( mptr > mbuf + 300000 )
+	if ( mptr > mbuf + 300000 ) {
 		gbshutdownAbort(true);
+	}
 
 	// clear the counts on this DocIdScore class for this new docid
 	pdcs = NULL;
@@ -3987,22 +4409,31 @@ void PosdbTable::intersectLists10_r ( ) {
 	//
 	for ( int32_t i = 0   ; i < m_numQueryTermInfos ; i++ ) {
 		// skip if not part of score
-		if ( bflags[i] & (BF_PIPED|BF_NEGATIVE) ) continue;
+		if ( bflags[i] & (BF_PIPED|BF_NEGATIVE) ) {
+			continue;
+		}
+		
 		// get list
 		char *plist    = miniMergedList[i];
 		char *plistEnd = miniMergedEnd[i];
 		int32_t  psize    = plistEnd - plist;
+		
 		// test it. first key is 12 bytes.
-		if ( psize && g_posdb.getKeySize(plist) != 12 )
+		if ( psize && g_posdb.getKeySize(plist) != 12 ) {
 			gbshutdownAbort(true);
+		}
+		
 		// next key is 6
-		if ( psize > 12 && g_posdb.getKeySize(plist+12) != 6)
+		if ( psize > 12 && g_posdb.getKeySize(plist+12) != 6) {
 			gbshutdownAbort(true);
+		}
 	}
 
 
-	if ( m_q->m_isBoolean )
+	if ( m_q->m_isBoolean ) {
 		goto boolJump2;
+	}
+	
 
 	//
 	//
@@ -4019,13 +4450,16 @@ void PosdbTable::intersectLists10_r ( ) {
 	// QueryTermInfo)
 	for ( int32_t i = 0   ; i < m_numQueryTermInfos ; i++ ) {
 		// skip if not part of score
-		if ( bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) continue;
+		if ( bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
+			continue;
+		}
 
 		// and pair it with each other possible query term
 		for ( int32_t j = i+1 ; j < m_numQueryTermInfos ; j++ ) {
 			// skip if not part of score
-			if ( bflags[j] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) )
+			if ( bflags[j] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
 				continue;
+			}
 
 			// but if they are in the same wikipedia phrase
 			// then try to keep their positions as in the query.
@@ -4053,6 +4487,7 @@ void PosdbTable::intersectLists10_r ( ) {
 				// wiki weight
 				wts = 1.0;
 			}
+			
 			pss = 0.0;
 			//
 			// get score for term pair from non-body occuring terms
@@ -4066,6 +4501,7 @@ void PosdbTable::intersectLists10_r ( ) {
 							   miniMergedEnd[j],
 							   qdist,
 							   &pss);
+							   
 			// it's -1 if one term is in the body/header/menu/etc.
 			if ( pss < 0 ) {
 				scoreMatrix[i*nqt+j] = -1.00;
@@ -4103,9 +4539,12 @@ void PosdbTable::intersectLists10_r ( ) {
 	//   termsign...
 	for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
 		float sts;
+		
 		// skip if to the left of a pipe operator
-		if ( bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) )
+		if ( bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
 			continue;
+		}
+		
 
 		// sometimes there is no wordpos subtermlist for this docid
 		// because it just has the bigram, like "streetlight" and not
@@ -4125,13 +4564,18 @@ void PosdbTable::intersectLists10_r ( ) {
 					  miniMergedEnd[i],
 					  pdcs,
 					  &bestPos[i]);
+					  
 		// sanity check
-		if ( bestPos[i] &&
-		     s_inBody[g_posdb.getHashGroup(bestPos[i])] )
+		if ( bestPos[i] && s_inBody[g_posdb.getHashGroup(bestPos[i])] ) {
 			gbshutdownAbort(true);
+		}
+		
 		//sts /= 3.0;
-		if ( sts < minSingleScore ) minSingleScore = sts;
+		if ( sts < minSingleScore ) {
+			minSingleScore = sts;
+		}
 	}
+
 
 	//
 	// . multiplier from siterank i guess
@@ -4144,25 +4588,33 @@ void PosdbTable::intersectLists10_r ( ) {
 	     ! (qip[0].m_bigramFlags[0] & (BF_NUMBER) ) ) {
 		siteRank = g_posdb.getSiteRank ( miniMergedList[0] );
 		docLang  = g_posdb.getLangId   ( miniMergedList[0] );
+		
 		if ( g_posdb.getHashGroup(miniMergedList[0])==HASHGROUP_INLINKTEXT) {
 			char inlinkerSiteRank = g_posdb.getWordSpamRank(miniMergedList[0]);
-			if(inlinkerSiteRank>highestInlinkSiteRank)
+			if(inlinkerSiteRank>highestInlinkSiteRank) {
 				highestInlinkSiteRank = inlinkerSiteRank;
+			}
 		}
 	}
 	else {
 		for ( int32_t k = 1 ; k < m_numQueryTermInfos ; k++ ) {
-			if ( ! miniMergedList[k] ) continue;
+			if ( ! miniMergedList[k] ) {
+				continue;
+			}
+			
 			// siterank/langid is always 0 in numeric
 			// termlists so they sort by their number correctly
-			if ( qip[k].m_bigramFlags[0] & (BF_NUMBER) )
+			if ( qip[k].m_bigramFlags[0] & (BF_NUMBER) ) {
 				continue;
+			}
+			
 			siteRank = g_posdb.getSiteRank ( miniMergedList[k] );
 			docLang  = g_posdb.getLangId   ( miniMergedList[k] );
 			if ( g_posdb.getHashGroup(miniMergedList[k])==HASHGROUP_INLINKTEXT) {
 				char inlinkerSiteRank = g_posdb.getWordSpamRank(miniMergedList[k]);
-				if(inlinkerSiteRank>highestInlinkSiteRank)
+				if(inlinkerSiteRank>highestInlinkSiteRank) {
 					highestInlinkSiteRank = inlinkerSiteRank;
+				}
 			}
 			break;
 		}
@@ -4207,8 +4659,9 @@ void PosdbTable::intersectLists10_r ( ) {
 	// use special ptrs for the windows so we do not mangle 
 	// miniMergedList[] array because we use that below!
 	//char *xpos[MAX_QUERY_TERMS];
-	for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) 
+	for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
 		xpos[i] = miniMergedList[i];
+	}
 
 	allNull = true;
 	//
@@ -4217,28 +4670,39 @@ void PosdbTable::intersectLists10_r ( ) {
 	//
 	for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
 		// skip if to the left of a pipe operator
-		if ( bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) )
+		if ( bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
 			continue;
+		}
+		
 		// skip wordposition until it in the body
 		while ( xpos[i] &&!s_inBody[g_posdb.getHashGroup(xpos[i])]) {
 			// advance
 			if ( ! (xpos[i][0] & 0x04) ) xpos[i] += 12;
 			else                         xpos[i] +=  6;
+				
 			// NULLify list if no more for this docid
-			if (xpos[i] < miniMergedEnd[i] && (xpos[i][0] & 0x04)) 
+			if (xpos[i] < miniMergedEnd[i] && (xpos[i][0] & 0x04)) {
 				continue;
+			}
+			
 			// ok, no more! null means empty list
 			xpos[i] = NULL;
 			// must be in title or something else then
-			if ( ! bestPos[i] )
+			if ( ! bestPos[i] ) {
 				gbshutdownAbort(true);
+			}
 		}
+		
 		// if all xpos are NULL, then no terms are in body...
-		if ( xpos[i] ) allNull = false;
+		if ( xpos[i] ) {
+			allNull = false;
+		}
 	}
 
 	// if no terms in body, no need to do sliding window
-	if ( allNull ) goto doneSliding;
+	if ( allNull ) {
+		goto doneSliding;
+	}
 
 	minx = -1;
 
@@ -4272,29 +4736,40 @@ void PosdbTable::intersectLists10_r ( ) {
 		// skip if to the left of a pipe operator
 		// and numeric posdb termlists do not have word positions,
 		// they store a float there.
-		if ( bflags[x] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) )
+		if ( bflags[x] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
 			continue;
-		if ( ! xpos[x] ) continue;
+		}
+		
+		if ( ! xpos[x] ) {
+			continue;
+		}
+		
 		if ( xpos[x] && minx == -1 ) {
 			minx = x;
 			//minRec = xpos[x];
 			minPos = g_posdb.getWordPos(xpos[x]);
 			continue;
 		}
-		if ( g_posdb.getWordPos(xpos[x]) >= minPos ) 
+		
+		if ( g_posdb.getWordPos(xpos[x]) >= minPos ) {
 			continue;
+		}
+		
 		minx = x;
 		//minRec = xpos[x];
 		minPos = g_posdb.getWordPos(xpos[x]);
 	}
+	
 	// sanity
-	if ( minx < 0 )
+	if ( minx < 0 ) {
 		gbshutdownAbort(true);
+	}
 
  advanceAgain:
 	// now advance that to slide our window
 	if ( ! (xpos[minx][0] & 0x04) ) xpos[minx] += 12;
 	else                            xpos[minx] +=  6;
+		
 	// NULLify list if no more for this docid
 	if ( xpos[minx] >= miniMergedEnd[minx] || ! (xpos[minx][0] & 0x04) ) {
 		// exhausted list now
@@ -4303,18 +4778,28 @@ void PosdbTable::intersectLists10_r ( ) {
 		int32_t k; 
 		for ( k = 0 ; k < m_numQueryTermInfos ; k++ ) {
 			// skip if to the left of a pipe operator
-			if(bflags[k]&(BF_PIPED|BF_NEGATIVE|BF_NUMBER))
+			if(bflags[k]&(BF_PIPED|BF_NEGATIVE|BF_NUMBER)) {
 				continue;
-			if ( xpos[k] ) break;
+			}
+			
+			if ( xpos[k] ) {
+				break;
+			}
 		}
+		
 		// all lists are now exhausted
-		if ( k >= m_numQueryTermInfos ) goto doneSliding;
+		if ( k >= m_numQueryTermInfos ) {
+			goto doneSliding;
+		}
+		
 		// ok, now recompute the next min and advance him
 		goto advanceMin;
 	}
+	
 	// if it left the body then advance some more i guess?
-	if ( ! s_inBody[g_posdb.getHashGroup(xpos[minx])] ) 
+	if ( ! s_inBody[g_posdb.getHashGroup(xpos[minx])] ) {
 		goto advanceAgain;
+	}
 
 	// do more!
 	goto slideMore;
@@ -4342,19 +4827,28 @@ void PosdbTable::intersectLists10_r ( ) {
 	for ( int32_t i = 0   ; i < m_numQueryTermInfos ; i++ ) {
 
 		// skip if to the left of a pipe operator
-		if ( bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) continue;
+		if ( bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
+			continue;
+		}
 
 		for ( int32_t j = i+1 ; j < m_numQueryTermInfos ; j++ ) {
 
 			// skip if to the left of a pipe operator
-			if ( bflags[j] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) )
+			if ( bflags[j] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
 				continue;
+			}
 
 			//
 			// get score for term pair from non-body occuring terms
 			//
-			if ( ! miniMergedList[i] ) continue;
-			if ( ! miniMergedList[j] ) continue;
+			if ( ! miniMergedList[i] ) {
+				continue;
+			}
+			
+			if ( ! miniMergedList[j] ) {
+				continue;
+			}
+			
 			// . this limits its scoring to the winning sliding window
 			//   as far as the in-body terms are concerned
 			// . it will do sub-outs using the score matrix
@@ -4369,12 +4863,17 @@ void PosdbTable::intersectLists10_r ( ) {
 							      miniMergedEnd[i],
 							      miniMergedEnd[j],
 							      pdcs );
+							      
 			// get min of all term pair scores
-			if ( score >= minPairScore && minPairScore >= 0.0 ) continue;
+			if ( score >= minPairScore && minPairScore >= 0.0 ) {
+				continue;
+			}
+			
 			// got a new min
 			minPairScore = score;
 		}
 	}
+	
 	//
 	//
 	// END ZAK'S ALGO
@@ -4387,19 +4886,22 @@ void PosdbTable::intersectLists10_r ( ) {
 	minScore = 999999999.0;
 			
 	// get a min score from all the term pairs
-	if ( minPairScore < minScore && minPairScore >= 0.0 )
+	if ( minPairScore < minScore && minPairScore >= 0.0 ) {
 		minScore = minPairScore;
+	}
 
 	// if we only had one query term
-	if ( minSingleScore < minScore )
+	if ( minSingleScore < minScore ) {
 		minScore = minSingleScore;
+	}
 
 
 	logTrace(g_conf.m_logTracePosdb, "m_preFinalScore=%f, minScore=%f", m_preFinalScore, minScore);
 	
 	// comment out for gbsectionhash: debug:
-	if ( minScore <= 0.0 ) 
+	if ( minScore <= 0.0 ) {
 		goto advance;
+	}
 
 
 	float effectiveSiteRank;
@@ -4409,7 +4911,7 @@ void PosdbTable::intersectLists10_r ( ) {
 	effectiveSiteRank = siteRank;
 	if( highestInlinkSiteRank > siteRank ) {
 		//adjust effective siterank because a high-rank site linked to it. Don't adjust it too much though.
-		effectiveSiteRank = siteRank + (highestInlinkSiteRank-siteRank)/3.0;
+		effectiveSiteRank = siteRank + (highestInlinkSiteRank-siteRank) / 3.0;
 	}
 	// try dividing it by 3! (or multiply by .33333 faster)
 	score = minScore * (effectiveSiteRank*m_siteRankMultiplier+1.0);
@@ -4418,25 +4920,34 @@ void PosdbTable::intersectLists10_r ( ) {
 	// . use "qlang" parm to set the language. i.e. "&qlang=fr"
 	if ( m_r->m_language == 0 || 
 	     docLang == 0 ||
-	     m_r->m_language == docLang)
+	     m_r->m_language == docLang) {
 		score *= (m_r->m_sameLangWeight);//SAMELANGMULT;
+	}
 
 	// assume filtered out
-	if ( ! secondPass ) m_filtered++;
+	if ( ! secondPass ) {
+		m_filtered++;
+	}
 
 	//
 	// if we have a gbsortby:price term then score exclusively on that
 	//
 	if ( m_sortByTermNum >= 0 ) {
 		// no term?
-		if ( ! miniMergedList[m_sortByTermInfoNum] ) goto advance;
+		if ( ! miniMergedList[m_sortByTermInfoNum] ) {
+			goto advance;
+		}
+		
 		score = g_posdb.getFloat (miniMergedList[m_sortByTermInfoNum]);
 	}
 
 	if ( m_sortByTermNumInt >= 0 ) {
 		// no term?
-		if ( ! miniMergedList[m_sortByTermInfoNumInt] ) goto advance;
-	       intScore=g_posdb.getInt(miniMergedList[m_sortByTermInfoNumInt]);
+		if ( ! miniMergedList[m_sortByTermInfoNumInt] ) {
+			goto advance;
+		}
+		
+		intScore = g_posdb.getInt(miniMergedList[m_sortByTermInfoNumInt]);
 		// do this so hasMaxSerpScore below works, although
 		// because of roundoff errors we might lose a docid
 		// through the cracks in the widget.
@@ -4446,7 +4957,7 @@ void PosdbTable::intersectLists10_r ( ) {
 	// this logic now moved into isInRange2() when we fill up
 	// the docidVoteBuf. we won't add the docid if it fails one
 	// of these range terms. But if we are a boolean query then
-	// we handle it in makeDocIdVoteBufForBoolQuery_r() below.
+	// we handle it in makeDocIdVoteBufForBoolQuery() below.
 	// [snip: range checks]
 
 
@@ -4456,48 +4967,62 @@ void PosdbTable::intersectLists10_r ( ) {
 		// if dealing with an "int" score use the extra precision
 		// of the double that m_maxSerpScore is!
 		if ( m_sortByTermNumInt >= 0 ) {
-			if ( intScore > (int32_t)m_r->m_maxSerpScore )
+			if ( intScore > (int32_t)m_r->m_maxSerpScore ) {
 				goto advance;
-			if ( intScore == (int32_t)m_r->m_maxSerpScore &&
-			     (int64_t)m_docId <= m_r->m_minSerpDocId ) 
+			}
+			
+			if ( intScore == (int32_t)m_r->m_maxSerpScore && (int64_t)m_docId <= m_r->m_minSerpDocId ) {
 				goto advance;
+			}
 		}
 		else {
-			if ( score > (float)m_r->m_maxSerpScore ) 
+			if ( score > (float)m_r->m_maxSerpScore ) {
 				goto advance;
-			if ( score == m_r->m_maxSerpScore &&
-			     (int64_t)m_docId <= m_r->m_minSerpDocId ) 
+			}
+			
+			if ( score == m_r->m_maxSerpScore && (int64_t)m_docId <= m_r->m_minSerpDocId ) {
 				goto advance;
+			}
 		}
 	}
 
+
 	// we did not get filtered out
-	if ( ! secondPass ) m_filtered--;
+	if ( ! secondPass ) {
+		m_filtered--;
+	}
+	
 
 	// . seoDebug hack so we can set "dcs"
 	// . we only come here if we actually made it into m_topTree
 	if ( secondPass ) {
 		dcs.m_siteRank   = siteRank;
 		dcs.m_finalScore = score;
+		
 		// a double can capture an int without dropping any bits,
 		// inlike a mere float
-		if ( m_sortByTermNumInt >= 0 )
+		if ( m_sortByTermNumInt >= 0 ) {
 			dcs.m_finalScore = (double)intScore;
+		}
+		
 		dcs.m_docId      = m_docId;
 		dcs.m_numRequiredTerms = m_numQueryTermInfos;
 		dcs.m_docLang = docLang;
+		
 		// ensure enough room we can't allocate in a thread!
-		if ( m_scoreInfoBuf.getAvail()<(int32_t)sizeof(DocIdScore)+1){
+		if ( m_scoreInfoBuf.getAvail()<(int32_t)sizeof(DocIdScore)+1) {
 			goto advance;
 		}
+		
 		// if same as last docid, overwrite it since we have a higher
 		// siterank or langid i guess
-		if ( m_docId == lastDocId ) 
+		if ( m_docId == lastDocId ) {
 			m_scoreInfoBuf.m_length = lastLen;
+		}
+		
 		// save that
 		int32_t len = m_scoreInfoBuf.m_length;
-		// show it, 190255775595
-		//log("posdb: storing score info for d=%" PRId64,m_docId);
+		
 		// copy into the safebuf for holding the scoring info
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(&dcs,sizeof(dcs));
@@ -4542,24 +5067,33 @@ void PosdbTable::intersectLists10_r ( ) {
 
 		// only kick out docids from the score buffer when there
 		// is no room left...
-		if ( m_scoreInfoBuf.getAvail() >= (int)sizeof(DocIdScore ) )
+		if ( m_scoreInfoBuf.getAvail() >= (int)sizeof(DocIdScore ) ) {
 			goto advance;
+		}
 
 		sx = m_scoreInfoBuf.getBufStart();
 		sxEnd = sx + m_scoreInfoBuf.length();
+		
 		// if we have not supplanted anyone yet, be on our way
 		for ( ; sx < sxEnd ; sx += sizeof(DocIdScore) ) {
 			si = (DocIdScore *)sx;
 			// if top tree no longer has this docid, we must
 			// remove its associated scoring info so we do not
 			// breach our scoring info bufs
-			if ( ! m_topTree->hasDocId( si->m_docId ) ) break;
+			if ( ! m_topTree->hasDocId( si->m_docId ) ) {
+				break;
+			}
 		}
+		
 		// might not be full yet
-		if ( sx >= sxEnd ) goto advance;
+		if ( sx >= sxEnd ) {
+			goto advance;
+		}
+		
 		// must be there!
-		if ( ! si )
+		if ( ! si ) {
 			gbshutdownAbort(true);
+		}
 
 		// note it because it is slow
 		// this is only used if getting score info, which is
@@ -4577,14 +5111,18 @@ void PosdbTable::intersectLists10_r ( ) {
 		// and his related info
 		m_pairScoreBuf  .removeChunk2 ( pairOffset   , pairSize   );
 		m_singleScoreBuf.removeChunk2 ( singleOffset , singleSize );
+		
 		// adjust offsets of remaining single scores
 		sx = m_scoreInfoBuf.getBufStart();
 		for ( ; sx < sxEnd ; sx += sizeof(DocIdScore) ) {
 			si = (DocIdScore *)sx;
-			if ( si->m_pairsOffset > pairOffset )
+			if ( si->m_pairsOffset > pairOffset ) {
 				si->m_pairsOffset -= pairSize;
-			if ( si->m_singlesOffset > singleOffset )
+			}
+			
+			if ( si->m_singlesOffset > singleOffset ) {
 				si->m_singlesOffset -= singleSize;
+			}
 		}
 		
 		// adjust this too!
@@ -4608,14 +5146,18 @@ void PosdbTable::intersectLists10_r ( ) {
 		if ( m_sortByTermNumInt >= 0 ) {
 			t->m_intScore = intScore;
 			t->m_score = 0.0;
-			if ( ! m_topTree->m_useIntScores)
+			
+			if ( ! m_topTree->m_useIntScores) {
 				gbshutdownAbort(true);
+			}
 		}
+		
 		// . this will not add if tree is full and it is less than the 
 		//   m_lowNode in score
 		// . if it does get added to a full tree, lowNode will be 
 		//   removed
 		m_topTree->addNode ( t, tn);
+
 		// top tree only holds enough docids to satisfy the
 		// Msg39Request::m_docsToGet (m_r->m_docsToGet) request 
 		// from the searcher. It basically stores m_docsToGet
@@ -4684,7 +5226,6 @@ void PosdbTable::intersectLists10_r ( ) {
 	if ( m_debug ) {
 		log(LOG_INFO, "posdb: # fail0 = %" PRId32" ", fail0 );
 		log(LOG_INFO, "posdb: # pass0 = %" PRId32" ", pass0 );
-
 		log(LOG_INFO, "posdb: # fail = %" PRId32" ", fail );
 		log(LOG_INFO, "posdb: # pass = %" PRId32" ", pass );
 	}
@@ -4696,7 +5237,7 @@ void PosdbTable::intersectLists10_r ( ) {
 	m_t1 = t1;
 	m_t2 = now;
 
-	logTrace(g_conf.m_logTracePosdb, "Done. Took %" PRId64" msec", m_addListsTime);
+	logTrace(g_conf.m_logTracePosdb, "END. Took %" PRId64" msec", m_addListsTime);
 }
 
 
@@ -4707,6 +5248,8 @@ float PosdbTable::getMaxPossibleScore ( const QueryTermInfo *qti,
 					int32_t bestDist,
 					int32_t qdist,
 					const QueryTermInfo *qtm ) {
+
+	logTrace(g_conf.m_logTracePosdb, "BEGIN.");
 
 	// get max score of all sublists
 	float bestHashGroupWeight = -1.0;
@@ -4851,6 +5394,7 @@ float PosdbTable::getMaxPossibleScore ( const QueryTermInfo *qti,
 	if ( m_allInSameWikiPhrase )
 		score *= WIKI_WEIGHT;
 	
+	logTrace(g_conf.m_logTracePosdb, "END. score=%f", score);
 	return score;
 }
 
@@ -4863,7 +5407,9 @@ static int dcmp6 ( const void *h1, const void *h2 ) {
 
 // TODO: do this in docid range phases to save memory and be much faster
 // since we could contain to the L1 cache for hashing
-bool PosdbTable::makeDocIdVoteBufForBoolQuery_r ( ) {
+bool PosdbTable::makeDocIdVoteBufForBoolQuery( ) {
+
+	logTrace(g_conf.m_logTracePosdb, "BEGIN.");
 
 	// . make a hashtable of all the docids from all the termlists
 	// . the value slot will be the operand bit vector i guess
@@ -4873,7 +5419,9 @@ bool PosdbTable::makeDocIdVoteBufForBoolQuery_r ( ) {
 	//   we can use a another hashtable in order to avoid re-evaluation
 	//   on if it passes the boolean query.
 	char bitVec[MAX_OVEC_SIZE];
-	if ( m_vecSize > MAX_OVEC_SIZE ) m_vecSize = MAX_OVEC_SIZE;
+	if ( m_vecSize > MAX_OVEC_SIZE ) {
+		m_vecSize = MAX_OVEC_SIZE;
+	}
 
 	QueryTermInfo *qip = (QueryTermInfo *)m_qiBuf.getBufStart();
 
@@ -4959,25 +5507,32 @@ bool PosdbTable::makeDocIdVoteBufForBoolQuery_r ( ) {
 
 				// check each posdb key for compliance
 				// for gbmin:offprice:190 bool terms
-				if ( isRangeTerm && isInRange(p,qt) )
+				if ( isRangeTerm && isInRange(p,qt) ) {
 					inRange = true;
+				}
 
 				// this was the first key for this docid for 
 				// this termid and possible the first key for 
 				// this termid, so skip it, either 12 or 18 
 				// bytes
-				if ( (((char *)p)[0])&0x02 ) p += 12;
+				if ( (((char *)p)[0])&0x02 ) {
+					p += 12;
+				}
 				// the first key for this termid?
-				else p += 18;
+				else {
+					p += 18;
+				}
 
 				// then only 6 byte keys would follow from the
 				// same docid, so skip those as well
 			subloop:
-				if( p<pend && (((char *)p)[0])&0x04){
+				if( p < pend && (((char *)p)[0]) & 0x04 ) {
 					// check each posdb key for compliance
 					// for gbmin:offprice:190 bool terms
-					if ( isRangeTerm && isInRange(p,qt) )
+					if ( isRangeTerm && isInRange(p,qt) ) {
 						inRange = true;
+					}
+					
 					p += 6;
 					goto subloop;
 				}
@@ -4985,8 +5540,9 @@ bool PosdbTable::makeDocIdVoteBufForBoolQuery_r ( ) {
 				// if we had gbmin:offprice:190 and it
 				// was not satisfied, then do not OR in this
 				// bit in the bitvector for the docid
-				if ( isRangeTerm && ! inRange )
+				if ( isRangeTerm && ! inRange ) {
 					continue;
+				}
 
 				// convert docid into hash key
 				//int64_t docId = *(int64_t *)dp;
@@ -5003,8 +5559,10 @@ bool PosdbTable::makeDocIdVoteBufForBoolQuery_r ( ) {
 				int32_t slot = m_bt.getSlot ( &docId );
 				if ( slot < 0 ) {
 					// we can't alloc in a thread, careful
-					if ( ! m_bt.addKey(&docId,bitVec) )
+					if ( ! m_bt.addKey(&docId,bitVec) ) {
 						gbshutdownAbort(true);
+					}
+					
 					continue;
 				}
 				// or the bit in otherwise
@@ -5025,33 +5583,35 @@ bool PosdbTable::makeDocIdVoteBufForBoolQuery_r ( ) {
 	// . evaluate each bit vector
 	for ( int32_t i = 0 ; i < m_bt.m_numSlots ; i++ ) {
 		// skip if empty
-		if ( ! m_bt.m_flags[i] ) continue;
+		if ( ! m_bt.m_flags[i] ) {
+			continue;
+		}
+			
 		// get the bit vector
 		unsigned char *vec = (unsigned char *)m_bt.getValueFromSlot(i);
+		
 		// hash the vector
 		int64_t h64 = 0LL;
 		for ( int32_t k = 0 ; k < m_vecSize ; k++ )
-		       h64^=g_hashtab[(unsigned char)vec[k]][(unsigned char)k];
+		       h64 ^= g_hashtab[(unsigned char)vec[k]][(unsigned char)k];
+		       
 		// check in hash table
 		char *val = (char *)m_ct.getValue ( &h64 );
 
 		// it passes, add the ocid
 		if ( m_debug ) {
 			int64_t docId =*(int64_t *)m_bt.getKeyFromSlot(i);
-			log(LOG_INFO, "query: eval d=%" PRIu64" vec[0]=%" PRIx32" h64=%" PRId64,
-			    docId,(int32_t)vec[0],h64);
-			//if ( docId == 47801316261LL )
-			//	log("hy");
+			log(LOG_INFO, "query: eval d=%" PRIu64" vec[0]=%" PRIx32" h64=%" PRId64, docId,(int32_t)vec[0],h64);
 		}
 
 		// add him to the good table
 		if ( val && *val ) {
 			// it passes, add the ocid
 			int64_t docId =*(int64_t *)m_bt.getKeyFromSlot(i);
+			
 			// fix it up
 			if ( m_debug ) {
-				log(LOG_INFO, "query: adding d=%" PRIu64" bitVecSize=%" PRId32" "
-				    "bitvec[0]=0x%" PRIx32" (TRUE)",
+				log(LOG_INFO, "query: adding d=%" PRIu64" bitVecSize=%" PRId32" bitvec[0]=0x%" PRIx32" (TRUE)",
 				    docId,m_vecSize,(int32_t)vec[0]);
 			}
 			// shift up
@@ -5061,20 +5621,23 @@ bool PosdbTable::makeDocIdVoteBufForBoolQuery_r ( ) {
 			dst += 6;
 			continue;
 		}
+
 		// evaluate the vector
-		char include = m_q->matchesBoolQuery ( (unsigned char *)vec,
-						        m_vecSize );
+		char include = m_q->matchesBoolQuery ( (unsigned char *)vec, m_vecSize );
 		if ( include ) {
 			// it passes, add the ocid
 			int64_t docId =*(int64_t *)m_bt.getKeyFromSlot(i);
+			
 			// fix it up
 			if ( m_debug ) {
 				log(LOG_INFO, "query: adding d=%" PRIu64" vec[0]=0x%" PRIx32, docId,(int32_t)vec[0]);
 			}
+			
 			// shift up
 			docId <<= 2;
 			// a 6 byte key means you pass
 			gbmemcpy ( dst, &docId, 6 );
+			
 			// test it
 			if ( m_debug ) {
 				int64_t d2;
@@ -5096,7 +5659,7 @@ bool PosdbTable::makeDocIdVoteBufForBoolQuery_r ( ) {
 	// update SafeBuf::m_length
 	m_docIdVoteBuf.setLength ( dst - m_docIdVoteBuf.getBufStart() );
 
-	// now sort the docids. TODO: break makeDocIdVoteBufForBoolQuery_r()
+	// now sort the docids. TODO: break makeDocIdVoteBufForBoolQuery()
 	// up into docid ranges so we have like 1/100th the # of docids to 
 	// sort. that should make this part a lot faster.
 	// i.e. 1000*log(1000) > 1000*(10*log(10))) --> 3000 > 1000
@@ -5107,5 +5670,8 @@ bool PosdbTable::makeDocIdVoteBufForBoolQuery_r ( ) {
 		6,
 		dcmp6 );
 
+	logTrace(g_conf.m_logTracePosdb, "END.");
 	return true;
 }
+
+

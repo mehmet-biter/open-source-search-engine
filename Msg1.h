@@ -22,6 +22,7 @@
 #include "Clusterdb.h"
 #include "Linkdb.h"
 #include "Tagdb.h"
+#include "rdbid_t.h"
 
 #define MSG1_BUF_SIZE 64
 
@@ -48,7 +49,7 @@ class Msg1 {
 	//   does not support delbits in the keys use this.
 	// . when deleteRecs is true, the recs in the list are really just keys
 	bool addList ( RdbList  *list  ,
-		       char      rdbId ,
+		       rdbid_t   rdbId,
 		       collnum_t collnum, // char     *coll  ,
 		       void     *state ,
 		       void    (*callback)(void *state) ,
@@ -60,7 +61,7 @@ class Msg1 {
 
 	bool addRecord ( char *rec , 
 			 int32_t recSize , 
-			 char          rdbId             ,
+			 rdbid_t       rdbId,
 			 collnum_t collnum ,
 			 void         *state             ,
 			 void (* callback)(void *state)  ,
@@ -84,7 +85,7 @@ class Msg1 {
 	RdbList m_tmpList;
 
 	// rdb id to add to ( see Msg0::getRdb(char rdbId) )
-	char        m_rdbId;
+	rdbid_t     m_rdbId;
 	//char       *m_coll;
 	collnum_t m_collnum;
 

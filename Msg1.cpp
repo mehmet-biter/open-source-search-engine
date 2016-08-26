@@ -77,7 +77,7 @@ static void init() {
 
 bool Msg1::addRecord ( char *rec , 
 		       int32_t recSize , 
-		       char          rdbId             ,
+		       rdbid_t       rdbId,
 		       collnum_t collnum ,
 		       void         *state             ,
 		       void (* callback)(void *state)  ,
@@ -115,7 +115,7 @@ bool Msg1::addRecord ( char *rec ,
 //   launch MAX_MSG1S requests without waiting for replies, and
 //   when the reply does come back we do NOT call the callback
 bool Msg1::addList ( RdbList      *list              ,
-		     char          rdbId             ,
+		     rdbid_t       rdbId,
 		     collnum_t collnum, // char         *coll              ,
 		     void         *state             ,
 		     void (* callback)(void *state)  ,
@@ -354,7 +354,7 @@ bool Msg1::sendData ( uint32_t shardNum, char *listData , int32_t listSize) {
 	if ( groupId == g_hostdb.m_groupId  && numHosts == 1 ) {
 		// this sets g_errno on error
 		Msg0 msg0;
-		Rdb *rdb = msg0.getRdb ( (char) m_rdbId );
+		Rdb *rdb = msg0.getRdb ( m_rdbId );
 		if ( ! rdb ) return true;
 		// make a list from this data
 		RdbList list;
@@ -388,7 +388,7 @@ bool Msg1::sendData ( uint32_t shardNum, char *listData , int32_t listSize) {
 	if ( shardNum == getMyShardNum() &&
 	     ! g_conf.m_interfaceMachine ) {
 		// get the rdb to which it belongs, use Msg0::getRdb()
-		Rdb *rdb = getRdbFromId ( (char) m_rdbId );
+		Rdb *rdb = getRdbFromId ( m_rdbId );
 		if ( ! rdb ) goto skip;
 		// key size
 		int32_t ks = getKeySizeFromRdbId ( m_rdbId );
@@ -565,9 +565,9 @@ static void handleRequest1(UdpSlot *slot, int32_t netnice) {
 	char *p    = readBuf;
 	char *pend = readBuf + readBufSize;
 	// extract rdbId
-	char rdbId = *p++;
+	rdbid_t rdbId = (rdbid_t)(*p++);
 	// get the rdb to which it belongs, use Msg0::getRdb()
-	Rdb *rdb = getRdbFromId ( (char) rdbId );
+	Rdb *rdb = getRdbFromId ( rdbId );
 	if ( ! rdb ) { 
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. Bad rdbid", __FILE__, __func__, __LINE__);
 		us->sendErrorReply(slot, EBADRDBID);
