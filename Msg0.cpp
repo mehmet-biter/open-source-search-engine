@@ -77,7 +77,7 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 		     int16_t     port        ,
 		     int32_t      maxCacheAge , // max cached age in seconds
 		     bool      addToCache  , // add net recv'd list to cache?
-		     char      rdbId       , // specifies the rdb
+		     rdbid_t   rdbId       , // specifies the rdb
 		     collnum_t collnum ,
 		     RdbList  *list        ,
 		     const char     *startKey    ,
