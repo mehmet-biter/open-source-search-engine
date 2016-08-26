@@ -10,64 +10,30 @@ export BASE_DIR
 
 unexport CONFIG_CPPFLAGS
 
-OBJS_O0 =  UdpSlot.o Rebalance.o \
-	Msg13.o \
-	PageGet.o PageHosts.o \
-	PageParser.o PageInject.o PagePerf.o PageReindex.o PageResults.o \
-	PageAddUrl.o PageRoot.o PageSockets.o PageStats.o \
-	PageTitledb.o \
-	PageAddColl.o \
-	PageHealthCheck.o \
-	Domains.o \
-	Collectiondb.o \
-	ip.o \
-	Titledb.o HashTable.o \
-	TcpServer.o \
-	RdbTree.o RdbScan.o RdbMerge.o RdbMem.o \
-	RdbDump.o RdbCache.o \
-	Query.o Phrases.o Multicast.o \
-	Msg39.o \
-	Msg22.o \
-	Msg20.o \
-	Msg1.o \
-	Msg0.o Mem.o \
-	Log.o Lang.o \
-	Clusterdb.o \
-	HttpServer.o HttpRequest.o \
-	HttpMime.o Hostdb.o \
-	File.o Errno.o Entities.o \
-	Dns.o Dir.o Conf.o \
-	Stats.o BigFile.o \
-	Speller.o \
-	PingServer.o \
-	Parms.o Pages.o \
-	iana_charset.o \
-	SearchInput.o \
-	Msg3a.o  \
-	PageLogView.o Msg1f.o Blaster.o MsgC.o \
-	Proxy.o PageThreads.o \
-	LanguageIdentifier.o \
-	Repair.o Process.o \
-	Abbreviations.o \
-	Msg51.o \
-	Msg4.o SpiderProxy.o \
-	Statsdb.o PageStatsdb.o \
-	Msge0.o Msge1.o \
-	CountryCode.o DailyMerge.o Tagdb.o \
-	Images.o Wiki.o Wiktionary.o \
-	Timezone.o SiteGetter.o \
-	Synonyms.o \
-	PageCrawlBot.o Json.o PageBasic.o \
-	Punycode.o Version.o \
-	HighFrequencyTermShortcuts.o \
-	SummaryCache.o \
-	ScalingFunctions.o \
-	RobotRule.o Robots.o \
-	JobScheduler.o \
-	AdultCheck.o \
-	Url.o \
+OBJS_O0 =  \
+	Abbreviations.o AdultCheck.o \
+	BigFile.o Blaster.o \
+	Clusterdb.o Collectiondb.o Conf.o CountryCode.o \
+	DailyMerge.o Dir.o Dns.o Domains.o \
+	Errno.o Entities.o \
+	File.o \
 	GbMutex.o \
-	Sanity.o \
+	HashTable.o HighFrequencyTermShortcuts.o HttpMime.o HttpRequest.o HttpServer.o Hostdb.o \
+	iana_charset.o Images.o ip.o \
+	JobScheduler.o Json.o \
+	Lang.o LanguageIdentifier.o Log.o \
+	Mem.o Msg0.o Msg1.o Msg4.o MsgC.o Msg13.o Msg20.o Msg22.o Msg39.o Msg1f.o Msg3a.o Msg51.o Msge0.o Msge1.o Multicast.o \
+	Parms.o Pages.o PageAddColl.o PageAddUrl.o PageBasic.o PageCrawlBot.o PageGet.o PageHealthCheck.o PageHosts.o PageInject.o PageLogView.o \
+	PageParser.o PagePerf.o PageReindex.o PageResults.o PageRoot.o PageSockets.o PageStats.o PageStatsdb.o PageThreads.o PageTitledb.o \
+	Phrases.o PingServer.o Process.o Proxy.o Punycode.o \
+	Query.o \
+	RdbCache.o RdbDump.o RdbMem.o RdbMerge.o RdbScan.o RdbTree.o \
+	Rebalance.o Repair.o RobotRule.o Robots.o \
+	Sanity.o ScalingFunctions.o SearchInput.o SiteGetter.o Speller.o SpiderProxy.o Stats.o Statsdb.o SummaryCache.o Synonyms.o \
+	Tagdb.o TcpServer.o Timezone.o Titledb.o \
+	Version.o \
+	Wiki.o Wiktionary.o \
+	UdpSlot.o Url.o \
 
 
 OBJS_O1 = \
