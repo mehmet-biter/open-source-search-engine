@@ -20,7 +20,7 @@ extern void signature_verification_failed();
 #define set_signature()
 #define clear_signature()
 #define verify_signature()
-#define verify_signature_at()
+#define verify_signature_at(x)
 
 #endif
 
