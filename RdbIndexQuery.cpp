@@ -3,8 +3,8 @@
 #include <algorithm>
 
 /// @todo ALC make sure base->getTreeIndex is sorted
-RdbIndexQuery::RdbIndexQuery(RdbBase *base, int filePos)
-	: RdbIndexQuery(base->getIndex(filePos) ? base->getIndex(filePos)->getDocIds() : docidsconst_ptr_t(),
+RdbIndexQuery::RdbIndexQuery(RdbBase *base)
+	: RdbIndexQuery(base->getGlobalIndex() ? base->getGlobalIndex() : docidsconst_ptr_t(),
 	                base->getTreeIndex() ? base->getTreeIndex()->getDocIds() : docidsconst_ptr_t(),
 	                base->getNumFiles()) {
 }
@@ -15,6 +15,8 @@ RdbIndexQuery::RdbIndexQuery(docidsconst_ptr_t globalIndexData, docidsconst_ptr_
 	, m_numFiles(numFiles) {
 }
 
+RdbIndexQuery::~RdbIndexQuery() {
+}
 
 /// @todo ALC instead of having a mtx, we should have a reference counter for docIds and create a copy when updating
 int32_t RdbIndexQuery::getFilePos(uint64_t docId) const {

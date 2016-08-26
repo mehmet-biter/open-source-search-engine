@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <unordered_set>
 #include <assert.h>
+#include <RdbIndexQuery.h>
 
 static void print_usage(const char *argv0) {
 	fprintf(stdout, "Usage: %s [-h] PATH RDB\n", argv0);
@@ -170,8 +171,10 @@ int main(int argc, char **argv) {
 
 	logf(LOG_DEBUG, "Starting test with %zu entries", testData.size());
 	uint64_t start = gettimeofdayInMicroseconds();
+
+	RdbIndexQuery rdbIndexQuery(base);
 	for (auto it = testData.begin(); it != testData.end(); ++it) {
-		assert(base->getFilePos(*it >> 24) == static_cast<int32_t>(*it & 0xffff));
+		assert(rdbIndexQuery.getFilePos(*it >> 24) == static_cast<int32_t>(*it & 0xffff));
 	}
 
 	uint64_t diff = gettimeofdayInMicroseconds() - start;

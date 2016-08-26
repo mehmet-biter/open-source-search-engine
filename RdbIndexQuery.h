@@ -10,7 +10,7 @@ class RdbBase;
 
 class RdbIndexQuery {
 public:
-	RdbIndexQuery(RdbBase *base, int filePos);
+	RdbIndexQuery(RdbBase *base);
 	~RdbIndexQuery();
 
 	int32_t getFilePos(uint64_t docId) const;

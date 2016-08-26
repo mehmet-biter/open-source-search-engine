@@ -110,6 +110,7 @@ class RdbBase {
 		return NULL;
 	}
 
+	docidsconst_ptr_t getGlobalIndex() const { return m_docIdFileIndex; }
 
 
 	float getPercentNegativeRecsOnDisk ( int64_t *totalArg ) const;
@@ -242,8 +243,6 @@ private:
 	docids_ptr_t m_docIdFileIndex;
 
 public:
-	int32_t getFilePos(uint64_t docId) const;
-
 	// this class contains a ptr to us
 	class Rdb           *m_rdb;
 

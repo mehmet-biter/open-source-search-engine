@@ -238,16 +238,6 @@ void RdbIndex::addRecord(char *key) {
 	}
 }
 
-bool RdbIndex::inIndex(uint64_t docId) const {
-	if (m_needToSort) {
-		/// @todo ALC this should be optimized
-		// we can't use binary search for the full vector directly because we may have unsorted data at the end
-		return (std::find(m_docIds->begin(), m_docIds->end(), docId) != m_docIds->end());
-	}
-
-	return std::binary_search(m_docIds->begin(), m_docIds->end(), docId);
-}
-
 void RdbIndex::printIndex() {
 	//@todo: IMPLEMENT!
 	logError("NOT IMPLEMENTED YET");

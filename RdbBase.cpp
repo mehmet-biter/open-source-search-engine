@@ -2503,20 +2503,3 @@ void RdbBase::generateGlobalIndex() {
 	m_docIdFileIndex->shrink_to_fit();
 	/// @todo ALC free up m_indexes[i]->m_docIds as well
 }
-
-/// @todo ALC instead of having a mtx, we should have a reference counter for docIds and create a copy when updating
-int32_t RdbBase::getFilePos(uint64_t docId) const {
-	if (m_treeIndex.inIndex(docId)) {
-		return m_numFiles;
-	}
-
-	auto it = std::lower_bound(m_docIdFileIndex->cbegin(), m_docIdFileIndex->cend(), docId << 24);
-	if ((*it >> 24) == docId) {
-		return static_cast<int32_t>(*it & 0xffff);
-	}
-
-	// it's not possible that we can't find docId
-	logError("Unable to find docId=%lu in global index", docId);
-	gbshutdownLogicError();
-}
-
