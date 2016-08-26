@@ -3,7 +3,6 @@
 #include "Msg3.h"
 #include "Rdb.h"
 #include "Stats.h"     // for timing and graphing merge time
-#include "PingServer.h"
 #include "RdbCache.h"
 #include "Process.h"
 #include "GbMutex.h"
