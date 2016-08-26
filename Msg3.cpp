@@ -191,9 +191,6 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 	m_ks = getKeySizeFromRdbId ( m_rdbId );
 	// reset the group error
 	m_errno    = 0;
-	// . reset all our lists 
-	// . these are reset in call the RdbScan::setRead() below
-	//for ( int32_t i = 0 ; i < MAX_RDB_FILES ; i++ ) m_lists[i].reset();
 	// . ensure startKey last bit clear, endKey last bit set
 	// . no! this warning is now only in Msg5
 	// . if RdbMerge is merging some files, not involving the root 
@@ -204,7 +201,6 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 	// . so in that case RdbList::merge will stop merging once the
 	//   minRecSizes limit is reached even if it means ending on a negative
 	//   rec key
-	//if ( (startKey.n0 & 0x01) == 0x01 ) 
 	if ( !KEYNEG(startKeyArg) )
 		log(LOG_REMIND,"net: msg3: StartKey lastbit set."); 
 	if (  KEYNEG(endKeyArg) )
@@ -519,7 +515,6 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		// . but iff p2 is NOT the last page in the map/file
 		// . maps[fn]->getKey(lastPage) will return the LAST KEY
 		//   and maps[fn]->getOffset(lastPage) the length of the file
-		//if ( maps[fn]->getNumPages()!=p2) endKey -=(uint32_t)1;
 		if ( maps[fn]->getNumPages() != p2 ) KEYDEC(endKey2,m_ks);
 		// otherwise, if we're reading all pages, then force the
 		// endKey to virtual inifinite
@@ -555,12 +550,6 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 
 		// reset g_errno before calling setRead()
 		g_errno = 0;
-		// . this fix is now in RdbList::checklist_r()
-		// . we can now have dup keys, so, we may read in
-		//   a rec with key "lastMinKey" even though we don't read
-		//   in the first key on the end page, so don't subtract 1...
-		//if ( endKey != m_endKeyOrig ) 
-		//	endKey += (uint32_t) 1;
 
 		// timing debug
 		if ( g_conf.m_logTimingDb )
@@ -1082,7 +1071,6 @@ bool Msg3::doneSleeping ( ) {
 // . shrinks endKey while still preserving the minRecSizes requirement
 // . this is the most confusing subroutine in the project
 // . this now OVERWRITES endKey with the new one
-//key_t Msg3::setPageRanges ( RdbBase *base ,
 void  Msg3::setPageRanges ( RdbBase *base ,
 			    int32_t  *fileNums      ,
 			    int32_t   numFileNums   ,
