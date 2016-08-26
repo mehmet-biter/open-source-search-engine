@@ -403,12 +403,7 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 	//   to ensure we read "minRecSizes" worth of records, not much more
 	// . returns the new endKey for all ranges
 	// . now this just overwrites m_endKey
-	setPageRanges ( base           ,
-			m_fileNums     ,
-			m_numFileNums  ,
-			m_fileStartKey , // start reading @ key
-			m_endKey       , // stop reading @ key
-			m_minRecSizes  );
+	setPageRanges(base);
 
 	// . NEVER let m_endKey be a negative key, because it will 
 	//   always be unmatched, since delbit is cleared
@@ -1070,12 +1065,7 @@ bool Msg3::doneSleeping ( ) {
 // . shrinks endKey while still preserving the minRecSizes requirement
 // . this is the most confusing subroutine in the project
 // . this now OVERWRITES endKey with the new one
-void  Msg3::setPageRanges ( RdbBase *base ,
-			    int32_t  *fileNums      ,
-			    int32_t   numFileNums   ,
-			    const char  *startKey   ,
-			    char  *endKey        ,
-			    int32_t   minRecSizes   ) {
+void Msg3::setPageRanges(RdbBase *base) {
 	// sanity check
 	//if ( m_ks != 12 && m_ks != 16 ) { g_process.shutdownAbort(true); }
 	// get the file maps from the rdb
@@ -1083,15 +1073,14 @@ void  Msg3::setPageRanges ( RdbBase *base ,
 	// . initialize the startpg/endpg for each file
 	// . we read from the first offset on m_startpg to offset on m_endpg
 	// . since we set them equal that means an empty range for each file
-	for ( int32_t i = 0 ; i < numFileNums ; i++ ) {
-		int32_t fn = fileNums[i];
+	for ( int32_t i = 0 ; i < m_numFileNums ; i++ ) {
+		int32_t fn = m_fileNums[i];
 		if ( fn < 0 ) { g_process.shutdownAbort(true); }
-		m_startpg[i] = maps[fn]->getPage( startKey );
+		m_startpg[i] = maps[fn]->getPage( m_fileStartKey );
 		m_endpg  [i] = m_startpg[i];
 	}
 	// just return if minRecSizes 0 (no reading needed)
-	//if ( minRecSizes <= 0 ) return endKey ;
-	if ( minRecSizes <= 0 ) return;
+	if ( m_minRecSizes <= 0 ) return;
 	// calculate minKey minus one
 	char lastMinKey[MAX_KEY_BYTES];
 	char lastMinKeyIsValid = 0;
@@ -1100,11 +1089,10 @@ void  Msg3::setPageRanges ( RdbBase *base ,
 	// find the map whose next page has the lowest key
 	int32_t  minpg   = -1;
 	char minKey[MAX_KEY_BYTES];
-	for ( int32_t i = 0 ; i < numFileNums ; i++ ) {
-		int32_t fn = fileNums[i];
+	for ( int32_t i = 0 ; i < m_numFileNums ; i++ ) {
+		int32_t fn = m_fileNums[i];
 		// this guy is out of race if his end key > "endKey" already
-		//if ( maps[fn]->getKey ( m_endpg[i] ) > endKey ) continue;
-		if(KEYCMP(maps[fn]->getKeyPtr(m_endpg[i]),endKey,m_ks)>0)
+		if(KEYCMP(maps[fn]->getKeyPtr(m_endpg[i]),m_endKey,m_ks)>0)
 			continue;
 		// get the next page after m_endpg[i]
 		int32_t nextpg = m_endpg[i] + 1;
@@ -1138,7 +1126,6 @@ void  Msg3::setPageRanges ( RdbBase *base ,
 	// . return the max end key
 	// key_t maxEndKey; maxEndKey.setMax(); return maxEndKey; }
 	// . no, just the endKey
-	//if ( minpg  == -1 ) return endKey;
 	if ( minpg  == -1 ) return;
 	// sanity check
 	if ( lastMinKeyIsValid && KEYCMP(minKey,lastMinKey,m_ks)<=0 ) {
@@ -1159,11 +1146,10 @@ void  Msg3::setPageRanges ( RdbBase *base ,
 		return;
 	}
 	// don't let minKey exceed endKey, however
-	if ( KEYCMP(minKey,endKey,m_ks)>0 ) {
-		//lastMinKey  = endKey;
-		KEYSET(minKey,endKey,m_ks);
+	if ( KEYCMP(minKey,m_endKey,m_ks)>0 ) {
+		KEYSET(minKey,m_endKey,m_ks);
 		KEYINC(minKey,m_ks);
-		KEYSET(lastMinKey,endKey,m_ks);
+		KEYSET(lastMinKey,m_endKey,m_ks);
 	}
 	else {
 		KEYSET(lastMinKey,minKey,m_ks);
@@ -1174,12 +1160,12 @@ void  Msg3::setPageRanges ( RdbBase *base ,
 	// . advance m_endpg[i] so that next page < minKey 
 	// . we want to read UP TO the first key on m_endpg[i]
 	for ( int32_t i = 0 ; i < m_numFileNums ; i++ ) {
-		int32_t fn = fileNums[i];
+		int32_t fn = m_fileNums[i];
 		m_endpg[i] = maps[fn]->getEndPage ( m_endpg[i], lastMinKey );
 	}
 	// . if the minKey is BIGGER than the provided endKey we're done
 	// . we don't necessarily include records whose key is "minKey"
-	if ( KEYCMP(minKey,endKey,m_ks)>0) return;
+	if ( KEYCMP(minKey,m_endKey,m_ks)>0) return;
 	// . calculate recSizes per page within [startKey,minKey-1]
 	// . compute bytes of records in [startKey,minKey-1] for each map
 	// . this includes negative records so we may have annihilations
@@ -1188,23 +1174,22 @@ void  Msg3::setPageRanges ( RdbBase *base ,
 	//   again if he wants more
 	int32_t recSizes = 0;
 	for ( int32_t i = 0 ; i < m_numFileNums ; i++ ) {
-		int32_t fn = fileNums[i];
+		int32_t fn = m_fileNums[i];
 		recSizes += maps[fn]->getMinRecSizes ( m_startpg[i] , 
 						       m_endpg  [i] ,
-						       startKey     , 
+						       m_fileStartKey,
 						       lastMinKey   ,
 						       false        );
 	}
 	// if we hit it then return minKey -1 so we only read UP TO "minKey"
 	// not including "minKey"
-	//if ( recSizes >= minRecSizes ) 
-	if ( recSizes >= minRecSizes ) {
+	if ( recSizes >= m_minRecSizes ) {
 		// . sanity check
 		// . this sanity check fails sometimes, but leave it
 		//   out for now... causes the Illegal endkey msgs in
 		//   RdbList::indexMerge_r()
 		//if ( KEYNEG(lastMinKey) ) { g_process.shutdownAbort(true); }
-		KEYSET(endKey,lastMinKey,m_ks);
+		KEYSET(m_endKey,lastMinKey,m_ks);
 		//return lastMinKey;
 		return;
 	}

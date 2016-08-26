@@ -90,13 +90,7 @@ private:
 	void compensateForNegativeRecs ( class RdbBase *base ) ;
 
 	// . sets page ranges for RdbScan (m_startpg[i], m_endpg[i])
-	// . returns the endKey for all RdbScans
-	void  setPageRanges ( class RdbBase *base     ,
-			      int32_t      *fileNums     ,
-			      int32_t       numFileNums  ,
-			      const char  *startKey     ,
-			      char      *endKey       ,
-			      int32_t       minRecSizes  );
+	void  setPageRanges(RdbBase *base);
 
 	static void doneScanningWrapper(void *state);
 	static void doneSleepingWrapper3(int fd, void *state);
