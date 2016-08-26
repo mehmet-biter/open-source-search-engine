@@ -368,13 +368,14 @@ coverage:
 
 
 # special dependency and auto-generated file
-Entities.o: entities.inc
-
 entities.inc: entities.json generate_entities.py
 entities.json entities.inc:
 	./generate_entities.py >entities.inc
 
+Entities.o: entities.inc
 Version.o: CPPFLAGS += -DGIT_COMMIT_ID=$(GIT_VERSION) -DBUILD_CONFIG=$(config)
+
+# different optimization level
 $(OBJS_O1): CPPFLAGS += $(O1)
 $(OBJS_O2): CPPFLAGS += $(O2)
 $(OBJS_O3): CPPFLAGS += $(O3)
