@@ -12,6 +12,7 @@
 #else
 
 void gbshutdownAbort( bool save_on_abort );
+void gbshutdownResourceError();
 void gbshutdownLogicError();
 void gbshutdownCorrupted();
 
