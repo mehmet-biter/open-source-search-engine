@@ -103,10 +103,7 @@ public:
 	// . caller should retry later on g_errno of ENOMEM or ETRYAGAIN
 	// . returns the node # in the tree it added the record to
 	// . key low bit must be set (otherwise it indicates a delete)
-	bool addRecord ( collnum_t collnum, char *key, char *data, int32_t dataSize, int32_t niceness);
-	bool addRecord ( const char *coll , char *key, char *data, int32_t dataSize, int32_t niceness);
-	bool addRecord (const char *coll , key_t &key, char *data, int32_t dataSize, int32_t niceness) {
-		return addRecord(coll,(char *)&key,data,dataSize, niceness);}
+	bool addRecord ( collnum_t collnum, char *key, char *data, int32_t dataSize);
 
 	// returns false if no room in tree or m_mem for a list to add
 	bool hasRoom ( RdbList *list , int32_t niceness );

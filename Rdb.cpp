@@ -1625,7 +1625,7 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list, int32_t niceness ) {
 			data     = NULL;
 		}
 
-		if ( ! addRecord ( collnum , key , data , dataSize, niceness ) ) {
+		if ( ! addRecord ( collnum , key , data , dataSize ) ) {
 			// bitch
 			static int32_t s_last = 0;
 			int32_t now = time(NULL);
@@ -1768,7 +1768,7 @@ bool Rdb::hasRoom ( RdbList *list , int32_t niceness ) {
 // . if RdbMem, m_mem, has no mem, sets g_errno to ETRYAGAIN and returns false
 //   because dump should complete soon and free up some mem
 // . this overwrites dups
-bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSize, int32_t niceness) {
+bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSize) {
 	if ( ! getBase(collnum) ) {
 		g_errno = EBADENGINEER;
 		log(LOG_LOGIC,"db: addRecord: collection #%i is gone.",
@@ -2470,24 +2470,6 @@ bool Rdb::addList ( const char *coll , RdbList *list, int32_t niceness ) {
 	}
 	return addList ( collnum , list, niceness );
 }
-
-//bool Rdb::addRecord ( char *coll , key_t &key, char *data, int32_t dataSize ) {
-bool Rdb::addRecord ( const char *coll , char *key, char *data, int32_t dataSize,
-		      int32_t niceness) {
-	// catdb has no collection per se
-	if ( m_isCollectionLess )
-		return addRecord ((collnum_t)0,
-				  key,data,dataSize,
-				  niceness);
-	collnum_t collnum = g_collectiondb.getCollnum ( coll );
-	if ( collnum < (collnum_t) 0 ) {
-		g_errno = ENOCOLLREC;
-		log(LOG_WARN, "db: Could not add rec because collection \"%s\" does not exist.",coll);
-		return false;
-	}
-	return addRecord ( collnum , key , data , dataSize,niceness );
-}
-
 
 int32_t Rdb::getNumUsedNodes ( ) const {
 	 if(m_useTree) return m_tree.getNumUsedNodes(); 
