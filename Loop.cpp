@@ -64,19 +64,19 @@ static void sigpwrHandler ( int x , siginfo_t *info , void *y ) ;
 static void sighupHandler ( int x , siginfo_t *info , void *y ) ;
 static void sigprofHandler(int signo, siginfo_t *info, void *context);
 
-void Loop::unregisterReadCallback ( int fd, void *state , void (* callback)(int fd,void *state), bool silent ){
+void Loop::unregisterReadCallback ( int fd, void *state , void (* callback)(int fd,void *state) ){
 	if ( fd < 0 ) return;
 	// from reading
-	unregisterCallback ( m_readSlots,fd, state , callback, silent,true );
+	unregisterCallback ( m_readSlots,fd, state , callback, true);
 }
 
 void Loop::unregisterWriteCallback ( int fd, void *state , void (* callback)(int fd,void *state)){
 	// from writing
-	unregisterCallback ( m_writeSlots , fd  , state,callback,false,false);
+	unregisterCallback ( m_writeSlots , fd  , state,callback,false);
 }
 
 void Loop::unregisterSleepCallback ( void *state , void (* callback)(int fd,void *state)){
-	unregisterCallback (m_readSlots,MAX_NUM_FDS,state,callback,false,true);
+	unregisterCallback (m_readSlots,MAX_NUM_FDS,state,callback,true);
 }
 
 static fd_set s_selectMaskRead;
@@ -88,7 +88,7 @@ static int s_writeFds[MAX_NUM_FDS];
 static int32_t s_numWriteFds = 0;
 
 void Loop::unregisterCallback ( Slot **slots , int fd , void *state , void (* callback)(int fd,void *state) ,
-                                bool silent , bool forReading ) {
+                                bool forReading ) {
 	// bad fd
 	if ( fd < 0 ) {log(LOG_LOGIC,
 			   "loop: fd to unregister is negative.");return;}

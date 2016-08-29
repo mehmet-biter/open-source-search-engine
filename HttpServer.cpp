@@ -1132,12 +1132,10 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 	// . do it SILENTLY so not message is logged if fd not registered
 	if (tcp->m_useSSL)
 		g_loop.unregisterReadCallback ( fd,(void *)(PTRTYPE)(sd),
-						getSSLMsgPieceWrapper , 
-						true /*silent?*/);
+						getSSLMsgPieceWrapper);
 	else
 		g_loop.unregisterReadCallback ( fd,(void *)(PTRTYPE)(sd),
-						getMsgPieceWrapper , 
-						true /*silent?*/);
+						getMsgPieceWrapper);
 
 	// TcpServer will free sendBuf on s's recycling/destruction
 	// mfree ( sendBuf , sendBufSize );
@@ -1302,13 +1300,11 @@ void cleanUp ( void *state , TcpSocket *s ) {
 		if (tcp->m_useSSL)
 			g_loop.unregisterReadCallback ( fd,//f->getfd(),
 						    (void *)(PTRTYPE)(socketDescriptor),
-							getSSLMsgPieceWrapper,
-							true );
+							getSSLMsgPieceWrapper);
 		else
 			g_loop.unregisterReadCallback ( fd,//f->getfd(),
 						    (void *)(PTRTYPE)(socketDescriptor),
-							getMsgPieceWrapper , 
-							true );
+							getMsgPieceWrapper);
 	}
 
 	logDebug(g_conf.m_logDebugTcp, "tcp: deleting filestate=0x%" PTRFMT" fd=%" PRId32" [7] s=0x%" PTRFMT"", (PTRTYPE)f,fd,(PTRTYPE)s);

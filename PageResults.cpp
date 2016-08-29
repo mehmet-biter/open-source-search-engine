@@ -1,7 +1,6 @@
 #include "gb-include.h"
 
 #include "Collectiondb.h"
-//#include "CollectionRec.h"
 #include "Stats.h"
 #include "Statsdb.h"
 #include "Statistics.h"
@@ -27,6 +26,7 @@
 #include "Images.h" //Thumbnail*
 #include "HttpMime.h"
 #include "Process.h"
+#include "Linkdb.h"
 
 static bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) ;
 static bool printMenu ( SafeBuf *sb , int32_t menuNum , HttpRequest *hr ) ;

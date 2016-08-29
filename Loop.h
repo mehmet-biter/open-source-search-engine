@@ -104,7 +104,7 @@ class Loop {
 	                             int32_t niceness = 1, bool immediate = false );
 
 	// unregister call back for reading, writing or sleeping
-	void unregisterReadCallback  ( int fd, void *state , void (* callback)(int fd,void *state), bool silent = false );
+	void unregisterReadCallback  ( int fd, void *state , void (* callback)(int fd,void *state) );
 	void unregisterWriteCallback ( int fd, void *state , void (* callback)(int fd,void *state) );
 	void unregisterSleepCallback ( void *state , void (* callback)(int fd,void *state) );
 
@@ -133,7 +133,6 @@ class Loop {
 
 	void unregisterCallback ( Slot **slots , int fd , void *state ,
 				  void (* callback)(int fd,void *state) ,
-				  bool silent , // = false );
 				  bool forReading );
 
 	bool addSlot ( bool forReading , int fd , void *state , void (* callback)(int fd , void *state ),

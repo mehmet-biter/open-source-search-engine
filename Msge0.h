@@ -5,8 +5,9 @@
 
 #define MAX_OUTSTANDING_MSGE0 20
 
-#include "Tagdb.h"
 #include "Linkdb.h"
+
+class TagRec;
 
 class Msge0 {
 
@@ -20,7 +21,7 @@ public:
 			  linkflags_t  *urlFlags     ,
 			  int32_t          numUrls      ,
 			  bool          skipOldLinks ,
-			  class TagRec *baseTagRec ,
+			  TagRec *baseTagRec ,
 			  collnum_t  collnum,
 			  int32_t          niceness     ,
 			  void         *state        ,
@@ -50,7 +51,7 @@ public:
 	char  *m_slabPtr;
 	char  *m_slabEnd;
 
-	class TagRec *m_baseTagRec;
+	TagRec *m_baseTagRec;
 
 	// sub-buffers of the great "m_buf", where we store the data for eacu
 	// url that we get in urlBuf

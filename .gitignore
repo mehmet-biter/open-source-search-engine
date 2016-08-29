@@ -3,12 +3,12 @@
 /statsdb/
 # generated file/binary
 *.o
+*.d
 *.dat
 *.conf.saving
 *.conf
 *.cache
 diskusage
-Make.depend
 gb
 gb.oldsave
 urlinfo

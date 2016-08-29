@@ -14,15 +14,10 @@
 #ifndef GB_MSG1_H
 #define GB_MSG1_H
 
-#include "Rdb.h"
-#include "UdpServer.h"
+#include "RdbList.h"
 #include "Multicast.h"
-#include "Msg0.h"                         // for getRdb(char rdbId)
-#include "Titledb.h"
-#include "Clusterdb.h"
-#include "Linkdb.h"
-#include "Tagdb.h"
 #include "rdbid_t.h"
+#include "types.h"
 
 #define MSG1_BUF_SIZE 64
 
