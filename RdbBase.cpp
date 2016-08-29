@@ -15,6 +15,7 @@
 #include "Rebalance.h"
 #include "JobScheduler.h"
 #include "Process.h"
+#include "ScopedLock.h"
 #include <sys/stat.h> //mkdir()
 #include <algorithm>
 
@@ -42,6 +43,7 @@ RdbBase::RdbBase()
 
 	// use bogus collnum just in case
 	m_collnum = -1;
+
 	reset();
 }
 
@@ -2483,23 +2485,31 @@ void RdbBase::generateGlobalIndex() {
 		return;
 	}
 
-	m_docIdFileIndex->clear();
+	docids_ptr_t tmpDocIdFileIndex(new docids_t);
 
 	// global index does not include RdbIndex from tree/buckets
-
 	for (int32_t i = 0; i < m_numFiles; i++) {
 		auto docIds = m_indexes[i]->getDocIds();
-		m_docIdFileIndex->reserve(m_docIdFileIndex->size() + docIds->size());
-		std::transform(docIds->begin(), docIds->end(), std::back_inserter(*m_docIdFileIndex),
+		tmpDocIdFileIndex->reserve(tmpDocIdFileIndex->size() + docIds->size());
+		std::transform(docIds->begin(), docIds->end(), std::back_inserter(*tmpDocIdFileIndex),
 		               [i](uint64_t docId) { return ((docId << 24) | i); });
 	}
 
-	std::sort(m_docIdFileIndex->begin(), m_docIdFileIndex->end());
-	auto it = std::unique(m_docIdFileIndex->rbegin(), m_docIdFileIndex->rend(),
+	std::sort(tmpDocIdFileIndex->begin(), tmpDocIdFileIndex->end());
+	auto it = std::unique(tmpDocIdFileIndex->rbegin(), tmpDocIdFileIndex->rend(),
 	                      [](uint64_t a, uint64_t b) { return (a & 0xffffffffff000000ULL) == (b & 0xffffffffff000000ULL); });
-	m_docIdFileIndex->erase(m_docIdFileIndex->begin(), it.base());
+	tmpDocIdFileIndex->erase(tmpDocIdFileIndex->begin(), it.base());
 
 	// free up used space
-	m_docIdFileIndex->shrink_to_fit();
+	tmpDocIdFileIndex->shrink_to_fit();
 	/// @todo ALC free up m_indexes[i]->m_docIds as well
+
+	// replace with new index
+	ScopedLock sl(m_docIdFileIndexMtx);
+	m_docIdFileIndex.swap(tmpDocIdFileIndex);
+}
+
+docidsconst_ptr_t RdbBase::getGlobalIndex() {
+	ScopedLock sl(m_docIdFileIndexMtx);
+	return m_docIdFileIndex;
 }

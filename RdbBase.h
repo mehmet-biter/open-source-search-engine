@@ -37,6 +37,7 @@
 #include "Dir.h"
 #include "RdbMem.h"
 #include "RdbIndex.h"
+#include "GbMutex.h"
 
 // how many rdbs are in "urgent merge" mode?
 extern int32_t g_numUrgentMerges;
@@ -110,7 +111,7 @@ class RdbBase {
 		return NULL;
 	}
 
-	docidsconst_ptr_t getGlobalIndex() const { return m_docIdFileIndex; }
+	docidsconst_ptr_t getGlobalIndex();
 
 
 	float getPercentNegativeRecsOnDisk ( int64_t *totalArg ) const;
@@ -241,6 +242,7 @@ private:
 	// ..dddddd dddddddd dddddddd dddddddd  d = docId
 	// dddddddd ........ ffffffff ffffffff  f = fileIndex
 	docids_ptr_t m_docIdFileIndex;
+	GbMutex m_docIdFileIndexMtx;
 
 public:
 	// this class contains a ptr to us
