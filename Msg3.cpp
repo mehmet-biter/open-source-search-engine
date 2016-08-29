@@ -228,9 +228,6 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		return true;
 	}
 
-	// store the file numbers in the array, these are the files we read
-	m_numFileNums = 0;
-
 	// save startFileNum here, just for recall
 	m_startFileNum = startFileNum;
 	m_numFiles     = numFiles;
@@ -321,6 +318,9 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 	//Mem.cpp has bad logic concerning arrays
 	//mnew(m_scan,sizeof(*m_scan)*m_numChunks,"Msg3:scan");
 	
+	// store the file numbers in the array, these are the files we read
+	m_numFileNums = 0;
+
 	// make fix from up top
 	if ( pre != -10 ) m_scan[m_numFileNums++].m_fileNum = pre;
 
