@@ -2310,7 +2310,7 @@ void RdbBase::closeMaps ( bool urgent ) {
 	}
 }
 
-//@@@ BR: no-merge index begin
+/// @todo ALC when do we use closeIndexes?
 void RdbBase::closeIndexes ( bool urgent ) {
 	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) {
 		if( m_useIndexFile && m_indexes[i] ) {
@@ -2322,7 +2322,6 @@ void RdbBase::closeIndexes ( bool urgent ) {
 		}
 	}
 }
-//@@@ BR: no-merge index end
 
 void RdbBase::saveMaps() {
 	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) {
@@ -2480,6 +2479,7 @@ float RdbBase::getPercentNegativeRecsOnDisk ( int64_t *totalArg ) const {
 	return percent;
 }
 
+/// @todo ALC we should free up m_indexes[i]->m_docIds when we don't need it, and load it back when we do
 void RdbBase::generateGlobalIndex() {
 	if (!m_useIndexFile) {
 		return;
@@ -2502,7 +2502,6 @@ void RdbBase::generateGlobalIndex() {
 
 	// free up used space
 	tmpDocIdFileIndex->shrink_to_fit();
-	/// @todo ALC free up m_indexes[i]->m_docIds as well
 
 	// replace with new index
 	ScopedLock sl(m_docIdFileIndexMtx);
