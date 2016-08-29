@@ -343,11 +343,6 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 	}
 	m_numFileNums = n;
 
-	// . if root file is being merged, he's file #0, & root file is file #1
-	// . this is a hack so caller gets what he wants
-	//if ( startFileNum == 0 && base->getFileId(0) == 0 && numFiles == 1 )
-	//	numFiles = 2;
-
 	// remember the file range we should scan
 	m_numScansStarted    = 0;
 	m_numScansCompleted  = 0;
