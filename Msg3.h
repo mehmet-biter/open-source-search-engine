@@ -69,8 +69,8 @@ class Msg3 {
 			 bool           hitDisk        = true );
 
 	// for retrieving unmerged lists
-	RdbList        *getList ( int32_t i )       { return &m_lists[i]; }
-	const RdbList  *getList ( int32_t i ) const { return &m_lists[i]; }
+	RdbList        *getList ( int32_t i )       { return &m_scan[i].m_list; }
+	const RdbList  *getList ( int32_t i ) const { return &m_scan[i].m_list; }
 	int32_t         getNumLists() const { return m_numScansCompleted; }
 	bool            areAllScansCompleted() const;
 
@@ -119,6 +119,10 @@ private:
 		int32_t    m_hintOffset;
 
 		int32_t    m_fileNum;
+
+		// hold the list we read from disk here
+		RdbList    m_list;
+
 		Scan();
 	};
 	
@@ -136,9 +140,7 @@ private:
 	void incrementScansStarted();
 	void incrementScansCompleted();
 
-	// hold the lists we read from disk here
-	RdbList  *m_lists ;
-
+	
 	// key range to read
 	const char     *m_fileStartKey;
 	char      m_startKey[MAX_KEY_BYTES];

@@ -16,7 +16,8 @@ int32_t g_numIOErrors = 0;
 Msg3::Scan::Scan()
   : m_scan(),
     m_startpg(0), m_endpg(0),
-    m_hintOffset(0), m_fileNum(0)
+    m_hintOffset(0), m_fileNum(0),
+    m_list()
 {
 	memset(m_hintKey,0,sizeof(m_hintKey));
 }
@@ -27,8 +28,7 @@ Msg3::Msg3()
   : m_scan(NULL),
     m_numScansStarted(0),
     m_numScansCompleted(0),
-    m_scansBeingSubmitted(false),
-    m_lists(NULL)
+    m_scansBeingSubmitted(false)
 {
 //	log(LOG_TRACE,"Msg3(%p)::Msg3()",this);
 	set_signature();
@@ -57,8 +57,6 @@ void Msg3::reset() {
 		delete[] m_scan;
 		m_scan = NULL;
 	}
-	delete[] m_lists;
-	m_lists = NULL;
 	verify_signature();
 }
 
@@ -257,9 +255,6 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		return true;
 	}
 
-	// store the file numbers in the array, these are the files we read
-	m_numFileNums = 0;
-
 	// save startFileNum here, just for recall
 	m_startFileNum = startFileNum;
 	m_numFiles     = numFiles;
@@ -290,10 +285,7 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 			// if we are reading from a file being merged...
 			if ( startFileNum < base->m_mergeStartFileNum +
 			     base->m_numFilesToMerge - 1 )
-				//m_fileNums [ m_numFileNums++ ] =
-				//	base->m_mergeStartFileNum - 1;
 				pre = base->m_mergeStartFileNum - 1;
-			// debug msg
 			if ( g_conf.m_logDebugQuery )
 				log(LOG_DEBUG,
 				   "net: msg3: startFileNum from %" PRId32" to %" PRId32" (mfn=%" PRId32")",
@@ -305,7 +297,6 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		if ( startFileNum < base->m_mergeStartFileNum - 1 &&
 		     numFiles != -1 &&
 		     startFileNum + numFiles - 1 >= base->m_mergeStartFileNum - 1 ) {
-			// debug msg
 			if ( g_conf.m_logDebugQuery )
 				log(LOG_DEBUG,"net: msg3: numFiles up one.");
 			// if merge file was inserted before us, inc our file number
@@ -338,15 +329,6 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 	m_numChunks = nn;
 //	log(LOG_TRACE,"Msg3(%p)::readList():allocating %d rdblists",this,m_numChunks);
 	try {
-		m_lists = new RdbList[m_numChunks];
-	} catch(std::bad_alloc) {
-		log("disk: Msg3::readList: Could not allocate %d RdbList", m_numChunks);
-		g_errno = ENOMEM;
-		return true;
-	}
-//	log(LOG_TRACE,"Msg3(%p)::readList():allocated %d rdblists [%p..%p]",this,m_numChunks,m_lists,m_lists+(m_numChunks-1));
-
-	try {
 		m_scan = new Scan[m_numChunks];
 	} catch(std::bad_alloc&) {
 		log(LOG_WARN, "disk: Could not allocate %d 'Scan' structures to read %s.",m_numChunks,base->m_dbname);
@@ -356,6 +338,9 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 	//Mem.cpp has bad logic concerning arrays
 	//mnew(m_scan,sizeof(*m_scan)*m_numChunks,"Msg3:scan");
 	
+	// store the file numbers in the array, these are the files we read
+	m_numFileNums = 0;
+
 	// make fix from up top
 	if ( pre != -10 ) m_scan[m_numFileNums++].m_fileNum = pre;
 
@@ -377,11 +362,6 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		m_scan[n++].m_fileNum = m_scan[i].m_fileNum;
 	}
 	m_numFileNums = n;
-
-	// . if root file is being merged, he's file #0, & root file is file #1
-	// . this is a hack so caller gets what he wants
-	//if ( startFileNum == 0 && base->getFileId(0) == 0 && numFiles == 1 )
-	//	numFiles = 2;
 
 	// remember the file range we should scan
 	m_numScansStarted    = 0;
@@ -640,7 +620,7 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 					// now we have to store this value, 6 or 12 so
 					// we can modify the hint appropriately
 					m_scan[i].m_scan.m_shifted = *rec;
-					m_lists[i].set ( rec +1,
+					m_scan[i].m_list.set ( rec +1,
 							recSize-1 ,
 							rec , // alloc
 							recSize , // allocSize
@@ -660,7 +640,7 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		// . this returns false if blocked, true otherwise
 		// . this will set g_errno on error
 		bool done = m_scan[i].m_scan.setRead( base->getFile(m_scan[i].m_fileNum), base->m_fixedDataSize, offset, bytesToRead,
-		                                startKey2, endKey2, m_ks, &m_lists[i], this, doneScanningWrapper,
+		                                startKey2, endKey2, m_ks, &m_scan[i].m_list, this, doneScanningWrapper,
 		                                base->useHalfKeys(), m_rdbId, m_niceness, m_allowPageCache, m_hitDisk ) ;
 
 						// debug msg
@@ -852,7 +832,7 @@ bool Msg3::doneScanning ( ) {
 	if ( ! g_errno ) { // && g_conf.m_doErrorCorrection ) {
 		int32_t i;
 		for ( i = 0 ; i < m_numFileNums ; i++ )
-			if ( ! m_lists[i].checkList_r ( false, false ) ) break;
+			if ( ! m_scan[i].m_list.checkList_r ( false, false ) ) break;
 		if ( i < m_numFileNums ) {
 			g_errno = ECORRUPTDATA;
 			m_errno = ECORRUPTDATA;
@@ -900,7 +880,7 @@ bool Msg3::doneScanning ( ) {
 		// free the list buffer since if we have 1000 Msg3s retrying
 		// it will totally use all of our memory
 		for ( int32_t i = 0 ; i < m_numChunks ; i++ ) 
-			m_lists[i].destructor();
+			m_scan[i].m_list.destructor();
 		// count retries
 		m_retryNum++;
 
@@ -954,11 +934,11 @@ bool Msg3::doneScanning ( ) {
 	// . if we have only one list, then that's nice cuz the constrain
 	//   will allow us to send it right away w/ zero copying
 	// . if we have only 1 list, it won't be merged into a final list,
-	//   that is, we'll just set m_list = &m_lists[i]
+	//   that is, we'll just set m_list = &m_scan[i].m_list
 	for ( int32_t i = 0 ; i < m_numFileNums ; i++ ) {
 		QUICKPOLL(m_niceness);
 		// count total bytes for logging
-		count += m_lists[i].getListSize();
+		count += m_scan[i].m_list.getListSize();
 		// . hint offset is relative to the offset of first key we read
 		// . if that key was only 6 bytes RdbScan shift the list buf
 		//   down 6 bytes to make the first key 12 bytes... a 
@@ -1018,8 +998,8 @@ bool Msg3::doneScanning ( ) {
 						   true ); // inccounts?
 			if ( inCache && 
 			     // 1st byte is RdbScan::m_shifted
-			     ( m_lists[i].m_listSize != recSize-1 ||
-			       memcmp ( m_lists[i].m_list , rec+1,recSize-1) ||
+			     ( m_scan[i].m_list.m_listSize != recSize-1 ||
+			       memcmp ( m_scan[i].m_list.m_list , rec+1,recSize-1) ||
 			       *rec != m_scan[i].m_scan.m_shifted ) ) {
 				log("msg3: cache did not validate");
 				g_process.shutdownAbort(true);
@@ -1045,14 +1025,14 @@ bool Msg3::doneScanning ( ) {
 					 &m_scan[i].m_scan.m_shifted,
 					 1,
 					 // rec2
-					 m_lists[i].getList() ,
-					 m_lists[i].getListSize() ,
+					 m_scan[i].m_list.getList() ,
+					 m_scan[i].m_list.getListSize() ,
 					 0 ); // timestamp. 0 = now
 		}
 
 		QUICKPOLL(m_niceness);
 
-		if (!m_lists[i].constrain(m_startKey, m_constrainKey, mrs, m_scan[i].m_hintOffset, m_scan[i].m_hintKey, m_rdbId, filename)) {
+		if (!m_scan[i].m_list.constrain(m_startKey, m_constrainKey, mrs, m_scan[i].m_hintOffset, m_scan[i].m_hintKey, m_rdbId, filename)) {
 			log(LOG_WARN, "net: Had error while constraining list read from %s: %s/%s. vfd=%" PRId32" parts=%" PRId32". "
 			    "This is likely caused by corrupted data on disk.",
 			    mstrerror(g_errno), ff->getDir(), ff->getFilename(), ff->getVfd(), (int32_t)ff->m_numParts );
