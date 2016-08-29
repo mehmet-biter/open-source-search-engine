@@ -128,8 +128,7 @@ void RdbTree::reset ( ) {
 	if ( m_useProtection ) unprotect ( );
 	// make sure string is NULL temrinated. this strlen() should 
 	if ( m_numNodes > 0 && 
-	     m_dbname[0] && 
-	     strlen(m_dbname) >= 0 &&
+	     m_dbname[0] &&
 	     // don't be spammy we can have thousands of these, one per coll
 	     strcmp(m_dbname,"waitingtree") )
 		log(LOG_INFO,"db: Resetting tree for %s.",m_dbname);
