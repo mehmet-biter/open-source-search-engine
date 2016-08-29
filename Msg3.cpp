@@ -283,34 +283,34 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		     (int32_t)startFileNum,(int32_t)base->m_mergeStartFileNum-1,
 		     (int32_t)numFiles,base->m_dbname);
 	int32_t pre = -10;
-	if ( compensateForMerge && base->hasMergeFile() && 
-	     startFileNum >= base->m_mergeStartFileNum - 1 &&
-	     (startFileNum > 0 || numFiles != -1) ) {
-		// now also include the file being merged into, but only
-		// if we are reading from a file being merged...
-		if ( startFileNum < base->m_mergeStartFileNum +
-		     base->m_numFilesToMerge - 1 )
-			//m_fileNums [ m_numFileNums++ ] =
-			//	base->m_mergeStartFileNum - 1;
-			pre = base->m_mergeStartFileNum - 1;
-		// debug msg
-		if ( g_conf.m_logDebugQuery )
-			log(LOG_DEBUG,
-			   "net: msg3: startFileNum from %" PRId32" to %" PRId32" (mfn=%" PRId32")",
-			    startFileNum,startFileNum+1,mergeFileNum);
-		// if merge file was inserted before us, inc our file number
-		startFileNum++;
-	}
-	// adjust num files if we need to, as well
-	if ( compensateForMerge && base->hasMergeFile() && 
-	     startFileNum < base->m_mergeStartFileNum - 1 &&
-	     numFiles != -1 &&
-	     startFileNum + numFiles - 1 >= base->m_mergeStartFileNum - 1 ) {
-		// debug msg
-		if ( g_conf.m_logDebugQuery )
-			log(LOG_DEBUG,"net: msg3: numFiles up one.");
-		// if merge file was inserted before us, inc our file number
-		numFiles++;
+	if ( compensateForMerge && base->hasMergeFile() ) {
+		if ( startFileNum >= base->m_mergeStartFileNum - 1 &&
+		     (startFileNum > 0 || numFiles != -1) ) {
+			// now also include the file being merged into, but only
+			// if we are reading from a file being merged...
+			if ( startFileNum < base->m_mergeStartFileNum +
+			     base->m_numFilesToMerge - 1 )
+				//m_fileNums [ m_numFileNums++ ] =
+				//	base->m_mergeStartFileNum - 1;
+				pre = base->m_mergeStartFileNum - 1;
+			// debug msg
+			if ( g_conf.m_logDebugQuery )
+				log(LOG_DEBUG,
+				   "net: msg3: startFileNum from %" PRId32" to %" PRId32" (mfn=%" PRId32")",
+				    startFileNum,startFileNum+1,mergeFileNum);
+			// if merge file was inserted before us, inc our file number
+			startFileNum++;
+		}
+		// adjust num files if we need to, as well
+		if ( startFileNum < base->m_mergeStartFileNum - 1 &&
+		     numFiles != -1 &&
+		     startFileNum + numFiles - 1 >= base->m_mergeStartFileNum - 1 ) {
+			// debug msg
+			if ( g_conf.m_logDebugQuery )
+				log(LOG_DEBUG,"net: msg3: numFiles up one.");
+			// if merge file was inserted before us, inc our file number
+			numFiles++;
+		}
 	}
 
 	// . how many rdb files does this base have?
