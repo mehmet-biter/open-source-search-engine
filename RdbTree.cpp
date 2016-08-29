@@ -461,11 +461,10 @@ int32_t RdbTree::addNode ( collnum_t collnum , const char *key , char *data , in
 	// this is -1 iff there are no nodes used in the tree
 	int32_t i = m_headNode;
 	// disable mem protection
-	char undo ;
-	if ( m_useProtection ) { 
-		if ( m_isProtected ) undo = 1; 
-		else                 undo = 0;
-		unprotect ( ); 
+	bool undo = false;
+	if ( m_useProtection ) {
+		undo = m_isProtected;
+		unprotect ( );
 	}
 	// . find the parent of node i and call it "iparent"
 	// . if a node exists with our key then replace it
