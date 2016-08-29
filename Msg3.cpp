@@ -12,11 +12,22 @@
 
 int32_t g_numIOErrors = 0;
 
+
+Msg3::Scan::Scan()
+  : m_scan(),
+    m_startpg(0), m_endpg(0),
+    m_hintOffset(0), m_fileNum(0)
+{
+	memset(m_hintKey,0,sizeof(m_hintKey));
+}
+
+
+
 Msg3::Msg3()
-  : m_numScansStarted(0),
+  : m_scan(NULL),
+    m_numScansStarted(0),
     m_numScansCompleted(0),
-    m_lists(NULL),
-    m_alloc(NULL)
+    m_lists(NULL)
 {
 }
 
@@ -32,9 +43,11 @@ void Msg3::reset() {
 	// reset # of lists to 0
 	m_numScansCompleted = 0;
 	m_numScansStarted = 0;
-	if ( m_alloc ) {
-		mfree ( m_alloc , m_allocSize , "Msg3" );
-		m_alloc = NULL;
+	if ( m_scan ) {
+		//Mem.cpp has bad logic concerning arrays
+		//mdelete(m_scan, -1, "Msg3:scan");
+		delete[] m_scan;
+		m_scan = NULL;
 	}
 	delete[] m_lists;
 	m_lists = NULL;
@@ -291,15 +304,6 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		g_process.shutdownAbort(true);
 	}
 
-	// . allocate buffer space
-	// . m_scans, m_startpg, m_endpg, m_hintKeys, m_hintOffsets,
-	//   m_fileNums
-	int32_t chunk = sizeof(RdbScan) + // m_scans
-		4 +                    // m_startpg
-		4 +                    // m_endpg
-		m_ks +                 // m_hintKeys
-		4 +                    // m_hintOffsets
-		4;                     // m_fileNums
 	int32_t nn   = numFiles;
 	if ( pre != -10 ) nn++;
 	m_numChunks = nn;
@@ -311,45 +315,22 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		return true;
 	}
 
-	int32_t need = nn * (chunk);
-	m_allocSize = need;
-	m_alloc = (char *)mcalloc ( need , "Msg3" );
-	if ( ! m_alloc ) {
-		log(LOG_WARN, "disk: Could not allocate %" PRId32" bytes read structures to read %s.",need,base->m_dbname);
+	try {
+		m_scan = new Scan[m_numChunks];
+	} catch(std::bad_alloc&) {
+		log(LOG_WARN, "disk: Could not allocate %d 'Scan' structures to read %s.",m_numChunks,base->m_dbname);
+		g_errno = ENOMEM;
 		return true;
 	}
-
-	char *p = m_alloc;
-
-	m_scans = (RdbScan *) p;
-	p += nn * sizeof(RdbScan);
-
-	m_startpg = (int32_t *) p;
-	p += nn * 4;
-
-	m_endpg = (int32_t *) p;
-	p += nn * 4;
-
-	m_hintKeys = p;
-	p += nn * m_ks;
-
-	m_hintOffsets = (int32_t *) p;
-	p += nn * 4;
-
-	m_fileNums = (int32_t *) p;
-	p += nn * 4;
-
-	// sanity check
-	if ( p - m_alloc != need ) {
-		log(LOG_LOGIC,"disk: Bad malloc in Msg3.cpp.");
-		g_process.shutdownAbort(true);
-	}
+	//Mem.cpp has bad logic concerning arrays
+	//mnew(m_scan,sizeof(*m_scan)*m_numChunks,"Msg3:scan");
+	
 	// make fix from up top
-	if ( pre != -10 ) m_fileNums [ m_numFileNums++ ] = pre;
+	if ( pre != -10 ) m_scan[m_numFileNums++].m_fileNum = pre;
 
 	// store them all
 	for ( int32_t i = startFileNum ; i < startFileNum + numFiles ; i++ )
-		m_fileNums [ m_numFileNums++ ] = i;
+		m_scan[m_numFileNums++].m_fileNum = i;
 
 	// . remove file nums that are being unlinked after a merge now
 	// . keep it here (below skip: label) so sync point reads can use it
@@ -357,12 +338,12 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 	for ( int32_t i = 0 ; i < m_numFileNums ; i++ ) {
 		// skip those that are being unlinked after the merge
 		if ( base->m_isUnlinking && 
-		     m_fileNums[i] >= base->m_mergeStartFileNum &&
-		     m_fileNums[i] <  base->m_mergeStartFileNum + 
+		     m_scan[i].m_fileNum >= base->m_mergeStartFileNum &&
+		     m_scan[i].m_fileNum <  base->m_mergeStartFileNum +
 		                      base->m_numFilesToMerge      )
 			continue;
 		// otherwise, keep it
-		m_fileNums[n++] = m_fileNums[i];
+		m_scan[n++].m_fileNum = m_scan[i].m_fileNum;
 	}
 	m_numFileNums = n;
 
@@ -436,17 +417,17 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 	// . our m_scans array starts at 0
 	for ( int32_t i = 0 ; i < m_numFileNums ; i++ ) {
 		// get the page range
-		//int32_t p1 = m_startpg [ i ];
+		//int32_t p1 = m_scan[i].m_startpg;
 		//int32_t p2 = m_endpg   [ i ];
 		//#ifdef GBSANITYCHECK
-		int32_t fn = m_fileNums[i];
+		int32_t fn = m_scan[i].m_fileNum;
 		// this can happen somehow!
 		if ( fn < 0 ) {
 			log(LOG_LOGIC,"net: msg3: fn=%" PRId32". Bad engineer.",fn);
 			continue;
 		}
 		// sanity check
-		if ( i > 0 && m_fileNums[i-1] >= fn ) {
+		if ( i > 0 && m_scan[i-1].m_fileNum >= fn ) {
 			log(LOG_LOGIC,
 			    "net: msg3: files must be read in order "
 			    "from oldest to newest so RdbList::indexMerge_r "
@@ -502,8 +483,8 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		maps[fn]->getKey ( p2 , endKey2 );
 
 		// store in here
-		m_startpg [ i ] = p1;
-		m_endpg   [ i ] = p2;
+		m_scan[i].m_startpg = p1;
+		m_scan[i].m_endpg   = p2;
 
 		// . we read UP TO that endKey, so reduce by 1
 		// . but iff p2 is NOT the last page in the map/file
@@ -539,8 +520,8 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		}
 
 		// now set the hint
-		m_hintOffsets[i] = maps[fn]->getAbsoluteOffset(h2) - maps[fn]->getAbsoluteOffset(p1);
-		KEYSET(&m_hintKeys[i * m_ks], maps[fn]->getKeyPtr(h2), m_ks);
+		m_scan[i].m_hintOffset = maps[fn]->getAbsoluteOffset(h2) - maps[fn]->getAbsoluteOffset(p1);
+		KEYSET(m_scan[i].m_hintKey, maps[fn]->getKeyPtr(h2), m_ks);
 
 		// reset g_errno before calling setRead()
 		g_errno = 0;
@@ -596,7 +577,7 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		// try to get from PAGE CACHE
 		//
 		////////
-		BigFile *ff = base->getFile(m_fileNums[i]);
+		BigFile *ff = base->getFile(m_scan[i].m_fileNum);
 		RdbCache *rpc = getDiskPageCache ( m_rdbId );
 		if ( ! m_allowPageCache ) rpc = NULL;
 		// . vfd is unique 64 bit file id
@@ -613,13 +594,13 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 						   true , // copy?
 						   -1 , // maxAge, none 
 						   true ); // inccounts?
-		m_scans[i].m_inPageCache = false;
+		m_scan[i].m_scan.m_inPageCache = false;
 		if ( inCache ) {
-			m_scans[i].m_inPageCache = true;
+			m_scan[i].m_scan.m_inPageCache = true;
 			m_numScansCompleted++;
 			// now we have to store this value, 6 or 12 so
 			// we can modify the hint appropriately
-			m_scans[i].m_shifted = *rec;
+			m_scan[i].m_scan.m_shifted = *rec;
 			m_lists[i].set ( rec +1,
 					 recSize-1 ,
 					 rec , // alloc
@@ -636,7 +617,7 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		// . do the scan/read of file #i
 		// . this returns false if blocked, true otherwise
 		// . this will set g_errno on error
-		bool done = m_scans[i].setRead( base->getFile(m_fileNums[i]), base->m_fixedDataSize, offset, bytesToRead,
+		bool done = m_scan[i].m_scan.setRead( base->getFile(m_scan[i].m_fileNum), base->m_fixedDataSize, offset, bytesToRead,
 		                                startKey2, endKey2, m_ks, &m_lists[i], this, doneScanningWrapper,
 		                                base->useHalfKeys(), m_rdbId, m_niceness, m_allowPageCache, m_hitDisk ) ;
 
@@ -781,8 +762,8 @@ bool Msg3::doneScanning ( ) {
 	if ( g_errno == EBUFTOOSMALL ) { 
 		int32_t biggest = 0;
 		for ( int32_t i = 0 ; i < m_numFileNums ; i++ ) {
-			if ( m_scans[i].m_bytesToRead < biggest ) continue;
-			biggest = m_scans[i].m_bytesToRead;
+			if ( m_scan[i].m_scan.m_bytesToRead < biggest ) continue;
+			biggest = m_scan[i].m_scan.m_bytesToRead;
 		}
 		if ( biggest > 500000000 ) {
 			log("db: Max read size was %" PRId32" > 500000000. Assuming "
@@ -820,7 +801,7 @@ bool Msg3::doneScanning ( ) {
 			m_errno = ECORRUPTDATA;
 			max     = g_conf.m_corruptRetries; // try 100 times
 			log("db: Encountered corrupt list in file %s.",
-			    base->getFile(m_fileNums[i])->getFilename());
+			    base->getFile(m_scan[i].m_fileNum)->getFilename());
 		}
 		else
 			m_listsChecked = true;
@@ -925,11 +906,11 @@ bool Msg3::doneScanning ( ) {
 		//   requirement for all RdbLists
 		// . don't inc it, though, if it was 0, pointing to the start
 		//   of the list because our shift won't affect that
-		if ( m_scans[i].m_shifted == 6 && m_hintOffsets[i] > 0 ) 
-			m_hintOffsets[i] += 6;
+		if ( m_scan[i].m_scan.m_shifted == 6 && m_scan[i].m_hintOffset > 0 )
+			m_scan[i].m_hintOffset += 6;
 		// posdb double compression
-		if ( m_scans[i].m_shifted == 12 && m_hintOffsets[i] > 0 ) 
-			m_hintOffsets[i] += 12;
+		if ( m_scan[i].m_scan.m_shifted == 12 && m_scan[i].m_hintOffset > 0 )
+			m_scan[i].m_hintOffset += 12;
 		// . don't constrain on minRecSizes here because it may
 		//   make our endKey smaller, which will cause problems
 		//   when Msg5 merges these lists.
@@ -949,7 +930,7 @@ bool Msg3::doneScanning ( ) {
 		else                      mrs = -1;
 		// . this returns false and sets g_errno on error
 		// . like if data is corrupt
-		BigFile *ff = base->getFile(m_fileNums[i]);
+		BigFile *ff = base->getFile(m_scan[i].m_fileNum);
 		// if we did a merge really quick and delete one of the 
 		// files we were reading, i've seen 'ff' be NULL
 		const char *filename = "lostfilename";
@@ -963,8 +944,8 @@ bool Msg3::doneScanning ( ) {
 		key192_t ck ;
 		if ( ff )
 			ck = makeCacheKey ( vfd ,
-					    m_scans[i].m_offset ,
-					    m_scans[i].m_bytesToRead );
+					    m_scan[i].m_scan.m_offset ,
+					    m_scan[i].m_scan.m_bytesToRead );
 		if ( m_validateCache && ff && rpc && vfd != -1 ) {
 			bool inCache;
 			char *rec; int32_t recSize;
@@ -979,7 +960,7 @@ bool Msg3::doneScanning ( ) {
 			     // 1st byte is RdbScan::m_shifted
 			     ( m_lists[i].m_listSize != recSize-1 ||
 			       memcmp ( m_lists[i].m_list , rec+1,recSize-1) ||
-			       *rec != m_scans[i].m_shifted ) ) {
+			       *rec != m_scan[i].m_scan.m_shifted ) ) {
 				log("msg3: cache did not validate");
 				g_process.shutdownAbort(true);
 			}
@@ -996,11 +977,11 @@ bool Msg3::doneScanning ( ) {
 		// if it was a retry, just in case something strange happened.
 		// store pre-constrain call is more efficient.
 		if ( m_retryNum<=0 && ff && rpc && vfd != -1 &&
-		     ! m_scans[i].m_inPageCache )
+		     ! m_scan[i].m_scan.m_inPageCache )
 			rpc->addRecord ( (collnum_t)0 , // collnum
 					 (char *)&ck , 
 					 // rec1 is this little thingy
-					 &m_scans[i].m_shifted,
+					 &m_scan[i].m_scan.m_shifted,
 					 1,
 					 // rec2
 					 m_lists[i].getList() ,
@@ -1009,7 +990,7 @@ bool Msg3::doneScanning ( ) {
 
 		QUICKPOLL(m_niceness);
 
-		if (!m_lists[i].constrain(m_startKey, m_constrainKey, mrs, m_hintOffsets[i], &m_hintKeys[i * m_ks], m_rdbId, filename)) {
+		if (!m_lists[i].constrain(m_startKey, m_constrainKey, mrs, m_scan[i].m_hintOffset, m_scan[i].m_hintKey, m_rdbId, filename)) {
 			log(LOG_WARN, "net: Had error while constraining list read from %s: %s/%s. vfd=%" PRId32" parts=%" PRId32". "
 			    "This is likely caused by corrupted data on disk.",
 			    mstrerror(g_errno), ff->getDir(), ff->getFilename(), ff->getVfd(), (int32_t)ff->m_numParts );
@@ -1074,10 +1055,10 @@ void Msg3::setPageRanges(RdbBase *base) {
 	// . we read from the first offset on m_startpg to offset on m_endpg
 	// . since we set them equal that means an empty range for each file
 	for ( int32_t i = 0 ; i < m_numFileNums ; i++ ) {
-		int32_t fn = m_fileNums[i];
+		int32_t fn = m_scan[i].m_fileNum;
 		if ( fn < 0 ) { g_process.shutdownAbort(true); }
-		m_startpg[i] = maps[fn]->getPage( m_fileStartKey );
-		m_endpg  [i] = m_startpg[i];
+		m_scan[i].m_startpg = maps[fn]->getPage( m_fileStartKey );
+		m_scan[i].m_endpg = m_scan[i].m_startpg;
 	}
 	// just return if minRecSizes 0 (no reading needed)
 	if ( m_minRecSizes <= 0 ) return;
@@ -1090,12 +1071,12 @@ void Msg3::setPageRanges(RdbBase *base) {
 	int32_t  minpg   = -1;
 	char minKey[MAX_KEY_BYTES];
 	for ( int32_t i = 0 ; i < m_numFileNums ; i++ ) {
-		int32_t fn = m_fileNums[i];
+		int32_t fn = m_scan[i].m_fileNum;
 		// this guy is out of race if his end key > "endKey" already
-		if(KEYCMP(maps[fn]->getKeyPtr(m_endpg[i]),m_endKey,m_ks)>0)
+		if(KEYCMP(maps[fn]->getKeyPtr(m_scan[i].m_endpg),m_endKey,m_ks)>0)
 			continue;
-		// get the next page after m_endpg[i]
-		int32_t nextpg = m_endpg[i] + 1;
+		// get the next page after m_scan[i].m_endpg
+		int32_t nextpg = m_scan[i].m_endpg + 1;
 		// if endpg[i]+1 == m_numPages then we maxed out this range
 		if ( nextpg > maps[fn]->getNumPages() ) continue;
 		// . but this may have an offset of -1
@@ -1109,15 +1090,15 @@ void Msg3::setPageRanges(RdbBase *base) {
 		if (minpg != -1 && 
 		    KEYCMP(maps[fn]->getKeyPtr(nextpg),minKey,m_ks)>0)continue;
 		// . we got a winner, his next page has the current min key
-		// . if m_endpg[i]+1 == getNumPages() then getKey() returns the
+		// . if m_scan[i].m_endpg+1 == getNumPages() then getKey() returns the
 		//   last key in the mapped file
-		// . minKey should never equal the key on m_endpg[i] UNLESS 
+		// . minKey should never equal the key on m_scan[i].m_endpg UNLESS
 		//   it's on page #m_numPages
 		KEYSET(minKey,maps[fn]->getKeyPtr(nextpg),m_ks);
 		minpg  = i;
 		// if minKey is same as the current key on this endpg, inc it
 		// so we cause some advancement, otherwise, we'll loop forever
-		if ( KEYCMP(minKey,maps[fn]->getKeyPtr(m_endpg[i]),m_ks)!=0) 
+		if ( KEYCMP(minKey,maps[fn]->getKeyPtr(m_scan[i].m_endpg),m_ks)!=0)
 			continue;
 		//minKey += (uint32_t) 1;
 		KEYINC(minKey,m_ks);
@@ -1157,11 +1138,11 @@ void Msg3::setPageRanges(RdbBase *base) {
 	}
 	// it is now valid
 	lastMinKeyIsValid = 1;
-	// . advance m_endpg[i] so that next page < minKey 
-	// . we want to read UP TO the first key on m_endpg[i]
+	// . advance m_scan[i].m_endpg so that next page < minKey
+	// . we want to read UP TO the first key on m_scan[i].m_endpg
 	for ( int32_t i = 0 ; i < m_numFileNums ; i++ ) {
-		int32_t fn = m_fileNums[i];
-		m_endpg[i] = maps[fn]->getEndPage ( m_endpg[i], lastMinKey );
+		int32_t fn = m_scan[i].m_fileNum;
+		m_scan[i].m_endpg = maps[fn]->getEndPage ( m_scan[i].m_endpg, lastMinKey );
 	}
 	// . if the minKey is BIGGER than the provided endKey we're done
 	// . we don't necessarily include records whose key is "minKey"
@@ -1174,9 +1155,9 @@ void Msg3::setPageRanges(RdbBase *base) {
 	//   again if he wants more
 	int32_t recSizes = 0;
 	for ( int32_t i = 0 ; i < m_numFileNums ; i++ ) {
-		int32_t fn = m_fileNums[i];
-		recSizes += maps[fn]->getMinRecSizes ( m_startpg[i] , 
-						       m_endpg  [i] ,
+		int32_t fn = m_scan[i].m_fileNum;
+		recSizes += maps[fn]->getMinRecSizes ( m_scan[i].m_startpg,
+						       m_scan[i].m_endpg,
 						       m_fileStartKey,
 						       lastMinKey   ,
 						       false        );
@@ -1207,7 +1188,7 @@ void Msg3::compensateForNegativeRecs ( RdbBase *base ) {
 	int64_t totalPositives = 0;
 	int64_t totalFileSize  = 0;
 	for (int32_t i = 0 ; i < m_numFileNums ; i++) {
-		int32_t fn = m_fileNums[i];
+		int32_t fn = m_scan[i].m_fileNum;
 		// . this cored on me before when fn was -1, how'd that happen?
 		// . it happened right after startup before a merge should
 		//   have been attempted

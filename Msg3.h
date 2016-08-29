@@ -74,7 +74,7 @@ class Msg3 {
 	bool isListChecked() const { return m_listsChecked; }
 	bool listHadCorruption() const { return m_hadCorruption; }
 	int32_t getFileNums() const { return m_numFileNums; }
-	int32_t getFileNum(int32_t i) const { return m_fileNums[i]; }
+	int32_t getFileNum(int32_t i) const { return m_scan[i].m_fileNum; }
 
 	// end key to use when calling constrain_r()
 	char      m_constrainKey[MAX_KEY_BYTES];
@@ -101,20 +101,25 @@ private:
 
 	bool m_validateCache;
 
-	// the scan classes, 1 per file, used to read from that file
-	RdbScan *m_scans ;
+	struct Scan {
+		// the scan classes, 1 per file, used to read from that file
+		RdbScan m_scan;
+		// page ranges for each scan computed in setPageRanges()
+		int32_t    m_startpg;
+		int32_t    m_endpg;
 
-	// page ranges for each scan computed in setPageRanges()
-	int32_t    *m_startpg ;
-	int32_t    *m_endpg   ;
+		char       m_hintKey[MAX_KEY_BYTES];
+		int32_t    m_hintOffset;
 
-	char    *m_hintKeys    ;
-	int32_t    *m_hintOffsets ;
+		int32_t    m_fileNum;
+		Scan();
+	};
+	
+	Scan        *m_scan; //holds <m_numChunks> items
 
 	int32_t     m_startFileNum;
 	int32_t     m_numFiles    ;
 
-	int32_t    *m_fileNums    ;
 	int32_t     m_numFileNums;
 
 	int32_t      m_numScansStarted;
@@ -155,8 +160,6 @@ private:
 
 	bool        m_compensateForMerge;
 
-	char *m_alloc;
-	int32_t  m_allocSize;
 	int32_t  m_numChunks;
 	char  m_ks;
 
