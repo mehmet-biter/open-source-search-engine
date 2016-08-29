@@ -549,7 +549,7 @@ bool Msg39::getLists () {
 			     "sign=%c "
 			     "numPlusses=%hhu "
 			     "required=%" PRId32" "
-			     "fielcode=%" PRId32" "
+			     "fieldcode=%" PRId32" "
 
 			     "ebit=0x%0" PRIx64" "
 			     "impBits=0x%0" PRIx64" "
