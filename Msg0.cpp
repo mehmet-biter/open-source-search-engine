@@ -58,8 +58,6 @@ bool Msg0::registerHandler ( ) {
 	// . it calls our callback when it receives a msg of type 0x0A
 	if ( ! g_udpServer.registerHandler ( msg_type_0, handleRequest0 ))
 		return false;
-	//if ( ! g_udpServer2.registerHandler ( 0x00, handleRequest0 )) 
-	//	return false;
 	return true;
 }
 
@@ -536,6 +534,9 @@ public:
 	int32_t       m_niceness;
 	UdpServer *m_us;
 	char       m_rdbId;
+	char       m_ks;
+	char       m_startKey[MAX_KEY_BYTES];
+	char       m_endKey[MAX_KEY_BYTES];
 };
 
 // . reply to a request for an RdbList
@@ -544,9 +545,7 @@ public:
 void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 	logTrace( g_conf.m_logTraceMsg0, "BEGIN. Got request for an RdbList" );
 
-	// if niceness is 0, use the higher priority udpServer
 	UdpServer *us = &g_udpServer;
-	//if ( netnice == 0 ) us = &g_udpServer2;
 	// get the request
 	char *request     = slot->m_readBuf;
 	int32_t  requestSize = slot->m_readBufSize;
@@ -638,6 +637,9 @@ void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 	// init this one
 	st0->m_niceness = niceness;
 	st0->m_rdbId    = rdbId;
+	st0->m_ks = ks;
+	memcpy(st0->m_startKey,startKey,ks);
+	memcpy(st0->m_endKey,endKey,ks);
 
 	QUICKPOLL(niceness);
 
@@ -706,7 +708,7 @@ void gotListWrapper ( void *state , RdbList *listb , Msg5 *msg5xx ) {
 		    "Now sending data termId=%" PRIu64" size=%" PRId32
 		    " transId=%" PRId32" ip=%s port=%i took=%" PRId64" "
 		    "(niceness=%" PRId32").",
-		    g_posdb.getTermId(msg5->m_startKey),
+		    g_posdb.getTermId(st0->m_startKey),
 		    size,slot->getTransId(),
 		    iptoa(slot->getIp()),slot->getPort(),
 		    gettimeofdayInMilliseconds() - st0->m_startTime ,

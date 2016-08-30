@@ -2,7 +2,7 @@
 
 #include "Loop.h"
 #include "JobScheduler.h"
-#include "UdpServer.h"  // g_udpServer2.makeCallbacks()
+#include "UdpServer.h"
 #include "HttpServer.h" // g_httpServer.m_tcp.m_numQueued
 #include "Profiler.h"
 #include "Process.h"

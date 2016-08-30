@@ -235,13 +235,11 @@ class PosdbTable {
 	void shrinkSubLists ( QueryTermInfo *qti );
 
 	// for intersecting docids
-	void addDocIdVotes ( const QueryTermInfo *qti , int32_t listGroupNum );
+	void addDocIdVotes( const QueryTermInfo *qti , int32_t listGroupNum );
 	void makeDocIdVoteBufForRarestTerm( const QueryTermInfo *qti , bool isRangeTerm );
 	bool makeDocIdVoteBufForBoolQuery() ;
+	void delDocIdVotes ( const QueryTermInfo *qti );	// for negative query terms...
 
-
-	// for negative query terms...
-	void rmDocIdVotes ( const QueryTermInfo *qti );
 
 	// upper score bound
 	float getMaxPossibleScore ( const QueryTermInfo *qti ,

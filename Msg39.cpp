@@ -589,7 +589,7 @@ void Msg39::getLists(int fileNum, int64_t docIdStart, int64_t docIdEnd) {
 			     "sign=%c "
 			     "numPlusses=%hhu "
 			     "required=%" PRId32" "
-			     "fielcode=%" PRId32" "
+			     "fieldcode=%" PRId32" "
 
 			     "ebit=0x%0" PRIx64" "
 			     "impBits=0x%0" PRIx64" "
