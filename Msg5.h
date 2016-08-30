@@ -124,11 +124,11 @@ class Msg5 {
 	// holds all RdbLists from disk
 	Msg3      m_msg3;
 
+private:
 	// holds list parms
 	char      m_startKey[MAX_KEY_BYTES];
 	char      m_endKey[MAX_KEY_BYTES];
 
-private:
 	// called to read lists from disk using Msg3
 	bool readList();
 
