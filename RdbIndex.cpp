@@ -17,7 +17,10 @@
 
 static const int32_t s_defaultMaxPendingTimeMs = 5000;
 static const uint32_t s_defaultMaxPendingSize = 2000000;
-static const uint32_t s_generateMaxPendingSize = 20000000;
+
+// larger number equals more memory used; but faster generateIndex
+// 40000000 * 8 bytes = 320 megabytes
+static const uint32_t s_generateMaxPendingSize = 40000000;
 
 RdbIndex::RdbIndex()
 	: m_file()
@@ -221,14 +224,16 @@ docidsconst_ptr_t RdbIndex::mergePendingDocIds() {
 	std::sort(m_pendingDocIds->begin(), m_pendingDocIds->end());
 	m_pendingDocIds->erase(std::unique(m_pendingDocIds->begin(), m_pendingDocIds->end()), m_pendingDocIds->end());
 
-	docids_ptr_t tmpDocIds(new docids_t(*m_docIds));
-	auto midIt = std::prev(tmpDocIds->end());
-	tmpDocIds->insert(tmpDocIds->end(), m_pendingDocIds->begin(), m_pendingDocIds->end());
-	std::inplace_merge(tmpDocIds->begin(), midIt, tmpDocIds->end());
+	docids_ptr_t tmpDocIds(new docids_t);
+	std::set_union(m_docIds->begin(), m_docIds->end(), m_pendingDocIds->begin(), m_pendingDocIds->end(), std::back_inserter(*tmpDocIds));
 
-	// replace existing
-	ScopedLock sl(m_docIdsMtx);
-	m_docIds.swap(tmpDocIds);
+	m_pendingDocIds->clear();
+
+	if (m_docIds->size() != tmpDocIds->size()) {
+		// replace existing
+		ScopedLock sl(m_docIdsMtx);
+		m_docIds.swap(tmpDocIds);
+	}
 
 	return m_docIds;
 }
