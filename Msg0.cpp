@@ -58,8 +58,6 @@ bool Msg0::registerHandler ( ) {
 	// . it calls our callback when it receives a msg of type 0x0A
 	if ( ! g_udpServer.registerHandler ( msg_type_0, handleRequest0 ))
 		return false;
-	//if ( ! g_udpServer2.registerHandler ( 0x00, handleRequest0 )) 
-	//	return false;
 	return true;
 }
 
@@ -544,9 +542,7 @@ public:
 void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 	logTrace( g_conf.m_logTraceMsg0, "BEGIN. Got request for an RdbList" );
 
-	// if niceness is 0, use the higher priority udpServer
 	UdpServer *us = &g_udpServer;
-	//if ( netnice == 0 ) us = &g_udpServer2;
 	// get the request
 	char *request     = slot->m_readBuf;
 	int32_t  requestSize = slot->m_readBufSize;

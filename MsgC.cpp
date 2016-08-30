@@ -18,8 +18,6 @@ static void gotMsgCIpWrapper( void *state, int32_t ip);
 bool MsgC::registerHandler ( ) {
 	// . register ourselves with the high priority udp server
 	// . it calls our callback when it receives a msg of type 0x0c
-	//if ( ! g_udpServer2.registerHandler ( 0x0c, handleRequest )) 
-	//	return false;
 	if ( ! g_udpServer.registerHandler ( msg_type_c, handleRequest ))
 		return false;
 	return true;
