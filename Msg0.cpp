@@ -534,6 +534,9 @@ public:
 	int32_t       m_niceness;
 	UdpServer *m_us;
 	char       m_rdbId;
+	char       m_ks;
+	char       m_startKey[MAX_KEY_BYTES];
+	char       m_endKey[MAX_KEY_BYTES];
 };
 
 // . reply to a request for an RdbList
@@ -634,6 +637,9 @@ void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 	// init this one
 	st0->m_niceness = niceness;
 	st0->m_rdbId    = rdbId;
+	st0->m_ks = ks;
+	memcpy(st0->m_startKey,startKey,ks);
+	memcpy(st0->m_endKey,endKey,ks);
 
 	QUICKPOLL(niceness);
 
@@ -702,7 +708,7 @@ void gotListWrapper ( void *state , RdbList *listb , Msg5 *msg5xx ) {
 		    "Now sending data termId=%" PRIu64" size=%" PRId32
 		    " transId=%" PRId32" ip=%s port=%i took=%" PRId64" "
 		    "(niceness=%" PRId32").",
-		    g_posdb.getTermId(msg5->m_startKey),
+		    g_posdb.getTermId(st0->m_startKey),
 		    size,slot->getTransId(),
 		    iptoa(slot->getIp()),slot->getPort(),
 		    gettimeofdayInMilliseconds() - st0->m_startTime ,
