@@ -67,10 +67,11 @@ void Msg3::incrementScansStarted() {
 	if(m_numScansCompleted>=m_numScansStarted) gbshutdownLogicError();
 }
 
-void Msg3::incrementScansCompleted() {
+bool Msg3::incrementScansCompleted() {
 	ScopedLock sl(m_mtxScanCounters);
 	m_numScansCompleted++;
 	if(m_numScansCompleted>m_numScansStarted) gbshutdownLogicError();
+	return m_numScansCompleted==m_numScansStarted && !m_scansBeingSubmitted;
 }
 
 bool Msg3::areAllScansCompleted() const {
@@ -694,7 +695,7 @@ void Msg3::doneScanningWrapper() {
 	verify_signature();
 //	log(LOG_TRACE,"Msg3(%p)::doneScqanningWrapper()",THIS);
 
-	incrementScansCompleted();
+	bool done = incrementScansCompleted();
 
 	// if we had an error, remember it
 	if ( g_errno ) {
@@ -715,7 +716,7 @@ void Msg3::doneScanningWrapper() {
 	}
 
 	// return now if we're awaiting more scan completions
-	if ( !areAllScansCompleted() ) {
+	if ( !done ) {
 		return;
 	}
 

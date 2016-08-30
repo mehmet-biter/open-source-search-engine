@@ -659,12 +659,15 @@ void Msg5::gotListWrapper() {
 //log("@@@@ Msg5(%p)::gotListWrapper()",this);
 if ( m_calledCallback ) abort();
 if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
+if(!m_msg3.areAllScansCompleted()) abort();
 	// . this sets g_errno on error
 	// . this will merge cache/tree and disk lists into m_list
 	// . it will update m_newMinRecSizes
 	// . it will also update m_fileStartKey to the endKey of m_list + 1
 	// . returns false if it blocks
 	if ( ! gotList ( ) ) return;
+
+if(!m_msg3.areAllScansCompleted()) abort();
 	// . throw it back into the loop if necessary
 	// . only returns true if COMPLETELY done
 	if ( needsRecall() && ! readList() ) return;
@@ -685,6 +688,7 @@ if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 // . sets g_errno on error
 bool Msg5::gotList ( ) {
 	verify_signature();
+if(!m_msg3.areAllScansCompleted()) abort();
 
 	// return if g_errno is set
 	if ( g_errno && g_errno != ECORRUPTDATA ) return true;
@@ -1070,19 +1074,23 @@ if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 	// . it will handle calling callback if that happens
 	if ( ! doneMerging() ) return;
 
+if(m_calledCallback) abort();
 	// . throw it back into the loop if necessary
 	// . only returns true if COMPLETELY done
 	if ( needsRecall() ) {
-//log("@@@@ Msg5(%p)::mergeDone(): recalling readList()",this);
+if(m_calledCallback) abort();
 		if ( ! readList() ) return;
+if(m_calledCallback) abort();
 	}
 
 	// sanity check
 	if ( m_calledCallback ) abort();
 
+if(m_calledCallback) abort();
 	// we are no longer waiting for the list
 	m_waitingForList = false;
 
+if(m_calledCallback) abort();
 	// set it now
 	m_calledCallback = 3;
 

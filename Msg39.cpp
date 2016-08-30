@@ -694,7 +694,7 @@ void Msg39::getLists(int fileNum, int64_t docIdStart, int64_t docIdEnd) {
 		log(LOG_DEBUG,"m_msg2.getLists returned false - waiting for job to finish");
 		jobState.wait_for_finish();
 	} else
-		log(LOG_DEBUG,"m_msg2.getLists returned true. must be done");
+		log(LOG_DEBUG,"m_msg2.getLists returned true. Must be done");
 }
 
 

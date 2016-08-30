@@ -138,7 +138,7 @@ private:
 	GbMutex      m_mtxScanCounters;
 	bool         m_scansBeingSubmitted;
 	void incrementScansStarted();
-	void incrementScansCompleted();
+	bool incrementScansCompleted();
 
 	
 	// key range to read

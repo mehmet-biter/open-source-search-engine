@@ -80,11 +80,12 @@ void Msg2::incrementRequestCount() {
 	m_numRequests++;
 }
 
-void Msg2::incrementReplyCount() {
+bool Msg2::incrementReplyCount() {
 	ScopedLock sl(m_mtxCounters);
 	if(m_numReplies>=m_numRequests)
 		abort();
 	m_numReplies++;
+	return m_numReplies==m_numRequests && !m_requestsBeingSubmitted;
 }
 
 bool Msg2::allRequestsReplied()	{
@@ -480,8 +481,8 @@ void Msg2::gotListWrapper( Msg5 *msg5 ) {
 			     i,list->getListSize() );
 	}
 	
-	incrementReplyCount();
-	if(!allRequestsReplied())
+	bool done = incrementReplyCount();
+	if(!done)
 		return; //still more to go
 	// set g_errno if any one list read had error
 	if ( m_errno ) g_errno = m_errno;

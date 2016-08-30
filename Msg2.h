@@ -122,7 +122,7 @@ private:
 	bool m_requestsBeingSubmitted;
 	GbMutex m_mtxCounters; //protects the two counters and flag above
 	void incrementRequestCount();
-	void incrementReplyCount();
+	bool incrementReplyCount();
 	bool allRequestsReplied();
 
 	static void gotListWrapper(void *state, RdbList *list, Msg5 *msg5);
