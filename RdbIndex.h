@@ -3,6 +3,7 @@
 
 #include "BigFile.h"
 #include "Sanity.h"
+#include "GbMutex.h"
 #include <vector>
 #include <memory>
 
@@ -60,27 +61,32 @@ public:
 
 	void addRecord(char *key);
 
-	docidsconst_ptr_t getDocIds() const { return m_docIds; }
+	docidsconst_ptr_t getDocIds();
 
 private:
+	void addRecord_unlocked(char *key, bool isGenerateIndex);
+	docidsconst_ptr_t mergePendingDocIds();
+
 	void printIndex();
 
 	// the index file
 	BigFile m_file;
-
-	docids_ptr_t m_docIds;
 
 	int32_t m_fixedDataSize;
 	bool m_useHalfKeys;
 	char m_ks;
 	char m_rdbId;
 
-	uint64_t m_prevDocId;
+	// always sorted
+	docids_ptr_t m_docIds;
+	GbMutex m_docIdsMtx;
 
-	bool m_needToSort;
+	// newest record pending merge into m_docIds
+	docids_ptr_t m_pendingDocIds;
+	GbMutex m_pendingDocIdsMtx;
+	uint64_t m_prevPendingDocId;
 
-	size_t m_startSortPos;
-	unsigned m_sortCount;
+	int64_t m_lastMergeTime;
 
 	// when close is called, must we write the index?
 	bool m_needToWrite;

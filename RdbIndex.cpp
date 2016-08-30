@@ -11,22 +11,27 @@
 #include <algorithm>
 #include "RdbTree.h"
 #include "RdbBuckets.h"
+#include "ScopedLock.h"
 
 #include <iterator>
 
+static const int32_t s_defaultMaxPendingTimeMs = 5000;
+static const uint32_t s_defaultMaxPendingSize = 2000000;
+static const uint32_t s_generateMaxPendingSize = 20000000;
+
 RdbIndex::RdbIndex()
 	: m_file()
-	, m_docIds(new docids_t)
 	, m_fixedDataSize(0)
 	, m_useHalfKeys(false)
 	, m_ks(0)
 	, m_rdbId(RDB_NONE)
-	, m_prevDocId(MAX_DOCID + 1)
-	, m_needToSort(false)
-	, m_startSortPos(0)
-	, m_sortCount(0)
+	, m_docIds(new docids_t)
+	, m_docIdsMtx()
+	, m_pendingDocIds(new docids_t)
+	, m_pendingDocIdsMtx()
+	, m_prevPendingDocId(MAX_DOCID + 1)
+	, m_lastMergeTime(gettimeofdayInMilliseconds())
 	, m_needToWrite(false) {
-	m_docIds->reserve(20000000);
 }
 
 // dont save index on deletion!
@@ -35,16 +40,16 @@ RdbIndex::~RdbIndex() {
 
 void RdbIndex::reset() {
 	m_file.reset();
+
+	m_prevPendingDocId = MAX_DOCID + 1;
+
 	m_docIds->clear();
-	m_docIds->reserve(20000000);
-	m_prevDocId = MAX_DOCID + 1;
-	m_needToSort = false;
-	m_startSortPos = 0;
-	m_sortCount = 0;
+	m_pendingDocIds->clear();
+
 	m_needToWrite = false;
 }
 
-/// @todo collapse RdbIndex::set into constructor
+/// @todo ALC collapse RdbIndex::set into constructor
 void RdbIndex::set(const char *dir, const char *indexFilename,
                    int32_t fixedDataSize , bool useHalfKeys , char keySize, char rdbId) {
 	logTrace(g_conf.m_logTraceRdbIndex, "BEGIN. dir [%s], indexFilename [%s]", dir, indexFilename);
@@ -112,16 +117,14 @@ bool RdbIndex::writeIndex2() {
 
 	int64_t offset = 0LL;
 
-	if (m_needToSort) {
-		std::sort(m_docIds->begin(), m_docIds->end());
-		m_docIds->erase(std::unique(m_docIds->begin(), m_docIds->end()), m_docIds->end());
-	}
-	m_docIds->shrink_to_fit();
+	// make sure we always write the newest tree
+	// remove const as m_file.write does not accept const buffer
+	docids_ptr_t tmpDocIds = std::const_pointer_cast<docids_t>(mergePendingDocIds());
 
-	/// @todo we may want to store size of data used to generate index file here so that we can validate index file
+	/// @todo ALC we may want to store size of data used to generate index file here so that we can validate index file
 	/// eg: store total keys in buckets/tree; size of rdb file
 	// first 8 bytes are the total docIds in the index file
-	size_t docid_count = m_docIds->size();
+	size_t docid_count = tmpDocIds->size();
 
 	m_file.write(&docid_count, sizeof(docid_count), offset);
 	if (g_errno) {
@@ -131,7 +134,7 @@ bool RdbIndex::writeIndex2() {
 
 	offset += sizeof(docid_count);
 
-	m_file.write(&(*m_docIds)[0], docid_count * sizeof((*m_docIds)[0]), offset);
+	m_file.write(&(*tmpDocIds)[0], docid_count * sizeof((*tmpDocIds)[0]), offset);
 	if (g_errno) {
 		logError("Failed to write to %s (docids): %s", m_file.getFilename(), mstrerror(g_errno))
 		return false;
@@ -187,31 +190,57 @@ bool RdbIndex::readIndex2() {
 		return false;
 	}
 
-	offset += sizeof(docid_count);
-	m_docIds->resize(docid_count);
+	docids_ptr_t tmpDocIds(new docids_t);
 
-	m_file.read(&(*m_docIds)[0], docid_count * sizeof((*m_docIds)[0]), offset);
-	if ( g_errno ) {
+	offset += sizeof(docid_count);
+	tmpDocIds->resize(docid_count);
+
+	m_file.read(&(*tmpDocIds)[0], docid_count * sizeof((*tmpDocIds)[0]), offset);
+	if (g_errno) {
 		logError("Had error reading offset=%" PRId64" from %s: %s", offset, m_file.getFilename(), mstrerror(g_errno));
 		return false;
 	}
+
+	// replace with new index
+	ScopedLock sl(m_docIdsMtx);
+	m_docIds.swap(tmpDocIds);
 
 	logTrace(g_conf.m_logTraceRdbIndex, "END. Returning true with %zu docIds loaded", m_docIds->size());
 	return true;
 }
 
 void RdbIndex::addRecord(char *key) {
+	ScopedLock sl(m_pendingDocIdsMtx);
+	addRecord_unlocked(key, false);
+}
+
+docidsconst_ptr_t RdbIndex::mergePendingDocIds() {
+	m_lastMergeTime = gettimeofdayInMilliseconds();
+
+	// merge pending docIds into docIds
+	std::sort(m_pendingDocIds->begin(), m_pendingDocIds->end());
+	m_pendingDocIds->erase(std::unique(m_pendingDocIds->begin(), m_pendingDocIds->end()), m_pendingDocIds->end());
+
+	docids_ptr_t tmpDocIds(new docids_t(*m_docIds));
+	auto midIt = std::prev(tmpDocIds->end());
+	tmpDocIds->insert(tmpDocIds->end(), m_pendingDocIds->begin(), m_pendingDocIds->end());
+	std::inplace_merge(tmpDocIds->begin(), midIt, tmpDocIds->end());
+
+	// replace existing
+	ScopedLock sl(m_docIdsMtx);
+	m_docIds.swap(tmpDocIds);
+
+	return m_docIds;
+}
+
+void RdbIndex::addRecord_unlocked(char *key, bool isGenerateIndex) {
 	if (m_rdbId == RDB_POSDB || m_rdbId == RDB2_POSDB2) {
 		if (key[0] & 0x02 || !(key[0] & 0x04)) {
 			//it is a 12-byte docid+pos or 18-byte termid+docid+pos key
 			uint64_t doc_id = extract_bits(key, 58, 96);
-			if (doc_id != m_prevDocId) {
-				m_docIds->push_back(doc_id);
-				m_prevDocId = doc_id;
-
-				m_needToSort = true;
-				++m_sortCount;
-
+			if (doc_id != m_prevPendingDocId) {
+				m_pendingDocIds->push_back(doc_id);
+				m_prevPendingDocId = doc_id;
 				m_needToWrite = true;
 			}
 		}
@@ -220,21 +249,20 @@ void RdbIndex::addRecord(char *key) {
 		gbshutdownLogicError();
 	}
 
-	// make sure our docids don't get too large
-	if (m_sortCount >= 20000000) {
-		auto startIt = std::next(m_docIds->begin(), m_startSortPos);
-		std::sort(startIt, m_docIds->end());
-		m_docIds->erase(std::unique(startIt, m_docIds->end()), m_docIds->end());
-
-		// do a full sort in this case
-		if (m_docIds->size() >= 20000000) {
-			std::sort(m_docIds->begin(), m_docIds->end());
-			m_docIds->erase(std::unique(m_docIds->begin(), m_docIds->end()), m_docIds->end());
-			m_needToSort = false;
+	bool doMerge = false;
+	if (isGenerateIndex) {
+		if (m_pendingDocIds->size() >= s_generateMaxPendingSize) {
+			doMerge = true;
 		}
+	} else {
+		if ((m_pendingDocIds->size() >= s_defaultMaxPendingSize) ||
+		    (gettimeofdayInMilliseconds() - m_lastMergeTime >= s_defaultMaxPendingTimeMs)) {
+			doMerge = true;
+		}
+	}
 
-		m_sortCount = 0;
-		m_startSortPos = m_docIds->size() - 1;
+	if (doMerge) {
+		(void)mergePendingDocIds();
 	}
 }
 
@@ -265,11 +293,11 @@ bool RdbIndex::generateIndex(RdbTree *tree, collnum_t collnum, const char *dbnam
 
 	char key[MAX_KEY_BYTES];
 
+	ScopedLock sl(m_pendingDocIdsMtx);
 	for (list.resetListPtr(); !list.isExhausted(); list.skipCurrentRecord()) {
 		list.getCurrentKey(key);
-		addRecord(key);
+		addRecord_unlocked(key, true);
 	}
-
 	return true;
 }
 
@@ -295,9 +323,10 @@ bool RdbIndex::generateIndex(RdbBuckets *buckets, collnum_t collnum, const char 
 
 	char key[MAX_KEY_BYTES];
 
+	ScopedLock sl(m_pendingDocIdsMtx);
 	for (list.resetListPtr(); !list.isExhausted(); list.skipCurrentRecord()) {
 		list.getCurrentKey(key);
-		addRecord(key);
+		addRecord_unlocked(key, true);
 	}
 
 	return true;
@@ -358,6 +387,7 @@ bool RdbIndex::generateIndex(BigFile *f) {
 	char key[MAX_KEY_BYTES];
 	int64_t next = 0LL;
 
+	ScopedLock sl(m_pendingDocIdsMtx);
 	// read in at most "bufSize" bytes with each read
 	for (; offset < fileSize;) {
 		// keep track of how many bytes read in the log
@@ -469,7 +499,7 @@ bool RdbIndex::generateIndex(BigFile *f) {
 				break;
 			}
 
-			addRecord(key);
+			addRecord_unlocked(key, true);
 		}
 
 		if (advanceOffset) {
@@ -484,4 +514,7 @@ bool RdbIndex::generateIndex(BigFile *f) {
 	return true;
 }
 
-
+docidsconst_ptr_t RdbIndex::getDocIds() {
+	ScopedLock sl(m_docIdsMtx);
+	return m_docIds;
+}
