@@ -133,10 +133,12 @@ CPPFLAGS += -Wall
 # disable offsetof warnings
 CPPFLAGS += -Wno-invalid-offsetof
 
+# other warnings (to be moved above or re-enabled when we have cleaned up the code sufficiently)
 CPPFLAGS += -Wstrict-aliasing=0
 CPPFLAGS += -Wno-write-strings
 CPPFLAGS += -Wno-maybe-uninitialized
 CPPFLAGS += -Wno-unused-but-set-variable
+CPPFLAGS += -Wno-nonnull-compare
 
 else ifeq ($(CXX), clang++)
 CPPFLAGS += -Weverything
