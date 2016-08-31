@@ -285,7 +285,7 @@ bool RdbMap::readMap ( BigFile *dataFile )
 	
 	// bail if does not exist
 	if ( ! m_file.doesExist() ) {
-		log(LOG_ERROR,"%s:%s:%d: Map file [%s] does not exist.", __FILE__, __func__, __LINE__,  m_file.getFilename());			
+		logError("Map file [%s] does not exist.", m_file.getFilename());
 		
 		logTrace( g_conf.m_logTraceRdbMap, "END. Returning false" );
 		return false;
@@ -296,7 +296,7 @@ bool RdbMap::readMap ( BigFile *dataFile )
 	// . do not open O_RDONLY because if we are resuming a killed merge
 	//   we will add to this map and write it back out.
 	if ( ! m_file.open ( O_RDWR ) ) {
-		log(LOG_ERROR,"%s:%s:%d: Could not open map file %s for reading: %s.",__FILE__, __func__, __LINE__, m_file.getFilename(),mstrerror(g_errno));
+		logError("Could not open map file %s for reading: %s.", m_file.getFilename(),mstrerror(g_errno));
 			   
 		logTrace( g_conf.m_logTraceRdbMap, "END. Returning false" );
 		return false;
@@ -313,7 +313,7 @@ bool RdbMap::readMap ( BigFile *dataFile )
 	m_file.closeFds ( );
 	// verify and fix map, data on disk could be corrupted
 	if ( ! verifyMap ( dataFile ) ) {
-		log(LOG_ERROR,"%s:%s:%d: END. Could not verify map. filename [%s]. Returning false", __FILE__, __func__, __LINE__,  m_file.getFilename());
+		logError("END. Could not verify map. filename [%s]. Returning false", m_file.getFilename());
 		return false;
 	}
 	
@@ -397,15 +397,13 @@ bool RdbMap::verifyMap ( BigFile *dataFile ) {
 		numMissingParts--;
 
 	
-	if ( numMissingParts > 0 ) 
-	{
-		log(LOG_ERROR,"%s:%s:%d: %" PRId32" missing parts. filename [%s]", __FILE__, __func__, __LINE__,  numMissingParts, m_file.getFilename());
+	if ( numMissingParts > 0 ) {
+		logError("%" PRId32" missing parts. filename [%s]", numMissingParts, m_file.getFilename());
 
 		File *f = dataFile->getFile2 ( numMissingParts );
 		
-		if ( f ) 
-		{
-			log(LOG_ERROR,"%s:%s:%d: Missing part file before %s.", __FILE__, __func__, __LINE__,  f->getFilename());
+		if ( f ) {
+			logError("Missing part file before %s.", f->getFilename());
 		}
 	}
 
@@ -413,8 +411,7 @@ bool RdbMap::verifyMap ( BigFile *dataFile ) {
 	int32_t removed = m_fileStartOffset / MAX_PART_SIZE;
 	// . balance it out
 	// . don't map to PARTs of data file that have been chopped
-	while ( removed < numMissingParts ) 
-	{
+	while ( removed < numMissingParts ) {
 		log(LOG_WARN,"db: Removing part #%" PRId32" from map.",removed);
 		chopHead ( MAX_PART_SIZE );
 		removed++;
@@ -458,8 +455,7 @@ bool RdbMap::verifyMap2 ( ) {
 		log( LOG_WARN, "db:    k.n1=%016" PRIx64" n0=%016" PRIx64,KEY1(k,m_ks),KEY0(k));
 		log( LOG_WARN, "db: m_numPages = %" PRId32,m_numPages);
 
-		log(LOG_ERROR,"%s:%s: Previous versions would have move %s/%s to trash!!", 
-			__FILE__,__func__,m_file.getDir(), m_file.getFilename());
+		logError("Previous versions would have move %s/%s to trash!!", m_file.getDir(), m_file.getFilename());
 
 		// make the bash shell restart us by returning a 1 error code
 		g_process.shutdownAbort(false);
