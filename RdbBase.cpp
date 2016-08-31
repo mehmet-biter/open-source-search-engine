@@ -2350,14 +2350,17 @@ void RdbBase::saveTreeIndex() {
 }
 
 void RdbBase::saveIndexes() {
+	if (!m_useIndexFile) {
+		return;
+	}
+
 	for (int32_t i = 0; i < m_numFiles; i++) {
 		if (!m_indexes[i]) {
 			log(LOG_WARN, "base: index for file #%i is null", i);
 			continue;
 		}
 
-		bool status = m_indexes[i]->writeIndex();
-		if (!status) {
+		if (!m_indexes[i]->writeIndex()) {
 			// unable to write, let's abort
 			g_process.shutdownAbort();
 		}
