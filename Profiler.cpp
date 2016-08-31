@@ -3,6 +3,8 @@
 #include "Profiler.h"
 #include "Stats.h"
 #include "Process.h"
+#include "HttpRequest.h"
+#include "Pages.h"
 #include "sort.h"
 #include "Conf.h"
 #include "Hostdb.h"
