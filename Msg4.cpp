@@ -13,6 +13,7 @@
 #include "JobScheduler.h"
 #include "Process.h"
 #include "PingServer.h"
+#include "max_niceness.h"
 #include <sys/stat.h> //stat()
 
 #ifdef _VALGRIND_

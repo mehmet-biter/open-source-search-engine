@@ -7,7 +7,6 @@
 #include "Msg5.h"
 #include "Msg1.h"
 #include "Msg4.h"
-#include "XmlDoc.h"
 #include "Tagdb.h"
 
 #define SR_BUFSIZE 2048

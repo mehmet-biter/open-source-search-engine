@@ -11,6 +11,7 @@
 #include "SpiderColl.h"
 #include "SpiderLoop.h"
 #include "Proxy.h"
+#include "Linkdb.h"
 
 static void dailyMergeWrapper ( int fd , void *state ) ;
 

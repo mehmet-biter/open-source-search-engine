@@ -15,9 +15,11 @@
 #include "Spider.h"
 #include "SpiderColl.h"
 #include "Doledb.h"
+#include "Linkdb.h"
 #include "hash.h"
 #include "JobScheduler.h"
 #include "Stats.h"
+#include "max_niceness.h"
 #include <sys/stat.h> //mdir()
 
 Rdb::Rdb ( ) {

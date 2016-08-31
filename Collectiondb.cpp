@@ -13,10 +13,12 @@
 #include "Tagdb.h"
 #include "Spider.h"
 #include "Clusterdb.h"
+#include "Linkdb.h"
 #include "Spider.h"
 #include "Repair.h"
 #include "Parms.h"
 #include "Process.h"
+#include "HttpRequest.h"
 #include <sys/stat.h> //mkdir()
 
 static HashTableX g_collTable;

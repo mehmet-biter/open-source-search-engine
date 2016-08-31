@@ -18,6 +18,11 @@
 #include "Tagdb.h"
 #include "Sections.h"
 #include "Posdb.h"
+#include "Clusterdb.h"
+#include "Linkdb.h"
+#include "XmlDoc.h"
+#include "max_niceness.h"
+
 
 static void repairWrapper ( int fd , void *state ) ;
 static void loopWrapper   ( void *state , RdbList *list , Msg5 *msg5 ) ;
