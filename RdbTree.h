@@ -229,6 +229,7 @@ public:
 
 	int32_t  getNumNegativeKeys( collnum_t collnum ) const;
 	int32_t  getNumPositiveKeys( collnum_t collnum ) const;
+	int32_t  getNumTotalKeys(collnum_t collnum) const;
 
 	void setNumKeys ( class CollectionRec *cr ) ;
 

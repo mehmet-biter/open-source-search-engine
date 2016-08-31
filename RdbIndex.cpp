@@ -28,6 +28,7 @@ RdbIndex::RdbIndex()
 	, m_useHalfKeys(false)
 	, m_ks(0)
 	, m_rdbId(RDB_NONE)
+	, m_dataFileSize(0)
 	, m_docIds(new docids_t)
 	, m_docIdsMtx()
 	, m_pendingDocIds(new docids_t)
@@ -44,6 +45,8 @@ RdbIndex::~RdbIndex() {
 void RdbIndex::reset() {
 	m_file.reset();
 
+	m_dataFileSize = 0;
+
 	m_docIds.reset(new docids_t);
 	m_pendingDocIds.reset(new docids_t);
 
@@ -59,8 +62,9 @@ void RdbIndex::set(const char *dir, const char *indexFilename,
 	logTrace(g_conf.m_logTraceRdbIndex, "BEGIN. dir [%s], indexFilename [%s]", dir, indexFilename);
 
 	reset();
+
 	m_fixedDataSize = fixedDataSize;
-	m_file.set ( dir , indexFilename );
+	m_file.set(dir, indexFilename);
 	m_useHalfKeys = useHalfKeys;
 	m_ks = keySize;
 	m_rdbId = rdbId;
@@ -125,14 +129,20 @@ bool RdbIndex::writeIndex2() {
 	// remove const as m_file.write does not accept const buffer
 	docids_ptr_t tmpDocIds = std::const_pointer_cast<docids_t>(mergePendingDocIds());
 
-	/// @todo ALC we may want to store size of data used to generate index file here so that we can validate index file
-	/// eg: store total keys in buckets/tree; size of rdb file
-	// first 8 bytes are the total docIds in the index file
+	// first 8 bytes are the size of the DATA file we're indexing
+	m_file.write(&m_dataFileSize, sizeof(m_dataFileSize), offset);
+	if (g_errno) {
+		logError("Failed to write to %s (m_dataFileSize): %s", m_file.getFilename(), mstrerror(g_errno));
+		return false;
+	}
+	offset += sizeof(m_dataFileSize);
+
+	// next 8 bytes are the total number of docids in the index file
 	size_t docid_count = tmpDocIds->size();
 
 	m_file.write(&docid_count, sizeof(docid_count), offset);
 	if (g_errno) {
-		logError("Failed to write to %s (docid_count): %s", m_file.getFilename(), mstrerror(g_errno))
+		logError("Failed to write to %s (docid_count): %s", m_file.getFilename(), mstrerror(g_errno));
 		return false;
 	}
 
@@ -140,7 +150,7 @@ bool RdbIndex::writeIndex2() {
 
 	m_file.write(&(*tmpDocIds)[0], docid_count * sizeof((*tmpDocIds)[0]), offset);
 	if (g_errno) {
-		logError("Failed to write to %s (docids): %s", m_file.getFilename(), mstrerror(g_errno))
+		logError("Failed to write to %s (docids): %s", m_file.getFilename(), mstrerror(g_errno));
 		return false;
 	}
 
@@ -188,18 +198,32 @@ bool RdbIndex::readIndex2() {
 	size_t docid_count = 0;
 
 	// first 8 bytes are the size of the DATA file we're indexing
-	m_file.read(&docid_count, sizeof(docid_count), offset);
-	if ( g_errno ) {
+	m_file.read(&m_dataFileSize, sizeof(m_dataFileSize), offset);
+	if (g_errno) {
 		logError("Had error reading offset=%" PRId64" from %s: %s", offset, m_file.getFilename(), mstrerror(g_errno));
 		return false;
 	}
+	offset += sizeof(m_dataFileSize);
+
+	// next 8 bytes are the total number of docids in the index file
+	m_file.read(&docid_count, sizeof(docid_count), offset);
+	if (g_errno) {
+		logError("Had error reading offset=%" PRId64" from %s: %s", offset, m_file.getFilename(), mstrerror(g_errno));
+		return false;
+	}
+	offset += sizeof(docid_count);
 
 	docids_ptr_t tmpDocIds(new docids_t);
+	int64_t readSize = docid_count * sizeof((*tmpDocIds)[0]);
 
-	offset += sizeof(docid_count);
+	int64_t expectedFileSize = offset + readSize;
+	if (expectedFileSize != m_file.getFileSize()) {
+		logError("Data file size[%" PRId64"] differs from expected size[%" PRId64"]", m_file.getFileSize(), expectedFileSize);
+		return false;
+	}
+
 	tmpDocIds->resize(docid_count);
-
-	m_file.read(&(*tmpDocIds)[0], docid_count * sizeof((*tmpDocIds)[0]), offset);
+	m_file.read(&(*tmpDocIds)[0], readSize, offset);
 	if (g_errno) {
 		logError("Had error reading offset=%" PRId64" from %s: %s", offset, m_file.getFilename(), mstrerror(g_errno));
 		return false;
@@ -209,6 +233,19 @@ bool RdbIndex::readIndex2() {
 	swapDocIds(tmpDocIds);
 
 	logTrace(g_conf.m_logTraceRdbIndex, "END. Returning true with %zu docIds loaded", m_docIds->size());
+	return true;
+}
+
+bool RdbIndex::verifyIndex(int64_t dataFileSize) {
+	logTrace( g_conf.m_logTraceRdbIndex, "BEGIN. filename [%s]", m_file.getFilename());
+
+	// simple verification for now
+	if (m_dataFileSize != dataFileSize) {
+		logError("Data file size[%" PRId64"] differs from expected size[%" PRId64"]", dataFileSize, m_dataFileSize);
+		return false;
+	}
+
+	logTrace(g_conf.m_logTraceRdbIndex, "END. Returning false");
 	return true;
 }
 
@@ -332,6 +369,9 @@ bool RdbIndex::generateIndex(RdbTree *tree, collnum_t collnum) {
 	// make sure it's all sorted and merged
 	(void)mergePendingDocIds();
 
+	// update dataFileSize
+	m_dataFileSize = tree->getNumTotalKeys(collnum);
+
 	return true;
 }
 
@@ -361,6 +401,9 @@ bool RdbIndex::generateIndex(RdbBuckets *buckets, collnum_t collnum) {
 	// make sure it's all sorted and merged
 	(void)mergePendingDocIds();
 
+	// update dataFileSize
+	m_dataFileSize = buckets->getNumKeys(collnum);
+
 	return true;
 }
 
@@ -383,7 +426,7 @@ bool RdbIndex::generateIndex(BigFile *f) {
 
 	// scan through all the recs in f
 	int64_t offset = 0;
-	int64_t fileSize = f->getFileSize();
+	const int64_t fileSize = f->getFileSize();
 
 	// if file is length 0, we don't need to do much
 	// g_errno should be set on error
@@ -544,6 +587,9 @@ bool RdbIndex::generateIndex(BigFile *f) {
 
 	// make sure it's all sorted and merged
 	(void)mergePendingDocIds();
+
+	// update dataFileSize
+	m_dataFileSize = fileSize;
 
 	// otherwise, we're done
 	return true;

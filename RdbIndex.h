@@ -48,6 +48,8 @@ public:
 	bool readIndex();
 	bool readIndex2();
 
+	bool verifyIndex(int64_t dataFileSize);
+
 	bool unlink() { return m_file.unlink(); }
 
 	bool unlink(void (*callback)(void *state), void *state) {
@@ -80,6 +82,9 @@ private:
 	bool m_useHalfKeys;
 	char m_ks;
 	char m_rdbId;
+
+	// verification
+	int64_t m_dataFileSize;
 
 	// always sorted
 	docidsconst_ptr_t m_docIds;

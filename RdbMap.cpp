@@ -301,23 +301,25 @@ bool RdbMap::readMap ( BigFile *dataFile )
 		logTrace( g_conf.m_logTraceRdbMap, "END. Returning false" );
 		return false;
 	}
-			   
-			   
-	bool status = readMap2 ( );
+
+	bool status = readMap2();
+
 	// . close map
 	// . no longer since we use BigFile
 	// . no, we have to close since we will hog all the fds
 	// . we cannot call BigFile::close() because then RdbMap::unlink() will
 	//   not work because BigFile::m_maxParts gets set to 0, and that is
 	//   used in the loop in BigFile::unlinkRename().
-	m_file.closeFds ( );
+	m_file.closeFds();
+
 	// verify and fix map, data on disk could be corrupted
-	if ( ! verifyMap ( dataFile ) ) {
+	if (status && !verifyMap(dataFile)) {
 		logError("END. Could not verify map. filename [%s]. Returning false", m_file.getFilename());
 		return false;
 	}
 	
 	logTrace( g_conf.m_logTraceRdbMap, "END. Returning %s", status?"true":"false");
+
 	// return status
 	return status;
 }
