@@ -99,7 +99,6 @@ public:
 	char       m_tmpBuf[32];
 	RdbList    m_linkdbListToAdd;
 	uint64_t   m_chksum1LongLong;
-	XmlDoc     m_doc;
 
 	// spiderdb scan vars
 	bool       m_isNew;
