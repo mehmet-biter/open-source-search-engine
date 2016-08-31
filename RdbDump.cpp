@@ -197,6 +197,15 @@ void RdbDump::doneDumping() {
 		m_map->writeMap(true);
 	}
 
+	// regenerate treeIndex
+	if (m_treeIndex) {
+		bool result = m_tree ? m_treeIndex->generateIndex(m_tree, m_collnum) : m_treeIndex->generateIndex(m_buckets, m_collnum);
+		if (!result) {
+			logError("db: Index generation failed");
+			gbshutdownCorrupted();
+		}
+	}
+
 	if (m_index) {
 		m_index->writeIndex();
 	}
@@ -591,10 +600,6 @@ bool RdbDump::dumpList(RdbList *list, int32_t niceness, bool recall) {
 		return true;
 	}
 
-	if (m_index) {
-		/// @todo ALC logic to move from m_treeIndex to m_index
-	}
-
 	// tab to the old offset
 	int64_t offset = m_offset;
 	// might as well update the offset now, even before write is done
@@ -737,10 +742,7 @@ bool RdbDump::doneReadingForVerify ( ) {
 	}
 
 	// time dump to disk (and tfndb bins)
-	int64_t t;
-
-	// start timing
-	t = gettimeofdayInMilliseconds();
+	int64_t t1 = gettimeofdayInMilliseconds();
 
 	// sanity check
 	if (m_list->m_ks != m_ks) {
@@ -790,8 +792,13 @@ tryAgain:
 		gbshutdownCorrupted();
 	}
 
-	int64_t now = gettimeofdayInMilliseconds();
-	log(LOG_TIMING, "db: adding to map took %" PRIu64" ms", now - t);
+	int64_t t2 = gettimeofdayInMilliseconds();
+	log(LOG_TIMING, "db: adding to map took %" PRIu64" ms", t2 - t1);
+
+	if (m_index) {
+		m_index->addList(m_list);
+		log(LOG_TIMING, "db: adding to index took %" PRIu64" ms", gettimeofdayInMilliseconds() - t2);
+	}
 
 	// . HACK: fix hacked lists before deleting from tree
 	// . iff the first key has the half bit set
@@ -851,7 +858,7 @@ tryAgain:
 	//   balancing to make it even faster
 	// . balancing will be restored once we're done deleting this list
 
-	int64_t t1 = gettimeofdayInMilliseconds();
+	int64_t t3 = gettimeofdayInMilliseconds();
 
 	// tree delete is slow due to checking for leaks, not balancing
 	bool s;
@@ -876,8 +883,7 @@ tryAgain:
 		g_errno = 0;
 	}
 
-	int64_t t2 = gettimeofdayInMilliseconds();
-	log(LOG_TIMING,"db: dump: deleteList: took %" PRId64,t2-t1);
+	log(LOG_TIMING,"db: dump: deleteList: took %" PRId64,gettimeofdayInMilliseconds()-t3);
 
 	logTrace( g_conf.m_logTraceRdbDump, "END - OK, returning true" );
 	return true;

@@ -9,6 +9,7 @@
 
 class RdbTree;
 class RdbBuckets;
+class RdbList;
 
 typedef std::vector<uint64_t> docids_t;
 typedef std::shared_ptr<docids_t> docids_ptr_t;
@@ -56,8 +57,10 @@ public:
 	// . attempts to auto-generate from data file
 	// . returns false and sets g_errno on error
 	bool generateIndex(BigFile *f);
-	bool generateIndex(RdbBuckets *buckets, collnum_t collnum, const char *dbname);
-	bool generateIndex(RdbTree *tree, collnum_t collnum, const char *dbname);
+	bool generateIndex(RdbBuckets *buckets, collnum_t collnum);
+	bool generateIndex(RdbTree *tree, collnum_t collnum);
+
+	void addList(RdbList *list);
 
 	void addRecord(char *key);
 
@@ -66,6 +69,7 @@ public:
 private:
 	void addRecord_unlocked(char *key, bool isGenerateIndex);
 	docidsconst_ptr_t mergePendingDocIds();
+	void swapDocIds(docidsconst_ptr_t docIds);
 
 	void printIndex();
 
@@ -78,7 +82,7 @@ private:
 	char m_rdbId;
 
 	// always sorted
-	docids_ptr_t m_docIds;
+	docidsconst_ptr_t m_docIds;
 	GbMutex m_docIdsMtx;
 
 	// newest record pending merge into m_docIds

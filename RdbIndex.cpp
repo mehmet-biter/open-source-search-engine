@@ -44,10 +44,11 @@ RdbIndex::~RdbIndex() {
 void RdbIndex::reset() {
 	m_file.reset();
 
-	m_prevPendingDocId = MAX_DOCID + 1;
+	m_docIds.reset(new docids_t);
+	m_pendingDocIds.reset(new docids_t);
 
-	m_docIds->clear();
-	m_pendingDocIds->clear();
+	m_prevPendingDocId = MAX_DOCID + 1;
+	m_lastMergeTime = gettimeofdayInMilliseconds();
 
 	m_needToWrite = false;
 }
@@ -205,8 +206,7 @@ bool RdbIndex::readIndex2() {
 	}
 
 	// replace with new index
-	ScopedLock sl(m_docIdsMtx);
-	m_docIds.swap(tmpDocIds);
+	swapDocIds(tmpDocIds);
 
 	logTrace(g_conf.m_logTraceRdbIndex, "END. Returning true with %zu docIds loaded", m_docIds->size());
 	return true;
@@ -218,6 +218,11 @@ void RdbIndex::addRecord(char *key) {
 }
 
 docidsconst_ptr_t RdbIndex::mergePendingDocIds() {
+	// don't need to merge when there are no pending docIds
+	if (m_pendingDocIds->empty()) {
+		return m_docIds;
+	}
+
 	m_lastMergeTime = gettimeofdayInMilliseconds();
 
 	// merge pending docIds into docIds
@@ -229,10 +234,10 @@ docidsconst_ptr_t RdbIndex::mergePendingDocIds() {
 
 	m_pendingDocIds->clear();
 
+	// if size after merge doesn't change, we don't need to replace docIds (pending docIds are a subset of docIds)
 	if (m_docIds->size() != tmpDocIds->size()) {
 		// replace existing
-		ScopedLock sl(m_docIdsMtx);
-		m_docIds.swap(tmpDocIds);
+		swapDocIds(tmpDocIds);
 	}
 
 	return m_docIds;
@@ -276,14 +281,39 @@ void RdbIndex::printIndex() {
 	logError("NOT IMPLEMENTED YET");
 }
 
-bool RdbIndex::generateIndex(RdbTree *tree, collnum_t collnum, const char *dbname) {
+
+void RdbIndex::addList(RdbList *list) {
+	// sanity check
+	if (list->m_ks != m_ks) {
+		g_process.shutdownAbort(true);
+	}
+
+	// . do not reset list, because of HACK in RdbDump.cpp we set m_listPtrHi < m_list
+	//   so our first key can be a half key, calling resetListPtr()
+	//   will reset m_listPtrHi and fuck it up
+
+	// bail now if it's empty
+	if (list->isEmpty()) {
+		return;
+	}
+
+	char key[MAX_KEY_BYTES];
+
+	ScopedLock sl(m_pendingDocIdsMtx);
+	for (; !list->isExhausted(); list->skipCurrentRecord()) {
+		list->getCurrentKey(key);
+		addRecord_unlocked(key, true);
+	}
+}
+
+bool RdbIndex::generateIndex(RdbTree *tree, collnum_t collnum) {
 	reset();
 
 	if (g_conf.m_readOnlyMode) {
 		return false;
 	}
 
-	log(LOG_INFO, "db: Generating index for %s tree", dbname);
+	log(LOG_INFO, "db: Generating index for %s tree", getDbnameFromId(m_rdbId));
 
 	// use extremes
 	const char *startKey = KEYMIN();
@@ -296,24 +326,23 @@ bool RdbIndex::generateIndex(RdbTree *tree, collnum_t collnum, const char *dbnam
 		return false;
 	}
 
-	char key[MAX_KEY_BYTES];
+	list.resetListPtr();
+	addList(&list);
 
-	ScopedLock sl(m_pendingDocIdsMtx);
-	for (list.resetListPtr(); !list.isExhausted(); list.skipCurrentRecord()) {
-		list.getCurrentKey(key);
-		addRecord_unlocked(key, true);
-	}
+	// make sure it's all sorted and merged
+	(void)mergePendingDocIds();
+
 	return true;
 }
 
-bool RdbIndex::generateIndex(RdbBuckets *buckets, collnum_t collnum, const char *dbname) {
+bool RdbIndex::generateIndex(RdbBuckets *buckets, collnum_t collnum) {
 	reset();
 
 	if (g_conf.m_readOnlyMode) {
 		return false;
 	}
 
-	log(LOG_INFO, "db: Generating index for %s buckets", dbname);
+	log(LOG_INFO, "db: Generating index for %s buckets", getDbnameFromId(m_rdbId));
 
 	// use extremes
 	const char *startKey = KEYMIN();
@@ -326,13 +355,11 @@ bool RdbIndex::generateIndex(RdbBuckets *buckets, collnum_t collnum, const char 
 		return false;
 	}
 
-	char key[MAX_KEY_BYTES];
+	list.resetListPtr();
+	addList(&list);
 
-	ScopedLock sl(m_pendingDocIdsMtx);
-	for (list.resetListPtr(); !list.isExhausted(); list.skipCurrentRecord()) {
-		list.getCurrentKey(key);
-		addRecord_unlocked(key, true);
-	}
+	// make sure it's all sorted and merged
+	(void)mergePendingDocIds();
 
 	return true;
 }
@@ -515,6 +542,9 @@ bool RdbIndex::generateIndex(BigFile *f) {
 	// don't forget to free this
 	mfree(buf, bufSize, "RdbMap");
 
+	// make sure it's all sorted and merged
+	(void)mergePendingDocIds();
+
 	// otherwise, we're done
 	return true;
 }
@@ -522,4 +552,9 @@ bool RdbIndex::generateIndex(BigFile *f) {
 docidsconst_ptr_t RdbIndex::getDocIds() {
 	ScopedLock sl(m_docIdsMtx);
 	return m_docIds;
+}
+
+void RdbIndex::swapDocIds(docidsconst_ptr_t docIds) {
+	ScopedLock sl(m_docIdsMtx);
+	m_docIds.swap(docIds);
 }
