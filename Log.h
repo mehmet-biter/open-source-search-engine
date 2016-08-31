@@ -102,7 +102,7 @@ void loghex( int32_t type, void const *data, const unsigned int len, const char 
 	__attribute__ ((format(printf, 4, 5)));
 
 #define logError(msg, ...) \
-	logf(LOG_ERROR, "%s:%s:%d: " msg, __FILE__, __func__, __LINE__, ##__VA_ARGS__);
+	logf(LOG_ERROR, "%s:%s:%d: " msg, __FILE__, __func__, __LINE__, ##__VA_ARGS__)
 
 #define logDebug(condition, ...) \
     if (condition) { \

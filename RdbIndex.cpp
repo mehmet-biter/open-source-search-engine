@@ -101,7 +101,7 @@ bool RdbIndex::writeIndex() {
 
 	// open a new file
 	if (!m_file.open(O_RDWR | O_CREAT | O_TRUNC)) {
-		logError("END. Could not open %s for writing: %s. Returning false.", m_file.getFilename(), mstrerror(g_errno))
+		logError("END. Could not open %s for writing: %s. Returning false.", m_file.getFilename(), mstrerror(g_errno));
 		return false;
 	}
 
