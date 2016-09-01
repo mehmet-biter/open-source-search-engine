@@ -206,7 +206,7 @@ private:
 	int32_t m_docIdSplitNumber; //next split range to do
 	
 	void        estimateHitsAndSendReply   ();
-	bool        setClusterRecs ();
+	bool        getClusterRecs();
 	bool        gotClusterRecs ();
 
 public:

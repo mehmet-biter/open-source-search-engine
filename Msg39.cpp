@@ -407,7 +407,7 @@ bool Msg39::controlLoop ( ) {
 		// . this loads them using msg51 from clusterdb
 		// . if m_msg39req->m_doSiteClustering is false it just returns true
 		// . this sets m_gotClusterRecs to true if we get them
-		if ( ! setClusterRecs ( ) ) return false;
+		if ( ! getClusterRecs ( ) ) return false;
 		// error setting clusterrecs?
 		if ( g_errno ) goto hadError;
 	}
@@ -822,7 +822,7 @@ void Msg39::intersectListsThreadFunction ( void *state ) {
 // . set the clusterdb recs in the top tree
 // . returns false if blocked, true otherwise
 // . returns true and sets g_errno on error
-bool Msg39::setClusterRecs ( ) {
+bool Msg39::getClusterRecs ( ) {
 
 	if ( ! m_msg39req->m_doSiteClustering ) return true;
 
@@ -891,9 +891,6 @@ bool Msg39::setClusterRecs ( ) {
 		// did we block? if so, return
 		return false;
 
-	// ok, process the replies
-	//gotClusterRecs();
-	// the above never blocks
 	return true;
 }
 
