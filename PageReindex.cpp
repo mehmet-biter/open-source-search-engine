@@ -321,7 +321,7 @@ bool Msg1c::gotList ( ) {
 
 	HashTableX dt;
 	char dbuf[1024];
-	dt.set(8,0,64,dbuf,1024,false,0,"ddocids");
+	dt.set(8,0,64,dbuf,1024,false,"ddocids");
 
 	m_sb.setLabel("reiadd");
 

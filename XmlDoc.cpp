@@ -4040,7 +4040,7 @@ HashTableX *XmlDoc::getCountTable ( ) {
 	// add 5000 slots for inlink text in hashString_ct() calls below
 	int32_t numSlots = nw * 3 + 5000;
 	// only alloc for this one if not provided
-	if (!ct->set(8,4,numSlots,NULL,0,false,m_niceness,"xmlct"))
+	if (!ct->set(8,4,numSlots,NULL,0,false,"xmlct"))
 	  return (HashTableX *)NULL;
 
 	// . now hash all the phrase ids we have in order to see if the phrase
@@ -4272,7 +4272,7 @@ uint32_t *XmlDoc::getTagPairHash32 ( ) {
 	// . similar to Vector::setTagPairHashes() but we do not compute a
 	//   vector, just a single scalar/hash of 32 bits, m_termId
 	HashTableX tp; // T<int64_t,char> tp;
-	if ( ! tp.set ( 4 , 1 , nt * 4  , NULL , 0 , true,m_niceness,"xmltp"))
+	if ( ! tp.set ( 4 , 1 , nt * 4  , NULL , 0 , true,"xmltp"))
 		return 0LL;
 	uint32_t lastTid = 0;
 	char val = 1;
@@ -4516,7 +4516,7 @@ int32_t XmlDoc::computeVector( Words *words, uint32_t *vec, int32_t start, int32
 	// dedup our vector using this hashtable, "ht"
 	char hbuf[3000*6*2];
 	HashTableX ht;
-	if ( ! ht.set(4,0,3000,hbuf,3000*6*2,false,m_niceness,"xmlvecdedup")){
+	if ( ! ht.set(4,0,3000,hbuf,3000*6*2,false,"xmlvecdedup")){
 		g_process.shutdownAbort(true);}
 
  again:
@@ -4654,7 +4654,7 @@ float computeSimilarity ( int32_t   *vec0 ,
 	char qbuf[5000];
 	if ( q ) {
 		// init hash table
-		if ( ! qt.set ( 4,0,512,qbuf,5000,false,niceness,"xmlqvtbl") )
+		if ( ! qt.set ( 4,0,512,qbuf,5000,false,"xmlqvtbl") )
 			return -1;
 		// . stock the query term hash table
 		// . use the lower 32 bits of the termids to make compatible
@@ -4684,7 +4684,7 @@ float computeSimilarity ( int32_t   *vec0 ,
 
 	HashTableX ht;
 	char  hbuf[10000];
-	if ( ! ht.set ( 4,4,-1,hbuf,10000,allowDups,niceness,"xmlqvtbl2"))
+	if ( ! ht.set ( 4,4,-1,hbuf,10000,allowDups,"xmlqvtbl2"))
 		return -1;
 
 	bool useScores  = (bool)s0;
@@ -13381,11 +13381,10 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 
 
 	// store what we hash into this table
-	if ( (m_pbuf || m_storeTermListInfo) && ! m_wts ) {
+	if ((m_pbuf || m_storeTermListInfo) && !m_wts) {
 		// init it. the value is a TermInfo class. allowDups=true!
-		m_wtsTable.set (12,sizeof(TermDebugInfo),
-				0,NULL,0,true,m_niceness,
-				"wts-tab");
+		m_wtsTable.set(12, sizeof(TermDebugInfo), 0, NULL, 0, true, "wts-tab");
+
 		// point to it, make it active
 		m_wts = &m_wtsTable;
 	}
@@ -13408,8 +13407,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	//   count it here though... but add 5k for it...
 	int32_t need4 = nw * 4 + 5000;
 	if ( nd && index1 && m_usePosdb ) {
-		if ( ! tt1.set ( 18 , 4 , need4,NULL,0,false,m_niceness,
-				 "posdb-indx")) {
+		if ( ! tt1.set ( 18 , 4 , need4,NULL,0,false, "posdb-indx")) {
 			logTrace( g_conf.m_logTraceXmlDoc, "tt1.set failed" );
 			return NULL;
 		}
@@ -13431,9 +13429,9 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 			return NULL;
 		}
 		int32_t done = tt1.m_numSlots;
-		if ( done != did )
-			log("xmldoc: reallocated big table! bad. old=%" PRId32" "
-			    "new=%" PRId32" nw=%" PRId32,did,done,nw);
+		if (done != did) {
+			log(LOG_WARN, "xmldoc: reallocated big table! bad. old=%" PRId32" new=%" PRId32" nw=%" PRId32, did, done, nw);
+		}
 	}
 
 	// if indexing the spider reply as well under a different docid
@@ -13453,7 +13451,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	HashTableX st1;
 	// set key/data size
 	int32_t svs = sizeof(SectionVote);
-	st1.set(sizeof(key128_t),svs,0,NULL,0,false,m_niceness,"sectdb-indx");
+	st1.set(sizeof(key128_t),svs,0,NULL,0,false,"sectdb-indx");
 	// tell hashtable to use the sectionhash for determining the slot,
 	// not the lower 4 bytes because that is the docid which is the
 	// same for every key
@@ -13498,7 +13496,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	int32_t nis = 0;
 	if ( nl2 && m_useLinkdb ) nis = nl2->getNumLinks() * 4;
 	// pre-grow table based on # outlinks
-	kt1.set ( sizeof(key224_t),0,nis,NULL,0,false,m_niceness,"link-indx" );
+	kt1.set ( sizeof(key224_t),0,nis,NULL,0,false,"link-indx" );
 	// use magic to make fast
 	kt1.m_useKeyMagic = true;
 	// linkdb keys will have the same lower 4 bytes, so make hashing fast.
@@ -14002,7 +14000,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		char dbuf8[34900];
 
 		// value is the ptr to the rdbId/key in the oldList
-		dt8.set(8, sizeof(char *), 2048, dbuf8, 34900, false, m_niceness, "dt8-tab");
+		dt8.set(8, sizeof(char *), 2048, dbuf8, 34900, false, "dt8-tab");
 
 		// scan recs in that and hash them
 		for ( char *p = om ; p < omend ; ) {
@@ -15053,7 +15051,7 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 	// hash table to avoid dups
 	HashTableX ht;
 	char buf2[8192];
-	if ( ! ht.set ( 4,0,1000,buf2 , 8192,false,m_niceness,"linkdedup" ) )
+	if ( ! ht.set ( 4,0,1000,buf2 , 8192,false,"linkdedup" ) )
 	{
 		logTrace( g_conf.m_logTraceXmlDoc, "END, ht.set failed" );
 		return NULL;
@@ -20064,7 +20062,7 @@ char *XmlDoc::getTitleBuf ( ) {
 	// init this
 	char dtbuf[1000];
 	HashTableX dupTable;
-	dupTable.set(8,0,64,dtbuf,1000,false,m_niceness,"xmldup");
+	dupTable.set(8,0,64,dtbuf,1000,false,"xmldup");
 	// now set the scores and isdup
 	for ( int32_t i = 0 ; i < linkNum ; i++ ) {
 		// skip if ignored
@@ -20356,7 +20354,7 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 
 	// only do once per site
 	char buf[1000];
-	HashTableX ht; ht.set (4,0,-1 , buf , 1000 ,false,m_niceness,"sg-tab");
+	HashTableX ht; ht.set (4,0,-1 , buf , 1000 ,false,"sg-tab");
 	// get site of outlink
 	SiteGetter siteGetter;
 	// . must be from an EXTERNAL DOMAIN and must be new

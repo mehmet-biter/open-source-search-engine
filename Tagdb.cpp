@@ -1022,7 +1022,7 @@ void Tagdb::setHashTable ( ) {
 
 
 	// the hashtable of TagDescriptors
-	if ( ! s_ht.set ( 4, sizeof(TagDesc *), 1024, NULL, 0, false, 0, "tgdbtb" ) ) {
+	if ( ! s_ht.set ( 4, sizeof(TagDesc *), 1024, NULL, 0, false, "tgdbtb" ) ) {
 		log( LOG_WARN, "tagdb: Tagdb hash init failed." );
 		return;
 	}
@@ -1598,7 +1598,7 @@ void Msg8a::gotAllReplies ( ) {
 	// scan tags in list and set Tag::m_type to TT_DUP if its a dup
 	HashTableX cx;
 	char cbuf[2048];
-	cx.set ( 4, 0, 64, cbuf, 2048, false, m_niceness, "tagtypetab" );
+	cx.set ( 4, 0, 64, cbuf, 2048, false, "tagtypetab" );
 
 	Tag *tag = m_tagRec->getFirstTag();
 

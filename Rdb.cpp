@@ -2553,8 +2553,7 @@ int32_t Rdb::reclaimMemFromDeletedTreeNodes( int32_t niceness ) {
 		      4, 
 		      m_tree.getNumUsedNodes()*2,
 		      NULL , 0 , 
-		      false , 
-		      niceness ,
+		      false ,
 		      "trectbl",
 		      true )) // useMagic? yes..
 		return -1;

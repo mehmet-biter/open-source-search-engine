@@ -180,7 +180,7 @@ short get_iana_charset(char *cs, int len)
 {
     if (!s_isInitialized){
 	// set up the hash table
-	if ( ! s_table.set ( 8,4,4096,NULL,0,false,0,"ianatbl") ) {
+	if ( ! s_table.set ( 8,4,4096,NULL,0,false,"ianatbl") ) {
 	    log("build: Could not init table of IANA Charsets.");
 	    return false;
 	}

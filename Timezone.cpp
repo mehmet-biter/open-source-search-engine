@@ -303,7 +303,7 @@ static bool initTimeZoneTable ( ) {
 	if ( s_tzt.m_numSlotsUsed ) return true;
 
 	// set up the time zone hashtable
-	if ( ! s_tzt.set( 8,sizeof(TimeZone*), 300,NULL,0,false,0,"tzts"))
+	if ( ! s_tzt.set( 8,sizeof(TimeZone*), 300,NULL,0,false,"tzts"))
 		return false;
 	// load time zone names and their modifiers into hashtable
 	for ( int32_t i = 0 ; *tzs[i].m_name ; i++ ) {

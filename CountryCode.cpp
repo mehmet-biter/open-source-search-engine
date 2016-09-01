@@ -285,7 +285,7 @@ uint8_t getCountryId ( char *cc ) {
 	if ( ! s_init ) {
 		s_init = true;
 		// hash them up
-		ht.set ( 4 , 1 , -1,buf,2000,false,MAX_NICENESS,"ctryids");
+		ht.set ( 4 , 1 , -1,buf,2000,false,"ctryids");
 		// now add in all the country codes
 		int32_t n = (int32_t) sizeof(s_countryCode) / sizeof(char *); 
 		for ( int32_t i = 0 ; i < n ; i++ ) {

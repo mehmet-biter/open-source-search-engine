@@ -238,7 +238,7 @@ bool isAbbr ( int64_t h , bool *hasWordAfter ) {
 		HashTableX *t = &s_abbrTable;
 		// set up the hash table
 		int32_t n = ((int32_t)sizeof(s_abbrs99))/ ((int32_t)sizeof(Abbr));
-		if ( ! t->set ( 8,4,n*4, NULL,0,false,MAX_NICENESS,"abbrtbl")) {
+		if ( ! t->set ( 8,4,n*4, NULL,0,false,"abbrtbl")) {
 			log( LOG_ERROR, "build: Could not init abbrev table." );
 			return false;
 		}

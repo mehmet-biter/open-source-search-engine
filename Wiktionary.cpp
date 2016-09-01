@@ -21,7 +21,7 @@ Wiktionary::Wiktionary () {
 	// . allowDups = true!
 	// . now m_langTable just maps to langId, no POS bits...
 	//m_langTable.set ( 6 , 1,0,NULL,0,false,0 ,"wkt-lang"); 
-	m_synTable.set  ( 6 , 4,0,NULL,0,true,0 ,"wkt-synt"); 
+	m_synTable.set  ( 6 , 4,0,NULL,0,true,"wkt-synt");
 
 	m_synBuf.setLabel("synbuf");
 }
@@ -246,11 +246,11 @@ bool Wiktionary::load() {
 	//m_langTable.setTableSize ( 16777216 , NULL , 0 );
 	//m_synTable .setTableSize ( 16777216 , NULL , 0 );
 	//m_debugMap .setTableSize ( 8388608  , NULL , 0 );
-	m_dedup.set    ( 8 , 0 , 16777216 , NULL , 0 , false, 0,"ddtab");
+	m_dedup.set    ( 8 , 0 , 16777216 , NULL , 0 , false,"ddtab");
 	// this has to allow dups! it maps a baseForm to a variant/syn
 	// now it includes langid
-	m_tmp.set      ( 8 , 9 , 16777216 , NULL , 0 , true , 0,"tmptab");
-	m_debugMap.set  ( 8 , 4,0,NULL,0,false,0 ,"wkt-dmap"); 
+	m_tmp.set      ( 8 , 9 , 16777216 , NULL , 0 , true,"tmptab");
+	m_debugMap.set  ( 8 , 4,0,NULL,0,false,"wkt-dmap");
 	//m_langTableTmp.set( 6 , 1,0,NULL,0,false,0 ,"wktlangt"); 
 	// this maps a pure word id (wid) to an offset in m_debugBuf for
 	// printing out the word
@@ -318,7 +318,7 @@ bool Wiktionary::addSynsets ( const char *filename ) {
 		return false;
 	}
 
-	if ( ! m_localTable.set ( 8 ,4,9000,NULL,0,false,0,"synloc") )
+	if ( ! m_localTable.set ( 8 ,4,9000,NULL,0,false,"synloc") )
 		return false;
 
 	char *p = m_localBuf.getBufStart();
@@ -1808,7 +1808,7 @@ bool Wiktionary::addWord ( char *word ,
 bool Wiktionary::compile ( ) {
 
 	HashTableX dedup;
-	dedup.set ( 8,0,16777216,NULL,0,false,0,"cdtab");
+	dedup.set ( 8,0,16777216,NULL,0,false,"cdtab");
 
 	// scan the m_tmp table
 	for ( int32_t i = 0 ; i < m_tmp.m_numSlots ; i++ ) {
@@ -1828,7 +1828,7 @@ bool Wiktionary::compile ( ) {
 		// remove dups
 		HashTableX dd2;
 		char dbuf2[512];
-		dd2.set(8,0,8,dbuf2,512,false,0,"ddttt2");
+		dd2.set(8,0,8,dbuf2,512,false,"ddttt2");
 		// how many forms? must be 2+ to get added to syntable
 		int32_t formCount = 0;
 		int32_t stripCount = 0;
@@ -1887,7 +1887,7 @@ bool Wiktionary::compile ( ) {
 		// remove dups
 		HashTableX dd;
 		char dbuf[512];
-		dd.set(8,0,8,dbuf,512,false,0,"ddttt");
+		dd.set(8,0,8,dbuf,512,false,"ddttt");
 		// a byte for storing the # of synonym forms
 		//m_synBuf.pushChar(0);
 		// push the langid!

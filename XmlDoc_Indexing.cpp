@@ -584,7 +584,7 @@ bool XmlDoc::setSpiderStatusDocMetaList ( SafeBuf *jd , int64_t uqd ) {
 
 	// the posdb table
 	HashTableX tt4;
-	if ( !tt4.set(18,4,256,NULL,0,false,m_niceness,"posdb-spindx"))
+	if ( !tt4.set(18,4,256,NULL,0,false,"posdb-spindx"))
 		return false;
 
 
@@ -899,7 +899,7 @@ bool XmlDoc::hashLinks ( HashTableX *tt ) {
 
 	char dbuf[8*4*1024];
 	HashTableX dedup;
-	dedup.set( 8,0,1024,dbuf,8*4*1024,false,m_niceness,"hldt");
+	dedup.set( 8,0,1024,dbuf,8*4*1024,false,"hldt");
 
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) {
@@ -2153,7 +2153,7 @@ bool XmlDoc::hashWords3( HashInfo *hi, const Words *words, Phrases *phrases, Sec
 	bool hashIffUnique = false;
 	if ( hi->m_hashGroup == HASHGROUP_INMETATAG  ) hashIffUnique = true;
 	if ( hi->m_hashGroup == HASHGROUP_INTAG      ) hashIffUnique = true;
-	HashTableX ut; ut.set ( 8,0,0,NULL,0,false,niceness,"uqtbl");
+	HashTableX ut; ut.set ( 8,0,0,NULL,0,false,"uqtbl");
 
 	///////
 	//

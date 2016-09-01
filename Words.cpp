@@ -557,7 +557,7 @@ int32_t Words::getLanguage( Sections *sections, int32_t maxSamples, int32_t nice
 	// sample the words
 	int32_t wordi     = 0;
 
-	if ( !ht.set( 8, 1, ( int32_t )( maxSamples * 8.0 ), NULL, 0, false, niceness, "wordslang" ) ) {
+	if ( !ht.set( 8, 1, ( int32_t )( maxSamples * 8.0 ), NULL, 0, false, "wordslang" ) ) {
 		return -1;
 	}
 
