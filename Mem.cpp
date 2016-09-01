@@ -606,7 +606,7 @@ bool Mem::lblMem( void *mem, size_t size, const char *note ) {
 			int32_t len = strlen( note );
 			if ( len > 15 ) len = 15;
 			char *here = &s_labels[ h * 16 ];
-			gbmemcpy ( here, note, len );
+			memcpy ( here, note, len );
 			// make sure NULL terminated
 			here[ len ] = '\0';
 			val = true;
@@ -1078,10 +1078,10 @@ retry:
 		return NULL;
 	}
 	// log a note
-	log(LOG_INFO,"mem: had to use malloc/gbmemcpy instead of realloc.");
+	log(LOG_INFO,"mem: had to use malloc+memcpy instead of realloc.");
 
 	// copy over to it
-	memmove ( mem , ptr , oldSize );
+	memcpy ( mem, ptr, oldSize );
 	// we already called rmMem() so don't double call
 	sysfree ( (char *)ptr - UNDERPAD );	
 

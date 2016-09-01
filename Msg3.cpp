@@ -558,36 +558,37 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 			    bytesToRead,offset,base->m_dbname);
 		}
 
-		// if any keys in the map are the same report corruption
-		char tmpKey    [16];
-		char lastTmpKey[16];
-		int32_t ccount = 0;
-		if ( bytesToRead     > 10000000      && 
-		     bytesToRead / 2 > m_minRecSizes &&
-		     base->m_fixedDataSize >= 0        ) {
-			for ( int32_t pn = p1 ; pn <= p2 ; pn++ ) {
+		if(bytesToRead     > 10000000      &&
+		   bytesToRead / 2 > m_minRecSizes &&
+		   base->m_fixedDataSize >= 0)
+		{
+			// if any keys in the map are the same report corruption
+			char tmpKey    [MAX_KEY_BYTES];
+			char lastTmpKey[MAX_KEY_BYTES];
+			int32_t ccount = 0;
+			for(int32_t pn = p1; pn <= p2; pn++) {
 				maps[fn]->getKey ( pn , tmpKey );
-				if ( KEYCMP(tmpKey,lastTmpKey,m_ks) == 0 ) 
+				if(pn!=p1 && KEYCMP(tmpKey,lastTmpKey,m_ks) == 0)
 					ccount++;
-				gbmemcpy(lastTmpKey,tmpKey,m_ks);
+				memcpy(lastTmpKey,tmpKey,sizeof(tmpKey));
 			}
-		}
-		if ( ccount > 10 ) {
-			logf(LOG_INFO,"disk: Reading %" PRId32" bytes from %s file #"
-			     "%" PRId32" when min "
-			     "required is %" PRId32". Map is corrupt and has %" PRId32" "
-			     "identical consecutive page keys because the "
-			     "map was \"repaired\" because out of order keys "
-			     "in the index.",
-			     (int32_t)bytesToRead,
-			     base->m_dbname,fn,
-			     (int32_t)m_minRecSizes,
-			     (int32_t)ccount);
-			incrementScansCompleted();
-			m_errno = ECORRUPTDATA;
-			m_hadCorruption = true;
-			//m_maxRetries = 0;
-			break;
+			if(ccount > 10) {
+				logf(LOG_INFO,"disk: Reading %" PRId32" bytes from %s file #"
+				     "%" PRId32" when min "
+				     "required is %" PRId32". Map is corrupt and has %" PRId32" "
+				     "identical consecutive page keys because the "
+				     "map was \"repaired\" because out of order keys "
+				     "in the index.",
+				     (int32_t)bytesToRead,
+				     base->m_dbname,fn,
+				     (int32_t)m_minRecSizes,
+				     (int32_t)ccount);
+				incrementScansCompleted();
+				m_errno = ECORRUPTDATA;
+				m_hadCorruption = true;
+				//m_maxRetries = 0;
+				break;
+			}
 		}
 
 		////////
