@@ -17,7 +17,8 @@
 #include "Wiki.h"
 #include "RdbList.h"
 #include "Process.h"
-
+#include "GbMutex.h"
+#include "ScopedLock.h"
 
 Query::Query ( ) {
 	constructor();
@@ -2566,6 +2567,7 @@ int32_t Query::getWordNum ( int64_t wordId ) {
 
 static HashTableX s_table;
 static bool       s_isInitialized = false;
+static GbMutex    s_tableMutex;
 
 // 3rd field = m_hasColon
 struct QueryField g_fields[] = {
@@ -3077,6 +3079,7 @@ int32_t getNumFieldCodes ( ) {
 
 static bool initFieldTable(){
 
+	ScopedLock sl(s_tableMutex);
 	if ( ! s_isInitialized ) {
 		// set up the hash table
 		if ( ! s_table.set ( 8 , 4 , 255,NULL,0,false,0,"qryfldtbl" ) ) {
