@@ -7,6 +7,8 @@
 #include "HashTableX.h"
 #include "Conf.h"
 #include "hash.h"
+#include "GbMutex.h"
+#include "ScopedLock.h"
 
 typedef struct {
     const char *name;
@@ -834,14 +836,17 @@ static const IANACharset s_charsets[] = {
 
 static HashTableX s_table;
 static bool       s_isInitialized = false;
+static GbMutex    s_tableMutex;
 
 void reset_iana_charset ( ) {
+	ScopedLock sl(s_tableMutex);
 	s_table.reset();
 }
 
 // Slightly modified from getTextEntity
 int16_t get_iana_charset(const char *cs, int len)
 {
+	ScopedLock sl(s_tableMutex);
     if (!s_isInitialized){
 	// set up the hash table
 	if ( ! s_table.set ( 8,4,4096,NULL,0,false,0,"ianatbl") ) {
@@ -864,6 +869,7 @@ int16_t get_iana_charset(const char *cs, int len)
 	g_conf.m_useQuickpoll = saved;
 	s_isInitialized = true;
     }
+    sl.unlock();
     int64_t h = hash64Lower_a ( cs , len );
     // get the entity index from table (stored in the score field)
     int32_t i = (int32_t) s_table.getScore ( &h );
