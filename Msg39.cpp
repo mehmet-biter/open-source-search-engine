@@ -910,9 +910,6 @@ bool Msg39::gotClusterRecs ( ) {
 				  2                  , // maxdocidsperhostname
 				  m_msg39req->m_doSiteClustering,
 				  m_msg39req->m_familyFilter,
-				  // turn this off, not needed now that
-				  // we have the langid in every posdb key
-				  0,//m_msg39req->m_language         ,
 				  m_debug          ,
 				  m_clusterLevels    )) {
 		m_errno = g_errno;
