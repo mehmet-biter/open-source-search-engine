@@ -14103,10 +14103,10 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	if ( oldList ) {
 		// point to start of the old meta list, the first and only
 		// record in the oldList
-		char *om = oldList;// + 12 + 4;
+		char *om = oldList;
 
 		// the size
-		int32_t osize = oldListSize;//*(int32_t *)(oldList + 12);
+		int32_t osize = oldListSize;
 
 		// the end
 		char *omend = om + osize;
@@ -14122,13 +14122,13 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		for ( char *p = om ; p < omend ; ) {
 			// breathe
 			QUICKPOLL(m_niceness);
+
 			// save this
 			char byte = *p;
-			// save this
 			char *rec = p;
+
 			// get the rdbid for this rec
 			char rdbId = byte & 0x7f;
-			// skip that
 			p++;
 
 			// get the key size
@@ -14147,37 +14147,22 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 			// version of this key back (add 1 for rdbId)
 			needx += ks + 1;
 
-			// always re-add titledb record!
-			// if our current/new list is basically empty
-			// except for a SpiderReply because it got deleted
-			// from the index, we need to store the titledb key
-			// in dt8 so we can add it as a negative! so i
-			// don't really know what this was trying to fix
-			// because it broke that!
-			//if ( rdbId == RDB_TITLEDB ) continue;
 			// for linkdb, sometimes we also add a "lost" link
 			// key in addition to deleting the old key! see below
-			if ( rdbId == RDB_LINKDB ) {
+			if (rdbId == RDB_LINKDB) {
 				needx += ks + 1;
 			}
 
 			// do not add it if datasize > 0
-			uint64_t hk;
-
 			// do not include discovery or lost dates in the linkdb key...
-			if ( rdbId == RDB_LINKDB ) {
-				hk = hash64(k + 12, ks - 12);
-			} else {
-				hk = hash64(k, ks);
-			}
+			uint64_t hk = (rdbId == RDB_LINKDB) ? hash64(k + 12, ks - 12) : hash64(k, ks);
 
 			// sanity check
-			if ( rdbId == RDB_LINKDB &&
-			     g_linkdb.getLinkerDocId_uk((key224_t *)k)!=
-			     m_docId ) {
-				g_process.shutdownAbort(true); }
+			if (rdbId == RDB_LINKDB && g_linkdb.getLinkerDocId_uk((key224_t *)k) != m_docId) {
+				g_process.shutdownAbort(true);
+			}
 
-			if( g_conf.m_noInMemoryPosdbMerge && rdbId == RDB_POSDB ) {
+			if (g_conf.m_noInMemoryPosdbMerge && rdbId == RDB_POSDB) {
 				// NEW 20160803.
 				// Do not store records for POSDB in the hash table of old
 				// values. This makes sure that no delete records are
@@ -14186,7 +14171,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 				continue;
 			}
 
-			if ( ! dt8.addKey(&hk,&rec) ) {
+			if (!dt8.addKey(&hk, &rec)) {
 				logTrace( g_conf.m_logTraceXmlDoc, "addKey failed" );
 				return NULL;
 			}
@@ -14195,88 +14180,88 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		// also need all the new keys just to be sure, in case none
 		// are already in the rdbs
 		needx += (m_p - m_metaList);
+
 		// now alloc for our new manicured metalist
-		char *nm = (char *)mmalloc( needx, "newmeta" );
-		if ( ! nm ) {
-			logTrace( g_conf.m_logTraceXmlDoc, "mmalloc failed" );
+		char *nm = (char *)mmalloc(needx, "newmeta");
+		if (!nm) {
+			logTrace(g_conf.m_logTraceXmlDoc, "mmalloc failed");
 			return NULL;
 		}
 
 		char *nptr = nm;
 		char *nmax = nm + needx;
+
 		// scan each rec in the current meta list, see if its in either
 		// the dt12 or dt16 hash table, if it already is, then
 		// do NOT add it to the new metalist, nm, because there is
 		// no need to.
 		char *p    = m_metaList;
 		char *pend = p + (m_p - m_metaList);
-		for ( ; p < pend ; ) {
+		for (; p < pend;) {
 			// breathe
 			QUICKPOLL(m_niceness);
+
 			// save it with the flag
 			char byte = *p;
+
 			// get rdbId
 			char rdbId = byte & 0x7f;
-			// skip that
 			p++;
+
 			// key size
 			int32_t ks = getKeySizeFromRdbId(rdbId);
+
 			// get key
 			char *key = p;
-			// skip that
 			p += ks;
+
 			// get data size
 			int32_t ds = getDataSizeFromRdbId(rdbId);
+
 			// assume we do not store the datasize
 			bool neg = false;
+
 			// . if key is negative, no data is present
 			// . the doledb key is negative for us here
-			if ( (key[0] & 0x01) == 0x00 ) { neg = true; ds = 0; }
+			if ((key[0] & 0x01) == 0x00) {
+				neg = true;
+				ds = 0;
+			}
+
 			// if datasize variable, read it in
-			if ( ds == -1 ) {
+			if (ds == -1) {
 				// get data size
 				ds = *(int32_t *)p;
+
 				// skip data size int32_t
 				p += 4;
 			}
+
 			// point to data
 			char *data = p;
+
 			// skip data if not zero
 			p += ds;
 
 			// mix it up for hashtable speed
-			uint64_t hk ;//= hash64 ( key,ks);
-
 			// skip if for linkdb, we do that below
-			if ( rdbId == RDB_LINKDB )
-				hk = hash64(key+12,ks-12);
-			else
-				hk = hash64(key,ks);
+			uint64_t hk = (rdbId == RDB_LINKDB) ? hash64(key + 12, ks - 12) : hash64(key, ks);
 
 			// was this key already in the "old" list?
 			int32_t slot = dt8.getSlot(&hk);
 
-			// do we got a linkdb key that existed last time
-			// we indexed this doc? if so, inherit its discovery
-			// date.
-			if ( slot >= 0 && rdbId == RDB_LINKDB ) {
-				// . no need to deal with this any further
-				// . yeah, because there could be dups!
-				//   so don't delete it just yet
-				// . but make the data ptr NULL so we
-				//   know to disregard it below...???
-				dt8.removeSlot(slot);
-				// all done for this key
-				continue;
-			}
-
 			// see if already in an rdb, IFF dataless, otherwise
 			// the keys might be the same but with different data!
-			if ( slot >= 0 ) { // dt8.isInTable(&hk) ) {
+			if (slot >= 0) {
 				// remove from hashtable so we do not add it
 				// as a delete key below
-				// dt8.removeKey(&hk);
 				dt8.removeSlot(slot);
+
+				if (rdbId == RDB_LINKDB) {
+					// all done for this key
+					continue;
+				}
+
 				// but do add like a titledb rec that has the
 				// same key, because its data is probably
 				// different...
@@ -14284,71 +14269,96 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 				// the url:www.geico.com term somehow!!!
 				// geico got deleted but not the title rec!!
 				// MAKE SURE TITLEREC gets deleted then!!!
-				if ( ds==0 && g_conf.m_doIncrementalUpdating )
+				if (ds == 0 && g_conf.m_doIncrementalUpdating) {
 					continue;
+				}
 			}
+
 			// ok, it is not already in an rdb, so add it
 			*nptr++ = byte;
+
 			// store key
 			gbmemcpy ( nptr, key , ks );
+
 			// skip over it
 			nptr += ks;
+
 			// store data size. BUT not if negative key!
-			if ( getDataSizeFromRdbId(rdbId) == -1 && ! neg ) {
+			if (getDataSizeFromRdbId(rdbId) == -1 && !neg) {
 				*(int32_t *)nptr = ds;
 				nptr += 4;
 			}
+
 			// store data
-			if ( ds ) {
-				gbmemcpy ( nptr , data , ds );
+			if (ds) {
+				gbmemcpy (nptr, data, ds);
 				nptr += ds;
 			}
 		}
+
 		// now scan dt8 and add their keys as del keys
 		for ( int32_t i = 0 ; i < dt8.m_numSlots ; i++ ) {
 			// breathe
 			QUICKPOLL(m_niceness);
+
 			// skip if empty
-			if ( ! dt8.m_flags[i] ) continue;
+			if (!dt8.m_flags[i]) {
+				continue;
+			}
+
 			// store rdbid first
 			char *rec = *(char **)dt8.getValueFromSlot(i);
+
 			// get rdbId with hi bit possibly set
 			char rdbId = rec[0] & 0x7f;
+
 			// key size
 			int32_t ks = getKeySizeFromRdbId(rdbId);
+
 			// sanity test - no negative keys
-			if ( (rec[1] & 0x01) == 0x00 ) { g_process.shutdownAbort(true);}
+			if ((rec[1] & 0x01) == 0x00) {
+				g_process.shutdownAbort(true);
+			}
+
 			// copy the rdbId byte and key
 			gbmemcpy ( nptr , rec , 1 + ks );
+
 			// skip over rdbid
 			nptr++;
+
 			// make it a negative key by clearing lsb
 			*nptr = *nptr & 0xfe;
+
 			// skip it
 			nptr += ks;
+
 			// if it is from linkdb, and unmet, then it is a
 			// lost link, so set the lost date of it. we keep
 			// these so we can graph lost links
 			if ( rdbId == RDB_LINKDB ) {
 				// the real linkdb rec is at rec+1
 				int32_t lost = g_linkdb.getLostDate_uk( rec+1 );
+
 				// how can it be non-zero? it should have
 				// been freshly made from the old titlerec...
-				if ( lost ) { g_process.shutdownAbort(true); }
-				// if zero, set it to now!
-				//g_linkdb.setLostDate_uk(realRec,now);
+				if (lost) {
+					g_process.shutdownAbort(true);
+				}
+
 				// copy the rdbId byte and key
 				gbmemcpy ( nptr , rec , 1 + ks );
+
 				// set it in there now
 				g_linkdb.setLostDate_uk(nptr+1,now);
+
 				// carry it through on revdb, do not delete
 				// it! we want a linkdb history for seomasters
 				nptr += 1 + ks;
+
 				// and go on to delete the old linkdb key that
 				// did not have a lost date
 				//continue;
 			}
-
 		}
 		// sanity. check for metalist breach
 		if ( nptr > nmax ) { g_process.shutdownAbort(true); }
@@ -14380,7 +14390,8 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	m_metaListValid = true;
 
 	// set the list size, different from the alloc size
-	m_metaListSize = m_p - m_metaList;//end - m_p;
+	m_metaListSize = m_p - m_metaList;
+
 	// sanity check
 	verifyMetaList( m_metaList , m_metaList + m_metaListSize , forDelete );
 
