@@ -935,47 +935,40 @@ void Msg39::getClusterRecs ( ) {
 
 
 // return false and set g_errno on error
-bool Msg39::gotClusterRecs ( ) {
+bool Msg39::gotClusterRecs() {
+	if(!m_gotClusterRecs)
+		return true; //nothing to do
 
-	if ( ! m_gotClusterRecs ) return true;
-
-	// now tell msg5 to set the cluster levels
-	if ( ! setClusterLevels ( m_clusterRecs      ,
-				  m_clusterDocIds    ,
-				  m_numClusterDocIds ,
-				  2                  , // maxdocidsperhostname
-				  m_msg39req->m_doSiteClustering,
-				  m_msg39req->m_familyFilter,
-				  // turn this off, not needed now that
-				  // we have the langid in every posdb key
-				  0,//m_msg39req->m_language         ,
-				  m_debug          ,
-				  m_clusterLevels    )) {
+	if(!setClusterLevels(m_clusterRecs,
+			     m_clusterDocIds,
+			     m_numClusterDocIds,
+			     2,  // maxdocidsperhostname (todo: configurable)
+			     m_msg39req->m_doSiteClustering,
+			     m_msg39req->m_familyFilter,
+			     m_debug,
+			     m_clusterLevels))
+	{
 		m_errno = g_errno;
-		// send back an error reply
-		//sendReply ( m_slot , this , NULL , 0 , 0 ,true);
 		return false;
 	}
 
-	// count this
 	m_numVisible = 0;
 
 	// now put the info back into the top tree
 	int32_t nd = 0;
-	for ( int32_t ti = m_toptree.getHighNode();
-	      ti >= 0;
-	      ti = m_toptree.getPrev(ti) , nd++ ) {
+	for(int32_t ti = m_toptree.getHighNode();
+	    ti >= 0;
+	    ti = m_toptree.getPrev(ti) , nd++ ) {
 		// get the guy
 		TopNode *t = &m_toptree.m_nodes[ti];
-		// get the docid
-		//int64_t  docId = getDocIdFromPtr(t->m_docIdPtr);
 		// sanity check
-		if ( t->m_docId != m_clusterDocIds[nd] ) gbshutdownLogicError();
+		if(t->m_docId!=m_clusterDocIds[nd]) gbshutdownLogicError();
 		// set it
 		t->m_clusterLevel = m_clusterLevels[nd];
 		t->m_clusterRec   = m_clusterRecs  [nd];
 		// visible?
-		if ( t->m_clusterLevel == CR_OK ) m_numVisible++;
+		if(t->m_clusterLevel==CR_OK)
+			m_numVisible++;
 	}
 
 	log(LOG_DEBUG,"query: msg39: %" PRId32" docids out of %" PRId32" are visible",
@@ -985,9 +978,8 @@ bool Msg39::gotClusterRecs ( ) {
 	mfree ( m_buf , m_bufSize , "Msg39cluster");
 	m_buf = NULL;
 
-	// finish up and send back the reply
 	return true;
-}	
+}
 
 
 void Msg39::estimateHitsAndSendReply(double pctSearched) {

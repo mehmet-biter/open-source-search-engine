@@ -72,7 +72,6 @@ bool setClusterLevels ( const key_t   *clusterRecs,
 			int32_t       maxDocIdsPerHostname ,
 			bool       doHostnameClustering ,
 			bool       familyFilter         ,
-			char       langFilter           ,
 			bool       isDebug              ,
 			// output to clusterLevels[]
 			char      *clusterLevels        );

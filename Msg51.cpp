@@ -478,7 +478,6 @@ bool setClusterLevels ( const key_t   *clusterRecs,
 			int32_t       maxDocIdsPerHostname ,
 			bool       doHostnameClustering ,
 			bool       familyFilter         ,
-			char       langFilter           ,
 			bool       isDebug              ,
 			// output to clusterLevels[]
 			char    *clusterLevels        ) {
@@ -486,7 +485,7 @@ bool setClusterLevels ( const key_t   *clusterRecs,
 	if ( numRecs <= 0 ) return true;
 
 	// skip if not clustering on anything
-	//if ( ! doHostnameClustering && ! familyFilter && langFilter <= 0 ) {
+	//if ( ! doHostnameClustering && ! familyFilter ) {
 	//	memset ( clusterLevels, CR_OK, numRecs );
 	//	return true;
 	//}
@@ -525,11 +524,6 @@ bool setClusterLevels ( const key_t   *clusterRecs,
 		// and the adult bit, for cleaning the results
 		if ( familyFilter && g_clusterdb.hasAdultContent ( crec ) ) {
 			*level = CR_DIRTY;
-			continue;
-		}
-		// and the lang filter
-		if ( langFilter > 0 && g_clusterdb.getLanguage( crec )!= langFilter ) {
-			*level = CR_WRONG_LANG;
 			continue;
 		}
 		// if error looking up in clusterdb, use a 8 bit domainhash from docid
