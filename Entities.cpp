@@ -4,11 +4,13 @@
 #include "Unicode.h"
 #include "HashTableX.h"
 #include "Process.h"
-
+#include "GbMutex.h"
+#include "ScopedLock.h"
 
 
 static HashTableX s_table;
 static bool       s_isInitialized = false;
+static GbMutex    s_tableMutex;
 struct Entity {
 	const char     *entity;        //entity name with leading ampersand but without trailing semicolon, like "&nbsp"
 	int             codepoints;    //number of unicode codepoitns this entity translates to
@@ -25,6 +27,7 @@ void resetEntities ( ) {
 }
 
 static bool initEntityTable(){
+	ScopedLock sl(s_tableMutex);
 	if ( ! s_isInitialized ) {
 		// set up the hash table
 		if ( ! s_table.set ( 8,4,4096,NULL,0,false,0,"enttbl" ) ) {
