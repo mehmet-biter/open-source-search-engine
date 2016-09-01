@@ -41,7 +41,7 @@ const char * const g_crStrings[] = {
 	"ruleset filtered"       ,
 	"end -- do not use"      
 };
-	
+
 RdbCache s_clusterdbQuickCache;
 static bool     s_cacheInit = false;
 
@@ -76,24 +76,24 @@ bool Msg51::getClusterRecs ( const int64_t     *docIds,
 			     char          *clusterLevels            ,
 			     key_t         *clusterRecs              ,
 			     int32_t           numDocIds                ,
-			     //char          *coll                     ,
 			     collnum_t collnum ,
 			     int32_t           maxCacheAge              ,
 			     bool           addToCache               ,
 			     void          *state                    ,
 			     void        (* callback)( void *state ) ,
-			     // blacklisted sites
 			     int32_t           niceness                 ,
 			     // output
-			     bool           isDebug                  ) {
+			     bool           isDebug                  )
+{
 	verify_signature();
-	// reset this msg
-	reset();
 	// warning
 	if ( collnum < 0 ) log(LOG_LOGIC,"net: NULL collection. msg51.");
+
+	// reset this msg
+	reset();
+
 	// get the collection rec
 	CollectionRec *cr = g_collectiondb.getRec ( collnum );
-	// return true on error, g_errno should already be set
 	if ( ! cr ) {
 		log("db: msg51. Collection rec null for collnum %" PRId32".",
 		    (int32_t)collnum);
@@ -105,8 +105,6 @@ bool Msg51::getClusterRecs ( const int64_t     *docIds,
 	m_addToCache    = addToCache;
 	m_state         = state;
 	m_callback      = callback;
-	//m_coll          = coll;
-	//m_collLen       = strlen(coll);
 	m_collnum = collnum;
 	// these are storage for the requester
 	m_docIds        = docIds;
@@ -118,19 +116,10 @@ bool Msg51::getClusterRecs ( const int64_t     *docIds,
 	// bail if none to do
 	if ( m_numDocIds <= 0 ) return true;
 
-	// . we do like 15 sends at a time
-	// . we are often called multiple times have list of docids
-	//   is grown, so don't redo the ones we've already done
 	m_nexti      = 0;
 	// for i/o mostly
 	m_niceness   = niceness;
 	m_errno      = 0;
-	// caching info
-	m_maxCacheAge = maxCacheAge;
-	m_addToCache  = addToCache;
-
-	// alloc cluster rec buf if none given
-	m_clusterRecs = clusterRecs;
 
 	// reset these
 	m_numRequests = 0;
