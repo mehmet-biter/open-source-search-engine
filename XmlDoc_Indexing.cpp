@@ -964,9 +964,6 @@ bool XmlDoc::hashLinks ( HashTableX *tt ) {
 			}
 		}
 
-		// breathe
-		QUICKPOLL(m_niceness);
-
 		// dedup this crap
 		int64_t h = hash64 ( link.getUrl(), link.getUrlLen() );
 		if ( dedup.isInTable ( &h ) ) continue;
@@ -994,9 +991,6 @@ bool XmlDoc::hashLinks ( HashTableX *tt ) {
 		if ( ! hashSingleTerm ( link.getHost(),link.getHostLen(),&hi)) {
 			return false;
 		}
-
-		// breathe
-		QUICKPOLL(m_niceness);
 	}
 
 	return true;
@@ -1041,8 +1035,6 @@ bool XmlDoc::hashLinksForLinkdb ( HashTableX *dt ) {
 
 	// add in new links
 	for ( int32_t i = 0 ; i < m_links.m_numLinks ; i++ ) {
-		// give up control
-		QUICKPOLL ( m_niceness );
 		// skip if empty
 		if ( m_links.m_linkLens[i] == 0 ) continue;
 		// . skip if spam, ALWAYS allow internal outlinks though!!
@@ -2219,8 +2211,6 @@ bool XmlDoc::hashWords3( HashInfo *hi, const Words *words, Phrases *phrases, Sec
 
 	int32_t i;
 	for ( i = 0 ; i < nw ; i++ ) {
-		// breathe
-		QUICKPOLL(niceness);
 		if ( ! wids[i] ) continue;
 		// ignore if in repeated fragment
 		if ( fragVec && i<MAXFRAGWORDS && fragVec[i] == 0 ) continue;
@@ -2814,7 +2804,6 @@ char *XmlDoc::hashJSONFields2 ( HashTableX *table ,
 	//int32_t totalHash32 = 0;
 
 	for ( ; ji ; ji = ji->m_next ) {
-		QUICKPOLL(m_niceness);
 		// skip if not number or string
 		if ( ji->m_type != JT_NUMBER && ji->m_type != JT_STRING )
 			continue;
