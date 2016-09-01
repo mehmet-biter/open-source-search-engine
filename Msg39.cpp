@@ -134,7 +134,8 @@ bool Msg39::registerHandler ( ) {
 
 
 Msg39::Msg39 ()
-  : m_lists(NULL)
+  : m_lists(NULL),
+    m_clusterBuf(NULL)
 {
 	m_inUse = false;
 	reset();
@@ -154,6 +155,10 @@ void Msg39::reset() {
 	m_numTotalHits = 0;
 	m_gotClusterRecs = 0;
 	reset2();
+	if(m_clusterBuf) {
+		mfree ( m_clusterBuf, m_clusterBufSize, "Msg39cluster");
+		m_clusterBuf = NULL;
+	}
 }
 
 
@@ -867,10 +872,10 @@ void Msg39::getClusterRecs ( ) {
 	// make buf for arrays of the docids, cluster levels and cluster recs
 	int32_t nodeSize  = 8 + 1 + 12;
 	int32_t numDocIds = m_toptree.m_numUsedNodes;
-	m_bufSize = numDocIds * nodeSize;
-	m_buf = (char *)mmalloc ( m_bufSize , "Msg39docids" );
+	m_clusterBufSize = numDocIds * nodeSize;
+	m_clusterBuf = (char *)mmalloc(m_clusterBufSize, "Msg39cluster");
 	// on error, return true, g_errno should be set
-	if ( ! m_buf ) { 
+	if ( ! m_clusterBuf ) {
 		log("query: msg39: Failed to alloc buf for clustering.");
 		sendReply(m_slot,this,NULL,0,0,true);
 		return;
@@ -880,13 +885,13 @@ void Msg39::getClusterRecs ( ) {
 	m_gotClusterRecs = true;
 
 	// parse out the buf
-	char *p = m_buf;
+	char *p = m_clusterBuf;
 	// docIds
 	m_clusterDocIds = (int64_t *)p; p += numDocIds * 8;
 	m_clusterLevels = (char      *)p; p += numDocIds * 1;
 	m_clusterRecs   = (key_t     *)p; p += numDocIds * 12;
 	// sanity check
-	if ( p > m_buf + m_bufSize ) gbshutdownLogicError();
+	if ( p > m_clusterBuf + m_clusterBufSize ) gbshutdownLogicError();
 	
 	// loop over all results
 	int32_t nd = 0;
@@ -974,9 +979,9 @@ bool Msg39::gotClusterRecs() {
 	log(LOG_DEBUG,"query: msg39: %" PRId32" docids out of %" PRId32" are visible",
 	    m_numVisible,nd);
 
-	// free this junk now
-	mfree ( m_buf , m_bufSize , "Msg39cluster");
-	m_buf = NULL;
+	// we don't need this anymore
+	mfree ( m_clusterBuf, m_clusterBufSize, "Msg39cluster");
+	m_clusterBuf = NULL;
 
 	return true;
 }
