@@ -1134,7 +1134,7 @@ void Msg5::mergeLists() {
 	//   Rdb::addRecord() NOT to do the annihilation, therefore it's good
 	//   to do the merge to do the annihilation
 	//else
-	m_list->merge_r ( m_listPtrs, m_numListPtrs, m_startKey, m_minEndKey, m_minRecSizes, m_removeNegRecs, m_rdbId, niceness );
+	m_list->merge_r(m_listPtrs, m_numListPtrs, m_startKey, m_minEndKey, m_minRecSizes, m_removeNegRecs, m_rdbId);
 	m_list->resetListPtr(); //merge_r() doesn't rewind the list iterator/pointer (?)
 	
 	// maintain this info for truncation purposes
