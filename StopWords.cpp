@@ -141,6 +141,7 @@ static const char * const s_stopWords[] = {
 };
 static HashTableX s_stopWordTable;
 static bool       s_stopWordsInitialized = false;
+static GbMutex    s_stopWordTableMutex;
 
 bool initWordTable( HashTableX *table, const char * const words[], const char *label ) {
 	// count them
@@ -164,6 +165,7 @@ bool initWordTable( HashTableX *table, const char * const words[], const char *l
 }
 
 bool isStopWord ( const char *s , int32_t len , int64_t h ) {
+	ScopedLock sl(s_stopWordTableMutex);
 	if ( ! s_stopWordsInitialized ) {
 		s_stopWordsInitialized = 
 			initWordTable(&s_stopWordTable, s_stopWords, 
@@ -171,6 +173,7 @@ bool isStopWord ( const char *s , int32_t len , int64_t h ) {
 				      "stopwords");
 		if (!s_stopWordsInitialized) return false;
 	} 
+	sl.unlock();
 
 	// . all 1 char letter words are stop words
 	// . good for initials and some contractions
@@ -1980,6 +1983,7 @@ static const char *s_queryStopWordsGerman[] = {
 
 static HashTableX s_queryStopWordTables[MAXLANGID+1];
 static bool       s_queryStopWordsInitialized = false;
+static GbMutex    s_queryStopWordsMutex;
 
 static const char * const * s_queryStopWords2[MAXLANGID+1];
 
@@ -1987,6 +1991,7 @@ bool isQueryStopWord ( const char *s , int32_t len , int64_t h , int32_t langId 
 
 	// include a bunch of foreign prepositions so they don't get required
 	// by the bitScores in IndexTable.cpp
+	ScopedLock sl(s_queryStopWordsMutex);
 	if ( ! s_queryStopWordsInitialized ) {
 		// reset these
 		for ( int32_t i = 0 ; i <= MAXLANGID ; i++ )
@@ -2008,6 +2013,7 @@ bool isQueryStopWord ( const char *s , int32_t len , int64_t h , int32_t langId 
 		}
 		s_queryStopWordsInitialized = true;
 	} 
+	sl.unlock();
 
 	// . all 1 char letter words are stop words
 	// . good for initials and some contractions
