@@ -14,6 +14,8 @@
 #include "HashTable.h"
 #include "AdultCheck.h"
 #include "Process.h"
+#include "GbMutex.h"
+#include "ScopedLock.h"
 
 
 // increasing this doesn't seem to improve performance any on a single
@@ -1991,6 +1993,8 @@ static const char * const s_subDoms[] = {
 };
 static HashTable  s_subDomTable;
 static bool       s_subDomInitialized = false;
+static GbMutex    s_subDomTableMutex;
+
 static bool initSubDomTable(HashTable *table, const char * const words[], int32_t size ){
 	// set up the hash table
 	if ( ! table->set ( size * 2 ) ) {
@@ -2014,12 +2018,14 @@ static bool initSubDomTable(HashTable *table, const char * const words[], int32_
 }
 
 static bool isSubDom(char *s , int32_t len) {
+	ScopedLock sl(s_subDomTableMutex);
 	if ( ! s_subDomInitialized ) {
 		s_subDomInitialized = 
 			initSubDomTable(&s_subDomTable, s_subDoms, 
 				      sizeof(s_subDoms));
 		if (!s_subDomInitialized) return false;
 	} 
+	sl.unlock();
 
 	// get from table
         int32_t h = hash32Lower_a(s, len);
