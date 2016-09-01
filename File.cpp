@@ -923,6 +923,7 @@ bool File::unlink() {
 
 // called by File::open() when it's found out that we're not initialized.
 bool File::initialize ( ) {
+	ScopedLock sl(s_mtx);
 
 	if ( s_isInitialized ) return true;
 
