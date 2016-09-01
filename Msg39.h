@@ -187,8 +187,8 @@ private:
 
 	int64_t  m_numTotalHits;
 
-	int32_t        m_bufSize;
-	char       *m_buf;
+	int32_t        m_clusterBufSize;
+	char       *m_clusterBuf;
 	int64_t  *m_clusterDocIds;
 	char       *m_clusterLevels;
 	key_t      *m_clusterRecs;
