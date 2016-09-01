@@ -14104,17 +14104,19 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		// point to start of the old meta list, the first and only
 		// record in the oldList
 		char *om = oldList;// + 12 + 4;
+
 		// the size
 		int32_t osize = oldListSize;//*(int32_t *)(oldList + 12);
+
 		// the end
 		char *omend = om + osize;
 		int32_t needx = 0;
 
 		HashTableX dt8;
 		char dbuf8[34900];
+
 		// value is the ptr to the rdbId/key in the oldList
-		dt8.set ( 8,sizeof(char *),2048,dbuf8,34900,
-			  false,m_niceness,"dt8-tab");
+		dt8.set(8, sizeof(char *), 2048, dbuf8, 34900, false, m_niceness, "dt8-tab");
 
 		// scan recs in that and hash them
 		for ( char *p = om ; p < omend ; ) {
@@ -14128,18 +14130,23 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 			char rdbId = byte & 0x7f;
 			// skip that
 			p++;
+
 			// get the key size
 			int32_t ks = getKeySizeFromRdbId ( rdbId );
+
 			// get that
 			char *k = p;
+
 			// unlike a real meta list, this meta list has
 			// no data field, just rdbIds and keys only! because
 			// we only use it for deleting, which only requires
 			// a key and not the data
 			p += ks;
+
 			// tally this up in case we have to add the delete
 			// version of this key back (add 1 for rdbId)
 			needx += ks + 1;
+
 			// always re-add titledb record!
 			// if our current/new list is basically empty
 			// except for a SpiderReply because it got deleted
@@ -14150,15 +14157,20 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 			//if ( rdbId == RDB_TITLEDB ) continue;
 			// for linkdb, sometimes we also add a "lost" link
 			// key in addition to deleting the old key! see below
-			if ( rdbId == RDB_LINKDB ) needx += ks + 1;
+			if ( rdbId == RDB_LINKDB ) {
+				needx += ks + 1;
+			}
+
 			// do not add it if datasize > 0
 			uint64_t hk;
-			// do not include discovery or lost dates in the
-			// linkdb key...
-			if ( rdbId == RDB_LINKDB )
-				hk = hash64 (k+12,ks-12);
-			else
-				hk = hash64 (k,ks);
+
+			// do not include discovery or lost dates in the linkdb key...
+			if ( rdbId == RDB_LINKDB ) {
+				hk = hash64(k + 12, ks - 12);
+			} else {
+				hk = hash64(k, ks);
+			}
+
 			// sanity check
 			if ( rdbId == RDB_LINKDB &&
 			     g_linkdb.getLinkerDocId_uk((key224_t *)k)!=
@@ -14168,8 +14180,8 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 			if( g_conf.m_noInMemoryPosdbMerge && rdbId == RDB_POSDB ) {
 				// NEW 20160803.
 				// Do not store records for POSDB in the hash table of old
-				// values. This makes sure that no delete records are 
-				// stored in posdb for existing terms, which is needed for 
+				// values. This makes sure that no delete records are
+				// stored in posdb for existing terms, which is needed for
 				// the new no-merge feature.
 				continue;
 			}
@@ -14179,13 +14191,13 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 				return NULL;
 			}
 		}
+
 		// also need all the new keys just to be sure, in case none
 		// are already in the rdbs
 		needx += (m_p - m_metaList);
 		// now alloc for our new manicured metalist
 		char *nm = (char *)mmalloc( needx, "newmeta" );
-		if ( ! nm )
-		{
+		if ( ! nm ) {
 			logTrace( g_conf.m_logTraceXmlDoc, "mmalloc failed" );
 			return NULL;
 		}
