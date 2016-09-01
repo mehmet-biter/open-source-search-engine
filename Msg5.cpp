@@ -1095,14 +1095,10 @@ void Msg5::repairLists() {
 }
 
 void Msg5::mergeLists() {
-
 	// . don't do any merge if this is true
 	// . if our fetch of remote list fails, then we'll be called
 	//   again with this set to false
 	if ( m_hadCorruption ) return;
-
-	// start the timer
-	//int64_t startTime = gettimeofdayInMilliseconds();
 
 	// . if the key of the last key of the previous list we read from
 	//   is not below startKey, reset the truncation count to avoid errors
@@ -1110,10 +1106,6 @@ void Msg5::mergeLists() {
 	//   we would do a truncation in error eventually
 	// . use m_fileStartKey, not just m_startKey, since we may be doing
 	//   a follow-up read
-
-	int32_t niceness = m_niceness;
-	if ( niceness > 0  ) niceness = 2;
-	if ( m_isRealMerge ) niceness = 1;
 
 	// . old Msg3 notes:
 	// . otherwise, merge the lists together
