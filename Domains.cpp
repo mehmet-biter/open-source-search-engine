@@ -3,6 +3,8 @@
 #include "HashTableX.h"
 #include "Domains.h"
 #include "Mem.h"
+#include "GbMutex.h"
+#include "ScopedLock.h"
 
 static bool isTLD ( const char *tld, int32_t tldLen );
 
@@ -102,6 +104,8 @@ const char* getPrivacoreBlacklistedTLD() {
 
 //static TermTable  s_table(false);
 static HashTableX s_table;
+static bool       s_isInitialized = false;
+static GbMutex    s_tableMutex;
 static bool isTLD ( const char *tld , int32_t tldLen ) {
 
 	int32_t pcount = 0;
@@ -117,8 +121,6 @@ static bool isTLD ( const char *tld , int32_t tldLen ) {
 
 	// otherwise, if one period, check table to see if qualified
 
-	// we use this as our hashtable
-	static bool       s_isInitialized = false;
 	// . i shrunk this list a lot
 	// . see backups for the hold list
 	static const char * const s_tlds[] = {
@@ -1871,6 +1873,7 @@ static bool isTLD ( const char *tld , int32_t tldLen ) {
 	"ZJ.CN"
 };
 
+	ScopedLock sl(s_tableMutex);
 	if ( ! s_isInitialized ) {
 		// set up the hash table
 		if ( ! s_table.set ( 8 , 0, sizeof(s_tlds)*2,NULL,0,false,0, "tldtbl") ) {
@@ -1891,6 +1894,7 @@ static bool isTLD ( const char *tld , int32_t tldLen ) {
 		}
 		s_isInitialized = true;
 	} 
+	sl.unlock();
 	int64_t h = hash64Lower_a ( tld , tldLen ); // strlen(tld));
 	return s_table.isInTable ( &h );//getScoreFromTermId ( h );
 }		
