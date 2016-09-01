@@ -119,9 +119,6 @@ bool Msg51::getClusterRecs ( const int64_t     *docIds,
 	// for i/o mostly
 	m_niceness   = niceness;
 	m_errno      = 0;
-	// caching info
-	m_maxCacheAge = maxCacheAge;
-	m_addToCache  = addToCache;
 
 	// alloc cluster rec buf if none given
 	m_clusterRecs = clusterRecs;
