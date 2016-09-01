@@ -1718,14 +1718,16 @@ bool RdbList::posdbConstrain(const char *startKey, char *endKey, int32_t minRecS
 //   so we don't have to do boundary checks on the keys here
 void RdbList::merge_r(RdbList **lists, int32_t numLists, const char *startKey, const char *endKey, int32_t minRecSizes, bool removeNegRecs, char rdbId) {
 	// sanity
-	if ( ! m_ownData ) {
-		log("list: merge_r data not owned");
+	if (!m_ownData) {
+		log(LOG_ERROR, "list: merge_r data not owned");
 		g_process.shutdownAbort(true);
 	}
 
 	// bail if none! i saw a doledb merge do this from Msg5.cpp
 	// and it was causing a core because m_MergeMinListSize was -1
-	if ( numLists == 0 ) return;
+	if (numLists == 0) {
+		return;
+	}
 
 	// save this
 	int32_t startListSize = m_listSize;
@@ -2191,8 +2193,7 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 		// . cheap sanity check
 		if ( (lists[i]->getList()[0]) & 0x06 ) {
 			errno = EBADENGINEER;
-			log(LOG_LOGIC,"db: posdbMerge_r: First key of list is "
-			    "a compressed key.");
+			log(LOG_LOGIC,"db: posdbMerge_r: First key of list is a compressed key.");
 			g_process.shutdownAbort(true);
 		}
 		// set ptrs
@@ -2224,15 +2225,17 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 
 		// merge loop over the lists, get the smallest key
 		for ( int32_t i = 1 ; i < numLists ; i++ ) {
-			char ss = bfcmpPosdb (minPtrBase,minPtrLo,minPtrHi,
-					 ptrs[i],loKeys[i],hiKeys[i]);
+			char ss = bfcmpPosdb(minPtrBase, minPtrLo, minPtrHi, ptrs[i], loKeys[i], hiKeys[i]);
+
 			// . continue if tie, so we get the oldest first
 			// . treat negative and positive keys as identical for this
 			if ( ss <  0 ) continue;
+
 			// advance old winner. this happens if this key is positive
 			// and minPtrBase/Lo/Hi was a negative key! so this is
 			// the annihilation. skip the positive key.
 			if ( ss == 0 ) goto skip;
+
 			// we got a new min
 			minPtrBase = ptrs  [i];
 			minPtrLo   = loKeys[i];
@@ -2292,6 +2295,7 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 		if ( ptrs[mini] < ends[mini] ) {
 			// is new key 6 bytes? then do not touch hi/lo ptrs
 			if ( ptrs[mini][0] & 0x04 ) {
+				// no-op
 			}
 			// is new key 12 bytes?
 			else if ( ptrs[mini][0] & 0x02 ) {
@@ -2325,7 +2329,6 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 	//   they should annihilate in the primary for loop above!! UNLESS
 	//   one list was truncated at the end and we did not get its
 	//   annihilating key... strange, but i guess it could happen...
-
 
 	// set new size and end of this merged list
 	m_listSize = m_listPtr - m_list;
