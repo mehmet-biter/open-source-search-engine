@@ -11,160 +11,129 @@
 #define GB_RDBDUMP_H
 
 #include "BigFile.h"
-#include "Loop.h"
-#include "RdbTree.h"
-#include "RdbBuckets.h"
-#include "RdbMap.h"
-#include "Msg5.h"
+#include "RdbList.h"
 
-
-class RdbCache;
-
+class Rdb;
+class RdbTree;
+class RdbBuckets;
+class RdbMap;
+class RdbIndex;
 
 class RdbDump {
+public:
+    RdbDump() { m_isDumping = false; }
 
- public:
-
-        RdbDump() { m_isDumping = false; }
-
-	void reset ( ) ;
-
-	bool isDumping() const { return m_isDumping; }
+	void reset();
 
 	// . set up for a dump of rdb records to a file
 	// . returns false and sets errno on error
-        bool set  ( //char      *coll          ,
-		   collnum_t collnum ,
-		    BigFile   *file          ,
-		    int32_t       id2           , // in Rdb::m_files[] array
-		    RdbBuckets *buckets      , // optional buckets to dump
-		    RdbTree   *tree          , // optional tree to dump
-		    RdbMap    *map           ,
-		    RdbCache  *cache         , // for caching dumped tree
-		    int32_t       maxBufSize    ,
-		    bool       orderedDump   , // dump in order of keys?
-		    bool       dedup         , // for merging tree into cache
-		    int32_t       niceness      ,
-		    void      *state         ,
-		    void     (* callback ) ( void *state ) ,
-		    bool       useHalfKeys   ,
-		    int64_t  startOffset   ,
-		    const char      *prevLastKey   ,
-		    char       keySize       ,
-		   void *pc ,
-		    int64_t  maxFileSize   ,
-		    class Rdb    *rdb        );
+	bool set(collnum_t collnum,
+	         BigFile *file,
+	         RdbBuckets *buckets, // optional buckets to dump
+	         RdbTree *tree, // optional tree to dump
+	         RdbIndex *treeIndex, // only present if buckets/tree is set
+	         RdbMap *map,
+	         RdbIndex *index,
+	         int32_t maxBufSize,
+	         int32_t niceness,
+	         void *state,
+	         void (*callback )(void *state),
+	         bool useHalfKeys,
+	         int64_t startOffset,
+	         const char *prevLastKey,
+	         char keySize,
+	         Rdb *rdb);
+
+	bool isDumping() const { return m_isDumping; }
+
+	const char *getFirstKeyInQueue() const { return m_firstKeyInQueue; }
+	const char *getLastKeyInQueue() const { return m_lastKeyInQueue; }
 
 	// a niceness of 0 means to block on the dumping
-	int32_t getNiceness() { return m_niceness; }
+	int32_t getNiceness() const { return m_niceness; }
 
+	collnum_t getCollNum() const { return m_collnum; }
+
+	void setSuspended() { m_isSuspended = true; }
+
+	bool dumpList(RdbList *list, int32_t niceness, bool isRecall);
+
+	static void doneWritingWrapper(void *state);
+	static void doneReadingForVerifyWrapper(void *state);
+	static void tryAgainWrapper2(int fd, void *state);
+
+private:
 	// . dump the tree to the file
 	// . returns false if blocked, true otherwise
-	bool dumpTree ( bool recall );
+	bool dumpTree(bool recall);
 
-	bool dumpList ( RdbList *list , int32_t niceness , bool isRecall );
-
-	void doneDumping ( );
-
-	bool doneReadingForVerify ( ) ;
-
-	// . load the table from an RdbFile
-	// . used for saved table recovery
-	// . table must be empty/unused otherwise false will be returned 
-	// . returns true if "filename" does not exist
-	// . overriden in LdbDumper to pass an LdbFile casted as an RdbFile
-	// . this override makes the file's getSlot() return LdbSlots
-	//   which can be appropriately added to an RdbTable or LdbTable
-	bool load ( class Rdb *rdb , int32_t fixedDataSize , BigFile *file , void *pc );
-
-	// . calls the callback specified in set() when done
-	// . errno set to indicate error #, if any
-	void close ( );
-
-	// must be public so wrapper can call it
-	bool writeBuf      ( );
+	void doneDumping();
+	bool doneReadingForVerify();
 
 	// called when we've finished writing an RdbList to the file
-	bool doneDumpingList ( bool addToMap ) ;
-
-	//key_t getFirstKeyInQueue () { return m_firstKeyInQueue; }
-	//key_t getLastKeyInQueue  () { return m_lastKeyInQueue; }
-	char *getFirstKeyInQueue () { return m_firstKeyInQueue; }
-	char *getLastKeyInQueue  () { return m_lastKeyInQueue; }
-
-	// this is called only when dumping TitleRecs
-	bool updateTfndbLoop ( );
-
+	bool doneDumpingList();
 	void continueDumping();
 
-	// private:
-
-	bool      m_isDumping; // true if we're in the middle of dumping
+	bool m_isDumping; // true if we're in the middle of dumping
 
 	// true if the actual write thread is outstanding
-	bool      m_writing;
+	bool m_writing;
 
-	RdbTree     *m_tree          ;
-	RdbBuckets  *m_buckets       ;
-	RdbMap      *m_map           ;
-	RdbCache    *m_cache         ;
-	int32_t         m_maxBufSize    ;
-	bool         m_orderedDump   ;
-	bool         m_dedup         ; // used for merging/adding tree to cache
-	void        *m_state         ;
-	void       (*m_callback)(void *state ) ;
-	int64_t    m_offset        ;
+	RdbTree *m_tree;
+	RdbBuckets *m_buckets;
+	RdbIndex *m_treeIndex;
+	RdbMap *m_map;
+	RdbIndex *m_index;
+	int32_t m_maxBufSize;
+	void *m_state;
 
-	BigFile  *m_file          ;
-	int32_t      m_id2           ; // secondary id of file we are dumping to
-	RdbList  *m_list          ; // holds list to dump
-	RdbList   m_ourList       ; // we use for dumping a tree, point m_list
-	char     *m_buf           ; // points into list
-	char     *m_verifyBuf     ;
-	int32_t      m_verifyBufSize ;
-	int32_t      m_bytesToWrite  ;
-	int32_t      m_bytesWritten  ;
-	char      m_addToMap      ;
+	void (*m_callback)(void *state);
 
-	//key_t     m_firstKeyInQueue;
-	//key_t     m_lastKeyInQueue;
-	char      m_firstKeyInQueue[MAX_KEY_BYTES];
-	char     *m_lastKeyInQueue;
+	int64_t m_offset;
 
-	//key_t     m_prevLastKey   ;
-	char      m_prevLastKey[MAX_KEY_BYTES];
+	BigFile *m_file;
+	RdbList *m_list; // holds list to dump
+	RdbList m_ourList; // we use for dumping a tree, point m_list
+	char *m_buf; // points into list
+	char *m_verifyBuf;
+	int32_t m_verifyBufSize;
+	int32_t m_bytesToWrite;
+	int32_t m_bytesWritten;
 
-	int32_t      m_nextNode      ;
-	//key_t     m_nextKey       ;
-	char      m_nextKey[MAX_KEY_BYTES];
-	bool      m_rolledOver    ; // true if m_nextKey rolls back to 0
+	char m_firstKeyInQueue[MAX_KEY_BYTES];
+	char *m_lastKeyInQueue;
+
+	char m_prevLastKey[MAX_KEY_BYTES];
+
+	int32_t m_nextNode;
+	char m_nextKey[MAX_KEY_BYTES];
+	bool m_rolledOver; // true if m_nextKey rolls back to 0
 
 	// . file descriptor of file #0 in the BigFile
 	// . we're dumping to this guy
-	int       m_fd;
+	int m_fd;
 
 	// we pass this to BigFile::write() to do non-blocking writes
 	FileState m_fstate;
 
 	// a niceness of 0 means the dump will block, otherwise, will not
-	int32_t      m_niceness;
+	int32_t m_niceness;
 
-	bool      m_useHalfKeys;
-	bool      m_hacked;
-	bool      m_hacked12;
+	bool m_useHalfKeys;
+	bool m_hacked;
+	bool m_hacked12;
 
-	int32_t      m_totalPosDumped;
-	int32_t      m_totalNegDumped;
+	int32_t m_totalPosDumped;
+	int32_t m_totalNegDumped;
 
 	// recall info
 	int64_t m_t1;
-	int32_t      m_numPosRecs;
-	int32_t      m_numNegRecs;
+	int32_t m_numPosRecs;
+	int32_t m_numNegRecs;
 
 	// for setting m_rdb->m_needsSave after deleting list from tree
-	class Rdb *m_rdb;
+	Rdb *m_rdb;
 
-	//char      m_coll [ MAX_COLL_LEN + 1 ];
 	collnum_t m_collnum;
 
 	bool m_doCollCheck;
@@ -174,11 +143,6 @@ class RdbDump {
 	bool m_isSuspended;
 
 	char m_ks;
-
-	int32_t m_deduped1;
-	int32_t m_deduped2;
-	int32_t m_deduped3;
-	int32_t m_unforced;
 };
 
 #endif // GB_RDBDUMP_H

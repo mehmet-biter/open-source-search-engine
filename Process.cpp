@@ -310,7 +310,7 @@ bool Process::init ( ) {
 bool Process::isAnyTreeSaving ( ) {
 	for ( int32_t i = 0 ; i < m_numRdbs ; i++ ) {
 		Rdb *rdb = m_rdbs[i];
-		if ( rdb->m_isCollectionLess ) continue;
+		if ( rdb->isCollectionless() ) continue;
 		if ( rdb->isSavingTree() ) return true;
 		// we also just disable writing below in Process.cpp
 		// while saving other files. so hafta check that as well
@@ -611,14 +611,18 @@ bool Process::save2 ( ) {
 
 	// . tell all rdbs to save trees
 	// . will return true if no rdb tree needs a save
-	if ( ! saveRdbTrees ( useThreads , false ) ) {
+	if (!saveRdbTrees(useThreads, false)) {
+		return false;
+	}
+
+	if (!saveRdbIndexes()) {
 		return false;
 	}
 
 	// . save all rdb maps if they need it
 	// . will return true if no rdb map needs a save
 	// . save these last since maps can be auto-regenerated at startup
-	if ( ! saveRdbMaps() ) {
+	if (!saveRdbMaps()) {
 		return false;
 	}
 
@@ -726,8 +730,17 @@ bool Process::shutdown2() {
 
 	// . tell all rdbs to save trees
 	// . will return true if no rdb tree needs a save
-	if ( ! saveRdbTrees ( false , true ) ) 
-		if ( ! m_urgent ) return false;
+	if (!saveRdbTrees(false, true)) {
+		if (!m_urgent) {
+			return false;
+		}
+	}
+
+	if (!saveRdbIndexes()) {
+		if (!m_urgent) {
+			return false;
+		}
+	}
 
 	// save this right after the trees in case we core
 	// in saveRdbMaps() again due to the core we are
@@ -739,8 +752,8 @@ bool Process::shutdown2() {
 
 	// . save all rdb maps if they need it
 	// . will return true if no rdb map needs a save
-	if ( ! saveRdbMaps() ) {
-		if ( ! m_urgent ) {
+	if (!saveRdbMaps()) {
+		if (!m_urgent) {
 			return false;
 		}
 	}
@@ -860,7 +873,7 @@ void Process::disableTreeWrites ( bool shuttingDown ) {
 		// if we save doledb while spidering it screws us up
 		// because Spider.cpp can not directly write into the
 		// rdb tree and it expects that to always be available!
-		if ( ! shuttingDown && rdb->m_rdbId == RDB_DOLEDB )
+		if ( ! shuttingDown && rdb->getRdbId() == RDB_DOLEDB )
 			continue;
 		rdb->disableWrites();
 	}
@@ -903,7 +916,7 @@ bool Process::isRdbDumping ( ) {
 	// loop over all Rdbs and save them
 	for ( int32_t i = 0 ; i < m_numRdbs ; i++ ) {
 		Rdb *rdb = m_rdbs[i];
-		if ( rdb->m_dump.m_isDumping ) return true;
+		if ( rdb->isDumping() ) return true;
 	}
 	return false;
 }
@@ -944,19 +957,19 @@ bool Process::saveRdbTrees ( bool useThread , bool shuttingDown ) {
 		// if we save doledb while spidering it screws us up
 		// because Spider.cpp can not directly write into the
 		// rdb tree and it expects that to always be available!
-		if ( ! shuttingDown && rdb->m_rdbId == RDB_DOLEDB ) {
+		if ( ! shuttingDown && rdb->getRdbId() == RDB_DOLEDB ) {
 			continue;
 		}
 
 		// note it
-		if ( ! rdb->m_dbname[0] ) {
-			log( "gb: calling save tree for rdbid %i", ( int ) rdb->m_rdbId );
+		if ( rdb->getDbname() ) {
+			log( "gb: calling save tree for %s", rdb->getDbname() );
 		} else {
-			log( "gb: calling save tree for %s", rdb->m_dbname );
+			log( "gb: calling save tree for rdbid %i", ( int ) rdb->getRdbId() );
 		}
 
-		rdb->saveTree ( useThread );
-		rdb->saveIndex( useThread );	//@@@ BR: no-merge index
+		rdb->saveTree(useThread);
+		rdb->saveTreeIndex(useThread);
 	}
 
 	// . save waitingtrees for each collection, blocks.
@@ -1008,6 +1021,22 @@ bool Process::saveRdbTrees ( bool useThread , bool shuttingDown ) {
 
 	// reset for next call
 	m_calledSave = false;
+
+	// everyone is done saving
+	return true;
+}
+
+bool Process::saveRdbIndexes() {
+	// never if in read only mode
+	if (g_conf.m_readOnlyMode) {
+		return true;
+	}
+
+	// loop over all Rdbs and save them
+	for (int32_t i = 0; i < m_numRdbs; i++) {
+		Rdb *rdb = m_rdbs[i];
+		rdb->saveIndexes();
+	}
 
 	// everyone is done saving
 	return true;

@@ -1982,7 +1982,9 @@ int main2 ( int argc , char *argv[] ) {
 	// like if a collection was delete but tree never saved right it'll
 	// still have the collection's data in it
 	if ( ! g_collectiondb.addRdbBaseToAllRdbsForEachCollRec ( ) ) {
-		log("db: Collectiondb init failed." ); return 1; }
+		log("db: Collectiondb init failed." );
+		return 1;
+	}
 
 	//Load the high-frequency term shortcuts (if they exist)
 	g_hfts.load();
@@ -3094,7 +3096,7 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 
 void dumpWaitingTree (const char *coll ) {
 	RdbTree wt;
-	if (!wt.set(0,-1,true,20000000,true,"waittree2", false,"waitingtree",sizeof(key_t))) {
+	if (!wt.set(0,-1,20000000,true,"waittree2", false,"waitingtree",sizeof(key_t))) {
 		return;
 	}
 
@@ -3746,12 +3748,7 @@ bool treetest ( ) {
 	}
 	// init the tree
 	RdbTree rt;
-	if ( ! rt.set ( 0              , // fixedDataSize  , 
-			numKeys + 1000 , // maxTreeNodes   ,
-			false          , // isTreeBalanced , 
-			numKeys * 28   , // maxTreeMem     ,
-			false          , // own data?
-			"tree-test"    ) ) {
+	if (!rt.set(0, numKeys + 1000, numKeys * 28, false, "tree-test")) {
 		log(LOG_WARN, "speedTest: tree init failed.");
 		return false;
 	}
@@ -5185,7 +5182,7 @@ int injectFileTest ( int32_t reqLen , int32_t hid ) {
 	}
 	char *p    = req;
 	char *pend = req + reqLen;
-	sprintf ( p , 
+	sprintf ( p ,
 		  "POST /inject HTTP/1.0\r\n"
 		  "Content-Length: 000000000\r\n" // placeholder
 		  "Content-Type: text/html\r\n"
@@ -5193,7 +5190,7 @@ int injectFileTest ( int32_t reqLen , int32_t hid ) {
 		  "\r\n" );
 	p += strlen(p);
 	char *content = p;
-	sprintf ( p , 
+	sprintf ( p ,
 		  "u=%" PRIu32".injecttest.com&c=&"
 		  "deleteurl=0&ip=4.5.6.7&iplookups=0&"
 		  "dedup=1&rs=7&"
@@ -5202,12 +5199,12 @@ int injectFileTest ( int32_t reqLen , int32_t hid ) {
 		  "Last-Modified: Sun, 06 Nov 1994 08:49:37 GMT\r\n"
 		  "Connection: Close\r\n"
 		  "Content-Type: text/html\r\n"
-		  "\r\n" , 
+		  "\r\n" ,
 		  (uint32_t)time(NULL) );
 	p += strlen(p);
 	// now store random words (just numbers of 8 digits each)
 	while ( p + 12 < pend ) {
-		int32_t r ; r = rand(); 
+		int32_t r ; r = rand();
 		sprintf ( p , "%010" PRIu32" " , r );
 		p += strlen ( p );
 	}
@@ -5226,7 +5223,7 @@ int injectFileTest ( int32_t reqLen , int32_t hid ) {
 
 	// generate the filename
 	const char *filename = "/tmp/inject-test";
-	File f; 
+	File f;
 	f.set ( filename );
 	f.unlink();
 	if ( ! f.open ( O_RDWR | O_CREAT ) ) {
@@ -5485,13 +5482,13 @@ int injectFile ( const char *filename , char *ips , const char *coll ) {
 		char tmp[1024];
 		sprintf(tmp,"./%s",coll2);
 		s_base->m_dir.set(tmp);
-		strcpy(s_base->m_dbname,rdb->m_dbname);
-		s_base->m_dbnameLen = strlen(rdb->m_dbname);
+		strcpy(s_base->m_dbname,rdb->getDbname());
+		s_base->m_dbnameLen = strlen(rdb->getDbname());
 		s_base->m_coll = "main";
 		s_base->m_collnum = (collnum_t)0;
 		s_base->m_rdb = rdb;
-		s_base->m_fixedDataSize = rdb->m_fixedDataSize;
-		s_base->m_useHalfKeys = rdb->m_useHalfKeys;
+		s_base->m_fixedDataSize = rdb->getFixedDataSize();
+		s_base->m_useHalfKeys = rdb->useHalfKeys();
 		s_base->m_ks = rdb->getKeySize();
 		s_base->m_pageSize = rdb->getPageSize();
 		s_base->m_isTitledb = rdb->m_isTitledb;

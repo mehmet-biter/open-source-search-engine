@@ -490,8 +490,7 @@ void RdbBucket::printBucket() {
 	char* kk = m_keys;
 	int32_t recSize = m_parent->getRecSize();
  	for(int32_t i = 0; i < m_numKeys;i++) {
-		log(LOG_WARN, "rdbbuckets last key: ""%016" PRIx64"%08" PRIx32" num "
-		    "keys: %" PRId32,
+		log(LOG_WARN, "rdbbuckets last key: ""%016" PRIx64"%08" PRIx32" num keys: %" PRId32,
  		    *(int64_t*)(kk+(sizeof(int32_t))), *(int32_t*)kk, m_numKeys);
 		kk += recSize;
 	}
@@ -512,9 +511,8 @@ RdbBuckets::RdbBuckets() {
 }
 
 
-
-bool RdbBuckets::set( int32_t fixedDataSize , int32_t maxMem, bool ownData, const char *allocName, rdbid_t rdbId,
-                      bool dataInPtrs, const char *dbname, char keySize, bool useProtection ) {
+bool RdbBuckets::set(int32_t fixedDataSize, int32_t maxMem, const char *allocName, rdbid_t rdbId,
+                     const char *dbname, char keySize) {
 	m_numBuckets = 0;
 	m_ks = keySize;
 	m_rdbId = rdbId;
@@ -554,43 +552,6 @@ bool RdbBuckets::set( int32_t fixedDataSize , int32_t maxMem, bool ownData, cons
 		g_errno = ENOMEM;
 		return false;
 	}
-	
-	// log("init: Successfully initialized buckets for %s, "
-	//     "keysize is %" PRId32", max mem is %" PRId32", datasize is %" PRId32,
-	//     m_dbname, (int32_t)m_ks, m_maxMem, m_fixedDataSize);
-
-
-	/*
-	RdbBuckets b;
-	b.set ( 0, // fixedDataSize, 
-		50000000 , // maxTreeMem,
-		false, //own data
-		"tbuck", // m_treeName, // allocName
-		false, //data in ptrs
-		"tbuck",//m_dbname,
-		16, // m_ks,
-		false);
-	collnum_t cn = 1;
-	key128_t k;
-	k.n1 = 12;
-	k.n0 = 11;
-	b.addNode ( cn , (char *)&k, NULL, 0 );
-	// negate it
-	k.n0 = 10;
-	b.addNode ( cn , (char *)&k, NULL, 0 );
-
-	// try that
-	key128_t k1;
-	key128_t k2;
-	k1.setMin();
-	k2.setMax();
-	RdbList list;
-	int32_t np,nn;
-	b.getList ( cn,(char *)&k1,(char *)&k2,1000,&list,&np,&nn,false);
-	if ( np != 0 || nn != 1 ) { g_process.shutdownAbort(true); }
-	// must be empty
-	if ( b.getNumKeys() != 0 ) { g_process.shutdownAbort(true); }
-	*/
 
 	return true;
 }
@@ -1740,63 +1701,45 @@ bool RdbBucket::deleteList(RdbList *list) {
 
 // remove keys from any non-existent collection
 void RdbBuckets::cleanBuckets ( ) {
-
 	// what buckets have -1 rdbid???
-	if ( m_rdbId < 0 ) return;
+	if (m_rdbId < 0) {
+		return;
+	}
 
 	// the liberation count
 	int32_t count = 0;
 
-	/*
-	char buf[50000];
-	RdbList list;
-	list.set ( NULL,
-		   0,
-		   buf,
-		   50000,
-		   0, // fixeddatasize
-		   false, // own data? should rdblist free it
-		   false, // usehalfkeys
-		   m_ks);
-	*/
+	for (;;) {
+		bool restart = false;
 
- top:
+		for (int32_t i = 0; i < m_numBuckets; i++) {
+			RdbBucket *b = m_buckets[i];
+			collnum_t collnum = b->getCollnum();
+			if (collnum < g_collectiondb.m_numRecs) {
+				if (g_collectiondb.m_recs[collnum]) {
+					continue;
+				}
+			}
 
-	for ( int32_t i = 0; i < m_numBuckets; i++ ) {
-		RdbBucket *b = m_buckets[i];
-		collnum_t collnum = b->getCollnum();
-		CollectionRec *cr = NULL;
-		if ( collnum < g_collectiondb.m_numRecs ) {
-			cr = g_collectiondb.m_recs[ collnum ];
-		}
-		if ( cr ) {
-			continue;
+			// count # deleted
+			count += b->getNumKeys();
+
+			// delete that coll
+			delColl(collnum);
+
+			// restart
+			restart = true;
+			break;
 		}
 
-		// count # deleted
-		count += b->getNumKeys();
-
-		// delete that coll
-		delColl ( collnum );
-
-		// restart
-		goto top;
-		/*
-		int32_t nk = b->getNumKeys();
-		for (int32_t j = 0 ; j < nk ; j++ ) {
-			char *kp = b->m_keys + j*m_ks;
-			// add into list. should just be a gbmemcpy()
-			list.addKey ( kp , 0 , NULL );
-		*/
-		//deleteBucket ( i );
+		if (!restart) {
+			break;
+		}
 	}
 
-	// print it
-	if ( count == 0 ) {
-		return;
+	if ( count != 0 ) {
+		log( LOG_LOGIC, "db: Removed %" PRId32" records from %s buckets for invalid collection numbers.", count, m_dbname );
 	}
-
-	log( LOG_LOGIC, "db: Removed %" PRId32" records from %s buckets for invalid collection numbers.", count, m_dbname );
 }
 
 
@@ -1919,7 +1862,7 @@ int64_t RdbBuckets::getListSize ( collnum_t collnum,
 // . we'll open it here
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
-bool RdbBuckets::fastSave ( char *dir, bool useThread, void *state, void (* callback) (void *state) ) {
+bool RdbBuckets::fastSave ( const char *dir, bool useThread, void *state, void (* callback) (void *state) ) {
 	if ( g_conf.m_readOnlyMode ) return true;
 
 	// we do not need a save
@@ -1976,7 +1919,7 @@ bool RdbBuckets::fastSave_r() {
 	//	log("RdbTree::fastSave_r: %s",mstrerror(g_errno));
 	//  return false;
 	//}
-	// cannot use the BigFile class, since we may be in a thread and it 
+	// cannot use the BigFile class, since we may be in a thread and it
 	// messes with g_errno
 	//char *s = m_saveFile->getFilename();
 	char s[1024];

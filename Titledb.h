@@ -144,8 +144,8 @@ class Titledb {
 			(int64_t)g_hostdb.m_numShards;}
 
 	int32_t getLocalNumDocs () { return m_rdb.getNumTotalRecs(); }
-	int32_t getNumDocsInMem () { return m_rdb.m_tree.getNumUsedNodes(); }
-	int32_t getMemUsed      () { return m_rdb.m_tree.getMemOccupied(); }
+	int32_t getNumDocsInMem () { return m_rdb.getNumUsedNodes(); }
+	int32_t getMemUsed      () { return m_rdb.getTreeMemOccupied(); }
 
 	// holds binary format title entries
 	Rdb m_rdb;

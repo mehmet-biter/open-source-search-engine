@@ -51,7 +51,7 @@ public:
 	RdbList  *m_subLists        [MAX_SUBLISTS];
 	// flags to indicate if bigram list should be scored higher
 	char      m_bigramFlags     [MAX_SUBLISTS];
-	// shrinkSubLists() set this:
+	// delNonMatchingDocIdsFromSubLists() set this:
 	int32_t      m_newSubListSize  [MAX_SUBLISTS];
 	char     *m_newSubListStart [MAX_SUBLISTS];
 	char     *m_newSubListEnd   [MAX_SUBLISTS];
@@ -93,7 +93,7 @@ class PosdbTable {
 	void prepareWhiteListTable();
 
 	// pre-allocate memory since intersection runs in a thread
-	bool allocTopTree ( );
+	bool allocTopScoringDocIdsData();
 
 	void  getTermPairScoreForNonBody   ( int32_t i, int32_t j,
 					     const char *wpi,  const char *wpj, 
@@ -180,7 +180,7 @@ class PosdbTable {
 	SafeBuf m_pairScoreBuf;
 	SafeBuf m_singleScoreBuf;
 
-	SafeBuf m_stackBuf;
+	SafeBuf m_topScoringDocIdsBuf;	// Buffer containing pointers to scoring info
 
 	// a reference to the query
 	Query          *m_q;
@@ -231,14 +231,14 @@ class PosdbTable {
 
 	// sets stuff used by intersect10_r()
 	bool setQueryTermInfo ( );
-
-	void shrinkSubLists ( QueryTermInfo *qti );
+	void delNonMatchingDocIdsFromSubLists( QueryTermInfo *qti );
 
 	// for intersecting docids
 	void addDocIdVotes( const QueryTermInfo *qti , int32_t listGroupNum );
 	void makeDocIdVoteBufForRarestTerm( const QueryTermInfo *qti , bool isRangeTerm );
 	bool makeDocIdVoteBufForBoolQuery() ;
 	void delDocIdVotes ( const QueryTermInfo *qti );	// for negative query terms...
+	bool findCandidateDocIds();
 
 
 	// upper score bound
@@ -252,9 +252,9 @@ class PosdbTable {
 	int32_t                 m_numQueryTermInfos;
 	// the size of the smallest set of sublists. each sublists is
 	// the main term or a synonym, etc. of the main term.
-	int32_t                 m_minListSize;
+	int32_t                 m_minTermListSize;
 	// which query term info has the smallest set of sublists
-	int32_t                 m_minListi;
+	int32_t                 m_minTermListIdx;
 	// intersect docids from each QueryTermInfo into here
 	SafeBuf              m_docIdVoteBuf;
 

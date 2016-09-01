@@ -47,23 +47,13 @@ bool Titledb::init ( ) {
 	// initialize our own internal rdb
 	return m_rdb.init ( g_hostdb.m_dir              ,
 			    "titledb"                   ,
-			    true                        , // dedup same keys?
 			    -1                          , // fixed record size
 			    //g_conf.m_titledbMinFilesToMerge ,
 			    // this should not really be changed...
 			    -1,
 			    g_conf.m_titledbMaxTreeMem  ,
 			    maxTreeNodes                ,
-			    // now we balance so Sync.cpp can ordered huge list
-			    true                        , // balance tree?
-			    // turn off cache for now because the page cache
-			    // is just as fast and does not get out of date
-			    // so bad??
-			    0,//g_conf.m_titledbMaxCacheMem ,
-			    0,//maxCacheNodes               ,
 			    false                       ,// half keys?
-			    false                       ,// g_conf.m_titledbSav
-			    NULL,//&m_pc               , // page cache ptr
 			    true                        ); // is titledb?
 
 	// validate
@@ -79,18 +69,11 @@ bool Titledb::init2 ( int32_t treeMem ) {
 	// initialize our own internal rdb
 	return m_rdb.init ( g_hostdb.m_dir              ,
 			    "titledbRebuild"            ,
-			    true                        , // dedup same keys?
 			    -1                          , // fixed record size
 			    240                         , // MinFilesToMerge
 			    treeMem                     ,
 			    maxTreeNodes                ,
-			    // now we balance so Sync.cpp can ordered huge list
-			    true                        , // balance tree?
-			    0                           , // MaxCacheMem ,
-			    0                           , // maxCacheNodes
 			    false                       , // half keys?
-			    false                       , // titledbSaveCache
-			    NULL                        , // page cache ptr
 			    true                        ); // is titledb?
 
 	// validate

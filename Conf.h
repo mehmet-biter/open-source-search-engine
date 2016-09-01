@@ -69,7 +69,7 @@ class Conf {
 	const char *getDefaultColl ( char *hostname, int32_t hostnameLen );
 
 	// max amount of memory we can use
-	int64_t        m_maxMem;
+	size_t m_maxMem;
 
 	// if this is false, we do not save, used by dump routines
 	// in main.cpp so they can change parms here and not worry about
@@ -127,7 +127,6 @@ class Conf {
 	int64_t m_clusterdbFileCacheSize;
 	int32_t  m_clusterdbMaxTreeMem;
 	int32_t  m_clusterdbMinFilesToMerge;
-	bool  m_clusterdbSaveCache;
 
 	// titledb
 	int64_t m_titledbFileCacheSize;
@@ -143,7 +142,6 @@ class Conf {
 
 	// statdb
 	int32_t m_statsdbMaxTreeMem;
-	int32_t m_statsdbMaxCacheMem;
 	bool m_useStatsdb;
 
 	// are we doing a command line thing like 'gb 0 dump s ....' in

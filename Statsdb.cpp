@@ -130,7 +130,6 @@ bool Statsdb::init ( ) {
 	//   after compression depending on the state of the
 	//   all errors arrays.
 	uint32_t maxTreeNodes  = maxTreeMem / nodeSize;
-	uint32_t maxCacheNodes = g_conf.m_statsdbMaxCacheMem / nodeSize;
 
 	// assume low niceness
 	m_niceness = 0;
@@ -173,21 +172,13 @@ bool Statsdb::init ( ) {
 	// make the rec cache 0 bytes, cuz we are just using page cache now
 	if ( ! m_rdb.init ( g_hostdb.m_dir		, // working directory
 			    "statsdb"			, // dbname
-			    true			, // dedup keys
 			    sizeof(StatData)            , // fixed record size
 			    200,//g_conf.m_statsdbMinFilesToMerge ,
 			    maxTreeMem                  ,
 			    maxTreeNodes		,
-			    true			, // balance tree?
-			    0                           , // m_statsdbMaxCchMem
-			    maxCacheNodes		,
 			    false			, // use half keys?
-			    false			, // cache from disk?
-			    NULL			, // page cache pointer
 			    false			, // is titledb?
-			    false			,
 			    sizeof(key96_t)		, // key size
-			    false, // bias disk page cache?
 			    true ) ) // is collectionless?
 		return false;
 
@@ -214,12 +205,12 @@ void flushStatsWrapper ( int fd , void *state ) {
 
 	// force a statsdb tree dump if running out of room
 	Rdb     *rdb  = &g_statsdb.m_rdb;
-	RdbTree *tree = &rdb->m_tree;
+	RdbTree *tree = rdb->getTree();
 	// if we got 20% room left and 50k available mem, do not dump
 	if ( (float)tree->getNumUsedNodes() * 1.2 < 
 	     (float)tree->getNumAvailNodes () &&
 	     //tree->getNumAvailNodes () > 1000 &&
-	     rdb-> m_mem.getAvailMem() > 50000 )
+	     rdb->getRdbMem()->getAvailMem() > 50000 )
 		return;
 
 	if ( ! isClockInSync() ) return;
@@ -317,9 +308,9 @@ bool Statsdb::addStat ( int32_t        niceness ,
 	// . this is kinda a hack and it would be nice to not miss stats!
 	if ( ! isClockInSync() ) return true;
 
-	RdbTree *tree = &m_rdb.m_tree;
+	RdbTree *tree = m_rdb.getTree();
 	// do not add stats to our tree if it is loading
-	if ( tree->m_isLoading ) return true;
+	if (tree->isLoading()) return true;
 
 	// convert into host #0 synced time
 	t1Arg = localToGlobalTimeMilliseconds ( t1Arg );
@@ -404,11 +395,7 @@ bool Statsdb::addStat ( int32_t        niceness ,
 			// save this
 			int32_t saved = g_errno;
 			// need to add using rdb so it can gbmemcpy the data
-			if ( ! m_rdb.addRecord ( (collnum_t)0 ,
-						 (char *)&sk,
-						 (char *)&tmp,
-						 sizeof(StatData),
-						 niceness ) ) {
+			if (!m_rdb.addRecord((collnum_t)0, (char *)&sk, (char *)&tmp, sizeof(StatData))) {
 				if ( g_errno != ETRYAGAIN )
 				log("statsdb: add rec failed: %s",
 				    mstrerror(g_errno));

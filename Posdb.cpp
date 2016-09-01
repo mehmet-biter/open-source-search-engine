@@ -134,31 +134,16 @@ bool Posdb::init ( ) {
 	//   dump it to rdb files when it is 90% full (90% of bins in use)
 	return m_rdb.init ( g_hostdb.m_dir,
 	                    "posdb",
-	                    true, // dedup same keys?
 	                    0, // fixed data size
 	                    // -1 means look in CollectionRec::m_posdbMinFilesToMerge
 	                    -1,
 	                    g_conf.m_posdbMaxTreeMem, // g_conf.m_posdbMaxTreeMem  ,
 	                    maxTreeNodes                ,
-	                    // now we balance so Sync.cpp can ordered huge lists
-                        true                        , // balance tree?
-                        0 , // g_conf.m_posdbMaxCacheMem ,
-                        0 , // maxCacheNodes 	       ,
                         true                        , // use half keys?
-                        false                       , // g_conf.m_posdbSav
-	                    // newer systems have tons of ram to use
-	                    // for their disk page cache. it is slower than
-	                    // ours but the new engine has much slower things
-			            NULL,//&m_pc                       ,
 			            false , // istitledb?
-			            false , // preloaddiskpagecache?
 			            sizeof(key144_t),
 			            false,
-			            false,
-						true);	//@@@ BR: no-merge index
-
-	// validate posdb
-	//return verify();
+						true);
 }
 
 // init the rebuild/secondary rdb, used by PageRepair.cpp
@@ -177,7 +162,6 @@ bool Posdb::init2 ( int32_t treeMem ) {
 	//   dump it to rdb files when it is 90% full (90% of bins in use)
 	return m_rdb.init ( g_hostdb.m_dir              ,
 			    "posdbRebuild"            ,
-			    true                        , // dedup same keys?
 			    0                           , // fixed data size
 			    // change back to 200!!
 			    //2                         , // min files to merge
@@ -185,16 +169,9 @@ bool Posdb::init2 ( int32_t treeMem ) {
 			    1000                        , // min files to merge
 			    treeMem                     ,
 			    maxTreeNodes                ,
-			    true                        , // balance tree?
-			    0                           , // MaxCacheMem ,
-			    0                           , // maxCacheNodes
 			    true                        , // use half keys?
-			    false                       , // posdbSaveCache
-			    NULL                        , // s_pc
 			    false ,
-			    false ,
-			    sizeof(key144_t),
-			true );		// @@@ BR: no-merge index
+			    sizeof(key144_t));
 }
 
 
@@ -466,13 +443,7 @@ int64_t Posdb::getTermFreq ( collnum_t collnum, int64_t termId ) {
 					    (char *)&maxKey,
 					    oldTrunc );
 
-
-	int64_t numBytes = m_rdb.m_buckets.getListSize(collnum,
-						(char *)&startKey,
-						(char *)&endKey,
-						NULL,NULL);
-
-
+	int64_t numBytes = m_rdb.getBuckets()->getListSize(collnum, (char *)&startKey, (char *)&endKey, NULL, NULL);
 
 	// convert from size in bytes to # of recs
 	maxRecs += numBytes / sizeof(POSDBKEY);

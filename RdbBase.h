@@ -37,6 +37,7 @@
 #include "Dir.h"
 #include "RdbMem.h"
 #include "RdbIndex.h"
+#include "GbMutex.h"
 
 // how many rdbs are in "urgent merge" mode?
 extern int32_t g_numUrgentMerges;
@@ -64,7 +65,6 @@ class RdbBase {
 	// . otherwise, we mask the high int32_t in the key
 	bool init ( char  *dir             , // working directory
 		    char  *dbname          , // "indexdb","tagdb",...
-		    bool   dedup           , //= true ,
 		    int32_t   fixedDataSize   , //= -1   ,
 		    int32_t   minToMerge      , //, //=  2   ,
 		    bool   useHalfKeys     ,
@@ -75,39 +75,44 @@ class RdbBase {
 		    RdbTree             *tree    ,
 		    RdbBuckets          *buckets ,
 		    RdbDump             *dump    ,
-		    class Rdb           *rdb    ,
-		    void *pc = NULL,
+		    Rdb           *rdb    ,
 		    bool                 isTitledb = false , // use fileIds2[]?
-		    bool                 preloadDiskPageCache = false ,
-		    bool                 biasDiskPageCache    = false,
 		    bool				useIndexFile = false );
 
 	void closeMaps ( bool urgent );
 	void saveMaps  ();
 
-//@@@ BR: no-merge index begin
 	void closeIndexes ( bool urgent );
-	void saveIndexes  ();
-//@@@ BR: no-merge index end
+	void saveIndexes();
+
+	void saveTreeIndex();
 
 
 	// get the directory name where this rdb stores it's files
-	const char *getDir ( ) { return m_dir.getDirname(); }
+	const char *getDir() { return m_dir.getDir(); }
 
-	bool getDedup() const { return m_dedup; }
 	int32_t getFixedDataSize() const { return m_fixedDataSize; }
 
-	bool useHalfKeys ( ) const { return m_useHalfKeys; }
+	bool useHalfKeys() const { return m_useHalfKeys; }
 
-	RdbMap   **getMaps  ( ) { return m_maps; }
-	RdbIndex	**getIndexes() { return m_indexes;}
-	BigFile  **getFiles ( ) { return m_files; }
+	BigFile **getFiles() { return m_files; }
+	RdbMap **getMaps() { return m_maps; }
+	RdbIndex **getIndexes() { return m_indexes; }
 
-	BigFile   *getFile   ( int32_t n ) { return m_files   [n]; }
-	int32_t       getFileId ( int32_t n ) { return m_fileIds [n]; }
-	int32_t       getFileId2( int32_t n ) { return m_fileIds2[n]; }
-	RdbMap    *getMap    ( int32_t n ) { return m_maps    [n]; }
-	RdbIndex  *getIndex  ( int32_t n ) { return m_indexes [n]; }
+	BigFile *getFile(int32_t n) { return m_files[n]; }
+	int32_t getFileId(int32_t n) { return m_fileIds[n]; }
+	RdbMap *getMap(int32_t n) { return m_maps[n]; }
+	RdbIndex *getIndex(int32_t n) { return m_indexes[n]; }
+
+	RdbIndex *getTreeIndex() {
+		if (m_useIndexFile) {
+			return &m_treeIndex;
+		}
+		return NULL;
+	}
+
+	docidsconst_ptr_t getGlobalIndex();
+
 
 	float getPercentNegativeRecsOnDisk ( int64_t *totalArg ) const;
 
@@ -154,8 +159,6 @@ class RdbBase {
 
 	// . set the m_files, m_fileMaps, m_fileIds arrays and m_numFiles
 	bool setFiles ( ) ;
-
-	void verifyDiskPageCache ( );
 
 	bool verifyFileSharding ( );
 
@@ -225,18 +228,26 @@ private:
 	// . older files are listed first (lower fileIds)
 	// . filenames should include the directory (full filenames)
 	// . TODO: RdbMgr should control what rdb gets merged?
-	BigFile  *m_files     [ MAX_RDB_FILES+1 ];
-	int32_t      m_fileIds   [ MAX_RDB_FILES+1 ];
-	int32_t      m_fileIds2  [ MAX_RDB_FILES+1 ]; // for titledb/tfndb linking
-	RdbMap   *m_maps      [ MAX_RDB_FILES+1 ];
-	RdbIndex *m_indexes	[ MAX_RDB_FILES+1 ];
-	int32_t      m_numFiles;
+	BigFile *m_files[MAX_RDB_FILES + 1];
+	int32_t m_fileIds[MAX_RDB_FILES + 1];
+	int32_t m_fileIds2[MAX_RDB_FILES + 1]; // for titledb/tfndb linking
+	RdbMap *m_maps[MAX_RDB_FILES + 1];
+	RdbIndex *m_indexes[MAX_RDB_FILES + 1];
+	int32_t m_numFiles;
+
+	void generateGlobalIndex();
+
+	// mapping of docId to file
+	// key format
+	// ..dddddd dddddddd dddddddd dddddddd  d = docId
+	// dddddddd ........ ffffffff ffffffff  f = fileIndex
+	docids_ptr_t m_docIdFileIndex;
+	GbMutex m_docIdFileIndexMtx;
 
 public:
 	// this class contains a ptr to us
 	class Rdb           *m_rdb;
 
-	bool      m_dedup;
 	int32_t      m_fixedDataSize;
 
 	Dir       m_dir;
@@ -250,7 +261,11 @@ public:
 
 	// for storing records in memory
 	RdbTree    *m_tree;  
-	RdbBuckets *m_buckets;  
+	RdbBuckets *m_buckets;
+
+	// index for in memory records
+	RdbIndex m_treeIndex;
+
 	// for dumping a table to an rdb file
 	RdbDump    *m_dump;  
 

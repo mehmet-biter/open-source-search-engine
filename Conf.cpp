@@ -257,14 +257,8 @@ void Conf::setRootIps ( ) {
 	}
 	m_numDns = i;
 
-	Host *h = g_hostdb.getMyHost();
-
 	// fail back to public dns
 	const char *ipStr = PUBLICLY_AVAILABLE_DNS1;
-
-	if ( h->m_type & HT_SCPROXY ) ipStr = PUBLICLY_AVAILABLE_DNS1; 
-	if ( h->m_type & HT_PROXY ) ipStr = PUBLICLY_AVAILABLE_DNS1; 
-
 	if ( m_numDns == 0 ) {
 		m_dnsIps[0] = atoip( ipStr , strlen(ipStr) );
 		m_dnsPorts[0] = 53;

@@ -1065,22 +1065,14 @@ bool Tagdb::init ( ) {
 	// . we still use page cache however, which is good enough!
 	return m_rdb.init ( g_hostdb.m_dir               ,
 			    "tagdb"                     ,
-			    true                       , // dedup same keys?
 			    -1                         , // fixed record size
 			    -1,//g_conf.m_tagdbMinFilesToMerge   ,
 			    g_conf.m_tagdbMaxTreeMem  ,
 			    maxTreeNodes               ,
 			    // now we balance so Sync.cpp can ordered huge list
-			    true                        , // balance tree?
-			    0 , //g_conf.m_tagdbMaxCacheMem ,
-			    0 , //maxCacheNodes              ,
 			    false                      , // half keys?
-			    false                      , //m_tagdbSaveCache
-			    NULL,//&m_pc                      ,
 			    false,  // is titledb
-			    true ,  // preload disk page cache
-			    sizeof(key128_t),     // key size
-			    true ); // bias disk page cache?
+			    sizeof(key128_t));     // key size
 }
 
 bool Tagdb::verify ( const char *coll ) {

@@ -204,22 +204,8 @@ class RdbList {
 	// . merge the lists into this list
 	// . set our startKey/endKey to "startKey"/"endKey"
 	// . exclude any records from lists not in that range
-	void merge_r ( RdbList **lists         , 
-		       int32_t      numLists      , 
-		       const  char    *startKey      ,
-		       const char     *endKey        ,
-		       int32_t      minRecSizes   ,
-		       bool      removeNegRecs ,
-		       char      rdbId         ,
-		       int32_t      niceness      );
-
-	bool posdbMerge_r ( RdbList **lists         ,  
-			    int32_t      numLists      ,
-			    const char     *startKey      ,
-			    const char     *endKey        ,
-			    int32_t      minRecSizes   ,
-			    bool      removeNegKeys ,
-			    int32_t      niceness       ) ;
+	void merge_r(RdbList **lists, int32_t numLists, const char *startKey, const char *endKey, int32_t minRecSizes, bool removeNegRecs, char rdbId);
+	bool posdbMerge_r(RdbList **lists, int32_t numLists, const char *startKey, const char *endKey, int32_t minRecSizes, bool removeNegKeys);
 
 
 	// returns false if we skipped into a black hole (end of list)

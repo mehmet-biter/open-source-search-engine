@@ -1,6 +1,12 @@
-#include "gb-include.h"
-
 #include "Dir.h"
+
+#include "Log.h"
+#include "Errno.h"
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <errno.h>
 
 Dir::Dir ( ) {
 	m_dirname = NULL;

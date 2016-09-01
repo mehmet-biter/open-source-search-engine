@@ -40,17 +40,11 @@ bool Doledb::init ( ) {
 	// initialize our own internal rdb
 	return m_rdb.init ( g_hostdb.m_dir              ,
 			    "doledb"                    ,
-			    true                        , // dedup
 			    -1                          , // fixedDataSize
 			    2                           , // MinFilesToMerge
 			    maxTreeMem                  ,
 			    maxTreeNodes                ,
-			    true                        , // balance tree?
-			    0                           , // spiderdbMaxCacheMe
-			    0                           , // maxCacheNodes 
-			    false                       , // half keys?
-			    false                       , // save cache?
-			    NULL);
+			    false                       ); // half keys?
 }
 
 //

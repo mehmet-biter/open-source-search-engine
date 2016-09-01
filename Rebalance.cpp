@@ -223,14 +223,12 @@ void Rebalance::scanLoop ( ) {
 			// or if uninitialized
 			if ( ! rdb->isInitialized() ) continue;
 			// skip statsdb, do not rebalance that
-			if ( rdb->m_rdbId == RDB_STATSDB ) continue;
-			// only tagdb for now
-			//if ( rdb->m_rdbId != RDB_TAGDB ) continue;
+			if ( rdb->getRdbId() == RDB_STATSDB ) continue;
 			// log it as well
 			if ( m_lastRdb != rdb ) {
 				log("rebal: scanning %s (%" PRId32") [%s]",
 				    cr->m_coll,(int32_t)cr->m_collnum,
-				    rdb->m_dbname);
+				    rdb->getDbname());
 				// only do this once per rdb/coll
 				m_lastRdb = rdb;
 				// reset key cursor as well!!!
@@ -259,7 +257,7 @@ void Rebalance::scanLoop ( ) {
 			log("rebal: moved %" PRId64" of %" PRId64" recs scanned in "
 			    "%s for coll.%s.%" PRId32,
 			    m_rebalanceCount,m_scannedCount,
-			    rdb->m_dbname,cr->m_coll,(int32_t)cr->m_collnum);
+			    rdb->getDbname(),cr->m_coll,(int32_t)cr->m_collnum);
 			//if ( m_rebalanceCount ) goto done;
 			m_rebalanceCount = 0;
 			m_scannedCount = 0;
@@ -364,7 +362,7 @@ bool Rebalance::scanRdb ( ) {
 	// base is NULL for like monitordb...
 	if ( base && base->isMerging() ) {
 		log("rebal: waiting for merge on %s for coll #%" PRId32" to complete",
-		    rdb->m_dbname,(int32_t)m_collnum);
+		    rdb->getDbname(),(int32_t)m_collnum);
 		g_loop.registerSleepCallback ( 1000,NULL,sleepWrapper,1);
 		m_registered = true;
 		// we blocked, return false
@@ -373,18 +371,12 @@ bool Rebalance::scanRdb ( ) {
 	// or really if any merging is going on way for it to save disk space
 	if ( rdb->isMerging() ) {
 		log("rebal: waiting for merge on %s for coll ??? to complete",
-		    rdb->m_dbname);
+		    rdb->getDbname());
 		g_loop.registerSleepCallback ( 1000,NULL,sleepWrapper,1);
 		m_registered = true;
 		// we blocked, return false
 		return false;
 	}
-
-
-	// skip empty collrecs, unless like statsdb or something
-	//if ( ! cr && ! rdb->m_isCollectionLess ) return true;
-
-	//char *coll = cr->m_coll;
 
  readAnother:
 
@@ -392,7 +384,7 @@ bool Rebalance::scanRdb ( ) {
 
 	//log("rebal: loading list start = %s",KEYSTR(m_nextKey,rdb->m_ks));
 
-	if ( ! m_msg5.getList ( rdb->m_rdbId     ,
+	if ( ! m_msg5.getList ( rdb->getRdbId()     ,
 				m_collnum, // coll             ,
 				&m_list          ,
 				m_nextKey        ,
@@ -445,7 +437,7 @@ bool Rebalance::gotList ( ) {
 
 	Rdb *rdb = g_process.m_rdbs[m_rdbNum];
 
-	char rdbId = rdb->m_rdbId;
+	char rdbId = rdb->getRdbId();
 
 	int32_t ks = rdb->getKeySize();
 
@@ -496,8 +488,8 @@ bool Rebalance::gotList ( ) {
 		// first key
 		m_posMetaList.safeMemcpy ( key , ks );
 		// then record
-		int32_t dataSize = rdb->m_fixedDataSize;
-		if ( rdb->m_fixedDataSize == -1 ) {
+		int32_t dataSize = rdb->getFixedDataSize();
+		if ( dataSize == -1 ) {
 			dataSize = m_list.getCurrentDataSize();
 			m_posMetaList.pushLong ( dataSize );
 		}
@@ -533,11 +525,11 @@ bool Rebalance::gotList ( ) {
 			KEYINC ( m_nextKey , ks );
 	}
 
-	if ( ! m_msg4a.addMetaList( &m_posMetaList, m_collnum, this, doneAddingMetaWrapper, MAX_NICENESS, rdb->m_rdbId, -1 ) ) { // shard override, not!
+	if ( ! m_msg4a.addMetaList( &m_posMetaList, m_collnum, this, doneAddingMetaWrapper, MAX_NICENESS, rdb->getRdbId(), -1 ) ) { // shard override, not!
 		++m_blocked;
 	}
 
-	if ( ! m_msg4b.addMetaList( &m_negMetaList, m_collnum, this, doneAddingMetaWrapper, MAX_NICENESS, rdb->m_rdbId, myShard ) ) { // shard override, not!
+	if ( ! m_msg4b.addMetaList( &m_negMetaList, m_collnum, this, doneAddingMetaWrapper, MAX_NICENESS, rdb->getRdbId(), myShard ) ) { // shard override, not!
 		++m_blocked;
 	}
 

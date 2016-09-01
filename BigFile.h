@@ -110,11 +110,7 @@ class BigFile {
 	// . waits for a read/write operation before doing that
 	// . if you set maxFileSize to -1 we set it to BigFile::getFileSize()
 	// . if you are opening a new file for writing, you need to provide it
-	bool open  ( int flags , 
-		     void *pc = NULL ,
-		     int64_t maxFileSize = -1 ,
-		     int permissions    = 
-		     S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH );
+	bool open(int flags);
 
 	void logAllData(int32_t log_type);
 
@@ -140,7 +136,7 @@ class BigFile {
 	// . otherwise, returns 1 if the read was completed
 	// . decides what 2gb part file(s) we should read from
 	bool read  ( void       *buf    , 
-		     int32_t        size   , 
+		     int64_t        size   ,
 		     int64_t   offset                         , 
 		     FileState  *fs                      = NULL , 
 		     void       *state                   = NULL , 
@@ -155,8 +151,8 @@ class BigFile {
 	// . IMPORTANT: if returns -1 it MAY have written some bytes 
 	//   successfully to OTHER parts that's why caller should be 
 	//   responsible for maintaining current write offset
-	bool  write ( void       *buf    , 
-		      int32_t        size   , 
+	bool  write ( void       *buf    ,
+	              int64_t        size   ,
 		      int64_t   offset                         , 
 		      FileState  *fs                      = NULL , 
 		      void       *state                   = NULL , 
@@ -239,8 +235,8 @@ private:
 	// . wrapper for all reads and writes
 	// . if doWrite is true then we'll do a write, otherwise we do a read
 	// . returns false and sets errno on error, true on success
-	bool readwrite ( void       *buf, 
-			 int32_t        size, 
+	bool readwrite ( void       *buf,
+	                 int64_t        size,
 			 int64_t   offset, 
 			 bool        doWrite,
 			 FileState  *fstate   ,

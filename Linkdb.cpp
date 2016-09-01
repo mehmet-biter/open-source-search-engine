@@ -134,7 +134,6 @@ bool Linkdb::init ( ) {
 	// init the rdb
 	return m_rdb.init ( g_hostdb.m_dir ,
 			    "linkdb" ,
-			    true     , // dedup
 			    0        , // fixeddatasize is 0 since no data
 			    // keep it high since we are mostly ssds now and
 			    // the reads are small...
@@ -145,16 +144,9 @@ bool Linkdb::init ( ) {
 			    //15       , 
 			    maxTreeMem ,
 			    maxTreeNodes ,
-			    true     , //isTreeBalanced
-			    0        , // cache mem 
-			    0        , // cache nodes
 			    false, // true     , // use half keys
-			    false    , // load cache from disk
-			    NULL,//&m_pc    ,
 			    false    , // false
-			    false    , // preload page cache
-			    sizeof(key224_t) ,
-			    true             ); // bias page cache? (true!)
+			    sizeof(key224_t) );
 }
 
 // init the rebuild/secondary rdb, used by PageRepair.cpp
@@ -167,21 +159,13 @@ bool Linkdb::init2 ( int32_t treeMem ) {
 	// initialize our own internal rdb
 	return m_rdb.init ( g_hostdb.m_dir     ,
 			    "linkdbRebuild" ,
-			    true          , // dedup
 			    0             , // no data now! just docid/s/c
 			    50            , // m_clusterdbMinFilesToMerge,
 			    treeMem       , // g_conf.m_clusterdbMaxTreeMem,
-			    maxTreeNodes  , 
-			    true          , // balance tree?
-			    0             , // maxCacheMem   , 
-			    0             , // maxCacheNodes ,
+			    maxTreeNodes  ,
 			    false, // true          , // half keys?
-			    false         , // g_conf.m_clusterdbSaveCache,
-			    NULL          , // &m_pc ,
 			    false         , // is titledb
-			    false         , // preload disk page cache
-			    sizeof(key224_t), // key size
-			    true          );// bias disk page cache
+			    sizeof(key224_t)); // key size
 }
 
 bool Linkdb::verify ( char *coll ) {

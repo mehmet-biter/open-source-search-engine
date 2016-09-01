@@ -145,8 +145,9 @@ bool SpiderColl::load ( ) {
 	//   test runs...
 	// . try going to 20M now since we hit it again...
 	// . start off at just 10 nodes since we grow dynamically now
-	if (!m_waitingTree.set(0,10,true,-1,true,"waittree2",
-			       false,"waitingtree",sizeof(key_t)))return false;
+	if (!m_waitingTree.set(0, 10, -1, true, "waittree2", false, "waitingtree", sizeof(key_t))) {
+		return false;
+	}
 	m_waitingTreeKeyValid = false;
 	m_scanningIp = 0;
 	// prevent core with this
@@ -1159,7 +1160,7 @@ bool SpiderColl::addToWaitingTree ( uint64_t spiderTimeMS, int32_t firstIp, bool
 	if ( spiderTimeMS != 0 ) { g_process.shutdownAbort(true); }
 
 	// waiting tree might be saving!!!
-	if ( ! m_waitingTree.m_isWritable ) {
+	if ( ! m_waitingTree.isWritable() ) {
 		log( LOG_WARN, "spider: addtowaitingtree: failed. is not writable. saving?" );
 		return false;
 	}
@@ -1180,7 +1181,7 @@ bool SpiderColl::addToWaitingTree ( uint64_t spiderTimeMS, int32_t firstIp, bool
 
 	// sanity check
 	// i think this trigged on gk209 during an auto-save!!! FIX!
-	if ( ! m_waitingTree.m_isWritable ) { g_process.shutdownAbort(true); }
+	if ( ! m_waitingTree.isWritable() ) { g_process.shutdownAbort(true); }
 
 	// see if in tree already, so we can delete it and replace it below
 	int32_t ws = m_waitingTable.getSlot ( &firstIp ) ;
@@ -1261,7 +1262,7 @@ bool SpiderColl::addToWaitingTree ( uint64_t spiderTimeMS, int32_t firstIp, bool
 		log("spider: growing waiting tree to from %" PRId32" to %" PRId32" nodes "
 		    "for collnum %" PRId32,
 		    max , newNum , (int32_t)m_collnum );
-		if ( ! m_waitingTree.growTree ( newNum , MAX_NICENESS ) ) {
+		if (!m_waitingTree.growTree(newNum)) {
 			log(LOG_WARN, "spider: failed to grow waiting tree to add firstip %s", iptoa(firstIp));
 			return false;
 		}
@@ -1366,7 +1367,7 @@ int32_t SpiderColl::getNextIpFromWaitingTree ( ) {
 		if ( g_conf.m_logDebugSpider )
 			log(LOG_DEBUG,"spider: removed1 ip=%s from waiting "
 			    "tree. nn=%" PRId32,
-			    iptoa(firstIp),m_waitingTree.m_numUsedNodes);
+			    iptoa(firstIp),m_waitingTree.getNumUsedNodes());
 
 		// log it
 		if ( g_conf.m_logDebugSpcache )
@@ -1582,8 +1583,7 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 	// writes were disabled then just bail and let the scan be re-called
 	// later
 	RdbTree *wt = &m_waitingTree;
-	if ( wt->m_isSaving || ! wt->m_isWritable ) 
-	{
+	if (wt->isSaving() || !wt->isWritable()) {
 		logTrace( g_conf.m_logTraceSpider, "END, waitingTree not writable at the moment" );
 		return;
 	}
@@ -1871,7 +1871,7 @@ void SpiderColl::populateDoledbFromWaitingTree ( ) { // bool reentry ) {
 	// if waiting tree is being saved, we can't write to it
 	// so in that case, bail and wait to be called another time
 	RdbTree *wt = &m_waitingTree;
-	if ( wt->m_isSaving || ! wt->m_isWritable ) {
+	if (wt->isSaving() || !wt->isWritable()) {
 		m_isPopulatingDoledb = false;
 		logTrace( g_conf.m_logTraceSpider, "END, waitingTree not writable at the moment" );
 		return;
@@ -1929,7 +1929,7 @@ void SpiderColl::populateDoledbFromWaitingTree ( ) { // bool reentry ) {
 	}
 
 	logDebug( g_conf.m_logDebugSpider, "spider: evalIpLoop: waitingtree nextip=%s numUsedNodes=%" PRId32,
-	          iptoa(ip), m_waitingTree.m_numUsedNodes );
+	          iptoa(ip), m_waitingTree.getNumUsedNodes() );
 
 //@@@@@@ BR: THIS SHOULD BE DEBUGGED AND ENABLED
 
@@ -2011,19 +2011,8 @@ void SpiderColl::populateDoledbFromWaitingTree ( ) { // bool reentry ) {
 	// reset this
 	int32_t maxWinners = (int32_t)MAX_WINNER_NODES;
 
-	if ( m_winnerTree.m_numNodes == 0 &&
-	     ! m_winnerTree.set ( -1 , // fixeddatasize
-				  maxWinners , // maxnumnodes
-				  true , // balance?
-				  maxWinners * MAX_BEST_REQUEST_SIZE, // memmax
-				  true, // owndata?
-				  "wintree", // allocname
-				  false, // datainptrs?
-				  NULL, // dbname
-				  sizeof(key192_t), // keysize
-				  false, // useprotection?
-				  false, // allowdups?
-				  -1 ) ) { // rdbid
+	if ( m_winnerTree.getNumNodes() == 0 &&
+	     !m_winnerTree.set(-1, maxWinners, maxWinners * MAX_BEST_REQUEST_SIZE, true, "wintree", false, NULL, sizeof(key192_t), -1)) {
 		m_isPopulatingDoledb = false;
 		log("spider: winntree set: %s",mstrerror(g_errno));
 		logTrace( g_conf.m_logTraceSpider, "END, after winnerTree.set" );
@@ -2529,7 +2518,7 @@ bool SpiderColl::scanListForWinners ( ) {
 	//
 	// MDW: move this up in evalIpLoop() i think
 	RdbTree *wt = &m_waitingTree;
-	if ( wt->m_isSaving || ! wt->m_isWritable )
+	if (wt->isSaving() || !wt->isWritable())
 		return true;
 
 	// shortcut
@@ -3427,7 +3416,7 @@ bool SpiderColl::addWinnersIntoDoledb ( ) {
 	// gotta check this again since we might have done a QUICKPOLL() above
 	// to call g_process.shutdown() so now tree might be unwritable
 	RdbTree *wt = &m_waitingTree;
-	if ( wt->m_isSaving || ! wt->m_isWritable )
+	if (wt->isSaving() || !wt->isWritable())
 		return true;
 
 	/*
@@ -3479,7 +3468,7 @@ bool SpiderColl::addWinnersIntoDoledb ( ) {
 			log(LOG_DEBUG,"spider: removed2 time=%" PRId64" ip=%s from "
 			    "waiting tree. nn=%" PRId32".",
 			    timestamp64, iptoa(firstIp),
-			    m_waitingTree.m_numUsedNodes);
+			    m_waitingTree.getNumUsedNodes());
 
 		m_waitingTable.removeKey  ( &firstIp  );
 		// sanity check

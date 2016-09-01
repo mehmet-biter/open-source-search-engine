@@ -101,14 +101,17 @@ void logf ( int32_t type , const char *formatString , ... )
 void loghex( int32_t type, void const *data, const unsigned int len, const char *formatString , ...)
 	__attribute__ ((format(printf, 4, 5)));
 
-#define logDebug( condition, ... ) \
-	if ( condition ) { \
-		logf( LOG_DEBUG, __VA_ARGS__ ); \
-	}
+#define logError(msg, ...) \
+	logf(LOG_ERROR, "%s:%s:%d: " msg, __FILE__, __func__, __LINE__, ##__VA_ARGS__)
 
-#define logTrace( condition, msg, ... ) \
-	if ( condition ) { \
-		logf( LOG_TRACE, "%s:%s:%d: " msg, __FILE__, __func__, __LINE__, ##__VA_ARGS__ ); \
+#define logDebug(condition, ...) \
+    if (condition) { \
+        logf(LOG_DEBUG, __VA_ARGS__); \
+    }
+
+#define logTrace(condition, msg, ...) \
+	if (condition) { \
+		logf(LOG_TRACE, "%s:%s:%d: " msg, __FILE__, __func__, __LINE__, ##__VA_ARGS__); \
 	}
 
 class Log { 

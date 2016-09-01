@@ -522,7 +522,6 @@ bool Spiderdb::init ( ) {
 	// initialize our own internal rdb
 	return m_rdb.init ( g_hostdb.m_dir ,
 			    "spiderdb"   ,
-			    true    , // dedup
 			    -1      , // fixedDataSize
 			    // now that we have MAX_WINNER_NODES allowed in doledb
 			    // we don't have to keep spiderdb so tightly merged i guess..
@@ -531,13 +530,7 @@ bool Spiderdb::init ( ) {
 			    -1,//g_conf.m_spiderdbMinFilesToMerge , mintomerge
 			    g_conf.m_spiderdbMaxTreeMem ,
 			    maxTreeNodes                ,
-			    true                        , // balance tree?
-			    0,//g_conf.m_spiderdbMaxCacheMem,
-			    0,//maxCacheNodes               ,
 			    false                       , // half keys?
-			    false                       , // save cache?
-			    NULL,//&m_pc                       ,
-			    false                       ,
 			    false                       ,
 			    sizeof(key128_t)            );
 }
@@ -553,19 +546,12 @@ bool Spiderdb::init2 ( int32_t treeMem ) {
 	// initialize our own internal rdb
 	return m_rdb.init ( g_hostdb.m_dir ,
 			    "spiderdbRebuild"   ,
-			    true          , // dedup
 			    -1            , // fixedDataSize
 			    200           , // g_conf.m_spiderdbMinFilesToMerge
 			    treeMem       , // g_conf.m_spiderdbMaxTreeMem ,
 			    maxTreeNodes  ,
-			    true          , // balance tree?
-			    0             , // m_spiderdbMaxCacheMem,
-			    0             , // maxCacheNodes               ,
 			    false         , // half keys?
-			    false         , // save cache?
-			    NULL          , // &m_pc 
 			    false         , // isTitledb?
-			    false         , // preload diskpagecache
 			    sizeof(key128_t));
 }
 
@@ -758,9 +744,9 @@ void SpiderCache::save ( bool useThread ) {
 		SpiderColl *sc = getSpiderCollIffNonNull(i);//m_spiderColls[i];
 		if ( ! sc ) continue;
 		RdbTree *tree = &sc->m_waitingTree;
-		if ( ! tree->m_needsSave ) continue;
+		if ( ! tree->needsSave() ) continue;
 		// if already saving from a thread
-		if ( tree->m_isSaving ) continue;
+		if ( tree->isSaving() ) continue;
 		const char *filename = "waitingtree";
 		char dir[1024];
 		sprintf(dir,"%scoll.%s.%" PRId32,g_hostdb.m_dir,
@@ -812,7 +798,7 @@ bool SpiderCache::needsSave ( ) {
 	for ( int32_t i = 0 ; i < g_collectiondb.m_numRecs ; i++ ) {
 		SpiderColl *sc = getSpiderCollIffNonNull(i);//m_spiderColls[i];
 		if ( ! sc ) continue;
-		if ( sc->m_waitingTree.m_needsSave ) return true;
+		if ( sc->m_waitingTree.needsSave() ) return true;
 		// also the doleIpTable
 		//if ( sc->m_doleIpTable.m_needsSave ) return true;
 	}

@@ -13,6 +13,7 @@
 #include "JobScheduler.h"
 #include "Process.h"
 #include "PingServer.h"
+#include "max_niceness.h"
 #include <sys/stat.h> //stat()
 
 #ifdef _VALGRIND_
@@ -911,7 +912,7 @@ bool addMetaList ( const char *p , UdpSlot *slot ) {
 
 	// . if already in addList and we are quickpoll interruptint, try again
 	// . happens if our niceness gets converted to 0
-	if ( rdb->m_inAddList ) {
+	if ( rdb->inAddList() ) {
 		g_errno = ETRYAGAIN;
 		return false;
 	}

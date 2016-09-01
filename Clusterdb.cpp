@@ -25,26 +25,17 @@ bool Clusterdb::init ( ) {
 	// . 28 bytes per record when in the tree
 	int32_t maxTreeNodes  = maxTreeMem / ( 16 + CLUSTER_REC_SIZE );
 
-	bool bias = false;
 	// initialize our own internal rdb
 	return m_rdb.init ( g_hostdb.m_dir  ,
 			    "clusterdb"   ,
-			    true          , // dedup
 			    //CLUSTER_REC_SIZE - sizeof(key_t),//fixedDataSize 
 			    0             , // no data now! just docid/s/c
 			    2, // g_conf.m_clusterdbMinFilesToMerge,
 			    g_conf.m_clusterdbMaxTreeMem,
 			    maxTreeNodes  , // maxTreeNodes  ,
-			    true          , //false         , // balance tree?
-			    0,//maxCacheMem   , 
-			    0,//maxCacheNodes ,
 			    true          , // half keys?
-			    g_conf.m_clusterdbSaveCache,
-			    NULL,//&m_pc ,
 			    false,  // is titledb
-			    true ,  // preload disk page cache
-			    12,     // key size
-			    bias ); // bias disk page cache?
+			    12);     // key size
 }
 
 // init the rebuild/secondary rdb, used by PageRepair.cpp
@@ -56,21 +47,13 @@ bool Clusterdb::init2 ( int32_t treeMem ) {
 	// initialize our own internal rdb
 	return m_rdb.init ( g_hostdb.m_dir     ,
 			    "clusterdbRebuild" ,
-			    true          , // dedup
 			    0             , // no data now! just docid/s/c
 			    50            , // m_clusterdbMinFilesToMerge,
 			    treeMem       , // g_conf.m_clusterdbMaxTreeMem,
-			    maxTreeNodes  , 
-			    true          , // balance tree?
-			    0             , // maxCacheMem   , 
-			    0             , // maxCacheNodes ,
+			    maxTreeNodes  ,
 			    true          , // half keys?
-			    false         , // g_conf.m_clusterdbSaveCache,
-			    NULL          , // &m_pc ,
 			    false         ,  // is titledb
-			    false         ,  // preload disk page cache
-			    12            ,     // key size
-			    true          ); // bias disk page cache
+			    12            );     // key size
 }
 
 bool Clusterdb::verify ( char *coll ) {

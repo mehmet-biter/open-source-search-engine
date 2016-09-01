@@ -388,12 +388,9 @@ class RdbMap {
 
 	char m_ks;
 
-	bool m_generatingMap;
-
 	int32_t m_pageSize;
 	int32_t m_pageSizeBits;
 
-	int32_t      m_lastLogTime ;
 	int64_t m_badKeys     ;
 	bool      m_needVerify  ;
 

@@ -736,7 +736,7 @@ void Msg39::intersectLists ( ) {
 	// . but if we are getting weights, we don't need m_toptree!
 	// . actually we were using it before for rat=0/bool queries but
 	//   i got rid of NO_RAT_SLOTS
-	if ( ! m_allocedTree && ! m_posdbTable.allocTopTree() ) {
+	if ( ! m_allocedTree && ! m_posdbTable.allocTopScoringDocIdsData() ) {
 		if ( ! g_errno ) {
 			gbshutdownLogicError();
 		}
@@ -764,7 +764,7 @@ void Msg39::intersectLists ( ) {
 	// do not re do it if doing docid range splitting
 	m_allocedTree = true;
 
-	// . now we must call this separately here, not in allocTopTree()
+	// . now we must call this separately here, not in allocTopScoringDocIdsData()
 	// . we have to re-set the QueryTermInfos with each docid range split
 	//   since it will set the list ptrs from the msg2 lists
 	if ( ! m_posdbTable.setQueryTermInfo () ) {
@@ -995,135 +995,126 @@ void Msg39::estimateHitsAndSendReply(double pctSearched) {
 	// no longer in use
 	m_inUse = false;
 
-	// convenience ptrs. we will store the docids/scores into these arrays
-	int64_t *topDocIds;
-	double    *topScores;
-	key_t     *topRecs;
-
 	// numDocIds counts docs in all tiers when using toptree.
 	int32_t numDocIds = m_toptree.m_numUsedNodes;
 
-	// the msg39 reply we send back
-	int32_t  replySize;
-	char *reply;
+	// if we got clusterdb recs in here, use 'em
+	if(m_gotClusterRecs)
+		numDocIds = m_numVisible;
 
-	//m_numTotalHits = m_posdbTable.m_docIdVoteBuf.length() / 6;
+	// don't send more than the docs that are asked for
+	if(numDocIds>m_msg39req->m_docsToGet)
+		numDocIds = m_msg39req->m_docsToGet;
 
-	// make the reply?
+	// # of QueryTerms in query
+	int32_t nqt = m_query.m_numTerms;
+
+	// make the reply
 	Msg39Reply mr;
 	mr.reset();
+	mr.m_numDocIds = numDocIds;
+	// . total estimated hits
+	mr.m_estimatedHits = m_numTotalHits;  //this is now an EXACT count
+	mr.m_pctSearched = pctSearched;
+	// sanity check
+	mr.m_nqt = nqt;
+	// the m_errno if any
+	mr.m_errno = m_errno;
+	// shortcut
+	PosdbTable *pt = &m_posdbTable;
+	// the score info, in no particular order right now
+	mr.ptr_scoreInfo  = pt->m_scoreInfoBuf.getBufStart();
+	mr.size_scoreInfo = pt->m_scoreInfoBuf.length();
+	// that has offset references into posdbtable::m_pairScoreBuf
+	// and m_singleScoreBuf, so we need those too now
+	mr.ptr_pairScoreBuf    = pt->m_pairScoreBuf.getBufStart();
+	mr.size_pairScoreBuf   = pt->m_pairScoreBuf.length();
+	mr.ptr_singleScoreBuf  = pt->m_singleScoreBuf.getBufStart();
+	mr.size_singleScoreBuf = pt->m_singleScoreBuf.length();
 
-	if ( true ) { //silly condition so we don't have to un-indent a lot of lines
-		// if we got clusterdb recs in here, use 'em
-		if ( m_gotClusterRecs ) numDocIds = m_numVisible;
-		
-		// don't send more than the docs that are asked for
-		if ( numDocIds > m_msg39req->m_docsToGet) numDocIds =m_msg39req->m_docsToGet;
+	// reserve space for these guys, we fill them in below
+	mr.ptr_docIds       = NULL;
+	mr.ptr_scores       = NULL;
+	mr.ptr_clusterRecs  = NULL;
+	// this is how much space to reserve
+	mr.size_docIds      = sizeof(int64_t) * numDocIds;
+	mr.size_scores      = sizeof(double) * numDocIds;
+	// if not doing site clustering, we won't have these perhaps...
+	if(m_gotClusterRecs)
+		mr.size_clusterRecs = sizeof(key_t) *numDocIds;
+	else
+		mr.size_clusterRecs = 0;
 
-		// # of QueryTerms in query
-		int32_t nqt = m_query.m_numTerms;
-		// start setting the stuff
-		mr.m_numDocIds = numDocIds;
-		// . total estimated hits
-		// . this is now an EXACT count!
-		mr.m_estimatedHits = m_numTotalHits;
-		mr.m_pctSearched = pctSearched;
-		// sanity check
-		mr.m_nqt = nqt;
-		// the m_errno if any
-		mr.m_errno = m_errno;
-		// shortcut
-		PosdbTable *pt = &m_posdbTable;
-		// the score info, in no particular order right now
-		mr.ptr_scoreInfo  = pt->m_scoreInfoBuf.getBufStart();
-		mr.size_scoreInfo = pt->m_scoreInfoBuf.length();
-		// that has offset references into posdbtable::m_pairScoreBuf 
-		// and m_singleScoreBuf, so we need those too now
-		mr.ptr_pairScoreBuf    = pt->m_pairScoreBuf.getBufStart();
-		mr.size_pairScoreBuf   = pt->m_pairScoreBuf.length();
-		mr.ptr_singleScoreBuf  = pt->m_singleScoreBuf.getBufStart();
-		mr.size_singleScoreBuf = pt->m_singleScoreBuf.length();
-
-		// reserve space for these guys, we fill them in below
-		mr.ptr_docIds       = NULL;
-		mr.ptr_scores       = NULL;
-		mr.ptr_clusterRecs  = NULL;
-		// this is how much space to reserve
-		mr.size_docIds      = 8 * numDocIds; // int64_t
-		mr.size_scores      = sizeof(double) * numDocIds; // float
-		// if not doing site clustering, we won't have these perhaps...
-		if ( m_gotClusterRecs ) 
-			mr.size_clusterRecs = sizeof(key_t) *numDocIds;
-		else    
-			mr.size_clusterRecs = 0;
-
-		// . that is pretty much it,so serialize it into buffer,"reply"
-		// . mr.ptr_docIds, etc., will point into the buffer so we can
-		//   re-serialize into it below from the tree
-		// . returns NULL and sets g_errno on error
-		// . "true" means we should make mr.ptr_* reference into the 
-		//   newly  serialized buffer.
-		reply = serializeMsg ( sizeof(Msg39Reply), // baseSize
-				       &mr.size_docIds, // firstSizeParm
-				       &mr.size_clusterRecs,//lastSizePrm
-				       &mr.ptr_docIds , // firstStrPtr
-				       &mr , // thisPtr
-				       &replySize , 
-				       NULL , 
-				       0 , 
-				       true ) ;
-		if ( ! reply ) {
-			log("query: Could not allocated memory "
-			    "to hold reply of docids to send back.");
-			sendReply(m_slot,this,NULL,0,0,true);
-			return;
-		}
-		topDocIds    = (int64_t *) mr.ptr_docIds;
-		topScores    = (double    *) mr.ptr_scores;
-		topRecs      = (key_t     *) mr.ptr_clusterRecs;
-
-		// sanity
-		if ( nqt != m_msg2.getNumLists() )
-			log("query: nqt mismatch for q=%s",m_query.m_orig);
+	// . that is pretty much it,so serialize it into buffer,"reply"
+	// . mr.ptr_docIds, etc., will point into the buffer so we can
+	//   re-serialize into it below from the tree
+	// . returns NULL and sets g_errno on error
+	// . "true" means we should make mr.ptr_* reference into the
+	//   newly  serialized buffer.
+	int32_t  replySize;
+	char *reply = serializeMsg(sizeof(Msg39Reply),   // baseSize
+				   &mr.size_docIds,      // firstSizeParm
+				   &mr.size_clusterRecs, // lastSizePrm
+				   &mr.ptr_docIds,       // firstStrPtr
+				   &mr,                  // thisPtr
+				   &replySize,
+				   NULL,
+				   0,
+				   true);
+	if(!reply){
+		log("query: Could not allocated memory "
+		    "to hold reply of docids to send back.");
+		sendReply(m_slot,this,NULL,0,0,true);
+		return;
 	}
+	int64_t *topDocIds = (int64_t*)mr.ptr_docIds;
+	double *topScores  = (double*) mr.ptr_scores;
+	key_t *topRecs     = (key_t*)  mr.ptr_clusterRecs;
+
+	// sanity
+	if(nqt!=m_msg2.getNumLists())
+		log("query: nqt mismatch for q=%s",m_query.m_orig);
 
 	int32_t docCount = 0;
 	// loop over all results in the TopTree
-	for ( int32_t ti = m_toptree.getHighNode();
-	      ti >= 0;
-	      ti = m_toptree.getPrev(ti) ) {
+	for(int32_t ti = m_toptree.getHighNode();
+	    ti >= 0;
+	    ti = m_toptree.getPrev(ti))
+	{
 		// get the guy
 		TopNode *t = &m_toptree.m_nodes[ti];
 		// skip if clusterLevel is bad!
-		if ( m_gotClusterRecs && t->m_clusterLevel != CR_OK ) 
+		if(m_gotClusterRecs && t->m_clusterLevel!=CR_OK)
 			continue;
 
 		// sanity check
-		if ( t->m_docId < 0 ) gbshutdownLogicError();
+		if(t->m_docId<0)
+			gbshutdownLogicError();
 		//add it to the reply
-		topDocIds         [docCount] = t->m_docId;
-		topScores         [docCount] = t->m_score;
-		if ( m_toptree.m_useIntScores ) 
+		topDocIds[docCount] = t->m_docId;
+		topScores[docCount] = t->m_score;
+		if(m_toptree.m_useIntScores)
 			topScores[docCount] = (double)t->m_intScore;
 		// supply clusterdb rec? only for full splits
-		if ( m_gotClusterRecs ) 
+		if(m_gotClusterRecs)
 			topRecs [docCount] = t->m_clusterRec;
 		docCount++;
 
-		if ( m_debug ) {
+		if(m_debug) {
 			logf(LOG_DEBUG,"query: msg39: [%" PTRFMT"] "
 			    "%03" PRId32") docId=%012" PRIu64" sum=%.02f",
 			    (PTRTYPE)this, docCount,
 			    t->m_docId,t->m_score);
 		}
 		//don't send more than the docs that are wanted
-		if ( docCount >= numDocIds ) break;
+		if(docCount>=numDocIds)
+			break;
 	}
- 	if ( docCount > 300 && m_debug )
+	if(docCount>300 && m_debug)
 		log("query: Had %" PRId32" nodes in top tree",docCount);
 
 	// this is sensitive info
-	if ( m_debug ) {
+	if(m_debug) {
 		log(LOG_DEBUG,
 		    "query: msg39: [%" PTRFMT"] "
 		    "Intersected lists took %" PRId64" (%" PRId64") "
@@ -1137,7 +1128,6 @@ void Msg39::estimateHitsAndSendReply(double pctSearched) {
 		    numDocIds                         ,
 		    m_query.getQuery());
 	}
-
 
 	// now send back the reply
 #ifdef _VALGRIND_

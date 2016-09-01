@@ -28,28 +28,15 @@
 #define GB_RDBMERGE_H
 
 #include "RdbDump.h"
-#include "RdbIndex.h"
 #include "Msg5.h"
 
-// . we try to read this many bytes at a time then dump to a file
-// . keep it to 5 megs for now
-//#define MERGE_BUF_SIZE (5*1024*1024)
-// . i'm trying to improve query response time
-// . while merging, it seems it is directly proportional to MERGE_BUF_SIZE
-// . we also need to disable bdflush so all the writes don't spew out on
-//   some important reads
-// . i think if we do large reads the kernel commits to it and cancelling
-//   the thread does not really cancel the read, so keep reads small
-//#define MERGE_BUF_SIZE (1000*1000)
-// . now we cancel threads, try a bigger one
-// . Lars's stripe size is 1 meg i believe
-//#define MERGE_BUF_SIZE (4*1024*1024)
-// for debugging tiering, i made this small
-//#define MERGE_BUF_SIZE (1024)
+class RdbIndex;
 
 class RdbMerge {
-
- public:
+public:
+	RdbMerge();
+	~RdbMerge();
+	void reset();
 
 	// . selects the files to merge
 	// . uses keyMasks and files from the passed Rdb class
@@ -58,92 +45,85 @@ class RdbMerge {
 	// . new file name is stored in m_filename so Rdb can look at it
 	// . calls rdb->incorporateMerge() when done with merge or had error
 	// . "maxBufSize" is size of list to get then write (read/write buf)
-	bool merge ( rdbid_t       rdbId,
-		     //char      *coll         ,
-		     collnum_t collnum ,
-		     BigFile   *target       ,
-		     RdbMap    *targetMap    ,
-		     RdbIndex	*targetIndex,		//@@@ BR: no-merge index
-		     int32_t       id2          ,
-		     int32_t       startFileNum ,
-		     int32_t       numFiles     ,
-		     int32_t       niceness     ,
-		     void *pc ,
-		     int64_t maxTargetFileSize ,
-		     char       keySize      );
+	bool merge(rdbid_t rdbId,
+	           collnum_t collnum,
+	           BigFile *target,
+	           RdbMap *targetMap,
+	           RdbIndex *targetIndex,
+	           int32_t startFileNum,
+	           int32_t numFiles,
+	           int32_t niceness,
+	           char keySize);
 
-	bool isMerging ( ) { return m_isMerging; }
+	int32_t getNumThreads() const { return m_numThreads; }
+
+	bool isMerging() const { return m_isMerging; }
+	void setMerging(bool merging) { m_isMerging = merging; }
+
+	bool isSuspended() const { return m_isSuspended; }
+	bool isDumping() const { return m_dump.isDumping(); }
+
+	rdbid_t getRdbId() const { return m_rdbId; }
 
 	// suspend the merging until resumeMerge() is called
-	void suspendMerge ( ) ;
+	void suspendMerge();
+
+	static void unlinkPartWrapper(void *state);
+	static void dumpListWrapper(void *state);
+	static void gotListWrapper(void *state, RdbList *list, Msg5 *msg5);
+	static void tryAgainWrapper(int fd, void *state);
+
+private:
+	bool dumpList();
+	bool getNextList();
+	bool getAnotherList();
+	void doneMerging();
 
 	// . return false and sets errno on error merging
 	// . returns true if blocked, or completed successfully
-	bool resumeMerge  ( ) ;
-
-	// these must be public so wrappers can call
-	bool dumpList     ( );
-	bool getNextList  ( ) ;
-	bool getAnotherList ( ) ;
-	void doneMerging  ( ) ;
-
-	 RdbMerge() ;
-	~RdbMerge() ;
-	void reset();
+	bool resumeMerge();
 
 	// . called to continue merge initialization after lock is secure
 	// . lock is g_isMergingLock
-	bool gotLock ( ) ;
-
-	// set to true when m_startKey wraps back to 0
-	bool        m_doneMerging;
+	bool gotLock();
 
 	void doSleep();
 
-	int32_t      m_numThreads;
+	// set to true when m_startKey wraps back to 0
+	bool m_doneMerging;
 
-	// private:
-
-	// . used when growing the database
-	// . removes keys that would no longer be stored by us
-	//void filterList    ( RdbList *list ) ;
+	int32_t m_numThreads;
 
 	// . we get the units from the master and the mergees from the units
-	int32_t        m_startFileNum;
-	int32_t        m_numFiles;
-	bool        m_dedup;
-	int32_t        m_fixedDataSize;
-	BigFile    *m_target;
-	RdbMap     *m_targetMap;
-	RdbIndex   *m_targetIndex;
+	int32_t m_startFileNum;
+	int32_t m_numFiles;
+	int32_t m_fixedDataSize;
+	BigFile *m_target;
+	RdbMap *m_targetMap;
+	RdbIndex *m_targetIndex;
 
-	char        m_startKey[MAX_KEY_BYTES];
-	char        m_endKey[MAX_KEY_BYTES];
+	char m_startKey[MAX_KEY_BYTES];
+	char m_endKey[MAX_KEY_BYTES];
 
-	bool        m_isMerging;
-	bool        m_isSuspended;
-	bool        m_isReadyToSave;
+	bool m_isMerging;
+	bool m_isSuspended;
+	bool m_isReadyToSave;
 
 	// for writing to target file
-	RdbDump     m_dump;
+	RdbDump m_dump;
 
 	// a Msg5 for getting RdbLists from disk/cache
-	Msg5        m_msg5;
+	Msg5 m_msg5;
 
-	RdbList     m_list;
+	RdbList m_list;
 
-	int32_t        m_niceness;
-
-	int64_t m_maxTargetFileSize;
-
-	int32_t      m_id2;
+	int32_t m_niceness;
 
 	// for getting the RdbBase class doing the merge
-	rdbid_t   m_rdbId;
-	//char      m_coll [ MAX_COLL_LEN + 1 ];
+	rdbid_t m_rdbId;
 	collnum_t m_collnum;
 
-	char      m_ks;
+	char m_ks;
 };
 
 #endif // GB_RDBMERGE_H

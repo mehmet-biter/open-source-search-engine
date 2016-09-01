@@ -89,7 +89,7 @@ void *RdbMem::dupData(const char *key, const char *data, int32_t dataSize, colln
 void *RdbMem::allocData(const char *key, int32_t dataSize, collnum_t collnum) {
 	// if we're dumping and key has been dumped, use the secondary mem
 	//if ( m_dump->isDumping() && key < m_dump->getLastKeyInQueue() ) {
-	if ( m_rdb->m_inDumpLoop ) {
+	if ( m_rdb->isInDumpLoop() ) {
 		/////
 		// MDW: 3/15/2016
 		// if we're dumping then ALWAYS use secondary mem, wtf...
@@ -173,18 +173,18 @@ void RdbMem::freeDumpedMem( RdbTree *tree ) {
 	log("rdbmem: start freeing dumped mem");
 
 	// this should still be true so allocData() returns m_ptr2 ptrs
-	if(!m_rdb->m_inDumpLoop) g_process.shutdownAbort(true);
+	if(!m_rdb->isInDumpLoop()) g_process.shutdownAbort(true);
 
 	// count how many data nodes we had to move to avoid corruption
 	int32_t count = 0;
 	int32_t scanned = 0;
-	for(int32_t i = 0; i < tree->m_minUnusedNode; i++) {
+	for(int32_t i = 0; i < tree->getMinUnusedNode(); i++) {
 		// skip node if parents is -2 (unoccupied)
-		if(tree->m_parents[i]==-2)
+		if(tree->isEmpty(i))
 			continue;
 		scanned++;
 		// get the ptr
-		char *data = tree->m_data[i];
+		char *data = tree->getData(i);
 		if(!data)
 			continue;
 		// how could it's data not be stored in here?
@@ -216,7 +216,7 @@ void RdbMem::freeDumpedMem( RdbTree *tree ) {
 		// m_ptr2
 		int32_t size;
 		if ( tree->m_sizes )
-			size = tree->m_sizes[i];
+			size = tree->getDataSize(i);
 		else
 			size = tree->m_fixedDataSize;
 			
@@ -249,11 +249,11 @@ void RdbMem::freeDumpedMem( RdbTree *tree ) {
 		}
 		count++;
 		gbmemcpy(newData,data,size);
-		tree->m_data[i] = newData;
+		tree->setData(i, newData);
 	}
 	if(count>0)
 		log("rdbmem: moved %i tree nodes for %s",(int)count,
-			m_rdb->m_dbname);
+			m_rdb->getDbname());
 		
 	log("rdbmem: stop freeing dumped mem. scanned %i nodes.",(int)scanned);
 

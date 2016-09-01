@@ -5,11 +5,8 @@
 #define SHT_SYMTAB 2
 #define SHT_DYNSYM 11
 
-#include "TcpServer.h"
-#include "HttpRequest.h"
 #include "Parms.h"
 #include "SafeBuf.h"
-#include "Pages.h"
 #include "HashTableX.h"
 
 typedef struct elf_internal_ehdr {

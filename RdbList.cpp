@@ -1885,14 +1885,7 @@ bool RdbList::posdbConstrain(const char *startKey, char *endKey, int32_t minRecS
 //   before calling this
 // . CAUTION: you should call constrain() on all "lists" before calling this
 //   so we don't have to do boundary checks on the keys here
-void RdbList::merge_r ( RdbList **lists         ,
-			int32_t      numLists      ,
-			const char     *startKey      ,
-			const char     *endKey        ,
-			int32_t      minRecSizes   ,
-			bool      removeNegRecs ,
-			char      rdbId         ,
-			int32_t      niceness      ) {
+void RdbList::merge_r(RdbList **lists, int32_t numLists, const char *startKey, const char *endKey, int32_t minRecSizes, bool removeNegRecs, char rdbId) {
 	assert(this);
 	verify_signature();
 	// sanity
@@ -1974,8 +1967,8 @@ void RdbList::merge_r ( RdbList **lists         ,
 		return;
 	}
 
-	if ( rdbId  == RDB_POSDB ) {
-		posdbMerge_r ( lists, numLists, startKey, endKey, m_mergeMinListSize, removeNegRecs, niceness );
+	if (rdbId == RDB_POSDB) {
+		posdbMerge_r(lists, numLists, startKey, endKey, m_mergeMinListSize, removeNegRecs);
 		verify_signature();
 		return;
 	}
@@ -2398,23 +2391,13 @@ skip:
 	*/
 }
 
-#include "Msg3.h" // #define for MAX_RDB_FILES
-
 ////////
 //
 // SPECIALTY MERGE FOR POSDB
 //
 ///////
 
-
-
-bool RdbList::posdbMerge_r ( RdbList **lists         ,
-			     int32_t      numLists      ,
-			     const char     *startKey      ,
-			     const char     *endKey        ,
-			     int32_t      minRecSizes   ,
-			     bool      removeNegKeys ,
-			     int32_t      niceness       ) {
+bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startKey, const char *endKey, int32_t minRecSizes, bool removeNegKeys) {
 	// sanity
 	if ( m_ks != sizeof(key144_t) ) { g_process.shutdownAbort(true); }
 	//no-op check

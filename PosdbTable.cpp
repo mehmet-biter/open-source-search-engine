@@ -159,257 +159,6 @@ void PosdbTable::init(Query *q, bool debug, void *logstate, TopTree *topTree, Ms
 
 
 
-// this is separate from allocTopTree() function below because we must
-// call it for each iteration in Msg39::doDocIdSplitLoop() which is used
-// to avoid reading huge termlists into memory. it breaks the huge lists
-// up by smaller docid ranges and gets the search results for each docid
-// range separately.
-bool PosdbTable::allocWhiteListTable ( ) {
-	//
-	// the whitetable is for the docids in the whitelist. we have
-	// to only show results whose docid is in the whitetable, which
-	// is from the "&sites=abc.com+xyz.com..." custom search site list
-	// provided by the user.
-	//
-	if ( m_r->size_whiteList <= 1 ) m_useWhiteTable = false; // inclds \0
-	else 		                m_useWhiteTable = true;
-	int32_t sum = 0;
-	for ( int32_t i = 0 ; i < m_msg2->getNumWhiteLists() ; i++ ) {
-		RdbList *list = m_msg2->getWhiteList(i);
-		if ( list->isEmpty() ) continue;
-		// assume 12 bytes for all keys but first which is 18
-		int32_t size = list->getListSize();
-		sum += size / 12 + 1;
-	}
-	if ( sum ) {
-		// making this sum * 3 does not show a speedup... hmmm...
-		int32_t numSlots = sum * 2;
-		// keep it restricted to 5 byte keys so we do not have to
-		// extract the docid, we can just hash the ptr to those
-		// 5 bytes (which includes 1 siterank bit as the lowbit,
-		// but should be ok since it should be set the same in
-		// all termlists that have that docid)
-		if ( ! m_whiteListTable.set(5,0,numSlots,NULL,0,false,
-					    0,"wtall"))
-			return false;
-		// try to speed up. wow, this slowed it down about 4x!!
-		//m_whiteListTable.m_maskKeyOffset = 1;
-		//
-		////////////
-		//
-		// this seems to make it like 20x faster... 1444ms vs 27000ms:
-		//
-		////////////
-		//
-		m_whiteListTable.m_useKeyMagic = true;
-	}
-	return true;
-}
-
-
-
-void PosdbTable::prepareWhiteListTable()
-{
-	// hash the docids in the whitelist termlists into a hashtable.
-	// every docid in the search results must be in there. the
-	// whitelist termlists are from a provided "&sites=abc.com+xyz.com+.."
-	// cgi parm. the user only wants search results returned from the
-	// specified subdomains. there can be up to MAX_WHITELISTS (500)
-	// sites right now. this hash table must have been pre-allocated
-	// in Posdb::allocTopTree() above since we might be in a thread.
-	if ( m_addedSites )
-		return;
-
-	for ( int32_t i = 0 ; i < m_msg2->getNumWhiteLists() ; i++ ) {
-		RdbList *list = m_msg2->getWhiteList(i);
-		if ( list->isEmpty() ) continue;
-		// sanity test
-		int64_t d1 = g_posdb.getDocId(list->getList());
-		if ( d1 > m_msg2->docIdEnd() ) {
-			log("posdb: d1=%" PRId64" > %" PRId64,
-			    d1,m_msg2->docIdEnd());
-			//gbshutdownAbort(true);
-		}
-		if ( d1 < m_msg2->docIdStart() ) {
-			log("posdb: d1=%" PRId64" < %" PRId64,
-			    d1,m_msg2->docIdStart());
-			//gbshutdownAbort(true);
-		}
-		// first key is always 18 bytes cuz it has the termid
-		// scan recs in the list
-		for ( ; ! list->isExhausted() ; list->skipCurrentRecord() ) {
-			char *rec = list->getCurrentRec();
-			// point to the 5 bytes of docid
-			m_whiteListTable.addKey ( rec + 7 );
-		}
-	}
-
-	m_addedSites = true;
-}
-
-
-
-bool PosdbTable::allocTopTree() {
-	int64_t nn1 = m_r->m_docsToGet;
-	int64_t nn2 = 0;
-	// just add all up in case doing boolean OR or something
-	for ( int32_t k = 0 ; k < m_msg2->getNumLists(); k++){
-		// count
-		RdbList *list = m_msg2->getList(k);
-		// skip if null
-		if ( ! list ) continue;
-		// skip if list is empty, too
-		if ( list->isEmpty() ) continue;
-		// show if debug
-		if ( m_debug )
-			log(LOG_INFO, "toptree: adding listsize %" PRId32" to nn2", list->m_listSize);
-		// tally. each new docid in this termlist will compress
-		// the 6 byte termid out, so reduce by 6.
-		nn2 += list->m_listSize / ( sizeof(POSDBKEY) -6 );
-	}
-
-	// if doing docid range phases where we compute the winning docids
-	// for a range of docids to save memory, then we need to amp this up
-	if ( m_r->m_numDocIdSplits > 1 ) {
-		// if 1 split has only 1 docid the other splits
-		// might have 10 then this doesn't work, so make it
-		// a min of 100.
-		if ( nn2 < 100 ) nn2 = 100;		
-		// how many docid range splits are we doing?
-		nn2 *= m_r->m_numDocIdSplits;
-		// just in case one split is not as big
-		nn2 *= 2;
-
-		// boost this guy too since we compare it to nn2
-		if ( nn1 < 100 ) nn1 = 100;
-		nn1 *= m_r->m_numDocIdSplits;
-		nn1 *= 2;
-	}
-		
-	// do not go OOM just because client asked for 10B results and we
-	// only have like 100 results.
-	int64_t nn = gbmin(nn1,nn2);
-
-	
-
-	// . do not alloc space for anything if all termlists are empty
-	// . before, even if nn was 0, top tree would alloc a bunch of nodes
-	//   and we don't want to do that now to save mem and so 
-	//   Msg39 can check 
-	//   if ( m_posdbTable.m_topTree->m_numNodes == 0 )
-	//   to see if it should
-	//   advance to the next docid range or not.
-	if ( nn == 0 )
-		return true;
-
-	// always at least 100 i guess. why? it messes up the
-	// m_scoreInfoBuf capacity and it cores
-	//if ( nn < 100 ) nn = 100;
-	// but 30 is ok since m_scoreInfo buf uses 32
-	nn = gbmax(nn,30);
-
-
-	if ( m_r->m_doSiteClustering ) nn *= 2;
-
-        // limit to this regardless!
-        //CollectionRec *cr = g_collectiondb.getRec ( m_coll );
-        //if ( ! cr ) return false;
-
-	// limit to 2B docids i guess
-	nn = gbmin(nn,2000000000);
-
-	if ( m_debug )
-		log(LOG_INFO, "toptree: toptree: initializing %" PRId64" nodes",nn);
-
-	if ( nn < m_r->m_docsToGet )
-		log("query: warning only getting up to %" PRId64" docids "
-		    "even though %" PRId32" requested because termlist "
-		    "sizes are so small!! splits=%" PRId32
-		    , nn
-		    , m_r->m_docsToGet 
-		    , (int32_t)m_r->m_numDocIdSplits
-		    );
-
-	// keep it sane
-	if ( nn > m_r->m_docsToGet * 2 && nn > 60 )
-		nn = m_r->m_docsToGet * 2;
-
-	// this actually sets the # of nodes to MORE than nn!!!
-	if ( ! m_topTree->setNumNodes(nn,m_r->m_doSiteClustering)) {
-		log("toptree: toptree: error allocating nodes: %s",
-		    mstrerror(g_errno));
-		return false;
-	}
-	// let's use nn*4 to try to get as many score as possible, although
-	// it may still not work!
-	int32_t xx = nn;//m_r->m_docsToGet ;
-	// try to fix a core of growing this table in a thread when xx == 1
-	xx = gbmax(xx,32);
-	//if ( m_r->m_doSiteClustering ) xx *= 4;
-	m_maxScores = xx;
-	// for seeing if a docid is in toptree. niceness=0.
-	//if ( ! m_docIdTable.set(8,0,xx*4,NULL,0,false,0,"dotb") )
-	//	return false;
-
-	if ( m_r->m_getDocIdScoringInfo ) {
-
-		m_scoreInfoBuf.setLabel ("scinfobuf" );
-
-		// . for holding the scoring info
-		// . add 1 for the \0 safeMemcpy() likes to put at the end so 
-		//   it will not realloc on us
-		if ( ! m_scoreInfoBuf.reserve ( xx * sizeof(DocIdScore) +100) )
-			return false;
-		// likewise how many query term pair scores should we get?
-		int32_t numTerms = m_q->m_numTerms;
-		// limit
-		numTerms = gbmin(numTerms,10);
-		// the pairs. divide by 2 since (x,y) is same as (y,x)
-		int32_t numPairs = (numTerms * numTerms) / 2;
-		// then for each pair assume no more than MAX_TOP reps, usually
-		// it's just 1, but be on the safe side
-		numPairs *= m_realMaxTop;//MAX_TOP;
-		// now that is how many pairs per docid and can be 500! but we
-		// still have to multiply by how many docids we want to 
-		// compute. so this could easily get into the megabytes, most 
-		// of the time we will not need nearly that much however.
-		numPairs *= xx;
-
-		m_pairScoreBuf.setLabel ( "pairbuf" );
-		m_singleScoreBuf.setLabel ("snglbuf" );
-
-		// but alloc it just in case
-		if ( ! m_pairScoreBuf.reserve (numPairs * sizeof(PairScore) ) )
-			return false;
-		// and for singles
-		int32_t numSingles = numTerms * m_realMaxTop * xx; // MAX_TOP *xx;
-		if ( !m_singleScoreBuf.reserve(numSingles*sizeof(SingleScore)))
-			return false;
-	}
-
-	// m_stackBuf
-	int32_t   nqt = m_q->m_numTerms;
-	int32_t need  = 0;
-	need += 4 * nqt;
-	need += 4 * nqt;
-	need += 4 * nqt;
-	need += 4 * nqt;
-	need += sizeof(float ) * nqt;
-	need += sizeof(char *) * nqt;
-	need += sizeof(char *) * nqt;
-	need += sizeof(char *) * nqt;
-	need += sizeof(char *) * nqt;
-	need += sizeof(char *) * nqt;
-	need += sizeof(char  ) * nqt;
-	need += sizeof(float ) * nqt * nqt; // square matrix
-	m_stackBuf.setLabel("stkbuf1");
-	if ( ! m_stackBuf.reserve( need ) )
-		return false;
-
-	return true;
-}
-
-
 
 // kinda like getTermPairScore, but uses the word positions currently
 // pointed to by ptrs[i] and does not scan the word position lists.
@@ -2375,12 +2124,10 @@ bool PosdbTable::setQueryTermInfo ( ) {
 	//
 	// get the query term with the least data in posdb including syns
 	//
-	m_minListSize = 0;
-	m_minListi    = -1;
-	int64_t grand = 0LL;
-	// hopefully no more than 100 sublists per term
-	//char *listEnds  [ MAX_QUERY_TERMS ][ MAX_SUBLISTS ];
-	// set ptrs now i guess
+	m_minTermListSize	= 0;
+	m_minTermListIdx	= -1;
+	int64_t grand 		= 0LL;
+
 	for ( int32_t i = 0 ; i < nrg ; i++ ) {
 		// compute total sizes
 		int64_t total = 0LL;
@@ -2395,26 +2142,27 @@ bool PosdbTable::setQueryTermInfo ( ) {
 		total = qti->m_totalSubListsSize;
 		// add up this now
 		grand += total;
+
 		// get min
-		if ( total < m_minListSize || m_minListi == -1 ) {
-			m_minListSize = total;
-			m_minListi    = i;
+		if ( total < m_minTermListSize || m_minTermListIdx == -1 ) {
+			m_minTermListSize	= total;
+			m_minTermListIdx	= i;
 		}
 	}
 
 	// bad! ringbuf[] was not designed for this nonsense!
-	if ( m_minListi >= 255 ) {
+	if ( m_minTermListIdx >= 255 ) {
 		gbshutdownAbort(true);
 	}
 	
 	// set this for caller to use to loop over the queryterminfos
 	m_numQueryTermInfos = nrg;
 
-	// . m_minListSize is set in setQueryTermInfo()
+	// . m_minTermListSize is set in setQueryTermInfo()
 	// . how many docids do we have at most in the intersection?
 	// . all keys are of same termid, so they are 12 or 6 bytes compressed
 	// . assume 12 if each is a different docid
-	int32_t maxDocIds = m_minListSize / 12;
+	int32_t maxDocIds = m_minTermListSize / 12;
 	// store all interesected docids in here for new algo plus 1 byte vote
 	int32_t need = maxDocIds * 6;
 
@@ -2475,159 +2223,10 @@ bool PosdbTable::setQueryTermInfo ( ) {
 
 
 
-
-
-
-void PosdbTable::shrinkSubLists ( QueryTermInfo *qti ) {
-
-	logTrace(g_conf.m_logTracePosdb, "BEGIN.");
-
-	// reset count of new sublists
-	qti->m_numNewSubLists = 0;
-
-	// scan each sublist vs. the docid list
-	for ( int32_t i = 0 ; i < qti->m_numSubLists ; i++ ) {
-
-		// get that sublist
-		char *recPtr     = qti->m_subLists[i]->getList();
-		char *subListEnd = qti->m_subLists[i]->getListEnd();
-		// reset docid list ptrs
-		char *dp    =      m_docIdVoteBuf.getBufStart();
-		char *dpEnd = dp + m_docIdVoteBuf.length();
-
-		// re-copy into the same buffer!
-		char *dst = recPtr;
-		// save it
-		char *savedDst = dst;
-
-
-	subLoop:
-		// scan the docid list for the current docid in this termlist
-		for ( ; ; dp += 6 ) {
-			// no docids in list? no need to skip any more recPtrs!
-			if ( dp >= dpEnd ) {
-				goto doneWithSubList;
-			}
-				
-			// if current docid in docid list is >= the docid
-			// in the sublist, stop. docid in list is 6 bytes and
-			// recPtr must be pointing to a 12 byte posdb rec.
-			if ( *(uint32_t *)(dp+1) > *(uint32_t *)(recPtr+8) ) {
-				break;
-			}
-			
-			// try to catch up docid if it is behind
-			if ( *(uint32_t *)(dp+1) < *(uint32_t *)(recPtr+8) ) {
-				continue;
-			}
-
-			// check lower byte if equal
-			if ( *(unsigned char *)(dp) > (*(unsigned char *)(recPtr+7) & 0xfc ) ) {
-				break;
-			}
-
-			if ( *(unsigned char *)(dp) < (*(unsigned char *)(recPtr+7) & 0xfc ) ) {
-				continue;
-			}
-
-			// copy over the 12 byte key
-			*(int64_t *)dst = *(int64_t *)recPtr;
-			*(int32_t *)(dst+8) = *(int32_t *)(recPtr+8);
-			// skip that 
-			dst    += 12;
-			recPtr += 12;
-
-			// copy over any 6 bytes keys following
-			for ( ; ; ) {
-				if ( recPtr >= subListEnd ) {
-					// give up on this exhausted term list!
-					goto doneWithSubList;
-				}
-				
-				// next docid willbe next 12 bytekey
-				if ( ! ( recPtr[0] & 0x04 ) ) {
-					break;
-				}
-				
-				// otherwise it's 6 bytes
-				*(int32_t *)dst = *(int32_t *)recPtr;
-				*(int16_t *)(dst+4) = *(int16_t *)(recPtr+4);
-				dst += 6;
-				recPtr += 6;
-			}
-			// continue the docid loop for this new recPtr
-			continue;
-		}
-
-		// skip that docid record in our termlist. it MUST have been
-		// 12 bytes, a docid heading record.
-		recPtr += 12;
-
-		// skip any following keys that are 6 bytes, that means they
-		// share the same docid
-		for ( ; ;  ) {
-			// list exhausted?
-			if ( recPtr >= subListEnd ) {
-				goto doneWithSubList;
-			}
-			
-			// stop if next key is 12 bytes, that is a new docid
-			if ( ! (recPtr[0] & 0x04) ) {
-				break;
-			}
-			
-			// skip it
-			recPtr += 6;
-		}
-
-		// process the next rec ptr now
-		goto subLoop;
-
-	doneWithSubList:
-
-		// set sublist end
-		int32_t x = qti->m_numNewSubLists;
-		qti->m_newSubListSize  [x] = dst - savedDst;
-		qti->m_newSubListStart [x] = savedDst;
-		qti->m_newSubListEnd   [x] = dst;
-		qti->m_cursor          [x] = savedDst;
-		qti->m_savedCursor     [x] = savedDst;
-		
-		if ( qti->m_newSubListSize [x] ) {
-			qti->m_numNewSubLists++;
-		}
-	}
-	
-	logTrace(g_conf.m_logTracePosdb, "END.");
-}
-
-
-
-// . compare the output of this to intersectLists9_r()
-// . hopefully this will be easier to understand and faster
-// . IDEAS:
-//   we could also note that if a term was not in the title or
-//   inlink text it could never beat the 10th score.
-void PosdbTable::intersectLists10_r ( ) {
-	logTrace(g_conf.m_logTracePosdb, "BEGIN. numTerms: %" PRId32, m_q->m_numTerms);
-
-
-	m_finalScore = 0.0;
-
-
-	prepareWhiteListTable();
-
-	initWeights();
-	// assume no-op
-	m_t1 = 0LL;
-
-	// set start time
-	int64_t t1 = gettimeofdayInMilliseconds();
-
-	int64_t lastTime = t1;
-
-	// assume we return early
-	m_addListsTime = 0;
+bool PosdbTable::findCandidateDocIds() {
+	int64_t lastTime = gettimeofdayInMilliseconds();
+	int64_t now;
+	int64_t took;
 
 
 	//
@@ -2638,7 +2237,7 @@ void PosdbTable::intersectLists10_r ( ) {
 	// and the rest are 6 bytes due to our termid compression.
 	//
 	// This makes the lists much much easier to work with, but we have
-	// to remember to swap back when done!
+	// to remember to swap back when done! (but we dont...)
 	//
 	for ( int32_t k = 0 ; k < m_q->m_numTerms ; k++ ) {
 		// count
@@ -2690,22 +2289,21 @@ void PosdbTable::intersectLists10_r ( ) {
 	// setQueryTermInfos() should have set how many we have
 	if ( m_numQueryTermInfos == 0 ) {
 		log(LOG_DEBUG, "query: NO REQUIRED TERMS IN QUERY!");
-
 		logTrace(g_conf.m_logTracePosdb, "END, m_numQueryTermInfos = 0");
-		return;
+		return false;
 	}
 
 	// . if smallest required list is empty, 0 results
 	// . also set in setQueryTermInfo
-	if ( m_minListSize == 0 && ! m_q->m_isBoolean ) {
-		logTrace(g_conf.m_logTracePosdb, "END, m_minListSize = 0 and not boolean");
-		return;
+	if ( m_minTermListSize == 0 && ! m_q->m_isBoolean ) {
+		logTrace(g_conf.m_logTracePosdb, "END, m_minTermListSize = 0 and not boolean");
+		return false;
 	}
 
 
-	int64_t now;
-	int64_t took;
-	int32_t phase = 1;
+//	int64_t now;
+//	int64_t took;
+//	int32_t phase = 1;
 
 	int32_t listGroupNum = 0;
 
@@ -2718,20 +2316,28 @@ void PosdbTable::intersectLists10_r ( ) {
 	for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
 		// get it
 		QueryTermInfo *qti = &qip[i];
+
 		// skip if negative query term
-		if ( qti->m_bigramFlags[0] & BF_NEGATIVE ) continue;
+		if ( qti->m_bigramFlags[0] & BF_NEGATIVE ) {
+			continue;
+		}
+		
 		// skip if numeric field like gbsortby:price gbmin:price:1.23
-		if ( qti->m_bigramFlags[0] & BF_NUMBER ) continue;
+		if ( qti->m_bigramFlags[0] & BF_NUMBER ) {
+			continue;
+		}
+		
 		// set it
-		if ( qti->m_wikiPhraseId == 1 ) continue;			//@@@ BR: Why only check for id = 1 ??
+		if ( qti->m_wikiPhraseId == 1 ) {
+			continue;			//@@@ BR: Why only check for id = 1 ??
+		}
+		
 		// stop
 		m_allInSameWikiPhrase = false;
 		break;
 	}
-
-
-
 	logTrace(g_conf.m_logTracePosdb, "m_allInSameWikiPhrase: %s", m_allInSameWikiPhrase?"true":"false");
+
 
 	// for boolean queries we scan every docid in all termlists,
 	// then we see what query terms it has, and make a bit vector for it.
@@ -2745,22 +2351,25 @@ void PosdbTable::intersectLists10_r ( ) {
 		makeDocIdVoteBufForBoolQuery();
 	}
 	else {
-
-		// . create "m_docIdVoteBuf" filled with just the docids from the
-		//   smallest group of sublists 
-		// . m_minListi is the queryterminfo that had the smallest total
-		//   sublist sizes of m_minListSize. this was set in 
-		//   setQueryTermInfos()
-		// . if all these sublist termlists were 50MB i'd day 10-25ms to
-		//   add their docid votes.
+		// create "m_docIdVoteBuf" filled with just the docids from the
+		// smallest group of sublists (one term, all variations).
+		//
+		// m_minTermListIdx is the queryterminfo that had the smallest total
+		// sublist sizes of m_minTermListSize. this was set in 
+		// setQueryTermInfos()
+		//
+		// if all these sublist termlists were 50MB i'd day 10-25ms to
+		// add their docid votes.
 		logTrace(g_conf.m_logTracePosdb, "addDocIdVotes");
-		addDocIdVotes ( &qip[m_minListi], listGroupNum );
+		addDocIdVotes ( &qip[m_minTermListIdx], listGroupNum );
 		
 
 		// now repeat the docid scan for successive lists but only
 		// inc the docid count for docids we match. docids that are 
 		// in m_docIdVoteBuf but not in sublist group #i will be removed
-		// from m_docIdVoteBuf. worst case scenario with termlists limited
+		// from m_docIdVoteBuf. 
+		//
+		// worst case scenario with termlists limited
 		// to 30MB will be about 10MB of docid vote buf, but it should
 		// shrink quite a bit every time we call addDocIdVotes() with a 
 		// new group of sublists for a query term. but scanning 10MB should
@@ -2768,8 +2377,8 @@ void PosdbTable::intersectLists10_r ( ) {
 		// i would think scanning and docid voting for 200MB of termlists 
 		// should take like 50-100ms
 		for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
-			// skip if we did it above
-			if ( i == m_minListi ) {
+			// skip if we did it above when allocating the vote buffer
+			if ( i == m_minTermListIdx ) {
 				continue;
 			}
 			
@@ -2779,8 +2388,9 @@ void PosdbTable::intersectLists10_r ( ) {
 			if ( qti->m_bigramFlags[0] & BF_NEGATIVE ) {
 				continue;
 			}
-			
-			// inc this
+
+			// inc the group number ("score"), which will be set on the docids
+			// in addDocIdVotes if they match.
 			listGroupNum++;
 			
 			// if it hits 256 then wrap back down to 1
@@ -2793,10 +2403,13 @@ void PosdbTable::intersectLists10_r ( ) {
 		}
 		logTrace(g_conf.m_logTracePosdb, "Added DocIdVotes");
 
-		// remove the negative query term's docids from our docid vote buf
+
+		//
+		// remove the negative query term docids from our docid vote buf
+		//
 		for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
 			// skip if we did it above
-			if ( i == m_minListi ) {
+			if ( i == m_minTermListIdx ) {
 				continue;
 			}
 			
@@ -2808,34 +2421,19 @@ void PosdbTable::intersectLists10_r ( ) {
 				continue;
 			}
 			
-			// add it
+			// delete the docid from the vote buffer
 			delDocIdVotes ( qti );
 		}
 		logTrace(g_conf.m_logTracePosdb, "Removed DocIdVotes for negative query terms");
 	}
 
-
 	if ( m_debug ) {
 		now = gettimeofdayInMilliseconds();
 		took = now - lastTime;
-		log(LOG_INFO, "posdb: new algo phase %" PRId32" took %" PRId64" ms", phase,took);
+		log(LOG_INFO, "posdb: new algo phase (find matching docids) took %" PRId64" ms", took);
 		lastTime = now;
-		phase++;
 	}
 
-	/*
-	// NOW REMOVED DOCIDS from m_docIdBuf if in a negative termlist
-	for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
-		// do not consider for first termlist if negative
-		if ( ! ( bigramFlags[i][0] & BF_NEGATIVE ) ) continue;
-		// remove docid votes for all docids in this
-		removeDocIdVotes ( requiredGroup       [i],
-				   listEnds            [i],
-				   //numRequiredSubLists [i] );
-				   // only do exact matches not synonyms!
-				   1 );
-	}
-	*/
 
 	//
 	// NOW FILTER EVERY SUBLIST to just the docids in m_docIdVoteBuf.
@@ -2846,35 +2444,77 @@ void PosdbTable::intersectLists10_r ( ) {
 	for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
 		// get it
 		QueryTermInfo *qti = &qip[i];
+		
 		// do not consider for adding if negative ('my house -home')
-		if ( qti->m_bigramFlags[0] & BF_NEGATIVE ) continue;
+		if ( qti->m_bigramFlags[0] & BF_NEGATIVE ) {
+			continue;
+		}
+		
 		// remove docids from each termlist that are not in
 		// m_docIdVoteBuf (the intersection)
-		shrinkSubLists ( qti );
+		delNonMatchingDocIdsFromSubLists( qti );
 	}
-
 	logTrace(g_conf.m_logTracePosdb, "Shrunk SubLists");
 
 
 	if ( m_debug ) {
 		now = gettimeofdayInMilliseconds();
 		took = now - lastTime;
-		log(LOG_INFO, "posdb: new algo phase %" PRId32" took %" PRId64" ms", phase,took);
-		lastTime = now;
-		phase++;
+		log(LOG_INFO, "posdb: new algo phase (shrink sublists) took %" PRId64" ms", took);
 	}
+
+	return true;
+}
+
+
+
+// . compare the output of this to intersectLists9_r()
+// . hopefully this will be easier to understand and faster
+// . IDEAS:
+//   we could also note that if a term was not in the title or
+//   inlink text it could never beat the 10th score.
+void PosdbTable::intersectLists10_r ( ) {
+	logTrace(g_conf.m_logTracePosdb, "BEGIN. numTerms: %" PRId32, m_q->m_numTerms);
+
+
+	m_finalScore = 0.0;
+
+
+	prepareWhiteListTable();
+
+	initWeights();
+	// assume no-op
+	m_t1 = 0LL;
+
+	// set start time
+	int64_t t1 = gettimeofdayInMilliseconds();
+
+	// assume we return early
+	m_addListsTime = 0;
+
+
+	if( !findCandidateDocIds() ) {
+		logTrace(g_conf.m_logTracePosdb, "END. Found no candidate docids");
+		return;
+	}
+
+	//
+	// The vote buffer now contains the matching docids and each term sublist 
+	// has been adjusted to only contain these docids as well. Let the fun begin.
+	//
+
+
+	// point to our array of query term infos set in setQueryTermInfos()
+	QueryTermInfo *qip = (QueryTermInfo *)m_qiBuf.getBufStart();
+
 
 
 	//
 	// TRANSFORM QueryTermInfo::m_* vars into old style arrays
 	//
-	// int32_t  wikiPhraseIds  [MAX_QUERY_TERMS];
-	// int32_t  quotedStartIds[MAX_QUERY_TERMS];
-	// int32_t  qpos           [MAX_QUERY_TERMS];
-	// int32_t  qtermNums      [MAX_QUERY_TERMS];
-	// float freqWeights    [MAX_QUERY_TERMS];
-	// now dynamically allocate to avoid stack smashing
-	char     *pp  = m_stackBuf.getBufStart();
+	// MUST MATCH allocation in allocTopScoringDocIdsData
+	//
+	char     *pp  = m_topScoringDocIdsBuf.getBufStart();
 	int32_t   nqt = m_q->m_numTerms;
 	int32_t  *wikiPhraseIds  = (int32_t *)pp; pp += 4 * nqt;
 	int32_t  *quotedStartIds = (int32_t *)pp; pp += 4 * nqt;
@@ -2888,8 +2528,14 @@ void PosdbTable::intersectLists10_r ( ) {
 	char    **xpos           = (char   **)pp; pp += sizeof(char *) * nqt;
 	char     *bflags         = (char    *)pp; pp += sizeof(char) * nqt;
 	float    *scoreMatrix    = (float   *)pp; pp += sizeof(float) *nqt*nqt;
-	if ( pp > m_stackBuf.getBufEnd() )
+	if ( pp > m_topScoringDocIdsBuf.getBufEnd() )
 		gbshutdownAbort(true);
+
+	int64_t lastTime = gettimeofdayInMilliseconds();
+	int64_t now;
+	int64_t took;
+	int32_t phase = 3; // 2 first in findCandidateDocIds
+
 
 	for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
 		// get it
@@ -3257,7 +2903,7 @@ void PosdbTable::intersectLists10_r ( ) {
 	// query term # plus 1.
 
 	logTrace(g_conf.m_logTracePosdb, "Ring buffer generation");
-	qtx = &qip[m_minListi];
+	qtx = &qip[m_minTermListIdx];
 	// populate ring buf just for this query term
 	for ( int32_t k = 0 ; k < qtx->m_numNewSubLists ; k++ ) {
 		// scan that sublist and add word positions
@@ -3271,7 +2917,7 @@ void PosdbTable::intersectLists10_r ( ) {
 		// mod with 4096
 		wx &= (RINGBUFSIZE-1);
 		// store it. 0 is legit.
-		ringBuf[wx] = m_minListi;
+		ringBuf[wx] = m_minTermListIdx;
 		// set this
 		ourFirstPos = wx;
 		// skip first key
@@ -3284,17 +2930,17 @@ void PosdbTable::intersectLists10_r ( ) {
 			// mod with 4096
 			wx &= (RINGBUFSIZE-1);
 			// store it. 0 is legit.
-			ringBuf[wx] = m_minListi;
+			ringBuf[wx] = m_minTermListIdx;
 		}
 	}
 	
-	// now get query term closest to query term # m_minListi which
+	// now get query term closest to query term # m_minTermListIdx which
 	// is the query term # with the shortest termlist
-	// get closest term to m_minListi and the distance
+	// get closest term to m_minTermListIdx and the distance
 	logTrace(g_conf.m_logTracePosdb, "Ring buffer generation 2");
 	for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
 		// skip the man
-		if ( i == m_minListi ) {
+		if ( i == m_minTermListIdx ) {
 			continue;
 		}
 		
@@ -3358,7 +3004,7 @@ void PosdbTable::intersectLists10_r ( ) {
 			qt = ringBuf[x];
 			
 			// if it's the man
-			if ( qt == m_minListi ) {
+			if ( qt == m_minTermListIdx ) {
 				// record
 				hisLastPos = x;
 				// skip if we are not there yet
@@ -3402,12 +3048,12 @@ void PosdbTable::intersectLists10_r ( ) {
 		}
 		
 		// query distance
-		qdist = qpos[m_minListi] - qpos[i];
+		qdist = qpos[m_minTermListIdx] - qpos[i];
 		// compute it
 		float maxScore2 = getMaxPossibleScore(&qip[i],
 						      bestDist,
 						      qdist,
-						      &qip[m_minListi]);
+						      &qip[m_minTermListIdx]);
 		// -1 means it has inlink text so do not apply this constraint
 		// to this docid because it is too difficult because we
 		// sum up the inlink text
@@ -4526,7 +4172,7 @@ void PosdbTable::intersectLists10_r ( ) {
 
 
 
-// . "bestDist" is closest distance to query term # m_minListi
+// . "bestDist" is closest distance to query term # m_minTermListIdx
 // . set "bestDist" to 1 to ignore it
 float PosdbTable::getMaxPossibleScore ( const QueryTermInfo *qti,
 					int32_t bestDist,
@@ -4684,14 +4330,441 @@ float PosdbTable::getMaxPossibleScore ( const QueryTermInfo *qti,
 
 
 
+
 ////////////////////
 // 
-// "Voting" functions used to find docids with all required term ids
+// "White list" functions used to find docids from only specific sites
+//
+////////////////////
+
+// this is separate from allocTopTree() function below because we must
+// call it for each iteration in Msg39::doDocIdSplitLoop() which is used
+// to avoid reading huge termlists into memory. it breaks the huge lists
+// up by smaller docid ranges and gets the search results for each docid
+// range separately.
+bool PosdbTable::allocWhiteListTable ( ) {
+	//
+	// the whitetable is for the docids in the whitelist. we have
+	// to only show results whose docid is in the whitetable, which
+	// is from the "&sites=abc.com+xyz.com..." custom search site list
+	// provided by the user.
+	//
+	if ( m_r->size_whiteList <= 1 ) m_useWhiteTable = false; // inclds \0
+	else 		                m_useWhiteTable = true;
+	int32_t sum = 0;
+	for ( int32_t i = 0 ; i < m_msg2->getNumWhiteLists() ; i++ ) {
+		RdbList *list = m_msg2->getWhiteList(i);
+		if ( list->isEmpty() ) continue;
+		// assume 12 bytes for all keys but first which is 18
+		int32_t size = list->getListSize();
+		sum += size / 12 + 1;
+	}
+	if ( sum ) {
+		// making this sum * 3 does not show a speedup... hmmm...
+		int32_t numSlots = sum * 2;
+		// keep it restricted to 5 byte keys so we do not have to
+		// extract the docid, we can just hash the ptr to those
+		// 5 bytes (which includes 1 siterank bit as the lowbit,
+		// but should be ok since it should be set the same in
+		// all termlists that have that docid)
+		if ( ! m_whiteListTable.set(5,0,numSlots,NULL,0,false,
+					    0,"wtall"))
+			return false;
+		// try to speed up. wow, this slowed it down about 4x!!
+		//m_whiteListTable.m_maskKeyOffset = 1;
+		//
+		////////////
+		//
+		// this seems to make it like 20x faster... 1444ms vs 27000ms:
+		//
+		////////////
+		//
+		m_whiteListTable.m_useKeyMagic = true;
+	}
+	return true;
+}
+
+
+
+void PosdbTable::prepareWhiteListTable()
+{
+	// hash the docids in the whitelist termlists into a hashtable.
+	// every docid in the search results must be in there. the
+	// whitelist termlists are from a provided "&sites=abc.com+xyz.com+.."
+	// cgi parm. the user only wants search results returned from the
+	// specified subdomains. there can be up to MAX_WHITELISTS (500)
+	// sites right now. this hash table must have been pre-allocated
+	// in Posdb::allocTopTree() above since we might be in a thread.
+	if ( m_addedSites )
+		return;
+
+	for ( int32_t i = 0 ; i < m_msg2->getNumWhiteLists() ; i++ ) {
+		RdbList *list = m_msg2->getWhiteList(i);
+		if ( list->isEmpty() ) continue;
+		// sanity test
+		int64_t d1 = g_posdb.getDocId(list->getList());
+		if ( d1 > m_msg2->docIdEnd() ) {
+			log("posdb: d1=%" PRId64" > %" PRId64,
+			    d1,m_msg2->docIdEnd());
+			//gbshutdownAbort(true);
+		}
+		if ( d1 < m_msg2->docIdStart() ) {
+			log("posdb: d1=%" PRId64" < %" PRId64,
+			    d1,m_msg2->docIdStart());
+			//gbshutdownAbort(true);
+		}
+		// first key is always 18 bytes cuz it has the termid
+		// scan recs in the list
+		for ( ; ! list->isExhausted() ; list->skipCurrentRecord() ) {
+			char *rec = list->getCurrentRec();
+			// point to the 5 bytes of docid
+			m_whiteListTable.addKey ( rec + 7 );
+		}
+	}
+
+	m_addedSites = true;
+}
+
+
+
+bool PosdbTable::allocTopScoringDocIdsData() {
+	int64_t nn1 = m_r->m_docsToGet;
+	int64_t nn2 = 0;
+
+	// just add all up in case doing boolean OR or something
+	for ( int32_t k = 0 ; k < m_msg2->getNumLists(); k++) {
+		// count
+		RdbList *list = m_msg2->getList(k);
+		
+		// skip if null
+		if ( ! list ) {
+			continue;
+		}
+		
+		// skip if list is empty, too
+		if ( list->isEmpty() ) {
+			continue;
+		}
+		
+		// show if debug
+		if ( m_debug ) {
+			log(LOG_INFO, "toptree: adding listsize %" PRId32" to nn2", list->m_listSize);
+		}
+		
+		// tally. each new docid in this termlist will compress
+		// the 6 byte termid out, so reduce by 6.
+		nn2 += list->m_listSize / ( sizeof(POSDBKEY) -6 );
+	}
+
+	// if doing docid range phases where we compute the winning docids
+	// for a range of docids to save memory, then we need to amp this up
+	if ( m_r->m_numDocIdSplits > 1 ) {
+		// if 1 split has only 1 docid the other splits
+		// might have 10 then this doesn't work, so make it
+		// a min of 100.
+		if ( nn2 < 100 ) {
+			nn2 = 100;
+		}
+		
+		// how many docid range splits are we doing?
+		nn2 *= m_r->m_numDocIdSplits;
+		
+		// just in case one split is not as big
+		nn2 *= 2;
+
+		// boost this guy too since we compare it to nn2
+		if ( nn1 < 100 ) {
+			nn1 = 100;
+		}
+		
+		nn1 *= m_r->m_numDocIdSplits;
+		nn1 *= 2;
+	}
+		
+	// do not go OOM just because client asked for 10B results and we
+	// only have like 100 results.
+	int64_t nn = gbmin(nn1,nn2);
+
+
+
+	// . do not alloc space for anything if all termlists are empty
+	// . before, even if nn was 0, top tree would alloc a bunch of nodes
+	//   and we don't want to do that now to save mem and so 
+	//   Msg39 can check 
+	//   if ( m_posdbTable.m_topTree->m_numNodes == 0 )
+	//   to see if it should
+	//   advance to the next docid range or not.
+	if ( nn == 0 ) {
+		return true;
+	}
+
+	// always at least 100 i guess. why? it messes up the
+	// m_scoreInfoBuf capacity and it cores
+	//if ( nn < 100 ) nn = 100;
+	// but 30 is ok since m_scoreInfo buf uses 32
+	nn = gbmax(nn,30);
+
+
+	if ( m_r->m_doSiteClustering ) {
+		nn *= 2;
+	}
+
+
+	// limit to 2B docids i guess
+	nn = gbmin(nn,2000000000);
+
+	if ( m_debug ) {
+		log(LOG_INFO, "toptree: toptree: initializing %" PRId64" nodes",nn);
+	}
+
+	if ( nn < m_r->m_docsToGet ) {
+		log("query: warning only getting up to %" PRId64" docids "
+		    "even though %" PRId32" requested because termlist "
+		    "sizes are so small!! splits=%" PRId32
+		    , nn
+		    , m_r->m_docsToGet 
+		    , (int32_t)m_r->m_numDocIdSplits
+		    );
+	}
+
+	// keep it sane
+	if ( nn > m_r->m_docsToGet * 2 && nn > 60 ) {
+		nn = m_r->m_docsToGet * 2;
+	}
+
+	// this actually sets the # of nodes to MORE than nn!!!
+	if ( ! m_topTree->setNumNodes(nn,m_r->m_doSiteClustering)) {
+		log("toptree: toptree: error allocating nodes: %s",
+		    mstrerror(g_errno));
+		return false;
+	}
+	
+	// let's use nn*4 to try to get as many score as possible, although
+	// it may still not work!
+	int32_t xx = nn;//m_r->m_docsToGet ;
+	
+	// try to fix a core of growing this table in a thread when xx == 1
+	xx = gbmax(xx,32);
+	
+	//if ( m_r->m_doSiteClustering ) xx *= 4;
+	m_maxScores = xx;
+	// for seeing if a docid is in toptree. niceness=0.
+	//if ( ! m_docIdTable.set(8,0,xx*4,NULL,0,false,0,"dotb") )
+	//	return false;
+
+	if ( m_r->m_getDocIdScoringInfo ) {
+
+		m_scoreInfoBuf.setLabel ("scinfobuf" );
+
+		// . for holding the scoring info
+		// . add 1 for the \0 safeMemcpy() likes to put at the end so 
+		//   it will not realloc on us
+		if ( ! m_scoreInfoBuf.reserve ( xx * sizeof(DocIdScore) +100) ) {
+			return false;
+		}
+		
+		// likewise how many query term pair scores should we get?
+		int32_t numTerms = m_q->m_numTerms;
+
+		// limit
+		numTerms = gbmin(numTerms,10);
+
+		// the pairs. divide by 2 since (x,y) is same as (y,x)
+		int32_t numPairs = (numTerms * numTerms) / 2;
+
+		// then for each pair assume no more than MAX_TOP reps, usually
+		// it's just 1, but be on the safe side
+		numPairs *= m_realMaxTop;//MAX_TOP;
+
+		// now that is how many pairs per docid and can be 500! but we
+		// still have to multiply by how many docids we want to 
+		// compute. so this could easily get into the megabytes, most 
+		// of the time we will not need nearly that much however.
+		numPairs *= xx;
+
+		m_pairScoreBuf.setLabel ( "pairbuf" );
+		m_singleScoreBuf.setLabel ("snglbuf" );
+
+		// but alloc it just in case
+		if ( ! m_pairScoreBuf.reserve (numPairs * sizeof(PairScore) ) ) {
+			return false;
+		}
+		
+		// and for singles
+		int32_t numSingles = numTerms * m_realMaxTop * xx; // MAX_TOP *xx;
+		if ( !m_singleScoreBuf.reserve(numSingles*sizeof(SingleScore))) {
+			return false;
+		}
+	}
+
+	// m_topScoringDocIdsBuf. MUST MATCH use in intersectLists10_r !
+	int32_t   nqt = m_q->m_numTerms;
+	int32_t need  = 0;
+	need += 4 * nqt;						// wikiPhraseIds
+	need += 4 * nqt;						// quotedStartIds
+	need += 4 * nqt;						// qpos
+	need += 4 * nqt;						// qtermNums
+	need += sizeof(float ) * nqt;			// freqWeights
+	need += sizeof(char *) * nqt;			// miniMergedList
+	need += sizeof(char *) * nqt;			// miniMergedEnd
+	need += sizeof(char *) * nqt;			// bestPos
+	need += sizeof(char *) * nqt;			// winnerStack
+	need += sizeof(char *) * nqt;			// xpos
+	need += sizeof(char  ) * nqt;			// bflags
+	need += sizeof(float ) * nqt * nqt; 	// scoreMatrix
+	m_topScoringDocIdsBuf.setLabel("stkbuf1");
+	if ( ! m_topScoringDocIdsBuf.reserve( need ) ) {
+		return false;
+	}
+
+	return true;
+}
+
+
+
+////////////////////
+// 
+// Functions used to find candidate docids, including "Voting" functions 
+// used to find docids with all required term ids and functions to remove
+// docids that do not match all required terms
 //
 ////////////////////
 
 
+//
+// Run through each term sublist and remove all docids not
+// found in the docid vote buffer
+//
+void PosdbTable::delNonMatchingDocIdsFromSubLists(QueryTermInfo *qti) {
 
+	logTrace(g_conf.m_logTracePosdb, "BEGIN.");
+
+	// reset count of new sublists
+	qti->m_numNewSubLists = 0;
+
+	// scan each sublist vs. the docid list
+	for ( int32_t i = 0 ; i < qti->m_numSubLists ; i++ ) {
+
+		// get that sublist
+		char *subListPtr = qti->m_subLists[i]->getList();
+		char *subListEnd = qti->m_subLists[i]->getListEnd();
+		// reset docid list ptrs
+		char *dp    =      m_docIdVoteBuf.getBufStart();
+		char *dpEnd = dp + m_docIdVoteBuf.length();
+
+		// re-copy into the same buffer!
+		char *dst = subListPtr;
+		// save it
+		char *savedDst = dst;
+
+
+	handleNextRecord:
+		// scan the docid list for the current docid in this termlist
+		for ( ; ; dp += 6 ) {
+			// no docids in list? no need to skip any more subListPtrs!
+			if ( dp >= dpEnd ) {
+				goto doneWithSubList;
+			}
+				
+			// if current docid in docid list is >= the docid
+			// in the sublist, stop. docid in list is 6 bytes and
+			// subListPtr must be pointing to a 12 byte posdb rec.
+			if ( *(uint32_t *)(dp+1) > *(uint32_t *)(subListPtr+8) ) {
+				break;
+			}
+			
+			// try to catch up docid if it is behind
+			if ( *(uint32_t *)(dp+1) < *(uint32_t *)(subListPtr+8) ) {
+				continue;
+			}
+
+			// check lower byte if equal
+			if ( *(unsigned char *)(dp) > (*(unsigned char *)(subListPtr+7) & 0xfc ) ) {
+				break;
+			}
+
+			if ( *(unsigned char *)(dp) < (*(unsigned char *)(subListPtr+7) & 0xfc ) ) {
+				continue;
+			}
+
+			// copy over the 12 byte key
+			*(int64_t *)dst = *(int64_t *)subListPtr;
+			*(int32_t *)(dst+8) = *(int32_t *)(subListPtr+8);
+			
+			// skip that 
+			dst    += 12;
+			subListPtr += 12;
+
+			// copy over any 6 bytes keys following
+			for ( ; ; ) {
+				if ( subListPtr >= subListEnd ) {
+					// give up on this exhausted term list!
+					goto doneWithSubList;
+				}
+				
+				// next docid willbe next 12 bytekey
+				if ( ! ( subListPtr[0] & 0x04 ) ) {
+					break;
+				}
+				
+				// otherwise it's 6 bytes
+				*(int32_t *)dst = *(int32_t *)subListPtr;
+				*(int16_t *)(dst+4) = *(int16_t *)(subListPtr+4);
+				dst += 6;
+				subListPtr += 6;
+			}
+			// continue the docid loop for this new subListPtr
+			continue;
+		}
+
+		// skip that docid record in our termlist. it MUST have been
+		// 12 bytes, a docid heading record.
+		subListPtr += 12;
+
+		// skip any following keys that are 6 bytes, that means they
+		// share the same docid
+		for ( ; ;  ) {
+			// list exhausted?
+			if ( subListPtr >= subListEnd ) {
+				goto doneWithSubList;
+			}
+			
+			// stop if next key is 12 bytes, that is a new docid
+			if ( ! (subListPtr[0] & 0x04) ) {
+				break;
+			}
+			
+			// skip it
+			subListPtr += 6;
+		}
+
+		// process the next rec ptr now
+		goto handleNextRecord;
+
+	doneWithSubList:
+
+		// set sublist end
+		int32_t x = qti->m_numNewSubLists;
+		qti->m_newSubListSize  [x] = dst - savedDst;
+		qti->m_newSubListStart [x] = savedDst;
+		qti->m_newSubListEnd   [x] = dst;
+		qti->m_cursor          [x] = savedDst;
+		qti->m_savedCursor     [x] = savedDst;
+		
+		if ( qti->m_newSubListSize [x] ) {
+			qti->m_numNewSubLists++;
+		}
+	}
+	
+	logTrace(g_conf.m_logTracePosdb, "END.");
+}
+
+
+
+//
+// Removes docids with vote -1, which is set for docids matching
+// negative query terms (e.g. -rock)
+//
 void PosdbTable::delDocIdVotes ( const QueryTermInfo *qti ) {
 	char *bufStart = m_docIdVoteBuf.getBufStart();
 	char *voteBufPtr = NULL;
@@ -4736,7 +4809,7 @@ void PosdbTable::delDocIdVotes ( const QueryTermInfo *qti ) {
 				}
 				
 				// . equal! mark it as nuked!
-				voteBufPtr[5] = -1;//listGroupNum;
+				voteBufPtr[5] = -1;
 				// skip it
 				voteBufPtr += 6;
 				// advance subListPtr now
@@ -4747,7 +4820,7 @@ void PosdbTable::delDocIdVotes ( const QueryTermInfo *qti ) {
 			if ( voteBufPtr >= voteBufEnd ) {
 				goto endloop2;
 			}
-			
+
 			// skip that docid record in our termlist. it MUST have been
 			// 12 bytes, a docid heading record.
 			subListPtr += 12;
@@ -4761,7 +4834,7 @@ void PosdbTable::delDocIdVotes ( const QueryTermInfo *qti ) {
 		// otherwise, advance to next sublist
 	}
 
-	// now remove docids with a 0xff vote, they are nuked
+	// now remove docids with a -1 vote, they are nuked
 	voteBufPtr = m_docIdVoteBuf.getBufStart();
 	voteBufEnd = voteBufPtr + m_docIdVoteBuf.length();
 	char *dst   = voteBufPtr;

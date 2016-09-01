@@ -8,7 +8,7 @@
 #include "IndexList.h"
 #include "MsgC.h"
 #include "SafeBuf.h"
-#include "HttpRequest.h" // FORMAT_HTML
+#include "GbFormat.h" // FORMAT_HTML
 
 #define MAX_IMAGES 500
 

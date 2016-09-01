@@ -59,7 +59,7 @@ OBJS_O3 = \
 	IPAddressChecks.o \
 	Linkdb.o \
 	Msg40.o \
-	RdbBuckets.o RdbIndex.o RdbList.o RdbMap.o \
+	RdbBuckets.o RdbIndex.o RdbIndexQuery.o RdbList.o RdbMap.o \
 	SafeBuf.o sort.o Statistics.o \
 	TopTree.o \
 	UrlComponent.o UrlParser.o UdpStatistic.o \
@@ -129,11 +129,40 @@ CPPFLAGS += -MMD -MP
 export CONFIG_CPPFLAGS
 
 ifeq ($(CXX), g++)
+# versions
+GCC_VER_MIN_61 := $(shell echo `g++ -dumpversion |cut -f1-2 -d.` \>= 6.1 |bc)
+GCC_VER_MIN_51 := $(shell echo `g++ -dumpversion |cut -f1-2 -d.` \>= 5.1 |bc)
+
 CPPFLAGS += -Wall
+
+# enable more warnings
+#CPPFLAGS += -Wformat=2
+CPPFLAGS += -Wformat-security
+
+# version specific warnings
+ifeq ($(GCC_VER_MIN_61), 1)
+CPPFLAGS += -Wshift-negative-value -Wshift-overflow=2
+CPPFLAGS += -Wduplicated-cond
+#CPPFLAGS += -Wnull-dereference
+
+# other warnings (to be moved above or re-enabled when we have cleaned up the code sufficiently)
+CPPFLAGS += -Wno-nonnull-compare
+endif
+
+ifeq ($(GCC_VER_MIN_51), 1)
+CPPFLAGS += -Wodr
+CPPFLAGS += -Wswitch-bool
+CPPFLAGS += -Wlogical-not-parentheses
+CPPFLAGS += -Wsizeof-array-argument
+CPPFLAGS += -Wbool-compare
+CPPFLAGS += -Wsuggest-final-types
+CPPFLAGS += -Wsuggest-final-methods
+endif
 
 # disable offsetof warnings
 CPPFLAGS += -Wno-invalid-offsetof
 
+# other warnings (to be moved above or re-enabled when we have cleaned up the code sufficiently)
 CPPFLAGS += -Wstrict-aliasing=0
 CPPFLAGS += -Wno-write-strings
 CPPFLAGS += -Wno-maybe-uninitialized
@@ -161,8 +190,10 @@ CPPFLAGS += -Wno-format-pedantic
 # other warnings (to be moved above or re-enabled when we have cleaned up the code sufficiently)
 CPPFLAGS += -Wno-cast-align -Wno-tautological-undefined-compare -Wno-float-equal -Wno-weak-vtables -Wno-global-constructors -Wno-exit-time-destructors
 CPPFLAGS += -Wno-shadow -Wno-conversion -Wno-sign-conversion -Wno-old-style-cast -Wno-shorten-64-to-32 -Wno-double-promotion
-CPPFLAGS += -Wno-unused-parameter -Wno-missing-prototypes
-CPPFLAGS += -Wno-sometimes-uninitialized -Wno-conditional-uninitialized
+CPPFLAGS += -Wno-unused-parameter
+CPPFLAGS += -Wno-missing-prototypes
+CPPFLAGS += -Wno-sometimes-uninitialized
+CPPFLAGS += -Wno-conditional-uninitialized
 CPPFLAGS += -Wno-packed -Wno-padded
 CPPFLAGS += -Wno-writable-strings
 CPPFLAGS += -Wno-deprecated
@@ -205,6 +236,7 @@ ifneq ($(shell git diff --shortstat 2> /dev/null),)
 	DIRTY=-dirty
 endif
 GIT_VERSION=$(shell git rev-parse HEAD)$(DIRTY)
+GIT_BRANCH=$(shell git rev-parse --abbrev-ref HEAD)
 
 
 .PHONY: all
@@ -287,10 +319,13 @@ doc:
 	doxygen doxygen/doxygen_config.conf
 
 
-# used for unit testing
+# used for tools/unittest
 libgb.a: $(OBJS)
 	ar rcs $@ $^
 
+.PHONY: tools
+tools:
+	+$(MAKE) -C tools
 
 .PHONY: test
 test: unittest systemtest
@@ -342,7 +377,7 @@ entities.json entities.inc:
 	./generate_entities.py >entities.inc
 
 Entities.o: entities.inc
-Version.o: CPPFLAGS += -DGIT_COMMIT_ID=$(GIT_VERSION) -DBUILD_CONFIG=$(config)
+Version.o: CPPFLAGS += -DGIT_COMMIT_ID=$(GIT_VERSION) -DGIT_BRANCH=$(GIT_BRANCH) -DBUILD_CONFIG=$(config)
 
 # different optimization level
 $(OBJS_O1): CPPFLAGS += $(O1)

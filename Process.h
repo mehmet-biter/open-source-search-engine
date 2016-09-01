@@ -49,7 +49,8 @@ class Process {
 	void enableTreeWrites   ( bool shuttingDown ) ;
 	bool isRdbDumping       ( ) ;
 	bool isRdbMerging       ( ) ;
-	bool saveRdbTrees       ( bool useThread , bool shuttingDown ) ;
+	bool saveRdbTrees(bool useThread, bool shuttingDown);
+	bool saveRdbIndexes();
 	bool saveRdbMaps();
 	bool saveBlockingFiles1 ( ) ;
 	bool saveBlockingFiles2 ( ) ;

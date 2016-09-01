@@ -13,10 +13,12 @@
 #include "Tagdb.h"
 #include "Spider.h"
 #include "Clusterdb.h"
+#include "Linkdb.h"
 #include "Spider.h"
 #include "Repair.h"
 #include "Parms.h"
 #include "Process.h"
+#include "HttpRequest.h"
 #include <sys/stat.h> //mkdir()
 
 static HashTableX g_collTable;
@@ -159,19 +161,13 @@ bool Collectiondb::loadAllCollRecs ( ) {
 
 // after we've initialized all rdbs in main.cpp call this to clean out
 // our rdb trees
-bool Collectiondb::cleanTrees ( ) {
-
+bool Collectiondb::cleanTrees() {
 	// remove any nodes with illegal collnums
-	Rdb *r;
-	r = g_posdb.getRdb();
-	r->m_buckets.cleanBuckets();
+	g_posdb.getRdb()->cleanTree();
+	g_titledb.getRdb()->cleanTree();
+	g_spiderdb.getRdb()->cleanTree();
+	g_doledb.getRdb()->cleanTree();
 
-	r = g_titledb.getRdb();
-	r->m_tree.cleanTree    ();//(char **)r->m_bases);
-	r = g_spiderdb.getRdb();
-	r->m_tree.cleanTree    ();//(char **)r->m_bases);
-	r = g_doledb.getRdb();
-	r->m_tree.cleanTree    ();//(char **)r->m_bases);
 	// success
 	return true;
 }

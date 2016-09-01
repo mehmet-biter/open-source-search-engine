@@ -120,7 +120,7 @@ bool Msg5::getTreeList(RdbList *result,
 		*memUsedByTree = tree->getMemOccupiedForList();
 		*numUsedNodes = tree->getNumUsedNodes();
 	} else {
-		RdbBuckets *buckets = &base->m_rdb->m_buckets;
+		RdbBuckets *buckets = base->m_rdb->getBuckets();
 		if(!buckets->getList(base->m_collnum,
 				     static_cast<const char*>(startKey),
 				     static_cast<const char*>(endKey),
@@ -463,10 +463,9 @@ if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 					if ( rs < minrs ) rs = minrs;
 				}
 				else {
-					RdbBuckets *buckets = &base->m_rdb->m_buckets;
+					RdbBuckets *buckets = base->m_rdb->getBuckets();
 
-					rs = buckets->getNumKeys() /
-						buckets->getMemOccupied();
+					rs = buckets->getNumKeys() / buckets->getMemOccupied();
 					int32_t minrs = buckets->getRecSize() + 4;
 					// ensure a minimal record size
 					if ( rs < minrs ) rs = minrs;
@@ -1225,7 +1224,7 @@ if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 	//   Rdb::addRecord() NOT to do the annihilation, therefore it's good
 	//   to do the merge to do the annihilation
 	//else
-	m_list->merge_r ( m_listPtrs, m_numListPtrs, m_startKey, m_minEndKey, m_minRecSizes, m_removeNegRecs, m_rdbId, niceness );
+	m_list->merge_r(m_listPtrs, m_numListPtrs, m_startKey, m_minEndKey, m_minRecSizes, m_removeNegRecs, m_rdbId);
 	m_list->resetListPtr(); //merge_r() doesn't rewind the list iterator/pointer (?)
 	
 	// maintain this info for truncation purposes

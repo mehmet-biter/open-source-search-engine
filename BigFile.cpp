@@ -407,9 +407,8 @@ static int64_t s_vfd = 0;
 // . set maxFileSize when opening a new file for writing and using 
 //   DiskPageCache
 // . use maxFileSize of -1 for us to use getFileSize() to set it
-bool BigFile::open ( int flags, void *pc, int64_t maxFileSize, int permissions ) {
+bool BigFile::open(int flags) {
     m_flags       = flags;
-	//m_permissions = permissions;
 	m_isClosing   = false;
 
 	// . init the page cache for this vfd
@@ -417,9 +416,7 @@ bool BigFile::open ( int flags, void *pc, int64_t maxFileSize, int permissions )
 	// . returns -1 and sets g_errno on failure
 	// . we pass m_vfd to getPages() and addPages()
 	if ( m_vfd == -1 ) {
-		//if ( maxFileSize == -1 ) maxFileSize = getFileSize();
 		m_vfd = ++s_vfd;
-		//g_errno = 0;
 	}
 	return true;
 }
@@ -458,8 +455,7 @@ void BigFile::makeFilename_r ( char *baseFilename    ,
 
 // . get the fd of the nth file
 // . will try to open the file if it hasn't yet been opened
-int BigFile::getfd ( int32_t n , bool forReading ) { 
-
+int BigFile::getfd ( int32_t n , bool forReading ) {
 	// boundary check
 	if ( n >= m_maxParts && ! addPart ( n ) ) {
 		log( LOG_ERROR, "disk: Part number %" PRId32" > %" PRId32". fd not available.", n, m_maxParts );
@@ -471,30 +467,36 @@ int BigFile::getfd ( int32_t n , bool forReading ) {
 	// get the File ptr from the table
 	File *f = getFile2(n);
 	// if part does not exist then create it! addPart(n) will do that?
-	if ( ! f ) {
+	if (!f) {
 		// don't create File if we're getting it for reading
-		if ( forReading ) {
+		if (forReading) {
 			log( LOG_WARN, "disk: Don't create file when we're getting it for reading" );
 			return -1;
 		}
 
-		if ( ! addPart( n ) ) {
-			log( LOG_WARN, "disk: Unable to add part %" PRId32, n );
+		if (!addPart(n)) {
+			log(LOG_WARN, "disk: Unable to add part %" PRId32, n);
+			return -1;
+		}
+
+		f = getFile2(n);
+		if (!f) {
+			log(LOG_WARN, "disk: Unable to get part %" PRId32, n);
 			return -1;
 		}
 	}
 
 	// open it if not opened
-	if ( ! f->calledOpen() ) {
-		if ( ! f->open ( m_flags , getFileCreationFlags() ) ) {
-			log( LOG_WARN, "disk: Failed to open file part #%" PRId32".", n );
+	if (!f->calledOpen()) {
+		if (!f->open(m_flags, getFileCreationFlags())) {
+			log(LOG_WARN, "disk: Failed to open file part #%" PRId32".", n);
 			return -1;
 		}
 	}
 
 	// get it's file descriptor
-	int fd = f->getfd ( ) ;
-	if ( fd >= -1 ) {
+	int fd = f->getfd();
+	if (fd >= -1) {
 		return fd;
 	}
 
@@ -572,7 +574,7 @@ time_t BigFile::getLastModifiedTime ( ) {
 // . we need a ptr to the ptr to this BigFile so if we get deleted and
 //   a signal is still pending for us, the callback will know we are nuked
 bool BigFile::read  ( void       *buf    , 
-		      int32_t        size   , 
+		      int64_t        size   ,
 		      int64_t   offset , 
 		      FileState  *fs     ,                 
 		      void       *state  ,
@@ -590,8 +592,8 @@ bool BigFile::read  ( void       *buf    ,
 
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
-bool BigFile::write ( void       *buf    , 
-		      int32_t        size   , 
+bool BigFile::write ( void       *buf    ,
+                      int64_t        size   ,
 		      int64_t   offset , 
 		      FileState  *fs     ,
 		      void       *state  ,
@@ -622,8 +624,8 @@ bool BigFile::write ( void       *buf    ,
 // . fstate is used by aio_read/write()
 // . we need a ptr to the ptr to this BigFile so if we get deleted and
 //   a signal is still pending for us, the callback will know we are nuked
-bool BigFile::readwrite ( void         *buf      , 
-			  int32_t          size     , 
+bool BigFile::readwrite ( void         *buf      ,
+                          int64_t          size     ,
 			  int64_t     offset   , 
 			  bool          doWrite  ,
 			  FileState    *fstate   ,
@@ -799,14 +801,14 @@ skipThread:
 	// we must do it here now
 	FileState *fs = fstate;
 	if ( ! fs->m_doWrite && ! fs->m_buf && fs->m_bytesToGo > 0 ) {
-		int32_t need = fs->m_bytesToGo + fs->m_allocOff;
+		int64_t need = fs->m_bytesToGo + fs->m_allocOff;
 		char *p = (char *) mmalloc ( need , "ThreadReadBuf" );
 		if ( p ) {
 			fs->m_buf       = p + fs->m_allocOff;
 			fs->m_allocBuf  = p;
 			fs->m_allocSize = need;
 		} else {
-			log( LOG_WARN, "disk: read buf alloc failed for %" PRId32" bytes.", need );
+			log( LOG_WARN, "disk: read buf alloc failed for %" PRId64" bytes.", need );
 		}
 	}
 
@@ -830,11 +832,11 @@ skipThread:
 	// if it read less than 8MB/s bitch
 	int64_t now   = gettimeofdayInMilliseconds() ;
 	int64_t took  = now - fstate->m_startTime ;
-	int32_t      rate  = 100000;
+	int64_t      rate  = 100000;
 	if ( took  > 500 ) rate = fstate->m_bytesDone / took ;
 	if ( rate < 8000 && fstate->m_niceness <= 0 ) {
 		log(LOG_INFO,"disk: Read %" PRId64" bytes in %" PRId64" "
-		    "ms (%" PRId32"KB/s).",
+		    "ms (%" PRId64"KB/s).",
 		    fstate->m_bytesDone,took,rate);
 		g_stats.m_slowDiskReads++;
 	}
@@ -1096,9 +1098,9 @@ static bool readwrite_r ( FileState *fstate ) {
 	}
 
 	// how many total bytes to write?
-	int32_t bytesToGo = fstate->m_bytesToGo;
+	int64_t bytesToGo = fstate->m_bytesToGo;
 	// how many bytes we've written so far
-	int32_t bytesDone = fstate->m_bytesDone;
+	int64_t bytesDone = fstate->m_bytesDone;
 	// get current offset
 	int64_t offset = fstate->m_offset + fstate->m_bytesDone;
 	// are we writing? or reading?
@@ -1114,13 +1116,13 @@ static bool readwrite_r ( FileState *fstate ) {
 
 		// translate offset to a filenum and offset
 		int32_t filenum = offset / MAX_PART_SIZE;
-		int32_t localOffset = offset % MAX_PART_SIZE;
+		int64_t localOffset = offset % MAX_PART_SIZE;
 
 		// how many bytes to read/write to first little file?
-		int32_t avail = MAX_PART_SIZE - localOffset;
+		int64_t avail = MAX_PART_SIZE - localOffset;
 
 		// how may bytes do we have left to read/write
-		int32_t len = bytesToGo - bytesDone;
+		int64_t len = bytesToGo - bytesDone;
 
 		// how many bytes can we write to it now
 		if (len > avail) {
@@ -1146,7 +1148,7 @@ static bool readwrite_r ( FileState *fstate ) {
 		errno = 0;
 
 		// n holds how many bytes read/written
-		int n;
+		ssize_t n;
 
 		// do the read/write blocking
 		if (doWrite) {
@@ -1165,7 +1167,7 @@ static bool readwrite_r ( FileState *fstate ) {
 			// altered
 			// MDW: don't access m_bigfile in case bigfile was deleted
 			// since we are in a thread
-			log(LOG_DEBUG, "disk::readwrite: %s %i bytes of %i @ offset %i "
+			log(LOG_DEBUG, "disk::readwrite: %s %zi bytes of %" PRId64" @ offset %" PRId64
 					    "(nonBlock=%s) "
 					    "fd %i "
 					    "cc1=%i=?%i cc2=%i=?%i errno=%s",
@@ -1187,12 +1189,12 @@ static bool readwrite_r ( FileState *fstate ) {
 		if (n == 0 && len > 0) {
 			// MDW: don't access m_bigfile in case bigfile was deleted
 			// since we are in a thread
-			log(LOG_WARN, "disk: Read of %" PRId32" bytes at offset %" PRId64" "
+			log(LOG_WARN, "disk: Read of %" PRId64" bytes at offset %" PRId64" "
 					    " failed because file is too short for that "
 					    "offset? Our fd was probably stolen from us by another "
-					    "thread. fd1=%i fd2=%i len=%i filenum=%i "
-					    "localoffset=%i. error=%s.",
-					    (int32_t) len, fstate->m_offset,
+					    "thread. fd1=%i fd2=%i len=%" PRId64" filenum=%i "
+					    "localoffset=%" PRId64". error=%s.",
+					    len, fstate->m_offset,
 					    fstate->m_fd1,
 					    fstate->m_fd2,
 					    len,

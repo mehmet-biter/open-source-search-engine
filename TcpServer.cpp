@@ -4,6 +4,7 @@
 #include "Stats.h"
 #include "Profiler.h"
 #include "PingServer.h"
+#include "HttpServer.h" //g_httpServer.m_ssltcp.m_ctx
 #include "Hostdb.h"
 #include "Loop.h"      // g_loop.registerRead/WriteCallback()
 #include "Conf.h"

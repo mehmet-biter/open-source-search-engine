@@ -1166,8 +1166,9 @@ void Msg3::setPageRanges(RdbBase *base) {
 		    base->m_dbname);
 		// do not wait for any merge to complete... otherwise
 		// Rdb.cpp will not close until the merge is done
-		g_merge.m_isMerging  = false;
-		g_merge2.m_isMerging = false;
+		g_merge.setMerging(false);
+		g_merge2.setMerging(false);
+
 		// to complete
 		// shutdown with urgent=true so threads are disabled.
 		g_process.shutdown(true);

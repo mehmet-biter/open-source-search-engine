@@ -175,17 +175,9 @@ bool TopTree::setNumNodes ( int32_t docsWanted , bool doSiteClustering ) {
 	// . "dataInPtrs" mean we have a 4 byte data that we store in the
 	//   "dataPtr". this is somewhat of a hack, but we need a place to
 	//   store the node number of this node in this top tree. see below.
-	if ( ! m_t2.set ( 4          , // fixedDataSize
-			  m_numNodes , // maxNumNodes
-			  true       , // doBalancing
-			  -1         , // memMax (-1-->no max)
-			  false      , // ownData?
-			  "tree-toptree"  ,
-			  true       , // dataInPtrs?
-			  NULL       , // dbname (generic)
-			  12         , // keySize
-			  false      ))// useProtection?
+	if (!m_t2.set(4, m_numNodes, -1, false, "tree-toptree", true, NULL, 12)) {
 		return false;
+	}
 
 	return true;
 }
@@ -381,7 +373,7 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 		// get his "node number" in the top tree, "nn" so we can
 		// delete him from the top tree as well as m_t2. it is 
 		// "hidden" in the dataPtr
-		deleteMe = (SPTRTYPE)m_t2.m_data[min];
+		deleteMe = (SPTRTYPE)m_t2.getData(min);
 		// delete him from the top tree now as well
 		//deleteNode ( nn , domHash );
 		// then delete him from the m_t2 tree
@@ -406,8 +398,8 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 	if ( m_doSiteClustering ) {
 		// update the dataPtr so every node in m_t2 has a reference
 		// to the equivalent node in this top tree
-		if ( n < 0 || n > m_t2.m_numNodes ) gbshutdownLogicError();
-		m_t2.m_data[n] = (char *)(PTRTYPE)tnn;
+		if ( n < 0 || n > m_t2.getNumNodes() ) gbshutdownLogicError();
+		m_t2.setData(n, (char *)(PTRTYPE)tnn);
 	}
 
 	//

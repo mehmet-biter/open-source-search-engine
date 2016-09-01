@@ -527,30 +527,26 @@ static bool CommandResetColl ( char *rec , WaitEntry *we ) {
 }
 #endif
 
-static bool CommandMergePosdb ( char *rec ) {
-	forceMergeAll ( RDB_POSDB ,1);
-	// set this for each posdb base
+static bool CommandMergePosdb(char *rec) {
+	forceMergeAll(RDB_POSDB);
 	return true;
 }
 
 
-static bool CommandMergeTitledb ( char *rec ) {
-	forceMergeAll ( RDB_TITLEDB ,1);
-	//g_titledb.getRdb()->attemptMerge    (1,true);
+static bool CommandMergeTitledb(char *rec) {
+	forceMergeAll(RDB_TITLEDB);
 	return true;
 }
 
 
-static bool CommandMergeSpiderdb ( char *rec ) {
-	forceMergeAll ( RDB_SPIDERDB ,1);
-	//g_spiderdb.getRdb()->attemptMerge    (1,true);
+static bool CommandMergeSpiderdb(char *rec) {
+	forceMergeAll(RDB_SPIDERDB);
 	return true;
 }
 
-static bool CommandMergeLinkdb ( char *rec ) {
-        forceMergeAll ( RDB_LINKDB ,1);
-        //g_spiderdb.getRdb()->attemptMerge    (1,true);
-        return true;
+static bool CommandMergeLinkdb(char *rec) {
+	forceMergeAll(RDB_LINKDB);
+	return true;
 }
 
 
@@ -5049,7 +5045,8 @@ void Parms::init ( ) {
 	m++;
 
 	m->m_title = "Use new no-in-memory-merge feature";
-	m->m_desc  = "Posdb will no longer contain delete keys, and the entire document is indexed every time a change is found.";
+	m->m_desc  = "Posdb will no longer contain delete keys, and the entire document is indexed every time a change is found. "
+	             "(Changes requires restart)";
 	m->m_cgi   = "noinmemmerge";
 	m->m_off   = offsetof(Conf,m_noInMemoryPosdbMerge);
 	m->m_type  = TYPE_BOOL;
@@ -8064,18 +8061,6 @@ void Parms::init ( ) {
 	m->m_group = false;
 	m++;
 
-	m->m_title = "clusterdb save cache";
-	m->m_desc  = "";
-	m->m_cgi   = "cdbsc";
-	m->m_off   = offsetof(Conf,m_clusterdbSaveCache);
-	m->m_def   = "0";
-	m->m_type  = TYPE_BOOL;
-	m->m_page  = PAGE_NONE;
-	m->m_obj   = OBJ_CONF;
-	m->m_flags = PF_NOAPI;
-	m->m_group = false;
-	m++;
-
 	////////////////////
 	// linkdb settings
 	////////////////////
@@ -8163,22 +8148,6 @@ void Parms::init ( ) {
 #endif
 	m->m_obj   = OBJ_CONF;
 	m->m_group = true;
-	m++;
-
-	m->m_title = "statsdb max cache mem";
-	m->m_desc  = "";
-	m->m_cgi   = "stcm";
-	m->m_off   = offsetof(Conf,m_statsdbMaxCacheMem);
-	m->m_def   = "0";
-	m->m_type  = TYPE_LONG;
-	m->m_flags = PF_NOSYNC|PF_NOAPI;
-#ifndef PRIVACORE_TEST_VERSION
-	m->m_page  = PAGE_NONE;
-#else
-	m->m_page  = PAGE_RDB;
-#endif
-	m->m_obj   = OBJ_CONF;
-	m->m_group = false;
 	m++;
 
 	////////////////////

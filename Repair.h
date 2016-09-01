@@ -7,7 +7,6 @@
 #include "Msg5.h"
 #include "Msg1.h"
 #include "Msg4.h"
-#include "XmlDoc.h"
 #include "Tagdb.h"
 
 #define SR_BUFSIZE 2048
@@ -99,7 +98,6 @@ public:
 	char       m_tmpBuf[32];
 	RdbList    m_linkdbListToAdd;
 	uint64_t   m_chksum1LongLong;
-	XmlDoc     m_doc;
 
 	// spiderdb scan vars
 	bool       m_isNew;

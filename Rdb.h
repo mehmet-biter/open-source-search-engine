@@ -48,13 +48,16 @@ static inline char getKeySizeFromRdbId(uint8_t rdbId) {
 
 // and this is -1 if dataSize is variable
 int32_t getDataSizeFromRdbId ( uint8_t rdbId );
-void forceMergeAll(rdbid_t rdbId, char niceness);
+void forceMergeAll(rdbid_t rdbId);
 
 // main.cpp calls this
 void attemptMergeAllCallback ( int fd , void *state ) ;
 void attemptMergeAll ( );
 
 class Rdb {
+	/// @todo ALC remove this when method is fixed (main.cpp)
+	friend int injectFile ( const char *filename , char *ips , const char *coll );
+
 public:
 
 	 Rdb ( );
@@ -70,21 +73,13 @@ public:
 
 	bool init ( const char  *dir          , // working directory
 		    const char  *dbname       , // "indexdb","tagdb",...
-		    bool   dedup           , //= true ,
 		    int32_t   fixedDataSize   , //= -1   ,
 		    int32_t   minToMerge      , //, //=  2   ,
 		    int32_t   maxTreeMem      , //=  1024*1024*32 ,
 		    int32_t   maxTreeNodes    ,
-		    bool   isTreeBalanced  ,
-		    int32_t   maxCacheMem     , //=  1024*1024*5 );
-		    int32_t   maxCacheNodes   ,
 		    bool   useHalfKeys     ,
-		    bool   loadCacheFromDisk ,
-		    void *pc = NULL,
 		    bool   isTitledb    = false , // use fileIds2[]?
-		    bool   preloadDiskPageCache = false ,
 		    char   keySize = 12    ,
-		    bool   biasDiskPageCache    = false ,
 		    bool   isCollectionLess = false,
 		    bool	useIndexFile = false );
 	// . frees up all the memory and closes all files
@@ -108,10 +103,7 @@ public:
 	// . caller should retry later on g_errno of ENOMEM or ETRYAGAIN
 	// . returns the node # in the tree it added the record to
 	// . key low bit must be set (otherwise it indicates a delete)
-	bool addRecord ( collnum_t collnum, char *key, char *data, int32_t dataSize, int32_t niceness);
-	bool addRecord ( const char *coll , char *key, char *data, int32_t dataSize, int32_t niceness);
-	bool addRecord (const char *coll , key_t &key, char *data, int32_t dataSize, int32_t niceness) {
-		return addRecord(coll,(char *)&key,data,dataSize, niceness);}
+	bool addRecord ( collnum_t collnum, char *key, char *data, int32_t dataSize);
 
 	// returns false if no room in tree or m_mem for a list to add
 	bool hasRoom ( RdbList *list , int32_t niceness );
@@ -136,7 +128,6 @@ public:
 	bool isInitialized() const { return m_initialized; }
 
 	// get the directory name where this rdb stores it's files
-	char       *getDir       ( ) { return g_hostdb.m_dir; }
 	const char *getDir() const { return g_hostdb.m_dir; }
 
 	int32_t getFixedDataSize() const { return m_fixedDataSize; }
@@ -145,21 +136,30 @@ public:
 	char getKeySize() const { return m_ks; }
 	int32_t getPageSize() const { return m_pageSize; }
 
-	RdbTree    *getTree    ( ) { if(!m_useTree) return NULL; return &m_tree; }
-	RdbIndex   *getIndex   ( ) { if(!m_useIndexFile) return NULL; return &m_index; }
+	RdbTree *getTree() {
+		if (!m_useTree) return NULL;
+		return &m_tree;
+	}
+
+	RdbBuckets* getBuckets() {
+		if (m_useTree) return NULL;
+		return &m_buckets;
+	}
+
 	RdbMem     *getRdbMem  ( ) { return &m_mem; }
 	bool       useTree() const { return m_useTree;}
-	bool       useIndexFile() const { return m_useIndexFile;}
 
 	int32_t       getNumUsedNodes() const;
 	int32_t       getMaxTreeMem() const;
 	int32_t       getTreeMemOccupied() const;
 	int32_t       getTreeMemAlloced() const;
 	int32_t       getNumNegativeKeys() const;
-	
-	void disableWrites ();
-	void enableWrites  ();
-	bool isWritable ( ) ;
+
+	void disableWrites();
+	void enableWrites();
+	bool isWritable() const;
+
+	void cleanTree();
 
 	RdbBase *getBase ( collnum_t collnum ) ;
 	int32_t getNumBases ( ) { 	return g_collectiondb.m_numRecs; }
@@ -229,17 +229,27 @@ public:
 	// used by main.cpp to periodically save us if we haven't dumped
 	// in a while
 	int64_t getLastWriteTime() const { return m_lastWrite; }
-	
-	// private:
+
+	rdbid_t getRdbId() const { return m_rdbId; }
+	const char* getDbname() const { return m_dbname; }
+
+	bool isCollectionless() const { return m_isCollectionLess; }
+	bool isInDumpLoop() const { return m_inDumpLoop; }
+	void setInDumpLoop(bool inDumpLoop) {
+		m_inDumpLoop = inDumpLoop;
+	}
+
+	bool inAddList() const { return m_inAddList; }
 
 	// . you'll lose your data in this class if you call this
 	void reset();
 
 	bool isSavingTree ( ) ;
 
-	bool saveTree  ( bool useThread ) ;
+	bool saveTree(bool useThread);
+	bool saveTreeIndex(bool useThread);
+	bool saveIndexes();
 	bool saveMaps();
-	bool saveIndex( bool useThread );
 
 	//bool saveCache ( bool useThread ) ;
 
@@ -264,6 +274,12 @@ public:
 
 	// these are used for computing load on a machine
 	bool isMerging() const;
+	void incrementNumMerges() {
+		++m_numMergesOut;
+	}
+	void decrementNumMerges() {
+		--m_numMergesOut;
+	}
 	bool isDumping() const { return m_dump.isDumping(); }
 
 	// PageRepair.cpp calls this when it is done rebuilding an rdb
@@ -271,7 +287,12 @@ public:
 	// rebuilt files, pointed to by rdb2.
 	bool updateToRebuildFiles ( Rdb *rdb2 , char *coll ) ;
 
-	bool      m_dedup;
+	static void doneSavingWrapper(void *state);
+	static void closeSleepWrapper(int fd, void *state);
+
+	static void doneDumpingCollWrapper(void *state);
+
+private:
 	int32_t      m_fixedDataSize;
 
 	char      m_dbname [32];
@@ -287,7 +308,7 @@ public:
 	// for storing records in memory
 	RdbTree    m_tree;  
 	RdbBuckets m_buckets;
-	RdbIndex	m_index;		// For now only DocID index for PosDB data files.
+
 	bool       m_useTree;
 
 	// for dumping a table to an rdb file
@@ -306,8 +327,6 @@ public:
 	BigFile   m_saveFile; // for saving the tree
 	bool      m_isClosing; 
 	bool      m_isClosed;
-	bool      m_preloadCache;
-	bool      m_biasDiskPageCache;
 
 	// this callback called when close is complete
 	void     *m_closeState; 
@@ -359,7 +378,6 @@ public:
 	int32_t  m_fn;
 	
 	char m_treeName [64];
-	char m_indexName [64];
 	char m_memName  [64];
 
 	int64_t m_lastWrite;
@@ -375,7 +393,6 @@ public:
 
 	rdbid_t m_rdbId;
 
-private:
 	char m_ks; // key size
 	int32_t m_pageSize;
 
