@@ -1080,8 +1080,8 @@ bool Repair::scanRecs ( ) {
 	log(LOG_DEBUG,"repair: nextKey=%s endKey=%s"
 	    "coll=%s collnum=%" PRId32" "
 	    "bnf=%" PRId32,//fn=%" PRId32" nf=%" PRId32,
-	    KEYSTR(&m_nextTitledbKey,sizeof(key_t)),
-	    KEYSTR(&m_endKey,sizeof(key_t)),
+	    KEYSTR(&m_nextTitledbKey,sizeof(key96_t)),
+	    KEYSTR(&m_endKey,sizeof(key96_t)),
 	    m_cr->m_coll,
 	    (int32_t)m_collnum,
 	    (int32_t)base->getNumFiles());//,m_fn,nf);
@@ -1133,7 +1133,7 @@ bool Repair::gotScanRecList ( ) {
 	if ( g_errno == ECORRUPTDATA ) {
 		log("repair: Encountered corruption1 in titledb. "
 		    "NextKey=%s",
-		    KEYSTR(&m_nextTitledbKey,sizeof(key_t)));
+		    KEYSTR(&m_nextTitledbKey,sizeof(key96_t)));
 		/*
 		// get map for this file
 		RdbMap  *map  = base->getMap(m_fn);
@@ -1150,7 +1150,7 @@ bool Repair::gotScanRecList ( ) {
 			goto fileDone;
 		}
 		// get key from that page
-		key_t next = *(key_t *)map->getKeyPtr ( page );
+		key96_t next = *(key96_t *)map->getKeyPtr ( page );
 		// keep advancing if its the same key!
 		if ( next == m_nextTitledbKey ) goto advancePage;
 		// ok, we got a new key, use it
@@ -1208,7 +1208,7 @@ bool Repair::gotScanRecList ( ) {
 	}
 
 	// nextRec2:
-	key_t tkey = m_titleRecList.getCurrentKey();
+	key96_t tkey = m_titleRecList.getCurrentKey();
 	int64_t docId = g_titledb.getDocId ( &tkey );
 	// save it
 	//m_currentTitleRecKey = tkey;
@@ -1230,8 +1230,8 @@ bool Repair::gotScanRecList ( ) {
 		    "key=%s < NextKey=%s"
 		    "FirstDocId=%" PRIu64".",
 		    //p1-1,
-		    KEYSTR(&tkey,sizeof(key_t)),
-		    KEYSTR(&m_nextTitledbKey,sizeof(key_t)),
+		    KEYSTR(&tkey,sizeof(key96_t)),
+		    KEYSTR(&m_nextTitledbKey,sizeof(key96_t)),
 		    docId);
 		m_nextTitledbKey += (uint32_t)1;
 		// advance one if positive, must always start on a negative key
@@ -1368,7 +1368,7 @@ bool Repair::injectTitleRec ( ) {
 		char *rec     = tlist->getCurrentRec();
 		int32_t  recSize = tlist->getCurrentRecSize();
 		// get that key
-		key_t *k = (key_t *)rec;
+		key96_t *k = (key96_t *)rec;
 		// skip negative recs, first one should not be negative however
 		if ( ( k->n0 & 0x01 ) == 0x00 ) continue;
 		// get docid of that guy

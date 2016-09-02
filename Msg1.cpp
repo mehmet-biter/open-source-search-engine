@@ -83,8 +83,8 @@ bool Msg1::addRecord ( char *rec ,
 		       void (* callback)(void *state)  ,
 		       int32_t          niceness          ) {
 
-	key_t sk;
-	key_t ek;
+	key96_t sk;
+	key96_t ek;
 	sk.setMin();
 	ek.setMax();
 	//RdbList list;
@@ -97,7 +97,7 @@ bool Msg1::addRecord ( char *rec ,
 		   -1 , // fixed data size
 		   false , // owndata?
 		   false , // use half keys?
-		   sizeof(key_t));
+		   sizeof(key96_t));
 	return addList ( &m_tmpList ,
 			 rdbId ,
 			 collnum,//g_collectiondb.m_recs[collnum]->m_coll ,
@@ -252,7 +252,6 @@ bool Msg1::sendSomeOfList ( ) {
 	// return true if list exhausted and nothing left to add
 	if ( m_list->isExhausted() ) return true;
 	// get key of the first record in the list
-	//key_t firstKey = m_list->getCurrentKey();
 	char firstKey[MAX_KEY_BYTES];
 	m_list->getCurrentKey(firstKey);
  	QUICKPOLL(m_niceness);
@@ -264,7 +263,6 @@ bool Msg1::sendSomeOfList ( ) {
 	// point to start of data we're going to send
 	char *dataStart = m_list->getListPtr();
 	// how many records belong to the same group as "firstKey"
-	//key_t key;
 	char key[MAX_KEY_BYTES];
 	while ( ! m_list->isExhausted() ) {
 		//key = m_list->getCurrentKey();

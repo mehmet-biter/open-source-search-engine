@@ -6,7 +6,9 @@
 #define NUMTERMIDBITS 48
 
 #include "Sanity.h"
+#include "types.h"
 #include "GbSignature.h"
+#include <stdint.h>
 
 /**
  *
@@ -44,16 +46,8 @@
  * additional support routines for IndexLists
  */
 class RdbList {
-	
 	declare_signature
- public:
-
-	// IndexList sees keys as termId/score/docId tuples
-	friend class RdbScan;   // for hacking to make first key read 12 bytes
-	friend class RdbDump;   // for hacking m_listPtrHi/m_listPtr
-	friend class RdbMap;    // for call to RdbList::setListPtr()
-	friend class Msg1;
-
+public:
 	RdbList () ;
 	~RdbList () ;
 	void constructor();
@@ -89,7 +83,7 @@ class RdbList {
 		  int32_t  fixedDataSize , 
 		  bool  ownData       ,
 		  bool  useHalfKeys   ,
-		  char  keySize       = sizeof(key_t) );
+		  char  keySize       = sizeof(key96_t) );
 
 	void setFromPtr ( char *p , int32_t psize , char rdbId ) ;
 
@@ -165,8 +159,8 @@ class RdbList {
 	}
 
 	bool  isExhausted        () const { return (m_listPtr >= m_listEnd); }
-	key_t getCurrentKey      () const { 
-		key_t key ; getKey ( m_listPtr,(char *)&key ); return key; }
+	key96_t getCurrentKey      () const {
+		key96_t key ; getKey ( m_listPtr,(char *)&key ); return key; }
 	void  getCurrentKey      (void *key) const { getKey(m_listPtr,(char *)key);}
 	int32_t  getCurrentDataSize () const { return getDataSize ( m_listPtr );}
 	char *getCurrentData     () { return getData     ( m_listPtr );}
@@ -217,14 +211,9 @@ class RdbList {
 			return 18;
 		}
 		if ( m_useHalfKeys ) {
-			//if ( isHalfBitOn(rec) ) return 6;
 			if ( isHalfBitOn(rec) ) return m_ks-6;
-			//return sizeof(key_t);
 			return m_ks;
 		}
-		//if (m_fixedDataSize == 0) return sizeof(key_t);
-		//if (m_fixedDataSize >0) return sizeof(key_t)+m_fixedDataSize;
-		//return *(int32_t *)(rec + sizeof(key_t)) + sizeof(key_t) + 4 ;
 		if (m_fixedDataSize == 0) return m_ks;
 		// negative keys always have no datasize entry
 		if ( (rec[0] & 0x01) == 0 ) return m_ks;
@@ -258,17 +247,15 @@ class RdbList {
 
 	// . check to see if keys in order
 	// . logs any problems
-	// . set "removedNegRecs" to true if neg recs should have been removed
 	// . sleeps if any problems encountered
-	bool checkList_r ( bool removedNegRecs , bool sleepOnProblem = true ,
-			   char rdbId = 0 ); // RDB_NONE );
+	bool checkList_r ( bool abortOnProblem = true , char rdbId = 0 ); // RDB_NONE );
 
 	// . removes records whose keys aren't in proper range (corruption)
 	// . returns false and sets errno on error/problem
 	bool removeBadData_r ( ) ;
 
 	// . print out the list (uses log())
-	int printList ( int32_t logtype=LOG_INFO);
+	int printList ( int32_t logtype);
 	int printPosdbList ( int32_t logtype );
 
 	void  setListPtrs ( char *p , char *hi ) {m_listPtr=p;m_listPtrHi=hi;}

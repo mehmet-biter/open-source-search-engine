@@ -1732,7 +1732,6 @@ bool Rdb::hasRoom ( RdbList *list , int32_t niceness ) {
 	if ( !m_useTree && !m_buckets.hasRoom(numNodes)) return false;
 	// how many nodes will tree need?
 	// how much space will RdbMem, m_mem, need?
-	//int32_t overhead = sizeof(key_t);
 	int32_t overhead = m_ks;
 	if ( list->getFixedDataSize() == -1 ) overhead += 4;
 	// how much mem will the data use?
@@ -1873,7 +1872,6 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 	// . #2) if we're adding a negative key, replace positive counterpart
 	//       in the tree, but we must keep negative rec in tree in case
 	//       the positive counterpart was overriding one on disk (as in #1)
-	//key_t oppKey = key ;
 	char oppKey[MAX_KEY_BYTES];
 	int32_t n = -1;
 
@@ -1889,7 +1887,7 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 		// must be 96 bits
 		if ( m_ks != 12 ) { g_process.shutdownAbort(true); }
 		// set this
-		key_t doleKey = *(key_t *)key;
+		key96_t doleKey = *(key96_t *)key;
 		// remove from g_spiderLoop.m_lockTable too!
 		if ( KEYNEG(key) ) {
 			// log debug
@@ -2027,17 +2025,17 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 		if ( ! sc ) return true;
 		// if doing doledb...
 		if ( m_rdbId == RDB_DOLEDB ) {
-			int32_t pri = g_doledb.getPriority((key_t *)key);
+			int32_t pri = g_doledb.getPriority((key96_t *)key);
 			// skip over corruption
 			if ( pri < 0 || pri >= MAX_SPIDER_PRIORITIES )
 				return true;
 			// if added positive key is before cursor, update curso
 			if ( KEYCMP((char *)key,
 				    (char *)&sc->m_nextKeys[pri],
-				    sizeof(key_t)) < 0 ) {
+				    sizeof(key96_t)) < 0 ) {
 				KEYSET((char *)&sc->m_nextKeys[pri],
 				       (char *)key,
-				       sizeof(key_t) );
+				       sizeof(key96_t) );
 				// debug log
 				if ( g_conf.m_logDebugSpider )
 					log("spider: cursor reset pri=%" PRId32" to "
@@ -2130,7 +2128,6 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 // . use the maps and tree to estimate the size of this list w/o hitting disk
 // . used by Indexdb.cpp to get the size of a list for IDF weighting purposes
 int64_t Rdb::getListSize ( collnum_t collnum,
-			//key_t startKey , key_t endKey , key_t *max ,
 			char *startKey , char *endKey , char *max ,
 			int64_t oldTruncationLimit ) {
 	// pick it
@@ -2608,7 +2605,7 @@ int32_t Rdb::reclaimMemFromDeletedTreeNodes( int32_t niceness ) {
 		// negative key? this shouldn't happen
 		if ( (sreq->m_key.n0 & 0x01) == 0x00 ) {
 			log("rdb: reclaim got negative doldb key in scan");
-			p += sizeof(key_t);
+			p += sizeof(key96_t);
 			skipped++;
 			continue;
 		}

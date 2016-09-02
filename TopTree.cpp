@@ -331,7 +331,7 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 	else
 		cs = ((uint32_t)t->m_score);
 
-	key_t k;
+	key96_t k;
 	k.n1  =  domHash                 << 24; // 1 byte domHash
 	//k.n1 |= (t->m_bscore & ~0xc0)    << 16; // 1 byte bscore
 	k.n1 |=  cs                      >> 16; // 4 byte score
@@ -353,7 +353,7 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 		// sanity check
 		//if ( min < 0 ) gbshutdownLogicError();
 		// if we are lesser or dup of min, just don't add!
-		if ( k <= *((key_t *)m_t2.getKey(min)) ) return false;
+		if ( k <= *((key96_t *)m_t2.getKey(min)) ) return false;
 		// . add ourselves. use 0 for collnum.
 		// . dataPtr is not really a ptr, but the node
 		n = m_t2.addNode ( 0 , k , NULL , 4 );
@@ -364,9 +364,9 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 		// sanity check
 		//if ( next < 0 ) gbshutdownLogicError();
 		// sanity check
-		//key_t *kp1 = (key_t *)m_t2.getKey(min);
+		//key96_t *kp1 = (key96_t *)m_t2.getKey(min);
 		//if ( (kp1->n1) >>24 != domHash ) gbshutdownLogicError();
-		//key_t *kp2 = (key_t *)m_t2.getKey(next);
+		//key96_t *kp2 = (key96_t *)m_t2.getKey(next);
 		//if ( (kp2->n1) >>24 != domHash ) gbshutdownLogicError();
 		// the new min is the "next" of the old min
 		m_domMinNode[domHash] = next;
@@ -387,11 +387,11 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 		//	log("r2 nodeb 52 has domHash=%" PRId32,domHash);
 		// sanity check
 		//if ( min > 0 ) {
-		//	key_t *kp1 = (key_t *)m_t2.getKey(min);
+		//	key96_t *kp1 = (key96_t *)m_t2.getKey(min);
 		//	if ( (kp1->n1) >>24 != domHash ) gbshutdownLogicError();
 		//}
 		// are we the new min? if so, assign it
-		if ( min == -1 || k < *((key_t *)m_t2.getKey(min)) )
+		if ( min == -1 || k < *((key96_t *)m_t2.getKey(min)) )
 			m_domMinNode[domHash] = n;
 	}
 
@@ -454,7 +454,7 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 		uint8_t domHash2 = g_titledb.getDomHash8FromDocId(t->m_docId);
 		// . also must delete from m_t2
 		// . make the key
-		key_t k;
+		key96_t k;
 		// WARNING: if t->m_score is fractional, the fraction will be
 		// dropped and could result in the lower scoring of the two 
 		// docids being kept.
@@ -481,7 +481,7 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 		// sanity check. LEAVE THIS HERE!
 		if ( min < 0 ) { break; }
 		// sanity check
-		//key_t *kp1 = (key_t *)m_t2.getKey(min);
+		//key96_t *kp1 = (key96_t *)m_t2.getKey(min);
 		//if ( (kp1->n1) >>24 != domHash2 ) gbshutdownLogicError();
 		// get next node from t2
 		int32_t next = m_t2.getNextNode ( min );
@@ -495,7 +495,7 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 			m_domMinNode[domHash2] = -1;
 			// sanity check
 			//if ( next > 0 ) {
-			//key_t *kp2 = (key_t *)m_t2.getKey(next);
+			//key96_t *kp2 = (key96_t *)m_t2.getKey(next);
 			//if ( (kp2->n1) >>24 == domHash2 ) gbshutdownLogicError();
 			//}
 			continue;
@@ -503,7 +503,7 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 		// sanity check
 		//if ( next < 0 ) gbshutdownLogicError();
 		// sanity check
-		//key_t *kp2 = (key_t *)m_t2.getKey(next);
+		//key96_t *kp2 = (key96_t *)m_t2.getKey(next);
 		//if ( (kp2->n1) >>24 != domHash2 ) gbshutdownLogicError();
 		// the new min is the "next" of the old min
 		m_domMinNode[domHash2] = next;

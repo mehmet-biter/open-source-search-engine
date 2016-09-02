@@ -28,7 +28,6 @@ bool Clusterdb::init ( ) {
 	// initialize our own internal rdb
 	return m_rdb.init ( g_hostdb.m_dir  ,
 			    "clusterdb"   ,
-			    //CLUSTER_REC_SIZE - sizeof(key_t),//fixedDataSize 
 			    0             , // no data now! just docid/s/c
 			    2, // g_conf.m_clusterdbMinFilesToMerge,
 			    g_conf.m_clusterdbMaxTreeMem,
@@ -62,8 +61,8 @@ bool Clusterdb::verify(const char *coll) {
 
 	Msg5 msg5;
 	RdbList list;
-	key_t startKey;
-	key_t endKey;
+	key96_t startKey;
+	key96_t endKey;
 	startKey.setMin();
 	endKey.setMax();
 	//int32_t minRecSizes = 64000;
@@ -100,7 +99,7 @@ bool Clusterdb::verify(const char *coll) {
 	int32_t got   = 0;
 	for ( list.resetListPtr() ; ! list.isExhausted() ;
 	      list.skipCurrentRecord() ) {
-		key_t k = list.getCurrentKey();
+		key96_t k = list.getCurrentKey();
 		// skip negative keys
 		if ( (k.n0 & 0x01) == 0x00 ) continue;
 		count++;
@@ -130,13 +129,13 @@ bool Clusterdb::verify(const char *coll) {
 	return true;
 }
 
-key_t Clusterdb::makeClusterRecKey ( int64_t     docId,
+key96_t Clusterdb::makeClusterRecKey ( int64_t     docId,
 				     bool          familyFilter,
 				     uint8_t       languageBits,
 				     int32_t          siteHash,
 				     bool          isDelKey,
 				     bool          isHalfKey ) {
-	key_t key;
+	key96_t key;
 	// set the docId upper bits
 	key.n1 = (uint32_t)(docId >> 29);
 	key.n1 &= 0x000001ff;

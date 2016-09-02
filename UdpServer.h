@@ -313,14 +313,14 @@ private:
 	int32_t m_maxSlots;
 
 	// routines
-	UdpSlot *getEmptyUdpSlot(key_t k, bool incoming);
+	UdpSlot *getEmptyUdpSlot(key96_t k, bool incoming);
 	void freeUdpSlot(UdpSlot *slot);
 
-	void addKey(key_t key , UdpSlot *ptr);
+	void addKey(key96_t key , UdpSlot *ptr);
 
 	// verified these are only called from within _ass routines that
 	// turn them interrupts off before calling this
-	UdpSlot *getUdpSlot(key_t k);
+	UdpSlot *getUdpSlot(key96_t k);
 
 	// . hash table for converting keys to slots
 	// . if m_ptrs[i] is NULL, ith bucket is empty

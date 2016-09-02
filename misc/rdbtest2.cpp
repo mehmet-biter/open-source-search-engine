@@ -28,8 +28,8 @@ int main ( int argc , char *argv[] ) {
 	RdbList *ptrs[2];
 	ptrs[0] = &list1;
 	ptrs[1] = &list2;
-	key_t startKey ;
-	key_t endKey   ;
+	key96_t startKey ;
+	key96_t endKey   ;
 	startKey.n0 = 0LL;
 	startKey.n1 = 0;
 	endKey.setMax();
@@ -75,7 +75,7 @@ int main ( int argc , char *argv[] ) {
 	return 0;
 }
 
-static key_t keys[50000];
+static key96_t keys[50000];
 
 void *gohere ( void *) {
 	// make a bunch of random keys
@@ -98,7 +98,7 @@ void *gohere ( void *) {
 	
 	
 	for ( int32_t i = 0 ; i < 50000 ; i++ ) {
-		key_t k = keys[i];
+		key96_t k = keys[i];
 		if ( (i % 1000) == 0 ) fprintf(stderr,"%"INT32"\n",i);
 		if ( rdb.addRecord ( k, NULL ,0, false ) >= 0 ) continue;
 		fprintf(stderr,"rdb::addRecord: %s\n",mstrerror(errno));

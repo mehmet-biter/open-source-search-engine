@@ -310,7 +310,7 @@ public:
 		    int32_t       niceness    );
 
 	bool set4 ( class SpiderRequest *sreq  , 
-		    key_t           *doledbKey ,
+		    key96_t           *doledbKey ,
 		    const char      *coll      ,
 		    class SafeBuf   *pbuf      , 
 		    int32_t          niceness  ,
@@ -344,7 +344,7 @@ public:
 	bool indexDoc ( );
 	bool indexDoc2 ( );
 
-	key_t *getTitleRecKey() ;
+	key96_t *getTitleRecKey() ;
 	char *prepareToMakeTitleRec ( ) ;
 	// store TitleRec into "buf" so it can be added to metalist
 	bool setTitleRecBuf ( SafeBuf *buf , int64_t docId, int64_t uh48 );
@@ -1027,13 +1027,13 @@ public:
 
 	// ptrs to stuff
 	SafeBuf m_titleRecBuf;
-	key_t   m_titleRecKey;
+	key96_t   m_titleRecKey;
 
 	// for isDupOfUs()
 	char *m_dupTrPtr;
 	int32_t  m_dupTrSize;
 
-	key_t     m_doledbKey;
+	key96_t     m_doledbKey;
 	SpiderRequest m_sreq;
 	SpiderReply   m_srep;//newsr;
 

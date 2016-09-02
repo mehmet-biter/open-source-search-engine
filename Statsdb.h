@@ -145,8 +145,8 @@ class Statsdb {
 	// some flag
 	bool m_done;
 
-	key_t m_startKey;
-	key_t m_endKey;
+	key96_t m_startKey;
+	key96_t m_endKey;
 
 	//FILE *m_fd;
 
@@ -167,7 +167,7 @@ extern class Statsdb g_statsdb;
 //   based on the label hash
 class StatKey {
  public:
-	// these two vars make up the key_t!
+	// these two vars make up the key96_t!
 	uint32_t m_zero;
 	uint32_t m_labelHash;
 	// force to 32-bit even though time_t is 64-bit on 64-bit systems

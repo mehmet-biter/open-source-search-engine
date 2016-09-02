@@ -30,10 +30,10 @@ void SearchInput::clear ( int32_t niceness ) {
 
 // . make a key for caching the search results page based on this input
 // . do not use all vars, like the m_*ToDisplay should not be included
-key_t SearchInput::makeKey ( ) {
+key96_t SearchInput::makeKey ( ) {
 	// hash the query
 	int32_t n = m_q.getNumTerms();
-	key_t k;
+	key96_t k;
 	k.n1 = 0;
 
 	// user defined weights, for weighting each query term separately

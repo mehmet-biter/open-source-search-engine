@@ -51,15 +51,18 @@ public:
 	RdbList  *m_subLists        [MAX_SUBLISTS];
 	// flags to indicate if bigram list should be scored higher
 	char      m_bigramFlags     [MAX_SUBLISTS];
-	// delNonMatchingDocIdsFromSubLists() set this:
-	int32_t      m_newSubListSize  [MAX_SUBLISTS];
-	char     *m_newSubListStart [MAX_SUBLISTS];
-	char     *m_newSubListEnd   [MAX_SUBLISTS];
-	char     *m_cursor          [MAX_SUBLISTS];
-	char     *m_savedCursor     [MAX_SUBLISTS];
-	// the corresponding QueryTerm for this sublist
-	//class QueryTerm *m_qtermList [MAX_SUBLISTS];
-	int32_t      m_numNewSubLists;
+	
+	// delNonMatchingDocIdsFromSubLists() set these. They
+	// point to m_subLists that have been reduced in size 
+	// to only contain the docids matching all required term ids
+	int32_t   m_matchingSubListSize			[MAX_SUBLISTS];
+	char     *m_matchingSubListStart		[MAX_SUBLISTS];
+	char     *m_matchingSubListEnd   		[MAX_SUBLISTS];
+	char     *m_matchingSubListCursor		[MAX_SUBLISTS];
+	char     *m_matchingSubListSavedCursor	[MAX_SUBLISTS];
+	int32_t   m_numMatchingSubLists;
+	
+	
 	// how many are valid?
 	int32_t      m_numSubLists;
 	// size of all m_subLists in bytes

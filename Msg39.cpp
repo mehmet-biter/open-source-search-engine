@@ -887,7 +887,7 @@ void Msg39::getClusterRecs ( ) {
 	// docIds
 	m_clusterDocIds = (int64_t *)p; p += numDocIds * 8;
 	m_clusterLevels = (char      *)p; p += numDocIds * 1;
-	m_clusterRecs   = (key_t     *)p; p += numDocIds * 12;
+	m_clusterRecs   = (key96_t     *)p; p += numDocIds * 12;
 	// sanity check
 	if ( p > m_clusterBuf + m_clusterBufSize ) gbshutdownLogicError();
 	
@@ -1036,7 +1036,7 @@ void Msg39::estimateHitsAndSendReply(double pctSearched) {
 	mr.size_scores      = sizeof(double) * numDocIds;
 	// if not doing site clustering, we won't have these perhaps...
 	if(m_gotClusterRecs)
-		mr.size_clusterRecs = sizeof(key_t) *numDocIds;
+		mr.size_clusterRecs = sizeof(key96_t) *numDocIds;
 	else
 		mr.size_clusterRecs = 0;
 
@@ -1064,7 +1064,7 @@ void Msg39::estimateHitsAndSendReply(double pctSearched) {
 	}
 	int64_t *topDocIds = (int64_t*)mr.ptr_docIds;
 	double *topScores  = (double*) mr.ptr_scores;
-	key_t *topRecs     = (key_t*)  mr.ptr_clusterRecs;
+	key96_t *topRecs     = (key96_t*)  mr.ptr_clusterRecs;
 
 	// sanity
 	if(nqt!=m_msg2.getNumLists())

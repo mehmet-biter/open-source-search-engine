@@ -62,8 +62,8 @@ class Msg5 {
 	bool getList ( rdbid_t       rdbId,
 		       collnum_t collnum ,
 		       RdbList   *list          ,
-		       key_t      startKey      , 
-		       key_t      endKey        , 
+		       key96_t      startKey      ,
+		       key96_t      endKey        ,
 		       int32_t       recSizes      , // requestd scan size(-1 all)
 		       bool       includeTree   ,
 		       int32_t       maxCacheAge   , // in secs for cache lookup
@@ -75,7 +75,7 @@ class Msg5 {
 						Msg5    *msg5  ) ,
 		       int32_t       niceness      ,
 		       bool       doErrorCorrection  ,
-		       key_t        *cacheKeyPtr,
+		       key96_t        *cacheKeyPtr,
 		       int32_t       retryNum,
 		       int32_t       maxRetries,
 		       bool          compensateForMerge,

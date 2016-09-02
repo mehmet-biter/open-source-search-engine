@@ -32,8 +32,6 @@ class RdbScan {
 		       int32_t       fixedDataSize ,
 		       int64_t  offset        ,
 		       int32_t       bytesToRead   ,
-		       //key_t      startKey      , 
-		       //key_t      endKey        , 
 		       char      *startKey      , 
 		       char      *endKey        , 
 		       char       keySize       ,
@@ -70,7 +68,6 @@ class RdbScan {
 	rdbid_t m_rdbId;
 
 	// save for call to our gotListWrapper()
-	//key_t  m_startKey;
 	char m_startKey[MAX_KEY_BYTES];
 	char m_endKey  [MAX_KEY_BYTES];
 	int32_t m_fixedDataSize;

@@ -111,7 +111,7 @@ public:
 	char  *ptr_scoreInfo      ; // transparency info
 	char  *ptr_pairScoreBuf   ; // transparency info
 	char  *ptr_singleScoreBuf ; // transparency info
-	char  *ptr_clusterRecs    ; // key_t (might be empty)
+	char  *ptr_clusterRecs    ; // key96_t (might be empty)
 	
 	// do not add new string parms before size_docIds or
 	// after size_clusterRecs so serializeMsg() calls still work
@@ -188,7 +188,7 @@ private:
 	char       *m_clusterBuf;
 	int64_t  *m_clusterDocIds;
 	char       *m_clusterLevels;
-	key_t      *m_clusterRecs;
+	key96_t      *m_clusterRecs;
 	int32_t        m_numClusterDocIds;
 	int32_t        m_numVisible;
 	Msg51       m_msg51;

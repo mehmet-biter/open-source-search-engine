@@ -424,7 +424,7 @@ protected:
 	UdpSlot *m_activeListPrev;
 
 	// store the key so when returning slot we can remove from hash table
-	key_t m_key;
+	key96_t m_key;
 
 	char m_maxResends;
 

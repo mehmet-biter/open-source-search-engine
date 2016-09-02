@@ -232,7 +232,7 @@ int64_t RdbCache::getLongLong ( collnum_t collnum ,
 				  bool promoteRecord ) {
 	char *rec;
 	int32_t  recSize;
-	key_t k;
+	key96_t k;
 	k.n0 = 0;
 	k.n1 = (uint64_t)key;
 	// sanity check
@@ -265,7 +265,7 @@ int64_t RdbCache::getLongLong2 ( collnum_t collnum ,
 				  bool promoteRecord ) {
 	char *rec;
 	int32_t  recSize;
-	key_t k;
+	key96_t k;
 	k.n0 = (uint64_t)key;
 	k.n1 = 0;
 	// sanity check
@@ -294,7 +294,7 @@ int64_t RdbCache::getLongLong2 ( collnum_t collnum ,
 // this puts a int32_t in there
 void RdbCache::addLongLong2 ( collnum_t collnum ,
 			      uint64_t key , int64_t value ) {
-	key_t k;
+	key96_t k;
 	k.n0 = (uint64_t)key;
 	k.n1 = 0;
 	// sanity check
@@ -310,13 +310,13 @@ void RdbCache::addLongLong2 ( collnum_t collnum ,
 // this puts a int32_t in there
 void RdbCache::addLongLong ( collnum_t collnum ,
 			     uint32_t key , int64_t value ) {
-	key_t k;
+	key96_t k;
 	k.n0 = 0;
 	k.n1 = (uint64_t)key;
 	// sanity check
 	//if ( m_cks != 4 ) gbshutdownLogicError();
 	// sanity check
-	if ( m_cks > (int32_t)sizeof(key_t) ) gbshutdownLogicError();
+	if ( m_cks > (int32_t)sizeof(key96_t) ) gbshutdownLogicError();
 	//if ( m_dks != 0 ) gbshutdownLogicError();
 	//addRecord ( collnum , k , NULL , 0 , (char *)&value , 8 ,
 	//addRecord ( collnum , (char *)&key , NULL , 0 , (char *)&value , 8 ,
@@ -333,7 +333,7 @@ int32_t RdbCache::getLong ( collnum_t collnum ,
 			 bool promoteRecord ) {
 	char *rec;
 	int32_t  recSize;
-	key_t k;
+	key96_t k;
 	// TODO: fix this!?! k.n0 = key, k.n1 = 0?
 	k.n0 = 0;
 	k.n1 = key;
@@ -361,11 +361,11 @@ int32_t RdbCache::getLong ( collnum_t collnum ,
 // this puts a int32_t in there
 void RdbCache::addLong ( collnum_t collnum ,
 			 uint64_t key , int32_t value ) {
-	key_t k;
+	key96_t k;
 	k.n0 = 0;
 	k.n1 = key;
 	// sanity check
-	if ( m_cks > (int32_t)sizeof(key_t) ) gbshutdownLogicError();
+	if ( m_cks > (int32_t)sizeof(key96_t) ) gbshutdownLogicError();
 	addRecord ( collnum , (char *)&k , NULL , 0 , (char *)&value , 
 		    // by long we really mean 32 bits!
 		    4,//sizeof(char *), // 4 , now 8 for 64 bit archs
@@ -430,11 +430,8 @@ bool RdbCache::getRecord ( collnum_t collnum   ,
 	// chain
 	while ( m_ptrs[n] && 
 		( *(collnum_t *)(m_ptrs[n]+0                ) != collnum ||
-		  //*(key_t     *)(m_ptrs[n]+sizeof(collnum_t)) != cacheKey ) )
 		  KEYCMP(m_ptrs[n]+sizeof(collnum_t),cacheKey,m_cks) != 0 ) )
 		if ( ++n >= m_numPtrsMax ) n = 0;
-	//while ( m_ptrs[n] && *(key_t *)m_ptrs[n] != cacheKey ) 
-	//	if ( ++n >= m_numPtrsMax ) n = 0;
 	// return false if not found
 	if ( ! m_ptrs[n] ) {
 		if ( incCounts ) incrementMisses();
@@ -449,7 +446,6 @@ bool RdbCache::getRecord ( collnum_t collnum   ,
 		return false;
 	}
 	// skip over collnum and key
-	//p += sizeof(collnum_t) + sizeof(key_t);
 	p += sizeof(collnum_t) + m_cks;
 	// skip over time stamp
 	int32_t timestamp = *(int32_t *)p;
@@ -572,14 +568,6 @@ bool RdbCache::getRecord ( collnum_t collnum   ,
 		//removeKey ( collnum , cacheKey , ptr );
 		//markDeletedRecord(ptr);
 
-		//int32_t n = hash32 ( cacheKey , m_cks ) % m_numPtrsMax;
-		//if ( this == &g_robotdb.m_rdbCache )
-		// if ( this == &g_spiderLoop.m_winnerListCache ) {
-		// 	logf(LOG_DEBUG, "db: cachebug: promoting record "
-		// 	     "k.n0=0x%" PRIx64" n=%" PRId32,
-		// 	     ((key_t *)cacheKey)->n0,
-		// 	     *recSize);
-		// }
 		char *retRec = NULL;
 		addRecord ( collnum , cacheKey , *rec , *recSize , timestamp ,
 			    &retRec );
@@ -633,9 +621,6 @@ bool RdbCache::getList ( collnum_t collnum  ,
 			    incCounts ,
 			    NULL      ) ) return false;
 	// first 2 keys of bytes are the start and end keys
-	//key_t endKey = *(key_t *)rec;
-	//char *data     = rec     + sizeof(key_t);
-	//int32_t  dataSize = recSize - sizeof(key_t);
 	char *endKey   = rec;
 	char *data     = rec     + m_dks;
 	int32_t  dataSize = recSize - m_dks;
@@ -667,7 +652,6 @@ bool RdbCache::getList ( collnum_t collnum  ,
 }
 
 // returns false and sets errno on error
-//bool RdbCache::addList ( char *coll , key_t cacheKey , RdbList *list ) {
 bool RdbCache::addList ( const char *coll, const char *cacheKey, RdbList *list ) {
 	collnum_t collnum = g_collectiondb.getCollnum ( coll );
 	if ( collnum < 0 ) {
@@ -679,7 +663,6 @@ bool RdbCache::addList ( const char *coll, const char *cacheKey, RdbList *list )
 }
 
 // returns false and sets errno on error
-//bool RdbCache::addList ( collnum_t collnum , key_t cacheKey , RdbList *list){
 bool RdbCache::addList ( collnum_t collnum, const char *cacheKey, RdbList *list ) {
 	// . sanity check
 	// . msg2 sometimes fails this check when it adds to the cache
@@ -690,8 +673,6 @@ bool RdbCache::addList ( collnum_t collnum, const char *cacheKey, RdbList *list 
 		//gbshutdownLogicError();
 	}
 	// store endkey then list data in the record data slot
-	//key_t k;
-	//k = list->getLastKey  ();
 	char *k = list->getLastKey  ();
 	// just to make sure
 	char *data     = list->getList();
@@ -777,13 +758,11 @@ bool RdbCache::addRecord ( collnum_t collnum ,
 	if ( ! g_cacheWritesEnabled ) return false;
 
 	// collnum_t and cache key
-	//need += sizeof(collnum_t) + sizeof(key_t);
 	need += sizeof(collnum_t) + m_cks;
 	// timestamp
 	need += 4;
 	// . trailing 0 collnum_t, key and trailing time stamp
 	// . this DELIMETER tells us to go to the next buf
-	//need += sizeof(collnum_t) + sizeof(key_t) + 4 ; // timestamp
 	need += sizeof(collnum_t) + m_cks + 4 ;
 	// and size, if not fixed or we support lists
 	if ( m_fixedDataSize == -1 || m_supportLists ) need += 4;
@@ -912,8 +891,8 @@ bool RdbCache::addRecord ( collnum_t collnum ,
 	    m_dbname, (int32_t)(p - start) , 
 	    gettimeofdayInMillisecondsLocal()-t,
 	    (PTRTYPE)this,
-	    ((key_t *)(&cacheKey))->n1 ,
-	    ((key_t *)(&cacheKey))->n0 );
+	    ((key96_t *)(&cacheKey))->n1 ,
+	    ((key96_t *)(&cacheKey))->n0 );
 
 	m_adds++;
 
@@ -1041,14 +1020,6 @@ bool RdbCache::deleteRec ( ) {
 	}
 
 
-	//if ( this == &g_robotdb.m_rdbCache ) 
-	// if ( this == &g_spiderLoop.m_winnerListCache )
-	// 	logf(LOG_DEBUG, "db: cachebug: removing k.n0=0x%" PRIx64" "
-	// 	     "oldtail=%" PRId32" newtail=%" PRId32" ds=%" PRId32,
-	// 	     ((key_t *)k)->n0,saved,m_tail,dataSize);
-
-	//else
-	//	logf(LOG_DEBUG,"test: oops");
 	// count as a delete
 	m_deletes++;
 	// void this key in the buffer, 
@@ -1096,7 +1067,6 @@ void RdbCache::markDeletedRecord(char *ptr){
 }
 
 // patch the hole so chaining still works
-//void RdbCache::removeKey ( collnum_t collnum , key_t key , char *rec ) {
 void RdbCache::removeKey ( collnum_t collnum, const char *key, const char *rec ) {
 	//int32_t n = (key.n0 + (uint64_t)key.n1)% m_numPtrsMax;
 	int32_t n = hash32 ( key , m_cks ) % m_numPtrsMax;
@@ -1110,10 +1080,8 @@ void RdbCache::removeKey ( collnum_t collnum, const char *key, const char *rec )
 	// chain
 	while ( m_ptrs[n] && 
 		( *(collnum_t *)(m_ptrs[n]+0                ) != collnum ||
-		  //*(key_t     *)(m_ptrs[n]+sizeof(collnum_t)) != key     ) )
 		  KEYCMP(m_ptrs[n]+sizeof(collnum_t),key,m_cks) != 0 ) )
 		if ( ++n >= m_numPtrsMax ) n = 0;
-	//while ( m_ptrs[n] && *(key_t *)m_ptrs[n] != key ) 
 	//	if ( ++n >= m_numPtrsMax ) n = 0;
 	// . return false if key not found
 	// . this happens sometimes, if m_tail wraps to 0 and the new rec
@@ -1149,11 +1117,6 @@ void RdbCache::removeKey ( collnum_t collnum, const char *key, const char *rec )
 		gbshutdownLogicError();
 	}
 
-	// debug msg 
-	//key_t *k = (key_t *)(m_ptrs[n]+2);
-	//log("cache: %s removing key.n1=%" PRIu32" key.n0=%" PRIu64" from slot #%" PRId32,
-	//    m_dbname,k->n1,k->n0,n);
-	
 	// all done if already cleared
 	if ( ! m_ptrs[n] ) return;
 	// clear it
@@ -1178,7 +1141,6 @@ void RdbCache::removeKey ( collnum_t collnum, const char *key, const char *rec )
 	}
 }
 
-//void RdbCache::addKey ( collnum_t collnum , key_t key , char *ptr ) { 
 void RdbCache::addKey ( collnum_t collnum, const char *key, char *ptr ) {
 	// look up in hash table
 	//int32_t n = (key.n0 + (uint64_t)key.n1)% m_numPtrsMax;
@@ -1191,21 +1153,12 @@ void RdbCache::addKey ( collnum_t collnum, const char *key, char *ptr ) {
 	// chain
 	while ( m_ptrs[n] && 
 		( *(collnum_t *)(m_ptrs[n]+0                ) != collnum ||
-		  //*(key_t     *)(m_ptrs[n]+sizeof(collnum_t)) != key     ) )
 		  KEYCMP(m_ptrs[n]+sizeof(collnum_t),key,m_cks) != 0 ) )
 		if ( ++n >= m_numPtrsMax ) n = 0;
-	//while ( m_ptrs[n] && *(key_t *)m_ptrs[n] != key ) 
-	//	if ( ++n >= m_numPtrsMax ) n = 0;
 	// if already there don't inc the count
 	if ( ! m_ptrs[n] ) {
 		m_numPtrsUsed++;
 		m_memOccupied += sizeof(char *);
-		// debug msg 
-		//key_t *k = (key_t *)key;
-		//log("cache: %s added key.n1=%" PRIu32" key.n0=%" PRIu64" to slot #%" PRId32" "
-		//    "ptr=0x%" PRIx32" off=%" PRId32" size=%" PRId32,
-		//    m_dbname,k->n1,k->n0,n,ptr,ptr-m_bufs[0],
-		//    *(int32_t *)(ptr+2+12+4));
 	}
 	// debug msg
 	//else 
@@ -1593,16 +1546,6 @@ bool RdbCache::load ( const char *dbname ) {
 		m_ptrs[i] = p;
 		// count it
 		used++;
-		// see what is there
-		
-		// debug msg
-		//key_t kk = *(key_t *)p;
-		//log("loaded k.n1=%" PRIu32" k.n0=%" PRIu64,kk.n1,kk.n0);
-		//if ( m_fixedDataSize || m_supportLists )
-		//	log("loaded k.n1=%" PRIu32" k.n0=%" PRIu64" size=%" PRId32,
-		//	    kk.n1,kk.n0, 20+*(int32_t *)(p+sizeof(key_t)+4));
-		//else
-		//	log("loaded k.n1=%" PRIu32" k.n0=%" PRIu64, kk.n1,kk.n0);
 	}
 	if ( used != m_numPtrsUsed ) { 
 		log("cache: error loading cache. %" PRId32" != %" PRId32

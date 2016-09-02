@@ -635,7 +635,7 @@ subloopNextPriority:
 	if ( nowGlobal == 0 ) { g_process.shutdownAbort(true); }
 
 	// need this for msg5 call
-	key_t endKey;
+	key96_t endKey;
 	endKey.setMax();
 
 	// init the m_priorityToUfn map array?
@@ -896,7 +896,7 @@ bool SpiderLoop::gotDoledbList2 ( ) {
 	char *rec = (char *)m_list.getListPtr();
 
 	// the doledbkey
-	key_t *doledbKey = (key_t *)rec;
+	key96_t *doledbKey = (key96_t *)rec;
 
 	// get record after it next time
 	m_sc->m_nextDoledbKey = *doledbKey ;
@@ -1001,7 +1001,7 @@ bool SpiderLoop::gotDoledbList2 ( ) {
 	int32_t globalOut = 0;
 
 	// get the "spider rec" (SpiderRequest) (embedded in the doledb rec)
-	SpiderRequest *sreq = (SpiderRequest *)(rec + sizeof(key_t)+4);
+	SpiderRequest *sreq = (SpiderRequest *)(rec + sizeof(key96_t)+4);
 
 	// sanity check. check for http(s)://
 	// might be a docid from a pagereindex.cpp
@@ -1240,7 +1240,7 @@ skipDoledbRec:
 // . returns false if your callback will be called
 // . returns true and sets g_errno on error
 bool SpiderLoop::spiderUrl9 ( SpiderRequest *sreq ,
-			      key_t *doledbKey ,
+			      key96_t *doledbKey ,
 			      //char *coll ,
 			      collnum_t collnum ,
 			      int32_t sameIpWaitTime ,

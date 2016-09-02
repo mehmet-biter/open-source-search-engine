@@ -400,7 +400,7 @@ createFile:
 		// if not an ip, look it up
 		if ( ! ip ) {
 			// get key
-			key_t k = hash96 ( host , hlen );
+			key96_t k = hash96 ( host , hlen );
 			// get eth0 ip of hostname in /etc/hosts
 			g_dns.isInFile ( k , &ip );
 		}
@@ -453,7 +453,7 @@ createFile:
 			// set this ip
 			//int32_t nextip;
 			// now that must have the eth1 ip in /etc/hosts
-			key_t k = hash96 ( h->m_hostname2 , hlen2 );
+			key96_t k = hash96 ( h->m_hostname2 , hlen2 );
 			// get eth1 ip of hostname in /etc/hosts
 			if ( ! g_dns.isInFile ( k , &ip2 ) ) {
 				log(LOG_WARN, "admin: secondary host %s in hosts.conf "
@@ -1571,7 +1571,7 @@ uint32_t Hostdb::getShardNum(rdbid_t rdbId, const void *k) {
 		return m_map [(*(uint16_t *)((char *)k + 26))>>3];	
 	}
 	else if ( rdbId == RDB_TITLEDB || rdbId == RDB2_TITLEDB2 ) {
-		uint64_t d = g_titledb.getDocId ( (key_t *)k );
+		uint64_t d = g_titledb.getDocId ( (key96_t *)k );
 		return m_map [ ((d>>14)^(d>>7)) & (MAX_KSLOTS-1) ];
 	}
 	else if ( rdbId == RDB_SPIDERDB || rdbId == RDB2_SPIDERDB2 ) {

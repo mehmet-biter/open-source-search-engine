@@ -136,8 +136,7 @@ public:
 	int64_t      *m_docIds        ;
 	double         *m_scores        ;
 	class DocIdScore **m_scoreInfos ;
-	//key_t          *m_recs          ; // clusterdb recs
-	key_t          *m_clusterRecs   ;
+	key96_t          *m_clusterRecs   ;
 	char           *m_clusterLevels ;
 	// this is new
 	collnum_t      *m_collnums;

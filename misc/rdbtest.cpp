@@ -22,8 +22,8 @@ int main ( int argc , char *argv[] ) {
 	*(int32_t *)(data1 + 8) = 1059574105;
 	*(int32_t *)(data2 + 8) = 1059574105;
 
-	key_t startKey ;
-	key_t endKey   ;
+	key96_t startKey ;
+	key96_t endKey   ;
 	startKey.n0 = 216172782113783808LL;
 	startKey.n1 = 1059574105;
 	endKey.n0   = 288230376151711743LL;

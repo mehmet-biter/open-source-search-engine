@@ -18,8 +18,8 @@ void test2 ( int arg , int removeNegRecs ) {
 	RdbList list2;
 	RdbList list3;
 
-	key_t startKey;
-	key_t endKey;
+	key96_t startKey;
+	key96_t endKey;
 	startKey.n1 = 0;
 	startKey.n0 = 0LL;
 	endKey.n1   = 0xffffffff;
@@ -62,7 +62,7 @@ void test2 ( int arg , int removeNegRecs ) {
 		    usehalf    );// use half keys?
 
 	// make a list of keys
-	key_t k;
+	key96_t k;
 	k.n1 = 0xa0 ; k.n0 = 0x01LL ;	list1.addKey ( k );
 	k.n1 = 0xb0 ; k.n0 = 0x00LL ;	list1.addKey ( k );
 	k.n1 = 0xc0 ; k.n0 = 0x01LL ;	list1.addKey ( k );
@@ -150,10 +150,10 @@ void test1 ( int arg ) {
 	fprintf (stderr,"smt:: randomizing begin. %"INT32" lists of %"INT32" keys.\n",
 		 numToMerge, nk);
 	// make a list of compressed (6 byte) docIds
-        key_t *keys0 = (key_t *) malloc ( sizeof(key_t) * nk );
-        key_t *keys1 = (key_t *) malloc ( sizeof(key_t) * nk );
-        key_t *keys2 = (key_t *) malloc ( sizeof(key_t) * nk );
-        key_t *keys3 = (key_t *) malloc ( sizeof(key_t) * nk );
+        key96_t *keys0 = (key96_t *) malloc ( sizeof(key96_t) * nk );
+        key96_t *keys1 = (key96_t *) malloc ( sizeof(key96_t) * nk );
+        key96_t *keys2 = (key96_t *) malloc ( sizeof(key96_t) * nk );
+        key96_t *keys3 = (key96_t *) malloc ( sizeof(key96_t) * nk );
 	// store radnom docIds in this list
 	uint32_t *p = (uint32_t *) keys0;
 	// random docIds
@@ -181,48 +181,48 @@ void test1 ( int arg ) {
 		*p++ = rand() ;
 	}
 	// sort em up
-	gbsort ( keys0  , nk , sizeof(key_t) , cmp );
-	gbsort ( keys1  , nk , sizeof(key_t) , cmp );
-	gbsort ( keys2  , nk , sizeof(key_t) , cmp );
-	gbsort ( keys3  , nk , sizeof(key_t) , cmp );
+	gbsort ( keys0  , nk , sizeof(key96_t) , cmp );
+	gbsort ( keys1  , nk , sizeof(key96_t) , cmp );
+	gbsort ( keys2  , nk , sizeof(key96_t) , cmp );
+	gbsort ( keys3  , nk , sizeof(key96_t) , cmp );
 	// set lists
 	RdbList list0;
 	RdbList list1;
 	RdbList list2;
 	RdbList list3;
-	key_t minKey; minKey.n0 = 0LL; minKey.n1 = 0LL;
-	key_t maxKey; maxKey.setMax();
+	key96_t minKey; minKey.n0 = 0LL; minKey.n1 = 0LL;
+	key96_t maxKey; maxKey.setMax();
 	list0.set ( (char *)keys0 , 
-		    nk * sizeof(key_t),
+		    nk * sizeof(key96_t),
 		    (char *)keys0 , 
-		    nk * sizeof(key_t),
+		    nk * sizeof(key96_t),
 		    minKey , 
 		    maxKey , 
 		    0 , 
 		    false ,
 		    false );
 	list1.set ( (char *)keys1 , 
-		    nk * sizeof(key_t),
+		    nk * sizeof(key96_t),
 		    (char *)keys1 , 
-		    nk * sizeof(key_t),
+		    nk * sizeof(key96_t),
 		    minKey , 
 		    maxKey , 
 		    0 , 
 		    false ,
 		    false );
 	list2.set ( (char *)keys2 , 
-		    nk * sizeof(key_t),
+		    nk * sizeof(key96_t),
 		    (char *)keys2 , 
-		    nk * sizeof(key_t),
+		    nk * sizeof(key96_t),
 		    minKey , 
 		    maxKey , 
 		    0 , 
 		    false ,
 		    false );
 	list3.set ( (char *)keys3 , 
-		    nk * sizeof(key_t),
+		    nk * sizeof(key96_t),
 		    (char *)keys3 , 
-		    nk * sizeof(key_t),
+		    nk * sizeof(key96_t),
 		    minKey , 
 		    maxKey , 
 		    0 , 
@@ -235,8 +235,8 @@ void test1 ( int arg ) {
 	lists[1] = &list1;
 	lists[2] = &list2;
 	lists[3] = &list3;
-	//list.prepareForMerge ( lists , 3 , numKeysWanted * sizeof(key_t));
-	list.prepareForMerge (lists,numToMerge,numKeysWanted * sizeof(key_t));
+	//list.prepareForMerge ( lists , 3 , numKeysWanted * sizeof(key96_t));
+	list.prepareForMerge (lists,numToMerge,numKeysWanted * sizeof(key96_t));
 	// start time
 	fprintf(stderr,"starting merge\n");
 	int64_t t = gettimeofdayInMilliseconds();
@@ -274,7 +274,7 @@ void test1 ( int arg ) {
 	fprintf(stderr,"smt:: %"INT32" list NEW MERGE took %"UINT64" ms\n",
 		numToMerge,now-t);
 	// time per key
-	int32_t size = list.getListSize() / sizeof(key_t);
+	int32_t size = list.getListSize() / sizeof(key96_t);
 	double tt = ((double)(now - t))*1000000.0 / ((double)size);
 	fprintf (stderr,"smt:: %f nanoseconds per key\n", tt);
 	// stats
@@ -288,10 +288,10 @@ void test1 ( int arg ) {
 	// now get list from the old merge routine
 	/*
 	RdbList listOld;
-	listOld.prepareForMerge (lists,numToMerge,numKeysWanted*sizeof(key_t));
+	listOld.prepareForMerge (lists,numToMerge,numKeysWanted*sizeof(key96_t));
 	t = gettimeofdayInMilliseconds();
 	listOld.merge_r ( lists , numToMerge , true , minKey , maxKey , false ,
-		       numKeysWanted * sizeof(key_t));
+		       numKeysWanted * sizeof(key96_t));
 	now = gettimeofdayInMilliseconds();
 	fprintf(stderr,"smt:: %"INT32" list OLD MERGE took %"UINT64" ms\n",
 		numToMerge,now-t);
@@ -303,7 +303,7 @@ void test1 ( int arg ) {
 }
 
 int cmp (const void *h1, const void *h2) {
-	if ( *(key_t *)h1 < *(key_t *)h2 ) return -1;
-	if ( *(key_t *)h1 > *(key_t *)h2 ) return  1;
+	if ( *(key96_t *)h1 < *(key96_t *)h2 ) return -1;
+	if ( *(key96_t *)h1 > *(key96_t *)h2 ) return  1;
 	return 0;
 }

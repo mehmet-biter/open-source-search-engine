@@ -35,7 +35,7 @@ typedef struct {
 class Dns;
 
 struct DnsState {
-	key_t       m_hostnameKey;
+	key96_t       m_hostnameKey;
 	// key for lookup into s_dnsTable hash table
 	int64_t   m_tableKey; 
 	Dns        *m_this  ;
@@ -179,17 +179,17 @@ class Dns {
 	bool extractHostname ( const char *dgram, const char *record, char *hostname );
 
 	// returns true if in cache, and sets *ip
-	bool isInCache (key_t key , int32_t *ip );
+	bool isInCache (key96_t key , int32_t *ip );
 
 	// add this hostnamekey/ip pair to the cache
-	void addToCache ( key_t hostnameKey , int32_t ip , int32_t ttl = -1 ) ;
+	void addToCache ( key96_t hostnameKey , int32_t ip , int32_t ttl = -1 ) ;
 
 	// is it in the /etc/hosts file?
-	bool isInFile (key_t key , int32_t *ip );
+	bool isInFile (key96_t key , int32_t *ip );
 
-	static key_t getKey ( const char *hostname , int32_t hostnameLen ) ;
+	static key96_t getKey ( const char *hostname , int32_t hostnameLen ) ;
 
-	Host *getResponsibleHost ( key_t key ) ;
+	Host *getResponsibleHost ( key96_t key ) ;
 
  private:
 
@@ -209,7 +209,7 @@ class Dns {
 
 	// /etc/hosts in hashed into this table
 	int32_t   *m_ips;
-	key_t  *m_keys;
+	key96_t  *m_keys;
 	int32_t    m_numSlots;
 };
 

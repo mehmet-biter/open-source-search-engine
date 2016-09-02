@@ -410,10 +410,10 @@ void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
 
 	// make the cacheKey ourself, since Msg5 would make the key wrong
 	// since it would base it on startFileNum and numFiles
-	key_t cacheKey ; cacheKey.n1 = 0; cacheKey.n0 = r->m_docId;
+	key96_t cacheKey ; cacheKey.n1 = 0; cacheKey.n0 = r->m_docId;
 	// make titledb keys
-	key_t startKey = g_titledb.makeFirstKey ( st->m_docId1 );
-	key_t endKey   = g_titledb.makeLastKey  ( st->m_docId2 );
+	key96_t startKey = g_titledb.makeFirstKey ( st->m_docId1 );
+	key96_t endKey   = g_titledb.makeLastKey  ( st->m_docId2 );
 
 	// . load the list of title recs from disk now
 	// . our file range should be solid
@@ -501,7 +501,7 @@ void gotTitleList ( void *state , RdbList *list , Msg5 *msg5 ) {
 		char *rec     = tlist->getCurrentRec();
 		int32_t  recSize = tlist->getCurrentRecSize();
 		// get that key
-		key_t *k = (key_t *)rec;
+		key96_t *k = (key96_t *)rec;
 		// skip negative recs, first one should not be negative however
 		if ( ( k->n0 & 0x01 ) == 0x00 ) continue;
 

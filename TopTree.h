@@ -21,7 +21,7 @@ class TopNode {
 	// really quick on each machine, assuming we have a full split and the
 	// entire clusterdb is in our local disk page cache.
 	char     m_clusterLevel;
-	key_t    m_clusterRec;
+	key96_t    m_clusterRec;
 
 	// no longer needed, Msg3a does not need, it has already
 	//unsigned char  m_tier     ;

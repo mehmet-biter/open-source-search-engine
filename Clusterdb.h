@@ -33,7 +33,7 @@
 #include "Titledb.h"
 
 // these are now just TitleRec keys
-#define CLUSTER_REC_SIZE (sizeof(key_t))
+#define CLUSTER_REC_SIZE (sizeof(key96_t))
 
 class Clusterdb {
 public:
@@ -55,16 +55,16 @@ public:
 	const Rdb *getRdb() const { return &m_rdb; }
 
 	// make the cluster rec key
-	static key_t makeClusterRecKey(int64_t     docId,
+	static key96_t makeClusterRecKey(int64_t     docId,
 				       bool        familyFilter,
 				       uint8_t     languageBits,
 				       int32_t     siteHash,
 				       bool        isDelKey,
 				       bool        isHalfKey = false );
 
-	static key_t makeFirstClusterRecKey(int64_t docId) {
+	static key96_t makeFirstClusterRecKey(int64_t docId) {
 		return makeClusterRecKey ( docId, false, 0, 0, true ); }
-	static key_t makeLastClusterRecKey(int64_t docId) {
+	static key96_t makeLastClusterRecKey(int64_t docId) {
 		return makeClusterRecKey ( docId, true, 0xff, 0xffffffff,
 					   false, true ); }
 
@@ -74,23 +74,23 @@ public:
 	static int64_t getDocId ( const void *k ) {
 		//int64_t docId = (k.n0) >> (32+24);
 		//docId |= ( ((uint64_t)(k.n1)) << 8 );
-		int64_t docId = (((const key_t *)k)->n0) >> 35;
-		docId |= ( ((uint64_t)(((const key_t *)k)->n1)) << 29 );
+		int64_t docId = (((const key96_t *)k)->n0) >> 35;
+		docId |= ( ((uint64_t)(((const key96_t *)k)->n1)) << 29 );
 		return docId;
 	}
 
 	static uint32_t getSiteHash26 ( const char *r ) {
 		//return g_titledb.getSiteHash ( (key_t *)r ); }
-		return ((uint32_t)(((const key_t*)r)->n0 >> 2) & 0x03FFFFFF);
+		return ((uint32_t)(((const key96_t*)r)->n0 >> 2) & 0x03FFFFFF);
 	}
 
 	static uint32_t hasAdultContent ( const char *r ) {
 		//return g_titledb.hasAdultContent ( *(key_t *)r ); }
-		return ((uint32_t)(((const key_t*)r)->n0 >> 34) & 0x00000001);
+		return ((uint32_t)(((const key96_t*)r)->n0 >> 34) & 0x00000001);
 	}
 
 	static unsigned char getLanguage ( const char *r ) {
-		return ((unsigned char)(((const key_t*)r)->n0 >> 28) & 0x0000003F);
+		return ((unsigned char)(((const key96_t*)r)->n0 >> 28) & 0x0000003F);
 	}
 
 	static char getFamilyFilter ( const char *r ) {

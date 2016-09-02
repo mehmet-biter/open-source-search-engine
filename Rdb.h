@@ -190,7 +190,7 @@ public:
 			   int64_t oldTruncationLimit ) ;
 
 	int64_t getListSize ( collnum_t collnum,
-			   key_t startKey ,key_t endKey , key_t *maxKey ,
+			   key96_t startKey ,key96_t endKey , key96_t *maxKey ,
 			   int64_t oldTruncationLimit ) {
 		return getListSize(collnum,(char *)&startKey,(char *)&endKey,
 				   (char *)maxKey,oldTruncationLimit);}

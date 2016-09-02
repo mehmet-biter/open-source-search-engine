@@ -559,8 +559,6 @@ void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 	// parse the request
 	char *p                  = request;
 	int64_t syncPoint          = *(int64_t *)p ; p += 8;
-	//key_t     startKey           = *(key_t     *)p ; p += sizeof(key_t);
-	//key_t     endKey             = *(key_t     *)p ; p += sizeof(key_t);
 	int32_t      minRecSizes        = *(int32_t      *)p ; p += 4;
 	int32_t      startFileNum       = *(int32_t      *)p ; p += 4;
 	int32_t      numFiles           = *(int32_t      *)p ; p += 4;

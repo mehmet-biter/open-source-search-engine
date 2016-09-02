@@ -625,7 +625,7 @@ bool Mem::lblMem( void *mem, size_t size, const char *note ) {
 }
 
 // this is called just before a memory block is freed and needs to be deregistered
-bool Mem::rmMem(void *mem, size_t size, const char *note) {
+bool Mem::rmMem(void *mem, size_t size, const char *note, bool checksize) {
 	ScopedLock sl(s_lock);
 	logTrace( g_conf.m_logTraceMem, "mem=%p size=%zu note='%s'", mem, size, note );
 
@@ -639,7 +639,7 @@ bool Mem::rmMem(void *mem, size_t size, const char *note) {
 	if ( g_conf.m_logDebugMem ) printBreeches_unlocked();
 
 	// don't free 0 bytes
-	if ( size == 0 ) {
+	if ( checksize && size == 0 ) {
 		return true;
 	}
 
@@ -664,12 +664,15 @@ bool Mem::rmMem(void *mem, size_t size, const char *note) {
 	// are we from the "new" operator
 	bool isnew = s_isnew[h];
 
-	// . bitch is sizes don't match
-	// . delete operator does not provide a size now (it's -1)
-	if ( s_sizes[h] != size ) {
-		log( LOG_ERROR, "mem: rmMem: Freeing %zu should be %zu. (%s)", size,s_sizes[h],note);
-		gbshutdownAbort(true);
-	}
+	if(checksize) {
+		// . bitch is sizes don't match
+		// . delete operator does not provide a size now (it's -1)
+		if ( s_sizes[h] != size ) {
+			log( LOG_ERROR, "mem: rmMem: Freeing %zu should be %zu. (%s)", size,s_sizes[h],note);
+			gbshutdownAbort(true);
+		}
+	} else
+		size = s_sizes[h];
 
 	// debug
 	if ( (size > MINMEM && g_conf.m_logDebugMemUsage) || size>=100000000 )
@@ -1048,7 +1051,7 @@ retry:
 
 	// assume it will be successful. we can't call rmMem() after
 	// calling sysrealloc() because it will mess up our MAGICCHAR buf
-	rmMem(ptr, oldSize, note);
+	rmMem(ptr, oldSize, note, true);
 
 	// . do the actual realloc
 	// . CAUTION: don't pass in 0x7fffffff in as "ptr" 
@@ -1121,17 +1124,13 @@ void Mem::gbfree ( void *ptr , const char *note, size_t size , bool checksize ) 
 		return;
 	}
 
-	// get size if not available
-	if (!checksize) {
-		size = s_sizes[slot];
-	}
+	bool isnew = s_isnew[slot];
 
 	// if this returns false it was an unbalanced free
-	if (!rmMem(ptr, size, note)) {
+	if (!rmMem(ptr, size, note, checksize)) {
 		return;
 	}
 
-	bool isnew = s_isnew[slot];
 	if ( isnew ) sysfree ( (char *)ptr );
 	else         sysfree ( (char *)ptr - UNDERPAD );
 }

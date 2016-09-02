@@ -118,14 +118,14 @@ class UdpProtocol {
 	// . ip is in network order BUT port is in host order
 	// . this dgram is one that we read, so flip weInitiated bit
 	// . this will make the key of a reply match the key of the request
-	virtual key_t makeKey( const char *header, int32_t /*peekSize*/, uint32_t ip, uint16_t port ) {
+	virtual key96_t makeKey( const char *header, int32_t /*peekSize*/, uint32_t ip, uint16_t port ) {
 		return makeKey( ip, port, getTransId( header, 12 ), !didWeInitiate( header, 12 ) );
 	}
 
 	// . weInitiated is true iff we initiated this transaction
 	// . that applies to ACKs as well
-	virtual key_t makeKey( uint32_t ip, uint16_t port, int32_t transId, bool weInitiated ) {
-		key_t key;
+	virtual key96_t makeKey( uint32_t ip, uint16_t port, int32_t transId, bool weInitiated ) {
+		key96_t key;
 		key.n1 = transId;
 		key.n0 = ( ( (uint64_t)ip ) << 16 ) | port;
 		// . this prevents collisions between hosts using same transId

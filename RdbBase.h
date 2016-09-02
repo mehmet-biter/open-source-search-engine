@@ -16,7 +16,7 @@
 // . when mem is low dumps records from tree to disk, frees as it dumps
 // . has a key-to-diskOffset/dataSize map in memory (good for small records)
 //   for mapping a file of records on disk
-// . this key-to-offset map takes up sizeof(key_t)+  bytes per disk page 
+// . this key-to-offset map takes up sizeof(key96_t)+  bytes per disk page
 // . we can map .8 gigs of disk with 1 meg of mem (using page size of 8k)
 // . memory is only freed by the Mem.h class when it finds it's running out
 // . addRecord will only return false if there's some lack of memory problems
@@ -128,12 +128,10 @@ class RdbBase {
 	// returns -1 if variable (variable dataSize)
 	int32_t getRecSize ( ) const {
 		if ( m_fixedDataSize == -1 ) return -1;
-		//return sizeof(key_t) + m_fixedDataSize; }
 		return m_ks + m_fixedDataSize;
 	}
 
 	// use the maps and tree to estimate the size of this list
-	//int32_t getListSize ( key_t startKey ,key_t endKey , key_t *maxKey ,
 	int64_t getListSize ( char *startKey ,char *endKey , char *maxKey ,
 			        int64_t oldTruncationLimit ) ;
 

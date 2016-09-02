@@ -67,8 +67,7 @@ bool MsgC::getIp(const char *hostname, int32_t hostnameLen, int32_t *ip, void *s
 	}
 	
 	// key is hash of the hostname
-	//key_t key = hash96 ( hostname , hostnameLen );
-	key_t key = g_dns.getKey ( hostname , hostnameLen );
+	key96_t key = g_dns.getKey ( hostname , hostnameLen );
 	
 	// is it in the /etc/hosts file?
 	if ( g_conf.m_useEtcHosts && g_dns.isInFile ( key , ip ))return 1;
@@ -240,8 +239,7 @@ int32_t MsgC::gotReply(){
 	if(g_errno) return *m_ipPtr;
 
 	// Now we can add stuff to the local dns and spider cache.
-	//key_t key = hash96( m_u.getHost() , m_u.getHostLen() );
-	key_t key = g_dns.getKey ( m_u.getHost(),m_u.getHostLen() );
+	key96_t key = g_dns.getKey ( m_u.getHost(),m_u.getHostLen() );
 	// just cache for hour locally since ttl may not have been that high
 	// as given to us from the authoratative name server. 
 	// TODO: return the ttl as well.

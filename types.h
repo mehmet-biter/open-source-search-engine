@@ -1,6 +1,7 @@
 #ifndef GB_TYPES_H
 #define GB_TYPES_H
 
+#include <stdint.h>
 #include <string.h>
 #include "Sanity.h"
 
@@ -498,10 +499,6 @@ inline char KEYCMPNEGEQ ( const char *k1, const char *k2, char keySize ) {
 	gbshutdownAbort(true);
 }
 
-
-// shit, how was i supposed to know this is defined in sys/types.h...
-#define key_t   u_int96_t
-
 // or you can be less ambiguous with these types
 typedef u_int96_t  key96_t;
 typedef u_int96_t  uint96_t;
@@ -654,7 +651,7 @@ static inline bool KEYNEG ( const char *k ) {
 	return false;
 }
 
-static inline bool KEYNEG ( key_t k ) {
+static inline bool KEYNEG ( key96_t k ) {
 	if ( (k.n0 & 0x01) == 0x00 ) return true;
 	return false;
 }

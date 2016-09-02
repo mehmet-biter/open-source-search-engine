@@ -79,7 +79,6 @@ void RdbMap::reset ( ) {
 	if ( m_newPagesPerSegment > 0 ) pps = m_newPagesPerSegment;
 
 	for ( int32_t i = 0 ; i < m_numSegments; i++ ) {
-		//mfree(m_keys[i],sizeof(key_t)*PAGES_PER_SEGMENT,"RdbMap");
 		mfree(m_keys[i],m_ks *pps,"RdbMap");
 		mfree(m_offsets[i], 2*pps,"RdbMap");
 		// set to NULL so we know if accessed illegally
@@ -253,7 +252,6 @@ int64_t RdbMap::writeSegment ( int32_t seg , int64_t offset ) {
 	// truncate to segment's worth of pages for writing purposes
 	if ( pagesLeft > PAGES_PER_SEGMENT ) pagesLeft = PAGES_PER_SEGMENT;
 	// determine writeSize for keys
-	//int32_t writeSize = pagesLeft * sizeof(key_t);
 	int32_t writeSize = pagesLeft * m_ks;
 	// write the keys segment
 	g_errno = 0;
@@ -429,13 +427,9 @@ bool RdbMap::verifyMap ( BigFile *dataFile ) {
 // this just fixes a bad map
 bool RdbMap::verifyMap2 ( ) {
 // top:
-	//key_t lastKey ; lastKey.n0 = 0LL; lastKey.n1 = 0;
 	char lastKey[MAX_KEY_BYTES];
 	KEYMIN(lastKey,m_ks);
 	for ( int32_t i = 0 ; i < m_numPages ; i++ ) {
-		//key_t k;
-		//k = getKey(i);
-		//if ( k >= lastKey ) { lastKey = k; continue; }
 		char *k = getKeyPtr(i);
 		if ( KEYCMP(k,lastKey,m_ks)>=0 ) {
 			KEYSET(lastKey,k,m_ks); continue; }
@@ -467,7 +461,6 @@ bool RdbMap::verifyMap2 ( ) {
 		// was k too small?
 		//if ( i + 1 < m_numPages && lastKey <= getKey(i+1) ) {
 		if (i+1<m_numPages && KEYCMP(lastKey,getKeyPtr(i+1),m_ks)<=0){
-			//key_t f = lastKey ;
 			char f[MAX_KEY_BYTES];
 			KEYSET(f,lastKey,m_ks);
 			//if ( lastKey != getKey(i+1) ) f += (uint32_t)1;
@@ -480,7 +473,6 @@ bool RdbMap::verifyMap2 ( ) {
 		// was lastKey too big?
 		//if ( i - 2 >= m_numPages && getKey(i-2) <= k ) {
 		if ( i - 2 >= m_numPages && KEYCMP(getKeyPtr(i-2),k,m_ks)<=0) {
-			//key_t f = getKey(i-2);
 			char *f = getKeyPtr(i-2);
 			//if ( f != k ) f += (uint32_t)1;
 			if ( KEYCMP(f,k,m_ks)!=0) KEYINC(f,m_ks);
@@ -507,7 +499,6 @@ bool RdbMap::verifyMap2 ( ) {
 		int32_t  a , b ;
 		if ( leftCount <= rightCount ) { a = left ; b = i - 1 ; }
 		else                           { a = i    ; b = right ; }
-		//key_t keya ; keya.n0 = 0LL; keya.n1 = 0;
 		char *keya = KEYMIN();
 		if ( a > 0 ) keya = getKeyPtr(a-1);
 		// remove the smallest chunk
@@ -594,7 +585,6 @@ int64_t RdbMap::readSegment ( int32_t seg , int64_t offset , int32_t fileSize ) 
 	// . increments m_numSegments and increases m_maxNumPages
 	if ( ! addSegment () ) return -1;
 	// get the slot size, 1 12 byte key and 1 int16_t offset per page
-	//int32_t slotSize = sizeof(key_t) + 2;
 	int32_t slotSize = m_ks + 2;
 	// how much will we read now?
 	int32_t totalReadSize = PAGES_PER_SEGMENT * slotSize;
@@ -610,7 +600,6 @@ int64_t RdbMap::readSegment ( int32_t seg , int64_t offset , int32_t fileSize ) 
 	// get # of keys/offsets to read
 	int32_t numKeys = totalReadSize / slotSize;
 	// calculate how many bytes to read of keys
-	//int32_t readSize = numKeys * sizeof(key_t);
 	int32_t readSize = numKeys * m_ks;
 	// do the read
 	g_errno = 0;
@@ -735,13 +724,13 @@ bool RdbMap::addRecord ( char *key, char *rec , int32_t recSize ) {
 // . TODO: can quicken by pre-initializing map size
 // . TODO: don't use until it counts the # of deleted keys, etc...
 /*
-bool RdbMap::addKey ( key_t &key ) {
+bool RdbMap::addKey ( key96_t &key ) {
 
 	// what page is first byte of key on?
 	int32_t pageNum = m_offset / m_pageSize;
 
 	// increment the size of the data file
-	m_offset += sizeof(key_t);
+	m_offset += sizeof(key96_t);
 
 	// keep the number of pages up to date
 	m_numPages = m_offset / m_pageSize + 1;
@@ -900,7 +889,7 @@ int64_t RdbMap::getRecSizes ( int32_t startPage ,
 	//   and we started in the middle of a dump, so instead of reading
 	//   0 bytes, since offset was the end of the file, the dump dumped
 	//   some and we read that. And the # of bytes we read was not
-	//   divisible by sizeof(key_t) and RdbList::checkList_r() complained
+	//   divisible by sizeof(key96_t) and RdbList::checkList_r() complained
 	//   about the last key out of order, but that last key's last 8
 	//   bytes were garbage we did NOT read from disk... phew!
 	if ( startPage == endPage ) return 0; // return (int32_t)m_pageSize;
@@ -917,7 +906,6 @@ int64_t RdbMap::getRecSizes ( int32_t startPage ,
 	// . but take into account delete keys, so we can have a negative size!
 	// . use random sampling
 	int64_t size = 0;
-	//key_t     k;
 	char *k;
 	for ( int32_t i = startPage ; i < endPage ; i++ ) {
 		// get current page size
@@ -963,7 +951,6 @@ int64_t RdbMap::getNextAbsoluteOffset ( int32_t page ) {
 // . [startPage,*endPage] must cover [startKey,endKey]
 // . by cover i mean have all recs with those keys
 // . returns the endPage #
-//int32_t RdbMap::getEndPage ( int32_t startPage , key_t endKey ) {
 int32_t RdbMap::getEndPage ( int32_t startPage, const char *endKey ) {
 	// use "ep" for the endPage we're computing
 	int32_t ep = startPage;
@@ -1031,7 +1018,7 @@ bool RdbMap::getPageRange ( const char  *startKey  ,
 }
 
 /*
-bool RdbMap::getPageRange ( key_t  startKey  , key_t endKey  ,
+bool RdbMap::getPageRange ( key96_t  startKey  , key96_t endKey  ,
 			    int32_t   minRecSizes ,
 			    int32_t  *startPage , int32_t *endPage ) {
 
@@ -1069,7 +1056,6 @@ bool RdbMap::getPageRange ( key_t  startKey  , key_t endKey  ,
 //   are < startKey
 // . if m_keys[N] > startKey then m_keys[N-1] spans multiple pages so that
 //   the key immediately after it on disk is in fact, m_keys[N]
-//int32_t RdbMap::getPage ( key_t startKey ) {
 int32_t RdbMap::getPage ( const char *startKey ) {
 	// if the key exceeds our lastKey then return m_numPages
 	//if ( startKey > m_lastKey ) return m_numPages;
@@ -1155,7 +1141,6 @@ void RdbMap::printMap () {
 int64_t RdbMap::getMemAlloced() const {
 	// . how much space per segment?
 	// . each page has a key and a 2 byte offset
-	//int64_t space = PAGES_PER_SEGMENT * (sizeof(key_t) + 2);
 	int64_t space = PAGES_PER_SEGMENT * (m_ks + 2);
 	// how many segments we use * segment allocation
 	return (int64_t)m_numSegments * space;
@@ -1334,7 +1319,6 @@ bool RdbMap::chopHead ( int32_t fileHeadSize ) {
 	//   matches the head PART file of the data file we map
 	//m_needToWrite = true;
 	// a helper variable
-	//int32_t ks = sizeof(key_t);
 	int32_t ks = m_ks;
 	// remove segments before segNum
 	for ( int32_t i = 0 ; i < segNum ; i++ ) {
@@ -1355,7 +1339,6 @@ bool RdbMap::chopHead ( int32_t fileHeadSize ) {
 	// if 0 return now
 	// if ( m_numSegments == 0 ) return true;
 	// bury the stuff we chopped
-	//int32_t sk = sizeof(key_t *);
 	int32_t sk = sizeof(char  *);
 	int32_t ss = sizeof(int16_t *);
 	memmove ( &m_keys   [0] , &m_keys   [segNum] , m_numSegments * sk );

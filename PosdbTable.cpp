@@ -1671,7 +1671,7 @@ bool PosdbTable::setQueryTermInfo ( ) {
 	}
 	
 	// point to those
-	QueryTermInfo *qip = (QueryTermInfo *)m_qiBuf.getBufStart();
+	QueryTermInfo *qtibuf = (QueryTermInfo *)m_qiBuf.getBufStart();
 
 	RdbList *list = NULL;
 
@@ -1708,7 +1708,7 @@ bool PosdbTable::setQueryTermInfo ( ) {
 		QueryWord     *qw =   qt->m_qword;
 		//int32_t wordNum = qw - &m_q->m_qwords[0];
 		// get one
-		QueryTermInfo *qti = &qip[nrg];
+		QueryTermInfo *qti = &qtibuf[nrg];
 		// and set it
 		qti->m_qt            = qt;
 		qti->m_qtermNum      = i;
@@ -2109,7 +2109,7 @@ bool PosdbTable::setQueryTermInfo ( ) {
 	/*
 	for ( int32_t i = 0 ; i < nrg ; i++ ) {
 		// get one
-		QueryTermInfo *qti = &qip[i];
+		QueryTermInfo *qti = &qtibuf[i];
 		// how many query terms are in this group?
 		for ( int32_t j = 0 ; j < qti->m_numSubLists ; j++ ) {
 			// get the query term
@@ -2132,7 +2132,7 @@ bool PosdbTable::setQueryTermInfo ( ) {
 		// compute total sizes
 		int64_t total = 0LL;
 		// get it
-		QueryTermInfo *qti = &qip[i];
+		QueryTermInfo *qti = &qtibuf[i];
 		// do not consider for first termlist if negative
 		if ( qti->m_bigramFlags[0] & BF_NEGATIVE ) {
 			continue;
@@ -2283,7 +2283,7 @@ bool PosdbTable::findCandidateDocIds() {
 
 
 	// point to our array of query term infos set in setQueryTermInfos()
-	QueryTermInfo *qip = (QueryTermInfo *)m_qiBuf.getBufStart();
+	QueryTermInfo *qtibuf = (QueryTermInfo *)m_qiBuf.getBufStart();
 
 	// setQueryTermInfos() should have set how many we have
 	if ( m_numQueryTermInfos == 0 ) {
@@ -2314,7 +2314,7 @@ bool PosdbTable::findCandidateDocIds() {
 	m_allInSameWikiPhrase = true;
 	for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
 		// get it
-		QueryTermInfo *qti = &qip[i];
+		QueryTermInfo *qti = &qtibuf[i];
 
 		// skip if negative query term
 		if ( qti->m_bigramFlags[0] & BF_NEGATIVE ) {
@@ -2360,7 +2360,7 @@ bool PosdbTable::findCandidateDocIds() {
 		// if all these sublist termlists were 50MB i'd day 10-25ms to
 		// add their docid votes.
 		logTrace(g_conf.m_logTracePosdb, "addDocIdVotes");
-		addDocIdVotes ( &qip[m_minTermListIdx], listGroupNum );
+		addDocIdVotes ( &qtibuf[m_minTermListIdx], listGroupNum );
 		
 
 		// now repeat the docid scan for successive lists but only
@@ -2382,7 +2382,7 @@ bool PosdbTable::findCandidateDocIds() {
 			}
 			
 			// get it
-			QueryTermInfo *qti = &qip[i];
+			QueryTermInfo *qti = &qtibuf[i];
 			// do not consider for adding if negative ('my house -home')
 			if ( qti->m_bigramFlags[0] & BF_NEGATIVE ) {
 				continue;
@@ -2413,7 +2413,7 @@ bool PosdbTable::findCandidateDocIds() {
 			}
 			
 			// get it
-			QueryTermInfo *qti = &qip[i];
+			QueryTermInfo *qti = &qtibuf[i];
 			
 			// do not consider for adding if negative ('my house -home')
 			if ( ! (qti->m_bigramFlags[0] & BF_NEGATIVE) ) {
@@ -2442,7 +2442,7 @@ bool PosdbTable::findCandidateDocIds() {
 	//
 	for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
 		// get it
-		QueryTermInfo *qti = &qip[i];
+		QueryTermInfo *qti = &qtibuf[i];
 		
 		// do not consider for adding if negative ('my house -home')
 		if ( qti->m_bigramFlags[0] & BF_NEGATIVE ) {
@@ -2503,11 +2503,6 @@ void PosdbTable::intersectLists10_r ( ) {
 	//
 
 
-	// point to our array of query term infos set in setQueryTermInfos()
-	QueryTermInfo *qip = (QueryTermInfo *)m_qiBuf.getBufStart();
-
-
-
 	//
 	// TRANSFORM QueryTermInfo::m_* vars into old style arrays
 	//
@@ -2515,11 +2510,11 @@ void PosdbTable::intersectLists10_r ( ) {
 	//
 	char     *pp  = m_topScoringDocIdsBuf.getBufStart();
 	int32_t   nqt = m_q->m_numTerms;
-	int32_t  *wikiPhraseIds  = (int32_t *)pp; pp += 4 * nqt;
-	int32_t  *quotedStartIds = (int32_t *)pp; pp += 4 * nqt;
-	int32_t  *qpos           = (int32_t *)pp; pp += 4 * nqt;
-	int32_t  *qtermNums      = (int32_t *)pp; pp += 4 * nqt;
-	float    *freqWeights    = (float   *)pp; pp += sizeof(float) * nqt;
+	int32_t  *wikiPhraseIds  = (int32_t *)pp; pp += 4 * nqt;				// from QueryTermInfo
+	int32_t  *quotedStartIds = (int32_t *)pp; pp += 4 * nqt;				// from QueryTermInfo
+	int32_t  *qpos           = (int32_t *)pp; pp += 4 * nqt;				// from QueryTermInfo
+	int32_t  *qtermNums      = (int32_t *)pp; pp += 4 * nqt;				// from QueryTermInfo
+	float    *freqWeights    = (float   *)pp; pp += sizeof(float) * nqt;	// from QueryTermInfo
 	char    **miniMergedList = (char   **)pp; pp += sizeof(char *) * nqt;
 	char    **miniMergedEnd  = (char   **)pp; pp += sizeof(char *) * nqt;
 	char    **bestPos        = (char   **)pp; pp += sizeof(char *) * nqt;
@@ -2536,9 +2531,12 @@ void PosdbTable::intersectLists10_r ( ) {
 	int32_t phase = 3; // 2 first in findCandidateDocIds
 
 
+	// point to our array of query term infos set in setQueryTermInfos()
+	QueryTermInfo *qtibuf = (QueryTermInfo *)m_qiBuf.getBufStart();
+
 	for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
 		// get it
-		QueryTermInfo *qti = &qip[i];
+		QueryTermInfo *qti = &qtibuf[i];
 		// set it
 		wikiPhraseIds [i] = qti->m_wikiPhraseId;
 		quotedStartIds[i] = qti->m_quotedStartId;
@@ -2550,9 +2548,10 @@ void PosdbTable::intersectLists10_r ( ) {
 
 
 	// for evalSlidingWindow() function
-	//m_freqWeights = (float *)m_r->ptr_termFreqWeights;
 	m_freqWeights = freqWeights;
 	m_qtermNums   = qtermNums;
+
+
 
 	//////////
 	//
@@ -2577,7 +2576,6 @@ void PosdbTable::intersectLists10_r ( ) {
 	float minScore;
 	float minPairScore;
 	float minSingleScore;
-	//int64_t docId;
 	m_bflags = bflags;
 	int32_t qdist;
 	float wts;
@@ -2613,9 +2611,6 @@ void PosdbTable::intersectLists10_r ( ) {
 	ringBuf[RINGBUFSIZE+1] = 0xff;
 	ringBuf[RINGBUFSIZE+2] = 0xff;
 	ringBuf[RINGBUFSIZE+3] = 0xff;
-	//int32_t bestDist[MAX_QUERY_TERMS];
-	//int32_t dist;
-	//int32_t prevPos = -1;
 	unsigned char qt;
 	QueryTermInfo *qtx;
 	uint32_t wx;
@@ -2625,44 +2620,54 @@ void PosdbTable::intersectLists10_r ( ) {
 	int32_t pass = 0;
 	int32_t ourFirstPos = -1;
 
-	//char          *cursors        [MAX_SUBLISTS*MAX_QUERY_TERMS];
-	//char          *savedCursors   [MAX_SUBLISTS*MAX_QUERY_TERMS];
-	//QueryTermInfo *cursorTermInfos[MAX_SUBLISTS*MAX_QUERY_TERMS];
-	//int32_t           numCursors = 0;
 
 	// populate the cursors for each sublist
 
-	int32_t nnn = m_numQueryTermInfos;
-	if ( ! m_r->m_doMaxScoreAlgo ) nnn = 0;
-
+	int32_t numQueryTermsToHandle = m_numQueryTermInfos;
+	if ( ! m_r->m_doMaxScoreAlgo ) {
+		numQueryTermsToHandle = 0;
+	}
 	// do not do it if we got a gbsortby: field
-	if ( m_sortByTermNum >= 0 ) nnn = 0;
-	if ( m_sortByTermNumInt >= 0 ) nnn = 0;
+	if ( m_sortByTermNum >= 0 ) {
+		numQueryTermsToHandle = 0;
+	}
+	if ( m_sortByTermNumInt >= 0 ) {
+		numQueryTermsToHandle = 0;
+	}
 
 
 	logTrace(g_conf.m_logTracePosdb, "Before secondPassLoop");
+	
  secondPassLoop:
 
 	// reset docid to start!
 	docIdPtr = m_docIdVoteBuf.getBufStart();
 
-	// reset QueryTermInfo::m_cursor[] for second pass
-	for ( int32_t i = 0 ; secondPass && i < m_numQueryTermInfos ; i++ ) {
-		// get it
-		QueryTermInfo *qti = &qip[i];
-		// skip negative termlists
-		if ( qti->m_bigramFlags[0] & BF_NEGATIVE ) continue;
-		// do each sublist
-		for ( int32_t j = 0 ; j < qti->m_numNewSubLists ; j++ ) {
-			qti->m_cursor      [j] = qti->m_newSubListStart[j];
-			qti->m_savedCursor [j] = qti->m_newSubListStart[j];
+	if( secondPass ) {
+		//
+		// reset QueryTermInfo::m_matchingSubListCursor[] to point to start of 
+		// term lists for second pass
+		//
+		for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
+			// get it
+			QueryTermInfo *qti = &qtibuf[i];
+			// skip negative termlists
+			if ( qti->m_bigramFlags[0] & BF_NEGATIVE ) {
+				continue;
+			}
+			
+			// do each sublist
+			for ( int32_t j = 0 ; j < qti->m_numMatchingSubLists ; j++ ) {
+				qti->m_matchingSubListCursor      [j] = qti->m_matchingSubListStart[j];
+				qti->m_matchingSubListSavedCursor [j] = qti->m_matchingSubListStart[j];
+			}
 		}
 	}
 
 	//
 	// the main loop for looping over each docid
 	//
- docIdLoop:
+handleNextDocId:
 
 	// is this right?
 	if ( docIdPtr >= docIdEnd ) {
@@ -2682,6 +2687,7 @@ void PosdbTable::intersectLists10_r ( ) {
 		
 		// loop back up here if the docid is from a previous range
 	nextNode:
+		
 		// this mean top tree empty basically
 		if ( topCursor == -1 ) {
 			goto done;
@@ -2699,6 +2705,7 @@ void PosdbTable::intersectLists10_r ( ) {
 			// otherwise, initialize topCursor
 			topCursor = m_topTree->getHighNode();
 		}
+		
 		// get current node
 		TopNode *tn = m_topTree->getNode ( topCursor );
 		// advance
@@ -2707,6 +2714,7 @@ void PosdbTable::intersectLists10_r ( ) {
 		numProcessed++;
 		// shortcut
 		m_docId = tn->m_docId;
+		
 		// skip if not in our range! the top tree now holds
 		// all the winners from previous docid ranges. msg39
 		// now does the search result in docid range chunks to avoid
@@ -2714,32 +2722,38 @@ void PosdbTable::intersectLists10_r ( ) {
 		if ( m_r->m_minDocId != -1 &&
 		     m_r->m_maxDocId != -1 &&
 		     ( m_docId < (uint64_t)m_r->m_minDocId || 
-		       m_docId >= (uint64_t)m_r->m_maxDocId ) ) 
+		       m_docId >= (uint64_t)m_r->m_maxDocId ) ) {
 			goto nextNode;
+		}
+			
 		// set query termlists in all sublists
 		for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
 			// get it
-			QueryTermInfo *qti = &qip[i];
+			QueryTermInfo *qti = &qtibuf[i];
 			// do not advance negative termlist cursor
 			if ( qti->m_bigramFlags[0] & BF_NEGATIVE ) {
 				continue;
 			}
 			
 			// do each sublist
-			for ( int32_t j = 0 ; j < qti->m_numNewSubLists ; j++ ) {
+			for ( int32_t j = 0 ; j < qti->m_numMatchingSubLists ; j++ ) {
 				// get termlist for that docid
-				char *xlist    = qti->m_newSubListStart[j];
-				char *xlistEnd = qti->m_newSubListEnd[j];
+				char *xlist    = qti->m_matchingSubListStart[j];
+				char *xlistEnd = qti->m_matchingSubListEnd[j];
 				char *xp = getWordPosList ( m_docId, xlist, xlistEnd - xlist);
+
 				// not there? xlist will be NULL
-				qti->m_savedCursor[j] = xp;
+				qti->m_matchingSubListSavedCursor[j] = xp;
+
 				// if not there make cursor NULL as well
 				if ( ! xp ) {
-					qti->m_cursor[j] = NULL;
+					qti->m_matchingSubListCursor[j] = NULL;
 					continue;
 				}
+
 				// skip over docid list
 				xp += 12;
+
 				for ( ; ; ) {
 					// do not breach sublist
 					if ( xp >= xlistEnd ) {
@@ -2754,8 +2768,9 @@ void PosdbTable::intersectLists10_r ( ) {
 					// skip over 6 byte key
 					xp += 6;
 				}
+
 				// point to docid sublist end
-				qti->m_cursor[j] = xp;
+				qti->m_matchingSubListCursor[j] = xp;
 			}
 		}
 		
@@ -2764,25 +2779,32 @@ void PosdbTable::intersectLists10_r ( ) {
 	}
 
 
-	// . pre-advance each termlist's cursor to skip to next docid
-	// . set QueryTermInfo::m_cursor and m_savedCursor of each termlist
-	//   so we are ready for a quick skip over this docid
-	// . TODO: use just a single array of termlist ptrs perhaps,
-	//   then we can remove them when they go NULL.  and we'd save a little
-	//   time not having a nested loop.
+	// Pre-advance each termlist's cursor to skip to next docid.
+	//
+	// Set QueryTermInfo::m_matchingSubListCursor to NEXT docid
+	// Set QueryTermInfo::m_matchingSubListSavedCursor to CURRENT docid
+	// of each termlist so we are ready for a quick skip over this docid.
+	//
+	// TODO: use just a single array of termlist ptrs perhaps,
+	// then we can remove them when they go NULL.  and we'd save a little
+	// time not having a nested loop.
 	for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
 		// get it
-		QueryTermInfo *qti = &qip[i];
+		QueryTermInfo *qti = &qtibuf[i];
 		// do not advance negative termlist cursor
 		if ( qti->m_bigramFlags[0] & BF_NEGATIVE ) {
 			continue;
 		}
-		
-		// do each sublist
-		for ( int32_t j = 0 ; j < qti->m_numNewSubLists ; j++ ) {
+
+		//
+		// In first pass, sublists data is initialized by delNonMatchingDocIdsFromSubLists.
+		// In second pass, they are initialized above
+		//
+		for ( int32_t j = 0 ; j < qti->m_numMatchingSubLists ; j++ ) {
 			// shortcuts
-			char *xc    = qti->m_cursor[j];
-			char *xcEnd = qti->m_newSubListEnd[j];
+			char *xc    = qti->m_matchingSubListCursor[j];
+			char *xcEnd = qti->m_matchingSubListEnd[j];
+
 			// exhausted? (we can't make cursor NULL because
 			// getMaxPossibleScore() needs the last ptr)
 			// must match docid
@@ -2790,16 +2812,13 @@ void PosdbTable::intersectLists10_r ( ) {
 			     *(int32_t *)(xc+8) != *(int32_t *)(docIdPtr+1) ||
 			     (*(char *)(xc+7)&0xfc) != (*(char *)(docIdPtr)&0xfc) ) {
 				// flag it as not having the docid
-				qti->m_savedCursor[j] = NULL;
+				qti->m_matchingSubListSavedCursor[j] = NULL;
 				// skip this sublist if does not have our docid
 				continue;
 			}
-			
-			// sanity. must be 12 byte key
-			//if ( (*xc & 0x06) != 0x02 ) {
-			//	gbshutdownAbort(true);}
+
 			// save it
-			qti->m_savedCursor[j] = xc;
+			qti->m_matchingSubListSavedCursor[j] = xc;
 			// get new docid
 			//log("new docid %" PRId64,g_posdb.getDocId(xc) );
 			// advance the cursors. skip our 12
@@ -2834,7 +2853,7 @@ void PosdbTable::intersectLists10_r ( ) {
 				}
 			}
 			// assign to next docid word position list
-			qti->m_cursor[j] = xc;
+			qti->m_matchingSubListCursor[j] = xc;
 		}
 	}
 
@@ -2844,34 +2863,35 @@ void PosdbTable::intersectLists10_r ( ) {
 		goto boolJump1;
 	}
 
+
 	// TODO: consider skipping this pre-filter if it sucks, as it does
 	// for 'time enough for love'. it might save time!
-
 	if ( ! secondPass ) {
 		logTrace(g_conf.m_logTracePosdb, "Compute 'upper bound' for each query term");
-			
-		// . if there's no way we can break into the winner's circle, give up!
-		// . this computes an upper bound for each query term
-		for ( int32_t i = 0 ; i < nnn ; i++ ) { // m_numQueryTermInfos ; i++ ) {
+
+		// If there's no way we can break into the winner's circle, give up!
+		// This computes an upper bound for each query term
+		for ( int32_t i = 0 ; i < numQueryTermsToHandle ; i++ ) { // m_numQueryTermInfos ; i++ ) {
 			// skip negative termlists.
-			if ( qip[i].m_bigramFlags[0]&(BF_NEGATIVE) ) {
+			if ( qtibuf[i].m_bigramFlags[0]&(BF_NEGATIVE) ) {
 				continue;
 			}
-			
+
 			// an upper bound on the score we could get
-			float maxScore = getMaxPossibleScore ( &qip[i], 0, 0, NULL );
+			float maxScore = getMaxPossibleScore ( &qtibuf[i], 0, 0, NULL );
 			// -1 means it has inlink text so do not apply this constraint
 			// to this docid because it is too difficult because we
 			// sum up the inlink text
 			if ( maxScore == -1.0 ) {
 				continue;
 			}
+
 			// if any one of these terms have a max score below the
 			// worst score of the 10th result, then it can not win.
 			if ( maxScore <= minWinningScore && ! secondPass ) {
 				docIdPtr += 6;
 				fail0++;
-				goto docIdLoop;
+				goto handleNextDocId;
 			}
 		}
 	}
@@ -2885,6 +2905,7 @@ void PosdbTable::intersectLists10_r ( ) {
 	if ( m_sortByTermNumInt >= 0 ) {
 		goto skipScoringFilter;
 	}
+
 
 	// TODO: consider skipping this pre-filter if it sucks, as it does
 	// for 'search engine'. it might save time!
@@ -2902,14 +2923,14 @@ void PosdbTable::intersectLists10_r ( ) {
 	// query term # plus 1.
 
 	logTrace(g_conf.m_logTracePosdb, "Ring buffer generation");
-	qtx = &qip[m_minTermListIdx];
+	qtx = &qtibuf[m_minTermListIdx];
 	// populate ring buf just for this query term
-	for ( int32_t k = 0 ; k < qtx->m_numNewSubLists ; k++ ) {
+	for ( int32_t k = 0 ; k < qtx->m_numMatchingSubLists ; k++ ) {
 		// scan that sublist and add word positions
-		char *sub = qtx->m_savedCursor [k];
+		char *sub = qtx->m_matchingSubListSavedCursor [k];
 		// skip sublist if it's cursor is exhausted
 		if ( ! sub ) continue;
-		char *end = qtx->m_cursor      [k];
+		char *end = qtx->m_matchingSubListCursor      [k];
 		// add first key
 		//int32_t wx = g_posdb.getWordPos(sub);
 		wx = (*((uint32_t *)(sub+3))) >> 6;
@@ -2944,7 +2965,7 @@ void PosdbTable::intersectLists10_r ( ) {
 		}
 		
 		// get the query term info
-		QueryTermInfo *qti = &qip[i];
+		QueryTermInfo *qti = &qtibuf[i];
 		// if we have a negative term, skip it
 		if ( qti->m_bigramFlags[0] & (BF_NEGATIVE) ) {
 			// if its empty, that's good!
@@ -2952,15 +2973,15 @@ void PosdbTable::intersectLists10_r ( ) {
 		}
 		
 		// store all his word positions into ring buffer AS WELL
-		for ( int32_t k = 0 ; k < qti->m_numNewSubLists ; k++ ) {
+		for ( int32_t k = 0 ; k < qti->m_numMatchingSubLists ; k++ ) {
 			// scan that sublist and add word positions
-			char *sub = qti->m_savedCursor [k];
+			char *sub = qti->m_matchingSubListSavedCursor [k];
 			// skip sublist if it's cursor is exhausted
 			if ( ! sub ) {
 				continue;
 			}
 			
-			char *end = qti->m_cursor      [k];
+			char *end = qti->m_matchingSubListCursor      [k];
 			// add first key
 			//int32_t wx = g_posdb.getWordPos(sub);
 			wx = (*((uint32_t *)(sub+3))) >> 6;
@@ -3049,10 +3070,10 @@ void PosdbTable::intersectLists10_r ( ) {
 		// query distance
 		qdist = qpos[m_minTermListIdx] - qpos[i];
 		// compute it
-		float maxScore2 = getMaxPossibleScore(&qip[i],
+		float maxScore2 = getMaxPossibleScore(&qtibuf[i],
 						      bestDist,
 						      qdist,
-						      &qip[m_minTermListIdx]);
+						      &qtibuf[m_minTermListIdx]);
 		// -1 means it has inlink text so do not apply this constraint
 		// to this docid because it is too difficult because we
 		// sum up the inlink text
@@ -3065,7 +3086,7 @@ void PosdbTable::intersectLists10_r ( ) {
 		if ( maxScore2 <= minWinningScore && ! secondPass ) {
 			docIdPtr += 6;
 			fail++;
-			goto docIdLoop;
+			goto handleNextDocId;
 		}
 	}
 
@@ -3122,7 +3143,7 @@ void PosdbTable::intersectLists10_r ( ) {
 	logTrace(g_conf.m_logTracePosdb, "Merge sublists");
 	for ( int32_t j = 0 ; j < m_numQueryTermInfos ; j++ ) {
 		// get the query term info
-		QueryTermInfo *qti = &qip[j];
+		QueryTermInfo *qti = &qtibuf[j];
 		// just use the flags from first term i guess
 		// NO! this loses the wikihalfstopbigram bit! so we gotta
 		// add that in for the key i guess the same way we add in
@@ -3140,21 +3161,21 @@ void PosdbTable::intersectLists10_r ( ) {
 		bool isFirstKey = true;
 		// populate the nwp[] arrays for merging
 		int32_t nsub = 0;
-		for ( int32_t k = 0 ; k < qti->m_numNewSubLists ; k++ ) {
+		for ( int32_t k = 0 ; k < qti->m_numMatchingSubLists ; k++ ) {
 			// NULL means does not have that docid
-			if ( ! qti->m_savedCursor[k] ) {
+			if ( ! qti->m_matchingSubListSavedCursor[k] ) {
 				continue;
 			}
 			
-			// getMaxPossibleScore() incremented m_cursor to
-			// the next docid so use m_savedCursor.
-			nwp      [nsub] = qti->m_savedCursor [k];
+			// getMaxPossibleScore() incremented m_matchingSubListCursor to
+			// the next docid so use m_matchingSubListSavedCursor.
+			nwp      [nsub] = qti->m_matchingSubListSavedCursor [k];
 			// sanity
 			//if ( g_posdb.getKeySize(nwp[nsub]) > 12 ) { 
 			//	gbshutdownAbort(true);}
-			// if doing seohack then m_cursor was not advanced
+			// if doing seohack then m_matchingSubListCursor was not advanced
 			// so advance it here
-			nwpEnd [nsub] = qti->m_cursor [k];
+			nwpEnd [nsub] = qti->m_matchingSubListCursor [k];
 			nwpFlags [nsub] = qti->m_bigramFlags [k];
 			nsub++;
 		}
@@ -3514,7 +3535,7 @@ void PosdbTable::intersectLists10_r ( ) {
 	if ( miniMergedList[0] && 
 	     // siterank/langid is always 0 in numeric
 	     // termlists so they sort by their number correctly
-	     ! (qip[0].m_bigramFlags[0] & (BF_NUMBER) ) ) {
+	     ! (qtibuf[0].m_bigramFlags[0] & (BF_NUMBER) ) ) {
 		siteRank = g_posdb.getSiteRank ( miniMergedList[0] );
 		docLang  = g_posdb.getLangId   ( miniMergedList[0] );
 		
@@ -3533,7 +3554,7 @@ void PosdbTable::intersectLists10_r ( ) {
 			
 			// siterank/langid is always 0 in numeric
 			// termlists so they sort by their number correctly
-			if ( qip[k].m_bigramFlags[0] & (BF_NUMBER) ) {
+			if ( qtibuf[k].m_bigramFlags[0] & (BF_NUMBER) ) {
 				continue;
 			}
 			
@@ -4113,7 +4134,7 @@ void PosdbTable::intersectLists10_r ( ) {
 	//if ( p < listEnd ) goto bigloop;
 
 	logTrace(g_conf.m_logTracePosdb, "^ Now repeat for next docID");
-	goto docIdLoop;
+	goto handleNextDocId;
 
  done:
 
@@ -4185,31 +4206,41 @@ float PosdbTable::getMaxPossibleScore ( const QueryTermInfo *qti,
 	unsigned char bestDensityRank;
 	char siteRank = -1;
 	char docLang;
-	//char bestWordSpamRank ;
 	unsigned char hgrp;
 	bool hadHalfStopWikiBigram = false;
+	
 	// scan those sublists to set m_ptrs[] and to get the
 	// max possible score of each one
-	for ( int32_t j = 0 ; j < qti->m_numNewSubLists ; j++ ) {
+	for ( int32_t j = 0 ; j < qti->m_numMatchingSubLists ; j++ ) {
 		// scan backwards up to this
-		char *start = qti->m_savedCursor[j] ;
+		char *start = qti->m_matchingSubListSavedCursor[j] ;
+		
 		// skip if does not have our docid
-		if ( ! start ) continue;
+		if ( ! start ) {
+			continue;
+		}
+		
 		// note it if any is a wiki bigram
-		if ( qti->m_bigramFlags[0] & BF_HALFSTOPWIKIBIGRAM ) 
+		if ( qti->m_bigramFlags[0] & BF_HALFSTOPWIKIBIGRAM ) {
 			hadHalfStopWikiBigram = true;
+		}
+		
 		// skip if entire sublist/termlist is exhausted
-		if ( start >= qti->m_newSubListEnd[j] ) continue;
+		if ( start >= qti->m_matchingSubListEnd[j] ) {
+			continue;
+		}
+			
 		// set this?
 		if ( siteRank == -1 ) {
 			siteRank = g_posdb.getSiteRank(start);
 			docLang = g_posdb.getLangId(start);
 		}
+		
 		// skip first key because it is 12 bytes, go right to the
 		// 6 byte keys. we deal with it below.
 		start += 12;
 		// get cursor. this is actually pointing to the next docid
-		char *dc = qti->m_cursor[j];
+		char *dc = qti->m_matchingSubListCursor[j];
 		// back up into our list
 		dc -= 6;
 		// reset this
@@ -4259,7 +4290,7 @@ float PosdbTable::getMaxPossibleScore ( const QueryTermInfo *qti,
 		// handle the beginning 12 byte key
 		if ( ! retried ) {
 			retried = true;
-			dc = qti->m_savedCursor[j];
+			dc = qti->m_matchingSubListSavedCursor[j];
 			goto retry;
 		}
 
@@ -4638,7 +4669,7 @@ void PosdbTable::delNonMatchingDocIdsFromSubLists(QueryTermInfo *qti) {
 	logTrace(g_conf.m_logTracePosdb, "BEGIN.");
 
 	// reset count of new sublists
-	qti->m_numNewSubLists = 0;
+	qti->m_numMatchingSubLists = 0;
 
 	// scan each sublist vs. the docid list
 	for ( int32_t i = 0 ; i < qti->m_numSubLists ; i++ ) {
@@ -4741,16 +4772,18 @@ void PosdbTable::delNonMatchingDocIdsFromSubLists(QueryTermInfo *qti) {
 
 	doneWithSubList:
 
-		// set sublist end
-		int32_t x = qti->m_numNewSubLists;
-		qti->m_newSubListSize  [x] = dst - savedDst;
-		qti->m_newSubListStart [x] = savedDst;
-		qti->m_newSubListEnd   [x] = dst;
-		qti->m_cursor          [x] = savedDst;
-		qti->m_savedCursor     [x] = savedDst;
+		// Now set "shortcut" info for the reduced sublist so
+		// we end up with an array of matching sublists that 
+		// only contain the matching docids
+		int32_t x = qti->m_numMatchingSubLists;
+		qti->m_matchingSubListSize  		[x] = dst - savedDst;
+		qti->m_matchingSubListStart 		[x] = savedDst;
+		qti->m_matchingSubListEnd			[x] = dst;
+		qti->m_matchingSubListCursor		[x] = savedDst;
+		qti->m_matchingSubListSavedCursor	[x] = savedDst;
 		
-		if ( qti->m_newSubListSize [x] ) {
-			qti->m_numNewSubLists++;
+		if ( qti->m_matchingSubListSize[x] ) {
+			qti->m_numMatchingSubLists++;
 		}
 	}
 	
@@ -5241,7 +5274,7 @@ bool PosdbTable::makeDocIdVoteBufForBoolQuery( ) {
 		m_vecSize = MAX_OVEC_SIZE;
 	}
 
-	QueryTermInfo *qip = (QueryTermInfo *)m_qiBuf.getBufStart();
+	QueryTermInfo *qtibuf = (QueryTermInfo *)m_qiBuf.getBufStart();
 
 	// . scan each list of docids to a get a new docid, keep a dedup
 	//   table to avoid re-processing the same docid.
@@ -5253,7 +5286,7 @@ bool PosdbTable::makeDocIdVoteBufForBoolQuery( ) {
 	for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
 
 		// get it
-		QueryTermInfo *qti = &qip[i];
+		QueryTermInfo *qti = &qtibuf[i];
 
 		QueryTerm *qt = &m_q->m_qterms[qti->m_qtermNum];
 		// get the query word

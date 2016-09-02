@@ -67,13 +67,13 @@ making %sbalanced tree with %"INT32" nodes",bs,numNodes);
 		return -1;
 	}
 	// make random keys
-	key_t *keys = (key_t *) malloc ( sizeof(key_t) * numNodes );
+	key96_t *keys = (key96_t *) malloc ( sizeof(key96_t) * numNodes );
 	if ( ! keys ) {
 		fprintf(stderr,"malloc error\n");
 		return -1;
 	}
 	for ( int32_t i = 0 ; i < numNodes ; i++ ) {
-		key_t k;
+		key96_t k;
 		k.n1 = rand() ;
 		k.n0 = rand();
 		k.n0 <<= 32;
@@ -83,7 +83,7 @@ making %sbalanced tree with %"INT32" nodes",bs,numNodes);
 	log("generated %"INT32" random keys",numNodes);
 
 
-	//char *data = (char *)mmalloc ( numNodes * sizeof(key_t), "treetest");
+	//char *data = (char *)mmalloc ( numNodes * sizeof(key96_t), "treetest");
 	//char *pp = data;
 	//if ( ! data ) { log("shit"); return -1; }
 	int64_t t1 = gettimeofdayInMilliseconds();
@@ -99,8 +99,8 @@ making %sbalanced tree with %"INT32" nodes",bs,numNodes);
 	t1 = gettimeofdayInMilliseconds();
 
 	RdbList list;
-	key_t startKey;
-	key_t endKey;
+	key96_t startKey;
+	key96_t endKey;
 	startKey.n0 = 0LL; startKey.n1 = 0;
 	endKey.setMax();
 	int32_t xx;
@@ -129,7 +129,7 @@ int32_t sanitytest () {
 		fprintf(stderr,"init error\n");
 		return -1;
 	}
-	key_t *keys = (key_t *) malloc ( sizeof(key_t) * 1505000 );
+	key96_t *keys = (key96_t *) malloc ( sizeof(key96_t) * 1505000 );
 	if ( ! keys ) {
 		fprintf(stderr,"malloc error\n");
 		return -1;
@@ -139,7 +139,7 @@ int32_t sanitytest () {
 	fprintf(stderr,"pass=%"INT32"\n",p++);
 	// make random keys
 	for ( int32_t i = 0 ; i < 1505000 ; i++ ) {
-		key_t k;
+		key96_t k;
 		k.n1 = rand() ;
 		k.n0 = rand();
 		k.n0 <<= 32;
@@ -153,7 +153,7 @@ int32_t sanitytest () {
 			return -1;
 		}
 	// sort 'em
-	gbsort (keys , 1500000 , sizeof(key_t) , cmp );
+	gbsort (keys , 1500000 , sizeof(key96_t) , cmp );
 	// delete em in order now
 	for ( int32_t i = 0 ; i < 750000 ; i++ ) 
 		if ( t.deleteNode ( keys[i] , true ) < 0 ) {
@@ -180,7 +180,7 @@ int32_t sanitytest () {
 }
 
 int cmp ( const void *h1 , const void *h2 ) {
-	if ( *(key_t *)h1 < *(key_t *)h2 ) return -1;
-	if ( *(key_t *)h1 > *(key_t *)h2 ) return  1;
+	if ( *(key96_t *)h1 < *(key96_t *)h2 ) return -1;
+	if ( *(key96_t *)h1 > *(key96_t *)h2 ) return  1;
 	return 0;
 }
