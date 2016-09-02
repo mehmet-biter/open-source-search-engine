@@ -55,23 +55,23 @@ public:
 	const Rdb *getRdb() const { return &m_rdb; }
 
 	// make the cluster rec key
-	key_t makeClusterRecKey ( int64_t     docId,
-				  bool          familyFilter,
-				  uint8_t       languageBits,
-				  int32_t          siteHash,
-				  bool          isDelKey,
-				  bool          isHalfKey = false );
+	static key_t makeClusterRecKey(int64_t     docId,
+				       bool        familyFilter,
+				       uint8_t     languageBits,
+				       int32_t     siteHash,
+				       bool        isDelKey,
+				       bool        isHalfKey = false );
 
-	key_t makeFirstClusterRecKey ( int64_t docId ) {
+	static key_t makeFirstClusterRecKey(int64_t docId) {
 		return makeClusterRecKey ( docId, false, 0, 0, true ); }
-	key_t makeLastClusterRecKey  ( int64_t docId ) {
+	static key_t makeLastClusterRecKey(int64_t docId) {
 		return makeClusterRecKey ( docId, true, 0xff, 0xffffffff,
 					   false, true ); }
 
 	// NOTE: THESE NOW USE THE REAL CLUSTERDB REC
 	// // docId occupies the most significant bytes of the key
 	// now docId occupies the bits after the first 23
-	int64_t getDocId ( const void *k ) {
+	static int64_t getDocId ( const void *k ) {
 		//int64_t docId = (k.n0) >> (32+24);
 		//docId |= ( ((uint64_t)(k.n1)) << 8 );
 		int64_t docId = (((const key_t *)k)->n0) >> 35;
@@ -79,21 +79,21 @@ public:
 		return docId;
 	}
 
-	uint32_t getSiteHash26 ( const char *r ) {
+	static uint32_t getSiteHash26 ( const char *r ) {
 		//return g_titledb.getSiteHash ( (key_t *)r ); }
 		return ((uint32_t)(((const key_t*)r)->n0 >> 2) & 0x03FFFFFF);
 	}
 
-	uint32_t hasAdultContent ( const char *r ) {
+	static uint32_t hasAdultContent ( const char *r ) {
 		//return g_titledb.hasAdultContent ( *(key_t *)r ); }
 		return ((uint32_t)(((const key_t*)r)->n0 >> 34) & 0x00000001);
 	}
 
-	unsigned char getLanguage ( const char *r ) {
+	static unsigned char getLanguage ( const char *r ) {
 		return ((unsigned char)(((const key_t*)r)->n0 >> 28) & 0x0000003F);
 	}
 
-	char getFamilyFilter ( const char *r ) {
+	static char getFamilyFilter ( const char *r ) {
 		if ( (*(const int64_t *)r) & 0x0000000400000000LL ) return 1;
 		return 0;
 	}
