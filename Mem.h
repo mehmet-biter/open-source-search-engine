@@ -63,7 +63,7 @@ class Mem {
 	int  printMem      ( ) ;
 
 	void addMem(void *mem, size_t size, const char *note, char isnew);
-	bool rmMem(void *mem, size_t size, const char *note);
+	bool rmMem(void *mem, size_t size, const char *note, bool checksize);
 	bool lblMem(void *mem, size_t size, const char *note);
 	void addnew(void *ptr, size_t size, const char *note);
 	void delnew(void *ptr, size_t size, const char *note);
