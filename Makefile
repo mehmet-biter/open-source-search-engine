@@ -79,12 +79,7 @@ CPPFLAGS += -std=c++11
 
 
 # optimization
-ifeq ($(config),$(filter $(config),debug test coverage))
-O1 =
-O2 =
-O3 =
-
-else ifeq ($(config),$(filter $(config),release sanitize))
+ifeq ($(config),$(filter $(config),release))
 O1 = -O1
 O2 = -O2
 O3 = -O3
@@ -106,12 +101,18 @@ DEFS += -DPRIVACORE_TEST_VERSION
 else ifeq ($(config),coverage)
 CONFIG_CPPFLAGS += --coverage
 
-else ifeq ($(config),sanitize)
+else ifeq ($(findstring sanitize, $(config)),sanitize)
 DEFS += -DPRIVACORE_SAFE_VERSION
+
+ifeq ($(config),sanitize-address)
 CONFIG_CPPFLAGS += -fsanitize=address -fno-omit-frame-pointer # libasan
+else ifeq ($(config),sanitize-undefined)
 CONFIG_CPPFLAGS += -fsanitize=undefined # libubsan
-#CONFIG_CPPFLAGS += -fsanitize=thread # libtsan
+else ifeq ($(config),sanitize-thread)
+CONFIG_CPPFLAGS += -fsanitize=thread # libtsan
+else ifeq ($(config),sanitize-leak)
 CONFIG_CPPFLAGS += -fsanitize=leak # liblsan
+endif
 
 else ifeq ($(config),release)
 # if defined, UI options that can damage our production index will be disabled
@@ -361,6 +362,21 @@ cleandb:
 debug:
 	$(MAKE) config=debug
 
+.PHONY: sanitize-address
+sanitize-address:
+	$(MAKE) config=$@
+
+.PHONY: sanitize-undefined
+sanitize-undefined:
+	$(MAKE) config=$@
+
+.PHONY: sanitize-thread
+sanitize-thread:
+	$(MAKE) config=$@
+
+.PHONY: sanitize-leak
+sanitize-leak:
+	$(MAKE) config=$@
 
 # pip install gcovr
 
