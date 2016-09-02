@@ -74,7 +74,7 @@ static bool storeTerm ( const char	*s        ,
 		 HashTableX *wts      ,
 		 char        synSrc   ,
 		 char        langId ,
-		 POSDBKEY key ) {
+		 posdbkey_t key ) {
 
 	// store prefix
 	int32_t poff = wbuf->length();

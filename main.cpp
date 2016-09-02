@@ -4646,8 +4646,8 @@ void dumpPosdb (const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 		g_posdb.makeStartKey ( &startKey, termId );
 		g_posdb.makeEndKey  ( &endKey, termId );
 		printf("termid=%" PRIu64"\n",termId);
-		printf("startkey=%s\n",KEYSTR(&startKey,sizeof(POSDBKEY)));
-		printf("endkey=%s\n",KEYSTR(&endKey,sizeof(POSDBKEY)));
+		printf("startkey=%s\n",KEYSTR(&startKey,sizeof(posdbkey_t)));
+		printf("endkey=%s\n",KEYSTR(&endKey,sizeof(posdbkey_t)));
 	}
 	// turn off threads
 	g_jobScheduler.disallow_new_jobs();

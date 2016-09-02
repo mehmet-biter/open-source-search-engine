@@ -516,7 +516,7 @@ bool Msg39::getLists () {
 		// store now in qterm
 		g_posdb.makeStartKey ( sk , tid , docIdStart );
 		g_posdb.makeEndKey   ( ek , tid , docIdEnd   );
-		qterm->m_ks = sizeof(POSDBKEY);//key144_t);
+		qterm->m_ks = sizeof(posdbkey_t);
 	}
 
 	// debug msg

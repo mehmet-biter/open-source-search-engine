@@ -4524,7 +4524,7 @@ bool PosdbTable::allocTopScoringDocIdsData() {
 		
 		// tally. each new docid in this termlist will compress
 		// the 6 byte termid out, so reduce by 6.
-		nn2 += list->m_listSize / ( sizeof(POSDBKEY) -6 );
+		nn2 += list->m_listSize / ( sizeof(posdbkey_t) -6 );
 	}
 
 	// if doing docid range phases where we compute the winning docids

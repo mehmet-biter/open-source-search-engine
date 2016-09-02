@@ -368,7 +368,7 @@ void Posdb::makeKey ( void              *vkp            ,
 	if ( shardedByTermId ) setShardedByTermIdBit ( kp );
 
 	// get the one we lost
-	// char *kstr = KEYSTR ( kp , sizeof(POSDBKEY) );
+	// char *kstr = KEYSTR ( kp , sizeof(posdbkey_t) );
 	// if (!strcmp(kstr,"0x0ca3417544e400000000000032b96bf8aa01"))
 	// 	log("got lost key");
 }
@@ -445,7 +445,7 @@ int64_t Posdb::getTermFreq ( collnum_t collnum, int64_t termId ) {
 	int64_t numBytes = m_rdb.getBuckets()->getListSize(collnum, (char *)&startKey, (char *)&endKey, NULL, NULL);
 
 	// convert from size in bytes to # of recs
-	maxRecs += numBytes / sizeof(POSDBKEY);
+	maxRecs += numBytes / sizeof(posdbkey_t);
 
 	// RdbList list;
 	// makeStartKey ( &startKey, termId );
@@ -534,7 +534,7 @@ void printTermList ( int32_t i, const char *list, int32_t listSize ) {
 
 int Posdb::printList ( RdbList &list ) {
 	bool justVerify = false;
-	POSDBKEY lastKey;
+	posdbkey_t lastKey;
 	// loop over entries in list
 	for ( list.resetListPtr() ; ! list.isExhausted() && ! justVerify ;
 	      list.skipCurrentRecord() ) {

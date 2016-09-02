@@ -88,9 +88,7 @@
 const char *getHashGroupString ( unsigned char hg );
 float getTermFreqWeight  ( int64_t termFreq , int64_t numDocsInColl );
 
-#ifndef POSDBKEY
-#define POSDBKEY key144_t
-#endif
+typedef key144_t posdbkey_t;
 
 #ifndef TERMID_MASK
 #define TERMID_MASK (0x0000ffffffffffffLL)
