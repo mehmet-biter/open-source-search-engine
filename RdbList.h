@@ -43,15 +43,7 @@
  * additional support routines for IndexLists
  */
 class RdbList {
-
- public:
-
-	// IndexList sees keys as termId/score/docId tuples
-	friend class RdbScan;   // for hacking to make first key read 12 bytes
-	friend class RdbDump;   // for hacking m_listPtrHi/m_listPtr
-	friend class RdbMap;    // for call to RdbList::setListPtr()
-	friend class Msg1;
-
+public:
 	RdbList () ;
 	~RdbList () ;
 	void constructor();
