@@ -3037,9 +3037,6 @@ SafeBuf *XmlDoc::getTitleRecBuf ( ) {
 	if ( ! m_contentHash32Valid          ) { g_process.shutdownAbort(true); }
 	if ( ! m_tagPairHash32Valid          ) { g_process.shutdownAbort(true); }
 
-	// breathe
-	QUICKPOLL( m_niceness );
-
 	setStatus ( "compressing into final title rec");
 
 	int64_t uh48 = getFirstUrlHash48();
@@ -3063,17 +3060,12 @@ SafeBuf *XmlDoc::getTitleRecBuf ( ) {
 	// because it is too short of an xmldoc stub
 	m_versionValid = true;
 
-	// breathe
-	QUICKPOLL( m_niceness );
-
 	// . add the stat
 	// . use white for the stat
 	g_stats.addStat_r ( 0               ,
 			    startTime ,
 			    gettimeofdayInMilliseconds(),
 			    0x00ffffff );
-
-	QUICKPOLL( m_niceness );
 
 	char *cbuf = m_titleRecBuf.getBufStart();
 	m_titleRecKey = *(key_t *)cbuf;
@@ -3266,8 +3258,6 @@ static bool setLangVec ( Words *words ,
 
 	// now set the langid
 	for ( int32_t i = 0 ; i < nw ; i++ ) {
-		// breathe
-		QUICKPOLL ( niceness );
 		// default
 		langVector[i] = langUnknown;
 		// add the word
@@ -3312,14 +3302,10 @@ static bool setLangVec ( Words *words ,
 	if ( ss ) si = ss->m_firstSent;
 	// scan the sentence sections and or in the bits we should
 	for ( ; si ; si = si->m_nextSent ) {
-		// breathe
-		QUICKPOLL ( niceness );
 		// reset vec
 		int64_t bits = LANG_BIT_MASK;
 		// get lang 64 bit vec for each wid in sentence
 		for ( int32_t j = si->m_senta ; j < si->m_sentb ; j++ ) {
-			// breathe
-			QUICKPOLL ( niceness );
 			// skip if not alnum word
 			if ( ! wids[j] ) continue;
 			// skip if starts with digit
@@ -3336,8 +3322,6 @@ static bool setLangVec ( Words *words ,
 		char langId = getBitPosLL((uint8_t *)&bits) + 1;
 		// ok, must be this language i guess
 		for ( int32_t j = si->m_senta ; j < si->m_sentb ; j++ ) {
-			// breathe
-			QUICKPOLL ( niceness );
 			// skip if not alnum word
 			if ( ! wids[j] ) continue;
 			// skip if starts with digit
@@ -3359,8 +3343,6 @@ static bool setLangVec ( Words *words ,
 	int32_t total = 0;
 	// now set the langid
 	for ( int32_t i = 0 ; i < nw ; i++ ) {
-		// breathe
-		QUICKPOLL ( niceness );
 		// must be alnum
 		if ( ! wids[i] ) continue;
 		// skip if starts with digit
@@ -3550,8 +3532,6 @@ char XmlDoc::computeLangId ( Sections *sections , Words *words, char *lv ) {
 
 	// now set the langid
 	for ( int32_t i = 0 ; i < nw ; i++ ) {
-		// breathe
-		QUICKPOLL(m_niceness);
 		// skip if in script or style section
 		if ( sp && (sp[i]->m_flags & badFlags) ) continue;
 		//
@@ -3829,8 +3809,6 @@ int32_t *XmlDoc::getLinkSiteHashes ( ) {
 		int32_t *pend = (int32_t *)(ptr_linkdbData + size_linkdbData);
 		// loop over links
 		for ( int32_t i = 0 ; i < n ; i++ ) {
-			// breathe
-			QUICKPOLL ( m_niceness );
 			// get the link
 			char *u = links->getLinkPtr(i);
 			// assume site is just the host
@@ -3858,8 +3836,6 @@ int32_t *XmlDoc::getLinkSiteHashes ( ) {
 
 	// loop through them
 	for ( int32_t i = 0 ; i < n ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
 		// get the link
 		char *u = links->getLinkPtr(i);
 		// get full host from link
@@ -4049,9 +4025,6 @@ HashTableX *XmlDoc::getCountTable ( ) {
 	char *fv = getFragVec();
 	if ( ! fv || fv == (void *)-1 ) return (HashTableX *)fv;
 
-	// breathe
-	QUICKPOLL ( m_niceness );
-
 	//
 	// this was in Weights.cpp, but now it is here...
 	//
@@ -4067,7 +4040,7 @@ HashTableX *XmlDoc::getCountTable ( ) {
 	// add 5000 slots for inlink text in hashString_ct() calls below
 	int32_t numSlots = nw * 3 + 5000;
 	// only alloc for this one if not provided
-	if (!ct->set(8,4,numSlots,NULL,0,false,m_niceness,"xmlct"))
+	if (!ct->set(8,4,numSlots,NULL,0,false,"xmlct"))
 	  return (HashTableX *)NULL;
 
 	// . now hash all the phrase ids we have in order to see if the phrase
@@ -4075,8 +4048,6 @@ HashTableX *XmlDoc::getCountTable ( ) {
 	//   of the individual words in the phrase and boost the score of the
 	//   phrase itself. We check for uniqueness down below.
 	for ( int32_t i = 0 ; i < nw ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
 		// add the word
 		int64_t wid = words->getWordId(i);
 		if ( wid == 0LL )
@@ -4103,8 +4074,6 @@ HashTableX *XmlDoc::getCountTable ( ) {
 
 	// now add each meta tag to the pot
 	for ( int32_t i = 0 ; i < nw ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
 		// skip if not a meta tag
 		if ( tids[i] != TAG_META ) continue;
 		// find the "content=" word
@@ -4126,8 +4095,6 @@ HashTableX *XmlDoc::getCountTable ( ) {
 	}
 	// add each incoming link text
 	for ( Inlink *k=NULL ; info1 && (k=info1->getNextInlink(k)) ; ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
 		// shortcuts
 		char *p;
 		int32_t  plen;
@@ -4170,8 +4137,6 @@ bool XmlDoc::hashString_ct ( HashTableX *ct , char *s , int32_t slen ) {
 	const int64_t  *pids  = phrases.getPhraseIds2();
 
 	for ( int32_t i = 0 ; i < nw ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
 		// add the word
 		int64_t wid = words.getWordId(i);
 		if ( wid == 0LL ) continue;
@@ -4222,8 +4187,6 @@ int32_t *XmlDoc::getTagPairHashVector ( ) {
 	uint32_t lastHash = 0;
 	// loop over the nodes
 	for ( ; i < n ; i++ ) {
-		// breathe a little
-		QUICKPOLL ( m_niceness );
 		// skip NON tags
 		if ( ! nodes[i].isTag() ) continue;
 		// use the tag id as the hash, its unique
@@ -4252,22 +4215,18 @@ int32_t *XmlDoc::getTagPairHashVector ( ) {
 	// if only had one tag after, use that
 	if ( nh == 0 && saved ) hashes[nh++] = saved;
 
-	// breathe
-	QUICKPOLL ( m_niceness ) ;
 	// . TODO: remove the link text hashes here?
 	// . because will probably be identical..
 	// . now sort hashes to get the top MAX_PAIR_HASHES
 	gbsort ( hashes , nh , 4 , cmp );
-	// breathe
-	QUICKPOLL ( m_niceness ) ;
+
 	// uniquify them
 	int32_t d = 0;
 	for ( int32_t j = 1 ; j < nh ; j++ ) {
 		if ( hashes[j] == hashes[d] ) continue;
 		hashes[++d] = hashes[j];
 	}
-	// breathe
-	QUICKPOLL ( m_niceness ) ;
+
 	// how many do we got?
 	nh = d;
 	// truncate to MAX_PAIR_HASHES MINUS 1 so we can put a 0 at the end
@@ -4313,7 +4272,7 @@ uint32_t *XmlDoc::getTagPairHash32 ( ) {
 	// . similar to Vector::setTagPairHashes() but we do not compute a
 	//   vector, just a single scalar/hash of 32 bits, m_termId
 	HashTableX tp; // T<int64_t,char> tp;
-	if ( ! tp.set ( 4 , 1 , nt * 4  , NULL , 0 , true,m_niceness,"xmltp"))
+	if ( ! tp.set ( 4 , 1 , nt * 4  , NULL , 0 , true,"xmltp"))
 		return 0LL;
 	uint32_t lastTid = 0;
 	char val = 1;
@@ -4462,8 +4421,6 @@ int32_t *XmlDoc::getPostLinkTextVector ( int32_t linkNode ) {
 	const int32_t   *wn   = ww->getNodes();
 	int32_t       i    = 0;
 	for ( ; i < nw ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
 		// stop when we got the first word in this node #
 		if ( wn[i] == linkNode ) break;
 	}
@@ -4559,7 +4516,7 @@ int32_t XmlDoc::computeVector( Words *words, uint32_t *vec, int32_t start, int32
 	// dedup our vector using this hashtable, "ht"
 	char hbuf[3000*6*2];
 	HashTableX ht;
-	if ( ! ht.set(4,0,3000,hbuf,3000*6*2,false,m_niceness,"xmlvecdedup")){
+	if ( ! ht.set(4,0,3000,hbuf,3000*6*2,false,"xmlvecdedup")){
 		g_process.shutdownAbort(true);}
 
  again:
@@ -4570,8 +4527,6 @@ int32_t XmlDoc::computeVector( Words *words, uint32_t *vec, int32_t start, int32
 	// . buffer should have at least "maxTerms" in it
 	// . these should all be 12 byte keys
 	for ( int32_t i = start ; i < end ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
 		// skip if not alnum word
 		if ( wids[i] == 0 ) continue;
 
@@ -4611,8 +4566,6 @@ int32_t XmlDoc::computeVector( Words *words, uint32_t *vec, int32_t start, int32
 	// bubble sort them
 	bool flag = true;
 	while ( flag ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
 		flag = false;
 		for ( int32_t i = 1 ; i < nd ; i++ ) {
 			if ( d[i-1] <= d[i] ) continue;
@@ -4701,7 +4654,7 @@ float computeSimilarity ( int32_t   *vec0 ,
 	char qbuf[5000];
 	if ( q ) {
 		// init hash table
-		if ( ! qt.set ( 4,0,512,qbuf,5000,false,niceness,"xmlqvtbl") )
+		if ( ! qt.set ( 4,0,512,qbuf,5000,false,"xmlqvtbl") )
 			return -1;
 		// . stock the query term hash table
 		// . use the lower 32 bits of the termids to make compatible
@@ -4731,7 +4684,7 @@ float computeSimilarity ( int32_t   *vec0 ,
 
 	HashTableX ht;
 	char  hbuf[10000];
-	if ( ! ht.set ( 4,4,-1,hbuf,10000,allowDups,niceness,"xmlqvtbl2"))
+	if ( ! ht.set ( 4,4,-1,hbuf,10000,allowDups,"xmlqvtbl2"))
 		return -1;
 
 	bool useScores  = (bool)s0;
@@ -4744,8 +4697,6 @@ float computeSimilarity ( int32_t   *vec0 ,
 
 	// hash first vector. accumulating score total and total count
 	for ( int32_t *p = vec0; *p ; p++ , s0++ ) {
-		// breathe
-		QUICKPOLL(niceness);
 		// skip if matches a query term
 		if ( q && qt.getSlot ( p ) ) continue;
 		// count it
@@ -4773,8 +4724,6 @@ float computeSimilarity ( int32_t   *vec0 ,
 
 	// see what components of this vector match
 	for ( int32_t *p = vec1; *p ; p++ , s1++ ) {
-		// breathe
-		QUICKPOLL(niceness);
 		// skip if matches a query term
 		if ( q && qt.getSlot ( p ) ) continue;
 		// count it
@@ -4907,8 +4856,6 @@ int64_t *XmlDoc::getExactContentHash64 ( ) {
 	unsigned char pos = 0;
 	bool lastWasSpace = true;
 	for ( ; p < pend ; p++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
 		// treat sequences of white space as a single ' ' (space)
 		if ( is_wspace_a(*p) ) {
 			if ( lastWasSpace ) continue;
@@ -5077,9 +5024,6 @@ char *XmlDoc::getIsDup ( ) {
 	m_isDup = false;
 	// get the docid that we are a dup of
 	for ( ; ! list->isExhausted() ; list->skipCurrentRecord() ) {
-		// breathe
-		QUICKPOLL(m_niceness);
-
 		char *rec = list->getCurrentRec();
 
 		// get the docid
@@ -5372,9 +5316,6 @@ Url **XmlDoc::getRedirUrl() {
 		return (Url **)info1;
 	}
 
-	// breathe
-	QUICKPOLL(m_niceness);
-
 	// did we send a cookie with our last request?
 	bool sentCookieLastTime = false;
 	if ( m_redirCookieBuf.length() ) {
@@ -5416,9 +5357,6 @@ Url **XmlDoc::getRedirUrl() {
 		}
 	}
 
-	// breathe
-	QUICKPOLL(m_niceness);
-
 	// if no location url, then no redirect a NULL redir url
 	if ( ! loc || loc->getUrl()[0] == '\0' ) {
 		// validate it
@@ -5430,9 +5368,6 @@ Url **XmlDoc::getRedirUrl() {
 		logTrace( g_conf.m_logTraceXmlDoc, "END, no redir url (no loc)" );;
 		return &m_redirUrlPtr;
 	}
-
-	// breathe
-	QUICKPOLL(m_niceness);
 
 	bool keep = false;
 	if ( info1->hasLinkText() ) keep = true;
@@ -5537,9 +5472,6 @@ Url **XmlDoc::getRedirUrl() {
 
 	// get first url ever
 	Url *f = getFirstUrl();
-
-	// breathe
-	QUICKPOLL(m_niceness);
 
 	// set this to true if the redirected urls is much preferred
 	bool simplifiedRedir = false;
@@ -8224,9 +8156,6 @@ char **XmlDoc::gotHttpReply ( ) {
 	// relabel mem so we know where it came from
 	relabel( m_httpReply, m_httpReplyAllocSize, "XmlDocHR" );
 
-	// breathe
-	QUICKPOLL ( m_niceness );
-
 	CollectionRec *cr = getCollRec();
 	if ( ! cr )
 	{
@@ -8664,7 +8593,6 @@ char getContentTypeFromContent ( char *p , int32_t niceness ) {
 	char *pmax = p + 100;
 	// check that out
 	for ( ; p && *p && p < pmax ; p++ ) {
-		QUICKPOLL(niceness);
 		if ( p[0] != '<' ) continue;
 		if ( p[1] != '!' ) continue;
 		if ( to_lower_a(p[2]) != 'd' ) continue;
@@ -8672,7 +8600,6 @@ char getContentTypeFromContent ( char *p , int32_t niceness ) {
 		char *dt = p + 10;
 		// skip spaces
 		for ( ; *dt ; dt++ ) {
-			QUICKPOLL(niceness);
 			if ( ! is_wspace_a ( *dt ) ) break;
 		}
 		// point to that
@@ -8758,8 +8685,6 @@ Url **XmlDoc::getCanonicalRedirUrl ( ) {
 
 	// scan nodes looking for a <link> node. like getBaseUrl()
 	for ( int32_t i=0 ; i < xml->getNumNodes() ; i++ ) {
-		// breathe some
-		QUICKPOLL(m_niceness);
 		// 12 is the <base href> tag id
 		if ( xml->getNodeId ( i ) != TAG_LINK ) continue;
 		// get the href field of this base tag
@@ -8795,7 +8720,6 @@ Url **XmlDoc::getCanonicalRedirUrl ( ) {
 		if ( ! m_didExpansion ) p = pstart;
 		bool skip = false;
 		for ( ; p > pstart ; p-- ) {
-			QUICKPOLL(m_niceness);
 			if ( p[0] != '<' )
 				continue;
 			if ( p[1] == '/' &&
@@ -8976,9 +8900,6 @@ Url **XmlDoc::getMetaRedirUrl ( ) {
 	p += 10;
 	// begin the string matching loop
 	for ( ; p < pend ; p++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-
 		// fix <!--[if lte IE 6]>
 		// <meta http-equiv="refresh" content="0; url=/error-ie6/" />
 		if ( *p == '!' &&
@@ -8987,7 +8908,6 @@ Url **XmlDoc::getMetaRedirUrl ( ) {
 			 p[2] == '-' ) {
 				// find end of comment
 				for ( ; p < pend ; p++ ) {
-					QUICKPOLL(m_niceness);
 					if (p[0] == '-' &&
 						p[1] == '-' &&
 						p[2] == '>' )
@@ -9190,8 +9110,6 @@ uint16_t getCharsetFast ( HttpMime *mime,
 	if ( charset == csUTF8 ) {
 		// loop over every char
 		for ( char *s = pstart ; s < pend ; s += getUtf8CharSize(s) ) {
-			// breathe
-			QUICKPOLL(niceness);
 			// sanity check
 			if ( ! isFirstUtf8Char ( s ) ) {
 				// note it
@@ -9221,8 +9139,6 @@ uint16_t getCharsetFast ( HttpMime *mime,
 	if ( p ) p += 10;
 	// begin the string matching loop
 	for ( ; p < pend ; p++ ) {
-		// breathe
-		QUICKPOLL ( niceness );
 		// base everything off the equal sign
 		if ( *p != '=' ) continue;
 		// must have a 't' or 'g' before the equal sign
@@ -9348,8 +9264,6 @@ uint16_t getCharsetFast ( HttpMime *mime,
 		char size;
 		// loop over every char
 		for ( char *s = pstart ; s < pend ; s += size ) {
-			// breathe
-			QUICKPOLL(niceness);
 			// set
 			size = getUtf8CharSize(s);
 			// sanity check
@@ -9384,13 +9298,7 @@ uint16_t getCharsetFast ( HttpMime *mime,
 		}
 	}
 
-	// breathe
-	QUICKPOLL ( niceness );
-
 	//char *csName = get_charset_str(charset);
-
-	// breathe
-	//QUICKPOLL ( m_niceness );
 
 	// if we are not supported, set m_indexCode
 	//if ( csName && ! supportedCharset(charset) ) {
@@ -9550,8 +9458,7 @@ char **XmlDoc::getFilteredContent ( ) {
 		    "content filter.",m_filteredContentMaxSize);
 		return NULL;
 	}
-	// breathe
-	QUICKPOLL ( m_niceness );
+
 	// reset this here in case thread gets killed by the kill() call below
 	m_filteredContentLen = 0;
 	// update status msg so its visible in the spider gui
@@ -9909,7 +9816,6 @@ char **XmlDoc::getRawUtf8Content ( ) {
 	char *p    =     m_rawUtf8Content;
 	char *pend = p + m_rawUtf8ContentSize - 1;
 	for ( ; p < pend ; p++ ) {
-		QUICKPOLL(m_niceness);
 		if ( ! *p ) *p = ' ';
 	}
 
@@ -9931,7 +9837,6 @@ char **XmlDoc::getRawUtf8Content ( ) {
 	char size;
 	char *lastp = NULL;
 	for ( ; ; p += size ) {
-		QUICKPOLL(m_niceness);
 		if ( p >= pend ) break;
 		lastp = p;
 		size = getUtf8CharSize(p);
@@ -10053,8 +9958,6 @@ char **XmlDoc::getExpandedUtf8Content ( ) {
 	}
 	// now loop for frame and iframe tags
 	for ( ; p < pend ; p += getUtf8CharSize(p) ) {
-		// breathe
-		QUICKPOLL(m_niceness);
 		// if never found a frame tag, just keep on chugging
 		if ( *p != '<' ) continue;
 		// <script>?
@@ -10200,8 +10103,6 @@ char **XmlDoc::getExpandedUtf8Content ( ) {
 		// find end of frame tag
 		fend = p;
 		for ( ; fend < pend ; fend += getUtf8CharSize(fend) ) {
-			// breathe
-			QUICKPOLL(m_niceness);
 			// if never found a frame tag, just keep on chugging
 			if ( *fend == '>' ) break;
 		}
@@ -10359,8 +10260,6 @@ char **XmlDoc::getUtf8Content ( ) {
 	if ( m_xmlValid   ) { g_process.shutdownAbort(true); }
 	if ( m_wordsValid ) { g_process.shutdownAbort(true); }
 
-	QUICKPOLL(m_niceness);
-
 	//
 	// convert illegal utf8 characters into spaces
 	//
@@ -10369,7 +10268,6 @@ char **XmlDoc::getUtf8Content ( ) {
 	char *x = m_expandedUtf8Content;
 	char size;
 	for ( ; *x ; x += size ) {
-		QUICKPOLL(m_niceness);
 		size = getUtf8CharSize(x);
 		// ok, make it a space i guess if it is a bad utf8 char
 		if ( ! isValidUtf8Char(x) ) {
@@ -10423,7 +10321,6 @@ char **XmlDoc::getUtf8Content ( ) {
 	uint8_t *pend = p + n;
 
 	for ( ; *p ; p += size ) {
-		QUICKPOLL(m_niceness);
 		size = getUtf8CharSize(p);
 
 		// quick copy
@@ -10570,9 +10467,6 @@ int32_t getContentHash32Fast ( unsigned char *p ,
 	//char  size = 0;
 	unsigned char pos = 0;
 	for ( ; p < pend ; p++ ) { //  += size ) {
-		// breathe
-		QUICKPOLL ( niceness );
-
 		if ( ! is_alnum_a ( *p ) ) {
 			lastWasDigit = false;
 			lastWasPunct = true;
@@ -10699,7 +10593,6 @@ int32_t *XmlDoc::getContentHashJson32 ( ) {
 	//logf(LOG_DEBUG,"ch32: url=%s",m_firstUrl.m_url);
 
 	for ( ; ji ; ji = ji->m_next ) {
-		QUICKPOLL(m_niceness);
 		// skip if not number or string
 		if ( ji->m_type != JT_NUMBER && ji->m_type != JT_STRING )
 			continue;
@@ -12029,9 +11922,6 @@ bool XmlDoc::logIt (SafeBuf *bb ) {
 	//
 	sb->safePrintf(": %s",mstrerror(m_indexCode));
 
-	// breathe
-	QUICKPOLL ( m_niceness );
-
 	// if safebuf provided, do not log to log
 	if ( bb ) return true;
 
@@ -12450,8 +12340,6 @@ bool XmlDoc::verifyMetaList ( char *p , char *pend , bool forDelete ) {
 
 	// store each record in the list into the send buffers
 	for ( ; p < pend ; ) {
-		// breathe
- 		QUICKPOLL(m_niceness);
 		// first is rdbId
 		//char rdbId = -1; // m_rdbId;
 		//if ( rdbId < 0 ) rdbId = *p++;
@@ -12554,8 +12442,6 @@ bool XmlDoc::hashMetaList ( HashTableX *ht        ,
 	int32_t recSize = 0;
 	int32_t count = 0;
 	for ( ; p < pend ; p += recSize , count++ ) {
-		// breathe
-		QUICKPOLL(m_niceness);
 		// get rdbid
 		char rdbId = *p & 0x7f;
 		// skip rdb id
@@ -13495,11 +13381,10 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 
 
 	// store what we hash into this table
-	if ( (m_pbuf || m_storeTermListInfo) && ! m_wts ) {
+	if ((m_pbuf || m_storeTermListInfo) && !m_wts) {
 		// init it. the value is a TermInfo class. allowDups=true!
-		m_wtsTable.set (12,sizeof(TermDebugInfo),
-				0,NULL,0,true,m_niceness,
-				"wts-tab");
+		m_wtsTable.set(12, sizeof(TermDebugInfo), 0, NULL, 0, true, "wts-tab");
+
 		// point to it, make it active
 		m_wts = &m_wtsTable;
 	}
@@ -13522,8 +13407,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	//   count it here though... but add 5k for it...
 	int32_t need4 = nw * 4 + 5000;
 	if ( nd && index1 && m_usePosdb ) {
-		if ( ! tt1.set ( 18 , 4 , need4,NULL,0,false,m_niceness,
-				 "posdb-indx")) {
+		if ( ! tt1.set ( 18 , 4 , need4,NULL,0,false, "posdb-indx")) {
 			logTrace( g_conf.m_logTraceXmlDoc, "tt1.set failed" );
 			return NULL;
 		}
@@ -13545,9 +13429,9 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 			return NULL;
 		}
 		int32_t done = tt1.m_numSlots;
-		if ( done != did )
-			log("xmldoc: reallocated big table! bad. old=%" PRId32" "
-			    "new=%" PRId32" nw=%" PRId32,did,done,nw);
+		if (done != did) {
+			log(LOG_WARN, "xmldoc: reallocated big table! bad. old=%" PRId32" new=%" PRId32" nw=%" PRId32, did, done, nw);
+		}
 	}
 
 	// if indexing the spider reply as well under a different docid
@@ -13567,7 +13451,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	HashTableX st1;
 	// set key/data size
 	int32_t svs = sizeof(SectionVote);
-	st1.set(sizeof(key128_t),svs,0,NULL,0,false,m_niceness,"sectdb-indx");
+	st1.set(sizeof(key128_t),svs,0,NULL,0,false,"sectdb-indx");
 	// tell hashtable to use the sectionhash for determining the slot,
 	// not the lower 4 bytes because that is the docid which is the
 	// same for every key
@@ -13612,7 +13496,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	int32_t nis = 0;
 	if ( nl2 && m_useLinkdb ) nis = nl2->getNumLinks() * 4;
 	// pre-grow table based on # outlinks
-	kt1.set ( sizeof(key224_t),0,nis,NULL,0,false,m_niceness,"link-indx" );
+	kt1.set ( sizeof(key224_t),0,nis,NULL,0,false,"link-indx" );
 	// use magic to make fast
 	kt1.m_useKeyMagic = true;
 	// linkdb keys will have the same lower 4 bytes, so make hashing fast.
@@ -14103,168 +13987,159 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	if ( oldList ) {
 		// point to start of the old meta list, the first and only
 		// record in the oldList
-		char *om = oldList;// + 12 + 4;
+		char *om = oldList;
+
 		// the size
-		int32_t osize = oldListSize;//*(int32_t *)(oldList + 12);
+		int32_t osize = oldListSize;
+
 		// the end
 		char *omend = om + osize;
 		int32_t needx = 0;
 
 		HashTableX dt8;
 		char dbuf8[34900];
+
 		// value is the ptr to the rdbId/key in the oldList
-		dt8.set ( 8,sizeof(char *),2048,dbuf8,34900,
-			  false,m_niceness,"dt8-tab");
+		dt8.set(8, sizeof(char *), 2048, dbuf8, 34900, false, "dt8-tab");
 
 		// scan recs in that and hash them
 		for ( char *p = om ; p < omend ; ) {
-			// breathe
-			QUICKPOLL(m_niceness);
 			// save this
 			char byte = *p;
-			// save this
 			char *rec = p;
+
 			// get the rdbid for this rec
 			char rdbId = byte & 0x7f;
-			// skip that
 			p++;
+
 			// get the key size
 			int32_t ks = getKeySizeFromRdbId ( rdbId );
+
 			// get that
 			char *k = p;
+
 			// unlike a real meta list, this meta list has
 			// no data field, just rdbIds and keys only! because
 			// we only use it for deleting, which only requires
 			// a key and not the data
 			p += ks;
+
 			// tally this up in case we have to add the delete
 			// version of this key back (add 1 for rdbId)
 			needx += ks + 1;
-			// always re-add titledb record!
-			// if our current/new list is basically empty
-			// except for a SpiderReply because it got deleted
-			// from the index, we need to store the titledb key
-			// in dt8 so we can add it as a negative! so i
-			// don't really know what this was trying to fix
-			// because it broke that!
-			//if ( rdbId == RDB_TITLEDB ) continue;
+
 			// for linkdb, sometimes we also add a "lost" link
 			// key in addition to deleting the old key! see below
-			if ( rdbId == RDB_LINKDB ) needx += ks + 1;
-			// do not add it if datasize > 0
-			uint64_t hk;
-			// do not include discovery or lost dates in the
-			// linkdb key...
-			if ( rdbId == RDB_LINKDB )
-				hk = hash64 (k+12,ks-12);
-			else
-				hk = hash64 (k,ks);
-			// sanity check
-			if ( rdbId == RDB_LINKDB &&
-			     g_linkdb.getLinkerDocId_uk((key224_t *)k)!=
-			     m_docId ) {
-				g_process.shutdownAbort(true); }
+			if (rdbId == RDB_LINKDB) {
+				needx += ks + 1;
+			}
 
-			if( g_conf.m_noInMemoryPosdbMerge && rdbId == RDB_POSDB ) {
+			// do not add it if datasize > 0
+			// do not include discovery or lost dates in the linkdb key...
+			uint64_t hk = (rdbId == RDB_LINKDB) ? hash64(k + 12, ks - 12) : hash64(k, ks);
+
+			// sanity check
+			if (rdbId == RDB_LINKDB && g_linkdb.getLinkerDocId_uk((key224_t *)k) != m_docId) {
+				g_process.shutdownAbort(true);
+			}
+
+			if (g_conf.m_noInMemoryPosdbMerge && rdbId == RDB_POSDB) {
 				// NEW 20160803.
 				// Do not store records for POSDB in the hash table of old
-				// values. This makes sure that no delete records are 
-				// stored in posdb for existing terms, which is needed for 
+				// values. This makes sure that no delete records are
+				// stored in posdb for existing terms, which is needed for
 				// the new no-merge feature.
 				continue;
 			}
 
-			if ( ! dt8.addKey(&hk,&rec) ) {
+			if (!dt8.addKey(&hk, &rec)) {
 				logTrace( g_conf.m_logTraceXmlDoc, "addKey failed" );
 				return NULL;
 			}
 		}
+
 		// also need all the new keys just to be sure, in case none
 		// are already in the rdbs
 		needx += (m_p - m_metaList);
+
 		// now alloc for our new manicured metalist
-		char *nm = (char *)mmalloc( needx, "newmeta" );
-		if ( ! nm )
-		{
-			logTrace( g_conf.m_logTraceXmlDoc, "mmalloc failed" );
+		char *nm = (char *)mmalloc(needx, "newmeta");
+		if (!nm) {
+			logTrace(g_conf.m_logTraceXmlDoc, "mmalloc failed");
 			return NULL;
 		}
 
 		char *nptr = nm;
 		char *nmax = nm + needx;
+
 		// scan each rec in the current meta list, see if its in either
 		// the dt12 or dt16 hash table, if it already is, then
 		// do NOT add it to the new metalist, nm, because there is
 		// no need to.
 		char *p    = m_metaList;
 		char *pend = p + (m_p - m_metaList);
-		for ( ; p < pend ; ) {
-			// breathe
-			QUICKPOLL(m_niceness);
+		for (; p < pend;) {
 			// save it with the flag
 			char byte = *p;
+
 			// get rdbId
 			char rdbId = byte & 0x7f;
-			// skip that
 			p++;
+
 			// key size
 			int32_t ks = getKeySizeFromRdbId(rdbId);
+
 			// get key
 			char *key = p;
-			// skip that
 			p += ks;
+
 			// get data size
 			int32_t ds = getDataSizeFromRdbId(rdbId);
+
 			// assume we do not store the datasize
 			bool neg = false;
+
 			// . if key is negative, no data is present
 			// . the doledb key is negative for us here
-			if ( (key[0] & 0x01) == 0x00 ) { neg = true; ds = 0; }
+			if ((key[0] & 0x01) == 0x00) {
+				neg = true;
+				ds = 0;
+			}
+
 			// if datasize variable, read it in
-			if ( ds == -1 ) {
+			if (ds == -1) {
 				// get data size
 				ds = *(int32_t *)p;
+
 				// skip data size int32_t
 				p += 4;
 			}
+
 			// point to data
 			char *data = p;
+
 			// skip data if not zero
 			p += ds;
 
 			// mix it up for hashtable speed
-			uint64_t hk ;//= hash64 ( key,ks);
-
 			// skip if for linkdb, we do that below
-			if ( rdbId == RDB_LINKDB )
-				hk = hash64(key+12,ks-12);
-			else
-				hk = hash64(key,ks);
+			uint64_t hk = (rdbId == RDB_LINKDB) ? hash64(key + 12, ks - 12) : hash64(key, ks);
 
 			// was this key already in the "old" list?
 			int32_t slot = dt8.getSlot(&hk);
 
-			// do we got a linkdb key that existed last time
-			// we indexed this doc? if so, inherit its discovery
-			// date.
-			if ( slot >= 0 && rdbId == RDB_LINKDB ) {
-				// . no need to deal with this any further
-				// . yeah, because there could be dups!
-				//   so don't delete it just yet
-				// . but make the data ptr NULL so we
-				//   know to disregard it below...???
-				dt8.removeSlot(slot);
-				// all done for this key
-				continue;
-			}
-
 			// see if already in an rdb, IFF dataless, otherwise
 			// the keys might be the same but with different data!
-			if ( slot >= 0 ) { // dt8.isInTable(&hk) ) {
+			if (slot >= 0) {
 				// remove from hashtable so we do not add it
 				// as a delete key below
-				// dt8.removeKey(&hk);
 				dt8.removeSlot(slot);
+
+				if (rdbId == RDB_LINKDB) {
+					// all done for this key
+					continue;
+				}
+
 				// but do add like a titledb rec that has the
 				// same key, because its data is probably
 				// different...
@@ -14272,71 +14147,93 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 				// the url:www.geico.com term somehow!!!
 				// geico got deleted but not the title rec!!
 				// MAKE SURE TITLEREC gets deleted then!!!
-				if ( ds==0 && g_conf.m_doIncrementalUpdating )
+				if (ds == 0 && g_conf.m_doIncrementalUpdating) {
 					continue;
+				}
 			}
+
 			// ok, it is not already in an rdb, so add it
 			*nptr++ = byte;
+
 			// store key
 			gbmemcpy ( nptr, key , ks );
+
 			// skip over it
 			nptr += ks;
+
 			// store data size. BUT not if negative key!
-			if ( getDataSizeFromRdbId(rdbId) == -1 && ! neg ) {
+			if (getDataSizeFromRdbId(rdbId) == -1 && !neg) {
 				*(int32_t *)nptr = ds;
 				nptr += 4;
 			}
+
 			// store data
-			if ( ds ) {
-				gbmemcpy ( nptr , data , ds );
+			if (ds) {
+				gbmemcpy (nptr, data, ds);
 				nptr += ds;
 			}
 		}
+
 		// now scan dt8 and add their keys as del keys
 		for ( int32_t i = 0 ; i < dt8.m_numSlots ; i++ ) {
-			// breathe
-			QUICKPOLL(m_niceness);
 			// skip if empty
-			if ( ! dt8.m_flags[i] ) continue;
+			if (!dt8.m_flags[i]) {
+				continue;
+			}
+
 			// store rdbid first
 			char *rec = *(char **)dt8.getValueFromSlot(i);
+
 			// get rdbId with hi bit possibly set
 			char rdbId = rec[0] & 0x7f;
+
 			// key size
 			int32_t ks = getKeySizeFromRdbId(rdbId);
+
 			// sanity test - no negative keys
-			if ( (rec[1] & 0x01) == 0x00 ) { g_process.shutdownAbort(true);}
+			if ((rec[1] & 0x01) == 0x00) {
+				g_process.shutdownAbort(true);
+			}
+
 			// copy the rdbId byte and key
 			gbmemcpy ( nptr , rec , 1 + ks );
+
 			// skip over rdbid
 			nptr++;
+
 			// make it a negative key by clearing lsb
 			*nptr = *nptr & 0xfe;
+
 			// skip it
 			nptr += ks;
+
 			// if it is from linkdb, and unmet, then it is a
 			// lost link, so set the lost date of it. we keep
 			// these so we can graph lost links
 			if ( rdbId == RDB_LINKDB ) {
 				// the real linkdb rec is at rec+1
 				int32_t lost = g_linkdb.getLostDate_uk( rec+1 );
+
 				// how can it be non-zero? it should have
 				// been freshly made from the old titlerec...
-				if ( lost ) { g_process.shutdownAbort(true); }
-				// if zero, set it to now!
-				//g_linkdb.setLostDate_uk(realRec,now);
+				if (lost) {
+					g_process.shutdownAbort(true);
+				}
+
 				// copy the rdbId byte and key
 				gbmemcpy ( nptr , rec , 1 + ks );
+
 				// set it in there now
 				g_linkdb.setLostDate_uk(nptr+1,now);
+
 				// carry it through on revdb, do not delete
 				// it! we want a linkdb history for seomasters
 				nptr += 1 + ks;
+
 				// and go on to delete the old linkdb key that
 				// did not have a lost date
 				//continue;
 			}
-
 		}
 		// sanity. check for metalist breach
 		if ( nptr > nmax ) { g_process.shutdownAbort(true); }
@@ -14368,7 +14265,8 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	m_metaListValid = true;
 
 	// set the list size, different from the alloc size
-	m_metaListSize = m_p - m_metaList;//end - m_p;
+	m_metaListSize = m_p - m_metaList;
+
 	// sanity check
 	verifyMetaList( m_metaList , m_metaList + m_metaListSize , forDelete );
 
@@ -15153,7 +15051,7 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 	// hash table to avoid dups
 	HashTableX ht;
 	char buf2[8192];
-	if ( ! ht.set ( 4,0,1000,buf2 , 8192,false,m_niceness,"linkdedup" ) )
+	if ( ! ht.set ( 4,0,1000,buf2 , 8192,false,"linkdedup" ) )
 	{
 		logTrace( g_conf.m_logTraceXmlDoc, "END, ht.set failed" );
 		return NULL;
@@ -15200,8 +15098,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 	// serialize each link into the metalist now
 	//
 	for ( int32_t i = 0 ; i < n ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
 		// grab our info
 		TagRec *gr        = (*grv)[i];
 		int32_t    firstIp   = (*ipv)[i];
@@ -15230,9 +15126,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		// point to url
 		char *s    = links->getLink   (i);
 		int32_t  slen = links->getLinkLen(i);
-
-		// breathe
-		QUICKPOLL(m_niceness);
 
 		// get hash
 		int32_t uh = hash32 ( s , slen );
@@ -15546,8 +15439,6 @@ bool XmlDoc::addTable144 ( HashTableX *tt1 , int64_t docId , SafeBuf *buf ) {
 
 	// store terms from "tt1" table
 	for ( int32_t i = 0 ; i < tt1->m_numSlots ; i++ ) {
-		// breathe
-		QUICKPOLL(m_niceness);
 		// skip if empty
 		if ( tt1->m_flags[i] == 0 ) continue;
 		// get its key
@@ -15608,8 +15499,6 @@ bool XmlDoc::addTable224 ( HashTableX *tt1 ) {
 
 	// store terms from "tt1" table
 	for ( int32_t i = 0 ; i < tt1->m_numSlots ; i++ ) {
-		// breathe
-		QUICKPOLL(m_niceness);
 		// skip if empty
 		if ( tt1->m_flags[i] == 0 ) continue;
 		// get its key
@@ -16563,9 +16452,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		m_setTr = true;
 	}
 
-	// breathe
-	QUICKPOLL(m_niceness);
-
 	reply->m_collnum = m_collnum;
 
 	// lookup the tagdb rec fresh if setting for a summary. that way we
@@ -16680,9 +16566,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		}
 	}
 
-	// breathe
-	QUICKPOLL ( m_niceness );
-
 	// a special hack for XmlDoc::getRecommendedLinksBuf() so we exclude
 	// links that link to the main url's site/domain as well as a
 	// competitor url (aka related docid)
@@ -16691,9 +16574,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		links = getLinks();
 		if ( ! links || links==(Links *)-1) return (Msg20Reply *)links;
 	}
-
-	// breathe
-	QUICKPOLL ( m_niceness );
 
 	// do they want a summary?
 	if ( m_req->m_numSummaryLines>0 && ! reply->ptr_displaySum ) {
@@ -16721,18 +16601,11 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		reply->size_displaySum = hsumLen+1;
 	}
 
-	// breathe
-	QUICKPOLL ( m_niceness );
-
 	// copy the link info stuff?
 	if ( ! m_req->m_getLinkText ) {
 		reply->ptr_linkInfo  = (char *)ptr_linkInfo1;
 		reply->size_linkInfo = size_linkInfo1;
 	}
-
-
-	// breathe
-	QUICKPOLL ( m_niceness );
 
 	bool getThatTitle = true;
 	if ( m_req->m_titleMaxLen <= 0 ) getThatTitle = false;
@@ -16788,9 +16661,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		reply->size_htag = htb->getLength();
 	}
 
-	// breathe
-	QUICKPOLL ( m_niceness );
-
 	// get site
 	reply->ptr_site  = ptr_site;
 	reply->size_site = size_site;
@@ -16804,9 +16674,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		reply->m_noArchive = *na;
 	}
 
-	// breathe
-	QUICKPOLL ( m_niceness );
-
 	// . summary vector for deduping
 	// . does not compute anything if we should not! (svSize will be 0)
 	if ( ! reply->ptr_vbuf &&
@@ -16819,9 +16686,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		reply->size_vbuf = m_summaryVecSize;
 	}
 
-	// breathe
-	QUICKPOLL ( m_niceness );
-
 	// returns values of specified meta tags
 	if ( ! reply->ptr_dbuf && m_req->size_displayMetas > 1 ) {
 		int32_t dsize;  char *d;
@@ -16830,9 +16694,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		reply->ptr_dbuf  = d;
 		reply->size_dbuf = dsize; // includes \0
 	}
-
-	// breathe
-	QUICKPOLL ( m_niceness );
 
 	// get thumbnail image DATA
 	if ( ! reply->ptr_imgData && ! m_req->m_getLinkText ) {
@@ -16854,9 +16715,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		reply-> ptr_content =  ptr_utf8Content;
 		reply->size_content = size_utf8Content;
 	}
-
-	// breathe
-	QUICKPOLL ( m_niceness );
 
 	// do they want to know if this doc has an outlink to a url
 	// that has the provided site and domain hash, Msg20Request::
@@ -16900,11 +16758,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	reply->size_rubuf            = rulen;
 	reply->size_metadataBuf      = 0;
 
-
-	// breathe
-	QUICKPOLL( m_req->m_niceness );
-
-
 	// check the tag first
 	if ( ! m_siteNumInlinksValid ) { g_process.shutdownAbort(true); }
 
@@ -16922,9 +16775,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		reply->m_pageNumUniqueCBlocks   = info1->m_numUniqueCBlocks;
 		reply->m_pageInlinksLastUpdated = info1->m_lastUpdated;
 	}
-
-	// breathe
-	QUICKPOLL ( m_niceness );
 
 	// getLinkText is true if we are getting the anchor text for a
 	// supplied url as part of the SPIDER process..
@@ -16945,9 +16795,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		linker = &redir;
 	}
 
-	// breathe
-	QUICKPOLL( m_niceness );
-
 	// . we need the mid doma hash in addition to the ip domain because
 	//   chat.yahoo.com has different ip domain than www.yahoo.com , ...
 	//   and we don't want them both to be able to vote
@@ -16956,9 +16803,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	if ( reply->m_midDomHash == 0 ) {
 		reply->m_midDomHash = hash32 ( linker->getMidDomain(), linker->getMidDomainLen() );
 	}
-
-	// breathe
-	QUICKPOLL( m_niceness );
 
 	int64_t start = gettimeofdayInMilliseconds();
 
@@ -17041,9 +16885,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		return NULL;
 	}
 
-	// breathe
-	QUICKPOLL(m_niceness);
-
 	if ( ! verifyUtf8 ( m_linkTextBuf , blen ) ) {
 		log("xmldoc: bad OUT link text from url=%s for %s",
 		    m_req->ptr_linkee,m_firstUrl.getUrl());
@@ -17092,9 +16933,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		reply->size_rssItem = rssItemLen + 1;
 	}
 
-	// breathe
-	QUICKPOLL( m_niceness );
-
 	if ( ! m_req->m_doLinkSpamCheck )
 		reply->m_isLinkSpam = false;
 
@@ -17138,9 +16976,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 			log("linkspam: missing note for d=%" PRId64"!",m_docId);
 	}
 
-	// breathe
-	QUICKPOLL(m_niceness);
-
 	// sanity check
 	if ( reply->ptr_rssItem &&
 	     reply->size_rssItem>0 &&
@@ -17165,24 +17000,15 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	if ( ! m_pageSampleVecValid ) { g_process.shutdownAbort(true); }
 	//st->m_v1.setPairHashes    ( ww , -1    , m_niceness );
 
-	// breathe
-	QUICKPOLL( m_niceness );
-
 	// . this vector is set from the text after the link text
 	// . it terminates at at a breaking tag
 	// . check it out in ~/fff/src/Msg20.cpp
 	getPostLinkTextVector ( linkNode );
 
-	// breathe
-	QUICKPOLL( m_niceness );
-
 	// get it
 	getTagPairHashVector();
 	// must not block or error out. sanity check
 	if ( ! m_tagPairHashVecValid ) { g_process.shutdownAbort(true); }
-
-	// breathe
-	QUICKPOLL( m_niceness );
 
 	// reference the vectors in our reply
 	reply-> ptr_vector1 = m_pageSampleVec;
@@ -17199,8 +17025,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	// exclude the terminating 0 int32_t
 	int32_t nd = (m_tagPairHashVecSize / 4) - 1;
 	while ( flag ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
 		flag = false;
 		for ( int32_t i = 1 ; i < nd ; i++ ) {
 			if ( d[i-1] <= d[i] ) continue;
@@ -17219,8 +17043,8 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	int32_t   nw = ww->getNumWords();
 	int32_t   n;
 
-	for ( n = 0; n < nw && wp[n] < node ; n++ )
-		QUICKPOLL(m_niceness);
+	for ( n = 0; n < nw && wp[n] < node ; n++ ) {
+	}
 
 	// sanity check
 	if ( n >= nw ) {
@@ -17262,9 +17086,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		reply->ptr_surroundingText  = p;
 		reply->size_surroundingText = len2 + 1;
 	}
-
-	// breathe
-	QUICKPOLL ( m_niceness );
 
 	// get title? its slow because it sets the sections class
 	if ( m_req->m_titleMaxLen > 0 && ! reply->ptr_tbuf &&
@@ -17449,8 +17270,6 @@ SafeBuf *XmlDoc::getHeaderTagBuf() {
  moreloop:
 
 	for ( ; si ; si = si->m_next ) {
-		// breathe
-		QUICKPOLL(m_niceness);
 		if ( si->m_tagId != TAG_H1 ) continue;
 		// if it contains now text, this will be -1
 		// so give up on it
@@ -17742,8 +17561,6 @@ char *XmlDoc::getIsNoArchive ( ) {
 	XmlNode *nodes = xml->getNodes();
 	// find the meta tags
 	for ( int32_t i = 0 ; i < n ; i++ ) {
-		// breathe
-		QUICKPOLL(m_niceness);
 		// continue if not a meta tag
 		if ( nodes[i].m_nodeId != TAG_META ) continue;
 		// get robots attribute
@@ -17867,10 +17684,6 @@ int gbuncompress ( unsigned char *dest      ,
 	err = inflateEnd(&stream);
 	return err;
 }
-
-// void deflateQuickPoll ( ) {
-// 	QUICKPOLL(1);
-// }
 
 int gbcompress ( unsigned char *dest      ,
 		 uint32_t *destLen   ,
@@ -18693,8 +18506,6 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 	for ( int32_t i = 0 ; i < nwt ; i++ ) {
 		// skip if empty
 		if ( wt->m_flags[i] == 0 ) continue;
-		// breathe
-		//QUICKPOLL(m_niceness);
 		// get its key, date=32bits termid=64bits
 		//key96_t *k = (key96_t *)wt->getKey ( i );
 		// get the TermDebugInfo
@@ -19402,8 +19213,6 @@ bool XmlDoc::printRainbowSections ( SafeBuf *sb , HttpRequest *hr ) {
 	sec_t mflags = SEC_SENTENCE | SEC_MENU;
 
 	for ( ; si ; si = si->m_next ) {
-		// breathe
-		QUICKPOLL(m_niceness);
 		// print it out
 		sb->safePrintf("\t<section>\n");
 		// get our offset in the array of sections
@@ -19585,8 +19394,6 @@ bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {
 	for ( int32_t i = 0 ; i < nwt ; i++ ) {
 		// skip if empty
 		if ( wt->m_flags[i] == 0 ) continue;
-		// breathe
-		//QUICKPOLL(m_niceness);
 		// get its key, date=32bits termid=64bits
 		//key96_t *k = (key96_t *)wt->getKey ( i );
 		// get the TermDebugInfo
@@ -20255,7 +20062,7 @@ char *XmlDoc::getTitleBuf ( ) {
 	// init this
 	char dtbuf[1000];
 	HashTableX dupTable;
-	dupTable.set(8,0,64,dtbuf,1000,false,m_niceness,"xmldup");
+	dupTable.set(8,0,64,dtbuf,1000,false,"xmldup");
 	// now set the scores and isdup
 	for ( int32_t i = 0 ; i < linkNum ; i++ ) {
 		// skip if ignored
@@ -20547,7 +20354,7 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 
 	// only do once per site
 	char buf[1000];
-	HashTableX ht; ht.set (4,0,-1 , buf , 1000 ,false,m_niceness,"sg-tab");
+	HashTableX ht; ht.set (4,0,-1 , buf , 1000 ,false,"sg-tab");
 	// get site of outlink
 	SiteGetter siteGetter;
 	// . must be from an EXTERNAL DOMAIN and must be new
@@ -20722,7 +20529,6 @@ char *XmlDoc::getWordSpamVec ( ) {
 		}
 	}
 
-	QUICKPOLL(m_niceness);
 	// set up ptrs
 	char *p = tmp;
 	// first this
@@ -20769,8 +20575,6 @@ char *XmlDoc::getWordSpamVec ( ) {
 		// . skip punctuation
 		// . this includes tags now , too i guess
 		if ( wids[i] == 0 ) continue;
-
-		QUICKPOLL(m_niceness);
 
 		// get the hash of the ith word
 		int64_t h = words->getWordId(i);
@@ -20841,8 +20645,6 @@ char *XmlDoc::getWordSpamVec ( ) {
 			knp = 0;
 		// scan to see if they are a tight list
 		for ( int32_t k = 1 ; k < knp ; k++ ) {
-			// breathe
-			QUICKPOLL(m_niceness);
 			// are they close together? if not, bail
 			if ( profile[k-1] - profile[k] >= 25 ) {
 				count = 0;
@@ -20893,7 +20695,6 @@ char *XmlDoc::getWordSpamVec ( ) {
 		// . don't check if word occurred 2 or less times
 		// . TODO: what about TORA! TORA! TORA!
 		// . returns true if 1+ occurences were considered spam
-		QUICKPOLL(m_niceness);
 		bool isSpam = setSpam ( profile , np , numWords , spam );
 		// don't count stop words or numbers towards this threshold
 		if ( commonWords[i] ) continue;
@@ -20977,8 +20778,6 @@ bool XmlDoc::setSpam ( const int32_t *profile, int32_t plen , int32_t numWords ,
 		profile += plen - 50;
 	}
 
-	QUICKPOLL(m_niceness);
-
 	// just use 40% "quality"
 	int32_t off = 3;
 
@@ -21017,7 +20816,6 @@ bool XmlDoc::setSpam ( const int32_t *profile, int32_t plen , int32_t numWords ,
 					if (spam[profile[i]] < prob)
 						spam[profile[i]] = prob;
 				}
-				QUICKPOLL(m_niceness);
 			}
 
 		}
@@ -21127,9 +20925,6 @@ bool getWordPosVec ( const Words *words ,
 
 
 	for ( int32_t i = 0 ; i < nw ; i++ ) {
-		// breathe
-		QUICKPOLL(niceness);
-
 		// save it
 		wposvec[i] = dist;
 
@@ -21226,8 +21021,6 @@ bool getDensityRanks ( const int64_t *wids ,
 	// sanity
 	//if ( sections && wordStart != 0 ) { g_process.shutdownAbort(true); }
 	for ( ; ss ; ss = ss->m_nextSent ) {
-		// breathe
-		QUICKPOLL(niceness);
 		// count of the alnum words in sentence
 		int32_t count = ss->m_alnumPosB - ss->m_alnumPosA;
 		// start with one word!
@@ -21241,8 +21034,6 @@ bool getDensityRanks ( const int64_t *wids ,
 		if ( dr < 1 ) dr = 1;
 		// mark all in sentence then
 		for ( int32_t i = ss->m_senta ; i < ss->m_sentb ; i++ ) {
-			// breathe
-			QUICKPOLL(niceness);
 			// assign
 			densVec[i] = dr;
 		}
@@ -21264,8 +21055,6 @@ bool getDensityRanks ( const int64_t *wids ,
 	if ( dr < 1 ) dr = 1;
 	// assign
 	for ( int32_t i = 0 ; i < nw ; i++ ) {
-		// breathe
-		QUICKPOLL(niceness);
 		// assign
 		densVec[i] = dr;
 	}
@@ -21296,8 +21085,6 @@ bool getDiversityVec( const Words *words, const Phrases *phrases, HashTableX *co
 	// . now consider ourselves the last word in a phrase
 	// . adjust the score of the first word in the phrase to be
 	for ( int32_t i = 0 ; i < nw ; i++ ) {
-		// yield
-		QUICKPOLL ( niceness );
 		// skip if not alnum word
 		if ( ! wids[i] ) { ww[i] = 0.0; continue; }
 		// try to inline this
@@ -21437,8 +21224,7 @@ char *XmlDoc::getFragVec ( ) {
 	for ( int32_t i = 0 ; i < nw ; i++ ) {
 		// skip if not alnum word
 		if ( ! wids[i] ) continue;
-		// yield
-		QUICKPOLL ( m_niceness );
+
 		// add new to the 5 word hash
 		h ^= wids[i];
 		// . remove old from 5 word hash before adding new...

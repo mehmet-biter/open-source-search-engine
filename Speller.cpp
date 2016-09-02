@@ -91,7 +91,7 @@ bool Speller::loadUnifiedDict() {
 
 	// . give it a million slots
 	// . unified dict currently has 1340223 entries
-	m_unifiedDict.set ( 8,4, 2*1024*1024,NULL,0,false,0,"udictht");	
+	m_unifiedDict.set ( 8,4, 2*1024*1024,NULL,0,false,"udictht");
 
 	// try to load in the hashtable and the buffer directly
 	if ( ! m_unifiedDict.load(g_hostdb.m_dir,"unifiedDict-map.dat"))
@@ -173,7 +173,7 @@ bool Speller::loadUnifiedDict() {
 	char *pend = p + wkfBuf.length();
 	HashTableX wkfMap;
 	// true = allow dups. because same word can appear in multiple langs
-	if ( ! wkfMap.set ( 8,1,1000000,NULL,0,true,0,"wkfmap") )
+	if ( ! wkfMap.set ( 8,1,1000000,NULL,0,true,"wkfmap") )
 		return false;
 
 	// "fr|livre" is how it's formatted
@@ -358,7 +358,7 @@ bool Speller::loadUnifiedDict() {
 	     totalCollisions);
 
 	HashTableX dedup;
-	dedup.set(8,0,1000000,NULL,0,false,0,"dmdm");
+	dedup.set(8,0,1000000,NULL,0,false,"dmdm");
 
 	// . now add entries from wkfBuf that were not also in "ub"
 	// . format is "<langAbbr>|<word>\n"

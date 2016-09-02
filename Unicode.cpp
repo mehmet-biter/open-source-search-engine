@@ -1,6 +1,5 @@
 #include "gb-include.h"
 
-#include "Mem.h"
 #include "HashTable.h"
 #include "Titledb.h"
 #include "Process.h"
@@ -38,8 +37,6 @@ iconv_t gbiconv_open( const char *tocode, const char *fromcode) {
 			
 			return conv;
 		}
-		// add mem to table to keep track
-		g_mem.addMem((void*)conv, 52, "iconv", 1);
 		// cache convertor
 		s_convTable.addKey(&hash, &conv);
 		//log(LOG_DEBUG, "uni: Saved convertor 0x%" PRId32" under hash 0x%" PRIx32,
@@ -60,7 +57,6 @@ iconv_t gbiconv_open( const char *tocode, const char *fromcode) {
 int gbiconv_close(iconv_t cd) {
 	/// @todo ALC gbiconv_close currently does nothing
 	//int val = iconv_close(cd);
-	//if (val  == 0) g_mem.rmMem((void*)cd, 1, "iconv", 1);
 	//return val;	
 	return 0;
 }
@@ -74,7 +70,6 @@ void gbiconv_reset(){
 		if (! pconv) continue;
 		iconv_t iconv = *pconv;
 		//logf(LOG_DEBUG, "iconv: freeing iconv: 0x%x", (int)iconv);
-		g_mem.rmMem((void*)iconv, 52, "iconv");
 		iconv_close(iconv);
 	}
 	s_convTable.reset();
@@ -145,7 +140,7 @@ bool ucInit(const char *path) {
 	}
 
 	//s_convTable.set(1024);
-	if ( ! s_convTable.set(4,sizeof(iconv_t),1024,NULL,0,false,0,"cnvtbl"))
+	if ( ! s_convTable.set(4,sizeof(iconv_t),1024,NULL,0,false,"cnvtbl"))
 		goto failed;	
 
 	return true;

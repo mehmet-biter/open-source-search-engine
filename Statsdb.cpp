@@ -136,8 +136,7 @@ bool Statsdb::init ( ) {
 
 	// init the label table
 	static char s_buf[832];
-	if ( ! m_labelTable.set(4,sizeof(Label *),64,
-				s_buf,832,false,0,"statcolors") )
+	if ( ! m_labelTable.set(4,sizeof(Label *),64, s_buf,832,false,"statcolors") )
 		return false;
 	// stock the table
 	int32_t n = (int32_t)sizeof(s_labels)/ sizeof(Label);
@@ -486,7 +485,7 @@ bool Statsdb::makeGIF ( int32_t t1Arg ,
 	// print graph in here as a bunch of divs now:
 	m_gw.purge();
 	m_dupTable.reset();
-	m_dupTable.set(4,0,20000,NULL,0,false,0,"statstbl");
+	m_dupTable.set(4,0,20000,NULL,0,false,"statstbl");
 
 	// . start at t1 and get stats lists, up to 1MB of stats at a time
 	// . subtract 60 seconds so we can have a better shot at having
@@ -499,10 +498,10 @@ bool Statsdb::makeGIF ( int32_t t1Arg ,
 
 	m_done = false;
 
-	if ( ! m_ht0.set ( 4 , 4,256,NULL,0,true,m_niceness,"statht0") ) 
+	if ( ! m_ht0.set ( 4 , 4,256,NULL,0,true,"statht0") )
 		return true;
 
-	if ( ! m_ht3.set ( 4 , 4,256,NULL,0,true,m_niceness,"statht3") ) 
+	if ( ! m_ht3.set ( 4 , 4,256,NULL,0,true,"statht3") )
 		return true;
 
 	// open the file for the gif
@@ -675,7 +674,7 @@ bool Statsdb::gifLoop ( ) {
 
 
 	HashTableX tmpht;
-	tmpht.set(4,0,0,NULL,0,false,m_niceness,"statsparms");
+	tmpht.set(4,0,0,NULL,0,false,"statsparms");
 
 	int32_t col = 0;
 

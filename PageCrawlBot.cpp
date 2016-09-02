@@ -119,7 +119,7 @@ int32_t isInSeedBuf ( CollectionRec *cr , const char *url, int len ) {
 	// if table is empty, populate it
 	if ( ht->m_numSlotsUsed <= 0 ) {
 		// initialize the hash table
-		if ( ! ht->set(8,0,1024,NULL,0,false,1,"seedtbl") ) 
+		if ( ! ht->set(8,0,1024,NULL,0,false,"seedtbl") )
 			return -1;
 		// populate it from list of seed urls
 		char *p = cr->m_diffbotSeeds.getBufStart();

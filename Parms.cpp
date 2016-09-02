@@ -5994,7 +5994,6 @@ void Parms::init ( ) {
 		"since the last time the document was indexed. Otherwise, "
 		"re-add the data regardless.";
 	m->m_cgi   = "oic";
-	//m->m_off   = offsetof(Conf,m_onlyAddUnchangedTermIds);
 	m->m_off   = offsetof(Conf,m_doIncrementalUpdating);
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "1";
@@ -11068,8 +11067,7 @@ Parm *Parms::getParmFast2 ( int32_t cgiHash32 ) {
 
 	if ( ! s_init ) {
 		// init hashtable
-		s_pht.set ( 4,sizeof(char *),2048,s_phtBuf,26700,
-			    false,0,"phttab" );
+		s_pht.set ( 4,sizeof(char *),2048,s_phtBuf,26700, false,"phttab" );
 		// reduce hash collisions:
 		s_pht.m_useKeyMagic = true;
 		// wtf?

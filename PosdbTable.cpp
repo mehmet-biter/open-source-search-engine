@@ -2202,7 +2202,7 @@ bool PosdbTable::setQueryTermInfo ( ) {
 	if ( m_numQueryTermInfos % 8 ) m_vecSize++;
 	// now preallocate the hashtable. 0 niceness.
 	if ( m_q->m_isBoolean &&  // true = useKeyMagic
-	     ! m_bt.set (8,m_vecSize,maxSlots,NULL,0,false,0,"booltbl",true)) {
+	     ! m_bt.set (8,m_vecSize,maxSlots,NULL,0,false,"booltbl",true)) {
 		logTrace(g_conf.m_logTracePosdb, "END.");
 		return false;
 	}
@@ -2211,8 +2211,7 @@ bool PosdbTable::setQueryTermInfo ( ) {
 	// . each "bit" in the "bit vector" indicates if docid has that 
 	//   particular query term
 	if ( m_q->m_isBoolean && // true = useKeyMagic
-	     ! m_ct.set (8,1,maxSlots,NULL,0,false,0,
-			 "booltbl",true)) {
+	     ! m_ct.set (8,1,maxSlots,NULL,0,false,"booltbl",true)) {
 		logTrace(g_conf.m_logTracePosdb, "END.");
 		return false;
 	}
@@ -4398,8 +4397,7 @@ bool PosdbTable::allocWhiteListTable ( ) {
 		// 5 bytes (which includes 1 siterank bit as the lowbit,
 		// but should be ok since it should be set the same in
 		// all termlists that have that docid)
-		if ( ! m_whiteListTable.set(5,0,numSlots,NULL,0,false,
-					    0,"wtall"))
+		if ( ! m_whiteListTable.set(5,0,numSlots,NULL,0,false, "wtall"))
 			return false;
 		// try to speed up. wow, this slowed it down about 4x!!
 		//m_whiteListTable.m_maskKeyOffset = 1;

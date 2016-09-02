@@ -653,7 +653,7 @@ bool Collectiondb::setRecPtr ( collnum_t collnum , CollectionRec *cr ) {
 
 	// first time init hashtable that maps coll to collnum
 	if ( g_collTable.m_numSlots == 0 &&
-	     ! g_collTable.set(8,sizeof(collnum_t), 256,NULL,0, false,0,"nhshtbl")) {
+	     ! g_collTable.set(8,sizeof(collnum_t), 256,NULL,0, false,"nhshtbl")) {
 		return false;
 	}
 
@@ -888,8 +888,7 @@ bool Collectiondb::resetColl2( collnum_t oldCollnum, collnum_t newCollnum, bool 
 bool addCollToTable ( const char *coll , collnum_t collnum ) {
 	// readd it to the hashtable that maps name to collnum too
 	int64_t h64 = hash64n(coll);
-	g_collTable.set(8,sizeof(collnum_t), 256,NULL,0,
-			false,0,"nhshtbl");
+	g_collTable.set(8,sizeof(collnum_t), 256,NULL,0, false,"nhshtbl");
 	return g_collTable.addKey ( &h64 , &collnum );
 }
 

@@ -38,7 +38,6 @@ bool HashTableX::set ( int32_t  ks              ,
 		       char *buf             , 
 		       int32_t  bufSize         ,
 		       bool  allowDups       ,
-		       int32_t  niceness        ,
 		       const char *allocName ,
 		       // in general you want keymagic to ensure your
 		       // keys are "random" for good hashing. it doesn't
@@ -48,7 +47,6 @@ bool HashTableX::set ( int32_t  ks              ,
 	m_ks = ks;
 	m_ds = ds;
 	m_allowDups = allowDups;
-	m_niceness  = niceness;
 	m_needsSave = true;
 	m_isSaving  = false;
 	m_maxSlots  = 0x7fffffffffffffffLL;
@@ -341,7 +339,6 @@ bool HashTableX::setTableSize ( int32_t oldn , char *buf , int32_t bufSize ) {
 		m_bufSize = need;
 		m_doFree  = true;
 		if ( ! m_buf ) return false;
-		QUICKPOLL(m_niceness);
 		memset(m_buf, 0, m_bufSize);
 	}
 
@@ -372,8 +369,6 @@ bool HashTableX::setTableSize ( int32_t oldn , char *buf , int32_t bufSize ) {
 
 	// loop over results in old table, if any
 	for ( int32_t i = 0 ; i < ns ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
 		// skip the empty slots 
 		if ( oldFlags [ i ] == 0 ) continue;
 		// add old key/val into the empty table

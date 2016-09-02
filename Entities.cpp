@@ -27,7 +27,7 @@ void resetEntities ( ) {
 static bool initEntityTable(){
 	if ( ! s_isInitialized ) {
 		// set up the hash table
-		if ( ! s_table.set ( 8,4,4096,NULL,0,false,0,"enttbl" ) ) {
+		if ( ! s_table.set ( 8,4,4096,NULL,0,false,"enttbl" ) ) {
 			log("build: Could not init table of HTML entities.");
 			return false;
 		}

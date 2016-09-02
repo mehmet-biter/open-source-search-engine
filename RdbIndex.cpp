@@ -218,7 +218,7 @@ bool RdbIndex::readIndex2() {
 
 	int64_t expectedFileSize = offset + readSize;
 	if (expectedFileSize != m_file.getFileSize()) {
-		logError("Data file size[%" PRId64"] differs from expected size[%" PRId64"]", m_file.getFileSize(), expectedFileSize);
+		logError("Index file size[%" PRId64"] differs from expected size[%" PRId64"]", m_file.getFileSize(), expectedFileSize);
 		return false;
 	}
 
