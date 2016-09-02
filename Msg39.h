@@ -194,7 +194,6 @@ private:
 	Msg51       m_msg51;
 	bool        m_gotClusterRecs;
 
-	static void intersectionFinishedCallback(void *state, job_exit_t exit_type);
 	void        controlLoop();
 	static void intersectListsThreadFunction(void *state);
 

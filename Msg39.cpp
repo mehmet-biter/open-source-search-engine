@@ -814,7 +814,7 @@ void Msg39::intersectLists ( ) {
 	// . create the thread
 	// . only one of these type of threads should be launched at a time
 	if ( g_jobScheduler.submit(&intersectListsThreadFunction,
-	                           &intersectionFinishedCallback,
+	                           0, //no finish callback
 				   &jobState,
 				   thread_type_query_intersect,
 				   m_msg39req->m_niceness) ) {
@@ -853,10 +853,8 @@ void Msg39::intersectListsThreadFunction ( void *state ) {
 	if (g_errno && !that->m_errno) {
 		that->m_errno = g_errno;
 	}
-}
 
-
-void Msg39::intersectionFinishedCallback(void *state, job_exit_t exit_type) {
+	//signal completion directly instead of goiign via the jobscheduler+main thread
 	JobFinishedCallback(state);
 }
 
