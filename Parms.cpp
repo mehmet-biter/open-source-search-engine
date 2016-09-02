@@ -5994,7 +5994,6 @@ void Parms::init ( ) {
 		"since the last time the document was indexed. Otherwise, "
 		"re-add the data regardless.";
 	m->m_cgi   = "oic";
-	//m->m_off   = offsetof(Conf,m_onlyAddUnchangedTermIds);
 	m->m_off   = offsetof(Conf,m_doIncrementalUpdating);
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "1";
