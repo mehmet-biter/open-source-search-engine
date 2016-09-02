@@ -2098,27 +2098,33 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 	}
 
 	// set this list's boundary keys
-	KEYSET(m_startKey,startKey,sizeof(key144_t));
-	KEYSET(m_endKey,endKey,sizeof(key144_t));
+	KEYSET(m_startKey, startKey, sizeof(key144_t));
+	KEYSET(m_endKey, endKey, sizeof(key144_t));
 
 	// bail if nothing requested
-	if ( minRecSizes == 0 ) return true;
+	if (minRecSizes == 0) {
+		return true;
+	}
 
 	// maxPtr set by minRecSizes
 	const char *maxPtr = m_list + minRecSizes;
-	// watch out for wrap around
-	if ( (intptr_t)maxPtr < (intptr_t)m_list )
-		maxPtr = m_alloc + m_allocSize;
-	// don't exceed what we alloc'd though
-	if ( maxPtr > m_alloc + m_allocSize ) maxPtr = m_alloc + m_allocSize;
 
-	// debug note
- 	if ( m_listSize && g_conf.m_logDebugBuild )
-		log(LOG_LOGIC,"db: storing recs in a non-empty list for merge"
-		    " probably from recall from negative key loss");
+	// watch out for wrap around
+	if ((intptr_t)maxPtr < (intptr_t)m_list) {
+		maxPtr = m_alloc + m_allocSize;
+	}
+
+	// don't exceed what we alloc'd though
+	if (maxPtr > m_alloc + m_allocSize) {
+		maxPtr = m_alloc + m_allocSize;
+	}
+
+	if (m_listSize) {
+		logDebug(g_conf.m_logDebugBuild, "db: storing recs in a non-empty list for merge probably from recall from negative key loss");
+	}
 
 	// bitch if too many lists
-	if ( numLists > MAX_RDB_FILES + 1 ) {
+	if (numLists > MAX_RDB_FILES + 1) {
 		// set errno, cuz g_errno is used by main process only
 		errno = EBADENGINEER;
 		log(LOG_LOGIC,"db: rdblist: posdbMerge_r: Too many lists for merging.");
@@ -2132,10 +2138,13 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 	char       loKeys[ MAX_RDB_FILES + 1 ][6];
 	// set the ptrs that are non-empty
 	int32_t n = 0;
+
 	// convenience ptr
-	for ( int32_t i = 0 ; i < numLists ; i++ ) {
+	for (int32_t i = 0; i < numLists; i++) {
 		// skip if empty
-		if ( lists[i]->isEmpty() ) continue;
+		if (lists[i]->isEmpty()) {
+			continue;
+		}
 
 #ifdef _MERGEDEBUG_
 		log(LOG_LOGIC,"%s:%s: DUMPING LIST %" PRId32, __FILE__,__func__, i);
@@ -2145,16 +2154,19 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 		// . first key of a list must ALWAYS be 18 byte
 		// . bitch if it isn't, that should be fixed!
 		// . cheap sanity check
-		if ( (lists[i]->getList()[0]) & 0x06 ) {
+		if ((lists[i]->getList()[0]) & 0x06) {
 			errno = EBADENGINEER;
 			log(LOG_LOGIC,"db: posdbMerge_r: First key of list is a compressed key.");
 			gbshutdownAbort(true);
 		}
+
 		// set ptrs
-		ends    [n] = lists[i]->getListEnd ();
-		ptrs    [n] = lists[i]->getList    ();
+		ends[n] = lists[i]->getListEnd();
+		ptrs[n] = lists[i]->getList();
+
 		memcpy(hiKeys[n], lists[i]->getList() + 12, 6);
-		memcpy(loKeys[n], lists[i]->getList() +  6, 6);
+		memcpy(loKeys[n], lists[i]->getList() + 6, 6);
+
 		n++;
 	}
 
@@ -2163,32 +2175,38 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 
 	// . are all lists and trash exhausted?
 	// . all their keys are supposed to be <= m_endKey
-	if ( numLists <= 0 ) return true;
+	if (numLists <= 0) {
+		return true;
+	}
 
 	char *pp = NULL;
 
 	// see Posdb.h for format of a 18/12/6-byte posdb key
 
 	char *new_listPtr = m_listPtr;
-	while ( numLists > 0 && new_listPtr < maxPtr) {
+	while (numLists > 0 && new_listPtr < maxPtr) {
 		// assume key in first list is the winner
 		const char *minPtrBase = ptrs  [0]; // lowest  6 bytes
 		const char *minPtrLo   = loKeys[0]; // next    6 bytes
 		const char *minPtrHi   = hiKeys[0]; // highest 6 bytes
-		int16_t mini     = 0;         // int16_t -> must be able to accomodate MAX_RDB_FILES!!
+		int16_t mini = 0; // int16_t -> must be able to accomodate MAX_RDB_FILES!!
 
 		// merge loop over the lists, get the smallest key
-		for ( int32_t i = 1 ; i < numLists ; i++ ) {
+		for (int32_t i = 1; i < numLists; i++) {
 			char ss = bfcmpPosdb(minPtrBase, minPtrLo, minPtrHi, ptrs[i], loKeys[i], hiKeys[i]);
 
 			// . continue if tie, so we get the oldest first
 			// . treat negative and positive keys as identical for this
-			if ( ss <  0 ) continue;
+			if (ss < 0) {
+				continue;
+			}
 
 			// advance old winner. this happens if this key is positive
 			// and minPtrBase/Lo/Hi was a negative key! so this is
 			// the annihilation. skip the positive key.
-			if ( ss == 0 ) goto skip;
+			if (ss == 0) {
+				goto skip;
+			}
 
 			// we got a new min
 			minPtrBase = ptrs  [i];
@@ -2198,19 +2216,21 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 		}
 
 		// ignore if negative i guess, just skip it
-		if ( removeNegKeys && (minPtrBase[0] & 0x01) == 0x00 ) goto skip;
+		if (removeNegKeys && (minPtrBase[0] & 0x01) == 0x00) {
+			goto skip;
+		}
 
 		// save ptr
 		pp = new_listPtr;
 
 		// store key
-		if ( m_listPtrHi && cmp_6bytes_equal(minPtrHi,m_listPtrHi)) {
-			if(m_listPtrLo && cmp_6bytes_equal(minPtrLo,m_listPtrLo)) {
+		if (m_listPtrHi && cmp_6bytes_equal(minPtrHi, m_listPtrHi)) {
+			if (m_listPtrLo && cmp_6bytes_equal(minPtrLo, m_listPtrLo)) {
 				// 6-byte entry
 				memcpy(new_listPtr, minPtrBase, 6);
 				new_listPtr += 6;
 				*pp |= 0x06; //turn on both compression bits
-			} else  {
+			} else {
 				// 12-byte entry
 				memcpy(new_listPtr, minPtrBase, 6);
 				new_listPtr += 6;
@@ -2239,24 +2259,22 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 		//   this termid (the we can fix Msg5::needsRecall() )
 		// . TODO: what if last key we were able to add was NEGATIVE???
 
-	 skip:
+skip:
 		// advance winning src list ptr
 		if      ( ptrs[mini][0] & 0x04 ) ptrs [ mini ] += 6;
 		else if ( ptrs[mini][0] & 0x02 ) ptrs [ mini ] += 12;
 		else                             ptrs [ mini ] += 18;
 
 		// if the src list that we advanced is not exhausted, then continue
-		if ( ptrs[mini] < ends[mini] ) {
+		if (ptrs[mini] < ends[mini]) {
 			// is new key 6 bytes? then do not touch hi/lo ptrs
 			if ( ptrs[mini][0] & 0x04 ) {
 				// no-op
-			}
-			// is new key 12 bytes?
-			else if ( ptrs[mini][0] & 0x02 ) {
+			} else if ( ptrs[mini][0] & 0x02 ) {
+				// is new key 12 bytes?
 				memcpy(loKeys[mini], ptrs[mini] +  6, 6);
-			}
-			// is new key 18 bytes? full key.
-			else {
+			} else {
+				// is new key 18 bytes? full key.
 				memcpy(hiKeys[mini], ptrs[mini] + 12, 6);
 				memcpy(loKeys[mini], ptrs[mini] +  6, 6);
 			}
@@ -2266,12 +2284,13 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 			//
 
 			// otherwise, remove him from array
-			for ( int32_t i = mini ; i < numLists - 1 ; i++ ) {
-				ptrs    [i] = ptrs    [i+1];
-				ends    [i] = ends    [i+1];
-				memcpy(hiKeys[i], hiKeys[i+1], 6);
-				memcpy(loKeys[i], loKeys[i+1], 6);
+			for (int32_t i = mini; i < numLists - 1; i++) {
+				ptrs[i] = ptrs[i + 1];
+				ends[i] = ends[i + 1];
+				memcpy(hiKeys[i], hiKeys[i + 1], 6);
+				memcpy(loKeys[i], loKeys[i + 1], 6);
 			}
+
 			// one less list to worry about
 			numLists--;
 		}
@@ -2286,35 +2305,41 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 
 	// set new size and end of this merged list
 	m_listSize = m_listPtr - m_list;
-	m_listEnd  = m_list    + m_listSize;
+	m_listEnd = m_list + m_listSize;
 
 	// return now if we're empty... all our recs annihilated?
-	if ( m_listSize <= 0 ) return true;
+	if (m_listSize <= 0) {
+		return true;
+	}
 
 	// if we are tacking this merge onto a non-empty list
 	// and we just had negative keys then pp could be NULL.
 	// we would log "storing recs in a non-empty list" from
 	// above and "pp" would be NULL.
-	if ( pp ) {
+	if (pp) {
 		// the last key we stored
 		char *e = m_lastKey;
+
 		// record the last key we added in m_lastKey
-		gbmemcpy ( e , pp , 6 );
+		gbmemcpy (e, pp, 6);
+
 		// take off compression bits
 		*e &= 0xf9;
 		e += 6;
-		gbmemcpy ( e , m_listPtrLo , 6 );
+		gbmemcpy (e, m_listPtrLo, 6);
 		e += 6;
-		gbmemcpy ( e , m_listPtrHi , 6 );
+		gbmemcpy (e, m_listPtrHi, 6);
+
 		// validate it now
 		m_lastKeyIsValid = true;
 	}
 
-	if ( m_listSize && ! m_lastKeyIsValid )
-		log("db: why last key not valid?");
+	if (m_listSize && !m_lastKeyIsValid) {
+		log(LOG_DEBUG, "db: why last key not valid?");
+	}
 
 	// under what was requested? then done.
-	if ( m_listSize < minRecSizes ) {
+	if (m_listSize < minRecSizes) {
 #ifdef _MERGEDEBUG_
 		log(LOG_LOGIC,"%s:%s:%d: Done.", __FILE__,__func__, __LINE__);
 		printList(LOG_LOGIC);
@@ -2323,7 +2348,7 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 	}
 
 	// or if no more lists
-	if ( numLists <= 0 ) {
+	if (numLists <= 0) {
 #ifdef _MERGEDEBUG_
 		log(LOG_LOGIC,"%s:%s:%d: Done.", __FILE__,__func__, __LINE__);
 		printList(LOG_LOGIC);
@@ -2333,7 +2358,7 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 
 	// save original end key
 	char orig[MAX_KEY_BYTES];
-	memcpy ( orig, m_endKey, sizeof(key144_t) );
+	memcpy(orig, m_endKey, sizeof(key144_t));
 
 	// . we only need to shrink the endKey if we fill up our list and
 	//   there's still keys under m_endKey left over to merge
@@ -2341,17 +2366,21 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 	// . i don't want the endKey decreased unnecessarily because
 	//   it means there's no recs up to the endKey
 	memcpy ( m_endKey, m_lastKey, sizeof(key144_t) );
+
 	// if endkey is now negative we must have a dangling negative
 	// so make it positive (dangling = unmatched)
-	if ( KEYNEG(m_endKey) )
+	if (KEYNEG(m_endKey)) {
 		KEYINC(m_endKey, sizeof(key144_t));
+	}
+
 	// be careful not to increase original endkey, though
-	if ( KEYCMP(orig,m_endKey,sizeof(key144_t))<0 )
+	if (KEYCMP(orig, m_endKey, sizeof(key144_t)) < 0) {
 		KEYSET(m_endKey, orig, sizeof(key144_t));
+	}
 
 #ifdef _MERGEDEBUG_
-		log(LOG_LOGIC,"%s:%s:%d: Done.", __FILE__,__func__, __LINE__);
-		printList(LOG_LOGIC);
+	log(LOG_LOGIC,"%s:%s:%d: Done.", __FILE__,__func__, __LINE__);
+	printList(LOG_LOGIC);
 #endif
 
 	return true;
