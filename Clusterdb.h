@@ -47,11 +47,12 @@ public:
 	// init the rebuild/secondary rdb, used by PageRepair.cpp
 	bool init2 ( int32_t treeMem );
 
-	bool verify ( char *coll );
+	bool verify ( const char *coll );
 
-	bool addColl ( char *coll, bool doVerify = true );
+	//bool addColl ( const char *coll, bool doVerify = true );
 
-	Rdb *getRdb  ( ) { return &m_rdb; }
+	Rdb *      getRdb()       { return &m_rdb; }
+	const Rdb *getRdb() const { return &m_rdb; }
 
 	// make the cluster rec key
 	key_t makeClusterRecKey ( int64_t     docId,

@@ -56,7 +56,7 @@ bool Clusterdb::init2 ( int32_t treeMem ) {
 			    12            );     // key size
 }
 
-bool Clusterdb::verify ( char *coll ) {
+bool Clusterdb::verify(const char *coll) {
 	log ( LOG_DEBUG, "db: Verifying Clusterdb for coll %s...", coll );
 	g_jobScheduler.disallow_new_jobs();
 
