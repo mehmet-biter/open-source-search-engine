@@ -558,6 +558,7 @@ void UdpServer::sendReply(char *msg, int32_t msgSize, char *alloc, int32_t alloc
 		// . TODO: we may have to destroy this slot ourselves now...
 		log(LOG_WARN, "udp: Got error sending dgrams.");
 		// destroy it i guess
+		sl.unlock();
 		destroySlot ( slot );
 	}
 	// status is 0 if this blocked
