@@ -243,10 +243,8 @@ public:
 
 	// . check to see if keys in order
 	// . logs any problems
-	// . set "removedNegRecs" to true if neg recs should have been removed
 	// . sleeps if any problems encountered
-	bool checkList_r ( bool removedNegRecs , bool sleepOnProblem = true ,
-			   char rdbId = 0 ); // RDB_NONE );
+	bool checkList_r ( bool abortOnProblem = true , char rdbId = 0 ); // RDB_NONE );
 
 	// . removes records whose keys aren't in proper range (corruption)
 	// . returns false and sets errno on error/problem

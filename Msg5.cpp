@@ -1062,7 +1062,7 @@ void Msg5::repairLists() {
 		bool status = m_listPtrs[i]->checkList_r(false, true);
 #else
 		// this took like 50ms (-O3) on lenny on a 4meg list
-		bool status = m_listPtrs[i]->checkList_r(false, false);
+		bool status = m_listPtrs[i]->checkList_r(false);
 #endif
 
 		// if no errors, check the next list
@@ -1469,7 +1469,7 @@ bool Msg5::gotRemoteList ( ) {
 		// . we need it for the big merge for getting next key in
 		//   RdbDump.cpp
 		// . if it too is invalid, we are fucked
-		if ( ! m_list->checkList_r ( false , false ) ) {
+		if ( ! m_list->checkList_r ( false ) ) {
 			log("net: Received bad list from twin.");
 			g_errno = ECORRUPTDATA;
 			goto badList;

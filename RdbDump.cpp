@@ -398,7 +398,7 @@ bool RdbDump::dumpTree(bool recall) {
 
 			log(LOG_INFO, "dump: verifying list before dumping (rdb=%s collnum=%i k1=%s k2=%s)", s, (int)m_collnum, ks1,
 			    ks2);
-			m_list->checkList_r(false, false, m_rdb->getRdbId());
+			m_list->checkList_r(false, m_rdb->getRdbId());
 		}
 
 		// if list is empty, we're done!
@@ -483,7 +483,7 @@ bool RdbDump::dumpList(RdbList *list, int32_t niceness, bool recall) {
 
 		// don't check list if we're dumping an unordered list from tree!
 		if (g_conf.m_verifyWrites) {
-			m_list->checkList_r(false);
+			m_list->checkList_r();
 		}
 
 		// before calling RdbMap::addList(), always reset list ptr
@@ -513,7 +513,7 @@ bool RdbDump::dumpList(RdbList *list, int32_t niceness, bool recall) {
 		if (g_conf.m_verifyWrites) {
 			char rdbId = 0;
 			if (m_rdb) rdbId = m_rdb->getRdbId();
-			m_list->checkList_r(false, false, rdbId);
+			m_list->checkList_r(false, rdbId);
 			m_list->resetListPtr();
 		}
 

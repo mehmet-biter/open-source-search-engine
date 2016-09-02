@@ -599,26 +599,14 @@ bool RdbList::growList ( int32_t newSize ) {
 // . I had a problem where a foreign spider rec was in our spiderdb and
 //   i couldn't delete it because the del key would go to the foreign group!
 // . as a temp patch i added a msg1 force local group option
-bool RdbList::checkList_r ( bool removeNegRecs , bool sleepOnProblem , char rdbId ) {
+bool RdbList::checkList_r ( bool abortOnProblem , char rdbId ) {
 	// bail if empty
 	if ( m_listSize <= 0 || ! m_list ) return true;
 
 	// ensure m_listSize jives with m_listEnd
 	if ( m_listEnd - m_list != m_listSize ) {
-		log("db: Data end does not correspond to data size.");
-		if ( sleepOnProblem ) { gbshutdownAbort(true); }
-		if ( sleepOnProblem ) sleep(50000);
-		return false;
-	}
-	// . watch out for positive fixed size lists
-	// . crap negative keys will not have data! so you can't do
-	//   this check really!!!
-	if ( removeNegRecs &&
-	     m_fixedDataSize > 0 &&
-	     ( m_listSize % (m_fixedDataSize+m_ks))!=0){
-		log("db: Odd data size. Corrupted data file.");
-		if ( sleepOnProblem ) { gbshutdownAbort(true); }
-		if ( sleepOnProblem ) sleep(50000);
+		log(LOG_WARN, "db: Data end does not correspond to data size.");
+		if ( abortOnProblem ) { gbshutdownAbort(true); }
 		return false;
 	}
 
@@ -690,8 +678,7 @@ bool RdbList::checkList_r ( bool removeNegRecs , bool sleepOnProblem , char rdbI
 			log("db: Key before start key in list of records.");
 			log("db: sk=%s",KEYSTR(m_startKey,m_ks));
 			log("db: k2=%s",KEYSTR(k,m_ks));
-			if ( sleepOnProblem ) { gbshutdownAbort(true); }
-			if ( sleepOnProblem ) sleep(50000);
+			if ( abortOnProblem ) { gbshutdownAbort(true); }
 			return false;
 		}
 		if ( KEYCMP(k,oldk,m_ks)<0 ) {
@@ -708,18 +695,11 @@ bool RdbList::checkList_r ( bool removeNegRecs , bool sleepOnProblem , char rdbI
 			log("db: k2=%s",KEYSTR(k,m_ks));
 			log("db: ak=%s",KEYSTR(acceptable,m_ks));
 			log("db: ek=%s",KEYSTR(m_endKey,m_ks));
-			if ( sleepOnProblem ) { gbshutdownAbort(true); }
-			if ( sleepOnProblem ) sleep(50000);
+			if ( abortOnProblem ) { gbshutdownAbort(true); }
 			return false;
 		}
 		// check for delete keys
 		if ( KEYNEG(k) ) {
-			if ( removeNegRecs ) {
-				log( LOG_WARN, "db: Got unmet negative key.");
-				if ( sleepOnProblem ) { gbshutdownAbort(true); }
-				if ( sleepOnProblem ) sleep(50000);
-				return false;
-			}
 			// ensure delete keys have no dataSize
 			if ( m_fixedDataSize == -1 &&
 			     getCurrentDataSize() != 0 ) {
@@ -738,21 +718,15 @@ bool RdbList::checkList_r ( bool removeNegRecs , bool sleepOnProblem , char rdbI
 
 		// sometimes dataSize is too big in corrupt lists
 		if ( m_listPtr > m_listEnd ) {
-			log(
-			    "db: Got record with bad data size field. "
-			    "Corrupted data file.");
-			if ( sleepOnProblem ) { gbshutdownAbort(true); }
-			if ( sleepOnProblem ) sleep(50000);
+			log(LOG_ERROR, "db: Got record with bad data size field. Corrupted data file.");
+			if ( abortOnProblem ) { gbshutdownAbort(true); }
 			return false;
 		}
 		// don't go backwards, and make sure to go forwards at
 		// least 6 bytes, the min size of a key (half key)
 		if ( m_listPtr < saved + 6 ) {
-			log(
-			    "db: Got record with bad data size field. "
-			    "Corrupted data file.");
-			if ( sleepOnProblem ) {gbshutdownAbort(true);}
-			if ( sleepOnProblem ) sleep(50000);
+			log(LOG_ERROR, "db: Got record with bad data size field. Corrupted data file.");
+			if ( abortOnProblem ) {gbshutdownAbort(true);}
 			return false;
 		}
 	}
@@ -760,18 +734,11 @@ bool RdbList::checkList_r ( bool removeNegRecs , bool sleepOnProblem , char rdbI
 	// . oldk ALWAYS has the half bit clear, so clear it on lastKey
 	// . this isn't so much a check for corruption as it is a check
 	//   to see if the routines that set the m_lastKey were correct
-	//if ( m_lastKeyIsValid && oldk != m_lastKey ) {
 	if ( m_lastKeyIsValid && KEYCMP(oldk,m_lastKey,m_ks) != 0 ) {
-		log(LOG_LOGIC,
-		    "db: rdbList: checkList_r: Got bad last key.");
-		log(LOG_LOGIC,
-		    "db: rdbList: checkList_r: key=%s",
-		    KEYSTR(oldk,m_ks));
-		log(LOG_LOGIC,
-		    "db: rdbList: checkList_r: key=%s",
-		    KEYSTR(m_lastKey,m_ks) );
-		if ( sleepOnProblem ) {gbshutdownAbort(true);}
-		if ( sleepOnProblem ) sleep(50000);
+		log(LOG_LOGIC, "db: rdbList: checkList_r: Got bad last key.");
+		log(LOG_LOGIC, "db: rdbList: checkList_r: key=%s", KEYSTR(oldk,m_ks));
+		log(LOG_LOGIC, "db: rdbList: checkList_r: key=%s", KEYSTR(m_lastKey,m_ks) );
+		if ( abortOnProblem ) {gbshutdownAbort(true);}
 		// fix it
 		KEYSET(m_lastKey,oldk,m_ks);
 	}
