@@ -1140,7 +1140,7 @@ bool HttpMime::init ( ) {
 	s_init = true;
 	//s_mimeTable.set ( 256 );
 	//s_mimeTable.setLabel("mimetbl");
-	if ( ! s_mimeTable.set(4,sizeof(char *),256,NULL,0,false,1,"mimetbl"))
+	if ( ! s_mimeTable.set(4,sizeof(char *),256,NULL,0,false,"mimetbl"))
 		return false;
 	// set table from internal list
 	for ( uint32_t i = 0 ; i < sizeof(s_ext)/sizeof(char *) ; i+=2 ) {

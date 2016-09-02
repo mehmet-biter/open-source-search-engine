@@ -3082,7 +3082,7 @@ static bool initFieldTable(){
 	ScopedLock sl(s_tableMutex);
 	if ( ! s_isInitialized ) {
 		// set up the hash table
-		if ( ! s_table.set ( 8 , 4 , 255,NULL,0,false,0,"qryfldtbl" ) ) {
+		if ( ! s_table.set ( 8 , 4 , 255,NULL,0,false,"qryfldtbl" ) ) {
 			log(LOG_WARN, "build: Could not init table of query fields.");
 			return false;
 		}

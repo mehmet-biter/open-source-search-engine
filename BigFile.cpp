@@ -531,7 +531,7 @@ int64_t BigFile::getFileSize ( ) {
 		}
 		// . returns -2 on error, -1 if does not exist
 		// . TODO: it returns 0 if does not exist! FIX...
-		int32_t size = f->getFileSize();
+		int64_t size = f->getFileSize();
 		if ( size == -2 ) return -2;
 		if ( size == -1 ) break;
 		totalSize += size;

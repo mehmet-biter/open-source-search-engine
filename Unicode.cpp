@@ -145,7 +145,7 @@ bool ucInit(const char *path) {
 	}
 
 	//s_convTable.set(1024);
-	if ( ! s_convTable.set(4,sizeof(iconv_t),1024,NULL,0,false,0,"cnvtbl"))
+	if ( ! s_convTable.set(4,sizeof(iconv_t),1024,NULL,0,false,"cnvtbl"))
 		goto failed;	
 
 	return true;

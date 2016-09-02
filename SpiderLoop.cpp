@@ -143,8 +143,7 @@ void SpiderLoop::startLoop ( ) {
 	m_numSpidersOut = 0;
 	m_processed = 0;
 	// for locking. key size is 8 for easier debugging
-	m_lockTable.set ( 8,sizeof(UrlLock),0,NULL,0,false,MAX_NICENESS,
-			  "splocks", true ); // useKeyMagic? yes.
+	m_lockTable.set ( 8,sizeof(UrlLock),0,NULL,0,false, "splocks", true ); // useKeyMagic? yes.
 
 	if ( ! m_lockCache.init ( 20000 , // maxcachemem
 				  4     , // fixedatasize

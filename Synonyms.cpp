@@ -53,7 +53,7 @@ int32_t Synonyms::getSynonyms ( const Words *words ,
 	// init the dedup table to dedup wordIds
 	HashTableX dt;
 	char dbuf[512];
-	dt.set(8,0,12,dbuf,512,false,niceness,"altwrds");
+	dt.set(8,0,12,dbuf,512,false,"altwrds");
 
 
 	int32_t maxSyns = (int32_t)MAX_SYNS;
@@ -267,7 +267,7 @@ int32_t Synonyms::getSynonyms ( const Words *words ,
 		// if so, init the dedup table then
 		if ( next && ! dd ) {
 			dd = &dedup;
-			dd->set ( 8,0,8,dbuf,512,false,niceness,"sddbuf");
+			dd->set ( 8,0,8,dbuf,512,false,"sddbuf");
 		}
 		// get lang, 2 chars, unless zh_ch
 		char *synLangAbbr = ss;

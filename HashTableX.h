@@ -19,7 +19,6 @@ class HashTableX {
 		   char *buf             , // = NULL ,
 		   int32_t  bufSize         , // = 0    ,
 		   bool  allowDups       , // = false ,
-		   int32_t  niceness        , // = MAX_NICENESS ,
 		   const char *allocName  ,
 		   bool  useKeyMagic = false );
 
@@ -328,7 +327,6 @@ class HashTableX {
 	int32_t m_ks;
 	int32_t m_ds;
 	char m_allowDups;
-	int32_t m_niceness;
 
 	// a flag used by XmlDoc.cpp
 	bool m_addIffNotUnique;

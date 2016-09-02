@@ -881,7 +881,7 @@ nodeid_t getTagId ( const char *s , NodeType **retp ) {
 
 	if ( ! s_init ) {
 		s_init = true;
-		s_ht.set ( 4 ,4,1024,s_buf,10000,false,0,"tagids");
+		s_ht.set ( 4 ,4,1024,s_buf,10000,false,"tagids");
 
 		// how many NodeTypes do we have in g_nodes?
 		static const int32_t nn = sizeof(g_nodes) / sizeof(NodeType);

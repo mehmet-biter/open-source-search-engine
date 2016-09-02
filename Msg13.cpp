@@ -107,7 +107,7 @@ bool Msg13::registerHandler ( ) {
 
 	// . set up the request table (aka wait in line table)
 	// . allowDups = "true"
-	if ( ! s_rt.set ( 8 ,sizeof(UdpSlot *),0,NULL,0,true,0,"wait13tbl") )
+	if ( ! s_rt.set ( 8 ,sizeof(UdpSlot *),0,NULL,0,true,"wait13tbl") )
 		return false;
 
 	if ( ! g_loop.registerSleepCallback(10, NULL, scanHammerQueue ) ) {
@@ -412,7 +412,7 @@ bool addIpToTwitchyTable ( CollectionRec *cr , int32_t ip ) {
 	if ( ! cr ) return true;
 	HashTableX *ht = &cr->m_twitchyTable;
 	if ( ht->m_numSlots == 0 )
-		ht->set ( 4,0,16,NULL,0,false,MAX_NICENESS,"twitchtbl",true);
+		ht->set ( 4,0,16,NULL,0,false,"twitchtbl",true);
 	return ht->addKey ( &ip );
 }
 

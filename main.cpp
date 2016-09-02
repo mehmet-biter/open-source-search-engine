@@ -2551,7 +2551,7 @@ static int install ( install_flag_konst_t installFlag, int32_t hostId, char *dir
 
 	HashTableX iptab;
 	char tmpBuf[2048];
-	iptab.set(4,4,64,tmpBuf,2048,true,0,"iptsu");
+	iptab.set(4,4,64,tmpBuf,2048,true,"iptsu");
 
 	int32_t maxOut = 500;
 
@@ -2855,7 +2855,7 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 	int32_t count = 0;
 	char ttt[2048+MAX_URL_LEN];
 	HashTableX dedupTable;
-	dedupTable.set(4,0,10000,NULL,0,false,0,"maintitledb");
+	dedupTable.set(4,0,10000,NULL,0,false,"maintitledb");
 	//g_synonyms.init();
 	// load the appropriate dictionaries -- why???
 	//g_speller.init(); 
@@ -3327,7 +3327,7 @@ int32_t dumpSpiderdb ( const char *coll, int32_t startFileNum, int32_t numFiles,
 	}		
 
 	if ( printStats == 1 ) {
-		if ( ! g_ut.set ( 4, sizeof(UStat), 10000000, NULL, 0, 0, false, "utttt") ) {
+		if ( ! g_ut.set ( 4, sizeof(UStat), 10000000, NULL, 0, false, "utttt") ) {
 			return -1;
 		}
 	}
@@ -3372,7 +3372,7 @@ int32_t dumpSpiderdb ( const char *coll, int32_t startFileNum, int32_t numFiles,
 	HashTableX ipDomTable;
 
 	// allow dups? true!
-	ipDomTable.set ( 4,4,5000000 , NULL, 0, true ,0, "ipdomtbl");
+	ipDomTable.set ( 4,4,5000000 , NULL, 0, true, "ipdomtbl");
 
 	// count how many unique domains per ip
 	HashTable ipDomCntTable;

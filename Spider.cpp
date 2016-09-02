@@ -1687,7 +1687,7 @@ bool updateSiteListBuf ( collnum_t collnum ,
 	// hash current sitelist entries, each line so we don't add
 	// dup requests into spiderdb i guess...
 	HashTableX dedup;
-	if ( ! dedup.set ( 4,0,1024,NULL,0,false,0,"sldt") ) {
+	if ( ! dedup.set ( 4,0,1024,NULL,0,false,"sldt") ) {
 		return true;
 	}
 
@@ -1728,7 +1728,6 @@ bool updateSiteListBuf ( collnum_t collnum ,
 	                 NULL ,
 	                 0 ,
 	                 true , // allow dup keys?
-	                 0 , // niceness - at least for now
 	                 "sldt" ) ) {
 		return true;
 	}
@@ -2000,9 +1999,6 @@ bool updateSiteListBuf ( collnum_t collnum ,
 		// we have some patterns in there
 		sc->m_siteListIsEmpty = false;
 	}
-
-	// go back to a high niceness
-	dt->m_niceness = MAX_NICENESS;
 
 	if ( ! addSeeds ) return true;
 

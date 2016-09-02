@@ -1081,7 +1081,7 @@ bool Msg40::gotSummary ( ) {
 
 	// initialize dedup table if we haven't already
 	if ( ! m_dedupTable.isInitialized() &&
-	     ! m_dedupTable.set (4,0,64,NULL,0,false,m_si->m_niceness,"srdt") )
+	     ! m_dedupTable.set (4,0,64,NULL,0,false,"srdt") )
 		log("query: error initializing dedup table: %s",
 		    mstrerror(g_errno));
 

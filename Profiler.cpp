@@ -1240,7 +1240,7 @@ Profiler::printRealTimeInfo(SafeBuf *sb, const char *coll) {
 	// function names.
 	char *p = out.getBufStart();
 	HashTableX map;
-	map.set ( 8,8,1024,NULL,0,false,0,"pmtb");
+	map.set ( 8,8,1024,NULL,0,false,"pmtb");
 	for ( ; *p ; ) {
 		// get addr
 		uint64_t addr64;
@@ -1263,7 +1263,7 @@ Profiler::printRealTimeInfo(SafeBuf *sb, const char *coll) {
 	bool missedQuickPoll = false;
 	uint64_t hhh = 0LL;
 	HashTableX pathTable;
-	pathTable.set ( 8,sizeof(PathBucket),1024,NULL,0,false,0,"pbproftb");
+	pathTable.set ( 8,sizeof(PathBucket),1024,NULL,0,false,"pbproftb");
 	for ( ; ip < ipEnd ; ip += sizeof(uint64_t) ) {
 		if ( ! firstOne ) firstOne = ip;
 		uint64_t addr64 = *(uint64_t *)ip;

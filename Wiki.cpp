@@ -15,7 +15,7 @@ Wiki::Wiki () {
 	m_state    = NULL;
 	m_opened   = false;
 	// use a 4 byte key size and 1 byte data size
-	m_ht.set ( 4 , 1,0,NULL,0,false,0 ,"tbl-wiki"); 
+	m_ht.set ( 4 , 1,0,NULL,0,false,"tbl-wiki");
 }
 
 void Wiki::reset() {

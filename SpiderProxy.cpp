@@ -86,7 +86,7 @@ bool buildProxyTable ( ) {
 	char *p = g_conf.m_proxyIps.getBufStart();
 
 	HashTableX tmptab;
-	tmptab.set(8,0,16,NULL,0,false,0,"tmptab");
+	tmptab.set(8,0,16,NULL,0,false,"tmptab");
 
 	// scan the user inputted space-separated list of ip:ports
 	// (optional username:password@ip:port)
@@ -241,8 +241,8 @@ bool initProxyTables ( ) {
 	// initialize proxy/urlip ban table?
 	if ( ! s_init ) return true;
 	s_init = false;
-	s_proxyBannedTable.set(8,0,0,NULL,0,false,1,"proxban");
-	s_banCountTable.set(4,4,0,NULL,0,false,1,"bancnt");
+	s_proxyBannedTable.set(8,0,0,NULL,0,false,"proxban");
+	s_banCountTable.set(4,4,0,NULL,0,false,"bancnt");
 	return true;
 }
 
@@ -250,11 +250,11 @@ bool resetProxyStats ( ) {
 	// s_proxyBannedTable.reset();
 	// s_banCountTable.reset();
 	// s_iptab.reset();
-	s_iptab.set(8,sizeof(SpiderProxy),0,NULL,0,false,0,"siptab",true);
+	s_iptab.set(8,sizeof(SpiderProxy),0,NULL,0,false,"siptab",true);
 	// skip port part of key magic, and get LSB of the IP as key magic
 	s_iptab.m_maskKeyOffset = 5;
-	s_proxyBannedTable.set(8,0,0,NULL,0,false,1,"proxban");
-	s_banCountTable.set(4,4,0,NULL,0,false,1,"bancnt");
+	s_proxyBannedTable.set(8,0,0,NULL,0,false,"proxban");
+	s_banCountTable.set(4,4,0,NULL,0,false,"bancnt");
 	return buildProxyTable();
 }
 
@@ -892,7 +892,7 @@ bool initSpiderProxyStuff() {
 		return false;
 
 	// key is ip/port
-	s_iptab.set(8,sizeof(SpiderProxy),0,NULL,0,false,0,"siptab",true);
+	s_iptab.set(8,sizeof(SpiderProxy),0,NULL,0,false,"siptab",true);
 	// skip port part of key magic, and get LSB of the IP as key magic
 	s_iptab.m_maskKeyOffset = 5;
 
@@ -917,7 +917,6 @@ bool initSpiderProxyStuff() {
 			       0,
 			       // this slows us down
 			       true, // allow dups?
-			       MAX_NICENESS,
 			       "lbtab",
 			       true); // use key magic to mix things up
 

@@ -127,16 +127,16 @@ bool SpiderColl::load ( ) {
 	// a restart request from crawlbottesting for this collnum which
 	// calls Collectiondb::resetColl2() which calls deleteSpiderColl()
 	// on THIS spidercoll, but our m_loading flag is set
-	if (!m_sniTable.set   ( 4,8,0,NULL,0,false,MAX_NICENESS,"snitbl") )
+	if (!m_sniTable.set   ( 4,8,0,NULL,0,false,"snitbl") )
 		return false;
-	if (!m_cdTable.set    (4,4,0,NULL,0,false,MAX_NICENESS,"cdtbl"))
+	if (!m_cdTable.set    (4,4,0,NULL,0,false,"cdtbl"))
 		return false;
 	// doledb seems to have like 32000 entries in it
 	int32_t numSlots = 0; // was 128000
-	if(!m_doleIpTable.set(4,4,numSlots,NULL,0,false,MAX_NICENESS,"doleip"))
+	if(!m_doleIpTable.set(4,4,numSlots,NULL,0,false,"doleip"))
 		return false;
 	// this should grow dynamically...
-	if (!m_waitingTable.set (4,8,16,NULL,0,false,MAX_NICENESS,"waittbl"))
+	if (!m_waitingTable.set (4,8,16,NULL,0,false,"waittbl"))
 		return false;
 	// . a tree of keys, key is earliestSpiderTime|ip (key=12 bytes)
 	// . earliestSpiderTime is 0 if unknown
@@ -1923,7 +1923,7 @@ void SpiderColl::populateDoledbFromWaitingTree ( ) { // bool reentry ) {
 		m_lastRepUh48  = 0LL;
 		// and setup the LOCAL counting table if not initialized
 		if ( m_localTable.m_ks == 0 ) 
-			m_localTable.set (4,4,0,NULL,0,false,0,"ltpct" );
+			m_localTable.set (4,4,0,NULL,0,false,"ltpct" );
 		// otherwise, just reset it so we can repopulate it
 		else m_localTable.reset();
 	}
@@ -2026,7 +2026,6 @@ void SpiderColl::populateDoledbFromWaitingTree ( ) { // bool reentry ) {
 				   NULL ,
 				   0 ,
 				   false , // allow dups?
-				   MAX_NICENESS ,
 				   "wtdedup" ) ) {
 		m_isPopulatingDoledb = false;
 		log("spider: wintable set: %s",mstrerror(g_errno));
@@ -3495,7 +3494,6 @@ bool SpiderColl::addWinnersIntoDoledb ( ) {
 		    NULL,//dbuf,
 		    0,//147456,//(int32_t)(3*MAX_WINNER_NODES*(8+1)),
 		    false,
-		    MAX_NICENESS,
 		    "windt");
 
 	///////////

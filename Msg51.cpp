@@ -488,7 +488,7 @@ bool setClusterLevels ( const key_t   *clusterRecs,
 
 	HashTableX ctab;
 	// init to 2*numRecs for speed. use 0 for niceness!
-	if ( ! ctab.set ( 8 , 4 , numRecs * 2,NULL,0,false,0,"clustertab" ) )
+	if ( ! ctab.set ( 8 , 4 , numRecs * 2,NULL,0,false,"clustertab" ) )
 		return false;
 
 	// time it

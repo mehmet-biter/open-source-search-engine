@@ -1201,10 +1201,6 @@ if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 	// . use m_fileStartKey, not just m_startKey, since we may be doing
 	//   a follow-up read
 
-	int32_t niceness = m_niceness;
-	if ( niceness > 0  ) niceness = 2;
-	if ( m_isRealMerge ) niceness = 1;
-
 	// . old Msg3 notes:
 	// . otherwise, merge the lists together
 	// . this may call growList() via RdbList::addRecord/Key() but it 

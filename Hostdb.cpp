@@ -1035,7 +1035,7 @@ bool Hostdb::hashHost (	bool udp , Host *h , uint32_t ip , uint16_t port ) {
 	else       t = &g_hostTableTcp;
 	// initialize the table?
 	if ( t->m_ks == 0 ) {
-		t->set ( 8 , sizeof(char *),16,NULL,0,false,0,"hostbl");
+		t->set ( 8 , sizeof(char *),16,NULL,0,false,"hostbl");
 	}
 	// get his key
 	uint64_t key = 0;

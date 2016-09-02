@@ -147,7 +147,7 @@ bool initWordTable( HashTableX *table, const char * const words[], const char *l
 	// count them
 	int32_t count; for ( count = 0 ; words[count] ; count++ );
 	// set up the hash table
-	if ( ! table->set ( 8,4,count * 2,NULL,0,false,0,label ) ) {
+	if ( ! table->set ( 8,4,count * 2,NULL,0,false,label ) ) {
 		log(LOG_INIT, "build: Could not init stop words table.");
 		return false;
 	}
@@ -3830,7 +3830,7 @@ int32_t isCommonWord ( int64_t h ) {
 	// by the bitScores in IndexTable.cpp
 	if ( ! s_commonWordsInitialized ) {
 		// set up the hash table
-		if ( ! s_commonWordTable.set (8,4,sizeof(s_commonWords)*2, NULL,0,false,0,"commonwrds") ) {
+		if ( ! s_commonWordTable.set (8,4,sizeof(s_commonWords)*2, NULL,0,false,"commonwrds") ) {
 			log(LOG_INIT, "query: Could not init common words table.");
 			return false;
 		}

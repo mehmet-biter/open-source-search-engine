@@ -1876,7 +1876,7 @@ static bool isTLD ( const char *tld , int32_t tldLen ) {
 	ScopedLock sl(s_tableMutex);
 	if ( ! s_isInitialized ) {
 		// set up the hash table
-		if ( ! s_table.set ( 8 , 0, sizeof(s_tlds)*2,NULL,0,false,0, "tldtbl") ) {
+		if ( ! s_table.set ( 8 , 0, sizeof(s_tlds)*2,NULL,0,false, "tldtbl") ) {
 			log( LOG_WARN, "build: Could not init table of TLDs.");
 			return false;
 		}

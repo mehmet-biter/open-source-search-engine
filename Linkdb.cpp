@@ -664,8 +664,7 @@ void  handleRequest25 ( UdpSlot *slot , int32_t netnice ) {
 
 	// set up the hashtable if our first time
 	if ( ! g_lineTable.isInitialized() )
-		g_lineTable.set ( 8,sizeof(Msg25Request *),256,
-				  NULL,0,false,MAX_NICENESS,"lht25");
+		g_lineTable.set ( 8,sizeof(Msg25Request *),256, NULL,0,false,"lht25");
 
 	// . if already working on this same request, wait for it, don't
 	//   overload server with duplicate requests
@@ -941,10 +940,9 @@ bool Msg25::getLinkInfo2( char      *site                ,
 	m_nextKey.setMin();
 
 	m_adBanTable.reset();
-	m_adBanTable.set(4,0,0,NULL,0,false,m_niceness,"adbans");
+	m_adBanTable.set(4,0,0,NULL,0,false,"adbans");
 
-	m_table.set (4,sizeof(NoteEntry *),0,
-		     NULL,0,false,m_niceness,"msg25tab");
+	m_table.set (4,sizeof(NoteEntry *),0, NULL,0,false,"msg25tab");
 
 	QUICKPOLL(m_niceness);
 
@@ -1187,7 +1185,7 @@ bool Msg25::gotList() {
 		// use this to dedup ips in linkdb to avoid looking up their
 		// title recs... saves a lot of lookups
 		//m_ipTable.set(256);
-		if (!m_ipTable.set(4,0,256,NULL,0,false,m_niceness,"msg25ips"))
+		if (!m_ipTable.set(4,0,256,NULL,0,false,"msg25ips"))
 			return true;
 		int64_t needSlots = m_list.getListSize() / LDBKS;
 		// wtf?
@@ -1202,17 +1200,14 @@ bool Msg25::gotList() {
 		// ensure 256 min
 		if ( needSlots < 256 ) needSlots = 256;
 		
-		if ( ! m_fullIpTable.set(4,0,needSlots,NULL,0,false,
-					 m_niceness,"msg25ip32") )
+		if ( ! m_fullIpTable.set(4,0,needSlots,NULL,0,false,"msg25ip32") )
 			return true;
 
-		if ( ! m_firstIpTable.set(4,0,needSlots,NULL,0,false,
-					  m_niceness,"msg25fip32") )
+		if ( ! m_firstIpTable.set(4,0,needSlots,NULL,0,false,"msg25fip32") )
 			return true;
 		// this too
 		//m_docIdTable.set(256);
-		if ( ! m_docIdTable.set(8,0,needSlots,
-					NULL,0,false,m_niceness,"msg25docid") )
+		if ( ! m_docIdTable.set(8,0,needSlots, NULL,0,false,"msg25docid") )
 			return true;
 		// . how many link spam inlinks can we accept?
 		// . they do not contribute to quality
@@ -2974,7 +2969,7 @@ static LinkInfo *makeLinkInfo ( const char        *coll                    ,
 	// buf for tt
 	char ttbuf[2048];
 	// must init it!
-	tt.set ( 8 ,4,128,ttbuf,2048,false,niceness,"linknfo");
+	tt.set ( 8 ,4,128,ttbuf,2048,false,"linknfo");
 	// how many internal linkers do we have?
 	int32_t icount = 0;
 	// we are currently only sampling from 10
