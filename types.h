@@ -1,6 +1,7 @@
 #ifndef GB_TYPES_H
 #define GB_TYPES_H
 
+#include <stdint.h>
 #include <string.h>
 #include "Sanity.h"
 

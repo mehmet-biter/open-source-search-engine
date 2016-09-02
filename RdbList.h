@@ -6,6 +6,8 @@
 #define NUMTERMIDBITS 48
 
 #include "Sanity.h"
+#include "types.h"
+#include <stdint.h>
 
 /**
  *
@@ -251,7 +253,7 @@ public:
 	bool removeBadData_r ( ) ;
 
 	// . print out the list (uses log())
-	int printList ( int32_t logtype=LOG_INFO);
+	int printList ( int32_t logtype);
 	int printPosdbList ( int32_t logtype );
 
 	void  setListPtrs ( char *p , char *hi ) {m_listPtr=p;m_listPtrHi=hi;}
