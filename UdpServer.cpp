@@ -37,9 +37,6 @@ static void defaultCallbackWrapper(void * /*state*/, UdpSlot * /*slot*/) {
 }
 
 
-// now redine key_t as our types.h should have it
-#define key_t  u_int96_t
-
 // free send/readBufs
 void UdpServer::reset() {
 
@@ -383,7 +380,7 @@ bool UdpServer::sendRequest(char *msg,
 	}
 
 	// make a key for this new slot
-	key_t key = m_proto->makeKey (ip2,port,transId,true/*weInitiated?*/);
+	key96_t key = m_proto->makeKey (ip2,port,transId,true/*weInitiated?*/);
 
 	// . create a new slot to control the transmission of this request
 	// . should set g_errno on failure
@@ -896,7 +893,7 @@ int32_t UdpServer::readSock(UdpSlot **slotPtr, int64_t now) {
 
 	uint32_t ip2;
 	Host *h;
-	key_t key;
+	key96_t key;
 	UdpSlot *slot;
 	int32_t dgramNum;
 	bool wasAck;
@@ -2312,7 +2309,7 @@ bool UdpServer::timeoutDeadHosts ( Host *h ) {
 }
 
 // verified that this is not interruptible
-UdpSlot *UdpServer::getEmptyUdpSlot(key_t k, bool incoming) {
+UdpSlot *UdpServer::getEmptyUdpSlot(key96_t k, bool incoming) {
 	UdpSlot *slot = removeFromAvailableLinkedList();
 
 	// return NULL if none left
@@ -2340,12 +2337,12 @@ UdpSlot *UdpServer::getEmptyUdpSlot(key_t k, bool incoming) {
 	slot->m_key = k;
 	addKey(k, slot);
 
-	logDebug(g_conf.m_logDebugUdp, "udp: get %s empty slot=%p with key=%s", incoming ? "incoming" : "outgoing", slot, KEYSTR(&k, sizeof(key_t)));
+	logDebug(g_conf.m_logDebugUdp, "udp: get %s empty slot=%p with key=%s", incoming ? "incoming" : "outgoing", slot, KEYSTR(&k, sizeof(key96_t)));
 	return slot;
 }
 
-void UdpServer::addKey ( key_t k , UdpSlot *ptr ) {
-	logDebug(g_conf.m_logDebugUdp, "udp: add key=%s with slot=%p", KEYSTR(&k, sizeof(key_t)), ptr);
+void UdpServer::addKey ( key96_t k , UdpSlot *ptr ) {
+	logDebug(g_conf.m_logDebugUdp, "udp: add key=%s with slot=%p", KEYSTR(&k, sizeof(key96_t)), ptr);
 
 	// we assume that k.n1 is the transId. if this changes we should
 	// change this to keep our hash lookups fast
@@ -2356,7 +2353,7 @@ void UdpServer::addKey ( key_t k , UdpSlot *ptr ) {
 }
 
 // verify that interrupts are always off before calling this
-UdpSlot *UdpServer::getUdpSlot ( key_t k ) {
+UdpSlot *UdpServer::getUdpSlot ( key96_t k ) {
 	// . hash into table
 	// . transId is key.n1, use that as hash
 	// . m_numBuckets must be a power of 2
@@ -2529,7 +2526,7 @@ void UdpServer::freeUdpSlot(UdpSlot *slot ) {
 
 	// . get bucket number in hash table
 	// . may have change since table often gets rehashed
-	key_t k = slot->m_key;
+	key96_t k = slot->m_key;
 	int32_t i = hashLong(k.n1) & m_bucketMask;
 	while ( m_ptrs[i] && m_ptrs[i]->m_key != k ) 
 		if ( ++i >= m_numBuckets ) i = 0;
@@ -2596,7 +2593,7 @@ void UdpServer::replaceHost ( Host *oldHost, Host *newHost ) {
 		// . first remove the old hashed key for this slot
 		// . get bucket number in hash table
 		// . may have change since table often gets rehashed
-		key_t k = slot->m_key;
+		key96_t k = slot->m_key;
 		int32_t i = hashLong(k.n1) & m_bucketMask;
 		while ( m_ptrs[i] && m_ptrs[i]->m_key != k ) 
 			if ( ++i >= m_numBuckets ) i = 0;
@@ -2636,7 +2633,7 @@ void UdpServer::replaceHost ( Host *oldHost, Host *newHost ) {
 		//else			      slot->m_port = newHost->m_port2;
 		//slot->m_transId = getTransId();
 		// . now readd the slot to the hash table
-		key_t key = m_proto->makeKey ( slot->getIp(),
+		key96_t key = m_proto->makeKey ( slot->getIp(),
 					       slot->getPort(),
 					       slot->getTransId(),
 					       true/*weInitiated?*/);

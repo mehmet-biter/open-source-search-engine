@@ -510,7 +510,7 @@ bool Msg40::mergeDocIdsIntoBaseMsg3a() {
 	int32_t need = 0;
 	need += td * 8;
 	need += td * sizeof(double);
-	need += td * sizeof(key_t);
+	need += td * sizeof(key96_t);
 	need += td * 1;
 	need += td * sizeof(collnum_t);
 	// make room for the merged docids
@@ -522,7 +522,7 @@ bool Msg40::mergeDocIdsIntoBaseMsg3a() {
 	char *p = m_msg3a.m_finalBuf;
 	m_msg3a.m_docIds        = (int64_t *)p; p += td * 8;
 	m_msg3a.m_scores        = (double    *)p; p += td * sizeof(double);
-	m_msg3a.m_clusterRecs   = (key_t     *)p; p += td * sizeof(key_t);
+	m_msg3a.m_clusterRecs   = (key96_t     *)p; p += td * sizeof(key96_t);
 	m_msg3a.m_clusterLevels = (char      *)p; p += td * 1;
 	m_msg3a.m_scoreInfos    = NULL;
 	m_msg3a.m_collnums      = (collnum_t *)p; p += td * sizeof(collnum_t);

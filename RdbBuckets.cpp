@@ -1425,7 +1425,6 @@ bool RdbBucket::getList(RdbList* list,
 	// there may be more records before endKey than we put in "list"
 	if ( list->getListSize() >= minRecSizes && lastKey != NULL ) {
 		// use the last key we read as the new endKey
-		//key_t newEndKey = m_keys[lastNode];
 		char newEndKey[MAX_KEY_BYTES];
 		KEYSET(newEndKey, lastKey, ks);
 		// . if he's negative, boost new endKey by 1 because endKey's

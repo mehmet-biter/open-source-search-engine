@@ -550,7 +550,7 @@ CollectionRec *XmlDoc::getCollRec ( ) {
 
 // returns false and sets g_errno on error
 bool XmlDoc::set4 ( SpiderRequest *sreq      ,
-		    key_t         *doledbKey ,
+		    key96_t         *doledbKey ,
 		    const char     *coll      ,
 		    SafeBuf       *pbuf      ,
 		    int32_t        niceness  ,
@@ -853,7 +853,7 @@ bool XmlDoc::set2 ( char    *titleRec ,
 
 	// this is valid i guess. includes key, etc.
 	//m_titleRec      = titleRec;
-	//m_titleRecSize  = *(int32_t *)(titleRec+12) + sizeof(key_t) + 4;
+	//m_titleRecSize  = *(int32_t *)(titleRec+12) + sizeof(key96_t) + 4;
 	//m_titleRecValid = true;
 	// . should we free m_cbuf on our reset/destruction?
 	// . no because doCOnsistencyCheck calls XmlDoc::set2 with a titleRec
@@ -863,7 +863,7 @@ bool XmlDoc::set2 ( char    *titleRec ,
 	// it must be there!
 	if ( !titleRec ) { g_errno=ENOTFOUND; return false; }
 
-	int32_t titleRecSize = *(int32_t *)(titleRec+12) + sizeof(key_t) + 4;
+	int32_t titleRecSize = *(int32_t *)(titleRec+12) + sizeof(key96_t) + 4;
 
 	// it must be there!
 	if ( titleRecSize==0 ) { g_errno=ENOTFOUND; return false; }
@@ -907,9 +907,9 @@ bool XmlDoc::set2 ( char    *titleRec ,
 	// . this is just like a serialized RdbList key/dataSize/data of 1 rec
 	// . first thing is the key
 	// . key should have docId embedded in it
-	m_titleRecKey =  *(key_t *) p ;
+	m_titleRecKey =  *(key96_t *) p ;
 	//m_titleRecKeyValid = true;
-	p += sizeof(key_t);
+	p += sizeof(key96_t);
 	// bail on error
 	if ( (m_titleRecKey.n0 & 0x01) == 0x00 ) {
 		g_errno = EBADTITLEREC;
@@ -932,7 +932,7 @@ bool XmlDoc::set2 ( char    *titleRec ,
 		return false;
 	}
 	// what is the size of cbuf/titleRec in bytes?
-	int32_t cbufSize = dataSize + 4 + sizeof(key_t);
+	int32_t cbufSize = dataSize + 4 + sizeof(key96_t);
 	// . the actual data follows "dataSize"
 	// . what's the size of the uncompressed compressed stuff below here?
 	m_ubufSize = *(int32_t  *) p ; p += 4;
@@ -2126,10 +2126,10 @@ static void getTitleRecBufWrapper ( void *state ) {
 	else                     THIS->m_callback2 ( THIS->m_state );
 }
 
-key_t *XmlDoc::getTitleRecKey() {
+key96_t *XmlDoc::getTitleRecKey() {
 	if ( m_titleRecBufValid ) return &m_titleRecKey;
 	SafeBuf *tr = getTitleRecBuf();
-	if ( ! tr || tr == (void *)-1 ) return (key_t *)tr;
+	if ( ! tr || tr == (void *)-1 ) return (key96_t *)tr;
 	return &m_titleRecKey;
 }
 
@@ -2871,13 +2871,13 @@ bool XmlDoc::setTitleRecBuf ( SafeBuf *tbuf, int64_t docId, int64_t uh48 ){
 
 	// we also need to store a key then regular dataSize then
 	// the uncompressed size in cbuf before the compression of m_ubuf
-	int32_t hdrSize = sizeof(key_t) + 4 + 4;
+	int32_t hdrSize = sizeof(key96_t) + 4 + 4;
 
 	// . now i add 12 bytes more so Msg14.cpp can also squeeze in a
 	//   negative key to delete the old titleRec, cuz we use this cbuf
 	//   to set our list that we add to our twins with
 	// . we now store the negative rec before the positive rec in Msg14.cpp
-	//hdrSize += sizeof(key_t) + 4;
+	//hdrSize += sizeof(key96_t) + 4;
 	need2 += hdrSize;
 
 	// return false on error
@@ -2919,15 +2919,15 @@ bool XmlDoc::setTitleRecBuf ( SafeBuf *tbuf, int64_t docId, int64_t uh48 ){
 		return false;
 	}
 
-	key_t tkey = g_titledb.makeKey (docId,uh48,false);//delkey?
+	key96_t tkey = g_titledb.makeKey (docId,uh48,false);//delkey?
 
 	// get a ptr to the Rdb record at start of the header
 	p = cbuf;
 
 	// . store key in header of cbuf
 	// . store in our host byte ordering so we can be a rec in an RdbList
-	*(key_t *) p = tkey;
-	p += sizeof(key_t);
+	*(key96_t *) p = tkey;
+	p += sizeof(key96_t);
 
 	// store total dataSize in header (excluding itself and key only)
 	int32_t dataSize = size + 4;
@@ -3068,7 +3068,7 @@ SafeBuf *XmlDoc::getTitleRecBuf ( ) {
 			    0x00ffffff );
 
 	char *cbuf = m_titleRecBuf.getBufStart();
-	m_titleRecKey = *(key_t *)cbuf;
+	m_titleRecKey = *(key96_t *)cbuf;
 	m_titleRecKeyValid = true;
 
 	// now valid. congratulations!
@@ -5674,7 +5674,7 @@ XmlDoc **XmlDoc::getOldXmlDoc ( ) {
 	if ( ! m_setFromDocId ) {
 		//int64_t uh48 = getFirstUrl()->getUrlHash48();
 		int64_t uh48 = getFirstUrlHash48();
-		int64_t tuh48 = g_titledb.getUrlHash48 ( (key_t *)*otr );
+		int64_t tuh48 = g_titledb.getUrlHash48 ( (key96_t *)*otr );
 		if ( uh48 != tuh48 ) {
 			log("xmldoc: docid collision uh48 mismatch. cannot "
 				"index "
@@ -6275,7 +6275,7 @@ int64_t *XmlDoc::getDocId ( ) {
 	// if titlerec was there but not od it had an error uncompressing
 	// because of the corruption bug in RdbMem.cpp when dumping to disk.
 	if ( m_docId == 0 && m_oldTitleRec && m_oldTitleRecSize > 12 ) {
-		m_docId = g_titledb.getDocIdFromKey ( (key_t *)m_oldTitleRec );
+		m_docId = g_titledb.getDocIdFromKey ( (key96_t *)m_oldTitleRec );
 		log("build: salvaged docid %" PRId64" from corrupt title rec "
 			"for %s",m_docId,m_firstUrl.getUrl());
 	}
@@ -12277,7 +12277,7 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 			sb->safePrintf("</nobr></td>");
 		}
 		else if ( rdbId == RDB_DOLEDB ) {
-			key_t *k2 = (key_t *)k;
+			key96_t *k2 = (key96_t *)k;
 			sb->safePrintf("<td><nobr>");
 			sb->safePrintf("priority=%" PRId32" "
 				       "spidertime=%" PRIu32" "
@@ -12706,13 +12706,13 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 			logTrace( g_conf.m_logTraceXmlDoc, "Not indexing spider replies. Delete titlerec for this doc" );
 			int64_t uh48 = m_firstUrl.getUrlHash48();
 			// delete title rec. true = delete?
-			key_t tkey = g_titledb.makeKey (m_docId,uh48,true);
+			key96_t tkey = g_titledb.makeKey (m_docId,uh48,true);
 			// shortcut
 			SafeBuf *ssb = &m_spiderStatusDocMetaList;
 			// add to list. and we do not add the spider status
 			// doc to posdb since we deleted its titlerec.
 			ssb->pushChar(RDB_TITLEDB); // RDB2_TITLEDB2
-			ssb->safeMemcpy ( &tkey , sizeof(key_t) );
+			ssb->safeMemcpy ( &tkey , sizeof(key96_t) );
 			m_metaList      = ssb->getBufStart();
 			m_metaListSize  = ssb->getLength  ();
 			m_metaListValid = true;
@@ -13519,7 +13519,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	need += needLinkdb;
 
 	// we add a negative key to doledb usually (include datasize now)
-	int32_t needDoledb = sizeof(key_t) + 1 ; // + 4;
+	int32_t needDoledb = sizeof(key96_t) + 1 ; // + 4;
 	if ( forDelete ) needDoledb = 0;
 	need += needDoledb;
 
@@ -13631,18 +13631,18 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	if ( nd && m_useTitledb && ! forDelete )
 		needTitledb += m_titleRecBuf.length();
 	// set new and old keys for titledb
-	//key_t ok;
-	key_t nk;
+	//key96_t ok;
+	key96_t nk;
 	//ok.setMin();
 	nk.setMin();
 	//if ( od ) ok = *od->getTitleRecKey();
 	if ( nd && m_useTitledb ) nk = *nd->getTitleRecKey();
-	//if ( od && m_useTitledb && ok != nk ) needTitledb += sizeof(key_t)+1;
+	//if ( od && m_useTitledb && ok != nk ) needTitledb += sizeof(key96_t)+1;
 	if ( m_useTitledb ) {
 		// then add it in
 		need += needTitledb;
 		// the titledb unlock key for msg12 in spider.cpp
-		need += sizeof(key_t);
+		need += sizeof(key96_t);
 	}
 
 	// . alloc mem for metalist
@@ -13676,7 +13676,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		int32_t tsize = nd->m_titleRecBuf.length();
 		// if getting an "oldList" to do incremental posdb updates
 		// then do not include the data portion of the title rec
-		if ( forDelete ) tsize = sizeof(key_t);
+		if ( forDelete ) tsize = sizeof(key96_t);
 		gbmemcpy ( m_p , nd->m_titleRecBuf.getBufStart() , tsize );
 		// make it a negative key
 		//if ( forDelete ) *m_p = *m_p & 0xfe;
@@ -13738,7 +13738,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	if ( nd && ! m_isAdultValid ) { g_process.shutdownAbort(true); }
 	// . get new clusterdb key
 	// . we use the host hash for the site hash! hey, this is only 26 bits!
-	key_t newk ; newk.setMin();
+	key96_t newk ; newk.setMin();
 	if ( nd )
 		newk = g_clusterdb.makeClusterRecKey ( *nd->getDocId() ,
 						       *nd->getIsAdult() ,
@@ -13758,9 +13758,9 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		// skip
 		m_p++;
 		// and key
-		*(key_t *)m_p = newk;
+		*(key96_t *)m_p = newk;
 		// skip it
-		m_p += sizeof(key_t);
+		m_p += sizeof(key96_t);
 	}
 
 	// sanity check

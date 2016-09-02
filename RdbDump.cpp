@@ -553,7 +553,6 @@ bool RdbDump::dumpList(RdbList *list, int32_t niceness, bool recall) {
 		//   on when they can be on
 		// . IMPORTANT: calling m_list->resetListPtr() will mess this HACK up!!
 		if (m_useHalfKeys && m_offset > 0 && !m_hacked12) {
-			//key_t k = m_list->getCurrentKey();
 			char k[MAX_KEY_BYTES];
 			m_list->getCurrentKey(k);
 			// . same top 6 bytes as last key we added?

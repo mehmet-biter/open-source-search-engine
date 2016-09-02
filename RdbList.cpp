@@ -189,13 +189,11 @@ void RdbList::set (char *list          ,
 }
 
 // just set the start and end keys
-//void RdbList::set ( key_t startKey , key_t endKey ) {
 void RdbList::set ( const char *startKey, const char *endKey ) {
 	KEYSET ( m_startKey , startKey , m_ks );
 	KEYSET ( m_endKey   , endKey   , m_ks );
 }
 
-//key_t RdbList::getLastKey  ( ) {
 char *RdbList::getLastKey  ( ) {
 	if ( ! m_lastKeyIsValid ) {
 		log("db: rdblist: getLastKey: m_lastKey not valid.");
@@ -204,7 +202,6 @@ char *RdbList::getLastKey  ( ) {
 	return m_lastKey;
 };
 
-//void RdbList::setLastKey  ( key_t k ) {
 void RdbList::setLastKey  ( const char *k ) {
 	//m_lastKey = k;
 	KEYSET ( m_lastKey , k , m_ks );
@@ -216,7 +213,6 @@ void RdbList::setLastKey  ( const char *k ) {
 int32_t RdbList::getNumRecs ( ) {
 	// we only keep this count for lists of variable sized records
 	if ( m_fixedDataSize == 0 && ! m_useHalfKeys )
-	//	return m_listSize / ( sizeof(key_t) + m_fixedDataSize );
 		return m_listSize / ( m_ks + m_fixedDataSize );
 	// save the list ptr
 	char *saved = m_listPtr;
@@ -329,7 +325,6 @@ bool RdbList::addRecord ( const char *key, int32_t dataSize, const char *data, b
 	}
 
 	// store the key at the end of the list
-	//*(key_t *)(&m_list[m_listSize]) = key;
 	KEYSET ( &m_list[m_listSize], key, m_ks );
 
 	// update the ptr
@@ -398,12 +393,10 @@ bool RdbList::prepareForMerge ( RdbList **lists         ,
 	// call growList() in the merge_r() routine... that won't work since
 	// we'd be in a thread.
 	if ( m_fixedDataSize >= 0 && minRecSizes > 0 ) {
-		//int32_t newmin = minRecSizes + sizeof(key_t) + m_fixedDataSize;
 		int32_t newmin = minRecSizes + m_ks + m_fixedDataSize;
 		// we have to grow another 12 cuz we set "first" in
 		// indexMerge_r() to false and try to add another rec to see
 		// if there was an annihilation
-		//newmin += sizeof(key_t);
 		newmin += m_ks;
 		// watch out for wrap around
 		if ( newmin < minRecSizes ) newmin = 0x7fffffff;
@@ -453,7 +446,6 @@ bool RdbList::prepareForMerge ( RdbList **lists         ,
 
 // . get the current records key
 // . this needs to be fast!!
-//key_t RdbList::getKey ( char *rec ) {
 void RdbList::getKey ( const char *rec , char *key ) const {
 
 	// posdb?
@@ -477,7 +469,6 @@ void RdbList::getKey ( const char *rec , char *key ) const {
 		return;
 	}
 
-	//if ( ! m_useHalfKeys ) return *(key_t *)rec;
 	if ( ! m_useHalfKeys || ! isHalfBitOn ( rec ) ) {
 		KEYSET(key,rec,m_ks);
 		return;
@@ -517,7 +508,6 @@ void RdbList::getKey ( const char *rec , char *key ) const {
 		*key &= 0xfd;
 		return;
 	}
-	//key_t key ;
 	if ( m_ks == 16 ) {
 		// set top most 4 bytes from hi key
 		*(int32_t  *)(&key[12]) = *(int32_t  *)&m_listPtrHi[2];
@@ -552,7 +542,6 @@ int32_t RdbList::getDataSize ( const char *rec ) const {
 	// negative keys always have no datasize entry
 	if ( (rec[0] & 0x01) == 0 ) return 0;
 	if ( m_fixedDataSize >= 0 ) return m_fixedDataSize;
-	//return *(int32_t  *)(rec+sizeof(key_t));
 	return *(int32_t  *)(rec+m_ks);
 }
 
@@ -872,7 +861,6 @@ bool RdbList::removeBadData_r ( ) {
 			m_listSize = m_listEnd - m_list;
 			goto top;
 		}
-		//key_t k = getCurrentKey();
 		char k[MAX_KEY_BYTES];
 		getCurrentKey ( k );
 		//if ( k < m_startKey || k > m_endKey ) {
@@ -970,7 +958,6 @@ int RdbList::printPosdbList ( int32_t logtype ) {
 
 
 	while ( ! isExhausted() ) {
-		//key_t k = getCurrentKey();
 		char k[MAX_KEY_BYTES];
 		getCurrentKey(k);
 
@@ -1077,7 +1064,6 @@ int RdbList::printList ( int32_t logtype ) {
 	log(logtype, "db: STARTKEY=%s",KEYSTR(m_startKey,m_ks));
 
 	while ( ! isExhausted() ) {
-		//key_t k = getCurrentKey();
 		char k[MAX_KEY_BYTES];
 		getCurrentKey(k);
 		int32_t dataSize = getCurrentDataSize();
@@ -1275,11 +1261,9 @@ bool RdbList::constrain(const char *startKey, char *endKey, int32_t minRecSizes,
 	// . this is the only destructive part of this function
 	else if ( m_useHalfKeys && isHalfBitOn ( p ) ) {
 		// the key returned should have half bit cleared
-		//key_t k = getKey(p);
 		getKey(p,k);
 		// write the key back 6 bytes
 		p -= 6;
-		//*(key_t *)p = k;
 		KEYSET(p,k,m_ks);
 	}
 
@@ -1308,7 +1292,7 @@ bool RdbList::constrain(const char *startKey, char *endKey, int32_t minRecSizes,
 
 	// . dont' start looking for the end before our new m_list
 	// . don't start at m_list+6 either cuz we may have overwritten that
-	//   with the *(key_t *)p = k above!!!! tricky...
+	//   with the *(key96_t *)p = k above!!!! tricky...
 	if ( p < m_list + m_ks ) {
 		p           = m_list;
 		m_listPtr   = m_list;
@@ -1578,7 +1562,7 @@ bool RdbList::posdbConstrain(const char *startKey, char *endKey, int32_t minRecS
 
 	bool resetPtr = false;
 	// . dont' start looking for the end before our new m_list
-	// . don't start at m_list+6 either cuz we may have overwritten that with the *(key_t *)p = k above!!!! tricky...
+	// . don't start at m_list+6 either cuz we may have overwritten that with the *(key96_t *)p = k above!!!! tricky...
 	if ( p < m_list + 18 ) {
 		resetPtr = true;
 	} else if (KEYCMP(k, hintKey, 18) != 0 || KEYCMP(hintKey, endKey, 18) > 0) {
@@ -1952,7 +1936,6 @@ top:
 	// . these increment store at m_list+m_listSize and inc m_listSize
 	if ( m_fixedDataSize == 0 ) {
 		// if adding the key would breech us, goto done
-		//if (m_list + m_listSize + sizeof(key_t) >allocEnd) goto done;
 		if (m_list + m_listSize + m_ks > allocEnd ) {
 			goto done;
 		}

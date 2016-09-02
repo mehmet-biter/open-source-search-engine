@@ -69,7 +69,7 @@ void Msg51::reset ( ) {
 // . sets g_errno on error
 bool Msg51::getClusterRecs ( const int64_t     *docIds,
 			     char          *clusterLevels            ,
-			     key_t         *clusterRecs              ,
+			     key96_t         *clusterRecs              ,
 			     int32_t           numDocIds                ,
 			     collnum_t collnum ,
 			     int32_t           maxCacheAge              ,
@@ -174,9 +174,8 @@ bool Msg51::sendRequests ( int32_t k ) {
 	RdbCache *c = &s_clusterdbQuickCache;
 	if ( ! s_cacheInit ) c = NULL;
 	int32_t      crecSize;
-	// key_t     crec;
 	char     *crecPtr = NULL;
-	key_t     ckey = (key_t)m_docIds[m_nexti];
+	key96_t     ckey = (key96_t)m_docIds[m_nexti];
 	bool found = false;
 	if ( c )
 		found = c->getRecord ( m_collnum    ,
@@ -189,8 +188,8 @@ bool Msg51::sendRequests ( int32_t k ) {
 				       NULL      );// cachedTime
 	if ( found ) {
 		// sanity check
-		if ( crecSize != sizeof(key_t) ) gbshutdownLogicError();
-		m_clusterRecs[m_nexti] = *(key_t *)crecPtr;
+		if ( crecSize != sizeof(key96_t) ) gbshutdownLogicError();
+		m_clusterRecs[m_nexti] = *(key96_t *)crecPtr;
 		// it is no longer CR_UNINIT, we got the rec now
 		m_clusterLevels[m_nexti] = CR_GOT_REC;
 		// debug msg
@@ -257,8 +256,8 @@ bool Msg51::sendRequest ( int32_t    i ) {
 	// count it
 	m_numRequests++;
 	// lookup in clusterdb, need a start and endkey
-	key_t startKey = g_clusterdb.makeFirstClusterRecKey ( d );
-	key_t endKey   = g_clusterdb.makeLastClusterRecKey  ( d );
+	key96_t startKey = g_clusterdb.makeFirstClusterRecKey ( d );
+	key96_t endKey   = g_clusterdb.makeLastClusterRecKey  ( d );
 	
 	// bias clusterdb lookups (from Msg22.cpp)
 	int32_t           numTwins     = g_hostdb.getNumHostsPerShard();
@@ -356,10 +355,6 @@ void Msg51::gotClusterRec(Slot *slot) {
 		    "query: Had error getting cluster info got docId=d: "
 		    "%s.",mstrerror(g_errno));
 
-	// get docid
-	//key_t *startKey = (key_t *)msg0->m_startKey;
-	//int64_t docId = g_clusterdb.getDocId ( *startKey );
-
 	// this doubles as a ptr to a cluster rec
 	int32_t    ci = slot->m_ci;
 	// get docid
@@ -378,10 +373,10 @@ void Msg51::gotClusterRec(Slot *slot) {
 
 	// . steal rec from this multicast
 	// . point to cluster rec, a int32_t   
-	key_t *rec = &m_clusterRecs[ci];
+	key96_t *rec = &m_clusterRecs[ci];
 
 	// store the cluster rec itself
-	*rec = *(key_t *)(list->m_list);
+	*rec = *(key96_t *)(list->m_list);
 	// debug note
 	log(LOG_DEBUG,
 	    "build: had clusterdb SUCCESS for d=%" PRId64" dptr=%" PRIu32" "
@@ -406,14 +401,14 @@ void Msg51::gotClusterRec(Slot *slot) {
 	// . use 100k
 	if ( ! s_cacheInit && 
 	     c->init ( 200*1024      ,  // maxMem
-		       sizeof(key_t) ,  // fixedDataSize (clusterdb rec)
+		       sizeof(key96_t) ,  // fixedDataSize (clusterdb rec)
 		       false         ,  // support lists
 		       10000         ,  // max recs
 		       false         ,  // use half keys?
 		       "clusterdbQuickCache" ,
 		       false         ,  // load from disk?
-		       sizeof(key_t) ,  // cache key size
-		       sizeof(key_t) )) // cache key size
+		       sizeof(key96_t) ,  // cache key size
+		       sizeof(key96_t) )) // cache key size
 		// only init once if successful
 		s_cacheInit = true;
 
@@ -425,9 +420,9 @@ void Msg51::gotClusterRec(Slot *slot) {
 	// . ignore any error
 	if ( s_cacheInit )
 		c->addRecord ( m_collnum        ,
-			       (key_t)docId  , // docid is key
+			       (key96_t)docId  , // docid is key
 			       (char *)rec   ,
-			       sizeof(key_t) , // recSize
+			       sizeof(key96_t) , // recSize
 			       0             );// timestamp
 
 	// clear it in case the cache set it, we don't care
@@ -437,7 +432,7 @@ void Msg51::gotClusterRec(Slot *slot) {
 // . cluster the docids based on the clusterRecs
 // . returns false and sets g_errno on error
 // . if maxDocIdsPerHostname is -1 do not do hostname clsutering
-bool setClusterLevels ( const key_t   *clusterRecs,
+bool setClusterLevels ( const key96_t   *clusterRecs,
 			const int64_t *docIds,
 			int32_t       numRecs              ,
 			int32_t       maxDocIdsPerHostname ,

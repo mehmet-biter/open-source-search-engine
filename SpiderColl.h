@@ -141,7 +141,7 @@ class SpiderColl {
 				   uint64_t nowGlobalMS);
 
 	// doledb cursor keys for each priority to speed up performance
-	key_t m_nextKeys[MAX_SPIDER_PRIORITIES];
+	key96_t m_nextKeys[MAX_SPIDER_PRIORITIES];
 
 	// save us scanning empty priorities
 	char m_isDoledbEmpty [MAX_SPIDER_PRIORITIES];
@@ -235,7 +235,7 @@ class SpiderColl {
 	HashTableX m_waitingTable;
 	RdbTree    m_waitingTree;
 	RdbMem     m_waitingMem; // used by m_waitingTree
-	key_t      m_waitingTreeKey;
+	key96_t      m_waitingTreeKey;
 	bool       m_waitingTreeKeyValid;
 	int32_t       m_scanningIp;
 	int32_t       m_gotNewDataForScanningIp;
@@ -246,12 +246,12 @@ class SpiderColl {
 	char m_deleteMyself;
 
 	// start key for reading doledb
-	key_t m_msg5StartKey;
+	key96_t m_msg5StartKey;
 
 	void devancePriority();
 	void setPriority(int32_t pri);
 
-	key_t m_nextDoledbKey;
+	key96_t m_nextDoledbKey;
 	bool  m_didRound;
 	int32_t  m_pri2;
 	bool  m_twinDied;
@@ -281,7 +281,7 @@ class SpiderColl {
 	class CollectionRec *m_cr;
 };
 
-key_t makeWaitingTreeKey ( uint64_t spiderTimeMS , int32_t firstIp );
+key96_t makeWaitingTreeKey ( uint64_t spiderTimeMS , int32_t firstIp );
 
 
 #endif // GB_SPIDERCOLL_H

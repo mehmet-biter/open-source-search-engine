@@ -955,7 +955,7 @@ bool ImportState::importLoop ( ) {
 	int32_t need = 12;
 	int32_t dataSize = -1;
 	//XmlDoc xd;
-	key_t tkey;
+	key96_t tkey;
 	bool status;
 	SafeBuf tmp;
 	SafeBuf *sbuf = &tmp;
@@ -972,7 +972,7 @@ bool ImportState::importLoop ( ) {
 	}
 	
 	// read in title rec key and data size
-	status = m_bf.read ( &tkey, sizeof(key_t) , m_fileOffset );
+	status = m_bf.read ( &tkey, sizeof(key96_t) , m_fileOffset );
 	
 	//if ( n != 12 ) goto nextFile;
 	if ( g_errno ) {
@@ -1026,7 +1026,7 @@ bool ImportState::importLoop ( ) {
 	sbuf->pushLong( (int32_t)m_collnum );
 
 	// store title key
-	sbuf->safeMemcpy ( &tkey , sizeof(key_t) );
+	sbuf->safeMemcpy ( &tkey , sizeof(key96_t) );
 
 	// then datasize if any. neg rec will have -1 datasize
 	if ( dataSize >= 0 ) 

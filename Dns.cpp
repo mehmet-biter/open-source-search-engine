@@ -50,7 +50,7 @@ void Dns::reset() {
 	m_rdbCacheLocal.reset();
 	// free hash table of /etc/hosts
 	if ( m_ips  ) mfree ( m_ips  , m_numSlots*4            , "Dns");
-	if ( m_keys ) mfree ( m_keys , m_numSlots*sizeof(key_t), "Dns");
+	if ( m_keys ) mfree ( m_keys , m_numSlots*sizeof(key96_t), "Dns");
 	m_ips      = NULL;
 	m_keys     = NULL;
 	m_numSlots = 0;
@@ -147,7 +147,7 @@ bool isTimedOut(int32_t ip) {
 	char *rec;
 	int32_t  recSize;
 	int32_t  maxAge = 3600; // 1 hour in seconds
-	key_t k;
+	key96_t k;
 	k.n0 = 0LL;
 	k.n1 = ip;
 	bool  inCache = g_timedoutCache.getRecord ( (collnum_t)0 ,
@@ -342,7 +342,7 @@ bool Dns::getIp ( const char *hostname,
 		return true;
 	}
 	// key is hash of the hostname
-	key_t  hostKey96  = hash96 ( hostname , hostnameLen );
+	key96_t  hostKey96  = hash96 ( hostname , hostnameLen );
 	// . is it in the /etc/hosts file?
 	// . BAD: could have a key collision!! TODO: fix..
 	if ( g_conf.m_useEtcHosts && isInFile ( hostKey96 , ip ) ) return true;
@@ -1274,7 +1274,7 @@ void gotIpWrapper ( void *state , UdpSlot *slot ) {
 		     // and we were missing out!
 		     g_conf.m_askRootNameservers ) {
 			int32_t timestamp = getTime();
-			key_t k;
+			key96_t k;
 			k.n0 = 0LL;
 			k.n1 = slot->getIp();
 			static const char s_data[] = "1111";
@@ -2178,7 +2178,7 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 	return -1;
 }
 
-bool Dns::isInCache ( key_t key , int32_t *ip ) {
+bool Dns::isInCache ( key96_t key , int32_t *ip ) {
 	// debug msg
 	//log("dns::isInCache: checking");
 	// . returns 0 if not in cache
@@ -2216,7 +2216,7 @@ bool Dns::isInCache ( key_t key , int32_t *ip ) {
 }
 
 // ttl is in seconds
-void Dns::addToCache ( key_t hostnameKey , int32_t ip , int32_t ttl ) {
+void Dns::addToCache ( key96_t hostnameKey , int32_t ip , int32_t ttl ) {
 	// debug msg
 	log(LOG_DEBUG, "dns: addToCache added key %" PRIu64" ip %s ttl %" PRId32" to cache",
 		hostnameKey.n0, iptoa(ip), ttl);
@@ -2293,7 +2293,7 @@ bool Dns::extractHostname ( const char *dgram,
 
 // TODO: hostname key collision is possible, so watch out. 
 //       should we also store ptr to the whole hostname in hash table?
-bool Dns::isInFile ( key_t key , int32_t *ip ) {
+bool Dns::isInFile ( key96_t key , int32_t *ip ) {
 	// flush and reload our /etc/hosts hash table every minute
 	static int32_t s_lastTime = 0;
 	int32_t now = getTime();
@@ -2350,7 +2350,7 @@ bool Dns::loadFile ( ) {
 	buf [ fsize ] = '\0';
 	// free hash table
 	mfree ( m_ips  , m_numSlots*4            , "Dns");
-	mfree ( m_keys , m_numSlots*sizeof(key_t), "Dns");
+	mfree ( m_keys , m_numSlots*sizeof(key96_t), "Dns");
 	m_ips      = NULL;
 	m_keys     = NULL;
 	m_numSlots = 0;
@@ -2361,10 +2361,10 @@ bool Dns::loadFile ( ) {
 	// alloc the hash table
 	m_numSlots = count * 2;
 	m_ips  = (int32_t  *) mmalloc ( 4             * m_numSlots , "Dns" );
-	m_keys = (key_t *) mmalloc ( sizeof(key_t) * m_numSlots , "Dns" );
+	m_keys = (key96_t *) mmalloc ( sizeof(key96_t) * m_numSlots , "Dns" );
 	if ( ! m_ips || ! m_keys ) {
 		if ( m_ips ) mfree ( m_ips  , m_numSlots*4            , "Dns");
-		if ( m_keys) mfree ( m_keys , m_numSlots*sizeof(key_t), "Dns");
+		if ( m_keys) mfree ( m_keys , m_numSlots*sizeof(key96_t), "Dns");
 		m_numSlots = 0;
 		mfree ( buf , bufSize , "Dns" );
 		f.close();
@@ -2376,7 +2376,7 @@ bool Dns::loadFile ( ) {
 	// declare vars here
 	char *e;
 	int32_t  ip;
-	key_t key;
+	key96_t key;
 	int32_t  n;
 	// point to first line
 	p = buf;
@@ -2424,7 +2424,7 @@ bool Dns::loadFile ( ) {
 	return true;
 }		
 
-key_t Dns::getKey ( const char *hostname, int32_t hostnameLen ) {
+key96_t Dns::getKey ( const char *hostname, int32_t hostnameLen ) {
 	// use the domain name name. so *.blogspot.com does not flood their dns
 	return hash96 ( hostname , hostnameLen );
 	//int32_t  dlen = 0;
@@ -2436,7 +2436,7 @@ key_t Dns::getKey ( const char *hostname, int32_t hostnameLen ) {
 // . MsgC uses this to see which host is responsible for this key
 //   which is just a hash96() of the hostname (see getKey() above)
 // . returns -1 if not host available to send request to
-Host *Dns::getResponsibleHost ( key_t key ) {
+Host *Dns::getResponsibleHost ( key96_t key ) {
 	logTrace( g_conf.m_logTraceDns, "BEGIN" );
 
 	// just keep this on this cluster now

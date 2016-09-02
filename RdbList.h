@@ -79,7 +79,7 @@ public:
 		  int32_t  fixedDataSize , 
 		  bool  ownData       ,
 		  bool  useHalfKeys   ,
-		  char  keySize       = sizeof(key_t) );
+		  char  keySize       = sizeof(key96_t) );
 
 	void setFromPtr ( char *p , int32_t psize , char rdbId ) ;
 
@@ -153,8 +153,8 @@ public:
 	}
 
 	bool  isExhausted        () const { return (m_listPtr >= m_listEnd); }
-	key_t getCurrentKey      () const { 
-		key_t key ; getKey ( m_listPtr,(char *)&key ); return key; }
+	key96_t getCurrentKey      () const {
+		key96_t key ; getKey ( m_listPtr,(char *)&key ); return key; }
 	void  getCurrentKey      (void *key) const { getKey(m_listPtr,(char *)key);}
 	int32_t  getCurrentDataSize () const { return getDataSize ( m_listPtr );}
 	char *getCurrentData     () { return getData     ( m_listPtr );}
@@ -205,14 +205,9 @@ public:
 			return 18;
 		}
 		if ( m_useHalfKeys ) {
-			//if ( isHalfBitOn(rec) ) return 6;
 			if ( isHalfBitOn(rec) ) return m_ks-6;
-			//return sizeof(key_t);
 			return m_ks;
 		}
-		//if (m_fixedDataSize == 0) return sizeof(key_t);
-		//if (m_fixedDataSize >0) return sizeof(key_t)+m_fixedDataSize;
-		//return *(int32_t *)(rec + sizeof(key_t)) + sizeof(key_t) + 4 ;
 		if (m_fixedDataSize == 0) return m_ks;
 		// negative keys always have no datasize entry
 		if ( (rec[0] & 0x01) == 0 ) return m_ks;

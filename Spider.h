@@ -905,7 +905,7 @@ public:
 
 // was 1000 but breached, now equals SR_READ_SIZE/sizeof(SpiderReply)
 #define MAX_BEST_REQUEST_SIZE (MAX_URL_LEN+1+sizeof(SpiderRequest))
-#define MAX_DOLEREC_SIZE      (MAX_BEST_REQUEST_SIZE+sizeof(key_t)+4)
+#define MAX_DOLEREC_SIZE      (MAX_BEST_REQUEST_SIZE+sizeof(key96_t)+4)
 #define MAX_SP_REPLY_SIZE     (sizeof(SpiderReply))
 
 // are we responsible for this ip?

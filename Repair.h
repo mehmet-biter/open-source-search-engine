@@ -84,16 +84,16 @@ public:
 	bool       m_updated;
 
 	// titledb scan vars
-	key_t      m_nextTitledbKey;
-	key_t      m_nextSpiderdbKey;
-	key_t      m_nextPosdbKey;
+	key96_t      m_nextTitledbKey;
+	key96_t      m_nextSpiderdbKey;
+	key96_t      m_nextPosdbKey;
 	key128_t   m_nextLinkdbKey;
-	key_t      m_endKey;
+	key96_t      m_endKey;
 	int64_t  m_uh48;
 	int32_t       m_priority;
 	uint64_t   m_contentHash;
-	key_t      m_clusterdbKey ;
-	key_t      m_spiderdbKey;
+	key96_t      m_clusterdbKey ;
+	key96_t      m_spiderdbKey;
 	char       m_srBuf[SR_BUFSIZE];
 	char       m_tmpBuf[32];
 	RdbList    m_linkdbListToAdd;
@@ -111,8 +111,8 @@ public:
 	int64_t  m_prevDocId;
 	bool       m_completedFirstScan  ;
 	bool       m_completedSpiderdbScan ;
-	key_t      m_lastTitledbKey;
-	key_t      m_lastSpiderdbKey;
+	key96_t      m_lastTitledbKey;
+	key96_t      m_lastSpiderdbKey;
 
 	int64_t  m_recsScanned;
 	int64_t  m_recsOutOfOrder;

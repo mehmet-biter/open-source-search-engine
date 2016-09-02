@@ -498,7 +498,7 @@ bool Spiderdb::init ( ) {
 	int64_t urlHash48  = 0x1234567887654321LL & 0x0000ffffffffffffLL;
 
 	// doledb key test
-	key_t dk = g_doledb.makeKey(priority,spiderTime,urlHash48,false);
+	key96_t dk = g_doledb.makeKey(priority,spiderTime,urlHash48,false);
 	if(g_doledb.getPriority(&dk)!=priority){g_process.shutdownAbort(true);}
 	if(g_doledb.getSpiderTime(&dk)!=spiderTime){g_process.shutdownAbort(true);}
 	if(g_doledb.getUrlHash48(&dk)!=urlHash48){g_process.shutdownAbort(true);}
@@ -602,7 +602,6 @@ bool Spiderdb::verify ( char *coll ) {
 	for ( list.resetListPtr() ; ! list.isExhausted() ;
 	      list.skipCurrentRecord() ) {
 		char *k = list.getCurrentRec();
-		//key_t k = list.getCurrentKey();
 		count++;
 		// what group's spiderdb should hold this rec
 		//uint32_t groupId = g_hostdb.getGroupId ( RDB_SPIDERDB , k );
@@ -1144,8 +1143,8 @@ public:
 	collnum_t     m_collnum;
 	const char   *m_coll;
 	int32_t          m_count;
-	key_t         m_startKey;
-	key_t         m_endKey;
+	key96_t         m_startKey;
+	key96_t         m_endKey;
 	int32_t          m_minRecSizes;
 	bool          m_done;
 	SafeBuf       m_safeBuf;
@@ -1280,7 +1279,7 @@ static bool printList ( State11 *st ) {
 		// stop if we got enough
 		if ( st->m_count >= st->m_numRecs )  break;
 		// get the doledb key
-		key_t dk = list->getCurrentKey();
+		key96_t dk = list->getCurrentKey();
 		// update to that
 		st->m_startKey = dk;
 		// inc by one
@@ -1563,7 +1562,7 @@ static bool sendPage ( State11 *st ) {
 		// breathe
 		QUICKPOLL(MAX_NICENESS);
 		// get key
-		key_t *key = (key_t *)sc->m_waitingTree.getKey(node);
+		key96_t *key = (key96_t *)sc->m_waitingTree.getKey(node);
 		// get ip from that
 		int32_t firstIp = (key->n0) & 0xffffffff;
 		// get the time

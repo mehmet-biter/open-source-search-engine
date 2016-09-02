@@ -145,7 +145,7 @@ bool SpiderColl::load ( ) {
 	//   test runs...
 	// . try going to 20M now since we hit it again...
 	// . start off at just 10 nodes since we grow dynamically now
-	if (!m_waitingTree.set(0, 10, -1, true, "waittree2", false, "waitingtree", sizeof(key_t))) {
+	if (!m_waitingTree.set(0, 10, -1, true, "waittree2", false, "waitingtree", sizeof(key96_t))) {
 		return false;
 	}
 	m_waitingTreeKeyValid = false;
@@ -218,9 +218,9 @@ bool SpiderColl::makeDoleIPTable ( ) {
 
 	log(LOG_DEBUG,"spider: making dole ip table for %s",m_coll);
 
-	key_t startKey ; startKey.setMin();
-	key_t endKey   ; endKey.setMax();
-	key_t lastKey  ; lastKey.setMin();
+	key96_t startKey ; startKey.setMin();
+	key96_t endKey   ; endKey.setMax();
+	key96_t lastKey  ; lastKey.setMin();
 	// turn off threads for this so it blocks
 	bool enabled = g_jobScheduler.are_new_jobs_allowed();
 	// turn off regardless
@@ -257,7 +257,7 @@ bool SpiderColl::makeDoleIPTable ( ) {
 		return false;
 	}
 	// shortcut
-	int32_t minSize=(int32_t)(sizeof(SpiderRequest)+sizeof(key_t)+4-MAX_URL_LEN);
+	int32_t minSize=(int32_t)(sizeof(SpiderRequest)+sizeof(key96_t)+4-MAX_URL_LEN);
 	// all done if empty
 	if ( list.isEmpty() ) goto done;
 	// loop over entries in list
@@ -265,7 +265,7 @@ bool SpiderColl::makeDoleIPTable ( ) {
 		// get rec
 		char *rec = list.getCurrentRec();
 		// get key
-		key_t k = list.getCurrentKey();		
+		key96_t k = list.getCurrentKey();
 		// skip deletes -- how did this happen?
 		if ( (k.n0 & 0x01) == 0) continue;
 		// check this out
@@ -278,16 +278,16 @@ bool SpiderColl::makeDoleIPTable ( ) {
 		if ( recSize<=minSize) {g_process.shutdownAbort(true);}
 		// . doledb key is 12 bytes, followed by a 4 byte datasize
 		// . so skip that key and dataSize to point to spider request
-		SpiderRequest *sreq = (SpiderRequest *)(rec+sizeof(key_t)+4);
+		SpiderRequest *sreq = (SpiderRequest *)(rec+sizeof(key96_t)+4);
 		// add to dole tables
 		if ( ! addToDoleTable ( sreq ) )
 			// return false with g_errno set on error
 			return false;
 	}
-	startKey = *(key_t *)list.getLastKey();
+	startKey = *(key96_t *)list.getLastKey();
 	startKey += (uint32_t) 1;
 	// watch out for wrap around
-	if ( startKey >= *(key_t *)list.getLastKey() ) goto loop;
+	if ( startKey >= *(key96_t *)list.getLastKey() ) goto loop;
  done:
 	log(LOG_DEBUG,"spider: making dole ip table done.");
 	// re-enable threads
@@ -381,7 +381,7 @@ bool SpiderColl::makeWaitingTree ( ) {
 		if ( m_doleIpTable.isInTable ( &firstIp ) ) continue;
 		// make the key. use 1 for spiderTimeMS. this tells the
 		// spider loop that it is temporary and should be updated
-		key_t wk = makeWaitingTreeKey ( 1 , firstIp );
+		key96_t wk = makeWaitingTreeKey ( 1 , firstIp );
 		// ok, add to waiting tree
 		int32_t wn = m_waitingTree.addKey ( &wk );
 		if ( wn < 0 ) {
@@ -417,7 +417,7 @@ bool SpiderColl::makeWaitingTree ( ) {
 // for debugging query reindex i guess
 int64_t SpiderColl::getEarliestSpiderTimeFromWaitingTree ( int32_t firstIp ) {
 	// make the key. use 0 as the time...
-	key_t wk = makeWaitingTreeKey ( 0, firstIp );
+	key96_t wk = makeWaitingTreeKey ( 0, firstIp );
 	// set node from wait tree key. this way we can resume from a prev key
 	int32_t node = m_waitingTree.getNextNode ( 0, (char *)&wk );
 	// if empty, stop
@@ -425,7 +425,7 @@ int64_t SpiderColl::getEarliestSpiderTimeFromWaitingTree ( int32_t firstIp ) {
 	// breathe
 	QUICKPOLL(MAX_NICENESS);
 	// get the key
-	key_t *k = (key_t *)m_waitingTree.getKey ( node );
+	key96_t *k = (key96_t *)m_waitingTree.getKey ( node );
 	// ok, we got one
 	int32_t storedFirstIp = (k->n0) & 0xffffffff;
 	// match? we call this with a firstIp of 0 below to indicate
@@ -449,7 +449,7 @@ bool SpiderColl::makeWaitingTable ( ) {
 		// breathe
 		QUICKPOLL(MAX_NICENESS);
 		// get key
-		key_t *key = (key_t *)m_waitingTree.getKey(node);
+		key96_t *key = (key96_t *)m_waitingTree.getKey(node);
 		// get ip from that
 		int32_t ip = (key->n0) & 0xffffffff;
 		// spider time is up top
@@ -1088,7 +1088,7 @@ bool SpiderColl::addSpiderRequest ( SpiderRequest *sreq , int64_t nowGlobalMS ) 
 bool SpiderColl::printWaitingTree ( ) {
 	int32_t node = m_waitingTree.getFirstNode();
 	for ( ; node >= 0 ; node = m_waitingTree.getNextNode(node) ) {
-		key_t *wk = (key_t *)m_waitingTree.getKey (node);
+		key96_t *wk = (key96_t *)m_waitingTree.getKey (node);
 		// spider time is up top
 		uint64_t spiderTimeMS = (wk->n1);
 		spiderTimeMS <<= 32;
@@ -1193,7 +1193,7 @@ bool SpiderColl::addToWaitingTree ( uint64_t spiderTimeMS, int32_t firstIp, bool
 		int64_t sms = m_waitingTable.getScore64FromSlot(ws);
 
 		// make the key then
-		key_t wk = makeWaitingTreeKey ( sms, firstIp );
+		key96_t wk = makeWaitingTreeKey ( sms, firstIp );
 		// must be there
 		int32_t tn = m_waitingTree.getNode ( (collnum_t)0, (char *)&wk );
 		// sanity check. ensure waitingTable and waitingTree in sync
@@ -1232,7 +1232,7 @@ bool SpiderColl::addToWaitingTree ( uint64_t spiderTimeMS, int32_t firstIp, bool
 	}
 
 	// make the key
-	key_t wk = makeWaitingTreeKey ( spiderTimeMS, firstIp );
+	key96_t wk = makeWaitingTreeKey ( spiderTimeMS, firstIp );
 	// what is this?
 	if ( firstIp == 0 || firstIp == -1 ) {
 		log("spider: got ip of %s. cn=%" PRId32" "
@@ -1337,7 +1337,7 @@ int32_t SpiderColl::getNextIpFromWaitingTree ( ) {
 	if ( node < 0 ) return 0;
 
 	// get the key
-	key_t *k = (key_t *)m_waitingTree.getKey ( node );
+	key96_t *k = (key96_t *)m_waitingTree.getKey ( node );
 
 	// ok, we got one
 	firstIp = (k->n0) & 0xffffffff;
@@ -1414,13 +1414,13 @@ uint64_t SpiderColl::getNextSpiderTimeFromWaitingTree ( ) {
 	// if nothing to scan, bail
 	if ( m_waitingTree.isEmpty() ) return 0LL;
 	// the key
-	key_t mink; mink.setMin();
+	key96_t mink; mink.setMin();
 	// set node from wait tree key. this way we can resume from a prev key
 	int32_t node = m_waitingTree.getNextNode (0,(char *)&mink );
 	// if empty, stop
 	if ( node < 0 ) return 0LL;
 	// get the key
-	key_t *wk = (key_t *)m_waitingTree.getKey ( node );
+	key96_t *wk = (key96_t *)m_waitingTree.getKey ( node );
 	// time from that
 	uint64_t spiderTimeMS = (wk->n1);
 	spiderTimeMS <<= 32;
@@ -2114,7 +2114,7 @@ bool SpiderColl::evalIpLoop ( ) {
 
 	// if this ip is in the winnerlistcache use that. it saves
 	// us a lot of time.
-	key_t cacheKey;
+	key96_t cacheKey;
 	cacheKey.n0 = m_scanningIp;
 	cacheKey.n1 = 0;
 	char *doleBuf = NULL;
@@ -3553,7 +3553,7 @@ bool SpiderColl::addWinnersIntoDoledb ( ) {
 		if ( winIp != firstIp ) { g_process.shutdownAbort(true);}
 		if ( winUh48 != sreq2->getUrlHash48() ) { g_process.shutdownAbort(true);}
 		// make the doledb key
-		key_t doleKey = g_doledb.makeKey ( winPriority,
+		key96_t doleKey = g_doledb.makeKey ( winPriority,
 						   // convert to secs from ms
 						   winSpiderTimeMS / 1000     ,
 						   winUh48 ,
@@ -3575,7 +3575,7 @@ bool SpiderColl::addWinnersIntoDoledb ( ) {
 		// do not allow dups
 		dedup.addKey ( &winUh48 );
 		// store doledb key first
-		if ( ! doleBuf.safeMemcpy ( &doleKey, sizeof(key_t) ) ) 
+		if ( ! doleBuf.safeMemcpy ( &doleKey, sizeof(key96_t) ) )
 			hadError = true;
 		// then size of spiderrequest
 		if ( ! doleBuf.pushLong ( sreq2->getRecSize() ) ) 
@@ -3617,7 +3617,7 @@ bool SpiderColl::validateDoleBuf ( SafeBuf *doleBuf ) {
 		if ( p == pstart + jump )
 			gotIt = true;
 		// first is doledbkey
-		p += sizeof(key_t);
+		p += sizeof(key96_t);
 		// then size of spider request
 		int32_t recSize = *(int32_t *)p;
 		p += 4;
@@ -3753,7 +3753,7 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 		// invalidate
 		m_waitingTreeKeyValid = false;
 		//int32_t  fip = m_bestRequest->m_firstIp;
-		key_t wk2 = makeWaitingTreeKey ( m_minFutureTimeMS , firstIp );
+		key96_t wk2 = makeWaitingTreeKey ( m_minFutureTimeMS , firstIp );
 		// log the replacement
 		if ( g_conf.m_logDebugSpider )
 			log("spider: scan replacing waitingtree key "
@@ -3795,7 +3795,7 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 	}
 
 	// make the doledb key first for this so we can add it
-	key_t doleKey = g_doledb.makeKey ( m_bestRequest->m_priority     ,
+	key96_t doleKey = g_doledb.makeKey ( m_bestRequest->m_priority     ,
 					   // convert to seconds from ms
 					   m_bestSpiderTimeMS / 1000     ,
 					   m_bestRequest->getUrlHash48() ,
@@ -3810,8 +3810,8 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 
 	// make it into a doledb record
 	char *p = m_doleBuf;
-	*(key_t *)p = doleKey;
-	p += sizeof(key_t);
+	*(key96_t *)p = doleKey;
+	p += sizeof(key96_t);
 	int32_t recSize = m_bestRequest->getRecSize();
 	*(int32_t *)p = recSize;
 	p += 4;
@@ -3849,7 +3849,7 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 	// save it
 	char *doledbRec = p;
 	// first is doledbkey
-	p += sizeof(key_t);
+	p += sizeof(key96_t);
 	// then size of spider request
 	p += 4;
 	// the spider request encapsulated
@@ -3862,7 +3862,7 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 	if ( p > doleBufEnd ) { g_process.shutdownAbort(true); }
 
 	// for caching logic below, set this
-	int32_t doledbRecSize = sizeof(key_t) + 4 + sreq3->getRecSize();
+	int32_t doledbRecSize = sizeof(key96_t) + 4 + sreq3->getRecSize();
 	// process sreq3 my incrementing the firstip count in 
 	// m_doleIpTable
 	if ( ! addToDoleTable ( sreq3 ) ) return true;	
@@ -3915,7 +3915,7 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 		// set the timestamp to 12345 so the getRecord above will
 		// not get it and promote it in the linked list.
 		char byte = 0;
-		key_t cacheKey;
+		key96_t cacheKey;
 		cacheKey.n0 = firstIp;
 		cacheKey.n1 = 0;
 		//wc->verify();
@@ -3930,7 +3930,7 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 	// if it wasn't in the cache and it was only one record we
 	// obviously do not want to add it to the cache.
 	else if ( p < doleBufEnd ) { // if ( addToCache ) {
-		key_t cacheKey;
+		key96_t cacheKey;
 		cacheKey.n0 = firstIp;
 		cacheKey.n1 = 0;
 		char *x = doleBuf->getBufStart();
@@ -4295,11 +4295,11 @@ bool SpiderColl::printStats ( SafeBuf &sb ) {
 
 
 
-key_t makeWaitingTreeKey ( uint64_t spiderTimeMS , int32_t firstIp ) {
+key96_t makeWaitingTreeKey ( uint64_t spiderTimeMS , int32_t firstIp ) {
 	// sanity
 	if ( ((int64_t)spiderTimeMS) < 0 ) { g_process.shutdownAbort(true); }
 	// make the wait tree key
-	key_t wk;
+	key96_t wk;
 	wk.n1 = (spiderTimeMS>>32);
 	wk.n0 = (spiderTimeMS&0xffffffff);
 	wk.n0 <<= 32;

@@ -25,7 +25,7 @@ public:
 	bool set ( class TcpSocket *s , class HttpRequest *hr );
 
 	void  test    ( );
-	key_t makeKey ( ) ;
+	key96_t makeKey ( ) ;
 
 	bool setQueryBuffers ( class HttpRequest *hr ) ;
 

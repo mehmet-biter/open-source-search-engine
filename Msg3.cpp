@@ -1087,7 +1087,7 @@ void Msg3::setPageRanges(RdbBase *base) {
 	}
 	// . we're done if we hit the end of all maps in the race
 	// . return the max end key
-	// key_t maxEndKey; maxEndKey.setMax(); return maxEndKey; }
+	// key96_t maxEndKey; maxEndKey.setMax(); return maxEndKey; }
 	// . no, just the endKey
 	if ( minpg  == -1 ) return;
 	// sanity check
@@ -1188,7 +1188,6 @@ void Msg3::compensateForNegativeRecs ( RdbBase *base ) {
 	// if we have no records on disk, why are we reading from disk?
 	if ( totalNumRecs == 0 ) return ;
 	// what is the size of a negative record?
-	//int32_t negRecSize  = sizeof(key_t);
 	int32_t negRecSize  = m_ks;
 	if ( base->getFixedDataSize() == -1 ) negRecSize += 4;
 	// what is the size of all positive recs combined?

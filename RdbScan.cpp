@@ -14,8 +14,6 @@ bool RdbScan::setRead ( BigFile  *file         ,
 			int32_t      fixedDataSize,
 			int64_t offset       ,
 			int32_t      bytesToRead  ,
-			//key_t     startKey     , 
-			//key_t     endKey       ,
 			char     *startKey     , 
 			char     *endKey       ,
 			char      keySize      ,
@@ -352,7 +350,6 @@ void RdbScan::gotList ( ) {
 		m_rdblist->m_list     -= 6;
 		m_rdblist->m_listSize += 6;
 		p                  -= 6;
-		//*(key_t *)p = m_startKey;
 		KEYSET(p,m_startKey,m_rdblist->m_ks);
 		// clear the half bit in case it is set
 		*p &= 0xfd;

@@ -18,7 +18,7 @@ bool Titledb::init ( ) {
 	// key sanity tests
 	int64_t uh48  = 0x1234567887654321LL & 0x0000ffffffffffffLL;
 	int64_t docId = 123456789;
-	key_t k = makeKey(docId,uh48,false);
+	key96_t k = makeKey(docId,uh48,false);
 	if ( getDocId(&k) != docId ) { g_process.shutdownAbort(true);}
 	if ( getUrlHash48(&k) != uh48 ) { g_process.shutdownAbort(true);}
 
@@ -98,8 +98,8 @@ bool Titledb::verify ( char *coll ) {
 
 	Msg5 msg5;
 	RdbList list;
-	key_t startKey;
-	key_t endKey;
+	key96_t startKey;
+	key96_t endKey;
 	startKey.setMin();
 	endKey.setMax();
 	//int32_t minRecSizes = 64000;
@@ -136,7 +136,7 @@ bool Titledb::verify ( char *coll ) {
 	int32_t got   = 0;
 	for ( list.resetListPtr() ; ! list.isExhausted() ;
 	      list.skipCurrentRecord() ) {
-		key_t k = list.getCurrentKey();
+		key96_t k = list.getCurrentKey();
 		// skip negative keys
 		if ( (k.n0 & 0x01) == 0x00 ) continue;
 		count++;
@@ -160,7 +160,7 @@ bool Titledb::verify ( char *coll ) {
 		// repeat with log
 		for ( list.resetListPtr() ; ! list.isExhausted() ;
 		      list.skipCurrentRecord() ) {
-			key_t k = list.getCurrentKey();
+			key96_t k = list.getCurrentKey();
 			//uint32_t groupId = getGroupId ( RDB_TITLEDB,&k);
 			//int32_t groupNum = g_hostdb.getGroupNum(groupId);
 			int32_t shardNum = getShardNum ( RDB_TITLEDB, &k );
@@ -216,7 +216,7 @@ uint64_t Titledb::getProbableDocId ( char *url ) {
 
 bool Titledb::isLocal ( int64_t docId ) {
 	// shift it up (64 minus 38) bits so we can mask it
-	//key_t key = makeTitleRecKey ( docId , false /*isDelKey?*/ );
+	//key96_t key = makeTitleRecKey ( docId , false /*isDelKey?*/ );
 	// mask upper bits of the top 4 bytes
 	//return ( getGroupIdFromDocId ( docId ) == g_hostdb.m_groupId ) ;
 	return ( getShardNumFromDocId(docId) == getMyShardNum() );
@@ -225,8 +225,8 @@ bool Titledb::isLocal ( int64_t docId ) {
 // . make the key of a TitleRec from a docId
 // . remember to set the low bit so it's not a delete
 // . hi bits are set in the key
-key_t Titledb::makeKey ( int64_t docId, int64_t uh48, bool isDel ){
-	key_t key ;
+key96_t Titledb::makeKey ( int64_t docId, int64_t uh48, bool isDel ){
+	key96_t key ;
 	// top bits are the docid so generic getGroupId() works!
 	key.n1 = (uint32_t)(docId >> 6); // (NUMDOCIDBITS-32));
 

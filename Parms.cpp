@@ -375,7 +375,7 @@ static bool CommandForceNextSpiderRound ( char *rec ) {
 		return true;
 	}
 
-	// seems like parmlist is an rdblist, so we have a key_t followed
+	// seems like parmlist is an rdblist, so we have a key96_t followed
 	// by 4 bytes of datasize then the data... which is an ascii string
 	// in our case...
 	char *data = getDataFromParmRec ( rec );

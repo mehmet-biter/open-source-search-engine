@@ -72,10 +72,10 @@ void Msg3a::reset ( ) {
 }
 
 // from Indexdb.cpp
-static key_t makeKey ( int64_t termId, unsigned char score, uint64_t docId, bool isDelKey ) {
+static key96_t makeKey ( int64_t termId, unsigned char score, uint64_t docId, bool isDelKey ) {
 	// make sure we mask out the hi bits we do not use first
 	termId = termId & TERMID_MASK;
-	key_t key ;
+	key96_t key ;
 	char *kp = (char *)&key;
 	char *tp = (char *)&termId;
 	char *dp = (char *)&docId;
@@ -348,7 +348,7 @@ bool Msg3a::getDocIds ( Msg39Request *r          ,
 		// TODO: fix msg2 to do that...
 		if ( ! m_q->isSplit() ) {
 			int64_t     tid  = m_q->getTermId(0);
-			key_t         k    = makeKey(tid,1,1,false );
+			key96_t         k    = makeKey(tid,1,1,false );
 			// split = false! do not split
 			//gid = getGroupId ( RDB_POSDB,&k,false);
 			shardNum = g_hostdb.getShardNumByTermId(&k);
@@ -680,7 +680,7 @@ bool Msg3a::mergeLists ( ) {
 	//   have? formerly called topExplicits in IndexTable2.cpp
 	int64_t     *diPtr [MAX_SHARDS];
 	double        *rsPtr [MAX_SHARDS];
-	key_t         *ksPtr [MAX_SHARDS];
+	key96_t         *ksPtr [MAX_SHARDS];
 	int64_t     *diEnd [MAX_SHARDS];
 	for ( int32_t j = 0; j < m_numQueriedHosts ; j++ ) {
 		// how does this happen?
@@ -696,7 +696,7 @@ bool Msg3a::mergeLists ( ) {
 		}
 		diPtr [j] = (int64_t *)mr->ptr_docIds;
 		rsPtr [j] = (double    *)mr->ptr_scores;
-		ksPtr [j] = (key_t     *)mr->ptr_clusterRecs;
+		ksPtr [j] = (key96_t     *)mr->ptr_clusterRecs;
 		diEnd [j] = (int64_t *)(mr->ptr_docIds +
 					  mr->m_numDocIds * 8);
 	}
@@ -711,7 +711,7 @@ bool Msg3a::mergeLists ( ) {
 	if ( m_docsToGet <= 0 ) { g_process.shutdownAbort(true); }
 
 	// . how much do we need to store final merged docids, etc.?
-	// . docid=8 score=4 bitScore=1 clusterRecs=key_t clusterLevls=1
+	// . docid=8 score=4 bitScore=1 clusterRecs=key96_t clusterLevls=1
 	int32_t nd1 = m_docsToGet;
 	int32_t nd2 = 0;
 	for ( int32_t j = 0; j < m_numQueriedHosts; j++ ) {
@@ -724,7 +724,7 @@ bool Msg3a::mergeLists ( ) {
 	if ( nd2 < nd1 ) nd = nd2;
 
 	int32_t need =  nd * (8+sizeof(double)+
-			   sizeof(key_t)+sizeof(DocIdScore *)+1);
+			   sizeof(key96_t)+sizeof(DocIdScore *)+1);
 	if ( need < 0 ) {
 		log("msg3a: need is %i, nd = %i is too many docids",
 		    (int)need,(int)nd);
@@ -741,7 +741,7 @@ bool Msg3a::mergeLists ( ) {
 	char *p = m_finalBuf;
 	m_docIds        = (int64_t *)p; p += nd * 8;
 	m_scores        = (double    *)p; p += nd * sizeof(double);
-	m_clusterRecs   = (key_t     *)p; p += nd * sizeof(key_t);
+	m_clusterRecs   = (key96_t     *)p; p += nd * sizeof(key96_t);
 	m_clusterLevels = (char      *)p; p += nd * 1;
 	m_scoreInfos    = (DocIdScore **)p;p+=nd*sizeof(DocIdScore *);
 

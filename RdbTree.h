@@ -101,12 +101,11 @@ public:
 	// . returns the node # we added it to on success
 	// . don't free your data because we don't copy it!
 	// . sets errno if it returns -1
-	//int32_t addNode ( collnum_t collnum , key_t  key, char *data, 
 	int32_t addKey  ( const void *key ) {
 		return addNode ( 0,(const char *)key,NULL,0);
 	}
 	int32_t addNode ( collnum_t collnum , const char *key, char *data, int32_t dataSize );
-	int32_t addNode ( collnum_t collnum , const key_t &key, char *data, int32_t dataSize ) {
+	int32_t addNode ( collnum_t collnum , const key96_t &key, char *data, int32_t dataSize ) {
 		return addNode(collnum,(const char *)&key,data,dataSize);
 	}
 	int32_t addNode ( collnum_t collnum , const char *key ) {
@@ -116,7 +115,7 @@ public:
 	// . returns -1 if not found
 	// . otherwise return the node #
 	int32_t getNode ( collnum_t collnum, const char *key );
-	int32_t getNode ( collnum_t collnum , const key_t &key ) {
+	int32_t getNode ( collnum_t collnum , const key96_t &key ) {
 		return getNode(collnum,(const char *)&key);
 	}
 
@@ -126,7 +125,7 @@ public:
         // . get the node whose key is >= key 
         // . much much slower than getNextNode() below
         int32_t getNextNode ( collnum_t collnum, const char *key );
-        int32_t getNextNode ( collnum_t collnum , const key_t &key ) {
+        int32_t getNextNode ( collnum_t collnum , const key96_t &key ) {
 		return getNextNode ( collnum, (const char *)&key);
 	}
 
@@ -142,7 +141,7 @@ public:
 
 	// . get the node whose key is <= "key"
     int32_t getPrevNode ( collnum_t collnum, const char *key );
-    int32_t getPrevNode ( collnum_t collnum , const key_t &key ) {
+    int32_t getPrevNode ( collnum_t collnum , const key96_t &key ) {
 		return getPrevNode(collnum,(const char *)&key);
 	}
 
@@ -157,12 +156,12 @@ public:
 	// . frees m_data[node] if freeIt is true
 	void deleteNode3  ( int32_t  node , bool freeData );
 	int32_t deleteNode  ( collnum_t collnum, const char *key, bool freeData );
-	int32_t deleteNode  ( collnum_t collnum , const key_t &key , bool freeData) {
+	int32_t deleteNode  ( collnum_t collnum , const key96_t &key , bool freeData) {
 		return deleteNode ( collnum , (const char *)&key , freeData ); }
 
 	// delete all nodes with keys in [startKey,endKey]
 	void deleteNodes ( collnum_t collnum ,
-			   const key_t &startKey, const key_t &endKey, bool freeData ) {
+			   const key96_t &startKey, const key96_t &endKey, bool freeData ) {
 		deleteNodes(collnum,(const char *)&startKey,(const char *)&endKey,
 			    freeData); }
 
@@ -271,8 +270,8 @@ public:
 		       bool     useHalfKeys);
 
 	bool getList ( collnum_t collnum    ,
-		       const key_t    &startKey    ,
-		       const key_t    &endKey      ,
+		       const key96_t    &startKey    ,
+		       const key96_t    &endKey      ,
 		       int32_t     minRecSizes ,
 		       RdbList *list        ,
 		       int32_t    *numPosRecs  ,

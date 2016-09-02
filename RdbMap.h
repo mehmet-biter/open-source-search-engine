@@ -135,7 +135,7 @@ class RdbMap {
 	// . like above but faster
 	// . just for adding data-less keys
 	// . NOTE: disabled until it works correctly
-	//	bool addKey  ( key_t &key );
+	//	bool addKey  ( key96_t &key );
 
 	// get the number of non-deleted records in the data file we map
 	int64_t getNumPositiveRecs() const { return m_numPositiveRecs; }
@@ -171,13 +171,11 @@ class RdbMap {
 
 	// get a key range from a page range
 	void getKeyRange  ( int32_t   startPage , int32_t   endPage ,
-			    //key_t *minKey    , key_t *maxKey  );
 			    char *minKey , char *maxKey );
 	// . get a page range from a key range
 	// . returns false if no records exist in that key range
 	// . maxKey will be sampled under "oldTruncationLimit" so you
 	//   can increase the trunc limit w/o messing up Indexdb::getTermFreq()
-	//bool getPageRange ( key_t  startKey  , key_t endKey  ,
 	bool getPageRange ( const char  *startKey, const char *endKey,
 			    int32_t  *startPage , int32_t *endPage ,
 			    char  *maxKey ,
@@ -185,12 +183,11 @@ class RdbMap {
 
 	// get the ending page so that [startPage,endPage] has ALL the recs
 	// whose keys are in [startKey,endKey] 
-	//int32_t getEndPage   ( int32_t startPage , key_t endKey );
 	int32_t getEndPage   ( int32_t startPage, const char *endKey );
 
 	// like above, but endPage may be smaller as int32_t as we cover at least
 	// minRecSizes worth of records in [startKey,endKey]
-	//bool getPageRange ( key_t  startKey  , key_t endKey  ,
+	//bool getPageRange ( key96_t  startKey  , key96_t endKey  ,
 	//int32_t   minRecSizes ,
 	//int32_t  *startPage , int32_t *endPage ) ;
 	
@@ -203,21 +200,18 @@ class RdbMap {
 	int64_t getNextAbsoluteOffset ( int32_t page ) ;
 
 
-	//key_t getLastKey ( ) { return m_lastKey; }
 	//char *getLastKey ( ) { return m_lastKey; }
 	void  getLastKey(char *key) const { KEYSET(key,m_lastKey,m_ks); }
 
 	// . these functions operate on one page
 	// . get the first key wholly on page # "page"
 	// . if page >= m_numPages use the lastKey in the file
-	//key_t getKey              ( int32_t page ) { 
 	void getKey(int32_t page, char *k) const {
 		if ( page >= m_numPages ) {KEYSET(k,m_lastKey,m_ks);return;}
 		//return m_keys[page/PAGES_PER_SEG][page%PAGES_PER_SEG];
 		KEYSET(k,&m_keys[page/PAGES_PER_SEG][(page%PAGES_PER_SEG)*m_ks],m_ks);
 		return;
 	}
-	//const key_t *getKeyPtr ( int32_t page ) { 
 	char *getKeyPtr ( int32_t page ) { 
 		//if ( page >= m_numPages ) return &m_lastKey;
 		//if ( page >= m_numPages ) return m_lastKey;
@@ -233,7 +227,6 @@ class RdbMap {
 		}
 		return m_offsets [page/PAGES_PER_SEG][page%PAGES_PER_SEG]; 
 	}
-	//void setKey               ( int32_t page , key_t &k ) { 
 	void setKey ( int32_t page, const char *k ) {
 		//#ifdef GBSANITYCHECK
 		if ( page >= m_maxNumPages ) {
@@ -282,7 +275,6 @@ class RdbMap {
 	//   are strictly less than "startKey" and "startKey" does not exist
 	// . if m_keys[N] > startKey then m_keys[N-1] spans multiple pages so 
 	//   that the key immediately after it on disk is in fact, m_keys[N]
-	//int32_t getPage ( key_t startKey ) ;
 	int32_t getPage ( const char *startKey );
 
 	// used in Rdb class before calling setMapSize
@@ -317,7 +309,7 @@ class RdbMap {
 	// . add a slot to the map
 	// . returns false if map size would be exceed by adding this slot
 	bool addRecord ( char *key, char *rec , int32_t recSize );
-	bool addRecord ( key_t &key, char *rec , int32_t recSize ) {
+	bool addRecord ( key96_t &key, char *rec , int32_t recSize ) {
 		return addRecord((char *)&key,rec,recSize);}
 
 	bool truncateFile ( BigFile *f ) ;
@@ -338,8 +330,6 @@ class RdbMap {
 	//   from int16_t to int32_t
 	char          **m_keys;
 	int32_t            m_numSegmentPtrs;
-	//key96_t      **m_keys96; // set to m_keys
-	//key128_t     **m_keys128; // set to m_keys
 
 	int16_t         **m_offsets;
 	int32_t            m_numSegmentOffs;
@@ -374,7 +364,6 @@ class RdbMap {
 	// . the last key in the file itself
 	// . getKey(pageNum) returns this when pageNum == m_numPages
 	// . used by Msg3::getSmallestEndKey()
-	//key_t  m_lastKey;
 	char m_lastKey[MAX_KEY_BYTES];
 
 	// when close is called, must we write the map?

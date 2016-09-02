@@ -139,7 +139,6 @@ private:
 	int32_t      m_minRecSizes;
 
 	// keep some original copies incase errno == ETRYAGAIN
-	//key_t     m_endKeyOrig;
 	char      m_endKeyOrig[MAX_KEY_BYTES];
 	int32_t      m_minRecSizesOrig;
 

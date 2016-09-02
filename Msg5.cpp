@@ -421,7 +421,7 @@ bool Msg5::readList ( ) {
 					// add 10% for deviations
 					rs = (rs * 110) / 100;
 					// what is the minimal record size?
-					int32_t minrs     = sizeof(key_t) + 4;
+					int32_t minrs     = sizeof(key96_t) + 4;
 					// ensure a minimal record size
 					if ( rs < minrs ) rs = minrs;
 				}
@@ -1477,14 +1477,6 @@ bool Msg5::gotRemoteList ( ) {
 		// . success messages
 		// . logging the key ranges gives us an idea of how long
 		//   it will take to patch the bad data
-		//key_t sk = m_list->getStartKey();
-		//key_t ek = m_list->getEndKey  ();
-		//log("net: Received good list from twin. Requested %" PRId32" bytes "
-		//    "and got %" PRId32". "
-		//    "startKey.n1=%" PRIx32" n0=%" PRIx64" "
-		//    "endKey.n1=%" PRIx32" n0=%" PRIx64,
-		//    m_minRecSizes , m_list->getListSize() ,
-		//    sk.n1,sk.n0,ek.n1,ek.n0);
 		const char *sk = m_list->getStartKey();
 		const char *ek = m_list->getEndKey  ();
 		log("net: Received good list from twin. Requested %" PRId32" bytes "
@@ -1499,8 +1491,6 @@ bool Msg5::gotRemoteList ( ) {
 		QUICKPOLL(m_niceness);
 		if ( ! m_list->isEmpty() )
 			m_list->setEndKey ( m_list->getLastKey() );
-		//key_t k ;
-		//k = m_list->getStartKey();
 		const char *k = m_list->getStartKey();
 		log(LOG_DEBUG,
 		    //"net: Received list skey.n1=%08" PRIx32" skey.n0=%016" PRIx64"." ,

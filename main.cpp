@@ -2359,7 +2359,7 @@ int scale ( char *newHostsConf , bool useShotgunIp) {
 	// . do a quick monte carlo test to make sure that a key in old
 	//   group #0 maps to groups 0,8,16,24 for all keys and all dbs
 	for ( int32_t i = 0 ; i < 1000 ; i++ ) {
-		//key_t k;
+		//key96_t k;
 		//k.n1 = rand(); k.n0 = rand(); k.n0 <<= 32; k.n0 |= rand();
 		//key128_t k16;
 		//k16.n0 = k.n0;
@@ -2838,9 +2838,9 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 	g_titledb.init ();
 	//g_collectiondb.init(true);
 	g_titledb.getRdb()->addRdbBase1(coll);
-	key_t startKey ;
-	key_t endKey   ;
-	key_t lastKey  ;
+	key96_t startKey ;
+	key96_t endKey   ;
+	key96_t lastKey  ;
 	startKey.setMin();
 	endKey.setMax();
 	lastKey.setMin();
@@ -2906,7 +2906,7 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 	// loop over entries in list
 	for ( list.resetListPtr() ; ! list.isExhausted() ;
 	      list.skipCurrentRecord() ) {
-		key_t k       = list.getCurrentKey();
+		key96_t k       = list.getCurrentKey();
 		char *rec     = list.getCurrentRec();
 		int32_t  recSize = list.getCurrentRecSize();
 		int64_t docId       = g_titledb.getDocIdFromKey ( k );
@@ -3087,16 +3087,16 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 		// free the mem
 		xd->reset();
 	}
-	startKey = *(key_t *)list.getLastKey();
+	startKey = *(key96_t *)list.getLastKey();
 	startKey += (uint32_t) 1;
 	// watch out for wrap around
-	if ( startKey < *(key_t *)list.getLastKey() ) return;
+	if ( startKey < *(key96_t *)list.getLastKey() ) return;
 	goto loop;
 }
 
 void dumpWaitingTree (const char *coll ) {
 	RdbTree wt;
-	if (!wt.set(0,-1,20000000,true,"waittree2", false,"waitingtree",sizeof(key_t))) {
+	if (!wt.set(0,-1,20000000,true,"waittree2", false,"waitingtree",sizeof(key96_t))) {
 		return;
 	}
 
@@ -3118,7 +3118,7 @@ void dumpWaitingTree (const char *coll ) {
 		// breathe
 		QUICKPOLL(MAX_NICENESS);
 		// get key
-		key_t *key = (key_t *)wt.getKey(node);
+		key96_t *key = (key96_t *)wt.getKey(node);
 		// get ip from that
 		int32_t firstIp = (key->n0) & 0xffffffff;
 		// get the time
@@ -3138,8 +3138,8 @@ void dumpWaitingTree (const char *coll ) {
 void dumpDoledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree){
 	g_doledb.init ();
 	g_doledb.getRdb()->addRdbBase1(coll );
-	key_t startKey ;
-	key_t endKey   ;
+	key96_t startKey ;
+	key96_t endKey   ;
 	startKey.setMin();
 	endKey.setMax();
 	// turn off threads
@@ -3148,7 +3148,7 @@ void dumpDoledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool 
 	int32_t minRecSizes = 1024*1024;
 	Msg5 msg5;
 	RdbList list;
-	key_t oldk; oldk.setMin();
+	key96_t oldk; oldk.setMin();
 	CollectionRec *cr = g_collectiondb.getRec(coll);
  loop:
 	// use msg5 to get the list, should ALWAYS block since no threads
@@ -3182,7 +3182,7 @@ void dumpDoledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool 
 	// loop over entries in list
 	for ( list.resetListPtr() ; ! list.isExhausted() ;
 	      list.skipCurrentRecord() ) {
-		key_t k    = list.getCurrentKey();
+		key96_t k    = list.getCurrentKey();
 		if ( oldk > k ) 
 			fprintf(stdout,"got bad key order. "
 				"%" PRIx32"/%" PRIx64" > %" PRIx32"/%" PRIx64"\n",
@@ -3221,10 +3221,10 @@ void dumpDoledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool 
 		if ( (sreq->m_key.n0 & 0x01) == 0x00 ) {
 			g_process.shutdownAbort(true); }
 	}
-	startKey = *(key_t *)list.getLastKey();
+	startKey = *(key96_t *)list.getLastKey();
 	startKey += (uint32_t) 1;
 	// watch out for wrap around
-	if ( startKey < *(key_t *)list.getLastKey() ) return;
+	if ( startKey < *(key96_t *)list.getLastKey() ) return;
 	goto loop;
 }
 
@@ -3718,8 +3718,8 @@ int32_t dumpSpiderdb ( const char *coll, int32_t startFileNum, int32_t numFiles,
 static int keycmp(const void *, const void *);
 int keycmp ( const void *p1 , const void *p2 ) {
 	// returns 0 if equal, -1 if p1 < p2, +1 if p1 > p2
-	if ( *(key_t *)p1 < *(key_t *)p2 ) return -1;
-	if ( *(key_t *)p1 > *(key_t *)p2 ) return  1;
+	if ( *(key96_t *)p1 < *(key96_t *)p2 ) return -1;
+	if ( *(key96_t *)p1 > *(key96_t *)p2 ) return  1;
 	return 0;
 }
 
@@ -3730,7 +3730,7 @@ bool treetest ( ) {
 	// seed randomizer
 	srand ( (int32_t)gettimeofdayInMilliseconds() );
 	// make list of one million random keys
-	key_t *k = (key_t *)mmalloc ( sizeof(key_t) * numKeys , "main" );
+	key96_t *k = (key96_t *)mmalloc ( sizeof(key96_t) * numKeys , "main" );
 	if ( ! k ) {
 		log(LOG_WARN, "speedtest: malloc failed");
 		return false;
@@ -3768,13 +3768,13 @@ bool treetest ( ) {
 
 	// sort the list of keys
 	t = gettimeofdayInMilliseconds();
-	gbsort ( k , numKeys , sizeof(key_t) , keycmp );
+	gbsort ( k , numKeys , sizeof(key96_t) , keycmp );
 	// print time it took
 	e = gettimeofdayInMilliseconds();
 	log("db: sorted %" PRId32" in %" PRId64" ms",numKeys,e - t);
 
 	// get the list
-	key_t kk;
+	key96_t kk;
 	kk.n0 = 0LL;
 	kk.n1 = 0;
 	kk.n1 = 1234567;
@@ -3800,7 +3800,7 @@ bool hashtest ( ) {
 	// seed randomizer
 	srand ( (int32_t)gettimeofdayInMilliseconds() );
 	// make list of one million random keys
-	key_t *k = (key_t *)mmalloc ( sizeof(key_t) * numKeys , "main" );
+	key96_t *k = (key96_t *)mmalloc ( sizeof(key96_t) * numKeys , "main" );
 	if ( ! k ) {
 		log(LOG_WARN, "hashtest: malloc failed");
 		return false;
@@ -4148,7 +4148,7 @@ void dumpTagdb( const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 	// loop over entries in list
 	for(list.resetListPtr();!list.isExhausted(); list.skipCurrentRecord()){
 		char *rec  = list.getCurrentRec();
-		//key_t k    = list.getCurrentKey();
+		//key96_t k    = list.getCurrentKey();
 		key128_t k;
 		list.getCurrentKey ( &k );
 		char *data = list.getCurrentData();
@@ -4292,8 +4292,8 @@ bool parseTest ( const char *coll, int64_t docId, const char *query ) {
 	// get a title rec
 	g_jobScheduler.disallow_new_jobs();
 	RdbList tlist;
-	key_t startKey = g_titledb.makeFirstKey ( docId );
-	key_t endKey   = g_titledb.makeLastKey  ( docId );
+	key96_t startKey = g_titledb.makeFirstKey ( docId );
+	key96_t endKey   = g_titledb.makeLastKey  ( docId );
 	// a niceness of 0 tells it to block until it gets results!!
 	Msg5 msg5;
 
@@ -4841,8 +4841,8 @@ void dumpClusterdb ( const char *coll,
 		     bool includeTree ) {
 	g_clusterdb.init ();
 	g_clusterdb.getRdb()->addRdbBase1(coll );
-	key_t startKey ;
-	key_t endKey   ;
+	key96_t startKey ;
+	key96_t endKey   ;
 	startKey.setMin();
 	endKey.setMax();
 	// turn off threads
@@ -4895,7 +4895,7 @@ void dumpClusterdb ( const char *coll,
 	char strLanguage[256];
 	for ( list.resetListPtr() ; ! list.isExhausted() ;
 	      list.skipCurrentRecord() ) {
-		key_t k    = list.getCurrentKey();
+		key96_t k    = list.getCurrentKey();
 		// is it a delete?
 		const char *dd = "";
 		if ( (k.n0 & 0x01) == 0x00 ) dd = " (delete)";
@@ -4924,10 +4924,10 @@ void dumpClusterdb ( const char *coll,
 		continue;
 	}
 
-	startKey = *(key_t *)list.getLastKey();
+	startKey = *(key96_t *)list.getLastKey();
 	startKey += (uint32_t) 1;
 	// watch out for wrap around
-	if ( startKey < *(key_t *)list.getLastKey() )
+	if ( startKey < *(key96_t *)list.getLastKey() )
 		return;
 	goto loop;
 }
@@ -5267,7 +5267,7 @@ static int32_t s_injectTitledb;
 static int32_t s_injectWarc;
 static int32_t s_injectArc;
 static const char *s_coll = NULL;
-static key_t s_titledbKey;
+static key96_t s_titledbKey;
 static char *s_req  [MAX_INJECT_SOCKETS];
 static int64_t s_docId[MAX_INJECT_SOCKETS];
 static char s_init5 = false;
@@ -5568,7 +5568,7 @@ void doInject ( int fd , void *state ) {
 	if ( s_injectTitledb ) {
 		// turn off threads so this happens right away
 		g_jobScheduler.disallow_new_jobs();
-		key_t endKey; //endKey.setMax();
+		key96_t endKey; //endKey.setMax();
 		endKey = g_titledb.makeFirstKey(s_endDocId);
 		RdbList list;
 		Msg5 msg5;
@@ -6893,7 +6893,7 @@ bool cacheTest() {
 	// timestamp
 	int32_t timestamp = 42;
 	// keep ring buffer of last 10 keys
-	key_t oldk[10];
+	key96_t oldk[10];
 	int32_t  oldip[10];
 	int32_t  b = 0;
 	// fill with random recs
@@ -6901,7 +6901,7 @@ bool cacheTest() {
 		if ( (i % 100000) == 0 )
 			logf(LOG_DEBUG,"test: Added %" PRId32" recs to cache.",i);
 		// random key
-		key_t k ;
+		key96_t k ;
 		k.n1 = rand();
 		k.n0 = rand();
 		k.n0 <<= 32;
@@ -6919,7 +6919,7 @@ bool cacheTest() {
 		if ( i < 10 ) continue;
 		int32_t next = b + 1;
 		if ( next >= 10 ) next = 0;
-		key_t back = oldk[next];
+		key96_t back = oldk[next];
 		char *rec;
 		int32_t  recSize;
 		if ( ! c.getRecord ( (collnum_t)0 ,
@@ -6983,7 +6983,7 @@ bool cacheTest() {
 			logf(LOG_DEBUG,"test: Added %" PRId32" recs to cache. "
 			     "Misses=%" PRId32".",i,numMisses);
 		// random key
-		key_t k ;
+		key96_t k ;
 		k.n1 = rand();
 		k.n0 = rand();
 		k.n0 <<= 32;
@@ -7010,7 +7010,7 @@ bool cacheTest() {
 		if ( i < 10 ) continue;
 		int32_t next = b + 1;
 		if ( next >= 10 ) next = 0;
-		key_t back = oldk[next];
+		key96_t back = oldk[next];
 		//log("cache: get rec");
 		if ( ! c.getRecord ( (collnum_t)0 ,
 				     back         ,
@@ -7098,9 +7098,9 @@ void countdomains( const char* coll, int32_t numRecs, int32_t verbosity, int32_t
 
 	CollectionRec *cr = g_collectiondb.getRec(coll);
 
-	key_t startKey;
-	key_t endKey  ;
-	key_t lastKey ;
+	key96_t startKey;
+	key96_t endKey  ;
+	key96_t lastKey ;
 	startKey.setMin();
 	endKey.setMax();
 	lastKey.setMin();
@@ -7163,7 +7163,7 @@ void countdomains( const char* coll, int32_t numRecs, int32_t verbosity, int32_t
 	// loop over entries in list
 	for ( list.resetListPtr() ; ! list.isExhausted() ;
 	      list.skipCurrentRecord() ) {
-		key_t k       = list.getCurrentKey();
+		key96_t k       = list.getCurrentKey();
 		char *rec     = list.getCurrentRec();
 		int32_t  recSize = list.getCurrentRecSize();
 		int64_t docId       = g_titledb.getDocId        ( &k );
@@ -7342,10 +7342,10 @@ void countdomains( const char* coll, int32_t numRecs, int32_t verbosity, int32_t
 		if( countDocs == numRecs ) goto freeInfo;
 		//else countDocs++;
 	}
-	startKey = *(key_t *)list.getLastKey();
+	startKey = *(key96_t *)list.getLastKey();
 	startKey += (uint32_t) 1;
 	// watch out for wrap around
-	if ( startKey < *(key_t *)list.getLastKey() ) {
+	if ( startKey < *(key96_t *)list.getLastKey() ) {
 		log( LOG_INFO, "cntDm: Keys wrapped around! Exiting." );
 		goto freeInfo;
 	}

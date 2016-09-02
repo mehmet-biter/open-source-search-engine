@@ -64,7 +64,7 @@ enum {
 
 extern const char * const g_crStrings[];
 
-bool setClusterLevels ( const key_t   *clusterRecs,
+bool setClusterLevels ( const key96_t   *clusterRecs,
 			const int64_t *docIds,
 			int32_t       numRecs              ,
 			int32_t       maxDocIdsPerHostname ,
@@ -87,7 +87,7 @@ class Msg51 {
 	// . we just store the "int32_t" part of the cluster rec
 	bool getClusterRecs ( const int64_t     *docIds,
 			      char          *clusterLevels            ,
-			      key_t         *clusterRecs              ,
+			      key96_t         *clusterRecs              ,
 			      int32_t           numDocIds                ,
 			      collnum_t collnum ,
 			      int32_t           maxCacheAge              ,
@@ -108,7 +108,7 @@ class Msg51 {
 	//	return g_clusterdb.getSiteHash26((char *)&clusterRec); }
 
 
-        key_t getClusterRec ( int32_t i ) const { return m_clusterRecs[i]; }
+        key96_t getClusterRec ( int32_t i ) const { return m_clusterRecs[i]; }
 
 private:
 	bool sendRequests   ( int32_t k );
@@ -119,7 +119,7 @@ private:
 	int32_t         m_numDocIds;
 
 	// the lower 64 bits of each cluster rec
-	key_t      *m_clusterRecs;
+	key96_t      *m_clusterRecs;
 	char       *m_clusterLevels;
 
 	void     (*m_callback ) ( void *state );

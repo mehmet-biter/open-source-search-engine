@@ -3,14 +3,14 @@
 // . we use a big buffer, m_buf, into which we sequentially store records as 
 //   they are added to the cache
 // . each record we store in the big buffer has a header which consists
-//   of a key_t, recordSize(int32_t), timestamp and the record data
+//   of a key96_t, recordSize(int32_t), timestamp and the record data
 // . the header is as follows:
 //   a collnum_t (use sizeof(collnum_t)) that identifies the collection
-//   a 12 byte key_t (actually, it is now m_cks bytes)
+//   a 12 byte key96_t (actually, it is now m_cks bytes)
 //   a 4 bytes timestamp (seconds since the epoch, like time_t)
 //   a 4 bytes data size
 //   the data
-// . we have a hash table that maps a key_t to a ptr to a record header in the
+// . we have a hash table that maps a key96_t to a ptr to a record header in the
 //   big buffer
 // . what if we run out of room in the hash table? we delete the oldest
 //   records in the big buffer so we can remove their ptrs from the hash table
@@ -140,7 +140,7 @@ class RdbCache {
 			 bool     promoteRecord = true);
 
 	bool getRecord ( collnum_t collnum   ,
-			 key_t    cacheKey   ,
+			 key96_t    cacheKey   ,
 			 char   **rec        ,
 			 int32_t    *recSize    ,
 			 bool     doCopy     ,
@@ -153,7 +153,7 @@ class RdbCache {
 	}
 
 	bool getRecord ( const char    *coll       ,
-			 key_t    cacheKey   ,
+			 key96_t    cacheKey   ,
 			 char   **rec        ,
 			 int32_t    *recSize    ,
 			 bool     doCopy     ,
@@ -186,12 +186,12 @@ class RdbCache {
 	// use this key for cache lookup of the list rather than form from 
 	// startKey/endKey
 	bool addList ( collnum_t collnum, const char *cacheKey, RdbList *list );
-	bool addList ( collnum_t collnum, key_t cacheKey, RdbList *list ) {
+	bool addList ( collnum_t collnum, key96_t cacheKey, RdbList *list ) {
 		return addList(collnum,(const char *)&cacheKey,list);
 	}
 
 	bool addList ( const char *coll, const char *cacheKey, RdbList *list );
-	bool addList ( const char *coll, key_t cacheKey, RdbList *list ) {
+	bool addList ( const char *coll, key96_t cacheKey, RdbList *list ) {
 		return addList(coll,(const char *)&cacheKey,list);
 	}
 
@@ -212,7 +212,7 @@ class RdbCache {
 			 int32_t  timestamp = 0 );
 
 	bool addRecord ( collnum_t collnum ,
-			 key_t cacheKey , 
+			 key96_t cacheKey ,
 			 const char *rec      ,
 			 int32_t  recSize  ,
 			 int32_t  timestamp = 0 ) {
@@ -221,7 +221,7 @@ class RdbCache {
 	}
 
 	bool addRecord ( const char *coll     ,
-			 key_t cacheKey , 
+			 key96_t cacheKey ,
 			 const char *rec      ,
 			 int32_t  recSize  ,
 			 int32_t  timestamp = 0 ) {

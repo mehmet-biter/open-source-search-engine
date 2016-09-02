@@ -181,10 +181,6 @@ void RdbTree::reset ( ) {
 
 void RdbTree::delColl ( collnum_t collnum ) {
 	m_needsSave = true;
-	//key_t startKey;
-	//key_t endKey;
-	//startKey.setMin();
-	//endKey.setMax();
 	const char *startKey = KEYMIN();
 	const char *endKey   = KEYMAX();
 	deleteNodes ( collnum , startKey , endKey , true/*freeData*/) ;
@@ -303,19 +299,16 @@ int32_t RdbTree::getNextNode ( collnum_t collnum, const char *key ) {
 }
 
 int32_t RdbTree::getFirstNode ( ) {
-	//key_t k;  k.n0 = 0LL; k.n1 = 0;
 	const char *k = KEYMIN();
 	return getNextNode ( 0 , k );
 }
 
 int32_t RdbTree::getFirstNode2 ( collnum_t collnum ) {
-	//key_t k;  k.n0 = 0LL; k.n1 = 0;
 	const char *k = KEYMIN();
 	return getNextNode ( collnum , k );
 }
 
 int32_t RdbTree::getLastNode ( ) {
-	//key_t k;  k.setMax();
 	const char *k = KEYMAX();
 	return getPrevNode ( (collnum_t)0x7fff , k );
 }
@@ -667,7 +660,6 @@ int32_t RdbTree::deleteNode  ( collnum_t collnum, const char *key, bool freeData
 
 // delete all nodes with keys in [startKey,endKey]
 void RdbTree::deleteNodes ( collnum_t collnum ,
-			    //key_t startKey , key_t endKey , bool freeData ) {
 			    const char *startKey, const char *endKey, bool freeData ) {
 
 	// sanity check
@@ -988,7 +980,6 @@ bool RdbTree::deleteList(collnum_t collnum, RdbList *list, bool doBalancing) {
 	if ( m_numUsedNodes <= 0 ) return true;
 	// reset before calling list->getCurrent*() functions
 	list->resetListPtr();
-	//key_t key;
 	char key[MAX_KEY_BYTES];
 	// bail if list is empty now
 	if ( list->isEmpty() ) return true;
@@ -1029,7 +1020,6 @@ void RdbTree::deleteOrderedList ( collnum_t collnum ,
 	if ( m_numUsedNodes <= 0 ) return ;
 	// reset before calling list->getCurrent*() functions
 	list->resetListPtr();
-	//key_t key;
 	char key [ MAX_KEY_BYTES ];
 	// bail if list is empty now
 	if ( list->isEmpty() ) return;
@@ -1427,7 +1417,6 @@ bool RdbTree::growTree(int32_t nn) {
 	int32_t   k = m_ks;
 	int32_t   d = sizeof(char *);
 
-	//key_t *kp = NULL;
 	char  *kp = NULL;
 	int32_t  *lp = NULL;
 	int32_t  *rp = NULL;
@@ -1876,7 +1865,7 @@ bool RdbTree::getList ( collnum_t collnum ,
 	// . "node" should be the next node we would have added to this list
 	// . if "node" is < 0 then we can keep endKey set high the way it is
 	//if ( node >= 0 ) {
-	//key_t newEndKey = m_keys[node];
+	//key96_t newEndKey = m_keys[node];
 	//newEndKey -= (uint32_t) 1 ;
 	//list->set ( startKey , newEndKey );
 	//}
@@ -1887,7 +1876,6 @@ bool RdbTree::getList ( collnum_t collnum ,
 	// there may be more records before endKey than we put in "list"
 	if ( list->getListSize() >= minRecSizes && lastNode >= 0 ) {
 		// use the last key we read as the new endKey
-		//key_t newEndKey = m_keys[lastNode];
 		char newEndKey[MAX_KEY_BYTES];
 		KEYSET(newEndKey,&m_keys[lastNode*m_ks],m_ks);
 		// . if he's negative, boost new endKey by 1 because endKey's
@@ -2834,7 +2822,6 @@ int32_t RdbTree::fastLoadBlock ( BigFile *f, int32_t start, int32_t totalNodes, 
 			if ( m_parents[i] != -2 ) bufSize += m_fixedDataSize;
 	}
 	// get space
-	//key_t dummy;
 	char *dummy = NULL;
 	char *buf = (char *) stack->allocData ( dummy , bufSize , 0 );
 	if ( ! buf ) {

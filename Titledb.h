@@ -91,20 +91,20 @@ class Titledb {
 	// . we use the top X bits of the keys to partition the records
 	// . using the top bits to partition allows us to keep keys that
 	//   are near each other (euclidean metric) in the same partition
-	int64_t getDocIdFromKey ( key_t *key ) {
+	int64_t getDocIdFromKey ( key96_t *key ) {
 		uint64_t docId;
 		docId = ((uint64_t)key->n1)<<(NUMDOCIDBITS - 32);
 		docId|=                      key->n0 >>(64-(NUMDOCIDBITS-32));
 		return docId;
 	}
-	int64_t getDocId ( key_t *key ) { return getDocIdFromKey(key); }
-	int64_t getDocIdFromKey ( key_t  key ) {
+	int64_t getDocId ( key96_t *key ) { return getDocIdFromKey(key); }
+	int64_t getDocIdFromKey ( key96_t  key ) {
 		return getDocIdFromKey(&key);}
 
 	uint8_t getDomHash8FromDocId (int64_t d) {
 		return (d & ~0xffffffffffffc03fULL) >> 6; }
 
-	int64_t getUrlHash48 ( key_t *k ) {
+	int64_t getUrlHash48 ( key96_t *k ) {
 		return ((k->n0 >> 10) & 0x0000ffffffffffffLL); }
 
 	// . dptr is a char ptr to the docid
@@ -120,7 +120,7 @@ class Titledb {
 	bool isLocal ( int64_t docId );
 	bool isLocal ( Url *url ) {
 		return isLocal ( getProbableDocId(url) ); }
-	bool isLocal ( key_t key ) { 
+	bool isLocal ( key96_t key ) {
 		return isLocal (getDocIdFromKey(&key));}
 
 
@@ -129,12 +129,12 @@ class Titledb {
 	// . make the key of a TitleRec from a docId
 	// . remember to set the low bit so it's not a delete
 	// . hi bits are set in the key
-	key_t makeKey ( int64_t docId, int64_t uh48, bool isDel );
+	key96_t makeKey ( int64_t docId, int64_t uh48, bool isDel );
 
-	key_t makeFirstKey ( int64_t docId ) {
+	key96_t makeFirstKey ( int64_t docId ) {
 		return makeKey ( docId , 0, true ); }
 
-	key_t makeLastKey  ( int64_t docId ) {
+	key96_t makeLastKey  ( int64_t docId ) {
 		return makeKey ( docId , 0xffffffffffffLL, false ); }
 
 	// . this is an estimate of the number of docs in the WHOLE db network

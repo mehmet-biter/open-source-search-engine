@@ -56,7 +56,7 @@ class SpiderLoop {
 	//   true otherwise
 	// . returns true and sets g_errno on error
 	bool spiderUrl9 ( class SpiderRequest *sreq ,
-			 key_t *doledbKey       ,
+			 key96_t *doledbKey       ,
 			  collnum_t collnum,//char  *coll            ,
 			  int32_t sameIpWaitTime , // in milliseconds
 			  int32_t maxSpidersOutPerIp );
@@ -71,7 +71,7 @@ class SpiderLoop {
 	char      *m_content;
 	int32_t       m_contentLen;
 	char       m_contentHasMime;
-	key_t     *m_doledbKey;
+	key96_t     *m_doledbKey;
 	void      *m_state;
 	void     (*m_callback)(void *state);
 

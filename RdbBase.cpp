@@ -2139,7 +2139,6 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 
 // . use the maps and tree to estimate the size of this list w/o hitting disk
 // . used by Indexdb.cpp to get the size of a list for IDF weighting purposes
-//int32_t RdbBase::getListSize ( key_t startKey , key_t endKey , key_t *max ,
 int64_t RdbBase::getListSize ( char *startKey , char *endKey , char *max ,
 			         int64_t oldTruncationLimit ) {
 	// . reset this to low points
@@ -2148,7 +2147,6 @@ int64_t RdbBase::getListSize ( char *startKey , char *endKey , char *max ,
 	KEYSET(max,endKey,m_ks);
 	bool first = true;
 	// do some looping
-	//key_t newGuy;
 	char newGuy[MAX_KEY_BYTES];
 	int64_t totalBytes = 0;
 	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) {

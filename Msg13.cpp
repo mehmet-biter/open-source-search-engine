@@ -471,7 +471,7 @@ void handleRequest13 ( UdpSlot *slot , int32_t niceness  ) {
 	RdbCache *c = &s_httpCacheOthers;
 	if ( r->m_isRobotsTxt ) c = &s_httpCacheRobots;
 	// the key is just the 64 bit hash of the url
-	key_t k; k.n1 = 0; k.n0 = r->m_cacheKey;
+	key96_t k; k.n1 = 0; k.n0 = r->m_cacheKey;
 	// see if in there already
 	bool inCache = c->getRecord ( (collnum_t)0     , // share btwn colls
 				      k                , // cacheKey
@@ -1537,7 +1537,7 @@ void gotHttpReply2 ( void *state ,
 		// use robots cache if we are a robots.txt file
 		if ( r->m_isRobotsTxt ) c = &s_httpCacheRobots;
 		// key is based on url hash
-		key_t k; k.n1 = 0; k.n0 = r->m_cacheKey;
+		key96_t k; k.n1 = 0; k.n0 = r->m_cacheKey;
 		// add it, use a generic collection
 		c->addRecord ( (collnum_t) 0 , k , reply , replySize );
 		// ignore errors caching it
