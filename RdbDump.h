@@ -49,9 +49,6 @@ public:
 	const char *getFirstKeyInQueue() const { return m_firstKeyInQueue; }
 	const char *getLastKeyInQueue() const { return m_lastKeyInQueue; }
 
-	// a niceness of 0 means to block on the dumping
-	int32_t getNiceness() const { return m_niceness; }
-
 	collnum_t getCollNum() const { return m_collnum; }
 
 	void setSuspended() { m_isSuspended = true; }
