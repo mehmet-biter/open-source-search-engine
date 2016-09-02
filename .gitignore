@@ -8,6 +8,7 @@
 *.conf.saving
 *.conf
 *.cache
+entities.inc
 diskusage
 gb
 gb.oldsave
@@ -36,8 +37,9 @@ lastcore.*
 *.creator.user
 *.files
 *.includes
+# cmake
+CMakeLists.txt
 # coverage
 *.gcda
 *.gcno
 coverage*.html
-entities.inc
