@@ -2864,6 +2864,7 @@ handleNextDocId:
 	}
 
 
+//@@@ HERTIL
 	// TODO: consider skipping this pre-filter if it sucks, as it does
 	// for 'time enough for love'. it might save time!
 	if ( ! secondPass ) {
@@ -2873,7 +2874,7 @@ handleNextDocId:
 		// This computes an upper bound for each query term
 		for ( int32_t i = 0 ; i < numQueryTermsToHandle ; i++ ) { // m_numQueryTermInfos ; i++ ) {
 			// skip negative termlists.
-			if ( qtibuf[i].m_bigramFlags[0]&(BF_NEGATIVE) ) {
+			if ( qtibuf[i].m_bigramFlags[0] & (BF_NEGATIVE) ) {
 				continue;
 			}
 
@@ -2885,7 +2886,7 @@ handleNextDocId:
 			if ( maxScore == -1.0 ) {
 				continue;
 			}
-
+log(LOG_ERROR,"@@@ maxScore=%f  minWinningScore=%f", maxScore, minWinningScore);
 			// if any one of these terms have a max score below the
 			// worst score of the 10th result, then it can not win.
 			if ( maxScore <= minWinningScore && ! secondPass ) {
@@ -4213,7 +4214,7 @@ float PosdbTable::getMaxPossibleScore ( const QueryTermInfo *qti,
 	// max possible score of each one
 	for ( int32_t j = 0 ; j < qti->m_numMatchingSubLists ; j++ ) {
 		// scan backwards up to this
-		char *start = qti->m_matchingSubListSavedCursor[j] ;
+		char *start = qti->m_matchingSubListSavedCursor[j];
 		
 		// skip if does not have our docid
 		if ( ! start ) {
@@ -4245,27 +4246,36 @@ float PosdbTable::getMaxPossibleScore ( const QueryTermInfo *qti,
 		dc -= 6;
 		// reset this
 		bool retried = false;
+		
 		// do not include the beginning 12 byte key in this loop!
 		for ( ; dc >= start ; dc -= 6 ) {
 			// loop back here for the 12 byte key
 		retry:
 			// get the best hash group
 			hgrp = g_posdb.getHashGroup(dc);
+
 			// if not body, do not apply this algo because
 			// we end up adding term pairs from each hash group
-			if ( hgrp == HASHGROUP_INLINKTEXT ) return -1.0;
+			if ( hgrp == HASHGROUP_INLINKTEXT ) {
+				return -1.0;
+			}
+			
 			//if ( hgrp == HASHGROUP_TITLE      ) return -1.0;
 			// loser?
 			if ( s_hashGroupWeights[hgrp] < bestHashGroupWeight ) {
 				// if in body, it's over for this termlist 
 				// because this is the last hash group
 				// we will encounter.
-				if ( hgrp == HASHGROUP_BODY )
+				if ( hgrp == HASHGROUP_BODY ) {
+					// @@@ BR: Dangerous assumption if we change indexing order in XmlDoc_Indexing ! @@@
 					goto nextTermList;
+				}
 				// otherwise, keep chugging
 				continue;
 			}
+			
 			char dr = g_posdb.getDensityRank(dc);
+			
 			// a clean win?
 			if ( s_hashGroupWeights[hgrp] > bestHashGroupWeight ) {
 				// if the term was in an inlink we end
@@ -4273,20 +4283,27 @@ float PosdbTable::getMaxPossibleScore ( const QueryTermInfo *qti,
 				// -1 to indicate we had inlinktext so
 				// we won't apply the constraint to this
 				// docid for this term
-				if ( hgrp == HASHGROUP_INLINKTEXT )
+				if ( hgrp == HASHGROUP_INLINKTEXT ) {
 					return -1.0;
+				}
+				
 				bestHashGroupWeight = s_hashGroupWeights[hgrp];
 				bestDensityRank = dr;
 				continue;
 			}
+			
 			// but worst density rank?
-			if ( dr < bestDensityRank ) 
+			if ( dr < bestDensityRank ) {
 				continue;
+			}
+			
 			// better?
-			if ( dr > bestDensityRank )
+			if ( dr > bestDensityRank ) {
 				bestDensityRank = dr;
+			}
 			// another tie, oh well... just ignore it
 		}
+		
 		// handle the beginning 12 byte key
 		if ( ! retried ) {
 			retried = true;
@@ -4300,31 +4317,37 @@ float PosdbTable::getMaxPossibleScore ( const QueryTermInfo *qti,
 	}
 
 	// if nothing, then maybe all sublists were empty?
-	if ( bestHashGroupWeight < 0 ) return 0.0;
+	if ( bestHashGroupWeight < 0 ) {
+		return 0.0;
+	}
 
 	// assume perfect adjacency and that the other term is perfect
 	float score = 100.0;
 
 	score *= bestHashGroupWeight;
 	score *= bestHashGroupWeight;
+	
 	// since adjacent, 2nd term in pair will be in same sentence
 	// TODO: fix this for 'qtm' it might have a better density rank and
 	//       better hashgroup weight, like being in title!
 	score *= s_densityWeights[bestDensityRank];
 	score *= s_densityWeights[bestDensityRank];
+	
 	// wiki bigram?
 	if ( hadHalfStopWikiBigram ) {
 		score *= WIKI_BIGRAM_WEIGHT;
 		score *= WIKI_BIGRAM_WEIGHT;
 	}
+	
 	//score *= perfectWordSpamWeight * perfectWordSpamWeight;
 	score *= (((float)siteRank)*m_siteRankMultiplier+1.0);
 
 	// language boost if same language (or no lang specified)
 	if ( m_r->m_language == docLang ||
 	     m_r->m_language == 0 || 
-	     docLang == 0 )
+	     docLang == 0 ) {
 		score *= m_r->m_sameLangWeight;//SAMELANGMULT;
+	}
 	
 	// assume the other term we pair with will be 1.0
 	score *= qti->m_termFreqWeight;
@@ -4333,14 +4356,24 @@ float PosdbTable::getMaxPossibleScore ( const QueryTermInfo *qti,
 	if ( qdist ) {
 		// no use it
 		score *= qtm->m_termFreqWeight;
+		
 		// subtract qdist
 		bestDist -= qdist;
+		
 		// assume in correct order
-		if ( qdist < 0 ) qdist *= -1;
+		if ( qdist < 0 ) {
+			qdist *= -1;
+		}
+		
 		// make it positive
-		if ( bestDist < 0 ) bestDist *= -1;
+		if ( bestDist < 0 ) {
+			bestDist *= -1;
+		}
+		
 		// avoid 0 division
-		if ( bestDist > 1 ) score /= (float)bestDist;
+		if ( bestDist > 1 ) {
+			score /= (float)bestDist;
+		}
 	}
 
 	// terms in same wikipedia phrase?
@@ -4351,8 +4384,9 @@ float PosdbTable::getMaxPossibleScore ( const QueryTermInfo *qti,
 	// we were never multiplying by WIKI_WEIGHT, even though all
 	// query terms were in the same wikipedia phrase. so see if this
 	// speeds it up.
-	if ( m_allInSameWikiPhrase )
+	if ( m_allInSameWikiPhrase ) {
 		score *= WIKI_WEIGHT;
+	}
 	
 	logTrace(g_conf.m_logTracePosdb, "END. score=%f", score);
 	return score;
