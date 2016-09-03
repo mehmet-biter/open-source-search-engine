@@ -386,10 +386,8 @@ bool RdbDump::dumpTree(bool recall) {
 			char tmp1[32];
 			char tmp2[32];
 
-			if (m_firstKeyInQueue) {
-				strcpy(tmp1, KEYSTR(m_firstKeyInQueue, m_list->m_ks));
-				ks1 = tmp1;
-			}
+			strcpy(tmp1, KEYSTR(m_firstKeyInQueue, m_list->m_ks));
+			ks1 = tmp1;
 
 			if (m_lastKeyInQueue) {
 				strcpy(tmp2, KEYSTR(m_lastKeyInQueue, m_list->m_ks));
