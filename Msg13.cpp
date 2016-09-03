@@ -2195,7 +2195,7 @@ bool addNewProxyAuthorization ( SafeBuf *req , Msg13Request *r ) {
 	SpiderProxy *sp = getSpiderProxyByIpPort (r->m_proxyIp,r->m_proxyPort);
 
 	// if none required, all done
-	if ( ! sp->m_usernamePwd ) return true;
+	if ( ! sp->m_usernamePwd[0] ) return true;
 	// strange?
 	if ( req->length() < 8 ) return false;
 	// back up over final \r\n
