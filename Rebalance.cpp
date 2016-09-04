@@ -437,7 +437,7 @@ bool Rebalance::gotList ( ) {
 
 	Rdb *rdb = g_process.m_rdbs[m_rdbNum];
 
-	char rdbId = rdb->getRdbId();
+	rdbid_t rdbId = rdb->getRdbId();
 
 	int32_t ks = rdb->getKeySize();
 
