@@ -17,9 +17,7 @@ public:
 	//Url   m_rootUrl;
 	const char *m_u;
 	int32_t  m_ulen;
-	bool  m_applyRulesetToRoot;
 	char  m_rootQuality;
-	int32_t  m_reparseRootRetries;
 	char  m_coll[MAX_COLL_LEN];
 	int32_t  m_collLen;
 	//int32_t  m_sfn;
