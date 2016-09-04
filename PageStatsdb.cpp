@@ -33,7 +33,6 @@ class StateStatsdb {
 	int32_t m_hostId;
 
 	// Request & build flags
-	bool m_dateLimit;
 	bool m_dateCustom;
 	bool m_cacti;
 	bool m_now;
