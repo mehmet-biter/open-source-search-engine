@@ -761,7 +761,7 @@ void gotListWrapper ( void *state , RdbList *listb , Msg5 *msg5xx ) {
 	//
 	if ( st0->m_rdbId == RDB_LINKDB ) {
 		// store compressed list on itself
-		char *dst = list->m_list;
+		char *dst = list->getList();
 		// keep stats
 		int32_t totalOrigLinks = 0;
 		int32_t ipDups = 0;

@@ -4723,7 +4723,7 @@ void dumpPosdb (const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 		if ( (k.n0 & 0x01) == 0x00 ) dd = " (delete)";
 		int64_t d = g_posdb.getDocId(&k);
 		uint8_t dh = g_titledb.getDomHash8FromDocId(d);
-		char *rec = list.m_listPtr;
+		char *rec = list.getListPtr();
 		int32_t recSize = 18;
 		if ( rec[0] & 0x04 ) recSize = 6;
 		else if ( rec[0] & 0x02 ) recSize = 12;

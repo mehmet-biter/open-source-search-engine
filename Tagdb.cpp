@@ -425,7 +425,7 @@ Tag* TagRec::getFirstTag ( ) {
 		return NULL;
 	}
 
-	return (Tag *)m_listPtrs[0]->m_list;
+	return (Tag *)m_listPtrs[0]->getList();
 }
 
 Tag* TagRec::getNextTag ( Tag *tag ) {
@@ -441,8 +441,8 @@ Tag* TagRec::getNextTag ( Tag *tag ) {
 	// find what list we are in
 	int32_t i;
 	for ( i = 0 ; i < m_numListPtrs ; i++ ) {
-		if ( current <  m_listPtrs[i]->m_list    ) continue;
-		if ( current >= m_listPtrs[i]->m_listEnd ) continue;
+		if ( current <  m_listPtrs[i]->getList()    ) continue;
+		if ( current >= m_listPtrs[i]->getListEnd() ) continue;
 		break;
 	}
 
@@ -459,7 +459,7 @@ Tag* TagRec::getNextTag ( Tag *tag ) {
 	}
 
 	// breach list?
-	if ( current < m_listPtrs[i]->m_listEnd) {
+	if ( current < m_listPtrs[i]->getListEnd()) {
 		return (Tag *)current;
 	}
 
@@ -472,7 +472,7 @@ Tag* TagRec::getNextTag ( Tag *tag ) {
 	}
 
 	// return that list record then
-	return (Tag *)(m_listPtrs[i]->m_list);
+	return (Tag *)(m_listPtrs[i]->getList());
 }
 
 Tag *TagRec::getTag ( const char *tagTypeStr ) {
@@ -1577,12 +1577,12 @@ void Msg8a::gotAllReplies ( ) {
 		RdbList *list = &m_tagRec->m_lists[i];
 
 		// skip if empty
-		if ( list->m_listSize <= 0 ) {
+		if ( list->getListSize() <= 0 ) {
 			continue;
 		}
 
 		// panic msg
-		if ( list->m_listSize >= 10000000 ) {
+		if ( list->getListSize() >= 10000000 ) {
 			log("tagdb: CAUTION!!! cutoff tagdb list!");
 			log("tagdb: CAUTION!!! will lost useful info!!");
 			g_process.shutdownAbort(true);

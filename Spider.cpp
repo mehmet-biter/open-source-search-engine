@@ -3711,7 +3711,7 @@ checkNextRule:
 //   gotSpiderdbList() can assume those to be valid and save time. BUT it does
 //   have siteNumInlinks...
 void dedupSpiderdbList ( RdbList *list ) {
-	char *newList = list->m_list;
+	char *newList = list->getList();
 
 	char *dst          = newList;
 	char *restorePoint = newList;
@@ -3722,7 +3722,7 @@ void dedupSpiderdbList ( RdbList *list ) {
 	SpiderReply   *oldRep = NULL;
 	char *lastKey     = NULL;
 
-	int32_t oldSize = list->m_listSize;
+	int32_t oldSize = list->getListSize();
 	int32_t corrupt = 0;
 
 	int32_t numToFilter = 0;
@@ -3940,7 +3940,7 @@ void dedupSpiderdbList ( RdbList *list ) {
 	}
 
 	// sanity check
-	if ( dst < list->m_list || dst > list->m_list + list->m_listSize ) {
+	if ( dst < list->getList() || dst > list->getListEnd() ) {
 		g_process.shutdownAbort(true);
 	}
 

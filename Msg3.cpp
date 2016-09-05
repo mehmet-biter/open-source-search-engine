@@ -940,8 +940,8 @@ bool Msg3::doneScanning ( ) {
 						   true ); // inccounts?
 			if ( inCache && 
 			     // 1st byte is RdbScan::m_shifted
-			     ( m_scan[i].m_list.m_listSize != recSize-1 ||
-			       memcmp ( m_scan[i].m_list.m_list , rec+1,recSize-1) ||
+			     ( m_scan[i].m_list.getListSize() != recSize-1 ||
+			       memcmp ( m_scan[i].m_list.getList() , rec+1,recSize-1) ||
 			       *rec != m_scan[i].m_scan.m_shifted ) ) {
 				log("msg3: cache did not validate");
 				g_process.shutdownAbort(true);

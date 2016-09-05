@@ -1057,7 +1057,7 @@ skipDoledbRec:
 		// print a log msg if we corked things up even
 		// though we read 50k from doledb
 		static bool s_flag = true;
-		if ( m_list.m_listSize > 50000 && s_flag ) {
+		if ( m_list.getListSize() > 50000 && s_flag ) {
 			s_flag = true;
 			log("spider: 50k not big enough");
 		}

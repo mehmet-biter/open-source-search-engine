@@ -1568,7 +1568,7 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 	}
 
 	// show list stats
-	logDebug( g_conf.m_logDebugSpider, "spider: populateWaitingTree: got list of size %" PRId32, m_list2.m_listSize );
+	logDebug( g_conf.m_logDebugSpider, "spider: populateWaitingTree: got list of size %" PRId32, m_list2.getListSize() );
 
 	// unflag it
 	m_gettingList2 = false;
@@ -2252,7 +2252,7 @@ bool SpiderColl::evalIpLoop ( ) {
 
 	// if we started reading, then assume we got a fresh list here
 	logDebug( g_conf.m_logDebugSpider, "spider: back from msg5 spiderdb read2 of %" PRId32" bytes (cn=%" PRId32")",
-	          m_list.m_listSize, (int32_t)m_collnum );
+	          m_list.getListSize(), (int32_t)m_collnum );
 
 	// . set the winning request for all lists we read so far
 	// . if m_countingPagesIndexed is true this will just fill in
@@ -2479,7 +2479,7 @@ bool SpiderColl::readListFromSpiderdb ( ) {
 	}
 	
 	// note its return
-	logDebug( g_conf.m_logDebugSpider, "spider: back from msg5 spiderdb read of %" PRId32" bytes",m_list.m_listSize);
+	logDebug( g_conf.m_logDebugSpider, "spider: back from msg5 spiderdb read of %" PRId32" bytes",m_list.getListSize());
 		
 	// no longer getting list
 	m_gettingList1 = false;
@@ -2552,7 +2552,7 @@ bool SpiderColl::scanListForWinners ( ) {
 
 	// show list stats
 	logDebug( g_conf.m_logDebugSpider, "spider: readListFromSpiderdb: got list of size %" PRId32" for firstip=%s",
-	          m_list.m_listSize, iptoa( m_scanningIp ) );
+	          m_list.getListSize(), iptoa( m_scanningIp ) );
 
 
 	// if we don't read minRecSizes worth of data that MUST indicate

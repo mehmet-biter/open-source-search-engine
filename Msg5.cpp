@@ -597,7 +597,7 @@ bool Msg5::needsRecall ( ) {
 		     "got %" PRId32" totalListSizes=%" PRId32" sk=%s) "
 		     "cn=%" PRId32" this=0x%" PTRFMT" round=%" PRId32".", 
 		     m_newMinRecSizes , base->m_dbname , m_minRecSizes, 
-		     m_list->m_listSize,
+		     m_list->getListSize(),
 		     m_totalSize,
 		     KEYSTR(m_startKey,m_ks),
 		     (int32_t)m_collnum,(PTRTYPE)this, m_round );
@@ -1050,11 +1050,11 @@ void Msg5::repairLists() {
 		//   bitch about this here..
 		if ( g_conf.m_logDebugDb &&
 		     m_rdbId == RDB_POSDB &&
-		     m_listPtrs[i]->m_listSize > m_minRecSizes + 12 )
+		     m_listPtrs[i]->getListSize() > m_minRecSizes + 12 )
 			// just log it for now, maybe force core later
 			log(LOG_DEBUG,"db: Index list size is %" PRId32" but "
 			    "minRecSizes is %" PRId32".",
-			    m_listPtrs[i]->m_listSize ,
+			    m_listPtrs[i]->getListSize() ,
 			    m_minRecSizes );
 
 #ifdef GBSANITYCHECK
@@ -1137,7 +1137,7 @@ void Msg5::mergeLists() {
 		// . lastKey should be set and valid if list is not empty
 		// . we need it for de-duping dup tfndb recs that fall on our
 		//   read boundaries
-		if ( m_list->m_listSize > 0 )
+		if ( m_list->getListSize() > 0 )
 			log(LOG_LOGIC,"db: Msg5. Last key invalid.");
 	}
 }
@@ -1226,7 +1226,7 @@ bool Msg5::doneMerging ( ) {
 
 	if ( m_isRealMerge )
 		log(LOG_DEBUG,"db: merged list is %" PRId32" bytes long.",
-		    m_list->m_listSize);
+		    m_list->getListSize());
 
 	// log it
 	int64_t now ;

@@ -293,7 +293,7 @@ bool Msg1::sendSomeOfList ( ) {
 		//int32_t crec = m_list->getCurrentRecSize();
 		m_list->skipCurrentRecord();
 		// sanity check
-		if ( m_list->m_listPtr > m_list->m_listEnd ) {
+		if ( m_list->getListPtr() > m_list->getListEnd() ) {
 			g_process.shutdownAbort(true); }
 	}
  done:
@@ -317,7 +317,7 @@ bool Msg1::sendSomeOfList ( ) {
  	QUICKPOLL(m_niceness);
 
 	// sanity test for new rdbs
-	if ( m_list->m_fixedDataSize != getDataSizeFromRdbId(m_rdbId) ) {
+	if ( m_list->getFixedDataSize() != getDataSizeFromRdbId(m_rdbId) ) {
 		g_process.shutdownAbort(true); }
 
 	// . now send this list to the host

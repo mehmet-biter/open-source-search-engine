@@ -1545,7 +1545,7 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list, int32_t niceness ) {
 		// exception, spider status docs can be deleted from titledb
 		// if user turns off 'index spider replies' before doing
 		// the rebuild, when not rebuilding titledb.
-	     ((m_rdbId == RDB_TITLEDB && list->m_listSize != 12 )    ||
+	     ((m_rdbId == RDB_TITLEDB && list->getListSize() != 12 )    ||
 	       m_rdbId == RDB_POSDB      ||
 	       m_rdbId == RDB_CLUSTERDB  ||
 	       m_rdbId == RDB_LINKDB     ||
@@ -1587,7 +1587,7 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list, int32_t niceness ) {
 			g_errno = ELISTTOOBIG;
 			log( LOG_WARN, "db: Tried to add a record that is simply too big (%" PRId32" bytes) to ever fit in "
 				   "the memory space for %s. Please increase the max memory for %s in gb.conf.",
-				   list->m_listSize, m_dbname, m_dbname );
+				   list->getListSize(), m_dbname, m_dbname );
 			return false;
 		}
 
