@@ -63,26 +63,12 @@ public:
 	// . startKey/endKey specifies the list's range
 	// . there may, however, be some keys in the list outside of the range
 	// . if "ownData" is true we free "list" on our reset/destruction
-	void set (char *list          , 
-		  int32_t  listSize      , 
-		  char *alloc         ,
-		  int32_t  allocSize     ,
-		  const char *startKey      ,
-		  const char *endKey        ,
-		  int32_t  fixedDataSize , 
-		  bool  ownData       ,
-		  bool  useHalfKeys   ,
-		  char  keySize       ); // 12 is default
+	void set(char *list, int32_t listSize, char *alloc, int32_t allocSize, const char *startKey, const char *endKey,
+	         int32_t fixedDataSize, bool ownData, bool useHalfKeys, char keySize);
 
 	// like above but uses 0/maxKey for startKey/endKey
-	void set (char *list          , 
-		  int32_t  listSize      , 
-		  char *alloc         ,
-		  int32_t  allocSize     ,
-		  int32_t  fixedDataSize , 
-		  bool  ownData       ,
-		  bool  useHalfKeys   ,
-		  char  keySize       = sizeof(key96_t) );
+	void set(char *list, int32_t listSize, char *alloc, int32_t allocSize,
+	         int32_t fixedDataSize, bool ownData, bool useHalfKeys, char keySize = sizeof(key96_t));
 
 	void setFromPtr(char *p, int32_t psize, rdbid_t rdbId);
 
