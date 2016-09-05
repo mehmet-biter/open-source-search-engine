@@ -731,7 +731,7 @@ void Loop::doPoll ( ) {
 	// and we need this to be the same as sigalrmhandler() since we
 	// keep track of cpu usage here too, since sigalrmhandler is "VT"
 	// based it only goes off when that much "cpu time" has elapsed.
-	v.tv_usec = QUICKPOLL_INTERVAL * 1000;
+	v.tv_usec = 10 * 1000;
 
  again:
 

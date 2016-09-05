@@ -6,7 +6,6 @@
 #ifndef GB_LOOP_H
 #define GB_LOOP_H
 
-#define QUICKPOLL_INTERVAL 10
 
 int gbsystem(const char *cmd);
 
