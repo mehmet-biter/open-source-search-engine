@@ -40,8 +40,7 @@ static inline char bfcmpPosdb ( const char *alo, const char *ame, const char *ah
 };
 
 
-static bool cmp_6bytes_equal(const void *p1, const void *p2)
-{
+static bool cmp_6bytes_equal(const void *p1, const void *p2) {
 	uint32_t u32_1 = *(const uint32_t*)p1;
 	uint32_t u32_2 = *(const uint32_t*)p2;
 	if(u32_1!=u32_2) return false;
@@ -130,16 +129,8 @@ void RdbList::reset ( ) {
 
 // . set from a pre-existing list
 // . all keys of records in list must be in [startKey,endKey]
-void RdbList::set ( char  *list          ,
-		    int32_t   listSize      ,
-		    char  *alloc         ,
-		    int32_t   allocSize     ,
-		    const char  *startKey      ,
-		    const char  *endKey        ,
-		    int32_t   fixedDataSize ,
-		    bool   ownData       ,
-		    bool   useHalfKeys   ,
-		    char   keySize       ) {
+void RdbList::set(char *list, int32_t listSize, char *alloc, int32_t allocSize, const char *startKey, const char *endKey,
+                  int32_t fixedDataSize, bool ownData, bool useHalfKeys, char keySize) {
 	assert(this);
 	verify_signature();
 	// free and NULLify any old m_list we had to make room for our new list
@@ -177,27 +168,10 @@ void RdbList::set ( char  *list          ,
 }
 
 // like above but uses 0/maxKey for startKey/endKey
-void RdbList::set (char *list          ,
-		   int32_t  listSize      ,
-		   char *alloc         ,
-		   int32_t  allocSize     ,
-		   int32_t  fixedDataSize ,
-		   bool  ownData       ,
-		   bool  useHalfKeys   ,
-		   char  keySize       ) {
+void RdbList::set(char *list, int32_t listSize, char *alloc, int32_t allocSize,
+                  int32_t fixedDataSize, bool ownData, bool useHalfKeys, char keySize) {
 	verify_signature();
-	const char *startKey = KEYMIN();
-	const char *endKey   = KEYMAX();
-	set ( list          ,
-	      listSize      ,
-	      alloc         ,
-	      allocSize     ,
-	      startKey      ,
-	      endKey        ,
-	      fixedDataSize ,
-	      ownData       ,
-	      useHalfKeys   ,
-	      keySize       );
+	set(list, listSize, alloc, allocSize, KEYMIN(), KEYMAX(), fixedDataSize, ownData, useHalfKeys, keySize);
 }
 
 
@@ -238,14 +212,15 @@ void RdbList::set ( const char *startKey, const char *endKey ) {
 	KEYSET ( m_endKey   , endKey   , m_ks );
 }
 
-char *RdbList::getLastKey  ( ) {
+const char *RdbList::getLastKey() const {
 	verify_signature();
-	if ( ! m_lastKeyIsValid ) {
-		log("db: rdblist: getLastKey: m_lastKey not valid.");
+	if (!m_lastKeyIsValid) {
+		log(LOG_ERROR, "db: rdblist: getLastKey: m_lastKey not valid.");
 		gbshutdownAbort(true);
 	}
+
 	return m_lastKey;
-};
+}
 
 void RdbList::setLastKey  ( const char *k ) {
 	verify_signature();
@@ -412,13 +387,11 @@ bool RdbList::addRecord ( const char *key, int32_t dataSize, const char *data, b
 //   before calling merge_r() in a thread
 // . allocates on top of m_listSize
 // . returns false and sets g_errno on error, true on success
-bool RdbList::prepareForMerge ( RdbList **lists         ,
-				int32_t      numLists      ,
-				int32_t      minRecSizes   ) {
+bool RdbList::prepareForMerge(RdbList **lists, int32_t numLists, int32_t minRecSizes) {
 	verify_signature();
 	// return false if we don't own the data
-	if ( ! m_ownData ) {
-		log("db: rdblist: prepareForMerge: Data not owned.");
+	if (!m_ownData) {
+		log(LOG_ERROR, "db: rdblist: prepareForMerge: Data not owned.");
 		gbshutdownAbort(true);
 	}
 
@@ -428,12 +401,17 @@ bool RdbList::prepareForMerge ( RdbList **lists         ,
 	// . NO! we want to keep what we got and add records on back
 	//reset();
 	// do nothing if no lists passed in
-	if ( numLists <= 0 ) return true;
+	if (numLists <= 0) {
+		return true;
+	}
+
 	// . we inherit our dataSize/dedup from who we're merging
 	// . TODO: all lists may not be the same fixedDataSize
 	m_fixedDataSize = lists[0]->m_fixedDataSize;
+
 	// assume we use half keys
 	m_useHalfKeys = lists[0]->m_useHalfKeys;
+
 	// inherit key size
 	m_ks = lists[0]->m_ks;
 
@@ -442,17 +420,23 @@ bool RdbList::prepareForMerge ( RdbList **lists         ,
 	// by a rec of size 1 meg!! quite a bit! then we would have to
 	// call growList() in the merge_r() routine... that won't work since
 	// we'd be in a thread.
-	if ( m_fixedDataSize >= 0 && minRecSizes > 0 ) {
+	if (m_fixedDataSize >= 0 && minRecSizes > 0) {
 		int32_t newmin = minRecSizes + m_ks + m_fixedDataSize;
+
 		// we have to grow another 12 cuz we set "first" in
 		// indexMerge_r() to false and try to add another rec to see
 		// if there was an annihilation
 		newmin += m_ks;
+
 		// watch out for wrap around
-		if ( newmin < minRecSizes ) newmin = 0x7fffffff;
+		if ( newmin < minRecSizes ) {
+			newmin = 0x7fffffff;
+		}
+
 		minRecSizes = newmin;
+	} else if ( m_fixedDataSize <  0 ) {
+		minRecSizes = -1;
 	}
-	else if ( m_fixedDataSize <  0 ) minRecSizes = -1;
 
 	// . temporarily set m_listPtr/m_listEnd of each list based on
 	//   the contraints: startKey/endKey
@@ -461,21 +445,28 @@ bool RdbList::prepareForMerge ( RdbList **lists         ,
 	for ( int32_t i = 0 ; i < numLists ; i++ ) {
 		// each list should be constrained already
 		maxListSize += lists[i]->getListSize();
+
 		// ensure same dataSize type for each list
-		if (lists[i]->getFixedDataSize() == m_fixedDataSize) continue;
+		if (lists[i]->getFixedDataSize() == m_fixedDataSize) {
+			continue;
+		}
+
 		// bitch if not
-		g_errno = EBADENGINEER;
-		log(LOG_LOGIC,"db: rdblist: prepareForMerge: Non-uniform "
-		    "fixedDataSize. %" PRId32" != %" PRId32".",
+		log(LOG_LOGIC,"db: rdblist: prepareForMerge: Non-uniform fixedDataSize. %" PRId32" != %" PRId32".",
 		    lists[i]->getFixedDataSize(), m_fixedDataSize );
+
+		g_errno = EBADENGINEER;
 		return false;
 	}
+
 	// . set the # of bytes we need to merge at minimum
 	// . include our current list size, too
 	// . our current list MUST NOT intersect w/ these lists
 	m_mergeMinListSize = maxListSize + m_listSize ;
-	if ( minRecSizes >= 0 && m_mergeMinListSize > minRecSizes )
+	if (minRecSizes >= 0 && m_mergeMinListSize > minRecSizes) {
 		m_mergeMinListSize = minRecSizes;
+	}
+
 	// . now alloc space for merging these lists
 	// . won't shrink our m_list buffer, might grow it a bit if necessary
 	// . this should keep m_listPtr and m_listPtrHi in order, too
@@ -489,7 +480,10 @@ bool RdbList::prepareForMerge ( RdbList **lists         ,
 	// exit before getting the full mintomerge and come up short
 	grow += m_ks;
 
-	if ( growList ( grow ) ) return true;
+	if (growList(grow)) {
+		return true;
+	}
+
 	// otherwise, bitch about error
 	return false; // log("RdbList::merge: growList failed");
 }
@@ -609,21 +603,25 @@ char *RdbList::getData ( char *rec ) {
 
 
 // returns false on error and set g_errno
-bool RdbList::growList ( int32_t newSize ) {
+bool RdbList::growList(int32_t newSize) {
 	assert(this);
 	verify_signature();
 	// return false if we don't own the data
-	if ( ! m_ownData ) {
+	if (!m_ownData) {
 		log(LOG_LOGIC,"db: rdblist: growlist: Data not owned.");
 		gbshutdownAbort(true);
 	}
+
 	// sanity check
-	if ( newSize <  0 ) {
+	if (newSize < 0) {
 		log(LOG_LOGIC,"db: rdblist: growlist: Size is negative.");
 		gbshutdownAbort(true);
 	}
+
 	// don't shrink list
-	if ( newSize <= m_allocSize ) return true;
+	if (newSize <= m_allocSize) {
+		return true;
+	}
 
 	// make a new buffer
 	char *tmp =(char *) mrealloc ( m_alloc,m_allocSize,newSize,"RdbList");

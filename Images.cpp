@@ -469,22 +469,16 @@ void Images::gotTermList ( ) {
 	if ( g_errno ) return;
 	// check docids in termlist
 	m_list.resetListPtr();
-#if 0
-	IndexList doesnt know how to deal with modern posdb format, so the check below gives undefined results
+
 	// loop over it
 	for ( ; ! m_list.isExhausted() ; m_list.skipCurrentRecord() ) {
-		// get the first rec
-		int64_t d = m_list.getCurrentDocId();
-		// note it
-		//log("dup: image is dupped");
 		// is it us? if so ignore it
-		if ( d == m_docId ) continue;
+		if ( Posdb::getDocId(m_list.getCurrentRec()) == m_docId ) continue;
 		// crap, i guess our image url is not unique. mark it off.
 		m_errors[i] = EDOCDUP;
 		// no need to go further
 		break;
 	}
-#endif
 	
 }
 

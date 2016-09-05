@@ -16,9 +16,7 @@ float getHashGroupWeight ( unsigned char hg );
 #define SITERANKDIVISOR 3.0
 #define SITERANKMULTIPLIER 0.33333333
 
-#ifndef POSDBKEY
-#define POSDBKEY key144_t
-#endif
+typedef key144_t posdbkey_t;
 
 #ifndef TERMID_MASK
 #define TERMID_MASK (0x0000ffffffffffffLL)

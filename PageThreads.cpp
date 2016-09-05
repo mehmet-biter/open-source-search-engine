@@ -23,7 +23,7 @@ static const char *thread_type_name(thread_type_t tt) {
 		case thread_type_replicate_read:     return "replicate-read";
 		case thread_type_file_merge:         return "file-merge";
 		case thread_type_file_meta_data:     return "file-meta-data";
-		case thread_type_statistics:         return "statistis";
+		case thread_type_statistics:         return "statistics";
 		case thread_type_unspecified_io:     return "unspecified IO";
 		case thread_type_unlink:             return "unlink()";
 		case thread_type_generate_thumbnail: return "generate-thumbnail";
@@ -135,6 +135,32 @@ bool sendPageThreads ( TcpSocket *s , HttpRequest *r ) {
 	}
 	
 	p.safePrintf("</table><br><br>");
+
+	//print timing / wait time / delay statistics per job type
+	p.safePrintf("<table %s>", TABLE_STYLE);
+	p.safePrintf("  <tr class=hdrow>\n");
+	p.safePrintf("    <td><b>Job type</b></td>\n");
+	p.safePrintf("    <td><b>Time in queue</b></td>\n");
+	p.safePrintf("    <td><b>Time executing</b></td>\n");
+	p.safePrintf("    <td><b>Time waiting for cleanup</b></td>\n");
+	p.safePrintf("    <td><b>Cleanup time</b></td>\n");
+	p.safePrintf("   </tr>\n");
+	for(const auto &js : g_jobScheduler.query_job_statistics(true)) {
+		p.safePrintf("  <tr bgcolor=#%s>\n",LIGHT_BLUE);
+		p.safePrintf("    <td>%s</td>", thread_type_name(js.first));
+		if(js.second.job_count!=0) {
+			p.safePrintf("    <td>%.3f</td>\n", js.second.queue_time/js.second.job_count/1000.0);
+			p.safePrintf("    <td>%.3f</td>\n", js.second.running_time/js.second.job_count/1000.0);
+			p.safePrintf("    <td>%.3f</td>\n", js.second.done_time/js.second.job_count/1000.0);
+			p.safePrintf("    <td>%.3f</td>\n", js.second.cleanup_time/js.second.job_count/1000.0);
+		} else {
+			p.safePrintf("    <td>-</td>\n");
+			p.safePrintf("    <td>-</td>\n");
+			p.safePrintf("    <td>-</td>\n");
+			p.safePrintf("    <td>-</td>\n");
+		}
+		p.safePrintf("   </tr>\n");
+	}
 
 	return g_httpServer.sendDynamicPage ( s , (char*) p.getBufStart() ,
 						p.length() );

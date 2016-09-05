@@ -321,7 +321,7 @@ void RdbIndex::printIndex() {
 
 void RdbIndex::addList(RdbList *list) {
 	// sanity check
-	if (list->m_ks != m_ks) {
+	if (list->getKeySize() != m_ks) {
 		g_process.shutdownAbort(true);
 	}
 
@@ -505,9 +505,9 @@ bool RdbIndex::generateIndex(BigFile *f) {
 		if (offset > 0) {
 			// ... fix for posdb!!!
 			if (m_ks == 18) {
-				list.m_listPtrLo = key + (m_ks - 12);
+				list.setListPtrLo(key + (m_ks - 12));
 			} else {
-				list.m_listPtrHi = key + (m_ks - 6);
+				list.setListPtrHi(key + (m_ks - 6));
 			}
 		}
 

@@ -47,6 +47,7 @@
 
 #define SENT_UNITS 30
 
+#define NUMTERMIDBITS 48 // was in RdbList but only used in XmlDoc
 
 static void getWordToPhraseRatioWeights ( int64_t   pid1 , // pre phrase
 					  int64_t   wid1 ,
@@ -5008,7 +5009,7 @@ char *XmlDoc::getIsDup ( ) {
 	}
 
 	// sanity. must be posdb list.
-	if ( ! list->isEmpty() && list->m_ks != 18 ) { g_process.shutdownAbort(true);}
+	if ( ! list->isEmpty() && list->getKeySize() != 18 ) { g_process.shutdownAbort(true);}
 
 	// so getSiteRank() does not core
 	int32_t *sni = getSiteNumInlinks();

@@ -4646,8 +4646,8 @@ void dumpPosdb (const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 		g_posdb.makeStartKey ( &startKey, termId );
 		g_posdb.makeEndKey  ( &endKey, termId );
 		printf("termid=%" PRIu64"\n",termId);
-		printf("startkey=%s\n",KEYSTR(&startKey,sizeof(POSDBKEY)));
-		printf("endkey=%s\n",KEYSTR(&endKey,sizeof(POSDBKEY)));
+		printf("startkey=%s\n",KEYSTR(&startKey,sizeof(posdbkey_t)));
+		printf("endkey=%s\n",KEYSTR(&endKey,sizeof(posdbkey_t)));
 	}
 	// turn off threads
 	g_jobScheduler.disallow_new_jobs();
@@ -4705,9 +4705,9 @@ void dumpPosdb (const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 	if ( list.isEmpty() ) return;
 
 	// get last key in list
-	char *ek2 = list.m_endKey;
+	const char *ek2 = list.getEndKey();
 	// print it
-	printf("ek=%s\n",KEYSTR(ek2,list.m_ks) );
+	printf("ek=%s\n",KEYSTR(ek2,list.getKeySize()) );
 
 	// loop over entries in list
 	for ( list.resetListPtr() ; ! list.isExhausted() && ! justVerify ;
@@ -4723,7 +4723,7 @@ void dumpPosdb (const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 		if ( (k.n0 & 0x01) == 0x00 ) dd = " (delete)";
 		int64_t d = g_posdb.getDocId(&k);
 		uint8_t dh = g_titledb.getDomHash8FromDocId(d);
-		char *rec = list.m_listPtr;
+		char *rec = list.getCurrentRec();
 		int32_t recSize = 18;
 		if ( rec[0] & 0x04 ) recSize = 6;
 		else if ( rec[0] & 0x02 ) recSize = 12;
@@ -4749,8 +4749,8 @@ void dumpPosdb (const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 			err = " (alignerror3)";
 			if ( nd2 < d ) err = " (alignordererror3)";
 		}
-		if ( KEYCMP((char *)&k,(char *)&startKey,list.m_ks)<0 || 
-		     KEYCMP((char *)&k,ek2,list.m_ks)>0){
+		if ( KEYCMP((char *)&k,(char *)&startKey,list.getKeySize())<0 ||
+		     KEYCMP((char *)&k,ek2,list.getKeySize())>0){
 			err = " (out of range)";
 		}
 

@@ -352,7 +352,7 @@ if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 		//   we don't want merge to have incompatible lists
 		m_treeList.reset();
 		m_treeList.setFixedDataSize ( base->getFixedDataSize() );
-		m_treeList.m_ks = m_ks;
+		m_treeList.setKeySize(m_ks);
 		// reset Msg3 in case gotList() is called without calling
 		// Msg3::readList() first
 		m_msg3.reset();
@@ -546,7 +546,7 @@ if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 		QUICKPOLL((m_niceness));
 		const char *diskEndKey = m_treeList.getEndKey();
 		// sanity check
-		if ( m_treeList.m_ks != m_ks ) { g_process.shutdownAbort(true); }
+		if ( m_treeList.getKeySize() != m_ks ) { g_process.shutdownAbort(true); }
 
 		// clear just in case
 		g_errno = 0;
@@ -635,7 +635,7 @@ if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 		     "got %" PRId32" totalListSizes=%" PRId32" sk=%s) "
 		     "cn=%" PRId32" this=0x%" PTRFMT" round=%" PRId32".", 
 		     m_newMinRecSizes , base->m_dbname , m_minRecSizes, 
-		     m_list->m_listSize,
+		     m_list->getListSize(),
 		     m_totalSize,
 		     KEYSTR(m_startKey,m_ks),
 		     (int32_t)m_collnum,(PTRTYPE)this, m_round );
@@ -915,7 +915,7 @@ if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 	     // this speeds up our queryloop querylog parsing in seo.cpp quite a bit
 	     ( m_rdbId == RDB_POSDB && m_numFiles == 1 ) ) ) {
 		// log any problems
-		if ( m_listPtrs[0]->m_ownData ) {
+		if ( m_listPtrs[0]->getOwnData() ) {
 			// . bitch if not empty
 			// . NO! might be our second time around if we had key
 			//   annihilations between file #0 and the tree, and now
@@ -933,14 +933,14 @@ if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 			              m_listPtrs[0]->getEndKey        () ,
 			              m_listPtrs[0]->getFixedDataSize () ,
 			              true                               , // own data?
-			              m_listPtrs[0]->useHalfKeys      () ,
+			              m_listPtrs[0]->getUseHalfKeys   () ,
 			              m_ks                               );
 			// ensure we don't free it when we loop on freeLists() below
 			m_listPtrs[0]->setOwnData ( false );
 
 			// gotta set this too!
-			if ( m_listPtrs[0]->m_lastKeyIsValid ) {
-				m_list->setLastKey ( m_listPtrs[0]->m_lastKey );
+			if ( m_listPtrs[0]->isLastKeyValid() ) {
+				m_list->setLastKey ( m_listPtrs[0]->getLastKey() );
 			}
 
 			// . remove titleRecs that shouldn't be there
@@ -1127,11 +1127,11 @@ if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 		//   bitch about this here..
 		if ( g_conf.m_logDebugDb &&
 		     m_rdbId == RDB_POSDB &&
-		     m_listPtrs[i]->m_listSize > m_minRecSizes + 12 )
+		     m_listPtrs[i]->getListSize() > m_minRecSizes + 12 )
 			// just log it for now, maybe force core later
 			log(LOG_DEBUG,"db: Index list size is %" PRId32" but "
 			    "minRecSizes is %" PRId32".",
-			    m_listPtrs[i]->m_listSize ,
+			    m_listPtrs[i]->getListSize() ,
 			    m_minRecSizes );
 
 #ifdef GBSANITYCHECK
@@ -1231,7 +1231,7 @@ if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 		// . lastKey should be set and valid if list is not empty
 		// . we need it for de-duping dup tfndb recs that fall on our
 		//   read boundaries
-		if ( m_list->m_listSize > 0 )
+		if ( m_list->getListSize() > 0 )
 			log(LOG_LOGIC,"db: Msg5. Last key invalid.");
 	}
 }
@@ -1323,7 +1323,7 @@ abort();
 
 	if ( m_isRealMerge )
 		log(LOG_DEBUG,"db: merged list is %" PRId32" bytes long.",
-		    m_list->m_listSize);
+		    m_list->getListSize());
 
 	// log it
 	int64_t now ;

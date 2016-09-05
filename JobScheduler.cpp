@@ -43,6 +43,7 @@ struct JobEntry {
 	uint64_t          queue_enter_time;   //when this job was queued
 	uint64_t          start_time;	      //when this job started running
 	uint64_t          stop_time;	      //when this job stopped running
+	uint64_t          finish_time;        //when the finish callback was called
 	uint64_t          exit_time;	      //when this job was finished, including finish-callback
 };
 
@@ -258,6 +259,8 @@ class JobScheduler_impl {
 	bool no_threads;
 	bool new_jobs_allowed;
 	
+	std::map<thread_type_t,JobTypeStatistics> job_statistics;
+	
 	bool submit(thread_type_t thread_type, JobEntry &e);
 public:
 	JobScheduler_impl(unsigned num_coordinator_threads, unsigned num_cpu_threads, unsigned num_io_threads, unsigned num_external_threads, job_done_notify_t job_done_notify)
@@ -314,6 +317,7 @@ public:
 	void cleanup_finished_jobs();
 	
 	std::vector<JobDigest> query_job_digests() const;
+	std::map<thread_type_t,JobTypeStatistics> query_job_statistics(bool clear);
 };
 
 
@@ -526,10 +530,17 @@ void JobScheduler_impl::cleanup_finished_jobs()
 	sl.unlock();
 	
 	for(auto e : es) {
+		e.first.finish_time = now_ms();
 		if(e.first.finish_callback)
 			e.first.finish_callback(e.first.state,e.second);
 		e.first.exit_time = now_ms();
-		//todo. register statistics
+		
+		JobTypeStatistics &s = job_statistics[e.first.thread_type];
+		s.job_count++;
+		s.queue_time += e.first.start_time - e.first.queue_enter_time;
+		s.running_time += e.first.stop_time - e.first.start_time;
+		s.done_time += e.first.finish_time - e.first.stop_time;
+		s.cleanup_time += e.first.exit_time - e.first.finish_time;
 	}
 }
 
@@ -568,6 +579,17 @@ std::vector<JobDigest> JobScheduler_impl::query_job_digests() const
 		v.push_back(job_entry_to_job_digest(je.first,JobDigest::job_state_stopped));
 	return v;
 	
+}
+
+
+std::map<thread_type_t,JobTypeStatistics> JobScheduler_impl::query_job_statistics(bool clear)
+{
+	if(clear) {
+		std::map<thread_type_t,JobTypeStatistics> tmp;
+		tmp.swap(job_statistics);
+		return tmp;
+	} else
+		return job_statistics;
 }
 
 
@@ -704,6 +726,15 @@ std::vector<JobDigest> JobScheduler::query_job_digests() const
 		return impl->query_job_digests();
 	else
 		return std::vector<JobDigest>();
+}
+
+
+std::map<thread_type_t,JobTypeStatistics> JobScheduler::query_job_statistics(bool clear)
+{
+	if(impl)
+		return impl->query_job_statistics(clear);
+	else
+		return std::map<thread_type_t,JobTypeStatistics>();
 }
 
 

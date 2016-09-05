@@ -3,6 +3,7 @@
 
 #include <inttypes.h>
 #include <vector>
+#include <map>
 
 
 class BigFile;
@@ -61,6 +62,16 @@ struct JobDigest {
 };
 
 
+//statistics for queue and execution time per thread type
+struct JobTypeStatistics {
+	uint64_t job_count;
+	uint64_t queue_time;            //time from enque to start, in nsecs
+	uint64_t running_time;          //time from start to stop, in nsecs
+	uint64_t done_time;             //time from stop to cleanup
+	uint64_t cleanup_time;          //time from in cleanup
+};
+
+
 class JobScheduler_impl;
 
 typedef void (*job_done_notify_t)();
@@ -103,6 +114,7 @@ public:
 	void cleanup_finished_jobs();
 	
 	std::vector<JobDigest> query_job_digests() const;
+	std::map<thread_type_t,JobTypeStatistics> query_job_statistics(bool clear=true);
 
 private:
 	JobScheduler_impl *impl;

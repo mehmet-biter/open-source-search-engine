@@ -98,7 +98,7 @@ private:
 	int32_t m_bytesWritten;
 
 	char m_firstKeyInQueue[MAX_KEY_BYTES];
-	char *m_lastKeyInQueue;
+	const char *m_lastKeyInQueue;
 
 	char m_prevLastKey[MAX_KEY_BYTES];
 

@@ -398,7 +398,7 @@ void Msg51::gotClusterRec(Slot *slot) {
 	key96_t *rec = &m_clusterRecs[ci];
 
 	// store the cluster rec itself
-	*rec = *(key96_t *)(list->m_list);
+	*rec = *(key96_t *)(list->getList());
 	// debug note
 	log(LOG_DEBUG,
 	    "build: had clusterdb SUCCESS for d=%" PRId64" dptr=%" PRIu32" "

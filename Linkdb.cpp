@@ -2023,7 +2023,7 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 	//
 	//
 	// youtube is doing like 180,000 rounds! wtf! limit to 10000
-	if ( m_list.m_listSize > 0 && // && m_round < 10000 ) {
+	if ( m_list.getListSize() > 0 && // && m_round < 10000 ) {
 	     // no! now we shrink a list by removing dup docids from it
 	     // in Msg0.cpp before sending back to save memory and cpu and
 	     // network. so it can be well below m_minRecSizes and still need

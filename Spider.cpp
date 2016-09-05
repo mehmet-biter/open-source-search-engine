@@ -3711,7 +3711,7 @@ checkNextRule:
 //   gotSpiderdbList() can assume those to be valid and save time. BUT it does
 //   have siteNumInlinks...
 void dedupSpiderdbList ( RdbList *list ) {
-	char *newList = list->m_list;
+	char *newList = list->getList();
 
 	char *dst          = newList;
 	char *restorePoint = newList;
@@ -3722,7 +3722,7 @@ void dedupSpiderdbList ( RdbList *list ) {
 	SpiderReply   *oldRep = NULL;
 	char *lastKey     = NULL;
 
-	int32_t oldSize = list->m_listSize;
+	int32_t oldSize = list->getListSize();
 	int32_t corrupt = 0;
 
 	int32_t numToFilter = 0;
@@ -3738,7 +3738,7 @@ void dedupSpiderdbList ( RdbList *list ) {
 		char *rec = list->getCurrentRec();
 
 		// pre skip it
-		list->skipCurrentRec();
+		list->skipCurrentRecord();
 
 		// skip if negative, just copy over
 		if ( ( rec[0] & 0x01 ) == 0x00 ) {
@@ -3940,7 +3940,7 @@ void dedupSpiderdbList ( RdbList *list ) {
 	}
 
 	// sanity check
-	if ( dst < list->m_list || dst > list->m_list + list->m_listSize ) {
+	if ( dst < list->getList() || dst > list->getListEnd() ) {
 		g_process.shutdownAbort(true);
 	}
 
@@ -3952,10 +3952,10 @@ void dedupSpiderdbList ( RdbList *list ) {
 	/////////
 	if ( numToFilter > 0 ) {
 		// update list so for-loop below works
-		list->m_listSize  = dst - newList;
-		list->m_listPtr   = newList;
-		list->m_listEnd   = list->m_list + list->m_listSize;
-		list->m_listPtrHi = NULL;
+		list->setListSize(dst - newList);
+		list->setListEnd(list->getList() + list->getListSize());
+		list->setListPtr(newList);
+		list->setListPtrHi(NULL);
 		// and we'll re-write everything back into itself at "dst"
 		dst = newList;
 	}
@@ -3965,7 +3965,7 @@ void dedupSpiderdbList ( RdbList *list ) {
 		char *rec = list->getCurrentRec();
 
 		// pre skip it
-		list->skipCurrentRec();
+		list->skipCurrentRecord();
 
 		// skip if negative, just copy over
 		if ( ( rec[0] & 0x01 ) == 0x00 ) {
@@ -3999,24 +3999,22 @@ void dedupSpiderdbList ( RdbList *list ) {
 
 
 	// and stick our newly filtered list in there
-	list->m_listSize  = dst - newList;
+	list->setListSize(dst - newList);
 	// set to end i guess
-	list->m_listPtr   = dst;
-	list->m_listEnd   = list->m_list + list->m_listSize;
-	list->m_listPtrHi = NULL;
+	list->setListEnd(list->getList() + list->getListSize());
+	list->setListPtr(dst);
+	list->setListPtrHi(NULL);
 
 	// log("spiderdb: remove ME!!!");
 	// check it
 	// list->checkList_r(false,false,RDB_SPIDERDB);
 	// list->resetListPtr();
 
-	int32_t delta = oldSize - list->m_listSize;
+	int32_t delta = oldSize - list->getListSize();
 	log( LOG_DEBUG, "spider: deduped %i bytes (of which %i were corrupted) out of %i",
 	     (int)delta,(int)corrupt,(int)oldSize);
 
-	if ( lastKey ) {
-		KEYSET( list->m_lastKey, lastKey, list->m_ks );
-	}
+	list->setLastKey(lastKey);
 }
 
 

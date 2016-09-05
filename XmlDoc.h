@@ -1231,7 +1231,7 @@ class TermDebugInfo {
 	char      m_hashGroup;
 	int32_t      m_wordNum;
 	int32_t      m_wordPos;
-	POSDBKEY  m_key; // key144_t
+	posdbkey_t  m_key; // key144_t
 	// 0 = not a syn, 1 = syn from presets,2=wikt,3=generated
 	char      m_synSrc;
 	int64_t  m_langBitVec64;

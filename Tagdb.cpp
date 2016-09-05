@@ -425,7 +425,7 @@ Tag* TagRec::getFirstTag ( ) {
 		return NULL;
 	}
 
-	return (Tag *)m_listPtrs[0]->m_list;
+	return (Tag *)m_listPtrs[0]->getList();
 }
 
 Tag* TagRec::getNextTag ( Tag *tag ) {
@@ -441,8 +441,8 @@ Tag* TagRec::getNextTag ( Tag *tag ) {
 	// find what list we are in
 	int32_t i;
 	for ( i = 0 ; i < m_numListPtrs ; i++ ) {
-		if ( current <  m_listPtrs[i]->m_list    ) continue;
-		if ( current >= m_listPtrs[i]->m_listEnd ) continue;
+		if ( current <  m_listPtrs[i]->getList()    ) continue;
+		if ( current >= m_listPtrs[i]->getListEndPtr() ) continue;
 		break;
 	}
 
@@ -459,7 +459,7 @@ Tag* TagRec::getNextTag ( Tag *tag ) {
 	}
 
 	// breach list?
-	if ( current < m_listPtrs[i]->m_listEnd) {
+	if ( current < m_listPtrs[i]->getListEndPtr()) {
 		return (Tag *)current;
 	}
 
@@ -472,7 +472,7 @@ Tag* TagRec::getNextTag ( Tag *tag ) {
 	}
 
 	// return that list record then
-	return (Tag *)(m_listPtrs[i]->m_list);
+	return (Tag *)(m_listPtrs[i]->getList());
 }
 
 Tag *TagRec::getTag ( const char *tagTypeStr ) {
@@ -811,14 +811,14 @@ bool TagRec::printToBuf (  SafeBuf *sb ) {
 
 bool TagRec::setFromBuf ( char *p , int32_t bufSize ) {
 	// assign to list! but do not free i guess
-	m_lists[0].m_list = p;
-	m_lists[0].m_listSize = bufSize;
-	m_lists[0].m_listEnd = p + bufSize;
-	m_lists[0].m_ownData = false;
-	m_lists[0].m_lastKeyIsValid = false;
-	m_lists[0].m_fixedDataSize = -1;
-	m_lists[0].m_useHalfKeys = false;
-	m_lists[0].m_ks = sizeof(key128_t);
+	m_lists[0].setList(p);
+	m_lists[0].setListSize(bufSize);
+	m_lists[0].setListEnd(p + bufSize);
+	m_lists[0].setOwnData(false);
+	m_lists[0].setLastKeyIsValid(false);
+	m_lists[0].setFixedDataSize(-1);
+	m_lists[0].setUseHalfKeys(false);
+	m_lists[0].setKeySize(sizeof(key128_t));
 	m_listPtrs[0] = &m_lists[0];
 	m_numListPtrs = 1;
 
@@ -1581,12 +1581,12 @@ void Msg8a::gotAllReplies ( ) {
 		RdbList *list = &m_tagRec->m_lists[i];
 
 		// skip if empty
-		if ( list->m_listSize <= 0 ) {
+		if ( list->getListSize() <= 0 ) {
 			continue;
 		}
 
 		// panic msg
-		if ( list->m_listSize >= 10000000 ) {
+		if ( list->getListSize() >= 10000000 ) {
 			log("tagdb: CAUTION!!! cutoff tagdb list!");
 			log("tagdb: CAUTION!!! will lost useful info!!");
 			g_process.shutdownAbort(true);

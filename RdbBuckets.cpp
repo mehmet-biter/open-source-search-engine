@@ -836,7 +836,7 @@ bool RdbBuckets::getList ( collnum_t collnum ,
 	// . set lists's m_ownData member to true
 	list->reset();
 	// got set m_ks first so the set ( startKey, endKey ) works!
-	list->m_ks = m_ks;
+	list->setKeySize(m_ks);
 	list->set              ( startKey , endKey );
 	list->setFixedDataSize ( m_fixedDataSize   );
 	list->setUseHalfKeys   ( useHalfKeys       );

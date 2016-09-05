@@ -208,8 +208,8 @@ bool Msg2::getLists ( ) {
 			    m_i,
 			    //hostId, 
 			    g_posdb.getTermId(sk),
-			    KEYSTR(sk,sizeof(POSDBKEY)),
-			    KEYSTR(ek,sizeof(POSDBKEY)),
+			    KEYSTR(sk,sizeof(posdbkey_t)),
+			    KEYSTR(ek,sizeof(posdbkey_t)),
 			    //sk->n2,
 			    //sk->n1,
 			    //(int32_t)sk->n0,
@@ -517,18 +517,18 @@ bool Msg2::gotList() {
 	if ( m_isDebug ) {
 		for ( int32_t i = 0 ; i < m_numLists ; i++ ) {
 			log("msg2: read termlist #%" PRId32" size=%" PRId32,
-			    i,m_lists[i].m_listSize);
+			    i,m_lists[i].getListSize());
 		}
 	}
 
 	// bitch if we hit our max read sizes limit, we are losing docids!
 	for ( int32_t i = 0 ; i < m_numLists ; i++ ) {
-		if ( m_lists[i].m_listSize < DEFAULT_POSDB_READSIZE ) continue;
-		if ( m_lists[i].m_listSize == 0 ) continue;
+		if ( m_lists[i].getListSize() < DEFAULT_POSDB_READSIZE ) continue;
+		if ( m_lists[i].getListSize() == 0 ) continue;
 
 		log("msg2: read termlist #%" PRId32" size=%" PRId32" "
 		    "maxSize=%" PRId32". losing docIds!",
-		    i,m_lists[i].m_listSize,DEFAULT_POSDB_READSIZE);
+		    i,m_lists[i].getListSize(),DEFAULT_POSDB_READSIZE);
 	}
 
 	// set this i guess

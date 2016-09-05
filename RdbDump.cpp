@@ -386,11 +386,11 @@ bool RdbDump::dumpTree(bool recall) {
 			char tmp1[32];
 			char tmp2[32];
 
-			strcpy(tmp1, KEYSTR(m_firstKeyInQueue, m_list->m_ks));
+			strcpy(tmp1, KEYSTR(m_firstKeyInQueue, m_list->getKeySize()));
 			ks1 = tmp1;
 
 			if (m_lastKeyInQueue) {
-				strcpy(tmp2, KEYSTR(m_lastKeyInQueue, m_list->m_ks));
+				strcpy(tmp2, KEYSTR(m_lastKeyInQueue, m_list->getKeySize()));
 				ks2 = tmp2;
 			}
 
@@ -409,7 +409,7 @@ bool RdbDump::dumpTree(bool recall) {
 		}
 
 		// get the last key of the list
-		char *lastKey = m_list->getLastKey();
+		const char *lastKey = m_list->getLastKey();
 		// advance m_nextKey
 		KEYSET(m_nextKey, lastKey, m_ks);
 		KEYINC(m_nextKey, m_ks);
@@ -530,11 +530,11 @@ bool RdbDump::dumpList(RdbList *list, int32_t niceness, bool recall) {
 				gbmemcpy (p, p + (m_ks - 12), 12);
 				gbmemcpy (p + 12, tmp, m_ks - 12);
 				// big hack here
-				m_list->m_list = p + 12;
-				m_list->m_listPtr = p + 12;
-				m_list->m_listPtrLo = p;
-				m_list->m_listPtrHi = p + 6;
-				m_list->m_listSize -= 12;
+				m_list->setList(p + 12);
+				m_list->setListPtr(p + 12);
+				m_list->setListPtrLo(p);
+				m_list->setListPtrHi(p + 6);
+				m_list->setListSize(m_list->getListSize() - 12);
 				// turn on both bits to indicate double compression
 				*(p + 12) |= 0x06;
 				m_hacked12 = true;
@@ -564,12 +564,12 @@ bool RdbDump::dumpList(RdbList *list, int32_t niceness, bool recall) {
 				gbmemcpy (p, p + (m_ks - 6), 6);
 				gbmemcpy (p + 6, tmp, m_ks - 6);
 				// big hack here
-				m_list->m_list = p + 6;
-				m_list->m_listPtr = p + 6;
+				m_list->setList(p + 6);
 				// make this work for POSDB, too
-				m_list->m_listPtrLo = p + 6 + 6;
-				m_list->m_listPtrHi = p;
-				m_list->m_listSize -= 6;
+				m_list->setListPtr(p + 6);
+				m_list->setListPtrLo(p + 6 + 6);
+				m_list->setListPtrHi(p);
+				m_list->setListSize(m_list->getListSize() - 6);
 				// hack on the half bit, too
 				*(p + 6) |= 0x02;
 			}
@@ -742,8 +742,8 @@ bool RdbDump::doneReadingForVerify ( ) {
 	int64_t t1 = gettimeofdayInMilliseconds();
 
 	// sanity check
-	if (m_list->m_ks != m_ks) {
-		logError("Sanity check failed. m_list->m_ks [%02x]!= m_ks [%02x]", m_list->m_ks, m_ks);
+	if (m_list->getKeySize() != m_ks) {
+		logError("Sanity check failed. m_list->m_ks [%02x]!= m_ks [%02x]", m_list->getKeySize(), m_ks);
 		gbshutdownCorrupted();
 	}
 
@@ -806,12 +806,12 @@ tryAgain:
 		gbmemcpy (p, p + 6, m_ks - 6);
 		gbmemcpy (p + (m_ks - 6), tmp, 6);
 		// undo the big hack
-		m_list->m_list = p;
-		m_list->m_listPtr = p;
+		m_list->setList(p);
 		// make this work for POSDB...
-		m_list->m_listPtrLo = p + m_ks - 12;
-		m_list->m_listPtrHi = p + m_ks - 6;
-		m_list->m_listSize += 6;
+		m_list->setListPtr(p);
+		m_list->setListPtrLo(p + m_ks - 12);
+		m_list->setListPtrHi(p + m_ks - 6);
+		m_list->setListSize(m_list->getListSize() + 6);
 		// hack off the half bit, we're 12 bytes again
 		*p &= 0xfd;
 		// turn it off again just in case
@@ -826,11 +826,11 @@ tryAgain:
 		gbmemcpy (p, p + 12, 6);
 		gbmemcpy (p + 6, tmp, 12);
 		// big hack here
-		m_list->m_list = p;
-		m_list->m_listPtr = p;
-		m_list->m_listPtrLo = p + 6;
-		m_list->m_listPtrHi = p + 12;
-		m_list->m_listSize += 12;
+		m_list->setList(p);
+		m_list->setListPtr(p);
+		m_list->setListPtrLo(p + 6);
+		m_list->setListPtrHi(p + 12);
+		m_list->setListSize(m_list->getListSize() + 12);
 		// hack off the half bit, we're 12 bytes again
 		*p &= 0xf9;
 		m_hacked12 = false;

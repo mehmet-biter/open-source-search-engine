@@ -457,7 +457,7 @@ bool Rebalance::gotList ( ) {
 
 	//char *last = NULL;
 
-	for ( ; ! m_list.isExhausted() ; m_list.skipCurrentRec() ) {
+	for ( ; ! m_list.isExhausted() ; m_list.skipCurrentRecord() ) {
 		// get tht rec
 		//char *rec = m_list.getCurrentRec();
 		// get it

@@ -558,7 +558,7 @@ void gotTitleList ( void *state , RdbList *list , Msg5 *msg5 ) {
 		// otherwise we send back the whole list!
 		else {
 			// we stole this from list
-			tlist->m_ownData = false;
+			tlist->setOwnData(false);
 		}
 		// off ya go
 		us->sendReply(reply,recSize,reply,recSize,st->m_slot);

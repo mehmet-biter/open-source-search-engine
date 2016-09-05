@@ -334,10 +334,10 @@ void RdbScan::gotList ( ) {
 	if ( (m_rdbId == RDB_POSDB || m_rdbId == RDB2_POSDB2)
 	     && (p[0] & 0x04) ) {
 		// make it full
-		m_rdblist->m_list     -= 12;
-		m_rdblist->m_listSize += 12;
+		m_rdblist->setList(m_rdblist->getList() - 12);
+		m_rdblist->setListSize(m_rdblist->getListSize() + 12);
 		p                  -= 12;
-		KEYSET(p,m_startKey,m_rdblist->m_ks);
+		KEYSET(p,m_startKey,m_rdblist->getKeySize());
 		// clear the compression bits
 		*p &= 0xf9;
 		// let em know we shifted it so they can shift the hint offset
@@ -347,10 +347,10 @@ void RdbScan::gotList ( ) {
 	// if first key is already full (12 bytes) no need to do anything
 	else if ( m_rdblist->isHalfBitOn ( p ) ) {
 		// otherwise, make it full
-		m_rdblist->m_list     -= 6;
-		m_rdblist->m_listSize += 6;
+		m_rdblist->setList(m_rdblist->getList() - 6);
+		m_rdblist->setListSize(m_rdblist->getListSize() + 6);
 		p                  -= 6;
-		KEYSET(p,m_startKey,m_rdblist->m_ks);
+		KEYSET(p,m_startKey,m_rdblist->getKeySize());
 		// clear the half bit in case it is set
 		*p &= 0xfd;
 		// let em know we shifted it so they can shift the hint offset

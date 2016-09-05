@@ -5,7 +5,6 @@
 
 #include "Msg0.h"
 #include "Msg13.h"
-#include "IndexList.h"
 #include "MsgC.h"
 #include "SafeBuf.h"
 #include "GbFormat.h" // FORMAT_HTML
@@ -143,7 +142,7 @@ class Images {
 	collnum_t m_collnum;
 
 	int64_t   m_docId;
-	IndexList   m_list;
+	RdbList   m_list;
 
 	int32_t m_latestIp;
 	MsgC m_msgc;

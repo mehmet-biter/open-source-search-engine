@@ -761,7 +761,7 @@ void gotListWrapper ( void *state , RdbList *listb , Msg5 *msg5xx ) {
 	//
 	if ( st0->m_rdbId == RDB_LINKDB ) {
 		// store compressed list on itself
-		char *dst = list->m_list;
+		char *dst = list->getList();
 		// keep stats
 		int32_t totalOrigLinks = 0;
 		int32_t ipDups = 0;
@@ -801,8 +801,8 @@ void gotListWrapper ( void *state , RdbList *listb , Msg5 *msg5xx ) {
 			//dst += 4;
 		}
 		// update list parms
-		list->m_listSize = dst - list->m_list;
-		list->m_listEnd  = list->m_list + list->m_listSize;
+		list->setListSize(dst - list->getList());
+		list->setListEnd(list->getList() + list->getListSize());
 		data      = list->getList();
 		dataSize  = list->getListSize();
 	}

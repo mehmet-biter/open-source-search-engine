@@ -1795,7 +1795,7 @@ bool PosdbTable::setQueryTermInfo ( ) {
 			//qti->m_qtermList[nn] = &m_q->m_qterms[left];
 			m_q->m_qterms[left].m_bitNum = nrg;
 			// only really add if useful
-			if ( list && list->m_listSize ) nn++;
+			if ( list && list->getListSize() ) nn++;
 
 			// add bigram synonyms! like "new jersey" bigram
 			// has the synonym "nj"
@@ -1818,7 +1818,7 @@ bool PosdbTable::setQueryTermInfo ( ) {
 				// add list of member terms as well
 				//qti->m_qtermList[nn] = bt;
 				bt->m_bitNum = nrg;
-				if ( list && list->m_listSize ) {
+				if ( list && list->getListSize() ) {
 					nn++;
 				}
 			}
@@ -1845,7 +1845,7 @@ bool PosdbTable::setQueryTermInfo ( ) {
 			//qti->m_qtermList[nn] = &m_q->m_qterms[right];
 			m_q->m_qterms[right].m_bitNum = nrg;
 			// only really add if useful
-			if ( list && list->m_listSize ) {
+			if ( list && list->getListSize() ) {
 				nn++;
 			}
 
@@ -1870,7 +1870,7 @@ bool PosdbTable::setQueryTermInfo ( ) {
 				// add list of member terms as well
 				//qti->m_qtermList[nn] = bt;
 				bt->m_bitNum = nrg;
-				if ( list && list->m_listSize ) {
+				if ( list && list->getListSize() ) {
 					nn++;
 				}
 			}
@@ -1928,7 +1928,7 @@ bool PosdbTable::setQueryTermInfo ( ) {
 		// no, because when inserting NEW (related) terms that are
 		// not currently in the document, this list may initially
 		// be empty.
-		if ( list && list->m_listSize ) {
+		if ( list && list->getListSize() ) {
 			nn++;
 		}
 			
@@ -1953,7 +1953,7 @@ bool PosdbTable::setQueryTermInfo ( ) {
 			//qti->m_qtermList[nn] = &m_q->m_qterms[left];
 			m_q->m_qterms[left].m_bitNum = nrg;
 			// only really add if useful
-			if ( list && list->m_listSize ) {
+			if ( list && list->getListSize() ) {
 				nn++;
 			}
 
@@ -1975,7 +1975,7 @@ bool PosdbTable::setQueryTermInfo ( ) {
 				// add list of member terms
 				//qti->m_qtermList[nn] = bt;
 				bt->m_bitNum = nrg;
-				if ( list && list->m_listSize ) {
+				if ( list && list->getListSize() ) {
 					nn++;
 				}
 			}
@@ -2003,7 +2003,7 @@ bool PosdbTable::setQueryTermInfo ( ) {
 			//qti->m_qtermList[nn] = &m_q->m_qterms[right];
 			m_q->m_qterms[right].m_bitNum = nrg;
 			// only really add if useful
-			if ( list && list->m_listSize ) {
+			if ( list && list->getListSize() ) {
 				nn++;
 			}
 
@@ -2025,7 +2025,7 @@ bool PosdbTable::setQueryTermInfo ( ) {
 				// add list of member terms
 				//qti->m_qtermList[nn] = bt;
 				bt->m_bitNum = nrg;
-				if ( list && list->m_listSize ) {
+				if ( list && list->getListSize() ) {
 					nn++;
 				}
 			}
@@ -2058,7 +2058,7 @@ bool PosdbTable::setQueryTermInfo ( ) {
 			// set bitnum here i guess
 			qt2->m_bitNum = nrg;
 			// only really add if useful
-			if ( list && list->m_listSize ) {
+			if ( list && list->getListSize() ) {
 				nn++;
 			}
 		}
@@ -2254,9 +2254,9 @@ bool PosdbTable::findCandidateDocIds() {
 		}
 		
 		// tally
-		total += list->m_listSize;
+		total += list->getListSize();
 		// point to start
-		char *p = list->m_list;
+		char *p = list->getList();
 		
 		// remember to swap back when done!!
 		char ttt[12];
@@ -2270,8 +2270,8 @@ bool PosdbTable::findCandidateDocIds() {
 		// turn half bit on. first key is now 12 bytes!!
 		*p |= 0x02;
 		// MANGLE the list
-		list->m_listSize -= 6;
-		list->m_list      = p;
+		list->setListSize(list->getListSize() - 6);
+		list->setList(p);
 
 		logTrace(g_conf.m_logTracePosdb, "termList #%" PRId32" totalSize=%" PRId64, k, total);
 
@@ -4519,12 +4519,12 @@ bool PosdbTable::allocTopScoringDocIdsData() {
 		
 		// show if debug
 		if ( m_debug ) {
-			log(LOG_INFO, "toptree: adding listsize %" PRId32" to nn2", list->m_listSize);
+			log(LOG_INFO, "toptree: adding listsize %" PRId32" to nn2", list->getListSize());
 		}
 		
 		// tally. each new docid in this termlist will compress
 		// the 6 byte termid out, so reduce by 6.
-		nn2 += list->m_listSize / ( sizeof(POSDBKEY) -6 );
+		nn2 += list->getListSize() / ( sizeof(posdbkey_t) -6 );
 	}
 
 	// if doing docid range phases where we compute the winning docids

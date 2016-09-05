@@ -9950,6 +9950,15 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
+	m->m_title = "log trace info for RdbList";
+	m->m_cgi   = "ltrc_rl";
+	m->m_off   = offsetof(Conf,m_logTraceRdbList);
+	m->m_type  = TYPE_BOOL;
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m->m_obj   = OBJ_CONF;
+	m++;
+
 	m->m_title = "log trace info for RdbMap";
 	m->m_cgi   = "ltrc_rm";
 	m->m_off   = offsetof(Conf,m_logTraceRdbMap);
