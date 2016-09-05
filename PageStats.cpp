@@ -789,9 +789,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 	SafeBuf ubuf;
 	printUptime ( ubuf );
 
-	int arch = 32;
-	if ( __WORDSIZE == 64 ) arch = 64;
-	if ( __WORDSIZE == 128 ) arch = 128;
+	const int arch = __WORDSIZE;
 
 	if ( format == FORMAT_HTML )
 		p.safePrintf (
