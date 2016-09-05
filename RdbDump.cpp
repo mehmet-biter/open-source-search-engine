@@ -409,7 +409,7 @@ bool RdbDump::dumpTree(bool recall) {
 		}
 
 		// get the last key of the list
-		char *lastKey = m_list->getLastKey();
+		const char *lastKey = m_list->getLastKey();
 		// advance m_nextKey
 		KEYSET(m_nextKey, lastKey, m_ks);
 		KEYINC(m_nextKey, m_ks);

@@ -669,7 +669,7 @@ bool RdbCache::addList ( collnum_t collnum, const char *cacheKey, RdbList *list 
 		//gbshutdownLogicError();
 	}
 	// store endkey then list data in the record data slot
-	char *k = list->getLastKey  ();
+	const char *k = list->getLastKey  ();
 	// just to make sure
 	char *data     = list->getList();
 	int32_t  dataSize = list->getListSize();

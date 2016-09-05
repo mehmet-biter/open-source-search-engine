@@ -810,7 +810,7 @@ bool RdbMap::addList(RdbList *list) {
 #endif
 
 	char key[MAX_KEY_BYTES];
-	for (; !list->isExhausted(); list->skipCurrentRec()) {
+	for (; !list->isExhausted(); list->skipCurrentRecord()) {
 		list->getCurrentKey(key);
 
 		int32_t recSize = list->getCurrentRecSize();

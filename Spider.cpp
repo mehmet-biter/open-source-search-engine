@@ -3738,7 +3738,7 @@ void dedupSpiderdbList ( RdbList *list ) {
 		char *rec = list->getCurrentRec();
 
 		// pre skip it
-		list->skipCurrentRec();
+		list->skipCurrentRecord();
 
 		// skip if negative, just copy over
 		if ( ( rec[0] & 0x01 ) == 0x00 ) {
@@ -3965,7 +3965,7 @@ void dedupSpiderdbList ( RdbList *list ) {
 		char *rec = list->getCurrentRec();
 
 		// pre skip it
-		list->skipCurrentRec();
+		list->skipCurrentRecord();
 
 		// skip if negative, just copy over
 		if ( ( rec[0] & 0x01 ) == 0x00 ) {

@@ -893,7 +893,7 @@ bool SpiderLoop::gotDoledbList2 ( ) {
 	QUICKPOLL(MAX_NICENESS);
 
 	// get the current rec from list ptr
-	char *rec = (char *)m_list.getListPtr();
+	char *rec = (char *)m_list.getCurrentRec();
 
 	// the doledbkey
 	key96_t *doledbKey = (key96_t *)rec;

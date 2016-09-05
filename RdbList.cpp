@@ -163,13 +163,14 @@ void RdbList::set ( const char *startKey, const char *endKey ) {
 	KEYSET ( m_endKey   , endKey   , m_ks );
 }
 
-char *RdbList::getLastKey  ( ) {
-	if ( ! m_lastKeyIsValid ) {
-		log("db: rdblist: getLastKey: m_lastKey not valid.");
+const char *RdbList::getLastKey() const {
+	if (!m_lastKeyIsValid) {
+		log(LOG_ERROR, "db: rdblist: getLastKey: m_lastKey not valid.");
 		gbshutdownAbort(true);
 	}
+
 	return m_lastKey;
-};
+}
 
 void RdbList::setLastKey  ( const char *k ) {
 	//m_lastKey = k;

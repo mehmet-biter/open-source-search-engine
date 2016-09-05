@@ -46,16 +46,19 @@
 
 class RdbList {
 public:
-	RdbList () ;
-	~RdbList () ;
+	RdbList();
+
+	~RdbList();
+
 	void constructor();
-	void destructor ();
+
+	void destructor();
 
 	// sets m_listSize to 0, keeps any allocated buffer (m_alloc), however
-	void reset ( );
+	void reset();
 
 	// like reset, but frees m_alloc/m_allocSize and resets all to 0
-	void freeList ( );
+	void freeList();
 
 	// . set it to this list
 	// . "list" is a serialized sequence of rdb records sorted by key
@@ -69,50 +72,37 @@ public:
 	void set(char *list, int32_t listSize, char *alloc, int32_t allocSize,
 	         int32_t fixedDataSize, bool ownData, bool useHalfKeys, char keySize = sizeof(key96_t));
 
+	// just set the start and end keys
+	void set(const char *startKey, const char *endKey);
+
 	void setFromPtr(char *p, int32_t psize, rdbid_t rdbId);
 
-	// just set the start and end keys
-	void set ( const char *startKey, const char *endKey );
+	// these operate on the whole list
+	char *getList() { return m_list; }
+	void setList(char *list) { m_list = list; }
 
+	int32_t getListSize() const { return m_listSize; }
+	void setListSize(int32_t size) { m_listSize = size; }
+
+	const char *getStartKey() const { return m_startKey; }
+	void getStartKey(char *k) const { KEYSET(k, m_startKey, m_ks); }
 	void setStartKey(const char *startKey) { KEYSET(m_startKey, startKey, m_ks); }
+
+	const char *getEndKey() const { return m_endKey; }
+	void getEndKey(char *k) const { KEYSET(k, m_endKey, m_ks); }
 	void setEndKey(const char *endKey) { KEYSET(m_endKey, endKey, m_ks); }
 
-	void setUseHalfKeys(bool use) { m_useHalfKeys = use; }
-
-	// if you don't want data to be freed on destruction then don't own it
-	void setOwnData(bool ownData) { m_ownData = ownData; }
-
-	void setFixedDataSize(int32_t fixedDataSize) { m_fixedDataSize = fixedDataSize; }
-
-	char *getStartKey() { return m_startKey; }
-	char *getEndKey() { return m_endKey; }
-
-	int32_t getFixedDataSize() { return m_fixedDataSize; }
-
-	bool getOwnData() { return m_ownData; }
-
-	void getStartKey(char *k) { KEYSET(k, m_startKey, m_ks); }
-	void getEndKey(char *k) { KEYSET(k, m_endKey, m_ks); }
-
-	void  getLastKey         ( char *k ) { 
-		if ( ! m_lastKeyIsValid ) { gbshutdownAbort(true); }
-		KEYSET(k,getLastKey(),m_ks);
-	}
-
-	// will scan through each record if record size is variable
-	int32_t  getNumRecs         () ;
-
-	// these operate on the whole list
-	char *getList            () { return m_list; }
-	void setList(char *list) { m_list = list;}
-
-	int32_t  getListSize        () const { return m_listSize; }
-	void setListSize ( int32_t size ) { m_listSize = size; }
-
 	/// @todo ALC why getListEnd does not return m_listEnd?
-	char *getListEnd         () { return m_list + m_listSize; }
+	char *getListEnd() { return m_list + m_listSize; }
 	char *getListEndPtr() { return m_listEnd; }
 	void setListEnd(char *listEnd) { m_listEnd = listEnd; }
+
+	char *getCurrentRec() { return m_listPtr; }
+	char *getListPtr() { return m_listPtr; }
+	void setListPtr(char *listPtr) { m_listPtr = listPtr; }
+	void setListPtrHi(char *listPtrHi) { m_listPtrHi = listPtrHi; }
+	void setListPtrLo(char *listPtrLo) { m_listPtrLo = listPtrLo; }
+	void resetListPtr();
 
 	// often these equal m_list/m_listSize, but they may encompass
 	char *getAlloc() { return m_alloc; }
@@ -121,8 +111,51 @@ public:
 	int32_t getAllocSize() const { return m_allocSize; }
 	void setAllocSize(int32_t allocSize) { m_allocSize = allocSize; }
 
+	int32_t getFixedDataSize() { return m_fixedDataSize; }
+	void setFixedDataSize(int32_t fixedDataSize) { m_fixedDataSize = fixedDataSize; }
+
+	// . merge_r() sets m_lastKey for the list it merges the others into
+	// . otherwise, this may be invalid
+	const char *getLastKey() const;
+	void getLastKey(char *k) {
+		if (!m_lastKeyIsValid) {
+			gbshutdownAbort(true);
+		}
+		KEYSET(k, getLastKey(), m_ks);
+	}
+
+	void setLastKey(const char *k);
+
+	// sometimes we don't have a valid m_lastKey because it is only
+	// set in calls to constrain(), merge_r() and indexMerge_r()
+	bool isLastKeyValid() const { return m_lastKeyIsValid; }
+	void setLastKeyIsValid(bool lastKeyIsValid) { m_lastKeyIsValid = lastKeyIsValid; }
+
+	bool getOwnData() { return m_ownData; }
+	// if you don't want data to be freed on destruction then don't own it
+	void setOwnData(bool ownData) { m_ownData = ownData; }
+
+	bool getUseHalfKeys() const { return m_useHalfKeys; }
+	void setUseHalfKeys(bool use) { m_useHalfKeys = use; }
+
 	char getKeySize() const { return m_ks; }
 	void setKeySize(char ks) { m_ks = ks; }
+
+	// will scan through each record if record size is variable
+	int32_t getNumRecs();
+
+	int32_t getCurrentRecSize() const { return getRecSize(m_listPtr); }
+
+	key96_t getCurrentKey() const {
+		key96_t key;
+		getKey(m_listPtr, (char *)&key);
+		return key;
+	}
+
+	void getCurrentKey(void *key) const { getKey(m_listPtr, (char *)key); }
+
+	char *getCurrentData() { return getData(m_listPtr); }
+	int32_t getCurrentDataSize() const { return getDataSize(m_listPtr); }
 
 	// . skip over the current record and point to the next one
 	// . returns false if we skipped into a black hole (end of list)
@@ -130,19 +163,15 @@ public:
 		return skipCurrentRec(getRecSize(m_listPtr));
 	}
 
-	bool skipCurrentRec() {
-		return skipCurrentRec(getRecSize(m_listPtr));
-	}
-
 	// this is specially-made for RdbMap's processing of IndexLists
-	bool skipCurrentRec ( int32_t recSize ) {
+	bool skipCurrentRec(int32_t recSize) {
 		m_listPtr += recSize;
-		if ( m_listPtr >= m_listEnd ) return false;
-		if ( m_ks == 18 ) {
+		if (m_listPtr >= m_listEnd) return false;
+		if (m_ks == 18) {
 			// a 6 byte key? do not change listPtrHi nor Lo
-			if ( m_listPtr[0] & 0x04 ) return true;
+			if (m_listPtr[0] & 0x04) return true;
 			// a 12 byte key?
-			if ( m_listPtr[0] & 0x02 ) {
+			if (m_listPtr[0] & 0x02) {
 				m_listPtrLo = m_listPtr + 6;
 				return true;
 			}
@@ -151,33 +180,20 @@ public:
 			m_listPtrLo = m_listPtr + 6;
 			return true;
 		}
-		if ( m_useHalfKeys && ! isHalfBitOn ( m_listPtr ) ) 
-			m_listPtrHi = m_listPtr + (m_ks-6);
+		if (m_useHalfKeys && !isHalfBitOn(m_listPtr))
+			m_listPtrHi = m_listPtr + (m_ks - 6);
 		return true;
 	}
 
-	bool  isExhausted        () const { return (m_listPtr >= m_listEnd); }
-	key96_t getCurrentKey      () const {
-		key96_t key ; getKey ( m_listPtr,(char *)&key ); return key; }
-	void  getCurrentKey      (void *key) const { getKey(m_listPtr,(char *)key);}
-	int32_t  getCurrentDataSize () const { return getDataSize ( m_listPtr );}
-	char *getCurrentData     () { return getData     ( m_listPtr );}
-
-	int32_t  getCurrentRecSize  () const { return getRecSize  ( m_listPtr );}
-	int32_t  getCurrentSize     () const { return m_listEnd - m_listPtr; }
-
-	char *getCurrentRec() { return m_listPtr; }
-	char *getListPtr() { return m_listPtr; }
-
-	void resetListPtr();
+	bool isExhausted() const { return (m_listPtr >= m_listEnd); }
 
 	// are there any records in the list?
-	bool  isEmpty     ( ) const { return (m_listSize == 0); }
+	bool isEmpty() const { return (m_listSize == 0); }
 
 	// . add this record to the end of the list,  @ m_list+m_listSize
 	// . returns false and sets errno on error
 	// . grows list (m_allocSize) if we need more space
-	bool addRecord ( const char *key, int32_t dataSize, const char *data, bool bitch = true );
+	bool addRecord(const char *key, int32_t dataSize, const char *data, bool bitch = true);
 
 	// . constrain a list to [startKey,endKey]
 	// . returns false and sets g_errno on error
@@ -197,52 +213,13 @@ public:
 	// . merge the lists into this list
 	// . set our startKey/endKey to "startKey"/"endKey"
 	// . exclude any records from lists not in that range
-	void merge_r(RdbList **lists, int32_t numLists, const char *startKey, const char *endKey, int32_t minRecSizes, bool removeNegRecs, rdbid_t rdbId);
-	bool posdbMerge_r(RdbList **lists, int32_t numLists, const char *startKey, const char *endKey, int32_t minRecSizes, bool removeNegKeys);
+	void merge_r(RdbList **lists, int32_t numLists, const char *startKey, const char *endKey, int32_t minRecSizes,
+	             bool removeNegRecs, rdbid_t rdbId);
 
-	// returns false if we skipped into a black hole (end of list)
-	int32_t getRecSize(const char *rec) const {
-		// posdb?
-		if ( m_ks == 18 ) {
-			if ( rec[0]&0x04 ) return 6;
-			if ( rec[0]&0x02 ) return 12;
-			return 18;
-		}
-		if ( m_useHalfKeys ) {
-			if ( isHalfBitOn(rec) ) return m_ks-6;
-			return m_ks;
-		}
-		if (m_fixedDataSize == 0) return m_ks;
-		// negative keys always have no datasize entry
-		if ( (rec[0] & 0x01) == 0 ) return m_ks;
-		if (m_fixedDataSize >  0) return m_ks+m_fixedDataSize;
-		return *(int32_t *)(rec + m_ks) + m_ks + 4 ;
-	}
+	bool posdbMerge_r(RdbList **lists, int32_t numLists, const char *startKey, const char *endKey, int32_t minRecSizes,
+	                  bool removeNegKeys);
 
-	// . is the format bit set? that means it's a 12-byte key
-	// . used exclusively for index lists (indexdb)
-	// . see Indexdb.h for format of the 12-byte and 6-byte indexdb keys
-	bool isHalfBitOn ( const char *rec ) const { return ( *rec & 0x02 ); }
-
-	bool useHalfKeys () const { return m_useHalfKeys; }
-
-	char *getData     ( char *rec ) ;
-	int32_t  getDataSize ( const char *rec ) const;
-	void  getKey      ( const char *rec , char *key ) const;
-
-	// . merge_r() sets m_lastKey for the list it merges the others into
-	// . otherwise, this may be invalid
-	char *getLastKey  ( ) ;
-	void  setLastKey  ( const char *k );
-	// sometimes we don't have a valid m_lastKey because it is only
-	// set in calls to constrain(), merge_r() and indexMerge_r()
-	bool isLastKeyValid() const { return m_lastKeyIsValid; }
-	void setLastKeyIsValid(bool lastKeyIsValid) { m_lastKeyIsValid = lastKeyIsValid; }
-
-	char *getFirstKey ( ) { return m_list; }
-
-
-	bool growList ( int32_t newSize ) ;
+	bool growList(int32_t newSize);
 
 	// . check to see if keys in order
 	// . logs any problems
@@ -251,45 +228,55 @@ public:
 
 	// . removes records whose keys aren't in proper range (corruption)
 	// . returns false and sets errno on error/problem
-	bool removeBadData_r ( ) ;
+	bool removeBadData_r();
 
 	// . print out the list (uses log())
-	int printList ( int32_t logtype);
-	int printPosdbList ( int32_t logtype );
+	int printList(int32_t logtype);
+	int printPosdbList(int32_t logtype);
 
-	void setListPtr(char *listPtr) { m_listPtr = listPtr; }
-	void setListPtrHi(char *listPtrHi) { m_listPtrHi = listPtrHi; }
-	void setListPtrLo(char *listPtrLo) { m_listPtrLo = listPtrLo; }
+	// . is the format bit set? that means it's a 12-byte key
+	// . used exclusively for index lists (indexdb)
+	// . see Indexdb.h for format of the 12-byte and 6-byte indexdb keys
+	static bool isHalfBitOn(const char *rec) { return (*rec & 0x02); }
 
 private:
+	// returns false if we skipped into a black hole (end of list)
+	int32_t getRecSize(const char *rec) const {
+		// posdb?
+		if (m_ks == 18) {
+			if (rec[0] & 0x04) return 6;
+			if (rec[0] & 0x02) return 12;
+			return 18;
+		}
+		if (m_useHalfKeys) {
+			if (isHalfBitOn(rec)) return m_ks - 6;
+			return m_ks;
+		}
+		if (m_fixedDataSize == 0) return m_ks;
+		// negative keys always have no datasize entry
+		if ((rec[0] & 0x01) == 0) return m_ks;
+		if (m_fixedDataSize > 0) return m_ks + m_fixedDataSize;
+		return *(int32_t *)(rec + m_ks) + m_ks + 4;
+	}
+
+	void getKey(const char *rec, char *key) const;
+
+	char *getData(char *rec);
+	int32_t getDataSize(const char *rec) const;
 
 	// the unalterd raw list. keys may be outside of [m_startKey,m_endKey]
 	char *m_list;
 	int32_t m_listSize;     // how many bytes we're using for a list
 
-	char m_startKey[MAX_KEY_BYTES];
 	// the list contains all the keys in [m_startKey,m_endKey] so make
 	// sure if the list is truncated by minrecsizes that you decrease
 	// m_endKey so this is still true. seems like zak did not do that
 	// for rdbbuckets code.
+	char m_startKey[MAX_KEY_BYTES];
 	char m_endKey[MAX_KEY_BYTES];
 
 	char *m_listEnd;      // = m_list + m_listSize
 	char *m_listPtr;      // points to current record in list
-
-	int32_t m_allocSize;  // how many bytes we've allocated at m_alloc
-	char *m_alloc;  // start of chunk that was allocated
-
-	// m_fixedDataSize is -1 if records are variable length,
-	// 0 for data-less records (keys only) and N for records of dataSize N
-	int32_t  m_fixedDataSize;
-
-	// this is set to the last key in this list if we were made by merge()
-	char m_lastKey[MAX_KEY_BYTES];
-	bool m_lastKeyIsValid;
-
-	// max list rec sizes to merge as set by prepareForMerge()
-	int32_t m_mergeMinListSize;
 
 	// . this points to the most significant 6 bytes of a key
 	// . only valid if m_useHalfKeys is true
@@ -297,6 +284,20 @@ private:
 
 	// for the secondary compression bit for posdb
 	const char *m_listPtrLo;
+
+	int32_t m_allocSize;  // how many bytes we've allocated at m_alloc
+	char *m_alloc;  // start of chunk that was allocated
+
+	// m_fixedDataSize is -1 if records are variable length,
+	// 0 for data-less records (keys only) and N for records of dataSize N
+	int32_t m_fixedDataSize;
+
+	// this is set to the last key in this list if we were made by merge()
+	char m_lastKey[MAX_KEY_BYTES];
+	bool m_lastKeyIsValid;
+
+	// max list rec sizes to merge as set by prepareForMerge()
+	int32_t m_mergeMinListSize;
 
 	// do we own the list data (m_list)? if so free it on destruction
 	bool m_ownData;

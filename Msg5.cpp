@@ -885,7 +885,7 @@ bool Msg5::gotList2 ( ) {
 			              m_listPtrs[0]->getEndKey        () ,
 			              m_listPtrs[0]->getFixedDataSize () ,
 			              true                               , // own data?
-			              m_listPtrs[0]->useHalfKeys      () ,
+			              m_listPtrs[0]->getUseHalfKeys   () ,
 			              m_ks                               );
 			// ensure we don't free it when we loop on freeLists() below
 			m_listPtrs[0]->setOwnData ( false );
