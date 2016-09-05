@@ -2270,7 +2270,7 @@ bool PosdbTable::findCandidateDocIds() {
 		// turn half bit on. first key is now 12 bytes!!
 		*p |= 0x02;
 		// MANGLE the list
-		list->adjustListSize(-6);
+		list->setListSize(list->getListSize() - 6);
 		list->setList(p);
 
 		logTrace(g_conf.m_logTracePosdb, "termList #%" PRId32" totalSize=%" PRId64, k, total);

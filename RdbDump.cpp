@@ -534,7 +534,7 @@ bool RdbDump::dumpList(RdbList *list, int32_t niceness, bool recall) {
 				m_list->setListPtr(p + 12);
 				m_list->setListPtrLo(p);
 				m_list->setListPtrHi(p + 6);
-				m_list->adjustListSize(-12);
+				m_list->setListSize(m_list->getListSize() - 12);
 				// turn on both bits to indicate double compression
 				*(p + 12) |= 0x06;
 				m_hacked12 = true;
@@ -569,7 +569,7 @@ bool RdbDump::dumpList(RdbList *list, int32_t niceness, bool recall) {
 				m_list->setListPtr(p + 6);
 				m_list->setListPtrLo(p + 6 + 6);
 				m_list->setListPtrHi(p);
-				m_list->adjustListSize(-6);
+				m_list->setListSize(m_list->getListSize() - 6);
 				// hack on the half bit, too
 				*(p + 6) |= 0x02;
 			}
@@ -811,7 +811,7 @@ tryAgain:
 		m_list->setListPtr(p);
 		m_list->setListPtrLo(p + m_ks - 12);
 		m_list->setListPtrHi(p + m_ks - 6);
-		m_list->adjustListSize(6);
+		m_list->setListSize(m_list->getListSize() + 6);
 		// hack off the half bit, we're 12 bytes again
 		*p &= 0xfd;
 		// turn it off again just in case
@@ -830,7 +830,7 @@ tryAgain:
 		m_list->setListPtr(p);
 		m_list->setListPtrLo(p + 6);
 		m_list->setListPtrHi(p + 12);
-		m_list->adjustListSize(12);
+		m_list->setListSize(m_list->getListSize() + 12);
 		// hack off the half bit, we're 12 bytes again
 		*p &= 0xf9;
 		m_hacked12 = false;

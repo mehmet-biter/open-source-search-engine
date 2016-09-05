@@ -335,7 +335,7 @@ void RdbScan::gotList ( ) {
 	     && (p[0] & 0x04) ) {
 		// make it full
 		m_rdblist->setList(m_rdblist->getList() - 12);
-		m_rdblist->adjustListSize(12);
+		m_rdblist->setListSize(m_rdblist->getListSize() + 12);
 		p                  -= 12;
 		KEYSET(p,m_startKey,m_rdblist->getKeySize());
 		// clear the compression bits
@@ -348,7 +348,7 @@ void RdbScan::gotList ( ) {
 	else if ( m_rdblist->isHalfBitOn ( p ) ) {
 		// otherwise, make it full
 		m_rdblist->setList(m_rdblist->getList() - 6);
-		m_rdblist->adjustListSize(6);
+		m_rdblist->setListSize(m_rdblist->getListSize() + 6);
 		p                  -= 6;
 		KEYSET(p,m_startKey,m_rdblist->getKeySize());
 		// clear the half bit in case it is set

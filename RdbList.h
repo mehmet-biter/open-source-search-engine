@@ -110,7 +110,6 @@ public:
 
 	int32_t  getListSize        () const { return m_listSize; }
 	void setListSize ( int32_t size ) { m_listSize = size; }
-	void adjustListSize( int32_t adjustment ) { m_listSize += adjustment; }
 
 	/// @todo ALC why getListEnd does not return m_listEnd?
 	char *getListEnd         () { return m_list + m_listSize; }
