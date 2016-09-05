@@ -106,13 +106,26 @@ public:
 
 	// these operate on the whole list
 	char *getList            () { return m_list; }
-	int32_t  getListSize        () const { return m_listSize; }
-	char *getListEnd         () { return m_list + m_listSize; }
+	void setList(char *list) { m_list = list;}
 
+	int32_t  getListSize        () const { return m_listSize; }
+	void setListSize ( int32_t size ) { m_listSize = size; }
+	void adjustListSize( int32_t adjustment ) { m_listSize += adjustment; }
+
+	/// @todo ALC why getListEnd does not return m_listEnd?
+	char *getListEnd         () { return m_list + m_listSize; }
+	char *getListEndPtr() { return m_listEnd; }
+	void setListEnd(char *listEnd) { m_listEnd = listEnd; }
 
 	// often these equal m_list/m_listSize, but they may encompass
-	char *getAlloc           () { return m_alloc; }
-	int32_t  getAllocSize       () const { return m_allocSize; }
+	char *getAlloc() { return m_alloc; }
+	void setAlloc(char *alloc) { m_alloc = alloc; }
+
+	int32_t getAllocSize() const { return m_allocSize; }
+	void setAllocSize(int32_t allocSize) { m_allocSize = allocSize; }
+
+	char getKeySize() const { return m_ks; }
+	void setKeySize(char ks) { m_ks = ks; }
 
 	// . skip over the current record and point to the next one
 	// . returns false if we skipped into a black hole (end of list)
@@ -226,7 +239,8 @@ public:
 	void  setLastKey  ( const char *k );
 	// sometimes we don't have a valid m_lastKey because it is only
 	// set in calls to constrain(), merge_r() and indexMerge_r()
-	bool  isLastKeyValid () const { return m_lastKeyIsValid; }
+	bool isLastKeyValid() const { return m_lastKeyIsValid; }
+	void setLastKeyIsValid(bool lastKeyIsValid) { m_lastKeyIsValid = lastKeyIsValid; }
 
 	char *getFirstKey ( ) { return m_list; }
 
@@ -246,11 +260,11 @@ public:
 	int printList ( int32_t logtype);
 	int printPosdbList ( int32_t logtype );
 
-	void  setListPtrs ( char *p , char *hi ) {m_listPtr=p;m_listPtrHi=hi;}
+	void setListPtr(char *listPtr) { m_listPtr = listPtr; }
+	void setListPtrHi(char *listPtrHi) { m_listPtrHi = listPtrHi; }
+	void setListPtrLo(char *listPtrLo) { m_listPtrLo = listPtrLo; }
 
-	void setListSize ( int32_t size ) { m_listSize = size; }
-
-	// private:
+private:
 
 	// the unalterd raw list. keys may be outside of [m_startKey,m_endKey]
 	char *m_list;

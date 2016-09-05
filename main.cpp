@@ -4707,7 +4707,7 @@ void dumpPosdb (const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 	// get last key in list
 	char *ek2 = list.getEndKey();
 	// print it
-	printf("ek=%s\n",KEYSTR(ek2,list.m_ks) );
+	printf("ek=%s\n",KEYSTR(ek2,list.getKeySize()) );
 
 	// loop over entries in list
 	for ( list.resetListPtr() ; ! list.isExhausted() && ! justVerify ;
@@ -4749,8 +4749,8 @@ void dumpPosdb (const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 			err = " (alignerror3)";
 			if ( nd2 < d ) err = " (alignordererror3)";
 		}
-		if ( KEYCMP((char *)&k,(char *)&startKey,list.m_ks)<0 || 
-		     KEYCMP((char *)&k,ek2,list.m_ks)>0){
+		if ( KEYCMP((char *)&k,(char *)&startKey,list.getKeySize())<0 ||
+		     KEYCMP((char *)&k,ek2,list.getKeySize())>0){
 			err = " (out of range)";
 		}
 

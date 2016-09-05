@@ -975,7 +975,7 @@ bool RdbTree::deleteKeys ( collnum_t collnum , char *keys , int32_t numKeys ) {
 // . returns false if a key in list was not found
 bool RdbTree::deleteList(collnum_t collnum, RdbList *list, bool doBalancing) {
 	// sanity check
-	if ( list->m_ks != m_ks ) { g_process.shutdownAbort(true); }
+	if ( list->getKeySize() != m_ks ) { g_process.shutdownAbort(true); }
 	// return if no non-empty nodes in the tree
 	if ( m_numUsedNodes <= 0 ) return true;
 	// reset before calling list->getCurrent*() functions
@@ -1663,7 +1663,7 @@ bool RdbTree::getList ( collnum_t collnum ,
 	// . set lists's m_ownData member to true
 	list->reset();
 	// got set m_ks first so the set ( startKey, endKey ) works!
-	list->m_ks = m_ks;
+	list->setKeySize(m_ks);
 	list->set              ( startKey , endKey );
 	list->setFixedDataSize ( m_fixedDataSize   );
 	list->setUseHalfKeys   ( useHalfKeys       );

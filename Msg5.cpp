@@ -315,7 +315,7 @@ bool Msg5::readList ( ) {
 		//   we don't want merge to have incompatible lists
 		m_treeList.reset();
 		m_treeList.setFixedDataSize ( base->getFixedDataSize() );
-		m_treeList.m_ks = m_ks;
+		m_treeList.setKeySize(m_ks);
 		// reset Msg3 in case gotList() is called without calling
 		// Msg3::readList() first
 		m_msg3.reset();
@@ -509,7 +509,7 @@ bool Msg5::readList ( ) {
 		QUICKPOLL((m_niceness));
 		const char *diskEndKey = m_treeList.getEndKey();
 		// sanity check
-		if ( m_treeList.m_ks != m_ks ) { g_process.shutdownAbort(true); }
+		if ( m_treeList.getKeySize() != m_ks ) { g_process.shutdownAbort(true); }
 
 		// we are waiting for the list
 		//m_waitingForList = true;
@@ -867,7 +867,7 @@ bool Msg5::gotList2 ( ) {
 	     // this speeds up our queryloop querylog parsing in seo.cpp quite a bit
 	     ( m_rdbId == RDB_POSDB && m_numFiles == 1 ) ) ) {
 		// log any problems
-		if ( m_listPtrs[0]->m_ownData ) {
+		if ( m_listPtrs[0]->getOwnData() ) {
 			// . bitch if not empty
 			// . NO! might be our second time around if we had key
 			//   annihilations between file #0 and the tree, and now
@@ -891,8 +891,8 @@ bool Msg5::gotList2 ( ) {
 			m_listPtrs[0]->setOwnData ( false );
 
 			// gotta set this too!
-			if ( m_listPtrs[0]->m_lastKeyIsValid ) {
-				m_list->setLastKey ( m_listPtrs[0]->m_lastKey );
+			if ( m_listPtrs[0]->isLastKeyValid() ) {
+				m_list->setLastKey ( m_listPtrs[0]->getLastKey() );
 			}
 
 			// . remove titleRecs that shouldn't be there

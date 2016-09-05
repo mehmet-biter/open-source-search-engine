@@ -662,9 +662,9 @@ bool RdbCache::addList ( const char *coll, const char *cacheKey, RdbList *list )
 bool RdbCache::addList ( collnum_t collnum, const char *cacheKey, RdbList *list ) {
 	// . sanity check
 	// . msg2 sometimes fails this check when it adds to the cache
-	if ( list->m_ks != m_dks ) { 
+	if ( list->getKeySize() != m_dks ) {
 		//g_errno = EBADENGINEER;
-		log(LOG_WARN, "cache: key size %" PRId32" != %" PRId32, (int32_t)list->m_ks,(int32_t)m_dks);
+		log(LOG_WARN, "cache: key size %" PRId32" != %" PRId32, (int32_t)list->getKeySize(),(int32_t)m_dks);
 		return false;
 		//gbshutdownLogicError();
 	}

@@ -801,8 +801,8 @@ void gotListWrapper ( void *state , RdbList *listb , Msg5 *msg5xx ) {
 			//dst += 4;
 		}
 		// update list parms
-		list->m_listSize = dst - list->m_list;
-		list->m_listEnd  = list->m_list + list->m_listSize;
+		list->setListSize(dst - list->getList());
+		list->setListEnd(list->getList() + list->getListSize());
 		data      = list->getList();
 		dataSize  = list->getListSize();
 	}

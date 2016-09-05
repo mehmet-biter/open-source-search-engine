@@ -755,7 +755,7 @@ bool RdbMap::addKey ( key96_t &key ) {
 // . call addRecord() or addKey() for each record in this list
 bool RdbMap::prealloc ( RdbList *list ) {
 	// sanity check
-	if ( list->m_ks != m_ks ) { g_process.shutdownAbort(true); }
+	if ( list->getKeySize() != m_ks ) { g_process.shutdownAbort(true); }
 	// bail now if it's empty
 	if ( list->isEmpty() ) return true;
 
@@ -777,7 +777,7 @@ bool RdbMap::prealloc ( RdbList *list ) {
 // . call addRecord() or addKey() for each record in this list
 bool RdbMap::addList(RdbList *list) {
 	// sanity check
-	if (list->m_ks != m_ks) {
+	if (list->getKeySize() != m_ks) {
 		g_process.shutdownAbort(true);
 	}
 
@@ -1508,9 +1508,9 @@ readLoop:
 	if ( offset > 0 ) {
 		// ... fix for posdb!!!
 		if (m_ks == 18) {
-			list.m_listPtrLo = key + (m_ks - 12);
+			list.setListPtrLo(key + (m_ks - 12));
 		} else {
-			list.m_listPtrHi = key + (m_ks - 6);
+			list.setListPtrHi(key + (m_ks - 6));
 		}
 	}
 

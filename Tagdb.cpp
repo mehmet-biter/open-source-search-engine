@@ -442,7 +442,7 @@ Tag* TagRec::getNextTag ( Tag *tag ) {
 	int32_t i;
 	for ( i = 0 ; i < m_numListPtrs ; i++ ) {
 		if ( current <  m_listPtrs[i]->getList()    ) continue;
-		if ( current >= m_listPtrs[i]->getListEnd() ) continue;
+		if ( current >= m_listPtrs[i]->getListEndPtr() ) continue;
 		break;
 	}
 
@@ -459,7 +459,7 @@ Tag* TagRec::getNextTag ( Tag *tag ) {
 	}
 
 	// breach list?
-	if ( current < m_listPtrs[i]->getListEnd()) {
+	if ( current < m_listPtrs[i]->getListEndPtr()) {
 		return (Tag *)current;
 	}
 
@@ -811,14 +811,14 @@ bool TagRec::printToBuf (  SafeBuf *sb ) {
 
 bool TagRec::setFromBuf ( char *p , int32_t bufSize ) {
 	// assign to list! but do not free i guess
-	m_lists[0].m_list = p;
-	m_lists[0].m_listSize = bufSize;
-	m_lists[0].m_listEnd = p + bufSize;
-	m_lists[0].m_ownData = false;
-	m_lists[0].m_lastKeyIsValid = false;
-	m_lists[0].m_fixedDataSize = -1;
-	m_lists[0].m_useHalfKeys = false;
-	m_lists[0].m_ks = sizeof(key128_t);
+	m_lists[0].setList(p);
+	m_lists[0].setListSize(bufSize);
+	m_lists[0].setListEnd(p + bufSize);
+	m_lists[0].setOwnData(false);
+	m_lists[0].setLastKeyIsValid(false);
+	m_lists[0].setFixedDataSize(-1);
+	m_lists[0].setUseHalfKeys(false);
+	m_lists[0].setKeySize(sizeof(key128_t));
 	m_listPtrs[0] = &m_lists[0];
 	m_numListPtrs = 1;
 

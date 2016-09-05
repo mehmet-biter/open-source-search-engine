@@ -129,10 +129,10 @@ bool Msg1::addList ( RdbList      *list              ,
 	// if list has no records in it return true
 	if ( ! list || list->isEmpty() ) return true;
 	// sanity check
-	if ( list->m_ks !=  8 &&
-	     list->m_ks != 12 &&
-	     list->m_ks != 16 &&
-	     list->m_ks != 24 ) { 
+	if ( list->getKeySize() !=  8 &&
+	     list->getKeySize() != 12 &&
+	     list->getKeySize() != 16 &&
+	     list->getKeySize() != 24 ) {
 		g_process.shutdownAbort(true); }
 	// start at the beginning
 	list->resetListPtr();
@@ -153,21 +153,23 @@ bool Msg1::addList ( RdbList      *list              ,
  		QUICKPOLL(niceness);
 		
 		// if list is small enough use our buf
-		if ( ! list->m_ownData && list->m_listSize <= MSG1_BUF_SIZE ) {
-			gbmemcpy ( Y->m_buf , list->m_list , list->m_listSize );
-			Y->m_ourList.m_list    = Y->m_buf;
-			Y->m_ourList.m_listEnd = Y->m_buf + list->m_listSize;
-			Y->m_ourList.m_alloc   = NULL;
-			Y->m_ourList.m_ownData = false;
+		if ( ! list->getOwnData() && list->getListSize() <= MSG1_BUF_SIZE ) {
+			gbmemcpy ( Y->m_buf , list->getList() , list->getListSize() );
+			Y->m_ourList.setList(Y->m_buf);
+			Y->m_ourList.setListEnd(Y->m_buf + list->getListSize());
+			Y->m_ourList.setAlloc(NULL);
+			Y->m_ourList.setOwnData(false);
 		}
 		// otherwise, we cannot copy it and i don't want to mdup it...
-		else if ( ! list->m_ownData ) {
+		else if ( ! list->getOwnData() ) {
 			log(LOG_LOGIC,"net: msg1: List must own data. Bad "
 			    "engineer.");
 			g_process.shutdownAbort(true); 
 		}
 		// lastly, if it was a clean steal, don't let list free it
-		else list->m_ownData = false;
+		else {
+			list->setOwnData(false);
+		}
 		// reset m_listPtr and m_listPtrHi so we pass the isExhausted()
 		// check in sendSomeOfList() below
 		Y->m_ourList.resetListPtr();
@@ -240,10 +242,10 @@ bool Msg1::addList ( RdbList      *list              ,
 // . if the list is sorted by keys this will be the most efficient
 bool Msg1::sendSomeOfList ( ) {
 	// sanity check
-	if ( m_list->m_ks !=  8 &&
-	     m_list->m_ks != 12 &&
-	     m_list->m_ks != 16 &&
-	     m_list->m_ks != 24 ) { 
+	if ( m_list->getKeySize() !=  8 &&
+	     m_list->getKeySize() != 12 &&
+	     m_list->getKeySize() != 16 &&
+	     m_list->getKeySize() != 24 ) {
 		g_process.shutdownAbort(true); }
 	// debug msg
 	//log("sendSomeOfList: mcast=%" PRIu32" exhausted=%" PRId32,
@@ -293,7 +295,7 @@ bool Msg1::sendSomeOfList ( ) {
 		//int32_t crec = m_list->getCurrentRecSize();
 		m_list->skipCurrentRecord();
 		// sanity check
-		if ( m_list->getListPtr() > m_list->getListEnd() ) {
+		if ( m_list->getListPtr() > m_list->getListEndPtr() ) {
 			g_process.shutdownAbort(true); }
 	}
  done:
