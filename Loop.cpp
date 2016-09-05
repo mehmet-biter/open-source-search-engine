@@ -41,6 +41,23 @@
 // TODO: don't mask signals, catch them as they arrive? (like in phhttpd)
 
 
+class Slot {
+ public:
+	void   *m_state;
+	void  (* m_callback)(int fd, void *state);
+	// the next Slot thats registerd on this fd
+	Slot   *m_next;
+	// save niceness level for doPoll() to segregate
+	int32_t    m_niceness;
+	// this callback should be called every X milliseconds
+	int32_t      m_tick;
+	// when we were last called in ms time (only valid for sleep callbacks)
+	int64_t m_lastCall;
+	// linked list of available slots
+	Slot     *m_nextAvail;
+};
+
+
 // a global class extern'd in .h file
 Loop g_loop;
 

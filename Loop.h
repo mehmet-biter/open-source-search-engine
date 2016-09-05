@@ -17,29 +17,7 @@ int gbsystem(const char *cmd);
 void printStackTrace (bool print_location = false);
 
 
-// we have 2 arrays of slots, m_readSlots and m_writeSlots
-class Slot {
- public:
-	void   *m_state;
-	void  (* m_callback)(int fd, void *state);
-	// the next Slot thats registerd on this fd
-	Slot   *m_next;
-	// save niceness level for doPoll() to segregate
-	int32_t    m_niceness;
-	// last time we called m_callback for this fd
-	//	time_t  m_lastActivity;
-	// . when should this fd timeout and we call the callback with
-	//   errno set to ETIMEDOUT
-	// . set to -1 for never timeout
-	// . m_timeout is in seconds
-	//	int32_t    m_timeout;     
-	// this callback should be called every X milliseconds
-	int32_t      m_tick;
-	// when we were last called in ms time (only valid for sleep callbacks)
-	int64_t m_lastCall;
-	// linked list of available slots
-	Slot     *m_nextAvail;
-};
+class Slot;
 
 
 // linux 2.2 kernel has this limitation
