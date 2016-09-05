@@ -55,11 +55,9 @@ int main(int argc, char **argv) {
 	BigFile bigFile;
 	bigFile.set(dir, filename);
 
-	g_conf.m_logTraceRdbIndex = true;
-
 	RdbIndex index;
 	if (starts_with(filename, "posdb")) {
-		index.set(dir, indexFilename, 0, true, sizeof(key144_t), RDB_POSDB);
+		index.set(dir, indexFilename, Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB);
 		if (!index.generateIndex(&bigFile)) {
 			fprintf(stdout, "Unable to generate index for %s\n", filename);
 			return 1;

@@ -196,10 +196,10 @@ bool Msg2::getLists ( ) {
 			                 hfterm_shortcut_buffer_bytes,         //allocSize
 			                 startKey,                             //startkey
 			                 endKey,                               //endkey
-			                 0,                                    //fixeddatasize
+			                 Posdb::getFixedDataSize(),
 			                 true,                                 //owndata
-			                 true,                                 //usehalfkeys
-			                 18);                                  //keysize
+			                 Posdb::getUseHalfKeys(),
+			                 Posdb::getKeySize());
 			char ek2_copy[18];
 			memcpy(ek2_copy, ek2, sizeof(ek2_copy)); //RdbList::constrain() modifies endkey, so give it a copy
 			m_lists[m_i].constrain(sk2, ek2_copy, -1, 0, NULL, RDB_POSDB, "highfrequencyterm");

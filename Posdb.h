@@ -324,6 +324,11 @@ class Posdb {
 
 	Rdb      *getRdb   ( ) { return &m_rdb; }
 
+	// Rdb init variables
+	static inline int32_t getFixedDataSize() { return 0; }
+	static inline bool getUseHalfKeys() { return true; }
+	static inline char getKeySize() { return sizeof(posdbkey_t); }
+
 private:
 	Rdb m_rdb;
 };
