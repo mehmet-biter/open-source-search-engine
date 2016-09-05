@@ -554,6 +554,8 @@ std::vector<JobDigest> JobScheduler_impl::query_job_digests() const
 	std::vector<JobDigest> v;
 	ScopedLock sl(mtx);
 	//v.reserve(cpu_job_queue.size() + io_job_queue.size() + external_job_queue.size() + running_set().size() + exit_set().size());
+	for(const auto &je : coordinator_job_queue)
+		v.push_back(job_entry_to_job_digest(je,JobDigest::job_state_queued));
 	for(const auto &je : cpu_job_queue)
 		v.push_back(job_entry_to_job_digest(je,JobDigest::job_state_queued));
 	for(const auto &je : io_job_queue)

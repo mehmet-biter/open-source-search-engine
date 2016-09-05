@@ -65,7 +65,7 @@ bool sendPageThreads ( TcpSocket *s , HttpRequest *r ) {
 	p.safePrintf("    <td colspan=\"1\"><b>Avg time</b></td>\n");
 	p.safePrintf("  </tr>\n");
 	
-	for(int thread_type=thread_type_query_read; thread_type<=thread_type_generate_thumbnail; thread_type++) {
+	for(int thread_type=thread_type_query_coordinator; thread_type<=thread_type_generate_thumbnail; thread_type++) {
 		int queued_count=0;
 		uint64_t queued_time=0;
 		int running_count=0;
