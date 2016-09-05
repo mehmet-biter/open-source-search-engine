@@ -39,8 +39,6 @@ class Slot;
 //extern int64_t g_nowGlobal;
 
 
-extern char g_niceness ;
-
 
 class Loop {
 

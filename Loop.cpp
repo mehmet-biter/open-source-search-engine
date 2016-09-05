@@ -61,9 +61,6 @@ class Slot {
 // a global class extern'd in .h file
 Loop g_loop;
 
-// the global niceness
-char g_niceness = 0;
-
 // use this in case we unregister the "next" callback
 static Slot *s_callbacksNext;
 
@@ -419,20 +416,7 @@ void Loop::callCallbacks_ass ( bool forReading , int fd , int64_t now , int32_t 
 			g_process.shutdownAbort(true);
 		}
 
-		// Temporarily (for the duration of the callback call) switch
-		// niceness to the niceness of the slot
-		int32_t saved_niceness = g_niceness;
-		g_niceness = s->m_niceness;
-
-		// make sure not 2
-		if ( g_niceness >= 2 ) {
-			g_niceness = 1;
-		}
-
 		s->m_callback ( fd , s->m_state );
-
-		// restore niceness
-		g_niceness = saved_niceness;
 
 		logDebug( g_conf.m_logDebugLoop, "loop: exit fd callback fd=%" PRId32" nice=%" PRId32,
 		          (int32_t)fd,(int32_t)s->m_niceness );
