@@ -166,7 +166,8 @@ static void job_done_notify_noop() {
 
 class ThreadPool {
 public:
-	ThreadPool(unsigned num_threads,
+	ThreadPool(const char *thread_name_prefix,
+	           unsigned num_threads,
 	           JobQueue *job_queue, RunningSet *running_set, ExitSet *exit_set,
 		   unsigned *num_io_write_jobs_running,
 		   pthread_mutex_t *mtx,
@@ -181,7 +182,8 @@ private:
 };
 
 
-ThreadPool::ThreadPool(unsigned num_threads,
+ThreadPool::ThreadPool(const char *thread_name_prefix,
+                       unsigned num_threads,
                        JobQueue *job_queue, RunningSet *running_set, ExitSet *exit_set,
 		       unsigned *num_io_write_jobs_running,
 		       pthread_mutex_t *mtx,
@@ -200,6 +202,11 @@ ThreadPool::ThreadPool(unsigned num_threads,
 		int rc = pthread_create(&tid[i], NULL, job_pool_thread_function, &ptp);
 		if(rc!=0)
 			throw std::runtime_error("pthread_create() failed");
+		char thread_name[16]; //hard limit
+		snprintf(thread_name,sizeof(thread_name),"%s %u", thread_name_prefix,i);
+		rc = pthread_setname_np(tid[i],thread_name);
+		if(rc!=0)
+			throw std::runtime_error("pthread_setname_np() failed");
 	}
 }
 
@@ -262,10 +269,10 @@ public:
 	    running_set(),
 	    exit_set(),
 	    num_io_write_jobs_running(0),
-	    coordinator_thread_pool(num_coordinator_threads,&coordinator_job_queue,&running_set,&exit_set,&num_io_write_jobs_running,&mtx,job_done_notify),
-	    cpu_thread_pool(num_cpu_threads,&cpu_job_queue,&running_set,&exit_set,&num_io_write_jobs_running,&mtx,job_done_notify),
-	    io_thread_pool(num_io_threads,&io_job_queue,&running_set,&exit_set,&num_io_write_jobs_running,&mtx,job_done_notify),
-	    external_thread_pool(num_external_threads,&external_job_queue,&running_set,&exit_set,&num_io_write_jobs_running,&mtx,job_done_notify),
+	    coordinator_thread_pool("coord",num_coordinator_threads,&coordinator_job_queue,&running_set,&exit_set,&num_io_write_jobs_running,&mtx,job_done_notify),
+	    cpu_thread_pool("cpu",num_cpu_threads,&cpu_job_queue,&running_set,&exit_set,&num_io_write_jobs_running,&mtx,job_done_notify),
+	    io_thread_pool("io",num_io_threads,&io_job_queue,&running_set,&exit_set,&num_io_write_jobs_running,&mtx,job_done_notify),
+	    external_thread_pool("ext",num_external_threads,&external_job_queue,&running_set,&exit_set,&num_io_write_jobs_running,&mtx,job_done_notify),
 	    no_threads(num_cpu_threads==0 && num_io_threads==0 && num_external_threads==0),
 	    new_jobs_allowed(true)
 	{
