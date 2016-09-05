@@ -423,6 +423,7 @@ class Conf {
 	bool m_logTraceRdbBase;
 	bool m_logTraceRdbBuckets;
 	bool m_logTraceRdbDump;
+	bool m_logTraceRdbList;
 	bool m_logTraceRdbMap;
 	bool m_logTraceRdbIndex;
 	bool m_logTraceRepairs;
