@@ -101,76 +101,73 @@ static int32_t s_numReadFds = 0;
 static int s_writeFds[MAX_NUM_FDS];
 static int32_t s_numWriteFds = 0;
 
-void Loop::unregisterCallback ( Slot **slots , int fd , void *state , void (* callback)(int fd,void *state) ,
-                                bool forReading ) {
+void Loop::unregisterCallback(Slot **slots, int fd, void *state, void (* callback)(int fd,void *state), bool forReading) {
 	// bad fd
-	if ( fd < 0 ) {log(LOG_LOGIC,
-			   "loop: fd to unregister is negative.");return;}
-	// set a flag if we found it
-	bool found = false;
-	// slots is m_readSlots OR m_writeSlots
-	Slot *s        = slots [ fd ];
-	Slot *lastSlot = NULL;
+	if(fd<0) {
+		log(LOG_LOGIC, "loop: fd to unregister is negative.");
+		return;
+	}
 	// . keep track of new min tick for sleep callbacks
 	// . sleep a min of 40ms so g_now is somewhat up to date
 	int32_t min     = 40; // 0x7fffffff;
-	int32_t lastMin = min;
 
-	// chain through all callbacks registerd with this fd
-	while ( s ) {
+	// chase through all callbacks registered with this fd
+	Slot *prevSlot = NULL;
+	for(Slot *s = slots[fd]; s; ) {
 		// get the next slot (NULL if no more)
 		Slot *next = s->m_next;
-		// if we're unregistering a sleep callback
-		// we might have to recalculate m_minTick
-		if ( s->m_tick < min ) { lastMin = min; min = s->m_tick; }
-		// skip this slot if callbacks don't match
-		if ( s->m_callback != callback ) { lastSlot = s; goto skip; }
-		// skip this slot if states    don't match
-		if ( s->m_state    != state    ) { lastSlot = s; goto skip; }
-		// free this slot since it callback matches "callback"
-		//mfree ( s , sizeof(Slot) , "Loop" );
-		returnSlot ( s );
-		found = true;
-		// if the last one, then remove the FD from s_fdList
-		// so and clear a bit so doPoll() function is fast
-		if ( slots[fd] == s && s->m_next == NULL ) {
-			for (int32_t i = 0; i < s_numReadFds ; i++ ) {
-				if ( ! forReading ) break;
-				if ( s_readFds[i] != fd ) continue;
-				s_readFds[i] = s_readFds[s_numReadFds-1];
-				s_numReadFds--;
-				// remove from select mask too
-				FD_CLR(fd,&s_selectMaskRead );
-				if ( g_conf.m_logDebugLoop || g_conf.m_logDebugTcp ) {
-					log( "loop: unregistering read callback for fd=%i", fd );
+		if(s->m_callback == callback &&
+		   s->m_state    == state) {
+			// free this slot since it callback matches "callback"
+			returnSlot ( s );
+			// if the last one, then remove the FD from s_fdList
+			// so and clear a bit so doPoll() function is fast
+			if(slots[fd] == s && s->m_next == NULL) {
+				if(forReading) {
+					for(int32_t i = 0; i < s_numReadFds; i++ ) {
+						if (s_readFds[i] == fd) {
+							s_readFds[i] = s_readFds[s_numReadFds-1];
+							s_numReadFds--;
+							// remove from select mask too
+							FD_CLR(fd,&s_selectMaskRead );
+							if(g_conf.m_logDebugLoop || g_conf.m_logDebugTcp) {
+								log( "loop: unregistering read callback for fd=%i", fd );
+							}
+							break;
+						}
+					}
+				} else {
+					for(int32_t i = 0; i < s_numWriteFds; i++ ) {
+						if(s_writeFds[i] == fd) {
+							s_writeFds[i] = s_writeFds[s_numWriteFds-1];
+							s_numWriteFds--;
+							// remove from select mask too
+							FD_CLR(fd,&s_selectMaskWrite);
+							if(g_conf.m_logDebugLoop || g_conf.m_logDebugTcp) {
+								log( LOG_DEBUG, "loop: unregistering write callback for fd=%" PRId32" from write #wrts=%" PRId32,
+								     ( int32_t ) fd, ( int32_t ) s_numWriteFds );
+							}
+							break;
+						}
+					}
 				}
-				break;
 			}
-			for (int32_t i = 0; i < s_numWriteFds ; i++ ) {
-				if ( forReading ) break;
-			 	if ( s_writeFds[i] != fd ) continue;
-			 	s_writeFds[i] = s_writeFds[s_numWriteFds-1];
-			 	s_numWriteFds--;
-			 	// remove from select mask too
-			 	FD_CLR(fd,&s_selectMaskWrite);
-				if ( g_conf.m_logDebugLoop || g_conf.m_logDebugTcp ) {
-					log( LOG_DEBUG, "loop: unregistering write callback for fd=%" PRId32" from write #wrts=%" PRId32,
-					     ( int32_t ) fd, ( int32_t ) s_numWriteFds );
-				}
-			 	break;
-			}
+			// excise the previous slot from linked list
+			if(prevSlot)
+				prevSlot->m_next = next;
+			else
+				slots[fd]        = next;
+			// watch out if we're in the previous callback, we need to
+			// fix the linked list in callCallbacks_ass
+			if(s_callbacksNext == s)
+				s_callbacksNext = next;
+		} else {
+			prevSlot = s;
+			// if we're unregistering a sleep callback
+			// we might have to recalculate m_minTick
+			if(s->m_tick < min)
+				min = s->m_tick;
 		}
-		// debug msg
-		//log("Loop::unregistered fd=%" PRId32" state=%" PRIu32, fd, (int32_t)state );
-		// revert back to old min if this is the Slot we're removing
-		min = lastMin;
-		// excise the previous slot from linked list
-		if   ( lastSlot ) lastSlot->m_next = next;
-		else              slots[fd]        = next;
-		// watch out if we're in the previous callback, we need to
-		// fix the linked list in callCallbacks_ass
-		if ( s_callbacksNext == s ) s_callbacksNext = next;
-	skip:
 		// advance to the next slot
 		s = next;
 	}
