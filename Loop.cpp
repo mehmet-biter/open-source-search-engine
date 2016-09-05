@@ -8,6 +8,7 @@
 #include "Process.h"
 #include "PageParser.h"
 #include "Conf.h"
+#include "ScopedLock.h"
 
 #include "Stats.h"
 
@@ -61,8 +62,6 @@ class Slot {
 // a global class extern'd in .h file
 Loop g_loop;
 
-// use this in case we unregister the "next" callback
-static Slot *s_callbacksNext;
 
 // free up all our mem
 void Loop::reset() {
@@ -111,6 +110,7 @@ void Loop::unregisterCallback(Slot **slots, int fd, void *state, void (* callbac
 	// . sleep a min of 40ms so g_now is somewhat up to date
 	int32_t min     = 40; // 0x7fffffff;
 
+	ScopedLock sl(m_slotMutex);
 	// chase through all callbacks registered with this fd
 	Slot *prevSlot = NULL;
 	for(Slot *s = slots[fd]; s; ) {
@@ -159,8 +159,8 @@ void Loop::unregisterCallback(Slot **slots, int fd, void *state, void (* callbac
 				slots[fd]        = next;
 			// watch out if we're in the previous callback, we need to
 			// fix the linked list in callCallbacks_ass
-			if(s_callbacksNext == s)
-				s_callbacksNext = next;
+			if(m_callbacksNext == s)
+				m_callbacksNext = next;
 		} else {
 			prevSlot = s;
 			// if we're unregistering a sleep callback
@@ -234,6 +234,7 @@ bool Loop::addSlot ( bool forReading , int fd, void *state, void (* callback)(in
 		log( LOG_DEBUG, "loop: registering %s callback sd=%i", forReading ? "read" : "write", fd);
 	}
 
+	ScopedLock sl(m_slotMutex);
 	// . ensure fd not already registered with this callback/state
 	// . prevent dups so you can keep calling register w/o fear
 	Slot *s;
@@ -362,6 +363,7 @@ void Loop::callCallbacks_ass ( bool forReading , int fd , int64_t now , int32_t 
 	// save the g_errno to send to all callbacks
 	int saved_errno = g_errno;
 
+	ScopedLock sl(m_slotMutex);
 	// get the first Slot in the chain that is waiting on this fd
 	Slot *s ;
 	if ( forReading ) s = m_readSlots  [ fd ];
@@ -378,10 +380,6 @@ void Loop::callCallbacks_ass ( bool forReading , int fd , int64_t now , int32_t 
 			continue;
 		}
 
-		// NOTE: callback can unregister fd for Slot s, so get next
-		//Slot *next = s->m_next;
-		s_callbacksNext = s->m_next;
-
 		// watch out if clock was set back
 		if ( s->m_lastCall > now ) {
 			s->m_lastCall = now;
@@ -389,13 +387,13 @@ void Loop::callCallbacks_ass ( bool forReading , int fd , int64_t now , int32_t 
 
 		// if we're a sleep callback, check to make sure not premature
 		if ( fd == MAX_NUM_FDS && s->m_lastCall + s->m_tick > now ) {
-			s = s_callbacksNext;
+			s = s->m_next;
 			continue;
 		}
 
 		// skip if not a niceness match
 		if ( niceness == 0 && s->m_niceness != 0 ) {
-			s = s_callbacksNext;
+			s = s->m_next;
 			continue;
 		}
 
@@ -406,6 +404,9 @@ void Loop::callCallbacks_ass ( bool forReading , int fd , int64_t now , int32_t 
 
 		// do the callback
 
+		// NOTE: callback can unregister fd for Slot s, so get next
+		m_callbacksNext = s->m_next;
+
 		logDebug( g_conf.m_logDebugLoop, "loop: enter fd callback fd=%d nice=%" PRId32, fd, s->m_niceness );
 
 		// sanity check. -1 no longer supported
@@ -413,7 +414,9 @@ void Loop::callCallbacks_ass ( bool forReading , int fd , int64_t now , int32_t 
 			g_process.shutdownAbort(true);
 		}
 
+		m_slotMutex.unlock();
 		s->m_callback ( fd , s->m_state );
+		m_slotMutex.lock();
 
 		logDebug( g_conf.m_logDebugLoop, "loop: exit fd callback fd=%" PRId32" nice=%" PRId32,
 		          (int32_t)fd,(int32_t)s->m_niceness );
@@ -423,13 +426,16 @@ void Loop::callCallbacks_ass ( bool forReading , int fd , int64_t now , int32_t 
 		// reset g_errno so all callbacks for this fd get same g_errno
 		g_errno = saved_errno;
 		// get the next n (will be -1 if no slot after it)
-		s = s_callbacksNext;
+		s = m_callbacksNext;
 	}
 
-	s_callbacksNext = NULL;
+	m_callbacksNext = NULL;
 }
 
-Loop::Loop ( ) {
+Loop::Loop()
+  : m_callbacksNext(NULL),
+    m_slotMutex()
+{
 	m_isDoingLoop      = false;
 
 	// set all callbacks to NULL so we know they're empty

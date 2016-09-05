@@ -6,6 +6,8 @@
 #ifndef GB_LOOP_H
 #define GB_LOOP_H
 
+#include "GbMutex.h"
+
 
 int gbsystem(const char *cmd);
 
@@ -140,6 +142,9 @@ class Loop {
 	Slot *m_slots;
 	Slot *m_head;
 	Slot *m_tail;
+	Slot *m_callbacksNext; //in case we unregister the "next" callback
+
+	GbMutex m_slotMutex; //protects all slot linked list modification and traversal
 	
 	int m_pipeFd[2]; //used for waking up from select/poll
 };
