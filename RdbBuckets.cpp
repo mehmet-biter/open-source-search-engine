@@ -198,24 +198,14 @@ bool RdbBucket::sort() {
 	char *list2  = m_keys + (recSize*m_lastSorted);
 	char *list1end  = list2;
 	char *list2end  = list2 + (recSize * numUnsorted);
-	//turn quickpoll off while we sort,
-	//because we do not know what sort of indeterminate state
-	//we will be in while sorting
-	// MDW: this no longer disables it since it is based on g_niceness
-	// now, but what is the point, does it use static vars or what?
 
 	//sort the unsorted portion
-	// turn off this way
-	int32_t saved = g_niceness;
-	g_niceness = 0;
 	// . use merge sort because it is stable, and we need to always keep
 	// . the identical keys that were added last
 	// . now we pass in a buffer to merge into, otherwise one is malloced,
 	// . which can fail.  It falls back on qsort which is not stable.
 	if(!m_parent->getSortBuf()) {g_process.shutdownAbort(true);}
 	gbmergesort (list2, numUnsorted , recSize , cmpfn, 0, m_parent->getSortBuf(), m_parent->getSortBufSize());
-
-	g_niceness = saved;
 
 	char *p  = mergeBuf;
 	char v;
