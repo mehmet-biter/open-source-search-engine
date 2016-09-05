@@ -47,6 +47,7 @@
 
 #define SENT_UNITS 30
 
+#define NUMTERMIDBITS 48 // was in RdbList but only used in XmlDoc
 
 static void getWordToPhraseRatioWeights ( int64_t   pid1 , // pre phrase
 					  int64_t   wid1 ,

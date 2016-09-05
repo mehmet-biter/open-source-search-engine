@@ -3,8 +3,6 @@
 #ifndef GB_RDBLIST_H
 #define GB_RDBLIST_H
 
-#define NUMTERMIDBITS 48
-
 #include "Sanity.h"
 #include "types.h"
 #include "rdbid_t.h"
