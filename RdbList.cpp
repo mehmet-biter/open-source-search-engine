@@ -5,9 +5,6 @@
 #include "BitOperations.h"
 #include <set>
 
-//#define _MERGEDEBUG_
-
-
 // . compares to keys split into 6 byte ptrs
 // . returns -1, 0 , 1 if a < b , a == b , a > b
 // . for comparison purposes, we must set 0x02 (half bits) on all keys
@@ -117,6 +114,9 @@ void RdbList::reset ( ) {
 // . all keys of records in list must be in [startKey,endKey]
 void RdbList::set(char *list, int32_t listSize, char *alloc, int32_t allocSize, const char *startKey, const char *endKey,
                   int32_t fixedDataSize, bool ownData, bool useHalfKeys, char keySize) {
+	logTrace(g_conf.m_logTraceRdbList, "BEGIN. list=%p listSize=%" PRId32" alloc=%p allocSize=%" PRId32,
+	         list, listSize, alloc, allocSize);
+
 	// free and NULLify any old m_list we had to make room for our new list
 	freeList();
 	// set this first since others depend on it
@@ -335,6 +335,8 @@ bool RdbList::addRecord ( const char *key, int32_t dataSize, const char *data, b
 // . allocates on top of m_listSize
 // . returns false and sets g_errno on error, true on success
 bool RdbList::prepareForMerge(RdbList **lists, int32_t numLists, int32_t minRecSizes) {
+	logTrace(g_conf.m_logTraceRdbList, "BEGIN. numLists=%" PRId32" minRecSizes=%" PRId32, numLists, minRecSizes);
+
 	// return false if we don't own the data
 	if (!m_ownData) {
 		log(LOG_ERROR, "db: rdblist: prepareForMerge: Data not owned.");
@@ -360,6 +362,9 @@ bool RdbList::prepareForMerge(RdbList **lists, int32_t numLists, int32_t minRecS
 
 	// inherit key size
 	m_ks = lists[0]->m_ks;
+
+	logTrace(g_conf.m_logTraceRdbList, "m_fixedDataSize=%" PRId32" m_useHalfKeys=%s m_ks=%" PRId32,
+	         m_fixedDataSize, m_useHalfKeys ? "true" : "false", m_ks);
 
 	// minRecSizes is only a good size-constraining parameter if
 	// we know the max rec size, cuz we could overshoot list
@@ -412,6 +417,9 @@ bool RdbList::prepareForMerge(RdbList **lists, int32_t numLists, int32_t minRecS
 	if (minRecSizes >= 0 && m_mergeMinListSize > minRecSizes) {
 		m_mergeMinListSize = minRecSizes;
 	}
+
+	logTrace(g_conf.m_logTraceRdbList, "minRecSizes=%" PRId32 " maxListSize=%" PRId32" m_listSize=%" PRId32" m_mergeMinListSize=%" PRId32,
+	         minRecSizes, maxListSize, m_listSize, m_mergeMinListSize);
 
 	// . now alloc space for merging these lists
 	// . won't shrink our m_list buffer, might grow it a bit if necessary
@@ -548,6 +556,8 @@ char *RdbList::getData ( char *rec ) {
 
 // returns false on error and set g_errno
 bool RdbList::growList(int32_t newSize) {
+	logTrace(g_conf.m_logTraceRdbList, "BEGIN. newSize=%" PRId32, newSize);
+
 	// return false if we don't own the data
 	if (!m_ownData) {
 		log(LOG_LOGIC,"db: rdblist: growlist: Data not owned.");
@@ -903,19 +913,19 @@ bool RdbList::removeBadData_r ( ) {
 }
 
 
-int RdbList::printPosdbList ( int32_t logtype ) {
+int RdbList::printPosdbList() {
 
-	log(logtype, "%s:%s: BEGIN",__FILE__,__func__);
+	logf(LOG_DEBUG, "%s:%s: BEGIN",__FILE__,__func__);
 
 	// save
 	char *oldp   = m_listPtr;
 	const char *oldphi = m_listPtrHi;
 	resetListPtr();
-	log(logtype, "db: STARTKEY=%s, m_ks=%d, datasize=%" PRId32,KEYSTR(m_startKey,m_ks), (int)m_ks, m_listSize);
+	logf(LOG_DEBUG, "db: STARTKEY=%s, m_ks=%d, datasize=%" PRId32,KEYSTR(m_startKey,m_ks), (int)m_ks, m_listSize);
 
 	size_t key_size;
 	// 48bit 38bit 4bit 4bit 18bit
-	log(logtype,"db:   ........term_id ......doc_id rank lang wordpos del ");
+	logf(LOG_DEBUG,"db:   ........term_id ......doc_id rank lang wordpos del ");
 
 
 	while ( ! isExhausted() ) {
@@ -980,13 +990,13 @@ int RdbList::printPosdbList ( int32_t logtype ) {
 		switch(key_size)
 		{
 			case 18:
-				log(logtype,"db:   %15" PRId64" %12" PRId64" %4" PRId64" %4" PRId64" %7" PRId64" %3s", term_id, doc_id, site_rank, lang_id, word_pos, !nodelete_marker?"Y":"N");
+				logf(LOG_DEBUG,"db:   %15" PRId64" %12" PRId64" %4" PRId64" %4" PRId64" %7" PRId64" %3s", term_id, doc_id, site_rank, lang_id, word_pos, !nodelete_marker?"Y":"N");
 				break;
 			case 12:
-				log(logtype,"db:   %15s %12" PRId64" %4" PRId64" %4" PRId64" %7" PRId64" %3s", "-", doc_id, site_rank, lang_id, word_pos, !nodelete_marker?"Y":"N");
+				logf(LOG_DEBUG,"db:   %15s %12" PRId64" %4" PRId64" %4" PRId64" %7" PRId64" %3s", "-", doc_id, site_rank, lang_id, word_pos, !nodelete_marker?"Y":"N");
 				break;
 			default:
-				log(logtype,"db:   %15s %12s %4s %4s %7" PRId64" %3s", "-", "-", "-", "-", word_pos, !nodelete_marker?"Y":"N");
+				logf(LOG_DEBUG,"db:   %15s %12s %4s %4s %7" PRId64" %3s", "-", "-", "-", "-", word_pos, !nodelete_marker?"Y":"N");
 				break;
 		}
 
@@ -994,35 +1004,32 @@ int RdbList::printPosdbList ( int32_t logtype ) {
 	}
 
 	if ( m_lastKeyIsValid )
-		log(logtype,  "db: LASTKEY=%s", KEYSTR(m_lastKey,m_ks));
+		logf(LOG_DEBUG,  "db: LASTKEY=%s", KEYSTR(m_lastKey,m_ks));
 
-	log(logtype, "db: ENDKEY=%s",KEYSTR(m_endKey,m_ks));
+	logf(LOG_DEBUG, "db: ENDKEY=%s",KEYSTR(m_endKey,m_ks));
 
 	//resetListPtr();
 	m_listPtr   = oldp;
 	m_listPtrHi = oldphi;
 
-	log(logtype, "%s:%s: END",__FILE__,__func__);
+	logf(LOG_DEBUG, "%s:%s: END",__FILE__,__func__);
 	return 0;
 }
 
 
-
-
-int RdbList::printList ( int32_t logtype ) {
-
+int RdbList::printList() {
 	if ( m_ks == 18 ) { // m_rdbId == RDB_POSDB ) {
-		return printPosdbList(logtype);
+		return printPosdbList();
 	}
 
-	log(logtype, "%s:%s: BEGIN",__FILE__,__func__);
+	logf(LOG_DEBUG, "%s:%s: BEGIN",__FILE__,__func__);
 
 	//log("m_list=%" PRId32,(int32_t)m_list);
 	// save
 	char *oldp   = m_listPtr;
 	const char *oldphi = m_listPtrHi;
 	resetListPtr();
-	log(logtype, "db: STARTKEY=%s",KEYSTR(m_startKey,m_ks));
+	logf(LOG_DEBUG, "db: STARTKEY=%s",KEYSTR(m_startKey,m_ks));
 
 	while ( ! isExhausted() ) {
 		char k[MAX_KEY_BYTES];
@@ -1039,19 +1046,19 @@ int RdbList::printList ( int32_t logtype ) {
 			d = "";
 		}
 
-		log(logtype, "db: k=%s dsize=%07" PRId32"%s", KEYSTR(k,m_ks),dataSize,d);
+		logf(LOG_DEBUG, "db: k=%s dsize=%07" PRId32"%s", KEYSTR(k,m_ks),dataSize,d);
 		skipCurrentRecord();
 	}
 
 	if ( m_lastKeyIsValid )
-		log(logtype,  "db: LASTKEY=%s", KEYSTR(m_lastKey,m_ks));
+		logf(LOG_DEBUG,  "db: LASTKEY=%s", KEYSTR(m_lastKey,m_ks));
 
-	log(logtype, "db: ENDKEY=%s",KEYSTR(m_endKey,m_ks));
+	logf(LOG_INFO, "db: ENDKEY=%s",KEYSTR(m_endKey,m_ks));
 
 	m_listPtr   = oldp;
 	m_listPtrHi = oldphi;
 
-	log(logtype, "%s:%s: END",__FILE__,__func__);
+	logf(LOG_DEBUG, "%s:%s: END",__FILE__,__func__);
 	return 0;
 }
 
@@ -1742,10 +1749,6 @@ void RdbList::merge_r(RdbList **lists, int32_t numLists, const char *startKey, c
 	// . caller should have just called constrain() then
 	if ( numLists == 1 ) {
 		// we do this sometimes to remove the negative keys!!
-		//log(LOG_LOGIC,"db: rdblist: merge_r: merge_r called on one "
-		//    "list.");
-		// this seems to nuke our list!!
-		//gbshutdownAbort(true);
 		required = m_listSize + lists[0]->m_listSize;
 	}
 	// otherwise, list #j has the minKey, although may not be min
@@ -2070,13 +2073,10 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 		return true;
 	}
 
-#ifdef _MERGEDEBUG_
-	log(LOG_LOGIC,"%s:%s: removeNegKeys: %s", __FILE__, __func__, removeNegKeys?"true":"false");
-	log(LOG_LOGIC,"%s:%s: sk.n1=%" PRIx64" sk.n0=%" PRIx64" ek.n1=%" PRIx64" ek.n0=%" PRIx64,
-	    __FILE__,__func__, KEY1(startKey,m_ks),KEY0(startKey),KEY1(endKey,m_ks),KEY0(endKey));
-	log(LOG_LOGIC,"%s:%s: numLists: %" PRId32", m_allocSize=%" PRId32", m_mergeMinListSize=%" PRId32", minRecSizes=%" PRId32,
-		__FILE__,__func__, numLists, m_allocSize, m_mergeMinListSize, minRecSizes);
-#endif
+	logTrace(g_conf.m_logTraceRdbList, "lists=%p numLists=%" PRId32" minRecSizes=%" PRId32 " removeNegKeys=%s",
+	         lists, numLists, minRecSizes, removeNegKeys ? "true" : "false");
+	logTrace(g_conf.m_logTraceRdbList, "startKey=%s endKey=%s", KEYSTR(startKey,m_ks), KEYSTR(endKey,m_ks));
+	logTrace(g_conf.m_logTraceRdbList, "m_allocSize=%" PRId32" m_mergeMinListSize=%" PRId32, m_allocSize, m_mergeMinListSize);
 
 	// did they call prepareForMerge()?
 	if (m_allocSize < m_mergeMinListSize) {
@@ -2123,9 +2123,7 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 
 	// bitch if too many lists
 	if (numLists > MAX_RDB_FILES + 1) {
-		// set errno, cuz g_errno is used by main process only
-		errno = EBADENGINEER;
-		log(LOG_LOGIC,"db: rdblist: posdbMerge_r: Too many lists for merging.");
+		log(LOG_LOGIC, "db: rdblist: posdbMerge_r: Too many lists for merging.");
 		gbshutdownAbort(true);
 	}
 
@@ -2144,10 +2142,10 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 			continue;
 		}
 
-#ifdef _MERGEDEBUG_
-		log(LOG_LOGIC,"%s:%s: DUMPING LIST %" PRId32, __FILE__,__func__, i);
-		lists[i]->printList(LOG_LOGIC);
-#endif
+		logTrace(g_conf.m_logTraceRdbList, "===== dumping list #%" PRId32" =====", i);
+		if (g_conf.m_logTraceRdbList) {
+			lists[i]->printList();
+		}
 
 		// . first key of a list must ALWAYS be 18 byte
 		// . bitch if it isn't, that should be fixed!
@@ -2338,19 +2336,19 @@ skip:
 
 	// under what was requested? then done.
 	if (m_listSize < minRecSizes) {
-#ifdef _MERGEDEBUG_
-		log(LOG_LOGIC,"%s:%s:%d: Done.", __FILE__,__func__, __LINE__);
-		printList(LOG_LOGIC);
-#endif
+		logTrace(g_conf.m_logTraceRdbList, "===== dumping merged list =====");
+		if (g_conf.m_logTraceRdbList) {
+			printList();
+		}
 		return true;
 	}
 
 	// or if no more lists
 	if (numLists <= 0) {
-#ifdef _MERGEDEBUG_
-		log(LOG_LOGIC,"%s:%s:%d: Done.", __FILE__,__func__, __LINE__);
-		printList(LOG_LOGIC);
-#endif
+		logTrace(g_conf.m_logTraceRdbList, "===== dumping merged list =====");
+		if (g_conf.m_logTraceRdbList) {
+			printList();
+		}
 		return true;
 	}
 
@@ -2376,10 +2374,10 @@ skip:
 		KEYSET(m_endKey, orig, sizeof(key144_t));
 	}
 
-#ifdef _MERGEDEBUG_
-	log(LOG_LOGIC,"%s:%s:%d: Done.", __FILE__,__func__, __LINE__);
-	printList(LOG_LOGIC);
-#endif
+	logTrace(g_conf.m_logTraceRdbList, "===== dumping merged list =====");
+	if (g_conf.m_logTraceRdbList) {
+		printList();
+	}
 
 	return true;
 }
