@@ -657,7 +657,7 @@ bool RdbList::growList ( int32_t newSize ) {
 // . I had a problem where a foreign spider rec was in our spiderdb and
 //   i couldn't delete it because the del key would go to the foreign group!
 // . as a temp patch i added a msg1 force local group option
-bool RdbList::checkList_r ( bool abortOnProblem , char rdbId ) {
+bool RdbList::checkList_r(bool abortOnProblem, rdbid_t rdbId) {
 	assert(this);
 	verify_signature();
 	// bail if empty
@@ -1134,7 +1134,7 @@ int RdbList::printList ( int32_t logtype ) {
 // . mincRecSizes is really only important when we read just 1 list
 // . it's a really good idea to keep it as -1 otherwise
 bool RdbList::constrain(const char *startKey, char *endKey, int32_t minRecSizes,
-                        int32_t hintOffset, const char *hintKey, char rdbId, const char *filename) {
+                        int32_t hintOffset, const char *hintKey, rdbid_t rdbId, const char *filename) {
 //	log(LOG_TRACE,"RdbList(%p)::constrain()",this);
 	assert(this);
 	verify_signature();
@@ -1729,7 +1729,7 @@ bool RdbList::posdbConstrain(const char *startKey, char *endKey, int32_t minRecS
 //   before calling this
 // . CAUTION: you should call constrain() on all "lists" before calling this
 //   so we don't have to do boundary checks on the keys here
-void RdbList::merge_r(RdbList **lists, int32_t numLists, const char *startKey, const char *endKey, int32_t minRecSizes, bool removeNegRecs, char rdbId) {
+void RdbList::merge_r(RdbList **lists, int32_t numLists, const char *startKey, const char *endKey, int32_t minRecSizes, bool removeNegRecs, rdbid_t rdbId) {
 	assert(this);
 	verify_signature();
 	// sanity
@@ -2455,7 +2455,7 @@ skip:
 	return true;
 }
 
-void RdbList::setFromPtr ( char *p , int32_t psize , char rdbId ) {
+void RdbList::setFromPtr(char *p, int32_t psize, rdbid_t rdbId) {
 
 	// free and NULLify any old m_list we had to make room for our new list
 	freeList();

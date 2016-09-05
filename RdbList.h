@@ -8,6 +8,7 @@
 #include "Sanity.h"
 #include "types.h"
 #include "GbSignature.h"
+#include "rdbid_t.h"
 #include <stdint.h>
 
 /**
@@ -85,7 +86,7 @@ public:
 		  bool  useHalfKeys   ,
 		  char  keySize       = sizeof(key96_t) );
 
-	void setFromPtr ( char *p , int32_t psize , char rdbId ) ;
+	void setFromPtr(char *p, int32_t psize, rdbid_t rdbId);
 
 	void stealFromOtherList(RdbList *other_list);
 
@@ -184,7 +185,7 @@ public:
 	//   and malloc()'ing
 	// . may change m_list and/or m_listSize
 	bool constrain(const char *startKey, char *endKey, int32_t minRecSizes,
-	               int32_t hintOffset, const char *hintKey, char rdbId, const char *filename);
+	               int32_t hintOffset, const char *hintKey, rdbid_t rdbId, const char *filename);
 
 	bool posdbConstrain(const char *startKey, char *endKey, int32_t minRecSizes,
 	                    int32_t hintOffset, const char *hintKey, const char *filename);
@@ -198,7 +199,7 @@ public:
 	// . merge the lists into this list
 	// . set our startKey/endKey to "startKey"/"endKey"
 	// . exclude any records from lists not in that range
-	void merge_r(RdbList **lists, int32_t numLists, const char *startKey, const char *endKey, int32_t minRecSizes, bool removeNegRecs, char rdbId);
+	void merge_r(RdbList **lists, int32_t numLists, const char *startKey, const char *endKey, int32_t minRecSizes, bool removeNegRecs, rdbid_t rdbId);
 	bool posdbMerge_r(RdbList **lists, int32_t numLists, const char *startKey, const char *endKey, int32_t minRecSizes, bool removeNegKeys);
 
 
@@ -248,7 +249,7 @@ public:
 	// . check to see if keys in order
 	// . logs any problems
 	// . sleeps if any problems encountered
-	bool checkList_r ( bool abortOnProblem = true , char rdbId = 0 ); // RDB_NONE );
+	bool checkList_r(bool abortOnProblem = true, rdbid_t rdbId = RDB_NONE);
 
 	// . removes records whose keys aren't in proper range (corruption)
 	// . returns false and sets errno on error/problem

@@ -7060,12 +7060,6 @@ bool ramdiskTest() {
 }
 
 // CountDomains Structures and function definitions
-struct lnk_info {
-	char          *dom;
-	int32_t           domLen;
-	int32_t           pages;
-};
-
 struct dom_info {
 	char          *dom;
 	int32_t           domLen;
@@ -7268,7 +7262,6 @@ void countdomains( const char* coll, int32_t numRecs, int32_t verbosity, int32_t
 		}
 			
 		for( int32_t i = 0; i < dlinks->getNumLinks(); i++ ) {
-			//struct lnk_info *slink;
 			char *link = dlinks->getLink(i);
 			int32_t dlen;
 			const char *dom = getDomFast ( link , &dlen );
@@ -7359,7 +7352,6 @@ void countdomains( const char* coll, int32_t numRecs, int32_t verbosity, int32_t
 		int32_t             recsDisp;
 		struct ip_info  *tmpipi  ;
 		struct dom_info *tmpdomi ;
-		//struct lnk_info *tmplnk  ;
 		loop = 0;
 
 		FILE *fhndl;		

@@ -291,7 +291,7 @@ bool Conf::save ( ) {
 //   will look for the hostname in each collection for a match
 //   no match defaults to default collection
 const char *Conf::getDefaultColl ( char *hostname, int32_t hostnameLen ) {
-	if ( ! m_defaultColl || ! m_defaultColl[0] ) {
+	if ( ! m_defaultColl[0] ) {
 		return "main";
 	}
 

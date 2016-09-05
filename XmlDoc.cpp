@@ -1858,7 +1858,7 @@ bool XmlDoc::indexDoc ( ) {
 			goto skipNewAdd1;
 		}
 		// store the new request (store reply for this below)
-		char rd = RDB_SPIDERDB;
+		rdbid_t rd = RDB_SPIDERDB;
 		if ( m_useSecondaryRdbs ) rd = RDB2_SPIDERDB2;
 		if ( ! m_metaList2.pushChar(rd) )
 		{
@@ -1902,7 +1902,7 @@ bool XmlDoc::indexDoc ( ) {
 
 		//SafeBuf metaList;
 
-		char rd = RDB_SPIDERDB;
+		rdbid_t rd = RDB_SPIDERDB;
 		if ( m_useSecondaryRdbs ) rd = RDB2_SPIDERDB2;
 		if ( ! m_metaList2.pushChar( rd ) )
 		{
@@ -12118,7 +12118,7 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 	int32_t rcount = 0;
 	for ( ; p < pend ; p += recSize ) {
 		// get rdbid
-		uint8_t rdbId = *p & 0x7f;
+		rdbid_t rdbId = (rdbid_t)(*p & 0x7f);
 		// skip
 		p++;
 		// get key size
@@ -12342,9 +12342,7 @@ bool XmlDoc::verifyMetaList ( char *p , char *pend , bool forDelete ) {
 		// first is rdbId
 		//char rdbId = -1; // m_rdbId;
 		//if ( rdbId < 0 ) rdbId = *p++;
-		uint8_t rdbId = *p++;
-		// mask off rdbId
-		rdbId &= 0x7f;
+		rdbid_t rdbId = (rdbid_t)(*p++ & 0x7f);
 
 		// negative key?
 		bool del = !( *p & 0x01 );
@@ -12442,7 +12440,7 @@ bool XmlDoc::hashMetaList ( HashTableX *ht        ,
 	int32_t count = 0;
 	for ( ; p < pend ; p += recSize , count++ ) {
 		// get rdbid
-		char rdbId = *p & 0x7f;
+		rdbid_t rdbId = (rdbid_t)(*p & 0x7f);
 		// skip rdb id
 		p++;
 		// save that
@@ -13041,9 +13039,9 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		logTrace( g_conf.m_logTraceXmlDoc, "Adding spider reply to spiderdb" );
 
 		// rdbid first
-		char rd = RDB_SPIDERDB;
+		rdbid_t rd = RDB_SPIDERDB;
 		if ( m_useSecondaryRdbs ) rd = RDB2_SPIDERDB2;
-		*m_p++ = rd;
+		*m_p++ = (char)rd;
 		// get this
 		if ( ! m_srepValid ) { g_process.shutdownAbort(true); }
 		// store the spider rec
@@ -14008,7 +14006,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 			char *rec = p;
 
 			// get the rdbid for this rec
-			char rdbId = byte & 0x7f;
+			rdbid_t rdbId = (rdbid_t)(byte & 0x7f);
 			p++;
 
 			// get the key size
@@ -14082,7 +14080,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 			char byte = *p;
 
 			// get rdbId
-			char rdbId = byte & 0x7f;
+			rdbid_t rdbId = (rdbid_t)(byte & 0x7f);
 			p++;
 
 			// key size
@@ -14184,7 +14182,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 			char *rec = *(char **)dt8.getValueFromSlot(i);
 
 			// get rdbId with hi bit possibly set
-			char rdbId = rec[0] & 0x7f;
+			rdbid_t rdbId = (rdbid_t)(rec[0] & 0x7f);
 
 			// key size
 			int32_t ks = getKeySizeFromRdbId(rdbId);
@@ -15433,7 +15431,7 @@ bool XmlDoc::addTable144 ( HashTableX *tt1 , int64_t docId , SafeBuf *buf ) {
 
 	if ( ! m_langIdValid ) { g_process.shutdownAbort(true); }
 
-	char rdbId = RDB_POSDB;
+	rdbid_t rdbId = RDB_POSDB;
 	if ( m_useSecondaryRdbs ) rdbId = RDB2_POSDB2;
 
 	// store terms from "tt1" table
@@ -15493,7 +15491,7 @@ bool XmlDoc::addTable224 ( HashTableX *tt1 ) {
 		if ( tt1->m_ds != 0                ) {g_process.shutdownAbort(true);}
 	}
 
-	char rdbId = RDB_LINKDB;
+	rdbid_t rdbId = RDB_LINKDB;
 	if ( m_useSecondaryRdbs ) rdbId = RDB2_LINKDB2;
 
 	// store terms from "tt1" table

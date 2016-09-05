@@ -21,9 +21,6 @@ static void uncountStripe ( struct StateControl *stC ) ;
 
 struct StateControl{
 	int32_t m_pageNum;
-	int64_t m_start;
-	int32_t m_reqNum;
-	SafeBuf m_sb;
 	TcpSocket *m_s;
 	int64_t m_startTime;
 	bool m_isQuery;

@@ -13,6 +13,7 @@ bool hasAddsInQueue     ( ) ;
 bool isInMsg4LinkedList ( class Msg4 *msg4 ) ;
 
 #include "SafeBuf.h"
+#include "rdbid_t.h"
 
 class Msg4 {
 
@@ -23,11 +24,17 @@ class Msg4 {
 	// (rdbId | 0x00) then rdb record [if split  ]
 	bool addMetaList( class SafeBuf *sb, collnum_t collnum, void *state,
 	                  void (* callback)(void *state), int32_t niceness, char rdbId = -1, int32_t shardOverride = -1 );
+	bool addMetaList( class SafeBuf *sb, collnum_t collnum, void *state,
+	                  void (* callback)(void *state), int32_t niceness, rdbid_t rdbId, int32_t shardOverride = -1 )
+	{ return addMetaList(sb,collnum,state,callback,niceness,(char)rdbId,shardOverride); }
 
 	// this one is faster...
 	// returns false if blocked
 	bool addMetaList( const char *metaList, int32_t metaListSize, collnum_t collnum, void *state,
 	                  void (* callback)(void *state), int32_t niceness, char rdbId = -1, int32_t shardOverride = -1 );
+	bool addMetaList( const char *metaList, int32_t metaListSize, collnum_t collnum, void *state,
+	                  void (* callback)(void *state), int32_t niceness, rdbid_t rdbId, int32_t shardOverride = -1 )
+	{ return addMetaList(metaList,metaListSize,collnum,state,callback,niceness,(char)rdbId,shardOverride); }
 
 	bool addMetaList2();
 

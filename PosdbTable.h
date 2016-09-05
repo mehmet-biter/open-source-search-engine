@@ -137,6 +137,9 @@ class PosdbTable {
 		return m_initialized;
 	}
 
+	bool genDebugScoreInfo1(int32_t &numProcessed, int32_t &topCursor, QueryTermInfo *qtibuf);
+	bool genDebugScoreInfo2(DocIdScore &dcs, int32_t &lastLen, uint64_t &lastDocId, char siteRank, float score, int32_t intScore, char docLang);
+
 	uint64_t m_docId;
 
 	bool m_hasMaxSerpScore;
@@ -198,7 +201,7 @@ class PosdbTable {
 	// for debug msgs
 	void *m_logstate;
 
-	Msg39Request *m_r;
+	Msg39Request *m_msg39req;
 
 	// for gbsortby:item.price ...
 	int32_t m_sortByTermNum;

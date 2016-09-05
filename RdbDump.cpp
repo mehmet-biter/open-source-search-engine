@@ -386,10 +386,8 @@ bool RdbDump::dumpTree(bool recall) {
 			char tmp1[32];
 			char tmp2[32];
 
-			if (m_firstKeyInQueue) {
-				strcpy(tmp1, KEYSTR(m_firstKeyInQueue, m_list->m_ks));
-				ks1 = tmp1;
-			}
+			strcpy(tmp1, KEYSTR(m_firstKeyInQueue, m_list->m_ks));
+			ks1 = tmp1;
 
 			if (m_lastKeyInQueue) {
 				strcpy(tmp2, KEYSTR(m_lastKeyInQueue, m_list->m_ks));
@@ -511,7 +509,7 @@ bool RdbDump::dumpList(RdbList *list, int32_t niceness, bool recall) {
 		}
 
 		if (g_conf.m_verifyWrites) {
-			char rdbId = 0;
+			rdbid_t rdbId = RDB_NONE;
 			if (m_rdb) rdbId = m_rdb->getRdbId();
 			m_list->checkList_r(false, rdbId);
 			m_list->resetListPtr();

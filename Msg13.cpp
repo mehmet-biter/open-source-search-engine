@@ -2203,7 +2203,7 @@ bool addNewProxyAuthorization ( SafeBuf *req , Msg13Request *r ) {
 	SpiderProxy *sp = getSpiderProxyByIpPort (r->m_proxyIp,r->m_proxyPort);
 
 	// if none required, all done
-	if ( ! sp->m_usernamePwd ) return true;
+	if ( ! sp->m_usernamePwd[0] ) return true;
 	// strange?
 	if ( req->length() < 8 ) return false;
 	// back up over final \r\n
@@ -2410,77 +2410,71 @@ bool printHammerQueueTable ( SafeBuf *sb ) {
 			 , DARK_BLUE
 			 );
 
-	Msg13Request *r = s_hammerQueueHead ;
-
 	int32_t count = 0;
 	int64_t nowms = gettimeofdayInMilliseconds();
 
- loop:
-	if ( ! r ) return true;
 
-	// print row
-	sb->safePrintf( "<tr bgcolor=#%s>"
-		       "<td>%i</td>" // #
-		       "<td>%ims</td>" // age in hammer queue
-		       "<td>%s</td>"
-			,LIGHT_BLUE
-		       ,(int)count
-		       ,(int)(nowms - r->m_stored)
-		       ,iptoa(r->m_firstIp)
-		       );
+	for(Msg13Request *r = s_hammerQueueHead; r; r = r->m_nextLink) {
+		// print row
+		sb->safePrintf( "<tr bgcolor=#%s>"
+			       "<td>%i</td>" // #
+			       "<td>%ims</td>" // age in hammer queue
+			       "<td>%s</td>"
+				,LIGHT_BLUE
+			       ,(int)count
+			       ,(int)(nowms - r->m_stored)
+			       ,iptoa(r->m_firstIp)
+			       );
 
-	sb->safePrintf("<td>%s</td>" // actual ip
-		       , iptoa(r->m_urlIp));
+		sb->safePrintf("<td>%s</td>" // actual ip
+			       , iptoa(r->m_urlIp));
 
-	// print crawl delay as link to robots.txt
-	sb->safePrintf( "<td><a href=\"");
-	Url cu;
-	cu.set ( r->ptr_url );
-	bool isHttps = cu.isHttps();
-	if ( isHttps ) {
-		sb->safeStrcpy( "https://" );
-	} else {
-		sb->safeStrcpy( "http://" );
+		// print crawl delay as link to robots.txt
+		sb->safePrintf( "<td><a href=\"");
+		Url cu;
+		cu.set ( r->ptr_url );
+		bool isHttps = cu.isHttps();
+		if ( isHttps ) {
+			sb->safeStrcpy( "https://" );
+		} else {
+			sb->safeStrcpy( "http://" );
+		}
+
+		sb->safeMemcpy ( cu.getHost() , cu.getHostLen() );
+		int32_t port = cu.getPort();
+		int32_t defPort = isHttps ? 443 : 80;
+
+		if ( port != defPort ) {
+			sb->safePrintf( ":%" PRId32, port );
+		}
+
+		sb->safePrintf ( "/robots.txt\">"
+				 "%i"
+				 "</a>"
+				 "</td>" // crawl delay MS
+				 "<td>%i</td>" // proxies banning
+				 , r->m_crawlDelayMS
+				 , r->m_numBannedProxies
+				 );
+
+		// show collection name as a link, also truncate to 32 chars
+		CollectionRec *cr = g_collectiondb.getRec ( r->m_collnum );
+		const char *coll = "none";
+		if ( cr ) coll = cr->m_coll;
+		sb->safePrintf("<td>");
+		if ( cr ) {
+			sb->safePrintf("<a href=/admin/sockets?c=");
+			sb->urlEncode(coll);
+			sb->safePrintf(">");
+		}
+		sb->safeTruncateEllipsis ( coll , 32 );
+		if ( cr ) sb->safePrintf("</a>");
+		sb->safePrintf("</td>");
+		// then the url itself
+		sb->safePrintf("<td><a href=%s>",r->ptr_url);
+		sb->safeTruncateEllipsis ( r->ptr_url , 128 );
+		sb->safePrintf("</a></td>");
+		sb->safePrintf("</tr>\n");
 	}
-
-	sb->safeMemcpy ( cu.getHost() , cu.getHostLen() );
-	int32_t port = cu.getPort();
-	int32_t defPort = isHttps ? 443 : 80;
-
-	if ( port != defPort ) {
-		sb->safePrintf( ":%" PRId32, port );
-	}
-
-	sb->safePrintf ( "/robots.txt\">"
-			 "%i"
-			 "</a>"
-			 "</td>" // crawl delay MS
-			 "<td>%i</td>" // proxies banning
-			 , r->m_crawlDelayMS
-			 , r->m_numBannedProxies
-			 );
-
-	// show collection name as a link, also truncate to 32 chars
-	CollectionRec *cr = g_collectiondb.getRec ( r->m_collnum );
-	const char *coll = "none";
-	if ( cr ) coll = cr->m_coll;
-	sb->safePrintf("<td>");
-	if ( cr ) {
-		sb->safePrintf("<a href=/admin/sockets?c=");
-		sb->urlEncode(coll);
-		sb->safePrintf(">");
-	}
-	sb->safeTruncateEllipsis ( coll , 32 );
-	if ( cr ) sb->safePrintf("</a>");
-	sb->safePrintf("</td>");
-	// then the url itself
-	sb->safePrintf("<td><a href=%s>",r->ptr_url);
-	sb->safeTruncateEllipsis ( r->ptr_url , 128 );
-	sb->safePrintf("</a></td>");
-	sb->safePrintf("</tr>\n");
-
-	// print next entry now
-	r = r->m_nextLink;
-	goto loop;
-
+	return true;
 }

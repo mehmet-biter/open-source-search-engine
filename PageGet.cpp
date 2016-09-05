@@ -556,7 +556,7 @@ bool processLoop ( void *state ) {
 	Highlight hi;
 	// make words so we can set the scores to ignore fielded terms
 	Words qw;
-	qw.set( q, qlen, true, false );
+	qw.set(q, qlen, true);
 
 	// declare up here
 	Matches m;
