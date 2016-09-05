@@ -147,6 +147,7 @@ bool sendPageThreads ( TcpSocket *s , HttpRequest *r ) {
 	for(const auto &js : g_jobScheduler.query_job_statistics(true)) {
 		p.safePrintf("  <tr bgcolor=#%s>\n",LIGHT_BLUE);
 		p.safePrintf("    <td>%s</td>", thread_type_name(js.first));
+		p.safePrintf("<!-- %lu %lu %lu %lu %lu -->\n", js.second.job_count,js.second.queue_time,js.second.running_time,js.second.done_time,js.second.cleanup_time);
 		if(js.second.job_count!=0) {
 			p.safePrintf("    <td>%.3f</td>\n", js.second.queue_time/js.second.job_count/1000.0);
 			p.safePrintf("    <td>%.3f</td>\n", js.second.running_time/js.second.job_count/1000.0);
