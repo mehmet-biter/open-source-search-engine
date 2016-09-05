@@ -4705,7 +4705,7 @@ void dumpPosdb (const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 	if ( list.isEmpty() ) return;
 
 	// get last key in list
-	char *ek2 = list.m_endKey;
+	char *ek2 = list.getEndKey();
 	// print it
 	printf("ek=%s\n",KEYSTR(ek2,list.m_ks) );
 

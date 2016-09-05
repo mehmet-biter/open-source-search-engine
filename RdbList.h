@@ -45,6 +45,7 @@
  * class rather than have a virtual function or having to write lots of
  * additional support routines for IndexLists
  */
+
 class RdbList {
 public:
 	RdbList () ;
@@ -75,28 +76,30 @@ public:
 	// just set the start and end keys
 	void set ( const char *startKey, const char *endKey );
 
-	void setStartKey ( const char *startKey ){KEYSET(m_startKey,startKey,m_ks);}
-	void setEndKey   ( const char *endKey   ){KEYSET(m_endKey  ,endKey  ,m_ks);}
+	void setStartKey(const char *startKey) { KEYSET(m_startKey, startKey, m_ks); }
+	void setEndKey(const char *endKey) { KEYSET(m_endKey, endKey, m_ks); }
 
-	void setUseHalfKeys ( bool use ) { m_useHalfKeys = use; }
+	void setUseHalfKeys(bool use) { m_useHalfKeys = use; }
 
 	// if you don't want data to be freed on destruction then don't own it
-	void setOwnData ( bool ownData ) { m_ownData = ownData; }
+	void setOwnData(bool ownData) { m_ownData = ownData; }
 
-	void setFixedDataSize ( int32_t fixedDataSize ) { 
-		m_fixedDataSize = fixedDataSize; }
+	void setFixedDataSize(int32_t fixedDataSize) { m_fixedDataSize = fixedDataSize; }
 
-	char *getStartKey        () { return m_startKey; }
-	char *getEndKey          () { return m_endKey;   }
-	int32_t  getFixedDataSize   () { return m_fixedDataSize; }
-	bool  getOwnData         () { return m_ownData; }
+	char *getStartKey() { return m_startKey; }
+	char *getEndKey() { return m_endKey; }
 
-	void  getStartKey        ( char *k ) { KEYSET(k,m_startKey,m_ks);}
-	void  getEndKey          ( char *k ) { KEYSET(k,m_endKey  ,m_ks);}
+	int32_t getFixedDataSize() { return m_fixedDataSize; }
+
+	bool getOwnData() { return m_ownData; }
+
+	void getStartKey(char *k) { KEYSET(k, m_startKey, m_ks); }
+	void getEndKey(char *k) { KEYSET(k, m_endKey, m_ks); }
 
 	void  getLastKey         ( char *k ) { 
 		if ( ! m_lastKeyIsValid ) { gbshutdownAbort(true); }
-		KEYSET(k,getLastKey(),m_ks);}
+		KEYSET(k,getLastKey(),m_ks);
+	}
 
 	// will scan through each record if record size is variable
 	int32_t  getNumRecs         () ;
@@ -113,11 +116,13 @@ public:
 
 	// . skip over the current record and point to the next one
 	// . returns false if we skipped into a black hole (end of list)
-	bool skipCurrentRecord ( ) { 
-		return skipCurrentRec ( getRecSize ( m_listPtr ) ); }
+	bool skipCurrentRecord() {
+		return skipCurrentRec(getRecSize(m_listPtr));
+	}
 
-	bool skipCurrentRec ( ) { 
-		return skipCurrentRec ( getRecSize ( m_listPtr ) ); }
+	bool skipCurrentRec() {
+		return skipCurrentRec(getRecSize(m_listPtr));
+	}
 
 	// this is specially-made for RdbMap's processing of IndexLists
 	bool skipCurrentRec ( int32_t recSize ) {
@@ -147,11 +152,14 @@ public:
 	void  getCurrentKey      (void *key) const { getKey(m_listPtr,(char *)key);}
 	int32_t  getCurrentDataSize () const { return getDataSize ( m_listPtr );}
 	char *getCurrentData     () { return getData     ( m_listPtr );}
+
 	int32_t  getCurrentRecSize  () const { return getRecSize  ( m_listPtr );}
 	int32_t  getCurrentSize     () const { return m_listEnd - m_listPtr; }
-	char *getCurrentRec      () { return m_listPtr; }
-	char *getListPtr         () { return m_listPtr; }
-	void  resetListPtr       () ;
+
+	char *getCurrentRec() { return m_listPtr; }
+	char *getListPtr() { return m_listPtr; }
+
+	void resetListPtr();
 
 	// are there any records in the list?
 	bool  isEmpty     ( ) const { return (m_listSize == 0); }
@@ -174,9 +182,7 @@ public:
 
 	// . this MUST be called before calling merge_r() 
 	// . will alloc enough space for m_listSize + sizes of "lists"
-	bool prepareForMerge ( RdbList **lists            , 
-			       int32_t      numLists         , 
-			       int32_t      minRecSizes = -1 );
+	bool prepareForMerge(RdbList **lists, int32_t numLists, int32_t minRecSizes = -1);
 
 	// . merge the lists into this list
 	// . set our startKey/endKey to "startKey"/"endKey"
@@ -184,9 +190,8 @@ public:
 	void merge_r(RdbList **lists, int32_t numLists, const char *startKey, const char *endKey, int32_t minRecSizes, bool removeNegRecs, rdbid_t rdbId);
 	bool posdbMerge_r(RdbList **lists, int32_t numLists, const char *startKey, const char *endKey, int32_t minRecSizes, bool removeNegKeys);
 
-
 	// returns false if we skipped into a black hole (end of list)
-	int32_t getRecSize ( const char *rec ) const {
+	int32_t getRecSize(const char *rec) const {
 		// posdb?
 		if ( m_ks == 18 ) {
 			if ( rec[0]&0x04 ) return 6;
@@ -248,46 +253,48 @@ public:
 	// private:
 
 	// the unalterd raw list. keys may be outside of [m_startKey,m_endKey]
-	char  *m_list;
-	int32_t   m_listSize;     // how many bytes we're using for a list
-	char   m_startKey [ MAX_KEY_BYTES ];
+	char *m_list;
+	int32_t m_listSize;     // how many bytes we're using for a list
+
+	char m_startKey[MAX_KEY_BYTES];
 	// the list contains all the keys in [m_startKey,m_endKey] so make
 	// sure if the list is truncated by minrecsizes that you decrease
 	// m_endKey so this is still true. seems like zak did not do that
 	// for rdbbuckets code.
-	char   m_endKey   [ MAX_KEY_BYTES ];
-	char  *m_listEnd;      // = m_list + m_listSize
-	char  *m_listPtr;      // points to current record in list
+	char m_endKey[MAX_KEY_BYTES];
 
-	int32_t   m_allocSize;  // how many bytes we've allocated at m_alloc
-	char  *m_alloc    ;  // start of chunk that was allocated
+	char *m_listEnd;      // = m_list + m_listSize
+	char *m_listPtr;      // points to current record in list
+
+	int32_t m_allocSize;  // how many bytes we've allocated at m_alloc
+	char *m_alloc;  // start of chunk that was allocated
 
 	// m_fixedDataSize is -1 if records are variable length,
 	// 0 for data-less records (keys only) and N for records of dataSize N
 	int32_t  m_fixedDataSize;
 
 	// this is set to the last key in this list if we were made by merge()
-	char  m_lastKey [ MAX_KEY_BYTES ];
-	bool  m_lastKeyIsValid;
+	char m_lastKey[MAX_KEY_BYTES];
+	bool m_lastKeyIsValid;
 
 	// max list rec sizes to merge as set by prepareForMerge()
-	int32_t   m_mergeMinListSize;
+	int32_t m_mergeMinListSize;
 
 	// . this points to the most significant 6 bytes of a key
 	// . only valid if m_useHalfKeys is true
-	const char  *m_listPtrHi;
+	const char *m_listPtrHi;
 
 	// for the secondary compression bit for posdb
-	const char  *m_listPtrLo;
+	const char *m_listPtrLo;
 
 	// do we own the list data (m_list)? if so free it on destruction
-	bool   m_ownData;       
+	bool m_ownData;
 
 	// are keys compressed? only used for index lists right now
-	bool   m_useHalfKeys;
+	bool m_useHalfKeys;
 
 	// keysize, usually 12, for 12 bytes. can be 16 for date index (datedb)
-	char   m_ks;
+	char m_ks;
 };
 
 #endif // GB_RDBLIST_H
