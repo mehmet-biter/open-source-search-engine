@@ -596,48 +596,42 @@ bool UdpServer::doSending(UdpSlot *slot, bool allowResends, int64_t now) {
 		return true;
 	}
 
- loop:
-	int32_t status = 0;
-	// . don't do any sending until we leave the wait state
+	for(;;) {
+		// . don't do any sending until we leave the wait state
 
-	// . if the score of this slot is -1, don't send on it!
-	// . this now will allow one dgram to be resent even if we don't
-	//   have the token
-	//int32_t score = slot->getScore(now);
-	//log("score is %" PRId32, score);
-	if ( slot->getScore(now) < 0 ) goto done;
-	//if ( score < 0 ) return true;
-	// . returns -2 if nothing to send, -1 on error, 0 if blocked, 
-	//   1 if sent something
-	// . it will send a dgram or an ACK
-	status = slot->sendDatagramOrAck ( m_sock , allowResends , now );
-	// return 1 if nothing to send
-	if ( status == -2 ) goto done;
-	// return -1 on error
-	if ( status == -1 ) {
-		log("udp: Had error sending dgram: %s.",mstrerror(g_errno));
-		goto done;
-	}
-	// return 0 if we blocked on this dgram
-	if ( status ==  0 ) {
-		// but Loop should call us again asap because I don't think
-		// we'll get a ready to write signal... don't count on it
-		m_needToSend = true;
-		// ok, now it should
-		if ( ! m_writeRegistered ) {
-			g_loop.registerWriteCallback ( m_sock, this, sendPollWrapper, 0 ); // niceness
-			m_writeRegistered = true;
+		// . if the score of this slot is -1, don't send on it!
+		// . this now will allow one dgram to be resent even if we don't
+		//   have the token
+		//int32_t score = slot->getScore(now);
+		//log("score is %" PRId32, score);
+		if ( slot->getScore(now) < 0 )
+			return true;
+		//if ( score < 0 ) return true;
+		// . returns -2 if nothing to send, -1 on error, 0 if blocked,
+		//   1 if sent something
+		// . it will send a dgram or an ACK
+		int32_t status = slot->sendDatagramOrAck ( m_sock , allowResends , now );
+		// return 1 if nothing to send
+		if ( status == -2 )
+			return true;
+		// return -1 on error
+		if ( status == -1 ) {
+			log("udp: Had error sending dgram: %s.",mstrerror(g_errno));
+			return false;
 		}
-		goto done;
+		// return 0 if we blocked on this dgram
+		if ( status ==  0 ) {
+			// but Loop should call us again asap because I don't think
+			// we'll get a ready to write signal... don't count on it
+			m_needToSend = true;
+			// ok, now it should
+			if ( ! m_writeRegistered ) {
+				g_loop.registerWriteCallback ( m_sock, this, sendPollWrapper, 0 ); // niceness
+				m_writeRegistered = true;
+			}
+			return true;
+		}
 	}
-	// otherwise keep looping, we might be able to send more
-	goto loop;
-	// come here to turn the interrupts back on if we turned them off
- done:
-	if ( status == -1 ) {
-		return false;
-	}
-	return true;
 }
 
 // . should only be called from process() since this is not re-entrant
