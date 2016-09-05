@@ -1514,7 +1514,6 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 	int64_t start = 0;
 	int64_t now ;
 	int32_t delta , n , bucket;
-	int32_t saved;
 	bool saved2;
 	//bool incInt;
 
@@ -1604,17 +1603,7 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 			g_process.shutdownAbort(true);
 		}
 
-		// save niceness
-		saved = g_niceness;
-		// set it
-		g_niceness = slot->getNiceness();
-		// make sure not 2
-		if ( g_niceness >= 2 ) g_niceness = 1;
-
 		slot->m_callback(slot->m_state, slot);
-
-		// restore it
-		g_niceness = saved;
 
 		if ( g_conf.m_logDebugLoop && slot->getMsgType() != msg_type_11 )
 			log(LOG_DEBUG,"loop: exit callback for 0x%" PRIx32" "
@@ -1789,13 +1778,6 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 	//   call niceness 1 slots here
 	//if ( g_niceness==0 && slot->m_niceness ) { g_process.shutdownAbort(true);}
 
-	// save niceness
-	saved = g_niceness;
-	// set it
-	g_niceness = slot->getNiceness();
-	// make sure not 2
-	if ( g_niceness >= 2 ) g_niceness = 1;
-
 	bool oom = g_mem.getUsedMemPercentage() >= 99.0;
 
 	// if we are out of mem basically, do not waste time fucking around
@@ -1843,9 +1825,6 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 		// let loop.cpp know we're done then
 		g_inHandler = saved2;
 	}
-
-	// restore
-	g_niceness = saved;
 
 	if ( slot->getMsgType() != msg_type_11 && g_conf.m_logDebugLoop )
 		log(LOG_DEBUG,"loop: exit handler for 0x%" PRIx32" nice=%" PRId32,

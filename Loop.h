@@ -6,7 +6,8 @@
 #ifndef GB_LOOP_H
 #define GB_LOOP_H
 
-#define QUICKPOLL_INTERVAL 10
+#include "GbMutex.h"
+
 
 int gbsystem(const char *cmd);
 
@@ -17,29 +18,7 @@ int gbsystem(const char *cmd);
 void printStackTrace (bool print_location = false);
 
 
-// we have 2 arrays of slots, m_readSlots and m_writeSlots
-class Slot {
- public:
-	void   *m_state;
-	void  (* m_callback)(int fd, void *state);
-	// the next Slot thats registerd on this fd
-	Slot   *m_next;
-	// save niceness level for doPoll() to segregate
-	int32_t    m_niceness;
-	// last time we called m_callback for this fd
-	//	time_t  m_lastActivity;
-	// . when should this fd timeout and we call the callback with
-	//   errno set to ETIMEDOUT
-	// . set to -1 for never timeout
-	// . m_timeout is in seconds
-	//	int32_t    m_timeout;     
-	// this callback should be called every X milliseconds
-	int32_t      m_tick;
-	// when we were last called in ms time (only valid for sleep callbacks)
-	int64_t m_lastCall;
-	// linked list of available slots
-	Slot     *m_nextAvail;
-};
+class Slot;
 
 
 // linux 2.2 kernel has this limitation
@@ -60,8 +39,6 @@ class Slot {
 // . this is now the time synced with host #0
 //extern int64_t g_nowGlobal;
 
-
-extern char g_niceness ;
 
 
 class Loop {
@@ -165,6 +142,9 @@ class Loop {
 	Slot *m_slots;
 	Slot *m_head;
 	Slot *m_tail;
+	Slot *m_callbacksNext; //in case we unregister the "next" callback
+
+	GbMutex m_slotMutex; //protects all slot linked list modification and traversal
 	
 	int m_pipeFd[2]; //used for waking up from select/poll
 };
