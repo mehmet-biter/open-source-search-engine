@@ -1048,117 +1048,116 @@ void Msg3::setPageRanges(RdbBase *base) {
 	char lastMinKey[MAX_KEY_BYTES];
 	bool lastMinKeyIsValid = false;
 	// loop until we find the page ranges that barely satisfy "minRecSizes"
-  loop:
-	// find the map whose next page has the lowest key
-	int32_t  minpg   = -1;
-	char minKey[MAX_KEY_BYTES];
-	for ( int32_t i = 0 ; i < m_numFileNums ; i++ ) {
-		int32_t fn = m_scan[i].m_fileNum;
-		// this guy is out of race if his end key > "endKey" already
-		if(KEYCMP(maps[fn]->getKeyPtr(m_scan[i].m_endpg),m_endKey,m_ks)>0)
-			continue;
-		// get the next page after m_scan[i].m_endpg
-		int32_t nextpg = m_scan[i].m_endpg + 1;
-		// if endpg[i]+1 == m_numPages then we maxed out this range
-		if ( nextpg > maps[fn]->getNumPages() ) continue;
-		// . but this may have an offset of -1
-		// . which means the page has no key starting on it and
-		//   it's occupied by a rec which starts on a previous page
-		while ( nextpg < maps[fn]->getNumPages() &&
-			maps[fn]->getOffset ( nextpg ) == -1 ) nextpg++;
-		// . continue if his next page doesn't have the minimum key
-		// . if nextpg == getNumPages() then it returns the LAST KEY
-		//   contained in the corresponding RdbFile
-		if (minpg != -1 && 
-		    KEYCMP(maps[fn]->getKeyPtr(nextpg),minKey,m_ks)>0)continue;
-		// . we got a winner, his next page has the current min key
-		// . if m_scan[i].m_endpg+1 == getNumPages() then getKey() returns the
-		//   last key in the mapped file
-		// . minKey should never equal the key on m_scan[i].m_endpg UNLESS
-		//   it's on page #m_numPages
-		KEYSET(minKey,maps[fn]->getKeyPtr(nextpg),m_ks);
-		minpg  = i;
-		// if minKey is same as the current key on this endpg, inc it
-		// so we cause some advancement, otherwise, we'll loop forever
-		if ( KEYCMP(minKey,maps[fn]->getKeyPtr(m_scan[i].m_endpg),m_ks)!=0)
-			continue;
-		//minKey += (uint32_t) 1;
-		KEYINC(minKey,m_ks);
-	}
-	// . we're done if we hit the end of all maps in the race
-	// . return the max end key
-	// key96_t maxEndKey; maxEndKey.setMax(); return maxEndKey; }
-	// . no, just the endKey
-	if ( minpg  == -1 ) return;
-	// sanity check
-	if ( lastMinKeyIsValid && KEYCMP(minKey,lastMinKey,m_ks)<=0 ) {
-		g_errno = ECORRUPTDATA;
-		log("db: Got corrupted map in memory for %s. This is almost "
-		    "always because of bad memory. Please replace your RAM.",
-		    base->m_dbname);
-		// do not wait for any merge to complete... otherwise
-		// Rdb.cpp will not close until the merge is done
-		g_merge.setMerging(false);
-		g_merge2.setMerging(false);
+	for(;;) {
+		// find the map whose next page has the lowest key
+		int32_t  minpg   = -1;
+		char minKey[MAX_KEY_BYTES];
+		for ( int32_t i = 0 ; i < m_numFileNums ; i++ ) {
+			int32_t fn = m_scan[i].m_fileNum;
+			// this guy is out of race if his end key > "endKey" already
+			if(KEYCMP(maps[fn]->getKeyPtr(m_scan[i].m_endpg),m_endKey,m_ks)>0)
+				continue;
+			// get the next page after m_scan[i].m_endpg
+			int32_t nextpg = m_scan[i].m_endpg + 1;
+			// if endpg[i]+1 == m_numPages then we maxed out this range
+			if ( nextpg > maps[fn]->getNumPages() ) continue;
+			// . but this may have an offset of -1
+			// . which means the page has no key starting on it and
+			//   it's occupied by a rec which starts on a previous page
+			while ( nextpg < maps[fn]->getNumPages() &&
+				maps[fn]->getOffset ( nextpg ) == -1 ) nextpg++;
+			// . continue if his next page doesn't have the minimum key
+			// . if nextpg == getNumPages() then it returns the LAST KEY
+			//   contained in the corresponding RdbFile
+			if (minpg != -1 && 
+			    KEYCMP(maps[fn]->getKeyPtr(nextpg),minKey,m_ks)>0)continue;
+			// . we got a winner, his next page has the current min key
+			// . if m_scan[i].m_endpg+1 == getNumPages() then getKey() returns the
+			//   last key in the mapped file
+			// . minKey should never equal the key on m_scan[i].m_endpg UNLESS
+			//   it's on page #m_numPages
+			KEYSET(minKey,maps[fn]->getKeyPtr(nextpg),m_ks);
+			minpg  = i;
+			// if minKey is same as the current key on this endpg, inc it
+			// so we cause some advancement, otherwise, we'll loop forever
+			if ( KEYCMP(minKey,maps[fn]->getKeyPtr(m_scan[i].m_endpg),m_ks)!=0)
+				continue;
+			//minKey += (uint32_t) 1;
+			KEYINC(minKey,m_ks);
+		}
+		// . we're done if we hit the end of all maps in the race
+		// . return the max end key
+		// key96_t maxEndKey; maxEndKey.setMax(); return maxEndKey; }
+		// . no, just the endKey
+		if ( minpg  == -1 ) return;
+		// sanity check
+		if ( lastMinKeyIsValid && KEYCMP(minKey,lastMinKey,m_ks)<=0 ) {
+			g_errno = ECORRUPTDATA;
+			log("db: Got corrupted map in memory for %s. This is almost "
+			    "always because of bad memory. Please replace your RAM.",
+			    base->m_dbname);
+			// do not wait for any merge to complete... otherwise
+			// Rdb.cpp will not close until the merge is done
+			g_merge.setMerging(false);
+			g_merge2.setMerging(false);
 
-		// to complete
-		// shutdown with urgent=true so threads are disabled.
-		g_process.shutdown(true);
-		//g_numCorrupt++;
-		// sleep for now until we make sure this works
-		//sleep(2000);
-		return;
+			// to complete
+			// shutdown with urgent=true so threads are disabled.
+			g_process.shutdown(true);
+			//g_numCorrupt++;
+			// sleep for now until we make sure this works
+			//sleep(2000);
+			return;
+		}
+		// don't let minKey exceed endKey, however
+		if ( KEYCMP(minKey,m_endKey,m_ks)>0 ) {
+			KEYSET(minKey,m_endKey,m_ks);
+			KEYINC(minKey,m_ks);
+			KEYSET(lastMinKey,m_endKey,m_ks);
+		}
+		else {
+			KEYSET(lastMinKey,minKey,m_ks);
+			KEYDEC(lastMinKey,m_ks);
+		}
+		// it is now valid
+		lastMinKeyIsValid = true;
+		// . advance m_scan[i].m_endpg so that next page < minKey
+		// . we want to read UP TO the first key on m_scan[i].m_endpg
+		for ( int32_t i = 0 ; i < m_numFileNums ; i++ ) {
+			int32_t fn = m_scan[i].m_fileNum;
+			m_scan[i].m_endpg = maps[fn]->getEndPage ( m_scan[i].m_endpg, lastMinKey );
+		}
+		// . if the minKey is BIGGER than the provided endKey we're done
+		// . we don't necessarily include records whose key is "minKey"
+		if ( KEYCMP(minKey,m_endKey,m_ks)>0) return;
+		// . calculate recSizes per page within [startKey,minKey-1]
+		// . compute bytes of records in [startKey,minKey-1] for each map
+		// . this includes negative records so we may have annihilations
+		//   when merging into "diskList" and get less than what we wanted
+		//   but endKey should be shortened, so our caller will know to call
+		//   again if he wants more
+		int32_t recSizes = 0;
+		for ( int32_t i = 0 ; i < m_numFileNums ; i++ ) {
+			int32_t fn = m_scan[i].m_fileNum;
+			recSizes += maps[fn]->getMinRecSizes ( m_scan[i].m_startpg,
+							       m_scan[i].m_endpg,
+							       m_fileStartKey,
+							       lastMinKey   ,
+							       false        );
+		}
+		// if we hit it then return minKey -1 so we only read UP TO "minKey"
+		// not including "minKey"
+		if ( recSizes >= m_minRecSizes ) {
+			// . sanity check
+			// . this sanity check fails sometimes, but leave it
+			//   out for now... causes the Illegal endkey msgs in
+			//   RdbList::indexMerge_r()
+			//if ( KEYNEG(lastMinKey) ) { g_process.shutdownAbort(true); }
+			KEYSET(m_endKey,lastMinKey,m_ks);
+			//return lastMinKey;
+			return;
+		}
 	}
-	// don't let minKey exceed endKey, however
-	if ( KEYCMP(minKey,m_endKey,m_ks)>0 ) {
-		KEYSET(minKey,m_endKey,m_ks);
-		KEYINC(minKey,m_ks);
-		KEYSET(lastMinKey,m_endKey,m_ks);
-	}
-	else {
-		KEYSET(lastMinKey,minKey,m_ks);
-		KEYDEC(lastMinKey,m_ks);
-	}
-	// it is now valid
-	lastMinKeyIsValid = true;
-	// . advance m_scan[i].m_endpg so that next page < minKey
-	// . we want to read UP TO the first key on m_scan[i].m_endpg
-	for ( int32_t i = 0 ; i < m_numFileNums ; i++ ) {
-		int32_t fn = m_scan[i].m_fileNum;
-		m_scan[i].m_endpg = maps[fn]->getEndPage ( m_scan[i].m_endpg, lastMinKey );
-	}
-	// . if the minKey is BIGGER than the provided endKey we're done
-	// . we don't necessarily include records whose key is "minKey"
-	if ( KEYCMP(minKey,m_endKey,m_ks)>0) return;
-	// . calculate recSizes per page within [startKey,minKey-1]
-	// . compute bytes of records in [startKey,minKey-1] for each map
-	// . this includes negative records so we may have annihilations
-	//   when merging into "diskList" and get less than what we wanted
-	//   but endKey should be shortened, so our caller will know to call
-	//   again if he wants more
-	int32_t recSizes = 0;
-	for ( int32_t i = 0 ; i < m_numFileNums ; i++ ) {
-		int32_t fn = m_scan[i].m_fileNum;
-		recSizes += maps[fn]->getMinRecSizes ( m_scan[i].m_startpg,
-						       m_scan[i].m_endpg,
-						       m_fileStartKey,
-						       lastMinKey   ,
-						       false        );
-	}
-	// if we hit it then return minKey -1 so we only read UP TO "minKey"
-	// not including "minKey"
-	if ( recSizes >= m_minRecSizes ) {
-		// . sanity check
-		// . this sanity check fails sometimes, but leave it
-		//   out for now... causes the Illegal endkey msgs in
-		//   RdbList::indexMerge_r()
-		//if ( KEYNEG(lastMinKey) ) { g_process.shutdownAbort(true); }
-		KEYSET(m_endKey,lastMinKey,m_ks);
-		//return lastMinKey;
-		return;
-	}
-	// keep on truckin'
-	goto loop;
 }
 
 // . we now boost m_minRecSizes to account for negative recs in certain files
