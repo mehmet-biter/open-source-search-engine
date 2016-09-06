@@ -81,9 +81,6 @@ class RdbScan {
 	int64_t  m_offset;
 	char       m_ks;
 
-	// for allowing page cache
-	bool  m_allowPageCache;
-
 	bool  m_hitDisk;
 
 	// this is set by Msg3.cpp

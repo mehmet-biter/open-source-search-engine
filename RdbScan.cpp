@@ -32,8 +32,6 @@ bool RdbScan::setRead ( BigFile  *file         ,
 	// save keySize
 	m_ks = keySize;
 	m_rdbId = rdbId;
-	// save allow page cache
-	m_allowPageCache = allowPageCache;
 	m_hitDisk        = hitDisk;
 	// ensure startKey last bit clear, endKey last bit set
 	//if ( (startKey.n0 & 0x01) == 0x01 ) 
