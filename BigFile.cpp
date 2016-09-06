@@ -668,9 +668,6 @@ bool BigFile::readwrite ( void         *buf      ,
 
 	// reset this
 	fstate->m_errno = 0;
-	// sanity check. if you set hitDisk to false, you must allow
-	// us to check the page cache! silly bean!
-	if ( ! allowPageCache && ! hitDisk ) gbshutdownLogicError();
 	// set up fstate
 	fstate->m_bigfile     = this;
 	// buf may be NULL if caller passed in a NULL "buf" and it did not hit 
