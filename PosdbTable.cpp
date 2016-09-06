@@ -4173,7 +4173,7 @@ float PosdbTable::getMaxPossibleScore ( const QueryTermInfo *qti,
 				continue;
 			}
 			
-			char dr = Posdb::getDensityRank(dc);
+			unsigned char dr = Posdb::getDensityRank(dc);
 			
 			// a clean win?
 			if ( s_hashGroupWeights[hgrp] > bestHashGroupWeight ) {
