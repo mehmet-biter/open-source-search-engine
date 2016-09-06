@@ -59,6 +59,7 @@
 #include "HashTableX.h"
 #include "Sections.h"
 #include "Sanity.h"
+#include "termid_mask.h"
 
 
 #define MAXSITERANK      0x0f // 4 bits
@@ -90,9 +91,6 @@ float getTermFreqWeight  ( int64_t termFreq , int64_t numDocsInColl );
 
 typedef key144_t posdbkey_t;
 
-#ifndef TERMID_MASK
-#define TERMID_MASK (0x0000ffffffffffffLL)
-#endif
 
 void printTermList ( int32_t i, const char *list, int32_t listSize ) ;
 
