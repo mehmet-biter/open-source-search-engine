@@ -1316,8 +1316,7 @@ void addCollnumToLinkedListOfMergeCandidates ( collnum_t dumpCollnum ) {
 		cr         ->m_nextLink = NULL;
 		cr         ->m_prevLink = s_mergeTail;
 		s_mergeTail = cr;
-	}
-	else if ( cr ) {
+	} else {
 		cr->m_prevLink = NULL;
 		cr->m_nextLink = NULL;
 		s_mergeHead = cr;
