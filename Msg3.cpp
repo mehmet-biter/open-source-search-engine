@@ -1046,7 +1046,7 @@ void Msg3::setPageRanges(RdbBase *base) {
 	if ( m_minRecSizes <= 0 ) return;
 	// calculate minKey minus one
 	char lastMinKey[MAX_KEY_BYTES];
-	char lastMinKeyIsValid = 0;
+	bool lastMinKeyIsValid = false;
 	// loop until we find the page ranges that barely satisfy "minRecSizes"
   loop:
 	// find the map whose next page has the lowest key
@@ -1120,7 +1120,7 @@ void Msg3::setPageRanges(RdbBase *base) {
 		KEYDEC(lastMinKey,m_ks);
 	}
 	// it is now valid
-	lastMinKeyIsValid = 1;
+	lastMinKeyIsValid = true;
 	// . advance m_scan[i].m_endpg so that next page < minKey
 	// . we want to read UP TO the first key on m_scan[i].m_endpg
 	for ( int32_t i = 0 ; i < m_numFileNums ; i++ ) {
