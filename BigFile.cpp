@@ -886,6 +886,9 @@ void doneWrapper ( void *state, job_exit_t exit_type ) {
 
 	if( exit_type != job_exit_normal ) {
 		log(LOG_INFO, "disk: Read canceled due to JobScheduler exit type %d.", (int)exit_type);
+		//call calback with m-errno set
+		fstate->m_errno = ECLOSING;
+		fstate->m_callback ( fstate->m_state );
 		return;
 	}
 
