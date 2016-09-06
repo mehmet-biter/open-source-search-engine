@@ -17,7 +17,7 @@
 #include "Wiki.h"
 #include "RdbList.h"
 #include "Process.h"
-#include "Posdb.h"
+#include "termid_mask.h"
 
 
 Query::Query ( ) {
