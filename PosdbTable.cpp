@@ -2925,7 +2925,7 @@ handleNextDocId:
 					// -1 means it has inlink text so do not apply this constraint
 					// to this docid because it is too difficult because we
 					// sum up the inlink text
-					if ( maxScore == -1.0 ) {
+					if ( maxScore < 0.0 ) {
 						continue;
 					}
 					
@@ -3114,7 +3114,7 @@ handleNextDocId:
 					// -1 means it has inlink text so do not apply this constraint
 					// to this docid because it is too difficult because we
 					// sum up the inlink text
-					if ( maxScore2 == -1.0 ) {
+					if ( maxScore2 < 0.0 ) {
 						continue;
 					}
 					
