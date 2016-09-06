@@ -121,8 +121,8 @@ class BigFile {
 	// . return -2 on error
 	// . return -1 if does not exist
 	// . otherwise return the big file's complete file size (can b >2gb)
-	int64_t getFileSize ( );
-	int64_t getSize     ( ) { return getFileSize(); }
+	int64_t getFileSize() const;
+	int64_t getSize() const { return getFileSize(); }
 
 	// use the base filename as our filename
 	char       *getFilename()       { return m_baseFilename.getBufStart(); }
@@ -189,7 +189,7 @@ class BigFile {
 	bool closeFds ( ) ;
 
 	// what part (little File) of this BigFile has offset "offset"?
-	int getPartNum ( int64_t offset ) { return offset / MAX_PART_SIZE; }
+	int getPartNum(int64_t offset) const { return offset / MAX_PART_SIZE; }
 
 	// . opens the nth file if necessary to get it's fd
 	// . returns -1 if none, >=0 on success
@@ -301,6 +301,9 @@ public:
 		// this will be NULL if addPart(n) never called
 		return f;
 	}
+	const File *getFile2(int32_t n) const {
+		return const_cast<BigFile*>(this)->getFile2(n);
+	}
 
 	bool reset ( );
 
@@ -312,7 +315,7 @@ public:
 	// prevent circular calls to BigFile::close() with this
 	bool m_isClosing;
 
-	int64_t m_fileSize;
+	mutable int64_t m_fileSize;
 
 	// oldest of the last modified dates of all the part files
 	time_t m_lastModified;

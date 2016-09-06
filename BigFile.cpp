@@ -511,7 +511,7 @@ int BigFile::getfd ( int32_t n , bool forReading ) {
 // . return -2 on error
 // . return -1 if does not exist
 // . otherwise return the big file's complete file size (can be well over 2gb)
-int64_t BigFile::getFileSize ( ) {
+int64_t BigFile::getFileSize() const {
 	// return if already computed
 	if ( m_fileSize >= 0 ) {
 		return m_fileSize;
@@ -521,7 +521,7 @@ int64_t BigFile::getFileSize ( ) {
 	int64_t totalSize = 0;
 	for ( int32_t n = 0 ; n < m_maxParts ; n++ ) {
 		// shortcut
-		File *f = getFile2(n);
+		const File *f = getFile2(n);
 		// we can have headless big files... count the heads.
 		// this can happen if the first Files were deleted because
 		// of an ongoing merge operation.
