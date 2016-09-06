@@ -1548,7 +1548,7 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 		memset(px,0,sizeof(*px));
 		const char *maxp1 = bestwpi[k];
 		const char *maxp2 = bestwpj[k];
-		float score = bestScores[k];
+		score = bestScores[k];
 		bool fixedDist = bestFixed[k];
 		score *= wts;
 		score *= m_freqWeights[i];
@@ -1568,8 +1568,8 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 		px->m_finalScore     = score;
 		px->m_wordPos1       = g_posdb.getWordPos(maxp1);
 		px->m_wordPos2       = g_posdb.getWordPos(maxp2);
-		char syn1 = g_posdb.getIsSynonym(maxp1);
-		char syn2 = g_posdb.getIsSynonym(maxp2);
+		syn1 = g_posdb.getIsSynonym(maxp1);
+		syn2 = g_posdb.getIsSynonym(maxp2);
 		px->m_isSynonym1     = syn1;
 		px->m_isSynonym2     = syn2;
 		px->m_isHalfStopWikiBigram1 = g_posdb.getIsHalfStopWikiBigram(maxp1);
@@ -2086,11 +2086,11 @@ bool PosdbTable::setQueryTermInfo ( ) {
 		qti->m_totalSubListsSize = 0LL;
 		for ( int32_t q = 0 ; q < qti->m_numSubLists ; q++ ) {
 			// add list ptr into our required group
-			RdbList *list = qti->m_subLists[q];
+			RdbList *l = qti->m_subLists[q];
 			// set end ptr
 			//qti->m_subListEnds[q]=list->m_list +list->m_listSize;
 			// get it
-			int64_t listSize = list->getListSize();
+			int64_t listSize = l->getListSize();
 			// add it up
 			qti->m_totalSubListsSize += listSize;
 		}
@@ -3942,7 +3942,7 @@ handleNextDocId:
 				//   in the winning window defined by m_windowTermPtrs[]
 				//   that we set in evalSlidingWindow()
 				// . returns the best score for this term
-				float score = getTermPairScoreForAny (i,
+				float tpscore = getTermPairScoreForAny (i,
 								      j,
 								      miniMergedList[i],
 								      miniMergedList[j],
@@ -3951,12 +3951,12 @@ handleNextDocId:
 								      pdcs );
 								      
 				// get min of all term pair scores
-				if ( score >= minPairScore && minPairScore >= 0.0 ) {
+				if ( tpscore >= minPairScore && minPairScore >= 0.0 ) {
 					continue;
 				}
 				
 				// got a new min
-				minPairScore = score;
+				minPairScore = tpscore;
 			}
 		}
 		
