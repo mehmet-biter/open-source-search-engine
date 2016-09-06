@@ -17,6 +17,7 @@
 #include "Wiki.h"
 #include "RdbList.h"
 #include "Process.h"
+#include "Posdb.h"
 
 
 Query::Query ( ) {

@@ -16,12 +16,6 @@ float getHashGroupWeight ( unsigned char hg );
 #define SITERANKDIVISOR 3.0
 #define SITERANKMULTIPLIER 0.33333333
 
-typedef key144_t posdbkey_t;
-
-#ifndef TERMID_MASK
-#define TERMID_MASK (0x0000ffffffffffffLL)
-#endif
-
 void printTermList ( int32_t i, const char *list, int32_t listSize ) ;
 
 // if query is 'the tigers' we weight bigram "the tigers" x 1.20 because
