@@ -4103,7 +4103,7 @@ float PosdbTable::getMaxPossibleScore ( const QueryTermInfo *qti,
 
 	// get max score of all sublists
 	float bestHashGroupWeight = -1.0;
-	unsigned char bestDensityRank;
+	unsigned char bestDensityRank = 0;
 	char siteRank = -1;
 	char docLang;
 	unsigned char hgrp;
