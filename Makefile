@@ -421,6 +421,7 @@ install:
 
 
 DEPS := $(OBJS:.o=.d)
+DEPS+=main.d
 
 -include $(DEPS)
 
