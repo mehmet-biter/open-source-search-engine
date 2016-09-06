@@ -46,8 +46,6 @@ public:
 	void          (*m_callback) ( void *state ) ;
 	// goes from 0 to 1, the lower the niceness, the higher the priority
 	int32_t            m_niceness;
-	// was it found in the disk page cache?
-	char m_inPageCache;
 
 	// . we get our fds before starting the read thread to avoid
 	//   problems with accessing m_files since RdbMerge may call unlinkPart
