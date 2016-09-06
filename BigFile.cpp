@@ -385,8 +385,8 @@ bool BigFile::addPart ( int32_t n ) {
 }
 
 
-bool BigFile::doesExist ( ) {
-	return m_numParts;
+bool BigFile::doesExist() const {
+	return m_numParts != 0;
 }
 
 

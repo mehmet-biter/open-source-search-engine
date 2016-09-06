@@ -100,8 +100,7 @@ class BigFile {
 	//   "dir" and "stripeDir"
 	bool set ( const char *dir, const char *baseFilename, const char *stripeDir = NULL );
 
-	// self explanatory
-	bool doesExist ( ) ;
+	bool doesExist() const;
 
 	// does file part #n exist?
 	bool doesPartExist ( int32_t n ) ;
@@ -199,7 +198,7 @@ class BigFile {
 	int32_t       getVfd       ( ) { return m_vfd; }
 
 	// WARNING: some may have been unlinked from call to unlinkPart()
-	int32_t getNumParts ( ) { return m_numParts; }
+	int32_t getNumParts() const { return m_numParts; }
 
 private:
 	// makes the filename of part file #n
