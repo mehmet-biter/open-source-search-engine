@@ -212,7 +212,6 @@ bool Words::addWords( char *s, int32_t nodeLen, bool computeWordIds, int32_t nic
 	int32_t  i = 0;
 	int32_t  j;
 	int32_t  wlen;
-	int32_t badCount = 0;
 
 	bool hadApostrophe = false;
 
@@ -429,9 +428,6 @@ bool Words::addWords( char *s, int32_t nodeLen, bool computeWordIds, int32_t nic
 		log(LOG_LOGIC, "build: words: set: Fix counting routine.");
 		gbshutdownLogicError();
 	}
-
-	if ( badCount )
-		log("words: had %" PRId32" bad utf8 chars",badCount);
 
 	return true;
 }

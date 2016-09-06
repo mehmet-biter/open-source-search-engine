@@ -17,6 +17,8 @@
 #include "Wiki.h"
 #include "RdbList.h"
 #include "Process.h"
+#include "Posdb.h"
+
 #include "GbMutex.h"
 #include "ScopedLock.h"
 

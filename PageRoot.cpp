@@ -1130,9 +1130,6 @@ public:
 	//SpiderRequest m_sreq;
 };
 
-// only allow up to 1 Msg10's to be in progress at a time
-static bool s_inprogress = false;
-
 static void doneInjectingWrapper3 ( void *st ) ;
 
 // . returns false if blocked, true otherwise
@@ -1242,9 +1239,6 @@ bool sendPageAddUrl ( TcpSocket *sock , HttpRequest *hr ) {
 	// or if in read-only mode
 	if (   g_conf.m_readOnlyMode  ) 
 		msg = "Add url is temporarily disabled";
-	// cannot add if another Msg10 from here is still in progress
-	if ( s_inprogress ) 
-		msg = "Add url is currently busy! Try again in a second.";
 
 	// . send msg back to the ajax request
 	// . use cachetime of 3600 so it does not re-inject if you hit the
@@ -1405,8 +1399,6 @@ bool sendPageAddUrl ( TcpSocket *sock , HttpRequest *hr ) {
 
 static void doneInjectingWrapper3 ( void *st ) {
 	State1i *st1 = (State1i *)st;
-	// allow others to add now
-	s_inprogress = false;
 	// get the state properly
 	//State1i *st1 = (State1i *) state;
 	// in order to see what sites are being added log it, then we can
@@ -1486,13 +1478,6 @@ static void doneInjectingWrapper3 ( void *st ) {
 			sb.safePrintf("%s",pm);
 			//rb.safePrintf("Sorry, this feature is temporarily "
 			//	      "disabled. Please try again later.");
-		}
-		else if ( s_inprogress ) {
-			pm = "Add url busy. Try again later.";
-			log("addurls: Failed for user at %s: "
-			    "busy adding another.", iptoa(sock->m_ip));
-			//rb.safePrintf("Add url busy. Try again later.");
-			sb.safePrintf("%s",pm);
 		}
 		// did they fail the turing test?
 		else if ( ! st1->m_goodAnswer ) {

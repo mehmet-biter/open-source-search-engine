@@ -1316,8 +1316,7 @@ void addCollnumToLinkedListOfMergeCandidates ( collnum_t dumpCollnum ) {
 		cr         ->m_nextLink = NULL;
 		cr         ->m_prevLink = s_mergeTail;
 		s_mergeTail = cr;
-	}
-	else if ( cr ) {
+	} else {
 		cr->m_prevLink = NULL;
 		cr->m_nextLink = NULL;
 		s_mergeHead = cr;
@@ -2372,14 +2371,11 @@ char getKeySizeFromRdbId(rdbid_t rdbId) {
 // returns -1 if dataSize is variable
 int32_t getDataSizeFromRdbId ( uint8_t rdbId ) {
 	static bool s_flag = true;
-	static int32_t s_table2[80];
+	static int32_t s_table2[RDB_END];
+	if ( rdbId >= RDB_END )
+		g_process.shutdownAbort(true);
 	if ( s_flag ) {
-		// only stock the table once
-		s_flag = false;
 		// sanity check
-		if ( RDB_END >= 80 ) {
-			g_process.shutdownAbort(true);
-		}
 		// loop over all possible rdbIds
 		for ( int32_t i = 1 ; i < RDB_END ; i++ ) {
 			// assume none
@@ -2411,6 +2407,8 @@ int32_t getDataSizeFromRdbId ( uint8_t rdbId ) {
 			// set the table
 			s_table2[i] = ds;
 		}
+		// only stock the table once
+		s_flag = false;
 	}
 	return s_table2[rdbId];
 }

@@ -52,6 +52,7 @@
 #include "HttpMime.h" // ET_DEFLAT
 #include "Msg1.h"
 #include "Json.h"
+#include "Posdb.h"
 
 #define MAXFRAGWORDS 80000
 
