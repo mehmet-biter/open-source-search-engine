@@ -340,13 +340,12 @@ float PosdbTable::getSingleTermScore ( int32_t     i,
 				       char       **bestPos ) {
 
 	float nonBodyMax = -1.0;
-	//char *maxp;
-	int32_t minx;
+	int32_t minx = 0;
 	float bestScores[MAX_TOP];
 	char *bestwpi   [MAX_TOP];
 	int32_t numTop = 0;
 
-	logTrace(g_conf.m_logTracePosdb, "END.");
+	logTrace(g_conf.m_logTracePosdb, "BEGIN.");
 
 	// assume no terms!
 	*bestPos = NULL;
