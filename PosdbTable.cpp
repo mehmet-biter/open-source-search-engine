@@ -4790,7 +4790,10 @@ void PosdbTable::delDocIdVotes ( const QueryTermInfo *qti ) {
 			subListPtr += 12;
 			// skip any following keys that are 6 bytes, that means they
 			// share the same docid
-			for ( ; subListPtr < subListEnd && ((*subListPtr)&0x04); subListPtr += 6 );
+			for ( ; subListPtr < subListEnd && ((*subListPtr)&0x04); ) {
+				subListPtr += 6;
+			}
+
 			// if we have more posdb recs in this sublist, then keep
 			// adding our docid votes into the docid list
 		}
@@ -4962,7 +4965,9 @@ void PosdbTable::addDocIdVotes( const QueryTermInfo *qti, int32_t listGroupNum) 
 
 		// skip any following keys that are 6 bytes, that means they
 		// share the same docid
-		for ( ; subListPtr < subListEnd && ((*subListPtr)&0x04); subListPtr += 6 );
+		for ( ; subListPtr < subListEnd && ((*subListPtr)&0x04); ) {
+			subListPtr += 6;
+		}
 		
 		// if we have more posdb recs in this sublist, then keep
 		// adding our docid votes into the docid list
@@ -5554,9 +5559,12 @@ static inline char *getWordPosList ( int64_t docId, char *list, int32_t listSize
 	char *origp = p;
 	// scan up to docid. we use this special bit to distinguish between
 	// 6-byte and 12-byte posdb keys
-	for ( ; p > list && (p[1] & 0x02) ; p -= 6 );
+	for ( ; p > list && (p[1] & 0x02); ) {
+		p -= 6;
+	}
 	// ok, we hit a 12 byte key i guess, so backup 6 more
 	p -= 6;
+
 	// ok, we got a 12-byte key then i guess
 	int64_t d = Posdb::getDocId ( p );
 	// we got a match, but it might be a NEGATIVE key so
@@ -5570,10 +5578,14 @@ static inline char *getWordPosList ( int64_t docId, char *list, int32_t listSize
 		char *current = p;
 		// back up to 6 byte key before this 12 byte key
 		p -= 6;
+
 		// now go backwards to previous 12 byte key
-		for ( ; p > list && (p[1] & 0x02) ; p -= 6 );
+		for ( ; p > list && (p[1] & 0x02); ) {
+			p -= 6;
+		}
 		// ok, we hit a 12 byte key i guess, so backup 6 more
 		p -= 6;
+
 		// is it there?
 		if ( p >= list && Posdb::getDocId(p) == docId ) {
 			// sanity. return NULL if its negative! wtf????
@@ -5586,7 +5598,10 @@ static inline char *getWordPosList ( int64_t docId, char *list, int32_t listSize
 		// advance over current 12 byte key
 		p += 12;
 		// now go forwards to next 12 byte key
-		for ( ; p < listEnd && (p[1] & 0x02) ; p += 6 );
+		for ( ; p < listEnd && (p[1] & 0x02); ) {
+			p += 6;
+		}
+
 		// is it there?
 		if ( p + 12 < listEnd && Posdb::getDocId(p) == docId ) {
 			// sanity. return NULL if its negative! wtf????
