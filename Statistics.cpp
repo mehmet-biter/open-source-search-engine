@@ -362,6 +362,7 @@ bool Statistics::initialize()
 		log(LOG_ERROR,"pthread_create() failed with rc=%d (%s)",rc,strerror(rc));
 		return false;
 	}
+	(void)pthread_setname_np(dump_thread,"statdump");
 	return true;
 }
 
