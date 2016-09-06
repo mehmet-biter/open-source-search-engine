@@ -90,11 +90,8 @@ class PosdbTable {
 	// pre-allocate memory since intersection runs in a thread
 	bool allocTopScoringDocIdsData();
 
-	void  getTermPairScoreForNonBody   ( int32_t i, int32_t j,
-					     const char *wpi,  const char *wpj, 
-					     const char *endi, const char *endj,
-					     int32_t qdist ,
-					     float *retMax );
+	void  getTermPairScoreForNonBody( 	const char *wpi,  const char *wpj, const char *endi, const char *endj,
+					     				int32_t qdist, float *retMax );
 	float getSingleTermScore ( int32_t i, char *wpi , char *endi,
 				   DocIdScore *pdcs,
 				   char **bestPos );
