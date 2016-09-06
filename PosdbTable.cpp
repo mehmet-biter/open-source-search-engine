@@ -235,31 +235,25 @@ void PosdbTable::evalSlidingWindow ( char    **ptrs,
 		}
 
 		// this will be -1 if wpi or wpj is NULL
-		float max = getTermPairScoreForWindow ( i,j,wpi, wpj, 0 );
+		float max = getTermPairScoreForWindow ( wpi, wpj, 0 );
 
 		// try sub-ing in the best title occurence or best
 		// inlink text occurence. cuz if the term is in the title
 		// but these two terms are really far apart, we should
 		// get a better score
-		float score = getTermPairScoreForWindow ( i,j,bestPos[i], 
-							  wpj,
-							  FIXED_DISTANCE );
+		float score = getTermPairScoreForWindow ( bestPos[i], wpj, FIXED_DISTANCE );
 		if ( score > max ) {
 			max   = score;
 		}
 
 		// a double pair sub should be covered in the 
 		// getTermPairScoreForNonBody() function
-		score = getTermPairScoreForWindow ( i,j,bestPos[i], 
-						    bestPos[j],
-						    FIXED_DISTANCE );
+		score = getTermPairScoreForWindow ( bestPos[i], bestPos[j], FIXED_DISTANCE );
 		if ( score > max ) {
 			max   = score;
 		}
 
-		score = getTermPairScoreForWindow ( i,j,wpi, 
-						    bestPos[j],
-						    FIXED_DISTANCE );
+		score = getTermPairScoreForWindow ( wpi, bestPos[j], FIXED_DISTANCE );
 		if ( score > max ) {
 			max   = score;
 		}
@@ -798,13 +792,7 @@ void PosdbTable::getTermPairScoreForNonBody ( 	const char *wpi,  const char *wpj
 
 
 
-float PosdbTable::getTermPairScoreForWindow ( int32_t i,
-					      int32_t j,
-					      const char *wpi,
-					      const char *wpj,
-					      int32_t fixedDistance ) {
-
-
+float PosdbTable::getTermPairScoreForWindow( const char *wpi, const char *wpj, int32_t fixedDistance ) {
 	logTrace(g_conf.m_logTracePosdb, "BEGIN.");
 
 	if ( ! wpi ) {

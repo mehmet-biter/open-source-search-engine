@@ -100,11 +100,7 @@ class PosdbTable {
 				 int32_t   nr , 
 				 char **bestPos ,
 				 float *scoreMatrix );
-	float getTermPairScoreForWindow ( int32_t i, int32_t j,
-					  const char *wpi,
-					  const char *wpj,
-					  int32_t fixedDistance
-					  );
+	float getTermPairScoreForWindow( const char *wpi, const char *wpj, int32_t fixedDistance);
 
 	float getTermPairScoreForAny   ( int32_t i, int32_t j,
 					 const char *wpi, const char *wpj, 
