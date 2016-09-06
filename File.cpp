@@ -549,70 +549,66 @@ int File::getfd () {
 	}
 
 	// time the calls to open just in case they are hurting us
-	int64_t t1 = -1LL;
-	int fd = -1;
+	int64_t t1 = gettimeofdayInMilliseconds();
 	// then try to open the new name
-	if ( fd == -1 ) {
-		t1 = gettimeofdayInMilliseconds();
-		fd = ::open ( getFilename() , m_flags,getFileCreationFlags());
-		// 0 means stdout, right? why am i seeing it get assigned???
-		if ( fd == 0 )
-			log(LOG_WARN, "disk: Got fd of 0 when opening %s.", getFilename());
-		if ( fd == 0 )
-		       fd=::open(getFilename(),m_flags,getFileCreationFlags());
-		if ( fd == 0 )
-			log(LOG_WARN, "disk: Got fd of 0 when opening2 %s.",
-			    getFilename());
-		if ( fd >= MAX_NUM_FDS )
-			log(LOG_WARN, "disk: got fd of %i out of bounds 1 of %i",
-			    fd,(int)MAX_NUM_FDS);
+	int fd = ::open ( getFilename() , m_flags,getFileCreationFlags());
+	// 0 means stdout, right? why am i seeing it get assigned???
+	if ( fd == 0 )
+		log(LOG_WARN, "disk: Got fd of 0 when opening %s.", getFilename());
+	if ( fd == 0 )
+	       fd=::open(getFilename(),m_flags,getFileCreationFlags());
+	if ( fd == 0 )
+		log(LOG_WARN, "disk: Got fd of 0 when opening2 %s.",
+		    getFilename());
+	if ( fd >= MAX_NUM_FDS )
+		log(LOG_WARN, "disk: got fd of %i out of bounds 1 of %i",
+		    fd,(int)MAX_NUM_FDS);
 
-		// if we got someone else's fd that called close1_r() in a
-		// thread but did not have time to call close2() to fix
-		// up these member vars, then do it here. close2() will
-		// see that s_filePtrs[fd] does not equal the file ptr any more
-		// and it will not update s_numOpenFiles in that case.
-		if ( fd >= 0 && s_open [ fd ] ) {
-			File *f = s_filePtrs [ fd ];
-			logDebug( g_conf.m_logDebugDisk, "disk: swiping fd %i from %s before his close thread returned this=0x%" PTRFMT,
-			          fd, f->getFilename(), (PTRTYPE)f );
+	// if we got someone else's fd that called close1_r() in a
+	// thread but did not have time to call close2() to fix
+	// up these member vars, then do it here. close2() will
+	// see that s_filePtrs[fd] does not equal the file ptr any more
+	// and it will not update s_numOpenFiles in that case.
+	if ( fd >= 0 && s_open [ fd ] ) {
+		File *f = s_filePtrs [ fd ];
+		logDebug( g_conf.m_logDebugDisk, "disk: swiping fd %i from %s before his close thread returned this=0x%" PTRFMT,
+			  fd, f->getFilename(), (PTRTYPE)f );
 
-			// he only incs/decs his counters if he owns it so in
-			// close2() so dec this global counter here
-			s_numOpenFiles--;
-			s_open[fd] = false;
-			s_filePtrs[fd] = NULL;
-			if ( g_conf.m_logDebugDisk ) {
-				sanityCheck();
-			}
+		// he only incs/decs his counters if he owns it so in
+		// close2() so dec this global counter here
+		s_numOpenFiles--;
+		s_open[fd] = false;
+		s_filePtrs[fd] = NULL;
+		if ( g_conf.m_logDebugDisk ) {
+			sanityCheck();
 		}
+	}
 
-		// sanity. how can we get an fd already opened?
-		// because it was closed in a thread in close1_r()
-		if ( fd >= 0 && s_open[fd] ) {
-			gbshutdownCorrupted();
-		}
+	// sanity. how can we get an fd already opened?
+	// because it was closed in a thread in close1_r()
+	if ( fd >= 0 && s_open[fd] ) {
+		gbshutdownCorrupted();
+	}
 
-		// . now inc that count in case there was someone reading on
-		//   that fd right before it was closed and we got it
-		// . ::close() call can now happen in a thread, so we
-		//   need to inc this guy here now, too
-		// . so when that read returns it will know to re-do
-		// . this should really be named s_openCounts!!
-		if ( fd >= 0 ) {
-			s_closeCounts [ fd ]++;
+	// . now inc that count in case there was someone reading on
+	//   that fd right before it was closed and we got it
+	// . ::close() call can now happen in a thread, so we
+	//   need to inc this guy here now, too
+	// . so when that read returns it will know to re-do
+	// . this should really be named s_openCounts!!
+	if ( fd >= 0 ) {
+		s_closeCounts [ fd ]++;
 
-			// . we now record this
-			// . that way if our fd gets closed in closeLeastUsed() or
-			//   in close1_r() due to a rename/unlink then we know it!
-			// . this fixes a race condition of closeCounts in Threads.cpp
-			//   where we did not know that the fd had been stolen from
-			//   us and assigned to another file because our close1_r()
-			//   had called ::close() on our fd and our closeCount algo
-			//   failed us. see the top of this file for more description
-			//   into this bug fix.
-			m_closeCount = s_closeCounts[fd];
-		}
+		// . we now record this
+		// . that way if our fd gets closed in closeLeastUsed() or
+		//   in close1_r() due to a rename/unlink then we know it!
+		// . this fixes a race condition of closeCounts in Threads.cpp
+		//   where we did not know that the fd had been stolen from
+		//   us and assigned to another file because our close1_r()
+		//   had called ::close() on our fd and our closeCount algo
+		//   failed us. see the top of this file for more description
+		//   into this bug fix.
+		m_closeCount = s_closeCounts[fd];
 	}
 
 	if ( t1 >= 0 ) {
