@@ -139,8 +139,6 @@ class BigFile {
 		     void       *state                   = NULL , 
 		     void      (* callback)(void *state) = NULL ,
 		     int32_t        niceness                = 1    ,
-		     bool        allowPageCache          = true ,
-		     bool        hitDisk                 = true ,
 		     int32_t        allocOff                = 0    );
 
 	// . returns false if blocked, true otherwise
@@ -239,8 +237,6 @@ private:
 			 void       *state    ,
 			 void      (* callback) ( void *state ) ,
 			 int32_t        niceness ,
-			 bool        allowPageCache ,
-			 bool        hitDisk        ,
 			 int32_t        allocOff       );
 
 	// . returns false if blocked, true otherwise

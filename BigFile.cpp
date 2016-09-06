@@ -580,13 +580,10 @@ bool BigFile::read  ( void       *buf    ,
 		      void       *state  ,
 		      void      (* callback)(void *state) ,
 		      int32_t        niceness                ,
-		      bool        allowPageCache ,
-		      bool        hitDisk        ,
 		      int32_t        allocOff  ) {
 	g_errno = 0;
 	return readwrite ( buf , size , offset , false/*doWrite?*/, 
-			   fs  , state, callback , niceness , allowPageCache ,
-			   hitDisk , allocOff );
+			   fs  , state, callback , niceness , allocOff );
 }
 
 
@@ -607,8 +604,7 @@ bool BigFile::write ( void       *buf    ,
 	}
 	g_errno = 0;
 	return readwrite ( buf , size , offset , true/*doWrite?*/ , 
-			   fs  , state, callback , niceness , true,
-			   true , 0 );
+			   fs  , state, callback , niceness , 0 );
 }
 
 
@@ -631,8 +627,6 @@ bool BigFile::readwrite ( void         *buf      ,
 			  void         *state    ,
 			  void        (* callback) ( void *state ) ,
 			  int32_t          niceness ,
-			  bool          allowPageCache ,
-			  bool          hitDisk        ,
 			  int32_t          allocOff ) {
 	// are we blocking?
 	bool isNonBlocking = m_flags & O_NONBLOCK;
@@ -755,8 +749,6 @@ bool BigFile::readwrite ( void         *buf      ,
 	fstate->m_errno       = 0;
 	fstate->m_startTime   = gettimeofdayInMilliseconds();
 	fstate->m_vfd         = m_vfd;
-	// if hitDisk was false we only check the page cache!
-	if ( ! hitDisk ) return true;
 
 	// . if we're blocking then do it now
 	// . this should return false and set g_errno on error, true otherwise

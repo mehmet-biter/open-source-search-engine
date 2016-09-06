@@ -157,8 +157,8 @@ bool RdbScan::setRead ( BigFile  *file         ,
 	//   memory. i've seen like 19000 unlaunched threads each allocating
 	//   32KB for a tfndb read, hogging up all the memory.
 	//if ( ! file->read ( buf + pad + m_off ,
-	if ( ! file->read ( NULL, bytesToRead, offset, &m_fstate, this, gotListWrapper, niceness, m_allowPageCache,
-	                    m_hitDisk, pad + m_off )) // allocOff, buf offset to read into
+	if ( ! file->read ( NULL, bytesToRead, offset, &m_fstate, this, gotListWrapper, niceness,
+	                    pad + m_off )) // allocOff, buf offset to read into
 		return false;
 
 	/*
@@ -271,8 +271,6 @@ void RdbScan::gotList ( ) {
 			       NULL             , // callback state
 			       gotListWrapper   , // FAKE callback
 			       MAX_NICENESS     , // niceness
-			       false, // m_allowPageCache ,... not for test!
-			       m_hitDisk  ,
 			       16 + m_off );
 		//char *allocBuf  = fstate.m_allocBuf;
 		//int32_t  allocSize = fstate.m_allocSize;
