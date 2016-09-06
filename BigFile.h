@@ -154,8 +154,7 @@ class BigFile {
 		      FileState  *fs                      = NULL , 
 		      void       *state                   = NULL , 
 		      void      (* callback)(void *state) = NULL ,
-		      int32_t       niceness                 = 1    ,
-		      bool       allowPageCache           = true );
+		      int32_t       niceness                 = 1);
 
 	// unlinks all part files
 	bool unlink ( );

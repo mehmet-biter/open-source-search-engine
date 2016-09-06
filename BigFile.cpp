@@ -598,8 +598,7 @@ bool BigFile::write ( void       *buf    ,
 		      FileState  *fs     ,
 		      void       *state  ,
 		      void      (* callback)(void *state) ,
-		      int32_t        niceness                ,
-		      bool        allowPageCache ) {
+		      int32_t        niceness) {
 	// sanity check
 	if ( g_conf.m_readOnlyMode ) {
 		logf(LOG_DEBUG,"disk: BigFile: Trying to write while in "
@@ -608,7 +607,7 @@ bool BigFile::write ( void       *buf    ,
 	}
 	g_errno = 0;
 	return readwrite ( buf , size , offset , true/*doWrite?*/ , 
-			   fs  , state, callback , niceness , allowPageCache ,
+			   fs  , state, callback , niceness , true,
 			   true , 0 );
 }
 
