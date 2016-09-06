@@ -23,6 +23,8 @@
 #include <pthread.h>
 
 
+bool doesFileExist ( const char *filename ) ;
+
 int64_t getFileSize ( const char *filename ) ;
 
 // for avoiding unlink/opens that mess up our threaded read
@@ -84,7 +86,7 @@ public:
 	// . returns numBytesWritten if not error
 	// . this is non-blocking so may return < "numBytesToWrite"
 	// . a negative offset means current write offset
-	int  write   ( void *buf , int32_t size , int32_t offset );
+	int  write(const void *buf, int32_t size, int32_t offset);
 
 	// . this will really close this file
 	bool close   ( );  

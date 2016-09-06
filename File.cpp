@@ -212,9 +212,7 @@ bool File::open_unlocked(int flags, int permissions) {
 // . returns number of bytes written
 // . returns -1 on error
 // . may return < numBytesToWrite if non-blocking
-int File::write ( void *buf             ,
-		  int32_t  numBytesToWrite ,
-		  int32_t  offset          ) {
+int File::write(const void *buf, int32_t  numBytesToWrite, int32_t offset) {
 	// safety catch!
 	if ( g_conf.m_readOnlyMode ) {
 		logf(LOG_DEBUG,"disk: Trying to write while in read only mode.");
