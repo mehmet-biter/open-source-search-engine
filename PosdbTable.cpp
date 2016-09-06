@@ -2717,8 +2717,8 @@ void PosdbTable::intersectLists10_r ( ) {
 	int highestInlinkSiteRank = -1;
 	char docLang =0;
 	float score;
-	int32_t intScore;
-	float minScore;
+	int32_t intScore = 0;
+	float minScore = 0.0;
 	float minPairScore;
 	float minSingleScore;
 	m_bflags = bflags;
