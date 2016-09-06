@@ -139,6 +139,7 @@ bool sendPageThreads ( TcpSocket *s , HttpRequest *r ) {
 	p.safePrintf("<table %s>", TABLE_STYLE);
 	p.safePrintf("  <tr class=hdrow>\n");
 	p.safePrintf("    <td><b>Job type</b></td>\n");
+	p.safePrintf("    <td><b>Count</b></td>\n");
 	p.safePrintf("    <td><b>Time in queue</b></td>\n");
 	p.safePrintf("    <td><b>Time executing</b></td>\n");
 	p.safePrintf("    <td><b>Time waiting for cleanup</b></td>\n");
@@ -148,6 +149,7 @@ bool sendPageThreads ( TcpSocket *s , HttpRequest *r ) {
 		p.safePrintf("  <tr bgcolor=#%s>\n",LIGHT_BLUE);
 		p.safePrintf("    <td>%s</td>", thread_type_name(js.first));
 		p.safePrintf("<!-- %lu %lu %lu %lu %lu -->\n", js.second.job_count,js.second.queue_time,js.second.running_time,js.second.done_time,js.second.cleanup_time);
+		p.safePrintf("    <td>%lu</td>\n",js.second.job_count);
 		if(js.second.job_count!=0) {
 			p.safePrintf("    <td>%.3f</td>\n", js.second.queue_time/js.second.job_count/1000.0);
 			p.safePrintf("    <td>%.3f</td>\n", js.second.running_time/js.second.job_count/1000.0);
