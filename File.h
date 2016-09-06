@@ -23,8 +23,6 @@
 #include <pthread.h>
 
 
-bool doesFileExist ( const char *filename ) ;
-
 int64_t getFileSize ( const char *filename ) ;
 
 // for avoiding unlink/opens that mess up our threaded read

@@ -832,11 +832,6 @@ time_t File::getLastModifiedTime() const {
 }
 
 
-bool doesFileExist ( const char *filename ) {
-	struct stat stats;
-	return stat ( filename, &stats ) == 0;
-}
-
 // . returns -1 on error
 // . returns  0 if does not exist
 // . returns  1 if it exists
