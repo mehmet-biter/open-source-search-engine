@@ -554,22 +554,28 @@ void PosdbTable::getTermPairScoreForNonBody ( 	const char *wpi,  const char *wpj
 	int32_t p1 = Posdb::getWordPos ( wpi );
 	int32_t p2 = Posdb::getWordPos ( wpj );
 
-	// fix for bigram algorithm
-	//if ( p1 == p2 ) p2 = p1 + 2;
-
-	unsigned char hg1 = Posdb::getHashGroup ( wpi );
-	unsigned char hg2 = Posdb::getHashGroup ( wpj );
+	unsigned char hg1 = Posdb::getHashGroup(wpi);
+	unsigned char hg2 = Posdb::getHashGroup(wpj);
 
 	unsigned char wsr1 = Posdb::getWordSpamRank(wpi);
 	unsigned char wsr2 = Posdb::getWordSpamRank(wpj);
 
 	float spamw1 ;
 	float spamw2 ;
-	if ( hg1 == HASHGROUP_INLINKTEXT ) spamw1 = s_linkerWeights[wsr1];
-	else                               spamw1 = s_wordSpamWeights[wsr1];
 
-	if ( hg2 == HASHGROUP_INLINKTEXT ) spamw2 = s_linkerWeights[wsr2];
-	else                               spamw2 = s_wordSpamWeights[wsr2];
+	if ( hg1 == HASHGROUP_INLINKTEXT ) {
+		spamw1 = s_linkerWeights[wsr1];
+	}
+	else {
+		spamw1 = s_wordSpamWeights[wsr1];
+	}
+
+	if ( hg2 == HASHGROUP_INLINKTEXT ) {
+		spamw2 = s_linkerWeights[wsr2];
+	}
+	else  {
+		spamw2 = s_wordSpamWeights[wsr2];
+	}
 
 	const char *maxp1;
 	const char *maxp2;
@@ -588,204 +594,203 @@ void PosdbTable::getTermPairScoreForNonBody ( 	const char *wpi,  const char *wpj
 	int32_t  dist;
 	bool  fixedDistance;
 
- loop:
+	for(;;) {
 
-	if ( p1 <= p2 ) {
-		// . skip the pair if they are in different hashgroups
-		// . we no longer allow either to be in the body in this
-		//   algo because we handle those cases in the sliding window
-		//   algo!
-		if ( ! s_isCompatible[hg1][hg2] ) {
-			goto skip1;
-		}
-		
-		// git distance
-		dist = p2 - p1;
-		// if zero, make sure its 2. this happens when the same bigram
-		// is used by both terms. i.e. street uses the bigram 
-		// 'street light' and so does 'light'. so the wordpositions
-		// are exactly the same!
-		if ( dist < 2 ) dist = 2;
-		// fix distance if in different non-body hashgroups
-		if ( dist > 50 ) {
-			dist = FIXED_DISTANCE;
-			fixedDistance = true;
+		if ( p1 <= p2 ) {
+			// . skip the pair if they are in different hashgroups
+			// . we no longer allow either to be in the body in this
+			//   algo because we handle those cases in the sliding window
+			//   algo!
+			if( s_isCompatible[hg1][hg2] ) {
+				// git distance
+				dist = p2 - p1;
+
+				// if zero, make sure its 2. this happens when the same bigram
+				// is used by both terms. i.e. street uses the bigram 
+				// 'street light' and so does 'light'. so the wordpositions
+				// are exactly the same!
+				if ( dist < 2 ) {
+					dist = 2;
+				}
+				
+				// fix distance if in different non-body hashgroups
+				if ( dist > 50 ) {
+					dist = FIXED_DISTANCE;
+					fixedDistance = true;
+				}
+				else {
+					fixedDistance = false;
+				}
+
+				// subtract from the dist the terms are apart in the query
+				if ( dist >= qdist ) {
+					dist =  dist - qdist;
+				}
+				
+				// good density?
+				score = 100 * denw1 * denw2;
+
+				// hashgroup modifier
+				score *= s_hashGroupWeights[hg1];
+				score *= s_hashGroupWeights[hg2];
+
+				// if synonym or alternate word form
+				if ( Posdb::getIsSynonym(wpi) ) {
+					score *= g_conf.m_synonymWeight;
+				}
+				if ( Posdb::getIsSynonym(wpj) ) {
+					score *= g_conf.m_synonymWeight;
+				}
+
+				// word spam weights
+				score *= spamw1 * spamw2;
+				// huge title? do not allow 11th+ word to be weighted high
+				//if ( hg1 == HASHGROUP_TITLE && dist > 20 ) 
+				//	score /= s_hashGroupWeights[hg1];
+				// mod by distance
+				score /= (dist + 1.0);
+				// tmp hack
+				//score *= (dist+1.0);
+				// best?
+				if ( score > max ) {
+					max = score;
+					maxp1 = wpi;
+					maxp2 = wpj;
+				}
+			}		
+
+			// first key is 12 bytes
+			if ( firsti ) { 
+				wpi += 6; 
+				firsti = false; 
+			}
+			
+			// advance
+			wpi += 6;
+			// end of list?
+			if ( wpi >= endi ) {
+				break;	// exit for(;;) loop
+			}
+			
+			// exhausted?
+			if ( Posdb::getKeySize ( wpi ) != 6 ) {
+				break;	// exit for(;;) loop
+			}
+			
+			// update. include G-bits?
+			p1 = Posdb::getWordPos ( wpi );
+			// hash group update
+			hg1 = Posdb::getHashGroup ( wpi );
+			// update density weight in case hash group changed
+			denw1 = s_densityWeights[Posdb::getDensityRank(wpi)];
+			// word spam weight update
+			if ( hg1 == HASHGROUP_INLINKTEXT ) {
+				spamw1=s_linkerWeights[Posdb::getWordSpamRank(wpi)];
+			}
+			else {
+				spamw1=s_wordSpamWeights[Posdb::getWordSpamRank(wpi)];
+			}
 		}
 		else {
-			fixedDistance = false;
-		}
-		// if both are link text and > 50 units apart that means
-		// they are from different link texts
-		//if ( hg1 == HASHGROUP_INLINKTEXT && dist > 50 ) goto skip1;
-		// subtract from the dist the terms are apart in the query
-		if ( dist >= qdist ) dist =  dist - qdist;
-		//else               dist = qdist -  dist;
-		// compute score based on that junk
-		//score = (MAXWORDPOS+1) - dist;
-		// good diversity? uneeded for pair algo
-		//score *= s_diversityWeights[div1];
-		//score *= s_diversityWeights[div2];
-		// good density?
-		score = 100 * denw1 * denw2;
-		// hashgroup modifier
-		score *= s_hashGroupWeights[hg1];
-		score *= s_hashGroupWeights[hg2];
-		// if synonym or alternate word form
-		if ( Posdb::getIsSynonym(wpi) ) score *= g_conf.m_synonymWeight;
-		if ( Posdb::getIsSynonym(wpj) ) score *= g_conf.m_synonymWeight;
-		//if (m_bflags[i] & BF_SYNONYM) score *= g_conf.m_synonymWeight;
-		//if (m_bflags[j] & BF_SYNONYM) score *= g_conf.m_synonymWeight;
+			// . skip the pair if they are in different hashgroups
+			// . we no longer allow either to be in the body in this
+			//   algo because we handle those cases in the sliding window
+			//   algo!
+			if ( s_isCompatible[hg1][hg2] ) {
+				// get distance
+				dist = p1 - p2;
+				// if zero, make sure its 2. this happens when the same bigram
+				// is used by both terms. i.e. street uses the bigram 
+				// 'street light' and so does 'light'. so the wordpositions
+				// are exactly the same!
+				if ( dist < 2 ) dist = 2;
+				// fix distance if in different non-body hashgroups
+				if ( dist > 50 ) {
+					dist = FIXED_DISTANCE;
+					fixedDistance = true;
+				}
+				else {
+					fixedDistance = false;
+				}
 
-		// word spam weights
-		score *= spamw1 * spamw2;
-		// huge title? do not allow 11th+ word to be weighted high
-		//if ( hg1 == HASHGROUP_TITLE && dist > 20 ) 
-		//	score /= s_hashGroupWeights[hg1];
-		// mod by distance
-		score /= (dist + 1.0);
-		// tmp hack
-		//score *= (dist+1.0);
-		// best?
-		if ( score > max ) {
-			max = score;
-			maxp1 = wpi;
-			maxp2 = wpj;
+				// subtract from the dist the terms are apart in the query
+				if ( dist >= qdist ) {
+					dist =  dist - qdist;
+					// add 1 for being out of order
+					dist += qdist - 1;
+				}
+				else {
+					//dist =  dist - qdist;
+					// add 1 for being out of order
+					dist += 1; // qdist - 1;
+				}
+
+				// compute score based on that junk
+				//score = (MAXWORDPOS+1) - dist;
+				// good diversity? uneeded for pair algo
+				//score *= s_diversityWeights[div1];
+				//score *= s_diversityWeights[div2];
+				// good density?
+				score = 100 * denw1 * denw2;
+				// hashgroup modifier
+				score *= s_hashGroupWeights[hg1];
+				score *= s_hashGroupWeights[hg2];
+				// if synonym or alternate word form
+				if ( Posdb::getIsSynonym(wpi) ) score *= g_conf.m_synonymWeight;
+				if ( Posdb::getIsSynonym(wpj) ) score *= g_conf.m_synonymWeight;
+				//if ( m_bflags[i] & BF_SYNONYM ) score *= g_conf.m_synonymWeight;
+				//if ( m_bflags[j] & BF_SYNONYM ) score *= g_conf.m_synonymWeight;
+				// word spam weights
+				score *= spamw1 * spamw2;
+				// huge title? do not allow 11th+ word to be weighted high
+				//if ( hg1 == HASHGROUP_TITLE && dist > 20 ) 
+				//	score /= s_hashGroupWeights[hg1];
+				// mod by distance
+				score /= (dist + 1.0);
+				// tmp hack
+				//score *= (dist+1.0);
+				// best?
+				if ( score > max ) {
+					max = score;
+					maxp1 = wpi;
+					maxp2 = wpj;
+				}
+			}
+
+			// first key is 12 bytes
+			if ( firstj ) { 
+				wpj += 6; 
+				firstj = false; 
+			}
+
+			// advance
+			wpj += 6;
+			// end of list?
+			if ( wpj >= endj ) {
+				break;	// exit for(;;) loop
+			}
+			
+			// exhausted?
+			if ( Posdb::getKeySize(wpj) != 6 ) {
+				break;	// exit for(;;) loop
+			}
+			
+			// update
+			p2 = Posdb::getWordPos(wpj);
+			// hash group update
+			hg2 = Posdb::getHashGroup(wpj);
+			// update density weight in case hash group changed
+			denw2 = s_densityWeights[Posdb::getDensityRank(wpj)];
+			// word spam weight update
+			if ( hg2 == HASHGROUP_INLINKTEXT ) {
+				spamw2=s_linkerWeights[Posdb::getWordSpamRank(wpj)];
+			}
+			else {
+				spamw2=s_wordSpamWeights[Posdb::getWordSpamRank(wpj)];
+			}
 		}
-	skip1:
-		// first key is 12 bytes
-		if ( firsti ) { 
-			wpi += 6; 
-			firsti = false; 
-		}
-		
-		// advance
-		wpi += 6;
-		// end of list?
-		if ( wpi >= endi ) {
-			goto done;
-		}
-		
-		// exhausted?
-		if ( Posdb::getKeySize ( wpi ) != 6 ) {
-			goto done;
-		}
-		
-		// update. include G-bits?
-		p1 = Posdb::getWordPos ( wpi );
-		// hash group update
-		hg1 = Posdb::getHashGroup ( wpi );
-		// update density weight in case hash group changed
-		denw1 = s_densityWeights[Posdb::getDensityRank(wpi)];
-		// word spam weight update
-		if ( hg1 == HASHGROUP_INLINKTEXT )
-			spamw1=s_linkerWeights[Posdb::getWordSpamRank(wpi)];
-		else
-			spamw1=s_wordSpamWeights[Posdb::getWordSpamRank(wpi)];
-		goto loop;
 	}
-	else {
-		// . skip the pair if they are in different hashgroups
-		// . we no longer allow either to be in the body in this
-		//   algo because we handle those cases in the sliding window
-		//   algo!
-		if ( ! s_isCompatible[hg1][hg2] ) {
-			goto skip2;
-		}
-		
-		// get distance
-		dist = p1 - p2;
-		// if zero, make sure its 2. this happens when the same bigram
-		// is used by both terms. i.e. street uses the bigram 
-		// 'street light' and so does 'light'. so the wordpositions
-		// are exactly the same!
-		if ( dist < 2 ) dist = 2;
-		// fix distance if in different non-body hashgroups
-		if ( dist > 50 ) {
-			dist = FIXED_DISTANCE;
-			fixedDistance = true;
-		}
-		else {
-			fixedDistance = false;
-		}
-		// if both are link text and > 50 units apart that means
-		// they are from different link texts
-		//if ( hg1 == HASHGROUP_INLINKTEXT && dist > 50 ) goto skip2;
-		// subtract from the dist the terms are apart in the query
-		if ( dist >= qdist ) {
-			dist =  dist - qdist;
-			// add 1 for being out of order
-			dist += qdist - 1;
-		}
-		else {
-			//dist =  dist - qdist;
-			// add 1 for being out of order
-			dist += 1; // qdist - 1;
-		}
 
-		// compute score based on that junk
-		//score = (MAXWORDPOS+1) - dist;
-		// good diversity? uneeded for pair algo
-		//score *= s_diversityWeights[div1];
-		//score *= s_diversityWeights[div2];
-		// good density?
-		score = 100 * denw1 * denw2;
-		// hashgroup modifier
-		score *= s_hashGroupWeights[hg1];
-		score *= s_hashGroupWeights[hg2];
-		// if synonym or alternate word form
-		if ( Posdb::getIsSynonym(wpi) ) score *= g_conf.m_synonymWeight;
-		if ( Posdb::getIsSynonym(wpj) ) score *= g_conf.m_synonymWeight;
-		//if ( m_bflags[i] & BF_SYNONYM ) score *= g_conf.m_synonymWeight;
-		//if ( m_bflags[j] & BF_SYNONYM ) score *= g_conf.m_synonymWeight;
-		// word spam weights
-		score *= spamw1 * spamw2;
-		// huge title? do not allow 11th+ word to be weighted high
-		//if ( hg1 == HASHGROUP_TITLE && dist > 20 ) 
-		//	score /= s_hashGroupWeights[hg1];
-		// mod by distance
-		score /= (dist + 1.0);
-		// tmp hack
-		//score *= (dist+1.0);
-		// best?
-		if ( score > max ) {
-			max = score;
-			maxp1 = wpi;
-			maxp2 = wpj;
-		}
-	skip2:
-		// first key is 12 bytes
-		if ( firstj ) { wpj += 6; firstj = false; }
-		// advance
-		wpj += 6;
-		// end of list?
-		if ( wpj >= endj ) {
-			goto done;
-		}
-		
-		// exhausted?
-		if ( Posdb::getKeySize ( wpj ) != 6 ) {
-			goto done;
-		}
-		
-		// update
-		p2 = Posdb::getWordPos ( wpj );
-		// hash group update
-		hg2 = Posdb::getHashGroup ( wpj );
-		// update density weight in case hash group changed
-		denw2 = s_densityWeights[Posdb::getDensityRank(wpj)];
-		// word spam weight update
-		if ( hg2 == HASHGROUP_INLINKTEXT )
-			spamw2=s_linkerWeights[Posdb::getWordSpamRank(wpj)];
-		else
-			spamw2=s_wordSpamWeights[Posdb::getWordSpamRank(wpj)];
-		goto loop;
-	}
-
- done:
-
-	//if ( max < *retMax ) return;
-	//if ( max > 0 ) 
-	//	log("posdb: ret score = %f",max);
 	*retMax = max;
 	logTrace(g_conf.m_logTracePosdb, "END.");
 }
