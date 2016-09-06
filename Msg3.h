@@ -61,9 +61,7 @@ class Msg3 {
 			 int32_t           retryNum      , // = 0             ,
 			 int32_t           maxRetries    , // = -1
 			 bool           compensateForMerge ,
-			 bool           justGetEndKey = false ,
-			 bool           allowPageCache = true ,
-			 bool           hitDisk        = true );
+			 bool           justGetEndKey = false);
 
 	// for retrieving unmerged lists
 	RdbList        *getList ( int32_t i )       { return &m_scan[i].m_list; }
@@ -164,14 +162,9 @@ private:
 	int32_t  m_numChunks;
 	char  m_ks;
 
-	// for allowing the page cache
-	bool  m_allowPageCache;
-
 	bool  m_listsChecked;
 
 	bool  m_hadCorruption;
-
-	bool  m_hitDisk;
 
 	void *m_state;
 	void (*m_callback)(void *state);

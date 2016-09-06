@@ -366,8 +366,7 @@ bool Msg5::readList ( ) {
 					   0                , // retry num
 					   m_maxRetries     , // -1=def
 					   m_compensateForMerge ,
-					   true                 , // just get endKey?
-					   allowPageCache     );
+					   true);             // just get endKey?
 			if ( g_errno ) {
 				log("db: Msg5: getting endKey: %s",mstrerror(g_errno));
 				return true;
@@ -535,9 +534,7 @@ bool Msg5::readList ( ) {
 					  0                , // retry num
 					  m_maxRetries     , // max retries (-1=def)
 					  m_compensateForMerge ,
-					  false                ,
-					  m_allowPageCache     ,
-					  true             ))
+					  false))
 			return false;
 		// . this returns false if blocked, true otherwise
 		// . sets g_errno on error

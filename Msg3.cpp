@@ -163,9 +163,7 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		       int32_t           retryNum      ,
 		       int32_t           maxRetries    ,
 		       bool           compensateForMerge ,
-		       bool           justGetEndKey ,
-		       bool           allowPageCache ,
-		       bool           hitDisk        ) {
+		       bool           justGetEndKey) {
 
 	// set this to true to validate
 	m_validateCache = false;//true;
@@ -194,8 +192,6 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 	m_retryNum           = retryNum;
 	m_maxRetries         = maxRetries;
 	m_compensateForMerge = compensateForMerge;
-	m_allowPageCache     = allowPageCache;
-	m_hitDisk            = hitDisk;
 	m_hadCorruption      = false;
 	// get keySize of rdb
 	m_ks = getKeySizeFromRdbId ( m_rdbId );
@@ -561,7 +557,6 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		////////
 		BigFile *ff = base->getFile(m_scan[i].m_fileNum);
 		RdbCache *rpc = getDiskPageCache ( m_rdbId );
-		if ( ! m_allowPageCache ) rpc = NULL;
 		// . vfd is unique 64 bit file id
 		// . if file is opened vfd is -1, only set in call to open()
 		int64_t vfd = ff->getVfd();
@@ -601,7 +596,7 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		// . this will set g_errno on error
 		bool done = m_scan[i].m_scan.setRead( base->getFile(m_scan[i].m_fileNum), base->m_fixedDataSize, offset, bytesToRead,
 		                                startKey2, endKey2, m_ks, &m_scan[i].m_list, this, doneScanningWrapper,
-		                                base->useHalfKeys(), m_rdbId, m_niceness, m_allowPageCache, m_hitDisk ) ;
+		                                base->useHalfKeys(), m_rdbId, m_niceness, true, true);
 
 		// debug msg
 		//fprintf(stderr,"Msg3:: reading %" PRId32" bytes from file #%" PRId32","
@@ -920,7 +915,6 @@ bool Msg3::doneScanning ( ) {
 
 		// compute cache info
 		RdbCache *rpc = getDiskPageCache ( m_rdbId );
-		if ( ! m_allowPageCache ) rpc = NULL;
 		int64_t vfd ;
 		if ( ff ) vfd = ff->getVfd();
 		key192_t ck ;
@@ -1018,9 +1012,7 @@ bool Msg3::doneSleeping ( ) {
 			  m_retryNum         ,
 			  m_maxRetries       ,
 			  m_compensateForMerge ,
-			  false                ,
-			  m_allowPageCache     ,
-			  m_hitDisk            ) ) return false;
+			  false                ) ) return false;
 	return true;
 }
 
