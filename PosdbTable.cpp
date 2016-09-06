@@ -2725,16 +2725,6 @@ void PosdbTable::intersectLists10_r ( ) {
 	int32_t qdist;
 	float wts;
 	float pss;
-	float maxNonBodyScore;
-	// new vars for removing supplanted docid score infos and
-	// corresponding pair and single score infos
-//	char *sx;
-//	char *sxEnd;
-//	int32_t pairOffset;
-//	int32_t pairSize;
-//	int32_t singleOffset;
-//	int32_t singleSize;
-
 	// scan the posdb keys in the smallest list
 	// raised from 200 to 300,000 for 'da da da' query
 	char mbuf[300000];
@@ -3520,7 +3510,6 @@ handleNextDocId:
 		// SINGLE TERM SCORE LOOP
 		//
 		//
-		maxNonBodyScore = -2.0;
 		minSingleScore = 999999999.0;
 		// . now add single word scores
 		// . having inlink text from siterank 15 of max 
