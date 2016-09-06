@@ -244,6 +244,8 @@ class PosdbTable {
 				    int32_t qdist ,
 				    const QueryTermInfo *qtm ) ;
 
+	int64_t getTotalHits() const { return m_docIdVoteBuf.length() / 6; }
+
 	// stuff set in setQueryTermInf() function:
 	SafeBuf              m_qiBuf;
 	int32_t                 m_numQueryTermInfos;

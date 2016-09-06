@@ -395,7 +395,7 @@ bool Msg39::controlLoop ( ) {
 			g_stats.addStat_r ( 0, m_posdbTable.m_t1, m_posdbTable.m_t2, 0x0000ff00 );
 		}
 		// accumulate total hits count over each docid split
-		m_numTotalHits += m_posdbTable.m_docIdVoteBuf.length() / 6;
+		m_numTotalHits += m_posdbTable.getTotalHits();
 		// minus the shit we filtered out because of gbminint/gbmaxint/
 		// gbmin/gbmax/gbsortby/gbrevsortby/gbsortbyint/gbrevsortbyint
 		m_numTotalHits -= m_posdbTable.m_filtered;
