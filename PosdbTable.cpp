@@ -235,31 +235,25 @@ void PosdbTable::evalSlidingWindow ( char    **ptrs,
 		}
 
 		// this will be -1 if wpi or wpj is NULL
-		float max = getTermPairScoreForWindow ( i,j,wpi, wpj, 0 );
+		float max = getTermPairScoreForWindow ( wpi, wpj, 0 );
 
 		// try sub-ing in the best title occurence or best
 		// inlink text occurence. cuz if the term is in the title
 		// but these two terms are really far apart, we should
 		// get a better score
-		float score = getTermPairScoreForWindow ( i,j,bestPos[i], 
-							  wpj,
-							  FIXED_DISTANCE );
+		float score = getTermPairScoreForWindow ( bestPos[i], wpj, FIXED_DISTANCE );
 		if ( score > max ) {
 			max   = score;
 		}
 
 		// a double pair sub should be covered in the 
 		// getTermPairScoreForNonBody() function
-		score = getTermPairScoreForWindow ( i,j,bestPos[i], 
-						    bestPos[j],
-						    FIXED_DISTANCE );
+		score = getTermPairScoreForWindow ( bestPos[i], bestPos[j], FIXED_DISTANCE );
 		if ( score > max ) {
 			max   = score;
 		}
 
-		score = getTermPairScoreForWindow ( i,j,wpi, 
-						    bestPos[j],
-						    FIXED_DISTANCE );
+		score = getTermPairScoreForWindow ( wpi, bestPos[j], FIXED_DISTANCE );
 		if ( score > max ) {
 			max   = score;
 		}
@@ -553,12 +547,8 @@ float PosdbTable::getSingleTermScore ( int32_t     i,
 
 // . advace two ptrs at the same time so it's just a linear scan
 // . TODO: add all up, then basically taking a weight of the top 6 or so...
-void PosdbTable::getTermPairScoreForNonBody ( int32_t i, int32_t j,
-					      const char *wpi,  const char *wpj,
-					      const char *endi, const char *endj,
-					      int32_t qdist,
-					      float *retMax ) {
-
+void PosdbTable::getTermPairScoreForNonBody ( 	const char *wpi,  const char *wpj, const char *endi, 
+												const char *endj, int32_t qdist, float *retMax ) {
 	logTrace(g_conf.m_logTracePosdb, "BEGIN.");
 
 	int32_t p1 = Posdb::getWordPos ( wpi );
@@ -802,13 +792,7 @@ void PosdbTable::getTermPairScoreForNonBody ( int32_t i, int32_t j,
 
 
 
-float PosdbTable::getTermPairScoreForWindow ( int32_t i,
-					      int32_t j,
-					      const char *wpi,
-					      const char *wpj,
-					      int32_t fixedDistance ) {
-
-
+float PosdbTable::getTermPairScoreForWindow( const char *wpi, const char *wpj, int32_t fixedDistance ) {
 	logTrace(g_conf.m_logTracePosdb, "BEGIN.");
 
 	if ( ! wpi ) {
@@ -2733,24 +2717,14 @@ void PosdbTable::intersectLists10_r ( ) {
 	int highestInlinkSiteRank = -1;
 	char docLang =0;
 	float score;
-	int32_t intScore;
-	float minScore;
+	int32_t intScore = 0;
+	float minScore = 0.0;
 	float minPairScore;
 	float minSingleScore;
 	m_bflags = bflags;
 	int32_t qdist;
 	float wts;
 	float pss;
-	float maxNonBodyScore;
-	// new vars for removing supplanted docid score infos and
-	// corresponding pair and single score infos
-//	char *sx;
-//	char *sxEnd;
-//	int32_t pairOffset;
-//	int32_t pairSize;
-//	int32_t singleOffset;
-//	int32_t singleSize;
-
 	// scan the posdb keys in the smallest list
 	// raised from 200 to 300,000 for 'da da da' query
 	char mbuf[300000];
@@ -2951,7 +2925,7 @@ handleNextDocId:
 					// -1 means it has inlink text so do not apply this constraint
 					// to this docid because it is too difficult because we
 					// sum up the inlink text
-					if ( maxScore == -1.0 ) {
+					if ( maxScore < 0.0 ) {
 						continue;
 					}
 					
@@ -3140,7 +3114,7 @@ handleNextDocId:
 					// -1 means it has inlink text so do not apply this constraint
 					// to this docid because it is too difficult because we
 					// sum up the inlink text
-					if ( maxScore2 == -1.0 ) {
+					if ( maxScore2 < 0.0 ) {
 						continue;
 					}
 					
@@ -3502,9 +3476,7 @@ handleNextDocId:
 				// get score for term pair from non-body occuring terms
 				//
 				if ( miniMergedList[i] && miniMergedList[j] )
-					getTermPairScoreForNonBody(i,
-								   j,
-								   miniMergedList[i],
+					getTermPairScoreForNonBody( miniMergedList[i],
 								   miniMergedList[j],
 								   miniMergedEnd[i],
 								   miniMergedEnd[j],
@@ -3538,7 +3510,6 @@ handleNextDocId:
 		// SINGLE TERM SCORE LOOP
 		//
 		//
-		maxNonBodyScore = -2.0;
 		minSingleScore = 999999999.0;
 		// . now add single word scores
 		// . having inlink text from siterank 15 of max 
@@ -4132,7 +4103,7 @@ float PosdbTable::getMaxPossibleScore ( const QueryTermInfo *qti,
 
 	// get max score of all sublists
 	float bestHashGroupWeight = -1.0;
-	unsigned char bestDensityRank;
+	unsigned char bestDensityRank = 0;
 	char siteRank = -1;
 	char docLang;
 	unsigned char hgrp;
@@ -4202,7 +4173,7 @@ float PosdbTable::getMaxPossibleScore ( const QueryTermInfo *qti,
 				continue;
 			}
 			
-			char dr = Posdb::getDensityRank(dc);
+			unsigned char dr = Posdb::getDensityRank(dc);
 			
 			// a clean win?
 			if ( s_hashGroupWeights[hgrp] > bestHashGroupWeight ) {
@@ -4819,7 +4790,10 @@ void PosdbTable::delDocIdVotes ( const QueryTermInfo *qti ) {
 			subListPtr += 12;
 			// skip any following keys that are 6 bytes, that means they
 			// share the same docid
-			for ( ; subListPtr < subListEnd && ((*subListPtr)&0x04); subListPtr += 6 );
+			for ( ; subListPtr < subListEnd && ((*subListPtr)&0x04); ) {
+				subListPtr += 6;
+			}
+
 			// if we have more posdb recs in this sublist, then keep
 			// adding our docid votes into the docid list
 		}
@@ -4991,7 +4965,9 @@ void PosdbTable::addDocIdVotes( const QueryTermInfo *qti, int32_t listGroupNum) 
 
 		// skip any following keys that are 6 bytes, that means they
 		// share the same docid
-		for ( ; subListPtr < subListEnd && ((*subListPtr)&0x04); subListPtr += 6 );
+		for ( ; subListPtr < subListEnd && ((*subListPtr)&0x04); ) {
+			subListPtr += 6;
+		}
 		
 		// if we have more posdb recs in this sublist, then keep
 		// adding our docid votes into the docid list
@@ -5583,9 +5559,12 @@ static inline char *getWordPosList ( int64_t docId, char *list, int32_t listSize
 	char *origp = p;
 	// scan up to docid. we use this special bit to distinguish between
 	// 6-byte and 12-byte posdb keys
-	for ( ; p > list && (p[1] & 0x02) ; p -= 6 );
+	for ( ; p > list && (p[1] & 0x02); ) {
+		p -= 6;
+	}
 	// ok, we hit a 12 byte key i guess, so backup 6 more
 	p -= 6;
+
 	// ok, we got a 12-byte key then i guess
 	int64_t d = Posdb::getDocId ( p );
 	// we got a match, but it might be a NEGATIVE key so
@@ -5599,10 +5578,14 @@ static inline char *getWordPosList ( int64_t docId, char *list, int32_t listSize
 		char *current = p;
 		// back up to 6 byte key before this 12 byte key
 		p -= 6;
+
 		// now go backwards to previous 12 byte key
-		for ( ; p > list && (p[1] & 0x02) ; p -= 6 );
+		for ( ; p > list && (p[1] & 0x02); ) {
+			p -= 6;
+		}
 		// ok, we hit a 12 byte key i guess, so backup 6 more
 		p -= 6;
+
 		// is it there?
 		if ( p >= list && Posdb::getDocId(p) == docId ) {
 			// sanity. return NULL if its negative! wtf????
@@ -5615,7 +5598,10 @@ static inline char *getWordPosList ( int64_t docId, char *list, int32_t listSize
 		// advance over current 12 byte key
 		p += 12;
 		// now go forwards to next 12 byte key
-		for ( ; p < listEnd && (p[1] & 0x02) ; p += 6 );
+		for ( ; p < listEnd && (p[1] & 0x02); ) {
+			p += 6;
+		}
+
 		// is it there?
 		if ( p + 12 < listEnd && Posdb::getDocId(p) == docId ) {
 			// sanity. return NULL if its negative! wtf????

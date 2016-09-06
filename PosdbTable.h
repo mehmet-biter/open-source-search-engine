@@ -90,11 +90,8 @@ class PosdbTable {
 	// pre-allocate memory since intersection runs in a thread
 	bool allocTopScoringDocIdsData();
 
-	void  getTermPairScoreForNonBody   ( int32_t i, int32_t j,
-					     const char *wpi,  const char *wpj, 
-					     const char *endi, const char *endj,
-					     int32_t qdist ,
-					     float *retMax );
+	void  getTermPairScoreForNonBody( 	const char *wpi,  const char *wpj, const char *endi, const char *endj,
+					     				int32_t qdist, float *retMax );
 	float getSingleTermScore ( int32_t i, char *wpi , char *endi,
 				   DocIdScore *pdcs,
 				   char **bestPos );
@@ -103,11 +100,7 @@ class PosdbTable {
 				 int32_t   nr , 
 				 char **bestPos ,
 				 float *scoreMatrix );
-	float getTermPairScoreForWindow ( int32_t i, int32_t j,
-					  const char *wpi,
-					  const char *wpj,
-					  int32_t fixedDistance
-					  );
+	float getTermPairScoreForWindow( const char *wpi, const char *wpj, int32_t fixedDistance);
 
 	float getTermPairScoreForAny   ( int32_t i, int32_t j,
 					 const char *wpi, const char *wpj, 
@@ -243,6 +236,8 @@ class PosdbTable {
 				    int32_t bestDist ,
 				    int32_t qdist ,
 				    const QueryTermInfo *qtm ) ;
+
+	int64_t getTotalHits() const { return m_docIdVoteBuf.length() / 6; }
 
 	// stuff set in setQueryTermInf() function:
 	SafeBuf              m_qiBuf;

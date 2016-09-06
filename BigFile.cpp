@@ -385,8 +385,8 @@ bool BigFile::addPart ( int32_t n ) {
 }
 
 
-bool BigFile::doesExist ( ) {
-	return m_numParts;
+bool BigFile::doesExist() const {
+	return m_numParts != 0;
 }
 
 
@@ -511,7 +511,7 @@ int BigFile::getfd ( int32_t n , bool forReading ) {
 // . return -2 on error
 // . return -1 if does not exist
 // . otherwise return the big file's complete file size (can be well over 2gb)
-int64_t BigFile::getFileSize ( ) {
+int64_t BigFile::getFileSize() const {
 	// return if already computed
 	if ( m_fileSize >= 0 ) {
 		return m_fileSize;
@@ -521,7 +521,7 @@ int64_t BigFile::getFileSize ( ) {
 	int64_t totalSize = 0;
 	for ( int32_t n = 0 ; n < m_maxParts ; n++ ) {
 		// shortcut
-		File *f = getFile2(n);
+		const File *f = getFile2(n);
 		// we can have headless big files... count the heads.
 		// this can happen if the first Files were deleted because
 		// of an ongoing merge operation.
@@ -580,13 +580,10 @@ bool BigFile::read  ( void       *buf    ,
 		      void       *state  ,
 		      void      (* callback)(void *state) ,
 		      int32_t        niceness                ,
-		      bool        allowPageCache ,
-		      bool        hitDisk        ,
 		      int32_t        allocOff  ) {
 	g_errno = 0;
 	return readwrite ( buf , size , offset , false/*doWrite?*/, 
-			   fs  , state, callback , niceness , allowPageCache ,
-			   hitDisk , allocOff );
+			   fs  , state, callback , niceness , allocOff );
 }
 
 
@@ -598,8 +595,7 @@ bool BigFile::write ( void       *buf    ,
 		      FileState  *fs     ,
 		      void       *state  ,
 		      void      (* callback)(void *state) ,
-		      int32_t        niceness                ,
-		      bool        allowPageCache ) {
+		      int32_t        niceness) {
 	// sanity check
 	if ( g_conf.m_readOnlyMode ) {
 		logf(LOG_DEBUG,"disk: BigFile: Trying to write while in "
@@ -608,8 +604,7 @@ bool BigFile::write ( void       *buf    ,
 	}
 	g_errno = 0;
 	return readwrite ( buf , size , offset , true/*doWrite?*/ , 
-			   fs  , state, callback , niceness , allowPageCache ,
-			   true , 0 );
+			   fs  , state, callback , niceness , 0 );
 }
 
 
@@ -632,8 +627,6 @@ bool BigFile::readwrite ( void         *buf      ,
 			  void         *state    ,
 			  void        (* callback) ( void *state ) ,
 			  int32_t          niceness ,
-			  bool          allowPageCache ,
-			  bool          hitDisk        ,
 			  int32_t          allocOff ) {
 	// are we blocking?
 	bool isNonBlocking = m_flags & O_NONBLOCK;
@@ -668,10 +661,6 @@ bool BigFile::readwrite ( void         *buf      ,
 
 	// reset this
 	fstate->m_errno = 0;
-	fstate->m_inPageCache = false;
-	// sanity check. if you set hitDisk to false, you must allow
-	// us to check the page cache! silly bean!
-	if ( ! allowPageCache && ! hitDisk ) gbshutdownLogicError();
 	// set up fstate
 	fstate->m_bigfile     = this;
 	// buf may be NULL if caller passed in a NULL "buf" and it did not hit 
@@ -760,8 +749,6 @@ bool BigFile::readwrite ( void         *buf      ,
 	fstate->m_errno       = 0;
 	fstate->m_startTime   = gettimeofdayInMilliseconds();
 	fstate->m_vfd         = m_vfd;
-	// if hitDisk was false we only check the page cache!
-	if ( ! hitDisk ) return true;
 
 	// . if we're blocking then do it now
 	// . this should return false and set g_errno on error, true otherwise
@@ -899,6 +886,9 @@ void doneWrapper ( void *state, job_exit_t exit_type ) {
 
 	if( exit_type != job_exit_normal ) {
 		log(LOG_INFO, "disk: Read canceled due to JobScheduler exit type %d.", (int)exit_type);
+		//call calback with m-errno set
+		fstate->m_errno = ECLOSING;
+		fstate->m_callback ( fstate->m_state );
 		return;
 	}
 

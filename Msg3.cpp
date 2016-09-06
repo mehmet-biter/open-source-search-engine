@@ -192,9 +192,7 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		       int32_t           retryNum      ,
 		       int32_t           maxRetries    ,
 		       bool           compensateForMerge ,
-		       bool           justGetEndKey ,
-		       bool           allowPageCache ,
-		       bool           hitDisk        ) {
+		       bool           justGetEndKey) {
 	verify_signature();
 
 	// set this to true to validate
@@ -224,8 +222,6 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 	m_retryNum           = retryNum;
 	m_maxRetries         = maxRetries;
 	m_compensateForMerge = compensateForMerge;
-	m_allowPageCache     = allowPageCache;
-	m_hitDisk            = hitDisk;
 	m_hadCorruption      = false;
 	// get keySize of rdb
 	m_ks = getKeySizeFromRdbId ( m_rdbId );
@@ -598,42 +594,40 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		////////
 		m_scan[i].m_scan.m_inPageCache = false;
 		BigFile *ff = base->getFile(m_scan[i].m_fileNum);
-		if ( m_allowPageCache ) {
-			RdbCache *rpc = getDiskPageCache ( m_rdbId );
-			if(rpc) {
-				// . vfd is unique 64 bit file id
-				// . if file is opened vfd is -1, only set in call to open()
-				int64_t vfd = ff->getVfd();
-				key192_t ck = makeCacheKey ( vfd , offset, bytesToRead);
-				char *rec; int32_t recSize;
-				bool inCache = false;
-				RdbCacheLock rcl(*rpc);
-				if ( vfd != -1 && ! m_validateCache ) 
-					inCache = rpc->getRecord ( (collnum_t)0 , // collnum
-								(char *)&ck , 
-								&rec , 
-								&recSize ,
-								true , // copy?
-								-1 , // maxAge, none 
-								true ); // inccounts?
-				if ( inCache ) {
-					m_scan[i].m_scan.m_inPageCache = true;
-					incrementScansCompleted();
-					// now we have to store this value, 6 or 12 so
-					// we can modify the hint appropriately
-					m_scan[i].m_scan.m_shifted = *rec;
-					m_scan[i].m_list.set ( rec +1,
-							recSize-1 ,
-							rec , // alloc
-							recSize , // allocSize
-							startKey2 ,
-							endKey2 ,
-							base->m_fixedDataSize ,
-							true , // owndata
-							base->useHalfKeys() ,
-							getKeySizeFromRdbId ( m_rdbId ) );
-					continue;
-				}
+		RdbCache *rpc = getDiskPageCache ( m_rdbId );
+		if(rpc) {
+			// . vfd is unique 64 bit file id
+			// . if file is opened vfd is -1, only set in call to open()
+			int64_t vfd = ff->getVfd();
+			key192_t ck = makeCacheKey ( vfd , offset, bytesToRead);
+			char *rec; int32_t recSize;
+			bool inCache = false;
+			RdbCacheLock rcl(*rpc);
+			if ( vfd != -1 && ! m_validateCache ) 
+				inCache = rpc->getRecord ( (collnum_t)0 , // collnum
+							(char *)&ck , 
+							&rec , 
+							&recSize ,
+							true , // copy?
+							-1 , // maxAge, none 
+							true ); // inccounts?
+			if ( inCache ) {
+				m_scan[i].m_scan.m_inPageCache = true;
+				incrementScansCompleted();
+				// now we have to store this value, 6 or 12 so
+				// we can modify the hint appropriately
+				m_scan[i].m_scan.m_shifted = *rec;
+				m_scan[i].m_list.set ( rec +1,
+						recSize-1 ,
+						rec , // alloc
+						recSize , // allocSize
+						startKey2 ,
+						endKey2 ,
+						base->m_fixedDataSize ,
+						true , // owndata
+						base->useHalfKeys() ,
+						getKeySizeFromRdbId ( m_rdbId ) );
+				continue;
 			}
 		}
 		
@@ -643,7 +637,7 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		// . this will set g_errno on error
 		bool done = m_scan[i].m_scan.setRead( base->getFile(m_scan[i].m_fileNum), base->m_fixedDataSize, offset, bytesToRead,
 		                                startKey2, endKey2, m_ks, &m_scan[i].m_list, this, doneScanningWrapper,
-		                                base->useHalfKeys(), m_rdbId, m_niceness, m_allowPageCache, m_hitDisk ) ;
+		                                base->useHalfKeys(), m_rdbId, m_niceness, true, true);
 
 						// debug msg
 		//fprintf(stderr,"Msg3:: reading %" PRId32" bytes from file #%" PRId32","
@@ -979,7 +973,6 @@ bool Msg3::doneScanning ( ) {
 
 		// compute cache info
 		RdbCache *rpc = getDiskPageCache ( m_rdbId );
-		if ( ! m_allowPageCache ) rpc = NULL;
 		int64_t vfd ;
 		if ( ff ) vfd = ff->getVfd();
 		key192_t ck ;
@@ -1086,9 +1079,7 @@ bool Msg3::doneSleeping ( ) {
 			  m_retryNum         ,
 			  m_maxRetries       ,
 			  m_compensateForMerge ,
-			  false                ,
-			  m_allowPageCache     ,
-			  m_hitDisk            ) ) return false;
+			  false                ) ) return false;
 	return true;
 }
 

@@ -1706,7 +1706,7 @@ int main2 ( int argc , char *argv[] ) {
 	// move the log file name logxxx to logxxx-2016_03_16-14:59:24
 	// we did the test bind so no gb process is bound on the port yet
 	// TODO: probably should bind on the port before doing this
-	if ( doesFileExist ( g_hostdb.m_logFilename ) ) {
+	if( access(g_hostdb.m_logFilename,F_OK)==0 ) {
 		char tmp2[128];
 		SafeBuf newName(tmp2,128);
 		time_t ts = getTimeLocal();

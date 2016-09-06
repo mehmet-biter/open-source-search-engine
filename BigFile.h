@@ -46,8 +46,6 @@ public:
 	void          (*m_callback) ( void *state ) ;
 	// goes from 0 to 1, the lower the niceness, the higher the priority
 	int32_t            m_niceness;
-	// was it found in the disk page cache?
-	char m_inPageCache;
 
 	// . we get our fds before starting the read thread to avoid
 	//   problems with accessing m_files since RdbMerge may call unlinkPart
@@ -100,8 +98,7 @@ class BigFile {
 	//   "dir" and "stripeDir"
 	bool set ( const char *dir, const char *baseFilename, const char *stripeDir = NULL );
 
-	// self explanatory
-	bool doesExist ( ) ;
+	bool doesExist() const;
 
 	// does file part #n exist?
 	bool doesPartExist ( int32_t n ) ;
@@ -122,8 +119,8 @@ class BigFile {
 	// . return -2 on error
 	// . return -1 if does not exist
 	// . otherwise return the big file's complete file size (can b >2gb)
-	int64_t getFileSize ( );
-	int64_t getSize     ( ) { return getFileSize(); }
+	int64_t getFileSize() const;
+	int64_t getSize() const { return getFileSize(); }
 
 	// use the base filename as our filename
 	char       *getFilename()       { return m_baseFilename.getBufStart(); }
@@ -142,8 +139,6 @@ class BigFile {
 		     void       *state                   = NULL , 
 		     void      (* callback)(void *state) = NULL ,
 		     int32_t        niceness                = 1    ,
-		     bool        allowPageCache          = true ,
-		     bool        hitDisk                 = true ,
 		     int32_t        allocOff                = 0    );
 
 	// . returns false if blocked, true otherwise
@@ -157,8 +152,7 @@ class BigFile {
 		      FileState  *fs                      = NULL , 
 		      void       *state                   = NULL , 
 		      void      (* callback)(void *state) = NULL ,
-		      int32_t       niceness                 = 1    ,
-		      bool       allowPageCache           = true );
+		      int32_t       niceness                 = 1);
 
 	// unlinks all part files
 	bool unlink ( );
@@ -190,7 +184,7 @@ class BigFile {
 	bool closeFds ( ) ;
 
 	// what part (little File) of this BigFile has offset "offset"?
-	int getPartNum ( int64_t offset ) { return offset / MAX_PART_SIZE; }
+	int getPartNum(int64_t offset) const { return offset / MAX_PART_SIZE; }
 
 	// . opens the nth file if necessary to get it's fd
 	// . returns -1 if none, >=0 on success
@@ -199,7 +193,7 @@ class BigFile {
 	int32_t       getVfd       ( ) { return m_vfd; }
 
 	// WARNING: some may have been unlinked from call to unlinkPart()
-	int32_t getNumParts ( ) { return m_numParts; }
+	int32_t getNumParts() const { return m_numParts; }
 
 private:
 	// makes the filename of part file #n
@@ -243,8 +237,6 @@ private:
 			 void       *state    ,
 			 void      (* callback) ( void *state ) ,
 			 int32_t        niceness ,
-			 bool        allowPageCache ,
-			 bool        hitDisk        ,
 			 int32_t        allocOff       );
 
 	// . returns false if blocked, true otherwise
@@ -302,6 +294,9 @@ public:
 		// this will be NULL if addPart(n) never called
 		return f;
 	}
+	const File *getFile2(int32_t n) const {
+		return const_cast<BigFile*>(this)->getFile2(n);
+	}
 
 	bool reset ( );
 
@@ -313,7 +308,7 @@ public:
 	// prevent circular calls to BigFile::close() with this
 	bool m_isClosing;
 
-	int64_t m_fileSize;
+	mutable int64_t m_fileSize;
 
 	// oldest of the last modified dates of all the part files
 	time_t m_lastModified;
