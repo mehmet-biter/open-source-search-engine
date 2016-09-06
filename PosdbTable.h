@@ -102,8 +102,7 @@ class PosdbTable {
 	void evalSlidingWindow ( char **ptrs , 
 				 int32_t   nr , 
 				 char **bestPos ,
-				 float *scoreMatrix  ,
-				 int32_t   advancedTermNum );
+				 float *scoreMatrix );
 	float getTermPairScoreForWindow ( int32_t i, int32_t j,
 					  const char *wpi,
 					  const char *wpj,

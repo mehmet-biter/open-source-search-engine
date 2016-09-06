@@ -71,7 +71,7 @@ void PosdbTable::reset() {
 	// has init() been called?
 	m_initialized          = false;
 	m_estimatedTotalHits   = -1;
-	freeMem();
+	//freeMem(); // not implemented
 	// does not free the mem of this safebuf, only resets length
 	m_docIdVoteBuf.reset();
 	m_filtered = 0;
@@ -167,18 +167,11 @@ void PosdbTable::init(Query *q, bool debug, void *logstate, TopTree *topTree, Ms
 void PosdbTable::evalSlidingWindow ( char    **ptrs,
 				     int32_t   nr,
 				     char    **bestPos,
-				     float    *scoreMatrix,
-				     int32_t   advancedTermNum ) {
+				     float    *scoreMatrix ) {
 
 	char *wpi;
 	char *wpj;
 	float wikiWeight;
-	char *maxp1 = NULL;
-	char *maxp2;
-	//bool fixedDistance;
-	//char *winners1[MAX_QUERY_TERMS*MAX_QUERY_TERMS];
-	//char *winners2[MAX_QUERY_TERMS*MAX_QUERY_TERMS];
-	//float scores  [MAX_QUERY_TERMS*MAX_QUERY_TERMS];
 	float minTermPairScoreInWindow = 999999999.0;
 
 
@@ -186,10 +179,7 @@ void PosdbTable::evalSlidingWindow ( char    **ptrs,
 
 	// TODO: only do this loop on the (i,j) pairs where i or j
 	// is the term whose position got advanced in the sliding window.
-	// advancedTermNum is -1 on the very first sliding window so we
-	// establish our max scores into the scoreMatrix.
 	int32_t maxi = nr;
-	//if ( advancedTermNum >= 0 ) maxi = advancedTermNum + 1;
 
 	for ( int32_t i = 0 ; i < maxi ; i++ ) {
 
@@ -208,10 +198,6 @@ void PosdbTable::evalSlidingWindow ( char    **ptrs,
 		// to save time.
 		int32_t j = i + 1;
 		int32_t maxj = nr;
-		//if ( advancedTermNum >= 0 && i != advancedTermNum ) {
-		//	j = advancedTermNum;
-		//	maxj = j+1;
-		//}
 
 	// loop over other terms
 	for ( ; j < maxj ; j++ ) {
@@ -259,15 +245,7 @@ void PosdbTable::evalSlidingWindow ( char    **ptrs,
 							  wpj,
 							  FIXED_DISTANCE );
 		if ( score > max ) {
-			maxp1 = bestPos[i];
-			maxp2 = wpj;
 			max   = score;
-			//fixedDistance = true;
-		}
-		else {
-			maxp1 = wpi;
-			maxp2 = wpj;
-			//fixedDistance = false;
 		}
 
 		// a double pair sub should be covered in the 
@@ -276,20 +254,14 @@ void PosdbTable::evalSlidingWindow ( char    **ptrs,
 						    bestPos[j],
 						    FIXED_DISTANCE );
 		if ( score > max ) {
-			maxp1 = bestPos[i];
-			maxp2 = bestPos[j];
 			max   = score;
-			//fixedDistance = true;
 		}
 
 		score = getTermPairScoreForWindow ( i,j,wpi, 
 						    bestPos[j],
 						    FIXED_DISTANCE );
 		if ( score > max ) {
-			maxp1 = wpi;
-			maxp2 = bestPos[j];
 			max   = score;
-			//fixedDistance = true;
 		}
 
 		// wikipedia phrase weight
@@ -301,20 +273,7 @@ void PosdbTable::evalSlidingWindow ( char    **ptrs,
 		// use score from scoreMatrix if bigger
 		if ( scoreMatrix[m_nqt*i+j] > max ) {
 			max = scoreMatrix[m_nqt*i+j];
-			//if ( m_ds ) {
-			//	winners1[i*MAX_QUERY_TERMS+j] = NULL;
-			//	winners2[i*MAX_QUERY_TERMS+j] = NULL;
-			//}
 		}
-		// if we end up selecting this window we will want to know
-		// the term pair scoring information, but only if we
-		// did not take the score from the scoreMatrix, which only
-		// contains non-body term pairs.
-		//else if ( m_ds ) {
-		//	winners1[i*MAX_QUERY_TERMS+j] = maxp1;
-		//	winners2[i*MAX_QUERY_TERMS+j] = maxp2;
-		//	scores  [i*MAX_QUERY_TERMS+j] = max;
-		//}
 
 
 		// in same quoted phrase?
@@ -329,15 +288,12 @@ void PosdbTable::evalSlidingWindow ( char    **ptrs,
 			}
 			else {
 				int32_t qdist = m_qpos[j] - m_qpos[i];
-				int32_t p1 = g_posdb.getWordPos ( wpi );
-				int32_t p2 = g_posdb.getWordPos ( wpj );
+				int32_t p1 = Posdb::getWordPos ( wpi );
+				int32_t p2 = Posdb::getWordPos ( wpj );
 				int32_t  dist = p2 - p1;
 				// must be in right order!
 				if ( dist < 0 ) {
 					max = -1.0;
-					//log("ddd0: i=%" PRId32" j=%" PRId32" "
-					//    "dist=%" PRId32" qdist=%" PRId32,
-					//    i,j,dist,qdist);
 				}
 				// allow for a discrepancy of 1 unit in case 
 				// there is a comma? i think we add an extra 
@@ -350,18 +306,9 @@ void PosdbTable::evalSlidingWindow ( char    **ptrs,
 				}
 				else if ( dist < qdist && qdist - dist > 1 ) {
 					max = -1.0;
-					//log("ddd2: i=%" PRId32" j=%" PRId32" "
-					//    "dist=%" PRId32" qdist=%" PRId32,
-					//    i,j,dist,qdist);
 				}
-				//else {
-				//	log("ddd3: i=%" PRId32" j=%" PRId32" "
-				//	    "dist=%" PRId32" qdist=%" PRId32,
-				//	    i,j,dist,qdist);
-				//}
 			}
 		}
-
 
 		// now we want the sliding window with the largest min
 		// term pair score!
@@ -380,32 +327,7 @@ void PosdbTable::evalSlidingWindow ( char    **ptrs,
 	// record term positions in winning window
 	for ( int32_t i = 0 ; i < maxi ; i++ )
 		m_windowTermPtrs[i] = ptrs[i];	
-	
 
-	/*
-	if ( ! m_ds ) return;
-
-	for ( int32_t i = 0   ; i < nr ; i++ ) {
-	for ( int32_t j = i+1 ; j < nr ; j++ ) {
-		m_finalWinners1[i*MAX_QUERY_TERMS+j] = 
-			winners1[i*MAX_QUERY_TERMS+j];
-		m_finalWinners2[i*MAX_QUERY_TERMS+j] = 
-			winners2[i*MAX_QUERY_TERMS+j];
-		m_finalScores  [i*MAX_QUERY_TERMS+j] = 
-			scores  [i*MAX_QUERY_TERMS+j];
-		// sanity
-		//if ( winners1[i*MAX_QUERY_TERMS+j])
-		//unsigned char hg1;
-		//hg1=g_posdb.getHashGroup(winners1[i*MAX_QUERY_TERMS+j]
-		//if ( winners2[i*MAX_QUERY_TERMS+j])
-		//unsigned char hg2;
-		//hg2=g_posdb.getHashGroup(winners2[i*MAX_QUERY_TERMS+j]
-		//log("winner %" PRId32" x %" PRId32" 0x%" PRIx32" 0x%" PRIx32,i,j,
-		//    (int32_t)winners1[i*MAX_QUERY_TERMS+j],
-		//    (int32_t)winners1[i*MAX_QUERY_TERMS+j]);
-	}
-	}
-	*/
 	logTrace(g_conf.m_logTracePosdb, "END.");
 }
 
@@ -418,13 +340,12 @@ float PosdbTable::getSingleTermScore ( int32_t     i,
 				       char       **bestPos ) {
 
 	float nonBodyMax = -1.0;
-	//char *maxp;
-	int32_t minx;
+	int32_t minx = 0;
 	float bestScores[MAX_TOP];
 	char *bestwpi   [MAX_TOP];
 	int32_t numTop = 0;
 
-	logTrace(g_conf.m_logTracePosdb, "END.");
+	logTrace(g_conf.m_logTracePosdb, "BEGIN.");
 
 	// assume no terms!
 	*bestPos = NULL;
@@ -435,19 +356,19 @@ float PosdbTable::getSingleTermScore ( int32_t     i,
 		do {
 			float score = 100.0;
 			// good diversity?
-			unsigned char div = g_posdb.getDiversityRank ( wpi );
+			unsigned char div = Posdb::getDiversityRank ( wpi );
 			score *= s_diversityWeights[div];
 			score *= s_diversityWeights[div];
 
 			// hash group? title? body? heading? etc.
-			unsigned char hg = g_posdb.getHashGroup ( wpi );
+			unsigned char hg = Posdb::getHashGroup ( wpi );
 			unsigned char mhg = hg;
 			if ( s_inBody[mhg] ) mhg = HASHGROUP_BODY;
 			score *= s_hashGroupWeights[hg];
 			score *= s_hashGroupWeights[hg];
 
 			// good density?
-			unsigned char dens = g_posdb.getDensityRank ( wpi );
+			unsigned char dens = Posdb::getDensityRank ( wpi );
 			score *= s_densityWeights[dens];
 			score *= s_densityWeights[dens];
 
@@ -455,7 +376,7 @@ float PosdbTable::getSingleTermScore ( int32_t     i,
 			//score /= 2.0;
 
 			// word spam?
-			unsigned char wspam = g_posdb.getWordSpamRank ( wpi );
+			unsigned char wspam = Posdb::getWordSpamRank ( wpi );
 			// word spam weight update
 			if ( hg == HASHGROUP_INLINKTEXT ) {
 				score *= s_linkerWeights  [wspam];
@@ -467,7 +388,7 @@ float PosdbTable::getSingleTermScore ( int32_t     i,
 			}
 
 			// synonym
-			if ( g_posdb.getIsSynonym(wpi) ) {
+			if ( Posdb::getIsSynonym(wpi) ) {
 				score *= g_conf.m_synonymWeight;
 				score *= g_conf.m_synonymWeight;
 			}
@@ -521,7 +442,7 @@ float PosdbTable::getSingleTermScore ( int32_t     i,
 			// advance
 			wpi += 6;
 			// exhausted?
-		} while( wpi < endi && g_posdb.getKeySize(wpi) == 6 );
+		} while( wpi < endi && Posdb::getKeySize(wpi) == 6 );
 	}
 
 	// add up the top scores
@@ -531,7 +452,7 @@ float PosdbTable::getSingleTermScore ( int32_t     i,
 		// phrase like "time enough for love" give it a boost!
 		// now we set a special bit in the keys since we do a mini 
 		// merge, we do the same thing for the syn bits
-		if ( g_posdb.getIsHalfStopWikiBigram(bestwpi[k]) )
+		if ( Posdb::getIsHalfStopWikiBigram(bestwpi[k]) )
 			sum += (bestScores[k] * 
 				WIKI_BIGRAM_WEIGHT * 
 				WIKI_BIGRAM_WEIGHT);
@@ -598,15 +519,15 @@ float PosdbTable::getSingleTermScore ( int32_t     i,
 		pdcs->m_numSingles++;
 		char *maxp = bestwpi[k];
 		memset(sx,0,sizeof(*sx));
-		sx->m_isSynonym      = g_posdb.getIsSynonym(maxp);
+		sx->m_isSynonym      = Posdb::getIsSynonym(maxp);
 		sx->m_isHalfStopWikiBigram = 
-			g_posdb.getIsHalfStopWikiBigram(maxp);
+			Posdb::getIsHalfStopWikiBigram(maxp);
 		//sx->m_isSynonym = (m_bflags[i] & BF_SYNONYM) ;
-		sx->m_diversityRank  = g_posdb.getDiversityRank(maxp);
-		sx->m_wordSpamRank   = g_posdb.getWordSpamRank(maxp);
-		sx->m_hashGroup      = g_posdb.getHashGroup(maxp);
-		sx->m_wordPos        = g_posdb.getWordPos(maxp);
-		sx->m_densityRank = g_posdb.getDensityRank(maxp);
+		sx->m_diversityRank  = Posdb::getDiversityRank(maxp);
+		sx->m_wordSpamRank   = Posdb::getWordSpamRank(maxp);
+		sx->m_hashGroup      = Posdb::getHashGroup(maxp);
+		sx->m_wordPos        = Posdb::getWordPos(maxp);
+		sx->m_densityRank = Posdb::getDensityRank(maxp);
 		float score = bestScores[k];
 		//score *= ts;
 		score *= m_freqWeights[i];
@@ -640,17 +561,17 @@ void PosdbTable::getTermPairScoreForNonBody ( int32_t i, int32_t j,
 
 	logTrace(g_conf.m_logTracePosdb, "BEGIN.");
 
-	int32_t p1 = g_posdb.getWordPos ( wpi );
-	int32_t p2 = g_posdb.getWordPos ( wpj );
+	int32_t p1 = Posdb::getWordPos ( wpi );
+	int32_t p2 = Posdb::getWordPos ( wpj );
 
 	// fix for bigram algorithm
 	//if ( p1 == p2 ) p2 = p1 + 2;
 
-	unsigned char hg1 = g_posdb.getHashGroup ( wpi );
-	unsigned char hg2 = g_posdb.getHashGroup ( wpj );
+	unsigned char hg1 = Posdb::getHashGroup ( wpi );
+	unsigned char hg2 = Posdb::getHashGroup ( wpj );
 
-	unsigned char wsr1 = g_posdb.getWordSpamRank(wpi);
-	unsigned char wsr2 = g_posdb.getWordSpamRank(wpj);
+	unsigned char wsr1 = Posdb::getWordSpamRank(wpi);
+	unsigned char wsr2 = Posdb::getWordSpamRank(wpj);
 
 	float spamw1 ;
 	float spamw2 ;
@@ -666,8 +587,8 @@ void PosdbTable::getTermPairScoreForNonBody ( int32_t i, int32_t j,
 	// density weight
 	//float denw ;
 	//if ( hg1 == HASHGROUP_BODY ) denw = 1.0;
-	float denw1 = s_densityWeights[g_posdb.getDensityRank(wpi)];
-	float denw2 = s_densityWeights[g_posdb.getDensityRank(wpj)];
+	float denw1 = s_densityWeights[Posdb::getDensityRank(wpi)];
+	float denw2 = s_densityWeights[Posdb::getDensityRank(wpj)];
 
 	bool firsti = true;
 	bool firstj = true;
@@ -720,8 +641,8 @@ void PosdbTable::getTermPairScoreForNonBody ( int32_t i, int32_t j,
 		score *= s_hashGroupWeights[hg1];
 		score *= s_hashGroupWeights[hg2];
 		// if synonym or alternate word form
-		if ( g_posdb.getIsSynonym(wpi) ) score *= g_conf.m_synonymWeight;
-		if ( g_posdb.getIsSynonym(wpj) ) score *= g_conf.m_synonymWeight;
+		if ( Posdb::getIsSynonym(wpi) ) score *= g_conf.m_synonymWeight;
+		if ( Posdb::getIsSynonym(wpj) ) score *= g_conf.m_synonymWeight;
 		//if (m_bflags[i] & BF_SYNONYM) score *= g_conf.m_synonymWeight;
 		//if (m_bflags[j] & BF_SYNONYM) score *= g_conf.m_synonymWeight;
 
@@ -755,21 +676,21 @@ void PosdbTable::getTermPairScoreForNonBody ( int32_t i, int32_t j,
 		}
 		
 		// exhausted?
-		if ( g_posdb.getKeySize ( wpi ) != 6 ) {
+		if ( Posdb::getKeySize ( wpi ) != 6 ) {
 			goto done;
 		}
 		
 		// update. include G-bits?
-		p1 = g_posdb.getWordPos ( wpi );
+		p1 = Posdb::getWordPos ( wpi );
 		// hash group update
-		hg1 = g_posdb.getHashGroup ( wpi );
+		hg1 = Posdb::getHashGroup ( wpi );
 		// update density weight in case hash group changed
-		denw1 = s_densityWeights[g_posdb.getDensityRank(wpi)];
+		denw1 = s_densityWeights[Posdb::getDensityRank(wpi)];
 		// word spam weight update
 		if ( hg1 == HASHGROUP_INLINKTEXT )
-			spamw1=s_linkerWeights[g_posdb.getWordSpamRank(wpi)];
+			spamw1=s_linkerWeights[Posdb::getWordSpamRank(wpi)];
 		else
-			spamw1=s_wordSpamWeights[g_posdb.getWordSpamRank(wpi)];
+			spamw1=s_wordSpamWeights[Posdb::getWordSpamRank(wpi)];
 		goto loop;
 	}
 	else {
@@ -822,8 +743,8 @@ void PosdbTable::getTermPairScoreForNonBody ( int32_t i, int32_t j,
 		score *= s_hashGroupWeights[hg1];
 		score *= s_hashGroupWeights[hg2];
 		// if synonym or alternate word form
-		if ( g_posdb.getIsSynonym(wpi) ) score *= g_conf.m_synonymWeight;
-		if ( g_posdb.getIsSynonym(wpj) ) score *= g_conf.m_synonymWeight;
+		if ( Posdb::getIsSynonym(wpi) ) score *= g_conf.m_synonymWeight;
+		if ( Posdb::getIsSynonym(wpj) ) score *= g_conf.m_synonymWeight;
 		//if ( m_bflags[i] & BF_SYNONYM ) score *= g_conf.m_synonymWeight;
 		//if ( m_bflags[j] & BF_SYNONYM ) score *= g_conf.m_synonymWeight;
 		// word spam weights
@@ -852,21 +773,21 @@ void PosdbTable::getTermPairScoreForNonBody ( int32_t i, int32_t j,
 		}
 		
 		// exhausted?
-		if ( g_posdb.getKeySize ( wpj ) != 6 ) {
+		if ( Posdb::getKeySize ( wpj ) != 6 ) {
 			goto done;
 		}
 		
 		// update
-		p2 = g_posdb.getWordPos ( wpj );
+		p2 = Posdb::getWordPos ( wpj );
 		// hash group update
-		hg2 = g_posdb.getHashGroup ( wpj );
+		hg2 = Posdb::getHashGroup ( wpj );
 		// update density weight in case hash group changed
-		denw2 = s_densityWeights[g_posdb.getDensityRank(wpj)];
+		denw2 = s_densityWeights[Posdb::getDensityRank(wpj)];
 		// word spam weight update
 		if ( hg2 == HASHGROUP_INLINKTEXT )
-			spamw2=s_linkerWeights[g_posdb.getWordSpamRank(wpj)];
+			spamw2=s_linkerWeights[Posdb::getWordSpamRank(wpj)];
 		else
-			spamw2=s_wordSpamWeights[g_posdb.getWordSpamRank(wpj)];
+			spamw2=s_wordSpamWeights[Posdb::getWordSpamRank(wpj)];
 		goto loop;
 	}
 
@@ -899,12 +820,12 @@ float PosdbTable::getTermPairScoreForWindow ( int32_t i,
 		return -1.00;
 	}
 
-	int32_t p1 = g_posdb.getWordPos ( wpi );
-	int32_t p2 = g_posdb.getWordPos ( wpj );
-	unsigned char hg1 = g_posdb.getHashGroup ( wpi );
-	unsigned char hg2 = g_posdb.getHashGroup ( wpj );
-	unsigned char wsr1 = g_posdb.getWordSpamRank(wpi);
-	unsigned char wsr2 = g_posdb.getWordSpamRank(wpj);
+	int32_t p1 = Posdb::getWordPos ( wpi );
+	int32_t p2 = Posdb::getWordPos ( wpj );
+	unsigned char hg1 = Posdb::getHashGroup ( wpi );
+	unsigned char hg2 = Posdb::getHashGroup ( wpj );
+	unsigned char wsr1 = Posdb::getWordSpamRank(wpi);
+	unsigned char wsr2 = Posdb::getWordSpamRank(wpj);
 	float spamw1;
 	float spamw2;
 	float denw1;
@@ -915,8 +836,8 @@ float PosdbTable::getTermPairScoreForWindow ( int32_t i,
 	else                            spamw1=s_wordSpamWeights[wsr1];
 	if ( hg2 ==HASHGROUP_INLINKTEXT)spamw2=s_linkerWeights[wsr2];
 	else                            spamw2=s_wordSpamWeights[wsr2];
-	denw1 = s_densityWeights[g_posdb.getDensityRank(wpi)];
-	denw2 = s_densityWeights[g_posdb.getDensityRank(wpj)];
+	denw1 = s_densityWeights[Posdb::getDensityRank(wpi)];
+	denw2 = s_densityWeights[Posdb::getDensityRank(wpj)];
 	// set this
 	if ( fixedDistance != 0 ) {
 		dist = fixedDistance;
@@ -947,8 +868,8 @@ float PosdbTable::getTermPairScoreForWindow ( int32_t i,
 	score *= s_hashGroupWeights[hg1];
 	score *= s_hashGroupWeights[hg2];
 	// if synonym or alternate word form
-	if ( g_posdb.getIsSynonym(wpi) ) score *= g_conf.m_synonymWeight;
-	if ( g_posdb.getIsSynonym(wpj) ) score *= g_conf.m_synonymWeight;
+	if ( Posdb::getIsSynonym(wpi) ) score *= g_conf.m_synonymWeight;
+	if ( Posdb::getIsSynonym(wpj) ) score *= g_conf.m_synonymWeight;
 	//if ( m_bflags[i] & BF_SYNONYM ) score *= g_conf.m_synonymWeight;
 	//if ( m_bflags[j] & BF_SYNONYM ) score *= g_conf.m_synonymWeight;
 	// word spam weights
@@ -1013,14 +934,14 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 		qdist = m_qpos[j] - m_qpos[i];		
 
 
-	int32_t p1 = g_posdb.getWordPos ( wpi );
-	int32_t p2 = g_posdb.getWordPos ( wpj );
+	int32_t p1 = Posdb::getWordPos ( wpi );
+	int32_t p2 = Posdb::getWordPos ( wpj );
 
 	// fix for bigram algorithm
 	//if ( p1 == p2 ) p2 = p1 + 2;
 
-	unsigned char hg1 = g_posdb.getHashGroup ( wpi );
-	unsigned char hg2 = g_posdb.getHashGroup ( wpj );
+	unsigned char hg1 = Posdb::getHashGroup ( wpi );
+	unsigned char hg2 = Posdb::getHashGroup ( wpj );
 
 	// reduce to either HASHGROUP_BODY/TITLE/INLINK/META
 	unsigned char mhg1 = hg1;
@@ -1028,8 +949,8 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 	if ( s_inBody[mhg1] ) mhg1 = HASHGROUP_BODY;
 	if ( s_inBody[mhg2] ) mhg2 = HASHGROUP_BODY;
 
-	unsigned char wsr1 = g_posdb.getWordSpamRank(wpi);
-	unsigned char wsr2 = g_posdb.getWordSpamRank(wpj);
+	unsigned char wsr1 = Posdb::getWordSpamRank(wpi);
+	unsigned char wsr2 = Posdb::getWordSpamRank(wpj);
 
 	float spamw1 ;
 	float spamw2 ;
@@ -1042,8 +963,8 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 	// density weight
 	//float denw ;
 	//if ( hg1 == HASHGROUP_BODY ) denw = 1.0;
-	float denw1 = s_densityWeights[g_posdb.getDensityRank(wpi)];
-	float denw2 = s_densityWeights[g_posdb.getDensityRank(wpj)];
+	float denw1 = s_densityWeights[Posdb::getDensityRank(wpi)];
+	float denw2 = s_densityWeights[Posdb::getDensityRank(wpj)];
 
 	bool firsti = true;
 	bool firstj = true;
@@ -1116,8 +1037,8 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 		}
 
 		// are either synonyms
-		syn1 = g_posdb.getIsSynonym(wpi);
-		syn2 = g_posdb.getIsSynonym(wpj);
+		syn1 = Posdb::getIsSynonym(wpi);
+		syn2 = Posdb::getIsSynonym(wpj);
 		// if zero, make sure its 2. this happens when the same bigram
 		// is used by both terms. i.e. street uses the bigram 
 		// 'street light' and so does 'light'. so the wordpositions
@@ -1171,11 +1092,11 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 		}
 		
 		// the new logic
-		if ( g_posdb.getIsHalfStopWikiBigram(wpi) ) {
+		if ( Posdb::getIsHalfStopWikiBigram(wpi) ) {
 			score *= WIKI_BIGRAM_WEIGHT;
 		}
 		
-		if ( g_posdb.getIsHalfStopWikiBigram(wpj) ) {
+		if ( Posdb::getIsHalfStopWikiBigram(wpj) ) {
 			score *= WIKI_BIGRAM_WEIGHT;
 		}
 		
@@ -1260,31 +1181,31 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 		}
 		
 		// exhausted?
-		if ( g_posdb.getKeySize ( wpi ) != 6 ) {
+		if ( Posdb::getKeySize ( wpi ) != 6 ) {
 			// sometimes there is posdb index corruption and
 			// we have a 12 byte key with the same docid but
 			// different siterank or langid because it was
 			// not deleted right!
-			if ( (uint64_t)g_posdb.getDocId(wpi) != m_docId ) {
+			if ( (uint64_t)Posdb::getDocId(wpi) != m_docId ) {
 				gbshutdownAbort(true);
 			}
 			// re-set this i guess
 			firsti = true;
 		}
 		// update. include G-bits?
-		p1 = g_posdb.getWordPos ( wpi );
+		p1 = Posdb::getWordPos ( wpi );
 		// hash group update
-		hg1 = g_posdb.getHashGroup ( wpi );
+		hg1 = Posdb::getHashGroup ( wpi );
 		// the "modified" hash group
 		mhg1 = hg1;
 		if ( s_inBody[mhg1] ) mhg1 = HASHGROUP_BODY;
 		// update density weight in case hash group changed
-		denw1 = s_densityWeights[g_posdb.getDensityRank(wpi)];
+		denw1 = s_densityWeights[Posdb::getDensityRank(wpi)];
 		// word spam weight update
 		if ( hg1 == HASHGROUP_INLINKTEXT )
-			spamw1=s_linkerWeights[g_posdb.getWordSpamRank(wpi)];
+			spamw1=s_linkerWeights[Posdb::getWordSpamRank(wpi)];
 		else
-			spamw1=s_wordSpamWeights[g_posdb.getWordSpamRank(wpi)];
+			spamw1=s_wordSpamWeights[Posdb::getWordSpamRank(wpi)];
 		goto loop;
 	}
 	else {
@@ -1351,11 +1272,11 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 		score *= s_hashGroupWeights[hg2];
 		
 		// if synonym or alternate word form
-		if ( g_posdb.getIsSynonym(wpi) ) {
+		if ( Posdb::getIsSynonym(wpi) ) {
 			score *= g_conf.m_synonymWeight;
 		}
 		
-		if ( g_posdb.getIsSynonym(wpj) ) {
+		if ( Posdb::getIsSynonym(wpj) ) {
 			score *= g_conf.m_synonymWeight;
 		}
 		
@@ -1443,31 +1364,31 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 		}
 		
 		// exhausted?
-		if ( g_posdb.getKeySize ( wpj ) != 6 ) {
+		if ( Posdb::getKeySize ( wpj ) != 6 ) {
 			// sometimes there is posdb index corruption and
 			// we have a 12 byte key with the same docid but
 			// different siterank or langid because it was
 			// not deleted right!
-			if ( (uint64_t)g_posdb.getDocId(wpj) != m_docId ) {
+			if ( (uint64_t)Posdb::getDocId(wpj) != m_docId ) {
 				gbshutdownAbort(true);
 			}
 			// re-set this i guess
 			firstj = true;
 		}
 		// update
-		p2 = g_posdb.getWordPos ( wpj );
+		p2 = Posdb::getWordPos ( wpj );
 		// hash group update
-		hg2 = g_posdb.getHashGroup ( wpj );
+		hg2 = Posdb::getHashGroup ( wpj );
 		// the "modified" hash group
 		mhg2 = hg2;
 		if ( s_inBody[mhg2] ) mhg2 = HASHGROUP_BODY;
 		// update density weight in case hash group changed
-		denw2 = s_densityWeights[g_posdb.getDensityRank(wpj)];
+		denw2 = s_densityWeights[Posdb::getDensityRank(wpj)];
 		// word spam weight update
 		if ( hg2 == HASHGROUP_INLINKTEXT )
-			spamw2=s_linkerWeights[g_posdb.getWordSpamRank(wpj)];
+			spamw2=s_linkerWeights[Posdb::getWordSpamRank(wpj)];
 		else
-			spamw2=s_wordSpamWeights[g_posdb.getWordSpamRank(wpj)];
+			spamw2=s_wordSpamWeights[Posdb::getWordSpamRank(wpj)];
 		goto loop;
 	}
 
@@ -1554,11 +1475,11 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 		score *= m_freqWeights[i];
 		score *= m_freqWeights[j];
 		// we have to encode these bits into the mini merge now
-		if ( g_posdb.getIsHalfStopWikiBigram(maxp1) ) {
+		if ( Posdb::getIsHalfStopWikiBigram(maxp1) ) {
 			score *= WIKI_BIGRAM_WEIGHT;
 		}
 		
-		if ( g_posdb.getIsHalfStopWikiBigram(maxp2) ) {
+		if ( Posdb::getIsHalfStopWikiBigram(maxp2) ) {
 			score *= WIKI_BIGRAM_WEIGHT;
 		}
 		
@@ -1566,28 +1487,28 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 		//if ( m_bflags[j] & BF_HALFSTOPWIKIBIGRAM ) 
 		// wiki phrase weight
 		px->m_finalScore     = score;
-		px->m_wordPos1       = g_posdb.getWordPos(maxp1);
-		px->m_wordPos2       = g_posdb.getWordPos(maxp2);
-		syn1 = g_posdb.getIsSynonym(maxp1);
-		syn2 = g_posdb.getIsSynonym(maxp2);
+		px->m_wordPos1       = Posdb::getWordPos(maxp1);
+		px->m_wordPos2       = Posdb::getWordPos(maxp2);
+		syn1 = Posdb::getIsSynonym(maxp1);
+		syn2 = Posdb::getIsSynonym(maxp2);
 		px->m_isSynonym1     = syn1;
 		px->m_isSynonym2     = syn2;
-		px->m_isHalfStopWikiBigram1 = g_posdb.getIsHalfStopWikiBigram(maxp1);
-		px->m_isHalfStopWikiBigram2 = g_posdb.getIsHalfStopWikiBigram(maxp2);
+		px->m_isHalfStopWikiBigram1 = Posdb::getIsHalfStopWikiBigram(maxp1);
+		px->m_isHalfStopWikiBigram2 = Posdb::getIsHalfStopWikiBigram(maxp2);
 		//px->m_isSynonym1 = ( m_bflags[i] & BF_SYNONYM );
 		//px->m_isSynonym2 = ( m_bflags[j] & BF_SYNONYM );
-		px->m_diversityRank1 = g_posdb.getDiversityRank(maxp1);
-		px->m_diversityRank2 = g_posdb.getDiversityRank(maxp2);
-		px->m_wordSpamRank1  = g_posdb.getWordSpamRank(maxp1);
-		px->m_wordSpamRank2  = g_posdb.getWordSpamRank(maxp2);
-		px->m_hashGroup1     = g_posdb.getHashGroup(maxp1);
-		px->m_hashGroup2     = g_posdb.getHashGroup(maxp2);
+		px->m_diversityRank1 = Posdb::getDiversityRank(maxp1);
+		px->m_diversityRank2 = Posdb::getDiversityRank(maxp2);
+		px->m_wordSpamRank1  = Posdb::getWordSpamRank(maxp1);
+		px->m_wordSpamRank2  = Posdb::getWordSpamRank(maxp2);
+		px->m_hashGroup1     = Posdb::getHashGroup(maxp1);
+		px->m_hashGroup2     = Posdb::getHashGroup(maxp2);
 		px->m_qdist          = qdist;
 		// bigram algorithm fix
 		//if ( px->m_wordPos1 == px->m_wordPos2 )
 		//	px->m_wordPos2 += 2;
-		px->m_densityRank1   = g_posdb.getDensityRank(maxp1);
-		px->m_densityRank2   = g_posdb.getDensityRank(maxp2);
+		px->m_densityRank1   = Posdb::getDensityRank(maxp1);
+		px->m_densityRank2   = Posdb::getDensityRank(maxp2);
 		px->m_fixedDistance  = fixedDist;
 		px->m_qtermNum1      = m_qtermNums[i];
 		px->m_qtermNum2      = m_qtermNums[j];
@@ -2331,7 +2252,7 @@ bool PosdbTable::findCandidateDocIds() {
 		m_allInSameWikiPhrase = false;
 		break;
 	}
-	logTrace(g_conf.m_logTracePosdb, "m_allInSameWikiPhrase: %s", m_allInSameWikiPhrase?"true":"false");
+	logTrace(g_conf.m_logTracePosdb, "m_allInSameWikiPhrase: %s", (m_allInSameWikiPhrase?"true":"false") );
 
 
 	// for boolean queries we scan every docid in all termlists,
@@ -2968,7 +2889,7 @@ handleNextDocId:
 				// save it
 				qti->m_matchingSubListSavedCursor[j] = xc;
 				// get new docid
-				//log("new docid %" PRId64,g_posdb.getDocId(xc) );
+				//log("new docid %" PRId64,Posdb::getDocId(xc) );
 				// advance the cursors. skip our 12
 				xc += 12;
 				// then skip any following 6 byte keys because they
@@ -3074,7 +2995,7 @@ handleNextDocId:
 					if ( ! sub ) continue;
 					char *end = qtx->m_matchingSubListCursor      [k];
 					// add first key
-					//int32_t wx = g_posdb.getWordPos(sub);
+					//int32_t wx = Posdb::getWordPos(sub);
 					wx = (*((uint32_t *)(sub+3))) >> 6;
 					// mod with 4096
 					wx &= (RINGBUFSIZE-1);
@@ -3087,7 +3008,7 @@ handleNextDocId:
 					// then 6 byte keys
 					for ( ; sub < end ; sub += 6 ) {
 						// get word position
-						//wx = g_posdb.getWordPos(sub);
+						//wx = Posdb::getWordPos(sub);
 						wx = (*((uint32_t *)(sub+3))) >> 6;
 						// mod with 4096
 						wx &= (RINGBUFSIZE-1);
@@ -3125,7 +3046,7 @@ handleNextDocId:
 						
 						char *end = qti->m_matchingSubListCursor      [k];
 						// add first key
-						//int32_t wx = g_posdb.getWordPos(sub);
+						//int32_t wx = Posdb::getWordPos(sub);
 						wx = (*((uint32_t *)(sub+3))) >> 6;
 						// mod with 4096
 						wx &= (RINGBUFSIZE-1);
@@ -3136,7 +3057,7 @@ handleNextDocId:
 						// then 6 byte keys
 						for ( ; sub < end ; sub += 6 ) {
 							// get word position
-							//wx = g_posdb.getWordPos(sub);
+							//wx = Posdb::getWordPos(sub);
 							wx = (*((uint32_t *)(sub+3))) >> 6;
 							// mod with 4096
 							wx &= (RINGBUFSIZE-1);
@@ -3312,7 +3233,7 @@ handleNextDocId:
 			// the next docid so use m_matchingSubListSavedCursor.
 			nwp      [nsub] = qti->m_matchingSubListSavedCursor [k];
 			// sanity
-			//if ( g_posdb.getKeySize(nwp[nsub]) > 12 ) { 
+			//if ( Posdb::getKeySize(nwp[nsub]) > 12 ) { 
 			//	gbshutdownAbort(true);}
 			// if doing seohack then m_matchingSubListCursor was not advanced
 			// so advance it here
@@ -3366,7 +3287,7 @@ handleNextDocId:
 		}
 		
 		// get keysize
-		char ks = g_posdb.getKeySize(nwp[mink]);
+		char ks = Posdb::getKeySize(nwp[mink]);
 		// sanity
 		//if ( ks > 12 )
 		//	gbshutdownAbort(true);
@@ -3425,7 +3346,7 @@ handleNextDocId:
 			// otherwise, they are added after the regular term.
 			// should fix double scoring bug for 'cheat codes'
 			// query!
-			if ( g_posdb.getWordPos(lastMptr) == g_posdb.getWordPos(nwp[mink]) ) {
+			if ( Posdb::getWordPos(lastMptr) == Posdb::getWordPos(nwp[mink]) ) {
 				goto skipOver;
 			}
 			
@@ -3454,14 +3375,14 @@ handleNextDocId:
 	skipOver:
 		//log("skipping ks=%" PRId32,(int32_t)ks);
 		// advance the cursor over the key we used.
-		nwp[mink] += ks; // g_posdb.getKeySize(nwp[mink]);
+		nwp[mink] += ks; // Posdb::getKeySize(nwp[mink]);
 		// exhausted?
 		if ( nwp[mink] >= nwpEnd[mink] ) {
 			nwp[mink] = NULL;
 		}
 		
 		// or hit a different docid
-		else if ( g_posdb.getKeySize(nwp[mink]) != 6 ) {
+		else if ( Posdb::getKeySize(nwp[mink]) != 6 ) {
 			nwp[mink] = NULL;
 		}
 		
@@ -3510,12 +3431,12 @@ handleNextDocId:
 		int32_t  psize    = plistEnd - plist;
 		
 		// test it. first key is 12 bytes.
-		if ( psize && g_posdb.getKeySize(plist) != 12 ) {
+		if ( psize && Posdb::getKeySize(plist) != 12 ) {
 			gbshutdownAbort(true);
 		}
 		
 		// next key is 6
-		if ( psize > 12 && g_posdb.getKeySize(plist+12) != 6) {
+		if ( psize > 12 && Posdb::getKeySize(plist+12) != 6) {
 			gbshutdownAbort(true);
 		}
 	}
@@ -3654,7 +3575,7 @@ handleNextDocId:
 						  &bestPos[i]);
 						  
 			// sanity check
-			if ( bestPos[i] && s_inBody[g_posdb.getHashGroup(bestPos[i])] ) {
+			if ( bestPos[i] && s_inBody[Posdb::getHashGroup(bestPos[i])] ) {
 				gbshutdownAbort(true);
 			}
 			
@@ -3674,11 +3595,11 @@ handleNextDocId:
 		     // siterank/langid is always 0 in numeric
 		     // termlists so they sort by their number correctly
 		     ! (qtibuf[0].m_bigramFlags[0] & (BF_NUMBER) ) ) {
-			siteRank = g_posdb.getSiteRank ( miniMergedList[0] );
-			docLang  = g_posdb.getLangId   ( miniMergedList[0] );
+			siteRank = Posdb::getSiteRank ( miniMergedList[0] );
+			docLang  = Posdb::getLangId   ( miniMergedList[0] );
 			
-			if ( g_posdb.getHashGroup(miniMergedList[0])==HASHGROUP_INLINKTEXT) {
-				char inlinkerSiteRank = g_posdb.getWordSpamRank(miniMergedList[0]);
+			if ( Posdb::getHashGroup(miniMergedList[0])==HASHGROUP_INLINKTEXT) {
+				char inlinkerSiteRank = Posdb::getWordSpamRank(miniMergedList[0]);
 				if(inlinkerSiteRank>highestInlinkSiteRank) {
 					highestInlinkSiteRank = inlinkerSiteRank;
 				}
@@ -3696,10 +3617,10 @@ handleNextDocId:
 					continue;
 				}
 				
-				siteRank = g_posdb.getSiteRank ( miniMergedList[k] );
-				docLang  = g_posdb.getLangId   ( miniMergedList[k] );
-				if ( g_posdb.getHashGroup(miniMergedList[k])==HASHGROUP_INLINKTEXT) {
-					char inlinkerSiteRank = g_posdb.getWordSpamRank(miniMergedList[k]);
+				siteRank = Posdb::getSiteRank ( miniMergedList[k] );
+				docLang  = Posdb::getLangId   ( miniMergedList[k] );
+				if ( Posdb::getHashGroup(miniMergedList[k])==HASHGROUP_INLINKTEXT) {
+					char inlinkerSiteRank = Posdb::getWordSpamRank(miniMergedList[k]);
 					if(inlinkerSiteRank>highestInlinkSiteRank) {
 						highestInlinkSiteRank = inlinkerSiteRank;
 					}
@@ -3761,7 +3682,7 @@ handleNextDocId:
 			}
 			
 			// skip wordposition until it in the body
-			while ( xpos[i] &&!s_inBody[g_posdb.getHashGroup(xpos[i])]) {
+			while ( xpos[i] &&!s_inBody[Posdb::getHashGroup(xpos[i])]) {
 				// advance
 				if ( ! (xpos[i][0] & 0x04) ) xpos[i] += 12;
 				else                         xpos[i] +=  6;
@@ -3811,8 +3732,7 @@ handleNextDocId:
 		evalSlidingWindow ( xpos,
 				    m_numQueryTermInfos,
 				    bestPos,
-				    scoreMatrix,
-				    minx );
+				    scoreMatrix);
 
 
 	 advanceMin:
@@ -3833,17 +3753,17 @@ handleNextDocId:
 			if ( xpos[x] && minx == -1 ) {
 				minx = x;
 				//minRec = xpos[x];
-				minPos = g_posdb.getWordPos(xpos[x]);
+				minPos = Posdb::getWordPos(xpos[x]);
 				continue;
 			}
 			
-			if ( g_posdb.getWordPos(xpos[x]) >= minPos ) {
+			if ( Posdb::getWordPos(xpos[x]) >= minPos ) {
 				continue;
 			}
 			
 			minx = x;
 			//minRec = xpos[x];
-			minPos = g_posdb.getWordPos(xpos[x]);
+			minPos = Posdb::getWordPos(xpos[x]);
 		}
 		
 		// sanity
@@ -3883,7 +3803,7 @@ handleNextDocId:
 		}
 		
 		// if it left the body then advance some more i guess?
-		if ( ! s_inBody[g_posdb.getHashGroup(xpos[minx])] ) {
+		if ( ! s_inBody[Posdb::getHashGroup(xpos[minx])] ) {
 			goto advanceAgain;
 		}
 
@@ -4024,7 +3944,7 @@ handleNextDocId:
 			goto advance;
 		}
 		
-		score = g_posdb.getFloat (miniMergedList[m_sortByTermInfoNum]);
+		score = Posdb::getFloat (miniMergedList[m_sortByTermInfoNum]);
 	}
 
 	if ( m_sortByTermNumInt >= 0 ) {
@@ -4033,7 +3953,7 @@ handleNextDocId:
 			goto advance;
 		}
 		
-		intScore = g_posdb.getInt(miniMergedList[m_sortByTermInfoNumInt]);
+		intScore = Posdb::getInt(miniMergedList[m_sortByTermInfoNumInt]);
 		// do this so hasMaxSerpScore below works, although
 		// because of roundoff errors we might lose a docid
 		// through the cracks in the widget.
@@ -4241,8 +4161,8 @@ float PosdbTable::getMaxPossibleScore ( const QueryTermInfo *qti,
 			
 		// set this?
 		if ( siteRank == -1 ) {
-			siteRank = g_posdb.getSiteRank(start);
-			docLang = g_posdb.getLangId(start);
+			siteRank = Posdb::getSiteRank(start);
+			docLang = Posdb::getLangId(start);
 		}
 		
 		// skip first key because it is 12 bytes, go right to the
@@ -4260,7 +4180,7 @@ float PosdbTable::getMaxPossibleScore ( const QueryTermInfo *qti,
 			// loop back here for the 12 byte key
 		retry:
 			// get the best hash group
-			hgrp = g_posdb.getHashGroup(dc);
+			hgrp = Posdb::getHashGroup(dc);
 
 			// if not body, do not apply this algo because
 			// we end up adding term pairs from each hash group
@@ -4282,7 +4202,7 @@ float PosdbTable::getMaxPossibleScore ( const QueryTermInfo *qti,
 				continue;
 			}
 			
-			char dr = g_posdb.getDensityRank(dc);
+			char dr = Posdb::getDensityRank(dc);
 			
 			// a clean win?
 			if ( s_hashGroupWeights[hgrp] > bestHashGroupWeight ) {
@@ -4473,7 +4393,7 @@ void PosdbTable::prepareWhiteListTable()
 		RdbList *list = m_msg2->getWhiteList(i);
 		if ( list->isEmpty() ) continue;
 		// sanity test
-		int64_t d1 = g_posdb.getDocId(list->getList());
+		int64_t d1 = Posdb::getDocId(list->getList());
 		if ( d1 > m_msg2->docIdEnd() ) {
 			log("posdb: d1=%" PRId64" > %" PRId64,
 			    d1,m_msg2->docIdEnd());
@@ -5285,7 +5205,7 @@ void PosdbTable::makeDocIdVoteBufForRarestTerm(const QueryTermInfo *qti, bool is
 	voteBufPtr[5] = 0;
 
 	// debug
-	//	int64_t dd = g_posdb.getDocId(minRecPtr);
+	//	int64_t dd = Posdb::getDocId(minRecPtr);
 	//	log(LOG_ERROR, "%s:%s: adding docid %" PRId64 "", __FILE__, __func__, dd);
 
 	// advance
@@ -5384,7 +5304,7 @@ bool PosdbTable::makeDocIdVoteBufForBoolQuery( ) {
 			// scan the sub termlist #j
 			for ( ; p < pend ; ) {
 				// place holder
-				int64_t docId = g_posdb.getDocId(p);
+				int64_t docId = Posdb::getDocId(p);
 
 				// assume this docid is not in range if we
 				// had a range term like gbmin:offerprice:190
@@ -5444,7 +5364,7 @@ bool PosdbTable::makeDocIdVoteBufForBoolQuery( ) {
 				// and mask
 				//docId &= DOCID_MASK;
 				// test it
-				//int64_t docId = g_posdb.getDocId(voteBufPtr-8);
+				//int64_t docId = Posdb::getDocId(voteBufPtr-8);
 				//if ( d2 != docId )
 				//	gbshutdownAbort(true);
 				// store this docid though. treat as int64_t
@@ -5589,37 +5509,37 @@ static inline bool isTermValueInRange( const char *p, const QueryTerm *qt ) {
 
 	// return false if outside of range
 	if ( qt->m_fieldCode == FIELD_GBNUMBERMIN ) {
-		float score2 = g_posdb.getFloat ( p );
+		float score2 = Posdb::getFloat ( p );
 		return ( score2 >= qt->m_qword->m_float );
 	}
 
 	if ( qt->m_fieldCode == FIELD_GBNUMBERMAX ) {
-		float score2 = g_posdb.getFloat ( p );
+		float score2 = Posdb::getFloat ( p );
 		return ( score2 <= qt->m_qword->m_float );
 	}
 
 	if ( qt->m_fieldCode == FIELD_GBNUMBEREQUALFLOAT ) {
-		float score2 = g_posdb.getFloat ( p );
+		float score2 = Posdb::getFloat ( p );
 		return ( score2 == qt->m_qword->m_float );
 	}
 
 	if ( qt->m_fieldCode == FIELD_GBNUMBERMININT ) {
-		int32_t score2 = g_posdb.getInt ( p );
+		int32_t score2 = Posdb::getInt ( p );
 		return ( score2 >= qt->m_qword->m_int );
 	}
 
 	if ( qt->m_fieldCode == FIELD_GBNUMBERMAXINT ) {
-		int32_t score2 = g_posdb.getInt ( p );
+		int32_t score2 = Posdb::getInt ( p );
 		return ( score2 <= qt->m_qword->m_int );
 	}
 
 	if ( qt->m_fieldCode == FIELD_GBNUMBEREQUALINT ) {
-		int32_t score2 = g_posdb.getInt ( p );
+		int32_t score2 = Posdb::getInt ( p );
 		return ( score2 == qt->m_qword->m_int );
 	}
 
 	// if ( qt->m_fieldCode == FIELD_GBFIELDMATCH ) {
-	// 	int32_t score2 = g_posdb.getInt ( p );
+	// 	int32_t score2 = Posdb::getInt ( p );
 	// 	return ( score2 == qt->m_qword->m_int );
 	// }
 
@@ -5667,7 +5587,7 @@ static inline char *getWordPosList ( int64_t docId, char *list, int32_t listSize
 	// ok, we hit a 12 byte key i guess, so backup 6 more
 	p -= 6;
 	// ok, we got a 12-byte key then i guess
-	int64_t d = g_posdb.getDocId ( p );
+	int64_t d = Posdb::getDocId ( p );
 	// we got a match, but it might be a NEGATIVE key so
 	// we have to try to find the positive keys in that case
 	if ( d == docId ) {
@@ -5684,7 +5604,7 @@ static inline char *getWordPosList ( int64_t docId, char *list, int32_t listSize
 		// ok, we hit a 12 byte key i guess, so backup 6 more
 		p -= 6;
 		// is it there?
-		if ( p >= list && g_posdb.getDocId(p) == docId ) {
+		if ( p >= list && Posdb::getDocId(p) == docId ) {
 			// sanity. return NULL if its negative! wtf????
 			if ( (p[0] & 0x01) == 0x00 ) return NULL;
 			// got it
@@ -5697,7 +5617,7 @@ static inline char *getWordPosList ( int64_t docId, char *list, int32_t listSize
 		// now go forwards to next 12 byte key
 		for ( ; p < listEnd && (p[1] & 0x02) ; p += 6 );
 		// is it there?
-		if ( p + 12 < listEnd && g_posdb.getDocId(p) == docId ) {
+		if ( p + 12 < listEnd && Posdb::getDocId(p) == docId ) {
 			// sanity. return NULL if its negative! wtf????
 			if ( (p[0] & 0x01) == 0x00 ) {
 				return NULL;
