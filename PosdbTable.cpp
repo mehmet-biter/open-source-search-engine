@@ -71,7 +71,7 @@ void PosdbTable::reset() {
 	// has init() been called?
 	m_initialized          = false;
 	m_estimatedTotalHits   = -1;
-	freeMem();
+	//freeMem(); // not implemented
 	// does not free the mem of this safebuf, only resets length
 	m_docIdVoteBuf.reset();
 	m_filtered = 0;
@@ -167,18 +167,11 @@ void PosdbTable::init(Query *q, bool debug, void *logstate, TopTree *topTree, Ms
 void PosdbTable::evalSlidingWindow ( char    **ptrs,
 				     int32_t   nr,
 				     char    **bestPos,
-				     float    *scoreMatrix,
-				     int32_t   advancedTermNum ) {
+				     float    *scoreMatrix ) {
 
 	char *wpi;
 	char *wpj;
 	float wikiWeight;
-	char *maxp1 = NULL;
-	char *maxp2;
-	//bool fixedDistance;
-	//char *winners1[MAX_QUERY_TERMS*MAX_QUERY_TERMS];
-	//char *winners2[MAX_QUERY_TERMS*MAX_QUERY_TERMS];
-	//float scores  [MAX_QUERY_TERMS*MAX_QUERY_TERMS];
 	float minTermPairScoreInWindow = 999999999.0;
 
 
@@ -186,10 +179,7 @@ void PosdbTable::evalSlidingWindow ( char    **ptrs,
 
 	// TODO: only do this loop on the (i,j) pairs where i or j
 	// is the term whose position got advanced in the sliding window.
-	// advancedTermNum is -1 on the very first sliding window so we
-	// establish our max scores into the scoreMatrix.
 	int32_t maxi = nr;
-	//if ( advancedTermNum >= 0 ) maxi = advancedTermNum + 1;
 
 	for ( int32_t i = 0 ; i < maxi ; i++ ) {
 
@@ -208,10 +198,6 @@ void PosdbTable::evalSlidingWindow ( char    **ptrs,
 		// to save time.
 		int32_t j = i + 1;
 		int32_t maxj = nr;
-		//if ( advancedTermNum >= 0 && i != advancedTermNum ) {
-		//	j = advancedTermNum;
-		//	maxj = j+1;
-		//}
 
 	// loop over other terms
 	for ( ; j < maxj ; j++ ) {
@@ -259,15 +245,7 @@ void PosdbTable::evalSlidingWindow ( char    **ptrs,
 							  wpj,
 							  FIXED_DISTANCE );
 		if ( score > max ) {
-			maxp1 = bestPos[i];
-			maxp2 = wpj;
 			max   = score;
-			//fixedDistance = true;
-		}
-		else {
-			maxp1 = wpi;
-			maxp2 = wpj;
-			//fixedDistance = false;
 		}
 
 		// a double pair sub should be covered in the 
@@ -276,20 +254,14 @@ void PosdbTable::evalSlidingWindow ( char    **ptrs,
 						    bestPos[j],
 						    FIXED_DISTANCE );
 		if ( score > max ) {
-			maxp1 = bestPos[i];
-			maxp2 = bestPos[j];
 			max   = score;
-			//fixedDistance = true;
 		}
 
 		score = getTermPairScoreForWindow ( i,j,wpi, 
 						    bestPos[j],
 						    FIXED_DISTANCE );
 		if ( score > max ) {
-			maxp1 = wpi;
-			maxp2 = bestPos[j];
 			max   = score;
-			//fixedDistance = true;
 		}
 
 		// wikipedia phrase weight
@@ -301,20 +273,7 @@ void PosdbTable::evalSlidingWindow ( char    **ptrs,
 		// use score from scoreMatrix if bigger
 		if ( scoreMatrix[m_nqt*i+j] > max ) {
 			max = scoreMatrix[m_nqt*i+j];
-			//if ( m_ds ) {
-			//	winners1[i*MAX_QUERY_TERMS+j] = NULL;
-			//	winners2[i*MAX_QUERY_TERMS+j] = NULL;
-			//}
 		}
-		// if we end up selecting this window we will want to know
-		// the term pair scoring information, but only if we
-		// did not take the score from the scoreMatrix, which only
-		// contains non-body term pairs.
-		//else if ( m_ds ) {
-		//	winners1[i*MAX_QUERY_TERMS+j] = maxp1;
-		//	winners2[i*MAX_QUERY_TERMS+j] = maxp2;
-		//	scores  [i*MAX_QUERY_TERMS+j] = max;
-		//}
 
 
 		// in same quoted phrase?
@@ -335,9 +294,6 @@ void PosdbTable::evalSlidingWindow ( char    **ptrs,
 				// must be in right order!
 				if ( dist < 0 ) {
 					max = -1.0;
-					//log("ddd0: i=%" PRId32" j=%" PRId32" "
-					//    "dist=%" PRId32" qdist=%" PRId32,
-					//    i,j,dist,qdist);
 				}
 				// allow for a discrepancy of 1 unit in case 
 				// there is a comma? i think we add an extra 
@@ -350,18 +306,9 @@ void PosdbTable::evalSlidingWindow ( char    **ptrs,
 				}
 				else if ( dist < qdist && qdist - dist > 1 ) {
 					max = -1.0;
-					//log("ddd2: i=%" PRId32" j=%" PRId32" "
-					//    "dist=%" PRId32" qdist=%" PRId32,
-					//    i,j,dist,qdist);
 				}
-				//else {
-				//	log("ddd3: i=%" PRId32" j=%" PRId32" "
-				//	    "dist=%" PRId32" qdist=%" PRId32,
-				//	    i,j,dist,qdist);
-				//}
 			}
 		}
-
 
 		// now we want the sliding window with the largest min
 		// term pair score!
@@ -380,32 +327,7 @@ void PosdbTable::evalSlidingWindow ( char    **ptrs,
 	// record term positions in winning window
 	for ( int32_t i = 0 ; i < maxi ; i++ )
 		m_windowTermPtrs[i] = ptrs[i];	
-	
 
-	/*
-	if ( ! m_ds ) return;
-
-	for ( int32_t i = 0   ; i < nr ; i++ ) {
-	for ( int32_t j = i+1 ; j < nr ; j++ ) {
-		m_finalWinners1[i*MAX_QUERY_TERMS+j] = 
-			winners1[i*MAX_QUERY_TERMS+j];
-		m_finalWinners2[i*MAX_QUERY_TERMS+j] = 
-			winners2[i*MAX_QUERY_TERMS+j];
-		m_finalScores  [i*MAX_QUERY_TERMS+j] = 
-			scores  [i*MAX_QUERY_TERMS+j];
-		// sanity
-		//if ( winners1[i*MAX_QUERY_TERMS+j])
-		//unsigned char hg1;
-		//hg1=g_posdb.getHashGroup(winners1[i*MAX_QUERY_TERMS+j]
-		//if ( winners2[i*MAX_QUERY_TERMS+j])
-		//unsigned char hg2;
-		//hg2=g_posdb.getHashGroup(winners2[i*MAX_QUERY_TERMS+j]
-		//log("winner %" PRId32" x %" PRId32" 0x%" PRIx32" 0x%" PRIx32,i,j,
-		//    (int32_t)winners1[i*MAX_QUERY_TERMS+j],
-		//    (int32_t)winners1[i*MAX_QUERY_TERMS+j]);
-	}
-	}
-	*/
 	logTrace(g_conf.m_logTracePosdb, "END.");
 }
 
@@ -2331,7 +2253,7 @@ bool PosdbTable::findCandidateDocIds() {
 		m_allInSameWikiPhrase = false;
 		break;
 	}
-	logTrace(g_conf.m_logTracePosdb, "m_allInSameWikiPhrase: %s", m_allInSameWikiPhrase?"true":"false");
+	logTrace(g_conf.m_logTracePosdb, "m_allInSameWikiPhrase: %s", (m_allInSameWikiPhrase?"true":"false") );
 
 
 	// for boolean queries we scan every docid in all termlists,
@@ -3811,8 +3733,7 @@ handleNextDocId:
 		evalSlidingWindow ( xpos,
 				    m_numQueryTermInfos,
 				    bestPos,
-				    scoreMatrix,
-				    minx );
+				    scoreMatrix);
 
 
 	 advanceMin:
