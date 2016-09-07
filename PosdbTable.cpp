@@ -577,9 +577,6 @@ void PosdbTable::getTermPairScoreForNonBody ( 	const char *wpi,  const char *wpj
 		spamw2 = s_wordSpamWeights[wsr2];
 	}
 
-	const char *maxp1;
-	const char *maxp2;
-
 	// density weight
 	//float denw ;
 	//if ( hg1 == HASHGROUP_BODY ) denw = 1.0;
@@ -654,8 +651,6 @@ void PosdbTable::getTermPairScoreForNonBody ( 	const char *wpi,  const char *wpj
 				// best?
 				if ( score > max ) {
 					max = score;
-					maxp1 = wpi;
-					maxp2 = wpj;
 				}
 			}		
 
@@ -752,8 +747,6 @@ void PosdbTable::getTermPairScoreForNonBody ( 	const char *wpi,  const char *wpj
 				// best?
 				if ( score > max ) {
 					max = score;
-					maxp1 = wpi;
-					maxp2 = wpj;
 				}
 			}
 
