@@ -2918,15 +2918,21 @@ void PosdbTable::intersectLists10_r ( ) {
 
 				// TODO: consider skipping this pre-filter if it sucks, as it does
 				// for 'time enough for love'. it might save time!
-						
-				//@@@ BR: Do not go through this if minWinningScore = -1?! - which it is if we haven't
-				// reached max number of docs to get
-				if ( currPassNum == INTERSECT_SCORING ) {
+
+				//
+				// Calculate maximum possible score for a document. If the max score
+				// is lower than the current minimum winning score, give up already
+				// now and skip to the next docid.
+				//
+
+				// Only go through this if we actually have a minimum score to compare with ...
+				// No need if minWinningScore is still -1
+				if ( minWinningScore >= 0 ) {
 					logTrace(g_conf.m_logTracePosdb, "Compute 'upper bound' for each query term");
 
 					// If there's no way we can break into the winner's circle, give up!
 					// This computes an upper bound for each query term
-					for ( int32_t i = 0 ; i < numQueryTermsToHandle ; i++ ) { // m_numQueryTermInfos ; i++ ) {
+					for ( int32_t i = 0 ; i < numQueryTermsToHandle ; i++ ) { 
 						// skip negative termlists.
 						if ( qtibuf[i].m_bigramFlags[0] & (BF_NEGATIVE) ) {
 							continue;
