@@ -589,7 +589,6 @@ void PosdbTable::getTermPairScoreForNonBody ( 	const char *wpi,  const char *wpj
 	float score;
 	float max = -1.0;
 	int32_t  dist;
-	bool  fixedDistance;
 
 	for(;;) {
 
@@ -613,10 +612,6 @@ void PosdbTable::getTermPairScoreForNonBody ( 	const char *wpi,  const char *wpj
 				// fix distance if in different non-body hashgroups
 				if ( dist > 50 ) {
 					dist = FIXED_DISTANCE;
-					fixedDistance = true;
-				}
-				else {
-					fixedDistance = false;
 				}
 
 				// subtract from the dist the terms are apart in the query
@@ -702,10 +697,6 @@ void PosdbTable::getTermPairScoreForNonBody ( 	const char *wpi,  const char *wpj
 				// fix distance if in different non-body hashgroups
 				if ( dist > 50 ) {
 					dist = FIXED_DISTANCE;
-					fixedDistance = true;
-				}
-				else {
-					fixedDistance = false;
 				}
 
 				// subtract from the dist the terms are apart in the query
