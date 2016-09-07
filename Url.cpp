@@ -7,6 +7,7 @@
 #include "Speller.h"
 #include "Punycode.h"
 #include "Unicode.h"
+#include "Lang.h"
 #include "Sanity.h"
 #include "GbMutex.h"
 #include "ScopedLock.h"

@@ -14,9 +14,6 @@
 // max int32_t returned by getPhrasePopularity() function
 #define MAX_PHRASE_POP 16800
 
-#include "StopWords.h"
-#include "Query.h"
-#include "Multicast.h"
 #include "HashTableX.h"
 
 class Speller {
