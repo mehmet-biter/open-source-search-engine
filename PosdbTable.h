@@ -72,6 +72,11 @@ public:
 };
 
 
+enum {
+	INTERSECT_SCORING		= 0,
+	INTERSECT_DEBUG_INFO	= 1
+};
+
 
 class PosdbTable {
 

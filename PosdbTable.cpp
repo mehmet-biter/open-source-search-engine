@@ -554,25 +554,28 @@ void PosdbTable::getTermPairScoreForNonBody ( 	const char *wpi,  const char *wpj
 	int32_t p1 = Posdb::getWordPos ( wpi );
 	int32_t p2 = Posdb::getWordPos ( wpj );
 
-	// fix for bigram algorithm
-	//if ( p1 == p2 ) p2 = p1 + 2;
-
-	unsigned char hg1 = Posdb::getHashGroup ( wpi );
-	unsigned char hg2 = Posdb::getHashGroup ( wpj );
+	unsigned char hg1 = Posdb::getHashGroup(wpi);
+	unsigned char hg2 = Posdb::getHashGroup(wpj);
 
 	unsigned char wsr1 = Posdb::getWordSpamRank(wpi);
 	unsigned char wsr2 = Posdb::getWordSpamRank(wpj);
 
 	float spamw1 ;
 	float spamw2 ;
-	if ( hg1 == HASHGROUP_INLINKTEXT ) spamw1 = s_linkerWeights[wsr1];
-	else                               spamw1 = s_wordSpamWeights[wsr1];
 
-	if ( hg2 == HASHGROUP_INLINKTEXT ) spamw2 = s_linkerWeights[wsr2];
-	else                               spamw2 = s_wordSpamWeights[wsr2];
+	if ( hg1 == HASHGROUP_INLINKTEXT ) {
+		spamw1 = s_linkerWeights[wsr1];
+	}
+	else {
+		spamw1 = s_wordSpamWeights[wsr1];
+	}
 
-	const char *maxp1;
-	const char *maxp2;
+	if ( hg2 == HASHGROUP_INLINKTEXT ) {
+		spamw2 = s_linkerWeights[wsr2];
+	}
+	else  {
+		spamw2 = s_wordSpamWeights[wsr2];
+	}
 
 	// density weight
 	//float denw ;
@@ -586,206 +589,192 @@ void PosdbTable::getTermPairScoreForNonBody ( 	const char *wpi,  const char *wpj
 	float score;
 	float max = -1.0;
 	int32_t  dist;
-	bool  fixedDistance;
 
- loop:
+	for(;;) {
 
-	if ( p1 <= p2 ) {
-		// . skip the pair if they are in different hashgroups
-		// . we no longer allow either to be in the body in this
-		//   algo because we handle those cases in the sliding window
-		//   algo!
-		if ( ! s_isCompatible[hg1][hg2] ) {
-			goto skip1;
-		}
-		
-		// git distance
-		dist = p2 - p1;
-		// if zero, make sure its 2. this happens when the same bigram
-		// is used by both terms. i.e. street uses the bigram 
-		// 'street light' and so does 'light'. so the wordpositions
-		// are exactly the same!
-		if ( dist < 2 ) dist = 2;
-		// fix distance if in different non-body hashgroups
-		if ( dist > 50 ) {
-			dist = FIXED_DISTANCE;
-			fixedDistance = true;
+		if ( p1 <= p2 ) {
+			// . skip the pair if they are in different hashgroups
+			// . we no longer allow either to be in the body in this
+			//   algo because we handle those cases in the sliding window
+			//   algo!
+			if( s_isCompatible[hg1][hg2] ) {
+				// git distance
+				dist = p2 - p1;
+
+				// if zero, make sure its 2. this happens when the same bigram
+				// is used by both terms. i.e. street uses the bigram 
+				// 'street light' and so does 'light'. so the wordpositions
+				// are exactly the same!
+				if ( dist < 2 ) {
+					dist = 2;
+				}
+				
+				// fix distance if in different non-body hashgroups
+				if ( dist > 50 ) {
+					dist = FIXED_DISTANCE;
+				}
+
+				// subtract from the dist the terms are apart in the query
+				if ( dist >= qdist ) {
+					dist =  dist - qdist;
+				}
+				
+				// good density?
+				score = 100 * denw1 * denw2;
+
+				// hashgroup modifier
+				score *= s_hashGroupWeights[hg1];
+				score *= s_hashGroupWeights[hg2];
+
+				// if synonym or alternate word form
+				if ( Posdb::getIsSynonym(wpi) ) {
+					score *= g_conf.m_synonymWeight;
+				}
+				if ( Posdb::getIsSynonym(wpj) ) {
+					score *= g_conf.m_synonymWeight;
+				}
+
+				// word spam weights
+				score *= spamw1 * spamw2;
+				// huge title? do not allow 11th+ word to be weighted high
+				//if ( hg1 == HASHGROUP_TITLE && dist > 20 ) 
+				//	score /= s_hashGroupWeights[hg1];
+				// mod by distance
+				score /= (dist + 1.0);
+				// tmp hack
+				//score *= (dist+1.0);
+				// best?
+				if ( score > max ) {
+					max = score;
+				}
+			}		
+
+			// first key is 12 bytes
+			if ( firsti ) { 
+				wpi += 6; 
+				firsti = false; 
+			}
+			
+			// advance
+			wpi += 6;
+			// end of list?
+			if ( wpi >= endi ) {
+				break;	// exit for(;;) loop
+			}
+			
+			// exhausted?
+			if ( Posdb::getKeySize ( wpi ) != 6 ) {
+				break;	// exit for(;;) loop
+			}
+			
+			// update. include G-bits?
+			p1 = Posdb::getWordPos ( wpi );
+			// hash group update
+			hg1 = Posdb::getHashGroup ( wpi );
+			// update density weight in case hash group changed
+			denw1 = s_densityWeights[Posdb::getDensityRank(wpi)];
+			// word spam weight update
+			if ( hg1 == HASHGROUP_INLINKTEXT ) {
+				spamw1=s_linkerWeights[Posdb::getWordSpamRank(wpi)];
+			}
+			else {
+				spamw1=s_wordSpamWeights[Posdb::getWordSpamRank(wpi)];
+			}
 		}
 		else {
-			fixedDistance = false;
-		}
-		// if both are link text and > 50 units apart that means
-		// they are from different link texts
-		//if ( hg1 == HASHGROUP_INLINKTEXT && dist > 50 ) goto skip1;
-		// subtract from the dist the terms are apart in the query
-		if ( dist >= qdist ) dist =  dist - qdist;
-		//else               dist = qdist -  dist;
-		// compute score based on that junk
-		//score = (MAXWORDPOS+1) - dist;
-		// good diversity? uneeded for pair algo
-		//score *= s_diversityWeights[div1];
-		//score *= s_diversityWeights[div2];
-		// good density?
-		score = 100 * denw1 * denw2;
-		// hashgroup modifier
-		score *= s_hashGroupWeights[hg1];
-		score *= s_hashGroupWeights[hg2];
-		// if synonym or alternate word form
-		if ( Posdb::getIsSynonym(wpi) ) score *= g_conf.m_synonymWeight;
-		if ( Posdb::getIsSynonym(wpj) ) score *= g_conf.m_synonymWeight;
-		//if (m_bflags[i] & BF_SYNONYM) score *= g_conf.m_synonymWeight;
-		//if (m_bflags[j] & BF_SYNONYM) score *= g_conf.m_synonymWeight;
+			// . skip the pair if they are in different hashgroups
+			// . we no longer allow either to be in the body in this
+			//   algo because we handle those cases in the sliding window
+			//   algo!
+			if ( s_isCompatible[hg1][hg2] ) {
+				// get distance
+				dist = p1 - p2;
+				// if zero, make sure its 2. this happens when the same bigram
+				// is used by both terms. i.e. street uses the bigram 
+				// 'street light' and so does 'light'. so the wordpositions
+				// are exactly the same!
+				if ( dist < 2 ) dist = 2;
+				// fix distance if in different non-body hashgroups
+				if ( dist > 50 ) {
+					dist = FIXED_DISTANCE;
+				}
 
-		// word spam weights
-		score *= spamw1 * spamw2;
-		// huge title? do not allow 11th+ word to be weighted high
-		//if ( hg1 == HASHGROUP_TITLE && dist > 20 ) 
-		//	score /= s_hashGroupWeights[hg1];
-		// mod by distance
-		score /= (dist + 1.0);
-		// tmp hack
-		//score *= (dist+1.0);
-		// best?
-		if ( score > max ) {
-			max = score;
-			maxp1 = wpi;
-			maxp2 = wpj;
-		}
-	skip1:
-		// first key is 12 bytes
-		if ( firsti ) { 
-			wpi += 6; 
-			firsti = false; 
-		}
-		
-		// advance
-		wpi += 6;
-		// end of list?
-		if ( wpi >= endi ) {
-			goto done;
-		}
-		
-		// exhausted?
-		if ( Posdb::getKeySize ( wpi ) != 6 ) {
-			goto done;
-		}
-		
-		// update. include G-bits?
-		p1 = Posdb::getWordPos ( wpi );
-		// hash group update
-		hg1 = Posdb::getHashGroup ( wpi );
-		// update density weight in case hash group changed
-		denw1 = s_densityWeights[Posdb::getDensityRank(wpi)];
-		// word spam weight update
-		if ( hg1 == HASHGROUP_INLINKTEXT )
-			spamw1=s_linkerWeights[Posdb::getWordSpamRank(wpi)];
-		else
-			spamw1=s_wordSpamWeights[Posdb::getWordSpamRank(wpi)];
-		goto loop;
-	}
-	else {
-		// . skip the pair if they are in different hashgroups
-		// . we no longer allow either to be in the body in this
-		//   algo because we handle those cases in the sliding window
-		//   algo!
-		if ( ! s_isCompatible[hg1][hg2] ) {
-			goto skip2;
-		}
-		
-		// get distance
-		dist = p1 - p2;
-		// if zero, make sure its 2. this happens when the same bigram
-		// is used by both terms. i.e. street uses the bigram 
-		// 'street light' and so does 'light'. so the wordpositions
-		// are exactly the same!
-		if ( dist < 2 ) dist = 2;
-		// fix distance if in different non-body hashgroups
-		if ( dist > 50 ) {
-			dist = FIXED_DISTANCE;
-			fixedDistance = true;
-		}
-		else {
-			fixedDistance = false;
-		}
-		// if both are link text and > 50 units apart that means
-		// they are from different link texts
-		//if ( hg1 == HASHGROUP_INLINKTEXT && dist > 50 ) goto skip2;
-		// subtract from the dist the terms are apart in the query
-		if ( dist >= qdist ) {
-			dist =  dist - qdist;
-			// add 1 for being out of order
-			dist += qdist - 1;
-		}
-		else {
-			//dist =  dist - qdist;
-			// add 1 for being out of order
-			dist += 1; // qdist - 1;
-		}
+				// subtract from the dist the terms are apart in the query
+				if ( dist >= qdist ) {
+					dist =  dist - qdist;
+					// add 1 for being out of order
+					dist += qdist - 1;
+				}
+				else {
+					//dist =  dist - qdist;
+					// add 1 for being out of order
+					dist += 1; // qdist - 1;
+				}
 
-		// compute score based on that junk
-		//score = (MAXWORDPOS+1) - dist;
-		// good diversity? uneeded for pair algo
-		//score *= s_diversityWeights[div1];
-		//score *= s_diversityWeights[div2];
-		// good density?
-		score = 100 * denw1 * denw2;
-		// hashgroup modifier
-		score *= s_hashGroupWeights[hg1];
-		score *= s_hashGroupWeights[hg2];
-		// if synonym or alternate word form
-		if ( Posdb::getIsSynonym(wpi) ) score *= g_conf.m_synonymWeight;
-		if ( Posdb::getIsSynonym(wpj) ) score *= g_conf.m_synonymWeight;
-		//if ( m_bflags[i] & BF_SYNONYM ) score *= g_conf.m_synonymWeight;
-		//if ( m_bflags[j] & BF_SYNONYM ) score *= g_conf.m_synonymWeight;
-		// word spam weights
-		score *= spamw1 * spamw2;
-		// huge title? do not allow 11th+ word to be weighted high
-		//if ( hg1 == HASHGROUP_TITLE && dist > 20 ) 
-		//	score /= s_hashGroupWeights[hg1];
-		// mod by distance
-		score /= (dist + 1.0);
-		// tmp hack
-		//score *= (dist+1.0);
-		// best?
-		if ( score > max ) {
-			max = score;
-			maxp1 = wpi;
-			maxp2 = wpj;
+				// compute score based on that junk
+				//score = (MAXWORDPOS+1) - dist;
+				// good diversity? uneeded for pair algo
+				//score *= s_diversityWeights[div1];
+				//score *= s_diversityWeights[div2];
+				// good density?
+				score = 100 * denw1 * denw2;
+				// hashgroup modifier
+				score *= s_hashGroupWeights[hg1];
+				score *= s_hashGroupWeights[hg2];
+				// if synonym or alternate word form
+				if ( Posdb::getIsSynonym(wpi) ) score *= g_conf.m_synonymWeight;
+				if ( Posdb::getIsSynonym(wpj) ) score *= g_conf.m_synonymWeight;
+				//if ( m_bflags[i] & BF_SYNONYM ) score *= g_conf.m_synonymWeight;
+				//if ( m_bflags[j] & BF_SYNONYM ) score *= g_conf.m_synonymWeight;
+				// word spam weights
+				score *= spamw1 * spamw2;
+				// huge title? do not allow 11th+ word to be weighted high
+				//if ( hg1 == HASHGROUP_TITLE && dist > 20 ) 
+				//	score /= s_hashGroupWeights[hg1];
+				// mod by distance
+				score /= (dist + 1.0);
+				// tmp hack
+				//score *= (dist+1.0);
+				// best?
+				if ( score > max ) {
+					max = score;
+				}
+			}
+
+			// first key is 12 bytes
+			if ( firstj ) { 
+				wpj += 6; 
+				firstj = false; 
+			}
+
+			// advance
+			wpj += 6;
+			// end of list?
+			if ( wpj >= endj ) {
+				break;	// exit for(;;) loop
+			}
+			
+			// exhausted?
+			if ( Posdb::getKeySize(wpj) != 6 ) {
+				break;	// exit for(;;) loop
+			}
+			
+			// update
+			p2 = Posdb::getWordPos(wpj);
+			// hash group update
+			hg2 = Posdb::getHashGroup(wpj);
+			// update density weight in case hash group changed
+			denw2 = s_densityWeights[Posdb::getDensityRank(wpj)];
+			// word spam weight update
+			if ( hg2 == HASHGROUP_INLINKTEXT ) {
+				spamw2=s_linkerWeights[Posdb::getWordSpamRank(wpj)];
+			}
+			else {
+				spamw2=s_wordSpamWeights[Posdb::getWordSpamRank(wpj)];
+			}
 		}
-	skip2:
-		// first key is 12 bytes
-		if ( firstj ) { wpj += 6; firstj = false; }
-		// advance
-		wpj += 6;
-		// end of list?
-		if ( wpj >= endj ) {
-			goto done;
-		}
-		
-		// exhausted?
-		if ( Posdb::getKeySize ( wpj ) != 6 ) {
-			goto done;
-		}
-		
-		// update
-		p2 = Posdb::getWordPos ( wpj );
-		// hash group update
-		hg2 = Posdb::getHashGroup ( wpj );
-		// update density weight in case hash group changed
-		denw2 = s_densityWeights[Posdb::getDensityRank(wpj)];
-		// word spam weight update
-		if ( hg2 == HASHGROUP_INLINKTEXT )
-			spamw2=s_linkerWeights[Posdb::getWordSpamRank(wpj)];
-		else
-			spamw2=s_wordSpamWeights[Posdb::getWordSpamRank(wpj)];
-		goto loop;
 	}
 
- done:
-
-	//if ( max < *retMax ) return;
-	//if ( max > 0 ) 
-	//	log("posdb: ret score = %f",max);
 	*retMax = max;
 	logTrace(g_conf.m_logTracePosdb, "END.");
 }
@@ -887,12 +876,10 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 	// then try to keep their positions as in the query.
 	// so for 'time enough for love' ideally we want
 	// 'time' to be 6 units apart from 'love'
-	if ( m_wikiPhraseIds[j] == m_wikiPhraseIds[i] &&
-	     // zero means not in a phrase
-	     m_wikiPhraseIds[j] ) {
+	if ( m_wikiPhraseIds[j] == m_wikiPhraseIds[i] && m_wikiPhraseIds[j] ) { // zero means not in a phrase
 		qdist = m_qpos[j] - m_qpos[i];
 		// wiki weight
-		wts = (float)WIKI_WEIGHT; // .50;
+		wts = (float)WIKI_WEIGHT;
 	}
 	else {
 		// basically try to get query words as close
@@ -908,21 +895,18 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 	}
 
 	bool inSameQuotedPhrase = false;
-	if ( m_quotedStartIds[i] == m_quotedStartIds[j] &&
-	     m_quotedStartIds[i] >= 0 )
+	if ( m_quotedStartIds[i] == m_quotedStartIds[j] && m_quotedStartIds[i] >= 0 ) {
 		inSameQuotedPhrase = true;
+	}
 
 	// oops.. this was not counting non-space punct for 2 units 
 	// instead of 1
-	if ( inSameQuotedPhrase ) 
+	if ( inSameQuotedPhrase ) {
 		qdist = m_qpos[j] - m_qpos[i];		
+	}
 
-
-	int32_t p1 = Posdb::getWordPos ( wpi );
-	int32_t p2 = Posdb::getWordPos ( wpj );
-
-	// fix for bigram algorithm
-	//if ( p1 == p2 ) p2 = p1 + 2;
+	int32_t p1 = Posdb::getWordPos(wpi);
+	int32_t p2 = Posdb::getWordPos(wpj);
 
 	unsigned char hg1 = Posdb::getHashGroup ( wpi );
 	unsigned char hg2 = Posdb::getHashGroup ( wpj );
@@ -930,37 +914,38 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 	// reduce to either HASHGROUP_BODY/TITLE/INLINK/META
 	unsigned char mhg1 = hg1;
 	unsigned char mhg2 = hg2;
-	if ( s_inBody[mhg1] ) mhg1 = HASHGROUP_BODY;
-	if ( s_inBody[mhg2] ) mhg2 = HASHGROUP_BODY;
+	if ( s_inBody[mhg1] ) {
+		mhg1 = HASHGROUP_BODY;
+	}
+	if ( s_inBody[mhg2] ) {
+		mhg2 = HASHGROUP_BODY;
+	}
 
 	unsigned char wsr1 = Posdb::getWordSpamRank(wpi);
 	unsigned char wsr2 = Posdb::getWordSpamRank(wpj);
 
 	float spamw1 ;
 	float spamw2 ;
-	if ( hg1 == HASHGROUP_INLINKTEXT ) spamw1 = s_linkerWeights[wsr1];
-	else                               spamw1 = s_wordSpamWeights[wsr1];
+	if( hg1 == HASHGROUP_INLINKTEXT ) {
+		spamw1 = s_linkerWeights[wsr1];
+	}
+	else {
+		spamw1 = s_wordSpamWeights[wsr1];
+	}
 
-	if ( hg2 == HASHGROUP_INLINKTEXT ) spamw2 = s_linkerWeights[wsr2];
-	else                               spamw2 = s_wordSpamWeights[wsr2];
+	if( hg2 == HASHGROUP_INLINKTEXT ) {
+		spamw2 = s_linkerWeights[wsr2];
+	}
+	else {
+		spamw2 = s_wordSpamWeights[wsr2];
+	}
 
 	// density weight
-	//float denw ;
-	//if ( hg1 == HASHGROUP_BODY ) denw = 1.0;
 	float denw1 = s_densityWeights[Posdb::getDensityRank(wpi)];
 	float denw2 = s_densityWeights[Posdb::getDensityRank(wpj)];
 
 	bool firsti = true;
 	bool firstj = true;
-
-	// if m_msg2 is NULL that means we are being called from seo.cpp
-	// which gives us 6-byte keys only since we are restricted to just
-	// one particular docid. not any more, i think we use
-	// QueryTerm::m_posdbListPtr and make the first key 12 bytes.
-	//if ( ! m_msg2 ) {
-	//	firsti = false;
-	//	firstj = false;
-	//}
 
 	float score;
 	int32_t  minx = -1;
@@ -977,406 +962,408 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 	char  syn1;
 	char  syn2;
 
- loop:
-
-	// pos = 19536
-	//log("hg1=%" PRId32" hg2=%" PRId32" pos1=%" PRId32" pos2=%" PRId32,
-	//    (int32_t)hg1,(int32_t)hg2,(int32_t)p1,(int32_t)p2);
-
-	// . if p1/p2 is in body and not in window, skip
-	// . this is how we restrict all body terms to the winning
-	//   sliding window
-	if ( s_inBody[hg1] && wpi != m_windowTermPtrs[i] ) {
-		goto skip1;
-	}
-	
-	if ( s_inBody[hg2] && wpj != m_windowTermPtrs[j] ) {
-		goto skip2;
-	}
-
-	// make this strictly < now and not <= because in the event
-	// of bigram terms, where p1==p2 we'd like to advance p2/wj to
-	// point to the non-syn single term in order to get a better score
-	// to fix the 'search engine' query on gigablast.com
-	if ( p1 <= p2 ) {
-		// git distance
-		dist = p2 - p1;
-
-		// if in the same quoted phrase, order is bad!
-		if ( inSameQuotedPhrase ) {
-			// debug
-			//log("dddx: i=%" PRId32" j=%" PRId32" dist=%" PRId32" qdist=%" PRId32" posi=%" PRId32" "
-			//    "posj=%" PRId32,
-			//    i,j,dist,qdist,p1,p2);
-			// TODO: allow for off by 1
-			// if it has punct in it then dist will be 3, 
-			// just a space or similar then dist should be 2.
-			if ( dist > qdist && dist - qdist >= 2 ) {
-				goto skip1;
-			}
-			
-			if ( dist < qdist && qdist - dist >= 2 ) {
-				goto skip1;
-			}
-		}
-
-		// are either synonyms
-		syn1 = Posdb::getIsSynonym(wpi);
-		syn2 = Posdb::getIsSynonym(wpj);
-		// if zero, make sure its 2. this happens when the same bigram
-		// is used by both terms. i.e. street uses the bigram 
-		// 'street light' and so does 'light'. so the wordpositions
-		// are exactly the same!
-		if ( dist < 2 ) {
-			dist = 2;
-		}
-		// fix distance if in different non-body hashgroups
-		if ( dist < 50 ) {
-			fixedDistance = false;
-		}
-		// body vs title, linktext vs title, linktext vs body
-		else if ( mhg1 != mhg2 ) {
-			dist = FIXED_DISTANCE;
-			fixedDistance = true;
-		}
-		// link text to other link text
-		else if ( mhg1 == HASHGROUP_INLINKTEXT ) {
-			dist = FIXED_DISTANCE;
-			fixedDistance = true;
-		}
-		else
-			fixedDistance = false;
-		// if both are link text and > 50 units apart that means
-		// they are from different link texts
-		//if ( hg1 == HASHGROUP_INLINKTEXT && dist > 50 ) goto skip1;
-		// subtract from the dist the terms are apart in the query
-		if ( dist >= qdist ) {
-			dist =  dist - qdist;
+	for(;;) {
+		// . if p1/p2 is in body and not in window, skip
+		// . this is how we restrict all body terms to the winning
+		//   sliding window
+		if ( s_inBody[hg1] && wpi != m_windowTermPtrs[i] ) {
+			goto skip1;
 		}
 		
-		//else               dist = qdist -  dist;
-		// compute score based on that junk
-		//score = (MAXWORDPOS+1) - dist;
-		// good diversity? uneeded for pair algo
-		//score *= s_diversityWeights[div1];
-		//score *= s_diversityWeights[div2];
-		// good density?
-		score = 100 * denw1 * denw2;
-		// hashgroup modifier
-		score *= s_hashGroupWeights[hg1];
-		score *= s_hashGroupWeights[hg2];
-
-		// if synonym or alternate word form
-		if ( syn1 ) {
-			score *= g_conf.m_synonymWeight;
-		}
-		
-		if ( syn2 ) {
-			score *= g_conf.m_synonymWeight;
-		}
-		
-		// the new logic
-		if ( Posdb::getIsHalfStopWikiBigram(wpi) ) {
-			score *= WIKI_BIGRAM_WEIGHT;
-		}
-		
-		if ( Posdb::getIsHalfStopWikiBigram(wpj) ) {
-			score *= WIKI_BIGRAM_WEIGHT;
-		}
-		
-		//if ( m_bflags[i] & BF_SYNONYM ) score *= g_conf.m_synonymWeight;
-		//if ( m_bflags[j] & BF_SYNONYM ) score *= g_conf.m_synonymWeight;
-		// word spam weights
-		score *= spamw1 * spamw2;
-		// huge title? do not allow 11th+ word to be weighted high
-		//if ( hg1 == HASHGROUP_TITLE && dist > 20 ) 
-		//	score /= s_hashGroupWeights[hg1];
-		// mod by distance
-		score /= (dist + 1.0);
-		// tmp hack
-		//score *= (dist+1.0);
-
-		// if our hg1/hg2 hashgroup pairing already exists
-		// in the bestScores array we have to beat it and then
-		// we have to replace that. we can only have one per,
-		// except for linktext!
-
-		bro = -1;
-		for ( int32_t k = 0 ; k < numTop ; k++ ) {
-			if ( bestmhg1[k]==mhg1 && hg1 !=HASHGROUP_INLINKTEXT ){
-				bro = k;
-				break;
-			}
-			if ( bestmhg2[k]==mhg2 && hg2 !=HASHGROUP_INLINKTEXT ){
-				bro = k;
-				break;
-			}
-		}
-		if ( bro >= 0 ) {
-			if ( score > bestScores[bro] ) {
-				bestScores[bro] = score;
-				bestwpi   [bro] = wpi;
-				bestwpj   [bro] = wpj;
-				bestmhg1  [bro] = mhg1;
-				bestmhg2  [bro] = mhg2;
-				bestFixed [bro] = fixedDistance;
-			}
-		}
-		// best?
-		else if ( numTop < m_realMaxTop ) { // MAX_TOP ) {
-			bestScores[numTop] = score;
-			bestwpi   [numTop] = wpi;
-			bestwpj   [numTop] = wpj;
-			bestmhg1  [numTop] = mhg1;
-			bestmhg2  [numTop] = mhg2;
-			bestFixed [numTop] = fixedDistance;
-			numTop++;
-		}
-		else if ( score > bestScores[minx] ) {
-			bestScores[minx] = score;
-			bestwpi   [minx] = wpi;
-			bestwpj   [minx] = wpj;
-			bestmhg1  [minx] = mhg1;
-			bestmhg2  [minx] = mhg2;
-			bestFixed [minx] = fixedDistance;
-		}
-		
-		// set "minx" to the lowest score out of the top scores
-		if ( numTop >= m_realMaxTop ) { // MAX_TOP ) {
-			minx = 0;
-			for ( int32_t k = 1 ; k < m_realMaxTop;k++){//MAX_TOP;k++
-				if (bestScores[k]>bestScores[minx] ) {
-					continue;
-				}
-				
-				minx = k;
-			}
-		}
-
-		
-	skip1:
-		// first key is 12 bytes
-		if ( firsti ) { wpi += 6; firsti = false; }
-		// advance
-		wpi += 6;
-		// end of list?
-		if ( wpi >= endi ) {
-			goto done;
-		}
-		
-		// exhausted?
-		if ( Posdb::getKeySize ( wpi ) != 6 ) {
-			// sometimes there is posdb index corruption and
-			// we have a 12 byte key with the same docid but
-			// different siterank or langid because it was
-			// not deleted right!
-			if ( (uint64_t)Posdb::getDocId(wpi) != m_docId ) {
-				gbshutdownAbort(true);
-			}
-			// re-set this i guess
-			firsti = true;
-		}
-		// update. include G-bits?
-		p1 = Posdb::getWordPos ( wpi );
-		// hash group update
-		hg1 = Posdb::getHashGroup ( wpi );
-		// the "modified" hash group
-		mhg1 = hg1;
-		if ( s_inBody[mhg1] ) mhg1 = HASHGROUP_BODY;
-		// update density weight in case hash group changed
-		denw1 = s_densityWeights[Posdb::getDensityRank(wpi)];
-		// word spam weight update
-		if ( hg1 == HASHGROUP_INLINKTEXT )
-			spamw1=s_linkerWeights[Posdb::getWordSpamRank(wpi)];
-		else
-			spamw1=s_wordSpamWeights[Posdb::getWordSpamRank(wpi)];
-		goto loop;
-	}
-	else {
-		// get distance
-		dist = p1 - p2;
-
-		// if in the same quoted phrase, order is bad!
-		if ( inSameQuotedPhrase ) {
-			// debug
-			//log("dddy: i=%" PRId32" j=%" PRId32" dist=%" PRId32" qdist=%" PRId32" posi=%" PRId32" "
-			//    "posj=%" PRId32,
-			//    i,j,dist,qdist,p1,p2);
+		if ( s_inBody[hg2] && wpj != m_windowTermPtrs[j] ) {
 			goto skip2;
 		}
 
-		// if zero, make sure its 2. this happens when the same bigram
-		// is used by both terms. i.e. street uses the bigram 
-		// 'street light' and so does 'light'. so the wordpositions
-		// are exactly the same!
-		if ( dist < 2 ) {
-			dist = 2;
-		}
-		
-		// fix distance if in different non-body hashgroups
-		if ( dist < 50 ) {
-			fixedDistance = false;
-		}
-		// body vs title, linktext vs title, linktext vs body
-		else if ( mhg1 != mhg2 ) {
-			dist = FIXED_DISTANCE;
-			fixedDistance = true;
-		}
-		// link text to other link text
-		else if ( mhg1 == HASHGROUP_INLINKTEXT ) {
-			dist = FIXED_DISTANCE;
-			fixedDistance = true;
-		}
-		else
-			fixedDistance = false;
-		// if both are link text and > 50 units apart that means
-		// they are from different link texts
-		//if ( hg1 == HASHGROUP_INLINKTEXT && dist > 50 ) goto skip2;
-		// subtract from the dist the terms are apart in the query
-		if ( dist >= qdist ) {
-			dist =  dist - qdist;
-			// add 1 for being out of order
-			dist += qdist - 1;
-		}
-		else {
-			//dist =  dist - qdist;
-			// add 1 for being out of order
-			dist += 1; // qdist - 1;
-		}
+		// make this strictly < now and not <= because in the event
+		// of bigram terms, where p1==p2 we'd like to advance p2/wj to
+		// point to the non-syn single term in order to get a better score
+		// to fix the 'search engine' query on gigablast.com
+		if ( p1 <= p2 ) {
+			// git distance
+			dist = p2 - p1;
 
-		// compute score based on that junk
-		//score = (MAXWORDPOS+1) - dist;
-		// good diversity? uneeded for pair algo
-		//score *= s_diversityWeights[div1];
-		//score *= s_diversityWeights[div2];
-		// good density?
-		score = 100 * denw1 * denw2;
-		// hashgroup modifier
-		score *= s_hashGroupWeights[hg1];
-		score *= s_hashGroupWeights[hg2];
-		
-		// if synonym or alternate word form
-		if ( Posdb::getIsSynonym(wpi) ) {
-			score *= g_conf.m_synonymWeight;
-		}
-		
-		if ( Posdb::getIsSynonym(wpj) ) {
-			score *= g_conf.m_synonymWeight;
-		}
-		
-		//if ( m_bflags[i] & BF_SYNONYM ) score *= g_conf.m_synonymWeight;
-		//if ( m_bflags[j] & BF_SYNONYM ) score *= g_conf.m_synonymWeight;
-		// word spam weights
-		score *= spamw1 * spamw2;
-		// huge title? do not allow 11th+ word to be weighted high
-		//if ( hg1 == HASHGROUP_TITLE && dist > 20 ) 
-		//	score /= s_hashGroupWeights[hg1];
-		// mod by distance
-		score /= (dist + 1.0);
-		// tmp hack
-		//score *= (dist+1.0);
-
-		// if our hg1/hg2 hashgroup pairing already exists
-		// in the bestScores array we have to beat it and then
-		// we have to replace that. we can only have one per,
-		// except for linktext!
-
-		bro = -1;
-		for ( int32_t k = 0 ; k < numTop ; k++ ) {
-			if ( bestmhg1[k]==mhg1 && hg1 !=HASHGROUP_INLINKTEXT ){
-				bro = k;
-				break;
-			}
-			if ( bestmhg2[k]==mhg2 && hg2 !=HASHGROUP_INLINKTEXT ){
-				bro = k;
-				break;
-			}
-		}
-		if ( bro >= 0 ) {
-			if ( score > bestScores[bro] ) {
-				bestScores[bro] = score;
-				bestwpi   [bro] = wpi;
-				bestwpj   [bro] = wpj;
-				bestmhg1  [bro] = mhg1;
-				bestmhg2  [bro] = mhg2;
-				bestFixed [bro] = fixedDistance;
-			}
-		}
-		// best?
-		else if ( numTop < m_realMaxTop ) { // MAX_TOP ) {
-			bestScores[numTop] = score;
-			bestwpi   [numTop] = wpi;
-			bestwpj   [numTop] = wpj;
-			bestmhg1  [numTop] = mhg1;
-			bestmhg2  [numTop] = mhg2;
-			bestFixed [numTop] = fixedDistance;
-			numTop++;
-		}
-		else if ( score > bestScores[minx] ) {
-			bestScores[minx] = score;
-			bestwpi   [minx] = wpi;
-			bestwpj   [minx] = wpj;
-			bestmhg1  [minx] = mhg1;
-			bestmhg2  [minx] = mhg2;
-			bestFixed [minx] = fixedDistance;
-		}
-		
-		// set "minx" to the lowest score out of the top scores
-		if ( numTop >= m_realMaxTop ) { // MAX_TOP ) {
-			minx = 0;
-			for ( int32_t k = 1 ; k < m_realMaxTop;k++){//MAX_TOP;k++
-				if (bestScores[k]>bestScores[minx] ) {
-					continue;
+			// if in the same quoted phrase, order is bad!
+			if ( inSameQuotedPhrase ) {
+				// debug
+				//log("dddx: i=%" PRId32" j=%" PRId32" dist=%" PRId32" qdist=%" PRId32" posi=%" PRId32" "
+				//    "posj=%" PRId32,
+				//    i,j,dist,qdist,p1,p2);
+				// TODO: allow for off by 1
+				// if it has punct in it then dist will be 3, 
+				// just a space or similar then dist should be 2.
+				if ( dist > qdist && dist - qdist >= 2 ) {
+					goto skip1;
 				}
 				
-				minx = k;
+				if ( dist < qdist && qdist - dist >= 2 ) {
+					goto skip1;
+				}
+			}
+
+			// are either synonyms
+			syn1 = Posdb::getIsSynonym(wpi);
+			syn2 = Posdb::getIsSynonym(wpj);
+			// if zero, make sure its 2. this happens when the same bigram
+			// is used by both terms. i.e. street uses the bigram 
+			// 'street light' and so does 'light'. so the wordpositions
+			// are exactly the same!
+			if ( dist < 2 ) {
+				dist = 2;
+			}
+			// fix distance if in different non-body hashgroups
+			if ( dist < 50 ) {
+				fixedDistance = false;
+			}
+			// body vs title, linktext vs title, linktext vs body
+			else if ( mhg1 != mhg2 ) {
+				dist = FIXED_DISTANCE;
+				fixedDistance = true;
+			}
+			// link text to other link text
+			else if ( mhg1 == HASHGROUP_INLINKTEXT ) {
+				dist = FIXED_DISTANCE;
+				fixedDistance = true;
+			}
+			else {
+				fixedDistance = false;
+			}
+			
+			// if both are link text and > 50 units apart that means
+			// they are from different link texts
+			//if ( hg1 == HASHGROUP_INLINKTEXT && dist > 50 ) goto skip1;
+			// subtract from the dist the terms are apart in the query
+			if ( dist >= qdist ) {
+				dist =  dist - qdist;
+			}
+			
+			// good density?
+			score = 100 * denw1 * denw2;
+			// hashgroup modifier
+			score *= s_hashGroupWeights[hg1];
+			score *= s_hashGroupWeights[hg2];
+
+			// if synonym or alternate word form
+			if ( syn1 ) {
+				score *= g_conf.m_synonymWeight;
+			}
+			
+			if ( syn2 ) {
+				score *= g_conf.m_synonymWeight;
+			}
+			
+			// the new logic
+			if ( Posdb::getIsHalfStopWikiBigram(wpi) ) {
+				score *= WIKI_BIGRAM_WEIGHT;
+			}
+			
+			if ( Posdb::getIsHalfStopWikiBigram(wpj) ) {
+				score *= WIKI_BIGRAM_WEIGHT;
+			}
+			
+			// word spam weights
+			score *= spamw1 * spamw2;
+			// huge title? do not allow 11th+ word to be weighted high
+			//if ( hg1 == HASHGROUP_TITLE && dist > 20 ) 
+			//	score /= s_hashGroupWeights[hg1];
+			// mod by distance
+			score /= (dist + 1.0);
+			// tmp hack
+			//score *= (dist+1.0);
+
+			// if our hg1/hg2 hashgroup pairing already exists
+			// in the bestScores array we have to beat it and then
+			// we have to replace that. we can only have one per,
+			// except for linktext!
+
+			bro = -1;
+			for ( int32_t k = 0 ; k < numTop ; k++ ) {
+				if ( bestmhg1[k]==mhg1 && hg1 != HASHGROUP_INLINKTEXT ){
+					bro = k;
+					break;
+				}
+				if ( bestmhg2[k]==mhg2 && hg2 != HASHGROUP_INLINKTEXT ){
+					bro = k;
+					break;
+				}
+			}
+
+			if ( bro >= 0 ) {
+				if ( score > bestScores[bro] ) {
+					bestScores[bro] = score;
+					bestwpi   [bro] = wpi;
+					bestwpj   [bro] = wpj;
+					bestmhg1  [bro] = mhg1;
+					bestmhg2  [bro] = mhg2;
+					bestFixed [bro] = fixedDistance;
+				}
+			}
+			// best?
+			else if ( numTop < m_realMaxTop ) { // MAX_TOP ) {
+				bestScores[numTop] = score;
+				bestwpi   [numTop] = wpi;
+				bestwpj   [numTop] = wpj;
+				bestmhg1  [numTop] = mhg1;
+				bestmhg2  [numTop] = mhg2;
+				bestFixed [numTop] = fixedDistance;
+				numTop++;
+			}
+			else if ( score > bestScores[minx] ) {
+				bestScores[minx] = score;
+				bestwpi   [minx] = wpi;
+				bestwpj   [minx] = wpj;
+				bestmhg1  [minx] = mhg1;
+				bestmhg2  [minx] = mhg2;
+				bestFixed [minx] = fixedDistance;
+			}
+			
+			// set "minx" to the lowest score out of the top scores
+			if ( numTop >= m_realMaxTop ) { // MAX_TOP ) {
+				minx = 0;
+				for ( int32_t k = 1 ; k < m_realMaxTop;k++){//MAX_TOP;k++
+					if (bestScores[k]>bestScores[minx] ) {
+						continue;
+					}
+					
+					minx = k;
+				}
+			}
+
+			
+		skip1:
+			// first key is 12 bytes
+			if ( firsti ) { 
+				wpi += 6; 
+				firsti = false; 
+			}
+
+			// advance
+			wpi += 6;
+
+			// end of list?
+			if ( wpi >= endi ) {
+				break;	// exit for(;;) loop
+			}
+			
+			// exhausted?
+			if ( Posdb::getKeySize ( wpi ) != 6 ) {
+				// sometimes there is posdb index corruption and
+				// we have a 12 byte key with the same docid but
+				// different siterank or langid because it was
+				// not deleted right!
+				if ( (uint64_t)Posdb::getDocId(wpi) != m_docId ) {
+					gbshutdownAbort(true);
+				}
+				// re-set this i guess
+				firsti = true;
+			}
+			// update. include G-bits?
+			p1 = Posdb::getWordPos ( wpi );
+			// hash group update
+			hg1 = Posdb::getHashGroup ( wpi );
+			// the "modified" hash group
+			mhg1 = hg1;
+			if ( s_inBody[mhg1] ) mhg1 = HASHGROUP_BODY;
+			// update density weight in case hash group changed
+			denw1 = s_densityWeights[Posdb::getDensityRank(wpi)];
+			// word spam weight update
+			if ( hg1 == HASHGROUP_INLINKTEXT ) {
+				spamw1=s_linkerWeights[Posdb::getWordSpamRank(wpi)];
+			}
+			else {
+				spamw1=s_wordSpamWeights[Posdb::getWordSpamRank(wpi)];
 			}
 		}
+		else {
+			// get distance
+			dist = p1 - p2;
 
-	skip2:
-		// first key is 12 bytes
-		if ( firstj ) { 
-			wpj += 6; 
-			firstj = false; 
-		}
-		
-		// advance
-		wpj += 6;
-		// end of list?
-		if ( wpj >= endj ) {
-			goto done;
-		}
-		
-		// exhausted?
-		if ( Posdb::getKeySize ( wpj ) != 6 ) {
-			// sometimes there is posdb index corruption and
-			// we have a 12 byte key with the same docid but
-			// different siterank or langid because it was
-			// not deleted right!
-			if ( (uint64_t)Posdb::getDocId(wpj) != m_docId ) {
-				gbshutdownAbort(true);
+			// if in the same quoted phrase, order is bad!
+			if ( inSameQuotedPhrase ) {
+				// debug
+				//log("dddy: i=%" PRId32" j=%" PRId32" dist=%" PRId32" qdist=%" PRId32" posi=%" PRId32" "
+				//    "posj=%" PRId32,
+				//    i,j,dist,qdist,p1,p2);
+				goto skip2;
 			}
-			// re-set this i guess
-			firstj = true;
-		}
-		// update
-		p2 = Posdb::getWordPos ( wpj );
-		// hash group update
-		hg2 = Posdb::getHashGroup ( wpj );
-		// the "modified" hash group
-		mhg2 = hg2;
-		if ( s_inBody[mhg2] ) mhg2 = HASHGROUP_BODY;
-		// update density weight in case hash group changed
-		denw2 = s_densityWeights[Posdb::getDensityRank(wpj)];
-		// word spam weight update
-		if ( hg2 == HASHGROUP_INLINKTEXT )
-			spamw2=s_linkerWeights[Posdb::getWordSpamRank(wpj)];
-		else
-			spamw2=s_wordSpamWeights[Posdb::getWordSpamRank(wpj)];
-		goto loop;
-	}
 
- done:
+			// if zero, make sure its 2. this happens when the same bigram
+			// is used by both terms. i.e. street uses the bigram 
+			// 'street light' and so does 'light'. so the wordpositions
+			// are exactly the same!
+			if ( dist < 2 ) {
+				dist = 2;
+			}
+			
+			// fix distance if in different non-body hashgroups
+			if ( dist < 50 ) {
+				fixedDistance = false;
+			}
+			// body vs title, linktext vs title, linktext vs body
+			else if ( mhg1 != mhg2 ) {
+				dist = FIXED_DISTANCE;
+				fixedDistance = true;
+			}
+			// link text to other link text
+			else if ( mhg1 == HASHGROUP_INLINKTEXT ) {
+				dist = FIXED_DISTANCE;
+				fixedDistance = true;
+			}
+			else
+				fixedDistance = false;
+			// if both are link text and > 50 units apart that means
+			// they are from different link texts
+			//if ( hg1 == HASHGROUP_INLINKTEXT && dist > 50 ) goto skip2;
+			// subtract from the dist the terms are apart in the query
+			if ( dist >= qdist ) {
+				dist =  dist - qdist;
+				// add 1 for being out of order
+				dist += qdist - 1;
+			}
+			else {
+				//dist =  dist - qdist;
+				// add 1 for being out of order
+				dist += 1; // qdist - 1;
+			}
+
+			// compute score based on that junk
+			//score = (MAXWORDPOS+1) - dist;
+			// good diversity? uneeded for pair algo
+			//score *= s_diversityWeights[div1];
+			//score *= s_diversityWeights[div2];
+			// good density?
+			score = 100 * denw1 * denw2;
+			// hashgroup modifier
+			score *= s_hashGroupWeights[hg1];
+			score *= s_hashGroupWeights[hg2];
+			
+			// if synonym or alternate word form
+			if ( Posdb::getIsSynonym(wpi) ) {
+				score *= g_conf.m_synonymWeight;
+			}
+			
+			if ( Posdb::getIsSynonym(wpj) ) {
+				score *= g_conf.m_synonymWeight;
+			}
+			
+			//if ( m_bflags[i] & BF_SYNONYM ) score *= g_conf.m_synonymWeight;
+			//if ( m_bflags[j] & BF_SYNONYM ) score *= g_conf.m_synonymWeight;
+			// word spam weights
+			score *= spamw1 * spamw2;
+			// huge title? do not allow 11th+ word to be weighted high
+			//if ( hg1 == HASHGROUP_TITLE && dist > 20 ) 
+			//	score /= s_hashGroupWeights[hg1];
+			// mod by distance
+			score /= (dist + 1.0);
+			// tmp hack
+			//score *= (dist+1.0);
+
+			// if our hg1/hg2 hashgroup pairing already exists
+			// in the bestScores array we have to beat it and then
+			// we have to replace that. we can only have one per,
+			// except for linktext!
+
+			bro = -1;
+			for ( int32_t k = 0 ; k < numTop ; k++ ) {
+				if ( bestmhg1[k]==mhg1 && hg1 !=HASHGROUP_INLINKTEXT ){
+					bro = k;
+					break;
+				}
+				if ( bestmhg2[k]==mhg2 && hg2 !=HASHGROUP_INLINKTEXT ){
+					bro = k;
+					break;
+				}
+			}
+			if ( bro >= 0 ) {
+				if ( score > bestScores[bro] ) {
+					bestScores[bro] = score;
+					bestwpi   [bro] = wpi;
+					bestwpj   [bro] = wpj;
+					bestmhg1  [bro] = mhg1;
+					bestmhg2  [bro] = mhg2;
+					bestFixed [bro] = fixedDistance;
+				}
+			}
+			// best?
+			else if ( numTop < m_realMaxTop ) { // MAX_TOP ) {
+				bestScores[numTop] = score;
+				bestwpi   [numTop] = wpi;
+				bestwpj   [numTop] = wpj;
+				bestmhg1  [numTop] = mhg1;
+				bestmhg2  [numTop] = mhg2;
+				bestFixed [numTop] = fixedDistance;
+				numTop++;
+			}
+			else if ( score > bestScores[minx] ) {
+				bestScores[minx] = score;
+				bestwpi   [minx] = wpi;
+				bestwpj   [minx] = wpj;
+				bestmhg1  [minx] = mhg1;
+				bestmhg2  [minx] = mhg2;
+				bestFixed [minx] = fixedDistance;
+			}
+			
+			// set "minx" to the lowest score out of the top scores
+			if ( numTop >= m_realMaxTop ) { // MAX_TOP ) {
+				minx = 0;
+				for ( int32_t k = 1 ; k < m_realMaxTop;k++){//MAX_TOP;k++
+					if( bestScores[k] > bestScores[minx]) {
+						continue;
+					}
+					minx = k;
+				}
+			}
+
+		skip2:
+			// first key is 12 bytes
+			if ( firstj ) { 
+				wpj += 6; 
+				firstj = false; 
+			}
+			
+			// advance
+			wpj += 6;
+
+			// end of list?
+			if ( wpj >= endj ) {
+				break;	// exit for(;;) loop
+			}
+			
+			// exhausted?
+			if ( Posdb::getKeySize ( wpj ) != 6 ) {
+				// sometimes there is posdb index corruption and
+				// we have a 12 byte key with the same docid but
+				// different siterank or langid because it was
+				// not deleted right!
+				if ( (uint64_t)Posdb::getDocId(wpj) != m_docId ) {
+					gbshutdownAbort(true);
+				}
+				// re-set this i guess
+				firstj = true;
+			}
+
+			// update
+			p2 = Posdb::getWordPos ( wpj );
+			// hash group update
+			hg2 = Posdb::getHashGroup ( wpj );
+			// the "modified" hash group
+			mhg2 = hg2;
+			if ( s_inBody[mhg2] ) {
+				mhg2 = HASHGROUP_BODY;
+			}
+
+			// update density weight in case hash group changed
+			denw2 = s_densityWeights[Posdb::getDensityRank(wpj)];
+
+			// word spam weight update
+			if ( hg2 == HASHGROUP_INLINKTEXT ) {
+				spamw2 = s_linkerWeights[Posdb::getWordSpamRank(wpj)];
+			}
+			else {
+				spamw2 = s_wordSpamWeights[Posdb::getWordSpamRank(wpj)];
+			}
+		}
+	} // for(;;)
+
 
 	// add up the top scores
 	float sum = 0.0;
@@ -1397,13 +1384,9 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 	sum *= m_freqWeights[i];
 	sum *= m_freqWeights[j];
 
-	if (m_debug)
+	if (m_debug) {
 		log(LOG_INFO, "posdb: best score final = %f",sum);
-
-	// wiki bigram weight
-	// i don't think this works this way any more!
-	//if ( m_bflags[i] & BF_HALFSTOPWIKIBIGRAM ) sum *= WIKI_BIGRAM_WEIGHT;
-	//if ( m_bflags[j] & BF_HALFSTOPWIKIBIGRAM ) sum *= WIKI_BIGRAM_WEIGHT;
+	}
 
 	//
 	// end the loop. return now if not collecting scoring info.
@@ -1427,11 +1410,15 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 	// point into buf
 	PairScore *px = (PairScore *)m_pairScoreBuf.getBuf();
 	int32_t need = sizeof(PairScore) * numTop;
+
 	// point to that
-	if ( pdcs->m_pairsOffset < 0 )
+	if ( pdcs->m_pairsOffset < 0 ) {
 		pdcs->m_pairsOffset = m_pairScoreBuf.length();
+	}
+
 	// reset this i guess
 	pdcs->m_pairScores = NULL;
+
 	// sanity
 	if ( m_pairScoreBuf.getAvail() < need ) { 
 		// m_pairScores will be NULL
@@ -1458,6 +1445,7 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 		score *= wts;
 		score *= m_freqWeights[i];
 		score *= m_freqWeights[j];
+
 		// we have to encode these bits into the mini merge now
 		if ( Posdb::getIsHalfStopWikiBigram(maxp1) ) {
 			score *= WIKI_BIGRAM_WEIGHT;
@@ -1503,9 +1491,15 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 		px->m_tfWeight2      = m_freqWeights[j];//sfw[j];
 		px->m_bflags1        = m_bflags[i];
 		px->m_bflags2        = m_bflags[j];
+
 		// flag it as in same wiki phrase
-		if ( wts == (float)WIKI_WEIGHT ) px->m_inSameWikiPhrase =true;
-		else                             px->m_inSameWikiPhrase =false;
+		if ( wts == (float)WIKI_WEIGHT ) {
+			px->m_inSameWikiPhrase = true;
+		}
+		else {
+			px->m_inSameWikiPhrase = false;
+		}
+		
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(px,sizeof(*px));
 #endif
@@ -2704,7 +2698,6 @@ void PosdbTable::intersectLists10_r ( ) {
 	//
 	/////////
 
-	bool genDebugScoreInfoPass = false;
 	DocIdScore dcs;
 	DocIdScore *pdcs = NULL;
 	int32_t minx =0;
@@ -2772,260 +2765,236 @@ void PosdbTable::intersectLists10_r ( ) {
 	}
 
 
-	logTrace(g_conf.m_logTracePosdb, "Before genDebugScoreInfoPassLoop");
-	
- genDebugScoreInfoPassLoop:
+ 	//
+ 	// Run through the scoring logic once or twice. Two passes needed ONLY if we 
+ 	// need to create additional (debug) scoring info for visual display.
+ 	//
+ 	int numPassesNeeded = m_msg39req->m_getDocIdScoringInfo ? 2 : 1;
 
-	// reset docid to start!
-	docIdPtr = m_docIdVoteBuf.getBufStart();
+	for(int currPassNum=0; currPassNum < numPassesNeeded; currPassNum++) {
+		//
+		// Pass 0: Find candidate docids and calculate scores
+		// Pass 1: Only for creating debug scoring info for visual display
+		//
+		switch( currPassNum ) {
+			case INTERSECT_SCORING:
+				logTrace(g_conf.m_logTracePosdb, "Loop 0: Real scoring");
+				break;
+			case INTERSECT_DEBUG_INFO:
+				logTrace(g_conf.m_logTracePosdb, "Loop 1: Data for visual scoring info");
+				break;
+			default:
+				log(LOG_LOGIC,"%s:%d: Illegal pass number %d", __FILE__, __LINE__, currPassNum);
+				gbshutdownLogicError();
+				break;
+		}
 
-	if( genDebugScoreInfoPass ) {
-		//
-		// reset QueryTermInfo::m_matchingSubListCursor[] to point to start of 
-		// term lists for second pass that gets printable scoring info
-		//
-		for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
-			// get it
-			QueryTermInfo *qti = &qtibuf[i];
-			// skip negative termlists
-			if ( qti->m_bigramFlags[0] & BF_NEGATIVE ) {
-				continue;
-			}
-			
-			// do each sublist
-			for ( int32_t j = 0 ; j < qti->m_numMatchingSubLists ; j++ ) {
-				qti->m_matchingSubListCursor      [j] = qti->m_matchingSubListStart[j];
-				qti->m_matchingSubListSavedCursor [j] = qti->m_matchingSubListStart[j];
+		// reset docid to start!
+		docIdPtr = m_docIdVoteBuf.getBufStart();
+
+		if( currPassNum == INTERSECT_DEBUG_INFO ) {
+			//
+			// reset QueryTermInfo::m_matchingSubListCursor[] to point to start of 
+			// term lists for second pass that gets printable scoring info
+			//
+			for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
+				// get it
+				QueryTermInfo *qti = &qtibuf[i];
+				// skip negative termlists
+				if ( qti->m_bigramFlags[0] & BF_NEGATIVE ) {
+					continue;
+				}
+				
+				// do each sublist
+				for ( int32_t j = 0 ; j < qti->m_numMatchingSubLists ; j++ ) {
+					qti->m_matchingSubListCursor      [j] = qti->m_matchingSubListStart[j];
+					qti->m_matchingSubListSavedCursor [j] = qti->m_matchingSubListStart[j];
+				}
 			}
 		}
-	}
 
-	//
-	// the main loop for looping over each docid
-	//
-handleNextDocId:
+		//
+		// the main loop for looping over each docid
+		//
+	handleNextDocId:
 
-	// is this right?
-	if ( docIdPtr >= docIdEnd ) {
-		goto done;
-	}
-
-
-	// second pass? for printing out transparency info.
-	if ( genDebugScoreInfoPass ) {
-		logTrace(g_conf.m_logTracePosdb, "This is the second pass");
-		if( genDebugScoreInfo1(numProcessed, topCursor, qtibuf) ) {
-			// returns true if no more docids to handle
+		// is this right?
+		if ( docIdPtr >= docIdEnd ) {
 			goto done;
 		}
-	}
 
 
-	if( !genDebugScoreInfoPass ) {
-		// Pre-advance each termlist's cursor to skip to next docid.
-		//
-		// Set QueryTermInfo::m_matchingSubListCursor to NEXT docid
-		// Set QueryTermInfo::m_matchingSubListSavedCursor to CURRENT docid
-		// of each termlist so we are ready for a quick skip over this docid.
-		//
-		// TODO: use just a single array of termlist ptrs perhaps,
-		// then we can remove them when they go NULL.  and we'd save a little
-		// time not having a nested loop.
-		for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
-			// get it
-			QueryTermInfo *qti = &qtibuf[i];
-			// do not advance negative termlist cursor
-			if ( qti->m_bigramFlags[0] & BF_NEGATIVE ) {
-				continue;
+		// second pass? for printing out transparency info.
+		if ( currPassNum == INTERSECT_DEBUG_INFO ) {
+			if( genDebugScoreInfo1(numProcessed, topCursor, qtibuf) ) {
+				// returns true if no more docids to handle
+				goto done;
 			}
+		}
 
-			//
-			// In first pass, sublists data is initialized by delNonMatchingDocIdsFromSubLists.
-			// In second pass (to get detailed scoring info for UI output), they are initialized above
-			//
-			for ( int32_t j = 0 ; j < qti->m_numMatchingSubLists ; j++ ) {
-				// shortcuts
-				char *xc    = qti->m_matchingSubListCursor[j];
-				char *xcEnd = qti->m_matchingSubListEnd[j];
 
-				// exhausted? (we can't make cursor NULL because
-				// getMaxPossibleScore() needs the last ptr)
-				// must match docid
-				if ( xc >= xcEnd ||
-				     *(int32_t *)(xc+8) != *(int32_t *)(docIdPtr+1) ||
-				     (*(char *)(xc+7)&0xfc) != (*(char *)(docIdPtr)&0xfc) ) {
-					// flag it as not having the docid
-					qti->m_matchingSubListSavedCursor[j] = NULL;
-					// skip this sublist if does not have our docid
+		if( currPassNum == INTERSECT_SCORING ) {
+			// Pre-advance each termlist's cursor to skip to next docid.
+			//
+			// Set QueryTermInfo::m_matchingSubListCursor to NEXT docid
+			// Set QueryTermInfo::m_matchingSubListSavedCursor to CURRENT docid
+			// of each termlist so we are ready for a quick skip over this docid.
+			//
+			// TODO: use just a single array of termlist ptrs perhaps,
+			// then we can remove them when they go NULL.  and we'd save a little
+			// time not having a nested loop.
+			for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
+				// get it
+				QueryTermInfo *qti = &qtibuf[i];
+				// do not advance negative termlist cursor
+				if ( qti->m_bigramFlags[0] & BF_NEGATIVE ) {
 					continue;
 				}
 
-				// save it
-				qti->m_matchingSubListSavedCursor[j] = xc;
-				// get new docid
-				//log("new docid %" PRId64,Posdb::getDocId(xc) );
-				// advance the cursors. skip our 12
-				xc += 12;
-				// then skip any following 6 byte keys because they
-				// share the same docid
-				for ( ;  ; xc += 6 ) {
-					// end of whole termlist?
-					if ( xc >= xcEnd ) {
-						break;
-					}
-					
-					// sanity. no 18 byte keys allowed
-					if ( (*xc & 0x06) == 0x00 ) {
-						// i've seen this triggered on gk28.
-						// a dump of posdb for the termlist
-						// for 'post' had corruption in it,
-						// yet its twin, gk92 did not. the
-						// corruption could have occurred
-						// anywhere from nov 2012 to may 2013,
-						// and the posdb file was never
-						// re-merged! must have been blatant
-						// disk malfunction?
-						log("posdb: encountered corrupt posdb list. bailing.");
-						logTrace(g_conf.m_logTracePosdb, "END.");
-						return;
-						//gbshutdownAbort(true);
-					}
-					// the next docid? it will be a 12 byte key.
-					if ( ! (*xc & 0x04) ) {
-						break;
-					}
-				}
-				// assign to next docid word position list
-				qti->m_matchingSubListCursor[j] = xc;
-			}
-		}
+				//
+				// In first pass, sublists data is initialized by delNonMatchingDocIdsFromSubLists.
+				// In second pass (to get detailed scoring info for UI output), they are initialized above
+				//
+				for ( int32_t j = 0 ; j < qti->m_numMatchingSubLists ; j++ ) {
+					// shortcuts
+					char *xc    = qti->m_matchingSubListCursor[j];
+					char *xcEnd = qti->m_matchingSubListEnd[j];
 
-
-
-		if( !m_q->m_isBoolean ) {
-
-			// TODO: consider skipping this pre-filter if it sucks, as it does
-			// for 'time enough for love'. it might save time!
-					
-			//@@@ BR: Do not go through this if minWinningScore = -1?! - which it is if we haven't
-			// reached max number of docs to get
-			if ( ! genDebugScoreInfoPass ) {
-				logTrace(g_conf.m_logTracePosdb, "Compute 'upper bound' for each query term");
-
-				// If there's no way we can break into the winner's circle, give up!
-				// This computes an upper bound for each query term
-				for ( int32_t i = 0 ; i < numQueryTermsToHandle ; i++ ) { // m_numQueryTermInfos ; i++ ) {
-					// skip negative termlists.
-					if ( qtibuf[i].m_bigramFlags[0] & (BF_NEGATIVE) ) {
+					// exhausted? (we can't make cursor NULL because
+					// getMaxPossibleScore() needs the last ptr)
+					// must match docid
+					if ( xc >= xcEnd ||
+					     *(int32_t *)(xc+8) != *(int32_t *)(docIdPtr+1) ||
+					     (*(char *)(xc+7)&0xfc) != (*(char *)(docIdPtr)&0xfc) ) {
+						// flag it as not having the docid
+						qti->m_matchingSubListSavedCursor[j] = NULL;
+						// skip this sublist if does not have our docid
 						continue;
 					}
 
-					// an upper bound on the score we could get
-					float maxScore = getMaxPossibleScore ( &qtibuf[i], 0, 0, NULL );
-					// -1 means it has inlink text so do not apply this constraint
-					// to this docid because it is too difficult because we
-					// sum up the inlink text
-					if ( maxScore < 0.0 ) {
-						continue;
+					// save it
+					qti->m_matchingSubListSavedCursor[j] = xc;
+					// get new docid
+					//log("new docid %" PRId64,Posdb::getDocId(xc) );
+					// advance the cursors. skip our 12
+					xc += 12;
+					// then skip any following 6 byte keys because they
+					// share the same docid
+					for ( ;  ; xc += 6 ) {
+						// end of whole termlist?
+						if ( xc >= xcEnd ) {
+							break;
+						}
+						
+						// sanity. no 18 byte keys allowed
+						if ( (*xc & 0x06) == 0x00 ) {
+							// i've seen this triggered on gk28.
+							// a dump of posdb for the termlist
+							// for 'post' had corruption in it,
+							// yet its twin, gk92 did not. the
+							// corruption could have occurred
+							// anywhere from nov 2012 to may 2013,
+							// and the posdb file was never
+							// re-merged! must have been blatant
+							// disk malfunction?
+							log("posdb: encountered corrupt posdb list. bailing.");
+							logTrace(g_conf.m_logTracePosdb, "END.");
+							return;
+							//gbshutdownAbort(true);
+						}
+						// the next docid? it will be a 12 byte key.
+						if ( ! (*xc & 0x04) ) {
+							break;
+						}
 					}
-					
-					// logTrace(g_conf.m_logTracePosdb, "maxScore=%f  minWinningScore=%f", maxScore, minWinningScore);
-					// if any one of these terms have a max score below the
-					// worst score of the 10th result, then it can not win.
-					if ( maxScore <= minWinningScore ) {
-						docIdPtr += 6;
-						fail0++;
-						goto handleNextDocId;
-					}
+					// assign to next docid word position list
+					qti->m_matchingSubListCursor[j] = xc;
 				}
 			}
 
-			pass0++;
 
-			
-			if ( m_sortByTermNum < 0 && m_sortByTermNumInt < 0 ) {
+
+			if( !m_q->m_isBoolean ) {
+
 				// TODO: consider skipping this pre-filter if it sucks, as it does
-				// for 'search engine'. it might save time!
+				// for 'time enough for love'. it might save time!
 
-				// reset ring buf. make all slots 0xff. should be 1000 cycles or so.
-				memset ( ringBuf, 0xff, RINGBUFSIZE );
+				//
+				// Calculate maximum possible score for a document. If the max score
+				// is lower than the current minimum winning score, give up already
+				// now and skip to the next docid.
+				//
 
-				// now to speed up 'time enough for love' query which does not
-				// have many super high scoring guys on top we need a more restrictive
-				// filter than getMaxPossibleScore() so let's pick one query term,
-				// the one with the shortest termlist, and see how close it gets to
-				// each of the other query terms. then score each of those pairs.
-				// so quickly record the word positions of each query term into
-				// a ring buffer of 4096 slots where each slot contains the
-				// query term # plus 1.
+				// Only go through this if we actually have a minimum score to compare with ...
+				// No need if minWinningScore is still -1
+				if ( minWinningScore >= 0 ) {
+					logTrace(g_conf.m_logTracePosdb, "Compute 'upper bound' for each query term");
 
-				logTrace(g_conf.m_logTracePosdb, "Ring buffer generation");
-				qtx = &qtibuf[m_minTermListIdx];
-				// populate ring buf just for this query term
-				for ( int32_t k = 0 ; k < qtx->m_numMatchingSubLists ; k++ ) {
-					// scan that sublist and add word positions
-					char *sub = qtx->m_matchingSubListSavedCursor [k];
-					// skip sublist if it's cursor is exhausted
-					if ( ! sub ) continue;
-					char *end = qtx->m_matchingSubListCursor      [k];
-					// add first key
-					//int32_t wx = Posdb::getWordPos(sub);
-					wx = (*((uint32_t *)(sub+3))) >> 6;
-					// mod with 4096
-					wx &= (RINGBUFSIZE-1);
-					// store it. 0 is legit.
-					ringBuf[wx] = m_minTermListIdx;
-					// set this
-					ourFirstPos = wx;
-					// skip first key
-					sub += 12;
-					// then 6 byte keys
-					for ( ; sub < end ; sub += 6 ) {
-						// get word position
-						//wx = Posdb::getWordPos(sub);
-						wx = (*((uint32_t *)(sub+3))) >> 6;
-						// mod with 4096
-						wx &= (RINGBUFSIZE-1);
-						// store it. 0 is legit.
-						ringBuf[wx] = m_minTermListIdx;
-					}
-				}
-				
-				// now get query term closest to query term # m_minTermListIdx which
-				// is the query term # with the shortest termlist
-				// get closest term to m_minTermListIdx and the distance
-				logTrace(g_conf.m_logTracePosdb, "Ring buffer generation 2");
-				for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
-					// skip the man
-					if ( i == m_minTermListIdx ) {
-						continue;
-					}
-					
-					// get the query term info
-					QueryTermInfo *qti = &qtibuf[i];
-					// if we have a negative term, skip it
-					if ( qti->m_bigramFlags[0] & (BF_NEGATIVE) ) {
-						// if its empty, that's good!
-						continue;
-					}
-					
-					// store all his word positions into ring buffer AS WELL
-					for ( int32_t k = 0 ; k < qti->m_numMatchingSubLists ; k++ ) {
-						// scan that sublist and add word positions
-						char *sub = qti->m_matchingSubListSavedCursor [k];
-						// skip sublist if it's cursor is exhausted
-						if ( ! sub ) {
+					// If there's no way we can break into the winner's circle, give up!
+					// This computes an upper bound for each query term
+					for ( int32_t i = 0 ; i < numQueryTermsToHandle ; i++ ) { 
+						// skip negative termlists.
+						if ( qtibuf[i].m_bigramFlags[0] & (BF_NEGATIVE) ) {
+							continue;
+						}
+
+						// an upper bound on the score we could get
+						float maxScore = getMaxPossibleScore ( &qtibuf[i], 0, 0, NULL );
+						// -1 means it has inlink text so do not apply this constraint
+						// to this docid because it is too difficult because we
+						// sum up the inlink text
+						if ( maxScore < 0.0 ) {
 							continue;
 						}
 						
-						char *end = qti->m_matchingSubListCursor      [k];
+						// logTrace(g_conf.m_logTracePosdb, "maxScore=%f  minWinningScore=%f", maxScore, minWinningScore);
+						// if any one of these terms have a max score below the
+						// worst score of the 10th result, then it can not win.
+						if ( maxScore <= minWinningScore ) {
+							docIdPtr += 6;
+							fail0++;
+							goto handleNextDocId;
+						}
+					}
+				}
+
+				pass0++;
+
+				
+				if ( m_sortByTermNum < 0 && m_sortByTermNumInt < 0 ) {
+					// TODO: consider skipping this pre-filter if it sucks, as it does
+					// for 'search engine'. it might save time!
+
+					// reset ring buf. make all slots 0xff. should be 1000 cycles or so.
+					memset ( ringBuf, 0xff, RINGBUFSIZE );
+
+					// now to speed up 'time enough for love' query which does not
+					// have many super high scoring guys on top we need a more restrictive
+					// filter than getMaxPossibleScore() so let's pick one query term,
+					// the one with the shortest termlist, and see how close it gets to
+					// each of the other query terms. then score each of those pairs.
+					// so quickly record the word positions of each query term into
+					// a ring buffer of 4096 slots where each slot contains the
+					// query term # plus 1.
+
+					logTrace(g_conf.m_logTracePosdb, "Ring buffer generation");
+					qtx = &qtibuf[m_minTermListIdx];
+					// populate ring buf just for this query term
+					for ( int32_t k = 0 ; k < qtx->m_numMatchingSubLists ; k++ ) {
+						// scan that sublist and add word positions
+						char *sub = qtx->m_matchingSubListSavedCursor [k];
+						// skip sublist if it's cursor is exhausted
+						if ( ! sub ) continue;
+						char *end = qtx->m_matchingSubListCursor      [k];
 						// add first key
 						//int32_t wx = Posdb::getWordPos(sub);
 						wx = (*((uint32_t *)(sub+3))) >> 6;
 						// mod with 4096
 						wx &= (RINGBUFSIZE-1);
 						// store it. 0 is legit.
-						ringBuf[wx] = i;
+						ringBuf[wx] = m_minTermListIdx;
+						// set this
+						ourFirstPos = wx;
 						// skip first key
 						sub += 12;
 						// then 6 byte keys
@@ -3036,1042 +3005,1067 @@ handleNextDocId:
 							// mod with 4096
 							wx &= (RINGBUFSIZE-1);
 							// store it. 0 is legit.
+							ringBuf[wx] = m_minTermListIdx;
+						}
+					}
+					
+					// now get query term closest to query term # m_minTermListIdx which
+					// is the query term # with the shortest termlist
+					// get closest term to m_minTermListIdx and the distance
+					logTrace(g_conf.m_logTracePosdb, "Ring buffer generation 2");
+					for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
+						// skip the man
+						if ( i == m_minTermListIdx ) {
+							continue;
+						}
+						
+						// get the query term info
+						QueryTermInfo *qti = &qtibuf[i];
+						// if we have a negative term, skip it
+						if ( qti->m_bigramFlags[0] & (BF_NEGATIVE) ) {
+							// if its empty, that's good!
+							continue;
+						}
+						
+						// store all his word positions into ring buffer AS WELL
+						for ( int32_t k = 0 ; k < qti->m_numMatchingSubLists ; k++ ) {
+							// scan that sublist and add word positions
+							char *sub = qti->m_matchingSubListSavedCursor [k];
+							// skip sublist if it's cursor is exhausted
+							if ( ! sub ) {
+								continue;
+							}
+							
+							char *end = qti->m_matchingSubListCursor      [k];
+							// add first key
+							//int32_t wx = Posdb::getWordPos(sub);
+							wx = (*((uint32_t *)(sub+3))) >> 6;
+							// mod with 4096
+							wx &= (RINGBUFSIZE-1);
+							// store it. 0 is legit.
 							ringBuf[wx] = i;
-						}
-					}
-					
-					// reset
-					int32_t ourLastPos = -1;
-					int32_t hisLastPos = -1;
-					int32_t bestDist = 0x7fffffff;
-					// how far is this guy from the man?
-					for ( int32_t x = 0 ; x < (int32_t)RINGBUFSIZE ; ) {
-						// skip next 4 slots if all empty. fast?
-						if (*(uint32_t *)(ringBuf+x) == 0xffffffff) {
-							x+=4;continue;
-						}
-						
-						// skip if nobody
-						if ( ringBuf[x] == 0xff ) { 
-							x++; 
-							continue; 
+							// skip first key
+							sub += 12;
+							// then 6 byte keys
+							for ( ; sub < end ; sub += 6 ) {
+								// get word position
+								//wx = Posdb::getWordPos(sub);
+								wx = (*((uint32_t *)(sub+3))) >> 6;
+								// mod with 4096
+								wx &= (RINGBUFSIZE-1);
+								// store it. 0 is legit.
+								ringBuf[wx] = i;
+							}
 						}
 						
-						// get query term #
-						qt = ringBuf[x];
-						
-						// if it's the man
-						if ( qt == m_minTermListIdx ) {
-							// record
-							hisLastPos = x;
-							// skip if we are not there yet
-							if ( ourLastPos == -1 ) { 
+						// reset
+						int32_t ourLastPos = -1;
+						int32_t hisLastPos = -1;
+						int32_t bestDist = 0x7fffffff;
+						// how far is this guy from the man?
+						for ( int32_t x = 0 ; x < (int32_t)RINGBUFSIZE ; ) {
+							// skip next 4 slots if all empty. fast?
+							if (*(uint32_t *)(ringBuf+x) == 0xffffffff) {
+								x+=4;continue;
+							}
+							
+							// skip if nobody
+							if ( ringBuf[x] == 0xff ) { 
 								x++; 
 								continue; 
 							}
 							
-							// try distance fix
-							if ( x - ourLastPos < bestDist ) {
-								bestDist = x - ourLastPos;
-							}
-						}
-						// if us
-						else if ( qt == i ) {
-							// record
-							ourLastPos = x;
-							// skip if he's not recorded yet
-							if ( hisLastPos == -1 ) { 
-								x++; 
-								continue; 
-							}
+							// get query term #
+							qt = ringBuf[x];
 							
-							// update
-							ourLastPos = x;
-							
-							// check dist
-							if ( x - hisLastPos < bestDist ) {
-								bestDist = x - hisLastPos;
+							// if it's the man
+							if ( qt == m_minTermListIdx ) {
+								// record
+								hisLastPos = x;
+								// skip if we are not there yet
+								if ( ourLastPos == -1 ) { 
+									x++; 
+									continue; 
+								}
+								
+								// try distance fix
+								if ( x - ourLastPos < bestDist ) {
+									bestDist = x - ourLastPos;
+								}
 							}
+							// if us
+							else if ( qt == i ) {
+								// record
+								ourLastPos = x;
+								// skip if he's not recorded yet
+								if ( hisLastPos == -1 ) { 
+									x++; 
+									continue; 
+								}
+								
+								// update
+								ourLastPos = x;
+								
+								// check dist
+								if ( x - hisLastPos < bestDist ) {
+									bestDist = x - hisLastPos;
+								}
+							}
+							x++;
+							continue;
 						}
-						x++;
-						continue;
+						
+						// compare last occurence of query term #x with our first occ.
+						// since this is a RING buffer
+						int32_t wrapDist = ourFirstPos + ((int32_t)RINGBUFSIZE-hisLastPos);
+						if ( wrapDist < bestDist ) {
+							bestDist = wrapDist;
+						}
+						
+						// query distance
+						qdist = qpos[m_minTermListIdx] - qpos[i];
+						// compute it
+						float maxScore2 = getMaxPossibleScore(&qtibuf[i],
+										      bestDist,
+										      qdist,
+										      &qtibuf[m_minTermListIdx]);
+						// -1 means it has inlink text so do not apply this constraint
+						// to this docid because it is too difficult because we
+						// sum up the inlink text
+						if ( maxScore2 < 0.0 ) {
+							continue;
+						}
+						
+						// if any one of these terms have a max score below the
+						// worst score of the 10th result, then it can not win.
+						if ( maxScore2 <= minWinningScore ) {
+							docIdPtr += 6;
+							fail++;
+							goto handleNextDocId;
+						}
 					}
-					
-					// compare last occurence of query term #x with our first occ.
-					// since this is a RING buffer
-					int32_t wrapDist = ourFirstPos + ((int32_t)RINGBUFSIZE-hisLastPos);
-					if ( wrapDist < bestDist ) {
-						bestDist = wrapDist;
-					}
-					
-					// query distance
-					qdist = qpos[m_minTermListIdx] - qpos[i];
-					// compute it
-					float maxScore2 = getMaxPossibleScore(&qtibuf[i],
-									      bestDist,
-									      qdist,
-									      &qtibuf[m_minTermListIdx]);
-					// -1 means it has inlink text so do not apply this constraint
-					// to this docid because it is too difficult because we
-					// sum up the inlink text
-					if ( maxScore2 < 0.0 ) {
-						continue;
-					}
-					
-					// if any one of these terms have a max score below the
-					// worst score of the 10th result, then it can not win.
-					if ( maxScore2 <= minWinningScore && ! genDebugScoreInfoPass ) {
-						docIdPtr += 6;
-						fail++;
-						goto handleNextDocId;
-					}
-				}
-			} // not m_sortByTermNum or m_sortByTermNumInt
+				} // not m_sortByTermNum or m_sortByTermNumInt
 
-			pass++;
-		} // !m_q->m_isBoolean
-	}	// ! genDebugScoreInfoPass
+				pass++;
+			} // !m_q->m_isBoolean
+		}	// currPassNum == INTERSECT_SCORING
 
 
 
-	if ( m_q->m_isBoolean ) {
-		//minScore = 1.0;
-		// this is somewhat wasteful since it is set below again
-		m_docId = *(uint32_t *)(docIdPtr+1);
-		m_docId <<= 8;
-		m_docId |= (unsigned char)docIdPtr[0];
-		m_docId >>= 2;
-		// add one point for each term matched in the bool query
-		// this is really just for when the terms are from different
-		// fields. if we have unfielded boolean terms we should
-		// do proximity matching.
-		int32_t slot = m_bt.getSlot ( &m_docId );
-		if ( slot >= 0 ) {
-			uint8_t *bv = (uint8_t *)m_bt.getValueFromSlot(slot);
-			// then a score based on the # of terms that matched
-			int16_t bitsOn = getNumBitsOnX ( bv, m_vecSize );
-			// but store in hashtable now
-			minScore = (float)bitsOn;
-		}
-		else {
-			minScore = 1.0;
-		}
-	}
-
-	//
-	// PERFORMANCE HACK:
-	//
-	// ON-DEMAND MINI MERGES.
-
-	// we got a docid that has all the query terms, so merge
-	// each term's sublists into a single list just for this docid.
-
-	// all posdb keys for this docid should fit in here, the 
-	// mini merge buf:
-	mptr = mbuf;
-
-	// . merge each set of sublists
-	// . like we merge a term's list with its two associated bigram
-	//   lists, if there, the left bigram and right bigram list.
-	// . and merge all the synonym lists for that term together as well.
-	//   so if the term is 'run' we merge it with the lists for
-	//   'running' 'ran' etc.
-	logTrace(g_conf.m_logTracePosdb, "Merge sublists");
-	for ( int32_t j = 0 ; j < m_numQueryTermInfos ; j++ ) {
-		// get the query term info
-		QueryTermInfo *qti = &qtibuf[j];
-		// just use the flags from first term i guess
-		// NO! this loses the wikihalfstopbigram bit! so we gotta
-		// add that in for the key i guess the same way we add in
-		// the syn bits below!!!!!
-		bflags [j] = qti->m_bigramFlags[0];
-		// if we have a negative term, skip it
-		if ( qti->m_bigramFlags[0] & BF_NEGATIVE ) {
-			// need to make this NULL for getSiteRank() call below
-			miniMergedList[j] = NULL;
-			// if its empty, that's good!
-			continue;
-		}
-		// the merged list for term #j is here:
-		miniMergedList [j] = mptr;
-		bool isFirstKey = true;
-		// populate the nwp[] arrays for merging
-		int32_t nsub = 0;
-		for ( int32_t k = 0 ; k < qti->m_numMatchingSubLists ; k++ ) {
-			// NULL means does not have that docid
-			if ( ! qti->m_matchingSubListSavedCursor[k] ) {
-				continue;
+		if ( m_q->m_isBoolean ) {
+			//minScore = 1.0;
+			// this is somewhat wasteful since it is set below again
+			m_docId = *(uint32_t *)(docIdPtr+1);
+			m_docId <<= 8;
+			m_docId |= (unsigned char)docIdPtr[0];
+			m_docId >>= 2;
+			// add one point for each term matched in the bool query
+			// this is really just for when the terms are from different
+			// fields. if we have unfielded boolean terms we should
+			// do proximity matching.
+			int32_t slot = m_bt.getSlot ( &m_docId );
+			if ( slot >= 0 ) {
+				uint8_t *bv = (uint8_t *)m_bt.getValueFromSlot(slot);
+				// then a score based on the # of terms that matched
+				int16_t bitsOn = getNumBitsOnX ( bv, m_vecSize );
+				// but store in hashtable now
+				minScore = (float)bitsOn;
 			}
-			
-			// getMaxPossibleScore() incremented m_matchingSubListCursor to
-			// the next docid so use m_matchingSubListSavedCursor.
-			nwp      [nsub] = qti->m_matchingSubListSavedCursor [k];
-			// sanity
-			//if ( Posdb::getKeySize(nwp[nsub]) > 12 ) { 
-			//	gbshutdownAbort(true);}
-			// if doing seohack then m_matchingSubListCursor was not advanced
-			// so advance it here
-			nwpEnd [nsub] = qti->m_matchingSubListCursor [k];
-			nwpFlags [nsub] = qti->m_bigramFlags [k];
-			nsub++;
-		}
-
-		// if only one sublist had this docid, no need to merge
-		// UNLESS it's a synonym list then we gotta set the
-		// synbits on it, below!!! or a half stop wiki bigram like
-		// the term "enough for" in the wiki phrase 
-		// "time enough for love" because we wanna reward that more!
-		// this halfstopwikibigram bit is set in the indivial keys
-		// so we'd have to at least do a key cleansing, so we can't
-		// do this shortcut right now... mdw oct 10 2015
-		if ( nsub == 1 && 
-		     (nwpFlags[0] & BF_NUMBER) &&
-		     !(nwpFlags[0] & BF_SYNONYM) &&
-		     !(nwpFlags[0] & BF_HALFSTOPWIKIBIGRAM) ) {
-			miniMergedList [j] = nwp     [0];
-			miniMergedEnd  [j] = nwpEnd  [0];
-			bflags         [j] = nwpFlags[0];
-			continue;
-		}
-		// . ok, merge the lists into a list in mbuf
-		// . get the min of each list
-	mergeMore:
-		int32_t mink = -1;
-		for ( int32_t k = 0 ; k < nsub ; k++ ) {
-			// skip if list is exhausted
-			if ( ! nwp[k] ) {
-				continue;
-			}
-			
-			// auto winner?
-			if ( mink == -1 ) {
-				mink = k;
-				continue;
-			}
-			
-			if ( KEYCMP(nwp[k],nwp[mink],6) < 0 ) {
-				mink = k; // a new min...
+			else {
+				minScore = 1.0;
 			}
 		}
-		
-		// all exhausted? merge next set of sublists then for term #j
-		if ( mink == -1 ) {
-			miniMergedEnd[j] = mptr;
-			continue;
-		}
-		
-		// get keysize
-		char ks = Posdb::getKeySize(nwp[mink]);
-		// sanity
-		//if ( ks > 12 )
-		//	gbshutdownAbort(true);
 
-		// HACK OF CONFUSION:
 		//
-		// skip it if its a query phrase term, like 
-		// "searchengine" is for the 'search engine' query 
-		// AND it has the synbit which means it was a bigram
-		// in the doc (i.e. occurred as two separate terms)
-		if ( (nwpFlags[mink] & BF_BIGRAM) &&
-		     // this means it occurred as two separate terms
-		     // or could be like bob and occurred as "bob's".
-		     // see XmlDoc::hashWords3().
-		     (nwp[mink][2] & 0x03) ) {
-			goto skipOver;
-		}
-		
-		// if the first key in our merged list store the docid crap
-		if ( isFirstKey ) {
-			// store a 12 byte key in the merged list buffer
-			memcpy ( mptr, nwp[mink], 12 );
-			// wipe out its syn bits and re-use our way
-			mptr[2] &= 0xfc;
-			// set the synbit so we know if its a synonym of term
-			if ( nwpFlags[mink] & (BF_BIGRAM|BF_SYNONYM)) {
-				mptr[2] |= 0x02;
+		// PERFORMANCE HACK:
+		//
+		// ON-DEMAND MINI MERGES.
+
+		// we got a docid that has all the query terms, so merge
+		// each term's sublists into a single list just for this docid.
+
+		// all posdb keys for this docid should fit in here, the 
+		// mini merge buf:
+		mptr = mbuf;
+
+		// . merge each set of sublists
+		// . like we merge a term's list with its two associated bigram
+		//   lists, if there, the left bigram and right bigram list.
+		// . and merge all the synonym lists for that term together as well.
+		//   so if the term is 'run' we merge it with the lists for
+		//   'running' 'ran' etc.
+		logTrace(g_conf.m_logTracePosdb, "Merge sublists");
+		for ( int32_t j = 0 ; j < m_numQueryTermInfos ; j++ ) {
+			// get the query term info
+			QueryTermInfo *qti = &qtibuf[j];
+			// just use the flags from first term i guess
+			// NO! this loses the wikihalfstopbigram bit! so we gotta
+			// add that in for the key i guess the same way we add in
+			// the syn bits below!!!!!
+			bflags [j] = qti->m_bigramFlags[0];
+			// if we have a negative term, skip it
+			if ( qti->m_bigramFlags[0] & BF_NEGATIVE ) {
+				// need to make this NULL for getSiteRank() call below
+				miniMergedList[j] = NULL;
+				// if its empty, that's good!
+				continue;
+			}
+			// the merged list for term #j is here:
+			miniMergedList [j] = mptr;
+			bool isFirstKey = true;
+			// populate the nwp[] arrays for merging
+			int32_t nsub = 0;
+			for ( int32_t k = 0 ; k < qti->m_numMatchingSubLists ; k++ ) {
+				// NULL means does not have that docid
+				if ( ! qti->m_matchingSubListSavedCursor[k] ) {
+					continue;
+				}
+				
+				// getMaxPossibleScore() incremented m_matchingSubListCursor to
+				// the next docid so use m_matchingSubListSavedCursor.
+				nwp      [nsub] = qti->m_matchingSubListSavedCursor [k];
+				// sanity
+				//if ( Posdb::getKeySize(nwp[nsub]) > 12 ) { 
+				//	gbshutdownAbort(true);}
+				// if doing seohack then m_matchingSubListCursor was not advanced
+				// so advance it here
+				nwpEnd [nsub] = qti->m_matchingSubListCursor [k];
+				nwpFlags [nsub] = qti->m_bigramFlags [k];
+				nsub++;
+			}
+
+			// if only one sublist had this docid, no need to merge
+			// UNLESS it's a synonym list then we gotta set the
+			// synbits on it, below!!! or a half stop wiki bigram like
+			// the term "enough for" in the wiki phrase 
+			// "time enough for love" because we wanna reward that more!
+			// this halfstopwikibigram bit is set in the indivial keys
+			// so we'd have to at least do a key cleansing, so we can't
+			// do this shortcut right now... mdw oct 10 2015
+			if ( nsub == 1 && 
+			     (nwpFlags[0] & BF_NUMBER) &&
+			     !(nwpFlags[0] & BF_SYNONYM) &&
+			     !(nwpFlags[0] & BF_HALFSTOPWIKIBIGRAM) ) {
+				miniMergedList [j] = nwp     [0];
+				miniMergedEnd  [j] = nwpEnd  [0];
+				bflags         [j] = nwpFlags[0];
+				continue;
+			}
+			// . ok, merge the lists into a list in mbuf
+			// . get the min of each list
+		mergeMore:
+			int32_t mink = -1;
+			for ( int32_t k = 0 ; k < nsub ; k++ ) {
+				// skip if list is exhausted
+				if ( ! nwp[k] ) {
+					continue;
+				}
+				
+				// auto winner?
+				if ( mink == -1 ) {
+					mink = k;
+					continue;
+				}
+				
+				if ( KEYCMP(nwp[k],nwp[mink],6) < 0 ) {
+					mink = k; // a new min...
+				}
 			}
 			
-			// wiki half stop bigram? so for the query
-			// 'time enough for love' the phrase term "enough for"
-			// is a half stopword wiki bigram, because it is in
-			// a phrase in wikipedia ("time enough for love") and
-			// one of the two words in the phrase term is a 
-			// stop word. therefore we give it more weight than
-			// just 'enough' by itself.
-			if ( nwpFlags[mink] & BF_HALFSTOPWIKIBIGRAM ) {
-				mptr[2] |= 0x01;
+			// all exhausted? merge next set of sublists then for term #j
+			if ( mink == -1 ) {
+				miniMergedEnd[j] = mptr;
+				continue;
 			}
 			
-			// make sure its 12 bytes! it might have been
-			// the first key for the termid, and 18 bytes.
-			mptr[0] &= 0xf9;
-			mptr[0] |= 0x02;
-			// save it
-			lastMptr = mptr;
-			mptr += 12;
-			isFirstKey = false;
-		}
-		else {
-			// if matches last key word position, do not add!
-			// we should add the bigram first if more important
-			// since it should be added before the actual term
-			// above in the sublist array. so if they are
-			// wikihalfstop bigrams they will be added first,
-			// otherwise, they are added after the regular term.
-			// should fix double scoring bug for 'cheat codes'
-			// query!
-			if ( Posdb::getWordPos(lastMptr) == Posdb::getWordPos(nwp[mink]) ) {
+			// get keysize
+			char ks = Posdb::getKeySize(nwp[mink]);
+			// sanity
+			//if ( ks > 12 )
+			//	gbshutdownAbort(true);
+
+			// HACK OF CONFUSION:
+			//
+			// skip it if its a query phrase term, like 
+			// "searchengine" is for the 'search engine' query 
+			// AND it has the synbit which means it was a bigram
+			// in the doc (i.e. occurred as two separate terms)
+			if ( (nwpFlags[mink] & BF_BIGRAM) &&
+			     // this means it occurred as two separate terms
+			     // or could be like bob and occurred as "bob's".
+			     // see XmlDoc::hashWords3().
+			     (nwp[mink][2] & 0x03) ) {
 				goto skipOver;
 			}
 			
-			memcpy ( mptr, nwp[mink], 6 );
-			// wipe out its syn bits and re-use our way
-			mptr[2] &= 0xfc;
-			// set the synbit so we know if its a synonym of term
-			if ( nwpFlags[mink] & (BF_BIGRAM|BF_SYNONYM)) {
-				mptr[2] |= 0x02;
-			}
-			
-			if ( nwpFlags[mink] & BF_HALFSTOPWIKIBIGRAM ) {
-				mptr[2] |= 0x01;
-			}
-			
-			// if it was the first key of its list it may not
-			// have its bit set for being 6 bytes now! so turn
-			// on the 2 compression bits
-			mptr[0] &= 0xf9;
-			mptr[0] |= 0x06;
-			// save it
-			lastMptr = mptr;
-			mptr += 6;
-		}
-		
-	skipOver:
-		//log("skipping ks=%" PRId32,(int32_t)ks);
-		// advance the cursor over the key we used.
-		nwp[mink] += ks; // Posdb::getKeySize(nwp[mink]);
-		// exhausted?
-		if ( nwp[mink] >= nwpEnd[mink] ) {
-			nwp[mink] = NULL;
-		}
-		
-		// or hit a different docid
-		else if ( Posdb::getKeySize(nwp[mink]) != 6 ) {
-			nwp[mink] = NULL;
-		}
-		
-		// avoid breach of core below now
-		if ( mptr < mptrEnd ) {
-			goto mergeMore;
-		}
-		
-		// wrap it up here since done merging
-		miniMergedEnd[j] = mptr;		
-	}
-
-	// breach?
-	if ( mptr > mbuf + 300000 ) {
-		gbshutdownAbort(true);
-	}
-
-	// clear the counts on this DocIdScore class for this new docid
-	pdcs = NULL;
-	if ( genDebugScoreInfoPass ) {
-		dcs.reset();
-		pdcs = &dcs;
-	}
-
-	// second pass already sets m_docId above
-	if ( ! genDebugScoreInfoPass ) {
-		// docid ptr points to 5 bytes of docid shifted up 2
-		m_docId = *(uint32_t *)(docIdPtr+1);
-		m_docId <<= 8;
-		m_docId |= (unsigned char)docIdPtr[0];
-		m_docId >>= 2;
-	}
-
-	//
-	// sanity check for all
-	//
-	for ( int32_t i = 0   ; i < m_numQueryTermInfos ; i++ ) {
-		// skip if not part of score
-		if ( bflags[i] & (BF_PIPED|BF_NEGATIVE) ) {
-			continue;
-		}
-		
-		// get list
-		char *plist    = miniMergedList[i];
-		char *plistEnd = miniMergedEnd[i];
-		int32_t  psize    = plistEnd - plist;
-		
-		// test it. first key is 12 bytes.
-		if ( psize && Posdb::getKeySize(plist) != 12 ) {
-			gbshutdownAbort(true);
-		}
-		
-		// next key is 6
-		if ( psize > 12 && Posdb::getKeySize(plist+12) != 6) {
-			gbshutdownAbort(true);
-		}
-	}
-
-
-	if ( !m_q->m_isBoolean ) {
-
-		//
-		//
-		// NON-BODY TERM PAIR SCORING LOOP
-		//
-		// . nested for loops to score the term pairs
-		// . store best scores into the scoreMatrix so the sliding window
-		//   algorithm can use them from there to do sub-outs
-		//
-
-		logTrace(g_conf.m_logTracePosdb, "Non-body term pair scoring loop");
-			
-		// scan over each query term (its synonyms are part of the
-		// QueryTermInfo)
-		for ( int32_t i = 0   ; i < m_numQueryTermInfos ; i++ ) {
-			// skip if not part of score
-			if ( bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
-				continue;
-			}
-
-			// and pair it with each other possible query term
-			for ( int32_t j = i+1 ; j < m_numQueryTermInfos ; j++ ) {
-				// skip if not part of score
-				if ( bflags[j] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
-					continue;
-				}
-
-				// but if they are in the same wikipedia phrase
-				// then try to keep their positions as in the query.
-				// so for 'time enough for love' ideally we want
-				// 'time' to be 6 units apart from 'love'
-				if ( wikiPhraseIds[j] == wikiPhraseIds[i] &&
-				     // zero means not in a phrase
-				     wikiPhraseIds[j] ) {
-					// . the distance between the terms in the query
-					// . ideally we'd like this distance to be reflected
-					//   in the matched terms in the body
-					qdist = qpos[j] - qpos[i];
-					// wiki weight
-					wts = (float)WIKI_WEIGHT; // .50;
-				}
-				else {
-					// basically try to get query words as close
-					// together as possible
-					qdist = 2;
-					// this should help fix
-					// 'what is an unsecured loan' so we are more likely
-					// to get the page that has that exact phrase in it.
-					// yes, but hurts how to make a lock pick set.
-					//qdist = qpos[j] - qpos[i];
-					// wiki weight
-					wts = 1.0;
+			// if the first key in our merged list store the docid crap
+			if ( isFirstKey ) {
+				// store a 12 byte key in the merged list buffer
+				memcpy ( mptr, nwp[mink], 12 );
+				// wipe out its syn bits and re-use our way
+				mptr[2] &= 0xfc;
+				// set the synbit so we know if its a synonym of term
+				if ( nwpFlags[mink] & (BF_BIGRAM|BF_SYNONYM)) {
+					mptr[2] |= 0x02;
 				}
 				
-				pss = 0.0;
-				//
-				// get score for term pair from non-body occuring terms
-				//
-				if ( miniMergedList[i] && miniMergedList[j] )
-					getTermPairScoreForNonBody( miniMergedList[i],
-								   miniMergedList[j],
-								   miniMergedEnd[i],
-								   miniMergedEnd[j],
-								   qdist,
-								   &pss);
-								   
-				// it's -1 if one term is in the body/header/menu/etc.
-				if ( pss < 0 ) {
-					scoreMatrix[i*nqt+j] = -1.00;
-					wts = -1.0;
+				// wiki half stop bigram? so for the query
+				// 'time enough for love' the phrase term "enough for"
+				// is a half stopword wiki bigram, because it is in
+				// a phrase in wikipedia ("time enough for love") and
+				// one of the two words in the phrase term is a 
+				// stop word. therefore we give it more weight than
+				// just 'enough' by itself.
+				if ( nwpFlags[mink] & BF_HALFSTOPWIKIBIGRAM ) {
+					mptr[2] |= 0x01;
 				}
-				else {
-					wts *= pss;
-					wts *= m_freqWeights[i];//sfw[i];
-					wts *= m_freqWeights[j];//sfw[j];
-					// store in matrix for "sub out" algo below
-					// when doing sliding window
-					scoreMatrix[i*nqt+j] = wts;
-					// if terms is a special wiki half stop bigram
-					//if ( bflags[i] == 1 ) wts *= WIKI_BIGRAM_WEIGHT;
-					//if ( bflags[j] == 1 ) wts *= WIKI_BIGRAM_WEIGHT;
-					//if ( ts < minScore ) minScore = ts;
-				}
+				
+				// make sure its 12 bytes! it might have been
+				// the first key for the termid, and 18 bytes.
+				mptr[0] &= 0xf9;
+				mptr[0] |= 0x02;
+				// save it
+				lastMptr = mptr;
+				mptr += 12;
+				isFirstKey = false;
 			}
+			else {
+				// if matches last key word position, do not add!
+				// we should add the bigram first if more important
+				// since it should be added before the actual term
+				// above in the sublist array. so if they are
+				// wikihalfstop bigrams they will be added first,
+				// otherwise, they are added after the regular term.
+				// should fix double scoring bug for 'cheat codes'
+				// query!
+				if ( Posdb::getWordPos(lastMptr) == Posdb::getWordPos(nwp[mink]) ) {
+					goto skipOver;
+				}
+				
+				memcpy ( mptr, nwp[mink], 6 );
+				// wipe out its syn bits and re-use our way
+				mptr[2] &= 0xfc;
+				// set the synbit so we know if its a synonym of term
+				if ( nwpFlags[mink] & (BF_BIGRAM|BF_SYNONYM)) {
+					mptr[2] |= 0x02;
+				}
+				
+				if ( nwpFlags[mink] & BF_HALFSTOPWIKIBIGRAM ) {
+					mptr[2] |= 0x01;
+				}
+				
+				// if it was the first key of its list it may not
+				// have its bit set for being 6 bytes now! so turn
+				// on the 2 compression bits
+				mptr[0] &= 0xf9;
+				mptr[0] |= 0x06;
+				// save it
+				lastMptr = mptr;
+				mptr += 6;
+			}
+			
+		skipOver:
+			//log("skipping ks=%" PRId32,(int32_t)ks);
+			// advance the cursor over the key we used.
+			nwp[mink] += ks; // Posdb::getKeySize(nwp[mink]);
+			// exhausted?
+			if ( nwp[mink] >= nwpEnd[mink] ) {
+				nwp[mink] = NULL;
+			}
+			
+			// or hit a different docid
+			else if ( Posdb::getKeySize(nwp[mink]) != 6 ) {
+				nwp[mink] = NULL;
+			}
+			
+			// avoid breach of core below now
+			if ( mptr < mptrEnd ) {
+				goto mergeMore;
+			}
+			
+			// wrap it up here since done merging
+			miniMergedEnd[j] = mptr;		
 		}
 
-		logTrace(g_conf.m_logTracePosdb, "Single term scoring loop");
+		// breach?
+		if ( mptr > mbuf + 300000 ) {
+			gbshutdownAbort(true);
+		}
+
+		// clear the counts on this DocIdScore class for this new docid
+		pdcs = NULL;
+		if ( currPassNum == INTERSECT_DEBUG_INFO ) {
+			dcs.reset();
+			pdcs = &dcs;
+		}
+
+		// second pass already sets m_docId above
+		if ( currPassNum == INTERSECT_SCORING ) {
+			// docid ptr points to 5 bytes of docid shifted up 2
+			m_docId = *(uint32_t *)(docIdPtr+1);
+			m_docId <<= 8;
+			m_docId |= (unsigned char)docIdPtr[0];
+			m_docId >>= 2;
+		}
 
 		//
+		// sanity check for all
 		//
-		// SINGLE TERM SCORE LOOP
-		//
-		//
-		minSingleScore = 999999999.0;
-		// . now add single word scores
-		// . having inlink text from siterank 15 of max 
-		//   diversity/density will result in the largest score, 
-		//   but we add them all up...
-		// . this should be highly negative if singles[i] has a '-' 
-		//   termsign...
-		for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
-			float sts;
-			
-			// skip if to the left of a pipe operator
-			if ( bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
+		for ( int32_t i = 0   ; i < m_numQueryTermInfos ; i++ ) {
+			// skip if not part of score
+			if ( bflags[i] & (BF_PIPED|BF_NEGATIVE) ) {
 				continue;
 			}
 			
-
-			// sometimes there is no wordpos subtermlist for this docid
-			// because it just has the bigram, like "streetlight" and not
-			// the word "light" by itself for the query 'street light'
-			//if ( miniMergedList[i] ) {
-			// assume all word positions are in body
-			//bestPos[i] = NULL;
-			// . this scans all word positions for this term
-			// . this should ignore occurences in the body and only
-			//   focus on inlink text, etc.
-			// . sets "bestPos" to point to the winning word 
-			//   position which does NOT occur in the body
-			// . adds up MAX_TOP top scores and returns that sum
-			// . pdcs is NULL if not genDebugScoreInfoPass
-			sts = getSingleTermScore (i,
-						  miniMergedList[i],
-						  miniMergedEnd[i],
-						  pdcs,
-						  &bestPos[i]);
-						  
-			// sanity check
-			if ( bestPos[i] && s_inBody[Posdb::getHashGroup(bestPos[i])] ) {
+			// get list
+			char *plist    = miniMergedList[i];
+			char *plistEnd = miniMergedEnd[i];
+			int32_t  psize    = plistEnd - plist;
+			
+			// test it. first key is 12 bytes.
+			if ( psize && Posdb::getKeySize(plist) != 12 ) {
 				gbshutdownAbort(true);
 			}
 			
-			//sts /= 3.0;
-			if ( sts < minSingleScore ) {
-				minSingleScore = sts;
+			// next key is 6
+			if ( psize > 12 && Posdb::getKeySize(plist+12) != 6) {
+				gbshutdownAbort(true);
 			}
 		}
 
 
-		//
-		// . multiplier from siterank i guess
-		// . miniMergedList[0] list can be null if it does not have 'street' 
-		//   but has 'streetlight' for the query 'street light'
-		//
-		if ( miniMergedList[0] && 
-		     // siterank/langid is always 0 in numeric
-		     // termlists so they sort by their number correctly
-		     ! (qtibuf[0].m_bigramFlags[0] & (BF_NUMBER) ) ) {
-			siteRank = Posdb::getSiteRank ( miniMergedList[0] );
-			docLang  = Posdb::getLangId   ( miniMergedList[0] );
-			
-			if ( Posdb::getHashGroup(miniMergedList[0])==HASHGROUP_INLINKTEXT) {
-				char inlinkerSiteRank = Posdb::getWordSpamRank(miniMergedList[0]);
-				if(inlinkerSiteRank>highestInlinkSiteRank) {
-					highestInlinkSiteRank = inlinkerSiteRank;
+		if ( !m_q->m_isBoolean ) {
+
+			//
+			//
+			// NON-BODY TERM PAIR SCORING LOOP
+			//
+			// . nested for loops to score the term pairs
+			// . store best scores into the scoreMatrix so the sliding window
+			//   algorithm can use them from there to do sub-outs
+			//
+
+			logTrace(g_conf.m_logTracePosdb, "Non-body term pair scoring loop");
+				
+			// scan over each query term (its synonyms are part of the
+			// QueryTermInfo)
+			for ( int32_t i = 0   ; i < m_numQueryTermInfos ; i++ ) {
+				// skip if not part of score
+				if ( bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
+					continue;
+				}
+
+				// and pair it with each other possible query term
+				for ( int32_t j = i+1 ; j < m_numQueryTermInfos ; j++ ) {
+					// skip if not part of score
+					if ( bflags[j] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
+						continue;
+					}
+
+					// but if they are in the same wikipedia phrase
+					// then try to keep their positions as in the query.
+					// so for 'time enough for love' ideally we want
+					// 'time' to be 6 units apart from 'love'
+					if ( wikiPhraseIds[j] == wikiPhraseIds[i] &&
+					     // zero means not in a phrase
+					     wikiPhraseIds[j] ) {
+						// . the distance between the terms in the query
+						// . ideally we'd like this distance to be reflected
+						//   in the matched terms in the body
+						qdist = qpos[j] - qpos[i];
+						// wiki weight
+						wts = (float)WIKI_WEIGHT; // .50;
+					}
+					else {
+						// basically try to get query words as close
+						// together as possible
+						qdist = 2;
+						// this should help fix
+						// 'what is an unsecured loan' so we are more likely
+						// to get the page that has that exact phrase in it.
+						// yes, but hurts how to make a lock pick set.
+						//qdist = qpos[j] - qpos[i];
+						// wiki weight
+						wts = 1.0;
+					}
+					
+					pss = 0.0;
+					//
+					// get score for term pair from non-body occuring terms
+					//
+					if ( miniMergedList[i] && miniMergedList[j] )
+						getTermPairScoreForNonBody( miniMergedList[i],
+									   miniMergedList[j],
+									   miniMergedEnd[i],
+									   miniMergedEnd[j],
+									   qdist,
+									   &pss);
+									   
+					// it's -1 if one term is in the body/header/menu/etc.
+					if ( pss < 0 ) {
+						scoreMatrix[i*nqt+j] = -1.00;
+						wts = -1.0;
+					}
+					else {
+						wts *= pss;
+						wts *= m_freqWeights[i];//sfw[i];
+						wts *= m_freqWeights[j];//sfw[j];
+						// store in matrix for "sub out" algo below
+						// when doing sliding window
+						scoreMatrix[i*nqt+j] = wts;
+						// if terms is a special wiki half stop bigram
+						//if ( bflags[i] == 1 ) wts *= WIKI_BIGRAM_WEIGHT;
+						//if ( bflags[j] == 1 ) wts *= WIKI_BIGRAM_WEIGHT;
+						//if ( ts < minScore ) minScore = ts;
+					}
 				}
 			}
-		}
-		else {
-			for ( int32_t k = 1 ; k < m_numQueryTermInfos ; k++ ) {
-				if ( ! miniMergedList[k] ) {
+
+			logTrace(g_conf.m_logTracePosdb, "Single term scoring loop");
+
+			//
+			//
+			// SINGLE TERM SCORE LOOP
+			//
+			//
+			minSingleScore = 999999999.0;
+			// . now add single word scores
+			// . having inlink text from siterank 15 of max 
+			//   diversity/density will result in the largest score, 
+			//   but we add them all up...
+			// . this should be highly negative if singles[i] has a '-' 
+			//   termsign...
+			for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
+				float sts;
+				
+				// skip if to the left of a pipe operator
+				if ( bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
 					continue;
 				}
 				
-				// siterank/langid is always 0 in numeric
-				// termlists so they sort by their number correctly
-				if ( qtibuf[k].m_bigramFlags[0] & (BF_NUMBER) ) {
-					continue;
+
+				// sometimes there is no wordpos subtermlist for this docid
+				// because it just has the bigram, like "streetlight" and not
+				// the word "light" by itself for the query 'street light'
+				//if ( miniMergedList[i] ) {
+				// assume all word positions are in body
+				//bestPos[i] = NULL;
+				// . this scans all word positions for this term
+				// . this should ignore occurences in the body and only
+				//   focus on inlink text, etc.
+				// . sets "bestPos" to point to the winning word 
+				//   position which does NOT occur in the body
+				// . adds up MAX_TOP top scores and returns that sum
+				// . pdcs is NULL if not currPassNum == INTERSECT_DEBUG_INFO
+				sts = getSingleTermScore (i,
+							  miniMergedList[i],
+							  miniMergedEnd[i],
+							  pdcs,
+							  &bestPos[i]);
+							  
+				// sanity check
+				if ( bestPos[i] && s_inBody[Posdb::getHashGroup(bestPos[i])] ) {
+					gbshutdownAbort(true);
 				}
 				
-				siteRank = Posdb::getSiteRank ( miniMergedList[k] );
-				docLang  = Posdb::getLangId   ( miniMergedList[k] );
-				if ( Posdb::getHashGroup(miniMergedList[k])==HASHGROUP_INLINKTEXT) {
-					char inlinkerSiteRank = Posdb::getWordSpamRank(miniMergedList[k]);
+				//sts /= 3.0;
+				if ( sts < minSingleScore ) {
+					minSingleScore = sts;
+				}
+			}
+
+
+			//
+			// . multiplier from siterank i guess
+			// . miniMergedList[0] list can be null if it does not have 'street' 
+			//   but has 'streetlight' for the query 'street light'
+			//
+			if ( miniMergedList[0] && 
+			     // siterank/langid is always 0 in numeric
+			     // termlists so they sort by their number correctly
+			     ! (qtibuf[0].m_bigramFlags[0] & (BF_NUMBER) ) ) {
+				siteRank = Posdb::getSiteRank ( miniMergedList[0] );
+				docLang  = Posdb::getLangId   ( miniMergedList[0] );
+				
+				if ( Posdb::getHashGroup(miniMergedList[0])==HASHGROUP_INLINKTEXT) {
+					char inlinkerSiteRank = Posdb::getWordSpamRank(miniMergedList[0]);
 					if(inlinkerSiteRank>highestInlinkSiteRank) {
 						highestInlinkSiteRank = inlinkerSiteRank;
 					}
 				}
-				break;
 			}
-		}
-		logTrace(g_conf.m_logTracePosdb, "Got siteRank and docLang");
-			
-		//
-		// parms for sliding window algorithm
-		//
-		m_qpos          = qpos;
-		m_wikiPhraseIds = wikiPhraseIds;
-		m_quotedStartIds = quotedStartIds;
-		m_bestWindowScore = -2.0;
-
-		//
-		//
-		// BEGIN SLIDING WINDOW ALGO
-		//
-		//
-
-		logTrace(g_conf.m_logTracePosdb, "Sliding Window algorithm begins");
-		m_windowTermPtrs = winnerStack;
-
-		// . now scan the terms that are in the body in a sliding window
-		// . compute the term pair score on just the terms in that
-		//   sliding window. that way, the term for a word like 'dog'
-		//   keeps the same word position when it is paired up with the
-		//   other terms.
-		// . compute the score the same way getTermPairScore() works so
-		//   we are on the same playing field
-		// . sub-out each term with its best scoring occurence in the title
-		//   or link text or meta tag, etc. but it gets a distance penalty
-		//   of like 100 units or so.
-		// . if term does not occur in the body, the sub-out approach should
-		//   fix that.
-		// . keep a matrix of the best scores between two terms from the
-		//   above double nested loop algo. and replace that pair if we
-		//   got a better score in the sliding window.
-
-		// use special ptrs for the windows so we do not mangle 
-		// miniMergedList[] array because we use that below!
-		//char *xpos[MAX_QUERY_TERMS];
-		for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
-			xpos[i] = miniMergedList[i];
-		}
-
-		allNull = true;
-		//
-		// init each list ptr to the first wordpos rec in the body
-		// and if no such rec, make it NULL
-		//
-		for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
-			// skip if to the left of a pipe operator
-			if ( bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
-				continue;
-			}
-			
-			// skip wordposition until it in the body
-			while ( xpos[i] &&!s_inBody[Posdb::getHashGroup(xpos[i])]) {
-				// advance
-				if ( ! (xpos[i][0] & 0x04) ) xpos[i] += 12;
-				else                         xpos[i] +=  6;
+			else {
+				for ( int32_t k = 1 ; k < m_numQueryTermInfos ; k++ ) {
+					if ( ! miniMergedList[k] ) {
+						continue;
+					}
 					
-				// NULLify list if no more for this docid
-				if (xpos[i] < miniMergedEnd[i] && (xpos[i][0] & 0x04)) {
+					// siterank/langid is always 0 in numeric
+					// termlists so they sort by their number correctly
+					if ( qtibuf[k].m_bigramFlags[0] & (BF_NUMBER) ) {
+						continue;
+					}
+					
+					siteRank = Posdb::getSiteRank ( miniMergedList[k] );
+					docLang  = Posdb::getLangId   ( miniMergedList[k] );
+					if ( Posdb::getHashGroup(miniMergedList[k])==HASHGROUP_INLINKTEXT) {
+						char inlinkerSiteRank = Posdb::getWordSpamRank(miniMergedList[k]);
+						if(inlinkerSiteRank>highestInlinkSiteRank) {
+							highestInlinkSiteRank = inlinkerSiteRank;
+						}
+					}
+					break;
+				}
+			}
+			logTrace(g_conf.m_logTracePosdb, "Got siteRank and docLang");
+				
+			//
+			// parms for sliding window algorithm
+			//
+			m_qpos          = qpos;
+			m_wikiPhraseIds = wikiPhraseIds;
+			m_quotedStartIds = quotedStartIds;
+			m_bestWindowScore = -2.0;
+
+			//
+			//
+			// BEGIN SLIDING WINDOW ALGO
+			//
+			//
+
+			logTrace(g_conf.m_logTracePosdb, "Sliding Window algorithm begins");
+			m_windowTermPtrs = winnerStack;
+
+			// . now scan the terms that are in the body in a sliding window
+			// . compute the term pair score on just the terms in that
+			//   sliding window. that way, the term for a word like 'dog'
+			//   keeps the same word position when it is paired up with the
+			//   other terms.
+			// . compute the score the same way getTermPairScore() works so
+			//   we are on the same playing field
+			// . sub-out each term with its best scoring occurence in the title
+			//   or link text or meta tag, etc. but it gets a distance penalty
+			//   of like 100 units or so.
+			// . if term does not occur in the body, the sub-out approach should
+			//   fix that.
+			// . keep a matrix of the best scores between two terms from the
+			//   above double nested loop algo. and replace that pair if we
+			//   got a better score in the sliding window.
+
+			// use special ptrs for the windows so we do not mangle 
+			// miniMergedList[] array because we use that below!
+			//char *xpos[MAX_QUERY_TERMS];
+			for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
+				xpos[i] = miniMergedList[i];
+			}
+
+			allNull = true;
+			//
+			// init each list ptr to the first wordpos rec in the body
+			// and if no such rec, make it NULL
+			//
+			for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
+				// skip if to the left of a pipe operator
+				if ( bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
 					continue;
 				}
 				
-				// ok, no more! null means empty list
-				xpos[i] = NULL;
-				// must be in title or something else then
-				if ( ! bestPos[i] ) {
+				// skip wordposition until it in the body
+				while ( xpos[i] &&!s_inBody[Posdb::getHashGroup(xpos[i])]) {
+					// advance
+					if ( ! (xpos[i][0] & 0x04) ) xpos[i] += 12;
+					else                         xpos[i] +=  6;
+						
+					// NULLify list if no more for this docid
+					if (xpos[i] < miniMergedEnd[i] && (xpos[i][0] & 0x04)) {
+						continue;
+					}
+					
+					// ok, no more! null means empty list
+					xpos[i] = NULL;
+					// must be in title or something else then
+					if ( ! bestPos[i] ) {
+						gbshutdownAbort(true);
+					}
+				}
+				
+				// if all xpos are NULL, then no terms are in body...
+				if ( xpos[i] ) {
+					allNull = false;
+				}
+			}
+
+			// if no terms in body, no need to do sliding window
+			if ( allNull ) {
+				goto doneSliding;
+			}
+
+			minx = -1;
+
+		 slideMore:
+
+			// . now all xpos are in the body
+			// . calc the window score
+			// . if window score beats m_bestWindowScore we store the
+			//   term xpos that define this window in m_windowTermPtrs[] array
+			// . will try to sub in s_bestPos[i] if better, but will fix 
+			//   distance to FIXED_DISTANCE
+			// . "minx" is who just got advanced, this saves time because we
+			//   do not have to re-compute the scores of term pairs that consist
+			//   of two terms that did not advance in the sliding window
+			// . "scoreMatrix" hold the highest scoring non-body term pair
+			//   for sub-bing out the term pair in the body with
+			// . sets m_bestWindowScore if this window score beats it
+			// . does sub-outs with the non-body pairs and also the singles i guess
+			// . uses "bestPos[x]" to get best non-body scoring term for sub-outs
+			evalSlidingWindow ( xpos,
+					    m_numQueryTermInfos,
+					    bestPos,
+					    scoreMatrix);
+
+
+		 advanceMin:
+			// now find the min word pos still in body
+			minx = -1;
+			for ( int32_t x = 0 ; x < m_numQueryTermInfos ; x++ ) {
+				// skip if to the left of a pipe operator
+				// and numeric posdb termlists do not have word positions,
+				// they store a float there.
+				if ( bflags[x] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
+					continue;
+				}
+				
+				if ( ! xpos[x] ) {
+					continue;
+				}
+				
+				if ( xpos[x] && minx == -1 ) {
+					minx = x;
+					//minRec = xpos[x];
+					minPos = Posdb::getWordPos(xpos[x]);
+					continue;
+				}
+				
+				if ( Posdb::getWordPos(xpos[x]) >= minPos ) {
+					continue;
+				}
+				
+				minx = x;
+				//minRec = xpos[x];
+				minPos = Posdb::getWordPos(xpos[x]);
+			}
+			
+			// sanity
+			if ( minx < 0 ) {
+				gbshutdownAbort(true);
+			}
+
+		 advanceAgain:
+			// now advance that to slide our window
+			if ( ! (xpos[minx][0] & 0x04) ) xpos[minx] += 12;
+			else                            xpos[minx] +=  6;
+				
+			// NULLify list if no more for this docid
+			if ( xpos[minx] >= miniMergedEnd[minx] || ! (xpos[minx][0] & 0x04) ) {
+				// exhausted list now
+				xpos[minx] = NULL;
+				// are all null now?
+				int32_t k; 
+				for ( k = 0 ; k < m_numQueryTermInfos ; k++ ) {
+					// skip if to the left of a pipe operator
+					if(bflags[k]&(BF_PIPED|BF_NEGATIVE|BF_NUMBER)) {
+						continue;
+					}
+					
+					if ( xpos[k] ) {
+						break;
+					}
+				}
+				
+				// all lists are now exhausted
+				if ( k >= m_numQueryTermInfos ) {
+					goto doneSliding;
+				}
+				
+				// ok, now recompute the next min and advance him
+				goto advanceMin;
+			}
+			
+			// if it left the body then advance some more i guess?
+			if ( ! s_inBody[Posdb::getHashGroup(xpos[minx])] ) {
+				goto advanceAgain;
+			}
+
+			// do more!
+			goto slideMore;
+
+
+			//
+			//
+			// END SLIDING WINDOW ALGO
+			//
+			//
+
+		 doneSliding:
+
+			minPairScore = -1.0;
+
+			//
+			//
+			// BEGIN ZAK'S ALGO, BUT RESTRICT ALL BODY TERMS TO SLIDING WINDOW
+			//
+			//
+			// (similar to NON-BODY TERM PAIR SCORING LOOP above)
+			//
+			logTrace(g_conf.m_logTracePosdb, "Zak algorithm begins");
+
+			for ( int32_t i = 0   ; i < m_numQueryTermInfos ; i++ ) {
+
+				// skip if to the left of a pipe operator
+				if ( bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
+					continue;
+				}
+
+				for ( int32_t j = i+1 ; j < m_numQueryTermInfos ; j++ ) {
+
+					// skip if to the left of a pipe operator
+					if ( bflags[j] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
+						continue;
+					}
+
+					//
+					// get score for term pair from non-body occuring terms
+					//
+					if ( ! miniMergedList[i] ) {
+						continue;
+					}
+					
+					if ( ! miniMergedList[j] ) {
+						continue;
+					}
+					
+					// . this limits its scoring to the winning sliding window
+					//   as far as the in-body terms are concerned
+					// . it will do sub-outs using the score matrix
+					// . this will skip over body terms that are not 
+					//   in the winning window defined by m_windowTermPtrs[]
+					//   that we set in evalSlidingWindow()
+					// . returns the best score for this term
+					float tpscore = getTermPairScoreForAny (i,
+									      j,
+									      miniMergedList[i],
+									      miniMergedList[j],
+									      miniMergedEnd[i],
+									      miniMergedEnd[j],
+									      pdcs );
+									      
+					// get min of all term pair scores
+					if ( tpscore >= minPairScore && minPairScore >= 0.0 ) {
+						continue;
+					}
+					
+					// got a new min
+					minPairScore = tpscore;
+				}
+			}
+			
+			//
+			//
+			// END ZAK'S ALGO
+			//
+			//
+
+			m_preFinalScore = minPairScore;
+
+			
+			minScore = 999999999.0;
+					
+			// get a min score from all the term pairs
+			if ( minPairScore < minScore && minPairScore >= 0.0 ) {
+				minScore = minPairScore;
+			}
+
+			// if we only had one query term
+			if ( minSingleScore < minScore ) {
+				minScore = minSingleScore;
+			}
+
+
+			logTrace(g_conf.m_logTracePosdb, "m_preFinalScore=%f, minScore=%f", m_preFinalScore, minScore);
+			
+			// comment out for gbsectionhash: debug:
+			if ( minScore <= 0.0 ) {
+				goto advance;
+			}
+			
+		} // !m_q->m_isBoolean
+
+
+		float effectiveSiteRank;
+
+		effectiveSiteRank = siteRank;
+		if( highestInlinkSiteRank > siteRank ) {
+			//adjust effective siterank because a high-rank site linked to it. Don't adjust it too much though.
+			effectiveSiteRank = siteRank + (highestInlinkSiteRank-siteRank) / 3.0;
+		}
+		// try dividing it by 3! (or multiply by .33333 faster)
+		score = minScore * (effectiveSiteRank*m_siteRankMultiplier+1.0);
+
+		// . not foreign language? give a huge boost
+		// . use "qlang" parm to set the language. i.e. "&qlang=fr"
+		if ( m_msg39req->m_language == 0 || 
+		     docLang == 0 ||
+		     m_msg39req->m_language == docLang) {
+			score *= (m_msg39req->m_sameLangWeight);//SAMELANGMULT;
+		}
+
+		// assume filtered out
+		if ( currPassNum == INTERSECT_SCORING ) {
+			m_filtered++;
+		}
+
+		//
+		// if we have a gbsortby:price term then score exclusively on that
+		//
+		if ( m_sortByTermNum >= 0 ) {
+			// no term?
+			if ( ! miniMergedList[m_sortByTermInfoNum] ) {
+				goto advance;
+			}
+			
+			score = Posdb::getFloat (miniMergedList[m_sortByTermInfoNum]);
+		}
+
+		if ( m_sortByTermNumInt >= 0 ) {
+			// no term?
+			if ( ! miniMergedList[m_sortByTermInfoNumInt] ) {
+				goto advance;
+			}
+			
+			intScore = Posdb::getInt(miniMergedList[m_sortByTermInfoNumInt]);
+			// do this so hasMaxSerpScore below works, although
+			// because of roundoff errors we might lose a docid
+			// through the cracks in the widget.
+			//score = (float)intScore;
+		}
+
+		// this logic now moved into isTermValueInRange2() when we fill up
+		// the docidVoteBuf. we won't add the docid if it fails one
+		// of these range terms. But if we are a boolean query then
+		// we handle it in makeDocIdVoteBufForBoolQuery() below.
+		// [snip: range checks]
+
+
+		// now we have a maxscore/maxdocid upper range so the widget
+		// can append only new results to an older result set.
+		if ( m_hasMaxSerpScore ) {
+			// if dealing with an "int" score use the extra precision
+			// of the double that m_maxSerpScore is!
+			if ( m_sortByTermNumInt >= 0 ) {
+				if ( intScore > (int32_t)m_msg39req->m_maxSerpScore ) {
+					goto advance;
+				}
+				
+				if ( intScore == (int32_t)m_msg39req->m_maxSerpScore && (int64_t)m_docId <= m_msg39req->m_minSerpDocId ) {
+					goto advance;
+				}
+			}
+			else {
+				if ( score > (float)m_msg39req->m_maxSerpScore ) {
+					goto advance;
+				}
+				
+				if ( score == m_msg39req->m_maxSerpScore && (int64_t)m_docId <= m_msg39req->m_minSerpDocId ) {
+					goto advance;
+				}
+			}
+		}
+
+
+		// we did not get filtered out
+		if ( currPassNum == INTERSECT_SCORING ) {
+			m_filtered--;
+		}
+		
+
+		// . seoDebug hack so we can set "dcs"
+		// . we only come here if we actually made it into m_topTree
+		if ( currPassNum == INTERSECT_DEBUG_INFO ) {
+			if( genDebugScoreInfo2(dcs, lastLen, lastDocId, siteRank, score, intScore, docLang) ) {
+				goto advance;
+			}
+		}
+		// if doing the second pass for printing out transparency info
+		// then do not mess with top tree
+		else { // currPassNum == INTERSECT_SCORING ) {
+			// add to top tree then!
+			int32_t tn = m_topTree->getEmptyNode();
+			TopNode *t  = &m_topTree->m_nodes[tn];
+			// set the score and docid ptr
+			t->m_score = score;
+			t->m_docId = m_docId;
+			// sanity
+			// take this out i've seen this core here before, no idea
+			// why, but why core?
+			//if ( m_docId == 0 )
+			//	gbshutdownAbort(true);
+			// use an integer score like lastSpidered timestamp?
+			if ( m_sortByTermNumInt >= 0 ) {
+				t->m_intScore = intScore;
+				t->m_score = 0.0;
+				
+				if ( ! m_topTree->m_useIntScores) {
 					gbshutdownAbort(true);
 				}
 			}
 			
-			// if all xpos are NULL, then no terms are in body...
-			if ( xpos[i] ) {
-				allNull = false;
-			}
-		}
+			// . this will not add if tree is full and it is less than the 
+			//   m_lowNode in score
+			// . if it does get added to a full tree, lowNode will be 
+			//   removed
+			m_topTree->addNode ( t, tn);
 
-		// if no terms in body, no need to do sliding window
-		if ( allNull ) {
-			goto doneSliding;
-		}
-
-		minx = -1;
-
-	 slideMore:
-
-		// . now all xpos are in the body
-		// . calc the window score
-		// . if window score beats m_bestWindowScore we store the
-		//   term xpos that define this window in m_windowTermPtrs[] array
-		// . will try to sub in s_bestPos[i] if better, but will fix 
-		//   distance to FIXED_DISTANCE
-		// . "minx" is who just got advanced, this saves time because we
-		//   do not have to re-compute the scores of term pairs that consist
-		//   of two terms that did not advance in the sliding window
-		// . "scoreMatrix" hold the highest scoring non-body term pair
-		//   for sub-bing out the term pair in the body with
-		// . sets m_bestWindowScore if this window score beats it
-		// . does sub-outs with the non-body pairs and also the singles i guess
-		// . uses "bestPos[x]" to get best non-body scoring term for sub-outs
-		evalSlidingWindow ( xpos,
-				    m_numQueryTermInfos,
-				    bestPos,
-				    scoreMatrix);
-
-
-	 advanceMin:
-		// now find the min word pos still in body
-		minx = -1;
-		for ( int32_t x = 0 ; x < m_numQueryTermInfos ; x++ ) {
-			// skip if to the left of a pipe operator
-			// and numeric posdb termlists do not have word positions,
-			// they store a float there.
-			if ( bflags[x] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
-				continue;
-			}
-			
-			if ( ! xpos[x] ) {
-				continue;
-			}
-			
-			if ( xpos[x] && minx == -1 ) {
-				minx = x;
-				//minRec = xpos[x];
-				minPos = Posdb::getWordPos(xpos[x]);
-				continue;
-			}
-			
-			if ( Posdb::getWordPos(xpos[x]) >= minPos ) {
-				continue;
-			}
-			
-			minx = x;
-			//minRec = xpos[x];
-			minPos = Posdb::getWordPos(xpos[x]);
-		}
-		
-		// sanity
-		if ( minx < 0 ) {
-			gbshutdownAbort(true);
-		}
-
-	 advanceAgain:
-		// now advance that to slide our window
-		if ( ! (xpos[minx][0] & 0x04) ) xpos[minx] += 12;
-		else                            xpos[minx] +=  6;
-			
-		// NULLify list if no more for this docid
-		if ( xpos[minx] >= miniMergedEnd[minx] || ! (xpos[minx][0] & 0x04) ) {
-			// exhausted list now
-			xpos[minx] = NULL;
-			// are all null now?
-			int32_t k; 
-			for ( k = 0 ; k < m_numQueryTermInfos ; k++ ) {
-				// skip if to the left of a pipe operator
-				if(bflags[k]&(BF_PIPED|BF_NEGATIVE|BF_NUMBER)) {
-					continue;
-				}
-				
-				if ( xpos[k] ) {
-					break;
-				}
-			}
-			
-			// all lists are now exhausted
-			if ( k >= m_numQueryTermInfos ) {
-				goto doneSliding;
-			}
-			
-			// ok, now recompute the next min and advance him
-			goto advanceMin;
-		}
-		
-		// if it left the body then advance some more i guess?
-		if ( ! s_inBody[Posdb::getHashGroup(xpos[minx])] ) {
-			goto advanceAgain;
-		}
-
-		// do more!
-		goto slideMore;
-
-
-		//
-		//
-		// END SLIDING WINDOW ALGO
-		//
-		//
-
-	 doneSliding:
-
-		minPairScore = -1.0;
-
-		//
-		//
-		// BEGIN ZAK'S ALGO, BUT RESTRICT ALL BODY TERMS TO SLIDING WINDOW
-		//
-		//
-		// (similar to NON-BODY TERM PAIR SCORING LOOP above)
-		//
-		logTrace(g_conf.m_logTracePosdb, "Zak algorithm begins");
-
-		for ( int32_t i = 0   ; i < m_numQueryTermInfos ; i++ ) {
-
-			// skip if to the left of a pipe operator
-			if ( bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
-				continue;
-			}
-
-			for ( int32_t j = i+1 ; j < m_numQueryTermInfos ; j++ ) {
-
-				// skip if to the left of a pipe operator
-				if ( bflags[j] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
-					continue;
-				}
-
-				//
-				// get score for term pair from non-body occuring terms
-				//
-				if ( ! miniMergedList[i] ) {
-					continue;
-				}
-				
-				if ( ! miniMergedList[j] ) {
-					continue;
-				}
-				
-				// . this limits its scoring to the winning sliding window
-				//   as far as the in-body terms are concerned
-				// . it will do sub-outs using the score matrix
-				// . this will skip over body terms that are not 
-				//   in the winning window defined by m_windowTermPtrs[]
-				//   that we set in evalSlidingWindow()
-				// . returns the best score for this term
-				float tpscore = getTermPairScoreForAny (i,
-								      j,
-								      miniMergedList[i],
-								      miniMergedList[j],
-								      miniMergedEnd[i],
-								      miniMergedEnd[j],
-								      pdcs );
-								      
-				// get min of all term pair scores
-				if ( tpscore >= minPairScore && minPairScore >= 0.0 ) {
-					continue;
-				}
-				
-				// got a new min
-				minPairScore = tpscore;
+			// top tree only holds enough docids to satisfy the
+			// m_msg39request::m_docsToGet (m_msg39req->m_docsToGet) request 
+			// from the searcher. It basically stores m_docsToGet
+			// into TopTree::m_docsWanted. TopTree::m_docsWanted is often 
+			// double m_docsToGet to compensate for site clustering, and
+			// it can be even more than that in order to ensure we get
+			// enough domains represented in the search results.
+			// See TopTree::addNode(). it will not add the "t" node if
+			// its score is not high enough when the top tree is full.
+			if ( m_topTree->m_numUsedNodes > m_topTree->m_docsWanted ) {
+				// get the lowest scoring node
+				int32_t lowNode = m_topTree->getLowNode();
+				// and record its score in "minWinningScore"
+				minWinningScore = m_topTree->m_nodes[lowNode].m_score;
 			}
 		}
 		
-		//
-		//
-		// END ZAK'S ALGO
-		//
-		//
+	 advance:
 
-		m_preFinalScore = minPairScore;
+		// advance to next docid
+		docIdPtr += 6;
+		//p = pend;
+		// if not of end list loop back up
+		//if ( p < listEnd ) goto bigloop;
 
-		
-		minScore = 999999999.0;
-				
-		// get a min score from all the term pairs
-		if ( minPairScore < minScore && minPairScore >= 0.0 ) {
-			minScore = minPairScore;
+		logTrace(g_conf.m_logTracePosdb, "^ Now repeat for next docID");
+		goto handleNextDocId;
+
+
+	 done:
+
+		if ( m_debug ) {
+			now = gettimeofdayInMilliseconds();
+			took = now - lastTime;
+			log(LOG_INFO, "posdb: new algo phase %" PRId32" took %" PRId64" ms", phase,took);
+			lastTime = now;
+			phase++;
 		}
 
-		// if we only had one query term
-		if ( minSingleScore < minScore ) {
-			minScore = minSingleScore;
-		}
-
-
-		logTrace(g_conf.m_logTracePosdb, "m_preFinalScore=%f, minScore=%f", m_preFinalScore, minScore);
-		
-		// comment out for gbsectionhash: debug:
-		if ( minScore <= 0.0 ) {
-			goto advance;
-		}
-		
-	} // !m_q->m_isBoolean
-
-
-	float effectiveSiteRank;
-
-	effectiveSiteRank = siteRank;
-	if( highestInlinkSiteRank > siteRank ) {
-		//adjust effective siterank because a high-rank site linked to it. Don't adjust it too much though.
-		effectiveSiteRank = siteRank + (highestInlinkSiteRank-siteRank) / 3.0;
-	}
-	// try dividing it by 3! (or multiply by .33333 faster)
-	score = minScore * (effectiveSiteRank*m_siteRankMultiplier+1.0);
-
-	// . not foreign language? give a huge boost
-	// . use "qlang" parm to set the language. i.e. "&qlang=fr"
-	if ( m_msg39req->m_language == 0 || 
-	     docLang == 0 ||
-	     m_msg39req->m_language == docLang) {
-		score *= (m_msg39req->m_sameLangWeight);//SAMELANGMULT;
 	}
 
-	// assume filtered out
-	if ( ! genDebugScoreInfoPass ) {
-		m_filtered++;
-	}
-
-	//
-	// if we have a gbsortby:price term then score exclusively on that
-	//
-	if ( m_sortByTermNum >= 0 ) {
-		// no term?
-		if ( ! miniMergedList[m_sortByTermInfoNum] ) {
-			goto advance;
-		}
-		
-		score = Posdb::getFloat (miniMergedList[m_sortByTermInfoNum]);
-	}
-
-	if ( m_sortByTermNumInt >= 0 ) {
-		// no term?
-		if ( ! miniMergedList[m_sortByTermInfoNumInt] ) {
-			goto advance;
-		}
-		
-		intScore = Posdb::getInt(miniMergedList[m_sortByTermInfoNumInt]);
-		// do this so hasMaxSerpScore below works, although
-		// because of roundoff errors we might lose a docid
-		// through the cracks in the widget.
-		//score = (float)intScore;
-	}
-
-	// this logic now moved into isTermValueInRange2() when we fill up
-	// the docidVoteBuf. we won't add the docid if it fails one
-	// of these range terms. But if we are a boolean query then
-	// we handle it in makeDocIdVoteBufForBoolQuery() below.
-	// [snip: range checks]
-
-
-	// now we have a maxscore/maxdocid upper range so the widget
-	// can append only new results to an older result set.
-	if ( m_hasMaxSerpScore ) {
-		// if dealing with an "int" score use the extra precision
-		// of the double that m_maxSerpScore is!
-		if ( m_sortByTermNumInt >= 0 ) {
-			if ( intScore > (int32_t)m_msg39req->m_maxSerpScore ) {
-				goto advance;
-			}
-			
-			if ( intScore == (int32_t)m_msg39req->m_maxSerpScore && (int64_t)m_docId <= m_msg39req->m_minSerpDocId ) {
-				goto advance;
-			}
-		}
-		else {
-			if ( score > (float)m_msg39req->m_maxSerpScore ) {
-				goto advance;
-			}
-			
-			if ( score == m_msg39req->m_maxSerpScore && (int64_t)m_docId <= m_msg39req->m_minSerpDocId ) {
-				goto advance;
-			}
-		}
-	}
-
-
-	// we did not get filtered out
-	if ( ! genDebugScoreInfoPass ) {
-		m_filtered--;
-	}
-	
-
-	// . seoDebug hack so we can set "dcs"
-	// . we only come here if we actually made it into m_topTree
-	if ( genDebugScoreInfoPass ) {
-		if( genDebugScoreInfo2(dcs, lastLen, lastDocId, siteRank, score, intScore, docLang) ) {
-			goto advance;
-		}
-	}
-	// if doing the second pass for printing out transparency info
-	// then do not mess with top tree
-	else { // ! genDebugScoreInfoPass ) {
-		// add to top tree then!
-		int32_t tn = m_topTree->getEmptyNode();
-		TopNode *t  = &m_topTree->m_nodes[tn];
-		// set the score and docid ptr
-		t->m_score = score;
-		t->m_docId = m_docId;
-		// sanity
-		// take this out i've seen this core here before, no idea
-		// why, but why core?
-		//if ( m_docId == 0 )
-		//	gbshutdownAbort(true);
-		// use an integer score like lastSpidered timestamp?
-		if ( m_sortByTermNumInt >= 0 ) {
-			t->m_intScore = intScore;
-			t->m_score = 0.0;
-			
-			if ( ! m_topTree->m_useIntScores) {
-				gbshutdownAbort(true);
-			}
-		}
-		
-		// . this will not add if tree is full and it is less than the 
-		//   m_lowNode in score
-		// . if it does get added to a full tree, lowNode will be 
-		//   removed
-		m_topTree->addNode ( t, tn);
-
-		// top tree only holds enough docids to satisfy the
-		// m_msg39request::m_docsToGet (m_msg39req->m_docsToGet) request 
-		// from the searcher. It basically stores m_docsToGet
-		// into TopTree::m_docsWanted. TopTree::m_docsWanted is often 
-		// double m_docsToGet to compensate for site clustering, and
-		// it can be even more than that in order to ensure we get
-		// enough domains represented in the search results.
-		// See TopTree::addNode(). it will not add the "t" node if
-		// its score is not high enough when the top tree is full.
-		if ( m_topTree->m_numUsedNodes > m_topTree->m_docsWanted ) {
-			// get the lowest scoring node
-			int32_t lowNode = m_topTree->getLowNode();
-			// and record its score in "minWinningScore"
-			minWinningScore = m_topTree->m_nodes[lowNode].m_score;
-		}
-	}
-	
- advance:
-
-	// advance to next docid
-	docIdPtr += 6;
-	//p = pend;
-	// if not of end list loop back up
-	//if ( p < listEnd ) goto bigloop;
-
-	logTrace(g_conf.m_logTracePosdb, "^ Now repeat for next docID");
-	goto handleNextDocId;
-
-
- done:
-
-	if ( m_debug ) {
-		now = gettimeofdayInMilliseconds();
-		took = now - lastTime;
-		log(LOG_INFO, "posdb: new algo phase %" PRId32" took %" PRId64" ms", phase,took);
-		lastTime = now;
-		phase++;
-	}
-
-	// now repeat the above loop, but with m_dt hashtable
-	// non-NULL and include all the docids in the toptree, and
-	// for each of those docids store the transparency info in english
-	// into the safebuf "transBuf".
-	if ( ! genDebugScoreInfoPass && m_msg39req->m_getDocIdScoringInfo ) {
-		// only do one second pass
-		genDebugScoreInfoPass = true;
-		// reset this for purposes above!
-		//m_topTree->m_lastKickedOutDocId = -1LL;
-		/*
-		int32_t count = 0;
-		// stock m_docIdTable
-		for ( int32_t ti = m_topTree->getHighNode() ; 
-		      ti >= 0 ; ti = m_topTree->getPrev(ti) ) {
-			// get the guy
-			TopNode *t = &m_topTree->m_nodes[ti];
-			// limit to max!
-			if ( count++ >= m_maxScores ) break;
-			// now 
-			m_docIdTable.addKey(&t->m_docId);
-		}
-		*/
-
-		logTrace(g_conf.m_logTracePosdb, "Do second loop now");
-		goto genDebugScoreInfoPassLoop;
-	}
 
 	if ( m_debug ) {
 		log(LOG_INFO, "posdb: # fail0 = %" PRId32" ", fail0 );

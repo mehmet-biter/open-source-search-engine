@@ -1,6 +1,7 @@
-#include "gb-include.h"
 #include "Errno.h"
-#include <string>
+#include "Sanity.h"
+#include <string.h>
+#include <stdlib.h>
 #include <pthread.h>
 
 static pthread_key_t s_g_errno_key;

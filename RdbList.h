@@ -235,8 +235,8 @@ public:
 	bool removeBadData_r();
 
 	// . print out the list (uses log())
-	int printList(int32_t logtype);
-	int printPosdbList(int32_t logtype);
+	int printList();
+	int printPosdbList();
 
 	// . is the format bit set? that means it's a 12-byte key
 	// . used exclusively for index lists (indexdb)

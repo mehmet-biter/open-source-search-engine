@@ -768,7 +768,7 @@ tryAgain:
 
 			if (m_buckets) {
 				logError("Contains buckets, cannot fix this yet");
-				m_list->printList(LOG_ERROR);	//@@@@@@ EXCESSIVE
+				m_list->printList();	//@@@@@@ EXCESSIVE
 				gbshutdownCorrupted();
 			}
 

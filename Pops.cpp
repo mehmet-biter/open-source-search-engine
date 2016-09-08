@@ -3,6 +3,7 @@
 #include "Pops.h"
 #include "Words.h"
 #include "Speller.h"
+#include "Mem.h"
 #include "Sanity.h"
 
 
