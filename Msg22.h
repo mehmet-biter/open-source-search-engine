@@ -46,7 +46,6 @@ class Msg22 {
 
 	// . make sure you keep url/coll on your stack cuz we just point to it
 	// . see the other getTitleRec() description below for more details
-	// . use a maxCacheAge of 0 to avoid the cache
 	bool getTitleRec ( class Msg22Request *r ,
 			   char      *url     ,
 			   int64_t  docId   ,
@@ -58,7 +57,6 @@ class Msg22 {
 			   void      *state          , 
 			   void     (* callback) (void *state ),
 			   int32_t       niceness       ,
-			   int32_t       maxCacheAge    ,
 			   int32_t       timeout );
 
 	int64_t getAvailDocId ( ) { return m_availDocId; }

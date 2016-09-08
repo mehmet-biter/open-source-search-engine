@@ -6148,7 +6148,6 @@ char **XmlDoc::getOldTitleRec ( ) {
 				      m_masterState        ,
 				      m_masterLoop         ,
 				      m_niceness           , // niceness
-				      0                    , // max cache age
 				      999999               )) // timeout seconds
 		// return -1 if we blocked
 		return (char **)-1;
@@ -6206,7 +6205,6 @@ char **XmlDoc::getRootTitleRec ( ) {
 				      m_masterState        ,
 				      m_masterLoop         ,
 				      m_niceness           , // niceness
-				      0                    , // max cache age
 				      999999               )) // timeout seconds
 		// return -1 if we blocked
 		return (char **)-1;
@@ -6354,7 +6352,6 @@ char *XmlDoc::getIsIndexed ( ) {
 				      m_masterState        ,
 				      m_masterLoop         ,
 				      m_niceness           , // niceness
-				      0                    , // max cache age
 				      999999               )){ // timeout seconds
 		// validate
 		m_calledMsg22e = true;
@@ -7327,7 +7324,6 @@ char *XmlDoc::getIsWWWDup ( ) {
 				      m_masterState        ,
 				      m_masterLoop         ,
 				      m_niceness           , // niceness
-				      0                    , // max cache age
 				      999999               )){ // timeout seconds
 		// validate
 		m_calledMsg22f = true;
