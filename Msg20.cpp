@@ -5,8 +5,8 @@
 #endif
 #include "SummaryCache.h"
 
-static void handleRequest20   ( UdpSlot *slot , int32_t netnice );
-static bool gotReplyWrapperxd ( void *state ) ;
+static void handleRequest20(UdpSlot *slot, int32_t netnice);
+static bool gotReplyWrapperxd(void *state);
 
 
 static bool sendCachedReply ( Msg20Request *req, const void *cached_summary, size_t cached_summary_len, UdpSlot *slot );
@@ -298,7 +298,7 @@ void Msg20::gotReply ( UdpSlot *slot ) {
 
 // . this is called
 // . destroys the UdpSlot if false is returned
-void handleRequest20 ( UdpSlot *slot , int32_t netnice ) {
+static void handleRequest20(UdpSlot *slot, int32_t netnice) {
 	// . check g_errno
 	// . before, we were not sending a reply back here and we continued
 	//   to process the request, even though it was empty. the slot
@@ -410,7 +410,7 @@ void handleRequest20 ( UdpSlot *slot , int32_t netnice ) {
 	gotReplyWrapperxd ( xd );
 }
 
-bool gotReplyWrapperxd ( void *state ) {
+bool gotReplyWrapperxd(void *state) {
 	// grab it
 	XmlDoc *xd = (XmlDoc *)state;
 
