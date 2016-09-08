@@ -247,10 +247,6 @@ public:
 	// see definition of Msg20Request below
 	bool getSummary ( class Msg20Request *r );
 
-	// "m_request = r->serialize(&m_requestSize,m_requestBuf)"
-	char  *m_request;
-	int32_t   m_requestSize;
-
 	// this is cast to m_replyPtr
 	Msg20Reply *m_r ;
 	int32_t   m_replySize;
@@ -262,8 +258,7 @@ public:
 	// set if we had an error
 	int32_t   m_errno;
 
-	int64_t getRequestDocId () { return m_requestDocId; }
-	int64_t m_requestDocId;
+	int64_t getRequestDocId () const { return m_requestDocId; }
 
 	int32_t getStoredSize ( ) { 
 		if ( ! m_r ) return 0; 
@@ -310,6 +305,11 @@ public:
 	bool m_launched;
 
 private:
+	char  *m_request;
+	int32_t   m_requestSize;
+
+	int64_t m_requestDocId;
+
 	// for sending the request
 	Multicast m_mcast;
 	
