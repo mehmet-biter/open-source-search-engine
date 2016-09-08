@@ -3153,8 +3153,6 @@ void PosdbTable::intersectLists10_r ( ) {
 
 
 		if ( m_q->m_isBoolean ) {
-			//minScore = 1.0;
-			// this is somewhat wasteful since it is set below again
 			m_docId = *(uint32_t *)(docIdPtr+1);
 			m_docId <<= 8;
 			m_docId |= (unsigned char)docIdPtr[0];
@@ -3734,67 +3732,69 @@ void PosdbTable::intersectLists10_r ( ) {
 				if ( bflags[x] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
 					continue;
 				}
-				
+
 				if ( ! xpos[x] ) {
 					continue;
 				}
-				
+
 				if ( xpos[x] && minx == -1 ) {
 					minx = x;
 					//minRec = xpos[x];
 					minPos = Posdb::getWordPos(xpos[x]);
 					continue;
 				}
-				
+
 				if ( Posdb::getWordPos(xpos[x]) >= minPos ) {
 					continue;
 				}
-				
+
 				minx = x;
 				//minRec = xpos[x];
 				minPos = Posdb::getWordPos(xpos[x]);
 			}
-			
+
 			// sanity
 			if ( minx < 0 ) {
 				gbshutdownAbort(true);
 			}
 
-		 advanceAgain:
-			// now advance that to slide our window
-			if ( ! (xpos[minx][0] & 0x04) ) xpos[minx] += 12;
-			else                            xpos[minx] +=  6;
-				
-			// NULLify list if no more for this docid
-			if ( xpos[minx] >= miniMergedEnd[minx] || ! (xpos[minx][0] & 0x04) ) {
-				// exhausted list now
-				xpos[minx] = NULL;
-				// are all null now?
-				int32_t k; 
-				for ( k = 0 ; k < m_numQueryTermInfos ; k++ ) {
-					// skip if to the left of a pipe operator
-					if(bflags[k]&(BF_PIPED|BF_NEGATIVE|BF_NUMBER)) {
-						continue;
+		 	do {
+				// now advance that to slide our window
+				if ( ! (xpos[minx][0] & 0x04) ) {
+					xpos[minx] += 12;
+				}
+				else {
+					xpos[minx] +=  6;
+				}
+
+				// NULLify list if no more for this docid
+				if ( xpos[minx] >= miniMergedEnd[minx] || ! (xpos[minx][0] & 0x04) ) {
+					// exhausted list now
+					xpos[minx] = NULL;
+					// are all null now?
+					int32_t k; 
+					for ( k = 0 ; k < m_numQueryTermInfos ; k++ ) {
+						// skip if to the left of a pipe operator
+						if(bflags[k]&(BF_PIPED|BF_NEGATIVE|BF_NUMBER)) {
+							continue;
+						}
+						
+						if ( xpos[k] ) {
+							break;
+						}
 					}
-					
-					if ( xpos[k] ) {
-						break;
+
+					// all lists are now exhausted
+					if ( k >= m_numQueryTermInfos ) {
+						goto doneSliding;
 					}
+
+					// ok, now recompute the next min and advance him
+					goto advanceMin;
 				}
 				
-				// all lists are now exhausted
-				if ( k >= m_numQueryTermInfos ) {
-					goto doneSliding;
-				}
-				
-				// ok, now recompute the next min and advance him
-				goto advanceMin;
-			}
-			
-			// if it left the body then advance some more i guess?
-			if ( ! s_inBody[Posdb::getHashGroup(xpos[minx])] ) {
-				goto advanceAgain;
-			}
+				// if it left the body then advance some more i guess?
+			} while( ! s_inBody[Posdb::getHashGroup(xpos[minx])] );
 
 			// do more!
 			goto slideMore;
