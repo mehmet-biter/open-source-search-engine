@@ -1489,6 +1489,26 @@ int32_t getMsgStoredSize(int32_t baseSize,
 
 // . return ptr to the buffer we serialize into
 // . return NULL and set g_errno on error
+char *serializeMsg(int32_t             baseSize,
+		   const int32_t      *firstSizeParm,
+		   const int32_t      *lastSizeParm,
+		   const char * const *firstStrPtr,
+		   const void         *thisPtr,
+		   int32_t            *retSize,
+		   char               *userBuf,
+		   int32_t             userBufSize)
+{
+	return serializeMsg(baseSize,
+	                    const_cast<int32_t*>(firstSizeParm),
+			    const_cast<int32_t*>(lastSizeParm),
+			    const_cast<char**>(firstStrPtr),
+			    const_cast<void*>(thisPtr),
+			    retSize,
+			    userBuf,
+			    userBufSize,
+			    false);
+}
+
 char *serializeMsg ( int32_t  baseSize ,
 		     int32_t *firstSizeParm ,
 		     int32_t *lastSizeParm ,

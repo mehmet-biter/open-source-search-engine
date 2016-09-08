@@ -591,8 +591,7 @@ char *Msg20Request::serialize ( int32_t *retSize ) {
 			    &ptr_qbuf,
 			    this,
 			    retSize,
-			    buf, need,
-			    false);
+			    buf, need);
 }
 
 // convert offsets back into ptrs
@@ -694,8 +693,7 @@ int32_t Msg20Reply::serialize ( char *buf , int32_t bufSize ) {
 	             &ptr_tbuf,
 	             this,
 	             &retSize,
-	             buf, bufSize,
-	             false);
+	             buf, bufSize);
 	if ( retSize > bufSize ) { g_process.shutdownAbort(true); }
 	// return it
 	return retSize;
