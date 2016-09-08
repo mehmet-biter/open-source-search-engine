@@ -519,11 +519,6 @@ bool Profiler::startTimer(int32_t address, const char* caller) {
 	return true;
 }
 
-inline uint64_t gettimeofdayInMicroseconds(void) {
-	struct timeval tv;
-	gettimeofday(&tv, NULL);
-	return(((uint64_t)tv.tv_sec * 1000000LL) + (uint64_t)tv.tv_usec);
-}
 bool Profiler::pause(const char* caller, int32_t lineno, int32_t took) {
 	lastQuickPollTime = gettimeofdayInMicroseconds(); 
 	uint64_t nowLocal = lastQuickPollTime / 1000;
