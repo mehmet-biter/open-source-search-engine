@@ -2194,6 +2194,7 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 			// . continue if tie, so we get the oldest first
 			// . treat negative and positive keys as identical for this
 			if (ss < 0) {
+				logTrace(g_conf.m_logTraceRdbList, "ss < 0. continue");
 				continue;
 			}
 
@@ -2201,8 +2202,11 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 			// and minPtrBase/Lo/Hi was a negative key! so this is
 			// the annihilation. skip the positive key.
 			if (ss == 0) {
+				logTrace(g_conf.m_logTraceRdbList, "ss == 0. skip");
 				goto skip;
 			}
+
+			logTrace(g_conf.m_logTraceRdbList, "new min i=%" PRId32, i);
 
 			// we got a new min
 			minPtrBase = ptrs  [i];
@@ -2213,6 +2217,7 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 
 		// ignore if negative i guess, just skip it
 		if (removeNegKeys && (minPtrBase[0] & 0x01) == 0x00) {
+			logTrace(g_conf.m_logTraceRdbList, "removeNegKeys. skip");
 			goto skip;
 		}
 
@@ -2223,11 +2228,13 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 		if (m_listPtrHi && cmp_6bytes_equal(minPtrHi, m_listPtrHi)) {
 			if (m_listPtrLo && cmp_6bytes_equal(minPtrLo, m_listPtrLo)) {
 				// 6-byte entry
+				logTrace(g_conf.m_logTraceRdbList, "store 6-byte key");
 				memcpy(new_listPtr, minPtrBase, 6);
 				new_listPtr += 6;
 				*pp |= 0x06; //turn on both compression bits
 			} else {
 				// 12-byte entry
+				logTrace(g_conf.m_logTraceRdbList, "store 12-byte key");
 				memcpy(new_listPtr, minPtrBase, 6);
 				new_listPtr += 6;
 				memcpy(new_listPtr, minPtrLo, 6);
@@ -2237,6 +2244,7 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 			}
 		} else {
 			// 18-byte entry
+			logTrace(g_conf.m_logTraceRdbList, "store 18-byte key");
 			memcpy(new_listPtr, minPtrBase, 6);
 			new_listPtr += 6;
 			memcpy(new_listPtr, minPtrLo, 6);
@@ -2266,11 +2274,14 @@ skip:
 			// is new key 6 bytes? then do not touch hi/lo ptrs
 			if ( ptrs[mini][0] & 0x04 ) {
 				// no-op
+				logTrace(g_conf.m_logTraceRdbList, "new 6-byte key");
 			} else if ( ptrs[mini][0] & 0x02 ) {
 				// is new key 12 bytes?
+				logTrace(g_conf.m_logTraceRdbList, "new 12-byte key");
 				memcpy(loKeys[mini], ptrs[mini] +  6, 6);
 			} else {
 				// is new key 18 bytes? full key.
+				logTrace(g_conf.m_logTraceRdbList, "new 18-byte key");
 				memcpy(hiKeys[mini], ptrs[mini] + 12, 6);
 				memcpy(loKeys[mini], ptrs[mini] +  6, 6);
 			}
@@ -2278,6 +2289,7 @@ skip:
 			//
 			// REMOVE THE LIST at mini
 			//
+			logTrace(g_conf.m_logTraceRdbList, "remove list at mini=%" PRId32, mini);
 
 			// otherwise, remove him from array
 			for (int32_t i = mini; i < numLists - 1; i++) {
@@ -2305,6 +2317,7 @@ skip:
 
 	// return now if we're empty... all our recs annihilated?
 	if (m_listSize <= 0) {
+		logTrace(g_conf.m_logTraceRdbList, "no more list");
 		return true;
 	}
 
