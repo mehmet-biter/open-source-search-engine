@@ -6,6 +6,7 @@
 #define MAX_OUTSTANDING_MSGE0 20
 
 #include "Linkdb.h"
+#include "Tagdb.h"
 
 class TagRec;
 

@@ -1,5 +1,7 @@
 #include "gb-include.h"
 #include "XmlDoc.h"
+#include "Hostdb.h"
+#include "Process.h"
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
 #endif
@@ -27,7 +29,6 @@ void Msg20::constructor () {
 
 void Msg20::destructor  () { reset(); m_mcast.destructor(); }
 
-#include "Process.h"
 
 void Msg20::freeReply() {
 	if (!m_r) {

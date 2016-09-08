@@ -5,14 +5,7 @@
 #ifndef GB_MSG20_H
 #define GB_MSG20_H
 
-#include "UdpServer.h"
-#include "Hostdb.h"
 #include "Multicast.h"
-#include "Xml.h"
-#include "Summary.h"
-#include "Titledb.h"
-#include "Query.h"
-#include "Tagdb.h" // TagRec
 
 
 class Msg20Request {
