@@ -2674,6 +2674,7 @@ int32_t UdpServer::getNumUsedSlots() const {
 
 void UdpServer::saveActiveSlots(int fd, msg_type_t msg_type) {
 	ScopedLock sl(m_mtx);
+	int ignored __attribute__((unused));	// shut up gcc warning: ignoring return value
 	for (const UdpSlot *slot = m_activeListHead; slot; slot = slot->m_activeListNext) {
 		// skip if not wanted msg type
 		if (slot->getMsgType() != msg_type) {
@@ -2687,13 +2688,13 @@ void UdpServer::saveActiveSlots(int fd, msg_type_t msg_type) {
 
 		// write hostid sent to
 		int32_t hostId = slot->getHostId();
-		write(fd, &hostId, 4);
+		ignored = write(fd, &hostId, 4);
 
 		// write that
-		write(fd, &slot->m_sendBufSize, 4);
+		ignored = write(fd, &slot->m_sendBufSize, 4);
 
 		// then the buf data itself
-		write(fd, slot->m_sendBuf, slot->m_sendBufSize);
+		ignored = write(fd, slot->m_sendBuf, slot->m_sendBufSize);
 	}
 }
 

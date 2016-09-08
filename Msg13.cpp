@@ -247,8 +247,7 @@ bool Msg13::forwardRequest ( ) {
 					  r,
 					  &requestBufSize ,
 					  NULL , 
-					  0,//RBUF_SIZE , 
-					  false );
+					  0); //RBUF_SIZE
 	// g_errno should be set in this case, most likely to ENOMEM
 	if ( ! requestBuf ) return true;
 

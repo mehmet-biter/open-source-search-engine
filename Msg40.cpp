@@ -912,7 +912,6 @@ bool Msg40::launchMsg20s ( bool recalled ) {
 		req.m_niceness           = m_si->m_niceness;
 		req.m_showBanned         = m_si->m_showBanned;
 		req.m_includeCachedCopy  = m_si->m_includeCachedCopy;
-		req.m_expected           = true;
 		req.m_getSummaryVector   = true;
 		req.m_titleMaxLen = m_si->m_titleMaxLen;
 		req.m_summaryMaxLen = cr->m_summaryMaxLen;

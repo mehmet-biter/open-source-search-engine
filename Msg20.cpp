@@ -5,7 +5,6 @@
 #endif
 #include "SummaryCache.h"
 
-static void gotReplyWrapper20 ( void *state , void *state20 ) ;
 static void handleRequest20   ( UdpSlot *slot , int32_t netnice );
 static bool gotReplyWrapperxd ( void *state ) ;
 
@@ -72,7 +71,6 @@ void Msg20::reset() {
 	m_errno        = 0;
 	m_requestDocId = -1LL;
 	m_callback     = NULL;
-	m_callback2    = NULL;
 	m_state        = NULL;
 	m_ownReply     = true;
 }
@@ -111,8 +109,7 @@ bool Msg20::getSummary ( Msg20Request *req ) {
 	m_requestDocId = req->m_docId;
 	m_state        = req->m_state;
 	m_callback     = req->m_callback;
-	m_callback2    = req->m_callback2;
-	m_expected     = req->m_expected;
+	m_callback2    = NULL;
 
 	// does this ever happen?
 	if ( g_hostdb.getNumHosts() <= 0 ) {
@@ -228,7 +225,7 @@ bool Msg20::getSummary ( Msg20Request *req ) {
 	return false;
 }
 
-void gotReplyWrapper20 ( void *state , void */*state2*/ ) {
+void Msg20::gotReplyWrapper20 ( void *state , void */*state2*/ ) {
 	Msg20 *THIS = (Msg20 *)state;
 	// gotReply() does not block, and does NOT call our callback
 	THIS->gotReply ( NULL ) ;
@@ -575,13 +572,13 @@ int32_t Msg20::deserialize ( char *buf , int32_t bufSize ) {
 	return m_r->deserialize ( );
 }
 
-int32_t Msg20Request::getStoredSize ( ) {
+int32_t Msg20Request::getStoredSize() const {
 	return getMsgStoredSize(sizeof(*this), &size_qbuf, &size_displayMetas);
 }
 
 // . return ptr to the buffer we serialize into
 // . return NULL and set g_errno on error
-char *Msg20Request::serialize ( int32_t *retSize ) {
+char *Msg20Request::serialize(int32_t *retSize) const {
 	// make a buffer to serialize into
 	int32_t  need = getStoredSize();
 	// alloc if we should
@@ -594,8 +591,7 @@ char *Msg20Request::serialize ( int32_t *retSize ) {
 			    &ptr_qbuf,
 			    this,
 			    retSize,
-			    buf, need,
-			    false);
+			    buf, need);
 }
 
 // convert offsets back into ptrs
@@ -611,7 +607,6 @@ int32_t Msg20Request::deserialize ( ) {
 int64_t Msg20Request::makeCacheKey() const
 {
 	SafeBuf hash_buffer;
-	hash_buffer.pushLong(m_version);
 	hash_buffer.pushLong(m_numSummaryLines);
 	hash_buffer.pushLong(m_getHeaderTag);
 	hash_buffer.pushLongLong(m_docId);
@@ -638,13 +633,13 @@ int64_t Msg20Request::makeCacheKey() const
 }
 
 
-int32_t Msg20Reply::getStoredSize ( ) {
+int32_t Msg20Reply::getStoredSize() const {
 	return getMsgStoredSize(sizeof(*this), &size_tbuf, &size_note);
 }
 
 
 // returns NULL and set g_errno on error
-int32_t Msg20Reply::serialize ( char *buf , int32_t bufSize ) {
+int32_t Msg20Reply::serialize(char *buf, int32_t bufSize) const {
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(this,sizeof(*this));
 	if(ptr_htag)
@@ -698,8 +693,7 @@ int32_t Msg20Reply::serialize ( char *buf , int32_t bufSize ) {
 	             &ptr_tbuf,
 	             this,
 	             &retSize,
-	             buf, bufSize,
-	             false);
+	             buf, bufSize);
 	if ( retSize > bufSize ) { g_process.shutdownAbort(true); }
 	// return it
 	return retSize;

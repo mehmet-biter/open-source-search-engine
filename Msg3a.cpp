@@ -277,8 +277,7 @@ bool Msg3a::getDocIds ( Msg39Request *r          ,
 				   m_r,
 				   &m_rbufSize ,
 				   m_rbuf ,
-				   RBUF_SIZE ,
-				   false );
+				   RBUF_SIZE);
 
 	if ( ! m_rbufPtr ) return true;
 

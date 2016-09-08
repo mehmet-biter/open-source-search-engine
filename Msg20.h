@@ -14,7 +14,6 @@
 #include "Query.h"
 #include "Tagdb.h" // TagRec
 
-#define MSG20_CURRENT_VERSION 0
 
 class Msg20Request {
  public:
@@ -23,30 +22,25 @@ class Msg20Request {
 
 	// zero ourselves out
 	void reset() { 
-		memset ( (char *)this,0,sizeof(Msg20Request) ); 
+		memset(this,0,sizeof(*this));
 		// these are the only non-zero defaults
-		m_version            = MSG20_CURRENT_VERSION;
 		m_numSummaryLines    = 1;
-		m_expected           = false;
 		m_docId              = -1LL; // set docid to "invalid"
 		m_titleMaxLen        = 80  ;
 		m_summaryMaxLen      = 180 ;
 	}
 
-	int32_t  getStoredSize ( );
-	char *serialize     ( int32_t *sizePtr );
+	int32_t getStoredSize() const;
+	char *serialize(int32_t *sizePtr) const;
 	int32_t  deserialize   ( );
 	int64_t makeCacheKey() const;
 
-	char       m_version                   ; // non-zero default
 	char       m_numSummaryLines           ; // non-zero default
-	char       m_expected                  ; // non-zero default
 	bool       m_getHeaderTag              ;
 	void      *m_state                     ;
 	void      *m_state2                    ; // used by Msg25.cpp
 	int32_t       m_j                         ; // used by Msg25.cpp
 	bool    (* m_callback)( void *m_state );
-	void    (* m_callback2)( void *m_state );
 	int64_t  m_docId                     ;
 	int32_t       m_niceness                  ;
 	int32_t       m_titleMaxLen               ;
@@ -105,13 +99,13 @@ public:
 	void destructor();
 
 	// zero ourselves out
-	void reset() { memset ( (char *)this,0,sizeof(Msg20Reply) ); }
+	void reset() { memset(this,0,sizeof(*this)); }
 
 	// how many bytes if we had to serialize it?
-	int32_t getStoredSize() ;
+	int32_t getStoredSize() const;
 
 	int32_t  deserialize ( ) ;
-	int32_t  serialize ( char *buf , int32_t bufSize );
+	int32_t  serialize(char *buf, int32_t bufSize) const;
 
 
 	bool  sendReply ( Msg20Request *req, class XmlDoc *xd ) ;
@@ -253,10 +247,6 @@ public:
 	// see definition of Msg20Request below
 	bool getSummary ( class Msg20Request *r );
 
-	// "m_request = r->serialize(&m_requestSize,m_requestBuf)"
-	char  *m_request;
-	int32_t   m_requestSize;
-
 	// this is cast to m_replyPtr
 	Msg20Reply *m_r ;
 	int32_t   m_replySize;
@@ -268,10 +258,9 @@ public:
 	// set if we had an error
 	int32_t   m_errno;
 
-	int64_t getRequestDocId () { return m_requestDocId; }
-	int64_t m_requestDocId;
+	int64_t getRequestDocId () const { return m_requestDocId; }
 
-	int32_t getStoredSize ( ) { 
+	int32_t getStoredSize() const {
 		if ( ! m_r ) return 0; 
 		return m_r->getStoredSize();
 	}
@@ -296,9 +285,6 @@ public:
 	// copy "src" to ourselves
 	void copyFrom ( class Msg20 *src ) ;
 
-	// for sending the request
-	Multicast m_mcast;
-
 	void gotReply ( class UdpSlot *slot );
 
 	// general purpose routines
@@ -318,12 +304,22 @@ public:
 	bool m_inProgress;
 	bool m_launched;
 
+private:
+	char  *m_request;
+	int32_t   m_requestSize;
+
+	int64_t m_requestDocId;
+
+	// for sending the request
+	Multicast m_mcast;
+	
 	char       m_ownReply;
-	char       m_expected;
 
 	bool     (*m_callback ) ( void *state );
 	void     (*m_callback2) ( void *state );
 	void      *m_state;
+
+	static void gotReplyWrapper20(void *state, void *state20);
 };
 
 #endif // GB_MSG20_H
