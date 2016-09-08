@@ -30,8 +30,8 @@ class Msg20Request {
 		m_summaryMaxLen      = 180 ;
 	}
 
-	int32_t  getStoredSize ( );
-	char *serialize     ( int32_t *sizePtr );
+	int32_t getStoredSize() const;
+	char *serialize(int32_t *sizePtr) const;
 	int32_t  deserialize   ( );
 	int64_t makeCacheKey() const;
 
@@ -102,10 +102,10 @@ public:
 	void reset() { memset ( (char *)this,0,sizeof(Msg20Reply) ); }
 
 	// how many bytes if we had to serialize it?
-	int32_t getStoredSize() ;
+	int32_t getStoredSize() const;
 
 	int32_t  deserialize ( ) ;
-	int32_t  serialize ( char *buf , int32_t bufSize );
+	int32_t  serialize(char *buf, int32_t bufSize) const;
 
 
 	bool  sendReply ( Msg20Request *req, class XmlDoc *xd ) ;
@@ -260,7 +260,7 @@ public:
 
 	int64_t getRequestDocId () const { return m_requestDocId; }
 
-	int32_t getStoredSize ( ) { 
+	int32_t getStoredSize() const {
 		if ( ! m_r ) return 0; 
 		return m_r->getStoredSize();
 	}

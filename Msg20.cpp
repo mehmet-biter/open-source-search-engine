@@ -572,13 +572,13 @@ int32_t Msg20::deserialize ( char *buf , int32_t bufSize ) {
 	return m_r->deserialize ( );
 }
 
-int32_t Msg20Request::getStoredSize ( ) {
+int32_t Msg20Request::getStoredSize() const {
 	return getMsgStoredSize(sizeof(*this), &size_qbuf, &size_displayMetas);
 }
 
 // . return ptr to the buffer we serialize into
 // . return NULL and set g_errno on error
-char *Msg20Request::serialize ( int32_t *retSize ) {
+char *Msg20Request::serialize(int32_t *retSize) const {
 	// make a buffer to serialize into
 	int32_t  need = getStoredSize();
 	// alloc if we should
@@ -633,13 +633,13 @@ int64_t Msg20Request::makeCacheKey() const
 }
 
 
-int32_t Msg20Reply::getStoredSize ( ) {
+int32_t Msg20Reply::getStoredSize() const {
 	return getMsgStoredSize(sizeof(*this), &size_tbuf, &size_note);
 }
 
 
 // returns NULL and set g_errno on error
-int32_t Msg20Reply::serialize ( char *buf , int32_t bufSize ) {
+int32_t Msg20Reply::serialize(char *buf, int32_t bufSize) const {
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(this,sizeof(*this));
 	if(ptr_htag)
