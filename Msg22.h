@@ -58,7 +58,6 @@ class Msg22 {
 			   void      *state          , 
 			   void     (* callback) (void *state ),
 			   int32_t       niceness       ,
-			   bool       addToCache     ,
 			   int32_t       maxCacheAge    ,
 			   int32_t       timeout );
 

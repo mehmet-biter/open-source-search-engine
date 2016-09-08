@@ -6096,8 +6096,6 @@ char **XmlDoc::getOldTitleRec ( ) {
 
 	// assume its valid
 	m_oldTitleRecValid = true;
-	// add it to the cache?
-	bool addToCache = false;
 	//if ( maxCacheAge > 0 ) addToCache = true;
 
 	// not if new! no we need to do this so XmlDoc::getDocId() works!
@@ -6150,7 +6148,6 @@ char **XmlDoc::getOldTitleRec ( ) {
 				      m_masterState        ,
 				      m_masterLoop         ,
 				      m_niceness           , // niceness
-				      addToCache           , // add to cache?
 				      0                    , // max cache age
 				      999999               )) // timeout seconds
 		// return -1 if we blocked
@@ -6192,8 +6189,6 @@ char **XmlDoc::getRootTitleRec ( ) {
 	Url site; site.set ( mysite );
 	// assume its valid
 	m_rootTitleRecValid = true;
-	// add it to the cache?
-	bool addToCache = false;
 	//if ( maxCacheAge > 0 ) addToCache = true;
 	// update status msg
 	setStatus ( "getting root title rec");
@@ -6211,7 +6206,6 @@ char **XmlDoc::getRootTitleRec ( ) {
 				      m_masterState        ,
 				      m_masterLoop         ,
 				      m_niceness           , // niceness
-				      addToCache           , // add to cache?
 				      0                    , // max cache age
 				      999999               )) // timeout seconds
 		// return -1 if we blocked
@@ -6360,7 +6354,6 @@ char *XmlDoc::getIsIndexed ( ) {
 				      m_masterState        ,
 				      m_masterLoop         ,
 				      m_niceness           , // niceness
-				      false                , // add to cache?
 				      0                    , // max cache age
 				      999999               )){ // timeout seconds
 		// validate
@@ -7334,7 +7327,6 @@ char *XmlDoc::getIsWWWDup ( ) {
 				      m_masterState        ,
 				      m_masterLoop         ,
 				      m_niceness           , // niceness
-				      false                , // add to cache?
 				      0                    , // max cache age
 				      999999               )){ // timeout seconds
 		// validate

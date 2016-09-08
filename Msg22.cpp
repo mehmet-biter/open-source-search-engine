@@ -49,7 +49,6 @@ bool Msg22::getAvailDocIdOnly ( Msg22Request  *r              ,
 			     state    ,
 			     callback ,
 			     niceness ,
-			     false    , // addToCache
 			     0        , // maxCacheAge
 			     9999999  ); // timeout
 }
@@ -76,7 +75,6 @@ bool Msg22::getTitleRec ( Msg22Request  *r              ,
 			  void          *state          ,
 			  void         (* callback) (void *state) ,
 			  int32_t           niceness       ,
-			  bool           addToCache     ,
 			  int32_t           maxCacheAge    ,
 			  int32_t           timeout ) {
 
