@@ -16432,15 +16432,12 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	// sanity
 	if ( *otr != m_oldTitleRec ) { g_process.shutdownAbort(true); }
 
-	// what is this?
-	int32_t maxSize = 0;
-
 	// . set our ptr_ and size_ member vars from it after uncompressing
 	// . returns false and sets g_errno on error
 	if ( ! m_setTr ) {
 		// . this completely resets us
 		// . this returns false with g_errno set on error
-		bool status = set2( *otr, maxSize, cr->m_coll, NULL, m_niceness);
+		bool status = set2( *otr, 0, cr->m_coll, NULL, m_niceness);
 
 		// sanity check
 		if ( ! status && ! g_errno ) { g_process.shutdownAbort(true); }
