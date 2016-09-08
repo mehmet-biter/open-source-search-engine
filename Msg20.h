@@ -312,13 +312,13 @@ public:
 	bool m_inProgress;
 	bool m_launched;
 
+private:
 	char       m_ownReply;
 
 	bool     (*m_callback ) ( void *state );
 	void     (*m_callback2) ( void *state );
 	void      *m_state;
 
-private:
 	static void gotReplyWrapper20(void *state, void *state20);
 };
 
