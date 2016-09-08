@@ -489,10 +489,11 @@ bool Msg20Reply::sendReply(Msg20State *state) {
 		log(LOG_ERROR, "query: Had error generating msg20 reply for d=%" PRId64": %s",state->m_xmldoc.m_docId, mstrerror(g_errno));
 		// don't forget to delete this list
 	haderror:
+		UdpSlot *slot = state->m_slot;
 		mdelete(state, sizeof(*state), "Msg20");
 		delete state;
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. error=%s", __FILE__, __func__, __LINE__, mstrerror( g_errno ));
-		g_udpServer.sendErrorReply(state->m_slot, g_errno);
+		g_udpServer.sendErrorReply(slot, g_errno);
 		return true;
 	}
 
