@@ -14,7 +14,6 @@
 #include "Query.h"
 #include "Tagdb.h" // TagRec
 
-#define MSG20_CURRENT_VERSION 0
 
 class Msg20Request {
  public:
@@ -25,7 +24,6 @@ class Msg20Request {
 	void reset() { 
 		memset ( (char *)this,0,sizeof(Msg20Request) ); 
 		// these are the only non-zero defaults
-		m_version            = MSG20_CURRENT_VERSION;
 		m_numSummaryLines    = 1;
 		m_expected           = false;
 		m_docId              = -1LL; // set docid to "invalid"
@@ -38,7 +36,6 @@ class Msg20Request {
 	int32_t  deserialize   ( );
 	int64_t makeCacheKey() const;
 
-	char       m_version                   ; // non-zero default
 	char       m_numSummaryLines           ; // non-zero default
 	char       m_expected                  ; // non-zero default
 	bool       m_getHeaderTag              ;

@@ -611,7 +611,6 @@ int32_t Msg20Request::deserialize ( ) {
 int64_t Msg20Request::makeCacheKey() const
 {
 	SafeBuf hash_buffer;
-	hash_buffer.pushLong(m_version);
 	hash_buffer.pushLong(m_numSummaryLines);
 	hash_buffer.pushLong(m_getHeaderTag);
 	hash_buffer.pushLongLong(m_docId);
