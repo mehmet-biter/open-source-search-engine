@@ -72,7 +72,6 @@ void Msg20::reset() {
 	m_errno        = 0;
 	m_requestDocId = -1LL;
 	m_callback     = NULL;
-	m_callback2    = NULL;
 	m_state        = NULL;
 	m_ownReply     = true;
 }
@@ -111,7 +110,7 @@ bool Msg20::getSummary ( Msg20Request *req ) {
 	m_requestDocId = req->m_docId;
 	m_state        = req->m_state;
 	m_callback     = req->m_callback;
-	m_callback2    = req->m_callback2;
+	m_callback2    = NULL;
 
 	// does this ever happen?
 	if ( g_hostdb.getNumHosts() <= 0 ) {

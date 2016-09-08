@@ -41,7 +41,6 @@ class Msg20Request {
 	void      *m_state2                    ; // used by Msg25.cpp
 	int32_t       m_j                         ; // used by Msg25.cpp
 	bool    (* m_callback)( void *m_state );
-	void    (* m_callback2)( void *m_state );
 	int64_t  m_docId                     ;
 	int32_t       m_niceness                  ;
 	int32_t       m_titleMaxLen               ;
