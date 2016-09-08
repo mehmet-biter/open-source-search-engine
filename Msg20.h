@@ -317,6 +317,9 @@ public:
 	bool     (*m_callback ) ( void *state );
 	void     (*m_callback2) ( void *state );
 	void      *m_state;
+
+private:
+	static void gotReplyWrapper20(void *state, void *state20);
 };
 
 #endif // GB_MSG20_H
