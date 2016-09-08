@@ -253,7 +253,7 @@ public:
 	int32_t   m_replyMaxSize;
 
 	// i guess Msg40.cpp looks at this flag
-	char   m_gotReply;
+	bool m_gotReply;
 
 	// set if we had an error
 	int32_t   m_errno;
@@ -283,7 +283,7 @@ public:
 	void clearLinks     () { if ( m_r ) m_r->clearOutlinks (); }
 	void clearVectors   () { if ( m_r ) m_r->clearVectors  (); }
 	// copy "src" to ourselves
-	void copyFrom ( class Msg20 *src ) ;
+	void moveFrom(Msg20 *src);
 
 	void gotReply ( class UdpSlot *slot );
 

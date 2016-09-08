@@ -681,7 +681,7 @@ bool Msg40::reallocMsg20Buf ( ) {
 			// . otherwise copy the memory if available
 			// . if m_msg20[i]->m_docId is set this will save us
 			//   repeating a summary lookup
-			tmp[i]->copyFrom ( m_msg20[k] );
+			tmp[i]->moveFrom(m_msg20[k]);
 		}
 		// sanity check
 		if ( p - (char *)tmp != need ) { g_process.shutdownAbort(true); }
