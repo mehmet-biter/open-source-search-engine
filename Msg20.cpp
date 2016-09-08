@@ -112,7 +112,6 @@ bool Msg20::getSummary ( Msg20Request *req ) {
 	m_state        = req->m_state;
 	m_callback     = req->m_callback;
 	m_callback2    = req->m_callback2;
-	m_expected     = req->m_expected;
 
 	// does this ever happen?
 	if ( g_hostdb.getNumHosts() <= 0 ) {

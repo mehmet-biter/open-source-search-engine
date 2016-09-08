@@ -1462,7 +1462,6 @@ bool Msg25::sendRequests ( ) {
 		}
 		r->m_collnum = cr->m_collnum;
 		r->m_docId           = docId;
-		r->m_expected        = true; // false;
 		r->m_niceness        = m_niceness;
 		r->m_state           = r;
 		r->m_state2          = this;

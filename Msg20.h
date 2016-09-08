@@ -25,7 +25,6 @@ class Msg20Request {
 		memset ( (char *)this,0,sizeof(Msg20Request) ); 
 		// these are the only non-zero defaults
 		m_numSummaryLines    = 1;
-		m_expected           = false;
 		m_docId              = -1LL; // set docid to "invalid"
 		m_titleMaxLen        = 80  ;
 		m_summaryMaxLen      = 180 ;
@@ -37,7 +36,6 @@ class Msg20Request {
 	int64_t makeCacheKey() const;
 
 	char       m_numSummaryLines           ; // non-zero default
-	char       m_expected                  ; // non-zero default
 	bool       m_getHeaderTag              ;
 	void      *m_state                     ;
 	void      *m_state2                    ; // used by Msg25.cpp
@@ -316,7 +314,6 @@ public:
 	bool m_launched;
 
 	char       m_ownReply;
-	char       m_expected;
 
 	bool     (*m_callback ) ( void *state );
 	void     (*m_callback2) ( void *state );
