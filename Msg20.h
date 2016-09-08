@@ -290,9 +290,6 @@ public:
 	// copy "src" to ourselves
 	void copyFrom ( class Msg20 *src ) ;
 
-	// for sending the request
-	Multicast m_mcast;
-
 	void gotReply ( class UdpSlot *slot );
 
 	// general purpose routines
@@ -313,6 +310,9 @@ public:
 	bool m_launched;
 
 private:
+	// for sending the request
+	Multicast m_mcast;
+	
 	char       m_ownReply;
 
 	bool     (*m_callback ) ( void *state );
