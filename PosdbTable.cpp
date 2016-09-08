@@ -3693,111 +3693,113 @@ void PosdbTable::intersectLists10_r ( ) {
 				}
 			}
 
+
+			bool doneSliding = false;
+
 			// if no terms in body, no need to do sliding window
 			if ( allNull ) {
-				goto doneSliding;
+				doneSliding = true;
+			}
+			else {
+				minx = -1;
 			}
 
-			minx = -1;
+			while( !doneSliding ) {
+				// . now all xpos are in the body
+				// . calc the window score
+				// . if window score beats m_bestWindowScore we store the
+				//   term xpos that define this window in m_windowTermPtrs[] array
+				// . will try to sub in s_bestPos[i] if better, but will fix 
+				//   distance to FIXED_DISTANCE
+				// . "minx" is who just got advanced, this saves time because we
+				//   do not have to re-compute the scores of term pairs that consist
+				//   of two terms that did not advance in the sliding window
+				// . "scoreMatrix" hold the highest scoring non-body term pair
+				//   for sub-bing out the term pair in the body with
+				// . sets m_bestWindowScore if this window score beats it
+				// . does sub-outs with the non-body pairs and also the singles i guess
+				// . uses "bestPos[x]" to get best non-body scoring term for sub-outs
+				evalSlidingWindow ( xpos, m_numQueryTermInfos, bestPos, scoreMatrix);
 
-		 slideMore:
+			 	bool advanceMin = false;
 
-			// . now all xpos are in the body
-			// . calc the window score
-			// . if window score beats m_bestWindowScore we store the
-			//   term xpos that define this window in m_windowTermPtrs[] array
-			// . will try to sub in s_bestPos[i] if better, but will fix 
-			//   distance to FIXED_DISTANCE
-			// . "minx" is who just got advanced, this saves time because we
-			//   do not have to re-compute the scores of term pairs that consist
-			//   of two terms that did not advance in the sliding window
-			// . "scoreMatrix" hold the highest scoring non-body term pair
-			//   for sub-bing out the term pair in the body with
-			// . sets m_bestWindowScore if this window score beats it
-			// . does sub-outs with the non-body pairs and also the singles i guess
-			// . uses "bestPos[x]" to get best non-body scoring term for sub-outs
-			evalSlidingWindow ( xpos,
-					    m_numQueryTermInfos,
-					    bestPos,
-					    scoreMatrix);
-
-
-		 advanceMin:
-			// now find the min word pos still in body
-			minx = -1;
-			for ( int32_t x = 0 ; x < m_numQueryTermInfos ; x++ ) {
-				// skip if to the left of a pipe operator
-				// and numeric posdb termlists do not have word positions,
-				// they store a float there.
-				if ( bflags[x] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
-					continue;
-				}
-
-				if ( ! xpos[x] ) {
-					continue;
-				}
-
-				if ( xpos[x] && minx == -1 ) {
-					minx = x;
-					//minRec = xpos[x];
-					minPos = Posdb::getWordPos(xpos[x]);
-					continue;
-				}
-
-				if ( Posdb::getWordPos(xpos[x]) >= minPos ) {
-					continue;
-				}
-
-				minx = x;
-				//minRec = xpos[x];
-				minPos = Posdb::getWordPos(xpos[x]);
-			}
-
-			// sanity
-			if ( minx < 0 ) {
-				gbshutdownAbort(true);
-			}
-
-		 	do {
-				// now advance that to slide our window
-				if ( ! (xpos[minx][0] & 0x04) ) {
-					xpos[minx] += 12;
-				}
-				else {
-					xpos[minx] +=  6;
-				}
-
-				// NULLify list if no more for this docid
-				if ( xpos[minx] >= miniMergedEnd[minx] || ! (xpos[minx][0] & 0x04) ) {
-					// exhausted list now
-					xpos[minx] = NULL;
-					// are all null now?
-					int32_t k; 
-					for ( k = 0 ; k < m_numQueryTermInfos ; k++ ) {
+			 	do { // while( advanceMin );
+					// now find the min word pos still in body
+					minx = -1;
+					for ( int32_t x = 0 ; x < m_numQueryTermInfos ; x++ ) {
 						// skip if to the left of a pipe operator
-						if(bflags[k]&(BF_PIPED|BF_NEGATIVE|BF_NUMBER)) {
+						// and numeric posdb termlists do not have word positions,
+						// they store a float there.
+						if ( bflags[x] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
 							continue;
 						}
-						
-						if ( xpos[k] ) {
-							break;
+
+						if ( ! xpos[x] ) {
+							continue;
 						}
+
+						if ( xpos[x] && minx == -1 ) {
+							minx = x;
+							//minRec = xpos[x];
+							minPos = Posdb::getWordPos(xpos[x]);
+							continue;
+						}
+
+						if ( Posdb::getWordPos(xpos[x]) >= minPos ) {
+							continue;
+						}
+
+						minx = x;
+						//minRec = xpos[x];
+						minPos = Posdb::getWordPos(xpos[x]);
 					}
 
-					// all lists are now exhausted
-					if ( k >= m_numQueryTermInfos ) {
-						goto doneSliding;
+					// sanity
+					if ( minx < 0 ) {
+						gbshutdownAbort(true);
 					}
 
-					// ok, now recompute the next min and advance him
-					goto advanceMin;
-				}
-				
-				// if it left the body then advance some more i guess?
-			} while( ! s_inBody[Posdb::getHashGroup(xpos[minx])] );
+				 	do { // while( !s_inBody[Posdb::getHashGroup(xpos[minx])] && !advanceMin );
+						// now advance that to slide our window
+						if ( ! (xpos[minx][0] & 0x04) ) {
+							xpos[minx] += 12;
+						}
+						else {
+							xpos[minx] +=  6;
+						}
 
-			// do more!
-			goto slideMore;
+						// NULLify list if no more for this docid
+						if ( xpos[minx] >= miniMergedEnd[minx] || ! (xpos[minx][0] & 0x04) ) {
+							// exhausted list now
+							xpos[minx] = NULL;
+							// are all null now?
+							int32_t k; 
+							for ( k = 0 ; k < m_numQueryTermInfos ; k++ ) {
+								// skip if to the left of a pipe operator
+								if(bflags[k]&(BF_PIPED|BF_NEGATIVE|BF_NUMBER)) {
+									continue;
+								}
+								
+								if ( xpos[k] ) {
+									break;
+								}
+							}
+
+							// all lists are now exhausted
+							if ( k >= m_numQueryTermInfos ) {
+								doneSliding = true;
+							}
+
+							// ok, now recompute the next min and advance him
+							advanceMin = true;
+						}
+						
+						// if it left the body then advance some more i guess?
+					} while( !advanceMin && !doneSliding && !s_inBody[Posdb::getHashGroup(xpos[minx])] );
+						
+				} while( advanceMin && !doneSliding );
+
+			} // while( !doneSliding )
 
 
 			//
@@ -3806,7 +3808,6 @@ void PosdbTable::intersectLists10_r ( ) {
 			//
 			//
 
-		 doneSliding:
 
 			minPairScore = -1.0;
 
