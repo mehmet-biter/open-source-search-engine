@@ -1475,14 +1475,13 @@ int32_t cleanInput(char *outbuf, int32_t outbufSize, const char *inbuf, int32_t 
 // serialize/deserialize everytime we compile gb it seems
 //
 
-int32_t getMsgStoredSize ( int32_t baseSize, 
-			int32_t *firstSizeParm, 
-			int32_t *lastSizeParm ) {
-	//int32_t size = (int32_t)sizeof(Msg);
-	int32_t size = baseSize;//getBaseSize();
+int32_t getMsgStoredSize(int32_t baseSize,
+			 const int32_t *firstSizeParm,
+			 const int32_t *lastSizeParm) {
+	int32_t size = baseSize;
 	// add up string buffer sizes
-	int32_t *sizePtr = firstSizeParm;//getFirstSizeParm(); // &size_qbuf;
-	int32_t *sizeEnd = lastSizeParm;//getLastSizeParm (); // &size_displayMeta
+	const int32_t *sizePtr = firstSizeParm;
+	const int32_t *sizeEnd = lastSizeParm;
 	for ( ; sizePtr <= sizeEnd ; sizePtr++ )
 		size += *sizePtr;
 	return size;

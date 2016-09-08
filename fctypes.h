@@ -349,9 +349,9 @@ int32_t cleanInput(char *outbuf, int32_t outbufSize, const char *inbuf, int32_t 
 // these three functions replace the Msg.cpp/.h class
 //
 // actually "lastParm" point to the thing right after the lastParm
-int32_t getMsgStoredSize ( int32_t baseSize, 
-			int32_t *firstSizeParm, 
-			int32_t *lastSizeParm ) ;
+int32_t getMsgStoredSize(int32_t baseSize,
+			 const int32_t *firstSizeParm,
+			 const int32_t *lastSizeParm);
 // . return ptr to the buffer we serialize into
 // . return NULL and set g_errno on error
 char *serializeMsg ( int32_t  baseSize ,
