@@ -1163,9 +1163,6 @@ public:
 	// used by msg13
 	class Msg13Request *m_r;
 
-	// Msg20 uses this to stash its TcpSlot
-	void *m_slot;
-
 	bool m_freed;
 
 	bool m_msg4Waiting;

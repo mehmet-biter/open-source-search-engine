@@ -6,6 +6,16 @@
 #include <valgrind/memcheck.h>
 #endif
 #include "SummaryCache.h"
+#include "Stats.h"
+
+
+struct Msg20State {
+	UdpSlot *m_slot;
+	Msg20Request *m_req;
+	XmlDoc m_xmldoc;
+	Msg20State(UdpSlot *slot, Msg20Request *req) : m_slot(slot), m_req(req), m_xmldoc() {}
+};
+
 
 static void handleRequest20(UdpSlot *slot, int32_t netnice);
 static bool gotReplyWrapperxd(void *state);
@@ -297,6 +307,7 @@ void Msg20::gotReply ( UdpSlot *slot ) {
 	m_r->deserialize();
 }
 
+
 // . this is called
 // . destroys the UdpSlot if false is returned
 static void handleRequest20(UdpSlot *slot, int32_t netnice) {
@@ -372,10 +383,10 @@ static void handleRequest20(UdpSlot *slot, int32_t netnice) {
 	int64_t startTime = gettimeofdayInMilliseconds();
 
 	// alloc a new state to get the titlerec
-	XmlDoc *xd;
-
-	try { xd = new (XmlDoc); }
-	catch ( ... ) { 
+	Msg20State *state;
+	try {
+		state = new Msg20State(slot,req);
+	} catch(...) {
 		g_errno = ENOMEM;
 		log("query: msg20 new(%" PRId32"): %s", (int32_t)sizeof(XmlDoc),
 		    mstrerror(g_errno));
@@ -383,48 +394,39 @@ static void handleRequest20(UdpSlot *slot, int32_t netnice) {
 		g_udpServer.sendErrorReply ( slot, g_errno ); 
 		return; 
 	}
-	mnew ( xd , sizeof(XmlDoc) , "xd20" );
+	mnew(state, sizeof(*state), "xd20");
 
 	// ok, let's use the new XmlDoc.cpp class now!
-	xd->set20 ( req );
-
-	// encode slot
-	xd->m_slot = slot;
+	state->m_xmldoc.set20 ( req );
 
 	// set the callback
-	xd->setCallback ( xd , gotReplyWrapperxd );
+	state->m_xmldoc.setCallback(state, gotReplyWrapperxd);
 
 	// set set time
-	xd->m_setTime = startTime;
-	xd->m_cpuSummaryStartTime = 0;
+	state->m_xmldoc.m_setTime = startTime;
+	state->m_xmldoc.m_cpuSummaryStartTime = 0;
 
 	// . now as for the msg20 reply!
 	// . TODO: move the parse state cache into just a cache of the
 	//   XmlDoc itself, and put that cache logic into XmlDoc.cpp so
 	//   it can be used more generally.
-	Msg20Reply *reply = xd->getMsg20Reply ( );
+	Msg20Reply *reply = state->m_xmldoc.getMsg20Reply ( );
 
 	// this is just blocked
 	if ( reply == (void *)-1 ) return;
 
 	// got it?
-	gotReplyWrapperxd ( xd );
+	gotReplyWrapperxd (state);
 }
 
-bool gotReplyWrapperxd(void *state) {
-	// grab it
-	XmlDoc *xd = (XmlDoc *)state;
-
-	// get it
-	UdpSlot *slot = (UdpSlot *)xd->m_slot;
-	// parse the request
-	Msg20Request *req = (Msg20Request *)slot->m_readBuf;
+bool gotReplyWrapperxd(void *state_) {
+	Msg20State *state = static_cast<Msg20State*>(state_);
 	// print time
 	int64_t now = gettimeofdayInMilliseconds();
-	int64_t took = now - xd->m_setTime;
+	int64_t took = now - state->m_xmldoc.m_setTime;
 	int64_t took2 = 0;
-	if ( xd->m_cpuSummaryStartTime) {
-		took2 = now - xd->m_cpuSummaryStartTime;
+	if ( state->m_xmldoc.m_cpuSummaryStartTime) {
+		took2 = now - state->m_xmldoc.m_cpuSummaryStartTime;
 	}
 
 	// if there is a baclkog of msg20 summary generation requests this
@@ -434,26 +436,29 @@ bool gotReplyWrapperxd(void *state) {
 	// meanwhile its clock was ticking. TODO: make this better?
 	// only do for niceness 0 otherwise it gets interrupted by quickpoll
 	// and can take a int32_t time.
-	if ( req->m_niceness == 0 && (req->m_isDebug || took > 100 || took2 > 100 ) ) {
+	if ( state->m_req->m_niceness == 0 && (state->m_req->m_isDebug || took > 100 || took2 > 100 ) ) {
 		log(LOG_TIMING, "query: Took %" PRId64" ms (total=%" PRId64" ms) to compute summary for d=%" PRId64" "
 		    "u=%s status=%s q=%s",
 		    took2,
 			took,
-		    xd->m_docId,xd->m_firstUrl.getUrl(),
+		    state->m_xmldoc.m_docId, state->m_xmldoc.m_firstUrl.getUrl(),
 		    mstrerror(g_errno),
-		    req->ptr_qbuf);
+		    state->m_req->ptr_qbuf);
 	}
 
 	// error?
-	if ( g_errno ) { xd->m_reply.sendReply ( req, xd ); return true; }
+	if ( g_errno ) {
+		state->m_xmldoc.m_reply.sendReply(state);
+		return true;
+	}
 	// this should not block now
-	Msg20Reply *reply = xd->getMsg20Reply ( );
+	Msg20Reply *reply = state->m_xmldoc.getMsg20Reply();
 	// sanity check, should not block here now
 	if ( reply == (void *)-1 ) { g_process.shutdownAbort(true); }
 	// NULL means error, -1 means blocked. on error g_errno should be set
 	if ( ! reply && ! g_errno ) { g_process.shutdownAbort(true);}
 	// send it off. will send an error reply if g_errno is set
-	return reply->sendReply ( req, xd );
+	return reply->sendReply(state);
 }
 
 Msg20Reply::Msg20Reply ( ) {
@@ -475,24 +480,19 @@ Msg20Reply::~Msg20Reply ( ) {
 void Msg20Reply::destructor ( ) {
 }
 
-#include "Stats.h"
 
 // . return ptr to the buffer we serialize into
 // . return NULL and set g_errno on error
-bool Msg20Reply::sendReply ( Msg20Request *req, XmlDoc *xd ) {
-
-	// get it
-	UdpSlot *slot = (UdpSlot *)xd->m_slot;
-
+bool Msg20Reply::sendReply(Msg20State *state) {
 	if ( g_errno ) {
 		// extract titleRec ptr
-		log(LOG_ERROR, "query: Had error generating msg20 reply for d=%" PRId64": %s",xd->m_docId, mstrerror(g_errno));
+		log(LOG_ERROR, "query: Had error generating msg20 reply for d=%" PRId64": %s",state->m_xmldoc.m_docId, mstrerror(g_errno));
 		// don't forget to delete this list
 	haderror:
-		mdelete ( xd, sizeof(XmlDoc) , "Msg20" );
-		delete ( xd );
+		mdelete(state, sizeof(*state), "Msg20");
+		delete state;
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. error=%s", __FILE__, __func__, __LINE__, mstrerror( g_errno ));
-		g_udpServer.sendErrorReply ( slot , g_errno ) ;
+		g_udpServer.sendErrorReply(state->m_slot, g_errno);
 		return true;
 	}
 
@@ -511,32 +511,33 @@ bool Msg20Reply::sendReply ( Msg20Request *req, XmlDoc *xd ) {
 	int32_t color = 0x0000ff;
 
 	// but use dark blue for niceness > 0
-	if ( xd->m_niceness > 0 ) color = 0x0000b0;
+	if ( state->m_xmldoc.m_niceness > 0 ) color = 0x0000b0;
 
 	// sanity check
-	if ( ! xd->m_utf8ContentValid ) { g_process.shutdownAbort(true); }
+	if ( ! state->m_xmldoc.m_utf8ContentValid ) { g_process.shutdownAbort(true); }
 
 	// for records
 	int32_t clen = 0;
 
-	if ( xd->m_utf8ContentValid ) clen = xd->size_utf8Content - 1;
+	if ( state->m_xmldoc.m_utf8ContentValid ) clen = state->m_xmldoc.size_utf8Content - 1;
 
 	// show it in performance graph
-	if ( xd->m_startTimeValid ) {
-		g_stats.addStat_r( clen, xd->m_startTime, gettimeofdayInMilliseconds(), color );
+	if ( state->m_xmldoc.m_startTimeValid ) {
+		g_stats.addStat_r( clen, state->m_xmldoc.m_startTime, gettimeofdayInMilliseconds(), color );
 	}
 	
 	
 	//put the reply into the summary cache
-	if(m_isDisplaySumSetFromTags && !req->m_highlightQueryTerms)
-		g_stable_summary_cache.insert(req->makeCacheKey(), buf, need);
+	if(m_isDisplaySumSetFromTags && !state->m_req->m_highlightQueryTerms)
+		g_stable_summary_cache.insert(state->m_req->makeCacheKey(), buf, need);
 	else
-		g_unstable_summary_cache.insert(req->makeCacheKey(), buf, need);
+		g_unstable_summary_cache.insert(state->m_req->makeCacheKey(), buf, need);
 
+	UdpSlot *slot = state->m_slot;
 	// . del the list at this point, we've copied all the data into reply
 	// . this will free a non-null State20::m_ps (ParseState) for us
-	mdelete ( xd , sizeof(XmlDoc) , "xd20" );
-	delete ( xd );
+	mdelete(state, sizeof(*state), "Msg20");
+	delete state;
 	
 	g_udpServer.sendReply(buf, need, buf, need, slot);
 

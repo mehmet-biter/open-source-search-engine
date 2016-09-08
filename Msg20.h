@@ -83,6 +83,9 @@ class Msg20Request {
 	// variable data comes here
 };
 
+
+class Msg20State;
+
 class Msg20Reply {
 public:
 
@@ -101,7 +104,7 @@ public:
 	int32_t  serialize(char *buf, int32_t bufSize) const;
 
 
-	bool  sendReply ( Msg20Request *req, class XmlDoc *xd ) ;
+	bool  sendReply(Msg20State *state);
 
 	// after calling these, when serialize() is called again it will 
 	// exclude these strings which were "cleared". Used by Msg40 to 
