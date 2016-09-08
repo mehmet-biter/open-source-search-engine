@@ -193,8 +193,6 @@ public:
 
 	bool verifySections ( ) ;
 
-	bool growSections ( );
-
 	void setNextBrotherPtrs ( bool setContainer ) ;
 
 	// this is used by Events.cpp Section::m_nextSent
