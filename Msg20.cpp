@@ -85,8 +85,8 @@ bool Msg20::registerHandler ( ) {
 }
 
 // copy "src" to ourselves
-void Msg20::copyFrom ( Msg20 *src ) {
-	gbmemcpy ( this , src , sizeof(Msg20) );
+void Msg20::moveFrom(Msg20 *src) {
+	memcpy(this, src, sizeof(Msg20));
 
 	// make sure it does not free it!
 	src->m_r = NULL;

@@ -283,7 +283,7 @@ public:
 	void clearLinks     () { if ( m_r ) m_r->clearOutlinks (); }
 	void clearVectors   () { if ( m_r ) m_r->clearVectors  (); }
 	// copy "src" to ourselves
-	void copyFrom ( class Msg20 *src ) ;
+	void moveFrom(Msg20 *src);
 
 	void gotReply ( class UdpSlot *slot );
 
