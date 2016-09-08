@@ -22,7 +22,7 @@ class Msg20Request {
 
 	// zero ourselves out
 	void reset() { 
-		memset ( (char *)this,0,sizeof(Msg20Request) ); 
+		memset(this,0,sizeof(*this));
 		// these are the only non-zero defaults
 		m_numSummaryLines    = 1;
 		m_docId              = -1LL; // set docid to "invalid"
@@ -99,7 +99,7 @@ public:
 	void destructor();
 
 	// zero ourselves out
-	void reset() { memset ( (char *)this,0,sizeof(Msg20Reply) ); }
+	void reset() { memset(this,0,sizeof(*this)); }
 
 	// how many bytes if we had to serialize it?
 	int32_t getStoredSize() const;
