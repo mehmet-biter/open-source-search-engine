@@ -1521,7 +1521,7 @@ int RdbBucket::getListSizeExact (const char* startKey, const char* endKey ) {
 	char* currKey = m_keys + (start * recSize);
 
 	//bail now if there is only one key and it is out of range.
-	if(start == end && 
+	if (start == end &&
 	   ((startKey && KEYCMP(currKey, startKey, ks) < 0) ||
 	    (endKey   && KEYCMP(currKey, endKey, ks) > 0))) {
 		return 0;
@@ -1533,20 +1533,8 @@ int RdbBucket::getListSizeExact (const char* startKey, const char* endKey ) {
 		return numRecs;
 	}
 
-	char* lastKey = NULL;
-	for(int32_t i = start;
-	    i <= end ; //&& list->getListSize() < minRecSizes;
-	    i++, currKey += recSize) {
-		// if ( fixedDataSize == 0 ) {
-		// 	numRecs++;
-		// }
-		// else {
-		int32_t dataSize = fixedDataSize;
-		if ( fixedDataSize == -1 ) 
-			dataSize = *(int32_t*)(currKey+ks+sizeof(char*));
+	for (int32_t i = start; i <= end; i++, currKey += recSize) {
 		numRecs++;
-		//}
-		lastKey = currKey;
 	}
 
 	// success
