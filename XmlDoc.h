@@ -535,7 +535,7 @@ public:
 	class Url *getBaseUrl ( ) ;
 	bool hashIsAdult    ( class HashTableX *table ) ;
 
-	void set20 ( Msg20Request *req ) ;
+	void setMsg20Request(Msg20Request *req);
 	class Msg20Reply *getMsg20Reply ( ) ;
 	Query *getQuery() ;
 	Matches *getMatches () ;

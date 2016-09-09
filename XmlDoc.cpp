@@ -16325,7 +16325,7 @@ uint32_t score8to32 ( uint8_t score8 ) {
 //
 ////////////////////////////////////////////////////////////
 
-void XmlDoc::set20 ( Msg20Request *req ) {
+void XmlDoc::setMsg20Request(Msg20Request *req) {
 	// clear it all out
 	reset();
 	// this too

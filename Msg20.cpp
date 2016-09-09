@@ -397,7 +397,7 @@ static void handleRequest20(UdpSlot *slot, int32_t netnice) {
 	mnew(state, sizeof(*state), "xd20");
 
 	// ok, let's use the new XmlDoc.cpp class now!
-	state->m_xmldoc.set20 ( req );
+	state->m_xmldoc.setMsg20Request(req);
 
 	// set the callback
 	state->m_xmldoc.setCallback(state, gotReplyWrapperxd);
