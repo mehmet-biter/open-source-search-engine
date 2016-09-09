@@ -465,8 +465,7 @@ static void loadFromOldTitleRecWrapper ( void *state ) {
 			   coll,
 			   mstrerror(g_errno));
 	// otherwise, all done, call the caller callback
-	if ( THIS->m_callback1 ) THIS->m_callback1 ( THIS->m_state );
-	else                     THIS->m_callback2 ( THIS->m_state );
+	THIS->callBackback();
 }
 
 // returns false if blocked, returns true and sets g_errno on error otherwise
@@ -1293,18 +1292,8 @@ static void indexDocWrapper ( void *state ) {
 	// 		    );
 
 
-	if ( THIS->m_callback1 )
-	{
-		logTrace( g_conf.m_logTraceXmlDoc, "Calling callback1" );
-
-		THIS->m_callback1 ( THIS->m_state );
-	}
-	else
-	{
-		logTrace( g_conf.m_logTraceXmlDoc, "Calling callback2" );
-
-		THIS->m_callback2 ( THIS->m_state );
-	}
+	logTrace( g_conf.m_logTraceXmlDoc, "Calling callback" );
+	THIS->callBackback();
 
 	logTrace( g_conf.m_logTraceXmlDoc, "END" );
 }
@@ -2123,8 +2112,7 @@ static void getTitleRecBufWrapper ( void *state ) {
 	// return if it blocked
 	if ( THIS->getTitleRecBuf() == (void *)-1 ) return;
 	// otherwise, all done, call the caller callback
-	if ( THIS->m_callback1 ) THIS->m_callback1 ( THIS->m_state );
-	else                     THIS->m_callback2 ( THIS->m_state );
+	THIS->callBackback();
 }
 
 key96_t *XmlDoc::getTitleRecKey() {
@@ -9865,8 +9853,7 @@ static void getExpandedUtf8ContentWrapper ( void *state ) {
 	// return if blocked again
 	if ( retVal == (void *)-1 ) return;
 	// otherwise, all done, call the caller callback
-	if ( THIS->m_callback1 ) THIS->m_callback1 ( THIS->m_state );
-	else                     THIS->m_callback2 ( THIS->m_state );
+	THIS->callBackback();
 }
 
 // now if there are any <iframe> tags let's substitute them for
@@ -12609,8 +12596,7 @@ void getMetaListWrapper ( void *state ) {
 	// sanityh check
 	if ( THIS->m_callback1 == getMetaListWrapper ) { g_process.shutdownAbort(true);}
 	// otherwise, all done, call the caller callback
-	if ( THIS->m_callback1 ) THIS->m_callback1 ( THIS->m_state );
-	else                     THIS->m_callback2 ( THIS->m_state );
+	THIS->callBackback();
 }
 
 
@@ -16369,8 +16355,7 @@ static void getMsg20ReplyWrapper ( void *state ) {
 	// return if it blocked
 	if ( THIS->getMsg20Reply ( ) == (void *)-1 ) return;
 	// otherwise, all done, call the caller callback
-	if ( THIS->m_callback1 ) THIS->m_callback1 ( THIS->m_state );
-	else                     THIS->m_callback2 ( THIS->m_state );
+	THIS->callBackback();
 }
 
 // . returns NULL with g_errno set on error
@@ -18611,8 +18596,7 @@ static void printDocForProCogWrapper ( void *state ) {
 	// return if it blocked
 	if ( ! status ) return;
 	// otherwise, all done, call the caller callback
-	if ( THIS->m_callback1 ) THIS->m_callback1 ( THIS->m_state );
-	else                     THIS->m_callback2 ( THIS->m_state );
+	THIS->callBackback();
 }
 
 
@@ -21650,4 +21634,12 @@ Json *XmlDoc::getParsedJson ( ) {
 
 	m_jpValid = true;
 	return &m_jp;
+}
+
+
+void XmlDoc::callBackback() {
+	if(m_callback1 )
+		m_callback1(m_state);
+	else
+		m_callback2(m_state);
 }

@@ -1203,6 +1203,8 @@ public:
 	void logQueryTimingEnd(const char* function, int64_t startTime);
 
 	int32_t  m_i;
+
+	void callBackback();
 };
 
 // . PageParser.cpp uses this class for printing hashed terms out by calling
