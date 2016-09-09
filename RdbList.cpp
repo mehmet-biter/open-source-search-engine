@@ -955,7 +955,7 @@ int RdbList::printPosdbList() {
 		uint64_t doc_id = 0;
 		uint64_t site_rank = 0;
 		uint64_t lang_id = 0;
-		uint64_t alignment_bit0 = 0;
+//		uint64_t alignment_bit0 = 0;
 		uint64_t lang_bit6 = 0;
 
 		if( key_size == 18 )
@@ -966,7 +966,7 @@ int RdbList::printPosdbList() {
 		if( key_size >= 12 )
 		{
 	        doc_id				= extract_bits(key,58,96);
-	        alignment_bit0		= extract_bits(key,57,58);
+//	        alignment_bit0		= extract_bits(key,57,58);
         	site_rank			= extract_bits(key,53,57);
         	lang_id				= extract_bits(key,48,53);
 	        lang_bit6 			= extract_bits(key, 3, 4);
