@@ -914,9 +914,6 @@ bool RdbList::removeBadData_r ( ) {
 
 
 int RdbList::printPosdbList() {
-
-	logf(LOG_DEBUG, "%s:%s: BEGIN",__FILE__,__func__);
-
 	// save
 	char *oldp   = m_listPtr;
 	const char *oldphi = m_listPtrHi;
@@ -1012,7 +1009,6 @@ int RdbList::printPosdbList() {
 	m_listPtr   = oldp;
 	m_listPtrHi = oldphi;
 
-	logf(LOG_DEBUG, "%s:%s: END",__FILE__,__func__);
 	return 0;
 }
 
@@ -1022,9 +1018,6 @@ int RdbList::printList() {
 		return printPosdbList();
 	}
 
-	logf(LOG_DEBUG, "%s:%s: BEGIN",__FILE__,__func__);
-
-	//log("m_list=%" PRId32,(int32_t)m_list);
 	// save
 	char *oldp   = m_listPtr;
 	const char *oldphi = m_listPtrHi;
@@ -1058,7 +1051,6 @@ int RdbList::printList() {
 	m_listPtr   = oldp;
 	m_listPtrHi = oldphi;
 
-	logf(LOG_DEBUG, "%s:%s: END",__FILE__,__func__);
 	return 0;
 }
 
@@ -2063,6 +2055,7 @@ skip:
 ///////
 
 bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startKey, const char *endKey, int32_t minRecSizes, bool removeNegKeys) {
+	logTrace(g_conf.m_logTraceRdbList, "BEGIN");
 	// sanity
 	if (m_ks != sizeof(key144_t)) {
 		gbshutdownAbort(true);
@@ -2317,7 +2310,7 @@ skip:
 
 	// return now if we're empty... all our recs annihilated?
 	if (m_listSize <= 0) {
-		logTrace(g_conf.m_logTraceRdbList, "no more list");
+		logTrace(g_conf.m_logTraceRdbList, "END. no more list");
 		return true;
 	}
 
@@ -2353,6 +2346,7 @@ skip:
 		if (g_conf.m_logTraceRdbList) {
 			printList();
 		}
+		logTrace(g_conf.m_logTraceRdbList, "END. Less than requested");
 		return true;
 	}
 
@@ -2362,6 +2356,7 @@ skip:
 		if (g_conf.m_logTraceRdbList) {
 			printList();
 		}
+		logTrace(g_conf.m_logTraceRdbList, "END. No more list");
 		return true;
 	}
 
@@ -2392,6 +2387,7 @@ skip:
 		printList();
 	}
 
+	logTrace(g_conf.m_logTraceRdbList, "END. Done");
 	return true;
 }
 
