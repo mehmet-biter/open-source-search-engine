@@ -16373,7 +16373,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	}
 
 	// used by Msg20.cpp to time this XmlDoc::getMsg20Reply() function
-	if ( ! m_startTimeValid && isClockInSync() ) {
+	if ( ! m_startTimeValid ) {
 		m_startTime      = gettimeofdayInMilliseconds();
 		m_startTimeValid = true;
 	}
