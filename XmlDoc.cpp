@@ -6088,7 +6088,7 @@ char **XmlDoc::getOldTitleRec ( ) {
 		return &m_oldTitleRec;
 	}
 	// sanity check
-	if ( m_oldTitleRecValid && m_msg22a.m_outstanding ) {
+	if ( m_oldTitleRecValid && m_msg22a.isOutstanding() ) {
 		g_process.shutdownAbort(true); }
 	// point to url
 	//char *u = getCurrentUrl()->getUrl();
@@ -6367,8 +6367,7 @@ char *XmlDoc::getIsIndexed ( ) {
 	// error?
 	if ( g_errno ) return NULL;
 	// get it
-	if ( m_msg22e.m_found ) m_isIndexed = true;
-	else                    m_isIndexed = false;
+	m_isIndexed = m_msg22e.wasFound();
 
 	// validate
 	m_isIndexedValid = true;
@@ -7335,7 +7334,7 @@ char *XmlDoc::getIsWWWDup ( ) {
 	// valid now
 	m_isWWWDupValid = true;
 	// found?
-	if ( ! g_errno && m_msg22f.m_found ) {
+	if(!g_errno && m_msg22f.wasFound()) {
 		// crap we are a dup
 		m_isWWWDup = true;
 		// set the index code

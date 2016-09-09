@@ -23,10 +23,12 @@ public:
 
 	Msg22Request();
 	
-	int32_t getSize () {
-		return (m_url - (char *)&m_docId) + 1+strlen(m_url); }
-	int32_t getMinSize() {
-		return (m_url - (char *)&m_docId) + 1; }
+	int32_t getSize() const {
+		return (m_url - (char *)&m_docId) + 1+strlen(m_url);
+	}
+	int32_t getMinSize() const {
+		return (m_url - (char *)&m_docId) + 1;
+	}
 };
 
 class Msg22 {
@@ -59,11 +61,15 @@ class Msg22 {
 			   int32_t       niceness       ,
 			   int32_t       timeout );
 
-	int64_t getAvailDocId ( ) { return m_availDocId; }
+	int64_t getAvailDocId() const { return m_availDocId; }
+	bool isOutstanding() const { return m_outstanding; }
+	bool wasFound() const { return m_found; }
 
-	// public so C wrappers can call
-	void gotReply ( ) ;
 
+	//XmlDoc must be able to get a pointer to this member. Hrmpf
+	int64_t m_availDocId;
+
+private:
 	char **m_titleRecPtrPtr;
 	int32_t  *m_titleRecSizePtr;
 
@@ -71,7 +77,6 @@ class Msg22 {
 	void     *m_state       ;
 
 	bool      m_found;
-	int64_t m_availDocId;
 	// the error getting the title rec is stored here
 	int32_t      m_errno;
 
@@ -81,6 +86,9 @@ class Msg22 {
 	Multicast m_mcast;
 
 	class Msg22Request *m_r;
+
+	static void gotReplyWrapper22(void *state1, void *state2);
+	void gotReply();
 };
 
 #endif // GB_MSG22_H
