@@ -465,7 +465,7 @@ static void loadFromOldTitleRecWrapper ( void *state ) {
 			   coll,
 			   mstrerror(g_errno));
 	// otherwise, all done, call the caller callback
-	THIS->callBackback();
+	THIS->callCallback();
 }
 
 // returns false if blocked, returns true and sets g_errno on error otherwise
@@ -1293,7 +1293,7 @@ static void indexDocWrapper ( void *state ) {
 
 
 	logTrace( g_conf.m_logTraceXmlDoc, "Calling callback" );
-	THIS->callBackback();
+	THIS->callCallback();
 
 	logTrace( g_conf.m_logTraceXmlDoc, "END" );
 }
@@ -2112,7 +2112,7 @@ static void getTitleRecBufWrapper ( void *state ) {
 	// return if it blocked
 	if ( THIS->getTitleRecBuf() == (void *)-1 ) return;
 	// otherwise, all done, call the caller callback
-	THIS->callBackback();
+	THIS->callCallback();
 }
 
 key96_t *XmlDoc::getTitleRecKey() {
@@ -9853,7 +9853,7 @@ static void getExpandedUtf8ContentWrapper ( void *state ) {
 	// return if blocked again
 	if ( retVal == (void *)-1 ) return;
 	// otherwise, all done, call the caller callback
-	THIS->callBackback();
+	THIS->callCallback();
 }
 
 // now if there are any <iframe> tags let's substitute them for
@@ -12596,7 +12596,7 @@ void getMetaListWrapper ( void *state ) {
 	// sanityh check
 	if ( THIS->m_callback1 == getMetaListWrapper ) { g_process.shutdownAbort(true);}
 	// otherwise, all done, call the caller callback
-	THIS->callBackback();
+	THIS->callCallback();
 }
 
 
@@ -16355,7 +16355,7 @@ static void getMsg20ReplyWrapper ( void *state ) {
 	// return if it blocked
 	if ( THIS->getMsg20Reply ( ) == (void *)-1 ) return;
 	// otherwise, all done, call the caller callback
-	THIS->callBackback();
+	THIS->callCallback();
 }
 
 // . returns NULL with g_errno set on error
@@ -18596,7 +18596,7 @@ static void printDocForProCogWrapper ( void *state ) {
 	// return if it blocked
 	if ( ! status ) return;
 	// otherwise, all done, call the caller callback
-	THIS->callBackback();
+	THIS->callCallback();
 }
 
 
@@ -21637,7 +21637,7 @@ Json *XmlDoc::getParsedJson ( ) {
 }
 
 
-void XmlDoc::callBackback() {
+void XmlDoc::callCallback() {
 	if(m_callback1 )
 		m_callback1(m_state);
 	else

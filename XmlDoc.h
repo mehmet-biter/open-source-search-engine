@@ -1204,7 +1204,7 @@ public:
 
 	int32_t  m_i;
 
-	void callBackback();
+	void callCallback();
 };
 
 // . PageParser.cpp uses this class for printing hashed terms out by calling
