@@ -26,8 +26,6 @@ Msg22::Msg22() {
 Msg22::~Msg22(){
 }
 
-static void gotReplyWrapper22     ( void *state1 , void *state2 ) ;
-
 
 // . sets m_availDocId or sets g_errno to ENOTFOUND on error
 // . calls callback(state) when done
@@ -166,8 +164,8 @@ bool Msg22::getTitleRec ( Msg22Request  *r              ,
 	return false;
 }
 
-void gotReplyWrapper22 ( void *state1 , void *state2 ) {
-	Msg22 *THIS = (Msg22 *)state1;
+void Msg22::gotReplyWrapper22(void *state1, void *state2) {
+	Msg22 *THIS = static_cast<Msg22*>(state1);
 	THIS->gotReply();
 }
 
