@@ -205,7 +205,7 @@ bool RdbBucket::sort() {
 	// . now we pass in a buffer to merge into, otherwise one is malloced,
 	// . which can fail.  It falls back on qsort which is not stable.
 	if(!m_parent->getSortBuf()) {g_process.shutdownAbort(true);}
-	gbmergesort (list2, numUnsorted , recSize , cmpfn, 0, m_parent->getSortBuf(), m_parent->getSortBufSize());
+	gbmergesort (list2, numUnsorted , recSize , cmpfn, m_parent->getSortBuf(), m_parent->getSortBufSize());
 
 	char *p  = mergeBuf;
 	char v;

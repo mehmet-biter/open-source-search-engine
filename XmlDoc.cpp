@@ -18486,7 +18486,7 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 	s_wbuf = &m_wbuf;
 
 	// sort them alphabetically by Term
-	gbsort ( tp , nt , sizeof(TermDebugInfo *), cmptp , m_niceness );
+	gbsort ( tp , nt , sizeof(TermDebugInfo *), cmptp );
 
 	// print them out in a table
 	char hdr[1000];
@@ -19374,10 +19374,10 @@ bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {
 
 	if ( m_sortTermListBy == 0 )
 		// sort them alphabetically
-		gbsort ( tp , nt , sizeof(TermDebugInfo *), cmptp , m_niceness );
+		gbsort ( tp , nt , sizeof(TermDebugInfo *), cmptp );
 	else
 		// sort by word pos
-		gbsort ( tp , nt , sizeof(TermDebugInfo *), cmptp2 , m_niceness );
+		gbsort ( tp , nt , sizeof(TermDebugInfo *), cmptp2 );
 
 
 	// print the weight tables
@@ -20048,7 +20048,7 @@ char *XmlDoc::getTitleBuf ( ) {
 		bk[i].m_score = 1; // scoreTable.getScore ( &h );
 	}
 	// now sort the bk array by m_score
-	//gbsort ( bk , linkNum , sizeof(Binky), cmpbk , m_niceness );
+	//gbsort ( bk , linkNum , sizeof(Binky), cmpbk );
 
 	// sanity check - make sure sorted right
 	//if ( linkNum >= 2 && bk[0].m_score < bk[1].m_score ) {

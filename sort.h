@@ -16,11 +16,9 @@
 #define gbsort gbmergesort
 
 extern void gbqsort(void *aa, size_t n, size_t es,
-			int (*cmp)(const void *, const void *),
-			int niceness = 0);
+			int (*cmp)(const void *, const void *));
 extern void gbmergesort(void *base, size_t nmemb, size_t size,
 			int (*cmp)(const void *, const void *),
-			int niceness = 0,
 			char* bufSpace = NULL, int32_t bufSpaceSize = 0);
 
 #endif
