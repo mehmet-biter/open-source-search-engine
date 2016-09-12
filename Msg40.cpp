@@ -14,6 +14,7 @@
 #include "HashTable.h"
 #include "AdultCheck.h"
 #include "Process.h"
+#include <new>
 
 
 // increasing this doesn't seem to improve performance any on a single
@@ -60,7 +61,7 @@ void Msg40::resetBuf2 ( ) {
 		// cast it
 		Msg20 *m = (Msg20 *)p;
 		// free its stuff
-		m->destructor();
+		m->~Msg20();
 		// advance
 		p += sizeof(Msg20);
 	}
@@ -627,7 +628,7 @@ bool Msg40::reallocMsg20Buf ( ) {
 			// point to the next Msg20
 			p += sizeof(Msg20);
 			// init it
-			tmp[i]->constructor();
+			new (tmp[i]) Msg20();
 			// count it
 			pcount++;
 			// skip it if it is a new docid, we do not have a Msg20
@@ -738,7 +739,7 @@ bool Msg40::reallocMsg20Buf ( ) {
 		// point it to its memory
 		m_msg20[i] = (Msg20 *)p;
 		// call its constructor
-		m_msg20[i]->constructor();
+		new (m_msg20[i]) Msg20();
 		// point to the next Msg20
 		p += sizeof(Msg20);
 		// remember num to free in reset() function
