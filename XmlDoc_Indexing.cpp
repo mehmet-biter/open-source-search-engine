@@ -1992,7 +1992,7 @@ bool XmlDoc::hashSingleTerm( const char *s, int32_t slen, HashInfo *hi ) {
 
 
 	key144_t k;
-	g_posdb.makeKey ( &k ,
+	Posdb::makeKey ( &k ,
 			  final,
 			  0LL, // docid
 			  0, // dist
@@ -2355,7 +2355,7 @@ bool XmlDoc::hashWords3( HashInfo *hi, const Words *words, Phrases *phrases, Sec
 		// if using posdb
 		key144_t k;
 
-		g_posdb.makeKey ( &k ,
+		Posdb::makeKey ( &k ,
 				  h ,
 				  0LL,//docid
 				  wposvec[i], // dist,
@@ -2405,7 +2405,7 @@ bool XmlDoc::hashWords3( HashInfo *hi, const Words *words, Phrases *phrases, Sec
 			int64_t nah ;
 			nah = hash64Lower_utf8 ( wptrs[i], wlens[i]-2 );
 			if ( plen>0 ) nah = hash64 ( nah , prefixHash );
-			g_posdb.makeKey ( &k ,
+			Posdb::makeKey ( &k ,
 					  nah,
 					  0LL,//docid
 					  wposvec[i], // dist,
@@ -2462,7 +2462,7 @@ skipsingleword:
 			// hash with prefix
 			if ( plen > 0 ) ph2 = hash64 ( npid , prefixHash );
 			else            ph2 = npid;
-			g_posdb.makeKey ( &k ,
+			Posdb::makeKey ( &k ,
 					  ph2 ,
 					  0LL,//docid
 					  wposvec[i],//dist,
@@ -2565,7 +2565,7 @@ bool XmlDoc::hashFieldMatchTerm ( char *val , int32_t vlen , HashInfo *hi ) {
 	//   a prefix hash
 	// . use mostly fake value otherwise
 	key144_t k;
-	g_posdb.makeKey ( &k ,
+	Posdb::makeKey ( &k ,
 			  ph2 ,
 			  0,//docid
 			  0,// word pos #
@@ -2696,7 +2696,7 @@ bool XmlDoc::hashNumberForSortingAsInt32 ( int32_t n , HashInfo *hi , const char
 	//   a prefix hash
 	// . use mostly fake value otherwise
 	key144_t k;
-	g_posdb.makeKey ( &k ,
+	Posdb::makeKey ( &k ,
 			  ph2 ,
 			  0,//docid
 			  0,// word pos #
@@ -2719,14 +2719,7 @@ bool XmlDoc::hashNumberForSortingAsInt32 ( int32_t n , HashInfo *hi , const char
 			  false , // delkey?
 			  hi->m_shardByTermId );
 
-	//int64_t final = hash64n("products.offerprice",0);
-	//int64_t prefix = hash64n("gbsortby",0);
-	//int64_t h64 = hash64 ( final , prefix);
-	//if ( ph2 == h64 )
-	//	log("hey: got offer price");
-	// now set the float in that key
-	//g_posdb.setFloat ( &k , f );
-	g_posdb.setInt ( &k , n );
+	Posdb::setInt ( &k , n );
 
 	// HACK: this bit is ALWAYS set by Posdb::makeKey() to 1
 	// so that we can b-step into a posdb list and make sure
@@ -2736,11 +2729,11 @@ bool XmlDoc::hashNumberForSortingAsInt32 ( int32_t n , HashInfo *hi , const char
 	// key that has a float stored in it. then it will NOT
 	// set the siterank and langid bits which throw our sorting
 	// off!!
-	g_posdb.setAlignmentBit ( &k , 0 );
+	Posdb::setAlignmentBit ( &k , 0 );
 
 	// sanity
-	//float t = g_posdb.getFloat ( &k );
-	int32_t x = g_posdb.getInt ( &k );
+	//float t = Posdb::getFloat ( &k );
+	int32_t x = Posdb::getInt ( &k );
 	if ( x != n ) { g_process.shutdownAbort(true); }
 
 	HashTableX *dt = hi->m_tt;
