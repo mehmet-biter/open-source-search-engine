@@ -14036,18 +14036,10 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 			char *key = p;
 			p += ks;
 
-			// get data size
-			int32_t ds = getDataSizeFromRdbId(rdbId);
-
-			// assume we do not store the datasize
-			bool neg = false;
-
 			// . if key is negative, no data is present
 			// . the doledb key is negative for us here
-			if ((key[0] & 0x01) == 0x00) {
-				neg = true;
-				ds = 0;
-			}
+			bool isDel = ((key[0] & 0x01) == 0x00);
+			int32_t ds = isDel ? 0 : getDataSizeFromRdbId(rdbId);
 
 			// if datasize variable, read it in
 			if (ds == -1) {
@@ -14104,14 +14096,12 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 			// skip over it
 			nptr += ks;
 
-			// store data size. BUT not if negative key!
-			if (getDataSizeFromRdbId(rdbId) == -1 && !neg) {
-				*(int32_t *)nptr = ds;
-				nptr += 4;
-			}
-
 			// store data
 			if (ds) {
+				// store data size
+				*(int32_t *)nptr = ds;
+				nptr += 4;
+
 				gbmemcpy (nptr, data, ds);
 				nptr += ds;
 			}
