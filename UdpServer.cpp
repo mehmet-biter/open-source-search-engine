@@ -2289,8 +2289,8 @@ bool UdpServer::timeoutDeadHosts ( Host *h ) {
 	// and proxy1 do...
 	if ( h->m_isProxy ) return true;
 
-	ScopedLock sl(m_mtx);
 	// find sockets out to dead hosts and change the timeout
+	ScopedLock sl(m_mtx);
 	for ( UdpSlot *slot = m_activeListHead ; slot ; slot = slot->m_activeListNext ) {
 		// only change requests to dead hosts
 		if ( slot->getHostId() < 0 ) continue;
