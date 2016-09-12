@@ -13927,7 +13927,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	//
 	/////////////////
 
-	if ( oldList ) {
+	if (oldList) {
 		// point to start of the old meta list, the first and only
 		// record in the oldList
 		char *om = oldList;
@@ -14143,7 +14143,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 			// if it is from linkdb, and unmet, then it is a
 			// lost link, so set the lost date of it. we keep
 			// these so we can graph lost links
-			if ( rdbId == RDB_LINKDB ) {
+			if (rdbId == RDB_LINKDB) {
 				// the real linkdb rec is at rec+1
 				int32_t lost = g_linkdb.getLostDate_uk( rec+1 );
 
@@ -14168,14 +14168,19 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 				//continue;
 			}
 		}
+
 		// sanity. check for metalist breach
-		if ( nptr > nmax ) { g_process.shutdownAbort(true); }
+		if (nptr > nmax) {
+			g_process.shutdownAbort(true);
+		}
+
 		// free the old meta list
-		mfree ( m_metaList , m_metaListAllocSize , "fm" );
+		mfree(m_metaList, m_metaListAllocSize, "fm");
+
 		// now switch over to the new one
-		m_metaList          = nm;
+		m_metaList = nm;
 		m_metaListAllocSize = needx;
-		m_p                 = nptr;
+		m_p = nptr;
 	}
 
 	//
