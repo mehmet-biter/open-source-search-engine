@@ -13416,27 +13416,6 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	needIndexdb +=tt1.m_numSlotsUsed*(sizeof(key144_t)+2+sizeof(key128_t));
 	need += needIndexdb;
 
-	setStatus ( "hashing sectiondb keys" );
-	// add in special sections keys. "ns" = "new sections", etc.
-	// add in the special nosplit datedb terms from the Sections class
-	// these hash into the term table so we can do incremental updating
-	HashTableX st1;
-	// set key/data size
-	int32_t svs = sizeof(SectionVote);
-	st1.set(sizeof(key128_t),svs,0,NULL,0,false,"sectdb-indx");
-	// tell hashtable to use the sectionhash for determining the slot,
-	// not the lower 4 bytes because that is the docid which is the
-	// same for every key
-	st1.m_maskKeyOffset = 6;
-
-	// needs for hashing no split terms
-	int32_t needSectiondb = 0;
-	// add em up. plus one for rdbId
-	needSectiondb += st1.m_numSlotsUsed * (16+svs+1);
-	//needSectiondb += st2.m_numSlotsUsed * (16+svs+1);
-	// add it in
-	need += needSectiondb;
-
 	// clusterdb keys. plus one for rdbId
 	int32_t needClusterdb = 0;
 	if ( nd ) needClusterdb += 13;
@@ -13679,26 +13658,6 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	if ( m_p - saved > needIndexdb ) { g_process.shutdownAbort(true); }
 	// free all mem
 	tt1.reset();
-
-	// sanity check
-	verifyMetaList( m_metaList , m_p , forDelete );
-
-
-	//
-	// ADD SECTIONS SPECIAL TERMS
-	//
-	setStatus ( "adding sectiondb keys");
-
-	// checkpoint
-	saved = m_p;
-
-	// sanity check
-	if (m_p - saved > needSectiondb) {
-		g_process.shutdownAbort(true);
-	}
-
-	// free mem
-	st1.reset();
 
 	// sanity check
 	verifyMetaList( m_metaList , m_p , forDelete );
