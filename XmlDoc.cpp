@@ -13677,19 +13677,15 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		g_process.shutdownAbort(true);
 	}
 
-	// . get new clusterdb key
-	// . we use the host hash for the site hash! hey, this is only 26 bits!
-	key96_t newk;
-	newk.setMin();
-	if (nd) {
-		newk = g_clusterdb.makeClusterRecKey(*nd->getDocId(), *nd->getIsAdult(), *nd->getLangId(), nd->getHostHash32a(), false);
-	}
-
 	// . store old only if new tr is good and keys are different from old
 	// . now we store even if skipIndexing is true because i'd like to
 	//   see how many titlerecs we have and count them towards the
 	//   docsIndexed count...
 	if ( nd && m_useClusterdb ) {
+		// . get new clusterdb key
+		// . we use the host hash for the site hash! hey, this is only 26 bits!
+		key96_t newk = g_clusterdb.makeClusterRecKey(*nd->getDocId(), *nd->getIsAdult(), *nd->getLangId(), nd->getHostHash32a(), false);
+
 		// store rdbid
 		*m_p = RDB_CLUSTERDB;
 
