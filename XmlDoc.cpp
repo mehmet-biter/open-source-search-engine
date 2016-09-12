@@ -6585,20 +6585,9 @@ int32_t *XmlDoc::getSiteNumInlinks ( ) {
 			maxAge = 1;
 		// for every 100 urls you already got, add a day!
 		sni = atol(tag->getTagData());
-		// double if repairing
-		//if ( m_useSecondaryRdbs ) maxAge = (maxAge+1) * 2;
-		// fix bug for rebuild. rebuild any tag before now because
-		// the MAX_LINKERS_IN_TERMLIST was too small in Linkdb.cpp
-		// and i raised from 1M to 3M. it was hurting mahalo.com.
-		if ( m_useSecondaryRdbs && tag->m_timestamp < 1345819704 )
-			valid = false;
-		// force another rebuild of siterank because i fixed
-		// the 'beds' query a little to use firstip, so recompute
-		// siterank for those spammers.
-		if ( m_useSecondaryRdbs && tag->m_timestamp < 1348257346 &&
-		     // leave really big guys in tact
-		     sni < 300 )
-			valid = false;
+
+		/// @note if we need to force an update in tagdb for sitenuminlinks, add it here
+
 		// convert into seconds
 		maxAge *= 3600*24;
 		// so youtube which has 2997 links will add an extra 29 days
