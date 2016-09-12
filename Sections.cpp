@@ -144,8 +144,7 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 	// and each section may create a sentence section
 	max *= 2;
 
-	// truncate if excessive. growSections() will kick in then i guess
-	// if we need more sections.
+	// truncate if excessive.
 	if ( max > 1000000 ) {
 		log("sections: truncating max sections to 1000000");
 		max = 1000000;
@@ -227,9 +226,10 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 		     fullTid == TAG_HR    ||
 		     fullTid == TAG_COMMENT ) {
 			// try to realloc i guess. should keep ptrs in tact.
-			if ( m_numSections >= m_maxNumSections && 
-			     ! growSections() ) 
+			if ( m_numSections >= m_maxNumSections) {
+				g_errno = EDOCBADSECTIONS;
 				return true;
+			}
 			// get the section
 			Section *sn = &m_sections[m_numSections];
 			// clear
@@ -251,9 +251,10 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 		// a section of multiple br tags in a sequence
 		if ( fullTid == TAG_BR ) {
 			// try to realloc i guess. should keep ptrs in tact.
-			if ( m_numSections >= m_maxNumSections && 
-			     ! growSections() ) 
+			if ( m_numSections >= m_maxNumSections) {
+				g_errno = EDOCBADSECTIONS;
 				return true;
+			}
 			// get the section
 			Section *sn = &m_sections[m_numSections];
 			// clear
@@ -551,8 +552,10 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 		if ( tid == TAG_FONT ) continue;
 
 		// try to realloc i guess. should keep ptrs in tact.
-		if ( m_numSections >= m_maxNumSections && ! growSections() ) 
+		if ( m_numSections >= m_maxNumSections) {
+			g_errno = EDOCBADSECTIONS;
 			return true;
+		}
 
 		// get the section
 		Section *sn = &m_sections[m_numSections];
@@ -1944,7 +1947,8 @@ bool Sections::addSentenceSections ( ) {
 			// ok, now add the split sentence
 			Section *is =insertSubSection(adda,addb+1,bh);
 			// panic?
-			if ( ! is ) return false;
+			if ( ! is )
+				break;
 			// set sentence flag on it
 			is->m_flags |= SEC_SENTENCE;
 			// . set this
@@ -1989,10 +1993,8 @@ bool Sections::addSentenceSections ( ) {
 Section *Sections::insertSubSection ( int32_t a, int32_t b, int32_t newBaseHash ) {
 	// try to realloc i guess. should keep ptrs in tact.
 	if ( m_numSections >= m_maxNumSections ) {
-		// try to realloc i guess
-		if ( !growSections() ) {
-			return NULL;
-		}
+		g_errno = EDOCBADSECTIONS;
+		return NULL;
 	}
 
 	//
@@ -3561,11 +3563,3 @@ bool Sections::verifySections ( ) {
 
 	return true;
 }
-
-bool Sections::growSections ( ) {
-	// make a log note b/c this should not happen a lot because it's slow
-	log("build: growing sections!");
-	g_errno = EDOCBADSECTIONS;
-	return true;
-}
-

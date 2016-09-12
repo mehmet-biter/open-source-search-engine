@@ -535,7 +535,7 @@ public:
 	class Url *getBaseUrl ( ) ;
 	bool hashIsAdult    ( class HashTableX *table ) ;
 
-	void set20 ( Msg20Request *req ) ;
+	void setMsg20Request(Msg20Request *req);
 	class Msg20Reply *getMsg20Reply ( ) ;
 	Query *getQuery() ;
 	Matches *getMatches () ;
@@ -1163,9 +1163,6 @@ public:
 	// used by msg13
 	class Msg13Request *m_r;
 
-	// Msg20 uses this to stash its TcpSlot
-	void *m_slot;
-
 	bool m_freed;
 
 	bool m_msg4Waiting;
@@ -1206,6 +1203,8 @@ public:
 	void logQueryTimingEnd(const char* function, int64_t startTime);
 
 	int32_t  m_i;
+
+	void callCallback();
 };
 
 // . PageParser.cpp uses this class for printing hashed terms out by calling

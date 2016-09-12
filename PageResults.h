@@ -14,6 +14,8 @@
 #define SCROLLBAR_WIDTH 20
 
 
+class XmlDoc;
+
 class State0 {
 public:
 

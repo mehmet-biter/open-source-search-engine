@@ -674,10 +674,6 @@ bool RdbCache::addList ( collnum_t collnum, const char *cacheKey, RdbList *list 
 	}
 	// store endkey then list data in the record data slot
 	const char *k = list->getLastKey  ();
-	// just to make sure
-	char *data     = list->getList();
-	int32_t  dataSize = list->getListSize();
-	if ( ! data ) dataSize = 0;
 	// . add as a record
 	// . key is combo of startKey/endKey
 	// . return false on error (and set errno), false otherwise

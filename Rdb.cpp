@@ -17,7 +17,6 @@
 #include "Doledb.h"
 #include "Linkdb.h"
 #include "hash.h"
-#include "JobScheduler.h"
 #include "Stats.h"
 #include "max_niceness.h"
 #include <sys/stat.h> //mdir()
@@ -918,12 +917,7 @@ bool Rdb::loadTree ( ) {
 			} else {
 				char newFilename[256];
 				sprintf(newFilename,"%s-%" PRId32".old", filename, (int32_t)getTime());
-				bool usingThreads = g_jobScheduler.are_new_jobs_allowed();
-				g_jobScheduler.disallow_new_jobs();
 				file.rename(newFilename);
-				if ( usingThreads ) {
-					g_jobScheduler.allow_new_jobs();
-				}
 				m_tree.reset();
 			}
 			file.close();

@@ -465,8 +465,7 @@ static void loadFromOldTitleRecWrapper ( void *state ) {
 			   coll,
 			   mstrerror(g_errno));
 	// otherwise, all done, call the caller callback
-	if ( THIS->m_callback1 ) THIS->m_callback1 ( THIS->m_state );
-	else                     THIS->m_callback2 ( THIS->m_state );
+	THIS->callCallback();
 }
 
 // returns false if blocked, returns true and sets g_errno on error otherwise
@@ -1293,18 +1292,8 @@ static void indexDocWrapper ( void *state ) {
 	// 		    );
 
 
-	if ( THIS->m_callback1 )
-	{
-		logTrace( g_conf.m_logTraceXmlDoc, "Calling callback1" );
-
-		THIS->m_callback1 ( THIS->m_state );
-	}
-	else
-	{
-		logTrace( g_conf.m_logTraceXmlDoc, "Calling callback2" );
-
-		THIS->m_callback2 ( THIS->m_state );
-	}
+	logTrace( g_conf.m_logTraceXmlDoc, "Calling callback" );
+	THIS->callCallback();
 
 	logTrace( g_conf.m_logTraceXmlDoc, "END" );
 }
@@ -2123,8 +2112,7 @@ static void getTitleRecBufWrapper ( void *state ) {
 	// return if it blocked
 	if ( THIS->getTitleRecBuf() == (void *)-1 ) return;
 	// otherwise, all done, call the caller callback
-	if ( THIS->m_callback1 ) THIS->m_callback1 ( THIS->m_state );
-	else                     THIS->m_callback2 ( THIS->m_state );
+	THIS->callCallback();
 }
 
 key96_t *XmlDoc::getTitleRecKey() {
@@ -6088,7 +6076,7 @@ char **XmlDoc::getOldTitleRec ( ) {
 		return &m_oldTitleRec;
 	}
 	// sanity check
-	if ( m_oldTitleRecValid && m_msg22a.m_outstanding ) {
+	if ( m_oldTitleRecValid && m_msg22a.isOutstanding() ) {
 		g_process.shutdownAbort(true); }
 	// point to url
 	//char *u = getCurrentUrl()->getUrl();
@@ -6096,8 +6084,6 @@ char **XmlDoc::getOldTitleRec ( ) {
 
 	// assume its valid
 	m_oldTitleRecValid = true;
-	// add it to the cache?
-	bool addToCache = false;
 	//if ( maxCacheAge > 0 ) addToCache = true;
 
 	// not if new! no we need to do this so XmlDoc::getDocId() works!
@@ -6150,8 +6136,6 @@ char **XmlDoc::getOldTitleRec ( ) {
 				      m_masterState        ,
 				      m_masterLoop         ,
 				      m_niceness           , // niceness
-				      addToCache           , // add to cache?
-				      0                    , // max cache age
 				      999999               )) // timeout seconds
 		// return -1 if we blocked
 		return (char **)-1;
@@ -6192,8 +6176,6 @@ char **XmlDoc::getRootTitleRec ( ) {
 	Url site; site.set ( mysite );
 	// assume its valid
 	m_rootTitleRecValid = true;
-	// add it to the cache?
-	bool addToCache = false;
 	//if ( maxCacheAge > 0 ) addToCache = true;
 	// update status msg
 	setStatus ( "getting root title rec");
@@ -6211,8 +6193,6 @@ char **XmlDoc::getRootTitleRec ( ) {
 				      m_masterState        ,
 				      m_masterLoop         ,
 				      m_niceness           , // niceness
-				      addToCache           , // add to cache?
-				      0                    , // max cache age
 				      999999               )) // timeout seconds
 		// return -1 if we blocked
 		return (char **)-1;
@@ -6360,8 +6340,6 @@ char *XmlDoc::getIsIndexed ( ) {
 				      m_masterState        ,
 				      m_masterLoop         ,
 				      m_niceness           , // niceness
-				      false                , // add to cache?
-				      0                    , // max cache age
 				      999999               )){ // timeout seconds
 		// validate
 		m_calledMsg22e = true;
@@ -6377,8 +6355,7 @@ char *XmlDoc::getIsIndexed ( ) {
 	// error?
 	if ( g_errno ) return NULL;
 	// get it
-	if ( m_msg22e.m_found ) m_isIndexed = true;
-	else                    m_isIndexed = false;
+	m_isIndexed = m_msg22e.wasFound();
 
 	// validate
 	m_isIndexedValid = true;
@@ -7334,8 +7311,6 @@ char *XmlDoc::getIsWWWDup ( ) {
 				      m_masterState        ,
 				      m_masterLoop         ,
 				      m_niceness           , // niceness
-				      false                , // add to cache?
-				      0                    , // max cache age
 				      999999               )){ // timeout seconds
 		// validate
 		m_calledMsg22f = true;
@@ -7347,7 +7322,7 @@ char *XmlDoc::getIsWWWDup ( ) {
 	// valid now
 	m_isWWWDupValid = true;
 	// found?
-	if ( ! g_errno && m_msg22f.m_found ) {
+	if(!g_errno && m_msg22f.wasFound()) {
 		// crap we are a dup
 		m_isWWWDup = true;
 		// set the index code
@@ -9877,8 +9852,7 @@ static void getExpandedUtf8ContentWrapper ( void *state ) {
 	// return if blocked again
 	if ( retVal == (void *)-1 ) return;
 	// otherwise, all done, call the caller callback
-	if ( THIS->m_callback1 ) THIS->m_callback1 ( THIS->m_state );
-	else                     THIS->m_callback2 ( THIS->m_state );
+	THIS->callCallback();
 }
 
 // now if there are any <iframe> tags let's substitute them for
@@ -12621,8 +12595,7 @@ void getMetaListWrapper ( void *state ) {
 	// sanityh check
 	if ( THIS->m_callback1 == getMetaListWrapper ) { g_process.shutdownAbort(true);}
 	// otherwise, all done, call the caller callback
-	if ( THIS->m_callback1 ) THIS->m_callback1 ( THIS->m_state );
-	else                     THIS->m_callback2 ( THIS->m_state );
+	THIS->callCallback();
 }
 
 
@@ -16351,7 +16324,7 @@ uint32_t score8to32 ( uint8_t score8 ) {
 //
 ////////////////////////////////////////////////////////////
 
-void XmlDoc::set20 ( Msg20Request *req ) {
+void XmlDoc::setMsg20Request(Msg20Request *req) {
 	// clear it all out
 	reset();
 	// this too
@@ -16381,8 +16354,7 @@ static void getMsg20ReplyWrapper ( void *state ) {
 	// return if it blocked
 	if ( THIS->getMsg20Reply ( ) == (void *)-1 ) return;
 	// otherwise, all done, call the caller callback
-	if ( THIS->m_callback1 ) THIS->m_callback1 ( THIS->m_state );
-	else                     THIS->m_callback2 ( THIS->m_state );
+	THIS->callCallback();
 }
 
 // . returns NULL with g_errno set on error
@@ -16400,7 +16372,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	}
 
 	// used by Msg20.cpp to time this XmlDoc::getMsg20Reply() function
-	if ( ! m_startTimeValid && isClockInSync() ) {
+	if ( ! m_startTimeValid ) {
 		m_startTime      = gettimeofdayInMilliseconds();
 		m_startTimeValid = true;
 	}
@@ -16431,15 +16403,12 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	// sanity
 	if ( *otr != m_oldTitleRec ) { g_process.shutdownAbort(true); }
 
-	// what is this?
-	int32_t maxSize = 0;
-
 	// . set our ptr_ and size_ member vars from it after uncompressing
 	// . returns false and sets g_errno on error
 	if ( ! m_setTr ) {
 		// . this completely resets us
 		// . this returns false with g_errno set on error
-		bool status = set2( *otr, maxSize, cr->m_coll, NULL, m_niceness);
+		bool status = set2( *otr, 0, cr->m_coll, NULL, m_niceness);
 
 		// sanity check
 		if ( ! status && ! g_errno ) { g_process.shutdownAbort(true); }
@@ -18515,7 +18484,7 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 	s_wbuf = &m_wbuf;
 
 	// sort them alphabetically by Term
-	gbsort ( tp , nt , sizeof(TermDebugInfo *), cmptp , m_niceness );
+	gbsort ( tp , nt , sizeof(TermDebugInfo *), cmptp );
 
 	// print them out in a table
 	char hdr[1000];
@@ -18625,8 +18594,7 @@ static void printDocForProCogWrapper ( void *state ) {
 	// return if it blocked
 	if ( ! status ) return;
 	// otherwise, all done, call the caller callback
-	if ( THIS->m_callback1 ) THIS->m_callback1 ( THIS->m_state );
-	else                     THIS->m_callback2 ( THIS->m_state );
+	THIS->callCallback();
 }
 
 
@@ -19404,10 +19372,10 @@ bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {
 
 	if ( m_sortTermListBy == 0 )
 		// sort them alphabetically
-		gbsort ( tp , nt , sizeof(TermDebugInfo *), cmptp , m_niceness );
+		gbsort ( tp , nt , sizeof(TermDebugInfo *), cmptp );
 	else
 		// sort by word pos
-		gbsort ( tp , nt , sizeof(TermDebugInfo *), cmptp2 , m_niceness );
+		gbsort ( tp , nt , sizeof(TermDebugInfo *), cmptp2 );
 
 
 	// print the weight tables
@@ -20078,7 +20046,7 @@ char *XmlDoc::getTitleBuf ( ) {
 		bk[i].m_score = 1; // scoreTable.getScore ( &h );
 	}
 	// now sort the bk array by m_score
-	//gbsort ( bk , linkNum , sizeof(Binky), cmpbk , m_niceness );
+	//gbsort ( bk , linkNum , sizeof(Binky), cmpbk );
 
 	// sanity check - make sure sorted right
 	//if ( linkNum >= 2 && bk[0].m_score < bk[1].m_score ) {
@@ -21664,4 +21632,12 @@ Json *XmlDoc::getParsedJson ( ) {
 
 	m_jpValid = true;
 	return &m_jp;
+}
+
+
+void XmlDoc::callCallback() {
+	if(m_callback1 )
+		m_callback1(m_state);
+	else
+		m_callback2(m_state);
 }

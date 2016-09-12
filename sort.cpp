@@ -96,8 +96,7 @@ void
 gbqsort(	void*	aa,
 		size_t	n,
 		size_t	es,
-		int	(*cmp)(const void *, const void *),
-		int	niceness)
+		int	(*cmp)(const void *, const void *))
 {
 	char *pa, *pb, *pc, *pd, *pl, *pm, *pn;
 	int d, r, swaptype, swap_cnt;
@@ -293,7 +292,6 @@ gbmergesort(	void*	base,
 		size_t	nmemb,
 		size_t	size,
 		int	(*cmp)(const void *, const void *),
-		int	niceness,
 		char*   bufSpace, int32_t bufSpaceSize) {
 	int i, sense;
 	int big, iflag;

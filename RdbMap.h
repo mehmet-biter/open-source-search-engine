@@ -309,8 +309,6 @@ class RdbMap {
 	// . add a slot to the map
 	// . returns false if map size would be exceed by adding this slot
 	bool addRecord ( char *key, char *rec , int32_t recSize );
-	bool addRecord ( key96_t &key, char *rec , int32_t recSize ) {
-		return addRecord((char *)&key,rec,recSize);}
 
 	bool truncateFile ( BigFile *f ) ;
 

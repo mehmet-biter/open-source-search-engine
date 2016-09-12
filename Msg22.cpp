@@ -26,8 +26,6 @@ Msg22::Msg22() {
 Msg22::~Msg22(){
 }
 
-static void gotReplyWrapper22     ( void *state1 , void *state2 ) ;
-
 
 // . sets m_availDocId or sets g_errno to ENOTFOUND on error
 // . calls callback(state) when done
@@ -49,8 +47,6 @@ bool Msg22::getAvailDocIdOnly ( Msg22Request  *r              ,
 			     state    ,
 			     callback ,
 			     niceness ,
-			     false    , // addToCache
-			     0        , // maxCacheAge
 			     9999999  ); // timeout
 }
 
@@ -76,8 +72,6 @@ bool Msg22::getTitleRec ( Msg22Request  *r              ,
 			  void          *state          ,
 			  void         (* callback) (void *state) ,
 			  int32_t           niceness       ,
-			  bool           addToCache     ,
-			  int32_t           maxCacheAge    ,
 			  int32_t           timeout ) {
 
 	m_availDocId = 0;
@@ -170,8 +164,8 @@ bool Msg22::getTitleRec ( Msg22Request  *r              ,
 	return false;
 }
 
-void gotReplyWrapper22 ( void *state1 , void *state2 ) {
-	Msg22 *THIS = (Msg22 *)state1;
+void Msg22::gotReplyWrapper22(void *state1, void *state2) {
+	Msg22 *THIS = static_cast<Msg22*>(state1);
 	THIS->gotReply();
 }
 
