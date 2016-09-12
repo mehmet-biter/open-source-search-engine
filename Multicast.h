@@ -124,13 +124,30 @@ class Multicast {
 	int32_t        m_msgSize;
 	msg_type_t     m_msgType;
 	bool        m_ownMsg;
-	//uint32_t m_groupId;
+
+	class UdpSlot *m_slot;
+
+	bool        m_inUse;
+
+	// for linked list of available Multicasts in Msg4.cpp
+	class Multicast *m_next;
+
+	// host we got reply from. used by Msg3a for timing.
+	Host      *m_replyingHost;
+	// when the request was launched to the m_replyingHost
+	int64_t  m_replyLaunchTime;
+
+	// more hack stuff used by PageInject.cpp
+	int32_t m_hackFileId;
+	int64_t m_hackFileOff;
+	class ImportState *m_importState;
+
+private:
 	void       *m_state;
 	void       *m_state2;
 	void       (* m_callback)( void *state , void *state2 );
-	int64_t       m_totalTimeout;   // in milliseconds
 
-	class UdpSlot *m_slot;
+	int64_t       m_totalTimeout;   // in milliseconds
 
 	// . m_slots[] is our list of concurrent transactions
 	// . we delete all the slots only after cast is done
@@ -172,6 +189,7 @@ class Multicast {
 	// . last sending of the request to ONE host in a group (pick & send)
 	// . in milliseconds
 	int64_t   m_lastLaunch;
+
 	Host       *m_lastLaunchHost;
 
 	// only free m_reply if this is true
@@ -186,20 +204,7 @@ class Multicast {
 
 	bool        m_sentToTwin;
 
-	bool        m_inUse;
-
-	// for linked list of available Multicasts in Msg4.cpp
-	class Multicast *m_next;
-
-	// host we got reply from. used by Msg3a for timing.
-	Host      *m_replyingHost;
-	// when the request was launched to the m_replyingHost
-	int64_t  m_replyLaunchTime;
-
-	// more hack stuff used by PageInject.cpp
-	int32_t m_hackFileId;
-	int64_t m_hackFileOff;
-	class ImportState *m_importState;
+	static void sleepWrapper1(int bogusfd, void *state);
 };
 
 #endif // GB_MULTICAST_H

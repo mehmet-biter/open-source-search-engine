@@ -13,7 +13,6 @@
 //       to send we should send as much as we can and save the remaining
 //       slots to disk for sending later??
 
-static void sleepWrapper1       ( int bogusfd , void    *state ) ;
 static void sleepWrapper2       ( int bogusfd , void    *state ) ;
 static void gotReplyWrapperM1    ( void *state , UdpSlot *slot  ) ;
 static void gotReplyWrapperM2    ( void *state , UdpSlot *slot  ) ;
@@ -651,7 +650,7 @@ bool Multicast::sendToHost ( int32_t i ) {
 
 // this is called every 50 ms so we have the chance to launch our request
 // to a more responsive host
-void sleepWrapper1 ( int bogusfd , void    *state ) {
+void Multicast::sleepWrapper1 ( int bogusfd , void    *state ) {
 	Multicast *THIS = (Multicast *) state;
 	// . if our last launch was less than X seconds ago, wait another tick
 	// . we often send out 2+ requests and end up getting one reply before
