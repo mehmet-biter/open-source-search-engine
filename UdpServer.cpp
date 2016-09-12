@@ -12,6 +12,7 @@
 #include "Msg0.h" //RDBIDOFFSET
 #include "Rdb.h" //RDB_...
 #include "max_niceness.h"
+#include "ScopedLock.h"
 
 // . any changes made to the slots should only be done without risk of
 //   interruption because makeCallbacks() reads from the slots to call
@@ -48,6 +49,7 @@ void UdpServer::reset() {
 	if ( m_buf ) mfree ( m_buf , m_bufSize , "UdpServer");
 	m_buf = NULL;
 }
+
 
 UdpServer::UdpServer ( ) {
 	m_sock = -1;
@@ -348,9 +350,6 @@ bool UdpServer::sendRequest(char *msg,
 	if ( niceness > 1 ) niceness = 1;
 	if ( niceness < 0 ) niceness = 0;
 
-	// get a new transId
-	int32_t transId = getTransId();
-
 	// set up shotgunning for this hostId
 	Host *h = NULL;
 	uint32_t ip2 = ip;
@@ -378,6 +377,11 @@ bool UdpServer::sendRequest(char *msg,
 	if ( h ) {
 		ip2 = h->m_ip;
 	}
+
+	ScopedLock sl(m_mtx);
+
+	// get a new transId
+	int32_t transId = getTransId();
 
 	// make a key for this new slot
 	key96_t key = m_proto->makeKey (ip2,port,transId,true/*weInitiated?*/);
@@ -508,6 +512,8 @@ void UdpServer::sendReply(char *msg, int32_t msgSize, char *alloc, int32_t alloc
 	slot->m_host = g_hostdb.getHost ( slot->getIp() , slot->getPort() );
 	//else slot->m_host = NULL;
 
+	ScopedLock sl(m_mtx);
+
 	// discount this
 	if ( slot->m_convertedNiceness == 1 && slot->getNiceness() == 0 ) {
 		logDebug(g_conf.m_logDebugUdp, "udp: unconverting slot=%p", slot);
@@ -551,6 +557,7 @@ void UdpServer::sendReply(char *msg, int32_t msgSize, char *alloc, int32_t alloc
 		// . TODO: we may have to destroy this slot ourselves now...
 		log(LOG_WARN, "udp: Got error sending dgrams.");
 		// destroy it i guess
+		sl.unlock();
 		destroySlot ( slot );
 	}
 	// status is 0 if this blocked
@@ -643,6 +650,7 @@ bool UdpServer::sendPoll(bool allowResends, int64_t now) {
 	// assume we didn't process anything
 	bool something = false;
 	
+	ScopedLock sl(m_mtx);
 	for(;;) {
 		// . don't do any sending until we leave the wait state
 		// or if is shutting down
@@ -771,7 +779,11 @@ void UdpServer::process(int64_t now, int32_t maxNiceness) {
 	// . *slot will be NULL on some errors (read errors or alloc errors)
 	// . *slot will be NULL if we read and processed a slotless ACK
 	// . *slot will be NULL if we read nothing (0 bytes read & 0 returned)
-	int32_t status = readSock(&slot, now);
+	int32_t status;
+	{
+		ScopedLock sl(m_mtx);
+		status = readSock(&slot, now);
+	}
 	// if we read something
 	if ( status != 0 ) {
 		// if no slot was set, it was a slotless read so keep looping
@@ -781,8 +793,10 @@ void UdpServer::process(int64_t now, int32_t maxNiceness) {
 			slot->m_errno = g_errno;
 			// prepare to call the callback by adding it to this
 			// special linked list
-			if ( g_errno )
+			if ( g_errno ) {
+				ScopedLock sl(m_mtx);
 				addToCallbackLinkedList ( slot );
+			}
 			// sanity
 			if ( ! g_errno )
 				log("udp: missing g_errno from read error");
@@ -1328,6 +1342,8 @@ bool UdpServer::makeCallbacks(int32_t niceness) {
 
 	int64_t startTime = gettimeofdayInMillisecondsLocal();
 
+	ScopedLock sl(m_mtx);
+
  fullRestart:
 
 	// take care of certain handlers/callbacks before any others
@@ -1403,9 +1419,12 @@ bool UdpServer::makeCallbacks(int32_t niceness) {
 		// . return false on error and sets g_errno, true otherwise
 		// . return true if we called one
 		// . skip to next slot if did not call callback/handler
+		pthread_mutex_unlock(&m_mtx.mtx);
 		if (!makeCallback(slot)) {
+			pthread_mutex_lock(&m_mtx.mtx);
 			continue;
 		}
+		pthread_mutex_lock(&m_mtx.mtx);
 
 		// remove it from the callback list to avoid re-call
 		removeFromCallbackLinkedList(slot);
@@ -1461,7 +1480,7 @@ bool UdpServer::makeCallbacks(int32_t niceness) {
 
 	// if we just did pass 0 now we do pass 1
 	if ( ++pass == 1 ) goto nextPass;	
-		
+
 	return numCalled;
 }
 
@@ -1904,6 +1923,7 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 	// did we do something? assume not.
 	bool something = false;
 	// loop over occupied slots
+	ScopedLock sl(m_mtx);
 	for ( UdpSlot *slot = m_activeListHead ; slot ; slot = slot->m_activeListNext ) {
 		// clear g_errno
 		g_errno = 0;
@@ -2171,6 +2191,7 @@ void UdpServer::destroySlot ( UdpSlot *slot ) {
 	//   since we turned interrupts off
 	// . free this slot available right away so sig handler won't
 	//   write into m_readBuf or use m_sendBuf, but it may claim it!
+	ScopedLock sl(m_mtx);
 	freeUdpSlot(slot);
 	// free the send/read buffers
 	if ( rbuf ) mfree ( rbuf , rbufSize , "UdpServer");
@@ -2198,6 +2219,8 @@ bool UdpServer::shutdown ( bool urgent ) {
 		log(LOG_INFO,"gb: Shutting down dns resolver.");
 	else if ( ! m_isShuttingDown ) 
 		log(LOG_INFO,"gb: Shutting down udp server port %hu.",m_port);
+
+	ScopedLock sl(m_mtx);
 
 	// so we know not to accept new connections
 	m_isShuttingDown = true;
@@ -2265,6 +2288,7 @@ bool UdpServer::timeoutDeadHosts ( Host *h ) {
 	if ( h->m_isProxy ) return true;
 
 	// find sockets out to dead hosts and change the timeout
+	ScopedLock sl(m_mtx);
 	for ( UdpSlot *slot = m_activeListHead ; slot ; slot = slot->m_activeListNext ) {
 		// only change requests to dead hosts
 		if ( slot->getHostId() < 0 ) continue;
@@ -2529,6 +2553,7 @@ void UdpServer::freeUdpSlot(UdpSlot *slot ) {
 void UdpServer::cancel ( void *state , msg_type_t msgType ) {
 	// . if we have transactions in progress wait
 	// . but if we're waiting for a reply, don't bother
+	pthread_mutex_lock(&m_mtx.mtx);
 	for ( UdpSlot *slot = m_activeListHead ; slot ; slot = slot->m_activeListNext ) {
 		// skip if not a match
 		if (slot->m_state != state || slot->getMsgType() != msgType) {
@@ -2541,8 +2566,11 @@ void UdpServer::cancel ( void *state , msg_type_t msgType ) {
 		// let them know why we are calling the callback prematurely
 		g_errno = ECANCELLED;
 		// stop waiting for reply, this will call destroySlot(), too
+		pthread_mutex_unlock(&m_mtx.mtx);
 		makeCallback(slot);
+		pthread_mutex_lock(&m_mtx.mtx);
 	}
+	pthread_mutex_unlock(&m_mtx.mtx);
 }
 
 void UdpServer::replaceHost ( Host *oldHost, Host *newHost ) {
@@ -2551,6 +2579,7 @@ void UdpServer::replaceHost ( Host *oldHost, Host *newHost ) {
 	      (uint32_t)oldHost->m_ip, 
 	      (uint32_t)oldHost->m_ipShotgun,
 	      (uint32_t)oldHost->m_port );//, oldHost->m_port2 );
+	ScopedLock sl(m_mtx);
 	// . loop over outstanding transactions looking for ones to oldHost
 	for ( UdpSlot *slot = m_activeListHead; slot; slot = slot->m_activeListNext ) {
 		// ignore incoming
@@ -2629,7 +2658,13 @@ void UdpServer::printState() {
 	}	
 }
 
+int32_t UdpServer::getNumUsedSlots() const {
+	ScopedLock sl(const_cast<GbMutex&>(m_mtx));
+	return m_numUsedSlots;
+}
+
 void UdpServer::saveActiveSlots(int fd, msg_type_t msg_type) {
+	ScopedLock sl(m_mtx);
 	int ignored __attribute__((unused));	// shut up gcc warning: ignoring return value
 	for (const UdpSlot *slot = m_activeListHead; slot; slot = slot->m_activeListNext) {
 		// skip if not wanted msg type
