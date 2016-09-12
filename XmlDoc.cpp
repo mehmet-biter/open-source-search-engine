@@ -6578,7 +6578,7 @@ int32_t *XmlDoc::getSiteNumInlinks ( ) {
 		else if ( ns < 100 ) maxAge = 60;
 		// if index size is tiny then maybe we are just starting to
 		// build something massive, so reduce the cached max age
-		int64_t nt = g_titledb.m_rdb.getCollNumTotalRecs(m_collnum);
+		int64_t nt = g_titledb.getRdb()->getCollNumTotalRecs(m_collnum);
 		if ( nt < 100000000 ) //100M
 			maxAge = 3;
 		if ( nt < 10000000 ) //10M

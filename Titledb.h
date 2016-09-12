@@ -147,6 +147,7 @@ class Titledb {
 	int32_t getNumDocsInMem () { return m_rdb.getNumUsedNodes(); }
 	int32_t getMemUsed      () { return m_rdb.getTreeMemOccupied(); }
 
+private:
 	// holds binary format title entries
 	Rdb m_rdb;
 };
