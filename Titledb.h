@@ -13,8 +13,6 @@
 #include "TitleRecVersion.h"
 #include "Rdb.h"
 #include "Url.h"
-#include "Conf.h"
-#include "Xml.h"
 
 // new key format:
 // . <docId>     - 38 bits
