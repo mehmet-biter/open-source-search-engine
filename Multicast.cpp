@@ -17,15 +17,26 @@ static void sleepWrapper2       ( int bogusfd , void    *state ) ;
 static void gotReplyWrapperM1    ( void *state , UdpSlot *slot  ) ;
 static void gotReplyWrapperM2    ( void *state , UdpSlot *slot  ) ;
 
-void Multicast::constructor ( ) {
+
+void Multicast::constructor() {
 	m_msg      = NULL;
 	m_readBuf  = NULL;
 	m_inUse    = false;
 }
-void Multicast::destructor  ( ) { reset(); }
 
-Multicast::Multicast ( ) { constructor(); }
-Multicast::~Multicast ( ) { reset(); }
+void Multicast::destructor() {
+	reset();
+}
+
+Multicast::Multicast ( ) {
+	constructor();
+
+}
+
+Multicast::~Multicast() {
+	reset();
+}
+
 
 // free the send/read (request/reply) bufs we pirated from a UdpSlot or
 // got from the caller
