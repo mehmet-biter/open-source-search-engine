@@ -12612,14 +12612,14 @@ void getMetaListWrapper ( void *state ) {
 // . returns (char *)-1 if it blocks and will call your callback when done
 // . generally only Repair.cpp changes these use* args to false
 char *XmlDoc::getMetaList ( bool forDelete ) {
-
 	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );
-	if ( m_metaListValid ) {
+
+	if (m_metaListValid) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END, already valid" );
 		return m_metaList;
 	}
 
-	setStatus ( "getting meta list" );
+	setStatus("getting meta list");
 
 	// force it true?
 	// "forDelete" means we want the metalist to consist of "negative"
@@ -12646,8 +12646,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	}
 
 	// returning from a handler that had an error?
-	if ( g_errno )
-	{
+	if ( g_errno ) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END, g_errno=%" PRId32, g_errno);
 		return NULL;
 	}
@@ -12694,14 +12693,12 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 
 		// set safebuf to the json of the spider status doc
 		SafeBuf jd;
-		if ( ! jd.safeMemcpy ( ptr_utf8Content , size_utf8Content ) )
-		{
+		if ( ! jd.safeMemcpy ( ptr_utf8Content , size_utf8Content ) ) {
 			logTrace( g_conf.m_logTraceXmlDoc, "END, js.safeMemcpy failed" );
 			return NULL;
 		}
 		// set m_spiderStatusDocMetaList from the json
-		if ( ! setSpiderStatusDocMetaList ( &jd , m_docId ) )
-		{
+		if ( ! setSpiderStatusDocMetaList ( &jd , m_docId ) ) {
 			logTrace( g_conf.m_logTraceXmlDoc, "END, setSpiderStatusDocMetaList failed" );
 			return NULL;
 		}
@@ -12749,48 +12746,42 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	}
 
 	CollectionRec *cr = getCollRec();
-	if ( ! cr )
-	{
+	if ( ! cr ) {
 		logTrace( g_conf.m_logTraceXmlDoc, "getCollRec failed" );
 		return NULL;
 	}
 
 	// get our checksum
 	int32_t *plainch32 = getContentHash32();
-	if ( ! plainch32 || plainch32 == (void *)-1 )
-	{
+	if ( ! plainch32 || plainch32 == (void *)-1 ) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END, getContentHash32 failed" );
 		return (char *)plainch32;
 	}
 
 	// get this too
 	int16_t *hs = getHttpStatus ();
-	if ( ! hs || hs == (void *)-1 )
-	{
+	if ( ! hs || hs == (void *)-1 ) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END, getHttpStatus failed" );
 		return (char *)hs;
 	}
 
 	// make sure site is valid
 	char *site = getSite();
-	if ( ! site || site == (void *)-1 )
-	{
+	if ( ! site || site == (void *)-1 ) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END, getSite failed" );
 		return (char *)site;
 	}
 
 	// this seems to be an issue as well for "unchanged" block below
 	char *isr = getIsSiteRoot();
-	if ( ! isr || isr == (void *)-1 )
-	{
+	if ( ! isr || isr == (void *)-1 ) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END, getIsSiteRoot failed" );
 		return (char *)isr;
 	}
 
 	// make sure docid valid
 	int64_t *mydocid = getDocId();
-	if ( ! mydocid || mydocid == (int64_t *)-1)
-	{
+	if ( ! mydocid || mydocid == (int64_t *)-1) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END, getDocId failed" );
 		return (char *)mydocid;
 	}
@@ -12802,8 +12793,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	// . getNewSpiderReply() will use this to set the reply if
 	//   m_indexCode == EDOCUNCHANGED...
 	XmlDoc **pod = getOldXmlDoc ( );
-	if ( ! pod || pod == (XmlDoc **)-1 )
-	{
+	if ( ! pod || pod == (XmlDoc **)-1 ) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END, getOldXmlDoc failed" );
 		return (char *)pod;
 	}
@@ -12813,8 +12803,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 
 	// check if we are already indexed
 	char *isIndexed = getIsIndexed ();
-	if ( ! isIndexed || isIndexed == (char *)-1 )
-	{
+	if ( ! isIndexed || isIndexed == (char *)-1 ) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END, getIsIndexed failed" );
 		return (char *)isIndexed;
 	}
@@ -12822,8 +12811,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	// why call this way down here? it ends up downloading the doc!
 	// @todo: BR: Eh, what? ^^^
 	int32_t *indexCode = getIndexCode();
-	if ( ! indexCode || indexCode ==(void *)-1)
-	{
+	if ( ! indexCode || indexCode ==(void *)-1) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END, getIndexCode failed" );
 		return (char *)indexCode;
 	}
@@ -12944,8 +12932,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		// get our spider reply
 		SpiderReply *newsr = getNewSpiderReply();
 		// return on error
-		if ( ! newsr )
-		{
+		if ( ! newsr ) {
 			logTrace( g_conf.m_logTraceXmlDoc, "END, could not get spider reply" );
 			return (char *)newsr;
 		}
@@ -12967,15 +12954,13 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		// get the spiderreply ready to be added
 		SafeBuf *spiderStatusDocMetaList = getSpiderStatusDocMetaList(newsr, forDelete);
 		// error?
-		if ( ! spiderStatusDocMetaList )
-		{
+		if ( ! spiderStatusDocMetaList ) {
 			logTrace( g_conf.m_logTraceXmlDoc, "END, getSpiderStatusDocMetaList failed" );
 			return NULL;
 		}
 
 		// blocked?
-		if (spiderStatusDocMetaList==(void *)-1)
-		{
+		if (spiderStatusDocMetaList==(void *)-1) {
 			logTrace( g_conf.m_logTraceXmlDoc, "END, getSpiderStatusDocMetaList blocked" );
 			return (char *)-1;
 		}
@@ -13052,8 +13037,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		// page, so we need to get the old doc meta list
 		oldList = od->getMetaList ( true );
 		oldListSize = od->m_metaListSize;
-		if ( ! oldList || oldList ==(void *)-1)
-		{
+		if ( ! oldList || oldList ==(void *)-1) {
 			logTrace( g_conf.m_logTraceXmlDoc, "END, get old meta list failed" );
 			return (char *)oldList;
 		}
@@ -13073,8 +13057,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	//   these dmoz urls so we can search the CONTENT of the pages in dmoz,
 	//   something dmoz won't let you do.
 	char *mt = hasNoIndexMetaTag();
-	if ( ! mt || mt == (void *)-1 )
-	{
+	if ( ! mt || mt == (void *)-1 ) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END, hasNoIndexMetaTag failed" );
 		return (char *)mt;
 	}
@@ -13855,8 +13838,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		// sanity check
 		if ( ! ret && ! g_errno ) { g_process.shutdownAbort(true); }
 		// return NULL on error
-		if ( ! ret )
-		{
+		if ( ! ret ) {
 			logTrace( g_conf.m_logTraceXmlDoc, "addOutlinkSpiderRecsToMetaList failed" );
 			return NULL;
 		}
