@@ -13,9 +13,6 @@
 //       to send we should send as much as we can and save the remaining
 //       slots to disk for sending later??
 
-static void sleepWrapper2       ( int bogusfd , void    *state ) ;
-static void gotReplyWrapperM1    ( void *state , UdpSlot *slot  ) ;
-static void gotReplyWrapperM2    ( void *state , UdpSlot *slot  ) ;
 
 
 void Multicast::constructor() {
@@ -207,7 +204,7 @@ void Multicast::sendToGroup() {
 		// . send to a single host
 		// . this creates a transaction control slot, "udpSlot"
 		// . returns false and sets g_errno on error
-		if (us->sendRequest(m_msg, m_msgSize, m_msgType, bestIp, destPort, hid, &m_slots[i], this, gotReplyWrapperM2, m_totalTimeout, m_niceness)) {
+		if (us->sendRequest(m_msg, m_msgSize, m_msgType, bestIp, destPort, hid, &m_slots[i], this, gotReply2, m_totalTimeout, m_niceness)) {
 			continue;
 		}
 		// g_errno must have been set, remember it
@@ -241,16 +238,16 @@ void Multicast::sendToGroup() {
 	}
 }
 
-void sleepWrapper2 ( int bogusfd , void *state ) {
-	Multicast *THIS = (Multicast *)state;
+void Multicast::sleepWrapper2(int bogusfd, void *state) {
+	Multicast *THIS = static_cast<Multicast*>(state);
 	// try another round of sending to see if hosts had errors or not
-	THIS->sendToGroup ( );
+	THIS->sendToGroup();
 }
 
-// C wrapper for the C++ callback
-void gotReplyWrapperM2 ( void *state , UdpSlot *slot ) {
-	Multicast *THIS = (Multicast *)state;
-        THIS->gotReply2 ( slot );
+
+void Multicast::gotReply2(void *state, UdpSlot *slot) {
+	Multicast *THIS = static_cast<Multicast*>(state);
+        THIS->gotReply2(slot);
 }
 
 // . otherwise, we were sending to a whole group so ALL HOSTS must produce a 
@@ -630,7 +627,7 @@ bool Multicast::sendToHost ( int32_t i ) {
 	// . this creates a transaction control slot, "udpSlot"
 	// . return false and sets g_errno on error
 	// . returns true on successful launch and calls callback on completion
-	if (!us->sendRequest(m_msg, m_msgSize, m_msgType, bestIp, destPort, hid, &m_slots[i], this, gotReplyWrapperM1, timeRemaining, m_niceness, NULL, -1, -1, maxResends)) {
+	if (!us->sendRequest(m_msg, m_msgSize, m_msgType, bestIp, destPort, hid, &m_slots[i], this, gotReply1, timeRemaining, m_niceness, NULL, -1, -1, maxResends)) {
 		log(LOG_WARN, "net: Had error sending msgtype 0x%02x to host #%" PRId32": %s. Not retrying.",
 		    m_msgType,h->m_hostId,mstrerror(g_errno));
 		// i've seen ENOUDPSLOTS available msg here along with oom
@@ -855,10 +852,10 @@ void Multicast::sleepWrapper1 ( int bogusfd , void    *state ) {
 	//    THIS->m_msgType);
 }
 
-// C wrapper for the C++ callback
-void gotReplyWrapperM1 ( void *state , UdpSlot *slot ) {
-	Multicast *THIS = (Multicast *)state;
-    THIS->gotReply1 ( slot );
+
+void Multicast::gotReply1(void *state, UdpSlot *slot) {
+	Multicast *THIS = static_cast<Multicast*>(state);
+	THIS->gotReply1(slot);
 }
 
 // come here if we've got a reply from a host that's not part of a group send

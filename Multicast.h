@@ -107,18 +107,6 @@ class Multicast {
 
 	// private:
 
-	void destroySlotsInProgress ( UdpSlot *slot );
-
-	// keep these public so C wrapper can call them
-	bool sendToHostLoop(int32_t key, int32_t hostNumToTry, int32_t firstHostId);
-	bool sendToHost    ( int32_t i ); 
-	int32_t pickBestHost  ( uint32_t key , int32_t hostNumToTry );
-	void gotReply1     ( UdpSlot *slot ) ;
-	void closeUpShop   ( UdpSlot *slot ) ;
-
-	void sendToGroup();
-	void gotReply2     ( UdpSlot *slot ) ;
-
 	// . stuff set directly by send() parameters
 	char       *m_msg;
 	int32_t        m_msgSize;
@@ -146,7 +134,6 @@ private:
 	void       *m_state;
 	void       *m_state2;
 	void       (* m_callback)( void *state , void *state2 );
-
 	int64_t       m_totalTimeout;   // in milliseconds
 
 	// . m_slots[] is our list of concurrent transactions
@@ -204,7 +191,21 @@ private:
 
 	bool        m_sentToTwin;
 
+	void destroySlotsInProgress ( UdpSlot *slot );
+
+	void sendToGroup();
+
 	static void sleepWrapper1(int bogusfd, void *state);
+	static void sleepWrapper2(int bogusfd, void *state);
+	static void gotReply1(void *state, UdpSlot *slot);
+	void gotReply1(UdpSlot *slot);
+	static void gotReply2(void *state, UdpSlot *slot);
+	void gotReply2(UdpSlot *slot);
+
+	bool sendToHostLoop(int32_t key, int32_t hostNumToTry, int32_t firstHostId);
+	bool sendToHost    ( int32_t i ); 
+	int32_t pickBestHost  ( uint32_t key , int32_t hostNumToTry );
+	void closeUpShop   ( UdpSlot *slot ) ;
 };
 
 #endif // GB_MULTICAST_H
