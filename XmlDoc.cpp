@@ -13596,32 +13596,40 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	// TITLEDB
 	//
 	setStatus ("adding titledb recs");
+
 	// checkpoint
 	char *saved = m_p;
 
 	// . store title rec
 	// . Repair.cpp might set useTitledb to false!
-	if ( nd && m_useTitledb ) {
+	if (nd && m_useTitledb) {
 		// rdbId
-		if ( m_useSecondaryRdbs ) *m_p++ = RDB2_TITLEDB2;
-		else                      *m_p++ = RDB_TITLEDB;
+		*m_p++ = m_useSecondaryRdbs ? RDB2_TITLEDB2 : RDB_TITLEDB;
+
 		// sanity
-		if ( ! nd->m_titleRecBufValid ) { g_process.shutdownAbort(true); }
+		if (!nd->m_titleRecBufValid) {
+			g_process.shutdownAbort(true);
+		}
+
 		// key, dataSize, data is the whole rec
 		int32_t tsize = nd->m_titleRecBuf.length();
+
 		// if getting an "oldList" to do incremental posdb updates
 		// then do not include the data portion of the title rec
-		if ( forDelete ) tsize = sizeof(key96_t);
+		if (forDelete) {
+			tsize = sizeof(key96_t);
+		}
+
 		gbmemcpy ( m_p , nd->m_titleRecBuf.getBufStart() , tsize );
-		// make it a negative key
-		//if ( forDelete ) *m_p = *m_p & 0xfe;
-		m_p += tsize;//nd->m_titleRecSize;
-		// store a zero datasize, key is still positive until the dt8
-		// table deletes it
-		//if ( forDelete ) { *(int32_t *)m_p = 0; m_p += 4; }
+
+		m_p += tsize;
 	}
+
 	// sanity check
-	if ( m_p - saved > needTitledb ) { g_process.shutdownAbort(true); }
+	if (m_p - saved > needTitledb) {
+		g_process.shutdownAbort(true);
+	}
+
 	// sanity check
 	verifyMetaList( m_metaList , m_p , forDelete );
 
@@ -13629,17 +13637,21 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	// ADD BASIC INDEXDB/DATEDB TERMS
 	//
 	setStatus ( "adding posdb and datedb terms");
+
 	// checkpoint
 	saved = m_p;
+
 	// store indexdb terms into m_metaList[]
-	if ( m_usePosdb && ! addTable144 ( &tt1 , m_docId ))
-	{
+	if ( m_usePosdb && ! addTable144 ( &tt1 , m_docId )) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END, addTable144 failed" );
 		return NULL;
 	}
 
 	// sanity check
-	if ( m_p - saved > needIndexdb ) { g_process.shutdownAbort(true); }
+	if (m_p - saved > needIndexdb) {
+		g_process.shutdownAbort(true);
+	}
+
 	// free all mem
 	tt1.reset();
 
