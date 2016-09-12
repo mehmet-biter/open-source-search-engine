@@ -4899,8 +4899,8 @@ RdbList *XmlDoc::getDupList ( ) {
 	// get the startkey, endkey for termlist
 	key144_t sk ;
 	key144_t ek ;
-	g_posdb.makeStartKey ( &sk,termId ,0);
-	g_posdb.makeEndKey   ( &ek,termId ,MAX_DOCID);
+	Posdb::makeStartKey ( &sk,termId ,0);
+	Posdb::makeEndKey   ( &ek,termId ,MAX_DOCID);
 	// note it
 	log(LOG_DEBUG,"build: check termid=%" PRIu64" for docid %" PRIu64
 	    ,(uint64_t)(termId&TERMID_MASK)
@@ -5016,11 +5016,11 @@ char *XmlDoc::getIsDup ( ) {
 		char *rec = list->getCurrentRec();
 
 		// get the docid
-		int64_t d = g_posdb.getDocId ( rec );
+		int64_t d = Posdb::getDocId ( rec );
 
 		// just let the best site rank win i guess?
 		// even though one page may have more inlinks???
-		char sr = (char )g_posdb.getSiteRank ( rec );
+		char sr = (char )Posdb::getSiteRank ( rec );
 
 		// skip if us
 		if ( d == m_docId ) continue;
@@ -12103,7 +12103,7 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 		if ( ! ( p[0] & 0x01 ) ) neg = true;
 		// this is now a bit in the posdb key so we can rebalance
 		char shardByTermId = false;
-		if ( rdbId==RDB_POSDB && g_posdb.isShardedByTermId(k))
+		if ( rdbId==RDB_POSDB && Posdb::isShardedByTermId(k))
 			shardByTermId = true;
 		// skip it
 		p += ks;
@@ -12155,8 +12155,8 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 		if ( rdbId == RDB_POSDB ) {
 			// get termid et al
 			key144_t *k2 = (key144_t *)k;
-			int64_t tid = g_posdb.getTermId(k2);
-			//uint8_t score8 = g_posdb.getScore ( *k2 );
+			int64_t tid = Posdb::getTermId(k2);
+			//uint8_t score8 = Posdb::getScore ( *k2 );
 			//uint32_t score32 = score8to32 ( score8 );
 			// sanity check
 			if(dataSize!=0){g_process.shutdownAbort(true);}
@@ -12328,7 +12328,7 @@ bool XmlDoc::verifyMetaList ( char *p , char *pend , bool forDelete ) {
 			// alignment bit set or cleared
 			if ( ! ( p[1] & 0x02 ) ) { g_process.shutdownAbort(true); }
 			if (   ( p[7] & 0x02 ) ) { g_process.shutdownAbort(true); }
-			int64_t docId = g_posdb.getDocId(p);
+			int64_t docId = Posdb::getDocId(p);
 			if ( docId != m_docId && !cr->m_indexSpiderReplies) {
 				log( LOG_WARN, "xmldoc: %" PRId64" != %" PRId64, docId, m_docId );
 				g_process.shutdownAbort(true);
@@ -12348,7 +12348,7 @@ bool XmlDoc::verifyMetaList ( char *p , char *pend , bool forDelete ) {
 
 		// set this
 		//bool split = true;
-		//if(rdbId == RDB_POSDB && g_posdb.isShardedByTermId(p) )
+		//if(rdbId == RDB_POSDB && Posdb::isShardedByTermId(p) )
 		// split =false;
 		// skip key
 		p += ks;
@@ -12460,8 +12460,8 @@ bool XmlDoc::hashMetaList ( HashTableX *ht        ,
 		// bitch if not found
 		if ( slot < 0 && ks==12 ) {
 			key144_t *k2 = (key144_t *)k;
-			int64_t tid = g_posdb.getTermId(k2);
-			char shardByTermId = g_posdb.isShardedByTermId(k2);
+			int64_t tid = Posdb::getTermId(k2);
+			char shardByTermId = Posdb::isShardedByTermId(k2);
 			log("build: missing key #%" PRId32" rdb=%s ks=%" PRId32" ds=%" PRId32" "
 			    "tid=%" PRIu64" "
 			    "key=%s "
@@ -12532,7 +12532,7 @@ bool XmlDoc::hashMetaList ( HashTableX *ht        ,
 		// otherwise, bitch
 		char shardByTermId = false;
 		if ( rdbId == RDB_POSDB )
-			shardByTermId = g_posdb.isShardedByTermId(rec2);
+			shardByTermId = Posdb::isShardedByTermId(rec2);
 		log("build: data not equal for key=%s "
 		    "rdb=%s splitbytermid=%" PRId32" dataSize=%" PRId32,
 		    KEYSTR(k,ks2),
@@ -15396,25 +15396,25 @@ bool XmlDoc::addTable144 ( HashTableX *tt1 , int64_t docId , SafeBuf *buf ) {
 		// store it as is
 		gbmemcpy ( p , kp , sizeof(key144_t) );
 		// this was zero when we added these keys to zero, so fix it
-		g_posdb.setDocIdBits ( p , docId );
+		Posdb::setDocIdBits ( p , docId );
 		// if this is a numeric field we do not want to set
 		// the siterank or langid bits because it will mess up
 		// sorting by the float which is basically in the position
 		// of the word position bits.
-		if ( g_posdb.isAlignmentBitClear ( p ) ) {
+		if ( Posdb::isAlignmentBitClear ( p ) ) {
 			// make sure it is set again. it was just cleared
 			// to indicate that this key contains a float
 			// like a price or something, and we should not
 			// set siterank or langid so that its termlist
 			// remains sorted just by that float
-			g_posdb.setAlignmentBit ( p , 1 );
+			Posdb::setAlignmentBit ( p , 1 );
 		}
 		// otherwise, set the siterank and langid
 		else {
 			// this too
-			g_posdb.setSiteRankBits ( p , siteRank );
+			Posdb::setSiteRankBits ( p , siteRank );
 			// set language here too
-			g_posdb.setLangIdBits ( p , m_langId );
+			Posdb::setLangIdBits ( p , m_langId );
 		}
 		// advance over it
 		p += sizeof(key144_t);
