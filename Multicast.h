@@ -184,9 +184,9 @@ class Multicast {
 
 	int32_t        m_retryCount;
 
-	char        m_sentToTwin;
+	bool        m_sentToTwin;
 
-	char        m_inUse;
+	bool        m_inUse;
 
 	// for linked list of available Multicasts in Msg4.cpp
 	class Multicast *m_next;
