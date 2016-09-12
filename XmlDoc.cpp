@@ -12576,8 +12576,7 @@ void getMetaListWrapper ( void *state ) {
 	char *ml = THIS->getMetaList ( );
 	// sanity check
 	if ( ! ml && ! g_errno ) {
-		log("doc: getMetaList() returned NULL without g_errno");
-		sleep(5);
+		log(LOG_ERROR, "doc: getMetaList() returned NULL without g_errno");
 		g_process.shutdownAbort(true);
 	}
 	// return if it blocked
