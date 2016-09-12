@@ -497,7 +497,7 @@ bool setClusterLevels ( const key96_t   *clusterRecs,
 		// . get the site hash
 		// . these are only 32 bits!
 		if(fakeIt)
-			h = g_titledb.getDomHash8FromDocId(docIds[i]);
+			h = Titledb::getDomHash8FromDocId(docIds[i]);
 		else
 			h = g_clusterdb.getSiteHash26 ( crec );
 

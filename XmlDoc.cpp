@@ -918,7 +918,7 @@ bool XmlDoc::set2 ( char    *titleRec ,
 	}
 
 	// set m_docId from key
-	m_docId = g_titledb.getDocIdFromKey ( m_titleRecKey );
+	m_docId = Titledb::getDocIdFromKey ( m_titleRecKey );
 	// validate that
 	m_docIdValid = true;
 	// then the size of the data that follows this
@@ -2908,7 +2908,7 @@ bool XmlDoc::setTitleRecBuf ( SafeBuf *tbuf, int64_t docId, int64_t uh48 ){
 		return false;
 	}
 
-	key96_t tkey = g_titledb.makeKey (docId,uh48,false);//delkey?
+	key96_t tkey = Titledb::makeKey (docId,uh48,false);//delkey?
 
 	// get a ptr to the Rdb record at start of the header
 	p = cbuf;
@@ -5663,7 +5663,7 @@ XmlDoc **XmlDoc::getOldXmlDoc ( ) {
 	if ( ! m_setFromDocId ) {
 		//int64_t uh48 = getFirstUrl()->getUrlHash48();
 		int64_t uh48 = getFirstUrlHash48();
-		int64_t tuh48 = g_titledb.getUrlHash48 ( (key96_t *)*otr );
+		int64_t tuh48 = Titledb::getUrlHash48 ( (key96_t *)*otr );
 		if ( uh48 != tuh48 ) {
 			log("xmldoc: docid collision uh48 mismatch. cannot "
 				"index "
@@ -6256,7 +6256,7 @@ int64_t *XmlDoc::getDocId ( ) {
 	// if titlerec was there but not od it had an error uncompressing
 	// because of the corruption bug in RdbMem.cpp when dumping to disk.
 	if ( m_docId == 0 && m_oldTitleRec && m_oldTitleRecSize > 12 ) {
-		m_docId = g_titledb.getDocIdFromKey ( (key96_t *)m_oldTitleRec );
+		m_docId = Titledb::getDocIdFromKey ( (key96_t *)m_oldTitleRec );
 		log("build: salvaged docid %" PRId64" from corrupt title rec "
 			"for %s",m_docId,m_firstUrl.getUrl());
 	}
@@ -6270,9 +6270,9 @@ int64_t *XmlDoc::getDocId ( ) {
 	// ensure it is within probable range
 	if ( ! getUseTimeAxis () ) {
 		char *u = getFirstUrl()->getUrl();
-		int64_t pd = g_titledb.getProbableDocId(u);
-		int64_t d1 = g_titledb.getFirstProbableDocId ( pd );
-		int64_t d2 = g_titledb.getLastProbableDocId  ( pd );
+		int64_t pd = Titledb::getProbableDocId(u);
+		int64_t d1 = Titledb::getFirstProbableDocId ( pd );
+		int64_t d2 = Titledb::getLastProbableDocId  ( pd );
 		if ( m_docId < d1 || m_docId > d2 ) {
 			g_process.shutdownAbort(true); }
 	}
@@ -11545,9 +11545,9 @@ bool XmlDoc::logIt (SafeBuf *bb ) {
 		sb->safePrintf("docid=%" PRIu64" ",m_docId);
 
 	char *u = getFirstUrl()->getUrl();
-	int64_t pd = g_titledb.getProbableDocId(u);
-	int64_t d1 = g_titledb.getFirstProbableDocId ( pd );
-	int64_t d2 = g_titledb.getLastProbableDocId  ( pd );
+	int64_t pd = Titledb::getProbableDocId(u);
+	int64_t d1 = Titledb::getFirstProbableDocId ( pd );
+	int64_t d2 = Titledb::getLastProbableDocId  ( pd );
 	sb->safePrintf("probdocid=%" PRIu64" ",pd);
 	sb->safePrintf("probdocidmin=%" PRIu64" ",d1);
 	sb->safePrintf("probdocidmax=%" PRIu64" ",d2);
@@ -12668,7 +12668,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 			int64_t uh48 = m_firstUrl.getUrlHash48();
 
 			// delete title rec. true = delete?
-			key96_t tkey = g_titledb.makeKey (m_docId,uh48,true);
+			key96_t tkey = Titledb::makeKey (m_docId,uh48,true);
 
 			// shortcut
 			SafeBuf *ssb = &m_spiderStatusDocMetaList;
@@ -18115,7 +18115,7 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 			 "<td>0x%" PRIx32"</td>"
 			 "</tr>\n"
 			 ,
-			 (int32_t)g_titledb.getDomHash8FromDocId(m_docId)
+			 (int32_t)Titledb::getDomHash8FromDocId(m_docId)
 			 );
 
 	struct tm tm_buf;
