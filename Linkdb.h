@@ -159,16 +159,18 @@ bool getLinkInfo ( SafeBuf *reqBuf , // store msg25 request in here
 int32_t getSiteRank ( int32_t sni ) ;
 
 class Linkdb {
- public:
+public:
 	void reset();
 
-	bool init    ( );
-	bool init2 ( int32_t treeMem );
-	bool verify  ( char *coll );
-	bool addColl ( char *coll, bool doVerify = true );
+	bool init();
+	bool init2(int32_t treeMem);
+
+	bool verify(char *coll);
+
+	Rdb *getRdb() { return &m_rdb; }
 
 	// this makes a "url" key
-	key224_t makeKey_uk ( uint32_t  linkeeSiteHash32 ,
+	static key224_t makeKey_uk ( uint32_t  linkeeSiteHash32 ,
 			      uint64_t  linkeeUrlHash64  ,
 			      bool      isLinkSpam     ,
 			      unsigned char linkerSiteRank , // 0-15 i guess
@@ -182,7 +184,7 @@ class Linkdb {
 			      bool      isDelete       );
 	
 
-	key224_t makeStartKey_uk ( uint32_t linkeeSiteHash32 ,
+	static key224_t makeStartKey_uk ( uint32_t linkeeSiteHash32 ,
 				   uint64_t linkeeUrlHash64  = 0LL ) {
 		return makeKey_uk ( linkeeSiteHash32,
 				    linkeeUrlHash64,
@@ -198,7 +200,7 @@ class Linkdb {
 				    true); // is delete?
 	}
 
-	key224_t makeEndKey_uk ( uint32_t linkeeSiteHash32 ,
+	static key224_t makeEndKey_uk ( uint32_t linkeeSiteHash32 ,
 				 uint64_t linkeeUrlHash64  = 
 				 0xffffffffffffffffLL ) {
 		return makeKey_uk ( linkeeSiteHash32,
@@ -219,10 +221,11 @@ class Linkdb {
 	// accessors for "url" keys in linkdb
 	//
 
-	uint32_t getLinkeeSiteHash32_uk ( key224_t *key ) {
-		return (key->n3) >> 32; }
+	static uint32_t getLinkeeSiteHash32_uk ( key224_t *key ) {
+		return (key->n3) >> 32;
+	}
 
-	uint64_t getLinkeeUrlHash64_uk ( key224_t *key ) {
+	static uint64_t getLinkeeUrlHash64_uk ( key224_t *key ) {
 		uint64_t h = key->n3;
 		h &= 0x00000000ffffffffLL;
 		h <<= 15;
@@ -230,19 +233,19 @@ class Linkdb {
 		return h;
 	}
 
-	char isLinkSpam_uk (key224_t *key ) {
+	static char isLinkSpam_uk (key224_t *key ) {
 		if ((key->n2) & 0x1000000000000LL) return true; 
 		return false;
 	}
 
-	unsigned char getLinkerSiteRank_uk ( key224_t *k ) {
+	static unsigned char getLinkerSiteRank_uk ( key224_t *k ) {
 		unsigned char rank = (k->n2 >> 40) & 0xff;
 		// complement it back
 		rank = (unsigned char)~rank;//LDB_MAXSITERANK - rank;
 		return rank;
 	}
-	
-	int32_t getLinkerIp_uk ( key224_t *k ) {
+
+	static int32_t getLinkerIp_uk ( key224_t *k ) {
 		uint32_t ip ;
 		// the most significant part of the ip is the lower byte!!!
 		ip = (uint32_t)((k->n2>>8)&0x00ffffff);
@@ -250,7 +253,7 @@ class Linkdb {
 		return ip;
 	}
 
-	void setIp32_uk ( void *k , uint32_t ip ) {
+	static void setIp32_uk ( void *k , uint32_t ip ) {
 		char *ips = (char *)&ip;
 		char *ks = (char *)k;
 		ks[16] = ips[3];
@@ -261,11 +264,11 @@ class Linkdb {
 
 
 	// we are missing the lower byte, it will be zero
-	int32_t getLinkerIp24_uk ( key224_t *k ) {
+	static int32_t getLinkerIp24_uk ( key224_t *k ) {
 		return (int32_t)((k->n2>>8)&0x00ffffff); 
 	}
 
-	int64_t getLinkerDocId_uk( key224_t *k ) {
+	static int64_t getLinkerDocId_uk( key224_t *k ) {
 		uint64_t d = k->n2 & 0xff;
 		d <<= 30;
 		d |= k->n1 >>34;
@@ -274,7 +277,7 @@ class Linkdb {
 
 	// . in days since jan 1, 2012 utc
 	// . timestamp of jan 1, 2012 utc is 1325376000
-	int32_t getDiscoveryDate_uk ( void *k ) {
+	static int32_t getDiscoveryDate_uk ( void *k ) {
 		uint32_t date = ((key224_t *)k)->n1 >> 18;
 		date &= 0x00003fff;
 		// if 0 return that
@@ -289,7 +292,7 @@ class Linkdb {
 
 	// . in days since jan 1, 2012 utc
 	// . timestamp of jan 1, 2012 utc is 1325376000
-	void setDiscoveryDate_uk ( void *k , int32_t date ) {
+	static void setDiscoveryDate_uk ( void *k , int32_t date ) {
 		// subtract jan 1 2012
 		date -= LINKDBEPOCH;
 		// convert into days
@@ -302,7 +305,7 @@ class Linkdb {
 		((key224_t *)k)->n1 |= ((uint64_t)date) << 18;
 	}
 
-	int32_t getLostDate_uk ( void *k ) {
+	static int32_t getLostDate_uk ( void *k ) {
 		uint32_t date = ((key224_t *)k)->n1 >> 2;
 		date &= 0x00003fff;
 		// if 0 return that
@@ -317,7 +320,7 @@ class Linkdb {
 
 	// . in days since jan 1, 2012 utc
 	// . timestamp of jan 1, 2012 utc is 1325376000
-	void setLostDate_uk ( void *k , int32_t date ) {
+	static void setLostDate_uk ( void *k , int32_t date ) {
 		// subtract jan 1 2012
 		date -= LINKDBEPOCH;
 		// convert into days
@@ -330,18 +333,15 @@ class Linkdb {
 		((key224_t *)k)->n1 |= ((uint64_t)date) << 2;
 	}
 
-	uint32_t getLinkerSiteHash32_uk( void *k ) {
+	static uint32_t getLinkerSiteHash32_uk( void *k ) {
 		uint32_t sh32 = ((key224_t *)k)->n1 & 0x00000003;
 		sh32 <<= 30;
 		sh32 |= ((key224_t *)k)->n0 >> 2;
 		return sh32;
 	}
 
-	Rdb           *getRdb()           { return &m_rdb; }
-
- private:
-	Rdb           m_rdb;
-
+private:
+	Rdb m_rdb;
 };
 
 extern class Linkdb g_linkdb;

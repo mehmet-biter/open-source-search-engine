@@ -4947,10 +4947,10 @@ void dumpLinkdb ( const char *coll,
 	if ( url ) {
 		Url u;
 		u.set( url, strlen( url ), true, false );
-		uint32_t h32 = u.getHostHash32();//g_linkdb.getUrlHash(&u)
+		uint32_t h32 = u.getHostHash32();
 		int64_t uh64 = hash64n(url,0);
-		startKey = g_linkdb.makeStartKey_uk ( h32 , uh64 );
-		endKey   = g_linkdb.makeEndKey_uk   ( h32 , uh64 );
+		startKey = Linkdb::makeStartKey_uk ( h32 , uh64 );
+		endKey   = Linkdb::makeEndKey_uk   ( h32 , uh64 );
 	}
 	// turn off threads
 	g_jobScheduler.disallow_new_jobs();
@@ -5006,7 +5006,7 @@ void dumpLinkdb ( const char *coll,
 		// is it a delete?
 		const char *dd = "";
 		if ( (k.n0 & 0x01) == 0x00 ) dd = " (delete)";
-		int64_t docId = (int64_t)g_linkdb.getLinkerDocId_uk(&k);
+		int64_t docId = (int64_t)Linkdb::getLinkerDocId_uk(&k);
 		int32_t shardNum = getShardNum(RDB_LINKDB,&k);
 		printf("k=%s "
 		       "linkeesitehash32=0x%08" PRIx32" "
@@ -5022,16 +5022,16 @@ void dumpLinkdb ( const char *coll,
 		       "shardNum=%" PRIu32" "
 		       "%s\n",
 		       KEYSTR(&k,sizeof(key224_t)),
-		       (int32_t)g_linkdb.getLinkeeSiteHash32_uk(&k),
-		       (int64_t)g_linkdb.getLinkeeUrlHash64_uk(&k),
-		       (int32_t)g_linkdb.isLinkSpam_uk(&k),
-		       (int32_t)g_linkdb.getLinkerSiteRank_uk(&k),
-		       //hc,//g_linkdb.getLinkerHopCount_uk(&k),
-		       iptoa((int32_t)g_linkdb.getLinkerIp_uk(&k)),
+		       (int32_t)Linkdb::getLinkeeSiteHash32_uk(&k),
+		       (int64_t)Linkdb::getLinkeeUrlHash64_uk(&k),
+		       (int32_t)Linkdb::isLinkSpam_uk(&k),
+		       (int32_t)Linkdb::getLinkerSiteRank_uk(&k),
+		       //hc,//Linkdb::getLinkerHopCount_uk(&k),
+		       iptoa((int32_t)Linkdb::getLinkerIp_uk(&k)),
 		       docId,
-		       (int32_t)g_linkdb.getDiscoveryDate_uk(&k),
-		       (int32_t)g_linkdb.getLostDate_uk(&k),
-		       (int32_t)g_linkdb.getLinkerSiteHash32_uk(&k),
+		       (int32_t)Linkdb::getDiscoveryDate_uk(&k),
+		       (int32_t)Linkdb::getLostDate_uk(&k),
+		       (int32_t)Linkdb::getLinkerSiteHash32_uk(&k),
 		       shardNum,
 		       dd );
 	}

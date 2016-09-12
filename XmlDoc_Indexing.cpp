@@ -1088,7 +1088,7 @@ bool XmlDoc::hashLinksForLinkdb ( HashTableX *dt ) {
 #endif
 		// set this key, it is the entire record
 		key224_t k;
-		k = g_linkdb.makeKey_uk ( linkeeSiteHash32 ,
+		k = Linkdb::makeKey_uk ( linkeeSiteHash32 ,
 					  m_links.getLinkHash64(i)   ,
 					  spam               , // link spam?
 					  siteRank     , // was quality

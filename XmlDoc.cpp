@@ -12172,15 +12172,15 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 		}
 		else if ( rdbId == RDB_LINKDB ) {
 			key224_t *k2 = (key224_t *)k;
-			int64_t linkHash=g_linkdb.getLinkeeUrlHash64_uk(k2);
-			int32_t linkeeSiteHash  = g_linkdb.getLinkeeSiteHash32_uk(k2);
-			int32_t linkerSiteHash  = g_linkdb.getLinkerSiteHash32_uk(k2);
-			char linkSpam   = g_linkdb.isLinkSpam_uk    (k2);
-			int32_t siteRank = g_linkdb.getLinkerSiteRank_uk (k2);
-			//int32_t hopCount = g_linkdb.getLinkerHopCount_uk   (k2);
-			//int32_t ip24     = g_linkdb.getLinkerIp24_uk       (k2);
-			int32_t ip32       = g_linkdb.getLinkerIp_uk       (k2);
-			int64_t docId = g_linkdb.getLinkerDocId_uk      (k2);
+			int64_t linkHash=Linkdb::getLinkeeUrlHash64_uk(k2);
+			int32_t linkeeSiteHash  = Linkdb::getLinkeeSiteHash32_uk(k2);
+			int32_t linkerSiteHash  = Linkdb::getLinkerSiteHash32_uk(k2);
+			char linkSpam   = Linkdb::isLinkSpam_uk    (k2);
+			int32_t siteRank = Linkdb::getLinkerSiteRank_uk (k2);
+			//int32_t hopCount = Linkdb::getLinkerHopCount_uk   (k2);
+			//int32_t ip24     = Linkdb::getLinkerIp24_uk       (k2);
+			int32_t ip32       = Linkdb::getLinkerIp_uk       (k2);
+			int64_t docId = Linkdb::getLinkerDocId_uk      (k2);
 			// sanity check
 			if(dataSize!=0){g_process.shutdownAbort(true);}
 			sb->safePrintf("<td>"
@@ -13991,7 +13991,7 @@ skipNewAdd2:
 			uint64_t hk = (rdbId == RDB_LINKDB) ? hash64(k + 12, ks - 12) : hash64(k, ks);
 
 			// sanity check
-			if (rdbId == RDB_LINKDB && g_linkdb.getLinkerDocId_uk((key224_t *)k) != m_docId) {
+			if (rdbId == RDB_LINKDB && Linkdb::getLinkerDocId_uk((key224_t *)k) != m_docId) {
 				g_process.shutdownAbort(true);
 			}
 
@@ -14154,7 +14154,7 @@ skipNewAdd2:
 			// these so we can graph lost links
 			if (rdbId == RDB_LINKDB) {
 				// the real linkdb rec is at rec+1
-				int32_t lost = g_linkdb.getLostDate_uk( rec+1 );
+				int32_t lost = Linkdb::getLostDate_uk( rec+1 );
 
 				// how can it be non-zero? it should have
 				// been freshly made from the old titlerec...
@@ -14166,7 +14166,7 @@ skipNewAdd2:
 				gbmemcpy ( nptr , rec , 1 + ks );
 
 				// set it in there now
-				g_linkdb.setLostDate_uk(nptr+1,now);
+				Linkdb::setLostDate_uk(nptr+1,now);
 
 				// carry it through on revdb, do not delete
 				// it! we want a linkdb history for seomasters
