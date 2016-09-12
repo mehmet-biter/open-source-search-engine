@@ -17,9 +17,10 @@
 #ifndef GB_MULTICAST_H
 #define GB_MULTICAST_H
 
-#include "Hostdb.h"  // getGroup(), getTimes(), stampHost()
-#include "UdpServer.h"        // sendRequest()
-#include "Loop.h"         // registerSleepCallback()
+#include "MsgType.h"
+#include <inttypes.h>
+#include <stddef.h>
+
 
 #define MAX_HOSTS_PER_GROUP 10
 
@@ -30,6 +31,9 @@ static const int64_t multicast_msg1_senddata_timeout       =      60000;
 static const int64_t multicast_msg3a_default_timeout       =      10000;
 static const int64_t multicast_msg3a_maximum_timeout       =      60000;
 static const int64_t multicast_msg1c_getip_default_timeout =      60000;
+
+class UdpSlot;
+class Host;
 
 
 class Multicast {
