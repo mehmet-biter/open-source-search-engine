@@ -13683,15 +13683,20 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	// sanity check
 	verifyMetaList( m_metaList , m_p , forDelete );
 
+
 	//
 	// ADD SECTIONS SPECIAL TERMS
 	//
 	setStatus ( "adding sectiondb keys");
+
 	// checkpoint
 	saved = m_p;
 
 	// sanity check
-	if ( m_p - saved > needSectiondb ) { g_process.shutdownAbort(true); }
+	if (m_p - saved > needSectiondb) {
+		g_process.shutdownAbort(true);
+	}
+
 	// free mem
 	st1.reset();
 
@@ -13703,20 +13708,23 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	// ADD CLUSTERDB KEYS
 	//
 	setStatus ( "adding clusterdb keys" );
+
 	// checkpoint
 	saved = m_p;
+
 	// . do we have adult content?
 	// . should already be valid!
-	if ( nd && ! m_isAdultValid ) { g_process.shutdownAbort(true); }
+	if (nd && !m_isAdultValid) {
+		g_process.shutdownAbort(true);
+	}
+
 	// . get new clusterdb key
 	// . we use the host hash for the site hash! hey, this is only 26 bits!
-	key96_t newk ; newk.setMin();
-	if ( nd )
-		newk = g_clusterdb.makeClusterRecKey ( *nd->getDocId() ,
-						       *nd->getIsAdult() ,
-						       *nd->getLangId(),
-						        nd->getHostHash32a(),
-						        false ); // del?
+	key96_t newk;
+	newk.setMin();
+	if (nd) {
+		newk = g_clusterdb.makeClusterRecKey(*nd->getDocId(), *nd->getIsAdult(), *nd->getLangId(), nd->getHostHash32a(), false);
+	}
 
 	// . store old only if new tr is good and keys are different from old
 	// . now we store even if skipIndexing is true because i'd like to
@@ -13725,38 +13733,50 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	if ( nd && m_useClusterdb ) {
 		// store rdbid
 		*m_p = RDB_CLUSTERDB;
+
 		// use secondary if we should
-		if ( m_useSecondaryRdbs ) *m_p = RDB2_CLUSTERDB2;
+		if ( m_useSecondaryRdbs ) {
+			*m_p = RDB2_CLUSTERDB2;
+		}
+
 		// skip
 		m_p++;
+
 		// and key
 		*(key96_t *)m_p = newk;
+
 		// skip it
 		m_p += sizeof(key96_t);
 	}
 
 	// sanity check
-	if ( m_p - saved > needClusterdb ) { g_process.shutdownAbort(true); }
+	if (m_p - saved > needClusterdb) {
+		g_process.shutdownAbort(true);
+	}
+
 	// sanity check
 	verifyMetaList( m_metaList , m_p , forDelete );
-
 
 
 	//
 	// ADD LINKDB KEYS
 	//
 	setStatus ( "adding linkdb keys" );
+
 	// checkpoint
 	saved = m_p;
+
 	// add that table to the metalist (LINKDB)
-	if ( m_useLinkdb && !addTable224(&kt1))
-	{
-		logTrace( g_conf.m_logTraceXmlDoc, "addTable224 failed" );
+	if (m_useLinkdb && !addTable224(&kt1)) {
+		logTrace(g_conf.m_logTraceXmlDoc, "addTable224 failed");
 		return NULL;
 	}
 
 	// sanity check
-	if ( m_p - saved > needLinkdb ) { g_process.shutdownAbort(true); }
+	if (m_p - saved > needLinkdb) {
+		g_process.shutdownAbort(true);
+	}
+
 	// all done
 	kt1.reset();
 
@@ -13975,7 +13995,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		dt8.set(8, sizeof(char *), 2048, dbuf8, 34900, false, "dt8-tab");
 
 		// scan recs in that and hash them
-		for ( char *p = om ; p < omend ; ) {
+		for (char *p = om; p < omend;) {
 			// save this
 			char byte = *p;
 			char *rec = p;
@@ -13985,7 +14005,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 			p++;
 
 			// get the key size
-			int32_t ks = getKeySizeFromRdbId ( rdbId );
+			int32_t ks = getKeySizeFromRdbId(rdbId);
 
 			// get that
 			char *k = p;
@@ -14015,7 +14035,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 				g_process.shutdownAbort(true);
 			}
 
-			if (g_conf.m_noInMemoryPosdbMerge && rdbId == RDB_POSDB) {
+			if (rdbId == RDB_POSDB && g_conf.m_noInMemoryPosdbMerge) {
 				// NEW 20160803.
 				// Do not store records for POSDB in the hash table of old
 				// values. This makes sure that no delete records are
@@ -14025,7 +14045,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 			}
 
 			if (!dt8.addKey(&hk, &rec)) {
-				logTrace( g_conf.m_logTraceXmlDoc, "addKey failed" );
+				logTrace(g_conf.m_logTraceXmlDoc, "addKey failed");
 				return NULL;
 			}
 		}
