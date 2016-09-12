@@ -13095,8 +13095,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	//   the inlink texts for hashing
 	//if ( m_useTitledb ) {
 	LinkInfo *info1 = getLinkInfo1();
-	if ( ! info1 || info1 == (LinkInfo *)-1 )
-	{
+	if ( ! info1 || info1 == (LinkInfo *)-1 ) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END, getLinkInfo1 failed" );
 		return (char *)info1;
 	}
@@ -13104,16 +13103,14 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 
 	// so getSiteRank() works
 	int32_t *sni = getSiteNumInlinks();
-	if ( ! sni || sni == (int32_t *)-1 )
-	{
+	if ( ! sni || sni == (int32_t *)-1 ) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END, getSiteNumInlinks failed" );
 		return (char *)sni;
 	}
 
 	// so addTable144 works
 	uint8_t *langId = getLangId();
-	if ( ! langId || langId == (uint8_t *)-1 )
-	{
+	if ( ! langId || langId == (uint8_t *)-1 ) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END, getLangId failed" );
 		return (char *) langId;
 	}
@@ -13128,8 +13125,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		// all member vars should already be valid if set from titlerec
 		char *ptg = prepareToMakeTitleRec ();
 		// return NULL with g_errno set on error
-		if ( ! ptg || ptg == (void *)-1 )
-		{
+		if ( ! ptg || ptg == (void *)-1 ) {
 			logTrace( g_conf.m_logTraceXmlDoc, "END, prepareToMakeTitleRec failed" );
 			return (char *)ptg;
 		}
@@ -13137,8 +13133,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 
 	// our next slated spider priority
 	char *spiderLinks3 = getSpiderLinks();
-	if ( ! spiderLinks3  || spiderLinks3 == (char *)-1 )
-	{
+	if ( ! spiderLinks3  || spiderLinks3 == (char *)-1 ) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END, getSpiderLinks failed" );
 		return (char *)spiderLinks3;
 	}
@@ -13207,8 +13202,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		logTrace( g_conf.m_logTraceXmlDoc, "call getOutlinkTagRecVector" );
 
 		TagRec ***grv = getOutlinkTagRecVector();
-		if ( ! grv || grv == (void *)-1 )
-		{
+		if ( ! grv || grv == (void *)-1 ) {
 			logTrace( g_conf.m_logTraceXmlDoc, "END, getOutlinkTagRecVector returned -1" );
 			return (char *)grv;
 		}
@@ -13216,8 +13210,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		logTrace( g_conf.m_logTraceXmlDoc, "call getOutlinkFirstIpVector" );
 
 		int32_t    **ipv = getOutlinkFirstIpVector();
-		if ( ! ipv || ipv == (void *)-1 )
-		{
+		if ( ! ipv || ipv == (void *)-1 ) {
 			logTrace( g_conf.m_logTraceXmlDoc, "END, getOutlinkFirstIpVector returned -1" );
 			return (char *)ipv;
 		}
@@ -13230,8 +13223,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	if ( m_useTagdb && ! m_deleteFromIndex ) {
 		logTrace( g_conf.m_logTraceXmlDoc, "call getNewTagBuf" );
 		ntb = getNewTagBuf();
-		if ( ! ntb || ntb == (void *)-1 )
-		{
+		if ( ! ntb || ntb == (void *)-1 ) {
 			logTrace( g_conf.m_logTraceXmlDoc, "END, getNewTagBuf failed" );
 			return (char *)ntb;
 		}
@@ -13239,22 +13231,19 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 
 	logTrace( g_conf.m_logTraceXmlDoc, "call getIsSiteRoot" );
 	char *isRoot = getIsSiteRoot();
-	if ( ! isRoot || isRoot == (char *)-1 )
-	{
+	if ( ! isRoot || isRoot == (char *)-1 ) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END, getIsSiteRoot returned -1" );
 		return (char *)isRoot;
 	}
 
 	Words *ww = getWords();
-	if ( ! ww || ww == (void *)-1 )
-	{
+	if ( ! ww || ww == (void *)-1 ) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END, getWords returned -1" );
 		return (char *)ww;
 	}
 
 	int64_t *pch64 = getExactContentHash64();
-	if ( ! pch64 || pch64 == (void *)-1 )
-	{
+	if ( ! pch64 || pch64 == (void *)-1 ) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END, getExactContentHash64 returned -1" );
 		return (char *)pch64;
 	}
@@ -13262,8 +13251,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	// need firstip if adding a rebuilt spider request
 	if ( m_useSecondaryRdbs && m_useSpiderdb ) {
 		int32_t *fip = getFirstIp();
-		if ( ! fip || fip == (void *)-1 )
-		{
+		if ( ! fip || fip == (void *)-1 ) {
 			logTrace( g_conf.m_logTraceXmlDoc, "END, getFirstIp returned -1" );
 			return (char *)fip;
 		}
@@ -13276,8 +13264,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	SpiderReply *newsr = NULL;
 	if ( m_useSpiderdb ) { // && ! m_deleteFromIndex ) {
 		newsr = getNewSpiderReply();
-		if ( ! newsr || newsr == (void *)-1 )
-		{
+		if ( ! newsr || newsr == (void *)-1 ) {
 			logTrace( g_conf.m_logTraceXmlDoc, "END, getNewSpiderReply failed" );
 			return (char *)newsr;
 		}
@@ -13285,16 +13272,14 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 
 	// the site hash for hashing
 	int32_t *sh32 = getSiteHash32();
-	if ( ! sh32 || sh32 == (int32_t *)-1 )
-	{
+	if ( ! sh32 || sh32 == (int32_t *)-1 ) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END, getSiteHash32 failed" );
 		return (char *)sh32;
 	}
 
 	if ( m_useLinkdb && ! m_deleteFromIndex ) {
 		int32_t *linkSiteHashes = getLinkSiteHashes();
-		if ( ! linkSiteHashes || linkSiteHashes == (void *)-1 )
-		{
+		if ( ! linkSiteHashes || linkSiteHashes == (void *)-1 ) {
 			logTrace( g_conf.m_logTraceXmlDoc, "END, getLinkSiteHashes failed" );
 			return (char *)linkSiteHashes;
 		}
@@ -13327,8 +13312,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		}
 	}
 
-	if ( spiderStatusDocMetaList == (void *)-1)
-	{
+	if ( spiderStatusDocMetaList == (void *)-1) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END, getSpiderStatusDocMetaList failed" );
 		return (char *)spiderStatusDocMetaList;
 	}
