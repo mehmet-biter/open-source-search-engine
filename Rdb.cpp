@@ -123,6 +123,7 @@ bool Rdb::init ( const char     *dir                  ,
 	m_useHalfKeys      = useHalfKeys;
 	m_isTitledb        = isTitledb;
 	m_ks               = keySize;
+	m_useIndexFile     = useIndexFile;
 	m_inDumpLoop       = false;
 
 	// set our id
@@ -135,12 +136,6 @@ bool Rdb::init ( const char     *dir                  ,
 	// sanity check
 	if (m_ks != getKeySizeFromRdbId(m_rdbId)) {
 		g_process.shutdownAbort(true);
-	}
-
-	if (m_rdbId == RDB_POSDB || m_rdbId == RDB2_POSDB2) {
-		m_useIndexFile = g_conf.m_noInMemoryPosdbMerge ? useIndexFile : false;
-	} else {
-		m_useIndexFile = useIndexFile;
 	}
 
 	// get page size
