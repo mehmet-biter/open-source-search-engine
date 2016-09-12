@@ -1496,11 +1496,6 @@ bool RdbList::posdbConstrain(const char *startKey, char *endKey, int32_t minRecS
 
 		// write the full key back into "p"
 		KEYSET(p, k, 18);
-	} else if (p[0] & 0x02) {
-		// write the key back 6 bytes
-		p -= 6;
-
-		KEYSET(p, k, 18);
 	}
 
 	// inc m_list , m_alloc should remain where it is
