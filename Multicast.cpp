@@ -4,6 +4,7 @@
 #include "Stats.h"
 #include "Conf.h"
 #include "Loop.h"         // registerSleepCallback()
+#include "ScopedLock.h"
 #include "Process.h"
 
 // up to 10 twins in a group
@@ -25,7 +26,9 @@ void Multicast::destructor() {
 	reset();
 }
 
-Multicast::Multicast ( ) {
+Multicast::Multicast()
+  : m_mtx()
+{
 	constructor();
 
 }
@@ -161,6 +164,7 @@ bool Multicast::send(char *msg, int32_t msgSize, msg_type_t msgType, bool ownMsg
 // . TODO: deal with errors from g_udpServer::sendRequest() better
 // . returns false and sets g_errno on error
 void Multicast::sendToGroup() {
+	ScopedLock sl(m_mtx);
 	// see if anyone gets an error
 	bool hadError = false;
 	// . cast the msg to ALL hosts in the m_hosts group of hosts
@@ -254,6 +258,7 @@ void Multicast::gotReply2(void *state, UdpSlot *slot) {
 //   successful reply
 // . we keep re-trying forever until they do
 void Multicast::gotReply2 ( UdpSlot *slot ) {
+	ScopedLock sl(m_mtx);
 	// don't ever let UdpServer free this send buf (it is m_msg)
 	slot->m_sendBufAlloc = NULL;
 	// save this for msg4 logic that calls injection callback
@@ -291,6 +296,7 @@ void Multicast::gotReply2 ( UdpSlot *slot ) {
 		// allow us to be re-used now, callback might relaunch
 		m_inUse = false;
 		if ( m_callback ) {
+			sl.unlock();
 			m_callback ( m_state , m_state2 );
 		}
 		return;
@@ -627,6 +633,7 @@ bool Multicast::sendToHost ( int32_t i ) {
 	// . this creates a transaction control slot, "udpSlot"
 	// . return false and sets g_errno on error
 	// . returns true on successful launch and calls callback on completion
+	ScopedLock sl(m_mtx);
 	if (!us->sendRequest(m_msg, m_msgSize, m_msgType, bestIp, destPort, hid, &m_slots[i], this, gotReply1, timeRemaining, m_niceness, NULL, -1, -1, maxResends)) {
 		log(LOG_WARN, "net: Had error sending msgtype 0x%02x to host #%" PRId32": %s. Not retrying.",
 		    m_msgType,h->m_hostId,mstrerror(g_errno));
@@ -860,6 +867,8 @@ void Multicast::gotReply1(void *state, UdpSlot *slot) {
 
 // come here if we've got a reply from a host that's not part of a group send
 void Multicast::gotReply1 ( UdpSlot *slot ) {		
+	ScopedLock sl(m_mtx);
+
 	// don't ever let UdpServer free this send buf (it is m_msg)
 	slot->m_sendBufAlloc = NULL;
 
@@ -900,6 +909,8 @@ void Multicast::gotReply1 ( UdpSlot *slot ) {
 		log(LOG_DEBUG, "net: Twin msgType=0x%" PRIx32" (this=0x%" PTRFMT") reply: %s.",
 		    (int32_t) m_msgType, (PTRTYPE) this, mstrerror(g_errno));
 	}
+
+	sl.unlock();
 
 	// on error try sending the request to another host
 	// return if we kicked another request off ok

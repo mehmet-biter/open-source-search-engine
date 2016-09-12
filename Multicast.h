@@ -18,6 +18,7 @@
 #define GB_MULTICAST_H
 
 #include "MsgType.h"
+#include "GbMutex.h"
 #include <inttypes.h>
 #include <stddef.h>
 
@@ -131,6 +132,8 @@ class Multicast {
 	class ImportState *m_importState;
 
 private:
+	GbMutex m_mtx;
+
 	void       *m_state;
 	void       *m_state2;
 	void       (* m_callback)( void *state , void *state2 );
