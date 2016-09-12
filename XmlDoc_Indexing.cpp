@@ -291,7 +291,7 @@ bool XmlDoc::hashNoSplit ( HashTableX *tt ) {
 // . "ws" store the terms for PageParser.cpp display
 char *XmlDoc::hashAll ( HashTableX *table ) {
 
-	if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__,__func__, __LINE__);
+	logTrace(g_conf.m_logTraceXmlDoc, "BEGIN");
 		
 	setStatus ( "hashing document" );
 
@@ -308,7 +308,7 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 	uint8_t *ct = getContentType();
 	if ( ! ct )
 	{
-		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, getContentType failed", __FILE__,__func__, __LINE__);
+		logTrace(g_conf.m_logTraceXmlDoc, "END, getContentType failed");
 		return NULL;
 	}
 	
@@ -320,7 +320,7 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 		// eventually ban it.
 		if ( !hashUrl( table, true ) )  // urlOnly (skip IP and term generation)
 		{
-			if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, hashUrl failed", __FILE__,__func__, __LINE__);
+			logTrace(g_conf.m_logTraceXmlDoc, "END, hashUrl failed");
 			return NULL;
 		}
 		m_allHashed = true;
@@ -332,7 +332,7 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 	unsigned char *hc = (unsigned char *)getHopCount();
 	if ( ! hc || hc == (void *)-1 ) 
 	{
-		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, getHopCount returned -1", __FILE__,__func__, __LINE__);
+		logTrace(g_conf.m_logTraceXmlDoc, "END, getHopCount returned -1");
 		return (char *)hc;
 	}
 
@@ -340,7 +340,7 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 	HashTableX *cnt = getCountTable();
 	if ( ! cnt ) 
 	{
-		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, getCountTable failed", __FILE__,__func__, __LINE__);
+		logTrace(g_conf.m_logTraceXmlDoc, "END, getCountTable failed");
 		return (char *)cnt;
 	}
 	if ( cnt == (void *)-1 ) { g_process.shutdownAbort(true); }
@@ -349,7 +349,7 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 	Links *links = getLinks();
 	if ( ! links ) 
 	{
-		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, getLinks failed", __FILE__,__func__, __LINE__);
+		logTrace(g_conf.m_logTraceXmlDoc, "END, getLinks failed");
 		return (char *)links;
 	}
 	if ( links == (Links *)-1 ) { g_process.shutdownAbort(true); }
@@ -357,7 +357,7 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 	char *wordSpamVec = getWordSpamVec();
 	if (!wordSpamVec) 
 	{
-		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, getWordSpamVec failed", __FILE__,__func__, __LINE__);
+		logTrace(g_conf.m_logTraceXmlDoc, "END, getWordSpamVec failed");
 		return (char *)wordSpamVec;
 	}
 	if (wordSpamVec==(void *)-1) {g_process.shutdownAbort(true);}
@@ -365,7 +365,7 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 	char *fragVec = getFragVec();//m_fragBuf.getBufStart();
 	if ( ! fragVec ) 
 	{
-		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, getFragVec failed", __FILE__,__func__, __LINE__);
+		logTrace(g_conf.m_logTraceXmlDoc, "END, getFragVec failed");
 		return (char *)fragVec;
 	}
 	if ( fragVec == (void *)-1 ) { g_process.shutdownAbort(true); }
@@ -375,7 +375,7 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 		uint8_t *lv = getLangVector();
 		if ( ! lv ) 
 		{
-			if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, getLangVector failed", __FILE__,__func__, __LINE__);
+			logTrace(g_conf.m_logTraceXmlDoc, "END, getLangVector failed");
 			return (char *)lv;
 		}
 		if ( lv == (void *)-1 ) { g_process.shutdownAbort(true); }
@@ -384,7 +384,7 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) 
 	{
-		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, getCollRec failed", __FILE__,__func__, __LINE__);
+		logTrace(g_conf.m_logTraceXmlDoc, "END, getCollRec failed");
 		return NULL;
 	}
 
@@ -398,25 +398,25 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 
 	if ( ! hashContentType   ( table ) ) 
 	{
-		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, hashContentType failed", __FILE__,__func__, __LINE__);
+		logTrace(g_conf.m_logTraceXmlDoc, "END, hashContentType failed");
 		return NULL;
 	}
 	
 	if ( ! hashUrl           ( table, false ) ) 
 	{
-		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, hashUrl failed", __FILE__,__func__, __LINE__);
+		logTrace(g_conf.m_logTraceXmlDoc, "END, hashUrl failed");
 		return NULL;
 	}
 	
 	if ( ! hashLanguage      ( table ) ) 
 	{
-		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, hashLanguage failed", __FILE__,__func__, __LINE__);
+		logTrace(g_conf.m_logTraceXmlDoc, "END, hashLanguage failed");
 		return NULL;
 	}
 	
 	if ( ! hashCountry       ( table ) ) 
 	{
-		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, hashCountry failed", __FILE__,__func__, __LINE__);
+		logTrace(g_conf.m_logTraceXmlDoc, "END, hashCountry failed");
 		return NULL;
 	}
 
@@ -424,7 +424,7 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 // BR 20160106 removed:	if ( ! hashSubmitUrls    ( table ) ) return NULL;
 	if ( ! hashIsAdult       ( table ) ) 
 	{
-		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, hashIsAdult failed", __FILE__,__func__, __LINE__);
+		logTrace(g_conf.m_logTraceXmlDoc, "END, hashIsAdult failed");
 		return NULL;
 	}
 
@@ -437,7 +437,7 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 	// which we use for diffbot custom crawls as well.
 	if ( ! hashNoSplit ( table ) ) 
 	{
-		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, hashNoSplit failed", __FILE__,__func__, __LINE__);
+		logTrace(g_conf.m_logTraceXmlDoc, "END, hashNoSplit failed");
 		return NULL;
 	}
 
@@ -454,7 +454,7 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 	// usage by about half, posdb* files are pretty big.
 	if ( ! indexDoc ) 
 	{
-		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, !indexDoc", __FILE__,__func__, __LINE__);
+		logTrace(g_conf.m_logTraceXmlDoc, "END, !indexDoc");
 		return (char *)1;
 	}
 
@@ -466,7 +466,7 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 	// the rainbow display of sections
 	if ( ! hashBody2 (table ) ) 
 	{
-		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, hashBody2 failed", __FILE__,__func__, __LINE__);
+		logTrace(g_conf.m_logTraceXmlDoc, "END, hashBody2 failed");
 		return NULL;
 	}
 
@@ -478,7 +478,7 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 	// else. give them triple the body score
 	if ( ! hashTitle ( table )) 
 	{
-		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, hashTitle failed", __FILE__,__func__, __LINE__);
+		logTrace(g_conf.m_logTraceXmlDoc, "END, hashTitle failed");
 		return NULL;
 	}
 
@@ -487,7 +487,7 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 	//   what is already in the hash table
 	if ( ! hashMetaKeywords(table ) ) 
 	{
-		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, hashMetaKeywords failed", __FILE__,__func__, __LINE__);
+		logTrace(g_conf.m_logTraceXmlDoc, "END, hashMetaKeywords failed");
 		return NULL;
 	}
 
@@ -497,7 +497,7 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 	// query because it had a bunch of anomalous inlink text.
 	if ( ! hashIncomingLinkText(table,false,true)) 
 	{
-		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, hashIncomingLinkText failed", __FILE__,__func__, __LINE__);
+		logTrace(g_conf.m_logTraceXmlDoc, "END, hashIncomingLinkText failed");
 		return NULL;
 	}
 
@@ -506,7 +506,7 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 	// somewhere.
 	if ( ! hashMetaSummary(table) ) 
 	{
-		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, hashMetaSummary failed", __FILE__,__func__, __LINE__);
+		logTrace(g_conf.m_logTraceXmlDoc, "END, hashMetaSummary failed");
 		return NULL;
 	}
 
@@ -516,7 +516,7 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 	// location specific sites, e.g. 'Restaurant in London'
 	if ( ! hashMetaGeoPlacename(table) ) 
 	{
-		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, hashMetaGeoPlacename failed", __FILE__,__func__, __LINE__);
+		logTrace(g_conf.m_logTraceXmlDoc, "END, hashMetaGeoPlacename failed");
 		return NULL;
 	}
 
@@ -529,38 +529,38 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 	// necessarily and we do not want to ruin our precision
 	if ( ! hashNeighborhoods ( table ) ) 
 	{
-		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, hashNeighborhoods failed", __FILE__,__func__, __LINE__);
+		logTrace(g_conf.m_logTraceXmlDoc, "END, hashNeighborhoods failed");
 		return NULL;
 	}
 
 	if ( ! hashLinks         ( table ) ) 
 	{
-		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, hashLinks failed", __FILE__,__func__, __LINE__);
+		logTrace(g_conf.m_logTraceXmlDoc, "END, hashLinks failed");
 		return NULL;
 	}
 	
 	if ( ! hashDateNumbers   ( table ) ) 
 	{
-		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, hashDateNumbers failed", __FILE__,__func__, __LINE__);
+		logTrace(g_conf.m_logTraceXmlDoc, "END, hashDateNumbers failed");
 		return NULL;
 	}
 	
 	if ( ! hashMetaTags      ( table ) ) 
 	{
-		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, hashMetaTags failed", __FILE__,__func__, __LINE__);
+		logTrace(g_conf.m_logTraceXmlDoc, "END, hashMetaTags failed");
 		return NULL;
 	}
 
 	if ( ! hashPermalink     ( table ) )
 	{
-		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, hashPermaLink failed", __FILE__,__func__, __LINE__);
+		logTrace(g_conf.m_logTraceXmlDoc, "END, hashPermaLink failed");
 		return NULL;
 	}
 
 	// hash gblang:de last for parsing consistency
 	if ( ! hashLanguageString ( table ) ) 
 	{
-		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, hashLanguageString failed", __FILE__,__func__, __LINE__);
+		logTrace(g_conf.m_logTraceXmlDoc, "END, hashLanguageString failed");
 		return NULL;
 	}
 
@@ -575,7 +575,7 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 	//if ( ! m_pbuf ) return true;
 	// print out the table into g_bufPtr now if we need to
 	//table->print ( );
-	if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, OK", __FILE__,__func__, __LINE__);
+	logTrace(g_conf.m_logTraceXmlDoc, "END, OK");
 	return (char *)1;
 }
 
