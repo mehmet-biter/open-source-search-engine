@@ -16,7 +16,6 @@
 #include "GbMutex.h"
 #include "ScopedLock.h"
 
-static void gotMsg0ReplyWrapper ( void *state );
 
 static HashTableX s_ht;
 static bool s_initialized = false;
@@ -1533,7 +1532,7 @@ bool Msg8a::launchGetRequests ( ) {
 	return (m_requests == m_replies);
 }
 	
-static void gotMsg0ReplyWrapper ( void *state ) {
+void Msg8a::gotMsg0ReplyWrapper ( void *state ) {
 	Msg8aState *msg8aState = (Msg8aState*)state;
 
 	Msg8a *msg8a = msg8aState->m_msg8a;
