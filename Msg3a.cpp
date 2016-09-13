@@ -639,7 +639,7 @@ bool Msg3a::gotAllShardReplies ( ) {
 			     j                                        ,
 			     i                                        ,
 			     docIds [j] ,
-			     (int32_t)g_titledb.getDomHash8FromDocId(docIds[j]),
+			     (int32_t)Titledb::getDomHash8FromDocId(docIds[j]),
 			      scores[j] );
 		}
 	}

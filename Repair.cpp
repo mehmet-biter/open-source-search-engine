@@ -1157,11 +1157,11 @@ bool Repair::gotScanRecList ( ) {
 		m_nextTitledbKey = next;
 		*/
 		// get the docid
-		//int64_t dd = g_titledb.getDocIdFromKey(&m_nextTitledbKey);
+		//int64_t dd = Titledb::getDocIdFromKey(&m_nextTitledbKey);
 		// inc it
 		//dd++;
 		// re-make key
-		//m_nextTitledbKey = g_titledb.makeFirstTitleRecKey ( dd );
+		//m_nextTitledbKey = Titledb::makeFirstTitleRecKey ( dd );
 		// advance one if positive, must always start on a neg
 		if ( (m_nextTitledbKey.n0 & 0x01) == 0x01 ) 
 			m_nextTitledbKey += (uint32_t)1;
@@ -1209,7 +1209,7 @@ bool Repair::gotScanRecList ( ) {
 
 	// nextRec2:
 	key96_t tkey = m_titleRecList.getCurrentKey();
-	int64_t docId = g_titledb.getDocId ( &tkey );
+	int64_t docId = Titledb::getDocId ( &tkey );
 	// save it
 	//m_currentTitleRecKey = tkey;
 
@@ -1372,7 +1372,7 @@ bool Repair::injectTitleRec ( ) {
 		// skip negative recs, first one should not be negative however
 		if ( ( k->n0 & 0x01 ) == 0x00 ) continue;
 		// get docid of that guy
-		int64_t dd = g_titledb.getDocId(k);
+		int64_t dd = Titledb::getDocId(k);
 		// compare that
 		if ( m_docId != dd ) continue;
 		// we got it!

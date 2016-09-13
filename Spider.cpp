@@ -4139,7 +4139,7 @@ bool getSpiderStatusMsg ( CollectionRec *cx , SafeBuf *msg , int32_t *status ) {
 
 static int32_t getFakeIpForUrl2(Url *url2) {
 	// make the probable docid
-	int64_t probDocId = g_titledb.getProbableDocId ( url2 );
+	int64_t probDocId = Titledb::getProbableDocId ( url2 );
 	// make one up, like we do in PageReindex.cpp
 	int32_t firstIp = (probDocId & 0xffffffff);
 	return firstIp;
@@ -4154,7 +4154,7 @@ bool SpiderRequest::setFromAddUrl(const char *url) {
 	// reset it
 	reset();
 	// make the probable docid
-	int64_t probDocId = g_titledb.getProbableDocId ( url );
+	int64_t probDocId = Titledb::getProbableDocId ( url );
 
 	// make one up, like we do in PageReindex.cpp
 	int32_t firstIp = (probDocId & 0xffffffff);

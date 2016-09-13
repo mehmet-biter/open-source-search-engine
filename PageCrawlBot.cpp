@@ -188,7 +188,7 @@ bool getSpiderRequestMetaList ( const char *doc, SafeBuf *listBuf, bool spiderLi
 		if ( url.getUrlLen() <= 0 ) continue;
 
 		// need this
-		int64_t probDocId = g_titledb.getProbableDocId(&url);
+		int64_t probDocId = Titledb::getProbableDocId(&url);
 
 		// make it
 		SpiderRequest sreq;

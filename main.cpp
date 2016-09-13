@@ -2844,7 +2844,7 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 	startKey.setMin();
 	endKey.setMax();
 	lastKey.setMin();
-	startKey = g_titledb.makeFirstKey ( docid );
+	startKey = Titledb::makeFirstKey ( docid );
 	// turn off threads
 	g_jobScheduler.disallow_new_jobs();
 	// get a meg at a time
@@ -2909,7 +2909,7 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 		key96_t k       = list.getCurrentKey();
 		char *rec     = list.getCurrentRec();
 		int32_t  recSize = list.getCurrentRecSize();
-		int64_t docId       = g_titledb.getDocIdFromKey ( k );
+		int64_t docId       = Titledb::getDocIdFromKey ( &k );
 		if ( k <= lastKey )
 			log("key out of order. "
 			    "lastKey.n1=%" PRIx32" n0=%" PRIx64" "
@@ -4292,8 +4292,8 @@ bool parseTest ( const char *coll, int64_t docId, const char *query ) {
 	// get a title rec
 	g_jobScheduler.disallow_new_jobs();
 	RdbList tlist;
-	key96_t startKey = g_titledb.makeFirstKey ( docId );
-	key96_t endKey   = g_titledb.makeLastKey  ( docId );
+	key96_t startKey = Titledb::makeFirstKey ( docId );
+	key96_t endKey   = Titledb::makeLastKey  ( docId );
 	// a niceness of 0 tells it to block until it gets results!!
 	Msg5 msg5;
 
@@ -4722,7 +4722,7 @@ void dumpPosdb (const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 		const char *dd = "";
 		if ( (k.n0 & 0x01) == 0x00 ) dd = " (delete)";
 		int64_t d = g_posdb.getDocId(&k);
-		uint8_t dh = g_titledb.getDomHash8FromDocId(d);
+		uint8_t dh = Titledb::getDomHash8FromDocId(d);
 		char *rec = list.getCurrentRec();
 		int32_t recSize = 18;
 		if ( rec[0] & 0x04 ) recSize = 6;
@@ -5441,7 +5441,7 @@ int injectFile ( const char *filename , char *ips , const char *coll ) {
 		}
 
 		if ( startDocId != 0LL )
-			s_titledbKey = g_titledb.makeFirstKey(startDocId);
+			s_titledbKey = Titledb::makeFirstKey(startDocId);
 
 		s_endDocId = endDocId;
 
@@ -5569,7 +5569,7 @@ void doInject ( int fd , void *state ) {
 		// turn off threads so this happens right away
 		g_jobScheduler.disallow_new_jobs();
 		key96_t endKey; //endKey.setMax();
-		endKey = g_titledb.makeFirstKey(s_endDocId);
+		endKey = Titledb::makeFirstKey(s_endDocId);
 		RdbList list;
 		Msg5 msg5;
 		const char *coll = "main";
@@ -7160,7 +7160,7 @@ void countdomains( const char* coll, int32_t numRecs, int32_t verbosity, int32_t
 		key96_t k       = list.getCurrentKey();
 		char *rec     = list.getCurrentRec();
 		int32_t  recSize = list.getCurrentRecSize();
-		int64_t docId       = g_titledb.getDocId        ( &k );
+		int64_t docId       = Titledb::getDocId        ( &k );
 		attempts++;
 
 		if ( k <= lastKey ) 

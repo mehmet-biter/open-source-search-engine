@@ -45,7 +45,7 @@ public:
 	//   in the case of a collision we pick a nearby docId that is 
 	//   different but guaranteed to be in the same group/cluster, so you 
 	//   can be assured the top 32 bits of the docId will be unchanged
-	static uint64_t getProbableDocId(Url *url, bool mask = true) {
+	static uint64_t getProbableDocId(const Url *url, bool mask = true) {
 		uint64_t probableDocId = hash64b(url->getUrl(),0);
 		// Linkdb::getUrlHash() does not mask it
 		if ( mask ) probableDocId = probableDocId & DOCID_MASK;
@@ -95,15 +95,13 @@ public:
 	// . we use the top X bits of the keys to partition the records
 	// . using the top bits to partition allows us to keep keys that
 	//   are near each other (euclidean metric) in the same partition
-	static int64_t getDocIdFromKey(key96_t *key) {
+	static int64_t getDocIdFromKey(const key96_t *key) {
 		uint64_t docId = ((uint64_t)key->n1) << (NUMDOCIDBITS - 32);
 		docId |= key->n0 >> (64 - (NUMDOCIDBITS - 32));
 		return docId;
 	}
 
-	static int64_t getDocId(key96_t *key) { return getDocIdFromKey(key); }
-
-	static int64_t getDocIdFromKey(key96_t key) { return getDocIdFromKey(&key); }
+	static int64_t getDocId(const key96_t *key) { return getDocIdFromKey(key); }
 
 	static uint8_t getDomHash8FromDocId (int64_t d) {
 		return (d & ~0xffffffffffffc03fULL) >> 6;
@@ -113,24 +111,11 @@ public:
 		return ((k->n0 >> 10) & 0x0000ffffffffffffLL);
 	}
 
-	// . dptr is a char ptr to the docid
-	// . used by IndexTable2.cpp
-	// . "dptr" is pointing into a 6-byte indexdb key
-	// . see IndexTable2.cpp, grep for gbmemcpy() to see
-	//   how the docid is parsed out of this key (or see
-	//   Indexdb.h)
-	// . return  ((*((uint16_t *)dptr)) >> 8) & 0xff; }
-	static uint8_t getDomHash8 ( uint8_t *dptr ) { return dptr[1]; }
-
 	// does this key/docId/url have it's titleRec stored locally?
 	static bool isLocal(int64_t docId);
 
 	static bool isLocal(Url *url) {
 		return isLocal(getProbableDocId(url));
-	}
-
-	static bool isLocal(key96_t key) {
-		return isLocal(getDocIdFromKey(&key));
 	}
 
 	// . make the key of a TitleRec from a docId

@@ -1327,10 +1327,6 @@ bool SpiderLoop::spiderUrl9 ( SpiderRequest *sreq ,
 	// shortcut
 	int64_t lockKeyUh48 = makeLockTableKey ( sreq );
 
-	//uint64_t lockKey ;
-	//lockKey = g_titledb.getFirstProbableDocId(sreq->m_probDocId);
-	//lockKey = g_titledb.getFirstProbableDocId(sreq->m_probDocId);
-
 	// . now that we have to use msg12 to see if the thing is locked
 	//   to avoid spidering it.. (see comment in above function)
 	//   we often try to spider something we are already spidering. that

@@ -918,7 +918,7 @@ bool XmlDoc::set2 ( char    *titleRec ,
 	}
 
 	// set m_docId from key
-	m_docId = Titledb::getDocIdFromKey ( m_titleRecKey );
+	m_docId = Titledb::getDocIdFromKey ( &m_titleRecKey );
 	// validate that
 	m_docIdValid = true;
 	// then the size of the data that follows this
