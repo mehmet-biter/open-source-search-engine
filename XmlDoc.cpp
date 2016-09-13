@@ -13398,7 +13398,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 	}
 
 	// pre-grow table based on # outlinks
-	kt1.set ( sizeof(key224_t),0,nis,NULL,0,false,"link-indx" );
+	kt1.set(sizeof(key224_t), 0, nis, NULL, 0, false, "link-indx");
 
 	// use magic to make fast
 	kt1.m_useKeyMagic = true;
@@ -13617,7 +13617,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 	tt1.reset();
 
 	// sanity check
-	verifyMetaList( m_metaList , m_p , forDelete );
+	verifyMetaList(m_metaList, m_p, forDelete);
 
 
 	//
@@ -13861,6 +13861,7 @@ skipNewAdd2:
 	//
 	// ADD TAG RECORDS TO TAGDB
 	//
+
 	// checkpoint
 	saved = m_p;
 
