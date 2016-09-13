@@ -27,7 +27,44 @@ void Multicast::destructor() {
 }
 
 Multicast::Multicast()
-  : m_mtx()
+  : m_msg(NULL),
+    m_msgSize(0),
+    m_msgType((msg_type_t)-1),
+    m_ownMsg(false),
+    m_slot(NULL),
+    m_inUse(false),
+    m_next(NULL),
+    m_replyingHost(NULL),
+    m_replyLaunchTime(0),
+    m_hackFileId(0),
+    m_hackFileOff(0),
+    m_importState(NULL),
+    m_mtx(),
+    m_state(NULL), m_state2(NULL),
+    m_callback(NULL),
+    m_totalTimeout(0),
+    m_startTime(0),
+    m_numReplies(0),
+    //m_hostPtrs
+    m_numHosts(0),
+    //m_retired
+    //m_slots
+    //m_errnos
+    //m_inProgress
+    //m_launchTime
+    m_readBuf(NULL),
+    m_readBufSize(0),
+    m_readBufMaxSize(0),
+    m_ownReadBuf(false),
+    m_registeredSleep(false),
+    m_niceness(0),
+    m_lastLaunch(0),
+    m_lastLaunchHost(NULL),
+    m_freeReadBuf(false),
+    m_key(0),
+    m_sendToSelf(false),
+    m_retryCount(0),
+    m_sentToTwin(false)
 {
 	constructor();
 
