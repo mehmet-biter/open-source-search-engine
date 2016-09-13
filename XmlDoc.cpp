@@ -13316,14 +13316,11 @@ char *XmlDoc::getMetaList(bool forDelete) {
 	// . by old, we mean the older versioned doc of this url spidered b4
 	HashTableX tt1;
 
-	// how many words we got?
-	int32_t nw = m_words.getNumWords();
-
 	// . prepare it, 5000 initial terms
 	// . make it nw*8 to avoid have to re-alloc the table!!!
 	// . i guess we can have link and neighborhood text too! we don't
 	//   count it here though... but add 5k for it...
-	int32_t need4 = nw * 4 + 5000;
+	int32_t need4 = m_words.getNumWords() * 4 + 5000;
 	if (m_usePosdb && nd) {
 		if (!tt1.set(18, 4, need4, NULL, 0, false, "posdb-indx")) {
 			logTrace(g_conf.m_logTraceXmlDoc, "tt1.set failed");
@@ -13353,7 +13350,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 
 		int32_t done = tt1.m_numSlots;
 		if (done != did) {
-			log(LOG_WARN, "xmldoc: reallocated big table! bad. old=%" PRId32" new=%" PRId32" nw=%" PRId32, did, done, nw);
+			log(LOG_WARN, "xmldoc: reallocated big table! bad. old=%" PRId32" new=%" PRId32" nw=%" PRId32, did, done, m_words.getNumWords());
 		}
 	}
 
@@ -13873,10 +13870,8 @@ skipNewAdd2:
 	if (m_useTagdb && ntb && !forDelete) {
 		// ntb is a safebuf of Tags, which are already Rdb records
 		// so just gbmemcpy them directly over
-		char *src = ntb->getBufStart();
-		int32_t srcSize = ntb->length();
-		gbmemcpy (m_p, src, srcSize);
-		m_p += srcSize;
+		gbmemcpy (m_p, ntb->getBufStart(), ntb->length());
+		m_p += ntb->length();
 	}
 
 	// sanity check
