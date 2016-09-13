@@ -126,8 +126,11 @@ class PosdbTable {
 		return m_initialized;
 	}
 
+	// functions used by intersectlist
 	bool genDebugScoreInfo1(int32_t &numProcessed, int32_t &topCursor, QueryTermInfo *qtibuf);
 	bool genDebugScoreInfo2(DocIdScore &dcs, int32_t &lastLen, uint64_t &lastDocId, char siteRank, float score, int32_t intScore, char docLang);
+	bool advanceTermListCursors(const char *docIdPtr, QueryTermInfo *qtibuf);
+	bool prefilterMaxPossibleScoreByDistance(QueryTermInfo *qtibuf, const int32_t *qpos, float minWinningScore);
 
 	uint64_t m_docId;
 

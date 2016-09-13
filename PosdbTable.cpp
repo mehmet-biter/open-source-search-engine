@@ -2605,6 +2605,309 @@ VALGRIND_CHECK_MEM_IS_DEFINED(&dcs,sizeof(dcs));
 }
 
 
+// Pre-advance each termlist's cursor to skip to next docid.
+//
+// Set QueryTermInfo::m_matchingSubListCursor to NEXT docid
+// Set QueryTermInfo::m_matchingSubListSavedCursor to CURRENT docid
+// of each termlist so we are ready for a quick skip over this docid.
+//
+// TODO: use just a single array of termlist ptrs perhaps,
+// then we can remove them when they go NULL.  and we'd save a little
+// time not having a nested loop.
+bool PosdbTable::advanceTermListCursors(const char *docIdPtr, QueryTermInfo *qtibuf) {
+	logTrace(g_conf.m_logTracePosdb, "BEGIN");
+
+	for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
+		// get it
+		QueryTermInfo *qti = &qtibuf[i];
+		// do not advance negative termlist cursor
+		if ( qti->m_bigramFlags[0] & BF_NEGATIVE ) {
+			continue;
+		}
+
+		//
+		// In first pass, sublists data is initialized by delNonMatchingDocIdsFromSubLists.
+		// In second pass (to get detailed scoring info for UI output), they are initialized above
+		//
+		for ( int32_t j = 0 ; j < qti->m_numMatchingSubLists ; j++ ) {
+			// shortcuts
+			char *xc    = qti->m_matchingSubListCursor[j];
+			char *xcEnd = qti->m_matchingSubListEnd[j];
+
+			// exhausted? (we can't make cursor NULL because
+			// getMaxPossibleScore() needs the last ptr)
+			// must match docid
+			if ( xc >= xcEnd ||
+			     *(int32_t *)(xc+8) != *(int32_t *)(docIdPtr+1) ||
+			     (*(char *)(xc+7)&0xfc) != (*(char *)(docIdPtr)&0xfc) ) {
+				// flag it as not having the docid
+				qti->m_matchingSubListSavedCursor[j] = NULL;
+				// skip this sublist if does not have our docid
+				continue;
+			}
+
+			// save it
+			qti->m_matchingSubListSavedCursor[j] = xc;
+			// get new docid
+			//log("new docid %" PRId64,Posdb::getDocId(xc) );
+			// advance the cursors. skip our 12
+			xc += 12;
+			// then skip any following 6 byte keys because they
+			// share the same docid
+			for ( ;  ; xc += 6 ) {
+				// end of whole termlist?
+				if ( xc >= xcEnd ) {
+					break;
+				}
+				
+				// sanity. no 18 byte keys allowed
+				if ( (*xc & 0x06) == 0x00 ) {
+					// i've seen this triggered on gk28.
+					// a dump of posdb for the termlist
+					// for 'post' had corruption in it,
+					// yet its twin, gk92 did not. the
+					// corruption could have occurred
+					// anywhere from nov 2012 to may 2013,
+					// and the posdb file was never
+					// re-merged! must have been blatant
+					// disk malfunction?
+					log("posdb: encountered corrupt posdb list. bailing.");
+					logTrace(g_conf.m_logTracePosdb, "END.");
+					return false;
+					//gbshutdownAbort(true);
+				}
+				// the next docid? it will be a 12 byte key.
+				if ( ! (*xc & 0x04) ) {
+					break;
+				}
+			}
+			// assign to next docid word position list
+			qti->m_matchingSubListCursor[j] = xc;
+		}
+	}
+
+	logTrace(g_conf.m_logTracePosdb, "END");
+	return true;
+}
+
+
+
+#define RINGBUFSIZE 4096
+
+//
+// TODO: consider skipping this pre-filter if it sucks, as it does
+// for 'search engine'. it might save time!
+//
+// Returns:
+//	false - docid does not meet minimum score requirement
+//	true - docid can potentially be a top scoring docid
+//
+bool PosdbTable::prefilterMaxPossibleScoreByDistance(QueryTermInfo *qtibuf, const int32_t *qpos, float minWinningScore) {
+//#define RINGBUFSIZE 1024
+	unsigned char ringBuf[RINGBUFSIZE+10];
+	// for overflow conditions in loops below
+	ringBuf[RINGBUFSIZE+0] = 0xff;
+	ringBuf[RINGBUFSIZE+1] = 0xff;
+	ringBuf[RINGBUFSIZE+2] = 0xff;
+	ringBuf[RINGBUFSIZE+3] = 0xff;
+	unsigned char qt;
+	QueryTermInfo *qtx;
+	uint32_t wx;
+	int32_t ourFirstPos = -1;
+	int32_t qdist;
+	
+	logTrace(g_conf.m_logTracePosdb, "BEGIN");
+
+
+	// reset ring buf. make all slots 0xff. should be 1000 cycles or so.
+	memset ( ringBuf, 0xff, RINGBUFSIZE );
+
+	// now to speed up 'time enough for love' query which does not
+	// have many super high scoring guys on top we need a more restrictive
+	// filter than getMaxPossibleScore() so let's pick one query term,
+	// the one with the shortest termlist, and see how close it gets to
+	// each of the other query terms. then score each of those pairs.
+	// so quickly record the word positions of each query term into
+	// a ring buffer of 4096 slots where each slot contains the
+	// query term # plus 1.
+
+	logTrace(g_conf.m_logTracePosdb, "Ring buffer generation");
+	qtx = &qtibuf[m_minTermListIdx];
+	// populate ring buf just for this query term
+	for ( int32_t k = 0 ; k < qtx->m_numMatchingSubLists ; k++ ) {
+		// scan that sublist and add word positions
+		char *sub = qtx->m_matchingSubListSavedCursor[k];
+		// skip sublist if it's cursor is exhausted
+		if ( ! sub ) {
+			continue;
+		}
+
+		char *end = qtx->m_matchingSubListCursor[k];
+		// add first key
+		//int32_t wx = Posdb::getWordPos(sub);
+		wx = (*((uint32_t *)(sub+3))) >> 6;
+		// mod with 4096
+		wx &= (RINGBUFSIZE-1);
+		// store it. 0 is legit.
+		ringBuf[wx] = m_minTermListIdx;
+		// set this
+		ourFirstPos = wx;
+		// skip first key
+		sub += 12;
+		// then 6 byte keys
+		for ( ; sub < end ; sub += 6 ) {
+			// get word position
+			//wx = Posdb::getWordPos(sub);
+			wx = (*((uint32_t *)(sub+3))) >> 6;
+			// mod with 4096
+			wx &= (RINGBUFSIZE-1);
+			// store it. 0 is legit.
+			ringBuf[wx] = m_minTermListIdx;
+		}
+	}
+	
+	// now get query term closest to query term # m_minTermListIdx which
+	// is the query term # with the shortest termlist
+	// get closest term to m_minTermListIdx and the distance
+	logTrace(g_conf.m_logTracePosdb, "Ring buffer generation 2");
+	for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
+		if ( i == m_minTermListIdx ) {
+			continue;
+		}
+		
+		// get the query term info
+		QueryTermInfo *qti = &qtibuf[i];
+
+		// if we have a negative term, skip it
+		if ( qti->m_bigramFlags[0] & (BF_NEGATIVE) ) {
+			continue;
+		}
+
+		// store all his word positions into ring buffer AS WELL
+		for ( int32_t k = 0 ; k < qti->m_numMatchingSubLists ; k++ ) {
+			// scan that sublist and add word positions
+			char *sub = qti->m_matchingSubListSavedCursor[k];
+			// skip sublist if it's cursor is exhausted
+			if ( ! sub ) {
+				continue;
+			}
+			
+			char *end = qti->m_matchingSubListCursor[k];
+			// add first key
+			//int32_t wx = Posdb::getWordPos(sub);
+			wx = (*((uint32_t *)(sub+3))) >> 6;
+			// mod with 4096
+			wx &= (RINGBUFSIZE-1);
+			// store it. 0 is legit.
+			ringBuf[wx] = i;
+			// skip first key
+			sub += 12;
+			// then 6 byte keys
+			for ( ; sub < end ; sub += 6 ) {
+				// get word position
+				//wx = Posdb::getWordPos(sub);
+				wx = (*((uint32_t *)(sub+3))) >> 6;
+				// mod with 4096
+				wx &= (RINGBUFSIZE-1);
+				// store it. 0 is legit.
+				ringBuf[wx] = i;
+			}
+		}
+
+		// reset
+		int32_t ourLastPos = -1;
+		int32_t hisLastPos = -1;
+		int32_t bestDist = 0x7fffffff;
+		// how far is this guy from the man?
+		for ( int32_t x = 0 ; x < (int32_t)RINGBUFSIZE ; ) {
+			// skip next 4 slots if all empty. fast?
+			if (*(uint32_t *)(ringBuf+x) == 0xffffffff) {
+				x+=4;
+				continue;
+			}
+
+			// skip if nobody
+			if ( ringBuf[x] == 0xff ) { 
+				x++; 
+				continue; 
+			}
+
+			// get query term #
+			qt = ringBuf[x];
+
+			// if it's the man
+			if ( qt == m_minTermListIdx ) {
+				// record
+				hisLastPos = x;
+				// skip if we are not there yet
+				if ( ourLastPos == -1 ) { 
+					x++; 
+					continue; 
+				}
+
+				// try distance fix
+				if ( x - ourLastPos < bestDist ) {
+					bestDist = x - ourLastPos;
+				}
+			}
+			// if us
+			else 
+			if ( qt == i ) {
+				// record
+				ourLastPos = x;
+				// skip if he's not recorded yet
+				if ( hisLastPos == -1 ) { 
+					x++; 
+					continue; 
+				}
+
+				// update
+				ourLastPos = x;
+//@@@ ^^ dupe
+				// check dist
+				if ( x - hisLastPos < bestDist ) {
+					bestDist = x - hisLastPos;
+				}
+			}
+			x++;
+			continue;	//@@@ doh...
+		}
+
+		// compare last occurence of query term #x with our first occ.
+		// since this is a RING buffer
+		int32_t wrapDist = ourFirstPos + ((int32_t)RINGBUFSIZE-hisLastPos);
+		if ( wrapDist < bestDist ) {
+			bestDist = wrapDist;
+		}
+
+		// query distance
+		qdist = qpos[m_minTermListIdx] - qpos[i];
+		// compute it
+		float maxScore2 = getMaxPossibleScore(&qtibuf[i],
+						      bestDist,
+						      qdist,
+						      &qtibuf[m_minTermListIdx]);
+		// -1 means it has inlink text so do not apply this constraint
+		// to this docid because it is too difficult because we
+		// sum up the inlink text
+		if ( maxScore2 < 0.0 ) {
+			continue;
+		}
+
+		// if any one of these terms have a max score below the
+		// worst score of the 10th result, then it can not win.
+		// @todo: BR. Really? ANY of them?
+		if ( maxScore2 <= minWinningScore ) {
+			logTrace(g_conf.m_logTracePosdb, "END - docid score too low");
+			return false;
+		}
+	}
+
+	logTrace(g_conf.m_logTracePosdb, "END - docid score high enough");
+	return true;
+}
+
+
 
 // . compare the output of this to intersectLists9_r()
 // . hopefully this will be easier to understand and faster
@@ -2732,6 +3035,7 @@ void PosdbTable::intersectLists10_r ( ) {
 	char *lastMptr = NULL;
 	int32_t topCursor = -9;
 	int32_t numProcessed = 0;
+#if 0
 #define RINGBUFSIZE 4096
 //#define RINGBUFSIZE 1024
 	unsigned char ringBuf[RINGBUFSIZE+10];
@@ -2743,11 +3047,13 @@ void PosdbTable::intersectLists10_r ( ) {
 	unsigned char qt;
 	QueryTermInfo *qtx;
 	uint32_t wx;
+	int32_t ourFirstPos = -1;
+#endif
+	
 	int32_t fail0 = 0;
 	int32_t pass0 = 0;
 	int32_t fail = 0;
 	int32_t pass = 0;
-	int32_t ourFirstPos = -1;
 
 
 	// populate the cursors for each sublist
@@ -2819,6 +3125,8 @@ void PosdbTable::intersectLists10_r ( ) {
 		bool allDone = false;
 
 		while( !allDone && docIdPtr < docIdEnd ) {
+			logTrace(g_conf.m_logTracePosdb, "Handling next docID");
+
 			bool skipToNextDocId = false;
 
 			// second pass? for printing out transparency info.
@@ -2831,97 +3139,31 @@ void PosdbTable::intersectLists10_r ( ) {
 			}
 
 			if( currPassNum == INTERSECT_SCORING ) {
+				//
 				// Pre-advance each termlist's cursor to skip to next docid.
 				//
-				// Set QueryTermInfo::m_matchingSubListCursor to NEXT docid
-				// Set QueryTermInfo::m_matchingSubListSavedCursor to CURRENT docid
-				// of each termlist so we are ready for a quick skip over this docid.
-				//
-				// TODO: use just a single array of termlist ptrs perhaps,
-				// then we can remove them when they go NULL.  and we'd save a little
-				// time not having a nested loop.
-				for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
-					// get it
-					QueryTermInfo *qti = &qtibuf[i];
-					// do not advance negative termlist cursor
-					if ( qti->m_bigramFlags[0] & BF_NEGATIVE ) {
-						continue;
-					}
-
-					//
-					// In first pass, sublists data is initialized by delNonMatchingDocIdsFromSubLists.
-					// In second pass (to get detailed scoring info for UI output), they are initialized above
-					//
-					for ( int32_t j = 0 ; j < qti->m_numMatchingSubLists ; j++ ) {
-						// shortcuts
-						char *xc    = qti->m_matchingSubListCursor[j];
-						char *xcEnd = qti->m_matchingSubListEnd[j];
-
-						// exhausted? (we can't make cursor NULL because
-						// getMaxPossibleScore() needs the last ptr)
-						// must match docid
-						if ( xc >= xcEnd ||
-						     *(int32_t *)(xc+8) != *(int32_t *)(docIdPtr+1) ||
-						     (*(char *)(xc+7)&0xfc) != (*(char *)(docIdPtr)&0xfc) ) {
-							// flag it as not having the docid
-							qti->m_matchingSubListSavedCursor[j] = NULL;
-							// skip this sublist if does not have our docid
-							continue;
-						}
-
-						// save it
-						qti->m_matchingSubListSavedCursor[j] = xc;
-						// get new docid
-						//log("new docid %" PRId64,Posdb::getDocId(xc) );
-						// advance the cursors. skip our 12
-						xc += 12;
-						// then skip any following 6 byte keys because they
-						// share the same docid
-						for ( ;  ; xc += 6 ) {
-							// end of whole termlist?
-							if ( xc >= xcEnd ) {
-								break;
-							}
-							
-							// sanity. no 18 byte keys allowed
-							if ( (*xc & 0x06) == 0x00 ) {
-								// i've seen this triggered on gk28.
-								// a dump of posdb for the termlist
-								// for 'post' had corruption in it,
-								// yet its twin, gk92 did not. the
-								// corruption could have occurred
-								// anywhere from nov 2012 to may 2013,
-								// and the posdb file was never
-								// re-merged! must have been blatant
-								// disk malfunction?
-								log("posdb: encountered corrupt posdb list. bailing.");
-								logTrace(g_conf.m_logTracePosdb, "END.");
-								return;
-								//gbshutdownAbort(true);
-							}
-							// the next docid? it will be a 12 byte key.
-							if ( ! (*xc & 0x04) ) {
-								break;
-							}
-						}
-						// assign to next docid word position list
-						qti->m_matchingSubListCursor[j] = xc;
-					}
+				if( !advanceTermListCursors(docIdPtr, qtibuf) ) {
+					logTrace(g_conf.m_logTracePosdb, "END. advanceTermListCursors failed");
+					return;
 				}
 
 
 
 				if( !m_q->m_isBoolean ) {
 
+					//##
+					//## PRE-FILTERS. Discard DocIDs that cannot meet the minimum required
+					//## score, before entering the main scoring loop below
+					//##
+
+
 					// TODO: consider skipping this pre-filter if it sucks, as it does
 					// for 'time enough for love'. it might save time!
-
 					//
 					// Calculate maximum possible score for a document. If the max score
 					// is lower than the current minimum winning score, give up already
 					// now and skip to the next docid.
 					//
-
 					// Only go through this if we actually have a minimum score to compare with ...
 					// No need if minWinningScore is still -1
 					if ( minWinningScore >= 0 ) {
@@ -2963,195 +3205,12 @@ void PosdbTable::intersectLists10_r ( ) {
 
 					pass0++;
 
-
 					if ( m_sortByTermNum < 0 && m_sortByTermNumInt < 0 ) {
-						// TODO: consider skipping this pre-filter if it sucks, as it does
-						// for 'search engine'. it might save time!
 
-						// reset ring buf. make all slots 0xff. should be 1000 cycles or so.
-						memset ( ringBuf, 0xff, RINGBUFSIZE );
-
-						// now to speed up 'time enough for love' query which does not
-						// have many super high scoring guys on top we need a more restrictive
-						// filter than getMaxPossibleScore() so let's pick one query term,
-						// the one with the shortest termlist, and see how close it gets to
-						// each of the other query terms. then score each of those pairs.
-						// so quickly record the word positions of each query term into
-						// a ring buffer of 4096 slots where each slot contains the
-						// query term # plus 1.
-
-						logTrace(g_conf.m_logTracePosdb, "Ring buffer generation");
-						qtx = &qtibuf[m_minTermListIdx];
-						// populate ring buf just for this query term
-						for ( int32_t k = 0 ; k < qtx->m_numMatchingSubLists ; k++ ) {
-							// scan that sublist and add word positions
-							char *sub = qtx->m_matchingSubListSavedCursor[k];
-							// skip sublist if it's cursor is exhausted
-							if ( ! sub ) {
-								continue;
-							}
-
-							char *end = qtx->m_matchingSubListCursor[k];
-							// add first key
-							//int32_t wx = Posdb::getWordPos(sub);
-							wx = (*((uint32_t *)(sub+3))) >> 6;
-							// mod with 4096
-							wx &= (RINGBUFSIZE-1);
-							// store it. 0 is legit.
-							ringBuf[wx] = m_minTermListIdx;
-							// set this
-							ourFirstPos = wx;
-							// skip first key
-							sub += 12;
-							// then 6 byte keys
-							for ( ; sub < end ; sub += 6 ) {
-								// get word position
-								//wx = Posdb::getWordPos(sub);
-								wx = (*((uint32_t *)(sub+3))) >> 6;
-								// mod with 4096
-								wx &= (RINGBUFSIZE-1);
-								// store it. 0 is legit.
-								ringBuf[wx] = m_minTermListIdx;
-							}
-						}
-						
-						// now get query term closest to query term # m_minTermListIdx which
-						// is the query term # with the shortest termlist
-						// get closest term to m_minTermListIdx and the distance
-						logTrace(g_conf.m_logTracePosdb, "Ring buffer generation 2");
-						for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
-							// skip the man
-							if ( i == m_minTermListIdx ) {
-								continue;
-							}
-							
-							// get the query term info
-							QueryTermInfo *qti = &qtibuf[i];
-							// if we have a negative term, skip it
-							if ( qti->m_bigramFlags[0] & (BF_NEGATIVE) ) {
-								// if its empty, that's good!
-								continue;
-							}
-							
-							// store all his word positions into ring buffer AS WELL
-							for ( int32_t k = 0 ; k < qti->m_numMatchingSubLists ; k++ ) {
-								// scan that sublist and add word positions
-								char *sub = qti->m_matchingSubListSavedCursor[k];
-								// skip sublist if it's cursor is exhausted
-								if ( ! sub ) {
-									continue;
-								}
-								
-								char *end = qti->m_matchingSubListCursor[k];
-								// add first key
-								//int32_t wx = Posdb::getWordPos(sub);
-								wx = (*((uint32_t *)(sub+3))) >> 6;
-								// mod with 4096
-								wx &= (RINGBUFSIZE-1);
-								// store it. 0 is legit.
-								ringBuf[wx] = i;
-								// skip first key
-								sub += 12;
-								// then 6 byte keys
-								for ( ; sub < end ; sub += 6 ) {
-									// get word position
-									//wx = Posdb::getWordPos(sub);
-									wx = (*((uint32_t *)(sub+3))) >> 6;
-									// mod with 4096
-									wx &= (RINGBUFSIZE-1);
-									// store it. 0 is legit.
-									ringBuf[wx] = i;
-								}
-							}
-
-							// reset
-							int32_t ourLastPos = -1;
-							int32_t hisLastPos = -1;
-							int32_t bestDist = 0x7fffffff;
-							// how far is this guy from the man?
-							for ( int32_t x = 0 ; x < (int32_t)RINGBUFSIZE ; ) {
-								// skip next 4 slots if all empty. fast?
-								if (*(uint32_t *)(ringBuf+x) == 0xffffffff) {
-									x+=4;
-									continue;
-								}
-
-								// skip if nobody
-								if ( ringBuf[x] == 0xff ) { 
-									x++; 
-									continue; 
-								}
-
-								// get query term #
-								qt = ringBuf[x];
-
-								// if it's the man
-								if ( qt == m_minTermListIdx ) {
-									// record
-									hisLastPos = x;
-									// skip if we are not there yet
-									if ( ourLastPos == -1 ) { 
-										x++; 
-										continue; 
-									}
-
-									// try distance fix
-									if ( x - ourLastPos < bestDist ) {
-										bestDist = x - ourLastPos;
-									}
-								}
-								// if us
-								else 
-								if ( qt == i ) {
-									// record
-									ourLastPos = x;
-									// skip if he's not recorded yet
-									if ( hisLastPos == -1 ) { 
-										x++; 
-										continue; 
-									}
-
-									// update
-									ourLastPos = x;
-
-									// check dist
-									if ( x - hisLastPos < bestDist ) {
-										bestDist = x - hisLastPos;
-									}
-								}
-								x++;
-								continue;
-							}
-
-							// compare last occurence of query term #x with our first occ.
-							// since this is a RING buffer
-							int32_t wrapDist = ourFirstPos + ((int32_t)RINGBUFSIZE-hisLastPos);
-							if ( wrapDist < bestDist ) {
-								bestDist = wrapDist;
-							}
-
-							// query distance
-							qdist = qpos[m_minTermListIdx] - qpos[i];
-							// compute it
-							float maxScore2 = getMaxPossibleScore(&qtibuf[i],
-											      bestDist,
-											      qdist,
-											      &qtibuf[m_minTermListIdx]);
-							// -1 means it has inlink text so do not apply this constraint
-							// to this docid because it is too difficult because we
-							// sum up the inlink text
-							if ( maxScore2 < 0.0 ) {
-								continue;
-							}
-
-							// if any one of these terms have a max score below the
-							// worst score of the 10th result, then it can not win.
-							if ( maxScore2 <= minWinningScore ) {
-								docIdPtr += 6;
-								fail++;
-								skipToNextDocId = true;
-								break;	// break out of numQueryTermsToHandle loop
-							}
+						if( !prefilterMaxPossibleScoreByDistance(qtibuf, qpos, minWinningScore) ) {
+							docIdPtr += 6;
+							fail++;
+							skipToNextDocId = true;
 						}
 					} // not m_sortByTermNum or m_sortByTermNumInt
 
@@ -4074,9 +4133,7 @@ void PosdbTable::intersectLists10_r ( ) {
 
 			// advance to next docid
 			docIdPtr += 6;
-
-			logTrace(g_conf.m_logTracePosdb, "^ Now repeat for next docID");
-		}
+		} // docIdPtr < docIdEnd loop
 
 
 		if ( m_debug ) {
