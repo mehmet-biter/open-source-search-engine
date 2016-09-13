@@ -13467,8 +13467,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 		// do not call twice!
 		m_computedMetaListCheckSum = true;
 		// all keys in tt1, ns1, kt1 and pt1
-		int32_t ck32 = 0;
-		ck32 ^= tt1.getKeyChecksum32();
+		int32_t ck32 = tt1.getKeyChecksum32();
 
 		// set this before calling getTitleRecBuf() below
 		uint8_t currentMetaListCheckSum8 = (uint8_t)ck32;
