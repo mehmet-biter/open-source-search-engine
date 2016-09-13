@@ -1931,7 +1931,7 @@ bool XmlDoc::indexDoc ( ) {
 
 	// "cr" might have been deleted by calling indexDoc() above i think
 	// so use collnum here, not "cr"
-	if ( ! m_msg4.addMetaList ( &m_metaList2, m_collnum, m_masterState, m_masterLoop, m_niceness ) ) {
+	if (!m_msg4.addMetaList(&m_metaList2, m_collnum, m_masterState, m_masterLoop)) {
 		m_msg4Waiting = true;
 		logTrace( g_conf.m_logTraceXmlDoc, "END, return false, m_msg4.addMetaList returned false" );
 		return false;
@@ -2058,7 +2058,7 @@ bool XmlDoc::indexDoc2 ( ) {
 		verifyMetaList ( m_metaList , m_metaList + m_metaListSize , false );
 
 		// do it
-		if (!m_msg4.addMetaList(m_metaList, m_metaListSize, m_collnum, m_masterState, m_masterLoop, m_niceness)) {
+		if (!m_msg4.addMetaList(m_metaList, m_metaListSize, m_collnum, m_masterState, m_masterLoop)) {
 			m_msg4Waiting = true;
 			logTrace( g_conf.m_logTraceXmlDoc, "END, return false. addMetaList blocked" );
 			return false;
@@ -2074,7 +2074,7 @@ bool XmlDoc::indexDoc2 ( ) {
 	}
 
 	// make sure our msg4 is no longer in the linked list!
-	if (m_msg4Waiting && isInMsg4LinkedList(&m_msg4)){
+	if (m_msg4Waiting && Msg4::isInMsg4LinkedList(&m_msg4)){
 		g_process.shutdownAbort(true);
 	}
 

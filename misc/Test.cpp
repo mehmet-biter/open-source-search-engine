@@ -973,7 +973,6 @@ bool Test::injectLoop ( ) {
 				    m_coll              ,
 				    NULL                ,
 				    injectedWrapper     ,
-				    MAX_NICENESS        ,
 				    RDB_SPIDERDB        ) )
 		// return false if blocked
 		return false;

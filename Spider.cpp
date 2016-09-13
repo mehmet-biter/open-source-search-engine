@@ -1674,7 +1674,7 @@ bool updateSiteListBuf ( collnum_t collnum ,
 	SpiderColl *sc = g_spiderCache.getSpiderColl ( cr->m_collnum );
 
 	// sanity. if in use we should not even be here
-	if ( sc->m_msg4x.m_inUse ) {
+	if ( sc->m_msg4x.isInUse() ) {
 		log( LOG_WARN, "basic: trying to update site list while previous update still outstanding.");
 		g_errno = EBADENGINEER;
 		return true;
@@ -2005,7 +2005,7 @@ bool updateSiteListBuf ( collnum_t collnum ,
 
 	// use spidercoll to contain this msg4 but if in use it
 	// won't be able to be deleted until it comes back..
-	return sc->m_msg4x.addMetaList ( spiderReqBuf, sc->m_collnum, sc, doneAddingSeedsWrapper, MAX_NICENESS, RDB_SPIDERDB );
+	return sc->m_msg4x.addMetaList(spiderReqBuf, sc->m_collnum, sc, doneAddingSeedsWrapper, RDB_SPIDERDB);
 }
 
 // . Spider.cpp calls this to see if a url it wants to spider is

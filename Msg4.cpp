@@ -65,22 +65,15 @@ static Msg4 *s_msg4Tail = NULL;
 // . also, need to update spiderdb rec for the url in Msg14 using Msg4 too!
 // . need to add support for passing in array of lists for Msg14
 
-static bool       addMetaList ( const char *p , class UdpSlot *slot = NULL );
-static void       gotReplyWrapper4 ( void    *state   , void *state2   ) ;
-static void       storeLineWaiters ( ) ;
-static void       handleRequest4   ( UdpSlot *slot    , int32_t  niceness ) ;
-static void       sleepCallback4   ( int bogusfd      , void *state    ) ;
-static bool       sendBuffer       ( int32_t hostId , int32_t niceness ) ;
-static Multicast *getMulticast     ( ) ;
-static void       returnMulticast  ( Multicast *mcast ) ;
-
-static bool storeRec   ( collnum_t      collnum , 
-			 char           rdbId   ,
-			 uint32_t  gid     ,
-			 int32_t           hostId  ,
-			 const char          *rec     ,
-			 int32_t           recSize ,
-			 int32_t           niceness ) ;
+static bool addMetaList(const char *p, class UdpSlot *slot = NULL);
+static void gotReplyWrapper4(void *state, void *state2);
+static void handleRequest4(UdpSlot *slot, int32_t niceness);
+static void sleepCallback4(int bogusfd, void *state);
+static void flushLocal();
+static bool sendBuffer(int32_t hostId);
+static Multicast *getMulticast();
+static void returnMulticast(Multicast *mcast);
+static bool storeRec(collnum_t collnum, char rdbId, uint32_t gid, int32_t hostId, const char *rec, int32_t recSize);
 
 // all these parameters should be preset
 bool Msg4::registerHandler() {
@@ -128,9 +121,6 @@ bool Msg4::registerHandler() {
 	return rc;
 }
 
-
-static void flushLocal ( ) ;
-
 // scan all host bufs and try to send on them
 void sleepCallback4 ( int bogusfd , void    *state ) {
 	// wait for clock to be in sync
@@ -145,7 +135,7 @@ void flushLocal ( ) {
 	//storeLineWaiters();
 	// now try to send the buffers
 	for ( int32_t i = 0 ; i < s_numHostBufs ; i++ ) 
-		sendBuffer ( i , MAX_NICENESS );
+		sendBuffer ( i );
 	g_errno = 0;
 }
 
@@ -183,12 +173,12 @@ bool hasAddsInQueue   ( ) {
 }
 
 bool Msg4::addMetaList ( SafeBuf *sb, collnum_t collnum, void *state, void (* callback)(void *state),
-                         int32_t niceness, char rdbId, int32_t shardOverride ) {
-	return addMetaList ( sb->getBufStart(), sb->length(), collnum, state, callback, niceness, rdbId, shardOverride );
+                         rdbid_t rdbId, int32_t shardOverride ) {
+	return addMetaList ( sb->getBufStart(), sb->length(), collnum, state, callback, rdbId, shardOverride );
 }
 
 bool Msg4::addMetaList ( const char *metaList, int32_t metaListSize, collnum_t collnum, void *state,
-                         void (* callback)(void *state), int32_t niceness, char rdbId,
+                         void (* callback)(void *state), rdbid_t rdbId,
                          // Rebalance.cpp needs to add negative keys to
                          // remove foreign records from where they no
                          // longer belong because of a new hosts.conf file.
@@ -212,7 +202,6 @@ bool Msg4::addMetaList ( const char *metaList, int32_t metaListSize, collnum_t c
 	m_state        = state;
 	m_callback     = callback;
 	m_rdbId        = rdbId;
-	m_niceness     = niceness;
 	m_next         = NULL;
 	m_shardOverride = shardOverride;
 
@@ -279,7 +268,7 @@ bool Msg4::addMetaList ( const char *metaList, int32_t metaListSize, collnum_t c
 	return false;
 }
 
-bool isInMsg4LinkedList ( Msg4 *msg4 ) {
+bool Msg4::isInMsg4LinkedList ( Msg4 *msg4 ) {
 	Msg4 *m = s_msg4Head;
 	for ( ; m ; m = m->m_next ) 
 		if ( m == msg4 ) return true;
@@ -300,10 +289,10 @@ bool Msg4::addMetaList2 ( ) {
 	// store each record in the list into the send buffers
 	for ( ; p < pend ; ) {
 		// first is rdbId
-		char rdbId = m_rdbId;
-		if ( rdbId < 0 ) rdbId = *p++;
-		// mask off rdbId
-		rdbId &= 0x7f;
+		rdbid_t rdbId = m_rdbId;
+		if ( rdbId == RDB_NONE ) {
+			rdbId = (rdbid_t)(*p++ & 0x7f);
+		}
 
 		// get the key of the current record
 		const char *key = p;
@@ -313,8 +302,6 @@ bool Msg4::addMetaList2 ( ) {
 
 		// negative key?
 		bool del = !( *key & 0x01 );
-
-
 
 		// skip key
 		p += ks;
@@ -348,10 +335,6 @@ bool Msg4::addMetaList2 ( ) {
 		
 		// breach us?
 		if ( p > pend ) { g_process.shutdownAbort(true); }
-			
-		// i fixed UdpServer.cpp to NOT call msg4 handlers when in
-		// a quickpoll, in case we receive a niceness 0 msg4 request
-		QUICKPOLL(m_niceness);
  		
 		// convert the gid to the hostid of the first host in this
 		// group. uses a quick hash table.
@@ -368,7 +351,7 @@ bool Msg4::addMetaList2 ( ) {
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(key,p-key);
 #endif
-		if ( storeRec ( m_collnum, rdbId, shardNum, hostId, key, p - key, m_niceness )) {
+		if ( storeRec ( m_collnum, rdbId, shardNum, hostId, key, p - key )) {
 			// . point to next record
 			// . will point past records if no more left!
 			m_currentPtr = p;
@@ -407,8 +390,7 @@ bool storeRec ( collnum_t      collnum ,
 		uint32_t  shardNum,
 		int32_t           hostId  ,
 		const char          *rec     ,
-		int32_t           recSize ,
-		int32_t           niceness ) {
+		int32_t           recSize ) {
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(&collnum,sizeof(collnum));
 	VALGRIND_CHECK_MEM_IS_DEFINED(&rdbId,sizeof(rdbId));
@@ -482,7 +464,7 @@ bool storeRec ( collnum_t      collnum ,
 		//   will he be able to proceed. we will call his callback
 		//   as soon as we can copy... use this->m_msg1 to add the
 		//   list that was passed in...
-		if ( ! sendBuffer ( hostId , niceness ) ) return false;
+		if ( ! sendBuffer ( hostId ) ) return false;
 		// now the buffer should be empty, try again
 		goto retry;
 	}
@@ -506,7 +488,7 @@ bool storeRec ( collnum_t      collnum ,
 // . returns false if we were UNable to get a multicast to launch the buffer, 
 //   true otherwise
 // . returns false and sets g_errno on error
-bool sendBuffer ( int32_t hostId , int32_t niceness ) {
+bool sendBuffer ( int32_t hostId ) {
 	//logf(LOG_DEBUG,"build: sending buf");
 	// how many bytes of the buffer are occupied or "in use"?
 	char *buf       = s_hostBufs    [hostId];
@@ -664,10 +646,10 @@ void gotReplyWrapper4 ( void *state , void *state2 ) {
 
 	returnMulticast(mcast);
 
-	storeLineWaiters(); // try to launch more msg4 requests in waiting
+	Msg4::storeLineWaiters(); // try to launch more msg4 requests in waiting
 }
 
-void storeLineWaiters ( ) {
+void Msg4::storeLineWaiters ( ) {
 	// try to store all the msg4's lists that are waiting in line
 	for (;;) {
 		Msg4 *msg4 = s_msg4Head;
