@@ -13171,7 +13171,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 	// . prepare the outlink info if we are adding links to spiderdb!
 	// . do this before we start hashing so we do not block and re-hash!!
 	//
-	if (spideringLinks && !m_doingConsistencyCheck && m_useSpiderdb) {
+	if (m_useSpiderdb && spideringLinks && !m_doingConsistencyCheck) {
 		setStatus("getting outlink info");
 		logTrace(g_conf.m_logTraceXmlDoc, "call getOutlinkTagRecVector");
 
@@ -13221,7 +13221,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 	}
 
 	// need firstip if adding a rebuilt spider request
-	if (m_useSecondaryRdbs && m_useSpiderdb) {
+	if (m_useSpiderdb && m_useSecondaryRdbs) {
 		int32_t *fip = getFirstIp();
 		if (!fip || fip == (void *)-1) {
 			logTrace(g_conf.m_logTraceXmlDoc, "END, getFirstIp returned -1");
@@ -13328,7 +13328,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 	// . i guess we can have link and neighborhood text too! we don't
 	//   count it here though... but add 5k for it...
 	int32_t need4 = nw * 4 + 5000;
-	if (nd && m_usePosdb) {
+	if (m_usePosdb && nd) {
 		if (!tt1.set(18, 4, need4, NULL, 0, false, "posdb-indx")) {
 			logTrace(g_conf.m_logTraceXmlDoc, "tt1.set failed");
 			return NULL;
@@ -13400,7 +13400,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 	HashTableX kt1;
 
 	int32_t nis = 0;
-	if (nl2 && m_useLinkdb) {
+	if (m_useLinkdb && nl2) {
 		nis = nl2->getNumLinks() * 4;
 	}
 
@@ -13444,7 +13444,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 		// NO! because when injecting a warc and the subdocs
 		// it contains, gb then tries to spider all of them !!! sux...
 		needSpiderdb3 = 0;
-	} else if (m_useSecondaryRdbs && m_useSpiderdb) {
+	} else if (m_useSpiderdb && m_useSecondaryRdbs) {
 		// or if we are rebuilding spiderdb
 		needSpiderdb3 = sizeof(SpiderRequest) + m_firstUrl.getUrlLen() + 1;
 	}
@@ -13575,7 +13575,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 
 	// . store title rec
 	// . Repair.cpp might set useTitledb to false!
-	if (nd && m_useTitledb) {
+	if (m_useTitledb && nd) {
 		// rdbId
 		*m_p++ = m_useSecondaryRdbs ? RDB2_TITLEDB2 : RDB_TITLEDB;
 
@@ -13645,7 +13645,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 	// . now we store even if skipIndexing is true because i'd like to
 	//   see how many titlerecs we have and count them towards the
 	//   docsIndexed count...
-	if (nd && m_useClusterdb) {
+	if (m_useClusterdb && nd) {
 		// . get new clusterdb key
 		// . we use the host hash for the site hash! hey, this is only 26 bits!
 		key96_t newk = g_clusterdb.makeClusterRecKey(*nd->getDocId(), *nd->getIsAdult(), *nd->getLangId(), nd->getHostHash32a(), false);
@@ -13718,7 +13718,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 	saved = m_p;
 
 	// now add the new rescheduled time
-	if (addReply && m_useSpiderdb && !forDelete) {
+	if (m_useSpiderdb && addReply && !forDelete) {
 		// note it
 		setStatus("adding SpiderReply to spiderdb");
 
@@ -13834,7 +13834,7 @@ skipNewAdd2:
 	// . should also add with a time of now plus 5 seconds to that if
 	//   we spider an outlink linkdb should be update with this doc
 	//   pointing to it so it can get link text then!!
-	if (spideringLinks && nl2 && !m_doingConsistencyCheck && m_useSpiderdb && !forDelete) {
+	if (m_useSpiderdb && spideringLinks && nl2 && !m_doingConsistencyCheck && !forDelete) {
 		logTrace( g_conf.m_logTraceXmlDoc, "Adding spiderdb records of outlinks" );
 
 		// returns NULL and sets g_errno on error
@@ -13874,7 +13874,7 @@ skipNewAdd2:
 	// . only do this if NOT setting from a title rec
 	// . it might add a bunch of forced spider recs to spiderdb
 	// . store into tagdb even if indexCode is set!
-	if (ntb && m_useTagdb && !forDelete) {
+	if (m_useTagdb && ntb && !forDelete) {
 		// ntb is a safebuf of Tags, which are already Rdb records
 		// so just gbmemcpy them directly over
 		char *src = ntb->getBufStart();
