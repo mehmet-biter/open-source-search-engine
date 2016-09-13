@@ -328,8 +328,6 @@ class HashTableX {
 	int32_t m_ds;
 	bool m_allowDups;
 
-	// a flag used by XmlDoc.cpp
-	bool m_addIffNotUnique;
 	bool m_isSaving;
 	bool m_needsSave;
 

@@ -81,7 +81,6 @@ void HashTableX::reset ( ) {
 	m_flags = NULL;
 	m_numSlots     = 0;
 	m_numSlotsUsed = 0;
-	m_addIffNotUnique = false;
 	m_maskKeyOffset = 0;
 	//m_useKeyMagic = false;
 	// we should free it in reset()

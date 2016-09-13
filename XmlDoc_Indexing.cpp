@@ -1591,11 +1591,6 @@ bool XmlDoc::hashNeighborhoods ( HashTableX *tt ) {
 
 	//int32_t inlinks = *getSiteNumInlinks();
 
-	// HACK: to avoid having to pass a flag to TermTable, then to
-	// Words::hash(), Phrases::hash(), etc. just flip a bit in the
-	// table to make it not add anything unless it is already in there.
-	tt->m_addIffNotUnique = true;
-
 	// update hash parms
 	HashInfo hi;
 	hi.m_tt        = tt;
@@ -1606,9 +1601,6 @@ bool XmlDoc::hashNeighborhoods ( HashTableX *tt ) {
 	// . this returns false and sets g_errno on error
 	int32_t len = k->size_surroundingText - 1;
 	if ( ! hashString ( s, len, &hi ) ) return false;
-
-	// now turn it back off
-	tt->m_addIffNotUnique = false;
 
 	// get the next Inlink
 	goto loop;
