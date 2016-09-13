@@ -100,6 +100,7 @@ XmlDoc::XmlDoc() {
 	m_wasInIndex = false;
 	m_outlinkHopCountVector = NULL;
 	m_extraDoc = NULL;
+	m_statusMsg = NULL;
 
 	reset();
 }
@@ -1209,32 +1210,27 @@ bool XmlDoc::setFirstUrl ( char *u ) {
 
 
 void XmlDoc::setStatus ( const char *s ) {
-	m_statusMsg = s;
-	m_statusMsgValid = true;
-	static const char *s_last = NULL;
-
-	if ( s == s_last ) return;
-
 	bool timeIt = false;
 	if ( g_conf.m_logDebugBuildTime )
 		timeIt = true;
 
 	// log times to detect slowness
-	if ( timeIt ) {
+	if ( timeIt  && m_statusMsgValid ) {
 		int64_t now = gettimeofdayInMillisecondsLocal();
 		if ( s_lastTimeStart == 0LL ) s_lastTimeStart = now;
 		int32_t took = now - s_lastTimeStart;
 		//if ( took > 100 )
 			log("xmldoc: %s (xd=0x%" PTRFMT" "
 			    "u=%s) took %" PRId32"ms",
-			    s_last,
+			    m_statusMsg,
 			    (PTRTYPE)this,
 			    m_firstUrl.getUrl(),
 			    took);
 		s_lastTimeStart = now;
 	}
 
-	s_last = s;
+	m_statusMsg = s;
+	m_statusMsgValid = true;
 
 	bool logIt = g_conf.m_logDebugBuild;
 	if ( ! logIt ) return;
