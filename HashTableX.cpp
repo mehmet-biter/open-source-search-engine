@@ -620,3 +620,17 @@ int32_t HashTableX::getKeyChecksum32 () const {
 	}
 	return checksum;
 }
+
+// print as text into sb for debugging
+void HashTableX::print() {
+	for (int32_t i = 0; i < m_numSlots; i++) {
+		// skip empty bucket
+		if (!m_flags[i]) {
+			continue;
+		}
+
+		// get the key
+		char *kp = (char *)getKeyFromSlot(i);
+		logf(LOG_WARN, "key=%s", KEYSTR(kp, m_ks));
+	}
+}

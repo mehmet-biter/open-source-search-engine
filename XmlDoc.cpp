@@ -13483,9 +13483,9 @@ char *XmlDoc::getMetaList(bool forDelete) {
 		    // fix for import log spam
 		    !m_isImporting &&
 		    m_metaListCheckSum8 != currentMetaListCheckSum8) {
-			log( LOG_WARN, "xmldoc: checksum parsing inconsistency for %s (old)%i != %i(new). "
-			     "Uncomment tt1.print() above to debug.",
-			     m_firstUrl.getUrl(), (int)m_metaListCheckSum8, (int)currentMetaListCheckSum8 );
+			log(LOG_WARN, "xmldoc: checksum parsing inconsistency for %s (old)%i != %i(new). ",
+			    m_firstUrl.getUrl(), (int)m_metaListCheckSum8, (int)currentMetaListCheckSum8);
+			//tt1.print();
 		}
 
 		// assign the new one, getTitleRecBuf() call below needs this
