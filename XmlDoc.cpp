@@ -13534,11 +13534,11 @@ char *XmlDoc::getMetaList(bool forDelete) {
 	// +1 for rdbId
 	int32_t needTitledb = sizeof(key96_t) + 1;
 
-	if (nd && m_useTitledb && !forDelete) {
-		needTitledb += m_titleRecBuf.length();
-	}
-
 	if (m_useTitledb) {
+		if (nd && !forDelete) {
+			needTitledb += m_titleRecBuf.length();
+		}
+
 		// then add it in
 		need += needTitledb;
 
