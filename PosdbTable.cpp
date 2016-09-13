@@ -3023,8 +3023,8 @@ void PosdbTable::intersectLists10_r ( ) {
 	float pss;
 	// scan the posdb keys in the smallest list
 	// raised from 200 to 300,000 for 'da da da' query
-	char mbuf[300000];
-	char *mptrEnd = mbuf + 299000;
+	char miniMergeBuf[300000];
+	char *mptrEnd = miniMergeBuf + 299000;
 	char *mptr;
 	char *docIdPtr;
 	char *docIdEnd = m_docIdVoteBuf.getBufStart()+m_docIdVoteBuf.length();
@@ -3035,25 +3035,11 @@ void PosdbTable::intersectLists10_r ( ) {
 	char *lastMptr = NULL;
 	int32_t topCursor = -9;
 	int32_t numProcessed = 0;
-#if 0
-#define RINGBUFSIZE 4096
-//#define RINGBUFSIZE 1024
-	unsigned char ringBuf[RINGBUFSIZE+10];
-	// for overflow conditions in loops below
-	ringBuf[RINGBUFSIZE+0] = 0xff;
-	ringBuf[RINGBUFSIZE+1] = 0xff;
-	ringBuf[RINGBUFSIZE+2] = 0xff;
-	ringBuf[RINGBUFSIZE+3] = 0xff;
-	unsigned char qt;
-	QueryTermInfo *qtx;
-	uint32_t wx;
-	int32_t ourFirstPos = -1;
-#endif
 	
-	int32_t fail0 = 0;
-	int32_t pass0 = 0;
-	int32_t fail = 0;
-	int32_t pass = 0;
+	int32_t prefiltMaxPossScoreFail 		= 0;
+	int32_t prefiltMaxPossScorePass 		= 0;
+	int32_t prefiltBestDistMaxPossScoreFail = 0;
+	int32_t prefiltBestDistMaxPossScorePass	= 0;
 
 
 	// populate the cursors for each sublist
@@ -3138,6 +3124,7 @@ void PosdbTable::intersectLists10_r ( ) {
 				}
 			}
 
+
 			if( currPassNum == INTERSECT_SCORING ) {
 				//
 				// Pre-advance each termlist's cursor to skip to next docid.
@@ -3146,8 +3133,6 @@ void PosdbTable::intersectLists10_r ( ) {
 					logTrace(g_conf.m_logTracePosdb, "END. advanceTermListCursors failed");
 					return;
 				}
-
-
 
 				if( !m_q->m_isBoolean ) {
 
@@ -3166,7 +3151,7 @@ void PosdbTable::intersectLists10_r ( ) {
 					//
 					// Only go through this if we actually have a minimum score to compare with ...
 					// No need if minWinningScore is still -1
-					if ( minWinningScore >= 0 ) {
+					if ( minWinningScore >= 0.0 ) {
 						logTrace(g_conf.m_logTracePosdb, "Compute 'upper bound' for each query term");
 
 						// If there's no way we can break into the winner's circle, give up!
@@ -3191,7 +3176,7 @@ void PosdbTable::intersectLists10_r ( ) {
 							// worst score of the 10th result, then it can not win.
 							if ( maxScore <= minWinningScore ) {
 								docIdPtr += 6;
-								fail0++;
+								prefiltMaxPossScoreFail++;
 								skipToNextDocId = true;
 								break;	// break out of numQueryTermsToHandle loop
 							}
@@ -3203,13 +3188,13 @@ void PosdbTable::intersectLists10_r ( ) {
 						continue;
 					}
 
-					pass0++;
+					prefiltMaxPossScorePass++;
 
-					if ( m_sortByTermNum < 0 && m_sortByTermNumInt < 0 ) {
+					if ( minWinningScore >= 0.0 && m_sortByTermNum < 0 && m_sortByTermNumInt < 0 ) {
 
 						if( !prefilterMaxPossibleScoreByDistance(qtibuf, qpos, minWinningScore) ) {
 							docIdPtr += 6;
-							fail++;
+							prefiltBestDistMaxPossScoreFail++;
 							skipToNextDocId = true;
 						}
 					} // not m_sortByTermNum or m_sortByTermNumInt
@@ -3218,7 +3203,7 @@ void PosdbTable::intersectLists10_r ( ) {
 						// Continue docIdPtr < docIdEnd loop
 						continue;	
 					}
-					pass++;
+					prefiltBestDistMaxPossScorePass++;
 				} // !m_q->m_isBoolean
 			}	// currPassNum == INTERSECT_SCORING
 
@@ -3245,6 +3230,8 @@ void PosdbTable::intersectLists10_r ( ) {
 				}
 			}
 
+
+
 			//
 			// PERFORMANCE HACK:
 			//
@@ -3255,7 +3242,7 @@ void PosdbTable::intersectLists10_r ( ) {
 
 			// all posdb keys for this docid should fit in here, the 
 			// mini merge buf:
-			mptr = mbuf;
+			mptr = miniMergeBuf;
 
 			// . merge each set of sublists
 			// . like we merge a term's list with its two associated bigram
@@ -3263,10 +3250,11 @@ void PosdbTable::intersectLists10_r ( ) {
 			// . and merge all the synonym lists for that term together as well.
 			//   so if the term is 'run' we merge it with the lists for
 			//   'running' 'ran' etc.
-			logTrace(g_conf.m_logTracePosdb, "Merge sublists");
+			logTrace(g_conf.m_logTracePosdb, "Merge sublists into a single list per query term");
 			for ( int32_t j = 0 ; j < m_numQueryTermInfos ; j++ ) {
 				// get the query term info
 				QueryTermInfo *qti = &qtibuf[j];
+
 				// just use the flags from first term i guess
 				// NO! this loses the wikihalfstopbigram bit! so we gotta
 				// add that in for the key i guess the same way we add in
@@ -3279,9 +3267,11 @@ void PosdbTable::intersectLists10_r ( ) {
 					// if its empty, that's good!
 					continue;
 				}
+
 				// the merged list for term #j is here:
-				miniMergedList [j] = mptr;
+				miniMergedList[j] = mptr;
 				bool isFirstKey = true;
+
 				// populate the nwp[] arrays for merging
 				int32_t nsub = 0;
 				for ( int32_t k = 0 ; k < qti->m_numMatchingSubLists ; k++ ) {
@@ -3320,7 +3310,7 @@ void PosdbTable::intersectLists10_r ( ) {
 					bflags         [j] = nwpFlags[0];
 					continue;
 				}
-				// . ok, merge the lists into a list in mbuf
+				// . ok, merge the lists into a list in miniMergeBuf
 				// . get the min of each list
 
 				bool currTermDone = false;
@@ -3455,7 +3445,7 @@ void PosdbTable::intersectLists10_r ( ) {
 			}
 
 			// breach?
-			if ( mptr > mbuf + 300000 ) {
+			if ( mptr > miniMergeBuf + 300000 ) {
 				gbshutdownAbort(true);
 			}
 
@@ -4148,10 +4138,10 @@ void PosdbTable::intersectLists10_r ( ) {
 
 
 	if ( m_debug ) {
-		log(LOG_INFO, "posdb: # fail0 = %" PRId32" ", fail0 );
-		log(LOG_INFO, "posdb: # pass0 = %" PRId32" ", pass0 );
-		log(LOG_INFO, "posdb: # fail = %" PRId32" ", fail );
-		log(LOG_INFO, "posdb: # pass = %" PRId32" ", pass );
+		log(LOG_INFO, "posdb: # prefiltMaxPossScoreFail........: %" PRId32" ", prefiltMaxPossScoreFail );
+		log(LOG_INFO, "posdb: # prefiltMaxPossScorePass........: %" PRId32" ", prefiltMaxPossScorePass );
+		log(LOG_INFO, "posdb: # prefiltBestDistMaxPossScoreFail: %" PRId32" ", prefiltBestDistMaxPossScoreFail );
+		log(LOG_INFO, "posdb: # prefiltBestDistMaxPossScorePass: %" PRId32" ", prefiltBestDistMaxPossScorePass );
 	}
 
 	// get time now
