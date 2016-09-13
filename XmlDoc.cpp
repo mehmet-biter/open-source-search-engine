@@ -2074,7 +2074,7 @@ bool XmlDoc::indexDoc2 ( ) {
 	}
 
 	// make sure our msg4 is no longer in the linked list!
-	if (m_msg4Waiting && Msg4::isInMsg4LinkedList(&m_msg4)){
+	if (m_msg4Waiting && Msg4::isInLinkedList(&m_msg4)){
 		g_process.shutdownAbort(true);
 	}
 
