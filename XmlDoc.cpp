@@ -13313,7 +13313,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 	// how much to alloc? compute an upper bound
 	int32_t need = 0;
 
-	setStatus("hashing posdb and datedb terms");
+	setStatus("hashing posdb terms");
 
 	// . hash our documents terms into "tt1"
 	// . hash the old document's terms into "tt2"
