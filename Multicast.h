@@ -161,7 +161,7 @@ private:
 	// did we have an errno with this slot?
 	int32_t        m_errnos     [MAX_HOSTS_PER_GROUP]; 
 	// transaction in progress?
-	char        m_inProgress [MAX_HOSTS_PER_GROUP]; 
+	bool        m_inProgress [MAX_HOSTS_PER_GROUP];
 	int64_t   m_launchTime [MAX_HOSTS_PER_GROUP];
 
 	// steal this from the slot(s) we get

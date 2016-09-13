@@ -643,7 +643,7 @@ bool Multicast::sendToHost ( int32_t i ) {
 		return false;
 	}
 	// mark it as outstanding
-	m_inProgress[i] = 1;
+	m_inProgress[i] = true;
 	// set our last launch date
 	m_lastLaunch = nowms ; // gettimeofdayInMilliseconds();
 	// save the host, too
@@ -897,7 +897,7 @@ void Multicast::gotReply1 ( UdpSlot *slot ) {
 	}
 
 	// mark it as no longer in progress
-	m_inProgress[i] = 0;
+	m_inProgress[i] = false;
 
 	Host *h = m_hostPtrs[i];
 
@@ -1081,7 +1081,7 @@ void Multicast::destroySlotsInProgress ( UdpSlot *slot ) {
 		// destroy this slot that's in progress
 		g_udpServer.destroySlot ( m_slots[i] );
 		// do not re-destroy. consider no longer in progress.
-		m_inProgress[i] = 0;
+		m_inProgress[i] = false;
 	}
 }
 
