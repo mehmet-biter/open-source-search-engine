@@ -13538,13 +13538,6 @@ char *XmlDoc::getMetaList(bool forDelete) {
 		needTitledb += m_titleRecBuf.length();
 	}
 
-	// set new key for titledb
-	key96_t nk;
-	nk.setMin();
-	if (nd && m_useTitledb) {
-		nk = *nd->getTitleRecKey();
-	}
-
 	if (m_useTitledb) {
 		// then add it in
 		need += needTitledb;
