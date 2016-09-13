@@ -13446,10 +13446,15 @@ char *XmlDoc::getMetaList(bool forDelete) {
 	// . for adding our outlinks to spiderdb
 	// . see SpiderRequest::getRecSize() for description
 	// . SpiderRequest::getNeededSize() will include the null terminator
+	int32_t needSpiderdb2 = 0;
+
 	// don't need this if doing consistecy check
 	// nor for generating the delete meta list for incremental indexing
 	// and the url buffer of outlinks. includes \0 terminators i think
-	int32_t needSpiderdb2 = (m_doingConsistencyCheck || forDelete) ? 0 : ((SpiderRequest::getNeededSize(0) * m_links.getNumLinks()) + m_links.getLinkBufLen());
+	if (!m_doingConsistencyCheck && !forDelete) {
+		needSpiderdb2 = (SpiderRequest::getNeededSize(0) * m_links.getNumLinks()) + m_links.getLinkBufLen();
+	}
+
 	need += needSpiderdb2;
 
 	// the new tags for tagdb
