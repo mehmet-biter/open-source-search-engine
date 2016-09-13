@@ -16,7 +16,6 @@
 #include "GbMutex.h"
 #include "ScopedLock.h"
 
-static void gotMsg0ReplyWrapper ( void *state );
 
 static HashTableX s_ht;
 static bool s_initialized = false;
@@ -1204,9 +1203,26 @@ static bool s_cacheInitialized = false;
 static RdbCache s_cache;
 static GbMutex s_cacheInitializedMutex;
 
-Msg8a::Msg8a() {
-	m_replies  = 0;
-	m_requests = 0;
+
+Msg8a::Msg8a()
+  : m_url(NULL),
+    m_collnum(-1),
+    m_callback(NULL),
+    m_state(NULL),
+    //m_msg0s
+    //m_siteStartKey
+    //m_siteEndKey
+    m_niceness(0),
+    m_dom(NULL),
+    m_hostEnd(NULL),
+    m_p(NULL),
+    m_requests(0), m_replies(0),
+    m_doneLaunching(false),
+    m_errno(0),
+    m_tagRec(NULL),
+    m_state2(NULL),
+    m_state3(NULL)
+{
 }
 
 Msg8a::~Msg8a ( ) {
@@ -1516,7 +1532,7 @@ bool Msg8a::launchGetRequests ( ) {
 	return (m_requests == m_replies);
 }
 	
-static void gotMsg0ReplyWrapper ( void *state ) {
+void Msg8a::gotMsg0ReplyWrapper ( void *state ) {
 	Msg8aState *msg8aState = (Msg8aState*)state;
 
 	Msg8a *msg8a = msg8aState->m_msg8a;

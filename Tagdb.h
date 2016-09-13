@@ -214,8 +214,11 @@ class Msg8a {
 	bool getTagRec( Url *url, collnum_t collnum, int32_t niceness, void *state, void (*callback)( void * ),
 	                TagRec *tagRec );
 	
+private:
 	bool launchGetRequests();
 	void gotAllReplies ( ) ;
+
+	static void gotMsg0ReplyWrapper(void *);
 
 	// some specified input
 	Url   *m_url;
@@ -238,13 +241,14 @@ class Msg8a {
 
 	int32_t  m_requests;
 	int32_t  m_replies;
-	char  m_doneLaunching;
+	bool  m_doneLaunching;
 
 	int32_t  m_errno;
 
 	// we set this for the caller
 	TagRec *m_tagRec;
 
+public:
 	// hack for MsgE
 	void *m_state2;
 	void *m_state3;
