@@ -305,20 +305,16 @@ bool Msg4::addMetaList2 ( ) {
 		// mask off rdbId
 		rdbId &= 0x7f;
 
-		logTrace( g_conf.m_logTraceMsg4, "  rdbId: %02x", rdbId);
-
 		// get the key of the current record
 		const char *key = p;
 
 		// get the key size. a table lookup in Rdb.cpp.
 		int32_t ks = getKeySizeFromRdbId ( rdbId );
 
-		logTrace( g_conf.m_logTraceMsg4, "  Key: %s", KEYSTR(key, ks) );
-		logTrace( g_conf.m_logTraceMsg4, "  Key size: %" PRId32, ks);
-
 		// negative key?
 		bool del = !( *key & 0x01 );
-		logTrace( g_conf.m_logTraceMsg4, "  Negative key: %s", del?"true":"false");
+
+
 
 		// skip key
 		p += ks;
@@ -330,15 +326,11 @@ bool Msg4::addMetaList2 ( ) {
 		if ( m_shardOverride >= 0 ) {
 			shardNum = m_shardOverride;
 		}
-			
-		logTrace( g_conf.m_logTraceMsg4, "  shardNum: %" PRId32, shardNum);
 
 		// get the record, is -1 if variable. a table lookup.
 		// . negative keys have no data
 		// . this unfortunately is not true according to RdbList.cpp
 		int32_t dataSize = del ? 0 : getDataSizeFromRdbId ( rdbId );
-
-		logTrace( g_conf.m_logTraceMsg4, "  dataSize: %" PRId32, dataSize);
 
 		// if variable read that in
 		if ( dataSize == -1 ) {
@@ -349,8 +341,6 @@ bool Msg4::addMetaList2 ( ) {
 
 			// skip dataSize
 			p += 4;
-
-			logTrace( g_conf.m_logTraceMsg4, "  dataSize: %" PRId32" (variable size read)", dataSize);
 		}
 
 		// skip over the data, if any
@@ -367,9 +357,10 @@ bool Msg4::addMetaList2 ( ) {
 		// group. uses a quick hash table.
 		Host *hosts = g_hostdb.getShard ( shardNum );
 		int32_t hostId = hosts[0].m_hostId;
-		logTrace( g_conf.m_logTraceMsg4, "  hostId: %" PRId32, hostId);
-		
-		
+
+		logTrace(g_conf.m_logTraceMsg4, "  rdb=%s key=%s keySize=%" PRId32" isDel=%d dataSize=%" PRId32" shardNum=%" PRId32" hostId=%" PRId32,
+		         getDbnameFromId(rdbId), KEYSTR(key, ks), ks, del, shardNum, dataSize, hostId);
+
 		// . add that rec to this groupId, gid, includes the key
 		// . these are NOT allowed to be compressed (half bit set)
 		//   and this point
