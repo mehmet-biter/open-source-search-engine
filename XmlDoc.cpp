@@ -13500,6 +13500,13 @@ char *XmlDoc::getMetaList(bool forDelete) {
 	// the title rec
 	//
 
+	// . add in title rec size
+	// . should be valid because we called getTitleRecBuf() above
+	// . this should include the key
+	// . add in possible negative key for deleting old title rec
+	// +1 for rdbId
+	int32_t needTitledb = sizeof(key96_t) + 1;
+
 	// . MAKE the title rec from scratch, that is all we need at this point
 	// . if repairing and not rebuilding titledb, we do not need the titlerec
 	if (m_useTitledb) {
@@ -13522,16 +13529,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 		if (tr->length() == 0 && !m_indexCode) {
 			g_process.shutdownAbort(true);
 		}
-	}
 
-	// . add in title rec size
-	// . should be valid because we called getTitleRecBuf() above
-	// . this should include the key
-	// . add in possible negative key for deleting old title rec
-	// +1 for rdbId
-	int32_t needTitledb = sizeof(key96_t) + 1;
-
-	if (m_useTitledb) {
 		if (nd && !forDelete) {
 			needTitledb += m_titleRecBuf.length();
 		}
