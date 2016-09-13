@@ -361,7 +361,7 @@ public:
 	char *getIsPermalink ( ) ;
 	char *getIsUrlPermalinkFormat ( ) ;
 	char *getIsRSS ( ) ;
-	char *getIsSiteMap ( ) ;
+	bool *getIsSiteMap ( ) ;
 	class Xml *getXml ( ) ;
 	uint8_t *getLangVector ( ) ;	
 	uint8_t *getLangId ( ) ;
@@ -849,7 +849,7 @@ public:
 	bool m_exactContentHash64Valid;
 	bool m_jpValid;
 
-	char m_isSiteMap;
+	bool m_isSiteMap;
 
 	// shadows
 	char m_isRSS2;

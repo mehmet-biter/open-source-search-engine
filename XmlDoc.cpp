@@ -3178,10 +3178,10 @@ char *XmlDoc::getIsRSS ( ) {
 	return &m_isRSS2;
 }
 
-char *XmlDoc::getIsSiteMap ( ) {
+bool *XmlDoc::getIsSiteMap ( ) {
 	if ( m_isSiteMapValid ) return &m_isSiteMap;
 	uint8_t  *ct = getContentType();
-	if ( ! ct    || ct    == (uint8_t  *)-1 ) return (char *)ct;
+	if ( ! ct    || ct    == (uint8_t  *)-1 ) return (bool *)ct;
 	char *uf = m_firstUrl.getFilename();
 	int32_t ulen = m_firstUrl.getFilenameLen();
 	// sitemap.xml
