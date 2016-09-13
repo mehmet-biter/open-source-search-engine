@@ -10,6 +10,7 @@
 #include "Loop.h"
 #include "SafeBuf.h"
 #include "Msg0.h"
+#include "GbMutex.h"
 
 // . Tag::m_type is this if its a dup in the TagRec
 // . so if www.xyz.com has one tag and xyz.com has another, then
@@ -242,6 +243,7 @@ private:
 	int32_t  m_requests;
 	int32_t  m_replies;
 	bool  m_doneLaunching;
+	GbMutex m_mtx;
 
 	int32_t  m_errno;
 
