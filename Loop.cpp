@@ -208,6 +208,7 @@ bool Loop::registerSleepCallback ( int32_t tick, void *state, void (* callback)(
 		return false;
 	}
 
+	ScopedLock sl(m_slotMutex);
 	if ( tick < m_minTick ) {
 		m_minTick = tick;
 	}
