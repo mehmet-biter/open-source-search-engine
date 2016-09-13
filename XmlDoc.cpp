@@ -13312,8 +13312,6 @@ char *XmlDoc::getMetaList(bool forDelete) {
 
 	// how much to alloc? compute an upper bound
 	int32_t need = 0;
-	// should we index this doc?
-	bool index1 = true;
 
 	setStatus("hashing posdb and datedb terms");
 
@@ -13330,7 +13328,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 	// . i guess we can have link and neighborhood text too! we don't
 	//   count it here though... but add 5k for it...
 	int32_t need4 = nw * 4 + 5000;
-	if (nd && index1 && m_usePosdb) {
+	if (nd && m_usePosdb) {
 		if (!tt1.set(18, 4, need4, NULL, 0, false, "posdb-indx")) {
 			logTrace(g_conf.m_logTraceXmlDoc, "tt1.set failed");
 			return NULL;
