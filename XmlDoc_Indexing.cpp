@@ -289,37 +289,37 @@ bool XmlDoc::hashNoSplit ( HashTableX *tt ) {
 // . returns -1 if blocked, returns NULL and sets g_errno on error
 // . "sr" is the tagdb Record
 // . "ws" store the terms for PageParser.cpp display
-char *XmlDoc::hashAll ( HashTableX *table ) {
-
+char *XmlDoc::hashAll(HashTableX *table) {
 	logTrace(g_conf.m_logTraceXmlDoc, "BEGIN");
-		
-	setStatus ( "hashing document" );
 
-	if ( m_allHashed ) return (char *)1;
+	setStatus("hashing document");
+
+	if (m_allHashed) {
+		return (char *)1;
+	}
 
 	// sanity checks
-	if ( table->m_ks != 18 ) { g_process.shutdownAbort(true); }
-	if ( table->m_ds != 4  ) { g_process.shutdownAbort(true); }
+	if (table->m_ks != 18 || table->m_ds != 4) {
+		g_process.shutdownAbort(true);
+	}
 
-	if ( m_wts && m_wts->m_ks != 12  ) { g_process.shutdownAbort(true); }
 	// ptr to term = 4 + score = 4 + ptr to sec = 4
-	if ( m_wts && m_wts->m_ds!=sizeof(TermDebugInfo)){g_process.shutdownAbort(true);}
+	if (m_wts && (m_wts->m_ks != 12 || m_wts->m_ds != sizeof(TermDebugInfo))) {
+		g_process.shutdownAbort(true);
+	}
 
 	uint8_t *ct = getContentType();
-	if ( ! ct )
-	{
+	if (!ct) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, getContentType failed");
 		return NULL;
 	}
 	
 	// BR 20160127: Never index JSON and XML content
-	if ( *ct == CT_JSON || *ct == CT_XML )
-	{
+	if (*ct == CT_JSON || *ct == CT_XML) {
 		// For XML (JSON should not get here as it should be filtered out during spidering)
 		// store the URL as the only thing in posdb so we are able to find it, and
 		// eventually ban it.
-		if ( !hashUrl( table, true ) )  // urlOnly (skip IP and term generation)
-		{
+		if (!hashUrl(table, true)) {  // urlOnly (skip IP and term generation)
 			logTrace(g_conf.m_logTraceXmlDoc, "END, hashUrl failed");
 			return NULL;
 		}
@@ -327,67 +327,67 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 		return (char *)1;
 	}
 
-
-
 	unsigned char *hc = (unsigned char *)getHopCount();
-	if ( ! hc || hc == (void *)-1 ) 
-	{
+	if (!hc || hc == (void *)-1) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, getHopCount returned -1");
 		return (char *)hc;
 	}
 
 	// need this for hashing
 	HashTableX *cnt = getCountTable();
-	if ( ! cnt ) 
-	{
+	if (!cnt) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, getCountTable failed");
 		return (char *)cnt;
 	}
-	if ( cnt == (void *)-1 ) { g_process.shutdownAbort(true); }
+	if (cnt == (void *)-1) {
+		g_process.shutdownAbort(true);
+	}
 
 	// and this
 	Links *links = getLinks();
-	if ( ! links ) 
-	{
+	if (!links) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, getLinks failed");
 		return (char *)links;
 	}
-	if ( links == (Links *)-1 ) { g_process.shutdownAbort(true); }
+	if (links == (Links *)-1) {
+		g_process.shutdownAbort(true);
+	}
 
 	char *wordSpamVec = getWordSpamVec();
-	if (!wordSpamVec) 
-	{
+	if (!wordSpamVec) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, getWordSpamVec failed");
-		return (char *)wordSpamVec;
+		return wordSpamVec;
 	}
-	if (wordSpamVec==(void *)-1) {g_process.shutdownAbort(true);}
+	if (wordSpamVec == (void *)-1) {
+		g_process.shutdownAbort(true);
+	}
 
-	char *fragVec = getFragVec();//m_fragBuf.getBufStart();
-	if ( ! fragVec ) 
-	{
+	char *fragVec = getFragVec();
+	if (!fragVec) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, getFragVec failed");
-		return (char *)fragVec;
+		return fragVec;
 	}
-	if ( fragVec == (void *)-1 ) { g_process.shutdownAbort(true); }
+	if (fragVec == (void *)-1) {
+		g_process.shutdownAbort(true);
+	}
 
 	// why do we need this?
 	if ( m_wts ) {
 		uint8_t *lv = getLangVector();
-		if ( ! lv ) 
-		{
+		if (!lv) {
 			logTrace(g_conf.m_logTraceXmlDoc, "END, getLangVector failed");
 			return (char *)lv;
 		}
-		if ( lv == (void *)-1 ) { g_process.shutdownAbort(true); }
+		if (lv == (void *)-1) {
+			g_process.shutdownAbort(true);
+		}
 	}
 
 	CollectionRec *cr = getCollRec();
-	if ( ! cr ) 
-	{
+	if ( ! cr ) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, getCollRec failed");
 		return NULL;
 	}
-
 
 	// do not repeat this if the cachedb storage call blocks
 	m_allHashed = true;
@@ -395,48 +395,36 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 	// reset distance cursor
 	m_dist = 0;
 
-
-	if ( ! hashContentType   ( table ) ) 
-	{
+	if (!hashContentType(table)) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, hashContentType failed");
 		return NULL;
 	}
-	
-	if ( ! hashUrl           ( table, false ) ) 
-	{
+
+	if (!hashUrl(table, false)) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, hashUrl failed");
 		return NULL;
 	}
-	
-	if ( ! hashLanguage      ( table ) ) 
-	{
+
+	if (!hashLanguage(table)) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, hashLanguage failed");
 		return NULL;
 	}
-	
-	if ( ! hashCountry       ( table ) ) 
-	{
+
+	if (!hashCountry(table)) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, hashCountry failed");
 		return NULL;
 	}
 
-// BR 20160106 removed:	if ( ! hashAds           ( table ) ) return NULL;
-// BR 20160106 removed:	if ( ! hashSubmitUrls    ( table ) ) return NULL;
-	if ( ! hashIsAdult       ( table ) ) 
-	{
+	if (!hashIsAdult(table)) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, hashIsAdult failed");
 		return NULL;
 	}
-
-	// has gbhasthumbnail:1 or 0
-// BR 20160106 removed:	if ( ! hashImageStuff    ( table ) ) return NULL;
 
 	// now hash the terms sharded by termid and not docid here since they
 	// just set a special bit in posdb key so Rebalance.cpp can work.
 	// this will hash the content checksum which we need for deduping
 	// which we use for diffbot custom crawls as well.
-	if ( ! hashNoSplit ( table ) ) 
-	{
+	if (!hashNoSplit(table)) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, hashNoSplit failed");
 		return NULL;
 	}
@@ -445,15 +433,12 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 	// global index now, so don't need this... 9/28/2014
 
 	// stop indexing xml docs
-	bool indexDoc = true;
-	if ( ! cr->m_indexBody   ) indexDoc = false;
-
+	bool indexDoc = cr->m_indexBody;
 
 	// global index unless this is a json object in which case it is
 	// hashed above in the call to hashJSON(). this will decrease disk
 	// usage by about half, posdb* files are pretty big.
-	if ( ! indexDoc ) 
-	{
+	if (!indexDoc) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, !indexDoc");
 		return (char *)1;
 	}
@@ -464,8 +449,7 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 
 	// hash the body of the doc first so m_dist is 0 to match
 	// the rainbow display of sections
-	if ( ! hashBody2 (table ) ) 
-	{
+	if (!hashBody2(table)) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, hashBody2 failed");
 		return NULL;
 	}
@@ -476,8 +460,7 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 	// repeated title terms because we do not do spam detection
 	// on them. thus, we need to hash these first before anything
 	// else. give them triple the body score
-	if ( ! hashTitle ( table )) 
-	{
+	if (!hashTitle(table)) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, hashTitle failed");
 		return NULL;
 	}
@@ -485,8 +468,7 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 	// . hash the keywords tag, limited to first 2k of them so far
 	// . hash above the neighborhoods so the neighborhoods only index
 	//   what is already in the hash table
-	if ( ! hashMetaKeywords(table ) ) 
-	{
+	if (!hashMetaKeywords(table)) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, hashMetaKeywords failed");
 		return NULL;
 	}
@@ -495,8 +477,7 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 	// we index the single words in the neighborhoods next, and
 	// we had songfacts.com coming up for the 'street light facts'
 	// query because it had a bunch of anomalous inlink text.
-	if ( ! hashIncomingLinkText(table,false,true)) 
-	{
+	if (!hashIncomingLinkText(table, false, true)) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, hashIncomingLinkText failed");
 		return NULL;
 	}
@@ -504,8 +485,7 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 	// then the meta summary and description tags with half the score of
 	// the body, and only hash a term if was not already hashed above
 	// somewhere.
-	if ( ! hashMetaSummary(table) ) 
-	{
+	if (!hashMetaSummary(table)) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, hashMetaSummary failed");
 		return NULL;
 	}
@@ -514,67 +494,47 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 	// BR 20160220
 	// Store value of meta tag "geo.placename" to help aid searches for
 	// location specific sites, e.g. 'Restaurant in London'
-	if ( ! hashMetaGeoPlacename(table) ) 
-	{
+	if (!hashMetaGeoPlacename(table)) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, hashMetaGeoPlacename failed");
 		return NULL;
 	}
 
-
-
- skip:
+skip:
 
 	// this will only increment the scores of terms already in the table
 	// because we neighborhoods are not techincally in the document
 	// necessarily and we do not want to ruin our precision
-	if ( ! hashNeighborhoods ( table ) ) 
-	{
+	if (!hashNeighborhoods(table)) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, hashNeighborhoods failed");
 		return NULL;
 	}
 
-	if ( ! hashLinks         ( table ) ) 
-	{
+	if (!hashLinks(table)) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, hashLinks failed");
 		return NULL;
 	}
-	
-	if ( ! hashDateNumbers   ( table ) ) 
-	{
+
+	if (!hashDateNumbers(table)) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, hashDateNumbers failed");
 		return NULL;
 	}
-	
-	if ( ! hashMetaTags      ( table ) ) 
-	{
+
+	if (!hashMetaTags(table)) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, hashMetaTags failed");
 		return NULL;
 	}
 
-	if ( ! hashPermalink     ( table ) )
-	{
+	if (!hashPermalink(table)) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, hashPermaLink failed");
 		return NULL;
 	}
 
 	// hash gblang:de last for parsing consistency
-	if ( ! hashLanguageString ( table ) ) 
-	{
+	if (!hashLanguageString(table)) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, hashLanguageString failed");
 		return NULL;
 	}
 
-	// . hash gbkeyword:gbmininlinks where the score is the inlink count
-	// . the inlink count can go from 1 to 255
-	// . an ip neighborhood can vote no more than once
-	// . this is in LinkInfo::hash
-	//if ( ! hashMinInlinks ( table , linkInfo ) ) return NULL;
-
-
-	// return true if we don't need to print parser info
-	//if ( ! m_pbuf ) return true;
-	// print out the table into g_bufPtr now if we need to
-	//table->print ( );
 	logTrace(g_conf.m_logTraceXmlDoc, "END, OK");
 	return (char *)1;
 }
