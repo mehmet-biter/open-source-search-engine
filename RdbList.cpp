@@ -116,26 +116,32 @@ void RdbList::set(char *list, int32_t listSize, char *alloc, int32_t allocSize, 
                   int32_t fixedDataSize, bool ownData, bool useHalfKeys, char keySize) {
 	logTrace(g_conf.m_logTraceRdbList, "BEGIN. list=%p listSize=%" PRId32" alloc=%p allocSize=%" PRId32,
 	         list, listSize, alloc, allocSize);
+	logTrace(g_conf.m_logTraceRdbList, "startKey=%s endKey=%s keySize=%hhu fixedDataSize=%" PRId32,
+	         KEYSTR(startKey, keySize), KEYSTR(endKey, keySize), keySize, fixedDataSize);
 
 	// free and NULLify any old m_list we had to make room for our new list
 	freeList();
+
 	// set this first since others depend on it
 	m_ks = keySize;
+
 	// sanity check (happens when IndexReadInfo exhausts a list to Msg2)
-	if ( KEYCMP(startKey,endKey,m_ks) > 0 )
-		log(LOG_REMIND,"db: rdblist: set: startKey > endKey.");
+	if (KEYCMP(startKey, endKey, m_ks) > 0) {
+		log(LOG_WARN, "db: rdblist: set: startKey > endKey.");
+	}
+
 	// safety check
-	if ( fixedDataSize != 0 && useHalfKeys ) {
-		log(LOG_LOGIC,"db: rdblist: set: useHalfKeys 1 when "
-		    "fixedDataSize not 0.");
+	if (fixedDataSize != 0 && useHalfKeys) {
+		log(LOG_LOGIC, "db: rdblist: set: useHalfKeys 1 when fixedDataSize not 0.");
 		useHalfKeys = false;
 	}
+
 	// got an extremely ugly corrupt stack core without this check
-	if ( m_list && m_listSize == 0 ){
-		log ( LOG_WARN, "rdblist: listSize of 0 but list pointer not "
-		      "NULL!" );
+	if (m_list && m_listSize == 0) {
+		log(LOG_WARN, "rdblist: listSize of 0 but list pointer not NULL!");
 		m_list = NULL;
 	}
+
 	// set our list parms
 	m_list          = list;
 	m_listSize      = listSize;
@@ -147,8 +153,11 @@ void RdbList::set(char *list, int32_t listSize, char *alloc, int32_t allocSize, 
 	m_fixedDataSize = fixedDataSize;
 	m_ownData       = ownData;
 	m_useHalfKeys   = useHalfKeys;
+
 	// use this call now to set m_listPtr and m_listPtrHi based on m_list
 	resetListPtr();
+
+	logTrace(g_conf.m_logTraceRdbList, "END");
 }
 
 // like above but uses 0/maxKey for startKey/endKey
@@ -1673,8 +1682,7 @@ void RdbList::merge_r(RdbList **lists, int32_t numLists, const char *startKey, c
 
 	// did they call prepareForMerge()?
 	if ( m_mergeMinListSize == -1 ) {
-		log(LOG_LOGIC,"db: rdblist: merge_r: prepareForMerge() not "
-			"called. ignoring error and returning emtpy list.");
+		log(LOG_LOGIC,"db: rdblist: merge_r: prepareForMerge() not called. ignoring error and returning emtpy list.");
 		// this happens if we nuke doledb during a merge of it. it is just bad timing
 		return;
 		// save state and dump core, sigBadHandler will catch this
@@ -1688,8 +1696,8 @@ void RdbList::merge_r(RdbList **lists, int32_t numLists, const char *startKey, c
 
 	// warning msg
 	if ( m_listPtr != m_listEnd ) {
-		log( LOG_LOGIC, "db: rdblist: merge_r: warning. merge not storing at end of list for %s.",
-		     getDbnameFromId( ( uint8_t ) rdbId ) );
+		log(LOG_LOGIC, "db: rdblist: merge_r: warning. merge not storing at end of list for %s.",
+		    getDbnameFromId((uint8_t)rdbId));
 	}
 
 	// set our key range
@@ -1700,8 +1708,6 @@ void RdbList::merge_r(RdbList **lists, int32_t numLists, const char *startKey, c
 	//   deletes all the urls then does a dump of just negative keys.
 	//   so let's comment it out for now
 	if ( KEYCMP(m_startKey,m_endKey,m_ks)!=0 && KEYNEG(m_endKey) ) {
-		// log(LOG_LOGIC,"db: rdblist: merge_r: Illegal endKey for "
-		//     "merging rdb=%s. fixing.",getDbnameFromId(rdbId));
 		// make it legal so it will be read first NEXT time
 		KEYDEC(m_endKey,m_ks);
 	}
