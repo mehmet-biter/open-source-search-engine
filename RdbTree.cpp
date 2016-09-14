@@ -1196,13 +1196,10 @@ bool RdbTree::checkTree2 ( bool printMsgs , bool doChainTest ) {
 
 	// these guy always use a collnum of 0
 	bool doCollRecCheck = true;
-	if ( !strcmp(m_dbname,"catdb") ) doCollRecCheck = false;
 	if ( !strcmp(m_dbname,"statsdb") ) doCollRecCheck = false;
 
 
 	if ( !strcmp(m_dbname,"indexdb") ) useHalfKeys = true;
-	if ( !strcmp(m_dbname,"datedb" ) ) useHalfKeys = true;
-	if ( !strcmp(m_dbname,"tfndb"  ) ) useHalfKeys = true;
 	if ( !strcmp(m_dbname,"linkdb" ) ) useHalfKeys = true;
 
 	bool isTitledb = false;
