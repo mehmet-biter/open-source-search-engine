@@ -13421,16 +13421,16 @@ char *XmlDoc::getMetaList(bool forDelete) {
 	// if injecting we add a spiderrequest to be able to update it
 	// but don't do this if it is pagereindex. why is pagereindex
 	// setting the injecting flag anyway?
-	int32_t needSpiderdb3 = 0;
+	int32_t needSpiderdbRequest = 0;
 	if (m_sreqValid && m_sreq.m_isInjecting && m_sreq.m_fakeFirstIp && !m_sreq.m_forceDelete) {
 		// NO! because when injecting a warc and the subdocs
 		// it contains, gb then tries to spider all of them !!! sux...
-		needSpiderdb3 = 0;
+		needSpiderdbRequest = 0;
 	} else if (m_useSpiderdb && m_useSecondaryRdbs) {
 		// or if we are rebuilding spiderdb
-		needSpiderdb3 = sizeof(SpiderRequest) + m_firstUrl.getUrlLen() + 1;
+		needSpiderdbRequest = sizeof(SpiderRequest) + m_firstUrl.getUrlLen() + 1;
 	}
-	need += needSpiderdb3;
+	need += needSpiderdbRequest;
 
 	// . for adding our outlinks to spiderdb
 	// . see SpiderRequest::getRecSize() for description
@@ -13730,7 +13730,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 	// spidered again.
 	// NO! because when injecting a warc and the subdocs
 	// it contains, gb then tries to spider all of them !!! sux...
-	if (needSpiderdb3) {
+	if (needSpiderdbRequest) {
 		// note it
 		setStatus("adding spider request");
 
@@ -13771,7 +13771,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 		m_p += revisedReq.getRecSize();
 
 		// sanity check
-		if (m_p - saved > needSpiderdb3) {
+		if (m_p - saved > needSpiderdbRequest) {
 			g_process.shutdownAbort(true);
 		}
 
