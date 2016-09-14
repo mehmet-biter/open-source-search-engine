@@ -12285,7 +12285,13 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 }
 
 
-bool XmlDoc::verifyMetaList ( char *p , char *pend , bool forDelete ) {
+bool XmlDoc::verifyMetaList(char *p, char *pend, bool forDelete, char *psaved, int32_t psize) {
+	// psaved is only set when we need to do a size check
+	if (psaved) {
+		if (pend - psaved > psize) {
+			gbshutdownLogicError();
+		}
+	}
 	return true;
 
 #if 0
@@ -12583,7 +12589,6 @@ void getMetaListWrapper ( void *state ) {
 	THIS->callCallback();
 }
 
-
 // . returns NULL and sets g_errno on error
 // . make a meta list to call Msg4::addMetaList() with
 // . called by Msg14.cpp
@@ -12624,7 +12629,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 	// . internal callback
 	// . so if any of the functions we end up calling directly or
 	//   indirectly block, this callback will be called
-	if ( ! m_masterLoop ) {
+	if (!m_masterLoop) {
 		m_masterLoop  = getMetaListWrapper;
 		m_masterState = this;
 	}
@@ -12754,14 +12759,14 @@ char *XmlDoc::getMetaList(bool forDelete) {
 	char *site = getSite();
 	if (!site || site == (void *)-1) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, getSite failed");
-		return (char *)site;
+		return site;
 	}
 
 	// this seems to be an issue as well for "unchanged" block below
 	char *isr = getIsSiteRoot();
 	if (!isr || isr == (void *)-1) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, getIsSiteRoot failed");
-		return (char *)isr;
+		return isr;
 	}
 
 	// make sure docid valid
@@ -12790,7 +12795,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 	char *isIndexed = getIsIndexed();
 	if (!isIndexed || isIndexed == (char *)-1) {
 		logTrace(g_conf.m_logTraceXmlDoc, "END, getIsIndexed failed");
-		return (char *)isIndexed;
+		return isIndexed;
 	}
 
 	// why call this way down here? it ends up downloading the doc!
@@ -13010,12 +13015,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 		m_addedSpiderReplySizeValid = true;
 
 		// sanity check
-		if (m_p - saved != needx) {
-			g_process.shutdownAbort(true);
-		}
-
-		// sanity check
-		verifyMetaList(m_metaList, m_p, forDelete);
+		verifyMetaList(m_metaList, m_p, forDelete, saved, needx);
 
 		// verify it
 		m_metaListValid = true;
@@ -13183,17 +13183,6 @@ char *XmlDoc::getMetaList(bool forDelete) {
 		if (!ipv || ipv == (void *)-1) {
 			logTrace(g_conf.m_logTraceXmlDoc, "END, getOutlinkFirstIpVector returned -1");
 			return (char *)ipv;
-		}
-	}
-
-	// get the tag buf to add to tagdb
-	SafeBuf *ntb = NULL;
-	if (m_useTagdb && !m_deleteFromIndex) {
-		logTrace(g_conf.m_logTraceXmlDoc, "call getNewTagBuf");
-		ntb = getNewTagBuf();
-		if (!ntb || ntb == (void *)-1) {
-			logTrace(g_conf.m_logTraceXmlDoc, "END, getNewTagBuf failed");
-			return (char *)ntb;
 		}
 	}
 
@@ -13457,9 +13446,22 @@ char *XmlDoc::getMetaList(bool forDelete) {
 
 	need += needSpiderdb2;
 
-	// the new tags for tagdb
-	int32_t needTagdb = ntb ? ntb->length() : 0;
+	// get the tag buf to add to tagdb
+	SafeBuf *ntb = NULL;
+	int32_t needTagdb = 0;
+	if (m_useTagdb && !m_deleteFromIndex) {
+		logTrace(g_conf.m_logTraceXmlDoc, "call getNewTagBuf");
+		ntb = getNewTagBuf();
+		if (!ntb || ntb == (void *)-1) {
+			logTrace(g_conf.m_logTraceXmlDoc, "END, getNewTagBuf failed");
+			return (char *)ntb;
+		}
+
+		needTagdb = ntb->length();
+	}
 	need += needTagdb;
+
+
 
 	//
 	// . CHECKSUM PARSING CONSISTENCY TEST
@@ -13589,12 +13591,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 	}
 
 	// sanity check
-	if (m_p - saved > needTitledb) {
-		g_process.shutdownAbort(true);
-	}
-
-	// sanity check
-	verifyMetaList(m_metaList, m_p, forDelete);
+	verifyMetaList(m_metaList, m_p, forDelete, saved, needTitledb);
 
 	//
 	// ADD BASIC POSDB TERMS
@@ -13610,16 +13607,11 @@ char *XmlDoc::getMetaList(bool forDelete) {
 		return NULL;
 	}
 
-	// sanity check
-	if (m_p - saved > needIndexdb) {
-		g_process.shutdownAbort(true);
-	}
-
 	// free all mem
 	tt1.reset();
 
 	// sanity check
-	verifyMetaList(m_metaList, m_p, forDelete);
+	verifyMetaList(m_metaList, m_p, forDelete, saved, needIndexdb);
 
 
 	//
@@ -13664,12 +13656,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 	}
 
 	// sanity check
-	if (m_p - saved > needClusterdb) {
-		g_process.shutdownAbort(true);
-	}
-
-	// sanity check
-	verifyMetaList(m_metaList, m_p, forDelete);
+	verifyMetaList(m_metaList, m_p, forDelete, saved, needClusterdb);
 
 
 	//
@@ -13686,16 +13673,11 @@ char *XmlDoc::getMetaList(bool forDelete) {
 		return NULL;
 	}
 
-	// sanity check
-	if (m_p - saved > needLinkdb) {
-		g_process.shutdownAbort(true);
-	}
-
 	// all done
 	kt1.reset();
 
 	// sanity check
-	verifyMetaList(m_metaList, m_p, forDelete);
+	verifyMetaList(m_metaList, m_p, forDelete, saved, needLinkdb);
 
 
 	//////
@@ -13739,12 +13721,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 		}
 
 		// sanity check
-		if (m_p - saved != needSpiderdb1) {
-			g_process.shutdownAbort(true);
-		}
-
-		// sanity check
-		verifyMetaList(m_metaList, m_p, forDelete);
+		verifyMetaList(m_metaList, m_p, forDelete, saved, needSpiderdb1);
 	}
 
 
@@ -13853,12 +13830,7 @@ skipNewAdd2:
 	}
 
 	// sanity check
-	if (m_p - saved > needSpiderdb2) {
-		g_process.shutdownAbort(true);
-	}
-
-	// sanity check
-	verifyMetaList(m_metaList, m_p, forDelete);
+	verifyMetaList(m_metaList, m_p, forDelete, saved, needSpiderdb2);
 
 	//
 	// ADD TAG RECORDS TO TAGDB
@@ -13870,20 +13842,15 @@ skipNewAdd2:
 	// . only do this if NOT setting from a title rec
 	// . it might add a bunch of forced spider recs to spiderdb
 	// . store into tagdb even if indexCode is set!
-	if (m_useTagdb && ntb && !forDelete) {
+	if (ntb && !forDelete) {
 		// ntb is a safebuf of Tags, which are already Rdb records
 		// so just gbmemcpy them directly over
-		gbmemcpy (m_p, ntb->getBufStart(), ntb->length());
+		memcpy(m_p, ntb->getBufStart(), ntb->length());
 		m_p += ntb->length();
 	}
 
 	// sanity check
-	if (m_p - saved > needTagdb) {
-		g_process.shutdownAbort(true);
-	}
-
-	// sanity check
-	verifyMetaList(m_metaList, m_p, forDelete);
+	verifyMetaList(m_metaList, m_p, forDelete, saved, needTagdb);
 
 	//
 	// ADD INDEXED SPIDER REPLY with different docid so we can
