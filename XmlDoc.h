@@ -471,10 +471,15 @@ public:
 	bool m_doConsistencyTesting;
 	bool doConsistencyTest ( bool forceTest ) ;
 
-	void printMetaList(char *metaList, char *metaListEnd, SafeBuf *pbuf);
-	bool verifyMetaList(char *p, char *pend, bool forDelete, char *psaved = NULL, int32_t psize = 0);
-	bool hashMetaList(HashTableX *ht, char *p, char *pend, bool checkList);
-	char *getMetaList(bool forDelete = false);
+	void printMetaList ( char *metaList , char *metaListEnd ,
+			     class SafeBuf *pbuf );
+	bool verifyMetaList ( char *p , char *pend , bool forDelete ) ;
+	bool hashMetaList ( class HashTableX *ht        ,
+			    char       *p         ,
+			    char       *pend      ,
+			    bool        checkList ) ;
+
+	char *getMetaList ( bool forDelete = false );
 
 	uint64_t m_downloadStartTime;
 
