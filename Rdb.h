@@ -239,6 +239,8 @@ public:
 		m_inDumpLoop = inDumpLoop;
 	}
 
+	bool isUseIndexFile() const { return m_useIndexFile; }
+
 	bool inAddList() const { return m_inAddList; }
 
 	// . you'll lose your data in this class if you call this

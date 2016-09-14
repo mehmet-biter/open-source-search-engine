@@ -1731,6 +1731,13 @@ void RdbList::merge_r(RdbList **lists, int32_t numLists, const char *startKey, c
 		return;
 	}
 
+	// check that we're not using index for other rdb file than posdb
+	Rdb* rdb = getRdbFromId(rdbId);
+	if (rdb->isUseIndexFile()) {
+		/// @todo ALC logic to use index file is not implemented for any rdb other than posdb. add it below if required
+		gbshutdownLogicError();
+	}
+
 	int32_t required = -1;
 	// . if merge not necessary, print a warning message.
 	// . caller should have just called constrain() then
