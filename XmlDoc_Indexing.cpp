@@ -142,7 +142,7 @@ static bool storeTerm ( const char	*s        ,
 // . hash terms that are sharded by TERMID not DOCID!!
 //
 // . returns false and sets g_errno on error
-// . these terms are stored in indexdb/datedb, but all terms with the same
+// . these terms are stored in indexdb, but all terms with the same
 //   termId reside in one and only one group. whereas normally the records
 //   are split based on docid and every group gets 1/nth of the termlist.
 // . we do this "no splitting" so that only one disk seek is required, and

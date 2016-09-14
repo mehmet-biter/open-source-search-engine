@@ -1,6 +1,6 @@
 // Copyright Gigablast, Inc. Apr 2008
 
-// tight merge indexdb and datedb at the given time every day
+// tight merge indexdb at the given time every day
 
 #ifndef GB_DAILYMERGE_H
 #define GB_DAILYMERGE_H

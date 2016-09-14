@@ -268,7 +268,7 @@ void DailyMerge::dailyMergeLoop ( ) {
 		// ok, all trees are clear and dumped
 		m_mergeMode = 5;
 		// log it
-		log("daily: Merging indexdb and datedb files.");
+		log("daily: Merging indexdb files.");
 	}
 
 	// start the merge
