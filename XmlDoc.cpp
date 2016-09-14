@@ -13947,6 +13947,7 @@ skipNewAdd2:
 				g_process.shutdownAbort(true);
 			}
 
+			/// @todo ALC we're allocating too much here, we can only have 1 del key per doc
 			if (rdbId == RDB_POSDB && g_conf.m_noInMemoryPosdbMerge) {
 				// NEW 20160803.
 				// Do not store records for POSDB in the hash table of old
@@ -14128,6 +14129,15 @@ skipNewAdd2:
 				// did not have a lost date
 				//continue;
 			}
+		}
+
+		// we need to add delete key per document when it's deleted (with term 0)
+		if (g_conf.m_noInMemoryPosdbMerge && !m_isInIndex) {
+			char key[MAX_KEY_BYTES];
+			Posdb::makeStartKey(&key, 0, *od->getDocId());
+			*nptr++ = RDB_POSDB;
+			memcpy(nptr, &key, sizeof(posdbkey_t));
+			nptr += sizeof(posdbkey_t);
 		}
 
 		// sanity. check for metalist breach
