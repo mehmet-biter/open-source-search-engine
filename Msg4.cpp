@@ -704,17 +704,14 @@ void Msg4::storeLineWaiters ( ) {
 void handleRequest4 ( UdpSlot *slot , int32_t netnice ) {
 	logTrace( g_conf.m_logTraceMsg4, "BEGIN" );
 
-	// easy var
-	UdpServer *us = &g_udpServer;
-
 	// if we just came up we need to make sure our hosts.conf is in
 	// sync with everyone else before accepting this! it might have
 	// been the case that the sender thinks our hosts.conf is the same
 	// since last time we were up, so it is up to us to check this
 	if ( g_pingServer.m_hostsConfInDisagreement ) {
 		g_errno = EBADHOSTSCONF;
-		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
-		us->sendErrorReply ( slot , g_errno );
+		logError("call sendErrorReply");
+		g_udpServer.sendErrorReply ( slot , g_errno );
 		
 		log(LOG_WARN,"%s:%s: END - hostsConfInDisagreement", __FILE__, __func__ );
 		return;
@@ -726,8 +723,8 @@ void handleRequest4 ( UdpSlot *slot , int32_t netnice ) {
 		// . this is 0 if not received yet
 		if (!slot->m_host->m_pingInfo.m_hostsConfCRC) {
 			g_errno = EWAITINGTOSYNCHOSTSCONF;
-			log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
-			us->sendErrorReply ( slot , g_errno );
+			logError("call sendErrorReply");
+			g_udpServer.sendErrorReply ( slot , g_errno );
 			
 			log(LOG_WARN,"%s:%s: END - EWAITINGTOSYNCHOSTCONF", __FILE__, __func__ );
 			return;
@@ -736,8 +733,8 @@ void handleRequest4 ( UdpSlot *slot , int32_t netnice ) {
 		// compare our hosts.conf to sender's otherwise
 		if (slot->m_host->m_pingInfo.m_hostsConfCRC != g_hostdb.getCRC()) {
 			g_errno = EBADHOSTSCONF;
-			log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
-			us->sendErrorReply ( slot , g_errno );
+			logError("call sendErrorReply");
+			g_udpServer.sendErrorReply ( slot , g_errno );
 			
 			log(LOG_WARN,"%s:%s: END - EBADHOSTSCONF", __FILE__, __func__ );
 			return;
@@ -751,8 +748,8 @@ void handleRequest4 ( UdpSlot *slot , int32_t netnice ) {
 	// must at least have an rdbId
 	if (readBufSize < 7) {
 		g_errno = EREQUESTTOOSHORT;
-		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
-		us->sendErrorReply ( slot , g_errno );
+		logError("call sendErrorReply");
+		g_udpServer.sendErrorReply ( slot , g_errno );
 		
 		log(LOG_ERROR,"%s:%s: END - EREQUESTTOOSHORT", __FILE__, __func__ );
 		return;
@@ -766,20 +763,15 @@ void handleRequest4 ( UdpSlot *slot , int32_t netnice ) {
 	if ( used != readBufSize ) {
 		// if we send back a g_errno then multicast retries forever
 		// so just absorb it!
-		log(LOG_ERROR,"%s:%s: msg4: got corrupted request from hostid %" PRId32" "
-		    "used [%" PRId32"] != readBufSize [%" PRId32"]",
-		    __FILE__, 
-		    __func__,
-		    slot->m_host->m_hostId,
-		    used,
-		    readBufSize);
+		logError("msg4: got corrupted request from hostid %" PRId32" used [%" PRId32"] != readBufSize [%" PRId32"]",
+		    slot->m_host->m_hostId, used, readBufSize);
 
 		loghex(LOG_ERROR, readBuf, (readBufSize < 160 ? readBufSize : 160), "readBuf (first max. 160 bytes)");
-		    
-		us->sendReply(NULL, 0, NULL, 0, slot);
-		//us->sendErrorReply(slot,ECORRUPTDATA);return;}
-		
-		log(LOG_ERROR,"%s:%s: END", __FILE__, __func__ );
+
+		g_udpServer.sendReply(NULL, 0, NULL, 0, slot);
+		//g_udpServer.sendErrorReply(slot,ECORRUPTDATA);return;}
+
+		logError("END");
 		return;
 	}
 
@@ -794,8 +786,8 @@ void handleRequest4 ( UdpSlot *slot , int32_t netnice ) {
 		}
 		// tell send to try again shortly
 		g_errno = ETRYAGAIN;
-		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
-		us->sendErrorReply(slot,g_errno);
+		logError("call sendErrorReply");
+		g_udpServer.sendErrorReply(slot,g_errno);
 		
 		logTrace( g_conf.m_logTraceMsg4, "END - ETRYAGAIN. Waiting to sync with host #0" );
 		return; 
@@ -803,15 +795,15 @@ void handleRequest4 ( UdpSlot *slot , int32_t netnice ) {
 
 	// this returns false with g_errno set on error
 	if (!addMetaList(readBuf, slot)) {
-		log(LOG_ERROR, "%s:%s:%d: call sendErrorReply. error='%s'", __FILE__, __func__, __LINE__, mstrerror(g_errno));
-		us->sendErrorReply(slot,g_errno);
+		logError("call sendErrorReply error='%s", mstrerror(g_errno));
+		g_udpServer.sendErrorReply(slot,g_errno);
 
 		logTrace(g_conf.m_logTraceMsg4, "END - addMetaList returned false. g_errno=%d", g_errno);
 		return;
 	}
 
 	// good to go
-	us->sendReply(NULL, 0, NULL, 0, slot);
+	g_udpServer.sendReply(NULL, 0, NULL, 0, slot);
 
 	logTrace(g_conf.m_logTraceMsg4, "END - OK");
 }
