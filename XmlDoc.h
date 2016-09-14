@@ -730,7 +730,6 @@ public:
 	bool m_charsetValid;
 	bool m_langVectorValid;
 	bool m_langIdValid;
-	bool m_datedbDateValid;
 	bool m_isRSSValid;
 	bool m_isSiteMapValid;
 	bool m_isContentTruncatedValid;
