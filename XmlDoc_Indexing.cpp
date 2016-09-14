@@ -600,7 +600,6 @@ bool XmlDoc::hashMetaTags ( HashTableX *tt ) {
 		// only get content for <meta name=..> not <meta http-equiv=..>
 		int32_t tagLen;
 		char *tag = m_xml.getString ( i , "name" , &tagLen );
-		char *tptr = tag;
 		char tagLower[128];
 		int32_t j ;
 		int32_t code;
@@ -657,13 +656,6 @@ bool XmlDoc::hashMetaTags ( HashTableX *tt ) {
 			continue;
 		}
 
-
-		// . don't allow reserved names: site, url, suburl, link and ip
-		// . actually, the colon is included as part of those
-		//   field names, so we really lucked out...!
-		// . index this converted tag name
-		tptr = tagLower;
-
 		// get the content
 		int32_t len;
 		char *s = m_xml.getString ( i , "content" , &len );
@@ -702,22 +694,13 @@ bool XmlDoc::hashMetaTags ( HashTableX *tt ) {
 		// NULL terminate the buffer
 		buf[len] = '\0';
 
-		// temp null term
-		char c = tptr[tagLen];
-		tptr[tagLen] = 0;
-		
-		
-		// BR 20160220
 		// Now index the wanted meta tags as normal text without prefix so they
 		// are used in user searches automatically.
-		// custom
-		//hi.m_prefix = tptr;
 		hi.m_prefix = NULL;
 
 		// desc is NULL, prefix will be used as desc
 		bool status = hashString ( buf,len,&hi );
-		// put it back
-		tptr[tagLen] = c;
+
 		// bail on error, g_errno should be set
 		if ( ! status ) return false;
 
@@ -1469,8 +1452,7 @@ bool XmlDoc::hashIncomingLinkText ( HashTableX *tt               ,
 
 	// sanity check
 	if ( hashAnomalies == hashNonAnomalies ) { g_process.shutdownAbort(true); }
-	// display this note in page parser
-	const char *note = "hashing incoming link text";
+
 	// sanity
 	if ( ! m_linkInfo1Valid ) { g_process.shutdownAbort(true); }
 
@@ -1491,8 +1473,6 @@ bool XmlDoc::hashIncomingLinkText ( HashTableX *tt               ,
 	// brought the following code in from LinkInfo.cpp
 	//
 
-	int32_t noteLen = 0;
-	if ( note ) noteLen = strlen ( note );
 	// count "external" inlinkers
 	int32_t ecount = 0;
 
