@@ -899,23 +899,20 @@ bool addMetaList ( const char *p , UdpSlot *slot ) {
 		log(LOG_WARN, "seems like a stray /e/repair-addsinprogress.dat file "
 		    "rdbId=%" PRId32". waiting to be in repair mode."
 		    ,(int32_t)rdbId);
-		    //not in repair mode. dropping.",(int32_t)rdbId);
 		g_errno = ETRYAGAIN;
 		return false;
 	}
+
 	// set the list
-	list.set ( (char*)p                , //todo: dodgy cast. RdbList should be fixed
-		   recSize                 ,
-		   (char*)p                , //todo: dodgy cast. RdbList should be fixed
-		   recSize                 ,
-		   rdb->getFixedDataSize() ,
-		   false                   ,  // ownData?
-		   rdb->useHalfKeys()      ,
-		   rdb->getKeySize ()      ); 
+	// todo: dodgy cast to char*. RdbList should be fixed
+	list.set((char *)p, recSize, (char *)p, recSize, rdb->getFixedDataSize(), false, rdb->useHalfKeys(), rdb->getKeySize());
+
 	// advance over the rec data to point to next entry
 	p += recSize;
+
 	// keep track of stats
 	rdb->readRequestAdd ( recSize );
+
 	// this returns false and sets g_errno on error
 	bool status =rdb->addList(collnum, &list, MAX_NICENESS );
 
@@ -931,16 +928,12 @@ bool addMetaList ( const char *p , UdpSlot *slot ) {
 	// no memory means to try again
 	if ( g_errno == ENOMEM ) g_errno = ETRYAGAIN;
 	// doing a full rebuid will add collections
-	if ( g_errno == ENOCOLLREC  &&
-	     g_repairMode > 0       )
-	     //g_repair.m_fullRebuild   )
+	if ( g_errno == ENOCOLLREC  && g_repairMode > 0       )
 		g_errno = ETRYAGAIN;
-	// ignore enocollrec errors since collection can be reset while
-	// spiders are on now.
-	//if ( g_errno == ENOCOLLREC )
-	//	g_errno = 0;
+
 	// are we done
 	if ( g_errno ) return false;
+
 	// success
 	return true;
 }
