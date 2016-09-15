@@ -1525,6 +1525,8 @@ void Msg8a::gotMsg0ReplyWrapper ( void *state ) {
 	mdelete( msg8aState, sizeof(*msg8aState), "msg8astate" );
 	delete msg8aState;
 
+	ScopedLock sl(msg8a->m_mtx);
+
 	// error?
 	if ( g_errno ) {
 		msg8a->m_errno = g_errno;
@@ -1539,8 +1541,6 @@ void Msg8a::gotMsg0ReplyWrapper ( void *state ) {
 
 		s_cache.addList( msg8a->m_collnum, (char*)&startKey, list);
 	}
-
-	ScopedLock sl(msg8a->m_mtx);
 
 	msg8a->m_replies++;
 	
