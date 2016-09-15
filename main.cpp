@@ -72,6 +72,10 @@
 #include "SpiderProxy.h"
 #include "HashTable.h"
 #include <sys/stat.h> //umask()
+#ifdef _VALGRIND_
+#include <valgrind/memcheck.h>
+#include <valgrind/helgrind.h>
+#endif
 
 bool registerMsgHandlers ( ) ;
 bool registerMsgHandlers1 ( ) ;
@@ -201,6 +205,11 @@ int main2 ( int argc , char *argv[] ) {
 	// let's try again on gk127 to make sure
 	// YES! gk0 cluster has run for months with this just fine!!
 	mlockall(MCL_CURRENT|MCL_FUTURE);
+
+#ifdef _VALGRIND_
+	//threads are incrementing the counters all over the place
+	VALGRIND_HG_DISABLE_CHECKING(&g_stats,sizeof(g_stats));
+#endif
 
 	// record time for uptime
 	g_stats.m_uptimeStart = time(NULL);
