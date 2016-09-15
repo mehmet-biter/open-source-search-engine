@@ -165,9 +165,9 @@ int main ( int argc , char *argv[] ) {
 	printf("encoded: %s\n",dst);
 
 	// the probable docid
-	int64_t pd = g_titledb.getProbableDocId(&u);
+	int64_t pd = Titledb::getProbableDocId(&u);
 	printf("pdocid: %"UINT64"\n", pd );
-	printf("dom8: 0x%"XINT32"\n", (int32_t)g_titledb.getDomHash8FromDocId(pd) );
+	printf("dom8: 0x%"XINT32"\n", (int32_t)Titledb::getDomHash8FromDocId(pd) );
 	if ( u.isLinkLoop() ) printf("islinkloop: yes\n");
 	else                  printf("islinkloop: no\n");
 	int64_t hh64 = u.getHostHash64();

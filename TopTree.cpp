@@ -203,8 +203,7 @@ int32_t TopTree::getHighNode ( ) {
 bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 
 	// respect the dom hashes
-	//uint8_t domHash = g_titledb.getDomHash8((uint8_t*)t->m_docIdPtr);
-	uint8_t domHash = g_titledb.getDomHash8FromDocId(t->m_docId);
+	uint8_t domHash = Titledb::getDomHash8FromDocId(t->m_docId);
 
 	// if vcount is satisfied, only add if better score than tail
 	if ( m_vcount >= m_docsWanted ) {
@@ -449,9 +448,7 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 		//if ( getNext(tn) == -1 ) gbshutdownLogicError();
 		// get the min node
 		TopNode *t = &m_nodes[tn];
-		// get its docid ptr
-		//uint8_t domHash2 = g_titledb.getDomHash8((ui)t->m_docIdPtr);
-		uint8_t domHash2 = g_titledb.getDomHash8FromDocId(t->m_docId);
+		uint8_t domHash2 = Titledb::getDomHash8FromDocId(t->m_docId);
 		// . also must delete from m_t2
 		// . make the key
 		key96_t k;

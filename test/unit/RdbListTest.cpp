@@ -10,6 +10,7 @@ static const char* makePosdbKey(char *key, int64_t termId, uint64_t docId, int32
 }
 
 TEST(RdbListTest, MergeTestPosdbEmptyAll) {
+	g_conf.m_logTraceRdbList = true;
 	// setup test
 	RdbList list1;
 	list1.set(NULL, 0, NULL, 0, 0, true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
@@ -32,6 +33,7 @@ TEST(RdbListTest, MergeTestPosdbEmptyAll) {
 }
 
 TEST(RdbListTest, MergeTestPosdbEmptyOne) {
+	g_conf.m_logTraceRdbList = true;
 	char key[MAX_KEY_BYTES];
 
 	// setup test
@@ -83,6 +85,7 @@ TEST(RdbListTest, MergeTestPosdbEmptyOne) {
 
 // verify that list order is from oldest to newest (last list will override first list)
 TEST(RdbListTest, MergeTestPosdbVerifyListOrder) {
+	g_conf.m_logTraceRdbList = true;
 	char key[MAX_KEY_BYTES];
 
 	// setup test

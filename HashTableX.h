@@ -298,6 +298,9 @@ class HashTableX {
 
 	bool setTableSize ( int32_t numSlots , char *buf , int32_t bufSize );
 
+	// for debugging
+	void print();
+
 	void disableWrites () { m_isWritable = false; }
 	void enableWrites  () { m_isWritable = true ; }
 	bool m_isWritable;
@@ -318,18 +321,15 @@ class HashTableX {
 	int32_t     m_numSlotsUsed;
 	uint32_t m_mask;
 
-	char  m_doFree;
+	bool  m_doFree;
 	char *m_buf;
 	int32_t  m_bufSize;
 
-	char m_useKeyMagic;
+	bool m_useKeyMagic;
 
 	int32_t m_ks;
 	int32_t m_ds;
-	char m_allowDups;
-
-	// a flag used by XmlDoc.cpp
-	bool m_addIffNotUnique;
+	bool m_allowDups;
 
 	bool m_isSaving;
 	bool m_needsSave;

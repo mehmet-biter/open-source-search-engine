@@ -525,11 +525,11 @@ bool Rebalance::gotList ( ) {
 			KEYINC ( m_nextKey , ks );
 	}
 
-	if ( ! m_msg4a.addMetaList( &m_posMetaList, m_collnum, this, doneAddingMetaWrapper, MAX_NICENESS, rdb->getRdbId(), -1 ) ) { // shard override, not!
+	if (!m_msg4a.addMetaList(&m_posMetaList, m_collnum, this, doneAddingMetaWrapper, rdb->getRdbId(), -1)) { // shard override, not!
 		++m_blocked;
 	}
 
-	if ( ! m_msg4b.addMetaList( &m_negMetaList, m_collnum, this, doneAddingMetaWrapper, MAX_NICENESS, rdb->getRdbId(), myShard ) ) { // shard override, not!
+	if (!m_msg4b.addMetaList(&m_negMetaList, m_collnum, this, doneAddingMetaWrapper, rdb->getRdbId(), myShard)) { // shard override, not!
 		++m_blocked;
 	}
 

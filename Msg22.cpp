@@ -134,7 +134,7 @@ bool Msg22::getTitleRec ( Msg22Request  *r              ,
 
 	// if no docid provided, use probable docid
 	if ( ! docId ) 
-		docId = g_titledb.getProbableDocId ( url );
+		docId = Titledb::getProbableDocId ( url );
 
 	// get groupId from docId
 	uint32_t shardNum = getShardNumFromDocId ( docId );
@@ -359,8 +359,8 @@ void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
 	// so try the range
 	if ( r->m_getAvailDocIdOnly ) {
 	   int64_t pd = r->m_docId;
-	   int64_t d1 = g_titledb.getFirstProbableDocId ( pd );
-	   int64_t d2 = g_titledb.getLastProbableDocId  ( pd );
+	   int64_t d1 = Titledb::getFirstProbableDocId ( pd );
+	   int64_t d2 = Titledb::getLastProbableDocId  ( pd );
 	   // sanity - bad url with bad subdomain?
 	   if ( pd < d1 || pd > d2 ) { g_process.shutdownAbort(true); }
 	   // make sure we get a decent sample in titledb then in
@@ -388,9 +388,9 @@ void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
 	       delete ( st );
 	       return;
 	   }
-	   int64_t pd = g_titledb.getProbableDocId (r->m_url,dom,dlen);
-	   int64_t d1 = g_titledb.getFirstProbableDocId ( pd );
-	   int64_t d2 = g_titledb.getLastProbableDocId  ( pd );
+	   int64_t pd = Titledb::getProbableDocId (r->m_url,dom,dlen);
+	   int64_t d1 = Titledb::getFirstProbableDocId ( pd );
+	   int64_t d2 = Titledb::getLastProbableDocId  ( pd );
 	   // sanity - bad url with bad subdomain?
 	   if ( pd < d1 || pd > d2 ) { g_process.shutdownAbort(true); }
 	   // store these
@@ -406,8 +406,8 @@ void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
 	// since it would base it on startFileNum and numFiles
 	key96_t cacheKey ; cacheKey.n1 = 0; cacheKey.n0 = r->m_docId;
 	// make titledb keys
-	key96_t startKey = g_titledb.makeFirstKey ( st->m_docId1 );
-	key96_t endKey   = g_titledb.makeLastKey  ( st->m_docId2 );
+	key96_t startKey = Titledb::makeFirstKey ( st->m_docId1 );
+	key96_t endKey   = Titledb::makeLastKey  ( st->m_docId2 );
 
 	// . load the list of title recs from disk now
 	// . our file range should be solid
@@ -468,7 +468,7 @@ void gotTitleList ( void *state , RdbList *list , Msg5 *msg5 ) {
 	// set probable docid
 	int64_t pd = 0LL;
 	if ( r->m_url[0] ) {
-		pd = g_titledb.getProbableDocId(r->m_url);
+		pd = Titledb::getProbableDocId(r->m_url);
 		if ( pd != st->m_pd ) { 
 			log("db: crap probable docids do not match! u=%s",
 			    r->m_url);
@@ -500,7 +500,7 @@ void gotTitleList ( void *state , RdbList *list , Msg5 *msg5 ) {
 		if ( ( k->n0 & 0x01 ) == 0x00 ) continue;
 
 		// get docid of that titlerec
-		int64_t dd = g_titledb.getDocId(k);
+		int64_t dd = Titledb::getDocId(k);
 
 		if ( r->m_getAvailDocIdOnly ) {
 			// make sure our available docids are availble!
@@ -511,7 +511,7 @@ void gotTitleList ( void *state , RdbList *list , Msg5 *msg5 ) {
 		// if we had a url make sure uh48 matches
 		else if ( r->m_url[0] ) {
 			// get it
-			int64_t uh48 = g_titledb.getUrlHash48(k);
+			int64_t uh48 = Titledb::getUrlHash48(k);
 
 			// make sure our available docids are availble!
 			if ( dd == ad1 ) ad1++;

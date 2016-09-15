@@ -12,7 +12,7 @@
 #include "RdbCache.h"
 #include "ScopedLock.h"
 #include "Sanity.h"
-
+#include "Titledb.h"
 
 // how many Msg0 requests can we launch at the same time?
 #define MSG51_MAX_REQUESTS 60
@@ -511,7 +511,7 @@ bool setClusterLevels ( const key96_t   *clusterRecs,
 		// . get the site hash
 		// . these are only 32 bits!
 		if(fakeIt)
-			h = g_titledb.getDomHash8FromDocId(docIds[i]);
+			h = Titledb::getDomHash8FromDocId(docIds[i]);
 		else
 			h = g_clusterdb.getSiteHash26 ( crec );
 

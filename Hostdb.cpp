@@ -1571,7 +1571,7 @@ uint32_t Hostdb::getShardNum(rdbid_t rdbId, const void *k) {
 		return m_map [(*(uint16_t *)((char *)k + 26))>>3];	
 	}
 	else if ( rdbId == RDB_TITLEDB || rdbId == RDB2_TITLEDB2 ) {
-		uint64_t d = g_titledb.getDocId ( (key96_t *)k );
+		uint64_t d = Titledb::getDocId ( (key96_t *)k );
 		return m_map [ ((d>>14)^(d>>7)) & (MAX_KSLOTS-1) ];
 	}
 	else if ( rdbId == RDB_SPIDERDB || rdbId == RDB2_SPIDERDB2 ) {

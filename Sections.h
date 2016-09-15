@@ -13,10 +13,6 @@
 // hhhhhhhh hhhhhhhh tttttttt dddddddd  t = tag type
 // dddddddd dddddddd dddddddd ddddddHD  d = docid
 
-// DATA:
-// SSSSSSSS SSSSSSSS SSSSSSSS SSSSSSSS  S = SectionVote::m_score
-// NNNNNNNN NNNNNNNN NNNNNNNN NNNNNNNN  N = SectionVote::m_numSampled
-
 // h: hash value. typically the lower 32 bits of the 
 //    Section::m_contentHash64 vars. we
 //    do not need the full 64 bits because we have the 48 bit site hash included
@@ -276,23 +272,5 @@ public:
 	// in the document, is NULL iff no sentences in document
 	class Section *m_firstSent;
 };
-
-// . the key in sectiondb is basically the Section::m_tagHash 
-//   (with a docId) and the data portion of the Rdb record is this SectionVote
-// . the Sections::m_nsvt and m_osvt hash tables contain SectionVotes
-//   as their data value and use an tagHash key as well
-class SectionVote {
-public:
-	// . seems like addVote*() always uses a score of 1.0
-	// . seems to be a weight used when setting Section::m_votesFor[Not]Dup
-	// . not sure if we really use this now
-	float m_score;
-	// . how many times does this tagHash occur in this doc?
-	// . this eliminates the need for the SV_UNIQUE section type
-	// . this is not used for tags of type contenthash or taghash
-	// . seems like pastdate and futuredate and eurdatefmt 
-	//   are the only vote types that actually really use this...
-	float m_numSampled;
-} __attribute__((packed, aligned(4)));
 
 #endif // GB_SECTIONS_H

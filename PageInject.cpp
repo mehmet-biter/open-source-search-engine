@@ -107,7 +107,7 @@ Host *getHostToHandleInjection ( char *url ) {
 	Url norm;
 	norm.set(url);
 
-	int64_t docId = g_titledb.getProbableDocId ( &norm );
+	int64_t docId = Titledb::getProbableDocId ( &norm );
 	uint32_t shardNum = getShardNumFromDocId(docId);
 	Host *host = g_hostdb.getHostWithSpideringEnabled(shardNum);
 
@@ -1057,7 +1057,7 @@ bool ImportState::importLoop ( ) {
 	mcast->m_hackFileId  = m_bfFileId;
 
 	// get docid from key
-	docId = g_titledb.getDocIdFromKey ( &tkey );
+	docId = Titledb::getDocIdFromKey ( &tkey );
 
 	// get shard that holds the titlerec for it
 	shardNum = g_hostdb.getShardNumFromDocId ( docId );

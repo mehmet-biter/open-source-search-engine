@@ -536,9 +536,9 @@ bool getLinkInfo ( SafeBuf   *reqBuf              ,
 	//int32_t siteHash32 = hash32n ( req->ptr_site );
 	// access different parts of linkdb depending on the "mode"
 	if ( req->m_mode == MODE_SITELINKINFO )
-		startKey = g_linkdb.makeStartKey_uk ( req->m_siteHash32 );
+		startKey = Linkdb::makeStartKey_uk ( req->m_siteHash32 );
 	else
-		startKey = g_linkdb.makeStartKey_uk (req->m_siteHash32,
+		startKey = Linkdb::makeStartKey_uk (req->m_siteHash32,
 						     req->m_linkHash64 );
 	// what group has this linkdb list?
 	uint32_t shardNum = getShardNum ( RDB_LINKDB, &startKey );
@@ -999,14 +999,14 @@ bool Msg25::doReadLoop ( ) {
 
 	// access different parts of linkdb depending on the "mode"
 	if ( m_mode == MODE_SITELINKINFO ) {
-		startKey = g_linkdb.makeStartKey_uk ( siteHash32 );
-		endKey   = g_linkdb.makeEndKey_uk   ( siteHash32 );
+		startKey = Linkdb::makeStartKey_uk ( siteHash32 );
+		endKey   = Linkdb::makeEndKey_uk   ( siteHash32 );
 		//log("linkdb: getlinkinfo: "
 		//    "site=%s sitehash32=%" PRIu32,site,siteHash32);
 	}
 	else {
-		startKey = g_linkdb.makeStartKey_uk (siteHash32,m_linkHash64 );
-		endKey   = g_linkdb.makeEndKey_uk   (siteHash32,m_linkHash64 );
+		startKey = Linkdb::makeStartKey_uk (siteHash32,m_linkHash64 );
+		endKey   = Linkdb::makeEndKey_uk   (siteHash32,m_linkHash64 );
 	}
 
 	// resume from where we left off?
@@ -1329,13 +1329,13 @@ bool Msg25::sendRequests ( ) {
 			// get the current key if list has more left
 			key224_t key; m_list.getCurrentKey( &key );
 
-			itop       = g_linkdb.getLinkerIp24_uk     ( &key );
-			ip32       = g_linkdb.getLinkerIp_uk     ( &key );
-			isLinkSpam = g_linkdb.isLinkSpam_uk  ( &key );
-			docId      = g_linkdb.getLinkerDocId_uk    ( &key );
-			discovered = g_linkdb.getDiscoveryDate_uk(&key);
+			itop       = Linkdb::getLinkerIp24_uk     ( &key );
+			ip32       = Linkdb::getLinkerIp_uk     ( &key );
+			isLinkSpam = Linkdb::isLinkSpam_uk  ( &key );
+			docId      = Linkdb::getLinkerDocId_uk    ( &key );
+			discovered = Linkdb::getDiscoveryDate_uk(&key);
 			// is it expired?
-			lostDate = g_linkdb.getLostDate_uk(&key);
+			lostDate = Linkdb::getLostDate_uk(&key);
 			// update this
 			gbmemcpy ( &m_nextKey  , &key , LDBKS );
 
@@ -1347,15 +1347,15 @@ bool Msg25::sendRequests ( ) {
 			// get the current key if list has more left
 			key224_t key; m_list.getCurrentKey( &key );
 
-			itop       = g_linkdb.getLinkerIp24_uk     ( &key );
-			ip32       = g_linkdb.getLinkerIp_uk     ( &key );
+			itop       = Linkdb::getLinkerIp24_uk     ( &key );
+			ip32       = Linkdb::getLinkerIp_uk     ( &key );
 
 			isLinkSpam = false;
-			docId      = g_linkdb.getLinkerDocId_uk    ( &key );
+			docId      = Linkdb::getLinkerDocId_uk    ( &key );
 
-			discovered = g_linkdb.getDiscoveryDate_uk(&key);
+			discovered = Linkdb::getDiscoveryDate_uk(&key);
 			// is it expired?
-			lostDate = g_linkdb.getLostDate_uk(&key);
+			lostDate = Linkdb::getLostDate_uk(&key);
 			// update this
 			gbmemcpy ( &m_nextKey  , &key , LDBKS );
 

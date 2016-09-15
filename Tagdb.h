@@ -10,6 +10,7 @@
 #include "Loop.h"
 #include "SafeBuf.h"
 #include "Msg0.h"
+#include "GbMutex.h"
 
 // . Tag::m_type is this if its a dup in the TagRec
 // . so if www.xyz.com has one tag and xyz.com has another, then
@@ -214,8 +215,11 @@ class Msg8a {
 	bool getTagRec( Url *url, collnum_t collnum, int32_t niceness, void *state, void (*callback)( void * ),
 	                TagRec *tagRec );
 	
+private:
 	bool launchGetRequests();
 	void gotAllReplies ( ) ;
+
+	static void gotMsg0ReplyWrapper(void *);
 
 	// some specified input
 	Url   *m_url;
@@ -238,13 +242,15 @@ class Msg8a {
 
 	int32_t  m_requests;
 	int32_t  m_replies;
-	char  m_doneLaunching;
+	bool  m_doneLaunching;
+	GbMutex m_mtx;
 
 	int32_t  m_errno;
 
 	// we set this for the caller
 	TagRec *m_tagRec;
 
+public:
 	// hack for MsgE
 	void *m_state2;
 	void *m_state3;

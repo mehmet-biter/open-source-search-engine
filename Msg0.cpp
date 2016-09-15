@@ -775,7 +775,7 @@ void gotListWrapper ( void *state , RdbList *listb , Msg5 *msg5xx ) {
 			totalOrigLinks++;
 			// get rec
 			char *rec = list->getCurrentRec();
-			int32_t ip32 = g_linkdb.getLinkerIp_uk((key224_t *)rec );
+			int32_t ip32 = Linkdb::getLinkerIp_uk((key224_t *)rec );
 			// same as one before?
 			if ( ip32 == lastIp32 && 
 			     // are we the last rec? include that for

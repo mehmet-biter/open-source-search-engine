@@ -100,6 +100,7 @@ XmlDoc::XmlDoc() {
 	m_wasInIndex = false;
 	m_outlinkHopCountVector = NULL;
 	m_extraDoc = NULL;
+	m_statusMsg = NULL;
 
 	reset();
 }
@@ -918,7 +919,7 @@ bool XmlDoc::set2 ( char    *titleRec ,
 	}
 
 	// set m_docId from key
-	m_docId = g_titledb.getDocIdFromKey ( m_titleRecKey );
+	m_docId = Titledb::getDocIdFromKey ( &m_titleRecKey );
 	// validate that
 	m_docIdValid = true;
 	// then the size of the data that follows this
@@ -1209,32 +1210,27 @@ bool XmlDoc::setFirstUrl ( char *u ) {
 
 
 void XmlDoc::setStatus ( const char *s ) {
-	m_statusMsg = s;
-	m_statusMsgValid = true;
-	static const char *s_last = NULL;
-
-	if ( s == s_last ) return;
-
 	bool timeIt = false;
 	if ( g_conf.m_logDebugBuildTime )
 		timeIt = true;
 
 	// log times to detect slowness
-	if ( timeIt ) {
+	if ( timeIt  && m_statusMsgValid ) {
 		int64_t now = gettimeofdayInMillisecondsLocal();
 		if ( s_lastTimeStart == 0LL ) s_lastTimeStart = now;
 		int32_t took = now - s_lastTimeStart;
 		//if ( took > 100 )
 			log("xmldoc: %s (xd=0x%" PTRFMT" "
 			    "u=%s) took %" PRId32"ms",
-			    s_last,
+			    m_statusMsg,
 			    (PTRTYPE)this,
 			    m_firstUrl.getUrl(),
 			    took);
 		s_lastTimeStart = now;
 	}
 
-	s_last = s;
+	m_statusMsg = s;
+	m_statusMsgValid = true;
 
 	bool logIt = g_conf.m_logDebugBuild;
 	if ( ! logIt ) return;
@@ -1931,7 +1927,7 @@ bool XmlDoc::indexDoc ( ) {
 
 	// "cr" might have been deleted by calling indexDoc() above i think
 	// so use collnum here, not "cr"
-	if ( ! m_msg4.addMetaList ( &m_metaList2, m_collnum, m_masterState, m_masterLoop, m_niceness ) ) {
+	if (!m_msg4.addMetaList(&m_metaList2, m_collnum, m_masterState, m_masterLoop)) {
 		m_msg4Waiting = true;
 		logTrace( g_conf.m_logTraceXmlDoc, "END, return false, m_msg4.addMetaList returned false" );
 		return false;
@@ -2058,7 +2054,7 @@ bool XmlDoc::indexDoc2 ( ) {
 		verifyMetaList ( m_metaList , m_metaList + m_metaListSize , false );
 
 		// do it
-		if (!m_msg4.addMetaList(m_metaList, m_metaListSize, m_collnum, m_masterState, m_masterLoop, m_niceness)) {
+		if (!m_msg4.addMetaList(m_metaList, m_metaListSize, m_collnum, m_masterState, m_masterLoop)) {
 			m_msg4Waiting = true;
 			logTrace( g_conf.m_logTraceXmlDoc, "END, return false. addMetaList blocked" );
 			return false;
@@ -2074,7 +2070,7 @@ bool XmlDoc::indexDoc2 ( ) {
 	}
 
 	// make sure our msg4 is no longer in the linked list!
-	if (m_msg4Waiting && isInMsg4LinkedList(&m_msg4)){
+	if (m_msg4Waiting && Msg4::isInLinkedList(&m_msg4)){
 		g_process.shutdownAbort(true);
 	}
 
@@ -2908,7 +2904,7 @@ bool XmlDoc::setTitleRecBuf ( SafeBuf *tbuf, int64_t docId, int64_t uh48 ){
 		return false;
 	}
 
-	key96_t tkey = g_titledb.makeKey (docId,uh48,false);//delkey?
+	key96_t tkey = Titledb::makeKey (docId,uh48,false);//delkey?
 
 	// get a ptr to the Rdb record at start of the header
 	p = cbuf;
@@ -3178,10 +3174,10 @@ char *XmlDoc::getIsRSS ( ) {
 	return &m_isRSS2;
 }
 
-char *XmlDoc::getIsSiteMap ( ) {
+bool *XmlDoc::getIsSiteMap ( ) {
 	if ( m_isSiteMapValid ) return &m_isSiteMap;
 	uint8_t  *ct = getContentType();
-	if ( ! ct    || ct    == (uint8_t  *)-1 ) return (char *)ct;
+	if ( ! ct    || ct    == (uint8_t  *)-1 ) return (bool *)ct;
 	char *uf = m_firstUrl.getFilename();
 	int32_t ulen = m_firstUrl.getFilenameLen();
 	// sitemap.xml
@@ -4899,8 +4895,8 @@ RdbList *XmlDoc::getDupList ( ) {
 	// get the startkey, endkey for termlist
 	key144_t sk ;
 	key144_t ek ;
-	g_posdb.makeStartKey ( &sk,termId ,0);
-	g_posdb.makeEndKey   ( &ek,termId ,MAX_DOCID);
+	Posdb::makeStartKey ( &sk,termId ,0);
+	Posdb::makeEndKey   ( &ek,termId ,MAX_DOCID);
 	// note it
 	log(LOG_DEBUG,"build: check termid=%" PRIu64" for docid %" PRIu64
 	    ,(uint64_t)(termId&TERMID_MASK)
@@ -5016,11 +5012,11 @@ char *XmlDoc::getIsDup ( ) {
 		char *rec = list->getCurrentRec();
 
 		// get the docid
-		int64_t d = g_posdb.getDocId ( rec );
+		int64_t d = Posdb::getDocId ( rec );
 
 		// just let the best site rank win i guess?
 		// even though one page may have more inlinks???
-		char sr = (char )g_posdb.getSiteRank ( rec );
+		char sr = (char )Posdb::getSiteRank ( rec );
 
 		// skip if us
 		if ( d == m_docId ) continue;
@@ -5663,7 +5659,7 @@ XmlDoc **XmlDoc::getOldXmlDoc ( ) {
 	if ( ! m_setFromDocId ) {
 		//int64_t uh48 = getFirstUrl()->getUrlHash48();
 		int64_t uh48 = getFirstUrlHash48();
-		int64_t tuh48 = g_titledb.getUrlHash48 ( (key96_t *)*otr );
+		int64_t tuh48 = Titledb::getUrlHash48 ( (key96_t *)*otr );
 		if ( uh48 != tuh48 ) {
 			log("xmldoc: docid collision uh48 mismatch. cannot "
 				"index "
@@ -6256,7 +6252,7 @@ int64_t *XmlDoc::getDocId ( ) {
 	// if titlerec was there but not od it had an error uncompressing
 	// because of the corruption bug in RdbMem.cpp when dumping to disk.
 	if ( m_docId == 0 && m_oldTitleRec && m_oldTitleRecSize > 12 ) {
-		m_docId = g_titledb.getDocIdFromKey ( (key96_t *)m_oldTitleRec );
+		m_docId = Titledb::getDocIdFromKey ( (key96_t *)m_oldTitleRec );
 		log("build: salvaged docid %" PRId64" from corrupt title rec "
 			"for %s",m_docId,m_firstUrl.getUrl());
 	}
@@ -6270,9 +6266,9 @@ int64_t *XmlDoc::getDocId ( ) {
 	// ensure it is within probable range
 	if ( ! getUseTimeAxis () ) {
 		char *u = getFirstUrl()->getUrl();
-		int64_t pd = g_titledb.getProbableDocId(u);
-		int64_t d1 = g_titledb.getFirstProbableDocId ( pd );
-		int64_t d2 = g_titledb.getLastProbableDocId  ( pd );
+		int64_t pd = Titledb::getProbableDocId(u);
+		int64_t d1 = Titledb::getFirstProbableDocId ( pd );
+		int64_t d2 = Titledb::getLastProbableDocId  ( pd );
 		if ( m_docId < d1 || m_docId > d2 ) {
 			g_process.shutdownAbort(true); }
 	}
@@ -6578,27 +6574,16 @@ int32_t *XmlDoc::getSiteNumInlinks ( ) {
 		else if ( ns < 100 ) maxAge = 60;
 		// if index size is tiny then maybe we are just starting to
 		// build something massive, so reduce the cached max age
-		int64_t nt = g_titledb.m_rdb.getCollNumTotalRecs(m_collnum);
+		int64_t nt = g_titledb.getRdb()->getCollNumTotalRecs(m_collnum);
 		if ( nt < 100000000 ) //100M
 			maxAge = 3;
 		if ( nt < 10000000 ) //10M
 			maxAge = 1;
 		// for every 100 urls you already got, add a day!
 		sni = atol(tag->getTagData());
-		// double if repairing
-		//if ( m_useSecondaryRdbs ) maxAge = (maxAge+1) * 2;
-		// fix bug for rebuild. rebuild any tag before now because
-		// the MAX_LINKERS_IN_TERMLIST was too small in Linkdb.cpp
-		// and i raised from 1M to 3M. it was hurting mahalo.com.
-		if ( m_useSecondaryRdbs && tag->m_timestamp < 1345819704 )
-			valid = false;
-		// force another rebuild of siterank because i fixed
-		// the 'beds' query a little to use firstip, so recompute
-		// siterank for those spammers.
-		if ( m_useSecondaryRdbs && tag->m_timestamp < 1348257346 &&
-		     // leave really big guys in tact
-		     sni < 300 )
-			valid = false;
+
+		/// @note if we need to force an update in tagdb for sitenuminlinks, add it here
+
 		// convert into seconds
 		maxAge *= 3600*24;
 		// so youtube which has 2997 links will add an extra 29 days
@@ -11555,9 +11540,9 @@ bool XmlDoc::logIt (SafeBuf *bb ) {
 		sb->safePrintf("docid=%" PRIu64" ",m_docId);
 
 	char *u = getFirstUrl()->getUrl();
-	int64_t pd = g_titledb.getProbableDocId(u);
-	int64_t d1 = g_titledb.getFirstProbableDocId ( pd );
-	int64_t d2 = g_titledb.getLastProbableDocId  ( pd );
+	int64_t pd = Titledb::getProbableDocId(u);
+	int64_t d1 = Titledb::getFirstProbableDocId ( pd );
+	int64_t d2 = Titledb::getLastProbableDocId  ( pd );
 	sb->safePrintf("probdocid=%" PRIu64" ",pd);
 	sb->safePrintf("probdocidmin=%" PRIu64" ",d1);
 	sb->safePrintf("probdocidmax=%" PRIu64" ",d2);
@@ -12113,7 +12098,7 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 		if ( ! ( p[0] & 0x01 ) ) neg = true;
 		// this is now a bit in the posdb key so we can rebalance
 		char shardByTermId = false;
-		if ( rdbId==RDB_POSDB && g_posdb.isShardedByTermId(k))
+		if ( rdbId==RDB_POSDB && Posdb::isShardedByTermId(k))
 			shardByTermId = true;
 		// skip it
 		p += ks;
@@ -12165,8 +12150,8 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 		if ( rdbId == RDB_POSDB ) {
 			// get termid et al
 			key144_t *k2 = (key144_t *)k;
-			int64_t tid = g_posdb.getTermId(k2);
-			//uint8_t score8 = g_posdb.getScore ( *k2 );
+			int64_t tid = Posdb::getTermId(k2);
+			//uint8_t score8 = Posdb::getScore ( *k2 );
 			//uint32_t score32 = score8to32 ( score8 );
 			// sanity check
 			if(dataSize!=0){g_process.shutdownAbort(true);}
@@ -12182,15 +12167,15 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 		}
 		else if ( rdbId == RDB_LINKDB ) {
 			key224_t *k2 = (key224_t *)k;
-			int64_t linkHash=g_linkdb.getLinkeeUrlHash64_uk(k2);
-			int32_t linkeeSiteHash  = g_linkdb.getLinkeeSiteHash32_uk(k2);
-			int32_t linkerSiteHash  = g_linkdb.getLinkerSiteHash32_uk(k2);
-			char linkSpam   = g_linkdb.isLinkSpam_uk    (k2);
-			int32_t siteRank = g_linkdb.getLinkerSiteRank_uk (k2);
-			//int32_t hopCount = g_linkdb.getLinkerHopCount_uk   (k2);
-			//int32_t ip24     = g_linkdb.getLinkerIp24_uk       (k2);
-			int32_t ip32       = g_linkdb.getLinkerIp_uk       (k2);
-			int64_t docId = g_linkdb.getLinkerDocId_uk      (k2);
+			int64_t linkHash=Linkdb::getLinkeeUrlHash64_uk(k2);
+			int32_t linkeeSiteHash  = Linkdb::getLinkeeSiteHash32_uk(k2);
+			int32_t linkerSiteHash  = Linkdb::getLinkerSiteHash32_uk(k2);
+			char linkSpam   = Linkdb::isLinkSpam_uk    (k2);
+			int32_t siteRank = Linkdb::getLinkerSiteRank_uk (k2);
+			//int32_t hopCount = Linkdb::getLinkerHopCount_uk   (k2);
+			//int32_t ip24     = Linkdb::getLinkerIp24_uk       (k2);
+			int32_t ip32       = Linkdb::getLinkerIp_uk       (k2);
+			int64_t docId = Linkdb::getLinkerDocId_uk      (k2);
 			// sanity check
 			if(dataSize!=0){g_process.shutdownAbort(true);}
 			sb->safePrintf("<td>"
@@ -12338,7 +12323,7 @@ bool XmlDoc::verifyMetaList ( char *p , char *pend , bool forDelete ) {
 			// alignment bit set or cleared
 			if ( ! ( p[1] & 0x02 ) ) { g_process.shutdownAbort(true); }
 			if (   ( p[7] & 0x02 ) ) { g_process.shutdownAbort(true); }
-			int64_t docId = g_posdb.getDocId(p);
+			int64_t docId = Posdb::getDocId(p);
 			if ( docId != m_docId && !cr->m_indexSpiderReplies) {
 				log( LOG_WARN, "xmldoc: %" PRId64" != %" PRId64, docId, m_docId );
 				g_process.shutdownAbort(true);
@@ -12358,7 +12343,7 @@ bool XmlDoc::verifyMetaList ( char *p , char *pend , bool forDelete ) {
 
 		// set this
 		//bool split = true;
-		//if(rdbId == RDB_POSDB && g_posdb.isShardedByTermId(p) )
+		//if(rdbId == RDB_POSDB && Posdb::isShardedByTermId(p) )
 		// split =false;
 		// skip key
 		p += ks;
@@ -12470,8 +12455,8 @@ bool XmlDoc::hashMetaList ( HashTableX *ht        ,
 		// bitch if not found
 		if ( slot < 0 && ks==12 ) {
 			key144_t *k2 = (key144_t *)k;
-			int64_t tid = g_posdb.getTermId(k2);
-			char shardByTermId = g_posdb.isShardedByTermId(k2);
+			int64_t tid = Posdb::getTermId(k2);
+			char shardByTermId = Posdb::isShardedByTermId(k2);
 			log("build: missing key #%" PRId32" rdb=%s ks=%" PRId32" ds=%" PRId32" "
 			    "tid=%" PRIu64" "
 			    "key=%s "
@@ -12542,7 +12527,7 @@ bool XmlDoc::hashMetaList ( HashTableX *ht        ,
 		// otherwise, bitch
 		char shardByTermId = false;
 		if ( rdbId == RDB_POSDB )
-			shardByTermId = g_posdb.isShardedByTermId(rec2);
+			shardByTermId = Posdb::isShardedByTermId(rec2);
 		log("build: data not equal for key=%s "
 		    "rdb=%s splitbytermid=%" PRId32" dataSize=%" PRId32,
 		    KEYSTR(k,ks2),
@@ -12586,8 +12571,7 @@ void getMetaListWrapper ( void *state ) {
 	char *ml = THIS->getMetaList ( );
 	// sanity check
 	if ( ! ml && ! g_errno ) {
-		log("doc: getMetaList() returned NULL without g_errno");
-		sleep(5);
+		log(LOG_ERROR, "doc: getMetaList() returned NULL without g_errno");
 		g_process.shutdownAbort(true);
 	}
 	// return if it blocked
@@ -12610,15 +12594,15 @@ void getMetaListWrapper ( void *state ) {
 // . if "deleteIt" is true, we are a delete op on "old"
 // . returns (char *)-1 if it blocks and will call your callback when done
 // . generally only Repair.cpp changes these use* args to false
-char *XmlDoc::getMetaList ( bool forDelete ) {
-
+char *XmlDoc::getMetaList(bool forDelete) {
 	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );
-	if ( m_metaListValid ) {
+
+	if (m_metaListValid) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END, already valid" );
 		return m_metaList;
 	}
 
-	setStatus ( "getting meta list" );
+	setStatus("getting meta list");
 
 	// force it true?
 	// "forDelete" means we want the metalist to consist of "negative"
@@ -12645,23 +12629,19 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	}
 
 	// returning from a handler that had an error?
-	if ( g_errno )
-	{
+	if (g_errno) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END, g_errno=%" PRId32, g_errno);
 		return NULL;
 	}
 
 	// if we are a spider status doc/titlerec and we are doing a rebuild
 	// operation, then keep it simple
-	if ( m_setFromTitleRec &&
-	     m_useSecondaryRdbs &&
-	     m_contentTypeValid &&
-	     m_contentType == CT_STATUS ) {
+	if (m_setFromTitleRec && m_useSecondaryRdbs && m_contentTypeValid && m_contentType == CT_STATUS) {
 		// if not rebuilding posdb then done, list is empty since
 		// spider status docs do not contribute to linkdb, clusterdb,..
-		if ( ! m_usePosdb && ! m_useTitledb ) {
+		if (!m_usePosdb && !m_useTitledb) {
 			m_metaListValid = true;
-			logTrace( g_conf.m_logTraceXmlDoc, "END, CT_STATUS" );
+			logTrace(g_conf.m_logTraceXmlDoc, "END, CT_STATUS");
 			return m_metaList;
 		}
 
@@ -12672,55 +12652,59 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		//
 		/////////////
 		CollectionRec *cr = getCollRec();
-		if ( ! cr ) return NULL;
-		if ( ! cr->m_indexSpiderReplies ) {
-			logTrace( g_conf.m_logTraceXmlDoc, "Not indexing spider replies. Delete titlerec for this doc" );
+		if (!cr) {
+			return NULL;
+		}
+
+		if (!cr->m_indexSpiderReplies) {
+			logTrace(g_conf.m_logTraceXmlDoc, "Not indexing spider replies. Delete titlerec for this doc");
+
 			int64_t uh48 = m_firstUrl.getUrlHash48();
+
 			// delete title rec. true = delete?
-			key96_t tkey = g_titledb.makeKey (m_docId,uh48,true);
+			key96_t tkey = Titledb::makeKey (m_docId,uh48,true);
+
 			// shortcut
 			SafeBuf *ssb = &m_spiderStatusDocMetaList;
+
 			// add to list. and we do not add the spider status
 			// doc to posdb since we deleted its titlerec.
 			ssb->pushChar(RDB_TITLEDB); // RDB2_TITLEDB2
-			ssb->safeMemcpy ( &tkey , sizeof(key96_t) );
-			m_metaList      = ssb->getBufStart();
-			m_metaListSize  = ssb->getLength  ();
+			ssb->safeMemcpy(&tkey, sizeof(key96_t));
+			m_metaList = ssb->getBufStart();
+			m_metaListSize = ssb->getLength();
 			m_metaListValid = true;
+
 			logTrace( g_conf.m_logTraceXmlDoc, "END" );
 			return m_metaList;
 		}
 
 		// set safebuf to the json of the spider status doc
 		SafeBuf jd;
-		if ( ! jd.safeMemcpy ( ptr_utf8Content , size_utf8Content ) )
-		{
-			logTrace( g_conf.m_logTraceXmlDoc, "END, js.safeMemcpy failed" );
+		if (!jd.safeMemcpy(ptr_utf8Content, size_utf8Content)) {
+			logTrace(g_conf.m_logTraceXmlDoc, "END, jd.safeMemcpy failed");
 			return NULL;
 		}
+
 		// set m_spiderStatusDocMetaList from the json
-		if ( ! setSpiderStatusDocMetaList ( &jd , m_docId ) )
-		{
-			logTrace( g_conf.m_logTraceXmlDoc, "END, setSpiderStatusDocMetaList failed" );
+		if (!setSpiderStatusDocMetaList(&jd, m_docId)) {
+			logTrace(g_conf.m_logTraceXmlDoc, "END, setSpiderStatusDocMetaList failed");
 			return NULL;
 		}
+
 		// TODO: support titledb rebuild as well
-		m_metaList      = m_spiderStatusDocMetaList.getBufStart();
-		m_metaListSize  = m_spiderStatusDocMetaList.getLength();
+		m_metaList = m_spiderStatusDocMetaList.getBufStart();
+		m_metaListSize = m_spiderStatusDocMetaList.getLength();
 		m_metaListValid = true;
+
 		logTrace( g_conf.m_logTraceXmlDoc, "END, OK" );
 		return m_metaList;
 	}
 
 	// if "rejecting" from index fake all this stuff
-	if ( m_deleteFromIndex ) {
-		logTrace( g_conf.m_logTraceXmlDoc, "deleteFromIndex true" );
-	     // if we are using diffbot api and diffbot found no json objects
-	     // or we never even processed the url, we really just want to
-	     // add the SpiderReply for this url to spiderdb and nothing more.
-		// NO! we still want to store the page content in titledb
-		// so we can see if it has changed i guess
-	     //diffbotEmptyReply ) {
+	if (m_deleteFromIndex) {
+		logTrace(g_conf.m_logTraceXmlDoc, "deleteFromIndex true");
+
 		// set these things to bogus values since we don't need them
 		m_contentHash32Valid = true;
 		m_contentHash32 = 0;
@@ -12728,11 +12712,9 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		m_httpStatus = 200;
 		m_siteValid = true;
 		ptr_site = "";
-		size_site = strlen(ptr_site)+1;
+		size_site = strlen(ptr_site) + 1;
 		m_isSiteRootValid = true;
 		m_isSiteRoot2 = 1;
-		//m_tagHash32Valid = true;
-		//m_tagHash32 = 0;
 		m_tagPairHash32Valid = true;
 		m_tagPairHash32 = 0;
 		m_spiderLinksValid = true;
@@ -12748,49 +12730,43 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	}
 
 	CollectionRec *cr = getCollRec();
-	if ( ! cr )
-	{
-		logTrace( g_conf.m_logTraceXmlDoc, "getCollRec failed" );
+	if (!cr) {
+		logTrace(g_conf.m_logTraceXmlDoc, "getCollRec failed");
 		return NULL;
 	}
 
 	// get our checksum
 	int32_t *plainch32 = getContentHash32();
-	if ( ! plainch32 || plainch32 == (void *)-1 )
-	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, getContentHash32 failed" );
+	if (!plainch32 || plainch32 == (void *)-1) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, getContentHash32 failed");
 		return (char *)plainch32;
 	}
 
 	// get this too
-	int16_t *hs = getHttpStatus ();
-	if ( ! hs || hs == (void *)-1 )
-	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, getHttpStatus failed" );
+	int16_t *hs = getHttpStatus();
+	if (!hs || hs == (void *)-1) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, getHttpStatus failed");
 		return (char *)hs;
 	}
 
 	// make sure site is valid
 	char *site = getSite();
-	if ( ! site || site == (void *)-1 )
-	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, getSite failed" );
+	if (!site || site == (void *)-1) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, getSite failed");
 		return (char *)site;
 	}
 
 	// this seems to be an issue as well for "unchanged" block below
 	char *isr = getIsSiteRoot();
-	if ( ! isr || isr == (void *)-1 )
-	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, getIsSiteRoot failed" );
+	if (!isr || isr == (void *)-1) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, getIsSiteRoot failed");
 		return (char *)isr;
 	}
 
 	// make sure docid valid
 	int64_t *mydocid = getDocId();
-	if ( ! mydocid || mydocid == (int64_t *)-1)
-	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, getDocId failed" );
+	if (!mydocid || mydocid == (int64_t *)-1) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, getDocId failed");
 		return (char *)mydocid;
 	}
 
@@ -12800,10 +12776,9 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	// . should not even uncompress it!
 	// . getNewSpiderReply() will use this to set the reply if
 	//   m_indexCode == EDOCUNCHANGED...
-	XmlDoc **pod = getOldXmlDoc ( );
-	if ( ! pod || pod == (XmlDoc **)-1 )
-	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, getOldXmlDoc failed" );
+	XmlDoc **pod = getOldXmlDoc();
+	if (!pod || pod == (XmlDoc **)-1) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, getOldXmlDoc failed");
 		return (char *)pod;
 	}
 
@@ -12811,31 +12786,31 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	XmlDoc *od = *pod;
 
 	// check if we are already indexed
-	char *isIndexed = getIsIndexed ();
-	if ( ! isIndexed || isIndexed == (char *)-1 )
-	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, getIsIndexed failed" );
+	char *isIndexed = getIsIndexed();
+	if (!isIndexed || isIndexed == (char *)-1) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, getIsIndexed failed");
 		return (char *)isIndexed;
 	}
 
 	// why call this way down here? it ends up downloading the doc!
 	// @todo: BR: Eh, what? ^^^
 	int32_t *indexCode = getIndexCode();
-	if ( ! indexCode || indexCode ==(void *)-1)
-	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, getIndexCode failed" );
+	if (!indexCode || indexCode == (void *)-1) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, getIndexCode failed");
 		return (char *)indexCode;
 	}
 
 	// sanity check
-	if ( ! m_indexCodeValid ) { g_process.shutdownAbort(true); }
+	if (!m_indexCodeValid) {
+		g_process.shutdownAbort(true);
+	}
 
 	// this means to abandon the injection
-	if ( *indexCode == EABANDONED ) {
+	if (*indexCode == EABANDONED) {
 		m_metaList = (char *)0x123456;
 		m_metaListSize = 0;
 		m_metaListValid = true;
-		logTrace( g_conf.m_logTraceXmlDoc, "END, abandoned" );
+		logTrace(g_conf.m_logTraceXmlDoc, "END, abandoned");
 		return m_metaList;
 	}
 
@@ -12850,20 +12825,17 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	     || *indexCode == EDNSDEAD
 	     || *indexCode == ENETUNREACH
 	     || *indexCode == EHOSTUNREACH
-		// . rejected from a diffbot regex url crawl filter?
-		// . or no json objects returned from diffbot?
-		// . or rejected from the processign regex filter?
-		// . then just add the SpiderReply to avoid respidering
-		// . NO! still need to add outlinks
-		//|| diffbotEmptyReply
 		// . treat this as a temporary error i guess
 		// . getNewSpiderReply() below will clear the error in it and
 		//   copy stuff over from m_sreq and m_oldDoc for this case
 		|| *indexCode == EDOCUNCHANGED
 		) {
 		// sanity - in repair mode?
-		if ( m_useSecondaryRdbs ) { g_process.shutdownAbort(true); }
-		logTrace( g_conf.m_logTraceXmlDoc, "Temporary error state: %" PRId32, *indexCode);
+		if (m_useSecondaryRdbs) {
+			g_process.shutdownAbort(true);
+		}
+
+		logTrace(g_conf.m_logTraceXmlDoc, "Temporary error state: %" PRId32, *indexCode);
 
 		// . this seems to be an issue for blocking
 		// . if we do not have a valid ip, we can't compute this,
@@ -12874,84 +12846,88 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		//   periodically and reindex the whole thing...
 		// . i think we were getting the sitenuminlinks for
 		//   getNewSpiderReply()
-		if ( m_ipValid &&
-		     m_ip != 0 &&
-		     m_ip != -1 ) {
+		if (m_ipValid && m_ip != 0 && m_ip != -1) {
 			int32_t *sni = getSiteNumInlinks();
-			if ( ! sni || sni == (int32_t *)-1 )
-			{
-				logTrace( g_conf.m_logTraceXmlDoc, "getSiteNumInlinks failed" );
+			if (!sni || sni == (int32_t *)-1) {
+				logTrace(g_conf.m_logTraceXmlDoc, "getSiteNumInlinks failed");
 				return (char *)sni;
 			}
 		}
+
 		// all done!
 		bool addReply = true;
 		// page parser calls set4 and sometimes gets a dns time out!
-		if ( m_sreqValid && m_sreq.m_isPageParser ) addReply = false;
+		if (m_sreqValid && m_sreq.m_isPageParser) {
+			addReply = false;
+		}
+
 		// return nothing if done
-		if ( ! addReply ) {
+		if (!addReply) {
 			m_metaListSize = 0;
-			m_metaList     = (char *)0x1;
-			logTrace( g_conf.m_logTraceXmlDoc, "END, m_isPageParser and valid" );
+			m_metaList = (char *)0x1;
+			logTrace(g_conf.m_logTraceXmlDoc, "END, m_isPageParser and valid");
 			return m_metaList;
 		}
 
 		// save this
 		int32_t savedCode = *indexCode;
+
 		// before getting our spider reply, assign crap from the old
 		// doc to us since we are unchanged! this will allow us to
 		// call getNewSpiderReply() without doing any processing, like
 		// setting the Xml or Words classes, etc.
-		copyFromOldDoc ( od );
+		copyFromOldDoc(od);
+
 		// need this though! i don't want to print out "Success"
 		// in the log in the logIt() function
 		m_indexCode = savedCode;
 		m_indexCodeValid = true;
+
 		// but set our m_contentHash32 from the spider request
 		// which got it from the spiderreply in the case of
 		// EDOCUNCHANGED. this way ch32=xxx will log correctly.
 		// I think this is only when EDOCUNCHANGED is set in the
 		// Msg13.cpp code, when we have a spider compression proxy.
-		if ( *indexCode == EDOCUNCHANGED &&
-		     m_sreqValid &&
-		     ! m_contentHash32Valid ) {
-			m_contentHash32      = m_sreq.m_contentHash32;
+		if (*indexCode == EDOCUNCHANGED && m_sreqValid && !m_contentHash32Valid) {
+			m_contentHash32 = m_sreq.m_contentHash32;
 			m_contentHash32Valid = true;
 		}
+
 		// we need these got getNewSpiderReply()
-		m_wasInIndex = false;
-		if ( od ) m_wasInIndex = true;
-		m_isInIndex       = m_wasInIndex;
+		m_wasInIndex = (od != NULL);
+		m_isInIndex = m_wasInIndex;
 		m_wasInIndexValid = true;
-		m_isInIndexValid  = true;
+		m_isInIndexValid = true;
 
 		// unset our ptr_linkInfo1 so we do not free it and core
 		// since we might have set it in copyFromOldDoc() above
-		ptr_linkInfo1  = NULL;
+		ptr_linkInfo1 = NULL;
 		size_linkInfo1 = 0;
 		m_linkInfo1Valid = false;
 
 		// . if not using spiderdb we are done at this point
 		// . this happens for diffbot json replies (m_dx)
-		if ( ! m_useSpiderdb ) {
+		if (!m_useSpiderdb) {
 			m_metaList = NULL;
 			m_metaListSize = 0;
-			logTrace( g_conf.m_logTraceXmlDoc, "END, not using spiderdb" );
+			logTrace(g_conf.m_logTraceXmlDoc, "END, not using spiderdb");
 			return (char *)0x01;
 		}
 
 		// get our spider reply
 		SpiderReply *newsr = getNewSpiderReply();
 		// return on error
-		if ( ! newsr )
-		{
-			logTrace( g_conf.m_logTraceXmlDoc, "END, could not get spider reply" );
+		if (!newsr) {
+			logTrace(g_conf.m_logTraceXmlDoc, "END, could not get spider reply");
 			return (char *)newsr;
 		}
 
 		// . panic on blocking! this is supposed to be fast!
 		// . it might still have to lookup the tagdb rec?????
-		if ( newsr == (void *)-1 ) { g_process.shutdownAbort(true); }
+		if (newsr == (void *)-1) {
+			g_process.shutdownAbort(true);
+		}
+
 		// how much we need
 		int32_t needx = sizeof(SpiderReply) + 1;
 
@@ -12966,15 +12942,13 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		// get the spiderreply ready to be added
 		SafeBuf *spiderStatusDocMetaList = getSpiderStatusDocMetaList(newsr, forDelete);
 		// error?
-		if ( ! spiderStatusDocMetaList )
-		{
-			logTrace( g_conf.m_logTraceXmlDoc, "END, getSpiderStatusDocMetaList failed" );
+		if (!spiderStatusDocMetaList) {
+			logTrace(g_conf.m_logTraceXmlDoc, "END, getSpiderStatusDocMetaList failed");
 			return NULL;
 		}
 
 		// blocked?
-		if (spiderStatusDocMetaList==(void *)-1)
-		{
+		if (spiderStatusDocMetaList==(void *)-1) {
 			logTrace( g_conf.m_logTraceXmlDoc, "END, getSpiderStatusDocMetaList blocked" );
 			return (char *)-1;
 		}
@@ -12982,79 +12956,92 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		// need to alloc space for it too
 		int32_t len = spiderStatusDocMetaList->length();
 		needx += len;
+
 		// this too
 		m_addedStatusDocSize = len;
 		m_addedStatusDocSizeValid = true;
-		//}
 
 		// make the buffer
-		m_metaList = (char *)mmalloc ( needx , "metalist");
-		if ( ! m_metaList ) return NULL;
+		m_metaList = (char *)mmalloc(needx, "metalist");
+		if (!m_metaList) {
+			return NULL;
+		}
+
 		// save size for freeing later
 		m_metaListAllocSize = needx;
+
 		// ptr and boundary
-		m_p    = m_metaList;
+		m_p = m_metaList;
 		m_pend = m_metaList + needx;
 
 		// save it
 		char *saved = m_p;
 
 		// first store spider reply "document"
-		if ( spiderStatusDocMetaList ) {
-			gbmemcpy ( m_p, spiderStatusDocMetaList->getBufStart(), spiderStatusDocMetaList->length() );
+		if (spiderStatusDocMetaList) {
+			gbmemcpy (m_p, spiderStatusDocMetaList->getBufStart(), spiderStatusDocMetaList->length());
 			m_p += spiderStatusDocMetaList->length();
 		}
 
 		// sanity check
-		if ( ! m_docIdValid ) { g_process.shutdownAbort(true); }
+		if (!m_docIdValid) {
+			g_process.shutdownAbort(true);
+		}
 
 		// now add the new rescheduled time
-		setStatus ( "adding SpiderReply to spiderdb" );
-		logTrace( g_conf.m_logTraceXmlDoc, "Adding spider reply to spiderdb" );
+		setStatus("adding SpiderReply to spiderdb");
+		logTrace(g_conf.m_logTraceXmlDoc, "Adding spider reply to spiderdb");
 
 		// rdbid first
-		rdbid_t rd = RDB_SPIDERDB;
-		if ( m_useSecondaryRdbs ) rd = RDB2_SPIDERDB2;
+		rdbid_t rd = m_useSecondaryRdbs ? RDB2_SPIDERDB2 : RDB_SPIDERDB;
 		*m_p++ = (char)rd;
+
 		// get this
-		if ( ! m_srepValid ) { g_process.shutdownAbort(true); }
+		if (!m_srepValid) {
+			g_process.shutdownAbort(true);
+		}
+
 		// store the spider rec
 		int32_t newsrSize = newsr->getRecSize();
-		gbmemcpy ( m_p , newsr , newsrSize );
+		gbmemcpy (m_p, newsr, newsrSize);
 		m_p += newsrSize;
 		m_addedSpiderReplySize = newsrSize;
 		m_addedSpiderReplySizeValid = true;
+
 		// sanity check
-		if ( m_p - saved != needx ) { g_process.shutdownAbort(true); }
+		if (m_p - saved != needx) {
+			g_process.shutdownAbort(true);
+		}
+
 		// sanity check
-		verifyMetaList( m_metaList , m_p , forDelete );
+		verifyMetaList(m_metaList, m_p, forDelete);
+
 		// verify it
 		m_metaListValid = true;
+
 		// set size
 		m_metaListSize = m_p - m_metaList;
+
 		// all done
-
-		logTrace( g_conf.m_logTraceXmlDoc, "END, all done" );
+		logTrace(g_conf.m_logTraceXmlDoc, "END, all done");
 		return m_metaList;
-
 	}
 
 
 	// get the old meta list if we had an old doc
 	char *oldList = NULL;
-	int32_t  oldListSize = 0;
-	if ( od ) {
+	int32_t oldListSize = 0;
+	if (od) {
 		od->m_useSpiderdb = false;
-		od->m_useTagdb    = false;
+		od->m_useTagdb = false;
 
 		// if we are doing diffbot stuff, we are still indexing this
 		// page, so we need to get the old doc meta list
-		oldList = od->getMetaList ( true );
+		oldList = od->getMetaList(true);
 		oldListSize = od->m_metaListSize;
-		if ( ! oldList || oldList ==(void *)-1)
-		{
-			logTrace( g_conf.m_logTraceXmlDoc, "END, get old meta list failed" );
-			return (char *)oldList;
+		if (!oldList || oldList == (void *)-1) {
+			logTrace(g_conf.m_logTraceXmlDoc, "END, get old meta list failed");
+			return oldList;
 		}
 	}
 
@@ -13072,13 +13059,12 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	//   these dmoz urls so we can search the CONTENT of the pages in dmoz,
 	//   something dmoz won't let you do.
 	char *mt = hasNoIndexMetaTag();
-	if ( ! mt || mt == (void *)-1 )
-	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, hasNoIndexMetaTag failed" );
-		return (char *)mt;
+	if (!mt || mt == (void *)-1) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, hasNoIndexMetaTag failed");
+		return mt;
 	}
 
-	if ( *mt ) {
+	if (*mt) {
 		m_usePosdb = false;
 		m_useLinkdb = false;
 		m_useTitledb = false;
@@ -13092,54 +13078,46 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	// . otherwise XmlDoc::getTitleRecBuf() cores because its invalid
 	// . this cores if rebuilding just posdb because hashAll() needs
 	//   the inlink texts for hashing
-	//if ( m_useTitledb ) {
 	LinkInfo *info1 = getLinkInfo1();
-	if ( ! info1 || info1 == (LinkInfo *)-1 )
-	{
+	if (!info1 || info1 == (LinkInfo *)-1) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END, getLinkInfo1 failed" );
 		return (char *)info1;
 	}
-	//}
 
 	// so getSiteRank() works
 	int32_t *sni = getSiteNumInlinks();
-	if ( ! sni || sni == (int32_t *)-1 )
-	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, getSiteNumInlinks failed" );
+	if (!sni || sni == (int32_t *)-1) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, getSiteNumInlinks failed");
 		return (char *)sni;
 	}
 
 	// so addTable144 works
 	uint8_t *langId = getLangId();
-	if ( ! langId || langId == (uint8_t *)-1 )
-	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, getLangId failed" );
-		return (char *) langId;
+	if (!langId || langId == (uint8_t *)-1) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, getLangId failed");
+		return (char *)langId;
 	}
 
-
-	//
 	// . before making the title rec we need to set all the ptrs!
 	// . so at least now set all the data members we will need to
 	//   seriazlize into the title rec because we can't be blocking further
 	//   down below after we set all the hashtables and XmlDoc::ptr_ stuff
-	if ( ! m_setFromTitleRec || m_useSecondaryRdbs ) {
+	if (!m_setFromTitleRec || m_useSecondaryRdbs) {
 		// all member vars should already be valid if set from titlerec
-		char *ptg = prepareToMakeTitleRec ();
+		char *ptg = prepareToMakeTitleRec();
+
 		// return NULL with g_errno set on error
-		if ( ! ptg || ptg == (void *)-1 )
-		{
-			logTrace( g_conf.m_logTraceXmlDoc, "END, prepareToMakeTitleRec failed" );
-			return (char *)ptg;
+		if (!ptg || ptg == (void *)-1) {
+			logTrace(g_conf.m_logTraceXmlDoc, "END, prepareToMakeTitleRec failed");
+			return ptg;
 		}
 	}
 
 	// our next slated spider priority
 	char *spiderLinks3 = getSpiderLinks();
-	if ( ! spiderLinks3  || spiderLinks3 == (char *)-1 )
-	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, getSpiderLinks failed" );
-		return (char *)spiderLinks3;
+	if (!spiderLinks3 || spiderLinks3 == (char *)-1) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, getSpiderLinks failed");
+		return spiderLinks3;
 	}
 
 	bool spideringLinks = *spiderLinks3;
@@ -13150,151 +13128,125 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	///////////////////////////////////
 	///////////////////////////////////
 	//
-	//
 	// if we had an error, do not add us regardless to the index
 	// although we might add SOME things depending on the error.
 	// Like add the redirecting url if we had a ESIMPLIFIEDREDIR error.
 	// So what we had to the Rdbs depends on the indexCode.
 	//
-
-	if ( m_indexCode ) nd = NULL;
-
 	// OR if deleting from index, we just want to get the metalist
 	// directly from "od"
-	if ( m_deleteFromIndex ) nd = NULL;
-
-
 	//
+
+	if (m_indexCode || m_deleteFromIndex) {
+		nd = NULL;
+	}
+
 	//
 	///////////////////////////////////
 	///////////////////////////////////
 
-	if ( ! nd )
+	if (!nd) {
 		spideringLinks = false;
+	}
 
 	// set these for getNewSpiderReply() so it can set
 	// SpiderReply::m_wasIndexed and m_isIndexed...
-	m_wasInIndex = false;
-	m_isInIndex  = false;
-	if ( od ) m_wasInIndex = true;
-	if ( nd ) m_isInIndex  = true;
+	m_wasInIndex = (od != NULL);
+	m_isInIndex  = (nd != NULL);
 	m_wasInIndexValid = true;
 	m_isInIndexValid  = true;
 
-
 	// if we are adding a simplified redirect as a link to spiderdb
 	// likewise if the error was ENONCANONICAL treat it like that
-	if ( m_indexCode == EDOCSIMPLIFIEDREDIR || m_indexCode == EDOCNONCANONICAL ) {
+	if (m_indexCode == EDOCSIMPLIFIEDREDIR || m_indexCode == EDOCNONCANONICAL) {
 		spideringLinks = true;
 	}
-
-
-//@@@ BR TEST. Awaiting Matt's sanity check
-//if( !m_setFromTitleRec )
-//{
-
-//logTrace( g_conf.m_logTraceXmlDoc, "m_setFromTitleRec: %s", m_setFromTitleRec?"true":"false");
-//logTrace( g_conf.m_logTraceXmlDoc, "spideringLinks...: %s", spideringLinks?"true":"false");
-
 
 	//
 	// . prepare the outlink info if we are adding links to spiderdb!
 	// . do this before we start hashing so we do not block and re-hash!!
 	//
-	if ( spideringLinks && ! m_doingConsistencyCheck && m_useSpiderdb){
-		setStatus ( "getting outlink info" );
-		logTrace( g_conf.m_logTraceXmlDoc, "call getOutlinkTagRecVector" );
+	if (m_useSpiderdb && spideringLinks && !m_doingConsistencyCheck) {
+		setStatus("getting outlink info");
+		logTrace(g_conf.m_logTraceXmlDoc, "call getOutlinkTagRecVector");
 
 		TagRec ***grv = getOutlinkTagRecVector();
-		if ( ! grv || grv == (void *)-1 )
-		{
-			logTrace( g_conf.m_logTraceXmlDoc, "END, getOutlinkTagRecVector returned -1" );
+		if (!grv || grv == (void *)-1) {
+			logTrace(g_conf.m_logTraceXmlDoc, "END, getOutlinkTagRecVector returned -1");
 			return (char *)grv;
 		}
 
-		logTrace( g_conf.m_logTraceXmlDoc, "call getOutlinkFirstIpVector" );
+		logTrace(g_conf.m_logTraceXmlDoc, "call getOutlinkFirstIpVector");
 
-		int32_t    **ipv = getOutlinkFirstIpVector();
-		if ( ! ipv || ipv == (void *)-1 )
-		{
-			logTrace( g_conf.m_logTraceXmlDoc, "END, getOutlinkFirstIpVector returned -1" );
+		int32_t **ipv = getOutlinkFirstIpVector();
+		if (!ipv || ipv == (void *)-1) {
+			logTrace(g_conf.m_logTraceXmlDoc, "END, getOutlinkFirstIpVector returned -1");
 			return (char *)ipv;
 		}
 	}
 
-//}
-
 	// get the tag buf to add to tagdb
 	SafeBuf *ntb = NULL;
-	if ( m_useTagdb && ! m_deleteFromIndex ) {
-		logTrace( g_conf.m_logTraceXmlDoc, "call getNewTagBuf" );
+	if (m_useTagdb && !m_deleteFromIndex) {
+		logTrace(g_conf.m_logTraceXmlDoc, "call getNewTagBuf");
 		ntb = getNewTagBuf();
-		if ( ! ntb || ntb == (void *)-1 )
-		{
-			logTrace( g_conf.m_logTraceXmlDoc, "END, getNewTagBuf failed" );
+		if (!ntb || ntb == (void *)-1) {
+			logTrace(g_conf.m_logTraceXmlDoc, "END, getNewTagBuf failed");
 			return (char *)ntb;
 		}
 	}
 
-	logTrace( g_conf.m_logTraceXmlDoc, "call getIsSiteRoot" );
+	logTrace(g_conf.m_logTraceXmlDoc, "call getIsSiteRoot");
 	char *isRoot = getIsSiteRoot();
-	if ( ! isRoot || isRoot == (char *)-1 )
-	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, getIsSiteRoot returned -1" );
-		return (char *)isRoot;
+	if (!isRoot || isRoot == (char *)-1) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, getIsSiteRoot returned -1");
+		return isRoot;
 	}
 
 	Words *ww = getWords();
-	if ( ! ww || ww == (void *)-1 )
-	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, getWords returned -1" );
+	if (!ww || ww == (void *)-1) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, getWords returned -1");
 		return (char *)ww;
 	}
 
 	int64_t *pch64 = getExactContentHash64();
-	if ( ! pch64 || pch64 == (void *)-1 )
-	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, getExactContentHash64 returned -1" );
+	if (!pch64 || pch64 == (void *)-1) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, getExactContentHash64 returned -1");
 		return (char *)pch64;
 	}
 
 	// need firstip if adding a rebuilt spider request
-	if ( m_useSecondaryRdbs && m_useSpiderdb ) {
+	if (m_useSpiderdb && m_useSecondaryRdbs) {
 		int32_t *fip = getFirstIp();
-		if ( ! fip || fip == (void *)-1 )
-		{
-			logTrace( g_conf.m_logTraceXmlDoc, "END, getFirstIp returned -1" );
+		if (!fip || fip == (void *)-1) {
+			logTrace(g_conf.m_logTraceXmlDoc, "END, getFirstIp returned -1");
 			return (char *)fip;
 		}
 	}
-
 
 	// shit, we need a spider reply so that it will not re-add the
 	// spider request to waiting tree, we ignore docid-based
 	// recs that have spiderreplies in Spider.cpp
 	SpiderReply *newsr = NULL;
-	if ( m_useSpiderdb ) { // && ! m_deleteFromIndex ) {
+	if (m_useSpiderdb) {
 		newsr = getNewSpiderReply();
-		if ( ! newsr || newsr == (void *)-1 )
-		{
-			logTrace( g_conf.m_logTraceXmlDoc, "END, getNewSpiderReply failed" );
+		if (!newsr || newsr == (void *)-1) {
+			logTrace(g_conf.m_logTraceXmlDoc, "END, getNewSpiderReply failed");
 			return (char *)newsr;
 		}
 	}
 
 	// the site hash for hashing
 	int32_t *sh32 = getSiteHash32();
-	if ( ! sh32 || sh32 == (int32_t *)-1 )
-	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, getSiteHash32 failed" );
+	if (!sh32 || sh32 == (int32_t *)-1) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, getSiteHash32 failed");
 		return (char *)sh32;
 	}
 
-	if ( m_useLinkdb && ! m_deleteFromIndex ) {
+	if (m_useLinkdb && !m_deleteFromIndex) {
 		int32_t *linkSiteHashes = getLinkSiteHashes();
-		if ( ! linkSiteHashes || linkSiteHashes == (void *)-1 )
-		{
-			logTrace( g_conf.m_logTraceXmlDoc, "END, getLinkSiteHashes failed" );
+		if (!linkSiteHashes || linkSiteHashes == (void *)-1) {
+			logTrace(g_conf.m_logTraceXmlDoc, "END, getLinkSiteHashes failed");
 			return (char *)linkSiteHashes;
 		}
 	}
@@ -13316,27 +13268,21 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	// get the spiderreply ready to be added to the rdbs w/ msg4
 	// but if doing a rebuild operation then do not get it, we'll rebuild
 	// it since it will have its own titlerec
-	if ( ! m_useSecondaryRdbs ) {
-		spiderStatusDocMetaList = getSpiderStatusDocMetaList (newsr,forDelete);
-		if ( ! spiderStatusDocMetaList ) {
+	if (!m_useSecondaryRdbs) {
+		spiderStatusDocMetaList = getSpiderStatusDocMetaList(newsr, forDelete);
+		if (!spiderStatusDocMetaList) {
 			log("build: ss doc metalist null. bad!");
 
-			logTrace( g_conf.m_logTraceXmlDoc, "END, getSpiderStatusDocMetaList failed" );
+			logTrace(g_conf.m_logTraceXmlDoc, "END, getSpiderStatusDocMetaList failed");
 			return NULL;
 		}
 	}
 
-	if ( spiderStatusDocMetaList == (void *)-1)
-	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, getSpiderStatusDocMetaList failed" );
+	if (spiderStatusDocMetaList == (void *)-1) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, getSpiderStatusDocMetaList failed");
 		return (char *)spiderStatusDocMetaList;
 	}
 
-
-
-
-	//
-	// CAUTION
 	//
 	// CAUTION
 	//
@@ -13350,7 +13296,6 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	//
 	//
 
-
 	// store what we hash into this table
 	if ((m_pbuf || m_storeTermListInfo) && !m_wts) {
 		// init it. the value is a TermInfo class. allowDups=true!
@@ -13362,26 +13307,25 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 
 	// how much to alloc? compute an upper bound
 	int32_t need = 0;
-	// should we index this doc?
-	bool index1 = true;
 
-	setStatus ( "hashing posdb and datedb terms" );
+	setStatus("hashing posdb terms");
+
 	// . hash our documents terms into "tt1"
 	// . hash the old document's terms into "tt2"
 	// . by old, we mean the older versioned doc of this url spidered b4
 	HashTableX tt1;
-	// how many words we got?
-	int32_t nw = m_words.getNumWords();
+
 	// . prepare it, 5000 initial terms
 	// . make it nw*8 to avoid have to re-alloc the table!!!
 	// . i guess we can have link and neighborhood text too! we don't
 	//   count it here though... but add 5k for it...
-	int32_t need4 = nw * 4 + 5000;
-	if ( nd && index1 && m_usePosdb ) {
-		if ( ! tt1.set ( 18 , 4 , need4,NULL,0,false, "posdb-indx")) {
-			logTrace( g_conf.m_logTraceXmlDoc, "tt1.set failed" );
+	int32_t need4 = m_words.getNumWords() * 4 + 5000;
+	if (m_usePosdb && nd) {
+		if (!tt1.set(18, 4, need4, NULL, 0, false, "posdb-indx")) {
+			logTrace(g_conf.m_logTraceXmlDoc, "tt1.set failed");
 			return NULL;
 		}
+
 		int32_t did = tt1.m_numSlots;
 		// . hash the document terms into "tt1"
 		// . this is a biggie!!!
@@ -13389,56 +13333,38 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		// . m_indexCode is non-zero if we should delete the doc from
 		//   index
 		// . i think this only adds to posdb
-		//log("xmldoc: CALLING HASHALL");
 		// shit, this blocks which is bad!!!
-		char *nod = hashAll ( &tt1 ) ;
+		char *nod = hashAll(&tt1);
+
 		// you can't block here because if we are re-called we lose tt1
-		if ( nod == (char *)-1 ) { g_process.shutdownAbort(true); }
+		if (nod == (char *)-1) {
+			g_process.shutdownAbort(true);
+		}
+
 		// error?
-		if ( ! nod ) {
-			logTrace( g_conf.m_logTraceXmlDoc, "END, hashAll failed" );
+		if (!nod) {
+			logTrace(g_conf.m_logTraceXmlDoc, "END, hashAll failed");
 			return NULL;
 		}
+
 		int32_t done = tt1.m_numSlots;
 		if (done != did) {
-			log(LOG_WARN, "xmldoc: reallocated big table! bad. old=%" PRId32" new=%" PRId32" nw=%" PRId32, did, done, nw);
+			log(LOG_WARN, "xmldoc: reallocated big table! bad. old=%" PRId32" new=%" PRId32" nw=%" PRId32, did, done, m_words.getNumWords());
 		}
 	}
 
 	// if indexing the spider reply as well under a different docid
 	// there is no reason we can't toss it into our meta list here
-	if ( spiderStatusDocMetaList )
+	if (spiderStatusDocMetaList) {
 		need += spiderStatusDocMetaList->length();
+	}
 
 	// space for indexdb AND DATEDB! +2 for rdbids
-	int32_t needIndexdb = 0;
-	needIndexdb +=tt1.m_numSlotsUsed*(sizeof(key144_t)+2+sizeof(key128_t));
+	int32_t needIndexdb = tt1.m_numSlotsUsed * (sizeof(key144_t) + 2 + sizeof(key128_t));
 	need += needIndexdb;
 
-	setStatus ( "hashing sectiondb keys" );
-	// add in special sections keys. "ns" = "new sections", etc.
-	// add in the special nosplit datedb terms from the Sections class
-	// these hash into the term table so we can do incremental updating
-	HashTableX st1;
-	// set key/data size
-	int32_t svs = sizeof(SectionVote);
-	st1.set(sizeof(key128_t),svs,0,NULL,0,false,"sectdb-indx");
-	// tell hashtable to use the sectionhash for determining the slot,
-	// not the lower 4 bytes because that is the docid which is the
-	// same for every key
-	st1.m_maskKeyOffset = 6;
-
-	// needs for hashing no split terms
-	int32_t needSectiondb = 0;
-	// add em up. plus one for rdbId
-	needSectiondb += st1.m_numSlotsUsed * (16+svs+1);
-	//needSectiondb += st2.m_numSlotsUsed * (16+svs+1);
-	// add it in
-	need += needSectiondb;
-
 	// clusterdb keys. plus one for rdbId
-	int32_t needClusterdb = 0;
-	if ( nd ) needClusterdb += 13;
+	int32_t needClusterdb = nd ? 13 : 0;
 	need += needClusterdb;
 
 	// . LINKDB
@@ -13451,10 +13377,11 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	// do not bother if deleting. but we do add simplified redirects
 	// to spiderdb as SpiderRequests now.
 	int32_t code = m_indexCode;
-	if  ( code == EDOCSIMPLIFIEDREDIR || code == EDOCNONCANONICAL ) {
+	if (code == EDOCSIMPLIFIEDREDIR || code == EDOCNONCANONICAL) {
 		code = 0;
 	}
-	if  ( code ) {
+
+	if (code) {
 		nl2 = NULL;
 	}
 
@@ -13463,13 +13390,18 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	// . use 0 for the data, since these are pure keys, which have no
 	//   scores to accumulate
 	HashTableX kt1;
-	//HashTableX kt2;
+
 	int32_t nis = 0;
-	if ( nl2 && m_useLinkdb ) nis = nl2->getNumLinks() * 4;
+	if (m_useLinkdb && nl2) {
+		nis = nl2->getNumLinks() * 4;
+	}
+
 	// pre-grow table based on # outlinks
-	kt1.set ( sizeof(key224_t),0,nis,NULL,0,false,"link-indx" );
+	kt1.set(sizeof(key224_t), 0, nis, NULL, 0, false, "link-indx");
+
 	// use magic to make fast
 	kt1.m_useKeyMagic = true;
+
 	// linkdb keys will have the same lower 4 bytes, so make hashing fast.
 	// they are 28 byte keys. bytes 20-23 are the hash of the linkEE
 	// so that will be the most random.
@@ -13479,62 +13411,53 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	//   but this will have to be for adding to Linkdb. basically take a
 	//   lot of it from Linkdb::fillLinkdbList()
 	// . these return false with g_errno set on error
-	if ( m_useLinkdb && nl2 && ! hashLinksForLinkdb(&kt1) ) {
-		logTrace( g_conf.m_logTraceXmlDoc, "END, hashLinksForLinkdb failed" );
+	if (m_useLinkdb && nl2 && !hashLinksForLinkdb(&kt1)) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, hashLinksForLinkdb failed");
 		return NULL;
 	}
 
 	// add up what we need. +1 for rdbId
-	int32_t needLinkdb = 0;
-	needLinkdb += kt1.m_numSlotsUsed * (sizeof(key224_t)+1);
+	int32_t needLinkdb = kt1.m_numSlotsUsed * (sizeof(key224_t)+1);
 	need += needLinkdb;
 
 	// we add a negative key to doledb usually (include datasize now)
-	int32_t needDoledb = sizeof(key96_t) + 1 ; // + 4;
-	if ( forDelete ) needDoledb = 0;
+	int32_t needDoledb = forDelete ? 0 : (sizeof(key96_t) + 1);
 	need += needDoledb;
 
 	// for adding the SpiderReply to spiderdb (+1 for rdbId)
-	int32_t needSpiderdb1 = sizeof(SpiderReply) + 1;
-	if ( forDelete ) needSpiderdb1 = 0;
+	int32_t needSpiderdb1 = forDelete ? 0 : (sizeof(SpiderReply) + 1);
 	need += needSpiderdb1;
 
 	// if injecting we add a spiderrequest to be able to update it
 	// but don't do this if it is pagereindex. why is pagereindex
 	// setting the injecting flag anyway?
-	int32_t needSpiderdb3 = 0;
-	if ( m_sreqValid &&
-	     m_sreq.m_isInjecting &&
-	     m_sreq.m_fakeFirstIp &&
-	     ! m_sreq.m_forceDelete ) {
+	int32_t needSpiderdbRequest = 0;
+	if (m_sreqValid && m_sreq.m_isInjecting && m_sreq.m_fakeFirstIp && !m_sreq.m_forceDelete) {
 		// NO! because when injecting a warc and the subdocs
 		// it contains, gb then tries to spider all of them !!! sux...
-		needSpiderdb3 = 0;
+		needSpiderdbRequest = 0;
+	} else if (m_useSpiderdb && m_useSecondaryRdbs) {
+		// or if we are rebuilding spiderdb
+		needSpiderdbRequest = sizeof(SpiderRequest) + m_firstUrl.getUrlLen() + 1;
 	}
-	// or if we are rebuilding spiderdb
-	else if (m_useSecondaryRdbs && m_useSpiderdb)
-		needSpiderdb3 = sizeof(SpiderRequest) + m_firstUrl.getUrlLen()+1;
-
-	need += needSpiderdb3;
+	need += needSpiderdbRequest;
 
 	// . for adding our outlinks to spiderdb
 	// . see SpiderRequest::getRecSize() for description
 	// . SpiderRequest::getNeededSize() will include the null terminator
-	int32_t hsize         = SpiderRequest::getNeededSize ( 0 );
-	int32_t needSpiderdb2 = hsize * m_links.getNumLinks();
-	// and the url buffer of outlinks. includes \0 terminators i think
-	needSpiderdb2 += m_links.getLinkBufLen();
+	int32_t needSpiderdb2 = 0;
+
 	// don't need this if doing consistecy check
-	if ( m_doingConsistencyCheck ) needSpiderdb2 = 0;
 	// nor for generating the delete meta list for incremental indexing
-	if ( forDelete ) needSpiderdb2 = 0;
-	// accumulate it
+	// and the url buffer of outlinks. includes \0 terminators i think
+	if (!m_doingConsistencyCheck && !forDelete) {
+		needSpiderdb2 = (SpiderRequest::getNeededSize(0) * m_links.getNumLinks()) + m_links.getLinkBufLen();
+	}
+
 	need += needSpiderdb2;
 
 	// the new tags for tagdb
-	int32_t needTagdb = 0;
-	if ( ntb ) needTagdb = ntb->length() ;
-	// add that in
+	int32_t needTagdb = ntb ? ntb->length() : 0;
 	need += needTagdb;
 
 	//
@@ -13544,26 +13467,25 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	// . gotta set m_metaListCheckSum8 before making titleRec below
 	// . also, if set from titleRec, verify metalist is the same!
 	//
-	if ( ! m_computedMetaListCheckSum ) {
+	if (!m_computedMetaListCheckSum) {
 		// do not call twice!
 		m_computedMetaListCheckSum = true;
 		// all keys in tt1, ns1, kt1 and pt1
-		int32_t ck32 = 0;
-		ck32 ^= tt1.getKeyChecksum32();
+		int32_t ck32 = tt1.getKeyChecksum32();
 
 		// set this before calling getTitleRecBuf() below
 		uint8_t currentMetaListCheckSum8 = (uint8_t)ck32;
 		// see if matches what was in old titlerec
-		if ( m_metaListCheckSum8Valid &&
-		     // if we were set from a titleRec, see if we got
-		     // a different hash of terms to index this time around...
-		     m_setFromTitleRec &&
-		     // fix for import log spam
-		     ! m_isImporting &&
-		     m_metaListCheckSum8 != currentMetaListCheckSum8 ) {
-			log( LOG_WARN, "xmldoc: checksum parsing inconsistency for %s (old)%i != %i(new). "
-			     "Uncomment tt1.print() above to debug.",
-			     m_firstUrl.getUrl(), (int)m_metaListCheckSum8, (int)currentMetaListCheckSum8 );
+		if (m_metaListCheckSum8Valid &&
+		    // if we were set from a titleRec, see if we got
+		    // a different hash of terms to index this time around...
+		    m_setFromTitleRec &&
+		    // fix for import log spam
+		    !m_isImporting &&
+		    m_metaListCheckSum8 != currentMetaListCheckSum8) {
+			log(LOG_WARN, "xmldoc: checksum parsing inconsistency for %s (old)%i != %i(new). ",
+			    m_firstUrl.getUrl(), (int)m_metaListCheckSum8, (int)currentMetaListCheckSum8);
+			//tt1.print();
 		}
 
 		// assign the new one, getTitleRecBuf() call below needs this
@@ -13572,195 +13494,207 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	}
 
 
-
 	//
 	// now that we've set all the ptr_* members vars, we can make
 	// the title rec
 	//
 
-	// . MAKE the title rec from scratch, that is all we need at this point
-	// . if repairing and not rebuilding titledb, we do not need the titlerec
-	if ( m_useTitledb ) {
-		// this buf includes key/datasize/compressdata
-		SafeBuf *tr = getTitleRecBuf ();
-		// panic if this blocks! it should not at this point because
-		// we'd have to re-hash the crap above
-		if ( tr == (void *) -1 ) { g_process.shutdownAbort(true); }
-		// return NULL with g_errno set on error
-		if ( ! tr ) return (char *)tr;
-		// sanity check - if the valid title rec is null,
-		// m_indexCode is set!
-		if ( tr->length()==0 && ! m_indexCode ) { g_process.shutdownAbort(true);}
-	}
-
 	// . add in title rec size
 	// . should be valid because we called getTitleRecBuf() above
 	// . this should include the key
 	// . add in possible negative key for deleting old title rec
-	int32_t needTitledb = sizeof(key96_t) + 1;
 	// +1 for rdbId
-	if ( nd && m_useTitledb && ! forDelete )
-		needTitledb += m_titleRecBuf.length();
-	// set new and old keys for titledb
-	//key96_t ok;
-	key96_t nk;
-	//ok.setMin();
-	nk.setMin();
-	//if ( od ) ok = *od->getTitleRecKey();
-	if ( nd && m_useTitledb ) nk = *nd->getTitleRecKey();
-	//if ( od && m_useTitledb && ok != nk ) needTitledb += sizeof(key96_t)+1;
-	if ( m_useTitledb ) {
+	int32_t needTitledb = sizeof(key96_t) + 1;
+
+	// . MAKE the title rec from scratch, that is all we need at this point
+	// . if repairing and not rebuilding titledb, we do not need the titlerec
+	if (m_useTitledb) {
+		// this buf includes key/datasize/compressdata
+		SafeBuf *tr = getTitleRecBuf();
+
+		// panic if this blocks! it should not at this point because
+		// we'd have to re-hash the crap above
+		if (tr == (void *)-1) {
+			g_process.shutdownAbort(true);
+		}
+
+		// return NULL with g_errno set on error
+		if (!tr) {
+			return (char *)tr;
+		}
+
+		// sanity check - if the valid title rec is null,
+		// m_indexCode is set!
+		if (tr->length() == 0 && !m_indexCode) {
+			g_process.shutdownAbort(true);
+		}
+
+		if (nd && !forDelete) {
+			needTitledb += m_titleRecBuf.length();
+		}
+
 		// then add it in
 		need += needTitledb;
+
 		// the titledb unlock key for msg12 in spider.cpp
 		need += sizeof(key96_t);
 	}
 
 	// . alloc mem for metalist
 	// . sanity
-	if ( m_metaListSize > 0 ) { g_process.shutdownAbort(true); }
+	if (m_metaListSize > 0) {
+		g_process.shutdownAbort(true);
+	}
+
 	// make the buffer
-	m_metaList = (char *)mmalloc ( need , "metalist");
-	if ( ! m_metaList ) return NULL;
+	m_metaList = (char *)mmalloc(need, "metalist");
+	if (!m_metaList) {
+		return NULL;
+	}
+
 	// save size for freeing later
 	m_metaListAllocSize = need;
+
 	// ptr and boundary
-	m_p    = m_metaList;
+	m_p = m_metaList;
 	m_pend = m_metaList + need;
 
 	//
 	// TITLEDB
 	//
 	setStatus ("adding titledb recs");
+
 	// checkpoint
 	char *saved = m_p;
 
 	// . store title rec
 	// . Repair.cpp might set useTitledb to false!
-	if ( nd && m_useTitledb ) {
+	if (m_useTitledb && nd) {
 		// rdbId
-		if ( m_useSecondaryRdbs ) *m_p++ = RDB2_TITLEDB2;
-		else                      *m_p++ = RDB_TITLEDB;
+		*m_p++ = m_useSecondaryRdbs ? RDB2_TITLEDB2 : RDB_TITLEDB;
+
 		// sanity
-		if ( ! nd->m_titleRecBufValid ) { g_process.shutdownAbort(true); }
+		if (!nd->m_titleRecBufValid) {
+			g_process.shutdownAbort(true);
+		}
+
 		// key, dataSize, data is the whole rec
-		int32_t tsize = nd->m_titleRecBuf.length();
 		// if getting an "oldList" to do incremental posdb updates
 		// then do not include the data portion of the title rec
-		if ( forDelete ) tsize = sizeof(key96_t);
+		int32_t tsize = (forDelete) ? sizeof(key96_t) : nd->m_titleRecBuf.length();
 		gbmemcpy ( m_p , nd->m_titleRecBuf.getBufStart() , tsize );
-		// make it a negative key
-		//if ( forDelete ) *m_p = *m_p & 0xfe;
-		m_p += tsize;//nd->m_titleRecSize;
-		// store a zero datasize, key is still positive until the dt8
-		// table deletes it
-		//if ( forDelete ) { *(int32_t *)m_p = 0; m_p += 4; }
+
+		m_p += tsize;
 	}
+
 	// sanity check
-	if ( m_p - saved > needTitledb ) { g_process.shutdownAbort(true); }
+	if (m_p - saved > needTitledb) {
+		g_process.shutdownAbort(true);
+	}
+
 	// sanity check
-	verifyMetaList( m_metaList , m_p , forDelete );
+	verifyMetaList(m_metaList, m_p, forDelete);
 
 	//
-	// ADD BASIC INDEXDB/DATEDB TERMS
+	// ADD BASIC POSDB TERMS
 	//
-	setStatus ( "adding posdb and datedb terms");
+	setStatus("adding posdb terms");
+
 	// checkpoint
 	saved = m_p;
+
 	// store indexdb terms into m_metaList[]
-	if ( m_usePosdb && ! addTable144 ( &tt1 , m_docId ))
-	{
-		logTrace( g_conf.m_logTraceXmlDoc, "END, addTable144 failed" );
+	if (m_usePosdb && !addTable144(&tt1, m_docId)) {
+		logTrace(g_conf.m_logTraceXmlDoc, "END, addTable144 failed");
 		return NULL;
 	}
 
 	// sanity check
-	if ( m_p - saved > needIndexdb ) { g_process.shutdownAbort(true); }
+	if (m_p - saved > needIndexdb) {
+		g_process.shutdownAbort(true);
+	}
+
 	// free all mem
 	tt1.reset();
 
 	// sanity check
-	verifyMetaList( m_metaList , m_p , forDelete );
-
-	//
-	// ADD SECTIONS SPECIAL TERMS
-	//
-	setStatus ( "adding sectiondb keys");
-	// checkpoint
-	saved = m_p;
-
-	// sanity check
-	if ( m_p - saved > needSectiondb ) { g_process.shutdownAbort(true); }
-	// free mem
-	st1.reset();
-
-	// sanity check
-	verifyMetaList( m_metaList , m_p , forDelete );
+	verifyMetaList(m_metaList, m_p, forDelete);
 
 
 	//
 	// ADD CLUSTERDB KEYS
 	//
-	setStatus ( "adding clusterdb keys" );
+	setStatus("adding clusterdb keys");
+
 	// checkpoint
 	saved = m_p;
+
 	// . do we have adult content?
 	// . should already be valid!
-	if ( nd && ! m_isAdultValid ) { g_process.shutdownAbort(true); }
-	// . get new clusterdb key
-	// . we use the host hash for the site hash! hey, this is only 26 bits!
-	key96_t newk ; newk.setMin();
-	if ( nd )
-		newk = g_clusterdb.makeClusterRecKey ( *nd->getDocId() ,
-						       *nd->getIsAdult() ,
-						       *nd->getLangId(),
-						        nd->getHostHash32a(),
-						        false ); // del?
+	if (nd && !m_isAdultValid) {
+		g_process.shutdownAbort(true);
+	}
 
 	// . store old only if new tr is good and keys are different from old
 	// . now we store even if skipIndexing is true because i'd like to
 	//   see how many titlerecs we have and count them towards the
 	//   docsIndexed count...
-	if ( nd && m_useClusterdb ) {
+	if (m_useClusterdb && nd) {
+		// . get new clusterdb key
+		// . we use the host hash for the site hash! hey, this is only 26 bits!
+		key96_t newk = g_clusterdb.makeClusterRecKey(*nd->getDocId(), *nd->getIsAdult(), *nd->getLangId(), nd->getHostHash32a(), false);
+
 		// store rdbid
 		*m_p = RDB_CLUSTERDB;
+
 		// use secondary if we should
-		if ( m_useSecondaryRdbs ) *m_p = RDB2_CLUSTERDB2;
+		if (m_useSecondaryRdbs) {
+			*m_p = RDB2_CLUSTERDB2;
+		}
+
 		// skip
 		m_p++;
+
 		// and key
 		*(key96_t *)m_p = newk;
+
 		// skip it
 		m_p += sizeof(key96_t);
 	}
 
 	// sanity check
-	if ( m_p - saved > needClusterdb ) { g_process.shutdownAbort(true); }
-	// sanity check
-	verifyMetaList( m_metaList , m_p , forDelete );
+	if (m_p - saved > needClusterdb) {
+		g_process.shutdownAbort(true);
+	}
 
+	// sanity check
+	verifyMetaList(m_metaList, m_p, forDelete);
 
 
 	//
 	// ADD LINKDB KEYS
 	//
-	setStatus ( "adding linkdb keys" );
+	setStatus("adding linkdb keys");
+
 	// checkpoint
 	saved = m_p;
+
 	// add that table to the metalist (LINKDB)
-	if ( m_useLinkdb && !addTable224(&kt1))
-	{
-		logTrace( g_conf.m_logTraceXmlDoc, "addTable224 failed" );
+	if (m_useLinkdb && !addTable224(&kt1)) {
+		logTrace(g_conf.m_logTraceXmlDoc, "addTable224 failed");
 		return NULL;
 	}
 
 	// sanity check
-	if ( m_p - saved > needLinkdb ) { g_process.shutdownAbort(true); }
+	if (m_p - saved > needLinkdb) {
+		g_process.shutdownAbort(true);
+	}
+
 	// all done
 	kt1.reset();
 
 	// sanity check
-	verifyMetaList( m_metaList , m_p , forDelete );
+	verifyMetaList(m_metaList, m_p, forDelete);
 
 
 	//////
@@ -13773,34 +13707,43 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	// spawn a spider of this url again unless there is already a REPLY
 	// in spiderdb!!! crazy...
 	bool addReply = true;
+
 	// save it
 	saved = m_p;
+
 	// now add the new rescheduled time
-	if ( addReply && m_useSpiderdb && ! forDelete ) {
+	if (m_useSpiderdb && addReply && !forDelete) {
 		// note it
-		setStatus ( "adding SpiderReply to spiderdb" );
+		setStatus("adding SpiderReply to spiderdb");
+
 		// rdbid first
-		*m_p = RDB_SPIDERDB;
-		// use secondary?
-		if ( m_useSecondaryRdbs ) *m_p = RDB2_SPIDERDB2;
-		m_p++;
+		*m_p++ = (m_useSecondaryRdbs) ? RDB2_SPIDERDB2 : RDB_SPIDERDB;
+
 		// get this
-		if ( ! m_srepValid ) { g_process.shutdownAbort(true); }
+		if (!m_srepValid) {
+			g_process.shutdownAbort(true);
+		}
+
 		// store the spider rec
 		int32_t newsrSize = newsr->getRecSize();
-		gbmemcpy ( m_p , newsr , newsrSize );
+		gbmemcpy (m_p, newsr, newsrSize);
 		m_p += newsrSize;
 
 		m_addedSpiderReplySize = newsrSize;
 		m_addedSpiderReplySizeValid = true;
 
 		// sanity check - must not be a request, this is a reply
-		if ( g_spiderdb.isSpiderRequest( &newsr->m_key ) ) {
-			g_process.shutdownAbort(true); }
+		if (g_spiderdb.isSpiderRequest(&newsr->m_key)) {
+			g_process.shutdownAbort(true);
+		}
+
 		// sanity check
-		if ( m_p - saved != needSpiderdb1 ) { g_process.shutdownAbort(true); }
+		if (m_p - saved != needSpiderdb1) {
+			g_process.shutdownAbort(true);
+		}
+
 		// sanity check
-		verifyMetaList( m_metaList , m_p , forDelete );
+		verifyMetaList(m_metaList, m_p, forDelete);
 	}
 
 
@@ -13809,50 +13752,56 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	// spidered again.
 	// NO! because when injecting a warc and the subdocs
 	// it contains, gb then tries to spider all of them !!! sux...
-	if ( needSpiderdb3 ) {
+	if (needSpiderdbRequest) {
 		// note it
 		setStatus("adding spider request");
+
 		// checkpoint
 		saved = m_p;
+
 		// store it here
 		SpiderRequest revisedReq;
 
  		// if doing a repair/rebuild of spiderdb...
-		if ( m_useSecondaryRdbs )
-			getRebuiltSpiderRequest ( &revisedReq );
+		if (m_useSecondaryRdbs) {
+			getRebuiltSpiderRequest(&revisedReq);
+		} else {
+			// this fills it in for doing injections
+			getRevisedSpiderRequest(&revisedReq);
 
-		// this fills it in for doing injections
-		if ( ! m_useSecondaryRdbs ) {
-			getRevisedSpiderRequest ( &revisedReq );
 			// sanity log
-			if ( ! m_firstIpValid ) { g_process.shutdownAbort(true); }
+			if (!m_firstIpValid) {
+				g_process.shutdownAbort(true);
+			}
+
 			// sanity log
-			if ( m_firstIp == 0 || m_firstIp == -1 ) {
-				const char *url = "unknown";
-				if ( m_sreqValid ) url = m_sreq.m_url;
-				log("build: error3 getting real firstip of "
-				    "%" PRId32" for %s. not adding new request.",
+			if (m_firstIp == 0 || m_firstIp == -1) {
+				const char *url = m_sreqValid ? m_sreq.m_url : "unknown";
+				log(LOG_WARN, "build: error3 getting real firstip of %" PRId32" for %s. not adding new request.",
 				    (int32_t)m_firstIp,url);
 				goto skipNewAdd2;
 			}
 		}
 
 		// copy it
-		if ( m_useSecondaryRdbs ) *m_p++ = RDB2_SPIDERDB2;
-		else                      *m_p++ = RDB_SPIDERDB;
+		*m_p++ = (m_useSecondaryRdbs) ? RDB2_SPIDERDB2 : RDB_SPIDERDB;
+
 		// store it back
-		gbmemcpy ( m_p , &revisedReq , revisedReq.getRecSize() );
+		gbmemcpy (m_p, &revisedReq, revisedReq.getRecSize());
+
 		// skip over it
 		m_p += revisedReq.getRecSize();
+
 		// sanity check
-		if ( m_p - saved > needSpiderdb3 ) { g_process.shutdownAbort(true); }
+		if (m_p - saved > needSpiderdbRequest) {
+			g_process.shutdownAbort(true);
+		}
 
 		m_addedSpiderRequestSize = revisedReq.getRecSize();
 		m_addedSpiderRequestSizeValid = true;
-
 	}
 
- skipNewAdd2:
+skipNewAdd2:
 
 	//
 	// ADD SPIDERDB RECORDS of outlinks
@@ -13860,11 +13809,16 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	// - do this AFTER computing revdb since we do not want spiderdb recs
 	//   to be in revdb.
 	//
-	setStatus ( "adding spiderdb keys" );
+	setStatus("adding spiderdb keys");
+
 	// sanity check. cannot spider until in sync
-	if ( ! isClockInSync() ) { g_process.shutdownAbort(true); }
+	if (!isClockInSync()) {
+		g_process.shutdownAbort(true);
+	}
+
 	// checkpoint
 	saved = m_p;
+
 	// . should be fixed from Links::setRdbList
 	// . we should contain the msge that msg16 uses!
 	// . we were checking m_msg16.m_recycleContent, but i have not done
@@ -13874,50 +13828,61 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	// . should also add with a time of now plus 5 seconds to that if
 	//   we spider an outlink linkdb should be update with this doc
 	//   pointing to it so it can get link text then!!
-	if ( spideringLinks && nl2 && ! m_doingConsistencyCheck &&
-	     m_useSpiderdb && ! forDelete ){
-
+	if (m_useSpiderdb && spideringLinks && nl2 && !m_doingConsistencyCheck && !forDelete) {
 		logTrace( g_conf.m_logTraceXmlDoc, "Adding spiderdb records of outlinks" );
+
 		// returns NULL and sets g_errno on error
-		char *ret = addOutlinkSpiderRecsToMetaList ();
+		char *ret = addOutlinkSpiderRecsToMetaList();
+
 		// sanity check
-		if ( ! ret && ! g_errno ) { g_process.shutdownAbort(true); }
+		if (!ret && !g_errno) {
+			g_process.shutdownAbort(true);
+		}
+
 		// return NULL on error
-		if ( ! ret )
-		{
-			logTrace( g_conf.m_logTraceXmlDoc, "addOutlinkSpiderRecsToMetaList failed" );
+		if (!ret) {
+			logTrace(g_conf.m_logTraceXmlDoc, "addOutlinkSpiderRecsToMetaList failed");
 			return NULL;
 		}
+
 		// this MUST not block down here, to avoid re-hashing above
-		if ( ret == (void *)-1 ) { g_process.shutdownAbort(true); }
+		if (ret == (void *)-1) {
+			g_process.shutdownAbort(true);
+		}
 	}
+
 	// sanity check
-	if ( m_p - saved > needSpiderdb2 ) { g_process.shutdownAbort(true); }
+	if (m_p - saved > needSpiderdb2) {
+		g_process.shutdownAbort(true);
+	}
+
 	// sanity check
-	verifyMetaList( m_metaList , m_p , forDelete );
+	verifyMetaList(m_metaList, m_p, forDelete);
 
 	//
 	// ADD TAG RECORDS TO TAGDB
 	//
+
 	// checkpoint
 	saved = m_p;
+
 	// . only do this if NOT setting from a title rec
 	// . it might add a bunch of forced spider recs to spiderdb
 	// . store into tagdb even if indexCode is set!
-	if ( ntb && m_useTagdb && ! forDelete ) {
+	if (m_useTagdb && ntb && !forDelete) {
 		// ntb is a safebuf of Tags, which are already Rdb records
 		// so just gbmemcpy them directly over
-		char *src     = ntb->getBufStart();
-		int32_t  srcSize = ntb->length();
-		gbmemcpy ( m_p , src , srcSize );
-		m_p += srcSize;
+		gbmemcpy (m_p, ntb->getBufStart(), ntb->length());
+		m_p += ntb->length();
 	}
-	// sanity check
-	if ( m_p - saved > needTagdb ) { g_process.shutdownAbort(true); }
-	// sanity check
-	verifyMetaList( m_metaList , m_p , forDelete );
 
+	// sanity check
+	if (m_p - saved > needTagdb) {
+		g_process.shutdownAbort(true);
+	}
 
+	// sanity check
+	verifyMetaList(m_metaList, m_p, forDelete);
 
 	//
 	// ADD INDEXED SPIDER REPLY with different docid so we can
@@ -13926,10 +13891,8 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	// . index spider reply with separate docid so they are all searchable.
 	// . see getSpiderStatusDocMetaList() function to see what we index
 	//   and the titlerec we create for it
-	if ( spiderStatusDocMetaList ) {
-		gbmemcpy ( m_p ,
-			 spiderStatusDocMetaList->getBufStart() ,
-			 spiderStatusDocMetaList->length() );
+	if (spiderStatusDocMetaList) {
+		gbmemcpy (m_p, spiderStatusDocMetaList->getBufStart(), spiderStatusDocMetaList->length());
 		m_p += spiderStatusDocMetaList->length();
 		m_addedStatusDocSize = spiderStatusDocMetaList->length();
 		m_addedStatusDocSizeValid = true;
@@ -13939,7 +13902,9 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	saved = m_p;
 
 	// sanity check
-	if ( m_p > m_pend || m_p < m_metaList ) { g_process.shutdownAbort(true);}
+	if (m_p > m_pend || m_p < m_metaList) {
+		g_process.shutdownAbort(true);
+	}
 
 	int32_t now = getTimeGlobal();
 
@@ -13955,7 +13920,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	//
 	/////////////////
 
-	if ( oldList ) {
+	if (oldList) {
 		// point to start of the old meta list, the first and only
 		// record in the oldList
 		char *om = oldList;
@@ -13974,7 +13939,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		dt8.set(8, sizeof(char *), 2048, dbuf8, 34900, false, "dt8-tab");
 
 		// scan recs in that and hash them
-		for ( char *p = om ; p < omend ; ) {
+		for (char *p = om; p < omend;) {
 			// save this
 			char byte = *p;
 			char *rec = p;
@@ -13984,7 +13949,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 			p++;
 
 			// get the key size
-			int32_t ks = getKeySizeFromRdbId ( rdbId );
+			int32_t ks = getKeySizeFromRdbId(rdbId);
 
 			// get that
 			char *k = p;
@@ -14010,11 +13975,12 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 			uint64_t hk = (rdbId == RDB_LINKDB) ? hash64(k + 12, ks - 12) : hash64(k, ks);
 
 			// sanity check
-			if (rdbId == RDB_LINKDB && g_linkdb.getLinkerDocId_uk((key224_t *)k) != m_docId) {
+			if (rdbId == RDB_LINKDB && Linkdb::getLinkerDocId_uk((key224_t *)k) != m_docId) {
 				g_process.shutdownAbort(true);
 			}
 
-			if (g_conf.m_noInMemoryPosdbMerge && rdbId == RDB_POSDB) {
+			/// @todo ALC we're allocating too much here, we can only have 1 del key per doc
+			if (rdbId == RDB_POSDB && g_conf.m_noInMemoryPosdbMerge) {
 				// NEW 20160803.
 				// Do not store records for POSDB in the hash table of old
 				// values. This makes sure that no delete records are
@@ -14024,7 +13990,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 			}
 
 			if (!dt8.addKey(&hk, &rec)) {
-				logTrace( g_conf.m_logTraceXmlDoc, "addKey failed" );
+				logTrace(g_conf.m_logTraceXmlDoc, "addKey failed");
 				return NULL;
 			}
 		}
@@ -14064,18 +14030,10 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 			char *key = p;
 			p += ks;
 
-			// get data size
-			int32_t ds = getDataSizeFromRdbId(rdbId);
-
-			// assume we do not store the datasize
-			bool neg = false;
-
 			// . if key is negative, no data is present
 			// . the doledb key is negative for us here
-			if ((key[0] & 0x01) == 0x00) {
-				neg = true;
-				ds = 0;
-			}
+			bool isDel = ((key[0] & 0x01) == 0x00);
+			int32_t ds = isDel ? 0 : getDataSizeFromRdbId(rdbId);
 
 			// if datasize variable, read it in
 			if (ds == -1) {
@@ -14132,14 +14090,12 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 			// skip over it
 			nptr += ks;
 
-			// store data size. BUT not if negative key!
-			if (getDataSizeFromRdbId(rdbId) == -1 && !neg) {
-				*(int32_t *)nptr = ds;
-				nptr += 4;
-			}
-
 			// store data
 			if (ds) {
+				// store data size
+				*(int32_t *)nptr = ds;
+				nptr += 4;
+
 				gbmemcpy (nptr, data, ds);
 				nptr += ds;
 			}
@@ -14181,9 +14137,9 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 			// if it is from linkdb, and unmet, then it is a
 			// lost link, so set the lost date of it. we keep
 			// these so we can graph lost links
-			if ( rdbId == RDB_LINKDB ) {
+			if (rdbId == RDB_LINKDB) {
 				// the real linkdb rec is at rec+1
-				int32_t lost = g_linkdb.getLostDate_uk( rec+1 );
+				int32_t lost = Linkdb::getLostDate_uk( rec+1 );
 
 				// how can it be non-zero? it should have
 				// been freshly made from the old titlerec...
@@ -14195,7 +14151,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 				gbmemcpy ( nptr , rec , 1 + ks );
 
 				// set it in there now
-				g_linkdb.setLostDate_uk(nptr+1,now);
+				Linkdb::setLostDate_uk(nptr+1,now);
 
 				// carry it through on revdb, do not delete
 				// it! we want a linkdb history for seomasters
@@ -14206,14 +14162,28 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 				//continue;
 			}
 		}
+
+		// we need to add delete key per document when it's deleted (with term 0)
+		if (g_conf.m_noInMemoryPosdbMerge && !m_isInIndex) {
+			char key[MAX_KEY_BYTES];
+			Posdb::makeStartKey(&key, 0, *od->getDocId());
+			*nptr++ = RDB_POSDB;
+			memcpy(nptr, &key, sizeof(posdbkey_t));
+			nptr += sizeof(posdbkey_t);
+		}
+
 		// sanity. check for metalist breach
-		if ( nptr > nmax ) { g_process.shutdownAbort(true); }
+		if (nptr > nmax) {
+			g_process.shutdownAbort(true);
+		}
+
 		// free the old meta list
-		mfree ( m_metaList , m_metaListAllocSize , "fm" );
+		mfree(m_metaList, m_metaListAllocSize, "fm");
+
 		// now switch over to the new one
-		m_metaList          = nm;
+		m_metaList = nm;
 		m_metaListAllocSize = needx;
-		m_p                 = nptr;
+		m_p = nptr;
 	}
 
 	//
@@ -14239,10 +14209,10 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	m_metaListSize = m_p - m_metaList;
 
 	// sanity check
-	verifyMetaList( m_metaList , m_metaList + m_metaListSize , forDelete );
+	verifyMetaList(m_metaList, m_metaList + m_metaListSize, forDelete);
 
 	// all done
-	logTrace( g_conf.m_logTraceXmlDoc, "END, all done" );
+	logTrace(g_conf.m_logTraceXmlDoc, "END, all done");
 	return m_metaList;
 }
 
@@ -15419,25 +15389,25 @@ bool XmlDoc::addTable144 ( HashTableX *tt1 , int64_t docId , SafeBuf *buf ) {
 		// store it as is
 		gbmemcpy ( p , kp , sizeof(key144_t) );
 		// this was zero when we added these keys to zero, so fix it
-		g_posdb.setDocIdBits ( p , docId );
+		Posdb::setDocIdBits ( p , docId );
 		// if this is a numeric field we do not want to set
 		// the siterank or langid bits because it will mess up
 		// sorting by the float which is basically in the position
 		// of the word position bits.
-		if ( g_posdb.isAlignmentBitClear ( p ) ) {
+		if ( Posdb::isAlignmentBitClear ( p ) ) {
 			// make sure it is set again. it was just cleared
 			// to indicate that this key contains a float
 			// like a price or something, and we should not
 			// set siterank or langid so that its termlist
 			// remains sorted just by that float
-			g_posdb.setAlignmentBit ( p , 1 );
+			Posdb::setAlignmentBit ( p , 1 );
 		}
 		// otherwise, set the siterank and langid
 		else {
 			// this too
-			g_posdb.setSiteRankBits ( p , siteRank );
+			Posdb::setSiteRankBits ( p , siteRank );
 			// set language here too
-			g_posdb.setLangIdBits ( p , m_langId );
+			Posdb::setLangIdBits ( p , m_langId );
 		}
 		// advance over it
 		p += sizeof(key144_t);
@@ -18137,7 +18107,7 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 			 "<td>0x%" PRIx32"</td>"
 			 "</tr>\n"
 			 ,
-			 (int32_t)g_titledb.getDomHash8FromDocId(m_docId)
+			 (int32_t)Titledb::getDomHash8FromDocId(m_docId)
 			 );
 
 	struct tm tm_buf;

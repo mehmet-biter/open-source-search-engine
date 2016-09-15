@@ -28,9 +28,6 @@
 #define GB_CLUSTERDB_H
 
 #include "Rdb.h"
-#include "Url.h"
-#include "Conf.h"
-#include "Titledb.h"
 
 // these are now just TitleRec keys
 #define CLUSTER_REC_SIZE (sizeof(key96_t))
@@ -69,23 +66,19 @@ public:
 					   false, true ); }
 
 	// NOTE: THESE NOW USE THE REAL CLUSTERDB REC
-	// // docId occupies the most significant bytes of the key
+	// docId occupies the most significant bytes of the key
 	// now docId occupies the bits after the first 23
 	static int64_t getDocId ( const void *k ) {
-		//int64_t docId = (k.n0) >> (32+24);
-		//docId |= ( ((uint64_t)(k.n1)) << 8 );
 		int64_t docId = (((const key96_t *)k)->n0) >> 35;
 		docId |= ( ((uint64_t)(((const key96_t *)k)->n1)) << 29 );
 		return docId;
 	}
 
 	static uint32_t getSiteHash26 ( const char *r ) {
-		//return g_titledb.getSiteHash ( (key_t *)r ); }
 		return ((uint32_t)(((const key96_t*)r)->n0 >> 2) & 0x03FFFFFF);
 	}
 
 	static uint32_t hasAdultContent ( const char *r ) {
-		//return g_titledb.hasAdultContent ( *(key_t *)r ); }
 		return ((uint32_t)(((const key96_t*)r)->n0 >> 34) & 0x00000001);
 	}
 

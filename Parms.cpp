@@ -11867,8 +11867,8 @@ bool Parms::syncParmsWithHost0 ( ) {
 void handleRequest3e ( UdpSlot *slot , int32_t niceness ) {
 	// right now we must be host #0
 	if ( g_hostdb.m_hostId != 0 ) {
+hadError:
 		g_errno = EBADENGINEER;
-	hadError:
 		g_udpServer.sendErrorReply( slot, g_errno );
 		return;
 	}

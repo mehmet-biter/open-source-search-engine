@@ -133,26 +133,32 @@ void RdbList::set(char *list, int32_t listSize, char *alloc, int32_t allocSize, 
 	verify_signature();
 	logTrace(g_conf.m_logTraceRdbList, "BEGIN. list=%p listSize=%" PRId32" alloc=%p allocSize=%" PRId32,
 	         list, listSize, alloc, allocSize);
+	logTrace(g_conf.m_logTraceRdbList, "startKey=%s endKey=%s keySize=%hhu fixedDataSize=%" PRId32,
+	         KEYSTR(startKey, keySize), KEYSTR(endKey, keySize), keySize, fixedDataSize);
 
 	// free and NULLify any old m_list we had to make room for our new list
 	freeList();
+
 	// set this first since others depend on it
 	m_ks = keySize;
+
 	// sanity check (happens when IndexReadInfo exhausts a list to Msg2)
-	if ( KEYCMP(startKey,endKey,m_ks) > 0 )
-		log(LOG_REMIND,"db: rdblist: set: startKey > endKey.");
+	if (KEYCMP(startKey, endKey, m_ks) > 0) {
+		log(LOG_WARN, "db: rdblist: set: startKey > endKey.");
+	}
+
 	// safety check
-	if ( fixedDataSize != 0 && useHalfKeys ) {
-		log(LOG_LOGIC,"db: rdblist: set: useHalfKeys 1 when "
-		    "fixedDataSize not 0.");
+	if (fixedDataSize != 0 && useHalfKeys) {
+		log(LOG_LOGIC, "db: rdblist: set: useHalfKeys 1 when fixedDataSize not 0.");
 		useHalfKeys = false;
 	}
+
 	// got an extremely ugly corrupt stack core without this check
-	if ( m_list && m_listSize == 0 ){
-		log ( LOG_WARN, "rdblist: listSize of 0 but list pointer not "
-		      "NULL!" );
+	if (m_list && m_listSize == 0) {
+		log(LOG_WARN, "rdblist: listSize of 0 but list pointer not NULL!");
 		m_list = NULL;
 	}
+
 	// set our list parms
 	m_list          = list;
 	m_listSize      = listSize;
@@ -164,8 +170,11 @@ void RdbList::set(char *list, int32_t listSize, char *alloc, int32_t allocSize, 
 	m_fixedDataSize = fixedDataSize;
 	m_ownData       = ownData;
 	m_useHalfKeys   = useHalfKeys;
+
 	// use this call now to set m_listPtr and m_listPtrHi based on m_list
 	resetListPtr();
+
+	logTrace(g_conf.m_logTraceRdbList, "END");
 }
 
 // like above but uses 0/maxKey for startKey/endKey
@@ -976,9 +985,6 @@ bool RdbList::removeBadData_r ( ) {
 
 
 int RdbList::printPosdbList() {
-
-	logf(LOG_DEBUG, "%s:%s: BEGIN",__FILE__,__func__);
-
 	// save
 	char *oldp   = m_listPtr;
 	const char *oldphi = m_listPtrHi;
@@ -1074,7 +1080,6 @@ int RdbList::printPosdbList() {
 	m_listPtr   = oldp;
 	m_listPtrHi = oldphi;
 
-	logf(LOG_DEBUG, "%s:%s: END",__FILE__,__func__);
 	return 0;
 }
 
@@ -1084,9 +1089,6 @@ int RdbList::printList() {
 		return printPosdbList();
 	}
 
-	logf(LOG_DEBUG, "%s:%s: BEGIN",__FILE__,__func__);
-
-	//log("m_list=%" PRId32,(int32_t)m_list);
 	// save
 	char *oldp   = m_listPtr;
 	const char *oldphi = m_listPtrHi;
@@ -1120,7 +1122,6 @@ int RdbList::printList() {
 	m_listPtr   = oldp;
 	m_listPtrHi = oldphi;
 
-	logf(LOG_DEBUG, "%s:%s: END",__FILE__,__func__);
 	return 0;
 }
 
@@ -1571,11 +1572,6 @@ bool RdbList::posdbConstrain(const char *startKey, char *endKey, int32_t minRecS
 
 		// write the full key back into "p"
 		KEYSET(p, k, 18);
-	} else if (p[0] & 0x02) {
-		// write the key back 6 bytes
-		p -= 6;
-
-		KEYSET(p, k, 18);
 	}
 
 	// inc m_list , m_alloc should remain where it is
@@ -1755,8 +1751,7 @@ void RdbList::merge_r(RdbList **lists, int32_t numLists, const char *startKey, c
 
 	// did they call prepareForMerge()?
 	if ( m_mergeMinListSize == -1 ) {
-		log(LOG_LOGIC,"db: rdblist: merge_r: prepareForMerge() not "
-			"called. ignoring error and returning emtpy list.");
+		log(LOG_LOGIC,"db: rdblist: merge_r: prepareForMerge() not called. ignoring error and returning emtpy list.");
 		// this happens if we nuke doledb during a merge of it. it is just bad timing
 		return;
 		// save state and dump core, sigBadHandler will catch this
@@ -1770,8 +1765,8 @@ void RdbList::merge_r(RdbList **lists, int32_t numLists, const char *startKey, c
 
 	// warning msg
 	if ( m_listPtr != m_listEnd ) {
-		log( LOG_LOGIC, "db: rdblist: merge_r: warning. merge not storing at end of list for %s.",
-		     getDbnameFromId( ( uint8_t ) rdbId ) );
+		log(LOG_LOGIC, "db: rdblist: merge_r: warning. merge not storing at end of list for %s.",
+		    getDbnameFromId((uint8_t)rdbId));
 	}
 
 	// set our key range
@@ -1782,8 +1777,6 @@ void RdbList::merge_r(RdbList **lists, int32_t numLists, const char *startKey, c
 	//   deletes all the urls then does a dump of just negative keys.
 	//   so let's comment it out for now
 	if ( KEYCMP(m_startKey,m_endKey,m_ks)!=0 && KEYNEG(m_endKey) ) {
-		// log(LOG_LOGIC,"db: rdblist: merge_r: Illegal endKey for "
-		//     "merging rdb=%s. fixing.",getDbnameFromId(rdbId));
 		// make it legal so it will be read first NEXT time
 		KEYDEC(m_endKey,m_ks);
 	}
@@ -1812,6 +1805,13 @@ void RdbList::merge_r(RdbList **lists, int32_t numLists, const char *startKey, c
 		posdbMerge_r(lists, numLists, startKey, endKey, m_mergeMinListSize, removeNegRecs);
 		verify_signature();
 		return;
+	}
+
+	// check that we're not using index for other rdb file than posdb
+	Rdb* rdb = getRdbFromId(rdbId);
+	if (rdb->isUseIndexFile()) {
+		/// @todo ALC logic to use index file is not implemented for any rdb other than posdb. add it below if required
+		gbshutdownLogicError();
 	}
 
 	int32_t required = -1;
@@ -2133,6 +2133,7 @@ skip:
 ///////
 
 bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startKey, const char *endKey, int32_t minRecSizes, bool removeNegKeys) {
+	logTrace(g_conf.m_logTraceRdbList, "BEGIN");
 	// sanity
 	if (m_ks != sizeof(key144_t)) {
 		gbshutdownAbort(true);
@@ -2264,6 +2265,7 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 			// . continue if tie, so we get the oldest first
 			// . treat negative and positive keys as identical for this
 			if (ss < 0) {
+				logTrace(g_conf.m_logTraceRdbList, "ss < 0. continue");
 				continue;
 			}
 
@@ -2271,8 +2273,11 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 			// and minPtrBase/Lo/Hi was a negative key! so this is
 			// the annihilation. skip the positive key.
 			if (ss == 0) {
+				logTrace(g_conf.m_logTraceRdbList, "ss == 0. skip");
 				goto skip;
 			}
+
+			logTrace(g_conf.m_logTraceRdbList, "new min i=%" PRId32, i);
 
 			// we got a new min
 			minPtrBase = ptrs  [i];
@@ -2283,6 +2288,7 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 
 		// ignore if negative i guess, just skip it
 		if (removeNegKeys && (minPtrBase[0] & 0x01) == 0x00) {
+			logTrace(g_conf.m_logTraceRdbList, "removeNegKeys. skip");
 			goto skip;
 		}
 
@@ -2293,11 +2299,13 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 		if (m_listPtrHi && cmp_6bytes_equal(minPtrHi, m_listPtrHi)) {
 			if (m_listPtrLo && cmp_6bytes_equal(minPtrLo, m_listPtrLo)) {
 				// 6-byte entry
+				logTrace(g_conf.m_logTraceRdbList, "store 6-byte key");
 				memcpy(new_listPtr, minPtrBase, 6);
 				new_listPtr += 6;
 				*pp |= 0x06; //turn on both compression bits
 			} else {
 				// 12-byte entry
+				logTrace(g_conf.m_logTraceRdbList, "store 12-byte key");
 				memcpy(new_listPtr, minPtrBase, 6);
 				new_listPtr += 6;
 				memcpy(new_listPtr, minPtrLo, 6);
@@ -2307,6 +2315,7 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 			}
 		} else {
 			// 18-byte entry
+			logTrace(g_conf.m_logTraceRdbList, "store 18-byte key");
 			memcpy(new_listPtr, minPtrBase, 6);
 			new_listPtr += 6;
 			memcpy(new_listPtr, minPtrLo, 6);
@@ -2336,11 +2345,14 @@ skip:
 			// is new key 6 bytes? then do not touch hi/lo ptrs
 			if ( ptrs[mini][0] & 0x04 ) {
 				// no-op
+				logTrace(g_conf.m_logTraceRdbList, "new 6-byte key");
 			} else if ( ptrs[mini][0] & 0x02 ) {
 				// is new key 12 bytes?
+				logTrace(g_conf.m_logTraceRdbList, "new 12-byte key");
 				memcpy(loKeys[mini], ptrs[mini] +  6, 6);
 			} else {
 				// is new key 18 bytes? full key.
+				logTrace(g_conf.m_logTraceRdbList, "new 18-byte key");
 				memcpy(hiKeys[mini], ptrs[mini] + 12, 6);
 				memcpy(loKeys[mini], ptrs[mini] +  6, 6);
 			}
@@ -2348,6 +2360,7 @@ skip:
 			//
 			// REMOVE THE LIST at mini
 			//
+			logTrace(g_conf.m_logTraceRdbList, "remove list at mini=%" PRId32, mini);
 
 			// otherwise, remove him from array
 			for (int32_t i = mini; i < numLists - 1; i++) {
@@ -2375,6 +2388,7 @@ skip:
 
 	// return now if we're empty... all our recs annihilated?
 	if (m_listSize <= 0) {
+		logTrace(g_conf.m_logTraceRdbList, "END. no more list");
 		return true;
 	}
 
@@ -2410,6 +2424,7 @@ skip:
 		if (g_conf.m_logTraceRdbList) {
 			printList();
 		}
+		logTrace(g_conf.m_logTraceRdbList, "END. Less than requested");
 		return true;
 	}
 
@@ -2419,6 +2434,7 @@ skip:
 		if (g_conf.m_logTraceRdbList) {
 			printList();
 		}
+		logTrace(g_conf.m_logTraceRdbList, "END. No more list");
 		return true;
 	}
 
@@ -2449,6 +2465,7 @@ skip:
 		printList();
 	}
 
+	logTrace(g_conf.m_logTraceRdbList, "END. Done");
 	return true;
 }
 

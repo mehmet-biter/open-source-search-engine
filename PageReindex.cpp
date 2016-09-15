@@ -419,7 +419,7 @@ bool Msg1c::gotList ( ) {
 
 	log("reindex: adding docid list to spiderdb");
 
-	return m_msg4.addMetaList ( &m_sb, m_collnum, this, addedListWrapper, 0, RDB_SPIDERDB );
+	return m_msg4.addMetaList(&m_sb, m_collnum, this, addedListWrapper, RDB_SPIDERDB);
 }
 
 void addedListWrapper ( void *state ) {

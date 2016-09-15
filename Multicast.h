@@ -17,9 +17,11 @@
 #ifndef GB_MULTICAST_H
 #define GB_MULTICAST_H
 
-#include "Hostdb.h"  // getGroup(), getTimes(), stampHost()
-#include "UdpServer.h"        // sendRequest()
-#include "Loop.h"         // registerSleepCallback()
+#include "MsgType.h"
+#include "GbMutex.h"
+#include <inttypes.h>
+#include <stddef.h>
+
 
 #define MAX_HOSTS_PER_GROUP 10
 
@@ -30,6 +32,9 @@ static const int64_t multicast_msg1_senddata_timeout       =      60000;
 static const int64_t multicast_msg3a_default_timeout       =      10000;
 static const int64_t multicast_msg3a_maximum_timeout       =      60000;
 static const int64_t multicast_msg1c_getip_default_timeout =      60000;
+
+class UdpSlot;
+class Host;
 
 
 class Multicast {
@@ -103,30 +108,36 @@ class Multicast {
 
 	// private:
 
-	void destroySlotsInProgress ( UdpSlot *slot );
-
-	// keep these public so C wrapper can call them
-	bool sendToHostLoop(int32_t key, int32_t hostNumToTry, int32_t firstHostId);
-	bool sendToHost    ( int32_t i ); 
-	int32_t pickBestHost  ( uint32_t key , int32_t hostNumToTry );
-	void gotReply1     ( UdpSlot *slot ) ;
-	void closeUpShop   ( UdpSlot *slot ) ;
-
-	void sendToGroup();
-	void gotReply2     ( UdpSlot *slot ) ;
-
 	// . stuff set directly by send() parameters
 	char       *m_msg;
 	int32_t        m_msgSize;
 	msg_type_t     m_msgType;
 	bool        m_ownMsg;
-	//uint32_t m_groupId;
+
+	class UdpSlot *m_slot;
+
+	bool        m_inUse;
+
+	// for linked list of available Multicasts in Msg4.cpp
+	class Multicast *m_next;
+
+	// host we got reply from. used by Msg3a for timing.
+	Host      *m_replyingHost;
+	// when the request was launched to the m_replyingHost
+	int64_t  m_replyLaunchTime;
+
+	// more hack stuff used by PageInject.cpp
+	int32_t m_hackFileId;
+	int64_t m_hackFileOff;
+	class ImportState *m_importState;
+
+private:
+	GbMutex m_mtx;
+
 	void       *m_state;
 	void       *m_state2;
 	void       (* m_callback)( void *state , void *state2 );
 	int64_t       m_totalTimeout;   // in milliseconds
-
-	class UdpSlot *m_slot;
 
 	// . m_slots[] is our list of concurrent transactions
 	// . we delete all the slots only after cast is done
@@ -150,7 +161,7 @@ class Multicast {
 	// did we have an errno with this slot?
 	int32_t        m_errnos     [MAX_HOSTS_PER_GROUP]; 
 	// transaction in progress?
-	char        m_inProgress [MAX_HOSTS_PER_GROUP]; 
+	bool        m_inProgress [MAX_HOSTS_PER_GROUP];
 	int64_t   m_launchTime [MAX_HOSTS_PER_GROUP];
 
 	// steal this from the slot(s) we get
@@ -168,6 +179,7 @@ class Multicast {
 	// . last sending of the request to ONE host in a group (pick & send)
 	// . in milliseconds
 	int64_t   m_lastLaunch;
+
 	Host       *m_lastLaunchHost;
 
 	// only free m_reply if this is true
@@ -180,22 +192,23 @@ class Multicast {
 
 	int32_t        m_retryCount;
 
-	char        m_sentToTwin;
+	bool        m_sentToTwin;
 
-	char        m_inUse;
+	void destroySlotsInProgress ( UdpSlot *slot );
 
-	// for linked list of available Multicasts in Msg4.cpp
-	class Multicast *m_next;
+	void sendToGroup();
 
-	// host we got reply from. used by Msg3a for timing.
-	Host      *m_replyingHost;
-	// when the request was launched to the m_replyingHost
-	int64_t  m_replyLaunchTime;
+	static void sleepWrapper1(int bogusfd, void *state);
+	static void sleepWrapper2(int bogusfd, void *state);
+	static void gotReply1(void *state, UdpSlot *slot);
+	void gotReply1(UdpSlot *slot);
+	static void gotReply2(void *state, UdpSlot *slot);
+	void gotReply2(UdpSlot *slot);
 
-	// more hack stuff used by PageInject.cpp
-	int32_t m_hackFileId;
-	int64_t m_hackFileOff;
-	class ImportState *m_importState;
+	bool sendToHostLoop(int32_t key, int32_t hostNumToTry, int32_t firstHostId);
+	bool sendToHost    ( int32_t i ); 
+	int32_t pickBestHost  ( uint32_t key , int32_t hostNumToTry );
+	void closeUpShop   ( UdpSlot *slot ) ;
 };
 
 #endif // GB_MULTICAST_H

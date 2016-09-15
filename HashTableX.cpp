@@ -81,7 +81,6 @@ void HashTableX::reset ( ) {
 	m_flags = NULL;
 	m_numSlots     = 0;
 	m_numSlotsUsed = 0;
-	m_addIffNotUnique = false;
 	m_maskKeyOffset = 0;
 	//m_useKeyMagic = false;
 	// we should free it in reset()
@@ -620,4 +619,18 @@ int32_t HashTableX::getKeyChecksum32 () const {
 		gbshutdownLogicError();
 	}
 	return checksum;
+}
+
+// print as text into sb for debugging
+void HashTableX::print() {
+	for (int32_t i = 0; i < m_numSlots; i++) {
+		// skip empty bucket
+		if (!m_flags[i]) {
+			continue;
+		}
+
+		// get the key
+		char *kp = (char *)getKeyFromSlot(i);
+		logf(LOG_WARN, "key=%s", KEYSTR(kp, m_ks));
+	}
 }

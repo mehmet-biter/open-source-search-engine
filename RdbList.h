@@ -115,7 +115,7 @@ public:
 	int32_t getAllocSize() const { return m_allocSize; }
 	void setAllocSize(int32_t allocSize) { m_allocSize = allocSize; }
 
-	int32_t getFixedDataSize() { return m_fixedDataSize; }
+	int32_t getFixedDataSize() const { return m_fixedDataSize; }
 	void setFixedDataSize(int32_t fixedDataSize) { m_fixedDataSize = fixedDataSize; }
 
 	// . merge_r() sets m_lastKey for the list it merges the others into
@@ -135,7 +135,7 @@ public:
 	bool isLastKeyValid() const { return m_lastKeyIsValid; }
 	void setLastKeyIsValid(bool lastKeyIsValid) { m_lastKeyIsValid = lastKeyIsValid; }
 
-	bool getOwnData() { return m_ownData; }
+	bool getOwnData() const { return m_ownData; }
 	// if you don't want data to be freed on destruction then don't own it
 	void setOwnData(bool ownData) { m_ownData = ownData; }
 

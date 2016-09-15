@@ -1408,7 +1408,7 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 	// then do not do the merge, we do not want to overwrite tfndb via
 	// RdbDump::updateTfndbLoop() 
 	rdbid_t rdbId = getIdFromRdb ( m_rdb );
-	if ( rdbId == RDB_TITLEDB && g_titledb.m_rdb.isDumping() ) {
+	if ( rdbId == RDB_TITLEDB && g_titledb.getRdb()->isDumping() ) {
 		if ( doLog ) {
 			log( LOG_INFO, "db: Can not merge titledb while it is dumping." );
 		}

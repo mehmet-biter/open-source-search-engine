@@ -1,15 +1,10 @@
-#include "gb-include.h"
-
-
-//		i guess both msg0 send requests failed with no route to host, 
-//and they got retired... why didnt they switch to eth1????
-
-
 #include "Multicast.h"
-#include "Rdb.h"       // RDB_TITLEDB
-#include "Msg20.h"
-#include "Profiler.h"
+#include "UdpServer.h"
+#include "Hostdb.h"
 #include "Stats.h"
+#include "Conf.h"
+#include "Loop.h"         // registerSleepCallback()
+#include "ScopedLock.h"
 #include "Process.h"
 
 // up to 10 twins in a group
@@ -19,20 +14,66 @@
 //       to send we should send as much as we can and save the remaining
 //       slots to disk for sending later??
 
-static void sleepWrapper1       ( int bogusfd , void    *state ) ;
-static void sleepWrapper2       ( int bogusfd , void    *state ) ;
-static void gotReplyWrapperM1    ( void *state , UdpSlot *slot  ) ;
-static void gotReplyWrapperM2    ( void *state , UdpSlot *slot  ) ;
 
-void Multicast::constructor ( ) {
+
+void Multicast::constructor() {
 	m_msg      = NULL;
 	m_readBuf  = NULL;
 	m_inUse    = false;
 }
-void Multicast::destructor  ( ) { reset(); }
 
-Multicast::Multicast ( ) { constructor(); }
-Multicast::~Multicast ( ) { reset(); }
+void Multicast::destructor() {
+	reset();
+}
+
+Multicast::Multicast()
+  : m_msg(NULL),
+    m_msgSize(0),
+    m_msgType((msg_type_t)-1),
+    m_ownMsg(false),
+    m_slot(NULL),
+    m_inUse(false),
+    m_next(NULL),
+    m_replyingHost(NULL),
+    m_replyLaunchTime(0),
+    m_hackFileId(0),
+    m_hackFileOff(0),
+    m_importState(NULL),
+    m_mtx(),
+    m_state(NULL), m_state2(NULL),
+    m_callback(NULL),
+    m_totalTimeout(0),
+    m_startTime(0),
+    m_numReplies(0),
+    //m_hostPtrs
+    m_numHosts(0),
+    //m_retired
+    //m_slots
+    //m_errnos
+    //m_inProgress
+    //m_launchTime
+    m_readBuf(NULL),
+    m_readBufSize(0),
+    m_readBufMaxSize(0),
+    m_ownReadBuf(false),
+    m_registeredSleep(false),
+    m_niceness(0),
+    m_lastLaunch(0),
+    m_lastLaunchHost(NULL),
+    m_freeReadBuf(false),
+    m_key(0),
+    m_sendToSelf(false),
+    m_retryCount(0),
+    m_sentToTwin(false)
+{
+	constructor();
+
+}
+
+Multicast::~Multicast() {
+	reset();
+}
+
 
 // free the send/read (request/reply) bufs we pirated from a UdpSlot or
 // got from the caller
@@ -103,10 +144,10 @@ bool Multicast::send(char *msg, int32_t msgSize, msg_type_t msgType, bool ownMsg
 	m_key              = key;
 
 	// clear m_retired, m_errnos, m_slots
-	memset ( m_retired    , 0 , sizeof(bool     ) * MAX_HOSTS_PER_GROUP );
-	memset ( m_errnos     , 0 , sizeof(int32_t     ) * MAX_HOSTS_PER_GROUP );
-	memset ( m_slots      , 0 , sizeof(UdpSlot *) * MAX_HOSTS_PER_GROUP );
-	memset ( m_inProgress , 0 , sizeof(char     ) * MAX_HOSTS_PER_GROUP );
+	memset(m_retired, 0, sizeof(m_retired));
+	memset(m_errnos, 0, sizeof(m_errnos));
+	memset(m_slots, 0, sizeof(m_slots));
+	memset(m_inProgress, 0, sizeof(m_inProgress));
 
 	// . get the list of hosts in this group
 	// . returns false if blocked, true otherwise
@@ -160,6 +201,7 @@ bool Multicast::send(char *msg, int32_t msgSize, msg_type_t msgType, bool ownMsg
 // . TODO: deal with errors from g_udpServer::sendRequest() better
 // . returns false and sets g_errno on error
 void Multicast::sendToGroup() {
+	ScopedLock sl(m_mtx);
 	// see if anyone gets an error
 	bool hadError = false;
 	// . cast the msg to ALL hosts in the m_hosts group of hosts
@@ -203,7 +245,7 @@ void Multicast::sendToGroup() {
 		// . send to a single host
 		// . this creates a transaction control slot, "udpSlot"
 		// . returns false and sets g_errno on error
-		if (us->sendRequest(m_msg, m_msgSize, m_msgType, bestIp, destPort, hid, &m_slots[i], this, gotReplyWrapperM2, m_totalTimeout, m_niceness)) {
+		if (us->sendRequest(m_msg, m_msgSize, m_msgType, bestIp, destPort, hid, &m_slots[i], this, gotReply2, m_totalTimeout, m_niceness)) {
 			continue;
 		}
 		// g_errno must have been set, remember it
@@ -237,22 +279,23 @@ void Multicast::sendToGroup() {
 	}
 }
 
-void sleepWrapper2 ( int bogusfd , void *state ) {
-	Multicast *THIS = (Multicast *)state;
+void Multicast::sleepWrapper2(int bogusfd, void *state) {
+	Multicast *THIS = static_cast<Multicast*>(state);
 	// try another round of sending to see if hosts had errors or not
-	THIS->sendToGroup ( );
+	THIS->sendToGroup();
 }
 
-// C wrapper for the C++ callback
-void gotReplyWrapperM2 ( void *state , UdpSlot *slot ) {
-	Multicast *THIS = (Multicast *)state;
-        THIS->gotReply2 ( slot );
+
+void Multicast::gotReply2(void *state, UdpSlot *slot) {
+	Multicast *THIS = static_cast<Multicast*>(state);
+        THIS->gotReply2(slot);
 }
 
 // . otherwise, we were sending to a whole group so ALL HOSTS must produce a 
 //   successful reply
 // . we keep re-trying forever until they do
 void Multicast::gotReply2 ( UdpSlot *slot ) {
+	ScopedLock sl(m_mtx);
 	// don't ever let UdpServer free this send buf (it is m_msg)
 	slot->m_sendBufAlloc = NULL;
 	// save this for msg4 logic that calls injection callback
@@ -290,6 +333,7 @@ void Multicast::gotReply2 ( UdpSlot *slot ) {
 		// allow us to be re-used now, callback might relaunch
 		m_inUse = false;
 		if ( m_callback ) {
+			sl.unlock();
 			m_callback ( m_state , m_state2 );
 		}
 		return;
@@ -626,7 +670,8 @@ bool Multicast::sendToHost ( int32_t i ) {
 	// . this creates a transaction control slot, "udpSlot"
 	// . return false and sets g_errno on error
 	// . returns true on successful launch and calls callback on completion
-	if (!us->sendRequest(m_msg, m_msgSize, m_msgType, bestIp, destPort, hid, &m_slots[i], this, gotReplyWrapperM1, timeRemaining, m_niceness, NULL, -1, -1, maxResends)) {
+	ScopedLock sl(m_mtx);
+	if (!us->sendRequest(m_msg, m_msgSize, m_msgType, bestIp, destPort, hid, &m_slots[i], this, gotReply1, timeRemaining, m_niceness, NULL, -1, -1, maxResends)) {
 		log(LOG_WARN, "net: Had error sending msgtype 0x%02x to host #%" PRId32": %s. Not retrying.",
 		    m_msgType,h->m_hostId,mstrerror(g_errno));
 		// i've seen ENOUDPSLOTS available msg here along with oom
@@ -635,7 +680,7 @@ bool Multicast::sendToHost ( int32_t i ) {
 		return false;
 	}
 	// mark it as outstanding
-	m_inProgress[i] = 1;
+	m_inProgress[i] = true;
 	// set our last launch date
 	m_lastLaunch = nowms ; // gettimeofdayInMilliseconds();
 	// save the host, too
@@ -657,7 +702,7 @@ bool Multicast::sendToHost ( int32_t i ) {
 
 // this is called every 50 ms so we have the chance to launch our request
 // to a more responsive host
-void sleepWrapper1 ( int bogusfd , void    *state ) {
+void Multicast::sleepWrapper1 ( int bogusfd , void    *state ) {
 	Multicast *THIS = (Multicast *) state;
 	// . if our last launch was less than X seconds ago, wait another tick
 	// . we often send out 2+ requests and end up getting one reply before
@@ -851,14 +896,16 @@ void sleepWrapper1 ( int bogusfd , void    *state ) {
 	//    THIS->m_msgType);
 }
 
-// C wrapper for the C++ callback
-void gotReplyWrapperM1 ( void *state , UdpSlot *slot ) {
-	Multicast *THIS = (Multicast *)state;
-    THIS->gotReply1 ( slot );
+
+void Multicast::gotReply1(void *state, UdpSlot *slot) {
+	Multicast *THIS = static_cast<Multicast*>(state);
+	THIS->gotReply1(slot);
 }
 
 // come here if we've got a reply from a host that's not part of a group send
 void Multicast::gotReply1 ( UdpSlot *slot ) {		
+	ScopedLock sl(m_mtx);
+
 	// don't ever let UdpServer free this send buf (it is m_msg)
 	slot->m_sendBufAlloc = NULL;
 
@@ -887,7 +934,7 @@ void Multicast::gotReply1 ( UdpSlot *slot ) {
 	}
 
 	// mark it as no longer in progress
-	m_inProgress[i] = 0;
+	m_inProgress[i] = false;
 
 	Host *h = m_hostPtrs[i];
 
@@ -899,6 +946,8 @@ void Multicast::gotReply1 ( UdpSlot *slot ) {
 		log(LOG_DEBUG, "net: Twin msgType=0x%" PRIx32" (this=0x%" PTRFMT") reply: %s.",
 		    (int32_t) m_msgType, (PTRTYPE) this, mstrerror(g_errno));
 	}
+
+	sl.unlock();
 
 	// on error try sending the request to another host
 	// return if we kicked another request off ok
@@ -1069,7 +1118,7 @@ void Multicast::destroySlotsInProgress ( UdpSlot *slot ) {
 		// destroy this slot that's in progress
 		g_udpServer.destroySlot ( m_slots[i] );
 		// do not re-destroy. consider no longer in progress.
-		m_inProgress[i] = 0;
+		m_inProgress[i] = false;
 	}
 }
 

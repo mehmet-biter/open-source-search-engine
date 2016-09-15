@@ -3174,9 +3174,8 @@ bool SpiderColl::scanListForWinners ( ) {
 		// mdw: for testing take this out!
 		if ( m_totalBytesScanned < 25000 ) maxWinners = 1;
 
-		// sanity. make sure read is somewhat hefty for our 
-		// maxWinners=1 thing
-		if ( (int32_t)SR_READ_SIZE < 500000 ) { g_process.shutdownAbort(true); }
+		// sanity. make sure read is somewhat hefty for our maxWinners=1 thing
+		static_assert(SR_READ_SIZE >= 500000, "ensure read size is big enough");
 
 		// only compare to min winner in tree if tree is full
 		if ( m_winnerTree.getNumUsedNodes() >= maxWinners ) {
