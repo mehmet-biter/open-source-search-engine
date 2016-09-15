@@ -686,13 +686,14 @@ bool Rdb::close ( void *state , void (* callback)(void *state ), bool urgent , b
 	// in case the got their heads chopped (RdbMap::chopHead()) which
 	// we do to save disk space while merging.
 	// try to save the cache, may not save
-	if ( m_isReallyClosing ) {
+	if (m_isReallyClosing) {
 		// now loop over bases
-		for ( int32_t i = 0 ; i < g_collectiondb.m_numRecs ; i++ ) {
+		for (int32_t i = 0; i < g_collectiondb.m_numRecs; i++) {
 			// shut it down
-			RdbBase *base = getBase ( i );
-			if ( base ) {
-				base->closeMaps ( m_urgent );
+			RdbBase *base = getBase(i);
+			if (base) {
+				base->closeMaps(m_urgent);
+				base->closeIndexes(m_urgent);
 			}
 		}
 	}
@@ -702,14 +703,21 @@ bool Rdb::close ( void *state , void (* callback)(void *state ), bool urgent , b
 
 	// . returns false if blocked, true otherwise
 	// . sets g_errno on error
-	if(m_useTree) {
+	if (m_useTree) {
 		if (!m_tree.fastSave(getDir(), m_dbname, useThread, this, doneSavingWrapper)) {
 			return false;
 		}
-	}
-	else {
+	} else {
 		if (!m_buckets.fastSave(getDir(), useThread, this, doneSavingWrapper)) {
 			return false;
+		}
+	}
+
+	// save index for tree as well
+	for (int32_t i = 0; i < g_collectiondb.m_numRecs; i++) {
+		RdbBase *base = getBase(i);
+		if (base) {
+			base->saveTreeIndex();
 		}
 	}
 
