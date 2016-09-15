@@ -17,6 +17,7 @@
 #include "Xml.h" // host file in xml
 #include "rdbid_t.h"
 #include "Sanity.h"
+#include <atomic>
 
 /// @note ALC there used to be a sync host functionality that was removed
 /// in commit 08e8eeb2a53b41763b5d7f97a0b953bebb04517a because it wasn't working
@@ -197,8 +198,8 @@ public:
 	int32_t           m_forwardIp;
 	int16_t          m_forwardPort;
 
-	int64_t      m_dgramsTo;
-	int64_t      m_dgramsFrom;
+	std::atomic<int64_t>     m_dgramsTo;
+	std::atomic<int64_t>     m_dgramsFrom;
 
 	char           m_repairMode;
 

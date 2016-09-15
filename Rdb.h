@@ -13,6 +13,7 @@
 #include "RdbIndex.h"
 #include "Hostdb.h"
 #include "rdbid_t.h"
+#include <atomic>
 
 bool makeTrashDir() ;
 
@@ -343,21 +344,21 @@ private:
 	// a dummy data string for deleting records when m_fixedDataSize > 0
 
 	// for keeping stats
-	int64_t m_numSeeks;
-	int64_t m_numReSeeks;
-	int64_t m_numRead;
+	std::atomic<int64_t>     m_numSeeks;
+	std::atomic<int64_t>     m_numReSeeks;
+	std::atomic<int64_t> m_numRead;
 
 	// network request/reply info for get requests
-	int64_t m_numReqsGet    ;
-	int64_t m_numNetReadGet ;
-	int64_t m_numRepliesGet ; 
-	int64_t m_numNetSentGet ;
+	std::atomic<int64_t>     m_numReqsGet;
+	std::atomic<int64_t> m_numNetReadGet;
+	std::atomic<int64_t>     m_numRepliesGet;
+	std::atomic<int64_t> m_numNetSentGet;
 
 	// network request/reply info for add requests
-	int64_t m_numReqsAdd    ;
-	int64_t m_numNetReadAdd ;
-	int64_t m_numRepliesAdd ; 
-	int64_t m_numNetSentAdd ;
+	std::atomic<int64_t>     m_numReqsAdd;
+	std::atomic<int64_t> m_numNetReadAdd;
+	std::atomic<int64_t>     m_numRepliesAdd;
+	std::atomic<int64_t> m_numNetSentAdd;
 
 	// . when we dump list to an rdb file, can we use short keys?
 	// . currently exclusively used by indexdb
