@@ -1408,7 +1408,7 @@ bool Msg8a::launchGetRequests ( ) {
 	sl_cache.unlock();
 
 	//get tag for url and then domain
-	for(int getLoop = 0; getLoop<1; getLoop++) {
+	for(int getLoop = 0; getLoop<2; getLoop++) {
 
 		key128_t startKey;
 		key128_t endKey;
