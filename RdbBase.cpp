@@ -2299,22 +2299,21 @@ int64_t RdbBase::getDiskSpaceUsed() const {
 	return count;
 }
 
-void RdbBase::closeMaps ( bool urgent ) {
-	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) {
-		bool status = m_maps[i]->close ( urgent );
-		if ( !status ) {
+void RdbBase::closeMaps(bool urgent) {
+	for (int32_t i = 0; i < m_numFiles; i++) {
+		bool status = m_maps[i]->close(urgent);
+		if (!status) {
 			// unable to write, let's abort
 			g_process.shutdownAbort();
 		}
 	}
 }
 
-/// @todo ALC when do we use closeIndexes?
-void RdbBase::closeIndexes ( bool urgent ) {
-	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) {
-		if( m_useIndexFile && m_indexes[i] ) {
-			bool status = m_indexes[i]->close ( urgent );
-			if ( !status ) {
+void RdbBase::closeIndexes(bool urgent) {
+	for (int32_t i = 0; i < m_numFiles; i++) {
+		if (m_useIndexFile && m_indexes[i]) {
+			bool status = m_indexes[i]->close(urgent);
+			if (!status) {
 				// unable to write, let's abort
 				g_process.shutdownAbort();
 			}
