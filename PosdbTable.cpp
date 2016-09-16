@@ -203,116 +203,116 @@ void PosdbTable::evalSlidingWindow ( const char **ptrs,
 		int32_t j = i + 1;
 		int32_t maxj = nr;
 
-	// loop over other terms
-	for ( ; j < maxj ; j++ ) {
+		// loop over other terms
+		for ( ; j < maxj ; j++ ) {
 
-		// skip if to the left of a pipe operator
-		if ( m_bflags[j] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) )
-			continue;
+			// skip if to the left of a pipe operator
+			if ( m_bflags[j] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) )
+				continue;
 
-		// TODO: use a cache using wpi/wpj as the key. 
-		//if ( ptrs[j] ) wpj = ptrs[j];
-		// if term does not occur in body, sub-in the best term
-		// from the title/linktext/etc.
-		//else wpj = bestPos[j];
+			// TODO: use a cache using wpi/wpj as the key.
+			//if ( ptrs[j] ) wpj = ptrs[j];
+			// if term does not occur in body, sub-in the best term
+			// from the title/linktext/etc.
+			//else wpj = bestPos[j];
 
-		wpj = ptrs[j];
+			wpj = ptrs[j];
 
-		// in same wikipedia phrase?
-		if ( m_wikiPhraseIds[j] == m_wikiPhraseIds[i] &&
-		     // zero means not in a phrase
-		     m_wikiPhraseIds[j] ) {
-			// try to get dist that matches qdist exactly
-			m_qdist = m_qpos[j] - m_qpos[i];
-			// wiki weight
-			wikiWeight = WIKI_WEIGHT; // .50;
-		}
-		else {
-			// basically try to get query words as close
-			// together as possible
-			m_qdist = 2;
-			// fix 'what is an unsecured loan' to get the
-			// exact phrase with higher score
-			//m_qdist = m_qpos[j] - m_qpos[i];
-			// wiki weight
-			wikiWeight = 1.0;
-		}
-
-		// this will be -1 if wpi or wpj is NULL
-		float max = getTermPairScoreForWindow ( wpi, wpj, 0 );
-
-		// try sub-ing in the best title occurence or best
-		// inlink text occurence. cuz if the term is in the title
-		// but these two terms are really far apart, we should
-		// get a better score
-		float score = getTermPairScoreForWindow ( bestPos[i], wpj, FIXED_DISTANCE );
-		if ( score > max ) {
-			max   = score;
-		}
-
-		// a double pair sub should be covered in the 
-		// getTermPairScoreForNonBody() function
-		score = getTermPairScoreForWindow ( bestPos[i], bestPos[j], FIXED_DISTANCE );
-		if ( score > max ) {
-			max   = score;
-		}
-
-		score = getTermPairScoreForWindow ( wpi, bestPos[j], FIXED_DISTANCE );
-		if ( score > max ) {
-			max   = score;
-		}
-
-		// wikipedia phrase weight
-		if ( wikiWeight != 1.0 ) max *= wikiWeight;
-
-		// term freqweight here
-		max *= m_freqWeights[i] * m_freqWeights[j];
-
-		// use score from scoreMatrix if bigger
-		if ( scoreMatrix[m_nqt*i+j] > max ) {
-			max = scoreMatrix[m_nqt*i+j];
-		}
-
-
-		// in same quoted phrase?
-		if ( m_quotedStartIds[j] >= 0 &&
-		     m_quotedStartIds[j] == m_quotedStartIds[i] ) {
-			// no subouts allowed i guess
-			if ( ! wpi ) {
-				max = -1.0;
-			}
-			else if ( ! wpj ) {
-				max = -1.0;
+			// in same wikipedia phrase?
+			if ( m_wikiPhraseIds[j] == m_wikiPhraseIds[i] &&
+			     // zero means not in a phrase
+			     m_wikiPhraseIds[j] ) {
+				// try to get dist that matches qdist exactly
+				m_qdist = m_qpos[j] - m_qpos[i];
+				// wiki weight
+				wikiWeight = WIKI_WEIGHT; // .50;
 			}
 			else {
-				int32_t qdist = m_qpos[j] - m_qpos[i];
-				int32_t p1 = Posdb::getWordPos ( wpi );
-				int32_t p2 = Posdb::getWordPos ( wpj );
-				int32_t  dist = p2 - p1;
-				// must be in right order!
-				if ( dist < 0 ) {
+				// basically try to get query words as close
+				// together as possible
+				m_qdist = 2;
+				// fix 'what is an unsecured loan' to get the
+				// exact phrase with higher score
+				//m_qdist = m_qpos[j] - m_qpos[i];
+				// wiki weight
+				wikiWeight = 1.0;
+			}
+
+			// this will be -1 if wpi or wpj is NULL
+			float max = getTermPairScoreForWindow ( wpi, wpj, 0 );
+
+			// try sub-ing in the best title occurence or best
+			// inlink text occurence. cuz if the term is in the title
+			// but these two terms are really far apart, we should
+			// get a better score
+			float score = getTermPairScoreForWindow ( bestPos[i], wpj, FIXED_DISTANCE );
+			if ( score > max ) {
+				max   = score;
+			}
+
+			// a double pair sub should be covered in the
+			// getTermPairScoreForNonBody() function
+			score = getTermPairScoreForWindow ( bestPos[i], bestPos[j], FIXED_DISTANCE );
+			if ( score > max ) {
+				max   = score;
+			}
+
+			score = getTermPairScoreForWindow ( wpi, bestPos[j], FIXED_DISTANCE );
+			if ( score > max ) {
+				max   = score;
+			}
+
+			// wikipedia phrase weight
+			if ( wikiWeight != 1.0 ) max *= wikiWeight;
+
+			// term freqweight here
+			max *= m_freqWeights[i] * m_freqWeights[j];
+
+			// use score from scoreMatrix if bigger
+			if ( scoreMatrix[m_nqt*i+j] > max ) {
+				max = scoreMatrix[m_nqt*i+j];
+			}
+
+
+			// in same quoted phrase?
+			if ( m_quotedStartIds[j] >= 0 &&
+			     m_quotedStartIds[j] == m_quotedStartIds[i] ) {
+				// no subouts allowed i guess
+				if ( ! wpi ) {
 					max = -1.0;
 				}
-				// allow for a discrepancy of 1 unit in case 
-				// there is a comma? i think we add an extra 
-				// unit
-				else if ( dist > qdist && dist - qdist > 1 ) {
+				else if ( ! wpj ) {
 					max = -1.0;
-					//log("ddd1: i=%" PRId32" j=%" PRId32" "
-					//    "dist=%" PRId32" qdist=%" PRId32,
-					//    i,j,dist,qdist);
 				}
-				else if ( dist < qdist && qdist - dist > 1 ) {
-					max = -1.0;
+				else {
+					int32_t qdist = m_qpos[j] - m_qpos[i];
+					int32_t p1 = Posdb::getWordPos ( wpi );
+					int32_t p2 = Posdb::getWordPos ( wpj );
+					int32_t  dist = p2 - p1;
+					// must be in right order!
+					if ( dist < 0 ) {
+						max = -1.0;
+					}
+					// allow for a discrepancy of 1 unit in case
+					// there is a comma? i think we add an extra
+					// unit
+					else if ( dist > qdist && dist - qdist > 1 ) {
+						max = -1.0;
+						//log("ddd1: i=%" PRId32" j=%" PRId32" "
+						//    "dist=%" PRId32" qdist=%" PRId32,
+						//    i,j,dist,qdist);
+					}
+					else if ( dist < qdist && qdist - dist > 1 ) {
+						max = -1.0;
+					}
 				}
 			}
-		}
 
-		// now we want the sliding window with the largest min
-		// term pair score!
-		if ( max < minTermPairScoreInWindow ) 
-			minTermPairScoreInWindow = max;
-	}
+			// now we want the sliding window with the largest min
+			// term pair score!
+			if ( max < minTermPairScoreInWindow )
+				minTermPairScoreInWindow = max;
+		}
 	}
 
 	if ( minTermPairScoreInWindow <= m_bestWindowScore ) {
