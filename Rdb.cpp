@@ -367,7 +367,7 @@ bool Rdb::addRdbBase2 ( collnum_t collnum ) { // addColl2()
 		return false;
 	}
 
-	// catdb,statsbaccessdb,facebookdb,syncdb
+	// statsdb
 	if ( m_isCollectionLess )
 		collnum = (collnum_t)0;
 	// ensure no max breech
@@ -2122,7 +2122,7 @@ int64_t Rdb::getNumGlobalRecs ( ) {
 // . return number of positive records - negative records
 int64_t Rdb::getNumTotalRecs ( bool useCache ) {
 
-	// are we catdb or statsdb? then we have no associated collections
+	// are we statsdb? then we have no associated collections
 	// because we are used globally, by all collections
 	if ( m_isCollectionLess )
 		return m_collectionlessBase->getNumTotalRecs();
@@ -2404,7 +2404,7 @@ RdbBase *getRdbBase(rdbid_t rdbId, const char *coll) {
 		log("db: Collection \"%s\" does not exist.",coll);
 		return NULL;
 	}
-	// catdb is a special case
+	// statdb is a special case
 	collnum_t collnum ;
 	if ( rdb->isCollectionless() )
 		collnum = (collnum_t) 0;
@@ -2432,7 +2432,7 @@ RdbBase *getRdbBase(rdbid_t rdbId, collnum_t collnum) {
 
 // calls addList above
 bool Rdb::addList ( const char *coll , RdbList *list, int32_t niceness ) {
-	// catdb has no collection per se
+	// statdb has no collection per se
 	if ( m_isCollectionLess )
 		return addList ((collnum_t)0,list,niceness);
 	collnum_t collnum = g_collectiondb.getCollnum ( coll );
