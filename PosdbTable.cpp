@@ -804,6 +804,10 @@ float PosdbTable::getTermPairScoreForWindow( const char *wpi, const char *wpj, i
 		return -1.00;
 	}
 
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_DEFINED(wpi,6);
+	VALGRIND_CHECK_MEM_IS_DEFINED(wpj,6);
+#endif
 	int32_t p1 = Posdb::getWordPos ( wpi );
 	int32_t p2 = Posdb::getWordPos ( wpj );
 	unsigned char hg1 = Posdb::getHashGroup ( wpi );
