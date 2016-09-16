@@ -502,11 +502,12 @@ void RdbBuckets::printBuckets() {
 }
 
 void RdbBucket::printBucket() {
-	char *kk = m_keys;
+	const char *kk = m_keys;
 	int32_t recSize = m_parent->getRecSize();
+	int32_t keySize = m_parent->getKeySize();
 	for (int32_t i = 0; i < m_numKeys; i++) {
-		log(LOG_WARN, "rdbbuckets last key: ""%016" PRIx64"%08" PRIx32" num keys: %" PRId32,
- 		    *(int64_t*)(kk+(sizeof(int32_t))), *(int32_t*)kk, m_numKeys);
+		log(LOG_WARN, "rdbbuckets last key: %s keySize=%" PRId32" numKeys=%" PRId32,
+		    KEYSTR(kk, recSize), keySize, m_numKeys);
 		kk += recSize;
 	}
 }
