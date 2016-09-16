@@ -12,10 +12,13 @@
 #include "Stats.h"
 #include "Conf.h"
 #include "TopTree.h"
+#include "GbMutex.h"
+#include "ScopedLock.h"
 #include <math.h>
 
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
+#include <valgrind/helgrind.h>
 #endif
 
 #define BF_HALFSTOPWIKIBIGRAM 0x01  // "to be" in "to be or not to be"
@@ -27,6 +30,7 @@
 
 
 static bool  s_init = false;
+static GbMutex s_mtx_weights;
 static float s_diversityWeights [MAXDIVERSITYRANK+1];
 static float s_densityWeights   [MAXDENSITYRANK+1];
 static float s_wordSpamWeights  [MAXWORDSPAMRANK+1]; // wordspam
@@ -5728,11 +5732,11 @@ static inline char *getWordPosList ( int64_t docId, char *list, int32_t listSize
 static void initWeights ( ) {
 	logTrace(g_conf.m_logTracePosdb, "BEGIN.");
 	
+	ScopedLock sl(s_mtx_weights);
 	if ( s_init ) {
 		return;
 	}
 	
-	s_init = true;
 	for ( int32_t i = 0 ; i <= MAXDIVERSITYRANK ; i++ ) {
 		// disable for now
 		s_diversityWeights[i] = scale_quadratic(i,0,MAXDIVERSITYRANK,g_conf.m_diversityWeightMin,g_conf.m_diversityWeightMax);
@@ -5814,6 +5818,19 @@ static void initWeights ( ) {
 	s_hashGroupWeights[HASHGROUP_INURL             ] = g_conf.m_hashGroupWeightInUrl;
 	s_hashGroupWeights[HASHGROUP_INMENU            ] = g_conf.m_hashGroupWeightInMenu;
 	
+	s_init = true;
+
+#ifdef _VALGRIND_
+	//we read from the weight tables without locking. tell helgrind to ignore that
+	VALGRIND_HG_DISABLE_CHECKING(s_diversityWeights,sizeof(s_diversityWeights));
+	VALGRIND_HG_DISABLE_CHECKING(s_densityWeights,sizeof(s_densityWeights));
+	VALGRIND_HG_DISABLE_CHECKING(s_wordSpamWeights,sizeof(s_wordSpamWeights));
+	VALGRIND_HG_DISABLE_CHECKING(s_linkerWeights,sizeof(s_linkerWeights));
+	VALGRIND_HG_DISABLE_CHECKING(s_hashGroupWeights,sizeof(s_hashGroupWeights));
+	VALGRIND_HG_DISABLE_CHECKING(s_isCompatible,sizeof(s_isCompatible));
+	VALGRIND_HG_DISABLE_CHECKING(s_inBody,sizeof(s_inBody));
+#endif
+
 	logTrace(g_conf.m_logTracePosdb, "END.");
 }
 
@@ -5830,45 +5847,35 @@ void reinitializeRankingSettings()
 
 
 float getHashGroupWeight ( unsigned char hg ) {
-	if ( ! s_init ) {
-		initWeights();
-	}
+	initWeights();
 
 	return s_hashGroupWeights[hg];
 }
 
 
 float getDiversityWeight ( unsigned char diversityRank ) {
-	if ( ! s_init ) {
-		initWeights();
-	}
+	initWeights();
 
 	return s_diversityWeights[diversityRank];
 }
 
 
 float getDensityWeight ( unsigned char densityRank ) {
-	if ( ! s_init ) {
-		initWeights();
-	}
+	initWeights();
 
 	return s_densityWeights[densityRank];
 }
 
 
 float getWordSpamWeight ( unsigned char wordSpamRank ) {
-	if ( ! s_init ) {
-		initWeights();
-	}
+	initWeights();
 
 	return s_wordSpamWeights[wordSpamRank];
 }
 
 
 float getLinkerWeight ( unsigned char wordSpamRank ) {
-	if ( ! s_init ) {
-		initWeights();
-	}
+	initWeights();
 
 	return s_linkerWeights[wordSpamRank];
 }
