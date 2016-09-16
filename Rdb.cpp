@@ -1896,16 +1896,15 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 	// . #2) if we're adding a negative key, replace positive counterpart
 	//       in the tree, but we must keep negative rec in tree in case
 	//       the positive counterpart was overriding one on disk (as in #1)
-	char oppKey[MAX_KEY_BYTES];
-	int32_t n = -1;
-
 	if (m_useTree) {
+		char oppKey[MAX_KEY_BYTES];
+
 		// make the opposite key of "key"
 		KEYSET(oppKey, key, m_ks);
 		KEYXOR(oppKey, 0x01);
 
 		// look it up
-		n = m_tree.getNode(collnum, oppKey);
+		int32_t n = m_tree.getNode(collnum, oppKey);
 
 		// if it exists then annihilate it
 		if (n >= 0) {
