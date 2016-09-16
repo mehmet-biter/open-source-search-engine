@@ -545,12 +545,8 @@ static inline char *KEYSTR(const void *vk, int32_t ks) {
 	return KEYSTR(vk, ks, tmp);
 }
 
-static inline uint16_t KEY0 ( const char *k , int32_t ks ) {
-	if ( ks == 18 ) {
-		return *(const uint16_t *)k;
-	}
-
-	gbshutdownAbort(true);
+static inline int64_t KEY0 ( const char *k ) {
+	return *(const int64_t *)k;
 }
 
 static inline int64_t KEY1 ( const char *k , char keySize ) {
@@ -568,11 +564,6 @@ static inline int64_t KEY2 ( const char *k , char keySize ) {
 	gbshutdownAbort(true);
 }
 
-
-
-static inline int64_t KEY0 ( const char *k ) {
-	return *(const int64_t *)k;
-}
 static inline void KEYSET ( char *k1, const char *k2, char keySize ) {
 	// posdb
 	if ( keySize == 18 ) {
