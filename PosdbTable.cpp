@@ -556,6 +556,13 @@ float PosdbTable::getSingleTermScore ( int32_t     i,
 // . TODO: add all up, then basically taking a weight of the top 6 or so...
 void PosdbTable::getTermPairScoreForNonBody(const char *wpi,  const char *wpj, const char *endi,
 					    const char *endj, int32_t qdist, float *retMax) {
+
+	// Sanity check
+	if( wpi >= endi || wpj >= endj ) {
+		*retMax = -1.0;
+		return;
+	}
+
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(wpi,endi-wpi);
 	VALGRIND_CHECK_MEM_IS_DEFINED(wpj,endj-wpj);
