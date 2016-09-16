@@ -337,6 +337,9 @@ float PosdbTable::getSingleTermScore ( int32_t     i,
 				       DocIdScore  *pdcs,
 				       char       **bestPos ) {
 
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_DEFINED(wpi,endi-wpi);
+#endif
 	float nonBodyMax = -1.0;
 	int32_t minx = 0;
 	float bestScores[MAX_TOP];
@@ -553,6 +556,10 @@ float PosdbTable::getSingleTermScore ( int32_t     i,
 // . TODO: add all up, then basically taking a weight of the top 6 or so...
 void PosdbTable::getTermPairScoreForNonBody(const char *wpi,  const char *wpj, const char *endi,
 					    const char *endj, int32_t qdist, float *retMax) {
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_DEFINED(wpi,endi-wpi);
+	VALGRIND_CHECK_MEM_IS_DEFINED(wpj,endj-wpj);
+#endif
 	logTrace(g_conf.m_logTracePosdb, "BEGIN.");
 
 	int32_t p1 = Posdb::getWordPos ( wpi );
