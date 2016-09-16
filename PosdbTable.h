@@ -47,11 +47,11 @@ public:
 	// delNonMatchingDocIdsFromSubLists() set these. They
 	// point to m_subLists that have been reduced in size 
 	// to only contain the docids matching all required term ids
-	int32_t   m_matchingSubListSize			[MAX_SUBLISTS];
-	char     *m_matchingSubListStart		[MAX_SUBLISTS];
-	char     *m_matchingSubListEnd   		[MAX_SUBLISTS];
-	char     *m_matchingSubListCursor		[MAX_SUBLISTS];
-	char     *m_matchingSubListSavedCursor	[MAX_SUBLISTS];
+	int32_t   m_matchingSubListSize		    [MAX_SUBLISTS];
+	const char *m_matchingSubListStart	[MAX_SUBLISTS];
+	const char *m_matchingSubListEnd	[MAX_SUBLISTS];
+	const char *m_matchingSubListCursor	[MAX_SUBLISTS];
+	const char *m_matchingSubListSavedCursor[MAX_SUBLISTS];
 	int32_t   m_numMatchingSubLists;
 	
 	
@@ -97,14 +97,14 @@ class PosdbTable {
 
 	void  getTermPairScoreForNonBody( 	const char *wpi,  const char *wpj, const char *endi, const char *endj,
 					     				int32_t qdist, float *retMax );
-	float getSingleTermScore ( int32_t i, char *wpi , char *endi,
-				   DocIdScore *pdcs,
-				   char **bestPos );
+	float getSingleTermScore(int32_t i, const char *wpi, const char *endi,
+				 DocIdScore *pdcs,
+				 const char **bestPos);
 
-	void evalSlidingWindow ( char **ptrs , 
-				 int32_t   nr , 
-				 char **bestPos ,
-				 float *scoreMatrix );
+	void evalSlidingWindow(const char **ptrs,
+			       int32_t nr,
+			       const char **bestPos,
+			       float *scoreMatrix);
 	float getTermPairScoreForWindow( const char *wpi, const char *wpj, int32_t fixedDistance);
 
 	float getTermPairScoreForAny   ( int32_t i, int32_t j,
@@ -163,7 +163,7 @@ class PosdbTable {
 	char  *m_bflags;
 	int32_t  *m_qtermNums;
 	float m_bestWindowScore;
-	char **m_windowTermPtrs;
+	const char **m_windowTermPtrs;
 
 	// how many docs in the collection?
 	int64_t m_docsInColl;

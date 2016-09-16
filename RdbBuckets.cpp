@@ -2020,7 +2020,8 @@ bool RdbBuckets::fastLoad(BigFile *f, const char *dbname) {
 	}
 
 	// init offset
-	int64_t offset = fastLoadColl(f, dbname, offset);
+	int64_t offset = 0;
+	offset = fastLoadColl(f, dbname, offset);
 	if (offset < 0) {
 		log(LOG_ERROR, "db: Failed to load buckets for %s: %s.", m_dbname, mstrerror(g_errno));
 		return false;

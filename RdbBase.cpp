@@ -119,7 +119,7 @@ bool RdbBase::init(char *dir,
 	// the db is not associated with a collection. /statsdb etc.
 	if ( rdb->isCollectionless() ) {
 		if ( collnum != (collnum_t) 0 ) {
-			log( LOG_ERROR, "db: collnum not zero for catdb.");
+			log( LOG_ERROR, "db: collnum not zero for collectionless rdb.");
 			g_process.shutdownAbort(true);
 		}
 

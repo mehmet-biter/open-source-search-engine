@@ -1021,8 +1021,7 @@ collnum_t Collectiondb::getCollnum ( const char *coll , int32_t clen ) {
 		clen = strlen(coll);
 	}
 
-	// not associated with any collection. Is this
-	// necessary for Catdb?
+	// not associated with any collection
 	if ( coll[0]=='s' && coll[1] =='t' &&
 	     strcmp ( "statsdb\0", coll ) == 0)
 		return 0;

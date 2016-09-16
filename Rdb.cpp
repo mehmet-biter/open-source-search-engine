@@ -367,7 +367,7 @@ bool Rdb::addRdbBase2 ( collnum_t collnum ) { // addColl2()
 		return false;
 	}
 
-	// catdb,statsbaccessdb,facebookdb,syncdb
+	// statsdb
 	if ( m_isCollectionLess )
 		collnum = (collnum_t)0;
 	// ensure no max breech
@@ -1766,10 +1766,9 @@ bool Rdb::hasRoom ( RdbList *list , int32_t niceness ) {
 //   because dump should complete soon and free up some mem
 // . this overwrites dups
 bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSize) {
-	if ( ! getBase(collnum) ) {
+	if (!getBase(collnum)) {
 		g_errno = EBADENGINEER;
-		log(LOG_LOGIC,"db: addRecord: collection #%i is gone.",
-		    collnum);
+		log(LOG_LOGIC,"db: addRecord: collection #%i is gone.", collnum);
 		return false;
 	}
 
@@ -1785,6 +1784,7 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 		g_errno = ETRYAGAIN; 
 		return false;
 	}
+
 	// we can also use this logic to avoid adding to the waiting tree
 	// because Process.cpp locks all the trees up at once and unlocks
 	// them all at once as well. so since SpiderRequests are added to
@@ -1796,20 +1796,21 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 	}
 
 	// bail if we're closing
-	if ( m_isClosing ) { g_errno = ECLOSING; return false; }
+	if (m_isClosing) {
+		g_errno = ECLOSING;
+		return false;
+	}
 
 	// sanity check
-	if ( KEYNEG(key) ) {
-		if ( (dataSize > 0 && data) ) {
+	if (KEYNEG(key)) {
+		if ((dataSize > 0 && data)) {
 			log( LOG_WARN, "db: Got data for a negative key." );
 			g_process.shutdownAbort(true);
 		}
-	}
-	// sanity check
-	else if ( m_fixedDataSize >= 0 && dataSize != m_fixedDataSize ) {
+	} else if ( m_fixedDataSize >= 0 && dataSize != m_fixedDataSize ) {
+		// sanity check
 		g_errno = EBADENGINEER;
-		log(LOG_LOGIC,"db: addRecord: DataSize is %" PRId32" should "
-		    "be %" PRId32, dataSize,m_fixedDataSize );
+		log(LOG_LOGIC,"db: addRecord: DataSize is %" PRId32" should be %" PRId32, dataSize,m_fixedDataSize );
 		g_process.shutdownAbort(true);
 	}
 
@@ -1818,7 +1819,6 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 	// the tree, so if you were overriding a node currently being dumped
 	// we would lose it.
 	if ( m_dump.isDumping() &&
-		 //oppKey >= m_dump.getFirstKeyInQueue() &&
 		 // ensure the dump is dumping the collnum of this key
 		 m_dump.getCollNum() == collnum &&
 		 m_dump.getLastKeyInQueue() &&
@@ -1839,7 +1839,7 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 	char *orig = NULL;
 
 	// copy the data before adding if we don't already own it
-	if ( data ) {
+	if (data) {
 		// save orig
 		orig = data;
 
@@ -1896,16 +1896,15 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 	// . #2) if we're adding a negative key, replace positive counterpart
 	//       in the tree, but we must keep negative rec in tree in case
 	//       the positive counterpart was overriding one on disk (as in #1)
-	char oppKey[MAX_KEY_BYTES];
-	int32_t n = -1;
-
 	if (m_useTree) {
+		char oppKey[MAX_KEY_BYTES];
+
 		// make the opposite key of "key"
 		KEYSET(oppKey, key, m_ks);
 		KEYXOR(oppKey, 0x01);
 
 		// look it up
-		n = m_tree.getNode(collnum, oppKey);
+		int32_t n = m_tree.getNode(collnum, oppKey);
 
 		// if it exists then annihilate it
 		if (n >= 0) {
@@ -1927,175 +1926,168 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 		}
 	}
 
-	//
-	// Add data record to the current index file for the -saved.dat file.
-	// This index is stored in the Rdb record- the individual part file
-	// indexes are in RdbBase and are read-only except when merging).
-	//
-	RdbIndex *index = getBase(collnum)->getTreeIndex();
-	if (index) {
-		index->addRecord(key);
-	}
-
-	// . TODO: add using "lastNode" as a start node for the insertion point
-	// . should set g_errno if failed
-	// . caller should retry on g_errno of ETRYAGAIN or ENOMEM
-	if ( !m_useTree ) {
-		if (m_buckets.addNode(collnum, key, data, dataSize) >= 0) {
-			return true;
-		}
-	}
-
 	// . cancel any spider request that is a dup in the dupcache to save disk space
 	// . twins might have different dupcaches so they might have different dups,
 	//   but it shouldn't be a big deal because they are dups!
-	if ( m_rdbId == RDB_SPIDERDB && ! KEYNEG(key) ) {
+	if (m_rdbId == RDB_SPIDERDB && !KEYNEG(key)) {
 		// . this will create it if spiders are on and its NULL
 		// . even if spiders are off we need to create it so 
 		//   that the request can adds its ip to the waitingTree
 		SpiderColl *sc = g_spiderCache.getSpiderColl(collnum);
 
 		// skip if not there
-		if ( ! sc ) {
+		if (!sc) {
 			return true;
 		}
 
-		SpiderRequest *sreq = (SpiderRequest *)( orig - 4 - sizeof(key128_t) );
+		SpiderRequest *sreq = (SpiderRequest *)(orig - 4 - sizeof(key128_t));
 
 		// is it really a request and not a SpiderReply?
-		bool isReq = g_spiderdb.isSpiderRequest ( &( sreq->m_key ) );
+		bool isReq = g_spiderdb.isSpiderRequest(&(sreq->m_key));
 
 		// skip if in dup cache. do NOT add to cache since 
 		// addToWaitingTree() in Spider.cpp will do that when called 
 		// from addSpiderRequest() below
-		if ( isReq && sc->isInDupCache ( sreq , false ) ) {
+		if (isReq && sc->isInDupCache(sreq, false)) {
 			logDebug( g_conf.m_logDebugSpider, "spider: adding spider req %s is dup. skipping.", sreq->m_url );
 			return true;
 		}
 
 		// if we are overflowing...
-		if ( isReq &&
-		     ! sreq->m_isAddUrl &&
-		     ! sreq->m_isPageReindex &&
-		     ! sreq->m_urlIsDocId &&
-		     ! sreq->m_forceDelete &&
-		     sc->isFirstIpInOverflowList ( sreq->m_firstIp ) ) {
-			logDebug( g_conf.m_logDebugSpider, "spider: skipping for overflow url %s ", sreq->m_url );
+		if (isReq && !sreq->m_isAddUrl && !sreq->m_isPageReindex && !sreq->m_urlIsDocId && !sreq->m_forceDelete &&
+		    sc->isFirstIpInOverflowList(sreq->m_firstIp)) {
+			logDebug(g_conf.m_logDebugSpider, "spider: skipping for overflow url %s ", sreq->m_url);
 			g_stats.m_totalOverflows++;
 			return true;
 		}
 	}
 
-	int32_t tn;
-	if ( m_useTree && (tn=m_tree.addNode (collnum,key,data,dataSize))>=0) {
-		// if adding to spiderdb, add to cache, too
-		if ( m_rdbId != RDB_SPIDERDB && m_rdbId != RDB_DOLEDB ) 
-			return true;
-		// or if negative key
-		if ( KEYNEG(key) ) return true;
-		// . this will create it if spiders are on and its NULL
-		// . even if spiders are off we need to create it so 
-		//   that the request can adds its ip to the waitingTree
-		SpiderColl *sc = g_spiderCache.getSpiderColl(collnum);
-		// skip if not there
-		if ( ! sc ) return true;
-		// if doing doledb...
-		if ( m_rdbId == RDB_DOLEDB ) {
-			int32_t pri = g_doledb.getPriority((key96_t *)key);
-			// skip over corruption
-			if ( pri < 0 || pri >= MAX_SPIDER_PRIORITIES )
+	// Add data record to the current index file for the -saved.dat file.
+	// This index is stored in the Rdb record- the individual part file
+	// indexes are in RdbBase and are read-only except when merging).
+	// we only add to index after adding to tree/buckets
+	RdbIndex *index = getBase(collnum)->getTreeIndex();
+
+	if (m_useTree) {
+		int32_t tn = m_tree.addNode(collnum, key, data, dataSize);
+		if (tn >= 0) {
+			if (index) {
+				index->addRecord(key);
+			}
+
+			// if adding to spiderdb, add to cache, too
+			if (m_rdbId != RDB_SPIDERDB && m_rdbId != RDB_DOLEDB) {
 				return true;
-			// if added positive key is before cursor, update curso
-			if ( KEYCMP((char *)key,
-				    (char *)&sc->m_nextKeys[pri],
-				    sizeof(key96_t)) < 0 ) {
-				KEYSET((char *)&sc->m_nextKeys[pri],
-				       (char *)key,
-				       sizeof(key96_t) );
-				// debug log
-				if ( g_conf.m_logDebugSpider )
-					log("spider: cursor reset pri=%" PRId32" to "
-					    "%s",
-					    pri,KEYSTR(key,12));
 			}
-			// that's it for doledb mods
+
+			// don't add for negative key
+			if (KEYNEG(key)) {
+				return true;
+			}
+
+			// . this will create it if spiders are on and its NULL
+			// . even if spiders are off we need to create it so
+			//   that the request can adds its ip to the waitingTree
+			SpiderColl *sc = g_spiderCache.getSpiderColl(collnum);
+			// skip if not there
+			if (!sc) {
+				return true;
+			}
+
+			// if doing doledb...
+			if (m_rdbId == RDB_DOLEDB) {
+				int32_t pri = g_doledb.getPriority((key96_t *)key);
+				// skip over corruption
+				if (pri < 0 || pri >= MAX_SPIDER_PRIORITIES)
+					return true;
+				// if added positive key is before cursor, update curso
+				if (KEYCMP(key, (char *)&sc->m_nextKeys[pri], sizeof(key96_t)) < 0) {
+					KEYSET((char *)&sc->m_nextKeys[pri], key, sizeof(key96_t));
+					logDebug(g_conf.m_logDebugSpider, "spider: cursor reset pri=%" PRId32" to %s", pri, KEYSTR(key, 12));
+				}
+
+				// that's it for doledb mods
+				return true;
+			}
+
+			// . ok, now add that reply to the cache
+
+			// assume this is the rec (4 byte dataSize,spiderdb key is
+			// now 16 bytes)
+			SpiderRequest *sreq = (SpiderRequest *)(orig - 4 - sizeof(key128_t));
+			// is it really a request and not a SpiderReply?
+			char isReq = g_spiderdb.isSpiderRequest(&sreq->m_key);
+			// add the request
+			if (isReq) {
+				// log that. why isn't this undoling always
+				logDebug(g_conf.m_logDebugSpider, "spider: rdb: added spider request to spiderdb rdb tree addnode=%" PRId32
+						" request for uh48=%" PRIu64" prntdocid=%" PRIu64" firstIp=%s spiderdbkey=%s",
+				         tn, sreq->getUrlHash48(), sreq->getParentDocId(), iptoa(sreq->m_firstIp),
+				         KEYSTR((char *)&sreq->m_key, sizeof(key128_t)));
+
+				// false means to NOT call evaluateAllRequests()
+				// because we call it below. the reason we do this
+				// is because it does not always get called
+				// in addSpiderRequest(), like if its a dup and
+				// gets "nuked". (removed callEval arg since not
+				// really needed)
+				sc->addSpiderRequest(sreq, gettimeofdayInMilliseconds());
+			} else {
+				// otherwise repl
+				// shortcut - cast it to reply
+				SpiderReply *rr = (SpiderReply *)sreq;
+
+				// log that. why isn't this undoling always
+				logDebug(g_conf.m_logDebugSpider, "rdb: rdb: got spider reply for uh48=%" PRIu64, rr->getUrlHash48());
+
+				// add the reply
+				sc->addSpiderReply(rr);
+
+				// don't actually add it if "fake". i.e. if it
+				// was an internal error of some sort... this will
+				// make it try over and over again i guess...
+				// no because we need some kinda reply so that gb knows
+				// the pagereindex docid-based spider requests are done,
+				// at least for now, because the replies were not being
+				// added for now. just for internal errors at least...
+				// we were not adding spider replies to the page reindexes
+				// as they completed and when i tried to rerun it
+				// the title recs were not found since they were deleted,
+				// so we gotta add the replies now.
+				int32_t indexCode = rr->m_errCode;
+				if (indexCode == EABANDONED) {
+					log(LOG_WARN, "rdb: not adding spiderreply to rdb because it was an internal error for uh48=%" PRIu64
+					              " errCode = %s", rr->getUrlHash48(), mstrerror(indexCode));
+					m_tree.deleteNode3(tn, false);
+				}
+			}
+
+			// clear errors from adding to SpiderCache
+			g_errno = 0;
+
+			// all done
 			return true;
 		}
-		// . ok, now add that reply to the cache
-		// . g_now is in milliseconds!
-		//int32_t nowGlobal = localToGlobalTimeSeconds ( g_now/1000 );
-		//int32_t nowGlobal = getTimeGlobal();
-		// assume this is the rec (4 byte dataSize,spiderdb key is 
-		// now 16 bytes)
-		SpiderRequest *sreq=(SpiderRequest *)(orig-4-sizeof(key128_t));
-		// is it really a request and not a SpiderReply?
-		char isReq = g_spiderdb.isSpiderRequest ( &sreq->m_key );
-		// add the request
-		if ( isReq ) {
-			// log that. why isn't this undoling always
-			if ( g_conf.m_logDebugSpider )
-				logf(LOG_DEBUG,"spider: rdb: added spider "
-				     "request to spiderdb rdb tree "
-				     "addnode=%" PRId32" "
-				     "request for uh48=%" PRIu64" prntdocid=%" PRIu64" "
-				     "firstIp=%s spiderdbkey=%s",
-				     tn,
-				     sreq->getUrlHash48(), 
-				     sreq->getParentDocId(),
-				     iptoa(sreq->m_firstIp),
-				     KEYSTR((char *)&sreq->m_key,
-					    sizeof(key128_t)));
-			// false means to NOT call evaluateAllRequests()
-			// because we call it below. the reason we do this
-			// is because it does not always get called
-			// in addSpiderRequest(), like if its a dup and
-			// gets "nuked". (removed callEval arg since not
-			// really needed)
-			sc->addSpiderRequest ( sreq, gettimeofdayInMilliseconds() );
-		}
-		// otherwise repl
-		else {
-			// shortcut - cast it to reply
-			SpiderReply *rr = (SpiderReply *)sreq;
-			// log that. why isn't this undoling always
-			if ( g_conf.m_logDebugSpider )
-				logf(LOG_DEBUG,"rdb: rdb: got spider reply"
-				     " for uh48=%" PRIu64,rr->getUrlHash48());
-			// add the reply
-			sc->addSpiderReply(rr);
-			// don't actually add it if "fake". i.e. if it
-			// was an internal error of some sort... this will
-			// make it try over and over again i guess...
-			// no because we need some kinda reply so that gb knows
-			// the pagereindex docid-based spider requests are done,
-			// at least for now, because the replies were not being
-			// added for now. just for internal errors at least...
-			// we were not adding spider replies to the page reindexes
-			// as they completed and when i tried to rerun it
-			// the title recs were not found since they were deleted,
-			// so we gotta add the replies now.
-			int32_t indexCode = rr->m_errCode;
-			if ( //indexCode == EINTERNALERROR ||
-			     indexCode == EABANDONED ) {
-				log("rdb: not adding spiderreply to rdb "
-				    "because "
-				    "it was an internal error for uh48=%" PRIu64" "
-				    "errCode = %s",
-				    rr->getUrlHash48(),
-				    mstrerror(indexCode));
-				m_tree.deleteNode3(tn,false);
+	} else {
+		// . TODO: add using "lastNode" as a start node for the insertion point
+		// . should set g_errno if failed
+		// . caller should retry on g_errno of ETRYAGAIN or ENOMEM
+		if (m_buckets.addNode(collnum, key, data, dataSize) >= 0) {
+			if (index) {
+				index->addRecord(key);
 			}
+
+			return true;
 		}
-		// clear errors from adding to SpiderCache
-		g_errno = 0;
-		// all done
-		return true;
 	}
 
 	// enhance the error message
-	const char *ss ="";
-	if ( m_tree.isSaving() ) ss = " Tree is saving.";
-	if ( !m_useTree && m_buckets.isSaving() ) ss = " Buckets are saving.";
+	const char *ss;
+	if (m_useTree) {
+		ss = m_tree.isSaving() ? " Tree is saving." : "";
+	} else {
+		ss = m_buckets.isSaving() ? " Buckets are saving." : "";
+	}
 
 	log(LOG_INFO, "db: Had error adding data to %s: %s. %s", m_dbname, mstrerror(g_errno), ss);
 	return false;
@@ -2103,29 +2095,25 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 
 // . use the maps and tree to estimate the size of this list w/o hitting disk
 // . used by Indexdb.cpp to get the size of a list for IDF weighting purposes
-int64_t Rdb::getListSize ( collnum_t collnum,
-			char *startKey , char *endKey , char *max ,
-			int64_t oldTruncationLimit ) {
+int64_t Rdb::getListSize(collnum_t collnum, char *startKey, char *endKey, char *max, int64_t oldTruncationLimit) {
 	// pick it
-	//collnum_t collnum = g_collectiondb.getCollnum ( coll );
 	if ( collnum < 0 || collnum > getNumBases() || ! getBase(collnum) ) {
 		log(LOG_WARN, "db: %s bad collnum of %i", m_dbname, collnum);
 		return false;
 	}
-	return getBase(collnum)->getListSize(startKey,endKey,max,
-					    oldTruncationLimit);
+	return getBase(collnum)->getListSize(startKey, endKey, max, oldTruncationLimit);
 }
 
-int64_t Rdb::getNumGlobalRecs ( ) {
-	return getNumTotalRecs() * g_hostdb.m_numShards;//Groups;
+int64_t Rdb::getNumGlobalRecs() {
+	return (getNumTotalRecs() * g_hostdb.m_numShards);
 }
 
 // . return number of positive records - negative records
 int64_t Rdb::getNumTotalRecs ( bool useCache ) {
 
-	// are we catdb or statsdb? then we have no associated collections
+	// are we statsdb? then we have no associated collections
 	// because we are used globally, by all collections
-	if ( m_isCollectionLess )
+	if (m_isCollectionLess)
 		return m_collectionlessBase->getNumTotalRecs();
 
 	// this gets slammed w/ too many collections so use a cache...
@@ -2405,7 +2393,7 @@ RdbBase *getRdbBase(rdbid_t rdbId, const char *coll) {
 		log("db: Collection \"%s\" does not exist.",coll);
 		return NULL;
 	}
-	// catdb is a special case
+	// statdb is a special case
 	collnum_t collnum ;
 	if ( rdb->isCollectionless() )
 		collnum = (collnum_t) 0;
@@ -2433,7 +2421,7 @@ RdbBase *getRdbBase(rdbid_t rdbId, collnum_t collnum) {
 
 // calls addList above
 bool Rdb::addList ( const char *coll , RdbList *list, int32_t niceness ) {
-	// catdb has no collection per se
+	// statdb has no collection per se
 	if ( m_isCollectionLess )
 		return addList ((collnum_t)0,list,niceness);
 	collnum_t collnum = g_collectiondb.getCollnum ( coll );

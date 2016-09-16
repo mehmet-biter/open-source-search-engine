@@ -45,7 +45,7 @@ static bool  s_inBody           [HASHGROUP_END];
 
 static inline bool isTermValueInRange( const char *p, const QueryTerm *qt);
 static inline bool isTermValueInRange2 ( const char *recPtr, const char *subListEnd, const QueryTerm *qt);
-static inline char *getWordPosList ( int64_t docId, char *list, int32_t listSize );
+static inline const char *getWordPosList(int64_t docId, const char *list, int32_t listSize);
 static int docIdVoteBufKeyCompare_desc ( const void *h1, const void *h2 );
 static void initWeights();
 
@@ -168,13 +168,13 @@ void PosdbTable::init(Query *q, bool debug, void *logstate, TopTree *topTree, Ms
 // pointed to by ptrs[i] and does not scan the word position lists.
 // also tries to sub-out each term with the title or linktext wordpos term
 // pointed to  by "bestPos[i]"
-void PosdbTable::evalSlidingWindow ( char    **ptrs,
+void PosdbTable::evalSlidingWindow ( const char **ptrs,
 				     int32_t   nr,
-				     char    **bestPos,
+				     const char **bestPos,
 				     float    *scoreMatrix ) {
 
-	char *wpi;
-	char *wpj;
+	const char *wpi;
+	const char *wpj;
 	float wikiWeight;
 	float minTermPairScoreInWindow = 999999999.0;
 
@@ -203,116 +203,116 @@ void PosdbTable::evalSlidingWindow ( char    **ptrs,
 		int32_t j = i + 1;
 		int32_t maxj = nr;
 
-	// loop over other terms
-	for ( ; j < maxj ; j++ ) {
+		// loop over other terms
+		for ( ; j < maxj ; j++ ) {
 
-		// skip if to the left of a pipe operator
-		if ( m_bflags[j] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) )
-			continue;
+			// skip if to the left of a pipe operator
+			if ( m_bflags[j] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) )
+				continue;
 
-		// TODO: use a cache using wpi/wpj as the key. 
-		//if ( ptrs[j] ) wpj = ptrs[j];
-		// if term does not occur in body, sub-in the best term
-		// from the title/linktext/etc.
-		//else wpj = bestPos[j];
+			// TODO: use a cache using wpi/wpj as the key.
+			//if ( ptrs[j] ) wpj = ptrs[j];
+			// if term does not occur in body, sub-in the best term
+			// from the title/linktext/etc.
+			//else wpj = bestPos[j];
 
-		wpj = ptrs[j];
+			wpj = ptrs[j];
 
-		// in same wikipedia phrase?
-		if ( m_wikiPhraseIds[j] == m_wikiPhraseIds[i] &&
-		     // zero means not in a phrase
-		     m_wikiPhraseIds[j] ) {
-			// try to get dist that matches qdist exactly
-			m_qdist = m_qpos[j] - m_qpos[i];
-			// wiki weight
-			wikiWeight = WIKI_WEIGHT; // .50;
-		}
-		else {
-			// basically try to get query words as close
-			// together as possible
-			m_qdist = 2;
-			// fix 'what is an unsecured loan' to get the
-			// exact phrase with higher score
-			//m_qdist = m_qpos[j] - m_qpos[i];
-			// wiki weight
-			wikiWeight = 1.0;
-		}
-
-		// this will be -1 if wpi or wpj is NULL
-		float max = getTermPairScoreForWindow ( wpi, wpj, 0 );
-
-		// try sub-ing in the best title occurence or best
-		// inlink text occurence. cuz if the term is in the title
-		// but these two terms are really far apart, we should
-		// get a better score
-		float score = getTermPairScoreForWindow ( bestPos[i], wpj, FIXED_DISTANCE );
-		if ( score > max ) {
-			max   = score;
-		}
-
-		// a double pair sub should be covered in the 
-		// getTermPairScoreForNonBody() function
-		score = getTermPairScoreForWindow ( bestPos[i], bestPos[j], FIXED_DISTANCE );
-		if ( score > max ) {
-			max   = score;
-		}
-
-		score = getTermPairScoreForWindow ( wpi, bestPos[j], FIXED_DISTANCE );
-		if ( score > max ) {
-			max   = score;
-		}
-
-		// wikipedia phrase weight
-		if ( wikiWeight != 1.0 ) max *= wikiWeight;
-
-		// term freqweight here
-		max *= m_freqWeights[i] * m_freqWeights[j];
-
-		// use score from scoreMatrix if bigger
-		if ( scoreMatrix[m_nqt*i+j] > max ) {
-			max = scoreMatrix[m_nqt*i+j];
-		}
-
-
-		// in same quoted phrase?
-		if ( m_quotedStartIds[j] >= 0 &&
-		     m_quotedStartIds[j] == m_quotedStartIds[i] ) {
-			// no subouts allowed i guess
-			if ( ! wpi ) {
-				max = -1.0;
-			}
-			else if ( ! wpj ) {
-				max = -1.0;
+			// in same wikipedia phrase?
+			if ( m_wikiPhraseIds[j] == m_wikiPhraseIds[i] &&
+			     // zero means not in a phrase
+			     m_wikiPhraseIds[j] ) {
+				// try to get dist that matches qdist exactly
+				m_qdist = m_qpos[j] - m_qpos[i];
+				// wiki weight
+				wikiWeight = WIKI_WEIGHT; // .50;
 			}
 			else {
-				int32_t qdist = m_qpos[j] - m_qpos[i];
-				int32_t p1 = Posdb::getWordPos ( wpi );
-				int32_t p2 = Posdb::getWordPos ( wpj );
-				int32_t  dist = p2 - p1;
-				// must be in right order!
-				if ( dist < 0 ) {
+				// basically try to get query words as close
+				// together as possible
+				m_qdist = 2;
+				// fix 'what is an unsecured loan' to get the
+				// exact phrase with higher score
+				//m_qdist = m_qpos[j] - m_qpos[i];
+				// wiki weight
+				wikiWeight = 1.0;
+			}
+
+			// this will be -1 if wpi or wpj is NULL
+			float max = getTermPairScoreForWindow ( wpi, wpj, 0 );
+
+			// try sub-ing in the best title occurence or best
+			// inlink text occurence. cuz if the term is in the title
+			// but these two terms are really far apart, we should
+			// get a better score
+			float score = getTermPairScoreForWindow ( bestPos[i], wpj, FIXED_DISTANCE );
+			if ( score > max ) {
+				max   = score;
+			}
+
+			// a double pair sub should be covered in the
+			// getTermPairScoreForNonBody() function
+			score = getTermPairScoreForWindow ( bestPos[i], bestPos[j], FIXED_DISTANCE );
+			if ( score > max ) {
+				max   = score;
+			}
+
+			score = getTermPairScoreForWindow ( wpi, bestPos[j], FIXED_DISTANCE );
+			if ( score > max ) {
+				max   = score;
+			}
+
+			// wikipedia phrase weight
+			if ( wikiWeight != 1.0 ) max *= wikiWeight;
+
+			// term freqweight here
+			max *= m_freqWeights[i] * m_freqWeights[j];
+
+			// use score from scoreMatrix if bigger
+			if ( scoreMatrix[m_nqt*i+j] > max ) {
+				max = scoreMatrix[m_nqt*i+j];
+			}
+
+
+			// in same quoted phrase?
+			if ( m_quotedStartIds[j] >= 0 &&
+			     m_quotedStartIds[j] == m_quotedStartIds[i] ) {
+				// no subouts allowed i guess
+				if ( ! wpi ) {
 					max = -1.0;
 				}
-				// allow for a discrepancy of 1 unit in case 
-				// there is a comma? i think we add an extra 
-				// unit
-				else if ( dist > qdist && dist - qdist > 1 ) {
+				else if ( ! wpj ) {
 					max = -1.0;
-					//log("ddd1: i=%" PRId32" j=%" PRId32" "
-					//    "dist=%" PRId32" qdist=%" PRId32,
-					//    i,j,dist,qdist);
 				}
-				else if ( dist < qdist && qdist - dist > 1 ) {
-					max = -1.0;
+				else {
+					int32_t qdist = m_qpos[j] - m_qpos[i];
+					int32_t p1 = Posdb::getWordPos ( wpi );
+					int32_t p2 = Posdb::getWordPos ( wpj );
+					int32_t  dist = p2 - p1;
+					// must be in right order!
+					if ( dist < 0 ) {
+						max = -1.0;
+					}
+					// allow for a discrepancy of 1 unit in case
+					// there is a comma? i think we add an extra
+					// unit
+					else if ( dist > qdist && dist - qdist > 1 ) {
+						max = -1.0;
+						//log("ddd1: i=%" PRId32" j=%" PRId32" "
+						//    "dist=%" PRId32" qdist=%" PRId32,
+						//    i,j,dist,qdist);
+					}
+					else if ( dist < qdist && qdist - dist > 1 ) {
+						max = -1.0;
+					}
 				}
 			}
-		}
 
-		// now we want the sliding window with the largest min
-		// term pair score!
-		if ( max < minTermPairScoreInWindow ) 
-			minTermPairScoreInWindow = max;
-	}
+			// now we want the sliding window with the largest min
+			// term pair score!
+			if ( max < minTermPairScoreInWindow )
+				minTermPairScoreInWindow = max;
+		}
 	}
 
 	if ( minTermPairScoreInWindow <= m_bestWindowScore ) {
@@ -332,10 +332,10 @@ void PosdbTable::evalSlidingWindow ( char    **ptrs,
 
 
 float PosdbTable::getSingleTermScore ( int32_t     i,
-				       char        *wpi,
-				       char        *endi,
+				       const char *wpi,
+				       const char *endi,
 				       DocIdScore  *pdcs,
-				       char       **bestPos ) {
+				       const char **bestPos ) {
 
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(wpi,endi-wpi);
@@ -343,7 +343,7 @@ float PosdbTable::getSingleTermScore ( int32_t     i,
 	float nonBodyMax = -1.0;
 	int32_t minx = 0;
 	float bestScores[MAX_TOP];
-	char *bestwpi   [MAX_TOP];
+	const char *bestwpi[MAX_TOP];
 	int32_t numTop = 0;
 
 	logTrace(g_conf.m_logTracePosdb, "BEGIN.");
@@ -518,7 +518,7 @@ float PosdbTable::getSingleTermScore ( int32_t     i,
 	for ( int32_t k = 0 ; k < numTop ; k++, sx++ ) {
 		// udpate count
 		pdcs->m_numSingles++;
-		char *maxp = bestwpi[k];
+		const char *maxp = bestwpi[k];
 		memset(sx,0,sizeof(*sx));
 		sx->m_isSynonym      = Posdb::getIsSynonym(maxp);
 		sx->m_isHalfStopWikiBigram = 
@@ -556,6 +556,13 @@ float PosdbTable::getSingleTermScore ( int32_t     i,
 // . TODO: add all up, then basically taking a weight of the top 6 or so...
 void PosdbTable::getTermPairScoreForNonBody(const char *wpi,  const char *wpj, const char *endi,
 					    const char *endj, int32_t qdist, float *retMax) {
+
+	// Sanity check
+	if( wpi >= endi || wpj >= endj ) {
+		*retMax = -1.0;
+		return;
+	}
+
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(wpi,endi-wpi);
 	VALGRIND_CHECK_MEM_IS_DEFINED(wpj,endj-wpj);
@@ -804,6 +811,10 @@ float PosdbTable::getTermPairScoreForWindow( const char *wpi, const char *wpj, i
 		return -1.00;
 	}
 
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_DEFINED(wpi,6);
+	VALGRIND_CHECK_MEM_IS_DEFINED(wpj,6);
+#endif
 	int32_t p1 = Posdb::getWordPos ( wpi );
 	int32_t p2 = Posdb::getWordPos ( wpj );
 	unsigned char hg1 = Posdb::getHashGroup ( wpi );
@@ -2431,9 +2442,9 @@ nextNode:
 		// do each sublist
 		for ( int32_t j = 0 ; j < qti->m_numMatchingSubLists ; j++ ) {
 			// get termlist for that docid
-			char *xlist    = qti->m_matchingSubListStart[j];
-			char *xlistEnd = qti->m_matchingSubListEnd[j];
-			char *xp = getWordPosList ( m_docId, xlist, xlistEnd - xlist);
+			const char *xlist    = qti->m_matchingSubListStart[j];
+			const char *xlistEnd = qti->m_matchingSubListEnd[j];
+			const char *xp = getWordPosList ( m_docId, xlist, xlistEnd - xlist);
 
 			// not there? xlist will be NULL
 			qti->m_matchingSubListSavedCursor[j] = xp;
@@ -2642,8 +2653,8 @@ bool PosdbTable::advanceTermListCursors(const char *docIdPtr, QueryTermInfo *qti
 		//
 		for ( int32_t j = 0 ; j < qti->m_numMatchingSubLists ; j++ ) {
 			// shortcuts
-			char *xc    = qti->m_matchingSubListCursor[j];
-			char *xcEnd = qti->m_matchingSubListEnd[j];
+			const char *xc    = qti->m_matchingSubListCursor[j];
+			const char *xcEnd = qti->m_matchingSubListEnd[j];
 
 			// exhausted? (we can't make cursor NULL because
 			// getMaxPossibleScore() needs the last ptr)
@@ -2746,13 +2757,13 @@ bool PosdbTable::prefilterMaxPossibleScoreByDistance(QueryTermInfo *qtibuf, cons
 	// populate ring buf just for this query term
 	for ( int32_t k = 0 ; k < qtx->m_numMatchingSubLists ; k++ ) {
 		// scan that sublist and add word positions
-		char *sub = qtx->m_matchingSubListSavedCursor[k];
+		const char *sub = qtx->m_matchingSubListSavedCursor[k];
 		// skip sublist if it's cursor is exhausted
 		if ( ! sub ) {
 			continue;
 		}
 
-		char *end = qtx->m_matchingSubListCursor[k];
+		const char *end = qtx->m_matchingSubListCursor[k];
 		// add first key
 		//int32_t wx = Posdb::getWordPos(sub);
 		wx = (*((uint32_t *)(sub+3))) >> 6;
@@ -2796,13 +2807,13 @@ bool PosdbTable::prefilterMaxPossibleScoreByDistance(QueryTermInfo *qtibuf, cons
 		// store all his word positions into ring buffer AS WELL
 		for ( int32_t k = 0 ; k < qti->m_numMatchingSubLists ; k++ ) {
 			// scan that sublist and add word positions
-			char *sub = qti->m_matchingSubListSavedCursor[k];
+			const char *sub = qti->m_matchingSubListSavedCursor[k];
 			// skip sublist if it's cursor is exhausted
 			if ( ! sub ) {
 				continue;
 			}
 			
-			char *end = qti->m_matchingSubListCursor[k];
+			const char *end = qti->m_matchingSubListCursor[k];
 			// add first key
 			//int32_t wx = Posdb::getWordPos(sub);
 			wx = (*((uint32_t *)(sub+3))) >> 6;
@@ -2967,11 +2978,11 @@ void PosdbTable::intersectLists10_r ( ) {
 	int32_t  *qpos           = (int32_t *)pp; pp += 4 * nqt;				// from QueryTermInfo
 	int32_t  *qtermNums      = (int32_t *)pp; pp += 4 * nqt;				// from QueryTermInfo
 	float    *freqWeights    = (float   *)pp; pp += sizeof(float) * nqt;	// from QueryTermInfo
-	char    **miniMergedList = (char   **)pp; pp += sizeof(char *) * nqt;
-	char    **miniMergedEnd  = (char   **)pp; pp += sizeof(char *) * nqt;
-	char    **bestPos        = (char   **)pp; pp += sizeof(char *) * nqt;
-	char    **winnerStack    = (char   **)pp; pp += sizeof(char *) * nqt;
-	char    **xpos           = (char   **)pp; pp += sizeof(char *) * nqt;
+	const char **miniMergedList = (const char **)pp; pp += sizeof(const char *) * nqt;
+	const char **miniMergedEnd  = (const char **)pp; pp += sizeof(const char *) * nqt;
+	const char **bestPos	    = (const char **)pp; pp += sizeof(const char *) * nqt;
+	const char **winnerStack    = (const char **)pp; pp += sizeof(const char *) * nqt;
+	const char **xpos	    = (const char **)pp; pp += sizeof(const char *) * nqt;
 	char     *bflags         = (char    *)pp; pp += sizeof(char) * nqt;
 	float    *scoreMatrix    = (float   *)pp; pp += sizeof(float) *nqt*nqt;
 	if ( pp > m_topScoringDocIdsBuf.getBufEnd() )
@@ -3036,7 +3047,7 @@ void PosdbTable::intersectLists10_r ( ) {
 	char miniMergeBuf[300000];
 	char *mptrEnd = miniMergeBuf + 299000;
 	char *mptr;
-	char *docIdPtr;
+	const char *docIdPtr;
 	char *docIdEnd = m_docIdVoteBuf.getBufStart()+m_docIdVoteBuf.length();
 	float minWinningScore = -1.0;
 	char *lastMptr = NULL;
@@ -3248,8 +3259,8 @@ void PosdbTable::intersectLists10_r ( ) {
 			//## the miniMerged* pointers point into..
 			//##
 
-			char *nwp     [MAX_SUBLISTS];
-			char *nwpEnd  [MAX_SUBLISTS];
+			const char *nwp[MAX_SUBLISTS];
+			const char *nwpEnd[MAX_SUBLISTS];
 			char  nwpFlags[MAX_SUBLISTS];
 
 			// we got a docid that has all the query terms, so merge
@@ -3484,8 +3495,8 @@ void PosdbTable::intersectLists10_r ( ) {
 				}
 
 				// get list
-				char *plist		= miniMergedList[i];
-				char *plistEnd	= miniMergedEnd[i];
+				const char *plist		= miniMergedList[i];
+				const char *plistEnd	= miniMergedEnd[i];
 				int32_t  psize	= plistEnd - plist;
 
 				// test it. first key is 12 bytes.
@@ -4190,7 +4201,7 @@ float PosdbTable::getMaxPossibleScore ( const QueryTermInfo *qti,
 	// max possible score of each one
 	for ( int32_t j = 0 ; j < qti->m_numMatchingSubLists ; j++ ) {
 		// scan backwards up to this
-		char *start = qti->m_matchingSubListSavedCursor[j];
+		const char *start = qti->m_matchingSubListSavedCursor[j];
 		
 		// skip if does not have our docid
 		if ( ! start ) {
@@ -4217,7 +4228,7 @@ float PosdbTable::getMaxPossibleScore ( const QueryTermInfo *qti,
 		// 6 byte keys. we deal with it below.
 		start += 12;
 		// get cursor. this is actually pointing to the next docid
-		char *dc = qti->m_matchingSubListCursor[j];
+		const char *dc = qti->m_matchingSubListCursor[j];
 		// back up into our list
 		dc -= 6;
 		// reset this
@@ -5621,19 +5632,19 @@ static inline bool isTermValueInRange2 ( const char *recPtr, const char *subList
 
 // . b-step into list looking for docid "docId"
 // . assume p is start of list, excluding 6 byte of termid
-static inline char *getWordPosList ( int64_t docId, char *list, int32_t listSize ) {
+static inline const char *getWordPosList(int64_t docId, const char *list, int32_t listSize) {
 	// make step divisible by 6 initially
 	int32_t step = (listSize / 12) * 6;
 	// shortcut
-	char *listEnd = list + listSize;
+	const char *listEnd = list + listSize;
 	// divide in half
-	char *p = list + step;
+	const char *p = list + step;
 	// for detecting not founds
 	char count = 0;
 	
  loop:
 	// save it
-	char *origp = p;
+	const char *origp = p;
 	// scan up to docid. we use this special bit to distinguish between
 	// 6-byte and 12-byte posdb keys
 	for ( ; p > list && (p[1] & 0x02); ) {
@@ -5652,7 +5663,7 @@ static inline char *getWordPosList ( int64_t docId, char *list, int32_t listSize
 		// ok, it's negative, try to see if the positive is
 		// in here, if not then return NULL.
 		// save current pos
-		char *current = p;
+		const char *current = p;
 		// back up to 6 byte key before this 12 byte key
 		p -= 6;
 

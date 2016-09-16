@@ -30,11 +30,11 @@ bool RdbDump::set(collnum_t collnum,
 		m_collnum = 0;
 	}
 
-	// are we like catdb/statsdb etc.?
+	// are we like statsdb etc.?
 	m_doCollCheck = true;
 	if ( rdb && rdb->isCollectionless() ) m_doCollCheck = false;
 	// RdbMerge also calls us but rdb is always set to NULL and it was
-	// causing a merge on catdb (collectionless) to screw up
+	// causing a merge on collectionless rdb to screw up
 	if ( ! rdb ) m_doCollCheck = false;
 
 	m_file          = file;
@@ -212,7 +212,7 @@ void RdbDump::doneDumping() {
 
 	// now try to merge this collection/db again
 	// if not already in the linked list. but do not add to linked list
-	// if it is statsdb or catdb.
+	// if it is statsdb.
 	if (m_rdb && !m_rdb->isCollectionless()) {
 		addCollnumToLinkedListOfMergeCandidates(m_collnum);
 	}
@@ -714,7 +714,7 @@ bool RdbDump::doneReadingForVerify ( ) {
 	// if someone reset/deleted the collection we were dumping...
 	CollectionRec *cr = g_collectiondb.getRec(m_collnum);
 
-	// . do not do this for statsdb/catdb which always use collnum of 0
+	// . do not do this for statsdb which always use collnum of 0
 	// . RdbMerge also calls us but gives a NULL m_rdb so we can't
 	//   set m_isCollectionless to false
 	if (!cr && m_doCollCheck) {
@@ -913,7 +913,7 @@ void RdbDump::continueDumping() {
 	// if someone reset/deleted the collection we were dumping...
 	CollectionRec *cr = g_collectiondb.getRec ( m_collnum );
 
-	// . do not do this for statsdb/catdb which always use collnum of 0
+	// . do not do this for statsdb which always use collnum of 0
 	// . RdbMerge also calls us but gives a NULL m_rdb so we can't
 	//   set m_isCollectionless to false
 	if (!cr && m_doCollCheck) {
