@@ -1926,25 +1926,6 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 		}
 	}
 
-	//
-	// Add data record to the current index file for the -saved.dat file.
-	// This index is stored in the Rdb record- the individual part file
-	// indexes are in RdbBase and are read-only except when merging).
-	//
-	RdbIndex *index = getBase(collnum)->getTreeIndex();
-	if (index) {
-		index->addRecord(key);
-	}
-
-	// . TODO: add using "lastNode" as a start node for the insertion point
-	// . should set g_errno if failed
-	// . caller should retry on g_errno of ETRYAGAIN or ENOMEM
-	if ( !m_useTree ) {
-		if (m_buckets.addNode(collnum, key, data, dataSize) >= 0) {
-			return true;
-		}
-	}
-
 	// . cancel any spider request that is a dup in the dupcache to save disk space
 	// . twins might have different dupcaches so they might have different dups,
 	//   but it shouldn't be a big deal because they are dups!
@@ -1981,110 +1962,123 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 		}
 	}
 
-	int32_t tn;
-	if ( m_useTree && (tn=m_tree.addNode (collnum,key,data,dataSize))>=0) {
-		// if adding to spiderdb, add to cache, too
-		if ( m_rdbId != RDB_SPIDERDB && m_rdbId != RDB_DOLEDB ) 
-			return true;
-		// or if negative key
-		if ( KEYNEG(key) ) return true;
-		// . this will create it if spiders are on and its NULL
-		// . even if spiders are off we need to create it so 
-		//   that the request can adds its ip to the waitingTree
-		SpiderColl *sc = g_spiderCache.getSpiderColl(collnum);
-		// skip if not there
-		if ( ! sc ) return true;
-		// if doing doledb...
-		if ( m_rdbId == RDB_DOLEDB ) {
-			int32_t pri = g_doledb.getPriority((key96_t *)key);
-			// skip over corruption
-			if ( pri < 0 || pri >= MAX_SPIDER_PRIORITIES )
+	// Add data record to the current index file for the -saved.dat file.
+	// This index is stored in the Rdb record- the individual part file
+	// indexes are in RdbBase and are read-only except when merging).
+	// we only add to index after adding to tree/buckets
+	RdbIndex *index = getBase(collnum)->getTreeIndex();
+
+	if (m_useTree) {
+		int32_t tn = m_tree.addNode(collnum, key, data, dataSize);
+		if (tn >= 0) {
+			if (index) {
+				index->addRecord(key);
+			}
+
+			// if adding to spiderdb, add to cache, too
+			if (m_rdbId != RDB_SPIDERDB && m_rdbId != RDB_DOLEDB) {
 				return true;
-			// if added positive key is before cursor, update curso
-			if ( KEYCMP((char *)key,
-				    (char *)&sc->m_nextKeys[pri],
-				    sizeof(key96_t)) < 0 ) {
-				KEYSET((char *)&sc->m_nextKeys[pri],
-				       (char *)key,
-				       sizeof(key96_t) );
-				// debug log
-				if ( g_conf.m_logDebugSpider )
-					log("spider: cursor reset pri=%" PRId32" to "
-					    "%s",
-					    pri,KEYSTR(key,12));
 			}
-			// that's it for doledb mods
+
+			// don't add for negative key
+			if (KEYNEG(key)) {
+				return true;
+			}
+
+			// . this will create it if spiders are on and its NULL
+			// . even if spiders are off we need to create it so
+			//   that the request can adds its ip to the waitingTree
+			SpiderColl *sc = g_spiderCache.getSpiderColl(collnum);
+			// skip if not there
+			if (!sc) {
+				return true;
+			}
+
+			// if doing doledb...
+			if (m_rdbId == RDB_DOLEDB) {
+				int32_t pri = g_doledb.getPriority((key96_t *)key);
+				// skip over corruption
+				if (pri < 0 || pri >= MAX_SPIDER_PRIORITIES)
+					return true;
+				// if added positive key is before cursor, update curso
+				if (KEYCMP(key, (char *)&sc->m_nextKeys[pri], sizeof(key96_t)) < 0) {
+					KEYSET((char *)&sc->m_nextKeys[pri], key, sizeof(key96_t));
+					logDebug(g_conf.m_logDebugSpider, "spider: cursor reset pri=%" PRId32" to %s", pri, KEYSTR(key, 12));
+				}
+
+				// that's it for doledb mods
+				return true;
+			}
+
+			// . ok, now add that reply to the cache
+
+			// assume this is the rec (4 byte dataSize,spiderdb key is
+			// now 16 bytes)
+			SpiderRequest *sreq = (SpiderRequest *)(orig - 4 - sizeof(key128_t));
+			// is it really a request and not a SpiderReply?
+			char isReq = g_spiderdb.isSpiderRequest(&sreq->m_key);
+			// add the request
+			if (isReq) {
+				// log that. why isn't this undoling always
+				logDebug(g_conf.m_logDebugSpider, "spider: rdb: added spider request to spiderdb rdb tree addnode=%" PRId32
+						" request for uh48=%" PRIu64" prntdocid=%" PRIu64" firstIp=%s spiderdbkey=%s",
+				         tn, sreq->getUrlHash48(), sreq->getParentDocId(), iptoa(sreq->m_firstIp),
+				         KEYSTR((char *)&sreq->m_key, sizeof(key128_t)));
+
+				// false means to NOT call evaluateAllRequests()
+				// because we call it below. the reason we do this
+				// is because it does not always get called
+				// in addSpiderRequest(), like if its a dup and
+				// gets "nuked". (removed callEval arg since not
+				// really needed)
+				sc->addSpiderRequest(sreq, gettimeofdayInMilliseconds());
+			} else {
+				// otherwise repl
+				// shortcut - cast it to reply
+				SpiderReply *rr = (SpiderReply *)sreq;
+
+				// log that. why isn't this undoling always
+				logDebug(g_conf.m_logDebugSpider, "rdb: rdb: got spider reply for uh48=%" PRIu64, rr->getUrlHash48());
+
+				// add the reply
+				sc->addSpiderReply(rr);
+
+				// don't actually add it if "fake". i.e. if it
+				// was an internal error of some sort... this will
+				// make it try over and over again i guess...
+				// no because we need some kinda reply so that gb knows
+				// the pagereindex docid-based spider requests are done,
+				// at least for now, because the replies were not being
+				// added for now. just for internal errors at least...
+				// we were not adding spider replies to the page reindexes
+				// as they completed and when i tried to rerun it
+				// the title recs were not found since they were deleted,
+				// so we gotta add the replies now.
+				int32_t indexCode = rr->m_errCode;
+				if (indexCode == EABANDONED) {
+					log(LOG_WARN, "rdb: not adding spiderreply to rdb because it was an internal error for uh48=%" PRIu64
+					              " errCode = %s", rr->getUrlHash48(), mstrerror(indexCode));
+					m_tree.deleteNode3(tn, false);
+				}
+			}
+
+			// clear errors from adding to SpiderCache
+			g_errno = 0;
+
+			// all done
 			return true;
 		}
-		// . ok, now add that reply to the cache
-		// . g_now is in milliseconds!
-		//int32_t nowGlobal = localToGlobalTimeSeconds ( g_now/1000 );
-		//int32_t nowGlobal = getTimeGlobal();
-		// assume this is the rec (4 byte dataSize,spiderdb key is 
-		// now 16 bytes)
-		SpiderRequest *sreq=(SpiderRequest *)(orig-4-sizeof(key128_t));
-		// is it really a request and not a SpiderReply?
-		char isReq = g_spiderdb.isSpiderRequest ( &sreq->m_key );
-		// add the request
-		if ( isReq ) {
-			// log that. why isn't this undoling always
-			if ( g_conf.m_logDebugSpider )
-				logf(LOG_DEBUG,"spider: rdb: added spider "
-				     "request to spiderdb rdb tree "
-				     "addnode=%" PRId32" "
-				     "request for uh48=%" PRIu64" prntdocid=%" PRIu64" "
-				     "firstIp=%s spiderdbkey=%s",
-				     tn,
-				     sreq->getUrlHash48(), 
-				     sreq->getParentDocId(),
-				     iptoa(sreq->m_firstIp),
-				     KEYSTR((char *)&sreq->m_key,
-					    sizeof(key128_t)));
-			// false means to NOT call evaluateAllRequests()
-			// because we call it below. the reason we do this
-			// is because it does not always get called
-			// in addSpiderRequest(), like if its a dup and
-			// gets "nuked". (removed callEval arg since not
-			// really needed)
-			sc->addSpiderRequest ( sreq, gettimeofdayInMilliseconds() );
-		}
-		// otherwise repl
-		else {
-			// shortcut - cast it to reply
-			SpiderReply *rr = (SpiderReply *)sreq;
-			// log that. why isn't this undoling always
-			if ( g_conf.m_logDebugSpider )
-				logf(LOG_DEBUG,"rdb: rdb: got spider reply"
-				     " for uh48=%" PRIu64,rr->getUrlHash48());
-			// add the reply
-			sc->addSpiderReply(rr);
-			// don't actually add it if "fake". i.e. if it
-			// was an internal error of some sort... this will
-			// make it try over and over again i guess...
-			// no because we need some kinda reply so that gb knows
-			// the pagereindex docid-based spider requests are done,
-			// at least for now, because the replies were not being
-			// added for now. just for internal errors at least...
-			// we were not adding spider replies to the page reindexes
-			// as they completed and when i tried to rerun it
-			// the title recs were not found since they were deleted,
-			// so we gotta add the replies now.
-			int32_t indexCode = rr->m_errCode;
-			if ( //indexCode == EINTERNALERROR ||
-			     indexCode == EABANDONED ) {
-				log("rdb: not adding spiderreply to rdb "
-				    "because "
-				    "it was an internal error for uh48=%" PRIu64" "
-				    "errCode = %s",
-				    rr->getUrlHash48(),
-				    mstrerror(indexCode));
-				m_tree.deleteNode3(tn,false);
+	} else {
+		// . TODO: add using "lastNode" as a start node for the insertion point
+		// . should set g_errno if failed
+		// . caller should retry on g_errno of ETRYAGAIN or ENOMEM
+		if (m_buckets.addNode(collnum, key, data, dataSize) >= 0) {
+			if (index) {
+				index->addRecord(key);
 			}
+
+			return true;
 		}
-		// clear errors from adding to SpiderCache
-		g_errno = 0;
-		// all done
-		return true;
 	}
 
 	// enhance the error message
