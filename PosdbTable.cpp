@@ -337,6 +337,11 @@ float PosdbTable::getSingleTermScore ( int32_t     i,
 				       DocIdScore  *pdcs,
 				       const char **bestPos ) {
 
+    // Sanity check
+    if( wpi >= endi ) {
+		return -1.0;
+    }
+
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(wpi,endi-wpi);
 #endif
@@ -3574,13 +3579,14 @@ void PosdbTable::intersectLists10_r ( ) {
 						//
 						// get score for term pair from non-body occuring terms
 						//
-						if ( miniMergedList[i] && miniMergedList[j] )
+						if ( miniMergedList[i] && miniMergedList[j] ) {
 							getTermPairScoreForNonBody( miniMergedList[i],
 										   miniMergedList[j],
 										   miniMergedEnd[i],
 										   miniMergedEnd[j],
 										   qdist,
 										   &pss);
+						}
 										   
 						// it's -1 if one term is in the body/header/menu/etc.
 						if ( pss < 0 ) {
@@ -5186,7 +5192,7 @@ void PosdbTable::makeDocIdVoteBufForRarestTerm(const QueryTermInfo *qti, bool is
 		return;
 	}
 
-	bool inRange;
+	bool inRange=false;
 
 	// if we are a range term, does this subtermlist
 	// for this docid meet the min/max requirements
@@ -5194,9 +5200,7 @@ void PosdbTable::makeDocIdVoteBufForRarestTerm(const QueryTermInfo *qti, bool is
 	// if it doesn't then do not add this docid to the
 	// docidVoteBuf, "voteBufPtr"
 	if ( isRangeTerm ) {
-		// a new docid i guess
-		inRange = false;
-		
+
 		// no longer in range
 		if ( isTermValueInRange2(cursor[mini],cursorEnd[mini],qt)) {
 			inRange = true;
