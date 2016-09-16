@@ -1766,10 +1766,9 @@ bool Rdb::hasRoom ( RdbList *list , int32_t niceness ) {
 //   because dump should complete soon and free up some mem
 // . this overwrites dups
 bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSize) {
-	if ( ! getBase(collnum) ) {
+	if (!getBase(collnum)) {
 		g_errno = EBADENGINEER;
-		log(LOG_LOGIC,"db: addRecord: collection #%i is gone.",
-		    collnum);
+		log(LOG_LOGIC,"db: addRecord: collection #%i is gone.", collnum);
 		return false;
 	}
 
@@ -1785,6 +1784,7 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 		g_errno = ETRYAGAIN; 
 		return false;
 	}
+
 	// we can also use this logic to avoid adding to the waiting tree
 	// because Process.cpp locks all the trees up at once and unlocks
 	// them all at once as well. so since SpiderRequests are added to
@@ -1796,20 +1796,21 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 	}
 
 	// bail if we're closing
-	if ( m_isClosing ) { g_errno = ECLOSING; return false; }
+	if (m_isClosing) {
+		g_errno = ECLOSING;
+		return false;
+	}
 
 	// sanity check
-	if ( KEYNEG(key) ) {
-		if ( (dataSize > 0 && data) ) {
+	if (KEYNEG(key)) {
+		if ((dataSize > 0 && data)) {
 			log( LOG_WARN, "db: Got data for a negative key." );
 			g_process.shutdownAbort(true);
 		}
-	}
-	// sanity check
-	else if ( m_fixedDataSize >= 0 && dataSize != m_fixedDataSize ) {
+	} else if ( m_fixedDataSize >= 0 && dataSize != m_fixedDataSize ) {
+		// sanity check
 		g_errno = EBADENGINEER;
-		log(LOG_LOGIC,"db: addRecord: DataSize is %" PRId32" should "
-		    "be %" PRId32, dataSize,m_fixedDataSize );
+		log(LOG_LOGIC,"db: addRecord: DataSize is %" PRId32" should be %" PRId32, dataSize,m_fixedDataSize );
 		g_process.shutdownAbort(true);
 	}
 
@@ -1818,7 +1819,6 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 	// the tree, so if you were overriding a node currently being dumped
 	// we would lose it.
 	if ( m_dump.isDumping() &&
-		 //oppKey >= m_dump.getFirstKeyInQueue() &&
 		 // ensure the dump is dumping the collnum of this key
 		 m_dump.getCollNum() == collnum &&
 		 m_dump.getLastKeyInQueue() &&
@@ -1839,7 +1839,7 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 	char *orig = NULL;
 
 	// copy the data before adding if we don't already own it
-	if ( data ) {
+	if (data) {
 		// save orig
 		orig = data;
 
@@ -1948,38 +1948,34 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 	// . cancel any spider request that is a dup in the dupcache to save disk space
 	// . twins might have different dupcaches so they might have different dups,
 	//   but it shouldn't be a big deal because they are dups!
-	if ( m_rdbId == RDB_SPIDERDB && ! KEYNEG(key) ) {
+	if (m_rdbId == RDB_SPIDERDB && !KEYNEG(key)) {
 		// . this will create it if spiders are on and its NULL
 		// . even if spiders are off we need to create it so 
 		//   that the request can adds its ip to the waitingTree
 		SpiderColl *sc = g_spiderCache.getSpiderColl(collnum);
 
 		// skip if not there
-		if ( ! sc ) {
+		if (!sc) {
 			return true;
 		}
 
-		SpiderRequest *sreq = (SpiderRequest *)( orig - 4 - sizeof(key128_t) );
+		SpiderRequest *sreq = (SpiderRequest *)(orig - 4 - sizeof(key128_t));
 
 		// is it really a request and not a SpiderReply?
-		bool isReq = g_spiderdb.isSpiderRequest ( &( sreq->m_key ) );
+		bool isReq = g_spiderdb.isSpiderRequest(&(sreq->m_key));
 
 		// skip if in dup cache. do NOT add to cache since 
 		// addToWaitingTree() in Spider.cpp will do that when called 
 		// from addSpiderRequest() below
-		if ( isReq && sc->isInDupCache ( sreq , false ) ) {
+		if (isReq && sc->isInDupCache(sreq, false)) {
 			logDebug( g_conf.m_logDebugSpider, "spider: adding spider req %s is dup. skipping.", sreq->m_url );
 			return true;
 		}
 
 		// if we are overflowing...
-		if ( isReq &&
-		     ! sreq->m_isAddUrl &&
-		     ! sreq->m_isPageReindex &&
-		     ! sreq->m_urlIsDocId &&
-		     ! sreq->m_forceDelete &&
-		     sc->isFirstIpInOverflowList ( sreq->m_firstIp ) ) {
-			logDebug( g_conf.m_logDebugSpider, "spider: skipping for overflow url %s ", sreq->m_url );
+		if (isReq && !sreq->m_isAddUrl && !sreq->m_isPageReindex && !sreq->m_urlIsDocId && !sreq->m_forceDelete &&
+		    sc->isFirstIpInOverflowList(sreq->m_firstIp)) {
+			logDebug(g_conf.m_logDebugSpider, "spider: skipping for overflow url %s ", sreq->m_url);
 			g_stats.m_totalOverflows++;
 			return true;
 		}
@@ -2092,9 +2088,12 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 	}
 
 	// enhance the error message
-	const char *ss ="";
-	if ( m_tree.isSaving() ) ss = " Tree is saving.";
-	if ( !m_useTree && m_buckets.isSaving() ) ss = " Buckets are saving.";
+	const char *ss;
+	if (m_useTree) {
+		ss = m_tree.isSaving() ? " Tree is saving." : "";
+	} else {
+		ss = m_buckets.isSaving() ? " Buckets are saving." : "";
+	}
 
 	log(LOG_INFO, "db: Had error adding data to %s: %s. %s", m_dbname, mstrerror(g_errno), ss);
 	return false;
@@ -2102,21 +2101,17 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 
 // . use the maps and tree to estimate the size of this list w/o hitting disk
 // . used by Indexdb.cpp to get the size of a list for IDF weighting purposes
-int64_t Rdb::getListSize ( collnum_t collnum,
-			char *startKey , char *endKey , char *max ,
-			int64_t oldTruncationLimit ) {
+int64_t Rdb::getListSize(collnum_t collnum, char *startKey, char *endKey, char *max, int64_t oldTruncationLimit) {
 	// pick it
-	//collnum_t collnum = g_collectiondb.getCollnum ( coll );
 	if ( collnum < 0 || collnum > getNumBases() || ! getBase(collnum) ) {
 		log(LOG_WARN, "db: %s bad collnum of %i", m_dbname, collnum);
 		return false;
 	}
-	return getBase(collnum)->getListSize(startKey,endKey,max,
-					    oldTruncationLimit);
+	return getBase(collnum)->getListSize(startKey, endKey, max, oldTruncationLimit);
 }
 
-int64_t Rdb::getNumGlobalRecs ( ) {
-	return getNumTotalRecs() * g_hostdb.m_numShards;//Groups;
+int64_t Rdb::getNumGlobalRecs() {
+	return (getNumTotalRecs() * g_hostdb.m_numShards);
 }
 
 // . return number of positive records - negative records
@@ -2124,7 +2119,7 @@ int64_t Rdb::getNumTotalRecs ( bool useCache ) {
 
 	// are we statsdb? then we have no associated collections
 	// because we are used globally, by all collections
-	if ( m_isCollectionLess )
+	if (m_isCollectionLess)
 		return m_collectionlessBase->getNumTotalRecs();
 
 	// this gets slammed w/ too many collections so use a cache...
