@@ -45,7 +45,7 @@ static bool  s_inBody           [HASHGROUP_END];
 
 static inline bool isTermValueInRange( const char *p, const QueryTerm *qt);
 static inline bool isTermValueInRange2 ( const char *recPtr, const char *subListEnd, const QueryTerm *qt);
-static inline char *getWordPosList ( int64_t docId, char *list, int32_t listSize );
+static inline const char *getWordPosList(int64_t docId, const char *list, int32_t listSize);
 static int docIdVoteBufKeyCompare_desc ( const void *h1, const void *h2 );
 static void initWeights();
 
@@ -168,13 +168,13 @@ void PosdbTable::init(Query *q, bool debug, void *logstate, TopTree *topTree, Ms
 // pointed to by ptrs[i] and does not scan the word position lists.
 // also tries to sub-out each term with the title or linktext wordpos term
 // pointed to  by "bestPos[i]"
-void PosdbTable::evalSlidingWindow ( char    **ptrs,
+void PosdbTable::evalSlidingWindow ( const char **ptrs,
 				     int32_t   nr,
-				     char    **bestPos,
+				     const char **bestPos,
 				     float    *scoreMatrix ) {
 
-	char *wpi;
-	char *wpj;
+	const char *wpi;
+	const char *wpj;
 	float wikiWeight;
 	float minTermPairScoreInWindow = 999999999.0;
 
@@ -332,10 +332,10 @@ void PosdbTable::evalSlidingWindow ( char    **ptrs,
 
 
 float PosdbTable::getSingleTermScore ( int32_t     i,
-				       char        *wpi,
-				       char        *endi,
+				       const char *wpi,
+				       const char *endi,
 				       DocIdScore  *pdcs,
-				       char       **bestPos ) {
+				       const char **bestPos ) {
 
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(wpi,endi-wpi);
@@ -343,7 +343,7 @@ float PosdbTable::getSingleTermScore ( int32_t     i,
 	float nonBodyMax = -1.0;
 	int32_t minx = 0;
 	float bestScores[MAX_TOP];
-	char *bestwpi   [MAX_TOP];
+	const char *bestwpi[MAX_TOP];
 	int32_t numTop = 0;
 
 	logTrace(g_conf.m_logTracePosdb, "BEGIN.");
@@ -518,7 +518,7 @@ float PosdbTable::getSingleTermScore ( int32_t     i,
 	for ( int32_t k = 0 ; k < numTop ; k++, sx++ ) {
 		// udpate count
 		pdcs->m_numSingles++;
-		char *maxp = bestwpi[k];
+		const char *maxp = bestwpi[k];
 		memset(sx,0,sizeof(*sx));
 		sx->m_isSynonym      = Posdb::getIsSynonym(maxp);
 		sx->m_isHalfStopWikiBigram = 
@@ -2442,9 +2442,9 @@ nextNode:
 		// do each sublist
 		for ( int32_t j = 0 ; j < qti->m_numMatchingSubLists ; j++ ) {
 			// get termlist for that docid
-			char *xlist    = qti->m_matchingSubListStart[j];
-			char *xlistEnd = qti->m_matchingSubListEnd[j];
-			char *xp = getWordPosList ( m_docId, xlist, xlistEnd - xlist);
+			const char *xlist    = qti->m_matchingSubListStart[j];
+			const char *xlistEnd = qti->m_matchingSubListEnd[j];
+			const char *xp = getWordPosList ( m_docId, xlist, xlistEnd - xlist);
 
 			// not there? xlist will be NULL
 			qti->m_matchingSubListSavedCursor[j] = xp;
@@ -2653,8 +2653,8 @@ bool PosdbTable::advanceTermListCursors(const char *docIdPtr, QueryTermInfo *qti
 		//
 		for ( int32_t j = 0 ; j < qti->m_numMatchingSubLists ; j++ ) {
 			// shortcuts
-			char *xc    = qti->m_matchingSubListCursor[j];
-			char *xcEnd = qti->m_matchingSubListEnd[j];
+			const char *xc    = qti->m_matchingSubListCursor[j];
+			const char *xcEnd = qti->m_matchingSubListEnd[j];
 
 			// exhausted? (we can't make cursor NULL because
 			// getMaxPossibleScore() needs the last ptr)
@@ -2757,13 +2757,13 @@ bool PosdbTable::prefilterMaxPossibleScoreByDistance(QueryTermInfo *qtibuf, cons
 	// populate ring buf just for this query term
 	for ( int32_t k = 0 ; k < qtx->m_numMatchingSubLists ; k++ ) {
 		// scan that sublist and add word positions
-		char *sub = qtx->m_matchingSubListSavedCursor[k];
+		const char *sub = qtx->m_matchingSubListSavedCursor[k];
 		// skip sublist if it's cursor is exhausted
 		if ( ! sub ) {
 			continue;
 		}
 
-		char *end = qtx->m_matchingSubListCursor[k];
+		const char *end = qtx->m_matchingSubListCursor[k];
 		// add first key
 		//int32_t wx = Posdb::getWordPos(sub);
 		wx = (*((uint32_t *)(sub+3))) >> 6;
@@ -2807,13 +2807,13 @@ bool PosdbTable::prefilterMaxPossibleScoreByDistance(QueryTermInfo *qtibuf, cons
 		// store all his word positions into ring buffer AS WELL
 		for ( int32_t k = 0 ; k < qti->m_numMatchingSubLists ; k++ ) {
 			// scan that sublist and add word positions
-			char *sub = qti->m_matchingSubListSavedCursor[k];
+			const char *sub = qti->m_matchingSubListSavedCursor[k];
 			// skip sublist if it's cursor is exhausted
 			if ( ! sub ) {
 				continue;
 			}
 			
-			char *end = qti->m_matchingSubListCursor[k];
+			const char *end = qti->m_matchingSubListCursor[k];
 			// add first key
 			//int32_t wx = Posdb::getWordPos(sub);
 			wx = (*((uint32_t *)(sub+3))) >> 6;
@@ -2978,11 +2978,11 @@ void PosdbTable::intersectLists10_r ( ) {
 	int32_t  *qpos           = (int32_t *)pp; pp += 4 * nqt;				// from QueryTermInfo
 	int32_t  *qtermNums      = (int32_t *)pp; pp += 4 * nqt;				// from QueryTermInfo
 	float    *freqWeights    = (float   *)pp; pp += sizeof(float) * nqt;	// from QueryTermInfo
-	char    **miniMergedList = (char   **)pp; pp += sizeof(char *) * nqt;
-	char    **miniMergedEnd  = (char   **)pp; pp += sizeof(char *) * nqt;
-	char    **bestPos        = (char   **)pp; pp += sizeof(char *) * nqt;
-	char    **winnerStack    = (char   **)pp; pp += sizeof(char *) * nqt;
-	char    **xpos           = (char   **)pp; pp += sizeof(char *) * nqt;
+	const char **miniMergedList = (const char **)pp; pp += sizeof(const char *) * nqt;
+	const char **miniMergedEnd  = (const char **)pp; pp += sizeof(const char *) * nqt;
+	const char **bestPos	    = (const char **)pp; pp += sizeof(const char *) * nqt;
+	const char **winnerStack    = (const char **)pp; pp += sizeof(const char *) * nqt;
+	const char **xpos	    = (const char **)pp; pp += sizeof(const char *) * nqt;
 	char     *bflags         = (char    *)pp; pp += sizeof(char) * nqt;
 	float    *scoreMatrix    = (float   *)pp; pp += sizeof(float) *nqt*nqt;
 	if ( pp > m_topScoringDocIdsBuf.getBufEnd() )
@@ -3047,7 +3047,7 @@ void PosdbTable::intersectLists10_r ( ) {
 	char miniMergeBuf[300000];
 	char *mptrEnd = miniMergeBuf + 299000;
 	char *mptr;
-	char *docIdPtr;
+	const char *docIdPtr;
 	char *docIdEnd = m_docIdVoteBuf.getBufStart()+m_docIdVoteBuf.length();
 	float minWinningScore = -1.0;
 	char *lastMptr = NULL;
@@ -3259,8 +3259,8 @@ void PosdbTable::intersectLists10_r ( ) {
 			//## the miniMerged* pointers point into..
 			//##
 
-			char *nwp     [MAX_SUBLISTS];
-			char *nwpEnd  [MAX_SUBLISTS];
+			const char *nwp[MAX_SUBLISTS];
+			const char *nwpEnd[MAX_SUBLISTS];
 			char  nwpFlags[MAX_SUBLISTS];
 
 			// we got a docid that has all the query terms, so merge
@@ -3495,8 +3495,8 @@ void PosdbTable::intersectLists10_r ( ) {
 				}
 
 				// get list
-				char *plist		= miniMergedList[i];
-				char *plistEnd	= miniMergedEnd[i];
+				const char *plist		= miniMergedList[i];
+				const char *plistEnd	= miniMergedEnd[i];
 				int32_t  psize	= plistEnd - plist;
 
 				// test it. first key is 12 bytes.
@@ -4201,7 +4201,7 @@ float PosdbTable::getMaxPossibleScore ( const QueryTermInfo *qti,
 	// max possible score of each one
 	for ( int32_t j = 0 ; j < qti->m_numMatchingSubLists ; j++ ) {
 		// scan backwards up to this
-		char *start = qti->m_matchingSubListSavedCursor[j];
+		const char *start = qti->m_matchingSubListSavedCursor[j];
 		
 		// skip if does not have our docid
 		if ( ! start ) {
@@ -4228,7 +4228,7 @@ float PosdbTable::getMaxPossibleScore ( const QueryTermInfo *qti,
 		// 6 byte keys. we deal with it below.
 		start += 12;
 		// get cursor. this is actually pointing to the next docid
-		char *dc = qti->m_matchingSubListCursor[j];
+		const char *dc = qti->m_matchingSubListCursor[j];
 		// back up into our list
 		dc -= 6;
 		// reset this
@@ -5632,19 +5632,19 @@ static inline bool isTermValueInRange2 ( const char *recPtr, const char *subList
 
 // . b-step into list looking for docid "docId"
 // . assume p is start of list, excluding 6 byte of termid
-static inline char *getWordPosList ( int64_t docId, char *list, int32_t listSize ) {
+static inline const char *getWordPosList(int64_t docId, const char *list, int32_t listSize) {
 	// make step divisible by 6 initially
 	int32_t step = (listSize / 12) * 6;
 	// shortcut
-	char *listEnd = list + listSize;
+	const char *listEnd = list + listSize;
 	// divide in half
-	char *p = list + step;
+	const char *p = list + step;
 	// for detecting not founds
 	char count = 0;
 	
  loop:
 	// save it
-	char *origp = p;
+	const char *origp = p;
 	// scan up to docid. we use this special bit to distinguish between
 	// 6-byte and 12-byte posdb keys
 	for ( ; p > list && (p[1] & 0x02); ) {
@@ -5663,7 +5663,7 @@ static inline char *getWordPosList ( int64_t docId, char *list, int32_t listSize
 		// ok, it's negative, try to see if the positive is
 		// in here, if not then return NULL.
 		// save current pos
-		char *current = p;
+		const char *current = p;
 		// back up to 6 byte key before this 12 byte key
 		p -= 6;
 
