@@ -1434,7 +1434,7 @@ abort();
 
 
 
-int32_t g_isDumpingRdbFromMain = 0;
+bool g_isDumpingRdbFromMain = 0;
 
 // . if we discover one of the lists we read from a file is corrupt we go here
 // . uses Msg5 to try to get list remotely

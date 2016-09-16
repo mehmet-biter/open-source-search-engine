@@ -14,7 +14,7 @@
 
 extern int32_t g_numCorrupt;
 
-extern int32_t g_isDumpingRdbFromMain;
+extern bool g_isDumpingRdbFromMain;
 
 
 class Msg2;

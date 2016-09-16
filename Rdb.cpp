@@ -686,13 +686,14 @@ bool Rdb::close ( void *state , void (* callback)(void *state ), bool urgent , b
 	// in case the got their heads chopped (RdbMap::chopHead()) which
 	// we do to save disk space while merging.
 	// try to save the cache, may not save
-	if ( m_isReallyClosing ) {
+	if (m_isReallyClosing) {
 		// now loop over bases
-		for ( int32_t i = 0 ; i < g_collectiondb.m_numRecs ; i++ ) {
+		for (int32_t i = 0; i < g_collectiondb.m_numRecs; i++) {
 			// shut it down
-			RdbBase *base = getBase ( i );
-			if ( base ) {
-				base->closeMaps ( m_urgent );
+			RdbBase *base = getBase(i);
+			if (base) {
+				base->closeMaps(m_urgent);
+				base->closeIndexes(m_urgent);
 			}
 		}
 	}
@@ -702,14 +703,21 @@ bool Rdb::close ( void *state , void (* callback)(void *state ), bool urgent , b
 
 	// . returns false if blocked, true otherwise
 	// . sets g_errno on error
-	if(m_useTree) {
+	if (m_useTree) {
 		if (!m_tree.fastSave(getDir(), m_dbname, useThread, this, doneSavingWrapper)) {
 			return false;
 		}
-	}
-	else {
+	} else {
 		if (!m_buckets.fastSave(getDir(), useThread, this, doneSavingWrapper)) {
 			return false;
+		}
+	}
+
+	// save index for tree as well
+	for (int32_t i = 0; i < g_collectiondb.m_numRecs; i++) {
+		RdbBase *base = getBase(i);
+		if (base) {
+			base->saveTreeIndex();
 		}
 	}
 
@@ -1850,6 +1858,34 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 		}
 	}
 
+	if (m_rdbId == RDB_DOLEDB && g_conf.m_logDebugSpider) {
+		// must be 96 bits
+		if (m_ks != 12) {
+			g_process.shutdownAbort(true);
+		}
+
+		// set this
+		key96_t doleKey = *(key96_t *)key;
+
+		// remove from g_spiderLoop.m_lockTable too!
+		if (KEYNEG(key)) {
+			// log debug
+			logf(LOG_DEBUG,"spider: removed doledb key for pri=%" PRId32" time=%" PRIu32" uh48=%" PRIu64,
+			     (int32_t)g_doledb.getPriority(&doleKey),
+			     (uint32_t)g_doledb.getSpiderTime(&doleKey),
+			     g_doledb.getUrlHash48(&doleKey));
+		} else {
+			// do not overflow!
+			// log debug
+			SpiderRequest *sreq = (SpiderRequest *)data;
+			logf(LOG_DEBUG, "spider: added doledb key for pri=%" PRId32" time=%" PRIu32" uh48=%" PRIu64" u=%s",
+			     (int32_t)g_doledb.getPriority(&doleKey),
+			     (uint32_t)g_doledb.getSpiderTime(&doleKey),
+			     g_doledb.getUrlHash48(&doleKey),
+			     sreq->m_url);
+		}
+	}
+
 	// . TODO: save this tree-walking state for adding the node!!!
 	// . TODO: use somethin like getNode(key,&lastNode)
 	//         then addNode (lastNode,key,data,dataSize)
@@ -1863,79 +1899,32 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 	char oppKey[MAX_KEY_BYTES];
 	int32_t n = -1;
 
-	if ( m_useTree ) {
+	if (m_useTree) {
 		// make the opposite key of "key"
-		KEYSET(oppKey,key,m_ks);
-		KEYXOR(oppKey,0x01);
+		KEYSET(oppKey, key, m_ks);
+		KEYXOR(oppKey, 0x01);
+
 		// look it up
-		n = m_tree.getNode ( collnum , oppKey );
-	}
+		n = m_tree.getNode(collnum, oppKey);
 
-	if ( m_rdbId == RDB_DOLEDB && g_conf.m_logDebugSpider ) {
-		// must be 96 bits
-		if ( m_ks != 12 ) { g_process.shutdownAbort(true); }
-		// set this
-		key96_t doleKey = *(key96_t *)key;
-		// remove from g_spiderLoop.m_lockTable too!
-		if ( KEYNEG(key) ) {
-			// log debug
-			logf(LOG_DEBUG,"spider: removed doledb key "
-			     "for pri=%" PRId32" time=%" PRIu32" uh48=%" PRIu64,
-			     (int32_t)g_doledb.getPriority(&doleKey),
-			     (uint32_t)g_doledb.getSpiderTime(&doleKey),
-			     g_doledb.getUrlHash48(&doleKey));
+		// if it exists then annihilate it
+		if (n >= 0) {
+			// . otherwise, we can REPLACE oppKey
+			// . we NO LONGER annihilate with him. why?
+			// . freeData should be true, the tree doesn't own the data
+			//   so it shouldn't free it really
+			m_tree.deleteNode3(n, true);
 		}
-		else {
-			// do not overflow!
-			// log debug
-			SpiderRequest *sreq = (SpiderRequest *)data;
-			logf(LOG_DEBUG,"spider: added doledb key "
-			     "for pri=%" PRId32" time=%" PRIu32" "
-			     "uh48=%" PRIu64" "
-			     //"docid=%" PRId64" "
-			     "u=%s",
-			     (int32_t)g_doledb.getPriority(&doleKey),
-			     (uint32_t)g_doledb.getSpiderTime(&doleKey),
-			     g_doledb.getUrlHash48(&doleKey),
-			     //sreq->m_probDocId,
-			     sreq->m_url);
+
+		// if we have no files on disk for this db, don't bother
+		// preserving a a negative rec, it just wastes tree space
+		if (KEYNEG(key)) {
+			// return if all data is in the tree
+			if (getBase(collnum)->getNumFiles() == 0) {
+				return true;
+			}
+			// . otherwise, assume we match a positive...
 		}
-	}
-
-	// if it exists then annihilate it
-	if ( n >= 0 ) {
-		// CAUTION: we should not annihilate with oppKey if oppKey may
-		// be in the process of being dumped to disk! This would 
-		// render our annihilation useless and make undeletable data
-		/*
-		if ( m_dump.isDumping() &&
-		     //oppKey >= m_dump.getFirstKeyInQueue() &&
-		     m_dump.m_lastKeyInQueue &&
-		     KEYCMP(oppKey,m_dump.getFirstKeyInQueue(),m_ks)>=0 &&
-		     //oppKey <= m_dump.getLastKeyInQueue ()   ) goto addIt;
-		     KEYCMP(oppKey,m_dump.getLastKeyInQueue (),m_ks)<=0   ) 
-			goto addIt;
-		*/
-
-		// . otherwise, we can REPLACE oppKey 
-		// . we NO LONGER annihilate with him. why?
-		// . freeData should be true, the tree doesn't own the data
-		//   so it shouldn't free it really
-		m_tree.deleteNode3 ( n , true ); // false =freeData?);
-		// mark as changed
-		//if ( ! m_needsSave ) {
-		//	m_needsSave = true;
-		//}
-	}
-
-	// if we have no files on disk for this db, don't bother
-	// preserving a a negative rec, it just wastes tree space
-	if ( KEYNEG(key) && m_useTree ) {
-		// return if all data is in the tree
-		if ( getBase(collnum)->getNumFiles() == 0 ) {
-			return true;
-		}
-		// . otherwise, assume we match a positive...
 	}
 
 	//
@@ -1952,8 +1941,7 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 	// . should set g_errno if failed
 	// . caller should retry on g_errno of ETRYAGAIN or ENOMEM
 	if ( !m_useTree ) {
-		// debug indexdb
-		if ( m_buckets.addNode ( collnum , key , data , dataSize )>=0){
+		if (m_buckets.addNode(collnum, key, data, dataSize) >= 0) {
 			return true;
 		}
 	}

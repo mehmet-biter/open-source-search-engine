@@ -12,10 +12,13 @@
 #include "Stats.h"
 #include "Conf.h"
 #include "TopTree.h"
+#include "GbMutex.h"
+#include "ScopedLock.h"
 #include <math.h>
 
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
+#include <valgrind/helgrind.h>
 #endif
 
 #define BF_HALFSTOPWIKIBIGRAM 0x01  // "to be" in "to be or not to be"
@@ -27,6 +30,7 @@
 
 
 static bool  s_init = false;
+static GbMutex s_mtx_weights;
 static float s_diversityWeights [MAXDIVERSITYRANK+1];
 static float s_densityWeights   [MAXDENSITYRANK+1];
 static float s_wordSpamWeights  [MAXWORDSPAMRANK+1]; // wordspam
@@ -1487,8 +1491,8 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 		//int64_t *termFreqs = (int64_t *)m_msg39req->ptr_termFreqs;
 		//px->m_termFreq1      = termFreqs[px->m_qtermNum1];
 		//px->m_termFreq2      = termFreqs[px->m_qtermNum2];
-		px->m_tfWeight1      = m_freqWeights[i];//sfw[i];
-		px->m_tfWeight2      = m_freqWeights[j];//sfw[j];
+		px->m_tfWeight1      = m_freqWeights[i];
+		px->m_tfWeight2      = m_freqWeights[j];
 		px->m_bflags1        = m_bflags[i];
 		px->m_bflags2        = m_bflags[j];
 
@@ -2703,7 +2707,6 @@ bool PosdbTable::advanceTermListCursors(const char *docIdPtr, QueryTermInfo *qti
 //	true - docid can potentially be a top scoring docid
 //
 bool PosdbTable::prefilterMaxPossibleScoreByDistance(QueryTermInfo *qtibuf, const int32_t *qpos, float minWinningScore) {
-//#define RINGBUFSIZE 1024
 	unsigned char ringBuf[RINGBUFSIZE+10];
 	// for overflow conditions in loops below
 	ringBuf[RINGBUFSIZE+0] = 0xff;
@@ -3029,9 +3032,6 @@ void PosdbTable::intersectLists10_r ( ) {
 	char *docIdPtr;
 	char *docIdEnd = m_docIdVoteBuf.getBufStart()+m_docIdVoteBuf.length();
 	float minWinningScore = -1.0;
-	char *nwp     [MAX_SUBLISTS];
-	char *nwpEnd  [MAX_SUBLISTS];
-	char  nwpFlags[MAX_SUBLISTS];
 	char *lastMptr = NULL;
 	int32_t topCursor = -9;
 	int32_t numProcessed = 0;
@@ -3135,7 +3135,6 @@ void PosdbTable::intersectLists10_r ( ) {
 				}
 
 				if( !m_q->m_isBoolean ) {
-
 					//##
 					//## PRE-FILTERS. Discard DocIDs that cannot meet the minimum required
 					//## score, before entering the main scoring loop below
@@ -3205,6 +3204,7 @@ void PosdbTable::intersectLists10_r ( ) {
 					}
 					prefiltBestDistMaxPossScorePass++;
 				} // !m_q->m_isBoolean
+
 			}	// currPassNum == INTERSECT_SCORING
 
 
@@ -3232,10 +3232,18 @@ void PosdbTable::intersectLists10_r ( ) {
 
 
 
-			//
-			// PERFORMANCE HACK:
-			//
-			// ON-DEMAND MINI MERGES.
+			//##
+			//## PERFORMANCE HACK: ON-DEMAND MINI MERGES.
+			//##
+			//## Data for the current DocID found in sublists of each query term
+			//## is merged into a single list, so we end up with one list per query 
+			//## term. They are all stored in a single buffer (miniMergeBuf), which 
+			//## the miniMerged* pointers point into..
+			//##
+
+			char *nwp     [MAX_SUBLISTS];
+			char *nwpEnd  [MAX_SUBLISTS];
+			char  nwpFlags[MAX_SUBLISTS];
 
 			// we got a docid that has all the query terms, so merge
 			// each term's sublists into a single list just for this docid.
@@ -3244,12 +3252,11 @@ void PosdbTable::intersectLists10_r ( ) {
 			// mini merge buf:
 			mptr = miniMergeBuf;
 
-			// . merge each set of sublists
-			// . like we merge a term's list with its two associated bigram
-			//   lists, if there, the left bigram and right bigram list.
-			// . and merge all the synonym lists for that term together as well.
-			//   so if the term is 'run' we merge it with the lists for
-			//   'running' 'ran' etc.
+			// Merge each set of sublists, like we merge a term's list with 
+			// its two associated bigram lists, if there, the left bigram and 
+			// right bigram list. Merge all the synonym lists for that term 
+			// together as well, so if the term is 'run' we merge it with the 
+			// lists for 'running' 'ran' etc.
 			logTrace(g_conf.m_logTracePosdb, "Merge sublists into a single list per query term");
 			for ( int32_t j = 0 ; j < m_numQueryTermInfos ; j++ ) {
 				// get the query term info
@@ -3282,14 +3289,9 @@ void PosdbTable::intersectLists10_r ( ) {
 
 					// getMaxPossibleScore() incremented m_matchingSubListCursor to
 					// the next docid so use m_matchingSubListSavedCursor.
-					nwp[nsub] = qti->m_matchingSubListSavedCursor[k];
-					// sanity
-					//if ( Posdb::getKeySize(nwp[nsub]) > 12 ) { 
-					//	gbshutdownAbort(true);}
-					// if doing seohack then m_matchingSubListCursor was not advanced
-					// so advance it here
-					nwpEnd[nsub] = qti->m_matchingSubListCursor[k];
-					nwpFlags[nsub] = qti->m_bigramFlags[k];
+					nwp[nsub] 		= qti->m_matchingSubListSavedCursor[k];
+					nwpEnd[nsub]	= qti->m_matchingSubListCursor[k];
+					nwpFlags[nsub]	= qti->m_bigramFlags[k];
 					nsub++;
 				}
 
@@ -3310,9 +3312,9 @@ void PosdbTable::intersectLists10_r ( ) {
 					bflags         [j] = nwpFlags[0];
 					continue;
 				}
-				// . ok, merge the lists into a list in miniMergeBuf
-				// . get the min of each list
 
+				// Merge the lists into a list in miniMergeBuf.
+				// Get the min of each list
 				bool currTermDone = false;
 				char ks;
 
@@ -3332,7 +3334,7 @@ void PosdbTable::intersectLists10_r ( ) {
 							continue;
 						}
 
-						if ( KEYCMP(nwp[k],nwp[mink],6) < 0 ) {
+						if ( KEYCMP(nwp[k], nwp[mink], 6) < 0 ) {
 							mink = k; // a new min...
 						}
 					}
@@ -3473,17 +3475,17 @@ void PosdbTable::intersectLists10_r ( ) {
 				if ( bflags[i] & (BF_PIPED|BF_NEGATIVE) ) {
 					continue;
 				}
-				
+
 				// get list
-				char *plist    = miniMergedList[i];
-				char *plistEnd = miniMergedEnd[i];
-				int32_t  psize    = plistEnd - plist;
-				
+				char *plist		= miniMergedList[i];
+				char *plistEnd	= miniMergedEnd[i];
+				int32_t  psize	= plistEnd - plist;
+
 				// test it. first key is 12 bytes.
 				if ( psize && Posdb::getKeySize(plist) != 12 ) {
 					gbshutdownAbort(true);
 				}
-				
+
 				// next key is 6
 				if ( psize > 12 && Posdb::getKeySize(plist+12) != 6) {
 					gbshutdownAbort(true);
@@ -3491,9 +3493,13 @@ void PosdbTable::intersectLists10_r ( ) {
 			}
 
 
+
+			//##
+			//## ACTUAL SCORING BEGINS
+			//##
+
 			if ( !m_q->m_isBoolean ) {
 
-				//
 				//
 				// NON-BODY TERM PAIR SCORING LOOP
 				//
@@ -3565,8 +3571,8 @@ void PosdbTable::intersectLists10_r ( ) {
 						}
 						else {
 							wts *= pss;
-							wts *= m_freqWeights[i];//sfw[i];
-							wts *= m_freqWeights[j];//sfw[j];
+							wts *= m_freqWeights[i];
+							wts *= m_freqWeights[j];
 							// store in matrix for "sub out" algo below
 							// when doing sliding window
 							scoreMatrix[i*nqt+j] = wts;
@@ -5726,11 +5732,11 @@ static inline char *getWordPosList ( int64_t docId, char *list, int32_t listSize
 static void initWeights ( ) {
 	logTrace(g_conf.m_logTracePosdb, "BEGIN.");
 	
+	ScopedLock sl(s_mtx_weights);
 	if ( s_init ) {
 		return;
 	}
 	
-	s_init = true;
 	for ( int32_t i = 0 ; i <= MAXDIVERSITYRANK ; i++ ) {
 		// disable for now
 		s_diversityWeights[i] = scale_quadratic(i,0,MAXDIVERSITYRANK,g_conf.m_diversityWeightMin,g_conf.m_diversityWeightMax);
@@ -5812,6 +5818,19 @@ static void initWeights ( ) {
 	s_hashGroupWeights[HASHGROUP_INURL             ] = g_conf.m_hashGroupWeightInUrl;
 	s_hashGroupWeights[HASHGROUP_INMENU            ] = g_conf.m_hashGroupWeightInMenu;
 	
+	s_init = true;
+
+#ifdef _VALGRIND_
+	//we read from the weight tables without locking. tell helgrind to ignore that
+	VALGRIND_HG_DISABLE_CHECKING(s_diversityWeights,sizeof(s_diversityWeights));
+	VALGRIND_HG_DISABLE_CHECKING(s_densityWeights,sizeof(s_densityWeights));
+	VALGRIND_HG_DISABLE_CHECKING(s_wordSpamWeights,sizeof(s_wordSpamWeights));
+	VALGRIND_HG_DISABLE_CHECKING(s_linkerWeights,sizeof(s_linkerWeights));
+	VALGRIND_HG_DISABLE_CHECKING(s_hashGroupWeights,sizeof(s_hashGroupWeights));
+	VALGRIND_HG_DISABLE_CHECKING(s_isCompatible,sizeof(s_isCompatible));
+	VALGRIND_HG_DISABLE_CHECKING(s_inBody,sizeof(s_inBody));
+#endif
+
 	logTrace(g_conf.m_logTracePosdb, "END.");
 }
 
@@ -5828,45 +5847,35 @@ void reinitializeRankingSettings()
 
 
 float getHashGroupWeight ( unsigned char hg ) {
-	if ( ! s_init ) {
-		initWeights();
-	}
+	initWeights();
 
 	return s_hashGroupWeights[hg];
 }
 
 
 float getDiversityWeight ( unsigned char diversityRank ) {
-	if ( ! s_init ) {
-		initWeights();
-	}
+	initWeights();
 
 	return s_diversityWeights[diversityRank];
 }
 
 
 float getDensityWeight ( unsigned char densityRank ) {
-	if ( ! s_init ) {
-		initWeights();
-	}
+	initWeights();
 
 	return s_densityWeights[densityRank];
 }
 
 
 float getWordSpamWeight ( unsigned char wordSpamRank ) {
-	if ( ! s_init ) {
-		initWeights();
-	}
+	initWeights();
 
 	return s_wordSpamWeights[wordSpamRank];
 }
 
 
 float getLinkerWeight ( unsigned char wordSpamRank ) {
-	if ( ! s_init ) {
-		initWeights();
-	}
+	initWeights();
 
 	return s_linkerWeights[wordSpamRank];
 }

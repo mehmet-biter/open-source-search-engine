@@ -244,18 +244,34 @@ int32_t RdbTree::clear ( ) {
 
 // . used by cache 
 // . wrapper for getNode()
-int32_t RdbTree::getNode ( collnum_t collnum, const char *key ) {
+int32_t RdbTree::getNode(collnum_t collnum, const char *key) {
 	int32_t i = m_headNode;
+
 	// get the node (about 4 cycles per loop, 80cycles for 1 million items)
-	while ( i != -1 ) {
-		if ( collnum < m_collnums[i] ) { i = m_left [i]; continue;}
-		if ( collnum > m_collnums[i] ) { i = m_right[i]; continue;}
-		//if ( key <  m_keys[i] ) { i = m_left [i]; continue;}
-		//if ( key >  m_keys[i] ) { i = m_right[i]; continue;}
-		if ( KEYCMP(key,0,m_keys,i,m_ks)<0) { i=m_left [i]; continue;}
-		if ( KEYCMP(key,0,m_keys,i,m_ks)>0) { i=m_right[i]; continue;}
+	while (i != -1) {
+		if (collnum < m_collnums[i]) {
+			i = m_left[i];
+			continue;
+		}
+
+		if (collnum > m_collnums[i]) {
+			i = m_right[i];
+			continue;
+		}
+
+		if (KEYCMP(key, 0, m_keys, i, m_ks) < 0) {
+			i = m_left[i];
+			continue;
+		}
+
+		if (KEYCMP(key, 0, m_keys, i, m_ks) > 0) {
+			i = m_right[i];
+			continue;
+		}
+
 		return i;
-        }
+	}
+
 	return -1;
 }
 

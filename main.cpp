@@ -4679,7 +4679,7 @@ void dumpPosdb (const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 
 	// set this flag so Msg5.cpp if it does error correction does not
 	// try to get the list from a twin...
-	g_isDumpingRdbFromMain = 1;
+	g_isDumpingRdbFromMain = true;
 	CollectionRec *cr = g_collectiondb.getRec(coll);
 
  loop:
