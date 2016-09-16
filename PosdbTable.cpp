@@ -551,8 +551,8 @@ float PosdbTable::getSingleTermScore ( int32_t     i,
 
 // . advace two ptrs at the same time so it's just a linear scan
 // . TODO: add all up, then basically taking a weight of the top 6 or so...
-void PosdbTable::getTermPairScoreForNonBody ( 	const char *wpi,  const char *wpj, const char *endi, 
-												const char *endj, int32_t qdist, float *retMax ) {
+void PosdbTable::getTermPairScoreForNonBody(const char *wpi,  const char *wpj, const char *endi,
+					    const char *endj, int32_t qdist, float *retMax) {
 	logTrace(g_conf.m_logTracePosdb, "BEGIN.");
 
 	int32_t p1 = Posdb::getWordPos ( wpi );
