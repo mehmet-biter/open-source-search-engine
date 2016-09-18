@@ -336,15 +336,6 @@ float PosdbTable::getSingleTermScore ( int32_t     i,
 				       const char *endi,
 				       DocIdScore  *pdcs,
 				       const char **bestPos ) {
-
-    // Sanity check
-    if( wpi >= endi ) {
-		return -1.0;
-    }
-
-#ifdef _VALGRIND_
-	VALGRIND_CHECK_MEM_IS_DEFINED(wpi,endi-wpi);
-#endif
 	float nonBodyMax = -1.0;
 	int32_t minx = 0;
 	float bestScores[MAX_TOP];
@@ -355,6 +346,16 @@ float PosdbTable::getSingleTermScore ( int32_t     i,
 
 	// assume no terms!
 	*bestPos = NULL;
+
+    // Sanity check
+    if( wpi >= endi ) {
+    	logTrace(g_conf.m_logTracePosdb, "END, wpi %p >= %p", wpi, endi);
+		return -1.0;
+    }
+
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_DEFINED(wpi,endi-wpi);
+#endif
 
 	if ( wpi ) {
 		bool first = true;
@@ -2887,16 +2888,13 @@ bool PosdbTable::prefilterMaxPossibleScoreByDistance(QueryTermInfo *qtibuf, cons
 					continue; 
 				}
 
-				// update
-				ourLastPos = x;
-//@@@ ^^ dupe
 				// check dist
 				if ( x - hisLastPos < bestDist ) {
 					bestDist = x - hisLastPos;
 				}
 			}
+
 			x++;
-			continue;	//@@@ doh...
 		}
 
 		// compare last occurence of query term #x with our first occ.
@@ -3361,7 +3359,7 @@ void PosdbTable::intersectLists10_r ( ) {
 							mink = k; // a new min...
 						}
 					}
-					
+
 					// all exhausted? merge next set of sublists then for term #j
 					if ( mink == -1 ) {
 						// continue outer "j < m_numQueryTermInfos" loop.
@@ -3461,12 +3459,12 @@ void PosdbTable::intersectLists10_r ( ) {
 							nwp[mink] = NULL;
 						}
 					} // mink != -1
-
 					//log("skipping ks=%" PRId32,(int32_t)ks);
 				} while( !currTermDone && mptr < mptrEnd );	// merge more ...
 
 				// wrap it up here since done merging
 				miniMergedEnd[j] = mptr;		
+				//log(LOG_ERROR,"%s:%d: j=%" PRId32 ": miniMergedList[%" PRId32 "]=%p, miniMergedEnd[%" PRId32 "]=%p, mptr=%p, mptrEnd=%p, term=[%.*s] - TERM DONE", __func__, __LINE__, j, j, miniMergedList[j], j, miniMergedEnd[j], mptr, mptrEnd, qti->m_qt->m_termLen, qti->m_qt->m_term);
 			}
 
 			// breach?
@@ -3504,17 +3502,26 @@ void PosdbTable::intersectLists10_r ( ) {
 				const char *plistEnd	= miniMergedEnd[i];
 				int32_t  psize	= plistEnd - plist;
 
+				if( !psize ) {
+					// BR fix 20160918: Avoid working on empty lists where start and 
+					// end pointers are the same. This can happen if no positions are
+					// copied to the merged list because they are all synonyms or
+					// phrase terms. See "HACK OF CONFUSION" above..
+					miniMergedList[i] = NULL;
+				}
+
 				// test it. first key is 12 bytes.
 				if ( psize && Posdb::getKeySize(plist) != 12 ) {
+					log(LOG_ERROR,"%s:%s:%d: psize=%" PRId32 "", __FILE__, __func__, __LINE__, psize);
 					gbshutdownAbort(true);
 				}
 
 				// next key is 6
 				if ( psize > 12 && Posdb::getKeySize(plist+12) != 6) {
+					log(LOG_ERROR,"%s:%s:%d: next key size=%" PRId32 "", __FILE__, __func__, __LINE__, Posdb::getKeySize(plist+12));
 					gbshutdownAbort(true);
 				}
 			}
-
 
 
 			//##
@@ -3629,7 +3636,7 @@ void PosdbTable::intersectLists10_r ( ) {
 					if ( bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
 						continue;
 					}
-					
+
 
 					// sometimes there is no wordpos subtermlist for this docid
 					// because it just has the bigram, like "streetlight" and not
@@ -3654,7 +3661,7 @@ void PosdbTable::intersectLists10_r ( ) {
 					if ( bestPos[i] && s_inBody[Posdb::getHashGroup(bestPos[i])] ) {
 						gbshutdownAbort(true);
 					}
-					
+
 					//sts /= 3.0;
 					if ( sts < minSingleScore ) {
 						minSingleScore = sts;
