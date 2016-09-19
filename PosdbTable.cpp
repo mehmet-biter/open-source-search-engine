@@ -581,6 +581,10 @@ void PosdbTable::getTermPairScoreForNonBody(const char *wpi,  const char *wpj, c
 	unsigned char hg1 = Posdb::getHashGroup(wpi);
 	unsigned char hg2 = Posdb::getHashGroup(wpj);
 
+	//temporary fix: posdb can have junk in it so clamp the hashgroup to the limit
+	if(hg1>=HASHGROUP_END) hg1=HASHGROUP_END-1;
+	if(hg2>=HASHGROUP_END) hg2=HASHGROUP_END-1;
+
 	unsigned char wsr1 = Posdb::getWordSpamRank(wpi);
 	unsigned char wsr2 = Posdb::getWordSpamRank(wpj);
 
