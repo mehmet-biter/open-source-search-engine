@@ -351,6 +351,8 @@ bool RdbBucket::addKey(const char *key, char *data, int32_t dataSize) {
 	int32_t recSize = m_parent->getRecSize();
 	bool isNeg = KEYNEG(key);
 
+	logTrace(g_conf.m_logTraceRdbBuckets, "BEGIN. key=%s dataSize=%" PRId32, KEYSTR(key, ks), dataSize);
+
 	char *newLoc = m_keys + (recSize * m_numKeys);
 	gbmemcpy(newLoc, key, ks);
 
@@ -400,6 +402,8 @@ bool RdbBucket::addKey(const char *key, char *data, int32_t dataSize) {
 	}
 	m_numKeys++;
 	m_parent->updateNumRecs(1, dataSize, isNeg ? 1 : 0);
+
+	logTrace(g_conf.m_logTraceRdbBuckets, "END. Returning true");
 	return true;
 }
 
@@ -506,7 +510,7 @@ void RdbBucket::printBucket() {
 	int32_t recSize = m_parent->getRecSize();
 	int32_t keySize = m_parent->getKeySize();
 	for (int32_t i = 0; i < m_numKeys; i++) {
-		log(LOG_WARN, "rdbbuckets last key: %s keySize=%" PRId32" numKeys=%" PRId32,
+		log(LOG_WARN, "rdbbuckets key: %s keySize=%" PRId32" numKeys=%" PRId32,
 		    KEYSTR(kk, recSize), keySize, m_numKeys);
 		kk += recSize;
 	}
