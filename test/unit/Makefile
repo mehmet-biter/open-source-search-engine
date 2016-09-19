@@ -9,7 +9,7 @@ OBJECTS = GigablastTest.o \
 	BigFileTest.o \
 	FctypesTest.o \
 	JsonTest.o \
-	PosTest.o ProcessTest.o \
+	PosTest.o PosdbTest.o ProcessTest.o \
 	RdbBucketsTest.o RdbListTest.o RobotRuleTest.o RobotsTest.o \
 	ScalingFunctionsTest.o SummaryTest.o \
 	UnicodeTest.o UrlComponentTest.o UrlParserTest.o UrlTest.o \
