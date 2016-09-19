@@ -231,7 +231,15 @@ static void dump_spider_statistics( FILE *fp ) {
 				continue;
 			}
 
-			const char *status = it->first.first ? ( merrname( it->first.first ) ?: std::to_string( it->first.first ).c_str() ) : "SUCCESS";
+			std::string tmp_str;
+			const char *status = "SUCCESS";
+			if ( it->first.first ) {
+				status = merrname( it->first.first );
+				if ( status == NULL ) {
+					tmp_str = std::to_string( it->first.first );
+					status = tmp_str.c_str();
+				}
+			}
 			fprintf( fp, "spider:lower_bound=%u;is_new=1;status=%s;http_code=%d;min=%u;max=%u;count=%u;sum=%u\n",
 			         timerange_lower_bound[ i ],
 			         status,
