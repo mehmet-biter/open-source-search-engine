@@ -45,7 +45,7 @@ void Matches::reset2() {
 	m_numMatchGroups = 0;
 }
 
-bool Matches::isMatchableTerm ( QueryTerm *qt ) { // , int32_t i ) {
+bool Matches::isMatchableTerm(const QueryTerm *qt) const {
 	QueryWord *qw = qt->m_qword;
 	// not derived from  a query word? how?
 	if ( ! qw ) return false;

@@ -90,7 +90,7 @@ class Matches {
 					 Bits *bits = NULL, Pos *pos = NULL, mf_t flags = 0 );
 
 	// how many words matched a rawTermId?
-	int32_t getNumMatches() {
+	int32_t getNumMatches() const {
 		return m_numMatches;
 	}
 
@@ -101,7 +101,7 @@ class Matches {
 	void reset2 ( ) ;
 
 	// used internally and by PageGet.cpp
-	bool isMatchableTerm ( class QueryTerm *qt );
+	bool isMatchableTerm(const QueryTerm *qt) const;
 
 	// used internally
 	int32_t getNumWordsInMatch( Words *words, int32_t wn, int32_t n, int32_t *numQWords, int32_t *qwn,
