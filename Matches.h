@@ -3,9 +3,7 @@
 #ifndef GB_MATCHES_H
 #define GB_MATCHES_H
 
-#include "Query.h"
 #include "Words.h"
-#include "HashTableT.h"
 #include "Pos.h"
 #include "Bits.h"
 
@@ -37,12 +35,13 @@ typedef int32_t mf_t;
 #define MF_URL                        0x4000  // in url
 
 class Xml;
-class Words;
 class Sections;
 class Url;
 class LinkInfo;
 class Title;
 class Phrases;
+class QueryTerm;
+class Query;
 
 class Match {
  public:

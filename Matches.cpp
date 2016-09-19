@@ -1,14 +1,14 @@
 #include "gb-include.h"
 
 #include "Matches.h"
+#include "Query.h"
 #include "Titledb.h"  // for getting total # of docs in db
 #include "StopWords.h"
 #include "Phrases.h"
 #include "Title.h"
-#include "CountryCode.h"
 #include "Domains.h"
 #include "Sections.h"
-#include "XmlDoc.h"
+#include "Linkdb.h"
 #include "BitOperations.h"
 #include "Process.h"
 
