@@ -417,17 +417,17 @@ class Query {
 		    bool     useQueryStopWords = true ,
 		    int32_t  maxQueryTerms = 0x7fffffff );
 
-	char *getQuery    ( ) { return m_orig  ; }
-	int32_t  getQueryLen ( ) { return m_origLen; }
+	const char *getQuery() const { return m_orig; }
+	int32_t     getQueryLen() const { return m_origLen; }
 
-	int32_t       getNumTerms  (        ) { return m_numTerms;              }
-	char       getTermSign  ( int32_t i ) { return m_qterms[i].m_termSign;  }
-	bool       isPhrase     ( int32_t i ) { return m_qterms[i].m_isPhrase;  }
-	int64_t  getTermId    ( int32_t i ) { return m_qterms[i].m_termId;    }
-	int64_t  getRawTermId ( int32_t i ) { return m_qterms[i].m_rawTermId; }
-	char      *getTerm      ( int32_t i ) { return m_qterms[i].m_term; }
-	int32_t       getTermLen   ( int32_t i ) { return m_qterms[i].m_termLen; }
-	bool isSplit();
+	int32_t     getNumTerms() const { return m_numTerms; }
+	char        getTermSign(int32_t i) const { return m_qterms[i].m_termSign; }
+	bool        isPhrase(int32_t i) const { return m_qterms[i].m_isPhrase; }
+	int64_t     getTermId(int32_t i) const { return m_qterms[i].m_termId; }
+	int64_t     getRawTermId (int32_t i) const { return m_qterms[i].m_rawTermId; }
+	const char *getTerm(int32_t i) const { return m_qterms[i].m_term; }
+	int32_t     getTermLen(int32_t i) const { return m_qterms[i].m_termLen; }
+	bool        isSplit() const;
 
 	// the new way as of 3/12/2014. just determine if matches the bool
 	// query or not. let's try to offload the scoring logic to other places

@@ -3414,7 +3414,7 @@ void Expression::print(SafeBuf *sbuf) {
 }
 
 // if any one query term is split, msg3a has to split the query
-bool Query::isSplit() {
+bool Query::isSplit() const {
 	for(int32_t i = 0; i < m_numTerms; i++) 
 		if(m_qterms[i].isSplit()) return true;
 	return false;

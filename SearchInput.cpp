@@ -57,7 +57,7 @@ key96_t SearchInput::makeKey ( ) {
 	//   to consider in this hash as well. so
 	// . so just hash the whole damn query
 	if ( m_q.m_isBoolean ) {
-		char *q    = m_q.getQuery();
+		const char *q    = m_q.getQuery();
 		int32_t  qlen = m_q.getQueryLen();
 		k.n0 = hash64 ( q , qlen , k.n0 );
 	}

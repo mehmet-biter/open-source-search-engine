@@ -66,7 +66,7 @@ public:
 
 	// . we copy query and coll to our own local buffer
 	// . these routines give us back our inputted parameters we saved
-	char *getQuery              ( ) { return m_si->m_q.getQuery(); }
+	const char *getQuery              ( ) { return m_si->m_q.getQuery(); }
 	int32_t  getQueryLen           ( ) { return m_si->m_q.getQueryLen(); }
 
 	int32_t  getDocsWanted         ( ) { return m_si->m_docsWanted; }
