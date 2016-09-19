@@ -695,8 +695,8 @@ bool printSearchResultsHeader ( State0 *st ) {
 
 	// grab the query
 	Msg40 *msg40 = &(st->m_msg40);
-	char  *q    = msg40->getQuery();
-	int32_t   qlen = msg40->getQueryLen();
+	const char *q    = msg40->getQuery();
+	int32_t     qlen = msg40->getQueryLen();
 
   	//char  local[ 128000 ];
 	//SafeBuf sb(local, 128000);

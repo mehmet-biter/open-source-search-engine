@@ -882,7 +882,7 @@ bool Msg40::launchMsg20s ( bool recalled ) {
 		// set the summary request then get it!
 		Msg20Request req;
 		Query *q = &m_si->m_q;
-		req.ptr_qbuf             = q->getQuery();
+		req.ptr_qbuf             = const_cast<char*>(q->getQuery());
 		req.size_qbuf            = q->getQueryLen()+1;
 		req.m_langId             = m_si->m_queryLangId;
 

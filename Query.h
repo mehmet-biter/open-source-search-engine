@@ -104,6 +104,8 @@ char getFieldCode  ( const char *s , int32_t len , bool *hasColon = NULL ) ;
 
 int32_t getNumFieldCodes ( );
 
+class Query;
+
 // . values for QueryField::m_flag
 // . QTF_DUP means it is just for the help page in PageRoot.cpp to 
 //   illustrate a second or third example
@@ -357,7 +359,7 @@ class QueryTerm {
 
 	// copied from derived QueryWord
 	char m_fieldCode  ;
-	bool isSplit();
+	bool isSplit() const;
 	bool m_isRequired;
 
 	unsigned char  m_isWikiHalfStopBigram:1;
@@ -384,9 +386,9 @@ class Expression {
 public:
 	bool addExpression (int32_t start, 
 			    int32_t end, 
-			    class Query      *q,
+			    Query   *q,
 			    int32_t    level );
-	bool isTruth ( unsigned char *bitVec , int32_t vecSize );
+	bool isTruth(const unsigned char *bitVec, int32_t vecSize) const;
 	// . what QueryTerms are UNDER the influence of the NOT opcode?
 	// . we read in the WHOLE termlist of those that are (like '-' sign)
 	// . returned bit vector is 1-1 with m_qterms in Query class
@@ -394,7 +396,7 @@ public:
 
 	int32_t m_expressionStartWord;
 	int32_t m_numWordsInExpression;
-	Query *m_q;
+	const Query *m_q;
 };
 
 // . this is the main class for representing a query
@@ -417,24 +419,24 @@ class Query {
 		    bool     useQueryStopWords = true ,
 		    int32_t  maxQueryTerms = 0x7fffffff );
 
-	char *getQuery    ( ) { return m_orig  ; }
-	int32_t  getQueryLen ( ) { return m_origLen; }
+	const char *getQuery() const { return m_orig; }
+	int32_t     getQueryLen() const { return m_origLen; }
 
-	int32_t       getNumTerms  (        ) { return m_numTerms;              }
-	char       getTermSign  ( int32_t i ) { return m_qterms[i].m_termSign;  }
-	bool       isPhrase     ( int32_t i ) { return m_qterms[i].m_isPhrase;  }
-	int64_t  getTermId    ( int32_t i ) { return m_qterms[i].m_termId;    }
-	int64_t  getRawTermId ( int32_t i ) { return m_qterms[i].m_rawTermId; }
-	char      *getTerm      ( int32_t i ) { return m_qterms[i].m_term; }
-	int32_t       getTermLen   ( int32_t i ) { return m_qterms[i].m_termLen; }
-	bool isSplit();
+	int32_t     getNumTerms() const { return m_numTerms; }
+	char        getTermSign(int32_t i) const { return m_qterms[i].m_termSign; }
+	bool        isPhrase(int32_t i) const { return m_qterms[i].m_isPhrase; }
+	int64_t     getTermId(int32_t i) const { return m_qterms[i].m_termId; }
+	int64_t     getRawTermId (int32_t i) const { return m_qterms[i].m_rawTermId; }
+	const char *getTerm(int32_t i) const { return m_qterms[i].m_term; }
+	int32_t     getTermLen(int32_t i) const { return m_qterms[i].m_termLen; }
+	bool        isSplit() const;
 
 	// the new way as of 3/12/2014. just determine if matches the bool
 	// query or not. let's try to offload the scoring logic to other places
 	// if possible.
 	// bitVec is all the QueryWord::m_opBits some docid contains, so
 	// does it match our boolean query or not?
-	bool matchesBoolQuery ( unsigned char *bitVec , int32_t vecSize ) ;
+	bool matchesBoolQuery(const unsigned char *bitVec, int32_t vecSize) const;
 
 	// sets m_qwords[] array, this function is the heart of the class
 	bool setQWords ( char boolFlag , bool keepAllSingles ,
@@ -444,18 +446,18 @@ class Query {
 	bool setQTerms ( class Words &words ) ;
 
 	// helper funcs for parsing query into m_qwords[]
-	bool        isConnection ( const char *s , int32_t len ) ;
+	bool        isConnection(const char *s, int32_t len) const;
 
 	void dumpToLog() const;
 
  public:
 
 	// hash of all the query terms
-	int64_t getQueryHash();
+	int64_t getQueryHash() const;
 
 	// return -1 if does not exist in query, otherwise return the 
 	// query word num
-	int32_t getWordNum ( int64_t wordId );
+	int32_t getWordNum(int64_t wordId) const;
 
 	// . bit vector that is 1-1 with m_qterms[]
 	// . only has bits that we must have if we were default AND
