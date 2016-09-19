@@ -2117,7 +2117,6 @@ int64_t Rdb::getNumTotalRecs ( bool useCache ) {
 		return m_collectionlessBase->getNumTotalRecs();
 
 	// this gets slammed w/ too many collections so use a cache...
-	//if ( g_collectiondb.m_numRecsUsed > 10 ) {
 	int32_t now = 0;
 	if ( useCache ) {
 		now = getTimeLocal();
