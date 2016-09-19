@@ -126,7 +126,6 @@ void seektest ( const char *testdir , int32_t numThreads , int32_t maxReadSize ,
 bool pingTest ( int32_t hid , uint16_t clientPort );
 bool memTest();
 bool cacheTest();
-bool ramdiskTest();
 void countdomains( const char* coll, int32_t numRecs, int32_t verb, int32_t output );
 
 static void wakeupPollLoop() {
@@ -539,9 +538,6 @@ int main2 ( int argc , char *argv[] ) {
 			"cachetest\n\t"
 			"cache stability and speed tests\n\n"
 
-			"ramdisktest\n\t"
-			"test ramdisk functionality\n\n"
-
 			"dump e <coll> <UTCtimestamp>\n\tdump all events "
 			"as if the time is UTCtimestamp.\n\n"
 
@@ -666,11 +662,6 @@ int main2 ( int argc , char *argv[] ) {
 	if ( strcmp ( cmd , "cachetest" ) == 0 ) {
 		if ( argc > cmdarg+1 ) goto printHelp;
 		cacheTest();
-		return 0;
-	}
-	if ( strcmp ( cmd , "ramdisktest" ) == 0 ) {
-		if ( argc > cmdarg+1 ) goto printHelp;
-		ramdiskTest();
 		return 0;
 	}
 	if ( strcmp ( cmd , "parsetest"  ) == 0 ) {
@@ -7008,21 +6999,6 @@ bool cacheTest() {
 
 	c.reset();
 
-	return true;
-}
-
-bool ramdiskTest() {
-	int fd = open ("/dev/ram2",O_RDWR);
-
-	if ( fd < 0 ) {
-		fprintf(stderr,"ramdisk: failed to open /dev/ram2\n");
-		return false;
-	}
-
-	char *buf[1000];
-	pwrite ( fd , buf , 1000, 0 );
-
-	close ( fd);
 	return true;
 }
 
