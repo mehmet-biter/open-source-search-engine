@@ -272,14 +272,14 @@ bool Query::set2 ( const char *query        ,
 		QueryTerm *qt = &m_qterms[i];
 
 		if( qt->m_fieldCode == FIELD_GBTERMID ) {
-			char *ds = m_qterms[i].m_term + 9; // strlen("gbtermid:")
+			const char *ds = m_qterms[i].m_term + 9; // strlen("gbtermid:")
 			qt->m_termId = atoll(ds);
 		}
 
 		// gbdocid:?
 		if ( qt->m_fieldCode != FIELD_GBDOCID ) continue;
 		// get docid
-		char *ds = m_qterms[i].m_term + 8;
+		const char *ds = m_qterms[i].m_term + 8;
 		m_docIdRestriction = atoll(ds);
 		break;
 	}
@@ -453,7 +453,7 @@ bool Query::setQTerms ( Words &words ) {
 		if ( ! m_stackBuf.reserve ( need ) )
 			return false;
 		m_stackBuf.setLabel("stkbuf3");
-		char *pp = m_stackBuf.getBufStart();
+		const char *pp = m_stackBuf.getBufStart();
 		m_qterms = (QueryTerm *)pp;
 		pp += sizeof(QueryTerm);
 		if ( pp > m_stackBuf.getBufEnd() ) { g_process.shutdownAbort(true); }
@@ -1261,8 +1261,8 @@ bool Query::setQWords ( char boolFlag ,
 
 	// is all alpha chars in query in upper case? caps lock on?
 	bool allUpper = true;
-	char *p    = m_sb.getBufStart();//m_buf;
-	char *pend = m_sb.getBuf(); // m_buf + m_bufLen;
+	const char *p    = m_sb.getBufStart();//m_buf;
+	const char *pend = m_sb.getBuf(); // m_buf + m_bufLen;
 	for ( ; p < pend ; p += getUtf8CharSize(p) )
 		if ( is_alpha_utf8 ( p ) && ! is_upper_utf8 ( p ) ) {
 			allUpper = false; break; }
@@ -1273,7 +1273,7 @@ bool Query::setQWords ( char boolFlag ,
 	// field code we are in
 	char  fieldCode = 0;
 	char  fieldSign = 0;
-	char *field     = NULL;
+	const char *field     = NULL;
 	int32_t  fieldLen  = 0;
 	// keep track of the start of different chunks of quotes
 	int32_t quoteStart = -1;
@@ -1360,7 +1360,7 @@ bool Query::setQWords ( char boolFlag ,
 	int32_t pi = -1;
 
 	int32_t posNum = 0;
-	char *ignoreTill = NULL;
+	const char *ignoreTill = NULL;
 
 	// loop over all words, these QueryWords are 1-1 with "words"
 	for ( int32_t i = 0 ; i < numWords && i < ABS_MAX_QUERY_WORDS ; i++ ) {
@@ -1391,7 +1391,7 @@ bool Query::setQWords ( char boolFlag ,
 		// . we duplicated this code from XmlDoc.cpp's
 		//   getWordPosVec() function
 		if ( qw->m_isPunct ) { // ! wids[i] ) {
-			char *wp = qw->m_word;
+			const char *wp = qw->m_word;
 			int32_t  wplen = qw->m_wordLen;
 			// simple space or sequence of just white space
 			if ( words.isSpaces(i) ) 
@@ -1407,7 +1407,7 @@ bool Query::setQWords ( char boolFlag ,
 				posNum++;
 		}
 
-		char *w   = words.getWord(i);
+		const char *w = words.getWord(i);
 		int32_t wlen = words.getWordLen(i);
 		// assume it is a query weight operator
 		qw->m_queryOp = true;
@@ -1427,7 +1427,7 @@ bool Query::setQWords ( char boolFlag ,
 		     w[0]=='L'&&w[1]=='e'&&w[2]=='F'&&w[3]=='t'&&w[4]=='B'&& 
 		     i+4 < numWords ) {
 			// s MUST point to a number
-			char *s = words.getWord(i+2);
+			const char *s = words.getWord(i+2);
 			int32_t slen = words.getWordLen(i+2);
 			// if no number, it must be
 			// " leFtB RiGhB " or " leFtB p RiGhB "
@@ -1449,7 +1449,7 @@ bool Query::setQWords ( char boolFlag ,
 			// get the number
 			float fval = atof2 (s, slen);
 			// s2 MUST point to the a,r,ap,rp string
-			char *s2 = words.getWord(i+4);
+			const char *s2 = words.getWord(i+4);
 			// is it a phrase?
 			if ( s2[1] == 'p' ) {
 				userWeightPhrase = fval;
@@ -1506,7 +1506,7 @@ bool Query::setQWords ( char boolFlag ,
 			// set quote sign to sign before the quote
 			if ( inQuotes ) {
 				quoteSign = '\0';
-				for ( char *p = w + wlen - 1 ; p > w ; p--){
+				for ( const char *p = w + wlen - 1 ; p > w ; p--){
 					if ( *p != '\"' ) continue;
 					if ( *(p-1) == '-' ) quoteSign = '-';
 					if ( *(p-1) == '+' ) quoteSign = '+';
@@ -1544,7 +1544,7 @@ bool Query::setQWords ( char boolFlag ,
 		if ( nq == 1 && cancelField ) {
 			// if we hit the space BEFORE the quote, do NOT cancel
 			// the field
-			for ( char *p = w + wlen - 1 ; p > w ; p--) {
+			for ( const char *p = w + wlen - 1 ; p > w ; p--) {
 				// hey, we got the quote first, keep field
 				if ( *p == '\"' ) {cancelField = false; break;}
 				// otherwise, we got space first? cancel it!
@@ -1800,7 +1800,7 @@ bool Query::setQWords ( char boolFlag ,
 				// the tag.uri field, for example, is set
 				// in hashFacet1() and set to "val32". so
 				// hash it just like that does here.
-				char *a = w + firstColonLen + 1;
+				const char *a = w + firstColonLen + 1;
 				// . skip over colon at start
 				if (a[0] == ':') a++;
 				// . skip over quotes at start/end
@@ -1810,7 +1810,7 @@ bool Query::setQWords ( char boolFlag ,
 					a++;
 				}
 				// end of field
-				char *b = a;
+				const char *b = a;
 				// if not in quotes advance until
 				// we hit whitespace
 				char cs;
@@ -1844,8 +1844,8 @@ bool Query::setQWords ( char boolFlag ,
 				if (colonCount == 2) {
 					int64_t wid1;
 					int64_t wid2;
-					char *a = w;
-					char *b = w + firstColonLen;
+					const char *a = w;
+					const char *b = w + firstColonLen;
 					wid1 = hash64Lower_utf8(a, b - a);
 					a = w + firstColonLen + 1;
 					b = w + lastColonLen;
@@ -1965,7 +1965,7 @@ bool Query::setQWords ( char boolFlag ,
 		uint64_t wid = 0LL;
 		if (fieldCode == FIELD_CHARSET){
 			// find first space -- that terminates the field value
-			char* end = 
+			const char* end =
 				(words.getWord(words.getNumWords()-1) +
 				 words.getWordLen(words.getNumWords()-1));
 			while ( w+wlen<end && 
@@ -1998,7 +1998,7 @@ bool Query::setQWords ( char boolFlag ,
 								  m_langId);
 			// . BUT, if it is a single letter contraction thing
 			// . ninad: make this == 1 if in utf8! TODO!! it is!
-			if ( wlen == 1 && w[-1] == '\'' )
+			if ( i>0 && wlen == 1 && w[-1] == '\'' )
 				qw->m_isQueryStopWord = true;
 			qw->m_isStopWord =::isStopWord (w,wlen,wid);
 		}
@@ -2073,7 +2073,7 @@ bool Query::setQWords ( char boolFlag ,
 			if ( i +1 < numWords && m_qwords[i+1].m_fieldCode > 0 )
 				b &= ~D_CAN_PAIR_ACROSS;
 			// do not pair across ".." when not in quotes/field
-			char *w    = words.getWord   (i);
+			const char *w = words.getWord(i);
 			int32_t  wlen = words.getWordLen(i);
 			for ( int32_t j = 0 ; j < wlen-1 ; j++ ) {
 				if ( w[j  ]!='.' ) continue;
