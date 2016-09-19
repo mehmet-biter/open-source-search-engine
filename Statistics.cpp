@@ -113,31 +113,28 @@ static void dump_query_statistics( FILE *fp ) {
 //////////////////////////////////////////////////////////////////////////////
 // Spidering statistics
 
-static std::map<std::pair<int, int>, TimerangeStatistics[timerange_count]> old_spider_timerange_statistics;
-static std::map<std::pair<int, int>, TimerangeStatistics[timerange_count]> new_spider_timerange_statistics;
-static GbMutex mtx_spider_timerange_statistics;
+static std::map<std::pair<int, int>, TimerangeStatistics[timerange_count]> old_spider_trs;
+static std::map<std::pair<int, int>, TimerangeStatistics[timerange_count]> new_spider_trs;
+static GbMutex mtx_spider_trs;
 
-void Statistics::register_spider_time( bool is_new, int error_code, int http_status, unsigned ms ) {
-	{
-		int i = ms_to_tr( ms );
-		auto key = std::make_pair( error_code, http_status );
+void Statistics::register_spider_time(bool is_new, int error_code, int http_status, unsigned ms) {
+	int i = ms_to_tr(ms);
+	auto key = std::make_pair(error_code, http_status);
 
-		ScopedLock sl( mtx_spider_timerange_statistics );
-		TimerangeStatistics &ts = is_new ? new_spider_timerange_statistics[ key ][ i ] :
-		                          old_spider_timerange_statistics[ key ][ i ];
+	ScopedLock sl(mtx_spider_trs);
+	TimerangeStatistics &ts = is_new ? new_spider_trs[key][i] : old_spider_trs[key][i];
 
-		if ( ts.count != 0 ) {
-			if ( ms < ts.min_time )
-				ts.min_time = ms;
-			if ( ms > ts.max_time )
-				ts.max_time = ms;
-		} else {
+	if (ts.count != 0) {
+		if (ms < ts.min_time)
 			ts.min_time = ms;
+		if (ms > ts.max_time)
 			ts.max_time = ms;
-		}
-		ts.count++;
-		ts.sum += ms;
+	} else {
+		ts.min_time = ms;
+		ts.max_time = ms;
 	}
+	ts.count++;
+	ts.sum += ms;
 }
 
 enum SpiderStatistics {
@@ -187,12 +184,12 @@ static void status_to_spider_statistics( std::vector<unsigned> *spiderdoc_counts
 }
 
 static void dump_spider_statistics( FILE *fp ) {
-	ScopedLock sl1(mtx_spider_timerange_statistics);
-	std::map<std::pair<int, int>, TimerangeStatistics[timerange_count]> soldcopy( old_spider_timerange_statistics );
-	old_spider_timerange_statistics.clear();
+	ScopedLock sl1(mtx_spider_trs);
+	std::map<std::pair<int, int>, TimerangeStatistics[timerange_count]> soldcopy( old_spider_trs );
+	old_spider_trs.clear();
 
-	std::map<std::pair<int, int>, TimerangeStatistics[timerange_count]> snewcopy( new_spider_timerange_statistics );
-	new_spider_timerange_statistics.clear();
+	std::map<std::pair<int, int>, TimerangeStatistics[timerange_count]> snewcopy( new_spider_trs );
+	new_spider_trs.clear();
 
 	sl1.unlock();
 
