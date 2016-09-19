@@ -167,7 +167,6 @@ void membustest ( int32_t nb , int32_t loops , bool readf ) ;
 
 //void tryMergingWrapper ( int fd , void *state ) ;
 
-void saveRdbs ( int fd , void *state ) ;
 //void resetAll ( );
 //void spamTest ( ) ;
 
@@ -6682,43 +6681,6 @@ void injectedWrapper ( void *state , TcpSocket *s ) {
 	char *reply = s->m_readBuf;
 	logf(LOG_INFO,"inject: reply=\"%s\"",reply);
 	doInject(0,NULL);
-}
-
-void saveRdbs ( int fd , void *state ) {
-	int64_t now = gettimeofdayInMilliseconds();
-	int64_t last;
-	Rdb *rdb ;
-	// . try saving every 10 minutes from time of last write to disk
-	// . if nothing more added to tree since then, Rdb::close() return true
-	// . this is in MINUTES
-	int64_t delta = (int64_t)g_conf.m_autoSaveFrequency *60000LL;
-	if ( delta <= 0 ) return;
-	// jitter it up a bit so not all hostIds save at same time, 15 secs
-	delta += (int64_t)(g_hostdb.m_hostId % 10) * 15000LL + (rand()%7500);
-	rdb = g_tagdb.getRdb();
-	last = rdb->getLastWriteTime();
-	if ( now - last > delta )
-		if ( ! rdb->close(NULL,NULL,false,false)) return;
-	rdb = g_posdb.getRdb();
-	last = rdb->getLastWriteTime();
-	if ( now - last > delta )
-		if ( ! rdb->close(NULL,NULL,false,false)) return;
-	rdb = g_titledb.getRdb();
-	last = rdb->getLastWriteTime();
-	if ( now - last > delta )
-		if ( ! rdb->close(NULL,NULL,false,false)) return;
-	rdb = g_spiderdb.getRdb();
-	last = rdb->getLastWriteTime();
-	if ( now - last > delta )
-		if ( ! rdb->close(NULL,NULL,false,false)) return;
-	rdb = g_clusterdb.getRdb();
-	last = rdb->getLastWriteTime();
-	if ( now - last > delta )
-		if ( ! rdb->close(NULL,NULL,false,false)) return;
-	rdb = g_statsdb.getRdb();
-	last = rdb->getLastWriteTime();
-	if ( now - last > delta )
-		if ( ! rdb->close(NULL,NULL,false,false)) return;
 }
 
 bool memTest() {
