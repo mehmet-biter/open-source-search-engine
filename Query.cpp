@@ -2552,7 +2552,7 @@ bool Query::setQWords ( char boolFlag ,
 }
 
 // return -1 if does not exist in query, otherwise return the query word num
-int32_t Query::getWordNum ( int64_t wordId ) { 
+int32_t Query::getWordNum(int64_t wordId) const {
 	// skip if punct or whatever
 	if ( wordId == 0LL || wordId == -1LL ) return -1;
 	for ( int32_t i = 0 ; i < m_numWords ; i++ ) {
@@ -3123,7 +3123,7 @@ char getFieldCode ( const char *s , int32_t len , bool *hasColon ) {
 }
 
 // guaranteed to be punctuation
-bool Query::isConnection ( const char *s , int32_t len ) {
+bool Query::isConnection(const char *s, int32_t len) const {
 	if ( len == 1 ) {
 		switch (*s) {
 			// . only allow apostrophe if it's NOT a 's
@@ -3188,7 +3188,7 @@ void Query::dumpToLog() const
 // returns how many words expression was
 bool Expression::addExpression (int32_t start, 
 				int32_t end, 
-				class Query      *q,
+				Query *q,
 				int32_t              level
 				) {
 
@@ -3252,12 +3252,12 @@ bool Expression::addExpression (int32_t start,
 }
 
 // each bit is 1-1 with the explicit terms in the boolean query
-bool Query::matchesBoolQuery ( unsigned char *bitVec , int32_t vecSize ) {
+bool Query::matchesBoolQuery(const unsigned char *bitVec, int32_t vecSize) const {
 	return m_expressions[0].isTruth ( bitVec , vecSize );
 }
 
 
-bool isBitNumSet ( int32_t opBitNum, unsigned char *bitVec, int32_t vecSize ) {
+static bool isBitNumSet(int32_t opBitNum, const unsigned char *bitVec, int32_t vecSize) {
 	int32_t byte = opBitNum / 8;
 	int32_t mask = 1<<(opBitNum % 8);
 	if ( byte >= vecSize ) { g_process.shutdownAbort(true); }
@@ -3267,7 +3267,7 @@ bool isBitNumSet ( int32_t opBitNum, unsigned char *bitVec, int32_t vecSize ) {
 // . "bits" are 1-1 with the query words in Query::m_qwords[] array
 //   including ignored words and spaces i guess since Expression::add()
 //   seems to do that.
-bool Expression::isTruth ( unsigned char *bitVec ,int32_t vecSize ) {
+bool Expression::isTruth(const unsigned char *bitVec, int32_t vecSize) const {
 
 	//
 	// operand1 operand2 operator1 operand3 operator2 ....
@@ -3288,7 +3288,7 @@ bool Expression::isTruth ( unsigned char *bitVec ,int32_t vecSize ) {
 
 	for ( ; i < iend ; i++ ) {
 
-		QueryWord *qw = &m_q->m_qwords[i];
+		const QueryWord *qw = &m_q->m_qwords[i];
 
 		// ignore parentheses, aren't real opcodes.
 		// we just want OP_AND/OP_OR/OP_NOT
@@ -3462,7 +3462,7 @@ void QueryTerm::constructor ( ) {
 	m_ks = 0;
 }
 
-bool QueryTerm::isSplit() {
+bool QueryTerm::isSplit() const {
 	if(!m_fieldCode) return true;
 	if(m_fieldCode == FIELD_QUOTA)           return false;
 	if(m_fieldCode == FIELD_GBSECTIONHASH)  return false;
@@ -3471,10 +3471,10 @@ bool QueryTerm::isSplit() {
 }
 
 // hash of all the query terms
-int64_t Query::getQueryHash() {
+int64_t Query::getQueryHash() const {
 	int64_t qh = 0LL;
 	for ( int32_t i = 0 ; i < m_numTerms ; i++ )  {
-		QueryTerm *qt = &m_qterms[i];
+		const QueryTerm *qt = &m_qterms[i];
 		qh = hash64 ( qt->m_termId , qh );
 	}
 	return qh;

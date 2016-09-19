@@ -104,6 +104,8 @@ char getFieldCode  ( const char *s , int32_t len , bool *hasColon = NULL ) ;
 
 int32_t getNumFieldCodes ( );
 
+class Query;
+
 // . values for QueryField::m_flag
 // . QTF_DUP means it is just for the help page in PageRoot.cpp to 
 //   illustrate a second or third example
@@ -357,7 +359,7 @@ class QueryTerm {
 
 	// copied from derived QueryWord
 	char m_fieldCode  ;
-	bool isSplit();
+	bool isSplit() const;
 	bool m_isRequired;
 
 	unsigned char  m_isWikiHalfStopBigram:1;
@@ -384,9 +386,9 @@ class Expression {
 public:
 	bool addExpression (int32_t start, 
 			    int32_t end, 
-			    class Query      *q,
+			    Query   *q,
 			    int32_t    level );
-	bool isTruth ( unsigned char *bitVec , int32_t vecSize );
+	bool isTruth(const unsigned char *bitVec, int32_t vecSize) const;
 	// . what QueryTerms are UNDER the influence of the NOT opcode?
 	// . we read in the WHOLE termlist of those that are (like '-' sign)
 	// . returned bit vector is 1-1 with m_qterms in Query class
@@ -394,7 +396,7 @@ public:
 
 	int32_t m_expressionStartWord;
 	int32_t m_numWordsInExpression;
-	Query *m_q;
+	const Query *m_q;
 };
 
 // . this is the main class for representing a query
@@ -434,7 +436,7 @@ class Query {
 	// if possible.
 	// bitVec is all the QueryWord::m_opBits some docid contains, so
 	// does it match our boolean query or not?
-	bool matchesBoolQuery ( unsigned char *bitVec , int32_t vecSize ) ;
+	bool matchesBoolQuery(const unsigned char *bitVec, int32_t vecSize) const;
 
 	// sets m_qwords[] array, this function is the heart of the class
 	bool setQWords ( char boolFlag , bool keepAllSingles ,
@@ -444,18 +446,18 @@ class Query {
 	bool setQTerms ( class Words &words ) ;
 
 	// helper funcs for parsing query into m_qwords[]
-	bool        isConnection ( const char *s , int32_t len ) ;
+	bool        isConnection(const char *s, int32_t len) const;
 
 	void dumpToLog() const;
 
  public:
 
 	// hash of all the query terms
-	int64_t getQueryHash();
+	int64_t getQueryHash() const;
 
 	// return -1 if does not exist in query, otherwise return the 
 	// query word num
-	int32_t getWordNum ( int64_t wordId );
+	int32_t getWordNum(int64_t wordId) const;
 
 	// . bit vector that is 1-1 with m_qterms[]
 	// . only has bits that we must have if we were default AND
