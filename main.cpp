@@ -82,8 +82,6 @@ bool registerMsgHandlers1 ( ) ;
 bool registerMsgHandlers2 ( ) ;
 bool registerMsgHandlers3 ( ) ;
 
-void rmTest();
-
 static void dumpTitledb  (const char *coll, int32_t sfn, int32_t numFiles, bool includeTree,
 			   int64_t docId , bool justPrintDups );
 static int32_t dumpSpiderdb ( const char *coll,int32_t sfn,int32_t numFiles,bool includeTree,
@@ -1490,11 +1488,6 @@ int main2 ( int argc , char *argv[] ) {
 		// . generate the dict files
 		// . use the first 100,000,000 words/phrases to make them
 		g_speller.generateDicts ( nn , coll );
-		return 0;
-	}
-
-	if ( strcmp ( cmd , "rmtest" ) == 0 ) {
-		rmTest();
 		return 0;
 	}
 
@@ -7906,37 +7899,4 @@ int copyFiles ( const char *dstDir ) {
 	fprintf(stderr,"\nRunning cmd: %s\n",tmp.getBufStart());
 	system ( tmp.getBufStart() );
 	return 0;
-}
-
-void rmTest() {
-
-	// make five files
-	int32_t max = 100;
-
-	for ( int32_t i = 0 ; i < max ; i++ ) {
-		SafeBuf fn;
-		fn.safePrintf("./tmpfile%" PRId32,i);
-		SafeBuf sb;
-		for ( int32_t j = 0 ; j < 100 ; j++ ) {
-			sb.safePrintf("%" PRId32"\n",(int32_t)rand());
-		}
-		sb.save ( fn.getBufStart() );
-	}
-
-	// now delete
-	fprintf(stderr,"Deleting files\n");
-	int64_t now = gettimeofdayInMilliseconds();
-
-	for ( int32_t i = 0 ; i < max ; i++ ) {
-		SafeBuf fn;
-		fn.safePrintf("./tmpfile%" PRId32,i);
-		File f;
-		f.set ( fn.getBufStart() );
-		f.unlink();
-	}
-
-	int64_t took = gettimeofdayInMilliseconds() - now;
-
-	fprintf(stderr,"Deleting files took %" PRId64" ms\n",took);
-
 }
