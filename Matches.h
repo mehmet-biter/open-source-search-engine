@@ -111,6 +111,11 @@ class Matches {
 	Match  m_matches[MAX_MATCHES];
 	int32_t   m_numMatches;
 
+	// . 1-1 with Query::m_qwords[] array of QWords
+	// . shows the match flags for that query word
+	mf_t     *m_qwordFlags;
+
+private:
 	// . hash query word ids into a small hash table
 	// . we use this to see what words in the document are query terms
 	int64_t m_qtableIds      [ MAX_QUERY_WORDS_TO_MATCH * 3 ];
@@ -120,9 +125,6 @@ class Matches {
 	Query    *m_q;
 	int32_t      m_numAlnums;
 
-	// . 1-1 with Query::m_qwords[] array of QWords
-	// . shows the match flags for that query word
-	mf_t     *m_qwordFlags;
 	int32_t m_qwordAllocSize;
 	char m_tmpBuf[128];
 
