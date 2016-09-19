@@ -486,6 +486,9 @@ bool Query::setQTerms ( Words &words ) {
 			break;
 		}
 
+		if(n>=nqt)
+			break;
+
 		QueryTerm *qt = &m_qterms[n];
 		qt->m_qword     = qw ;
 		qt->m_piped     = qw->m_piped;
@@ -577,6 +580,9 @@ bool Query::setQTerms ( Words &words ) {
 			    "limit of %" PRId32,(int32_t)m_maxQueryTerms);
 			break;
 		}
+
+		if(n>=nqt)
+			break;
 
 		QueryTerm *qt = &m_qterms[n];
 		qt->m_qword     = qw ;
@@ -826,6 +832,9 @@ bool Query::setQTerms ( Words &words ) {
 				    (int32_t)m_maxQueryTerms);
 				break;
 			}
+
+			if(n>=nqt)
+				break;
 
 			// add that query term
 			QueryTerm *qt   = &m_qterms[n];
