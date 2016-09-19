@@ -92,8 +92,7 @@ static int32_t dumpSpiderdb ( const char *coll,int32_t sfn,int32_t numFiles,bool
 static void dumpTagdb( const char *coll, int32_t sfn, int32_t numFiles, bool includeTree, char rec = 0,
 					   int32_t rdbId = RDB_TAGDB, const char *site = NULL );
 
-void dumpPosdb  ( const char *coll,int32_t sfn,int32_t numFiles,bool includeTree, 
-		  int64_t termId , bool justVerify ) ;
+void dumpPosdb  ( const char *coll,int32_t sfn,int32_t numFiles,bool includeTree, int64_t termId ) ;
 static void dumpWaitingTree( const char *coll );
 static void dumpDoledb  ( const char *coll, int32_t sfn, int32_t numFiles, bool includeTree);
 
@@ -1626,7 +1625,7 @@ int main2 ( int argc , char *argv[] ) {
 			if ( cmdarg+6 < argc ) url = argv[cmdarg+6];
 			dumpLinkdb(coll,startFileNum,numFiles,includeTree,url);
 		}  else if ( argv[cmdarg+1][0] == 'p' ) {
-			dumpPosdb( coll, startFileNum, numFiles, includeTree, termId, false );
+			dumpPosdb( coll, startFileNum, numFiles, includeTree, termId );
 		} else {
 			goto printHelp;
 		}
@@ -4641,11 +4640,9 @@ bool summaryTest1   ( char *rec, int32_t listSize, const char *coll, int64_t doc
 }
 
 void dumpPosdb (const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree,
-		   int64_t termId , bool justVerify ) {
-	if ( ! justVerify ) {
-		g_posdb.init ();
-		g_posdb.getRdb()->addRdbBase1(coll );
-	}
+		   int64_t termId ) {
+	g_posdb.init ();
+	g_posdb.getRdb()->addRdbBase1(coll );
 
 	key144_t startKey ;
 	key144_t endKey   ;
@@ -4719,8 +4716,7 @@ void dumpPosdb (const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 	printf("ek=%s\n",KEYSTR(ek2,list.getKeySize()) );
 
 	// loop over entries in list
-	for ( list.resetListPtr() ; ! list.isExhausted() && ! justVerify ;
-	      list.skipCurrentRecord() ) {
+	for ( list.resetListPtr() ; ! list.isExhausted() ; list.skipCurrentRecord() ) {
 		key144_t k; list.getCurrentKey(&k);
 		// compare to last
 		const char *err = "";
