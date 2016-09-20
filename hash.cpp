@@ -1,7 +1,7 @@
 #include "gb-include.h"
 #include "Sanity.h"
 
-uint64_t g_hashtab[256][256] ;
+#include "g_hashtab.inc"
 
 
 // returns the 'clean' letter by removing accents and puctuation marks
@@ -11,14 +11,27 @@ static uint8_t getClean_a ( char c ) ;
 static UChar32 getClean_utf8 ( const char *src ) ;
 
 
-// . now we explicitly specify the zobrist table so we are compatible
-//   with cygwin and apple environments
-// . no, let's just define the rand2() function to be compatible then
-//#include "hashtab.cpp"
+#if 0
+//chunk of code to generate g_hashtab
+hashinit();
+printf("const uint64_t g_hashtab[256][256] = {\n");
+for(int i=0; i<256; i++) {
+	printf("\t{");
+	for(int j=0; j<256; j++) {
+		if(j>0) printf(",");
+		printf("UINT64_C(%" PRIu64 ")", g_hashtab[i][j]);
+	}
+	printf("}");
+	if(i!=255) printf(",");
+	printf("\n");
+}
+printf("};\n");
+#endif
 
 // . used for computing zobrist hash of a string up to 256 chars int32_t
 // . first array component is the max length, 256, of the string
 bool hashinit () {
+#if 0
 	static bool s_initialized = false;
 	// bail if we already called this
 	if ( s_initialized ) return true;
@@ -57,6 +70,7 @@ bool hashinit () {
 	if ( g_hashtab[0][0] != 6720717044602784129LL ) return false;
 
 	s_initialized = true;
+#endif
 	return true;
 }
 

@@ -16,7 +16,7 @@
 //#define SEED64 7651331LL
 
 // call this before calling any hash*() routines so we can fill our table
-extern uint64_t g_hashtab[256][256];
+extern const uint64_t g_hashtab[256][256];
 
 #include "types.h"
 #include "fctypes.h"
