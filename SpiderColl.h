@@ -4,7 +4,6 @@
 #define GB_SPIDERCOLL_H
 
 
-#include "Rdb.h"
 #include "Conf.h"
 #include "Titledb.h"
 #include "Hostdb.h"

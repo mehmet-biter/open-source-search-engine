@@ -2671,7 +2671,10 @@ char* Url::getDisplayUrl( const char* url, SafeBuf* sb ) {
 	else if ( strncmp(p, "https://", 8 ) == 0 )
 		p += 8;
 
-	const char *domEnd = static_cast<const char*>( memchr( p, '/', urlEnd - p ) ) ?: urlEnd;
+	const char *domEnd = static_cast<const char*>( memchr( p, '/', urlEnd - p ) );
+	if (domEnd == NULL) {
+		domEnd = urlEnd;
+	}
 
 	bool firstRun = true;
 	const char *found = NULL;

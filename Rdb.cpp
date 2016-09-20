@@ -1765,10 +1765,13 @@ bool Rdb::hasRoom ( RdbList *list , int32_t niceness ) {
 // . if RdbMem, m_mem, has no mem, sets g_errno to ETRYAGAIN and returns false
 //   because dump should complete soon and free up some mem
 // . this overwrites dups
-bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSize) {
+bool Rdb::addRecord(collnum_t collnum, char *key, char *data, int32_t dataSize) {
+	logTrace(g_conf.m_logTraceRdb, "BEGIN %s: collnum=%" PRId32" key=%s dataSize=%" PRId32, m_dbname, collnum, KEYSTR(key, m_ks), dataSize);
+
 	if (!getBase(collnum)) {
 		g_errno = EBADENGINEER;
 		log(LOG_LOGIC,"db: addRecord: collection #%i is gone.", collnum);
+		logTrace(g_conf.m_logTraceRdb, "END. %s: collection gone. Returning false", m_dbname);
 		return false;
 	}
 
@@ -1781,6 +1784,7 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 			s_last = now;
 			log("db: addRecord: power is off. try again.");
 		}
+		logTrace(g_conf.m_logTraceRdb, "END. %s: Power loss. Returning false", m_dbname);
 		g_errno = ETRYAGAIN; 
 		return false;
 	}
@@ -1792,12 +1796,14 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 	// protect us.
 	if (!isWritable()) {
 		g_errno = ETRYAGAIN;
+		logTrace(g_conf.m_logTraceRdb, "END. %s: Not writable. Returning false", m_dbname);
 		return false;
 	}
 
 	// bail if we're closing
 	if (m_isClosing) {
 		g_errno = ECLOSING;
+		logTrace(g_conf.m_logTraceRdb, "END. %s: Closing. Returning false", m_dbname);
 		return false;
 	}
 
@@ -1831,8 +1837,9 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 		 //oppKey <= m_dump.getLastKeyInQueue ()   ) goto addIt;
 		 KEYCMP(key,m_dump.getLastKeyInQueue (),m_ks)<=0   )  {
 		    // tell caller to wait and try again later
-		    g_errno = ETRYAGAIN;
-		    return false;
+	    g_errno = ETRYAGAIN;
+		logTrace(g_conf.m_logTraceRdb, "END. %s: Dumping. Returning false", m_dbname);
+	    return false;
 	}
 
 	// save orig
@@ -1847,6 +1854,7 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 		if ( m_fixedDataSize == 0 && dataSize > 0 ) {
 			g_errno = EBADENGINEER;
 			log(LOG_LOGIC,"db: addRecord: Data is present. Should not be");
+			logTrace(g_conf.m_logTraceRdb, "END. %s: Data is present. Returning false", m_dbname);
 			return false;
 		}
 
@@ -1854,6 +1862,7 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 		if ( ! data ) { 
 			g_errno = ETRYAGAIN; 
 			log(LOG_WARN, "db: Could not allocate %" PRId32" bytes to add data to %s. Retrying.",dataSize,m_dbname);
+			logTrace(g_conf.m_logTraceRdb, "END. %s: Unable to allocate data. Returning false", m_dbname);
 			return false;
 		}
 	}
@@ -1920,6 +1929,7 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 		if (KEYNEG(key)) {
 			// return if all data is in the tree
 			if (getBase(collnum)->getNumFiles() == 0) {
+				logTrace(g_conf.m_logTraceRdb, "END. %s: Negative key with all data in tree. Returning true", m_dbname);
 				return true;
 			}
 			// . otherwise, assume we match a positive...
@@ -1937,6 +1947,7 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 
 		// skip if not there
 		if (!sc) {
+			logTrace(g_conf.m_logTraceRdb, "END. %s: No spider coll. Returning true", m_dbname);
 			return true;
 		}
 
@@ -1950,14 +1961,16 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 		// from addSpiderRequest() below
 		if (isReq && sc->isInDupCache(sreq, false)) {
 			logDebug( g_conf.m_logDebugSpider, "spider: adding spider req %s is dup. skipping.", sreq->m_url );
+			logTrace(g_conf.m_logTraceRdb, "END. %s: Duplicated spider req. Returning true", m_dbname);
 			return true;
 		}
 
 		// if we are overflowing...
 		if (isReq && !sreq->m_isAddUrl && !sreq->m_isPageReindex && !sreq->m_urlIsDocId && !sreq->m_forceDelete &&
 		    sc->isFirstIpInOverflowList(sreq->m_firstIp)) {
-			logDebug(g_conf.m_logDebugSpider, "spider: skipping for overflow url %s ", sreq->m_url);
 			g_stats.m_totalOverflows++;
+			logDebug(g_conf.m_logDebugSpider, "spider: skipping for overflow url %s ", sreq->m_url);
+			logTrace(g_conf.m_logTraceRdb, "END. %s: Overflow. Returning true", m_dbname);
 			return true;
 		}
 	}
@@ -1977,11 +1990,13 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 
 			// if adding to spiderdb, add to cache, too
 			if (m_rdbId != RDB_SPIDERDB && m_rdbId != RDB_DOLEDB) {
+				logTrace(g_conf.m_logTraceRdb, "END. %s: Done. Not spiderdb/doledb Returning true", m_dbname);
 				return true;
 			}
 
 			// don't add for negative key
 			if (KEYNEG(key)) {
+				logTrace(g_conf.m_logTraceRdb, "END. %s: Done. Negative key. Returning true", m_dbname);
 				return true;
 			}
 
@@ -1991,6 +2006,7 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 			SpiderColl *sc = g_spiderCache.getSpiderColl(collnum);
 			// skip if not there
 			if (!sc) {
+				logTrace(g_conf.m_logTraceRdb, "END. %s: Done. No spider coll. Returning true", m_dbname);
 				return true;
 			}
 
@@ -2005,6 +2021,8 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 					KEYSET((char *)&sc->m_nextKeys[pri], key, sizeof(key96_t));
 					logDebug(g_conf.m_logDebugSpider, "spider: cursor reset pri=%" PRId32" to %s", pri, KEYSTR(key, 12));
 				}
+
+				logTrace(g_conf.m_logTraceRdb, "END. %s: Done. For doledb. Returning true", m_dbname);
 
 				// that's it for doledb mods
 				return true;
@@ -2065,7 +2083,7 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 			// clear errors from adding to SpiderCache
 			g_errno = 0;
 
-			// all done
+			logTrace(g_conf.m_logTraceRdb, "END. %s: Done. Returning true", m_dbname);
 			return true;
 		}
 	} else {
@@ -2077,6 +2095,7 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 				index->addRecord(key);
 			}
 
+			logTrace(g_conf.m_logTraceRdb, "END. %s: Done. Returning true", m_dbname);
 			return true;
 		}
 	}
@@ -2090,6 +2109,7 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 	}
 
 	log(LOG_INFO, "db: Had error adding data to %s: %s. %s", m_dbname, mstrerror(g_errno), ss);
+	logTrace(g_conf.m_logTraceRdb, "END. %s: Unable to add to tree/bucket. Returning false", m_dbname);
 	return false;
 }
 
@@ -2117,7 +2137,6 @@ int64_t Rdb::getNumTotalRecs ( bool useCache ) {
 		return m_collectionlessBase->getNumTotalRecs();
 
 	// this gets slammed w/ too many collections so use a cache...
-	//if ( g_collectiondb.m_numRecsUsed > 10 ) {
 	int32_t now = 0;
 	if ( useCache ) {
 		now = getTimeLocal();

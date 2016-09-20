@@ -353,11 +353,10 @@ float PosdbTable::getSingleTermScore ( int32_t     i,
 		return -1.0;
     }
 
-#ifdef _VALGRIND_
-	VALGRIND_CHECK_MEM_IS_DEFINED(wpi,endi-wpi);
-#endif
-
 	if ( wpi ) {
+#ifdef _VALGRIND_
+		VALGRIND_CHECK_MEM_IS_DEFINED(wpi,endi-wpi);
+#endif
 		bool first = true;
 		char  bestmhg[MAX_TOP];
 		do {

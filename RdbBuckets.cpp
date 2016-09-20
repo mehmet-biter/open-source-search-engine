@@ -351,6 +351,8 @@ bool RdbBucket::addKey(const char *key, char *data, int32_t dataSize) {
 	int32_t recSize = m_parent->getRecSize();
 	bool isNeg = KEYNEG(key);
 
+	logTrace(g_conf.m_logTraceRdbBuckets, "BEGIN. key=%s dataSize=%" PRId32, KEYSTR(key, ks), dataSize);
+
 	char *newLoc = m_keys + (recSize * m_numKeys);
 	gbmemcpy(newLoc, key, ks);
 
@@ -400,6 +402,8 @@ bool RdbBucket::addKey(const char *key, char *data, int32_t dataSize) {
 	}
 	m_numKeys++;
 	m_parent->updateNumRecs(1, dataSize, isNeg ? 1 : 0);
+
+	logTrace(g_conf.m_logTraceRdbBuckets, "END. Returning true");
 	return true;
 }
 
@@ -506,7 +510,7 @@ void RdbBucket::printBucket() {
 	int32_t recSize = m_parent->getRecSize();
 	int32_t keySize = m_parent->getKeySize();
 	for (int32_t i = 0; i < m_numKeys; i++) {
-		log(LOG_WARN, "rdbbuckets last key: %s keySize=%" PRId32" numKeys=%" PRId32,
+		log(LOG_WARN, "rdbbuckets key: %s keySize=%" PRId32" numKeys=%" PRId32,
 		    KEYSTR(kk, recSize), keySize, m_numKeys);
 		kk += recSize;
 	}
@@ -1909,10 +1913,7 @@ bool RdbBuckets::fastSave_r() {
 	errno = 0;
 
 	// . save the header
-	// . force file head to the 0 byte in case offset was elsewhere
-	int64_t offset = 0;
-
-	offset = fastSaveColl_r(fd, offset);
+	int64_t offset = fastSaveColl_r(fd);
 
 	// close it up
 	close(fd);
@@ -1926,7 +1927,9 @@ bool RdbBuckets::fastSave_r() {
 	return offset >= 0;
 }
 
-int64_t RdbBuckets::fastSaveColl_r(int fd, int64_t offset) {
+int64_t RdbBuckets::fastSaveColl_r(int fd) {
+	int64_t offset = 0;
+
 	if (m_numKeysApprox == 0) {
 		return offset;
 	}
@@ -1938,17 +1941,22 @@ int64_t RdbBuckets::fastSaveColl_r(int fd, int64_t offset) {
 
 	if (pwrite(fd, &m_numBuckets, sizeof(int32_t), offset) != 4)err = errno;
 	offset += sizeof(int32_t);
+
 	if (pwrite(fd, &m_maxBuckets, sizeof(int32_t), offset) != 4)err = errno;
 	offset += sizeof(int32_t);
 
 	if (pwrite(fd, &m_ks, sizeof(uint8_t), offset) != 1) err = errno;
 	offset += sizeof(uint8_t);
+
 	if (pwrite(fd, &m_fixedDataSize, sizeof(int32_t), offset) != 4) err = errno;
 	offset += sizeof(int32_t);
+
 	if (pwrite(fd, &m_recSize, sizeof(int32_t), offset) != 4) err = errno;
 	offset += sizeof(int32_t);
+
 	if (pwrite(fd, &m_numKeysApprox, sizeof(int32_t), offset) != 4)err = errno;
 	offset += sizeof(int32_t);
+
 	if (pwrite(fd, &m_numNegKeys, sizeof(int32_t), offset) != 4) err = errno;
 	offset += sizeof(int32_t);
 
@@ -1960,7 +1968,9 @@ int64_t RdbBuckets::fastSaveColl_r(int fd, int64_t offset) {
 	offset += sizeof(int32_t);
 
 	// set it
-	if (err) errno = err;
+	if (err) {
+		errno = err;
+	}
 
 	// bitch on error
 	if (errno) {
@@ -2019,9 +2029,8 @@ bool RdbBuckets::fastLoad(BigFile *f, const char *dbname) {
 		return true;
 	}
 
-	// init offset
-	int64_t offset = 0;
-	offset = fastLoadColl(f, dbname, offset);
+	// start reading at offset 0
+	int64_t offset = fastLoadColl(f, dbname);
 	if (offset < 0) {
 		log(LOG_ERROR, "db: Failed to load buckets for %s: %s.", m_dbname, mstrerror(g_errno));
 		return false;
@@ -2030,11 +2039,12 @@ bool RdbBuckets::fastLoad(BigFile *f, const char *dbname) {
 	return true;
 }
 
-int64_t RdbBuckets::fastLoadColl(BigFile *f, const char *dbname, int64_t offset) {
+int64_t RdbBuckets::fastLoadColl(BigFile *f, const char *dbname) {
 	int32_t maxBuckets;
 	int32_t numBuckets;
 	int32_t version;
 
+	int64_t offset = 0;
 	f->read(&version, sizeof(int32_t), offset);
 	offset += sizeof(int32_t);
 	if (version > SAVE_VERSION) {

@@ -30,8 +30,6 @@
 #include "Mem.h"
 #include "RdbScan.h"
 #include "RdbDump.h"
-#include "RdbTree.h"
-#include "RdbBuckets.h"
 #include "RdbMerge.h"
 #include "Msg3.h"               // MAX_RDB_FILES definition
 #include "Dir.h"
@@ -44,6 +42,9 @@ extern int32_t g_numUrgentMerges;
 
 extern RdbMerge g_merge;
 extern RdbMerge g_merge2;
+
+class RdbBuckets;
+class RdbTree;
 
 class RdbBase {
 

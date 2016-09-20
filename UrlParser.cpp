@@ -150,10 +150,10 @@ void UrlParser::parse() {
 //		currentPos = anchorPos + 1;
 //	}
 
-	const char *pathEnd = queryPos ?: anchorPos ?: urlEnd;
+	const char *pathEnd = queryPos ? queryPos : (anchorPos ? anchorPos : urlEnd);
 	m_pathEndChar = *( pathEnd - 1 );
 
-	const char *queryEnd = anchorPos ?: urlEnd;
+	const char *queryEnd = anchorPos ? anchorPos : urlEnd;
 
 	// path
 	const char *prevPos = pathPos + 1;

@@ -69,7 +69,7 @@ void SpiderRequest::setDataSize ( ) {
 
 int32_t SpiderRequest::print ( SafeBuf *sbarg ) {
 	SafeBuf tmp;
-	SafeBuf *sb = sbarg ?: &tmp;
+	SafeBuf *sb = sbarg ? sbarg : &tmp;
 
 	sb->safePrintf("k=%s ", KEYSTR( this, getKeySizeFromRdbId( RDB_SPIDERDB ) ) );
 

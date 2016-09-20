@@ -2416,13 +2416,6 @@ void RdbTree::threadDoneWrapper ( void *state, job_exit_t exit_type ) {
 bool RdbTree::fastSave_r() {
 	if ( g_conf.m_readOnlyMode ) return true;
 
-	// recover the file
-	//BigFile *f = m_saveFile;
-	// open it up
-	//if ( ! f->open ( O_RDWR | O_CREAT ) ) {
-	//	log("RdbTree::fastSave_r: %s",mstrerror(g_errno));
-	//  return false;
-	//}
 	// cannot use the BigFile class, since we may be in a thread and it 
 	// messes with g_errno
 	//char *s = m_saveFile->getFilename();

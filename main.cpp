@@ -82,8 +82,6 @@ bool registerMsgHandlers1 ( ) ;
 bool registerMsgHandlers2 ( ) ;
 bool registerMsgHandlers3 ( ) ;
 
-void rmTest();
-
 static void dumpTitledb  (const char *coll, int32_t sfn, int32_t numFiles, bool includeTree,
 			   int64_t docId , bool justPrintDups );
 static int32_t dumpSpiderdb ( const char *coll,int32_t sfn,int32_t numFiles,bool includeTree,
@@ -92,8 +90,7 @@ static int32_t dumpSpiderdb ( const char *coll,int32_t sfn,int32_t numFiles,bool
 static void dumpTagdb( const char *coll, int32_t sfn, int32_t numFiles, bool includeTree, char rec = 0,
 					   int32_t rdbId = RDB_TAGDB, const char *site = NULL );
 
-void dumpPosdb  ( const char *coll,int32_t sfn,int32_t numFiles,bool includeTree, 
-		  int64_t termId , bool justVerify ) ;
+void dumpPosdb  ( const char *coll,int32_t sfn,int32_t numFiles,bool includeTree, int64_t termId ) ;
 static void dumpWaitingTree( const char *coll );
 static void dumpDoledb  ( const char *coll, int32_t sfn, int32_t numFiles, bool includeTree);
 
@@ -127,7 +124,6 @@ void seektest ( const char *testdir , int32_t numThreads , int32_t maxReadSize ,
 bool pingTest ( int32_t hid , uint16_t clientPort );
 bool memTest();
 bool cacheTest();
-bool ramdiskTest();
 void countdomains( const char* coll, int32_t numRecs, int32_t verb, int32_t output );
 
 static void wakeupPollLoop() {
@@ -168,7 +164,6 @@ void membustest ( int32_t nb , int32_t loops , bool readf ) ;
 
 //void tryMergingWrapper ( int fd , void *state ) ;
 
-void saveRdbs ( int fd , void *state ) ;
 //void resetAll ( );
 //void spamTest ( ) ;
 
@@ -541,9 +536,6 @@ int main2 ( int argc , char *argv[] ) {
 			"cachetest\n\t"
 			"cache stability and speed tests\n\n"
 
-			"ramdisktest\n\t"
-			"test ramdisk functionality\n\n"
-
 			"dump e <coll> <UTCtimestamp>\n\tdump all events "
 			"as if the time is UTCtimestamp.\n\n"
 
@@ -668,11 +660,6 @@ int main2 ( int argc , char *argv[] ) {
 	if ( strcmp ( cmd , "cachetest" ) == 0 ) {
 		if ( argc > cmdarg+1 ) goto printHelp;
 		cacheTest();
-		return 0;
-	}
-	if ( strcmp ( cmd , "ramdisktest" ) == 0 ) {
-		if ( argc > cmdarg+1 ) goto printHelp;
-		ramdiskTest();
 		return 0;
 	}
 	if ( strcmp ( cmd , "parsetest"  ) == 0 ) {
@@ -1504,11 +1491,6 @@ int main2 ( int argc , char *argv[] ) {
 		return 0;
 	}
 
-	if ( strcmp ( cmd , "rmtest" ) == 0 ) {
-		rmTest();
-		return 0;
-	}
-
 	// . gb dump [dbLetter][coll][fileNum] [numFiles] [includeTree][termId]
 	// . spiderdb is special:
 	//   gb dump s [coll][fileNum] [numFiles] [includeTree] [0=old|1=new]
@@ -1626,7 +1608,7 @@ int main2 ( int argc , char *argv[] ) {
 			if ( cmdarg+6 < argc ) url = argv[cmdarg+6];
 			dumpLinkdb(coll,startFileNum,numFiles,includeTree,url);
 		}  else if ( argv[cmdarg+1][0] == 'p' ) {
-			dumpPosdb( coll, startFileNum, numFiles, includeTree, termId, false );
+			dumpPosdb( coll, startFileNum, numFiles, includeTree, termId );
 		} else {
 			goto printHelp;
 		}
@@ -4641,11 +4623,9 @@ bool summaryTest1   ( char *rec, int32_t listSize, const char *coll, int64_t doc
 }
 
 void dumpPosdb (const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree,
-		   int64_t termId , bool justVerify ) {
-	if ( ! justVerify ) {
-		g_posdb.init ();
-		g_posdb.getRdb()->addRdbBase1(coll );
-	}
+		   int64_t termId ) {
+	g_posdb.init ();
+	g_posdb.getRdb()->addRdbBase1(coll );
 
 	key144_t startKey ;
 	key144_t endKey   ;
@@ -4719,8 +4699,7 @@ void dumpPosdb (const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 	printf("ek=%s\n",KEYSTR(ek2,list.getKeySize()) );
 
 	// loop over entries in list
-	for ( list.resetListPtr() ; ! list.isExhausted() && ! justVerify ;
-	      list.skipCurrentRecord() ) {
+	for ( list.resetListPtr() ; ! list.isExhausted() ; list.skipCurrentRecord() ) {
 		key144_t k; list.getCurrentKey(&k);
 		// compare to last
 		const char *err = "";
@@ -6688,43 +6667,6 @@ void injectedWrapper ( void *state , TcpSocket *s ) {
 	doInject(0,NULL);
 }
 
-void saveRdbs ( int fd , void *state ) {
-	int64_t now = gettimeofdayInMilliseconds();
-	int64_t last;
-	Rdb *rdb ;
-	// . try saving every 10 minutes from time of last write to disk
-	// . if nothing more added to tree since then, Rdb::close() return true
-	// . this is in MINUTES
-	int64_t delta = (int64_t)g_conf.m_autoSaveFrequency *60000LL;
-	if ( delta <= 0 ) return;
-	// jitter it up a bit so not all hostIds save at same time, 15 secs
-	delta += (int64_t)(g_hostdb.m_hostId % 10) * 15000LL + (rand()%7500);
-	rdb = g_tagdb.getRdb();
-	last = rdb->getLastWriteTime();
-	if ( now - last > delta )
-		if ( ! rdb->close(NULL,NULL,false,false)) return;
-	rdb = g_posdb.getRdb();
-	last = rdb->getLastWriteTime();
-	if ( now - last > delta )
-		if ( ! rdb->close(NULL,NULL,false,false)) return;
-	rdb = g_titledb.getRdb();
-	last = rdb->getLastWriteTime();
-	if ( now - last > delta )
-		if ( ! rdb->close(NULL,NULL,false,false)) return;
-	rdb = g_spiderdb.getRdb();
-	last = rdb->getLastWriteTime();
-	if ( now - last > delta )
-		if ( ! rdb->close(NULL,NULL,false,false)) return;
-	rdb = g_clusterdb.getRdb();
-	last = rdb->getLastWriteTime();
-	if ( now - last > delta )
-		if ( ! rdb->close(NULL,NULL,false,false)) return;
-	rdb = g_statsdb.getRdb();
-	last = rdb->getLastWriteTime();
-	if ( now - last > delta )
-		if ( ! rdb->close(NULL,NULL,false,false)) return;
-}
-
 bool memTest() {
 	// let's ensure our core file can dump
 	struct rlimit lim;
@@ -7050,21 +6992,6 @@ bool cacheTest() {
 
 	c.reset();
 
-	return true;
-}
-
-bool ramdiskTest() {
-	int fd = open ("/dev/ram2",O_RDWR);
-
-	if ( fd < 0 ) {
-		fprintf(stderr,"ramdisk: failed to open /dev/ram2\n");
-		return false;
-	}
-
-	char *buf[1000];
-	pwrite ( fd , buf , 1000, 0 );
-
-	close ( fd);
 	return true;
 }
 
@@ -7972,37 +7899,4 @@ int copyFiles ( const char *dstDir ) {
 	fprintf(stderr,"\nRunning cmd: %s\n",tmp.getBufStart());
 	system ( tmp.getBufStart() );
 	return 0;
-}
-
-void rmTest() {
-
-	// make five files
-	int32_t max = 100;
-
-	for ( int32_t i = 0 ; i < max ; i++ ) {
-		SafeBuf fn;
-		fn.safePrintf("./tmpfile%" PRId32,i);
-		SafeBuf sb;
-		for ( int32_t j = 0 ; j < 100 ; j++ ) {
-			sb.safePrintf("%" PRId32"\n",(int32_t)rand());
-		}
-		sb.save ( fn.getBufStart() );
-	}
-
-	// now delete
-	fprintf(stderr,"Deleting files\n");
-	int64_t now = gettimeofdayInMilliseconds();
-
-	for ( int32_t i = 0 ; i < max ; i++ ) {
-		SafeBuf fn;
-		fn.safePrintf("./tmpfile%" PRId32,i);
-		File f;
-		f.set ( fn.getBufStart() );
-		f.unlink();
-	}
-
-	int64_t took = gettimeofdayInMilliseconds() - now;
-
-	fprintf(stderr,"Deleting files took %" PRId64" ms\n",took);
-
 }

@@ -57,8 +57,8 @@ void RdbIndex::reset() {
 }
 
 /// @todo ALC collapse RdbIndex::set into constructor
-void RdbIndex::set(const char *dir, const char *indexFilename,
-                   int32_t fixedDataSize , bool useHalfKeys , char keySize, char rdbId) {
+void RdbIndex::set(const char *dir, const char *indexFilename, int32_t fixedDataSize , bool useHalfKeys ,
+                   char keySize, rdbid_t rdbId) {
 	logTrace(g_conf.m_logTraceRdbIndex, "BEGIN. dir [%s], indexFilename [%s]", dir, indexFilename);
 
 	reset();
@@ -85,6 +85,8 @@ bool RdbIndex::close(bool urgent) {
 }
 
 bool RdbIndex::writeIndex() {
+	log(LOG_INFO, "db: Saving %s", m_file.getFilename());
+
 	logTrace(g_conf.m_logTraceRdbIndex, "BEGIN. filename [%s]", m_file.getFilename());
 
 	if (g_conf.m_readOnlyMode) {
@@ -153,6 +155,8 @@ bool RdbIndex::writeIndex2() {
 		logError("Failed to write to %s (docids): %s", m_file.getFilename(), mstrerror(g_errno));
 		return false;
 	}
+
+	log(LOG_INFO, "db: Saved %zu index keys for %s with dataFileSize=%" PRId64, docid_count, getDbnameFromId(m_rdbId), m_dataFileSize);
 
 	logTrace(g_conf.m_logTraceRdbIndex, "END - OK, returning true.");
 
@@ -302,6 +306,9 @@ void RdbIndex::addRecord_unlocked(char *key, bool isGenerateIndex) {
 			doMerge = true;
 		}
 	} else {
+		// only add size when we're not generating index
+		++m_dataFileSize;
+
 		if ((m_pendingDocIds->size() >= s_defaultMaxPendingSize) ||
 		    (gettimeofdayInMilliseconds() - m_lastMergeTime >= s_defaultMaxPendingTimeMs)) {
 			doMerge = true;
