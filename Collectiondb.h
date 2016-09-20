@@ -7,6 +7,7 @@
 
 #include "SafeBuf.h"
 #include "rdbid_t.h"
+#include "GbMutex.h"
 
 bool addCollToTable ( const char *coll , collnum_t collnum ) ;
 
@@ -472,6 +473,7 @@ class CollectionRec {
 	char m_sendingAlertInProgress;
 
 	class SpiderColl *m_spiderColl;
+	GbMutex m_spiderCollMutex;
 
 	int32_t m_overflow;
 	int32_t m_overflow2;

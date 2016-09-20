@@ -36,6 +36,7 @@
 #include "Rebalance.h"
 #include "PageInject.h" //getInjectHead()
 #include "PingServer.h"
+#include "ScopedLock.h"
 #include <list>
 
 void testWinnerTreeKey ( ) ;
@@ -808,13 +809,14 @@ void SpiderCache::reset ( ) {
 	log(LOG_DEBUG,"spider: resetting spidercache");
 	// loop over all SpiderColls and get the best
 	for ( int32_t i = 0 ; i < g_collectiondb.m_numRecs ; i++ ) {
+		CollectionRec *cr = g_collectiondb.getRec(i);
+		ScopedLock sl(cr->m_spiderCollMutex);
 		SpiderColl *sc = getSpiderCollIffNonNull(i);
 		if ( ! sc ) continue;
 		sc->reset();
 		mdelete ( sc , sizeof(SpiderColl) , "SpiderCache" );
 		delete ( sc );
 		//m_spiderColls[i] = NULL;
-		CollectionRec *cr = g_collectiondb.getRec(i);
 		cr->m_spiderColl = NULL;
 	}
 	//m_numSpiderColls = 0;
@@ -829,6 +831,7 @@ SpiderColl *SpiderCache::getSpiderCollIffNonNull ( collnum_t collnum ) {
 	// empty?
 	if ( ! cr ) return NULL;
 	// return it if non-NULL
+	ScopedLock sl(cr->m_spiderCollMutex); //not really needed but shuts up helgrind+drd
 	return cr->m_spiderColl;
 }
 
@@ -902,6 +905,7 @@ SpiderColl *SpiderCache::getSpiderColl ( collnum_t collnum ) {
 	CollectionRec *cr = g_collectiondb.m_recs[collnum];
 	// collection might have been reset in which case collnum changes
 	if ( ! cr ) return NULL;
+	ScopedLock sl(cr->m_spiderCollMutex);
 	// return it if non-NULL
 	SpiderColl *sc = cr->m_spiderColl;
 	if ( sc ) return sc;
@@ -938,10 +942,6 @@ SpiderColl *SpiderCache::getSpiderColl ( collnum_t collnum ) {
 	// set first doledb scan key
 	sc->m_nextDoledbKey.setMin();
 
-	// turn off quickpolling while loading incase a parm update comes in
-	bool saved = g_conf.m_useQuickpoll;
-	g_conf.m_useQuickpoll = false;
-
 	// mark it as loading so it can't be deleted while loading
 	sc->m_isLoading = true;
 	// . load its tables from disk
@@ -950,12 +950,6 @@ SpiderColl *SpiderCache::getSpiderColl ( collnum_t collnum ) {
 	sc->load();
 	// mark it as loading
 	sc->m_isLoading = false;
-
-	// restore
-	g_conf.m_useQuickpoll = saved;
-
-	// did crawlbottesting delete it right away?
-	if ( tryToDeleteSpiderColl( sc, "1" ) ) return NULL;
 
 	// note it!
 	log(LOG_DEBUG,"spider: adding new spider collection for %s", cr->m_coll);
