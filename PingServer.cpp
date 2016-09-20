@@ -645,8 +645,10 @@ void handleRequest11 ( UdpSlot *slot , int32_t niceness ) {
 		if ( pi2->m_hostId != h->m_hostId ) { 
 			g_process.shutdownAbort(true); }
 
-		// now we just copy the class
-		gbmemcpy ( &h->m_pingInfo , request , requestSize );
+		if(h!=g_hostdb.getMyHost()) {
+			//only copy statistics if it is not from outselves
+			memcpy(&h->m_pingInfo, request, requestSize);
+		}
 
 		// we finally got a ping reply from him
 		h->m_gotPingReply = true;
