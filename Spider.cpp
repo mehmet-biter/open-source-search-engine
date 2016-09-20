@@ -36,6 +36,7 @@
 #include "Rebalance.h"
 #include "PageInject.h" //getInjectHead()
 #include "PingServer.h"
+#include "ScopedLock.h"
 #include <list>
 
 void testWinnerTreeKey ( ) ;
@@ -808,13 +809,14 @@ void SpiderCache::reset ( ) {
 	log(LOG_DEBUG,"spider: resetting spidercache");
 	// loop over all SpiderColls and get the best
 	for ( int32_t i = 0 ; i < g_collectiondb.m_numRecs ; i++ ) {
+		CollectionRec *cr = g_collectiondb.getRec(i);
+		ScopedLock sl(cr->m_spiderCollMutex);
 		SpiderColl *sc = getSpiderCollIffNonNull(i);
 		if ( ! sc ) continue;
 		sc->reset();
 		mdelete ( sc , sizeof(SpiderColl) , "SpiderCache" );
 		delete ( sc );
 		//m_spiderColls[i] = NULL;
-		CollectionRec *cr = g_collectiondb.getRec(i);
 		cr->m_spiderColl = NULL;
 	}
 	//m_numSpiderColls = 0;
@@ -829,6 +831,7 @@ SpiderColl *SpiderCache::getSpiderCollIffNonNull ( collnum_t collnum ) {
 	// empty?
 	if ( ! cr ) return NULL;
 	// return it if non-NULL
+	ScopedLock sl(cr->m_spiderCollMutex); //not really needed but shuts up helgrind+drd
 	return cr->m_spiderColl;
 }
 
@@ -902,6 +905,7 @@ SpiderColl *SpiderCache::getSpiderColl ( collnum_t collnum ) {
 	CollectionRec *cr = g_collectiondb.m_recs[collnum];
 	// collection might have been reset in which case collnum changes
 	if ( ! cr ) return NULL;
+	ScopedLock sl(cr->m_spiderCollMutex);
 	// return it if non-NULL
 	SpiderColl *sc = cr->m_spiderColl;
 	if ( sc ) return sc;
