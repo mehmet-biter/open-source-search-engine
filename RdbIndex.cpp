@@ -249,7 +249,7 @@ bool RdbIndex::verifyIndex(int64_t dataFileSize) {
 		return false;
 	}
 
-	logTrace(g_conf.m_logTraceRdbIndex, "END. Returning false");
+	logTrace(g_conf.m_logTraceRdbIndex, "END. Returning true");
 	return true;
 }
 
