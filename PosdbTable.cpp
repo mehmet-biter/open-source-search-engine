@@ -3032,9 +3032,9 @@ void PosdbTable::intersectLists10_r ( ) {
 
 	uint64_t lastDocId = 0LL;
 	int32_t lastLen = 0;
-	char siteRank =0;
-	int highestInlinkSiteRank = -1;
-	char docLang =0;
+	char siteRank;
+	int highestInlinkSiteRank;
+	char docLang;
 	float score;
 	int32_t intScore = 0;
 	float minScore = 0.0;
@@ -3134,6 +3134,9 @@ void PosdbTable::intersectLists10_r ( ) {
 			logTrace(g_conf.m_logTracePosdb, "Handling next docID");
 
 			bool skipToNextDocId = false;
+			siteRank				= 0;
+			docLang					= langUnknown;
+			highestInlinkSiteRank 	= -1;
 
 			// second pass? for printing out transparency info.
 			if ( currPassNum == INTERSECT_DEBUG_INFO ) {
@@ -3382,8 +3385,18 @@ void PosdbTable::intersectLists10_r ( ) {
 
 							// if the first key in our merged list store the docid crap
 							if ( isFirstKey ) {
+
 								// store a 12 byte key in the merged list buffer
 								memcpy ( mptr, nwp[mink], 12 );
+
+								// Detect highest siterank of inlinkers
+								if ( Posdb::getHashGroup(mptr+6) == HASHGROUP_INLINKTEXT) {
+									char inlinkerSiteRank = Posdb::getWordSpamRank(mptr+6);
+									if(inlinkerSiteRank > highestInlinkSiteRank) {
+										highestInlinkSiteRank = inlinkerSiteRank;
+									}
+								}
+
 								// wipe out its syn bits and re-use our way
 								mptr[2] &= 0xfc;
 								// set the synbit so we know if its a synonym of term
@@ -3422,6 +3435,15 @@ void PosdbTable::intersectLists10_r ( ) {
 								// query!
 								if ( Posdb::getWordPos(lastMptr) != Posdb::getWordPos(nwp[mink]) ) {
 									memcpy ( mptr, nwp[mink], 6 );
+
+									// Detect highest siterank of inlinkers
+									if ( Posdb::getHashGroup(mptr) == HASHGROUP_INLINKTEXT) {
+										char inlinkerSiteRank = Posdb::getWordSpamRank(mptr);
+										if(inlinkerSiteRank > highestInlinkSiteRank) {
+											highestInlinkSiteRank = inlinkerSiteRank;
+										}
+									}
+
 									// wipe out its syn bits and re-use our way
 									mptr[2] &= 0xfc;
 									// set the synbit so we know if its a synonym of term
@@ -3622,20 +3644,26 @@ void PosdbTable::intersectLists10_r ( ) {
 				//
 				//
 				minSingleScore = 999999999.0;
-				// . now add single word scores
-				// . having inlink text from siterank 15 of max 
-				//   diversity/density will result in the largest score, 
-				//   but we add them all up...
-				// . this should be highly negative if singles[i] has a '-' 
-				//   termsign...
+				
+				// Now add single word scores.
+				//
+				// Having inlink text from siterank 15 of max 
+				// diversity/density will result in the largest score, 
+				// but we add them all up...
+				//
+				// This should be highly negative if singles[i] has a '-' 
+				// termsign...
 				for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
 					float sts;
-					
-					// skip if to the left of a pipe operator
-					if ( bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
+
+					if ( ! miniMergedList[i] ) {
 						continue;
 					}
-
+					
+					// skip if to the left of a pipe operator
+					if( bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
+						continue;
+					}
 
 					// sometimes there is no wordpos subtermlist for this docid
 					// because it just has the bigram, like "streetlight" and not
@@ -3643,13 +3671,18 @@ void PosdbTable::intersectLists10_r ( ) {
 					//if ( miniMergedList[i] ) {
 					// assume all word positions are in body
 					//bestPos[i] = NULL;
-					// . this scans all word positions for this term
-					// . this should ignore occurences in the body and only
-					//   focus on inlink text, etc.
-					// . sets "bestPos" to point to the winning word 
-					//   position which does NOT occur in the body
-					// . adds up MAX_TOP top scores and returns that sum
-					// . pdcs is NULL if not currPassNum == INTERSECT_DEBUG_INFO
+
+					// This scans all word positions for this term.
+					//
+					// This should ignore occurences in the body and only
+					// focus on inlink text, etc.
+					//
+					// Sets "bestPos" to point to the winning word 
+					// position which does NOT occur in the body.
+					//
+					// Adds up MAX_TOP top scores and returns that sum.
+					//
+					// pdcs is NULL if not currPassNum == INTERSECT_DEBUG_INFO
 					sts = getSingleTermScore (i,
 								  miniMergedList[i],
 								  miniMergedEnd[i],
@@ -3668,58 +3701,31 @@ void PosdbTable::intersectLists10_r ( ) {
 				}
 
 
-				//
-				// . multiplier from siterank i guess
-				// . miniMergedList[0] list can be null if it does not have 'street' 
-				//   but has 'streetlight' for the query 'street light'
-				//
-				if ( miniMergedList[0] && 
-				     // siterank/langid is always 0 in numeric
-				     // termlists so they sort by their number correctly
-				     ! (qtibuf[0].m_bigramFlags[0] & (BF_NUMBER) ) ) {
-					siteRank = Posdb::getSiteRank ( miniMergedList[0] );
-					docLang  = Posdb::getLangId   ( miniMergedList[0] );
-					
-					if ( Posdb::getHashGroup(miniMergedList[0])==HASHGROUP_INLINKTEXT) {
-						char inlinkerSiteRank = Posdb::getWordSpamRank(miniMergedList[0]);
-						if(inlinkerSiteRank>highestInlinkSiteRank) {
-							highestInlinkSiteRank = inlinkerSiteRank;
-						}
+				for ( int32_t k = 0 ; k < m_numQueryTermInfos ; k++ ) {
+					if ( ! miniMergedList[k] ) {
+						continue;
 					}
+					
+					// siterank/langid is always 0 in numeric
+					// termlists so they sort by their number correctly
+					if ( qtibuf[k].m_bigramFlags[0] & (BF_NUMBER) ) {
+						continue;
+					}
+					
+					siteRank = Posdb::getSiteRank ( miniMergedList[k] );
+					docLang  = Posdb::getLangId   ( miniMergedList[k] );
+					break;
 				}
-				else {
-					for ( int32_t k = 1 ; k < m_numQueryTermInfos ; k++ ) {
-						if ( ! miniMergedList[k] ) {
-							continue;
-						}
-						
-						// siterank/langid is always 0 in numeric
-						// termlists so they sort by their number correctly
-						if ( qtibuf[k].m_bigramFlags[0] & (BF_NUMBER) ) {
-							continue;
-						}
-						
-						siteRank = Posdb::getSiteRank ( miniMergedList[k] );
-						docLang  = Posdb::getLangId   ( miniMergedList[k] );
+				logTrace(g_conf.m_logTracePosdb, "Got siteRank %d and docLang %d", (int)siteRank, (int)docLang);
 
-						if ( Posdb::getHashGroup(miniMergedList[k])==HASHGROUP_INLINKTEXT) {
-							char inlinkerSiteRank = Posdb::getWordSpamRank(miniMergedList[k]);
-							if(inlinkerSiteRank > highestInlinkSiteRank) {
-								highestInlinkSiteRank = inlinkerSiteRank;
-							}
-						}
-						break;
-					}
-				}
-				logTrace(g_conf.m_logTracePosdb, "Got siteRank and docLang");
-					
+
 				//
 				// parms for sliding window algorithm
 				//
-				m_qpos          = qpos;
-				m_wikiPhraseIds = wikiPhraseIds;
-				m_quotedStartIds = quotedStartIds;
-				m_bestWindowScore = -2.0;
+				m_qpos				= qpos;
+				m_wikiPhraseIds		= wikiPhraseIds;
+				m_quotedStartIds	= quotedStartIds;
+				m_bestWindowScore	= -2.0;
 
 				//
 				//
