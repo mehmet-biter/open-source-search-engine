@@ -947,9 +947,6 @@ SpiderColl *SpiderCache::getSpiderColl ( collnum_t collnum ) {
 	// mark it as loading
 	sc->m_isLoading = false;
 
-	// did crawlbottesting delete it right away?
-	if ( tryToDeleteSpiderColl( sc, "1" ) ) return NULL;
-
 	// note it!
 	log(LOG_DEBUG,"spider: adding new spider collection for %s", cr->m_coll);
 	// that was it
