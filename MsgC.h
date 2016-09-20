@@ -19,7 +19,6 @@ returned result (the IP address) should be stored in all 4 caches.*/
 #include "UdpServer.h"
 #include "Dns.h"
 #include "Multicast.h"
-#include "Rdb.h"
 
 class MsgC {
 
