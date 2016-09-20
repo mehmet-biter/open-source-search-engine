@@ -57,8 +57,8 @@ void RdbIndex::reset() {
 }
 
 /// @todo ALC collapse RdbIndex::set into constructor
-void RdbIndex::set(const char *dir, const char *indexFilename,
-                   int32_t fixedDataSize , bool useHalfKeys , char keySize, char rdbId) {
+void RdbIndex::set(const char *dir, const char *indexFilename, int32_t fixedDataSize , bool useHalfKeys ,
+                   char keySize, rdbid_t rdbId) {
 	logTrace(g_conf.m_logTraceRdbIndex, "BEGIN. dir [%s], indexFilename [%s]", dir, indexFilename);
 
 	reset();
