@@ -1913,10 +1913,7 @@ bool RdbBuckets::fastSave_r() {
 	errno = 0;
 
 	// . save the header
-	// . force file head to the 0 byte in case offset was elsewhere
-	int64_t offset = 0;
-
-	offset = fastSaveColl_r(fd, offset);
+	int64_t offset = fastSaveColl_r(fd);
 
 	// close it up
 	close(fd);
@@ -1930,7 +1927,9 @@ bool RdbBuckets::fastSave_r() {
 	return offset >= 0;
 }
 
-int64_t RdbBuckets::fastSaveColl_r(int fd, int64_t offset) {
+int64_t RdbBuckets::fastSaveColl_r(int fd) {
+	int64_t offset = 0;
+
 	if (m_numKeysApprox == 0) {
 		return offset;
 	}

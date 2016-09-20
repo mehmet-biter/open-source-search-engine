@@ -181,7 +181,7 @@ public:
 	//Save/Load/Dump
 	bool fastSave(const char *dir, bool useThread, void *state, void (*callback)(void *state));
 	bool fastSave_r();
-	int64_t fastSaveColl_r(int fd, int64_t offset);
+	int64_t fastSaveColl_r(int fd);
 	bool loadBuckets(const char *dbname);
 	bool fastLoad(BigFile *f, const char *dbname);
 	int64_t fastLoadColl(BigFile *f, const char *dbname, int64_t offset);
