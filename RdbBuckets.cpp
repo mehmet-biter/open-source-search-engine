@@ -1941,17 +1941,22 @@ int64_t RdbBuckets::fastSaveColl_r(int fd) {
 
 	if (pwrite(fd, &m_numBuckets, sizeof(int32_t), offset) != 4)err = errno;
 	offset += sizeof(int32_t);
+
 	if (pwrite(fd, &m_maxBuckets, sizeof(int32_t), offset) != 4)err = errno;
 	offset += sizeof(int32_t);
 
 	if (pwrite(fd, &m_ks, sizeof(uint8_t), offset) != 1) err = errno;
 	offset += sizeof(uint8_t);
+
 	if (pwrite(fd, &m_fixedDataSize, sizeof(int32_t), offset) != 4) err = errno;
 	offset += sizeof(int32_t);
+
 	if (pwrite(fd, &m_recSize, sizeof(int32_t), offset) != 4) err = errno;
 	offset += sizeof(int32_t);
+
 	if (pwrite(fd, &m_numKeysApprox, sizeof(int32_t), offset) != 4)err = errno;
 	offset += sizeof(int32_t);
+
 	if (pwrite(fd, &m_numNegKeys, sizeof(int32_t), offset) != 4) err = errno;
 	offset += sizeof(int32_t);
 
@@ -1963,7 +1968,9 @@ int64_t RdbBuckets::fastSaveColl_r(int fd) {
 	offset += sizeof(int32_t);
 
 	// set it
-	if (err) errno = err;
+	if (err) {
+		errno = err;
+	}
 
 	// bitch on error
 	if (errno) {
