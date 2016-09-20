@@ -184,7 +184,7 @@ public:
 	int64_t fastSaveColl_r(int fd);
 	bool loadBuckets(const char *dbname);
 	bool fastLoad(BigFile *f, const char *dbname);
-	int64_t fastLoadColl(BigFile *f, const char *dbname, int64_t offset);
+	int64_t fastLoadColl(BigFile *f, const char *dbname);
 
 private:
 	RdbBucket **m_buckets;
