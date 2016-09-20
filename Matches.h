@@ -3,9 +3,7 @@
 #ifndef GB_MATCHES_H
 #define GB_MATCHES_H
 
-#include "Query.h"
 #include "Words.h"
-#include "HashTableT.h"
 #include "Pos.h"
 #include "Bits.h"
 
@@ -37,12 +35,13 @@ typedef int32_t mf_t;
 #define MF_URL                        0x4000  // in url
 
 class Xml;
-class Words;
 class Sections;
 class Url;
 class LinkInfo;
 class Title;
 class Phrases;
+class QueryTerm;
+class Query;
 
 class Match {
  public:
@@ -91,7 +90,7 @@ class Matches {
 					 Bits *bits = NULL, Pos *pos = NULL, mf_t flags = 0 );
 
 	// how many words matched a rawTermId?
-	int32_t getNumMatches() {
+	int32_t getNumMatches() const {
 		return m_numMatches;
 	}
 
@@ -102,7 +101,7 @@ class Matches {
 	void reset2 ( ) ;
 
 	// used internally and by PageGet.cpp
-	bool isMatchableTerm ( class QueryTerm *qt );
+	bool isMatchableTerm(const QueryTerm *qt) const;
 
 	// used internally
 	int32_t getNumWordsInMatch( Words *words, int32_t wn, int32_t n, int32_t *numQWords, int32_t *qwn,
@@ -112,6 +111,11 @@ class Matches {
 	Match  m_matches[MAX_MATCHES];
 	int32_t   m_numMatches;
 
+	// . 1-1 with Query::m_qwords[] array of QWords
+	// . shows the match flags for that query word
+	mf_t     *m_qwordFlags;
+
+private:
 	// . hash query word ids into a small hash table
 	// . we use this to see what words in the document are query terms
 	int64_t m_qtableIds      [ MAX_QUERY_WORDS_TO_MATCH * 3 ];
@@ -121,9 +125,6 @@ class Matches {
 	Query    *m_q;
 	int32_t      m_numAlnums;
 
-	// . 1-1 with Query::m_qwords[] array of QWords
-	// . shows the match flags for that query word
-	mf_t     *m_qwordFlags;
 	int32_t m_qwordAllocSize;
 	char m_tmpBuf[128];
 

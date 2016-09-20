@@ -1,14 +1,14 @@
 #include "gb-include.h"
 
 #include "Matches.h"
+#include "Query.h"
 #include "Titledb.h"  // for getting total # of docs in db
 #include "StopWords.h"
 #include "Phrases.h"
 #include "Title.h"
-#include "CountryCode.h"
 #include "Domains.h"
 #include "Sections.h"
-#include "XmlDoc.h"
+#include "Linkdb.h"
 #include "BitOperations.h"
 #include "Process.h"
 
@@ -45,7 +45,7 @@ void Matches::reset2() {
 	m_numMatchGroups = 0;
 }
 
-bool Matches::isMatchableTerm ( QueryTerm *qt ) { // , int32_t i ) {
+bool Matches::isMatchableTerm(const QueryTerm *qt) const {
 	QueryWord *qw = qt->m_qword;
 	// not derived from  a query word? how?
 	if ( ! qw ) return false;

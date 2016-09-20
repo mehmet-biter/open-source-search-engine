@@ -133,8 +133,9 @@ void RdbList::set(char *list, int32_t listSize, char *alloc, int32_t allocSize, 
 	verify_signature();
 	logTrace(g_conf.m_logTraceRdbList, "BEGIN. list=%p listSize=%" PRId32" alloc=%p allocSize=%" PRId32,
 	         list, listSize, alloc, allocSize);
+	char logbuf1[50],logbuf2[50];
 	logTrace(g_conf.m_logTraceRdbList, "startKey=%s endKey=%s keySize=%hhu fixedDataSize=%" PRId32,
-	         KEYSTR(startKey, keySize), KEYSTR(endKey, keySize), keySize, fixedDataSize);
+	         KEYSTR(startKey, keySize,logbuf1), KEYSTR(endKey, keySize,logbuf2), keySize, fixedDataSize);
 
 	// free and NULLify any old m_list we had to make room for our new list
 	freeList();
@@ -754,25 +755,28 @@ bool RdbList::checkList_r(bool abortOnProblem, rdbid_t rdbId) {
 
 		if ( KEYCMP(k,m_startKey,m_ks)<0 ) {
 			log("db: Key before start key in list of records.");
-			log("db: sk=%s",KEYSTR(m_startKey,m_ks));
-			log("db: k2=%s",KEYSTR(k,m_ks));
+			char logbuf1[50],logbuf2[50];
+			log("db: sk=%s",KEYSTR(m_startKey,m_ks,logbuf1));
+			log("db: k2=%s",KEYSTR(k,m_ks,logbuf2));
 			if ( abortOnProblem ) { gbshutdownAbort(true); }
 			return false;
 		}
 		if ( KEYCMP(k,oldk,m_ks)<0 ) {
 			log(
 			    "db: Key out of order in list of records.");
-			log("db: k1=%s",KEYSTR(oldk,m_ks));
-			log("db: k2=%s",KEYSTR(k,m_ks));
+			char logbuf1[50],logbuf2[50];
+			log("db: k1=%s",KEYSTR(oldk,m_ks,logbuf1));
+			log("db: k2=%s",KEYSTR(k,m_ks,logbuf2));
 
 			return false;
 		}
 		if ( KEYCMP(k,acceptable,m_ks)>0 ) {
 			log("db: Key after end key in list of records.");
 			//log("db: k.n1=%" PRIx32" k.n0=%" PRIx64,k.n1,k.n0);
-			log("db: k2=%s",KEYSTR(k,m_ks));
-			log("db: ak=%s",KEYSTR(acceptable,m_ks));
-			log("db: ek=%s",KEYSTR(m_endKey,m_ks));
+			char logbuf1[50],logbuf2[50],logbuf3[50];
+			log("db: k2=%s",KEYSTR(k,m_ks,logbuf1));
+			log("db: ak=%s",KEYSTR(acceptable,m_ks,logbuf2));
+			log("db: ek=%s",KEYSTR(m_endKey,m_ks,logbuf3));
 			if ( abortOnProblem ) { gbshutdownAbort(true); }
 			return false;
 		}
@@ -814,8 +818,9 @@ bool RdbList::checkList_r(bool abortOnProblem, rdbid_t rdbId) {
 	//   to see if the routines that set the m_lastKey were correct
 	if ( m_lastKeyIsValid && KEYCMP(oldk,m_lastKey,m_ks) != 0 ) {
 		log(LOG_LOGIC, "db: rdbList: checkList_r: Got bad last key.");
-		log(LOG_LOGIC, "db: rdbList: checkList_r: key=%s", KEYSTR(oldk,m_ks));
-		log(LOG_LOGIC, "db: rdbList: checkList_r: key=%s", KEYSTR(m_lastKey,m_ks) );
+		char logbuf1[50],logbuf2[50];
+		log(LOG_LOGIC, "db: rdbList: checkList_r: key=%s", KEYSTR(oldk,m_ks,logbuf1));
+		log(LOG_LOGIC, "db: rdbList: checkList_r: key=%s", KEYSTR(m_lastKey,m_ks,logbuf2));
 		if ( abortOnProblem ) {gbshutdownAbort(true);}
 		// fix it
 		KEYSET(m_lastKey,oldk,m_ks);
@@ -989,7 +994,8 @@ int RdbList::printPosdbList() {
 	char *oldp   = m_listPtr;
 	const char *oldphi = m_listPtrHi;
 	resetListPtr();
-	logf(LOG_DEBUG, "db: STARTKEY=%s, m_ks=%d, datasize=%" PRId32,KEYSTR(m_startKey,m_ks), (int)m_ks, m_listSize);
+	char logbuf1[50];
+	logf(LOG_DEBUG, "db: STARTKEY=%s, m_ks=%d, datasize=%" PRId32,KEYSTR(m_startKey,m_ks,logbuf1), (int)m_ks, m_listSize);
 
 	size_t key_size;
 	// 48bit 38bit 4bit 4bit 18bit
@@ -1072,9 +1078,9 @@ int RdbList::printPosdbList() {
 	}
 
 	if ( m_lastKeyIsValid )
-		logf(LOG_DEBUG,  "db: LASTKEY=%s", KEYSTR(m_lastKey,m_ks));
+		logf(LOG_DEBUG,  "db: LASTKEY=%s", KEYSTR(m_lastKey,m_ks,logbuf1));
 
-	logf(LOG_DEBUG, "db: ENDKEY=%s",KEYSTR(m_endKey,m_ks));
+	logf(LOG_DEBUG, "db: ENDKEY=%s",KEYSTR(m_endKey,m_ks,logbuf1));
 
 	//resetListPtr();
 	m_listPtr   = oldp;
@@ -1093,7 +1099,8 @@ int RdbList::printList() {
 	char *oldp   = m_listPtr;
 	const char *oldphi = m_listPtrHi;
 	resetListPtr();
-	logf(LOG_DEBUG, "db: STARTKEY=%s",KEYSTR(m_startKey,m_ks));
+	char logbuf1[50];
+	logf(LOG_DEBUG, "db: STARTKEY=%s",KEYSTR(m_startKey,m_ks,logbuf1));
 
 	while ( ! isExhausted() ) {
 		char k[MAX_KEY_BYTES];
@@ -1110,14 +1117,14 @@ int RdbList::printList() {
 			d = "";
 		}
 
-		logf(LOG_DEBUG, "db: k=%s dsize=%07" PRId32"%s", KEYSTR(k,m_ks),dataSize,d);
+		logf(LOG_DEBUG, "db: k=%s dsize=%07" PRId32"%s", KEYSTR(k,m_ks,logbuf1),dataSize,d);
 		skipCurrentRecord();
 	}
 
 	if ( m_lastKeyIsValid )
-		logf(LOG_DEBUG,  "db: LASTKEY=%s", KEYSTR(m_lastKey,m_ks));
+		logf(LOG_DEBUG,  "db: LASTKEY=%s", KEYSTR(m_lastKey,m_ks,logbuf1));
 
-	logf(LOG_INFO, "db: ENDKEY=%s",KEYSTR(m_endKey,m_ks));
+	logf(LOG_INFO, "db: ENDKEY=%s",KEYSTR(m_endKey,m_ks,logbuf1));
 
 	m_listPtr   = oldp;
 	m_listPtrHi = oldphi;
@@ -1191,6 +1198,7 @@ bool RdbList::constrain(const char *startKey, char *endKey, int32_t minRecSizes,
 	const char *savelistPtrLo = m_listPtrLo;
 
 #ifdef GBSANITYCHECK
+	char logbuf1[50];
 	char lastKey[MAX_KEY_BYTES];
 	KEYMIN(lastKey,m_ks);
 #endif
@@ -1215,7 +1223,7 @@ bool RdbList::constrain(const char *startKey, char *endKey, int32_t minRecSizes,
 		// check key order!
 		if ( KEYCMP(k,lastKey,m_ks)<= 0 ) {
 			log("constrain: key=%s out of order",
-			    KEYSTR(k,m_ks));
+			    KEYSTR(k,m_ks,logbuf1));
 			gbshutdownAbort(true);
 		}
 		KEYSET(lastKey,k,m_ks);
@@ -1227,7 +1235,7 @@ bool RdbList::constrain(const char *startKey, char *endKey, int32_t minRecSizes,
 
 #ifdef GBSANITYCHECK
 		// debug msg
-		log("constrain: skipping key=%s rs=%" PRId32, KEYSTR(k,m_ks), getRecSize(p));
+		log("constrain: skipping key=%s rs=%" PRId32, KEYSTR(k,m_ks,logbuf1), getRecSize(p));
 #endif
 
 		// . since we don't call skipCurrentRec() we must update m_listPtrHi ourselves
@@ -1302,7 +1310,7 @@ bool RdbList::constrain(const char *startKey, char *endKey, int32_t minRecSizes,
 	}
 
 #ifdef GBSANITYCHECK
-	log("constrain: hk=%s",KEYSTR(hintKey,m_ks));
+	log("constrain: hk=%s",KEYSTR(hintKey,m_ks,logbuf1));
 	log("constrain: hintOff=%" PRId32,hintOffset);
 #endif
 
@@ -1513,7 +1521,7 @@ bool RdbList::posdbConstrain(const char *startKey, char *endKey, int32_t minRecS
 		// check key order!
 		if ( KEYCMP(k,lastKey,m_ks)<= 0 ) {
 			log("constrain: key=%s out of order",
-			    KEYSTR(k,m_ks));
+			    KEYSTR(k,m_ks,logbuf1));
 			gbshutdownAbort(true);
 		}
 		KEYSET(lastKey,k,m_ks);
@@ -1525,7 +1533,7 @@ bool RdbList::posdbConstrain(const char *startKey, char *endKey, int32_t minRecS
 
 #ifdef GBSANITYCHECK
 		// debug msg
-		log("constrain: skipping key=%s rs=%" PRId32, KEYSTR(k,m_ks), getRecSize(p));
+		log("constrain: skipping key=%s rs=%" PRId32, KEYSTR(k,m_ks,logbuf1), getRecSize(p));
 #endif
 		int32_t recSize = 18;
 		if (p[0] & 0x04) {
@@ -2146,7 +2154,8 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 
 	logTrace(g_conf.m_logTraceRdbList, "lists=%p numLists=%" PRId32" minRecSizes=%" PRId32 " removeNegKeys=%s",
 	         lists, numLists, minRecSizes, removeNegKeys ? "true" : "false");
-	logTrace(g_conf.m_logTraceRdbList, "startKey=%s endKey=%s", KEYSTR(startKey,m_ks), KEYSTR(endKey,m_ks));
+	char logbuf1[50],logbuf2[50];
+	logTrace(g_conf.m_logTraceRdbList, "startKey=%s endKey=%s", KEYSTR(startKey,m_ks,logbuf1), KEYSTR(endKey,m_ks,logbuf2));
 	logTrace(g_conf.m_logTraceRdbList, "m_allocSize=%" PRId32" m_mergeMinListSize=%" PRId32, m_allocSize, m_mergeMinListSize);
 
 	// did they call prepareForMerge()?
