@@ -357,15 +357,7 @@ void heartbeatWrapper(int /*fd*/, void * /*state*/) {
 	// . this is a sign things are jammed up
 	int64_t elapsed = now - s_last;
 	if ( elapsed > 200 ) {
-		// now we print the # of elapsed alarms. that way we will
-		// know if the alarms were going off or not...
-		// this happens if the rt sig queue is overflowed.
-		// check the "cat /proc/<pid>/status | grep SigQ" output
-		// to see if its overflowed. hopefully i will fix this by
-		// queue the signals myself in Loop.cpp.
-		log( LOG_WARN, "db: missed calling niceness 0 heartbeatWrapper "
-				"function by %" PRId64" ms. Either you need a quickpoll "
-				"somewhere or a niceness 0 function is taking too long. ", elapsed - 100 );
+		log( LOG_WARN, "heartbeatWrapper: elapsed=%" PRId64 "ms - is main thread slow?", elapsed);
 	}
 	s_last = now;
 
