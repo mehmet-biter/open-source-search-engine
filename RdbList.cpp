@@ -643,8 +643,7 @@ bool RdbList::checkList_r(bool abortOnProblem, rdbid_t rdbId) {
 		KEYSET ( acceptable , m_endKey , m_ks );
 	char k[MAX_KEY_BYTES];
 
-	static int32_t th = 0;
-	if ( ! th ) th = hash64Lower_a ( "roottitles" , 10 );
+	static const int32_t roottitles_hashvalue = hash64Lower_a("roottitles", 10);
 
 	while ( ! isExhausted() ) {
 		getCurrentKey( k );
@@ -661,7 +660,7 @@ bool RdbList::checkList_r(bool abortOnProblem, rdbid_t rdbId) {
 		// tagrec?
 		if ( rdbId == RDB_TAGDB && ! KEYNEG(k) ) {
 			Tag *tag = (Tag *)getCurrentRec();
-			if ( tag->m_type == th ) {
+			if ( tag->m_type == roottitles_hashvalue ) {
 				char *tdata = tag->getTagData();
 				int32_t tsize = tag->getTagDataSize();
 				// core if tag val is not \0 terminated
