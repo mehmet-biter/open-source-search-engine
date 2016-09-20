@@ -938,10 +938,6 @@ SpiderColl *SpiderCache::getSpiderColl ( collnum_t collnum ) {
 	// set first doledb scan key
 	sc->m_nextDoledbKey.setMin();
 
-	// turn off quickpolling while loading incase a parm update comes in
-	bool saved = g_conf.m_useQuickpoll;
-	g_conf.m_useQuickpoll = false;
-
 	// mark it as loading so it can't be deleted while loading
 	sc->m_isLoading = true;
 	// . load its tables from disk
@@ -950,9 +946,6 @@ SpiderColl *SpiderCache::getSpiderColl ( collnum_t collnum ) {
 	sc->load();
 	// mark it as loading
 	sc->m_isLoading = false;
-
-	// restore
-	g_conf.m_useQuickpoll = saved;
 
 	// did crawlbottesting delete it right away?
 	if ( tryToDeleteSpiderColl( sc, "1" ) ) return NULL;
