@@ -145,21 +145,8 @@ bool Summary::setSummary ( Xml *xml, Words *words, Sections *sections, Pos *pos,
 	m_numDisplayLines = numDisplayLines;
 	m_displayLen      = 0;
 
-	// assume we got maxnumlines of summary
-	if ( (maxNumCharsPerLine + 6) * maxNumLines > maxSummaryLen ) {
-		if ( maxNumCharsPerLine < 10 ) {
-			maxNumCharsPerLine = 10;
-		}
-
-		static char s_flag = 1;
-		if ( s_flag ) {
-			s_flag = 0;
-			log("query: Warning. "
-			    "Max summary excerpt length decreased to "
-			    "%" PRId32" chars because max summary excerpts and "
-			    "max summary length are too big.",
-			    maxNumCharsPerLine);
-		}
+	if ( maxNumCharsPerLine < 10 ) {
+		maxNumCharsPerLine = 10;
 	}
 
 	// . sanity check
