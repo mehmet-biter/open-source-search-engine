@@ -58,7 +58,7 @@ public:
 	bool addKey(const char *key, char *data, int32_t dataSize);
 	char *getKeyVal(const char *key, char **data, int32_t *dataSize);
 
-	int32_t getKeyNumExact(const char *key) const; //returns -1 if not found
+	int32_t getNode(const char *key) const; //returns -1 if not found
 	int32_t getNumNegativeKeys() const;
 
 	bool getList(RdbList *list, const char *startKey, const char *endKey, int32_t minRecSizes,

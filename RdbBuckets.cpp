@@ -347,7 +347,7 @@ bool RdbBucket::addKey(const char *key, char *data, int32_t dataSize) {
 char* RdbBucket::getKeyVal( const char *key , char **data , int32_t* dataSize ) {
 	sort();
 
-	int32_t i = getKeyNumExact(key);
+	int32_t i = getNode(key);
 	if (i < 0) {
 		return NULL;
 	}
@@ -366,7 +366,7 @@ char* RdbBucket::getKeyVal( const char *key , char **data , int32_t* dataSize ) 
 	return rec;
 }
 
-int32_t RdbBucket::getKeyNumExact(const char* key) const {
+int32_t RdbBucket::getNode(const char *key) const {
 	uint8_t ks = m_parent->getKeySize();
 	int32_t recSize = m_parent->getRecSize();
 	int32_t i = 0;
