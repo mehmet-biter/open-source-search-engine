@@ -684,9 +684,7 @@ int32_t RdbBuckets::addNode(collnum_t collnum, char *key, char *data, int32_t da
 
 	m_needsSave = true;
 
-	int32_t i;
-
-	i = getBucketNum(key, collnum);
+	int32_t i = getBucketNum(key, collnum);
 	if (i == m_numBuckets || m_buckets[i]->getCollnum() != collnum) {
 		int32_t bucketsCutoff = (BUCKET_SIZE >> 1);
 		// when repairing the keys are added in order,
