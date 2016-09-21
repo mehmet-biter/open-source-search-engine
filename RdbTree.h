@@ -160,8 +160,6 @@ public:
 	// . this happens if memory is corrupted!
 	bool deleteList(collnum_t collnum, RdbList *list, bool doBalancing);
 
-	bool deleteKeys(collnum_t collnum, char *keys, int32_t numKeys);
-
 	// . if the list's keys are ordered from smallest to largest
 	//   this acts just like deleteList() above, but saves time by
 	//   using getNextNode() rather than lookup each key from root of tree

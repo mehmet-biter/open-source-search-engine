@@ -967,23 +967,6 @@ void RdbTree::deleteNode(int32_t i, bool freeData) {
 	if ( m_useProtection && undo ) protect ( );
 }
 
-bool RdbTree::deleteKeys ( collnum_t collnum , char *keys , int32_t numKeys ) {
-	// make a fake list
-	RdbList list;
-	int32_t size = m_ks * numKeys;
-	list.set ( keys  ,
-		   size  ,
-		   keys  ,
-		   size  ,
-		   keys  ,
-		   keys  ,
-		   0     , // fixedDataSize
-		   false ,
-		   false ,
-		   m_ks  );
-	return deleteList ( collnum , &list , true );
-}
-
 // . TODO: speed up since keys are usually ordered (use getNextNode())
 // . returns false if a key in list was not found
 bool RdbTree::deleteList(collnum_t collnum, RdbList *list, bool doBalancing) {
