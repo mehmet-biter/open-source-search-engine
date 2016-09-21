@@ -103,7 +103,7 @@ public:
 
 	int32_t addNode(collnum_t collnum, char *key, char *data, int32_t dataSize);
 
-	bool addList(RdbList *list, collnum_t collnum);
+	bool addList(collnum_t collnum, RdbList *list);
 
 	char *getKeyVal(collnum_t collnum, const char *key, char **data, int32_t *dataSize);
 
@@ -118,8 +118,8 @@ public:
 
 
 	bool addBucket (RdbBucket *newBucket, int32_t i);
-	int32_t getBucketNum(const char *key, collnum_t collnum);
-	char bucketCmp(const char *akey, collnum_t acoll, RdbBucket* b);
+	int32_t getBucketNum(collnum_t collnum, const char *key);
+	char bucketCmp(collnum_t acoll, const char *akey, RdbBucket* b);
 
 	bool collExists(collnum_t coll);
 

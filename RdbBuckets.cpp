@@ -684,7 +684,7 @@ int32_t RdbBuckets::addNode(collnum_t collnum, char *key, char *data, int32_t da
 
 	m_needsSave = true;
 
-	int32_t i = getBucketNum(key, collnum);
+	int32_t i = getBucketNum(collnum, key);
 	if (i == m_numBuckets || m_buckets[i]->getCollnum() != collnum) {
 		int32_t bucketsCutoff = (BUCKET_SIZE >> 1);
 		// when repairing the keys are added in order,
@@ -730,7 +730,7 @@ int32_t RdbBuckets::addNode(collnum_t collnum, char *key, char *data, int32_t da
 		newBucket->setCollnum(collnum);
 		m_buckets[i]->split(newBucket);
 		addBucket(newBucket, i + 1);
-		if (bucketCmp(key, collnum, m_buckets[i]) > 0) {
+		if (bucketCmp(collnum, key, m_buckets[i]) > 0) {
 			i++;
 		}
 
@@ -790,8 +790,8 @@ bool RdbBuckets::getList(collnum_t collnum, const char *startKey, const char *en
 		minRecSizes = 0x7fffffff; //LONG_MAX;
 	}
 
-	int32_t startBucket = getBucketNum(startKey, collnum);
-	if (startBucket > 0 && bucketCmp(startKey, collnum, m_buckets[startBucket - 1]) < 0) {
+	int32_t startBucket = getBucketNum(collnum, startKey);
+	if (startBucket > 0 && bucketCmp(collnum, startKey, m_buckets[startBucket - 1]) < 0) {
 		startBucket--;
 	}
 
@@ -803,10 +803,10 @@ bool RdbBuckets::getList(collnum_t collnum, const char *startKey, const char *en
 
 
 	int32_t endBucket;
-	if (bucketCmp(endKey, collnum, m_buckets[startBucket]) <= 0) {
+	if (bucketCmp(collnum, endKey, m_buckets[startBucket]) <= 0) {
 		endBucket = startBucket;
 	} else {
-		endBucket = getBucketNum(endKey, collnum);
+		endBucket = getBucketNum(collnum, endKey);
 	}
 
 	if (endBucket == m_numBuckets || m_buckets[endBucket]->getCollnum() != collnum) {
@@ -876,10 +876,10 @@ bool RdbBuckets::getList(collnum_t collnum, const char *startKey, const char *en
 int RdbBuckets::getListSizeExact(collnum_t collnum, const char *startKey, const char *endKey) {
 	int numBytes = 0;
 
-	int32_t startBucket = getBucketNum(startKey, collnum);
+	int32_t startBucket = getBucketNum(collnum, startKey);
 
 	// does this mean empty?
-	if (startBucket > 0 && bucketCmp(startKey, collnum, m_buckets[startBucket-1]) < 0) {
+	if (startBucket > 0 && bucketCmp(collnum, startKey, m_buckets[startBucket-1]) < 0) {
 		startBucket--;
 	}
 
@@ -888,10 +888,10 @@ int RdbBuckets::getListSizeExact(collnum_t collnum, const char *startKey, const 
 	}
 
 	int32_t endBucket;
-	if (bucketCmp(endKey, collnum, m_buckets[startBucket]) <= 0) {
+	if (bucketCmp(collnum, endKey, m_buckets[startBucket]) <= 0) {
 		endBucket = startBucket;
 	} else {
-		endBucket = getBucketNum(endKey, collnum);
+		endBucket = getBucketNum(collnum, endKey);
 	}
 
 	if (endBucket == m_numBuckets || m_buckets[endBucket]->getCollnum() != collnum) {
@@ -1030,7 +1030,7 @@ bool RdbBuckets::selfTest(bool thorough, bool core) {
 	return true;
 }
 
-char RdbBuckets::bucketCmp(const char *akey, collnum_t acoll, RdbBucket *b) {
+char RdbBuckets::bucketCmp(collnum_t acoll, const char *akey, RdbBucket *b) {
 	if (acoll == b->getCollnum()) {
 		return KEYCMPNEGEQ(akey, b->getEndKey(), m_ks);
 	}
@@ -1042,12 +1042,12 @@ char RdbBuckets::bucketCmp(const char *akey, collnum_t acoll, RdbBucket *b) {
 	return 1;
 }
 
-int32_t RdbBuckets::getBucketNum(const char* key, collnum_t collnum) {
+int32_t RdbBuckets::getBucketNum(collnum_t collnum, const char* key) {
 	if (m_numBuckets < 10) {
 		int32_t i = 0;
 		for (; i < m_numBuckets; i++) {
 			RdbBucket *b = m_buckets[i];
-			char v = bucketCmp(key, collnum, b);
+			char v = bucketCmp(collnum, key, b);
 			if (v > 0) {
 				continue;
 			}
@@ -1064,7 +1064,7 @@ int32_t RdbBuckets::getBucketNum(const char* key, collnum_t collnum) {
 		int32_t delta = high - low;
 		i = low + (delta >> 1);
 		b = m_buckets[i];
-		char v = bucketCmp(key, collnum, b);
+		char v = bucketCmp(collnum, key, b);
 		if (v < 0) {
 			high = i - 1;
 			continue;
@@ -1077,7 +1077,7 @@ int32_t RdbBuckets::getBucketNum(const char* key, collnum_t collnum) {
 	}
 	
 	//now fine tune:
-	v = bucketCmp(key, collnum, b);
+	v = bucketCmp(collnum, key, b);
 	if (v > 0) {
 		i++;
 	}
@@ -1127,7 +1127,7 @@ int32_t RdbBuckets::getNumPositiveKeys() const {
 }
 
 char *RdbBuckets::getKeyVal(collnum_t collnum, const char *key, char **data, int32_t *dataSize) {
-	int32_t i = getBucketNum(key, collnum);
+	int32_t i = getBucketNum(collnum, key);
 	if (i == m_numBuckets || m_buckets[i]->getCollnum() != collnum) {
 		return NULL;
 	}
@@ -1501,8 +1501,8 @@ bool RdbBuckets::deleteList(collnum_t collnum, RdbList *list) {
 	list->getStartKey(startKey);
 	list->getEndKey(endKey);
 
-	int32_t startBucket = getBucketNum(startKey, collnum);
-	if (startBucket > 0 && bucketCmp(startKey, collnum, m_buckets[startBucket - 1]) < 0) {
+	int32_t startBucket = getBucketNum(collnum, startKey);
+	if (startBucket > 0 && bucketCmp(collnum, startKey, m_buckets[startBucket - 1]) < 0) {
 		startBucket--;
 	}
 
@@ -1512,7 +1512,7 @@ bool RdbBuckets::deleteList(collnum_t collnum, RdbList *list) {
 		return true;
 	}
 
-	int32_t endBucket = getBucketNum(endKey, collnum);
+	int32_t endBucket = getBucketNum(collnum, endKey);
 	if (endBucket == m_numBuckets || m_buckets[endBucket]->getCollnum() != collnum) {
 		endBucket--;
 	}
@@ -1726,7 +1726,7 @@ int32_t RdbBuckets::addTree(RdbTree *rt) {
 }
 
 //this could be sped up a lot, but it is only called from repair at the moment.
-bool RdbBuckets::addList(RdbList* list, collnum_t collnum) {
+bool RdbBuckets::addList(collnum_t collnum, RdbList* list) {
 	char listKey[MAX_KEY_BYTES];
 
 	for (list->resetListPtr(); !list->isExhausted(); list->skipCurrentRecord()) {
@@ -1750,8 +1750,8 @@ int64_t RdbBuckets::getListSize(collnum_t collnum, const char *startKey, const c
 		KEYSET(maxKey, startKey, m_ks);
 	}
 
-	int32_t startBucket = getBucketNum(startKey, collnum);
-	if (startBucket > 0 && bucketCmp(startKey, collnum, m_buckets[startBucket - 1]) < 0) {
+	int32_t startBucket = getBucketNum(collnum, startKey);
+	if (startBucket > 0 && bucketCmp(collnum, startKey, m_buckets[startBucket - 1]) < 0) {
 		startBucket--;
 	}
 
@@ -1759,7 +1759,7 @@ int64_t RdbBuckets::getListSize(collnum_t collnum, const char *startKey, const c
 		return 0;
 	}
 
-	int32_t endBucket = getBucketNum(endKey, collnum);
+	int32_t endBucket = getBucketNum(collnum, endKey);
 	if (endBucket == m_numBuckets || m_buckets[endBucket]->getCollnum() != collnum) {
 		endBucket--;
 	}
