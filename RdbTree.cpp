@@ -666,11 +666,10 @@ int32_t RdbTree::addNode ( collnum_t collnum , const char *key , char *data , in
 
 int32_t RdbTree::deleteNode(collnum_t collnum, const char *key, bool freeData) {
 	int32_t node = getNode ( collnum , key );
-	// debug
-	//log("db: deleting n1=%" PRIx64" n0=%" PRIx64" node=%" PRId32".",
-	//    *(int64_t *)(key+8), *(int64_t *)(key+0),node);
-	if ( node == -1 ) return -1;
-	deleteNode(node, freeData);
+	if (node != -1) {
+		deleteNode(node, freeData);
+	}
+
 	return node;
 }
 
