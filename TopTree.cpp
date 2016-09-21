@@ -355,7 +355,7 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 		if ( k <= *((key96_t *)m_t2.getKey(min)) ) return false;
 		// . add ourselves. use 0 for collnum.
 		// . dataPtr is not really a ptr, but the node
-		n = m_t2.addNode ( 0 , k , NULL , 4 );
+		n = m_t2.addNode ( 0 , (const char *)&k , NULL , 4 );
 		//if ( n == 52 )
 		//	log("r2 node 52 has domHash=%" PRId32,domHash);
 		// the next node before the current min will be the next min
@@ -381,7 +381,7 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 	}
 	// if we have not violated the ridiculous max, just add ourselves
 	else if ( m_doSiteClustering ) {
-		n = m_t2.addNode ( 0 , k , NULL , 4 );
+		n = m_t2.addNode ( 0 , (const char *)&k , NULL , 4 );
 		//if ( n == 52 )
 		//	log("r2 nodeb 52 has domHash=%" PRId32,domHash);
 		// sanity check

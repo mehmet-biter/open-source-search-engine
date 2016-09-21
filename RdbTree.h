@@ -104,12 +104,10 @@ public:
 	int32_t addKey  ( const void *key ) {
 		return addNode ( 0,(const char *)key,NULL,0);
 	}
-	int32_t addNode ( collnum_t collnum , const char *key, char *data, int32_t dataSize );
-	int32_t addNode ( collnum_t collnum , const key96_t &key, char *data, int32_t dataSize ) {
-		return addNode(collnum,(const char *)&key,data,dataSize);
-	}
-	int32_t addNode ( collnum_t collnum , const char *key ) {
-		return addNode ( collnum , key , NULL , 0 );
+
+	int32_t addNode(collnum_t collnum, const char *key, char *data, int32_t dataSize);
+	int32_t addNode(collnum_t collnum, const char *key) {
+		return addNode(collnum, key, NULL, 0);
 	}
 			
 	// . returns -1 if not found

@@ -3748,7 +3748,7 @@ bool treetest ( ) {
 	for ( int32_t i = 0 ; i < numKeys ; i++ ) {
 		//if ( k[i].n1 == 1234567 )
 		//	fprintf(stderr,"i=%" PRId32"\n",i);
-		if ( rt.addNode ( (collnum_t)0 , k[i] , NULL , 0 ) < 0 ) {
+		if ( rt.addNode ( (collnum_t)0 , (const char*)&(k[i]) , NULL , 0 ) < 0 ) {
 			log(LOG_WARN, "speedTest: rdb tree addNode failed");
 			return false;
 		}
