@@ -101,10 +101,7 @@ class PosdbTable {
 				 DocIdScore *pdcs,
 				 const char **bestPos);
 
-	void evalSlidingWindow(const char **ptrs,
-			       int32_t nr,
-			       const char **bestPos,
-			       float *scoreMatrix);
+	void evalSlidingWindow(const char **ptrs, const char **bestPos, float *scoreMatrix);
 	float getTermPairScoreForWindow( const char *wpi, const char *wpj, int32_t fixedDistance);
 
 	float getTermPairScoreForAny   ( int32_t i, int32_t j,

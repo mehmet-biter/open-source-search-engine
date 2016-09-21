@@ -1119,8 +1119,8 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 					bestFixed [bro] = fixedDistance;
 				}
 			}
-			// best?
-			else if ( numTop < m_realMaxTop ) { // MAX_TOP ) {
+			else 
+			if ( numTop < m_realMaxTop ) { // MAX_TOP ) {
 				bestScores[numTop] = score;
 				bestwpi   [numTop] = wpi;
 				bestwpj   [numTop] = wpj;
@@ -1129,7 +1129,8 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 				bestFixed [numTop] = fixedDistance;
 				numTop++;
 			}
-			else if ( score > bestScores[minx] ) {
+			else 
+			if ( minx >= 0 && score > bestScores[minx] ) {
 				bestScores[minx] = score;
 				bestwpi   [minx] = wpi;
 				bestwpj   [minx] = wpj;
@@ -1142,7 +1143,7 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 			if ( numTop >= m_realMaxTop ) { // MAX_TOP ) {
 				minx = 0;
 				for ( int32_t k = 1 ; k < m_realMaxTop;k++){//MAX_TOP;k++
-					if (bestScores[k]>bestScores[minx] ) {
+					if (bestScores[k] > bestScores[minx] ) {
 						continue;
 					}
 					
