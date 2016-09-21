@@ -160,7 +160,7 @@ public:
 	// . if the list's keys are ordered from smallest to largest
 	//   this acts just like deleteList() above, but saves time by
 	//   using getNextNode() rather than lookup each key from root of tree
-	void deleteOrderedList ( collnum_t collnum , RdbList *list , bool doBalancing );
+	void deleteOrderedList(collnum_t collnum, RdbList *list);
 
 	bool isSaving() const { return m_isSaving; }
 	bool isWritable() const { return m_isWritable; }

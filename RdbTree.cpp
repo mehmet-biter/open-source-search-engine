@@ -1007,8 +1007,7 @@ bool RdbTree::deleteList(collnum_t collnum, RdbList *list) {
 }
 
 // TODO: speed up since keys are usually ordered (use getNextNode())
-void RdbTree::deleteOrderedList ( collnum_t collnum ,
-				  RdbList *list , bool doBalancing ) {
+void RdbTree::deleteOrderedList(collnum_t collnum, RdbList *list) {
 	// return if no non-empty nodes in the tree
 	if ( m_numUsedNodes <= 0 ) return ;
 	// reset before calling list->getCurrent*() functions
@@ -1017,15 +1016,10 @@ void RdbTree::deleteOrderedList ( collnum_t collnum ,
 	// bail if list is empty now
 	if ( list->isEmpty() ) return;
 
-	//int32_t  dataSize;
-	//key = list->getCurrentKey      ( );
 	list->getCurrentKey ( key );
 	// get the node whose keys is just <= key
 	int32_t node = getPrevNode ( collnum , key );
-	// preserve state of balance
-	bool balanced = m_doBalancing;
-	// possibly turn off balancing (only turn on/off if it's already on)
-	if ( m_doBalancing ) m_doBalancing = doBalancing;
+
 	// disable mem protection
 	if ( m_useProtection ) unprotect ( );
  top:
@@ -1065,9 +1059,8 @@ void RdbTree::deleteOrderedList ( collnum_t collnum ,
 	//key = list->getCurrentKey() ;
 	list->getCurrentKey ( key ) ;
 	goto top2;
+
  done:
-	// possibly restore balancing
-	m_doBalancing = balanced;
 
 	// re-enable mem protection
 	if ( m_useProtection ) protect ( );
@@ -1075,7 +1068,6 @@ void RdbTree::deleteOrderedList ( collnum_t collnum ,
 
 // . this fixes the tree
 // returns false if could not fix tree and sets g_errno, otherwise true
-
 bool RdbTree::fixTree ( ) {
 	// on error, fix the linked list
 	//log("RdbTree::fixTree: tree was corrupted on disk?");
