@@ -12,84 +12,6 @@
 #define INIT_SIZE 4096
 #define SAVE_VERSION 0
 
-inline int KEYCMP12 ( const void *a, const void *b ) {
-	char* k1 = (char*)a;
-	char* k2 = (char*)b;
-	if ( (*(uint64_t *)(k1+4)) <
-	     (*(uint64_t *)(k2+4)) ) return -1;
-	if ( (*(uint64_t *)(k1+4)) > 
-	     (*(uint64_t *)(k2+4)) ) return  1;
-	uint32_t k1n0 = ((*(uint32_t*)(k1)) & ~0x01UL);
-	uint32_t k2n0 = ((*(uint32_t*)(k2)) & ~0x01UL);
-	if ( k1n0 < k2n0 ) return -1;
-	if ( k1n0 > k2n0 ) return  1;
-	return 0;
-}
-
-inline int KEYCMP16 ( const void *a, const void *b ) {
-	char* k1 = (char*)a;
-	char* k2 = (char*)b;
-	if ( (*(uint64_t *)(k1+8)) <
-	     (*(uint64_t *)(k2+8)) ) return -1;
-	if ( (*(uint64_t *)(k1+8)) >
-	     (*(uint64_t *)(k2+8)) ) return  1;
-	uint64_t k1n0 = ((*(uint64_t *)(k1)) & ~0x01ULL);
-	uint64_t k2n0 = ((*(uint64_t *)(k2)) & ~0x01ULL);
-	if ( k1n0 < k2n0 ) return -1;
-	if ( k1n0 > k2n0 ) return  1;
-	return 0;
-}
-
-inline int KEYCMP18 ( const void *a, const void *b ) {
-	char* k1 = (char*)a;
-	char* k2 = (char*)b;
-	if ( (*(uint64_t *)(k1+10)) <
-	     (*(uint64_t *)(k2+10)) ) return -1;
-	if ( (*(uint64_t *)(k1+10)) >
-	     (*(uint64_t *)(k2+10)) ) return  1;
-	if ( (*(uint64_t *)(k1+2)) <
-	     (*(uint64_t *)(k2+2)) ) return -1;
-	if ( (*(uint64_t *)(k1+2)) >
-	     (*(uint64_t *)(k2+2)) ) return  1;
-	uint16_t k1n0 = ((*(uint16_t *)(k1)) & 0xfffe);
-	uint16_t k2n0 = ((*(uint16_t *)(k2)) & 0xfffe);
-	if ( k1n0 < k2n0 ) return -1;
-	if ( k1n0 > k2n0 ) return  1;
-	return 0;
-}
-
-inline int KEYCMP24 ( const void *a, const void *b ) {
-	char* k1 = (char*)a;
-	char* k2 = (char*)b;
-	if ( (*(uint64_t *)(k1+16)) <
-	     (*(uint64_t *)(k2+16)) ) return -1;
-	if ( (*(uint64_t *)(k1+16)) >
-	     (*(uint64_t *)(k2+16)) ) return  1;
-	if ( (*(uint64_t *)(k1+8)) <
-	     (*(uint64_t *)(k2+8)) ) return -1;
-	if ( (*(uint64_t *)(k1+8)) >
-	     (*(uint64_t *)(k2+8)) ) return  1;
-	uint64_t k1n0 = ((*(uint64_t *)(k1)) & ~0x01ULL);
-	uint64_t k2n0 = ((*(uint64_t *)(k2)) & ~0x01ULL);
-	if ( k1n0 < k2n0 ) return -1;
-	if ( k1n0 > k2n0 ) return  1;
-	return 0;
-}
-
-inline int KEYCMP6 ( const void *a, const void *b ) {
-	char* k1 = (char*)a;
-	char* k2 = (char*)b;
-	if ( (*(uint32_t  *)(k1+2)) <
-	     (*(uint32_t  *)(k2+2)) ) return -1;
-	if ( (*(uint32_t  *)(k1+2)) >
-	     (*(uint32_t  *)(k2+2)) ) return  1;
-	if ( (*(uint16_t *)(k1+0)) <
-	     (*(uint16_t *)(k2+0)) ) return -1;
-	if ( (*(uint16_t *)(k1+0)) >
-	     (*(uint16_t *)(k2+0)) ) return  1;
-	return 0;
-}
-
 bool RdbBucket::set(RdbBuckets* parent, char* newbuf) {
 	m_endKey = NULL;
 	m_parent = parent;
@@ -154,6 +76,35 @@ bool RdbBuckets::hasRoom(int32_t numRecs) const {
 	return ( m_maxBucketsCapacity - m_numBuckets >= numBucketsRequired );
 }
 
+#define CMPFN(ks) \
+	[](const void *a, const void *b) { \
+		return static_cast<int>(KEYCMPNEGEQ(static_cast<const char*>(a), static_cast<const char*>(b), ks)); \
+	};
+
+static int (*getCmpFn(uint8_t ks))(const void*, const void *) {
+	int (*cmpfn) (const void*, const void *) = NULL;
+
+	if (ks == 18) {
+		cmpfn = CMPFN(18);
+	} else if (ks == 12) {
+		cmpfn = CMPFN(12);
+	} else if (ks == 16) {
+		cmpfn = CMPFN(16);
+	} else if (ks == 6) {
+		cmpfn = CMPFN(6);
+	} else if (ks == 24) {
+		cmpfn = CMPFN(24);
+	} else if (ks == 28) {
+		cmpfn = CMPFN(28);
+	} else if (ks == 8) {
+		cmpfn = CMPFN(8);
+	} else {
+		gbshutdownAbort(true);
+	}
+
+	return cmpfn;
+}
+
 bool RdbBucket::sort() {
 	if (m_lastSorted == m_numKeys) {
 		return true;
@@ -167,21 +118,6 @@ bool RdbBucket::sort() {
 	uint8_t ks = m_parent->getKeySize();
 	int32_t recSize = m_parent->getRecSize();
 	int32_t fixedDataSize = m_parent->getFixedDataSize();
-
-	int (*cmpfn) (const void*, const void *) = NULL;
-	if (ks == 18) {
-		cmpfn = KEYCMP18;
-	} else if (ks == 24) {
-		cmpfn = KEYCMP24;
-	} else if (ks == 12) {
-		cmpfn = KEYCMP12;
-	} else if (ks == 16) {
-		cmpfn = KEYCMP16;
-	} else if (ks == 6) {
-		cmpfn = KEYCMP6;
-	} else {
-		gbshutdownAbort(true);
-	}
 
 	char* mergeBuf  = m_parent->getSwapBuf();
 	if (!mergeBuf) {
@@ -202,7 +138,8 @@ bool RdbBucket::sort() {
 	if (!m_parent->getSortBuf()) {
 		gbshutdownAbort(true);
 	}
-	gbmergesort(list2, numUnsorted, recSize, cmpfn, m_parent->getSortBuf(), m_parent->getSortBufSize());
+
+	gbmergesort(list2, numUnsorted, recSize, getCmpFn(ks), m_parent->getSortBuf(), m_parent->getSortBufSize());
 
 	char *p = mergeBuf;
 	char v;
