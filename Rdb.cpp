@@ -1921,7 +1921,7 @@ bool Rdb::addRecord(collnum_t collnum, char *key, char *data, int32_t dataSize) 
 			// . we NO LONGER annihilate with him. why?
 			// . freeData should be true, the tree doesn't own the data
 			//   so it shouldn't free it really
-			m_tree.deleteNode3(n, true);
+			m_tree.deleteNode(n, true);
 		}
 
 		// if we have no files on disk for this db, don't bother
@@ -2076,7 +2076,7 @@ bool Rdb::addRecord(collnum_t collnum, char *key, char *data, int32_t dataSize) 
 				if (indexCode == EABANDONED) {
 					log(LOG_WARN, "rdb: not adding spiderreply to rdb because it was an internal error for uh48=%" PRIu64
 					              " errCode = %s", rr->getUrlHash48(), mstrerror(indexCode));
-					m_tree.deleteNode3(tn, false);
+					m_tree.deleteNode(tn, false);
 				}
 			}
 

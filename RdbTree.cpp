@@ -670,7 +670,7 @@ int32_t RdbTree::deleteNode  ( collnum_t collnum, const char *key, bool freeData
 	//log("db: deleting n1=%" PRIx64" n0=%" PRIx64" node=%" PRId32".",
 	//    *(int64_t *)(key+8), *(int64_t *)(key+0),node);
 	if ( node == -1 ) return -1;
-	deleteNode3(node,freeData); 
+	deleteNode(node, freeData);
 	return node;
 }
 
@@ -695,7 +695,7 @@ void RdbTree::deleteNodes ( collnum_t collnum ,
 		if ( m_collnums[node] != collnum ) break;
 		//if ( m_keys    [node] > endKey   ) return;
 		if ( KEYCMP(m_keys,node,endKey,0,m_ks) > 0 ) break;
-		deleteNode3 ( node , freeData );
+		deleteNode(node, freeData);
 		// rotation in setDepths() will cause him to be replaced
 		// with one of his kids, unless he's a leaf node
 		//node = next;
@@ -709,7 +709,7 @@ void RdbTree::deleteNodes ( collnum_t collnum ,
 // . deletes node i from the tree
 // . i's parent should point to i's left or right kid
 // . if i has no parent then his left or right kid becomes the new top node
-void RdbTree::deleteNode3 ( int32_t i , bool freeData ) {
+void RdbTree::deleteNode(int32_t i, bool freeData) {
 	// sanity check
 	if ( ! m_isWritable ) {
 		log("db: Can not delete record from tree because "
@@ -1060,7 +1060,7 @@ void RdbTree::deleteOrderedList ( collnum_t collnum ,
 	//if ( m_keys [ node ] == key && m_collnums [ node ] == collnum ) {
 	if ( KEYCMP(m_keys,node,key,0,m_ks)==0 && m_collnums[node] == collnum){
 		// trim the node from the tree
-		deleteNode3 ( node , true /*freeData?*/ );
+		deleteNode(node, true /*freeData?*/ );
 		// get next node in tree
 		node = getNextNode ( node ) ;
 		// . point to next key in list to delete
@@ -2726,7 +2726,7 @@ bool RdbTree::fastLoad ( BigFile *f , RdbMem *stack ) {
 			log("got one");
 			// make it negative
 			m_keys[i].n0 &= 0xfffffffffffffffeLL;
-			//deleteNode3 ( i , true ); // freeData?
+			//deleteNode ( i , true ); // freeData?
 			//goto again;
 		}
 		log("REMOVED %" PRId32,count);
@@ -2893,13 +2893,13 @@ void RdbTree::cleanTree ( ) { // char **bases ) {
 		     m_collnums[i] <  max &&
 		     g_collectiondb.m_recs[m_collnums[i]] ) continue;
 		// if it is negtiave, remove it, that is wierd corruption
-		if ( m_collnums[i] < 0 ) 
-			deleteNode3 ( i , true );
+		if ( m_collnums[i] < 0 )
+			deleteNode(i, true);
 		// remove it otherwise
 		// don't actually remove it!!!! in case collection gets
 		// moved accidentally.
 		// no... otherwise it can clog up the tree forever!!!!
-		deleteNode3 ( i , true );
+		deleteNode(i, true);
 		count++;
 		// save it
 		collnum = m_collnums[i];
