@@ -2937,7 +2937,7 @@ bool PosdbTable::prefilterMaxPossibleScoreByDistance(QueryTermInfo *qtibuf, cons
 // is merged into a single list, so we end up with one list per query 
 // term. 
 //
-void PosdbTable::mergeTermSubListsForDocId(char *miniMergeBuf, QueryTermInfo *qtibuf, const char **miniMergedList, const char **miniMergedEnd, int *highestInlinkSiteRank) {
+void PosdbTable::mergeTermSubListsForDocId(QueryTermInfo *qtibuf, char *miniMergeBuf, const char **miniMergedList, const char **miniMergedEnd, int *highestInlinkSiteRank) {
 	char *mptr;
 	char *mptrEnd;
 	char *lastMptr = NULL;
@@ -3508,7 +3508,7 @@ void PosdbTable::intersectLists10_r ( ) {
 			//## the miniMerged* pointers point into..
 			//##
 
-			mergeTermSubListsForDocId(miniMergeBuf, qtibuf, miniMergedList, miniMergedEnd, &highestInlinkSiteRank);
+			mergeTermSubListsForDocId(qtibuf, miniMergeBuf, miniMergedList, miniMergedEnd, &highestInlinkSiteRank);
 
 
 			// clear the counts on this DocIdScore class for this new docid

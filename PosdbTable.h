@@ -131,7 +131,7 @@ class PosdbTable {
 	bool genDebugScoreInfo2(DocIdScore &dcs, int32_t &lastLen, uint64_t &lastDocId, char siteRank, float score, int32_t intScore, char docLang);
 	bool advanceTermListCursors(const char *docIdPtr, QueryTermInfo *qtibuf);
 	bool prefilterMaxPossibleScoreByDistance(QueryTermInfo *qtibuf, const int32_t *qpos, float minWinningScore);
-	void mergeTermSubListsForDocId(char *miniMergeBuf, QueryTermInfo *qtibuf, const char **miniMergedList, const char **miniMergedEnd, int *highestInlinkSiteRank);
+	void mergeTermSubListsForDocId(QueryTermInfo *qtibuf, char *miniMergeBuf, const char **miniMergedList, const char **miniMergedEnd, int *highestInlinkSiteRank);
 
 
 	uint64_t m_docId;
