@@ -326,14 +326,10 @@ void PosdbTable::evalSlidingWindow ( const char **ptrs, const char **bestPos, fl
 
 
 
-float PosdbTable::getSingleTermScore ( int32_t     i,
-				       const char *wpi,
-				       const char *endi,
-				       DocIdScore  *pdcs,
-				       const char **bestPos ) {
+float PosdbTable::getSingleTermScore(int32_t i, const char *wpi, const char *endi, DocIdScore *pdcs, const char **bestPos ) {
 	float nonBodyMax = -1.0;
 	int32_t minx = 0;
-	float bestScores[MAX_TOP];
+	float bestScores[MAX_TOP] = {0};	// make Coverity happy
 	const char *bestwpi[MAX_TOP];
 	int32_t numTop = 0;
 
@@ -397,12 +393,13 @@ float PosdbTable::getSingleTermScore ( int32_t     i,
 
 			// do not allow duplicate hashgroups!
 			int32_t bro = -1;
-			for ( int32_t k = 0 ; k < numTop ; k++ ) {
-				if ( bestmhg[k] == mhg && hg !=HASHGROUP_INLINKTEXT ){
+			for( int32_t k=0; k < numTop; k++) {
+				if( bestmhg[k] == mhg && hg != HASHGROUP_INLINKTEXT) {
 					bro = k;
 					break;
 				}
 			}
+
 			if ( bro >= 0 ) {
 				if ( score > bestScores[bro] ) {
 					bestScores[bro] = score;
@@ -411,13 +408,15 @@ float PosdbTable::getSingleTermScore ( int32_t     i,
 				}
 			}
 			// best?
-			else if ( numTop < m_realMaxTop ) { // MAX_TOP ) {
+			else 
+			if ( numTop < m_realMaxTop ) { // MAX_TOP ) {
 				bestScores[numTop] = score;
 				bestwpi   [numTop] = wpi;
 				bestmhg   [numTop] = mhg;
 				numTop++;
 			}
-			else if ( score > bestScores[minx] ) {
+			else 
+			if ( score > bestScores[minx] ) {
 				bestScores[minx] = score;
 				bestwpi   [minx] = wpi;
 				bestmhg   [minx] = mhg;
@@ -426,8 +425,10 @@ float PosdbTable::getSingleTermScore ( int32_t     i,
 			// set "minx" to the lowest score out of the top scores
 			if ( numTop >= m_realMaxTop ) { // MAX_TOP ) {
 				minx = 0;
-				for ( int32_t k = 1 ; k < m_realMaxTop; k++ ){//MAX_TOP ; k++ ) {
-					if ( bestScores[k] > bestScores[minx] ) continue;
+				for ( int32_t k = 1 ; k < m_realMaxTop; k++ ) {//MAX_TOP ; k++ ) {
+					if ( bestScores[k] > bestScores[minx] ) {
+						continue;
+					}
 					minx = k;
 				}
 			}
@@ -439,7 +440,11 @@ float PosdbTable::getSingleTermScore ( int32_t     i,
 			}
 
 			// first key is 12 bytes
-			if ( first ) { wpi += 6; first = false; }
+			if ( first ) { 
+				wpi += 6; 
+				first = false; 
+			}
+
 			// advance
 			wpi += 6;
 			// exhausted?
@@ -453,13 +458,13 @@ float PosdbTable::getSingleTermScore ( int32_t     i,
 		// phrase like "time enough for love" give it a boost!
 		// now we set a special bit in the keys since we do a mini 
 		// merge, we do the same thing for the syn bits
-		if ( Posdb::getIsHalfStopWikiBigram(bestwpi[k]) )
-			sum += (bestScores[k] * 
-				WIKI_BIGRAM_WEIGHT * 
-				WIKI_BIGRAM_WEIGHT);
-		// otherwise just add it up
-		else
+		if ( Posdb::getIsHalfStopWikiBigram(bestwpi[k]) ) {
+			sum += (bestScores[k] * WIKI_BIGRAM_WEIGHT * WIKI_BIGRAM_WEIGHT);
+		}
+		else {
+			// otherwise just add it up
 			sum += bestScores[k];
+		}
 	}
 
 	// wiki weight
@@ -497,20 +502,27 @@ float PosdbTable::getSingleTermScore ( int32_t     i,
 	// point into buf
 	SingleScore *sx = (SingleScore *)m_singleScoreBuf.getBuf();
 	int32_t need = sizeof(SingleScore) * numTop;
+
 	// point to that
-	if ( pdcs->m_singlesOffset < 0 )
+	if ( pdcs->m_singlesOffset < 0 ) {
 		pdcs->m_singlesOffset = m_singleScoreBuf.length();
+	}
+
 	// reset this i guess
 	pdcs->m_singleScores = NULL;
+
 	// sanity
 	if ( m_singleScoreBuf.getAvail() < need ) { 
 		static bool s_first = true;
-		if ( s_first ) log("posdb: CRITICAL single buf overflow");
+		if ( s_first ) {
+			log("posdb: CRITICAL single buf overflow");
+		}
 		s_first = false;
 		logTrace(g_conf.m_logTracePosdb, "END.");
 		return sum;
 		//gbshutdownAbort(true); }
 	}
+
 	// increase buf ptr over this then
 	m_singleScoreBuf.incrementLength(need);
 
@@ -520,15 +532,15 @@ float PosdbTable::getSingleTermScore ( int32_t     i,
 		pdcs->m_numSingles++;
 		const char *maxp = bestwpi[k];
 		memset(sx,0,sizeof(*sx));
-		sx->m_isSynonym      = Posdb::getIsSynonym(maxp);
-		sx->m_isHalfStopWikiBigram = 
-			Posdb::getIsHalfStopWikiBigram(maxp);
+		sx->m_isSynonym = Posdb::getIsSynonym(maxp);
+		sx->m_isHalfStopWikiBigram = Posdb::getIsHalfStopWikiBigram(maxp);
 		//sx->m_isSynonym = (m_bflags[i] & BF_SYNONYM) ;
 		sx->m_diversityRank  = Posdb::getDiversityRank(maxp);
 		sx->m_wordSpamRank   = Posdb::getWordSpamRank(maxp);
 		sx->m_hashGroup      = Posdb::getHashGroup(maxp);
 		sx->m_wordPos        = Posdb::getWordPos(maxp);
 		sx->m_densityRank = Posdb::getDensityRank(maxp);
+
 		float score = bestScores[k];
 		//score *= ts;
 		score *= m_freqWeights[i];
@@ -971,7 +983,7 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 
 	float score;
 	int32_t  minx = -1;
-	float bestScores[MAX_TOP];
+	float bestScores[MAX_TOP] = {0};	 // make Coverity happy
 	const char *bestwpi   [MAX_TOP];
 	const char *bestwpj   [MAX_TOP];
 	char  bestmhg1  [MAX_TOP];
