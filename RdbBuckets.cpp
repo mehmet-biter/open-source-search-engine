@@ -507,12 +507,11 @@ void RdbBuckets::printBuckets() {
 
 void RdbBucket::printBucket() {
 	const char *kk = m_keys;
-	int32_t recSize = m_parent->getRecSize();
 	int32_t keySize = m_parent->getKeySize();
+
 	for (int32_t i = 0; i < m_numKeys; i++) {
-		log(LOG_WARN, "rdbbuckets key: %s keySize=%" PRId32" numKeys=%" PRId32,
-		    KEYSTR(kk, recSize), keySize, m_numKeys);
-		kk += recSize;
+		logf(LOG_TRACE, "db: k=%s keySize=%" PRId32, KEYSTR(kk, keySize), keySize);
+		kk += m_parent->getRecSize();
 	}
 }
 
