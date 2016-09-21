@@ -678,8 +678,8 @@ bool RdbBuckets::resizeTable( int32_t numNeeded ) {
 
 int32_t RdbBuckets::addNode(collnum_t collnum, char *key, char *data, int32_t dataSize) {
 	if (!m_isWritable || m_isSaving) {
-		g_errno = EAGAIN;
-		return false;
+		g_errno = ETRYAGAIN;
+		return -1;
 	}
 
 	m_needsSave = true;
