@@ -119,11 +119,6 @@ bool RdbBucket::sort() {
 	int32_t recSize = m_parent->getRecSize();
 	int32_t fixedDataSize = m_parent->getFixedDataSize();
 
-	char* mergeBuf  = m_parent->getSwapBuf();
-	if (!mergeBuf) {
-		gbshutdownAbort(true);
-	}
-
 	int32_t numUnsorted = m_numKeys - m_lastSorted;
 	char *list1 = m_keys;
 	char *list2 = m_keys + (recSize * m_lastSorted);
@@ -140,6 +135,11 @@ bool RdbBucket::sort() {
 	}
 
 	gbmergesort(list2, numUnsorted, recSize, getCmpFn(ks), m_parent->getSortBuf(), m_parent->getSortBufSize());
+
+	char* mergeBuf  = m_parent->getSwapBuf();
+	if (!mergeBuf) {
+		gbshutdownAbort(true);
+	}
 
 	char *p = mergeBuf;
 	char v;
