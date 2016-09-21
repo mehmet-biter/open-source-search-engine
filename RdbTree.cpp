@@ -664,7 +664,7 @@ int32_t RdbTree::addNode ( collnum_t collnum , const char *key , char *data , in
 	return i;
 }
 
-int32_t RdbTree::deleteNode  ( collnum_t collnum, const char *key, bool freeData ) {
+int32_t RdbTree::deleteNode(collnum_t collnum, const char *key, bool freeData) {
 	int32_t node = getNode ( collnum , key );
 	// debug
 	//log("db: deleting n1=%" PRIx64" n0=%" PRIx64" node=%" PRId32".",
@@ -675,9 +675,7 @@ int32_t RdbTree::deleteNode  ( collnum_t collnum, const char *key, bool freeData
 }
 
 // delete all nodes with keys in [startKey,endKey]
-void RdbTree::deleteNodes ( collnum_t collnum ,
-			    const char *startKey, const char *endKey, bool freeData ) {
-
+void RdbTree::deleteNodes(collnum_t collnum, const char *startKey, const char *endKey, bool freeData) {
 	// sanity check
 	if ( ! m_isWritable ) {
 		log("db: Can not delete record from tree because "

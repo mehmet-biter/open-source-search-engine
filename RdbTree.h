@@ -146,11 +146,10 @@ public:
 	// . returns false iff not found 
 	// . frees m_data[node] if freeIt is true
 	void deleteNode(int32_t node, bool freeData);
-	int32_t deleteNode  ( collnum_t collnum, const char *key, bool freeData );
+	int32_t deleteNode(collnum_t collnum, const char *key, bool freeData);
 
 	// delete all nodes with keys in [startKey,endKey]
-	void deleteNodes ( collnum_t collnum ,
-			   const char *startKey, const char *endKey, bool freeData );
+	void deleteNodes(collnum_t collnum, const char *startKey, const char *endKey, bool freeData);
 
 	// . delete all records in this list from the tree
 	// . call deleteNode()
@@ -159,9 +158,9 @@ public:
 	//   being added after this will still be balanced
 	// . returns false if a key in list was not found
 	// . this happens if memory is corrupted!
-	bool deleteList ( collnum_t collnum , RdbList *list , bool doBalancing );
+	bool deleteList(collnum_t collnum, RdbList *list, bool doBalancing);
 
-	bool deleteKeys ( collnum_t collnum , char *keys , int32_t numKeys );
+	bool deleteKeys(collnum_t collnum, char *keys, int32_t numKeys);
 
 	// . if the list's keys are ordered from smallest to largest
 	//   this acts just like deleteList() above, but saves time by
