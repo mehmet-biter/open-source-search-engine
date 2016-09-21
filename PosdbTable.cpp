@@ -168,11 +168,7 @@ void PosdbTable::init(Query *q, bool debug, void *logstate, TopTree *topTree, Ms
 // pointed to by ptrs[i] and does not scan the word position lists.
 // also tries to sub-out each term with the title or linktext wordpos term
 // pointed to  by "bestPos[i]"
-void PosdbTable::evalSlidingWindow ( const char **ptrs,
-				     int32_t   nr,
-				     const char **bestPos,
-				     float    *scoreMatrix ) {
-
+void PosdbTable::evalSlidingWindow ( const char **ptrs, const char **bestPos, float *scoreMatrix ) {
 	const char *wpi;
 	const char *wpj;
 	float wikiWeight;
@@ -183,9 +179,8 @@ void PosdbTable::evalSlidingWindow ( const char **ptrs,
 
 	// TODO: only do this loop on the (i,j) pairs where i or j
 	// is the term whose position got advanced in the sliding window.
-	int32_t maxi = nr;
 
-	for ( int32_t i = 0 ; i < maxi ; i++ ) {
+	for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
 
 		// skip if to the left of a pipe operator
 		if ( m_bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) )
@@ -201,7 +196,7 @@ void PosdbTable::evalSlidingWindow ( const char **ptrs,
 		// only evaluate pairs that have the advanced term in them
 		// to save time.
 		int32_t j = i + 1;
-		int32_t maxj = nr;
+		int32_t maxj = m_numQueryTermInfos;
 
 		// loop over other terms
 		for ( ; j < maxj ; j++ ) {
@@ -323,7 +318,7 @@ void PosdbTable::evalSlidingWindow ( const char **ptrs,
 	m_bestWindowScore = minTermPairScoreInWindow;
 
 	// record term positions in winning window
-	for ( int32_t i = 0 ; i < maxi ; i++ )
+	for ( int32_t i = 0 ; i < m_numQueryTermInfos; i++ )
 		m_windowTermPtrs[i] = ptrs[i];	
 
 	logTrace(g_conf.m_logTracePosdb, "END.");
@@ -3572,13 +3567,15 @@ void PosdbTable::intersectLists10_r ( ) {
 			//##
 
 			if ( !m_q->m_isBoolean ) {
-
 				//
-				// NON-BODY TERM PAIR SCORING LOOP
+				//#
+				//# NON-BODY TERM PAIR SCORING LOOP
+				//#
 				//
-				// . nested for loops to score the term pairs
-				// . store best scores into the scoreMatrix so the sliding window
-				//   algorithm can use them from there to do sub-outs
+				// Nested for loops to score the term pairs.
+				//
+				// Store best scores into the scoreMatrix so the sliding window
+				// algorithm can use them from there to do sub-outs
 				//
 
 				logTrace(g_conf.m_logTracePosdb, "Non-body term pair scoring loop");
@@ -3660,10 +3657,12 @@ void PosdbTable::intersectLists10_r ( ) {
 
 				logTrace(g_conf.m_logTracePosdb, "Single term scoring loop");
 
+
+
 				//
-				//
-				// SINGLE TERM SCORE LOOP
-				//
+				//#
+				//# SINGLE TERM SCORE LOOP
+				//#
 				//
 				minSingleScore = 999999999.0;
 				
@@ -3758,53 +3757,64 @@ void PosdbTable::intersectLists10_r ( ) {
 				logTrace(g_conf.m_logTracePosdb, "Sliding Window algorithm begins");
 				m_windowTermPtrs = winnerStack;
 
-				// . now scan the terms that are in the body in a sliding window
-				// . compute the term pair score on just the terms in that
-				//   sliding window. that way, the term for a word like 'dog'
-				//   keeps the same word position when it is paired up with the
-				//   other terms.
-				// . compute the score the same way getTermPairScore() works so
-				//   we are on the same playing field
-				// . sub-out each term with its best scoring occurence in the title
-				//   or link text or meta tag, etc. but it gets a distance penalty
-				//   of like 100 units or so.
-				// . if term does not occur in the body, the sub-out approach should
-				//   fix that.
-				// . keep a matrix of the best scores between two terms from the
-				//   above double nested loop algo. and replace that pair if we
-				//   got a better score in the sliding window.
+				// Scan the terms that are in the body in a sliding window
+				//
+				// Compute the term pair score on just the terms in that
+				// sliding window. that way, the term for a word like 'dog'
+				// keeps the same word position when it is paired up with the
+				// other terms.
+				//
+				// Compute the score the same way getTermPairScore() works so
+				// we are on the same playing field
+				//
+				// Sub-out each term with its best scoring occurence in the title
+				// or link text or meta tag, etc. but it gets a distance penalty
+				// of like 100 units or so.
+				//
+				// If term does not occur in the body, the sub-out approach should
+				// fix that.
+				//
+				// Keep a matrix of the best scores between two terms from the
+				// above double nested loop algo, and replace that pair if we
+				// got a better score in the sliding window.
+
 
 				// use special ptrs for the windows so we do not mangle 
 				// miniMergedList[] array because we use that below!
-				//char *xpos[MAX_QUERY_TERMS];
 				for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
 					xpos[i] = miniMergedList[i];
 				}
+
 
 				allNull = true;
 				//
 				// init each list ptr to the first wordpos rec in the body
 				// and if no such rec, make it NULL
 				//
-				for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
+				for(int32_t i = 0; i < m_numQueryTermInfos; i++) {
 					// skip if to the left of a pipe operator
-					if ( bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
+					if( bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
 						continue;
 					}
 					
 					// skip wordposition until it in the body
-					while ( xpos[i] &&!s_inBody[Posdb::getHashGroup(xpos[i])]) {
+					while( xpos[i] && !s_inBody[Posdb::getHashGroup(xpos[i])]) {
 						// advance
-						if ( ! (xpos[i][0] & 0x04) ) xpos[i] += 12;
-						else                         xpos[i] +=  6;
+						if ( ! (xpos[i][0] & 0x04) ) {
+							xpos[i] += 12;
+						}
+						else {
+							xpos[i] +=  6;
+						}
 							
 						// NULLify list if no more for this docid
-						if (xpos[i] < miniMergedEnd[i] && (xpos[i][0] & 0x04)) {
+						if( xpos[i] < miniMergedEnd[i] && (xpos[i][0] & 0x04)) {
 							continue;
 						}
 						
 						// ok, no more! null means empty list
 						xpos[i] = NULL;
+
 						// must be in title or something else then
 						if ( ! bestPos[i] ) {
 							gbshutdownAbort(true);
@@ -3829,21 +3839,31 @@ void PosdbTable::intersectLists10_r ( ) {
 				}
 
 				while( !doneSliding ) {
-					// . now all xpos are in the body
-					// . calc the window score
-					// . if window score beats m_bestWindowScore we store the
-					//   term xpos that define this window in m_windowTermPtrs[] array
-					// . will try to sub in s_bestPos[i] if better, but will fix 
-					//   distance to FIXED_DISTANCE
-					// . "minx" is who just got advanced, this saves time because we
-					//   do not have to re-compute the scores of term pairs that consist
-					//   of two terms that did not advance in the sliding window
-					// . "scoreMatrix" hold the highest scoring non-body term pair
-					//   for sub-bing out the term pair in the body with
-					// . sets m_bestWindowScore if this window score beats it
-					// . does sub-outs with the non-body pairs and also the singles i guess
-					// . uses "bestPos[x]" to get best non-body scoring term for sub-outs
-					evalSlidingWindow ( xpos, m_numQueryTermInfos, bestPos, scoreMatrix);
+					//
+					// Now all xpos are in the body
+					//
+					// Calc the window score
+					//
+					// If window score beats m_bestWindowScore we store the
+					// term xpos that define this window in m_windowTermPtrs[] array
+					//
+					// Will try to sub in s_bestPos[i] if better, but will fix 
+					// distance to FIXED_DISTANCE
+					//
+					// "minx" is who just got advanced, this saves time because we
+					// do not have to re-compute the scores of term pairs that consist
+					// of two terms that did not advance in the sliding window
+					//
+					// "scoreMatrix" hold the highest scoring non-body term pair
+					// for sub-bing out the term pair in the body with
+					//
+					// Sets m_bestWindowScore if this window score beats it
+					//
+					// Does sub-outs with the non-body pairs and also the singles i guess
+					//
+					// Uses "bestPos[x]" to get best non-body scoring term for sub-outs
+					//
+					evalSlidingWindow ( xpos, bestPos, scoreMatrix);
 
 				 	bool advanceMin = false;
 
@@ -4233,7 +4253,7 @@ float PosdbTable::getMaxPossibleScore ( const QueryTermInfo *qti,
 	float bestHashGroupWeight = -1.0;
 	unsigned char bestDensityRank = 0;
 	char siteRank = -1;
-	char docLang;
+	char docLang = -1;
 	unsigned char hgrp;
 	bool hadHalfStopWikiBigram = false;
 	
@@ -4258,9 +4278,10 @@ float PosdbTable::getMaxPossibleScore ( const QueryTermInfo *qti,
 			continue;
 		}
 			
-		// set this?
 		if ( siteRank == -1 ) {
 			siteRank = Posdb::getSiteRank(start);
+		}
+		if ( docLang == -1 ) {
 			docLang = Posdb::getLangId(start);
 		}
 		
