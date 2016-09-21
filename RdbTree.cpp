@@ -969,37 +969,25 @@ void RdbTree::deleteNode(int32_t i, bool freeData) {
 
 // . TODO: speed up since keys are usually ordered (use getNextNode())
 // . returns false if a key in list was not found
-bool RdbTree::deleteList(collnum_t collnum, RdbList *list, bool doBalancing) {
+bool RdbTree::deleteList(collnum_t collnum, RdbList *list) {
 	// sanity check
 	if (list->getKeySize() != m_ks) {
 		g_process.shutdownAbort(true);
 	}
 
 	// return if no non-empty nodes in the tree
-	if (m_numUsedNodes <= 0) {
-		return true;
-	}
-
 	// bail if list is empty now
-	if (list->isEmpty()) {
+	if (m_numUsedNodes <= 0 || list->isEmpty()) {
 		return true;
-	}
-
-	// a key not found?
-	bool allgood = true;
-
-	// preserve state of balance
-	bool balanced = m_doBalancing;
-
-	// possibly turn off balancing (only turn on/off if it's already on)
-	if (m_doBalancing) {
-		m_doBalancing = doBalancing;
 	}
 
 	// disable mem protection
 	if (m_useProtection) {
 		unprotect();
 	}
+
+	// a key not found?
+	bool allgood = true;
 
 	char key[MAX_KEY_BYTES];
 	for (list->resetListPtr(); !list->isExhausted(); list->skipCurrentRecord()) {
@@ -1008,9 +996,6 @@ bool RdbTree::deleteList(collnum_t collnum, RdbList *list, bool doBalancing) {
 			allgood = false;
 		}
 	}
-
-	// possibly restore balancing
-	m_doBalancing = balanced;
 
 	// enable protection again
 	if (m_useProtection) {

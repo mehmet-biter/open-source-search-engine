@@ -153,12 +153,9 @@ public:
 
 	// . delete all records in this list from the tree
 	// . call deleteNode()
-	// . when deleting lists from spiderdb this seems to take a LONG time
-	//   so to make it faster set doBalancing to false. at least nodes
-	//   being added after this will still be balanced
 	// . returns false if a key in list was not found
 	// . this happens if memory is corrupted!
-	bool deleteList(collnum_t collnum, RdbList *list, bool doBalancing);
+	bool deleteList(collnum_t collnum, RdbList *list);
 
 	// . if the list's keys are ordered from smallest to largest
 	//   this acts just like deleteList() above, but saves time by
