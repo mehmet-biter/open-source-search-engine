@@ -477,24 +477,6 @@ bool Words::allocateWordBuffers(int32_t count, bool tagIds) {
 	return true;
 }
 
-static uint8_t s_findMaxIndex(int64_t *array, int num, int *wantmax = NULL) {
-	if(!array || num < 2 || num > 255) return(0);
-	int64_t max, oldmax;
-	int idx = 0;
-	max = oldmax = INT_MIN;
-	for(int x = 0; x < num; x++) {
-		if(array[x] >= max) {
-			oldmax = max;
-			max = array[x];
-			idx = x;
-		}
-	}
-	if(max == 0) return(0);
-	if(max == oldmax) return(0);
-	if(wantmax) *wantmax = max;
-	return((uint8_t)idx);
-}
-
 unsigned char Words::isBounded(int wordi) {
 	if(wordi+1 < m_numWords &&
 	   getWord(wordi)[getWordLen(wordi)] == '/'
