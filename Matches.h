@@ -134,11 +134,6 @@ private:
 	// . the document body (web page) is considered a single match group
 	// . a single link text is considered a match group
 	// . a single meta summary tag is a match group, ...
-	Words    *m_wordsPtr    [MAX_MATCHGROUPS];
-	Sections *m_sectionsPtr [MAX_MATCHGROUPS];
-	Bits     *m_bitsPtr     [MAX_MATCHGROUPS];
-	Pos      *m_posPtr      [MAX_MATCHGROUPS];
-	mf_t      m_flags       [MAX_MATCHGROUPS];
 	int32_t      m_numMatchGroups;
 
 	Words    m_wordsArray    [MAX_MATCHGROUPS];
