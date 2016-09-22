@@ -36,7 +36,7 @@ void Words::reset ( ) {
 	m_localBufSize2 = 0;
 }
 
-bool Words::set( char *s, int32_t slen, bool computeWordIds, int32_t niceness ) {
+bool Words::set( char *s, int32_t slen, bool computeWordIds ) {
 	// bail if nothing
 	if ( ! s || slen == 0 ) {
 		m_numWords = 0;
@@ -49,7 +49,7 @@ bool Words::set( char *s, int32_t slen, bool computeWordIds, int32_t niceness ) 
 		s[slen] = '\0';
 	}
 
-	bool status = set( s, computeWordIds, niceness );
+	bool status = set( s, computeWordIds );
 	if ( c != '\0' ) {
 		s[slen] = c;
 	}
@@ -108,7 +108,7 @@ static int32_t countWords ( const char *p ) {
 	return count+10;
 }
 
-bool Words::set( Xml *xml, bool computeWordIds, int32_t niceness, int32_t node1, int32_t node2 ) {
+bool Words::set( Xml *xml, bool computeWordIds, int32_t node1, int32_t node2 ) {
 	// prevent setting with the same string
 	if ( m_xml == xml ) gbshutdownLogicError();
 
@@ -158,7 +158,7 @@ bool Words::set( Xml *xml, bool computeWordIds, int32_t niceness, int32_t node1,
 			/// addWords should be change to use nodeLen and not null terminated string
 			char c = node[nodeLen];
 			node[nodeLen] = '\0';
-			addWords( node, nodeLen, computeWordIds, niceness );
+			addWords( node, nodeLen, computeWordIds );
 			node[nodeLen] = c;
 			continue;
 		}
@@ -195,7 +195,7 @@ bool Words::set( Xml *xml, bool computeWordIds, int32_t niceness, int32_t node1,
 // . doesn't do tags, only text nodes in "xml"
 // . our definition of a word is as close to English as we can get it
 // . BUT we also consider a string of punctuation characters to be a word
-bool Words::set( char *s, bool computeWordIds, int32_t niceness ) {
+bool Words::set( char *s, bool computeWordIds ) {
 	reset();
 
 	// determine rough upper bound on number of words by counting
@@ -205,10 +205,10 @@ bool Words::set( char *s, bool computeWordIds, int32_t niceness ) {
 		return false;
 	}
 
-	return addWords( s, 0x7fffffff, computeWordIds, niceness );
+	return addWords( s, 0x7fffffff, computeWordIds );
 }
 
-bool Words::addWords( char *s, int32_t nodeLen, bool computeWordIds, int32_t niceness ) {
+bool Words::addWords( char *s, int32_t nodeLen, bool computeWordIds ) {
 	int32_t  i = 0;
 	int32_t  j;
 	int32_t  wlen;
@@ -535,7 +535,7 @@ unsigned char getCharacterLanguage ( const char *utf8Char ) {
 }
 
 // returns -1 and sets g_errno on error, because 0 means langUnknown
-int32_t Words::getLanguage( Sections *sections, int32_t maxSamples, int32_t niceness, int32_t *langScore ) {
+int32_t Words::getLanguage( Sections *sections, int32_t maxSamples, int32_t *langScore ) {
 	// . take a random sample of words and look them up in the
 	//   language dictionary
 	HashTableX ht;

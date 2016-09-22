@@ -3471,7 +3471,7 @@ uint8_t *XmlDoc::getLangId ( ) {
 	int32_t mdlen;
 	char *md = getMetaDescription( &mdlen );
 	Words mdw;
-	mdw.set ( md , mdlen , true, m_niceness );
+	mdw.set ( md , mdlen , true );
 
 	SafeBuf langBuf;
 	setLangVec ( &mdw,&langBuf,NULL,m_niceness);
@@ -3485,7 +3485,7 @@ uint8_t *XmlDoc::getLangId ( ) {
 
 	// try meta keywords
 	md = getMetaKeywords( &mdlen );
-	mdw.set ( md , mdlen , true, m_niceness );
+	mdw.set ( md , mdlen , true );
 
 	langBuf.purge();
 	setLangVec ( &mdw,&langBuf,NULL,m_niceness);
@@ -3576,7 +3576,7 @@ Words *XmlDoc::getWords ( ) {
 	int64_t start = logQueryTimingStart();
 
 	// now set what we need
-	if ( !m_words.set( xml, true, m_niceness ) ) {
+	if ( !m_words.set( xml, true ) ) {
 		return NULL;
 	}
 
@@ -4112,7 +4112,7 @@ bool XmlDoc::hashString_ct ( HashTableX *ct , char *s , int32_t slen ) {
 	Words   words;
 	Bits    bits;
 	Phrases phrases;
-	if ( ! words.set   ( s , slen , true , m_niceness ) )
+	if ( ! words.set   ( s , slen , true ) )
 		return false;
 	if ( !bits.set(&words))
 		return false;
@@ -4341,7 +4341,7 @@ int32_t *XmlDoc::getSummaryVector ( ) {
 
 	// word-ify it
 	Words words;
-	if ( ! words.set ( sb.getBufStart() , true, m_niceness ) ) {
+	if ( ! words.set ( sb.getBufStart() , true ) ) {
 		return NULL;
 	}
 

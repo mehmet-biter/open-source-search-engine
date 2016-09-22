@@ -1999,7 +1999,7 @@ bool XmlDoc::hashString3( char       *s              ,
 	Bits    bits;
 	Phrases phrases;
 
-	if ( ! words.set   ( s , slen , true , niceness ) )
+	if ( ! words.set   ( s , slen , true ) )
 		return false;
 	if ( !bits.set(&words))
 		return false;

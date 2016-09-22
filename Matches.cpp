@@ -358,7 +358,7 @@ bool Matches::addMatches( char *s, int32_t slen, mf_t flags, int32_t niceness ) 
 	Pos      *pb = &m_posArray      [ m_numMatchGroups ];
 
 	// set the words class for this match group
-	if ( !wp->set( s, slen, true, niceness ) ) {
+	if ( !wp->set( s, slen, true ) ) {
 		return false;
 	}
 

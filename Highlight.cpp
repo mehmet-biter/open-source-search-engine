@@ -43,7 +43,7 @@ static const char s_styleSheet[] =
 int32_t Highlight::set( SafeBuf *sb, char *content, int32_t contentLen, Query *q, const char *frontTag,
 						const char *backTag, int32_t niceness ) {
 	Words words;
-	if ( ! words.set ( content, contentLen, true, true ) ) {
+	if ( ! words.set ( content, contentLen, true ) ) {
 		return -1;
 	}
 

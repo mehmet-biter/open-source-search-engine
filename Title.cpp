@@ -258,7 +258,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 			}
 
 			// now the words.
-			if ( !tw[ti].set( k->getLinkText(), k->size_linkText - 1, true, 0 ) ) {
+			if ( !tw[ti].set( k->getLinkText(), k->size_linkText - 1, true ) ) {
 				return false;
 			}
 
@@ -294,7 +294,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 		// skip if empty
 		if ( tslen <= 0 ) continue;
 		// now set words to that
-		if ( !tw[ti].set( ts, tslen, true, 0 ) ) {
+		if ( !tw[ti].set( ts, tslen, true ) ) {
 			return false;
 		}
 
@@ -444,7 +444,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 		}
 
 		// ok, process it
-		if ( ! tw[ti].set ( atitle, atlen, true, 0 )) {
+		if ( ! tw[ti].set ( atitle, atlen, true )) {
 			return false;
 		}
 
@@ -788,7 +788,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 		// did we get any?
 		if ( p > pstart && n < MAX_TIT_CANDIDATES ) {
 			// now set words to that
-			if ( ! tw[ti].set ( p, (pend - p), true, 0 )) {
+			if ( ! tw[ti].set ( p, (pend - p), true )) {
 				return false;
 			}
 

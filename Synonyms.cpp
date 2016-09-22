@@ -354,7 +354,7 @@ int32_t Synonyms::getSynonyms ( const Words *words ,
 		// and for multi alnum word synonyms
 		if ( hadSpace ) {
 			Words sw;
-			sw.set ( p , e - p , true, niceness );
+			sw.set ( p , e - p , true );
 
 			*(int64_t *)m_wids0Ptr = sw.getWordId(0);
 			*(int64_t *)m_wids1Ptr = sw.getWordId(2);

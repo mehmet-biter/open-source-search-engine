@@ -990,7 +990,7 @@ bool Xml::getTagContent( const char *fieldName, const char *fieldContent, char *
 					return false;
 				}
 			} else {
-				if ( !wp.set(this, true, 0, i, end_node ) ) {
+				if ( !wp.set(this, true, i, end_node ) ) {
 					// unable to allocate buffer
 					return false;
 				}

@@ -4399,7 +4399,7 @@ bool parseTest ( const char *coll, int64_t docId, const char *query ) {
 
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) 
-		if ( ! words.set ( &xml , true , true ) ) {
+		if ( ! words.set ( &xml , true ) ) {
 			log(LOG_WARN, "build: speedtestxml: words set: %s", mstrerror(g_errno));
 			return false;
 		}
@@ -4412,7 +4412,7 @@ bool parseTest ( const char *coll, int64_t docId, const char *query ) {
 
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) 
-		if ( ! words.set ( &xml , true , false ) ) {
+		if ( ! words.set ( &xml , true ) ) {
 			log(LOG_WARN, "build: speedtestxml: words set: %s", mstrerror(g_errno));
 			return false;
 		}
@@ -4426,8 +4426,7 @@ bool parseTest ( const char *coll, int64_t docId, const char *query ) {
 
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) 
-		//if ( ! words.set ( &xml , true , true ) )
-		if ( ! words.set ( content , true, 0 ) ) {
+		if ( ! words.set ( content , true ) ) {
 			log(LOG_WARN, "build: speedtestxml: words set: %s", mstrerror(g_errno));
 			return false;
 		}
@@ -4441,10 +4440,9 @@ bool parseTest ( const char *coll, int64_t docId, const char *query ) {
 
 	Pos pos;
 	// computeWordIds from xml
-	words.set ( &xml , true , true ) ;
+	words.set ( &xml , true ) ;
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) 
-		//if ( ! words.set ( &xml , true , true ) )
 		if ( ! pos.set ( &words ) ) {
 			log(LOG_WARN, "build: speedtestxml: pos set: %s", mstrerror(g_errno));
 			return false;
@@ -4459,10 +4457,9 @@ bool parseTest ( const char *coll, int64_t docId, const char *query ) {
 
 	Bits bits;
 	// computeWordIds from xml
-	words.set ( &xml , true , true ) ;
+	words.set ( &xml , true ) ;
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) 
-		//if ( ! words.set ( &xml , true , true ) )
 		if ( ! bits.setForSummary ( &words ) ) {
 			log(LOG_WARN, "build: speedtestxml: Bits set: %s", mstrerror(g_errno));
 			return false;
@@ -4477,11 +4474,10 @@ bool parseTest ( const char *coll, int64_t docId, const char *query ) {
 
 	Sections sections;
 	// computeWordIds from xml
-	words.set ( &xml , true , true ) ;
+	words.set ( &xml , true ) ;
 	bits.set(&words);
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) 
-		//if ( ! words.set ( &xml , true , true ) )
 		// do not supply xd so it will be set from scratch
 		if ( !sections.set( &words, &bits, NULL, NULL, 0, 0 ) ) {
 			log(LOG_WARN, "build: speedtestxml: sections set: %s", mstrerror(g_errno));
@@ -4533,7 +4529,7 @@ bool parseTest ( const char *coll, int64_t docId, const char *query ) {
 			log(LOG_WARN, "build: speedtestxml: getText: %s", mstrerror(g_errno));
 			return false;
 		}
-		if ( ! words.set ( buf,true,0) ) {
+		if ( ! words.set ( buf,true) ) {
 			log(LOG_WARN, "build: speedtestxml: words set: %s", mstrerror(g_errno));
 			return false;
 		}
@@ -4551,7 +4547,7 @@ bool parseTest ( const char *coll, int64_t docId, const char *query ) {
 	Query q;
 	q.set2 ( query , langUnknown , false );
 	matches.setQuery ( &q );
-	words.set ( &xml , true , 0 ) ;
+	words.set ( &xml , true ) ;
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) {
 		matches.reset();
