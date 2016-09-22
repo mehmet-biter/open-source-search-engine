@@ -354,7 +354,6 @@ bool Matches::addMatches( char *s, int32_t slen, mf_t flags, int32_t niceness ) 
 
 	// get some new ptrs for this match group
 	Words    *wp = &m_wordsArray    [ m_numMatchGroups ];
-	Sections *sp = NULL;
 	Bits     *bp = &m_bitsArray     [ m_numMatchGroups ];
 	Pos      *pb = &m_posArray      [ m_numMatchGroups ];
 
@@ -379,7 +378,7 @@ bool Matches::addMatches( char *s, int32_t slen, mf_t flags, int32_t niceness ) 
 	int32_t n = m_numMatchGroups;
 	// . add all the Match classes from this match group
 	// . this increments m_numMatchGroups on success
-	bool status = addMatches( wp, NULL, sp, bp, pb, flags );
+	bool status = addMatches( wp, NULL, NULL, bp, pb, flags );
 
 	// if this matchgroup had some, matches, then keep it
 	if ( m_numMatches > startNumMatches ) {
@@ -388,7 +387,6 @@ bool Matches::addMatches( char *s, int32_t slen, mf_t flags, int32_t niceness ) 
 
 	// otherwise, reset it, useless
 	wp->reset();
-	if ( sp ) sp->reset();
 	bp->reset();
 	pb->reset();
 
