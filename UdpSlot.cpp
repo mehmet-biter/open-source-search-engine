@@ -537,7 +537,7 @@ int32_t UdpSlot::sendDatagramOrAck ( int sock, bool allowResends, int64_t now ){
 		// where to store the header? right into send buf
 		dgram = send - headerSize;
 		// but save before overwriting
-		memcpy_ass ( saved , dgram , headerSize );
+		gbmemcpy ( saved , dgram , headerSize );
 	}
 	// store header into "dgram"
 	m_proto->setHeader(dgram, m_sendBufSize, m_msgType, dgramNum, m_transId, m_callback, m_localErrno, m_niceness);
@@ -546,8 +546,8 @@ int32_t UdpSlot::sendDatagramOrAck ( int sock, bool allowResends, int64_t now ){
 #endif
 	// . if we're the first dgram, we can't back up for the header...
 	// . copy data into dgram if we're the 1st dgram
-	if ( dgramNum == 0 ) 
-		memcpy_ass ( dgram + headerSize , send , sendSize );
+	if ( dgramNum == 0 )
+		gbmemcpy ( dgram + headerSize , send , sendSize );
 
 	// if we are the proxy sending a udp packet to our flock, then make
 	// sure that we send to tmp cluster if we should
@@ -600,7 +600,7 @@ int32_t UdpSlot::sendDatagramOrAck ( int sock, bool allowResends, int64_t now ){
 
 	// restore what we overwrote
 	if ( dgramNum != 0 ) {
-		memcpy_ass ( dgram , saved , headerSize );
+		gbmemcpy ( dgram , saved , headerSize );
 	}
 
 	// return -1 on error or 0 if blocked
@@ -1299,11 +1299,11 @@ bool UdpSlot::readDatagramOrAck ( const void *readBuffer_,
 		}
 		// save what's before us
 		char tmp[32];
-		memcpy_ass ( tmp , dest , headerSize );
+		gbmemcpy ( tmp , dest , headerSize );
 		memcpy(dest, readBuffer, toRead);
 		//log("udp: recvfrom1 = %i",(int)numRead);
 		// restore what was at the header before we stored it there
-		memcpy_ass ( dest , tmp , headerSize );
+		gbmemcpy ( dest , tmp , headerSize );
 		// keep stats
 		if ( m_host ) m_host->m_dgramsFrom++;
 		// keep track of dgrams sent outside of our cluster
@@ -1338,7 +1338,7 @@ bool UdpSlot::readDatagramOrAck ( const void *readBuffer_,
 	// if msgSize was -1 then m_readBufSize will be -1
 	if ( m_readBufSize == -1 ) m_readBufSize = len;
 	// bounce it back into m_readBuf
-	memcpy_ass ( dest , src , len );
+	gbmemcpy ( dest , src , len );
 	// it's new to us, set the read bits
 	setBit ( dgramNum, m_readBits2 );
 	// inc the lit bit count
