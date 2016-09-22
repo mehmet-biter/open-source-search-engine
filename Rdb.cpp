@@ -757,7 +757,7 @@ void Rdb::doneSaving ( ) {
 	}
 
 	// sanity
-	if ( m_dbname == NULL || m_dbname[0]=='\0' ) {
+	if ( m_dbname[0]=='\0' ) {
 		g_process.shutdownAbort(true);
 	}
 
