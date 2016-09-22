@@ -48,7 +48,7 @@ int32_t Highlight::set( SafeBuf *sb, char *content, int32_t contentLen, Query *q
 	}
 
 	Bits bits;
-	if ( !bits.set(&words, niceness)) {
+	if ( !bits.set(&words)) {
 		return -1;
 	}
 

@@ -1352,7 +1352,7 @@ bool Query::setQWords ( char boolFlag ,
 
 	// set the Bits used for making phrases from the Words class
 	Bits bits;
-	if ( !bits.set(&words, 0)) {
+	if ( !bits.set(&words)) {
 		log(LOG_WARN, "query: Had error processing query: %s.", mstrerror(g_errno));
 		return false;
 	}

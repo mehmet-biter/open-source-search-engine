@@ -32,13 +32,11 @@ void Bits::reset() {
 // . set bits for each word
 // . these bits are used for phrasing and by spam detector
 // . returns false and sets errno on error
-bool Bits::set(const Words *words, int32_t niceness) {
+bool Bits::set(const Words *words) {
 	reset();
 
 	// save words so printBits works
 	m_words = words;
-	// save for convenience/speed
-	m_niceness = niceness;
 	// how many words?
 	int32_t numBits = words->getNumWords();
 	// how much space do we need?
@@ -119,7 +117,7 @@ void Bits::setInLinkBits ( Sections *ss ) {
 	}
 }	
 
-void Bits::setInUrlBits ( int32_t niceness ) {
+void Bits::setInUrlBits () {
 	if ( m_inUrlBitsSet ) return;
 	m_inUrlBitsSet = true;
 	const nodeid_t *tids  = m_words->getTagIds();

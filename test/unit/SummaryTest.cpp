@@ -26,7 +26,7 @@ static void generateSummary( Summary &summary, char *htmlInput, const char *quer
 	ASSERT_TRUE(words.set(&xml, true));
 
 	Bits bits;
-	ASSERT_TRUE(bits.set(&words, 0));
+	ASSERT_TRUE(bits.set(&words));
 
 	Url url;
 	url.set(urlStr);

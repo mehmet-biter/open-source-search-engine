@@ -96,7 +96,7 @@ public:
 	~Bits();
 
 	// . returns false and sets errno on error
-	bool set( const Words *words, int32_t niceness );
+	bool set( const Words *words);
 	bool setForSummary( const Words *words );
 
 	void reset();
@@ -114,7 +114,7 @@ public:
 	}
 
 	void setInLinkBits ( class Sections *ss ) ;
-	void setInUrlBits  ( int32_t niceness );
+	void setInUrlBits  ();
 
 	// leave public so Query.cpp can tweak this
 	wbit_t *m_bits;
@@ -127,8 +127,6 @@ public:
 	int32_t m_swbitsSize;
 
  private:
-	int32_t m_niceness;
-
 	const Words *m_words;
 
 	bool m_inLinkBitsSet;

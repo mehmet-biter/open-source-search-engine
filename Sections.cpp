@@ -1316,7 +1316,7 @@ bool Sections::addSentenceSections ( ) {
 	}
 
 	// need D_IS_IN_URL bits to be valid
-	m_bits->setInUrlBits ( m_niceness );
+	m_bits->setInUrlBits ( );
 	// shortcut
 	wbit_t *bb = m_bits->m_bits;
 

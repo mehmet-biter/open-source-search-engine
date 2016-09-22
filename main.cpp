@@ -4478,7 +4478,7 @@ bool parseTest ( const char *coll, int64_t docId, const char *query ) {
 	Sections sections;
 	// computeWordIds from xml
 	words.set ( &xml , true , true ) ;
-	bits.set(&words, 0);
+	bits.set(&words);
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) 
 		//if ( ! words.set ( &xml , true , true ) )
