@@ -827,12 +827,11 @@ void Loop::doPoll ( ) {
 
 	bool calledOne = false;
 	const int64_t now = gettimeofdayInMilliseconds();
-	int ignored __attribute__((unused));	// shut up gcc warning: ignoring return value
 
 	if( n > 0 && FD_ISSET( m_pipeFd[0], &readfds ) ) {
 		//drain the wakeup pipe
 		char buf[32];
-		ignored = read( m_pipeFd[0], buf, sizeof(buf) );
+		ssize_t ignored __attribute__((unused)) = read( m_pipeFd[0], buf, sizeof(buf) ); // shut up gcc warning: ignoring return value
 		n--;
 		FD_CLR( m_pipeFd[0], &readfds );
 	}
@@ -927,9 +926,8 @@ void Loop::doPoll ( ) {
 
 
 void Loop::wakeupPollLoop() {
-	int ignored __attribute__((unused));	// shut up gcc warning: ignoring return value
 	char dummy='d';
-	ignored = write(m_pipeFd[1],&dummy,1);
+	ssize_t ignored __attribute__((unused)) = write(m_pipeFd[1],&dummy,1);;	// shut up gcc warning: ignoring return value
 }
 
 
