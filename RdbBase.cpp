@@ -2382,8 +2382,6 @@ return true;
 	if ( s_count >= 50 ) 
 		return true;
 
-	g_jobScheduler.disallow_new_jobs();
-
 	Msg5 msg5;
 	RdbList list;
 	char startKey[MAX_KEY_BYTES];
@@ -2418,7 +2416,6 @@ return true;
 			      -1LL          , // syncPint
 			      true          , // isRealMerge
 			      true)) {        // allowPageCache
-		g_jobScheduler.allow_new_jobs();
 		log( LOG_DEBUG, "db: HEY! it did not block");
 		return false;
 	}
@@ -2451,8 +2448,6 @@ return true;
 		// avoid log spam... comment this out. nah print out 1st 100.
 		log ( "db: Found bad key in list belongs to shard %" PRId32, shardNum);
 	}
-
-	g_jobScheduler.allow_new_jobs();
 
 	if ( got == count ) {
 		return true;

@@ -636,8 +636,10 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		// . this returns false if blocked, true otherwise
 		// . this will set g_errno on error
 		bool done = m_scan[i].m_scan.setRead( base->getFile(m_scan[i].m_fileNum), base->m_fixedDataSize, offset, bytesToRead,
-		                                startKey2, endKey2, m_ks, &m_scan[i].m_list, this, doneScanningWrapper,
-		                                base->useHalfKeys(), m_rdbId, m_niceness, true, true);
+		                                      startKey2, endKey2, m_ks, &m_scan[i].m_list,
+		                                      callback ? this : NULL,
+		                                      callback ? &doneScanningWrapper0 : NULL,
+		                                      base->useHalfKeys(), m_rdbId, m_niceness, true, true);
 
 						// debug msg
 		//fprintf(stderr,"Msg3:: reading %" PRId32" bytes from file #%" PRId32","
@@ -681,7 +683,7 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 }
 
 
-void Msg3::doneScanningWrapper(void *state) {
+void Msg3::doneScanningWrapper0(void *state) {
 	Msg3 *THIS = (Msg3 *) state;
 	THIS->doneScanningWrapper();
 }

@@ -119,9 +119,6 @@ public:
 	// . we copy all data so you can free your list when we're done
 	bool addList ( collnum_t collnum , RdbList *list, int32_t niceness);
 
-	// calls addList above
-	bool addList ( const char *coll , RdbList *list, int32_t niceness );
-
 	bool isSecondaryRdb() const {
 		return ::isSecondaryRdb((unsigned char)m_rdbId);
 	}

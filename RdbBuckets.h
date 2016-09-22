@@ -44,18 +44,16 @@ public:
 	char *getFirstKey();
 	const char *getFirstKey() const { return const_cast<RdbBucket *>(this)->getFirstKey(); }
 
-	char *getEndKey() { return m_endKey; }
 	const char *getEndKey() const { return m_endKey; }
 
 	int32_t getNumKeys() const { return m_numKeys; }
 
-	char *getKeys() { return m_keys; }
 	const char *getKeys() const { return m_keys; }
 
 	collnum_t getCollnum() const { return m_collnum; }
 	void setCollnum(collnum_t c) { m_collnum = c; }
 
-	bool addKey(const char *key, char *data, int32_t dataSize);
+	bool addKey(const char *key, const char *data, int32_t dataSize);
 	char *getKeyVal(const char *key, char **data, int32_t *dataSize);
 
 	int32_t getNode(const char *key) const; //returns -1 if not found
@@ -73,7 +71,7 @@ public:
 	int64_t fastLoad(BigFile *f, int64_t offset);
 	
 	//Debug
-	bool selfTest(char *prevKey);
+	bool selfTest(const char *prevKey);
 	void printBucket();
 
 	bool sort();
@@ -101,7 +99,7 @@ public:
 
 	bool resizeTable(int32_t numNeeded);
 
-	int32_t addNode(collnum_t collnum, char *key, char *data, int32_t dataSize);
+	int32_t addNode(collnum_t collnum, const char *key, const char *data, int32_t dataSize);
 
 	bool addList(collnum_t collnum, RdbList *list);
 

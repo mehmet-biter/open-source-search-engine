@@ -94,7 +94,6 @@ bool Titledb::addColl ( char *coll, bool doVerify ) {
 */
 bool Titledb::verify ( char *coll ) {
 	log ( LOG_DEBUG, "db: Verifying Titledb for coll %s...", coll );
-	g_jobScheduler.disallow_new_jobs();
 
 	Msg5 msg5;
 	RdbList list;
@@ -127,7 +126,6 @@ bool Titledb::verify ( char *coll ) {
 			      false         , // isRealMerge
 			      true))          // allowPageCache
 	{
-		g_jobScheduler.allow_new_jobs();
 		log(LOG_DEBUG, "db: HEY! it did not block");
 		return false;
 	}
@@ -167,7 +165,6 @@ bool Titledb::verify ( char *coll ) {
 			log("db: docid=%" PRId64" shard=%" PRId32,
 			    getDocId(&k),shardNum);
 		}
-		g_jobScheduler.allow_new_jobs();
 		//if ( g_conf.m_bypassValidation ) return true;
 		//if ( g_conf.m_allowScale ) return true;
 		// don't exit any more, allow it, but do not delete
@@ -181,7 +178,6 @@ bool Titledb::verify ( char *coll ) {
 	log ( LOG_DEBUG, "db: Titledb passed verification successfully for %" PRId32
 			" recs.", count );
 	// DONE
-	g_jobScheduler.allow_new_jobs();
 	return true;
 }
 

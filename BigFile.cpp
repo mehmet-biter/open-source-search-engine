@@ -752,7 +752,7 @@ bool BigFile::readwrite ( void         *buf      ,
 
 	// . if we're blocking then do it now
 	// . this should return false and set g_errno on error, true otherwise
-	if ( !isNonBlocking || !g_jobScheduler.are_new_jobs_allowed() ) 	{
+	if ( !isNonBlocking || !callback || !g_jobScheduler.are_new_jobs_allowed() ) 	{
 		goto skipThread;
 	}
 

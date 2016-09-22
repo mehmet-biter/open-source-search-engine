@@ -5,8 +5,9 @@
 #ifndef GB_DAILYMERGE_H
 #define GB_DAILYMERGE_H
 
-#include "gb-include.h"
-#include "Collectiondb.h"
+#include <ctime>
+
+class CollectionRec;
 
 class DailyMerge {
 public:

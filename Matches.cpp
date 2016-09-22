@@ -426,12 +426,6 @@ bool Matches::addMatches(Words *words, Phrases *phrases, Sections *sections, Bit
 
 	mf_t eflag = 0;
 
-	// set the ptrs
-	m_wordsPtr    [ m_numMatchGroups ] = words;
-	m_sectionsPtr [ m_numMatchGroups ] = sections;
-	m_bitsPtr     [ m_numMatchGroups ] = bits;
-	m_posPtr      [ m_numMatchGroups ] = pos;
-	m_flags       [ m_numMatchGroups ] = flags;
 	m_numMatchGroups++;
 
 	const int64_t *pids = NULL;

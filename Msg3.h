@@ -93,7 +93,7 @@ private:
 	// . sets page ranges for RdbScan (m_startpg[i], m_endpg[i])
 	void  setPageRanges(RdbBase *base);
 
-	static void doneScanningWrapper(void *state);
+	static void doneScanningWrapper0(void *state);
 	void doneScanningWrapper();
 	static void doneSleepingWrapper3(int fd, void *state);
 	void doneSleepingWrapper3();

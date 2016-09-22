@@ -1,9 +1,8 @@
 #ifndef GB_INCLUDE_H
 #define GB_INCLUDE_H
 
-//The two gbmem* functions below are legacy. Don't use them in new code
+//The function below are legacy. Don't use them in new code
 #define gbmemcpy(xx,yy,zz) memmove(xx,yy,zz)
-#define memcpy_ass(xx,yy,zz) memmove(xx,yy,zz)
 
 #include <inttypes.h>
 #include <bits/wordsize.h>
@@ -35,10 +34,5 @@
 
 #include "Errno.h"	// commonly included in include files
 #include "Log.h"	// commonly included in include files
-
-// cygwin fix
-#ifndef O_ASYNC
-#define O_ASYNC 0
-#endif
 
 #endif // GB_INCLUDE_H
