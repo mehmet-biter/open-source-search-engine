@@ -18,14 +18,23 @@
 //       as well as the summary generator, Summary.cpp. right now prox algo
 //       was setting all those different classes itself.
 
-Matches::Matches ( ) {
-	m_numMatchGroups = 0;
-	m_qwordFlags = NULL;
-	m_qwordAllocSize = 0;
+Matches::Matches()
+  : m_qwordFlags(NULL),
+    m_numMatches(0),
+    m_numSlots(0),
+    m_q(NULL),
+    m_numAlnums(0),
+    m_qwordAllocSize(0),
+    m_numMatchGroups(0)
+{
+}
+
+
+Matches::~Matches() {
 	reset();
 }
-Matches::~Matches( ) { reset(); }
-void Matches::reset   ( ) { 
+
+void Matches::reset() { 
 	reset2();
 	if ( m_qwordFlags && m_qwordFlags != (mf_t *)m_tmpBuf ) {
 		mfree ( m_qwordFlags , m_qwordAllocSize , "mmqw" );
@@ -716,8 +725,8 @@ bool Matches::addMatches(Words *words, Phrases *phrases, Sections *sections, Bit
 }
 
 // . word #i in the doc matches slot #n in the hash table
-int32_t Matches::getNumWordsInMatch( Words *words, int32_t wn, int32_t n, int32_t *numQWords, int32_t *qwn,
-									 bool allowPunctInPhrase ) {
+int32_t Matches::getNumWordsInMatch(Words *words, int32_t wn, int32_t n, int32_t *numQWords, int32_t *qwn,
+				    bool allowPunctInPhrase) {
 	// is it a two-word synonym?
 	if ( m_qtableFlags[n] & 0x08 ) {
 		// get the word following this

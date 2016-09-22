@@ -166,7 +166,7 @@ bool Summary::setSummary ( Xml *xml, Words *words, Sections *sections, Pos *pos,
 	}
 
 	// Nothing to match...print beginning of content as summary
-	if ( matches->m_numMatches == 0 && maxNumLines > 0 ) {
+	if ( matches->getNumMatches() == 0 && maxNumLines > 0 ) {
 		return getDefaultSummary ( xml, words, sections, pos, maxSummaryLen );
 	}
 
@@ -244,7 +244,7 @@ bool Summary::setSummary ( Xml *xml, Words *words, Sections *sections, Pos *pos,
 
 	// some query words are already matched in the title
 	for ( int32_t i = 0 ; i < m_q->m_numWords ; i++ ) {
-		if ( matches->m_qwordFlags[i] & MF_TITLEGEN ) {
+		if ( matches->isTitleMatch(i) ) {
 			retired [ i ] = 1;
 		}
 	}
@@ -264,7 +264,7 @@ bool Summary::setSummary ( Xml *xml, Words *words, Sections *sections, Pos *pos,
 		}
 
 		// reset these at the top of each loop
-		Match     *maxm;
+		const Match     *maxm;
 		int64_t  maxScore = 0;
 		int32_t       maxa = 0;
 		int32_t       maxb = 0;
@@ -280,15 +280,15 @@ bool Summary::setSummary ( Xml *xml, Words *words, Sections *sections, Pos *pos,
 		lastNumFinal = numFinal;
 
 		// loop through all the matches and see which is best
-		for ( int32_t i = 0 ; i < matches->m_numMatches ; i++ ) {
+		for ( int32_t i = 0 ; i < matches->getNumMatches() ; i++ ) {
 			int32_t       a , b;
 			// reset lasta if we changed words class
-			if ( i > 0 && matches->m_matches[i-1].m_words != matches->m_matches[i].m_words ) {
+			if ( i > 0 && matches->getMatch(i-1).m_words != matches->getMatch(i).m_words ) {
 				lasta = -1;
 			}
 
 			// only use matches in title, etc.
-			mf_t flags = matches->m_matches[i].m_flags;
+			mf_t flags = matches->getMatch(i).m_flags;
 
 			bool skip = true;
 			if ( flags & MF_METASUMM ) {
@@ -402,7 +402,7 @@ bool Summary::setSummary ( Xml *xml, Words *words, Sections *sections, Pos *pos,
 		}
 
 		// who is the winning match?
-		maxm = &matches->m_matches[maxi];
+		maxm = &matches->getMatch(maxi);
 		Words *ww = maxm->m_words;
 
 		// we now use "m_swbits" for the summary bits since they are
@@ -586,7 +586,7 @@ int64_t Summary::getBestWindow ( Matches *matches, int32_t mm, int32_t *lasta,
                                  int32_t *besta, int32_t *bestb, char *gotIt,
                                  char *retired, int32_t maxExcerptLen ) {
 	// get the window around match #mm
-	Match *m = &matches->m_matches[mm];
+	const Match *m = &matches->getMatch(mm);
 
 	// what is the word # of match #mm?
 	int32_t matchWordNum = m->m_wordNum;
@@ -776,15 +776,13 @@ int64_t Summary::getBestWindow ( Matches *matches, int32_t mm, int32_t *lasta,
 		}
 	}
 
-	Match *ms = matches->m_matches;
-
 	// make m_matches.m_matches[mi] the first match in our [a,b) window
 	int32_t mi ;
 
 	// . the match at the center of the window is match #"mm", so that
 	//   matches->m_matches[mm] is the Match class
 	// . set "mi" to it and back up "mi" as int32_t as >= a
-	for ( mi = mm ; mi > 0 && ms[mi-1].m_wordNum >=a ; mi-- )
+	for ( mi = mm ; mi > 0 && matches->getMatch(mi-1).m_wordNum >=a ; mi-- )
 		;
 
 	// now get the score of this excerpt. Also mark all the represented 
@@ -875,12 +873,12 @@ int64_t Summary::getBestWindow ( Matches *matches, int32_t mm, int32_t *lasta,
 		wordCount++;
 
 		// if no matches left, skip
-		if ( mi >= matches->m_numMatches ) {
+		if ( mi >= matches->getNumMatches() ) {
 			continue;
 		}
 
 		// get the match
-		Match *next = &ms[mi];
+		const Match *next = &matches->getMatch(mi);
 
 		// skip if not a match
 		if ( i != next->m_wordNum ) {
