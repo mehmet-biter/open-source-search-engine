@@ -268,9 +268,6 @@ bool Words::addWords( char *s, int32_t nodeLen, bool computeWordIds, int32_t nic
 				break;
 			}
 
-			// breathe
-			QUICKPOLL(niceness);
-
 			// if we are simple ascii, skip quickly
 			if ( is_ascii(s[i]) ) {
 				// accumulate NON-alnum chars
@@ -316,8 +313,6 @@ bool Words::addWords( char *s, int32_t nodeLen, bool computeWordIds, int32_t nic
 	j = i;
  again:
 	for ( ; s[i] ; i += getUtf8CharSize(s+i) ) {
-		// breathe
-		QUICKPOLL(niceness);
 		// simple ascii?
 		if ( is_ascii(s[i]) ) {
 			// accumulate alnum chars
@@ -574,9 +569,6 @@ int32_t Words::getLanguage( Sections *sections, int32_t maxSamples, int32_t nice
 	int32_t maxCount = 1000;
 
 	while ( wordi < numWords ) {
-		// breathe
-		QUICKPOLL( niceness );
-
 		// move to the next valid word
 		if ( ! wids [wordi]     ) { wordi++; continue; }
 		if (   wlens[wordi] < 2 ) { wordi++; continue; }
