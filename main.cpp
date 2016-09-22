@@ -4361,7 +4361,7 @@ bool parseTest ( const char *coll, int64_t docId, const char *query ) {
 	Xml xml;
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) {
-		if ( !xml.set( content, contentLen, xd.m_version, 0, CT_HTML ) ) {
+		if ( !xml.set( content, contentLen, xd.m_version, CT_HTML ) ) {
 			log(LOG_WARN, "build: speedtestxml: xml set: %s", mstrerror(g_errno));
 			return false;
 		}
@@ -4379,7 +4379,7 @@ bool parseTest ( const char *coll, int64_t docId, const char *query ) {
 	// loop parse
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) {
-		if ( !xml.set( content, contentLen, xd.m_version, 0, CT_HTML ) ) {
+		if ( !xml.set( content, contentLen, xd.m_version, CT_HTML ) ) {
 			log(LOG_WARN, "build: xml(setparents=false): %s", mstrerror(g_errno));
 			return false;
 		}
@@ -4592,7 +4592,7 @@ bool summaryTest1   ( char *rec, int32_t listSize, const char *coll, int64_t doc
 
 		// now parse into xhtml (takes 15ms on lenny)
 		Xml xml;
-		xml.set( content, contentLen, xd.m_version, 0, CT_HTML );
+		xml.set( content, contentLen, xd.m_version, CT_HTML );
 
 		xd.getSummary();
 	}

@@ -3033,7 +3033,7 @@ bool Parms::setXmlFromFile(Xml *xml, char *filename, SafeBuf *sb ) {
 	int32_t bufSize = d - buf;
 	// . set to xml
 	// . use version of 0
-	return xml->set( buf, bufSize, 0, 0, CT_XML );
+	return xml->set( buf, bufSize, 0, CT_XML );
 }
 
 //#define MAX_CONF_SIZE 200000

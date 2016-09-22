@@ -641,7 +641,7 @@ void Blaster::gotDoc2 ( void *state, TcpSocket *s){
 	Xml xml1;
 
 	// assume utf8
-	if ( !xml1.set( content1, content1Len, TITLEREC_CURRENT_VERSION, 0, CT_XML ) ) {
+	if ( !xml1.set( content1, content1Len, TITLEREC_CURRENT_VERSION, CT_XML ) ) {
 		log(LOG_WARN,"blaster: Couldn't set XML1 Class in gotDoc2");
 	}
 
@@ -662,7 +662,7 @@ void Blaster::gotDoc2 ( void *state, TcpSocket *s){
 	content2[content2Len]='\0';
 
 	Xml xml2;
-	if ( !xml2.set( content2, content2Len, TITLEREC_CURRENT_VERSION, 0, CT_XML ) ) {
+	if ( !xml2.set( content2, content2Len, TITLEREC_CURRENT_VERSION, CT_XML ) ) {
 		log(LOG_WARN,"blaster: Couldn't set XML2 Class in gotDoc2");
 	}
 
@@ -1136,7 +1136,7 @@ void Blaster::gotDoc4 ( void *state, TcpSocket *s){
 	int32_t  contentLen = size  - mime.getMimeLen();
 
 	Xml xml;
-	if ( !xml.set( content, contentLen, TITLEREC_CURRENT_VERSION, 0, CT_XML ) ) {
+	if ( !xml.set( content, contentLen, TITLEREC_CURRENT_VERSION, CT_XML ) ) {
 		log( LOG_WARN, "blaster: Couldn't set XML Class in gotDoc4" );
 	}
 

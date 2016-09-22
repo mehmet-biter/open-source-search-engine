@@ -144,7 +144,7 @@ TEST( PosTest, FilterTags ) {
 
 		std::sprintf(input, input_strs[i]);
 
-		ASSERT_TRUE( xml.set( input, strlen( input ), TITLEREC_CURRENT_VERSION, 0, CT_HTML ) );
+		ASSERT_TRUE( xml.set( input, strlen( input ), TITLEREC_CURRENT_VERSION, CT_HTML ) );
 		ASSERT_TRUE( words.set( &xml, true ) );
 
 		int32_t len = pos.filter( &words, 0, words.getNumWords(), false, buf, buf + MAX_BUF_SIZE );

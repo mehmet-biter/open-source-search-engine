@@ -3203,7 +3203,7 @@ bool Inlink::setXmlFromRSS ( Xml *xml , int32_t niceness ) {
 	int32_t len = size_rssItem - 1;
 
 	// return false and set g_errno if this fails
-	return xml->set( getRSSItem(), len, TITLEREC_CURRENT_VERSION, niceness, CT_XML );
+	return xml->set( getRSSItem(), len, TITLEREC_CURRENT_VERSION, CT_XML );
 }
 
 bool LinkInfo::hasLinkText ( ) {

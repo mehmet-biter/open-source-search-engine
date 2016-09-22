@@ -51,7 +51,7 @@ TEST( XmlTest, MetaDescription) {
 			std::sprintf(input, HTML_HEAD_FORMAT, desc);
 
 			Xml xml;
-			ASSERT_TRUE(xml.set(input, strlen(input), 0, 0, CT_HTML));
+			ASSERT_TRUE(xml.set(input, strlen(input), 0, CT_HTML));
 
 			char buf[MAX_BUF_SIZE];
 			int32_t bufLen = MAX_BUF_SIZE;
@@ -98,7 +98,7 @@ TEST( XmlTest, MetaDescriptionStripTags) {
 		std::sprintf(input, HTML_HEAD_FORMAT, desc);
 
 		Xml xml;
-		ASSERT_TRUE(xml.set(input, strlen(input), 0, 0, CT_HTML));
+		ASSERT_TRUE(xml.set(input, strlen(input), 0, CT_HTML));
 
 		char buf[MAX_BUF_SIZE];
 		int32_t bufLen = MAX_BUF_SIZE;

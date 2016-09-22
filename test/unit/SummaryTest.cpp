@@ -20,7 +20,7 @@
 
 static void generateSummary( Summary &summary, char *htmlInput, const char *queryStr, const char *urlStr ) {
 	Xml xml;
-	ASSERT_TRUE(xml.set(htmlInput, strlen(htmlInput), 0, 0, CT_HTML));
+	ASSERT_TRUE(xml.set(htmlInput, strlen(htmlInput), 0, CT_HTML));
 
 	Words words;
 	ASSERT_TRUE(words.set(&xml, true));

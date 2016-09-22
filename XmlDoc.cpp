@@ -3216,7 +3216,7 @@ Xml *XmlDoc::getXml ( ) {
 	int64_t start = logQueryTimingStart();
 
 	// set it
-	if ( !m_xml.set( *u8, u8len, m_version, m_niceness, *ct ) ) {
+	if ( !m_xml.set( *u8, u8len, m_version, *ct ) ) {
 		// return NULL on error with g_errno set
 		return NULL;
 	}
@@ -8991,7 +8991,7 @@ Url **XmlDoc::getMetaRedirUrl ( ) {
 
 	Xml xml;
 	// assume html since getContentType() is recursive on us.
-	if ( !xml.set( m_httpReply, m_httpReplySize - 1, m_version, m_niceness, CT_HTML ) ) {
+	if ( !xml.set( m_httpReply, m_httpReplySize - 1, m_version, CT_HTML ) ) {
 		// return NULL on error with g_errno set
 		logTrace( g_conf.m_logTraceXmlDoc, "END, xml.set failed" );;
 		return NULL;
