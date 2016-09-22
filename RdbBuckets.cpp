@@ -283,7 +283,7 @@ RdbBucket *RdbBucket::split(RdbBucket *newBucket) {
 }
 
 
-bool RdbBucket::addKey(const char *key, char *data, int32_t dataSize) {
+bool RdbBucket::addKey(const char *key, const char *data, int32_t dataSize) {
 	uint8_t ks = m_parent->getKeySize();
 	int32_t recSize = m_parent->getRecSize();
 	bool isNeg = KEYNEG(key);
@@ -294,7 +294,7 @@ bool RdbBucket::addKey(const char *key, char *data, int32_t dataSize) {
 	gbmemcpy(newLoc, key, ks);
 
 	if (data) {
-		*(char **)(newLoc + ks) = data;
+		*(const char **)(newLoc + ks) = data;
 		if (m_parent->getFixedDataSize() == -1) {
 			*(int32_t *)(newLoc + ks + sizeof(char *)) = (int32_t)dataSize;
 		}
@@ -393,7 +393,7 @@ int32_t RdbBucket::getNode(const char *key) const {
 	return -1;
 }
 
-bool RdbBucket::selfTest (char* prevKey) {
+bool RdbBucket::selfTest (const char* prevKey) {
 	sort();
 
 	char* last = NULL;
@@ -676,7 +676,7 @@ bool RdbBuckets::resizeTable( int32_t numNeeded ) {
 	return true;
 }
 
-int32_t RdbBuckets::addNode(collnum_t collnum, char *key, char *data, int32_t dataSize) {
+int32_t RdbBuckets::addNode(collnum_t collnum, const char *key, const char *data, int32_t dataSize) {
 	if (!m_isWritable || m_isSaving) {
 		g_errno = ETRYAGAIN;
 		return -1;
@@ -950,8 +950,8 @@ bool RdbBuckets::repair() {
 	for (int32_t j = 0; j < tmpNumBuckets; j++) {
 		collnum_t collnum = tmpBucketPtrs[j]->getCollnum();
 		for (int32_t i = 0; i < tmpBucketPtrs[j]->getNumKeys(); i++) {
-			char *currRec = tmpBucketPtrs[j]->getKeys() + m_recSize * i;
-			char *data = NULL;
+			const char *currRec = tmpBucketPtrs[j]->getKeys() + m_recSize * i;
+			const char *data = NULL;
 			int32_t dataSize = m_fixedDataSize;
 
 			if (m_fixedDataSize != 0) {
@@ -983,7 +983,7 @@ bool RdbBuckets::selfTest(bool thorough, bool core) {
 	}
 
 	int32_t totalNumKeys = 0;
-	char* last = NULL;
+	const char* last = NULL;
 	collnum_t lastcoll = -1;
 	int32_t numColls = 0;
 
@@ -1003,7 +1003,7 @@ bool RdbBuckets::selfTest(bool thorough, bool core) {
 		}
 
 		totalNumKeys += b->getNumKeys();
-		char *kk = b->getEndKey();
+		const char *kk = b->getEndKey();
 		if (i > 0 && lastcoll == b->getCollnum() && KEYCMPNEGEQ(last, kk, m_ks) >= 0) {
 			log(LOG_WARN, "rdbbuckets last key: %016" PRIx64"%08" PRIx32" num keys: %" PRId32,
 			    *(int64_t *)(kk + (sizeof(int32_t))),
