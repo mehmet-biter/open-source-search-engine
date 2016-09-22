@@ -686,14 +686,7 @@ bool SpiderColl::addSpiderReply ( SpiderReply *srep ) {
 		// . lower 32 bits is the spideredTime
 		// . upper 32 bits is the crawldelay
 		int32_t nv = (int32_t)(srep->m_crawlDelayMS);
-		// shift up
-		//nv <<= 32;
-		// or in time
-		//nv |= (uint32_t)srep->m_spideredTime;
-		// just direct update if faster
-		if      ( cdp ) *cdp = nv;
-		// store it anew otherwise
-		else if ( ! m_cdTable.addKey(&srep->m_domHash32,&nv)){
+		if ( ! m_cdTable.addKey(&srep->m_domHash32,&nv)){
 			// return false with g_errno set on error
 			//return false;
 			log("spider: failed to add crawl delay for "
