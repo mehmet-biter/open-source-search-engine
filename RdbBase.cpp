@@ -1461,8 +1461,8 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 		g_errno = 0;
 		log("merge: Could not find coll rec for %s.",m_coll);
 	}
+
 	// set the max files to merge in a single merge operation
-	m_absMaxFiles = -1;
 	m_absMaxFiles = 50;
 
 	// m_minToMerge is -1 if we should let cr override but if m_minToMerge
