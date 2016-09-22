@@ -263,11 +263,6 @@ class Words {
 	~Words     ( );
 	void reset ( ); 
 
-	// returns -1 and sets g_errno on error
-	int32_t getLanguage ( class Sections *sections = NULL ,
-			   int32_t maxSamples = NUM_LANGUAGE_SAMPLES,
-			   int32_t *langScore = NULL);
-
 	char *getContent() { 
 		if ( m_numWords == 0 ) return NULL;
 		return m_words[0]; 
