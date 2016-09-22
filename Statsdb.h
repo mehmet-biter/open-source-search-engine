@@ -112,7 +112,6 @@ class Statsdb {
 
 	Rdb 	  m_rdb;
 	RdbList   m_list;
-	Msg1	  m_msg1;
 
 	// the graphing window. now a bunch of absolute divs in html
 	SafeBuf m_gw;
