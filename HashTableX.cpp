@@ -205,8 +205,6 @@ bool HashTableX::addKey ( const void *key , const void *val , int32_t *slot ) {
         while ( count++ < m_numSlots ) {
 		// this is set to 0x00 if empty
 		if ( m_flags [ n ] == 0   ) break;
-		// breathe
-		//QUICKPOLL(m_niceness);
 		// use "n" if key matches
 		if ( *(int32_t *)(m_keys + m_ks * n) == *(int32_t *)key  &&
 		     // if we are a 4 byte key no need to do the memcmp
