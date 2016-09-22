@@ -814,12 +814,7 @@ subloopNextPriority:
 
 	logTrace( g_conf.m_logTraceSpider, "END, loop" );
 
-	if ( status ) {
-		// try another read
-		// now advance to next coll, launch one spider per coll
-		goto subloop;
-	}
-
+	// try another read
 	// now advance to next coll, launch one spider per coll
 	goto subloop;
 }
