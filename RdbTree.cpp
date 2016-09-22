@@ -664,20 +664,17 @@ int32_t RdbTree::addNode ( collnum_t collnum , const char *key , char *data , in
 	return i;
 }
 
-int32_t RdbTree::deleteNode  ( collnum_t collnum, const char *key, bool freeData ) {
+int32_t RdbTree::deleteNode(collnum_t collnum, const char *key, bool freeData) {
 	int32_t node = getNode ( collnum , key );
-	// debug
-	//log("db: deleting n1=%" PRIx64" n0=%" PRIx64" node=%" PRId32".",
-	//    *(int64_t *)(key+8), *(int64_t *)(key+0),node);
-	if ( node == -1 ) return -1;
-	deleteNode3(node,freeData); 
+	if (node != -1) {
+		deleteNode(node, freeData);
+	}
+
 	return node;
 }
 
 // delete all nodes with keys in [startKey,endKey]
-void RdbTree::deleteNodes ( collnum_t collnum ,
-			    const char *startKey, const char *endKey, bool freeData ) {
-
+void RdbTree::deleteNodes(collnum_t collnum, const char *startKey, const char *endKey, bool freeData) {
 	// sanity check
 	if ( ! m_isWritable ) {
 		log("db: Can not delete record from tree because "
@@ -695,7 +692,7 @@ void RdbTree::deleteNodes ( collnum_t collnum ,
 		if ( m_collnums[node] != collnum ) break;
 		//if ( m_keys    [node] > endKey   ) return;
 		if ( KEYCMP(m_keys,node,endKey,0,m_ks) > 0 ) break;
-		deleteNode3 ( node , freeData );
+		deleteNode(node, freeData);
 		// rotation in setDepths() will cause him to be replaced
 		// with one of his kids, unless he's a leaf node
 		//node = next;
@@ -709,7 +706,7 @@ void RdbTree::deleteNodes ( collnum_t collnum ,
 // . deletes node i from the tree
 // . i's parent should point to i's left or right kid
 // . if i has no parent then his left or right kid becomes the new top node
-void RdbTree::deleteNode3 ( int32_t i , bool freeData ) {
+void RdbTree::deleteNode(int32_t i, bool freeData) {
 	// sanity check
 	if ( ! m_isWritable ) {
 		log("db: Can not delete record from tree because "
@@ -970,68 +967,47 @@ void RdbTree::deleteNode3 ( int32_t i , bool freeData ) {
 	if ( m_useProtection && undo ) protect ( );
 }
 
-bool RdbTree::deleteKeys ( collnum_t collnum , char *keys , int32_t numKeys ) {
-	// make a fake list
-	RdbList list;
-	int32_t size = m_ks * numKeys;
-	list.set ( keys  ,
-		   size  ,
-		   keys  ,
-		   size  ,
-		   keys  ,
-		   keys  ,
-		   0     , // fixedDataSize
-		   false ,
-		   false ,
-		   m_ks  );
-	return deleteList ( collnum , &list , true );
-}
-
 // . TODO: speed up since keys are usually ordered (use getNextNode())
 // . returns false if a key in list was not found
-bool RdbTree::deleteList(collnum_t collnum, RdbList *list, bool doBalancing) {
+bool RdbTree::deleteList(collnum_t collnum, RdbList *list) {
 	// sanity check
-	if ( list->getKeySize() != m_ks ) { g_process.shutdownAbort(true); }
+	if (list->getKeySize() != m_ks) {
+		g_process.shutdownAbort(true);
+	}
+
 	// return if no non-empty nodes in the tree
-	if ( m_numUsedNodes <= 0 ) return true;
-	// reset before calling list->getCurrent*() functions
-	list->resetListPtr();
-	char key[MAX_KEY_BYTES];
 	// bail if list is empty now
-	if ( list->isEmpty() ) return true;
+	if (m_numUsedNodes <= 0 || list->isEmpty()) {
+		return true;
+	}
+
+	// disable mem protection
+	if (m_useProtection) {
+		unprotect();
+	}
+
 	// a key not found?
 	bool allgood = true;
-	// preserve state of balance
-	bool balanced = m_doBalancing;
-	// possibly turn off balancing (only turn on/off if it's already on)
-	if ( m_doBalancing ) m_doBalancing = doBalancing;
-	// disable mem protection
-	if ( m_useProtection ) unprotect ( );
-	//int32_t  dataSize;
- top:
-	//key      = list->getCurrentKey      ( );
-	list->getCurrentKey ( key );
-	//dataSize = list->getCurrentDataSize ( );
-	if ( deleteNode ( collnum , key , true /*freeData?*/) < 0 ) {
-		//log("RdbTree::deleteList: key not found");
-		allgood = false;
-	}		
 
-	// debug
-	//log("db: delete %s",KEYSTR(key,m_ks));
+	char key[MAX_KEY_BYTES];
+	for (list->resetListPtr(); !list->isExhausted(); list->skipCurrentRecord()) {
+		list->getCurrentKey(key);
+		if (deleteNode(collnum, key, true) < 0) {
+			allgood = false;
+		}
+	}
 
-	if ( list->skipCurrentRecord() ) goto top;
-	// possibly restore balancing
-	m_doBalancing = balanced;
 	// enable protection again
-	if ( m_useProtection ) protect ( );
+	if (m_useProtection) {
+		protect();
+	}
+
 	// return false if a key was not found
 	return allgood;
 }
 
 // TODO: speed up since keys are usually ordered (use getNextNode())
-void RdbTree::deleteOrderedList ( collnum_t collnum ,
-				  RdbList *list , bool doBalancing ) {
+void RdbTree::deleteOrderedList(collnum_t collnum, RdbList *list) {
 	// return if no non-empty nodes in the tree
 	if ( m_numUsedNodes <= 0 ) return ;
 	// reset before calling list->getCurrent*() functions
@@ -1040,15 +1016,10 @@ void RdbTree::deleteOrderedList ( collnum_t collnum ,
 	// bail if list is empty now
 	if ( list->isEmpty() ) return;
 
-	//int32_t  dataSize;
-	//key = list->getCurrentKey      ( );
 	list->getCurrentKey ( key );
 	// get the node whose keys is just <= key
 	int32_t node = getPrevNode ( collnum , key );
-	// preserve state of balance
-	bool balanced = m_doBalancing;
-	// possibly turn off balancing (only turn on/off if it's already on)
-	if ( m_doBalancing ) m_doBalancing = doBalancing;
+
 	// disable mem protection
 	if ( m_useProtection ) unprotect ( );
  top:
@@ -1060,7 +1031,7 @@ void RdbTree::deleteOrderedList ( collnum_t collnum ,
 	//if ( m_keys [ node ] == key && m_collnums [ node ] == collnum ) {
 	if ( KEYCMP(m_keys,node,key,0,m_ks)==0 && m_collnums[node] == collnum){
 		// trim the node from the tree
-		deleteNode3 ( node , true /*freeData?*/ );
+		deleteNode(node, true /*freeData?*/ );
 		// get next node in tree
 		node = getNextNode ( node ) ;
 		// . point to next key in list to delete
@@ -1088,9 +1059,8 @@ void RdbTree::deleteOrderedList ( collnum_t collnum ,
 	//key = list->getCurrentKey() ;
 	list->getCurrentKey ( key ) ;
 	goto top2;
+
  done:
-	// possibly restore balancing
-	m_doBalancing = balanced;
 
 	// re-enable mem protection
 	if ( m_useProtection ) protect ( );
@@ -1098,7 +1068,6 @@ void RdbTree::deleteOrderedList ( collnum_t collnum ,
 
 // . this fixes the tree
 // returns false if could not fix tree and sets g_errno, otherwise true
-
 bool RdbTree::fixTree ( ) {
 	// on error, fix the linked list
 	//log("RdbTree::fixTree: tree was corrupted on disk?");
@@ -2726,7 +2695,7 @@ bool RdbTree::fastLoad ( BigFile *f , RdbMem *stack ) {
 			log("got one");
 			// make it negative
 			m_keys[i].n0 &= 0xfffffffffffffffeLL;
-			//deleteNode3 ( i , true ); // freeData?
+			//deleteNode ( i , true ); // freeData?
 			//goto again;
 		}
 		log("REMOVED %" PRId32,count);
@@ -2893,13 +2862,13 @@ void RdbTree::cleanTree ( ) { // char **bases ) {
 		     m_collnums[i] <  max &&
 		     g_collectiondb.m_recs[m_collnums[i]] ) continue;
 		// if it is negtiave, remove it, that is wierd corruption
-		if ( m_collnums[i] < 0 ) 
-			deleteNode3 ( i , true );
+		if ( m_collnums[i] < 0 )
+			deleteNode(i, true);
 		// remove it otherwise
 		// don't actually remove it!!!! in case collection gets
 		// moved accidentally.
 		// no... otherwise it can clog up the tree forever!!!!
-		deleteNode3 ( i , true );
+		deleteNode(i, true);
 		count++;
 		// save it
 		collnum = m_collnums[i];

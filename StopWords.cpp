@@ -21,7 +21,7 @@ static const char * const s_stopWords[] = {
 	"a",
 	"b",
 	"c",
-	"d"
+	"d",
 	"e",
 	"f",
 	"g",

@@ -1286,14 +1286,12 @@ bool Msg8a::getTagRec( Url *url, collnum_t collnum, int32_t niceness, void *stat
 	// . msge0 passes this in as NULL an expects us to figure it out
 	// . if site was NULL that means we guess it. default to hostname
 	//   unless in a recognized for like /~mwells/
-	{
-		SiteGetter sg;
-		sg.getSite ( url->getUrl(), NULL, 0, collnum, m_niceness );
-		// if it set it to a recognized site, like ~mwells, then set "site"
-		if ( sg.m_siteLen ) {
-			site    = sg.m_site;
-			siteLen = sg.m_siteLen;
-		}
+	SiteGetter sg;
+	sg.getSite ( url->getUrl(), NULL, 0, collnum, m_niceness );
+	// if it set it to a recognized site, like ~mwells, then set "site"
+	if ( sg.m_siteLen ) {
+		site    = sg.m_site;
+		siteLen = sg.m_siteLen;
 	}
 
 	// if provided site was NULL and not of a ~mwells type of form

@@ -860,7 +860,7 @@ tryAgain:
 	// tree delete is slow due to checking for leaks, not balancing
 	bool s;
 	if (m_tree) {
-		s = m_tree->deleteList(m_collnum, m_list, true);
+		s = m_tree->deleteList(m_collnum, m_list);
 	} else if (m_buckets) {
 		s = m_buckets->deleteList(m_collnum, m_list);
 	}

@@ -120,32 +120,12 @@ void * operator new (size_t size) throw (std::bad_alloc) {
 
 	void *mem = sysmalloc ( size );
 
-	int32_t  memLoop = 0;
-newmemloop:
 	if ( ! mem && size > 0 ) {
 		g_mem.incrementOOMCount();
 		g_errno = errno;
 		log( LOG_WARN, "mem: new(%zu): %s",size,mstrerror(g_errno));
 		throw std::bad_alloc();
 		//return NULL;
-	}
-	if ( (PTRTYPE)mem < 0x00010000 ) {
-		void *remem = sysmalloc(size);
-		log( LOG_WARN, "mem: Caught low memory allocation "
-		      "at %08" PTRFMT", "
-		      "reallocated to %08" PTRFMT, 
-		      (PTRTYPE)mem,
-		      (PTRTYPE)remem );
-		sysfree(mem);
-		mem = remem;
-		if ( memLoop > 100 ) {
-			log( LOG_WARN, "mem: Attempted to reallocate low "
-					"memory allocation 100 times, "
-					"aborting and returning ENOMEM." );
-			g_errno = ENOMEM;
-			throw std::bad_alloc();
-		}
-		goto newmemloop;
 	}
 
 	g_mem.addMem ( mem , size , "TMPMEM" , 1 );
@@ -183,32 +163,12 @@ void * operator new [] (size_t size) throw (std::bad_alloc) {
 	void *mem = sysmalloc ( size );
 
 
-	int32_t  memLoop = 0;
-newmemloop:
 	if ( ! mem && size > 0 ) {
 		g_errno = errno;
 		g_mem.incrementOOMCount();
 		log( LOG_WARN, "mem: new(%zu): %s", size, mstrerror(g_errno));
 		throw std::bad_alloc();
 		//return NULL;
-	}
-
-	if ( (PTRTYPE)mem < 0x00010000 ) {
-		void *remem = sysmalloc(size);
-		log( LOG_WARN, "mem: Caught low memory allocation at "
-		      "%08" PTRFMT", "
-				"reallocated to %08" PTRFMT"", 
-		      (PTRTYPE)mem, (PTRTYPE)remem );
-		sysfree(mem);
-		mem = remem;
-		if ( memLoop > 100 ) {
-			log( LOG_WARN, "mem: Attempted to reallocate low "
-					"memory allocation 100 times, "
-					"aborting and returning ENOMEM." );
-			g_errno = ENOMEM;
-			throw std::bad_alloc();
-		}
-		goto newmemloop;
 	}
 
 	g_mem.addMem ( (char*)mem , size, "TMPMEM" , 1 );

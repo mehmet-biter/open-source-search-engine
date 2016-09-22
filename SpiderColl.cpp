@@ -397,7 +397,7 @@ bool SpiderColl::makeWaitingTree ( ) {
 		// add to table now since its in the tree
 		if ( ! m_waitingTable.addKey ( &firstIp , &fakeone ) ) {
 			log("spider: makeWaitTree2: %s",mstrerror(g_errno));
-			m_waitingTree.deleteNode3 ( wn , true );
+			m_waitingTree.deleteNode(wn, true);
 			//log("sper: 6 del node %" PRId32" for %s",wn,iptoa(firstIp));
 			return false;
 		}
@@ -1222,7 +1222,7 @@ bool SpiderColl::addToWaitingTree ( uint64_t spiderTimeMS, int32_t firstIp, bool
 		          iptoa( firstIp ) );
 
 		// remove from tree so we can add it below
-		m_waitingTree.deleteNode3 ( tn , false );
+		m_waitingTree.deleteNode(tn, false);
 	} else {
 		// time of 0 means we got the reply for something we spidered
 		// in doledb so we will need to recompute the best spider
@@ -1290,7 +1290,7 @@ bool SpiderColl::addToWaitingTree ( uint64_t spiderTimeMS, int32_t firstIp, bool
 	// add to table now since its in the tree
 	if ( ! m_waitingTable.addKey ( &firstIp , &spiderTimeMS ) ) {
 		// remove from tree then
-		m_waitingTree.deleteNode3 ( wn , false );
+		m_waitingTree.deleteNode(wn, false);
 		//log("spider: 5 del node %" PRId32" for %s",wn,iptoa(firstIp));
 		return false;
 	}
@@ -1361,7 +1361,7 @@ int32_t SpiderColl::getNextIpFromWaitingTree ( ) {
 		// these operations should fail if writes have been disabled
 		// and becase the trees/tables for spidercache are saving
 		// in Process.cpp's g_spiderCache::save() call
-		m_waitingTree.deleteNode3 ( node , true );
+		m_waitingTree.deleteNode(node, true);
 		//log("spdr: 8 del node node %" PRId32" for %s",node,iptoa(firstIp));
 		// note it
 		if ( g_conf.m_logDebugSpider )
@@ -3223,7 +3223,7 @@ bool SpiderColl::scanListForWinners ( ) {
 			// from table too
 			m_winnerTable.removeKey ( &m_tailUh48 );
 			// delete the tail so new spiderrequest can enter
-			m_winnerTree.deleteNode3 ( tailNode , true );
+			m_winnerTree.deleteNode(tailNode, true);
 
 		}
 
@@ -3733,7 +3733,7 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 		//int32_t wn = m_waitingTree.getNode(0,(char *)&m_waitingTreeKey);
 		//if ( wn < 0 ) { g_process.shutdownAbort(true); }
 		if ( wn >= 0 ) {
-			m_waitingTree.deleteNode3 (wn,false );
+			m_waitingTree.deleteNode(wn, false);
 			//log("spdr: 2 del node %" PRId32" for %s",wn,iptoa(firstIp));
 		}
 
