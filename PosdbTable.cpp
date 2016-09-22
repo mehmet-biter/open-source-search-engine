@@ -180,11 +180,17 @@ void PosdbTable::evalSlidingWindow ( const char **ptrs, const char **bestPos, fl
 	// TODO: only do this loop on the (i,j) pairs where i or j
 	// is the term whose position got advanced in the sliding window.
 
-	for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
+	for ( int32_t i = 0 ; i < m_numQueryTermInfos; i++ ) {
 
 		// skip if to the left of a pipe operator
 		if ( m_bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) )
 			continue;
+
+		// skip empty list
+		if( !ptrs[i] ) {
+			continue;
+		}
+		
 
 		//if ( ptrs[i] ) wpi = ptrs[i];
 		// if term does not occur in body, sub-in the best term
@@ -204,6 +210,12 @@ void PosdbTable::evalSlidingWindow ( const char **ptrs, const char **bestPos, fl
 			// skip if to the left of a pipe operator
 			if ( m_bflags[j] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) )
 				continue;
+
+			// skip empty list
+			if( !ptrs[j] ) {
+				continue;
+			}
+
 
 			// TODO: use a cache using wpi/wpj as the key.
 			//if ( ptrs[j] ) wpj = ptrs[j];
