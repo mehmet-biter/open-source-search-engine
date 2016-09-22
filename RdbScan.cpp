@@ -33,11 +33,6 @@ bool RdbScan::setRead ( BigFile  *file         ,
 	m_ks = keySize;
 	m_rdbId = rdbId;
 	m_hitDisk        = hitDisk;
-	// ensure startKey last bit clear, endKey last bit set
-	//if ( (startKey.n0 & 0x01) == 0x01 ) 
-	//	log("RdbScan::setRead: warning startKey lastbit set"); 
-	//if ( (endKey.n0   & 0x01) == 0x00 ) 
-	//	log("RdbScan::setRead: warning endKey lastbit clear"); 
 	// set list now
 	m_rdblist->set ( NULL          , 
 		      0             ,
@@ -55,11 +50,7 @@ bool RdbScan::setRead ( BigFile  *file         ,
 	//   therefore, just return silently now.
 	// . Msg3 will not merge empty lists so don't worry about setting the
 	//   lists startKey/endKey
-	//if ( startKey > endKey ) return true;
 	if ( KEYCMP(startKey,endKey,m_ks)>0 ) return true;
-	//	log("RdbScan::readList: startKey > endKey warning"); 
-	//	return true;
-	//}
 	// don't bother doing anything if nothing needs to be read
 	if ( bytesToRead == 0 ) return true;
 
@@ -80,11 +71,6 @@ bool RdbScan::setRead ( BigFile  *file         ,
 	// . m_hint is an offset, like m_offset
 	// . TODO: what if it returns false?
 
-	// debug msg
-	//if ( m_bufSize > 1024 * 1024 * 3 ) {
-	//	fprintf(stderr,"BIG READ\n");
-	//	sleep(5);
-	//}
 	// . alloc some read buffer space, m_buf
 	// . add 4 extra in case first key is half key and needs to be full
 	int32_t bufSize = bytesToRead ;
@@ -101,15 +87,6 @@ bool RdbScan::setRead ( BigFile  *file         ,
 	// . but try badding under us, maybe read() writes before the buf
 	int32_t pad = 16;
 	bufSize += pad;
-	// get the memory to hold what we read
-	//char *buf = (char *) mmalloc ( bufSize , "RdbScan" );
-	//if ( ! buf ) { 
-	//	log("disk: Could not allocate %" PRId32" bytes for read of %s.",
-	//	    bufSize ,file->getFilename());
-	//	return true;
-	//}
-	// note
-	//logf(LOG_DEBUG,"db: list %" PRIu32" has buf %" PRIu32".",(int32_t)m_rdblist,(int32_t)buf);
 	// . set up the list
 	// . set min/max keys on list if we're done reading
 	// . the min/maxKey defines the range of keys we read
@@ -133,7 +110,6 @@ bool RdbScan::setRead ( BigFile  *file         ,
 	m_callback = callback;
 	m_state    = state;
 	// save the first key in the list
-	//m_startKey = startKey;
 	KEYSET(m_startKey,startKey,m_ks);//m_rdblist->m_ks);
 	KEYSET(m_endKey,endKey,m_ks);
 	m_fixedDataSize = fixedDataSize;
@@ -146,32 +122,14 @@ bool RdbScan::setRead ( BigFile  *file         ,
 	m_fstate.m_allocBuf = NULL;
 	m_fstate.m_buf      = NULL;
 
-	// debug msg
-	//log("diskOff=%" PRId64" nb=%" PRId32,offset,bytesToRead);
-
 	// . do a threaded, non-blocking read 
 	// . we now pass in a NULL buffer so Threads.cpp will do the
 	//   allocation right before launching the thread so we don't waste
 	//   memory. i've seen like 19000 unlaunched threads each allocating
 	//   32KB for a tfndb read, hogging up all the memory.
-	//if ( ! file->read ( buf + pad + m_off ,
 	if ( ! file->read ( NULL, bytesToRead, offset, &m_fstate, this, gotListWrapper, niceness,
 	                    pad + m_off )) // allocOff, buf offset to read into
 		return false;
-
-	/*
-	// debug point
-	log("RDBSCAN: read %" PRId32" bytes @ %" PRId64,bytesToRead, offset);
-	for ( int32_t i = 0 ; i < bytesToRead ; i++ ) {
-		if (((offset+i) % 20) == 0 ) 
-			fprintf(stderr,"\n%" PRId64") ",offset+i);
-		fprintf(stderr,"%02hhx ",(buf+pad+m_off)[i]);
-	}
-	fprintf(stderr,"\n");
-
-	if ( offset == 49181 && bytesToRead == 98299 ) {
-		g_process.shutdownAbort(true); }
-	*/
 
 	if ( m_fstate.m_errno && ! g_errno ) {
 		g_process.shutdownAbort(true);
@@ -299,7 +257,7 @@ void RdbScan::gotList ( ) {
 	// skip:
 //#endif
 	// assume we did not shift it
-	m_shifted = 0;//false;
+	m_shifted = 0;
 	// if we were doing a cache only read, and got nothing, bail now
 	if ( ! m_hitDisk && m_rdblist->isEmpty() ) return;
 	// if first key in list is half, make it full
@@ -319,11 +277,6 @@ void RdbScan::gotList ( ) {
 	if ( m_fstate.m_bytesDone != m_fstate.m_bytesToGo && m_hitDisk )
 		log(LOG_INFO,"disk: Read %" PRId64" bytes but needed %" PRId64".", m_fstate.m_bytesDone , m_fstate.m_bytesToGo );
 		
-	// adjust the list size for biased page cache if necessary
-	//if ( m_file->m_pc && m_allowPageCache &&
-	//     m_file->m_pc->m_isOverriden &&
-	//     m_fstate.m_bytesDone < m_rdblist->m_listSize )
-	//	m_rdblist->m_listSize = m_fstate.m_bytesDone;
 	// bail if we don't do the 6 byte thing
 	if ( m_off == 0 ) return;
 	// posdb double compression?
