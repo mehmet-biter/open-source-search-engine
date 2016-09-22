@@ -559,7 +559,6 @@ void handleRequest54 ( UdpSlot *udpSlot , int32_t niceness ) {
 	int32_t hslot = s_loadTable.getSlot ( &urlIp );
 	// scan all proxies that have this urlip outstanding
 	for ( int32_t i = hslot ; i >= 0 ; i = s_loadTable.getNextSlot(i,&urlIp)){
-		QUICKPOLL(niceness);
 		// get the bucket
 		LoadBucket *lb;
 		lb = (LoadBucket *)s_loadTable.getValueFromSlot(i);
@@ -590,7 +589,6 @@ void handleRequest54 ( UdpSlot *udpSlot , int32_t niceness ) {
 	// get the min of the counts
 	int32_t minCount = 999999;
 	for ( int32_t i = 0 ; i < s_iptab.getNumSlots() ; i++ ) {
-		QUICKPOLL(niceness);
 		// skip empty slots
 		if ( ! s_iptab.m_flags[i] ) continue;
 		// get the spider proxy
@@ -679,7 +677,6 @@ void handleRequest54 ( UdpSlot *udpSlot , int32_t niceness ) {
 	int32_t slotCount = s_iptab.getNumSlots();
 	// . now find the best proxy wih the minCount
 	for ( int32_t i = start ; ; i++ ) {
-		QUICKPOLL(niceness);
 		// scan all slots in hash table, then stop
 		if ( slotCount-- <= 0 ) break;
 		// wrap around to zero if we hit the end
@@ -807,7 +804,6 @@ void handleRequest54 ( UdpSlot *udpSlot , int32_t niceness ) {
 	// now remove old entries from the load table. entries that
 	// have completed and have a download end time more than 10 mins ago.
 	for ( int32_t i = s_loadTable.getNumSlots() - 1 ; i >= 0 ; i-- ) {
-		QUICKPOLL(niceness);
 		// skip if empty
 		if ( ! s_loadTable.m_flags[i] ) continue;
 		// get the bucket
