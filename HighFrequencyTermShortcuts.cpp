@@ -96,13 +96,15 @@ bool HighFrequencyTermShortcuts::load()
 	if(p!=end) {
 		//truncated, overlong, invalid, or bogus file
 		log(LOG_WARN,"Inconsistency or data error detected in %s", filename);
-		delete[] (char*)buffer;
+		delete[] new_buffer;
 		return false;
 	}
 	
 	//ok, content seem to check out.
 	entries.swap(new_entries);
-	delete[] (char*)buffer;
+	if( buffer ) {
+		delete[] (char*)buffer;
+	}
 	buffer = new_buffer;
 	
 	//All the entries are full 18-byte entries in all their glory
@@ -146,8 +148,10 @@ bool HighFrequencyTermShortcuts::load()
 void HighFrequencyTermShortcuts::unload()
 {
 	entries.clear();
-	delete[] (char*)buffer;
-	buffer = 0;
+	if( buffer ) {
+		delete[] (char*)buffer;
+	}
+	buffer = NULL;
 }
 
 
