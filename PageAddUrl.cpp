@@ -89,7 +89,7 @@ bool sendPageAddUrl2 ( TcpSocket *sock , HttpRequest *hr ) {
 		}
 
 		bool rc = g_httpServer.sendErrorReply(gr);
-		mdelete ( gr , sizeof(gr) , "PageAddUrl" );
+		mdelete ( gr , sizeof(*gr) , "PageAddUrl" );
 		delete gr;
 		return rc;
 	}
@@ -123,7 +123,7 @@ bool sendReply ( void *state ) {
 	if ( format == FORMAT_JSON || format == FORMAT_XML ) {
 		bool status = g_httpServer.sendSuccessReply ( gr );
 		// nuke state
-		mdelete ( gr , sizeof(gr) , "PageAddUrl" );
+		mdelete ( gr , sizeof(*gr) , "PageAddUrl" );
 		delete (gr);
 		return status;
 	}
