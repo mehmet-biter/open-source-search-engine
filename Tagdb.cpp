@@ -1079,8 +1079,6 @@ bool Tagdb::verify ( const char *coll ) {
 	
 	log ( LOG_DEBUG, "db: Verifying %s for coll %s...", rdbName, coll );
 	
-	g_jobScheduler.disallow_new_jobs();
-
 	Msg5 msg5;
 	RdbList list;
 	key128_t startKey;
@@ -1111,7 +1109,6 @@ bool Tagdb::verify ( const char *coll ) {
 			      true          , // isRealMerge
 			      true))          // allowPageCache
 	{
-		g_jobScheduler.allow_new_jobs();
 		log(LOG_DEBUG, "tagdb: HEY! it did not block");
 		return false;
 	}
@@ -1139,14 +1136,10 @@ bool Tagdb::verify ( const char *coll ) {
 			log( "tagdb: Are you sure you have the right data in the right directory? Exiting." );
 		}
 		log ( "tagdb: Exiting due to %s inconsistency.", rdbName );
-		g_jobScheduler.allow_new_jobs();
 		return g_conf.m_bypassValidation;
 	}
 
 	log ( LOG_DEBUG, "db: %s passed verification successfully for %" PRId32" recs.", rdbName, count );
-
-	// turn threads back on
-	g_jobScheduler.allow_new_jobs();
 
 	// if no recs in tagdb, but sitedb exists, convert it
 	if ( count > 0 ) return true;

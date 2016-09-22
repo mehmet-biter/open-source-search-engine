@@ -561,7 +561,6 @@ bool Spiderdb::init2 ( int32_t treeMem ) {
 bool Spiderdb::verify ( char *coll ) {
 	//return true;
 	log ( LOG_DEBUG, "db: Verifying Spiderdb for coll %s...", coll );
-	g_jobScheduler.disallow_new_jobs();
 
 	Msg5 msg5;
 	RdbList list;
@@ -593,7 +592,6 @@ bool Spiderdb::verify ( char *coll ) {
 			      -1LL          , // syncPoint
 			      true          , // isRealMerge
 			      true          )) { // allowPageCache
-		g_jobScheduler.allow_new_jobs();
 		log(LOG_DEBUG, "db: HEY! it did not block");
 		return false;
 	}
@@ -621,13 +619,11 @@ bool Spiderdb::verify ( char *coll ) {
 					   "data in the right directory? "
 					   "Exiting.");
 		log ( "db: Exiting due to Spiderdb inconsistency." );
-		g_jobScheduler.allow_new_jobs();
 		return g_conf.m_bypassValidation;
 	}
 	log (LOG_DEBUG,"db: Spiderdb passed verification successfully for %" PRId32" "
 	      "recs.", count );
 	// DONE
-	g_jobScheduler.allow_new_jobs();
 	return true;
 }
 

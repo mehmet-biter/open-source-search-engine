@@ -57,7 +57,6 @@ bool Clusterdb::init2 ( int32_t treeMem ) {
 
 bool Clusterdb::verify(const char *coll) {
 	log ( LOG_DEBUG, "db: Verifying Clusterdb for coll %s...", coll );
-	g_jobScheduler.disallow_new_jobs();
 
 	Msg5 msg5;
 	RdbList list;
@@ -90,7 +89,6 @@ bool Clusterdb::verify(const char *coll) {
 			      true,           // isRealMerge
 			      true))          // allowPageCache
 	{
-		g_jobScheduler.allow_new_jobs();
 		log("db: HEY! it did not block");
 		return false;
 	}
@@ -119,13 +117,11 @@ bool Clusterdb::verify(const char *coll) {
 					   "data in the right directory? "
 					   "Exiting.");
 		log ( "db: Exiting due to Clusterdb inconsistency." );
-		g_jobScheduler.allow_new_jobs();
 		return g_conf.m_bypassValidation;
 	}
 	log ( LOG_DEBUG, "db: Clusterdb passed verification successfully for "
 			"%" PRId32" recs.", count );
 	// DONE
-	g_jobScheduler.allow_new_jobs();
 	return true;
 }
 

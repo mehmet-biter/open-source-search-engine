@@ -170,7 +170,6 @@ bool Linkdb::init2 ( int32_t treeMem ) {
 
 bool Linkdb::verify ( char *coll ) {
 	log ( LOG_DEBUG, "db: Verifying Linkdb for coll %s...", coll );
-	g_jobScheduler.disallow_new_jobs();
 
 	Msg5 msg5;
 	RdbList list;
@@ -203,7 +202,6 @@ bool Linkdb::verify ( char *coll ) {
 			      true          , // isRealMerge
 			      true))          // allowPageCache
 	{
-		g_jobScheduler.allow_new_jobs();
 		log(LOG_DEBUG, "db: HEY! it did not block");
 		return false;
 	}
@@ -234,13 +232,11 @@ bool Linkdb::verify ( char *coll ) {
 				    "data in the right directory? "
 				    "Exiting.");
 		log ( "db: Exiting due to inconsistency.");
-		g_jobScheduler.allow_new_jobs();
 		return g_conf.m_bypassValidation;
 	}
 	log ( LOG_DEBUG, "db: Linkdb passed verification successfully for "
 	      "%" PRId32" recs.", count );
 	// DONE
-	g_jobScheduler.allow_new_jobs();
 	return true;
 }
 
