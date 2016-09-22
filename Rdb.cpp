@@ -2430,20 +2430,6 @@ RdbBase *getRdbBase(rdbid_t rdbId, collnum_t collnum) {
 	return rdb->getBase(collnum);
 }
 
-// calls addList above
-bool Rdb::addList ( const char *coll , RdbList *list, int32_t niceness ) {
-	// statdb has no collection per se
-	if ( m_isCollectionLess )
-		return addList ((collnum_t)0,list,niceness);
-	collnum_t collnum = g_collectiondb.getCollnum ( coll );
-	if ( collnum < (collnum_t) 0 ) {
-		g_errno = ENOCOLLREC;
-		log(LOG_WARN, "db: Could not add list because collection \"%s\" does not exist.",coll);
-		return false;
-	}
-	return addList ( collnum , list, niceness );
-}
-
 int32_t Rdb::getNumUsedNodes ( ) const {
 	 if(m_useTree) return m_tree.getNumUsedNodes(); 
 	 return m_buckets.getNumKeys();
