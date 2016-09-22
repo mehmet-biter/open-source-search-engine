@@ -96,6 +96,7 @@ bool HighFrequencyTermShortcuts::load()
 	if(p!=end) {
 		//truncated, overlong, invalid, or bogus file
 		log(LOG_WARN,"Inconsistency or data error detected in %s", filename);
+		delete[] (char*)buffer;
 		return false;
 	}
 	
