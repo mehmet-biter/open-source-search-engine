@@ -236,9 +236,6 @@ void doneSleepingWrapperSL ( int fd , void *state ) {
 
 	//for ( int32_t i = 0 ; i < nc ; i++ ) {
 	for ( ; nextActive ;  ) {
-		// breathe
-		QUICKPOLL(MAX_NICENESS);
-
 		// before we assign crp to nextActive, ensure that it did not get deleted on us.
 		// if the next collrec got deleted, tr will be NULL
 		CollectionRec *tr = g_collectiondb.getRec( nextActiveCollnum );
@@ -391,9 +388,6 @@ collLoop:
 	m_launches = 0;
 
 subloop:
-
-	QUICKPOLL(MAX_NICENESS);
-
 	// must be spidering to dole out
 	if ( ! g_conf.m_spideringEnabled ) {
 		logTrace( g_conf.m_logTraceSpider, "END, spidering disabled"  );
@@ -552,9 +546,6 @@ subloop:
 	m_sc->setPriority ( MAX_SPIDER_PRIORITIES - 1 );
 
 subloopNextPriority:
-
-	QUICKPOLL(MAX_NICENESS);
-
 	// skip if gone
     if ( ! cr ) goto subloop;
 
@@ -648,9 +639,6 @@ subloopNextPriority:
 		// initialize the map that maps priority to first ufn that uses
 		// that priority. map to -1 if no ufn uses it.
 		for ( int32_t i = 0 ; i < cr->m_numRegExs ; i++ ) {
-			// breathe
-			QUICKPOLL ( MAX_NICENESS );
-
 			// get the ith rule priority
 			int32_t sp = cr->m_spiderPriorities[i];
 
@@ -674,8 +662,6 @@ subloopNextPriority:
 	}
 
 	for ( ; ; ) {
-		QUICKPOLL( MAX_NICENESS );
-
 		// shortcut
 		ci = &cr->m_localCrawlInfo;
 
@@ -790,9 +776,6 @@ subloopNextPriority:
 		return;
 	}
 
-	// breathe
-	QUICKPOLL ( MAX_NICENESS );
-
 	int32_t saved = m_launches;
 
 	// . add urls in list to cache
@@ -883,10 +866,6 @@ bool SpiderLoop::gotDoledbList2 ( ) {
 	m_list.resetListPtr();
 
  listLoop:
-
-	// breathe
-	QUICKPOLL(MAX_NICENESS);
-
 	// get the current rec from list ptr
 	char *rec = (char *)m_list.getCurrentRec();
 
@@ -1372,8 +1351,6 @@ bool SpiderLoop::spiderUrl9 ( SpiderRequest *sreq ,
 
 	// reset g_errno
 	g_errno = 0;
-	// breathe
-	QUICKPOLL(MAX_NICENESS);
 
 	// get rid of this crap for now
 	//g_spiderCache.meterBandwidth();
@@ -1484,18 +1461,12 @@ bool SpiderLoop::spiderUrl2 ( ) {
 	int32_t i;
 	for ( i=0 ; i<MAX_SPIDERS ; i++ ) if (! m_docs[i]) break;
 
-	// breathe
-	QUICKPOLL(MAX_NICENESS);
-
 	// come back later if we're full
 	if ( i >= MAX_SPIDERS ) {
 		log(LOG_DEBUG,"build: Already have %" PRId32" outstanding spiders.",
 		    (int32_t)MAX_SPIDERS);
 		g_process.shutdownAbort(true);
 	}
-
-	// breathe
-	QUICKPOLL(MAX_NICENESS);
 
 	XmlDoc *xd;
 	// otherwise, make a new one if we have to
@@ -1730,9 +1701,6 @@ bool SpiderLoop::indexedDoc ( XmlDoc *xd ) {
 	//    sc->m_spidersOut,sreq->m_url);
 	//if ( sc->m_spidersOut != m_numSpidersOut ) { g_process.shutdownAbort(true); }
 
-	// breathe
-	QUICKPOLL ( xd->m_niceness );
-
 	// are we a re-spider?
 	bool respider = false;
 	if ( xd->m_oldDocValid && xd->m_oldDoc ) respider = true;
@@ -1768,9 +1736,6 @@ bool SpiderLoop::indexedDoc ( XmlDoc *xd ) {
 		// hapeen...
 	}
 		
-	// breathe
-	QUICKPOLL ( xd->m_niceness );
-
 	// . call the final callback used for injecting urls
 	// . this may send a reply back so the caller knows the url
 	//   was fully injected into the index
@@ -1784,9 +1749,6 @@ bool SpiderLoop::indexedDoc ( XmlDoc *xd ) {
 
 	// we don't need this g_errno passed this point
 	g_errno = 0;
-
-	// breathe
-	QUICKPOLL ( xd->m_niceness );
 
 	// did this doc get a chance to add its meta list to msg4 bufs?
 	//bool addedMetaList = m_docs[i]->m_listAdded;
@@ -1829,8 +1791,6 @@ int32_t SpiderLoop::getNumSpidersOutPerIp ( int32_t firstIp , collnum_t collnum 
 	// scan the slots
 	int32_t ns = ht->m_numSlots;
 	for ( int32_t i = 0 ; i < ns ; i++ ) {
-		// breathe
-		//QUICKPOLL(niceness);
 		// skip if empty
 		if ( ! ht->m_flags[i] ) continue;
 		// cast lock
@@ -1984,8 +1944,6 @@ void removeExpiredLocks ( int32_t hostId ) {
 	//   or a twin is spidering or has just finished spidering, and
 	//   we get the lock, but we avoided the negative doledb key.
 	for ( int32_t i = 0 ; i < ns ; i++ ) {
-		// breathe
-		QUICKPOLL(MAX_NICENESS);
 		// skip if empty
 		if ( ! ht->m_flags[i] ) continue;
 		// cast lock
