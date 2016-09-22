@@ -1943,27 +1943,50 @@ bool Rdb::addRecord(collnum_t collnum, char *key, char *data, int32_t dataSize) 
 			return true;
 		}
 
+		/// @todo ALC we're making an assumption that data passed in is part of a SpiderRequest (fix this!)
 		SpiderRequest *sreq = (SpiderRequest *)(orig - 4 - sizeof(key128_t));
 
 		// is it really a request and not a SpiderReply?
-		bool isReq = g_spiderdb.isSpiderRequest(&(sreq->m_key));
+		if (g_spiderdb.isSpiderRequest(&(sreq->m_key))) {
+			// skip if in dup cache. do NOT add to cache since
+			// addToWaitingTree() in Spider.cpp will do that when called
+			// from addSpiderRequest() below
+			if (sc->isInDupCache(sreq, false)) {
+				logDebug(g_conf.m_logDebugSpider, "spider: adding spider req %s is dup. skipping.", sreq->m_url);
+				logTrace(g_conf.m_logTraceRdb, "END. %s: Duplicated spider req. Returning true", m_dbname);
+				return true;
+			}
 
-		// skip if in dup cache. do NOT add to cache since 
-		// addToWaitingTree() in Spider.cpp will do that when called 
-		// from addSpiderRequest() below
-		if (isReq && sc->isInDupCache(sreq, false)) {
-			logDebug( g_conf.m_logDebugSpider, "spider: adding spider req %s is dup. skipping.", sreq->m_url );
-			logTrace(g_conf.m_logTraceRdb, "END. %s: Duplicated spider req. Returning true", m_dbname);
-			return true;
+			// if we are overflowing...
+			if (!sreq->m_isAddUrl && !sreq->m_isPageReindex && !sreq->m_urlIsDocId && !sreq->m_forceDelete &&
+			    sc->isFirstIpInOverflowList(sreq->m_firstIp)) {
+				g_stats.m_totalOverflows++;
+				logDebug(g_conf.m_logDebugSpider, "spider: skipping for overflow url %s ", sreq->m_url);
+				logTrace(g_conf.m_logTraceRdb, "END. %s: Overflow. Returning true", m_dbname);
+				return true;
+			}
 		}
+	}
 
-		// if we are overflowing...
-		if (isReq && !sreq->m_isAddUrl && !sreq->m_isPageReindex && !sreq->m_urlIsDocId && !sreq->m_forceDelete &&
-		    sc->isFirstIpInOverflowList(sreq->m_firstIp)) {
-			g_stats.m_totalOverflows++;
-			logDebug(g_conf.m_logDebugSpider, "spider: skipping for overflow url %s ", sreq->m_url);
-			logTrace(g_conf.m_logTraceRdb, "END. %s: Overflow. Returning true", m_dbname);
-			return true;
+	int32_t tn;
+	if (m_useTree) {
+		tn = m_tree.addNode(collnum, key, data, dataSize);
+		if (tn < 0) {
+			// enhance the error message
+			const char *ss = m_tree.isSaving() ? " Tree is saving." : "";
+			log(LOG_INFO, "db: Had error adding data to %s: %s. %s", m_dbname, mstrerror(g_errno), ss);
+			return false;
+		}
+	} else {
+		// . TODO: add using "lastNode" as a start node for the insertion point
+		// . should set g_errno if failed
+		// . caller should retry on g_errno of ETRYAGAIN or ENOMEM
+		tn = m_buckets.addNode(collnum, key, data, dataSize);
+		if (tn < 0) {
+			// enhance the error message
+			const char *ss = m_buckets.isSaving() ? " Buckets are saving." : "";
+			log(LOG_INFO, "db: Had error adding data to %s: %s. %s", m_dbname, mstrerror(g_errno), ss);
+			return false;
 		}
 	}
 
@@ -1972,137 +1995,102 @@ bool Rdb::addRecord(collnum_t collnum, char *key, char *data, int32_t dataSize) 
 	// indexes are in RdbBase and are read-only except when merging).
 	// we only add to index after adding to tree/buckets
 	RdbIndex *index = getBase(collnum)->getTreeIndex();
+	if (index) {
+		index->addRecord(key);
+	}
 
-	if (m_useTree) {
-		int32_t tn = m_tree.addNode(collnum, key, data, dataSize);
-		if (tn >= 0) {
-			if (index) {
-				index->addRecord(key);
-			}
+	// if adding to spiderdb, add to cache, too (except negative key)
+	if ((m_rdbId == RDB_SPIDERDB || m_rdbId == RDB_DOLEDB) && !KEYNEG(key)) {
+		// . this will create it if spiders are on and its NULL
+		// . even if spiders are off we need to create it so
+		//   that the request can adds its ip to the waitingTree
+		SpiderColl *sc = g_spiderCache.getSpiderColl(collnum);
+		// skip if not there
+		if (!sc) {
+			logTrace(g_conf.m_logTraceRdb, "END. %s: Done. No spider coll. Returning true", m_dbname);
+			return true;
+		}
 
-			// if adding to spiderdb, add to cache, too
-			if (m_rdbId != RDB_SPIDERDB && m_rdbId != RDB_DOLEDB) {
-				logTrace(g_conf.m_logTraceRdb, "END. %s: Done. Not spiderdb/doledb Returning true", m_dbname);
+		// if doing doledb...
+		if (m_rdbId == RDB_DOLEDB) {
+			int32_t pri = g_doledb.getPriority((key96_t *)key);
+			// skip over corruption
+			if (pri < 0 || pri >= MAX_SPIDER_PRIORITIES) {
+				logTrace(g_conf.m_logTraceRdb, "END. %s: Done. Skip over corruption", m_dbname);
 				return true;
 			}
-
-			// don't add for negative key
-			if (KEYNEG(key)) {
-				logTrace(g_conf.m_logTraceRdb, "END. %s: Done. Negative key. Returning true", m_dbname);
-				return true;
+			// if added positive key is before cursor, update curso
+			if (KEYCMP(key, (char *)&sc->m_nextKeys[pri], sizeof(key96_t)) < 0) {
+				KEYSET((char *)&sc->m_nextKeys[pri], key, sizeof(key96_t));
+				logDebug(g_conf.m_logDebugSpider, "spider: cursor reset pri=%" PRId32" to %s", pri, KEYSTR(key, 12));
 			}
 
-			// . this will create it if spiders are on and its NULL
-			// . even if spiders are off we need to create it so
-			//   that the request can adds its ip to the waitingTree
-			SpiderColl *sc = g_spiderCache.getSpiderColl(collnum);
-			// skip if not there
-			if (!sc) {
-				logTrace(g_conf.m_logTraceRdb, "END. %s: Done. No spider coll. Returning true", m_dbname);
-				return true;
-			}
+			logTrace(g_conf.m_logTraceRdb, "END. %s: Done. For doledb. Returning true", m_dbname);
 
-			// if doing doledb...
-			if (m_rdbId == RDB_DOLEDB) {
-				int32_t pri = g_doledb.getPriority((key96_t *)key);
-				// skip over corruption
-				if (pri < 0 || pri >= MAX_SPIDER_PRIORITIES)
-					return true;
-				// if added positive key is before cursor, update curso
-				if (KEYCMP(key, (char *)&sc->m_nextKeys[pri], sizeof(key96_t)) < 0) {
-					KEYSET((char *)&sc->m_nextKeys[pri], key, sizeof(key96_t));
-					logDebug(g_conf.m_logDebugSpider, "spider: cursor reset pri=%" PRId32" to %s", pri, KEYSTR(key, 12));
-				}
+			// that's it for doledb mods
+			return true;
+		}
 
-				logTrace(g_conf.m_logTraceRdb, "END. %s: Done. For doledb. Returning true", m_dbname);
+		// . ok, now add that reply to the cache
 
-				// that's it for doledb mods
-				return true;
-			}
+		/// @todo ALC we're making an assumption that data passed in is part of a SpiderRequest (fix this!)
+		// assume this is the rec (4 byte dataSize,spiderdb key is now 16 bytes)
+		SpiderRequest *sreq = (SpiderRequest *)(orig - 4 - sizeof(key128_t));
 
-			// . ok, now add that reply to the cache
-
-			// assume this is the rec (4 byte dataSize,spiderdb key is
-			// now 16 bytes)
-			SpiderRequest *sreq = (SpiderRequest *)(orig - 4 - sizeof(key128_t));
-			// is it really a request and not a SpiderReply?
-			char isReq = g_spiderdb.isSpiderRequest(&sreq->m_key);
+		// is it really a request and not a SpiderReply?
+		if (g_spiderdb.isSpiderRequest(&sreq->m_key)) {
 			// add the request
-			if (isReq) {
-				// log that. why isn't this undoling always
-				logDebug(g_conf.m_logDebugSpider, "spider: rdb: added spider request to spiderdb rdb tree addnode=%" PRId32
-						" request for uh48=%" PRIu64" prntdocid=%" PRIu64" firstIp=%s spiderdbkey=%s",
-				         tn, sreq->getUrlHash48(), sreq->getParentDocId(), iptoa(sreq->m_firstIp),
-				         KEYSTR((char *)&sreq->m_key, sizeof(key128_t)));
 
-				// false means to NOT call evaluateAllRequests()
-				// because we call it below. the reason we do this
-				// is because it does not always get called
-				// in addSpiderRequest(), like if its a dup and
-				// gets "nuked". (removed callEval arg since not
-				// really needed)
-				sc->addSpiderRequest(sreq, gettimeofdayInMilliseconds());
-			} else {
-				// otherwise repl
-				// shortcut - cast it to reply
-				SpiderReply *rr = (SpiderReply *)sreq;
+			// log that. why isn't this undoling always
+			logDebug(g_conf.m_logDebugSpider, "spider: rdb: added spider request to spiderdb rdb tree addnode=%" PRId32
+					" request for uh48=%" PRIu64" prntdocid=%" PRIu64" firstIp=%s spiderdbkey=%s",
+			         tn, sreq->getUrlHash48(), sreq->getParentDocId(), iptoa(sreq->m_firstIp),
+			         KEYSTR((char *)&sreq->m_key, sizeof(key128_t)));
 
-				// log that. why isn't this undoling always
-				logDebug(g_conf.m_logDebugSpider, "rdb: rdb: got spider reply for uh48=%" PRIu64, rr->getUrlHash48());
+			// false means to NOT call evaluateAllRequests()
+			// because we call it below. the reason we do this
+			// is because it does not always get called
+			// in addSpiderRequest(), like if its a dup and
+			// gets "nuked". (removed callEval arg since not
+			// really needed)
+			sc->addSpiderRequest(sreq, gettimeofdayInMilliseconds());
+		} else {
+			// otherwise repl
+			// shortcut - cast it to reply
+			SpiderReply *rr = (SpiderReply *)sreq;
 
-				// add the reply
-				sc->addSpiderReply(rr);
+			// log that. why isn't this undoling always
+			logDebug(g_conf.m_logDebugSpider, "rdb: rdb: got spider reply for uh48=%" PRIu64, rr->getUrlHash48());
 
-				// don't actually add it if "fake". i.e. if it
-				// was an internal error of some sort... this will
-				// make it try over and over again i guess...
-				// no because we need some kinda reply so that gb knows
-				// the pagereindex docid-based spider requests are done,
-				// at least for now, because the replies were not being
-				// added for now. just for internal errors at least...
-				// we were not adding spider replies to the page reindexes
-				// as they completed and when i tried to rerun it
-				// the title recs were not found since they were deleted,
-				// so we gotta add the replies now.
-				int32_t indexCode = rr->m_errCode;
-				if (indexCode == EABANDONED) {
-					log(LOG_WARN, "rdb: not adding spiderreply to rdb because it was an internal error for uh48=%" PRIu64
-					              " errCode = %s", rr->getUrlHash48(), mstrerror(indexCode));
-					m_tree.deleteNode(tn, false);
-				}
+			// add the reply
+			sc->addSpiderReply(rr);
+
+			/// @todo ALC why are we removing this here? this check should be at where we're trying to insert this
+			// don't actually add it if "fake". i.e. if it
+			// was an internal error of some sort... this will
+			// make it try over and over again i guess...
+			// no because we need some kinda reply so that gb knows
+			// the pagereindex docid-based spider requests are done,
+			// at least for now, because the replies were not being
+			// added for now. just for internal errors at least...
+			// we were not adding spider replies to the page reindexes
+			// as they completed and when i tried to rerun it
+			// the title recs were not found since they were deleted,
+			// so we gotta add the replies now.
+			int32_t indexCode = rr->m_errCode;
+			if (indexCode == EABANDONED) {
+				log(LOG_WARN, "rdb: not adding spiderreply to rdb because it was an internal error for uh48=%" PRIu64
+				              " errCode = %s", rr->getUrlHash48(), mstrerror(indexCode));
+				m_tree.deleteNode(tn, false);
 			}
-
-			// clear errors from adding to SpiderCache
-			g_errno = 0;
-
-			logTrace(g_conf.m_logTraceRdb, "END. %s: Done. Returning true", m_dbname);
-			return true;
 		}
-	} else {
-		// . TODO: add using "lastNode" as a start node for the insertion point
-		// . should set g_errno if failed
-		// . caller should retry on g_errno of ETRYAGAIN or ENOMEM
-		if (m_buckets.addNode(collnum, key, data, dataSize) >= 0) {
-			if (index) {
-				index->addRecord(key);
-			}
 
-			logTrace(g_conf.m_logTraceRdb, "END. %s: Done. Returning true", m_dbname);
-			return true;
-		}
+		// clear errors from adding to SpiderCache
+		g_errno = 0;
 	}
 
-	// enhance the error message
-	const char *ss;
-	if (m_useTree) {
-		ss = m_tree.isSaving() ? " Tree is saving." : "";
-	} else {
-		ss = m_buckets.isSaving() ? " Buckets are saving." : "";
-	}
-
-	log(LOG_INFO, "db: Had error adding data to %s: %s. %s", m_dbname, mstrerror(g_errno), ss);
-	logTrace(g_conf.m_logTraceRdb, "END. %s: Unable to add to tree/bucket. Returning false", m_dbname);
-	return false;
+	logTrace(g_conf.m_logTraceRdb, "END. %s: Done. Returning true", m_dbname);
+	return true;
 }
 
 // . use the maps and tree to estimate the size of this list w/o hitting disk
