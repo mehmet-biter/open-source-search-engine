@@ -1895,34 +1895,26 @@ bool Rdb::addRecord(collnum_t collnum, char *key, char *data, int32_t dataSize) 
 		}
 	}
 
-	// . TODO: save this tree-walking state for adding the node!!!
-	// . TODO: use somethin like getNode(key,&lastNode)
-	//         then addNode (lastNode,key,data,dataSize)
-	//	   int32_t lastNode;
-	// . #1) if we're adding a positive key, replace negative counterpart
-	//       in the tree, because we'll override the positive rec it was
-	//       deleting
-	// . #2) if we're adding a negative key, replace positive counterpart
-	//       in the tree, but we must keep negative rec in tree in case
-	//       the positive counterpart was overriding one on disk (as in #1)
 	if (m_useTree) {
+		// . TODO: save this tree-walking state for adding the node!!!
+		// . TODO: use somethin like getNode(key,&lastNode)
+		//         then addNode (lastNode,key,data,dataSize)
+		//	   int32_t lastNode;
+		// . #1) if we're adding a positive key, replace negative counterpart
+		//       in the tree, because we'll override the positive rec it was
+		//       deleting
+		// . #2) if we're adding a negative key, replace positive counterpart
+		//       in the tree, but we must keep negative rec in tree in case
+		//       the positive counterpart was overriding one on disk (as in #1)
 		char oppKey[MAX_KEY_BYTES];
 
 		// make the opposite key of "key"
 		KEYSET(oppKey, key, m_ks);
 		KEYXOR(oppKey, 0x01);
 
-		// look it up
-		int32_t n = m_tree.getNode(collnum, oppKey);
-
-		// if it exists then annihilate it
-		if (n >= 0) {
-			// . otherwise, we can REPLACE oppKey
-			// . we NO LONGER annihilate with him. why?
-			// . freeData should be true, the tree doesn't own the data
-			//   so it shouldn't free it really
-			m_tree.deleteNode(n, true);
-		}
+		// . freeData should be true, the tree doesn't own the data
+		//   so it shouldn't free it really
+		m_tree.deleteNode(collnum, oppKey, true);
 
 		// if we have no files on disk for this db, don't bother
 		// preserving a a negative rec, it just wastes tree space
