@@ -2381,7 +2381,7 @@ bool RdbBase::verifyFileSharding ( ) {
 	if ( s_count >= 50 ) 
 		return true;
 
-	g_jobScheduler.disallow_new_jobs();
+//	g_jobScheduler.disallow_new_jobs();
 
 	Msg5 msg5;
 	RdbList list;
@@ -2417,7 +2417,7 @@ bool RdbBase::verifyFileSharding ( ) {
 			      -1LL          , // syncPint
 			      true          , // isRealMerge
 			      true)) {        // allowPageCache
-		g_jobScheduler.allow_new_jobs();
+//		g_jobScheduler.allow_new_jobs();
 		log( LOG_DEBUG, "db: HEY! it did not block");
 		return false;
 	}
@@ -2451,7 +2451,7 @@ bool RdbBase::verifyFileSharding ( ) {
 		log ( "db: Found bad key in list belongs to shard %" PRId32, shardNum);
 	}
 
-	g_jobScheduler.allow_new_jobs();
+//	g_jobScheduler.allow_new_jobs();
 
 	if ( got == count ) {
 		return true;

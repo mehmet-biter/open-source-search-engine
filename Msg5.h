@@ -213,7 +213,7 @@ private:
 
 	int32_t m_errno;
 
-	static void gotListWrapper(void *state);
+	static void gotListWrapper0(void *state);
 	void gotListWrapper();
 	
 	static void mergeDoneWrapper(void *state, job_exit_t exit_type);

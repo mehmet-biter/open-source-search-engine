@@ -525,8 +525,8 @@ bool Msg5::readList ( ) {
 					  m_newMinRecSizes , // modified by gotList()
 					  m_startFileNum   ,
 					  m_numFiles       ,
-					  this             ,
-					  gotListWrapper   ,
+					  m_callback ? this : NULL,
+					  m_callback ? &gotListWrapper0 : NULL,
 					  niceness         ,
 					  0                , // retry num
 					  m_maxRetries     , // max retries (-1=def)
@@ -604,7 +604,7 @@ bool Msg5::needsRecall ( ) {
 }
 
 
-void Msg5::gotListWrapper(void *state) {
+void Msg5::gotListWrapper0(void *state) {
 	Msg5 *that = static_cast<Msg5*>(state);
 	that->gotListWrapper();
 }
@@ -930,15 +930,18 @@ bool Msg5::gotList2 ( ) {
 
 	QUICKPOLL((m_niceness));
 
-	if ( g_jobScheduler.submit(mergeListsWrapper, mergeDoneWrapper, this, thread_type_query_merge, m_niceness) ) {
-		return false;
+	if(m_callback) {
+		if ( g_jobScheduler.submit(mergeListsWrapper, mergeDoneWrapper, this, thread_type_query_merge, m_niceness) ) {
+			return false;
+		}
+
+		// thread creation failed
+		if ( g_jobScheduler.are_new_jobs_allowed() )
+			log(LOG_INFO,
+			    "net: Failed to create thread to merge lists. Doing "
+			    "blocking merge. (%s)",mstrerror(g_errno));
 	}
 
-	// thread creation failed
-	if ( g_jobScheduler.are_new_jobs_allowed() )
-		log(LOG_INFO,
-		    "net: Failed to create thread to merge lists. Doing "
-		    "blocking merge. (%s)",mstrerror(g_errno));
 	// clear g_errno because it really isn't a problem, we just block
 	g_errno = 0;
 
@@ -1197,13 +1200,16 @@ bool Msg5::doneMerging ( ) {
 			g_pingServer.sendEmail(NULL, msgbuf);
 		}
 
-		// try to get the list from remote host
-		if ( ! getRemoteList() ) return false;
-		// note that
-		if ( ! g_errno ) {
-			log("net: got remote list without blocking");
-			g_process.shutdownAbort(true);
-		}
+		if(m_callback) {
+			// try to get the list from remote host
+			if ( ! getRemoteList() ) return false;
+			// note that
+			if ( ! g_errno ) {
+				log("net: got remote list without blocking");
+				g_process.shutdownAbort(true);
+			}
+		} else
+			g_errno = ESHARDDOWN; //not allowed to get remote list (and return false).
 		// if it set g_errno, it could not get a remote list
 		// so try to make due with what we have
 		if ( g_errno ) {
