@@ -109,9 +109,9 @@ bool Highlight::highlightWords ( const Words *words, const Matches *m, const Que
 	// set nexti to the word # of the first word that matches a query word
 	int32_t nextm = -1;
 	int32_t nexti = -1;
-	if ( m->m_numMatches > 0 ) {
+	if ( m->getNumMatches() > 0 ) {
 		nextm = 0;
-		nexti = m->m_matches[0].m_wordNum;
+		nexti = m->getMatch(0).m_wordNum;
 	}
 
 	int32_t backTagi = -1;
@@ -132,13 +132,11 @@ bool Highlight::highlightWords ( const Words *words, const Matches *m, const Que
 			endHead = words->isBackTag(i);
 		}
 
-		// match class ptr
-		const Match *mat = NULL;
 		// This word is a match...see if we're gonna tag it
 		// dont put the same tags around consecutive matches
 		if ( i == nexti && ! inTitle && ! endHead && ! endHtml) {
 			// get the match class for the match
-			mat = &m->m_matches[nextm];
+			const Match *mat = &m->getMatch(nextm);
 			// discontinue any current font tag we are in
 			if ( i < backTagi ) {
 				// push backtag ahead if needed
@@ -167,8 +165,8 @@ bool Highlight::highlightWords ( const Words *words, const Matches *m, const Que
 			// advance match
 			nextm++;
 			// set nexti to the word # of the next match
-			if ( nextm < m->m_numMatches ) 
-				nexti = m->m_matches[nextm].m_wordNum;
+			if ( nextm < m->getNumMatches() ) 
+				nexti = m->getMatch(nextm).m_wordNum;
 			else
 				nexti = -1;
 		}

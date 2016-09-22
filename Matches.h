@@ -94,28 +94,28 @@ class Matches {
 		return m_numMatches;
 	}
 
+	const Match& getMatch(int i) const { return m_matches[i]; }
+	bool isTitleMatch(int i) const { return m_qwordFlags[i] & MF_TITLEGEN; }
+
 	// janitorial stuff
-	Matches ( ) ;
-	~Matches( ) ;
-	void reset ( ) ;
-	void reset2 ( ) ;
+	Matches();
+	~Matches();
+	void reset();
 
-	// used internally and by PageGet.cpp
+private:
+	void reset2();
 	bool isMatchableTerm(const QueryTerm *qt) const;
-
-	// used internally
-	int32_t getNumWordsInMatch( Words *words, int32_t wn, int32_t n, int32_t *numQWords, int32_t *qwn,
-								bool allowPunctInPhrase = true );
-
-	// how many words matched a rawTermId?
-	Match  m_matches[MAX_MATCHES];
-	int32_t   m_numMatches;
+	int32_t getNumWordsInMatch(Words *words, int32_t wn, int32_t n, int32_t *numQWords, int32_t *qwn,
+				   bool allowPunctInPhrase = true);
 
 	// . 1-1 with Query::m_qwords[] array of QWords
 	// . shows the match flags for that query word
 	mf_t     *m_qwordFlags;
 
-private:
+	// how many words matched a rawTermId?
+	Match  m_matches[MAX_MATCHES];
+	int32_t   m_numMatches;
+
 	// . hash query word ids into a small hash table
 	// . we use this to see what words in the document are query terms
 	int64_t m_qtableIds      [ MAX_QUERY_WORDS_TO_MATCH * 3 ];
