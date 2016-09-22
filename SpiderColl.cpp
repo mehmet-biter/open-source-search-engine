@@ -221,10 +221,6 @@ bool SpiderColl::makeDoleIPTable ( ) {
 	key96_t startKey ; startKey.setMin();
 	key96_t endKey   ; endKey.setMax();
 	key96_t lastKey  ; lastKey.setMin();
-	// turn off threads for this so it blocks
-	bool enabled = g_jobScheduler.are_new_jobs_allowed();
-	// turn off regardless
-	g_jobScheduler.disallow_new_jobs();
 	// get a meg at a time
 	int32_t minRecSizes = 1024*1024;
 	Msg5 msg5;
@@ -290,8 +286,6 @@ bool SpiderColl::makeDoleIPTable ( ) {
 	if ( startKey >= *(key96_t *)list.getLastKey() ) goto loop;
  done:
 	log(LOG_DEBUG,"spider: making dole ip table done.");
-	// re-enable threads
-	if ( enabled ) g_jobScheduler.allow_new_jobs();
 	// we wrapped, all done
 	return true;
 }
@@ -318,10 +312,6 @@ bool SpiderColl::makeWaitingTree ( ) {
 	key128_t startKey ; startKey.setMin();
 	key128_t endKey   ; endKey.setMax();
 	key128_t lastKey  ; lastKey.setMin();
-	// turn off threads for this so it blocks
-	bool enabled = g_jobScheduler.are_new_jobs_allowed();
-	// turn off regardless
-	g_jobScheduler.disallow_new_jobs();
 	// get a meg at a time
 	int32_t minRecSizes = 1024*1024;
 	Msg5 msg5;
@@ -408,8 +398,6 @@ bool SpiderColl::makeWaitingTree ( ) {
 	if ( startKey >= *(key128_t *)list.getLastKey() ) goto loop;
  done:
 	log(LOG_DEBUG,"spider: making waiting tree done.");
-	// re-enable threads
-	if ( enabled ) g_jobScheduler.allow_new_jobs();
 	// we wrapped, all done
 	return true;
 }

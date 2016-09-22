@@ -2836,8 +2836,6 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 	endKey.setMax();
 	lastKey.setMin();
 	startKey = Titledb::makeFirstKey ( docid );
-	// turn off threads
-	g_jobScheduler.disallow_new_jobs();
 	// get a meg at a time
 	int32_t minRecSizes = 1024*1024;
 	Msg5 msg5;
@@ -3133,8 +3131,6 @@ void dumpDoledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool 
 	key96_t endKey   ;
 	startKey.setMin();
 	endKey.setMax();
-	// turn off threads
-	g_jobScheduler.disallow_new_jobs();
 	// get a meg at a time
 	int32_t minRecSizes = 1024*1024;
 	Msg5 msg5;
@@ -3337,9 +3333,6 @@ int32_t dumpSpiderdb ( const char *coll, int32_t startFileNum, int32_t numFiles,
 		startKey.setMin();
 		endKey.setMax();
 	}
-
-	// turn off threads
-	g_jobScheduler.disallow_new_jobs();
 
 	// get a meg at a time
 	int32_t minRecSizes = 1024*1024;
@@ -3833,9 +3826,6 @@ bool hashtest ( ) {
 // time speed of big write, read and the seeks
 bool thrutest ( char *testdir , int64_t fileSize ) {
 
-	// always block
-	g_jobScheduler.disallow_new_jobs();
-
 	// a read/write buffer of 30M
 	int32_t bufSize = 30000000;  // 30M
 	//int64_t fileSize = 4000000000LL; // 4G
@@ -4089,9 +4079,6 @@ void dumpTagdb( const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 		log("gb: using site %s for start key",siteArg );
 	}
 
-	// turn off threads
-	g_jobScheduler.disallow_new_jobs();
-
 	// get a meg at a time
 	int32_t minRecSizes = 1024*1024;
 	Msg5 msg5;
@@ -4280,8 +4267,6 @@ bool parseTest ( const char *coll, int64_t docId, const char *query ) {
 	g_titledb.init ();
 	g_titledb.getRdb()->addRdbBase1 ( coll );
 	log(LOG_INIT, "build: Testing parse speed of html docId %" PRId64".",docId);
-	// get a title rec
-	g_jobScheduler.disallow_new_jobs();
 	RdbList tlist;
 	key96_t startKey = Titledb::makeFirstKey ( docId );
 	key96_t endKey   = Titledb::makeLastKey  ( docId );
@@ -4637,8 +4622,6 @@ void dumpPosdb (const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 		printf("startkey=%s\n",KEYSTR(&startKey,sizeof(posdbkey_t)));
 		printf("endkey=%s\n",KEYSTR(&endKey,sizeof(posdbkey_t)));
 	}
-	// turn off threads
-	g_jobScheduler.disallow_new_jobs();
 	// get a meg at a time
 	int32_t minRecSizes = 1024*1024;
 
@@ -4795,8 +4778,6 @@ void dumpClusterdb ( const char *coll,
 	key96_t endKey   ;
 	startKey.setMin();
 	endKey.setMax();
-	// turn off threads
-	g_jobScheduler.disallow_new_jobs();
 	// get a meg at a time
 	int32_t minRecSizes = 1024*1024;
 
@@ -4902,8 +4883,6 @@ void dumpLinkdb ( const char *coll,
 		startKey = Linkdb::makeStartKey_uk ( h32 , uh64 );
 		endKey   = Linkdb::makeEndKey_uk   ( h32 , uh64 );
 	}
-	// turn off threads
-	g_jobScheduler.disallow_new_jobs();
 	// get a meg at a time
 	int32_t minRecSizes = 1024*1024;
 
@@ -7003,8 +6982,6 @@ void countdomains( const char* coll, int32_t numRecs, int32_t verbosity, int32_t
 	log( LOG_INFO, "cntDm: parms: %s, %" PRId32, coll, numRecs );
 	int64_t time_start = gettimeofdayInMilliseconds();
 
-	// turn off threads
-	g_jobScheduler.disallow_new_jobs();
 	// get a meg at a time
 	int32_t minRecSizes = 1024*1024;
 	Msg5 msg5;
