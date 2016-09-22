@@ -35,9 +35,4 @@
 #include "Errno.h"	// commonly included in include files
 #include "Log.h"	// commonly included in include files
 
-// cygwin fix
-#ifndef O_ASYNC
-#define O_ASYNC 0
-#endif
-
 #endif // GB_INCLUDE_H
