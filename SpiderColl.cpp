@@ -410,8 +410,6 @@ int64_t SpiderColl::getEarliestSpiderTimeFromWaitingTree ( int32_t firstIp ) {
 	int32_t node = m_waitingTree.getNextNode ( 0, (char *)&wk );
 	// if empty, stop
 	if ( node < 0 ) return -1;
-	// breathe
-	QUICKPOLL(MAX_NICENESS);
 	// get the key
 	key96_t *k = (key96_t *)m_waitingTree.getKey ( node );
 	// ok, we got one
@@ -434,8 +432,6 @@ bool SpiderColl::makeWaitingTable ( ) {
 	log(LOG_DEBUG,"spider: making waiting table for %s.",m_coll);
 	int32_t node = m_waitingTree.getFirstNode();
 	for ( ; node >= 0 ; node = m_waitingTree.getNextNode(node) ) {
-		// breathe
-		QUICKPOLL(MAX_NICENESS);
 		// get key
 		key96_t *key = (key96_t *)m_waitingTree.getKey(node);
 		// get ip from that
@@ -1543,8 +1539,6 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 	int32_t lastOne = 0;
 	// loop over all serialized spiderdb records in the list
 	for ( ; ! list->isExhausted() ; ) {
-		// breathe
-		QUICKPOLL ( MAX_NICENESS );
 		// get spiderdb rec in its serialized form
 		char *rec = list->getCurrentRec();
 		// skip to next guy
@@ -2526,8 +2520,6 @@ bool SpiderColl::scanListForWinners ( ) {
 
 	// loop over all serialized spiderdb records in the list
 	for ( ; ! list->isExhausted() ; ) {
-		// breathe
-		QUICKPOLL ( MAX_NICENESS );
 		// stop coring on empty lists
 		if ( list->isEmpty() ) break;
 		// get spiderdb rec in its serialized form
@@ -3467,8 +3459,6 @@ bool SpiderColl::addWinnersIntoDoledb ( ) {
 	for ( int32_t node = m_winnerTree.getFirstNode() ; 
 	      node >= 0 ; 
 	      node = m_winnerTree.getNextNode ( node ) ) {
-		// breathe
-		QUICKPOLL ( MAX_NICENESS );
 		// get data for that
 		SpiderRequest *sreq2;
 		sreq2 = (SpiderRequest *)m_winnerTree.getData ( node );
