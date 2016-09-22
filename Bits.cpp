@@ -59,9 +59,6 @@ bool Bits::set(const Words *words, int32_t niceness) {
 		return false;
 	}
 
-	// breathe
-	QUICKPOLL ( m_niceness );
-
 	const nodeid_t *tagIds = words->getTagIds();
 	const char *const*w = words->getWords();
 
@@ -70,8 +67,6 @@ bool Bits::set(const Words *words, int32_t niceness) {
 	wbit_t bits;
 
 	for ( int32_t i = 0 ; i < numBits ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
 		if ( tagIds && tagIds[i] ) {
 			// shortcut
 			nodeid_t tid = tagIds[i] & BACKBITCOMP;
@@ -114,8 +109,6 @@ void Bits::setInLinkBits ( Sections *ss ) {
 	if ( ss->m_numSections == 0 ) return;
 	// sets bits for Bits.cpp for D_IN_LINK for each ALNUM word
 	for ( Section *si = ss->m_rootSection ; si ; si = si->m_next ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
 		// skip if not a href section
 		if ( si->m_baseHash != TAG_A ) continue;
 		// set boundaries
@@ -134,8 +127,6 @@ void Bits::setInUrlBits ( int32_t niceness ) {
 	const char *const*wptrs    = m_words->getWords();
 	int32_t nw = m_words->getNumWords();
 	for ( int32_t i = 0 ; i < nw; i++ ) {
-		// breathe
-		QUICKPOLL(niceness);
 		// look for protocol
 		if ( wids[i] ) continue;
 		if ( tids[i] ) continue;
@@ -148,9 +139,6 @@ void Bits::setInUrlBits ( int32_t niceness ) {
 		// scan for end of it. stop at tag or space
 		int32_t j = i - 1;
 		for ( ; j < nw; j++ ) {
-			// breathe
-			QUICKPOLL( niceness );
-
 			// check if end
 			if ( m_words->hasSpace( j ) ) {
 				break;
