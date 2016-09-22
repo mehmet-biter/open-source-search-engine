@@ -12,84 +12,6 @@
 #define INIT_SIZE 4096
 #define SAVE_VERSION 0
 
-inline int KEYCMP12 ( const void *a, const void *b ) {
-	char* k1 = (char*)a;
-	char* k2 = (char*)b;
-	if ( (*(uint64_t *)(k1+4)) <
-	     (*(uint64_t *)(k2+4)) ) return -1;
-	if ( (*(uint64_t *)(k1+4)) > 
-	     (*(uint64_t *)(k2+4)) ) return  1;
-	uint32_t k1n0 = ((*(uint32_t*)(k1)) & ~0x01UL);
-	uint32_t k2n0 = ((*(uint32_t*)(k2)) & ~0x01UL);
-	if ( k1n0 < k2n0 ) return -1;
-	if ( k1n0 > k2n0 ) return  1;
-	return 0;
-}
-
-inline int KEYCMP16 ( const void *a, const void *b ) {
-	char* k1 = (char*)a;
-	char* k2 = (char*)b;
-	if ( (*(uint64_t *)(k1+8)) <
-	     (*(uint64_t *)(k2+8)) ) return -1;
-	if ( (*(uint64_t *)(k1+8)) >
-	     (*(uint64_t *)(k2+8)) ) return  1;
-	uint64_t k1n0 = ((*(uint64_t *)(k1)) & ~0x01ULL);
-	uint64_t k2n0 = ((*(uint64_t *)(k2)) & ~0x01ULL);
-	if ( k1n0 < k2n0 ) return -1;
-	if ( k1n0 > k2n0 ) return  1;
-	return 0;
-}
-
-inline int KEYCMP18 ( const void *a, const void *b ) {
-	char* k1 = (char*)a;
-	char* k2 = (char*)b;
-	if ( (*(uint64_t *)(k1+10)) <
-	     (*(uint64_t *)(k2+10)) ) return -1;
-	if ( (*(uint64_t *)(k1+10)) >
-	     (*(uint64_t *)(k2+10)) ) return  1;
-	if ( (*(uint64_t *)(k1+2)) <
-	     (*(uint64_t *)(k2+2)) ) return -1;
-	if ( (*(uint64_t *)(k1+2)) >
-	     (*(uint64_t *)(k2+2)) ) return  1;
-	uint16_t k1n0 = ((*(uint16_t *)(k1)) & 0xfffe);
-	uint16_t k2n0 = ((*(uint16_t *)(k2)) & 0xfffe);
-	if ( k1n0 < k2n0 ) return -1;
-	if ( k1n0 > k2n0 ) return  1;
-	return 0;
-}
-
-inline int KEYCMP24 ( const void *a, const void *b ) {
-	char* k1 = (char*)a;
-	char* k2 = (char*)b;
-	if ( (*(uint64_t *)(k1+16)) <
-	     (*(uint64_t *)(k2+16)) ) return -1;
-	if ( (*(uint64_t *)(k1+16)) >
-	     (*(uint64_t *)(k2+16)) ) return  1;
-	if ( (*(uint64_t *)(k1+8)) <
-	     (*(uint64_t *)(k2+8)) ) return -1;
-	if ( (*(uint64_t *)(k1+8)) >
-	     (*(uint64_t *)(k2+8)) ) return  1;
-	uint64_t k1n0 = ((*(uint64_t *)(k1)) & ~0x01ULL);
-	uint64_t k2n0 = ((*(uint64_t *)(k2)) & ~0x01ULL);
-	if ( k1n0 < k2n0 ) return -1;
-	if ( k1n0 > k2n0 ) return  1;
-	return 0;
-}
-
-inline int KEYCMP6 ( const void *a, const void *b ) {
-	char* k1 = (char*)a;
-	char* k2 = (char*)b;
-	if ( (*(uint32_t  *)(k1+2)) <
-	     (*(uint32_t  *)(k2+2)) ) return -1;
-	if ( (*(uint32_t  *)(k1+2)) >
-	     (*(uint32_t  *)(k2+2)) ) return  1;
-	if ( (*(uint16_t *)(k1+0)) <
-	     (*(uint16_t *)(k2+0)) ) return -1;
-	if ( (*(uint16_t *)(k1+0)) >
-	     (*(uint16_t *)(k2+0)) ) return  1;
-	return 0;
-}
-
 bool RdbBucket::set(RdbBuckets* parent, char* newbuf) {
 	m_endKey = NULL;
 	m_parent = parent;
@@ -154,6 +76,35 @@ bool RdbBuckets::hasRoom(int32_t numRecs) const {
 	return ( m_maxBucketsCapacity - m_numBuckets >= numBucketsRequired );
 }
 
+#define CMPFN(ks) \
+	[](const void *a, const void *b) { \
+		return static_cast<int>(KEYCMPNEGEQ(static_cast<const char*>(a), static_cast<const char*>(b), ks)); \
+	};
+
+static int (*getCmpFn(uint8_t ks))(const void*, const void *) {
+	int (*cmpfn) (const void*, const void *) = NULL;
+
+	if (ks == 18) {
+		cmpfn = CMPFN(18);
+	} else if (ks == 12) {
+		cmpfn = CMPFN(12);
+	} else if (ks == 16) {
+		cmpfn = CMPFN(16);
+	} else if (ks == 6) {
+		cmpfn = CMPFN(6);
+	} else if (ks == 24) {
+		cmpfn = CMPFN(24);
+	} else if (ks == 28) {
+		cmpfn = CMPFN(28);
+	} else if (ks == 8) {
+		cmpfn = CMPFN(8);
+	} else {
+		gbshutdownAbort(true);
+	}
+
+	return cmpfn;
+}
+
 bool RdbBucket::sort() {
 	if (m_lastSorted == m_numKeys) {
 		return true;
@@ -167,26 +118,6 @@ bool RdbBucket::sort() {
 	uint8_t ks = m_parent->getKeySize();
 	int32_t recSize = m_parent->getRecSize();
 	int32_t fixedDataSize = m_parent->getFixedDataSize();
-
-	int (*cmpfn) (const void*, const void *) = NULL;
-	if (ks == 18) {
-		cmpfn = KEYCMP18;
-	} else if (ks == 24) {
-		cmpfn = KEYCMP24;
-	} else if (ks == 12) {
-		cmpfn = KEYCMP12;
-	} else if (ks == 16) {
-		cmpfn = KEYCMP16;
-	} else if (ks == 6) {
-		cmpfn = KEYCMP6;
-	} else {
-		gbshutdownAbort(true);
-	}
-
-	char* mergeBuf  = m_parent->getSwapBuf();
-	if (!mergeBuf) {
-		gbshutdownAbort(true);
-	}
 
 	int32_t numUnsorted = m_numKeys - m_lastSorted;
 	char *list1 = m_keys;
@@ -202,7 +133,13 @@ bool RdbBucket::sort() {
 	if (!m_parent->getSortBuf()) {
 		gbshutdownAbort(true);
 	}
-	gbmergesort(list2, numUnsorted, recSize, cmpfn, m_parent->getSortBuf(), m_parent->getSortBufSize());
+
+	gbmergesort(list2, numUnsorted, recSize, getCmpFn(ks), m_parent->getSortBuf(), m_parent->getSortBufSize());
+
+	char* mergeBuf  = m_parent->getSwapBuf();
+	if (!mergeBuf) {
+		gbshutdownAbort(true);
+	}
 
 	char *p = mergeBuf;
 	char v;
@@ -410,7 +347,7 @@ bool RdbBucket::addKey(const char *key, char *data, int32_t dataSize) {
 char* RdbBucket::getKeyVal( const char *key , char **data , int32_t* dataSize ) {
 	sort();
 
-	int32_t i = getKeyNumExact(key);
+	int32_t i = getNode(key);
 	if (i < 0) {
 		return NULL;
 	}
@@ -429,7 +366,7 @@ char* RdbBucket::getKeyVal( const char *key , char **data , int32_t* dataSize ) 
 	return rec;
 }
 
-int32_t RdbBucket::getKeyNumExact(const char* key) const {
+int32_t RdbBucket::getNode(const char *key) const {
 	uint8_t ks = m_parent->getKeySize();
 	int32_t recSize = m_parent->getRecSize();
 	int32_t i = 0;
@@ -507,12 +444,11 @@ void RdbBuckets::printBuckets() {
 
 void RdbBucket::printBucket() {
 	const char *kk = m_keys;
-	int32_t recSize = m_parent->getRecSize();
 	int32_t keySize = m_parent->getKeySize();
+
 	for (int32_t i = 0; i < m_numKeys; i++) {
-		log(LOG_WARN, "rdbbuckets key: %s keySize=%" PRId32" numKeys=%" PRId32,
-		    KEYSTR(kk, recSize), keySize, m_numKeys);
-		kk += recSize;
+		logf(LOG_TRACE, "db: k=%s keySize=%" PRId32, KEYSTR(kk, keySize), keySize);
+		kk += m_parent->getRecSize();
 	}
 }
 
@@ -742,15 +678,13 @@ bool RdbBuckets::resizeTable( int32_t numNeeded ) {
 
 int32_t RdbBuckets::addNode(collnum_t collnum, char *key, char *data, int32_t dataSize) {
 	if (!m_isWritable || m_isSaving) {
-		g_errno = EAGAIN;
-		return false;
+		g_errno = ETRYAGAIN;
+		return -1;
 	}
 
 	m_needsSave = true;
 
-	int32_t i;
-
-	i = getBucketNum(key, collnum);
+	int32_t i = getBucketNum(collnum, key);
 	if (i == m_numBuckets || m_buckets[i]->getCollnum() != collnum) {
 		int32_t bucketsCutoff = (BUCKET_SIZE >> 1);
 		// when repairing the keys are added in order,
@@ -796,7 +730,7 @@ int32_t RdbBuckets::addNode(collnum_t collnum, char *key, char *data, int32_t da
 		newBucket->setCollnum(collnum);
 		m_buckets[i]->split(newBucket);
 		addBucket(newBucket, i + 1);
-		if (bucketCmp(key, collnum, m_buckets[i]) > 0) {
+		if (bucketCmp(collnum, key, m_buckets[i]) > 0) {
 			i++;
 		}
 
@@ -856,8 +790,8 @@ bool RdbBuckets::getList(collnum_t collnum, const char *startKey, const char *en
 		minRecSizes = 0x7fffffff; //LONG_MAX;
 	}
 
-	int32_t startBucket = getBucketNum(startKey, collnum);
-	if (startBucket > 0 && bucketCmp(startKey, collnum, m_buckets[startBucket - 1]) < 0) {
+	int32_t startBucket = getBucketNum(collnum, startKey);
+	if (startBucket > 0 && bucketCmp(collnum, startKey, m_buckets[startBucket - 1]) < 0) {
 		startBucket--;
 	}
 
@@ -869,10 +803,10 @@ bool RdbBuckets::getList(collnum_t collnum, const char *startKey, const char *en
 
 
 	int32_t endBucket;
-	if (bucketCmp(endKey, collnum, m_buckets[startBucket]) <= 0) {
+	if (bucketCmp(collnum, endKey, m_buckets[startBucket]) <= 0) {
 		endBucket = startBucket;
 	} else {
-		endBucket = getBucketNum(endKey, collnum);
+		endBucket = getBucketNum(collnum, endKey);
 	}
 
 	if (endBucket == m_numBuckets || m_buckets[endBucket]->getCollnum() != collnum) {
@@ -942,10 +876,10 @@ bool RdbBuckets::getList(collnum_t collnum, const char *startKey, const char *en
 int RdbBuckets::getListSizeExact(collnum_t collnum, const char *startKey, const char *endKey) {
 	int numBytes = 0;
 
-	int32_t startBucket = getBucketNum(startKey, collnum);
+	int32_t startBucket = getBucketNum(collnum, startKey);
 
 	// does this mean empty?
-	if (startBucket > 0 && bucketCmp(startKey, collnum, m_buckets[startBucket-1]) < 0) {
+	if (startBucket > 0 && bucketCmp(collnum, startKey, m_buckets[startBucket-1]) < 0) {
 		startBucket--;
 	}
 
@@ -954,10 +888,10 @@ int RdbBuckets::getListSizeExact(collnum_t collnum, const char *startKey, const 
 	}
 
 	int32_t endBucket;
-	if (bucketCmp(endKey, collnum, m_buckets[startBucket]) <= 0) {
+	if (bucketCmp(collnum, endKey, m_buckets[startBucket]) <= 0) {
 		endBucket = startBucket;
 	} else {
-		endBucket = getBucketNum(endKey, collnum);
+		endBucket = getBucketNum(collnum, endKey);
 	}
 
 	if (endBucket == m_numBuckets || m_buckets[endBucket]->getCollnum() != collnum) {
@@ -1096,7 +1030,7 @@ bool RdbBuckets::selfTest(bool thorough, bool core) {
 	return true;
 }
 
-char RdbBuckets::bucketCmp(const char *akey, collnum_t acoll, RdbBucket *b) {
+char RdbBuckets::bucketCmp(collnum_t acoll, const char *akey, RdbBucket *b) {
 	if (acoll == b->getCollnum()) {
 		return KEYCMPNEGEQ(akey, b->getEndKey(), m_ks);
 	}
@@ -1108,12 +1042,12 @@ char RdbBuckets::bucketCmp(const char *akey, collnum_t acoll, RdbBucket *b) {
 	return 1;
 }
 
-int32_t RdbBuckets::getBucketNum(const char* key, collnum_t collnum) {
+int32_t RdbBuckets::getBucketNum(collnum_t collnum, const char* key) {
 	if (m_numBuckets < 10) {
 		int32_t i = 0;
 		for (; i < m_numBuckets; i++) {
 			RdbBucket *b = m_buckets[i];
-			char v = bucketCmp(key, collnum, b);
+			char v = bucketCmp(collnum, key, b);
 			if (v > 0) {
 				continue;
 			}
@@ -1130,7 +1064,7 @@ int32_t RdbBuckets::getBucketNum(const char* key, collnum_t collnum) {
 		int32_t delta = high - low;
 		i = low + (delta >> 1);
 		b = m_buckets[i];
-		char v = bucketCmp(key, collnum, b);
+		char v = bucketCmp(collnum, key, b);
 		if (v < 0) {
 			high = i - 1;
 			continue;
@@ -1143,7 +1077,7 @@ int32_t RdbBuckets::getBucketNum(const char* key, collnum_t collnum) {
 	}
 	
 	//now fine tune:
-	v = bucketCmp(key, collnum, b);
+	v = bucketCmp(collnum, key, b);
 	if (v > 0) {
 		i++;
 	}
@@ -1193,7 +1127,7 @@ int32_t RdbBuckets::getNumPositiveKeys() const {
 }
 
 char *RdbBuckets::getKeyVal(collnum_t collnum, const char *key, char **data, int32_t *dataSize) {
-	int32_t i = getBucketNum(key, collnum);
+	int32_t i = getBucketNum(collnum, key);
 	if (i == m_numBuckets || m_buckets[i]->getCollnum() != collnum) {
 		return NULL;
 	}
@@ -1567,8 +1501,8 @@ bool RdbBuckets::deleteList(collnum_t collnum, RdbList *list) {
 	list->getStartKey(startKey);
 	list->getEndKey(endKey);
 
-	int32_t startBucket = getBucketNum(startKey, collnum);
-	if (startBucket > 0 && bucketCmp(startKey, collnum, m_buckets[startBucket - 1]) < 0) {
+	int32_t startBucket = getBucketNum(collnum, startKey);
+	if (startBucket > 0 && bucketCmp(collnum, startKey, m_buckets[startBucket - 1]) < 0) {
 		startBucket--;
 	}
 
@@ -1578,7 +1512,7 @@ bool RdbBuckets::deleteList(collnum_t collnum, RdbList *list) {
 		return true;
 	}
 
-	int32_t endBucket = getBucketNum(endKey, collnum);
+	int32_t endBucket = getBucketNum(collnum, endKey);
 	if (endBucket == m_numBuckets || m_buckets[endBucket]->getCollnum() != collnum) {
 		endBucket--;
 	}
@@ -1792,7 +1726,7 @@ int32_t RdbBuckets::addTree(RdbTree *rt) {
 }
 
 //this could be sped up a lot, but it is only called from repair at the moment.
-bool RdbBuckets::addList(RdbList* list, collnum_t collnum) {
+bool RdbBuckets::addList(collnum_t collnum, RdbList* list) {
 	char listKey[MAX_KEY_BYTES];
 
 	for (list->resetListPtr(); !list->isExhausted(); list->skipCurrentRecord()) {
@@ -1816,8 +1750,8 @@ int64_t RdbBuckets::getListSize(collnum_t collnum, const char *startKey, const c
 		KEYSET(maxKey, startKey, m_ks);
 	}
 
-	int32_t startBucket = getBucketNum(startKey, collnum);
-	if (startBucket > 0 && bucketCmp(startKey, collnum, m_buckets[startBucket - 1]) < 0) {
+	int32_t startBucket = getBucketNum(collnum, startKey);
+	if (startBucket > 0 && bucketCmp(collnum, startKey, m_buckets[startBucket - 1]) < 0) {
 		startBucket--;
 	}
 
@@ -1825,7 +1759,7 @@ int64_t RdbBuckets::getListSize(collnum_t collnum, const char *startKey, const c
 		return 0;
 	}
 
-	int32_t endBucket = getBucketNum(endKey, collnum);
+	int32_t endBucket = getBucketNum(collnum, endKey);
 	if (endBucket == m_numBuckets || m_buckets[endBucket]->getCollnum() != collnum) {
 		endBucket--;
 	}

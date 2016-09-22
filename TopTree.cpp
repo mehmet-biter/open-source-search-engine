@@ -355,7 +355,7 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 		if ( k <= *((key96_t *)m_t2.getKey(min)) ) return false;
 		// . add ourselves. use 0 for collnum.
 		// . dataPtr is not really a ptr, but the node
-		n = m_t2.addNode ( 0 , k , NULL , 4 );
+		n = m_t2.addNode ( 0 , (const char *)&k , NULL , 4 );
 		//if ( n == 52 )
 		//	log("r2 node 52 has domHash=%" PRId32,domHash);
 		// the next node before the current min will be the next min
@@ -376,12 +376,12 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 		// delete him from the top tree now as well
 		//deleteNode ( nn , domHash );
 		// then delete him from the m_t2 tree
-		m_t2.deleteNode3 ( min , false );
+		m_t2.deleteNode(min, false);
 		//logf(LOG_DEBUG,"deleting1 %" PRId32,min);
 	}
 	// if we have not violated the ridiculous max, just add ourselves
 	else if ( m_doSiteClustering ) {
-		n = m_t2.addNode ( 0 , k , NULL , 4 );
+		n = m_t2.addNode ( 0 , (const char *)&k , NULL , 4 );
 		//if ( n == 52 )
 		//	log("r2 nodeb 52 has domHash=%" PRId32,domHash);
 		// sanity check
@@ -483,7 +483,7 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 		// get next node from t2
 		int32_t next = m_t2.getNextNode ( min );
 		// delete from m_t2
-		m_t2.deleteNode3 ( min , false );
+		m_t2.deleteNode(min, false);
 		// skip if not th emin
 		if ( m_domMinNode[domHash2] != min ) continue;
 		// if we were the last, that's it

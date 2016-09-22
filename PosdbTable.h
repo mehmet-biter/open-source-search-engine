@@ -101,10 +101,7 @@ class PosdbTable {
 				 DocIdScore *pdcs,
 				 const char **bestPos);
 
-	void evalSlidingWindow(const char **ptrs,
-			       int32_t nr,
-			       const char **bestPos,
-			       float *scoreMatrix);
+	void evalSlidingWindow(const char **ptrs, const char **bestPos, float *scoreMatrix);
 	float getTermPairScoreForWindow( const char *wpi, const char *wpj, int32_t fixedDistance);
 
 	float getTermPairScoreForAny   ( int32_t i, int32_t j,
@@ -131,6 +128,8 @@ class PosdbTable {
 	bool genDebugScoreInfo2(DocIdScore &dcs, int32_t &lastLen, uint64_t &lastDocId, char siteRank, float score, int32_t intScore, char docLang);
 	bool advanceTermListCursors(const char *docIdPtr, QueryTermInfo *qtibuf);
 	bool prefilterMaxPossibleScoreByDistance(QueryTermInfo *qtibuf, const int32_t *qpos, float minWinningScore);
+	void mergeTermSubListsForDocId(QueryTermInfo *qtibuf, char *miniMergeBuf, const char **miniMergedList, const char **miniMergedEnd, int *highestInlinkSiteRank);
+
 
 	uint64_t m_docId;
 

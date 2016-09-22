@@ -104,35 +104,28 @@ public:
 	int32_t addKey  ( const void *key ) {
 		return addNode ( 0,(const char *)key,NULL,0);
 	}
-	int32_t addNode ( collnum_t collnum , const char *key, char *data, int32_t dataSize );
-	int32_t addNode ( collnum_t collnum , const key96_t &key, char *data, int32_t dataSize ) {
-		return addNode(collnum,(const char *)&key,data,dataSize);
-	}
-	int32_t addNode ( collnum_t collnum , const char *key ) {
-		return addNode ( collnum , key , NULL , 0 );
+
+	int32_t addNode(collnum_t collnum, const char *key, char *data, int32_t dataSize);
+	int32_t addNode(collnum_t collnum, const char *key) {
+		return addNode(collnum, key, NULL, 0);
 	}
 			
 	// . returns -1 if not found
 	// . otherwise return the node #
 	int32_t getNode ( collnum_t collnum, const char *key );
-	int32_t getNode ( collnum_t collnum , const key96_t &key ) {
-		return getNode(collnum,(const char *)&key);
-	}
 
 	// . get the node's data directly
 	char *getData ( collnum_t collnum, const char *key );
 
-        // . get the node whose key is >= key 
-        // . much much slower than getNextNode() below
-        int32_t getNextNode ( collnum_t collnum, const char *key );
-        int32_t getNextNode ( collnum_t collnum , const key96_t &key ) {
-		return getNextNode ( collnum, (const char *)&key);
-	}
+    // . get the node whose key is >= key
+    // . much much slower than getNextNode() below
+    int32_t getNextNode ( collnum_t collnum, const char *key );
 
-        // . get the next node # AFTER "node" by key
-        // . used for dumping out the nodes ordered by their keys
-        // . returns -1 on end
-        int32_t getNextNode ( int32_t node );
+
+    // . get the next node # AFTER "node" by key
+    // . used for dumping out the nodes ordered by their keys
+    // . returns -1 on end
+    int32_t getNextNode ( int32_t node );
 
 	int32_t getFirstNode ( );
 	int32_t getLastNode  ( );
@@ -141,9 +134,7 @@ public:
 
 	// . get the node whose key is <= "key"
     int32_t getPrevNode ( collnum_t collnum, const char *key );
-    int32_t getPrevNode ( collnum_t collnum , const key96_t &key ) {
-		return getPrevNode(collnum,(const char *)&key);
-	}
+
 
 	// . get the prev node # whose key is <= to key of node #i
 	int32_t getPrevNode ( int32_t i ) ;
@@ -154,37 +145,22 @@ public:
 	// . returns true  iff was found and deleted
 	// . returns false iff not found 
 	// . frees m_data[node] if freeIt is true
-	void deleteNode3  ( int32_t  node , bool freeData );
-	int32_t deleteNode  ( collnum_t collnum, const char *key, bool freeData );
-	int32_t deleteNode  ( collnum_t collnum , const key96_t &key , bool freeData) {
-		return deleteNode ( collnum , (const char *)&key , freeData ); }
+	void deleteNode(int32_t node, bool freeData);
+	int32_t deleteNode(collnum_t collnum, const char *key, bool freeData);
 
 	// delete all nodes with keys in [startKey,endKey]
-	void deleteNodes ( collnum_t collnum ,
-			   const key96_t &startKey, const key96_t &endKey, bool freeData ) {
-		deleteNodes(collnum,(const char *)&startKey,(const char *)&endKey,
-			    freeData); }
-
-	void deleteNodes ( collnum_t collnum ,
-			   const char *startKey, const char *endKey, bool freeData );
+	void deleteNodes(collnum_t collnum, const char *startKey, const char *endKey, bool freeData);
 
 	// . delete all records in this list from the tree
 	// . call deleteNode()
-	// . when deleting lists from spiderdb this seems to take a LONG time
-	//   so to make it faster set doBalancing to false. at least nodes
-	//   being added after this will still be balanced
 	// . returns false if a key in list was not found
 	// . this happens if memory is corrupted!
-	bool deleteList ( collnum_t collnum ,
-			  RdbList *list , bool doBalancing ); //= true );
-
-	bool deleteKeys ( collnum_t collnum , char *keys , int32_t numKeys );
+	bool deleteList(collnum_t collnum, RdbList *list);
 
 	// . if the list's keys are ordered from smallest to largest
 	//   this acts just like deleteList() above, but saves time by
 	//   using getNextNode() rather than lookup each key from root of tree
-	void deleteOrderedList ( collnum_t collnum ,
-				 RdbList *list , bool doBalancing ); //= true);
+	void deleteOrderedList(collnum_t collnum, RdbList *list);
 
 	bool isSaving() const { return m_isSaving; }
 	bool isWritable() const { return m_isWritable; }

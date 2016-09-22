@@ -3748,7 +3748,7 @@ bool treetest ( ) {
 	for ( int32_t i = 0 ; i < numKeys ; i++ ) {
 		//if ( k[i].n1 == 1234567 )
 		//	fprintf(stderr,"i=%" PRId32"\n",i);
-		if ( rt.addNode ( (collnum_t)0 , k[i] , NULL , 0 ) < 0 ) {
+		if ( rt.addNode ( (collnum_t)0 , (const char*)&(k[i]) , NULL , 0 ) < 0 ) {
 			log(LOG_WARN, "speedTest: rdb tree addNode failed");
 			return false;
 		}
@@ -4622,8 +4622,7 @@ bool summaryTest1   ( char *rec, int32_t listSize, const char *coll, int64_t doc
 	return true;
 }
 
-void dumpPosdb (const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree,
-		   int64_t termId ) {
+void dumpPosdb (const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree, int64_t termId ) {
 	g_posdb.init ();
 	g_posdb.getRdb()->addRdbBase1(coll );
 
@@ -4662,110 +4661,106 @@ void dumpPosdb (const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 	g_isDumpingRdbFromMain = true;
 	CollectionRec *cr = g_collectiondb.getRec(coll);
 
- loop:
-	// use msg5 to get the list, should ALWAYS block since no threads
-	if ( ! msg5.getList ( RDB_POSDB   ,
-			      cr->m_collnum      ,
-			      &list         ,
-			      &startKey      ,
-			      &endKey        ,
-			      minRecSizes   ,
-			      includeTree   ,
-			      0             , // max cache age
-			      startFileNum  ,
-			      numFiles      ,
-			      NULL          , // state
-			      NULL          , // callback
-			      0             , // niceness
-			      true,           // to debug RdbList::removeBadData_r()
-			      NULL,           // cacheKeyPtr
-			      0,              // retryNum
-			      -1,             // maxRetries
-			      true,           // compensateForMerge
-			      -1,             // syncPoint
-			      false,          // isRealMerge
-			      true))          // allowPageCache
-	{
-		            //false         )){// err correction?
-		log(LOG_LOGIC,"db: getList did not block.");
-		return;
-	}
-	// all done if empty
-	if ( list.isEmpty() ) return;
-
-	// get last key in list
-	const char *ek2 = list.getEndKey();
-	// print it
-	printf("ek=%s\n",KEYSTR(ek2,list.getKeySize()) );
-
-	// loop over entries in list
-	for ( list.resetListPtr() ; ! list.isExhausted() ; list.skipCurrentRecord() ) {
-		key144_t k; list.getCurrentKey(&k);
-		// compare to last
-		const char *err = "";
-		if ( KEYCMP((char *)&k,(char *)&lastKey,sizeof(key144_t))<0 ) 
-			err = " (out of order)";
-		lastKey = k;
-		// is it a delete?
-		const char *dd = "";
-		if ( (k.n0 & 0x01) == 0x00 ) dd = " (delete)";
-		int64_t d = g_posdb.getDocId(&k);
-		uint8_t dh = Titledb::getDomHash8FromDocId(d);
-		char *rec = list.getCurrentRec();
-		int32_t recSize = 18;
-		if ( rec[0] & 0x04 ) recSize = 6;
-		else if ( rec[0] & 0x02 ) recSize = 12;
-		// alignment bits check
-		if ( recSize == 6  && !(rec[1] & 0x02) ) {
-			int64_t nd1 = g_posdb.getDocId(rec+6);
-			err = " (alignerror1)";
-			if ( nd1 < d ) err = " (alignordererror1)";
-			//g_process.shutdownAbort(true);
+	for (;;) {
+		// use msg5 to get the list, should ALWAYS block since no threads
+		if (!msg5.getList(RDB_POSDB,
+		                  cr->m_collnum,
+		                  &list,
+		                  &startKey,
+		                  &endKey,
+		                  minRecSizes,
+		                  includeTree,
+		                  0, // max cache age
+		                  startFileNum,
+		                  numFiles,
+		                  NULL, // state
+		                  NULL, // callback
+		                  0, // niceness
+		                  true,           // to debug RdbList::removeBadData_r()
+		                  NULL,           // cacheKeyPtr
+		                  0,              // retryNum
+		                  -1,             // maxRetries
+		                  true,           // compensateForMerge
+		                  -1,             // syncPoint
+		                  false,          // isRealMerge
+		                  true))          // allowPageCache
+		{
+			log(LOG_LOGIC, "db: getList did not block.");
+			return;
 		}
-		if ( recSize == 12 && !(rec[1] & 0x02) )  {
-			// seems like nd2 is it, so it really is 12 bytes but
-			// does not have the alignment bit set...
-			int64_t nd2 = g_posdb.getDocId(rec+12);
-			err = " (alignerror2)";
-			if ( nd2 < d ) err = " (alignorderrror2)";
-		}
-		// if it 
-		if ( recSize == 12 &&  (rec[7] & 0x02)) { 
-			// seems like nd2 is it, so it really is 12 bytes but
-			// does not have the alignment bit set...
-			int64_t nd2 = g_posdb.getDocId(rec+12);
-			err = " (alignerror3)";
-			if ( nd2 < d ) err = " (alignordererror3)";
-		}
-		if ( KEYCMP((char *)&k,(char *)&startKey,list.getKeySize())<0 ||
-		     KEYCMP((char *)&k,ek2,list.getKeySize())>0){
-			err = " (out of range)";
-		}
+		// all done if empty
+		if (list.isEmpty()) return;
 
-		if ( termId < 0 )
-			printf(
-			       "k=%s "
-			       "tid=%015" PRIu64" "
-			       "docId=%012" PRId64" "
+		// get last key in list
+		const char *ek2 = list.getEndKey();
+		// print it
+		printf("ek=%s\n", KEYSTR(ek2, list.getKeySize()));
 
-			       "siterank=%02" PRId32" "
-			       "langid=%02" PRId32" "
-			       "pos=%06" PRId32" "
-			       "hgrp=%02" PRId32" "
-			       "spamrank=%02" PRId32" "
-			       "divrank=%02" PRId32" "
-			       "syn=%01" PRId32" "
-			       "densrank=%02" PRId32" "
-			       "mult=%02" PRId32" "
+		// loop over entries in list
+		for (list.resetListPtr(); !list.isExhausted(); list.skipCurrentRecord()) {
+			key144_t k;
+			list.getCurrentKey(&k);
+			// compare to last
+			const char *err = "";
+			if (KEYCMP((char *)&k, (char *)&lastKey, sizeof(key144_t)) < 0)
+				err = " (out of order)";
+			lastKey = k;
+			// is it a delete?
+			const char *dd = "";
+			if ((k.n0 & 0x01) == 0x00) dd = " (delete)";
+			int64_t d = g_posdb.getDocId(&k);
+			uint8_t dh = Titledb::getDomHash8FromDocId(d);
+			char *rec = list.getCurrentRec();
+			int32_t recSize = 18;
+			if (rec[0] & 0x04) recSize = 6;
+			else if (rec[0] & 0x02) recSize = 12;
+			// alignment bits check
+			if (recSize == 6 && !(rec[1] & 0x02)) {
+				int64_t nd1 = g_posdb.getDocId(rec + 6);
+				err = " (alignerror1)";
+				if (nd1 < d) err = " (alignordererror1)";
+				//g_process.shutdownAbort(true);
+			}
+			if (recSize == 12 && !(rec[1] & 0x02)) {
+				// seems like nd2 is it, so it really is 12 bytes but
+				// does not have the alignment bit set...
+				int64_t nd2 = g_posdb.getDocId(rec + 12);
+				err = " (alignerror2)";
+				if (nd2 < d) err = " (alignorderrror2)";
+			}
+			// if it
+			if (recSize == 12 && (rec[7] & 0x02)) {
+				// seems like nd2 is it, so it really is 12 bytes but
+				// does not have the alignment bit set...
+				int64_t nd2 = g_posdb.getDocId(rec + 12);
+				err = " (alignerror3)";
+				if (nd2 < d) err = " (alignordererror3)";
+			}
+			if (KEYCMP((char *)&k, (char *)&startKey, list.getKeySize()) < 0 ||
+			    KEYCMP((char *)&k, ek2, list.getKeySize()) > 0) {
+				err = " (out of range)";
+			}
 
-			       "dh=0x%02" PRIx32" "
-			       "rs=%" PRId32 //recSize
-			       "%s" // dd
-			       "%s" // err
-			       "\n" , 
-			       KEYSTR(&k,sizeof(key144_t)),
+			printf("k=%s"
+					       " tid=%015" PRIu64
+					       " docId=%012" PRId64
+					       " siterank=%02" PRId32
+					       " langid=%02" PRId32
+					       " pos=%06" PRId32
+					       " hgrp=%02" PRId32
+					       " spamrank=%02" PRId32
+					       " divrank=%02" PRId32
+					       " syn=%01" PRId32
+					       " densrank=%02" PRId32
+					       " mult=%02" PRId32
+					       " dh=0x%02" PRIx32
+					       " rs=%" PRId32 //recSize
+					       "%s" // dd
+					       "%s" // err
+					       "\n",
+			       KEYSTR(&k, sizeof(key144_t)),
 			       (int64_t)g_posdb.getTermId(&k),
-			       d , 
+			       d,
 			       (int32_t)g_posdb.getSiteRank(&k),
 			       (int32_t)g_posdb.getLangId(&k),
 			       (int32_t)g_posdb.getWordPos(&k),
@@ -4775,52 +4770,19 @@ void dumpPosdb (const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 			       (int32_t)g_posdb.getIsSynonym(&k),
 			       (int32_t)g_posdb.getDensityRank(&k),
 			       (int32_t)g_posdb.getMultiplier(&k),
-			       
-			       (int32_t)dh, 
+			       (int32_t)dh,
 			       recSize,
-			       dd ,
-			       err );
-		else
-			printf(
-			       "k=%s "
-			       "tid=%015" PRIu64" "
-			       "docId=%012" PRId64" "
-			       "siterank=%02" PRId32" "
-			       "langid=%02" PRId32" "
-			       "pos=%06" PRId32" "
-			       "hgrp=%02" PRId32" "
-			       "spamrank=%02" PRId32" "
-			       "divrank=%02" PRId32" "
-			       "syn=%01" PRId32" "
-			       "densrank=%02" PRId32" "
-			       "mult=%02" PRId32" "
-			       "recSize=%" PRId32" "
-			       "dh=0x%02" PRIx32"%s%s\n" ,
-			       KEYSTR(&k,sizeof(key144_t)),
-			       (int64_t)g_posdb.getTermId(&k),
-			       d , 
-			       (int32_t)g_posdb.getSiteRank(&k),
-			       (int32_t)g_posdb.getLangId(&k),
-			       (int32_t)g_posdb.getWordPos(&k),
-			       (int32_t)g_posdb.getHashGroup(&k),
-			       (int32_t)g_posdb.getWordSpamRank(&k),
-			       (int32_t)g_posdb.getDiversityRank(&k),
-			       (int32_t)g_posdb.getIsSynonym(&k),
-			       (int32_t)g_posdb.getDensityRank(&k),
-			       (int32_t)g_posdb.getMultiplier(&k),
-			       recSize,
-			       
-			       (int32_t)dh, 
-			       dd ,
-			       err );
-		continue;
-	}
+			       dd,
+			       err);
 
-	startKey = *(key144_t *)list.getLastKey();
-	startKey += (uint32_t) 1;
-	// watch out for wrap around
-	if ( startKey < *(key144_t *)list.getLastKey() ) return;
-	goto loop;
+			continue;
+		}
+
+		startKey = *(key144_t *)list.getLastKey();
+		startKey += (uint32_t)1;
+		// watch out for wrap around
+		if (startKey < *(key144_t *)list.getLastKey()) return;
+	}
 }
 
 void dumpClusterdb ( const char *coll,
