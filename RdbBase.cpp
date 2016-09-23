@@ -344,7 +344,9 @@ bool RdbBase::removeRebuildFromFilename ( BigFile *f ) {
 	char *ff = f->getFilename();
 	// copy it
 	char buf[1024];
-	strcpy ( buf , ff );
+	strncpy ( buf , ff, sizeof(buf) );
+	buf[ sizeof(buf)-1 ]='\0';
+	
 	// remove "Rebuild" from it
 	char *p = strstr ( buf , "Rebuild" );
 	if ( ! p ) {
@@ -2499,7 +2501,14 @@ float RdbBase::getPercentNegativeRecsOnDisk ( int64_t *totalArg ) const {
 	}
 	int64_t total = numPos + numNeg;
 	*totalArg = total;
-	float percent = (float)numNeg / (float)total;
+
+	float percent;
+	if( !total ) {
+		percent = 0.0;
+	}
+	else {
+		percent = (float)numNeg / (float)total;
+	}
 	return percent;
 }
 
