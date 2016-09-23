@@ -410,7 +410,7 @@ bool Multicast::sendToHostLoop(int32_t key, int32_t hostNumToTry, int32_t firstH
 		int32_t i = (hostNumToTry >= 0) ? hostNumToTry : pickBestHost(key, firstHostId);
 
 		// do not resend to retired hosts
-		if (m_retired[i]) {
+		if( i >= 0 && m_retired[i] ) {
 			i = -1;
 		}
 
@@ -456,7 +456,10 @@ int32_t Multicast::pickBestHost ( uint32_t key , int32_t firstHostId ) {
 	// debug msg
 	//log("pickBestHost manually");
 	// bail if no hosts
-	if ( m_numHosts == 0 ) return -1;
+	if ( m_numHosts == 0 ) {
+		return -1;
+	}
+
 	// . should we always pick host on same machine first?
 	// . we now only run one instance of gb per physical server, not like
 	//   the old days... so this is somewhat obsolete... MDW
