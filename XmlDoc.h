@@ -70,16 +70,13 @@ bool getDensityRanks ( const int64_t *wids,
 		       int32_t nw,
 		       int32_t hashGroup ,
 		       SafeBuf *densBuf ,
-		       const Sections *sections,
-		       int32_t niceness );
+		       const Sections *sections);
 
 // diversity vector
 bool getDiversityVec ( const Words *words ,
 		       const Phrases *phrases ,
 		       class HashTableX *countTable ,
-		       class SafeBuf *sbWordVec ,
-		       //class SafeBuf *sbPhraseVec ,
-		       int32_t niceness );
+		       class SafeBuf *sbWordVec );
 
 float computeSimilarity ( int32_t   *vec0 , 
 			  int32_t   *vec1 ,
@@ -87,7 +84,6 @@ float computeSimilarity ( int32_t   *vec0 ,
 			  int32_t   *s0   , 
 			  int32_t   *s1   , 
 			  class Query  *q    ,
-			  int32_t  niceness ,
 			  // only Sections::addDateBasedImpliedSections()
 			  // sets this to true right now. if set to true
 			  // we essentially dedup each vector, although
@@ -101,8 +97,7 @@ bool isSimilar_sorted ( int32_t   *vec0 ,
 			int32_t nv0 , // how many int32_ts in vec?
 			int32_t nv1 , // how many int32_ts in vec?
 			// they must be this similar or more to return true
-			int32_t percentSimilar,
-			int32_t    niceness ) ;
+			int32_t percentSimilar) ;
 
 
 // tell zlib to use our malloc/free functions
@@ -121,25 +116,21 @@ int gbcompress   ( unsigned char *dest      ,
 uint32_t score8to32 ( uint8_t score8 );
 
 // for Msg13.cpp
-char getContentTypeFromContent ( char *p , int32_t niceness ) ;
+char getContentTypeFromContent ( char *p ) ;
 
 // . for Msg13.cpp
 // . *pend must equal \0
-int32_t getContentHash32Fast ( unsigned char *p , 
-			    int32_t plen ,
-			    int32_t niceness ) ;
+int32_t getContentHash32Fast ( unsigned char *p , int32_t plen ) ;
 
 uint16_t getCharsetFast ( class HttpMime *mime, 
 			  char *url ,
 			  char *s , 
-			  int32_t slen , 
-			  int32_t niceness );
+			  int32_t slen );
 
 bool getWordPosVec ( const Words *words,
 		     const Sections *sections,
 		     int32_t startDist,
 		     const char *fragVec,
-		     int32_t niceness,
 		     SafeBuf *wpos );
 
 
@@ -556,11 +547,11 @@ public:
 
 	bool hashWords3( class HashInfo *hi, const Words *words, class Phrases *phrases,
 					 class Sections *sections, class HashTableX *countTable, char *fragVec, char *wordSpamVec,
-					 char *langVec, class HashTableX *wts, class SafeBuf *wbuf, int32_t niceness );
+					 char *langVec, class HashTableX *wts, class SafeBuf *wbuf );
 
 	bool hashString3( char *s, int32_t slen, class HashInfo *hi, class HashTableX *countTable,
 					  class SafeBuf *pbuf, class HashTableX *wts, class SafeBuf *wbuf, int32_t version,
-					  int32_t siteNumInlinks, int32_t niceness );
+					  int32_t siteNumInlinks );
 
 	// gbfieldmatch:
 	bool hashFieldMatchTerm ( char *val, int32_t vlen, class HashInfo *hi);

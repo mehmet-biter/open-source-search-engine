@@ -1380,9 +1380,7 @@ void gotHttpReply2 ( void *state ,
 	     // if we got iframes we can't tell if content changed
 	     ! hasIframe2 ) {
 		// compute it
-		int32_t ch32 = getContentHash32Fast( (unsigned char *)content ,
-						  contentLen ,
-						  niceness );
+		int32_t ch32 = getContentHash32Fast( (unsigned char *)content , contentLen);
 		// unchanged?
 		if ( ch32 == r->m_contentHash32 ) {
 			// record in the stats

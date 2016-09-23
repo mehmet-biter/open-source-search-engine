@@ -3228,8 +3228,7 @@ Xml *XmlDoc::getXml ( ) {
 
 static bool setLangVec ( Words *words ,
 			 SafeBuf *langBuf ,
-			 Sections *ss ,
-			 int32_t niceness ) {
+			 Sections *ss ) {
 
 	const int64_t *wids       = words->getWordIds();
 	const char * const *wptrs = words->getWords();
@@ -3391,7 +3390,7 @@ uint8_t *XmlDoc::getLangVector ( ) {
 	if ( ! ss || ss==(void *)-1) return (uint8_t *)ss;
 
 
-	if ( ! setLangVec ( words , &m_langVec , ss , m_niceness) )
+	if ( ! setLangVec ( words , &m_langVec , ss ) )
 		return NULL;
 
 	m_langVectorValid = true;
@@ -3473,7 +3472,7 @@ uint8_t *XmlDoc::getLangId ( ) {
 	mdw.set ( md , mdlen , true );
 
 	SafeBuf langBuf;
-	setLangVec ( &mdw,&langBuf,NULL,m_niceness);
+	setLangVec ( &mdw,&langBuf,NULL);
 	char *tmpLangVec = langBuf.getBufStart();
 	m_langId = computeLangId ( NULL , &mdw , tmpLangVec );
 	if ( m_langId != langUnknown ) {
@@ -3487,7 +3486,7 @@ uint8_t *XmlDoc::getLangId ( ) {
 	mdw.set ( md , mdlen , true );
 
 	langBuf.purge();
-	setLangVec ( &mdw,&langBuf,NULL,m_niceness);
+	setLangVec ( &mdw,&langBuf,NULL);
 	tmpLangVec = langBuf.getBufStart();
 	m_langId = computeLangId ( NULL , &mdw , tmpLangVec );
 	logTrace( g_conf.m_logTraceXmlDoc, "END, returning langid=%s from metaKeywords", getLanguageAbbr(m_langId) );
@@ -4580,8 +4579,7 @@ float *XmlDoc::getPageSimilarity ( XmlDoc *xd2 ) {
 	if ( ! sv1 || sv1 == (int32_t *)-1 ) return (float *)sv1;
 	int32_t *sv2 = xd2->getPageSampleVector();
 	if ( ! sv2 || sv2 == (int32_t *)-1 ) return (float *)sv2;
-	m_pageSimilarity = computeSimilarity ( sv1, sv2, NULL, NULL, NULL,
-					       m_niceness );
+	m_pageSimilarity = computeSimilarity ( sv1, sv2, NULL, NULL, NULL);
 	// this means error, g_errno should be set
 	if ( m_pageSimilarity == -1.0 ) return NULL;
 	return &m_pageSimilarity;
@@ -4626,7 +4624,6 @@ float computeSimilarity ( int32_t   *vec0 ,
 			  int32_t   *s0   , // corresponding scores vector
 			  int32_t   *s1   , // corresponding scores vector
 			  Query  *q    ,
-			  int32_t    niceness ,
 			  bool    dedupVectors ) {
 	static int32_t s_tmp = 0;
 	if ( ! vec0 ) vec0 = &s_tmp;
@@ -4770,8 +4767,7 @@ bool isSimilar_sorted ( int32_t   *vec0 ,
 			int32_t nv0 , // how many int32_ts in vec?
 			int32_t nv1 , // how many int32_ts in vec?
 			// they must be this similar or more to return true
-			int32_t percentSimilar,
-			int32_t    niceness ) {
+			int32_t percentSimilar) {
 	// if both empty, assume not similar at all
 	if ( *vec0 == 0 && *vec1 == 0 ) return 0;
 	// if either is empty, return 0 to be on the safe side
@@ -8552,7 +8548,7 @@ char **XmlDoc::getContent ( ) {
 	return &m_content;
 }
 
-char getContentTypeFromContent ( char *p , int32_t niceness ) {
+char getContentTypeFromContent ( char *p ) {
 	char ctype = 0;
 	// max
 	char *pmax = p + 100;
@@ -8592,7 +8588,7 @@ uint8_t *XmlDoc::getContentType ( ) {
 	if ( ! pp || pp == (void *)-1 ) return (uint8_t *)pp;
 	char *p = *pp;
 	// scan content for content type. returns 0 if none found.
-	char ctype2 = getContentTypeFromContent ( p , m_niceness );
+	char ctype2 = getContentTypeFromContent ( p );
 	// valid?
 	if ( ctype2 != 0 ) m_contentType = ctype2;
 	// it is valid now
@@ -9040,8 +9036,7 @@ Url **XmlDoc::getMetaRedirUrl ( ) {
 uint16_t getCharsetFast ( HttpMime *mime,
 			  char *url,
 			  char *s ,
-			  int32_t slen ,
-			  int32_t niceness  ){
+			  int32_t slen ){
 
 	int16_t charset = csUnknown;
 
@@ -9317,8 +9312,7 @@ uint16_t *XmlDoc::getCharset ( ) {
 	m_charset = getCharsetFast ( mime ,
 				     m_firstUrl.getUrl(),
 				     pstart ,
-				     m_filteredContentLen,
-				     m_niceness );
+				     m_filteredContentLen );
 	m_charsetValid = true;
 	return &m_charset;
 }
@@ -10365,9 +10359,7 @@ char **XmlDoc::getUtf8Content ( ) {
 }
 
 // *pend should be \0
-int32_t getContentHash32Fast ( unsigned char *p ,
-			    int32_t plen ,
-			    int32_t niceness ) {
+int32_t getContentHash32Fast ( unsigned char *p , int32_t plen ) {
 	// sanity
 	if ( ! p ) return 0;
 	if ( plen <= 0 ) return 0;
@@ -10534,7 +10526,7 @@ int32_t *XmlDoc::getContentHash32 ( ) {
 	// fields are independent, and numbers matter, like prices
 
 	// *pend should be \0
-	m_contentHash32 = getContentHash32Fast ( p , plen , m_niceness );
+	m_contentHash32 = getContentHash32Fast ( p , plen );
 	// validate
 	m_contentHash32Valid = true;
 	return &m_contentHash32;
@@ -19100,8 +19092,7 @@ bool XmlDoc::printRainbowSections ( SafeBuf *sb , HttpRequest *hr ) {
 			       nw,
 			       HASHGROUP_BODY,//hi->m_hashGroup,
 			       &densBuf,
-			       sections,
-			       m_niceness))
+			       sections))
 		return true;
 	// a handy ptr
 	char *densityVec = (char *)densBuf.getBufStart();
@@ -19116,7 +19107,6 @@ bool XmlDoc::printRainbowSections ( SafeBuf *sb , HttpRequest *hr ) {
 			       // terms before the body, so this is necessary.
 			       m_bodyStartPos,
 			       fragVec,
-			       m_niceness,
 			       &wpos) ) return true;
 	// a handy ptr
 	int32_t *wposVec = (int32_t *)wpos.getBufStart();
@@ -20854,7 +20844,6 @@ bool getWordPosVec ( const Words *words ,
 		     const Sections *sections,
 		     int32_t startDist,
 		     const char *fragVec,
-		     int32_t niceness ,
 		     SafeBuf *wpos ) {
 
 	int32_t dist = startDist; // 0;
@@ -20944,8 +20933,7 @@ bool getDensityRanks ( const int64_t *wids ,
 		       int32_t nw ,
 		       int32_t hashGroup ,
 		       SafeBuf *densBuf ,
-		       const Sections *sections ,
-		       int32_t niceness ) {
+		       const Sections *sections ) {
 
 	//int32_t nw = wordEnd - wordStart;
 
@@ -21012,8 +21000,7 @@ bool getDensityRanks ( const int64_t *wids ,
 // . string is usually the document body or inlink text of an inlinker or
 //   perhaps meta keywords. it could be anything. so we need to create this
 //   vector based on that string, which is represented by words/phrases here.
-bool getDiversityVec( const Words *words, const Phrases *phrases, HashTableX *countTable, SafeBuf *sbWordVec,
-					  int32_t niceness ) {
+bool getDiversityVec( const Words *words, const Phrases *phrases, HashTableX *countTable, SafeBuf *sbWordVec ) {
 	const int64_t  *wids  = words->getWordIds ();
 	int32_t        nw    = words->getNumWords();
 	const int64_t  *pids  = phrases->getPhraseIds2();
