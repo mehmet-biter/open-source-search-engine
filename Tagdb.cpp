@@ -1559,9 +1559,6 @@ void Msg8a::gotAllReplies ( ) {
 
 	// scan the lists
 	for ( int32_t i = 0 ; i < m_replies ; i++ ) {
-		// breathe
-		QUICKPOLL(m_niceness);
-
 		// get list
 		RdbList *list = &m_tagRec->m_lists[i];
 
@@ -1595,9 +1592,6 @@ void Msg8a::gotAllReplies ( ) {
 	// . each list should be from a different suburl?
 	// . the first list should be the narrowest/longest?
 	for ( ; tag ; tag = m_tagRec->getNextTag ( tag ) ) {
-		// breathe
-		QUICKPOLL(m_niceness);
-
 		// form the hash!
 		uint32_t h32 = (uint32_t)((tag->m_key.n0) >> 32);
 
