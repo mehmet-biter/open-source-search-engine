@@ -615,13 +615,21 @@ int main2 ( int argc , char *argv[] ) {
 	//unclean shutdown.
 	g_recoveryMode = false;
 	const char *cc = NULL;
-	if ( strncmp ( cmd , "-r" ,2 ) == 0 ) cc = cmd;
-	if ( strncmp ( cmd2 , "-r",2 ) == 0 ) cc = cmd2;
+	if ( strncmp ( cmd , "-r" ,2 ) == 0 ) {
+		cc = cmd;
+	}
+	if ( strncmp ( cmd2 , "-r",2 ) == 0 ) {
+		cc = cmd2;
+	}
 	if ( cc ) {
 		g_recoveryMode = true;
 		g_recoveryLevel = 1;
-		if ( cc[2] ) g_recoveryLevel = atoi(cc+2);
-		if ( g_recoveryLevel < 0 ) g_recoveryLevel = 0;
+		if ( strlen(cc) > 2 ) {
+			g_recoveryLevel = atoi(cc+2);
+		}
+		if ( g_recoveryLevel < 0 ) {
+			g_recoveryLevel = 0;
+		}
 	}
 
 	// run as daemon? then we have to fork
