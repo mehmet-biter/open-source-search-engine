@@ -21593,7 +21593,7 @@ Json *XmlDoc::getParsedJson ( ) {
 
 	// . returns NULL and sets g_errno on error
 	// . if p is NULL i guess this should still be ok and be empty
-	if ( ! m_jp.parseJsonStringIntoJsonItems ( p , m_niceness ) ) {
+	if ( ! m_jp.parseJsonStringIntoJsonItems ( p ) ) {
 		g_errno = EBADJSONPARSER;
 		return NULL;
 	}

@@ -549,7 +549,7 @@ bool XmlDoc::setSpiderStatusDocMetaList ( SafeBuf *jd , int64_t uqd ) {
 
 
 	Json jp2;
-	if (! jp2.parseJsonStringIntoJsonItems (jd->getBufStart(),m_niceness)){
+	if (! jp2.parseJsonStringIntoJsonItems (jd->getBufStart())){
 		g_errno = EBADJSONPARSER;
 		return false;
 	}

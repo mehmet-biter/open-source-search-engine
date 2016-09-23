@@ -72,7 +72,7 @@ class JsonItem {
 class Json {
  public:
 
-	JsonItem *parseJsonStringIntoJsonItems ( const char *json , int32_t niceness );
+	JsonItem *parseJsonStringIntoJsonItems ( const char *json );
 
 	JsonItem *getFirstItem ( ) ;
 

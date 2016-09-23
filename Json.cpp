@@ -64,7 +64,7 @@ JsonItem *Json::getItem ( char *name ) {
 
 #include "Mem.h" // strlen()
 
-JsonItem *Json::parseJsonStringIntoJsonItems (const char *json , int32_t niceness ) {
+JsonItem *Json::parseJsonStringIntoJsonItems (const char *json ) {
 
 	m_prev = NULL;
 
