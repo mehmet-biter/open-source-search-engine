@@ -36,7 +36,7 @@ libgtest.so:
 CPPFLAGS += -g
 CPPFLAGS += -Wno-write-strings
 CPPFLAGS += -Wl,-rpath=. -Wl,-rpath=$(BASE_DIR)
-CPPFLAGS += -I$(BASE_DIR) -I$(GTEST_DIR)/include
+CPPFLAGS += -I$(BASE_DIR) -isystem $(GTEST_DIR)/include
 CPPFLAGS += -std=c++11
 
 # exported in parent make

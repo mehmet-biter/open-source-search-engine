@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 #include "BitOperations.h"
 
 TEST(BitOperationsTest, GetHighestLitBit) {

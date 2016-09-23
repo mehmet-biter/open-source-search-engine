@@ -1,5 +1,5 @@
 #include <malloc.h>
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 #include "BigFile.h"
 #include "Process.h"
 
