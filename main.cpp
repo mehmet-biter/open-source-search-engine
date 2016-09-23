@@ -4016,13 +4016,20 @@ skip:
 
 	int32_t stksize = 1000000 ;
 	int32_t bufsize = stksize * s_numThreads ;
-	char *buf = (char *)malloc ( bufsize );
-	if ( ! buf ) { log("test: malloc of %" PRId32" failed.",bufsize); return; }
+	char *buf = (char *)malloc( bufsize );
+	if ( ! buf ) { 
+		log("test: malloc of %" PRId32" failed.",bufsize); 
+		return; 
+	}
+
 	g_jobScheduler.allow_new_jobs();
 	//int pid;
 	for ( int32_t i = 0 ; i < s_numThreads ; i++ ) {
-		if ( !g_jobScheduler.submit(startUp, NULL, (void *)(PTRTYPE)i, thread_type_unspecified_io, 0)){
-			log("test: Thread launch failed."); return; }
+		if ( !g_jobScheduler.submit(startUp, NULL, (void *)(PTRTYPE)i, thread_type_unspecified_io, 0)) {
+			log("test: Thread launch failed."); 
+			free(buf);
+			return; 
+		}
 		log(LOG_INIT,"test: Launched thread #%" PRId32".",i);
 	}
 	// sleep til done
