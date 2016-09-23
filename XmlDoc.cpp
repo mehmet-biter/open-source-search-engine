@@ -17316,7 +17316,7 @@ Title *XmlDoc::getTitle() {
 	start = logQueryTimingStart();
 
 	if ( !m_title.setTitle( xml, ww, titleMaxLen, query, getLinkInfo1(), getFirstUrl(), filteredRootTitleBuf,
-							m_filteredRootTitleBufSize, *contentTypePtr, m_langId, m_niceness ) ) {
+							m_filteredRootTitleBufSize, *contentTypePtr, m_langId ) ) {
 		return NULL;
 	}
 

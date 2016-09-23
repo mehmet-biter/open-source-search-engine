@@ -162,14 +162,13 @@ bool isWordQualified ( char *wp , int32_t wlen ) {
 // returns false and sets g_errno on error
 bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query,
                        LinkInfo *linkInfo, Url *firstUrl, const char *filteredRootTitleBuf, int32_t filteredRootTitleBufSize,
-                       uint8_t contentType, uint8_t langId, int32_t niceness ) {
+                       uint8_t contentType, uint8_t langId ) {
 	// make Msg20.cpp faster if it is just has
 	// Msg20Request::m_setForLinkInfo set to true, no need to extricate a title.
 	if ( maxTitleLen <= 0 ) {
 		return true;
 	}
 
-	m_niceness = niceness;
 	m_maxTitleLen = maxTitleLen;
 
 	// if this is too big the "first line" algo can be huge!!!
