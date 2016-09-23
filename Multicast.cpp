@@ -20,6 +20,8 @@ void Multicast::constructor() {
 	m_msg      = NULL;
 	m_readBuf  = NULL;
 	m_inUse    = false;
+	memset(m_hostPtrs, 0, sizeof(m_hostPtrs));
+	memset(m_slots, 0, sizeof(m_slots));
 }
 
 void Multicast::destructor() {
