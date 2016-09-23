@@ -8780,7 +8780,7 @@ static bool setMetaRedirUrlFromTag ( char *p , Url *metaRedirUrl , char niceness
 	char decoded[MAX_URL_LEN];
 
 	// convert &amp; to "&"
-	int32_t decBytes = htmlDecode( decoded, url, usize, false, niceness );
+	int32_t decBytes = htmlDecode( decoded, url, usize, false );
 	decoded[decBytes]='\0';
 
 	// . then the url
@@ -10257,7 +10257,7 @@ char **XmlDoc::getUtf8Content ( ) {
 	int32_t n = m_expandedUtf8ContentSize - 1;
 	if ( m_contentType != CT_XML ) {
 		n = htmlDecode( m_expandedUtf8Content, m_expandedUtf8Content, m_expandedUtf8ContentSize - 1,
-						doSpecial, m_niceness );
+						doSpecial );
 	}
 
 	// can't exceed this! n does not include the final \0 even though

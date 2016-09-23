@@ -1744,7 +1744,7 @@ bool printApiForPage ( SafeBuf *sb , int32_t PAGENUM , CollectionRec *cr ) {
 			if ( diff ) sb->safePrintf("<font color=red>");
 			// truncate to 80 chars
 			sb->htmlEncode(tmp.getBufStart(),tmp.length(),
-					   false,0,80); //niceness=0
+					   false,80);
 			if ( diff ) sb->safePrintf("</font>");
 			sb->safePrintf("</b>");
 		}

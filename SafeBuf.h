@@ -88,7 +88,7 @@ public:
 	bool safeTruncateEllipsis ( const char *src , int32_t maxLen );
 	bool safeTruncateEllipsis ( const char *src , int32_t srcLen, int32_t maxLen );
 
-	bool safeDecodeJSONToUtf8 ( const char *json, int32_t jsonLen, int32_t niceness);
+	bool safeDecodeJSONToUtf8 ( const char *json, int32_t jsonLen);
 
 	bool set ( const char *str ) {
 		purge();
@@ -118,8 +118,8 @@ public:
 	bool jsonEncode ( const char *utf8 ) { return safeUtf8ToJSON(utf8); }
 	bool jsonEncode ( char *utf8 , int32_t utf8Len );
 
-	bool  base64Encode ( const char *s , int32_t len , int32_t niceness = 0 );
-	bool  base64Decode ( const char *src , int32_t srcLen , int32_t niceness = 0 ) ;
+	bool  base64Encode ( const char *s , int32_t len );
+	bool  base64Decode ( const char *src , int32_t srcLen ) ;
 
 	bool base64Encode( const char *s ) ;
 
@@ -152,7 +152,6 @@ public:
 	bool  safeReplace(const char *s, int32_t len, int32_t pos, int32_t replaceLen);
 	bool  safeReplace2 ( const char *s, int32_t slen,
 			     const char *t, int32_t tlen,
-			     int32_t niceness ,
 			     int32_t startOff = 0 );
 	void replaceChar ( char src , char dst );
 
@@ -162,7 +161,7 @@ public:
 	bool brify2 ( const char *s, int32_t cols, const char *sep = "<br>" ,
 		      bool isHtml = true ) ;
 
-	bool brify( const char *s, int32_t slen, int32_t niceness, int32_t cols, const char *sep = "<br>",
+	bool brify( const char *s, int32_t slen, int32_t cols, const char *sep = "<br>",
 				bool isHtml = true );
 
 	bool hasDigits();
@@ -184,22 +183,20 @@ public:
 
 	bool addTag ( class Tag *tag );
 
-	bool utf8Encode2( char *s, int32_t len, bool htmlEncode = false, int32_t niceness = 0 );
+	bool utf8Encode2( char *s, int32_t len, bool htmlEncode = false);
 
 	bool utf32Encode(UChar32* codePoints, int32_t cpLen);
 
-	bool htmlEncode( const char *s, int32_t len, bool encodePoundSign, int32_t niceness = 0,
-					 int32_t truncateLen = -1 );
+	bool htmlEncode( const char *s, int32_t len, bool encodePoundSign, int32_t truncateLen = -1 );
 
 	bool  htmlEncode(const char *s) ;
 
 	// html-encode any of the last "len" bytes that need it
-	bool htmlEncode(int32_t len,int32_t niceness=0);
+	bool htmlEncode(int32_t len);
 
 	bool htmlDecode (const char *s,
 			 int32_t len,
-			 bool doSpecial = false,
-			 int32_t niceness = 0 );
+			 bool doSpecial = false);
 
 	bool  dequote ( const char *t , int32_t tlen );
 

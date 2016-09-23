@@ -3577,7 +3577,7 @@ bool Links::set(bool useRelNoFollow,
 		// nono, need this now otherwise it hits that linkNode<0
 		// error msg in XmlDoc.cpp. but for Msg13 spider compression
 		// you might want to do something else then i guess...
-		linkLen = htmlDecode( tmp, link, linkLen, false, niceness );
+		linkLen = htmlDecode( tmp, link, linkLen, false );
 
 		// use tmp buf
 		link = tmp;

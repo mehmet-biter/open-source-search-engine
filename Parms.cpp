@@ -2524,7 +2524,7 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 		sb->purge();
 		// this means that we can not use string POINTERS as parms!!
 		if ( ! isHtmlEncoded ) sb->safeMemcpy ( s , len );
-		else                   len = sb->htmlDecode (s,len,false,0);
+		else                   len = sb->htmlDecode (s,len,false);
 		// tag it
 		sb->setLabel ( "parm1" );
 		// ensure null terminated
@@ -2563,7 +2563,7 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 		if ( !isHtmlEncoded ) {
 			gbmemcpy( dst, s, len );
 		} else {
-			len = htmlDecode( dst, s, len, false, 0 );
+			len = htmlDecode( dst, s, len, false );
 		}
 
 		dst[len] = '\0';
@@ -2868,7 +2868,7 @@ bool Parms::setFromFile ( void *THIS        ,
 		//nb = cdataDecode ( v , v , 0 );//, vlen , false ,0);
 
 		// now decode it into itself
-		nb = htmlDecode ( v , v , vlen , false ,0);
+		nb = htmlDecode ( v , v , vlen , false);
 		v[nb] = '\0';
 
 		// set our parm
@@ -2938,7 +2938,7 @@ bool Parms::setFromFile ( void *THIS        ,
 		v[vlen]='\0';
 
 		// now decode it into itself
-		nb = htmlDecode ( v , v , vlen , false,0);
+		nb = htmlDecode ( v , v , vlen , false);
 		v[nb] = '\0';
 
 		// set our parm

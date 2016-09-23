@@ -1245,7 +1245,7 @@ bool ThumbnailInfo::printThumbnailInHtml ( SafeBuf *sb ,
 		sb->safePrintf("\t\"imageBase64\":\"");
 
 	// encode image in base 64
-	sb->base64Encode ( getData(), m_dataSize , 0 ); // 0 niceness
+	sb->base64Encode ( getData(), m_dataSize );
 	if ( format !=FORMAT_XML && format != FORMAT_JSON ) {
 		sb->safePrintf("\">");
 		if ( printLink ) sb->safePrintf ("</a>");
