@@ -1549,8 +1549,6 @@ static bool sendPage ( State11 *st ) {
 	int32_t count = 0;
 	//uint64_t nowMS = gettimeofdayInMillisecondsGlobal();
 	for ( ; node >= 0 ; node = sc->m_waitingTree.getNextNode(node) ) {
-		// breathe
-		QUICKPOLL(MAX_NICENESS);
 		// get key
 		key96_t *key = (key96_t *)sc->m_waitingTree.getKey(node);
 		// get ip from that
@@ -2239,8 +2237,6 @@ int32_t getUrlFilterNum ( 	SpiderRequest	*sreq,
 
 	// stop at first regular expression it matches
 	for ( int32_t i = 0 ; i < cr->m_numRegExs ; i++ ) {
-		// breathe
-		QUICKPOLL ( niceness );
 		// get the ith rule
 		SafeBuf *sb = &cr->m_regExs[i];
 		//char *p = cr->m_regExs[i];
