@@ -44,6 +44,34 @@ RdbBase::RdbBase()
 	// use bogus collnum just in case
 	m_collnum = -1;
 
+	// init below mainly to quiet coverity
+	m_x = 0;
+	m_a = 0;
+	m_fixedDataSize = 0;
+	m_coll = NULL;
+	m_didRepair = false;
+	m_tree = NULL;
+	m_buckets = NULL;
+	m_dump = NULL;
+	m_maxTreeMem = 0;
+	m_minToMergeArg = 0;
+	m_minToMerge = 0;
+	m_absMaxFiles = 0;
+	m_numFilesToMerge = 0;
+	m_mergeStartFileNum = 0;
+	m_useHalfKeys = false;
+	m_useIndexFile = false;
+	m_ks = 0;
+	m_pageSize = 0;
+	m_niceness = 0;
+	m_numPos = 0;
+	m_numNeg = 0;
+	m_isTitledb = false;
+	m_doLog = false;
+	memset(m_files, 0, sizeof(m_files));
+	memset(m_maps, 0, sizeof(m_maps));
+	memset(m_indexes, 0, sizeof(m_indexes));
+
 	reset();
 }
 
