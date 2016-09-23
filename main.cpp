@@ -5007,7 +5007,7 @@ bool pingTest ( int32_t hid , uint16_t clientPort ) {
 		return false;
 	}
 
-	char dgram[1450];
+	char dgram[DGRAM_SIZE];
 	int n;
 	struct sockaddr_in to;
 	sockaddr_in from;
@@ -5058,6 +5058,7 @@ bool pingTest ( int32_t hid , uint16_t clientPort ) {
 	sends++;
  readLoop2:
 	// loop until we read something
+	fromLen=sizeof(from);
 	n = recvfrom (sock,dgram,DGRAM_SIZE,0,(sockaddr *)(void*)&from, &fromLen);
 	if (gettimeofdayInMilliseconds() - start>2000) {lost++; goto sendLoop;}
 	if ( n <= 0 ) goto readLoop2; // { sched_yield(); goto readLoop2; }
