@@ -265,17 +265,18 @@ void RdbDump::tryAgainWrapper2 ( int fd , void *state ) {
 //   deleting it from the tree to keep the cache in sync. NO we do NOT!
 // . called again by writeBuf() when it's done writing the whole list
 bool RdbDump::dumpTree(bool recall) {
+
+	if( !m_rdb ) {
+		log(LOG_LOGIC,"%s:%s: m_rdb not set - bailing!", __FILE__, __func__);
+		g_errno = EBADENGINEER;
+		return false;
+	}
+
 	if (g_conf.m_logTraceRdbDump) {
 		logTrace(g_conf.m_logTraceRdbDump, "BEGIN");
 		logTrace(g_conf.m_logTraceRdbDump, "recall.: %s", recall ? "true" : "false");
-
-		const char *s = "none";
-		if (m_rdb) {
-			s = getDbnameFromId(m_rdb->getRdbId());
-			logTrace(g_conf.m_logTraceRdbDump, "m_rdbId: %02x", m_rdb->getRdbId());
-		}
-
-		logTrace(g_conf.m_logTraceRdbDump, "name...: [%s]", s);
+		logTrace(g_conf.m_logTraceRdbDump, "m_rdbId: %02x", m_rdb->getRdbId());
+		logTrace(g_conf.m_logTraceRdbDump, "name...: [%s]", getDbnameFromId(m_rdb->getRdbId()) );
 	}
 
 	// set up some vars
@@ -376,11 +377,7 @@ bool RdbDump::dumpTree(bool recall) {
 		// . check the list we got from the tree for problems
 		// . ensures keys are ordered from lowest to highest as well
 		if (g_conf.m_verifyWrites || g_conf.m_verifyDumpedLists) {
-			const char *s = "none";
-			if (m_rdb) {
-				s = getDbnameFromId(m_rdb->getRdbId());
-			}
-
+			const char *s = getDbnameFromId(m_rdb->getRdbId());
 			const char *ks1 = "";
 			const char *ks2 = "";
 			char tmp1[32];
