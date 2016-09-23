@@ -264,8 +264,7 @@ bool setLinkSpam ( int32_t       ip                 ,
 		   int32_t       siteNumInlinks     ,
 		   Xml       *xml                ,
 		   Links     *links              ,
-		   bool       isContentTruncated ,
-		   int32_t       niceness           ) {
+		   bool       isContentTruncated ) {
 	// get our url
 	//Url *linker = tr->getUrl();
 	// it is critical to get inlinks from all pingserver xml
@@ -605,8 +604,7 @@ bool isLinkSpam ( const Url *linker,
 		  const char **note ,
 		  const Url *linkee ,
 		  // node position of the linkee in the linker's content
-		  int32_t  linkNode ,
-		  int32_t  niceness ) {
+		  int32_t  linkNode ) {
 	// it is critical to get inlinks from all pingserver xml
 	// pages regardless if they are often large pages. we
 	// have to manually hard-code the ping servers in for now.

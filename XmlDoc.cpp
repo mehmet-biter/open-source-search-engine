@@ -3975,8 +3975,7 @@ Links *XmlDoc::getLinks ( bool doQuickSet ) {
 		      *sni               ,
 		      xml                ,
 		      &m_links           ,
-		      *ict               ,
-		      m_niceness         );
+		      *ict               );
 	// we got it
 	return &m_links;
 }
@@ -16913,8 +16912,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 						     150000,//MAXDOCLEN//150000
 						     &note ,
 						     &linkeeUrl , // url ,
-						     linkNode ,
-						     m_niceness );
+						     linkNode );
 		// store it
 		if ( note ) {
 			// include the \0
@@ -17584,8 +17582,7 @@ char *XmlDoc::getIsLinkSpam ( ) {
 				      150000,//MAXDOCLEN,//maxDocLen ,
 				      &m_note ,
 				      NULL , // &linkee , // url ,
-				      -1 , // linkNode ,
-				      m_niceness );
+				      -1 ); // linkNode ,
 	// set shadow
 	m_isLinkSpam2 = (bool)m_isLinkSpam;
 	return &m_isLinkSpam2;
