@@ -35,8 +35,7 @@ void Images::reset() {
 	m_phase = 0;
 }
 
-void Images::setCandidates ( Url *pageUrl , Words *words , Xml *xml ,
-			     Sections *sections , XmlDoc *xd ) {
+void Images::setCandidates ( Url *pageUrl , Words *words , Xml *xml , Sections *sections ) {
 	// not valid for now
 	m_thumbnailValid = false;
 	// reset our array of image node candidates
@@ -237,7 +236,6 @@ bool Images::getThumbnail ( char *pageSite ,
 			    XmlDoc *xd ,
 			    collnum_t collnum,//char *coll ,
 			    //char **statusPtr ,
-			    int32_t hopCount,
 			    void *state ,
 			    void   (*callback)(void *state) ) {
 	// sanity check

@@ -10718,15 +10718,13 @@ Images *XmlDoc::getImages ( ) {
 	if ( ! site || site == (char *)-1 ) return (Images *)site;
 	int64_t *d = getDocId();
 	if ( ! d || d == (int64_t *)-1 ) return (Images *)d;
-	int8_t *hc = getHopCount();
-	if ( ! hc || hc == (void *)-1 ) return (Images *)hc;
 	Url *cu = getCurrentUrl();
 	if ( ! cu || cu == (void *)-1 ) return (Images *)cu;
 
 	// . this does not block or anything
 	// . if we are a diffbot json reply it should just use the primary
 	//   image, if any, as the only candidate
-	m_images.setCandidates ( cu , words , xml , sections , this );
+	m_images.setCandidates ( cu , words , xml , sections );
 
 	setStatus ("getting thumbnail");
 
@@ -10739,8 +10737,6 @@ Images *XmlDoc::getImages ( ) {
 				       *d           ,
 				       this         ,
 				       cr->m_collnum       ,
-				       //NULL         , // statusPtr ptr
-				       *hc          ,
 				       m_masterState,
 				       m_masterLoop ) )
 		return (Images *)-1;
