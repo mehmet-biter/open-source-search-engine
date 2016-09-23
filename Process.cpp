@@ -1197,26 +1197,37 @@ double Process::getLoadAvg() {
 // out of sync for credit card transactions
 bool Process::checkNTPD ( ) {
 
-	if ( ! g_conf.m_isLive ) return true;
+	if ( ! g_conf.m_isLive ) {
+		return true;
+	}
 
 	FILE *pd = popen("ps auxww | grep ntpd | grep -v grep","r");
 	if ( ! pd ) {
 		log("gb: failed to ps auxww ntpd");
-		if ( ! g_errno ) g_errno = EBADENGINEER;
+		if ( ! g_errno ) {
+			g_errno = EBADENGINEER;
+		}
 		return false;
 	}
+
 	char tmp[1024];
 	char *ss = fgets ( tmp , 1000 , pd );
+	pclose(pd);
+
 	if ( ! ss ) {
 		log("gb: failed to ps auxww ntpd 2");
-		if ( ! g_errno ) g_errno = EBADENGINEER;
+		if ( ! g_errno ) {
+			g_errno = EBADENGINEER;
+		}
 		return false;
 	}
+
 	// must be there
 	if ( ! strstr ( tmp,"ntpd") ) {
-		log("gb: all proxies must have ntpd running! this "
-		    "one does not!");
-		if ( ! g_errno ) g_errno = EBADENGINEER;
+		log("gb: all proxies must have ntpd running! this one does not!");
+		if ( ! g_errno ) {
+			g_errno = EBADENGINEER;
+		}
 		return false;
 	}
 	return true;
