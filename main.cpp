@@ -768,19 +768,19 @@ int main2 ( int argc , char *argv[] ) {
 	// this is just like starting up a gb process, but we add one to
 	// each port, we are a dummy machine in the dummy cluster.
 	// gb -w <workingdir> tmpstart [hostId]
-	char useTmpCluster = 0;
+	bool useTmpCluster = false;
 	if ( strcmp ( cmd , "tmpstart" ) == 0 ) {
-		useTmpCluster = 1;
+		useTmpCluster = true;
 	}
 
 	// gb -w <workingdir> tmpstop [hostId]
 	if ( strcmp ( cmd , "tmpstop" ) == 0 ) {
-		useTmpCluster = 1;
+		useTmpCluster = true;
 	}
 
 	// gb -w <workingdir> tmpstarthost
 	if ( strcmp ( cmd , "tmpstarthost" ) == 0 ) {
-		useTmpCluster = 1;
+		useTmpCluster = true;
 	}
 
 	// gb inject <file> <ip:port> [startdocid]

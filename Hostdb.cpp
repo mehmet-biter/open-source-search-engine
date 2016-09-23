@@ -50,7 +50,36 @@ Hostdb::Hostdb ( ) {
 	m_crc = 0;
 	m_created = false;
 	m_myHost = NULL;
+	m_myIp = 0;
+	m_myIpShotgun = 0;
+	m_myPort = 0;
+	m_myMachineNum = -1;
+	m_myHost = NULL;
+	m_myShard = NULL;
+	m_loopbackIp = atoip ( "127.0.0.1" , 9 );
+	m_numHosts = 0;
+	m_numHostsAlive = 0;
+	m_allocSize = 0;
+	m_numHostsPerShard  = 0;
+	m_numStripeHostsPerShard = 0;
+	m_bufSize = 0;
+	m_numMachines = 0;
+	m_numIps = 0;
+	m_hostId = 0;
+	m_numShards = 0;
+	m_indexSplits = 0;
+	m_numSpareHosts = 0;
+	m_numProxyHosts = 0;
+	m_numProxyAlive = 0;
+	m_numTotalHosts = 0;
+	m_useTmpCluster = false;
+
+	memset(m_hostPtrs, 0, sizeof(m_hostPtrs));
+	memset(m_shards, 0, sizeof(m_shards));
+	memset(m_spareHosts, 0, sizeof(m_spareHosts));
+	memset(m_proxyHosts, 0, sizeof(m_proxyHosts));
 }
+
 
 Hostdb::~Hostdb () {
 	reset();
@@ -73,7 +102,7 @@ const char *Hostdb::getNetName ( ) {
 // . gets filename that contains the hosts from the Conf file
 // . return false on errro
 // . g_errno may NOT be set
-bool Hostdb::init(int32_t hostIdArg, char *netName, bool proxyHost, char useTmpCluster, const char *cwd) {
+bool Hostdb::init(int32_t hostIdArg, char *netName, bool proxyHost, bool useTmpCluster, const char *cwd) {
 	// reset my ip and port
 	m_myIp             = 0;
 	m_myIpShotgun      = 0;
