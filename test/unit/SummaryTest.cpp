@@ -32,7 +32,7 @@ static void generateSummary( Summary &summary, char *htmlInput, const char *quer
 	url.set(urlStr);
 
 	Sections sections;
-	ASSERT_TRUE(sections.set(&words, &bits, &url, "", 0, CT_HTML));
+	ASSERT_TRUE(sections.set(&words, &bits, &url, "", CT_HTML));
 
 	Query query;
 	ASSERT_TRUE(query.set2(queryStr, langEnglish, true));
@@ -42,7 +42,7 @@ static void generateSummary( Summary &summary, char *htmlInput, const char *quer
 	linkInfo.m_lisize = sizeof(LinkInfo);
 
 	Title title;
-	ASSERT_TRUE(title.setTitle(&xml, &words, 80, &query, &linkInfo, &url, NULL, 0, CT_HTML, langEnglish, 0));
+	ASSERT_TRUE(title.setTitle(&xml, &words, 80, &query, &linkInfo, &url, NULL, 0, CT_HTML, langEnglish));
 
 	Pos pos;
 	ASSERT_TRUE(pos.set(&words));
