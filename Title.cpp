@@ -224,8 +224,6 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 	// . get every link text
 	// . TODO: repeat for linkInfo2, the imported link text
 	for ( Inlink *k = NULL; linkInfo && (k = linkInfo->getNextInlink(k)) ; ) {
-		// breathe
-		QUICKPOLL(m_niceness);
 		// fast skip check for link text
 		if ( k->size_linkText >= 3 && ++kcount >= 20 ) continue;
 		// fast skip check for rss item
@@ -351,9 +349,6 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 	char inLink   = false;
 	char selfLink = false;
 	for ( int32_t i = 0 ; i < NW ; i++ ) {
-		// breathe
-		QUICKPOLL(m_niceness);
-
 		// if in a link that is not self link, cannot be in a candidate
 		if ( inLink && ! selfLink ) {
 			flags[i] |= 0x02;
