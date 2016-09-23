@@ -4495,7 +4495,7 @@ bool parseTest ( const char *coll, int64_t docId, const char *query ) {
 	Phrases phrases;
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < 100 ; i++ )
-		if ( !phrases.set( &words, &bits, 0 ) ) {
+		if ( !phrases.set( &words, &bits ) ) {
 			log(LOG_WARN, "build: speedtestxml: Phrases set: %s", mstrerror(g_errno));
 			return false;
 		}
