@@ -345,8 +345,6 @@ bool RdbBucket::addKey(const char *key, const char *data, int32_t dataSize) {
 }
 
 char* RdbBucket::getKeyVal( const char *key , char **data , int32_t* dataSize ) {
-	sort();
-
 	int32_t i = getNode(key);
 	if (i < 0) {
 		return NULL;
@@ -366,7 +364,9 @@ char* RdbBucket::getKeyVal( const char *key , char **data , int32_t* dataSize ) 
 	return rec;
 }
 
-int32_t RdbBucket::getNode(const char *key) const {
+int32_t RdbBucket::getNode(const char *key) {
+	sort();
+
 	uint8_t ks = m_parent->getKeySize();
 	int32_t recSize = m_parent->getRecSize();
 	int32_t i = 0;
@@ -1135,7 +1135,6 @@ char *RdbBuckets::getKeyVal(collnum_t collnum, const char *key, char **data, int
 	return m_buckets[i]->getKeyVal(key, data, dataSize);
 }
 
-
 void RdbBuckets::updateNumRecs(int32_t n, int32_t bytes, int32_t numNeg) {
 	m_numKeysApprox += n;
 	m_dataMemOccupied += bytes;
@@ -1482,6 +1481,35 @@ int RdbBucket::getListSizeExact(const char *startKey, const char *endKey) {
 	return numRecs * ks;
 }
 
+bool RdbBuckets::deleteNode(collnum_t collnum, const char *key) {
+	int32_t i = getBucketNum(collnum, key);
+	if (i == m_numBuckets || m_buckets[i]->getCollnum() != collnum) {
+		return false;
+	}
+
+	int32_t node = m_buckets[i]->getNode(key);
+	if (node == -1) {
+		return false;
+	}
+
+	if (!m_buckets[i]->deleteNode(node)) {
+		m_buckets[i]->reset();
+		memmove(m_buckets[i], m_buckets[i + 1], m_numBuckets - i - 1);
+		--m_numBuckets;
+	}
+
+	// did we delete the whole darn thing?
+	if (m_numBuckets == 0) {
+		if (m_numKeysApprox != 0) {
+			log(LOG_ERROR, "db: bucket's number of keys is getting off by %" PRId32" after deleting a node", m_numKeysApprox);
+			gbshutdownCorrupted();
+		}
+		m_firstOpenSlot = 0;
+	}
+
+	return true;
+}
+
 bool RdbBuckets::deleteList(collnum_t collnum, RdbList *list) {
 	if (list->getListSize() == 0) {
 		return true;
@@ -1541,6 +1569,39 @@ bool RdbBuckets::deleteList(collnum_t collnum, RdbList *list) {
 		m_firstOpenSlot = 0;
 	}
 	return true;
+}
+
+bool RdbBucket::deleteNode(int32_t i) {
+	int32_t recSize = m_parent->getRecSize();
+	char *rec = m_keys + (recSize * i);
+
+	char *data = NULL;
+	int32_t dataSize = m_parent->getFixedDataSize();
+	if (dataSize != 0) {
+		data = rec + m_parent->getKeySize();
+
+		if (dataSize == -1) {
+			dataSize = *(int32_t*)(data + sizeof(char*));
+		}
+
+		/// @todo ALC use proper note
+		mdelete(data, dataSize, "RdbBucketData");
+		delete data;
+	}
+
+	// delete record
+	memmove(rec, rec + recSize, m_numKeys * recSize);
+	m_parent->updateNumRecs(-1, -dataSize, -(KEYNEG(rec)));
+	--m_numKeys;
+
+	// make sure there are still entries left
+	if (m_numKeys) {
+		m_endKey = m_keys + ((m_numKeys - 1) * recSize);
+		m_lastSorted = m_numKeys;
+		return true;
+	}
+
+	return false;
 }
 
 bool RdbBucket::deleteList(RdbList *list) {
