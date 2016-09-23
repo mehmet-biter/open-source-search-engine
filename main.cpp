@@ -3251,6 +3251,12 @@ void addUStat1 ( SpiderRequest *sreq, bool hadReply , int32_t now ) {
 	else {
 		us = (UStat *)g_ut.getValueFromSlot ( n );
 	}
+
+	if( !us ) {
+		log(LOG_LOGIC,"%s:%s: us is NULL", __FILE__, __func__);
+		return;
+	}
+
 	int32_t age = now - sreq->m_addedTime;
 	// inc the counts
 	us->m_numRequests++;
