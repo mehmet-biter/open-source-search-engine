@@ -1860,7 +1860,7 @@ static bool printInlinkText ( SafeBuf *sb , Msg20Reply *mr , SearchInput *si ,
 
 		Highlight hi;
 		SafeBuf hb;
-		int32_t hlen = hi.set ( &hb, str, strLen , &si->m_hqq, frontTag, backTag, 0 );
+		int32_t hlen = hi.set ( &hb, str, strLen , &si->m_hqq, frontTag, backTag );
 		if ( hlen <= 0 ) {
 			continue;
 		}
@@ -2511,7 +2511,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 
 	StackBuf(hb);
 	if ( str && strLen && si->m_doQueryHighlighting ) {
-		hlen = hi.set ( &hb, tmpTitle.getBufStart(), tmpTitle.getLength(), &si->m_hqq, frontTag, backTag, 0);
+		hlen = hi.set ( &hb, tmpTitle.getBufStart(), tmpTitle.getLength(), &si->m_hqq, frontTag, backTag);
 
 		// reassign!
 		str = hb.getBufStart();

@@ -17479,7 +17479,7 @@ char *XmlDoc::getHighlightedSummary ( bool *isSetFromTagsPtr ) {
 	StackBuf(hb);
 
 	// highlight the query in it
-	int32_t hlen = hi.set ( &hb, tmpSum.getBufStart(), tmpSum.getLength(), q, "<b>", "</b>", m_niceness );
+	int32_t hlen = hi.set ( &hb, tmpSum.getBufStart(), tmpSum.getLength(), q, "<b>", "</b>" );
 
 	// highlight::set() returns 0 on error
 	if ( hlen < 0 ) {
