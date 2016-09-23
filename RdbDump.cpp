@@ -138,7 +138,9 @@ bool RdbDump::set(collnum_t collnum,
 	// a flag that doesn't do that... see RdbDump.cpp.
 	// this was in Rdb.cpp but when threads were turned off it was
 	// NEVER getting set and resulted in corruption in RdbMem.cpp.
-	m_rdb->setInDumpLoop(true);
+	if( m_rdb ) {
+		m_rdb->setInDumpLoop(true);
+	}
 
 	// . start dumping the tree
 	// . return false if it blocked
@@ -266,17 +268,13 @@ void RdbDump::tryAgainWrapper2 ( int fd , void *state ) {
 // . called again by writeBuf() when it's done writing the whole list
 bool RdbDump::dumpTree(bool recall) {
 
-	if( !m_rdb ) {
-		log(LOG_LOGIC,"%s:%s: m_rdb not set - bailing!", __FILE__, __func__);
-		g_errno = EBADENGINEER;
-		return false;
-	}
-
 	if (g_conf.m_logTraceRdbDump) {
 		logTrace(g_conf.m_logTraceRdbDump, "BEGIN");
 		logTrace(g_conf.m_logTraceRdbDump, "recall.: %s", recall ? "true" : "false");
-		logTrace(g_conf.m_logTraceRdbDump, "m_rdbId: %02x", m_rdb->getRdbId());
-		logTrace(g_conf.m_logTraceRdbDump, "name...: [%s]", getDbnameFromId(m_rdb->getRdbId()) );
+		if( m_rdb ) {
+			logTrace(g_conf.m_logTraceRdbDump, "m_rdbId: %02x", m_rdb->getRdbId());
+			logTrace(g_conf.m_logTraceRdbDump, "name...: [%s]", getDbnameFromId(m_rdb->getRdbId()) );
+		}
 	}
 
 	// set up some vars
@@ -288,7 +286,7 @@ bool RdbDump::dumpTree(bool recall) {
 	// because it may have a query that took 10 seconds come in then it
 	// needs to add a partial stat to the last 10 stats for those 10 secs.
 	// we use Global time at this juncture
-	if (m_rdb->getRdbId() == RDB_STATSDB) {
+	if( m_rdb && m_rdb->getRdbId() == RDB_STATSDB) {
 		int32_t nowSecs = getTimeGlobal();
 		StatKey *sk = (StatKey *)maxEndKey;
 		sk->m_zero = 0x01;
@@ -377,7 +375,7 @@ bool RdbDump::dumpTree(bool recall) {
 		// . check the list we got from the tree for problems
 		// . ensures keys are ordered from lowest to highest as well
 		if (g_conf.m_verifyWrites || g_conf.m_verifyDumpedLists) {
-			const char *s = getDbnameFromId(m_rdb->getRdbId());
+			const char *s = (m_rdb ? "none" : getDbnameFromId(m_rdb->getRdbId()));
 			const char *ks1 = "";
 			const char *ks2 = "";
 			char tmp1[32];
@@ -391,15 +389,17 @@ bool RdbDump::dumpTree(bool recall) {
 				ks2 = tmp2;
 			}
 
-			log(LOG_INFO, "dump: verifying list before dumping (rdb=%s collnum=%i k1=%s k2=%s)", s, (int)m_collnum, ks1,
-			    ks2);
-			m_list->checkList_r(false, m_rdb->getRdbId());
+			if( m_rdb ) {
+				log(LOG_INFO, "dump: verifying list before dumping (rdb=%s collnum=%i k1=%s k2=%s)", s, (int)m_collnum, ks1,
+				    ks2);
+				m_list->checkList_r(false, m_rdb->getRdbId());
+			}
 		}
 
 		// if list is empty, we're done!
 		if (m_list->isEmpty()) {
 			// consider that a rollover?
-			if (m_rdb->getRdbId() == RDB_STATSDB) {
+			if( m_rdb && m_rdb->getRdbId() == RDB_STATSDB) {
 				m_rolledOver = true;
 			}
 			return true;
