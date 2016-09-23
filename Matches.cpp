@@ -27,6 +27,7 @@ Matches::Matches()
     m_qwordAllocSize(0),
     m_numMatchGroups(0)
 {
+	memset(&m_matches, 0, sizeof(m_matches));	//@todo: added to silence Coverity. Remove if impacting performance (quite big memset)
 }
 
 
@@ -142,6 +143,11 @@ void Matches::setQuery ( Query *q ) {
 	for ( int32_t i = 0 ; i < nqt ; i++ ) {
 		// get query word #i
 		QueryTerm *qt = &m_q->m_qterms[i];
+
+		if( !qt ) {
+			continue;
+		}
+
 		// skip if ignored *in certain ways only*
 		if ( ! isMatchableTerm ( qt ) ) {
 			continue;
@@ -162,21 +168,27 @@ void Matches::setQuery ( Query *q ) {
 		int64_t qid = qt->m_rawTermId;//qw->m_rawWordId;
 
 		// but NOT for 'cheatcodes.com'
-		if ( qt->m_isPhrase ) qid = qw->m_rawWordId;
+		if ( qt->m_isPhrase ) {
+			qid = qw->m_rawWordId;
+		}
 
 		// if its a multi-word synonym, like "new jersey" we must
 		// index the individual words... or compute the phrase ids
 		// for all the words in the doc. right now the qid is
 		// the phrase hash for this guy i think...
-		if ( qt->m_synonymOf && qt->m_numAlnumWordsInSynonym == 2 )
+		if ( qt->m_synonymOf && qt->m_numAlnumWordsInSynonym == 2 ) {
 			qid = qt->m_synWids0;
+		}
 
 		// put in hash table
 		n = ((uint32_t)qid) & mask;
 
 		// chain to an empty slot
-		while ( m_qtableIds[n] && m_qtableIds[n] != qid ) 
-			if ( ++n >= m_numSlots ) n = 0;
+		while ( m_qtableIds[n] && m_qtableIds[n] != qid ) {
+			if ( ++n >= m_numSlots ) {
+				n = 0;
+			}
+		}
 
 		// . if already occupied, do not overwrite this, keep this
 		//   first word, the other is often ignored as IGNORE_REPEAT
@@ -189,15 +201,22 @@ void Matches::setQuery ( Query *q ) {
 		// in quotes? this term may appear multiple times in the
 		// query, in some cases in quotes, and in some cases not.
 		// we need to know either way for logic below.
-		if ( qw->m_inQuotes ) m_qtableFlags[n] |= 0x02;
-		else                  m_qtableFlags[n] |= 0x01;
+		if ( qw->m_inQuotes ) {
+			m_qtableFlags[n] |= 0x02;
+		}
+		else {
+			m_qtableFlags[n] |= 0x01;
+		}
 
 		// this is basically a quoted synonym
-		if ( qt->m_numAlnumWordsInSynonym == 2 )
+		if ( qt->m_numAlnumWordsInSynonym == 2 ) {
 			m_qtableFlags[n] |=  0x08;
+		}
 
 		//QueryTerm *qt = qw->m_queryWordTerm;
-		if ( qt && qt->m_termSign == '+' ) m_qtableFlags[n] |= 0x04;
+		if ( qt->m_termSign == '+' ) {
+			m_qtableFlags[n] |= 0x04;
+		}
 
 		//
 		// if query has e-mail, then index phrase id "email" so
@@ -206,7 +225,10 @@ void Matches::setQuery ( Query *q ) {
 		// highlights 'cheatcodes'
 		//
 		int64_t pid = qw->m_rawPhraseId;
-		if ( pid == 0 ) continue;
+		if ( pid == 0 ) {
+			continue;
+		}
+
 		// put in hash table
 		n = ((uint32_t)pid) & mask;
 		// chain to an empty slot
