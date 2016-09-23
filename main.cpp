@@ -3104,8 +3104,6 @@ void dumpWaitingTree (const char *coll ) {
 	// the the waiting tree
 	int32_t node = wt.getFirstNode();
 	for ( ; node >= 0 ; node = wt.getNextNode(node) ) {
-		// breathe
-		QUICKPOLL(MAX_NICENESS);
 		// get key
 		key96_t *key = (key96_t *)wt.getKey(node);
 		// get ip from that
