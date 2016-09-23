@@ -59,6 +59,7 @@ OBJS_O3 = \
 	IPAddressChecks.o \
 	Linkdb.o \
 	Msg40.o \
+	Msg25.o \
 	RdbBuckets.o RdbIndex.o RdbIndexQuery.o RdbList.o RdbMap.o \
 	SafeBuf.o sort.o Statistics.o \
 	TopTree.o \

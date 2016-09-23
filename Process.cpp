@@ -158,7 +158,7 @@ bool Process::getFilesToCopy ( const char *srcDir , SafeBuf *buf ) {
 	int32_t slen = strlen(srcDir);
 	if ( srcDir[slen-1] != '/' ) { g_process.shutdownAbort(true); }
 
-	for ( int32_t i = 0 ; i < (int32_t)sizeof(g_files)/4 ; i++ ) {
+	for ( int32_t i = 0 ; i < (int32_t)sizeof(g_files) / (int32_t)sizeof(g_files[0]) ; i++ ) {
 		// terminate?
 		if ( ! g_files[i] ) break;
 		// skip subdir shit it won't work
@@ -184,7 +184,7 @@ bool Process::checkFiles ( const char *dir ) {
 	// make sure we got all the files
 	bool needsFiles = false;
 
-	for ( int32_t i = 0 ; i < (int32_t)sizeof(g_files)/4 ; i++ ) {
+	for ( int32_t i = 0 ; i < (int32_t)sizeof(g_files) / (int32_t)sizeof(g_files[0]) ; i++ ) {
 		// terminate?
 		if ( ! g_files[i] ) {
 			break;
