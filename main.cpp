@@ -7699,25 +7699,35 @@ const char *getcwd2 ( char *arg2 ) {
 	// if it is a symbolic link...
 	// get real path (no symlinks symbolic links)
 	char tmp[1026];
-	int32_t tlen = readlink ( arg2 , tmp , 1020 );
+	int32_t tlen = readlink ( arg2 , tmp , sizeof(tmp)-1);
+
 	// if we got the actual path, copy that over
 	if ( tlen != -1 ) {
+		tmp[ tlen ] = '\0';
+
 		//fprintf(stderr,"tmp=%s\n",tmp);
 		// if symbolic link is relative...
-		if ( tmp[0]=='.' && tmp[1]=='.') {
+		if ( tlen >= 2 && tmp[0] == '.' && tmp[1] == '.') {
 			// store original path (/bin/gb --> ../../var/gigablast/data/gb)
-			strcpy(arg,arg2); // /bin/gb
+			strncpy(arg, arg2, sizeof(argBuf)-1); // /bin/gb
+			argBuf[ sizeof(argBuf)-1 ] = '\0';
+
 			// back up to /
-			while(arg[strlen(arg)-1] != '/' ) arg[strlen(arg)-1] = '\0';
+			while(arg[strlen(arg)-1] != '/' ) {
+				arg[strlen(arg)-1] = '\0';
+			}
 			int32_t len2 = strlen(arg);
-			strcpy(arg+len2,tmp);
+			strncpy(arg+len2, tmp, sizeof(argBuf)-len2-1);
+			argBuf[ sizeof(argBuf)-1 ] = '\0';
 		}
 		else {
-			strcpy(arg,tmp);
+			strncpy(arg,tmp,sizeof(argBuf)-1);
+			argBuf[ sizeof(argBuf)-1 ] = '\0';
 		}
 	}
 	else {
-		strcpy(arg,arg2);
+		strncpy(arg,arg2, sizeof(argBuf)-1);
+		argBuf[ sizeof(argBuf)-1 ] = '\0';
 	}
 
  again:
