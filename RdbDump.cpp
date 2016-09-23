@@ -381,11 +381,13 @@ bool RdbDump::dumpTree(bool recall) {
 			char tmp1[32];
 			char tmp2[32];
 
-			strcpy(tmp1, KEYSTR(m_firstKeyInQueue, m_list->getKeySize()));
+			strncpy(tmp1, KEYSTR(m_firstKeyInQueue, m_list->getKeySize()), sizeof(tmp1));
+			tmp1[ sizeof(tmp1)-1 ] = '\0';
 			ks1 = tmp1;
 
 			if (m_lastKeyInQueue) {
-				strcpy(tmp2, KEYSTR(m_lastKeyInQueue, m_list->getKeySize()));
+				strncpy(tmp2, KEYSTR(m_lastKeyInQueue, m_list->getKeySize()), sizeof(tmp2));
+				tmp2[ sizeof(tmp2)-1 ] = '\0';
 				ks2 = tmp2;
 			}
 
