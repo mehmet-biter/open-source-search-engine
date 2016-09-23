@@ -5128,7 +5128,13 @@ bool pingTest ( int32_t hid , uint16_t clientPort ) {
 	// send back an ack
 	size = up->makeAck ( dgram, dnum, transId , true/*weinit?*/ , false );
 	n = sendto(sock,dgram,size,0,(struct sockaddr *)(void*)&to,sizeof(to));
-	// mark our first read
+
+	if ( n != size ) {
+		close ( sock );
+		log(LOG_WARN, "net: pingtest: sendto returned %i (should have returned %" PRId32")",n,size);
+		return false;
+	}
+
 	goto sendLoop;
 }
 
