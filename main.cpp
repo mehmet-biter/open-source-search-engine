@@ -7567,8 +7567,8 @@ void countdomains( const char* coll, int32_t numRecs, int32_t verbosity, int32_t
 		     ima + dma + (8 * numRecs) );
 		log( LOG_INFO, "cntDm: %" PRId32" bytes Total for IP.", ima );
 		log( LOG_INFO, "cntDm: %" PRId32" bytes Total for Dom.", dma );
-		log( LOG_INFO, "cntDm: %" PRId32" bytes Average for IP.", ima/countIp );
-		log( LOG_INFO, "cntDm: %" PRId32" bytes Average for Dom.", dma/countDom );
+		log( LOG_INFO, "cntDm: %" PRId32" bytes Average for IP.", countIp ? ima/countIp : 0 );
+		log( LOG_INFO, "cntDm: %" PRId32" bytes Average for Dom.", countDom ? dma/countDom : 0 );
 		
 		return;
 	}	
