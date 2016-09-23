@@ -173,7 +173,7 @@ const char *ucDetectBOM(char *buf, int32_t bufsize){
 
 int32_t ucToAny(char *outbuf, int32_t outbufsize, const char *charset_out,
 		 char *inbuf, int32_t inbuflen, const char *charset_in,
-		 int32_t ignoreBadChars , int32_t niceness ){
+		 int32_t ignoreBadChars ){
 	if (inbuflen == 0) return 0;
 	// alias for iconv
 	const char *csAlias = charset_in;

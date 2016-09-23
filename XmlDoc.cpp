@@ -9727,8 +9727,7 @@ char **XmlDoc::getRawUtf8Content ( ) {
 				       m_filteredContent    ,
 				       m_filteredContentLen ,
 				       csName               ,
-				       -1                   ,//allowBadChars
-				       m_niceness           );
+				       -1                   );//allowBadChars
 		// clear this if successful, otherwise, it sets errno
 		if ( used > 0 ) g_errno = 0;
 		// unrecoverable error? bad charset is g_errno == E2BIG
