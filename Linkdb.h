@@ -659,7 +659,7 @@ class LinkInfo {
 
 	class Inlink *getNextInlink ( class Inlink *k ) ;
 
-	bool getItemXml ( Xml *xml , int32_t niceness ) ;
+	bool getItemXml ( Xml *xml ) ;
 
 	bool hasLinkText ( );
 
@@ -720,7 +720,7 @@ class Inlink {
 	// set ourselves from a serialized older-versioned Inlink
 	void set2 ( const Inlink *old );
 
-	bool setXmlFromRSS      ( Xml *xml , int32_t niceness ) ;
+	bool setXmlFromRSS      ( Xml *xml ) ;
 
 	// . set a Msg20Reply from ourselves
 	// . Msg25 uses this to recycle old inlinks that are now gone

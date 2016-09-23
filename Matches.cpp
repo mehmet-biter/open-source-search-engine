@@ -321,7 +321,7 @@ bool Matches::set( Words *bodyWords, Phrases *bodyPhrases, Sections *bodySection
 
 		// parse the rss up into xml
 		Xml rxml;
-		if ( ! k->setXmlFromRSS ( &rxml , niceness ) ) {
+		if ( ! k->setXmlFromRSS ( &rxml ) ) {
 			return false;
 		}
 

@@ -281,8 +281,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 		// get the rss item
 		if ( k->size_rssItem <= 10 ) continue;
 		// . returns false and sets g_errno on error
-		// . use a 0 for niceness
-		if ( ! k->setXmlFromRSS ( &tx[ti] , 0 ) ) return false;
+		if ( ! k->setXmlFromRSS ( &tx[ti] ) ) return false;
 		// get the word range
 		int32_t tslen;
 		bool isHtmlEnc;

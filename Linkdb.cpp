@@ -3160,7 +3160,7 @@ Inlink *LinkInfo::getNextInlink ( Inlink *k ) {
 // . returns false and sets g_errno on error
 // . returns true if no error was encountered
 // . call xml->isEmpty() to see if you got anything
-bool LinkInfo::getItemXml ( Xml *xml , int32_t niceness ) {
+bool LinkInfo::getItemXml ( Xml *xml ) {
 	// reset it
 	xml->reset();
 	// loop through the Inlinks
@@ -3174,10 +3174,10 @@ bool LinkInfo::getItemXml ( Xml *xml , int32_t niceness ) {
 	// return if nada
 	if ( ! k ) return true;
 	// set the xml
-	return k->setXmlFromRSS ( xml , niceness );
+	return k->setXmlFromRSS ( xml );
 }
 
-bool Inlink::setXmlFromRSS ( Xml *xml , int32_t niceness ) {
+bool Inlink::setXmlFromRSS ( Xml *xml ) {
 	// compute the length (excludes the \0's)
 	int32_t len = size_rssItem - 1;
 
