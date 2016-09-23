@@ -7,6 +7,8 @@
 Pos::Pos() {
 	m_buf = NULL;
 	m_needsFree = false;
+	m_pos = NULL;
+	m_bufSize = 0;
 }
 
 Pos::~Pos () {
