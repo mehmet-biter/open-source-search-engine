@@ -1125,8 +1125,6 @@ bool Repair::scanRecs ( ) {
 // . returns false if blocked, true otherwise
 bool Repair::gotScanRecList ( ) {
 
-	QUICKPOLL(MAX_NICENESS);
-
 	// get the base
 	//RdbBase *base = g_titledb.getRdb()->getBase ( m_collnum );
 
@@ -1319,7 +1317,6 @@ static void doneWithIndexDoc ( XmlDoc *xd ) {
 		g_repair.m_stage = STAGE_TITLEDB_0; // 0
 		return;
 	}
-	QUICKPOLL(MAX_NICENESS);
 	/*
 	// find the i
 	int32_t i ; for ( i = 0 ; i < MAX_OUT_REPAIR ; i++ ) {
@@ -1353,8 +1350,6 @@ bool Repair::injectTitleRec ( ) {
 	// dbs we want to update
 	//if ( ! m_fullRebuild && ! m_removeBadPages ) return true;
 
-	QUICKPOLL(MAX_NICENESS);
-
 	// scan for our docid in the title rec list
 	char *titleRec = NULL;
 	int32_t titleRecSize = 0;
@@ -1362,8 +1357,6 @@ bool Repair::injectTitleRec ( ) {
 	RdbList *tlist = &m_titleRecList;
 	// scan the titleRecs in the list
 	for ( ; ! tlist->isExhausted() ; tlist->skipCurrentRecord ( ) ) {
-		// breathe
-		QUICKPOLL ( MAX_NICENESS );
 		// get the rec
 		char *rec     = tlist->getCurrentRec();
 		int32_t  recSize = tlist->getCurrentRecSize();
