@@ -5798,15 +5798,17 @@ void doInject ( int fd , void *state ) {
 			      "u=",
 			      ipStr,
 			      (int32_t)s_isDelete);
+
+		if ( ! url ) {
+			g_process.shutdownAbort(true);
+		}
+
+
 		// url encode the url
 		rp += urlEncode ( rp , 4000 , url , strlen(url) );
 		// finish it up
 		rp += sprintf(rp,"&ucontent=");
 
-		if ( ! url ) {
-			// what is this?
-			g_process.shutdownAbort(true);
-		}
 
 		// store the content after the &ucontent
 		gbmemcpy ( rp , contentPtr , contentPtrLen );
