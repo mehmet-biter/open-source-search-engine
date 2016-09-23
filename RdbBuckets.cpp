@@ -1912,10 +1912,13 @@ bool RdbBuckets::fastSave_r() {
 
 	// close it up
 	close(fd);
-	// now fucking rename it
+
 	char s2[1024];
 	sprintf(s2, "%s/%s-buckets-saved.dat", m_dir, m_dbname);
-	::rename(s, s2); //fuck yeah!
+	if( ::rename(s, s2) == -1 ) {
+		log(LOG_LOGIC,"%s:%s: ERROR %d renaming [%s] to [%s]", __FILE__, __func__, errno, s, s2);
+		gbshutdownAbort(true);
+	}
 
 	log(LOG_INFO, "db: RdbBuckets saved %" PRId32" keys, %" PRId64" bytes for %s", getNumKeys(), offset, m_dbname);
 
