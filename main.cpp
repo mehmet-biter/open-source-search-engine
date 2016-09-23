@@ -3300,13 +3300,20 @@ void addUStat2 ( SpiderReply *srep , int32_t now ) {
 	else {
 		us = (UStat *)g_ut.getValueFromSlot ( n );
 	}
+
+	if( !us ) {
+		log(LOG_LOGIC,"%s:%s: us is NULL", __FILE__, __func__);
+		return;
+	}
+
 	//int32_t age = now - srep->m_spideredTime;
 	// inc the counts
-	if ( srep->m_errCode )
+	if ( srep->m_errCode ) {
 		us->m_numErrorReplies++;
-	else
+	}
+	else {
 		us->m_numGoodReplies++;
-
+	}
 }
 
 
