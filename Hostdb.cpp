@@ -1393,9 +1393,9 @@ bool Hostdb::saveHostsConf ( ) {
 	sprintf ( filename, "%shosts.conf", m_dir );
 	log ( LOG_INFO, "conf: Writing hosts.conf file to: %s",
 			filename );
-	int32_t fd = open ( filename, O_CREAT|O_WRONLY|O_TRUNC ,
+	int fd = open ( filename, O_CREAT|O_WRONLY|O_TRUNC ,
 			    getFileCreationFlags() );
-	if ( !fd ) {
+	if ( fd < 0 ) {
 		log ( "conf: Failed to open %s for writing.", filename );
 		return false;
 	}
