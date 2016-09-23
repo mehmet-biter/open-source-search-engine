@@ -4598,6 +4598,8 @@ bool parseTest ( const char *coll, int64_t docId, const char *query ) {
 	return true;
 }	
 
+
+
 bool summaryTest1   ( char *rec, int32_t listSize, const char *coll, int64_t docId, const char *query ) {
 
 	// start the timer
@@ -4612,7 +4614,10 @@ bool summaryTest1   ( char *rec, int32_t listSize, const char *coll, int64_t doc
 	// loop parse
 	for ( int32_t i = 0 ; i < 100 ; i++ ) {
 		XmlDoc xd;
-		xd.set2 (rec, listSize, coll,NULL,0);
+		if( !xd.set2 (rec, listSize, coll,NULL,0) ) {
+			log(LOG_ERROR,"%s:%s: XmlDoc.set2 failed", __FILE__, __func__);
+			return false;
+		}
 		// get content
 		content    = xd.ptr_utf8Content;//tr.getContent();
 		contentLen = xd.size_utf8Content-1;//tr.getContentLen();
@@ -4633,6 +4638,8 @@ bool summaryTest1   ( char *rec, int32_t listSize, const char *coll, int64_t doc
 	log("build: %.3f bytes/msec", bpms);
 	return true;
 }
+
+
 
 void dumpPosdb (const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree, int64_t termId ) {
 	g_posdb.init ();
