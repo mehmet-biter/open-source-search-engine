@@ -237,12 +237,12 @@ bool Matches::set( Words *bodyWords, Phrases *bodyPhrases, Sections *bodySection
 	}
 
 	// add the title in
-	if ( !addMatches( tt->getTitle(), tt->getTitleLen(), MF_TITLEGEN, niceness ) ) {
+	if ( !addMatches( tt->getTitle(), tt->getTitleLen(), MF_TITLEGEN ) ) {
 		return false;
 	}
 
 	// add in the url terms
-	if ( !addMatches( firstUrl->getUrl(), firstUrl->getUrlLen(), MF_URL, niceness ) ) {
+	if ( !addMatches( firstUrl->getUrl(), firstUrl->getUrlLen(), MF_URL ) ) {
 		return false;
 	}
 
@@ -255,7 +255,7 @@ bool Matches::set( Words *bodyWords, Phrases *bodyPhrases, Sections *bodySection
 	if ( a >= 0 && b >= 0 && b>a ) {
 		start = bodyWords->getWord(a);
 		end   = bodyWords->getWord(b-1) + bodyWords->getWordLen(b-1);
-		if ( !addMatches( start, end - start, MF_TITLETAG, niceness ) ) {
+		if ( !addMatches( start, end - start, MF_TITLETAG ) ) {
 			return false;
 		}
 	}
@@ -287,7 +287,7 @@ bool Matches::set( Words *bodyWords, Phrases *bodyPhrases, Sections *bodySection
 		char *s = bodyXml->getString ( i , "content" , &len );
 		if ( ! s || len <= 0 ) continue;
 		// wordify
-		if ( !addMatches( s, len, flag, niceness ) ) {
+		if ( !addMatches( s, len, flag ) ) {
 			return false;
 		}
 	}
@@ -307,7 +307,7 @@ bool Matches::set( Words *bodyWords, Phrases *bodyPhrases, Sections *bodySection
 		mf_t flags = MF_LINK;
 
 		// add it in
-		if ( !addMatches( k->getLinkText(), k->size_linkText - 1, flags, niceness ) ) {
+		if ( !addMatches( k->getLinkText(), k->size_linkText - 1, flags ) ) {
 			return false;
 		}
 
@@ -315,7 +315,7 @@ bool Matches::set( Words *bodyWords, Phrases *bodyPhrases, Sections *bodySection
 		flags = MF_HOOD;
 
 		// add it in
-		if ( !addMatches( k->getSurroundingText(), k->size_surroundingText - 1, flags, niceness ) ) {
+		if ( !addMatches( k->getSurroundingText(), k->size_surroundingText - 1, flags ) ) {
 			return false;
 		}
 
@@ -329,14 +329,14 @@ bool Matches::set( Words *bodyWords, Phrases *bodyPhrases, Sections *bodySection
 		bool isHtmlEncoded;
 		int32_t rdlen;
 		char *rd = rxml.getRSSDescription( &rdlen, &isHtmlEncoded );
-		if ( !addMatches( rd, rdlen, MF_RSSDESC, niceness ) ) {
+		if ( !addMatches( rd, rdlen, MF_RSSDESC ) ) {
 			return false;
 		}
 
 		// add rss title
 		int32_t rtlen;
 		char *rt = rxml.getRSSTitle( &rtlen, &isHtmlEncoded );
-		if ( !addMatches( rt, rtlen, MF_RSSTITLE, niceness ) ) {
+		if ( !addMatches( rt, rtlen, MF_RSSTITLE ) ) {
 			return false;
 		}
 	}
@@ -345,7 +345,7 @@ bool Matches::set( Words *bodyWords, Phrases *bodyPhrases, Sections *bodySection
 	return true;
 }
 
-bool Matches::addMatches( char *s, int32_t slen, mf_t flags, int32_t niceness ) {
+bool Matches::addMatches( char *s, int32_t slen, mf_t flags ) {
 	// . do not breach
 	// . happens a lot with a lot of link info text
 	if ( m_numMatchGroups >= MAX_MATCHGROUPS ) {
