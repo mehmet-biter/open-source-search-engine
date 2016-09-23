@@ -1004,7 +1004,7 @@ bool RdbBuckets::selfTest(bool thorough, bool core) {
 
 		totalNumKeys += b->getNumKeys();
 		const char *kk = b->getEndKey();
-		if (i > 0 && lastcoll == b->getCollnum() && KEYCMPNEGEQ(last, kk, m_ks) >= 0) {
+		if (i > 0 && lastcoll == b->getCollnum() && last && KEYCMPNEGEQ(last, kk, m_ks) >= 0) {
 			log(LOG_WARN, "rdbbuckets last key: %016" PRIx64"%08" PRIx32" num keys: %" PRId32,
 			    *(int64_t *)(kk + (sizeof(int32_t))),
 			    *(int32_t *)kk, b->getNumKeys());
