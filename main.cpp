@@ -2571,14 +2571,8 @@ static int install ( install_flag_konst_t installFlag, int32_t hostId, char *dir
 			amp = "&";
 		}
 
-		// limit install to this hostId if it is >= 0
-		//if ( hostId >= 0 && h2->m_hostId != hostId ) continue;
-		if ( hostId >= 0 && hostId2 == -1 ) {
-			if ( h2->m_hostId != hostId )
-				continue;
-		}
 		// if doing a range of hostid, hostId2 is >= 0
-		else if ( hostId >= 0 && hostId2 >= 0 ) {
+		if ( hostId >= 0 && hostId2 >= 0 ) {
 			if ( h2->m_hostId < hostId || h2->m_hostId > hostId2 )
 				continue;
 		}
