@@ -5508,8 +5508,10 @@ void doInject ( int fd , void *state ) {
 	// turn off threads so this happens right away
 	g_jobScheduler.disallow_new_jobs();
 
-	int64_t fsize ;
-	if ( ! s_injectTitledb ) fsize = s_file.getFileSize();
+	int64_t fsize=0;
+	if ( ! s_injectTitledb ) {
+		fsize = s_file.getFileSize();
+	}
 
 	// just repeat the function separately. i guess we'd repeat
 	// some code but for simplicity i think it is worth it. and we
