@@ -7413,7 +7413,7 @@ void countdomains( const char* coll, int32_t numRecs, int32_t verbosity, int32_t
 			 "</table><br><br><br>\n"
 			 ,countDom,countIp,
 			 countDocs, attempts-countDocs,total, 
-			 ((countDom*total)/countDocs) );
+			 countDocs ? ((countDom*total)/countDocs) : 0 );
 		
 		
 		fprintf( fhndl, "<a name=\"pid\">\n"
