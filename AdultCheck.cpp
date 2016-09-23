@@ -495,7 +495,7 @@ static Needle s_dirtyWordsPart2 []  = {
 static const int32_t numDirty2 = sizeof(s_dirtyWordsPart2) / sizeof(s_dirtyWordsPart2[0]);
 #endif
 
-int32_t getAdultPoints ( char *s, int32_t slen, int32_t niceness, const char *url ) {
+int32_t getAdultPoints ( char *s, int32_t slen, const char *url ) {
 	// . use the matches function to get all the matches
 	// . then check each match to see if it is actually a legit word
 	// . actually match the dirty words, then match the clean words

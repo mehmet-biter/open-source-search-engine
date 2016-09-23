@@ -3080,8 +3080,7 @@ char *XmlDoc::getIsAdult ( ) {
 	int64_t start = gettimeofdayInMilliseconds();
 
 	// score that up
-	int32_t total = getAdultPoints ( ptr_utf8Content, size_utf8Content - 1 ,
-				      m_niceness , m_firstUrl.getUrl() );
+	int32_t total = getAdultPoints ( ptr_utf8Content, size_utf8Content - 1 , m_firstUrl.getUrl() );
 
 
 	// debug msg
