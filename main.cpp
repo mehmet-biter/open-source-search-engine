@@ -7774,7 +7774,7 @@ const char *getcwd2 ( char *arg2 ) {
 	}
 
 	// if "arg" is a RELATIVE path then append it
-	if ( arg && arg[0]!='/' ) {
+	if ( arg[0]!='/' ) {
 		if ( arg[0]=='.' && arg[1]=='/' ) {
 			gbmemcpy ( end , arg+2 , alen -2 );
 			end += alen - 2;
