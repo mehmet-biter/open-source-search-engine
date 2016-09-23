@@ -2173,7 +2173,7 @@ bool Query::setQWords ( char boolFlag ,
 	}
 
 	// make the phrases from the words and the tweaked Bits class
-	if ( !phrases.set( &words, &bits, 0 ) )
+	if ( !phrases.set( &words, &bits ) )
 		return false;
 
 	int64_t *wids = words.getWordIds();

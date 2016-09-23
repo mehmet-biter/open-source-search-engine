@@ -2003,7 +2003,7 @@ bool XmlDoc::hashString3( char       *s              ,
 		return false;
 	if ( !bits.set(&words))
 		return false;
-	if ( !phrases.set( &words, &bits, niceness ) )
+	if ( !phrases.set( &words, &bits ) )
 		return false;
 
 	// use primary langid of doc

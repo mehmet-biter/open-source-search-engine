@@ -24,7 +24,7 @@ void Phrases::reset() {
 }
 
 // initialize this token array with the string, "s" of length, "len".
-bool Phrases::set( const Words *words, const Bits *bits, int32_t niceness ) {
+bool Phrases::set( const Words *words, const Bits *bits ) {
 	// reset in case being re-used
 	reset();
 

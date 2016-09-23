@@ -53,7 +53,7 @@ int32_t Highlight::set( SafeBuf *sb, char *content, int32_t contentLen, Query *q
 	}
 
 	Phrases phrases;
-	if ( !phrases.set( &words, &bits, niceness ) ) {
+	if ( !phrases.set( &words, &bits ) ) {
 		return -1;
 	}
 

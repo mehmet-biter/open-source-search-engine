@@ -51,7 +51,7 @@ static void generateSummary( Summary &summary, char *htmlInput, const char *quer
 	ASSERT_TRUE(bitsForSummary.setForSummary(&words));
 
 	Phrases phrases;
-	ASSERT_TRUE(phrases.set(&words, &bits, 0));
+	ASSERT_TRUE(phrases.set(&words, &bits));
 
 	Matches matches;
 	matches.setQuery(&query);
