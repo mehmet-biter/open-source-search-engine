@@ -1492,7 +1492,7 @@ bool Hostdb::saveHostsConf ( ) {
 }
 
 // use the ip that is not dead, prefer eth0
-int32_t Hostdb::getBestIp ( Host *h , int32_t fromIp ) {
+int32_t Hostdb::getBestIp ( Host *h ) {
 	// if shotgun/eth1 ip is dead, returh eth0 ip
 	if ( h->m_pingShotgun >= g_conf.m_deadHostTimeout ) return h->m_ip;
 	// if eth0 dead, return shotgun ip

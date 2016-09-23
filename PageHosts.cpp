@@ -380,7 +380,7 @@ skipReplaceHost:
 
 		// host can have 2 ip addresses, get the one most
 		// similar to that of the requester
-		int32_t eip = g_hostdb.getBestIp ( h , s->m_ip );
+		int32_t eip = g_hostdb.getBestIp ( h );
 		char ipbuf3[64];
 		strcpy(ipbuf3,iptoa(eip));
 
@@ -1107,7 +1107,7 @@ skipReplaceHost:
 
 		// host can have 2 ip addresses, get the one most
 		// similar to that of the requester
-		int32_t eip = g_hostdb.getBestIp ( h , s->m_ip );
+		int32_t eip = g_hostdb.getBestIp ( h );
 		char ipbuf3[64];
 		strcpy(ipbuf3,iptoa(eip));
 

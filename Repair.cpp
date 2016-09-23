@@ -1572,7 +1572,7 @@ bool Repair::printRepairStatus ( SafeBuf *sb , int32_t fromIp ) {
 	int16_t minPort = 80;
 	if ( mh ) {
 		minHostId = mh->m_hostId;
-		int32_t minHostIp = g_hostdb.getBestIp ( mh , fromIp );
+		int32_t minHostIp = g_hostdb.getBestIp ( mh );
 		strcpy(minIpBuf,iptoa(minHostIp));
 		minPort = mh->m_httpPort;
 	}
