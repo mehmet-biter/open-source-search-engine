@@ -103,7 +103,7 @@ bool Wiki::loadText ( int32_t fileSize ) {
 		for (eol = p; eol < pend && *eol !='\n' ; eol++) ;
 		// parse into words
 		Words w;
-		if ( !w.set( p, eol - p, true, MAX_NICENESS ) ) {
+		if ( !w.set( p, eol - p, true ) ) {
 			return false;
 		}
 

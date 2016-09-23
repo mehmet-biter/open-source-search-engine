@@ -27,6 +27,7 @@ Matches::Matches()
     m_qwordAllocSize(0),
     m_numMatchGroups(0)
 {
+	memset(&m_matches, 0, sizeof(m_matches));	//@todo: added to silence Coverity. Remove if impacting performance (quite big memset)
 }
 
 
@@ -142,6 +143,11 @@ void Matches::setQuery ( Query *q ) {
 	for ( int32_t i = 0 ; i < nqt ; i++ ) {
 		// get query word #i
 		QueryTerm *qt = &m_q->m_qterms[i];
+
+		if( !qt ) {
+			continue;
+		}
+
 		// skip if ignored *in certain ways only*
 		if ( ! isMatchableTerm ( qt ) ) {
 			continue;
@@ -162,21 +168,27 @@ void Matches::setQuery ( Query *q ) {
 		int64_t qid = qt->m_rawTermId;//qw->m_rawWordId;
 
 		// but NOT for 'cheatcodes.com'
-		if ( qt->m_isPhrase ) qid = qw->m_rawWordId;
+		if ( qt->m_isPhrase ) {
+			qid = qw->m_rawWordId;
+		}
 
 		// if its a multi-word synonym, like "new jersey" we must
 		// index the individual words... or compute the phrase ids
 		// for all the words in the doc. right now the qid is
 		// the phrase hash for this guy i think...
-		if ( qt->m_synonymOf && qt->m_numAlnumWordsInSynonym == 2 )
+		if ( qt->m_synonymOf && qt->m_numAlnumWordsInSynonym == 2 ) {
 			qid = qt->m_synWids0;
+		}
 
 		// put in hash table
 		n = ((uint32_t)qid) & mask;
 
 		// chain to an empty slot
-		while ( m_qtableIds[n] && m_qtableIds[n] != qid ) 
-			if ( ++n >= m_numSlots ) n = 0;
+		while ( m_qtableIds[n] && m_qtableIds[n] != qid ) {
+			if ( ++n >= m_numSlots ) {
+				n = 0;
+			}
+		}
 
 		// . if already occupied, do not overwrite this, keep this
 		//   first word, the other is often ignored as IGNORE_REPEAT
@@ -189,15 +201,22 @@ void Matches::setQuery ( Query *q ) {
 		// in quotes? this term may appear multiple times in the
 		// query, in some cases in quotes, and in some cases not.
 		// we need to know either way for logic below.
-		if ( qw->m_inQuotes ) m_qtableFlags[n] |= 0x02;
-		else                  m_qtableFlags[n] |= 0x01;
+		if ( qw->m_inQuotes ) {
+			m_qtableFlags[n] |= 0x02;
+		}
+		else {
+			m_qtableFlags[n] |= 0x01;
+		}
 
 		// this is basically a quoted synonym
-		if ( qt->m_numAlnumWordsInSynonym == 2 )
+		if ( qt->m_numAlnumWordsInSynonym == 2 ) {
 			m_qtableFlags[n] |=  0x08;
+		}
 
 		//QueryTerm *qt = qw->m_queryWordTerm;
-		if ( qt && qt->m_termSign == '+' ) m_qtableFlags[n] |= 0x04;
+		if ( qt->m_termSign == '+' ) {
+			m_qtableFlags[n] |= 0x04;
+		}
 
 		//
 		// if query has e-mail, then index phrase id "email" so
@@ -206,7 +225,10 @@ void Matches::setQuery ( Query *q ) {
 		// highlights 'cheatcodes'
 		//
 		int64_t pid = qw->m_rawPhraseId;
-		if ( pid == 0 ) continue;
+		if ( pid == 0 ) {
+			continue;
+		}
+
 		// put in hash table
 		n = ((uint32_t)pid) & mask;
 		// chain to an empty slot
@@ -225,7 +247,7 @@ void Matches::setQuery ( Query *q ) {
 //   fills in the matrix for title, link text, etc.
 // . returns false and sets g_errno on error
 bool Matches::set( Words *bodyWords, Phrases *bodyPhrases, Sections *bodySections, Bits *bodyBits,
-				   Pos *bodyPos, Xml *bodyXml, Title *tt, Url *firstUrl, LinkInfo *linkInfo, int32_t niceness ) {
+				   Pos *bodyPos, Xml *bodyXml, Title *tt, Url *firstUrl, LinkInfo *linkInfo ) {
 	// don't reset query info!
 	reset2();
 
@@ -237,12 +259,12 @@ bool Matches::set( Words *bodyWords, Phrases *bodyPhrases, Sections *bodySection
 	}
 
 	// add the title in
-	if ( !addMatches( tt->getTitle(), tt->getTitleLen(), MF_TITLEGEN, niceness ) ) {
+	if ( !addMatches( tt->getTitle(), tt->getTitleLen(), MF_TITLEGEN ) ) {
 		return false;
 	}
 
 	// add in the url terms
-	if ( !addMatches( firstUrl->getUrl(), firstUrl->getUrlLen(), MF_URL, niceness ) ) {
+	if ( !addMatches( firstUrl->getUrl(), firstUrl->getUrlLen(), MF_URL ) ) {
 		return false;
 	}
 
@@ -255,7 +277,7 @@ bool Matches::set( Words *bodyWords, Phrases *bodyPhrases, Sections *bodySection
 	if ( a >= 0 && b >= 0 && b>a ) {
 		start = bodyWords->getWord(a);
 		end   = bodyWords->getWord(b-1) + bodyWords->getWordLen(b-1);
-		if ( !addMatches( start, end - start, MF_TITLETAG, niceness ) ) {
+		if ( !addMatches( start, end - start, MF_TITLETAG ) ) {
 			return false;
 		}
 	}
@@ -287,7 +309,7 @@ bool Matches::set( Words *bodyWords, Phrases *bodyPhrases, Sections *bodySection
 		char *s = bodyXml->getString ( i , "content" , &len );
 		if ( ! s || len <= 0 ) continue;
 		// wordify
-		if ( !addMatches( s, len, flag, niceness ) ) {
+		if ( !addMatches( s, len, flag ) ) {
 			return false;
 		}
 	}
@@ -307,7 +329,7 @@ bool Matches::set( Words *bodyWords, Phrases *bodyPhrases, Sections *bodySection
 		mf_t flags = MF_LINK;
 
 		// add it in
-		if ( !addMatches( k->getLinkText(), k->size_linkText - 1, flags, niceness ) ) {
+		if ( !addMatches( k->getLinkText(), k->size_linkText - 1, flags ) ) {
 			return false;
 		}
 
@@ -315,13 +337,13 @@ bool Matches::set( Words *bodyWords, Phrases *bodyPhrases, Sections *bodySection
 		flags = MF_HOOD;
 
 		// add it in
-		if ( !addMatches( k->getSurroundingText(), k->size_surroundingText - 1, flags, niceness ) ) {
+		if ( !addMatches( k->getSurroundingText(), k->size_surroundingText - 1, flags ) ) {
 			return false;
 		}
 
 		// parse the rss up into xml
 		Xml rxml;
-		if ( ! k->setXmlFromRSS ( &rxml , niceness ) ) {
+		if ( ! k->setXmlFromRSS ( &rxml ) ) {
 			return false;
 		}
 
@@ -329,14 +351,14 @@ bool Matches::set( Words *bodyWords, Phrases *bodyPhrases, Sections *bodySection
 		bool isHtmlEncoded;
 		int32_t rdlen;
 		char *rd = rxml.getRSSDescription( &rdlen, &isHtmlEncoded );
-		if ( !addMatches( rd, rdlen, MF_RSSDESC, niceness ) ) {
+		if ( !addMatches( rd, rdlen, MF_RSSDESC ) ) {
 			return false;
 		}
 
 		// add rss title
 		int32_t rtlen;
 		char *rt = rxml.getRSSTitle( &rtlen, &isHtmlEncoded );
-		if ( !addMatches( rt, rtlen, MF_RSSTITLE, niceness ) ) {
+		if ( !addMatches( rt, rtlen, MF_RSSTITLE ) ) {
 			return false;
 		}
 	}
@@ -345,7 +367,7 @@ bool Matches::set( Words *bodyWords, Phrases *bodyPhrases, Sections *bodySection
 	return true;
 }
 
-bool Matches::addMatches( char *s, int32_t slen, mf_t flags, int32_t niceness ) {
+bool Matches::addMatches( char *s, int32_t slen, mf_t flags ) {
 	// . do not breach
 	// . happens a lot with a lot of link info text
 	if ( m_numMatchGroups >= MAX_MATCHGROUPS ) {
@@ -354,12 +376,11 @@ bool Matches::addMatches( char *s, int32_t slen, mf_t flags, int32_t niceness ) 
 
 	// get some new ptrs for this match group
 	Words    *wp = &m_wordsArray    [ m_numMatchGroups ];
-	Sections *sp = NULL;
 	Bits     *bp = &m_bitsArray     [ m_numMatchGroups ];
 	Pos      *pb = &m_posArray      [ m_numMatchGroups ];
 
 	// set the words class for this match group
-	if ( !wp->set( s, slen, true, niceness ) ) {
+	if ( !wp->set( s, slen, true ) ) {
 		return false;
 	}
 
@@ -379,7 +400,7 @@ bool Matches::addMatches( char *s, int32_t slen, mf_t flags, int32_t niceness ) 
 	int32_t n = m_numMatchGroups;
 	// . add all the Match classes from this match group
 	// . this increments m_numMatchGroups on success
-	bool status = addMatches( wp, NULL, sp, bp, pb, flags );
+	bool status = addMatches( wp, NULL, NULL, bp, pb, flags );
 
 	// if this matchgroup had some, matches, then keep it
 	if ( m_numMatches > startNumMatches ) {
@@ -388,7 +409,6 @@ bool Matches::addMatches( char *s, int32_t slen, mf_t flags, int32_t niceness ) 
 
 	// otherwise, reset it, useless
 	wp->reset();
-	if ( sp ) sp->reset();
 	bp->reset();
 	pb->reset();
 

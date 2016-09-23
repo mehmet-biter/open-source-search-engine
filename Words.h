@@ -38,18 +38,18 @@ class Words {
 	// . NOTE: we never own the data
 	// . there is typically no html in "s"
 	// . html tags are NOT parsed out
-	bool set( char *s, bool computeIds, int32_t niceness );
+	bool set( char *s, bool computeIds );
 
 	// . similar to above
 	// . but we temporarily stick a \0 @ s[slen] for parsing purposes
-	bool set( char *s, int32_t slen, bool computeIds, int32_t niceness = 0 );
+	bool set( char *s, int32_t slen, bool computeIds );
 
 	// . new function to set directly from an Xml, rather than extracting
 	//   text first
 	// . use range (node1,node2] and if node2 is -1 that means the last one
-	bool set( Xml *xml, bool computeIds, int32_t niceness = 0, int32_t node1 = 0, int32_t node2 = -1 );
+	bool set( Xml *xml, bool computeIds, int32_t node1 = 0, int32_t node2 = -1 );
 
-	inline bool addWords( char *s, int32_t nodeLen, bool computeIds, int32_t niceness );
+	inline bool addWords( char *s, int32_t nodeLen, bool computeIds );
 
 	// get the spam modified score of the ith word (baseScore is the 
 	// score if the word is not spammed)
@@ -262,12 +262,6 @@ class Words {
 	 Words     ( );
 	~Words     ( );
 	void reset ( ); 
-
-	// returns -1 and sets g_errno on error
-	int32_t getLanguage ( class Sections *sections = NULL ,
-			   int32_t maxSamples = NUM_LANGUAGE_SAMPLES,
-			   int32_t niceness = 0,
-			   int32_t *langScore = NULL);
 
 	char *getContent() { 
 		if ( m_numWords == 0 ) return NULL;

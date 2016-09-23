@@ -264,8 +264,7 @@ bool setLinkSpam ( int32_t       ip                 ,
 		   int32_t       siteNumInlinks     ,
 		   Xml       *xml                ,
 		   Links     *links              ,
-		   bool       isContentTruncated ,
-		   int32_t       niceness           ) {
+		   bool       isContentTruncated ) {
 	// get our url
 	//Url *linker = tr->getUrl();
 	// it is critical to get inlinks from all pingserver xml
@@ -287,8 +286,6 @@ bool setLinkSpam ( int32_t       ip                 ,
 	if ( tldLen == 3 && strncmp ( tld, "biz" , tldLen) == 0 && //q < 55 )
 	     siteNumInlinks < 20 )
 		return links->setAllSpamBits("low quality .biz linker");
-
-	QUICKPOLL( niceness );
 
 	// guestbook in hostname - domain?
 	const char *hd  = linker->getHost();
@@ -360,8 +357,6 @@ bool setLinkSpam ( int32_t       ip                 ,
 		if ( note ) return links->setAllSpamBits(note);
 	}
 
-	QUICKPOLL( niceness );
-
 	// does title contain "web statistics for"?
 	int32_t  tlen ;
 	const char *title = xml->getString ( "title" , &tlen );
@@ -392,8 +387,6 @@ bool setLinkSpam ( int32_t       ip                 ,
 		if ( val ) return links->setAllSpamBits("stats page");
 	}
 
-	QUICKPOLL( niceness );
-
 	/////////////////////////////////////////////////////
 	//
 	// check content for certain keywords and phrases
@@ -419,10 +412,7 @@ bool setLinkSpam ( int32_t       ip                 ,
 		      NULL             , // &n               ,
 		      false            , // stopAtFirstMatch
 		      &hadPreMatch     ,
-		      true             , // save quicktables
-		      niceness         );
-
-	QUICKPOLL( niceness );
+		      true             ); // save quicktables
 
 	// see if we got a hit
 	char *minPtr = NULL;
@@ -444,7 +434,6 @@ bool setLinkSpam ( int32_t       ip                 ,
 			minPtr = ptr;
 		}
 	}
-	QUICKPOLL( niceness );
 
 	// convert the char ptr into a link node following it
 	int32_t aa = 0;
@@ -462,7 +451,6 @@ bool setLinkSpam ( int32_t       ip                 ,
 		mini = i;
 		break;
 	}
-	QUICKPOLL( niceness );
 
 	// now count all the links BELOW this match as link spam
 	// but everyone else is ok!
@@ -481,10 +469,7 @@ bool setLinkSpam ( int32_t       ip                 ,
 		      NULL         ,  // &n ,
 		      false        ,  // stopAtFirstMatch?
 		      NULL         ,
-		      true         ,  // save quicktables
-		      niceness     );
-
-	QUICKPOLL( niceness );
+		      true         );  // save quicktables
 
 	// see if we got a hit
 	for ( int32_t i = 0 ; i < numNeedles2 ; i++ ) {
@@ -493,8 +478,6 @@ bool setLinkSpam ( int32_t       ip                 ,
 		// the whole doc is considered link spam
 		return links->setAllSpamBits(s_needles2[i].m_string); 
 	}
-
-	QUICKPOLL( niceness );
 
 	//skiplinks:
 	// check for certain post tag, indicative of a comment-friendly blog
@@ -563,13 +546,10 @@ bool setLinkSpam ( int32_t       ip                 ,
 		//if ( val && strstr ( s , "search" ) ) val = false;
 		s[slen] = c;
 		if ( val ) return links->setAllSpamBits("post page");
-		QUICKPOLL( niceness );
 	}
 
 	if ( gotTextArea && gotSubmit )
 		return links->setAllSpamBits("textarea tag");
-
-	QUICKPOLL( niceness );
 
 	// edu, gov, etc. can have link chains
 	if ( tldLen >= 3 && strncmp ( tld, "edu" , 3) == 0 ) return true;
@@ -590,9 +570,6 @@ bool setLinkSpam ( int32_t       ip                 ,
 		Url uu;
 		uu.set( links->getLink( i ), links->getLinkLen( i ) );
 
-		// take a break
-		QUICKPOLL ( niceness );
-
 		// . is it near sporny links? (naughty domains or lotsa -'s)
 		// . if we are in a list of ads, chances are good the true
 		//   nature of the ads will emerge...
@@ -611,8 +588,6 @@ bool setLinkSpam ( int32_t       ip                 ,
 		int32_t xmlNode = links->getNodeNum ( i );
 		if ( isLinkChain ( xml , linker, &uu, xmlNode, &np ))
 			links->setSpamBit ( np , i );
-		// take a break
-		QUICKPOLL ( niceness );
 	}
 	return true;
 }
@@ -629,8 +604,7 @@ bool isLinkSpam ( const Url *linker,
 		  const char **note ,
 		  const Url *linkee ,
 		  // node position of the linkee in the linker's content
-		  int32_t  linkNode ,
-		  int32_t  niceness ) {
+		  int32_t  linkNode ) {
 	// it is critical to get inlinks from all pingserver xml
 	// pages regardless if they are often large pages. we
 	// have to manually hard-code the ping servers in for now.
@@ -681,9 +655,6 @@ bool isLinkSpam ( const Url *linker,
 
 	// do not allow any cgi url to vote
 	if ( linker->isCgi() ) { *note = "path is cgi"; return true; }
-
-	// breathe
-	QUICKPOLL(niceness);
 
 	int32_t plen = linker->getPathLen();
 
@@ -739,8 +710,6 @@ bool isLinkSpam ( const Url *linker,
 			*note = "path has /trackbacks/"   ; return true; }
 	}
 
-	QUICKPOLL( niceness );
-
 	// scan through the content as fast as possible
 	char  *content    = xml->getContent(); 
 	int32_t   contentLen = xml->getContentLen();
@@ -776,8 +745,6 @@ bool isLinkSpam ( const Url *linker,
 		if ( val ) { *note = "stats page"; return true; }
 	}
 
-	QUICKPOLL( niceness );
-
 	/////////////////////////////////////////////////////
 	//
 	// check content for certain keywords and phrases
@@ -809,10 +776,7 @@ bool isLinkSpam ( const Url *linker,
 		      &n               ,
 		      false            , // stopAtFirstMatch
 		      &hadPreMatch     ,
-		      true             , // save quicktables
-		      niceness         );
-
-	QUICKPOLL( niceness );
+		      true             ); // save quicktables
 
 	// see if we got a hit
 	for ( int32_t i = 0 ; i < numNeedles1 ; i++ ) {
@@ -836,10 +800,7 @@ bool isLinkSpam ( const Url *linker,
 		      NULL         ,  // &n ,
 		      false        ,  // stopAtFirstMatch?
 		      NULL         ,  // hadPreMatch?
-		      true         ,  // save quicktables
-		      niceness     );
-
-	QUICKPOLL( niceness );
+		      true         );  // save quicktables
 
 	// see if we got a hit
 	for ( int32_t i = 0 ; i < numNeedles2 ; i++ ) {
@@ -850,8 +811,6 @@ bool isLinkSpam ( const Url *linker,
 		*note = s_needles2[i].m_string;
 		return true;
 	}
-
-	QUICKPOLL( niceness );
 
 	//skiplinks:
 	// check for certain post tag, indicative of a comment-friendly blog
@@ -912,8 +871,6 @@ bool isLinkSpam ( const Url *linker,
 		return true;
 	}
 
-	QUICKPOLL( niceness );
-
 	// edu, gov, etc. can have link chains
 	if ( tldLen >= 3 && strncmp ( tld, "edu" , 3) == 0 ) return false;
 	if ( tldLen >= 3 && strncmp ( tld, "gov" , 3) == 0 ) return false;
@@ -928,7 +885,6 @@ bool isLinkSpam ( const Url *linker,
 		return false;//true;
 	}
 
-	QUICKPOLL( niceness );
 	// . if they link to any adult site, consider them link spam
 	// . just consider a 100 link radius around linkNode
 	int32_t nl = links->getNumLinks();
@@ -941,8 +897,6 @@ bool isLinkSpam ( const Url *linker,
 	int32_t  uulen = uuend - uu;
 	int32_t  x     = linkNode;
  loop:
-
-	QUICKPOLL( niceness );
 
 	// return true right away if it is a link chain
 	if ( siteNumInlinks < 1000 && 

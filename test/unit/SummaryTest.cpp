@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 
 #include "Summary.h"
 #include "HttpMime.h" // CT_HTML
@@ -20,19 +20,19 @@
 
 static void generateSummary( Summary &summary, char *htmlInput, const char *queryStr, const char *urlStr ) {
 	Xml xml;
-	ASSERT_TRUE(xml.set(htmlInput, strlen(htmlInput), 0, 0, CT_HTML));
+	ASSERT_TRUE(xml.set(htmlInput, strlen(htmlInput), 0, CT_HTML));
 
 	Words words;
 	ASSERT_TRUE(words.set(&xml, true));
 
 	Bits bits;
-	ASSERT_TRUE(bits.set(&words, 0));
+	ASSERT_TRUE(bits.set(&words));
 
 	Url url;
 	url.set(urlStr);
 
 	Sections sections;
-	ASSERT_TRUE(sections.set(&words, &bits, &url, "", 0, CT_HTML));
+	ASSERT_TRUE(sections.set(&words, &bits, &url, "", CT_HTML));
 
 	Query query;
 	ASSERT_TRUE(query.set2(queryStr, langEnglish, true));
@@ -42,7 +42,7 @@ static void generateSummary( Summary &summary, char *htmlInput, const char *quer
 	linkInfo.m_lisize = sizeof(LinkInfo);
 
 	Title title;
-	ASSERT_TRUE(title.setTitle(&xml, &words, 80, &query, &linkInfo, &url, NULL, 0, CT_HTML, langEnglish, 0));
+	ASSERT_TRUE(title.setTitle(&xml, &words, 80, &query, &linkInfo, &url, NULL, 0, CT_HTML, langEnglish));
 
 	Pos pos;
 	ASSERT_TRUE(pos.set(&words));
@@ -51,11 +51,11 @@ static void generateSummary( Summary &summary, char *htmlInput, const char *quer
 	ASSERT_TRUE(bitsForSummary.setForSummary(&words));
 
 	Phrases phrases;
-	ASSERT_TRUE(phrases.set(&words, &bits, 0));
+	ASSERT_TRUE(phrases.set(&words, &bits));
 
 	Matches matches;
 	matches.setQuery(&query);
-	ASSERT_TRUE(matches.set(&words, &phrases, &sections, &bitsForSummary, &pos, &xml, &title, &url, &linkInfo, 0));
+	ASSERT_TRUE(matches.set(&words, &phrases, &sections, &bitsForSummary, &pos, &xml, &title, &url, &linkInfo));
 
 	summary.setSummary(&xml, &words, &sections, &pos, &query, 180, 3, 3, 180, &url, &matches, title.getTitle(), title.getTitleLen());
 }

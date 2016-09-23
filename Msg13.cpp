@@ -1692,7 +1692,6 @@ bool hasIframe ( char *reply, int32_t replySize , int32_t niceness ) {
 	// exclude \0
 	char *pend = reply + replySize - 1;
 	for ( ; p < pend ; p++ ) {
-		QUICKPOLL(niceness);
 		if ( *p != '<' ) continue;
 		if ( to_lower_a (p[1]) != 'i' ) continue;
 		if ( to_lower_a (p[2]) != 'f' ) continue;

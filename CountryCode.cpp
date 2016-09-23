@@ -874,12 +874,16 @@ void CountryCode::reset ( ) {
 }
 
 const char *CountryCode::getAbbr(int index) {
-	if(index < 0 || index > s_numCountryCodes) index = 0;
+	if(index < 0 || index >= s_numCountryCodes) {
+		index = 0;
+	}
 	return(s_countryCode[index]);
 }
 
 const char *CountryCode::getName(int index) {
-	if(index < 0 || index > s_numCountryCodes) return(NULL);
+	if(index < 0 || index >= s_numCountryCodes) {
+		index = 0;
+	}
 	return(s_countryName[index]);
 }
 

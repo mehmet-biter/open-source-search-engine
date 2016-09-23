@@ -21,7 +21,8 @@ static GbMutex s_lock;
 
 Log::Log () { 
 	m_fd = -1; 
-	m_filename = NULL; 
+	m_filename = NULL;
+	m_logFileSize = 0;
 	m_disabled = false;
 	m_logTimestamps = true;
 	m_logReadableTimestamps = true;

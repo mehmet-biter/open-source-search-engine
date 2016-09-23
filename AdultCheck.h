@@ -3,6 +3,6 @@
 
 #include <inttypes.h>
 
-int32_t getAdultPoints ( char *s, int32_t slen, int32_t niceness, const char *url );
+int32_t getAdultPoints ( char *s, int32_t slen, const char *url );
 
 #endif

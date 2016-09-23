@@ -41,19 +41,19 @@ static const char s_styleSheet[] =
 // . if "useAnchors" is true we do click and scroll
 // . if "isQueryTerms" is true, we do typical anchors in a special way
 int32_t Highlight::set( SafeBuf *sb, char *content, int32_t contentLen, Query *q, const char *frontTag,
-						const char *backTag, int32_t niceness ) {
+						const char *backTag ) {
 	Words words;
-	if ( ! words.set ( content, contentLen, true, true ) ) {
+	if ( ! words.set ( content, contentLen, true ) ) {
 		return -1;
 	}
 
 	Bits bits;
-	if ( !bits.set(&words, niceness)) {
+	if ( !bits.set(&words)) {
 		return -1;
 	}
 
 	Phrases phrases;
-	if ( !phrases.set( &words, &bits, niceness ) ) {
+	if ( !phrases.set( &words, &bits ) ) {
 		return -1;
 	}
 

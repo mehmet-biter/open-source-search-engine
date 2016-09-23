@@ -120,13 +120,11 @@ bool Wiktionary::test2 ( ) {
 
 	int32_t wordNum = 0;
 	char tmpBuf[1000];
-	int32_t niceness = 0;
 	Synonyms syn;
 	int32_t naids = syn.getSynonyms ( &words,
 				       wordNum , 
 				       langId ,
-				       tmpBuf ,
-				       niceness );
+				       tmpBuf );
 	// print those out
 	SafeBuf sb;
 	for ( int32_t k = 0 ; k < naids ; k++ ) {

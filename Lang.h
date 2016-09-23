@@ -42,7 +42,6 @@ enum {
 	langBengala     = 24,
 	langPolish      = 25,
 	langTagalog     = 26,
-
 	// added for wiktionary
 	langLatin          = 27,
 	langEsperanto      = 28,

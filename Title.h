@@ -24,7 +24,7 @@ public:
 
 	bool setTitle( Xml *xml, Words *words, int32_t maxTitleLen, Query *query, LinkInfo *linkInfo, Url *firstUrl,
 				   const char *filteredRootTitleBuf, int32_t filteredRootTitleBufSize, uint8_t contentType,
-				   uint8_t langId, int32_t niceness );
+				   uint8_t langId );
 
 	bool setTitleFromTags(Xml *xml, int32_t maxTitleLen , uint8_t contentType);
 
@@ -51,8 +51,6 @@ private:
 
 	char m_title[MAX_TITLE_LEN];
 	int32_t m_titleLen;
-
-	char m_niceness;
 
 	int32_t  m_maxTitleLen;
 

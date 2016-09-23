@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 
 #include "Pos.h"
 #include "Words.h"
@@ -30,7 +30,7 @@ TEST( PosTest, FilterAllCaps ) {
 		Pos pos;
 		char buf[MAX_BUF_SIZE];
 
-		ASSERT_TRUE( words.set( input_strs[i], true, 0 ) );
+		ASSERT_TRUE( words.set( input_strs[i], true ) );
 
 		int32_t len = pos.filter( &words, 0, words.getNumWords(), false, buf, buf + MAX_BUF_SIZE );
 
@@ -111,7 +111,7 @@ TEST( PosTest, FilterEnding ) {
 		Pos pos;
 		char buf[MAX_BUF_SIZE];
 
-		ASSERT_TRUE( words.set( input_strs[i], true, 0 ) );
+		ASSERT_TRUE( words.set( input_strs[i], true ) );
 
 		int32_t len = pos.filter( &words, 0, -1, true, buf, buf + 180 );
 
@@ -144,7 +144,7 @@ TEST( PosTest, FilterTags ) {
 
 		std::sprintf(input, input_strs[i]);
 
-		ASSERT_TRUE( xml.set( input, strlen( input ), TITLEREC_CURRENT_VERSION, 0, CT_HTML ) );
+		ASSERT_TRUE( xml.set( input, strlen( input ), TITLEREC_CURRENT_VERSION, CT_HTML ) );
 		ASSERT_TRUE( words.set( &xml, true ) );
 
 		int32_t len = pos.filter( &words, 0, words.getNumWords(), false, buf, buf + MAX_BUF_SIZE );
@@ -183,7 +183,7 @@ TEST( PosTest, FilterSamePunct ) {
 		Pos pos;
 		char buf[MAX_BUF_SIZE];
 
-		ASSERT_TRUE( words.set( input_strs[i], true, 0 ) );
+		ASSERT_TRUE( words.set( input_strs[i], true ) );
 
 		int32_t len = pos.filter( &words, 0, -1, true, buf, buf + 180 );
 
@@ -224,7 +224,7 @@ TEST( PosTest, DecodeHTMLEntities ) {
 		Pos pos;
 		char buf[MAX_BUF_SIZE];
 
-		ASSERT_TRUE( words.set( input_strs[i], true, 0 ) );
+		ASSERT_TRUE( words.set( input_strs[i], true ) );
 
 		int32_t len = pos.filter( &words, 0, -1, true, buf, buf + 180 );
 

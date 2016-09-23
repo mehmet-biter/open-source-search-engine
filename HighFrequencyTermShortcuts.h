@@ -17,9 +17,10 @@ class HighFrequencyTermShortcuts {
 	std::map<uint64_t,TermEntry> entries;
 	void *buffer;
 public:
-	HighFrequencyTermShortcuts()
-	  : entries()
-	  { }
+	HighFrequencyTermShortcuts() : entries() { 
+		buffer=NULL;
+	}
+
 	~HighFrequencyTermShortcuts()
 	  { }
 	

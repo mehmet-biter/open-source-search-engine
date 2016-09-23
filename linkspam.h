@@ -13,8 +13,7 @@ bool setLinkSpam ( int32_t             ip                 ,
                    int32_t             siteNumInlinks     ,
 		   class Xml       *xml                ,
 		   class Links     *links              ,
-		   bool             isContentTruncated ,
-		   int32_t             niceness           );
+		   bool             isContentTruncated );
 
 bool isLinkSpam  ( const  Url       *linker         ,
 		   int32_t             ip             ,
@@ -24,7 +23,6 @@ bool isLinkSpam  ( const  Url       *linker         ,
 		   int32_t             maxDocLen      , 
 		   const char           **note           ,
 		   const Url          *linkee         ,
-		   int32_t             linkNode       , 
-		   int32_t             niceness       );
+		   int32_t             linkNode       );
 
 #endif // GB_LINKSPAM_H

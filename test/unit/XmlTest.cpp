@@ -1,15 +1,14 @@
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 
 #include "Xml.h"
 #include "HttpMime.h" // CT_HTML
-#include <cstdio>
 
 #define MAX_BUF_SIZE 1024
 
 #define HTML_HEAD_FORMAT "<html><head>%s</head><body></body></html>"
 
 TEST( XmlTest, MetaDescription) {
-	char* input_strs[] =  {
+	const char* input_strs[] =  {
 	    // valid
 	    "totally valid description",
 	    "“inside special quotes” and outside",
@@ -22,7 +21,7 @@ TEST( XmlTest, MetaDescription) {
 	    "what is this quote \" doing here?"
 	};
 
-	char* format_strs[] = {
+	const char* format_strs[] = {
 	    "<meta name=\"description\" content=\"%s\">",
 	    "<meta name=\"description\" content='%s'>",
 	    "<meta name=\"description\" content=\"%s\" ng-attr-content=\"{{meta.description}}\">",
@@ -42,7 +41,7 @@ TEST( XmlTest, MetaDescription) {
 
 	for ( size_t i = 0; i < len; i++ ) {
 		for (size_t j = 0; j < format_len; j++) {
-			char *input_str = input_strs[i];
+			const char *input_str = input_strs[i];
 
 			char desc[MAX_BUF_SIZE];
 			std::sprintf(desc, format_strs[j], input_str, input_str);
@@ -51,7 +50,7 @@ TEST( XmlTest, MetaDescription) {
 			std::sprintf(input, HTML_HEAD_FORMAT, desc);
 
 			Xml xml;
-			ASSERT_TRUE(xml.set(input, strlen(input), 0, 0, CT_HTML));
+			ASSERT_TRUE(xml.set(input, strlen(input), 0, CT_HTML));
 
 			char buf[MAX_BUF_SIZE];
 			int32_t bufLen = MAX_BUF_SIZE;
@@ -65,7 +64,7 @@ TEST( XmlTest, MetaDescription) {
 }
 
 TEST( XmlTest, MetaDescriptionStripTags) {
-	char* input_strs[] =  {
+	const char* input_strs[] =  {
 	    "my title<br> my <b>very important</b> text",
 	    "Lesser than (<) and greater than (>).",
 	    "We shouldn't strip <3 out",
@@ -73,7 +72,7 @@ TEST( XmlTest, MetaDescriptionStripTags) {
 	    "<p style='text-align: center;'>A color cartoon drawing of a clapping cod fish ( rebus in the danish language for klaptorsk )</p>"
 	};
 
-	char* expected_outputs[] = {
+	const char* expected_outputs[] = {
 	    "my title. my very important text",
 	    "Lesser than (<) and greater than (>).",
 	    "We shouldn't strip <3 out",
@@ -81,15 +80,15 @@ TEST( XmlTest, MetaDescriptionStripTags) {
 	    "A color cartoon drawing of a clapping cod fish ( rebus in the danish language for klaptorsk ). "
 	};
 
-	char* format_str = "<meta name=\"description\" content=\"%s\">";
+	const char* format_str = "<meta name=\"description\" content=\"%s\">";
 
 	size_t len = sizeof( input_strs ) / sizeof( input_strs[0] );
 
 	ASSERT_EQ(sizeof(input_strs)/sizeof(input_strs[0]), sizeof(expected_outputs)/sizeof(expected_outputs[0]));
 
 	for ( size_t i = 0; i < len; i++ ) {
-		char *input_str = input_strs[i];
-		char *output_str = expected_outputs[i];
+		const char *input_str = input_strs[i];
+		const char *output_str = expected_outputs[i];
 
 		char desc[MAX_BUF_SIZE];
 		std::sprintf(desc, format_str, input_str, input_str);
@@ -98,7 +97,7 @@ TEST( XmlTest, MetaDescriptionStripTags) {
 		std::sprintf(input, HTML_HEAD_FORMAT, desc);
 
 		Xml xml;
-		ASSERT_TRUE(xml.set(input, strlen(input), 0, 0, CT_HTML));
+		ASSERT_TRUE(xml.set(input, strlen(input), 0, CT_HTML));
 
 		char buf[MAX_BUF_SIZE];
 		int32_t bufLen = MAX_BUF_SIZE;

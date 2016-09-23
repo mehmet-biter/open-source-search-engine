@@ -3080,8 +3080,7 @@ char *XmlDoc::getIsAdult ( ) {
 	int64_t start = gettimeofdayInMilliseconds();
 
 	// score that up
-	int32_t total = getAdultPoints ( ptr_utf8Content, size_utf8Content - 1 ,
-				      m_niceness , m_firstUrl.getUrl() );
+	int32_t total = getAdultPoints ( ptr_utf8Content, size_utf8Content - 1 , m_firstUrl.getUrl() );
 
 
 	// debug msg
@@ -3216,7 +3215,7 @@ Xml *XmlDoc::getXml ( ) {
 	int64_t start = logQueryTimingStart();
 
 	// set it
-	if ( !m_xml.set( *u8, u8len, m_version, m_niceness, *ct ) ) {
+	if ( !m_xml.set( *u8, u8len, m_version, *ct ) ) {
 		// return NULL on error with g_errno set
 		return NULL;
 	}
@@ -3471,7 +3470,7 @@ uint8_t *XmlDoc::getLangId ( ) {
 	int32_t mdlen;
 	char *md = getMetaDescription( &mdlen );
 	Words mdw;
-	mdw.set ( md , mdlen , true, m_niceness );
+	mdw.set ( md , mdlen , true );
 
 	SafeBuf langBuf;
 	setLangVec ( &mdw,&langBuf,NULL,m_niceness);
@@ -3485,7 +3484,7 @@ uint8_t *XmlDoc::getLangId ( ) {
 
 	// try meta keywords
 	md = getMetaKeywords( &mdlen );
-	mdw.set ( md , mdlen , true, m_niceness );
+	mdw.set ( md , mdlen , true );
 
 	langBuf.purge();
 	setLangVec ( &mdw,&langBuf,NULL,m_niceness);
@@ -3576,7 +3575,7 @@ Words *XmlDoc::getWords ( ) {
 	int64_t start = logQueryTimingStart();
 
 	// now set what we need
-	if ( !m_words.set( xml, true, m_niceness ) ) {
+	if ( !m_words.set( xml, true ) ) {
 		return NULL;
 	}
 
@@ -3598,7 +3597,7 @@ Bits *XmlDoc::getBits ( ) {
 	int64_t start = logQueryTimingStart();
 
 	// now set what we need
-	if ( !m_bits.set(words, m_niceness))
+	if ( !m_bits.set(words))
 		return NULL;
 
 	logQueryTimingEnd( __func__, start );
@@ -3667,7 +3666,7 @@ Phrases *XmlDoc::getPhrases ( ) {
 	int64_t start = logQueryTimingStart();
 
 	// now set what we need
-	if ( !m_phrases.set( words, bits, m_niceness ) ) {
+	if ( !m_phrases.set( words, bits ) ) {
 		return NULL;
 	}
 
@@ -3716,7 +3715,7 @@ Sections *XmlDoc::getSections ( ) {
 	// this uses the sectionsReply to see which sections are "text", etc.
 	// rather than compute it expensively
 	if ( !m_calledSections &&
-		 !m_sections.set( &m_words, bits, getFirstUrl(), cr->m_coll, m_niceness, *ct ) ) {
+		 !m_sections.set( &m_words, bits, getFirstUrl(), cr->m_coll, *ct ) ) {
 		m_calledSections = true;
 		// it blocked, return -1
 		return (Sections *) -1;
@@ -3975,8 +3974,7 @@ Links *XmlDoc::getLinks ( bool doQuickSet ) {
 		      *sni               ,
 		      xml                ,
 		      &m_links           ,
-		      *ict               ,
-		      m_niceness         );
+		      *ict               );
 	// we got it
 	return &m_links;
 }
@@ -4112,11 +4110,11 @@ bool XmlDoc::hashString_ct ( HashTableX *ct , char *s , int32_t slen ) {
 	Words   words;
 	Bits    bits;
 	Phrases phrases;
-	if ( ! words.set   ( s , slen , true , m_niceness ) )
+	if ( ! words.set   ( s , slen , true ) )
 		return false;
-	if ( !bits.set(&words, m_niceness))
+	if ( !bits.set(&words))
 		return false;
-	if ( !phrases.set( &words, &bits, m_niceness ) )
+	if ( !phrases.set( &words, &bits ) )
 		return false;
 	int32_t nw = words.getNumWords();
 	const int64_t  *pids  = phrases.getPhraseIds2();
@@ -4341,7 +4339,7 @@ int32_t *XmlDoc::getSummaryVector ( ) {
 
 	// word-ify it
 	Words words;
-	if ( ! words.set ( sb.getBufStart() , true, m_niceness ) ) {
+	if ( ! words.set ( sb.getBufStart() , true ) ) {
 		return NULL;
 	}
 
@@ -8990,7 +8988,7 @@ Url **XmlDoc::getMetaRedirUrl ( ) {
 
 	Xml xml;
 	// assume html since getContentType() is recursive on us.
-	if ( !xml.set( m_httpReply, m_httpReplySize - 1, m_version, m_niceness, CT_HTML ) ) {
+	if ( !xml.set( m_httpReply, m_httpReplySize - 1, m_version, CT_HTML ) ) {
 		// return NULL on error with g_errno set
 		logTrace( g_conf.m_logTraceXmlDoc, "END, xml.set failed" );;
 		return NULL;
@@ -16366,9 +16364,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	// caller shouldhave the callback set
 	if ( ! m_callback1 && ! m_callback2 ) { g_process.shutdownAbort(true); }
 
-	// shortcut
-	Msg20Reply *reply = &m_reply;
-
 	m_niceness = m_req->m_niceness;
 
 	m_collnum = m_req->m_collnum;//cr->m_collnum;
@@ -16405,7 +16400,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		m_setTr = true;
 	}
 
-	reply->m_collnum = m_collnum;
+	m_reply.m_collnum = m_collnum;
 
 	// lookup the tagdb rec fresh if setting for a summary. that way we
 	// can see if it is banned or not. but for getting m_getTermListBuf
@@ -16448,8 +16443,8 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	}
 
 	// this should be valid, it is stored in title rec
-	if ( m_contentHash32Valid ) reply->m_contentHash32 = m_contentHash32;
-	else                        reply->m_contentHash32 = 0;
+	if ( m_contentHash32Valid ) m_reply.m_contentHash32 = m_contentHash32;
+	else                        m_reply.m_contentHash32 = 0;
 
 	if ( ! m_checkedUrlFilters ) {
 		// do not re-check
@@ -16496,9 +16491,9 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		// is it banned
 		if ( pr == -3 ) { // SPIDER_PRIORITY_BANNED ) { // -2
 			// set m_errno
-			reply->m_errno = EDOCBANNED;
+			m_reply.m_errno = EDOCBANNED;
 			// and this
-			reply->m_isBanned = true;
+			m_reply.m_isBanned = true;
 		}
 
 		//
@@ -16510,12 +16505,12 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		pr = 0;
 
 		// done if we are
-		if ( reply->m_errno && ! m_req->m_showBanned ) {
+		if ( m_reply.m_errno && ! m_req->m_showBanned ) {
 			// give back the url at least
-			reply->ptr_ubuf = getFirstUrl()->getUrl();
-			reply->size_ubuf = getFirstUrl()->getUrlLen() + 1;
+			m_reply.ptr_ubuf = getFirstUrl()->getUrl();
+			m_reply.size_ubuf = getFirstUrl()->getUrlLen() + 1;
 			m_replyValid = true;
-			return reply;
+			return &m_reply;
 		}
 	}
 
@@ -16529,8 +16524,8 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	}
 
 	// do they want a summary?
-	if ( m_req->m_numSummaryLines>0 && ! reply->ptr_displaySum ) {
-		char *hsum = getHighlightedSummary( &(reply->m_isDisplaySumSetFromTags) );
+	if ( m_req->m_numSummaryLines>0 && ! m_reply.ptr_displaySum ) {
+		char *hsum = getHighlightedSummary( &(m_reply.m_isDisplaySumSetFromTags) );
 
 		if ( ! hsum || hsum == (void *)-1 ) {
 			return (Msg20Reply *)hsum;
@@ -16550,19 +16545,19 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		if ( hsumLen > 0 && hsum[hsumLen] ) { g_process.shutdownAbort(true); }
 
 		// grab stuff from it!
-		reply-> ptr_displaySum = hsum;
-		reply->size_displaySum = hsumLen+1;
+		m_reply.ptr_displaySum = hsum;
+		m_reply.size_displaySum = hsumLen+1;
 	}
 
 	// copy the link info stuff?
 	if ( ! m_req->m_getLinkText ) {
-		reply->ptr_linkInfo  = (char *)ptr_linkInfo1;
-		reply->size_linkInfo = size_linkInfo1;
+		m_reply.ptr_linkInfo  = (char *)ptr_linkInfo1;
+		m_reply.size_linkInfo = size_linkInfo1;
 	}
 
 	bool getThatTitle = true;
 	if ( m_req->m_titleMaxLen <= 0 ) getThatTitle = false;
-	if ( reply->ptr_tbuf           ) getThatTitle = false;
+	if ( m_reply.ptr_tbuf           ) getThatTitle = false;
 	// if steve's requesting the inlink summary we will want to get
 	// the title of each linker even if they are spammy!
 	// only get title here if NOT getting link text otherwise
@@ -16592,13 +16587,13 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		if ( ! ti || ti == (Title *)-1 ) return (Msg20Reply *)ti;
 		char *tit = ti->getTitle();
 		int32_t  titLen = ti->getTitleLen();
-		reply-> ptr_tbuf = tit;
-		reply->size_tbuf = titLen + 1; // include \0
+		m_reply.ptr_tbuf = tit;
+		m_reply.size_tbuf = titLen + 1; // include \0
 		// sanity
 		if ( tit && tit[titLen] != '\0' ) { g_process.shutdownAbort(true); }
 		if ( ! tit || titLen <= 0 ) {
-			reply->ptr_tbuf = NULL;
-			reply->size_tbuf = 0;
+			m_reply.ptr_tbuf = NULL;
+			m_reply.size_tbuf = 0;
 		}
 	}
 
@@ -16610,48 +16605,48 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		// . actually now it is a \0 separated list of the first
 		//   few h1 tags
 		// . we call SafeBuf::pushChar(0) to add each one
-		reply->ptr_htag = htb->getBufStart();
-		reply->size_htag = htb->getLength();
+		m_reply.ptr_htag = htb->getBufStart();
+		m_reply.size_htag = htb->getLength();
 	}
 
 	// get site
-	reply->ptr_site  = ptr_site;
-	reply->size_site = size_site;
+	m_reply.ptr_site  = ptr_site;
+	m_reply.size_site = size_site;
 
 	// assume unknown
-	reply->m_noArchive = 0;
+	m_reply.m_noArchive = 0;
 	// are we noarchive? only check this if not getting link text
 	if ( ! m_req->m_getLinkText ) {
 		char *na = getIsNoArchive();
 		if ( ! na || na == (char *)-1 ) return (Msg20Reply *)na;
-		reply->m_noArchive = *na;
+		m_reply.m_noArchive = *na;
 	}
 
 	// . summary vector for deduping
 	// . does not compute anything if we should not! (svSize will be 0)
-	if ( ! reply->ptr_vbuf &&
+	if ( ! m_reply.ptr_vbuf &&
 	     m_req->m_getSummaryVector &&
 	     cr->m_percentSimilarSummary >   0 &&
 	     cr->m_percentSimilarSummary < 100   ) {
 		int32_t *sv = getSummaryVector ( );
 		if ( ! sv || sv == (void *)-1 ) return (Msg20Reply *)sv;
-		reply-> ptr_vbuf = (char *)m_summaryVec;
-		reply->size_vbuf = m_summaryVecSize;
+		m_reply.ptr_vbuf = (char *)m_summaryVec;
+		m_reply.size_vbuf = m_summaryVecSize;
 	}
 
 	// returns values of specified meta tags
-	if ( ! reply->ptr_dbuf && m_req->size_displayMetas > 1 ) {
+	if ( ! m_reply.ptr_dbuf && m_req->size_displayMetas > 1 ) {
 		int32_t dsize;  char *d;
 		d = getDescriptionBuf(m_req->ptr_displayMetas,&dsize);
 		if ( ! d || d == (char *)-1 ) return (Msg20Reply *)d;
-		reply->ptr_dbuf  = d;
-		reply->size_dbuf = dsize; // includes \0
+		m_reply.ptr_dbuf  = d;
+		m_reply.size_dbuf = dsize; // includes \0
 	}
 
 	// get thumbnail image DATA
-	if ( ! reply->ptr_imgData && ! m_req->m_getLinkText ) {
-		reply-> ptr_imgData = ptr_imageData;
-		reply->size_imgData = size_imageData;
+	if ( ! m_reply.ptr_imgData && ! m_req->m_getLinkText ) {
+		m_reply.ptr_imgData = ptr_imageData;
+		m_reply.size_imgData = size_imageData;
 	}
 
 	// get firstip
@@ -16665,8 +16660,8 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	// need full cached page of each search result?
 	// include it always for spider status docs.
 	if ( m_req->m_includeCachedCopy || m_contentType == CT_STATUS ) {
-		reply-> ptr_content =  ptr_utf8Content;
-		reply->size_content = size_utf8Content;
+		m_reply.ptr_content =  ptr_utf8Content;
+		m_reply.size_content = size_utf8Content;
 	}
 
 	// do they want to know if this doc has an outlink to a url
@@ -16686,35 +16681,35 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	}
 
 	// easy ones
-	reply->m_isPermalink      = m_isPermalink;
-	reply->m_ip               = m_ip;
-	reply->m_firstIp          = *fip;
-	reply->m_docId            = m_docId;
-	reply->m_contentLen       = size_utf8Content;
-	reply->m_lastSpidered     = getSpideredTime();//m_spideredTime;
-	reply->m_datedbDate       = 0;
-	reply->m_firstIndexedDate = m_firstIndexedDate;
-	reply->m_firstSpidered    = m_firstIndexedDate;
-	reply->m_contentType      = m_contentType;
-	reply->m_language         = m_langId;
-	reply->m_country          = *getCountryId();
-	reply->m_hopcount         = m_hopCount;
-	reply->m_siteRank         = getSiteRank();
-	reply->m_isAdult          = m_isAdult; //QQQ getIsAdult()? hmmm
+	m_reply.m_isPermalink      = m_isPermalink;
+	m_reply.m_ip               = m_ip;
+	m_reply.m_firstIp          = *fip;
+	m_reply.m_docId            = m_docId;
+	m_reply.m_contentLen       = size_utf8Content;
+	m_reply.m_lastSpidered     = getSpideredTime();//m_spideredTime;
+	m_reply.m_datedbDate       = 0;
+	m_reply.m_firstIndexedDate = m_firstIndexedDate;
+	m_reply.m_firstSpidered    = m_firstIndexedDate;
+	m_reply.m_contentType      = m_contentType;
+	m_reply.m_language         = m_langId;
+	m_reply.m_country          = *getCountryId();
+	m_reply.m_hopcount         = m_hopCount;
+	m_reply.m_siteRank         = getSiteRank();
+	m_reply.m_isAdult          = m_isAdult; //QQQ getIsAdult()? hmmm
 
-	reply->ptr_ubuf             = getFirstUrl()->getUrl();
-	reply->ptr_rubuf            = ru;
-	reply->ptr_metadataBuf      = NULL;
+	m_reply.ptr_ubuf             = getFirstUrl()->getUrl();
+	m_reply.ptr_rubuf            = ru;
+	m_reply.ptr_metadataBuf      = NULL;
 
 
-	reply->size_ubuf             = getFirstUrl()->getUrlLen() + 1;
-	reply->size_rubuf            = rulen;
-	reply->size_metadataBuf      = 0;
+	m_reply.size_ubuf             = getFirstUrl()->getUrlLen() + 1;
+	m_reply.size_rubuf            = rulen;
+	m_reply.size_metadataBuf      = 0;
 
 	// check the tag first
 	if ( ! m_siteNumInlinksValid ) { g_process.shutdownAbort(true); }
 
-	reply->m_siteNumInlinks       = m_siteNumInlinks;
+	m_reply.m_siteNumInlinks       = m_siteNumInlinks;
 
 	// . get stuff from link info
 	// . this is so fast, just do it for all Msg20 requests
@@ -16722,11 +16717,11 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	//   google.com!!!
 	LinkInfo *info1 = ptr_linkInfo1;
 	if ( info1 ) {
-		reply->m_pageNumInlinks        = info1->m_totalInlinkingDocIds;
-		reply->m_pageNumGoodInlinks     = info1->m_numGoodInlinks;
-		reply->m_pageNumUniqueIps       = info1->m_numUniqueIps;
-		reply->m_pageNumUniqueCBlocks   = info1->m_numUniqueCBlocks;
-		reply->m_pageInlinksLastUpdated = info1->m_lastUpdated;
+		m_reply.m_pageNumInlinks        = info1->m_totalInlinkingDocIds;
+		m_reply.m_pageNumGoodInlinks     = info1->m_numGoodInlinks;
+		m_reply.m_pageNumUniqueIps       = info1->m_numUniqueIps;
+		m_reply.m_pageNumUniqueCBlocks   = info1->m_numUniqueCBlocks;
+		m_reply.m_pageInlinksLastUpdated = info1->m_lastUpdated;
 	}
 
 	// getLinkText is true if we are getting the anchor text for a
@@ -16751,10 +16746,10 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	// . we need the mid doma hash in addition to the ip domain because
 	//   chat.yahoo.com has different ip domain than www.yahoo.com , ...
 	//   and we don't want them both to be able to vote
-	// . the reply is zeroed out in call the reply->reset() above so
+	// . the reply is zeroed out in call the m_reply.reset() above so
 	//   if this is not yet set it will be 0
-	if ( reply->m_midDomHash == 0 ) {
-		reply->m_midDomHash = hash32 ( linker->getMidDomain(), linker->getMidDomainLen() );
+	if ( m_reply.m_midDomHash == 0 ) {
+		m_reply.m_midDomHash = hash32 ( linker->getMidDomain(), linker->getMidDomainLen() );
 	}
 
 	int64_t start = gettimeofdayInMilliseconds();
@@ -16855,9 +16850,9 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 
 	// point to it, include the \0.
 	if ( blen > 0 ) {
-		reply->ptr_linkText  = m_linkTextBuf;
+		m_reply.ptr_linkText  = m_linkTextBuf;
 		// save the size into the reply, include the \0
-		reply->size_linkText = blen + 1;
+		m_reply.size_linkText = blen + 1;
 		// sanity check
 		if ( (size_t)blen + 2 > sizeof(m_linkTextBuf) ) { g_process.shutdownAbort(true); }
 		// sanity check. null termination required.
@@ -16867,8 +16862,8 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	// . the link we link to
 	// . important when getting site info because the link url
 	//   can be different than the root url!
-	reply-> ptr_linkUrl = links->getLink   (linkNum);
-	reply->size_linkUrl = links->getLinkLen(linkNum)+1;
+	m_reply. ptr_linkUrl = links->getLink   (linkNum);
+	m_reply.size_linkUrl = links->getLinkLen(linkNum)+1;
 
 	// save the rss item in our state so we can point to it, include \0
 	if ( (size_t)rssItemLen > sizeof(m_rssItemBuf)-2)
@@ -16881,12 +16876,12 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 
 	// point to it, include the \0
 	if ( rssItemLen > 0 ) {
-		reply->ptr_rssItem  = m_rssItemBuf;
-		reply->size_rssItem = rssItemLen + 1;
+		m_reply.ptr_rssItem  = m_rssItemBuf;
+		m_reply.size_rssItem = rssItemLen + 1;
 	}
 
 	if ( ! m_req->m_doLinkSpamCheck )
-		reply->m_isLinkSpam = false;
+		m_reply.m_isLinkSpam = false;
 
 	if ( m_req->m_doLinkSpamCheck ) {
 		// reset to NULL to avoid strlen segfault
@@ -16898,7 +16893,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		linkeeUrl.set ( m_req->ptr_linkee );
 
 		// get it. does not block.
-		reply->m_isLinkSpam = ::isLinkSpam ( linker ,
+		m_reply.m_isLinkSpam = ::isLinkSpam ( linker ,
 						     m_ip ,
 						     m_siteNumInlinks,
 						     &m_xml,
@@ -16911,33 +16906,33 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 						     150000,//MAXDOCLEN//150000
 						     &note ,
 						     &linkeeUrl , // url ,
-						     linkNode ,
-						     m_niceness );
+						     linkNode );
 		// store it
 		if ( note ) {
 			// include the \0
-			reply->ptr_note  = note;
-			reply->size_note = strlen(note)+1;
+			m_reply.ptr_note  = note;
+			m_reply.size_note = strlen(note)+1;
 		}
 		// log the reason why it is a log page
-		if ( reply->m_isLinkSpam )
+		if ( m_reply.m_isLinkSpam )
 			log(LOG_DEBUG,"build: linker %s: %s.",
 			    linker->getUrl(),note);
 		// sanity
-		if ( reply->m_isLinkSpam && ! note )
+		if ( m_reply.m_isLinkSpam && ! note )
 			log("linkspam: missing note for d=%" PRId64"!",m_docId);
 	}
 
 	// sanity check
-	if ( reply->ptr_rssItem &&
-	     reply->size_rssItem>0 &&
-	     reply->ptr_rssItem[reply->size_rssItem-1]!=0) {
+	if ( m_reply.ptr_rssItem &&
+	     m_reply.size_rssItem>0 &&
+	     m_reply.ptr_rssItem[m_reply.size_rssItem-1]!=0) {
 		g_process.shutdownAbort(true); }
 
 	// . skip all this junk if we are a spammy voter
 	// . we get the title above in "getThatTitle"
-	if ( reply->m_isLinkSpam ) {
-		m_replyValid = true; return reply; }
+	if ( m_reply.m_isLinkSpam ) {
+		m_replyValid = true; return &m_reply;
+	}
 
 	// . this vector is set from a sample of the entire doc
 	// . it is used to dedup voters in Msg25.cpp
@@ -16963,12 +16958,12 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	if ( ! m_tagPairHashVecValid ) { g_process.shutdownAbort(true); }
 
 	// reference the vectors in our reply
-	reply-> ptr_vector1 = m_pageSampleVec;
-	reply->size_vector1 = m_pageSampleVecSize;
-	reply-> ptr_vector2 = m_postVec;
-	reply->size_vector2 = m_postVecSize;
-	reply-> ptr_vector3 = m_tagPairHashVec;
-	reply->size_vector3 = m_tagPairHashVecSize;
+	m_reply. ptr_vector1 = m_pageSampleVec;
+	m_reply.size_vector1 = m_pageSampleVecSize;
+	m_reply. ptr_vector2 = m_postVec;
+	m_reply.size_vector2 = m_postVecSize;
+	m_reply. ptr_vector3 = m_tagPairHashVec;
+	m_reply.size_vector3 = m_tagPairHashVecSize;
 
 	// crap, we gotta bubble sort these i think
 	// but only tag pair hash vec
@@ -17035,12 +17030,12 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		// ensure NULL terminated
 		p[len2] = '\0';
 		// store in reply. it will be serialized when sent.
-		reply->ptr_surroundingText  = p;
-		reply->size_surroundingText = len2 + 1;
+		m_reply.ptr_surroundingText  = p;
+		m_reply.size_surroundingText = len2 + 1;
 	}
 
 	// get title? its slow because it sets the sections class
-	if ( m_req->m_titleMaxLen > 0 && ! reply->ptr_tbuf &&
+	if ( m_req->m_titleMaxLen > 0 && ! m_reply.ptr_tbuf &&
 	     // don't get it anymore if getting link info because it
 	     // is slow...
 	     getThatTitle ) {
@@ -17048,11 +17043,11 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		if ( ! ti || ti == (Title *)-1 ) return (Msg20Reply *)ti;
 		char *tit = ti->getTitle();
 		int32_t  titLen = ti->getTitleLen();
-		reply-> ptr_tbuf = tit;
-		reply->size_tbuf = titLen + 1; // include \0
+		m_reply. ptr_tbuf = tit;
+		m_reply.size_tbuf = titLen + 1; // include \0
 		if ( ! tit || titLen <= 0 ) {
-			reply->ptr_tbuf = NULL;
-			reply->size_tbuf = 0;
+			m_reply.ptr_tbuf = NULL;
+			m_reply.size_tbuf = 0;
 		}
 	}
 
@@ -17066,7 +17061,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 
 
 	m_replyValid = true;
-	return reply;
+	return &m_reply;
 }
 
 
@@ -17130,7 +17125,7 @@ Matches *XmlDoc::getMatches () {
 	if(linkInfo==(LinkInfo*)-1)
 		linkInfo = NULL;
 	// returns false and sets g_errno on error
-	if ( !m_matches.set( ww, phrases, ss, bits, pos, xml, ti, getFirstUrl(), linkInfo, m_niceness ) ) {
+	if ( !m_matches.set( ww, phrases, ss, bits, pos, xml, ti, getFirstUrl(), linkInfo ) ) {
 		return NULL;
 	}
 
@@ -17316,7 +17311,7 @@ Title *XmlDoc::getTitle() {
 	start = logQueryTimingStart();
 
 	if ( !m_title.setTitle( xml, ww, titleMaxLen, query, getLinkInfo1(), getFirstUrl(), filteredRootTitleBuf,
-							m_filteredRootTitleBufSize, *contentTypePtr, m_langId, m_niceness ) ) {
+							m_filteredRootTitleBufSize, *contentTypePtr, m_langId ) ) {
 		return NULL;
 	}
 
@@ -17480,7 +17475,7 @@ char *XmlDoc::getHighlightedSummary ( bool *isSetFromTagsPtr ) {
 	StackBuf(hb);
 
 	// highlight the query in it
-	int32_t hlen = hi.set ( &hb, tmpSum.getBufStart(), tmpSum.getLength(), q, "<b>", "</b>", m_niceness );
+	int32_t hlen = hi.set ( &hb, tmpSum.getBufStart(), tmpSum.getLength(), q, "<b>", "</b>" );
 
 	// highlight::set() returns 0 on error
 	if ( hlen < 0 ) {
@@ -17582,8 +17577,7 @@ char *XmlDoc::getIsLinkSpam ( ) {
 				      150000,//MAXDOCLEN,//maxDocLen ,
 				      &m_note ,
 				      NULL , // &linkee , // url ,
-				      -1 , // linkNode ,
-				      m_niceness );
+				      -1 ); // linkNode ,
 	// set shadow
 	m_isLinkSpam2 = (bool)m_isLinkSpam;
 	return &m_isLinkSpam2;

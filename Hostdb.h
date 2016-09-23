@@ -252,9 +252,7 @@ class Hostdb {
 	// . sets itself from g_conf (our configuration class)
 	// . returns false on fatal error
 	// . gets filename from Conf.h class
-	bool init ( int32_t hostId , char *netname = NULL,
-		    bool proxyHost = false , char useTempCluster = 0 ,
-		    const char *cwd = NULL );
+	bool init(int32_t hostId, char *netname=NULL, bool proxyHost=false, bool useTempCluster=false, const char *cwd=NULL);
 
 	// if config changes this *should* change
 	int32_t getCRC();
@@ -459,7 +457,7 @@ class Hostdb {
 	int32_t m_crc;
 	int32_t m_crcValid;
 
-	char  m_useTmpCluster;
+	bool  m_useTmpCluster;
 
 	uint32_t getShardNum(rdbid_t rdbId, const void *key);
 	uint32_t getShardNum(char rdbId, const void *key) {

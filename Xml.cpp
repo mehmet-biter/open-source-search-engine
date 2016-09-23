@@ -207,12 +207,11 @@ bool Xml::getCompoundName ( int32_t node , SafeBuf *sb ) {
 #include "HttpMime.h" // CT_JSON
 
 // "s" must be in utf8
-bool Xml::set( char *s, int32_t slen, int32_t version, int32_t niceness, char contentType ) {
+bool Xml::set( char *s, int32_t slen, int32_t version, char contentType ) {
 	// just in case
 	reset();
 
 	m_version = version;
-	m_niceness = niceness;
 
 	// clear it
 	g_errno = 0;
@@ -267,7 +266,6 @@ bool Xml::set( char *s, int32_t slen, int32_t version, int32_t niceness, char co
 	// then XmlDoc::hashXml() breaks.
 	bool pureXml = ( contentType == CT_XML );
 
-	QUICKPOLL((niceness));
 	int32_t i;
 
 	/// @todo ALC why are we replacing NULL bytes here?
@@ -314,9 +312,6 @@ bool Xml::set( char *s, int32_t slen, int32_t version, int32_t niceness, char co
 		m_maxNumNodes = bigMax;
 	}
 
-	// breathe
-	QUICKPOLL ( niceness );
-
 	m_nodes = (XmlNode *)mmalloc( sizeof( XmlNode ) * m_maxNumNodes, "Xml1" );
 	if ( ! m_nodes ) { 
 		reset();
@@ -340,9 +335,6 @@ bool Xml::set( char *s, int32_t slen, int32_t version, int32_t niceness, char co
 	// . loop over the xml
 	// . i is byte-index in buffer
 	for ( i = 0 ; i < m_xmlLen && m_numNodes < m_maxNumNodes ; ) {
-		// breathe
-		QUICKPOLL(niceness);
-
 		// convenience ptr
 		XmlNode *xi = &m_nodes[m_numNodes];
 
@@ -425,8 +417,6 @@ bool Xml::set( char *s, int32_t slen, int32_t version, int32_t niceness, char co
 
 		// scan -- 5 continues -- node 1570 is text of script
 		for ( ; p < pend ; p++ ) {
-			// breathe
-			QUICKPOLL(m_niceness);
 			//
 			// adding these new quote checks may cause a few
 			// parsing inconsistencies for pages a hanful of pages
@@ -807,9 +797,6 @@ int32_t Xml::getMetaContent( char *buf, int32_t bufLen, const char *field, int32
 	char *dstEnd = buf + bufLen;
 	// find the first meta summary node
 	for ( int32_t i = startNode ; i < m_numNodes ; i++ ) {
-		// breathe
-		QUICKPOLL(m_niceness);
-
 		// continue if not a meta tag
 		if ( m_nodes[i].m_nodeId != TAG_META ) {
 			continue;
@@ -846,8 +833,6 @@ int32_t Xml::getMetaContent( char *buf, int32_t bufLen, const char *field, int32
 		char *lastp = NULL;
 		// copy the node @p into "dst"
 		for ( ; src < srcEnd ; src+= cs ) {
-			// breathe
-			QUICKPOLL(m_niceness);
 			// get the character size in bytes
 			cs = getUtf8CharSize ( src );
 
@@ -992,7 +977,7 @@ bool Xml::getTagContent( const char *fieldName, const char *fieldContent, char *
 					char saved = s[len];
 					s[len] = '\0';
 
-					if ( !xml.set( s, len, m_version, 0, CT_HTML ) ) {
+					if ( !xml.set( s, len, m_version, CT_HTML ) ) {
 						s[len] = saved;
 						return false;
 					}
@@ -1005,7 +990,7 @@ bool Xml::getTagContent( const char *fieldName, const char *fieldContent, char *
 					return false;
 				}
 			} else {
-				if ( !wp.set(this, true, 0, i, end_node ) ) {
+				if ( !wp.set(this, true, i, end_node ) ) {
 					// unable to allocate buffer
 					return false;
 				}

@@ -32,6 +32,18 @@ class RdbList;
 class RdbTree;
 class RdbBuckets;
 
+/**
+ * Data is stored in m_keys
+ *
+ * when fixedDataSize == 0 (no data)
+ * - recSize == keySize
+ *
+ * when fixedDataSize > 0 (fixed sized data)
+ * - recSize == keySize + sizeof(char*)
+ *
+ * when fixedDataSize == -1 (variable sized data)
+ * - recSize == keySize + sizeof(char*) + sizeof(int32_t)
+ */
 class RdbBucket {
 public:
 	RdbBucket() {}
@@ -56,11 +68,13 @@ public:
 	bool addKey(const char *key, const char *data, int32_t dataSize);
 	char *getKeyVal(const char *key, char **data, int32_t *dataSize);
 
-	int32_t getNode(const char *key) const; //returns -1 if not found
+	int32_t getNode(const char *key); //returns -1 if not found
 	int32_t getNumNegativeKeys() const;
 
 	bool getList(RdbList *list, const char *startKey, const char *endKey, int32_t minRecSizes,
 	             int32_t *numPosRecs, int32_t *numNegRecs, bool useHalfKeys);
+
+	bool deleteNode(int32_t i);
 
 	bool deleteList(RdbList *list);
 
@@ -107,6 +121,8 @@ public:
 
 	bool getList(collnum_t collnum, const char *startKey, const char *endKey, int32_t minRecSizes, RdbList *list,
 	             int32_t *numPosRecs, int32_t *numNegRecs, bool useHalfKeys);
+
+	bool deleteNode(collnum_t collnum, const char *key);
 
 	bool deleteList(collnum_t collnum, RdbList *list);
 

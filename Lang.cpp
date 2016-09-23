@@ -9,12 +9,33 @@ void languageToString ( unsigned char langId , char *buf ) {
 }
 
 static const char * const s_langStrings[] = {
-	"Unknown","English","French","Spanish","Russian","Turkish","Japanese",
-	"Chinese Traditional","Chinese Simplified","Korean","German","Dutch",
-	"Italian","Finnish","Swedish","Norwegian","Portuguese","Vietnamese",
-	"Arabic","Hebrew","Indonesian","Greek","Thai","Hindi","Bengala",
-	"Polish","Tagalog",
-
+	"Unknown",
+	"English",
+	"French",
+	"Spanish",
+	"Russian",
+	"Turkish",
+	"Japanese",
+	"Chinese Traditional",
+	"Chinese Simplified",
+	"Korean",
+	"German",
+	"Dutch",
+	"Italian",
+	"Finnish",
+	"Swedish",
+	"Norwegian",
+	"Portuguese",
+	"Vietnamese",
+	"Arabic",
+	"Hebrew",
+	"Indonesian",
+	"Greek",
+	"Thai",
+	"Hindi",
+	"Bengala",
+	"Polish",
+	"Tagalog",
 	"Latin",
 	"Esperanto",
 	"Catalan",
@@ -53,10 +74,33 @@ const char* getLanguageString ( unsigned char langId ) {
 }
 
 static const char * const s_langAbbr[] = {
-	"xx","en","fr","es","ru","tr","ja","zh_tw","zh_cn","ko","de","nl",
-	"it","fi","sv","no","pt","vi","ar","he","id","el","th","hi",
-	"bn","pl","tl",
-
+	"xx",
+	"en",
+	"fr",
+	"es",
+	"ru",
+	"tr",
+	"ja",
+	"zh_tw",
+	"zh_cn",
+	"ko",
+	"de",
+	"nl",
+	"it",
+	"fi",
+	"sv",
+	"no",
+	"pt",
+	"vi",
+	"ar",
+	"he",
+	"id",
+	"el",
+	"th",
+	"hi",
+	"bn",
+	"pl",
+	"tl",
 	"la", // latin
 	"eo", // esperanto
 	"ca", // catalan
@@ -90,7 +134,7 @@ static const char * const s_langAbbr[] = {
 };
 
 uint8_t getLangIdFromAbbr ( const char *abbr ) {
-	for (int x = 0; x < MAX_LANGUAGES && s_langAbbr[x]; ++x) {
+	for (int x = 0; x < langLast && s_langAbbr[x]; ++x) {
 		if (!strcasecmp((char*)abbr, s_langAbbr[x])) {
 			return x;
 		}

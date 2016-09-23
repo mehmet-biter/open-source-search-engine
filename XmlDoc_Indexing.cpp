@@ -1999,11 +1999,11 @@ bool XmlDoc::hashString3( char       *s              ,
 	Bits    bits;
 	Phrases phrases;
 
-	if ( ! words.set   ( s , slen , true , niceness ) )
+	if ( ! words.set   ( s , slen , true ) )
 		return false;
-	if ( !bits.set(&words, niceness))
+	if ( !bits.set(&words))
 		return false;
-	if ( !phrases.set( &words, &bits, niceness ) )
+	if ( !phrases.set( &words, &bits ) )
 		return false;
 
 	// use primary langid of doc

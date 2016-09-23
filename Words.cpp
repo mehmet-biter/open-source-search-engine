@@ -36,7 +36,7 @@ void Words::reset ( ) {
 	m_localBufSize2 = 0;
 }
 
-bool Words::set( char *s, int32_t slen, bool computeWordIds, int32_t niceness ) {
+bool Words::set( char *s, int32_t slen, bool computeWordIds ) {
 	// bail if nothing
 	if ( ! s || slen == 0 ) {
 		m_numWords = 0;
@@ -49,7 +49,7 @@ bool Words::set( char *s, int32_t slen, bool computeWordIds, int32_t niceness ) 
 		s[slen] = '\0';
 	}
 
-	bool status = set( s, computeWordIds, niceness );
+	bool status = set( s, computeWordIds );
 	if ( c != '\0' ) {
 		s[slen] = c;
 	}
@@ -108,7 +108,7 @@ static int32_t countWords ( const char *p ) {
 	return count+10;
 }
 
-bool Words::set( Xml *xml, bool computeWordIds, int32_t niceness, int32_t node1, int32_t node2 ) {
+bool Words::set( Xml *xml, bool computeWordIds, int32_t node1, int32_t node2 ) {
 	// prevent setting with the same string
 	if ( m_xml == xml ) gbshutdownLogicError();
 
@@ -158,7 +158,7 @@ bool Words::set( Xml *xml, bool computeWordIds, int32_t niceness, int32_t node1,
 			/// addWords should be change to use nodeLen and not null terminated string
 			char c = node[nodeLen];
 			node[nodeLen] = '\0';
-			addWords( node, nodeLen, computeWordIds, niceness );
+			addWords( node, nodeLen, computeWordIds );
 			node[nodeLen] = c;
 			continue;
 		}
@@ -195,7 +195,7 @@ bool Words::set( Xml *xml, bool computeWordIds, int32_t niceness, int32_t node1,
 // . doesn't do tags, only text nodes in "xml"
 // . our definition of a word is as close to English as we can get it
 // . BUT we also consider a string of punctuation characters to be a word
-bool Words::set( char *s, bool computeWordIds, int32_t niceness ) {
+bool Words::set( char *s, bool computeWordIds ) {
 	reset();
 
 	// determine rough upper bound on number of words by counting
@@ -205,10 +205,10 @@ bool Words::set( char *s, bool computeWordIds, int32_t niceness ) {
 		return false;
 	}
 
-	return addWords( s, 0x7fffffff, computeWordIds, niceness );
+	return addWords( s, 0x7fffffff, computeWordIds );
 }
 
-bool Words::addWords( char *s, int32_t nodeLen, bool computeWordIds, int32_t niceness ) {
+bool Words::addWords( char *s, int32_t nodeLen, bool computeWordIds ) {
 	int32_t  i = 0;
 	int32_t  j;
 	int32_t  wlen;
@@ -268,9 +268,6 @@ bool Words::addWords( char *s, int32_t nodeLen, bool computeWordIds, int32_t nic
 				break;
 			}
 
-			// breathe
-			QUICKPOLL(niceness);
-
 			// if we are simple ascii, skip quickly
 			if ( is_ascii(s[i]) ) {
 				// accumulate NON-alnum chars
@@ -316,8 +313,6 @@ bool Words::addWords( char *s, int32_t nodeLen, bool computeWordIds, int32_t nic
 	j = i;
  again:
 	for ( ; s[i] ; i += getUtf8CharSize(s+i) ) {
-		// breathe
-		QUICKPOLL(niceness);
 		// simple ascii?
 		if ( is_ascii(s[i]) ) {
 			// accumulate alnum chars
@@ -482,24 +477,6 @@ bool Words::allocateWordBuffers(int32_t count, bool tagIds) {
 	return true;
 }
 
-static uint8_t s_findMaxIndex(int64_t *array, int num, int *wantmax = NULL) {
-	if(!array || num < 2 || num > 255) return(0);
-	int64_t max, oldmax;
-	int idx = 0;
-	max = oldmax = INT_MIN;
-	for(int x = 0; x < num; x++) {
-		if(array[x] >= max) {
-			oldmax = max;
-			max = array[x];
-			idx = x;
-		}
-	}
-	if(max == 0) return(0);
-	if(max == oldmax) return(0);
-	if(wantmax) *wantmax = max;
-	return((uint8_t)idx);
-}
-
 unsigned char Words::isBounded(int wordi) {
 	if(wordi+1 < m_numWords &&
 	   getWord(wordi)[getWordLen(wordi)] == '/'
@@ -537,148 +514,6 @@ unsigned char getCharacterLanguage ( const char *utf8Char ) {
 		return langGreek;
 
 	return langUnknown;
-}
-
-// returns -1 and sets g_errno on error, because 0 means langUnknown
-int32_t Words::getLanguage( Sections *sections, int32_t maxSamples, int32_t niceness, int32_t *langScore ) {
-	// . take a random sample of words and look them up in the
-	//   language dictionary
-	HashTableX ht;
-	int64_t langCount[MAX_LANGUAGES];
-	int64_t langWorkArea[MAX_LANGUAGES];
-	int32_t numWords = m_numWords;
-
-	// reset the language count
-	memset(langCount, 0, sizeof(int64_t)*MAX_LANGUAGES);
-	// sample the words
-	int32_t wordi     = 0;
-
-	if ( !ht.set( 8, 1, ( int32_t )( maxSamples * 8.0 ), NULL, 0, false, "wordslang" ) ) {
-		return -1;
-	}
-
-	// . avoid words in these bad sections
-	int32_t badFlags = SEC_SCRIPT|SEC_STYLE|SEC_SELECT;
-
-	// shortcuts
-	int64_t *wids  = m_wordIds;
-	int32_t      *wlens = m_wordLens;
-	char     **wptrs = m_words;
-
-	char numOne = 1;
-	Section **sp = NULL;
-	if ( sections ) sp = sections->m_sectionPtrs;
-	// this means null too
-	if ( sections && sections->m_numSections == 0 ) sp = NULL;
-
-	int32_t maxCount = 1000;
-
-	while ( wordi < numWords ) {
-		// breathe
-		QUICKPOLL( niceness );
-
-		// move to the next valid word
-		if ( ! wids [wordi]     ) { wordi++; continue; }
-		if (   wlens[wordi] < 2 ) { wordi++; continue; }
-
-		// meaning script section ,etc
-		if ( sp && ( sp[wordi]->m_flags & badFlags ) ) {
-			wordi++; continue; }
-
-		// Skip word if bounded by '/' or '?' might be in a URL
-		if(isBounded(wordi)) {
-			wordi++;
-			continue;
-		}
-
-		// is it arabic? sometimes they are spammy pages and repeat
-		// a few arabic words over and over again, so don't do deduping
-		// with "ht" before checking this.
-		char cl = getCharacterLanguage ( wptrs[wordi] );
-		if ( cl ) {
-		        langCount[(unsigned char)cl]++;
-			wordi++;
-			continue;
-		}
-
-		if(!ht.isEmpty(&m_wordIds[wordi]) ) {
-			wordi++;
-			continue;
-		}
-
-		// If we can't add the word, it's not that bad.
-		// Just gripe about it in the log.
-		if(!ht.addKey(&m_wordIds[wordi], &numOne)) {
-			log(LOG_WARN, "build: Could not add word to temporary "
-			    "table, memory error?\n");
-			g_errno = ENOMEM;
-			return -1;
-		}
-
-		if ( maxCount-- <= 0 ) break;
-
-		// No lang from charset, got a phrase, and 0 language does not have 
-		// a score Order is very important!
-		int foundone = 0;
-		if (
-		    // we seem to be missing hungarian and thai
-		    g_speller.getPhraseLanguages(getWord(wordi),
-						 getWordLen(wordi), 
-						 langWorkArea) &&
-		    // why must it have an "unknown score" of 0?
-		    // allow -1... i don't know what that means!!
-		    langWorkArea[0] <= 0) {
-			
-			int lasty = -1;
-			for(int y = 1; y < MAX_LANGUAGES; y++) {
-				if(langWorkArea[y] == 0) continue;
-				langCount[y]++;
-				int32_t pop = langWorkArea[y];
-				// negative means in an official dictionary
-				if ( pop < 0 ) {
-					pop *= -1;
-					langCount[y] += 1;
-				}
-				// extra?
-				if ( pop > 1000 )
-					langCount[y] += 2;
-				if ( pop > 10000 )
-					langCount[y] += 2;
-				lasty = y;
-				foundone++;
-			}
-			// . if it can only belong to one language
-			// . helps fix that fact that our unifiedDict is crummy
-			//   and identifes some words as being in a lot of languages
-			//   like "Pronto" as being in english and not giving
-			//   the popularities correctly.
-			if ( foundone == 1 )
-				// give massive boost
-				langCount[lasty] += 10;
-		}
-		// . try to skip unknown words without killing sample size
-		// . we lack russian, hungarian and arabic in the unified
-		//   dict, so try to do character detection for those langs.
-		// . should prevent them from being detected as unknown
-		//   langs and coming up for english search 'gigablast'
-		if ( ! foundone ) {
-			langCount[langUnknown]++;
-			// do not count towards sample size
-			maxCount++;
-		}
-
-		wordi++;
-	}
-
-	// get the lang with the max score then
-	int l = s_findMaxIndex(langCount, MAX_LANGUAGES);
-
-	if ( langScore ) {
-		*langScore = langCount[l];
-	}
-
-	// return if known now
-	return l;
 }
 
 // . return the value of the specified "field" within this html tag, "s"

@@ -37,8 +37,7 @@ class Synonyms {
 	int32_t getSynonyms ( const class Words *words , 
 			   int32_t wordNum , 
 			   uint8_t langId ,
-			   char *tmpBuf ,
-			   int32_t niceness ) ;
+			   char *tmpBuf ) ;
 
 	
 	bool addWithoutApostrophe ( int32_t wordNum , class HashTableX *dt ) ;

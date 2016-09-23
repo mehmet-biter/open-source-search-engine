@@ -25,8 +25,7 @@ char *getMatches2 ( Needle *needles          ,
 		    int32_t   *needleNum        ,
 		    bool    stopAtFirstMatch ,
 		    bool   *hadPreMatch      ,
-		    bool    saveQuickTables  ,
-		    int32_t    niceness         ) {
+		    bool    saveQuickTables  ) {
 
 	// assume not
 	if ( hadPreMatch ) *hadPreMatch = false;

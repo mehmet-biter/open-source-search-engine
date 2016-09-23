@@ -940,8 +940,6 @@ bool Msg25::getLinkInfo2( char      *site                ,
 
 	m_table.set (4,sizeof(NoteEntry *),0, NULL,0,false,"msg25tab");
 
-	QUICKPOLL(m_niceness);
-
 	m_url = url;
 	m_site = site;
 
@@ -1012,8 +1010,6 @@ bool Msg25::doReadLoop ( ) {
 
 	// but new links: algo does not need internal links with no link test
 	// see Links.cpp::hash() for score table
-
-	QUICKPOLL(m_niceness);
 
 	m_minRecSizes = READSIZE; // MAX_LINKERS_IN_TERMLIST * 10 + 6;
 
@@ -1267,9 +1263,6 @@ bool Msg25::sendRequests ( ) {
 
 	// keep sending requests
 	for ( ;; ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-
 		// if we still haven't gotten enough good inlinks, quit after
 		// looking up this many titlerecs
 		if ( m_numRequests >= MAX_DOCIDS_TO_SAMPLE ) break;
@@ -1524,8 +1517,6 @@ bool Msg25::sendRequests ( ) {
 
 		// returns false if blocks, true otherwise
 		bool status = m_msg20s[j].getSummary ( r ) ;
-		// breathe
-		QUICKPOLL(m_niceness);
 		// if blocked launch another
 		if ( ! status ) continue;
 		// . this returns true if we are done
@@ -1809,9 +1800,6 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 		note = "linker banned or filtered";
 	}
 
-	// breathe
-	QUICKPOLL(m_niceness);
-
 	// get the linker url
 	Url linker; 
 	if ( r ) linker.set( r->ptr_ubuf, r->size_ubuf );
@@ -1846,7 +1834,6 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 	}
 
 
-	QUICKPOLL(m_niceness);
 	// discount if LinkText::isLinkSpam() or isLinkSpam2() said it
 	// should not vote
 	if ( r && good && ! internal && r->m_isLinkSpam &&
@@ -1878,8 +1865,6 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 	// . NO! not anymore, i don't want to hit MAX_LINKERS and end up
 	//   removing all the dups below and end up with hardly any inlinkers
 	for ( int32_t i = 0 ; ! internal && i < n ; i++ ) {
-		// breathe
-		QUICKPOLL(m_niceness);
 		// get the reply in a ptr
 		Msg20Reply *p = m_replyPtrs[i];
 		// is it internal
@@ -1923,9 +1908,6 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 		m->m_r            = r;
 		m->m_replyMaxSize = rsize;
 	}
-
-	// breathe
-	QUICKPOLL(m_niceness);
 
 	if ( r && good ) {
 		int32_t iptop1 = iptop(r->m_ip);
@@ -2050,9 +2032,6 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 	// process all "good" Msg20Replies
 	//
 	//
-
-	// breathe
-	QUICKPOLL(m_niceness);
 
 	// debug log
 	if ( g_conf.m_logDebugLinkInfo ) {
@@ -3183,7 +3162,7 @@ Inlink *LinkInfo::getNextInlink ( Inlink *k ) {
 // . returns false and sets g_errno on error
 // . returns true if no error was encountered
 // . call xml->isEmpty() to see if you got anything
-bool LinkInfo::getItemXml ( Xml *xml , int32_t niceness ) {
+bool LinkInfo::getItemXml ( Xml *xml ) {
 	// reset it
 	xml->reset();
 	// loop through the Inlinks
@@ -3197,15 +3176,15 @@ bool LinkInfo::getItemXml ( Xml *xml , int32_t niceness ) {
 	// return if nada
 	if ( ! k ) return true;
 	// set the xml
-	return k->setXmlFromRSS ( xml , niceness );
+	return k->setXmlFromRSS ( xml );
 }
 
-bool Inlink::setXmlFromRSS ( Xml *xml , int32_t niceness ) {
+bool Inlink::setXmlFromRSS ( Xml *xml ) {
 	// compute the length (excludes the \0's)
 	int32_t len = size_rssItem - 1;
 
 	// return false and set g_errno if this fails
-	return xml->set( getRSSItem(), len, TITLEREC_CURRENT_VERSION, niceness, CT_XML );
+	return xml->set( getRSSItem(), len, TITLEREC_CURRENT_VERSION, CT_XML );
 }
 
 bool LinkInfo::hasLinkText ( ) {
@@ -3617,7 +3596,6 @@ bool Links::set ( bool useRelNoFollow ,
 	// visit each node in the xml tree. a node can be a tag or a non-tag.
 	const char *urlattr = NULL;
 	for ( int32_t i=0; i < m_numNodes ; i++ ) {
-		QUICKPOLL(niceness);
 		// . continue if this tag ain't an <a href> tag
 		// . atom feeds have a <link href=""> field in them
 		int32_t id = xml->getNodeId ( i );
@@ -3757,8 +3735,6 @@ bool Links::set ( bool useRelNoFollow ,
 		// ignore mailto: links
 		if ( linkLen >= 7 && strncasecmp( link , "mailto:" , 7 ) == 0 )
 			continue;
-
-		QUICKPOLL(niceness);
 
 		// if we have a sequence of alnum chars (or hpyhens) followed 
 		// by a ':' then that is a protocol. we only support http and 
@@ -3957,12 +3933,8 @@ bool Links::addLink ( const char *link , int32_t linkLen , int32_t nodeNum ,
 		// how much mem do we need for newAllocLinks links?
 		int32_t newAllocSize = getLinkBufferSize(newAllocLinks); 
 
-		QUICKPOLL(niceness);
-
 		char *newBuf = (char*)mmalloc(newAllocSize, "Links");
 		if (!newBuf) return false; 
-
-		QUICKPOLL(niceness);
 
 		// a ptr to it
 		char *p = newBuf;
@@ -4000,30 +3972,22 @@ bool Links::addLink ( const char *link , int32_t linkLen , int32_t nodeNum ,
 		if (m_linkBuf){
 			gbmemcpy(newLinkPtrs, m_linkPtrs, 
 			       m_numLinks * sizeof(char*));
-			QUICKPOLL(niceness);
 			gbmemcpy(newLinkLens, m_linkLens, 
 			       m_numLinks * sizeof(int32_t));
-			QUICKPOLL(niceness);
 			gbmemcpy(newLinkNodes, m_linkNodes, 
 			       m_numLinks * sizeof(int32_t));
-			QUICKPOLL(niceness);
 			gbmemcpy(newLinkHashes, m_linkHashes,
 			       m_numLinks * sizeof(uint64_t));
-			QUICKPOLL(niceness);
 			gbmemcpy(newHostHashes, m_hostHashes,
 			       m_numLinks * sizeof(uint64_t));
-			QUICKPOLL(niceness);
 			gbmemcpy(newDomHashes, m_domHashes,
 			       m_numLinks * sizeof(int32_t));
-			QUICKPOLL(niceness);
 			gbmemcpy(newLinkFlags, m_linkFlags,
 			       m_numLinks * sizeof(linkflags_t));
-			QUICKPOLL(niceness);
 			gbmemcpy(newSpamNotes,m_spamNotes,
 			       m_numLinks * sizeof(char *));
 			int32_t oldSize = getLinkBufferSize(m_allocLinks);
 			mfree(m_linkBuf, oldSize, "Links");
-			QUICKPOLL(niceness);
 		}
 		m_allocLinks = newAllocLinks;
 		m_linkBuf    = newBuf;
@@ -4114,7 +4078,6 @@ bool Links::addLink ( const char *link , int32_t linkLen , int32_t nodeNum ,
 		else if (m_allocSize < 1024*1024) newAllocSize = m_allocSize*2;
 		else  newAllocSize = m_allocSize + 1024*1024;
 		// MDW: a realloc would be more efficient here.
-		QUICKPOLL(niceness);
 		char *newBuf = (char*)mmalloc(newAllocSize, "Links");
 		if ( ! newBuf ) {
 			log(LOG_WARN, "build: Links failed to realloc.");
@@ -4122,24 +4085,18 @@ bool Links::addLink ( const char *link , int32_t linkLen , int32_t nodeNum ,
 		}
 		log(LOG_DEBUG, "build: resizing Links text buffer to %" PRId32,
 		    newAllocSize);
-		QUICKPOLL(niceness);
 		if ( m_allocBuf ) {
-			QUICKPOLL(niceness);
 			gbmemcpy ( newBuf , m_allocBuf , m_allocSize );
-			QUICKPOLL(niceness);
 			// update pointers to previous buffer
 			int64_t offset = newBuf - m_allocBuf;
 			char *allocEnd = m_allocBuf + m_allocSize;
 			for (int32_t i = 0 ; i < m_numLinks ; i++ ) {
-				QUICKPOLL(niceness);
 				if ( m_linkPtrs[i] <  m_allocBuf ) continue;
 				if ( m_linkPtrs[i] >= allocEnd   ) continue;
 				m_linkPtrs[i] += offset;
 			}
 			m_bufPtr += offset;
-			QUICKPOLL(niceness);
 			mfree ( m_allocBuf , m_allocSize , "Links");
-			QUICKPOLL(niceness);
 		}
 		else m_bufPtr = newBuf;
 
@@ -4154,7 +4111,6 @@ bool Links::addLink ( const char *link , int32_t linkLen , int32_t nodeNum ,
 	// serialize the normalized link into the buffer 
 	gbmemcpy ( m_bufPtr , url.getUrl(), url.getUrlLen() );
 	m_bufPtr += url.getUrlLen();
-	QUICKPOLL(niceness);
 
 	// and NULL terminate it
 	*m_bufPtr++  = '\0';
@@ -4367,8 +4323,6 @@ bool Links::addLink ( const char *link , int32_t linkLen , int32_t nodeNum ,
 	// set to NULL for now -- call setLinkSpam() later...
 	m_spamNotes [ m_numLinks ] = NULL;
 
-	QUICKPOLL(niceness);
-
 	// inc the count
 	m_numLinks++;
 	return true;
@@ -4443,7 +4397,6 @@ int32_t Links::getLinkText ( const char  *linkee ,
 	// find the link point to our url
 	int32_t i;
 	for ( i = 0 ; i < m_numLinks ; i++ ) {
-		QUICKPOLL(niceness);
 		char *link    = getLinkPtr(i);
 		int32_t  linkLen = getLinkLen(i);
 		// now see if its a full match
@@ -4516,7 +4469,6 @@ int32_t Links::getLinkText2 ( int32_t i ,
 		// back pedal node until we hit <item> or <entry> tag
 		int32_t j ;
 		for ( j = node1 ; j > 0 ; j-- ) {
-			QUICKPOLL(niceness);
 			// skip text nodes
 			if ( xmlNodes[j].m_nodeId == TAG_TEXTNODE ) continue;
 			// check the tag
@@ -4540,7 +4492,6 @@ int32_t Links::getLinkText2 ( int32_t i ,
 		// . start at the first tag in this element/item
 		// . we will copy the blurb on the interval [j,k)
 		for ( int32_t k = j+1 ; k < xmlNumNodes ; k++ ) {
-			QUICKPOLL(niceness);
 			// get the next node in line
 			XmlNode *nn = &xmlNodes[k];
 			// . break out if would be too long
@@ -4593,7 +4544,6 @@ skipItem:
 	char *p    = buf;
 	char *pend = buf + bufLen;
 	while ( p < pend ) {
-		QUICKPOLL ( niceness );
 		int character_len = getUtf8CharSize(p);
 		if ( p+character_len > pend ) //truncated utf8 character
 			break;
@@ -4607,7 +4557,6 @@ skipItem:
 	char *q = p;
 	char *last = NULL;
 	while ( q < pend ) {
-		QUICKPOLL ( niceness );
 		int character_len = getUtf8CharSize(q);
 		if ( q+character_len > pend ) //truncated utf8 character
 			break;
@@ -4638,8 +4587,6 @@ char *Links::linkTextSubstr(int32_t linkNum, char *string, int32_t niceness) {
 		XmlNode *node = m_xml->getNodePtr(i);
 		if (node->getNodeId() == TAG_A) return NULL;
 		if (node->getNodeId() != TAG_TEXTNODE) continue;
-		// quickpoll, this is prone to blocking
-		QUICKPOLL(niceness);
 		// maybe handle img alt text here someday, too
 		char *ptr;
 		if ((ptr = strncasestr(node->getNode(), 

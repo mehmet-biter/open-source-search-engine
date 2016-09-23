@@ -691,8 +691,6 @@ bool Statsdb::gifLoop ( ) {
 	char *p    = m_sb1.getBufStart();
 	char *pend = p + m_sb1.length();
 	for ( ; p < pend ; p += 12 ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
 		// get graph hash of this point
 		int32_t  gh = *(int32_t *)(p +8);
 
@@ -741,8 +739,6 @@ bool Statsdb::gifLoop ( ) {
 	// now plot the events, horizontal line segments like the performance
 	// graph uses
 	for ( int32_t i = 0 ; i < m_ht3.m_numSlots ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
 		// skip if slot empty
 		if ( ! m_ht3.m_flags[i] ) continue;
 		// get the offset into m_sb3
@@ -877,8 +873,6 @@ char *Statsdb::plotGraph ( char *pstart ,
 	char *p = pstart;
 
 	for ( ; p < pend ; p += 12 ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
 		if ( m_gw.getLength() > 10000000 ) break;
 		// get the y
 		float y2 = *(float *)(p+4);
@@ -966,8 +960,6 @@ char *Statsdb::plotGraph ( char *pstart ,
 
 	// now the m_sb1 buffer consists of points to make lines with
 	for ( ; p < pend ; ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
 		if ( m_gw.getLength() > 10000000 ) break;
 		// first is x pixel pos
 		int32_t  x2 = *(int32_t *)p; p += 4;
@@ -1071,8 +1063,6 @@ char *Statsdb::plotGraph ( char *pstart ,
 
 	float lastZ = -1;
 	for ( float z = ymin ; z < ymax ; z += deltaz ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
 		// draw it
 		drawHR ( z , ymin , ymax , m_gw , label , zoff , color );
 		if(z == lastZ) break;
@@ -1293,8 +1283,6 @@ bool Statsdb::addPointsFromList ( Label *label ) {
 	m_list.resetListPtr();
 	// scan the list for our junk
 	for ( ; ! m_list.isExhausted() ; m_list.skipCurrentRecord() ) {
-		// breathe
-		QUICKPOLL(m_niceness);
 		// get that
 		StatKey *sk = (StatKey *)m_list.getCurrentRec();
 		// and data
@@ -1470,8 +1458,6 @@ bool Statsdb::addEventPointsFromList ( ) {
 	m_list.resetListPtr();
 	// scan the list for our junk
 	for ( ; ! m_list.isExhausted() ; m_list.skipCurrentRecord() ) {
-		// breathe
-		QUICKPOLL(m_niceness);
 		// get that
 		StatKey *sk = (StatKey *)m_list.getCurrentRec();
 		// and data
@@ -1520,15 +1506,11 @@ bool Statsdb::addEventPoint ( int32_t  t1        ,
 
 	// go down each line of points
 	for ( int32_t i = 0 ; i < MAX_LINES2 ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
 		// . is there room for us in this line?
 		// . see what other lines/events are on this line
 		int32_t slot = m_ht3.getSlot ( &i );
 		// loop over all events on this line
 		for ( ; slot >= 0 ; slot = m_ht3.getNextSlot ( slot , &i ) ) {
-			// breathe
-			QUICKPOLL ( m_niceness );
 			// get the offset
 			int32_t offset = *(int32_t *)m_ht3.getValueFromSlot ( slot );
 			// get buffer

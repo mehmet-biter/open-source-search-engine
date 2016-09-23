@@ -786,11 +786,11 @@ bool processLoop ( void *state ) {
 	}
 	else {
 		// get the content as xhtml (should be NULL terminated)
-		if ( ! xml.set ( content, contentLen, TITLEREC_CURRENT_VERSION, 0, CT_HTML ) ) {
+		if ( ! xml.set ( content, contentLen, TITLEREC_CURRENT_VERSION, CT_HTML ) ) {
 			return sendErrorReply ( st , g_errno );
 		}
 
-		if ( ! ww.set ( &xml, true, 0 ) ) {
+		if ( ! ww.set ( &xml, true ) ) {
 			return sendErrorReply ( st , g_errno );
 		}
 

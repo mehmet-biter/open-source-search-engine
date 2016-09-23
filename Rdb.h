@@ -104,7 +104,19 @@ public:
 	// . caller should retry later on g_errno of ENOMEM or ETRYAGAIN
 	// . returns the node # in the tree it added the record to
 	// . key low bit must be set (otherwise it indicates a delete)
-	bool addRecord ( collnum_t collnum, char *key, char *data, int32_t dataSize);
+	/**
+	 * @note special behaviour when index is enabled. if corresponding opposite key is found in tree/bucket,
+	 * it is assumed that we want the opposite key deleted.
+	 * eg:
+	 *   positive key in tree, negative key passed to addRecord (positive key deleted)
+	 *   negative key in tree, positive key passed to addRecord (negative key deleted)
+	 *
+	 * the reason for this is so that we can eliminate negative key in tree
+	 * (negative key should never be there when index is used, unless for special reasons. eg: posdb for deleted document)
+	 *
+	 * the scenario where we want to eliminate a negative key is when we deleted a document, and then we respider successfully
+	 */
+	bool addRecord(collnum_t collnum, char *key, char *data, int32_t dataSize);
 
 	// returns false if no room in tree or m_mem for a list to add
 	bool hasRoom ( RdbList *list , int32_t niceness );

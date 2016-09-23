@@ -410,8 +410,6 @@ int64_t SpiderColl::getEarliestSpiderTimeFromWaitingTree ( int32_t firstIp ) {
 	int32_t node = m_waitingTree.getNextNode ( 0, (char *)&wk );
 	// if empty, stop
 	if ( node < 0 ) return -1;
-	// breathe
-	QUICKPOLL(MAX_NICENESS);
 	// get the key
 	key96_t *k = (key96_t *)m_waitingTree.getKey ( node );
 	// ok, we got one
@@ -434,8 +432,6 @@ bool SpiderColl::makeWaitingTable ( ) {
 	log(LOG_DEBUG,"spider: making waiting table for %s.",m_coll);
 	int32_t node = m_waitingTree.getFirstNode();
 	for ( ; node >= 0 ; node = m_waitingTree.getNextNode(node) ) {
-		// breathe
-		QUICKPOLL(MAX_NICENESS);
 		// get key
 		key96_t *key = (key96_t *)m_waitingTree.getKey(node);
 		// get ip from that
@@ -627,11 +623,7 @@ bool SpiderColl::addSpiderReply ( SpiderReply *srep ) {
 	UrlLock *lock = (UrlLock *)ht->getValue ( &lockKey );
 	time_t nowGlobal = getTimeGlobal();
 
-	if ( g_conf.m_logDebugSpider )
-		logf(LOG_DEBUG,"spider: removing lock uh48=%" PRId64" "
-		     "lockKey=%" PRIu64,
-		     srep->getUrlHash48(),
-		     lockKey );
+	logDebug(g_conf.m_logDebugSpider, "spider: removing lock uh48=%" PRId64" lockKey=%" PRIu64, srep->getUrlHash48(), lockKey);
 
 	// we do it this way rather than remove it ourselves
 	// because a lock request for this guy
@@ -645,7 +637,6 @@ bool SpiderColl::addSpiderReply ( SpiderReply *srep ) {
 	//   will kick in before us and end the round, then we end up
 	//   spidering a previously locked url right after and DOUBLE
 	//   increment the round!
-	if ( lock ) lock->m_expires = nowGlobal + 2;
 	/////
 	//
 	// but do note that its spider has returned for populating the
@@ -655,42 +646,25 @@ bool SpiderColl::addSpiderReply ( SpiderReply *srep ) {
 	// is currently being spidered.
 	//
 	/////
-	if ( lock ) lock->m_spiderOutstanding = false;
-	// bitch if not in there
-	// when "rebuilding" (Rebuild.cpp) this msg gets triggered too much...
-	// so only show it when in debug mode.
-	if ( !lock && g_conf.m_logDebugSpider)//ht->isInTable(&lockKey)) 
-		logf(LOG_DEBUG,"spider: rdb: lockKey=%" PRIu64" "
-		     "was not in lock table",lockKey);
+	if (lock) {
+		lock->m_expires = nowGlobal + 2;
+		lock->m_spiderOutstanding = false;
+	} else {
+		// bitch if not in there
+		// when "rebuilding" (Rebuild.cpp) this msg gets triggered too much...
+		// so only show it when in debug mode.
+		logDebug(g_conf.m_logDebugSpider, "spider: rdb: lockKey=%" PRIu64" was not in lock table", lockKey);
+	}
 
 	// now just remove it since we only spider our own urls
 	// and doledb is in memory
 	g_spiderLoop.m_lockTable.removeKey ( &lockKey );
 
 	// update the latest siteNumInlinks count for this "site" (repeatbelow)
-	updateSiteNumInlinksTable ( srep->m_siteHash32, 
-				    srep->m_siteNumInlinks,
-				    srep->m_spideredTime );
-
-	// . skip the rest if injecting
-	// . otherwise it triggers a lookup for this firstip in spiderdb to
-	//   get a new spider request to add to doledb
-	// . no, because there might be more on disk from the same firstip
-	//   so comment this out again
-	//if ( srep->m_fromInjectionRequest )
-	//	return true;
+	updateSiteNumInlinksTable ( srep->m_siteHash32, srep->m_siteNumInlinks, srep->m_spideredTime );
 
 	// clear error for this
 	g_errno = 0;
-
-	// . update the latest crawl delay for this domain
-	// . only add to the table if we had a crawl delay
-	// . -1 implies an invalid or unknown crawl delay
-	// . we have to store crawl delays of -1 now so we at least know we
-	//   tried to download the robots.txt (todo: verify that!)
-	//   and the webmaster did not have one. then we can 
-	//   crawl more vigorously...
-	//if ( srep->m_crawlDelayMS >= 0 ) {
 
 	bool update = false;
 	// use the domain hash for this guy! since its from robots.txt
@@ -702,22 +676,13 @@ bool SpiderColl::addSpiderReply ( SpiderReply *srep ) {
 	if ( srep->m_fromInjectionRequest )
 		update = false;
 
-	//else if (((*cdp)&0xffffffff)<(uint32_t)srep->m_spideredTime) 
-	//	update = true;
 	// update m_sniTable if we should
 	if ( update ) {
 		// . make new data for this key
 		// . lower 32 bits is the spideredTime
 		// . upper 32 bits is the crawldelay
 		int32_t nv = (int32_t)(srep->m_crawlDelayMS);
-		// shift up
-		//nv <<= 32;
-		// or in time
-		//nv |= (uint32_t)srep->m_spideredTime;
-		// just direct update if faster
-		if      ( cdp ) *cdp = nv;
-		// store it anew otherwise
-		else if ( ! m_cdTable.addKey(&srep->m_domHash32,&nv)){
+		if ( ! m_cdTable.addKey(&srep->m_domHash32,&nv)){
 			// return false with g_errno set on error
 			//return false;
 			log("spider: failed to add crawl delay for "
@@ -748,9 +713,7 @@ bool SpiderColl::addSpiderReply ( SpiderReply *srep ) {
 						  srep->m_downloadEndTime );
 	}
 
-	// log this for now
-	if ( g_conf.m_logDebugSpider )
-		log("spider: adding spider reply, download end time %" PRId64" for "
+	logDebug(g_conf.m_logDebugSpider, "spider: adding spider reply, download end time %" PRId64" for "
 		    "ip=%s(%" PRIu32") uh48=%" PRIu64" indexcode=\"%s\" coll=%" PRId32" "
 		    "k.n1=%" PRIu64" k.n0=%" PRIu64,
 		    //"to SpiderColl::m_lastDownloadCache",
@@ -765,16 +728,6 @@ bool SpiderColl::addSpiderReply ( SpiderReply *srep ) {
 	
 	// ignore errors from that, it's just a cache
 	g_errno = 0;
-	// sanity check - test cache
-	//if ( g_conf.m_logDebugSpider && srep->m_downloadEndTime ) {
-	//	int64_t last = m_lastDownloadCache.getLongLong ( m_collnum ,
-	//						     srep->m_firstIp ,
-	//							   -1,// maxAge
-	//							   true );//pro
-	//	if ( last != srep->m_downloadEndTime ) { g_process.shutdownAbort(true);}
-	//}
-
-	// skip:
 
 	// . add to wait tree and let it populate doledb on its batch run
 	// . use a spiderTime of 0 which means unknown and that it needs to
@@ -1591,8 +1544,6 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 	int32_t lastOne = 0;
 	// loop over all serialized spiderdb records in the list
 	for ( ; ! list->isExhausted() ; ) {
-		// breathe
-		QUICKPOLL ( MAX_NICENESS );
 		// get spiderdb rec in its serialized form
 		char *rec = list->getCurrentRec();
 		// skip to next guy
@@ -2558,8 +2509,6 @@ bool SpiderColl::scanListForWinners ( ) {
 
 	// loop over all serialized spiderdb records in the list
 	for ( ; ! list->isExhausted() ; ) {
-		// breathe
-		QUICKPOLL ( MAX_NICENESS );
 		// stop coring on empty lists
 		if ( list->isEmpty() ) break;
 		// get spiderdb rec in its serialized form
@@ -3499,8 +3448,6 @@ bool SpiderColl::addWinnersIntoDoledb ( ) {
 	for ( int32_t node = m_winnerTree.getFirstNode() ; 
 	      node >= 0 ; 
 	      node = m_winnerTree.getNextNode ( node ) ) {
-		// breathe
-		QUICKPOLL ( MAX_NICENESS );
 		// get data for that
 		SpiderRequest *sreq2;
 		sreq2 = (SpiderRequest *)m_winnerTree.getData ( node );

@@ -757,7 +757,7 @@ void Rdb::doneSaving ( ) {
 	}
 
 	// sanity
-	if ( m_dbname == NULL || m_dbname[0]=='\0' ) {
+	if ( m_dbname[0]=='\0' ) {
 		g_process.shutdownAbort(true);
 	}
 
@@ -1895,36 +1895,54 @@ bool Rdb::addRecord(collnum_t collnum, char *key, char *data, int32_t dataSize) 
 		}
 	}
 
-	if (m_useTree) {
-		// . TODO: save this tree-walking state for adding the node!!!
-		// . TODO: use somethin like getNode(key,&lastNode)
-		//         then addNode (lastNode,key,data,dataSize)
-		//	   int32_t lastNode;
-		// . #1) if we're adding a positive key, replace negative counterpart
-		//       in the tree, because we'll override the positive rec it was
-		//       deleting
-		// . #2) if we're adding a negative key, replace positive counterpart
-		//       in the tree, but we must keep negative rec in tree in case
-		//       the positive counterpart was overriding one on disk (as in #1)
-		char oppKey[MAX_KEY_BYTES];
+	// make the opposite key of "key"
+	char oppKey[MAX_KEY_BYTES];
+	KEYSET(oppKey, key, m_ks);
+	KEYXOR(oppKey, 0x01);
 
-		// make the opposite key of "key"
-		KEYSET(oppKey, key, m_ks);
-		KEYXOR(oppKey, 0x01);
+	if (m_useIndexFile) {
+		// there are no negative keys when we're using index (except special keys eg: posdb with termId 0)
+		// if we're adding key that have a corresponding opposite key, it means we want to remove the key from the tree
+		int32_t tn = m_useTree ? m_tree.deleteNode(collnum, oppKey, true) : m_buckets.deleteNode(collnum, oppKey);
+		if (tn >= 0) {
+			logTrace(g_conf.m_logTraceRdb, "END. %s: Key with corresponding opposite key deleted in tree. Returning true", m_dbname);
+			return true;
+		}
 
-		// . freeData should be true, the tree doesn't own the data
-		//   so it shouldn't free it really
-		m_tree.deleteNode(collnum, oppKey, true);
-
-		// if we have no files on disk for this db, don't bother
-		// preserving a a negative rec, it just wastes tree space
+		/// @todo ALC is this necessary? we remove delete keys when we dump to Rdb anyway for the first file
+		// if we have no files on disk for this db, don't bother preserving a a negative rec, it just wastes tree space
 		if (KEYNEG(key)) {
 			// return if all data is in the tree
 			if (getBase(collnum)->getNumFiles() == 0) {
 				logTrace(g_conf.m_logTraceRdb, "END. %s: Negative key with all data in tree. Returning true", m_dbname);
 				return true;
 			}
-			// . otherwise, assume we match a positive...
+		}
+	} else {
+		if (m_useTree) {
+			// . TODO: save this tree-walking state for adding the node!!!
+			// . TODO: use somethin like getNode(key,&lastNode) then addNode (lastNode,key,data,dataSize)
+			// . #1) if we're adding a positive key, replace negative counterpart
+			//       in the tree, because we'll override the positive rec it was
+			//       deleting
+			// . #2) if we're adding a negative key, replace positive counterpart
+			//       in the tree, but we must keep negative rec in tree in case
+			//       the positive counterpart was overriding one on disk (as in #1)
+
+			// . freeData should be true, the tree doesn't own the data
+			//   so it shouldn't free it really
+			m_tree.deleteNode(collnum, oppKey, true);
+
+			/// @todo ALC is this necessary? we remove delete keys when we dump to Rdb anyway for the first file
+			// if we have no files on disk for this db, don't bother preserving a a negative rec, it just wastes tree space
+			if (KEYNEG(key)) {
+				// return if all data is in the tree
+				if (getBase(collnum)->getNumFiles() == 0) {
+					logTrace(g_conf.m_logTraceRdb, "END. %s: Negative key with all data in tree. Returning true", m_dbname);
+					return true;
+				}
+				// . otherwise, assume we match a positive...
+			}
 		}
 	}
 

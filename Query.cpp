@@ -436,8 +436,7 @@ bool Query::setQTerms ( Words &words ) {
 						  // is 0 we sample synonyms
 						  // from all languages.
 						  m_langId , 
-					       tmpBuf ,
-					       0 ); // m_niceness );
+					       tmpBuf );
 		// if no synonyms, all done
 		if ( naids <= 0 ) continue;
 		nqt += naids;
@@ -805,8 +804,7 @@ bool Query::setQTerms ( Words &words ) {
 						  // is 0 we sample synonyms
 						  // from all languages.
 						  m_langId , 
-					       tmpBuf ,
-					       0 ); // m_niceness );
+					       tmpBuf );
 		// if no synonyms, all done
 		if ( naids <= 0 ) continue;
 		// sanity
@@ -1231,7 +1229,7 @@ bool Query::setQWords ( char boolFlag ,
 	// . break query up into Words and phrases
 	// . because we now deal with boolean queries, we make parentheses
 	//   their own separate Word, so tell "words" we're setting a query
-	if ( !words.set( m_sb.getBufStart(), m_sb.length(), true, 1 ) ) {
+	if ( !words.set( m_sb.getBufStart(), m_sb.length(), true ) ) {
 		log(LOG_WARN, "query: Had error parsing query: %s.", mstrerror(g_errno));
 		return false;
 	}
@@ -1354,7 +1352,7 @@ bool Query::setQWords ( char boolFlag ,
 
 	// set the Bits used for making phrases from the Words class
 	Bits bits;
-	if ( !bits.set(&words, 0)) {
+	if ( !bits.set(&words)) {
 		log(LOG_WARN, "query: Had error processing query: %s.", mstrerror(g_errno));
 		return false;
 	}
@@ -2175,7 +2173,7 @@ bool Query::setQWords ( char boolFlag ,
 	}
 
 	// make the phrases from the words and the tweaked Bits class
-	if ( !phrases.set( &words, &bits, 0 ) )
+	if ( !phrases.set( &words, &bits ) )
 		return false;
 
 	int64_t *wids = words.getWordIds();

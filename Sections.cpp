@@ -69,7 +69,7 @@ public:
 // . sets m_sections[] array, 1-1 with words array "w"
 // . the Weights class can look at these sections and zero out the weights
 //   for words in script, style, select and marquee sections
-bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness, uint8_t contentType ) {
+bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, uint8_t contentType ) {
 	reset();
 
 	if ( ! w ) return true;
@@ -85,7 +85,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 	m_bits            = bits;
 	m_url             = url;
 	m_coll            = coll;
-	m_niceness        = niceness;
 	m_contentType     = contentType;
 
 	// reset this just in case
@@ -115,9 +114,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 	// . init at one to count the root section
 	int32_t max = 1;
 	for ( int32_t i = 0 ; i < nw ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-
 		// . count all front tags
 
 		// count back tags too since some url 
@@ -154,9 +150,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 
 	// set this
 	m_maxNumSections = max;
-
-	// breathe
-	QUICKPOLL(m_niceness);
 
 	m_sectionPtrBuf.setLabel("psectbuf");
 
@@ -211,9 +204,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 
 	// Sections are no longer 1-1 with words, just with front tags
 	for ( int32_t i = 0 ; i < nw ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-
 		nodeid_t fullTid = tids[i];
 
 		// are we a non-tag?
@@ -272,8 +262,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 			// scan for whole sequence
 			int32_t lastBrPos = i;
 			for ( int32_t j = i + 1 ; j < nw ; j++ ) {
-				// breathe
-				QUICKPOLL(m_niceness);
 				// claim br tags
 				if ( tids[j] == TAG_BR ) { 
 					lastBrPos = j;
@@ -432,8 +420,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 			// front tag that matches this back tag
 			//for(p = spp ; p >= stack && gotBackTag == 1 ; p-- ) {
 			for ( p = spp ; p >= stack ; p-- ) {
-				// breathe
-				QUICKPOLL(m_niceness);
 				// no match?
 				if ( p->m_tid != ptid ) {
 					// matched before? we can pop
@@ -644,8 +630,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 	// . set Section::m_frameNum and SEC_IN_GBFRAME bit
 	//
 	for ( int32_t i = 0 ; i < m_numSections ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
 		// get it
 		Section *sn = &m_sections[i];
 		// get it
@@ -694,8 +678,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 
 	// find any open ended tags and constrain them based on their parent
 	for ( int32_t i = 0 ; i < m_numSections ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
 		// get it
 		Section *si = &m_sections[i];
 		// get its parent
@@ -741,8 +723,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 		// uses that 2nd <p> tag to constrain si->m_b of the first
 		// <p> tag which is not right! sunsetpromotions.com has that.
 		for ( int32_t j = i + 1 ; j < m_numSections ; j++ ) {
-			// breathe
-			QUICKPOLL(m_niceness);
 			// get it
 			Section *sj = &m_sections[j];
 			// get word start
@@ -843,8 +823,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 	// . addImpliedSections() requires Section::m_baseHash
 	// . set Section::m_baseHash
 	for ( int32_t i = 0 ; i < m_numSections ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
 		// these have to be in order of sn->m_a to work right
 		// because we rely on the parent tag hash, which would not
 		// necessarily be set if we were not sorted, because the
@@ -958,8 +936,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 	// set up our linked list, the functions below will insert sections
 	// and modify this linked list
 	for ( int32_t i = 0 ; i < m_numSections ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
 		// set it
 		if ( i + 1 < m_numSections )
 			m_sections[i].m_next = &m_sections[i+1];
@@ -969,8 +945,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 
 	// init to -1 to indicate none
 	for ( Section *si = m_rootSection ; si ; si = si->m_next ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
 		// reset it
 		si->m_firstWordPos = -1;
 		si->m_lastWordPos  = -1;
@@ -979,8 +953,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 	}
 	// now set position of first word each section contains
 	for ( int32_t i = 0 ; i < m_nw ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
 		// skip if not alnum word
 		if ( ! m_wids[i] ) continue;
 		// get smallest section containing
@@ -997,8 +969,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 	}
 	// and last word position
 	for ( int32_t i = m_nw - 1 ; i > 0 ; i-- ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
 		// skip if not alnum word
 		if ( ! m_wids[i] ) continue;
 		// get smallest section containing
@@ -1023,9 +993,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 	// they should be...
 	//
 	for ( Section *si = m_rootSection ; si ; si = si->m_next ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-
 		// did we exceed a tag boundary?
 		for ( ; ni>0 && si->m_a >= istack[ni-1] ; ) {
 			// undo flag
@@ -1113,8 +1080,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 	// now that we have closed any open tag, set the SEC_HIDDEN bit
 	// for all sections that are like <div style=display:none>
 	for ( Section *sn = m_rootSection ; sn ; sn = sn->m_next ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
 		// set m_lastSection so we can scan backwards
 		m_lastSection = sn;
 
@@ -1177,8 +1142,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 
 	// now set the content hash of each section
 	for ( int32_t i = 0 ; i < m_nw ; i++ ) {
-		// breathe
-		QUICKPOLL(m_niceness);
 		// must be an alnum word
 		if ( ! m_wids[i] ) continue;
 		// get its section
@@ -1191,8 +1154,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 
 	// now set SEC_NOTEXT flag if content hash is zero!
 	for ( int32_t i = 0 ; i < m_numSections ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
 		// get it
 		Section *sn = &m_sections[i];
 		// skip if had text
@@ -1206,8 +1167,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 	//
 	int32_t alnumCount2 = 0;
 	for ( int32_t i = 0 ; i < m_numSections ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
 		// get it
 		Section *sn = &m_sections[i];
 		// skip if had text
@@ -1219,8 +1178,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 		int32_t a = sn->m_senta;
 		int32_t b = sn->m_sentb;
 		for ( int32_t j = a ; j < b ; j++ ) {
-			// breathe
-			QUICKPOLL(m_niceness);
 			// must be an alnum word
 			if ( ! m_wids[j] ) continue;
 			// alnumcount
@@ -1235,8 +1192,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 		Section *si = sn->m_parent;
 		// do each parent as well
 		for ( ; si ; si = si->m_parent ) {
-			// breathe
-			QUICKPOLL ( m_niceness );
 			// skip if already had one!
 			if ( si->m_alnumPosA > 0 ) break;
 			// otherwise, we are it
@@ -1246,8 +1201,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 	}
 	// propagate up alnumPosB now
 	for ( int32_t i = 0 ; i < m_numSections ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
 		// get it
 		Section *sn = &m_sections[i];
 		// skip if had text
@@ -1256,8 +1209,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 		Section *si = sn->m_parent;
 		// do each parent as well
 		for ( ; si ; si = si->m_parent ) {
-			// breathe
-			QUICKPOLL ( m_niceness );
 			// skip if already had one! no, because we need to
 			// get the MAX of all of our kids!!
 			//if ( si->m_alnumPosB > 0 ) break;
@@ -1364,7 +1315,7 @@ bool Sections::addSentenceSections ( ) {
 	}
 
 	// need D_IS_IN_URL bits to be valid
-	m_bits->setInUrlBits ( m_niceness );
+	m_bits->setInUrlBits ( );
 	// shortcut
 	wbit_t *bb = m_bits->m_bits;
 
@@ -1372,8 +1323,6 @@ bool Sections::addSentenceSections ( ) {
 	bool hasWordAfter = false;
 
 	for ( int32_t i = 0 ; i < m_nw ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
 		// need a wid
 		if ( ! m_wids[i] ) continue;
 		// get section we are currently in
@@ -1790,8 +1739,6 @@ bool Sections::addSentenceSections ( ) {
 		Section *lastGuy = NULL;
 
 		for ( int32_t k = senta ; k <= sentb ; k++ ) {
-			// breathe
-			QUICKPOLL(m_niceness);
 			// add final piece
 			if ( k == sentb ) {
 				// stop i no final piece
@@ -1815,8 +1762,6 @@ bool Sections::addSentenceSections ( ) {
 			// . but if before it contains start it breaches
 			//   [senta,sentb) then we have to cut things short
 			for ( ; pp ; pp = pp->m_parent ) {
-				// breathe
-				QUICKPOLL(m_niceness);
 				// we now have to split section "pp"
 				// when adding the sentence section.
 				// once we have such a section we
@@ -1849,8 +1794,6 @@ bool Sections::addSentenceSections ( ) {
 			// containing [start,lastk]
 			Section *parent = m_sectionPtrs[start];
 			for ( ; parent ; parent = parent->m_parent ) {
-				// breathe
-				QUICKPOLL(m_niceness);
 				// stop if contains lastk
 				if ( parent->m_b > lastk ) break;
 			}
@@ -1863,8 +1806,6 @@ bool Sections::addSentenceSections ( ) {
 			// need to update "start" to so its parent is the new 
 			// "parent" now so insertSubSection() does not core
 			for ( ; adda >= 0 ; ) {
-				// breathe
-				QUICKPOLL(m_niceness);
 				// stop if we finally got the right parent
 				if ( m_sectionPtrs[adda]==parent ) break;
 				// or if he's a tag and his parent
@@ -1886,8 +1827,6 @@ bool Sections::addSentenceSections ( ) {
 
 			// same for right endpoint
 			for ( ; addb < m_nw ; ) {
-				// breathe
-				QUICKPOLL(m_niceness);
 				// stop if we finally got the right parent
 				if ( m_sectionPtrs[addb]==parent ) break;
 				// get it
@@ -1972,8 +1911,6 @@ bool Sections::addSentenceSections ( ) {
 	// get the section of each word. if not a sentence section then
 	// make its m_sentenceSection point to its parent that is a sentence
 	for ( Section *sk = m_rootSection ; sk ; sk = sk->m_next ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
 		// need sentence
 		if ( ( sk->m_flags & SEC_SENTENCE ) ) {
 			inSentTil = sk->m_b;
@@ -2020,9 +1957,6 @@ Section *Sections::insertSubSection ( int32_t a, int32_t b, int32_t newBaseHash 
 	Section *si = m_sectionPtrs[a];
 
 	for ( ; si ; si = si->m_prev ) {
-		// breathe
-		QUICKPOLL(m_niceness);
-
 		// we become his child if this is true
 		if ( si->m_a < a ) {
 			break;
@@ -2058,8 +1992,6 @@ Section *Sections::insertSubSection ( int32_t a, int32_t b, int32_t newBaseHash 
 	// section. so to fix that try iterating over si->m_next to get si to
 	// be closer to sk.
 	for ( ; si ; si = si->m_next ) {
-		// breathe
-		QUICKPOLL(m_niceness);
 		// stop if no more eavailable
 		if ( ! si->m_next ) break;
 		// stop if would break
@@ -2097,8 +2029,6 @@ Section *Sections::insertSubSection ( int32_t a, int32_t b, int32_t newBaseHash 
 	Section *parent = m_sectionPtrs[a];
 	// expand until it encompasses both a and b
 	for ( ; ; parent = parent->m_parent ) {
-		// breathe
-		QUICKPOLL(m_niceness);
 		if ( parent->m_a > a ) continue;
 		if ( parent->m_b < b ) continue;
 		break;
@@ -2154,8 +2084,6 @@ Section *Sections::insertSubSection ( int32_t a, int32_t b, int32_t newBaseHash 
 	// of children sections!!
 	//
 	for ( int32_t i = a ; i < b ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
 		// get current parent of that word
 		Section *wp = m_sectionPtrs[i];
 		// if sentence section does NOT contain the word's current
@@ -2193,17 +2121,11 @@ void Sections::setNextBrotherPtrs ( bool setContainer ) {
 
 	// clear out
 	for ( Section *si = m_rootSection ; si ; si = si->m_next ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-
 		si->m_nextBrother = NULL;
 		si->m_prevBrother = NULL;
 	}
 
 	for ( Section *si = m_rootSection ; si ; si = si->m_next ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-
 		Section *sj = NULL;
 
 		// get word after us
@@ -2235,7 +2157,6 @@ void Sections::setNextBrotherPtrs ( bool setContainer ) {
 
 		// ok, try the next word algo approach
 		for ( ; wn < nw2 ; wn++ ) {
-			QUICKPOLL(m_niceness);
 			sj = m_sectionPtrs[wn];
 			if ( sj->m_a >= si->m_b ) break;
 		}
@@ -2293,9 +2214,6 @@ void Sections::setNextSentPtrs ( ) {
 
 	// scan the sentence sections and number them to set m_sentNum
 	for ( Section *sk = m_rootSection ; sk ; sk = sk->m_next ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-
 		// record final section
 		finalSec = sk;
 
@@ -2314,9 +2232,6 @@ void Sections::setNextSentPtrs ( ) {
 
 	// now set "m_nextSent" of each section
 	for ( Section *sk = finalSec ; sk ; sk = sk->m_prev ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-
 		// set this
 		sk->m_nextSent = lastSent;
 
@@ -2435,8 +2350,6 @@ bool Sections::setMenus ( ) {
 	sec_t flag;
 	// set SEC_PLAIN_TEXT and SEC_LINK_TEXT for all sections
 	for ( int32_t i = 0 ; i < m_nw ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
 		// need alnum word
 		if ( ! m_wids[i] ) continue;
 		// get our flag
@@ -2461,8 +2374,6 @@ bool Sections::setMenus ( ) {
 	// . this is all to fix texasdrums.drums.org which has various span
 	//   and bold tags throughout its menu at random
 	for ( Section *si = m_rootSection ; si ; si = si->m_next ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
 		// . if we hit plain text, we kill our last
 		// . this was causing "geeks who drink" for blackbirdbuvette
 		//   to get is SEC_MENU set because there was a link after it
@@ -2567,9 +2478,6 @@ bool Sections::setMenus ( ) {
 
 	// set SEC_MENU of child sections of SEC_MENU sections
 	for ( Section *si = m_rootSection; si; si = si->m_next ) {
-		// breathe
-		QUICKPOLL( m_niceness );
-
 		// must be a link text only section
 		if ( !( si->m_flags & ff ) )
 			continue;
@@ -2600,9 +2508,6 @@ bool Sections::setMenus ( ) {
 	// set SEC_MENU_HEADER
 	//
 	for ( Section *sk = m_rootSection ; sk ; sk = sk->m_next ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-
 		// skip if not in a menu
 		if ( ! ( sk->m_flags & SEC_MENU ) ) {
 			continue;
@@ -2646,8 +2551,6 @@ bool Sections::setMenus ( ) {
 		for ( ; r >= 0 && !m_wids[r]; r-- )
 			;
 
-		QUICKPOLL( m_niceness );
-
 		// if no header, skip
 		if ( r < 0 ) {
 			continue;
@@ -2661,9 +2564,6 @@ bool Sections::setMenus ( ) {
 	// set SEC_MENU_SENTENCE flag
 	//
 	for ( Section *si = m_rootSection; si; si = si->m_next ) {
-		// breathe
-		QUICKPOLL( m_niceness );
-
 		// must be a link text only section
 		if ( !( si->m_flags & SEC_MENU ) ) {
 			continue;
@@ -2679,9 +2579,6 @@ bool Sections::setMenus ( ) {
 
 		// parent up otherwise
 		for ( Section *sk = si->m_parent; sk; sk = sk->m_parent ) {
-			// breathe
-			QUICKPOLL( m_niceness );
-
 			// stop if sentence finally
 			if ( !( sk->m_flags & SEC_SENTENCE ) ) {
 				continue;
@@ -2785,8 +2682,6 @@ bool Sections::setMenus ( ) {
 	// . scan all href sections
 	// set SEC_LINK_ONLY on sections that just contain a link
 	for ( Section *si = m_rootSection ; si ; si = si->m_next ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
 		// skip if not a href section
 		if ( si->m_baseHash != TAG_A ) continue;
 		// set points to scan
@@ -2974,9 +2869,6 @@ bool Sections::setHeadingBit ( ) {
 	int32_t headings = 0;
 	// scan the sections
 	for ( Section *si = m_rootSection ; si ; si = si->m_next ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-
 		int32_t fwp = si->m_firstWordPos;
 		if ( fwp == -1 ) continue;
 
@@ -2996,8 +2888,6 @@ bool Sections::setHeadingBit ( ) {
 		// . TODO: what about "<b>Hi There <i>Bob</i></b>" as a heading
 		// . i guess that will still work!
 		for ( ; pp ; pp = pp->m_parent ) {
-			// breathe
-			QUICKPOLL(m_niceness);
 			// stop if breached
 			if ( pp->m_firstWordPos != a ) break;
 			if ( pp->m_lastWordPos  != b ) break;
@@ -3029,8 +2919,6 @@ bool Sections::setHeadingBit ( ) {
 		int32_t i;
 		// scan the alnum words we contain
 		for ( i = a ; i <= b ; i++ ) {
-			// breathe
-			QUICKPOLL ( m_niceness );
 			// . did we hit a breaking tag?
 			// . "<div> blah <table><tr><td>blah... </div>"
 			if ( m_tids[i] && isBreakingTagId(m_tids[i]) ) break;
@@ -3103,9 +2991,6 @@ void Sections::setTagHashes ( ) {
 	// now recompute the tagHashes and depths and content hashes since
 	// we have eliminate open-ended sections in the loop above
 	for ( Section *sn = m_rootSection ; sn ; sn = sn->m_next ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-
 		// these have to be in order of sn->m_a to work right
 		// because we rely on the parent tag hash, which would not
 		// necessarily be set if we were not sorted, because the
@@ -3176,8 +3061,6 @@ bool Sections::print( SafeBuf *sbuf, int32_t hiPos, int32_t *wposVec, char *dens
 
 	// check words
 	for ( int32_t i = 0 ; i < nw ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
 		// get section
 		Section *sn = m_sectionPtrs[i];
 		if ( sn->m_a >  i ) { g_process.shutdownAbort(true); }
@@ -3187,8 +3070,6 @@ bool Sections::print( SafeBuf *sbuf, int32_t hiPos, int32_t *wposVec, char *dens
 
 	// print sections out
 	for ( Section *sk = m_rootSection ; sk ; ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
 		// print this section
 		printSectionDiv(sk);
 		// advance
@@ -3225,8 +3106,6 @@ bool Sections::print( SafeBuf *sbuf, int32_t hiPos, int32_t *wposVec, char *dens
 	// output to see exactly where it starts, since we now label all
 	// the words
 	for ( Section *sn = m_rootSection ; sn ; sn = sn->m_next ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
 		// see if one big table causes a browser slowdown
 		if ( (++rcount % TABLE_ROWS ) == 0 ) 
 			sbuf->safePrintf("</table>%s\n",hdr);
@@ -3380,9 +3259,6 @@ bool Sections::printSectionDiv( Section *sk ) {
 	int32_t a = sk->m_a;
 	int32_t b = sk->m_b;
 	for ( int32_t i = a ; i < b ; i++ ) {
-		// breathe
-		QUICKPOLL(m_niceness);
-
 		// . if its a and us, skip
 		// . BUT if we are root then really this tag belongs to
 		//   our first child, so make an exception for root!
@@ -3481,14 +3357,8 @@ bool Sections::verifySections ( ) {
 			g_process.shutdownAbort(true);}
 	}
 
-	for ( Section *sn = m_rootSection ; sn ; sn = sn->m_next ) 
-		// breathe
-		QUICKPOLL ( m_niceness );
-
 	// sanity check
 	for ( Section *sn = m_rootSection ; sn ; sn = sn->m_next ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
 		// get it
 		//Section *sn = &m_sections[i];
 		// get parent
@@ -3499,8 +3369,6 @@ bool Sections::verifySections ( ) {
 		// make sure parent fully contains
 		if ( sp->m_a > sn->m_a ) { g_process.shutdownAbort(true); }
 		if ( sp->m_b < sn->m_b ) { g_process.shutdownAbort(true); }
-		// breathe
-		QUICKPOLL ( m_niceness );
 		// and make sure every grandparent fully contains us too!
 		sp = sp->m_parent;
 		goto subloop3;
@@ -3516,8 +3384,6 @@ bool Sections::verifySections ( ) {
 	// smallest section containing it
 	for ( Section *si = m_rootSection ; si ; si = si->m_next ) {
 		for ( Section *sj = m_rootSection ; sj ; sj = sj->m_next ) {
-			// breathe
-			QUICKPOLL(m_niceness);
 			// skip if us
 			if ( sj == si ) continue;
 			// skip column sections because they are artificial

@@ -449,6 +449,10 @@ Loop::Loop()
 	m_slots = NULL;
 	m_pipeFd[0] = -1;
 	m_pipeFd[1] = -1;
+	m_shutdown = 0;
+	m_minTick = 40;
+	m_head = NULL;
+	m_tail = NULL;
 }
 
 // free all slots from addSlots
@@ -888,18 +892,31 @@ void Loop::doPoll ( ) {
 	}
 
 	for ( int32_t i = 0 ; i < s_numWriteFds ; i++ ) {
-		if ( n == 0 ) break;
+		if ( n == 0 ) {
+			break;
+		}
+
 	 	int fd = s_writeFds[i];
-		Slot *s = m_writeSlots  [ fd ];
+		Slot *s = m_writeSlots[fd];
+
 	  	// if niceness is <= 0 we did it above
-	 	if ( s && s->m_niceness <= 0 ) continue;
+	 	if ( s && s->m_niceness <= 0 ) {
+	 		continue;
+	 	}
 	 	// must be set
-	 	if ( ! FD_ISSET ( fd , &writefds ) ) continue;
+	 	if ( ! FD_ISSET ( fd , &writefds ) ) {
+	 		continue;
+	 	}
 		if ( g_conf.m_logDebugLoop || g_conf.m_logDebugTcp ) {
-			log( LOG_DEBUG, "loop: calling wcback1 niceness=%" PRId32" fd=%i", s->m_niceness, fd );
+			if( s ) {
+				log( LOG_DEBUG, "loop: calling wcback1 niceness=%" PRId32" fd=%i", s->m_niceness, fd );
+			}
+			else {
+				log( LOG_WARN, "loop: calling wcback1. Slot not found! fd=%i", fd );
+			}
 		}
 		calledOne = true;
-		callCallbacks_ass (false,fd, now,1);//forread?
+		callCallbacks_ass(false, fd, now, 1);//forread?
 	}
 
 	// handle returned threads for all other nicenesses

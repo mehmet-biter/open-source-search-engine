@@ -162,14 +162,13 @@ bool isWordQualified ( char *wp , int32_t wlen ) {
 // returns false and sets g_errno on error
 bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query,
                        LinkInfo *linkInfo, Url *firstUrl, const char *filteredRootTitleBuf, int32_t filteredRootTitleBufSize,
-                       uint8_t contentType, uint8_t langId, int32_t niceness ) {
+                       uint8_t contentType, uint8_t langId ) {
 	// make Msg20.cpp faster if it is just has
 	// Msg20Request::m_setForLinkInfo set to true, no need to extricate a title.
 	if ( maxTitleLen <= 0 ) {
 		return true;
 	}
 
-	m_niceness = niceness;
 	m_maxTitleLen = maxTitleLen;
 
 	// if this is too big the "first line" algo can be huge!!!
@@ -224,8 +223,6 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 	// . get every link text
 	// . TODO: repeat for linkInfo2, the imported link text
 	for ( Inlink *k = NULL; linkInfo && (k = linkInfo->getNextInlink(k)) ; ) {
-		// breathe
-		QUICKPOLL(m_niceness);
 		// fast skip check for link text
 		if ( k->size_linkText >= 3 && ++kcount >= 20 ) continue;
 		// fast skip check for rss item
@@ -258,7 +255,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 			}
 
 			// now the words.
-			if ( !tw[ti].set( k->getLinkText(), k->size_linkText - 1, true, 0 ) ) {
+			if ( !tw[ti].set( k->getLinkText(), k->size_linkText - 1, true ) ) {
 				return false;
 			}
 
@@ -283,8 +280,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 		// get the rss item
 		if ( k->size_rssItem <= 10 ) continue;
 		// . returns false and sets g_errno on error
-		// . use a 0 for niceness
-		if ( ! k->setXmlFromRSS ( &tx[ti] , 0 ) ) return false;
+		if ( ! k->setXmlFromRSS ( &tx[ti] ) ) return false;
 		// get the word range
 		int32_t tslen;
 		bool isHtmlEnc;
@@ -294,7 +290,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 		// skip if empty
 		if ( tslen <= 0 ) continue;
 		// now set words to that
-		if ( !tw[ti].set( ts, tslen, true, 0 ) ) {
+		if ( !tw[ti].set( ts, tslen, true ) ) {
 			return false;
 		}
 
@@ -351,9 +347,6 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 	char inLink   = false;
 	char selfLink = false;
 	for ( int32_t i = 0 ; i < NW ; i++ ) {
-		// breathe
-		QUICKPOLL(m_niceness);
-
 		// if in a link that is not self link, cannot be in a candidate
 		if ( inLink && ! selfLink ) {
 			flags[i] |= 0x02;
@@ -444,7 +437,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 		}
 
 		// ok, process it
-		if ( ! tw[ti].set ( atitle, atlen, true, 0 )) {
+		if ( ! tw[ti].set ( atitle, atlen, true )) {
 			return false;
 		}
 
@@ -788,7 +781,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 		// did we get any?
 		if ( p > pstart && n < MAX_TIT_CANDIDATES ) {
 			// now set words to that
-			if ( ! tw[ti].set ( p, (pend - p), true, 0 )) {
+			if ( ! tw[ti].set ( p, (pend - p), true )) {
 				return false;
 			}
 
@@ -845,7 +838,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 				m.setQuery ( query );
 
 				// see if root title segment has query terms in it
-				m.addMatches ( const_cast<char*>(pr), strnlen(pr,rootTitleBufEnd-pr), MF_TITLEGEN, m_niceness );
+				m.addMatches ( const_cast<char*>(pr), strnlen(pr,rootTitleBufEnd-pr), MF_TITLEGEN );
 
 				// if matches query, do NOT add it, we only add it for
 				// removing from the title of the page...

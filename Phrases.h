@@ -27,7 +27,7 @@ public:
 	// . a phraseSpam of PSKIP means word is not in a phrase
 	// . "bits" describes the words in a phrasing context
 	// . "spam" is % spam of each word (spam may be NULL)
-	bool set(const Words *words, const Bits *bits, int32_t niceness );
+	bool set(const Words *words, const Bits *bits );
 
 	const int64_t *getPhraseIds2() const {
 		return m_phraseIds2;
