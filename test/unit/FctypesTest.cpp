@@ -4,7 +4,7 @@
 #include "fctypes.h"
 
 TEST(FctypesTest, VerifyStrnstrTrue) {
-	char* haystack[] = {
+	const char* haystack[] = {
 		"/abc/def//in.123456788",
 		"aabcdefghijkl",
 		"abcdefgghijkl",
@@ -12,7 +12,7 @@ TEST(FctypesTest, VerifyStrnstrTrue) {
 		"aaaaabcdefggg"
 	};
 
-	char* needle[] = {
+	const char* needle[] = {
 		"/in.",
 		"abc",
 		"gh",
