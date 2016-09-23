@@ -206,7 +206,6 @@ int32_t ucToAny(char *outbuf, int32_t outbufsize, const char *charset_out,
 		char buf[TMP_SIZE];
 		int32_t len = 0;
 		while (inRemaining) {
-			QUICKPOLL(niceness);
 			pout = buf;
 			outRemaining = TMP_SIZE;
 			res = iconv(cd, &pin, &inRemaining, 
@@ -229,7 +228,6 @@ int32_t ucToAny(char *outbuf, int32_t outbufsize, const char *charset_out,
 	}
 
 	while (inRemaining && outRemaining) {
-		QUICKPOLL(niceness);
 		//printf("Before - in: %d, out: %d\n", 
 		//inRemaining, outRemaining);
 		res = iconv(cd,&pin, &inRemaining,
