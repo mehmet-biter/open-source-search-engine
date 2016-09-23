@@ -184,19 +184,15 @@ class Parms {
 			  );
 
 	bool printParm ( SafeBuf* sb,
-			  const char *username,
 			  Parm *m    ,
 			  int32_t  mm   , // m = &m_parms[mm]
 			  int32_t  j    ,
 			  int32_t  jend ,
 			  char *THIS ,
 			  const char *coll ,
-			  const char *pwd  ,
 			  const char *bg   ,
 			  int32_t  nc   ,
 			 int32_t  pd   ,
-			 bool lastRow ,
-			 bool isCrawlbot ,//= false,
 			 char format , //= FORMAT_HTML,
 			 bool isMasterAdmin ,
 			 bool isCollAdmin ,

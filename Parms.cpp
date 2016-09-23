@@ -1313,12 +1313,10 @@ bool Parms::printParms2 ( SafeBuf* sb ,
 		// if not part of a complex row, just print this array right up
 		if ( rowid == -1 ) {
 			for ( int32_t j = 0 ; j < size ; j++ )
-				status &=printParm ( sb,NULL,&m_parms[i],i,
+				status &= printParm( sb,&m_parms[i],i,
 						     j, jend, (char *)THIS,
-						     coll,NULL,
+						     coll,
 						     bg,nc,pd,
-						     false,
-						     isCrawlbot,
 						     format,
 						     isMasterAdmin,
 						     isCollAdmin,
@@ -1338,10 +1336,10 @@ bool Parms::printParms2 ( SafeBuf* sb ,
 			      k < m_numParms &&
 				      m_parms[k].m_rowid == rowid;
 			      k++ ) {
-				status &=printParm(sb,NULL,&m_parms[k],k,
-					    newj,jend,(char *)THIS,coll,NULL,
-						   bg,nc,pd, j==size-1,
-						   isCrawlbot,format,
+				status &= printParm(sb,&m_parms[k],k,
+					    newj,jend,(char *)THIS,coll,
+						   bg,nc,pd,
+						   format,
 						   isMasterAdmin,
 						   isCollAdmin,
 						   sock);
@@ -1358,22 +1356,16 @@ bool Parms::printParms2 ( SafeBuf* sb ,
 }
 
 
-bool Parms::printParm ( SafeBuf* sb,
-			//int32_t  user ,
-			const char *username,
+bool Parms::printParm( SafeBuf* sb,
 			Parm *m    ,
 			int32_t  mm   , // m = &m_parms[mm]
 			int32_t  j    ,
 			int32_t  jend ,
 			char *THIS ,
 			const char *coll ,
-			const char *pwd  ,
 			const char *bg   ,
 			int32_t  nc   , // # column?
 			int32_t  pd   , // print description
-			bool lastRow ,
-			bool isCrawlbot ,
-			//bool isJSON ) {
 			char format ,
 			bool isMasterAdmin ,
 			bool isCollAdmin ,
