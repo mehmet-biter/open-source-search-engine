@@ -185,7 +185,7 @@ public:
 	// . returns false if blocked, true otherwise
 	// . returns true and sets g_errno on error
 	// . sets m_sections[] array, 1-1 with words array "w"
-	bool set(class Words *w, class Bits *bits, class Url *url, char *coll, int32_t niceness, uint8_t contentType );
+	bool set(class Words *w, class Bits *bits, class Url *url, char *coll, uint8_t contentType );
 
 	bool verifySections ( ) ;
 
@@ -217,7 +217,6 @@ public:
 	class Bits  *m_bits     ;
 	class Url   *m_url      ;
 	char        *m_coll     ;
-	int32_t         m_niceness ;
 	uint8_t      m_contentType;
 
 	int32_t *m_wposVec;

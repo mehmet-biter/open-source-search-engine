@@ -3716,7 +3716,7 @@ Sections *XmlDoc::getSections ( ) {
 	// this uses the sectionsReply to see which sections are "text", etc.
 	// rather than compute it expensively
 	if ( !m_calledSections &&
-		 !m_sections.set( &m_words, bits, getFirstUrl(), cr->m_coll, m_niceness, *ct ) ) {
+		 !m_sections.set( &m_words, bits, getFirstUrl(), cr->m_coll, *ct ) ) {
 		m_calledSections = true;
 		// it blocked, return -1
 		return (Sections *) -1;

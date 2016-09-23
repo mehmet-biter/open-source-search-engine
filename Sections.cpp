@@ -69,7 +69,7 @@ public:
 // . sets m_sections[] array, 1-1 with words array "w"
 // . the Weights class can look at these sections and zero out the weights
 //   for words in script, style, select and marquee sections
-bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness, uint8_t contentType ) {
+bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, uint8_t contentType ) {
 	reset();
 
 	if ( ! w ) return true;
@@ -85,7 +85,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 	m_bits            = bits;
 	m_url             = url;
 	m_coll            = coll;
-	m_niceness        = niceness;
 	m_contentType     = contentType;
 
 	// reset this just in case
