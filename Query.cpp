@@ -434,8 +434,7 @@ bool Query::setQTerms ( Words &words ) {
 						  // is 0 we sample synonyms
 						  // from all languages.
 						  m_langId , 
-					       tmpBuf ,
-					       0 ); // m_niceness );
+					       tmpBuf );
 		// if no synonyms, all done
 		if ( naids <= 0 ) continue;
 		nqt += naids;
@@ -803,8 +802,7 @@ bool Query::setQTerms ( Words &words ) {
 						  // is 0 we sample synonyms
 						  // from all languages.
 						  m_langId , 
-					       tmpBuf ,
-					       0 ); // m_niceness );
+					       tmpBuf );
 		// if no synonyms, all done
 		if ( naids <= 0 ) continue;
 		// sanity

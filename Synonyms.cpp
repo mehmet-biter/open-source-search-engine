@@ -37,8 +37,7 @@ void Synonyms::reset() {
 int32_t Synonyms::getSynonyms ( const Words *words , 
 			     int32_t wordNum , 
 			     uint8_t langId ,
-			     char *tmpBuf ,
-			     int32_t niceness ) {
+			     char *tmpBuf ) {
 
 	// punct words have no synoyms
 	if ( ! words->getWordId(wordNum) )
