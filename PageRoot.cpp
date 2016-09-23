@@ -1155,14 +1155,6 @@ bool sendPageAddUrl ( TcpSocket *sock , HttpRequest *hr ) {
 		g_msg = " (error: url too long)";
 		return g_httpServer.sendErrorReply(sock,500,"url too long");
 	}
-	// get the collection
-	//int32_t  collLen = 0;
-	//char *coll9    = r->getString("c",NULL);//&collLen);
-	//if ( ! coll || ! coll[0] ) {
-	//	//coll    = g_conf.m_defaultColl;
-	//	coll = g_conf.getDefaultColl( r->getHost(), r->getHostLen() );
-	//	collLen = strlen(coll);
-	//}
 	// get collection rec
 
 	CollectionRec *cr = g_collectiondb.getRec ( hr );

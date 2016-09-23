@@ -730,7 +730,7 @@ bool sendPageProfiler ( TcpSocket *s , HttpRequest *r ) {
 	const char *coll = r->getString ("c");
 	int32_t collLen;
 	if ( ! coll || ! coll[0] ) {
-		coll = g_conf.getDefaultColl( r->getHost(), r->getHostLen() );
+		coll = g_conf.getDefaultColl( );
 	}
 
 	collLen = strlen(coll);
