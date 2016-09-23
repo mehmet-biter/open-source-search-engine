@@ -850,11 +850,6 @@ tryAgain:
 	// . actually i fixed that problem by not deleting any nodes that
 	//   might be in the middle of being dumped
 	// . i changed Rdb::addNode() and Rdb::deleteNode() to do this
-	// . since we made it here m_list MUST be ordered, therefore
-	//   let's try the new, faster deleteOrderedList and let's not do
-	//   balancing to make it even faster
-	// . balancing will be restored once we're done deleting this list
-
 	int64_t t3 = gettimeofdayInMilliseconds();
 
 	// tree delete is slow due to checking for leaks, not balancing
