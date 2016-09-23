@@ -5016,6 +5016,7 @@ bool pingTest ( int32_t hid , uint16_t clientPort ) {
 	int fd = sock;
 	int flags = fcntl ( fd , F_GETFL ) ;
 	if ( flags < 0 ) {
+		close ( sock );
 		log(LOG_WARN, "net: pingtest: fcntl(F_GETFL): %s.", strerror(errno));
 		return false;
 	}
@@ -5065,6 +5066,7 @@ bool pingTest ( int32_t hid , uint16_t clientPort ) {
 	int64_t start = gettimeofdayInMilliseconds();
 	n = sendto(sock,dgram,size,0,(struct sockaddr *)(void*)&to,sizeof(to));
 	if ( n != size ) {
+		close ( sock );
 		log(LOG_WARN, "net: pingtest: sendto returned %i (should have returned %" PRId32")",n,size);
 		return false;
 	}
@@ -5079,6 +5081,7 @@ bool pingTest ( int32_t hid , uint16_t clientPort ) {
 	int32_t tid = up->getTransId ( dgram , n );
 	// -1 is error
 	if ( tid < 0 ) {
+		close ( sock );
 		log(LOG_WARN, "net: pingtest: Bad transId.");
 		return false;
 	}
