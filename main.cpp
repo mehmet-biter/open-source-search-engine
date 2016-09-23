@@ -6821,6 +6821,7 @@ bool cacheTest() {
 		return false;
 	}
 
+#if 0
 	int32_t numRecs = 0 * maxCacheNodes;
 	logf(LOG_DEBUG,"test: Adding %" PRId32" recs to cache.",numRecs);
 
@@ -6869,6 +6870,7 @@ bool cacheTest() {
 		if ( ! rec || recSize != 4 || *(int32_t *)rec != oldip[next] ) {
 			g_process.shutdownAbort(true); }
 	}		     		
+#endif
 
 	// now try variable sized recs
 	c.reset();
@@ -6896,14 +6898,16 @@ bool cacheTest() {
 		return false;
 	}
 
-	numRecs = 30 * maxCacheNodes;
+	int32_t numRecs = 30 * maxCacheNodes;
 	logf(LOG_DEBUG,"test: Adding %" PRId32" recs to cache.",numRecs);
 
+	key96_t oldk[10];
+
 	// timestamp
-	timestamp = 42;
+	int32_t timestamp = 42;
 	// keep ring buffer of last 10 keys
 	int32_t oldrs[10];
-	b = 0;
+	int32_t b = 0;
 	// rec to add
 	char *rec;
 	int32_t  recSize;
