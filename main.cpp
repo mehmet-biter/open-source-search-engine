@@ -5680,10 +5680,11 @@ void doInject ( int fd , void *state ) {
 		}
 		// read the mime
 		char buf [ 1000*1024 ];
-		int32_t maxToRead = 1000*1024;
+		int32_t maxToRead = sizeof(buf)-1;
 		int32_t toRead = maxToRead;
 		if ( s_off + toRead > fsize ) toRead = fsize - s_off;
 		int32_t bytesRead = s_file.read ( buf , toRead , s_off ) ;
+		buf[bytesRead] = '\0';
 		if ( bytesRead != toRead ) {
 			log("build: inject: Read of %s failed at offset "
 			    "%" PRId64, s_file.getFilename(), s_off);
