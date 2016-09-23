@@ -508,8 +508,7 @@ int32_t getAdultPoints ( char *s, int32_t slen, int32_t niceness, const char *ur
 		      NULL         , // needleNum
 		      false        , // stopAtFirstMatch?
 		      NULL         , // hadPreMatch ptr
-		      true         , // saveQuickTables?
-		      niceness     );
+		      true         ); // saveQuickTables?
 
 	int32_t points = 0;
 	// each needle has an associated score
@@ -551,8 +550,7 @@ int32_t getAdultPoints ( char *s, int32_t slen, int32_t niceness, const char *ur
 		      NULL         , // needleNum
 		      false        , // stopAtFirstMatch?
 		      NULL         , // hadPreMatch ptr
-		      true         , // saveQuickTables?
-		      niceness     );
+		      true         ); // saveQuickTables?
 
 
 	// each needle has an associated score

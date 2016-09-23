@@ -413,8 +413,7 @@ bool setLinkSpam ( int32_t       ip                 ,
 		      NULL             , // &n               ,
 		      false            , // stopAtFirstMatch
 		      &hadPreMatch     ,
-		      true             , // save quicktables
-		      niceness         );
+		      true             ); // save quicktables
 
 	// see if we got a hit
 	char *minPtr = NULL;
@@ -471,8 +470,7 @@ bool setLinkSpam ( int32_t       ip                 ,
 		      NULL         ,  // &n ,
 		      false        ,  // stopAtFirstMatch?
 		      NULL         ,
-		      true         ,  // save quicktables
-		      niceness     );
+		      true         );  // save quicktables
 
 	// see if we got a hit
 	for ( int32_t i = 0 ; i < numNeedles2 ; i++ ) {
@@ -780,8 +778,7 @@ bool isLinkSpam ( const Url *linker,
 		      &n               ,
 		      false            , // stopAtFirstMatch
 		      &hadPreMatch     ,
-		      true             , // save quicktables
-		      niceness         );
+		      true             ); // save quicktables
 
 	// see if we got a hit
 	for ( int32_t i = 0 ; i < numNeedles1 ; i++ ) {
@@ -805,8 +802,7 @@ bool isLinkSpam ( const Url *linker,
 		      NULL         ,  // &n ,
 		      false        ,  // stopAtFirstMatch?
 		      NULL         ,  // hadPreMatch?
-		      true         ,  // save quicktables
-		      niceness     );
+		      true         );  // save quicktables
 
 	// see if we got a hit
 	for ( int32_t i = 0 ; i < numNeedles2 ; i++ ) {
