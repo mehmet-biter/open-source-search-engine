@@ -5767,7 +5767,7 @@ void doInject ( int fd , void *state ) {
 		// get the length of content (includes the submime for 
 		// injection)
 		int32_t contentLen = m.getContentLen();
-		if ( ! url && contentLen == -1 ) {
+		if ( contentLen == -1 ) {
 			log("build: inject: Mime at offset %" PRId64" does not "
 			    "specify required Content-Length: XXX field.",
 			    s_off);
@@ -5806,11 +5806,6 @@ void doInject ( int fd , void *state ) {
 			      "u=",
 			      ipStr,
 			      (int32_t)s_isDelete);
-
-		if ( ! url ) {
-			g_process.shutdownAbort(true);
-		}
-
 
 		// url encode the url
 		rp += urlEncode ( rp , 4000 , url , strlen(url) );
