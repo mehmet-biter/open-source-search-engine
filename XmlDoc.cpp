@@ -11092,7 +11092,7 @@ int32_t *XmlDoc::getUrlFilterNum ( ) {
 	int32_t ufn = ::getUrlFilterNum ( oldsr,
 					  NULL,//&fakeReply,
 					  spideredTime,false,
-					  m_niceness,cr,
+					  cr,
 					  false, // isOutlink?
 					  NULL,
 					  langIdArg);
@@ -16465,7 +16465,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		// get it
 		int32_t ufn;
 		ufn=::getUrlFilterNum(&sreq,&srep,spideredTime,true,
-				      m_niceness,cr,
+				      cr,
 				      false, // isOutlink?
 				      NULL ,
 				      langIdArg);

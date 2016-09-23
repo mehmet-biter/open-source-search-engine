@@ -949,7 +949,7 @@ bool SpiderColl::addSpiderRequest ( SpiderRequest *sreq , int64_t nowGlobalMS ) 
 	// get ufn/priority,because if filtered we do not want to add to doledb
 	int32_t ufn ;
 	// HACK: set isOutlink to true here since we don't know if we have sre
-	ufn = ::getUrlFilterNum(sreq,NULL,nowGlobalMS,false,MAX_NICENESS,m_cr,
+	ufn = ::getUrlFilterNum(sreq,NULL,nowGlobalMS,false,m_cr,
 				true,//isoutlink? HACK!
 				NULL,// quota table quotatable
 				-1 );  // langid not valid
@@ -2827,7 +2827,6 @@ bool SpiderColl::scanListForWinners ( ) {
 					     srep,
 					     nowGlobal,
 					     false,
-					     MAX_NICENESS,
 					     m_cr,
 					     false, // isOutlink?
 					     // provide the page quota table
