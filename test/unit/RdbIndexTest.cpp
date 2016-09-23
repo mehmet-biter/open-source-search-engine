@@ -22,7 +22,7 @@ TEST(RdbIndexTest, GenerateFromBucketMultipleTermIdSingleDocId) {
 
 	RdbIndex index;
 	index.set("./", "test-posdbidx", Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB);
-	index.generateIndex(&buckets, 0);
+	index.generateIndex(0, &buckets);
 
 	auto docIds = index.getDocIds();
 	EXPECT_EQ(1, docIds->size());
@@ -41,7 +41,7 @@ TEST(RdbIndexTest, GenerateFromBucketSingleTermIdMultipleDocId) {
 
 	RdbIndex index;
 	index.set("./", "test-posdbidx", Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB);
-	index.generateIndex(&buckets, 0);
+	index.generateIndex(0, &buckets);
 
 	auto docIds = index.getDocIds();
 	EXPECT_EQ(total_records, docIds->size());
@@ -62,7 +62,7 @@ TEST(RdbIndexTest, GenerateFromBucketMultipleTermIdMultipleDocId) {
 
 	RdbIndex index;
 	index.set("./", "test-posdbidx", Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB);
-	index.generateIndex(&buckets, 0);
+	index.generateIndex(0, &buckets);
 
 	auto docIds = index.getDocIds();
 	EXPECT_EQ(total_records, docIds->size());
