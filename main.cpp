@@ -3854,11 +3854,13 @@ bool thrutest ( char *testdir , int64_t fileSize ) {
 	if ( f.doesExist() ) {
 		if ( ! f.open ( O_RDONLY ) ) {
 			log(LOG_WARN, "speedtestdisk: cannot open %s/%s", testdir, "speedtest");
+			free(buf);
 			return false;
 		}
 		// ensure big enough
 		if ( f.getFileSize() < fileSize ) {
 			log(LOG_WARN, "speedtestdisk: File %s/%s is too small for requested read size.", testdir, "speedtest");
+			free(buf);
 			return false;
 		}
 		log("db: reading from speedtest0001.dat");
@@ -3870,6 +3872,7 @@ bool thrutest ( char *testdir , int64_t fileSize ) {
 	if ( f.doesExist() ) {
 		if ( ! f.open ( O_RDONLY ) ) {
 			log(LOG_WARN, "speedtestdisk: cannot open %s/%s", testdir, "indexdb0001.dat");
+			free(buf);
 			return false;
 		}
 		log("db: reading from indexdb0001.dat");
@@ -3881,6 +3884,7 @@ bool thrutest ( char *testdir , int64_t fileSize ) {
 	if ( ! f.doesExist() ) {
 		if ( ! f.open ( O_RDWR | O_CREAT | O_SYNC ) ) {
 			log(LOG_WARN, "speedtestdisk: cannot open %s/%s", testdir, "speedtest");
+			free(buf);
 			return false;
 		}
 		log("db: writing to speedtest0001.dat");
@@ -3932,6 +3936,7 @@ bool thrutest ( char *testdir , int64_t fileSize ) {
 	}
 	}
 
+	free(buf);
 	return true;
 }
 
