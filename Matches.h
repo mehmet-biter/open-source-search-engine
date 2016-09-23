@@ -78,7 +78,7 @@ class Matches {
 
 	bool set( Words *bodyWords, Phrases *bodyPhrases,
 			  Sections *bodySections, Bits *bodyBits, Pos *bodyPos, Xml *xml,
-			  Title *tt, Url *firstUrl, LinkInfo *linkInfo, int32_t niceness );
+			  Title *tt, Url *firstUrl, LinkInfo *linkInfo );
 
 	bool addMatches(char *s, int32_t slen, mf_t flags );
 

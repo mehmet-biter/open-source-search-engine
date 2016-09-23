@@ -225,7 +225,7 @@ void Matches::setQuery ( Query *q ) {
 //   fills in the matrix for title, link text, etc.
 // . returns false and sets g_errno on error
 bool Matches::set( Words *bodyWords, Phrases *bodyPhrases, Sections *bodySections, Bits *bodyBits,
-				   Pos *bodyPos, Xml *bodyXml, Title *tt, Url *firstUrl, LinkInfo *linkInfo, int32_t niceness ) {
+				   Pos *bodyPos, Xml *bodyXml, Title *tt, Url *firstUrl, LinkInfo *linkInfo ) {
 	// don't reset query info!
 	reset2();
 

@@ -17129,7 +17129,7 @@ Matches *XmlDoc::getMatches () {
 	if(linkInfo==(LinkInfo*)-1)
 		linkInfo = NULL;
 	// returns false and sets g_errno on error
-	if ( !m_matches.set( ww, phrases, ss, bits, pos, xml, ti, getFirstUrl(), linkInfo, m_niceness ) ) {
+	if ( !m_matches.set( ww, phrases, ss, bits, pos, xml, ti, getFirstUrl(), linkInfo ) ) {
 		return NULL;
 	}
 
