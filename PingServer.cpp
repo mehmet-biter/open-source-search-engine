@@ -430,8 +430,6 @@ void gotReplyWrapperP ( void *state , UdpSlot *slot ) {
 	int64_t tripTime = nowms - slot->getFirstSendTime() ;
 	// ensure not negative, clock might have been adjusted!
 	if ( tripTime < 0 ) tripTime = 0;
-	// bail if none
-	if ( ! h ) { log(LOG_LOGIC,"net: pingserver: bad hostId."); return; }
 	// point to the right ping time, for the original port or for the 
 	// shotgun port
 	int32_t *pingPtr = NULL;
