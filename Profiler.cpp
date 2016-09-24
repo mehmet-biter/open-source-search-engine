@@ -278,22 +278,22 @@ bool Profiler::processSymbolTable (FILE * file){
 				    string_sec->sh_offset);
 				return 0;
 			}
-			strtab = (char *) mmalloc (string_sec->sh_size,
-						   "ProfilerG");
+			strtab = (char *) mmalloc(string_sec->sh_size+1, "ProfilerG");
 			if (strtab == NULL){
 				log(LOG_INIT,"admin: Out of memory allocating "
 				    "%" PRId32" bytes for %s", string_sec->sh_size,
 				    "string table");
+				return 0;
 			}
-			if (fread ( strtab, string_sec->sh_size, 1, 
-				    m_file) != 1 ){
+			if (fread ( strtab, string_sec->sh_size, 1, m_file) != 1 ){
 				log(LOG_INIT,"admin: Unable to read in %" PRId32" "
 				    "bytes of %s", string_sec->sh_size,
 				    "string table");
-				mfree (strtab,string_sec->sh_size,"ProfilerG");
+				mfree (strtab,string_sec->sh_size+1,"ProfilerG");
 				strtab = NULL;
 				return 0;
 			}
+			strtab[ string_sec->sh_size ] = '\0';
 		}
 		for (si = 0, psym = symtab;
 		     si < section->sh_size / section->sh_entsize;
@@ -317,8 +317,7 @@ bool Profiler::processSymbolTable (FILE * file){
 				}
 				else{
 					FnInfo fnInfoTmp;
-					strncpy(fnInfoTmp.m_fnName,
-						strtab+psym->st_name,255);
+					strncpy(fnInfoTmp.m_fnName, strtab+psym->st_name,255);
 					
 					char* end = strnstr( fnInfoTmp.m_fnName, "__", 255 );
 					if ( end ) {
@@ -351,7 +350,7 @@ bool Profiler::processSymbolTable (FILE * file){
 		       (section->sh_size/section->sh_entsize)*sizeof(Elf32_External_Sym),
 		       "ProfilerF");
 		if (strtab != m_stringTable)
-			mfree (strtab,string_sec->sh_size,"ProfilerG");
+			mfree (strtab,string_sec->sh_size+1,"ProfilerG");
 	}
 	gbqsort(m_addressMap, m_lastAddressMapIndex, sizeof(uint32_t), s_addressMapCmp);
       	return 1;
