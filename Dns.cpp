@@ -37,6 +37,7 @@ Dns::Dns() {
 	m_ips      = NULL;
 	m_keys     = NULL;
 	m_numSlots = 0;
+	m_dnsClientPort = 0;
 }
 
 // reset the udp server and rdb cache
