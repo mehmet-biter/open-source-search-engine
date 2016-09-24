@@ -147,7 +147,7 @@ bool Profiler:: readSymbolTable(){
 }
 
 
-bool Profiler:: getFileHeader (FILE * file){
+bool Profiler::getFileHeader (FILE * file){
 	/* Read in the identity array.  */
 	if (fread (m_elfHeader.e_ident, EI_NIDENT, 1, file) != 1)
 		return 0;
@@ -158,6 +158,8 @@ bool Profiler:: getFileHeader (FILE * file){
 	//gb is supposed to be 32-bit
 	/* Read in the rest of the header.  */
 	Elf32_External_Ehdr ehdr32;
+	
+	memset(&ehdr32, 0, sizeof(ehdr32));
 	
 	if (fread (ehdr32.e_type, sizeof (ehdr32) - EI_NIDENT, 1, file) != 1)
 		return 0;
