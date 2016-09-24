@@ -85,6 +85,10 @@ File::File ( ) {
 
 	m_calledOpen = false;
 	m_calledSet  = false;
+	m_closedIt	= false;
+	m_closeCount = 0;
+	m_flags = 0;
+	m_forceRename = false;
 
 	pthread_mutex_init(&m_mtxFdManipulation,NULL);
 	
