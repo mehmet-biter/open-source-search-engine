@@ -1578,7 +1578,7 @@ bool RdbBucket::deleteNode(int32_t i) {
 	char *data = NULL;
 	int32_t dataSize = m_parent->getFixedDataSize();
 	if (dataSize != 0) {
-		data = rec + m_parent->getKeySize();
+		data = *(char**)(rec + m_parent->getKeySize());
 
 		if (dataSize == -1) {
 			dataSize = *(int32_t*)(data + sizeof(char*));
