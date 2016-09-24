@@ -5693,10 +5693,11 @@ void doInject ( int fd , void *state ) {
 		int32_t toRead = maxToRead;
 		if ( s_off + toRead > fsize ) toRead = fsize - s_off;
 		int32_t bytesRead = s_file.read ( buf , toRead , s_off ) ;
-		buf[bytesRead] = '\0';
+		if( bytesRead >= 0 ) {
+			buf[bytesRead] = '\0';
+		}
 		if ( bytesRead != toRead ) {
-			log("build: inject: Read of %s failed at offset "
-			    "%" PRId64, s_file.getFilename(), s_off);
+			log("build: inject: Read of %s failed at offset %" PRId64, s_file.getFilename(), s_off);
 			exit(0);
 		}
 
