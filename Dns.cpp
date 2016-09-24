@@ -615,12 +615,8 @@ bool Dns::getIp ( const char *hostname,
 	ds->m_this        = this;
 	ds->m_state       = state;
 	ds->m_callback    = callback;	
-	int32_t newlen = hostnameLen;
-	if ( newlen > MAX_DNS_HOSTNAME_LEN ) {
-		newlen = MAX_DNS_HOSTNAME_LEN;
-	}
-	gbmemcpy ( ds->m_hostname , hostname , newlen );
-	ds->m_hostname [ newlen ] = '\0';
+	gbmemcpy ( ds->m_hostname , hostname , hostnameLen );
+	ds->m_hostname [ hostnameLen ] = '\0';
 
 	// copy the sendBuf cuz we need it in gotIp() to ensure hostnames match
 	//char *copy = (char *) mdup ( msg , msgSize , "Dns" );
