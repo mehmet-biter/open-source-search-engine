@@ -673,7 +673,7 @@ bool Msg3a::gotAllShardReplies ( ) {
 // . Msg51 remembers clusterRecs from previous call to avoid repeating lookups
 // . returns false if blocked, true otherwise
 // . sets g_errno and returns true on error
-bool Msg3a::mergeLists ( ) {
+bool Msg3a::mergeLists() {
 
 	// time how long the merge takes
 	if ( m_debug ) {
@@ -792,13 +792,26 @@ bool Msg3a::mergeLists ( ) {
 		// . skip exhausted lists
 		// . these both should be NULL if reply was skipped because
 		//   we did a gbdocid:| query
-		if ( diPtr[j] >= diEnd[j] ) continue;
+		if ( diPtr[j] >= diEnd[j] ) {
+			continue;
+		}
 		// compare the score
-		if ( maxj == -1 ) { maxj = j; continue; }
-		if ( *rsPtr[j] < *rsPtr[maxj] ) continue;
-		if ( *rsPtr[j] > *rsPtr[maxj] ){ maxj = j; continue; }
+		if ( maxj == -1 ) { 
+			maxj = j; 
+			continue; 
+		}
+		if ( *rsPtr[j] < *rsPtr[maxj] ) {
+			continue;
+		}
+		if ( *rsPtr[j] > *rsPtr[maxj] ) { 
+			maxj = j; 
+			continue; 
+		}
 		// prefer lower docids on top
-		if ( *diPtr[j] < *diPtr[maxj] ) { maxj = j; continue;}
+		if ( *diPtr[j] < *diPtr[maxj] ) { 
+			maxj = j; 
+			continue;
+		}
 	}
 
 	if ( maxj == -1 ) {
@@ -914,7 +927,11 @@ bool Msg3a::mergeLists ( ) {
 		// clear this out
 		//m_eventIdBits[m_numDocIds].clear();
 		// set this for use below
-		hslot = m_numDocIds;
+		
+		//@@@ BR: Something is wrong here... the assignment below is never used.
+		// Found by Coverity and disabled.
+//		hslot = m_numDocIds;
+
 		// point to next available slot to add to
 		m_numDocIds++;
 	}
