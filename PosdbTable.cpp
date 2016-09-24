@@ -4664,7 +4664,7 @@ bool PosdbTable::allocTopScoringDocIdsData() {
 	}
 
 	// keep it sane
-	if ( nn > m_msg39req->m_docsToGet * 2 && nn > 60 ) {
+	if ( nn > (int64_t)m_msg39req->m_docsToGet * 2 && nn > 60 ) {
 		nn = m_msg39req->m_docsToGet * 2;
 	}
 
