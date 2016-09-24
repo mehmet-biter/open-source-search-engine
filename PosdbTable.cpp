@@ -4351,15 +4351,6 @@ float PosdbTable::getMaxPossibleScore ( const QueryTermInfo *qti,
 			
 			// a clean win?
 			if ( s_hashGroupWeights[hgrp] > bestHashGroupWeight ) {
-				// if the term was in an inlink we end
-				// up summing those up so let's just return
-				// -1 to indicate we had inlinktext so
-				// we won't apply the constraint to this
-				// docid for this term
-				if ( hgrp == HASHGROUP_INLINKTEXT ) {
-					return -1.0;
-				}
-				
 				bestHashGroupWeight = s_hashGroupWeights[hgrp];
 				bestDensityRank = dr;
 				continue;
