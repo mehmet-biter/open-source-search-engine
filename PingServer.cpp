@@ -1441,8 +1441,15 @@ void checkKernelErrors( int fd, void *state ){
 	int64_t st = gettimeofdayInMilliseconds();
 	char buf[4098];
 	// klogctl reads the last 4k lines of the kernel ring buffer
-	int16_t bufLen = klogctl(3,buf,4096);
+	int bufLen = klogctl(3,buf,4096);
+
+	if ( bufLen < 0 ){
+		log ("db: klogctl returned error: %s",mstrerror(errno));
+		return;
+	}
+
 	int64_t took = gettimeofdayInMilliseconds() - st;
+
 	if ( took >= 3 ) {
 		int32_t len = bufLen;
 		if ( len > 200 ) len = 200;
@@ -1452,10 +1459,6 @@ void checkKernelErrors( int fd, void *state ){
 		buf[len] = c;
 	}
 
-	if ( bufLen < 0 ){
-		log ("db: klogctl returned error: %s",mstrerror(errno));
-		return;
-	}
 	// make sure not too big!
 	if ( bufLen >= 4097 ) {
 		log ("db: klogctl overflow");
