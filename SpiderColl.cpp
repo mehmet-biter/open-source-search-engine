@@ -973,10 +973,6 @@ bool SpiderColl::addSpiderRequest ( SpiderRequest *sreq , int64_t nowGlobalMS ) 
 		return true;
 	}
 
-	if ( m_cr->m_forceDelete[ufn] ) {
-		logDebug( g_conf.m_logDebugSpider, "spider: request %s is banned ufn=%" PRId32, sreq->m_url, ufn );
-		return true;
-	}
 
 	// once in waiting tree, we will scan waiting tree and then lookup
 	// each firstIp in waiting tree in spiderdb to get the best
