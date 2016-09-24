@@ -408,6 +408,8 @@ bool Dns::getIp ( const char *hostname,
 	ce.m_nextKey  = 0LL; // assume we are the first for this hostname
 	ce.m_ds       = NULL;
 	ce.m_listSize = 0;
+	ce.m_listId   = 0;
+
 	// always inc now no matter what now so no danger of re-use
 	s_bogus++;
 	// if we are the first guy requesting the ip for this hostname
