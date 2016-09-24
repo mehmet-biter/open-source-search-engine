@@ -122,7 +122,7 @@ bool RdbDump::set(collnum_t collnum,
 	if (m_tree) {
 		nr = m_tree->getNumUsedNodes();
 		structureName = "tree";
-	} else if (m_buckets) {
+	} else {
 		nr = m_buckets->getNumKeys();
 		structureName = "buckets";
 	}
@@ -855,7 +855,7 @@ tryAgain:
 	bool s;
 	if (m_tree) {
 		s = m_tree->deleteList(m_collnum, m_list);
-	} else if (m_buckets) {
+	} else {
 		s = m_buckets->deleteList(m_collnum, m_list);
 	}
 
