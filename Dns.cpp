@@ -2397,7 +2397,7 @@ bool Dns::loadFile ( ) {
 	e = p;
 	while ( *e && ! isspace(*e) ) e++;
 	// get ip, will stop at first space
-	ip = atoip ( p , e - p );
+	ip = atoip ( p , (int32_t)(e - p) );
 	// get the hostname
 	p = e;
 	// skip spaces after ip
