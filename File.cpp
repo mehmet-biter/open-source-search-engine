@@ -529,7 +529,9 @@ int File::getfd () {
 		logDebug( g_conf.m_logDebugDisk, "disk: returning existing fd %i for %s this=0x%" PTRFMT" ccSaved=%i ccNow=%i",
 		          m_fd,getFilename(),(PTRTYPE)this, (int)m_closeCount, (int)s_closeCounts[m_fd] );
 
-		if ( m_fd >= MAX_NUM_FDS ) gbshutdownCorrupted();
+		if ( m_fd >= MAX_NUM_FDS ) {
+			gbshutdownCorrupted();
+		}
 		// but update the timestamp to reduce chance it closes on us
 		s_timestamps [ m_fd ] = gettimeofdayInMillisecondsLocal();
 		return m_fd;
@@ -555,25 +557,36 @@ int File::getfd () {
 	// time the calls to open just in case they are hurting us
 	int64_t t1 = gettimeofdayInMilliseconds();
 	// then try to open the new name
-	int fd = ::open ( getFilename() , m_flags,getFileCreationFlags());
+	int fd = ::open ( getFilename(), m_flags, getFileCreationFlags());
 	// 0 means stdout, right? why am i seeing it get assigned???
-	if ( fd == 0 )
+	if ( fd == 0 ) {
 		log(LOG_WARN, "disk: Got fd of 0 when opening %s.", getFilename());
-	if ( fd == 0 )
-	       fd=::open(getFilename(),m_flags,getFileCreationFlags());
-	if ( fd == 0 )
-		log(LOG_WARN, "disk: Got fd of 0 when opening2 %s.",
-		    getFilename());
-	if ( fd >= MAX_NUM_FDS )
-		log(LOG_WARN, "disk: got fd of %i out of bounds 1 of %i",
-		    fd,(int)MAX_NUM_FDS);
+		fd=::open(getFilename(), m_flags, getFileCreationFlags());
+	}
+	if ( fd == 0 ) {
+		log(LOG_WARN, "disk: Got fd of 0 when opening2 %s.", getFilename());
+	}
+	if ( fd >= MAX_NUM_FDS ) {
+		log(LOG_WARN, "disk: got fd of %i out of bounds 1 of %i - FAILING File::getfd", fd, (int)MAX_NUM_FDS);
+		::close(fd);
+		return -1;
+	}
+
+	// copy errno to g_errno
+	if ( fd <= -1 ) {
+		g_errno = errno;
+		log( LOG_ERROR, "disk: error open(%s) : %s fd %i", getFilename(), strerror(g_errno), fd );
+		return -1;
+	}
+
+
 
 	// if we got someone else's fd that called close1_r() in a
 	// thread but did not have time to call close2() to fix
 	// up these member vars, then do it here. close2() will
 	// see that s_filePtrs[fd] does not equal the file ptr any more
 	// and it will not update s_numOpenFiles in that case.
-	if ( fd >= 0 && s_open [ fd ] ) {
+	if ( s_open [ fd ] ) {
 		File *f = s_filePtrs [ fd ];
 		logDebug( g_conf.m_logDebugDisk, "disk: swiping fd %i from %s before his close thread returned this=0x%" PTRFMT,
 			  fd, f->getFilename(), (PTRTYPE)f );
@@ -590,7 +603,7 @@ int File::getfd () {
 
 	// sanity. how can we get an fd already opened?
 	// because it was closed in a thread in close1_r()
-	if ( fd >= 0 && s_open[fd] ) {
+	if ( s_open[fd] ) {
 		gbshutdownCorrupted();
 	}
 
@@ -600,32 +613,24 @@ int File::getfd () {
 	//   need to inc this guy here now, too
 	// . so when that read returns it will know to re-do
 	// . this should really be named s_openCounts!!
-	if ( fd >= 0 ) {
-		s_closeCounts [ fd ]++;
+	s_closeCounts [ fd ]++;
 
-		// . we now record this
-		// . that way if our fd gets closed in closeLeastUsed() or
-		//   in close1_r() due to a rename/unlink then we know it!
-		// . this fixes a race condition of closeCounts in Threads.cpp
-		//   where we did not know that the fd had been stolen from
-		//   us and assigned to another file because our close1_r()
-		//   had called ::close() on our fd and our closeCount algo
-		//   failed us. see the top of this file for more description
-		//   into this bug fix.
-		m_closeCount = s_closeCounts[fd];
-	}
+	// . we now record this
+	// . that way if our fd gets closed in closeLeastUsed() or
+	//   in close1_r() due to a rename/unlink then we know it!
+	// . this fixes a race condition of closeCounts in Threads.cpp
+	//   where we did not know that the fd had been stolen from
+	//   us and assigned to another file because our close1_r()
+	//   had called ::close() on our fd and our closeCount algo
+	//   failed us. see the top of this file for more description
+	//   into this bug fix.
+	m_closeCount = s_closeCounts[fd];
 
 	if ( t1 >= 0 ) {
 		int64_t dt = gettimeofdayInMilliseconds() - t1 ;
 		if ( dt > 1 ) {
 			log( LOG_INFO, "disk: call to open(%s) blocked for %" PRId64" ms.", getFilename(), dt );
 		}
-	}
-	// copy errno to g_errno
-	if ( fd <= -1 ) {
-		g_errno = errno;
-		log( LOG_ERROR, "disk: error open(%s) : %s fd %i", getFilename(), strerror(g_errno), fd );
-		return -1;
 	}
 
 	if ( g_conf.m_logDebugDisk ) {
@@ -642,19 +647,16 @@ int File::getfd () {
 	// set this file descriptor, the other stuff remains the same
 	m_fd = fd;
 
-	// 0 means stdout, right? why am i seeing it get assigned???
-	if ( fd == 0 ) {
-		log( LOG_WARN, "disk: Found fd of 0 when opening %s.", getFilename() );
-	}
 	// reset
 	s_writing   [ fd ] = false;
 	s_unlinking [ fd ] = false;
-	// update the time stamp
-	s_timestamps [ fd ] = gettimeofdayInMillisecondsLocal();
-	s_open       [ fd ] = true;
-	s_filePtrs   [ fd ] = this;
+	s_timestamps[ fd ] = gettimeofdayInMillisecondsLocal();
+	s_open      [ fd ] = true;
+	s_filePtrs  [ fd ] = this;
 
-	if ( g_conf.m_logDebugDisk ) sanityCheck();
+	if ( g_conf.m_logDebugDisk ) {
+		sanityCheck();
+	}
 
 	return fd;
 }
