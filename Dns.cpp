@@ -2167,11 +2167,12 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 
 	// initialize next depth level
 	int32_t d1 = ds->m_depth + 1;
-	ds->m_rootTLD[d1] = false;
-	ds->m_fallbacks[d1] = 0;
-	ds->m_numDnsIps[d1] = 0;
-	ds->m_numDnsNames[d1] = 0;
-
+	if( d1 < MAX_DEPTH ) {
+		ds->m_rootTLD[d1] = false;
+		ds->m_fallbacks[d1] = 0;
+		ds->m_numDnsIps[d1] = 0;
+		ds->m_numDnsNames[d1] = 0;
+	}
 	// set g_errno so gotIp() will call sendToNextDNS(ds)
 	log(LOG_DEBUG, "dns: gotIp returning ETRYAGAIN");
 	g_errno = ETRYAGAIN;
