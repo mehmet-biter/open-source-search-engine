@@ -71,32 +71,6 @@ void Msg3a::reset ( ) {
 	m_numTotalEstimatedHits = 0LL;
 }
 
-// from Indexdb.cpp
-static key96_t makeKey ( int64_t termId, unsigned char score, uint64_t docId, bool isDelKey ) {
-	// make sure we mask out the hi bits we do not use first
-	termId = termId & TERMID_MASK;
-	key96_t key ;
-	char *kp = (char *)&key;
-	char *tp = (char *)&termId;
-	char *dp = (char *)&docId;
-	// store termid
-	*(int16_t *)(kp+10) = *(int16_t *)(tp+4);
-	*(int32_t  *)(kp+ 6) = *(int32_t  *)(tp  );
-	// store the complement of the score
-	kp[5] = ~score;
-	// . store docid
-	// . make room for del bit and half bit
-	docId <<= 2;
-	*(int32_t *)(kp+1) = *(int32_t *)(dp+1);
-	kp[0] = dp[0];
-	// turn off half bit
-	kp[0] &= 0xfd;
-	// turn on/off delbit
-	if ( isDelKey ) kp[0] &= 0xfe;
-	else            kp[0] |= 0x01;
-	// key is complete
-	return key;
-}
 
 
 // . returns false if blocked, true otherwise
@@ -353,12 +327,30 @@ bool Msg3a::getDocIds(Msg39Request *r, const SearchInput *si, Query *q, void *st
 		// TODO: fix msg2 to do that...
 		if ( ! m_q->isSplit() ) {
 			int64_t     tid  = m_q->getTermId(0);
-			key96_t         k    = makeKey(tid,1,1,false );
+			
+			key144_t k;
+			Posdb::makeKey ( &k ,
+					  tid,
+					  0LL, // docid
+					  0, // dist
+					  MAXDENSITYRANK, // density rank
+					  MAXDIVERSITYRANK, // diversity rank
+					  MAXWORDSPAMRANK, // wordspamrank
+					  0, // siterank
+					  0, // hashgroup
+					  // we set to docLang in final hash loop
+					  langUnknown,// langid
+					  0, // multiplier
+					  0, // syn?
+					  false , // delkey?
+					  false ); // sharded by termid
+
 			// split = false! do not split
 			//gid = getGroupId ( RDB_POSDB,&k,false);
 			shardNum = g_hostdb.getShardNumByTermId(&k);
 			firstHostId = -1;
 		}
+
 		// debug log
 		if ( m_debug ) {
 			logf(LOG_DEBUG,"query: Msg3a[%" PTRFMT"]: forwarding request "
