@@ -307,15 +307,14 @@ bool Dns::getIp ( const char *hostname,
 
 	// . don't accept large hostnames
 	// . technically the limit is 255 but i'm stricter
-	if ( hostnameLen >= 254 ) {
+	if ( hostnameLen > MAX_DNS_HOSTNAME_LEN ) {
 		g_errno = EHOSTNAMETOOBIG;
-		log("dns: Asked to get IP of hostname over 253 "
-		    "characters long.");
+		log("dns: Asked to get IP of hostname over %d characters long.", MAX_DNS_HOSTNAME_LEN);
 		*ip=0;
 		return true;
 	}
 	// debug msg
-	char tmp[256];
+	char tmp[MAX_DNS_HOSTNAME_LEN+1];
 	gbmemcpy ( tmp , hostname , hostnameLen );
 	tmp [ hostnameLen ] = '\0';
 
@@ -375,15 +374,19 @@ bool Dns::getIp ( const char *hostname,
 	//   not match then just error out?
 	int64_t hostKey64 = hostKey96.n0 & 0x7fffffffffffffffLL;
 	// never let this be zero
-	if ( hostKey64 == 0 ) hostKey64 = 1;
+	if ( hostKey64 == 0 ) {
+		hostKey64 = 1;
+	}
 	// see if we are already looking up this hostname
 	CallbackEntry *ptr = s_dnstable.getValuePointer ( hostKey64 );
+
 	// if he has our key see if his hostname matches ours, it should.
 	if ( ptr && 
 	     // we do not store hostnameLen in ds, so make sure this is 0 
 	     ! ptr->m_ds->m_hostname[hostnameLen] &&
 	     (int32_t)strlen(ptr->m_ds->m_hostname) == hostnameLen && 
 	     strncmp ( ptr->m_ds->m_hostname, hostname, hostnameLen ) != 0 ) {
+
 		g_errno = EBADENGINEER;
 		log(LOG_WARN, "dns: Found key collision in wait queue. host %s has "
 		    "same key as %s. key=%" PRIu64".",
@@ -610,7 +613,9 @@ bool Dns::getIp ( const char *hostname,
 	ds->m_state       = state;
 	ds->m_callback    = callback;	
 	int32_t newlen = hostnameLen;
-	if ( newlen > 127 ) newlen = 127;
+	if ( newlen > MAX_DNS_HOSTNAME_LEN ) {
+		newlen = MAX_DNS_HOSTNAME_LEN;
+	}
 	gbmemcpy ( ds->m_hostname , hostname , newlen );
 	ds->m_hostname [ newlen ] = '\0';
 
