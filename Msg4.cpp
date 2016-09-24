@@ -1085,8 +1085,8 @@ bool loadAddsInProgress ( const char *prefix ) {
 	read ( fd , (char *)&numHostBufs , 4 ); 
 	p += 4;
 	if ( numHostBufs != s_numHostBufs ) {
+		close ( fd );
 		g_errno = EBADENGINEER;
-
 		log( LOG_ERROR, "%s:%s: build: addsinprogress.dat has wrong number of host bufs.", __FILE__, __func__ );
 		return false;
 	}
@@ -1094,7 +1094,9 @@ bool loadAddsInProgress ( const char *prefix ) {
 	// deserialize each hostbuf
 	for ( int32_t i = 0 ; i < s_numHostBufs ; i++ ) {
 		// break if nothing left to read
-		if ( p >= pend ) break;
+		if ( p >= pend ) {
+			break;
+		}
 		// USED size of the buf
 		int32_t used;
 		read ( fd , (char *)&used , 4 );
@@ -1105,16 +1107,19 @@ bool loadAddsInProgress ( const char *prefix ) {
 			s_hostBufSizes[i] = 0;
 			continue;
 		}
+
 		// malloc the min buf size
 		int32_t allocSize = MAXHOSTBUFSIZE;
-		if ( allocSize < used ) allocSize = used;
+		if ( allocSize < used ) {
+			allocSize = used;
+		}
+
 		// alloc the buf space, returns NULL and sets g_errno on error
 		char *buf = (char *)mmalloc ( allocSize , "Msg4" );
-		if ( ! buf ) 
+		if( !buf ) 
 		{
-			log(LOG_ERROR,"build: Could not alloc %" PRId32" bytes for "
-					"reading %s",allocSize,filename);
-
+			close ( fd );
+			log(LOG_ERROR,"build: Could not alloc %" PRId32" bytes for reading %s",allocSize,filename);
 			logTrace( g_conf.m_logTraceMsg4, "END - returning false" );
 			return false;
 		}
@@ -1123,13 +1128,12 @@ bool loadAddsInProgress ( const char *prefix ) {
 		int32_t nb = read ( fd , buf , used );
 		// sanity
 		if ( nb != used ) {
+			close ( fd );
 			// reset the buffer usage
 			//*(int32_t *)(p-4) = 4;
 			*(int32_t *)buf = 4;
 			// return false
-			log(LOG_ERROR,"%s:%s: error reading addsinprogress.dat: %s", 
-				__FILE__,__func__,mstrerror(errno));
-				   
+			log(LOG_ERROR,"%s:%s: error reading addsinprogress.dat: %s", __FILE__, __func__, mstrerror(errno));
 			logTrace( g_conf.m_logTraceMsg4, "END - returning false" );
 			return false;
 		}
@@ -1148,7 +1152,10 @@ bool loadAddsInProgress ( const char *prefix ) {
 	// scan in progress msg4 requests too that we stored in this file too
 	for ( ; ; ) {
 		// break if nothing left to read
-		if ( p >= pend ) break;
+		if ( p >= pend ) {
+			break;
+		}
+
 		// hostid sent to
 		int32_t hostId;
 		read ( fd , (char *)&hostId , 4 );
