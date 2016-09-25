@@ -84,7 +84,7 @@ class Msg20Request {
 };
 
 
-class Msg20State;
+struct Msg20State;
 
 class Msg20Reply {
 public:
