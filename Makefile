@@ -123,17 +123,18 @@ endif
 
 CPPFLAGS += $(CONFIG_CPPFLAGS)
 
-# dependencies
-CPPFLAGS += -MMD -MP
-
 # export to sub-make
 export CONFIG_CPPFLAGS
 
 ifeq ($(CXX), g++)
+# dependencies
+CPPFLAGS += -MMD -MP
+
 # versions
 GCC_VER_MIN_61 := $(shell echo `g++ -dumpversion |cut -f1-2 -d.` \>= 6.1 |bc)
 GCC_VER_MIN_51 := $(shell echo `g++ -dumpversion |cut -f1-2 -d.` \>= 5.1 |bc)
 
+# warnings
 CPPFLAGS += -Wall
 
 # enable more warnings
@@ -168,8 +169,13 @@ CPPFLAGS += -Wstrict-aliasing=0
 CPPFLAGS += -Wno-write-strings
 CPPFLAGS += -Wno-maybe-uninitialized
 CPPFLAGS += -Wno-unused-but-set-variable
+CPPFLAGS += -Wno-unused-parameter
 
 else ifeq ($(CXX), clang++)
+# dependencies
+CPPFLAGS += -MMD -MP
+
+# warnings
 CPPFLAGS += -Weverything
 
 # enable colour
@@ -193,7 +199,6 @@ CPPFLAGS += -Wno-cast-align -Wno-tautological-undefined-compare -Wno-float-equal
 CPPFLAGS += -Wno-shadow -Wno-conversion -Wno-sign-conversion -Wno-old-style-cast -Wno-shorten-64-to-32 -Wno-double-promotion
 CPPFLAGS += -Wno-unused-parameter
 CPPFLAGS += -Wno-missing-prototypes
-CPPFLAGS += -Wno-sometimes-uninitialized
 CPPFLAGS += -Wno-conditional-uninitialized
 CPPFLAGS += -Wno-packed -Wno-padded
 CPPFLAGS += -Wno-writable-strings
