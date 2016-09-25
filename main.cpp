@@ -1039,7 +1039,7 @@ int main2 ( int argc , char *argv[] ) {
 		char *file2 = argv[i+1];
 		int32_t maxNumThreads=1;
 		if (argv[i+2])  maxNumThreads=atoi(argv[i+2]);
-		int32_t wait;
+		int32_t wait = 1000;
 		if (argv[i+3]) wait=atoi(argv[i+3]);
 		//wait atleast 1 sec before you start again.
 		if (wait<1000) wait=1000;
