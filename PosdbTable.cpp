@@ -3362,7 +3362,6 @@ void PosdbTable::intersectLists10_r ( ) {
 			default:
 				log(LOG_LOGIC,"%s:%d: Illegal pass number %d", __FILE__, __LINE__, currPassNum);
 				gbshutdownLogicError();
-				break;
 		}
 
 		// reset docid to start!
