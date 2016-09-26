@@ -1078,21 +1078,12 @@ bool loadAddsInProgress ( const char *prefix ) {
 
 	logTrace( g_conf.m_logTraceMsg4, "filename [%s]", filename);
 
-	// if file does not exist, return true, not really an error
-	struct stat stats;
-	stats.st_size = 0;
-	int status = stat ( filename , &stats );
-	if ( status != 0 && errno == ENOENT ) {
-		logTrace( g_conf.m_logTraceMsg4, "END - not found, returning true" );
-		return true;
-	}
-
-	// get the fileSize into "pend"
-	int32_t p    = 0;
-	int32_t pend = stats.st_size;
-
 	int32_t fd = open ( filename, O_RDONLY );
 	if ( fd < 0 ) {
+		if(errno==ENOENT) {
+			logTrace( g_conf.m_logTraceMsg4, "END - not found, returning true" );
+			return true;
+		}
 		log(LOG_ERROR, "%s:%s: Failed to open %s for reading: %s",__FILE__,__func__,filename,strerror(errno));
 		g_errno = errno;
 
@@ -1100,6 +1091,16 @@ bool loadAddsInProgress ( const char *prefix ) {
 		return false;
 	}
 
+	struct stat stats;
+	if(fstat(fd, &stats) != 0) {
+		log(LOG_ERROR, "fstat(%s) failed with errno=%d (%s)", filename, errno, strerror(errno));
+		close(fd);
+		return false;
+	}
+	int32_t p    = 0;
+	int32_t pend = stats.st_size;
+
+	
 	log(LOG_INFO,"build: Loading %" PRId32" bytes from %s",pend,filename);
 
 	// . deserialize each hostbuf
