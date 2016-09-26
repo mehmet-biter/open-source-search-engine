@@ -45,13 +45,13 @@ bool UCPropTable::setValue(u_int32_t c, const void* value) {
 	if (prefix >= m_numTables) return false; // invalid plane
 	if (m_data == NULL){
 		m_data = (u_char**)
-			mmalloc(m_numTables * sizeof(u_char*), 
+			mmalloc(m_numTables * sizeof(m_data[0]),
 				"UCPropTable");
 		if (m_data == NULL) {
 			log(LOG_WARN, "UCPropTable: out of memory");
 			return false;
 		}
-		memset(m_data, '\0', m_numTables*sizeof(u_char**));
+		memset(m_data, '\0', m_numTables*sizeof(m_data[0]));
 	}
 	if (m_data[prefix] == NULL){
 		m_data[prefix] = (u_char*) 
