@@ -34,6 +34,26 @@ void Msg0::constructor ( ) {
 	// reply buf
 	m_replyBuf     = NULL;
 	m_replyBufSize = 0;
+
+	// Coverity
+	m_callback = NULL;
+	m_state = NULL;
+	m_hostId = 0;
+	m_shardNum = 0;
+	m_requestSize = 0;
+	m_list = NULL;
+	m_fixedDataSize = 0;
+	m_useHalfKeys = false;
+	m_addToCache = false;
+	m_minRecSizes = 0;
+	m_rdbId = RDB_NONE;
+	m_collnum = 0;
+	m_deleteMsg5 = false;
+	m_isRealMerge = false;
+	m_startTime = 0;
+	m_niceness = 0;
+	m_ks = 0;
+	m_allowPageCache = false;
 }
 
 Msg0::~Msg0 ( ) {
