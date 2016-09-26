@@ -20,7 +20,15 @@ bool Msg22::registerHandler ( ) {
 }
 
 Msg22::Msg22() {
+	m_availDocId = 0;
+	m_titleRecPtrPtr = NULL;
+	m_titleRecSizePtr = NULL;
+	m_callback = NULL;
+	m_state = NULL;
+	m_found = false;
+	m_errno = 0;
 	m_outstanding = false;
+	m_r = NULL;
 }
 
 Msg22::~Msg22(){
