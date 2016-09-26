@@ -12,7 +12,9 @@ RdbMap::RdbMap() {
 	m_numSegmentPtrs = 0;
 	m_numSegmentOffs = 0;
 	m_newPagesPerSegment = 0;
-	reset ( );
+	m_keys = NULL;
+	m_offsets = NULL;
+	reset();
 }
 
 // dont save map on deletion!
@@ -76,7 +78,9 @@ bool RdbMap::close ( bool urgent ) {
 void RdbMap::reset ( ) {
 	m_reducedMem = false;
 	int32_t pps = PAGES_PER_SEGMENT;
-	if ( m_newPagesPerSegment > 0 ) pps = m_newPagesPerSegment;
+	if ( m_newPagesPerSegment > 0 ) {
+		pps = m_newPagesPerSegment;
+	}
 
 	for ( int32_t i = 0 ; i < m_numSegments; i++ ) {
 		mfree(m_keys[i],m_ks *pps,"RdbMap");
@@ -112,6 +116,15 @@ void RdbMap::reset ( ) {
 	m_needVerify  = false;
 
 	m_file.reset();
+
+	// Coverity	
+	m_keys = NULL;
+	m_offsets = NULL;
+	m_fixedDataSize = 0;
+	m_useHalfKeys = false;
+	m_ks = 0;
+	m_pageSize = 0;
+	m_pageSizeBits = 0;
 }
 
 
