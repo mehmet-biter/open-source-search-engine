@@ -55,13 +55,22 @@ static void returnMsg1(void *state) {
 	msg1->m_ourList.freeList();
 	// debug msg
 	//log("return mcast=%" PRId32,(int32_t)(&msg1->m_mcast));
+
 	int32_t i = msg1 - s_msg1;
-	if ( i < 0 || i > MAX_MSG1S ) {
-		log(LOG_LOGIC,"net: msg1: Major problem adding data."); 
-		g_process.shutdownAbort(true); }
+	if ( i < 0 || i >= MAX_MSG1S ) {
+		log(LOG_LOGIC,"net: msg1: Major problem adding data.");
+		g_process.shutdownAbort(true);
+	}
+
 	ScopedLock sl(s_mtx);
-	if ( s_head == -1 ) { s_head    = i      ; s_next[i] = -1; }
-	else                { s_next[i] = s_head ; s_head    =  i; }
+	if ( s_head == -1 ) {
+		s_head = i;
+		s_next[i] = -1;
+	}
+	else {
+		s_next[i] = s_head;
+		s_head = i;
+	}
 }
 
 static void init() {
