@@ -6,6 +6,7 @@
 #include "Dns.h"
 #include "types.h"
 #include "Process.h"
+#include "File.h"
 
 
 template<class Key_t, class Val_t> 

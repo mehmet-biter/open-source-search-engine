@@ -9,6 +9,7 @@
 #include "PageParser.h"
 #include "Conf.h"
 #include "ScopedLock.h"
+#include "Mem.h"
 
 #include "Stats.h"
 

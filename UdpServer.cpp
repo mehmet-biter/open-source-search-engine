@@ -11,6 +11,7 @@
 #include "BitOperations.h"
 #include "Msg0.h" //RDBIDOFFSET
 #include "Rdb.h" //RDB_...
+#include "Mem.h"
 #include "max_niceness.h"
 #include "ScopedLock.h"
 
