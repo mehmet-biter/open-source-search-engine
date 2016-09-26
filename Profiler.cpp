@@ -37,6 +37,16 @@ Profiler::Profiler() :
 	//newf.reset();
 	// newf.safePrintf("%strash/qp.txt",g_hostdb.m_dir);
 	// unlink ( newf.getBufStart() );
+
+	// Coverity
+	memset(&m_elfHeader, 0, sizeof(m_elfHeader));
+	m_sectionHeaders = NULL;
+	m_totalFrames = 0;
+	m_lastQpoll = NULL;
+	m_lastQpollLine = 0;
+	memset(&m_quickPollInfos, 0, sizeof(m_quickPollInfos));
+	m_lastQPUsed = 0;
+	m_lastAddressMapIndex = 0;
 }
 
 Profiler::~Profiler() {//reset();
