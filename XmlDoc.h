@@ -78,11 +78,11 @@ bool getDiversityVec ( const Words *words ,
 		       class HashTableX *countTable ,
 		       class SafeBuf *sbWordVec );
 
-float computeSimilarity ( int32_t   *vec0 , 
-			  int32_t   *vec1 ,
+float computeSimilarity ( const int32_t   *vec0,
+			  const int32_t   *vec1,
 			  // corresponding scores vectors
-			  int32_t   *s0   , 
-			  int32_t   *s1   , 
+			  const int32_t   *s0,
+			  const int32_t   *s1,
 			  class Query  *q    ,
 			  // only Sections::addDateBasedImpliedSections()
 			  // sets this to true right now. if set to true

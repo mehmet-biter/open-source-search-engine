@@ -4619,10 +4619,10 @@ float *XmlDoc::getPercentChanged ( ) {
 // . replaces:
 //   m_tagVec->getLinkBrotherProbability()
 //   g_clusterdb.getSampleSimilarity()
-float computeSimilarity ( int32_t   *vec0 ,
-			  int32_t   *vec1 ,
-			  int32_t   *s0   , // corresponding scores vector
-			  int32_t   *s1   , // corresponding scores vector
+float computeSimilarity ( const int32_t   *vec0,
+			  const int32_t   *vec1,
+			  const int32_t   *s0, // corresponding scores vector
+			  const int32_t   *s1, // corresponding scores vector
 			  Query  *q    ,
 			  bool    dedupVectors ) {
 	// if both empty, assume not similar at all
@@ -4677,7 +4677,7 @@ float computeSimilarity ( int32_t   *vec0 ,
 	int32_t totalScore = 0;
 
 	// hash first vector. accumulating score total and total count
-	for ( int32_t *p = vec0; *p ; p++ , s0++ ) {
+	for ( const int32_t *p = vec0; *p; p++, s0++ ) {
 		// skip if matches a query term
 		if ( q && qt.getSlot ( p ) ) continue;
 		// count it
@@ -4704,7 +4704,7 @@ float computeSimilarity ( int32_t   *vec0 ,
 	int32_t zero = 0;
 
 	// see what components of this vector match
-	for ( int32_t *p = vec1; *p ; p++ , s1++ ) {
+	for ( const int32_t *p = vec1; *p; p++, s1++ ) {
 		// skip if matches a query term
 		if ( q && qt.getSlot ( p ) ) continue;
 		// count it
