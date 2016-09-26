@@ -331,7 +331,7 @@ int32_t SafeBuf::safeSave (char *filename ) {
 	close(fd);
 
 	// remove original file before replacing it
-	if ( access (filename , F_OK ) == 0) unlink ( filename );
+	(void)::unlink(filename);
 
 	// now move it to the actual filename
 	//int32_t status = ::rename ( fn.getBufStart() , filename );
