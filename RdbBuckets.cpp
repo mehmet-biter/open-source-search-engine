@@ -463,6 +463,27 @@ RdbBuckets::RdbBuckets() {
 	m_dataMemOccupied = 0;
 	m_needsSave = false;
 	m_repairMode = false;
+
+	// Coverity
+	m_bucketsSpace = NULL;
+	m_masterSize = 0;
+	m_firstOpenSlot = 0;
+	m_maxBuckets = 0;
+	m_ks = 0;
+	m_fixedDataSize = 0;
+	m_recSize = 0;
+	m_numKeysApprox = 0;
+	m_numNegKeys = 0;
+	m_maxMem = 0;
+	m_maxBucketsCapacity = 0;
+	m_rdbId = RDB_NONE;
+	m_dbname = NULL;
+	m_sortBufSize = 0;
+	m_dir = NULL;
+	m_state = NULL;
+	m_callback = NULL;
+	m_saveErrno = 0;
+	m_allocName = NULL;
 }
 
 bool RdbBuckets::set(int32_t fixedDataSize, int32_t maxMem, const char *allocName, rdbid_t rdbId,
