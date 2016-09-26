@@ -1260,6 +1260,12 @@ bool RdbList::constrain(const char *startKey, char *endKey, int32_t minRecSizes,
 	// . saves us from having to scan the WHOLE list
 	p = firstStart + hintOffset;
 
+
+	// Sanity
+	if( !hintKey ) {
+		logError("hintKey is NULL before use!");
+		gbshutdownAbort(true);
+	}
 	// set our hi key temporarily cuz the actual key in the list may
 	// only be the lower 6 bytes
 	//m_listPtrHi = ((char *)&hintKey) + 6;
