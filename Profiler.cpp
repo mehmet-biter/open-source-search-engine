@@ -99,18 +99,9 @@ bool Profiler::init() {
 // readelf function in binutils from gnu.org. gb is 32-bits.
 bool Profiler:: readSymbolTable(){
 	int64_t start=gettimeofdayInMillisecondsLocal();
-	struct stat  statbuf;
 	//unsigned int i;
 	char fileName[512];
-	
 	sprintf(fileName,"%sgb",g_hostdb.m_dir);
-	//Checking to see if the file is present
-	if (stat (fileName, & statbuf) < 0)
-	{
-		log(LOG_INIT,"admin: Cannot stat input file %s."
-			 "You must be in the same directory", fileName);
-		return false;
-	}
 
 	m_file = fopen (fileName, "rb");
 	if (m_file == NULL)
