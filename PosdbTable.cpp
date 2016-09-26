@@ -86,6 +86,24 @@ void PosdbTable::reset() {
 	m_addedSites = false;
 
 	// Coverity
+	m_docId = 0;
+	m_hasMaxSerpScore = false;
+	m_finalScore = 0.0;
+	m_preFinalScore = 0.0;
+	m_siteRankMultiplier = 0.0;
+	m_addListsTime = 0;
+	m_t2 = 0;
+	m_numSlots = 0;
+	m_maxScores = 0;
+	m_collnum = 0;
+	m_qpos = NULL;
+	m_wikiPhraseIds = NULL;
+	m_quotedStartIds = NULL;
+	m_qdist = 0;
+	m_freqWeights = NULL;
+	m_bflags = NULL;
+	m_qtermNums = NULL;
+	m_bestWindowScore = 0.0;
 	m_windowTermPtrs = NULL;
 	m_docsInColl = 0;
 	m_msg2 = NULL;
