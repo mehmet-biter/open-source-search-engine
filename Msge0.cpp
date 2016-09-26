@@ -10,6 +10,9 @@ Msge0::Msge0() {
 	m_buf = NULL;
 	m_numReplies = 0;
 	m_n = 0;
+	m_slab = NULL;
+	m_baseTagRec = NULL;
+	m_tagRecPtrs = NULL;
 	reset();
 }
 
