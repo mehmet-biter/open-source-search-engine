@@ -223,6 +223,26 @@ Process::Process ( ) {
 	m_exiting = false;
 	m_powerIsOn = true;
 	m_totalDocsIndexed = -1LL;
+
+	// Coverity
+	memset(m_rdbs, 0, sizeof(m_rdbs));
+	m_numRdbs = 0;
+	m_urgent = false;
+	m_lastSaveTime = 0;
+	m_processStartTime = 0;
+	m_sentShutdownNote = false;
+	m_blockersNeedSave = false;
+	m_repairNeedsSave = false;
+	m_try = 0;
+	m_firstShutdownTime = 0;
+	m_callbackState = NULL;
+	m_callback = NULL;
+	m_lastHeartbeatApprox = 0;
+	m_suspendAutoSave = false;
+	m_powerOffTime = 0;
+	m_calledSave = false;
+	m_diskUsage = 0.0;
+	m_diskAvail = 0;
 }
 
 bool Process::init ( ) {
