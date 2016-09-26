@@ -61,6 +61,11 @@ RdbCache *Msg13::getHttpCacheOthers() { return &s_httpCacheOthers; }
 
 Msg13::Msg13() {
 	m_replyBuf = NULL;
+	m_state = NULL;
+	m_callback = NULL;
+	m_request = NULL;
+	m_replyBufSize = 0;
+	m_replyBufAllocSize = 0;
 }
 
 Msg13::~Msg13() {
