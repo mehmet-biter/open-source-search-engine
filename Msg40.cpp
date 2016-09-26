@@ -51,6 +51,28 @@ Msg40::Msg40() {
 	m_numCollsToSearch = 0;
 	m_numMsg20sIn = 0;
 	m_numMsg20sOut = 0;
+
+	// Coverity
+	m_msg3aRecallCnt = 0;
+	m_docsToGet = 0;
+	m_docsToGetVisible = 0;
+	m_state = NULL;
+	m_callback = NULL;
+	m_numRequests = 0;
+	m_numReplies = 0;
+	m_moreToCome = false;
+	m_lastProcessedi = 0;
+	m_startTime = 0;
+	m_cachedTime = 0;
+	m_tasksRemaining = 0;
+	m_bufMaxSize = 0;
+	m_bufMaxSize2 = 0;
+	m_errno = 0;
+	m_si = NULL;
+	m_msg3aPtrs = NULL;
+	m_num3aRequests = 0;
+	m_num3aReplies = 0;
+	m_firstCollnum = 0;
 }
 
 void Msg40::resetBuf2 ( ) {
