@@ -17055,6 +17055,8 @@ Query *XmlDoc::getQuery() {
 
 	// return NULL with g_errno set on error
 	if ( !m_query.set2( m_req->ptr_qbuf, m_req->m_langId, true ) ) {
+		if(!g_errno)
+			g_errno = EBADENGINEER; //can fail due to a multitude of problems
 		return NULL;
 	}
 
@@ -17289,6 +17291,7 @@ Title *XmlDoc::getTitle() {
 
 	if ( !m_title.setTitle( xml, ww, titleMaxLen, query, getLinkInfo1(), getFirstUrl(), filteredRootTitleBuf,
 							m_filteredRootTitleBufSize, *contentTypePtr, m_langId ) ) {
+		g_errno = ETITLEERROR;
 		return NULL;
 	}
 

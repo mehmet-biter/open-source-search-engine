@@ -233,6 +233,8 @@ const char *mstrerror ( int errnum ) {
 				return "Malformed query";
 			case ESHARDDOWN:
 				return "One or more shards are down";
+			case ETITLEERROR:
+				return "Error setting title";
 		}
 	}
 
@@ -413,7 +415,8 @@ static const char* s_errname[] {
 	STRINGIFY( EDNSERROR ),
 	STRINGIFY( EUNUSED51 ),
 	STRINGIFY( EMALFORMEDQUERY ),
-	STRINGIFY( ESHARDDOWN )
+	STRINGIFY( ESHARDDOWN ),
+	STRINGIFY( ETITLEERROR ),
 };
 
 #undef STRINGIFY
