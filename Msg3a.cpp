@@ -34,6 +34,27 @@ void Msg3a::constructor ( ) {
 	m_rbufPtr = NULL;
 	for ( int32_t j = 0; j < MAX_SHARDS; j++ )
 		m_mcast[j].constructor();
+
+	// Coverity
+	m_state = NULL;
+	m_callback = NULL;
+	m_numQueriedHosts = 0;
+	m_moreDocIdsAvail = false;
+	m_errno = 0;
+	m_startTime = 0;
+	m_numReplies = 0;
+	m_skippedShards = 0;
+	m_numTotalEstimatedHits = 0;
+	m_pctSearched = 0.0;
+	m_r = NULL;
+	m_rbufSize = 0;
+	m_debug = false;
+	m_docIds = NULL;
+	m_scores = NULL;
+	m_scoreInfos = NULL;
+	m_clusterRecs = NULL;
+	m_clusterLevels = NULL;
+	m_cursor = 0;
 }
 
 Msg3a::~Msg3a ( ) {
