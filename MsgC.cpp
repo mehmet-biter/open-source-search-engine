@@ -7,6 +7,9 @@
 
 MsgC::MsgC ( ) {
 	m_ipPtr = NULL;
+	m_callback = NULL;
+	m_state2 = NULL;
+	m_state3 = NULL;
 }
 
 MsgC::~MsgC ( ) {
