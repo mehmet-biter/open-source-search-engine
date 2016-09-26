@@ -9,6 +9,20 @@ static bool addPosdbKey(RdbBuckets *buckets, int64_t termId, int64_t docId, int3
 	buckets->addNode(0, key, NULL, 0);
 }
 
+static bool addPosdbKey(RdbIndex *index, int64_t termId, int64_t docId, int32_t wordPos, bool delKey = false) {
+	char key[MAX_KEY_BYTES];
+	Posdb::makeKey(&key, termId, docId, wordPos, 0, 0, 0, 0, 0, 0, 0, false, delKey, false);
+	index->addRecord(key);
+}
+
+static uint64_t getDocId(docidsconst_ptr_t docIds, size_t index) {
+	return ((*docIds.get())[index] >> RdbIndex::s_docIdOffset);
+}
+
+static bool isDel(docidsconst_ptr_t docIds, size_t index) {
+	return (((*docIds.get())[index] & 0x01) == 0);
+}
+
 // 000
 TEST(RdbIndexTest, GenerateFromBucketSingleTermIdSingleDocIdSingleWordPos) {
 	RdbBuckets buckets;
@@ -21,12 +35,12 @@ TEST(RdbIndexTest, GenerateFromBucketSingleTermIdSingleDocIdSingleWordPos) {
 	addPosdbKey(&buckets, termId, docId, wordPos);
 
 	RdbIndex index;
-	index.set("./", "test-posdbidx", Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB);
+	index.set(".", "test-posdbidx", Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB);
 	index.generateIndex(0, &buckets);
 
 	auto docIds = index.getDocIds();
 	EXPECT_EQ(1, docIds->size());
-	EXPECT_EQ(docId, (*docIds.get())[0]);
+	EXPECT_EQ(docId, getDocId(docIds, 0));
 }
 
 // 001
@@ -43,12 +57,12 @@ TEST(RdbIndexTest, GenerateFromBucketSingleTermIdSingleDocIdMultipleWordPos) {
 	}
 
 	RdbIndex index;
-	index.set("./", "test-posdbidx", Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB);
+	index.set(".", "test-posdbidx", Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB);
 	index.generateIndex(0, &buckets);
 
 	auto docIds = index.getDocIds();
 	EXPECT_EQ(1, docIds->size());
-	EXPECT_EQ(docId, (*docIds.get())[0]);
+	EXPECT_EQ(docId, getDocId(docIds, 0));
 }
 
 // 010
@@ -65,13 +79,13 @@ TEST(RdbIndexTest, GenerateFromBucketSingleTermIdMultipleDocIdSingleWordPos) {
 	}
 
 	RdbIndex index;
-	index.set("./", "test-posdbidx", Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB);
+	index.set(".", "test-posdbidx", Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB);
 	index.generateIndex(0, &buckets);
 
 	auto docIds = index.getDocIds();
 	EXPECT_EQ(total_records, docIds->size());
 	for (int i = 0; i < total_records; ++i) {
-		EXPECT_EQ(i, (*docIds.get())[i]);
+		EXPECT_EQ(i, getDocId(docIds, i));
 	}
 }
 
@@ -88,13 +102,13 @@ TEST(RdbIndexTest, GenerateFromBucketSingleTermIdMultipleDocIdMultipleWordPos) {
 	}
 
 	RdbIndex index;
-	index.set("./", "test-posdbidx", Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB);
+	index.set(".", "test-posdbidx", Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB);
 	index.generateIndex(0, &buckets);
 
 	auto docIds = index.getDocIds();
 	EXPECT_EQ(total_records, docIds->size());
 	for (int i = 0; i < total_records; ++i) {
-		EXPECT_EQ(i, (*docIds.get())[i]);
+		EXPECT_EQ(i, getDocId(docIds, i));
 	}
 }
 
@@ -112,12 +126,12 @@ TEST(RdbIndexTest, GenerateFromBucketMultipleTermIdSingleDocIdSingleWordPos) {
 	}
 
 	RdbIndex index;
-	index.set("./", "test-posdbidx", Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB);
+	index.set(".", "test-posdbidx", Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB);
 	index.generateIndex(0, &buckets);
 
 	auto docIds = index.getDocIds();
 	EXPECT_EQ(1, docIds->size());
-	EXPECT_EQ(docId, (*docIds.get())[0]);
+	EXPECT_EQ(docId, getDocId(docIds, 0));
 }
 
 // 101
@@ -133,12 +147,12 @@ TEST(RdbIndexTest, GenerateFromBucketMultipleTermIdSingleDocIdMultipleWordPos) {
 	}
 
 	RdbIndex index;
-	index.set("./", "test-posdbidx", Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB);
+	index.set(".", "test-posdbidx", Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB);
 	index.generateIndex(0, &buckets);
 
 	auto docIds = index.getDocIds();
 	EXPECT_EQ(1, docIds->size());
-	EXPECT_EQ(docId, (*docIds.get())[0]);
+	EXPECT_EQ(docId, getDocId(docIds, 0));
 }
 
 // 110
@@ -154,13 +168,13 @@ TEST(RdbIndexTest, GenerateFromBucketMultipleTermIdMultipleDocIdSingleWordPos) {
 	}
 
 	RdbIndex index;
-	index.set("./", "test-posdbidx", Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB);
+	index.set(".", "test-posdbidx", Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB);
 	index.generateIndex(0, &buckets);
 
 	auto docIds = index.getDocIds();
 	EXPECT_EQ(total_records, docIds->size());
 	for (int i = 0; i < total_records; ++i) {
-		EXPECT_EQ(i, (*docIds.get())[i]);
+		EXPECT_EQ(i, getDocId(docIds, i));
 	}
 }
 
@@ -176,12 +190,58 @@ TEST(RdbIndexTest, GenerateFromBucketMultipleTermIdMultipleDocIdMultipleWordPos)
 	}
 
 	RdbIndex index;
-	index.set("./", "test-posdbidx", Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB);
+	index.set(".", "test-posdbidx", Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB);
 	index.generateIndex(0, &buckets);
 
 	auto docIds = index.getDocIds();
 	EXPECT_EQ(total_records, docIds->size());
 	for (int i = 0; i < total_records; ++i) {
-		EXPECT_EQ(i, (*docIds.get())[i]);
+		EXPECT_EQ(i, getDocId(docIds, i));
 	}
+}
+
+TEST(RdbIndexTest, AddDeleteKey) {
+	RdbIndex index;
+	index.set(".", "test-posdbidx", Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB);
+
+	static const int64_t termId = 1;
+	static const int64_t docId = 1;
+	static const int32_t wordPos = 1;
+
+	addPosdbKey(&index, termId, docId, wordPos, false);
+	addPosdbKey(&index, termId, docId, wordPos, true);
+
+	// force merge
+	index.writeIndex();
+
+	auto docIds = index.getDocIds();
+	EXPECT_EQ(1, docIds->size());
+	EXPECT_EQ(docId, getDocId(docIds, 0));
+	EXPECT_TRUE(isDel(docIds, 0));
+
+	// cleanup
+	index.unlink();
+}
+
+TEST(RdbIndexTest, DeleteAddKey) {
+	RdbIndex index;
+	index.set(".", "test-posdbidx", Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB);
+
+	static const int64_t termId = 1;
+	static const int64_t docId = 1;
+	static const int32_t wordPos = 1;
+
+	addPosdbKey(&index, termId, docId, wordPos, true);
+	addPosdbKey(&index, termId, docId, wordPos, false);
+
+	// force merge
+	index.writeIndex();
+
+	auto docIds = index.getDocIds();
+	EXPECT_EQ(1, docIds->size());
+	EXPECT_EQ(docId, getDocId(docIds, 0));
+	EXPECT_FALSE(isDel(docIds, 0));
+
+	// cleanup
+	index.unlink();
 }

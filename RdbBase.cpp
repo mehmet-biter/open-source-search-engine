@@ -2525,12 +2525,18 @@ void RdbBase::generateGlobalIndex() {
 		auto docIds = m_indexes[i]->getDocIds();
 		tmpDocIdFileIndex->reserve(tmpDocIdFileIndex->size() + docIds->size());
 		std::transform(docIds->begin(), docIds->end(), std::back_inserter(*tmpDocIdFileIndex),
-		               [i](uint64_t docId) { return ((docId << 24) | i); });
+		               [i](uint64_t docId) {
+			               return ((docId << s_docIdFileIndex_docIdOffset) | i);
+		               });
 	}
 
 	std::sort(tmpDocIdFileIndex->begin(), tmpDocIdFileIndex->end());
+
+	// in reverse because we want to keep the highest file position
 	auto it = std::unique(tmpDocIdFileIndex->rbegin(), tmpDocIdFileIndex->rend(),
-	                      [](uint64_t a, uint64_t b) { return (a & 0xffffffffff000000ULL) == (b & 0xffffffffff000000ULL); });
+	                      [](uint64_t a, uint64_t b) {
+		                      return (a & s_docIdFileIndex_docIdMask) == (b & s_docIdFileIndex_docIdMask);
+	                      });
 	tmpDocIdFileIndex->erase(tmpDocIdFileIndex->begin(), it.base());
 
 	// free up used space

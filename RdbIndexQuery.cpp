@@ -17,14 +17,23 @@ RdbIndexQuery::RdbIndexQuery(docidsconst_ptr_t globalIndexData, docidsconst_ptr_
 RdbIndexQuery::~RdbIndexQuery() {
 }
 
-int32_t RdbIndexQuery::getFilePos(uint64_t docId) const {
-	if (m_treeIndexData.get() && std::binary_search(m_treeIndexData->begin(), m_treeIndexData->end(), docId)) {
-		return m_numFiles;
+int32_t RdbIndexQuery::getFilePos(uint64_t docId, bool *isDel) const {
+	if (m_treeIndexData.get()) {
+		auto it = std::lower_bound(m_treeIndexData->cbegin(), m_treeIndexData->cend(), docId << RdbIndex::s_docIdOffset);
+		if (it != m_treeIndexData->cend() && ((*it >> RdbIndex::s_docIdOffset) == docId)) {
+			if (isDel) {
+				*isDel = ((*it & RdbIndex::s_delBitMask) == 0);
+			}
+			return m_numFiles;
+		}
 	}
 
-	auto it = std::lower_bound(m_globalIndexData->cbegin(), m_globalIndexData->cend(), docId << 24);
-	if ((*it >> 24) == docId) {
-		return static_cast<int32_t>(*it & 0xffff);
+	auto it = std::lower_bound(m_globalIndexData->cbegin(), m_globalIndexData->cend(), docId << RdbBase::s_docIdFileIndex_docIdOffset);
+	if (it != m_globalIndexData->cend() && ((*it >> RdbBase::s_docIdFileIndex_docIdOffset) == docId)) {
+		if (isDel) {
+			*isDel = ((*it & RdbBase::s_docIdFileIndex_delBitMask) == 0);
+		}
+		return static_cast<int32_t>(*it & RdbBase::s_docIdFileIndex_filePosMask);
 	}
 
 	// mismatch in idx & data files?

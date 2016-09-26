@@ -174,7 +174,7 @@ int main(int argc, char **argv) {
 
 	RdbIndexQuery rdbIndexQuery(base);
 	for (auto it = testData.begin(); it != testData.end(); ++it) {
-		assert(rdbIndexQuery.getFilePos(*it >> 24) == static_cast<int32_t>(*it & 0xffff));
+		assert(rdbIndexQuery.getFilePos(*it >> RdbBase::s_docIdFileIndex_docIdOffset) == static_cast<int32_t>(*it & RdbBase::s_docIdFileIndex_filePosMask));
 	}
 
 	uint64_t diff = gettimeofdayInMicroseconds() - start;
