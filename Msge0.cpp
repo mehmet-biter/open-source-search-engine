@@ -25,22 +25,49 @@ void Msge0::reset() {
 		// cast it
 		TagRec *tr = m_tagRecPtrs[i];
 		// skip if empty
-		if ( ! tr ) continue;
+		if ( ! tr ) {
+			continue;
+		}
 		// skip if base
-		if ( tr == m_baseTagRec ) continue;
+		if ( tr == m_baseTagRec ) {
+			continue;
+		}
 		// free the rdblist memory in the TagRec::m_list
 		m_tagRecPtrs[i]->reset();
 	}
-	for ( int32_t i = 0 ; i <= m_slabNum ; i++ )
+	for ( int32_t i = 0 ; i <= m_slabNum ; i++ ) {
 		mfree ( m_slab[i] , SLAB_SIZE , "msgeslab" );
+	}
 	m_slabNum = -1;
 	m_slabPtr = NULL;
 	m_slabEnd = NULL;
-	if ( m_buf ) mfree ( m_buf , m_bufSize,"Msge0buf");
+	if ( m_buf ) {
+		mfree ( m_buf , m_bufSize,"Msge0buf");
+	}
 	m_buf = NULL;
 	m_numReplies = 0;
 	m_n = 0;
+
+	// Coverity
+	m_collnum = 0;
+	m_niceness = 0;
+	m_urlPtrs = NULL;
+	m_urlFlags = NULL;
+	m_numUrls = 0;
+	m_skipOldLinks = 0;
+	m_bufSize = 0;
+	m_slab = NULL;
+	m_baseTagRec = NULL;
+	m_tagRecErrors = NULL;
+	m_tagRecPtrs = NULL;
+	m_numTags = NULL;
+	m_numRequests = 0;
+	m_i = 0;
+	m_nextPtr = NULL;
+	m_state = NULL;
+	m_callback = NULL;
 }
+
 
 // . get various information for each url in a list of urls
 // . urls in "urlBuf" are \0 terminated
