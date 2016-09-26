@@ -15,16 +15,8 @@ bool hasAddsInQueue     ( ) ;
 
 class Msg4 {
 public:
-	Msg4()
-		: m_inUse(false) {
-	}
-
-	// why wasn't this saved in addsinprogress.dat file?
-	~Msg4() {
-		if (m_inUse) {
-			log(LOG_ERROR, "BAD: MSG4 in use!!!!!! this=%p", this);
-		}
-	}
+	Msg4();
+	~Msg4();
 
 	bool addMetaList(SafeBuf *sb, collnum_t collnum, void *state,
 	                 void (*callback)(void *state), rdbid_t rdbId = RDB_NONE, int32_t shardOverride = -1);

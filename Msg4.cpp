@@ -76,6 +76,28 @@ static Multicast *getMulticast();
 static void returnMulticast(Multicast *mcast);
 static bool storeRec(collnum_t collnum, char rdbId, uint32_t gid, int32_t hostId, const char *rec, int32_t recSize);
 
+
+Msg4::Msg4() : m_inUse(false) {
+	m_callback = NULL;
+	m_state = NULL;
+	m_rdbId = RDB_NONE;
+	m_collnum = 0;
+	m_shardOverride = 0;
+	m_metaList = NULL;
+	m_metaListSize = 0;
+	m_currentPtr = NULL;
+	m_next = NULL;
+}
+
+// why wasn't this saved in addsinprogress.dat file?
+Msg4::~Msg4() {
+	if (m_inUse) {
+		log(LOG_ERROR, "BAD: MSG4 in use!!!!!! this=%p", this);
+	}
+}
+
+
+
 // all these parameters should be preset
 bool Msg4::registerHandler() {
 	logTrace( g_conf.m_logTraceMsg4, "BEGIN" );
