@@ -38,6 +38,34 @@ Conf::Conf ( ) {
 
 	// set max mem to 16GB at least until we load on disk
 	m_maxMem = 16000000000;
+
+	// Coverity
+	m_logTimingRobots = false;
+	m_logReminders = false;
+	m_generateVectorAtQueryTime = false;
+	m_useCompressionProxy = 0;
+	m_gzipDownloads = 0;
+	m_useTmpCluster = 0;
+	m_timeSyncProxy = 0;
+	m_interfaceMachine = false;
+	m_allowScale = 0;
+	m_giveupOnDeadHosts = 0;
+	m_bypassValidation = 0;
+	m_maxHeartbeatDelay = 0;
+	m_maxCallbackDelay = 0;
+	m_repairingEnabled = 0;
+	m_maxRepairSpiders = 0;
+	m_repairMem = 0;
+	m_fullRebuild = 0;
+	m_rebuildAddOutlinks = 0;
+	m_rebuildRecycleLinkInfo = 0;
+	m_rebuildTitledb = 0;
+	m_rebuildPosdb = 0;
+	m_rebuildClusterdb = 0;
+	m_rebuildSpiderdb = 0;
+	m_rebuildLinkdb = 0;
+	m_rebuildRoots = 0;
+	m_rebuildNonRoots = 0;
 }
 
 static bool isInWhiteSpaceList ( const char *p , const char *buf ) {
