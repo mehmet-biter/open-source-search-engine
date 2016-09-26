@@ -32,12 +32,14 @@ Collectiondb::Collectiondb ( ) {
 	m_numRecsUsed = 0;
 	m_numCollsSwappedOut = 0;
 	m_initializing = false;
-	//m_lastUpdateTime = 0LL;
 	m_needsSave = false;
+	
 	// sanity
-	if ( RDB_END2 >= RDB_END ) return;
-	log("db: increase RDB_END2 to at least %" PRId32" in "
-	    "Collectiondb.h",(int32_t)RDB_END);
+	if ( RDB_END2 >= RDB_END ) {
+		return;
+	}
+
+	log("db: increase RDB_END2 to at least %" PRId32" in Collectiondb.h",(int32_t)RDB_END);
 	g_process.shutdownAbort(true);
 }
 
@@ -45,7 +47,9 @@ Collectiondb::Collectiondb ( ) {
 void Collectiondb::reset() {
 	log(LOG_INFO,"db: resetting collectiondb.");
 	for ( int32_t i = 0 ; i < m_numRecs ; i++ ) {
-		if ( ! m_recs[i] ) continue;
+		if ( ! m_recs[i] ) {
+			continue;
+		}
 		mdelete ( m_recs[i], sizeof(CollectionRec), "CollectionRec" );
 		delete ( m_recs[i] );
 		m_recs[i] = NULL;
@@ -1129,9 +1133,33 @@ CollectionRec::CollectionRec() {
 	// for diffbot caching the global spider stats
 	reset();
 
-	// add default reg ex if we do not have one
-	//setUrlFiltersToDefaults();
-	//rebuildUrlFilters();
+	// Coverity
+	m_allowAdultDocs = 0;
+	m_useCanonicalRedirects = 0;
+	m_maxNumSpiders = 0;
+	m_useCurrentTime = 0;
+	m_titleMaxLen = 0;
+	m_summaryMaxLen = 0;
+	m_summaryMaxNumLines = 0;
+	m_summaryMaxNumCharsPerLine = 0;
+	m_getDocIdScoringInfo = 0;
+	m_diffbotCrawlStartTime = 0;
+	m_diffbotCrawlEndTime = 0;
+	m_numRegExs9 = 0;
+	m_doQueryHighlighting = 0;
+	m_spellCheck = 0;
+	m_spiderTimeMin = 0;
+	m_spiderTimeMax = 0;
+	m_maxAddUrlsPerIpDomPerDay = 0;
+	m_maxTextDocLen = 0;
+	m_maxOtherDocLen = 0;
+	m_summaryMaxWidth = 0;
+	m_maxRobotsCacheAge = 0;
+	m_queryExpansion = 0;
+	m_rcache = 0;
+	m_hideAllClustered = 0;
+	m_END_COPY = 0;
+	m_hackFlag = 0;
 }
 
 CollectionRec::~CollectionRec() {
