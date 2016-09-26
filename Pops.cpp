@@ -9,6 +9,7 @@
 
 Pops::Pops () {
 	m_pops = NULL;
+	m_popsSize = 0;
 }
 
 Pops::~Pops() {
