@@ -726,6 +726,9 @@ ImportState::ImportState () {
 	m_bfFileId = -1;
 	m_bfFileSize = -1;
 	m_fileOffset = 0;
+	// Coverity
+	m_collnum = 0;
+	m_loadedPlaceHolder = false;
 }
 
 void ImportState::reset() {
