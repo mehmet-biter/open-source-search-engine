@@ -24,8 +24,13 @@ static bool gotReplyWrapperxd(void *state);
 static bool sendCachedReply ( Msg20Request *req, const void *cached_summary, size_t cached_summary_len, UdpSlot *slot );
 
 
-Msg20::Msg20 () { constructor(); }
-Msg20::~Msg20() { reset(); }
+Msg20::Msg20 () { 
+	constructor(); 
+}
+
+Msg20::~Msg20() { 
+	reset(); 
+}
 
 void Msg20::constructor () {
 	m_request = NULL;
@@ -37,7 +42,10 @@ void Msg20::constructor () {
 	m_mcast.constructor();
 }
 
-void Msg20::destructor  () { reset(); m_mcast.destructor(); }
+void Msg20::destructor() { 
+	reset(); 
+	m_mcast.destructor(); 
+}
 
 
 void Msg20::freeReply() {
@@ -84,6 +92,10 @@ void Msg20::reset() {
 	m_callback     = NULL;
 	m_state        = NULL;
 	m_ownReply     = true;
+	m_requestSize = 0;
+	m_replySize = 0;
+	m_replyMaxSize = 0;
+	m_callback2 = NULL;
 }
 
 bool Msg20::registerHandler ( ) {
@@ -240,8 +252,18 @@ void Msg20::gotReplyWrapper20 ( void *state , void */*state2*/ ) {
 	Msg20 *THIS = (Msg20 *)state;
 	// gotReply() does not block, and does NOT call our callback
 	THIS->gotReply ( NULL ) ;
-	if ( THIS->m_callback ) THIS->m_callback ( THIS->m_state );
-	else THIS->m_callback2 ( THIS->m_state );
+
+	if ( THIS->m_callback ) {
+		THIS->m_callback ( THIS->m_state );
+	}
+	else 
+	if( THIS->m_callback2 ) {
+		THIS->m_callback2 ( THIS->m_state );
+	}
+	else {
+		log(LOG_LOGIC,"%s:%s: No callback!", __FILE__, __func__);
+		g_process.shutdownAbort(true);
+	}
 }
 
 // . set m_reply/m_replySize to the reply
