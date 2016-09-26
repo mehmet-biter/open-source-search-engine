@@ -80,16 +80,22 @@ class Json {
 
 	JsonItem *addNewItem ();
 
-	Json() { m_stackPtr = 0; m_prev = NULL; }
+	Json() { 
+		m_stackPtr = 0;
+		m_prev = NULL;
+		memset(m_stack, 0, sizeof(m_stack));
+	}
 	
 	static bool prependKey(SafeBuf& jsonString, char* newKey);
-
 
 	SafeBuf m_sb;
 	JsonItem *m_stack[MAXJSONPARENTS];
 	int32_t m_stackPtr;
 	class JsonItem *m_prev;
-	void reset() { m_sb.purge(); }
+
+	void reset() { 
+		m_sb.purge(); 
+	}
 };
 
 #endif // GB_JSON_H
