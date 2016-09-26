@@ -9028,10 +9028,10 @@ Url **XmlDoc::getMetaRedirUrl ( ) {
 
 
 
-uint16_t getCharsetFast ( HttpMime *mime,
-			  char *url,
-			  char *s ,
-			  int32_t slen ){
+static uint16_t getCharsetFast(HttpMime *mime,
+			       char *url,
+			       char *s,
+			       int32_t slen) {
 
 	int16_t charset = csUnknown;
 

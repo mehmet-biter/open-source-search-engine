@@ -122,11 +122,6 @@ char getContentTypeFromContent ( char *p ) ;
 // . *pend must equal \0
 int32_t getContentHash32Fast ( unsigned char *p , int32_t plen ) ;
 
-uint16_t getCharsetFast ( class HttpMime *mime, 
-			  char *url ,
-			  char *s , 
-			  int32_t slen );
-
 bool getWordPosVec ( const Words *words,
 		     const Sections *sections,
 		     int32_t startDist,
