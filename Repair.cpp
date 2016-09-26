@@ -82,6 +82,33 @@ static Rdb **getAllRdbs ( int32_t *nsr ) {
 
 
 Repair::Repair() {
+	// Coverity
+	m_spiderRecNotAssigned = 0;
+	m_spiderRecBadTLD = 0;
+	m_rebuildTitledb = 0;
+	m_rebuildPosdb = 0;
+	m_rebuildClusterdb = 0;
+	m_rebuildSpiderdb = 0;
+	m_rebuildSitedb = 0;
+	m_rebuildLinkdb = 0;
+	m_rebuildTagdb = 0;
+	m_fullRebuild = 0;
+	m_rebuildRoots = 0;
+	m_rebuildNonRoots = 0;
+	m_collnum = 0;
+	m_newCollLen = 0;
+	m_newCollnum = 0;
+	m_colli = 0;
+	m_numColls = 0;
+	m_SAVE_END = 0;
+	m_cr=NULL;
+	m_startTime = 0;
+	m_isSuspended = 0;
+	m_numOutstandingInjects = 0;
+	m_allowInjectToLoop = false;
+	m_msg5InUse = false;
+	m_saveRepairState = false;
+	m_isRetrying = false;
 }
 
 // main.cpp calls g_repair.init()
