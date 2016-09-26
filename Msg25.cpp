@@ -46,6 +46,34 @@ Msg25::Msg25() {
 	m_numReplyPtrs = 0;
 	//m_linkInfo = NULL;
 	m_ownReplies = true;
+	
+	// mainly for Coverity
+	m_reciprocal = 0;
+	m_spideringEnabled = false;
+	m_dupCount = 0;
+	m_vectorDups = 0;
+	m_spamLinks = 0;
+	m_niceness = 0;
+	m_numFromSameIp = 0;
+	m_sameMidDomain = 0;
+	m_spamCount = 0;
+	m_spamWeight = 0;
+	m_maxSpam = 0;
+	m_siteQuality = 0;
+	m_siteNumFreshInlinks = 0;
+	m_ipDupsLinkdb = 0;
+	m_docIdDupsLinkdb = 0;
+	m_linkSpamLinkdb = 0;
+	m_lostLinks = 0;
+	m_ipDups = 0;
+	m_groupId = 0;
+	m_probDocId = 0;
+	m_oldLinkInfo = NULL;
+	m_bufPtr = NULL;
+	m_bufEnd = NULL;
+	m_requestSize = 0;
+	m_qbuf = NULL;
+	m_qbufSize = 0;
 }
 
 
