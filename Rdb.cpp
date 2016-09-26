@@ -55,6 +55,28 @@ void Rdb::reset ( ) {
 	m_isReallyClosing = false;
 	m_registered      = false;
 	m_lastTime        = 0LL;
+
+	// Coverity
+	m_fixedDataSize = 0;
+	m_dbnameLen = 0;
+	m_isCollectionLess = false;
+	m_useIndexFile = false;
+	m_useTree = false;
+	m_closeState = NULL;
+	m_closeCallback = NULL;
+	m_maxTreeMem = 0;
+	m_minToMerge = 0;
+	m_dumpErrno = 0;
+	m_useHalfKeys = false;
+	m_urgent = false;
+	m_niceness = false;
+	m_isTitledb = false;
+	m_fn = 0;
+	m_dumpCollnum = 0;
+	m_inDumpLoop = 0;
+	m_rdbId = RDB_NONE;
+	m_ks = 0;
+	m_pageSize = 0;
 }
 
 Rdb::~Rdb ( ) {
