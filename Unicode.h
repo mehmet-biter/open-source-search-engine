@@ -16,9 +16,9 @@ bool 	ucInit(const char *path = NULL);
 iconv_t gbiconv_open(const char *tocode, const char *fromcode) ;
 int gbiconv_close(iconv_t cd) ;
 
-int32_t 	ucToAny(char *outbuf, int32_t outbuflen, const char *charset_out,
-		 char *inbuf, int32_t inbuflen, const char *charset_in,
-		 int32_t ignoreBadChars);
+int32_t ucToAny(char *outbuf, int32_t outbuflen, const char *charset_out,
+		const char *inbuf, int32_t inbuflen, const char *charset_in,
+		int32_t ignoreBadChars);
 
 // table for decoding utf8...says how many bytes in the character
 // based on value of first byte.  0 is an illegal value
@@ -199,7 +199,7 @@ bool inline isUtf8UnwantedSymbols(const char *s) {
 // 1110yyyy 10yyyyxx 10xxxxxx
 // 11110zzz 10zzyyyy 10yyyyxx 10xxxxxx
 // TODO: make a table for this as well
-inline char isFirstUtf8Char ( char *p ) {
+inline char isFirstUtf8Char(const char *p) {
 	// non-first chars have the top bit set and next bit unset
 	if ( (p[0] & 0xc0) == 0x80 ) return false;
 	// we are the first char in a sequence
@@ -213,10 +213,10 @@ inline char *getPrevUtf8Char ( char *p , char *start ) {
 	return NULL;
 }
 
-inline int32_t ucToUtf8(char *outbuf, int32_t outbuflen, 
-			 char *inbuf, int32_t inbuflen, 
-			 const char *charset, int32_t ignoreBadChars) {
-  return ucToAny(outbuf, outbuflen, (char *)"UTF-8",
+inline int32_t ucToUtf8(char *outbuf, int32_t outbuflen,
+			char *inbuf, int32_t inbuflen,
+			const char *charset, int32_t ignoreBadChars) {
+  return ucToAny(outbuf, outbuflen, "UTF-8",
 		 inbuf, inbuflen, charset, ignoreBadChars);
 }
 
@@ -224,7 +224,7 @@ inline int32_t ucToUtf8(char *outbuf, int32_t outbuflen,
 int32_t	utf8Encode(UChar32 c, char* buf);
 
 // Try to detect the Byte Order Mark of a Unicode Document
-const char *	ucDetectBOM(char *buf, int32_t bufsize);
+const char *	ucDetectBOM(const char *buf, int32_t bufsize);
 
 //int32_t utf8ToAscii(char *outbuf, int32_t outbufsize,
 //		  unsigned char *inbuf, int32_t inbuflen);

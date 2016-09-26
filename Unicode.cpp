@@ -150,7 +150,7 @@ failed:
 	return false;
 }
 
-const char *ucDetectBOM(char *buf, int32_t bufsize){
+const char *ucDetectBOM(const char *buf, int32_t bufsize){
 	if (bufsize < 4) return NULL;
 	// copied from ICU
 	if(buf[0] == '\xFE' && buf[1] == '\xFF') {
@@ -172,7 +172,7 @@ const char *ucDetectBOM(char *buf, int32_t bufsize){
 }
 
 int32_t ucToAny(char *outbuf, int32_t outbufsize, const char *charset_out,
-		 char *inbuf, int32_t inbuflen, const char *charset_in,
+		const char *inbuf, int32_t inbuflen, const char *charset_in,
 		 int32_t ignoreBadChars ){
 	if (inbuflen == 0) return 0;
 	// alias for iconv
@@ -195,7 +195,7 @@ int32_t ucToAny(char *outbuf, int32_t outbufsize, const char *charset_out,
 	}
 
 	//if (normalized) *normalized = false;
-	char *pin = inbuf;
+	char *pin = const_cast<char*>(inbuf); //const cast due to iconv() speciality
 	size_t inRemaining = inbuflen;
 	char *pout = outbuf;
 	size_t outRemaining = outbufsize;
