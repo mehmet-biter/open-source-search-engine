@@ -1,4 +1,5 @@
 #include "Msg39.h"
+#include "UdpSlot.h"
 #include "Stats.h"
 #include "JobScheduler.h"
 #include "UdpServer.h"
@@ -159,6 +160,20 @@ void Msg39::reset() {
 		mfree ( m_clusterBuf, m_clusterBufSize, "Msg39cluster");
 		m_clusterBuf = NULL;
 	}
+
+	// Coverity
+	m_slot = NULL;
+	m_msg39req = NULL;
+	m_startTime = 0;
+	m_startTimeQuery = 0;
+	m_errno = 0;
+	m_clusterBufSize = 0;
+	m_clusterDocIds = NULL;
+	m_clusterLevels = NULL;
+	m_clusterRecs = NULL;
+	m_numClusterDocIds = 0;
+	m_numVisible = 0;
+	m_debug = false;
 }
 
 

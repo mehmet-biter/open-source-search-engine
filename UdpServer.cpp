@@ -1,6 +1,8 @@
 #include "gb-include.h"
 
 #include "UdpServer.h"
+#include "UdpProtocol.h"
+#include "UdpSlot.h"
 #include "Dns.h"      // g_dnsDistributed.extractHostname()
 #include "Profiler.h"
 #include "Stats.h"
@@ -11,8 +13,10 @@
 #include "BitOperations.h"
 #include "Msg0.h" //RDBIDOFFSET
 #include "Rdb.h" //RDB_...
+#include "Mem.h"
 #include "max_niceness.h"
 #include "ScopedLock.h"
+#include <netinet/in.h>        // ntohl() ntohs()
 #include <assert.h>
 
 // . any changes made to the slots should only be done without risk of
@@ -171,8 +175,8 @@ bool UdpServer::init ( uint16_t port, UdpProtocol *proto,
 	// clear handlers
 	memset ( m_handlers, 0 , sizeof(void(* )(UdpSlot *slot,int32_t)) * 128);
 
-    // save the port in case we need it later
-    m_port    = port;
+	// save the port in case we need it later
+	m_port = port;
 	// no requests waiting yet
 	m_requestsInWaiting = 0;
 	// special count
@@ -212,7 +216,7 @@ bool UdpServer::init ( uint16_t port, UdpProtocol *proto,
 		// copy errno to g_errno
 		g_errno = errno;
 		log( LOG_WARN, "udp: Call to  setsockopt: %s.",mstrerror(g_errno));
-	    return false;
+		return false;
 	}
 	// only do this if not dns!!! some dns servers require it and will
 	// just drop the packets if it doesn't match, because this will make
@@ -271,10 +275,10 @@ bool UdpServer::init ( uint16_t port, UdpProtocol *proto,
 	if ( bind ( m_sock, (struct sockaddr *)(void*)&name, sizeof(name)) < 0) {
 		// copy errno to g_errno
 		g_errno = errno;
-	    //if ( g_errno == EINVAL ) { port++; goto again; }
-	    close ( m_sock );
-	    log( LOG_WARN, "udp: Failed to bind to port %hu: %s.", port,strerror(g_errno));
-	    return false;
+		//if ( g_errno == EINVAL ) { port++; goto again; }
+		close ( m_sock );
+		log( LOG_WARN, "udp: Failed to bind to port %hu: %s.", port,strerror(g_errno));
+		return false;
 	}
 
 	// init stats

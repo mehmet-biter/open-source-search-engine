@@ -1,6 +1,9 @@
 #include "Msg1f.h"
 #include "UdpServer.h"
+#include "UdpSlot.h"
 #include "Conf.h"
+#include "Mem.h"
+#include <fcntl.h>
 
 static void handleRequest ( UdpSlot *slot , int32_t netnice );
 #define  LOG_WINDOW 2048

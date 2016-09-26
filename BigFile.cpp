@@ -355,7 +355,7 @@ bool BigFile::addPart ( int32_t n ) {
 			g_errno = ENOMEM;
 
 			//### BR 20151217: Fix. Previously returned the return code from log(...)
-			log(LOG_ERROR, "%s:%s:%d: new failed. size: %i, err [%s]", __FILE__, __func__, __LINE__, (int)sizeof(File), mstrerror(g_errno));
+			logError("new failed. size: %i, err [%s]", (int)sizeof(File), mstrerror(g_errno));
 			logAllData(LOG_ERROR);
 			return false;
 		}
@@ -1514,8 +1514,7 @@ bool BigFile::unlinkRename(const char *newBaseFilename, int32_t part, bool useTh
 		// wrap it up
 		doneRoutine  ( job_state , job_exit_normal );
 
-		mdelete(job_state, sizeof(FileState), "FileState");
-		delete job_state;
+		// don't delete job_state (already deleted in doneRoutine)
 	}
 
 	// if one blocked, we block, but never return false if !useThread
@@ -1733,11 +1732,16 @@ void BigFile::removePart ( int32_t i ) {
 	//File *f = getFile2(i);
 	File **filePtrs = (File **)m_filePtrsBuf.getBufStart();
 	File *f = filePtrs[i];
+
 	// . thread should have stored the filename for unlinking
 	// . now delete it from memory
-	//f->destructor();
-	mdelete ( f , sizeof(File) , "BigFile" );
-	delete (f);
+	if ( f == (File *)m_littleBuf ) {
+		f->~File();
+	} else {
+		mdelete(f, sizeof(File), "BigFile");
+		delete (f);
+	}
+
 	// and clear from our table
 	filePtrs[i] = NULL;
 	// we have one less part

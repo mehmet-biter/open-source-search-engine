@@ -4,6 +4,7 @@
 #define GB_DNSPROTOCOL_H
 
 #include "UdpProtocol.h"
+#include "UdpSlot.h"
 
 // DNS request datagram (in network/bigEndian order):
 //

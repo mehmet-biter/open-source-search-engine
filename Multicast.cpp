@@ -1,4 +1,5 @@
 #include "Multicast.h"
+#include "UdpSlot.h"
 #include "UdpServer.h"
 #include "Hostdb.h"
 #include "Stats.h"
@@ -6,6 +7,7 @@
 #include "Loop.h"         // registerSleepCallback()
 #include "ScopedLock.h"
 #include "Process.h"
+#include "Mem.h"
 
 // up to 10 twins in a group
 //#define MAX_HOSTS_PER_GROUP 10

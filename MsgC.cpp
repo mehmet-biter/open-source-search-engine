@@ -2,6 +2,7 @@
 #include "Process.h"
 
 #include "MsgC.h"
+#include "Mem.h"
 
 
 MsgC::MsgC ( ) {

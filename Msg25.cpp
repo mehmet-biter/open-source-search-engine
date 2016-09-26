@@ -46,6 +46,34 @@ Msg25::Msg25() {
 	m_numReplyPtrs = 0;
 	//m_linkInfo = NULL;
 	m_ownReplies = true;
+	
+	// mainly for Coverity
+	m_reciprocal = 0;
+	m_spideringEnabled = false;
+	m_dupCount = 0;
+	m_vectorDups = 0;
+	m_spamLinks = 0;
+	m_niceness = 0;
+	m_numFromSameIp = 0;
+	m_sameMidDomain = 0;
+	m_spamCount = 0;
+	m_spamWeight = 0;
+	m_maxSpam = 0;
+	m_siteQuality = 0;
+	m_siteNumFreshInlinks = 0;
+	m_ipDupsLinkdb = 0;
+	m_docIdDupsLinkdb = 0;
+	m_linkSpamLinkdb = 0;
+	m_lostLinks = 0;
+	m_ipDups = 0;
+	m_groupId = 0;
+	m_probDocId = 0;
+	m_oldLinkInfo = NULL;
+	m_bufPtr = NULL;
+	m_bufEnd = NULL;
+	m_requestSize = 0;
+	m_qbuf = NULL;
+	m_qbufSize = 0;
 }
 
 
@@ -3263,6 +3291,34 @@ Links::Links() {
 	m_baseUrl = NULL;
 	m_numOutlinksAdded = 0;
 	m_doQuickSet = false;
+
+	// Coverity
+	m_parentIsPermalink = false;
+	m_baseSite = NULL;
+	m_baseSiteLen = 0;
+	m_buf = NULL;
+	m_bufPtr = NULL;
+	m_linkPtrs = NULL;
+	m_linkLens = NULL;
+	m_linkNodes = NULL;
+	m_linkHashes = NULL;
+	m_hostHashes = NULL;
+	m_domHashes = NULL;
+	m_linkFlags = NULL;
+	m_spamNotes = NULL;
+	m_hasRSS = false;
+	m_isFeedBurner = false;
+	m_numNodes = 0;
+	m_hasRelNoFollow = false;
+	m_stripParams = false;
+	m_addSiteRootFlags = false;
+	m_coll = NULL;
+	m_flagged = false;
+	m_hasSelfPermalink = 0;
+	m_hasRSSOutlink = 0;
+	m_hasSubdirOutlink = 0;
+	m_rssOutlinkPtr = NULL;
+	m_rssOutlinkLen = 0;
 }
 
 

@@ -1,6 +1,7 @@
 #include "gb-include.h"
 
 #include "Msg1.h"
+#include "UdpSlot.h"
 #include "Clusterdb.h"
 #include "Spider.h"
 #include "Rdb.h"

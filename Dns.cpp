@@ -3,6 +3,7 @@
 #include "Dns.h"
 #include "HashTableT.h"
 #include "Process.h"
+#include "File.h"
 
 
 // comment out the following line to disable DNS TLD caching
