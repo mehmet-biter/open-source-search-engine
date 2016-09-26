@@ -4625,14 +4625,9 @@ float computeSimilarity ( int32_t   *vec0 ,
 			  int32_t   *s1   , // corresponding scores vector
 			  Query  *q    ,
 			  bool    dedupVectors ) {
-	static int32_t s_tmp = 0;
-	if ( ! vec0 ) vec0 = &s_tmp;
-	if ( ! vec1 ) vec1 = &s_tmp;
 	// if both empty, assume not similar at all
-	if ( *vec0 == 0 && *vec1 == 0 ) return 0;
-	// if either is empty, return 0 to be on the safe side
-	if ( *vec0 == 0 ) return 0;
-	if ( *vec1 == 0 ) return 0;
+	if(!vec0 || !vec1)
+		return 0;
 
 
 	// flag if from query vector
