@@ -27,13 +27,32 @@ static int countWhitelistItems(const char *whitelist) {
 
 
 
-Msg2::Msg2()
-  : m_whiteLists(NULL),
-    m_numWhitelists(0),
-    m_msg5(0),
-    m_avail(0),
-    m_numLists(0)
-{
+Msg2::Msg2() {
+	m_i = 0;
+	m_whiteList = NULL;
+	m_docIdStart = 0;
+	m_docIdEnd = 0;
+	m_p = NULL;
+	m_w = 0;
+	m_whiteLists = NULL;
+	m_numWhitelists = 0;
+	m_msg5 = 0;
+	m_avail = 0;
+	m_numLists = 0;
+	m_errno = 0;
+	m_lists = NULL;
+	m_qterms = NULL;
+	m_getComponents = false;
+	m_addToCache = false;
+	m_collnum = 0;
+	m_allowHighFrequencyTermCache = false;
+	m_numReplies = 0;
+	m_numRequests = 0;
+	m_state = NULL;
+	m_callback = NULL;
+	m_niceness = 0;
+	m_isDebug = false;
+	m_startTime = 0;
 }
 
 Msg2::~Msg2() {
