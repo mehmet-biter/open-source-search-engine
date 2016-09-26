@@ -17291,6 +17291,7 @@ Title *XmlDoc::getTitle() {
 
 	if ( !m_title.setTitle( xml, ww, titleMaxLen, query, getLinkInfo1(), getFirstUrl(), filteredRootTitleBuf,
 							m_filteredRootTitleBufSize, *contentTypePtr, m_langId ) ) {
+		g_errno = ETITLEERROR;
 		return NULL;
 	}
 
