@@ -84,6 +84,34 @@ void PosdbTable::reset() {
 	m_t1 = 0LL;
 	m_whiteListTable.reset();
 	m_addedSites = false;
+
+	// Coverity
+	m_windowTermPtrs = NULL;
+	m_docsInColl = 0;
+	m_msg2 = NULL;
+	m_topTree = NULL;
+	m_nqt = 0;
+	m_debug = false;
+	m_logstate = NULL;
+	m_sortByTermNum = 0;
+	m_sortByTermNumInt = 0;
+	m_sortByTermInfoNum = 0;
+	m_sortByTermInfoNumInt = 0;
+	m_minScoreTermNum = 0;
+	m_maxScoreTermNum = 0;
+	m_minScoreVal = 0.0;
+	m_maxScoreVal = 0.0;
+	m_minScoreTermNumInt = 0;
+	m_maxScoreTermNumInt = 0;
+	m_minScoreValInt = 0;
+	m_maxScoreValInt = 0;
+	m_useWhiteTable = false;
+	m_numQueryTermInfos = 0;
+	m_minTermListSize = 0;
+	m_minTermListIdx = 0;
+	m_vecSize = 0;
+	m_allInSameWikiPhrase = 0;
+	m_realMaxTop = 0;
 }
 
 
