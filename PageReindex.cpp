@@ -220,6 +220,12 @@ Msg1c::Msg1c() {
 	m_numDocIdsAdded = 0;
 	m_collnum = -1;
 	m_callback = NULL;
+	// Coverity
+	m_startNum = 0;
+	m_endNum = 0;
+	m_forceDel = false;
+	m_state = NULL;
+	m_niceness = 0;
 }
 
 bool Msg1c::reindexQuery ( char *query ,
