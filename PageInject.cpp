@@ -644,6 +644,20 @@ void Msg7::reset() {
 		mfree ( m_sir , m_sirSize , "m7ir" );
 		m_sir = NULL;
 	}
+
+	// Coverity
+	memset(&m_injectionRequest, 0, sizeof(m_injectionRequest));
+	m_startTime = 0;
+	m_replyIndexCode = 0;
+	m_replyDocId = 0;
+	m_sirSize = 0;
+	m_needsSet = false;
+	m_socket = NULL;
+	m_state = NULL;
+	m_callback = NULL;
+	m_importState = NULL;
+	m_format = 0;
+	m_stashxd = NULL;
 }
 
 ///////////////////////////////////////
