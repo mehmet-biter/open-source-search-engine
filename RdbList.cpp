@@ -1283,7 +1283,7 @@ bool RdbList::constrain(const char *startKey, char *endKey, int32_t minRecSizes,
 	// . if first key is over endKey that's a bad hint!
 	// . might it be a corrupt RdbMap?
 	// . reset "p" to beginning if hint is bad
-	else if ( KEYCMP(k,hintKey,m_ks)!=0 || KEYCMP(hintKey,endKey,m_ks)>0) {
+	else if ( hintKey && (KEYCMP(k,hintKey,m_ks)!=0 || KEYCMP(hintKey,endKey,m_ks)>0) ) {
 		log(LOG_WARN, "db: Corrupt data or map file. Bad hint for %s.", filename);
 		// . until we fix the corruption, drop a core
 		// . no, a lot of files could be corrupt, just do it for merge
