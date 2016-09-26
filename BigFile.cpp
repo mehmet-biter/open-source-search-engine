@@ -107,6 +107,10 @@ BigFile::BigFile () {
 	memset(m_littleBuf, 0, sizeof(m_littleBuf));
 	memset(m_tmpBaseBuf, 0, sizeof(m_tmpBaseBuf));
 	
+	// Coverity
+	m_callback = NULL;
+	m_state = NULL;
+
 	//memset ( m_littleBuf , 0 , LITTLEBUFSIZE );
 	// avoid a malloc for small files.
 	// this way we can save in memory RdbMaps upon a core, even malloc/free
