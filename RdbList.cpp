@@ -59,6 +59,7 @@ RdbList::RdbList () {
 	m_allocSize   = 0;
 	m_useHalfKeys = false;
 	m_ownData     = false;
+	m_fixedDataSize = false;
 	reset();
 }
 
@@ -95,7 +96,10 @@ void RdbList::resetListPtr () {
 void RdbList::reset ( ) {
 	// . if we don't own our data then, NULLify it
 	// . if we do own the data, don't free it
-	if ( ! m_ownData ) { m_alloc = NULL; m_allocSize = 0; }
+	if ( ! m_ownData ) { 
+		m_alloc = NULL; 
+		m_allocSize = 0; 
+	}
 	m_listSize  = 0;
 	m_list      = m_alloc;
 	m_listEnd   = m_list;
