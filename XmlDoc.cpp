@@ -8543,17 +8543,17 @@ char **XmlDoc::getContent ( ) {
 	return &m_content;
 }
 
-static char getContentTypeFromContent(char *p) {
+static char getContentTypeFromContent(const char *p) {
 	char ctype = 0;
 	// max
-	char *pmax = p + 100;
+	const char *pmax = p + 100;
 	// check that out
 	for ( ; p && *p && p < pmax ; p++ ) {
 		if ( p[0] != '<' ) continue;
 		if ( p[1] != '!' ) continue;
 		if ( to_lower_a(p[2]) != 'd' ) continue;
 		if ( strncasecmp(p,"<!doctype ",10) ) continue;
-		char *dt = p + 10;
+		const char *dt = p + 10;
 		// skip spaces
 		for ( ; *dt ; dt++ ) {
 			if ( ! is_wspace_a ( *dt ) ) break;
@@ -9029,16 +9029,16 @@ Url **XmlDoc::getMetaRedirUrl ( ) {
 
 
 static uint16_t getCharsetFast(HttpMime *mime,
-			       char *url,
-			       char *s,
+			       const char *url,
+			       const char *s,
 			       int32_t slen) {
 
 	int16_t charset = csUnknown;
 
 	if ( slen < 0 ) slen = 0;
 
-	char *pstart = s;
-	char *pend   = s + slen;
+	const char *pstart = s;
+	const char *pend   = s + slen;
 
 	const char *cs    = mime->getCharset();
 	int32_t  cslen = mime->getCharsetLen();
@@ -9056,7 +9056,7 @@ static uint16_t getCharsetFast(HttpMime *mime,
 	}
 
 	// prepare to scan doc
-	char *p = pstart;
+	const char *p = pstart;
 
 	// if the doc claims it is utf-8 let's double check because
 	// newmexicomusic.org says its utf-8 in the mime header and it says
@@ -9064,7 +9064,7 @@ static uint16_t getCharsetFast(HttpMime *mime,
 	// utf-8, so don't trust that!
 	if ( charset == csUTF8 ) {
 		// loop over every char
-		for ( char *s = pstart ; s < pend ; s += getUtf8CharSize(s) ) {
+		for ( const char *s = pstart ; s < pend ; s += getUtf8CharSize(s) ) {
 			// sanity check
 			if ( ! isFirstUtf8Char ( s ) ) {
 				// note it
@@ -9122,11 +9122,11 @@ static uint16_t getCharsetFast(HttpMime *mime,
 			continue;
 		// . make sure a <xml or a <meta preceeds us
 		// . do not look back more than 500 chars
-		char *limit = p - 500;
+		const char *limit = p - 500;
 		// assume charset= or encoding= did NOT occur in a tag
 		bool inTag = false;
 		if ( limit <  pstart ) limit = pstart;
-		for ( char *s = p ; s >= limit ; s -= 1 ) { // oneChar ) {
+		for ( const char *s = p ; s >= limit ; s -= 1 ) { // oneChar ) {
 			// break at > or <
 			if ( *s == '>' ) break;
 			if ( *s != '<' ) continue;
@@ -9163,7 +9163,7 @@ static uint16_t getCharsetFast(HttpMime *mime,
 		if ( *p == '\'' ) p += 1;//oneChar;
 		if ( *p == '\"' ) p += 1;//oneChar;
 		// keep start ptr
-		char *csString = p;
+		const char *csString = p;
 		// set a limit
 		limit = p + 50;
 		if ( limit > pend ) limit = pend;
@@ -9183,14 +9183,9 @@ static uint16_t getCharsetFast(HttpMime *mime,
 			*p !=';' &&
 			*p !='\\' )
 			p += 1;//oneChar;
-		// save it
-		char d = *p;
-		// do the actual NULL termination
-		*p = 0;
+		size_t csStringLen = (size_t)(p-csString);
 		// get the character set
-		int16_t metaCs = get_iana_charset(csString, strlen(csString));
-		// put it back
-		*p = d;
+		int16_t metaCs = get_iana_charset(csString, csStringLen);
 		// update "charset" to "metaCs" if known, it overrides all
 		if (metaCs != csUnknown ) charset = metaCs;
 		// all done, only if we got a known char set though!
@@ -9218,7 +9213,7 @@ static uint16_t getCharsetFast(HttpMime *mime,
 		// use this for iterating
 		char size;
 		// loop over every char
-		for ( char *s = pstart ; s < pend ; s += size ) {
+		for ( const char *s = pstart ; s < pend ; s += size ) {
 			// set
 			size = getUtf8CharSize(s);
 			// sanity check
