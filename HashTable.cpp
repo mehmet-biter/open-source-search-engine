@@ -13,6 +13,7 @@ HashTable::HashTable () {
 	m_numSlotsUsed = 0;
 	m_doFree       = true;
 	m_label = NULL;
+	m_mask = 0;
 }
 
 // returns false and sets errno on error
