@@ -632,7 +632,7 @@ bool RdbList::checkList_r(bool abortOnProblem, rdbid_t rdbId) {
 		return false;
 	}
 
-	char oldk[MAX_KEY_BYTES];
+	char oldk[MAX_KEY_BYTES] = {0};
 	KEYSET(oldk,KEYMIN(),m_ks);
 	// point to start of list
 	resetListPtr();
@@ -1771,7 +1771,7 @@ void RdbList::merge_r(RdbList **lists, int32_t numLists, const char *startKey, c
 	// . add 2 to ensure that it stays a non-delete key
 	char  lastKey[MAX_KEY_BYTES];
 	bool  lastKeyIsValid = false;
-	char  lastPosKey[MAX_KEY_BYTES];
+	char  lastPosKey[MAX_KEY_BYTES]={0};
 	char  highestKey[MAX_KEY_BYTES];
 	bool  firstTime = true;
 	char  lastNegKey[MAX_KEY_BYTES];
