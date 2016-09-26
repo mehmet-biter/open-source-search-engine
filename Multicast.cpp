@@ -1,4 +1,5 @@
 #include "Multicast.h"
+#include "UdpSlot.h"
 #include "UdpServer.h"
 #include "Hostdb.h"
 #include "Stats.h"

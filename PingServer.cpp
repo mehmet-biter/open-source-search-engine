@@ -11,6 +11,7 @@ int32_t klogctl( int, char *,int ) { return 0; }
 
 #include "PingServer.h"
 #include "UdpServer.h"
+#include "UdpSlot.h"
 #include "Conf.h"
 #include "HttpServer.h"
 #include "HttpMime.h"

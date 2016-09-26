@@ -1,5 +1,6 @@
 #include "Msg1f.h"
 #include "UdpServer.h"
+#include "UdpSlot.h"
 #include "Conf.h"
 #include "Mem.h"
 #include <fcntl.h>

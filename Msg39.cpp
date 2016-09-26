@@ -1,4 +1,5 @@
 #include "Msg39.h"
+#include "UdpSlot.h"
 #include "Stats.h"
 #include "JobScheduler.h"
 #include "UdpServer.h"

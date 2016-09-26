@@ -1,6 +1,8 @@
 #include "gb-include.h"
 
 #include "UdpServer.h"
+#include "UdpProtocol.h"
+#include "UdpSlot.h"
 #include "Dns.h"      // g_dnsDistributed.extractHostname()
 #include "Profiler.h"
 #include "Stats.h"
@@ -14,6 +16,7 @@
 #include "Mem.h"
 #include "max_niceness.h"
 #include "ScopedLock.h"
+#include <netinet/in.h>        // ntohl() ntohs()
 
 // . any changes made to the slots should only be done without risk of
 //   interruption because makeCallbacks() reads from the slots to call

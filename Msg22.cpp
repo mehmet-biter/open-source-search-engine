@@ -3,6 +3,7 @@
 #include "Msg22.h"
 #include "Titledb.h"
 #include "UdpServer.h"
+#include "UdpSlot.h"
 #include "Process.h"
 
 static void handleRequest22 ( UdpSlot *slot , int32_t netnice ) ;

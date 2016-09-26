@@ -30,17 +30,16 @@
 #ifndef GB_UDPSERVER_H
 #define GB_UDPSERVER_H
 
-#include <sys/time.h>          // select()
-#include <sys/types.h>         // select()
-#include <netinet/in.h>        // ntohl() ntohs()
-#include "UdpSlot.h"
-#include "UdpProtocol.h"
 #include "Hostdb.h"
 #include "UdpStatistic.h"
+#include "UdpProtocol.h"
 #include "GbMutex.h"
+#include <inttypes.h>
 
 
 static const int64_t udpserver_sendrequest_infinite_timeout = 999999999999;
+
+class UdpSlot;
 
 class UdpServer {
 public:
