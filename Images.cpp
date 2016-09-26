@@ -33,6 +33,16 @@ void Images::reset() {
 	m_numImages      = 0;
 	m_imageBufValid  = false;
 	m_phase = 0;
+
+	// Coverity
+	memset(&m_msg13Request, 0, sizeof(m_msg13Request));
+	m_httpStatus = 0;
+	m_imgType = 0;
+	m_dx = 0;
+	m_dy = 0;
+	m_thumbnailSize = 0;
+	m_tdx = 0;
+	m_tdy = 0;
 }
 
 void Images::setCandidates ( Url *pageUrl , Words *words , Xml *xml , Sections *sections ) {
