@@ -12,6 +12,7 @@
 Bits::Bits() {
 	m_bits = NULL;
 	m_swbits = NULL;
+	reset();
 }
 
 Bits::~Bits() {
@@ -27,6 +28,12 @@ void Bits::reset() {
 	m_swbits = NULL;
 	m_inLinkBitsSet = false;
 	m_inUrlBitsSet = false;
+
+	// Coverity
+	m_bitsSize = 0;
+	m_swbitsSize = 0;
+	m_words = NULL;
+	m_needsFree = false;
 }
 
 // . set bits for each word
