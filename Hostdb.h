@@ -375,7 +375,7 @@ class Hostdb {
 	// write a hosts.conf file
 	bool saveHostsConf ( );
 
-	int32_t getBestIp ( Host *h , int32_t fromIp ) ;
+	int32_t getBestIp ( Host *h ) ;
 	
 	Host *getBestSpiderCompressionProxy ( int32_t *key ) ;
 

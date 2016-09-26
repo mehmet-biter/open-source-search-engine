@@ -2532,7 +2532,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	       si->m_format == FORMAT_WIDGET_AJAX ) 
 	     ) {
 		// determine if TiTle wraps, if it does add a <br> count for each wrap
-		if ( !sb->brify( str, strLen, 0, cols ) ) {
+		if ( !sb->brify( str, strLen, cols ) ) {
 			return false;
 		}
 	}
@@ -2680,7 +2680,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 
 	if ( si->m_format == FORMAT_HTML ) {
 		if ( printSummary ) {
-			sb->brify( str, strLen, 0, cols );
+			sb->brify( str, strLen, cols );
 		}
 
 		// new line if not xml. even summary is empty we need it too like
@@ -3235,8 +3235,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		sb->safePrintf("<br>");
 
 		Json md;
-		JsonItem *ji = md.parseJsonStringIntoJsonItems(mr->ptr_metadataBuf,
-													   0);
+		JsonItem *ji = md.parseJsonStringIntoJsonItems(mr->ptr_metadataBuf);
 		char tmpBuf1[1024];
 		char tmpBuf2[1024];
 		SafeBuf nameBuf(tmpBuf1, 1024);

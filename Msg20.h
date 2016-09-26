@@ -84,7 +84,7 @@ class Msg20Request {
 };
 
 
-class Msg20State;
+struct Msg20State;
 
 class Msg20Reply {
 public:
@@ -202,33 +202,29 @@ public:
 
 	const char       *ptr_note           ; // reason why it cannot vote
 
-	int32_t       size_tbuf                 ;
-	int32_t       size_htag                 ;
-	int32_t       size_ubuf                 ;
-	int32_t       size_rubuf                ;
-	int32_t       size_displaySum           ;
-	int32_t       size_dbuf                 ;
-	int32_t       size_vbuf                 ;
-	int32_t       size_imgData              ;
-
-	int32_t       size_site                 ;
-
-	int32_t       size_linkInfo             ;
-	int32_t       size_outlinks             ;
-
-	int32_t       size_vector1              ;
-	int32_t       size_vector2              ;
-	int32_t       size_vector3              ;
-	int32_t       size_linkText             ;
-	int32_t       size_surroundingText      ;
-	int32_t       size_linkUrl              ;
-	int32_t       size_rssItem              ;
-	int32_t       size_categories           ;
-	int32_t       size_content              ; // page content in utf8
-	int32_t       size_templateVector       ;
-	int32_t       size_metadataBuf          ;
-
-	int32_t       size_note                 ;
+	int32_t       size_tbuf;
+	int32_t       size_htag;
+	int32_t       size_ubuf;
+	int32_t       size_rubuf;
+	int32_t       size_displaySum;
+	int32_t       size_dbuf;
+	int32_t       size_vbuf;
+	int32_t       size_imgData;
+	int32_t       size_site;
+	int32_t       size_linkInfo;
+	int32_t       size_outlinks;
+	int32_t       size_vector1;
+	int32_t       size_vector2;
+	int32_t       size_vector3;
+	int32_t       size_linkText;
+	int32_t       size_surroundingText;
+	int32_t       size_linkUrl;
+	int32_t       size_rssItem;
+	int32_t       size_categories;
+	int32_t       size_content; // page content in utf8
+	int32_t       size_templateVector;
+	int32_t       size_metadataBuf;
+	int32_t       size_note;
 
 	// variable data comes here
 };

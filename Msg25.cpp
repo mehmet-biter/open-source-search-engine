@@ -2541,7 +2541,7 @@ const char *Msg25::isDup(Msg20Reply *r, Msg20Reply *p) {
 	if ( v1 && x1 && nv1 >= 2 && nx1 >= 2 ) {
 		//p1 = (int32_t)computeSimilarity (v1,x1,NULL,NULL,NULL,ni);
 		// are these two vecs 80% or more similar?
-		if ( isSimilar_sorted (v1,x1,nv1,nx1,80,m_niceness) ) {
+		if ( isSimilar_sorted (v1,x1,nv1,nx1,80) ) {
 			//if ( p1 < 80 ) 
 			//	log("test p1 failed");
 			return "similar content";
@@ -2557,7 +2557,7 @@ const char *Msg25::isDup(Msg20Reply *r, Msg20Reply *p) {
 	if ( v2 && x2 && nv2 >= 2 && nx2 >= 2 ) {
 		//p2 = (int32_t)computeSimilarity (v2,x2,NULL,NULL,NULL,ni);
 		// are these two vecs 80% or more similar?
-		if ( isSimilar_sorted (v2,x2,nv2,nx2,80,m_niceness) ) {
+		if ( isSimilar_sorted (v2,x2,nv2,nx2,80) ) {
 			//if ( p2 < 80 )
 			//	log("test p2 failed");
 			return "similar link desc";
@@ -2568,7 +2568,7 @@ const char *Msg25::isDup(Msg20Reply *r, Msg20Reply *p) {
 	if ( v3 && x3 && nv3 >= 2 && nx3 >= 2 ) {
 		//p3 = (int32_t)computeSimilarity (v3,x3,NULL,NULL,NULL,ni);
 		// are these two vecs 80% or more similar?
-		if ( isSimilar_sorted (v3,x3,nv3,nx3,100,m_niceness) ) {
+		if ( isSimilar_sorted (v3,x3,nv3,nx3,100) ) {
 			//if ( p3 < 100 )
 			//	log("test p3 failed");
 			return "similar tag template";
@@ -3577,7 +3577,7 @@ bool Links::set(bool useRelNoFollow,
 		// nono, need this now otherwise it hits that linkNode<0
 		// error msg in XmlDoc.cpp. but for Msg13 spider compression
 		// you might want to do something else then i guess...
-		linkLen = htmlDecode( tmp, link, linkLen, false, niceness );
+		linkLen = htmlDecode( tmp, link, linkLen, false );
 
 		// use tmp buf
 		link = tmp;

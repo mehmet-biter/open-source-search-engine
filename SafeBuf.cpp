@@ -429,10 +429,8 @@ bool SafeBuf::replace ( const char *src, const char *dst ) {
 	int32_t len1 = strlen(src);
 	int32_t len2 = strlen(dst);
 	if ( len1 != len2 ) {
-		int32_t niceness = 0;
 		return safeReplace2 ( src , len1,
 				      dst , len2,
-				      niceness ,
 				      0 );
 	}
 	for ( char *p = strstr ( m_buf , src ) ; p ; p = strstr(p+len1,src ) )
@@ -486,7 +484,6 @@ bool SafeBuf::safeReplace ( const char *s, int32_t len, int32_t pos, int32_t rep
 // return false and set g_errno on error
 bool SafeBuf::safeReplace2 (const char *s, int32_t slen,
 			    const char *t, int32_t tlen,
-			     int32_t niceness ,
 			     int32_t startOff ) {
 
 	char *pend2 = m_buf + m_length - slen + 1;
@@ -541,7 +538,7 @@ bool SafeBuf::safeReplace2 (const char *s, int32_t slen,
 	return status;
 }
 
-bool  SafeBuf::utf8Encode2(char *s, int32_t len, bool encodeHTML,int32_t niceness) {
+bool  SafeBuf::utf8Encode2(char *s, int32_t len, bool encodeHTML) {
 	int32_t tmp = m_length;
 	if ( m_encoding == csUTF8 ) {
 		if (! safeMemcpy(s,len)) return false;
@@ -549,7 +546,7 @@ bool  SafeBuf::utf8Encode2(char *s, int32_t len, bool encodeHTML,int32_t nicenes
 		return false;
 	}
 	if (!encodeHTML) return true;
-	return htmlEncode(m_length-tmp,niceness);
+	return htmlEncode(m_length-tmp);
 }
 
 
@@ -593,8 +590,7 @@ bool  SafeBuf::safeCdataMemcpy ( const char *s, int32_t len ) {
 	return true;
 }
 
-bool  SafeBuf::htmlEncode(const char *s, int32_t lenArg, bool encodePoundSign ,
-			  int32_t niceness , int32_t truncateLen ) {
+bool  SafeBuf::htmlEncode(const char *s, int32_t lenArg, bool encodePoundSign , int32_t truncateLen ) {
 	// . we assume we are encoding into utf8
 	// . sanity check
 	if ( m_encoding == csUTF16 ) gbshutdownLogicError();
@@ -697,11 +693,11 @@ bool  SafeBuf::htmlEncode(const char *s, int32_t lenArg, bool encodePoundSign ,
 }
 
 bool SafeBuf::htmlEncode(const char *s) {
-	return htmlEncode(s,strlen(s),true,0);
+	return htmlEncode(s,strlen(s),true);
 }
 
 // scan the last "len" characters for entities to encode
-bool SafeBuf::htmlEncode(int32_t len, int32_t niceness ){
+bool SafeBuf::htmlEncode(int32_t len ){
 	for (int32_t i = m_length-len; i < m_length ; i++){
 
 		if ( m_buf[i] == '"' ) {
@@ -957,9 +953,7 @@ bool  SafeBuf::safeStrcpy ( const char *s ) {
 // . SO we do keep \" 
 // . so when indexing a doc we set decodeAll to FALSE, but if you want to 
 //   decode quotation marks as well then set decodeAll to TRUE!
-bool SafeBuf::safeDecodeJSONToUtf8 ( const char *json,
-				     int32_t jsonLen, 
-				     int32_t niceness ) {
+bool SafeBuf::safeDecodeJSONToUtf8 ( const char *json, int32_t jsonLen) {
 
 	// how much space to reserve for the copy?
 	int32_t need = jsonLen;
@@ -1186,10 +1180,10 @@ bool SafeBuf::safeUtf8ToJSON ( const char *utf8 ) {
 
 
 bool SafeBuf::brify2 ( const char *s, int32_t cols, const char *sep, bool isHtml ) {
-	return brify ( s, strlen(s), 0 , cols , sep , isHtml ); 
+	return brify ( s, strlen(s), cols , sep , isHtml );
 }
 
-bool SafeBuf::brify( const char *s, int32_t slen, int32_t niceness, int32_t maxCharsPerLine, const char *sep,
+bool SafeBuf::brify( const char *s, int32_t slen, int32_t maxCharsPerLine, const char *sep,
 					 bool isHtml ) {
 	// count the xml tags so we know how much buf to allocated
 	const char *p = s;
@@ -1329,8 +1323,7 @@ bool SafeBuf::safeTruncateEllipsis ( const char *src , int32_t srcLen , int32_t 
 
 bool SafeBuf::htmlDecode ( const char *src,
 			   int32_t srcLen,
-			   bool doSpecial ,
-			   int32_t niceness ) {
+			   bool doSpecial ) {
 	// in case we were in use
 	purge();
 	// make sure we have enough room
@@ -1339,7 +1332,7 @@ bool SafeBuf::htmlDecode ( const char *src,
 	// . just decode buffer into our m_buf that we reserved
 	// . it puts a \0 at the end and returns the LENGTH of the string
 	//   it put into m_buf, not including the \0
-	int32_t newLen = ::htmlDecode( m_buf, src, srcLen, false, niceness );
+	int32_t newLen = ::htmlDecode( m_buf, src, srcLen, false );
 
 	// assign that length then
 	m_length = newLen;
@@ -1355,7 +1348,7 @@ void SafeBuf::replaceChar ( char src , char dst ) {
 }
 
 
-bool SafeBuf::base64Encode ( const char *sx , int32_t len , int32_t niceness ) {
+bool SafeBuf::base64Encode ( const char *sx , int32_t len ) {
 
 	const unsigned char *s = (const unsigned char *)sx;
 
@@ -1446,7 +1439,7 @@ bool SafeBuf::base64Encode( const char *s ) {
 	return base64Encode(s,strlen(s)); 
 }
 
-bool SafeBuf::base64Decode ( const char *src , int32_t srcLen , int32_t niceness ) {
+bool SafeBuf::base64Decode ( const char *src , int32_t srcLen ) {
 
 	// make the map
 	static unsigned char s_bmap[256];

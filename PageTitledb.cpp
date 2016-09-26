@@ -59,7 +59,7 @@ bool sendPageTitledb ( TcpSocket *s , HttpRequest *r ) {
 	const char *coll    = st->m_r.getString("c",&collLen);
 	if ( ! coll || ! coll[0] ) {
 		//coll    = g_conf.m_defaultColl;
-		coll = g_conf.getDefaultColl( r->getHost(), r->getHostLen() );
+		coll = g_conf.getDefaultColl( );
 		collLen = strlen(coll);
 	}
 	st->m_coll    = coll;

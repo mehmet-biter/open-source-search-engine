@@ -122,7 +122,7 @@ bool RdbDump::set(collnum_t collnum,
 	if (m_tree) {
 		nr = m_tree->getNumUsedNodes();
 		structureName = "tree";
-	} else if (m_buckets) {
+	} else {
 		nr = m_buckets->getNumKeys();
 		structureName = "buckets";
 	}
@@ -138,7 +138,9 @@ bool RdbDump::set(collnum_t collnum,
 	// a flag that doesn't do that... see RdbDump.cpp.
 	// this was in Rdb.cpp but when threads were turned off it was
 	// NEVER getting set and resulted in corruption in RdbMem.cpp.
-	m_rdb->setInDumpLoop(true);
+	if( m_rdb ) {
+		m_rdb->setInDumpLoop(true);
+	}
 
 	// . start dumping the tree
 	// . return false if it blocked
@@ -199,7 +201,7 @@ void RdbDump::doneDumping() {
 
 	// regenerate treeIndex
 	if (m_treeIndex) {
-		bool result = m_tree ? m_treeIndex->generateIndex(m_tree, m_collnum) : m_treeIndex->generateIndex(m_buckets, m_collnum);
+		bool result = m_tree ? m_treeIndex->generateIndex(m_collnum, m_tree) : m_treeIndex->generateIndex(m_collnum, m_buckets);
 		if (!result) {
 			logError("db: Index generation failed");
 			gbshutdownCorrupted();
@@ -265,17 +267,14 @@ void RdbDump::tryAgainWrapper2 ( int fd , void *state ) {
 //   deleting it from the tree to keep the cache in sync. NO we do NOT!
 // . called again by writeBuf() when it's done writing the whole list
 bool RdbDump::dumpTree(bool recall) {
+
 	if (g_conf.m_logTraceRdbDump) {
 		logTrace(g_conf.m_logTraceRdbDump, "BEGIN");
 		logTrace(g_conf.m_logTraceRdbDump, "recall.: %s", recall ? "true" : "false");
-
-		const char *s = "none";
-		if (m_rdb) {
-			s = getDbnameFromId(m_rdb->getRdbId());
+		if( m_rdb ) {
 			logTrace(g_conf.m_logTraceRdbDump, "m_rdbId: %02x", m_rdb->getRdbId());
+			logTrace(g_conf.m_logTraceRdbDump, "name...: [%s]", getDbnameFromId(m_rdb->getRdbId()) );
 		}
-
-		logTrace(g_conf.m_logTraceRdbDump, "name...: [%s]", s);
 	}
 
 	// set up some vars
@@ -287,7 +286,7 @@ bool RdbDump::dumpTree(bool recall) {
 	// because it may have a query that took 10 seconds come in then it
 	// needs to add a partial stat to the last 10 stats for those 10 secs.
 	// we use Global time at this juncture
-	if (m_rdb->getRdbId() == RDB_STATSDB) {
+	if( m_rdb && m_rdb->getRdbId() == RDB_STATSDB) {
 		int32_t nowSecs = getTimeGlobal();
 		StatKey *sk = (StatKey *)maxEndKey;
 		sk->m_zero = 0x01;
@@ -376,33 +375,33 @@ bool RdbDump::dumpTree(bool recall) {
 		// . check the list we got from the tree for problems
 		// . ensures keys are ordered from lowest to highest as well
 		if (g_conf.m_verifyWrites || g_conf.m_verifyDumpedLists) {
-			const char *s = "none";
-			if (m_rdb) {
-				s = getDbnameFromId(m_rdb->getRdbId());
-			}
-
+			const char *s = (m_rdb ? "none" : getDbnameFromId(m_rdb->getRdbId()));
 			const char *ks1 = "";
 			const char *ks2 = "";
 			char tmp1[32];
 			char tmp2[32];
 
-			strcpy(tmp1, KEYSTR(m_firstKeyInQueue, m_list->getKeySize()));
+			strncpy(tmp1, KEYSTR(m_firstKeyInQueue, m_list->getKeySize()), sizeof(tmp1));
+			tmp1[ sizeof(tmp1)-1 ] = '\0';
 			ks1 = tmp1;
 
 			if (m_lastKeyInQueue) {
-				strcpy(tmp2, KEYSTR(m_lastKeyInQueue, m_list->getKeySize()));
+				strncpy(tmp2, KEYSTR(m_lastKeyInQueue, m_list->getKeySize()), sizeof(tmp2));
+				tmp2[ sizeof(tmp2)-1 ] = '\0';
 				ks2 = tmp2;
 			}
 
-			log(LOG_INFO, "dump: verifying list before dumping (rdb=%s collnum=%i k1=%s k2=%s)", s, (int)m_collnum, ks1,
-			    ks2);
-			m_list->checkList_r(false, m_rdb->getRdbId());
+			if( m_rdb ) {
+				log(LOG_INFO, "dump: verifying list before dumping (rdb=%s collnum=%i k1=%s k2=%s)", s, (int)m_collnum, ks1,
+				    ks2);
+				m_list->checkList_r(false, m_rdb->getRdbId());
+			}
 		}
 
 		// if list is empty, we're done!
 		if (m_list->isEmpty()) {
 			// consider that a rollover?
-			if (m_rdb->getRdbId() == RDB_STATSDB) {
+			if( m_rdb && m_rdb->getRdbId() == RDB_STATSDB) {
 				m_rolledOver = true;
 			}
 			return true;
@@ -850,18 +849,13 @@ tryAgain:
 	// . actually i fixed that problem by not deleting any nodes that
 	//   might be in the middle of being dumped
 	// . i changed Rdb::addNode() and Rdb::deleteNode() to do this
-	// . since we made it here m_list MUST be ordered, therefore
-	//   let's try the new, faster deleteOrderedList and let's not do
-	//   balancing to make it even faster
-	// . balancing will be restored once we're done deleting this list
-
 	int64_t t3 = gettimeofdayInMilliseconds();
 
 	// tree delete is slow due to checking for leaks, not balancing
 	bool s;
 	if (m_tree) {
 		s = m_tree->deleteList(m_collnum, m_list);
-	} else if (m_buckets) {
+	} else {
 		s = m_buckets->deleteList(m_collnum, m_list);
 	}
 

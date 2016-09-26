@@ -20,7 +20,15 @@ bool Msg22::registerHandler ( ) {
 }
 
 Msg22::Msg22() {
+	m_availDocId = 0;
+	m_titleRecPtrPtr = NULL;
+	m_titleRecSizePtr = NULL;
+	m_callback = NULL;
+	m_state = NULL;
+	m_found = false;
+	m_errno = 0;
 	m_outstanding = false;
+	m_r = NULL;
 }
 
 Msg22::~Msg22(){
@@ -270,7 +278,19 @@ public:
 	// free slot request here too
 	char *m_slotReadBuf;
 	int32_t  m_slotAllocSize;
-	State22() {m_slotReadBuf = NULL;}
+
+	State22() {
+		m_slot = NULL;
+		m_pd = 0;
+		m_docId1 = 0;
+		m_docId2 = 0;
+		m_availDocId = 0;
+		m_uh48 = 0;
+		m_r = NULL;
+		m_slotReadBuf = NULL;
+		m_slotAllocSize = 0;
+	}
+
 	~State22() {
 		if ( m_slotReadBuf )
 			mfree(m_slotReadBuf,m_slotAllocSize,"st22");

@@ -249,7 +249,7 @@ bool Collectiondb::addExistingColl ( const char *coll, collnum_t collnum ) {
 		return false;
 	}
 
-	if ( ! registerCollRec ( cr , false ) ) return false;
+	if ( ! registerCollRec ( cr ) ) return false;
 
 	// we need to compile the regular expressions or update the url
 	// filters with new logic that maps crawlbot parms to url filters
@@ -412,7 +412,7 @@ bool Collectiondb::addNewColl ( const char *coll, bool saveIt,
 	}
 
 
-	if ( ! registerCollRec ( cr , true ) ) {
+	if ( ! registerCollRec ( cr ) ) {
 		return false;
 	}
 
@@ -447,7 +447,7 @@ RdbBase *CollectionRec::getBase(rdbid_t rdbId) {
 
 
 // . called only by addNewColl() and by addExistingColl()
-bool Collectiondb::registerCollRec ( CollectionRec *cr ,  bool isNew ) {
+bool Collectiondb::registerCollRec ( CollectionRec *cr ) {
 	// add m_recs[] and to hashtable
 	return setRecPtr ( cr->m_collnum , cr );
 }

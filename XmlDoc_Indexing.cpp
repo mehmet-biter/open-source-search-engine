@@ -549,7 +549,7 @@ bool XmlDoc::setSpiderStatusDocMetaList ( SafeBuf *jd , int64_t uqd ) {
 
 
 	Json jp2;
-	if (! jp2.parseJsonStringIntoJsonItems (jd->getBufStart(),m_niceness)){
+	if (! jp2.parseJsonStringIntoJsonItems (jd->getBufStart())){
 		g_errno = EBADJSONPARSER;
 		return false;
 	}
@@ -1980,8 +1980,7 @@ bool XmlDoc::hashString( char *s, int32_t slen, HashInfo *hi ) {
 			      m_wts            ,
 			      &m_wbuf          ,
 			      m_version        ,
-			      *sni             ,
-			      m_niceness       );
+			      *sni             );
 }
 
 
@@ -1993,8 +1992,7 @@ bool XmlDoc::hashString3( char       *s              ,
 		  HashTableX *wts            ,
 		  SafeBuf    *wbuf           ,
 		  int32_t        version        ,
-		  int32_t        siteNumInlinks ,
-		  int32_t        niceness       ) {
+		  int32_t        siteNumInlinks ) {
 	Words   words;
 	Bits    bits;
 	Phrases phrases;
@@ -2009,7 +2007,7 @@ bool XmlDoc::hashString3( char       *s              ,
 	// use primary langid of doc
 	if ( ! m_langIdValid ) { g_process.shutdownAbort(true); }
 
-	return hashWords3( hi, &words, &phrases, NULL, countTable, NULL, NULL, NULL, wts, wbuf, niceness );
+	return hashWords3( hi, &words, &phrases, NULL, countTable, NULL, NULL, NULL, wts, wbuf );
 }
 
 bool XmlDoc::hashWords ( HashInfo   *hi ) {
@@ -2031,14 +2029,12 @@ bool XmlDoc::hashWords ( HashInfo   *hi ) {
 	char *fragVec = m_fragBuf.getBufStart();
 	char *langVec = m_langVec.getBufStart();
 
-	return hashWords3( hi, &m_words, &m_phrases, &m_sections, &m_countTable, fragVec, wordSpamVec, langVec, m_wts,
-	                   &m_wbuf, m_niceness );
+	return hashWords3(hi, &m_words, &m_phrases, &m_sections, &m_countTable, fragVec, wordSpamVec, langVec, m_wts, &m_wbuf);
 }
 
 // . this now uses posdb exclusively
 bool XmlDoc::hashWords3( HashInfo *hi, const Words *words, Phrases *phrases, Sections *sectionsArg, HashTableX *countTable,
-                         char *fragVec, char *wordSpamVec, char *langVec, HashTableX *wts, SafeBuf *wbuf,
-                         int32_t niceness ) {
+                         char *fragVec, char *wordSpamVec, char *langVec, HashTableX *wts, SafeBuf *wbuf) {
 	Sections *sections = sectionsArg;
 	// for getSpiderStatusDocMetaList() we don't use sections it'll mess us up
 	if ( ! hi->m_useSections ) sections = NULL;
@@ -2098,7 +2094,7 @@ bool XmlDoc::hashWords3( HashInfo *hi, const Words *words, Phrases *phrases, Sec
 	// phrase score. thus, a search for 'mexico' should not bring up
 	// the page for university of new mexico!
 	SafeBuf dwbuf;
-	if ( !getDiversityVec( words, phrases, countTable, &dwbuf, niceness ) ) {
+	if ( !getDiversityVec( words, phrases, countTable, &dwbuf ) ) {
 		return false;
 	}
 	char *wdv = dwbuf.getBufStart();
@@ -2120,8 +2116,7 @@ bool XmlDoc::hashWords3( HashInfo *hi, const Words *words, Phrases *phrases, Sec
 			       nw,
 			       hi->m_hashGroup,
 			       &densBuf,
-			       sections,
-			       m_niceness))
+			       sections))
 		return false;
 	// a handy ptr
 	char *densvec = (char *)densBuf.getBufStart();
@@ -2135,7 +2130,7 @@ bool XmlDoc::hashWords3( HashInfo *hi, const Words *words, Phrases *phrases, Sec
 	if ( sections ) sp = sections->m_sectionPtrs;
 
 	SafeBuf wpos;
-	if ( ! getWordPosVec ( words , sections, m_dist, fragVec, niceness, &wpos) )
+	if ( ! getWordPosVec ( words , sections, m_dist, fragVec, &wpos) )
 		return false;
 
 	// a handy ptr

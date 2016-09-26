@@ -514,24 +514,28 @@ bool HashTableX::save ( const char *dir ,
 	err = pwrite ( fd,  &numSlots     , 4 , off ) ; off += 4;
 	if ( err == -1 ) {
 		log(LOG_WARN, "htblx: write error");
+		close ( fd );
 		return false;
 	}
 
 	err = pwrite ( fd,  &numSlotsUsed , 4 , off ) ; off += 4;
 	if ( err == -1 ) {
 		log(LOG_WARN, "htblx: write error");
+		close ( fd );
 		return false;
 	}
 	
 	err = pwrite ( fd,  &m_ks         , 4 , off ) ; off += 4;
 	if ( err == -1 ) {
 		log(LOG_WARN, "htblx: write error");
+		close ( fd );
 		return false;
 	}
 
 	err = pwrite ( fd,  &m_ds         , 4 , off ) ; off += 4;
 	if ( err == -1 ) {
 		log(LOG_WARN, "htblx: write error");
+		close ( fd );
 		return false;
 	}
 
@@ -539,6 +543,7 @@ bool HashTableX::save ( const char *dir ,
 	off += numSlots * m_ks;
 	if ( err == -1 ) {
 		log(LOG_WARN, "htblx: write error");
+		close ( fd );
 		return false;
 	}
 
@@ -547,6 +552,7 @@ bool HashTableX::save ( const char *dir ,
 		off += numSlots * m_ds;
 		if ( err == -1 ) {
 			log(LOG_WARN, "htblx: write error");
+			close ( fd );
 			return false;
 		}
 	}
@@ -555,6 +561,7 @@ bool HashTableX::save ( const char *dir ,
 	err = pwrite ( fd,  m_flags , numSlots , off ); off += numSlots ;
 	if ( err == -1 ) {
 		log(LOG_WARN, "htblx: write error");
+		close ( fd );
 		return false;
 	}
 
@@ -563,12 +570,14 @@ bool HashTableX::save ( const char *dir ,
 		err = pwrite ( fd,  &tsize        , 4 , off ) ; off += 4;
 		if ( err == -1 ) {
 			log(LOG_WARN, "htblx: write error");
+			close ( fd );
 			return false;
 		}
 		// save the text buf content
 		err = pwrite ( fd,  tbuf          , tsize , off ) ; off+=tsize;
 		if ( err == -1 ) {
 			log(LOG_WARN, "htblx: write error");
+			close ( fd );
 			return false;
 		}
 	}

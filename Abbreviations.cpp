@@ -3,7 +3,6 @@
 #include "gb-include.h"
 
 #include "HashTableX.h"
-#include "max_niceness.h"
 #include "Process.h"
 #include "GbMutex.h"
 #include "ScopedLock.h"

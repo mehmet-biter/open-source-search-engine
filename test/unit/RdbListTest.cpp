@@ -13,10 +13,10 @@ TEST(RdbListTest, MergeTestPosdbEmptyAll) {
 	g_conf.m_logTraceRdbList = true;
 	// setup test
 	RdbList list1;
-	list1.set(NULL, 0, NULL, 0, 0, true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
+	list1.set(NULL, 0, NULL, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
 
 	RdbList list2;
-	list2.set(NULL, 0, NULL, 0, 0, true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
+	list2.set(NULL, 0, NULL, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
 
 	// keys go from present to deleted
 	RdbList *lists1[2];
@@ -24,7 +24,7 @@ TEST(RdbListTest, MergeTestPosdbEmptyAll) {
 	lists1[1] = &list2;
 
 	RdbList final1;
-	final1.set(NULL, 0, NULL, 0, 0, true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
+	final1.set(NULL, 0, NULL, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
 	final1.prepareForMerge(lists1, 2, -1);
 	final1.merge_r(lists1, 2, KEYMIN(), KEYMAX(), -1, true, RDB_POSDB);
 
@@ -38,7 +38,7 @@ TEST(RdbListTest, MergeTestPosdbEmptyOne) {
 
 	// setup test
 	RdbList list1;
-	list1.set(NULL, 0, NULL, 0, 0, true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
+	list1.set(NULL, 0, NULL, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
 	list1.addRecord(makePosdbKey(key, 0x01, 0x01, 0x01, false), 0, NULL);
 	list1.addRecord(makePosdbKey(key, 0x01, 0x01, 0x02, false), 0, NULL);
 	list1.addRecord(makePosdbKey(key, 0x01, 0x02, 0x01, false), 0, NULL);
@@ -46,7 +46,7 @@ TEST(RdbListTest, MergeTestPosdbEmptyOne) {
 	list1.addRecord(makePosdbKey(key, 0x02, 0x02, 0x01, false), 0, NULL);
 
 	RdbList list2;
-	list2.set(NULL, 0, NULL, 0, 0, true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
+	list2.set(NULL, 0, NULL, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
 
 	// keys go from present to deleted
 	RdbList *lists1[2];
@@ -54,7 +54,7 @@ TEST(RdbListTest, MergeTestPosdbEmptyOne) {
 	lists1[1] = &list2;
 
 	RdbList final1;
-	final1.set(NULL, 0, NULL, 0, 0, true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
+	final1.set(NULL, 0, NULL, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
 	final1.prepareForMerge(lists1, 2, -1);
 	final1.merge_r(lists1, 2, KEYMIN(), KEYMAX(), -1, true, RDB_POSDB);
 
@@ -71,7 +71,7 @@ TEST(RdbListTest, MergeTestPosdbEmptyOne) {
 	lists2[1] = &list1;
 
 	RdbList final2;
-	final2.set(NULL, 0, NULL, 0, 0, true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
+	final2.set(NULL, 0, NULL, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
 	final2.prepareForMerge(lists2, 2, -1);
 	final2.merge_r(lists2, 2, KEYMIN(), KEYMAX(), -1, true, RDB_POSDB);
 
@@ -90,7 +90,7 @@ TEST(RdbListTest, MergeTestPosdbVerifyListOrder) {
 
 	// setup test
 	RdbList list1;
-	list1.set(NULL, 0, NULL, 0, 0, true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
+	list1.set(NULL, 0, NULL, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
 	list1.addRecord(makePosdbKey(key, 0x01, 0x01, 0x01, false), 0, NULL);
 	list1.addRecord(makePosdbKey(key, 0x01, 0x01, 0x02, false), 0, NULL);
 	list1.addRecord(makePosdbKey(key, 0x01, 0x02, 0x01, false), 0, NULL);
@@ -98,7 +98,7 @@ TEST(RdbListTest, MergeTestPosdbVerifyListOrder) {
 	list1.addRecord(makePosdbKey(key, 0x02, 0x02, 0x01, false), 0, NULL);
 
 	RdbList list2;
-	list2.set(NULL, 0, NULL, 0, 0, true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
+	list2.set(NULL, 0, NULL, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
 	list2.addRecord(makePosdbKey(key, 0x01, 0x01, 0x01, true), 0, NULL);
 	list2.addRecord(makePosdbKey(key, 0x01, 0x01, 0x02, true), 0, NULL);
 	list2.addRecord(makePosdbKey(key, 0x01, 0x02, 0x01, true), 0, NULL);
@@ -111,7 +111,7 @@ TEST(RdbListTest, MergeTestPosdbVerifyListOrder) {
 	lists1[1] = &list2;
 
 	RdbList final1;
-	final1.set(NULL, 0, NULL, 0, 0, true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
+	final1.set(NULL, 0, NULL, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
 	final1.prepareForMerge(lists1, 2, -1);
 	final1.merge_r(lists1, 2, KEYMIN(), KEYMAX(), -1, true, RDB_POSDB);
 
@@ -124,7 +124,7 @@ TEST(RdbListTest, MergeTestPosdbVerifyListOrder) {
 	lists2[1] = &list1;
 
 	RdbList final2;
-	final2.set(NULL, 0, NULL, 0, 0, true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
+	final2.set(NULL, 0, NULL, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
 	final2.prepareForMerge(lists2, 2, -1);
 	final2.merge_r(lists2, 2, KEYMIN(), KEYMAX(), -1, true, RDB_POSDB);
 

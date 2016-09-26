@@ -22,6 +22,9 @@
 #define MAX_TRIED_IPS 32 // stop after asking 32 nameservers, return timed out
 #define LOOP_BUF_SIZE 26100
 
+#define MAX_DNS_HOSTNAME_LEN	127
+
+
 // use a default of 1 day for both caches
 #define DNS_CACHE_MAX_AGE       (60*60*24)
 
@@ -43,7 +46,7 @@ struct DnsState {
 	void      (*m_callback) ( void *state , int32_t ip ) ;
 	char        m_freeit;
 	bool        m_cacheNotFounds;
-	char        m_hostname[128];
+	char        m_hostname[MAX_DNS_HOSTNAME_LEN+1];
 
 	// . point to the replies received from dns servers
 	// . m_dnsNames[] should point into these reply buffers

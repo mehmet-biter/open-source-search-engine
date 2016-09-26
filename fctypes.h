@@ -40,7 +40,7 @@ char *htmlEncode( char *dst, char *dstend, const char *src, const char *srcend )
 // . like above but src is NULL terminated
 // . returns length of string stored into "dest"
 // . decode html entities like &amp; and &gt;
-int32_t htmlDecode( char *dst, const char *src, int32_t srcLen, bool doSpecial, int32_t niceness );
+int32_t htmlDecode( char *dst, const char *src, int32_t srcLen, bool doSpecial );
 
 // . convert " to %22 , & to %26, is that it?
 // . urlEncode() stores the encoded, NULL-terminated URL in "dest"

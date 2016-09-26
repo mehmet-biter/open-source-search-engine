@@ -1130,7 +1130,7 @@ bool Pages::printHostLinks ( SafeBuf* sb     ,
 		Host *h = g_hostdb.getHost ( i );
 		uint16_t port = h->m_httpPort;
 		// use the ip that is not dead, prefer eth0
-		uint32_t ip = g_hostdb.getBestIp ( h , fromIp );
+		uint32_t ip = g_hostdb.getBestIp ( h );
 		// convert our current page number to a path
 		const char *path = s_pages[page].m_filename;
 		// highlight itself
@@ -1159,7 +1159,7 @@ bool Pages::printHostLinks ( SafeBuf* sb     ,
 		Host *h = g_hostdb.getProxy( i );
 		uint16_t port = h->m_httpPort;
 		// use the ip that is not dead, prefer eth0
-		uint32_t ip = g_hostdb.getBestIp ( h , fromIp );
+		uint32_t ip = g_hostdb.getBestIp ( h );
 		const char *path = s_pages[page].m_filename;
 		sb->safePrintf("%s<a href=\"http://%s:%hu/%s?"
 			       "c=%s%s\">"
@@ -1744,7 +1744,7 @@ bool printApiForPage ( SafeBuf *sb , int32_t PAGENUM , CollectionRec *cr ) {
 			if ( diff ) sb->safePrintf("<font color=red>");
 			// truncate to 80 chars
 			sb->htmlEncode(tmp.getBufStart(),tmp.length(),
-					   false,0,80); //niceness=0
+					   false,80);
 			if ( diff ) sb->safePrintf("</font>");
 			sb->safePrintf("</b>");
 		}

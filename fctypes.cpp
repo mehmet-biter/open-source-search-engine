@@ -732,7 +732,7 @@ int32_t saftenTags ( char *dst , int32_t dstlen , const char *src , int32_t srcl
 }
 
 // . if "doSpecial" is true, then we don't touch &lt;, &gt; and &amp;
-int32_t htmlDecode( char *dst, const char *src, int32_t srcLen, bool doSpecial, int32_t niceness ) {
+int32_t htmlDecode( char *dst, const char *src, int32_t srcLen, bool doSpecial ) {
 	//special-case optimization
 	if ( srcLen == 0 ) {
 		return 0;

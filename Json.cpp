@@ -64,7 +64,7 @@ JsonItem *Json::getItem ( char *name ) {
 
 #include "Mem.h" // strlen()
 
-JsonItem *Json::parseJsonStringIntoJsonItems (const char *json , int32_t niceness ) {
+JsonItem *Json::parseJsonStringIntoJsonItems (const char *json ) {
 
 	m_prev = NULL;
 
@@ -264,8 +264,7 @@ JsonItem *Json::parseJsonStringIntoJsonItems (const char *json , int32_t nicenes
 				// get length decoded
 				int32_t curr = m_sb.length();
 				// store decoded string right after jsonitem
-				if ( !m_sb.safeDecodeJSONToUtf8 (str,slen,
-								 niceness ))
+				if ( !m_sb.safeDecodeJSONToUtf8 (str,slen))
 					return NULL;
 				// store length decoded json
 				ji->m_valueLen = m_sb.length() - curr;
@@ -305,7 +304,7 @@ JsonItem *Json::parseJsonStringIntoJsonItems (const char *json , int32_t nicenes
 				ji->m_valueDouble = 0;
 			}
 			// store decoded string right after jsonitem
-			if ( !m_sb.safeDecodeJSONToUtf8 (p,slen,niceness))
+			if ( !m_sb.safeDecodeJSONToUtf8 (p,slen))
 				return NULL;
 			// store length decoded json
 			ji->m_valueLen = m_sb.length() - curr;
@@ -351,7 +350,7 @@ JsonItem *Json::parseJsonStringIntoJsonItems (const char *json , int32_t nicenes
 			// copy the number as a string as well
 			int32_t curr = m_sb.length();
 			// store decoded string right after jsonitem
-			if ( !m_sb.safeDecodeJSONToUtf8 ( str, slen,niceness))
+			if ( !m_sb.safeDecodeJSONToUtf8 ( str, slen))
 				return NULL;
 			// store length decoded json
 			ji->m_valueLen = m_sb.length() - curr;

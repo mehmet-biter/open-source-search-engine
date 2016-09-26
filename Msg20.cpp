@@ -24,8 +24,13 @@ static bool gotReplyWrapperxd(void *state);
 static bool sendCachedReply ( Msg20Request *req, const void *cached_summary, size_t cached_summary_len, UdpSlot *slot );
 
 
-Msg20::Msg20 () { constructor(); }
-Msg20::~Msg20() { reset(); }
+Msg20::Msg20 () { 
+	constructor(); 
+}
+
+Msg20::~Msg20() { 
+	reset(); 
+}
 
 void Msg20::constructor () {
 	m_request = NULL;
@@ -37,7 +42,10 @@ void Msg20::constructor () {
 	m_mcast.constructor();
 }
 
-void Msg20::destructor  () { reset(); m_mcast.destructor(); }
+void Msg20::destructor() { 
+	reset(); 
+	m_mcast.destructor(); 
+}
 
 
 void Msg20::freeReply() {
@@ -84,6 +92,10 @@ void Msg20::reset() {
 	m_callback     = NULL;
 	m_state        = NULL;
 	m_ownReply     = true;
+	m_requestSize = 0;
+	m_replySize = 0;
+	m_replyMaxSize = 0;
+	m_callback2 = NULL;
 }
 
 bool Msg20::registerHandler ( ) {
@@ -240,8 +252,18 @@ void Msg20::gotReplyWrapper20 ( void *state , void */*state2*/ ) {
 	Msg20 *THIS = (Msg20 *)state;
 	// gotReply() does not block, and does NOT call our callback
 	THIS->gotReply ( NULL ) ;
-	if ( THIS->m_callback ) THIS->m_callback ( THIS->m_state );
-	else THIS->m_callback2 ( THIS->m_state );
+
+	if ( THIS->m_callback ) {
+		THIS->m_callback ( THIS->m_state );
+	}
+	else 
+	if( THIS->m_callback2 ) {
+		THIS->m_callback2 ( THIS->m_state );
+	}
+	else {
+		log(LOG_LOGIC,"%s:%s: No callback!", __FILE__, __func__);
+		g_process.shutdownAbort(true);
+	}
 }
 
 // . set m_reply/m_replySize to the reply
@@ -462,11 +484,91 @@ bool gotReplyWrapperxd(void *state_) {
 }
 
 Msg20Reply::Msg20Reply ( ) {
-	// seems to be an issue... caused a core with bogus size_dbuf
-	int32_t *sizePtr = &size_tbuf;
-	int32_t *sizeEnd = &size_note;
-	for ( ; sizePtr <= sizeEnd ; sizePtr++ )
-		*sizePtr = 0;
+	m_ip = 0;
+	m_firstIp = 0;
+	m_wordPosStart = 0;
+	m_docId = 0;
+	m_firstSpidered = 0;
+	m_lastSpidered = 0;
+	m_lastModified = 0;
+	m_datedbDate = 0;
+	m_firstIndexedDate = 0;
+	m_discoveryDate = 0;
+	m_errno = 0;
+	m_collnum = 0;
+	m_noArchive = 0;
+	m_contentType = 0;
+	m_siteRank = 0;
+	m_isBanned = 0;
+	m_hopcount = 0;
+	m_recycled = 0;
+	m_language = langUnknown;
+	m_country = 0;
+	m_isAdult = false;
+	m_contentLen = 0;
+	m_contentHash32 = 0;
+	m_pageNumInlinks = 0;
+	m_pageNumGoodInlinks = 0;
+	m_pageNumUniqueIps = 0;
+	m_pageNumUniqueCBlocks = 0;
+	m_pageInlinksLastUpdated = 0;
+	m_siteNumInlinks = 0;
+	m_numOutlinks = 0;
+	m_linkTextNumWords = 0;
+	m_midDomHash = 0;
+	m_isLinkSpam = 0;
+	m_outlinkInContent = 0;
+	m_outlinkInComment = 0;
+	m_isPermalink = 0;
+	m_isDisplaySumSetFromTags = 0;
+
+	ptr_tbuf = NULL;
+	ptr_htag = NULL;
+	ptr_ubuf = NULL;
+	ptr_rubuf = NULL;
+	ptr_displaySum = NULL;
+	ptr_dbuf = NULL;
+	ptr_vbuf = NULL;
+	ptr_imgData = NULL;
+	ptr_site = NULL;
+	ptr_linkInfo = NULL;
+	ptr_outlinks = NULL;
+	ptr_vector1 = NULL;
+	ptr_vector2 = NULL;
+	ptr_vector3 = NULL;
+	ptr_linkText = NULL;
+	ptr_surroundingText = NULL;
+	ptr_linkUrl = NULL;
+	ptr_rssItem = NULL;
+	ptr_categories = NULL;
+	ptr_content = NULL;
+	ptr_templateVector = NULL;
+	ptr_metadataBuf = NULL;
+	ptr_note = NULL;
+		
+	size_tbuf = 0;
+	size_htag = 0;
+	size_ubuf = 0;
+	size_rubuf = 0;
+	size_displaySum = 0;
+	size_dbuf = 0;
+	size_vbuf = 0;
+	size_imgData = 0;
+	size_site = 0;
+	size_linkInfo = 0;
+	size_outlinks = 0;
+	size_vector1 = 0;
+	size_vector2 = 0;
+	size_vector3 = 0;
+	size_linkText = 0;
+	size_surroundingText = 0;
+	size_linkUrl = 0;
+	size_rssItem = 0;
+	size_categories = 0;
+	size_content = 0; // page content in utf8
+	size_templateVector = 0;
+	size_metadataBuf = 0;
+	size_note = 0;
 }
 
 

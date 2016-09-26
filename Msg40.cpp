@@ -1504,8 +1504,7 @@ bool Msg40::gotSummary ( ) {
 			int32_t *vi = (int32_t *)mri->ptr_vbuf;
 			int32_t *vm = (int32_t *)mrm->ptr_vbuf;
 			float s ;
-			s = computeSimilarity(vi,vm,NULL,NULL,NULL,
-					      m_si->m_niceness);
+			s = computeSimilarity(vi,vm,NULL,NULL,NULL);
 			// skip if not similar
 			if ( (int32_t)s < dedupPercent ) continue;
 			// otherwise mark it as a summary dup

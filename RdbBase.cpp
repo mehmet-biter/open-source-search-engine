@@ -44,6 +44,34 @@ RdbBase::RdbBase()
 	// use bogus collnum just in case
 	m_collnum = -1;
 
+	// init below mainly to quiet coverity
+	m_x = 0;
+	m_a = 0;
+	m_fixedDataSize = 0;
+	m_coll = NULL;
+	m_didRepair = false;
+	m_tree = NULL;
+	m_buckets = NULL;
+	m_dump = NULL;
+	m_maxTreeMem = 0;
+	m_minToMergeArg = 0;
+	m_minToMerge = 0;
+	m_absMaxFiles = 0;
+	m_numFilesToMerge = 0;
+	m_mergeStartFileNum = 0;
+	m_useHalfKeys = false;
+	m_useIndexFile = false;
+	m_ks = 0;
+	m_pageSize = 0;
+	m_niceness = 0;
+	m_numPos = 0;
+	m_numNeg = 0;
+	m_isTitledb = false;
+	m_doLog = false;
+	memset(m_files, 0, sizeof(m_files));
+	memset(m_maps, 0, sizeof(m_maps));
+	memset(m_indexes, 0, sizeof(m_indexes));
+
 	reset();
 }
 
@@ -170,7 +198,7 @@ bool RdbBase::init(char *dir,
 			log(LOG_INFO, "db: Attempting to generate index file %s/%s-saved.dat. May take a while.",
 			    m_dir.getDir(), m_dbname);
 
-			bool result = m_tree ? m_treeIndex.generateIndex(m_tree, m_collnum) : m_treeIndex.generateIndex(m_buckets, m_collnum);
+			bool result = m_tree ? m_treeIndex.generateIndex(m_collnum, m_tree) : m_treeIndex.generateIndex(m_collnum, m_buckets);
 			if (!result) {
 				logError("db: Index generation failed for %s/%s-saved.dat.", m_dir.getDir(), m_dbname);
 				gbshutdownCorrupted();
@@ -316,7 +344,9 @@ bool RdbBase::removeRebuildFromFilename ( BigFile *f ) {
 	char *ff = f->getFilename();
 	// copy it
 	char buf[1024];
-	strcpy ( buf , ff );
+	strncpy ( buf , ff, sizeof(buf) );
+	buf[ sizeof(buf)-1 ]='\0';
+	
 	// remove "Rebuild" from it
 	char *p = strstr ( buf , "Rebuild" );
 	if ( ! p ) {
@@ -2472,7 +2502,14 @@ float RdbBase::getPercentNegativeRecsOnDisk ( int64_t *totalArg ) const {
 	}
 	int64_t total = numPos + numNeg;
 	*totalArg = total;
-	float percent = (float)numNeg / (float)total;
+
+	float percent;
+	if( !total ) {
+		percent = 0.0;
+	}
+	else {
+		percent = (float)numNeg / (float)total;
+	}
 	return percent;
 }
 

@@ -6,8 +6,8 @@
 #include "CountryCode.h"
 #include "PageResults.h"
 
-#include "third-party/cld2/public/compact_lang_det.h"
-#include "third-party/cld2/public/encodings.h"
+#include <third-party/cld2/public/compact_lang_det.h>
+#include <third-party/cld2/public/encodings.h>
 
 SearchInput::SearchInput() {
 }

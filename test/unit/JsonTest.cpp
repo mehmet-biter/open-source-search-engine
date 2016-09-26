@@ -13,7 +13,7 @@ TEST(JsonTest, ParseValid) {
 		"0.8,\"contentMatch\":0.9162303664921466,\"categories\":{\"33866248\":\"Nokia platforms\",\"20290726\":\"Microkernel-based operating systems\",\"39774425\":\"ARM operating systems\",\"2148723\":\"Real-time operating systems\",\"953043\":\"Smartphones\",\"10817505\":\"History of software\",\"17862682\":\"Mobile phone operating systems\",\"33569166\":\"Accenture\",\"2150815\":\"Embedded operating systems\",\"22533699\":\"Symbian OS\",\"22280474\":\"Mobile operating systems\"},\"type\":1,\"senseRank\":1,\"variety\":0.6566037735849057,\"depth\":0.6470588235294117},{\"id\":25970423,\"positions\":[[2639,2644],[2771,2775],[2864,2868]],\"name\":\"IPad\",\"score\":0.8,\"contentMatch\":1,\"categories\":{\"33578068\":\"Products introduced "
 		"in 2010\",\"18083009\":\"Apple personal digital assistants\",\"23475157\":\"Touchscreen portable media players\",\"30107877\":\"IPad\",\"9301031\":\"Apple Inc. hardware\",\"27765345\":\"IOS (Apple)\",\"26588084\":\"Tablet computers\"},\"type\":1,\"senseRank\":1,\"variety\":0.49056603773584906,\"depth\":0.5882352941176471},{\"id\":18839,\"positions\":[[1945,1950],[2204,2209]],\"name\":\"Music\",\"score\":0.7,\"contentMatch\":1,\"categories\":{\"991222\":\"Performing arts\",\"693016\":\"Entertainment\",\"691484\":\"Music\"},\"type\":1,\"senseRank\":1,\"variety\":0.22264150943396221,\"depth\":0.7058823529411764}],\"media\":[{\"pixelHeight\":350,\"link\":\"http://www.onlinemba.com/wp-content/uploads/2013/02/apple-innovates-invert-350x350.png\",\"primary\":\"true\",\"pixelWidth\":350,\"type\":\"image\"}]}";
 
-	JsonItem *ji = json.parseJsonStringIntoJsonItems(json_input , 0);
+	JsonItem *ji = json.parseJsonStringIntoJsonItems(json_input);
 	ASSERT_TRUE(ji);
 
 	EXPECT_EQ(JT_OBJECT, ji->m_type);
@@ -32,7 +32,7 @@ TEST(JsonTest, ParseInvalid) {
 	size_t len = sizeof(json_inputs) / sizeof(json_inputs[0]);
 	for (size_t i = 0; i < len; i++) {
 		Json jp;
-		jp.parseJsonStringIntoJsonItems(json_inputs[i], 0);
+		jp.parseJsonStringIntoJsonItems(json_inputs[i]);
 		JsonItem *ji = jp.getFirstItem();
 		ASSERT_FALSE(ji);
 	}

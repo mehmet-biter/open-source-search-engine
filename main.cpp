@@ -615,13 +615,21 @@ int main2 ( int argc , char *argv[] ) {
 	//unclean shutdown.
 	g_recoveryMode = false;
 	const char *cc = NULL;
-	if ( strncmp ( cmd , "-r" ,2 ) == 0 ) cc = cmd;
-	if ( strncmp ( cmd2 , "-r",2 ) == 0 ) cc = cmd2;
+	if ( strncmp ( cmd , "-r" ,2 ) == 0 ) {
+		cc = cmd;
+	}
+	if ( strncmp ( cmd2 , "-r",2 ) == 0 ) {
+		cc = cmd2;
+	}
 	if ( cc ) {
 		g_recoveryMode = true;
 		g_recoveryLevel = 1;
-		if ( cc[2] ) g_recoveryLevel = atoi(cc+2);
-		if ( g_recoveryLevel < 0 ) g_recoveryLevel = 0;
+		if ( strlen(cc) > 2 ) {
+			g_recoveryLevel = atoi(cc+2);
+		}
+		if ( g_recoveryLevel < 0 ) {
+			g_recoveryLevel = 0;
+		}
 	}
 
 	// run as daemon? then we have to fork
@@ -1031,7 +1039,7 @@ int main2 ( int argc , char *argv[] ) {
 		char *file2 = argv[i+1];
 		int32_t maxNumThreads=1;
 		if (argv[i+2])  maxNumThreads=atoi(argv[i+2]);
-		int32_t wait;
+		int32_t wait = 1000;
 		if (argv[i+3]) wait=atoi(argv[i+3]);
 		//wait atleast 1 sec before you start again.
 		if (wait<1000) wait=1000;
@@ -2563,14 +2571,8 @@ static int install ( install_flag_konst_t installFlag, int32_t hostId, char *dir
 			amp = "&";
 		}
 
-		// limit install to this hostId if it is >= 0
-		//if ( hostId >= 0 && h2->m_hostId != hostId ) continue;
-		if ( hostId >= 0 && hostId2 == -1 ) {
-			if ( h2->m_hostId != hostId )
-				continue;
-		}
 		// if doing a range of hostid, hostId2 is >= 0
-		else if ( hostId >= 0 && hostId2 >= 0 ) {
+		if ( hostId >= 0 && hostId2 >= 0 ) {
 			if ( h2->m_hostId < hostId || h2->m_hostId > hostId2 )
 				continue;
 		}
@@ -3251,6 +3253,12 @@ void addUStat1 ( SpiderRequest *sreq, bool hadReply , int32_t now ) {
 	else {
 		us = (UStat *)g_ut.getValueFromSlot ( n );
 	}
+
+	if( !us ) {
+		log(LOG_LOGIC,"%s:%s: us is NULL", __FILE__, __func__);
+		return;
+	}
+
 	int32_t age = now - sreq->m_addedTime;
 	// inc the counts
 	us->m_numRequests++;
@@ -3294,13 +3302,20 @@ void addUStat2 ( SpiderReply *srep , int32_t now ) {
 	else {
 		us = (UStat *)g_ut.getValueFromSlot ( n );
 	}
+
+	if( !us ) {
+		log(LOG_LOGIC,"%s:%s: us is NULL", __FILE__, __func__);
+		return;
+	}
+
 	//int32_t age = now - srep->m_spideredTime;
 	// inc the counts
-	if ( srep->m_errCode )
+	if ( srep->m_errCode ) {
 		us->m_numErrorReplies++;
-	else
+	}
+	else {
 		us->m_numGoodReplies++;
-
+	}
 }
 
 
@@ -3841,11 +3856,13 @@ bool thrutest ( char *testdir , int64_t fileSize ) {
 	if ( f.doesExist() ) {
 		if ( ! f.open ( O_RDONLY ) ) {
 			log(LOG_WARN, "speedtestdisk: cannot open %s/%s", testdir, "speedtest");
+			free(buf);
 			return false;
 		}
 		// ensure big enough
 		if ( f.getFileSize() < fileSize ) {
 			log(LOG_WARN, "speedtestdisk: File %s/%s is too small for requested read size.", testdir, "speedtest");
+			free(buf);
 			return false;
 		}
 		log("db: reading from speedtest0001.dat");
@@ -3857,6 +3874,7 @@ bool thrutest ( char *testdir , int64_t fileSize ) {
 	if ( f.doesExist() ) {
 		if ( ! f.open ( O_RDONLY ) ) {
 			log(LOG_WARN, "speedtestdisk: cannot open %s/%s", testdir, "indexdb0001.dat");
+			free(buf);
 			return false;
 		}
 		log("db: reading from indexdb0001.dat");
@@ -3868,6 +3886,7 @@ bool thrutest ( char *testdir , int64_t fileSize ) {
 	if ( ! f.doesExist() ) {
 		if ( ! f.open ( O_RDWR | O_CREAT | O_SYNC ) ) {
 			log(LOG_WARN, "speedtestdisk: cannot open %s/%s", testdir, "speedtest");
+			free(buf);
 			return false;
 		}
 		log("db: writing to speedtest0001.dat");
@@ -3919,6 +3938,7 @@ bool thrutest ( char *testdir , int64_t fileSize ) {
 	}
 	}
 
+	free(buf);
 	return true;
 }
 
@@ -4003,13 +4023,20 @@ skip:
 
 	int32_t stksize = 1000000 ;
 	int32_t bufsize = stksize * s_numThreads ;
-	char *buf = (char *)malloc ( bufsize );
-	if ( ! buf ) { log("test: malloc of %" PRId32" failed.",bufsize); return; }
+	char *buf = (char *)malloc( bufsize );
+	if ( ! buf ) { 
+		log("test: malloc of %" PRId32" failed.",bufsize); 
+		return; 
+	}
+
 	g_jobScheduler.allow_new_jobs();
 	//int pid;
 	for ( int32_t i = 0 ; i < s_numThreads ; i++ ) {
-		if ( !g_jobScheduler.submit(startUp, NULL, (void *)(PTRTYPE)i, thread_type_unspecified_io, 0)){
-			log("test: Thread launch failed."); return; }
+		if ( !g_jobScheduler.submit(startUp, NULL, (void *)(PTRTYPE)i, thread_type_unspecified_io, 0)) {
+			log("test: Thread launch failed."); 
+			free(buf);
+			return; 
+		}
 		log(LOG_INIT,"test: Launched thread #%" PRId32".",i);
 	}
 	// sleep til done
@@ -4565,6 +4592,8 @@ bool parseTest ( const char *coll, int64_t docId, const char *query ) {
 	return true;
 }	
 
+
+
 bool summaryTest1   ( char *rec, int32_t listSize, const char *coll, int64_t docId, const char *query ) {
 
 	// start the timer
@@ -4579,7 +4608,10 @@ bool summaryTest1   ( char *rec, int32_t listSize, const char *coll, int64_t doc
 	// loop parse
 	for ( int32_t i = 0 ; i < 100 ; i++ ) {
 		XmlDoc xd;
-		xd.set2 (rec, listSize, coll,NULL,0);
+		if( !xd.set2 (rec, listSize, coll,NULL,0) ) {
+			log(LOG_ERROR,"%s:%s: XmlDoc.set2 failed", __FILE__, __func__);
+			return false;
+		}
 		// get content
 		content    = xd.ptr_utf8Content;//tr.getContent();
 		contentLen = xd.size_utf8Content-1;//tr.getContentLen();
@@ -4600,6 +4632,8 @@ bool summaryTest1   ( char *rec, int32_t listSize, const char *coll, int64_t doc
 	log("build: %.3f bytes/msec", bpms);
 	return true;
 }
+
+
 
 void dumpPosdb (const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree, int64_t termId ) {
 	g_posdb.init ();
@@ -5003,11 +5037,12 @@ bool pingTest ( int32_t hid , uint16_t clientPort ) {
 	int fd = sock;
 	int flags = fcntl ( fd , F_GETFL ) ;
 	if ( flags < 0 ) {
+		close ( sock );
 		log(LOG_WARN, "net: pingtest: fcntl(F_GETFL): %s.", strerror(errno));
 		return false;
 	}
 
-	char dgram[1450];
+	char dgram[DGRAM_SIZE];
 	int n;
 	struct sockaddr_in to;
 	sockaddr_in from;
@@ -5052,12 +5087,14 @@ bool pingTest ( int32_t hid , uint16_t clientPort ) {
 	int64_t start = gettimeofdayInMilliseconds();
 	n = sendto(sock,dgram,size,0,(struct sockaddr *)(void*)&to,sizeof(to));
 	if ( n != size ) {
+		close ( sock );
 		log(LOG_WARN, "net: pingtest: sendto returned %i (should have returned %" PRId32")",n,size);
 		return false;
 	}
 	sends++;
  readLoop2:
 	// loop until we read something
+	fromLen=sizeof(from);
 	n = recvfrom (sock,dgram,DGRAM_SIZE,0,(sockaddr *)(void*)&from, &fromLen);
 	if (gettimeofdayInMilliseconds() - start>2000) {lost++; goto sendLoop;}
 	if ( n <= 0 ) goto readLoop2; // { sched_yield(); goto readLoop2; }
@@ -5065,6 +5102,7 @@ bool pingTest ( int32_t hid , uint16_t clientPort ) {
 	int32_t tid = up->getTransId ( dgram , n );
 	// -1 is error
 	if ( tid < 0 ) {
+		close ( sock );
 		log(LOG_WARN, "net: pingtest: Bad transId.");
 		return false;
 	}
@@ -5091,7 +5129,13 @@ bool pingTest ( int32_t hid , uint16_t clientPort ) {
 	// send back an ack
 	size = up->makeAck ( dgram, dnum, transId , true/*weinit?*/ , false );
 	n = sendto(sock,dgram,size,0,(struct sockaddr *)(void*)&to,sizeof(to));
-	// mark our first read
+
+	if ( n != size ) {
+		close ( sock );
+		log(LOG_WARN, "net: pingtest: sendto returned %i (should have returned %" PRId32")",n,size);
+		return false;
+	}
+
 	goto sendLoop;
 }
 
@@ -5465,8 +5509,10 @@ void doInject ( int fd , void *state ) {
 	// turn off threads so this happens right away
 	g_jobScheduler.disallow_new_jobs();
 
-	int64_t fsize ;
-	if ( ! s_injectTitledb ) fsize = s_file.getFileSize();
+	int64_t fsize=0;
+	if ( ! s_injectTitledb ) {
+		fsize = s_file.getFileSize();
+	}
 
 	// just repeat the function separately. i guess we'd repeat
 	// some code but for simplicity i think it is worth it. and we
@@ -5643,13 +5689,15 @@ void doInject ( int fd , void *state ) {
 		}
 		// read the mime
 		char buf [ 1000*1024 ];
-		int32_t maxToRead = 1000*1024;
+		int32_t maxToRead = sizeof(buf)-1;
 		int32_t toRead = maxToRead;
 		if ( s_off + toRead > fsize ) toRead = fsize - s_off;
 		int32_t bytesRead = s_file.read ( buf , toRead , s_off ) ;
+		if( bytesRead >= 0 ) {
+			buf[bytesRead] = '\0';
+		}
 		if ( bytesRead != toRead ) {
-			log("build: inject: Read of %s failed at offset "
-			    "%" PRId64, s_file.getFilename(), s_off);
+			log("build: inject: Read of %s failed at offset %" PRId64, s_file.getFilename(), s_off);
 			exit(0);
 		}
 
@@ -5721,7 +5769,7 @@ void doInject ( int fd , void *state ) {
 		// get the length of content (includes the submime for 
 		// injection)
 		int32_t contentLen = m.getContentLen();
-		if ( ! url && contentLen == -1 ) {
+		if ( contentLen == -1 ) {
 			log("build: inject: Mime at offset %" PRId64" does not "
 			    "specify required Content-Length: XXX field.",
 			    s_off);
@@ -5760,15 +5808,12 @@ void doInject ( int fd , void *state ) {
 			      "u=",
 			      ipStr,
 			      (int32_t)s_isDelete);
+
 		// url encode the url
 		rp += urlEncode ( rp , 4000 , url , strlen(url) );
 		// finish it up
 		rp += sprintf(rp,"&ucontent=");
 
-		if ( ! url ) {
-			// what is this?
-			g_process.shutdownAbort(true);
-		}
 
 		// store the content after the &ucontent
 		gbmemcpy ( rp , contentPtr , contentPtrLen );
@@ -6773,6 +6818,7 @@ bool cacheTest() {
 		return false;
 	}
 
+#if 0
 	int32_t numRecs = 0 * maxCacheNodes;
 	logf(LOG_DEBUG,"test: Adding %" PRId32" recs to cache.",numRecs);
 
@@ -6821,6 +6867,7 @@ bool cacheTest() {
 		if ( ! rec || recSize != 4 || *(int32_t *)rec != oldip[next] ) {
 			g_process.shutdownAbort(true); }
 	}		     		
+#endif
 
 	// now try variable sized recs
 	c.reset();
@@ -6848,14 +6895,16 @@ bool cacheTest() {
 		return false;
 	}
 
-	numRecs = 30 * maxCacheNodes;
+	int32_t numRecs = 30 * maxCacheNodes;
 	logf(LOG_DEBUG,"test: Adding %" PRId32" recs to cache.",numRecs);
 
+	key96_t oldk[10];
+
 	// timestamp
-	timestamp = 42;
+	int32_t timestamp = 42;
 	// keep ring buffer of last 10 keys
 	int32_t oldrs[10];
-	b = 0;
+	int32_t b = 0;
 	// rec to add
 	char *rec;
 	int32_t  recSize;
@@ -7365,7 +7414,7 @@ void countdomains( const char* coll, int32_t numRecs, int32_t verbosity, int32_t
 			 "</table><br><br><br>\n"
 			 ,countDom,countIp,
 			 countDocs, attempts-countDocs,total, 
-			 ((countDom*total)/countDocs) );
+			 countDocs ? ((countDom*total)/countDocs) : 0 );
 		
 		
 		fprintf( fhndl, "<a name=\"pid\">\n"
@@ -7519,8 +7568,8 @@ void countdomains( const char* coll, int32_t numRecs, int32_t verbosity, int32_t
 		     ima + dma + (8 * numRecs) );
 		log( LOG_INFO, "cntDm: %" PRId32" bytes Total for IP.", ima );
 		log( LOG_INFO, "cntDm: %" PRId32" bytes Total for Dom.", dma );
-		log( LOG_INFO, "cntDm: %" PRId32" bytes Average for IP.", ima/countIp );
-		log( LOG_INFO, "cntDm: %" PRId32" bytes Average for Dom.", dma/countDom );
+		log( LOG_INFO, "cntDm: %" PRId32" bytes Average for IP.", countIp ? ima/countIp : 0 );
+		log( LOG_INFO, "cntDm: %" PRId32" bytes Average for Dom.", countDom ? dma/countDom : 0 );
 		
 		return;
 	}	
@@ -7692,25 +7741,35 @@ const char *getcwd2 ( char *arg2 ) {
 	// if it is a symbolic link...
 	// get real path (no symlinks symbolic links)
 	char tmp[1026];
-	int32_t tlen = readlink ( arg2 , tmp , 1020 );
+	int32_t tlen = readlink ( arg2 , tmp , sizeof(tmp)-1);
+
 	// if we got the actual path, copy that over
 	if ( tlen != -1 ) {
+		tmp[ tlen ] = '\0';
+
 		//fprintf(stderr,"tmp=%s\n",tmp);
 		// if symbolic link is relative...
-		if ( tmp[0]=='.' && tmp[1]=='.') {
+		if ( tlen >= 2 && tmp[0] == '.' && tmp[1] == '.') {
 			// store original path (/bin/gb --> ../../var/gigablast/data/gb)
-			strcpy(arg,arg2); // /bin/gb
+			strncpy(arg, arg2, sizeof(argBuf)-1); // /bin/gb
+			argBuf[ sizeof(argBuf)-1 ] = '\0';
+
 			// back up to /
-			while(arg[strlen(arg)-1] != '/' ) arg[strlen(arg)-1] = '\0';
+			while(arg[strlen(arg)-1] != '/' ) {
+				arg[strlen(arg)-1] = '\0';
+			}
 			int32_t len2 = strlen(arg);
-			strcpy(arg+len2,tmp);
+			strncpy(arg+len2, tmp, sizeof(argBuf)-len2-1);
+			argBuf[ sizeof(argBuf)-1 ] = '\0';
 		}
 		else {
-			strcpy(arg,tmp);
+			strncpy(arg,tmp,sizeof(argBuf)-1);
+			argBuf[ sizeof(argBuf)-1 ] = '\0';
 		}
 	}
 	else {
-		strcpy(arg,arg2);
+		strncpy(arg,arg2, sizeof(argBuf)-1);
+		argBuf[ sizeof(argBuf)-1 ] = '\0';
 	}
 
  again:
@@ -7767,7 +7826,7 @@ const char *getcwd2 ( char *arg2 ) {
 	}
 
 	// if "arg" is a RELATIVE path then append it
-	if ( arg && arg[0]!='/' ) {
+	if ( arg[0]!='/' ) {
 		if ( arg[0]=='.' && arg[1]=='/' ) {
 			gbmemcpy ( end , arg+2 , alen -2 );
 			end += alen - 2;

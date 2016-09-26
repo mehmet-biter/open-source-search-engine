@@ -3366,7 +3366,6 @@ void PosdbTable::intersectLists10_r ( ) {
 			default:
 				log(LOG_LOGIC,"%s:%d: Illegal pass number %d", __FILE__, __LINE__, currPassNum);
 				gbshutdownLogicError();
-				break;
 		}
 
 		// reset docid to start!
@@ -4355,15 +4354,6 @@ float PosdbTable::getMaxPossibleScore ( const QueryTermInfo *qti,
 			
 			// a clean win?
 			if ( s_hashGroupWeights[hgrp] > bestHashGroupWeight ) {
-				// if the term was in an inlink we end
-				// up summing those up so let's just return
-				// -1 to indicate we had inlinktext so
-				// we won't apply the constraint to this
-				// docid for this term
-				if ( hgrp == HASHGROUP_INLINKTEXT ) {
-					return -1.0;
-				}
-				
 				bestHashGroupWeight = s_hashGroupWeights[hgrp];
 				bestDensityRank = dr;
 				continue;
@@ -4668,7 +4658,7 @@ bool PosdbTable::allocTopScoringDocIdsData() {
 	}
 
 	// keep it sane
-	if ( nn > m_msg39req->m_docsToGet * 2 && nn > 60 ) {
+	if ( nn > (int64_t)m_msg39req->m_docsToGet * 2 && nn > 60 ) {
 		nn = m_msg39req->m_docsToGet * 2;
 	}
 

@@ -3,7 +3,6 @@
 #include "LanguageIdentifier.h"
 #include "HashTableX.h"
 #include "Lang.h"
-#include "max_niceness.h"
 #include "Process.h"
 
 #include <sys/types.h>

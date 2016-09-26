@@ -3228,8 +3228,7 @@ Xml *XmlDoc::getXml ( ) {
 
 static bool setLangVec ( Words *words ,
 			 SafeBuf *langBuf ,
-			 Sections *ss ,
-			 int32_t niceness ) {
+			 Sections *ss ) {
 
 	const int64_t *wids       = words->getWordIds();
 	const char * const *wptrs = words->getWords();
@@ -3391,7 +3390,7 @@ uint8_t *XmlDoc::getLangVector ( ) {
 	if ( ! ss || ss==(void *)-1) return (uint8_t *)ss;
 
 
-	if ( ! setLangVec ( words , &m_langVec , ss , m_niceness) )
+	if ( ! setLangVec ( words , &m_langVec , ss ) )
 		return NULL;
 
 	m_langVectorValid = true;
@@ -3473,7 +3472,7 @@ uint8_t *XmlDoc::getLangId ( ) {
 	mdw.set ( md , mdlen , true );
 
 	SafeBuf langBuf;
-	setLangVec ( &mdw,&langBuf,NULL,m_niceness);
+	setLangVec ( &mdw,&langBuf,NULL);
 	char *tmpLangVec = langBuf.getBufStart();
 	m_langId = computeLangId ( NULL , &mdw , tmpLangVec );
 	if ( m_langId != langUnknown ) {
@@ -3487,7 +3486,7 @@ uint8_t *XmlDoc::getLangId ( ) {
 	mdw.set ( md , mdlen , true );
 
 	langBuf.purge();
-	setLangVec ( &mdw,&langBuf,NULL,m_niceness);
+	setLangVec ( &mdw,&langBuf,NULL);
 	tmpLangVec = langBuf.getBufStart();
 	m_langId = computeLangId ( NULL , &mdw , tmpLangVec );
 	logTrace( g_conf.m_logTraceXmlDoc, "END, returning langid=%s from metaKeywords", getLanguageAbbr(m_langId) );
@@ -4580,8 +4579,7 @@ float *XmlDoc::getPageSimilarity ( XmlDoc *xd2 ) {
 	if ( ! sv1 || sv1 == (int32_t *)-1 ) return (float *)sv1;
 	int32_t *sv2 = xd2->getPageSampleVector();
 	if ( ! sv2 || sv2 == (int32_t *)-1 ) return (float *)sv2;
-	m_pageSimilarity = computeSimilarity ( sv1, sv2, NULL, NULL, NULL,
-					       m_niceness );
+	m_pageSimilarity = computeSimilarity ( sv1, sv2, NULL, NULL, NULL);
 	// this means error, g_errno should be set
 	if ( m_pageSimilarity == -1.0 ) return NULL;
 	return &m_pageSimilarity;
@@ -4621,21 +4619,15 @@ float *XmlDoc::getPercentChanged ( ) {
 // . replaces:
 //   m_tagVec->getLinkBrotherProbability()
 //   g_clusterdb.getSampleSimilarity()
-float computeSimilarity ( int32_t   *vec0 ,
-			  int32_t   *vec1 ,
-			  int32_t   *s0   , // corresponding scores vector
-			  int32_t   *s1   , // corresponding scores vector
+float computeSimilarity ( const int32_t   *vec0,
+			  const int32_t   *vec1,
+			  const int32_t   *s0, // corresponding scores vector
+			  const int32_t   *s1, // corresponding scores vector
 			  Query  *q    ,
-			  int32_t    niceness ,
 			  bool    dedupVectors ) {
-	static int32_t s_tmp = 0;
-	if ( ! vec0 ) vec0 = &s_tmp;
-	if ( ! vec1 ) vec1 = &s_tmp;
 	// if both empty, assume not similar at all
-	if ( *vec0 == 0 && *vec1 == 0 ) return 0;
-	// if either is empty, return 0 to be on the safe side
-	if ( *vec0 == 0 ) return 0;
-	if ( *vec1 == 0 ) return 0;
+	if(!vec0 || !vec1)
+		return 0;
 
 
 	// flag if from query vector
@@ -4685,7 +4677,7 @@ float computeSimilarity ( int32_t   *vec0 ,
 	int32_t totalScore = 0;
 
 	// hash first vector. accumulating score total and total count
-	for ( int32_t *p = vec0; *p ; p++ , s0++ ) {
+	for ( const int32_t *p = vec0; *p; p++, s0++ ) {
 		// skip if matches a query term
 		if ( q && qt.getSlot ( p ) ) continue;
 		// count it
@@ -4712,7 +4704,7 @@ float computeSimilarity ( int32_t   *vec0 ,
 	int32_t zero = 0;
 
 	// see what components of this vector match
-	for ( int32_t *p = vec1; *p ; p++ , s1++ ) {
+	for ( const int32_t *p = vec1; *p; p++, s1++ ) {
 		// skip if matches a query term
 		if ( q && qt.getSlot ( p ) ) continue;
 		// count it
@@ -4770,8 +4762,7 @@ bool isSimilar_sorted ( int32_t   *vec0 ,
 			int32_t nv0 , // how many int32_ts in vec?
 			int32_t nv1 , // how many int32_ts in vec?
 			// they must be this similar or more to return true
-			int32_t percentSimilar,
-			int32_t    niceness ) {
+			int32_t percentSimilar) {
 	// if both empty, assume not similar at all
 	if ( *vec0 == 0 && *vec1 == 0 ) return 0;
 	// if either is empty, return 0 to be on the safe side
@@ -8551,17 +8542,17 @@ char **XmlDoc::getContent ( ) {
 	return &m_content;
 }
 
-char getContentTypeFromContent ( char *p , int32_t niceness ) {
+static char getContentTypeFromContent(const char *p) {
 	char ctype = 0;
 	// max
-	char *pmax = p + 100;
+	const char *pmax = p + 100;
 	// check that out
 	for ( ; p && *p && p < pmax ; p++ ) {
 		if ( p[0] != '<' ) continue;
 		if ( p[1] != '!' ) continue;
 		if ( to_lower_a(p[2]) != 'd' ) continue;
 		if ( strncasecmp(p,"<!doctype ",10) ) continue;
-		char *dt = p + 10;
+		const char *dt = p + 10;
 		// skip spaces
 		for ( ; *dt ; dt++ ) {
 			if ( ! is_wspace_a ( *dt ) ) break;
@@ -8591,7 +8582,7 @@ uint8_t *XmlDoc::getContentType ( ) {
 	if ( ! pp || pp == (void *)-1 ) return (uint8_t *)pp;
 	char *p = *pp;
 	// scan content for content type. returns 0 if none found.
-	char ctype2 = getContentTypeFromContent ( p , m_niceness );
+	char ctype2 = getContentTypeFromContent ( p );
 	// valid?
 	if ( ctype2 != 0 ) m_contentType = ctype2;
 	// it is valid now
@@ -8783,7 +8774,7 @@ static bool setMetaRedirUrlFromTag ( char *p , Url *metaRedirUrl , char niceness
 	char decoded[MAX_URL_LEN];
 
 	// convert &amp; to "&"
-	int32_t decBytes = htmlDecode( decoded, url, usize, false, niceness );
+	int32_t decBytes = htmlDecode( decoded, url, usize, false );
 	decoded[decBytes]='\0';
 
 	// . then the url
@@ -9036,18 +9027,17 @@ Url **XmlDoc::getMetaRedirUrl ( ) {
 
 
 
-uint16_t getCharsetFast ( HttpMime *mime,
-			  char *url,
-			  char *s ,
-			  int32_t slen ,
-			  int32_t niceness  ){
+static uint16_t getCharsetFast(HttpMime *mime,
+			       const char *url,
+			       const char *s,
+			       int32_t slen) {
 
 	int16_t charset = csUnknown;
 
 	if ( slen < 0 ) slen = 0;
 
-	char *pstart = s;
-	char *pend   = s + slen;
+	const char *pstart = s;
+	const char *pend   = s + slen;
 
 	const char *cs    = mime->getCharset();
 	int32_t  cslen = mime->getCharsetLen();
@@ -9065,7 +9055,7 @@ uint16_t getCharsetFast ( HttpMime *mime,
 	}
 
 	// prepare to scan doc
-	char *p = pstart;
+	const char *p = pstart;
 
 	// if the doc claims it is utf-8 let's double check because
 	// newmexicomusic.org says its utf-8 in the mime header and it says
@@ -9073,7 +9063,7 @@ uint16_t getCharsetFast ( HttpMime *mime,
 	// utf-8, so don't trust that!
 	if ( charset == csUTF8 ) {
 		// loop over every char
-		for ( char *s = pstart ; s < pend ; s += getUtf8CharSize(s) ) {
+		for ( const char *s = pstart ; s < pend ; s += getUtf8CharSize(s) ) {
 			// sanity check
 			if ( ! isFirstUtf8Char ( s ) ) {
 				// note it
@@ -9131,11 +9121,11 @@ uint16_t getCharsetFast ( HttpMime *mime,
 			continue;
 		// . make sure a <xml or a <meta preceeds us
 		// . do not look back more than 500 chars
-		char *limit = p - 500;
+		const char *limit = p - 500;
 		// assume charset= or encoding= did NOT occur in a tag
 		bool inTag = false;
 		if ( limit <  pstart ) limit = pstart;
-		for ( char *s = p ; s >= limit ; s -= 1 ) { // oneChar ) {
+		for ( const char *s = p ; s >= limit ; s -= 1 ) { // oneChar ) {
 			// break at > or <
 			if ( *s == '>' ) break;
 			if ( *s != '<' ) continue;
@@ -9172,7 +9162,7 @@ uint16_t getCharsetFast ( HttpMime *mime,
 		if ( *p == '\'' ) p += 1;//oneChar;
 		if ( *p == '\"' ) p += 1;//oneChar;
 		// keep start ptr
-		char *csString = p;
+		const char *csString = p;
 		// set a limit
 		limit = p + 50;
 		if ( limit > pend ) limit = pend;
@@ -9192,14 +9182,9 @@ uint16_t getCharsetFast ( HttpMime *mime,
 			*p !=';' &&
 			*p !='\\' )
 			p += 1;//oneChar;
-		// save it
-		char d = *p;
-		// do the actual NULL termination
-		*p = 0;
+		size_t csStringLen = (size_t)(p-csString);
 		// get the character set
-		int16_t metaCs = get_iana_charset(csString, strlen(csString));
-		// put it back
-		*p = d;
+		int16_t metaCs = get_iana_charset(csString, csStringLen);
 		// update "charset" to "metaCs" if known, it overrides all
 		if (metaCs != csUnknown ) charset = metaCs;
 		// all done, only if we got a known char set though!
@@ -9227,7 +9212,7 @@ uint16_t getCharsetFast ( HttpMime *mime,
 		// use this for iterating
 		char size;
 		// loop over every char
-		for ( char *s = pstart ; s < pend ; s += size ) {
+		for ( const char *s = pstart ; s < pend ; s += size ) {
 			// set
 			size = getUtf8CharSize(s);
 			// sanity check
@@ -9316,8 +9301,7 @@ uint16_t *XmlDoc::getCharset ( ) {
 	m_charset = getCharsetFast ( mime ,
 				     m_firstUrl.getUrl(),
 				     pstart ,
-				     m_filteredContentLen,
-				     m_niceness );
+				     m_filteredContentLen );
 	m_charsetValid = true;
 	return &m_charset;
 }
@@ -9732,8 +9716,7 @@ char **XmlDoc::getRawUtf8Content ( ) {
 				       m_filteredContent    ,
 				       m_filteredContentLen ,
 				       csName               ,
-				       -1                   ,//allowBadChars
-				       m_niceness           );
+				       -1                   );//allowBadChars
 		// clear this if successful, otherwise, it sets errno
 		if ( used > 0 ) g_errno = 0;
 		// unrecoverable error? bad charset is g_errno == E2BIG
@@ -10262,7 +10245,7 @@ char **XmlDoc::getUtf8Content ( ) {
 	int32_t n = m_expandedUtf8ContentSize - 1;
 	if ( m_contentType != CT_XML ) {
 		n = htmlDecode( m_expandedUtf8Content, m_expandedUtf8Content, m_expandedUtf8ContentSize - 1,
-						doSpecial, m_niceness );
+						doSpecial );
 	}
 
 	// can't exceed this! n does not include the final \0 even though
@@ -10364,9 +10347,7 @@ char **XmlDoc::getUtf8Content ( ) {
 }
 
 // *pend should be \0
-int32_t getContentHash32Fast ( unsigned char *p ,
-			    int32_t plen ,
-			    int32_t niceness ) {
+int32_t getContentHash32Fast ( unsigned char *p , int32_t plen ) {
 	// sanity
 	if ( ! p ) return 0;
 	if ( plen <= 0 ) return 0;
@@ -10533,7 +10514,7 @@ int32_t *XmlDoc::getContentHash32 ( ) {
 	// fields are independent, and numbers matter, like prices
 
 	// *pend should be \0
-	m_contentHash32 = getContentHash32Fast ( p , plen , m_niceness );
+	m_contentHash32 = getContentHash32Fast ( p , plen );
 	// validate
 	m_contentHash32Valid = true;
 	return &m_contentHash32;
@@ -10726,15 +10707,13 @@ Images *XmlDoc::getImages ( ) {
 	if ( ! site || site == (char *)-1 ) return (Images *)site;
 	int64_t *d = getDocId();
 	if ( ! d || d == (int64_t *)-1 ) return (Images *)d;
-	int8_t *hc = getHopCount();
-	if ( ! hc || hc == (void *)-1 ) return (Images *)hc;
 	Url *cu = getCurrentUrl();
 	if ( ! cu || cu == (void *)-1 ) return (Images *)cu;
 
 	// . this does not block or anything
 	// . if we are a diffbot json reply it should just use the primary
 	//   image, if any, as the only candidate
-	m_images.setCandidates ( cu , words , xml , sections , this );
+	m_images.setCandidates ( cu , words , xml , sections );
 
 	setStatus ("getting thumbnail");
 
@@ -10747,8 +10726,6 @@ Images *XmlDoc::getImages ( ) {
 				       *d           ,
 				       this         ,
 				       cr->m_collnum       ,
-				       //NULL         , // statusPtr ptr
-				       *hc          ,
 				       m_masterState,
 				       m_masterLoop ) )
 		return (Images *)-1;
@@ -11091,7 +11068,7 @@ int32_t *XmlDoc::getUrlFilterNum ( ) {
 	int32_t ufn = ::getUrlFilterNum ( oldsr,
 					  NULL,//&fakeReply,
 					  spideredTime,false,
-					  m_niceness,cr,
+					  cr,
 					  false, // isOutlink?
 					  NULL,
 					  langIdArg);
@@ -16464,7 +16441,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		// get it
 		int32_t ufn;
 		ufn=::getUrlFilterNum(&sreq,&srep,spideredTime,true,
-				      m_niceness,cr,
+				      cr,
 				      false, // isOutlink?
 				      NULL ,
 				      langIdArg);
@@ -19098,8 +19075,7 @@ bool XmlDoc::printRainbowSections ( SafeBuf *sb , HttpRequest *hr ) {
 			       nw,
 			       HASHGROUP_BODY,//hi->m_hashGroup,
 			       &densBuf,
-			       sections,
-			       m_niceness))
+			       sections))
 		return true;
 	// a handy ptr
 	char *densityVec = (char *)densBuf.getBufStart();
@@ -19114,7 +19090,6 @@ bool XmlDoc::printRainbowSections ( SafeBuf *sb , HttpRequest *hr ) {
 			       // terms before the body, so this is necessary.
 			       m_bodyStartPos,
 			       fragVec,
-			       m_niceness,
 			       &wpos) ) return true;
 	// a handy ptr
 	int32_t *wposVec = (int32_t *)wpos.getBufStart();
@@ -20852,7 +20827,6 @@ bool getWordPosVec ( const Words *words ,
 		     const Sections *sections,
 		     int32_t startDist,
 		     const char *fragVec,
-		     int32_t niceness ,
 		     SafeBuf *wpos ) {
 
 	int32_t dist = startDist; // 0;
@@ -20942,8 +20916,7 @@ bool getDensityRanks ( const int64_t *wids ,
 		       int32_t nw ,
 		       int32_t hashGroup ,
 		       SafeBuf *densBuf ,
-		       const Sections *sections ,
-		       int32_t niceness ) {
+		       const Sections *sections ) {
 
 	//int32_t nw = wordEnd - wordStart;
 
@@ -21010,8 +20983,7 @@ bool getDensityRanks ( const int64_t *wids ,
 // . string is usually the document body or inlink text of an inlinker or
 //   perhaps meta keywords. it could be anything. so we need to create this
 //   vector based on that string, which is represented by words/phrases here.
-bool getDiversityVec( const Words *words, const Phrases *phrases, HashTableX *countTable, SafeBuf *sbWordVec,
-					  int32_t niceness ) {
+bool getDiversityVec( const Words *words, const Phrases *phrases, HashTableX *countTable, SafeBuf *sbWordVec ) {
 	const int64_t  *wids  = words->getWordIds ();
 	int32_t        nw    = words->getNumWords();
 	const int64_t  *pids  = phrases->getPhraseIds2();
@@ -21605,7 +21577,7 @@ Json *XmlDoc::getParsedJson ( ) {
 
 	// . returns NULL and sets g_errno on error
 	// . if p is NULL i guess this should still be ok and be empty
-	if ( ! m_jp.parseJsonStringIntoJsonItems ( p , m_niceness ) ) {
+	if ( ! m_jp.parseJsonStringIntoJsonItems ( p ) ) {
 		g_errno = EBADJSONPARSER;
 		return NULL;
 	}

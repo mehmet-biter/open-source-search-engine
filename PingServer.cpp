@@ -430,8 +430,6 @@ void gotReplyWrapperP ( void *state , UdpSlot *slot ) {
 	int64_t tripTime = nowms - slot->getFirstSendTime() ;
 	// ensure not negative, clock might have been adjusted!
 	if ( tripTime < 0 ) tripTime = 0;
-	// bail if none
-	if ( ! h ) { log(LOG_LOGIC,"net: pingserver: bad hostId."); return; }
 	// point to the right ping time, for the original port or for the 
 	// shotgun port
 	int32_t *pingPtr = NULL;
@@ -590,11 +588,13 @@ void gotReplyWrapperP3 ( void *state , UdpSlot *slot ) {
 	s_outstandingPings--;
 }
 
+
+
 // record time in the ping request iff from hostId #0
 static int64_t s_deltaTime = 0;
 
 // this may be called from a signal handler now...
-void handleRequest11 ( UdpSlot *slot , int32_t niceness ) {
+void handleRequest11(UdpSlot *slot , int32_t niceness) {
 	// get request 
 	//char *request     = slot->m_readBuf;
 	int32_t  requestSize = slot->m_readBufSize;
@@ -606,7 +606,9 @@ void handleRequest11 ( UdpSlot *slot , int32_t niceness ) {
 	Host *h = g_hostdb.getHost ( ip , port );
 	// we may be the temporary cluster (grep for useTmpCluster) and
 	// the proxy is sending pings from its original port plus 1
-	if ( ! h ) h = g_hostdb.getHost ( ip , port + 1 );
+	if ( ! h ) {
+		h = g_hostdb.getHost ( ip , port + 1 );
+	}
 	if ( ! h ) {
 		// size of 3 means it is a debug ping from
 		// proxy server is a connectIp, so don't display the message
@@ -619,7 +621,6 @@ void handleRequest11 ( UdpSlot *slot , int32_t niceness ) {
 		// the udp server will send the reply back to the same ip/port
 		// from which we got the request
 		g_udpServer.sendReply(NULL, 0, NULL, 0, slot, NULL, NULL, 500, 1000, true);
-
 		return;
 	}
 
@@ -627,11 +628,20 @@ void handleRequest11 ( UdpSlot *slot , int32_t niceness ) {
 	// point to the correct ping time. this request may have come from
 	// the shotgun network, or the primary network.
 	int32_t *pingPtr = NULL;
-	if ( slot->getIp() == h->m_ipShotgun ) pingPtr = &h->m_pingShotgun;
+	if ( slot->getIp() == h->m_ipShotgun ) {
+		pingPtr = &h->m_pingShotgun;
+	}
+
 	// original overrides shotgun, in case ips match
-	if ( slot->getIp() == h->m_ip        ) pingPtr = &h->m_ping;
+	if ( slot->getIp() == h->m_ip) {
+		pingPtr = &h->m_ping;
+	}
+
 	// otherwise... wierd!!
-	if ( ! pingPtr ) pingPtr = &h->m_ping;
+	if ( ! pingPtr ) {
+		pingPtr = &h->m_ping;
+	}
+
 	// reply msg
 	char *reply     = NULL;
 	int32_t  replySize = 0;
@@ -643,10 +653,11 @@ void handleRequest11 ( UdpSlot *slot , int32_t niceness ) {
 		// sanity
 		PingInfo *pi2 = (PingInfo *)request;
 		if ( pi2->m_hostId != h->m_hostId ) { 
-			g_process.shutdownAbort(true); }
+			g_process.shutdownAbort(true); 
+		}
 
-		if(h!=g_hostdb.getMyHost()) {
-			//only copy statistics if it is not from outselves
+		if( h != g_hostdb.getMyHost() ) {
+			// only copy statistics if it is not from ourselves
 			memcpy(&h->m_pingInfo, request, requestSize);
 		}
 
@@ -675,10 +686,9 @@ void handleRequest11 ( UdpSlot *slot , int32_t niceness ) {
 		h->m_repairMode = mode;
 		// . get the MIN repair mode of all hosts
 		// . expensive, so only do if a host changes modes
-		if ( oldMode != mode                    || 
-		     g_pingServer.m_minRepairMode == -1   )
+		if ( oldMode != mode || g_pingServer.m_minRepairMode == -1 ) {
 			g_pingServer.setMinRepairMode ( h );
-		//}
+		}
 		// make it a normal ping now
 		requestSize = 8;
 	}
@@ -698,19 +708,25 @@ void handleRequest11 ( UdpSlot *slot , int32_t niceness ) {
 	// scan all grunts for agreement. do this line once per sec?
 	//
 	int32_t agree = 0;
-	int32_t i; for ( i = 0 ; i < g_hostdb.getNumGrunts() ; i++ ) {
-		Host *h = &g_hostdb.m_hosts[i];			
+	int32_t i; 
+	for ( i = 0 ; i < g_hostdb.getNumGrunts() ; i++ ) {
+		Host *h2 = &g_hostdb.m_hosts[i];			
 
-		if ( h->m_pingInfo.m_flags & PFLAG_FOREIGNRECS )
+		if ( h2->m_pingInfo.m_flags & PFLAG_FOREIGNRECS ) {
 			ps->m_numHostsWithForeignRecs++;
+		}
 
-		if ( g_hostdb.isDead ( h ) )
+		if ( g_hostdb.isDead ( h2 ) ) {
 			ps->m_numHostsDead++;
+		}
 
 		// skip if not received yet
-		if ( ! h->m_pingInfo.m_hostsConfCRC ) continue;
+		if ( ! h2->m_pingInfo.m_hostsConfCRC ) {
+			continue;
+		}
+
 		// badness?
-		if ( h->m_pingInfo.m_hostsConfCRC != g_hostdb.m_crc ) {
+		if ( h2->m_pingInfo.m_hostsConfCRC != g_hostdb.m_crc ) {
 			ps->m_hostsConfInDisagreement = true;
 			break;
 		}
@@ -718,43 +734,42 @@ void handleRequest11 ( UdpSlot *slot , int32_t niceness ) {
 		agree++;
 	}
 
-	// iff all in agreement, set this flag
-	if ( agree == g_hostdb.getNumGrunts() )
+	// if all in agreement, set this flag
+	if ( agree == g_hostdb.getNumGrunts() ) {
 		ps->m_hostsConfInAgreement = true;
+	}
 
 	// if request is 5 bytes, must be a host telling us he's shutting down
 	if ( requestSize == 5 ) {
 		// his byte #4 is sendEmailAlert
 		bool sendEmailAlert = request[4];
 		// and make him dead
-		if ( h ) {
-			int32_t deadTime = g_conf.m_deadHostTimeout + 1;
-			updatePingTime ( h , &h->m_ping        , deadTime );
-			updatePingTime ( h , &h->m_pingShotgun , deadTime );
-			// don't email admin if sendEmailAlert is false
-			if ( ! sendEmailAlert ) {
-				h->m_emailCode = -2;
-			} else {
-				// otherwise, launch him one now
-				// . this returns false if blocked, true otherw
-				// . sets g_errno on erro
-				g_pingServer.sendEmail ( h );
-				// reset in case sendEmail() set it
-				g_errno = 0;
-			}
-			// if we are a proxy and he had an outstanding 0xfd msg
-			// then we need to re-route that! likewise any msg
-			// that has not got a full reply needs to be timedout
-			// right now so we can re-route it...
-			g_udpServer.timeoutDeadHosts ( h );
+		int32_t deadTime = g_conf.m_deadHostTimeout + 1;
+		updatePingTime ( h , &h->m_ping        , deadTime );
+		updatePingTime ( h , &h->m_pingShotgun , deadTime );
+
+		// don't email admin if sendEmailAlert is false
+		if ( ! sendEmailAlert ) {
+			h->m_emailCode = -2;
+		} else {
+			// otherwise, launch him one now
+			// . this returns false if blocked, true otherw
+			// . sets g_errno on erro
+			g_pingServer.sendEmail ( h );
+			// reset in case sendEmail() set it
+			g_errno = 0;
 		}
-		else
-			log(LOG_LOGIC,"net: pingserver: Got NULL host ptr.");
+		// if we are a proxy and he had an outstanding 0xfd msg
+		// then we need to re-route that! likewise any msg
+		// that has not got a full reply needs to be timedout
+		// right now so we can re-route it...
+		g_udpServer.timeoutDeadHosts ( h );
 
 	}
 	// . if size is 4 then he wants us to sync with him
 	// . this was "0", but now we include what the ping was
-	else if ( requestSize == 4 ) {
+	else 
+	if ( requestSize == 4 ) {
 		// get the ping time
 		int32_t ping = *(int32_t *)request;
 		// store it
@@ -771,22 +786,31 @@ void handleRequest11 ( UdpSlot *slot , int32_t niceness ) {
 		// get best "drifted" ping, "dping"
 		int32_t dping = g_pingServer.m_bestPing + drift;
 		// no overflowing
-		if ( dping < g_pingServer.m_bestPing ) dping = 0x7fffffff;
+		if ( dping < g_pingServer.m_bestPing ) {
+			dping = 0x7fffffff;
+		}
 		// if this is our first time
-		if ( g_pingServer.m_bestPingDate == 0 ) dping = 0x7fffffff;
+		if ( g_pingServer.m_bestPingDate == 0 ) {
+			dping = 0x7fffffff;
+		}
 		// . don't bother if not more accurate
 		// . update the clock on "ping" ties because our local clock
 		//   drifts a lot
-		if ( g_pingServer.m_currentPing > dping )
+		if ( g_pingServer.m_currentPing > dping ) {
 			setClock = false;
+		}
 		// ping must be < 200 ms to update
-		if ( g_pingServer.m_currentPing > 200 ) setClock = false;
-		// if no host... how can this happen?
-		if ( ! h ) setClock = false;
+		if ( g_pingServer.m_currentPing > 200 ) {
+			setClock = false;
+		}
 		// only update if from host #0
-		if ( h && h->m_hostId != 0 ) setClock = false;
+		if ( h->m_hostId != 0 ) {
+			setClock = false;
+		}
 		// proxy can be host #0, too! watch out...
-		if ( h && h->m_isProxy ) setClock = false;
+		if ( h->m_isProxy ) {
+			setClock = false;
+		}
 		// only commit sender's time if from hostId #0
 		if ( setClock ) {
 			// what time is it now?
@@ -810,10 +834,11 @@ void handleRequest11 ( UdpSlot *slot , int32_t niceness ) {
 		}
 	}
 	// all pings now deliver a timestamp of the sending host
-	else if ( requestSize == 8 ) {
+	else 
+	if ( requestSize == 8 ) {
 		//reply = g_pingServer.getReplyBuffer();
 		// only record sender's time if from hostId #0
-		if ( h && h->m_hostId == 0 && !h->m_isProxy) {
+		if ( h->m_hostId == 0 && !h->m_isProxy) {
 			// what time is it now?
 			int64_t nowmsLocal=gettimeofdayInMillisecondsLocal();
 			// . seems these servers drift by 1 ms every 5 secs
@@ -841,6 +866,8 @@ void handleRequest11 ( UdpSlot *slot , int32_t niceness ) {
 	// always send back an empty reply
 	g_udpServer.sendReply(reply, replySize, NULL, 0, slot, NULL, NULL, 500, 1000, true);
 }
+
+
 
 // . sets m_minRepairMode
 // . only call this when host "h" changes repair mode
@@ -1441,8 +1468,15 @@ void checkKernelErrors( int fd, void *state ){
 	int64_t st = gettimeofdayInMilliseconds();
 	char buf[4098];
 	// klogctl reads the last 4k lines of the kernel ring buffer
-	int16_t bufLen = klogctl(3,buf,4096);
+	int bufLen = klogctl(3,buf,4096);
+
+	if ( bufLen < 0 ){
+		log ("db: klogctl returned error: %s",mstrerror(errno));
+		return;
+	}
+
 	int64_t took = gettimeofdayInMilliseconds() - st;
+
 	if ( took >= 3 ) {
 		int32_t len = bufLen;
 		if ( len > 200 ) len = 200;
@@ -1452,10 +1486,6 @@ void checkKernelErrors( int fd, void *state ){
 		buf[len] = c;
 	}
 
-	if ( bufLen < 0 ){
-		log ("db: klogctl returned error: %s",mstrerror(errno));
-		return;
-	}
 	// make sure not too big!
 	if ( bufLen >= 4097 ) {
 		log ("db: klogctl overflow");

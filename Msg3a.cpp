@@ -71,32 +71,6 @@ void Msg3a::reset ( ) {
 	m_numTotalEstimatedHits = 0LL;
 }
 
-// from Indexdb.cpp
-static key96_t makeKey ( int64_t termId, unsigned char score, uint64_t docId, bool isDelKey ) {
-	// make sure we mask out the hi bits we do not use first
-	termId = termId & TERMID_MASK;
-	key96_t key ;
-	char *kp = (char *)&key;
-	char *tp = (char *)&termId;
-	char *dp = (char *)&docId;
-	// store termid
-	*(int16_t *)(kp+10) = *(int16_t *)(tp+4);
-	*(int32_t  *)(kp+ 6) = *(int32_t  *)(tp  );
-	// store the complement of the score
-	kp[5] = ~score;
-	// . store docid
-	// . make room for del bit and half bit
-	docId <<= 2;
-	*(int32_t *)(kp+1) = *(int32_t *)(dp+1);
-	kp[0] = dp[0];
-	// turn off half bit
-	kp[0] &= 0xfd;
-	// turn on/off delbit
-	if ( isDelKey ) kp[0] &= 0xfe;
-	else            kp[0] |= 0x01;
-	// key is complete
-	return key;
-}
 
 
 // . returns false if blocked, true otherwise
@@ -136,12 +110,8 @@ static key96_t makeKey ( int64_t termId, unsigned char score, uint64_t docId, bo
 //   Msg25 to recompute the inlinker information used in
 //   Msg16::computeQuality(), but rather deserialize it from the TitleRec.
 //   Computing the link info takes a lot of time as well.
-bool Msg3a::getDocIds ( Msg39Request *r          ,
-			const SearchInput *si,
-			Query        *q          ,
-			void         *state      ,
-			void        (* callback) ( void *state ),
-			class Host *specialHost ) {
+bool Msg3a::getDocIds(Msg39Request *r, const SearchInput *si, Query *q, void *state, 
+	void (*callback)( void *state ), class Host *specialHost) {
 
 	// in case re-using it
 	reset();
@@ -153,8 +123,7 @@ bool Msg3a::getDocIds ( Msg39Request *r          ,
 	m_state    = state;
 
 	if ( m_r->m_collnum < 0 )
-		log(LOG_LOGIC,"net: bad collection. msg3a. %" PRId32,
-		    (int32_t)m_r->m_collnum);
+		log(LOG_LOGIC,"net: bad collection. msg3a. %" PRId32, (int32_t)m_r->m_collnum);
 
 	// for a sanity check in Msg39.cpp
 	r->m_nqt = m_q->getNumTerms();
@@ -171,16 +140,21 @@ bool Msg3a::getDocIds ( Msg39Request *r          ,
 
 	// . return now if query empty, no docids, or none wanted...
 	// . if query terms = 0, might have been "x AND NOT x"
-	if ( m_q->getNumTerms() <= 0 ) return true;
+	if ( m_q->getNumTerms() <= 0 ) {
+		return true;
+	}
 
 	// . set g_errno if not found and return true
 	// . coll is null terminated
 	CollectionRec *cr = g_collectiondb.getRec(r->m_collnum);
-	if ( ! cr ) { g_errno = ENOCOLLREC; return true; }
+	if ( ! cr ) { 
+		g_errno = ENOCOLLREC; 
+		return true; 
+	}
 
 	// query is truncated if had too many terms in it
 	if ( m_q->m_truncated ) {
-		log("query: query truncated: %s",m_q->m_orig);
+		log("query: query truncated: %s", m_q->m_orig);
 		m_errno = EQUERYTRUNCATED;
 	}
 
@@ -199,7 +173,7 @@ bool Msg3a::getDocIds ( Msg39Request *r          ,
 		     (PTRTYPE)this);
 	}
 
-	setTermFreqWeights ( m_r->m_collnum,m_q );
+	setTermFreqWeights(m_r->m_collnum, m_q);
 
 	if ( m_debug ) {
 		for ( int32_t i = 0 ; i < m_q->m_numTerms ; i++ ) {
@@ -288,7 +262,10 @@ bool Msg3a::getDocIds ( Msg39Request *r          ,
 	// free this one too
 	m_rbuf2.purge();
 	// and copy that!
-	if ( ! m_rbuf2.safeMemcpy ( m_rbufPtr , m_rbufSize ) ) return true;
+	if ( ! m_rbuf2.safeMemcpy ( m_rbufPtr , m_rbufSize ) ) {
+		return true;
+	}
+
 	// and tweak it
 	((Msg39Request *)(m_rbuf2.getBufStart()))->m_stripe = 1;
 
@@ -306,17 +283,20 @@ bool Msg3a::getDocIds ( Msg39Request *r          ,
 		timeout = m_r->m_timeout;
 		timeout += g_conf.m_msg3a_msg39_network_overhead;
 	}
-	if ( timeout > multicast_msg3a_maximum_timeout )
+	if ( timeout > multicast_msg3a_maximum_timeout ) {
 		timeout = multicast_msg3a_maximum_timeout;
+	}
 	
-	int64_t qh = 0LL; if ( m_q ) qh = m_q->getQueryHash();
+	int64_t qh = m_q->getQueryHash();
 
 	int32_t totalNumHosts = g_hostdb.getNumHosts();
 	
 	m_numQueriedHosts = 0;
 	
 	// only send to one host?
-	if ( ! m_q->isSplit() ) totalNumHosts = 1;
+	if ( ! m_q->isSplit() ) {
+		totalNumHosts = 1;
+	}
 
 
 	// now we run it over ALL hosts that are up!
@@ -347,17 +327,37 @@ bool Msg3a::getDocIds ( Msg39Request *r          ,
 		// TODO: fix msg2 to do that...
 		if ( ! m_q->isSplit() ) {
 			int64_t     tid  = m_q->getTermId(0);
-			key96_t         k    = makeKey(tid,1,1,false );
+			
+			key144_t k;
+			Posdb::makeKey ( &k ,
+					  tid,
+					  0LL, // docid
+					  0, // dist
+					  MAXDENSITYRANK, // density rank
+					  MAXDIVERSITYRANK, // diversity rank
+					  MAXWORDSPAMRANK, // wordspamrank
+					  0, // siterank
+					  0, // hashgroup
+					  // we set to docLang in final hash loop
+					  langUnknown,// langid
+					  0, // multiplier
+					  0, // syn?
+					  false , // delkey?
+					  false ); // sharded by termid
+
 			// split = false! do not split
 			//gid = getGroupId ( RDB_POSDB,&k,false);
 			shardNum = g_hostdb.getShardNumByTermId(&k);
 			firstHostId = -1;
 		}
+
 		// debug log
-		if ( m_debug )
+		if ( m_debug ) {
 			logf(LOG_DEBUG,"query: Msg3a[%" PTRFMT"]: forwarding request "
 			     "of query=%s to shard %" PRIu32".",
 			     (PTRTYPE)this, m_q->getQuery(), shardNum);
+		}
+
 		// send to this guy
 		Multicast *m = &m_mcast[i];
 		// clear it for transmit
@@ -396,16 +396,22 @@ bool Msg3a::getDocIds ( Msg39Request *r          ,
 		// . key should be largest termId in group we're sending to
 		bool status = m->send(req, m_rbufSize, msg_type_39, false, shardNum, false, (int32_t)qh, this, m, gotReplyWrapper3a, timeout, m_r->m_niceness, firstHostId);
 		// if successfully launch, do the next one
-		if ( status ) continue;
+		if ( status ) {
+			continue;
+		}
 		// . this serious error should make the whole query fail
 		// . must allow other replies to come in though, so keep going
 		m_numReplies++;
-		log("query: Multicast Msg3a had error: %s",mstrerror(g_errno));
+		log("query: Multicast Msg3a had error: %s", mstrerror(g_errno));
 		m_errno = g_errno;
 		g_errno = 0;
 	}
+
 	// return false if blocked on a reply
-	if ( m_numReplies < m_numQueriedHosts ) return false;//indexdbSplit )
+	if ( m_numReplies < m_numQueriedHosts ) {
+		return false;//indexdbSplit )
+	}
+
 	// . otherwise, we did not block... error?
 	// . it must have been an error or just no new lists available!!
 	// . if we call gotAllShardReplies() here, and we were called by
@@ -414,6 +420,7 @@ bool Msg3a::getDocIds ( Msg39Request *r          ,
 	//return gotAllShardReplies();
 	return true;
 }
+
 
 
 void gotReplyWrapper3a ( void *state , void *state2 ) {
@@ -658,7 +665,7 @@ bool Msg3a::gotAllShardReplies ( ) {
 // . Msg51 remembers clusterRecs from previous call to avoid repeating lookups
 // . returns false if blocked, true otherwise
 // . sets g_errno and returns true on error
-bool Msg3a::mergeLists ( ) {
+bool Msg3a::mergeLists() {
 
 	// time how long the merge takes
 	if ( m_debug ) {
@@ -777,13 +784,26 @@ bool Msg3a::mergeLists ( ) {
 		// . skip exhausted lists
 		// . these both should be NULL if reply was skipped because
 		//   we did a gbdocid:| query
-		if ( diPtr[j] >= diEnd[j] ) continue;
+		if ( diPtr[j] >= diEnd[j] ) {
+			continue;
+		}
 		// compare the score
-		if ( maxj == -1 ) { maxj = j; continue; }
-		if ( *rsPtr[j] < *rsPtr[maxj] ) continue;
-		if ( *rsPtr[j] > *rsPtr[maxj] ){ maxj = j; continue; }
+		if ( maxj == -1 ) { 
+			maxj = j; 
+			continue; 
+		}
+		if ( *rsPtr[j] < *rsPtr[maxj] ) {
+			continue;
+		}
+		if ( *rsPtr[j] > *rsPtr[maxj] ) { 
+			maxj = j; 
+			continue; 
+		}
 		// prefer lower docids on top
-		if ( *diPtr[j] < *diPtr[maxj] ) { maxj = j; continue;}
+		if ( *diPtr[j] < *diPtr[maxj] ) { 
+			maxj = j; 
+			continue;
+		}
 	}
 
 	if ( maxj == -1 ) {
@@ -899,7 +919,11 @@ bool Msg3a::mergeLists ( ) {
 		// clear this out
 		//m_eventIdBits[m_numDocIds].clear();
 		// set this for use below
-		hslot = m_numDocIds;
+		
+		//@@@ BR: Something is wrong here... the assignment below is never used.
+		// Found by Coverity and disabled.
+//		hslot = m_numDocIds;
+
 		// point to next available slot to add to
 		m_numDocIds++;
 	}

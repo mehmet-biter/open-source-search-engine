@@ -1004,7 +1004,7 @@ bool RdbBuckets::selfTest(bool thorough, bool core) {
 
 		totalNumKeys += b->getNumKeys();
 		const char *kk = b->getEndKey();
-		if (i > 0 && lastcoll == b->getCollnum() && KEYCMPNEGEQ(last, kk, m_ks) >= 0) {
+		if (i > 0 && lastcoll == b->getCollnum() && last && KEYCMPNEGEQ(last, kk, m_ks) >= 0) {
 			log(LOG_WARN, "rdbbuckets last key: %016" PRIx64"%08" PRIx32" num keys: %" PRId32,
 			    *(int64_t *)(kk + (sizeof(int32_t))),
 			    *(int32_t *)kk, b->getNumKeys());
@@ -1578,7 +1578,7 @@ bool RdbBucket::deleteNode(int32_t i) {
 	char *data = NULL;
 	int32_t dataSize = m_parent->getFixedDataSize();
 	if (dataSize != 0) {
-		data = rec + m_parent->getKeySize();
+		data = *(char**)(rec + m_parent->getKeySize());
 
 		if (dataSize == -1) {
 			dataSize = *(int32_t*)(data + sizeof(char*));
@@ -1912,10 +1912,13 @@ bool RdbBuckets::fastSave_r() {
 
 	// close it up
 	close(fd);
-	// now fucking rename it
+
 	char s2[1024];
 	sprintf(s2, "%s/%s-buckets-saved.dat", m_dir, m_dbname);
-	::rename(s, s2); //fuck yeah!
+	if( ::rename(s, s2) == -1 ) {
+		log(LOG_LOGIC,"%s:%s: ERROR %d renaming [%s] to [%s]", __FILE__, __func__, errno, s, s2);
+		gbshutdownAbort(true);
+	}
 
 	log(LOG_INFO, "db: RdbBuckets saved %" PRId32" keys, %" PRId64" bytes for %s", getNumKeys(), offset, m_dbname);
 

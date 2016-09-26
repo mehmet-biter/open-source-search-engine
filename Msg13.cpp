@@ -61,6 +61,11 @@ RdbCache *Msg13::getHttpCacheOthers() { return &s_httpCacheOthers; }
 
 Msg13::Msg13() {
 	m_replyBuf = NULL;
+	m_state = NULL;
+	m_callback = NULL;
+	m_request = NULL;
+	m_replyBufSize = 0;
+	m_replyBufAllocSize = 0;
 }
 
 Msg13::~Msg13() {
@@ -1386,9 +1391,7 @@ void gotHttpReply2 ( void *state ,
 	     // if we got iframes we can't tell if content changed
 	     ! hasIframe2 ) {
 		// compute it
-		int32_t ch32 = getContentHash32Fast( (unsigned char *)content ,
-						  contentLen ,
-						  niceness );
+		int32_t ch32 = getContentHash32Fast( (unsigned char *)content , contentLen);
 		// unchanged?
 		if ( ch32 == r->m_contentHash32 ) {
 			// record in the stats

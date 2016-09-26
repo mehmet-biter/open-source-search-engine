@@ -81,8 +81,7 @@ class Images {
 	void setCandidates ( class Url      *pageUrl , 
 			     class Words    *words , 
 			     class Xml      *xml ,
-			     class Sections *sections ,
-			     class XmlDoc *xd );
+			     class Sections *sections );
 	
 	// . returns false if blocked, true otherwise
 	// . sets errno on error
@@ -93,8 +92,6 @@ class Images {
 			    int64_t docId ,
 			    class XmlDoc *xd ,
 			    collnum_t collnum,
-			    //char **statusPtr ,
-			    int32_t hopCount,
 			    void   *state ,
 			    void   (*callback)(void *state) );
 

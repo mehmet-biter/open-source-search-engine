@@ -147,7 +147,7 @@ bool Profiler:: readSymbolTable(){
 }
 
 
-bool Profiler:: getFileHeader (FILE * file){
+bool Profiler::getFileHeader (FILE * file){
 	/* Read in the identity array.  */
 	if (fread (m_elfHeader.e_ident, EI_NIDENT, 1, file) != 1)
 		return 0;
@@ -158,6 +158,8 @@ bool Profiler:: getFileHeader (FILE * file){
 	//gb is supposed to be 32-bit
 	/* Read in the rest of the header.  */
 	Elf32_External_Ehdr ehdr32;
+	
+	memset(&ehdr32, 0, sizeof(ehdr32));
 	
 	if (fread (ehdr32.e_type, sizeof (ehdr32) - EI_NIDENT, 1, file) != 1)
 		return 0;
@@ -276,22 +278,22 @@ bool Profiler::processSymbolTable (FILE * file){
 				    string_sec->sh_offset);
 				return 0;
 			}
-			strtab = (char *) mmalloc (string_sec->sh_size,
-						   "ProfilerG");
+			strtab = (char *) mmalloc(string_sec->sh_size+1, "ProfilerG");
 			if (strtab == NULL){
 				log(LOG_INIT,"admin: Out of memory allocating "
 				    "%" PRId32" bytes for %s", string_sec->sh_size,
 				    "string table");
+				return 0;
 			}
-			if (fread ( strtab, string_sec->sh_size, 1, 
-				    m_file) != 1 ){
+			if (fread ( strtab, string_sec->sh_size, 1, m_file) != 1 ){
 				log(LOG_INIT,"admin: Unable to read in %" PRId32" "
 				    "bytes of %s", string_sec->sh_size,
 				    "string table");
-				mfree (strtab,string_sec->sh_size,"ProfilerG");
+				mfree (strtab,string_sec->sh_size+1,"ProfilerG");
 				strtab = NULL;
 				return 0;
 			}
+			strtab[ string_sec->sh_size ] = '\0';
 		}
 		for (si = 0, psym = symtab;
 		     si < section->sh_size / section->sh_entsize;
@@ -315,8 +317,7 @@ bool Profiler::processSymbolTable (FILE * file){
 				}
 				else{
 					FnInfo fnInfoTmp;
-					strncpy(fnInfoTmp.m_fnName,
-						strtab+psym->st_name,255);
+					strncpy(fnInfoTmp.m_fnName, strtab+psym->st_name,255);
 					
 					char* end = strnstr( fnInfoTmp.m_fnName, "__", 255 );
 					if ( end ) {
@@ -349,7 +350,7 @@ bool Profiler::processSymbolTable (FILE * file){
 		       (section->sh_size/section->sh_entsize)*sizeof(Elf32_External_Sym),
 		       "ProfilerF");
 		if (strtab != m_stringTable)
-			mfree (strtab,string_sec->sh_size,"ProfilerG");
+			mfree (strtab,string_sec->sh_size+1,"ProfilerG");
 	}
 	gbqsort(m_addressMap, m_lastAddressMapIndex, sizeof(uint32_t), s_addressMapCmp);
       	return 1;
@@ -730,7 +731,7 @@ bool sendPageProfiler ( TcpSocket *s , HttpRequest *r ) {
 	const char *coll = r->getString ("c");
 	int32_t collLen;
 	if ( ! coll || ! coll[0] ) {
-		coll = g_conf.getDefaultColl( r->getHost(), r->getHostLen() );
+		coll = g_conf.getDefaultColl( );
 	}
 
 	collLen = strlen(coll);

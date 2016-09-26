@@ -63,10 +63,8 @@ class Conf {
 	// reset all values to their defaults
 	void reset();
 
-	// . get the default collection based on hostname
-	//   will look for the hostname in each collection for a match
-	//   no match defaults to default collection
-	const char *getDefaultColl ( char *hostname, int32_t hostnameLen );
+	// defaults to default collection
+	const char *getDefaultColl ( );
 
 	// max amount of memory we can use
 	size_t m_maxMem;
