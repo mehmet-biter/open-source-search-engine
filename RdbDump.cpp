@@ -5,6 +5,53 @@
 #include "Statsdb.h"
 
 
+RdbDump::RdbDump() {
+   	m_isDumping = false; 
+
+	// Coverity
+	m_writing = false;
+	m_tree = NULL;
+	m_buckets = NULL;
+	m_treeIndex = NULL;
+	m_map = NULL;
+	m_index = NULL;
+	m_maxBufSize = 0;
+	m_state = NULL;
+	m_callback = NULL;
+	m_offset = 0;
+	m_file = NULL;
+	m_list = NULL;
+	m_buf = NULL;
+	m_verifyBuf = NULL;
+	m_verifyBufSize = 0;
+	m_bytesToWrite = 0;
+	m_bytesWritten = 0;
+	memset(m_firstKeyInQueue, 0, sizeof(m_firstKeyInQueue));
+	m_lastKeyInQueue = NULL;
+	memset(m_prevLastKey, 0, sizeof(m_prevLastKey));
+	m_nextNode = 0;
+	memset(m_nextKey, 0, sizeof(m_nextKey));
+	m_rolledOver = false;
+	m_fd = 0;
+	memset(&m_fstate, 0, sizeof(m_fstate));
+	m_niceness = 0;
+	m_useHalfKeys = false;
+	m_hacked = false;
+	m_hacked12 = false;
+	m_totalPosDumped = 0;
+	m_totalNegDumped = 0;
+	m_t1 = 0;
+	m_numPosRecs = 0;
+	m_numNegRecs = 0;
+	m_rdb = NULL;
+	m_collnum = 0;
+	m_doCollCheck = false;
+	m_tried = false;
+	m_isSuspended = false;
+	m_ks = 0;
+}
+
+
 // . return false if blocked, true otherwise
 // . sets g_errno on error
 bool RdbDump::set(collnum_t collnum,
