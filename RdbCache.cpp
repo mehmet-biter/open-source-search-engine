@@ -20,19 +20,21 @@ bool g_cacheWritesEnabled = true;
 static const int64_t m_maxColls = (1LL << (sizeof(collnum_t)*8));
 
 
-RdbCache::RdbCache ()
-  : m_dbname(NULL)
-{
+RdbCache::RdbCache() : m_dbname(NULL) {
 	m_totalBufSize = 0;
 	m_numBufs      = 0;
 	m_ptrs         = NULL;
 	m_maxMem       = 0;
 	m_numPtrsMax   = 0;
+	memset(m_bufs, 0, sizeof(m_bufs));
+	memset(&m_bufSizes, 0, sizeof(m_bufSizes));
 	reset();
 	m_needsSave    = false;
 }
 
-RdbCache::~RdbCache ( ) { reset (); }
+RdbCache::~RdbCache ( ) { 
+	reset (); 
+}
 
 #define BUFSIZE (128*1024*1024)
 //#define BUFSIZE (100000)
@@ -44,13 +46,18 @@ void RdbCache::reset ( ) {
 	//	log("db: resetting record cache");
 	m_offset = 0;
 	m_tail   = 0;
-	for ( int32_t i = 0 ; i < m_numBufs ; i++ )
+	for ( int32_t i = 0 ; i < m_numBufs ; i++ ) {
 		// all bufs, but not necessarily last, are BUFSIZE bytes big
 		mfree ( m_bufs[i] , m_bufSizes[i] , "RdbCache" );
+	}
 	m_numBufs     = 0;
 	m_totalBufSize= 0;
+	memset(m_bufs, 0, sizeof(m_bufs));
+	memset(&m_bufSizes, 0, sizeof(m_bufSizes));
 
-	if ( m_ptrs ) mfree ( m_ptrs , m_numPtrsMax*sizeof(char *),"RdbCache");
+	if ( m_ptrs ) {
+		mfree ( m_ptrs , m_numPtrsMax*sizeof(char *),"RdbCache");
+	}
 	m_ptrs        = NULL;
 	m_numPtrsUsed = 0;
 	// can't reset this, breaks the load!
@@ -67,6 +74,19 @@ void RdbCache::reset ( ) {
 
 	// assume no need to call convertCache()
 	m_convert = false;
+
+	// Coverity
+	m_convertNumPtrsMax = 0;
+	m_convertMaxMem = 0;
+	m_errno = 0;
+	m_threshold = 0;
+	m_fixedDataSize = 0;
+	m_supportLists = false;
+	m_useHalfKeys = false;
+	m_useDisk = false;
+	m_wrapped = 0;
+	m_cks = 0;
+	m_dks = 0;
 }
 
 bool RdbCache::init ( int32_t  maxMem        ,
