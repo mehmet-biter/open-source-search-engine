@@ -33,7 +33,8 @@ Collectiondb::Collectiondb ( ) {
 	m_numCollsSwappedOut = 0;
 	m_initializing = false;
 	m_needsSave = false;
-	
+	m_recs = NULL;
+
 	// sanity
 	if ( RDB_END2 >= RDB_END ) {
 		return;
