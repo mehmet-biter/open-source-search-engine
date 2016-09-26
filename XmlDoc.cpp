@@ -8543,7 +8543,7 @@ char **XmlDoc::getContent ( ) {
 	return &m_content;
 }
 
-char getContentTypeFromContent ( char *p ) {
+static char getContentTypeFromContent(char *p) {
 	char ctype = 0;
 	// max
 	char *pmax = p + 100;

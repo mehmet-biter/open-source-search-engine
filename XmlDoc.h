@@ -115,9 +115,6 @@ int gbcompress   ( unsigned char *dest      ,
 
 uint32_t score8to32 ( uint8_t score8 );
 
-// for Msg13.cpp
-char getContentTypeFromContent ( char *p ) ;
-
 // . for Msg13.cpp
 // . *pend must equal \0
 int32_t getContentHash32Fast ( unsigned char *p , int32_t plen ) ;
