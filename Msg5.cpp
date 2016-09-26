@@ -40,6 +40,34 @@ void Msg5::reset() {
 	m_numListPtrs = 0;
 	// and the tree list
 	m_treeList.freeList();
+	
+	// Coverity
+	m_calledCallback = 0;
+	m_includeTree = false;
+	m_maxCacheAge = 0;
+	m_numFiles = 0;
+	m_startFileNum = 0;
+	m_minRecSizes = 0;
+	m_rdbId = RDB_NONE;
+	m_newMinRecSizes = 0;
+	m_round = 0;
+	m_totalSize = 0;
+	m_readAbsolutelyNothing = false;
+	m_niceness = 0;
+	m_doErrorCorrection = false;
+	m_hadCorruption = false;
+	m_msg0 = NULL;
+	m_startTime = 0;
+	memset(m_listPtrs, 0, sizeof(m_listPtrs));
+	m_removeNegRecs = false;
+	m_oldListSize = 0;
+	m_compensateForMerge = false;
+	m_maxRetries = 0;
+	m_isRealMerge = false;
+	m_ks = 0;
+	m_allowPageCache = false;
+	m_collnum = 0;
+	m_errno = 0;
 }
 
 
