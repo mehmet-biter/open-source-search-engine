@@ -42,6 +42,11 @@ void Msg5::reset() {
 	m_treeList.freeList();
 	
 	// Coverity
+	m_list = NULL;
+	memset(m_startKey, 0, sizeof(m_startKey));
+	memset(m_endKey, 0, sizeof(m_endKey));
+	m_callback = NULL;
+	m_state = NULL;
 	m_calledCallback = 0;
 	m_includeTree = false;
 	m_maxCacheAge = 0;
