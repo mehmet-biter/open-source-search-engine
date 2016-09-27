@@ -35,6 +35,153 @@ Parms g_parms;
 #include "Clusterdb.h"
 #include "Collectiondb.h"
 
+Parm::Parm() {
+	// Coverity
+	m_title = NULL;
+	m_desc = NULL;
+	m_cgi = NULL;
+	m_xml = NULL;
+	m_off = 0;
+	m_arrayCountOffset = 0;
+	m_colspan = 0;
+	m_type = 0;
+	m_page = 0;
+	m_obj = 0;
+	m_max = 0;
+	m_fixed = 0;
+	m_size = 0;
+	m_def = NULL;
+	m_defOff = 0;
+	m_cast = 0;
+	m_units = NULL;
+	m_addin = 0;
+	m_rowid = 0;
+	m_rdonly = 0;
+	m_hdrs = 0;
+	m_flags = 0;
+	m_parmNum = 0;
+	m_func = NULL;
+	m_func2 = NULL;
+	m_plen = 0;
+	m_group = false;
+	m_save = 0;
+	m_min = 0;
+	m_sminc = 0;
+	m_smaxc = 0;
+	m_smin = 0;
+	m_smax = 0;
+	m_sprpg = 0;
+	m_sprpp = 0;
+	m_sync = false;
+	m_hash = 0;
+	m_cgiHash = 0;
+}
+
+Parm::~Parm() {
+}
+
+
+int32_t Parm::getNumInArray ( collnum_t collnum ) {
+	char *obj = (char *)&g_conf;
+	if ( m_obj == OBJ_COLL ) {
+		CollectionRec *cr = g_collectiondb.getRec ( collnum );
+		if ( ! cr ) return -1;
+		obj = (char *)cr;
+	}
+	
+	// beautiful pragma pack(4)/32-bit dependent original code. return *(int32_t *)(obj+m_off-4);
+	return *(int32_t *)(obj + m_arrayCountOffset);
+
+}
+
+
+bool Parm::printVal ( SafeBuf *sb , collnum_t collnum , int32_t occNum ) {
+
+	CollectionRec *cr = NULL;
+	if ( collnum >= 0 ) cr = g_collectiondb.getRec ( collnum );
+
+	// no value if no storage record offset
+	//if ( m_off < 0 ) return true;
+
+	char *base;
+	if ( m_obj == OBJ_COLL ) base = (char *)cr;
+	else                     base = (char *)&g_conf;
+
+	if ( ! base ) {
+		log("parms: no collrec (%" PRId32") to change parm",(int32_t)collnum);
+		g_errno = ENOCOLLREC;
+		return true;
+	}
+
+	// point to where to copy the data into collrect
+	char *val = (char *)base + m_off;
+
+	if ( isArray() && occNum < 0 ) {
+		log("parms: bad occnum for %s",m_title);
+		return false;
+	}
+
+	// add array index to ptr
+	if ( isArray() ) val += m_size * occNum;
+
+
+	if ( m_type == TYPE_SAFEBUF ) {
+		// point to it
+		SafeBuf *sb2 = (SafeBuf *)val;
+		return sb->safePrintf("%s",sb2->getBufStart());
+	}
+
+	if ( m_type == TYPE_STRING ||
+	     m_type == TYPE_STRINGBOX ||
+	     m_type == TYPE_SAFEBUF ||
+	     m_type == TYPE_STRINGNONEMPTY )
+		return sb->safePrintf("%s",val);
+
+	if ( m_type == TYPE_LONG || m_type == TYPE_LONG_CONST )
+		return sb->safePrintf("%" PRId32,*(int32_t *)val);
+
+	if ( m_type == TYPE_DATE )
+		return sb->safePrintf("%" PRId32,*(int32_t *)val);
+
+	if ( m_type == TYPE_DATE2 )
+		return sb->safePrintf("%" PRId32,*(int32_t *)val);
+
+	if ( m_type == TYPE_FLOAT )
+		return sb->safePrintf("%f",*(float *)val);
+
+	if ( m_type == TYPE_LONG_LONG )
+		return sb->safePrintf("%" PRId64,*(int64_t *)val);
+
+	if ( m_type == TYPE_CHARPTR ) {
+		if ( val ) return sb->safePrintf("%s",val);
+		return true;
+	}
+
+	if ( m_type == TYPE_BOOL ||
+	     m_type == TYPE_BOOL2 ||
+	     m_type == TYPE_CHECKBOX ||
+	     m_type == TYPE_PRIORITY2 ||
+	     m_type == TYPE_UFP ||
+	     m_type == TYPE_CHAR )
+		return sb->safePrintf("%hhx",*val);
+
+	if ( m_type == TYPE_CMD )
+		return sb->safePrintf("CMD");
+
+	if ( m_type == TYPE_IP )
+		// may print 0.0.0.0
+		return sb->safePrintf("%s",iptoa(*(int32_t *)val) );
+
+	log("parms: missing parm type!!");
+
+	g_process.shutdownAbort(true);
+}
+
+
+
+
+
+
 //
 // new functions to extricate info from parm recs
 //
@@ -677,7 +824,13 @@ Parms::Parms ( ) {
 	m_isDefaultLoaded = false;
 	m_inSyncWithHost0 = false;
 	m_triedToSync     = false;
+
+	// Coverity
+	m_numParms = 0;
+	memset(&m_searchParms, 0, sizeof(m_searchParms));
+	m_numSearchParms = 0;
 }
+
 
 void Parms::detachSafeBufs ( CollectionRec *cr ) {
 	for ( int32_t i = 0 ; i < m_numParms ; i++ ) {
@@ -12021,18 +12174,6 @@ bool Parms::makeSyncHashList ( SafeBuf *hashList ) {
 	return true;
 }
 
-int32_t Parm::getNumInArray ( collnum_t collnum ) {
-	char *obj = (char *)&g_conf;
-	if ( m_obj == OBJ_COLL ) {
-		CollectionRec *cr = g_collectiondb.getRec ( collnum );
-		if ( ! cr ) return -1;
-		obj = (char *)cr;
-	}
-	
-	// beautiful pragma pack(4)/32-bit dependent original code. return *(int32_t *)(obj+m_off-4);
-	return *(int32_t *)(obj + m_arrayCountOffset);
-
-}
 
 // . we use this for syncing parms between hosts
 // . called by convertAllCollRecsToParmList
@@ -12333,87 +12474,6 @@ bool Parms::updateParm ( char *rec , WaitEntry *we ) {
 	return true;
 }
 
-bool Parm::printVal ( SafeBuf *sb , collnum_t collnum , int32_t occNum ) {
-
-	CollectionRec *cr = NULL;
-	if ( collnum >= 0 ) cr = g_collectiondb.getRec ( collnum );
-
-	// no value if no storage record offset
-	//if ( m_off < 0 ) return true;
-
-	char *base;
-	if ( m_obj == OBJ_COLL ) base = (char *)cr;
-	else                     base = (char *)&g_conf;
-
-	if ( ! base ) {
-		log("parms: no collrec (%" PRId32") to change parm",(int32_t)collnum);
-		g_errno = ENOCOLLREC;
-		return true;
-	}
-
-	// point to where to copy the data into collrect
-	char *val = (char *)base + m_off;
-
-	if ( isArray() && occNum < 0 ) {
-		log("parms: bad occnum for %s",m_title);
-		return false;
-	}
-
-	// add array index to ptr
-	if ( isArray() ) val += m_size * occNum;
-
-
-	if ( m_type == TYPE_SAFEBUF ) {
-		// point to it
-		SafeBuf *sb2 = (SafeBuf *)val;
-		return sb->safePrintf("%s",sb2->getBufStart());
-	}
-
-	if ( m_type == TYPE_STRING ||
-	     m_type == TYPE_STRINGBOX ||
-	     m_type == TYPE_SAFEBUF ||
-	     m_type == TYPE_STRINGNONEMPTY )
-		return sb->safePrintf("%s",val);
-
-	if ( m_type == TYPE_LONG || m_type == TYPE_LONG_CONST )
-		return sb->safePrintf("%" PRId32,*(int32_t *)val);
-
-	if ( m_type == TYPE_DATE )
-		return sb->safePrintf("%" PRId32,*(int32_t *)val);
-
-	if ( m_type == TYPE_DATE2 )
-		return sb->safePrintf("%" PRId32,*(int32_t *)val);
-
-	if ( m_type == TYPE_FLOAT )
-		return sb->safePrintf("%f",*(float *)val);
-
-	if ( m_type == TYPE_LONG_LONG )
-		return sb->safePrintf("%" PRId64,*(int64_t *)val);
-
-	if ( m_type == TYPE_CHARPTR ) {
-		if ( val ) return sb->safePrintf("%s",val);
-		return true;
-	}
-
-	if ( m_type == TYPE_BOOL ||
-	     m_type == TYPE_BOOL2 ||
-	     m_type == TYPE_CHECKBOX ||
-	     m_type == TYPE_PRIORITY2 ||
-	     m_type == TYPE_UFP ||
-	     m_type == TYPE_CHAR )
-		return sb->safePrintf("%hhx",*val);
-
-	if ( m_type == TYPE_CMD )
-		return sb->safePrintf("CMD");
-
-	if ( m_type == TYPE_IP )
-		// may print 0.0.0.0
-		return sb->safePrintf("%s",iptoa(*(int32_t *)val) );
-
-	log("parms: missing parm type!!");
-
-	g_process.shutdownAbort(true);
-}
 
 static bool printUrlExpressionExamples ( SafeBuf *sb ) {
 		sb->safePrintf(
