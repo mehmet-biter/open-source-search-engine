@@ -1135,6 +1135,8 @@ CollectionRec::CollectionRec() {
 	reset();
 
 	// Coverity
+	m_nextActive = NULL;
+	m_needsSave = false;
 	m_urlFiltersHavePageCounts = false;
 	m_collLen = 0;
 	m_dailyMergeStarted = 0;
