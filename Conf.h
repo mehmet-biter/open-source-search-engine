@@ -148,6 +148,7 @@ class Conf {
 
 	int32_t  m_maxCoordinatorThreads;
 	int32_t  m_maxCpuThreads;
+	int32_t  m_maxSummaryThreads;
 	int32_t  m_maxIOThreads;
 	int32_t  m_maxExternalThreads;
 

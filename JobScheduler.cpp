@@ -242,6 +242,7 @@ class JobScheduler_impl {
 	
 	JobQueue   coordinator_job_queue;
 	JobQueue   cpu_job_queue;
+	JobQueue   summary_job_queue;
 	JobQueue   io_job_queue;
 	JobQueue   external_job_queue;
 	
@@ -253,6 +254,7 @@ class JobScheduler_impl {
 	
 	ThreadPool coordinator_thread_pool;
 	ThreadPool cpu_thread_pool;
+	ThreadPool summary_thread_pool;
 	ThreadPool io_thread_pool;
 	ThreadPool external_thread_pool;
 	
@@ -263,10 +265,11 @@ class JobScheduler_impl {
 	
 	bool submit(thread_type_t thread_type, JobEntry &e);
 public:
-	JobScheduler_impl(unsigned num_coordinator_threads, unsigned num_cpu_threads, unsigned num_io_threads, unsigned num_external_threads, job_done_notify_t job_done_notify)
+	JobScheduler_impl(unsigned num_coordinator_threads, unsigned num_cpu_threads, unsigned num_summary_threads, unsigned num_io_threads, unsigned num_external_threads, job_done_notify_t job_done_notify)
 	  : mtx PTHREAD_MUTEX_INITIALIZER,
 	    coordinator_job_queue(),
 	    cpu_job_queue(),
+	    summary_job_queue(),
 	    io_job_queue(),
 	    external_job_queue(),
 	    running_set(),
@@ -274,9 +277,10 @@ public:
 	    num_io_write_jobs_running(0),
 	    coordinator_thread_pool("coord",num_coordinator_threads,&coordinator_job_queue,&running_set,&exit_set,&num_io_write_jobs_running,&mtx,job_done_notify),
 	    cpu_thread_pool("cpu",num_cpu_threads,&cpu_job_queue,&running_set,&exit_set,&num_io_write_jobs_running,&mtx,job_done_notify),
+	    summary_thread_pool("summary",num_summary_threads,&summary_job_queue,&running_set,&exit_set,&num_io_write_jobs_running,&mtx,job_done_notify),
 	    io_thread_pool("io",num_io_threads,&io_job_queue,&running_set,&exit_set,&num_io_write_jobs_running,&mtx,job_done_notify),
 	    external_thread_pool("ext",num_external_threads,&external_job_queue,&running_set,&exit_set,&num_io_write_jobs_running,&mtx,job_done_notify),
-	    no_threads(num_cpu_threads==0 && num_io_threads==0 && num_external_threads==0),
+	    no_threads(num_cpu_threads==0 && num_summary_threads==0 && num_io_threads==0 && num_external_threads==0),
 	    new_jobs_allowed(true)
 	{
 	}
@@ -329,12 +333,14 @@ JobScheduler_impl::~JobScheduler_impl() {
 	//Then tell the worker threads to stop executing more jobs
 	coordinator_thread_pool.initiate_stop();
 	cpu_thread_pool.initiate_stop();
+	summary_thread_pool.initiate_stop();
 	io_thread_pool.initiate_stop();
 	external_thread_pool.initiate_stop();
 
 	//Then wake them if they are sleeping
 	pthread_cond_broadcast(&coordinator_job_queue.cond_not_empty);
 	pthread_cond_broadcast(&cpu_job_queue.cond_not_empty);
+	pthread_cond_broadcast(&summary_job_queue.cond_not_empty);
 	pthread_cond_broadcast(&io_job_queue.cond_not_empty);
 	pthread_cond_broadcast(&external_job_queue.cond_not_empty);
 
@@ -348,6 +354,10 @@ JobScheduler_impl::~JobScheduler_impl() {
 		while(!cpu_job_queue.empty()) {
 			exit_set.push_back(std::make_pair(cpu_job_queue.back(),job_exit_cancelled));
 			cpu_job_queue.pop_back();
+		}
+		while(!summary_job_queue.empty()) {
+			exit_set.push_back(std::make_pair(summary_job_queue.back(),job_exit_cancelled));
+			summary_job_queue.pop_back();
 		}
 		while(!io_job_queue.empty()) {
 			exit_set.push_back(std::make_pair(io_job_queue.back(),job_exit_cancelled));
@@ -366,6 +376,7 @@ JobScheduler_impl::~JobScheduler_impl() {
 	//Then wait  for worker threads to finished
 	coordinator_thread_pool.join_all();
 	cpu_thread_pool.join_all();
+	summary_thread_pool.join_all();
 	io_thread_pool.join_all();
 	external_thread_pool.join_all();
 
@@ -393,7 +404,7 @@ bool JobScheduler_impl::submit(thread_type_t thread_type, JobEntry &e)
 			case thread_type_query_constrain:    job_queue = &cpu_job_queue;      break;
 			case thread_type_query_merge:        job_queue = &cpu_job_queue;      break;
 			case thread_type_query_intersect:    job_queue = &cpu_job_queue;      break;
-			case thread_type_query_summary:      job_queue = &cpu_job_queue;      break;
+			case thread_type_query_summary:      job_queue = &summary_job_queue;  break;
 			case thread_type_spider_read:        job_queue = &cpu_job_queue;      break;
 			case thread_type_spider_write:       job_queue = &cpu_job_queue;      break;
 			case thread_type_spider_filter:      job_queue = &external_job_queue; break;
@@ -519,7 +530,7 @@ bool JobScheduler_impl::is_reading_file(const BigFile *bf)
 unsigned JobScheduler_impl::num_queued_jobs() const
 {
 	ScopedLock sl(mtx);
-	return cpu_job_queue.size() + io_job_queue.size() + external_job_queue.size();
+	return cpu_job_queue.size() + summary_job_queue.size() + io_job_queue.size() + external_job_queue.size();
 }
 
 void JobScheduler_impl::cleanup_finished_jobs()
@@ -569,6 +580,8 @@ std::vector<JobDigest> JobScheduler_impl::query_job_digests() const
 		v.push_back(job_entry_to_job_digest(je,JobDigest::job_state_queued));
 	for(const auto &je : cpu_job_queue)
 		v.push_back(job_entry_to_job_digest(je,JobDigest::job_state_queued));
+	for(const auto &je : summary_job_queue)
+		v.push_back(job_entry_to_job_digest(je,JobDigest::job_state_queued));
 	for(const auto &je : io_job_queue)
 		v.push_back(job_entry_to_job_digest(je,JobDigest::job_state_queued));
 	for(const auto &je : external_job_queue)
@@ -611,10 +624,10 @@ JobScheduler::~JobScheduler()
 }
 
 
-bool JobScheduler::initialize(unsigned num_coordinator_threads, unsigned num_cpu_threads, unsigned num_io_threads, unsigned num_external_threads, job_done_notify_t job_done_notify)
+bool JobScheduler::initialize(unsigned num_coordinator_threads, unsigned num_cpu_threads, unsigned num_summary_threads, unsigned num_io_threads, unsigned num_external_threads, job_done_notify_t job_done_notify)
 {
 	assert(!impl);
-	impl = new JobScheduler_impl(num_coordinator_threads,num_cpu_threads,num_io_threads,num_external_threads,job_done_notify);
+	impl = new JobScheduler_impl(num_coordinator_threads,num_cpu_threads,num_summary_threads,num_io_threads,num_external_threads,job_done_notify);
 	return true;
 }
 
