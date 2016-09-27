@@ -3,9 +3,37 @@
 #include "Process.h"
 #include "Spider.h"
 
-RdbMerge::RdbMerge   () {}
-RdbMerge::~RdbMerge  () {}
-void RdbMerge::reset () { m_isMerging = false; m_isSuspended = false; }
+RdbMerge::RdbMerge() {
+	reset();
+}
+
+RdbMerge::~RdbMerge() {
+}
+
+void RdbMerge::reset() {
+	m_isMerging = false;
+	m_isSuspended = false;
+
+	// Coverity
+	m_numThreads = 0;
+	m_startFileNum = 0;
+	m_numFiles = 0;
+	m_fixedDataSize = 0;
+	m_target = NULL;
+	m_targetMap = NULL;
+	m_targetIndex = NULL;
+	memset(m_startKey, 0, sizeof(m_startKey));
+	memset(m_endKey, 0, sizeof(m_endKey));
+	m_isMerging = false;
+	m_isSuspended = false;
+	m_isReadyToSave = false;
+	m_niceness = 0;
+	m_rdbId = RDB_NONE;
+	m_collnum = 0;
+	m_ks = 0;
+}
+
+
 
 // . buffer is used for reading and writing
 // . return false if blocked, true otherwise
