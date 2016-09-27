@@ -3337,6 +3337,7 @@ Links::Links() {
 	m_doQuickSet = false;
 
 	// Coverity
+	m_parentUrl = NULL;
 	m_xml = NULL;
 	m_parentIsPermalink = false;
 	m_baseSite = NULL;
