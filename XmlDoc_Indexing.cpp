@@ -624,8 +624,6 @@ bool XmlDoc::hashMetaTags ( HashTableX *tt ) {
 		// after version 45 or more, do not allow gbrss
 		// meta tags, because those are now reserved for us
 		if ( code == FIELD_GBRSS ) continue;
-		// allow gbrss: fields for earlier versions though
-		if ( code == FIELD_GBRSS ) code = FIELD_GENERIC;
 		// . do not allow reserved tag names
 		// . title,url,suburl,
 		if ( code != FIELD_GENERIC ) continue;
