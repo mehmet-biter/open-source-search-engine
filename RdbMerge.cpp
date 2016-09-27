@@ -4,6 +4,7 @@
 #include "Spider.h"
 
 RdbMerge::RdbMerge() {
+	m_doneMerging     = false;
 	reset();
 }
 
