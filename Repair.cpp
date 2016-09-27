@@ -83,6 +83,7 @@ static Rdb **getAllRdbs ( int32_t *nsr ) {
 
 Repair::Repair() {
 	// Coverity
+	m_completed = false;
 	m_needsCallback = false;
 	m_docQuality = 0;
 	m_docId = 0;
