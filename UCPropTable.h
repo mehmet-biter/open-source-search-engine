@@ -26,7 +26,7 @@ public:
 	size_t getSize() const { return getStoredSize() + m_numTables*sizeof(char*); }
 	size_t getStoredSize() const;
 	size_t serialize(char *buf, size_t bufSize) const;
-	size_t deserialize(const char *buf, size_t bufSize);
+	size_t deserialize(const void *buf, size_t bufSize);
 
 private:
 	unsigned char **m_data;
