@@ -30,6 +30,17 @@ RdbCache::RdbCache() : m_dbname(NULL) {
 	memset(&m_bufSizes, 0, sizeof(m_bufSizes));
 	reset();
 	m_needsSave    = false;
+	m_convertNumPtrsMax = 0;
+	m_convertMaxMem = 0;
+	m_errno = 0;
+	m_threshold = 0;
+	m_fixedDataSize = 0;
+	m_supportLists = false;
+	m_useHalfKeys = false;
+	m_useDisk = false;
+	m_wrapped = 0;
+	m_cks = 0;
+	m_dks = 0;
 }
 
 RdbCache::~RdbCache ( ) { 
@@ -74,19 +85,6 @@ void RdbCache::reset ( ) {
 
 	// assume no need to call convertCache()
 	m_convert = false;
-
-	// Coverity
-	m_convertNumPtrsMax = 0;
-	m_convertMaxMem = 0;
-	m_errno = 0;
-	m_threshold = 0;
-	m_fixedDataSize = 0;
-	m_supportLists = false;
-	m_useHalfKeys = false;
-	m_useDisk = false;
-	m_wrapped = 0;
-	m_cks = 0;
-	m_dks = 0;
 }
 
 bool RdbCache::init ( int32_t  maxMem        ,
