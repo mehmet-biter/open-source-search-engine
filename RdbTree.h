@@ -146,7 +146,7 @@ public:
 	// . returns false iff not found 
 	// . frees m_data[node] if freeIt is true
 	void deleteNode(int32_t node, bool freeData);
-	int32_t deleteNode(collnum_t collnum, const char *key, bool freeData);
+	bool deleteNode(collnum_t collnum, const char *key, bool freeData);
 
 	// delete all nodes with keys in [startKey,endKey]
 	void deleteNodes(collnum_t collnum, const char *startKey, const char *endKey, bool freeData);

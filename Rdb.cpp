@@ -1925,16 +1925,10 @@ bool Rdb::addRecord(collnum_t collnum, char *key, char *data, int32_t dataSize) 
 	if (m_useIndexFile) {
 		// there are no negative keys when we're using index (except special keys eg: posdb with termId 0)
 		// if we're adding key that have a corresponding opposite key, it means we want to remove the key from the tree
-		if (m_useTree) {
-			if (m_tree.deleteNode(collnum, oppKey, true) >= 0) {
-				logTrace(g_conf.m_logTraceRdb, "END. %s: Key with corresponding opposite key deleted in tree. Returning true", m_dbname);
-				return true;
-			}
-		} else {
-			if (m_buckets.deleteNode(collnum, oppKey)) {
-				logTrace(g_conf.m_logTraceRdb, "END. %s: Key with corresponding opposite key deleted in bucket. Returning true", m_dbname);
-				return true;
-			}
+		bool deleted = m_useTree ? m_tree.deleteNode(collnum, oppKey, true) : m_buckets.deleteNode(collnum, oppKey);
+		if (deleted) {
+			logTrace(g_conf.m_logTraceRdb, "END. %s: Key with corresponding opposite key deleted in tree. Returning true", m_dbname);
+			return true;
 		}
 
 		/// @todo ALC is this necessary? we remove delete keys when we dump to Rdb anyway for the first file
