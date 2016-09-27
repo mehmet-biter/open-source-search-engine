@@ -422,7 +422,7 @@ bool RdbDump::dumpTree(bool recall) {
 		// . check the list we got from the tree for problems
 		// . ensures keys are ordered from lowest to highest as well
 		if (g_conf.m_verifyWrites || g_conf.m_verifyDumpedLists) {
-			const char *s = (m_rdb ? "none" : getDbnameFromId(m_rdb->getRdbId()));
+			const char *s = (m_rdb ? getDbnameFromId(m_rdb->getRdbId()) : "none");
 			const char *ks1 = "";
 			const char *ks2 = "";
 			char tmp1[32];
