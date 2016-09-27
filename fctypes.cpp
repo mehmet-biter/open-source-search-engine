@@ -1570,7 +1570,8 @@ char *serializeMsg2 ( void *thisPtr ,
 
 	// make a buffer to serialize into
 	int32_t baseSize = (char *)firstStrPtr - (char *)thisPtr;
-	int nptrs=((char *)firstSizeParm-(char *)firstStrPtr)/sizeof(char *);
+	char **endStrPtr = (char**)firstSizeParm; //last+1
+	int nptrs = endStrPtr - firstStrPtr;
 	int32_t need = baseSize;
 	need += nptrs * sizeof(char *);
 	need += nptrs * sizeof(int32_t);
