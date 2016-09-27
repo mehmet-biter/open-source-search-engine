@@ -23,7 +23,7 @@ void UCPropTable::reset() {
 			if (m_data[i])
 				mfree(m_data[i], m_tableSize , "UCPropTable");
 		}
-		mfree(m_data, m_numTables*sizeof(u_char**),
+		mfree(m_data, m_numTables*sizeof(m_data[0]),
 			"UCPropTable");
 		m_data = NULL;
 	}	
