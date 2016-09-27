@@ -1546,12 +1546,21 @@ bool RdbList::posdbConstrain(const char *startKey, char *endKey, int32_t minRecS
 	// . don't start at m_list+6 either cuz we may have overwritten that with the *(key96_t *)p = k above!!!! tricky...
 	if ( p < m_list + 18 ) {
 		resetPtr = true;
-	} else if (KEYCMP(k, hintKey, 18) != 0 || KEYCMP(hintKey, endKey, 18) > 0) {
-		// . if first key is over endKey that's a bad hint!
-		// . might it be a corrupt RdbMap?
-		// . reset "p" to beginning if hint is bad
-		log(LOG_WARN, "db: Corrupt data or map file. Bad hint for %s.", filename);
-		resetPtr = true;
+	} 
+	else { 
+		// Sanity
+		if( !hintKey ) {
+			logError("hintKey is NULL before use!");
+			gbshutdownAbort(true);
+		}
+		
+		if (KEYCMP(k, hintKey, 18) != 0 || KEYCMP(hintKey, endKey, 18) > 0) {
+			// . if first key is over endKey that's a bad hint!
+			// . might it be a corrupt RdbMap?
+			// . reset "p" to beginning if hint is bad
+			log(LOG_WARN, "db: Corrupt data or map file. Bad hint for %s.", filename);
+			resetPtr = true;
+		}
 	}
 
 	if (resetPtr) {
