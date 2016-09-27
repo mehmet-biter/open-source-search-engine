@@ -9,8 +9,16 @@
 #include <float.h>
 
 
-HttpRequest::HttpRequest () { m_cgiBuf = NULL; m_cgiBuf2 = NULL; reset(); }
-HttpRequest::~HttpRequest() { reset();      }
+HttpRequest::HttpRequest () {
+	m_cgiBuf = NULL;
+	m_cgiBuf2 = NULL;
+	reset();
+}
+
+
+HttpRequest::~HttpRequest() { 
+	reset();
+}
 
 
 char HttpRequest::getReplyFormat() {
@@ -90,7 +98,34 @@ void HttpRequest::reset() {
 		m_cgiBuf2 = NULL;
 	}
 	m_cgiBuf2Size = 0;
+
+	// Coverity
+	m_replyFormat = 0;
+	m_isSquidProxyRequest = false;
+	m_squidProxiedUrl = NULL;
+	m_squidProxiedUrlLen = 0;
+	m_requestType = 0;
+	memset(m_filename, 0, sizeof(m_filename));
+	m_filenameLen = 0;
+	m_origUrlRequest = NULL;
+	m_origUrlRequestLen = 0;
+	memset(m_host, 0, sizeof(m_host));
+	m_hostLen = 0;
+	m_isLocal = false;
+	m_fileOffset = 0;
+	m_fileSize = 0;
+	memset(m_fields, 0, sizeof(m_fields));
+	memset(&m_fieldLens, 0, sizeof(m_fieldLens));
+	memset(m_fieldValues, 0, sizeof(m_fieldValues));
+	m_isSSL = false;
+	memset(m_redir, 0, sizeof(m_redir));
+	m_redirLen = 0;
+	memset(m_ref, 0, sizeof(m_ref));
+	m_refLen = 0;
+	memset(m_userAgent, 0, sizeof(m_userAgent));
+	m_metaCookie = NULL;
 }
+
 
 // returns false with g_errno set on error
 bool HttpRequest::copy ( class HttpRequest *r , bool stealBuf ) {
