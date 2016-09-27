@@ -33,6 +33,34 @@ void Images::reset() {
 	m_numImages      = 0;
 	m_imageBufValid  = false;
 	m_phase = 0;
+
+	// Coverity
+	m_i = 0;
+	m_j = 0;
+	m_xd = NULL;
+	m_state = NULL;
+	m_callback = NULL;
+	m_xysize = 0;
+	m_errno = 0;
+	m_hadError = 0;
+	m_stopDownloading = false;
+	memset(m_statusBuf, 0, sizeof(m_statusBuf));
+	m_collnum = 0;
+	m_docId = 0;
+	m_latestIp = 0;
+	memset(&m_imageNodes, 0, sizeof(m_imageNodes));
+	memset(&m_termIds, 0, sizeof(m_termIds));
+	memset(&m_errors, 0, sizeof(m_errors));
+	m_pageUrl = NULL;
+	m_xml = NULL;
+	memset(&m_msg13Request, 0, sizeof(m_msg13Request));
+	m_httpStatus = 0;
+	m_imgType = 0;
+	m_dx = 0;
+	m_dy = 0;
+	m_thumbnailSize = 0;
+	m_tdx = 0;
+	m_tdy = 0;
 }
 
 void Images::setCandidates ( Url *pageUrl , Words *words , Xml *xml , Sections *sections ) {

@@ -46,14 +46,13 @@ RdbCache s_clusterdbQuickCache;
 static bool     s_cacheInit = false;
 
 
-Msg51::Msg51 ( )
-  : m_slot(NULL),
-    m_numSlots(0)
+Msg51::Msg51() : m_slot(NULL), m_numSlots(0)
 {
 	m_clusterRecs     = NULL;
 	m_clusterLevels   = NULL;
 	pthread_mutex_init(&m_mtx,NULL);
 	set_signature();
+	reset();
 }
 
 Msg51::~Msg51 ( ) {
@@ -65,8 +64,25 @@ void Msg51::reset ( ) {
 	m_clusterRecs     = NULL;
 	m_clusterLevels   = NULL;
 	m_numSlots = 0;
-	delete[] m_slot;
-	m_slot = NULL;
+	if( m_slot ) {
+		delete[] m_slot;
+		m_slot = NULL;
+	}
+
+	// Coverity
+	m_docIds = NULL;
+	m_numDocIds = 0;
+	m_callback = NULL;
+	m_state = NULL;
+	m_nexti = 0;
+	m_numRequests = 0;
+	m_numReplies = 0;
+	m_errno = 0;
+	m_niceness = 0;
+	m_collnum = 0;
+	m_maxCacheAge = 0;
+	m_addToCache = false;
+	m_isDebug = false;
 }
 
 

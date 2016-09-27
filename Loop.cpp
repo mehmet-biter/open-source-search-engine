@@ -886,7 +886,7 @@ void Loop::doPoll ( ) {
 		// must be set
 		if ( ! FD_ISSET ( fd , &readfds ) ) continue;
 		if ( g_conf.m_logDebugLoop || g_conf.m_logDebugTcp ) {
-			log( LOG_DEBUG, "loop: calling cback1 niceness=%" PRId32" fd=%i", s->m_niceness, fd );
+			log( LOG_DEBUG, "loop: calling cback1 fd=%i", fd );
 		}
 		calledOne = true;
 		callCallbacks_ass (true,fd, now,1);//read?

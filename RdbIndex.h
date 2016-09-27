@@ -66,14 +66,21 @@ public:
 
 	void addRecord(char *key);
 
+	// key format
+	// ........ ........ ........ dddddddd  d = docId
+	// dddddddd dddddddd dddddddd dddddd.Z  Z = delBit
 	docidsconst_ptr_t getDocIds();
+
+	void printIndex();
+
+	static const char s_docIdOffset = 2;
+	static const uint64_t s_docIdMask = ~0x03ULL;
+	static const uint64_t s_delBitMask = 0x01ULL;
 
 private:
 	void addRecord_unlocked(char *key, bool isGenerateIndex);
 	docidsconst_ptr_t mergePendingDocIds();
 	void swapDocIds(docidsconst_ptr_t docIds);
-
-	void printIndex();
 
 	// the index file
 	BigFile m_file;
@@ -91,8 +98,9 @@ private:
 	GbMutex m_docIdsMtx;
 
 	// newest record pending merge into m_docIds
-	docids_ptr_t m_pendingDocIds;
 	GbMutex m_pendingDocIdsMtx;
+
+	docids_ptr_t m_pendingDocIds;
 	uint64_t m_prevPendingDocId;
 
 	int64_t m_lastMergeTime;

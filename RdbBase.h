@@ -238,12 +238,18 @@ private:
 
 	// mapping of docId to file
 	// key format
-	// ..dddddd dddddddd dddddddd dddddddd  d = docId
-	// dddddddd ........ ffffffff ffffffff  f = fileIndex
+	// dddddddd dddddddd dddddddd dddddddd  d = docId
+	// dddddd.Z ........ ffffffff ffffffff  Z = delBit
+	//                                      f = fileIndex
 	docids_ptr_t m_docIdFileIndex;
 	GbMutex m_docIdFileIndexMtx;
 
 public:
+	static const char s_docIdFileIndex_docIdOffset = 26;
+	static const uint64_t s_docIdFileIndex_docIdMask    = 0xfffffffffc000000ULL;
+	static const uint64_t s_docIdFileIndex_delBitMask   = 0x0000000001000000ULL;
+	static const uint64_t s_docIdFileIndex_filePosMask  = 0x000000000000ffffULL;
+
 	// this class contains a ptr to us
 	class Rdb           *m_rdb;
 

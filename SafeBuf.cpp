@@ -17,6 +17,7 @@ SafeBuf::SafeBuf(int32_t initSize, const char *label ) {
 	if(!m_buf) m_capacity = 0;
 	m_usingStack = false;
 	m_encoding = csUTF8;
+	m_renderHtml = false;
 }
 
 void SafeBuf::constructor ( ) {
@@ -26,6 +27,7 @@ void SafeBuf::constructor ( ) {
 	m_usingStack = false;
 	m_encoding = csUTF8;
 	m_label = NULL;
+	m_renderHtml = false;
 }	
 
 SafeBuf::SafeBuf() {
@@ -35,6 +37,7 @@ SafeBuf::SafeBuf() {
 	m_usingStack = false;
 	m_encoding = csUTF8;
 	m_label = NULL;
+	m_renderHtml = false;
 }
 
 void SafeBuf::setLabel ( const char *label ) {
@@ -48,6 +51,7 @@ SafeBuf::SafeBuf(char* stackBuf, int32_t cap, const char* label) {
 	m_length = 0;
 	m_encoding = csUTF8;
 	m_label = label;
+	m_renderHtml = false;
 }
 
 SafeBuf::SafeBuf(char *heapBuf, int32_t bufMax, int32_t bytesInUse, bool ownData) {
@@ -60,6 +64,8 @@ SafeBuf::SafeBuf(char *heapBuf, int32_t bufMax, int32_t bytesInUse, bool ownData
 	m_buf = heapBuf;
 	m_length = bytesInUse;
 	m_encoding = csUTF8;
+	m_label = NULL;
+	m_renderHtml = false;
 }
 
 SafeBuf::~SafeBuf() {
@@ -331,7 +337,7 @@ int32_t SafeBuf::safeSave (char *filename ) {
 	close(fd);
 
 	// remove original file before replacing it
-	if ( access (filename , F_OK ) == 0) unlink ( filename );
+	(void)::unlink(filename);
 
 	// now move it to the actual filename
 	//int32_t status = ::rename ( fn.getBufStart() , filename );
@@ -380,27 +386,27 @@ int32_t SafeBuf::catFile(const char *filename) {
 
 // returns -1 on error
 int32_t SafeBuf::fillFromFile(const char *filename) {
-	struct stat results;
-	if (stat(filename, &results) != 0) {
-		// An error occurred
-		log(LOG_DEBUG, "query: Failed to open %s for reading: ", 
-		    filename);
-		// 0 means does not exist or file is empty
-		return 0;
-	}
-
-	// The size of the file in bytes is in
-	// results.st_size
-	reserve(results.st_size+1);
-	
-	int32_t fd = open ( filename , O_RDONLY , getFileCreationFlags() );
-	if ( ! fd ) {
+	int32_t fd = open(filename, O_RDONLY);
+	if(fd<0) {
 		log(LOG_DEBUG, "query: Failed to open %s for reading: ",
 		    filename);
+		if(errno==ENOENT)
+			return 0;// 0 means does not exist or file is empty
 		// -1 means there was a read error of some sorts
 		return -1;//false;
 	}
-	int32_t numRead = read(fd, m_buf+m_length, results.st_size);
+
+	struct stat st;
+	if(fstat(fd, &st) != 0) {
+		// An error occurred
+		log(LOG_DEBUG, "query: Failed to open %s for reading: ", 
+		    filename);
+		close(fd);
+		return 0;
+	}
+	reserve(st.st_size+1);
+	
+	int32_t numRead = read(fd, m_buf+m_length, st.st_size);
 	close(fd);
 	// add a \0 for good meaure
 	if ( numRead >= 0 ) {

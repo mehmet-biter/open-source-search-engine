@@ -66,6 +66,7 @@ RdbList::RdbList () {
 	m_allocSize   = 0;
 	m_useHalfKeys = false;
 	m_ownData     = false;
+	m_fixedDataSize = false;
 	reset();
 }
 
@@ -110,7 +111,10 @@ void RdbList::reset ( ) {
 	verify_signature();
 	// . if we don't own our data then, NULLify it
 	// . if we do own the data, don't free it
-	if ( ! m_ownData ) { m_alloc = NULL; m_allocSize = 0; }
+	if ( ! m_ownData ) { 
+		m_alloc = NULL; 
+		m_allocSize = 0; 
+	}
 	m_listSize  = 0;
 	m_list      = m_alloc;
 	m_listEnd   = m_list;
@@ -689,7 +693,7 @@ bool RdbList::checkList_r(bool abortOnProblem, rdbid_t rdbId) {
 		return false;
 	}
 
-	char oldk[MAX_KEY_BYTES];
+	char oldk[MAX_KEY_BYTES] = {0};
 	KEYSET(oldk,KEYMIN(),m_ks);
 	// point to start of list
 	resetListPtr();
@@ -1321,6 +1325,12 @@ bool RdbList::constrain(const char *startKey, char *endKey, int32_t minRecSizes,
 	// . saves us from having to scan the WHOLE list
 	p = firstStart + hintOffset;
 
+
+	// Sanity
+	if( !hintKey ) {
+		logError("hintKey is NULL before use!");
+		gbshutdownAbort(true);
+	}
 	// set our hi key temporarily cuz the actual key in the list may
 	// only be the lower 6 bytes
 	//m_listPtrHi = ((char *)&hintKey) + 6;
@@ -1344,7 +1354,7 @@ bool RdbList::constrain(const char *startKey, char *endKey, int32_t minRecSizes,
 	// . if first key is over endKey that's a bad hint!
 	// . might it be a corrupt RdbMap?
 	// . reset "p" to beginning if hint is bad
-	else if ( KEYCMP(k,hintKey,m_ks)!=0 || KEYCMP(hintKey,endKey,m_ks)>0) {
+	else if ( hintKey && (KEYCMP(k,hintKey,m_ks)!=0 || KEYCMP(hintKey,endKey,m_ks)>0) ) {
 		log(LOG_WARN, "db: Corrupt data or map file. Bad hint for %s.", filename);
 		// . until we fix the corruption, drop a core
 		// . no, a lot of files could be corrupt, just do it for merge
@@ -1837,7 +1847,7 @@ void RdbList::merge_r(RdbList **lists, int32_t numLists, const char *startKey, c
 	// . add 2 to ensure that it stays a non-delete key
 	char  lastKey[MAX_KEY_BYTES];
 	bool  lastKeyIsValid = false;
-	char  lastPosKey[MAX_KEY_BYTES];
+	char  lastPosKey[MAX_KEY_BYTES]={0};
 	char  highestKey[MAX_KEY_BYTES];
 	bool  firstTime = true;
 	char  lastNegKey[MAX_KEY_BYTES];

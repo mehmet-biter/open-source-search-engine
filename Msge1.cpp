@@ -16,9 +16,30 @@ Msge1::~Msge1() {
 void Msge1::reset() {
 	m_errno = 0;
 	m_ipBuf = NULL;
-	if ( m_buf ) mfree ( m_buf , m_bufSize,"Msge1buf");
-	m_buf = NULL;
+	if ( m_buf ) {
+		mfree(m_buf, m_bufSize, "Msge1buf");
+		m_buf = NULL;
+	}
 	m_numReplies = 0;
+
+	// Coverity
+	m_coll = NULL;
+	m_niceness = 0;
+	m_urlPtrs = NULL;
+	m_urlFlags = NULL;
+	m_numUrls = 0;
+	m_addTags = false;
+	m_skipOldLinks = 0;
+	m_bufSize = 0;
+	m_ipErrors = NULL;
+	m_numRequests = 0;
+	m_i = 0;
+	m_n = 0;
+	m_nextPtr = NULL;
+	m_grv = NULL;
+	m_state = NULL;
+	m_callback = NULL;
+	m_nowGlobal = 0;
 }
 
 // . get various information for each url in a list of urls

@@ -32,12 +32,15 @@ Collectiondb::Collectiondb ( ) {
 	m_numRecsUsed = 0;
 	m_numCollsSwappedOut = 0;
 	m_initializing = false;
-	//m_lastUpdateTime = 0LL;
 	m_needsSave = false;
+	m_recs = NULL;
+
 	// sanity
-	if ( RDB_END2 >= RDB_END ) return;
-	log("db: increase RDB_END2 to at least %" PRId32" in "
-	    "Collectiondb.h",(int32_t)RDB_END);
+	if ( RDB_END2 >= RDB_END ) {
+		return;
+	}
+
+	log("db: increase RDB_END2 to at least %" PRId32" in Collectiondb.h",(int32_t)RDB_END);
 	g_process.shutdownAbort(true);
 }
 
@@ -45,7 +48,9 @@ Collectiondb::Collectiondb ( ) {
 void Collectiondb::reset() {
 	log(LOG_INFO,"db: resetting collectiondb.");
 	for ( int32_t i = 0 ; i < m_numRecs ; i++ ) {
-		if ( ! m_recs[i] ) continue;
+		if ( ! m_recs[i] ) {
+			continue;
+		}
 		mdelete ( m_recs[i], sizeof(CollectionRec), "CollectionRec" );
 		delete ( m_recs[i] );
 		m_recs[i] = NULL;
@@ -1129,9 +1134,90 @@ CollectionRec::CollectionRec() {
 	// for diffbot caching the global spider stats
 	reset();
 
-	// add default reg ex if we do not have one
-	//setUrlFiltersToDefaults();
-	//rebuildUrlFilters();
+	// Coverity
+	m_urlFiltersHavePageCounts = false;
+	m_collLen = 0;
+	m_dailyMergeStarted = 0;
+	m_dailyMergeTrigger = 0;
+	memset(m_dailyMergeDOWList, 0, sizeof(m_dailyMergeDOWList));
+	m_treeCount = 0;
+	m_spideringEnabled = 0;
+	m_spiderDelayInMilliseconds = 0;
+	m_isActive = false;
+	m_spiderRoundStartTime = 0;
+	m_spiderRoundNum = 0;
+	m_makeImageThumbnails = 0;
+	m_thumbnailMaxWidthHeight = 0;
+	m_indexSpiderReplies = 0;
+	m_indexBody = 0;
+	m_outlinksRecycleFrequencyDays = 0.0;
+	m_dedupingEnabled = 0;
+	m_dupCheckWWW = 0;
+	m_detectCustomErrorPages = 0;
+	m_useSimplifiedRedirects = 0;
+	m_useIfModifiedSince = 0;
+	m_useTimeAxis = 0;
+	m_buildVecFromCont = 0;
+	m_maxPercentSimilarPublishDate = 0;
+	m_useSimilarityPublishDate = 0;
+	m_oneVotePerIpDom = 0;
+	m_doUrlSpamCheck = 0;
+	m_doLinkSpamCheck = 0;
+	memset(m_tagdbColl, 0, sizeof(m_tagdbColl));
+	m_delete404s = 0;
+	m_siteClusterByDefault = 0;
+	m_doIpLookups = 0;
+	m_useRobotsTxt = 0;
+	m_obeyRelNoFollowLinks = 0;
+	m_forceUseFloaters = 0;
+	m_automaticallyUseProxies = 0;
+	m_automaticallyBackOff = 0;
+	m_recycleContent = 0;
+	m_getLinkInfo = 0;
+	m_computeSiteNumInlinks = 0;
+	m_indexInlinkNeighborhoods = 0;
+	m_removeBannedPages = 0;
+	m_percentSimilarSummary = 0;
+	m_summDedupNumLines = 0;
+	m_maxQueryTerms = 0;
+	m_sameLangWeight = 0.0;
+	memset(m_defaultSortLanguage2, 0, sizeof(m_defaultSortLanguage2));
+	m_importEnabled = 0;
+	m_numImportInjects = 0;
+	m_posdbMinFilesToMerge = 0;
+	m_titledbMinFilesToMerge = 0;
+	m_linkdbMinFilesToMerge = 0;
+	m_tagdbMinFilesToMerge = 0;
+	m_spiderdbMinFilesToMerge = 0;
+	m_dedupResultsByDefault = 0;
+	m_doTagdbLookups = 0;
+	m_deleteTimeouts = 0;
+	m_allowAdultDocs = 0;
+	m_useCanonicalRedirects = 0;
+	m_maxNumSpiders = 0;
+	m_useCurrentTime = 0;
+	m_titleMaxLen = 0;
+	m_summaryMaxLen = 0;
+	m_summaryMaxNumLines = 0;
+	m_summaryMaxNumCharsPerLine = 0;
+	m_getDocIdScoringInfo = 0;
+	m_diffbotCrawlStartTime = 0;
+	m_diffbotCrawlEndTime = 0;
+	m_numRegExs9 = 0;
+	m_doQueryHighlighting = 0;
+	m_spellCheck = 0;
+	m_spiderTimeMin = 0;
+	m_spiderTimeMax = 0;
+	m_maxAddUrlsPerIpDomPerDay = 0;
+	m_maxTextDocLen = 0;
+	m_maxOtherDocLen = 0;
+	m_summaryMaxWidth = 0;
+	m_maxRobotsCacheAge = 0;
+	m_queryExpansion = 0;
+	m_rcache = 0;
+	m_hideAllClustered = 0;
+	m_END_COPY = 0;
+	m_hackFlag = 0;
 }
 
 CollectionRec::~CollectionRec() {

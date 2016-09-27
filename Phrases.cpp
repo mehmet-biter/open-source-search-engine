@@ -7,8 +7,8 @@
 #include "Sanity.h"
 
 
-Phrases::Phrases ( ) {
-	m_buf = NULL;
+Phrases::Phrases() : m_buf(NULL) {
+	reset();
 }
 
 Phrases::~Phrases ( ) {
@@ -19,9 +19,20 @@ void Phrases::reset() {
 	if ( m_buf && m_buf != m_localBuf ) {
 		mfree ( m_buf , m_bufSize , "Phrases" );
 	}
-
 	m_buf = NULL;
+
+	// Coverity
+	m_bufSize = 0;
+	m_phraseIds2 = NULL;
+	m_numWordsTotal2 = NULL;
+	m_numPhrases = 0;
+	m_words = NULL;
+	m_wids = NULL;
+	m_wptrs = NULL;
+	m_wlens = NULL;
+	m_bits = NULL;
 }
+
 
 // initialize this token array with the string, "s" of length, "len".
 bool Phrases::set( const Words *words, const Bits *bits ) {

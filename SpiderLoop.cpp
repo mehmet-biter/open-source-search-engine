@@ -1377,11 +1377,10 @@ bool SpiderLoop::spiderUrl9 ( SpiderRequest *sreq ,
 	// count it
 	m_processed++;
 
-	// now we just take it out of doledb instantly
-	int32_t node = g_doledb.m_rdb.getTree()->deleteNode(m_collnum, (char *)m_doledbKey, true);
+	logDebug(g_conf.m_logDebugSpider, "spider: deleting doledb tree key=%s", KEYSTR(m_doledbKey, sizeof(*m_doledbKey)));
 
-	if ( g_conf.m_logDebugSpider )
-		log("spider: deleting doledb tree node %" PRId32,node);
+	// now we just take it out of doledb instantly
+	bool deleted = g_doledb.m_rdb.getTree()->deleteNode(m_collnum, (char *)m_doledbKey, true);
 
 	// if url filters rebuilt then doledb gets reset and i've seen us hit
 	// this node == -1 condition here... so maybe ignore it... just log
@@ -1389,7 +1388,7 @@ bool SpiderLoop::spiderUrl9 ( SpiderRequest *sreq ,
 	// and the call to spiderDoledUrls() and it the url filters changed
 	// so it reset doledb's tree. so in that case we should bail on this
 	// url.
-	if ( node == -1 ) { 
+	if (!deleted) {
 		g_errno = EADMININTERFERENCE;
 		log("spider: lost url about to spider from url filters "
 		    "and doledb tree reset. %s",mstrerror(g_errno));

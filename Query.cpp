@@ -78,6 +78,22 @@ void Query::reset ( ) {
 	m_hasSubUrlField       = false;
 	m_hasQuotaField        = false;
 	m_truncated            = false;
+
+	// Coverity
+	m_requiredBits = 0;
+	m_matchRequiredBits = 0;
+	m_negativeBits = 0;
+	m_forcedBits = 0;
+	m_synonymBits = 0;
+	m_numRequired = 0;
+	m_langId = 0;
+	m_useQueryStopWords = false;
+	m_numTermsUntruncated = 0;
+	m_isBoolean = false;
+	m_orig = NULL;
+	memset(&m_expressions, 0, sizeof(m_expressions));
+	m_maxQueryTerms = 0;
+	m_queryExpansion = false;
 }
 
 // . returns false and sets g_errno on error
@@ -96,6 +112,8 @@ bool Query::set2 ( const char *query        ,
 		   bool     useQueryStopWords ,
 		   int32_t  maxQueryTerms  ) {
 
+	reset();
+
 	m_langId = langId;
 	m_useQueryStopWords = useQueryStopWords;
 	// fix summary rerank and highlighting.
@@ -106,7 +124,6 @@ bool Query::set2 ( const char *query        ,
 	// assume  boolean auto-detect.
 	char boolFlag = 2;
 
-	reset();
 
 	if ( ! query ) return true;
 

@@ -259,7 +259,11 @@ class Posdb {
 
 	static unsigned char getHashGroup ( const void *key ) {
 		//return (((key144_t *)key)->n1 >> 10) & MAXHASHGROUP;
-		return ((((const unsigned char *)key)[3]) >>2) & MAXHASHGROUP;
+		//return ((((const unsigned char *)key)[3]) >>2) & MAXHASHGROUP;
+		//posdb sometimes have crap in it, so protect intersection from dealing with undefined hash groups
+		unsigned char tmp = ((((const unsigned char *)key)[3]) >>2) & MAXHASHGROUP;
+		return tmp<=10 ? tmp : 10;
+
 	}
 
 	static int32_t getWordPos ( const void *key ) {

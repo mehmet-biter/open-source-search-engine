@@ -664,13 +664,14 @@ int32_t RdbTree::addNode ( collnum_t collnum , const char *key , char *data , in
 	return i;
 }
 
-int32_t RdbTree::deleteNode(collnum_t collnum, const char *key, bool freeData) {
+bool RdbTree::deleteNode(collnum_t collnum, const char *key, bool freeData) {
 	int32_t node = getNode ( collnum , key );
-	if (node != -1) {
-		deleteNode(node, freeData);
+	if (node == -1) {
+		return false;
 	}
 
-	return node;
+	deleteNode(node, freeData);
+	return true;
 }
 
 // delete all nodes with keys in [startKey,endKey]
@@ -992,7 +993,7 @@ bool RdbTree::deleteList(collnum_t collnum, RdbList *list) {
 	char key[MAX_KEY_BYTES];
 	for (list->resetListPtr(); !list->isExhausted(); list->skipCurrentRecord()) {
 		list->getCurrentKey(key);
-		if (deleteNode(collnum, key, true) < 0) {
+		if (!deleteNode(collnum, key, true)) {
 			allgood = false;
 		}
 	}

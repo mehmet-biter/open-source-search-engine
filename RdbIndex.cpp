@@ -31,8 +31,8 @@ RdbIndex::RdbIndex()
 	, m_dataFileSize(0)
 	, m_docIds(new docids_t)
 	, m_docIdsMtx()
-	, m_pendingDocIds(new docids_t)
 	, m_pendingDocIdsMtx()
+	, m_pendingDocIds(new docids_t)
 	, m_prevPendingDocId(MAX_DOCID + 1)
 	, m_lastMergeTime(gettimeofdayInMilliseconds())
 	, m_needToWrite(false) {
@@ -267,8 +267,17 @@ docidsconst_ptr_t RdbIndex::mergePendingDocIds() {
 	m_lastMergeTime = gettimeofdayInMilliseconds();
 
 	// merge pending docIds into docIds
-	std::sort(m_pendingDocIds->begin(), m_pendingDocIds->end());
-	m_pendingDocIds->erase(std::unique(m_pendingDocIds->begin(), m_pendingDocIds->end()), m_pendingDocIds->end());
+	std::stable_sort(m_pendingDocIds->begin(), m_pendingDocIds->end(),
+	                 [](uint64_t a, uint64_t b) {
+		                 return (a & s_docIdMask) < (b & s_docIdMask);
+	                 });
+
+	// in reverse because we want to keep the newest entry
+	auto it = std::unique(m_pendingDocIds->rbegin(), m_pendingDocIds->rend(),
+	                      [](uint64_t a, uint64_t b) {
+		                      return (a & s_docIdMask) == (b & s_docIdMask);
+	                      });
+	m_pendingDocIds->erase(m_pendingDocIds->begin(), it.base());
 
 	docids_ptr_t tmpDocIds(new docids_t);
 	std::set_union(m_docIds->begin(), m_docIds->end(), m_pendingDocIds->begin(), m_pendingDocIds->end(), std::back_inserter(*tmpDocIds));
@@ -290,7 +299,7 @@ void RdbIndex::addRecord_unlocked(char *key, bool isGenerateIndex) {
 	if (m_rdbId == RDB_POSDB || m_rdbId == RDB2_POSDB2) {
 		if (key[0] & 0x02 || !(key[0] & 0x04)) {
 			//it is a 12-byte docid+pos or 18-byte termid+docid+pos key
-			uint64_t doc_id = extract_bits(key, 58, 96);
+			uint64_t doc_id = ((extract_bits(key, 58, 96) << s_docIdOffset) | !KEYNEG(key));
 			if (doc_id != m_prevPendingDocId) {
 				m_pendingDocIds->push_back(doc_id);
 				m_prevPendingDocId = doc_id;
@@ -322,8 +331,15 @@ void RdbIndex::addRecord_unlocked(char *key, bool isGenerateIndex) {
 }
 
 void RdbIndex::printIndex() {
-	//@todo: IMPLEMENT!
-	logError("NOT IMPLEMENTED YET");
+	auto docIds = getDocIds();
+	for (auto it = docIds->begin(); it != docIds->end(); ++it) {
+		logf(LOG_DEBUG, "inindex: docId=%" PRIu64" isDel=%d", (*it >> s_docIdOffset), ((*it & s_delBitMask) == 0));
+	}
+
+	ScopedLock sl(m_pendingDocIdsMtx);
+	for (auto it = m_pendingDocIds->begin(); it != m_pendingDocIds->end(); ++it) {
+		logf(LOG_DEBUG, "pending: docId=%" PRIu64" isDel=%d", (*it >> s_docIdOffset), ((*it & s_delBitMask) == 0));
+	}
 }
 
 

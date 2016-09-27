@@ -13,7 +13,7 @@ public:
 	RdbIndexQuery(RdbBase *base);
 	~RdbIndexQuery();
 
-	int32_t getFilePos(uint64_t docId) const;
+	int32_t getFilePos(uint64_t docId, bool *isDel = NULL) const;
 
 private:
 	RdbIndexQuery();

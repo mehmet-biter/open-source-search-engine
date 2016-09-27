@@ -37,6 +37,16 @@ Profiler::Profiler() :
 	//newf.reset();
 	// newf.safePrintf("%strash/qp.txt",g_hostdb.m_dir);
 	// unlink ( newf.getBufStart() );
+
+	// Coverity
+	memset(&m_elfHeader, 0, sizeof(m_elfHeader));
+	m_sectionHeaders = NULL;
+	m_totalFrames = 0;
+	m_lastQpoll = NULL;
+	m_lastQpollLine = 0;
+	memset(&m_quickPollInfos, 0, sizeof(m_quickPollInfos));
+	m_lastQPUsed = 0;
+	m_lastAddressMapIndex = 0;
 }
 
 Profiler::~Profiler() {//reset();
@@ -99,18 +109,9 @@ bool Profiler::init() {
 // readelf function in binutils from gnu.org. gb is 32-bits.
 bool Profiler:: readSymbolTable(){
 	int64_t start=gettimeofdayInMillisecondsLocal();
-	struct stat  statbuf;
 	//unsigned int i;
 	char fileName[512];
-	
 	sprintf(fileName,"%sgb",g_hostdb.m_dir);
-	//Checking to see if the file is present
-	if (stat (fileName, & statbuf) < 0)
-	{
-		log(LOG_INIT,"admin: Cannot stat input file %s."
-			 "You must be in the same directory", fileName);
-		return false;
-	}
 
 	m_file = fopen (fileName, "rb");
 	if (m_file == NULL)

@@ -32,6 +32,7 @@ Msg3::Msg3()
 {
 //	log(LOG_TRACE,"Msg3(%p)::Msg3()",this);
 	set_signature();
+	reset();
 }
 
 
@@ -46,7 +47,9 @@ Msg3::~Msg3() {
 void Msg3::reset() {
 	verify_signature();
 //	log(LOG_TRACE,"Msg3(%p)::reset()",this);
-	if ( !areAllScansCompleted() ) { g_process.shutdownAbort(true); }
+	if ( !areAllScansCompleted() ) { 
+		g_process.shutdownAbort(true); 
+	}
 	m_hadCorruption = false;
 	// reset # of lists to 0
 	m_numScansCompleted = 0;
@@ -57,6 +60,30 @@ void Msg3::reset() {
 		delete[] m_scan;
 		m_scan = NULL;
 	}
+	
+	// Coverity
+	m_rdbId = RDB_NONE;
+	m_collnum = 0;
+	m_validateCache = false;
+	m_startFileNum = 0;
+	m_numFiles = 0;
+	m_numFileNums = 0;
+	m_fileStartKey = NULL;
+	m_minRecSizes = 0;
+	m_minRecSizesOrig = 0;
+	m_niceness = 0;
+	m_errno = 0;
+	m_retryNum = 0;
+	m_maxRetries = 0;
+	m_startTime = 0;
+	m_hintOffset = 0;
+	m_compensateForMerge = false;
+	m_numChunks = 0;
+	m_ks = 0;
+	m_listsChecked = false;
+	m_hadCorruption = false;
+	m_state = NULL;
+	m_callback = NULL;
 	verify_signature();
 }
 
@@ -195,26 +222,31 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		       bool           justGetEndKey) {
 	verify_signature();
 
+	// reset m_alloc and data in all lists in case we are a re-call
+	reset();
+
 	// set this to true to validate
 	m_validateCache = false;//true;
 
 	// clear, this MUST be done so if we return true g_errno is correct
 	g_errno = 0;
+
 	// assume lists are not checked for corruption
 	m_listsChecked = false;
 	// warn
 	if ( minRecSizes < -1 ) {
-		log(LOG_LOGIC,"db: Msg3 got minRecSizes of %" PRId32", changing "
-		    "to -1.",minRecSizes);
+		log(LOG_LOGIC,"db: Msg3 got minRecSizes of %" PRId32", changing to -1.",minRecSizes);
 		minRecSizes = -1;
 	}
-	// reset m_alloc and data in all lists in case we are a re-call
-	reset();
+
 	// warning
-	if ( collnum < 0 ) log(LOG_LOGIC,"net: NULL collection. msg3.");
+	if ( collnum < 0 ) {
+		log(LOG_LOGIC,"net: NULL collection. msg3.");
+	}
+
 	// remember the callback
 	m_rdbId              = rdbId;
-	m_collnum = collnum;
+	m_collnum            = collnum;
 	m_callback           = callback;
 	m_state              = state;
 	m_niceness           = niceness;

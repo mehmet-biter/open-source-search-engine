@@ -3293,6 +3293,7 @@ Links::Links() {
 	m_doQuickSet = false;
 
 	// Coverity
+	m_xml = NULL;
 	m_parentIsPermalink = false;
 	m_baseSite = NULL;
 	m_baseSiteLen = 0;
@@ -3319,6 +3320,7 @@ Links::Links() {
 	m_hasSubdirOutlink = 0;
 	m_rssOutlinkPtr = NULL;
 	m_rssOutlinkLen = 0;
+	m_numOutlinksAdded = 0;
 }
 
 

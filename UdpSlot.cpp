@@ -262,7 +262,8 @@ bool UdpSlot::sendSetup(char *msg, int32_t msgSize, char *alloc, int32_t allocSi
 
 	// save additional info (if present)
 	if (extraInfo) {
-		strcpy(m_extraInfo, extraInfo);
+		strncpy(m_extraInfo, extraInfo, sizeof(m_extraInfo));
+		m_extraInfo[sizeof(m_extraInfo)-1] = '\0';
 	} else {
 		m_extraInfo[0] = '\0';
 	}

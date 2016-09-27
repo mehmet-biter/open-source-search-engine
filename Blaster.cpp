@@ -39,7 +39,32 @@ static void gotDocWrapper4 ( void *state , TcpSocket *s ) ;
 static void sleepWrapper ( int fd , void *state ) ;
 static void sleepWrapperLog(int fd, void *state);
 
-Blaster::Blaster() {}
+Blaster::Blaster() {
+	// Coverity
+	m_doInjection = false;
+	m_doInjectionWithLinks = false;
+	m_maxNumThreads = 0;
+	m_launched = 0;
+	m_buf1 = NULL;
+	m_bufSize1 = 0;
+	m_buf2 = NULL;
+	m_bufSize2 = 0;
+	m_p1 = NULL;
+	m_p1end = NULL;
+	m_p2 = NULL;
+	m_p2end = NULL;
+	m_totalUrls = 0;
+	m_totalDone = 0;
+	m_portSwitch = false;
+	m_wait = 0;
+	m_justDisplay = false;
+	m_useProxy = false;
+	m_verbose = false;
+	m_isLogFile = false;
+	m_startTime = 0;
+	m_blasterDiff = false;
+	m_print = false;
+}
 
 Blaster::~Blaster() {
 	if (m_buf1)

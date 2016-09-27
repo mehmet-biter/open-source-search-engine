@@ -64,6 +64,11 @@ void HttpMime::reset ( ) {
 	m_contentEncodingPos = NULL;
 	m_contentLengthPos = NULL;
 	m_contentTypePos   = NULL;
+	// Coverity
+	m_content = NULL;
+	m_bufLen = 0;
+	m_contentEncoding = 0;
+	m_boundaryLen = 0;
 }
 
 // . returns false if could not get a valid mime
