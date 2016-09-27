@@ -4,6 +4,7 @@
 #include <inttypes.h>
 #include <stddef.h>
 #include <map>
+#include "GbMutex.h"
 
 class SummaryCache {
 	SummaryCache(const SummaryCache&);
@@ -19,6 +20,7 @@ class SummaryCache {
 	int64_t max_age;
 	size_t max_memory;
 	size_t memory_used;
+	GbMutex mtx;
 	
 public:
 	SummaryCache();
