@@ -390,6 +390,9 @@ void XmlDoc::reset ( ) {
 	void *px    = &ptr_firstUrl;
 	void *pxend = &m_dummyEnd;
 	memset ( px , 0 , (char *)pxend - (char *)px );
+
+	//unclear if this would make things blow up:
+	//m_errno = 0;
 }
 
 int64_t XmlDoc::logQueryTimingStart() {
