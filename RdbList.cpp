@@ -812,7 +812,7 @@ bool RdbList::removeBadData_r ( ) {
 		m_lastKeyIsValid = false;
 		return true;
 	}
-	char  oldk[MAX_KEY_BYTES];
+	char  oldk[MAX_KEY_BYTES]={0};
 	int32_t  oldRecSize = 0;
 	char *bad     = NULL;
 	char *badEnd  = NULL;
