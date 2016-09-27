@@ -75,6 +75,21 @@ SiteGetter::SiteGetter ( ) {
 	
 	m_schemeLen = 0;
 	m_scheme[0] = '\0';
+
+	// Coverity
+	m_url = NULL;
+	m_collnum = 0;
+	m_state = NULL;
+	m_callback = NULL;
+	m_sitePathDepth = 0;
+	m_pathDepth = 0;
+	m_maxPathDepth = 0;
+	m_niceness = 0;
+	m_oldSitePathDepth = 0;
+	m_allDone = 0;
+	m_timestamp = 0;
+	m_hasSubdomain = false;
+	m_tryAgain = false;
 }
 
 SiteGetter::~SiteGetter ( ) {
