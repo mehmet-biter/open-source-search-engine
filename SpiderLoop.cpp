@@ -93,9 +93,38 @@ SpiderLoop::SpiderLoop ( ) {
 	m_crx = NULL;
 	// clear array of ptrs to Doc's
 	memset ( m_docs , 0 , sizeof(XmlDoc *) * MAX_SPIDERS );
+
+	// Coverity
+	m_sreq = NULL;
+	m_collnum = 0;
+	m_content = NULL;
+	m_contentLen = 0;
+	m_contentHasMime = 0;
+	m_doledbKey = NULL;
+	m_state = NULL;
+	m_callback = NULL;
+	m_isRegistered = false;
+	m_numSpidersOut = 0;
+	m_launches = 0;
+	m_maxUsed = 0;
+	m_sc = NULL;
+	m_outstanding1 = 0;
+	m_gettingDoledbList = false;
+	m_activeList = NULL;
+	m_bookmark = NULL;
+	m_activeListValid = false;
+	m_activeListModified = false;
+	m_activeListCount = 0;
+	m_recalcTime = 0;
+	m_recalcTimeValid = false;
+	m_lastCallTime = 0;
+	m_doleStart = 0;
+	m_processed = 0;
 }
 
-SpiderLoop::~SpiderLoop ( ) { reset(); }
+SpiderLoop::~SpiderLoop ( ) {
+	reset();
+}
 
 // free all doc's
 void SpiderLoop::reset() {
