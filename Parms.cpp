@@ -3256,13 +3256,13 @@ bool Parms::saveToXml ( char *THIS , char *f , char objType ) {
 
 skip2:
 		// description, do not wrap words around lines
-		const char *d = m->m_desc;
+		const char *d = ( m->m_desc ? m->m_desc : "");
 		// if empty array mod description to include the tag name
 		char tmp [10*1024];
 		if ( m->m_max > 1 && count == 0 && strlen(d) < 9000 &&
 		     m->m_xml && m->m_xml[0] ) {
 			const char *cc = "";
-			if ( d && d[0] ) cc = "\n";
+			if ( d[0] ) cc = "\n";
 			sprintf ( tmp , "%s%sUse <%s> tag.",d,cc,m->m_xml);
 			d = tmp;
 		}
