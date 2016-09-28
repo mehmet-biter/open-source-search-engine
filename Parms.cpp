@@ -10517,7 +10517,7 @@ void Parms::overlapTest ( char step ) {
 	InjectionRequest tmpir;
 	CollectionRec tmpcr;
 	Conf          tmpconf;
-	char          b;
+	char          b=0;
 	char *p1 , *p2;
 	int32_t i;
 	// sanity check: ensure parms do not overlap
