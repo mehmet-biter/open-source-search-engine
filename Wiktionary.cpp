@@ -457,7 +457,7 @@ bool Wiktionary::generateHashTableFromWiktionaryTxt ( int32_t sizen ) {
 	char ff1[256];
 	sprintf(ff1, "%swiktionary.txt.aa", g_hostdb.m_dir);
 	log(LOG_INFO,"wikt: Loading %s",ff1);
-        int fd1 = open ( ff1 , O_RDONLY );
+	int fd1 = open ( ff1 , O_RDONLY );
 	if ( fd1 < 0 ) {
 		log("wikt: open %s : %s",ff1,mstrerror(errno));
 		return false;
@@ -465,7 +465,10 @@ bool Wiktionary::generateHashTableFromWiktionaryTxt ( int32_t sizen ) {
 	// read in whole thing
 	int64_t maxReadSize = 300000000; // 300MB
 	char *buf = (char *)mmalloc ( maxReadSize + 1 , "wikt" );
-	if ( ! buf ) return false;
+	if ( ! buf ) {
+		close ( fd1 );
+		return false;
+	}
 
 	int64_t offset = 0LL;
 
@@ -498,7 +501,7 @@ bool Wiktionary::generateHashTableFromWiktionaryTxt ( int32_t sizen ) {
 			offset = 0;
 			sprintf(ff1,"%swiktionary.txt.ab",g_hostdb.m_dir);
 			log(LOG_INFO,"wikt: Loading %s",ff1);
-			int fd1 = open ( ff1 , O_RDONLY );
+			fd1 = open ( ff1 , O_RDONLY );
 			if ( fd1 < 0 ) {
 				log("wikt: open %s : %s",ff1,mstrerror(errno));
 				return false;
@@ -506,6 +509,7 @@ bool Wiktionary::generateHashTableFromWiktionaryTxt ( int32_t sizen ) {
 			struct stat stats;
 			if ( fstat ( fd1 , &stats ) == -1 ) {
 				g_errno = errno;
+				close ( fd1 );
 				return false;
 			}
 			sizen = stats.st_size;
@@ -582,6 +586,7 @@ bool Wiktionary::generateHashTableFromWiktionaryTxt ( int32_t sizen ) {
 	if ( n != readSize ) { 
 		log("wikt: read: %s",mstrerror(errno));
 		g_errno = EBADENGINEER;
+		close ( fd1 );
 		return false; 
 	}
 
