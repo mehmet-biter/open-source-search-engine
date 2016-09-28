@@ -258,6 +258,11 @@ bool HttpMime::parse ( char *mime , int32_t mimeLen , Url *url ) {
 
 time_t atotime ( const char *s ) {
 
+	// Sanity check
+	if( !s ) {
+		return 0;
+	}
+
 	// skip non-alnum padding
 	while ( *s && ! isalnum (*s) ) s++;
 
