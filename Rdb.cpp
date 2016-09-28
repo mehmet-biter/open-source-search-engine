@@ -930,7 +930,6 @@ bool Rdb::loadTree ( ) {
 			g_process.shutdownAbort(true);
 		}
 
-		
 		if(treeExists) {
 			m_buckets.addTree( &m_tree );
 			if ( m_buckets.getNumKeys() - numKeys > 0 ) {
@@ -1932,13 +1931,26 @@ bool Rdb::addRecord(collnum_t collnum, char *key, char *data, int32_t dataSize) 
 			return true;
 		}
 
-		/// @todo ALC is this necessary? we remove delete keys when we dump to Rdb anyway for the first file
 		// if we have no files on disk for this db, don't bother preserving a a negative rec, it just wastes tree space
 		if (KEYNEG(key)) {
 			// return if all data is in the tree
 			if (getBase(collnum)->getNumFiles() == 0) {
 				logTrace(g_conf.m_logTraceRdb, "END. %s: Negative key with all data in tree. Returning true", m_dbname);
 				return true;
+			}
+
+			// we should only store special delete keys (eg: posdb with termId 0)
+			// we will have non-special keys here to simplify logic in XmlDoc::getMetaList (and we can't really be sure
+			// if the key we're adding is in RdbTree/RdbBuckets at that point of time. It could potentially be dumped
+			// after the check.
+			if (m_rdbId == RDB_POSDB || m_rdbId == RDB2_POSDB2) {
+				if (Posdb::getTermId(key) != POSDB_DELETEDOC_TERMID) {
+					logTrace(g_conf.m_logTraceRdb, "END. %s: Negative key with non-zero termId found. Returning true", m_dbname);
+					return true;
+				}
+			} else {
+				/// @todo ALC cater for other rdb types here
+				gbshutdownLogicError();
 			}
 		}
 	} else {

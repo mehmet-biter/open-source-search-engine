@@ -22,6 +22,8 @@ static void deletePosdb() {
 	RdbBase *base = g_posdb.getRdb()->getBase(0);
 	for (int i = 0; i < base->getNumFiles(); ++i) {
 		base->getFile(i)->unlink();
+		base->getMap(i)->unlink();
+		base->getIndex(i)->unlink();
 	}
 
 	// delete posdb bucket file
@@ -286,18 +288,14 @@ TEST_F(PosdbNoMergeTest, AddDeleteRecordMultiple) {
 
 	// second round
 	// doc contains 3 words (a, c, d)
-	addPosdbKey(1, docId, true);
 	addPosdbKey(2, docId, true);
-	addPosdbKey(3, docId, true);
 	addPosdbKey(1, docId);
 	addPosdbKey(3, docId);
 	addPosdbKey(4, docId);
 
 	// third round
 	// doc contains 4 words (a, d, e, f)
-	addPosdbKey(1, docId, true);
 	addPosdbKey(3, docId, true);
-	addPosdbKey(4, docId, true);
 
 	addPosdbKey(1, docId);
 	addPosdbKey(4, docId);

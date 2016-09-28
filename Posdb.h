@@ -86,6 +86,8 @@
 #define HASHGROUP_INMENU               10 // body implied
 #define HASHGROUP_END                  11
 
+#define POSDB_DELETEDOC_TERMID    0
+
 const char *getHashGroupString ( unsigned char hg );
 float getTermFreqWeight  ( int64_t termFreq , int64_t numDocsInColl );
 
