@@ -14,6 +14,16 @@ static bool deletePosdbKey(RdbBuckets *buckets, int64_t termId, int64_t docId, b
 	buckets->deleteNode(0, key);
 }
 
+static void expectRecord(RdbList *list, int64_t termId, int64_t docId, bool isDel = false) {
+	ASSERT_FALSE(list->isExhausted());
+
+	const char *rec = list->getCurrentRec();
+	EXPECT_EQ(termId, Posdb::getTermId(rec));
+	EXPECT_EQ(docId, Posdb::getDocId(rec));
+	EXPECT_EQ(isDel, KEYNEG(rec));
+	list->skipCurrentRecord();
+}
+
 TEST(RdbBucketsTest, PosdbAddNodeCheckAfterAdd) {
 	static const int total_records = 10;
 	static const int64_t docId = 1;
@@ -128,4 +138,27 @@ TEST(RdbBucketsTest, PosdbAddDeleteNodeCheckEachDelete) {
 		}
 		EXPECT_TRUE(list.isExhausted());
 	}
+}
+
+TEST(RdbBucketsTest, PosdbAddDuplicateNode) {
+	static const int64_t docId = 1;
+	RdbBuckets buckets;
+	buckets.set(Posdb::getFixedDataSize(), 1024 * 1024, "test-posdb", RDB_POSDB, "posdb", Posdb::getKeySize());
+
+	addPosdbKey(&buckets, 1, docId);
+	addPosdbKey(&buckets, 2, docId);
+	addPosdbKey(&buckets, 1, docId);
+
+	// use extremes
+	const char *startKey = KEYMIN();
+	const char *endKey = KEYMAX();
+
+	int32_t numPosRecs  = 0;
+	int32_t numNegRecs = 0;
+
+	RdbList list;
+	buckets.getList(0, startKey, endKey, -1, &list, &numPosRecs, &numNegRecs, Posdb::getUseHalfKeys());
+	expectRecord(&list, 1, docId);
+	expectRecord(&list, 2, docId);
+	EXPECT_TRUE(list.isExhausted());
 }
