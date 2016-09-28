@@ -52,7 +52,7 @@ static bool createTestData(BigFile &bigFile, RdbBase *base, std::vector<uint64_t
 	docid_count = testData.size();
 	bigFile.write(&docid_count, sizeof(docid_count), offset);
 	if (g_errno) {
-		logError("Failed to write to %s (docid_count): %s", bigFile.getFilename(), mstrerror(g_errno))
+		logError("Failed to write to %s (docid_count): %s", bigFile.getFilename(), mstrerror(g_errno));
 		return false;
 	}
 
@@ -60,7 +60,7 @@ static bool createTestData(BigFile &bigFile, RdbBase *base, std::vector<uint64_t
 
 	bigFile.write(&testData[0], docid_count * sizeof(testData[0]), offset);
 	if (g_errno) {
-		logError("Failed to write to %s (docids): %s", bigFile.getFilename(), mstrerror(g_errno))
+		logError("Failed to write to %s (docids): %s", bigFile.getFilename(), mstrerror(g_errno));
 		return false;
 	}
 
