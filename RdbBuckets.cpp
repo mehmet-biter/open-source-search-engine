@@ -436,18 +436,22 @@ bool RdbBucket::selfTest (const char* prevKey) {
 	return true;
 }
 
-void RdbBuckets::printBuckets() {
+void RdbBuckets::printBuckets(std::function<void(const char*, int32_t)> print_fn) {
  	for(int32_t i = 0; i < m_numBuckets; i++) {
-		m_buckets[i]->printBucket();
+		m_buckets[i]->printBucket(print_fn);
 	}
 }
 
-void RdbBucket::printBucket() {
+void RdbBucket::printBucket(std::function<void(const char*, int32_t)> print_fn) {
 	const char *kk = m_keys;
 	int32_t keySize = m_parent->getKeySize();
 
 	for (int32_t i = 0; i < m_numKeys; i++) {
-		logf(LOG_TRACE, "db: k=%s keySize=%" PRId32, KEYSTR(kk, keySize), keySize);
+		if (print_fn) {
+			print_fn(kk, keySize);
+		} else {
+			logf(LOG_TRACE, "db: k=%s keySize=%" PRId32, KEYSTR(kk, keySize), keySize);
+		}
 		kk += m_parent->getRecSize();
 	}
 }
