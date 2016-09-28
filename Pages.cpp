@@ -549,6 +549,13 @@ bool Pages::printAdminTop (SafeBuf     *sb   ,
 			   const char  *qs   ,
 			   const char* bodyJavascript) {
 	int32_t  page   = getDynamicPageNumber ( r );
+	
+	if( page < 0 ) {
+		// should never happen
+		logError("invalid page number %" PRId32 "", page);
+		return false;
+	}
+	
 	const char *coll = g_collectiondb.getDefaultColl(r);
 	bool status = true;
 
