@@ -33,28 +33,6 @@ Rdb::Rdb ( ) {
 	m_collectionlessBase = NULL;
 	m_initialized = false;
 	m_numMergesOut = 0;
-	reset();
-}
-
-void Rdb::reset ( ) {
-	if (m_collectionlessBase) {
-		RdbBase *base = m_collectionlessBase;
-		mdelete (base, sizeof(RdbBase), "Rdb Coll");
-		delete  (base);
-		m_collectionlessBase = NULL;
-	}
-	// reset tree and cache
-	m_tree.reset();
-	m_buckets.reset();
-	m_mem.reset();
-	//m_cache.reset();
-	m_lastWrite = 0LL;
-	m_isClosing = false;
-	m_isClosed  = false;
-	m_isSaving  = false;
-	m_isReallyClosing = false;
-	m_registered      = false;
-	m_lastTime        = 0LL;
 
 	// Coverity
 	m_fixedDataSize = 0;
@@ -77,6 +55,29 @@ void Rdb::reset ( ) {
 	m_rdbId = RDB_NONE;
 	m_ks = 0;
 	m_pageSize = 0;
+
+	reset();
+}
+
+void Rdb::reset ( ) {
+	if (m_collectionlessBase) {
+		RdbBase *base = m_collectionlessBase;
+		mdelete (base, sizeof(RdbBase), "Rdb Coll");
+		delete  (base);
+		m_collectionlessBase = NULL;
+	}
+	// reset tree and cache
+	m_tree.reset();
+	m_buckets.reset();
+	m_mem.reset();
+	//m_cache.reset();
+	m_lastWrite = 0LL;
+	m_isClosing = false;
+	m_isClosed  = false;
+	m_isSaving  = false;
+	m_isReallyClosing = false;
+	m_registered      = false;
+	m_lastTime        = 0LL;
 }
 
 Rdb::~Rdb ( ) {
