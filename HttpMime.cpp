@@ -402,6 +402,12 @@ static time_t atotime3 ( const char *s ) {
 static time_t atotime4 ( const char *s ) {
 	// this time structure, once filled, will help yield a time_t
 	struct tm t;
+
+	// Sanity.. Needs at least "DD MMM YYYY"
+	if( strlen(s) < 11 ) { 
+		logError("Wrong date/time format for this function [%s]", s);
+		return 0;
+	}
 	// DAY OF WEEK 
 	//t.tm_wday = getWeekday ( s );
 	//while ( *s && ! isdigit(*s) ) s++;
