@@ -44,6 +44,8 @@ Title::Title() {
 	m_titleLen = 0;
 	m_titleTagStart = -1;
 	m_titleTagEnd   = -1;
+	
+	m_maxTitleLen = 0;
 }
 
 Title::~Title() {
