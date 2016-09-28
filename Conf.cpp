@@ -250,9 +250,10 @@ Conf::Conf ( ) {
 	m_logTraceRdbBase = false;
 	m_logTraceRdbBuckets = false;
 	m_logTraceRdbDump = false;
+	m_logTraceRdbIndex = false;
 	m_logTraceRdbList = false;
 	m_logTraceRdbMap = false;
-	m_logTraceRdbIndex = false;
+	m_logTraceRdbTree = false;
 	m_logTraceRepairs = false;
 	m_logTraceRobots = false;
 	m_logTraceSpider = false;

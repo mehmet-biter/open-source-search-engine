@@ -2268,17 +2268,22 @@ int32_t RdbTree::computeDepth ( int32_t i ) {
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
 bool RdbTree::fastSave ( const char *dir, const char *dbname, bool useThread, void *state, void (* callback) (void *state) ) {
+	logTrace(g_conf.m_logTraceRdbTree, "BEGIN. dir=%s", dir);
+
 	if ( g_conf.m_readOnlyMode ) {
+		logTrace(g_conf.m_logTraceRdbTree, "END. Read only mode. Returning true.");
 		return true;
 	}
 
 	// we do not need a save
 	if ( ! m_needsSave ) {
+		logTrace(g_conf.m_logTraceRdbTree, "END. Don't need to save. Returning true.");
 		return true;
 	}
 
 	// return true if already in the middle of saving
 	if ( m_isSaving ) {
+		logTrace(g_conf.m_logTraceRdbTree, "END. Is already saving. Returning false.");
 		return false;
 	}
 
@@ -2330,12 +2335,16 @@ bool RdbTree::fastSave ( const char *dir, const char *dbname, bool useThread, vo
 	// we do not need to be saved now?
 	m_needsSave = false;
 
+	logTrace(g_conf.m_logTraceRdbTree, "END. Returning true.");
+
 	// we did not block
 	return true;
 }
 
 // Use of ThreadEntry parameter is NOT thread safe
 void RdbTree::saveWrapper ( void *state ) {
+	logTrace(g_conf.m_logTraceRdbTree, "BEGIN");
+
 	// get this class
 	RdbTree *that = (RdbTree *)state;
 
@@ -2348,11 +2357,15 @@ void RdbTree::saveWrapper ( void *state ) {
 	if (g_errno && !that->m_errno) {
 		that->m_errno = g_errno;
 	}
+
+	logTrace(g_conf.m_logTraceRdbTree, "END");
 }
 
 // we come here after thread exits
 // Use of ThreadEntry parameter is NOT thread safe
 void RdbTree::threadDoneWrapper ( void *state, job_exit_t exit_type ) {
+	logTrace(g_conf.m_logTraceRdbTree, "BEGIN");
+
 	// get this class
 	RdbTree *that = (RdbTree *)state;
 
@@ -2377,8 +2390,13 @@ void RdbTree::threadDoneWrapper ( void *state, job_exit_t exit_type ) {
 		log( LOG_INFO, "db: Done saving %s%s-saved.dat (wrote %" PRId64" bytes)",
 		     that->m_dir, that->m_dbname, that->getBytesWritten() );
 	}
+
 	// . call callback
-	if ( that->m_callback ) that->m_callback ( that->m_state );
+	if ( that->m_callback ) {
+		that->m_callback ( that->m_state );
+	}
+
+	logTrace(g_conf.m_logTraceRdbTree, "BEGIN");
 }
 
 // . returns false and sets g_errno on error

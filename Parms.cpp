@@ -10081,6 +10081,15 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
+	m->m_title = "log trace info for RdbIndex";
+	m->m_cgi   = "ltrc_ridx";
+	m->m_off   = offsetof(Conf,m_logTraceRdbIndex);
+	m->m_type  = TYPE_BOOL;
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m->m_obj   = OBJ_CONF;
+	m++;
+
 	m->m_title = "log trace info for RdbList";
 	m->m_cgi   = "ltrc_rl";
 	m->m_off   = offsetof(Conf,m_logTraceRdbList);
@@ -10099,9 +10108,9 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
-	m->m_title = "log trace info for RdbIndex";
-	m->m_cgi   = "ltrc_ridx";
-	m->m_off   = offsetof(Conf,m_logTraceRdbIndex);
+	m->m_title = "log trace info for RdbTree";
+	m->m_cgi   = "ltrc_rt";
+	m->m_off   = offsetof(Conf,m_logTraceRdbTree);
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
 	m->m_page  = PAGE_LOG;
