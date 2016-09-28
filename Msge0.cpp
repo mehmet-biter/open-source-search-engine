@@ -38,7 +38,7 @@ void Msge0::reset() {
 		// free the rdblist memory in the TagRec::m_list
 		m_tagRecPtrs[i]->reset();
 	}
-	for ( int32_t i = 0 ; i <= m_slabNum ; i++ ) {
+	for ( int32_t i = 0; m_slab && i <= m_slabNum; i++ ) {
 		mfree ( m_slab[i] , SLAB_SIZE , "msgeslab" );
 	}
 	m_slabNum = -1;
