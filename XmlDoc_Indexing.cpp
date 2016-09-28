@@ -2779,16 +2779,18 @@ char *XmlDoc::hashJSONFields2 ( HashTableX *table ,
 		//
 		char *name = nameBuf.getBufStart();
 		hi->m_hashGroup = HASHGROUP_BODY;
-		if ( strstr(name,"title") )
-			hi->m_hashGroup = HASHGROUP_TITLE;
-		if ( strstr(name,"url") )
-			hi->m_hashGroup = HASHGROUP_INURL;
-		if ( strstr(name,"resolved_url") )
-			hi->m_hashGroup = HASHGROUP_INURL;
-		if ( strstr(name,"tags") )
-			hi->m_hashGroup = HASHGROUP_INTAG;
-		if ( strstr(name,"meta") )
-			hi->m_hashGroup = HASHGROUP_INMETATAG;
+		if( name ) {
+			if ( strstr(name,"title") )
+				hi->m_hashGroup = HASHGROUP_TITLE;
+			if ( strstr(name,"url") )
+				hi->m_hashGroup = HASHGROUP_INURL;
+			if ( strstr(name,"resolved_url") )
+				hi->m_hashGroup = HASHGROUP_INURL;
+			if ( strstr(name,"tags") )
+				hi->m_hashGroup = HASHGROUP_INTAG;
+			if ( strstr(name,"meta") )
+				hi->m_hashGroup = HASHGROUP_INMETATAG;
+		}
 		//
 		// now Json.cpp decodes and stores the value into
 		// a buffer, so ji->getValue() should be decoded completely
