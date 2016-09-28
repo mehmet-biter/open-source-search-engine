@@ -564,8 +564,7 @@ bool XmlDoc::set4 ( SpiderRequest *sreq      ,
 		    int32_t        forcedIp ,
 		    uint8_t        contentType ,
 		    uint32_t       spideredTime ,
-		    bool           contentHasMimeArg
-) {
+		    bool           contentHasMimeArg) {
 
 	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );
 
@@ -747,8 +746,8 @@ bool XmlDoc::set4 ( SpiderRequest *sreq      ,
 
 	// it should be valid since we just set it
 	CollectionRec *cr = getCollRec();
-
-	m_useRobotsTxt = cr->m_useRobotsTxt;
+	
+	m_useRobotsTxt = cr ? cr->m_useRobotsTxt : true;
 
 	// solidify some parms
 	//m_eliminateMenus       = cr->m_eliminateMenus;
