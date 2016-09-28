@@ -3118,6 +3118,7 @@ checkNextRule:
 			// if we had lang==en,es,...
 			if ( sign == SIGN_EQ &&
 			     blen == langLen && 
+			     lang &&
 			     strncasecmp(start,lang,langLen)==0 ) 
 				// if we matched any, that's great
 				goto matched2;
@@ -3126,6 +3127,7 @@ checkNextRule:
 			// particular rule!!!
 			if ( sign == SIGN_NE &&
 			     blen == langLen && 
+			     lang && 
 			     strncasecmp(start,lang,langLen)==0 ) 
 				// we do not match this rule if we matched
 				// and of the langs in the != list
