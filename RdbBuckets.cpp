@@ -1513,6 +1513,8 @@ bool RdbBuckets::deleteNode(collnum_t collnum, const char *key) {
 		return false;
 	}
 
+	m_needsSave = true;
+
 	if (!m_buckets[i]->deleteNode(node)) {
 		m_buckets[i]->reset();
 		memmove(m_buckets[i], m_buckets[i + 1], m_numBuckets - i - 1);
