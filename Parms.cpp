@@ -3196,7 +3196,7 @@ bool Parms::saveToXml ( char *THIS , char *f , char objType ) {
 	//int32_t  n   ;
 	int32_t  j   ;
 	int32_t  count;
-	char *s;
+	char *s = "";
 	CollectionRec *cr = NULL;
 	if ( THIS != (char *)&g_conf ) cr = (CollectionRec *)THIS;
 	// now set THIS based on the parameters in the xml file
