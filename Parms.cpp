@@ -1265,12 +1265,14 @@ bool printDropDownProfile ( SafeBuf* sb, const char *name, CollectionRec *cr ) {
 	//char *items[] = {"custom","web","news","chinese","shallow"};
 	int32_t nd = sizeof(g_drops)/sizeof(DropLangs);
 	for ( int32_t i = 0 ; i < nd ; i++ ) {
-		//if ( i == select ) s = " selected";
-		//else               s = "";
-		const char *x = cr->m_urlFiltersProfile.getBufStart();
+		const char *x = (cr ? cr->m_urlFiltersProfile.getBufStart() : NULL);
 		const char *s;
-		if ( strcmp(g_drops[i].m_title, x) == 0 ) s = " selected";
-		else                                      s = "";
+		if ( x && strcmp(g_drops[i].m_title, x) == 0 ) {
+			s = " selected";
+		}
+		else {
+			s = "";
+		}
 		sb->safePrintf ("<option value=%s%s>%s",
 				g_drops[i].m_title,
 				s,
