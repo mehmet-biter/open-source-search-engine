@@ -153,8 +153,7 @@ bool Parm::printVal ( SafeBuf *sb , collnum_t collnum , int32_t occNum ) {
 		return sb->safePrintf("%" PRId64,*(int64_t *)val);
 
 	if ( m_type == TYPE_CHARPTR ) {
-		if ( val ) return sb->safePrintf("%s",val);
-		return true;
+		return sb->safePrintf("%s",val);
 	}
 
 	if ( m_type == TYPE_BOOL ||
