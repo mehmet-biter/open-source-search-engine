@@ -1784,12 +1784,12 @@ void RdbList::merge_r(RdbList **lists, int32_t numLists, const char *startKey, c
 	// . we increment by 2 too
 	// . if minKey is a delete, then make it a non-delete key
 	// . add 2 to ensure that it stays a non-delete key
-	char  lastKey[MAX_KEY_BYTES];
+	char  lastKey[MAX_KEY_BYTES]={0};
 	bool  lastKeyIsValid = false;
 	char  lastPosKey[MAX_KEY_BYTES]={0};
 	char  highestKey[MAX_KEY_BYTES];
 	bool  firstTime = true;
-	char  lastNegKey[MAX_KEY_BYTES];
+	char  lastNegKey[MAX_KEY_BYTES]={0};
 	int32_t  lastNegi = -1;
 
 	// init highestKey
