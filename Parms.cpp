@@ -11753,11 +11753,13 @@ static void handleRequest3fLoop ( void *weArg ) {
 			we->m_collnum = getCollnumFromParmRec ( rec );
 
 		// see if our spider round changes
-		int32_t oldRound;
+		int32_t oldRound = -1;
 		if ( we->m_collnum >= 0 && ! cx ) {
 			cx = g_collectiondb.getRec ( we->m_collnum );
 			// i guess coll might gotten deleted! so check cx
-			if ( cx ) oldRound = cx->m_spiderRoundNum;
+			if ( cx ) {
+				oldRound = cx->m_spiderRoundNum;
+			}
 		}
 
 		// . this returns false if blocked, returns true and sets
