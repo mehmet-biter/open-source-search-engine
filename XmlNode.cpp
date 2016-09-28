@@ -762,7 +762,9 @@ char *XmlNode::getAttrValue( const char *field, int32_t fieldLen, int32_t *value
 	}
 
 	// set the length of the value
-	*valueLen = endQuotePos - startQuotePos - 1;
+	if( valueLen ) {
+		*valueLen = endQuotePos - startQuotePos - 1;
+	}
 
 	// return a ptr to the value
 	return m_node + startQuotePos + 1;
