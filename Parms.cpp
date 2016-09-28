@@ -2199,13 +2199,13 @@ bool Parms::printParm( SafeBuf* sb,
 		//			       -1         ); // subscript
 	else if ( t == TYPE_TIME ) {
 		//time is stored as a string
+		char hr[3]="00";
+		char min[3]="00";
 		//if time is not stored properly, just write 00:00
-		if ( s[2] != ':' )
-			strncpy ( s, "00:00", 5 );
-		char hr[3];
-		char min[3];
-		gbmemcpy ( hr, s, 2 );
-		gbmemcpy ( min, s + 3, 2 );
+		if ( s[2] == ':' ) {
+			gbmemcpy ( hr, s, 2 );
+			gbmemcpy ( min, s + 3, 2 );
+		}
 		hr[2] = '\0';
 		min[2] = '\0';
 		// print the time in the input forms
