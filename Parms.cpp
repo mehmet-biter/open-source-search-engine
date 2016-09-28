@@ -11148,12 +11148,28 @@ bool Parms::convertHttpRequestToParmList (HttpRequest *hr, SafeBuf *parmList,
 		if ( strcmp(field,"pause"     ) == 0 ||
 		     strcmp(field,"pauseCrawl") == 0 ) {
 			m = getParmFast1 ( "cse",  &occNum);
-			if      ( val && val[0] == '0' ) val = "1";
-			else if ( val && val[0] == '1' ) val = "0";
-			if ( ! m ) { g_process.shutdownAbort(true); }
+			if ( val && val[0] == '0' ) {
+				val = "1";
+			}
+			else 
+			if( val && val[0] == '1' ) {
+				val = "0";
+			}
+
+			if ( ! m ) {
+				g_process.shutdownAbort(true);
+			}
 		}
 
-		if ( ! m ) continue;
+		if ( ! m ) {
+			continue;
+		}
+
+		// Sanity as addNewParmToList2 uses it
+		if( !val ) {
+			logError("param had no value [%s]", field);
+			continue;
+		}
 
 		// skip if IS a command parm, like "addcoll", we did that above
 		if ( m->m_type == TYPE_CMD )
@@ -11186,18 +11202,6 @@ bool Parms::convertHttpRequestToParmList (HttpRequest *hr, SafeBuf *parmList,
 			continue;
 		}
 
-		// convert spiderRoundStartTime=0 (roundStart=0 roundStart=1)
-		// to spiderRoundStartTime=<currenttime>+30secs
-		// so that will force the next spider round to kick in
-		/*
-		bool restartRound = false;
-		char tmp[24];
-		if ( strcmp(field,"roundStart")==0 &&
-		     val && (val[0]=='0'||val[0]=='1') && val[1]==0 )
-			sprintf(tmp,"%" PRIu32,(int32_t)getTimeGlobalNoCore()+0);
-			val = tmp;
-		}
-		*/
 
 		// add it to a list now
 		if ( ! addNewParmToList2 ( parmList ,
