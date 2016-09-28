@@ -3195,7 +3195,7 @@ bool Parms::saveToXml ( char *THIS , char *f , char objType ) {
 	//char *pend = buf + MAX_CONF_SIZE;
 	//int32_t  n   ;
 	int32_t  j   ;
-	int32_t  count;
+	int32_t  count = 0;
 	char *s = "";
 	CollectionRec *cr = NULL;
 	if ( THIS != (char *)&g_conf ) cr = (CollectionRec *)THIS;
