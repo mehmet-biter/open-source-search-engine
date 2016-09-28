@@ -238,12 +238,14 @@ bool Words::addWords( char *s, int32_t nodeLen, bool computeWordIds ) {
 		// tag?
 		if ( s[i]=='<' && m_hasTags && isTagStart(s+i) ) {
 			// get the tag id
-			if ( s[i + 1] == '/' ) {
-				// skip over /
-				m_tagIds[m_numWords] = ::getTagId( s + i + 2 );
-				m_tagIds[m_numWords] |= BACKBIT;
-			} else {
-				m_tagIds[m_numWords] = ::getTagId( s + i + 1 );
+			if( m_tagIds ) {
+				if ( s[i + 1] == '/' ) {
+					// skip over /
+					m_tagIds[m_numWords] = ::getTagId( s + i + 2 );
+					m_tagIds[m_numWords] |= BACKBIT;
+				} else {
+					m_tagIds[m_numWords] = ::getTagId( s + i + 1 );
+				}
 			}
 
 			m_words[m_numWords] = s + i;
