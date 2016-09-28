@@ -40,6 +40,7 @@ public:
 		m_createSortByForNumbers= false;
 		m_hashNumbers			= true;
 		m_hashCommonWebWords	= true;
+		m_linkerSiteRank		= 0;
 	}
 	class HashTableX *m_tt;
 	const char		*m_prefix;
