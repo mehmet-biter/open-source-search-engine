@@ -1860,17 +1860,22 @@ int64_t RdbBuckets::getListSize(collnum_t collnum, const char *startKey, const c
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
 bool RdbBuckets::fastSave ( const char *dir, bool useThread, void *state, void (* callback) (void *state) ) {
+	logTrace(g_conf.m_logTraceRdbBuckets, "BEGIN. dir=%s", dir);
+
 	if (g_conf.m_readOnlyMode) {
+		logTrace(g_conf.m_logTraceRdbBuckets, "END. Read only mode. Returning true.");
 		return true;
 	}
 
 	// we do not need a save
 	if (!m_needsSave) {
+		logTrace(g_conf.m_logTraceRdbBuckets, "END. Don't need to save. Returning true.");
 		return true;
 	}
 
 	// return true if already in the middle of saving
 	if (m_isSaving) {
+		logTrace(g_conf.m_logTraceRdbBuckets, "END. Is already saving. Returning false.");
 		return false;
 	}
 
@@ -1901,6 +1906,8 @@ bool RdbBuckets::fastSave ( const char *dir, bool useThread, void *state, void (
 	m_isSaving = false;
 	// we do not need to be saved now?
 	m_needsSave = false;
+
+	logTrace(g_conf.m_logTraceRdbBuckets, "END. Returning true.");
 
 	// we did not block
 	return true;
