@@ -961,6 +961,12 @@ bool printGigabotAdvice ( SafeBuf *sb ,
 
 void Pages::printFormTop( SafeBuf *sb, HttpRequest *r ) {
 	int32_t  page   = getDynamicPageNumber ( r );
+
+	if( page < 0 ) {
+		logError("getDynamicPageNumber returned negative index!");
+		return;
+	}
+
 	// . the form
 	// . we cannot use the GET method if there is more than a few k of
 	//   parameters, like in the case of the Search Controls page. The
