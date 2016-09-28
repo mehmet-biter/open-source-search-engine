@@ -710,6 +710,10 @@ bool isLinkSpam ( const Url *linker,
 			*note = "path has /trackbacks/"   ; return true; }
 	}
 
+	if( !xml ) {
+		return false;
+	}
+
 	// scan through the content as fast as possible
 	char  *content    = xml->getContent(); 
 	int32_t   contentLen = xml->getContentLen();
