@@ -2197,7 +2197,8 @@ int32_t getUrlFilterNum ( 	SpiderRequest	*sreq,
 	logTrace( g_conf.m_logTraceSpider, "BEGIN" );
 		
 	if ( ! sreq ) {
-		log("spider: sreq is NULL!");
+		logError("spider: sreq is NULL!");
+		return -1;
 	}
 
 	int32_t langId = langIdArg;
