@@ -24,6 +24,7 @@
 #define GB_RDBBUCKETS_H
 
 #include <cstdint>
+#include <functional>
 #include "rdbid_t.h"
 #include "types.h"
 
@@ -86,7 +87,7 @@ public:
 	
 	//Debug
 	bool selfTest(const char *prevKey);
-	void printBucket();
+	void printBucket(std::function<void(const char*, int32_t)> print_fn = nullptr);
 
 	bool sort();
 	RdbBucket *split(RdbBucket *newBucket);
@@ -188,7 +189,7 @@ public:
 	//DEBUG
 	bool selfTest(bool thorough, bool core);
 	int32_t addTree(RdbTree *rt);
-	void printBuckets();
+	void printBuckets(std::function<void(const char*, int32_t)> print_fn = nullptr);
 	bool repair();
 	bool testAndRepair();
 
