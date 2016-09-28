@@ -133,7 +133,8 @@ class Posdb {
 		       bool               shardByTermId  );
 
 
-	int printList ( RdbList &list ) ;
+	static void printKey(const char *key);
+	static int printList ( RdbList &list ) ;
 
 	// we map the 32bit score to like 7 bits here
 	static void setMultiplierBits ( void *vkp , unsigned char mbits ) {
