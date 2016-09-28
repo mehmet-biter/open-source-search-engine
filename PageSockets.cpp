@@ -27,8 +27,8 @@ bool sendPageSockets ( TcpSocket *s , HttpRequest *r ) {
 	char tmp_coll[MAX_COLL_LEN+1];
 	if(coll) {
 		//copy collection name into tmpbuf and nul-terminate it
-		if ( (size_t)collLen >= sizeof(tmp_coll) )
-			collLen = sizeof(tmp_coll);
+		if ( (size_t)collLen > MAX_COLL_LEN )
+			collLen = MAX_COLL_LEN;
 		memcpy(tmp_coll,coll,collLen);
 		tmp_coll[collLen] = '\0';
 		coll = tmp_coll;
