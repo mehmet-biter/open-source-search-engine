@@ -266,29 +266,27 @@ docidsconst_ptr_t RdbIndex::mergePendingDocIds() {
 
 	m_lastMergeTime = gettimeofdayInMilliseconds();
 
-	// merge pending docIds into docIds
-	std::stable_sort(m_pendingDocIds->begin(), m_pendingDocIds->end(),
-	                 [](uint64_t a, uint64_t b) {
-		                 return (a & s_docIdMask) < (b & s_docIdMask);
-	                 });
+	auto cmplt_fn = [](uint64_t a, uint64_t b) {
+		return (a & s_docIdMask) < (b & s_docIdMask);
+	};
 
-	// in reverse because we want to keep the newest entry
-	auto it = std::unique(m_pendingDocIds->rbegin(), m_pendingDocIds->rend(),
-	                      [](uint64_t a, uint64_t b) {
-		                      return (a & s_docIdMask) == (b & s_docIdMask);
-	                      });
-	m_pendingDocIds->erase(m_pendingDocIds->begin(), it.base());
+	auto cmpeq_fn = [](uint64_t a, uint64_t b) {
+		return (a & s_docIdMask) == (b & s_docIdMask);
+	};
+
+	// merge pending docIds into docIds
+	std::stable_sort(m_pendingDocIds->begin(), m_pendingDocIds->end(), cmplt_fn);
 
 	docids_ptr_t tmpDocIds(new docids_t);
-	std::set_union(m_docIds->begin(), m_docIds->end(), m_pendingDocIds->begin(), m_pendingDocIds->end(), std::back_inserter(*tmpDocIds));
+	std::merge(m_docIds->begin(), m_docIds->end(), m_pendingDocIds->begin(), m_pendingDocIds->end(), std::back_inserter(*tmpDocIds), cmplt_fn);
 
+	// in reverse because we want to keep the newest entry
+	auto it = std::unique(tmpDocIds->rbegin(), tmpDocIds->rend(), cmpeq_fn);
+	tmpDocIds->erase(tmpDocIds->begin(), it.base());
+
+	// replace existing even if size doesn't change (could change from positive to negative key)
+	swapDocIds(tmpDocIds);
 	m_pendingDocIds->clear();
-
-	// if size after merge doesn't change, we don't need to replace docIds (pending docIds are a subset of docIds)
-	if (m_docIds->size() != tmpDocIds->size()) {
-		// replace existing
-		swapDocIds(tmpDocIds);
-	}
 
 	return m_docIds;
 }
