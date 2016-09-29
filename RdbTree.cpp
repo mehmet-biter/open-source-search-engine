@@ -1992,22 +1992,36 @@ int32_t RdbTree::getListSize ( collnum_t collnum ,
 	size = 0;
 	int32_t n = getPrevNode ( collnum , startKey );
 	// return 0 if no nodes in that key range
-	if ( n < 0 ) return 0;
+
+	if( n < 0 ) {
+		return 0;
+	}
+
 	// skip to next node if this one is < startKey
 	//if ( m_keys[n] < startKey ) n = getNextNode ( n );
-	if ( KEYCMP(m_keys,n,startKey,0,m_ks)<0) n = getNextNode(n);
+	if( KEYCMP(m_keys, n, startKey, 0, m_ks) < 0 ) {
+		n = getNextNode(n);
+	}
+
+	if( n < 0 ) {
+		return 0;
+	}
+	
 	// or collnum
-	if ( m_collnums[n] < collnum ) n = getNextNode ( n );
+	if ( m_collnums[n] < collnum ) {
+		n = getNextNode(n);
+	}
+
 	// loop until we run out of nodes or one breeches endKey
 	//while ( n > 0 && m_keys[n] <= endKey && m_collnums[n] == collnum ) {
-	while ( n>0 && KEYCMP(m_keys,n,endKey,0,m_ks)<=0 && 
-	m_collnums[n]==collnum){
+	while( n > 0 && KEYCMP(m_keys,n,endKey,0,m_ks) <= 0 && m_collnums[n]==collnum ) {
 		size++;
 		n = getNextNode(n);
 	}
 	// this should be an exact list size (actually # of nodes)
 	return size * m_ks;
 }
+
 
 // . returns a number from 0 to m_numUsedNodes-1
 // . represents the ordering of this key in that range
