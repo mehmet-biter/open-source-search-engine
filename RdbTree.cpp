@@ -2475,10 +2475,14 @@ bool RdbTree::fastSave_r() {
 	m_bytesWritten = offset;
 	// close it up
 	close ( fd );
-	// now fucking rename it
+
+	// now rename it
 	char s2[1024];
 	sprintf ( s2 , "%s/%s-saved.dat", m_dir , m_dbname );
-	::rename ( s , s2 ) ;
+	if( ::rename(s, s2) == -1 ) {
+		logError("Error renaming file [%s] to [%s] (%d: %s)", s, s2, errno, mstrerror(errno));
+	}
+
 	// info
 	//log(0,"RdbTree::fastSave: saved %" PRId32" nodes", m_numUsedNodes );
 	return true;
