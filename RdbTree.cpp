@@ -2292,7 +2292,8 @@ bool RdbTree::fastSave ( const char *dir, const char *dbname, bool useThread, vo
 
 	// save parms
 	//m_saveFile = f;
-	strcpy ( m_dir , dir );
+	strncpy(m_dir, dir, sizeof(m_dir)-1);
+	m_dir[ sizeof(m_dir)-1 ] = '\0';
 
 	// sanity check
 	if ( dbname && strcmp(dbname,m_dbname) ) {
