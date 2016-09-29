@@ -7,6 +7,7 @@
 #include "Process.h"
 #include "GbMutex.h"
 #include "ScopedLock.h"
+#include "Sanity.h"
 #include <new>
 
 
@@ -1125,18 +1126,7 @@ void Msg3::setPageRanges(RdbBase *base) {
 			log("db: Got corrupted map in memory for %s. This is almost "
 			    "always because of bad memory. Please replace your RAM.",
 			    base->m_dbname);
-			// do not wait for any merge to complete... otherwise
-			// Rdb.cpp will not close until the merge is done
-			g_merge.setMerging(false);
-			g_merge2.setMerging(false);
-
-			// to complete
-			// shutdown with urgent=true so threads are disabled.
-			g_process.shutdown(true);
-			//g_numCorrupt++;
-			// sleep for now until we make sure this works
-			//sleep(2000);
-			return;
+			gbshutdownCorrupted();
 		}
 		// don't let minKey exceed endKey, however
 		if ( KEYCMP(minKey,m_endKey,m_ks)>0 ) {
