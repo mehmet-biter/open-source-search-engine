@@ -82,9 +82,6 @@ class RdbScan {
 	char       m_ks;
 
 	bool  m_hitDisk;
-
-	// this is set by Msg3.cpp
-	char m_inPageCache;
 };
 
 #endif // GB_RDBSCAN_H
