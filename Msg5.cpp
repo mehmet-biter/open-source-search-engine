@@ -208,9 +208,6 @@ bool Msg5::getList ( rdbid_t     rdbId,
 	// sanity
 	if ( ! list ) gbshutdownLogicError();
 
-	// warning
-	if ( collnum < 0 ) log(LOG_LOGIC,"net: bad collection. msg5.");
-
 	// . reset the provided list
 	// . this will not free any mem it may have alloc'd but it will set
 	//   m_listSize to 0 so list->isEmpty() will return true
