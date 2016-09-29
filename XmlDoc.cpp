@@ -13344,9 +13344,15 @@ char *XmlDoc::getMetaList(bool forDelete) {
 		need += spiderStatusDocMetaList->length();
 	}
 
+	/// @todo ALC verify that we actually need sizeof(key128_t)
 	// space for indexdb AND DATEDB! +2 for rdbids
-	int32_t needIndexdb = tt1.m_numSlotsUsed * (sizeof(key144_t) + 2 + sizeof(key128_t));
-	need += needIndexdb;
+	int32_t needPosdb = tt1.m_numSlotsUsed * (sizeof(posdbkey_t) + 2 + sizeof(key128_t));
+	if (!forDelete) {
+		// need 1 additional key for special key (with termid 0)
+		needPosdb += sizeof(posdbkey_t) + 1;
+	}
+
+	need += needPosdb;
 
 	// clusterdb keys. plus one for rdbId
 	int32_t needClusterdb = nd ? 13 : 0;
@@ -13589,13 +13595,46 @@ char *XmlDoc::getMetaList(bool forDelete) {
 	saved = m_p;
 
 	// store indexdb terms into m_metaList[]
-	if (m_usePosdb && !addTable144(&tt1, m_docId)) {
-		logTrace(g_conf.m_logTraceXmlDoc, "END, addTable144 failed");
-		return NULL;
+	if (m_usePosdb) {
+		if (!addTable144(&tt1, m_docId)) {
+			logTrace(g_conf.m_logTraceXmlDoc, "END, addTable144 failed");
+			return NULL;
+		}
+
+		/// @todo ALC we need to handle delete keys for other rdb types
+
+		// we need to add delete key per document when it's deleted (with term 0)
+		// we also need to add positive key per document when it's new
+		// in case there is already a delete key in the tree/bucket (this will not be persisted and will be removed in Rdb::addRecord)
+		if (g_conf.m_noInMemoryPosdbMerge) {
+			// we don't need to do this if getMetaList is called to get negative keys
+			if (!forDelete) {
+				if ((m_isInIndex && !m_wasInIndex) || (!m_isInIndex && m_wasInIndex)) {
+					char key[MAX_KEY_BYTES];
+
+					int64_t docId;
+					bool delKey = (!m_isInIndex);
+					if (!m_isInIndex) {
+						// deleted doc
+						docId = *od->getDocId();
+					} else {
+						// new doc
+						docId = *nd->getDocId();
+					}
+
+					// add posdb doc key
+					*m_p++ = RDB_POSDB;
+
+					Posdb::makeKey(&key, POSDB_DELETEDOC_TERMID, docId, 0, 0, 0, 0, 0, 0, 0, 0, 0, delKey, false);
+					memcpy(m_p, &key, sizeof(posdbkey_t));
+					m_p += sizeof(posdbkey_t);
+				}
+			}
+		}
 	}
 
 	// sanity check
-	if (m_p - saved > needIndexdb) {
+	if (m_p - saved > needPosdb) {
 		g_process.shutdownAbort(true);
 	}
 
@@ -14135,19 +14174,6 @@ skipNewAdd2:
 				// did not have a lost date
 				//continue;
 			}
-		}
-
-		/// @todo ALC we need to handle delete keys for other rdb types
-
-		// we need to add delete key per document when it's deleted (with term 0)
-		if (g_conf.m_noInMemoryPosdbMerge && !m_isInIndex) {
-			char key[MAX_KEY_BYTES];
-
-			// add posdb delete key
-			Posdb::makeStartKey(&key, POSDB_DELETEDOC_TERMID, *od->getDocId());
-			*nptr++ = RDB_POSDB;
-			memcpy(nptr, &key, sizeof(posdbkey_t));
-			nptr += sizeof(posdbkey_t);
 		}
 
 		// sanity. check for metalist breach

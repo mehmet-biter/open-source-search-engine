@@ -1945,10 +1945,22 @@ bool Rdb::addRecord(collnum_t collnum, char *key, char *data, int32_t dataSize) 
 	KEYXOR(oppKey, 0x01);
 
 	if (m_useIndexFile) {
+		bool isSpecialKey;
+		if (m_rdbId == RDB_POSDB || m_rdbId == RDB2_POSDB2) {
+			isSpecialKey = (Posdb::getTermId(key) == POSDB_DELETEDOC_TERMID);
+		} else {
+			/// @todo ALC cater for other rdb types here
+			gbshutdownLogicError();
+		}
+
 		// there are no negative keys when we're using index (except special keys eg: posdb with termId 0)
 		// if we're adding key that have a corresponding opposite key, it means we want to remove the key from the tree
+		// even if it's a positive key (how else would we remove the special negative key?)
 		bool deleted = m_useTree ? m_tree.deleteNode(collnum, oppKey, true) : m_buckets.deleteNode(collnum, oppKey);
 		if (deleted) {
+			// assume that we don't need to delete from index even when we get positive special key
+			// since positive special key will only be inserted when a new document is added
+			// this means that other keys should overwrite the existing deleted docId
 			logTrace(g_conf.m_logTraceRdb, "END. %s: Key with corresponding opposite key deleted in tree. Returning true", m_dbname);
 			return true;
 		}
@@ -1965,14 +1977,15 @@ bool Rdb::addRecord(collnum_t collnum, char *key, char *data, int32_t dataSize) 
 			// we will have non-special keys here to simplify logic in XmlDoc::getMetaList (and we can't really be sure
 			// if the key we're adding is in RdbTree/RdbBuckets at that point of time. It could potentially be dumped
 			// after the check.
-			if (m_rdbId == RDB_POSDB || m_rdbId == RDB2_POSDB2) {
-				if (Posdb::getTermId(key) != POSDB_DELETEDOC_TERMID) {
-					logTrace(g_conf.m_logTraceRdb, "END. %s: Negative key with non-zero termId found. Returning true", m_dbname);
-					return true;
-				}
-			} else {
-				/// @todo ALC cater for other rdb types here
-				gbshutdownLogicError();
+			if (!isSpecialKey) {
+				logTrace(g_conf.m_logTraceRdb, "END. %s: Negative key with non-zero termId found. Returning true", m_dbname);
+				return true;
+			}
+		} else {
+			// make sure that positive special key is not persisted (reasons as delete key above; the XmlDoc::getMetaList part)
+			if (isSpecialKey) {
+				logTrace(g_conf.m_logTraceRdb, "END. %s: Positive key with zero termId found. Returning true", m_dbname);
+				return true;
 			}
 		}
 	} else {
