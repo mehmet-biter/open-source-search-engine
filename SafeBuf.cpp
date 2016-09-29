@@ -388,8 +388,7 @@ int32_t SafeBuf::catFile(const char *filename) {
 int32_t SafeBuf::fillFromFile(const char *filename) {
 	int32_t fd = open(filename, O_RDONLY);
 	if(fd<0) {
-		log(LOG_DEBUG, "query: Failed to open %s for reading: ",
-		    filename);
+		log(LOG_DEBUG, "Failed to open %s for reading", filename);
 		if(errno==ENOENT)
 			return 0;// 0 means does not exist or file is empty
 		// -1 means there was a read error of some sorts
@@ -399,12 +398,15 @@ int32_t SafeBuf::fillFromFile(const char *filename) {
 	struct stat st;
 	if(fstat(fd, &st) != 0) {
 		// An error occurred
-		log(LOG_DEBUG, "query: Failed to open %s for reading: ", 
-		    filename);
+		log(LOG_DEBUG, "Failed to open %s for reading", filename);
 		close(fd);
 		return 0;
 	}
-	reserve(st.st_size+1);
+	if( !reserve(st.st_size+1) ) {
+		logError("Failed to allocate %" PRId64 " bytes for %s content", (int64_t)st.st_size+1, filename);
+		close(fd);
+		return 0;
+	}
 	
 	int32_t numRead = read(fd, m_buf+m_length, st.st_size);
 	close(fd);
