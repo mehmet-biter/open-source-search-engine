@@ -547,10 +547,14 @@ bool makeTrashDir() {
 }
 
 
-bool Rdb::deleteColl ( collnum_t collnum , collnum_t newCollnum ) {
+bool Rdb::deleteColl( collnum_t collnum, collnum_t newCollnum) {
 	// remove these collnums from tree
-	if(m_useTree) m_tree.delColl    ( collnum );
-	else          m_buckets.delColl ( collnum );
+	if(m_useTree) {
+		m_tree.delColl(collnum);
+	}
+	else {
+		m_buckets.delColl(collnum);
+	}
 
 	// . close all files, set m_numFiles to 0 in RdbBase
 	// . TODO: what about outstanding merge or dump operations?
@@ -563,6 +567,10 @@ bool Rdb::deleteColl ( collnum_t collnum , collnum_t newCollnum ) {
 
 	// NULL it out...
 	CollectionRec *oldcr = g_collectiondb.getRec(collnum);
+	if( !oldcr ) {
+		logError("could not get record for collection %d", (int)collnum);
+		return false;
+	}
 	oldcr->setBasePtr ( m_rdbId , NULL );
 	char *coll = oldcr->m_coll;
 
@@ -592,7 +600,9 @@ bool Rdb::deleteColl ( collnum_t collnum , collnum_t newCollnum ) {
 	// ensure ./trash dir is there
 	makeTrashDir();
 	// move into that dir
-	::rename ( oldname , newname );
+	if( ::rename ( oldname , newname ) == -1 ) {
+		logError("Failed renaming [%s] to [%s]. errno %d: %s.", oldname, newname, errno, mstrerror(errno) );
+	}
 
 	log ( LOG_DEBUG, "db: cleared data for coll \"%s\" (%" PRId32") rdb=%s.",
 	       coll,(int32_t)collnum ,getDbnameFromId(m_rdbId));
@@ -601,12 +611,17 @@ bool Rdb::deleteColl ( collnum_t collnum , collnum_t newCollnum ) {
 }
 
 // returns false and sets g_errno on error, returns true on success
-bool Rdb::delColl ( const char *coll ) {
+bool Rdb::delColl(const char *coll) {
 	collnum_t collnum = g_collectiondb.getCollnum ( coll );
+	
+	if( collnum < (collnum_t)0 ) {
+		log(LOG_WARN, "Failed to delete collection. Could not look up collection [%s]", coll);
+		return false;
+	}
 	RdbBase *base = getBase ( collnum );
 
 	// ensure its there
-	if (collnum < (collnum_t)0 || !base) {
+	if(!base) {
 		g_errno = EBADENGINEER;
 		log(LOG_WARN, "db: %s: Failed to delete collection #%i. Does not exist.", m_dbname,collnum);
 		return false;

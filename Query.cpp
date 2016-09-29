@@ -142,7 +142,10 @@ bool Query::set2 ( const char *query        ,
 	// save original query
 	m_osb.setBuf ( m_otmpBuf , 128 , 0 , false );
 	m_osb.setLabel ("oqbuf" );
-	m_osb.reserve ( queryLen + 1 );
+	if( !m_osb.reserve ( queryLen + 1 ) ) {
+		logError("Failed to reserve %" PRId32 " bytes, bailing", queryLen+1);
+		return true;
+	}
 	m_osb.safeMemcpy ( query , queryLen );
 	m_osb.nullTerm ();
 	

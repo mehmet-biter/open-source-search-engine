@@ -179,17 +179,44 @@ extern void resetUnicode       ( );
 
 extern void tryToSyncWrapper ( int fd , void *state ) ;
 
-int main2 ( int argc , char *argv[] ) ;
+
+static int argc_copy;
+static char **argv_copy;
+static int rc_copy;
+
+static int main2(int argc, char *argv[]);
+
+static void *main2_trampoline(void *) {
+	pthread_setname_np(pthread_self(),"main");
+	rc_copy = main2(argc_copy,argv_copy);
+	return NULL;
+}
+
 
 int main ( int argc , char *argv[] ) {
-	int ret = main2 ( argc , argv );
-
-	// returns 1 if failed, 0 on successful/graceful exit
-	if ( ret ) {
-		fprintf( stderr, "Failed to start gb. Exiting.\n" );
+	//Run the main thread ... in a thread
+	//The reason for this is so that 'htop', 'perf' and other tools show metrics
+	//for the main thread instead of lumping it together wide process-wide
+	//aggregation (eg. linux kernel 4.4.x claims the main task/process does IO
+	//eventhough it provably doesn't)
+	argc_copy = argc;
+	argv_copy = argv;
+	pthread_t tid;
+	int rc = pthread_create(&tid,NULL,main2_trampoline,NULL);
+	if(rc!=0){
+		fprintf(stderr,"pthread_create() failed with error %d (%s)",rc,strerror(rc));
+		return 99;
 	}
+	rc = pthread_join(tid,NULL);
+	if(rc!=0) {
+		fprintf(stderr,"pthread_join() failed with error %d (%s)",rc,strerror(rc));
+		return 99;
+	}
+	
+	if(rc_copy)
+		fprintf( stderr, "Failed to start gb. Exiting.\n" );
 
-	return ret;
+	return rc_copy;
 }
 
 int main2 ( int argc , char *argv[] ) {

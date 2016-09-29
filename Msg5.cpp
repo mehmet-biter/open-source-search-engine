@@ -108,22 +108,16 @@ bool Msg5::getSingleUnmergedList(rdbid_t       rdbId,
 }
 
 
-bool Msg5::getTreeList(RdbList *result,
-		       rdbid_t rdbId, collnum_t collnum,
-		       const void *startKey, const void *endKey)
-{
+bool Msg5::getTreeList(RdbList *result, rdbid_t rdbId, collnum_t collnum, const void *startKey, const void *endKey) {
 	m_rdbId = rdbId;
 	m_collnum = collnum;
 	m_newMinRecSizes = -1;
 	int32_t dummy1,dummy2,dummy3,dummy4;
-	return getTreeList(result,startKey,endKey,&dummy1,&dummy2,&dummy3,&dummy4);
+	return getTreeList(result, startKey, endKey, &dummy1, &dummy2, &dummy3, &dummy4);
 }
 
-bool Msg5::getTreeList(RdbList *result,
-		       const void *startKey, const void *endKey,
-		       int32_t *numNegativeRecs, int32_t *numPositiveRecs,
-		       int32_t *memUsedByTree, int32_t *numUsedNodes)
-{
+bool Msg5::getTreeList(RdbList *result, const void *startKey, const void *endKey, int32_t *numPositiveRecs, 
+	int32_t *numNegativeRecs, int32_t *memUsedByTree, int32_t *numUsedNodes) {
 	RdbBase *base = getRdbBase(m_rdbId, m_collnum);
 	if(!base) {
 		log(LOG_DEBUG,"Msg5::getTreeList(): base %d/%d unknown",m_rdbId,m_collnum);
@@ -241,9 +235,6 @@ if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 
 	// sanity
 	if ( ! list ) gbshutdownLogicError();
-
-	// warning
-	if ( collnum < 0 ) log(LOG_LOGIC,"net: bad collection. msg5.");
 
 	// . reset the provided list
 	// . this will not free any mem it may have alloc'd but it will set
@@ -470,11 +461,10 @@ if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 			int32_t numPositiveRecs = 0;
 			int32_t memUsedByTree = 0;
 			int32_t numRecs = 0;
-			if(!getTreeList(&m_treeList,
-			                m_fileStartKey, treeEndKey,
-				        &numPositiveRecs, &numNegativeRecs,
-					&memUsedByTree, &numRecs))
+			if(!getTreeList(&m_treeList, m_fileStartKey, treeEndKey, &numPositiveRecs, &numNegativeRecs, &memUsedByTree, &numRecs)) {
 				return true;
+			}
+
 			// if our recSize is fixed we can boost m_minRecSizes to
 			// compensate for these deletes when we call m_msg3.readList()
 			int32_t rs = base->getRecSize() ;

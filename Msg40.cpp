@@ -772,10 +772,17 @@ bool Msg40::reallocMsg20Buf ( ) {
 	return true;
 }
 
-bool Msg40::launchMsg20s ( bool recalled ) {
+bool Msg40::launchMsg20s(bool recalled) {
+
+	if( !m_si ) {
+		logError("cannot use this function when m_si is not set");
+		gbshutdownLogicError();
+	}
 
 	// don't launch any more if client browser closed socket
-	if ( m_socketHadError ) { g_process.shutdownAbort(true); }
+	if ( m_socketHadError ) {
+		g_process.shutdownAbort(true);
+	}
 
 	// these are just like for passing to Msg39 above
 	int64_t maxCacheAge = 0 ;
@@ -793,8 +800,7 @@ bool Msg40::launchMsg20s ( bool recalled ) {
 	// if not deduping or site clustering, then
 	// just skip over docids for speed.
 	// don't bother with summaries we do not need
-	if ( m_si && 
-	     ! m_si->m_doDupContentRemoval &&
+	if ( ! m_si->m_doDupContentRemoval &&
 	     ! m_si->m_doSiteClustering &&
 	     m_lastProcessedi == -1 ) {
 		// start getting summaries with the result # they want
