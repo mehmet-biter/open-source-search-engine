@@ -1762,13 +1762,20 @@ bool Rdb::needsDump ( ) const {
 bool Rdb::hasRoom ( RdbList *list , int32_t niceness ) {
 	// how many nodes will tree need?
 	int32_t numNodes = list->getNumRecs( );
-	if ( !m_useTree && !m_buckets.hasRoom(numNodes)) return false;
+	if ( !m_useTree && !m_buckets.hasRoom(numNodes)) {
+		return false;
+	}
+
 	// how many nodes will tree need?
 	// how much space will RdbMem, m_mem, need?
-	int32_t overhead = m_ks;
-	if ( list->getFixedDataSize() == -1 ) overhead += 4;
+	int64_t overhead = m_ks;
+	if ( list->getFixedDataSize() == -1 ) {
+		overhead += 4;
+	}
+
 	// how much mem will the data use?
-	int64_t dataSpace = list->getListSize() - (numNodes * overhead);
+	int64_t dataSpace = (int64_t)list->getListSize() - ((int64_t)numNodes * overhead);
+
 	// does tree have room for these nodes?
 	if ( m_useTree && m_tree.getNumAvailNodes() < numNodes ) return false;
 

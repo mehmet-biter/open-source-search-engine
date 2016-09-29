@@ -48,9 +48,14 @@ class RdbScan {
 	RdbList *getList ( ) { return m_rdblist; }
 
 	// was buffer shifted down 6 bytes to turn first key into a 12 byter?
-	bool wasShifted () { return m_shifted; }
+	bool wasShifted() const { return m_shifted; }
+	char shiftCount() const { return m_shifted; }
+	int32_t getBytesToRead() const { return m_bytesToRead; }
+	int64_t getOffset() const { return m_offset; }
 
-
+private:
+	static void gotListWrapper0(void *state);
+	void gotListWrapper();
 	void gotList ( );
 
 	// we set this list with the read buffer on read completion
@@ -82,9 +87,6 @@ class RdbScan {
 	char       m_ks;
 
 	bool  m_hitDisk;
-
-	// this is set by Msg3.cpp
-	char m_inPageCache;
 };
 
 #endif // GB_RDBSCAN_H

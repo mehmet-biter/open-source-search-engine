@@ -24,7 +24,7 @@ static int64_t g_lastDiskReadCompleted = 0LL;
 
 static void readwriteWrapper_r  ( void *state );
 
-static void  doneWrapper        ( void *state, job_exit_t exit_type );
+static void  readwriteDoneWrapper(void *state, job_exit_t exit_type);
 static bool  readwrite_r        ( FileState *fstate );
 
 
@@ -764,7 +764,7 @@ bool BigFile::readwrite ( void         *buf      ,
 	// . this returns false and sets g_errno on error, true on success
 	// . we should return false cuz we blocked
 	// . thread will add signal to g_loop on completion to call
-	if ( g_jobScheduler.submit_io(readwriteWrapper_r, doneWrapper, fstate, thread_type_unspecified_io, niceness, doWrite) ) {
+	if ( g_jobScheduler.submit_io(readwriteWrapper_r, readwriteDoneWrapper, fstate, thread_type_unspecified_io, niceness, doWrite) ) {
 		return false;
 	}
 
@@ -885,7 +885,7 @@ skipThread:
 
 // . this should be called from the main process after getting our call OUR callback here
 // Use of ThreadEntry parameter is NOT thread safe
-void doneWrapper ( void *state, job_exit_t exit_type ) {
+void readwriteDoneWrapper(void *state, job_exit_t exit_type) {
 	FileState *fstate = (FileState *)state;
 
 	if( exit_type != job_exit_normal ) {

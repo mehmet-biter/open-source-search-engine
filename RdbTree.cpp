@@ -1992,22 +1992,36 @@ int32_t RdbTree::getListSize ( collnum_t collnum ,
 	size = 0;
 	int32_t n = getPrevNode ( collnum , startKey );
 	// return 0 if no nodes in that key range
-	if ( n < 0 ) return 0;
+
+	if( n < 0 ) {
+		return 0;
+	}
+
 	// skip to next node if this one is < startKey
 	//if ( m_keys[n] < startKey ) n = getNextNode ( n );
-	if ( KEYCMP(m_keys,n,startKey,0,m_ks)<0) n = getNextNode(n);
+	if( KEYCMP(m_keys, n, startKey, 0, m_ks) < 0 ) {
+		n = getNextNode(n);
+	}
+
+	if( n < 0 ) {
+		return 0;
+	}
+	
 	// or collnum
-	if ( m_collnums[n] < collnum ) n = getNextNode ( n );
+	if ( m_collnums[n] < collnum ) {
+		n = getNextNode(n);
+	}
+
 	// loop until we run out of nodes or one breeches endKey
 	//while ( n > 0 && m_keys[n] <= endKey && m_collnums[n] == collnum ) {
-	while ( n>0 && KEYCMP(m_keys,n,endKey,0,m_ks)<=0 && 
-	m_collnums[n]==collnum){
+	while( n > 0 && KEYCMP(m_keys,n,endKey,0,m_ks) <= 0 && m_collnums[n]==collnum ) {
 		size++;
 		n = getNextNode(n);
 	}
 	// this should be an exact list size (actually # of nodes)
 	return size * m_ks;
 }
+
 
 // . returns a number from 0 to m_numUsedNodes-1
 // . represents the ordering of this key in that range
@@ -2018,7 +2032,7 @@ int32_t RdbTree::getOrderOfKey ( collnum_t collnum, const char *key, char *retKe
 	if ( m_numUsedNodes <= 0 ) return 0;
 	int32_t i     = m_headNode;
 	// estimate the depth of tree if not balanced
-	int32_t d     = getTreeDepth()   ;
+	int32_t d     = getTreeDepth();
 	// TODO: WARNING: ensure d-1 not >= 32 !!!!!!!!!!!!!!!!!
 	int32_t step  = 1 << (d-1);
 	int32_t order = step;
@@ -2043,10 +2057,7 @@ int32_t RdbTree::getOrderOfKey ( collnum_t collnum, const char *key, char *retKe
 		break;
         }
 	// normalize order since tree probably has less then 2^d nodes
-	int64_t normOrder = 
-		(int64_t) order          * 
-		(int64_t) m_numUsedNodes / 
-		(int64_t) ((1 << d) -1)  ;
+	int64_t normOrder = (int64_t)order * (int64_t)m_numUsedNodes / ( ((int64_t)1 << d)-1);
 	return (int32_t) normOrder;
 }
 
@@ -2292,7 +2303,8 @@ bool RdbTree::fastSave ( const char *dir, const char *dbname, bool useThread, vo
 
 	// save parms
 	//m_saveFile = f;
-	strcpy ( m_dir , dir );
+	strncpy(m_dir, dir, sizeof(m_dir)-1);
+	m_dir[ sizeof(m_dir)-1 ] = '\0';
 
 	// sanity check
 	if ( dbname && strcmp(dbname,m_dbname) ) {
@@ -2475,10 +2487,14 @@ bool RdbTree::fastSave_r() {
 	m_bytesWritten = offset;
 	// close it up
 	close ( fd );
-	// now fucking rename it
+
+	// now rename it
 	char s2[1024];
 	sprintf ( s2 , "%s/%s-saved.dat", m_dir , m_dbname );
-	::rename ( s , s2 ) ;
+	if( ::rename(s, s2) == -1 ) {
+		logError("Error renaming file [%s] to [%s] (%d: %s)", s, s2, errno, mstrerror(errno));
+	}
+
 	// info
 	//log(0,"RdbTree::fastSave: saved %" PRId32" nodes", m_numUsedNodes );
 	return true;

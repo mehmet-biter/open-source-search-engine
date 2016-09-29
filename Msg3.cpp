@@ -17,6 +17,7 @@ Msg3::Scan::Scan()
   : m_scan(),
     m_startpg(0), m_endpg(0),
     m_hintOffset(0), m_fileNum(0),
+    m_inPageCache(false),
     m_list()
 {
 	memset(m_hintKey,0,sizeof(m_hintKey));
@@ -624,7 +625,7 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		// try to get from PAGE CACHE
 		//
 		////////
-		m_scan[i].m_scan.m_inPageCache = false;
+		m_scan[i].m_inPageCache = false;
 		BigFile *ff = base->getFile(m_scan[i].m_fileNum);
 		RdbCache *rpc = getDiskPageCache ( m_rdbId );
 		if(rpc) {
@@ -644,11 +645,11 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 							-1 , // maxAge, none 
 							true ); // inccounts?
 			if ( inCache ) {
-				m_scan[i].m_scan.m_inPageCache = true;
+				m_scan[i].m_inPageCache = true;
 				incrementScansCompleted();
 				// now we have to store this value, 6 or 12 so
 				// we can modify the hint appropriately
-				m_scan[i].m_scan.m_shifted = *rec;
+				m_scan[i].m_shiftCount = *rec;
 				m_scan[i].m_list.set ( rec +1,
 						recSize-1 ,
 						rec , // alloc
@@ -829,8 +830,8 @@ bool Msg3::doneScanning ( ) {
 	if ( g_errno == EBUFTOOSMALL ) { 
 		int32_t biggest = 0;
 		for ( int32_t i = 0 ; i < m_numFileNums ; i++ ) {
-			if ( m_scan[i].m_scan.m_bytesToRead < biggest ) continue;
-			biggest = m_scan[i].m_scan.m_bytesToRead;
+			if ( m_scan[i].m_scan.getBytesToRead() < biggest ) continue;
+			biggest = m_scan[i].m_scan.getBytesToRead();
 		}
 		if ( biggest > 500000000 ) {
 			log("db: Max read size was %" PRId32" > 500000000. Assuming "
@@ -969,16 +970,18 @@ bool Msg3::doneScanning ( ) {
 		QUICKPOLL(m_niceness);
 		// count total bytes for logging
 		count += m_scan[i].m_list.getListSize();
+		if(!m_scan[i].m_inPageCache)
+			m_scan[i].m_shiftCount = m_scan[i].m_scan.shiftCount();
 		// . hint offset is relative to the offset of first key we read
 		// . if that key was only 6 bytes RdbScan shift the list buf
 		//   down 6 bytes to make the first key 12 bytes... a 
 		//   requirement for all RdbLists
 		// . don't inc it, though, if it was 0, pointing to the start
 		//   of the list because our shift won't affect that
-		if ( m_scan[i].m_scan.m_shifted == 6 && m_scan[i].m_hintOffset > 0 )
+		if ( m_scan[i].m_shiftCount == 6 && m_scan[i].m_hintOffset > 0 )
 			m_scan[i].m_hintOffset += 6;
 		// posdb double compression
-		if ( m_scan[i].m_scan.m_shifted == 12 && m_scan[i].m_hintOffset > 0 )
+		if ( m_scan[i].m_shiftCount == 12 && m_scan[i].m_hintOffset > 0 )
 			m_scan[i].m_hintOffset += 12;
 		// . don't constrain on minRecSizes here because it may
 		//   make our endKey smaller, which will cause problems
@@ -1012,8 +1015,8 @@ bool Msg3::doneScanning ( ) {
 		key192_t ck ;
 		if ( ff )
 			ck = makeCacheKey ( vfd ,
-					    m_scan[i].m_scan.m_offset ,
-					    m_scan[i].m_scan.m_bytesToRead );
+					    m_scan[i].m_scan.getOffset(),
+					    m_scan[i].m_scan.getBytesToRead() );
 		if ( m_validateCache && ff && rpc && vfd != -1 ) {
 			bool inCache;
 			char *rec; int32_t recSize;
@@ -1029,7 +1032,7 @@ bool Msg3::doneScanning ( ) {
 			     // 1st byte is RdbScan::m_shifted
 			     ( m_scan[i].m_list.getListSize() != recSize-1 ||
 			       memcmp ( m_scan[i].m_list.getList() , rec+1,recSize-1) ||
-			       *rec != m_scan[i].m_scan.m_shifted ) ) {
+			       *rec != m_scan[i].m_scan.shiftCount() ) ) {
 				log("msg3: cache did not validate");
 				g_process.shutdownAbort(true);
 			}
@@ -1046,12 +1049,14 @@ bool Msg3::doneScanning ( ) {
 		// if it was a retry, just in case something strange happened.
 		// store pre-constrain call is more efficient.
 		if ( m_retryNum<=0 && ff && rpc && vfd != -1 &&
-		     !  m_scan[i].m_scan.m_inPageCache ) {
+		     ! m_scan[i].m_inPageCache )
+		{
 			RdbCacheLock rcl(*rpc);
+			char tmpShiftCount = m_scan[i].m_scan.shiftCount();
 			rpc->addRecord ( (collnum_t)0 , // collnum
 					 (char *)&ck , 
 					 // rec1 is this little thingy
-					 &m_scan[i].m_scan.m_shifted,
+					 &tmpShiftCount,
 					 1,
 					 // rec2
 					 m_scan[i].m_list.getList() ,

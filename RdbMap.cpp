@@ -14,6 +14,14 @@ RdbMap::RdbMap() {
 	m_newPagesPerSegment = 0;
 	m_keys = NULL;
 	m_offsets = NULL;
+
+	// Coverity	
+	m_fixedDataSize = 0;
+	m_useHalfKeys = false;
+	m_ks = 0;
+	m_pageSize = 0;
+	m_pageSizeBits = 0;
+
 	reset();
 }
 
@@ -116,15 +124,6 @@ void RdbMap::reset ( ) {
 	m_needVerify  = false;
 
 	m_file.reset();
-
-	// Coverity	
-	m_keys = NULL;
-	m_offsets = NULL;
-	m_fixedDataSize = 0;
-	m_useHalfKeys = false;
-	m_ks = 0;
-	m_pageSize = 0;
-	m_pageSizeBits = 0;
 }
 
 

@@ -5,8 +5,6 @@
 #include "Process.h"
 
 
-void gotListWrapper ( void *state ) ;
-
 // . readset up for a scan of slots in the RdbScans
 // . returns false if blocked, true otherwise
 // . sets errno on error
@@ -94,18 +92,6 @@ bool RdbScan::setRead ( BigFile  *file         ,
 	//   still <= the m_endKey specified in setRead()
 	// . it's used to make it easy to find the actual biggest key that is
 	//   <= m_endKey
-	/*
-	m_rdblist->set ( buf + pad + m_off , 
-		      bytesToRead   , 
-		      buf           ,
-		      bufSize       , 
-		      startKey      , 
-		      endKey        ,
-		      fixedDataSize , 
-		      true          ,
-		      useHalfKeys   , // ownData?
-		      m_ks          );
-	*/
 	// save caller's callback
 	m_callback = callback;
 	m_state    = state;
@@ -129,7 +115,7 @@ bool RdbScan::setRead ( BigFile  *file         ,
 	//   32KB for a tfndb read, hogging up all the memory.
 	if ( ! file->read ( NULL, bytesToRead, offset, &m_fstate,
 	                    callback ? this : NULL,
-			    callback ? gotListWrapper : NULL,
+			    callback ? gotListWrapper0 : NULL,
 			    niceness,
 	                    pad + m_off )) // allocOff, buf offset to read into
 		return false;
@@ -145,11 +131,16 @@ bool RdbScan::setRead ( BigFile  *file         ,
 	return true;
 }
 
-void gotListWrapper ( void *state ) {
-	RdbScan *THIS = (RdbScan *)state;
-	THIS->gotList ();
+
+void RdbScan::gotListWrapper0(void *state) {
+	RdbScan *that = static_cast<RdbScan*>(state);
+	that->gotListWrapper();
+}
+
+void RdbScan::gotListWrapper() {
+	gotList();
 	// let caller know we're done
-	THIS->m_callback ( THIS->m_state );
+	m_callback(m_state);
 }
 
 
@@ -175,9 +166,6 @@ void RdbScan::gotList ( ) {
 	//   due to a failed alloc and we'll just end up using the empty
 	//   m_rdblist we set way above.
 	if ( m_fstate.m_allocBuf ) {
-		// get the buffer info for setting the list
-		//char *allocBuf  = m_fstate.m_allocBuf;
-		//int32_t  allocSize = m_fstate.m_allocSize;
 		int32_t  bytesDone = m_fstate.m_bytesDone;
 		// sanity checks
 		if ( bytesDone > allocSize                 ) { 
@@ -199,66 +187,6 @@ void RdbScan::gotList ( ) {
 			      m_ks            );
 	}
 
-	// this was bitching a lot when running on a multinode cluster,
-	// so i effectively disabled it by changing to _GBSANITYCHECK2_
-//#ifdef GBSANITYCHECK2
-	// this first test, tests to make sure the read from cache worked
-	/*
-	DiskPageCache *pc = m_file->getDiskPageCache();
-	if ( pc && 
-	     ! g_errno && 
-	     g_conf.m_logDebugDiskPageCache && 
-	     // if we got it from the page cache, verify with disk
-	     m_fstate.m_inPageCache ) {
-		// ensure threads disabled
-		bool on = ! g_threads.areThreadsDisabled();
-		if ( on ) g_threads.disableThreads();
-		//pc->disableCache();
-		FileState fstate;
-		// ensure we don't mess around
-		fstate.m_allocBuf = NULL;
-		fstate.m_buf      = NULL;
-		char *bb          = (char *)mmalloc ( m_bytesToRead , "RS" );
-		if ( ! bb ) {
-			log("db: Failed to alloc mem for page cache verify.");
-			goto skip;
-		}
-		m_file->read ( bb , // NULL, // buf + pad + m_off
-			       m_bytesToRead    ,
-			       m_offset         ,
-			       &fstate          , // &m_fstate
-			       NULL             , // callback state
-			       gotListWrapper   , // FAKE callback
-			       MAX_NICENESS     , // niceness
-			       16 + m_off );
-		//char *allocBuf  = fstate.m_allocBuf;
-		//int32_t  allocSize = fstate.m_allocSize;
-		//char *bb        = allocBuf + fstate.m_allocOff;
-		// if file got unlinked from under us, or whatever, we get
-		// an error
-		if ( ! g_errno ) {
-			char *buf = m_rdblist->getList();
-			if ( memcmp ( bb , buf , m_bytesToRead) != 0 ) {
-				g_process.shutdownAbort(true); }
-			if ( m_bytesToRead != m_rdblist->getListSize() ) {
-				g_process.shutdownAbort(true); }
-		}
-		// compare
-		if ( memcmp ( allocBuf+allocOff, bb , m_bytesToRead ) ) {
-			log("db: failed diskpagecache verify");
-			g_process.shutdownAbort(true); 
-		}
-		//mfree ( allocBuf , allocSize , "RS" );
-		mfree ( bb , m_bytesToRead , "RS" );
-		if ( on ) g_threads.enableThreads();
-		//pc->enableCache();
-		// . this test tests to make sure the page stores worked
-		// . go through each page in page cache and verify on disk
-		//pc->verifyData ( m_file );
-	}
-	*/
-	// skip:
-//#endif
 	// assume we did not shift it
 	m_shifted = 0;
 	// if we were doing a cache only read, and got nothing, bail now
