@@ -547,10 +547,14 @@ bool makeTrashDir() {
 }
 
 
-bool Rdb::deleteColl ( collnum_t collnum , collnum_t newCollnum ) {
+bool Rdb::deleteColl( collnum_t collnum, collnum_t newCollnum) {
 	// remove these collnums from tree
-	if(m_useTree) m_tree.delColl    ( collnum );
-	else          m_buckets.delColl ( collnum );
+	if(m_useTree) {
+		m_tree.delColl(collnum);
+	}
+	else {
+		m_buckets.delColl(collnum);
+	}
 
 	// . close all files, set m_numFiles to 0 in RdbBase
 	// . TODO: what about outstanding merge or dump operations?
@@ -563,6 +567,10 @@ bool Rdb::deleteColl ( collnum_t collnum , collnum_t newCollnum ) {
 
 	// NULL it out...
 	CollectionRec *oldcr = g_collectiondb.getRec(collnum);
+	if( !oldcr ) {
+		logError("could not get record for collection %d", (int)collnum);
+		return false;
+	}
 	oldcr->setBasePtr ( m_rdbId , NULL );
 	char *coll = oldcr->m_coll;
 
