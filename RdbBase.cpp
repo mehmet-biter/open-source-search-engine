@@ -185,8 +185,7 @@ bool RdbBase::init(char *dir,
 		char indexName[64];
 		sprintf(indexName, "%s-saved.idx", m_dbname);
 		m_treeIndex.set(m_dir.getDir(), indexName, m_fixedDataSize, m_useHalfKeys, m_ks, m_rdb->getRdbId());
-		int32_t totalKeys = m_tree ? m_tree->getNumTotalKeys(m_collnum) : m_buckets->getNumKeys(m_collnum);
-		if (!(m_treeIndex.readIndex() && m_treeIndex.verifyIndex(totalKeys))) {
+		if (!(m_treeIndex.readIndex() && m_treeIndex.verifyIndex())) {
 			g_errno = 0;
 			log(LOG_WARN, "db: Could not read index file %s", indexName);
 
@@ -823,7 +822,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 		// set the index file's  filename
 		sprintf(name, "%s%04" PRId32".idx", m_dbname, fileId);
 		in->set(getDir(), name, m_fixedDataSize, m_useHalfKeys, m_ks, m_rdb->getRdbId());
-		if (!isNew && !(in->readIndex() && in->verifyIndex(f->getFileSize()))) {
+		if (!isNew && !(in->readIndex() && in->verifyIndex())) {
 			// if out of memory, do not try to regen for that
 			if (g_errno == ENOMEM) {
 				return -1;

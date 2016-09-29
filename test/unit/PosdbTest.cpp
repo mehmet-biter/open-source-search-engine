@@ -357,7 +357,7 @@ TEST_F(PosdbNoMergeTest, AddRecordDeleteDocWithoutRdbFiles) {
 
 	// verify that data returned is the same as data inserted above
 	buckets->getList(0, startKey, endKey, -1, &list, &numPosRecs, &numNegRecs, Posdb::getUseHalfKeys());
-	expectRecord(&list, 0, docId, true);
+	EXPECT_TRUE(list.isExhausted());
 
 	// respidered document
 	for (int i = 0; i < total_records; ++i) {

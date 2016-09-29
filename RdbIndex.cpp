@@ -22,13 +22,15 @@ static const uint32_t s_defaultMaxPendingSize = 2000000;
 // 40000000 * 8 bytes = 320 megabytes
 static const uint32_t s_generateMaxPendingSize = 40000000;
 
+static const int64_t s_rdbIndexCurrentVersion = 0;
+
 RdbIndex::RdbIndex()
 	: m_file()
 	, m_fixedDataSize(0)
 	, m_useHalfKeys(false)
 	, m_ks(0)
 	, m_rdbId(RDB_NONE)
-	, m_dataFileSize(0)
+	, m_version(-1)
 	, m_docIds(new docids_t)
 	, m_docIdsMtx()
 	, m_pendingDocIdsMtx()
@@ -44,8 +46,6 @@ RdbIndex::~RdbIndex() {
 
 void RdbIndex::reset() {
 	m_file.reset();
-
-	m_dataFileSize = 0;
 
 	/// @todo ALC do we need to lock here?
 	m_docIds.reset(new docids_t);
@@ -132,13 +132,13 @@ bool RdbIndex::writeIndex2() {
 	// remove const as m_file.write does not accept const buffer
 	docids_ptr_t tmpDocIds = std::const_pointer_cast<docids_t>(mergePendingDocIds());
 
-	// first 8 bytes are the size of the DATA file we're indexing
-	m_file.write(&m_dataFileSize, sizeof(m_dataFileSize), offset);
+	// first 8 bytes is the index version
+	m_file.write(&m_version, sizeof(m_version), offset);
 	if (g_errno) {
-		logError("Failed to write to %s (m_dataFileSize): %s", m_file.getFilename(), mstrerror(g_errno));
+		logError("Failed to write to %s (m_version): %s", m_file.getFilename(), mstrerror(g_errno));
 		return false;
 	}
-	offset += sizeof(m_dataFileSize);
+	offset += sizeof(m_version);
 
 	// next 8 bytes are the total number of docids in the index file
 	size_t docid_count = tmpDocIds->size();
@@ -157,7 +157,7 @@ bool RdbIndex::writeIndex2() {
 		return false;
 	}
 
-	log(LOG_INFO, "db: Saved %zu index keys for %s with dataFileSize=%" PRId64, docid_count, getDbnameFromId(m_rdbId), m_dataFileSize);
+	log(LOG_INFO, "db: Saved %zu index keys for %s", docid_count, getDbnameFromId(m_rdbId));
 
 	logTrace(g_conf.m_logTraceRdbIndex, "END - OK, returning true.");
 
@@ -202,13 +202,13 @@ bool RdbIndex::readIndex2() {
 	int64_t offset = 0;
 	size_t docid_count = 0;
 
-	// first 8 bytes are the size of the DATA file we're indexing
-	m_file.read(&m_dataFileSize, sizeof(m_dataFileSize), offset);
+	// first 8 bytes is the index version
+	m_file.read(&m_version, sizeof(m_version), offset);
 	if (g_errno) {
 		logError("Had error reading offset=%" PRId64" from %s: %s", offset, m_file.getFilename(), mstrerror(g_errno));
 		return false;
 	}
-	offset += sizeof(m_dataFileSize);
+	offset += sizeof(m_version);
 
 	// next 8 bytes are the total number of docids in the index file
 	m_file.read(&docid_count, sizeof(docid_count), offset);
@@ -242,12 +242,11 @@ bool RdbIndex::readIndex2() {
 	return true;
 }
 
-bool RdbIndex::verifyIndex(int64_t dataFileSize) {
+bool RdbIndex::verifyIndex() {
 	logTrace( g_conf.m_logTraceRdbIndex, "BEGIN. filename [%s]", m_file.getFilename());
 
-	// simple verification for now
-	if (m_dataFileSize != dataFileSize) {
-		logError("Data file size[%" PRId64"] differs from expected size[%" PRId64"]", dataFileSize, m_dataFileSize);
+	if (m_version != s_rdbIndexCurrentVersion) {
+		logTrace(g_conf.m_logTraceRdbIndex, "END. Index format have changed. Returning false");
 		return false;
 	}
 
@@ -323,9 +322,6 @@ void RdbIndex::addRecord_unlocked(char *key, bool isGenerateIndex) {
 			doMerge = true;
 		}
 	} else {
-		// only add size when we're not generating index
-		++m_dataFileSize;
-
 		if ((m_pendingDocIds->size() >= s_defaultMaxPendingSize) ||
 		    (gettimeofdayInMilliseconds() - m_lastMergeTime >= s_defaultMaxPendingTimeMs)) {
 			doMerge = true;
@@ -400,9 +396,6 @@ bool RdbIndex::generateIndex(collnum_t collnum, RdbTree *tree) {
 	// make sure it's all sorted and merged
 	(void)mergePendingDocIds();
 
-	// update dataFileSize
-	m_dataFileSize = tree->getNumTotalKeys(collnum);
-
 	return true;
 }
 
@@ -431,9 +424,6 @@ bool RdbIndex::generateIndex(collnum_t collnum, RdbBuckets *buckets) {
 
 	// make sure it's all sorted and merged
 	(void)mergePendingDocIds();
-
-	// update dataFileSize
-	m_dataFileSize = buckets->getNumKeys(collnum);
 
 	return true;
 }
@@ -618,9 +608,6 @@ bool RdbIndex::generateIndex(BigFile *f) {
 
 	// make sure it's all sorted and merged
 	(void)mergePendingDocIds_unlocked();
-
-	// update dataFileSize
-	m_dataFileSize = fileSize;
 
 	// otherwise, we're done
 	return true;
