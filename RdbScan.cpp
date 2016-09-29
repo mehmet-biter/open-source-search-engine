@@ -5,8 +5,6 @@
 #include "Process.h"
 
 
-void gotListWrapper ( void *state ) ;
-
 // . readset up for a scan of slots in the RdbScans
 // . returns false if blocked, true otherwise
 // . sets errno on error
@@ -117,7 +115,7 @@ bool RdbScan::setRead ( BigFile  *file         ,
 	//   32KB for a tfndb read, hogging up all the memory.
 	if ( ! file->read ( NULL, bytesToRead, offset, &m_fstate,
 	                    callback ? this : NULL,
-			    callback ? gotListWrapper : NULL,
+			    callback ? gotListWrapper0 : NULL,
 			    niceness,
 	                    pad + m_off )) // allocOff, buf offset to read into
 		return false;
@@ -133,11 +131,16 @@ bool RdbScan::setRead ( BigFile  *file         ,
 	return true;
 }
 
-void gotListWrapper ( void *state ) {
-	RdbScan *THIS = (RdbScan *)state;
-	THIS->gotList ();
+
+void RdbScan::gotListWrapper0(void *state) {
+	RdbScan *that = static_cast<RdbScan*>(state);
+	that->gotListWrapper();
+}
+
+void RdbScan::gotListWrapper() {
+	gotList();
 	// let caller know we're done
-	THIS->m_callback ( THIS->m_state );
+	m_callback(m_state);
 }
 
 
