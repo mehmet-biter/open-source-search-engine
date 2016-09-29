@@ -1194,10 +1194,18 @@ bool loadAddsInProgress ( const char *prefix ) {
 			logTrace( g_conf.m_logTraceMsg4, "END - returning false" );
 			return false;
 		}
-		// host many bytes
+
 		int32_t numBytes;
-		read ( fd , (char *)&numBytes , 4 );
+		int32_t nb;
+		nb = (int32_t)read(fd, (char *)&numBytes, 4);
+		if ( nb != 4 ) {
+			close ( fd );
+			logError("Read of message size returned %" PRId32 " bytes instead of 4", nb);
+			logTrace( g_conf.m_logTraceMsg4, "END - returning false" );
+			return false;
+		}
 		p += 4;
+
 		// allocate buffer
 		char *buf = (char *)mmalloc ( numBytes , "msg4loadbuf");
 		if ( ! buf ) {
@@ -1209,11 +1217,10 @@ bool loadAddsInProgress ( const char *prefix ) {
 		}
 		
 		// the buffer
-		int32_t nb = read ( fd , buf , numBytes );
+		nb = (int32_t)read ( fd , buf , numBytes );
 		if ( nb != numBytes ) {
 			close ( fd );
 			log(LOG_ERROR,"%s:%s: build: bad msg4 buf read", __FILE__, __func__ );
-
 			logTrace( g_conf.m_logTraceMsg4, "END - returning false" );
 			return false;
 		}
