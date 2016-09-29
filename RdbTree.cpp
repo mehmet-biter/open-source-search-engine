@@ -2032,7 +2032,7 @@ int32_t RdbTree::getOrderOfKey ( collnum_t collnum, const char *key, char *retKe
 	if ( m_numUsedNodes <= 0 ) return 0;
 	int32_t i     = m_headNode;
 	// estimate the depth of tree if not balanced
-	int32_t d     = getTreeDepth()   ;
+	int32_t d     = getTreeDepth();
 	// TODO: WARNING: ensure d-1 not >= 32 !!!!!!!!!!!!!!!!!
 	int32_t step  = 1 << (d-1);
 	int32_t order = step;
@@ -2057,10 +2057,7 @@ int32_t RdbTree::getOrderOfKey ( collnum_t collnum, const char *key, char *retKe
 		break;
         }
 	// normalize order since tree probably has less then 2^d nodes
-	int64_t normOrder = 
-		(int64_t) order          * 
-		(int64_t) m_numUsedNodes / 
-		(int64_t) ((1 << d) -1)  ;
+	int64_t normOrder = (int64_t)order * (int64_t)m_numUsedNodes / ( ((int64_t)1 << d)-1);
 	return (int32_t) normOrder;
 }
 
