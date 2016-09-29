@@ -140,7 +140,7 @@ bool Msg22::getTitleRec ( Msg22Request  *r              ,
 	// store url
 	if ( url ) {
 		strncpy(r->m_url, url, sizeof(r->m_url)-1);
-		r->m_url[ sizeof(r->m_url-1) ] = '\0';
+		r->m_url[ sizeof(r->m_url)-1 ] = '\0';
 	}
 	else {
 		r->m_url[0] = '\0';
