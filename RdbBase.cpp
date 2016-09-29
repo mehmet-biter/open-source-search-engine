@@ -91,7 +91,6 @@ void RdbBase::reset ( ) {
 	m_files[m_numFiles] = NULL;
 	// we're not in urgent merge mode yet
 	m_mergeUrgent = false;
-	m_waitingForTokenForMerge = false;
 	m_isMerging = false;
 	m_hasMergeFile = false;
 	m_isUnlinking  = false;
@@ -1652,16 +1651,6 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 		logTrace( g_conf.m_logTraceRdbBase, "END, already merging this" );
 		return false;
 	}
-	// bail if already waiting for it
-	if ( m_waitingForTokenForMerge ) {
-		if ( doLog ) 
-			log(LOG_INFO,"merge: Already requested token. "
-			    "Request for %s pending.",m_dbname);
-		logTrace( g_conf.m_logTraceRdbBase, "END, waiting for token" );
-		return false;
-	}
-	// score it
-	m_waitingForTokenForMerge = true;
 
 	// remember niceness for calling g_merge.merge()
 	m_niceness = niceness;
@@ -1675,14 +1664,9 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 		    m_dbname,mstrerror(g_errno));
 		g_errno = 0 ;
 		log(LOG_LOGIC,"merge: attemptMerge: %s: uh oh...",m_dbname);
-		// undo request
-		m_waitingForTokenForMerge = false;		 
 		// we don't have the token, so we're fucked...
 		return false;
 	}
-
-	// don't repeat
-	m_waitingForTokenForMerge = false;
 
 	// . if we are significantly over our m_minToMerge limit
 	//   then set m_mergeUrgent to true so merge disk operations will

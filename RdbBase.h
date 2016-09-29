@@ -307,8 +307,6 @@ public:
 
 	bool      m_niceness;
 
-	bool      m_waitingForTokenForMerge;
-
 	// we now determine when in merge mode
 	bool      m_isMerging;
 
