@@ -82,8 +82,8 @@ void handleRequest ( UdpSlot *slot , int32_t netnice ) {
 		}
 	}
 
-	lseek(fd, -1 * numBytes, SEEK_END);
-	if(errno == EINVAL) {
+	off_t off = lseek(fd, -1 * numBytes, SEEK_END);
+	if( off == -1 && errno == EINVAL) {
 		//oops! we seeked to before the begining of the file
 		//log(LOG_WARN, "bad seek!");
 		lseek(fd, 0, SEEK_SET);
