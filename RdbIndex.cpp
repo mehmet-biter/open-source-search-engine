@@ -47,6 +47,7 @@ void RdbIndex::reset() {
 
 	m_dataFileSize = 0;
 
+	/// @todo ALC do we need to lock here?
 	m_docIds.reset(new docids_t);
 	m_pendingDocIds.reset(new docids_t);
 
@@ -233,10 +234,11 @@ bool RdbIndex::readIndex2() {
 		return false;
 	}
 
+	logTrace(g_conf.m_logTraceRdbIndex, "END. Returning true with %zu docIds loaded", tmpDocIds->size());
+
 	// replace with new index
 	swapDocIds(tmpDocIds);
 
-	logTrace(g_conf.m_logTraceRdbIndex, "END. Returning true with %zu docIds loaded", m_docIds->size());
 	return true;
 }
 
@@ -253,15 +255,15 @@ bool RdbIndex::verifyIndex(int64_t dataFileSize) {
 	return true;
 }
 
-void RdbIndex::addRecord(char *key) {
+docidsconst_ptr_t RdbIndex::mergePendingDocIds() {
 	ScopedLock sl(m_pendingDocIdsMtx);
-	addRecord_unlocked(key, false);
+	return mergePendingDocIds_unlocked();
 }
 
-docidsconst_ptr_t RdbIndex::mergePendingDocIds() {
+docidsconst_ptr_t RdbIndex::mergePendingDocIds_unlocked() {
 	// don't need to merge when there are no pending docIds
 	if (m_pendingDocIds->empty()) {
-		return m_docIds;
+		return getDocIds();
 	}
 
 	m_lastMergeTime = gettimeofdayInMilliseconds();
@@ -277,8 +279,10 @@ docidsconst_ptr_t RdbIndex::mergePendingDocIds() {
 	// merge pending docIds into docIds
 	std::stable_sort(m_pendingDocIds->begin(), m_pendingDocIds->end(), cmplt_fn);
 
+
 	docids_ptr_t tmpDocIds(new docids_t);
-	std::merge(m_docIds->begin(), m_docIds->end(), m_pendingDocIds->begin(), m_pendingDocIds->end(), std::back_inserter(*tmpDocIds), cmplt_fn);
+	auto docIds = getDocIds();
+	std::merge(docIds->begin(), docIds->end(), m_pendingDocIds->begin(), m_pendingDocIds->end(), std::back_inserter(*tmpDocIds), cmplt_fn);
 
 	// in reverse because we want to keep the newest entry
 	auto it = std::unique(tmpDocIds->rbegin(), tmpDocIds->rend(), cmpeq_fn);
@@ -288,7 +292,12 @@ docidsconst_ptr_t RdbIndex::mergePendingDocIds() {
 	swapDocIds(tmpDocIds);
 	m_pendingDocIds->clear();
 
-	return m_docIds;
+	return getDocIds();
+}
+
+void RdbIndex::addRecord(char *key) {
+	ScopedLock sl(m_pendingDocIdsMtx);
+	addRecord_unlocked(key, false);
 }
 
 void RdbIndex::addRecord_unlocked(char *key, bool isGenerateIndex) {
@@ -324,7 +333,7 @@ void RdbIndex::addRecord_unlocked(char *key, bool isGenerateIndex) {
 	}
 
 	if (doMerge) {
-		(void)mergePendingDocIds();
+		(void)mergePendingDocIds_unlocked();
 	}
 }
 
@@ -608,7 +617,7 @@ bool RdbIndex::generateIndex(BigFile *f) {
 	mfree(buf, bufSize, "RdbMap");
 
 	// make sure it's all sorted and merged
-	(void)mergePendingDocIds();
+	(void)mergePendingDocIds_unlocked();
 
 	// update dataFileSize
 	m_dataFileSize = fileSize;
