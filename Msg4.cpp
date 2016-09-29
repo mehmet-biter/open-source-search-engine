@@ -1048,7 +1048,9 @@ bool saveAddsInProgress ( const char *prefix ) {
 	// rdb2 which has not been initialized and it does not work.
 	sprintf(newFilename, "%s%saddsinprogress.dat", g_hostdb.m_dir, prefix);
 
-	::rename ( filename , newFilename );
+	if( ::rename(filename , newFilename) == -1 ) {
+		logError("Error renaming file [%s] to [%s] (%d: %s)", filename, newFilename, errno, mstrerror(errno));
+	}
 
 	return true;
 }
