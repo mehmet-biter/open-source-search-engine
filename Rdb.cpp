@@ -611,12 +611,17 @@ bool Rdb::deleteColl( collnum_t collnum, collnum_t newCollnum) {
 }
 
 // returns false and sets g_errno on error, returns true on success
-bool Rdb::delColl ( const char *coll ) {
+bool Rdb::delColl(const char *coll) {
 	collnum_t collnum = g_collectiondb.getCollnum ( coll );
+	
+	if( collnum < (collnum_t)0 ) {
+		log(LOG_WARN, "Failed to delete collection. Could not look up collection [%s]", coll);
+		return false;
+	}
 	RdbBase *base = getBase ( collnum );
 
 	// ensure its there
-	if (collnum < (collnum_t)0 || !base) {
+	if(!base) {
 		g_errno = EBADENGINEER;
 		log(LOG_WARN, "db: %s: Failed to delete collection #%i. Does not exist.", m_dbname,collnum);
 		return false;
