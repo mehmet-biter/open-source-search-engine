@@ -592,7 +592,9 @@ bool Rdb::deleteColl ( collnum_t collnum , collnum_t newCollnum ) {
 	// ensure ./trash dir is there
 	makeTrashDir();
 	// move into that dir
-	::rename ( oldname , newname );
+	if( ::rename ( oldname , newname ) == -1 ) {
+		logError("Failed renaming [%s] to [%s]. errno %d: %s.", oldname, newname, errno, mstrerror(errno) );
+	}
 
 	log ( LOG_DEBUG, "db: cleared data for coll \"%s\" (%" PRId32") rdb=%s.",
 	       coll,(int32_t)collnum ,getDbnameFromId(m_rdbId));
