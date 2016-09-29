@@ -111,6 +111,8 @@ private:
 
 		int32_t    m_fileNum;
 
+		bool m_inPageCache;
+
 		// hold the list we read from disk here
 		RdbList    m_list;
 

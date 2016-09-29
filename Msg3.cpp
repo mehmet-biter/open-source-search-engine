@@ -17,6 +17,7 @@ Msg3::Scan::Scan()
   : m_scan(),
     m_startpg(0), m_endpg(0),
     m_hintOffset(0), m_fileNum(0),
+    m_inPageCache(false),
     m_list()
 {
 	memset(m_hintKey,0,sizeof(m_hintKey));
@@ -600,9 +601,9 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 						   true , // copy?
 						   -1 , // maxAge, none 
 						   true ); // inccounts?
-		m_scan[i].m_scan.m_inPageCache = false;
+		m_scan[i].m_inPageCache = false;
 		if ( inCache ) {
-			m_scan[i].m_scan.m_inPageCache = true;
+			m_scan[i].m_inPageCache = true;
 			m_numScansCompleted++;
 			// now we have to store this value, 6 or 12 so
 			// we can modify the hint appropriately
@@ -984,7 +985,7 @@ bool Msg3::doneScanning ( ) {
 		// if it was a retry, just in case something strange happened.
 		// store pre-constrain call is more efficient.
 		if ( m_retryNum<=0 && ff && rpc && vfd != -1 &&
-		     ! m_scan[i].m_scan.m_inPageCache )
+		     ! m_scan[i].m_inPageCache )
 			rpc->addRecord ( (collnum_t)0 , // collnum
 					 (char *)&ck , 
 					 // rec1 is this little thingy
