@@ -1559,9 +1559,7 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 	}
 
 
-	// tfndb has his own merge class since titledb merges write tfndb recs
-	RdbMerge *m = &g_merge;
-	if ( m->isMerging() )
+	if ( g_merge.isMerging() )
 	{
 		logTrace( g_conf.m_logTraceRdbBase, "END, is merging" );
 		return false;
@@ -1675,7 +1673,7 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 	}
 
 	// sanity check
-	if ( m_isMerging || m->isMerging() ) {
+	if ( m_isMerging || g_merge.isMerging() ) {
 		//if ( m_doLog )
 			//log(LOG_INFO,
 			//"merge: Someone already merging. Waiting for "
@@ -2097,15 +2095,15 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 	logTrace( g_conf.m_logTraceRdbBase, "merge!" );
 	// . start the merge
 	// . returns false if blocked, true otherwise & sets g_errno
-	if (!m->merge(rdbId,
-	              m_collnum,
-	              m_files[mergeFileNum],
-	              m_maps[mergeFileNum],
-	              m_indexes[mergeFileNum],
-	              m_mergeStartFileNum,
-	              m_numFilesToMerge,
-	              m_niceness,
-	              m_ks)) {
+	if (!g_merge.merge(rdbId,
+	                   m_collnum,
+	                   m_files[mergeFileNum],
+	                   m_maps[mergeFileNum],
+	                   m_indexes[mergeFileNum],
+	                   m_mergeStartFileNum,
+	                   m_numFilesToMerge,
+	                   m_niceness,
+	                   m_ks)) {
 		// we started the merge so return true here
 		logTrace( g_conf.m_logTraceRdbBase, "END, started OK" );
 		return true;
