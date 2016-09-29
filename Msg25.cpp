@@ -4373,7 +4373,9 @@ int32_t Links::getLinkText2(int32_t i,
 		//if ( ! send ) return 0;
 		// this is a blurb, send it back as such
 		*itemPtr = s;
-		*itemLen = send - s;
+		if( itemLen ) {
+			*itemLen = send - s;
+		}
 		// rss feeds do not have conventional link text
 		return 0;
 	}
