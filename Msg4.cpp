@@ -898,6 +898,11 @@ bool addMetaList ( const char *p , UdpSlot *slot ) {
 		}
 	}
 
+	if( !rdb ) {
+		logError("Attempt to work on NULL rdb object");
+		gbshutdownLogicError();
+	}
+
 	// . if already in addList and we are quickpoll interruptint, try again
 	// . happens if our niceness gets converted to 0
 	if ( rdb->inAddList() ) {
