@@ -29,10 +29,6 @@ char g_dumpMode = 0;
 // since we only do one merge at a time, keep this class static
 class RdbMerge g_merge;
 
-// this one is used exclusively by tfndb so he can merge when titledb is
-// merging since titledb adds a lot of tfndb records
-class RdbMerge g_merge2;
-
 RdbBase::RdbBase()
 	: m_docIdFileIndex(new docids_t) {
 	m_numFiles  = 0;
@@ -1402,17 +1398,12 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 		return false;
 	}
 
-	// nor if EITHER of the merge classes are suspended
+	// nor if the merge class is suspended
 	if ( g_merge.isSuspended()  ) {
 		logTrace( g_conf.m_logTraceRdbBase, "END, is suspended" );
 		return false;
 	}
 	
-	if ( g_merge2.isSuspended() ) {
-		logTrace( g_conf.m_logTraceRdbBase, "END, is suspended (2)" );
-		return false;
-	}
-
 	// shutting down? do not start another merge then
 	if ( g_process.m_mode == EXIT_MODE ) {
 		logTrace( g_conf.m_logTraceRdbBase, "END, shutting down" );

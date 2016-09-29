@@ -662,7 +662,6 @@ bool Rdb::close ( void *state , void (* callback)(void *state ), bool urgent , b
 	// suspend any merge permanently (not just for this rdb), we're exiting
 	if ( m_isReallyClosing ) {
 		g_merge.suspendMerge();
-		g_merge2.suspendMerge();
 	}
 	// . allow dumps to complete unless we're urgent
 	// . if we're urgent, we'll end up with a half dumped file, which
@@ -686,25 +685,6 @@ bool Rdb::close ( void *state , void (* callback)(void *state ), bool urgent , b
 	     ! m_urgent &&
 	     g_merge.getRdbId() == m_rdbId &&
 	     ( g_merge.getNumThreads() || g_merge.isDumping() ) ) {
-		// do not spam this message
-		int64_t now = gettimeofdayInMilliseconds();
-		if ( now - m_lastTime >= 500 ) {
-			log(LOG_INFO,"db: Waiting for merge to finish last "
-			    "write for %s.",m_dbname);
-			m_lastTime = now;
-		}
-		g_loop.registerSleepCallback (500,this,closeSleepWrapper);
-		m_registered = true;
-		// allow to be called again
-		m_isSaving = false;
-		return false;
-	}
-	if ( m_isReallyClosing && g_merge2.isMerging() && 
-	     // if we cored, we are urgent and need to make sure we save even
-	     // if we are merging this rdb...
-	     ! m_urgent &&
-	     g_merge2.getRdbId() == m_rdbId &&
-	     ( g_merge2.getNumThreads() || g_merge2.isDumping() ) ) {
 		// do not spam this message
 		int64_t now = gettimeofdayInMilliseconds();
 		if ( now - m_lastTime >= 500 ) {

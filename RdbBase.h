@@ -41,7 +41,6 @@
 extern int32_t g_numUrgentMerges;
 
 extern RdbMerge g_merge;
-extern RdbMerge g_merge2;
 
 class RdbBuckets;
 class RdbTree;

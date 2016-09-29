@@ -241,7 +241,6 @@ void repairWrapper ( int fd , void *state ) {
 	if ( g_repairMode == 1 ) {
 		// wait for all merging to stop just to be on the safe side
 		if ( g_merge.isMerging () ) return;
-		if ( g_merge2.isMerging() ) return;
 		// this is >= 0 is correct, -1 means no outstanding spiders
 		if ( g_spiderLoop.m_maxUsed >= 0 ) return;
 		// wait for ny outstanding unlinks or renames to finish
@@ -367,7 +366,6 @@ void repairWrapper ( int fd , void *state ) {
 		//}
 		// wait for all merging to stop just to be on the safe side
 		if ( g_merge.isMerging () ) return;
-		if ( g_merge2.isMerging() ) return;
 		// wait for ny outstanding unlinks or renames to finish
 		if ( g_unlinkRenameThreads > 0 ) return;
 		// note it

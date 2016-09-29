@@ -702,7 +702,6 @@ bool Process::shutdown2() {
 
 	// . suspend all merges
 	g_merge.suspendMerge () ;
-	g_merge2.suspendMerge() ;
 
 	// if urgent do not allow any further threads to be spawned unless
 	// they were already queued
