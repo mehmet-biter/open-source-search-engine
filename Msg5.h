@@ -104,10 +104,8 @@ class Msg5 {
 				 allowPageCache ); }
 
 	bool getTreeList(RdbList *result, rdbid_t rdbId, collnum_t collnum, const void *startKey, const void *endKey);
-	bool getTreeList(RdbList *result,
-			 const void *startKey, const void *endKey,
-			 int32_t *numNegativeRecs, int32_t *numPositiveRecs,
-			 int32_t *memUsedByTree, int32_t *numUsedNodes);
+	bool getTreeList(RdbList *result, const void *startKey, const void *endKey, int32_t *numPositiveRecs, 
+		int32_t *numNegativeRecs, int32_t *memUsedByTree, int32_t *numUsedNodes);
 
 	// frees m_treeList, m_diskList (can be quite a lot of mem 2+ megs)
 	void reset();
