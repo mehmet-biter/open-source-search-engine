@@ -92,6 +92,9 @@ enum {
 
 class Parm {
  public:
+ 	Parm();
+ 	~Parm();
+
 	const char *m_title; // displayed above m_desc on admin gui page
 	const char *m_desc;  // description of variable displayed on admin gui page
 	const char *m_cgi;   // cgi name, contains %i if an array

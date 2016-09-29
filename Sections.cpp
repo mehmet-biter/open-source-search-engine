@@ -34,10 +34,29 @@ void Sections::reset() {
 	m_rootSection      = NULL;
 	m_lastSection      = NULL;
 	m_lastAdded        = NULL;
-
 	m_nw = 0;
 	m_firstSent = NULL;
 	m_sectionPtrs = NULL;
+	
+	// Coverity
+	m_sbuf = NULL;
+	m_words = NULL;
+	m_url = NULL;
+	m_coll = NULL;
+	m_contentType = 0;
+	m_wposVec = NULL;
+	m_densityVec = NULL;
+	m_wordSpamVec = NULL;
+	m_fragVec = NULL;
+	m_isRSSExt = false;
+	m_titleStart = 0;
+	m_maxNumSections = 0;
+	memset(m_localBuf, 0, sizeof(m_localBuf));
+	m_wids = NULL;
+	m_wlens = NULL;
+	m_wptrs = NULL;
+	m_tids = NULL;
+	m_hiPos = 0;
 }
 
 Sections::~Sections ( ) {

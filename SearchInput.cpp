@@ -10,6 +10,77 @@
 #include <third-party/cld2/public/encodings.h>
 
 SearchInput::SearchInput() {
+	// Coverity
+	m_niceness = 0;
+	m_displayQuery = NULL;
+	m_cr = NULL;
+	m_isMasterAdmin = 0;
+	m_isCollAdmin = 0;
+	m_queryLangId = 0;
+	m_format = 0;
+	m_START = 0;
+	m_coll = NULL;
+	m_query = NULL;
+	m_prepend = NULL;
+	m_showImages = 0;
+	m_useCache = 0;
+	m_rcache = 0;
+	m_wcache = 0;
+	m_debug = 0;
+	m_spellCheck = 0;
+	m_displayMetas = NULL;
+	m_queryCharset = NULL;
+	m_gbcountry = NULL;
+	m_url = NULL;
+	m_sites = NULL;
+	m_plus = NULL;
+	m_minus = NULL;
+	m_link = NULL;
+	m_quote1 = NULL;
+	m_quote2 = NULL;
+	m_imgUrl = NULL;
+	m_imgLink = NULL;
+	m_imgWidth = 0;
+	m_imgHeight = 0;
+	m_titleMaxLen = 0;
+	m_maxSerpScore = 0.0;
+	m_minSerpDocId = 0;
+	m_sameLangWeight = 0.0;
+	m_defaultSortLang = NULL;
+	m_dedupURL = 0;
+	m_percentSimilarSummary = 0;
+	m_showBanned = 0;
+	m_includeCachedCopy = 0;
+	m_familyFilter = 0;
+	m_allowHighFrequencyTermCache = 0;
+	m_minMsg3aTimeout = 0;
+	m_showErrors = 0;
+	m_doSiteClustering = 0;
+	m_doDupContentRemoval = 0;
+	m_getDocIdScoringInfo = 0;
+	m_hideAllClustered = 0;
+	m_askOtherShards = 0;
+	memset(m_queryId, 0, sizeof(m_queryId));
+	m_doMaxScoreAlgo = 0;
+	m_streamResults = 0;
+	m_secsBack = 0;
+	m_sortBy = 0;
+	m_filetype = NULL;
+	m_realMaxTop = 0;
+	m_numLinesInSummary = 0;
+	m_summaryMaxWidth = 0;
+	m_summaryMaxNumCharsPerLine = 0;
+	m_docsWanted = 0;
+	m_firstResultNum = 0;
+	m_doQueryHighlighting = 0;
+	m_highlightQuery = NULL;
+	m_displayInlinks = 0;
+	m_displayOutlinks = 0;
+	m_docIdsOnly = 0;
+	m_formatStr = NULL;
+	m_queryExpansion = 0;
+	m_END_HASH = 0;
+	m_END_TEST = 0;
 }
 
 SearchInput::~SearchInput() {

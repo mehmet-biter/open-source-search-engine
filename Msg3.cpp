@@ -778,7 +778,7 @@ bool Msg3::doneScanning ( ) {
 	// 2 retry is the default
 	int32_t max = 2;
 	// see if explicitly provided by the caller
-	if ( m_maxRetries >= 0 ) max = m_maxRetries;
+//	if ( m_maxRetries >= 0 ) max = m_maxRetries;
 	// now use -1 (no max) as the default no matter what
 	max = -1;
 	// ENOMEM is particulary contagious, so watch out with it...

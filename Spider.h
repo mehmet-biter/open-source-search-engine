@@ -937,7 +937,7 @@ class SpiderCache {
 	bool needsSave ( ) ;
 	void doneSaving ( ) ;
 
-	bool m_isSaving;
+//	bool m_isSaving;
 };
 
 extern class SpiderCache g_spiderCache;

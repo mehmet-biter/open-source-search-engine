@@ -1196,14 +1196,12 @@ void RdbBase::doneWrapper2 ( ) {
 		g_numThreads++;
 	}
 
-//@@@ BR: no-merge index begin
 	if( m_useIndexFile ) {
 		if ( ! m_indexes[x]->rename( m_indexes[a]->getFilename(), doneWrapper3, this ) ) {
 			m_numThreads++;
 			g_numThreads++;
 		}
 	}
-//@@@ BR: no-merge index end
 
 	// sanity check
 	m_files[x]->m_fileSize = -1;

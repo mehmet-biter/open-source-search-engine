@@ -13,7 +13,19 @@ static void saveAndReloadPosdbBucket() {
 	g_posdb.getRdb()->loadTree();
 }
 
-static void deletePosdbBucket() {
+static void dumpPosdb() {
+	g_posdb.getRdb()->dumpTree(1);
+}
+
+static void deletePosdb() {
+	// delete rdb files
+	RdbBase *base = g_posdb.getRdb()->getBase(0);
+	for (int i = 0; i < base->getNumFiles(); ++i) {
+		base->getFile(i)->unlink();
+		base->getMap(i)->unlink();
+		base->getIndex(i)->unlink();
+	}
+
 	// delete posdb bucket file
 	std::string path(g_posdb.getRdb()->getDir());
 	path.append("/").append(g_posdb.getRdb()->getDbname()).append("-buckets-saved.dat");
@@ -23,26 +35,22 @@ static void deletePosdbBucket() {
 class PosdbTest : public ::testing::Test {
 protected:
 	static void SetUpTestCase() {
-		// make sure no leftover from previous test
-		deletePosdbBucket();
-
-		g_posdb.init();
-		g_collectiondb.loadAllCollRecs();
-		g_collectiondb.addRdbBaseToAllRdbsForEachCollRec();
 	}
 
 	static void TearDownTestCase() {
-		g_posdb.reset();
-		g_collectiondb.reset();
-		deletePosdbBucket();
 	}
 
 	void SetUp() {
+		g_posdb.init();
+		g_collectiondb.loadAllCollRecs();
+		g_collectiondb.addRdbBaseToAllRdbsForEachCollRec();
+		deletePosdb();
 	}
 
 	void TearDown() {
-		// we don't want leftover entries between tests
-		g_posdb.getRdb()->getBuckets()->clear();
+		deletePosdb();
+		g_posdb.reset();
+		g_collectiondb.reset();
 	}
 };
 
@@ -176,18 +184,17 @@ protected:
 	static void SetUpTestCase() {
 		g_conf.m_noInMemoryPosdbMerge = true;
 
-		// make sure no leftover from previous test
-		deletePosdbBucket();
-
 		g_posdb.init();
 		g_collectiondb.loadAllCollRecs();
 		g_collectiondb.addRdbBaseToAllRdbsForEachCollRec();
+		deletePosdb();
 	}
 
 	static void TearDownTestCase() {
+		deletePosdb();
 		g_posdb.reset();
 		g_collectiondb.reset();
-		deletePosdbBucket();
+
 
 		g_conf.m_noInMemoryPosdbMerge = m_savedMergeConf;
 	}
@@ -260,12 +267,13 @@ TEST_F(PosdbNoMergeTest, AddDeleteRecord) {
 	EXPECT_TRUE(list.isExhausted());
 }
 
-static void expectRecord(RdbList *list, int64_t termId, int64_t docId) {
+static void expectRecord(RdbList *list, int64_t termId, int64_t docId, bool isDel = false) {
 	ASSERT_FALSE(list->isExhausted());
 
 	const char *rec = list->getCurrentRec();
 	EXPECT_EQ(termId, Posdb::getTermId(rec));
 	EXPECT_EQ(docId, Posdb::getDocId(rec));
+	EXPECT_EQ(isDel, KEYNEG(rec));
 	list->skipCurrentRecord();
 }
 
@@ -281,14 +289,18 @@ TEST_F(PosdbNoMergeTest, AddDeleteRecordMultiple) {
 	// second round
 	// doc contains 3 words (a, c, d)
 	addPosdbKey(2, docId, true);
+	addPosdbKey(1, docId);
+	addPosdbKey(3, docId);
 	addPosdbKey(4, docId);
 
 	// third round
 	// doc contains 4 words (a, d, e, f)
 	addPosdbKey(3, docId, true);
+
+	addPosdbKey(1, docId);
+	addPosdbKey(4, docId);
 	addPosdbKey(5, docId);
 	addPosdbKey(6, docId);
-
 
 	// use extremes
 	const char *startKey = KEYMIN();
@@ -339,15 +351,32 @@ TEST_F(PosdbNoMergeTest, AddRecordDeleteDocWithoutRdbFiles) {
 	EXPECT_TRUE(list.isExhausted());
 }
 
-TEST_F(PosdbNoMergeTest, DISABLED_AddRecordDeleteDocWithRdbFiles) {
-	static const int total_records = 10;
+TEST_F(PosdbNoMergeTest, AddRecordDeleteDocWithRdbFiles) {
 	static const int64_t docId = 1;
 
-	for (int i = total_records; i >= 0; i--) {
-		addPosdbKey(i, docId, (i == 0));
-	}
+	// first round
+	// doc contains 3 words (a, b, c)
+	addPosdbKey(1, docId);
+	addPosdbKey(2, docId);
+	addPosdbKey(3, docId);
+	dumpPosdb();
 
-	saveAndReloadPosdbBucket();
+	// second round
+	// doc contains 3 words (a, c, d)
+	addPosdbKey(1, docId);
+	addPosdbKey(3, docId);
+	addPosdbKey(4, docId);
+	dumpPosdb();
+
+	// third round
+	// doc contains 4 words (a, d, e, f)
+	addPosdbKey(1, docId);
+	addPosdbKey(4, docId);
+	addPosdbKey(5, docId);
+	addPosdbKey(6, docId);
+	dumpPosdb();
+
+	addPosdbKey(0, docId, true);
 
 	// use extremes
 	const char *startKey = KEYMIN();
@@ -360,11 +389,5 @@ TEST_F(PosdbNoMergeTest, DISABLED_AddRecordDeleteDocWithRdbFiles) {
 	buckets->getList(0, startKey, endKey, -1, &list, &numPosRecs, &numNegRecs, Posdb::getUseHalfKeys());
 
 	// verify that data returned is the same as data inserted above
-	for (int i = 0; i <= total_records; ++i, list.skipCurrentRecord()) {
-		const char *rec = list.getCurrentRec();
-		EXPECT_EQ(i, Posdb::getTermId(rec));
-		EXPECT_EQ(docId, Posdb::getDocId(rec));
-		EXPECT_EQ((i == 0), KEYNEG(rec));
-	}
-	EXPECT_TRUE(list.isExhausted());
+	expectRecord(&list, 0, docId, true);
 }

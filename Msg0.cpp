@@ -222,8 +222,8 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 	// . now that we do load balancing we don't want to do a disk lookup
 	//   even if local if we are merging or dumping
 	// . UNLESS g_conf.m_preferLocalReads is true
-	if ( preferLocalReads == -1 ) 
-		preferLocalReads = g_conf.m_preferLocalReads;
+//	if ( preferLocalReads == -1 ) 
+//		preferLocalReads = g_conf.m_preferLocalReads;
 
 	// . always prefer local for full split clusterdb
 	// . and keep the tfndb/titledb lookups in the same stripe

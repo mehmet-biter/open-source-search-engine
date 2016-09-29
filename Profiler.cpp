@@ -39,6 +39,9 @@ Profiler::Profiler() :
 	// unlink ( newf.getBufStart() );
 
 	// Coverity
+	m_file = NULL;
+	m_stringTable = NULL;
+	m_stringTableSize = 0;
 	memset(&m_elfHeader, 0, sizeof(m_elfHeader));
 	m_sectionHeaders = NULL;
 	m_totalFrames = 0;

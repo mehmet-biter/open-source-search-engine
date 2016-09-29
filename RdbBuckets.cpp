@@ -436,18 +436,22 @@ bool RdbBucket::selfTest (const char* prevKey) {
 	return true;
 }
 
-void RdbBuckets::printBuckets() {
+void RdbBuckets::printBuckets(std::function<void(const char*, int32_t)> print_fn) {
  	for(int32_t i = 0; i < m_numBuckets; i++) {
-		m_buckets[i]->printBucket();
+		m_buckets[i]->printBucket(print_fn);
 	}
 }
 
-void RdbBucket::printBucket() {
+void RdbBucket::printBucket(std::function<void(const char*, int32_t)> print_fn) {
 	const char *kk = m_keys;
 	int32_t keySize = m_parent->getKeySize();
 
 	for (int32_t i = 0; i < m_numKeys; i++) {
-		logf(LOG_TRACE, "db: k=%s keySize=%" PRId32, KEYSTR(kk, keySize), keySize);
+		if (print_fn) {
+			print_fn(kk, keySize);
+		} else {
+			logf(LOG_TRACE, "db: k=%s keySize=%" PRId32, KEYSTR(kk, keySize), keySize);
+		}
 		kk += m_parent->getRecSize();
 	}
 }
@@ -1513,6 +1517,8 @@ bool RdbBuckets::deleteNode(collnum_t collnum, const char *key) {
 		return false;
 	}
 
+	m_needsSave = true;
+
 	if (!m_buckets[i]->deleteNode(node)) {
 		m_buckets[i]->reset();
 		memmove(m_buckets[i], m_buckets[i + 1], m_numBuckets - i - 1);
@@ -1611,8 +1617,9 @@ bool RdbBucket::deleteNode(int32_t i) {
 	}
 
 	// delete record
+	int32_t numNeg = KEYNEG(rec);
 	memmove(rec, rec + recSize, m_numKeys * recSize);
-	m_parent->updateNumRecs(-1, -dataSize, -(KEYNEG(rec)));
+	m_parent->updateNumRecs(-1, -dataSize, -numNeg);
 	--m_numKeys;
 
 	// make sure there are still entries left
@@ -1860,17 +1867,22 @@ int64_t RdbBuckets::getListSize(collnum_t collnum, const char *startKey, const c
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
 bool RdbBuckets::fastSave ( const char *dir, bool useThread, void *state, void (* callback) (void *state) ) {
+	logTrace(g_conf.m_logTraceRdbBuckets, "BEGIN. dir=%s", dir);
+
 	if (g_conf.m_readOnlyMode) {
+		logTrace(g_conf.m_logTraceRdbBuckets, "END. Read only mode. Returning true.");
 		return true;
 	}
 
 	// we do not need a save
 	if (!m_needsSave) {
+		logTrace(g_conf.m_logTraceRdbBuckets, "END. Don't need to save. Returning true.");
 		return true;
 	}
 
 	// return true if already in the middle of saving
 	if (m_isSaving) {
+		logTrace(g_conf.m_logTraceRdbBuckets, "END. Is already saving. Returning false.");
 		return false;
 	}
 
@@ -1901,6 +1913,8 @@ bool RdbBuckets::fastSave ( const char *dir, bool useThread, void *state, void (
 	m_isSaving = false;
 	// we do not need to be saved now?
 	m_needsSave = false;
+
+	logTrace(g_conf.m_logTraceRdbBuckets, "END. Returning true.");
 
 	// we did not block
 	return true;

@@ -34,41 +34,95 @@ Stats::Stats ( ) {
 	m_avgQueriesPerSec = 0;
 	m_lastQueryLogTime = gettimeofdayInMilliseconds();
 	m_startTime = m_lastQueryLogTime;
-        m_upTime = 0;
+	m_upTime = 0;
 	m_closedSockets = 0;
 
 	m_msg3aRecallCnt = 0;
-	// m_tierHits[0] = 0;
-	// m_tierHits[1] = 0;
-	// m_tierHits[2] = 0;
-	// m_tier2Misses = 0;
-	// m_tierTimes[0] = 0;
-	// m_tierTimes[1] = 0;
-	// m_tierTimes[2] = 0;
-	//m_totalDedupCand = 0;
-	//m_dedupedCand = 0;
-	//m_bannedDups = 0;
-	//m_bigHackDups = 0;
-	//m_summaryDups = 0;
-	//m_contentDups = 0;
-	//m_clusteredTier1 = 0;
-	//m_clusteredTier2 = 0;
-	//m_errored = 0;
-	m_msg3aRecalls[0] = 0;
-	m_msg3aRecalls[1] = 0;
-	m_msg3aRecalls[2] = 0;
-	m_msg3aRecalls[3] = 0;
-	m_msg3aRecalls[4] = 0;
-	m_msg3aRecalls[5] = 0;
+	memset(&m_msg3aRecalls, 0, sizeof(m_msg3aRecalls));
 
 	clearMsgStats();
+	
+	// Coverity
+	m_uptimeStart = 0;
+	m_msg3aSlowRecalls = 0;
+	m_msg3aFastRecalls = 0;
+	m_tier2Misses = 0;
+	memset(&m_filterStats, 0, sizeof(m_filterStats));
 };
 
 
 void Stats::clearMsgStats() {
-	char *start = &m_start;
-	char *end   = &m_end;
-	memset ( start , 0 , end - start );
+//	char *start = &m_start;
+//	char *end   = &m_end;
+//	memset ( start , 0 , end - start );
+	// Version understandable by Coverity
+
+	// char      m_start;
+	memset(&m_msgTotalOfSendTimes, 0, sizeof(m_msgTotalOfSendTimes));
+	memset(&m_msgTotalSent, 0, sizeof(m_msgTotalSent));
+	memset(&m_msgTotalSentByTime, 0, sizeof(m_msgTotalSentByTime));
+	memset(&m_msgTotalOfQueuedTimes, 0, sizeof(m_msgTotalOfQueuedTimes));
+	memset(&m_msgTotalQueued, 0, sizeof(m_msgTotalQueued));
+	memset(&m_msgTotalQueuedByTime, 0, sizeof(m_msgTotalQueuedByTime));
+	memset(&m_msgTotalOfHandlerTimes, 0, sizeof(m_msgTotalOfHandlerTimes));
+	memset(&m_msgTotalHandlersCalled, 0, sizeof(m_msgTotalHandlersCalled));
+	memset(&m_msgTotalHandlersByTime, 0, sizeof(m_msgTotalHandlersByTime));
+	memset(&m_packetsIn, 0, sizeof(m_packetsIn));
+	memset(&m_packetsOut, 0, sizeof(m_packetsOut));
+	memset(&m_acksIn, 0, sizeof(m_acksIn));
+	memset(&m_acksOut, 0, sizeof(m_acksOut));
+	memset(&m_reroutes, 0, sizeof(m_reroutes));
+	memset(&m_errors, 0, sizeof(m_errors));
+	memset(&m_timeouts, 0, sizeof(m_timeouts));
+	memset(&m_nomem, 0, sizeof(m_nomem));
+	memset(&m_dropped, 0, sizeof(m_dropped));
+	memset(&m_cancelRead, 0, sizeof(m_cancelRead));
+	m_parsingInconsistencies = 0;
+	m_totalOverflows = 0;
+	m_compressedBytesIn = 0;
+	m_uncompressedBytesIn = 0;
+	m_compressAllDocs = 0;
+	m_compressAllBytesIn = 0;
+	m_compressAllBytesOut = 0;
+	m_compressMimeErrorDocs = 0;
+	m_compressMimeErrorBytesIn = 0;
+	m_compressMimeErrorBytesOut = 0;
+	m_compressUnchangedDocs = 0;
+	m_compressUnchangedBytesIn = 0;
+	m_compressUnchangedBytesOut = 0;
+	m_compressBadContentDocs = 0;
+	m_compressBadContentBytesIn = 0;
+	m_compressBadContentBytesOut = 0;
+	m_compressBadLangDocs = 0;
+	m_compressBadLangBytesIn = 0;
+	m_compressBadLangBytesOut = 0;
+	m_compressBadCharsetDocs = 0;
+	m_compressBadCharsetBytesIn = 0;
+	m_compressBadCharsetBytesOut = 0;
+	m_compressBadCTypeDocs = 0;
+	m_compressBadCTypeBytesIn = 0;
+	m_compressBadCTypeBytesOut = 0;
+	m_compressHasIframeDocs = 0;
+	m_compressPlainLinkDocs = 0;
+	m_compressPlainLinkBytesIn = 0;
+	m_compressPlainLinkBytesOut = 0;
+	m_compressEmptyLinkDocs = 0;
+	m_compressEmptyLinkBytesIn = 0;
+	m_compressEmptyLinkBytesOut = 0;
+	m_compressFullPageDocs = 0;
+	m_compressFullPageBytesIn = 0;
+	m_compressFullPageBytesOut = 0;
+	m_compressHasDateDocs = 0;
+	m_compressHasDateBytesIn = 0;
+	m_compressHasDateBytesOut = 0;
+	m_compressRobotsTxtDocs = 0;
+	m_compressRobotsTxtBytesIn = 0;
+	m_compressRobotsTxtBytesOut = 0;
+	m_compressUnknownTypeDocs = 0;
+	m_compressUnknownTypeBytesIn = 0;
+	m_compressUnknownTypeBytesOut = 0;
+	//char      m_end;
+
 }
 
 //static pthread_mutex_t s_lock = PTHREAD_MUTEX_INITIALIZER;

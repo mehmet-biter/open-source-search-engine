@@ -1022,13 +1022,6 @@ bool Process::saveRdbTrees ( bool useThread , bool shuttingDown ) {
 	// only save spiderdb based trees if shutting down so we can
 	// still write to them without writes being disabled
 	if ( ! shuttingDown ) {
-		// . check spider cache files (doleiptable waitingtree etc.)
-		// . this should return true if it still has some files that haven't
-		//   saved to disk yet... so if it returns true we return false 
-		//   indicating that we are still waiting!
-		if ( g_spiderCache.needsSave () ) {
-			return false;
-		}
 		return true;
 	}
 

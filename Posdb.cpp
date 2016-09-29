@@ -530,7 +530,35 @@ void printTermList ( int32_t i, const char *list, int32_t listSize ) {
 	}
 }
 
-
+void Posdb::printKey(const char *k) {
+	logf(LOG_TRACE, "k=%s "
+			     "tid=%015" PRIu64" "
+			     "docId=%012" PRId64" "
+			     "siteRank=%02" PRId32" "
+			     "langId=%02" PRId32" "
+			     "pos=%06" PRId32" "
+			     "hgrp=%02" PRId32" "
+			     "spamRank=%02" PRId32" "
+			     "divRank=%02" PRId32" "
+			     "syn=%01" PRId32" "
+			     "densRank=%02" PRId32" "
+			     "mult=%02" PRId32" "
+			     "isDel=%d"
+			     "\n",
+	     KEYSTR(k, sizeof(key144_t)),
+	     getTermId(k),
+	     getDocId(k),
+	     (int32_t)getSiteRank(k),
+	     (int32_t)getLangId(k),
+	     getWordPos(k),
+	     (int32_t)getHashGroup(k),
+	     (int32_t)getWordSpamRank(k),
+	     (int32_t)getDiversityRank(k),
+	     (int32_t)getIsSynonym(k),
+	     (int32_t)getDensityRank(k),
+	     (int32_t)getMultiplier(k),
+	     KEYNEG(k));
+}
 
 int Posdb::printList ( RdbList &list ) {
 	bool justVerify = false;

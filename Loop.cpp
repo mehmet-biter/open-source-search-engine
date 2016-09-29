@@ -853,7 +853,7 @@ void Loop::doPoll ( ) {
 		// must be set
 		if ( ! FD_ISSET ( fd , &readfds ) ) continue;
 		if ( g_conf.m_logDebugLoop || g_conf.m_logDebugTcp ) {
-			log( LOG_DEBUG, "loop: calling cback0 niceness=%" PRId32" fd=%i", s->m_niceness, fd );
+			log( LOG_DEBUG, "loop: calling cback0 niceness=%" PRId32" fd=%i", s ? s->m_niceness : -1, fd );
 		}
 		calledOne = true;
 		callCallbacks_ass (true,fd, now,0);//read?
@@ -867,7 +867,7 @@ void Loop::doPoll ( ) {
 		// fds are always ready for writing so take this out.
 		if ( ! FD_ISSET ( fd , &writefds ) ) continue;
 		if ( g_conf.m_logDebugLoop || g_conf.m_logDebugTcp ) {
-			log( LOG_DEBUG, "loop: calling wcback0 niceness=%" PRId32" fd=%i", s->m_niceness, fd );
+			log( LOG_DEBUG, "loop: calling wcback0 niceness=%" PRId32" fd=%i", s ? s->m_niceness : -1, fd );
 		}
 		calledOne = true;
 		callCallbacks_ass (false,fd, now,0);//false=forRead?

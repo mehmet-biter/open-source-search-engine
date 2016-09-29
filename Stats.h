@@ -116,7 +116,7 @@ class Stats {
 	//int32_t m_termsVsTierExp[14][MAX_TIERS][7];
 
 	// use m_start so we know what msg stats to clear with memset
-	char      m_start;
+//	char      m_start;
 	// and stats for how long to send a request or reply from
 	// start to finish. the first "2" is the niceness, 0 or 1, and
 	// the second "2" is 0 if sending a reply and 1 if sending a request.
@@ -219,9 +219,7 @@ class Stats {
 	int64_t m_compressUnknownTypeBytesOut;
 
 	// use m_end so we know what msg stats to clear with memset
-	char      m_end;
-
-	//bool m_gotLock;
+//	char      m_end;
 };
 
 extern class Stats g_stats;

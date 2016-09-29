@@ -5024,6 +5024,7 @@ bool pingTest ( int32_t hid , uint16_t clientPort ) {
     // we want to re-use port it if we need to restart
     int options = 1;
     if ( setsockopt(sock, SOL_SOCKET, SO_REUSEADDR , &options,sizeof(options)) < 0 ) {
+		close( sock );
 	    log(LOG_WARN, "net: pingtest: setsockopt: %s.", strerror(errno));
 	    return false;
     }

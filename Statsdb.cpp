@@ -955,7 +955,7 @@ char *Statsdb::plotGraph ( char *pstart ,
 	p = pstart;
 
 	int32_t  lastx = -1;
-	float lasty ;
+	float lasty = 0.0;
 	bool  firstPoint = true;
 
 	// now the m_sb1 buffer consists of points to make lines with

@@ -898,6 +898,11 @@ bool addMetaList ( const char *p , UdpSlot *slot ) {
 		}
 	}
 
+	if( !rdb ) {
+		logError("Attempt to work on NULL rdb object");
+		gbshutdownLogicError();
+	}
+
 	// . if already in addList and we are quickpoll interruptint, try again
 	// . happens if our niceness gets converted to 0
 	if ( rdb->inAddList() ) {
@@ -1048,7 +1053,9 @@ bool saveAddsInProgress ( const char *prefix ) {
 	// rdb2 which has not been initialized and it does not work.
 	sprintf(newFilename, "%s%saddsinprogress.dat", g_hostdb.m_dir, prefix);
 
-	::rename ( filename , newFilename );
+	if( ::rename(filename , newFilename) == -1 ) {
+		logError("Error renaming file [%s] to [%s] (%d: %s)", filename, newFilename, errno, mstrerror(errno));
+	}
 
 	return true;
 }
@@ -1194,10 +1201,18 @@ bool loadAddsInProgress ( const char *prefix ) {
 			logTrace( g_conf.m_logTraceMsg4, "END - returning false" );
 			return false;
 		}
-		// host many bytes
+
 		int32_t numBytes;
-		read ( fd , (char *)&numBytes , 4 );
+		int32_t nb;
+		nb = (int32_t)read(fd, (char *)&numBytes, 4);
+		if ( nb != 4 ) {
+			close ( fd );
+			logError("Read of message size returned %" PRId32 " bytes instead of 4", nb);
+			logTrace( g_conf.m_logTraceMsg4, "END - returning false" );
+			return false;
+		}
 		p += 4;
+
 		// allocate buffer
 		char *buf = (char *)mmalloc ( numBytes , "msg4loadbuf");
 		if ( ! buf ) {
@@ -1209,11 +1224,10 @@ bool loadAddsInProgress ( const char *prefix ) {
 		}
 		
 		// the buffer
-		int32_t nb = read ( fd , buf , numBytes );
+		nb = (int32_t)read ( fd , buf , numBytes );
 		if ( nb != numBytes ) {
 			close ( fd );
 			log(LOG_ERROR,"%s:%s: build: bad msg4 buf read", __FILE__, __func__ );
-
 			logTrace( g_conf.m_logTraceMsg4, "END - returning false" );
 			return false;
 		}

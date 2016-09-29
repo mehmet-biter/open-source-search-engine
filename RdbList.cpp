@@ -874,7 +874,7 @@ bool RdbList::removeBadData_r ( ) {
 		m_lastKeyIsValid = false;
 		return true;
 	}
-	char  oldk[MAX_KEY_BYTES];
+	char  oldk[MAX_KEY_BYTES]={0};
 	int32_t  oldRecSize = 0;
 	char *bad     = NULL;
 	char *badEnd  = NULL;
@@ -1613,12 +1613,21 @@ bool RdbList::posdbConstrain(const char *startKey, char *endKey, int32_t minRecS
 	// . don't start at m_list+6 either cuz we may have overwritten that with the *(key96_t *)p = k above!!!! tricky...
 	if ( p < m_list + 18 ) {
 		resetPtr = true;
-	} else if (KEYCMP(k, hintKey, 18) != 0 || KEYCMP(hintKey, endKey, 18) > 0) {
-		// . if first key is over endKey that's a bad hint!
-		// . might it be a corrupt RdbMap?
-		// . reset "p" to beginning if hint is bad
-		log(LOG_WARN, "db: Corrupt data or map file. Bad hint for %s.", filename);
-		resetPtr = true;
+	} 
+	else { 
+		// Sanity
+		if( !hintKey ) {
+			logError("hintKey is NULL before use!");
+			gbshutdownAbort(true);
+		}
+		
+		if (KEYCMP(k, hintKey, 18) != 0 || KEYCMP(hintKey, endKey, 18) > 0) {
+			// . if first key is over endKey that's a bad hint!
+			// . might it be a corrupt RdbMap?
+			// . reset "p" to beginning if hint is bad
+			log(LOG_WARN, "db: Corrupt data or map file. Bad hint for %s.", filename);
+			resetPtr = true;
+		}
 	}
 
 	if (resetPtr) {
@@ -1845,12 +1854,12 @@ void RdbList::merge_r(RdbList **lists, int32_t numLists, const char *startKey, c
 	// . we increment by 2 too
 	// . if minKey is a delete, then make it a non-delete key
 	// . add 2 to ensure that it stays a non-delete key
-	char  lastKey[MAX_KEY_BYTES];
+	char  lastKey[MAX_KEY_BYTES]={0};
 	bool  lastKeyIsValid = false;
 	char  lastPosKey[MAX_KEY_BYTES]={0};
 	char  highestKey[MAX_KEY_BYTES];
 	bool  firstTime = true;
-	char  lastNegKey[MAX_KEY_BYTES];
+	char  lastNegKey[MAX_KEY_BYTES]={0};
 	int32_t  lastNegi = -1;
 
 	// init highestKey

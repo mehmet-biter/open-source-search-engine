@@ -138,12 +138,25 @@ bool Msg22::getTitleRec ( Msg22Request  *r              ,
 		return true;
 	}
 	// store url
-	if ( url ) strcpy(r->m_url,url);
-	else r->m_url[0] = '\0';
+	if ( url ) {
+		strncpy(r->m_url, url, sizeof(r->m_url)-1);
+		r->m_url[ sizeof(r->m_url)-1 ] = '\0';
+	}
+	else {
+		r->m_url[0] = '\0';
+	}
 
 	// if no docid provided, use probable docid
-	if ( ! docId ) 
-		docId = Titledb::getProbableDocId ( url );
+	if ( ! docId ) {
+		if( url ) {
+			docId = Titledb::getProbableDocId ( url );
+		}
+		else {
+			// Should never happen. Dump core if it does. Coverity 1361199
+			logError("No URL and no docId!");
+			gbshutdownLogicError();
+		}
+	}
 
 	// get groupId from docId
 	uint32_t shardNum = getShardNumFromDocId ( docId );

@@ -40,6 +40,7 @@ public:
 		m_createSortByForNumbers= false;
 		m_hashNumbers			= true;
 		m_hashCommonWebWords	= true;
+		m_linkerSiteRank		= 0;
 	}
 	class HashTableX *m_tt;
 	const char		*m_prefix;
@@ -1019,8 +1020,8 @@ bool XmlDoc::hashLinksForLinkdb ( HashTableX *dt ) {
 	VALGRIND_CHECK_MEM_IS_DEFINED(&spam,sizeof(spam));
 	VALGRIND_CHECK_MEM_IS_DEFINED(&siteRank,sizeof(siteRank));
 	VALGRIND_CHECK_MEM_IS_DEFINED(&hopCount,sizeof(hopCount));
-	uint32_t tmp2 = *getIp();
-	VALGRIND_CHECK_MEM_IS_DEFINED(&tmp2,sizeof(tmp2));
+//	uint32_t tmp2 = *getIp();
+//	VALGRIND_CHECK_MEM_IS_DEFINED(&tmp2,sizeof(tmp2));
 	uint64_t tmp3 = *getDocId();
 	VALGRIND_CHECK_MEM_IS_DEFINED(&tmp3,sizeof(tmp3));
 	VALGRIND_CHECK_MEM_IS_DEFINED(&discoveryDate,sizeof(discoveryDate));
@@ -1029,12 +1030,15 @@ bool XmlDoc::hashLinksForLinkdb ( HashTableX *dt ) {
 #endif
 		// set this key, it is the entire record
 		key224_t k;
+		int32_t *ipptr = getIp();
+		int32_t ip = ipptr ? *ipptr : 0;
+
 		k = Linkdb::makeKey_uk ( linkeeSiteHash32 ,
 					  m_links.getLinkHash64(i)   ,
 					  spam               , // link spam?
 					  siteRank     , // was quality
 					  hopCount,
-					  *getIp()       ,
+					  ip,
 					  *getDocId()    ,
 					  discoveryDate      ,
 					  lostDate           ,
@@ -2778,16 +2782,18 @@ char *XmlDoc::hashJSONFields2 ( HashTableX *table ,
 		//
 		char *name = nameBuf.getBufStart();
 		hi->m_hashGroup = HASHGROUP_BODY;
-		if ( strstr(name,"title") )
-			hi->m_hashGroup = HASHGROUP_TITLE;
-		if ( strstr(name,"url") )
-			hi->m_hashGroup = HASHGROUP_INURL;
-		if ( strstr(name,"resolved_url") )
-			hi->m_hashGroup = HASHGROUP_INURL;
-		if ( strstr(name,"tags") )
-			hi->m_hashGroup = HASHGROUP_INTAG;
-		if ( strstr(name,"meta") )
-			hi->m_hashGroup = HASHGROUP_INMETATAG;
+		if( name ) {
+			if ( strstr(name,"title") )
+				hi->m_hashGroup = HASHGROUP_TITLE;
+			if ( strstr(name,"url") )
+				hi->m_hashGroup = HASHGROUP_INURL;
+			if ( strstr(name,"resolved_url") )
+				hi->m_hashGroup = HASHGROUP_INURL;
+			if ( strstr(name,"tags") )
+				hi->m_hashGroup = HASHGROUP_INTAG;
+			if ( strstr(name,"meta") )
+				hi->m_hashGroup = HASHGROUP_INMETATAG;
+		}
 		//
 		// now Json.cpp decodes and stores the value into
 		// a buffer, so ji->getValue() should be decoded completely

@@ -564,8 +564,7 @@ bool XmlDoc::set4 ( SpiderRequest *sreq      ,
 		    int32_t        forcedIp ,
 		    uint8_t        contentType ,
 		    uint32_t       spideredTime ,
-		    bool           contentHasMimeArg
-) {
+		    bool           contentHasMimeArg) {
 
 	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );
 
@@ -747,8 +746,8 @@ bool XmlDoc::set4 ( SpiderRequest *sreq      ,
 
 	// it should be valid since we just set it
 	CollectionRec *cr = getCollRec();
-
-	m_useRobotsTxt = cr->m_useRobotsTxt;
+	
+	m_useRobotsTxt = cr ? cr->m_useRobotsTxt : true;
 
 	// solidify some parms
 	//m_eliminateMenus       = cr->m_eliminateMenus;
@@ -13964,22 +13963,6 @@ skipNewAdd2:
 				g_process.shutdownAbort(true);
 			}
 
-			/// @todo ALC we're allocating too much here, we can only have 1 del key per doc when index is used
-
-			Rdb *rdb = getRdbFromId(rdbId);
-			if (rdb->isUseIndexFile()) {
-				// Do not store records in the hash table of old values when we're using index file.
-				// This makes sure that no delete records are stored in rdb for existing records,
-				// which is needed for the new no-merge feature.
-				/// @todo ALC verify that we need to cater for secondary rdb use for rebuild
-				if (rdbId == RDB_POSDB || rdbId == RDB2_POSDB2) {
-					continue;
-				}
-
-				/// @todo ALC we need to cater for other rdb file down below
-				gbshutdownLogicError();
-			}
-
 			if (!dt8.addKey(&hk, &rec)) {
 				logTrace(g_conf.m_logTraceXmlDoc, "addKey failed");
 				return NULL;
@@ -14055,11 +14038,6 @@ skipNewAdd2:
 				// as a delete key below
 				dt8.removeSlot(slot);
 
-				if (rdbId == RDB_LINKDB) {
-					// all done for this key
-					continue;
-				}
-
 				// but do add like a titledb rec that has the
 				// same key, because its data is probably
 				// different...
@@ -14068,7 +14046,11 @@ skipNewAdd2:
 				// geico got deleted but not the title rec!!
 				// MAKE SURE TITLEREC gets deleted then!!!
 				if (ds == 0 && g_conf.m_doIncrementalUpdating) {
-					continue;
+					// don't do incremental updating when using index file
+					Rdb *rdb = getRdbFromId(rdbId);
+					if (!rdb->isUseIndexFile()) {
+						continue;
+					}
 				}
 			}
 
@@ -14161,7 +14143,7 @@ skipNewAdd2:
 			char key[MAX_KEY_BYTES];
 
 			// add posdb delete key
-			Posdb::makeStartKey(&key, 0, *od->getDocId());
+			Posdb::makeStartKey(&key, POSDB_DELETEDOC_TERMID, *od->getDocId());
 			*nptr++ = RDB_POSDB;
 			memcpy(nptr, &key, sizeof(posdbkey_t));
 			nptr += sizeof(posdbkey_t);
