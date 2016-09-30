@@ -51,8 +51,7 @@ public:
 	           RdbIndex *targetIndex,
 	           int32_t startFileNum,
 	           int32_t numFiles,
-	           int32_t niceness,
-	           char keySize);
+	           int32_t niceness);
 
 	int32_t getNumThreads() const { return m_numThreads; }
 

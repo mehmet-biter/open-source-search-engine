@@ -71,8 +71,7 @@ bool RdbMerge::merge(rdbid_t rdbId,
                      RdbIndex *targetIndex,
                      int32_t startFileNum,
                      int32_t numFiles,
-                     int32_t niceness,
-                     char keySize) {
+                     int32_t niceness) {
 	// reset ourselves
 	reset();
 
@@ -100,7 +99,7 @@ bool RdbMerge::merge(rdbid_t rdbId,
 	m_fixedDataSize   = base->getFixedDataSize();
 	m_niceness        = niceness;
 	m_doneMerging     = false;
-	m_ks              = keySize;
+	m_ks              = getKeySizeFromRdbId(rdbId);
 
 	// . set the key range we want to retrieve from the files
 	// . just get from the files, not tree (not cache?)

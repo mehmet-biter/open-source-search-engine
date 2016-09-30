@@ -2102,8 +2102,7 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 	                   m_indexes[mergeFileNum],
 	                   m_mergeStartFileNum,
 	                   m_numFilesToMerge,
-	                   m_niceness,
-	                   m_ks)) {
+	                   m_niceness)) {
 		// we started the merge so return true here
 		logTrace( g_conf.m_logTraceRdbBase, "END, started OK" );
 		return true;
