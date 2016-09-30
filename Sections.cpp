@@ -2214,11 +2214,11 @@ void Sections::setNextBrotherPtrs ( bool setContainer ) {
 		// only update list container if smaller than previous
 		if ( ! si->m_listContainer )
 			si->m_listContainer = te;
-		else if ( te->m_a > si->m_listContainer->m_a )
+		else if ( te && te->m_a > si->m_listContainer->m_a )
 			si->m_listContainer = te;
 		if ( ! sj->m_listContainer )
 			sj->m_listContainer = te;
-		else if ( te->m_a > sj->m_listContainer->m_a )
+		else if ( te && te->m_a > sj->m_listContainer->m_a )
 			sj->m_listContainer = te;
 
 		// now 
