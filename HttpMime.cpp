@@ -379,6 +379,13 @@ static time_t atotime2 ( const char *s ) {
 static time_t atotime3 ( const char *s ) {
 	// this time structure, once filled, will help yield a time_t
 	struct tm t;
+
+	// Sanity.. Needs at least "DDD MMM DD"
+	if( strlen(s) < 10 ) { 
+		logError("Wrong date/time format for this function [%s]", s);
+		return 0;
+	}
+	
 	// DAY OF WEEK 
 	t.tm_wday = getWeekday ( s ); // need getLongWeekday()?
 	while ( isalpha(*s) ) s++;
