@@ -2437,7 +2437,7 @@ bool Sections::setMenus ( ) {
 		}
 
 		// if it has plain text, forget it!
-		if ( prev->m_flags & SEC_PLAIN_TEXT ) continue;
+		if ( prev && prev->m_flags & SEC_PLAIN_TEXT ) continue;
 		// use this for us
 		Section *sk = si;
 		// get first "hard" section encountered while telescoping
@@ -2459,10 +2459,12 @@ bool Sections::setMenus ( ) {
 		//   they have different hard sections
 		if (   prevHard && ! skHard ) continue;
 		if ( ! prevHard &&   skHard ) continue;
-		if ( prevHard && prevHard->m_tagId!=skHard->m_tagId ) continue;
+		if ( prevHard && prevHard->m_tagId != skHard->m_tagId ) continue;
 
 		// ok, great that works!
-		prev->m_flags |= SEC_MENU;
+		if( prev ) {
+			prev->m_flags |= SEC_MENU;
+		}
 		if( sk ) {
 			sk->m_flags |= SEC_MENU;
 		}
