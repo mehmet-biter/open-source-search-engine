@@ -1160,7 +1160,7 @@ public:
 	// vector is 1-1 with words in the document body.
 	char *getFragVec ( );
 
-	bool injectDoc ( char *url ,
+	bool injectDoc ( const char *url ,
 			 class CollectionRec *cr ,
 			 char *content ,
 			 bool contentHasMime ,
@@ -1168,7 +1168,7 @@ public:
 			 int32_t charset,
 
 			 bool deleteUrl,
-			 char *contentTypeStr, // text/html, text/xml etc.
+			 const char *contentTypeStr, // text/html, text/xml etc.
 			 bool spiderLinks ,
 			 char newOnly, // index iff new
 

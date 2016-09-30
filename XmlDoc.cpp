@@ -1312,7 +1312,7 @@ static void indexDocWrapper2 ( int fd , void *state ) {
 // . user is requesting to inject this url
 // . returns false if blocked and your callback will be called when done
 // . returns true and sets g_errno on error
-bool XmlDoc::injectDoc ( char *url ,
+bool XmlDoc::injectDoc ( const char *url ,
 			 CollectionRec *cr ,
 			 char *content ,
 			 bool contentHasMimeArg ,
@@ -1320,7 +1320,7 @@ bool XmlDoc::injectDoc ( char *url ,
 			 int32_t charset,
 
 			 bool deleteUrl,
-			 char *contentTypeStr, // text/html application/json
+			 const char *contentTypeStr, // text/html application/json
 			 bool spiderLinks ,
 			 char newOnly, // index iff new
 
