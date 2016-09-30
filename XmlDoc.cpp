@@ -18380,7 +18380,9 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 	sb->safePrintf ( "</table></center><br>\n" );
 
 	// print outlinks
-	links->print( sb );
+	if( links ) {
+		links->print( sb );
+	}
 
 	//
 	// PRINT SECTIONS
