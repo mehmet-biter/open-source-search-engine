@@ -291,7 +291,7 @@ static bool loadKDecompTable(const char *baseDir) {
 		return false;
 	}
 	fseek(fp,0,SEEK_END);
-	size_t fileSize = (size_t)ftell(fp);
+	long fileSize = (size_t)ftell(fp);
 	if( fileSize <= 0 ) {
 		fclose(fp);
 		log(LOG_WARN, "uni: File [%s] not found or 0 bytes", filename);
@@ -305,7 +305,7 @@ static bool loadKDecompTable(const char *baseDir) {
 		return false;
 	}
 	size_t nread = fread(buf, 1, fileSize, fp);
-	if (nread != fileSize) {
+	if (nread != (size_t)fileSize) {
 		fclose(fp);
 		mfree(buf, fileSize, "UnicodeProperties");
 		log(LOG_WARN, "uni: error reading %s", filename);
