@@ -2131,7 +2131,9 @@ bool sendReply2 ( void *state ) {
 
 		// show the value
 		if ( ctag ) {
-			ctag->printDataToBuf( &sb );
+			if( !ctag->printDataToBuf( &sb ) ) {
+				sb.safePrintf( "ERROR handling ctag value" );
+			}
 		}
 
 		// close up the input tag
