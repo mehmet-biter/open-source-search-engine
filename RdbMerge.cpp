@@ -111,9 +111,7 @@ bool RdbMerge::merge(rdbid_t rdbId,
 	// the dump will start dumping at the end of the targetMap's data file.
 	if ( m_targetMap->getNumRecs() > 0 ) {
 		log(LOG_INIT,"db: Resuming a killed merge.");
-		//m_startKey = m_targetMap->getLastKey();
 		m_targetMap->getLastKey(m_startKey);
-		//m_startKey += (uint32_t) 1;
 		KEYINC(m_startKey,m_ks);
 	}
 
@@ -568,7 +566,6 @@ bool RdbMerge::dumpList() {
 	}
 
 	// if the startKey rolled over we're done
-	//if ( m_startKey.n0 == 0LL && m_startKey.n1 == 0 ) m_doneMerging=true;
 	if (KEYCMP(m_startKey, KEYMIN(), m_ks) == 0) {
 		m_doneMerging = true;
 	}
