@@ -2450,7 +2450,7 @@ bool Sections::setMenus ( ) {
 			if ( sk->m_parent->contains ( prev ) ) break;
 		}
 		// if it has plain text, forget it!
-		if ( sk->m_flags & SEC_PLAIN_TEXT ) continue;
+		if ( sk && sk->m_flags & SEC_PLAIN_TEXT ) continue;
 
 		// . first hard sections encountered must match!
 		// . otherwise for switchborad.com we lose "A B C ..." as
@@ -2463,7 +2463,9 @@ bool Sections::setMenus ( ) {
 
 		// ok, great that works!
 		prev->m_flags |= SEC_MENU;
-		sk  ->m_flags |= SEC_MENU;
+		if( sk ) {
+			sk->m_flags |= SEC_MENU;
+		}
 	}
 
 	int64_t h_copyright = hash64n("copyright");
