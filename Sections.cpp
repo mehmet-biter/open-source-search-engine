@@ -1999,7 +1999,7 @@ Section *Sections::insertSubSection ( int32_t a, int32_t b, int32_t newBaseHash 
 	//   to the newly inserted section, then when done adding sentence
 	//   sections we scanned all the words, keeping track of the last
 	//   html section we entered and used that to insert the sentence sections
-	if ( m_lastAdded && m_lastAdded->m_a > si->m_a && m_lastAdded->m_a < a ) {
+	if ( m_lastAdded && si && m_lastAdded->m_a > si->m_a && m_lastAdded->m_a < a ) {
 		si = m_lastAdded;
 	}
 
