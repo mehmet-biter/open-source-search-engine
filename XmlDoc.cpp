@@ -18530,6 +18530,10 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 
 bool XmlDoc::printMenu ( SafeBuf *sb ) {
 
+	if( !sb ) {
+		return false;
+	}
+
 	// encode it
 	SafeBuf ue;
 	ue.urlEncode ( ptr_firstUrl );
