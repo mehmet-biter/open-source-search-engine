@@ -145,7 +145,15 @@ bool HttpServer::getDoc ( char   *url      ,
 	}
 
 	// ignore if -1 as well
-	if ( proxyIp == -1 ) proxyIp = 0;
+	if ( proxyIp == -1 ) {
+		proxyIp = 0;
+	}
+
+	if( !url ) {
+		// getHostFast dereferences url below, so just as well bail here
+		logError("url empty in call to HttpServer.getDoc - needs to be set");
+		gbshutdownLogicError();
+	}
 
 	//log(LOG_WARN, "http: get doc %s", url->getUrl());
 	// use the HttpRequest class
@@ -182,7 +190,9 @@ bool HttpServer::getDoc ( char   *url      ,
 	}
 
 	int32_t pcLen = 0;
-	if ( postContent ) pcLen = strlen(postContent);
+	if ( postContent ) {
+		pcLen = strlen(postContent);
+	}
 
 	char *req = NULL;
 	int32_t reqSize;
