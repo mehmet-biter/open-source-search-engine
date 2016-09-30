@@ -291,7 +291,7 @@ static bool loadKDecompTable(const char *baseDir) {
 		return false;
 	}
 	fseek(fp,0,SEEK_END);
-	long fileSize = (size_t)ftell(fp);
+	long fileSize = ftell(fp);
 	if( fileSize <= 0 ) {
 		fclose(fp);
 		log(LOG_WARN, "uni: File [%s] not found or 0 bytes", filename);
