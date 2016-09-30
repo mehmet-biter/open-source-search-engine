@@ -100,7 +100,7 @@ bool HttpMime::set ( char *buf , int32_t bufLen , Url *url ) {
 	if ( m_bufLen < 0 ) { 
 		m_bufLen = 0; 
 		m_boundaryLen = 0; 
-		log("mime: no rnrn boundary detected");
+		log(LOG_WARN, "mime: no rnrn boundary detected");
 		return false; 
 	}
 	// set this
