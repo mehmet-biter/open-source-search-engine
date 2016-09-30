@@ -669,7 +669,10 @@ bool UdpServer::doSending(UdpSlot *slot, bool allowResends, int64_t now) {
 			m_needToSend = true;
 			// ok, now it should
 			if ( ! m_writeRegistered ) {
-				g_loop.registerWriteCallback ( m_sock, this, sendPollWrapper, 0 ); // niceness
+				if( !g_loop.registerWriteCallback ( m_sock, this, sendPollWrapper, 0 ) ) {
+					logError("registerWriteCallback failed");
+					return false;
+				}
 				m_writeRegistered = true;
 			}
 			return true;
