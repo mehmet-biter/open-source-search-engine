@@ -9278,6 +9278,10 @@ uint16_t *XmlDoc::getCharset ( ) {
 		return &m_charset;
 	}
 
+	if( !mime ) {
+		return NULL;
+	}
+
 	m_charset = getCharsetFast ( mime ,
 				     m_firstUrl.getUrl(),
 				     pstart ,
