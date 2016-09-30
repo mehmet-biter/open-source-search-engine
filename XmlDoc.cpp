@@ -21366,7 +21366,7 @@ static void getWordToPhraseRatioWeights ( int64_t   pid1 , // pre phrase
 				if ( k > i ) j = i;
 				// get ratio
 				//float ratio = (float)phrcount / (float)wrdcount;
-				float ratio = (float)j/(float)i;
+				float ratio = i ? (float)j/(float)i : 0;
 				// it should be impossible that this can be over 1.0
 				// but might happen due to hash collisions
 				if ( ratio > 1.0 ) ratio = 1.0;
