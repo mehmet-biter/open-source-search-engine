@@ -1616,7 +1616,7 @@ bool Repair::printRepairStatus ( SafeBuf *sb , int32_t fromIp ) {
 	// the titledb scan stats (phase 1)
 	int64_t ns     = m_recsScanned ;
 	int64_t nr     = g_titledb.getRdb()->getNumTotalRecs() ;
-	float     ratio  = ((float)ns * 100.0) / (float)nr;
+	float     ratio  = nr ? ((float)ns * 100.0) / (float)nr : 0.0;
 	int64_t errors = 
 		m_recsOutOfOrder +
 		m_recsetErrors   +
@@ -1627,9 +1627,8 @@ bool Repair::printRepairStatus ( SafeBuf *sb , int32_t fromIp ) {
 	// the spiderdb scan stats (phase 2)
 	int64_t ns2     = m_spiderRecsScanned ;
 	int64_t nr2     = g_spiderdb.getRdb()->getNumTotalRecs() ;
-	float     ratio2  = ((float)ns2 * 100.0) / (float)nr2;
-	int64_t errors2 = 
-		m_spiderRecSetErrors;
+	float     ratio2  = nr2 ? ((float)ns2 * 100.0) / (float)nr2 : 0.0;
+	int64_t errors2 = m_spiderRecSetErrors;
 
 	const char *newColl = " &nbsp; ";
 	//if ( m_fullRebuild ) newColl = m_newColl;
