@@ -275,6 +275,11 @@ bool Collectiondb::addNewColl ( const char *coll, bool saveIt,
 	//do not send add/del coll request until we are in sync with shard!!
 	// just return ETRYAGAIN for the parmlist...
 
+	if( !coll ) {
+		logError("Called with NULL coll parameter");
+		return false;
+	}
+
 	// ensure coll name is legit
 	const char *p = coll;
 	for ( ; *p ; p++ ) {
