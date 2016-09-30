@@ -2737,9 +2737,9 @@ bool SpiderColl::scanListForWinners ( ) {
 			m_localTable.addScore(&sreq->m_siteHash32,1);
 			m_localTable.addScore(&sreq->m_domHash32,1);
 
+			int32_t *tmpNum = (int32_t *)m_localTable.getValue( &( sreq->m_siteHash32 ) );
 			logDebug( g_conf.m_logDebugSpider, "spider: sitequota: got %" PRId32" indexed docs for site from "
-			          "firstip of %s from url %s",
-			          *( (int32_t *)m_localTable.getValue( &( sreq->m_siteHash32 ) ) ),
+			          "firstip of %s from url %s", tmpNum ? *tmpNum : -1,
 			          iptoa( sreq->m_firstIp ),
 			          sreq->m_url );
 			continue;
