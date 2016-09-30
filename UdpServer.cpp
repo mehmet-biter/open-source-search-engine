@@ -62,7 +62,47 @@ UdpServer::UdpServer ( ) {
 	m_buf = NULL;
 	m_outstandingConverts = 0;
 	m_writeRegistered = false;
+
+	// Coverity
+	m_needToSend = false;
+	m_port = 0;
+	m_proto = NULL;
+	m_isShuttingDown = false;
+	m_needBottom = false;
+	m_requestsInWaiting = 0;
+	m_msg07sInWaiting = 0;
+	m_msgc1sInWaiting = 0;
+	m_msg25sInWaiting = 0;
+	m_msg39sInWaiting = 0;
+	m_msg20sInWaiting = 0;
+	m_msg0csInWaiting = 0;
+	m_msg0sInWaiting = 0;
+	m_ptrs = NULL;
+	m_numBuckets = 0;
+	m_bucketMask = 0;
+	m_bufSize = 0;
+	m_availableListHead = NULL;
+	m_activeListHead = NULL;
+	m_activeListTail = NULL;
+	m_callbackListHead = NULL;
+	m_callbackListTail = NULL;
+	m_numUsedSlots = 0;
+	m_numUsedSlotsIncoming = 0;
+	m_isDns = false;
+	m_eth0BytesIn = 0;
+	m_eth0BytesOut = 0;
+	m_eth0PacketsIn = 0;
+	m_eth0PacketsOut = 0;
+	m_eth1BytesIn = 0;
+	m_eth1BytesOut = 0;
+	m_eth1PacketsIn = 0;
+	m_eth1PacketsOut = 0;
+	m_outsiderPacketsIn = 0;
+	m_outsiderPacketsOut = 0;
+	m_outsiderBytesIn = 0;
+	m_outsiderBytesOut = 0;
 }
+
 
 UdpServer::~UdpServer() {
 	reset();
