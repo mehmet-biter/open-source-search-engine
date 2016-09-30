@@ -19691,7 +19691,7 @@ char *XmlDoc::getRootTitleBuf ( ) {
 
 	int32_t max = (int32_t)ROOT_TITLE_BUF_MAX - 5;
 	// sanity
-	if ( srcSize >= max ) {
+	if ( src && srcSize >= max ) {
 		// truncate
 		srcSize = max;
 		// back up so we split on a space
