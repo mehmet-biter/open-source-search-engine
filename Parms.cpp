@@ -2717,6 +2717,9 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 		  t == TYPE_STRINGBOX      ||
 		  t == TYPE_STRINGNONEMPTY ||
 		  t == TYPE_TIME            ) {
+		if( !s ) {
+			return;
+		}
 		int32_t len = strlen(s);
 		if ( len >= m->m_size ) len = m->m_size - 1; // truncate!!
 		char *dst = THIS + m->m_off + m->m_size*j ;
@@ -2740,7 +2743,8 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 		// . used for CollectionRec::m_htmlHeadLen and m_htmlTailLen
 		if ( m->m_plen >= 0 )
 			*(int32_t *)(THIS + m->m_plen) = len ;
-		goto changed; }
+		goto changed;
+	}
  changed:
 	// tell gigablast the value is EXPLICITLY given -- no longer based
 	// on default.conf
