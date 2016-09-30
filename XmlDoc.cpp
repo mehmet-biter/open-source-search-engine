@@ -594,7 +594,7 @@ bool XmlDoc::set4 ( SpiderRequest *sreq      ,
 
 	char *utf8Content = utf8ContentArg;
 
-	if ( utf8Content ) {
+	if ( contentHasMimeArg && utf8Content ) {
 		// get length of it all
 		int32_t clen = strlen(utf8Content);
 		// return true on error with g_errno set
