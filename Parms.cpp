@@ -2580,10 +2580,13 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 		  t == TYPE_FILTER           ) {
 		if ( fromRequest && *(char *)(THIS + m->m_off + j) == atol(s))
 			return;
-		if ( fromRequest)oldVal = (float)*(char *)(THIS + m->m_off +j);
-		*(char *)(THIS + m->m_off + j) = atol ( s );
+		if ( fromRequest) {
+			oldVal = (float)*(char *)(THIS + m->m_off +j);
+		}
+		*(char *)(THIS + m->m_off + j) = s ? atol(s) : 0;
  		newVal = (float)*(char *)(THIS + m->m_off + j);
-		goto changed; }
+		goto changed; 
+	}
 	else if ( t == TYPE_CHARPTR ) {
 		// "s" might be NULL or m->m_def...
 		*(const char **)(THIS + m->m_off + j) = s;
@@ -2594,47 +2597,55 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 	}
 	else if ( t == TYPE_CMD ) {
 		log(LOG_LOGIC, "conf: Parms: TYPE_CMD is not a cgi var.");
-		return;	}
+		return;	
+	}
 	else if ( t == TYPE_DATE2 || t == TYPE_DATE ) {
-		int32_t v = (int32_t)atotime ( s );
+		int32_t v = s ? (int32_t)atotime(s) : 0;
 		if ( fromRequest && *(int32_t *)(THIS + m->m_off + 4*j) == v )
 			return;
 		*(int32_t *)(THIS + m->m_off + 4*j) = v;
 		if ( v < 0 ) log("conf: Date for <%s> of \""
 				 "%s\" is not in proper format like: "
 				 "01 Jan 1980 22:45",m->m_xml,s);
-		goto changed; }
+		goto changed; 
+	}
 	else if ( t == TYPE_FLOAT ) {
-		if( fromRequest &&
-		    *(float *)(THIS + m->m_off + 4*j) == (float)atof ( s ) )
+		if( fromRequest && *(float *)(THIS + m->m_off + 4*j) == (float)atof ( s ) ) {
 			return;
+		}
 		// if changed within .00001 that is ok too, do not count
 		// as changed, the atof() has roundoff errors
 		//float curVal = *(float *)(THIS + m->m_off + 4*j);
 		//float newVal = atof(s);
 		//if ( newVal < curVal && newVal + .000001 >= curVal ) return;
 		//if ( newVal > curVal && newVal - .000001 <= curVal ) return;
-		if ( fromRequest ) oldVal = *(float *)(THIS + m->m_off + 4*j);
-		*(float *)(THIS + m->m_off + 4*j) = (float)atof ( s );
+		if ( fromRequest ) {
+			oldVal = *(float *)(THIS + m->m_off + 4*j);
+		}
+		*(float *)(THIS + m->m_off + 4*j) = s ? (float)atof ( s ) : 0;
 		newVal = *(float *)(THIS + m->m_off + 4*j);
-		goto changed; }
+		goto changed; 
+	}
 	else if ( t == TYPE_DOUBLE ) {
-		if( fromRequest &&
-		    *(double *)(THIS + m->m_off + 4*j) == (double)atof ( s ) )
+		if( fromRequest && *(double *)(THIS + m->m_off + 4*j) == (double)atof ( s ) ) {
 			return;
-		if ( fromRequest ) oldVal = *(double *)(THIS + m->m_off + 4*j);
-		*(double *)(THIS + m->m_off + 4*j) = (double)atof ( s );
+		}
+		if ( fromRequest ) {
+			oldVal = *(double *)(THIS + m->m_off + 4*j);
+		}
+		*(double *)(THIS + m->m_off + 4*j) = s ? (double)atof ( s ) : 0;
 		newVal = *(double *)(THIS + m->m_off + 4*j);
-		goto changed; }
+		goto changed; 
+	}
 	else if ( t == TYPE_IP ) {
 		if ( fromRequest && *(int32_t *)(THIS + m->m_off + 4*j) ==
 		     (int32_t)atoip (s,strlen(s) ) )
 			return;
-		*(int32_t *)(THIS + m->m_off + 4*j) = (int32_t)atoip (s,strlen(s) );
-		goto changed; }
-	else if ( t == TYPE_LONG || t == TYPE_LONG_CONST || t == TYPE_RULESET||
-		  t == TYPE_SITERULE ) {
-		int32_t v = atol ( s );
+		*(int32_t *)(THIS + m->m_off + 4*j) = s ? (int32_t)atoip(s,strlen(s)) : 0;
+		goto changed; 
+	}
+	else if ( t == TYPE_LONG || t == TYPE_LONG_CONST || t == TYPE_RULESET || t == TYPE_SITERULE ) {
+		int32_t v = s ? atol(s) : 0;
 		// min is considered valid if >= 0
 		if ( m->m_min >= 0 && v < m->m_min ) v = m->m_min;
 		if ( fromRequest && *(int32_t *)(THIS + m->m_off + 4*j) == v )
@@ -2642,17 +2653,17 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 		if ( fromRequest)oldVal=(float)*(int32_t *)(THIS + m->m_off +4*j);
 		*(int32_t *)(THIS + m->m_off + 4*j) = v;
 		newVal = (float)*(int32_t *)(THIS + m->m_off + 4*j);
-		goto changed; }
+		goto changed; 
+	}
 	else if ( t == TYPE_LONG_LONG ) {
-		if ( fromRequest &&
-		     *(uint64_t *)(THIS + m->m_off+8*j)==
-		     strtoull(s,NULL,10))
+		if ( fromRequest && *(uint64_t *)(THIS + m->m_off+8*j) == strtoull(s,NULL,10)) {
 			return;
-		*(int64_t *)(THIS + m->m_off + 8*j) = strtoull(s,NULL,10);
+		}
+		*(int64_t *)(THIS + m->m_off + 8*j) = s ? strtoull(s,NULL,10) : 0;
 		goto changed; }
 	// like TYPE_STRING but dynamically allocates
 	else if ( t == TYPE_SAFEBUF ) {
-		int32_t len = strlen(s);
+		int32_t len = s ? strlen(s) : 0;
 		// no need to truncate since safebuf is dynamic
 		//if ( len >= m->m_size ) len = m->m_size - 1; // truncate!!
 		//char *dst = THIS + m->m_off + m->m_size*j ;
