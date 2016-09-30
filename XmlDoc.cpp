@@ -10910,7 +10910,10 @@ int32_t **XmlDoc::getOutlinkFirstIpVector () {
 
 	if ( *useFakeIps ) {
 		int32_t need = links->m_numLinks * 4;
-		m_fakeIpBuf.reserve ( need );
+		if( !m_fakeIpBuf.reserve ( need ) ) {
+			log(LOG_WARN,"%s:%s: Could not allocate %" PRId32 " bytes for links", __FILE__, __func__, need);
+			return NULL;
+		}
 		for ( int32_t i = 0 ; i < links->m_numLinks ; i++ ) {
 			uint64_t h64 = links->getHostHash64(i);
 			int32_t ip = h64 & 0xffffffff;
