@@ -54,6 +54,29 @@ static const char *getSSLError(SSL *ssl, int ret) {
 	return "Unknown SSL Error";
 }
 
+
+TcpServer::TcpServer() {
+	m_port = -1;
+	m_sock = -1;
+	m_useSSL = false;
+	m_ctx = NULL;
+
+	// Coverity
+	memset(&m_tcpSockets, 0, sizeof(m_tcpSockets));
+	m_lastFilled = 0;
+	m_numUsed = 0;
+	m_numIncomingUsed = 0;
+	memset(&m_actualSockets, 0, sizeof(m_actualSockets));
+	m_dummy = 0;
+	m_maxSocketsPtr = NULL;
+	m_doReadRateTimeouts = false;
+	m_ready = false;
+	m_numOpen = 0;
+	m_numClosed = 0;
+}
+
+
+
 // free all TcpSockets and their bufs
 void TcpServer::reset() {
 	// set not ready

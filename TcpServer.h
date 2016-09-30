@@ -35,8 +35,7 @@ class TcpServer {
 	// free all TcpSockets and their bufs
 	void reset();
 
-	// . constructor
-	TcpServer() { m_port = -1; m_sock = -1; m_useSSL = false; m_ctx = NULL; }
+	TcpServer();
 
 	// . creates a tcp socket which listens on port "port"
 	// . will close unused sockets to ensure we stay under "maxSockets"
