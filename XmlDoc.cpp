@@ -1450,8 +1450,7 @@ bool XmlDoc::injectDoc ( const char *url ,
 	// . eventually it will call "callback" when done if it blocks
 	logTrace( g_conf.m_logTraceXmlDoc, "Calling indexDoc" );
 	bool status = indexDoc ( );
-	if ( ! status )
-	{
+	if ( ! status ) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END, returning false. indexDoc returned false" );
 		return false;
 	}
@@ -6033,8 +6032,6 @@ SafeBuf *XmlDoc::getTimeAxisUrl ( ) {
 //   from scratch. this loads it from titledb.
 // . NULL is a valid value (EDOCNOTFOUND) so return a char **
 char **XmlDoc::getOldTitleRec ( ) {
-	// clear if we blocked
-	//if ( g_errno == ENOTFOUND ) g_errno = 0;
 	// if valid return that
 	if ( m_oldTitleRecValid ) return &m_oldTitleRec;
 	// update status msg
@@ -6047,14 +6044,11 @@ char **XmlDoc::getOldTitleRec ( ) {
 	}
 	// sanity check
 	if ( m_oldTitleRecValid && m_msg22a.isOutstanding() ) {
-		g_process.shutdownAbort(true); }
-	// point to url
-	//char *u = getCurrentUrl()->getUrl();
-	//char *u = getFirstUrl()->getUrl();
+		g_process.shutdownAbort(true);
+	}
 
 	// assume its valid
 	m_oldTitleRecValid = true;
-	//if ( maxCacheAge > 0 ) addToCache = true;
 
 	// not if new! no we need to do this so XmlDoc::getDocId() works!
 	// this logic prevents us from setting g_errno to ENOTFOUND
@@ -6067,16 +6061,21 @@ char **XmlDoc::getOldTitleRec ( ) {
 		return &m_oldTitleRec;
 	}
 	// sanity check. if we have no url or docid ...
-	if ( ! m_firstUrlValid && ! m_docIdValid ) { g_process.shutdownAbort(true); }
+	if ( ! m_firstUrlValid && ! m_docIdValid ) {
+		g_process.shutdownAbort(true);
+	}
+
 	// use docid if first url not valid
 	int64_t docId = 0;
-	if ( ! m_firstUrlValid ) docId = m_docId;
+	if ( ! m_firstUrlValid ) {
+		docId = m_docId;
+	}
 	// if url not valid, use NULL
 	char *u = NULL;
 	if ( docId == 0LL && ptr_firstUrl ) u = getFirstUrl()->getUrl();
 	// if both are not given that is a problem
 	if ( docId == 0LL && ! u ) {
-		log("doc: no url or docid provided to get old doc");
+		log(LOG_WARN, "doc: no url or docid provided to get old doc");
 		g_errno = EBADENGINEER;
 		return NULL;
 	}
@@ -6110,9 +6109,14 @@ char **XmlDoc::getOldTitleRec ( ) {
 		// return -1 if we blocked
 		return (char **)-1;
 	// not really an error
-	if ( g_errno == ENOTFOUND ) g_errno = 0;
+	if ( g_errno == ENOTFOUND ) {
+		g_errno = 0;
+	}
+
 	// error?
-	if ( g_errno ) return NULL;
+	if ( g_errno ) {
+		return NULL;
+	}
 	// got it
 	return &m_oldTitleRec;
 }
@@ -6227,12 +6231,11 @@ int64_t *XmlDoc::getDocId ( ) {
 	// because of the corruption bug in RdbMem.cpp when dumping to disk.
 	if ( m_docId == 0 && m_oldTitleRec && m_oldTitleRecSize > 12 ) {
 		m_docId = Titledb::getDocIdFromKey ( (key96_t *)m_oldTitleRec );
-		log("build: salvaged docid %" PRId64" from corrupt title rec "
-			"for %s",m_docId,m_firstUrl.getUrl());
+		log(LOG_WARN, "build: salvaged docid %" PRId64" from corrupt title rec for %s",m_docId,m_firstUrl.getUrl());
 	}
 
 	if ( m_docId == 0 ) {
-		log("build: docid is 0 for %s",m_firstUrl.getUrl());
+		log(LOG_WARN, "build: docid is 0 for %s",m_firstUrl.getUrl());
 		g_errno = ENODOCID;
 		return NULL;
 	}
@@ -6247,8 +6250,6 @@ int64_t *XmlDoc::getDocId ( ) {
 			g_process.shutdownAbort(true); }
 	}
 
-	// if docid is zero, none is a vailable!!!
-	//if ( m_docId == 0LL ) m_indexCode = ENODOCID;
 	m_docIdValid = true;
 	return &m_docId;
 }
