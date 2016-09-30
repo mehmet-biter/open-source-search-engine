@@ -655,7 +655,6 @@ void Msg7::reset() {
 	m_socket = NULL;
 	m_state = NULL;
 	m_callback = NULL;
-	m_importState = NULL;
 	m_format = 0;
 	m_stashxd = NULL;
 }

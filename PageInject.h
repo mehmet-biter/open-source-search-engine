@@ -90,8 +90,6 @@ public:
 	void *m_state;
 	void (* m_callback )(void *state);
 
-	class ImportState *m_importState;
-
 	Msg7 ();
 	~Msg7 ();
 	bool m_inUse;
