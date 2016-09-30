@@ -34,6 +34,11 @@ void Words::reset ( ) {
 	m_hasTags = false;
 	m_localBuf2 = NULL;
 	m_localBufSize2 = 0;
+
+	// Coverity
+	m_words = NULL;
+	m_wordLens = 0;
+	m_wordIds = NULL;
 }
 
 bool Words::set( char *s, int32_t slen, bool computeWordIds ) {
