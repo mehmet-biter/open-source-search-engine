@@ -36,7 +36,6 @@ class RdbMerge {
 public:
 	RdbMerge();
 	~RdbMerge();
-	void reset();
 
 	// . selects the files to merge
 	// . uses keyMasks and files from the passed Rdb class
@@ -74,6 +73,7 @@ public:
 	static void tryAgainWrapper(int fd, void *state);
 
 private:
+	void reset();
 	bool dumpList();
 	bool getNextList();
 	bool getAnotherList();
