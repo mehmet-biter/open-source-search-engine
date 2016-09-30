@@ -110,6 +110,4 @@ public:
 
 };
 
-extern bool g_inPageInject;
-
 #endif // GB_PAGEINJECT_H

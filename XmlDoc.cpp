@@ -1455,9 +1455,6 @@ bool XmlDoc::injectDoc ( char *url ,
 	m_isInjecting = true;
 	m_isInjectingValid = true;
 
-	// set this now
-	//g_inPageInject = true;
-
 	// log it now
 	//log("inject: indexing injected doc %s",cleanUrl);
 
@@ -1478,11 +1475,6 @@ bool XmlDoc::injectDoc ( char *url ,
 	// log it. i guess only for errors when it does not block?
 	// because xmldoc.cpp::indexDoc calls logIt()
 	if ( status ) logIt();
-
-
-
-	// undo it
-	//g_inPageInject = false;
 
 	logTrace( g_conf.m_logTraceXmlDoc, "END, returning true. indexDoc returned true" );
 	return true;
@@ -21566,7 +21558,6 @@ char XmlDoc::waitForTimeSync ( ) {
 
 bool XmlDoc::getIsInjecting ( ) {
 	bool isInjecting = false;
-	//if ( g_inPageInject ) isInjecting = true;
 	if ( m_sreqValid && m_sreq.m_isInjecting ) isInjecting = true;
 	if ( m_isInjecting && m_isInjectingValid ) isInjecting = true;
 	return isInjecting;
