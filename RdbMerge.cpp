@@ -400,8 +400,7 @@ bool RdbMerge::getAnotherList() {
 	int32_t nn = base->getNumFiles();
 	if ( m_numFiles > 0 && m_numFiles < nn ) nn = m_numFiles;
 
-	// for now force to 100k
-	int32_t bufSize = 100000; // g_conf.m_mergeBufSize
+	int32_t bufSize = g_conf.m_mergeBufSize;
 	// get it
 	return m_msg5.getList ( m_rdbId        ,
 				m_collnum           ,

@@ -6772,7 +6772,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_LONG;
 	// keep this way smaller than that 800k we had in here, 100k seems
 	// to be way better performance for qps
-	m->m_def   = "500000";
+	m->m_def   = "100000";
 	m->m_units = "bytes";
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
