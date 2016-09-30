@@ -1171,7 +1171,7 @@ Multicast *ImportState::getAvailMulticast() { // Msg7 ( ) {
 
 	// respect the user limit for this coll
 	int64_t out = m_numOut - m_numIn;
-	if ( out >= cr->m_numImportInjects ) {
+	if ( cr && out >= cr->m_numImportInjects ) {
 		g_errno = 0;
 		return NULL;
 	}
