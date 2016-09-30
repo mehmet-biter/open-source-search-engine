@@ -19703,7 +19703,12 @@ char *XmlDoc::getRootTitleBuf ( ) {
 	}
 
 	// copy that over in case root is destroyed
-	gbmemcpy ( m_rootTitleBuf , src , srcSize );
+	if( src && srcSize ) {
+		gbmemcpy ( m_rootTitleBuf , src , srcSize );
+	}
+	else {
+		m_rootTitleBuf[0] = '\0';
+	}
 	m_rootTitleBufSize = srcSize;
 
 	// sanity check, must include the null ni the size
