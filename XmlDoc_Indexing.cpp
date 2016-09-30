@@ -777,7 +777,12 @@ bool XmlDoc::hashContentType ( HashTableX *tt ) {
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) return false;
 
-	uint8_t ctype = *getContentType();
+
+	uint8_t *ctype = getContentType();
+	if( !ctype ) {
+		return false;
+	}
+
 	char *s = NULL;
 
 	setStatus ( "hashing content type" );
@@ -790,12 +795,12 @@ bool XmlDoc::hashContentType ( HashTableX *tt ) {
 	hi.m_prefix    = "type";
 
 	char tmp[6];
-	sprintf(tmp,"%" PRIu32,(uint32_t)ctype);
+	sprintf(tmp,"%" PRIu32,(uint32_t)*ctype);
 	if ( ! hashString (tmp,strlen(tmp),&hi ) ) return false;
 
 
 	// these ctypes are defined in HttpMime.h
-	switch (ctype) {
+	switch (*ctype) {
 		case CT_HTML: s = "html"; break;
 		case CT_TEXT: s = "text"; break;
 		case CT_XML : s = "xml" ; break;
