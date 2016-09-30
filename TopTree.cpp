@@ -29,14 +29,32 @@ int64_t TopNode::getDocIdForMsg3a ( ){
 
 TopTree::TopTree() { 
 	m_nodes = NULL; 
+
+	// Coverity
+	m_allocSize = 0;
+	m_emptyNode = 0;
+	m_vcount = 0.0;
+	m_cap = 0;
+	m_partial = 0.0;
+	m_doSiteClustering = false;
+	m_docsWanted = 0;
+	m_ridiculousMax = 0;
+	m_kickedOutDocIds = 0;
+	memset(&m_domCount, 0, sizeof(m_domCount));
+	memset(&m_domMinNode, 0, sizeof(m_domMinNode));
+
 	// sampleVectors = NULL; 
 	reset(); 
 }
 
-TopTree::~TopTree() { reset(); }
+TopTree::~TopTree() {
+	reset();
+}
 
-void TopTree::reset ( ) {
-	if ( m_nodes ) mfree(m_nodes,m_allocSize,"TopTree");
+void TopTree::reset() {
+	if( m_nodes ) {
+		mfree(m_nodes,m_allocSize,"TopTree");
+	}
 	m_nodes = NULL;
 	m_useIntScores = false;
 	//m_sampleVectors  = NULL;
