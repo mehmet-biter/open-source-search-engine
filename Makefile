@@ -171,6 +171,7 @@ CPPFLAGS += -Wno-write-strings
 CPPFLAGS += -Wno-maybe-uninitialized
 CPPFLAGS += -Wno-unused-but-set-variable
 CPPFLAGS += -Wno-unused-parameter
+CPPFLAGS += -Wno-unused-result            #gcc's semantics are sub-optimal
 
 else ifeq ($(CXX), clang++)
 # dependencies
