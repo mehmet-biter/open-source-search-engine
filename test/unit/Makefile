@@ -124,3 +124,9 @@ StatisticsTest00: StatisticsTest00.o libgb.a GigablastTest.o
 .PHONY: StatisticsTest00_run
 StatisticsTest00_run: StatisticsTest00
 	./StatisticsTest00
+
+MergeSpaceCoordinatorTest00: MergeSpaceCoordinatorTest00.o libgb.a GigablastTest.o
+	$(CXX) $(CPPFLAGS) MergeSpaceCoordinatorTest00.o $(LIBS) -o $@
+.PHONY: MergeSpaceCoordinatorTest00_run
+MergeSpaceCoordinatorTest00_run: MergeSpaceCoordinatorTest00
+	./MergeSpaceCoordinatorTest00
