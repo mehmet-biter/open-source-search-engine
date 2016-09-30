@@ -395,7 +395,7 @@ int32_t SpiderRequest::printToTableSimple ( SafeBuf *sb , const char *status ,
 
 	sb->safePrintf(" <td>%s</td>\n",iptoa(m_firstIp));
 
-	if ( xd->m_crawlDelayValid && xd->m_crawlDelay >= 0 )
+	if ( xd && xd->m_crawlDelayValid && xd->m_crawlDelay >= 0 )
 		sb->safePrintf(" <td>%" PRId32" ms</td>\n",xd->m_crawlDelay);
 	else
 		sb->safePrintf(" <td>--</td>\n");
