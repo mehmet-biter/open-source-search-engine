@@ -2696,7 +2696,14 @@ void gotSquidProxiedUrlIp ( void *state , int32_t ip ) {
 	r->size_url = sqs->m_sock->m_readOffset + 1;
 
 	// sanity
-	if ( r->ptr_url && r->ptr_url[r->size_url-1] ) { g_process.shutdownAbort(true);}
+	if ( r->ptr_url && r->ptr_url[r->size_url-1] ) { 
+		g_process.shutdownAbort(true);
+	}
+	if ( !r->ptr_url ) { 
+		// r->ptr_url is used by sqs->m_msg13.getDoc called below
+		logError("r->ptr_url is NULL - value is needed!");
+		g_process.shutdownAbort(true);
+	}
 
 	// use urlip for this, it determines what host downloads it
 	r->m_firstIp                = r->m_urlIp;
