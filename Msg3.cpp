@@ -19,6 +19,7 @@ Msg3::Scan::Scan()
     m_startpg(0), m_endpg(0),
     m_hintOffset(0), m_fileNum(0),
     m_inPageCache(false),
+    m_shiftCount(0),
     m_list()
 {
 	memset(m_hintKey,0,sizeof(m_hintKey));
