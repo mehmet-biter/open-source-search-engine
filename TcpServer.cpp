@@ -1057,8 +1057,8 @@ bool TcpServer::closeLeastUsed ( int32_t maxIdleTime ) {
 	int64_t nowms;
 	if ( maxIdleTime > 0 ) nowms = gettimeofdayInMilliseconds();
 	// conver it to milliseconds
-	int64_t maxms ;
-	if ( maxIdleTime > 0 ) maxms = maxIdleTime * 1000;
+	int64_t maxms;
+	if ( maxIdleTime > 0 ) maxms = (int64_t)maxIdleTime * 1000;
 	
 	for ( int32_t i = 0 ; i <= m_lastFilled ; i++ ) {
 		TcpSocket *s = m_tcpSockets[i];
