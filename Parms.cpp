@@ -364,6 +364,12 @@ static bool CommandRemoveUrlFiltersRow ( char *rec ) {
 	}
 	// need this
 	CollectionRec *cr = g_collectiondb.getRec ( collnum );
+
+	if( !cr ) {
+		logError("CollectionRec %d could not be looked up", (int)collnum);
+		return false;
+	}
+
 	// get the row #
 	char *data = getDataFromParmRec ( rec );
 	int32_t rowNum = atol(data);
