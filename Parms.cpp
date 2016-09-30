@@ -3009,7 +3009,11 @@ bool Parms::setFromFile ( void *THIS        ,
 		// get the value
 		//v = xml.getString ( nn , nn+2 , m->m_xml , &vlen );
 		// this only happens when tag is there, but without a value
-		if ( ! v || vlen == 0 ) { vlen = 0; v = tt; }
+		if ( ! v || vlen == 0 ) {
+			vlen = 0;
+			v = tt;
+		}
+
 		//c = v[vlen];
 		v[vlen]='\0';
 		if ( vlen == 0 ){
@@ -3054,6 +3058,12 @@ bool Parms::setFromFile ( void *THIS        ,
 		// point to it
 		v    = m_xml2.getNode    ( nn + 1 );
 		vlen = m_xml2.getNodeLen ( nn + 1 );
+
+		if( !v ) {
+			vlen = 0;
+			v = tt;
+		}
+
 		// if a back tag... set the value to the empty string
 		if ( v[0] == '<' && v[1] == '/' ) vlen = 0;
 		// now, extricate from the <![CDATA[ ... ]]> tag if we need to
@@ -3066,7 +3076,13 @@ bool Parms::setFromFile ( void *THIS        ,
 			if ( v[0] != '<' && nn + 2 < numNodes2 ) {
 				v    = m_xml2.getNode    ( nn + 2 );
 				vlen = m_xml2.getNodeLen ( nn + 2 );
+
+				if( !v ) {
+					vlen = 0;
+					v = tt;
+				}
 			}
+
 			// should be a <![CDATA[...]]>
 			if ( vlen<12 || strncasecmp(v,"<![CDATA[",9)!=0 ) {
 				log("conf: No <![CDATA[...]]> tag found "
@@ -3074,11 +3090,18 @@ bool Parms::setFromFile ( void *THIS        ,
 				    m->m_xml);
 				v    = oldv;
 				vlen = oldvlen;
+
+				if( !v ) {
+					vlen = 0;
+					v = tt;
+				}
 			}
 			// point to the nugget
 			else {
-				v    += 9;
-				vlen -= 12;
+				if( vlen > 0 ) {
+					v    += 9;
+					vlen -= 12;
+				}
 			}
 		}
 
