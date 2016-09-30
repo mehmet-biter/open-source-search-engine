@@ -1374,16 +1374,6 @@ bool XmlDoc::injectDoc ( char *url ,
 	if ( deleteUrl )
 		sreq.m_forceDelete = 1;
 
-	//static char s_dummy[3];
-	// sometims the content is indeed NULL...
-	//if ( newOnly && ! content ) {
-	//	// don't let it be NULL because then xmldoc will
-	//	// try to download the page!
-	//	s_dummy[0] = '\0';
-	//	content = s_dummy;
-	//	//g_process.shutdownAbort(true); }
-	//}
-
 	// . use the enormous power of our new XmlDoc class
 	// . this returns false with g_errno set on error
 	if ( ! set4 ( &sreq       ,
@@ -1406,12 +1396,6 @@ bool XmlDoc::injectDoc ( char *url ,
 		if ( ! g_errno ) { g_process.shutdownAbort(true); }
 		return true;
 	}
-
-	//m_doConsistencyTesting = doConsistencyTesting;
-
-	// . set xd from the old title rec if recycle is true
-	// . can also use XmlDoc::m_loadFromOldTitleRec flag
-	//if ( recycleContent ) m_recycleContent = true;
 
 	// othercrap. used for importing from titledb of another coll/cluster.
 	if ( firstIndexed ) {

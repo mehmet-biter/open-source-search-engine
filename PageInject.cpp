@@ -577,9 +577,9 @@ void handleRequest7 ( UdpSlot *slot , int32_t netnice ) {
 		g_process.shutdownAbort(true);
 	}
 
-	if ( ! xd->injectDoc ( ir->ptr_url , // m_injectUrlBuf.getBufStart() ,
+	if ( ! xd->injectDoc ( ir->ptr_url ,
 			       cr ,
-			       ir->ptr_content , // start , // content ,
+			       ir->ptr_content ,
 			       // if this doc is a 'container doc' then
 			       // hasMime applies to the SUBDOCS only!!
 			       ir->m_hasMime, // content starts with http mime?
