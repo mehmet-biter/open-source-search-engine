@@ -30,7 +30,6 @@ class Tag {
 	void set ( const char *site, const char *tagname, int32_t  timestamp, const char *user,
 	           int32_t ip, const char *data, int32_t  dataSize );
 
-	int32_t print ( ) ; 
 	bool printToBuf             ( SafeBuf *sb );
 	bool printToBufAsAddRequest ( SafeBuf *sb );
 	bool printToBufAsXml        ( SafeBuf *sb );

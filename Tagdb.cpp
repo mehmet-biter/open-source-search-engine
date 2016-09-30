@@ -22,15 +22,6 @@ static bool s_initialized = false;
 static GbMutex s_htMutex;
 
 
-// to stdout
-int32_t Tag::print ( ) {
-	SafeBuf sb;
-	printToBuf ( &sb );
-
-	// dump that
-	return fprintf(stderr,"%s\n",sb.getBufStart());
-}
-
 bool Tag::printToBuf ( SafeBuf *sb ) {
 	sb->safePrintf("k.hsthash=%016" PRIx64" k.duphash=%08" PRIx32" k.sitehash=%08" PRIx32" ",
 	               m_key.n1, (int32_t)(m_key.n0>>32), (int32_t)(m_key.n0&0xffffffff));
