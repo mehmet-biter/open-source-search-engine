@@ -7481,20 +7481,6 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(InjectionRequest,ptr_metadata);
 	m++;
 
-
-	m->m_title = "get sectiondb voting info";
-	m->m_desc = "Return section information of injected content for "
-		"the injected subdomain. ";
-	m->m_cgi   = "sections";
-	m->m_obj   = OBJ_IR;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m->m_flags = PF_API|PF_NOHTML;
-	m->m_page  = PAGE_INJECT;
-	m->m_off   = offsetof(InjectionRequest,m_getSections);
-	m++;
-
-
 	///////////////////
 	//
 	// QUERY REINDEX
