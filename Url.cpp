@@ -19,6 +19,11 @@
 #include <valgrind/memcheck.h>
 #endif
 
+Url::Url() {
+	reset();
+}
+
+
 void Url::reset() {
 	m_scheme    = NULL;
 	m_host      = NULL;
@@ -41,6 +46,14 @@ void Url::reset() {
 	m_anchorLen = 0;
 	// ip related stuff
 	m_ip          = 0;
+
+	// Coverity
+	m_plen = 0;
+	m_flen = 0;
+	m_tldLen = 0;
+	m_port = 0;
+	m_defPort = 0;
+	m_portLen = 0;
 }
 
 void Url::set( const Url *baseUrl, const char *s, int32_t len, bool addWWW, bool stripParams, bool stripPound,
