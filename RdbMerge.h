@@ -67,12 +67,12 @@ public:
 	// suspend the merging until resumeMerge() is called
 	void suspendMerge();
 
+private:
 	static void unlinkPartWrapper(void *state);
 	static void dumpListWrapper(void *state);
 	static void gotListWrapper(void *state, RdbList *list, Msg5 *msg5);
 	static void tryAgainWrapper(int fd, void *state);
 
-private:
 	void reset();
 	bool dumpList();
 	bool getNextList();

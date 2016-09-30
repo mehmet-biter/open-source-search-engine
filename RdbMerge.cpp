@@ -3,9 +3,28 @@
 #include "Process.h"
 #include "Spider.h"
 
-RdbMerge::RdbMerge() {
-	m_doneMerging     = false;
-	reset();
+RdbMerge::RdbMerge()
+  : m_doneMerging(false),
+    m_numThreads(0),
+    m_startFileNum(0),
+    m_numFiles(0),
+    m_fixedDataSize(0),
+    m_target(NULL),
+    m_targetMap(NULL),
+    m_targetIndex(NULL),
+    m_isMerging(false),
+    m_isSuspended(false),
+    m_isReadyToSave(false),
+    m_dump(),
+    m_msg5(),
+    m_list(),
+    m_niceness(0),
+    m_rdbId(RDB_NONE),
+    m_collnum(0),
+    m_ks(0)
+{
+	memset(m_startKey, 0, sizeof(m_startKey));
+	memset(m_endKey, 0, sizeof(m_endKey));
 }
 
 RdbMerge::~RdbMerge() {
@@ -36,7 +55,6 @@ void RdbMerge::reset() {
 
 
 
-// . buffer is used for reading and writing
 // . return false if blocked, true otherwise
 // . sets g_errno on error
 // . if niceness is 0 merge will block, otherwise will not block
