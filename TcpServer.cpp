@@ -1317,7 +1317,7 @@ void readSocketWrapper2 ( int sd , void *state ) {
 	// so now send our https content
 	if ( s->m_tunnelMode == 1 ) {
 		// check the reply first.. make sure it is established
-		if ( strncmp(s->m_readBuf,"HTTP/1.0 200",12) != 0 ) {
+		if ( s->m_readBuf && strncmp(s->m_readBuf,"HTTP/1.0 200",12) != 0 ) {
 			log("tcp: failed to establish ssl connection through "
 			    "proxy. reply=%s",s->m_readBuf);
 			// 0 out the reply so it does not get indexed
