@@ -10046,10 +10046,17 @@ char **XmlDoc::getExpandedUtf8Content ( ) {
 		m_esbuf.safePrintf("<gbframe>"); // gbiframe
 		// identify javascript
 		bool javascript = false;
-		if ( *ed->getContentType() == CT_JS ) javascript = true;
+
+		uint8_t *ct = ed->getContentType();
+		if ( ct && *ct == CT_JS ) {
+			javascript = true;
+		}
+
 		// so we do not mine javascript for cities and states etc.
 		// in Address.cpp
-		if ( javascript ) m_esbuf.safePrintf("<script>");
+		if ( javascript ) {
+			m_esbuf.safePrintf("<script>");
+		}
 		// store that
 		m_esbuf.safeMemcpy ( uc , ed->m_rawUtf8ContentSize - 1 );
 		// our special tag has an end tag as well
