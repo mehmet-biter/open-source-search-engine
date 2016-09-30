@@ -83,7 +83,7 @@ const char *Dir::getNextFilename ( const char *pattern ) {
 	//be. I just take a wild guess that no paths are longer than 1024
 	//characters.
 	struct dirent *ent;
-	int32_t plen = strlen ( pattern );
+	int32_t plen = pattern ? strlen(pattern) : 0;
 	while( readdir_r(m_dir,(dirent*)m_dentryBuffer,&ent)==0 && ent ) {
 		const char *filename = ent->d_name;
 		if ( ! pattern ) return filename;
