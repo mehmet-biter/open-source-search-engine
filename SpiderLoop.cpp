@@ -2181,7 +2181,7 @@ void gotCrawlInfoReply ( void *state , UdpSlot *slot ) {
 			cr->m_crawlInfoBuf.setLabel("cibuf");
 			if( !cr->m_crawlInfoBuf.reserve(need) ) {
 				logError("Could not reserve needed %" PRId32 " bytes, bailing!", need);
-				return false;
+				return;
 			}
 			// in case one was udp server timed out or something
 			cr->m_crawlInfoBuf.zeroOut();

@@ -1036,7 +1036,11 @@ bool ImportState::importLoop ( ) {
 	sbuf->reset();
 
 	// ensure we have enough room
-	sbuf->reserve ( need );
+	if( !sbuf->reserve ( need ) ) {
+		logError("Could not reserve needed %" PRId32 " bytes, bailing!", need);
+		return false;
+	}
+
 
 	// collnum first 4 bytes
 	sbuf->pushLong( (int32_t)m_collnum );
