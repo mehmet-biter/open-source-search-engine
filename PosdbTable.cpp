@@ -5247,157 +5247,155 @@ void PosdbTable::makeDocIdVoteBufForRarestTerm(const QueryTermInfo *qti, bool is
 	int32_t mini = -1;
 	QueryTerm *qt = qti->m_qt;
 	
- getMin:
-
-	// reset this
-	minRecPtr = NULL;
-
-	// just scan each sublist vs. the docid list
-	for ( int32_t i = 0 ; i < qti->m_numSubLists ; i++ ) {
-		// skip if exhausted
-		if ( ! cursor[i] ) {
-			continue;
-		}
-			
-		// shortcut
-		recPtr = cursor[i];
-		
-		// get the min docid
-		if ( ! minRecPtr ) {
-			minRecPtr = recPtr;
-			mini = i;
-			continue;
-		}
-
-		// compare!
-		if ( *(uint32_t *)(recPtr   +8) >
-		     *(uint32_t *)(minRecPtr+8) ) {
-			continue;
-		}
-		
-		// a new min
-		if ( *(uint32_t *)(recPtr   +8) <
-		     *(uint32_t *)(minRecPtr+8) ) {
-			minRecPtr = recPtr;
-			mini = i;
-			continue;
-		}
-		
-		// check lowest byte
-		if ( (*(unsigned char *)(recPtr   +7) & 0xfc ) >
-		     (*(unsigned char *)(minRecPtr+7) & 0xfc ) ) {
-			continue;
-		}
-			
-		// a new min
-		if ( (*(unsigned char *)(recPtr   +7) & 0xfc ) <
-		     (*(unsigned char *)(minRecPtr+7) & 0xfc ) ) {
-			minRecPtr = recPtr;
-			mini = i;
-			continue;
-		}
-	}
-
-	// if no min then all lists exhausted!
-	if ( ! minRecPtr ) {
-		// update length
-		m_docIdVoteBuf.setLength ( voteBufPtr - bufStart );
-		
-		// all done!
-		logTrace(g_conf.m_logTracePosdb, "END.");
-		return;
-	}
-
-	bool inRange=false;
-
-	// if we are a range term, does this subtermlist
-	// for this docid meet the min/max requirements
-	// of the range term, i.e. gbmin:offprice:190.
-	// if it doesn't then do not add this docid to the
-	// docidVoteBuf, "voteBufPtr"
-	if ( isRangeTerm ) {
-
-		// no longer in range
-		if ( isTermValueInRange2(cursor[mini],cursorEnd[mini],qt)) {
-			inRange = true;
-		}
-	}
-		
-
-	// advance that guy over that docid
-	cursor[mini] += 12;
-	// 6 byte keys follow?
-	for ( ; ; ) {
-		// end of list?
-		if ( cursor[mini] >= cursorEnd[mini] ) {
-			// use NULL to indicate list is exhausted
-			cursor[mini] = NULL;
-			break;
-		}
-		
-		// if we hit a new 12 byte key for a new docid, stop
-		if ( ! ( cursor[mini][0] & 0x04 ) ) {
-			break;
-		}
-
-		// check range again
-		if (isRangeTerm && isTermValueInRange2(cursor[mini],cursorEnd[mini],qt)) {
-			inRange = true;
-		}
-
-		// otherwise, skip this 6 byte key
-		cursor[mini] += 6;
-	}
-
-	// is it a docid dup?
-	if(lastMinRecPtr &&
-	   *(uint32_t *)(lastMinRecPtr+8) ==
-	   *(uint32_t *)(minRecPtr+8) &&
-	   (*(unsigned char *)(lastMinRecPtr+7)&0xfc) ==
-	   (*(unsigned char *)(minRecPtr+7)&0xfc)) {
-		goto getMin;
-	}
-
-	// . do not store the docid if not in the whitelist
-	// . FIX: two lower bits, what are they? at minRecPtrs[7].
-	// . well the lowest bit is the siterank upper bit and the
-	//   other bit is always 0. we should be ok with just using
-	//   the 6 bytes of the docid ptr as is though since the siterank
-	//   should be the same for the site: terms we indexed for the same
-	//   docid!!
-	if ( m_useWhiteTable && ! m_whiteListTable.isInTable(minRecPtr+7) ) {
-		goto getMin;
-	}
-		
-	if ( isRangeTerm && ! inRange ) {
-		goto getMin;
-	}
-
-	// only update this if we add the docid... that way there can be
-	// a winning "inRange" term in another sublist and the docid will
-	// get added.
-	lastMinRecPtr = minRecPtr;
-
-	// store our docid. actually it contains two lower bits not
-	// part of the docid, so we'll have to shift and mask to get
-	// the actual docid!
-	// docid is only 5 bytes for now
-	*(int32_t  *)(voteBufPtr+1) = *(int32_t  *)(minRecPtr+8);
-	// the single lower byte
-	voteBufPtr[0] = minRecPtr[7] & 0xfc;
-	// 0 vote count
-	voteBufPtr[5] = 0;
-
-	// debug
-	//	int64_t dd = Posdb::getDocId(minRecPtr);
-	//	log(LOG_ERROR, "%s:%s: adding docid %" PRId64 "", __FILE__, __func__, dd);
-
-	// advance
-	voteBufPtr += 6;
-	
 	// get the next min from all the termlists
-	goto getMin;
-	
+	for(;;) {
+
+		// reset this
+		minRecPtr = NULL;
+
+		// just scan each sublist vs. the docid list
+		for ( int32_t i = 0 ; i < qti->m_numSubLists ; i++ ) {
+			// skip if exhausted
+			if ( ! cursor[i] ) {
+				continue;
+			}
+
+			// shortcut
+			recPtr = cursor[i];
+
+			// get the min docid
+			if ( ! minRecPtr ) {
+				minRecPtr = recPtr;
+				mini = i;
+				continue;
+			}
+
+			// compare!
+			if ( *(uint32_t *)(recPtr   +8) >
+			     *(uint32_t *)(minRecPtr+8) ) {
+				continue;
+			}
+
+			// a new min
+			if ( *(uint32_t *)(recPtr   +8) <
+			     *(uint32_t *)(minRecPtr+8) ) {
+				minRecPtr = recPtr;
+				mini = i;
+				continue;
+			}
+
+			// check lowest byte
+			if ( (*(unsigned char *)(recPtr   +7) & 0xfc ) >
+			     (*(unsigned char *)(minRecPtr+7) & 0xfc ) ) {
+				continue;
+			}
+
+			// a new min
+			if ( (*(unsigned char *)(recPtr   +7) & 0xfc ) <
+			     (*(unsigned char *)(minRecPtr+7) & 0xfc ) ) {
+				minRecPtr = recPtr;
+				mini = i;
+				continue;
+			}
+		}
+
+		// if no min then all lists exhausted!
+		if ( ! minRecPtr ) {
+			// update length
+			m_docIdVoteBuf.setLength ( voteBufPtr - bufStart );
+
+			// all done!
+			logTrace(g_conf.m_logTracePosdb, "END.");
+			return;
+		}
+
+		bool inRange=false;
+
+		// if we are a range term, does this subtermlist
+		// for this docid meet the min/max requirements
+		// of the range term, i.e. gbmin:offprice:190.
+		// if it doesn't then do not add this docid to the
+		// docidVoteBuf, "voteBufPtr"
+		if ( isRangeTerm ) {
+
+			// no longer in range
+			if ( isTermValueInRange2(cursor[mini],cursorEnd[mini],qt)) {
+				inRange = true;
+			}
+		}
+
+
+		// advance that guy over that docid
+		cursor[mini] += 12;
+		// 6 byte keys follow?
+		for ( ; ; ) {
+			// end of list?
+			if ( cursor[mini] >= cursorEnd[mini] ) {
+				// use NULL to indicate list is exhausted
+				cursor[mini] = NULL;
+				break;
+			}
+
+			// if we hit a new 12 byte key for a new docid, stop
+			if ( ! ( cursor[mini][0] & 0x04 ) ) {
+				break;
+			}
+
+			// check range again
+			if (isRangeTerm && isTermValueInRange2(cursor[mini],cursorEnd[mini],qt)) {
+				inRange = true;
+			}
+
+			// otherwise, skip this 6 byte key
+			cursor[mini] += 6;
+		}
+
+		// is it a docid dup?
+		if(lastMinRecPtr &&
+		   *(uint32_t *)(lastMinRecPtr+8) ==
+		   *(uint32_t *)(minRecPtr+8) &&
+		   (*(unsigned char *)(lastMinRecPtr+7)&0xfc) ==
+		   (*(unsigned char *)(minRecPtr+7)&0xfc)) {
+			continue;
+		}
+
+		// . do not store the docid if not in the whitelist
+		// . FIX: two lower bits, what are they? at minRecPtrs[7].
+		// . well the lowest bit is the siterank upper bit and the
+		//   other bit is always 0. we should be ok with just using
+		//   the 6 bytes of the docid ptr as is though since the siterank
+		//   should be the same for the site: terms we indexed for the same
+		//   docid!!
+		if ( m_useWhiteTable && ! m_whiteListTable.isInTable(minRecPtr+7) ) {
+			continue;
+		}
+
+		if ( isRangeTerm && ! inRange ) {
+			continue;
+		}
+
+		// only update this if we add the docid... that way there can be
+		// a winning "inRange" term in another sublist and the docid will
+		// get added.
+		lastMinRecPtr = minRecPtr;
+
+		// store our docid. actually it contains two lower bits not
+		// part of the docid, so we'll have to shift and mask to get
+		// the actual docid!
+		// docid is only 5 bytes for now
+		*(int32_t  *)(voteBufPtr+1) = *(int32_t  *)(minRecPtr+8);
+		// the single lower byte
+		voteBufPtr[0] = minRecPtr[7] & 0xfc;
+		// 0 vote count
+		voteBufPtr[5] = 0;
+
+		// debug
+		//	int64_t dd = Posdb::getDocId(minRecPtr);
+		//	log(LOG_ERROR, "%s:%s: adding docid %" PRId64 "", __FILE__, __func__, dd);
+
+		// advance
+		voteBufPtr += 6;
+	}
 }
 
 
@@ -5762,106 +5760,104 @@ static inline const char *getWordPosList(int64_t docId, const char *list, int32_
 	// for detecting not founds
 	char count = 0;
 	
- loop:
-	// save it
-	const char *origp = p;
-	// scan up to docid. we use this special bit to distinguish between
-	// 6-byte and 12-byte posdb keys
-	for ( ; p > list && (p[1] & 0x02); ) {
-		p -= 6;
-	}
-	// ok, we hit a 12 byte key i guess, so backup 6 more
-	p -= 6;
-
-	// ok, we got a 12-byte key then i guess
-	int64_t d = Posdb::getDocId ( p );
-	// we got a match, but it might be a NEGATIVE key so
-	// we have to try to find the positive keys in that case
-	if ( d == docId ) {
-		// if its positive, no need to do anything else
-		if ( (p[0] & 0x01) == 0x01 ) return p;
-		// ok, it's negative, try to see if the positive is
-		// in here, if not then return NULL.
-		// save current pos
-		const char *current = p;
-		// back up to 6 byte key before this 12 byte key
-		p -= 6;
-
-		// now go backwards to previous 12 byte key
+	for(;;) {
+		// save it
+		const char *origp = p;
+		// scan up to docid. we use this special bit to distinguish between
+		// 6-byte and 12-byte posdb keys
 		for ( ; p > list && (p[1] & 0x02); ) {
 			p -= 6;
 		}
 		// ok, we hit a 12 byte key i guess, so backup 6 more
 		p -= 6;
 
-		// is it there?
-		if ( p >= list && Posdb::getDocId(p) == docId ) {
-			// sanity. return NULL if its negative! wtf????
-			if ( (p[0] & 0x01) == 0x00 ) return NULL;
-			// got it
-			return p;
-		}
-		// ok, no positive before us, try after us
-		p = current;
-		// advance over current 12 byte key
-		p += 12;
-		// now go forwards to next 12 byte key
-		for ( ; p < listEnd && (p[1] & 0x02); ) {
-			p += 6;
+		// ok, we got a 12-byte key then i guess
+		int64_t d = Posdb::getDocId ( p );
+		// we got a match, but it might be a NEGATIVE key so
+		// we have to try to find the positive keys in that case
+		if ( d == docId ) {
+			// if its positive, no need to do anything else
+			if ( (p[0] & 0x01) == 0x01 ) return p;
+			// ok, it's negative, try to see if the positive is
+			// in here, if not then return NULL.
+			// save current pos
+			const char *current = p;
+			// back up to 6 byte key before this 12 byte key
+			p -= 6;
+
+			// now go backwards to previous 12 byte key
+			for ( ; p > list && (p[1] & 0x02); ) {
+				p -= 6;
+			}
+			// ok, we hit a 12 byte key i guess, so backup 6 more
+			p -= 6;
+
+			// is it there?
+			if ( p >= list && Posdb::getDocId(p) == docId ) {
+				// sanity. return NULL if its negative! wtf????
+				if ( (p[0] & 0x01) == 0x00 ) return NULL;
+				// got it
+				return p;
+			}
+			// ok, no positive before us, try after us
+			p = current;
+			// advance over current 12 byte key
+			p += 12;
+			// now go forwards to next 12 byte key
+			for ( ; p < listEnd && (p[1] & 0x02); ) {
+				p += 6;
+			}
+
+			// is it there?
+			if ( p + 12 < listEnd && Posdb::getDocId(p) == docId ) {
+				// sanity. return NULL if its negative! wtf????
+				if ( (p[0] & 0x01) == 0x00 ) {
+					return NULL;
+				}
+
+				// got it
+				return p;
+			}
+			// . crap, i guess just had a single negative docid then
+			// . return that and the caller will see its negative
+			return current;
+		}		
+
+		// reduce step
+		//step /= 2;
+		step >>= 1;
+		// . make divisible by 6!
+		// . TODO: speed this up!!!
+		step = step - (step % 6);
+
+		// sanity
+		if ( step % 6 ) {
+			gbshutdownAbort(true);
 		}
 
-		// is it there?
-		if ( p + 12 < listEnd && Posdb::getDocId(p) == docId ) {
-			// sanity. return NULL if its negative! wtf????
-			if ( (p[0] & 0x01) == 0x00 ) {
+		// ensure never 0
+		if ( step <= 0 ) {
+			step = 6;
+			// return NULL if not found
+			if ( count++ >= 2 ) {
 				return NULL;
 			}
-			
-			// got it
-			return p;
 		}
-		// . crap, i guess just had a single negative docid then
-		// . return that and the caller will see its negative
-		return current;
-	}		
 
-	// reduce step
-	//step /= 2;
-	step >>= 1;
-	// . make divisible by 6!
-	// . TODO: speed this up!!!
-	step = step - (step % 6);
-	
-	// sanity
-	if ( step % 6 ) {
-		gbshutdownAbort(true);
-	}
-		
-	// ensure never 0
-	if ( step <= 0 ) {
-		step = 6;
-		// return NULL if not found
-		if ( count++ >= 2 ) {
-			return NULL;
+		// go up or down then
+		if ( d < docId ) { 
+			p = origp + step;
+			if ( p >= listEnd ) {
+				p = listEnd - 6;
+			}
+		}
+		else {
+			p = origp - step;
+			if ( p < list ) {
+				p = list;
+			}
 		}
 	}
-	
-	// go up or down then
-	if ( d < docId ) { 
-		p = origp + step;
-		if ( p >= listEnd ) {
-			p = listEnd - 6;
-		}
-	}
-	else {
-		p = origp - step;
-		if ( p < list ) {
-			p = list;
-		}
-	}
-
-	// and repeat
-	goto loop;
 }
 
 
