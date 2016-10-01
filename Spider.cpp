@@ -1322,7 +1322,7 @@ static bool printList ( State11 *st ) {
 	return true;
 }
 
-static bool sendPage ( State11 *st ) {
+static bool sendPage(State11 *st) {
 	// shortcut
 	SafeBuf *sbTable = &st->m_safeBuf;
 
@@ -1331,7 +1331,10 @@ static bool sendPage ( State11 *st ) {
 
 	// store the page in here!
 	SafeBuf sb;
-	sb.reserve ( 64*1024 );
+	if( !sb.reserve ( 64*1024 ) ) {
+		logError("Could not reserve needed mem, bailing!");
+		return false;
+	}
 
 	g_pages.printAdminTop ( &sb, st->m_socket , &st->m_r , qs );
 
