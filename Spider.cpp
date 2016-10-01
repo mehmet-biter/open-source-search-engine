@@ -4005,7 +4005,12 @@ void dedupSpiderdbList ( RdbList *list ) {
 	log( LOG_DEBUG, "spider: deduped %i bytes (of which %i were corrupted) out of %i",
 	     (int)delta,(int)corrupt,(int)oldSize);
 
-	list->setLastKey(lastKey);
+	if( !lastKey ) {
+		log(LOG_WARN, "%s:%s:%d: lastKey is null. Should not happen?", __FILE__, __func__, __LINE__);
+	}
+	else {
+		list->setLastKey(lastKey);
+	}
 }
 
 
