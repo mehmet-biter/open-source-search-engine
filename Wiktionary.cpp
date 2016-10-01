@@ -160,32 +160,26 @@ bool Wiktionary::load() {
 	//sprintf(ff2, "%swiktionary-mybuf.txt", g_hostdb.m_dir);
 	sprintf(ff3, "%swiktionary-syns.dat", g_hostdb.m_dir);
 	sprintf(ff4, "%swiktionary-buf.txt", g_hostdb.m_dir);
-	//FILE *fd1b = fopen ( ff1, "r" );
-	//if ( ! fd1b ) {
-	//	fprintf(stderr,"fopen: %s",mstrerror(errno));
-	//	return false;
-	//}
 	int fd1 = open ( ff1 , O_RDONLY );
-	//int fd2 = open ( ff2 , O_RDONLY );
 	int fd3 = open ( ff3 , O_RDONLY );
-	if ( fd3 < 0 ) log(LOG_INFO,"wikt: open %s: %s",ff3,mstrerror(errno));
+	if ( fd3 < 0 ) {
+		log(LOG_INFO,"wikt: open %s: %s",ff3,mstrerror(errno));
+	}
 	int fd4 = open ( ff4 , O_RDONLY );
-	if ( fd4 < 0 ) log(LOG_INFO,"wikt: open %s: %s",ff1,mstrerror(errno));
+	if ( fd4 < 0 ) {
+		log(LOG_INFO,"wikt: open %s: %s",ff1,mstrerror(errno));
+	}
+
 	struct stat stats1;
-	//struct stat stats2;
 	struct stat stats3;
 	struct stat stats4;
 	int32_t errno1 = 0;
-	//int32_t errno2 = 0;
 	int32_t errno3 = 0;
 	int32_t errno4 = 0;
-	if ( fstat ( fd1 , &stats1 ) == -1 ) errno1 = errno;
-	//if ( fstat ( fd2 , &stats2 ) == -1 ) errno1 = errno;
-	if ( fstat ( fd3 , &stats3 ) == -1 ) errno3 = errno;
-	if ( fstat ( fd4 , &stats4 ) == -1 ) errno4 = errno;
-	// close all
+	if ( fd1 < 0 || fstat ( fd1 , &stats1 ) == -1 ) errno1 = fd1 < 0 ? -1 : errno;
+	if ( fd3 < 0 || fstat ( fd3 , &stats3 ) == -1 ) errno3 = fd3 < 0 ? -1 : errno;
+	if ( fd4 < 0 || fstat ( fd4 , &stats4 ) == -1 ) errno4 = fd4 < 0 ? -1 : errno;
 	close ( fd1 );
-	//close ( fd2 );
 	close ( fd3 );
 	close ( fd4 );
 
