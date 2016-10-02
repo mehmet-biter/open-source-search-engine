@@ -2447,7 +2447,7 @@ bool Sections::setMenus ( ) {
 			// record?
 			if ( ! skHard && isHardSection(sk) ) skHard = sk;
 			// if parent contains us, stop
-			if ( sk->m_parent->contains ( prev ) ) break;
+			if ( prev && sk->m_parent->contains ( prev ) ) break;
 		}
 		// if it has plain text, forget it!
 		if ( sk && sk->m_flags & SEC_PLAIN_TEXT ) continue;
