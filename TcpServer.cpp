@@ -62,6 +62,7 @@ TcpServer::TcpServer() {
 	m_ctx = NULL;
 
 	// Coverity
+	m_requestHandler = NULL;
 	memset(&m_tcpSockets, 0, sizeof(m_tcpSockets));
 	m_lastFilled = 0;
 	m_numUsed = 0;
@@ -70,9 +71,12 @@ TcpServer::TcpServer() {
 	m_dummy = 0;
 	m_maxSocketsPtr = NULL;
 	m_doReadRateTimeouts = false;
+	m_getMsgSize = NULL;
+	m_getMsgPiece = NULL;
 	m_ready = false;
 	m_numOpen = 0;
 	m_numClosed = 0;
+	
 }
 
 
