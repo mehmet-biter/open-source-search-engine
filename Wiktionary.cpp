@@ -179,9 +179,9 @@ bool Wiktionary::load() {
 	if ( fd1 < 0 || fstat ( fd1 , &stats1 ) == -1 ) errno1 = fd1 < 0 ? -1 : errno;
 	if ( fd3 < 0 || fstat ( fd3 , &stats3 ) == -1 ) errno3 = fd3 < 0 ? -1 : errno;
 	if ( fd4 < 0 || fstat ( fd4 , &stats4 ) == -1 ) errno4 = fd4 < 0 ? -1 : errno;
-	close ( fd1 );
-	close ( fd3 );
-	close ( fd4 );
+	if( fd1 >= 0 ) close ( fd1 );
+	if( fd3 >= 0 ) close ( fd3 );
+	if( fd4 >= 0 ) close ( fd4 );
 
 	// if we got a newer binary version, use that
 	if ( ! errno3 && ! errno4 && 
