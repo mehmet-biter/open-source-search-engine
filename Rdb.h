@@ -396,12 +396,12 @@ private:
 
 	collnum_t m_dumpCollnum;
 
-	char      m_registered;
+	bool m_registered;
 	int64_t m_lastTime;
 
 	// set to true when dumping tree so RdbMem does not use the memory
 	// being dumped to hold newly added records
-	char m_inDumpLoop;
+	bool m_inDumpLoop;
 
 	rdbid_t m_rdbId;
 

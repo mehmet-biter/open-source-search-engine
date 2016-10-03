@@ -51,7 +51,7 @@ Rdb::Rdb ( ) {
 	m_isTitledb = false;
 	m_fn = 0;
 	m_dumpCollnum = 0;
-	m_inDumpLoop = 0;
+	m_inDumpLoop = false;
 	m_rdbId = RDB_NONE;
 	m_ks = 0;
 	m_pageSize = 0;
