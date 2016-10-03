@@ -306,16 +306,17 @@ inline UChar32 utf8Decode(const char *p){
 	}
 }
 
-////////////////////////////////////////////////////
 
-// JAB: returns the number of bytes required to encode character c in UTF-8
-inline int32_t utf8Size(UChar32 c){
-  if ((c & 0xFFFFFF80) == 0) return 1;
-  if ((c & 0xFFFFF800) == 0) return 2;
-  if ((c & 0xFFFF0000) == 0) return 3;
-  if ((c & 0xFFE00000) == 0) return 4;
-  if ((c & 0xFC000000) == 0) return 5;
-	return 6;
+
+// Return the number of bytes required to encode a codepoint in UTF-8
+static inline int32_t utf8Size(UChar32 codepoint) {
+	if(__builtin_expect(codepoint<=0x7F,1))
+		return 1;
+	if(codepoint<=0x7FF)
+		return 2;
+	if(codepoint<=0xFFFF)
+		return 3;
+	return 4;
 }
 
 #endif // GB_UNICODE_H
