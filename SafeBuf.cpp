@@ -879,7 +879,7 @@ bool SafeBuf::operator += (uint8_t i) {
 // 	return safeMemcpy((char*)&i, sizeof(double));
 // }
 
-char& SafeBuf::operator[](int32_t i) {
+const char& SafeBuf::operator[](int32_t i) const {
 	return m_buf[i];
 }
 
