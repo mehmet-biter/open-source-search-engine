@@ -322,7 +322,7 @@ public:
 
 	bool m_isUnlinking;
 
-	char m_doLog;
+	bool m_doLog;
 };
 
 extern int32_t g_numThreads;
