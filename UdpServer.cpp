@@ -1378,17 +1378,6 @@ bool UdpServer::makeCallbacks(int32_t niceness) {
 	int32_t numCalled = 0;
 	if(niceness > 0) m_needBottom = false;
 
-	bool doNicenessConversion = true;
-
-	// this stops merges from getting done because the write threads never
-	// get launched
-	if ( g_numUrgentMerges )
-		doNicenessConversion = false;
-
-	// or if saving or something
-	if ( g_process.m_mode )
-		doNicenessConversion = false;
-
 	int64_t startTime = gettimeofdayInMillisecondsLocal();
 
 	ScopedLock sl(m_mtx);
