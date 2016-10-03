@@ -261,8 +261,7 @@ public:
 	bool  operator += (int16_t  i) { return *this += (uint16_t)i; }
 	bool  operator += (int8_t   i) { return *this += (uint8_t)i;  }
 
-	//return a reference so we can use on lhs and rhs.
-	char& operator[](int32_t i);
+	const char& operator[](int32_t i) const;
 	
 public:
 	int32_t  m_capacity;

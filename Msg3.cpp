@@ -385,10 +385,7 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 	int32_t n = 0;
 	for ( int32_t i = 0 ; i < m_numFileNums ; i++ ) {
 		// skip those that are being unlinked after the merge
-		if ( base->m_isUnlinking && 
-		     m_scan[i].m_fileNum >= base->m_mergeStartFileNum &&
-		     m_scan[i].m_fileNum <  base->m_mergeStartFileNum +
-		                      base->m_numFilesToMerge      )
+		if(base->isFileBeingUnlinked(m_scan[i].m_fileNum))
 			continue;
 		// otherwise, keep it
 		m_scan[n++].m_fileNum = m_scan[i].m_fileNum;

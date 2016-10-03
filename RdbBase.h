@@ -73,8 +73,7 @@ class RdbBase {
 		    RdbBuckets          *buckets ,
 		    RdbDump             *dump    ,
 		    Rdb           *rdb    ,
-		    bool                 isTitledb = false , // use fileIds2[]?
-		    bool				useIndexFile = false );
+		    bool           useIndexFile);
 
 	void closeMaps ( bool urgent );
 	void saveMaps  ();
@@ -179,6 +178,9 @@ class RdbBase {
 		return m_hasMergeFile;
 	}
 
+	//are files being unlinked or renamed?
+	bool isManipulatingFiles() const;
+	
 	// used for translating titledb file # 255 (as read from new tfndb)
 	// into the real file number
 	int32_t getNewestFileNum() const { return m_numFiles - 1; }
@@ -188,12 +190,17 @@ class RdbBase {
 	int32_t      getMergeStartFileNum() const { return m_mergeStartFileNum; }
 	int32_t      getMergeNumFiles() const { return m_numFilesToMerge; }
 
+	bool isFileBeingUnlinked(int32_t fileNum) const {
+		return m_isUnlinking &&
+		       fileNum >= m_mergeStartFileNum &&
+		       fileNum <  m_mergeStartFileNum+m_numFilesToMerge;
+	}
+	
 	void renameFile( int32_t currentFileIdx, int32_t newFileId, int32_t newFileId2 );
 
 	// bury m_files[] in [a,b)
 	void buryFiles ( int32_t a , int32_t b );
 
-	void doneWrapper2 ( ) ;
 	void doneWrapper4 ( ) ;
 	int32_t m_x;
 	int32_t m_a;
@@ -313,13 +320,18 @@ public:
 	int64_t m_numPos ;
 	int64_t m_numNeg ;
 
-	bool m_isTitledb;
-
+private:
+	static void unlinkDoneWrapper(void *state);
+	void unlinkDone();
+	static void renameDoneWrapper(void *state);
+	static void checkThreadsAgainWrapper(int /*fd*/, void *state);
+	void renameDone();
+	
 	int32_t m_numThreads;
 
 	bool m_isUnlinking;
 
-	char m_doLog;
+	bool m_doLog;
 };
 
 extern int32_t g_numThreads;

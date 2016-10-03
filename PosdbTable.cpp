@@ -3249,6 +3249,206 @@ void PosdbTable::mergeTermSubListsForDocId(QueryTermInfo *qtibuf, char *miniMerg
 
 
 
+void PosdbTable::slidingWindowAlgorithm(const char **miniMergedList, const char **miniMergedEnd, const char **bestPos, const char **winnerStack, const char **xpos, float *scoreMatrix) {
+	int32_t minx = 0;
+	bool allNull;
+	int32_t minPos = 0;
+
+
+	logTrace(g_conf.m_logTracePosdb, "Sliding Window algorithm begins");
+	m_windowTermPtrs = winnerStack;
+
+	// Scan the terms that are in the body in a sliding window
+	//
+	// Compute the term pair score on just the terms in that
+	// sliding window. that way, the term for a word like 'dog'
+	// keeps the same word position when it is paired up with the
+	// other terms.
+	//
+	// Compute the score the same way getTermPairScore() works so
+	// we are on the same playing field
+	//
+	// Sub-out each term with its best scoring occurence in the title
+	// or link text or meta tag, etc. but it gets a distance penalty
+	// of like 100 units or so.
+	//
+	// If term does not occur in the body, the sub-out approach should
+	// fix that.
+	//
+	// Keep a matrix of the best scores between two terms from the
+	// above double nested loop algo, and replace that pair if we
+	// got a better score in the sliding window.
+
+
+	// use special ptrs for the windows so we do not mangle 
+	// miniMergedList[] array because we use that below!
+	for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
+		xpos[i] = miniMergedList[i];
+	}
+
+
+	//
+	// init each list ptr to the first wordpos rec in the body
+	// for THIS DOCID and if no such rec, make it NULL
+	//
+	allNull = true;
+	for(int32_t i = 0; i < m_numQueryTermInfos; i++) {
+		// skip if to the left of a pipe operator
+		if( m_bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
+			continue;
+		}
+
+		// skip wordposition until it in the body
+		while( xpos[i] && !s_inBody[Posdb::getHashGroup(xpos[i])]) {
+			// advance
+			if ( ! (xpos[i][0] & 0x04) ) {
+				xpos[i] += 12;
+			}
+			else {
+				xpos[i] +=  6;
+			}
+
+			// NULLify list if no more for this docid
+			if( xpos[i] < miniMergedEnd[i] && (xpos[i][0] & 0x04)) {
+				continue;
+			}
+
+			// ok, no more! null means empty list
+			xpos[i] = NULL;
+
+			// must be in title or something else then
+			if ( ! bestPos[i] ) {
+				gbshutdownAbort(true);
+			}
+		}
+
+		// if all xpos are NULL, then no terms are in body...
+		if ( xpos[i] ) {
+			allNull = false;
+		}
+	}
+
+
+	bool doneSliding = false;
+
+	// if no terms in body, no need to do sliding window
+	if ( allNull ) {
+		doneSliding = true;
+	}
+	else {
+		minx = -1;
+	}
+
+	while( !doneSliding ) {
+		//
+		// Now all xpos are in the body
+		//
+		// Calc the window score
+		//
+		// If window score beats m_bestWindowScore we store the
+		// term xpos that define this window in m_windowTermPtrs[] array
+		//
+		// Will try to sub in s_bestPos[i] if better, but will fix 
+		// distance to FIXED_DISTANCE
+		//
+		// "minx" is who just got advanced, this saves time because we
+		// do not have to re-compute the scores of term pairs that consist
+		// of two terms that did not advance in the sliding window
+		//
+		// "scoreMatrix" hold the highest scoring non-body term pair
+		// for sub-bing out the term pair in the body with
+		//
+		// Sets m_bestWindowScore if this window score beats it
+		//
+		// Does sub-outs with the non-body pairs and also the singles i guess
+		//
+		// Uses "bestPos[x]" to get best non-body scoring term for sub-outs
+		//
+		evalSlidingWindow(xpos, bestPos, scoreMatrix);
+
+	 	bool advanceMin = false;
+
+	 	do { // while( advanceMin );
+			// now find the min word pos still in body
+			minx = -1;
+			for ( int32_t x = 0 ; x < m_numQueryTermInfos ; x++ ) {
+				// skip if to the left of a pipe operator
+				// and numeric posdb termlists do not have word positions,
+				// they store a float there.
+				if ( m_bflags[x] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
+					continue;
+				}
+
+				if ( ! xpos[x] ) {
+					continue;
+				}
+
+				if ( xpos[x] && minx == -1 ) {
+					minx = x;
+					//minRec = xpos[x];
+					minPos = Posdb::getWordPos(xpos[x]);
+					continue;
+				}
+
+				if ( Posdb::getWordPos(xpos[x]) >= minPos ) {
+					continue;
+				}
+
+				minx = x;
+				//minRec = xpos[x];
+				minPos = Posdb::getWordPos(xpos[x]);
+			}
+
+			// sanity
+			if ( minx < 0 ) {
+				gbshutdownAbort(true);
+			}
+
+		 	do { // while( !s_inBody[Posdb::getHashGroup(xpos[minx])] && !advanceMin );
+				// now advance that to slide our window
+				if ( ! (xpos[minx][0] & 0x04) ) {
+					xpos[minx] += 12;
+				}
+				else {
+					xpos[minx] +=  6;
+				}
+
+				// NULLify list if no more for this docid
+				if ( xpos[minx] >= miniMergedEnd[minx] || ! (xpos[minx][0] & 0x04) ) {
+					// exhausted list now
+					xpos[minx] = NULL;
+					// are all null now?
+					int32_t k; 
+					for ( k = 0 ; k < m_numQueryTermInfos ; k++ ) {
+						// skip if to the left of a pipe operator
+						if( m_bflags[k] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER)) {
+							continue;
+						}
+
+						if ( xpos[k] ) {
+							break;
+						}
+					}
+
+					// all lists are now exhausted
+					if ( k >= m_numQueryTermInfos ) {
+						doneSliding = true;
+					}
+
+					// ok, now recompute the next min and advance him
+					advanceMin = true;
+				}
+
+				// if it left the body then advance some more i guess?
+			} while( !advanceMin && !doneSliding && !s_inBody[Posdb::getHashGroup(xpos[minx])] );
+
+		} while( advanceMin && !doneSliding );
+
+	} // while( !doneSliding )
+}
+
+
+
 // . compare the output of this to intersectLists9_r()
 // . hopefully this will be easier to understand and faster
 // . IDEAS:
@@ -3343,10 +3543,6 @@ void PosdbTable::intersectLists10_r ( ) {
 
 	DocIdScore dcs;
 	DocIdScore *pdcs = NULL;
-	int32_t minx =0;
-	bool allNull;
-	int32_t minPos =0;
-
 	uint64_t lastDocId = 0LL;
 	int32_t lastLen = 0;
 	char siteRank;
@@ -3815,6 +4011,10 @@ void PosdbTable::intersectLists10_r ( ) {
 
 
 				//
+				//#
+				//# SLIDING WINDOW SCORING ALGORITHM
+				//#
+				//
 				// parms for sliding window algorithm
 				//
 				m_qpos				= qpos;
@@ -3822,212 +4022,8 @@ void PosdbTable::intersectLists10_r ( ) {
 				m_quotedStartIds	= quotedStartIds;
 				m_bestWindowScore	= -2.0;
 
-				//
-				//
-				// BEGIN SLIDING WINDOW ALGO
-				//
-				//
+				slidingWindowAlgorithm(miniMergedList, miniMergedEnd, bestPos, winnerStack, xpos, scoreMatrix);
 
-				logTrace(g_conf.m_logTracePosdb, "Sliding Window algorithm begins");
-				m_windowTermPtrs = winnerStack;
-
-				// Scan the terms that are in the body in a sliding window
-				//
-				// Compute the term pair score on just the terms in that
-				// sliding window. that way, the term for a word like 'dog'
-				// keeps the same word position when it is paired up with the
-				// other terms.
-				//
-				// Compute the score the same way getTermPairScore() works so
-				// we are on the same playing field
-				//
-				// Sub-out each term with its best scoring occurence in the title
-				// or link text or meta tag, etc. but it gets a distance penalty
-				// of like 100 units or so.
-				//
-				// If term does not occur in the body, the sub-out approach should
-				// fix that.
-				//
-				// Keep a matrix of the best scores between two terms from the
-				// above double nested loop algo, and replace that pair if we
-				// got a better score in the sliding window.
-
-
-				// use special ptrs for the windows so we do not mangle 
-				// miniMergedList[] array because we use that below!
-				for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
-					xpos[i] = miniMergedList[i];
-				}
-
-
-				allNull = true;
-				//
-				// init each list ptr to the first wordpos rec in the body
-				// and if no such rec, make it NULL
-				//
-				for(int32_t i = 0; i < m_numQueryTermInfos; i++) {
-					// skip if to the left of a pipe operator
-					if( bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
-						continue;
-					}
-					
-					// skip wordposition until it in the body
-					while( xpos[i] && !s_inBody[Posdb::getHashGroup(xpos[i])]) {
-						// advance
-						if ( ! (xpos[i][0] & 0x04) ) {
-							xpos[i] += 12;
-						}
-						else {
-							xpos[i] +=  6;
-						}
-							
-						// NULLify list if no more for this docid
-						if( xpos[i] < miniMergedEnd[i] && (xpos[i][0] & 0x04)) {
-							continue;
-						}
-						
-						// ok, no more! null means empty list
-						xpos[i] = NULL;
-
-						// must be in title or something else then
-						if ( ! bestPos[i] ) {
-							gbshutdownAbort(true);
-						}
-					}
-					
-					// if all xpos are NULL, then no terms are in body...
-					if ( xpos[i] ) {
-						allNull = false;
-					}
-				}
-
-
-				bool doneSliding = false;
-
-				// if no terms in body, no need to do sliding window
-				if ( allNull ) {
-					doneSliding = true;
-				}
-				else {
-					minx = -1;
-				}
-
-				while( !doneSliding ) {
-					//
-					// Now all xpos are in the body
-					//
-					// Calc the window score
-					//
-					// If window score beats m_bestWindowScore we store the
-					// term xpos that define this window in m_windowTermPtrs[] array
-					//
-					// Will try to sub in s_bestPos[i] if better, but will fix 
-					// distance to FIXED_DISTANCE
-					//
-					// "minx" is who just got advanced, this saves time because we
-					// do not have to re-compute the scores of term pairs that consist
-					// of two terms that did not advance in the sliding window
-					//
-					// "scoreMatrix" hold the highest scoring non-body term pair
-					// for sub-bing out the term pair in the body with
-					//
-					// Sets m_bestWindowScore if this window score beats it
-					//
-					// Does sub-outs with the non-body pairs and also the singles i guess
-					//
-					// Uses "bestPos[x]" to get best non-body scoring term for sub-outs
-					//
-					evalSlidingWindow ( xpos, bestPos, scoreMatrix);
-
-				 	bool advanceMin = false;
-
-				 	do { // while( advanceMin );
-						// now find the min word pos still in body
-						minx = -1;
-						for ( int32_t x = 0 ; x < m_numQueryTermInfos ; x++ ) {
-							// skip if to the left of a pipe operator
-							// and numeric posdb termlists do not have word positions,
-							// they store a float there.
-							if ( bflags[x] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
-								continue;
-							}
-
-							if ( ! xpos[x] ) {
-								continue;
-							}
-
-							if ( xpos[x] && minx == -1 ) {
-								minx = x;
-								//minRec = xpos[x];
-								minPos = Posdb::getWordPos(xpos[x]);
-								continue;
-							}
-
-							if ( Posdb::getWordPos(xpos[x]) >= minPos ) {
-								continue;
-							}
-
-							minx = x;
-							//minRec = xpos[x];
-							minPos = Posdb::getWordPos(xpos[x]);
-						}
-
-						// sanity
-						if ( minx < 0 ) {
-							gbshutdownAbort(true);
-						}
-
-					 	do { // while( !s_inBody[Posdb::getHashGroup(xpos[minx])] && !advanceMin );
-							// now advance that to slide our window
-							if ( ! (xpos[minx][0] & 0x04) ) {
-								xpos[minx] += 12;
-							}
-							else {
-								xpos[minx] +=  6;
-							}
-
-							// NULLify list if no more for this docid
-							if ( xpos[minx] >= miniMergedEnd[minx] || ! (xpos[minx][0] & 0x04) ) {
-								// exhausted list now
-								xpos[minx] = NULL;
-								// are all null now?
-								int32_t k; 
-								for ( k = 0 ; k < m_numQueryTermInfos ; k++ ) {
-									// skip if to the left of a pipe operator
-									if(bflags[k]&(BF_PIPED|BF_NEGATIVE|BF_NUMBER)) {
-										continue;
-									}
-									
-									if ( xpos[k] ) {
-										break;
-									}
-								}
-
-								// all lists are now exhausted
-								if ( k >= m_numQueryTermInfos ) {
-									doneSliding = true;
-								}
-
-								// ok, now recompute the next min and advance him
-								advanceMin = true;
-							}
-							
-							// if it left the body then advance some more i guess?
-						} while( !advanceMin && !doneSliding && !s_inBody[Posdb::getHashGroup(xpos[minx])] );
-							
-					} while( advanceMin && !doneSliding );
-
-				} // while( !doneSliding )
-
-
-				//
-				//
-				// END SLIDING WINDOW ALGO
-				//
-				//
-
-
-				minPairScore = -1.0;
 
 				//
 				//
@@ -4037,6 +4033,7 @@ void PosdbTable::intersectLists10_r ( ) {
 				// (similar to NON-BODY TERM PAIR SCORING LOOP above)
 				//
 				logTrace(g_conf.m_logTracePosdb, "Zak algorithm begins");
+				minPairScore = -1.0;
 
 				for ( int32_t i = 0   ; i < m_numQueryTermInfos ; i++ ) {
 

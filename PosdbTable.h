@@ -129,7 +129,7 @@ class PosdbTable {
 	bool advanceTermListCursors(const char *docIdPtr, QueryTermInfo *qtibuf);
 	bool prefilterMaxPossibleScoreByDistance(QueryTermInfo *qtibuf, const int32_t *qpos, float minWinningScore);
 	void mergeTermSubListsForDocId(QueryTermInfo *qtibuf, char *miniMergeBuf, const char **miniMergedList, const char **miniMergedEnd, int *highestInlinkSiteRank);
-
+	void slidingWindowAlgorithm(const char **miniMergedList, const char **miniMergedEnd, const char **bestPos, const char **winnerStack, const char **xpos, float *scoreMatrix);
 
 	uint64_t m_docId;
 

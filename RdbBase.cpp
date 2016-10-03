@@ -62,7 +62,6 @@ RdbBase::RdbBase()
 	m_niceness = 0;
 	m_numPos = 0;
 	m_numNeg = 0;
-	m_isTitledb = false;
 	m_doLog = false;
 	memset(m_files, 0, sizeof(m_files));
 	memset(m_maps, 0, sizeof(m_maps));
@@ -112,7 +111,6 @@ bool RdbBase::init(char *dir,
                    RdbBuckets *buckets,
                    RdbDump *dump,
                    Rdb *rdb,
-                   bool isTitledb,
                    bool useIndexFile) {
 
 
@@ -173,7 +171,6 @@ bool RdbBase::init(char *dir,
 	m_useHalfKeys      = useHalfKeys;
 	m_ks               = keySize;
 	m_pageSize         = pageSize;
-	m_isTitledb        = isTitledb;
 	m_useIndexFile		= useIndexFile;
 
 	if (m_useIndexFile) {
@@ -471,7 +468,7 @@ bool RdbBase::setFiles ( ) {
 		// if we are titledb, we got the secondary id
 		// . if we are titledb we should have a -xxx after
 		// . if none is there it needs to be converted!
-		if ( m_isTitledb && fileId2 == -1 ) {
+		if ( m_rdb->isTitledb() && fileId2 == -1 ) {
 			// critical
 			log("gb: bad title filename of %s. Halting.",filename);
 			g_errno = EBADENGINEER;
@@ -647,13 +644,13 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	// set the data file's filename
 	char name[512];
 	if ( mergeNum <= 0 ) {
-		if ( m_isTitledb ) {
+		if ( m_rdb->isTitledb() ) {
 			snprintf( name, 511, "%s%04" PRId32"-%03" PRId32".dat", m_dbname, fileId, fileId2 );
 		} else {
 			snprintf( name, 511, "%s%04" PRId32".dat", m_dbname, fileId );
 		}
 	} else {
-		if ( m_isTitledb ) {
+		if ( m_rdb->isTitledb() ) {
 			snprintf( name, 511, "%s%04" PRId32"-%03" PRId32".%03" PRId32".%04" PRId32".dat",
 			          m_dbname, fileId, fileId2, mergeNum, endMergeFileId );
 		} else {
@@ -732,7 +729,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	g_conf.m_maxMem = mm;
 
 	// sanity check
-	if ( fileId2 < 0 && m_isTitledb ) {
+	if ( fileId2 < 0 && m_rdb->isTitledb() ) {
 		g_process.shutdownAbort(true);
 	}
 
@@ -967,7 +964,12 @@ int32_t RdbBase::addNewFile ( int32_t id2 ) {
 	return addFile( true, fileId, id2, -1, -1 );
 }
 
-static void doneWrapper ( void *state ) ;
+
+bool RdbBase::isManipulatingFiles() const {
+	//note: incomplete check but not worse than the original
+	return m_numThreads>0;
+}
+
 
 // . called after the merge has successfully completed
 // . the final merge file is always file #0 (i.e. "indexdb0000.dat/map")
@@ -1098,7 +1100,7 @@ bool RdbBase::incorporateMerge ( ) {
 		// . these links will be done in a thread
 		// . they will save the filename before spawning so we can
 		//   delete the m_files[i] now
-		if ( ! m_files[i]->unlink ( doneWrapper , this ) ) {
+		if ( ! m_files[i]->unlink(unlinkDoneWrapper, this) ) {
 			m_numThreads++;
 			g_numThreads++;
 		} else {
@@ -1110,7 +1112,7 @@ bool RdbBase::incorporateMerge ( ) {
 		// debug msg
 		log(LOG_INFO,"merge: Unlinking map file %s (#%" PRId32").", m_maps[i]->getFilename(),i);
 
-		if ( ! m_maps[i]->unlink  ( doneWrapper , this ) ) {
+		if ( ! m_maps[i]->unlink(unlinkDoneWrapper, this) ) {
 			m_numThreads++;
 			g_numThreads++;
 		} else {
@@ -1123,7 +1125,7 @@ bool RdbBase::incorporateMerge ( ) {
 		if( m_useIndexFile ) {
 			log(LOG_INFO,"merge: Unlinking index file %s (#%" PRId32").", m_indexes[i]->getFilename(),i);
 
-			if ( ! m_indexes[i]->unlink  ( doneWrapper , this ) ) {
+			if ( ! m_indexes[i]->unlink(unlinkDoneWrapper, this) ) {
 				m_numThreads++;
 				g_numThreads++;
 			} else {
@@ -1144,7 +1146,7 @@ bool RdbBase::incorporateMerge ( ) {
 	
 	// if we blocked on all, keep going
 	if ( m_numThreads == 0 ) {
-		doneWrapper2 ( );
+		unlinkDone();
 		return true;
 	}
 
@@ -1156,15 +1158,15 @@ bool RdbBase::incorporateMerge ( ) {
 	return true;
 }
 
-void doneWrapper ( void *state ) {
-	RdbBase *THIS = (RdbBase *)state;
-	log("merge: done unlinking file. #threads=%" PRId32,THIS->m_numThreads);
-	THIS->doneWrapper2 ( );
+
+void RdbBase::unlinkDoneWrapper(void *state) {
+	RdbBase *that = static_cast<RdbBase*>(state);
+	log("merge: done unlinking file. #threads=%" PRId32, that->m_numThreads);
+	that->unlinkDone();
 }
 
-static void doneWrapper3 ( void *state ) ;
 
-void RdbBase::doneWrapper2 ( ) {
+void RdbBase::unlinkDone() {
 	// bail if waiting for more to come back
 	if ( m_numThreads > 0 ) {
 		g_numThreads--;
@@ -1185,13 +1187,13 @@ void RdbBase::doneWrapper2 ( ) {
 	m_fileIds [ x ] = m_fileIds [ a ];
 
 	log(LOG_INFO,"db: Renaming %s to %s", m_files[x]->getFilename(), m_files[a]->getFilename());
-	if ( ! m_maps[x]->rename( m_maps[a]->getFilename(), doneWrapper3, this ) ) {
+	if ( ! m_maps[x]->rename( m_maps[a]->getFilename(), renameDoneWrapper, this) ) {
 		m_numThreads++;
 		g_numThreads++;
 	}
 
 	if( m_useIndexFile ) {
-		if ( ! m_indexes[x]->rename( m_indexes[a]->getFilename(), doneWrapper3, this ) ) {
+		if ( ! m_indexes[x]->rename( m_indexes[a]->getFilename(), renameDoneWrapper, this) ) {
 			m_numThreads++;
 			g_numThreads++;
 		}
@@ -1208,13 +1210,13 @@ void RdbBase::doneWrapper2 ( ) {
 		g_process.shutdownAbort(true);
 	}
 
-	if ( ! m_isTitledb ) {
+	if ( ! m_rdb->isTitledb() ) {
 		// debug statement
 		log(LOG_INFO,"db: Renaming %s of size %" PRId64" to %s",
 		    m_files[x]->getFilename(),fs , m_files[a]->getFilename());
 
 		// rename it, this may block
-		if ( ! m_files[x]->rename ( m_files[a]->getFilename(), doneWrapper3, this ) ) {
+		if ( ! m_files[x]->rename ( m_files[a]->getFilename(), renameDoneWrapper, this) ) {
 			m_numThreads++;
 			g_numThreads++;
 		}
@@ -1226,7 +1228,7 @@ void RdbBase::doneWrapper2 ( ) {
 		sprintf ( buf , "%s%04" PRId32"-%03" PRId32".dat", m_dbname, m_fileIds[a], m_fileIds2[x] );
 
 		// rename it, this may block
-		if ( ! m_files[ x ]->rename ( buf, doneWrapper3, this ) ) {
+		if ( ! m_files[ x ]->rename ( buf, renameDoneWrapper, this) ) {
 			m_numThreads++;
 			g_numThreads++;
 		}
@@ -1234,7 +1236,7 @@ void RdbBase::doneWrapper2 ( ) {
 
 	// if we blocked on all, keep going
 	if ( m_numThreads == 0 ) {
-		doneWrapper4 ( );
+		renameDone();
 		return ;
 	}
 
@@ -1245,20 +1247,22 @@ void RdbBase::doneWrapper2 ( ) {
 }
 
 
-void doneWrapper3 ( void *state ) {
-	RdbBase *THIS = (RdbBase *)state;
+void RdbBase::renameDoneWrapper(void *state) {
+	RdbBase *that = static_cast<RdbBase*>(state);
 	log(LOG_DEBUG, "rdb: thread completed rename operation for collnum=%" PRId32" #thisbaserenamethreads=%" PRId32,
-	    (int32_t)THIS->m_collnum,THIS->m_numThreads-1);
-	THIS->doneWrapper4 ( );
+	    (int32_t)that->m_collnum, that->m_numThreads-1);
+	that->renameDone();
 }
 
-static void checkThreadsAgainWrapper ( int fb, void *state  ) {
-	RdbBase *THIS = (RdbBase *)state;
+
+void RdbBase::checkThreadsAgainWrapper(int /*fd*/, void *state) {
+	RdbBase *that = static_cast<RdbBase*>(state);
 	g_loop.unregisterSleepCallback ( state,checkThreadsAgainWrapper);
-	THIS->doneWrapper4 ( );
+	that->renameDone();
 }
 
-void RdbBase::doneWrapper4 ( ) {
+
+void RdbBase::renameDone() {
 	// bail if waiting for more to come back
 	if ( m_numThreads > 0 ) {
 		g_numThreads--;
@@ -1329,7 +1333,7 @@ void RdbBase::renameFile( int32_t currentFileIdx, int32_t newFileId, int32_t new
 	// since it got nuked on disk incorporateMerge();
 	char fbuf[256];
 
-	if (m_isTitledb) {
+	if (m_rdb->isTitledb()) {
 		sprintf(fbuf, "%s%04" PRId32"-%03" PRId32".dat", m_dbname, newFileId, newFileId2);
 	} else {
 		sprintf(fbuf, "%s%04" PRId32".dat", m_dbname, newFileId);
@@ -1738,7 +1742,7 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 		// validation
 
 		// if titledb we got a "-023" part now
-		if ( m_isTitledb && fileId2 < 0 ) {
+		if ( m_rdb->isTitledb() && fileId2 < 0 ) {
 			g_process.shutdownAbort(true);
 		}
 
@@ -1860,7 +1864,7 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 	// other file... i've seen that happen... but don't know why it didn't
 	// merge two small files! i guess because the root file was the
 	// oldest file! (38.80 days old)???
-	if ( m_isTitledb && mergeNum < 50 && minToMerge > 200 ) {
+	if ( m_rdb->isTitledb() && mergeNum < 50 && minToMerge > 200 ) {
 		// force it to 50 files to merge
 		mergeNum = 50;
 
@@ -1923,7 +1927,7 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 		}
 
 		// if merging titledb, just pick by the lowest total
-		if ( m_isTitledb ) {
+		if ( m_rdb->isTitledb() ) {
 			if ( total < mint ) {
 				mini   = i;
 				mint   = total;
@@ -2018,7 +2022,7 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 	mergeFileId = m_fileIds[mini] - 1;
 
 	// get new id, -1 on error
-	fileId2 = m_isTitledb ? 0 : -1;
+	fileId2 = m_rdb->isTitledb() ? 0 : -1;
 
 	// . make a filename for the merge
 	// . always starts with file #0

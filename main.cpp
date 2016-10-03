@@ -5486,7 +5486,6 @@ int injectFile ( const char *filename , char *ips , const char *coll ) {
 		s_base->m_useHalfKeys = rdb->useHalfKeys();
 		s_base->m_ks = rdb->getKeySize();
 		s_base->m_pageSize = rdb->getPageSize();
-		s_base->m_isTitledb = rdb->m_isTitledb;
 		s_base->m_minToMerge = 99999;
 		// try to set the file info now!
 		s_base->setFiles();
