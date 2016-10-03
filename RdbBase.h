@@ -324,6 +324,6 @@ public:
 
 extern int32_t g_numThreads;
 
-extern char g_dumpMode;
+extern bool g_dumpMode;
 
 #endif // GB_RDBBASE_H

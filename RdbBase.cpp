@@ -24,7 +24,7 @@ static int32_t s_numUrgentMerges = 0;
 
 int32_t g_numThreads = 0;
 
-char g_dumpMode = 0;
+bool g_dumpMode = false;
 
 // since we only do one merge at a time, keep this class static
 class RdbMerge g_merge;
