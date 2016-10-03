@@ -974,8 +974,6 @@ bool RdbBase::isManipulatingFiles() const {
 }
 
 
-static void doneWrapper ( void *state ) ;
-
 // . called after the merge has successfully completed
 // . the final merge file is always file #0 (i.e. "indexdb0000.dat/map")
 bool RdbBase::incorporateMerge ( ) {
@@ -1105,7 +1103,7 @@ bool RdbBase::incorporateMerge ( ) {
 		// . these links will be done in a thread
 		// . they will save the filename before spawning so we can
 		//   delete the m_files[i] now
-		if ( ! m_files[i]->unlink ( doneWrapper , this ) ) {
+		if ( ! m_files[i]->unlink(unlinkDoneWrapper, this) ) {
 			m_numThreads++;
 			g_numThreads++;
 		} else {
@@ -1117,7 +1115,7 @@ bool RdbBase::incorporateMerge ( ) {
 		// debug msg
 		log(LOG_INFO,"merge: Unlinking map file %s (#%" PRId32").", m_maps[i]->getFilename(),i);
 
-		if ( ! m_maps[i]->unlink  ( doneWrapper , this ) ) {
+		if ( ! m_maps[i]->unlink(unlinkDoneWrapper, this) ) {
 			m_numThreads++;
 			g_numThreads++;
 		} else {
@@ -1130,7 +1128,7 @@ bool RdbBase::incorporateMerge ( ) {
 		if( m_useIndexFile ) {
 			log(LOG_INFO,"merge: Unlinking index file %s (#%" PRId32").", m_indexes[i]->getFilename(),i);
 
-			if ( ! m_indexes[i]->unlink  ( doneWrapper , this ) ) {
+			if ( ! m_indexes[i]->unlink(unlinkDoneWrapper, this) ) {
 				m_numThreads++;
 				g_numThreads++;
 			} else {
@@ -1151,7 +1149,7 @@ bool RdbBase::incorporateMerge ( ) {
 	
 	// if we blocked on all, keep going
 	if ( m_numThreads == 0 ) {
-		doneWrapper2 ( );
+		unlinkDone();
 		return true;
 	}
 
@@ -1163,15 +1161,15 @@ bool RdbBase::incorporateMerge ( ) {
 	return true;
 }
 
-void doneWrapper ( void *state ) {
-	RdbBase *THIS = (RdbBase *)state;
-	log("merge: done unlinking file. #threads=%" PRId32,THIS->m_numThreads);
-	THIS->doneWrapper2 ( );
+
+void RdbBase::unlinkDoneWrapper(void *state) {
+	RdbBase *that = static_cast<RdbBase*>(state);
+	log("merge: done unlinking file. #threads=%" PRId32, that->m_numThreads);
+	that->unlinkDone();
 }
 
-static void doneWrapper3 ( void *state ) ;
 
-void RdbBase::doneWrapper2 ( ) {
+void RdbBase::unlinkDone() {
 	// bail if waiting for more to come back
 	if ( m_numThreads > 0 ) {
 		g_numThreads--;
@@ -1192,13 +1190,13 @@ void RdbBase::doneWrapper2 ( ) {
 	m_fileIds [ x ] = m_fileIds [ a ];
 
 	log(LOG_INFO,"db: Renaming %s to %s", m_files[x]->getFilename(), m_files[a]->getFilename());
-	if ( ! m_maps[x]->rename( m_maps[a]->getFilename(), doneWrapper3, this ) ) {
+	if ( ! m_maps[x]->rename( m_maps[a]->getFilename(), renameDoneWrapper, this) ) {
 		m_numThreads++;
 		g_numThreads++;
 	}
 
 	if( m_useIndexFile ) {
-		if ( ! m_indexes[x]->rename( m_indexes[a]->getFilename(), doneWrapper3, this ) ) {
+		if ( ! m_indexes[x]->rename( m_indexes[a]->getFilename(), renameDoneWrapper, this) ) {
 			m_numThreads++;
 			g_numThreads++;
 		}
@@ -1221,7 +1219,7 @@ void RdbBase::doneWrapper2 ( ) {
 		    m_files[x]->getFilename(),fs , m_files[a]->getFilename());
 
 		// rename it, this may block
-		if ( ! m_files[x]->rename ( m_files[a]->getFilename(), doneWrapper3, this ) ) {
+		if ( ! m_files[x]->rename ( m_files[a]->getFilename(), renameDoneWrapper, this) ) {
 			m_numThreads++;
 			g_numThreads++;
 		}
@@ -1233,7 +1231,7 @@ void RdbBase::doneWrapper2 ( ) {
 		sprintf ( buf , "%s%04" PRId32"-%03" PRId32".dat", m_dbname, m_fileIds[a], m_fileIds2[x] );
 
 		// rename it, this may block
-		if ( ! m_files[ x ]->rename ( buf, doneWrapper3, this ) ) {
+		if ( ! m_files[ x ]->rename ( buf, renameDoneWrapper, this) ) {
 			m_numThreads++;
 			g_numThreads++;
 		}
@@ -1241,7 +1239,7 @@ void RdbBase::doneWrapper2 ( ) {
 
 	// if we blocked on all, keep going
 	if ( m_numThreads == 0 ) {
-		doneWrapper4 ( );
+		renameDone();
 		return ;
 	}
 
@@ -1252,20 +1250,22 @@ void RdbBase::doneWrapper2 ( ) {
 }
 
 
-void doneWrapper3 ( void *state ) {
-	RdbBase *THIS = (RdbBase *)state;
+void RdbBase::renameDoneWrapper(void *state) {
+	RdbBase *that = static_cast<RdbBase*>(state);
 	log(LOG_DEBUG, "rdb: thread completed rename operation for collnum=%" PRId32" #thisbaserenamethreads=%" PRId32,
-	    (int32_t)THIS->m_collnum,THIS->m_numThreads-1);
-	THIS->doneWrapper4 ( );
+	    (int32_t)that->m_collnum, that->m_numThreads-1);
+	that->renameDone();
 }
 
-static void checkThreadsAgainWrapper ( int fb, void *state  ) {
-	RdbBase *THIS = (RdbBase *)state;
+
+void RdbBase::checkThreadsAgainWrapper(int /*fd*/, void *state) {
+	RdbBase *that = static_cast<RdbBase*>(state);
 	g_loop.unregisterSleepCallback ( state,checkThreadsAgainWrapper);
-	THIS->doneWrapper4 ( );
+	that->renameDone();
 }
 
-void RdbBase::doneWrapper4 ( ) {
+
+void RdbBase::renameDone() {
 	// bail if waiting for more to come back
 	if ( m_numThreads > 0 ) {
 		g_numThreads--;
