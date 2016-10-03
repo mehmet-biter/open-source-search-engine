@@ -145,7 +145,15 @@ bool HttpServer::getDoc ( char   *url      ,
 	}
 
 	// ignore if -1 as well
-	if ( proxyIp == -1 ) proxyIp = 0;
+	if ( proxyIp == -1 ) {
+		proxyIp = 0;
+	}
+
+	if( !url ) {
+		// getHostFast dereferences url below, so just as well bail here
+		logError("url empty in call to HttpServer.getDoc - needs to be set");
+		gbshutdownLogicError();
+	}
 
 	//log(LOG_WARN, "http: get doc %s", url->getUrl());
 	// use the HttpRequest class
@@ -182,7 +190,9 @@ bool HttpServer::getDoc ( char   *url      ,
 	}
 
 	int32_t pcLen = 0;
-	if ( postContent ) pcLen = strlen(postContent);
+	if ( postContent ) {
+		pcLen = strlen(postContent);
+	}
 
 	char *req = NULL;
 	int32_t reqSize;
@@ -2696,7 +2706,14 @@ void gotSquidProxiedUrlIp ( void *state , int32_t ip ) {
 	r->size_url = sqs->m_sock->m_readOffset + 1;
 
 	// sanity
-	if ( r->ptr_url && r->ptr_url[r->size_url-1] ) { g_process.shutdownAbort(true);}
+	if ( r->ptr_url && r->ptr_url[r->size_url-1] ) { 
+		g_process.shutdownAbort(true);
+	}
+	if ( !r->ptr_url ) { 
+		// r->ptr_url is used by sqs->m_msg13.getDoc called below
+		logError("r->ptr_url is NULL - value is needed!");
+		g_process.shutdownAbort(true);
+	}
 
 	// use urlip for this, it determines what host downloads it
 	r->m_firstIp                = r->m_urlIp;

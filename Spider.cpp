@@ -395,7 +395,7 @@ int32_t SpiderRequest::printToTableSimple ( SafeBuf *sb , const char *status ,
 
 	sb->safePrintf(" <td>%s</td>\n",iptoa(m_firstIp));
 
-	if ( xd->m_crawlDelayValid && xd->m_crawlDelay >= 0 )
+	if ( xd && xd->m_crawlDelayValid && xd->m_crawlDelay >= 0 )
 		sb->safePrintf(" <td>%" PRId32" ms</td>\n",xd->m_crawlDelay);
 	else
 		sb->safePrintf(" <td>--</td>\n");
@@ -1322,7 +1322,7 @@ static bool printList ( State11 *st ) {
 	return true;
 }
 
-static bool sendPage ( State11 *st ) {
+static bool sendPage(State11 *st) {
 	// shortcut
 	SafeBuf *sbTable = &st->m_safeBuf;
 
@@ -1331,7 +1331,10 @@ static bool sendPage ( State11 *st ) {
 
 	// store the page in here!
 	SafeBuf sb;
-	sb.reserve ( 64*1024 );
+	if( !sb.reserve ( 64*1024 ) ) {
+		logError("Could not reserve needed mem, bailing!");
+		return false;
+	}
 
 	g_pages.printAdminTop ( &sb, st->m_socket , &st->m_r , qs );
 
@@ -4002,7 +4005,12 @@ void dedupSpiderdbList ( RdbList *list ) {
 	log( LOG_DEBUG, "spider: deduped %i bytes (of which %i were corrupted) out of %i",
 	     (int)delta,(int)corrupt,(int)oldSize);
 
-	list->setLastKey(lastKey);
+	if( !lastKey ) {
+		log(LOG_WARN, "%s:%s:%d: lastKey is null. Should not happen?", __FILE__, __func__, __LINE__);
+	}
+	else {
+		list->setLastKey(lastKey);
+	}
 }
 
 

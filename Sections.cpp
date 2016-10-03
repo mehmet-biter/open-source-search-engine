@@ -1999,7 +1999,7 @@ Section *Sections::insertSubSection ( int32_t a, int32_t b, int32_t newBaseHash 
 	//   to the newly inserted section, then when done adding sentence
 	//   sections we scanned all the words, keeping track of the last
 	//   html section we entered and used that to insert the sentence sections
-	if ( m_lastAdded && m_lastAdded->m_a > si->m_a && m_lastAdded->m_a < a ) {
+	if ( m_lastAdded && si && m_lastAdded->m_a > si->m_a && m_lastAdded->m_a < a ) {
 		si = m_lastAdded;
 	}
 
@@ -2214,11 +2214,11 @@ void Sections::setNextBrotherPtrs ( bool setContainer ) {
 		// only update list container if smaller than previous
 		if ( ! si->m_listContainer )
 			si->m_listContainer = te;
-		else if ( te->m_a > si->m_listContainer->m_a )
+		else if ( te && te->m_a > si->m_listContainer->m_a )
 			si->m_listContainer = te;
 		if ( ! sj->m_listContainer )
 			sj->m_listContainer = te;
-		else if ( te->m_a > sj->m_listContainer->m_a )
+		else if ( te && te->m_a > sj->m_listContainer->m_a )
 			sj->m_listContainer = te;
 
 		// now 
@@ -2437,7 +2437,7 @@ bool Sections::setMenus ( ) {
 		}
 
 		// if it has plain text, forget it!
-		if ( prev->m_flags & SEC_PLAIN_TEXT ) continue;
+		if ( prev && prev->m_flags & SEC_PLAIN_TEXT ) continue;
 		// use this for us
 		Section *sk = si;
 		// get first "hard" section encountered while telescoping
@@ -2447,10 +2447,10 @@ bool Sections::setMenus ( ) {
 			// record?
 			if ( ! skHard && isHardSection(sk) ) skHard = sk;
 			// if parent contains us, stop
-			if ( sk->m_parent->contains ( prev ) ) break;
+			if ( prev && sk->m_parent->contains ( prev ) ) break;
 		}
 		// if it has plain text, forget it!
-		if ( sk->m_flags & SEC_PLAIN_TEXT ) continue;
+		if ( sk && sk->m_flags & SEC_PLAIN_TEXT ) continue;
 
 		// . first hard sections encountered must match!
 		// . otherwise for switchborad.com we lose "A B C ..." as
@@ -2459,11 +2459,15 @@ bool Sections::setMenus ( ) {
 		//   they have different hard sections
 		if (   prevHard && ! skHard ) continue;
 		if ( ! prevHard &&   skHard ) continue;
-		if ( prevHard && prevHard->m_tagId!=skHard->m_tagId ) continue;
+		if ( prevHard && prevHard->m_tagId != skHard->m_tagId ) continue;
 
 		// ok, great that works!
-		prev->m_flags |= SEC_MENU;
-		sk  ->m_flags |= SEC_MENU;
+		if( prev ) {
+			prev->m_flags |= SEC_MENU;
+		}
+		if( sk ) {
+			sk->m_flags |= SEC_MENU;
+		}
 	}
 
 	int64_t h_copyright = hash64n("copyright");

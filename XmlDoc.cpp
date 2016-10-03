@@ -9278,6 +9278,10 @@ uint16_t *XmlDoc::getCharset ( ) {
 		return &m_charset;
 	}
 
+	if( !mime ) {
+		return NULL;
+	}
+
 	m_charset = getCharsetFast ( mime ,
 				     m_firstUrl.getUrl(),
 				     pstart ,
@@ -10906,7 +10910,10 @@ int32_t **XmlDoc::getOutlinkFirstIpVector () {
 
 	if ( *useFakeIps ) {
 		int32_t need = links->m_numLinks * 4;
-		m_fakeIpBuf.reserve ( need );
+		if( !m_fakeIpBuf.reserve ( need ) ) {
+			log(LOG_WARN,"%s:%s: Could not allocate %" PRId32 " bytes for links", __FILE__, __func__, need);
+			return NULL;
+		}
 		for ( int32_t i = 0 ; i < links->m_numLinks ; i++ ) {
 			uint64_t h64 = links->getHostHash64(i);
 			int32_t ip = h64 & 0xffffffff;
@@ -18526,6 +18533,10 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 
 bool XmlDoc::printMenu ( SafeBuf *sb ) {
 
+	if( !sb ) {
+		return false;
+	}
+
 	// encode it
 	SafeBuf ue;
 	ue.urlEncode ( ptr_firstUrl );
@@ -19691,7 +19702,7 @@ char *XmlDoc::getRootTitleBuf ( ) {
 
 	int32_t max = (int32_t)ROOT_TITLE_BUF_MAX - 5;
 	// sanity
-	if ( srcSize >= max ) {
+	if ( src && srcSize >= max ) {
 		// truncate
 		srcSize = max;
 		// back up so we split on a space
@@ -19703,7 +19714,12 @@ char *XmlDoc::getRootTitleBuf ( ) {
 	}
 
 	// copy that over in case root is destroyed
-	gbmemcpy ( m_rootTitleBuf , src , srcSize );
+	if( src && srcSize ) {
+		gbmemcpy ( m_rootTitleBuf , src , srcSize );
+	}
+	else {
+		m_rootTitleBuf[0] = '\0';
+	}
 	m_rootTitleBufSize = srcSize;
 
 	// sanity check, must include the null ni the size
@@ -21357,7 +21373,7 @@ static void getWordToPhraseRatioWeights ( int64_t   pid1 , // pre phrase
 				if ( k > i ) j = i;
 				// get ratio
 				//float ratio = (float)phrcount / (float)wrdcount;
-				float ratio = (float)j/(float)i;
+				float ratio = i ? (float)j/(float)i : 0;
 				// it should be impossible that this can be over 1.0
 				// but might happen due to hash collisions
 				if ( ratio > 1.0 ) ratio = 1.0;

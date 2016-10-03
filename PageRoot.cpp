@@ -196,12 +196,18 @@ bool expandHtml (  SafeBuf& sb,
 		if ( head[i+1] == 'S' ) { 
 			// now we got the %S, insert "spiders are [on/off]"
 			bool spidersOn = true;
-			if ( ! g_conf.m_spideringEnabled ) spidersOn = false;
-			if ( ! cr->m_spideringEnabled ) spidersOn = false;
-			if ( spidersOn ) 
+			if ( !g_conf.m_spideringEnabled ) {
+				spidersOn = false;
+			}
+			if ( cr && !cr->m_spideringEnabled ) {
+				spidersOn = false;
+			}
+			if ( spidersOn ) {
 				sb.safePrintf("Spiders are on");
-			else
+			}
+			else {
 				sb.safePrintf("Spiders are off");
+			}
 			// skip over %S
 			i += 1;
 			continue;
