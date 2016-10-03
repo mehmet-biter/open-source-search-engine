@@ -1006,18 +1006,21 @@ bool Rdb::dumpTree ( int32_t niceness ) {
 	// . wait for all unlinking and renaming activity to flush out
 	// . we do not want to dump to a filename in the middle of being
 	//   unlinked
-	if ( g_numThreads > 0 ) {
+	bool anyCollectionManipulatingFiles = false;
+	for(collnum_t collnum = 0; collnum<getNumBases(); collnum++) {
+		RdbBase *base = getBase(collnum);
+		if(base && base->isManipulatingFiles()) {
+			anyCollectionManipulatingFiles = true;
+			break;
+		}
+	}
+	if(anyCollectionManipulatingFiles) {
 		// update this so we don't try too much and flood the log
 		// with error messages from RdbDump.cpp calling log() and
 		// quickly kicking the log file over 2G which seems to 
 		// get the process killed
 		s_lastTryTime = getTime();
-		// now log a message
-		if ( g_numThreads > 0 ) {
-			log( LOG_INFO, "db: Waiting for previous unlink/rename operations to finish before dumping %s.", m_dbname );
-		} else {
-			log( LOG_WARN, "db: Failed to dump %s: %s.", m_dbname, mstrerror( g_errno ) );
-		}
+		log( LOG_INFO, "db: Waiting for previous unlink/rename operations to finish before dumping %s.", m_dbname );
 
 		logTrace( g_conf.m_logTraceRdb, "END. %s: g_error=%s or g_numThreads=%d. Returning false",
 		          m_dbname, mstrerror( g_errno), g_numThreads );

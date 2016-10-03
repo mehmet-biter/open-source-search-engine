@@ -967,6 +967,13 @@ int32_t RdbBase::addNewFile ( int32_t id2 ) {
 	return addFile( true, fileId, id2, -1, -1 );
 }
 
+
+bool RdbBase::isManipulatingFiles() const {
+	//note: incomplete check but not worse than the original
+	return m_numThreads>0;
+}
+
+
 static void doneWrapper ( void *state ) ;
 
 // . called after the merge has successfully completed

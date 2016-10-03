@@ -179,6 +179,9 @@ class RdbBase {
 		return m_hasMergeFile;
 	}
 
+	//are files being unlinked or renamed?
+	bool isManipulatingFiles() const;
+	
 	// used for translating titledb file # 255 (as read from new tfndb)
 	// into the real file number
 	int32_t getNewestFileNum() const { return m_numFiles - 1; }
