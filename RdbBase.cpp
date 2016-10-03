@@ -20,7 +20,7 @@
 #include <algorithm>
 
 // how many rdbs are in "urgent merge" mode?
-int32_t g_numUrgentMerges = 0;
+static int32_t s_numUrgentMerges = 0;
 
 int32_t g_numThreads = 0;
 
@@ -1306,8 +1306,8 @@ void RdbBase::doneWrapper4 ( ) {
 	// now unset m_mergeUrgent if we're close to our limit
 	if ( m_mergeUrgent && m_numFiles - 14 < m_minToMerge ) {
 		m_mergeUrgent = false;
-		if ( g_numUrgentMerges > 0 ) g_numUrgentMerges--;
-		if ( g_numUrgentMerges == 0 )
+		if ( s_numUrgentMerges > 0 ) s_numUrgentMerges--;
+		if ( s_numUrgentMerges == 0 )
 			log(LOG_INFO,"merge: Exiting urgent "
 			    "merge mode for %s.",m_dbname);
 	}
@@ -1555,7 +1555,7 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 		m_mergeUrgent = true;
 		if ( doLog ) 
 			log(LOG_INFO,"merge: Entering urgent merge mode for %s coll=%s.", m_dbname,m_coll);
-		g_numUrgentMerges++;
+		s_numUrgentMerges++;
 	}
 
 
@@ -1669,7 +1669,7 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 		log(LOG_INFO,
 		    "merge: Entering urgent merge mode (2) for %s coll=%s.", 
 		    m_dbname,m_coll);
-		g_numUrgentMerges++;
+		s_numUrgentMerges++;
 	}
 
 	// sanity check
@@ -1767,7 +1767,7 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 			    "engineer for %s coll=%s",m_dbname,m_coll);
 			if ( m_mergeUrgent ) {
 				log(LOG_WARN, "merge: leaving urgent merge mode");
-				g_numUrgentMerges--;
+				s_numUrgentMerges--;
 				m_mergeUrgent = false;
 			}
 			return false;
