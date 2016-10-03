@@ -48,7 +48,6 @@ Rdb::Rdb ( ) {
 	m_useHalfKeys = false;
 	m_urgent = false;
 	m_niceness = false;
-	m_isTitledb = false;
 	m_fn = 0;
 	m_dumpCollnum = 0;
 	m_inDumpLoop = false;
@@ -144,7 +143,6 @@ bool Rdb::init ( const char     *dir                  ,
 	m_fixedDataSize    = fixedDataSize;
 	m_maxTreeMem       = maxTreeMem;
 	m_useHalfKeys      = useHalfKeys;
-	m_isTitledb        = isTitledb;
 	m_ks               = keySize;
 	m_useIndexFile     = useIndexFile;
 	m_inDumpLoop       = false;
@@ -465,7 +463,6 @@ bool Rdb::addRdbBase2 ( collnum_t collnum ) { // addColl2()
 					buckets         ,
 					&m_dump         ,
 					this            ,
-					m_isTitledb     ,
 					m_useIndexFile ) ) {
 		logf(LOG_INFO,"db: %s: Failed to initialize db for "
 		     "collection \"%s\".", m_dbname,coll);
@@ -1218,7 +1215,7 @@ bool Rdb::dumpCollLoop ( ) {
 
 		// . MDW ADDING A NEW FILE SHOULD BE IN RDBDUMP.CPP NOW... NO!
 		// . get the biggest fileId
-		int32_t id2 = m_isTitledb ? 0 : -1;
+		int32_t id2 = isTitledb() ? 0 : -1;
 
 		// if we add to many files then we can not merge, because merge op
 		// needs to add a file and it calls addNewFile() too

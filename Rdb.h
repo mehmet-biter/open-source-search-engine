@@ -146,6 +146,8 @@ public:
 	char getKeySize() const { return m_ks; }
 	int32_t getPageSize() const { return m_pageSize; }
 
+	bool isTitledb() const { return m_rdbId==RDB_TITLEDB || m_rdbId==RDB2_TITLEDB2; }
+
 	RdbTree *getTree() {
 		if (!m_useTree) return NULL;
 		return &m_tree;

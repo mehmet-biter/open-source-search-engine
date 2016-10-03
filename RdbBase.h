@@ -73,8 +73,7 @@ class RdbBase {
 		    RdbBuckets          *buckets ,
 		    RdbDump             *dump    ,
 		    Rdb           *rdb    ,
-		    bool                 isTitledb = false , // use fileIds2[]?
-		    bool				useIndexFile = false );
+		    bool           useIndexFile);
 
 	void closeMaps ( bool urgent );
 	void saveMaps  ();
@@ -320,8 +319,6 @@ public:
 	// rec counts for files being merged
 	int64_t m_numPos ;
 	int64_t m_numNeg ;
-
-	bool m_isTitledb;
 
 private:
 	static void unlinkDoneWrapper(void *state);
