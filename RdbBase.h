@@ -191,6 +191,12 @@ class RdbBase {
 	int32_t      getMergeStartFileNum() const { return m_mergeStartFileNum; }
 	int32_t      getMergeNumFiles() const { return m_numFilesToMerge; }
 
+	bool isFileBeingUnlinked(int32_t fileNum) const {
+		return m_isUnlinking &&
+		       fileNum >= m_mergeStartFileNum &&
+		       fileNum <  m_mergeStartFileNum+m_numFilesToMerge;
+	}
+	
 	void renameFile( int32_t currentFileIdx, int32_t newFileId, int32_t newFileId2 );
 
 	// bury m_files[] in [a,b)
@@ -320,6 +326,7 @@ public:
 
 	int32_t m_numThreads;
 
+private:
 	bool m_isUnlinking;
 
 	bool m_doLog;
