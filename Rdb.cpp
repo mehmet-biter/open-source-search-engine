@@ -1459,71 +1459,72 @@ void attemptMergeAll() {
 	static collnum_t s_lastCollnum = 0;
 	int32_t count = 0;
 
- tryLoop:
+	for(;;) {
+		// if a collection got deleted, reset this to 0
+		if ( s_lastCollnum >= g_collectiondb.m_numRecs ) {
+			s_lastCollnum = 0;
+			// and return so we don't spin 1000 times over a single coll.
+			return;
+		}
 
-	// if a collection got deleted, reset this to 0
-	if ( s_lastCollnum >= g_collectiondb.m_numRecs ) {
-		s_lastCollnum = 0;
-		// and return so we don't spin 1000 times over a single coll.
-		return;
+		// limit to 1000 checks to save the cpu since we call this once
+		// every 2 seconds.
+		if ( ++count >= 1000 ) return;
+
+		CollectionRec *cr = g_collectiondb.m_recs[s_lastCollnum];
+		if ( ! cr ) {
+			s_lastCollnum++;
+			continue;
+		}
+
+		bool force = false;
+		RdbBase *base ;
+		// args = niceness, forceMergeAll, doLog, minToMergeOverride
+		// if RdbBase::attemptMerge() returns true that means it
+		// launched a merge and it will call attemptMergeAll2() when
+		// the merge completes.
+		base = cr->getBasePtr(RDB_POSDB);
+		if ( base && base->attemptMerge(niceness,force,true) )
+			return;
+		base = cr->getBasePtr(RDB_TITLEDB);
+		if ( base && base->attemptMerge(niceness,force,true) )
+			return;
+		base = cr->getBasePtr(RDB_TAGDB);
+		if ( base && base->attemptMerge(niceness,force,true) )
+			return;
+		base = cr->getBasePtr(RDB_LINKDB);
+		if ( base && base->attemptMerge(niceness,force,true) )
+			return;
+		base = cr->getBasePtr(RDB_SPIDERDB);
+		if ( base && base->attemptMerge(niceness,force,true) )
+			return;
+		base = cr->getBasePtr(RDB_CLUSTERDB);
+		if ( base && base->attemptMerge(niceness,force,true) )
+			return;
+
+		// also try to merge on rdbs being rebuilt
+		base = cr->getBasePtr(RDB2_POSDB2);
+		if ( base && base->attemptMerge(niceness,force,true) )
+			return;
+		base = cr->getBasePtr(RDB2_TITLEDB2);
+		if ( base && base->attemptMerge(niceness,force,true) )
+			return;
+		base = cr->getBasePtr(RDB2_TAGDB2);
+		if ( base && base->attemptMerge(niceness,force,true) )
+			return;
+		base = cr->getBasePtr(RDB2_LINKDB2);
+		if ( base && base->attemptMerge(niceness,force,true) )
+			return;
+		base = cr->getBasePtr(RDB2_SPIDERDB2);
+		if ( base && base->attemptMerge(niceness,force,true) )
+			return;
+		base = cr->getBasePtr(RDB2_CLUSTERDB2);
+		if ( base && base->attemptMerge(niceness,force,true) )
+			return;
+
+		// try next collection
+		s_lastCollnum++;
 	}
-
-	// limit to 1000 checks to save the cpu since we call this once
-	// every 2 seconds.
-	if ( ++count >= 1000 ) return;
-
-	CollectionRec *cr = g_collectiondb.m_recs[s_lastCollnum];
-	if ( ! cr ) { s_lastCollnum++; goto tryLoop; }
-
-	bool force = false;
-	RdbBase *base ;
-	// args = niceness, forceMergeAll, doLog, minToMergeOverride
-	// if RdbBase::attemptMerge() returns true that means it
-	// launched a merge and it will call attemptMergeAll2() when
-	// the merge completes.
-	base = cr->getBasePtr(RDB_POSDB);
-	if ( base && base->attemptMerge(niceness,force,true) ) 
-		return;
-	base = cr->getBasePtr(RDB_TITLEDB);
-	if ( base && base->attemptMerge(niceness,force,true) ) 
-		return;
-	base = cr->getBasePtr(RDB_TAGDB);
-	if ( base && base->attemptMerge(niceness,force,true) ) 
-		return;
-	base = cr->getBasePtr(RDB_LINKDB);
-	if ( base && base->attemptMerge(niceness,force,true) ) 
-		return;
-	base = cr->getBasePtr(RDB_SPIDERDB);
-	if ( base && base->attemptMerge(niceness,force,true) ) 
-		return;
-	base = cr->getBasePtr(RDB_CLUSTERDB);
-	if ( base && base->attemptMerge(niceness,force,true) ) 
-		return;
-
-	// also try to merge on rdbs being rebuilt
-	base = cr->getBasePtr(RDB2_POSDB2);
-	if ( base && base->attemptMerge(niceness,force,true) ) 
-		return;
-	base = cr->getBasePtr(RDB2_TITLEDB2);
-	if ( base && base->attemptMerge(niceness,force,true) ) 
-		return;
-	base = cr->getBasePtr(RDB2_TAGDB2);
-	if ( base && base->attemptMerge(niceness,force,true) ) 
-		return;
-	base = cr->getBasePtr(RDB2_LINKDB2);
-	if ( base && base->attemptMerge(niceness,force,true) ) 
-		return;
-	base = cr->getBasePtr(RDB2_SPIDERDB2);
-	if ( base && base->attemptMerge(niceness,force,true) ) 
-		return;
-	base = cr->getBasePtr(RDB2_CLUSTERDB2);
-	if ( base && base->attemptMerge(niceness,force,true) ) 
-		return;
-
-	// try next collection
-	s_lastCollnum++;
-
-	goto tryLoop;
 }
 
 // . return false and set g_errno on error
