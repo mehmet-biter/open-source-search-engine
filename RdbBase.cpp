@@ -20,18 +20,14 @@
 #include <algorithm>
 
 // how many rdbs are in "urgent merge" mode?
-int32_t g_numUrgentMerges = 0;
+static int32_t s_numUrgentMerges = 0;
 
 int32_t g_numThreads = 0;
 
-char g_dumpMode = 0;
+bool g_dumpMode = false;
 
 // since we only do one merge at a time, keep this class static
 class RdbMerge g_merge;
-
-// this one is used exclusively by tfndb so he can merge when titledb is
-// merging since titledb adds a lot of tfndb records
-class RdbMerge g_merge2;
 
 RdbBase::RdbBase()
 	: m_docIdFileIndex(new docids_t) {
@@ -91,7 +87,6 @@ void RdbBase::reset ( ) {
 	m_files[m_numFiles] = NULL;
 	// we're not in urgent merge mode yet
 	m_mergeUrgent = false;
-	m_waitingForTokenForMerge = false;
 	m_isMerging = false;
 	m_hasMergeFile = false;
 	m_isUnlinking  = false;
@@ -185,8 +180,7 @@ bool RdbBase::init(char *dir,
 		char indexName[64];
 		sprintf(indexName, "%s-saved.idx", m_dbname);
 		m_treeIndex.set(m_dir.getDir(), indexName, m_fixedDataSize, m_useHalfKeys, m_ks, m_rdb->getRdbId());
-		int32_t totalKeys = m_tree ? m_tree->getNumTotalKeys(m_collnum) : m_buckets->getNumKeys(m_collnum);
-		if (!(m_treeIndex.readIndex() && m_treeIndex.verifyIndex(totalKeys))) {
+		if (!(m_treeIndex.readIndex() && m_treeIndex.verifyIndex())) {
 			g_errno = 0;
 			log(LOG_WARN, "db: Could not read index file %s", indexName);
 
@@ -823,7 +817,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 		// set the index file's  filename
 		sprintf(name, "%s%04" PRId32".idx", m_dbname, fileId);
 		in->set(getDir(), name, m_fixedDataSize, m_useHalfKeys, m_ks, m_rdb->getRdbId());
-		if (!isNew && !(in->readIndex() && in->verifyIndex(f->getFileSize()))) {
+		if (!isNew && !(in->readIndex() && in->verifyIndex())) {
 			// if out of memory, do not try to regen for that
 			if (g_errno == ENOMEM) {
 				return -1;
@@ -1312,8 +1306,8 @@ void RdbBase::doneWrapper4 ( ) {
 	// now unset m_mergeUrgent if we're close to our limit
 	if ( m_mergeUrgent && m_numFiles - 14 < m_minToMerge ) {
 		m_mergeUrgent = false;
-		if ( g_numUrgentMerges > 0 ) g_numUrgentMerges--;
-		if ( g_numUrgentMerges == 0 )
+		if ( s_numUrgentMerges > 0 ) s_numUrgentMerges--;
+		if ( s_numUrgentMerges == 0 )
 			log(LOG_INFO,"merge: Exiting urgent "
 			    "merge mode for %s.",m_dbname);
 	}
@@ -1404,17 +1398,12 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 		return false;
 	}
 
-	// nor if EITHER of the merge classes are suspended
+	// nor if the merge class is suspended
 	if ( g_merge.isSuspended()  ) {
 		logTrace( g_conf.m_logTraceRdbBase, "END, is suspended" );
 		return false;
 	}
 	
-	if ( g_merge2.isSuspended() ) {
-		logTrace( g_conf.m_logTraceRdbBase, "END, is suspended (2)" );
-		return false;
-	}
-
 	// shutting down? do not start another merge then
 	if ( g_process.m_mode == EXIT_MODE ) {
 		logTrace( g_conf.m_logTraceRdbBase, "END, shutting down" );
@@ -1566,13 +1555,11 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 		m_mergeUrgent = true;
 		if ( doLog ) 
 			log(LOG_INFO,"merge: Entering urgent merge mode for %s coll=%s.", m_dbname,m_coll);
-		g_numUrgentMerges++;
+		s_numUrgentMerges++;
 	}
 
 
-	// tfndb has his own merge class since titledb merges write tfndb recs
-	RdbMerge *m = &g_merge;
-	if ( m->isMerging() )
+	if ( g_merge.isMerging() )
 	{
 		logTrace( g_conf.m_logTraceRdbBase, "END, is merging" );
 		return false;
@@ -1653,16 +1640,6 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 		logTrace( g_conf.m_logTraceRdbBase, "END, already merging this" );
 		return false;
 	}
-	// bail if already waiting for it
-	if ( m_waitingForTokenForMerge ) {
-		if ( doLog ) 
-			log(LOG_INFO,"merge: Already requested token. "
-			    "Request for %s pending.",m_dbname);
-		logTrace( g_conf.m_logTraceRdbBase, "END, waiting for token" );
-		return false;
-	}
-	// score it
-	m_waitingForTokenForMerge = true;
 
 	// remember niceness for calling g_merge.merge()
 	m_niceness = niceness;
@@ -1676,14 +1653,9 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 		    m_dbname,mstrerror(g_errno));
 		g_errno = 0 ;
 		log(LOG_LOGIC,"merge: attemptMerge: %s: uh oh...",m_dbname);
-		// undo request
-		m_waitingForTokenForMerge = false;		 
 		// we don't have the token, so we're fucked...
 		return false;
 	}
-
-	// don't repeat
-	m_waitingForTokenForMerge = false;
 
 	// . if we are significantly over our m_minToMerge limit
 	//   then set m_mergeUrgent to true so merge disk operations will
@@ -1697,11 +1669,11 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 		log(LOG_INFO,
 		    "merge: Entering urgent merge mode (2) for %s coll=%s.", 
 		    m_dbname,m_coll);
-		g_numUrgentMerges++;
+		s_numUrgentMerges++;
 	}
 
 	// sanity check
-	if ( m_isMerging || m->isMerging() ) {
+	if ( m_isMerging || g_merge.isMerging() ) {
 		//if ( m_doLog )
 			//log(LOG_INFO,
 			//"merge: Someone already merging. Waiting for "
@@ -1795,7 +1767,7 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 			    "engineer for %s coll=%s",m_dbname,m_coll);
 			if ( m_mergeUrgent ) {
 				log(LOG_WARN, "merge: leaving urgent merge mode");
-				g_numUrgentMerges--;
+				s_numUrgentMerges--;
 				m_mergeUrgent = false;
 			}
 			return false;
@@ -2123,15 +2095,14 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 	logTrace( g_conf.m_logTraceRdbBase, "merge!" );
 	// . start the merge
 	// . returns false if blocked, true otherwise & sets g_errno
-	if (!m->merge(rdbId,
-	              m_collnum,
-	              m_files[mergeFileNum],
-	              m_maps[mergeFileNum],
-	              m_indexes[mergeFileNum],
-	              m_mergeStartFileNum,
-	              m_numFilesToMerge,
-	              m_niceness,
-	              m_ks)) {
+	if (!g_merge.merge(rdbId,
+	                   m_collnum,
+	                   m_files[mergeFileNum],
+	                   m_maps[mergeFileNum],
+	                   m_indexes[mergeFileNum],
+	                   m_mergeStartFileNum,
+	                   m_numFilesToMerge,
+	                   m_niceness)) {
 		// we started the merge so return true here
 		logTrace( g_conf.m_logTraceRdbBase, "END, started OK" );
 		return true;

@@ -328,6 +328,12 @@ static bool CommandInsertUrlFiltersRow ( char *rec ) {
 	}
 	// need this
 	CollectionRec *cr = g_collectiondb.getRec ( collnum );
+
+	if( !cr ) {
+		logError("CollectionRec %d could not be looked up", (int)collnum);
+		return false;
+	}
+
 	// get the row #
 	char *data = getDataFromParmRec ( rec );
 	int32_t rowNum = atol(data);//*(int32_t *)data;
@@ -364,6 +370,12 @@ static bool CommandRemoveUrlFiltersRow ( char *rec ) {
 	}
 	// need this
 	CollectionRec *cr = g_collectiondb.getRec ( collnum );
+
+	if( !cr ) {
+		logError("CollectionRec %d could not be looked up", (int)collnum);
+		return false;
+	}
+
 	// get the row #
 	char *data = getDataFromParmRec ( rec );
 	int32_t rowNum = atol(data);
@@ -2580,10 +2592,13 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 		  t == TYPE_FILTER           ) {
 		if ( fromRequest && *(char *)(THIS + m->m_off + j) == atol(s))
 			return;
-		if ( fromRequest)oldVal = (float)*(char *)(THIS + m->m_off +j);
-		*(char *)(THIS + m->m_off + j) = atol ( s );
+		if ( fromRequest) {
+			oldVal = (float)*(char *)(THIS + m->m_off +j);
+		}
+		*(char *)(THIS + m->m_off + j) = s ? atol(s) : 0;
  		newVal = (float)*(char *)(THIS + m->m_off + j);
-		goto changed; }
+		goto changed; 
+	}
 	else if ( t == TYPE_CHARPTR ) {
 		// "s" might be NULL or m->m_def...
 		*(const char **)(THIS + m->m_off + j) = s;
@@ -2594,47 +2609,55 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 	}
 	else if ( t == TYPE_CMD ) {
 		log(LOG_LOGIC, "conf: Parms: TYPE_CMD is not a cgi var.");
-		return;	}
+		return;	
+	}
 	else if ( t == TYPE_DATE2 || t == TYPE_DATE ) {
-		int32_t v = (int32_t)atotime ( s );
+		int32_t v = s ? (int32_t)atotime(s) : 0;
 		if ( fromRequest && *(int32_t *)(THIS + m->m_off + 4*j) == v )
 			return;
 		*(int32_t *)(THIS + m->m_off + 4*j) = v;
 		if ( v < 0 ) log("conf: Date for <%s> of \""
 				 "%s\" is not in proper format like: "
 				 "01 Jan 1980 22:45",m->m_xml,s);
-		goto changed; }
+		goto changed; 
+	}
 	else if ( t == TYPE_FLOAT ) {
-		if( fromRequest &&
-		    *(float *)(THIS + m->m_off + 4*j) == (float)atof ( s ) )
+		if( fromRequest && *(float *)(THIS + m->m_off + 4*j) == (float)atof ( s ) ) {
 			return;
+		}
 		// if changed within .00001 that is ok too, do not count
 		// as changed, the atof() has roundoff errors
 		//float curVal = *(float *)(THIS + m->m_off + 4*j);
 		//float newVal = atof(s);
 		//if ( newVal < curVal && newVal + .000001 >= curVal ) return;
 		//if ( newVal > curVal && newVal - .000001 <= curVal ) return;
-		if ( fromRequest ) oldVal = *(float *)(THIS + m->m_off + 4*j);
-		*(float *)(THIS + m->m_off + 4*j) = (float)atof ( s );
+		if ( fromRequest ) {
+			oldVal = *(float *)(THIS + m->m_off + 4*j);
+		}
+		*(float *)(THIS + m->m_off + 4*j) = s ? (float)atof ( s ) : 0;
 		newVal = *(float *)(THIS + m->m_off + 4*j);
-		goto changed; }
+		goto changed; 
+	}
 	else if ( t == TYPE_DOUBLE ) {
-		if( fromRequest &&
-		    *(double *)(THIS + m->m_off + 4*j) == (double)atof ( s ) )
+		if( fromRequest && *(double *)(THIS + m->m_off + 4*j) == (double)atof ( s ) ) {
 			return;
-		if ( fromRequest ) oldVal = *(double *)(THIS + m->m_off + 4*j);
-		*(double *)(THIS + m->m_off + 4*j) = (double)atof ( s );
+		}
+		if ( fromRequest ) {
+			oldVal = *(double *)(THIS + m->m_off + 4*j);
+		}
+		*(double *)(THIS + m->m_off + 4*j) = s ? (double)atof ( s ) : 0;
 		newVal = *(double *)(THIS + m->m_off + 4*j);
-		goto changed; }
+		goto changed; 
+	}
 	else if ( t == TYPE_IP ) {
 		if ( fromRequest && *(int32_t *)(THIS + m->m_off + 4*j) ==
 		     (int32_t)atoip (s,strlen(s) ) )
 			return;
-		*(int32_t *)(THIS + m->m_off + 4*j) = (int32_t)atoip (s,strlen(s) );
-		goto changed; }
-	else if ( t == TYPE_LONG || t == TYPE_LONG_CONST || t == TYPE_RULESET||
-		  t == TYPE_SITERULE ) {
-		int32_t v = atol ( s );
+		*(int32_t *)(THIS + m->m_off + 4*j) = s ? (int32_t)atoip(s,strlen(s)) : 0;
+		goto changed; 
+	}
+	else if ( t == TYPE_LONG || t == TYPE_LONG_CONST || t == TYPE_RULESET || t == TYPE_SITERULE ) {
+		int32_t v = s ? atol(s) : 0;
 		// min is considered valid if >= 0
 		if ( m->m_min >= 0 && v < m->m_min ) v = m->m_min;
 		if ( fromRequest && *(int32_t *)(THIS + m->m_off + 4*j) == v )
@@ -2642,17 +2665,17 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 		if ( fromRequest)oldVal=(float)*(int32_t *)(THIS + m->m_off +4*j);
 		*(int32_t *)(THIS + m->m_off + 4*j) = v;
 		newVal = (float)*(int32_t *)(THIS + m->m_off + 4*j);
-		goto changed; }
+		goto changed; 
+	}
 	else if ( t == TYPE_LONG_LONG ) {
-		if ( fromRequest &&
-		     *(uint64_t *)(THIS + m->m_off+8*j)==
-		     strtoull(s,NULL,10))
+		if ( fromRequest && *(uint64_t *)(THIS + m->m_off+8*j) == strtoull(s,NULL,10)) {
 			return;
-		*(int64_t *)(THIS + m->m_off + 8*j) = strtoull(s,NULL,10);
+		}
+		*(int64_t *)(THIS + m->m_off + 8*j) = s ? strtoull(s,NULL,10) : 0;
 		goto changed; }
 	// like TYPE_STRING but dynamically allocates
 	else if ( t == TYPE_SAFEBUF ) {
-		int32_t len = strlen(s);
+		int32_t len = s ? strlen(s) : 0;
 		// no need to truncate since safebuf is dynamic
 		//if ( len >= m->m_size ) len = m->m_size - 1; // truncate!!
 		//char *dst = THIS + m->m_off + m->m_size*j ;
@@ -2694,6 +2717,9 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 		  t == TYPE_STRINGBOX      ||
 		  t == TYPE_STRINGNONEMPTY ||
 		  t == TYPE_TIME            ) {
+		if( !s ) {
+			return;
+		}
 		int32_t len = strlen(s);
 		if ( len >= m->m_size ) len = m->m_size - 1; // truncate!!
 		char *dst = THIS + m->m_off + m->m_size*j ;
@@ -2717,7 +2743,8 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 		// . used for CollectionRec::m_htmlHeadLen and m_htmlTailLen
 		if ( m->m_plen >= 0 )
 			*(int32_t *)(THIS + m->m_plen) = len ;
-		goto changed; }
+		goto changed;
+	}
  changed:
 	// tell gigablast the value is EXPLICITLY given -- no longer based
 	// on default.conf
@@ -2998,7 +3025,11 @@ bool Parms::setFromFile ( void *THIS        ,
 		// get the value
 		//v = xml.getString ( nn , nn+2 , m->m_xml , &vlen );
 		// this only happens when tag is there, but without a value
-		if ( ! v || vlen == 0 ) { vlen = 0; v = tt; }
+		if ( ! v || vlen == 0 ) {
+			vlen = 0;
+			v = tt;
+		}
+
 		//c = v[vlen];
 		v[vlen]='\0';
 		if ( vlen == 0 ){
@@ -3043,6 +3074,12 @@ bool Parms::setFromFile ( void *THIS        ,
 		// point to it
 		v    = m_xml2.getNode    ( nn + 1 );
 		vlen = m_xml2.getNodeLen ( nn + 1 );
+
+		if( !v ) {
+			vlen = 0;
+			v = tt;
+		}
+
 		// if a back tag... set the value to the empty string
 		if ( v[0] == '<' && v[1] == '/' ) vlen = 0;
 		// now, extricate from the <![CDATA[ ... ]]> tag if we need to
@@ -3055,7 +3092,13 @@ bool Parms::setFromFile ( void *THIS        ,
 			if ( v[0] != '<' && nn + 2 < numNodes2 ) {
 				v    = m_xml2.getNode    ( nn + 2 );
 				vlen = m_xml2.getNodeLen ( nn + 2 );
+
+				if( !v ) {
+					vlen = 0;
+					v = tt;
+				}
 			}
+
 			// should be a <![CDATA[...]]>
 			if ( vlen<12 || strncasecmp(v,"<![CDATA[",9)!=0 ) {
 				log("conf: No <![CDATA[...]]> tag found "
@@ -3063,11 +3106,18 @@ bool Parms::setFromFile ( void *THIS        ,
 				    m->m_xml);
 				v    = oldv;
 				vlen = oldvlen;
+
+				if( !v ) {
+					vlen = 0;
+					v = tt;
+				}
 			}
 			// point to the nugget
 			else {
-				v    += 9;
-				vlen -= 12;
+				if( vlen > 0 ) {
+					v    += 9;
+					vlen -= 12;
+				}
 			}
 		}
 
@@ -6756,7 +6806,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_LONG;
 	// keep this way smaller than that 800k we had in here, 100k seems
 	// to be way better performance for qps
-	m->m_def   = "500000";
+	m->m_def   = "100000";
 	m->m_units = "bytes";
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
@@ -7499,20 +7549,6 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_INJECT;
 	m->m_off   = offsetof(InjectionRequest,ptr_metadata);
 	m++;
-
-
-	m->m_title = "get sectiondb voting info";
-	m->m_desc = "Return section information of injected content for "
-		"the injected subdomain. ";
-	m->m_cgi   = "sections";
-	m->m_obj   = OBJ_IR;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m->m_flags = PF_API|PF_NOHTML;
-	m->m_page  = PAGE_INJECT;
-	m->m_off   = offsetof(InjectionRequest,m_getSections);
-	m++;
-
 
 	///////////////////
 	//

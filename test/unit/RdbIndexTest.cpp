@@ -245,3 +245,26 @@ TEST(RdbIndexTest, DeleteAddKey) {
 	// cleanup
 	index.unlink();
 }
+
+TEST(RdbIndexTest, DeleteAddKeySave) {
+	RdbIndex index;
+	index.set(".", "test-posdbidx", Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB);
+
+	static const int64_t termId = 1;
+	static const int64_t docId = 1;
+	static const int32_t wordPos = 1;
+
+	addPosdbKey(&index, termId, docId, wordPos, true);
+	index.writeIndex();
+
+	addPosdbKey(&index, termId, docId, wordPos, false);
+	index.writeIndex();
+
+	auto docIds = index.getDocIds();
+	EXPECT_EQ(1, docIds->size());
+	EXPECT_EQ(docId, getDocId(docIds, 0));
+	EXPECT_FALSE(isDel(docIds, 0));
+
+	// cleanup
+	index.unlink();
+}

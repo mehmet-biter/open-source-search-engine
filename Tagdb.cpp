@@ -22,15 +22,6 @@ static bool s_initialized = false;
 static GbMutex s_htMutex;
 
 
-// to stdout
-int32_t Tag::print ( ) {
-	SafeBuf sb;
-	printToBuf ( &sb );
-
-	// dump that
-	return fprintf(stderr,"%s\n",sb.getBufStart());
-}
-
 bool Tag::printToBuf ( SafeBuf *sb ) {
 	sb->safePrintf("k.hsthash=%016" PRIx64" k.duphash=%08" PRIx32" k.sitehash=%08" PRIx32" ",
 	               m_key.n1, (int32_t)(m_key.n0>>32), (int32_t)(m_key.n0&0xffffffff));
@@ -394,8 +385,9 @@ bool Tag::isType ( const char *t ) {
 	return (m_type == h);
 }
 
-TagRec::TagRec ( ) {
+TagRec::TagRec() {
 	m_numListPtrs = 0;
+	memset(&m_listPtrs, 0, sizeof(m_listPtrs));
 }
 
 void TagRec::constructor ( ) {
@@ -2135,7 +2127,9 @@ bool sendReply2 ( void *state ) {
 
 		// show the value
 		if ( ctag ) {
-			ctag->printDataToBuf( &sb );
+			if( !ctag->printDataToBuf( &sb ) ) {
+				sb.safePrintf( "ERROR handling ctag value" );
+			}
 		}
 
 		// close up the input tag

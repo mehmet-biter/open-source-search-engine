@@ -228,7 +228,7 @@ bool Loop::addSlot ( bool forReading , int fd, void *state, void (* callback)(in
 	}
 	// sanity
 	if ( fd > MAX_NUM_FDS ) {
-		log("loop: bad fd of %" PRId32,(int32_t)fd);
+		log(LOG_ERROR, "loop: bad fd of %" PRId32,(int32_t)fd);
 		g_process.shutdownAbort(true);
 	}
 
@@ -474,8 +474,7 @@ Slot *Loop::getEmptySlot ( ) {
 	Slot *s = m_head;
 	if ( ! s ) {
 		g_errno = EBUFTOOSMALL;
-		log("loop: No empty slots available. "
-		    "Increase #define MAX_SLOTS.");
+		log(LOG_WARN, "loop: No empty slots available. Increase #define MAX_SLOTS.");
 		return NULL;
 	}
 	m_head = s->m_nextAvail;

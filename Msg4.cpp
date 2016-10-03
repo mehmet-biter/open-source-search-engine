@@ -1113,7 +1113,15 @@ bool loadAddsInProgress ( const char *prefix ) {
 	// . deserialize each hostbuf
 	// . the # of host bufs
 	int32_t numHostBufs;
-	read ( fd , (char *)&numHostBufs , 4 ); 
+	int32_t nb;
+	nb = (int32_t)read(fd, (char *)&numHostBufs, 4); 
+	if ( nb != 4 ) {
+		close ( fd );
+		logError("Read of message size returned %" PRId32 " bytes instead of 4", nb);
+		logTrace( g_conf.m_logTraceMsg4, "END - returning false" );
+		return false;
+	}
+
 	p += 4;
 	if ( numHostBufs != s_numHostBufs ) {
 		close ( fd );
@@ -1128,10 +1136,18 @@ bool loadAddsInProgress ( const char *prefix ) {
 		if ( p >= pend ) {
 			break;
 		}
+		
 		// USED size of the buf
 		int32_t used;
-		read ( fd , (char *)&used , 4 );
+		nb = (int32_t)read(fd, (char *)&used, 4);
+		if ( nb != 4 ) {
+			close ( fd );
+			logError("Read of message size returned %" PRId32 " bytes instead of 4", nb);
+			logTrace( g_conf.m_logTraceMsg4, "END - returning false" );
+			return false;
+		}
 		p += 4;
+
 		// if used is 0, a NULL buffer, try to read the next one
 		if ( used == 0 || used == 4 ) { 
 			s_hostBufs    [i] = NULL;
@@ -1156,7 +1172,7 @@ bool loadAddsInProgress ( const char *prefix ) {
 		}
 		
 		// the buf itself
-		int32_t nb = read ( fd , buf , used );
+		nb = (int32_t)read(fd, buf, used);
 		// sanity
 		if ( nb != used ) {
 			close ( fd );
@@ -1187,9 +1203,18 @@ bool loadAddsInProgress ( const char *prefix ) {
 			break;
 		}
 
+		int32_t nb;
+
 		// hostid sent to
 		int32_t hostId;
-		read ( fd , (char *)&hostId , 4 );
+		nb = (int32_t)read(fd, (char *)&hostId, 4);
+		if ( nb != 4 ) {
+			close ( fd );
+			logError("Read of message size returned %" PRId32 " bytes instead of 4", nb);
+			logTrace( g_conf.m_logTraceMsg4, "END - returning false" );
+			return false;
+		}
+
 		p += 4;
 		// get host
 		Host *h = g_hostdb.getHost(hostId);
@@ -1203,7 +1228,6 @@ bool loadAddsInProgress ( const char *prefix ) {
 		}
 
 		int32_t numBytes;
-		int32_t nb;
 		nb = (int32_t)read(fd, (char *)&numBytes, 4);
 		if ( nb != 4 ) {
 			close ( fd );
@@ -1224,7 +1248,7 @@ bool loadAddsInProgress ( const char *prefix ) {
 		}
 		
 		// the buffer
-		nb = (int32_t)read ( fd , buf , numBytes );
+		nb = (int32_t)read(fd, buf, numBytes);
 		if ( nb != numBytes ) {
 			close ( fd );
 			log(LOG_ERROR,"%s:%s: build: bad msg4 buf read", __FILE__, __func__ );

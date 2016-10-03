@@ -2179,7 +2179,10 @@ void gotCrawlInfoReply ( void *state , UdpSlot *slot ) {
 		if ( ! cr->m_crawlInfoBuf.getBufStart() ) {
 			int32_t need = sizeof(CrawlInfo) * g_hostdb.getNumHosts();
 			cr->m_crawlInfoBuf.setLabel("cibuf");
-			cr->m_crawlInfoBuf.reserve(need);
+			if( !cr->m_crawlInfoBuf.reserve(need) ) {
+				logError("Could not reserve needed %" PRId32 " bytes, bailing!", need);
+				return;
+			}
 			// in case one was udp server timed out or something
 			cr->m_crawlInfoBuf.zeroOut();
 		}

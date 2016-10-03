@@ -51,7 +51,7 @@ Rdb::Rdb ( ) {
 	m_isTitledb = false;
 	m_fn = 0;
 	m_dumpCollnum = 0;
-	m_inDumpLoop = 0;
+	m_inDumpLoop = false;
 	m_rdbId = RDB_NONE;
 	m_ks = 0;
 	m_pageSize = 0;
@@ -662,7 +662,6 @@ bool Rdb::close ( void *state , void (* callback)(void *state ), bool urgent , b
 	// suspend any merge permanently (not just for this rdb), we're exiting
 	if ( m_isReallyClosing ) {
 		g_merge.suspendMerge();
-		g_merge2.suspendMerge();
 	}
 	// . allow dumps to complete unless we're urgent
 	// . if we're urgent, we'll end up with a half dumped file, which
@@ -686,25 +685,6 @@ bool Rdb::close ( void *state , void (* callback)(void *state ), bool urgent , b
 	     ! m_urgent &&
 	     g_merge.getRdbId() == m_rdbId &&
 	     ( g_merge.getNumThreads() || g_merge.isDumping() ) ) {
-		// do not spam this message
-		int64_t now = gettimeofdayInMilliseconds();
-		if ( now - m_lastTime >= 500 ) {
-			log(LOG_INFO,"db: Waiting for merge to finish last "
-			    "write for %s.",m_dbname);
-			m_lastTime = now;
-		}
-		g_loop.registerSleepCallback (500,this,closeSleepWrapper);
-		m_registered = true;
-		// allow to be called again
-		m_isSaving = false;
-		return false;
-	}
-	if ( m_isReallyClosing && g_merge2.isMerging() && 
-	     // if we cored, we are urgent and need to make sure we save even
-	     // if we are merging this rdb...
-	     ! m_urgent &&
-	     g_merge2.getRdbId() == m_rdbId &&
-	     ( g_merge2.getNumThreads() || g_merge2.isDumping() ) ) {
 		// do not spam this message
 		int64_t now = gettimeofdayInMilliseconds();
 		if ( now - m_lastTime >= 500 ) {
@@ -1026,7 +1006,7 @@ bool Rdb::dumpTree ( int32_t niceness ) {
 	// . wait for all unlinking and renaming activity to flush out
 	// . we do not want to dump to a filename in the middle of being
 	//   unlinked
-	if ( g_errno || g_numThreads > 0 ) {
+	if ( g_numThreads > 0 ) {
 		// update this so we don't try too much and flood the log
 		// with error messages from RdbDump.cpp calling log() and
 		// quickly kicking the log file over 2G which seems to 
@@ -1945,10 +1925,22 @@ bool Rdb::addRecord(collnum_t collnum, char *key, char *data, int32_t dataSize) 
 	KEYXOR(oppKey, 0x01);
 
 	if (m_useIndexFile) {
+		bool isSpecialKey;
+		if (m_rdbId == RDB_POSDB || m_rdbId == RDB2_POSDB2) {
+			isSpecialKey = (Posdb::getTermId(key) == POSDB_DELETEDOC_TERMID);
+		} else {
+			/// @todo ALC cater for other rdb types here
+			gbshutdownLogicError();
+		}
+
 		// there are no negative keys when we're using index (except special keys eg: posdb with termId 0)
 		// if we're adding key that have a corresponding opposite key, it means we want to remove the key from the tree
+		// even if it's a positive key (how else would we remove the special negative key?)
 		bool deleted = m_useTree ? m_tree.deleteNode(collnum, oppKey, true) : m_buckets.deleteNode(collnum, oppKey);
 		if (deleted) {
+			// assume that we don't need to delete from index even when we get positive special key
+			// since positive special key will only be inserted when a new document is added
+			// this means that other keys should overwrite the existing deleted docId
 			logTrace(g_conf.m_logTraceRdb, "END. %s: Key with corresponding opposite key deleted in tree. Returning true", m_dbname);
 			return true;
 		}
@@ -1965,14 +1957,15 @@ bool Rdb::addRecord(collnum_t collnum, char *key, char *data, int32_t dataSize) 
 			// we will have non-special keys here to simplify logic in XmlDoc::getMetaList (and we can't really be sure
 			// if the key we're adding is in RdbTree/RdbBuckets at that point of time. It could potentially be dumped
 			// after the check.
-			if (m_rdbId == RDB_POSDB || m_rdbId == RDB2_POSDB2) {
-				if (Posdb::getTermId(key) != POSDB_DELETEDOC_TERMID) {
-					logTrace(g_conf.m_logTraceRdb, "END. %s: Negative key with non-zero termId found. Returning true", m_dbname);
-					return true;
-				}
-			} else {
-				/// @todo ALC cater for other rdb types here
-				gbshutdownLogicError();
+			if (!isSpecialKey) {
+				logTrace(g_conf.m_logTraceRdb, "END. %s: Negative key with non-zero termId found. Returning true", m_dbname);
+				return true;
+			}
+		} else {
+			// make sure that positive special key is not persisted (reasons as delete key above; the XmlDoc::getMetaList part)
+			if (isSpecialKey) {
+				logTrace(g_conf.m_logTraceRdb, "END. %s: Positive key with zero termId found. Returning true", m_dbname);
+				return true;
 			}
 		}
 	} else {

@@ -118,11 +118,16 @@ bool loadUnicodeTable(UCPropTable *table, const char *filename, bool useChecksum
 
 	FILE *fp = fopen(filename, "r");
 	if (!fp) {
-		log( LOG_WARN, "uni: Couldn't open %s for reading", filename );
+		log(LOG_WARN, "Couldn't open [%s] for reading", filename );
 		return false;
 	}
 	fseek(fp,0,SEEK_END);
-	size_t fileSize = ftell(fp);
+	long fileSize = ftell(fp);
+	if( fileSize < 0 ) {
+		fclose(fp);
+		log(LOG_WARN, "Getting size of [%s] failed", filename);
+		return false;
+	}
 	rewind(fp);
 	char *buf = (char*)mmalloc(fileSize, "Unicode");
 	if (!buf) {
@@ -131,7 +136,7 @@ bool loadUnicodeTable(UCPropTable *table, const char *filename, bool useChecksum
 		return false;
 	}
 	size_t nread = fread(buf, 1, fileSize, fp);
-	if (nread != fileSize) {
+	if (nread != (size_t)fileSize) {
 		fclose(fp);
 		mfree(buf, fileSize, "Unicode");
 		log(LOG_WARN, "uni: error reading %s", filename);
@@ -291,7 +296,12 @@ static bool loadKDecompTable(const char *baseDir) {
 		return false;
 	}
 	fseek(fp,0,SEEK_END);
-	size_t fileSize = ftell(fp);
+	long fileSize = ftell(fp);
+	if( fileSize <= 0 ) {
+		fclose(fp);
+		log(LOG_WARN, "uni: File [%s] not found or 0 bytes", filename);
+		return false;
+	}
 	rewind(fp);
 	char *buf = (char*)mmalloc(fileSize, "UnicodeProperties");
 	if (!buf) {
@@ -300,7 +310,7 @@ static bool loadKDecompTable(const char *baseDir) {
 		return false;
 	}
 	size_t nread = fread(buf, 1, fileSize, fp);
-	if (nread != fileSize) {
+	if (nread != (size_t)fileSize) {
 		fclose(fp);
 		mfree(buf, fileSize, "UnicodeProperties");
 		log(LOG_WARN, "uni: error reading %s", filename);

@@ -32,14 +32,6 @@ LIBS += -L$(BASE_DIR) -lcld2_full
 %: libgb.a $(BASE_DIR)/libcld2_full.so %.cpp
 	$(CXX) $(CPPFLAGS) $@.cpp $(LIBS) -o $@
 
-.PHONY: check
-check: TARGET_PRE="valgrind"
-check: test
-
-.PHONY: test
-test: all ucdata
-	-$(TARGET_PRE) ./$(TARGET) $(TEST_ARGS)
-
 .PHONY: clean
 clean:
 	rm -f *.o $(TARGETS) core.*

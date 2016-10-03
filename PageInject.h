@@ -36,8 +36,6 @@ class InjectionRequest {
 	char      m_dedup;
 	char      m_hasMime;
 	char      m_doConsistencyTesting;
-	char      m_getSections;
-	char      m_gotSections;
 	int32_t   m_charset;
 	int32_t   m_hopCount;
 	collnum_t m_collnum; // more reliable than m_coll
@@ -92,8 +90,6 @@ public:
 	void *m_state;
 	void (* m_callback )(void *state);
 
-	class ImportState *m_importState;
-
 	Msg7 ();
 	~Msg7 ();
 	bool m_inUse;
@@ -111,7 +107,5 @@ public:
 					  void (* callback)(void *) );
 
 };
-
-extern bool g_inPageInject;
 
 #endif // GB_PAGEINJECT_H

@@ -54,6 +54,33 @@ static const char *getSSLError(SSL *ssl, int ret) {
 	return "Unknown SSL Error";
 }
 
+
+TcpServer::TcpServer() {
+	m_port = -1;
+	m_sock = -1;
+	m_useSSL = false;
+	m_ctx = NULL;
+
+	// Coverity
+	m_requestHandler = NULL;
+	memset(&m_tcpSockets, 0, sizeof(m_tcpSockets));
+	m_lastFilled = 0;
+	m_numUsed = 0;
+	m_numIncomingUsed = 0;
+	memset(&m_actualSockets, 0, sizeof(m_actualSockets));
+	m_dummy = 0;
+	m_maxSocketsPtr = NULL;
+	m_doReadRateTimeouts = false;
+	m_getMsgSize = NULL;
+	m_getMsgPiece = NULL;
+	m_ready = false;
+	m_numOpen = 0;
+	m_numClosed = 0;
+	
+}
+
+
+
 // free all TcpSockets and their bufs
 void TcpServer::reset() {
 	// set not ready
@@ -1034,8 +1061,8 @@ bool TcpServer::closeLeastUsed ( int32_t maxIdleTime ) {
 	int64_t nowms;
 	if ( maxIdleTime > 0 ) nowms = gettimeofdayInMilliseconds();
 	// conver it to milliseconds
-	int64_t maxms ;
-	if ( maxIdleTime > 0 ) maxms = maxIdleTime * 1000;
+	int64_t maxms;
+	if ( maxIdleTime > 0 ) maxms = (int64_t)maxIdleTime * 1000;
 	
 	for ( int32_t i = 0 ; i <= m_lastFilled ; i++ ) {
 		TcpSocket *s = m_tcpSockets[i];
@@ -1294,7 +1321,7 @@ void readSocketWrapper2 ( int sd , void *state ) {
 	// so now send our https content
 	if ( s->m_tunnelMode == 1 ) {
 		// check the reply first.. make sure it is established
-		if ( strncmp(s->m_readBuf,"HTTP/1.0 200",12) != 0 ) {
+		if ( s->m_readBuf && strncmp(s->m_readBuf,"HTTP/1.0 200",12) != 0 ) {
 			log("tcp: failed to establish ssl connection through "
 			    "proxy. reply=%s",s->m_readBuf);
 			// 0 out the reply so it does not get indexed

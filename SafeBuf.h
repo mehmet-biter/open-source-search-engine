@@ -164,7 +164,7 @@ public:
 	bool brify( const char *s, int32_t slen, int32_t cols, const char *sep = "<br>",
 				bool isHtml = true );
 
-	bool hasDigits();
+	bool hasDigits() const;
 
 	// . like "1 minute ago" "5 hours ago" "3 days ago" etc.
 	// . "ts" is the delta-t in seconds
@@ -221,7 +221,7 @@ public:
 		return true;
 	}
 
-	int32_t indexOf(char c);
+	int32_t indexOf(char c) const;
 
 	bool  safeCdataMemcpy(const char *s, int32_t len);
 	bool  pushChar (char i) {

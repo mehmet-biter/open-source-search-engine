@@ -63,7 +63,49 @@ UdpServer::UdpServer ( ) {
 	m_buf = NULL;
 	m_outstandingConverts = 0;
 	m_writeRegistered = false;
+
+	// Coverity
+	m_nextTransId = 0;
+	memset(&m_handlers, 0, sizeof(m_handlers));
+	m_needToSend = false;
+	m_port = 0;
+	m_proto = NULL;
+	m_isShuttingDown = false;
+	m_needBottom = false;
+	m_requestsInWaiting = 0;
+	m_msg07sInWaiting = 0;
+	m_msgc1sInWaiting = 0;
+	m_msg25sInWaiting = 0;
+	m_msg39sInWaiting = 0;
+	m_msg20sInWaiting = 0;
+	m_msg0csInWaiting = 0;
+	m_msg0sInWaiting = 0;
+	m_ptrs = NULL;
+	m_numBuckets = 0;
+	m_bucketMask = 0;
+	m_bufSize = 0;
+	m_availableListHead = NULL;
+	m_activeListHead = NULL;
+	m_activeListTail = NULL;
+	m_callbackListHead = NULL;
+	m_callbackListTail = NULL;
+	m_numUsedSlots = 0;
+	m_numUsedSlotsIncoming = 0;
+	m_isDns = false;
+	m_eth0BytesIn = 0;
+	m_eth0BytesOut = 0;
+	m_eth0PacketsIn = 0;
+	m_eth0PacketsOut = 0;
+	m_eth1BytesIn = 0;
+	m_eth1BytesOut = 0;
+	m_eth1PacketsIn = 0;
+	m_eth1PacketsOut = 0;
+	m_outsiderPacketsIn = 0;
+	m_outsiderPacketsOut = 0;
+	m_outsiderBytesIn = 0;
+	m_outsiderBytesOut = 0;
 }
+
 
 UdpServer::~UdpServer() {
 	reset();
@@ -630,7 +672,10 @@ bool UdpServer::doSending(UdpSlot *slot, bool allowResends, int64_t now) {
 			m_needToSend = true;
 			// ok, now it should
 			if ( ! m_writeRegistered ) {
-				g_loop.registerWriteCallback ( m_sock, this, sendPollWrapper, 0 ); // niceness
+				if( !g_loop.registerWriteCallback ( m_sock, this, sendPollWrapper, 0 ) ) {
+					logError("registerWriteCallback failed");
+					return false;
+				}
 				m_writeRegistered = true;
 			}
 			return true;
@@ -1334,17 +1379,6 @@ bool UdpServer::makeCallbacks(int32_t niceness) {
 	// assume noone called
 	int32_t numCalled = 0;
 	if(niceness > 0) m_needBottom = false;
-
-	bool doNicenessConversion = true;
-
-	// this stops merges from getting done because the write threads never
-	// get launched
-	if ( g_numUrgentMerges )
-		doNicenessConversion = false;
-
-	// or if saving or something
-	if ( g_process.m_mode )
-		doNicenessConversion = false;
 
 	int64_t startTime = gettimeofdayInMillisecondsLocal();
 

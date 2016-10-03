@@ -577,9 +577,9 @@ void handleRequest7 ( UdpSlot *slot , int32_t netnice ) {
 		g_process.shutdownAbort(true);
 	}
 
-	if ( ! xd->injectDoc ( ir->ptr_url , // m_injectUrlBuf.getBufStart() ,
+	if ( ! xd->injectDoc ( ir->ptr_url ,
 			       cr ,
-			       ir->ptr_content , // start , // content ,
+			       ir->ptr_content ,
 			       // if this doc is a 'container doc' then
 			       // hasMime applies to the SUBDOCS only!!
 			       ir->m_hasMime, // content starts with http mime?
@@ -655,7 +655,6 @@ void Msg7::reset() {
 	m_socket = NULL;
 	m_state = NULL;
 	m_callback = NULL;
-	m_importState = NULL;
 	m_format = 0;
 	m_stashxd = NULL;
 }
@@ -1037,7 +1036,11 @@ bool ImportState::importLoop ( ) {
 	sbuf->reset();
 
 	// ensure we have enough room
-	sbuf->reserve ( need );
+	if( !sbuf->reserve ( need ) ) {
+		logError("Could not reserve needed %" PRId32 " bytes, bailing!", need);
+		return false;
+	}
+
 
 	// collnum first 4 bytes
 	sbuf->pushLong( (int32_t)m_collnum );
@@ -1171,7 +1174,7 @@ Multicast *ImportState::getAvailMulticast() { // Msg7 ( ) {
 
 	// respect the user limit for this coll
 	int64_t out = m_numOut - m_numIn;
-	if ( out >= cr->m_numImportInjects ) {
+	if ( cr && out >= cr->m_numImportInjects ) {
 		g_errno = 0;
 		return NULL;
 	}

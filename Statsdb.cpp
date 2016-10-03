@@ -108,6 +108,18 @@ Label *Statsdb::getLabel ( int32_t labelHash ) {
 Statsdb::Statsdb ( ) {
 	m_init = false;
 	m_disabled = true;
+	
+	// Coverity
+	m_sb2 = NULL;
+	m_niceness = 0;
+	m_bx = 0;
+	m_by = 0;
+	m_samples = 0;
+	m_state = NULL;
+	m_callback = NULL;
+	m_done = false;
+	m_t1 = 0;
+	m_t2 = 0;
 }
 
 bool Statsdb::init ( ) {

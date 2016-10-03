@@ -320,16 +320,9 @@ TEST_F(PosdbNoMergeTest, AddDeleteRecordMultiple) {
 	EXPECT_TRUE(list.isExhausted());
 }
 
-// delete keys are not persisted when rdb files are not present
 TEST_F(PosdbNoMergeTest, AddRecordDeleteDocWithoutRdbFiles) {
 	static const int total_records = 10;
 	static const int64_t docId = 1;
-
-	for (int i = total_records; i >= 0; i--) {
-		addPosdbKey(i, docId, (i == 0));
-	}
-
-	saveAndReloadPosdbBucket();
 
 	// use extremes
 	const char *startKey = KEYMIN();
@@ -339,10 +332,42 @@ TEST_F(PosdbNoMergeTest, AddRecordDeleteDocWithoutRdbFiles) {
 
 	RdbBuckets *buckets = g_posdb.getRdb()->getBuckets();
 	RdbList list;
-	buckets->getList(0, startKey, endKey, -1, &list, &numPosRecs, &numNegRecs, Posdb::getUseHalfKeys());
+
+	// spider document
+	for (int i = 1; i < total_records; ++i) {
+		addPosdbKey(i, docId);
+	}
+	saveAndReloadPosdbBucket();
 
 	// verify that data returned is the same as data inserted above
-	for (int i = 1; i <= total_records; ++i, list.skipCurrentRecord()) {
+	buckets->getList(0, startKey, endKey, -1, &list, &numPosRecs, &numNegRecs, Posdb::getUseHalfKeys());
+	for (int i = 1; i < total_records; ++i, list.skipCurrentRecord()) {
+		const char *rec = list.getCurrentRec();
+		EXPECT_EQ(i, Posdb::getTermId(rec));
+		EXPECT_EQ(docId, Posdb::getDocId(rec));
+		EXPECT_FALSE(KEYNEG(rec));
+	}
+	EXPECT_TRUE(list.isExhausted());
+
+	// deleted document
+	for (int i = 0; i < total_records; ++i) {
+		addPosdbKey(i, docId, true);
+	}
+	saveAndReloadPosdbBucket();
+
+	// verify that data returned is the same as data inserted above
+	buckets->getList(0, startKey, endKey, -1, &list, &numPosRecs, &numNegRecs, Posdb::getUseHalfKeys());
+	EXPECT_TRUE(list.isExhausted());
+
+	// respidered document
+	for (int i = 0; i < total_records; ++i) {
+		addPosdbKey(i, docId);
+	}
+	saveAndReloadPosdbBucket();
+
+	// verify that data returned is the same as data inserted above
+	buckets->getList(0, startKey, endKey, -1, &list, &numPosRecs, &numNegRecs, Posdb::getUseHalfKeys());
+	for (int i = 1; i < total_records; ++i, list.skipCurrentRecord()) {
 		const char *rec = list.getCurrentRec();
 		EXPECT_EQ(i, Posdb::getTermId(rec));
 		EXPECT_EQ(docId, Posdb::getDocId(rec));

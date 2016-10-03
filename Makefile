@@ -64,7 +64,10 @@ OBJS_O3 = \
 	SafeBuf.o sort.o Statistics.o \
 	TopTree.o \
 	UrlComponent.o UrlParser.o UdpStatistic.o \
+	MergeSpaceCoordinator.o \
 	GbSignature.o \
+
+>>>>>>> master
 
 OBJS = $(OBJS_O0) $(OBJS_O1) $(OBJS_O2) $(OBJS_O3)
 
@@ -171,6 +174,7 @@ CPPFLAGS += -Wno-write-strings
 CPPFLAGS += -Wno-maybe-uninitialized
 CPPFLAGS += -Wno-unused-but-set-variable
 CPPFLAGS += -Wno-unused-parameter
+CPPFLAGS += -Wno-unused-result            #gcc's semantics are sub-optimal
 
 else ifeq ($(CXX), clang++)
 # dependencies

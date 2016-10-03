@@ -37,11 +37,7 @@
 #include "RdbIndex.h"
 #include "GbMutex.h"
 
-// how many rdbs are in "urgent merge" mode?
-extern int32_t g_numUrgentMerges;
-
 extern RdbMerge g_merge;
-extern RdbMerge g_merge2;
 
 class RdbBuckets;
 class RdbTree;
@@ -307,8 +303,6 @@ public:
 
 	bool      m_niceness;
 
-	bool      m_waitingForTokenForMerge;
-
 	// we now determine when in merge mode
 	bool      m_isMerging;
 
@@ -330,6 +324,6 @@ public:
 
 extern int32_t g_numThreads;
 
-extern char g_dumpMode;
+extern bool g_dumpMode;
 
 #endif // GB_RDBBASE_H

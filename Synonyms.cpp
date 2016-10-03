@@ -18,6 +18,29 @@
 
 Synonyms::Synonyms() {
 	m_synWordBuf.setLabel("syswbuf");
+	
+	// Coverity
+	m_words = NULL;
+	m_aids = NULL;
+	m_wids0 = NULL;
+	m_wids1 = NULL;
+	m_termPtrs = NULL;
+	m_termOffs = NULL;
+	m_termLens = NULL;
+	m_numAlnumWords = NULL;
+	m_numAlnumWordsInBase = NULL;
+	m_src = NULL;
+	m_langIds = NULL;
+	m_aidsPtr = NULL;
+	m_wids0Ptr = NULL;
+	m_wids1Ptr = NULL;
+	m_termPtrsPtr = NULL;
+	m_termOffsPtr = NULL;
+	m_termLensPtr = NULL;
+	m_numAlnumWordsPtr = NULL;
+	m_numAlnumWordsInBasePtr = NULL;
+	m_srcPtr = NULL;
+	m_langIdsPtr = NULL;
 }
 
 Synonyms::~Synonyms() {

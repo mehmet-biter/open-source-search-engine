@@ -48,7 +48,7 @@ public:
 	bool readIndex();
 	bool readIndex2();
 
-	bool verifyIndex(int64_t dataFileSize);
+	bool verifyIndex();
 
 	bool unlink() { return m_file.unlink(); }
 
@@ -79,7 +79,10 @@ public:
 
 private:
 	void addRecord_unlocked(char *key, bool isGenerateIndex);
+
 	docidsconst_ptr_t mergePendingDocIds();
+	docidsconst_ptr_t mergePendingDocIds_unlocked();
+
 	void swapDocIds(docidsconst_ptr_t docIds);
 
 	// the index file
@@ -91,7 +94,7 @@ private:
 	rdbid_t m_rdbId;
 
 	// verification
-	int64_t m_dataFileSize;
+	int64_t m_version;
 
 	// always sorted
 	docidsconst_ptr_t m_docIds;

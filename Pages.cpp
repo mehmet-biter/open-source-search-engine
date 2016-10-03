@@ -1520,7 +1520,6 @@ bool sendPageAPI ( TcpSocket *s , HttpRequest *r ) {
 
 	bool printed = false;
 	for ( int32_t i = 0 ; i < s_numPages ; i++ ) {
-		if ( i == PAGE_NONE ) continue;
 		if ( s_pages[i].m_pgflags & PG_NOAPI ) continue;
 		if ( printed )
 			p.safePrintf("<hr><br>\n");

@@ -78,8 +78,6 @@ public:
 	XmlDoc m_xd;
 };
 
-bool g_inPageInject = false;
-
 // TODO: meta redirect tag to host if hostId not ours
 static bool processLoop ( void *state ) ;
 static bool gotXmlDoc ( void *state ) ;

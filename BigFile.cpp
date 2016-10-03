@@ -63,7 +63,8 @@ static void addPendingUnlink(const char *filename) {
 			gbshutdownLogicError();
 	}
 	UnlinkFilename ruf;
-	strcpy(ruf.filename,filename);
+	strncpy(ruf.filename, filename, sizeof(ruf.filename)-1);
+	ruf.filename[ sizeof(ruf.filename)-1 ] = '\0';
 	s_pendingFileMetaOperations.push_back(ruf);
 }
 

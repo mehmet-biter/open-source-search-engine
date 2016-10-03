@@ -3,9 +3,28 @@
 #include "Process.h"
 #include "Spider.h"
 
-RdbMerge::RdbMerge() {
-	m_doneMerging     = false;
-	reset();
+RdbMerge::RdbMerge()
+  : m_doneMerging(false),
+    m_numThreads(0),
+    m_startFileNum(0),
+    m_numFiles(0),
+    m_fixedDataSize(0),
+    m_target(NULL),
+    m_targetMap(NULL),
+    m_targetIndex(NULL),
+    m_isMerging(false),
+    m_isSuspended(false),
+    m_isReadyToSave(false),
+    m_dump(),
+    m_msg5(),
+    m_list(),
+    m_niceness(0),
+    m_rdbId(RDB_NONE),
+    m_collnum(0),
+    m_ks(0)
+{
+	memset(m_startKey, 0, sizeof(m_startKey));
+	memset(m_endKey, 0, sizeof(m_endKey));
 }
 
 RdbMerge::~RdbMerge() {
@@ -36,7 +55,6 @@ void RdbMerge::reset() {
 
 
 
-// . buffer is used for reading and writing
 // . return false if blocked, true otherwise
 // . sets g_errno on error
 // . if niceness is 0 merge will block, otherwise will not block
@@ -53,8 +71,7 @@ bool RdbMerge::merge(rdbid_t rdbId,
                      RdbIndex *targetIndex,
                      int32_t startFileNum,
                      int32_t numFiles,
-                     int32_t niceness,
-                     char keySize) {
+                     int32_t niceness) {
 	// reset ourselves
 	reset();
 
@@ -82,7 +99,7 @@ bool RdbMerge::merge(rdbid_t rdbId,
 	m_fixedDataSize   = base->getFixedDataSize();
 	m_niceness        = niceness;
 	m_doneMerging     = false;
-	m_ks              = keySize;
+	m_ks              = getKeySizeFromRdbId(rdbId);
 
 	// . set the key range we want to retrieve from the files
 	// . just get from the files, not tree (not cache?)
@@ -94,9 +111,7 @@ bool RdbMerge::merge(rdbid_t rdbId,
 	// the dump will start dumping at the end of the targetMap's data file.
 	if ( m_targetMap->getNumRecs() > 0 ) {
 		log(LOG_INIT,"db: Resuming a killed merge.");
-		//m_startKey = m_targetMap->getLastKey();
 		m_targetMap->getLastKey(m_startKey);
-		//m_startKey += (uint32_t) 1;
 		KEYINC(m_startKey,m_ks);
 	}
 
@@ -385,8 +400,7 @@ bool RdbMerge::getAnotherList() {
 	int32_t nn = base->getNumFiles();
 	if ( m_numFiles > 0 && m_numFiles < nn ) nn = m_numFiles;
 
-	// for now force to 100k
-	int32_t bufSize = 100000; // g_conf.m_mergeBufSize
+	int32_t bufSize = g_conf.m_mergeBufSize;
 	// get it
 	return m_msg5.getList ( m_rdbId        ,
 				m_collnum           ,
@@ -551,7 +565,6 @@ bool RdbMerge::dumpList() {
 	}
 
 	// if the startKey rolled over we're done
-	//if ( m_startKey.n0 == 0LL && m_startKey.n1 == 0 ) m_doneMerging=true;
 	if (KEYCMP(m_startKey, KEYMIN(), m_ks) == 0) {
 		m_doneMerging = true;
 	}

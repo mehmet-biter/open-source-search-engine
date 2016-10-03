@@ -594,7 +594,7 @@ bool XmlDoc::set4 ( SpiderRequest *sreq      ,
 
 	char *utf8Content = utf8ContentArg;
 
-	if ( utf8Content ) {
+	if ( contentHasMimeArg && utf8Content ) {
 		// get length of it all
 		int32_t clen = strlen(utf8Content);
 		// return true on error with g_errno set
@@ -1374,16 +1374,6 @@ bool XmlDoc::injectDoc ( char *url ,
 	if ( deleteUrl )
 		sreq.m_forceDelete = 1;
 
-	//static char s_dummy[3];
-	// sometims the content is indeed NULL...
-	//if ( newOnly && ! content ) {
-	//	// don't let it be NULL because then xmldoc will
-	//	// try to download the page!
-	//	s_dummy[0] = '\0';
-	//	content = s_dummy;
-	//	//g_process.shutdownAbort(true); }
-	//}
-
 	// . use the enormous power of our new XmlDoc class
 	// . this returns false with g_errno set on error
 	if ( ! set4 ( &sreq       ,
@@ -1406,12 +1396,6 @@ bool XmlDoc::injectDoc ( char *url ,
 		if ( ! g_errno ) { g_process.shutdownAbort(true); }
 		return true;
 	}
-
-	//m_doConsistencyTesting = doConsistencyTesting;
-
-	// . set xd from the old title rec if recycle is true
-	// . can also use XmlDoc::m_loadFromOldTitleRec flag
-	//if ( recycleContent ) m_recycleContent = true;
 
 	// othercrap. used for importing from titledb of another coll/cluster.
 	if ( firstIndexed ) {
@@ -1455,9 +1439,6 @@ bool XmlDoc::injectDoc ( char *url ,
 	m_isInjecting = true;
 	m_isInjectingValid = true;
 
-	// set this now
-	//g_inPageInject = true;
-
 	// log it now
 	//log("inject: indexing injected doc %s",cleanUrl);
 
@@ -1478,11 +1459,6 @@ bool XmlDoc::injectDoc ( char *url ,
 	// log it. i guess only for errors when it does not block?
 	// because xmldoc.cpp::indexDoc calls logIt()
 	if ( status ) logIt();
-
-
-
-	// undo it
-	//g_inPageInject = false;
 
 	logTrace( g_conf.m_logTraceXmlDoc, "END, returning true. indexDoc returned true" );
 	return true;
@@ -9301,6 +9277,10 @@ uint16_t *XmlDoc::getCharset ( ) {
 		return &m_charset;
 	}
 
+	if( !mime ) {
+		return NULL;
+	}
+
 	m_charset = getCharsetFast ( mime ,
 				     m_firstUrl.getUrl(),
 				     pstart ,
@@ -10069,10 +10049,17 @@ char **XmlDoc::getExpandedUtf8Content ( ) {
 		m_esbuf.safePrintf("<gbframe>"); // gbiframe
 		// identify javascript
 		bool javascript = false;
-		if ( *ed->getContentType() == CT_JS ) javascript = true;
+
+		uint8_t *ct = ed->getContentType();
+		if ( ct && *ct == CT_JS ) {
+			javascript = true;
+		}
+
 		// so we do not mine javascript for cities and states etc.
 		// in Address.cpp
-		if ( javascript ) m_esbuf.safePrintf("<script>");
+		if ( javascript ) {
+			m_esbuf.safePrintf("<script>");
+		}
 		// store that
 		m_esbuf.safeMemcpy ( uc , ed->m_rawUtf8ContentSize - 1 );
 		// our special tag has an end tag as well
@@ -10922,7 +10909,10 @@ int32_t **XmlDoc::getOutlinkFirstIpVector () {
 
 	if ( *useFakeIps ) {
 		int32_t need = links->m_numLinks * 4;
-		m_fakeIpBuf.reserve ( need );
+		if( !m_fakeIpBuf.reserve ( need ) ) {
+			log(LOG_WARN,"%s:%s: Could not allocate %" PRId32 " bytes for links", __FILE__, __func__, need);
+			return NULL;
+		}
 		for ( int32_t i = 0 ; i < links->m_numLinks ; i++ ) {
 			uint64_t h64 = links->getHostHash64(i);
 			int32_t ip = h64 & 0xffffffff;
@@ -13343,9 +13333,15 @@ char *XmlDoc::getMetaList(bool forDelete) {
 		need += spiderStatusDocMetaList->length();
 	}
 
+	/// @todo ALC verify that we actually need sizeof(key128_t)
 	// space for indexdb AND DATEDB! +2 for rdbids
-	int32_t needIndexdb = tt1.m_numSlotsUsed * (sizeof(key144_t) + 2 + sizeof(key128_t));
-	need += needIndexdb;
+	int32_t needPosdb = tt1.m_numSlotsUsed * (sizeof(posdbkey_t) + 2 + sizeof(key128_t));
+	if (!forDelete) {
+		// need 1 additional key for special key (with termid 0)
+		needPosdb += sizeof(posdbkey_t) + 1;
+	}
+
+	need += needPosdb;
 
 	// clusterdb keys. plus one for rdbId
 	int32_t needClusterdb = nd ? 13 : 0;
@@ -13588,13 +13584,46 @@ char *XmlDoc::getMetaList(bool forDelete) {
 	saved = m_p;
 
 	// store indexdb terms into m_metaList[]
-	if (m_usePosdb && !addTable144(&tt1, m_docId)) {
-		logTrace(g_conf.m_logTraceXmlDoc, "END, addTable144 failed");
-		return NULL;
+	if (m_usePosdb) {
+		if (!addTable144(&tt1, m_docId)) {
+			logTrace(g_conf.m_logTraceXmlDoc, "END, addTable144 failed");
+			return NULL;
+		}
+
+		/// @todo ALC we need to handle delete keys for other rdb types
+
+		// we need to add delete key per document when it's deleted (with term 0)
+		// we also need to add positive key per document when it's new
+		// in case there is already a delete key in the tree/bucket (this will not be persisted and will be removed in Rdb::addRecord)
+		if (g_conf.m_noInMemoryPosdbMerge) {
+			// we don't need to do this if getMetaList is called to get negative keys
+			if (!forDelete) {
+				if ((m_isInIndex && !m_wasInIndex) || (!m_isInIndex && m_wasInIndex)) {
+					char key[MAX_KEY_BYTES];
+
+					int64_t docId;
+					bool delKey = (!m_isInIndex);
+					if (!m_isInIndex) {
+						// deleted doc
+						docId = *od->getDocId();
+					} else {
+						// new doc
+						docId = *nd->getDocId();
+					}
+
+					// add posdb doc key
+					*m_p++ = RDB_POSDB;
+
+					Posdb::makeKey(&key, POSDB_DELETEDOC_TERMID, docId, 0, 0, 0, 0, 0, 0, 0, 0, 0, delKey, false);
+					memcpy(m_p, &key, sizeof(posdbkey_t));
+					m_p += sizeof(posdbkey_t);
+				}
+			}
+		}
 	}
 
 	// sanity check
-	if (m_p - saved > needIndexdb) {
+	if (m_p - saved > needPosdb) {
 		g_process.shutdownAbort(true);
 	}
 
@@ -14134,19 +14163,6 @@ skipNewAdd2:
 				// did not have a lost date
 				//continue;
 			}
-		}
-
-		/// @todo ALC we need to handle delete keys for other rdb types
-
-		// we need to add delete key per document when it's deleted (with term 0)
-		if (g_conf.m_noInMemoryPosdbMerge && !m_isInIndex) {
-			char key[MAX_KEY_BYTES];
-
-			// add posdb delete key
-			Posdb::makeStartKey(&key, POSDB_DELETEDOC_TERMID, *od->getDocId());
-			*nptr++ = RDB_POSDB;
-			memcpy(nptr, &key, sizeof(posdbkey_t));
-			nptr += sizeof(posdbkey_t);
 		}
 
 		// sanity. check for metalist breach
@@ -18472,7 +18488,9 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 	sb->safePrintf ( "</table></center><br>\n" );
 
 	// print outlinks
-	links->print( sb );
+	if( links ) {
+		links->print( sb );
+	}
 
 	//
 	// PRINT SECTIONS
@@ -18624,6 +18642,10 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 }
 
 bool XmlDoc::printMenu ( SafeBuf *sb ) {
+
+	if( !sb ) {
+		return false;
+	}
 
 	// encode it
 	SafeBuf ue;
@@ -19790,7 +19812,7 @@ char *XmlDoc::getRootTitleBuf ( ) {
 
 	int32_t max = (int32_t)ROOT_TITLE_BUF_MAX - 5;
 	// sanity
-	if ( srcSize >= max ) {
+	if ( src && srcSize >= max ) {
 		// truncate
 		srcSize = max;
 		// back up so we split on a space
@@ -19802,7 +19824,12 @@ char *XmlDoc::getRootTitleBuf ( ) {
 	}
 
 	// copy that over in case root is destroyed
-	gbmemcpy ( m_rootTitleBuf , src , srcSize );
+	if( src && srcSize ) {
+		gbmemcpy ( m_rootTitleBuf , src , srcSize );
+	}
+	else {
+		m_rootTitleBuf[0] = '\0';
+	}
 	m_rootTitleBufSize = srcSize;
 
 	// sanity check, must include the null ni the size
@@ -21456,7 +21483,7 @@ static void getWordToPhraseRatioWeights ( int64_t   pid1 , // pre phrase
 				if ( k > i ) j = i;
 				// get ratio
 				//float ratio = (float)phrcount / (float)wrdcount;
-				float ratio = (float)j/(float)i;
+				float ratio = i ? (float)j/(float)i : 0;
 				// it should be impossible that this can be over 1.0
 				// but might happen due to hash collisions
 				if ( ratio > 1.0 ) ratio = 1.0;
@@ -21650,7 +21677,6 @@ char XmlDoc::waitForTimeSync ( ) {
 
 bool XmlDoc::getIsInjecting ( ) {
 	bool isInjecting = false;
-	//if ( g_inPageInject ) isInjecting = true;
 	if ( m_sreqValid && m_sreq.m_isInjecting ) isInjecting = true;
 	if ( m_isInjecting && m_isInjectingValid ) isInjecting = true;
 	return isInjecting;

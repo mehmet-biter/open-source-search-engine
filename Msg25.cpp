@@ -2686,23 +2686,26 @@ bool Msg25::addNote(const char *note, int32_t noteLen, int64_t docId) {
 		m_bufPtr = p;
 		return true;
 	}
-	// cast it
-	NoteEntry *entry = *pentry;
-	if( entry ) {
-		// get the count
-		entry->m_count++;
-		// add docids to the list
-		for(int32_t i=0; i < MAX_ENTRY_DOCIDS; i++) {
-			// skip if not empty
-			if ( entry->m_docIds[i] != -1LL )
-				continue;
-			// take it over, its empty if it is -1LL
-			entry->m_docIds[i] = docId;
-			// next one should be -1 now
-			if ( i + 1 < MAX_ENTRY_DOCIDS )
-				entry->m_docIds[i+1] = -1LL;
-			// all done
-			break;
+	
+	if( pentry ) {
+		// cast it
+		NoteEntry *entry = *pentry;
+		if( entry ) {
+			// get the count
+			entry->m_count++;
+			// add docids to the list
+			for(int32_t i=0; i < MAX_ENTRY_DOCIDS; i++) {
+				// skip if not empty
+				if ( entry->m_docIds[i] != -1LL )
+					continue;
+				// take it over, its empty if it is -1LL
+				entry->m_docIds[i] = docId;
+				// next one should be -1 now
+				if ( i + 1 < MAX_ENTRY_DOCIDS )
+					entry->m_docIds[i+1] = -1LL;
+				// all done
+				break;
+			}
 		}
 	}
 	// increase the count

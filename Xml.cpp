@@ -15,6 +15,8 @@ Xml::Xml  () {
 	m_xmlLen = 0; 
 	m_nodes = NULL; 
 	m_numNodes=0;
+	m_maxNumNodes = 0;
+	m_version = 0;
 }
 
 // . should free m_xml if m_copy is true

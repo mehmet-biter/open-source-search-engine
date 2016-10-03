@@ -36,7 +36,6 @@ class RdbMerge {
 public:
 	RdbMerge();
 	~RdbMerge();
-	void reset();
 
 	// . selects the files to merge
 	// . uses keyMasks and files from the passed Rdb class
@@ -52,8 +51,7 @@ public:
 	           RdbIndex *targetIndex,
 	           int32_t startFileNum,
 	           int32_t numFiles,
-	           int32_t niceness,
-	           char keySize);
+	           int32_t niceness);
 
 	int32_t getNumThreads() const { return m_numThreads; }
 
@@ -68,12 +66,13 @@ public:
 	// suspend the merging until resumeMerge() is called
 	void suspendMerge();
 
+private:
 	static void unlinkPartWrapper(void *state);
 	static void dumpListWrapper(void *state);
 	static void gotListWrapper(void *state, RdbList *list, Msg5 *msg5);
 	static void tryAgainWrapper(int fd, void *state);
 
-private:
+	void reset();
 	bool dumpList();
 	bool getNextList();
 	bool getAnotherList();

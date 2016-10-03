@@ -508,7 +508,7 @@ void Images::gotTermList ( ) {
 	
 }
 
-bool Images::downloadImages () {
+bool Images::downloadImages() {
 	// all done if we got a valid thumbnail
 	//if ( m_thumbnailValid ) return true;
 
@@ -597,7 +597,11 @@ bool Images::downloadImages () {
 		need += m_thumbnailSize;
 		need += sizeof(ThumbnailInfo);
 		// reserve it
-		m_imageBuf.reserve ( need );
+		if( !m_imageBuf.reserve ( need ) ) {
+			logError("Could not reserve needed %" PRId32 " bytes, bailing!", need);
+			return false;
+		}
+
 		// point to array
 		ThumbnailArray *ta =(ThumbnailArray *)m_imageBuf.getBufStart();
 		// set that as much as possible, version...
