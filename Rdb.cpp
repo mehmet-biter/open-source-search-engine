@@ -1006,7 +1006,7 @@ bool Rdb::dumpTree ( int32_t niceness ) {
 	// . wait for all unlinking and renaming activity to flush out
 	// . we do not want to dump to a filename in the middle of being
 	//   unlinked
-	if ( g_errno || g_numThreads > 0 ) {
+	if ( g_numThreads > 0 ) {
 		// update this so we don't try too much and flood the log
 		// with error messages from RdbDump.cpp calling log() and
 		// quickly kicking the log file over 2G which seems to 
