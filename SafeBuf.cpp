@@ -1572,7 +1572,7 @@ bool SafeBuf::printTimeAgo ( int32_t ago , int32_t now , bool shorthand ) {
 	return true;
 }
 
-bool SafeBuf::hasDigits() {
+bool SafeBuf::hasDigits() const {
 	if ( m_length <= 0 ) return false;
 	for ( int32_t i = 0 ; i < m_length ; i++ )
 		if ( is_digit(m_buf[i]) ) return true;
@@ -1580,10 +1580,12 @@ bool SafeBuf::hasDigits() {
 }
 
 
-int32_t SafeBuf::indexOf(char c) {
-	char* p = m_buf;
-	char* pend = m_buf + m_length;
-	while (p < pend && *p != c) p++;
-	if (p == pend) return -1;
+int32_t SafeBuf::indexOf(char c) const {
+	const char *p = m_buf;
+	const char *pend = m_buf + m_length;
+	while (p < pend && *p != c)
+		p++;
+	if(p == pend)
+		return -1;
 	return p - m_buf;
 }
