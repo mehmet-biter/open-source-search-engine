@@ -1122,197 +1122,199 @@ bool Rdb::dumpTree ( int32_t niceness ) {
 bool Rdb::dumpCollLoop ( ) {
 	logTrace( g_conf.m_logTraceRdb, "BEGIN %s", m_dbname );
 
- loop:
-	// if no more, we're done...
-	if ( m_dumpCollnum >= getNumBases() ) {
-		logTrace( g_conf.m_logTraceRdb, "END. %s: No more. Returning true", m_dbname );
-		return true;
-	}
+	for(;;) {
 
-	// the only was g_errno can be set here is from a previous dump
-	// error?
-	if ( g_errno ) {
-	hadError:
-		// if swapped out, this will be NULL, so skip it
-		RdbBase *base = NULL;
-		if ( m_dumpCollnum >= 0 ) {
-			CollectionRec *cr = g_collectiondb.m_recs[m_dumpCollnum];
-			if ( cr ) {
-				base = cr->getBasePtr( m_rdbId );
+		// if no more, we're done...
+		if ( m_dumpCollnum >= getNumBases() ) {
+			logTrace( g_conf.m_logTraceRdb, "END. %s: No more. Returning true", m_dbname );
+			return true;
+		}
+
+		// the only was g_errno can be set here is from a previous dump
+		// error?
+		if ( g_errno ) {
+		hadError:
+			// if swapped out, this will be NULL, so skip it
+			RdbBase *base = NULL;
+			if ( m_dumpCollnum >= 0 ) {
+				CollectionRec *cr = g_collectiondb.m_recs[m_dumpCollnum];
+				if ( cr ) {
+					base = cr->getBasePtr( m_rdbId );
+				}
 			}
+
+			log( LOG_ERROR, "build: Error dumping collection: %s.",mstrerror(g_errno));
+			// . if we wrote nothing, remove the file
+			// . if coll was deleted under us, base will be NULL!
+			if ( base &&   (! base->getFile(m_fn)->doesExist() ||
+			      base->getFile(m_fn)->getFileSize() <= 0) ) {
+				log("build: File %s is zero bytes, removing from memory.",base->getFile(m_fn)->getFilename());
+				base->buryFiles ( m_fn , m_fn+1 );
+			}
+
+			// game over, man
+			doneDumping();
+			// update this so we don't try too much and flood the log
+			// with error messages
+			s_lastTryTime = getTime();
+
+			logTrace( g_conf.m_logTraceRdb, "END. %s: Done dumping with g_errno=%s. Returning true",
+		        	  m_dbname, mstrerror( g_errno ) );
+			return true;
 		}
 
-		log( LOG_ERROR, "build: Error dumping collection: %s.",mstrerror(g_errno));
-		// . if we wrote nothing, remove the file
-		// . if coll was deleted under us, base will be NULL!
-		if ( base &&   (! base->getFile(m_fn)->doesExist() ||
-		      base->getFile(m_fn)->getFileSize() <= 0) ) {
-			log("build: File %s is zero bytes, removing from memory.",base->getFile(m_fn)->getFilename());
-			base->buryFiles ( m_fn , m_fn+1 );
-		}
+		// advance for next round
+		m_dumpCollnum++;
 
-		// game over, man
-		doneDumping();
-		// update this so we don't try too much and flood the log
-		// with error messages
-		s_lastTryTime = getTime();
+		// don't bother getting the base for all collections because
+		// we end up swapping them in
+		for ( ; m_dumpCollnum < getNumBases() ; m_dumpCollnum++ ) {
+			// collection rdbs like statsdb are ok to process
+			if ( m_isCollectionLess ) {
+				break;
+			}
 
-		logTrace( g_conf.m_logTraceRdb, "END. %s: Done dumping with g_errno=%s. Returning true",
-		          m_dbname, mstrerror( g_errno ) );
-		return true;
-	}
+			// otherwise get the coll rec now
+			if ( !g_collectiondb.m_recs[m_dumpCollnum] ) {
+				// skip if empty
+				continue;
+			}
 
-	// advance for next round
-	m_dumpCollnum++;
-
-	// don't bother getting the base for all collections because
-	// we end up swapping them in
-	for ( ; m_dumpCollnum < getNumBases() ; m_dumpCollnum++ ) {
-		// collection rdbs like statsdb are ok to process
-		if ( m_isCollectionLess ) {
+			// ok, it's good to dump
 			break;
 		}
 
-		// otherwise get the coll rec now
-		if ( !g_collectiondb.m_recs[m_dumpCollnum] ) {
-			// skip if empty
+		// if no more, we're done...
+		if ( m_dumpCollnum >= getNumBases() ) {
+			return true;
+		}
+
+		// swap it in for dumping purposes if we have to
+		// "cr" is NULL potentially for collectionless rdbs, like statsdb,
+		// do we can't involve that...
+		RdbBase *base = getBase(m_dumpCollnum);
+
+		// hwo can this happen? error swappingin?
+		if ( ! base ) { 
+			log( LOG_WARN, "rdb: dumpcollloop base was null for cn=%" PRId32, (int32_t)m_dumpCollnum);
+			goto hadError;
+		}
+
+		// before we create the file, see if tree has anything for this coll
+		if(m_useTree) {
+			const char *k = KEYMIN();
+			int32_t nn = m_tree.getNextNode ( m_dumpCollnum , k );
+			if ( nn < 0 )
+				continue;
+			if ( m_tree.getCollnum(nn) != m_dumpCollnum )
+				continue;
+		} else {
+			if(!m_buckets.collExists(m_dumpCollnum))
+				continue;
+		}
+
+		// . MDW ADDING A NEW FILE SHOULD BE IN RDBDUMP.CPP NOW... NO!
+		// . get the biggest fileId
+		int32_t id2 = m_isTitledb ? 0 : -1;
+
+		// if we add to many files then we can not merge, because merge op
+		// needs to add a file and it calls addNewFile() too
+		static int32_t s_flag = 0;
+		if ( base->getNumFiles() + 1 >= MAX_RDB_FILES ) {
+			if ( s_flag < 10 )
+				log( LOG_WARN, "db: could not dump tree to disk for cn="
+				    "%i %s because it has %" PRId32" files on disk. "
+				    "Need to wait for merge operation.",
+				    (int)m_dumpCollnum,m_dbname,base->getNumFiles());
+			s_flag++;
 			continue;
 		}
 
-		// ok, it's good to dump
-		break;
+		// this file must not exist already, we are dumping the tree into it
+		m_fn = base->addNewFile ( id2 ) ;
+		if ( m_fn < 0 ) {
+			log( LOG_LOGIC, "db: rdb: Failed to add new file to dump %s: %s.", m_dbname, mstrerror( g_errno ) );
+			return false;
+		}
+
+		log(LOG_INFO,"build: Dumping to %s/%s for coll \"%s\".",
+		    base->getFile(m_fn)->getDir(),
+		    base->getFile(m_fn)->getFilename() ,
+		    g_collectiondb.getCollName ( m_dumpCollnum ) );
+
+		// what is the avg rec size?
+		int32_t numRecs = getNumUsedNodes();
+		int32_t avgSize;
+
+		if(m_useTree) {
+			if ( numRecs <= 0 ) numRecs = 1;
+			avgSize = m_tree.getMemOccupiedForList() / numRecs;
+		} else {
+			avgSize = m_buckets.getRecSize();
+		}
+
+		// . don't get more than 3000 recs from the tree because it gets slow
+		// . we'd like to write as much out as possible to reduce possible
+		//   file interlacing when synchronous writes are enabled. RdbTree::
+		//   getList() should really be sped up by doing the neighbor node
+		//   thing. would help for adding lists, too, maybe.
+		int32_t bufSize = 300 * 1024;
+		int32_t bufSize2 = 3000 * avgSize;
+		if (bufSize2 < bufSize) {
+			bufSize = bufSize2;
+		}
+
+		if (!m_useTree) {
+			//buckets are much faster at getting lists
+			bufSize *= 4;
+		}
+
+		RdbBuckets *buckets = NULL;
+		RdbTree *tree = NULL;
+		if (m_useTree) {
+			tree = &m_tree;
+		} else {
+			buckets = &m_buckets;
+		}
+
+		// . RdbDump will set the filename of the map we pass to this
+		// . RdbMap should dump itself out CLOSE!
+		// . it returns false if blocked, true otherwise & sets g_errno on err
+		// . but we only return false on error here
+		if (!m_dump.set(base->m_collnum,
+	                	base->getFile(m_fn),
+	                	buckets,
+	                	tree,
+	                	base->getTreeIndex(),
+	                	base->getMap(m_fn),
+	                	base->getIndex(m_fn),
+	                	bufSize, // write buf size
+	                	m_niceness, // niceness of 1 will NOT block
+	                	this, // state
+	                	doneDumpingCollWrapper,
+	                	m_useHalfKeys,
+	                	0LL,  // dst start offset
+	                	KEYMIN(),  // prev last key
+	                	m_ks,  // keySize
+	                	this)) {// for setting m_needsToSave
+			logTrace( g_conf.m_logTraceRdb, "END. %s: RdbDump blocked. Returning false", m_dbname );
+			return false;
+		}
+
+		// error?
+		if ( g_errno ) {
+			log("rdb: error dumping = %s . coll deleted from under us?",
+			    mstrerror(g_errno));
+			// shit, what to do here? this is causing our RdbMem
+			// to get corrupted!
+			// because if we end up continuing it calls doneDumping()
+			// and updates RdbMem! maybe set a permanent error then!
+			// and if that is there do not clear RdbMem!
+			m_dumpErrno = g_errno;
+			// for now core out
+			//g_process.shutdownAbort(true);
+		}
 	}
-
-	// if no more, we're done...
-	if ( m_dumpCollnum >= getNumBases() ) {
-		return true;
-	}
-
-	// swap it in for dumping purposes if we have to
-	// "cr" is NULL potentially for collectionless rdbs, like statsdb,
-	// do we can't involve that...
-	RdbBase *base = getBase(m_dumpCollnum);
-
-	// hwo can this happen? error swappingin?
-	if ( ! base ) { 
-		log( LOG_WARN, "rdb: dumpcollloop base was null for cn=%" PRId32, (int32_t)m_dumpCollnum);
-		goto hadError;
-	}
-
-	// before we create the file, see if tree has anything for this coll
-	if(m_useTree) {
-		const char *k = KEYMIN();
-		int32_t nn = m_tree.getNextNode ( m_dumpCollnum , k );
-		if ( nn < 0 ) goto loop;
-		if ( m_tree.getCollnum(nn) != m_dumpCollnum ) goto loop;
-	} else {
-		if(!m_buckets.collExists(m_dumpCollnum)) goto loop;
-	}
-
-	// . MDW ADDING A NEW FILE SHOULD BE IN RDBDUMP.CPP NOW... NO!
-	// . get the biggest fileId
-	int32_t id2 = m_isTitledb ? 0 : -1;
-
-	// if we add to many files then we can not merge, because merge op
-	// needs to add a file and it calls addNewFile() too
-	static int32_t s_flag = 0;
-	if ( base->getNumFiles() + 1 >= MAX_RDB_FILES ) {
-		if ( s_flag < 10 )
-			log( LOG_WARN, "db: could not dump tree to disk for cn="
-			    "%i %s because it has %" PRId32" files on disk. "
-			    "Need to wait for merge operation.",
-			    (int)m_dumpCollnum,m_dbname,base->getNumFiles());
-		s_flag++;
-		goto loop;
-	}
-
-	// this file must not exist already, we are dumping the tree into it
-	m_fn = base->addNewFile ( id2 ) ;
-	if ( m_fn < 0 ) {
-		log( LOG_LOGIC, "db: rdb: Failed to add new file to dump %s: %s.", m_dbname, mstrerror( g_errno ) );
-		return false;
-	}
-
-	log(LOG_INFO,"build: Dumping to %s/%s for coll \"%s\".",
-	    base->getFile(m_fn)->getDir(),
-	    base->getFile(m_fn)->getFilename() ,
-	    g_collectiondb.getCollName ( m_dumpCollnum ) );
-
-	// what is the avg rec size?
-	int32_t numRecs = getNumUsedNodes();
-	int32_t avgSize;
-
-	if(m_useTree) {
-		if ( numRecs <= 0 ) numRecs = 1;
-		avgSize = m_tree.getMemOccupiedForList() / numRecs;
-	} else {
-		avgSize = m_buckets.getRecSize();
-	}
-
-	// . don't get more than 3000 recs from the tree because it gets slow
-	// . we'd like to write as much out as possible to reduce possible
-	//   file interlacing when synchronous writes are enabled. RdbTree::
-	//   getList() should really be sped up by doing the neighbor node
-	//   thing. would help for adding lists, too, maybe.
-	int32_t bufSize = 300 * 1024;
-	int32_t bufSize2 = 3000 * avgSize;
-	if (bufSize2 < bufSize) {
-		bufSize = bufSize2;
-	}
-
-	if (!m_useTree) {
-		//buckets are much faster at getting lists
-		bufSize *= 4;
-	}
-
-	RdbBuckets *buckets = NULL;
-	RdbTree *tree = NULL;
-	if (m_useTree) {
-		tree = &m_tree;
-	} else {
-		buckets = &m_buckets;
-	}
-
-	// . RdbDump will set the filename of the map we pass to this
-	// . RdbMap should dump itself out CLOSE!
-	// . it returns false if blocked, true otherwise & sets g_errno on err
-	// . but we only return false on error here
-	if (!m_dump.set(base->m_collnum,
-	                base->getFile(m_fn),
-	                buckets,
-	                tree,
-	                base->getTreeIndex(),
-	                base->getMap(m_fn),
-	                base->getIndex(m_fn),
-	                bufSize, // write buf size
-	                m_niceness, // niceness of 1 will NOT block
-	                this, // state
-	                doneDumpingCollWrapper,
-	                m_useHalfKeys,
-	                0LL,  // dst start offset
-	                KEYMIN(),  // prev last key
-	                m_ks,  // keySize
-	                this)) {// for setting m_needsToSave
-		logTrace( g_conf.m_logTraceRdb, "END. %s: RdbDump blocked. Returning false", m_dbname );
-		return false;
-	}
-
-	// error?
-	if ( g_errno ) {
-		log("rdb: error dumping = %s . coll deleted from under us?",
-		    mstrerror(g_errno));
-		// shit, what to do here? this is causing our RdbMem
-		// to get corrupted!
-		// because if we end up continuing it calls doneDumping()
-		// and updates RdbMem! maybe set a permanent error then!
-		// and if that is there do not clear RdbMem!
-		m_dumpErrno = g_errno;
-		// for now core out
-		//g_process.shutdownAbort(true);
-	}
-
-	// loop back up since we did not block
-	goto loop;
 }	
 
 static CollectionRec *s_mergeHead = NULL;
