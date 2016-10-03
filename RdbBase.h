@@ -304,6 +304,13 @@ public:
 
 	int32_t      m_pageSize;
 
+private:
+	static void unlinkDoneWrapper(void *state);
+	void unlinkDone();
+	static void renameDoneWrapper(void *state);
+	static void checkThreadsAgainWrapper(int /*fd*/, void *state);
+	void renameDone();
+	
 	// . is our merge urgent? (if so, it will starve spider disk reads)
 	// . also see Threads.cpp for the starvation
 	bool      m_mergeUrgent;
@@ -320,13 +327,6 @@ public:
 	int64_t m_numPos ;
 	int64_t m_numNeg ;
 
-private:
-	static void unlinkDoneWrapper(void *state);
-	void unlinkDone();
-	static void renameDoneWrapper(void *state);
-	static void checkThreadsAgainWrapper(int /*fd*/, void *state);
-	void renameDone();
-	
 	int32_t m_numThreads;
 
 	bool m_isUnlinking;
