@@ -140,7 +140,6 @@ bool Posdb::init ( ) {
 	                    g_conf.m_posdbMaxTreeMem, // g_conf.m_posdbMaxTreeMem  ,
 	                    maxTreeNodes                ,
 	                    getUseHalfKeys(),
-			            false , // istitledb?
 			            getKeySize(),
 			            false,
 			            g_conf.m_noInMemoryPosdbMerge);
@@ -167,7 +166,6 @@ bool Posdb::init2 ( int32_t treeMem ) {
 	                  treeMem,
 	                  maxTreeNodes,
 	                  getUseHalfKeys(),
-	                  false,
 	                  getKeySize(),
 	                  false,
 	                  g_conf.m_noInMemoryPosdbMerge);

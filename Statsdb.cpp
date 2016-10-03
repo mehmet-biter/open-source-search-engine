@@ -188,7 +188,6 @@ bool Statsdb::init ( ) {
 			    maxTreeMem                  ,
 			    maxTreeNodes		,
 			    false			, // use half keys?
-			    false			, // is titledb?
 			    sizeof(key96_t)		, // key size
 			    true ) ) // is collectionless?
 		return false;

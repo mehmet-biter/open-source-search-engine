@@ -121,7 +121,6 @@ bool Rdb::init ( const char     *dir                  ,
 		  int32_t           maxTreeMem           ,
 		  int32_t           maxTreeNodes         ,
 		  bool           useHalfKeys          ,
-		  bool           isTitledb            ,
 		  char           keySize              ,
 		 bool            isCollectionLess,
 		 bool			useIndexFile ) {

@@ -532,7 +532,6 @@ bool Spiderdb::init ( ) {
 			    g_conf.m_spiderdbMaxTreeMem ,
 			    maxTreeNodes                ,
 			    false                       , // half keys?
-			    false                       ,
 			    sizeof(key128_t)            );
 }
 
@@ -552,7 +551,6 @@ bool Spiderdb::init2 ( int32_t treeMem ) {
 			    treeMem       , // g_conf.m_spiderdbMaxTreeMem ,
 			    maxTreeNodes  ,
 			    false         , // half keys?
-			    false         , // isTitledb?
 			    sizeof(key128_t));
 }
 
