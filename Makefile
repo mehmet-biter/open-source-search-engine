@@ -67,7 +67,6 @@ OBJS_O3 = \
 	MergeSpaceCoordinator.o \
 	GbSignature.o \
 
->>>>>>> master
 
 OBJS = $(OBJS_O0) $(OBJS_O1) $(OBJS_O2) $(OBJS_O3)
 
