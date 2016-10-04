@@ -1087,7 +1087,7 @@ bool RdbBase::incorporateMerge ( ) {
 
 	// . before unlinking the files, ensure merged file is the right size!!
 	// . this will save us some anguish
-	m_fileInfo[x].m_file->m_fileSize = -1;
+	m_fileInfo[x].m_file->invalidateFileSize();
 
 	int64_t fs = m_fileInfo[x].m_file->getFileSize();
 
@@ -1224,7 +1224,7 @@ void RdbBase::unlinkDone() {
 	}
 
 	// sanity check
-	m_fileInfo[x].m_file->m_fileSize = -1;
+	m_fileInfo[x].m_file->invalidateFileSize();
 	int64_t fs = m_fileInfo[x].m_file->getFileSize();
 	// get file size from map
 	int64_t fs2 = m_fileInfo[x].m_map->getFileSize();
