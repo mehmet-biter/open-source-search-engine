@@ -22,8 +22,6 @@
 // how many rdbs are in "urgent merge" mode?
 static int32_t s_numUrgentMerges = 0;
 
-int32_t g_numThreads = 0;
-
 bool g_dumpMode = false;
 
 // since we only do one merge at a time, keep this class static
@@ -1126,7 +1124,6 @@ bool RdbBase::incorporateMerge ( ) {
 		//   delete the m_fileInfo[i].m_file now
 		if ( ! m_fileInfo[i].m_file->unlink(unlinkDoneWrapper, this) ) {
 			m_numThreads++;
-			g_numThreads++;
 		} else {
 			// debug msg
 			// MDW this cores if file is bad... if collection got delete from under us i guess!!
@@ -1138,7 +1135,6 @@ bool RdbBase::incorporateMerge ( ) {
 
 		if ( ! m_fileInfo[i].m_map->unlink(unlinkDoneWrapper, this) ) {
 			m_numThreads++;
-			g_numThreads++;
 		} else {
 			// debug msg
 			log(LOG_INFO,"merge: Unlinked %s (#%" PRId32").", m_fileInfo[i].m_map->getFilename(), i);
@@ -1151,7 +1147,6 @@ bool RdbBase::incorporateMerge ( ) {
 
 			if ( ! m_fileInfo[i].m_index->unlink(unlinkDoneWrapper, this) ) {
 				m_numThreads++;
-				g_numThreads++;
 			} else {
 				// debug msg
 				log(LOG_INFO,"merge: Unlinked %s (#%" PRId32").", m_fileInfo[i].m_index->getFilename(), i);
@@ -1193,7 +1188,6 @@ void RdbBase::unlinkDoneWrapper(void *state) {
 void RdbBase::unlinkDone() {
 	// bail if waiting for more to come back
 	if ( m_numThreads > 0 ) {
-		g_numThreads--;
 		if ( --m_numThreads > 0 ) return;
 	}
 
@@ -1213,13 +1207,11 @@ void RdbBase::unlinkDone() {
 	log(LOG_INFO,"db: Renaming %s to %s", m_fileInfo[x].m_file->getFilename(), m_fileInfo[a].m_file->getFilename());
 	if ( ! m_fileInfo[x].m_map->rename( m_fileInfo[a].m_map->getFilename(), renameDoneWrapper, this) ) {
 		m_numThreads++;
-		g_numThreads++;
 	}
 
 	if( m_useIndexFile ) {
 		if ( ! m_fileInfo[x].m_index->rename( m_fileInfo[a].m_index->getFilename(), renameDoneWrapper, this) ) {
 			m_numThreads++;
-			g_numThreads++;
 		}
 	}
 
@@ -1242,7 +1234,6 @@ void RdbBase::unlinkDone() {
 		// rename it, this may block
 		if ( ! m_fileInfo[x].m_file->rename ( m_fileInfo[a].m_file->getFilename(), renameDoneWrapper, this) ) {
 			m_numThreads++;
-			g_numThreads++;
 		}
 	} else {
 		// rename to this (titledb%04" PRId32"-%03" PRId32".dat)
@@ -1254,7 +1245,6 @@ void RdbBase::unlinkDone() {
 		// rename it, this may block
 		if ( ! m_fileInfo[x].m_file->rename ( buf, renameDoneWrapper, this) ) {
 			m_numThreads++;
-			g_numThreads++;
 		}
 	}
 
@@ -1289,7 +1279,6 @@ void RdbBase::checkThreadsAgainWrapper(int /*fd*/, void *state) {
 void RdbBase::renameDone() {
 	// bail if waiting for more to come back
 	if ( m_numThreads > 0 ) {
-		g_numThreads--;
 		if ( --m_numThreads > 0 ) return;
 	}
 

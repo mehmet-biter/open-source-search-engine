@@ -347,8 +347,6 @@ private:
 	bool m_doLog;
 };
 
-extern int32_t g_numThreads;
-
 extern bool g_dumpMode;
 
 #endif // GB_RDBBASE_H
