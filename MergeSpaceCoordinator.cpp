@@ -67,7 +67,7 @@ bool MergeSpaceCoordinator::acquire(uint64_t /*how_much*/) {
 		if(S_ISDIR(st.st_mode))
 			; //excellent
 		else
-			log(LOG_ERROR,"Lock directory %s is not a directly", lock_dir.c_str());
+			log(LOG_ERROR,"Lock directory %s is not a directory", lock_dir.c_str());
 	} else {
 		//lock directory doesn't exist. Try to create it.
 		//the equivalent of "mkdir -p" would be nice but not necessary
