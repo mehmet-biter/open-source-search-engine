@@ -306,9 +306,6 @@ private:
 	bool m_checkedForMerge;
 
 	int32_t      m_pageSize;
-	// . is our merge urgent? (if so, it will starve spider disk reads)
-	// . also see Threads.cpp for the starvation
-	bool      m_mergeUrgent;
 
 	bool      m_niceness;
 

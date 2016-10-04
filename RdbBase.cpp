@@ -19,9 +19,6 @@
 #include <sys/stat.h> //mkdir()
 #include <algorithm>
 
-// how many rdbs are in "urgent merge" mode?
-static int32_t s_numUrgentMerges = 0;
-
 bool g_dumpMode = false;
 
 // since we only do one merge at a time, keep this class static
@@ -80,8 +77,6 @@ void RdbBase::reset ( ) {
 
 	m_numFiles  = 0;
 	m_fileInfo[m_numFiles].m_file = NULL;
-	// we're not in urgent merge mode yet
-	m_mergeUrgent = false;
 	m_isMerging = false;
 	m_hasMergeFile = false;
 	m_isUnlinking  = false;
@@ -1320,15 +1315,6 @@ void RdbBase::renameDone() {
 	// we no longer have a merge file
 	m_hasMergeFile = false;
 
-	// now unset m_mergeUrgent if we're close to our limit
-	if ( m_mergeUrgent && m_numFiles - 14 < m_minToMerge ) {
-		m_mergeUrgent = false;
-		if ( s_numUrgentMerges > 0 ) s_numUrgentMerges--;
-		if ( s_numUrgentMerges == 0 )
-			log(LOG_INFO,"merge: Exiting urgent "
-			    "merge mode for %s.",m_dbname);
-	}
-
 	// decrement this count
 	if ( m_isMerging ) {
 		m_rdb->decrementNumMerges();
@@ -1539,24 +1525,6 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 		     numFiles, m_dbname, m_minToMerge );
 	}
 	
-	// . even though another merge may be going on, we can speed it up
-	//   by entering urgent merge mode. this will prefer the merge disk
-	//   ops over dump disk ops... essentially starving the dumps and
-	//   spider reads
-	// . if we are significantly over our m_minToMerge limit
-	//   then set m_mergeUrgent to true so merge disk operations will
-	//   starve any spider disk reads (see Threads.cpp for that)
-	// . TODO: fix this: if already merging we'll have an extra file
-	// . i changed the 4 to a 14 so spider is not slowed down so much
-	//   when getting link info... but real time queries will suffer!
-	if ( ! m_mergeUrgent && numFiles - 14 >= m_minToMerge ) {
-		m_mergeUrgent = true;
-		if ( doLog ) 
-			log(LOG_INFO,"merge: Entering urgent merge mode for %s coll=%s.", m_dbname,m_coll);
-		s_numUrgentMerges++;
-	}
-
-
 	if ( g_merge.isMerging() )
 	{
 		logTrace( g_conf.m_logTraceRdbBase, "END, is merging" );
@@ -1655,21 +1623,6 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 		return false;
 	}
 
-	// . if we are significantly over our m_minToMerge limit
-	//   then set m_mergeUrgent to true so merge disk operations will
-	//   starve any spider disk reads (see Threads.cpp for that)
-	// . TODO: fix this: if already merging we'll have an extra file
-	// . i changed the 4 to a 14 so spider is not slowed down so much
-	//   when getting link info... but real time queries will suffer!
-	if ( ! m_mergeUrgent && numFiles - 14 >= m_minToMerge ) {
-		m_mergeUrgent = true;
-		if ( m_doLog )
-		log(LOG_INFO,
-		    "merge: Entering urgent merge mode (2) for %s coll=%s.", 
-		    m_dbname,m_coll);
-		s_numUrgentMerges++;
-	}
-
 	// sanity check
 	if ( m_isMerging || g_merge.isMerging() ) {
 		//if ( m_doLog )
@@ -1763,11 +1716,6 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 		if ( mergeNum <= 1 ) {
 			log(LOG_LOGIC,"merge: attemptMerge: Resuming. bad "
 			    "engineer for %s coll=%s",m_dbname,m_coll);
-			if ( m_mergeUrgent ) {
-				log(LOG_WARN, "merge: leaving urgent merge mode");
-				s_numUrgentMerges--;
-				m_mergeUrgent = false;
-			}
 			return false;
 		}
 
