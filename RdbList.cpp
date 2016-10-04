@@ -2244,7 +2244,7 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 		}
 
 		// ignore if negative i guess, just skip it
-		if (removeNegKeys && (minPtrBase[0] & 0x01) == 0x00) {
+		if (removeNegKeys && KEYNEG(minPtrBase)) {
 			logTrace(g_conf.m_logTraceRdbList, "removeNegKeys. skip");
 			goto skip;
 		}
