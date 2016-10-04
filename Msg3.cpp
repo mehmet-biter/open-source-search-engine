@@ -378,8 +378,6 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 	m_fileStartKey = startKeyArg;
 	// start the timer, keep it fast for clusterdb though
 	if ( g_conf.m_logTimingDb ) m_startTime = gettimeofdayInMilliseconds();
-	// map ptrs
-	RdbMap **maps = base->getMaps();
 	// . we now boost m_minRecSizes to account for negative recs 
 	// . but not if only reading one list, cuz it won't get merged and
 	//   it will be too big to send back
@@ -443,14 +441,15 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 			    "result. ");
 			g_process.shutdownAbort(true);
 		}
+		RdbMap *map = base->getMap(fn);
 		// . sanity check?
 		// . no, we must get again since we turn on endKey's last bit
 		int32_t p1 , p2;
-		maps[fn]->getPageRange ( m_fileStartKey , 
-					m_endKey       , 
-					&p1            , 
-					&p2            ,
-					NULL           );
+		map->getPageRange(m_fileStartKey,
+				  m_endKey,
+				  &p1,
+				  &p2,
+				  NULL);
 		// sanity check, each endpg's key should be > endKey
 		//if ( p2 < maps[fn]->getNumPages() && 
 		//     maps[fn]->getKey ( p2 ) <= m_endKey ) {
@@ -461,8 +460,8 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		//int32_t p1 , p2; 
 		//maps[fn]->getPageRange (startKey,endKey,minRecSizes,&p1,&p2);
 		// now get some read info
-		int64_t offset      = maps[fn]->getAbsoluteOffset ( p1 );
-		int64_t      bytesToRead = maps[fn]->getRecSizes ( p1, p2, false);
+		int64_t offset      = map->getAbsoluteOffset ( p1 );
+		int64_t      bytesToRead = map->getRecSizes ( p1, p2, false);
 		// max out the endkey for this list
 		// debug msg
 		//#ifdef _DEBUG_		
@@ -487,8 +486,8 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		char startKey2 [ MAX_KEY_BYTES ];
 		char endKey2   [ MAX_KEY_BYTES ];
 
-		maps[fn]->getKey ( p1 , startKey2 );
-		maps[fn]->getKey ( p2 , endKey2 );
+		map->getKey(p1, startKey2);
+		map->getKey(p2, endKey2);
 
 		// store in here
 		m_scan[i].m_startpg = p1;
@@ -498,7 +497,7 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		// . but iff p2 is NOT the last page in the map/file
 		// . maps[fn]->getKey(lastPage) will return the LAST KEY
 		//   and maps[fn]->getOffset(lastPage) the length of the file
-		if ( maps[fn]->getNumPages() != p2 ) KEYDEC(endKey2,m_ks);
+		if ( map->getNumPages() != p2 ) KEYDEC(endKey2,m_ks);
 		// otherwise, if we're reading all pages, then force the
 		// endKey to virtual inifinite
 		else KEYMAX(endKey2,m_ks);
@@ -510,7 +509,7 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		//   in the list
 		int32_t h2 = p2 ;
 		// decrease by one page if we're on the last page
-		if ( h2 > p1 && maps[fn]->getNumPages() == h2 ) h2--;
+		if ( h2 > p1 && map->getNumPages() == h2 ) h2--;
 		// . decrease hint page until key is <= endKey on that page
 		//   AND offset is NOT -1 because the old way would give
 		//   us hints passed the endkey
@@ -520,16 +519,16 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		//   never be able to set "size" in RdbList::constrain()
 		//   because "p" could equal "maxPtr" right away
 		while ( h2 > p1 && 
-		      (KEYCMP(maps[fn]->getKeyPtr(h2),m_constrainKey,m_ks)>0||
-			  maps[fn]->getOffset(h2) == -1            ||
-			  maps[fn]->getAbsoluteOffset(h2) - offset >=
-			  m_minRecSizes ) ) {
+		      (KEYCMP(map->getKeyPtr(h2),m_constrainKey,m_ks)>0 ||
+		       map->getOffset(h2) == -1 ||
+		       map->getAbsoluteOffset(h2) - offset >= m_minRecSizes ) )
+		{
 			h2--;
 		}
 
 		// now set the hint
-		m_scan[i].m_hintOffset = maps[fn]->getAbsoluteOffset(h2) - maps[fn]->getAbsoluteOffset(p1);
-		KEYSET(m_scan[i].m_hintKey, maps[fn]->getKeyPtr(h2), m_ks);
+		m_scan[i].m_hintOffset = map->getAbsoluteOffset(h2) - map->getAbsoluteOffset(p1);
+		KEYSET(m_scan[i].m_hintKey, map->getKeyPtr(h2), m_ks);
 
 		// reset g_errno before calling setRead()
 		g_errno = 0;
@@ -557,7 +556,7 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 			char lastTmpKey[MAX_KEY_BYTES];
 			int32_t ccount = 0;
 			for(int32_t pn = p1; pn <= p2; pn++) {
-				maps[fn]->getKey ( pn , tmpKey );
+				map->getKey ( pn , tmpKey );
 				if(pn!=p1 && KEYCMP(tmpKey,lastTmpKey,m_ks) == 0)
 					ccount++;
 				memcpy(lastTmpKey,tmpKey,sizeof(tmpKey));
