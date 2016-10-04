@@ -805,7 +805,7 @@ void SpiderCache::reset ( ) {
 	for ( int32_t i = 0 ; i < g_collectiondb.m_numRecs ; i++ ) {
 		CollectionRec *cr = g_collectiondb.getRec(i);
 		ScopedLock sl(cr->m_spiderCollMutex);
-		SpiderColl *sc = getSpiderCollIffNonNull(i);
+		SpiderColl *sc = cr->m_spiderColl;
 		if ( ! sc ) continue;
 		sc->reset();
 		mdelete ( sc , sizeof(SpiderColl) , "SpiderCache" );
