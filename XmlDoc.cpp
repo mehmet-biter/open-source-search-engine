@@ -1179,7 +1179,7 @@ bool XmlDoc::set2 ( char    *titleRec ,
 }
 
 
-bool XmlDoc::setFirstUrl ( char *u ) {
+bool XmlDoc::setFirstUrl ( const char *u ) {
 	m_firstUrl.reset();
 	m_currentUrl.reset();
 
