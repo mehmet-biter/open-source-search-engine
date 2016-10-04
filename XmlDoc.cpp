@@ -12028,6 +12028,47 @@ bool XmlDoc::doConsistencyTest ( bool forceTest ) {
 
 #define TABLE_ROWS 25
 
+void XmlDoc::printMetaList() const {
+	const char *p = m_metaList;
+	const char *pend = m_metaList + m_metaListSize;
+	for (; p < pend;) {
+		// get rdbId
+		rdbid_t rdbId = (rdbid_t)(*p & 0x7f);
+		p++;
+
+		// key size
+		int32_t ks = getKeySizeFromRdbId(rdbId);
+
+		// get key
+		const char *key = p;
+		p += ks;
+
+		// . if key is negative, no data is present
+		// . the doledb key is negative for us here
+		bool isDel = ((key[0] & 0x01) == 0x00);
+		int32_t ds = isDel ? 0 : getDataSizeFromRdbId(rdbId);
+
+		// if datasize variable, read it in
+		if (ds == -1) {
+			// get data size
+			ds = *(int32_t *)p;
+
+			// skip data size int32_t
+			p += 4;
+		}
+
+		// skip data if not zero
+		p += ds;
+
+		if (rdbId == RDB_POSDB) {
+			Posdb::printKey(key);
+		} else {
+			/// @todo ALC implement other rdb types
+			gbshutdownLogicError();
+		}
+	}
+}
+
 // print this also for page parser output!
 void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 
@@ -19209,6 +19250,72 @@ bool XmlDoc::printRainbowSections ( SafeBuf *sb , HttpRequest *hr ) {
 	sb->safePrintf("</response>\n");
 
 	return true;
+}
+
+void XmlDoc::printTermList() const {
+	if (!m_wts) {
+		return;
+	}
+
+	// shortcut
+	HashTableX *wt = m_wts;
+
+	// use the keys to hold our list of ptrs to TermDebugInfos for sorting!
+	TermDebugInfo **tp = NULL;
+
+	// add them with this counter
+	int32_t nt = 0;
+
+	int32_t nwt = 0;
+	if ( wt ) {
+		nwt = wt->m_numSlots;
+		tp = (TermDebugInfo **)wt->m_keys;
+	}
+
+	// now print the table we stored all we hashed into
+	for ( int32_t i = 0 ; i < nwt ; i++ ) {
+		// skip if empty
+		if ( wt->m_flags[i] == 0 ) continue;
+
+		// get the TermDebugInfo
+		TermDebugInfo *ti = (TermDebugInfo *)wt->getValueFromSlot ( i );
+		// point to it for sorting
+		tp[nt++] = ti;
+	}
+
+	const char *start = m_wbuf.getBufStart();
+
+	for ( int32_t i = 0 ; i < nt ; i++ ) {
+		TermDebugInfo *tpi = tp[i];
+
+		const char *prefix = NULL;
+		if (tpi->m_prefixOff >= 0) {
+			prefix = start + tpi->m_prefixOff;
+		}
+
+		const char *desc = NULL;
+		if (tpi->m_descOff >= 0) {
+			desc = start + tpi->m_descOff;
+		}
+
+		// use hashgroup
+		int32_t hg = tpi->m_hashGroup;
+		if (!desc || !strcmp(desc, "body"))
+			desc = getHashGroupString(hg);
+
+		logf(LOG_TRACE, "termId=%015" PRId64" prefix='%s' wordPos=%" PRId32" wordNum=%" PRId32" term='%.*s' desc='%s%s%s' densityRank=%hhd wordSpamRank=%hhd",
+		     (int64_t)(tp[i]->m_termId & TERMID_MASK),
+		     prefix ? prefix : "",
+		     tpi->m_wordPos,
+		     tpi->m_wordNum,
+		     tpi->m_termLen, start + tpi->m_termOff,
+		     desc,
+		     tpi->m_synSrc ? " - " : "",
+		     tpi->m_synSrc ? getSourceString(tpi->m_synSrc) : "",
+		     tpi->m_densityRank,
+		     tpi->m_wordSpamRank);
+
+	}
 }
 
 bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {

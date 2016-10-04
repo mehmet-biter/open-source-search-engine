@@ -454,6 +454,7 @@ public:
 	bool m_doConsistencyTesting;
 	bool doConsistencyTest ( bool forceTest ) ;
 
+	void printMetaList() const;
 	void printMetaList ( char *metaList , char *metaListEnd ,
 			     class SafeBuf *pbuf );
 	bool verifyMetaList ( char *p , char *pend , bool forDelete ) ;
@@ -568,6 +569,8 @@ public:
 	bool printTermList ( class SafeBuf *sb , HttpRequest *hr );
 	bool printSpiderStats ( class SafeBuf *sb , HttpRequest *hr );
 	bool printCachedPage ( class SafeBuf *sb , HttpRequest *hr );
+
+	void printTermList() const;
 
 	char *getTitleBuf             ( );
 	char *getRootTitleBuf         ( );
