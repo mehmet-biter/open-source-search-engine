@@ -162,14 +162,6 @@ class RdbBase {
 	int32_t addFile     ( bool isNew, int32_t fileId, int32_t fileId2, int32_t mergeNum, int32_t endMergeFileId ) ;
 	int32_t addNewFile  ( int32_t id2 ) ;
 
-	// used by the high priority udp server to suspend merging for ALL
-	// rdb's since we share a common merge class, s_merge
-	//void suspendAllMerges ( ) ;
-	// resume ANY merges
-	//void resumeAllMerges ( ) ;
-
-	//bool needsDump ( );
-
 	// these are used for computing load on a machine
 	bool isMerging() const { return m_isMerging; }
 	bool isDumping() const { return m_dump->isDumping(); }
@@ -181,15 +173,6 @@ class RdbBase {
 	//are files being unlinked or renamed?
 	bool isManipulatingFiles() const;
 	
-	// used for translating titledb file # 255 (as read from new tfndb)
-	// into the real file number
-	int32_t getNewestFileNum() const { return m_numFiles - 1; }
-
-	// Msg22 needs the merge info so if the title file # of a read we are
-	// doing is being merged, we have to include the start merge file num
-	int32_t      getMergeStartFileNum() const { return m_mergeStartFileNum; }
-	int32_t      getMergeNumFiles() const { return m_numFilesToMerge; }
-
 	bool isFileBeingUnlinked(int32_t fileNum) const {
 		return m_isUnlinking &&
 		       fileNum >= m_mergeStartFileNum &&
