@@ -102,7 +102,7 @@ bool Msg5::getTreeList(RdbList *result, const void *startKey, const void *endKey
 	if(base->m_rdb->useTree()) {
 		// get the mem tree for this rdb
 		RdbTree *tree = base->m_rdb->getTree();
-		if(!tree->getList(base->m_collnum,
+		if(!tree->getList(base->getCollnum(),
 				  static_cast<const char*>(startKey),
 				  static_cast<const char*>(endKey),
 				  m_newMinRecSizes,
@@ -116,7 +116,7 @@ bool Msg5::getTreeList(RdbList *result, const void *startKey, const void *endKey
 		*numUsedNodes = tree->getNumUsedNodes();
 	} else {
 		RdbBuckets *buckets = base->m_rdb->getBuckets();
-		if(!buckets->getList(base->m_collnum,
+		if(!buckets->getList(base->getCollnum(),
 				     static_cast<const char*>(startKey),
 				     static_cast<const char*>(endKey),
 				     m_newMinRecSizes,

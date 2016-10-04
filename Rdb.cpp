@@ -1280,7 +1280,7 @@ bool Rdb::dumpCollLoop ( ) {
 		// . RdbMap should dump itself out CLOSE!
 		// . it returns false if blocked, true otherwise & sets g_errno on err
 		// . but we only return false on error here
-		if (!m_dump.set(base->m_collnum,
+		if (!m_dump.set(base->getCollnum(),
 	                	base->getFile(m_fn),
 	                	buckets,
 	                	tree,

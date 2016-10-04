@@ -107,6 +107,8 @@ class RdbBase {
 		return NULL;
 	}
 
+	collnum_t  getCollnum() const { return m_collnum; }
+
 	docidsconst_ptr_t getGlobalIndex();
 
 
@@ -278,6 +280,13 @@ public:
 	char      m_dbname [32];
 	int32_t      m_dbnameLen;
 
+private:
+	static void unlinkDoneWrapper(void *state);
+	void unlinkDone();
+	static void renameDoneWrapper(void *state);
+	static void checkThreadsAgainWrapper(int /*fd*/, void *state);
+	void renameDone();
+	
 	const char      *m_coll;
 	collnum_t  m_collnum;
 
@@ -295,13 +304,6 @@ public:
 
 	int32_t      m_maxTreeMem ; // max mem tree can use, dump at 90% of this
 
-private:
-	static void unlinkDoneWrapper(void *state);
-	void unlinkDone();
-	static void renameDoneWrapper(void *state);
-	static void checkThreadsAgainWrapper(int /*fd*/, void *state);
-	void renameDone();
-	
 	int32_t      m_minToMergeArg;
 	int32_t      m_minToMerge;  // need at least this many files b4 merging
 	int32_t      m_absMaxFiles;
