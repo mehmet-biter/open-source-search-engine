@@ -136,7 +136,7 @@ bool Msg5::getTreeList(RdbList *result, const void *startKey, const void *endKey
 			     "in %" PRIu64" ms. size=%" PRId32" db=%s "
 			     "niceness=%" PRId32".",
 			     structName, took,m_treeList.getListSize(),
-			     base->m_dbname,m_niceness);
+			     base->getDbName(),m_niceness);
 	}
 
 	return true;
@@ -595,7 +595,7 @@ bool Msg5::needsRecall ( ) {
 	// to read too many bytes a small titledb and it does an infinite loop
 	if ( m_readAbsolutelyNothing ) {
 		log("rdb: read absolutely nothing more for dbname=%s on cn=%" PRId32,
-		    base->m_dbname,(int32_t)m_collnum);
+		    base->getDbName(),(int32_t)m_collnum);
 		return false;
 	}
 	if ( KEYCMP(m_list->getEndKey(),m_endKey,m_ks)>=0 ) return false;
@@ -613,7 +613,7 @@ bool Msg5::needsRecall ( ) {
 		log("db: Reading %" PRId32" again from %s (need %" PRId32" total "
 		     "got %" PRId32" totalListSizes=%" PRId32" sk=%s) "
 		     "cn=%" PRId32" this=0x%" PTRFMT" round=%" PRId32".", 
-		     m_newMinRecSizes , base->m_dbname , m_minRecSizes, 
+		     m_newMinRecSizes , base->getDbName() , m_minRecSizes, 
 		     m_list->getListSize(),
 		     m_totalSize,
 		     KEYSTR(m_startKey,m_ks),
@@ -947,7 +947,7 @@ bool Msg5::gotList2 ( ) {
 	// . this returns false and sets g_errno on error
 	// . should not affect the current list in m_list, only build on top
 	if ( ! m_list->prepareForMerge ( m_listPtrs, m_numListPtrs, m_minRecSizes ) ) {
-		log( LOG_WARN, "net: Had error preparing to merge lists from %s: %s", base->m_dbname,mstrerror(g_errno));
+		log( LOG_WARN, "net: Had error preparing to merge lists from %s: %s", base->getDbName(),mstrerror(g_errno));
 		return true;
 	}
 
@@ -1189,7 +1189,7 @@ bool Msg5::doneMerging ( ) {
 	// . Thread class should propagate g_errno when it was set in a thread
 	if ( g_errno ) {
 		log( LOG_WARN, "net: Had error merging lists from %s: %s.",
-		    base->m_dbname,mstrerror(g_errno));
+		    base->getDbName(),mstrerror(g_errno));
 		return true;
 	}
 
@@ -1201,7 +1201,7 @@ bool Msg5::doneMerging ( ) {
 	if ( m_hadCorruption ) {
 		// log it here, cuz logging in thread doesn't work too well
 		log( LOG_WARN, "net: Encountered a corrupt list in rdb=%s collnum=%" PRId32,
-		    base->m_dbname,(int32_t)m_collnum);
+		    base->getDbName(),(int32_t)m_collnum);
 		// remove error condition, we removed the bad data in thread
 		
 		m_hadCorruption = false;

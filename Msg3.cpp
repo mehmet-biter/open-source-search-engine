@@ -275,7 +275,7 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		    "c=%" PRId32" hmf=%" PRId32" sfn=%" PRId32" msfn=%" PRId32" nf=%" PRId32" db=%s.",
 		     (int32_t)compensateForMerge,(int32_t)base->hasMergeFile(),
 		     (int32_t)startFileNum,(int32_t)base->mergeStartFileNum()-1,
-		     (int32_t)numFiles,base->m_dbname);
+		     (int32_t)numFiles,base->getDbName());
 	int32_t pre = -10;
 	if ( compensateForMerge && base->hasMergeFile() ) {
 		if ( startFileNum >= base->mergeStartFileNum() - 1 &&
@@ -329,7 +329,7 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 	try {
 		m_scan = new Scan[m_numChunks];
 	} catch(std::bad_alloc&) {
-		log(LOG_WARN, "disk: Could not allocate %d 'Scan' structures to read %s.",m_numChunks,base->m_dbname);
+		log(LOG_WARN, "disk: Could not allocate %d 'Scan' structures to read %s.",m_numChunks,base->getDbName());
 		g_errno = ENOMEM;
 		return true;
 	}
@@ -537,13 +537,13 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 			log(LOG_TIMING,
 			    "net: msg: reading %" PRId64" bytes from %s file #%" PRId32" "
 			     "(niceness=%" PRId32")",
-			     bytesToRead,base->m_dbname,i,m_niceness);
+			     bytesToRead,base->getDbName(),i,m_niceness);
 
 		// log huge reads, those hurt us
 		if ( bytesToRead > 150000000 ) {
 			logf(LOG_INFO,"disk: Reading %" PRId64" bytes at offset %" PRId64" "
 			    "from %s.",
-			    bytesToRead,offset,base->m_dbname);
+			    bytesToRead,offset,base->getDbName());
 		}
 
 		if(bytesToRead     > 10000000      &&
@@ -568,7 +568,7 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 				     "map was \"repaired\" because out of order keys "
 				     "in the index.",
 				     (int32_t)bytesToRead,
-				     base->m_dbname,fn,
+				     base->getDbName(),fn,
 				     (int32_t)m_minRecSizes,
 				     (int32_t)ccount);
 				m_numScansCompleted++;
@@ -648,7 +648,7 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 			int32_t tt = LOG_WARN;
 			if ( g_errno == EFILECLOSED ) tt = LOG_INFO;
 			log(tt,"disk: Reading %s had error: %s.",
-			    base->m_dbname, mstrerror(g_errno));
+			    base->getDbName(), mstrerror(g_errno));
 			m_errno = g_errno; 
 			break; 
 		}
@@ -676,7 +676,7 @@ void Msg3::doneScanningWrapper(void *state) {
 		RdbBase *base = getRdbBase( THIS->m_rdbId, THIS->m_collnum );
 		const char *dbname = "NOT FOUND";
 		if ( base ) {
-			dbname = base->m_dbname;
+			dbname = base->getDbName();
 		}
 
 		int32_t tt = LOG_WARN;
@@ -833,7 +833,7 @@ bool Msg3::doneScanning ( ) {
 		time_t now = getTime();
 		if ( now - s_time > 5 ) {
 			log(LOG_WARN, "net: Had error reading %s: %s. Retrying. (retry #%" PRId32")",
-			    base->m_dbname,mstrerror(m_errno) , m_retryNum );
+			    base->getDbName(),mstrerror(m_errno) , m_retryNum );
 			s_time = now;
 		}
 		// send email alert if in an infinite loop, but don't send
@@ -888,7 +888,7 @@ bool Msg3::doneScanning ( ) {
 		log(
 		    "net: Had error reading %s: %s. Giving up after %" PRId32" "
 		    "retries.",
-		    base->m_dbname,mstrerror(g_errno) , m_retryNum );
+		    base->getDbName(),mstrerror(g_errno) , m_retryNum );
 		return true;
 	}
 
@@ -1017,7 +1017,7 @@ bool Msg3::doneScanning ( ) {
 		log(LOG_TIMING,
 		    "net: Took %" PRId64" ms to read %" PRId32" lists of %" PRId32" bytes total"
 		     " from %s (niceness=%" PRId32").",
-		     took,m_numFileNums,count,base->m_dbname,m_niceness);
+		     took,m_numFileNums,count,base->getDbName(),m_niceness);
 	}
 
 	return true;
@@ -1123,7 +1123,7 @@ void Msg3::setPageRanges(RdbBase *base) {
 			g_errno = ECORRUPTDATA;
 			log("db: Got corrupted map in memory for %s. This is almost "
 			    "always because of bad memory. Please replace your RAM.",
-			    base->m_dbname);
+			    base->getDbName());
 			gbshutdownCorrupted();
 		}
 		// don't let minKey exceed endKey, however

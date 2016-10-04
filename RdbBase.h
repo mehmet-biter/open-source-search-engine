@@ -109,6 +109,8 @@ class RdbBase {
 
 	collnum_t  getCollnum() const { return m_collnum; }
 
+	const char *getDbName() const { return m_dbname; }
+
 	docidsconst_ptr_t getGlobalIndex();
 
 
@@ -276,10 +278,6 @@ public:
 
 	int32_t      m_fixedDataSize;
 
-	Dir       m_dir;
-	char      m_dbname [32];
-	int32_t      m_dbnameLen;
-
 private:
 	static void unlinkDoneWrapper(void *state);
 	void unlinkDone();
@@ -287,6 +285,10 @@ private:
 	static void checkThreadsAgainWrapper(int /*fd*/, void *state);
 	void renameDone();
 	
+	Dir       m_dir;
+	char      m_dbname [32];
+	int32_t      m_dbnameLen;
+
 	const char      *m_coll;
 	collnum_t  m_collnum;
 
