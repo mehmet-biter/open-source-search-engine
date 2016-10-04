@@ -2336,8 +2336,7 @@ bool XmlDoc::hashWords3( HashInfo *hi, const Words *words, Phrases *phrases, Sec
 		if ( wlens[i] >= 3 &&
 		     wptrs[i][wlens[i]-2] == '\'' &&
 		     to_lower_a(wptrs[i][wlens[i]-1]) == 's' ) {
-			int64_t nah ;
-			nah = hash64Lower_utf8 ( wptrs[i], wlens[i]-2 );
+			int64_t nah = hash64Lower_utf8 ( wptrs[i], wlens[i]-2 );
 			if ( plen>0 ) nah = hash64 ( nah , prefixHash );
 			Posdb::makeKey ( &k ,
 					  nah,
@@ -2411,6 +2410,7 @@ skipsingleword:
 					  true  , // syn?
 					  false , // delkey?
 					  hi->m_shardByTermId );
+
 			// key should NEVER collide since we are always
 			// incrementing the distance cursor, m_dist
 			dt->addTerm144 ( &k );
