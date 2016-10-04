@@ -1060,15 +1060,13 @@ bool Msg3::doneSleeping ( ) {
 void Msg3::setPageRanges(RdbBase *base) {
 	// sanity check
 	//if ( m_ks != 12 && m_ks != 16 ) { g_process.shutdownAbort(true); }
-	// get the file maps from the rdb
-	RdbMap **maps = base->getMaps();
 	// . initialize the startpg/endpg for each file
 	// . we read from the first offset on m_startpg to offset on m_endpg
 	// . since we set them equal that means an empty range for each file
 	for ( int32_t i = 0 ; i < m_numFileNums ; i++ ) {
 		int32_t fn = m_scan[i].m_fileNum;
 		if ( fn < 0 ) { g_process.shutdownAbort(true); }
-		m_scan[i].m_startpg = maps[fn]->getPage( m_fileStartKey );
+		m_scan[i].m_startpg = base->getMap(fn)->getPage( m_fileStartKey );
 		m_scan[i].m_endpg = m_scan[i].m_startpg;
 	}
 	// just return if minRecSizes 0 (no reading needed)
@@ -1083,33 +1081,34 @@ void Msg3::setPageRanges(RdbBase *base) {
 		char minKey[MAX_KEY_BYTES];
 		for ( int32_t i = 0 ; i < m_numFileNums ; i++ ) {
 			int32_t fn = m_scan[i].m_fileNum;
+			RdbMap *map = base->getMap(fn);
 			// this guy is out of race if his end key > "endKey" already
-			if(KEYCMP(maps[fn]->getKeyPtr(m_scan[i].m_endpg),m_endKey,m_ks)>0)
+			if(KEYCMP(map->getKeyPtr(m_scan[i].m_endpg),m_endKey,m_ks)>0)
 				continue;
 			// get the next page after m_scan[i].m_endpg
 			int32_t nextpg = m_scan[i].m_endpg + 1;
 			// if endpg[i]+1 == m_numPages then we maxed out this range
-			if ( nextpg > maps[fn]->getNumPages() ) continue;
+			if ( nextpg > map->getNumPages() ) continue;
 			// . but this may have an offset of -1
 			// . which means the page has no key starting on it and
 			//   it's occupied by a rec which starts on a previous page
-			while ( nextpg < maps[fn]->getNumPages() &&
-				maps[fn]->getOffset ( nextpg ) == -1 ) nextpg++;
+			while ( nextpg < map->getNumPages() &&
+				map->getOffset ( nextpg ) == -1 ) nextpg++;
 			// . continue if his next page doesn't have the minimum key
 			// . if nextpg == getNumPages() then it returns the LAST KEY
 			//   contained in the corresponding RdbFile
 			if (minpg != -1 && 
-			    KEYCMP(maps[fn]->getKeyPtr(nextpg),minKey,m_ks)>0)continue;
+			    KEYCMP(map->getKeyPtr(nextpg),minKey,m_ks)>0)continue;
 			// . we got a winner, his next page has the current min key
 			// . if m_scan[i].m_endpg+1 == getNumPages() then getKey() returns the
 			//   last key in the mapped file
 			// . minKey should never equal the key on m_scan[i].m_endpg UNLESS
 			//   it's on page #m_numPages
-			KEYSET(minKey,maps[fn]->getKeyPtr(nextpg),m_ks);
+			KEYSET(minKey,map->getKeyPtr(nextpg),m_ks);
 			minpg  = i;
 			// if minKey is same as the current key on this endpg, inc it
 			// so we cause some advancement, otherwise, we'll loop forever
-			if ( KEYCMP(minKey,maps[fn]->getKeyPtr(m_scan[i].m_endpg),m_ks)!=0)
+			if ( KEYCMP(minKey,map->getKeyPtr(m_scan[i].m_endpg),m_ks)!=0)
 				continue;
 			//minKey += (uint32_t) 1;
 			KEYINC(minKey,m_ks);
@@ -1143,7 +1142,7 @@ void Msg3::setPageRanges(RdbBase *base) {
 		// . we want to read UP TO the first key on m_scan[i].m_endpg
 		for ( int32_t i = 0 ; i < m_numFileNums ; i++ ) {
 			int32_t fn = m_scan[i].m_fileNum;
-			m_scan[i].m_endpg = maps[fn]->getEndPage ( m_scan[i].m_endpg, lastMinKey );
+			m_scan[i].m_endpg = base->getMap(fn)->getEndPage ( m_scan[i].m_endpg, lastMinKey );
 		}
 		// . if the minKey is BIGGER than the provided endKey we're done
 		// . we don't necessarily include records whose key is "minKey"
@@ -1157,11 +1156,11 @@ void Msg3::setPageRanges(RdbBase *base) {
 		int32_t recSizes = 0;
 		for ( int32_t i = 0 ; i < m_numFileNums ; i++ ) {
 			int32_t fn = m_scan[i].m_fileNum;
-			recSizes += maps[fn]->getMinRecSizes ( m_scan[i].m_startpg,
-							       m_scan[i].m_endpg,
-							       m_fileStartKey,
-							       lastMinKey   ,
-							       false        );
+			recSizes += base->getMap(fn)->getMinRecSizes(m_scan[i].m_startpg,
+								     m_scan[i].m_endpg,
+								     m_fileStartKey,
+								     lastMinKey   ,
+								     false        );
 		}
 		// if we hit it then return minKey -1 so we only read UP TO "minKey"
 		// not including "minKey"
