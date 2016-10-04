@@ -234,6 +234,32 @@ bool RdbBase::init(char *dir,
 	return true;
 }
 
+
+//special init function used by main.cpp injectFile. Not pretty
+void RdbBase::specialInjectFileInit(const char *dir,
+                                    const char *dbname,
+	                            collnum_t collnum,
+	                            Rdb *rdb,
+	                            int32_t fixedDataSize,
+	                            bool useHalfKeys,
+	                            char ks,
+	                            int32_t pageSize,
+	                            int32_t minToMerge)
+{
+	m_dir.set(dir);
+	strcpy(m_dbname,dbname);
+	m_dbnameLen = strlen(dbname);
+	m_coll = "main";
+	m_collnum = collnum;
+	m_rdb = rdb;
+	m_fixedDataSize = fixedDataSize;
+	m_useHalfKeys = useHalfKeys;
+	m_ks = ks;
+	m_pageSize = pageSize;
+	m_minToMerge = minToMerge;
+}
+
+
 // . move all files into trash subdir
 // . change name
 // . this is part of PageRepair's repair algorithm. all this stuff blocks.

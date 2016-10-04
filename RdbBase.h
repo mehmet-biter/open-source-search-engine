@@ -218,6 +218,16 @@ class RdbBase {
 	bool removeRebuildFromFilenames ( ) ;
 	bool removeRebuildFromFilename  ( BigFile *f ) ;
 
+	void specialInjectFileInit(const char *dir,
+	                           const char *filename,
+	                           collnum_t collnum,
+	                           Rdb *rdb,
+	                           int32_t fixedDataSize,
+	                           bool useHalfKeys,
+	                           char ks,
+	                           int32_t pageSize,
+	                           int32_t minToMerge);
+
 private:
 	bool parseFilename( const char* filename, int32_t *p_fileId, int32_t *p_fileId2,
 	                    int32_t *p_mergeNum, int32_t *p_endMergeFileId );
