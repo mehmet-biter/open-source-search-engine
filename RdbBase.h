@@ -303,8 +303,6 @@ private:
 	// key size
 	char      m_ks;
 
-	bool m_checkedForMerge;
-
 	int32_t      m_pageSize;
 
 	bool      m_niceness;

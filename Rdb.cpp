@@ -1357,7 +1357,6 @@ void Rdb::doneDumpingCollWrapper ( void *state ) {
 	// we just finished dumping to a file, 
 	// so allow it to try to merge again.
 	//RdbBase *base = THIS->getBase(THIS->m_dumpCollnum);
-	//if ( base ) base->m_checkedForMerge = false;
 
 	logTrace( g_conf.m_logTraceRdb, "%s", THIS->m_dbname );
 

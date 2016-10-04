@@ -81,7 +81,6 @@ void RdbBase::reset ( ) {
 	m_hasMergeFile = false;
 	m_isUnlinking  = false;
 	m_numThreads = 0;
-	m_checkedForMerge = false;
 }
 
 RdbBase::~RdbBase ( ) {
@@ -1592,7 +1591,6 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 		// merging. this will save a lot of cpu time when we have
 		// 20,000+ collections. if we dump a file to disk for it
 		// then we set this flag back to false in Rdb.cpp.
-		m_checkedForMerge = true;
 		logTrace( g_conf.m_logTraceRdbBase, "END, min files not reached (%" PRId32" / %" PRId32")",numFiles,minToMerge);
 		return false;
 	}
