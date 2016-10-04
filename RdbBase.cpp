@@ -63,27 +63,25 @@ RdbBase::RdbBase()
 	m_numPos = 0;
 	m_numNeg = 0;
 	m_doLog = false;
-	memset(m_files, 0, sizeof(m_files));
-	memset(m_maps, 0, sizeof(m_maps));
-	memset(m_indexes, 0, sizeof(m_indexes));
+	memset(m_fileInfo, 0, sizeof(m_fileInfo));
 
 	reset();
 }
 
 void RdbBase::reset ( ) {
 	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) {
-		mdelete(m_files[i], sizeof(BigFile), "RdbBFile");
-		delete (m_files[i]);
+		mdelete(m_fileInfo[i].m_file, sizeof(BigFile), "RdbBFile");
+		delete m_fileInfo[i].m_file;
 
-		mdelete(m_maps[i], sizeof(RdbMap), "RdbBMap");
-		delete (m_maps[i]);
+		mdelete(m_fileInfo[i].m_map, sizeof(RdbMap), "RdbBMap");
+		delete m_fileInfo[i].m_map;
 
-		mdelete(m_indexes[i], sizeof(RdbIndex), "RdbBIndex");
-		delete (m_indexes[i]);
+		mdelete(m_fileInfo[i].m_index, sizeof(RdbIndex), "RdbBIndex");
+		delete m_fileInfo[i].m_index;
 	}
 
 	m_numFiles  = 0;
-	m_files[m_numFiles] = NULL;
+	m_fileInfo[m_numFiles].m_file = NULL;
 	// we're not in urgent merge mode yet
 	m_mergeUrgent = false;
 	m_isMerging = false;
@@ -274,7 +272,7 @@ bool RdbBase::moveToTrash ( char *dstDir ) {
 		// . get the "base" filename, does not include directory
 		BigFile *f ;
 		char dstFilename [1024];
-		f = m_maps[i]->getFile();
+		f = m_fileInfo[i].m_map->getFile();
 		sprintf ( dstFilename , "%s" , f->getFilename());
 
 		// ALWAYS log what we are doing
@@ -286,7 +284,7 @@ bool RdbBase::moveToTrash ( char *dstDir ) {
 		}
 
 		if (m_useIndexFile) {
-			f = m_indexes[i]->getFile();
+			f = m_fileInfo[i].m_index->getFile();
 			sprintf(dstFilename, "%s", f->getFilename());
 
 			if (f->doesExist()) {
@@ -301,7 +299,7 @@ bool RdbBase::moveToTrash ( char *dstDir ) {
 		}
 
 		// move the data file
-		f = m_files[i];
+		f = m_fileInfo[i].m_file;
 		sprintf ( dstFilename , "%s" , f->getFilename());
 		// ALWAYS log what we are doing
 		logf(LOG_INFO,"repair: Renaming %s to %s%s", f->getFilename(),dstDir,dstFilename);
@@ -331,13 +329,13 @@ bool RdbBase::removeRebuildFromFilenames ( ) {
 	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) {
 		// . rename the map file
 		// . get the "base" filename, does not include directory
-		BigFile *f = m_files[i];
+		BigFile *f = m_fileInfo[i].m_file;
 		// return false if it fails
 		//if ( ! removeRebuildFromFilename(f) ) return false;
 		// DON'T STOP IF ONE FAILS
 		removeRebuildFromFilename(f);
 		// rename the map file now too!
-		f = m_maps[i]->getFile();
+		f = m_fileInfo[i].m_map->getFile();
 		// return false if it fails
 		//if ( ! removeRebuildFromFilename(f) ) return false;
 		// DON'T STOP IF ONE FAILS
@@ -346,7 +344,7 @@ bool RdbBase::removeRebuildFromFilenames ( ) {
 //@@@ BR: no-merge index begin
 		if( m_useIndexFile ) {
 			// rename the index file now too!
-			f = m_indexes[i]->getFile();
+			f = m_fileInfo[i].m_index->getFile();
 			// return false if it fails
 			//if ( ! removeRebuildFromFilename(f) ) return false;
 			// DON'T STOP IF ONE FAILS
@@ -508,12 +506,12 @@ bool RdbBase::setFiles ( ) {
 		// don't add if already in there
 		int32_t i ;
 		for ( i = 0 ; i < m_numFiles ; i++ ) {
-			if ( m_fileIds[ i ] >= fileId ) {
+			if ( m_fileInfo[i].m_fileId >= fileId ) {
 				break;
 			}
 		}
 
-		if ( i < m_numFiles && m_fileIds[i] == fileId ) {
+		if ( i < m_numFiles && m_fileInfo[i].m_fileId == fileId ) {
 			continue;
 		}
 
@@ -566,7 +564,7 @@ bool RdbBase::setFiles ( ) {
 	}
 
 	// everyone should start with file 0001.dat or 0000.dat
-	if ( m_numFiles > 0 && m_fileIds[0] > 1 && m_rdb->getRdbId() == RDB_SPIDERDB ) {
+	if ( m_numFiles > 0 && m_fileInfo[0].m_fileId > 1 && m_rdb->getRdbId() == RDB_SPIDERDB ) {
 		log( LOG_WARN, "db: missing file id 0001.dat for %s in coll %s. "
 		    "Fix this or it'll core later. Just rename the next file "
 		    "in line to 0001.dat/map. We probably cored at a "
@@ -579,7 +577,7 @@ bool RdbBase::setFiles ( ) {
 		// just fix it for them
 		BigFile bf;
 		SafeBuf oldName;
-		oldName.safePrintf("%s%04" PRId32".dat",m_dbname,m_fileIds[0]);
+		oldName.safePrintf("%s%04" PRId32".dat", m_dbname, m_fileInfo[0].m_fileId);
 		bf.set ( m_dir.getDir() , oldName.getBufStart() );
 
 		// rename it to like "spiderdb.0001.dat"
@@ -597,7 +595,7 @@ bool RdbBase::setFiles ( ) {
 		// get the map file name we want to move to 0001.map
 		BigFile cmf;
 		SafeBuf curMap;
-		curMap.safePrintf("%s%04" PRId32".map",m_dbname,m_fileIds[0]);
+		curMap.safePrintf("%s%04" PRId32".map", m_dbname, m_fileInfo[0].m_fileId);
 		cmf.set ( m_dir.getDir(), curMap.getBufStart());
 
 		// rename to spiderdb0081.map to spiderdb0001.map
@@ -617,7 +615,7 @@ bool RdbBase::setFiles ( ) {
 			// get the index file name we want to move to 0001.idx
 			BigFile cif;
 			SafeBuf curIndex;
-			curIndex.safePrintf("%s%04" PRId32".idx",m_dbname,m_fileIds[0]);
+			curIndex.safePrintf("%s%04" PRId32".idx", m_dbname, m_fileInfo[0].m_fileId);
 			cif.set ( m_dir.getDir(), curIndex.getBufStart());
 
 			// rename to spiderdb0081.map to spiderdb0001.map
@@ -907,13 +905,13 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	// find the position to add so we maintain order by fileId
 	int32_t i ;
 	for ( i = 0 ; i < m_numFiles ; i++ ) {
-		if ( m_fileIds[i] >= fileId ) {
+		if ( m_fileInfo[i].m_fileId >= fileId ) {
 			break;
 		}
 	}
 
 	// cannot collide here
-	if ( i < m_numFiles && m_fileIds[i] == fileId ) {
+	if ( i < m_numFiles && m_fileInfo[i].m_fileId == fileId ) {
 		log(LOG_LOGIC,"db: addFile: fileId collided.");
 		return -1;
 	}
@@ -923,19 +921,15 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 		int nn = m_numFiles - i;
 		int dstIdx = i + 1;
 
-		memmove(&m_files[dstIdx], &m_files[i], nn * sizeof(BigFile *));
-		memmove(&m_fileIds[dstIdx], &m_fileIds[i], nn * sizeof(int32_t));
-		memmove(&m_fileIds2[dstIdx], &m_fileIds2[i], nn * sizeof(int32_t));
-		memmove(&m_maps[dstIdx], &m_maps[i], nn * sizeof(RdbMap *));
-		memmove(&m_indexes[dstIdx], &m_indexes[i], nn * sizeof(RdbIndex *));
+		memmove( m_fileInfo+dstIdx, m_fileInfo+i, nn*sizeof(m_fileInfo[0]));
 	}
 
 	// insert this file into position #i
-	m_fileIds  [i] = fileId;
-	m_fileIds2 [i] = fileId2;
-	m_files    [i] = f;
-	m_maps     [i] = m;
-	m_indexes  [i] = in;
+	m_fileInfo[i].m_fileId  = fileId;
+	m_fileInfo[i].m_fileId2 = fileId2;
+	m_fileInfo[i].m_file    = f;
+	m_fileInfo[i].m_map     = m;
+	m_fileInfo[i].m_index   = in;
 
 	// are we resuming a killed merge?
 	if ( g_conf.m_readOnlyMode && ((fileId & 0x01)==0) ) {
@@ -952,7 +946,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	//log("rdb: numFiles=%" PRId32" for collnum=%" PRId32" db=%s",
 	//    m_numFiles,(int32_t)m_collnum,m_dbname);
 	// keep it NULL terminated
-	m_files [ m_numFiles ] = NULL;
+	m_fileInfo[m_numFiles].m_file = NULL;
 	// if we added a merge file, mark it
 	if ( mergeNum >= 0 ) {
 		m_hasMergeFile      = true;
@@ -965,11 +959,11 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 int32_t RdbBase::addNewFile ( int32_t id2 ) {
 	int32_t maxFileId = 0;
 	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) {
-		if ( m_fileIds[i] > maxFileId ) {
-			int32_t currentFileId = m_fileIds[ i ];
+		if ( m_fileInfo[i].m_fileId > maxFileId ) {
+			int32_t currentFileId = m_fileInfo[i].m_fileId;
 			if ( ( currentFileId & 0x01 ) == 0 ) {
 				// merge file
-				const char* filename = m_files[ i ]->getFilename();
+				const char* filename = m_fileInfo[i].m_file->getFilename();
 
 				int32_t mergeFileId;
 				int32_t mergeFileId2;
@@ -1036,19 +1030,19 @@ bool RdbBase::incorporateMerge ( ) {
 	}
 
 	// note
-	log(LOG_INFO,"db: Writing map %s.",m_maps[x]->getFilename());
+	log(LOG_INFO,"db: Writing map %s.", m_fileInfo[x].m_map->getFilename());
 
 	// . ensure we can save the map before deleting other files
 	// . sets g_errno and return false on error
 	// . allDone = true
-	bool status = m_maps[x]->writeMap( true );
+	bool status = m_fileInfo[x].m_map->writeMap( true );
 	if ( !status ) {
 		// unable to write, let's abort
 		g_process.shutdownAbort();
 	}
 
 	if( m_useIndexFile ) {
-		status = m_indexes[x]->writeIndex();
+		status = m_fileInfo[x].m_index->writeIndex();
 		if ( !status ) {
 			// unable to write, let's abort
 			log( LOG_ERROR, "db: Could not write index for %s, Exiting.", m_dbname);
@@ -1057,10 +1051,10 @@ bool RdbBase::incorporateMerge ( ) {
 	}
 
 	// print out info of newly merged file
-	int64_t tp = m_maps[x]->getNumPositiveRecs();
-	int64_t tn = m_maps[x]->getNumNegativeRecs();
+	int64_t tp = m_fileInfo[x].m_map->getNumPositiveRecs();
+	int64_t tn = m_fileInfo[x].m_map->getNumNegativeRecs();
 	log(LOG_INFO, "merge: Merge succeeded. %s (#%" PRId32") has %" PRId64" positive "
-	    "and %" PRId64" negative recs.", m_files[x]->getFilename(), x, tp, tn);
+	    "and %" PRId64" negative recs.", m_fileInfo[x].m_file->getFilename(), x, tp, tn);
 
 
 	// . bitch if bad news
@@ -1093,12 +1087,12 @@ bool RdbBase::incorporateMerge ( ) {
 
 	// . before unlinking the files, ensure merged file is the right size!!
 	// . this will save us some anguish
-	m_files[x]->m_fileSize = -1;
+	m_fileInfo[x].m_file->m_fileSize = -1;
 
-	int64_t fs = m_files[x]->getFileSize();
+	int64_t fs = m_fileInfo[x].m_file->getFileSize();
 
 	// get file size from map
-	int64_t fs2 = m_maps[x]->getFileSize();
+	int64_t fs2 = m_fileInfo[x].m_map->getFileSize();
 
 	// compare, if only a key off allow that. that is an artificat of
 	// generating a map for a file screwed up from a power outage. it
@@ -1107,7 +1101,7 @@ bool RdbBase::incorporateMerge ( ) {
 		log( LOG_ERROR, "build: Map file size does not agree with actual file "
 		    "size for %s. Map says it should be %" PRId64" bytes but it "
 		    "is %" PRId64" bytes.",
-		    m_files[x]->getFilename(), fs2 , fs );
+		    m_fileInfo[x].m_file->getFilename(), fs2 , fs );
 		if ( fs2-fs > 12 || fs-fs2 > 12 ) { g_process.shutdownAbort(true); }
 		// now print the exception
 		log( LOG_WARN, "build: continuing since difference is less than 12 "
@@ -1119,48 +1113,48 @@ bool RdbBase::incorporateMerge ( ) {
 	for ( int32_t i = a ; i < b ; i++ ) {
 		// incase we are starting with just the
 		// linkdb0001.003.dat file and not the stuff we merged
-		if ( ! m_files[i] ) {
+		if ( ! m_fileInfo[i].m_file ) {
 			continue;
 		}
 
 		// debug msg
 		log(LOG_INFO,"merge: Unlinking merged file %s/%s (#%" PRId32").",
-		    m_files[i]->getDir(),m_files[i]->getFilename(),i);
+		    m_fileInfo[i].m_file->getDir(),m_fileInfo[i].m_file->getFilename(),i);
 
 		// . these links will be done in a thread
 		// . they will save the filename before spawning so we can
-		//   delete the m_files[i] now
-		if ( ! m_files[i]->unlink(unlinkDoneWrapper, this) ) {
+		//   delete the m_fileInfo[i].m_file now
+		if ( ! m_fileInfo[i].m_file->unlink(unlinkDoneWrapper, this) ) {
 			m_numThreads++;
 			g_numThreads++;
 		} else {
 			// debug msg
 			// MDW this cores if file is bad... if collection got delete from under us i guess!!
-			log(LOG_INFO,"merge: Unlinked %s (#%" PRId32").", m_files[i]->getFilename(), i);
+			log(LOG_INFO,"merge: Unlinked %s (#%" PRId32").", m_fileInfo[i].m_file->getFilename(), i);
 		}
 
 		// debug msg
-		log(LOG_INFO,"merge: Unlinking map file %s (#%" PRId32").", m_maps[i]->getFilename(),i);
+		log(LOG_INFO,"merge: Unlinking map file %s (#%" PRId32").", m_fileInfo[i].m_map->getFilename(),i);
 
-		if ( ! m_maps[i]->unlink(unlinkDoneWrapper, this) ) {
+		if ( ! m_fileInfo[i].m_map->unlink(unlinkDoneWrapper, this) ) {
 			m_numThreads++;
 			g_numThreads++;
 		} else {
 			// debug msg
-			log(LOG_INFO,"merge: Unlinked %s (#%" PRId32").", m_maps[i]->getFilename(), i);
+			log(LOG_INFO,"merge: Unlinked %s (#%" PRId32").", m_fileInfo[i].m_map->getFilename(), i);
 		}
 		
 		
 //@@@ BR: no-merge index begin
 		if( m_useIndexFile ) {
-			log(LOG_INFO,"merge: Unlinking index file %s (#%" PRId32").", m_indexes[i]->getFilename(),i);
+			log(LOG_INFO,"merge: Unlinking index file %s (#%" PRId32").", m_fileInfo[i].m_index->getFilename(),i);
 
-			if ( ! m_indexes[i]->unlink(unlinkDoneWrapper, this) ) {
+			if ( ! m_fileInfo[i].m_index->unlink(unlinkDoneWrapper, this) ) {
 				m_numThreads++;
 				g_numThreads++;
 			} else {
 				// debug msg
-				log(LOG_INFO,"merge: Unlinked %s (#%" PRId32").", m_indexes[i]->getFilename(), i);
+				log(LOG_INFO,"merge: Unlinked %s (#%" PRId32").", m_fileInfo[i].m_index->getFilename(), i);
 			}
 		}
 //@@@ BR: no-merge index end
@@ -1214,26 +1208,26 @@ void RdbBase::unlinkDone() {
 
 	// . the fileId of the merge file becomes that of a
 	// . but secondary id should remain the same
-	m_fileIds [ x ] = m_fileIds [ a ];
+	m_fileInfo[x].m_fileId = m_fileInfo[a].m_fileId;
 
-	log(LOG_INFO,"db: Renaming %s to %s", m_files[x]->getFilename(), m_files[a]->getFilename());
-	if ( ! m_maps[x]->rename( m_maps[a]->getFilename(), renameDoneWrapper, this) ) {
+	log(LOG_INFO,"db: Renaming %s to %s", m_fileInfo[x].m_file->getFilename(), m_fileInfo[a].m_file->getFilename());
+	if ( ! m_fileInfo[x].m_map->rename( m_fileInfo[a].m_map->getFilename(), renameDoneWrapper, this) ) {
 		m_numThreads++;
 		g_numThreads++;
 	}
 
 	if( m_useIndexFile ) {
-		if ( ! m_indexes[x]->rename( m_indexes[a]->getFilename(), renameDoneWrapper, this) ) {
+		if ( ! m_fileInfo[x].m_index->rename( m_fileInfo[a].m_index->getFilename(), renameDoneWrapper, this) ) {
 			m_numThreads++;
 			g_numThreads++;
 		}
 	}
 
 	// sanity check
-	m_files[x]->m_fileSize = -1;
-	int64_t fs = m_files[x]->getFileSize();
+	m_fileInfo[x].m_file->m_fileSize = -1;
+	int64_t fs = m_fileInfo[x].m_file->getFileSize();
 	// get file size from map
-	int64_t fs2 = m_maps[x]->getFileSize();
+	int64_t fs2 = m_fileInfo[x].m_map->getFileSize();
 	// compare
 	if ( fs != fs2 ) {
 		log("build: Map file size does not agree with actual file size");
@@ -1243,10 +1237,10 @@ void RdbBase::unlinkDone() {
 	if ( ! m_rdb->isTitledb() ) {
 		// debug statement
 		log(LOG_INFO,"db: Renaming %s of size %" PRId64" to %s",
-		    m_files[x]->getFilename(),fs , m_files[a]->getFilename());
+		    m_fileInfo[x].m_file->getFilename(),fs , m_fileInfo[a].m_file->getFilename());
 
 		// rename it, this may block
-		if ( ! m_files[x]->rename ( m_files[a]->getFilename(), renameDoneWrapper, this) ) {
+		if ( ! m_fileInfo[x].m_file->rename ( m_fileInfo[a].m_file->getFilename(), renameDoneWrapper, this) ) {
 			m_numThreads++;
 			g_numThreads++;
 		}
@@ -1255,10 +1249,10 @@ void RdbBase::unlinkDone() {
 		char buf [ 1024 ];
 
 		// use m_dbname in case its titledbRebuild
-		sprintf ( buf , "%s%04" PRId32"-%03" PRId32".dat", m_dbname, m_fileIds[a], m_fileIds2[x] );
+		sprintf ( buf , "%s%04" PRId32"-%03" PRId32".dat", m_dbname, m_fileInfo[a].m_fileId, m_fileInfo[x].m_fileId2 );
 
 		// rename it, this may block
-		if ( ! m_files[ x ]->rename ( buf, renameDoneWrapper, this) ) {
+		if ( ! m_fileInfo[x].m_file->rename ( buf, renameDoneWrapper, this) ) {
 			m_numThreads++;
 			g_numThreads++;
 		}
@@ -1309,7 +1303,7 @@ void RdbBase::renameDone() {
 	log("db: checking for outstanding read threads on unlinked files");
 	bool wait = false;
 	for ( int32_t i = a ; i < b ; i++ ) {
-		BigFile *bf = m_files[i];
+		BigFile *bf = m_fileInfo[i].m_file;
 		if ( g_jobScheduler.is_reading_file(bf) ) wait = true;
 	}
 	if ( wait ) {
@@ -1370,22 +1364,22 @@ void RdbBase::renameFile( int32_t currentFileIdx, int32_t newFileId, int32_t new
 	}
 
 	log(LOG_INFO, "merge: renaming final merged file %s", fbuf);
-	m_files[currentFileIdx]->rename(fbuf);
+	m_fileInfo[currentFileIdx].m_file->rename(fbuf);
 
-	m_fileIds[currentFileIdx] = newFileId;
-	m_fileIds2[currentFileIdx] = newFileId2;
+	m_fileInfo[currentFileIdx].m_fileId = newFileId;
+	m_fileInfo[currentFileIdx].m_fileId2 = newFileId2;
 
 	// we could potentially have a 'regenerated' map file that has already been moved.
 	// eg: merge dies after moving map file, but before moving data files.
 	//     next start up, map file will be regenerated. means we now have both even & odd map files
 	sprintf(fbuf, "%s%04" PRId32".map", m_dbname, newFileId);
 	log(LOG_INFO, "merge: renaming final merged file %s", fbuf);
-	m_maps[currentFileIdx]->rename(fbuf, true);
+	m_fileInfo[currentFileIdx].m_map->rename(fbuf, true);
 
 	if (m_useIndexFile) {
 		sprintf(fbuf, "%s%04" PRId32".idx", m_dbname, newFileId);
 		log(LOG_INFO, "merge: renaming final merged file %s", fbuf);
-		m_indexes[currentFileIdx]->rename(fbuf, true);
+		m_fileInfo[currentFileIdx].m_index->rename(fbuf, true);
 	}
 }
 
@@ -1393,27 +1387,23 @@ void RdbBase::renameFile( int32_t currentFileIdx, int32_t newFileId, int32_t new
 void RdbBase::buryFiles ( int32_t a , int32_t b ) {
 	// on succes unlink the files we merged and free them
 	for ( int32_t i = a ; i < b ; i++ ) {
-		mdelete ( m_files[i] , sizeof(BigFile),"RdbBase");
-		delete (m_files[i]);
-		mdelete ( m_maps[i] , sizeof(RdbMap),"RdbBase");
-		delete (m_maps [i]);
-		mdelete ( m_indexes[i] , sizeof(RdbIndex),"RdbBase");
-		delete (m_indexes [i]);
+		mdelete ( m_fileInfo[i].m_file , sizeof(BigFile),"RdbBase");
+		delete m_fileInfo[i].m_file;
+		mdelete ( m_fileInfo[i].m_map , sizeof(RdbMap),"RdbBase");
+		delete m_fileInfo[i].m_map;
+		mdelete ( m_fileInfo[i].m_index , sizeof(RdbIndex),"RdbBase");
+		delete m_fileInfo[i].m_index;
 	}
 	// bury the merged files
 	int32_t n = m_numFiles - b;
-	gbmemcpy (&m_files   [a], &m_files   [b], n*sizeof(BigFile *));
-	gbmemcpy (&m_maps    [a], &m_maps    [b], n*sizeof(RdbMap  *));
-	gbmemcpy (&m_indexes [a], &m_indexes [b], n*sizeof(RdbIndex  *));
-	gbmemcpy (&m_fileIds [a], &m_fileIds [b], n*sizeof(int32_t     ));
-	gbmemcpy (&m_fileIds2[a], &m_fileIds2[b], n*sizeof(int32_t     ));
+	memmove(m_fileInfo+a, m_fileInfo+b, n*sizeof(m_fileInfo[0]));
 	// decrement the file count appropriately
 	m_numFiles -= (b-a);
 	// sanity
 	log("rdb: bury files: numFiles now %" PRId32" (b=%" PRId32" a=%" PRId32" collnum=%" PRId32")",
 	    m_numFiles,b,a,(int32_t)m_collnum);
 	// ensure last file is NULL (so BigFile knows the end of m_files)
-	m_files [ m_numFiles ] = NULL;
+	m_fileInfo[m_numFiles].m_file = NULL;
 }
 
 // . the DailyMerge.cpp will set minToMergeOverride for titledb, and this
@@ -1607,7 +1597,7 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 	bool resuming = false;
 	for ( int32_t j = 0 ; j < numFiles ; j++ ) {
 		// skip odd numbered files
-		if ( m_fileIds[j] & 0x01 ) continue;
+		if ( m_fileInfo[j].m_fileId & 0x01 ) continue;
 		// yes we are resuming a merge
 		resuming = true;
 		logTrace( g_conf.m_logTraceRdbBase, "Resuming a merge" );
@@ -1751,12 +1741,12 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 	// gb saved and exited w/o finishing the merge.
 	for ( int32_t j = 0 ; j < numFiles ; j++ ) {
 		// skip odd numbered files
-		if ( m_fileIds[j] & 0x01 ) {
+		if ( m_fileInfo[j].m_fileId & 0x01 ) {
 			continue;
 		}
 
 		// hey, we got a file that was being merged into
-		mergeFileId = m_fileIds[j];
+		mergeFileId = m_fileInfo[j].m_fileId;
 
 		// store the merged data into this file #
 		mergeFileNum = j ;
@@ -1765,7 +1755,7 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 		// indexdb0000.003.dat where the 003 indicates how many files
 		// is is merging in case we have to resume them due to power loss or whatever
 		int32_t fileId;
-		if ( !parseFilename( m_files[j]->getFilename(), &fileId, &fileId2, &mergeNum, &endMergeFileId ) ) {
+		if ( !parseFilename( m_fileInfo[j].m_file->getFilename(), &fileId, &fileId2, &mergeNum, &endMergeFileId ) ) {
 			continue;
 		}
 
@@ -1784,7 +1774,7 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 		int32_t endMergeFileNum = 0;
 		int32_t kEnd = j + 1 + mergeNum;
 		for ( int32_t k = j + 1; k < kEnd; ++k ) {
-			if ( m_fileIds[ k ] == endMergeFileId ) {
+			if ( m_fileInfo[k].m_fileId == endMergeFileId ) {
 				endMergeFileNum = k;
 				break;
 			}
@@ -1825,7 +1815,7 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 				break;
 			}
 
-			if ( ! m_files[i] ) {
+			if ( ! m_fileInfo[i].m_file ) {
 				log(LOG_DEBUG, "merge: File #%" PRId32" is NULL, skipping.",i);
 				continue;
 			}
@@ -1835,7 +1825,7 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 				mm++;
 			}
 
-			mint += m_files[i]->getFileSize();
+			mint += m_fileInfo[i].m_file->getFileSize();
 		}
 
 		if ( mm != mergeNum ) {
@@ -1926,8 +1916,8 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 		// add up the string
 		int64_t total = 0;
 		for ( int32_t j = i ; j < i + mergeNum ; j++ ) {
-			total += m_files[j]->getFileSize();
-			time_t mtime = m_files[j]->getLastModifiedTime();
+			total += m_fileInfo[j].m_file->getFileSize();
+			time_t mtime = m_fileInfo[j].m_file->getLastModifiedTime();
 			// skip on error
 			if ( mtime < 0 ) {
 				continue;
@@ -1976,8 +1966,8 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 		// . prefer the lowest average ratio
 		double ratio = 0.0;
 		for ( int32_t j = i ; j < i + mergeNum - 1 ; j++ ) {
-			int64_t s1 = m_files[j  ]->getFileSize();
-			int64_t s2 = m_files[j+1]->getFileSize();
+			int64_t s1 = m_fileInfo[j  ].m_file->getFileSize();
+			int64_t s2 = m_fileInfo[j+1].m_file->getFileSize();
 			int64_t tmp;
 			if ( s2 == 0 ) continue;
 			if ( s1 < s2 ) { tmp = s1; s1 = s2 ; s2 = tmp; }
@@ -2007,7 +1997,7 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 		// debug the merge selection
 		char      tooBig   = 0;
 		int64_t prevSize = 0;
-		if ( i > 0 ) prevSize = m_files[i-1]->getFileSize();
+		if ( i > 0 ) prevSize = m_fileInfo[i-1].m_file->getFileSize();
 		if ( i > 0 && prevSize < total/4 ) tooBig = 1;
 		log(LOG_INFO,"merge: i=%" PRId32" n=%" PRId32" ratio=%.2f adjratio=%.2f "
 		    "minr=%.2f mint=%" PRId64" mini=%" PRId32" prevFileSize=%" PRId64" "
@@ -2030,7 +2020,7 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 		//   merged unless we have this.
 		// . allow a file to be 4x bigger than the one before it, this
 		//   allows a little bit of lopsidedness.
-		if (i > 0  && m_files[i-1]->getFileSize() < total/4 ) {
+		if (i > 0  && m_fileInfo[i-1].m_file->getFileSize() < total/4 ) {
 			continue;
 		}
 
@@ -2049,7 +2039,7 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 	// . merge from file #mini through file #(mini+n)
 	// . these files should all have ODD fileIds so we can sneak a new
 	//   mergeFileId in there
-	mergeFileId = m_fileIds[mini] - 1;
+	mergeFileId = m_fileInfo[mini].m_fileId - 1;
 
 	// get new id, -1 on error
 	fileId2 = m_rdb->isTitledb() ? 0 : -1;
@@ -2062,7 +2052,7 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 	//   below anyway. we have to set it there in case we startup and
 	//   are resuming a merge.
 	endMergeFileNum = mini + mergeNum - 1;
-	endMergeFileId = m_fileIds[ endMergeFileNum ];
+	endMergeFileId = m_fileInfo[endMergeFileNum].m_fileId;
 	log( LOG_INFO, "merge: n=%d mini=%d mergeFileId=%d endMergeFileNum=%d endMergeFileId=%d",
 	     mergeNum, mini, mergeFileId, endMergeFileNum, endMergeFileId );
 
@@ -2104,14 +2094,14 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 	m_numPos = 0;
 	m_numNeg = 0;
 	for ( int32_t i = m_mergeStartFileNum; i < m_mergeStartFileNum + m_numFilesToMerge; ++i ) {
-		m_numPos += m_maps[i]->getNumPositiveRecs();		
-		m_numNeg += m_maps[i]->getNumNegativeRecs();
+		m_numPos += m_fileInfo[i].m_map->getNumPositiveRecs();		
+		m_numNeg += m_fileInfo[i].m_map->getNumNegativeRecs();
 		log(LOG_INFO,"merge: %s (#%" PRId32") has %" PRId64" positive "
 		     "and %" PRId64" negative records." ,
-		     m_files[i]->getFilename() ,
+		     m_fileInfo[i].m_file->getFilename(),
 		     i , 
-		     m_maps[i]->getNumPositiveRecs(),
-		     m_maps[i]->getNumNegativeRecs() );
+		     m_fileInfo[i].m_map->getNumPositiveRecs(),
+		     m_fileInfo[i].m_map->getNumNegativeRecs() );
 	}
 	log(LOG_INFO,"merge: Total positive = %" PRId64" Total negative = %" PRId64".",
 	     m_numPos,m_numNeg);
@@ -2131,9 +2121,9 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 	// . returns false if blocked, true otherwise & sets g_errno
 	if (!g_merge.merge(rdbId,
 	                   m_collnum,
-	                   m_files[mergeFileNum],
-	                   m_maps[mergeFileNum],
-	                   m_indexes[mergeFileNum],
+	                   m_fileInfo[mergeFileNum].m_file,
+	                   m_fileInfo[mergeFileNum].m_map,
+	                   m_fileInfo[mergeFileNum].m_index,
 	                   m_mergeStartFileNum,
 	                   m_numFilesToMerge,
 	                   m_niceness)) {
@@ -2186,13 +2176,12 @@ int64_t RdbBase::getListSize ( char *startKey , char *endKey , char *max ,
 		// the start and end pages for a page range
 		int32_t pg1 , pg2;
 		// get the start and end pages for this startKey/endKey
-		m_maps[i]->getPageRange ( startKey , 
-					  endKey   , 
-					  &pg1     , 
-					  &pg2     ,
-					  //&newGuy  ,
-					  newGuy   ,
-					  oldTruncationLimit );
+		m_fileInfo[i].m_map->getPageRange(startKey,
+						endKey,
+						&pg1,
+						&pg2,
+						newGuy,
+						oldTruncationLimit);
 		// . get the range size add it to count
 		// . some of these records are negative recs (deletes) so
 		//   our count may be small
@@ -2206,10 +2195,10 @@ int64_t RdbBase::getListSize ( char *startKey , char *endKey , char *max ,
 		// . minKey2 may be bigger than the actual minKey for this
 		//   range, likewise, maxKey2 may be smaller than the actual
 		//   maxKey, but should be good estimates
-		int64_t maxBytes = m_maps[i]->getMaxRecSizes ( pg1, pg2, startKey, endKey, true );//subtrct
+		int64_t maxBytes = m_fileInfo[i].m_map->getMaxRecSizes ( pg1, pg2, startKey, endKey, true );//subtrct
 
 		// get the min as well
-		int64_t minBytes = m_maps[i]->getMinRecSizes ( pg1, pg2, startKey, endKey, true );//subtrct
+		int64_t minBytes = m_fileInfo[i].m_map->getMinRecSizes ( pg1, pg2, startKey, endKey, true );//subtrct
 
 		int64_t avg = (maxBytes + minBytes) / 2LL;
 
@@ -2286,9 +2275,9 @@ int64_t RdbBase::getNumTotalRecs() const {
 	int64_t numNegativeRecs = 0;
 	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) {
 		// skip even #'d files -- those are merge files
-		if ( (m_fileIds[i] & 0x01) == 0 ) continue;
-		numPositiveRecs += m_maps[i]->getNumPositiveRecs();
-		numNegativeRecs += m_maps[i]->getNumNegativeRecs();
+		if ( (m_fileInfo[i].m_fileId & 0x01) == 0 ) continue;
+		numPositiveRecs += m_fileInfo[i].m_map->getNumPositiveRecs();
+		numNegativeRecs += m_fileInfo[i].m_map->getNumNegativeRecs();
 	}
 	// . add in the btree
 	// . TODO: count negative and positive recs in the b-tree
@@ -2313,7 +2302,7 @@ int64_t RdbBase::getNumTotalRecs() const {
 int64_t RdbBase::getMapMemAlloced() const {
 	int64_t alloced = 0;
 	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) 
-		alloced += m_maps[i]->getMemAlloced();
+		alloced += m_fileInfo[i].m_map->getMemAlloced();
 	return alloced;
 }
 
@@ -2321,20 +2310,20 @@ int64_t RdbBase::getMapMemAlloced() const {
 int32_t RdbBase::getNumSmallFiles() const {
 	int32_t count = 0;
 	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) 
-		count += m_files[i]->getNumParts();
+		count += m_fileInfo[i].m_file->getNumParts();
 	return count;
 }
 
 int64_t RdbBase::getDiskSpaceUsed() const {
 	int64_t count = 0;
 	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) 
-		count += m_files[i]->getFileSize();
+		count += m_fileInfo[i].m_file->getFileSize();
 	return count;
 }
 
 void RdbBase::closeMaps(bool urgent) {
 	for (int32_t i = 0; i < m_numFiles; i++) {
-		bool status = m_maps[i]->close(urgent);
+		bool status = m_fileInfo[i].m_map->close(urgent);
 		if (!status) {
 			// unable to write, let's abort
 			g_process.shutdownAbort();
@@ -2344,8 +2333,8 @@ void RdbBase::closeMaps(bool urgent) {
 
 void RdbBase::closeIndexes(bool urgent) {
 	for (int32_t i = 0; i < m_numFiles; i++) {
-		if (m_useIndexFile && m_indexes[i]) {
-			bool status = m_indexes[i]->close(urgent);
+		if (m_useIndexFile && m_fileInfo[i].m_index) {
+			bool status = m_fileInfo[i].m_index->close(urgent);
 			if (!status) {
 				// unable to write, let's abort
 				g_process.shutdownAbort();
@@ -2356,12 +2345,12 @@ void RdbBase::closeIndexes(bool urgent) {
 
 void RdbBase::saveMaps() {
 	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) {
-		if ( ! m_maps[i] ) {
+		if ( ! m_fileInfo[i].m_map ) {
 			log("base: map for file #%i is null", i);
 			continue;
 		}
 
-		bool status = m_maps[i]->writeMap ( false );
+		bool status = m_fileInfo[i].m_map->writeMap ( false );
 		if ( !status ) {
 			// unable to write, let's abort
 			g_process.shutdownAbort();
@@ -2386,12 +2375,12 @@ void RdbBase::saveIndexes() {
 	}
 
 	for (int32_t i = 0; i < m_numFiles; i++) {
-		if (!m_indexes[i]) {
+		if (!m_fileInfo[i].m_index) {
 			log(LOG_WARN, "base: index for file #%i is null", i);
 			continue;
 		}
 
-		if (!m_indexes[i]->writeIndex()) {
+		if (!m_fileInfo[i].m_index->writeIndex()) {
 			// unable to write, let's abort
 			g_process.shutdownAbort();
 		}
@@ -2499,8 +2488,8 @@ float RdbBase::getPercentNegativeRecsOnDisk ( int64_t *totalArg ) const {
 	int64_t numPos = 0LL;
 	int64_t numNeg = 0LL;
 	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) {
-		numPos += m_maps[i]->getNumPositiveRecs();
-		numNeg += m_maps[i]->getNumNegativeRecs();
+		numPos += m_fileInfo[i].m_map->getNumPositiveRecs();
+		numNeg += m_fileInfo[i].m_map->getNumNegativeRecs();
 	}
 	int64_t total = numPos + numNeg;
 	*totalArg = total;
@@ -2515,7 +2504,7 @@ float RdbBase::getPercentNegativeRecsOnDisk ( int64_t *totalArg ) const {
 	return percent;
 }
 
-/// @todo ALC we should free up m_indexes[i]->m_docIds when we don't need it, and load it back when we do
+/// @todo ALC we should free up m_fileInfo[i].m_index->m_docIds when we don't need it, and load it back when we do
 void RdbBase::generateGlobalIndex() {
 	if (!m_useIndexFile) {
 		return;
@@ -2525,7 +2514,7 @@ void RdbBase::generateGlobalIndex() {
 
 	// global index does not include RdbIndex from tree/buckets
 	for (int32_t i = 0; i < m_numFiles; i++) {
-		auto docIds = m_indexes[i]->getDocIds();
+		auto docIds = m_fileInfo[i].m_index->getDocIds();
 		tmpDocIdFileIndex->reserve(tmpDocIdFileIndex->size() + docIds->size());
 		std::transform(docIds->begin(), docIds->end(), std::back_inserter(*tmpDocIdFileIndex),
 		               [i](uint64_t docId) {

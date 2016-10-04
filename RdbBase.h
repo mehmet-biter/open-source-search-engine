@@ -91,14 +91,10 @@ class RdbBase {
 
 	bool useHalfKeys() const { return m_useHalfKeys; }
 
-	BigFile **getFiles() { return m_files; }
-	RdbMap **getMaps() { return m_maps; }
-	RdbIndex **getIndexes() { return m_indexes; }
-
-	BigFile *getFile(int32_t n) { return m_files[n]; }
-	int32_t getFileId(int32_t n) { return m_fileIds[n]; }
-	RdbMap *getMap(int32_t n) { return m_maps[n]; }
-	RdbIndex *getIndex(int32_t n) { return m_indexes[n]; }
+	BigFile *getFile(int32_t n) { return m_fileInfo[n].m_file; }
+	int32_t getFileId(int32_t n) { return m_fileInfo[n].m_fileId; }
+	RdbMap *getMap(int32_t n) { return m_fileInfo[n].m_map; }
+	RdbIndex *getIndex(int32_t n) { return m_fileInfo[n].m_index; }
 
 	RdbIndex *getTreeIndex() {
 		if (m_useIndexFile) {
@@ -249,11 +245,13 @@ private:
 	// . older files are listed first (lower fileIds)
 	// . filenames should include the directory (full filenames)
 	// . TODO: RdbMgr should control what rdb gets merged?
-	BigFile *m_files[MAX_RDB_FILES + 1];
-	int32_t m_fileIds[MAX_RDB_FILES + 1];
-	int32_t m_fileIds2[MAX_RDB_FILES + 1]; // for titledb/tfndb linking
-	RdbMap *m_maps[MAX_RDB_FILES + 1];
-	RdbIndex *m_indexes[MAX_RDB_FILES + 1];
+	struct FileInfo {
+		BigFile *m_file;
+		int32_t m_fileId;
+		int32_t m_fileId2; // for titledb/tfndb linking
+		RdbMap *m_map;
+		RdbIndex *m_index;
+	} m_fileInfo[MAX_RDB_FILES + 1];
 	int32_t m_numFiles;
 
 	void generateGlobalIndex();
