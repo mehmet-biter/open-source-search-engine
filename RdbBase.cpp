@@ -94,8 +94,8 @@ RdbBase::~RdbBase ( ) {
 	reset();
 }
 
-bool RdbBase::init(char *dir,
-                   char *dbname,
+bool RdbBase::init(const char *dir,
+                   const char *dbname,
                    int32_t fixedDataSize,
                    int32_t minToMergeArg,
                    bool useHalfKeys,

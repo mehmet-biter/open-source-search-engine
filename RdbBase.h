@@ -60,10 +60,10 @@ class RdbBase {
 	//   compare that to the groupId to see if the record belongs
 	// . this is currently just used by Spiderdb
 	// . otherwise, we mask the high int32_t in the key
-	bool init ( char  *dir             , // working directory
-		    char  *dbname          , // "indexdb","tagdb",...
-		    int32_t   fixedDataSize   , //= -1   ,
-		    int32_t   minToMerge      , //, //=  2   ,
+	bool init ( const char  *dir,        // working directory
+		    const char  *dbname,     // "indexdb","tagdb",...
+		    int32_t   fixedDataSize   ,
+		    int32_t   minToMerge      ,
 		    bool   useHalfKeys     ,
 		    char   keySize         ,
 		    int32_t   pageSize        ,
