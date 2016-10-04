@@ -321,7 +321,7 @@ public:
 	~XmlDoc() ; 
 	void nukeDoc ( class XmlDoc *);
 	void reset ( ) ;
-	bool setFirstUrl ( char *u ) ;
+	bool setFirstUrl ( const char *u ) ;
 	void setStatus ( const char *s ) ;
 	void setCallback ( void *state, void (*callback) (void *state) ) ;
 	void setCallback ( void *state, bool (*callback) (void *state) ) ;
@@ -456,6 +456,7 @@ public:
 	bool m_doConsistencyTesting;
 	bool doConsistencyTest ( bool forceTest ) ;
 
+	void printMetaList() const;
 	void printMetaList ( char *metaList , char *metaListEnd ,
 			     class SafeBuf *pbuf );
 	bool verifyMetaList ( char *p , char *pend , bool forDelete ) ;
@@ -574,6 +575,8 @@ public:
 	bool printTermList ( class SafeBuf *sb , HttpRequest *hr );
 	bool printSpiderStats ( class SafeBuf *sb , HttpRequest *hr );
 	bool printCachedPage ( class SafeBuf *sb , HttpRequest *hr );
+
+	void printTermList() const;
 
 	char *getTitleBuf             ( );
 	char *getRootTitleBuf         ( );
@@ -1166,7 +1169,7 @@ public:
 	// vector is 1-1 with words in the document body.
 	char *getFragVec ( );
 
-	bool injectDoc ( char *url ,
+	bool injectDoc ( const char *url ,
 			 class CollectionRec *cr ,
 			 char *content ,
 			 bool contentHasMime ,
@@ -1174,7 +1177,7 @@ public:
 			 int32_t charset,
 
 			 bool deleteUrl,
-			 char *contentTypeStr, // text/html, text/xml etc.
+			 const char *contentTypeStr, // text/html, text/xml etc.
 			 bool spiderLinks ,
 			 char newOnly, // index iff new
 

@@ -79,7 +79,6 @@ public:
 		    int32_t   maxTreeMem      , //=  1024*1024*32 ,
 		    int32_t   maxTreeNodes    ,
 		    bool   useHalfKeys     ,
-		    bool   isTitledb    = false , // use fileIds2[]?
 		    char   keySize = 12    ,
 		    bool   isCollectionLess = false,
 		    bool	useIndexFile = false );

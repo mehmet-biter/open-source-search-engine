@@ -107,6 +107,10 @@ class RdbBase {
 		return NULL;
 	}
 
+	collnum_t  getCollnum() const { return m_collnum; }
+
+	const char *getDbName() const { return m_dbname; }
+
 	docidsconst_ptr_t getGlobalIndex();
 
 
@@ -218,6 +222,22 @@ class RdbBase {
 	bool removeRebuildFromFilenames ( ) ;
 	bool removeRebuildFromFilename  ( BigFile *f ) ;
 
+	void specialInjectFileInit(const char *dir,
+	                           const char *filename,
+	                           collnum_t collnum,
+	                           Rdb *rdb,
+	                           int32_t fixedDataSize,
+	                           bool useHalfKeys,
+	                           char ks,
+	                           int32_t pageSize,
+	                           int32_t minToMerge);
+
+	void forceNextMerge() { m_nextMergeForced = true; }
+
+	//msg3 needs to know so it can compensate for ongoing merges
+	int32_t mergeStartFileNum() const { return m_mergeStartFileNum; }
+	int32_t numFilesToMerge() const { return m_numFilesToMerge; }
+
 private:
 	bool parseFilename( const char* filename, int32_t *p_fileId, int32_t *p_fileId2,
 	                    int32_t *p_mergeNum, int32_t *p_endMergeFileId );
@@ -253,6 +273,13 @@ public:
 	static const uint64_t s_docIdFileIndex_delBitMask   = 0x0000000001000000ULL;
 	static const uint64_t s_docIdFileIndex_filePosMask  = 0x000000000000ffffULL;
 
+private:
+	static void unlinkDoneWrapper(void *state);
+	void unlinkDone();
+	static void renameDoneWrapper(void *state);
+	static void checkThreadsAgainWrapper(int /*fd*/, void *state);
+	void renameDone();
+	
 	// this class contains a ptr to us
 	class Rdb           *m_rdb;
 
@@ -288,9 +315,6 @@ public:
 	// should our next merge in waiting force itself?
 	bool      m_nextMergeForced;
 
-	// do we need to dump to disk?
-	//bool      m_needsSave;
-
 	// . when we dump list to an rdb file, can we use short keys?
 	// . currently exclusively used by indexdb
 	bool      m_useHalfKeys;
@@ -303,7 +327,6 @@ public:
 	bool m_checkedForMerge;
 
 	int32_t      m_pageSize;
-
 	// . is our merge urgent? (if so, it will starve spider disk reads)
 	// . also see Threads.cpp for the starvation
 	bool      m_mergeUrgent;
@@ -320,13 +343,6 @@ public:
 	int64_t m_numPos ;
 	int64_t m_numNeg ;
 
-private:
-	static void unlinkDoneWrapper(void *state);
-	void unlinkDone();
-	static void renameDoneWrapper(void *state);
-	static void checkThreadsAgainWrapper(int /*fd*/, void *state);
-	void renameDone();
-	
 	int32_t m_numThreads;
 
 	bool m_isUnlinking;

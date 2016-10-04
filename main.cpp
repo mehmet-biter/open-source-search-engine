@@ -5476,17 +5476,15 @@ int injectFile ( const char *filename , char *ips , const char *coll ) {
 
 		char tmp[1024];
 		sprintf(tmp,"./%s",coll2);
-		s_base->m_dir.set(tmp);
-		strcpy(s_base->m_dbname,rdb->getDbname());
-		s_base->m_dbnameLen = strlen(rdb->getDbname());
-		s_base->m_coll = "main";
-		s_base->m_collnum = (collnum_t)0;
-		s_base->m_rdb = rdb;
-		s_base->m_fixedDataSize = rdb->getFixedDataSize();
-		s_base->m_useHalfKeys = rdb->useHalfKeys();
-		s_base->m_ks = rdb->getKeySize();
-		s_base->m_pageSize = rdb->getPageSize();
-		s_base->m_minToMerge = 99999;
+		s_base->specialInjectFileInit(tmp,
+		                              rdb->getDbname(),
+					      (collnum_t)0,
+					      rdb,
+					      rdb->getFixedDataSize(),
+					      rdb->useHalfKeys(),
+					      rdb->getKeySize(),
+					      rdb->getPageSize(),
+					      99999); //minToMerge
 		// try to set the file info now!
 		s_base->setFiles();
 	}

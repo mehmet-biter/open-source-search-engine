@@ -121,7 +121,6 @@ bool Rdb::init ( const char     *dir                  ,
 		  int32_t           maxTreeMem           ,
 		  int32_t           maxTreeNodes         ,
 		  bool           useHalfKeys          ,
-		  bool           isTitledb            ,
 		  char           keySize              ,
 		 bool            isCollectionLess,
 		 bool			useIndexFile ) {
@@ -1281,7 +1280,7 @@ bool Rdb::dumpCollLoop ( ) {
 		// . RdbMap should dump itself out CLOSE!
 		// . it returns false if blocked, true otherwise & sets g_errno on err
 		// . but we only return false on error here
-		if (!m_dump.set(base->m_collnum,
+		if (!m_dump.set(base->getCollnum(),
 	                	base->getFile(m_fn),
 	                	buckets,
 	                	tree,
@@ -1432,7 +1431,7 @@ void forceMergeAll(rdbid_t rdbId) {
 		}
 
 		log(LOG_INFO,"%s:%s:%d: coll %" PRId32" - Set next merge to Forced", __FILE__,__func__,__LINE__,i);
-		base->m_nextMergeForced = true;
+		base->forceNextMerge();
 	}
 
 	// and try to merge now

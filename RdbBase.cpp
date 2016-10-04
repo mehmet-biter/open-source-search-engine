@@ -177,35 +177,39 @@ bool RdbBase::init(char *dir,
 		char indexName[64];
 		sprintf(indexName, "%s-saved.idx", m_dbname);
 		m_treeIndex.set(m_dir.getDir(), indexName, m_fixedDataSize, m_useHalfKeys, m_ks, m_rdb->getRdbId());
-		if (!(m_treeIndex.readIndex() && m_treeIndex.verifyIndex())) {
-			g_errno = 0;
-			log(LOG_WARN, "db: Could not read index file %s", indexName);
 
-			// if 'gb dump X collname' was called, bail, we do not want to write any data
-			if (g_dumpMode) {
-				return false;
-			}
+		// only attempt to read/generate when we have tree/bucket
+		if ((m_tree && m_tree->getNumUsedNodes() > 0) || (m_buckets && m_buckets->getNumKeys() > 0)) {
+			if (!(m_treeIndex.readIndex() && m_treeIndex.verifyIndex())) {
+				g_errno = 0;
+				log(LOG_WARN, "db: Could not read index file %s", indexName);
 
-			log(LOG_INFO, "db: Attempting to generate index file %s/%s-saved.dat. May take a while.",
-			    m_dir.getDir(), m_dbname);
+				// if 'gb dump X collname' was called, bail, we do not want to write any data
+				if (g_dumpMode) {
+					return false;
+				}
 
-			bool result = m_tree ? m_treeIndex.generateIndex(m_collnum, m_tree) : m_treeIndex.generateIndex(m_collnum, m_buckets);
-			if (!result) {
-				logError("db: Index generation failed for %s/%s-saved.dat.", m_dir.getDir(), m_dbname);
-				gbshutdownCorrupted();
-			}
+				log(LOG_INFO, "db: Attempting to generate index file %s/%s-saved.dat. May take a while.",
+				    m_dir.getDir(), m_dbname);
 
-			log(LOG_INFO, "db: Index generation succeeded.");
+				bool result = m_tree ? m_treeIndex.generateIndex(m_collnum, m_tree) : m_treeIndex.generateIndex(m_collnum, m_buckets);
+				if (!result) {
+					logError("db: Index generation failed for %s/%s-saved.dat.", m_dir.getDir(), m_dbname);
+					gbshutdownCorrupted();
+				}
 
-			// . save it
-			// . if we're an even #'d file a merge will follow
-			//   when main.cpp calls attemptMerge()
-			log("db: Saving generated index file to disk.");
+				log(LOG_INFO, "db: Index generation succeeded.");
 
-			bool status = m_treeIndex.writeIndex();
-			if (!status) {
-				log(LOG_ERROR, "db: Save failed.");
-				return false;
+				// . save it
+				// . if we're an even #'d file a merge will follow
+				//   when main.cpp calls attemptMerge()
+				log("db: Saving generated index file to disk.");
+
+				bool status = m_treeIndex.writeIndex();
+				if (!status) {
+					log(LOG_ERROR, "db: Save failed.");
+					return false;
+				}
 			}
 		}
 	}
@@ -233,6 +237,32 @@ bool RdbBase::init(char *dir,
 	// now diskpagecache is much simpler, just basically rdbcache...
 	return true;
 }
+
+
+//special init function used by main.cpp injectFile. Not pretty
+void RdbBase::specialInjectFileInit(const char *dir,
+                                    const char *dbname,
+	                            collnum_t collnum,
+	                            Rdb *rdb,
+	                            int32_t fixedDataSize,
+	                            bool useHalfKeys,
+	                            char ks,
+	                            int32_t pageSize,
+	                            int32_t minToMerge)
+{
+	m_dir.set(dir);
+	strcpy(m_dbname,dbname);
+	m_dbnameLen = strlen(dbname);
+	m_coll = "main";
+	m_collnum = collnum;
+	m_rdb = rdb;
+	m_fixedDataSize = fixedDataSize;
+	m_useHalfKeys = useHalfKeys;
+	m_ks = ks;
+	m_pageSize = pageSize;
+	m_minToMerge = minToMerge;
+}
+
 
 // . move all files into trash subdir
 // . change name

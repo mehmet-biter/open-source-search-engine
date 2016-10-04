@@ -532,7 +532,6 @@ bool Spiderdb::init ( ) {
 			    g_conf.m_spiderdbMaxTreeMem ,
 			    maxTreeNodes                ,
 			    false                       , // half keys?
-			    false                       ,
 			    sizeof(key128_t)            );
 }
 
@@ -552,7 +551,6 @@ bool Spiderdb::init2 ( int32_t treeMem ) {
 			    treeMem       , // g_conf.m_spiderdbMaxTreeMem ,
 			    maxTreeNodes  ,
 			    false         , // half keys?
-			    false         , // isTitledb?
 			    sizeof(key128_t));
 }
 
@@ -807,7 +805,7 @@ void SpiderCache::reset ( ) {
 	for ( int32_t i = 0 ; i < g_collectiondb.m_numRecs ; i++ ) {
 		CollectionRec *cr = g_collectiondb.getRec(i);
 		ScopedLock sl(cr->m_spiderCollMutex);
-		SpiderColl *sc = getSpiderCollIffNonNull(i);
+		SpiderColl *sc = cr->m_spiderColl;
 		if ( ! sc ) continue;
 		sc->reset();
 		mdelete ( sc , sizeof(SpiderColl) , "SpiderCache" );

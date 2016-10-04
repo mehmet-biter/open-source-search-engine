@@ -214,18 +214,12 @@ void Msg22::gotReply ( ) {
 		return;
 	}
 
-	// breathe
-	QUICKPOLL ( r->m_niceness );
-
 	// get the reply
 	int32_t  replySize = -1 ;
 	int32_t  maxSize   ;
 	bool  freeIt    ;
 	char *reply     = m_mcast.getBestReply (&replySize, &maxSize, &freeIt);
 	relabel( reply, maxSize, "Msg22-mcastGBR" );
-
-	// breathe
-	QUICKPOLL ( r->m_niceness );
 
 	// a NULL reply happens when not found at one host and the other host
 	// is dead... we need to fix Multicast to return a g_errno for this
@@ -351,9 +345,6 @@ void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
 
 	g_titledb.getRdb()->readRequestGet  (requestSize);
 
-	// breathe
-	QUICKPOLL ( r->m_niceness);
-
 	// sanity check
 	if ( r->m_collnum < 0 ) { g_process.shutdownAbort(true); }
 
@@ -434,8 +425,6 @@ void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
 	   st->m_uh48   = hash64b ( r->m_url ) & 0x0000ffffffffffffLL;
 	}
 
-	QUICKPOLL ( r->m_niceness );
-
 	// make the cacheKey ourself, since Msg5 would make the key wrong
 	// since it would base it on startFileNum and numFiles
 	key96_t cacheKey ; cacheKey.n1 = 0; cacheKey.n0 = r->m_docId;
@@ -480,8 +469,6 @@ void gotTitleList ( void *state , RdbList *list , Msg5 *msg5 ) {
 	UdpServer *us = &g_udpServer;
 	// shortcut
 	Msg22Request *r = st->m_r;
-	// breathe
-	QUICKPOLL(r->m_niceness);
 
 	// send error reply on error
 	if ( g_errno ) { 
@@ -523,8 +510,6 @@ void gotTitleList ( void *state , RdbList *list , Msg5 *msg5 ) {
 
 	// scan the titleRecs in the list
 	for ( ; ! tlist->isExhausted() ; tlist->skipCurrentRecord ( ) ) {
-		// breathe
-		QUICKPOLL ( r->m_niceness );
 		// get the rec
 		char *rec     = tlist->getCurrentRec();
 		int32_t  recSize = tlist->getCurrentRecSize();

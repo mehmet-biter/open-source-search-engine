@@ -1179,7 +1179,7 @@ bool XmlDoc::set2 ( char    *titleRec ,
 }
 
 
-bool XmlDoc::setFirstUrl ( char *u ) {
+bool XmlDoc::setFirstUrl ( const char *u ) {
 	m_firstUrl.reset();
 	m_currentUrl.reset();
 
@@ -1312,7 +1312,7 @@ static void indexDocWrapper2 ( int fd , void *state ) {
 // . user is requesting to inject this url
 // . returns false if blocked and your callback will be called when done
 // . returns true and sets g_errno on error
-bool XmlDoc::injectDoc ( char *url ,
+bool XmlDoc::injectDoc ( const char *url ,
 			 CollectionRec *cr ,
 			 char *content ,
 			 bool contentHasMimeArg ,
@@ -1320,7 +1320,7 @@ bool XmlDoc::injectDoc ( char *url ,
 			 int32_t charset,
 
 			 bool deleteUrl,
-			 char *contentTypeStr, // text/html application/json
+			 const char *contentTypeStr, // text/html application/json
 			 bool spiderLinks ,
 			 char newOnly, // index iff new
 
@@ -1450,8 +1450,7 @@ bool XmlDoc::injectDoc ( char *url ,
 	// . eventually it will call "callback" when done if it blocks
 	logTrace( g_conf.m_logTraceXmlDoc, "Calling indexDoc" );
 	bool status = indexDoc ( );
-	if ( ! status )
-	{
+	if ( ! status ) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END, returning false. indexDoc returned false" );
 		return false;
 	}
@@ -6033,8 +6032,6 @@ SafeBuf *XmlDoc::getTimeAxisUrl ( ) {
 //   from scratch. this loads it from titledb.
 // . NULL is a valid value (EDOCNOTFOUND) so return a char **
 char **XmlDoc::getOldTitleRec ( ) {
-	// clear if we blocked
-	//if ( g_errno == ENOTFOUND ) g_errno = 0;
 	// if valid return that
 	if ( m_oldTitleRecValid ) return &m_oldTitleRec;
 	// update status msg
@@ -6047,14 +6044,11 @@ char **XmlDoc::getOldTitleRec ( ) {
 	}
 	// sanity check
 	if ( m_oldTitleRecValid && m_msg22a.isOutstanding() ) {
-		g_process.shutdownAbort(true); }
-	// point to url
-	//char *u = getCurrentUrl()->getUrl();
-	//char *u = getFirstUrl()->getUrl();
+		g_process.shutdownAbort(true);
+	}
 
 	// assume its valid
 	m_oldTitleRecValid = true;
-	//if ( maxCacheAge > 0 ) addToCache = true;
 
 	// not if new! no we need to do this so XmlDoc::getDocId() works!
 	// this logic prevents us from setting g_errno to ENOTFOUND
@@ -6067,16 +6061,21 @@ char **XmlDoc::getOldTitleRec ( ) {
 		return &m_oldTitleRec;
 	}
 	// sanity check. if we have no url or docid ...
-	if ( ! m_firstUrlValid && ! m_docIdValid ) { g_process.shutdownAbort(true); }
+	if ( ! m_firstUrlValid && ! m_docIdValid ) {
+		g_process.shutdownAbort(true);
+	}
+
 	// use docid if first url not valid
 	int64_t docId = 0;
-	if ( ! m_firstUrlValid ) docId = m_docId;
+	if ( ! m_firstUrlValid ) {
+		docId = m_docId;
+	}
 	// if url not valid, use NULL
 	char *u = NULL;
 	if ( docId == 0LL && ptr_firstUrl ) u = getFirstUrl()->getUrl();
 	// if both are not given that is a problem
 	if ( docId == 0LL && ! u ) {
-		log("doc: no url or docid provided to get old doc");
+		log(LOG_WARN, "doc: no url or docid provided to get old doc");
 		g_errno = EBADENGINEER;
 		return NULL;
 	}
@@ -6110,9 +6109,14 @@ char **XmlDoc::getOldTitleRec ( ) {
 		// return -1 if we blocked
 		return (char **)-1;
 	// not really an error
-	if ( g_errno == ENOTFOUND ) g_errno = 0;
+	if ( g_errno == ENOTFOUND ) {
+		g_errno = 0;
+	}
+
 	// error?
-	if ( g_errno ) return NULL;
+	if ( g_errno ) {
+		return NULL;
+	}
 	// got it
 	return &m_oldTitleRec;
 }
@@ -6227,12 +6231,11 @@ int64_t *XmlDoc::getDocId ( ) {
 	// because of the corruption bug in RdbMem.cpp when dumping to disk.
 	if ( m_docId == 0 && m_oldTitleRec && m_oldTitleRecSize > 12 ) {
 		m_docId = Titledb::getDocIdFromKey ( (key96_t *)m_oldTitleRec );
-		log("build: salvaged docid %" PRId64" from corrupt title rec "
-			"for %s",m_docId,m_firstUrl.getUrl());
+		log(LOG_WARN, "build: salvaged docid %" PRId64" from corrupt title rec for %s",m_docId,m_firstUrl.getUrl());
 	}
 
 	if ( m_docId == 0 ) {
-		log("build: docid is 0 for %s",m_firstUrl.getUrl());
+		log(LOG_WARN, "build: docid is 0 for %s",m_firstUrl.getUrl());
 		g_errno = ENODOCID;
 		return NULL;
 	}
@@ -6247,8 +6250,6 @@ int64_t *XmlDoc::getDocId ( ) {
 			g_process.shutdownAbort(true); }
 	}
 
-	// if docid is zero, none is a vailable!!!
-	//if ( m_docId == 0LL ) m_indexCode = ENODOCID;
 	m_docIdValid = true;
 	return &m_docId;
 }
@@ -8503,14 +8504,14 @@ char **XmlDoc::getContent ( ) {
 	// all done if no reply
 	if ( ! m_httpReply ) return &m_content;
 
-	// set the content, account for mime header
-	m_content    = m_httpReply     + mime->getMimeLen() ;
-	m_contentLen = m_httpReplySize - mime->getMimeLen() ;
-
 	// watch out for this!
-	if ( m_useFakeMime ) {
-		m_content    = m_httpReply;
+	if (m_useFakeMime) {
+		m_content = m_httpReply;
 		m_contentLen = m_httpReplySize;
+	} else {
+		// set the content, account for mime header
+		m_content = m_httpReply + mime->getMimeLen();
+		m_contentLen = m_httpReplySize - mime->getMimeLen();
 	}
 
 	// why is this not really the size???
@@ -12026,6 +12027,47 @@ bool XmlDoc::doConsistencyTest ( bool forceTest ) {
 
 #define TABLE_ROWS 25
 
+void XmlDoc::printMetaList() const {
+	const char *p = m_metaList;
+	const char *pend = m_metaList + m_metaListSize;
+	for (; p < pend;) {
+		// get rdbId
+		rdbid_t rdbId = (rdbid_t)(*p & 0x7f);
+		p++;
+
+		// key size
+		int32_t ks = getKeySizeFromRdbId(rdbId);
+
+		// get key
+		const char *key = p;
+		p += ks;
+
+		// . if key is negative, no data is present
+		// . the doledb key is negative for us here
+		bool isDel = ((key[0] & 0x01) == 0x00);
+		int32_t ds = isDel ? 0 : getDataSizeFromRdbId(rdbId);
+
+		// if datasize variable, read it in
+		if (ds == -1) {
+			// get data size
+			ds = *(int32_t *)p;
+
+			// skip data size int32_t
+			p += 4;
+		}
+
+		// skip data if not zero
+		p += ds;
+
+		if (rdbId == RDB_POSDB) {
+			Posdb::printKey(key);
+		} else {
+			/// @todo ALC implement other rdb types
+			gbshutdownLogicError();
+		}
+	}
+}
+
 // print this also for page parser output!
 void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 
@@ -12061,11 +12103,9 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 		char *rec = p;
 		// init this
 		int32_t recSize = ks;
-		// convert into a key128_t, the biggest possible key
-		//key224_t k ;
+
 		char k[MAX_KEY_BYTES];
 		if ( ks > MAX_KEY_BYTES ) { g_process.shutdownAbort(true); }
-		//k.setMin();
 		gbmemcpy ( &k , p , ks );
 		// is it a negative key?
 		char neg = false;
@@ -12103,9 +12143,6 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 		if ( (++rcount % TABLE_ROWS) == 0 )
 			sb->safePrintf("<!--ignore--></table>%s",hdr);
 
-
-		//if ( rdbId != RDB_LINKDB ) continue;
-
 		// print dbname
 		sb->safePrintf("<tr>");
 		const char *dn = getDbnameFromId ( rdbId );
@@ -12119,24 +12156,16 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 
 		sb->safePrintf("<td><nobr>%s</nobr></td>", KEYSTR(k,ks));
 
-
-
 		if ( rdbId == RDB_POSDB ) {
 			// get termid et al
 			key144_t *k2 = (key144_t *)k;
 			int64_t tid = Posdb::getTermId(k2);
-			//uint8_t score8 = Posdb::getScore ( *k2 );
-			//uint32_t score32 = score8to32 ( score8 );
 			// sanity check
 			if(dataSize!=0){g_process.shutdownAbort(true);}
 			sb->safePrintf("<td>"
 				       "termId=%020" PRIu64" "
-				       //"score8=%03" PRIu32" "
-				       //"score32=%010" PRIu32
 				       "</td>"
 				       ,(uint64_t)tid
-				       //(int32_t)score8,
-				       //(int32_t)score32
 				       );
 		}
 		else if ( rdbId == RDB_LINKDB ) {
@@ -12146,8 +12175,6 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 			int32_t linkerSiteHash  = Linkdb::getLinkerSiteHash32_uk(k2);
 			char linkSpam   = Linkdb::isLinkSpam_uk    (k2);
 			int32_t siteRank = Linkdb::getLinkerSiteRank_uk (k2);
-			//int32_t hopCount = Linkdb::getLinkerHopCount_uk   (k2);
-			//int32_t ip24     = Linkdb::getLinkerIp24_uk       (k2);
 			int32_t ip32       = Linkdb::getLinkerIp_uk       (k2);
 			int64_t docId = Linkdb::getLinkerDocId_uk      (k2);
 			// sanity check
@@ -12168,7 +12195,6 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 				       linkHash,
 				       (int32_t)linkSpam,
 				       siteRank,
-				       //hopCount,
 				       linkerSiteHash,
 				       iptoa(ip32),
 				       docId);
@@ -12225,16 +12251,8 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 		else if ( rdbId == RDB_TITLEDB ) {
 			// print each offset and size for the variable crap
 			sb->safePrintf("<td><nobr>titlerec datasize=%" PRId32" "
-				       //"sizeofxmldoc=%" PRId32" "
-				       //"hdrSize=%" PRId32" "
-				       //"version=%" PRId32" "
-				       //"%s"
 				       "</nobr></td>",
 				       dataSize
-				       //(int32_t)sizeof(XmlDoc),
-				       //(int32_t)tr.m_headerSize,
-				       //(int32_t)tr.m_version,
-				       //tmp.getBufStart());
 				       );
 		}
 		else if ( rdbId == RDB_TAGDB ) {
@@ -19320,6 +19338,72 @@ bool XmlDoc::printRainbowSections ( SafeBuf *sb , HttpRequest *hr ) {
 	return true;
 }
 
+void XmlDoc::printTermList() const {
+	if (!m_wts) {
+		return;
+	}
+
+	// shortcut
+	HashTableX *wt = m_wts;
+
+	// use the keys to hold our list of ptrs to TermDebugInfos for sorting!
+	TermDebugInfo **tp = NULL;
+
+	// add them with this counter
+	int32_t nt = 0;
+
+	int32_t nwt = 0;
+	if ( wt ) {
+		nwt = wt->m_numSlots;
+		tp = (TermDebugInfo **)wt->m_keys;
+	}
+
+	// now print the table we stored all we hashed into
+	for ( int32_t i = 0 ; i < nwt ; i++ ) {
+		// skip if empty
+		if ( wt->m_flags[i] == 0 ) continue;
+
+		// get the TermDebugInfo
+		TermDebugInfo *ti = (TermDebugInfo *)wt->getValueFromSlot ( i );
+		// point to it for sorting
+		tp[nt++] = ti;
+	}
+
+	const char *start = m_wbuf.getBufStart();
+
+	for ( int32_t i = 0 ; i < nt ; i++ ) {
+		TermDebugInfo *tpi = tp[i];
+
+		const char *prefix = NULL;
+		if (tpi->m_prefixOff >= 0) {
+			prefix = start + tpi->m_prefixOff;
+		}
+
+		const char *desc = NULL;
+		if (tpi->m_descOff >= 0) {
+			desc = start + tpi->m_descOff;
+		}
+
+		// use hashgroup
+		int32_t hg = tpi->m_hashGroup;
+		if (!desc || !strcmp(desc, "body"))
+			desc = getHashGroupString(hg);
+
+		logf(LOG_TRACE, "termId=%015" PRId64" prefix='%s' wordPos=%" PRId32" wordNum=%" PRId32" term='%.*s' desc='%s%s%s' densityRank=%hhd wordSpamRank=%hhd",
+		     (int64_t)(tp[i]->m_termId & TERMID_MASK),
+		     prefix ? prefix : "",
+		     tpi->m_wordPos,
+		     tpi->m_wordNum,
+		     tpi->m_termLen, start + tpi->m_termOff,
+		     desc,
+		     tpi->m_synSrc ? " - " : "",
+		     tpi->m_synSrc ? getSourceString(tpi->m_synSrc) : "",
+		     tpi->m_densityRank,
+		     tpi->m_wordSpamRank);
+
+	}
+}
+
 bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {
 
 	// set debug buffer
@@ -19455,14 +19539,6 @@ bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {
 		// sort by word pos
 		gbsort ( tp , nt , sizeof(TermDebugInfo *), cmptp2 );
 
-
-	// print the weight tables
-	//printLocationWeightsTable(sb,isXml);
-	//printDiversityWeightsTable(sb,isXml);
-	//printDensityWeightsTable(sb,isXml);
-	//printWordSpamWeightsTable(sb,isXml);
-
-
 	// print them out in a table
 	char hdr[1000];
 	sprintf(hdr,
@@ -19477,21 +19553,12 @@ bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {
 
 		"<td><b>Term</b></td>"
 
-		//"%s"
-
-		//"<td><b>Weight</b></td>"
-		//"<td><b>Spam</b></td>"
-
 		"<td><b>Desc</b></td>"
 
 		"<td><b>N</b></td>"
-		//"<td><b>V</b></td>" // diversityRank
 		"<td><b>S</b></td>"
 		"<td><b>Score</b></td>"
 
-		//"<td><b>Date</b></td>"
-		//"<td><b>Desc</b></td>"
-		//"<td><b>TermId</b></td>"
 		"</tr>\n"
 		//,fbuf
 		);
@@ -19549,12 +19616,6 @@ bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {
 				       );
 		}
 
-		//char *abbr = getLanguageAbbr(tp[i]->m_langId);
-		//if ( tp[i]->m_langId == langTranslingual ) abbr ="??";
-		//if ( tp[i]->m_langId == langUnknown      ) abbr ="--";
-		//if ( tp[i]->m_synSrc ) abbr = "";
-
-
 		// print out all langs word is in if it's not clear
 		// what language it is. we use a sliding window to
 		// resolve some ambiguity, but not all, so print out
@@ -19565,46 +19626,14 @@ bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {
 			sb->safePrintf("</td>");
 		}
 
-
-		//if ( ! isXml && abbr[0] )
-		//	sb->safePrintf("<td>%s</td>", abbr );
-		//else if ( ! isXml )
-		//	sb->safePrintf("<td>&nbsp;</td>" );
-		//else if ( abbr[0] )
-		//	sb->safePrintf("\t\t<lang><![CDATA["
-		//		       "]]>%s</lang>\n", abbr );
-
-
 		if ( isXml )
 			sb->safePrintf("\t\t<s><![CDATA[");
 
 		if ( ! isXml )
 			sb->safePrintf ("<td><nobr>" );
 
-		//if ( tp[i]->m_synSrc )
-		//	sb->pushChar('*');
-
 		sb->safeMemcpy_nospaces ( start + tp[i]->m_termOff ,
 					  tp[i]->m_termLen );
-
-		/*
-		char *dateStr = "&nbsp;";
-		int32_t ddd = tp[i]->m_date;
-		uint8_t *tddd = (uint8_t *)&ddd;
-		char tbbb[32];
-		if ( ddd && tddd[2] == 0 && tddd[3] == 0 &&
-		     tddd[0] && tddd[1] && tddd[1] <= tddd[0] ) {
-			sprintf(tbbb,"evIds %" PRId32"-%" PRId32,
-				(int32_t)tddd[1],(int32_t)tddd[0]);
-			dateStr = tbbb;
-		}
-		else if ( ddd )
-			dateStr = asctime_r(gmtime_r(&ddd ));
-
-		char tmp[20];
-		if ( tp[i]->m_noSplit ) sprintf ( tmp,"<b>1</b>" );
-		else                    sprintf ( tmp,"0" );
-		*/
 
 		if ( isXml )
 			sb->safePrintf("]]></s>\n");
@@ -19648,17 +19677,6 @@ bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {
 				       "</td>",dn);
 
 		// the diversityrank/wordspamrank
-		/*
-		int32_t ds = (int32_t)tp[i]->m_diversityRank;
-		if ( isXml )
-			sb->safePrintf("\t\t<div>%" PRId32"</div>\n",ds);
-		if ( ! isXml && ds >= MAXDIVERSITYRANK )
-			sb->safePrintf("<td>%" PRId32"</td>\n",ds);
-		else if ( ! isXml )
-			sb->safePrintf("<td><font color=green>%" PRId32"</font>"
-				       "</td>",ds);
-		*/
-
 		int32_t ws = (int32_t)tp[i]->m_wordSpamRank;
 
 		if ( isXml && hg == HASHGROUP_INLINKTEXT )

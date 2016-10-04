@@ -123,6 +123,7 @@ bool Msg5::getTreeList(RdbList *result, const void *startKey, const void *endKey
 		log(LOG_DEBUG,"Msg5::getTreeList(): base %d/%d unknown",m_rdbId,m_collnum);
 		return false;
 	}
+	Rdb *rdb = getRdbFromId(m_rdbId);
 	// set start time
 	int64_t start ;
 	if(m_newMinRecSizes > 64)
@@ -131,10 +132,10 @@ bool Msg5::getTreeList(RdbList *result, const void *startKey, const void *endKey
 	// . endKey of m_treeList may be less than m_endKey
 	const char *structName;
 
-	if(base->m_rdb->useTree()) {
+	if(rdb->useTree()) {
 		// get the mem tree for this rdb
-		RdbTree *tree = base->m_rdb->getTree();
-		if(!tree->getList(base->m_collnum,
+		RdbTree *tree = rdb->getTree();
+		if(!tree->getList(base->getCollnum(),
 				  static_cast<const char*>(startKey),
 				  static_cast<const char*>(endKey),
 				  m_newMinRecSizes,
@@ -147,8 +148,8 @@ bool Msg5::getTreeList(RdbList *result, const void *startKey, const void *endKey
 		*memUsedByTree = tree->getMemOccupiedForList();
 		*numUsedNodes = tree->getNumUsedNodes();
 	} else {
-		RdbBuckets *buckets = base->m_rdb->getBuckets();
-		if(!buckets->getList(base->m_collnum,
+		RdbBuckets *buckets = rdb->getBuckets();
+		if(!buckets->getList(base->getCollnum(),
 				     static_cast<const char*>(startKey),
 				     static_cast<const char*>(endKey),
 				     m_newMinRecSizes,
@@ -168,7 +169,7 @@ bool Msg5::getTreeList(RdbList *result, const void *startKey, const void *endKey
 			     "in %" PRIu64" ms. size=%" PRId32" db=%s "
 			     "niceness=%" PRId32".",
 			     structName, took,m_treeList.getListSize(),
-			     base->m_dbname,m_niceness);
+			     base->getDbName(),m_niceness);
 	}
 
 	return true;
@@ -364,6 +365,7 @@ bool Msg5::readList ( ) {
 	verify_signature();
 if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 	// get base, returns NULL and sets g_errno to ENOCOLLREC on error
+	Rdb *rdb = getRdbFromId(m_rdbId);
 	RdbBase *base = getRdbBase( m_rdbId, m_collnum );
 	if ( ! base ) {
 		return true;
@@ -471,7 +473,7 @@ if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 			// . use an avg. rec size for variable-length records
 			// . just use tree to estimate avg. rec size
 			if ( rs == -1) {
-				if(base->m_rdb->useTree()) {
+				if(rdb->useTree()) {
 					// get avg record size
 					if ( numRecs > 0 ) rs = memUsedByTree / numRecs;
 					// add 10% for deviations
@@ -482,7 +484,7 @@ if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 					if ( rs < minrs ) rs = minrs;
 				}
 				else {
-					RdbBuckets *buckets = base->m_rdb->getBuckets();
+					RdbBuckets *buckets = rdb->getBuckets();
 
 					rs = buckets->getNumKeys() / buckets->getMemOccupied();
 					int32_t minrs = buckets->getRecSize() + 4;
@@ -610,6 +612,7 @@ bool Msg5::needsRecall ( ) {
 	verify_signature();
 if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 	// get base, returns NULL and sets g_errno to ENOCOLLREC on error
+	Rdb *rdb = getRdbFromId(m_rdbId);
 	RdbBase *base = getRdbBase ( m_rdbId , m_collnum );
 	// if collection was deleted from under us, base will be NULL
 	if ( ! base && ! g_errno ) {
@@ -633,7 +636,7 @@ if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 	// to read too many bytes a small titledb and it does an infinite loop
 	if ( m_readAbsolutelyNothing ) {
 		log("rdb: read absolutely nothing more for dbname=%s on cn=%" PRId32,
-		    base->m_dbname,(int32_t)m_collnum);
+		    base->getDbName(),(int32_t)m_collnum);
 		return false;
 	}
 	if ( KEYCMP(m_list->getEndKey(),m_endKey,m_ks)>=0 ) return false;
@@ -651,14 +654,14 @@ if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 		log("db: Reading %" PRId32" again from %s (need %" PRId32" total "
 		     "got %" PRId32" totalListSizes=%" PRId32" sk=%s) "
 		     "cn=%" PRId32" this=0x%" PTRFMT" round=%" PRId32".", 
-		     m_newMinRecSizes , base->m_dbname , m_minRecSizes, 
+		     m_newMinRecSizes , base->getDbName() , m_minRecSizes, 
 		     m_list->getListSize(),
 		     m_totalSize,
 		     KEYSTR(m_startKey,m_ks),
 		     (int32_t)m_collnum,(PTRTYPE)this, m_round );
 		m_round++;
 	// record how many screw ups we had so we know if it hurts performance
-	base->m_rdb->didReSeek ( );
+	rdb->didReSeek ( );
 
 	// try to read more from disk
 	return true;
@@ -997,7 +1000,7 @@ if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 		// . this returns false and sets g_errno on error
 		// . should not affect the current list in m_list, only build on top
 		if ( ! m_list->prepareForMerge ( m_listPtrs, m_numListPtrs, m_minRecSizes ) ) {
-			log( LOG_WARN, "net: Had error preparing to merge lists from %s: %s", base->m_dbname,mstrerror(g_errno));
+			log( LOG_WARN, "net: Had error preparing to merge lists from %s: %s", base->getDbName(),mstrerror(g_errno));
 			return true;
 		}
 	} else {
@@ -1285,7 +1288,7 @@ if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 	// . Thread class should propagate g_errno when it was set in a thread
 	if ( g_errno ) {
 		log( LOG_WARN, "net: Had error merging lists from %s: %s.",
-		    base->m_dbname,mstrerror(g_errno));
+		    base->getDbName(),mstrerror(g_errno));
 		return true;
 	}
 
@@ -1297,7 +1300,7 @@ if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 	if ( m_hadCorruption ) {
 		// log it here, cuz logging in thread doesn't work too well
 		log( LOG_WARN, "net: Encountered a corrupt list in rdb=%s collnum=%" PRId32,
-		    base->m_dbname,(int32_t)m_collnum);
+		    base->getDbName(),(int32_t)m_collnum);
 		// remove error condition, we removed the bad data in thread
 		
 		m_hadCorruption = false;

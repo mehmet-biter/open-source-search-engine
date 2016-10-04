@@ -33,7 +33,6 @@ bool Clusterdb::init ( ) {
 			    g_conf.m_clusterdbMaxTreeMem,
 			    maxTreeNodes  , // maxTreeNodes  ,
 			    true          , // half keys?
-			    false,  // is titledb
 			    12);     // key size
 }
 
@@ -51,7 +50,6 @@ bool Clusterdb::init2 ( int32_t treeMem ) {
 			    treeMem       , // g_conf.m_clusterdbMaxTreeMem,
 			    maxTreeNodes  ,
 			    true          , // half keys?
-			    false         ,  // is titledb
 			    12            );     // key size
 }
 

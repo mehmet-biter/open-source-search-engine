@@ -120,7 +120,6 @@ bool Linkdb::init ( ) {
 			    maxTreeMem ,
 			    maxTreeNodes ,
 			    false, // true     , // use half keys
-			    false    , // false
 			    sizeof(key224_t) );
 }
 
@@ -139,7 +138,6 @@ bool Linkdb::init2 ( int32_t treeMem ) {
 			    treeMem       , // g_conf.m_clusterdbMaxTreeMem,
 			    maxTreeNodes  ,
 			    false, // true          , // half keys?
-			    false         , // is titledb
 			    sizeof(key224_t)); // key size
 }
 
