@@ -205,7 +205,6 @@ class RdbBase {
 	// bury m_files[] in [a,b)
 	void buryFiles ( int32_t a , int32_t b );
 
-	void doneWrapper4 ( ) ;
 	int32_t m_x;
 	int32_t m_a;
 
