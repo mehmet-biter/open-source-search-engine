@@ -163,28 +163,6 @@ public:
 		return skipCurrentRec(getRecSize(m_listPtr));
 	}
 
-	// this is specially-made for RdbMap's processing of IndexLists
-	bool skipCurrentRec(int32_t recSize) {
-		m_listPtr += recSize;
-		if (m_listPtr >= m_listEnd) return false;
-		if (m_ks == 18) {
-			// a 6 byte key? do not change listPtrHi nor Lo
-			if (m_listPtr[0] & 0x04) return true;
-			// a 12 byte key?
-			if (m_listPtr[0] & 0x02) {
-				m_listPtrLo = m_listPtr + 6;
-				return true;
-			}
-			// if it's a full 18 byte key, change both ptrs
-			m_listPtrHi = m_listPtr + 12;
-			m_listPtrLo = m_listPtr + 6;
-			return true;
-		}
-		if (m_useHalfKeys && !isHalfBitOn(m_listPtr))
-			m_listPtrHi = m_listPtr + (m_ks - 6);
-		return true;
-	}
-
 	bool isExhausted() const { return (m_listPtr >= m_listEnd); }
 
 	// are there any records in the list?
@@ -203,9 +181,6 @@ public:
 	bool constrain(const char *startKey, char *endKey, int32_t minRecSizes,
 	               int32_t hintOffset, const char *hintKey, rdbid_t rdbId, const char *filename);
 
-	bool posdbConstrain(const char *startKey, char *endKey, int32_t minRecSizes,
-	                    int32_t hintOffset, const char *hintKey, const char *filename);
-
 	// . this MUST be called before calling merge_r() 
 	// . will alloc enough space for m_listSize + sizes of "lists"
 	bool prepareForMerge(RdbList **lists, int32_t numLists, int32_t minRecSizes = -1);
@@ -215,9 +190,6 @@ public:
 	// . exclude any records from lists not in that range
 	void merge_r(RdbList **lists, int32_t numLists, const char *startKey, const char *endKey, int32_t minRecSizes,
 	             bool removeNegRecs, rdbid_t rdbId);
-
-	bool posdbMerge_r(RdbList **lists, int32_t numLists, const char *startKey, const char *endKey, int32_t minRecSizes,
-	                  bool removeNegKeys);
 
 	bool growList(int32_t newSize);
 
@@ -259,10 +231,38 @@ private:
 		return *(int32_t *)(rec + m_ks) + m_ks + 4;
 	}
 
+	// this is specially-made for RdbMap's processing of IndexLists
+	bool skipCurrentRec(int32_t recSize) {
+		m_listPtr += recSize;
+		if (m_listPtr >= m_listEnd) return false;
+		if (m_ks == 18) {
+			// a 6 byte key? do not change listPtrHi nor Lo
+			if (m_listPtr[0] & 0x04) return true;
+			// a 12 byte key?
+			if (m_listPtr[0] & 0x02) {
+				m_listPtrLo = m_listPtr + 6;
+				return true;
+			}
+			// if it's a full 18 byte key, change both ptrs
+			m_listPtrHi = m_listPtr + 12;
+			m_listPtrLo = m_listPtr + 6;
+			return true;
+		}
+		if (m_useHalfKeys && !isHalfBitOn(m_listPtr))
+			m_listPtrHi = m_listPtr + (m_ks - 6);
+		return true;
+	}
+
 	void getKey(const char *rec, char *key) const;
 
 	char *getData(char *rec);
 	int32_t getDataSize(const char *rec) const;
+
+	bool posdbConstrain(const char *startKey, char *endKey, int32_t minRecSizes,
+	                    int32_t hintOffset, const char *hintKey, const char *filename);
+
+	bool posdbMerge_r(RdbList **lists, int32_t numLists, const char *startKey, const char *endKey, int32_t minRecSizes,
+	                  bool removeNegKeys, bool useIndexFile);
 
 	// the unalterd raw list. keys may be outside of [m_startKey,m_endKey]
 	char *m_list;

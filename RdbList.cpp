@@ -1755,13 +1755,14 @@ void RdbList::merge_r(RdbList **lists, int32_t numLists, const char *startKey, c
 		return;
 	}
 
+	Rdb* rdb = getRdbFromId(rdbId);
+
 	if (rdbId == RDB_POSDB) {
-		posdbMerge_r(lists, numLists, startKey, endKey, m_mergeMinListSize, removeNegRecs);
+		posdbMerge_r(lists, numLists, startKey, endKey, m_mergeMinListSize, removeNegRecs, rdb->isUseIndexFile());
 		return;
 	}
 
 	// check that we're not using index for other rdb file than posdb
-	Rdb* rdb = getRdbFromId(rdbId);
 	if (rdb->isUseIndexFile()) {
 		/// @todo ALC logic to use index file is not implemented for any rdb other than posdb. add it below if required
 		gbshutdownLogicError();
@@ -2084,8 +2085,10 @@ skip:
 //
 ///////
 
-bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startKey, const char *endKey, int32_t minRecSizes, bool removeNegKeys) {
+bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startKey, const char *endKey, int32_t minRecSizes,
+                           bool removeNegKeys, bool useIndexFile) {
 	logTrace(g_conf.m_logTraceRdbList, "BEGIN");
+
 	// sanity
 	if (m_ks != sizeof(key144_t)) {
 		gbshutdownAbort(true);
