@@ -44,7 +44,6 @@ RdbBase::RdbBase()
 	m_tree = NULL;
 	m_buckets = NULL;
 	m_dump = NULL;
-	m_maxTreeMem = 0;
 	m_minToMergeArg = 0;
 	m_minToMerge = 0;
 	m_absMaxFiles = 0;
