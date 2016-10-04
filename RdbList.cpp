@@ -554,7 +554,7 @@ void RdbList::getKey ( const char *rec , char *key ) const {
 int32_t RdbList::getDataSize ( const char *rec ) const {
 	if ( m_fixedDataSize == 0 ) return 0;
 	// negative keys always have no datasize entry
-	if ( (rec[0] & 0x01) == 0 ) return 0;
+	if ( KEYNEG(rec) ) return 0;
 	if ( m_fixedDataSize >= 0 ) return m_fixedDataSize;
 	return *(int32_t  *)(rec+m_ks);
 }
@@ -563,7 +563,7 @@ char *RdbList::getData ( char *rec ) {
 	if ( m_fixedDataSize == 0 ) return NULL;
 	if ( m_fixedDataSize  > 0 ) return rec + m_ks;
 	// negative key? then no data
-	if ( (rec[0] & 0x01) == 0 ) return NULL;
+	if ( KEYNEG(rec) ) return NULL;
 	return rec + m_ks + 4;
 }
 
@@ -1049,12 +1049,9 @@ int RdbList::printList() {
 		int32_t dataSize = getCurrentDataSize();
 
 		const char *d;
-		if ( (*m_listPtr & 0x01) == 0x00 )
-		{
+		if ( KEYNEG(m_listPtr) ) {
 			d = " (del)";
-		}
-		else
-		{
+		} else {
 			d = "";
 		}
 
@@ -1956,7 +1953,6 @@ top:
 	// if we are positive and unannhilated, store it in case
 	// last key we get is negative and removeNegRecs is true we need to
 	// know the last positive key to set m_lastKey
-	//if ( (*(char *)&minKey & 0x01) == 0x01 ) lastPosKey = minKey;
 	if ( !KEYNEG(minKey) ) {
 		KEYSET(lastPosKey,minKey,m_ks);
 	}
