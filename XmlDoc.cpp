@@ -8505,14 +8505,14 @@ char **XmlDoc::getContent ( ) {
 	// all done if no reply
 	if ( ! m_httpReply ) return &m_content;
 
-	// set the content, account for mime header
-	m_content    = m_httpReply     + mime->getMimeLen() ;
-	m_contentLen = m_httpReplySize - mime->getMimeLen() ;
-
 	// watch out for this!
-	if ( m_useFakeMime ) {
-		m_content    = m_httpReply;
+	if (m_useFakeMime) {
+		m_content = m_httpReply;
 		m_contentLen = m_httpReplySize;
+	} else {
+		// set the content, account for mime header
+		m_content = m_httpReply + mime->getMimeLen();
+		m_contentLen = m_httpReplySize - mime->getMimeLen();
 	}
 
 	// why is this not really the size???
