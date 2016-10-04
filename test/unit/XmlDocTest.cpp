@@ -42,8 +42,10 @@ static void initializeDocForPosdb(XmlDoc *xmlDoc, const char *url, char *content
 
 	xmlDoc->m_useFakeMime = true;
 	xmlDoc->m_httpReplyValid = true;
-	xmlDoc->m_httpReply = content;
-	xmlDoc->m_httpReplySize = strlen(content) + 1;
+	xmlDoc->m_httpReplyAllocSize = strlen(content) + 1;
+	xmlDoc->m_httpReplySize = xmlDoc->m_httpReplyAllocSize;
+	xmlDoc->m_httpReply = static_cast<char*>(mmalloc(xmlDoc->m_httpReplyAllocSize, "httprep"));
+	memcpy(xmlDoc->m_httpReply, content, xmlDoc->m_httpReplyAllocSize);
 
 	xmlDoc->m_downloadStatusValid = true;
 	xmlDoc->m_downloadStatus = 0;
@@ -57,6 +59,11 @@ static void initializeDocForPosdb(XmlDoc *xmlDoc, const char *url, char *content
 
 	xmlDoc->m_linkInfo1Valid = true;
 	xmlDoc->ptr_linkInfo1 = NULL;
+
+	xmlDoc->m_siteValid = true;
+	xmlDoc->ptr_site = const_cast<char*>(url);
+
+	xmlDoc->m_tagRecValid = true;
 
 	xmlDoc->m_siteNumInlinksValid = true;
 	xmlDoc->m_siteNumInlinks = 0;
@@ -169,14 +176,15 @@ TEST_F(XmlDocTest, PosdbGetMetaListChangedDoc) {
 	char contentOld[] = "<html><head><title>my title</title></head><body>old document</body></html>";
 	char contentNew[] = "<html><head><title>my title</title></head><body>new document</body></html>";
 
-	XmlDoc xmlDocOld;
-	initializeDocForPosdb(&xmlDocOld, url, contentOld);
+	XmlDoc *xmlDocOld = new XmlDoc();
+	mnew(xmlDocOld, sizeof(*xmlDocOld), "XmlDoc");
+	initializeDocForPosdb(xmlDocOld, url, contentOld);
 
 	XmlDoc xmlDocNew;
 	initializeDocForPosdb(&xmlDocNew, url, contentNew);
 
 	xmlDocNew.m_oldDocValid = true;
-	xmlDocNew.m_oldDoc = &xmlDocOld;
+	xmlDocNew.m_oldDoc = xmlDocOld;
 	xmlDocNew.getMetaList(false);
 	auto metaListKeys = parseMetaList(xmlDocNew.m_metaList, xmlDocNew.m_metaListSize);
 
@@ -211,15 +219,16 @@ TEST_F(XmlDocTest, PosdbGetMetaListDeletedDoc) {
 	char contentOld[] = "<html><head><title>my title</title></head><body>old document</body></html>";
 	char contentNew[] = "";
 
-	XmlDoc xmlDocOld;
-	initializeDocForPosdb(&xmlDocOld, url, contentOld);
+	XmlDoc *xmlDocOld = new XmlDoc();
+	mnew(xmlDocOld, sizeof(*xmlDocOld), "XmlDoc");
+	initializeDocForPosdb(xmlDocOld, url, contentOld);
 
 	XmlDoc xmlDocNew;
 	initializeDocForPosdb(&xmlDocNew, url, contentNew);
 	xmlDocNew.m_deleteFromIndex = true;
 
 	xmlDocNew.m_oldDocValid = true;
-	xmlDocNew.m_oldDoc = &xmlDocOld;
+	xmlDocNew.m_oldDoc = xmlDocOld;
 	xmlDocNew.getMetaList(false);
 	auto metaListKeys = parseMetaList(xmlDocNew.m_metaList, xmlDocNew.m_metaListSize);
 
