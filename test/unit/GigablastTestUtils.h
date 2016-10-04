@@ -5,8 +5,6 @@
 namespace GbTest {
 	void initializeRdbs();
 	void resetRdbs();
-
-	void initializeUdpServer();
 }
 
 
