@@ -99,8 +99,7 @@ static std::vector<keypair_t> parseMetaList(const char *metaList, int32_t metaLi
 
 		// . if key is negative, no data is present
 		// . the doledb key is negative for us here
-		bool isDel = ((key[0] & 0x01) == 0x00);
-		int32_t ds = isDel ? 0 : getDataSizeFromRdbId(rdbId);
+		int32_t ds = KEYNEG(key) ? 0 : getDataSizeFromRdbId(rdbId);
 
 		// if datasize variable, read it in
 		if (ds == -1) {
