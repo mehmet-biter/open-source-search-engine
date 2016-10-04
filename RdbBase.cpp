@@ -1478,21 +1478,6 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 		return false;
 	}
 
-	if ( g_numThreads > 0 ) {
-		// prevent log spam
-		static int32_t s_lastTime = 0;
-		int32_t now = getTimeLocal();
-		if ( now - s_lastTime > 0 && doLog )
-			log(LOG_INFO,"merge: Waiting for another "
-			    "collection's unlink/rename "
-			    "operations to finish before attempting merge "
-			    "for %s (collnum=%" PRId32").",
-			    m_dbname,(int32_t)m_collnum);
-		s_lastTime = now;
-		logTrace( g_conf.m_logTraceRdbBase, "END, waiting for threads to finish" );
-		return false;
-	}
-
 
 	// set m_minToMerge from coll rec if we're indexdb
 	CollectionRec *cr = g_collectiondb.m_recs [ m_collnum ];
