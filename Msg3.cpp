@@ -1180,8 +1180,6 @@ void Msg3::setPageRanges(RdbBase *base) {
 // . we now boost m_minRecSizes to account for negative recs in certain files
 // . TODO: use floats for averages, not ints
 void Msg3::compensateForNegativeRecs ( RdbBase *base ) {
-	// get the file maps from the rdb
-	RdbMap **maps = base->getMaps();
 	// add up counts from each map
 	int64_t totalNegatives = 0;
 	int64_t totalPositives = 0;
@@ -1195,9 +1193,10 @@ void Msg3::compensateForNegativeRecs ( RdbBase *base ) {
 			log(LOG_LOGIC,"net: msg3: fn=%" PRId32". bad engineer.",fn);
 			continue;
 		}
-		totalNegatives += maps[fn]->getNumNegativeRecs();
-		totalPositives += maps[fn]->getNumPositiveRecs();
-		totalFileSize  += maps[fn]->getFileSize();
+		RdbMap *map = base->getMap(fn);
+		totalNegatives += map->getNumNegativeRecs();
+		totalPositives += map->getNumPositiveRecs();
+		totalFileSize  += map->getFileSize();
 	}
 	// add em all up
 	int64_t totalNumRecs = totalNegatives + totalPositives;
