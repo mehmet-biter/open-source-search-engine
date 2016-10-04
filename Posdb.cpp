@@ -540,8 +540,7 @@ void Posdb::printKey(const char *k) {
 			     "syn=%01" PRId32" "
 			     "densRank=%02" PRId32" "
 			     "mult=%02" PRId32" "
-			     "isDel=%d"
-			     "\n",
+			     "isDel=%d",
 	     KEYSTR(k, sizeof(key144_t)),
 	     getTermId(k),
 	     getDocId(k),
