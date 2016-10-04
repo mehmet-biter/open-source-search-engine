@@ -273,11 +273,6 @@ public:
 	static const uint64_t s_docIdFileIndex_delBitMask   = 0x0000000001000000ULL;
 	static const uint64_t s_docIdFileIndex_filePosMask  = 0x000000000000ffffULL;
 
-	// this class contains a ptr to us
-	class Rdb           *m_rdb;
-
-	int32_t      m_fixedDataSize;
-
 private:
 	static void unlinkDoneWrapper(void *state);
 	void unlinkDone();
@@ -285,6 +280,11 @@ private:
 	static void checkThreadsAgainWrapper(int /*fd*/, void *state);
 	void renameDone();
 	
+	// this class contains a ptr to us
+	class Rdb           *m_rdb;
+
+	int32_t      m_fixedDataSize;
+
 	Dir       m_dir;
 	char      m_dbname [32];
 	int32_t      m_dbnameLen;

@@ -412,6 +412,8 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		g_process.shutdownAbort(true);
 	}
 
+	Rdb *rdb = getRdbFromId(m_rdbId);
+
 	// debug msg
 	//log("msg3 getting list (msg5=%" PRIu32")",m_state);
 	// . MDW removed this -- go ahead an end on a delete key
@@ -473,8 +475,8 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		// . count disk seeks (assuming no fragmentation)
 		// . count disk bytes read
 		if ( bytesToRead > 0 ) {
-			base->m_rdb->didSeek (             );
-			base->m_rdb->didRead ( bytesToRead );
+			rdb->didSeek (             );
+			rdb->didRead ( bytesToRead );
 		}
 
 		// . the startKey may be different for each RdbScan class
@@ -548,7 +550,7 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 
 		if(bytesToRead     > 10000000      &&
 		   bytesToRead / 2 > m_minRecSizes &&
-		   base->m_fixedDataSize >= 0)
+		   base->getFixedDataSize() >= 0)
 		{
 			// if any keys in the map are the same report corruption
 			char tmpKey    [MAX_KEY_BYTES];
@@ -613,7 +615,7 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 					 recSize , // allocSize
 					 startKey2 ,
 					 endKey2 ,
-					 base->m_fixedDataSize ,
+					 base->getFixedDataSize() ,
 					 true , // owndata
 					 base->useHalfKeys() ,
 					 getKeySizeFromRdbId ( m_rdbId ) );
@@ -623,7 +625,7 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		// . do the scan/read of file #i
 		// . this returns false if blocked, true otherwise
 		// . this will set g_errno on error
-		bool done = m_scan[i].m_scan.setRead( base->getFile(m_scan[i].m_fileNum), base->m_fixedDataSize, offset, bytesToRead,
+		bool done = m_scan[i].m_scan.setRead( base->getFile(m_scan[i].m_fileNum), base->getFixedDataSize(), offset, bytesToRead,
 		                                      startKey2, endKey2, m_ks, &m_scan[i].m_list,
 		                                      callback ? this : NULL,
 		                                      callback ? &doneScanningWrapper : NULL,

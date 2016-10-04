@@ -91,6 +91,7 @@ bool Msg5::getTreeList(RdbList *result, const void *startKey, const void *endKey
 		log(LOG_DEBUG,"Msg5::getTreeList(): base %d/%d unknown",m_rdbId,m_collnum);
 		return false;
 	}
+	Rdb *rdb = getRdbFromId(m_rdbId);
 	// set start time
 	int64_t start ;
 	if(m_newMinRecSizes > 64)
@@ -99,9 +100,9 @@ bool Msg5::getTreeList(RdbList *result, const void *startKey, const void *endKey
 	// . endKey of m_treeList may be less than m_endKey
 	const char *structName;
 
-	if(base->m_rdb->useTree()) {
+	if(rdb->useTree()) {
 		// get the mem tree for this rdb
-		RdbTree *tree = base->m_rdb->getTree();
+		RdbTree *tree = rdb->getTree();
 		if(!tree->getList(base->getCollnum(),
 				  static_cast<const char*>(startKey),
 				  static_cast<const char*>(endKey),
@@ -115,7 +116,7 @@ bool Msg5::getTreeList(RdbList *result, const void *startKey, const void *endKey
 		*memUsedByTree = tree->getMemOccupiedForList();
 		*numUsedNodes = tree->getNumUsedNodes();
 	} else {
-		RdbBuckets *buckets = base->m_rdb->getBuckets();
+		RdbBuckets *buckets = rdb->getBuckets();
 		if(!buckets->getList(base->getCollnum(),
 				     static_cast<const char*>(startKey),
 				     static_cast<const char*>(endKey),
@@ -327,6 +328,7 @@ bool Msg5::getList ( rdbid_t     rdbId,
 // . loops until m_minRecSizes is satisfied OR m_endKey is reached
 bool Msg5::readList ( ) {
 	// get base, returns NULL and sets g_errno to ENOCOLLREC on error
+	Rdb *rdb = getRdbFromId(m_rdbId);
 	RdbBase *base = getRdbBase( m_rdbId, m_collnum );
 	if ( ! base ) {
 		return true;
@@ -434,7 +436,7 @@ bool Msg5::readList ( ) {
 			// . use an avg. rec size for variable-length records
 			// . just use tree to estimate avg. rec size
 			if ( rs == -1) {
-				if(base->m_rdb->useTree()) {
+				if(rdb->useTree()) {
 					// get avg record size
 					if ( numRecs > 0 ) rs = memUsedByTree / numRecs;
 					// add 10% for deviations
@@ -445,7 +447,7 @@ bool Msg5::readList ( ) {
 					if ( rs < minrs ) rs = minrs;
 				}
 				else {
-					RdbBuckets *buckets = base->m_rdb->getBuckets();
+					RdbBuckets *buckets = rdb->getBuckets();
 
 					rs = buckets->getNumKeys() / buckets->getMemOccupied();
 					int32_t minrs = buckets->getRecSize() + 4;
@@ -572,6 +574,7 @@ bool Msg5::readList ( ) {
 
 bool Msg5::needsRecall ( ) {
 	// get base, returns NULL and sets g_errno to ENOCOLLREC on error
+	Rdb *rdb = getRdbFromId(m_rdbId);
 	RdbBase *base = getRdbBase ( m_rdbId , m_collnum );
 	// if collection was deleted from under us, base will be NULL
 	if ( ! base && ! g_errno ) {
@@ -620,7 +623,7 @@ bool Msg5::needsRecall ( ) {
 		     (int32_t)m_collnum,(PTRTYPE)this, m_round );
 	m_round++;
 	// record how many screw ups we had so we know if it hurts performance
-	base->m_rdb->didReSeek ( );
+	rdb->didReSeek ( );
 
 	// try to read more from disk
 	return true;
