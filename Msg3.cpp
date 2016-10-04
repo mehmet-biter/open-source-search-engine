@@ -274,17 +274,17 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		    "net: msg3: "
 		    "c=%" PRId32" hmf=%" PRId32" sfn=%" PRId32" msfn=%" PRId32" nf=%" PRId32" db=%s.",
 		     (int32_t)compensateForMerge,(int32_t)base->hasMergeFile(),
-		     (int32_t)startFileNum,(int32_t)base->m_mergeStartFileNum-1,
+		     (int32_t)startFileNum,(int32_t)base->mergeStartFileNum()-1,
 		     (int32_t)numFiles,base->m_dbname);
 	int32_t pre = -10;
 	if ( compensateForMerge && base->hasMergeFile() ) {
-		if ( startFileNum >= base->m_mergeStartFileNum - 1 &&
+		if ( startFileNum >= base->mergeStartFileNum() - 1 &&
 		     (startFileNum > 0 || numFiles != -1) ) {
 			// now also include the file being merged into, but only
 			// if we are reading from a file being merged...
-			if ( startFileNum < base->m_mergeStartFileNum +
-			     base->m_numFilesToMerge - 1 )
-				pre = base->m_mergeStartFileNum - 1;
+			if ( startFileNum < base->mergeStartFileNum() +
+			     base->numFilesToMerge() - 1 )
+				pre = base->mergeStartFileNum() - 1;
 			if ( g_conf.m_logDebugQuery )
 				log(LOG_DEBUG,
 				   "net: msg3: startFileNum from %" PRId32" to %" PRId32" (mfn=%" PRId32")",
@@ -293,9 +293,9 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 			startFileNum++;
 		}
 		// adjust num files if we need to, as well
-		if ( startFileNum < base->m_mergeStartFileNum - 1 &&
+		if ( startFileNum < base->mergeStartFileNum() - 1 &&
 		     numFiles != -1 &&
-		     startFileNum + numFiles - 1 >= base->m_mergeStartFileNum - 1 ) {
+		     startFileNum + numFiles - 1 >= base->mergeStartFileNum() - 1 ) {
 			if ( g_conf.m_logDebugQuery )
 				log(LOG_DEBUG,"net: msg3: numFiles up one.");
 			// if merge file was inserted before us, inc our file number

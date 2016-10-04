@@ -230,6 +230,10 @@ class RdbBase {
 
 	void forceNextMerge() { m_nextMergeForced = true; }
 
+	//msg3 needs to know so it can compensate for ongoing merges
+	int32_t mergeStartFileNum() const { return m_mergeStartFileNum; }
+	int32_t numFilesToMerge() const { return m_numFilesToMerge; }
+
 private:
 	bool parseFilename( const char* filename, int32_t *p_fileId, int32_t *p_fileId2,
 	                    int32_t *p_mergeNum, int32_t *p_endMergeFileId );
@@ -291,12 +295,6 @@ public:
 
 	int32_t      m_maxTreeMem ; // max mem tree can use, dump at 90% of this
 
-	int32_t      m_minToMergeArg;
-	int32_t      m_minToMerge;  // need at least this many files b4 merging
-	int32_t      m_absMaxFiles;
-	int32_t      m_numFilesToMerge   ;
-	int32_t      m_mergeStartFileNum ;
-
 private:
 	static void unlinkDoneWrapper(void *state);
 	void unlinkDone();
@@ -304,6 +302,12 @@ private:
 	static void checkThreadsAgainWrapper(int /*fd*/, void *state);
 	void renameDone();
 	
+	int32_t      m_minToMergeArg;
+	int32_t      m_minToMerge;  // need at least this many files b4 merging
+	int32_t      m_absMaxFiles;
+	int32_t      m_numFilesToMerge   ;
+	int32_t      m_mergeStartFileNum ;
+
 	// should our next merge in waiting force itself?
 	bool      m_nextMergeForced;
 
