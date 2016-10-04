@@ -201,9 +201,6 @@ class RdbBase {
 	// bury m_files[] in [a,b)
 	void buryFiles ( int32_t a , int32_t b );
 
-	int32_t m_x;
-	int32_t m_a;
-
 	// PageRepair indirectly calls this to move the map and data of this
 	// rdb into the trash subdir after renaming them, because they will
 	// be replaced by the rebuilt files.
@@ -277,6 +274,9 @@ private:
 	static void checkThreadsAgainWrapper(int /*fd*/, void *state);
 	void renameDone();
 	
+	int32_t m_x;
+	int32_t m_a;
+
 	// this class contains a ptr to us
 	class Rdb           *m_rdb;
 
