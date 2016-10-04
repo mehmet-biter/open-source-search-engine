@@ -12104,11 +12104,9 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 		char *rec = p;
 		// init this
 		int32_t recSize = ks;
-		// convert into a key128_t, the biggest possible key
-		//key224_t k ;
+
 		char k[MAX_KEY_BYTES];
 		if ( ks > MAX_KEY_BYTES ) { g_process.shutdownAbort(true); }
-		//k.setMin();
 		gbmemcpy ( &k , p , ks );
 		// is it a negative key?
 		char neg = false;
@@ -12146,9 +12144,6 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 		if ( (++rcount % TABLE_ROWS) == 0 )
 			sb->safePrintf("<!--ignore--></table>%s",hdr);
 
-
-		//if ( rdbId != RDB_LINKDB ) continue;
-
 		// print dbname
 		sb->safePrintf("<tr>");
 		const char *dn = getDbnameFromId ( rdbId );
@@ -12162,24 +12157,16 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 
 		sb->safePrintf("<td><nobr>%s</nobr></td>", KEYSTR(k,ks));
 
-
-
 		if ( rdbId == RDB_POSDB ) {
 			// get termid et al
 			key144_t *k2 = (key144_t *)k;
 			int64_t tid = Posdb::getTermId(k2);
-			//uint8_t score8 = Posdb::getScore ( *k2 );
-			//uint32_t score32 = score8to32 ( score8 );
 			// sanity check
 			if(dataSize!=0){g_process.shutdownAbort(true);}
 			sb->safePrintf("<td>"
 				       "termId=%020" PRIu64" "
-				       //"score8=%03" PRIu32" "
-				       //"score32=%010" PRIu32
 				       "</td>"
 				       ,(uint64_t)tid
-				       //(int32_t)score8,
-				       //(int32_t)score32
 				       );
 		}
 		else if ( rdbId == RDB_LINKDB ) {
@@ -12189,8 +12176,6 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 			int32_t linkerSiteHash  = Linkdb::getLinkerSiteHash32_uk(k2);
 			char linkSpam   = Linkdb::isLinkSpam_uk    (k2);
 			int32_t siteRank = Linkdb::getLinkerSiteRank_uk (k2);
-			//int32_t hopCount = Linkdb::getLinkerHopCount_uk   (k2);
-			//int32_t ip24     = Linkdb::getLinkerIp24_uk       (k2);
 			int32_t ip32       = Linkdb::getLinkerIp_uk       (k2);
 			int64_t docId = Linkdb::getLinkerDocId_uk      (k2);
 			// sanity check
@@ -12211,7 +12196,6 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 				       linkHash,
 				       (int32_t)linkSpam,
 				       siteRank,
-				       //hopCount,
 				       linkerSiteHash,
 				       iptoa(ip32),
 				       docId);
@@ -12268,16 +12252,8 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 		else if ( rdbId == RDB_TITLEDB ) {
 			// print each offset and size for the variable crap
 			sb->safePrintf("<td><nobr>titlerec datasize=%" PRId32" "
-				       //"sizeofxmldoc=%" PRId32" "
-				       //"hdrSize=%" PRId32" "
-				       //"version=%" PRId32" "
-				       //"%s"
 				       "</nobr></td>",
 				       dataSize
-				       //(int32_t)sizeof(XmlDoc),
-				       //(int32_t)tr.m_headerSize,
-				       //(int32_t)tr.m_version,
-				       //tmp.getBufStart());
 				       );
 		}
 		else if ( rdbId == RDB_TAGDB ) {
@@ -19453,14 +19429,6 @@ bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {
 		// sort by word pos
 		gbsort ( tp , nt , sizeof(TermDebugInfo *), cmptp2 );
 
-
-	// print the weight tables
-	//printLocationWeightsTable(sb,isXml);
-	//printDiversityWeightsTable(sb,isXml);
-	//printDensityWeightsTable(sb,isXml);
-	//printWordSpamWeightsTable(sb,isXml);
-
-
 	// print them out in a table
 	char hdr[1000];
 	sprintf(hdr,
@@ -19475,21 +19443,12 @@ bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {
 
 		"<td><b>Term</b></td>"
 
-		//"%s"
-
-		//"<td><b>Weight</b></td>"
-		//"<td><b>Spam</b></td>"
-
 		"<td><b>Desc</b></td>"
 
 		"<td><b>N</b></td>"
-		//"<td><b>V</b></td>" // diversityRank
 		"<td><b>S</b></td>"
 		"<td><b>Score</b></td>"
 
-		//"<td><b>Date</b></td>"
-		//"<td><b>Desc</b></td>"
-		//"<td><b>TermId</b></td>"
 		"</tr>\n"
 		//,fbuf
 		);
@@ -19547,12 +19506,6 @@ bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {
 				       );
 		}
 
-		//char *abbr = getLanguageAbbr(tp[i]->m_langId);
-		//if ( tp[i]->m_langId == langTranslingual ) abbr ="??";
-		//if ( tp[i]->m_langId == langUnknown      ) abbr ="--";
-		//if ( tp[i]->m_synSrc ) abbr = "";
-
-
 		// print out all langs word is in if it's not clear
 		// what language it is. we use a sliding window to
 		// resolve some ambiguity, but not all, so print out
@@ -19563,46 +19516,14 @@ bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {
 			sb->safePrintf("</td>");
 		}
 
-
-		//if ( ! isXml && abbr[0] )
-		//	sb->safePrintf("<td>%s</td>", abbr );
-		//else if ( ! isXml )
-		//	sb->safePrintf("<td>&nbsp;</td>" );
-		//else if ( abbr[0] )
-		//	sb->safePrintf("\t\t<lang><![CDATA["
-		//		       "]]>%s</lang>\n", abbr );
-
-
 		if ( isXml )
 			sb->safePrintf("\t\t<s><![CDATA[");
 
 		if ( ! isXml )
 			sb->safePrintf ("<td><nobr>" );
 
-		//if ( tp[i]->m_synSrc )
-		//	sb->pushChar('*');
-
 		sb->safeMemcpy_nospaces ( start + tp[i]->m_termOff ,
 					  tp[i]->m_termLen );
-
-		/*
-		char *dateStr = "&nbsp;";
-		int32_t ddd = tp[i]->m_date;
-		uint8_t *tddd = (uint8_t *)&ddd;
-		char tbbb[32];
-		if ( ddd && tddd[2] == 0 && tddd[3] == 0 &&
-		     tddd[0] && tddd[1] && tddd[1] <= tddd[0] ) {
-			sprintf(tbbb,"evIds %" PRId32"-%" PRId32,
-				(int32_t)tddd[1],(int32_t)tddd[0]);
-			dateStr = tbbb;
-		}
-		else if ( ddd )
-			dateStr = asctime_r(gmtime_r(&ddd ));
-
-		char tmp[20];
-		if ( tp[i]->m_noSplit ) sprintf ( tmp,"<b>1</b>" );
-		else                    sprintf ( tmp,"0" );
-		*/
 
 		if ( isXml )
 			sb->safePrintf("]]></s>\n");
@@ -19646,17 +19567,6 @@ bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {
 				       "</td>",dn);
 
 		// the diversityrank/wordspamrank
-		/*
-		int32_t ds = (int32_t)tp[i]->m_diversityRank;
-		if ( isXml )
-			sb->safePrintf("\t\t<div>%" PRId32"</div>\n",ds);
-		if ( ! isXml && ds >= MAXDIVERSITYRANK )
-			sb->safePrintf("<td>%" PRId32"</td>\n",ds);
-		else if ( ! isXml )
-			sb->safePrintf("<td><font color=green>%" PRId32"</font>"
-				       "</td>",ds);
-		*/
-
 		int32_t ws = (int32_t)tp[i]->m_wordSpamRank;
 
 		if ( isXml && hg == HASHGROUP_INLINKTEXT )
