@@ -1018,8 +1018,8 @@ bool Rdb::dumpTree ( int32_t niceness ) {
 		s_lastTryTime = getTime();
 		log( LOG_INFO, "db: Waiting for previous unlink/rename operations to finish before dumping %s.", m_dbname );
 
-		logTrace( g_conf.m_logTraceRdb, "END. %s: g_error=%s or g_numThreads=%d. Returning false",
-		          m_dbname, mstrerror( g_errno), g_numThreads );
+		logTrace( g_conf.m_logTraceRdb, "END. %s: at least one collection is manipulating files. Returning false",
+		          m_dbname );
 		return false;
 	}
 
