@@ -228,6 +228,8 @@ class RdbBase {
 	                           int32_t pageSize,
 	                           int32_t minToMerge);
 
+	void forceNextMerge() { m_nextMergeForced = true; }
+
 private:
 	bool parseFilename( const char* filename, int32_t *p_fileId, int32_t *p_fileId2,
 	                    int32_t *p_mergeNum, int32_t *p_endMergeFileId );
@@ -295,11 +297,15 @@ public:
 	int32_t      m_numFilesToMerge   ;
 	int32_t      m_mergeStartFileNum ;
 
+private:
+	static void unlinkDoneWrapper(void *state);
+	void unlinkDone();
+	static void renameDoneWrapper(void *state);
+	static void checkThreadsAgainWrapper(int /*fd*/, void *state);
+	void renameDone();
+	
 	// should our next merge in waiting force itself?
 	bool      m_nextMergeForced;
-
-	// do we need to dump to disk?
-	//bool      m_needsSave;
 
 	// . when we dump list to an rdb file, can we use short keys?
 	// . currently exclusively used by indexdb
@@ -313,14 +319,6 @@ public:
 	bool m_checkedForMerge;
 
 	int32_t      m_pageSize;
-
-private:
-	static void unlinkDoneWrapper(void *state);
-	void unlinkDone();
-	static void renameDoneWrapper(void *state);
-	static void checkThreadsAgainWrapper(int /*fd*/, void *state);
-	void renameDone();
-	
 	// . is our merge urgent? (if so, it will starve spider disk reads)
 	// . also see Threads.cpp for the starvation
 	bool      m_mergeUrgent;

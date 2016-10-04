@@ -1431,7 +1431,7 @@ void forceMergeAll(rdbid_t rdbId) {
 		}
 
 		log(LOG_INFO,"%s:%s:%d: coll %" PRId32" - Set next merge to Forced", __FILE__,__func__,__LINE__,i);
-		base->m_nextMergeForced = true;
+		base->forceNextMerge();
 	}
 
 	// and try to merge now
