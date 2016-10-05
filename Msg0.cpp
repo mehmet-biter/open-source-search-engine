@@ -202,7 +202,6 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 	// . store these parameters
 	// . get a handle to the rdb in case we can satisfy locally
 	// . returns NULL and sets g_errno on error
-	QUICKPOLL((m_niceness));
 	Rdb *rdb = getRdbFromId ( m_rdbId );
 	if ( ! rdb ) return true;
 	// we need the fixedDataSize
@@ -291,7 +290,6 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 			m_deleteMsg5 = true;
 		}
 
-		QUICKPOLL(m_niceness);
 		if ( ! m_msg5->getList ( (rdbid_t)rdbId,
 					 m_collnum ,
 					 m_list ,
@@ -372,8 +370,6 @@ skip:
 			return true;
 		}
 
-		QUICKPOLL(m_niceness);
-
 		uint16_t port = h->m_port ;
 		// . returns false on error and sets g_errno, true otherwise
 		// . calls callback when reply is received (or error)
@@ -406,8 +402,6 @@ skip:
 	m_numRequests = 0;
 	m_numReplies  = 0;
 	//for ( int32_t i = 0; i < m_numSplit; i++ ) {
-
-	QUICKPOLL(m_niceness);
 
 	// get the multicast
 	Multicast *m = &m_mcast;
@@ -501,7 +495,6 @@ void Msg0::gotReply ( char *reply , int32_t replySize , int32_t replyMaxSize ) {
 	// TODO: insert some seals for security, may have to alloc
 	//       separate space for the list then
 	// set the list w/ the remaining data
-	QUICKPOLL(m_niceness);
 
 	m_list->set ( reply                , 
 		      replySize            , 
@@ -659,8 +652,6 @@ void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 	memcpy(st0->m_startKey,startKey,ks);
 	memcpy(st0->m_endKey,endKey,ks);
 
-	QUICKPOLL(niceness);
-
 	// debug msg
 	if ( maxCacheAge != 0 && ! addToCache ) {
 		log( LOG_LOGIC, "net: msg0: check but don't add... rdbid=%" PRId32".", ( int32_t ) rdbId );
@@ -789,8 +780,6 @@ void gotListWrapper ( void *state , RdbList *listb , Msg5 *msg5xx ) {
 		char *listEnd = list->getListEnd();
 		// compress the list
 		for ( ; ! list->isExhausted() ; list->skipCurrentRecord() ) {
-			// breathe
-			QUICKPOLL ( st0->m_niceness );
 			// count it
 			totalOrigLinks++;
 			// get rec
