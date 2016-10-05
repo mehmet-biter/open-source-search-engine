@@ -159,9 +159,7 @@ bool Msg1::addList ( RdbList      *list              ,
 		}
 		// steal the list, we don't want caller to free it
 		gbmemcpy ( &Y->m_ourList , list , sizeof(RdbList) );
-		
- 		QUICKPOLL(niceness);
-		
+
 		// if list is small enough use our buf
 		if ( ! list->getOwnData() && list->getListSize() <= MSG1_BUF_SIZE ) {
 			gbmemcpy ( Y->m_buf , list->getList() , list->getListSize() );
@@ -230,7 +228,6 @@ bool Msg1::addList ( RdbList      *list              ,
 	m_injecting     = injecting;
 	m_waitForReply  = waitForReply;
 
-	QUICKPOLL(niceness);
 	// reset m_listPtr to point to first record again
 	list->resetListPtr();
 	// is the request in transit? assume not (assume did not block)
@@ -266,7 +263,7 @@ bool Msg1::sendSomeOfList ( ) {
 	// get key of the first record in the list
 	char firstKey[MAX_KEY_BYTES];
 	m_list->getCurrentKey(firstKey);
- 	QUICKPOLL(m_niceness);
+
 	// get groupId from this key
 	//uint32_t groupId ; 
 	// . use the new Hostdb.h inlined function
@@ -301,7 +298,7 @@ bool Msg1::sendSomeOfList ( ) {
 		if ( m_list->getListPtr() - dataStart > 64*1024 ) goto done;
 		// . point to next record
 		// . will point passed records if no more left!
- 		QUICKPOLL(m_niceness);
+
 		//int32_t crec = m_list->getCurrentRecSize();
 		m_list->skipCurrentRecord();
 		// sanity check
@@ -325,8 +322,6 @@ bool Msg1::sendSomeOfList ( ) {
 		    "to %s anyway. Probable data corruption.",
 		    (uint32_t)shardNum,getDbnameFromId(m_rdbId));
 	}
-	
- 	QUICKPOLL(m_niceness);
 
 	// sanity test for new rdbs
 	if ( m_list->getFixedDataSize() != getDataSizeFromRdbId(m_rdbId) ) {
@@ -434,8 +429,7 @@ bool Msg1::sendData ( uint32_t shardNum, char *listData , int32_t listSize) {
 			// why did we put it in there??? from msg9b.cpp
 			//return true;
 		}
-		
- 		QUICKPOLL(m_niceness);
+
 		// if we're the only one in the group, bail, we're done
 		if ( ! sendToSelf &&
 		     g_hostdb.getNumHostsPerShard() == 1 ) return true;
@@ -482,7 +476,7 @@ skip:
 	//if ( m_overwriteRecs ) request[1] |= 0x40;
 	// store the list after coll
 	gbmemcpy ( p , listData , listSize );
- 	QUICKPOLL(m_niceness);
+
 	// for small packets
 	//int32_t niceness = 2;
 	//if ( requestLen < TMPBUFSIZE - 32 ) niceness = 0;
@@ -497,7 +491,6 @@ skip:
 		return false;
 	}
 
- 	QUICKPOLL(m_niceness);
 	// g_errno should be set
 	log("net: Had error when sending request to add data to %s in shard "
 	    "#%" PRIu32": %s.", getDbnameFromId(m_rdbId),shardNum,mstrerror(g_errno));
