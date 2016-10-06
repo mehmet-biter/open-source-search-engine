@@ -159,16 +159,21 @@ bool Rdb::init ( const char     *dir                  ,
 	}
 
 	// get page size
-	m_pageSize = GB_TFNDB_PAGE_SIZE;
-	if ( m_rdbId == RDB_POSDB    ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
-	if ( m_rdbId == RDB2_POSDB2  ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
-	if ( m_rdbId == RDB_TITLEDB    ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
-	if ( m_rdbId == RDB2_TITLEDB2  ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
-	if ( m_rdbId == RDB_SPIDERDB   ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
-	if ( m_rdbId == RDB_DOLEDB     ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
-	if ( m_rdbId == RDB2_SPIDERDB2 ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
-	if ( m_rdbId == RDB_LINKDB     ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
-	if ( m_rdbId == RDB2_LINKDB2   ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
+	switch(m_rdbId) {
+		case RDB_POSDB:
+		case RDB2_POSDB2:
+		case RDB_TITLEDB:
+		case RDB2_TITLEDB2:
+		case RDB_SPIDERDB:
+		case RDB_DOLEDB:
+		case RDB2_SPIDERDB2:
+		case RDB_LINKDB:
+		case RDB2_LINKDB2:
+			m_pageSize = GB_INDEXDB_PAGE_SIZE;
+			break;
+		default:
+			m_pageSize = GB_TFNDB_PAGE_SIZE;
+	}
 
 	// we can't merge more than MAX_RDB_FILES files at a time
 	if ( minToMerge > MAX_RDB_FILES ) minToMerge = MAX_RDB_FILES;
