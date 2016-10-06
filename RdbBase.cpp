@@ -2406,7 +2406,7 @@ void RdbBase::generateGlobalIndex() {
 		tmpDocIdFileIndex->reserve(tmpDocIdFileIndex->size() + docIds->size());
 		std::transform(docIds->begin(), docIds->end(), std::back_inserter(*tmpDocIdFileIndex),
 		               [i](uint64_t docId) {
-			               return ((docId << s_docIdFileIndex_docIdOffset) | i);
+			               return ((docId << s_docIdFileIndex_docIdWithDelKeyOffset) | i);
 		               });
 	}
 

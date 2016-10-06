@@ -28,7 +28,7 @@ int32_t RdbIndexQuery::getFilePos(uint64_t docId, bool *isDel) const {
 		}
 	}
 
-	auto it = std::lower_bound(m_globalIndexData->cbegin(), m_globalIndexData->cend(), docId << RdbBase::s_docIdFileIndex_docIdOffset);
+	auto it = std::lower_bound(m_globalIndexData->cbegin(), m_globalIndexData->cend(), docId << RdbBase::s_docIdFileIndex_docIdWithDelKeyOffset);
 	if (it != m_globalIndexData->cend() && ((*it >> RdbBase::s_docIdFileIndex_docIdOffset) == docId)) {
 		if (isDel) {
 			*isDel = ((*it & RdbBase::s_docIdFileIndex_delBitMask) == 0);
