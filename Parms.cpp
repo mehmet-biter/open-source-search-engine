@@ -707,6 +707,11 @@ static bool CommandMergeLinkdb(char *rec) {
 	return true;
 }
 
+static bool CommandMergeTagdb(char *rec) {
+	forceMergeAll(RDB_TAGDB);
+	return true;
+}
+
 
 static bool CommandDiskPageCacheOff ( char *rec ) {
 	g_process.resetPageCaches();
@@ -5534,6 +5539,18 @@ void Parms::init ( ) {
         m->m_cgi   = "lmerge";
         m->m_type  = TYPE_CMD;
         m->m_func  = CommandMergeLinkdb;
+        m->m_cast  = 1;
+        m->m_group = false;
+        m->m_page  = PAGE_MASTER;
+        m->m_obj   = OBJ_CONF;
+        m++;
+
+
+        m->m_title = "tight merge tagdb";
+        m->m_desc  = "Merges all outstanding tagdb files.";
+        m->m_cgi   = "lmerge";
+        m->m_type  = TYPE_CMD;
+        m->m_func  = CommandMergeTagdb;
         m->m_cast  = 1;
         m->m_group = false;
         m->m_page  = PAGE_MASTER;
