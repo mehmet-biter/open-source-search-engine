@@ -106,10 +106,6 @@ private:
 	char m_nextKey[MAX_KEY_BYTES];
 	bool m_rolledOver; // true if m_nextKey rolls back to 0
 
-	// . file descriptor of file #0 in the BigFile
-	// . we're dumping to this guy
-	int m_fd;
-
 	// we pass this to BigFile::write() to do non-blocking writes
 	FileState m_fstate;
 

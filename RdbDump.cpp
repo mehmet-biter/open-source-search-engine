@@ -32,7 +32,6 @@ RdbDump::RdbDump() {
 	m_nextNode = 0;
 	memset(m_nextKey, 0, sizeof(m_nextKey));
 	m_rolledOver = false;
-	m_fd = 0;
 	memset(&m_fstate, 0, sizeof(m_fstate));
 	m_niceness = 0;
 	m_useHalfKeys = false;
@@ -144,11 +143,13 @@ bool RdbDump::set(collnum_t collnum,
 		return true;
 	}
 
+	// Above open() actually doesn't open any file(-part). First when a fd is requested
+	// do we open/create a real file. Do that now to check for file creation errors.
 	// . get the file descriptor of the first real file in BigFile
 	// . we should only dump to the first file in BigFile otherwise,
 	//   we'd have to juggle fd registration
-	m_fd = m_file->getfd(0, false);
-	if (m_fd < 0) {
+	int fd = m_file->getfd(0, false);
+	if( fd<0 ) {
 		log(LOG_LOGIC, "db: dump: Bad fd of first file in BigFile.");
 		return true;
 	}
