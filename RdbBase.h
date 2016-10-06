@@ -157,9 +157,8 @@ class RdbBase {
 	bool verifyFileSharding ( );
 
 	// . add a (new) file to the m_files/m_maps/m_fileIds arrays
-	// . both return array position we added it to
-	// . both return -1 and set errno on error
-	int32_t addFile     ( bool isNew, int32_t fileId, int32_t fileId2, int32_t mergeNum, int32_t endMergeFileId ) ;
+	// . return array position we added it to
+	// . return -1 and set errno on error
 	int32_t addNewFile  ( int32_t id2 ) ;
 
 	// these are used for computing load on a machine
@@ -179,8 +178,6 @@ class RdbBase {
 		       fileNum <  m_mergeStartFileNum+m_numFilesToMerge;
 	}
 	
-	void renameFile( int32_t currentFileIdx, int32_t newFileId, int32_t newFileId2 );
-
 	// bury m_files[] in [a,b)
 	void buryFiles ( int32_t a , int32_t b );
 
@@ -194,7 +191,6 @@ class RdbBase {
 	// the primary rdb. this is called after moveToTrash() is called for
 	// the primary rdb.
 	bool removeRebuildFromFilenames ( ) ;
-	bool removeRebuildFromFilename  ( BigFile *f ) ;
 
 	void specialInjectFileInit(const char *dir,
 	                           const char *filename,
@@ -255,7 +251,14 @@ private:
 	static void renameDoneWrapper(void *state);
 	static void checkThreadsAgainWrapper(int /*fd*/, void *state);
 	void renameDone();
-	
+	bool removeRebuildFromFilename(BigFile *f);
+
+	void renameFile( int32_t currentFileIdx, int32_t newFileId, int32_t newFileId2 );
+
+	// Add a (new) file to the m_files/m_maps/m_fileIds arrays
+	// Return return array position of new entry, or -1 on error
+	int32_t addFile(bool isNew, int32_t fileId, int32_t fileId2, int32_t mergeNum, int32_t endMergeFileId);
+
 	int32_t m_x;
 	int32_t m_a;
 
