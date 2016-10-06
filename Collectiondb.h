@@ -78,7 +78,7 @@ class Collectiondb  {
 
 	// . how many collections we have in here
 	// . only counts valid existing collections
-	int32_t getNumRecsUsed() { return m_numRecsUsed; }
+	int32_t getNumRecsUsed() const { return m_numRecsUsed; }
 
 	int32_t getNumRecs() const { return m_numRecs; }
 
