@@ -29,7 +29,8 @@ RdbMem::~RdbMem() {
 void RdbMem::reset() {
 	if(m_mem)
 		mfree(m_mem, m_memSize, m_allocName);
-	m_mem = NULL;
+	m_ptr1 = m_ptr2 = m_mem = NULL;
+	m_memSize = 0;
 }
 
 
