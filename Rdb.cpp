@@ -2298,32 +2298,27 @@ bool Rdb::isMerging() const {
 }
 	
 
-static Rdb *s_table9 [ RDB_END ];
-
 // maps an rdbId to an Rdb
 Rdb *getRdbFromId ( rdbid_t rdbId ) {
-	static bool s_init = false;
-	if ( ! s_init ) {
-		s_init = true;
-		memset ( s_table9, 0, sizeof(s_table9) );
-		s_table9 [ RDB_TAGDB     ] = g_tagdb.getRdb();
-		s_table9 [ RDB_POSDB     ] = g_posdb.getRdb();
-		s_table9 [ RDB_TITLEDB   ] = g_titledb.getRdb();
-		s_table9 [ RDB_SPIDERDB  ] = g_spiderdb.getRdb();
-		s_table9 [ RDB_DOLEDB    ] = g_doledb.getRdb();
-		s_table9 [ RDB_CLUSTERDB ] = g_clusterdb.getRdb();
-		s_table9 [ RDB_LINKDB    ] = g_linkdb.getRdb();
-		s_table9 [ RDB_STATSDB   ] = g_statsdb.getRdb();
+	switch(rdbId) {
+		case RDB_TAGDB: return g_tagdb.getRdb();
+		case RDB_POSDB: return g_posdb.getRdb();
+		case RDB_TITLEDB: return g_titledb.getRdb();
+		case RDB_SPIDERDB: return g_spiderdb.getRdb();
+		case RDB_DOLEDB: return g_doledb.getRdb();
+		case RDB_CLUSTERDB: return g_clusterdb.getRdb();
+		case RDB_LINKDB: return g_linkdb.getRdb();
+		case RDB_STATSDB: return g_statsdb.getRdb();
 
-		s_table9 [ RDB2_POSDB2     ] = g_posdb2.getRdb();
-		s_table9 [ RDB2_TITLEDB2   ] = g_titledb2.getRdb();
-		s_table9 [ RDB2_SPIDERDB2  ] = g_spiderdb2.getRdb();
-		s_table9 [ RDB2_CLUSTERDB2 ] = g_clusterdb2.getRdb();
-		s_table9 [ RDB2_LINKDB2    ] = g_linkdb2.getRdb();
-		s_table9 [ RDB2_TAGDB2     ] = g_tagdb2.getRdb();
+		case RDB2_POSDB2: return g_posdb2.getRdb();
+		case RDB2_TITLEDB2: return g_titledb2.getRdb();
+		case RDB2_SPIDERDB2: return g_spiderdb2.getRdb();
+		case RDB2_CLUSTERDB2: return g_clusterdb2.getRdb();
+		case RDB2_LINKDB2: return g_linkdb2.getRdb();
+		case RDB2_TAGDB2: return g_tagdb2.getRdb();
+		default:
+			return NULL;
 	}
-	if ( rdbId >= RDB_END ) return NULL;
-	return s_table9 [ rdbId ];
 }
 		
 // the opposite of the above
