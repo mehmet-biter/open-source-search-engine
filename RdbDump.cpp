@@ -258,14 +258,6 @@ void RdbDump::doneDumping() {
 	if (m_index) {
 		m_index->writeIndex();
 	}
-
-	// now try to merge this collection/db again
-	// if not already in the linked list. but do not add to linked list
-	// if it is statsdb.
-	if (m_rdb && !m_rdb->isCollectionless()) {
-		addCollnumToLinkedListOfMergeCandidates(m_collnum);
-	}
-
 #ifdef GBSANITYCHECK
 	// sanity check
 	log("DOING SANITY CHECK FOR MAP -- REMOVE ME");

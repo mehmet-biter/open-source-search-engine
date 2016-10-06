@@ -585,9 +585,6 @@ bool Collectiondb::deleteRec2 ( collnum_t collnum ) { //, WaitEntry *we ) {
 		cr->m_spiderColl = NULL;
 	}
 
-	// now remove from list of collections that might need a disk merge
-	removeFromMergeLinkedList ( cr );
-
 	//////
 	//
 	// remove from m_recs[]
@@ -1097,8 +1094,6 @@ collnum_t Collectiondb::reserveCollNum ( ) {
 
 
 CollectionRec::CollectionRec() {
-	m_nextLink = NULL;
-	m_prevLink = NULL;
 	m_spiderCorruptCount = 0;
 	m_collnum = -1;
 	m_coll[0] = '\0';

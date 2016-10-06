@@ -1316,41 +1316,6 @@ bool Rdb::dumpCollLoop ( ) {
 			//g_process.shutdownAbort(true);
 		}
 	}
-}	
-
-static CollectionRec *s_mergeHead = NULL;
-static CollectionRec *s_mergeTail = NULL;
-
-void addCollnumToLinkedListOfMergeCandidates ( collnum_t dumpCollnum ) {
-	// add this collection to the linked list of merge candidates
-	CollectionRec *cr = g_collectiondb.getRec ( dumpCollnum );
-	if ( ! cr ) return;
-	// do not double add it, if already there just return
-	if ( cr->m_nextLink ) return;
-	if ( cr->m_prevLink ) return;
-	if ( s_mergeTail && cr ) {
-		s_mergeTail->m_nextLink = cr;
-		cr         ->m_nextLink = NULL;
-		cr         ->m_prevLink = s_mergeTail;
-		s_mergeTail = cr;
-	} else {
-		cr->m_prevLink = NULL;
-		cr->m_nextLink = NULL;
-		s_mergeHead = cr;
-		s_mergeTail = cr;
-	}
-}
-
-// this is also called in Collectiondb::deleteRec2()
-void removeFromMergeLinkedList ( CollectionRec *cr ) {
-	CollectionRec *prev = cr->m_prevLink;
-	CollectionRec *next = cr->m_nextLink;
-	cr->m_prevLink = NULL;
-	cr->m_nextLink = NULL;
-	if ( prev ) prev->m_nextLink = next;
-	if ( next ) next->m_prevLink = prev;
-	if ( s_mergeTail == cr ) s_mergeTail = prev;
-	if ( s_mergeHead == cr ) s_mergeHead = next;
 }
 
 void Rdb::doneDumpingCollWrapper ( void *state ) {
