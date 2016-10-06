@@ -2294,7 +2294,7 @@ int64_t Rdb::getDiskSpaceUsed ( ) {
 
 bool Rdb::isMerging() const {
 	// use this for speed
-	return (bool)m_numMergesOut;
+	return m_numMergesOut!=0;
 }
 	
 

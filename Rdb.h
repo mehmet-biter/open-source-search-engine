@@ -335,7 +335,7 @@ private:
 
 	bool m_inAddList;
 
-	int32_t m_numMergesOut;
+	std::atomic<int32_t> m_numMergesOut;
 
 	BigFile   m_saveFile; // for saving the tree
 	bool      m_isClosing; 
