@@ -59,8 +59,8 @@ public:
 	// . attempts to auto-generate from data file
 	// . returns false and sets g_errno on error
 	bool generateIndex(BigFile *f);
-	bool generateIndex(collnum_t collnum, RdbBuckets *buckets);
-	bool generateIndex(collnum_t collnum, RdbTree *tree);
+	bool generateIndex(collnum_t collnum, const RdbBuckets *buckets);
+	bool generateIndex(collnum_t collnum, const RdbTree *tree);
 
 	void addList(RdbList *list);
 

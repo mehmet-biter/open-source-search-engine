@@ -283,7 +283,7 @@ int32_t RdbTree::getNode(collnum_t collnum, const char *key) {
 // . TODO: keep a m_lastStartNode and start from that since it tends to only
 //         increase startKey via Msg3. if the key at m_lastStartNode is <=
 //         the provided key then we did well.
-int32_t RdbTree::getNextNode ( collnum_t collnum, const char *key ) {
+int32_t RdbTree::getNextNode(collnum_t collnum, const char *key) const {
 	// return -1 if no non-empty nodes in the tree
 	if ( m_headNode < 0 ) return -1;
 	// get the node (about 4 cycles per loop, 80cycles for 1 million items)
@@ -363,7 +363,7 @@ char *RdbTree::getData ( collnum_t collnum, const char *key ) {
 // . 24 cycles to get the first kid
 // . averages around 50 cycles per call probably
 // . 8 cycles are spent entering/exiting this subroutine (inline it? TODO)
-int32_t RdbTree::getNextNode ( int32_t i ) {
+int32_t RdbTree::getNextNode(int32_t i) const {
 	// cruise the kids if we have a right one
 	if ( m_right[i] >= 0 ) {
 		// go to the right kid
@@ -1577,7 +1577,7 @@ void RdbTree::gbmprotect ( void *p , int32_t size , int prot ) {
 int32_t RdbTree::getMemOccupiedForList2 ( collnum_t collnum  ,
 				       const char      *startKey,
 				       const char      *endKey  ,
-				       int32_t      minRecSizes) {
+				       int32_t      minRecSizes) const {
 	int32_t ne = 0;
 	int32_t size = 0;
 	int32_t i = getNextNode ( collnum , startKey ) ;
@@ -1605,7 +1605,7 @@ int32_t RdbTree::getMemOccupiedForList2 ( collnum_t collnum  ,
 	return size;
 }
 
-int32_t RdbTree::getMemOccupiedForList ( ) {
+int32_t RdbTree::getMemOccupiedForList() const {
 	int32_t mem = 0;
 	if ( m_fixedDataSize >= 0 ) {
 		mem += m_numUsedNodes * m_ks;
@@ -1634,7 +1634,7 @@ int32_t RdbTree::getMemOccupiedForList ( ) {
 bool RdbTree::getList ( collnum_t collnum ,
 			const char *startKey, const char *endKey, int32_t minRecSizes,
 			RdbList *list , int32_t *numPosRecs , int32_t *numNegRecs ,
-			bool useHalfKeys) {
+			bool useHalfKeys) const {
 	// reset the counts of positive and negative recs
 	int32_t numNeg = 0;
 	int32_t numPos = 0;
@@ -2261,7 +2261,7 @@ int32_t RdbTree::rotate ( int32_t i , int32_t *left , int32_t *right ) {
 
 // . depth of subtree with i as the head node
 // . includes i, so minimal depth is 1
-int32_t RdbTree::computeDepth ( int32_t i ) {
+int32_t RdbTree::computeDepth(int32_t i) const {
 	int32_t leftDepth  = 0;
 	int32_t rightDepth = 0;
 	if ( m_left [i] >= 0 ) leftDepth  = m_depth [ m_left [i] ] ;

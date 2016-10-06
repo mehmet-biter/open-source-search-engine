@@ -121,22 +121,22 @@ public:
 	char *getKeyVal(collnum_t collnum, const char *key, char **data, int32_t *dataSize);
 
 	bool getList(collnum_t collnum, const char *startKey, const char *endKey, int32_t minRecSizes, RdbList *list,
-	             int32_t *numPosRecs, int32_t *numNegRecs, bool useHalfKeys);
+	             int32_t *numPosRecs, int32_t *numNegRecs, bool useHalfKeys) const;
 
 	bool deleteNode(collnum_t collnum, const char *key);
 
 	bool deleteList(collnum_t collnum, RdbList *list);
 
-	int64_t getListSize(collnum_t collnum, const char *startKey, const char *endKey, char *minKey, char *maxKey);
+	int64_t getListSize(collnum_t collnum, const char *startKey, const char *endKey, char *minKey, char *maxKey) const;
 
 	int getListSizeExact(collnum_t collnum, const char *startKey, const char *endKey);
 
 
 	bool addBucket (RdbBucket *newBucket, int32_t i);
-	int32_t getBucketNum(collnum_t collnum, const char *key);
-	char bucketCmp(collnum_t acoll, const char *akey, RdbBucket* b);
+	int32_t getBucketNum(collnum_t collnum, const char *key) const;
+	char bucketCmp(collnum_t acoll, const char *akey, RdbBucket* b) const;
 
-	bool collExists(collnum_t coll);
+	bool collExists(collnum_t coll) const;
 
 	const RdbBucket* getBucket(int i) const { return m_buckets[i]; }
 	int32_t getNumBuckets() const { return m_numBuckets; }
@@ -144,8 +144,8 @@ public:
 	const char *getDbname() const { return m_dbname; }
 
 	uint8_t getKeySize() const { return m_ks; }
-	int32_t getFixedDataSize() { return m_fixedDataSize; }
-	int32_t getRecSize() { return m_recSize; }
+	int32_t getFixedDataSize() const { return m_fixedDataSize; }
+	int32_t getRecSize() const { return m_recSize; }
 
 	void setSwapBuf(char *s) { m_swapBuf = s; }
 	char *getSwapBuf() { return m_swapBuf; }
