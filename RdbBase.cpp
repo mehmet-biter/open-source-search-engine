@@ -2081,12 +2081,11 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 
 // . use the maps and tree to estimate the size of this list w/o hitting disk
 // . used by Indexdb.cpp to get the size of a list for IDF weighting purposes
-int64_t RdbBase::getListSize ( char *startKey , char *endKey , char *max ,
-			         int64_t oldTruncationLimit ) {
+int64_t RdbBase::getListSize(const char *startKey, const char *endKey, char *maxKey,
+			     int64_t oldTruncationLimit) {
 	// . reset this to low points
 	// . this is on
-	//*max = endKey;
-	KEYSET(max,endKey,m_ks);
+	KEYSET(maxKey,endKey,m_ks);
 	bool first = true;
 	// do some looping
 	char newGuy[MAX_KEY_BYTES];
@@ -2124,62 +2123,37 @@ int64_t RdbBase::getListSize ( char *startKey , char *endKey , char *max ,
 		// use that
 		totalBytes += avg;
 
-		// if not too many pages then don't even bother setting "max"
+		// if not too many pages then don't even bother setting "maxKey"
 		// since it is used only for interpolating if this term is
 		// truncated. if only a few pages then it might be way too
 		// small.
 		if ( pg1 + 5 > pg2 ) continue;
-		// replace *max automatically if this is our first time
-		//if ( first ) { *max = newGuy; first = false; continue; }
-		if ( first ) { 
-			KEYSET(max,newGuy,m_ks); first = false; continue; }
+		// replace *maxKey automatically if this is our first time
+		if(first) { 
+			KEYSET(maxKey,newGuy,m_ks);
+			first = false;
+			continue;
+		}
 		// . get the SMALLEST max key
 		// . this is used for estimating what the size of the list
 		//   would be without truncation
-		//if ( newGuy > *max ) *max = newGuy;
-		if ( KEYCMP(newGuy,max,m_ks)>0 ) KEYSET(max,newGuy,m_ks);
+		if(KEYCMP(newGuy,maxKey,m_ks)>0)
+			KEYSET(maxKey,newGuy,m_ks);
 	}
-
-	// debug
-	// log("PHASE1: sk=%s ek=%s bytes=%i"
-	//     ,KEYSTR(startKey,m_ks)
-	//     ,KEYSTR(endKey,m_ks)
-	//     ,(int)totalBytes);
 
 	// TODO: now get from the btree!
 	// before getting from the map (on disk IndexLists) get upper bound
 	// from the in memory b-tree
 	//int32_t n=getTree()->getListSize (startKey, endKey, &minKey2, &maxKey2);
 	int64_t n;
-	if(m_tree) n = m_tree->getListSize ( m_collnum ,
-					     startKey , endKey , NULL , NULL );
-	else n = m_buckets->getListSize ( m_collnum ,
-					  startKey , endKey , NULL , NULL );
-
-	// debug
-	// RdbList list;
-	// m_buckets->getList ( m_collnum,
-	// 		     startKey,
-	// 		     endKey,
-	// 		     10000000,
-	// 		     &list ,
-	// 		     NULL,
-	// 		     NULL,
-	// 		     true);
-	// g_posdb.printList ( list );
-
+	if(m_tree)
+		n = m_tree->getListSize(m_collnum, startKey, endKey, NULL, NULL);
+	else
+		n = m_buckets->getListSize(m_collnum, startKey, endKey, NULL, NULL);
 
 	totalBytes += n;
-	//if ( minKey2 < *minKey ) *minKey = minKey2;
-	//if ( maxKey2 > *maxKey ) *maxKey = maxKey2;	
 	// ensure totalBytes >= 0
 	if ( totalBytes < 0 ) totalBytes = 0;
-
-	// debug
-	// log("PHASE2: sk=%s ek=%s bytes=%i"
-	//     ,KEYSTR(startKey,m_ks)
-	//     ,KEYSTR(endKey,m_ks)
-	//     ,(int)totalBytes);
 
 	return totalBytes;
 }

@@ -128,8 +128,8 @@ class RdbBase {
 	}
 
 	// use the maps and tree to estimate the size of this list
-	int64_t getListSize ( char *startKey ,char *endKey , char *maxKey ,
-			        int64_t oldTruncationLimit ) ;
+	int64_t getListSize(const char *startKey, const char *endKey, char *maxKey,
+	                    int64_t oldTruncationLimit);
 
 	// positive minus negative
 	int64_t getNumTotalRecs() const;
