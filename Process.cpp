@@ -693,22 +693,13 @@ bool Process::shutdown2() {
 	// turn off statsdb so it does not try to add records for these writes
 	g_statsdb.m_disabled = true;
 
-	if ( g_jobScheduler.are_new_jobs_allowed () ) {
-		log("gb: disabling threads");
-		// now disable threads so we don't exit while threads are 
-		// outstanding
-		g_jobScheduler.disallow_new_jobs();
-	}
+	log("gb: disabling threads");
+	// now disable threads so we don't exit while threads are
+	// outstanding
+	g_jobScheduler.disallow_new_jobs();
 
 	// . suspend all merges
 	g_merge.suspendMerge () ;
-
-	// if urgent do not allow any further threads to be spawned unless
-	// they were already queued
-	if ( m_urgent ) {
-		// turn off all threads just in case
-		g_jobScheduler.disallow_new_jobs();
-	}
 
 	static bool s_printed = false;
 
