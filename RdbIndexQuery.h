@@ -15,6 +15,8 @@ public:
 
 	int32_t getFilePos(uint64_t docId, bool *isDel = NULL) const;
 
+	void printIndex() const;
+
 private:
 	RdbIndexQuery();
 	RdbIndexQuery(const RdbIndexQuery&);

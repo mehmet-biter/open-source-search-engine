@@ -40,3 +40,21 @@ int32_t RdbIndexQuery::getFilePos(uint64_t docId, bool *isDel) const {
 	logError("Unable to find docId=%lu in global index", docId);
 	gbshutdownLogicError();
 }
+
+void RdbIndexQuery::printIndex() const {
+	if (m_treeIndexData.get()) {
+		for (auto key : *m_treeIndexData) {
+			logf(LOG_TRACE, "db: docId=%" PRId64" index=%" PRId32" isDel=%d",
+			     key >> RdbIndex::s_docIdOffset,
+			     m_numFiles,
+			     ((key & RdbIndex::s_delBitMask) == 0));
+		}
+	}
+
+	for (auto key : *m_globalIndexData) {
+		logf(LOG_TRACE, "db: docId=%" PRId64" index=%" PRId64" isDel=%d",
+		     (key & RdbBase::s_docIdFileIndex_docIdMask) >> RdbBase::s_docIdFileIndex_docIdOffset,
+		     key & RdbBase::s_docIdFileIndex_filePosMask,
+		     ((key & RdbBase::s_docIdFileIndex_delBitMask) == 0));
+	}
+}
