@@ -2164,12 +2164,14 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 
 	// convenience ptr
 	for (int32_t i = 0; i < numLists; i++) {
+		logTrace(g_conf.m_logTraceRdbList, "===== dumping list #%" PRId32" =====", i);
+
 		// skip if empty
 		if (lists[i]->isEmpty()) {
+			logTrace(g_conf.m_logTraceRdbList, "empty list");
 			continue;
 		}
 
-		logTrace(g_conf.m_logTraceRdbList, "===== dumping list #%" PRId32" =====", i);
 		if (g_conf.m_logTraceRdbList) {
 			lists[i]->printList();
 		}
@@ -2214,6 +2216,8 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 		const char *minPtrHi   = hiKeys[0]; // highest 6 bytes
 		int16_t mini = 0; // int16_t -> must be able to accomodate MAX_RDB_FILES!!
 
+		logTrace(g_conf.m_logTraceRdbList, "new_listPtr=%p numLists=%" PRId32". assume key in the first list is the winner", new_listPtr, numLists);
+
 		// merge loop over the lists, get the smallest key
 		for (int32_t i = 1; i < numLists; i++) {
 			char ss = bfcmpPosdb(minPtrBase, minPtrLo, minPtrHi, ptrs[i], loKeys[i], hiKeys[i]);
@@ -2221,7 +2225,7 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 			// . continue if tie, so we get the oldest first
 			// . treat negative and positive keys as identical for this
 			if (ss < 0) {
-				logTrace(g_conf.m_logTraceRdbList, "ss < 0. continue");
+				logTrace(g_conf.m_logTraceRdbList, "i=%" PRId32" ss < 0. continue", i);
 				continue;
 			}
 
@@ -2229,7 +2233,7 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 			// and minPtrBase/Lo/Hi was a negative key! so this is
 			// the annihilation. skip the positive key.
 			if (ss == 0) {
-				logTrace(g_conf.m_logTraceRdbList, "ss == 0. skip");
+				logTrace(g_conf.m_logTraceRdbList, "i=%" PRId32" ss == 0. skip", i);
 				goto skip;
 			}
 
@@ -2301,14 +2305,14 @@ skip:
 			// is new key 6 bytes? then do not touch hi/lo ptrs
 			if ( ptrs[mini][0] & 0x04 ) {
 				// no-op
-				logTrace(g_conf.m_logTraceRdbList, "new 6-byte key");
+				logTrace(g_conf.m_logTraceRdbList, "mini=%" PRId32" new 6-byte key", mini);
 			} else if ( ptrs[mini][0] & 0x02 ) {
 				// is new key 12 bytes?
-				logTrace(g_conf.m_logTraceRdbList, "new 12-byte key");
+				logTrace(g_conf.m_logTraceRdbList, "mini=%" PRId32" new 12-byte key", mini);
 				memcpy(loKeys[mini], ptrs[mini] +  6, 6);
 			} else {
 				// is new key 18 bytes? full key.
-				logTrace(g_conf.m_logTraceRdbList, "new 18-byte key");
+				logTrace(g_conf.m_logTraceRdbList, "mini=%" PRId32" new 18-byte key", mini);
 				memcpy(hiKeys[mini], ptrs[mini] + 12, 6);
 				memcpy(loKeys[mini], ptrs[mini] +  6, 6);
 			}
@@ -2380,7 +2384,7 @@ skip:
 		if (g_conf.m_logTraceRdbList) {
 			printList();
 		}
-		logTrace(g_conf.m_logTraceRdbList, "END. Less than requested");
+		logTrace(g_conf.m_logTraceRdbList, "END. Less than requested m_listSize=%" PRId32" minRecSizes=%" PRId32, m_listSize, minRecSizes);
 		return true;
 	}
 
