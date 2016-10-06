@@ -7,6 +7,9 @@
 #ifndef GB_RDBMEM_H
 #define GB_RDBMEM_H
 
+#include "types.h"
+#include <inttypes.h>
+
 class RdbTree;
 class Rdb;
 
