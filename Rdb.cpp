@@ -105,7 +105,6 @@ void Rdb::addBase ( collnum_t collnum , RdbBase *base ) {
 	//if ( cr->m_bases[(unsigned char)m_rdbId] ) { g_process.shutdownAbort(true); }
 	RdbBase *oldBase = cr->getBasePtr ( m_rdbId );
 	if ( oldBase ) { g_process.shutdownAbort(true); }
-	//cr->m_bases[(unsigned char)m_rdbId] = base;
 	cr->setBasePtr ( m_rdbId , base );
 	log ( LOG_DEBUG,"db: added base to collrec "
 	    "for rdb=%s rdbid=%" PRId32" coll=%s collnum=%" PRId32" "
@@ -482,7 +481,6 @@ bool Rdb::addRdbBase2 ( collnum_t collnum ) { // addColl2()
 bool Rdb::resetBase ( collnum_t collnum ) {
 	CollectionRec *cr = g_collectiondb.getRec(collnum);
 	if ( ! cr ) return true;
-	//RdbBase *base = cr->m_bases[(unsigned char)m_rdbId];
 	// get the ptr, don't use CollectionRec::getBase() so we do not swapin
 	RdbBase *base = cr->getBasePtr (m_rdbId);
 	if ( ! base ) return true;
@@ -597,7 +595,6 @@ bool Rdb::deleteColl( collnum_t collnum, collnum_t newCollnum) {
 	char newname[1024];
 	sprintf(newname, "%strash/coll.%s.%" PRId32".%" PRId64"/",g_hostdb.m_dir,coll,
 		(int32_t)collnum,gettimeofdayInMilliseconds());
-	//Dir d; d.set ( dname );
 	// ensure ./trash dir is there
 	makeTrashDir();
 	// move into that dir
@@ -1377,9 +1374,6 @@ void Rdb::doneDumpingCollWrapper ( void *state ) {
 // Moved a lot of the logic originally here in Rdb::doneDumping into 
 // RdbDump.cpp::dumpTree()
 void Rdb::doneDumping ( ) {
-	// msg
-	//log(LOG_INFO,"db: Done dumping %s to %s (#%" PRId32"): %s.",
-	//    m_dbname,m_files[n]->getFilename(),n,mstrerror(g_errno));
 	log(LOG_INFO,"db: Done dumping %s: %s.",m_dbname,
 	    mstrerror(m_dumpErrno));
 
@@ -2251,7 +2245,6 @@ int64_t Rdb::getMapMemAlloced () {
 		CollectionRec *cr = g_collectiondb.m_recs[i];
 		if ( ! cr ) return true;
 		RdbBase *base = cr->getBasePtr(m_rdbId);		
-		//RdbBase *base = getBase(i);
 		if ( ! base ) continue;
 		total += base->getMapMemAlloced();
 	}
@@ -2266,7 +2259,6 @@ int32_t Rdb::getNumSmallFiles ( ) {
 		CollectionRec *cr = g_collectiondb.m_recs[i];
 		if ( ! cr ) return true;
 		RdbBase *base = cr->getBasePtr(m_rdbId);		
-		//RdbBase *base = getBase(i);
 		if ( ! base ) continue;
 		total += base->getNumSmallFiles();
 	}
@@ -2281,7 +2273,6 @@ int32_t Rdb::getNumFiles ( ) {
 		if ( ! cr ) continue;
 		// if swapped out, this will be NULL, so skip it
 		RdbBase *base = cr->getBasePtr(m_rdbId);
-		//RdbBase *base = getBase(i);
 		if ( ! base ) continue;
 		total += base->getNumFiles();
 	}
@@ -2295,7 +2286,6 @@ int64_t Rdb::getDiskSpaceUsed ( ) {
 		if ( ! cr ) continue;
 		// if swapped out, this will be NULL, so skip it
 		RdbBase *base = cr->getBasePtr(m_rdbId);
-		//RdbBase *base = getBase(i);
 		if ( ! base ) continue;
 		total += base->getDiskSpaceUsed();
 	}
@@ -2476,7 +2466,6 @@ RdbBase *getRdbBase(rdbid_t rdbId, const char *coll) {
 		g_errno = ENOCOLLREC;
 		return NULL;
 	}
-	//return rdb->m_bases [ collnum ];
 	return rdb->getBase(collnum);
 }
 
@@ -2655,18 +2644,6 @@ int32_t Rdb::reclaimMemFromDeletedTreeNodes( int32_t niceness ) {
 		p += recSize;
 	}
 
-	//if ( skipped != marked ) { g_process.shutdownAbort(true); }
-
-	// sanity -- this breaks us. i tried taking the quickpolls out to stop
-	// if(ht.getNumSlotsUsed()!=m_tree.m_numUsedNodes){
-	// 	log("rdb: %" PRId32" != %" PRId32
-	// 	    ,ht.getNumSlotsUsed()
-	// 	    ,m_tree.m_numUsedNodes
-	// 	    );
-	// 	while(1==1)sleep(1);
-	// 	g_process.shutdownAbort(true);
-	// }
-
 	int32_t inUseNew = dst - pstart;
 
 	// update mem class as well
@@ -2678,8 +2655,6 @@ int32_t Rdb::reclaimMemFromDeletedTreeNodes( int32_t niceness ) {
 	if ( reclaimed < 0 ) { g_process.shutdownAbort(true); }
 	if ( inUseNew  < 0 ) { g_process.shutdownAbort(true); }
 	if ( inUseNew  > m_mem.m_memSize ) { g_process.shutdownAbort(true); }
-
-	//if ( reclaimed == 0 && marked ) { g_process.shutdownAbort(true);}
 
 	// now update data ptrs in the tree, m_data[]
 	for ( int i = 0 ; i < nn ; i++ ) {
