@@ -1367,6 +1367,9 @@ void RdbBase::buryFiles ( int32_t a , int32_t b ) {
 	    m_numFiles,b,a,(int32_t)m_collnum);
 	// ensure last file is NULL (so BigFile knows the end of m_files)
 	m_fileInfo[m_numFiles].m_file = NULL;
+
+	// regenerate index since things have moved
+	generateGlobalIndex();
 }
 
 // . the DailyMerge.cpp will set minToMergeOverride for titledb, and this
@@ -2392,6 +2395,8 @@ void RdbBase::generateGlobalIndex() {
 	if (!m_useIndexFile) {
 		return;
 	}
+
+	log(LOG_INFO, "db: Generating global index for %s", m_rdb->getDbname());
 
 	docids_ptr_t tmpDocIdFileIndex(new docids_t);
 
