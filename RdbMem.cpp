@@ -43,7 +43,7 @@ void RdbMem::clear() {
 
 
 // initialize us with the RdbDump class your rdb is using
-bool RdbMem::init(Rdb *rdb, int32_t memToAlloc, char keySize, char *allocName) {
+bool RdbMem::init(const Rdb *rdb, int32_t memToAlloc, char keySize, const char *allocName) {
 	m_rdb  = rdb;
 	m_ks   = keySize;
 	m_allocName = allocName;

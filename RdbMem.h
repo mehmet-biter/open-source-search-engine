@@ -19,8 +19,8 @@ class RdbMem {
 	~RdbMem();
 
 	// initialize us with the RdbDump class your rdb is using
-	bool init ( class Rdb *rdb , int32_t memToAlloc , char keySize ,
-		    char *allocName );
+	bool init(const Rdb *rdb, int32_t memToAlloc, char keySize,
+		  const char *allocName);
 
 	void clear();
 
@@ -57,7 +57,7 @@ class RdbMem {
 private:
 	friend class Rdb;
 	// keep hold of this class
-	Rdb *m_rdb;
+	const Rdb *m_rdb;
 
 	// the primary mem
 	char *m_ptr1;
@@ -76,7 +76,7 @@ private:
 	char *m_90down ;
 
 	char  m_ks;
-	char *m_allocName;
+	const char *m_allocName;
 };
 
 #endif // GB_RDBMEM_H
