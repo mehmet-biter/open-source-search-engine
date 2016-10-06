@@ -299,7 +299,7 @@ private:
 	// . currently exclusively used by indexdb
 	bool      m_useHalfKeys;
 
-	bool	m_useIndexFile;	//@@@ BR: no-merge index
+	bool	m_useIndexFile;
 
 	// key size
 	char      m_ks;

@@ -332,7 +332,6 @@ bool RdbBase::removeRebuildFromFilenames ( ) {
 		// DON'T STOP IF ONE FAILS
 		removeRebuildFromFilename(f);
 
-//@@@ BR: no-merge index begin
 		if( m_useIndexFile ) {
 			// rename the index file now too!
 			f = m_fileInfo[i].m_index->getFile();
@@ -341,7 +340,6 @@ bool RdbBase::removeRebuildFromFilenames ( ) {
 			// DON'T STOP IF ONE FAILS
 			removeRebuildFromFilename(f);
 		}
-//@@@ BR: no-merge index end
 	}
 	// reset all now
 	reset();
@@ -592,9 +590,6 @@ bool RdbBase::setFiles ( ) {
 		// rename to spiderdb0081.map to spiderdb0001.map
 		cmf.rename ( oldMap.getBufStart() );
 
-
-
-//@@@ BR: no-merge index begin
 		if( m_useIndexFile ) {
 			// and delete the old index
 			SafeBuf oldIndex;
@@ -612,8 +607,6 @@ bool RdbBase::setFiles ( ) {
 			// rename to spiderdb0081.map to spiderdb0001.map
 			cif.rename ( oldIndex.getBufStart() );
 		}
-//@@@ BR: no-merge index end
-
 
 		// replace that first file then
 		m_didRepair = true;
@@ -1132,9 +1125,7 @@ bool RdbBase::incorporateMerge ( ) {
 			// debug msg
 			log(LOG_INFO,"merge: Unlinked %s (#%" PRId32").", m_fileInfo[i].m_map->getFilename(), i);
 		}
-		
-		
-//@@@ BR: no-merge index begin
+
 		if( m_useIndexFile ) {
 			log(LOG_INFO,"merge: Unlinking index file %s (#%" PRId32").", m_fileInfo[i].m_index->getFilename(),i);
 
@@ -1145,7 +1136,6 @@ bool RdbBase::incorporateMerge ( ) {
 				log(LOG_INFO,"merge: Unlinked %s (#%" PRId32").", m_fileInfo[i].m_index->getFilename(), i);
 			}
 		}
-//@@@ BR: no-merge index end
 	}
 
 	// save for re-use
