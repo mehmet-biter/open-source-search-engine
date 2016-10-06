@@ -134,7 +134,6 @@ bool RdbDump::set(collnum_t collnum,
 	// . we need O_SYNC when dumping trees only because we delete the
 	//   nodes/records as we dump them
 	// . ensure this sets g_errno for us
-	// . TODO: open might not block! fix that!
 	int32_t flags = O_RDWR | O_CREAT;
 	// a niceness bigger than 0 means to do non-blocking dumps
 	if (niceness > 0) {
