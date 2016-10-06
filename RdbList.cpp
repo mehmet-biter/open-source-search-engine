@@ -1687,7 +1687,8 @@ bool RdbList::posdbConstrain(const char *startKey, char *endKey, int32_t minRecS
 //   before calling this
 // . CAUTION: you should call constrain() on all "lists" before calling this
 //   so we don't have to do boundary checks on the keys here
-void RdbList::merge_r(RdbList **lists, int32_t numLists, const char *startKey, const char *endKey, int32_t minRecSizes, bool removeNegRecs, rdbid_t rdbId) {
+void RdbList::merge_r(RdbList **lists, int32_t numLists, const char *startKey, const char *endKey, int32_t minRecSizes,
+                      bool removeNegRecs, rdbid_t rdbId, collnum_t collNum) {
 	// sanity
 	if (!m_ownData) {
 		log(LOG_ERROR, "list: merge_r data not owned");
@@ -1756,9 +1757,8 @@ void RdbList::merge_r(RdbList **lists, int32_t numLists, const char *startKey, c
 	}
 
 	Rdb* rdb = getRdbFromId(rdbId);
-
 	if (rdbId == RDB_POSDB) {
-		posdbMerge_r(lists, numLists, startKey, endKey, m_mergeMinListSize, removeNegRecs, rdb->isUseIndexFile());
+		posdbMerge_r(lists, numLists, startKey, endKey, m_mergeMinListSize, removeNegRecs, rdb->isUseIndexFile(), collNum);
 		return;
 	}
 
@@ -2086,7 +2086,7 @@ skip:
 ///////
 
 bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startKey, const char *endKey, int32_t minRecSizes,
-                           bool removeNegKeys, bool useIndexFile) {
+                           bool removeNegKeys, bool useIndexFile, collnum_t collNum) {
 	logTrace(g_conf.m_logTraceRdbList, "BEGIN");
 
 	// sanity

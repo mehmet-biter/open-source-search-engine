@@ -189,7 +189,7 @@ public:
 	// . set our startKey/endKey to "startKey"/"endKey"
 	// . exclude any records from lists not in that range
 	void merge_r(RdbList **lists, int32_t numLists, const char *startKey, const char *endKey, int32_t minRecSizes,
-	             bool removeNegRecs, rdbid_t rdbId);
+	             bool removeNegRecs, rdbid_t rdbId, collnum_t collNum);
 
 	bool growList(int32_t newSize);
 
@@ -262,7 +262,7 @@ private:
 	                    int32_t hintOffset, const char *hintKey, const char *filename);
 
 	bool posdbMerge_r(RdbList **lists, int32_t numLists, const char *startKey, const char *endKey, int32_t minRecSizes,
-	                  bool removeNegKeys, bool useIndexFile);
+	                  bool removeNegKeys, bool useIndexFile, collnum_t collNum);
 
 	// the unalterd raw list. keys may be outside of [m_startKey,m_endKey]
 	char *m_list;
