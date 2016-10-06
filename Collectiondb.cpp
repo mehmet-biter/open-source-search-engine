@@ -444,14 +444,9 @@ RdbBase *CollectionRec::getBasePtr(rdbid_t rdbId) {
 	return m_bases [ (unsigned char)rdbId ];
 }
 
-static bool s_inside = false;
-
 // . returns NULL w/ g_errno set on error.
 // . TODO: ensure not called from in thread, not thread safe
 RdbBase *CollectionRec::getBase(rdbid_t rdbId) {
-
-	if ( s_inside ) { g_process.shutdownAbort(true); }
-
 	return m_bases[(unsigned char)rdbId];
 }
 
