@@ -2,6 +2,35 @@
 #include "Rdb.h"
 #include "Sanity.h"
 
+// RdbMem allocates a fixed chunk of memory and initially sets m_ptr1 to point at the start and m_ptr2 at the end
+//    |--------------------------------------------------|
+//    ^                                                  ^
+//    m_ptr1                                             m_ptr2
+//    m_mem
+//
+// allocData() normally takes memory from the primary region, m_mem..m_ptr1 (or m_ptr1..m_mem+end, see later)
+//
+//    |--------------------------------------------------|
+//    ^         ^                                        ^
+//              m_ptr1                                   m_ptr2
+//    m_mem
+//
+// During dumping allocation from the primary region is suspended and the secondary region is used:
+//    |--------------------------------------------------|
+//    ^         ^                               ^
+//              m_ptr1                          m_ptr2
+//    m_mem
+//
+// After dump has finsihed the region roles are swapped and the old primary is emptied:
+//    |--------------------------------------------------|
+//    ^                                         ^
+//    m_ptr2                                    m_ptr1
+//    m_mem
+// and memory allocation grows downward
+
+
+//isj: why not just use a circular buffer and make caller do a mark() ?
+
 
 RdbMem::RdbMem()
   : m_rdb(NULL),
