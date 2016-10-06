@@ -80,6 +80,8 @@ class Collectiondb  {
 	// . only counts valid existing collections
 	int32_t getNumRecsUsed() { return m_numRecsUsed; }
 
+	int32_t getNumRecs() const { return m_numRecs; }
+
 	// what collnum will be used the next time a coll is added?
 	collnum_t reserveCollNum ( ) ;
 
