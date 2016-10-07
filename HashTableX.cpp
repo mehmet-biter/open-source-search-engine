@@ -23,6 +23,15 @@ HashTableX::HashTableX () {
 	m_useKeyMagic = false;
 	m_ks = 0;
 	m_ds = 0;
+
+	// Coverity
+	m_mask = 0;
+	m_bufSize = 0;
+	m_allowDups = false;
+	m_isSaving = false;
+	m_needsSave = false;
+	m_maxSlots = 0;
+	m_txtBufSize = 0;
 	
 	reset();
 }
@@ -88,15 +97,6 @@ void HashTableX::reset ( ) {
 		mfree ( m_txtBuf , m_txtBufSize,"ftxtbuf");
 		m_txtBuf = NULL;
 	}
-
-	// Coverity
-	m_mask = 0;
-	m_bufSize = 0;
-	m_allowDups = false;
-	m_isSaving = false;
-	m_needsSave = false;
-	m_maxSlots = 0;
-	m_txtBufSize = 0;
 }
 
 void HashTableX::clear ( ) {
