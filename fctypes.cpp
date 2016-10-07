@@ -914,6 +914,8 @@ char *htmlEncode ( char *dst, char *dstend, const char *src, const char *srcend 
 }
 
 
+
+//Note: there is a safer version in GbUtil.* that writes to a SafeBuf.
 // . convert "-->%22 , &-->%26, +-->%2b, space-->+, ?-->%3f is that it?
 // . convert so we can display as a cgi PARAMETER within a url
 // . used by HttPage2 (cached web page) to encode the query into a url
