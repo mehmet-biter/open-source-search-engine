@@ -9128,6 +9128,7 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_COLL;
 	m++;
 
+    // m_maxOtherDocLen controls the maximum document to be stored in titledb. If it is larger than titledb-tree-mem then sillyness happens
     m->m_title = "max text doc length";
     m->m_desc  = "Gigablast will not download, index or "
             "store more than this many bytes of an HTML or text "
