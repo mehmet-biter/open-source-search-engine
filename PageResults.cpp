@@ -1297,7 +1297,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 	// encode query buf
 	const char *dq    = si->m_displayQuery;
 	if ( dq ) {
-		st->m_qesb.urlEncode(dq);
+		urlEncode(&st->m_qesb,dq);
 	}
 
 	// print it with commas into "thbuf" and null terminate it
@@ -1363,7 +1363,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 		sb->safePrintf("<br><br>"
 			      "Could not find that url in the "
 			      "index. Try <a href=/addurl?u=");
-		sb->urlEncode(url,ue-url,false,false);
+		urlEncode(sb,url,ue-url,false,false);
 		sb->safePrintf(">Adding it.</a>");
 	}
 
@@ -1374,7 +1374,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 			      "Did you mean to "
 			      "search for the url "
 			      "<a href=/search?q=url%%3A");
-		sb->urlEncode(url,ue-url,false,false);
+		urlEncode(sb,url,ue-url,false,false);
 		sb->safePrintf(">");
 		sb->safeMemcpy(url,ue-url);
 		sb->safePrintf("</a> itself?");
@@ -3027,7 +3027,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		// reindex
 		sb->safePrintf(" - <a style=color:blue; href=\"/addurl?"
 			       "urls=");
-		sb->urlEncode ( url , strlen(url) , false );
+		urlEncode(sb, url, strlen(url), false);
 		uint64_t rand64 = gettimeofdayInMillisecondsLocal();
 		sb->safePrintf("&c=%s&rand64=%" PRIu64"\">respider</a>\n",
 			       coll,rand64);
@@ -3042,7 +3042,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 				, coll 
 				);
 		// do not include ending \0
-		sb->urlEncode ( mr->ptr_ubuf , mr->size_ubuf-1 , false );
+		urlEncode(sb, mr->ptr_ubuf, mr->size_ubuf-1, false);
 		sb->safePrintf ( "\">"
 				 "spider info</a>\n"
 			       );
@@ -3162,9 +3162,9 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		char tmp[512];
 		SafeBuf qq (tmp,512);
 		qq.safePrintf("q=");
-		qq.urlEncode("site:");
-		qq.urlEncode (hbuf);
-		qq.urlEncode(" | ");
+		urlEncode(&qq, "site:");
+		urlEncode(&qq, hbuf);
+		urlEncode(&qq, " | ");
 		qq.safeStrcpy(st->m_qesb.getBufStart());
 		qq.nullTerm();
 		// get the original url and add/replace in query
@@ -3257,7 +3257,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 			// nameBuf.length(), valLen);
 
 			queryBuf.safePrintf("/search?q=%s:%%22",nameBuf.getBufStart());
-			queryBuf.urlEncode(valBuf, valLen);
+			urlEncode(&queryBuf, valBuf, valLen);
 			queryBuf.safePrintf("%%22&c=%s",coll);
 			queryBuf.nullTerm();
 			sb->safePrintf(" - <a href=\"%s\">%s:\"", queryBuf.getBufStart(),

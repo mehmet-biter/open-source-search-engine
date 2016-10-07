@@ -200,15 +200,6 @@ public:
 
 	bool  dequote ( const char *t , int32_t tlen );
 
-	bool  urlEncode (const char *s , 
-			 int32_t slen, 
-			 bool requestPath = false,
-			 bool encodeApostrophes = false );
-
-	bool urlEncode( const char *s ) {
-		return urlEncode( s, strlen( s ), false, false );
-	}
-
 	// . append a \0 but do not inc m_length
 	// . for null terminating strings
 	bool nullTerm ( ) {

@@ -11,4 +11,11 @@ class SafeBuf;
 bool cdataEncode(SafeBuf *dstBuf, const char *src);
 bool cdataEncode(SafeBuf *dstBuf, const char *src, size_t len);
 
+//Encode an URL by escaping certain characters
+bool urlEncode(SafeBuf *dstBuf, const char *ssrc);
+bool urlEncode(SafeBuf *dstBuf,
+               const char *src, size_t slen,
+	       bool requestPath = false,
+	       bool encodeApostrophes = false);
+
 #endif

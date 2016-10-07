@@ -14,6 +14,7 @@
 #include "Rebalance.h"
 #include "RdbCache.h"
 #include "GbMutex.h"
+#include "GbUtil.h"
 #include "ScopedLock.h"
 
 
@@ -307,7 +308,7 @@ bool Tag::printToBufAsAddRequest ( SafeBuf *sb ) {
 	}
 	tmp.nullTerm();
 
-	sb->urlEncode(tmp.getBufStart());
+	urlEncode(sb,tmp.getBufStart());
 	sb->nullTerm();
 
 	return true;

@@ -12,6 +12,7 @@
 #include "SafeBuf.h"
 #include "Proxy.h"
 #include "HashTable.h"
+#include "GbUtil.h"
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
 #endif
@@ -1010,7 +1011,7 @@ static bool printAddUrlHomePage ( SafeBuf &sb , const char *url , HttpRequest *r
 			      "client.onreadystatechange = handler;\n"
 			      "var url='/addurl?urls="
 			      , root );
-		sb.urlEncode ( url );
+		urlEncode(&sb,url);
 		// propagate "admin" if set
 		//int32_t admin = hr->getLong("admin",-1);
 		//if ( admin != -1 ) sb.safePrintf("&admin=%" PRId32,admin);
@@ -1522,7 +1523,7 @@ static void doneInjectingWrapper3 ( void *st ) {
 				      "c=%s&q=url%%3A",
 				      rand32,
 				      coll);
-			sb.urlEncode(url);
+			urlEncode(&sb,url);
 			sb.safePrintf(">Check it</a>"// or "
 				      //"<a href=http://www.gigablast."
 				      //"com/seo?u=");
@@ -1851,7 +1852,7 @@ bool sendPageHelp ( TcpSocket *sock , HttpRequest *hr ) {
 			      , host
 			      , qc
 			      );
-		sb.urlEncode ( f->example );
+		urlEncode(&sb,f->example);
 		sb.safePrintf("\">");
 		sb.safePrintf("%s</a></nobr></td>"
 			      "<td>%s</td></tr>\n",

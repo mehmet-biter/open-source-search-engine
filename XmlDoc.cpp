@@ -38,6 +38,7 @@
 #include "JobScheduler.h"
 #include "Process.h"
 #include "Statistics.h"
+#include "GbUtil.h"
 
 
 #ifdef _VALGRIND_
@@ -18557,7 +18558,7 @@ bool XmlDoc::printMenu ( SafeBuf *sb ) {
 
 	// encode it
 	SafeBuf ue;
-	ue.urlEncode ( ptr_firstUrl );
+	urlEncode(&ue, ptr_firstUrl);
 
 	// get
 	sb->safePrintf ("<meta http-equiv=\"Content-Type\" "
@@ -19361,7 +19362,7 @@ bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {
 			       );
 		// encode it
 		SafeBuf ue;
-		ue.urlEncode ( ptr_firstUrl );
+		urlEncode(&ue, ptr_firstUrl);
 
 		sb->safePrintf("Sort by: " );
 		if ( m_sortTermListBy == 0 )

@@ -5,6 +5,7 @@
 #include "Pages.h"         // g_msg
 #include "CountryCode.h"
 #include "PageResults.h"
+#include "GbUtil.h"
 
 #include <third-party/cld2/public/compact_lang_det.h>
 #include <third-party/cld2/public/encodings.h>
@@ -807,7 +808,7 @@ bool SearchInput::setQueryBuffers ( HttpRequest *hr ) {
 	while ( *m_displayQuery == ' ' ) m_displayQuery++;
 
 	// urlencoded display query
-	m_qe.urlEncode ( m_displayQuery );
+	urlEncode(&m_qe, m_displayQuery);
 
 	return true;
 }

@@ -9,6 +9,7 @@
 #include "Linkdb.h"
 #include "HttpMime.h"
 #include "Process.h"
+#include "GbUtil.h"
 
 
 struct StateBD {
@@ -437,7 +438,7 @@ void Blaster::startBlastering(){
 			else
 				st->m_injectUrl.safePrintf("spiderlinks=0&");
 			st->m_injectUrl.safePrintf("u=");
-			st->m_injectUrl.urlEncode(m_p1);
+			urlEncode(&st->m_injectUrl,m_p1);
 			st->m_injectUrl.pushChar('\0');
 			st->m_u1 = st->m_injectUrl.getBufStart();
 		}
