@@ -11,6 +11,7 @@
 #include "PageRoot.h"
 #include "Process.h"
 #include "PingServer.h"
+#include "GbUtil.h"
 
 
 // a global class extern'd in Pages.h
@@ -1806,7 +1807,7 @@ bool printApiForPage ( SafeBuf *sb , int32_t PAGENUM , CollectionRec *cr ) {
 			      "\t<cachedTimeStr>Jul 04, 2014 UTC"
 			      "</cachedTimeStr>\n"
 			      "\t<content><![CDATA[");
-		xb.cdataEncode(get);
+		cdataEncode(&xb,get);
 		xb.safePrintf("]]></content>\n");
 		xb.safePrintf("</response>\n");
 		sb->htmlEncode ( xb.getBufStart() );

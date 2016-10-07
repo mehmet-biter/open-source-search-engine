@@ -65,6 +65,7 @@ OBJS_O3 = \
 	TopTree.o \
 	UrlComponent.o UrlParser.o UdpStatistic.o \
 	MergeSpaceCoordinator.o \
+	GbUtil.o \
 
 
 OBJS = $(OBJS_O0) $(OBJS_O1) $(OBJS_O2) $(OBJS_O3)

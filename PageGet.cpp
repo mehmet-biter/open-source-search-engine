@@ -11,6 +11,7 @@
 #include "Tagdb.h"
 #include "XmlDoc.h"
 #include "Process.h"
+#include "GbUtil.h"
 
 // TODO: redirect to host that has the titleRec locally
 
@@ -604,7 +605,7 @@ bool processLoop ( void *state ) {
 		sb->safePrintf("<statusCode>0</statusCode>\n");
 		sb->safePrintf("<statusMsg>Success</statusMsg>\n");
 		sb->safePrintf("<url><![CDATA[");
-		sb->cdataEncode(xd->m_firstUrl.getUrl());
+		cdataEncode(sb, xd->m_firstUrl.getUrl());
 		sb->safePrintf("]]></url>\n");
 		sb->safePrintf("<docId>%" PRIu64"</docId>\n",xd->m_docId);
 		sb->safePrintf("\t<cachedTimeUTC>%" PRId32"</cachedTimeUTC>\n",
@@ -806,7 +807,7 @@ bool processLoop ( void *state ) {
 
 	if ( format == FORMAT_XML ) {
 		sb->safePrintf("\t<content><![CDATA[");
-		sb->cdataEncode ( xb->getBufStart() );
+		cdataEncode(sb, xb->getBufStart());
 		sb->safePrintf("]]></content>\n");
 		sb->safePrintf("</response>\n");
 	}
