@@ -355,6 +355,7 @@ bool Msg40::federatedLoop ( ) {
 	CollectionRec *cr = g_collectiondb.getRec(m_firstCollnum);
 	RdbBase *base = NULL;
 	if ( cr ) g_titledb.getRdb()->getBase(cr->m_collnum);
+	//NOTE: the above line is a bug, but the obvious fix causes numDocIdSplits to become huge (eg 200)
 	int64_t numDocs = 0;
 	if ( base ) numDocs = base->getNumTotalRecs();
 	// for every 5M docids per host, lets split up the docid range

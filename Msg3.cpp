@@ -412,8 +412,6 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 	m_fileStartKey = startKeyArg;
 	// start the timer, keep it fast for clusterdb though
 	if ( g_conf.m_logTimingDb ) m_startTime = gettimeofdayInMilliseconds();
-	// map ptrs
-	RdbMap **maps = base->getMaps();
 	// . we now boost m_minRecSizes to account for negative recs 
 	// . but not if only reading one list, cuz it won't get merged and
 	//   it will be too big to send back
@@ -483,14 +481,15 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 			    "result. ");
 			g_process.shutdownAbort(true);
 		}
+		RdbMap *map = base->getMap(fn);
 		// . sanity check?
 		// . no, we must get again since we turn on endKey's last bit
 		int32_t p1 , p2;
-		maps[fn]->getPageRange ( m_fileStartKey , 
-					m_endKey       , 
-					&p1            , 
-					&p2            ,
-					NULL           );
+		map->getPageRange(m_fileStartKey,
+				  m_endKey,
+				  &p1,
+				  &p2,
+				  NULL);
 		// sanity check, each endpg's key should be > endKey
 		//if ( p2 < maps[fn]->getNumPages() && 
 		//     maps[fn]->getKey ( p2 ) <= m_endKey ) {
@@ -501,8 +500,8 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		//int32_t p1 , p2; 
 		//maps[fn]->getPageRange (startKey,endKey,minRecSizes,&p1,&p2);
 		// now get some read info
-		int64_t offset      = maps[fn]->getAbsoluteOffset ( p1 );
-		int64_t      bytesToRead = maps[fn]->getRecSizes ( p1, p2, false);
+		int64_t offset      = map->getAbsoluteOffset ( p1 );
+		int64_t      bytesToRead = map->getRecSizes ( p1, p2, false);
 		// max out the endkey for this list
 		// debug msg
 		//#ifdef _DEBUG_		
@@ -526,8 +525,8 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		char startKey2 [ MAX_KEY_BYTES ];
 		char endKey2   [ MAX_KEY_BYTES ];
 
-		maps[fn]->getKey ( p1 , startKey2 );
-		maps[fn]->getKey ( p2 , endKey2 );
+		map->getKey(p1, startKey2);
+		map->getKey(p2, endKey2);
 
 		// store in here
 		m_scan[i].m_startpg = p1;
@@ -537,7 +536,7 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		// . but iff p2 is NOT the last page in the map/file
 		// . maps[fn]->getKey(lastPage) will return the LAST KEY
 		//   and maps[fn]->getOffset(lastPage) the length of the file
-		if ( maps[fn]->getNumPages() != p2 ) KEYDEC(endKey2,m_ks);
+		if ( map->getNumPages() != p2 ) KEYDEC(endKey2,m_ks);
 		// otherwise, if we're reading all pages, then force the
 		// endKey to virtual inifinite
 		else KEYMAX(endKey2,m_ks);
@@ -549,7 +548,7 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		//   in the list
 		int32_t h2 = p2 ;
 		// decrease by one page if we're on the last page
-		if ( h2 > p1 && maps[fn]->getNumPages() == h2 ) h2--;
+		if ( h2 > p1 && map->getNumPages() == h2 ) h2--;
 		// . decrease hint page until key is <= endKey on that page
 		//   AND offset is NOT -1 because the old way would give
 		//   us hints passed the endkey
@@ -559,16 +558,16 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		//   never be able to set "size" in RdbList::constrain()
 		//   because "p" could equal "maxPtr" right away
 		while ( h2 > p1 && 
-		      (KEYCMP(maps[fn]->getKeyPtr(h2),m_constrainKey,m_ks)>0||
-			  maps[fn]->getOffset(h2) == -1            ||
-			  maps[fn]->getAbsoluteOffset(h2) - offset >=
-			  m_minRecSizes ) ) {
+		      (KEYCMP(map->getKeyPtr(h2),m_constrainKey,m_ks)>0 ||
+		       map->getOffset(h2) == -1 ||
+		       map->getAbsoluteOffset(h2) - offset >= m_minRecSizes ) )
+		{
 			h2--;
 		}
 
 		// now set the hint
-		m_scan[i].m_hintOffset = maps[fn]->getAbsoluteOffset(h2) - maps[fn]->getAbsoluteOffset(p1);
-		KEYSET(m_scan[i].m_hintKey, maps[fn]->getKeyPtr(h2), m_ks);
+		m_scan[i].m_hintOffset = map->getAbsoluteOffset(h2) - map->getAbsoluteOffset(p1);
+		KEYSET(m_scan[i].m_hintKey, map->getKeyPtr(h2), m_ks);
 
 		// reset g_errno before calling setRead()
 		g_errno = 0;
@@ -596,7 +595,7 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 			char lastTmpKey[MAX_KEY_BYTES];
 			int32_t ccount = 0;
 			for(int32_t pn = p1; pn <= p2; pn++) {
-				maps[fn]->getKey ( pn , tmpKey );
+				map->getKey ( pn , tmpKey );
 				if(pn!=p1 && KEYCMP(tmpKey,lastTmpKey,m_ks) == 0)
 					ccount++;
 				memcpy(lastTmpKey,tmpKey,sizeof(tmpKey));
@@ -1130,15 +1129,13 @@ void Msg3::setPageRanges(RdbBase *base) {
 	verify_signature();
 	// sanity check
 	//if ( m_ks != 12 && m_ks != 16 ) { g_process.shutdownAbort(true); }
-	// get the file maps from the rdb
-	RdbMap **maps = base->getMaps();
 	// . initialize the startpg/endpg for each file
 	// . we read from the first offset on m_startpg to offset on m_endpg
 	// . since we set them equal that means an empty range for each file
 	for ( int32_t i = 0 ; i < m_numFileNums ; i++ ) {
 		int32_t fn = m_scan[i].m_fileNum;
 		if ( fn < 0 ) { g_process.shutdownAbort(true); }
-		m_scan[i].m_startpg = maps[fn]->getPage( m_fileStartKey );
+		m_scan[i].m_startpg = base->getMap(fn)->getPage( m_fileStartKey );
 		m_scan[i].m_endpg = m_scan[i].m_startpg;
 	}
 	// just return if minRecSizes 0 (no reading needed)
@@ -1153,33 +1150,34 @@ void Msg3::setPageRanges(RdbBase *base) {
 		char minKey[MAX_KEY_BYTES];
 		for ( int32_t i = 0 ; i < m_numFileNums ; i++ ) {
 			int32_t fn = m_scan[i].m_fileNum;
+			RdbMap *map = base->getMap(fn);
 			// this guy is out of race if his end key > "endKey" already
-			if(KEYCMP(maps[fn]->getKeyPtr(m_scan[i].m_endpg),m_endKey,m_ks)>0)
+			if(KEYCMP(map->getKeyPtr(m_scan[i].m_endpg),m_endKey,m_ks)>0)
 				continue;
 			// get the next page after m_scan[i].m_endpg
 			int32_t nextpg = m_scan[i].m_endpg + 1;
 			// if endpg[i]+1 == m_numPages then we maxed out this range
-			if ( nextpg > maps[fn]->getNumPages() ) continue;
+			if ( nextpg > map->getNumPages() ) continue;
 			// . but this may have an offset of -1
 			// . which means the page has no key starting on it and
 			//   it's occupied by a rec which starts on a previous page
-			while ( nextpg < maps[fn]->getNumPages() &&
-				maps[fn]->getOffset ( nextpg ) == -1 ) nextpg++;
+			while ( nextpg < map->getNumPages() &&
+				map->getOffset ( nextpg ) == -1 ) nextpg++;
 			// . continue if his next page doesn't have the minimum key
 			// . if nextpg == getNumPages() then it returns the LAST KEY
 			//   contained in the corresponding RdbFile
 			if (minpg != -1 && 
-			    KEYCMP(maps[fn]->getKeyPtr(nextpg),minKey,m_ks)>0)continue;
+			    KEYCMP(map->getKeyPtr(nextpg),minKey,m_ks)>0)continue;
 			// . we got a winner, his next page has the current min key
 			// . if m_scan[i].m_endpg+1 == getNumPages() then getKey() returns the
 			//   last key in the mapped file
 			// . minKey should never equal the key on m_scan[i].m_endpg UNLESS
 			//   it's on page #m_numPages
-			KEYSET(minKey,maps[fn]->getKeyPtr(nextpg),m_ks);
+			KEYSET(minKey,map->getKeyPtr(nextpg),m_ks);
 			minpg  = i;
 			// if minKey is same as the current key on this endpg, inc it
 			// so we cause some advancement, otherwise, we'll loop forever
-			if ( KEYCMP(minKey,maps[fn]->getKeyPtr(m_scan[i].m_endpg),m_ks)!=0)
+			if ( KEYCMP(minKey,map->getKeyPtr(m_scan[i].m_endpg),m_ks)!=0)
 				continue;
 			//minKey += (uint32_t) 1;
 			KEYINC(minKey,m_ks);
@@ -1213,7 +1211,7 @@ void Msg3::setPageRanges(RdbBase *base) {
 		// . we want to read UP TO the first key on m_scan[i].m_endpg
 		for ( int32_t i = 0 ; i < m_numFileNums ; i++ ) {
 			int32_t fn = m_scan[i].m_fileNum;
-			m_scan[i].m_endpg = maps[fn]->getEndPage ( m_scan[i].m_endpg, lastMinKey );
+			m_scan[i].m_endpg = base->getMap(fn)->getEndPage ( m_scan[i].m_endpg, lastMinKey );
 		}
 		// . if the minKey is BIGGER than the provided endKey we're done
 		// . we don't necessarily include records whose key is "minKey"
@@ -1227,11 +1225,11 @@ void Msg3::setPageRanges(RdbBase *base) {
 		int32_t recSizes = 0;
 		for ( int32_t i = 0 ; i < m_numFileNums ; i++ ) {
 			int32_t fn = m_scan[i].m_fileNum;
-			recSizes += maps[fn]->getMinRecSizes ( m_scan[i].m_startpg,
-							       m_scan[i].m_endpg,
-							       m_fileStartKey,
-							       lastMinKey   ,
-							       false        );
+			recSizes += base->getMap(fn)->getMinRecSizes(m_scan[i].m_startpg,
+								     m_scan[i].m_endpg,
+								     m_fileStartKey,
+								     lastMinKey   ,
+								     false        );
 		}
 		// if we hit it then return minKey -1 so we only read UP TO "minKey"
 		// not including "minKey"
@@ -1252,8 +1250,6 @@ void Msg3::setPageRanges(RdbBase *base) {
 // . TODO: use floats for averages, not ints
 void Msg3::compensateForNegativeRecs ( RdbBase *base ) {
 	verify_signature();
-	// get the file maps from the rdb
-	RdbMap **maps = base->getMaps();
 	// add up counts from each map
 	int64_t totalNegatives = 0;
 	int64_t totalPositives = 0;
@@ -1267,9 +1263,10 @@ void Msg3::compensateForNegativeRecs ( RdbBase *base ) {
 			log(LOG_LOGIC,"net: msg3: fn=%" PRId32". bad engineer.",fn);
 			continue;
 		}
-		totalNegatives += maps[fn]->getNumNegativeRecs();
-		totalPositives += maps[fn]->getNumPositiveRecs();
-		totalFileSize  += maps[fn]->getFileSize();
+		RdbMap *map = base->getMap(fn);
+		totalNegatives += map->getNumNegativeRecs();
+		totalPositives += map->getNumPositiveRecs();
+		totalFileSize  += map->getFileSize();
 	}
 	// add em all up
 	int64_t totalNumRecs = totalNegatives + totalPositives;

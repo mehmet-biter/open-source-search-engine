@@ -611,7 +611,7 @@ void RdbList::getKey ( const char *rec , char *key ) const {
 int32_t RdbList::getDataSize ( const char *rec ) const {
 	if ( m_fixedDataSize == 0 ) return 0;
 	// negative keys always have no datasize entry
-	if ( (rec[0] & 0x01) == 0 ) return 0;
+	if ( KEYNEG(rec) ) return 0;
 	if ( m_fixedDataSize >= 0 ) return m_fixedDataSize;
 	return *(int32_t  *)(rec+m_ks);
 }
@@ -620,7 +620,7 @@ char *RdbList::getData ( char *rec ) {
 	if ( m_fixedDataSize == 0 ) return NULL;
 	if ( m_fixedDataSize  > 0 ) return rec + m_ks;
 	// negative key? then no data
-	if ( (rec[0] & 0x01) == 0 ) return NULL;
+	if ( KEYNEG(rec) ) return NULL;
 	return rec + m_ks + 4;
 }
 
@@ -1111,12 +1111,9 @@ int RdbList::printList() {
 		int32_t dataSize = getCurrentDataSize();
 
 		const char *d;
-		if ( (*m_listPtr & 0x01) == 0x00 )
-		{
+		if ( KEYNEG(m_listPtr) ) {
 			d = " (del)";
-		}
-		else
-		{
+		} else {
 			d = "";
 		}
 
@@ -1827,14 +1824,15 @@ void RdbList::merge_r(RdbList **lists, int32_t numLists, const char *startKey, c
 		return;
 	}
 
+	Rdb* rdb = getRdbFromId(rdbId);
+
 	if (rdbId == RDB_POSDB) {
-		posdbMerge_r(lists, numLists, startKey, endKey, m_mergeMinListSize, removeNegRecs);
+		posdbMerge_r(lists, numLists, startKey, endKey, m_mergeMinListSize, removeNegRecs, rdb->isUseIndexFile());
 		verify_signature();
 		return;
 	}
 
 	// check that we're not using index for other rdb file than posdb
-	Rdb* rdb = getRdbFromId(rdbId);
 	if (rdb->isUseIndexFile()) {
 		/// @todo ALC logic to use index file is not implemented for any rdb other than posdb. add it below if required
 		gbshutdownLogicError();
@@ -2026,7 +2024,6 @@ top:
 	// if we are positive and unannhilated, store it in case
 	// last key we get is negative and removeNegRecs is true we need to
 	// know the last positive key to set m_lastKey
-	//if ( (*(char *)&minKey & 0x01) == 0x01 ) lastPosKey = minKey;
 	if ( !KEYNEG(minKey) ) {
 		KEYSET(lastPosKey,minKey,m_ks);
 	}
@@ -2158,8 +2155,10 @@ skip:
 //
 ///////
 
-bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startKey, const char *endKey, int32_t minRecSizes, bool removeNegKeys) {
+bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startKey, const char *endKey, int32_t minRecSizes,
+                           bool removeNegKeys, bool useIndexFile) {
 	logTrace(g_conf.m_logTraceRdbList, "BEGIN");
+
 	// sanity
 	if (m_ks != sizeof(key144_t)) {
 		gbshutdownAbort(true);
@@ -2314,7 +2313,7 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 		}
 
 		// ignore if negative i guess, just skip it
-		if (removeNegKeys && (minPtrBase[0] & 0x01) == 0x00) {
+		if (removeNegKeys && KEYNEG(minPtrBase)) {
 			logTrace(g_conf.m_logTraceRdbList, "removeNegKeys. skip");
 			goto skip;
 		}

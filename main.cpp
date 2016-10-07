@@ -71,6 +71,7 @@
 #include "RdbBuckets.h"
 #include "SpiderProxy.h"
 #include "HashTable.h"
+#include "GbUtil.h"
 #include <sys/stat.h> //umask()
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
@@ -6203,11 +6204,11 @@ void doInjectWarc ( int64_t fsize ) {
 		       );
 
 	// url encode the url
-	req.urlEncode ( url );
+	urlEncode(&req, url);
 	// finish it up
 	req.safePrintf("&content=");
 	// store the content after the &ucontent
-	req.urlEncode ( httpReply , httpReplySize );
+	urlEncode(&req, httpReply , httpReplySize);
 	req.nullTerm();
 
 
@@ -6525,11 +6526,11 @@ void doInjectArc ( int64_t fsize ) {
 		       );
 
 	// url encode the url
-	req.urlEncode ( url );
+	urlEncode(&req, url);
 	// finish it up
 	req.safePrintf("&content=");
 	// store the content after the &ucontent
-	req.urlEncode ( httpReply , httpReplySize );
+	urlEncode(&req, httpReply, httpReplySize);
 	req.nullTerm();
 
 

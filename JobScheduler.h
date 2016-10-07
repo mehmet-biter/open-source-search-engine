@@ -102,7 +102,6 @@ public:
 	
 	bool are_io_write_jobs_running() const;
 	void cancel_file_read_jobs(const BigFile *bf);
-	//void nice page for html and administation()
 	bool is_reading_file(const BigFile *bf);
 	
 	void allow_new_jobs();

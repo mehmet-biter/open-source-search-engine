@@ -573,31 +573,6 @@ bool SafeBuf::utf32Encode(UChar32* codePoints, int32_t cpLen) {
     return true;
 }
 
-bool SafeBuf::cdataEncode ( const char *s ) {
-	return safeCdataMemcpy(s,strlen(s));
-}
-
-bool SafeBuf::cdataEncode ( const char *s , int32_t len ) {
-	return safeCdataMemcpy(s,len);
-}
-
-
-bool  SafeBuf::safeCdataMemcpy ( const char *s, int32_t len ) {
-	int32_t len1 = m_length;
-	if ( !safeMemcpy(s,len) )
-		return false;
-	// check the written section for bad characters
-	int32_t p = len1;
-	while ( p < m_length-2 ) {
-		if ( m_buf[p]==']' && m_buf[p+1]==']' && m_buf[p+2]=='>') {
-			// rewrite the > as &gt
-			safeReplace("&gt", 3, p+2, 1);
-		}
-		p++;
-	}
-	return true;
-}
-
 bool  SafeBuf::htmlEncode(const char *s, int32_t lenArg, bool encodePoundSign , int32_t truncateLen ) {
 	// . we assume we are encoding into utf8
 	// . sanity check
@@ -729,80 +704,6 @@ bool SafeBuf::htmlEncode(int32_t len ){
 			continue;
 		}
 	}
-	return true;
-}
-
-// a static buffer for speed
-static char s_ut[256];
-static bool s_init23 = false;
-
-void initTable ( ) {
-	if ( s_init23 ) return;
-	s_init23 = true;
-	for ( int32_t c = 0 ; c <= 255 ; c++ ) {
-		// assume we must encode it
-		s_ut[c] = 1;
-		if ( ! is_ascii ( (unsigned char)c ) ) continue;
-		if ( c == ' ' ) continue;
-		if ( c == '&' ) continue;
-		if ( c == '"' ) continue;
-		if ( c == '+' ) continue;
-		if ( c == '%' ) continue;
-		if ( c == '#' ) continue;
-		if ( c == '<' ) continue;
-		if ( c == '>' ) continue;
-		if ( c == '?' ) continue;
-		if ( c == ':' ) continue;
-		if ( c == '/' ) continue;
-		// no need to encode it!
-		s_ut[c] = 0;
-	}
-}
-
-//s is a url, make it safe for printing to html
-bool SafeBuf::urlEncode (const char *s , int32_t slen,
-			 bool requestPath ,
-			 bool encodeApostrophes ) {
-	// this makes things faster
-	if ( ! s_init23 ) initTable();
-
-	const char *send = s + slen;
-	for ( ; s < send ; s++ ) {
-		if ( *s == '\0' && requestPath ) {
-			pushChar(*s);
-			continue;
-		}
-		if ( *s == '\'' && encodeApostrophes ) {
-			safeMemcpy("%27",3);
-			continue;
-		}
-
-		// skip if no encoding required
-		if ( s_ut[(unsigned char)*s] == 0 ) {
-			pushChar(*s); 
-			continue; 
-		}
-		// special case
-		if ( *s == '?' && requestPath ) {
-			pushChar(*s); 
-			continue; 
-		}
-
-		// space to +
-		if ( *s == ' ' ) { pushChar('+'); continue; }
-		pushChar('%');
-		// store first hex digit
-		unsigned char v = ((unsigned char)*s)/16 ;
-		if ( v < 10 ) v += '0';
-		else          v += 'A' - 10;
-		pushChar(v);
-		// store second hex digit
-		v = ((unsigned char)*s) & 0x0f ;
-		if ( v < 10 ) v += '0';
-		else          v += 'A' - 10;
-		pushChar(v);
-	}
-	nullTerm();
 	return true;
 }
 

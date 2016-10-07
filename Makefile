@@ -65,6 +65,7 @@ OBJS_O3 = \
 	TopTree.o \
 	UrlComponent.o UrlParser.o UdpStatistic.o \
 	MergeSpaceCoordinator.o \
+	GbUtil.o \
 	GbSignature.o \
 
 

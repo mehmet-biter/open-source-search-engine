@@ -6,6 +6,7 @@
 #include "Hostdb.h"
 #include "sort.h"
 #include "Conf.h"
+#include "GbUtil.h"
 
 static int defaultSort    ( const void *i1, const void *i2 );
 static int pingSort1      ( const void *i1, const void *i2 );
@@ -603,7 +604,7 @@ skipReplaceHost:
 			sb.safePrintf("\t<host>\n"
 				      "\t\t<name><![CDATA["
 				      );
-			sb.cdataEncode (h->m_hostname);
+			cdataEncode(&sb, h->m_hostname);
 			sb.safePrintf("]]></name>\n");
 			sb.safePrintf("\t\t<shard>%" PRId32"</shard>\n",
 				      (int32_t)h->m_shardNum);

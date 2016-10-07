@@ -9,6 +9,7 @@
 #include "SpiderProxy.h" // OP_GETPROXY OP_RETPROXY
 #include "RdbCache.h"
 #include "Process.h"
+#include "GbUtil.h"
 #include "zlib.h"
 
 static char g_fakeReply[] =
@@ -2465,7 +2466,7 @@ bool printHammerQueueTable ( SafeBuf *sb ) {
 		sb->safePrintf("<td>");
 		if ( cr ) {
 			sb->safePrintf("<a href=/admin/sockets?c=");
-			sb->urlEncode(coll);
+			urlEncode(sb,coll);
 			sb->safePrintf(">");
 		}
 		sb->safeTruncateEllipsis ( coll , 32 );

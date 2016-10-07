@@ -1,8 +1,35 @@
-#include "gb-include.h"
-
 #include "RdbMem.h"
 #include "Rdb.h"
-#include "Process.h"
+#include "Sanity.h"
+
+// RdbMem allocates a fixed chunk of memory and initially sets m_ptr1 to point at the start and m_ptr2 at the end
+//    |--------------------------------------------------|
+//    ^                                                  ^
+//    m_ptr1                                             m_ptr2
+//    m_mem
+//
+// allocData() normally takes memory from the primary region, m_mem..m_ptr1 (or m_ptr1..m_mem+end, see later)
+//
+//    |--------------------------------------------------|
+//    ^         ^                                        ^
+//              m_ptr1                                   m_ptr2
+//    m_mem
+//
+// During dumping allocation from the primary region is suspended and the secondary region is used:
+//    |--------------------------------------------------|
+//    ^         ^                               ^
+//              m_ptr1                          m_ptr2
+//    m_mem
+//
+// After dump has finsihed the region roles are swapped and the old primary is emptied:
+//    |--------------------------------------------------|
+//    ^                                         ^
+//    m_ptr2                                    m_ptr1
+//    m_mem
+// and memory allocation grows downward
+
+
+//isj: why not just use a circular buffer and make caller do a mark() ?
 
 
 RdbMem::RdbMem()
@@ -29,7 +56,8 @@ RdbMem::~RdbMem() {
 void RdbMem::reset() {
 	if(m_mem)
 		mfree(m_mem, m_memSize, m_allocName);
-	m_mem = NULL;
+	m_ptr1 = m_ptr2 = m_mem = NULL;
+	m_memSize = 0;
 }
 
 
@@ -42,7 +70,7 @@ void RdbMem::clear() {
 
 
 // initialize us with the RdbDump class your rdb is using
-bool RdbMem::init(Rdb *rdb, int32_t memToAlloc, char keySize, char *allocName) {
+bool RdbMem::init(const Rdb *rdb, int32_t memToAlloc, char keySize, const char *allocName) {
 	m_rdb  = rdb;
 	m_ks   = keySize;
 	m_allocName = allocName;
@@ -173,7 +201,7 @@ void RdbMem::freeDumpedMem( RdbTree *tree ) {
 	log("rdbmem: start freeing dumped mem");
 
 	// this should still be true so allocData() returns m_ptr2 ptrs
-	if(!m_rdb->isInDumpLoop()) g_process.shutdownAbort(true);
+	if(!m_rdb->isInDumpLoop()) gbshutdownLogicError();
 
 	// count how many data nodes we had to move to avoid corruption
 	int32_t count = 0;
@@ -220,7 +248,7 @@ void RdbMem::freeDumpedMem( RdbTree *tree ) {
 		else
 			size = tree->m_fixedDataSize;
 			
-		if(size<0) g_process.shutdownAbort(true);
+		if(size<0) gbshutdownCorrupted();
 		if(size==0)
 			continue;
 			

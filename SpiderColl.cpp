@@ -959,20 +959,14 @@ bool SpiderColl::addSpiderRequest ( SpiderRequest *sreq , int64_t nowGlobalMS ) 
 				NULL,// quota table quotatable
 				-1 );  // langid not valid
 
-	if( ufn < 0 ) {
-		log(LOG_ERROR,"%s:%s: URL filter not found for [%s]", __FILE__, __func__, sreq->m_url);
-		return true;
-	}
-
-
 	// spiders disabled for this row in url filters?
-	if ( m_cr->m_maxSpidersPerRule[ufn] == 0 ) {
+	if ( ufn >= 0 && m_cr->m_maxSpidersPerRule[ufn] == 0 ) {
 		logDebug( g_conf.m_logDebugSpider, "spider: request spidersoff ufn=%" PRId32" url=%s", ufn, sreq->m_url );
 		return true;
 	}
 
 	// set the priority (might be the same as old)
-	int32_t priority = m_cr->m_spiderPriorities[ufn];
+	int32_t priority = ufn >= 0 ? m_cr->m_spiderPriorities[ufn] : -1;
 
 	// sanity checks
 	if ( priority >= MAX_SPIDER_PRIORITIES) {
@@ -980,7 +974,7 @@ bool SpiderColl::addSpiderRequest ( SpiderRequest *sreq , int64_t nowGlobalMS ) 
 	}
 
 	// do not add to doledb if bad
-	if ( m_cr->m_forceDelete[ufn] ) {
+	if ( ufn >= 0 && m_cr->m_forceDelete[ufn] ) {
 		logDebug( g_conf.m_logDebugSpider, "spider: request %s is filtered ufn=%" PRId32, sreq->m_url, ufn );
 		return true;
 	}

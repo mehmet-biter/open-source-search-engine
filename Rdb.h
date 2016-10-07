@@ -17,10 +17,6 @@
 
 bool makeTrashDir() ;
 
-void removeFromMergeLinkedList ( class CollectionRec *cr ) ;
-void addCollnumToLinkedListOfMergeCandidates ( collnum_t dumpCollnum ) ;
-
-
 // get the RdbBase class for an rdbId and collection name
 class RdbBase *getRdbBase(rdbid_t rdbId, const char *coll);
 class RdbBase *getRdbBase(rdbid_t rdbId, collnum_t collnum);
@@ -335,7 +331,7 @@ private:
 
 	bool m_inAddList;
 
-	int32_t m_numMergesOut;
+	std::atomic<int32_t> m_numMergesOut;
 
 	BigFile   m_saveFile; // for saving the tree
 	bool      m_isClosing; 

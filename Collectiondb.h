@@ -78,7 +78,9 @@ class Collectiondb  {
 
 	// . how many collections we have in here
 	// . only counts valid existing collections
-	int32_t getNumRecsUsed() { return m_numRecsUsed; }
+	int32_t getNumRecsUsed() const { return m_numRecsUsed; }
+
+	int32_t getNumRecs() const { return m_numRecs; }
 
 	// what collnum will be used the next time a coll is added?
 	collnum_t reserveCollNum ( ) ;
@@ -270,9 +272,6 @@ class CollectionRec {
 	// for doing DailyMerge.cpp stuff
 	int32_t m_dailyMergeStarted; // time_t
 	int32_t m_dailyMergeTrigger;
-
-	class CollectionRec *m_nextLink;
-	class CollectionRec *m_prevLink;
 
 	char m_dailyMergeDOWList[48];
 

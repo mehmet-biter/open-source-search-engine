@@ -87,7 +87,7 @@ RdbBase *Rdb::getBase ( collnum_t collnum )  {
 	if ( m_isCollectionLess ) 
 		return m_collectionlessBase;
 	// RdbBase for statsdb, etc. resides in collrec #0 i guess
-	CollectionRec *cr = g_collectiondb.m_recs[collnum];
+	CollectionRec *cr = g_collectiondb.getRec(collnum);
 	if ( ! cr ) return NULL;
 	// this might load the rdbbase on demand now
 	return cr->getBase ( m_rdbId ); // m_bases[(unsigned char)m_rdbId];
@@ -100,12 +100,11 @@ void Rdb::addBase ( collnum_t collnum , RdbBase *base ) {
 		m_collectionlessBase = base;
 		return;
 	}
-	CollectionRec *cr = g_collectiondb.m_recs[collnum];
+	CollectionRec *cr = g_collectiondb.getRec(collnum);
 	if ( ! cr ) return;
 	//if ( cr->m_bases[(unsigned char)m_rdbId] ) { g_process.shutdownAbort(true); }
 	RdbBase *oldBase = cr->getBasePtr ( m_rdbId );
 	if ( oldBase ) { g_process.shutdownAbort(true); }
-	//cr->m_bases[(unsigned char)m_rdbId] = base;
 	cr->setBasePtr ( m_rdbId , base );
 	log ( LOG_DEBUG,"db: added base to collrec "
 	    "for rdb=%s rdbid=%" PRId32" coll=%s collnum=%" PRId32" "
@@ -159,16 +158,21 @@ bool Rdb::init ( const char     *dir                  ,
 	}
 
 	// get page size
-	m_pageSize = GB_TFNDB_PAGE_SIZE;
-	if ( m_rdbId == RDB_POSDB    ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
-	if ( m_rdbId == RDB2_POSDB2  ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
-	if ( m_rdbId == RDB_TITLEDB    ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
-	if ( m_rdbId == RDB2_TITLEDB2  ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
-	if ( m_rdbId == RDB_SPIDERDB   ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
-	if ( m_rdbId == RDB_DOLEDB     ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
-	if ( m_rdbId == RDB2_SPIDERDB2 ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
-	if ( m_rdbId == RDB_LINKDB     ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
-	if ( m_rdbId == RDB2_LINKDB2   ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
+	switch(m_rdbId) {
+		case RDB_POSDB:
+		case RDB2_POSDB2:
+		case RDB_TITLEDB:
+		case RDB2_TITLEDB2:
+		case RDB_SPIDERDB:
+		case RDB_DOLEDB:
+		case RDB2_SPIDERDB2:
+		case RDB_LINKDB:
+		case RDB2_LINKDB2:
+			m_pageSize = GB_INDEXDB_PAGE_SIZE;
+			break;
+		default:
+			m_pageSize = GB_TFNDB_PAGE_SIZE;
+	}
 
 	// we can't merge more than MAX_RDB_FILES files at a time
 	if ( minToMerge > MAX_RDB_FILES ) minToMerge = MAX_RDB_FILES;
@@ -402,7 +406,7 @@ bool Rdb::addRdbBase2 ( collnum_t collnum ) { // addColl2()
 
 	CollectionRec *cr = NULL;
 	const char *coll = NULL;
-	if ( ! m_isCollectionLess ) cr = g_collectiondb.m_recs[collnum];
+	if ( ! m_isCollectionLess ) cr = g_collectiondb.getRec(collnum);
 	if ( cr ) coll = cr->m_coll;
 
 	if ( m_isCollectionLess )
@@ -477,7 +481,6 @@ bool Rdb::addRdbBase2 ( collnum_t collnum ) { // addColl2()
 bool Rdb::resetBase ( collnum_t collnum ) {
 	CollectionRec *cr = g_collectiondb.getRec(collnum);
 	if ( ! cr ) return true;
-	//RdbBase *base = cr->m_bases[(unsigned char)m_rdbId];
 	// get the ptr, don't use CollectionRec::getBase() so we do not swapin
 	RdbBase *base = cr->getBasePtr (m_rdbId);
 	if ( ! base ) return true;
@@ -592,7 +595,6 @@ bool Rdb::deleteColl( collnum_t collnum, collnum_t newCollnum) {
 	char newname[1024];
 	sprintf(newname, "%strash/coll.%s.%" PRId32".%" PRId64"/",g_hostdb.m_dir,coll,
 		(int32_t)collnum,gettimeofdayInMilliseconds());
-	//Dir d; d.set ( dname );
 	// ensure ./trash dir is there
 	makeTrashDir();
 	// move into that dir
@@ -702,7 +704,7 @@ bool Rdb::close ( void *state , void (* callback)(void *state ), bool urgent , b
 	// try to save the cache, may not save
 	if (m_isReallyClosing) {
 		// now loop over bases
-		for (int32_t i = 0; i < g_collectiondb.m_numRecs; i++) {
+		for (int32_t i = 0; i < g_collectiondb.getNumRecs(); i++) {
 			// shut it down
 			RdbBase *base = getBase(i);
 			if (base) {
@@ -728,7 +730,7 @@ bool Rdb::close ( void *state , void (* callback)(void *state ), bool urgent , b
 	}
 
 	// save index for tree as well
-	for (int32_t i = 0; i < g_collectiondb.m_numRecs; i++) {
+	for (int32_t i = 0; i < g_collectiondb.getNumRecs(); i++) {
 		RdbBase *base = getBase(i);
 		if (base) {
 			base->saveTreeIndex();
@@ -822,7 +824,7 @@ bool Rdb::saveTreeIndex(bool /* useThread */) {
 
 	// now loop over bases
 	for ( int32_t i = 0 ; i < getNumBases() ; i++ ) {
-		CollectionRec *cr = g_collectiondb.m_recs[i];
+		CollectionRec *cr = g_collectiondb.getRec(i);
 		if ( ! cr ) {
 			continue;
 		}
@@ -839,7 +841,7 @@ bool Rdb::saveTreeIndex(bool /* useThread */) {
 bool Rdb::saveIndexes() {
 	// now loop over bases
 	for (int32_t i = 0; i < getNumBases(); i++) {
-		CollectionRec *cr = g_collectiondb.m_recs[i];
+		CollectionRec *cr = g_collectiondb.getRec(i);
 		if (!cr) {
 			continue;
 		}
@@ -856,7 +858,7 @@ bool Rdb::saveIndexes() {
 bool Rdb::saveMaps () {
 	// now loop over bases
 	for ( int32_t i = 0 ; i < getNumBases() ; i++ ) {
-		CollectionRec *cr = g_collectiondb.m_recs[i];
+		CollectionRec *cr = g_collectiondb.getRec(i);
 		if ( ! cr ) {
 			continue;
 		}
@@ -1018,8 +1020,8 @@ bool Rdb::dumpTree ( int32_t niceness ) {
 		s_lastTryTime = getTime();
 		log( LOG_INFO, "db: Waiting for previous unlink/rename operations to finish before dumping %s.", m_dbname );
 
-		logTrace( g_conf.m_logTraceRdb, "END. %s: g_error=%s or g_numThreads=%d. Returning false",
-		          m_dbname, mstrerror( g_errno), g_numThreads );
+		logTrace( g_conf.m_logTraceRdb, "END. %s: at least one collection is manipulating files. Returning false",
+		          m_dbname );
 		return false;
 	}
 
@@ -1059,8 +1061,8 @@ bool Rdb::dumpTree ( int32_t niceness ) {
 	//
 	////
 	CollectionRec *cr = NULL;
-	for ( int32_t i = 0 ; i < g_collectiondb.m_numRecs ; i++ ) {
-		cr = g_collectiondb.m_recs[i];
+	for ( int32_t i = 0 ; i < g_collectiondb.getNumRecs() ; i++ ) {
+		cr = g_collectiondb.getRec(i);
 		if ( ! cr ) continue;
 		// reset his tree count flag thing
 		cr->m_treeCount = 0;
@@ -1074,7 +1076,7 @@ bool Rdb::dumpTree ( int32_t niceness ) {
 			}
 
 			// get rec from tree collnum
-			cr = g_collectiondb.m_recs[m_tree.getCollnum(i)];
+			cr = g_collectiondb.getRec(m_tree.getCollnum(i));
 			if ( cr ) {
 				cr->m_treeCount++;
 			}
@@ -1084,7 +1086,7 @@ bool Rdb::dumpTree ( int32_t niceness ) {
 			const RdbBucket *b = m_buckets.getBucket(i);
 			collnum_t cn = b->getCollnum();
 			int32_t nk = b->getNumKeys();
-			cr = g_collectiondb.m_recs[cn];
+			cr = g_collectiondb.getRec(cn);
 			if ( cr ) {
 				cr->m_treeCount += nk;
 			}
@@ -1136,7 +1138,7 @@ bool Rdb::dumpCollLoop ( ) {
 			// if swapped out, this will be NULL, so skip it
 			RdbBase *base = NULL;
 			if ( m_dumpCollnum >= 0 ) {
-				CollectionRec *cr = g_collectiondb.m_recs[m_dumpCollnum];
+				CollectionRec *cr = g_collectiondb.getRec(m_dumpCollnum);
 				if ( cr ) {
 					base = cr->getBasePtr( m_rdbId );
 				}
@@ -1174,7 +1176,7 @@ bool Rdb::dumpCollLoop ( ) {
 			}
 
 			// otherwise get the coll rec now
-			if ( !g_collectiondb.m_recs[m_dumpCollnum] ) {
+			if ( !g_collectiondb.getRec(m_dumpCollnum) ) {
 				// skip if empty
 				continue;
 			}
@@ -1314,41 +1316,6 @@ bool Rdb::dumpCollLoop ( ) {
 			//g_process.shutdownAbort(true);
 		}
 	}
-}	
-
-static CollectionRec *s_mergeHead = NULL;
-static CollectionRec *s_mergeTail = NULL;
-
-void addCollnumToLinkedListOfMergeCandidates ( collnum_t dumpCollnum ) {
-	// add this collection to the linked list of merge candidates
-	CollectionRec *cr = g_collectiondb.getRec ( dumpCollnum );
-	if ( ! cr ) return;
-	// do not double add it, if already there just return
-	if ( cr->m_nextLink ) return;
-	if ( cr->m_prevLink ) return;
-	if ( s_mergeTail && cr ) {
-		s_mergeTail->m_nextLink = cr;
-		cr         ->m_nextLink = NULL;
-		cr         ->m_prevLink = s_mergeTail;
-		s_mergeTail = cr;
-	} else {
-		cr->m_prevLink = NULL;
-		cr->m_nextLink = NULL;
-		s_mergeHead = cr;
-		s_mergeTail = cr;
-	}
-}
-
-// this is also called in Collectiondb::deleteRec2()
-void removeFromMergeLinkedList ( CollectionRec *cr ) {
-	CollectionRec *prev = cr->m_prevLink;
-	CollectionRec *next = cr->m_nextLink;
-	cr->m_prevLink = NULL;
-	cr->m_nextLink = NULL;
-	if ( prev ) prev->m_nextLink = next;
-	if ( next ) next->m_prevLink = prev;
-	if ( s_mergeTail == cr ) s_mergeTail = prev;
-	if ( s_mergeHead == cr ) s_mergeHead = next;
 }
 
 void Rdb::doneDumpingCollWrapper ( void *state ) {
@@ -1357,7 +1324,6 @@ void Rdb::doneDumpingCollWrapper ( void *state ) {
 	// we just finished dumping to a file, 
 	// so allow it to try to merge again.
 	//RdbBase *base = THIS->getBase(THIS->m_dumpCollnum);
-	//if ( base ) base->m_checkedForMerge = false;
 
 	logTrace( g_conf.m_logTraceRdb, "%s", THIS->m_dbname );
 
@@ -1373,15 +1339,16 @@ void Rdb::doneDumpingCollWrapper ( void *state ) {
 // Moved a lot of the logic originally here in Rdb::doneDumping into 
 // RdbDump.cpp::dumpTree()
 void Rdb::doneDumping ( ) {
-	// msg
-	//log(LOG_INFO,"db: Done dumping %s to %s (#%" PRId32"): %s.",
-	//    m_dbname,m_files[n]->getFilename(),n,mstrerror(g_errno));
 	log(LOG_INFO,"db: Done dumping %s: %s.",m_dbname,
 	    mstrerror(m_dumpErrno));
 
 	// free mem in the primary buffer
 	if ( ! m_dumpErrno ) {
 		m_mem.freeDumpedMem( &m_tree );
+	}
+
+	for (collnum_t collnum = 0; collnum < getNumBases(); collnum++) {
+		getBase(collnum)->generateGlobalIndex();
 	}
 
 	// . tell RdbDump it is done
@@ -1416,8 +1383,8 @@ void Rdb::doneDumping ( ) {
 
 void forceMergeAll(rdbid_t rdbId) {
 	// set flag on all RdbBases
-	for ( int32_t i = 0 ; i < g_collectiondb.m_numRecs ; i++ ) {
-		CollectionRec *cr = g_collectiondb.m_recs[i];
+	for ( int32_t i = 0 ; i < g_collectiondb.getNumRecs(); i++ ) {
+		CollectionRec *cr = g_collectiondb.getRec(i);
 		if ( ! cr )
 		{
 			log(LOG_INFO,"%s:%s:%d: coll %" PRId32" - could not get CollectionRec", __FILE__,__func__,__LINE__,i);
@@ -1460,7 +1427,7 @@ void attemptMergeAll() {
 
 	for(;;) {
 		// if a collection got deleted, reset this to 0
-		if ( s_lastCollnum >= g_collectiondb.m_numRecs ) {
+		if ( s_lastCollnum >= g_collectiondb.getNumRecs() ) {
 			s_lastCollnum = 0;
 			// and return so we don't spin 1000 times over a single coll.
 			return;
@@ -1470,7 +1437,7 @@ void attemptMergeAll() {
 		// every 2 seconds.
 		if ( ++count >= 1000 ) return;
 
-		CollectionRec *cr = g_collectiondb.m_recs[s_lastCollnum];
+		CollectionRec *cr = g_collectiondb.getRec(s_lastCollnum);
 		if ( ! cr ) {
 			s_lastCollnum++;
 			continue;
@@ -2201,7 +2168,7 @@ int64_t Rdb::getNumTotalRecs ( bool useCache ) {
 
 	//return 0; // too many collections!!
 	for ( int32_t i = 0 ; i < nb ; i++ ) {
-		CollectionRec *cr = g_collectiondb.m_recs[i];
+		CollectionRec *cr = g_collectiondb.getRec(i);
 		if ( ! cr ) continue;
 		// if swapped out, this will be NULL, so skip it
 		RdbBase *base = cr->getBasePtr(m_rdbId);
@@ -2225,7 +2192,7 @@ int64_t Rdb::getCollNumTotalRecs ( collnum_t collnum ) {
 
 	if ( collnum < 0 ) return 0;
 
-	CollectionRec *cr = g_collectiondb.m_recs[collnum];
+	CollectionRec *cr = g_collectiondb.getRec(collnum);
 	if ( ! cr ) return 0;
 	// if swapped out, this will be NULL, so skip it
 	RdbBase *base = cr->getBasePtr(m_rdbId);
@@ -2244,10 +2211,9 @@ int64_t Rdb::getMapMemAlloced () {
 	int64_t total = 0;
 	for ( int32_t i = 0 ; i < getNumBases() ; i++ ) {
 		// skip null base if swapped out
-		CollectionRec *cr = g_collectiondb.m_recs[i];
+		CollectionRec *cr = g_collectiondb.getRec(i);
 		if ( ! cr ) return true;
 		RdbBase *base = cr->getBasePtr(m_rdbId);		
-		//RdbBase *base = getBase(i);
 		if ( ! base ) continue;
 		total += base->getMapMemAlloced();
 	}
@@ -2259,10 +2225,9 @@ int32_t Rdb::getNumSmallFiles ( ) {
 	int32_t total = 0;
 	for ( int32_t i = 0 ; i < getNumBases() ; i++ ) {
 		// skip null base if swapped out
-		CollectionRec *cr = g_collectiondb.m_recs[i];
+		CollectionRec *cr = g_collectiondb.getRec(i);
 		if ( ! cr ) return true;
 		RdbBase *base = cr->getBasePtr(m_rdbId);		
-		//RdbBase *base = getBase(i);
 		if ( ! base ) continue;
 		total += base->getNumSmallFiles();
 	}
@@ -2273,11 +2238,10 @@ int32_t Rdb::getNumSmallFiles ( ) {
 int32_t Rdb::getNumFiles ( ) {
 	int32_t total = 0;
 	for ( int32_t i = 0 ; i < getNumBases() ; i++ ) {
-		CollectionRec *cr = g_collectiondb.m_recs[i];
+		CollectionRec *cr = g_collectiondb.getRec(i);
 		if ( ! cr ) continue;
 		// if swapped out, this will be NULL, so skip it
 		RdbBase *base = cr->getBasePtr(m_rdbId);
-		//RdbBase *base = getBase(i);
 		if ( ! base ) continue;
 		total += base->getNumFiles();
 	}
@@ -2287,11 +2251,10 @@ int32_t Rdb::getNumFiles ( ) {
 int64_t Rdb::getDiskSpaceUsed ( ) {
 	int64_t total = 0;
 	for ( int32_t i = 0 ; i < getNumBases() ; i++ ) {
-		CollectionRec *cr = g_collectiondb.m_recs[i];
+		CollectionRec *cr = g_collectiondb.getRec(i);
 		if ( ! cr ) continue;
 		// if swapped out, this will be NULL, so skip it
 		RdbBase *base = cr->getBasePtr(m_rdbId);
-		//RdbBase *base = getBase(i);
 		if ( ! base ) continue;
 		total += base->getDiskSpaceUsed();
 	}
@@ -2300,36 +2263,31 @@ int64_t Rdb::getDiskSpaceUsed ( ) {
 
 bool Rdb::isMerging() const {
 	// use this for speed
-	return (bool)m_numMergesOut;
+	return m_numMergesOut!=0;
 }
 	
 
-static Rdb *s_table9 [ RDB_END ];
-
 // maps an rdbId to an Rdb
 Rdb *getRdbFromId ( rdbid_t rdbId ) {
-	static bool s_init = false;
-	if ( ! s_init ) {
-		s_init = true;
-		memset ( s_table9, 0, sizeof(s_table9) );
-		s_table9 [ RDB_TAGDB     ] = g_tagdb.getRdb();
-		s_table9 [ RDB_POSDB     ] = g_posdb.getRdb();
-		s_table9 [ RDB_TITLEDB   ] = g_titledb.getRdb();
-		s_table9 [ RDB_SPIDERDB  ] = g_spiderdb.getRdb();
-		s_table9 [ RDB_DOLEDB    ] = g_doledb.getRdb();
-		s_table9 [ RDB_CLUSTERDB ] = g_clusterdb.getRdb();
-		s_table9 [ RDB_LINKDB    ] = g_linkdb.getRdb();
-		s_table9 [ RDB_STATSDB   ] = g_statsdb.getRdb();
+	switch(rdbId) {
+		case RDB_TAGDB: return g_tagdb.getRdb();
+		case RDB_POSDB: return g_posdb.getRdb();
+		case RDB_TITLEDB: return g_titledb.getRdb();
+		case RDB_SPIDERDB: return g_spiderdb.getRdb();
+		case RDB_DOLEDB: return g_doledb.getRdb();
+		case RDB_CLUSTERDB: return g_clusterdb.getRdb();
+		case RDB_LINKDB: return g_linkdb.getRdb();
+		case RDB_STATSDB: return g_statsdb.getRdb();
 
-		s_table9 [ RDB2_POSDB2     ] = g_posdb2.getRdb();
-		s_table9 [ RDB2_TITLEDB2   ] = g_titledb2.getRdb();
-		s_table9 [ RDB2_SPIDERDB2  ] = g_spiderdb2.getRdb();
-		s_table9 [ RDB2_CLUSTERDB2 ] = g_clusterdb2.getRdb();
-		s_table9 [ RDB2_LINKDB2    ] = g_linkdb2.getRdb();
-		s_table9 [ RDB2_TAGDB2     ] = g_tagdb2.getRdb();
+		case RDB2_POSDB2: return g_posdb2.getRdb();
+		case RDB2_TITLEDB2: return g_titledb2.getRdb();
+		case RDB2_SPIDERDB2: return g_spiderdb2.getRdb();
+		case RDB2_CLUSTERDB2: return g_clusterdb2.getRdb();
+		case RDB2_LINKDB2: return g_linkdb2.getRdb();
+		case RDB2_TAGDB2: return g_tagdb2.getRdb();
+		default:
+			return NULL;
 	}
-	if ( rdbId >= RDB_END ) return NULL;
-	return s_table9 [ rdbId ];
 }
 		
 // the opposite of the above
@@ -2472,7 +2430,6 @@ RdbBase *getRdbBase(rdbid_t rdbId, const char *coll) {
 		g_errno = ENOCOLLREC;
 		return NULL;
 	}
-	//return rdb->m_bases [ collnum ];
 	return rdb->getBase(collnum);
 }
 
@@ -2651,18 +2608,6 @@ int32_t Rdb::reclaimMemFromDeletedTreeNodes( int32_t niceness ) {
 		p += recSize;
 	}
 
-	//if ( skipped != marked ) { g_process.shutdownAbort(true); }
-
-	// sanity -- this breaks us. i tried taking the quickpolls out to stop
-	// if(ht.getNumSlotsUsed()!=m_tree.m_numUsedNodes){
-	// 	log("rdb: %" PRId32" != %" PRId32
-	// 	    ,ht.getNumSlotsUsed()
-	// 	    ,m_tree.m_numUsedNodes
-	// 	    );
-	// 	while(1==1)sleep(1);
-	// 	g_process.shutdownAbort(true);
-	// }
-
 	int32_t inUseNew = dst - pstart;
 
 	// update mem class as well
@@ -2674,8 +2619,6 @@ int32_t Rdb::reclaimMemFromDeletedTreeNodes( int32_t niceness ) {
 	if ( reclaimed < 0 ) { g_process.shutdownAbort(true); }
 	if ( inUseNew  < 0 ) { g_process.shutdownAbort(true); }
 	if ( inUseNew  > m_mem.m_memSize ) { g_process.shutdownAbort(true); }
-
-	//if ( reclaimed == 0 && marked ) { g_process.shutdownAbort(true);}
 
 	// now update data ptrs in the tree, m_data[]
 	for ( int i = 0 ; i < nn ; i++ ) {

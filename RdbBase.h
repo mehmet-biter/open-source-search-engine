@@ -60,10 +60,10 @@ class RdbBase {
 	//   compare that to the groupId to see if the record belongs
 	// . this is currently just used by Spiderdb
 	// . otherwise, we mask the high int32_t in the key
-	bool init ( char  *dir             , // working directory
-		    char  *dbname          , // "indexdb","tagdb",...
-		    int32_t   fixedDataSize   , //= -1   ,
-		    int32_t   minToMerge      , //, //=  2   ,
+	bool init ( const char  *dir,        // working directory
+		    const char  *dbname,     // "indexdb","tagdb",...
+		    int32_t   fixedDataSize   ,
+		    int32_t   minToMerge      ,
 		    bool   useHalfKeys     ,
 		    char   keySize         ,
 		    int32_t   pageSize        ,
@@ -91,14 +91,10 @@ class RdbBase {
 
 	bool useHalfKeys() const { return m_useHalfKeys; }
 
-	BigFile **getFiles() { return m_files; }
-	RdbMap **getMaps() { return m_maps; }
-	RdbIndex **getIndexes() { return m_indexes; }
-
-	BigFile *getFile(int32_t n) { return m_files[n]; }
-	int32_t getFileId(int32_t n) { return m_fileIds[n]; }
-	RdbMap *getMap(int32_t n) { return m_maps[n]; }
-	RdbIndex *getIndex(int32_t n) { return m_indexes[n]; }
+	BigFile *getFile(int32_t n) { return m_fileInfo[n].m_file; }
+	int32_t getFileId(int32_t n) { return m_fileInfo[n].m_fileId; }
+	RdbMap *getMap(int32_t n) { return m_fileInfo[n].m_map; }
+	RdbIndex *getIndex(int32_t n) { return m_fileInfo[n].m_index; }
 
 	RdbIndex *getTreeIndex() {
 		if (m_useIndexFile) {
@@ -132,8 +128,8 @@ class RdbBase {
 	}
 
 	// use the maps and tree to estimate the size of this list
-	int64_t getListSize ( char *startKey ,char *endKey , char *maxKey ,
-			        int64_t oldTruncationLimit ) ;
+	int64_t getListSize(const char *startKey, const char *endKey, char *maxKey,
+	                    int64_t oldTruncationLimit);
 
 	// positive minus negative
 	int64_t getNumTotalRecs() const;
@@ -161,18 +157,9 @@ class RdbBase {
 	bool verifyFileSharding ( );
 
 	// . add a (new) file to the m_files/m_maps/m_fileIds arrays
-	// . both return array position we added it to
-	// . both return -1 and set errno on error
-	int32_t addFile     ( bool isNew, int32_t fileId, int32_t fileId2, int32_t mergeNum, int32_t endMergeFileId ) ;
+	// . return array position we added it to
+	// . return -1 and set errno on error
 	int32_t addNewFile  ( int32_t id2 ) ;
-
-	// used by the high priority udp server to suspend merging for ALL
-	// rdb's since we share a common merge class, s_merge
-	//void suspendAllMerges ( ) ;
-	// resume ANY merges
-	//void resumeAllMerges ( ) ;
-
-	//bool needsDump ( );
 
 	// these are used for computing load on a machine
 	bool isMerging() const { return m_isMerging; }
@@ -185,34 +172,18 @@ class RdbBase {
 	//are files being unlinked or renamed?
 	bool isManipulatingFiles() const;
 	
-	// used for translating titledb file # 255 (as read from new tfndb)
-	// into the real file number
-	int32_t getNewestFileNum() const { return m_numFiles - 1; }
-
-	// Msg22 needs the merge info so if the title file # of a read we are
-	// doing is being merged, we have to include the start merge file num
-	int32_t      getMergeStartFileNum() const { return m_mergeStartFileNum; }
-	int32_t      getMergeNumFiles() const { return m_numFilesToMerge; }
-
 	bool isFileBeingUnlinked(int32_t fileNum) const {
 		return m_isUnlinking &&
 		       fileNum >= m_mergeStartFileNum &&
 		       fileNum <  m_mergeStartFileNum+m_numFilesToMerge;
 	}
 	
-	void renameFile( int32_t currentFileIdx, int32_t newFileId, int32_t newFileId2 );
-
 	// bury m_files[] in [a,b)
 	void buryFiles ( int32_t a , int32_t b );
-
-	void doneWrapper4 ( ) ;
-	int32_t m_x;
-	int32_t m_a;
 
 	// PageRepair indirectly calls this to move the map and data of this
 	// rdb into the trash subdir after renaming them, because they will
 	// be replaced by the rebuilt files.
-	bool moveToDir   ( char *dstDir ) { return moveToTrash ( dstDir ); }
 	bool moveToTrash ( char *dstDir ) ;
 	// PageRepair indirectly calls this to rename the map and data files
 	// of a secondary/rebuilt rdb to the filenames of the primary rdb.
@@ -220,7 +191,6 @@ class RdbBase {
 	// the primary rdb. this is called after moveToTrash() is called for
 	// the primary rdb.
 	bool removeRebuildFromFilenames ( ) ;
-	bool removeRebuildFromFilename  ( BigFile *f ) ;
 
 	void specialInjectFileInit(const char *dir,
 	                           const char *filename,
@@ -250,14 +220,14 @@ private:
 	// . older files are listed first (lower fileIds)
 	// . filenames should include the directory (full filenames)
 	// . TODO: RdbMgr should control what rdb gets merged?
-	BigFile *m_files[MAX_RDB_FILES + 1];
-	int32_t m_fileIds[MAX_RDB_FILES + 1];
-	int32_t m_fileIds2[MAX_RDB_FILES + 1]; // for titledb/tfndb linking
-	RdbMap *m_maps[MAX_RDB_FILES + 1];
-	RdbIndex *m_indexes[MAX_RDB_FILES + 1];
+	struct FileInfo {
+		BigFile *m_file;
+		int32_t m_fileId;
+		int32_t m_fileId2; // for titledb/tfndb linking
+		RdbMap *m_map;
+		RdbIndex *m_index;
+	} m_fileInfo[MAX_RDB_FILES + 1];
 	int32_t m_numFiles;
-
-	void generateGlobalIndex();
 
 	// mapping of docId to file
 	// key format
@@ -268,6 +238,9 @@ private:
 	GbMutex m_docIdFileIndexMtx;
 
 public:
+	void generateGlobalIndex();
+
+	static const char s_docIdFileIndex_docIdWithDelKeyOffset = 24;
 	static const char s_docIdFileIndex_docIdOffset = 26;
 	static const uint64_t s_docIdFileIndex_docIdMask    = 0xfffffffffc000000ULL;
 	static const uint64_t s_docIdFileIndex_delBitMask   = 0x0000000001000000ULL;
@@ -279,7 +252,17 @@ private:
 	static void renameDoneWrapper(void *state);
 	static void checkThreadsAgainWrapper(int /*fd*/, void *state);
 	void renameDone();
-	
+	bool removeRebuildFromFilename(BigFile *f);
+
+	void renameFile( int32_t currentFileIdx, int32_t newFileId, int32_t newFileId2 );
+
+	// Add a (new) file to the m_files/m_maps/m_fileIds arrays
+	// Return return array position of new entry, or -1 on error
+	int32_t addFile(bool isNew, int32_t fileId, int32_t fileId2, int32_t mergeNum, int32_t endMergeFileId);
+
+	int32_t m_x;
+	int32_t m_a;
+
 	// this class contains a ptr to us
 	class Rdb           *m_rdb;
 
@@ -304,8 +287,6 @@ private:
 	// for dumping a table to an rdb file
 	RdbDump    *m_dump;  
 
-	int32_t      m_maxTreeMem ; // max mem tree can use, dump at 90% of this
-
 	int32_t      m_minToMergeArg;
 	int32_t      m_minToMerge;  // need at least this many files b4 merging
 	int32_t      m_absMaxFiles;
@@ -319,17 +300,12 @@ private:
 	// . currently exclusively used by indexdb
 	bool      m_useHalfKeys;
 
-	bool	m_useIndexFile;	//@@@ BR: no-merge index
+	bool	m_useIndexFile;
 
 	// key size
 	char      m_ks;
 
-	bool m_checkedForMerge;
-
 	int32_t      m_pageSize;
-	// . is our merge urgent? (if so, it will starve spider disk reads)
-	// . also see Threads.cpp for the starvation
-	bool      m_mergeUrgent;
 
 	bool      m_niceness;
 
@@ -349,8 +325,6 @@ private:
 
 	bool m_doLog;
 };
-
-extern int32_t g_numThreads;
 
 extern bool g_dumpMode;
 

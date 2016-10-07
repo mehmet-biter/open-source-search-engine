@@ -132,6 +132,58 @@ TEST(RdbListTest, MergeTestPosdbVerifyListOrder) {
 	}
 }
 
+TEST(RdbListTest, MergeTestPosdbVerifyRemoveNegRecords) {
+	g_conf.m_logTraceRdbList = true;
+	char key[MAX_KEY_BYTES];
+
+	// setup test
+	RdbList list1;
+	list1.set(NULL, 0, NULL, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
+	list1.addRecord(makePosdbKey(key, 0x01, 0x01, 0x01, false), 0, NULL);
+	list1.addRecord(makePosdbKey(key, 0x01, 0x01, 0x02, false), 0, NULL);
+	list1.addRecord(makePosdbKey(key, 0x01, 0x02, 0x01, false), 0, NULL);
+	list1.addRecord(makePosdbKey(key, 0x02, 0x01, 0x01, false), 0, NULL);
+	list1.addRecord(makePosdbKey(key, 0x02, 0x02, 0x01, false), 0, NULL);
+
+	RdbList list2;
+	list2.set(NULL, 0, NULL, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
+	list2.addRecord(makePosdbKey(key, 0x01, 0x01, 0x01, true), 0, NULL);
+	list2.addRecord(makePosdbKey(key, 0x01, 0x01, 0x02, true), 0, NULL);
+	list2.addRecord(makePosdbKey(key, 0x01, 0x02, 0x01, true), 0, NULL);
+	list2.addRecord(makePosdbKey(key, 0x02, 0x01, 0x01, true), 0, NULL);
+	list2.addRecord(makePosdbKey(key, 0x02, 0x02, 0x01, true), 0, NULL);
+	list2.addRecord(makePosdbKey(key, 0x02, 0x02, 0x02, true), 0, NULL);
+
+	// keys go from present to deleted
+	RdbList *lists1[2];
+	lists1[0] = &list1;
+	lists1[1] = &list2;
+
+	// remove negative records
+	RdbList final1;
+	final1.set(NULL, 0, NULL, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
+	final1.prepareForMerge(lists1, 2, -1);
+	final1.merge_r(lists1, 2, KEYMIN(), KEYMAX(), -1, true, RDB_POSDB);
+
+	// verify merged list
+	EXPECT_EQ(0, final1.getListSize());
+
+	// don't remove negative records
+	RdbList final2;
+	final2.set(NULL, 0, NULL, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
+	final2.prepareForMerge(lists1, 2, -1);
+	final2.merge_r(lists1, 2, KEYMIN(), KEYMAX(), -1, false, RDB_POSDB);
+
+	// verify merged list
+	EXPECT_EQ(list2.getListSize(), final2.getListSize());
+	for (list2.resetListPtr(), final2.resetListPtr(); !final2.isExhausted(); list2.skipCurrentRecord(), final2.skipCurrentRecord()) {
+		EXPECT_EQ(list2.getCurrentRecSize(), final2.getCurrentRecSize());
+		EXPECT_EQ(0, memcmp(list2.getCurrentRec(), final2.getCurrentRec(), list2.getCurrentRecSize()));
+	}
+}
+
+/// @todo ALC verify if disabled test below it's still needed
+
 int cmpKey (const void *h1, const void *h2) {
 	if ( *(key96_t *)h1 < *(key96_t *)h2 ) return -1;
 	if ( *(key96_t *)h1 > *(key96_t *)h2 ) return  1;

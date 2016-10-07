@@ -781,7 +781,7 @@ bool RdbBuckets::addBucket (RdbBucket* newBucket, int32_t i) {
 }
 
 bool RdbBuckets::getList(collnum_t collnum, const char *startKey, const char *endKey, int32_t minRecSizes,
-                         RdbList *list, int32_t *numPosRecs, int32_t *numNegRecs, bool useHalfKeys) {
+                         RdbList *list, int32_t *numPosRecs, int32_t *numNegRecs, bool useHalfKeys) const {
 
 	if (numNegRecs) {
 		*numNegRecs = 0;
@@ -1055,7 +1055,7 @@ bool RdbBuckets::selfTest(bool thorough, bool core) {
 	return true;
 }
 
-char RdbBuckets::bucketCmp(collnum_t acoll, const char *akey, RdbBucket *b) {
+char RdbBuckets::bucketCmp(collnum_t acoll, const char *akey, RdbBucket *b) const {
 	if (acoll == b->getCollnum()) {
 		return KEYCMPNEGEQ(akey, b->getEndKey(), m_ks);
 	}
@@ -1067,7 +1067,7 @@ char RdbBuckets::bucketCmp(collnum_t acoll, const char *akey, RdbBucket *b) {
 	return 1;
 }
 
-int32_t RdbBuckets::getBucketNum(collnum_t collnum, const char* key) {
+int32_t RdbBuckets::getBucketNum(collnum_t collnum, const char* key) const {
 	if (m_numBuckets < 10) {
 		int32_t i = 0;
 		for (; i < m_numBuckets; i++) {
@@ -1110,7 +1110,7 @@ int32_t RdbBuckets::getBucketNum(collnum_t collnum, const char* key) {
 	return i;
 }
 
-bool RdbBuckets::collExists(collnum_t collnum) {
+bool RdbBuckets::collExists(collnum_t collnum) const {
 	for (int32_t i = 0; i < m_numBuckets; i++) {
 		if (m_buckets[i]->getCollnum() == collnum) {
 			return true;
@@ -1830,7 +1830,7 @@ bool RdbBuckets::addList(collnum_t collnum, RdbList* list) {
 }
 
 //return the total bytes of the list bookended by startKey and endKey
-int64_t RdbBuckets::getListSize(collnum_t collnum, const char *startKey, const char *endKey, char *minKey, char *maxKey) {
+int64_t RdbBuckets::getListSize(collnum_t collnum, const char *startKey, const char *endKey, char *minKey, char *maxKey) const {
 	if (minKey) {
 		KEYSET(minKey, endKey, m_ks);
 	}

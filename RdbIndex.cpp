@@ -370,7 +370,7 @@ void RdbIndex::addList(RdbList *list) {
 	}
 }
 
-bool RdbIndex::generateIndex(collnum_t collnum, RdbTree *tree) {
+bool RdbIndex::generateIndex(collnum_t collnum, const RdbTree *tree) {
 	reset();
 
 	if (g_conf.m_readOnlyMode) {
@@ -399,7 +399,7 @@ bool RdbIndex::generateIndex(collnum_t collnum, RdbTree *tree) {
 	return true;
 }
 
-bool RdbIndex::generateIndex(collnum_t collnum, RdbBuckets *buckets) {
+bool RdbIndex::generateIndex(collnum_t collnum, const RdbBuckets *buckets) {
 	reset();
 
 	if (g_conf.m_readOnlyMode) {

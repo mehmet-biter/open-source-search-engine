@@ -13,6 +13,7 @@
 #include "PageRoot.h"
 #include "GigablastRequest.h"
 #include "Process.h"
+#include "GbUtil.h"
 
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
@@ -1436,7 +1437,7 @@ bool HttpServer::sendErrorReply ( GigablastRequest *gr ) {
 		xb.safePrintf("<response>\n"
 			      "\t<statusCode>%" PRId32"</statusCode>\n"
 			      "\t<statusMsg><![CDATA[", error );
-		xb.cdataEncode(errmsg );
+		cdataEncode(&xb, errmsg);
 		xb.safePrintf("]]></statusMsg>\n"
 			      "</response>\n");
 	}
@@ -1530,7 +1531,7 @@ bool HttpServer::sendErrorReply ( TcpSocket *s , int32_t error , const char *err
 		xb.safePrintf("<response>\n"
 			      "\t<statusCode>%" PRId32"</statusCode>\n"
 			      "\t<statusMsg><![CDATA[", error );
-		xb.cdataEncode(errmsg );
+		cdataEncode(&xb, errmsg);
 		xb.safePrintf("]]></statusMsg>\n"
 			      "</response>\n");
 	}
