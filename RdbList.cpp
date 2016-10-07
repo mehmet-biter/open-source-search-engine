@@ -3,6 +3,8 @@
 #include "Tagdb.h"
 #include "Spider.h"
 #include "BitOperations.h"
+#include "RdbIndexQuery.h"
+#include "Posdb.h"
 #include <set>
 
 // . compares to keys split into 6 byte ptrs
@@ -2207,8 +2209,10 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 	char *pp = NULL;
 
 	// see Posdb.h for format of a 18/12/6-byte posdb key
-
+	RdbIndexQuery rdbIndexQuery(getRdbBase(RDB_POSDB, collNum));
 	char *new_listPtr = m_listPtr;
+	int32_t listOffset = 0;
+
 	while (numLists > 0 && new_listPtr < maxPtr) {
 		// assume key in first list is the winner
 		const char *minPtrBase = ptrs  [0]; // lowest  6 bytes
@@ -2252,6 +2256,27 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 			goto skip;
 		}
 
+		if (useIndexFile) {
+			int64_t docId;
+
+			if (minPtrBase[0] & 0x04) {
+				// 6-byte pos key
+				docId = extract_bits(minPtrLo, 10, 48);
+			} else {
+				// 12-byte docid+pos key
+				docId = extract_bits(minPtrBase, 58, 96);
+			}
+
+			int32_t filePos = rdbIndexQuery.getFilePos(docId);
+
+			/// @todo ALC can we assume list number == rdb file idx?
+			if (filePos > mini + listOffset) {
+				// docId is present in newer file
+				logTrace(g_conf.m_logTraceRdbList, "docId in newer list. skip. filePos=%" PRId32" mini=%" PRId16, filePos, mini);
+				goto skip;
+			}
+		}
+
 		// save ptr
 		pp = new_listPtr;
 
@@ -2286,7 +2311,7 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 			new_listPtr += 6;
 			*pp = *pp&~0x06; //turn off all compression bits
 		}
-		
+
 		// . if it is truncated then we just skip it
 		// . it may have set oldList* stuff above, but that should not matter
 		// . TODO: BUT! if endKey has same termid as currently truncated key
@@ -2332,6 +2357,7 @@ skip:
 
 			// one less list to worry about
 			numLists--;
+			listOffset++;
 		}
 	}
 

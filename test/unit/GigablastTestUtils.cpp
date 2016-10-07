@@ -11,6 +11,28 @@
 #include "Clusterdb.h"
 #include "Linkdb.h"
 
+static void deleteRdbFiles() {
+	// delete all rdb files
+	for (int rdbId = RDB_NONE; rdbId < RDB_END; ++rdbId) {
+		Rdb *rdb = getRdbFromId(rdbId);
+		if (rdb) {
+			for (int32_t i = 0; i < rdb->getNumBases(); ++i ) {
+				RdbBase *base = rdb->getBase(i);
+				if (base) {
+					for (int32_t j = 0; j < base->getNumFiles(); ++j) {
+						ASSERT_TRUE(base->getFile(j)->unlink());
+						ASSERT_TRUE(base->getMap(j)->unlink());
+
+						if (base->getIndex(j)) {
+							ASSERT_TRUE(base->getIndex(j)->unlink());
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
 void GbTest::initializeRdbs() {
 	ASSERT_TRUE(g_loop.init());
 
@@ -30,6 +52,8 @@ void GbTest::initializeRdbs() {
 }
 
 void GbTest::resetRdbs() {
+	deleteRdbFiles();
+
 	g_linkdb.reset();
 	g_clusterdb.reset();
 	g_spiderCache.reset();

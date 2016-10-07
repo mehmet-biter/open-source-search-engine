@@ -280,9 +280,11 @@ private:
 
 	// . this points to the most significant 6 bytes of a key
 	// . only valid if m_useHalfKeys is true
+	// . points to start of termId (for 6-bytes/12-bytes posdbkey)
 	const char *m_listPtrHi;
 
 	// for the secondary compression bit for posdb
+	// points to start of langid (for 6-bytes posdbkey)
 	const char *m_listPtrLo;
 
 	int32_t m_allocSize;  // how many bytes we've allocated at m_alloc

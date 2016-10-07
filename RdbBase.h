@@ -240,8 +240,8 @@ private:
 public:
 	void generateGlobalIndex();
 
-	static const char s_docIdFileIndex_docIdWithDelKeyOffset = 24;
-	static const char s_docIdFileIndex_docIdOffset = 26;
+	static const char s_docIdFileIndex_docIdOffset = 24;
+	static const char s_docIdFileIndex_docIdDelKeyOffset = 26;
 	static const uint64_t s_docIdFileIndex_docIdMask    = 0xfffffffffc000000ULL;
 	static const uint64_t s_docIdFileIndex_delBitMask   = 0x0000000001000000ULL;
 	static const uint64_t s_docIdFileIndex_filePosMask  = 0x000000000000ffffULL;
