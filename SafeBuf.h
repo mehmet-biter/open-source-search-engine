@@ -209,9 +209,6 @@ public:
 		return urlEncode( s, strlen( s ), false, false );
 	}
 
-	bool  cdataEncode ( const char *s ) ;
-	bool  cdataEncode ( const char *s , int32_t slen ) ;
-
 	// . append a \0 but do not inc m_length
 	// . for null terminating strings
 	bool nullTerm ( ) {
@@ -223,7 +220,6 @@ public:
 
 	int32_t indexOf(char c) const;
 
-	bool  safeCdataMemcpy(const char *s, int32_t len);
 	bool  pushChar (char i) {
 		if(m_length >= m_capacity) 
 			if(!reserve(2*m_capacity + 1))

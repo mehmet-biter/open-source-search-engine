@@ -26,6 +26,7 @@
 #include "PageInject.h" // InjectionRequest
 #include "Posdb.h"
 #include "GigablastRequest.h"
+#include "GbUtil.h"
 
 
 Parms g_parms;
@@ -1570,10 +1571,10 @@ bool Parms::printParm( SafeBuf* sb,
 	if ( format == FORMAT_XML ) {
 		sb->safePrintf ( "\t<parm>\n");
 		sb->safePrintf ( "\t\t<title><![CDATA[");
-		sb->cdataEncode ( m->m_title );
+		cdataEncode(sb, m->m_title);
 		sb->safePrintf ( "]]></title>\n");
 		sb->safePrintf ( "\t\t<desc><![CDATA[");
-		sb->cdataEncode ( m->m_desc );
+		cdataEncode(sb, m->m_desc);
 		sb->safePrintf ( "]]></desc>\n");
 		if ( m->m_flags & PF_REQUIRED )
 			sb->safePrintf("\t\t<required>1</required>\n");
@@ -1582,7 +1583,7 @@ bool Parms::printParm( SafeBuf* sb,
 		const char *def = m->m_def;
 		if ( ! def ) def = "";
 		sb->safePrintf ( "\t\t<defaultValue><![CDATA[");
-		sb->cdataEncode ( def );
+		cdataEncode(sb, def);
 		sb->safePrintf ( "]]></defaultValue>\n");
 		if ( page == PAGE_MASTER ||
 		     page == PAGE_SEARCH ||
@@ -1597,7 +1598,7 @@ bool Parms::printParm( SafeBuf* sb,
 			sb->safePrintf ( "\t\t<currentValue><![CDATA[");
 			SafeBuf xb;
 			m->printVal ( &xb , collnum , 0 );//occNum
-			sb->cdataEncode ( xb.getBufStart() );
+			cdataEncode(sb, xb.getBufStart());
 			sb->safePrintf ( "]]></currentValue>\n");
 		}
 		sb->safePrintf ( "\t</parm>\n");
@@ -3442,7 +3443,7 @@ bool Parms::getParmHtmlEncoded ( SafeBuf *sb , Parm *m , char *s ) {
 		//if ( buf ) blen = strlen(buf);
 		//p = htmlEncode ( p , pend , buf , buf + blen , true ); // #?*
 		// we can't do proper cdata and be backwards compatible
-		//sb->cdataEncode ( buf );//, blen );//, true ); // #?*
+		//cdataEncode(sb, buf);//, blen );//, true ); // #?*
 		if ( buf ) sb->htmlEncode ( buf );
 	}
 	else if ( t == TYPE_STRING         ||
@@ -3455,7 +3456,7 @@ bool Parms::getParmHtmlEncoded ( SafeBuf *sb , Parm *m , char *s ) {
 		//p += saftenTags2 ( p , pend - p , s , len );
 		//p = htmlEncode ( p , pend , s , s + slen , true /*#?*/);
 		// we can't do proper cdata and be backwards compatible
-		//sb->cdataEncode ( s );//, slen );//, true /*#?*/);
+		//cdataEncode(sb, s);//, slen );//, true /*#?*/);
 		sb->htmlEncode ( s );
 	}
 	else if ( t == TYPE_DATE || t == TYPE_DATE2 ) {

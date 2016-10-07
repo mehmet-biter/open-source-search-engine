@@ -28,6 +28,7 @@
 #include "Process.h"
 #include "Linkdb.h"
 #include "XmlDoc.h"
+#include "GbUtil.h"
 
 static bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) ;
 static bool printMenu ( SafeBuf *sb , int32_t menuNum , HttpRequest *hr ) ;
@@ -1027,7 +1028,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 		Query *q = &si->m_q;
 		sb->safePrintf("\t<queryInfo>\n");
 		sb->safePrintf("\t\t<fullQuery><![CDATA[");
-		sb->cdataEncode(q->m_orig);
+		cdataEncode(sb, q->m_orig);
 		sb->safePrintf("]]></fullQuery>\n");
 		sb->safePrintf("\t\t<queryLanguageAbbr>"
 			       "<![CDATA[%s]]>"
@@ -1065,7 +1066,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 			sb->safePrintf("\t\t\t<termStr><![CDATA[");
 			const char *printTerm = qt->m_term;
 			if ( is_wspace_a(term[0])) printTerm++;
-			sb->cdataEncode(printTerm);
+			cdataEncode(sb, printTerm);
 			sb->safePrintf("]]>"
 				       "</termStr>\n");
 			term[qt->m_termLen] = c;
@@ -2132,7 +2133,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 
 	if ( mr->ptr_content && si->m_format == FORMAT_XML ) {
 		sb->safePrintf("\t\t<content><![CDATA[" );
-		sb->cdataEncode ( mr->ptr_content );
+		cdataEncode(sb, mr->ptr_content);
 		sb->safePrintf("]]></content>\n");
 	}
 		
@@ -2296,7 +2297,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 				       "</origImageWidth>\n",
 				       ti->m_origDX);
 			sb->safePrintf("\t\t<imageUrl><![CDATA[");
-			sb->cdataEncode(ti->getUrl());
+			cdataEncode(sb, ti->getUrl());
 			sb->safePrintf("]]></imageUrl>\n");
 		}
 		if ( si->m_format == FORMAT_JSON ) {
@@ -2541,7 +2542,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	if ( si->m_format == FORMAT_XML ) {
 		sb->safePrintf("\t\t<title><![CDATA[");
 		if ( str ) {
-			sb->cdataEncode(str);
+			cdataEncode(sb, str);
 		}
 		sb->safePrintf("]]></title>\n");
 	}
@@ -2573,7 +2574,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	for ( ; hp && hp < hpend ; ) {
 		if ( si->m_format == FORMAT_XML ) {
 			sb->safePrintf("\t\t<h1Tag><![CDATA[");
-			sb->cdataEncode(hp);
+			cdataEncode(sb, hp);
 			sb->safePrintf("]]></h1Tag>\n");
 		}
 		if ( si->m_format == FORMAT_JSON ) {
@@ -2688,7 +2689,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		sb->safePrintf( "<br>\n" );
 	} else if ( si->m_format == FORMAT_XML ) {
 		sb->safePrintf( "\t\t<sum><![CDATA[" );
-		sb->cdataEncode( str );
+		cdataEncode(sb, str);
 		sb->safePrintf( "]]></sum>\n" );
 	} else if ( si->m_format == FORMAT_JSON ) {
 		sb->safePrintf( "\t\t\"sum\":\"" );
@@ -5539,7 +5540,7 @@ static bool printMetaContent ( Msg40 *msg40 , int32_t i , State0 *st, SafeBuf *s
 			if ( si->m_format == FORMAT_XML ) {
 				sb->safePrintf ( "\t\t<display name=\"%s\">"
 					  	"<![CDATA[", ss );
-				sb->cdataEncode ( dptr, ddlen );
+				cdataEncode(sb, dptr, ddlen);
 				sb->safePrintf ( "]]></display>\n" );
 			}
 			else if ( si->m_format == FORMAT_JSON ) {

@@ -573,31 +573,6 @@ bool SafeBuf::utf32Encode(UChar32* codePoints, int32_t cpLen) {
     return true;
 }
 
-bool SafeBuf::cdataEncode ( const char *s ) {
-	return safeCdataMemcpy(s,strlen(s));
-}
-
-bool SafeBuf::cdataEncode ( const char *s , int32_t len ) {
-	return safeCdataMemcpy(s,len);
-}
-
-
-bool  SafeBuf::safeCdataMemcpy ( const char *s, int32_t len ) {
-	int32_t len1 = m_length;
-	if ( !safeMemcpy(s,len) )
-		return false;
-	// check the written section for bad characters
-	int32_t p = len1;
-	while ( p < m_length-2 ) {
-		if ( m_buf[p]==']' && m_buf[p+1]==']' && m_buf[p+2]=='>') {
-			// rewrite the > as &gt
-			safeReplace("&gt", 3, p+2, 1);
-		}
-		p++;
-	}
-	return true;
-}
-
 bool  SafeBuf::htmlEncode(const char *s, int32_t lenArg, bool encodePoundSign , int32_t truncateLen ) {
 	// . we assume we are encoding into utf8
 	// . sanity check

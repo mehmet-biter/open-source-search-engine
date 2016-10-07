@@ -9,6 +9,7 @@
 #include "HttpRequest.h"
 #include "Stats.h"
 #include "Process.h"
+#include "GbUtil.h"
 
 
 static bool sendHttpReply        ( void *state );
@@ -368,7 +369,7 @@ bool sendHttpReply ( void *state ) {
 		am.safePrintf("\t<statusCode>%" PRId32"</statusCode>\n",
 			      (int32_t)g_errno);
 		am.safePrintf("\t<statusMsg><![CDATA[");
-		am.cdataEncode(mstrerror(g_errno));
+		cdataEncode(&am, mstrerror(g_errno));
 		am.safePrintf("]]></statusMsg>\n");
 
 		am.safePrintf("\t<docId>%" PRId64"</docId>\n",docId);
