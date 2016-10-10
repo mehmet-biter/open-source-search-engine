@@ -54,19 +54,19 @@ Parm::Parm() {
 	m_size = 0;
 	m_def = NULL;
 	m_defOff = 0;
-	m_cast = 0;
+	m_cast = false;
 	m_units = NULL;
-	m_addin = 0;
+	m_addin = false;
 	m_rowid = 0;
-	m_rdonly = 0;
-	m_hdrs = 0;
+	m_rdonly = false;
+	m_hdrs = false;
 	m_flags = 0;
 	m_parmNum = 0;
 	m_func = NULL;
 	m_func2 = NULL;
 	m_plen = 0;
 	m_group = false;
-	m_save = 0;
+	m_save = false;
 	m_min = 0;
 	m_sminc = 0;
 	m_smaxc = 0;
@@ -3505,14 +3505,14 @@ void Parms::init ( ) {
 		m_parms[i].m_max    =  1         ; // max elements in array
 		m_parms[i].m_fixed  =  0         ; // size of fixed size array
 		m_parms[i].m_size   =  0         ; // max string size
-		m_parms[i].m_cast   =  1 ; // send to all hosts?
+		m_parms[i].m_cast   =  true ; // send to all hosts?
 		m_parms[i].m_rowid  = -1 ; // rowid of -1 means not in row
-		m_parms[i].m_addin  =  0 ; // add insert row command?
-		m_parms[i].m_rdonly =  0 ; // is command off in read-only mode?
-		m_parms[i].m_hdrs   =  1 ; // assume to always print headers
+		m_parms[i].m_addin  =  false ; // add insert row command?
+		m_parms[i].m_rdonly =  false ; // is command off in read-only mode?
+		m_parms[i].m_hdrs   =  true ; // assume to always print headers
 		m_parms[i].m_plen   = -1 ; // offset for strings length
 		m_parms[i].m_group  =  true      ; // start of a new group of controls?
-		m_parms[i].m_save   =  1 ; // save to xml file?
+		m_parms[i].m_save   =  true ; // save to xml file?
 		m_parms[i].m_min    = -1 ; // min value (for int32_t parms)
 		m_parms[i].m_flags  = 0;
 		m_parms[i].m_sminc  = -1;  // min in collection rec
@@ -3811,7 +3811,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_NONE;
 	m->m_obj   = OBJ_COLL;
 	m->m_func  = CommandInsertUrlFiltersRow;
-	m->m_cast  = 1;
+	m->m_cast  = true;
 	m->m_flags = PF_REBUILDURLFILTERS;
 	m++;
 
@@ -3822,7 +3822,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_NONE;
 	m->m_obj   = OBJ_COLL;
 	m->m_func  = CommandRemoveUrlFiltersRow;
-	m->m_cast  = 1;
+	m->m_cast  = true;
 	m->m_flags = PF_REBUILDURLFILTERS;
 	m++;
 
@@ -3834,7 +3834,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_NONE;
 	m->m_obj   = OBJ_COLL;
 	m->m_func2 = CommandDeleteColl;
-	m->m_cast  = 1;
+	m->m_cast  = true;
 	m++;
 
 	m->m_title = "delete collection 2";
@@ -3844,7 +3844,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_NONE;
 	m->m_obj   = OBJ_COLL;
 	m->m_func2 = CommandDeleteColl2;
-	m->m_cast  = 1;
+	m->m_cast  = true;
 	m++;
 
 	m->m_title = "delete collection";
@@ -3857,7 +3857,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_DELCOLL;
 	m->m_obj   = OBJ_COLL;
 	m->m_func2 = CommandDeleteColl2;
-	m->m_cast  = 1;
+	m->m_cast  = true;
 	m->m_flags = PF_API | PF_REQUIRED;
 	m++;
 
@@ -3869,7 +3869,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_CLONECOLL;
 	m->m_obj   = OBJ_COLL;
 	m->m_func  = CommandCloneColl;
-	m->m_cast  = 1;
+	m->m_cast  = true;
 	m->m_flags = PF_API | PF_REQUIRED;
 	m++;
 
@@ -3881,7 +3881,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_NONE;
 	m->m_obj   = OBJ_COLL;
 	m->m_func  = CommandAddColl;
-	m->m_cast  = 1;
+	m->m_cast  = true;
 	m++;
 
 	m->m_title = "add collection";
@@ -3893,7 +3893,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_ADDCOLL;
 	m->m_obj   = OBJ_COLL;
 	m->m_func  = CommandAddColl;
-	m->m_cast  = 1;
+	m->m_cast  = true;
 	m->m_flags = PF_API | PF_REQUIRED;
 	m++;
 #endif
@@ -3906,7 +3906,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_NONE;
 	m->m_obj   = OBJ_COLL;
 	m->m_func  = CommandInSync;
-	m->m_cast  = 1;
+	m->m_cast  = true;
 	m++;
 
 
@@ -4661,7 +4661,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "resetproxytable";
 	m->m_type  = TYPE_CMD;
 	m->m_func  = CommandResetProxyTable;
-	m->m_cast  = 1;
+	m->m_cast  = true;
 	m->m_page  = PAGE_SPIDERPROXIES;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5213,7 +5213,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "poweron";
 	m->m_type  = TYPE_CMD;
 	m->m_func  = CommandPowerOnNotice;
-	m->m_cast  = 0;
+	m->m_cast  = false;
 	m->m_page  = PAGE_NONE;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5223,7 +5223,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "poweroff";
 	m->m_type  = TYPE_CMD;
 	m->m_func  = CommandPowerOffNotice;
-	m->m_cast  = 0;
+	m->m_cast  = false;
 	m->m_page  = PAGE_NONE;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5487,7 +5487,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "dump";
 	m->m_type  = TYPE_CMD;
 	m->m_func  = CommandDiskDump;
-	m->m_cast  = 1;
+	m->m_cast  = true;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5497,7 +5497,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "forceit";
 	m->m_type  = TYPE_CMD;
 	m->m_func  = CommandForceIt;
-	m->m_cast  = 1;
+	m->m_cast  = true;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
@@ -5508,7 +5508,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "pmerge";
 	m->m_type  = TYPE_CMD;
 	m->m_func  = CommandMergePosdb;
-	m->m_cast  = 1;
+	m->m_cast  = true;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5518,7 +5518,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "tmerge";
 	m->m_type  = TYPE_CMD;
 	m->m_func  = CommandMergeTitledb;
-	m->m_cast  = 1;
+	m->m_cast  = true;
 	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -5529,7 +5529,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "spmerge";
 	m->m_type  = TYPE_CMD;
 	m->m_func  = CommandMergeSpiderdb;
-	m->m_cast  = 1;
+	m->m_cast  = true;
 	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -5541,7 +5541,7 @@ void Parms::init ( ) {
         m->m_cgi   = "lmerge";
         m->m_type  = TYPE_CMD;
         m->m_func  = CommandMergeLinkdb;
-        m->m_cast  = 1;
+        m->m_cast  = true;
         m->m_group = false;
         m->m_page  = PAGE_MASTER;
         m->m_obj   = OBJ_CONF;
@@ -5553,7 +5553,7 @@ void Parms::init ( ) {
         m->m_cgi   = "lmerge";
         m->m_type  = TYPE_CMD;
         m->m_func  = CommandMergeTagdb;
-        m->m_cast  = 1;
+        m->m_cast  = true;
         m->m_group = false;
         m->m_page  = PAGE_MASTER;
         m->m_obj   = OBJ_CONF;
@@ -5568,7 +5568,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "clrkrnerr";
 	m->m_type  = TYPE_CMD;
 	m->m_func  = CommandClearKernelError;
-	m->m_cast  = 1;
+	m->m_cast  = true;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5580,7 +5580,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "dpco";
 	m->m_type  = TYPE_CMD;
 	m->m_func  = CommandDiskPageCacheOff;
-	m->m_cast  = 1;
+	m->m_cast  = true;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -7078,7 +7078,7 @@ void Parms::init ( ) {
 	m->m_rowid = 1;
 	m->m_def   = "50";
 	m->m_flags = PF_REBUILDURLFILTERS | PF_CLONE;
-	m->m_addin = 1; // "insert" follows?
+	m->m_addin = true; // "insert" follows?
 	m++;
 
 	///////////////////////////////////////////
@@ -8239,7 +8239,7 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(Conf,m_clusterdbMinFilesToMerge);
 	m->m_def   = "-1"; // -1 means to use collection rec
 	m->m_type  = TYPE_LONG;
-	m->m_save  = 0;
+	m->m_save  = false;
 	m->m_page  = PAGE_NONE;
 	m->m_obj   = OBJ_CONF;
 	m->m_flags = PF_NOAPI;
@@ -8462,7 +8462,7 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(CollectionRec,m_titledbMinFilesToMerge);
 	m->m_def   = "6";
 	m->m_type  = TYPE_LONG;
-	//m->m_save  = 0;
+	//m->m_save  = false;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RDB;
 	m->m_obj   = OBJ_COLL;
@@ -8553,7 +8553,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_SPIDER;
 	m->m_obj   = OBJ_COLL;
 	m->m_func2 = CommandResetColl;
-	m->m_cast  = 1;
+	m->m_cast  = true;
 	m->m_flags = PF_HIDDEN;
 	m++;
 
@@ -8565,7 +8565,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_SPIDER;
 	m->m_obj   = OBJ_COLL;
 	m->m_func2 = CommandRestartColl;
-	m->m_cast  = 1;
+	m->m_cast  = true;
 	m++;
 #endif
 
@@ -9490,7 +9490,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_MASTERPASSWORDS;
 	//m->m_max   = MAX_MASTER_PASSWORDS;
 	//m->m_size  = PASSWORD_MAX_LEN+1;
-	//m->m_addin = 1; // "insert" follows?
+	//m->m_addin = true; // "insert" follows?
 	m->m_flags = PF_PRIVATE | PF_TEXTAREA | PF_SMALLTEXTAREA;
 	m++;
 
