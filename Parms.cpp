@@ -72,8 +72,6 @@ Parm::Parm() {
 	m_smaxc = 0;
 	m_smin = 0;
 	m_smax = 0;
-	m_sprpg = 0;
-	m_sprpp = 0;
 	m_sync = false;
 	m_hash = 0;
 	m_cgiHash = 0;
@@ -3519,8 +3517,6 @@ void Parms::init ( ) {
 		m_parms[i].m_smaxc  = -1;  // max in collection rec
 		m_parms[i].m_smin   = 0x80000000; // 0xffffffff;
 		m_parms[i].m_smax   = 0x7fffffff;
-		m_parms[i].m_sprpg  =  1; // propagate to other pages via GET
-		m_parms[i].m_sprpp  =  1; // propagate to other pages via POST
 		m_parms[i].m_sync   = true;
 	}
 
@@ -3975,8 +3971,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_LONG;
 	m->m_cgi   = "s";
 	m->m_smin  = 0;
-	m->m_sprpg = 0;
-	m->m_sprpp = 0;
 	m->m_flags = PF_REDBOX;
 	m++;
 
@@ -4124,8 +4118,6 @@ void Parms::init ( ) {
 	m->m_def   = "0";
 	m->m_cgi   = "stream";
 	m->m_flags = PF_API;
-	m->m_sprpg = 0; // propagate to next 10
-	m->m_sprpp = 0;
 	m++;
 
 	m->m_title = "seconds back";
@@ -4693,8 +4685,6 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(SearchInput,m_showImages);
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "1";
-	m->m_sprpg = 0;
-	m->m_sprpp = 0;
 	m->m_flags = PF_NOSAVE;
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
@@ -4719,8 +4709,6 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(SearchInput,m_rcache);
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "1";
-	m->m_sprpg = 0;
-	m->m_sprpp = 0;
 	m->m_flags = PF_NOSAVE;
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
@@ -4747,8 +4735,6 @@ void Parms::init ( ) {
 	m->m_cgi   = "minserpdocid";
 	m->m_flags = PF_API;
 	m->m_smin  = 0;
-	m->m_sprpg = 0;
-	m->m_sprpp = 0;
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
 	m++;
@@ -4763,8 +4749,6 @@ void Parms::init ( ) {
 	m->m_cgi   = "maxserpscore";
 	m->m_flags = PF_API;
 	m->m_smin  = 0;
-	m->m_sprpg = 0;
-	m->m_sprpp = 0;
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
 	m++;
@@ -4774,8 +4758,6 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(SearchInput,m_url);
 	m->m_type  = TYPE_CHARPTR;//STRING;
 	m->m_cgi   = "url";
-	m->m_sprpg = 0;
-	m->m_sprpp = 0;
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
 	m->m_flags = PF_NOAPI;
@@ -4786,8 +4768,6 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(SearchInput,m_link);
 	m->m_type  = TYPE_CHARPTR;//STRING;
 	m->m_cgi   = "link";
-	m->m_sprpg = 0;
-	m->m_sprpp = 0;
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
 	m++;
@@ -4798,8 +4778,6 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(SearchInput,m_quote1);
 	m->m_type  = TYPE_CHARPTR;//STRING;
 	m->m_cgi   = "quotea";
-	m->m_sprpg = 0;
-	m->m_sprpp = 0;
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
 	m->m_flags = PF_NOAPI;
@@ -4811,8 +4789,6 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(SearchInput,m_quote2);
 	m->m_type  = TYPE_CHARPTR;//STRING;
 	m->m_cgi   = "quoteb";
-	m->m_sprpg = 0;
-	m->m_sprpp = 0;
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
 	m->m_flags = PF_NOAPI;
@@ -4828,8 +4804,6 @@ void Parms::init ( ) {
 	m->m_cgi   = "sites";
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
-	m->m_sprpg = 1;
-	m->m_sprpp = 1;
 	m++;
 
 	m->m_title = "require these query terms";
@@ -4839,8 +4813,6 @@ void Parms::init ( ) {
 	m->m_def   = NULL;
 	m->m_type  = TYPE_CHARPTR;//STRING;
 	m->m_cgi   = "plus";
-	m->m_sprpg = 0;
-	m->m_sprpp = 0;
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
 	m->m_flags = PF_NOAPI;
@@ -4853,8 +4825,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_CHARPTR;//STRING;
 	m->m_cgi   = "minus";
 	//m->m_size  = 500;
-	m->m_sprpg = 0;
-	m->m_sprpp = 0;
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
 	m->m_flags = PF_NOAPI;
@@ -4912,8 +4882,6 @@ void Parms::init ( ) {
 	m->m_cgi   = "qh";
 	m->m_smin  = 0;
 	m->m_smax  = 8;
-	m->m_sprpg = 1; // turn off for now
-	m->m_sprpp = 1;
 	m->m_flags = PF_API;
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
@@ -4926,8 +4894,6 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(SearchInput,m_highlightQuery);
 	m->m_type  = TYPE_CHARPTR;//STRING;
 	m->m_cgi   = "hq";
-	m->m_sprpg = 0; // no need to propagate this one
-	m->m_sprpp = 0;
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
 	m++;
@@ -5041,8 +5007,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "1";
 	m->m_cgi   = "admin";
-	m->m_sprpg = 1; // propagate on GET request
-        m->m_sprpp = 1; // propagate on POST request
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
 	m++;
@@ -7696,8 +7660,6 @@ void Parms::init ( ) {
 	m->m_cgi   = "qh";
 	m->m_smin  = 0;
 	m->m_smax  = 8;
-	m->m_sprpg = 1; // turn off for now
-	m->m_sprpp = 1;
 	m->m_flags = PF_API | PF_CLONE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;

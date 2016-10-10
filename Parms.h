@@ -143,8 +143,6 @@ class Parm {
 	int32_t  m_smaxc ;// offset of max in CollectionRec (-1 for none)
 	int32_t  m_smin;  // absolute min
 	int32_t  m_smax;  // absolute max
-	char  m_sprpg; // propagate the cgi variable to other pages via GET?
-	char  m_sprpp; // propagate the cgi variable to other pages via POST?
 	bool  m_sync;  // this parm should be synced
 	int32_t  m_hash;  // hash of "title"
 	int32_t  m_cgiHash; // hash of m_cgi
