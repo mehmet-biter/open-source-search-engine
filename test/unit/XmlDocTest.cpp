@@ -5,19 +5,19 @@
 class XmlDocTest : public ::testing::Test {
 protected:
 	static void SetUpTestCase() {
+		g_conf.m_noInMemoryPosdbMerge = true;
 	}
 
 	static void TearDownTestCase() {
+		g_conf.m_noInMemoryPosdbMerge = m_savedMergeConf;
 	}
 
 	void SetUp() {
-		g_conf.m_noInMemoryPosdbMerge = true;
 		GbTest::initializeRdbs();
 	}
 
 	void TearDown() {
 		GbTest::resetRdbs();
-		g_conf.m_noInMemoryPosdbMerge = m_savedMergeConf;
 	}
 
 	static bool m_savedMergeConf;
