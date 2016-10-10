@@ -852,106 +852,113 @@ bool addMetaList ( const char *p , UdpSlot *slot ) {
 
 	// . this request consists of multiple recs, so add each one
 	// . collnum(2bytes)/rdbId(1byte)/recSize(4bytes)/recData/...
- loop:
-	// extract collnum, rdbId, recSize
-	collnum_t collnum = *(collnum_t *)p; p += sizeof(collnum_t);
-	char      rdbId   = *(char      *)p; p += 1;
-	int32_t      recSize = *(int32_t      *)p; p += 4;
-	// shortcut
-	//UdpServer *us = &g_udpServer;
-	// . get the rdb to which it belongs, use Msg0::getRdb()
-	// . do not call this for every rec if we do not have to
-	if ( rdbId != lastRdbId ) {
-		rdb = getRdbFromId ( (char) rdbId );
+	while (p < pend) {
+		// extract collnum, rdbId, recSize
+		collnum_t collnum = *(collnum_t *)p;
+		p += sizeof(collnum_t);
+		char rdbId = *(char *)p;
+		p += 1;
+		int32_t recSize = *(int32_t *)p;
+		p += 4;
 
-		// an uninitialized secondary rdb? it will have a keysize
-		// of 0 if its never been intialized from the repair page.
-		// don't core any more, we probably restarted this shard
-		// and it needs to wait for host #0 to syncs its
-		// g_conf.m_repairingEnabled to '1' so it can start its
-		// Repair.cpp repairWrapper() loop and init the secondary
-		// rdbs so "rdb" here won't be NULL any more.
-		if ( rdb && rdb->getKeySize() <= 0 ) {
-			time_t currentTime = getTime();
-			static time_t s_lastTime = 0;
-			if ( currentTime > s_lastTime + 10 ) {
-				s_lastTime = currentTime;
-				log( LOG_WARN, "msg4: oops. got an rdbId key for a secondary "
-				    "rdb and not in repair mode. waiting to be in repair mode.");
+		// . get the rdb to which it belongs, use Msg0::getRdb()
+		// . do not call this for every rec if we do not have to
+		if (rdbId != lastRdbId) {
+			rdb = getRdbFromId((char)rdbId);
+
+			// an uninitialized secondary rdb? it will have a keysize
+			// of 0 if its never been intialized from the repair page.
+			// don't core any more, we probably restarted this shard
+			// and it needs to wait for host #0 to syncs its
+			// g_conf.m_repairingEnabled to '1' so it can start its
+			// Repair.cpp repairWrapper() loop and init the secondary
+			// rdbs so "rdb" here won't be NULL any more.
+			if (rdb && rdb->getKeySize() <= 0) {
+				time_t currentTime = getTime();
+				static time_t s_lastTime = 0;
+				if (currentTime > s_lastTime + 10) {
+					s_lastTime = currentTime;
+					log(LOG_WARN, "msg4: oops. got an rdbId key for a secondary "
+							"rdb and not in repair mode. waiting to be in repair mode.");
+					g_errno = ETRYAGAIN;
+					return false;
+					//g_process.shutdownAbort(true);
+				}
+			}
+
+			if (!rdb) {
+				if (slot) {
+					log(LOG_WARN, "msg4: rdbId of %" PRId32" unrecognized from hostip=%s. dropping WHOLE request",
+					    (int32_t)rdbId, iptoa(slot->getIp()));
+				} else {
+					log(LOG_WARN, "msg4: rdbId of %" PRId32" unrecognized. dropping WHOLE request", (int32_t)rdbId);
+				}
 				g_errno = ETRYAGAIN;
 				return false;
-				//g_process.shutdownAbort(true);
 			}
 		}
 
-		if ( ! rdb ) {
-			if ( slot ) 
-				log( LOG_WARN, "msg4: rdbId of %" PRId32" unrecognized "
-				    "from hostip=%s. "
-				    "dropping WHOLE request", (int32_t)rdbId,
-				    iptoa(slot->getIp()));
-			else
-				log( LOG_WARN, "msg4: rdbId of %" PRId32" unrecognized. "
-				    "dropping WHOLE request", (int32_t)rdbId);
+		if (!rdb) {
+			logError("Attempt to work on NULL rdb object");
+			gbshutdownLogicError();
+		}
+
+		// . if already in addList and we are quickpoll interruptint, try again
+		// . happens if our niceness gets converted to 0
+		if (rdb->inAddList()) {
 			g_errno = ETRYAGAIN;
 			return false;
 		}
+
+		// sanity check
+		if (p + recSize > pend) {
+			g_errno = ECORRUPTDATA;
+			return false;
+		}
+
+		// reset g_errno
+		g_errno = 0;
+
+		// . make a list from this data
+		// . skip over the first 4 bytes which is the rdbId
+		// . TODO: embed the rdbId in the msgtype or something...
+		RdbList list;
+		// sanity check
+		if (rdb->getKeySize() == 0) {
+			log(LOG_WARN, "seems like a stray /e/repair-addsinprogress.dat file "
+					"rdbId=%" PRId32". waiting to be in repair mode.", (int32_t)rdbId);
+			g_errno = ETRYAGAIN;
+			return false;
+		}
+
+		// set the list
+		// todo: dodgy cast to char*. RdbList should be fixed
+		list.set((char *)p, recSize, (char *)p, recSize, rdb->getFixedDataSize(), false, rdb->useHalfKeys(), rdb->getKeySize());
+
+		// advance over the rec data to point to next entry
+		p += recSize;
+
+		// keep track of stats
+		rdb->readRequestAdd(recSize);
+
+		// this returns false and sets g_errno on error
+		bool status = rdb->addList(collnum, &list, MAX_NICENESS);
+
+		// bad coll #? ignore it. common when deleting and resetting
+		// collections using crawlbot. but there are other recs in this
+		// list from different collections, so do not abandon the whole
+		// meta list!! otherwise we lose data!!
+		if (g_errno == ENOCOLLREC && !status) {
+			g_errno = 0;
+			status = true;
+		}
+
+		if (!status) {
+			break;
+		}
+
+		// do the next record here if there is one
 	}
-
-	if( !rdb ) {
-		logError("Attempt to work on NULL rdb object");
-		gbshutdownLogicError();
-	}
-
-	// . if already in addList and we are quickpoll interruptint, try again
-	// . happens if our niceness gets converted to 0
-	if ( rdb->inAddList() ) {
-		g_errno = ETRYAGAIN;
-		return false;
-	}
-
-	// sanity check
-	if ( p + recSize > pend ) {
-		g_errno = ECORRUPTDATA;
-		return false;
-	}
-
-	// reset g_errno
-	g_errno = 0;
-	// . make a list from this data
-	// . skip over the first 4 bytes which is the rdbId
-	// . TODO: embed the rdbId in the msgtype or something...
-	RdbList list;
-	// sanity check
-	if ( rdb->getKeySize() == 0 ) {
-		log(LOG_WARN, "seems like a stray /e/repair-addsinprogress.dat file "
-		    "rdbId=%" PRId32". waiting to be in repair mode."
-		    ,(int32_t)rdbId);
-		g_errno = ETRYAGAIN;
-		return false;
-	}
-
-	// set the list
-	// todo: dodgy cast to char*. RdbList should be fixed
-	list.set((char *)p, recSize, (char *)p, recSize, rdb->getFixedDataSize(), false, rdb->useHalfKeys(), rdb->getKeySize());
-
-	// advance over the rec data to point to next entry
-	p += recSize;
-
-	// keep track of stats
-	rdb->readRequestAdd ( recSize );
-
-	// this returns false and sets g_errno on error
-	bool status =rdb->addList(collnum, &list, MAX_NICENESS );
-
-	// bad coll #? ignore it. common when deleting and resetting
-	// collections using crawlbot. but there are other recs in this
-	// list from different collections, so do not abandon the whole 
-	// meta list!! otherwise we lose data!!
-	if ( g_errno == ENOCOLLREC && !status ) { g_errno = 0; status = true; }
-
-	// do the next record here if there is one
-	if ( status && p < pend ) goto loop;
 
 	// no memory means to try again
 	if ( g_errno == ENOMEM ) g_errno = ETRYAGAIN;
