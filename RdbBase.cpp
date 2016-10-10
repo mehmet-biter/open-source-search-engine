@@ -2410,7 +2410,10 @@ void RdbBase::generateGlobalIndex() {
 		               });
 	}
 
-	std::sort(tmpDocIdFileIndex->begin(), tmpDocIdFileIndex->end());
+	std::stable_sort(tmpDocIdFileIndex->begin(), tmpDocIdFileIndex->end(),
+	          [](uint64_t a, uint64_t b) {
+		          return (a & s_docIdFileIndex_docIdMask) < (b & s_docIdFileIndex_docIdMask);
+	          });
 
 	// in reverse because we want to keep the highest file position
 	auto it = std::unique(tmpDocIdFileIndex->rbegin(), tmpDocIdFileIndex->rend(),
