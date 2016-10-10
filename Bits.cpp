@@ -248,10 +248,10 @@ bool Bits::setForSummary ( const Words *words ) {
 	const int32_t *wlens = words->getWordLens();
 	const int64_t *wids = words->getWordIds();
 
-	char startSent = 1;
-	char startFrag = 1;
-	char inQuote = 0;
-	char inParens = 0;
+	bool startSent = true;
+	bool startFrag = true;
+	bool inQuote = false;
+	bool inParens = false;
 
 	int32_t wlen;
 	const char *wp;
@@ -270,8 +270,8 @@ bool Bits::setForSummary ( const Words *words ) {
 
 			// is it a "breaking tag"?
 			if ( g_nodes[tid].m_isBreaking ) {
-				startSent = 1;
-				inQuote   = 0;
+				startSent = true;
+				inQuote   = false;
 			}
 
 			// adjust flags if we should
@@ -292,17 +292,17 @@ bool Bits::setForSummary ( const Words *words ) {
 		if ( wids[i] ) {
 			if ( startFrag ) {
 				m_swbits[i] |= D_STARTS_FRAG;
-				startFrag = 0;
+				startFrag = false;
 			}
 
 			if ( startSent ) {
 				m_swbits[i] |= D_STARTS_SENTENCE;
-				startSent = 0;
+				startSent = false;
 			}
 
 			if ( inQuote ) {
 				m_swbits[i] |= D_IN_QUOTES;
-				inQuote = 0;
+				inQuote = false;
 			}
 
 			if ( inParens ) {
@@ -330,9 +330,9 @@ bool Bits::setForSummary ( const Words *words ) {
 
 		// does it END in a quote?
 		if ( wp[wlen - 1] == '\"' ) {
-			inQuote = 1;
+			inQuote = true;
 		} else if ( wlen >= 6 && strncmp( wp, "&quot;", 6 ) == 0 ) {
-			inQuote = 1;
+			inQuote = true;
 		}
 
 		// . but double spaces are not starters
@@ -343,7 +343,7 @@ bool Bits::setForSummary ( const Words *words ) {
 
 		// it can start a fragment if not a single space char
 		if ( wlen != 1 || !is_wspace_utf8( wp ) ) {
-			startFrag = 1;
+			startFrag = true;
 		}
 
 		// ". " denotes end of sentence
@@ -354,7 +354,7 @@ bool Bits::setForSummary ( const Words *words ) {
 			}
 
 			// ok, really the end of a sentence
-			startSent = 1;
+			startSent = true;
 		}
 
 		// are we a "strong connector", meaning that
