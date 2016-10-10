@@ -199,7 +199,7 @@ bool Bits::setForSummary ( const Words *words ) {
 		if ( getNumXmlNodes() > 512 ) {
 			g_process.shutdownAbort(true);
 		}
-		memset ( s_bt , 0 , 512 * sizeof(nodeid_t) );
+		memset ( s_bt, 0, sizeof(s_bt) );
 		// set just those that have bits #defined in Bits.h
 		s_bt [ TAG_TITLE      ] = D_IN_TITLE;
 		s_bt [ TAG_A          ] = D_IN_HYPERLINK;
