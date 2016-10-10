@@ -2427,6 +2427,17 @@ void RdbBase::generateGlobalIndex() {
 	m_docIdFileIndex.swap(tmpDocIdFileIndex);
 }
 
+void RdbBase::printGlobalIndex() {
+	auto globalIndex = getGlobalIndex();
+	for (auto key : *globalIndex) {
+		logf(LOG_TRACE, "db: docId=%" PRId64" index=%" PRId64" isDel=%d key=%" PRIx64,
+		     key >> RdbBase::s_docIdFileIndex_docIdDelKeyOffset,
+		     key & RdbBase::s_docIdFileIndex_filePosMask,
+		     ((key & RdbBase::s_docIdFileIndex_delBitMask) == 0),
+		     key);
+	}
+}
+
 docidsconst_ptr_t RdbBase::getGlobalIndex() {
 	ScopedLock sl(m_docIdFileIndexMtx);
 	return m_docIdFileIndex;
