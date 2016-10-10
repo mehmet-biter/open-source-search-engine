@@ -849,7 +849,7 @@ int64_t RdbMap::getMinRecSizes ( int32_t   sp       ,
 			      int32_t   ep       ,
 			      const char  *startKey ,
 			      const char  *endKey   ,
-			      bool   subtract ) {
+			      bool   subtract) const {
 	// . calculate first page, "sp", whose key is >= startKey
 	// . NOTE: sp may have a relative offset of -1
 	// . in this case, just leave it be!
@@ -871,7 +871,7 @@ int64_t RdbMap::getMaxRecSizes ( int32_t   sp       ,
 			      int32_t   ep       ,
 			      const char  *startKey ,
 			      const char  *endKey   ,
-			      bool   subtract ) {
+			      bool   subtract ) const {
 	// . calculate first page, "sp", whose key is >= startKey
 	// . NOTE: sp may have a relative offset of -1
 	// . in this case, just leave it be!
@@ -893,7 +893,7 @@ int64_t RdbMap::getMaxRecSizes ( int32_t   sp       ,
 // . this can now return negative sizes
 int64_t RdbMap::getRecSizes ( int32_t startPage ,
 				int32_t endPage ,
-				bool subtract ) {
+				bool subtract ) const {
 	// . assume a minimum of one page if key range not well mapped
 	// . no, why should we?
 	// . if pages are the same, there's no recs between them!
@@ -918,7 +918,7 @@ int64_t RdbMap::getRecSizes ( int32_t startPage ,
 	// . but take into account delete keys, so we can have a negative size!
 	// . use random sampling
 	int64_t size = 0;
-	char *k;
+	const char *k;
 	for ( int32_t i = startPage ; i < endPage ; i++ ) {
 		// get current page size
 		offset1 = getAbsoluteOffset ( i     );
@@ -935,7 +935,7 @@ int64_t RdbMap::getRecSizes ( int32_t startPage ,
 }
 
 // if page has relative offset of -1, use the next page
-int64_t RdbMap::getAbsoluteOffset ( int32_t page ) {
+int64_t RdbMap::getAbsoluteOffset(int32_t page) const {
 	for(;;) {
 		if ( page >= m_numPages ) return m_offset; // fileSize
 		int64_t offset = (int64_t)getOffset(page) +
@@ -950,7 +950,7 @@ int64_t RdbMap::getAbsoluteOffset ( int32_t page ) {
 // . get offset of next known key after the one in page
 // . do a while to skip rec on page "page" if it spans multiple pages
 // . watch out for eof
-int64_t RdbMap::getNextAbsoluteOffset ( int32_t page ) {
+int64_t RdbMap::getNextAbsoluteOffset(int32_t page) const {
 	// advance to next page
 	page++;
 	// inc page as int32_t as we need to
@@ -963,7 +963,7 @@ int64_t RdbMap::getNextAbsoluteOffset ( int32_t page ) {
 // . [startPage,*endPage] must cover [startKey,endKey]
 // . by cover i mean have all recs with those keys
 // . returns the endPage #
-int32_t RdbMap::getEndPage ( int32_t startPage, const char *endKey ) {
+int32_t RdbMap::getEndPage(int32_t startPage, const char *endKey) const {
 	// use "ep" for the endPage we're computing
 	int32_t ep = startPage;
 	// advance if "ep"'s key <= endKey
@@ -987,7 +987,7 @@ bool RdbMap::getPageRange ( const char  *startKey  ,
 			    int32_t  *startPage ,
 			    int32_t  *endPage   ,
 			    char  *maxKey    ,
-			    int64_t oldTruncationLimit ) {
+			    int64_t oldTruncationLimit ) const {
 	// the first key on n1 is usually <= startKey, but can be > startKey
 	// if the page (n-1) has only 1 rec whose key is < startKey
 	int32_t n1 = getPage ( startKey );
@@ -1068,7 +1068,7 @@ bool RdbMap::getPageRange ( key96_t  startKey  , key96_t endKey  ,
 //   are < startKey
 // . if m_keys[N] > startKey then m_keys[N-1] spans multiple pages so that
 //   the key immediately after it on disk is in fact, m_keys[N]
-int32_t RdbMap::getPage ( const char *startKey ) {
+int32_t RdbMap::getPage( const char *startKey) const {
 	// if the key exceeds our lastKey then return m_numPages
 	//if ( startKey > m_lastKey ) return m_numPages;
 	if ( KEYCMP(startKey,m_lastKey,m_ks)>0 ) return m_numPages;

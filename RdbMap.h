@@ -153,21 +153,21 @@ class RdbMap {
 	//   with a delete key (low bit is clear)
 	int64_t getRecSizes ( int32_t startPage , 
 			   int32_t endPage   , 
-			   bool subtract  );
+			   bool subtract) const;
 
 	// like above, but recSizes is guaranteed to be in [startKey,endKey]
 	int64_t getMinRecSizes ( int32_t   sp       , 
 			      int32_t   ep       , 
 			      const char  *startKey ,
 			      const char  *endKey   ,
-			      bool   subtract );
+			      bool   subtract) const;
 
 	// like above, but sets an upper bound for recs in [startKey,endKey]
 	int64_t getMaxRecSizes ( int32_t   sp       , 
 			      int32_t   ep       , 
 			      const char  *startKey ,
 			      const char  *endKey   ,
-			      bool   subtract );
+			      bool   subtract) const;
 
 	// get a key range from a page range
 	void getKeyRange  ( int32_t   startPage , int32_t   endPage ,
@@ -179,11 +179,11 @@ class RdbMap {
 	bool getPageRange ( const char  *startKey, const char *endKey,
 			    int32_t  *startPage , int32_t *endPage ,
 			    char  *maxKey ,
-			    int64_t oldTruncationLimit = -1 ) ;
+			    int64_t oldTruncationLimit = -1) const;
 
 	// get the ending page so that [startPage,endPage] has ALL the recs
 	// whose keys are in [startKey,endKey] 
-	int32_t getEndPage   ( int32_t startPage, const char *endKey );
+	int32_t getEndPage(int32_t startPage, const char *endKey) const;
 
 	// like above, but endPage may be smaller as int32_t as we cover at least
 	// minRecSizes worth of records in [startKey,endKey]
@@ -194,10 +194,10 @@ class RdbMap {
 	// . offset of first key wholly on page # "page"
 	// . return length of the whole mapped file if "page" > m_numPages
 	// . use m_offset as the size of the file that we're mapping
-	int64_t getAbsoluteOffset     ( int32_t page ) ;
+	int64_t getAbsoluteOffset     ( int32_t page ) const;
 	// . the offset of a page after "page" that is a different key
 	// . returns m_offset if page >= m_numPages
-	int64_t getNextAbsoluteOffset ( int32_t page ) ;
+	int64_t getNextAbsoluteOffset ( int32_t page ) const;
 
 
 	//char *getLastKey ( ) { return m_lastKey; }
@@ -212,15 +212,16 @@ class RdbMap {
 		KEYSET(k,&m_keys[page/PAGES_PER_SEG][(page%PAGES_PER_SEG)*m_ks],m_ks);
 		return;
 	}
-	char *getKeyPtr ( int32_t page ) { 
-		//if ( page >= m_numPages ) return &m_lastKey;
-		//if ( page >= m_numPages ) return m_lastKey;
+
+	char *getKeyPtr(int32_t page) {
+		return const_cast<char*>(getKeyPtr(page));
+	}
+	const char *getKeyPtr(int32_t page) const {
 		if ( page >= m_numPages ) return m_lastKey;
 		return &m_keys[page/PAGES_PER_SEG][(page%PAGES_PER_SEG)*m_ks];
 	}
-	//	return getKey ( page ); }
-	// if page >= m_numPages return 0
-	int16_t getOffset           ( int32_t page ) { 
+
+	int16_t getOffset(int32_t page) const {
 		if ( page >= m_numPages ) {
 			log(LOG_LOGIC,"RdbMap::getOffset: bad engineer");
 			return 0;
@@ -275,7 +276,7 @@ class RdbMap {
 	//   are strictly less than "startKey" and "startKey" does not exist
 	// . if m_keys[N] > startKey then m_keys[N-1] spans multiple pages so 
 	//   that the key immediately after it on disk is in fact, m_keys[N]
-	int32_t getPage ( const char *startKey );
+	int32_t getPage ( const char *startKey ) const;
 
 	// used in Rdb class before calling setMapSize
 	//int32_t setMapSizeFromFile ( int32_t fileSize ) ;
