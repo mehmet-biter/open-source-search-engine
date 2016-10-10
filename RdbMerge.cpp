@@ -582,7 +582,7 @@ bool RdbMerge::dumpList() {
 
 void RdbMerge::doneMerging() {
 	// save this
-	int32_t saved = g_errno;
+	int32_t saved_errno = g_errno;
 
 	// let RdbDump free its m_verifyBuf buffer if it existed
 	m_dump.reset();
@@ -607,7 +607,7 @@ void RdbMerge::doneMerging() {
 
 	// if collection rec was deleted while merging files for it
 	// then the rdbbase should be NULL i guess.
-	if (saved == ENOCOLLREC) {
+	if (saved_errno == ENOCOLLREC) {
 		return;
 	}
 
