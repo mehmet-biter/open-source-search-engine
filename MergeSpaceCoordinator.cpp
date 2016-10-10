@@ -61,6 +61,9 @@ bool MergeSpaceCoordinator::acquire(uint64_t /*how_much*/) {
 	if(please_shutdown)
 		return false;
 	
+	if(held_lock_number>=0)
+		return true;
+	
 	//verify or create lock directory
 	struct stat st;
 	if(stat(lock_dir.c_str(),&st)==0) {
