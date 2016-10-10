@@ -2,18 +2,7 @@
 #include "RdbIndex.h"
 #include "RdbBuckets.h"
 #include "Posdb.h"
-
-static bool addPosdbKey(RdbBuckets *buckets, int64_t termId, int64_t docId, int32_t wordPos, bool delKey = false) {
-	char key[MAX_KEY_BYTES];
-	Posdb::makeKey(&key, termId, docId, wordPos, 0, 0, 0, 0, 0, 0, 0, false, delKey, false);
-	buckets->addNode(0, key, NULL, 0);
-}
-
-static bool addPosdbKey(RdbIndex *index, int64_t termId, int64_t docId, int32_t wordPos, bool delKey = false) {
-	char key[MAX_KEY_BYTES];
-	Posdb::makeKey(&key, termId, docId, wordPos, 0, 0, 0, 0, 0, 0, 0, false, delKey, false);
-	index->addRecord(key);
-}
+#include "GigablastTestUtils.h"
 
 static uint64_t getDocId(docidsconst_ptr_t docIds, size_t index) {
 	return ((*docIds.get())[index] >> RdbIndex::s_docIdOffset);
@@ -32,7 +21,7 @@ TEST(RdbIndexTest, GenerateFromBucketSingleTermIdSingleDocIdSingleWordPos) {
 	static const int64_t docId = 1;
 	static const int32_t wordPos = 0;
 
-	addPosdbKey(&buckets, termId, docId, wordPos);
+	GbTest::addPosdbKey(&buckets, termId, docId, wordPos);
 
 	RdbIndex index;
 	index.set(".", "test-posdbidx", Posdb::getFixedDataSize(), Posdb::getUseHalfKeys(), Posdb::getKeySize(), RDB_POSDB);
@@ -53,7 +42,7 @@ TEST(RdbIndexTest, GenerateFromBucketSingleTermIdSingleDocIdMultipleWordPos) {
 	static const int64_t docId = 1;
 
 	for (int i = 0; i < total_records; ++i) {
-		addPosdbKey(&buckets, termId, docId, i);
+		GbTest::addPosdbKey(&buckets, termId, docId, i);
 	}
 
 	RdbIndex index;
@@ -75,7 +64,7 @@ TEST(RdbIndexTest, GenerateFromBucketSingleTermIdMultipleDocIdSingleWordPos) {
 	static const int32_t wordPos = 0;
 
 	for (int i = 0; i < total_records; ++i) {
-		addPosdbKey(&buckets, termId, i, wordPos);
+		GbTest::addPosdbKey(&buckets, termId, i, wordPos);
 	}
 
 	RdbIndex index;
@@ -98,7 +87,7 @@ TEST(RdbIndexTest, GenerateFromBucketSingleTermIdMultipleDocIdMultipleWordPos) {
 	static const int64_t termId = 1;
 
 	for (int i = 0; i < total_records; ++i) {
-		addPosdbKey(&buckets, termId, i, i);
+		GbTest::addPosdbKey(&buckets, termId, i, i);
 	}
 
 	RdbIndex index;
@@ -122,7 +111,7 @@ TEST(RdbIndexTest, GenerateFromBucketMultipleTermIdSingleDocIdSingleWordPos) {
 	static const int32_t wordPos = 1;
 
 	for (int i = 0; i < total_records; i++) {
-		addPosdbKey(&buckets, i, docId, wordPos);
+		GbTest::addPosdbKey(&buckets, i, docId, wordPos);
 	}
 
 	RdbIndex index;
@@ -143,7 +132,7 @@ TEST(RdbIndexTest, GenerateFromBucketMultipleTermIdSingleDocIdMultipleWordPos) {
 	static const int64_t docId = 1;
 
 	for (int i = 0; i < total_records; i++) {
-		addPosdbKey(&buckets, i, docId, i);
+		GbTest::addPosdbKey(&buckets, i, docId, i);
 	}
 
 	RdbIndex index;
@@ -164,7 +153,7 @@ TEST(RdbIndexTest, GenerateFromBucketMultipleTermIdMultipleDocIdSingleWordPos) {
 	static const int32_t wordPos = 0;
 
 	for (int i = 0; i < total_records; ++i) {
-		addPosdbKey(&buckets, i, i, wordPos);
+		GbTest::addPosdbKey(&buckets, i, i, wordPos);
 	}
 
 	RdbIndex index;
@@ -186,7 +175,7 @@ TEST(RdbIndexTest, GenerateFromBucketMultipleTermIdMultipleDocIdMultipleWordPos)
 	static const int total_records = 10;
 
 	for (int i = 0; i < total_records; ++i) {
-		addPosdbKey(&buckets, i, i, i);
+		GbTest::addPosdbKey(&buckets, i, i, i);
 	}
 
 	RdbIndex index;
@@ -208,8 +197,8 @@ TEST(RdbIndexTest, AddDeleteKey) {
 	static const int64_t docId = 1;
 	static const int32_t wordPos = 1;
 
-	addPosdbKey(&index, termId, docId, wordPos, false);
-	addPosdbKey(&index, termId, docId, wordPos, true);
+	GbTest::addPosdbKey(&index, termId, docId, wordPos, false);
+	GbTest::addPosdbKey(&index, termId, docId, wordPos, true);
 
 	// force merge
 	index.writeIndex();
@@ -231,8 +220,8 @@ TEST(RdbIndexTest, DeleteAddKey) {
 	static const int64_t docId = 1;
 	static const int32_t wordPos = 1;
 
-	addPosdbKey(&index, termId, docId, wordPos, true);
-	addPosdbKey(&index, termId, docId, wordPos, false);
+	GbTest::addPosdbKey(&index, termId, docId, wordPos, true);
+	GbTest::addPosdbKey(&index, termId, docId, wordPos, false);
 
 	// force merge
 	index.writeIndex();
@@ -254,10 +243,10 @@ TEST(RdbIndexTest, DeleteAddKeySave) {
 	static const int64_t docId = 1;
 	static const int32_t wordPos = 1;
 
-	addPosdbKey(&index, termId, docId, wordPos, true);
+	GbTest::addPosdbKey(&index, termId, docId, wordPos, true);
 	index.writeIndex();
 
-	addPosdbKey(&index, termId, docId, wordPos, false);
+	GbTest::addPosdbKey(&index, termId, docId, wordPos, false);
 	index.writeIndex();
 
 	auto docIds = index.getDocIds();

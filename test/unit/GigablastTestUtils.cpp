@@ -69,3 +69,15 @@ void GbTest::resetRdbs() {
 	g_loop.reset();
 	new(&g_loop) Loop(); // some variables are not Loop::reset. Call the constructor to re-initialize them
 }
+
+void GbTest::addPosdbKey(RdbBuckets *buckets, int64_t termId, int64_t docId, int32_t wordPos, bool isDelKey) {
+	char key[MAX_KEY_BYTES];
+	::Posdb::makeKey(&key, termId, docId, wordPos, 0, 0, 0, 0, 0, 0, 0, false, isDelKey, false);
+	buckets->addNode(0, key, NULL, 0);
+}
+
+void GbTest::addPosdbKey(RdbIndex *index, int64_t termId, int64_t docId, int32_t wordPos, bool isDelKey) {
+    char key[MAX_KEY_BYTES];
+	::Posdb::makeKey(&key, termId, docId, wordPos, 0, 0, 0, 0, 0, 0, 0, false, isDelKey, false);
+    index->addRecord(key);
+}
