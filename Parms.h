@@ -9,6 +9,7 @@
 
 class CollectionRec;
 class UdpSlot;
+class SafeBuf;
 
 void handleRequest3e ( UdpSlot *slot , int32_t niceness ) ;
 void handleRequest3f ( UdpSlot *slot , int32_t niceness ) ;
@@ -158,7 +159,6 @@ class Parm {
 #define MAX_XML_CONF (200*1024)
 
 #include "Xml.h"
-#include "SafeBuf.h"
 
 class Parms {
 
