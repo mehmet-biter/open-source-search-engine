@@ -41,8 +41,9 @@ protected:
 	}
 
 	void SetUp() {
-		g_posdb.init();
 		g_collectiondb.loadAllCollRecs();
+		g_posdb.init();
+
 		g_collectiondb.addRdbBaseToAllRdbsForEachCollRec();
 		deletePosdb();
 	}
