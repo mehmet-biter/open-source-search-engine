@@ -10,7 +10,7 @@ OBJECTS = GigablastTest.o GigablastTestUtils.o \
 	FctypesTest.o \
 	JsonTest.o \
 	PosTest.o PosdbTest.o ProcessTest.o \
-	RdbBucketsTest.o RdbIndexTest.o RdbListTest.o RobotRuleTest.o RobotsTest.o \
+	RdbBaseTest.o RdbBucketsTest.o RdbIndexTest.o RdbListTest.o RobotRuleTest.o RobotsTest.o \
 	ScalingFunctionsTest.o SummaryTest.o \
 	UnicodeTest.o UrlComponentTest.o UrlParserTest.o UrlTest.o \
 	WordsTest.o \
@@ -61,6 +61,7 @@ test: all ucdata
 clean:
 	rm -f *.o $(TARGET) core.*
 	rm -f *.gcda *.gcno
+	rm -f core.* vgcore.*
 
 
 JobSchedulerTest00: JobSchedulerTest00.o libgb.a GigablastTest.o
