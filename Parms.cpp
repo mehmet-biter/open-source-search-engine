@@ -82,31 +82,31 @@ Parm::~Parm() {
 }
 
 
-int32_t Parm::getNumInArray ( collnum_t collnum ) {
-	char *obj = (char *)&g_conf;
+int32_t Parm::getNumInArray(collnum_t collnum) const {
+	const char *obj = (const char*)&g_conf;
 	if ( m_obj == OBJ_COLL ) {
 		CollectionRec *cr = g_collectiondb.getRec ( collnum );
 		if ( ! cr ) return -1;
-		obj = (char *)cr;
+		obj = (const char*)cr;
 	}
 	
 	// beautiful pragma pack(4)/32-bit dependent original code. return *(int32_t *)(obj+m_off-4);
-	return *(int32_t *)(obj + m_arrayCountOffset);
+	return *(const int32_t*)(obj + m_arrayCountOffset);
 
 }
 
 
-bool Parm::printVal ( SafeBuf *sb , collnum_t collnum , int32_t occNum ) {
+bool Parm::printVal(SafeBuf *sb, collnum_t collnum, int32_t occNum) const {
 
-	CollectionRec *cr = NULL;
+	const CollectionRec *cr = NULL;
 	if ( collnum >= 0 ) cr = g_collectiondb.getRec ( collnum );
 
 	// no value if no storage record offset
 	//if ( m_off < 0 ) return true;
 
-	char *base;
-	if ( m_obj == OBJ_COLL ) base = (char *)cr;
-	else                     base = (char *)&g_conf;
+	const char *base;
+	if ( m_obj == OBJ_COLL ) base = (const char*)cr;
+	else                     base = (const char*)&g_conf;
 
 	if ( ! base ) {
 		log("parms: no collrec (%" PRId32") to change parm",(int32_t)collnum);
@@ -115,7 +115,7 @@ bool Parm::printVal ( SafeBuf *sb , collnum_t collnum , int32_t occNum ) {
 	}
 
 	// point to where to copy the data into collrect
-	char *val = (char *)base + m_off;
+	const char *val = (const char *)base + m_off;
 
 	if ( isArray() && occNum < 0 ) {
 		log("parms: bad occnum for %s",m_title);
@@ -186,33 +186,33 @@ bool Parm::printVal ( SafeBuf *sb , collnum_t collnum , int32_t occNum ) {
 // new functions to extricate info from parm recs
 //
 
-static int32_t getDataSizeFromParmRec ( char *rec ) {
-	return *(int32_t *)(rec+sizeof(key96_t));
+static int32_t getDataSizeFromParmRec(const char *rec) {
+	return *(const int32_t *)(rec+sizeof(key96_t));
 }
 
 static char *getDataFromParmRec ( char *rec ) {
 	return rec+sizeof(key96_t)+4;
 }
 
-static collnum_t getCollnumFromParmRec ( char *rec ) {
+static collnum_t getCollnumFromParmRec(const char *rec) {
 	key96_t *k = (key96_t *)rec;
 	return (collnum_t)k->n1;
 }
 
 // for parms that are arrays...
-static int16_t getOccNumFromParmRec ( char *rec ) {
-	key96_t *k = (key96_t *)rec;
+static int16_t getOccNumFromParmRec(const char *rec) {
+	const key96_t *k = (const key96_t *)rec;
 	return (int16_t)((k->n0>>16));
 }
 
-static Parm *getParmFromParmRec ( char *rec ) {
+static Parm *getParmFromParmRec(char *rec) {
 	key96_t *k = (key96_t *)rec;
 	int32_t cgiHash32 = (k->n0 >> 32);
 	return g_parms.getParmFast2 ( cgiHash32 );
 }
 
-static int32_t getHashFromParmRec ( char *rec ) {
-	key96_t *k = (key96_t *)rec;
+static int32_t getHashFromParmRec(const char *rec) {
+	const key96_t *k = (const key96_t *)rec;
 	int32_t cgiHash32 = (k->n0 >> 32);
 	return cgiHash32;
 }
@@ -220,7 +220,7 @@ static int32_t getHashFromParmRec ( char *rec ) {
 // . occNum is index # for parms that are arrays. it is -1 if not used.
 // . collnum is -1 for g_conf, which is not a collrec
 // . occNUm is -1 for a non-array parm
-static key96_t makeParmKey ( collnum_t collnum , Parm *m , int16_t occNum ) {
+static key96_t makeParmKey(collnum_t collnum, const Parm *m, int16_t occNum) {
 	key96_t k;
 	k.n1 = collnum;
 	k.n0 = (uint32_t)m->m_cgiHash; // 32 bit

@@ -112,7 +112,7 @@ class Parm {
 	// this is 1 if NOT an array (i.e. array of only one parm).
 	// in such cases a "count" is NOT stored before the parm in
 	// CollectionRec.h or Conf.h.
-	bool isArray() { return (m_max>1); }
+	bool isArray() const { return (m_max>1); }
 
 	int32_t  m_max;   // max elements in the array
 	// if array is fixed size, how many elements in it?
@@ -148,9 +148,9 @@ class Parm {
 	int32_t  m_hash;  // hash of "title"
 	int32_t  m_cgiHash; // hash of m_cgi
 
-	int32_t getNumInArray ( collnum_t collnum ) ;
+	int32_t getNumInArray(collnum_t collnum) const;
 
-	bool printVal ( class SafeBuf *sb , collnum_t collnum , int32_t occNum ) ;
+	bool printVal(class SafeBuf *sb , collnum_t collnum , int32_t occNum) const;
 };
 
 #define MAX_PARMS 940
