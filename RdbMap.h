@@ -132,11 +132,6 @@ class RdbMap {
 	bool addList ( RdbList *list );
 	bool prealloc ( RdbList *list );
 
-	// . like above but faster
-	// . just for adding data-less keys
-	// . NOTE: disabled until it works correctly
-	//	bool addKey  ( key96_t &key );
-
 	// get the number of non-deleted records in the data file we map
 	int64_t getNumPositiveRecs() const { return m_numPositiveRecs; }
 	// get the number of "delete" records in the data file we map
@@ -185,19 +180,13 @@ class RdbMap {
 	// whose keys are in [startKey,endKey] 
 	int32_t getEndPage(int32_t startPage, const char *endKey) const;
 
-	// like above, but endPage may be smaller as int32_t as we cover at least
-	// minRecSizes worth of records in [startKey,endKey]
-	//bool getPageRange ( key96_t  startKey  , key96_t endKey  ,
-	//int32_t   minRecSizes ,
-	//int32_t  *startPage , int32_t *endPage ) ;
-	
 	// . offset of first key wholly on page # "page"
 	// . return length of the whole mapped file if "page" > m_numPages
 	// . use m_offset as the size of the file that we're mapping
-	int64_t getAbsoluteOffset     ( int32_t page ) const;
+	int64_t getAbsoluteOffset(int32_t page) const;
 	// . the offset of a page after "page" that is a different key
 	// . returns m_offset if page >= m_numPages
-	int64_t getNextAbsoluteOffset ( int32_t page ) const;
+	int64_t getNextAbsoluteOffset(int32_t page) const;
 
 
 	//char *getLastKey ( ) { return m_lastKey; }
@@ -235,7 +224,6 @@ class RdbMap {
 			gbshutdownAbort(true);
 		}
 		//#endif
-		//m_keys[page/PAGES_PER_SEG][page%PAGES_PER_SEG] = k; }
 		KEYSET(&m_keys[page/PAGES_PER_SEG][(page%PAGES_PER_SEG)*m_ks],
 		       k,m_ks);
 	}
@@ -243,11 +231,6 @@ class RdbMap {
 	void setOffset            ( int32_t page , int16_t offset ) {
 		m_offsets[page/PAGES_PER_SEG][page%PAGES_PER_SEG] = offset;}
 
-	// . total recSizes = positive + negative rec sizes
-	// . used to read all the recs in Msg3 and RdbScan
-	//int32_t  getRecSizes         ( int32_t page ) {
-	//return getRecSizes         ( page , page + 1 ); }
-	
 	// . returns true on success
 	// . returns false on i/o error.
 	// . calls allocMap() to get memory for m_keys/m_offsets
@@ -276,20 +259,10 @@ class RdbMap {
 	//   are strictly less than "startKey" and "startKey" does not exist
 	// . if m_keys[N] > startKey then m_keys[N-1] spans multiple pages so 
 	//   that the key immediately after it on disk is in fact, m_keys[N]
-	int32_t getPage ( const char *startKey ) const;
-
-	// used in Rdb class before calling setMapSize
-	//int32_t setMapSizeFromFile ( int32_t fileSize ) ;
-
-	// . call this before calling addList() or addRecord()
-	// . returns false if realloc had problems
-	// . sets m_maxNumPages to maxNumPages if successfull
-	// . used to grow the map, too
-	//bool setMapSize ( int32_t maxNumPages );
+	int32_t getPage(const char *startKey) const;
 
 	bool addSegmentPtr ( int32_t n ) ;
 
-	// called by setMapSize() to increase the # of segments
 	bool addSegment (  ) ;
 
 	// . remove and bury (shift over) all segments below the one that 

@@ -284,7 +284,6 @@ int64_t RdbMap::writeSegment ( int32_t seg , int64_t offset ) {
 // . called by openOld()
 // . returns true on success
 // . returns false on i/o error.
-// . calls setMapSize() to get memory for m_keys/m_offsets
 // . The format of the map on disk is described in Map.h
 // . sets "m_numPages", "m_keys", and "m_offsets"
 // . reads the keys and offsets into buffers allocated during open().
@@ -731,38 +730,6 @@ bool RdbMap::addRecord ( char *key, char *rec , int32_t recSize ) {
 	return true;
 }
 
-// . for adding a data-less key very quickly
-// . i don't use m_numPages here (should use m_offset!)
-// . TODO: can quicken by pre-initializing map size
-// . TODO: don't use until it counts the # of deleted keys, etc...
-/*
-bool RdbMap::addKey ( key96_t &key ) {
-
-	// what page is first byte of key on?
-	int32_t pageNum = m_offset / m_pageSize;
-
-	// increment the size of the data file
-	m_offset += sizeof(key96_t);
-
-	// keep the number of pages up to date
-	m_numPages = m_offset / m_pageSize + 1;
-
-	// . see if we need to reallocate/allocate more pages in the map.
-	// . g_errno should be set to ENOMEM
-	// . only do this if we're NOT adding to disk
-	if ( m_numPages >= m_maxNumPages )
-		if ( ! setMapSize ( m_numPages + 8*1024 ) ) return false;
-
-	// if no key has claimed this page then we'll claim it
-	if ( m_offsets [ pageNum ] < 0 ) {
-		m_offsets   [ pageNum ]  = m_offset % m_pageSize;
-		m_keys      [ pageNum ]  = key;
-	}
-
-	// otherwise if current page already has a FIRST slot on it then return
-	return true;
-}
-*/
 
 // . call addRecord() or addKey() for each record in this list
 bool RdbMap::prealloc ( RdbList *list ) {
@@ -1029,38 +996,6 @@ bool RdbMap::getPageRange ( const char  *startKey  ,
 	return true;
 }
 
-/*
-bool RdbMap::getPageRange ( key96_t  startKey  , key96_t endKey  ,
-			    int32_t   minRecSizes ,
-			    int32_t  *startPage , int32_t *endPage ) {
-
-	// the first key on n1 is usually <= startKey, but can be > startKey
-	// if the page (n-1) has only 1 rec whose key is < startKey
-	int32_t n1 = getPage ( startKey );
-	// set n2, the endpage
-	int32_t n2 = n1;
-	// tally the recSizes
-	int32_t recSizes = 0;
-	// . increase n2 until we are > endKey or meet minRecSizes requirement
-	// . if n2 == m_numPages, that means all the pages from n1 on
-	while ( n2<m_numPages && m_keys[n2]<=endKey && recSizes<minRecSizes) {
-		// . find the next value for n2
-		// . m_offsets[n2] may not be -1
-		int32_t next = n2 + 1;
-		while ( next < m_numPages && m_offsets[next] == -1 ) next++;
-		// . getPageSize() returns size from the first key on page n2
-		//   to the next key on the next page
-		// . next key may be more than 1 page away if key on page n2
-		//   takes up more than 1 page (-1 == m_offsets[n2+1])
-		if ( m_keys[n2] >= startKey ) recSizes += getRecSizes(n2,next);
-		n2 = next;
-	}
-	// otherwise set our stuff and return true
-	*startPage = n1;
-	*endPage   = n2;
-	return true;
-}
-*/
 
 // . return a page number, N
 // . if m_keys[N] < startKey then m_keys[N+1] is > startKey
@@ -1132,23 +1067,6 @@ void RdbMap::printMap () {
 	log(LOG_INFO,"map checksum = 0x%" PRIx32,h);
 }
 
-//int32_t RdbMap::setMapSizeFromFileSize ( int32_t fileSize ) {
-//	int32_t n = fileSize / m_pageSize ;
-//	if ( (fileSize % m_pageSize) == 0 ) return setMapSize ( n );
-//	return setMapSize ( n + 1 );
-//}
-
-// . returns false if malloc had problems
-// . increases m_maxNumPages
-// . increases m_numSegments
-//bool RdbMap::setMapSize ( int32_t numPages ) {
-	// . add the segments
-	// . addSegment() increases m_maxNumPages with each call
-	// . it returns false and sets g_errno on error
-//	for ( int32_t i = 0 ; m_maxNumPages < numPages ; i++ )
-//		if ( ! addSegment ( ) ) return false;
-//	return true;
-//}
 
 int64_t RdbMap::getMemAlloced() const {
 	// . how much space per segment?
