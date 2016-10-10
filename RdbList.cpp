@@ -2345,7 +2345,7 @@ skip:
 			//
 			// REMOVE THE LIST at mini
 			//
-			logTrace(g_conf.m_logTraceRdbList, "remove list at mini=%" PRId32, mini);
+			logTrace(g_conf.m_logTraceRdbList, "remove list at mini=%" PRId32" numLists=%" PRId32, mini, numLists);
 
 			// otherwise, remove him from array
 			for (int32_t i = mini; i < numLists - 1; i++) {
@@ -2357,7 +2357,11 @@ skip:
 
 			// one less list to worry about
 			numLists--;
-			listOffset++;
+
+			// only increase offset if it's not the last list we remove
+			if (mini < numLists) {
+				listOffset++;
+			}
 		}
 	}
 
