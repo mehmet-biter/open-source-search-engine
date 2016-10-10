@@ -106,7 +106,6 @@ private:
 
 	bool m_isMerging;
 	bool m_isSuspended;
-	bool m_isReadyToSave;
 
 	// for writing to target file
 	RdbDump m_dump;

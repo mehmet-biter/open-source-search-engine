@@ -14,7 +14,6 @@ RdbMerge::RdbMerge()
     m_targetIndex(NULL),
     m_isMerging(false),
     m_isSuspended(false),
-    m_isReadyToSave(false),
     m_dump(),
     m_msg5(),
     m_list(),
@@ -46,7 +45,6 @@ void RdbMerge::reset() {
 	memset(m_endKey, 0, sizeof(m_endKey));
 	m_isMerging = false;
 	m_isSuspended = false;
-	m_isReadyToSave = false;
 	m_niceness = 0;
 	m_rdbId = RDB_NONE;
 	m_collnum = 0;
@@ -186,15 +184,11 @@ void RdbMerge::suspendMerge ( ) {
 		return;
 	}
 
-	// do not reset m_isReadyToSave...
 	if (m_isSuspended) {
 		return;
 	}
 
 	m_isSuspended = true;
-
-	// we are waiting for the suspension to kick in really
-	m_isReadyToSave = false;
 
 	// . we don't want the dump writing to an RdbMap that has been deleted
 	// . this can happen if the close is delayed because we are dumping
@@ -259,13 +253,11 @@ bool RdbMerge::getNextList() {
 
 	// it's suspended so we count this as blocking
 	if (m_isSuspended) {
-		m_isReadyToSave = true;
 		return false;
 	}
 
 	// if the power is off, suspend the merging
 	if (!g_process.m_powerIsOn) {
-		m_isReadyToSave = true;
 		doSleep();
 		return false;
 	}
@@ -543,7 +535,6 @@ bool RdbMerge::dumpList() {
 	// . resumeMerge() will call getNextList() again, not dumpList() so
 	//   don't advance m_startKey
 	if (m_isSuspended) {
-		m_isReadyToSave = true;
 		return false;
 	}
 
