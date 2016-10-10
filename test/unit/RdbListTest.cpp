@@ -424,6 +424,284 @@ TEST_F(RdbListNoMergeTest, MergeTestPosdbSingleDocSpiderDeleteSpider) {
 	}
 }
 
+TEST_F(RdbListNoMergeTest, MergeTestPosdbMultiDocS1S2N1S2S1N2) {
+	char key[MAX_KEY_BYTES];
+	const rdbid_t rdbId = RDB_POSDB;
+	const collnum_t collNum = 0;
+	const int64_t docId1 = 1;
+	const int64_t docId2 = 2;
+
+
+	// spider doc 1 (a, b, c, d, e)
+	// spider doc 2 (a, b, c)
+	RdbList list1;
+	list1.set(nullptr, 0, nullptr, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
+	list1.addRecord(makePosdbKey(key, 'a', docId1, 0, false), 0, nullptr);
+	list1.addRecord(makePosdbKey(key, 'b', docId1, 1, false), 0, nullptr);
+	list1.addRecord(makePosdbKey(key, 'c', docId1, 2, false), 0, nullptr);
+	list1.addRecord(makePosdbKey(key, 'd', docId1, 3, false), 0, nullptr);
+	list1.addRecord(makePosdbKey(key, 'e', docId1, 4, false), 0, nullptr);
+	list1.addRecord(makePosdbKey(key, 'a', docId2, 0, false), 0, nullptr);
+	list1.addRecord(makePosdbKey(key, 'b', docId2, 1, false), 0, nullptr);
+	list1.addRecord(makePosdbKey(key, 'c', docId2, 2, false), 0, nullptr);
+	addListToTree(rdbId, collNum, &list1);
+
+	// respider doc 2 (a, c, b, e, d)
+	RdbList list2;
+	list2.set(nullptr, 0, nullptr, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
+	list2.addRecord(makePosdbKey(key, 'a', docId2, 0, false), 0, nullptr);
+	list2.addRecord(makePosdbKey(key, 'c', docId2, 1, false), 0, nullptr);
+	list2.addRecord(makePosdbKey(key, 'b', docId2, 2, false), 0, nullptr);
+	list2.addRecord(makePosdbKey(key, 'e', docId2, 3, false), 0, nullptr);
+	list2.addRecord(makePosdbKey(key, 'd', docId2, 4, false), 0, nullptr);
+	addListToTree(rdbId, collNum, &list2);
+
+	// respider doc 1 (r, s, t, l, n)
+	RdbList list3;
+	list3.set(nullptr, 0, nullptr, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
+	list3.addRecord(makePosdbKey(key, 'r', docId1, 0, false), 0, nullptr);
+	list3.addRecord(makePosdbKey(key, 's', docId1, 1, false), 0, nullptr);
+	list3.addRecord(makePosdbKey(key, 't', docId1, 2, false), 0, nullptr);
+	list3.addRecord(makePosdbKey(key, 'l', docId1, 3, false), 0, nullptr);
+	list3.addRecord(makePosdbKey(key, 'n', docId1, 4, false), 0, nullptr);
+	addListToTree(rdbId, collNum, &list3);
+
+	// keys go from oldest to newest
+	RdbList *lists1[3];
+	lists1[0] = &list1;
+	lists1[1] = &list2;
+	lists1[2] = &list3;
+
+	size_t lists1_size = sizeof_arr(lists1);
+
+	// merge
+	RdbList final1;
+	final1.set(nullptr, 0, nullptr, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
+	final1.prepareForMerge(lists1, lists1_size, -1);
+	final1.merge_r(lists1, lists1_size, KEYMIN(), KEYMAX(), -1, false, RDB_POSDB, collNum);
+
+	EXPECT_EQ(list2.getListSize() + list3.getListSize(), final1.getListSize());
+
+	for (list2.resetListPtr(), final1.resetListPtr(); !list2.isExhausted(); list2.skipCurrentRecord(), final1.skipCurrentRecord()) {
+		EXPECT_EQ(list2.getCurrentRecSize(), final1.getCurrentRecSize());
+		EXPECT_EQ(0, memcmp(list2.getCurrentRec(), final1.getCurrentRec(), list2.getCurrentRecSize()));
+	}
+
+	for (list3.resetListPtr(); !list3.isExhausted(); list3.skipCurrentRecord(), final1.skipCurrentRecord()) {
+		EXPECT_EQ(list3.getCurrentRecSize(), final1.getCurrentRecSize());
+		EXPECT_EQ(0, memcmp(list3.getCurrentRec(), final1.getCurrentRec(), list3.getCurrentRecSize()));
+	}
+}
+
+TEST_F(RdbListNoMergeTest, MergeTestPosdbMultiDocS1N2N1S2S1N2) {
+	char key[MAX_KEY_BYTES];
+	const rdbid_t rdbId = RDB_POSDB;
+	const collnum_t collNum = 0;
+	const int64_t docId1 = 1;
+	const int64_t docId2 = 2;
+
+
+	// spider doc 1 (a, b, c, d, e)
+	RdbList list1;
+	list1.set(nullptr, 0, nullptr, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
+	list1.addRecord(makePosdbKey(key, 'a', docId1, 0, false), 0, nullptr);
+	list1.addRecord(makePosdbKey(key, 'b', docId1, 1, false), 0, nullptr);
+	list1.addRecord(makePosdbKey(key, 'c', docId1, 2, false), 0, nullptr);
+	list1.addRecord(makePosdbKey(key, 'd', docId1, 3, false), 0, nullptr);
+	list1.addRecord(makePosdbKey(key, 'e', docId1, 4, false), 0, nullptr);
+	list1.addRecord(makePosdbKey(key, 'a', docId2, 0, false), 0, nullptr);
+	list1.addRecord(makePosdbKey(key, 'b', docId2, 1, false), 0, nullptr);
+	list1.addRecord(makePosdbKey(key, 'c', docId2, 2, false), 0, nullptr);
+	addListToTree(rdbId, collNum, &list1);
+
+	// spider doc 2 (a, c, b, e, d)
+	RdbList list2;
+	list2.set(nullptr, 0, nullptr, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
+	list2.addRecord(makePosdbKey(key, 'a', docId2, 0, false), 0, nullptr);
+	list2.addRecord(makePosdbKey(key, 'c', docId2, 1, false), 0, nullptr);
+	list2.addRecord(makePosdbKey(key, 'b', docId2, 2, false), 0, nullptr);
+	list2.addRecord(makePosdbKey(key, 'e', docId2, 3, false), 0, nullptr);
+	list2.addRecord(makePosdbKey(key, 'd', docId2, 4, false), 0, nullptr);
+	addListToTree(rdbId, collNum, &list2);
+
+	// respider doc 1 (r, s, t, l, n)
+	RdbList list3;
+	list3.set(nullptr, 0, nullptr, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
+	list3.addRecord(makePosdbKey(key, 'r', docId1, 0, false), 0, nullptr);
+	list3.addRecord(makePosdbKey(key, 's', docId1, 1, false), 0, nullptr);
+	list3.addRecord(makePosdbKey(key, 't', docId1, 2, false), 0, nullptr);
+	list3.addRecord(makePosdbKey(key, 'l', docId1, 3, false), 0, nullptr);
+	list3.addRecord(makePosdbKey(key, 'n', docId1, 4, false), 0, nullptr);
+	addListToTree(rdbId, collNum, &list3);
+
+	// keys go from oldest to newest
+	RdbList *lists1[3];
+	lists1[0] = &list1;
+	lists1[1] = &list2;
+	lists1[2] = &list3;
+
+	size_t lists1_size = sizeof_arr(lists1);
+
+	// merge
+	RdbList final1;
+	final1.set(nullptr, 0, nullptr, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
+	final1.prepareForMerge(lists1, lists1_size, -1);
+	final1.merge_r(lists1, lists1_size, KEYMIN(), KEYMAX(), -1, false, RDB_POSDB, collNum);
+
+	EXPECT_EQ(list2.getListSize() + list3.getListSize(), final1.getListSize());
+
+	for (list2.resetListPtr(), final1.resetListPtr(); !list2.isExhausted(); list2.skipCurrentRecord(), final1.skipCurrentRecord()) {
+		EXPECT_EQ(list2.getCurrentRecSize(), final1.getCurrentRecSize());
+		EXPECT_EQ(0, memcmp(list2.getCurrentRec(), final1.getCurrentRec(), list2.getCurrentRecSize()));
+	}
+
+	for (list3.resetListPtr(); !list3.isExhausted(); list3.skipCurrentRecord(), final1.skipCurrentRecord()) {
+		EXPECT_EQ(list3.getCurrentRecSize(), final1.getCurrentRecSize());
+		EXPECT_EQ(0, memcmp(list3.getCurrentRec(), final1.getCurrentRec(), list3.getCurrentRecSize()));
+	}
+}
+
+TEST_F(RdbListNoMergeTest, MergeTestPosdbMultiDocS1S2D1S2S1N2) {
+	char key[MAX_KEY_BYTES];
+	const rdbid_t rdbId = RDB_POSDB;
+	const collnum_t collNum = 0;
+	const int64_t docId1 = 1;
+	const int64_t docId2 = 2;
+
+
+	// spider doc 1 (a, b, c, d, e)
+	// spider doc 2 (a, b, c)
+	RdbList list1;
+	list1.set(nullptr, 0, nullptr, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
+	list1.addRecord(makePosdbKey(key, 'a', docId1, 0, false), 0, nullptr);
+	list1.addRecord(makePosdbKey(key, 'b', docId1, 1, false), 0, nullptr);
+	list1.addRecord(makePosdbKey(key, 'c', docId1, 2, false), 0, nullptr);
+	list1.addRecord(makePosdbKey(key, 'd', docId1, 3, false), 0, nullptr);
+	list1.addRecord(makePosdbKey(key, 'e', docId1, 4, false), 0, nullptr);
+	list1.addRecord(makePosdbKey(key, 'a', docId2, 0, false), 0, nullptr);
+	list1.addRecord(makePosdbKey(key, 'b', docId2, 1, false), 0, nullptr);
+	list1.addRecord(makePosdbKey(key, 'c', docId2, 2, false), 0, nullptr);
+	addListToTree(rdbId, collNum, &list1);
+
+	// deleted doc 1
+	// respider doc 2 (a, c, b, e, d)
+	RdbList list2;
+	list2.set(nullptr, 0, nullptr, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
+	list2.addRecord(makePosdbKey(key, POSDB_DELETEDOC_TERMID, docId1, 0, true), 0, nullptr);
+	list2.addRecord(makePosdbKey(key, 'a', docId2, 0, false), 0, nullptr);
+	list2.addRecord(makePosdbKey(key, 'c', docId2, 1, false), 0, nullptr);
+	list2.addRecord(makePosdbKey(key, 'b', docId2, 2, false), 0, nullptr);
+	list2.addRecord(makePosdbKey(key, 'e', docId2, 3, false), 0, nullptr);
+	list2.addRecord(makePosdbKey(key, 'd', docId2, 4, false), 0, nullptr);
+	addListToTree(rdbId, collNum, &list2);
+
+	// spider doc 1 (r, s, t, l, n)
+	RdbList list3;
+	list3.set(nullptr, 0, nullptr, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
+	list3.addRecord(makePosdbKey(key, 'r', docId1, 0, false), 0, nullptr);
+	list3.addRecord(makePosdbKey(key, 's', docId1, 1, false), 0, nullptr);
+	list3.addRecord(makePosdbKey(key, 't', docId1, 2, false), 0, nullptr);
+	list3.addRecord(makePosdbKey(key, 'l', docId1, 3, false), 0, nullptr);
+	list3.addRecord(makePosdbKey(key, 'n', docId1, 4, false), 0, nullptr);
+	addListToTree(rdbId, collNum, &list3);
+
+	// keys go from oldest to newest
+	RdbList *lists1[3];
+	lists1[0] = &list1;
+	lists1[1] = &list2;
+	lists1[2] = &list3;
+
+	size_t lists1_size = sizeof_arr(lists1);
+
+	// merge
+	RdbList final1;
+	final1.set(nullptr, 0, nullptr, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
+	final1.prepareForMerge(lists1, lists1_size, -1);
+	final1.merge_r(lists1, lists1_size, KEYMIN(), KEYMAX(), -1, false, RDB_POSDB, collNum);
+
+	// first record from list2 is not in output list
+	list2.resetListPtr();
+	EXPECT_EQ(list2.getListSize() - list2.getCurrentRecSize() + list3.getListSize(), final1.getListSize());
+
+	for (list2.skipCurrentRecord(), final1.resetListPtr(); !list2.isExhausted(); list2.skipCurrentRecord(), final1.skipCurrentRecord()) {
+		EXPECT_EQ(list2.getCurrentRecSize(), final1.getCurrentRecSize());
+		EXPECT_EQ(0, memcmp(list2.getCurrentRec(), final1.getCurrentRec(), list2.getCurrentRecSize()));
+	}
+
+	for (list3.resetListPtr(); !list3.isExhausted(); list3.skipCurrentRecord(), final1.skipCurrentRecord()) {
+		EXPECT_EQ(list3.getCurrentRecSize(), final1.getCurrentRecSize());
+		EXPECT_EQ(0, memcmp(list3.getCurrentRec(), final1.getCurrentRec(), list3.getCurrentRecSize()));
+	}
+}
+
+TEST_F(RdbListNoMergeTest, MergeTestPosdbMultiDocS1S2D1S2S1D2) {
+	char key[MAX_KEY_BYTES];
+	const rdbid_t rdbId = RDB_POSDB;
+	const collnum_t collNum = 0;
+	const int64_t docId1 = 1;
+	const int64_t docId2 = 2;
+
+
+	// spider doc 1 (a, b, c, d, e)
+	// spider doc 2 (a, b, c)
+	RdbList list1;
+	list1.set(nullptr, 0, nullptr, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
+	list1.addRecord(makePosdbKey(key, 'a', docId1, 0, false), 0, nullptr);
+	list1.addRecord(makePosdbKey(key, 'b', docId1, 1, false), 0, nullptr);
+	list1.addRecord(makePosdbKey(key, 'c', docId1, 2, false), 0, nullptr);
+	list1.addRecord(makePosdbKey(key, 'd', docId1, 3, false), 0, nullptr);
+	list1.addRecord(makePosdbKey(key, 'e', docId1, 4, false), 0, nullptr);
+	list1.addRecord(makePosdbKey(key, 'a', docId2, 0, false), 0, nullptr);
+	list1.addRecord(makePosdbKey(key, 'b', docId2, 1, false), 0, nullptr);
+	list1.addRecord(makePosdbKey(key, 'c', docId2, 2, false), 0, nullptr);
+	addListToTree(rdbId, collNum, &list1);
+
+	// deleted doc 1
+	// respider doc 2 (a, c, b, e, d)
+	RdbList list2;
+	list2.set(nullptr, 0, nullptr, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
+	list2.addRecord(makePosdbKey(key, POSDB_DELETEDOC_TERMID, docId1, 0, true), 0, nullptr);
+	list2.addRecord(makePosdbKey(key, 'a', docId2, 0, false), 0, nullptr);
+	list2.addRecord(makePosdbKey(key, 'c', docId2, 1, false), 0, nullptr);
+	list2.addRecord(makePosdbKey(key, 'b', docId2, 2, false), 0, nullptr);
+	list2.addRecord(makePosdbKey(key, 'e', docId2, 3, false), 0, nullptr);
+	list2.addRecord(makePosdbKey(key, 'd', docId2, 4, false), 0, nullptr);
+	addListToTree(rdbId, collNum, &list2);
+
+	// spider doc 1 (r, s, t, l, n)
+	// deleted doc 2
+	RdbList list3;
+	list3.set(nullptr, 0, nullptr, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
+	list3.addRecord(makePosdbKey(key, POSDB_DELETEDOC_TERMID, docId2, 0, true), 0, nullptr);
+	list3.addRecord(makePosdbKey(key, 'r', docId1, 0, false), 0, nullptr);
+	list3.addRecord(makePosdbKey(key, 's', docId1, 1, false), 0, nullptr);
+	list3.addRecord(makePosdbKey(key, 't', docId1, 2, false), 0, nullptr);
+	list3.addRecord(makePosdbKey(key, 'l', docId1, 3, false), 0, nullptr);
+	list3.addRecord(makePosdbKey(key, 'n', docId1, 4, false), 0, nullptr);
+	addListToTree(rdbId, collNum, &list3);
+
+	// keys go from oldest to newest
+	RdbList *lists1[3];
+	lists1[0] = &list1;
+	lists1[1] = &list2;
+	lists1[2] = &list3;
+
+	size_t lists1_size = sizeof_arr(lists1);
+
+	// merge
+	RdbList final1;
+	final1.set(nullptr, 0, nullptr, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
+	final1.prepareForMerge(lists1, lists1_size, -1);
+	final1.merge_r(lists1, lists1_size, KEYMIN(), KEYMAX(), -1, false, RDB_POSDB, collNum);
+
+	EXPECT_EQ(list3.getListSize(), final1.getListSize());
+	for (list3.resetListPtr(), final1.resetListPtr(); !final1.isExhausted(); list3.skipCurrentRecord(), final1.skipCurrentRecord()) {
+		EXPECT_EQ(list3.getCurrentRecSize(), final1.getCurrentRecSize());
+		EXPECT_EQ(0, memcmp(list3.getCurrentRec(), final1.getCurrentRec(), list3.getCurrentRecSize()));
+	}
+}
+
+
 static const int64_t s_docIdStart = 1;
 static const int32_t s_wordPosStart = 0;
 
@@ -461,7 +739,6 @@ static void addPosdbKey(RdbList *list, uint8_t type, int64_t *termId, int64_t *d
 			break;
 		default:
 			gbshutdownLogicError();
-			break;
 	}
 }
 
