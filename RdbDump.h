@@ -73,9 +73,6 @@ private:
 
 	bool m_isDumping; // true if we're in the middle of dumping
 
-	// true if the actual write thread is outstanding
-	bool m_writing;
-
 	RdbTree *m_tree;
 	RdbBuckets *m_buckets;
 	RdbIndex *m_treeIndex;
