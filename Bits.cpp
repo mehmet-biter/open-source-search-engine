@@ -253,9 +253,6 @@ bool Bits::setForSummary ( const Words *words ) {
 	bool inQuote = false;
 	bool inParens = false;
 
-	int32_t wlen;
-	const char *wp;
-
 	// the ongoing accumulation flag we apply to each word
 	swbit_t flags = 0;
 
@@ -315,8 +312,8 @@ bool Bits::setForSummary ( const Words *words ) {
 		}
 
 		// fast ptrs
-		wlen = wlens[i];
-		wp   = w    [i];
+		int32_t wlen = wlens[i];
+		const char *wp = w[i];
 		
 		// this is not 100%
 		if ( words->hasChar( i, '(' ) ) {
