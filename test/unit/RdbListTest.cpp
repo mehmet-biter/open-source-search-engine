@@ -428,7 +428,6 @@ static const int64_t s_docIdStart = 1;
 static const int32_t s_wordPosStart = 0;
 
 static void addPosdbKey18b(RdbList *list, int64_t *termId, int64_t *docId, int32_t *wordPos, bool isDelKey) {
-	logf(LOG_TRACE, "@@@ %s", __func__);
 	char key[MAX_KEY_BYTES];
 	++(*termId);
 	*docId = s_docIdStart;
@@ -437,7 +436,6 @@ static void addPosdbKey18b(RdbList *list, int64_t *termId, int64_t *docId, int32
 }
 
 static void addPosdbKey12b(RdbList *list, int64_t *termId, int64_t *docId, int32_t *wordPos, bool isDelKey) {
-	logf(LOG_TRACE, "@@@ %s", __func__);
 	char key[MAX_KEY_BYTES];
 	++(*docId);
 	*wordPos = s_wordPosStart;
@@ -445,7 +443,6 @@ static void addPosdbKey12b(RdbList *list, int64_t *termId, int64_t *docId, int32
 }
 
 static void addPosdbKey06b(RdbList *list, int64_t *termId, int64_t *docId, int32_t *wordPos, bool isDelKey) {
-	logf(LOG_TRACE, "@@@ %s", __func__);
 	char key[MAX_KEY_BYTES];
 	++(*wordPos);
 	list->addRecord(makePosdbKey(key, *termId, *docId, *wordPos, isDelKey), 0, nullptr);
@@ -506,7 +503,7 @@ static void expectEqualList(RdbList *list1, RdbList *list2) {
 class RdbListNoMergePosdbMultiRecTest : public RdbListNoMergeTest, public ::testing::WithParamInterface<::testing::tuple<uint8_t, uint8_t, uint8_t>> {
 };
 
-INSTANTIATE_TEST_CASE_P(RdbListNoMergePosdbMultiRecord,
+INSTANTIATE_TEST_CASE_P(RdbListNoMergePosdbMultiRec,
                         RdbListNoMergePosdbMultiRecTest,
                         ::testing::Combine(::testing::Values(6, 12, 18),
                                            ::testing::Values(6, 12, 18),
