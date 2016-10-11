@@ -69,7 +69,13 @@ bool RdbMerge::merge(rdbid_t rdbId,
                      RdbIndex *targetIndex,
                      int32_t startFileNum,
                      int32_t numFiles,
-                     int32_t niceness) {
+                     int32_t niceness)
+{
+	if(m_isHalted) {
+		logTrace(g_conf.m_logTraceRdbBase, "END, merging is halted");
+		return true;
+	}
+
 	// reset ourselves
 	reset();
 
