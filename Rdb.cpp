@@ -1410,7 +1410,7 @@ void attemptMergeAllCallback ( int fd , void *state ) {
 	attemptMergeAll();
 }
 
-// called by main.cpp
+
 // . TODO: if rdbbase::attemptMerge() needs to launch a merge but can't
 //   then do NOT remove from linked list. maybe set a flag like 'needsMerge'
 void attemptMergeAll() {
@@ -1421,29 +1421,20 @@ void attemptMergeAll() {
 		return;
 	}
 
-	int32_t niceness = MAX_NICENESS;
+	const int32_t niceness = MAX_NICENESS;
+	const bool forceMergeAll = false;
 	static collnum_t s_lastCollnum = 0;
-	int32_t count = 0;
 
-	for(;;) {
-		// if a collection got deleted, reset this to 0
-		if ( s_lastCollnum >= g_collectiondb.getNumRecs() ) {
+	// limit to 1000 checks to save the cpu since we call this once every 2 seconds.
+	for(int loop_count=0; loop_count<1000 && loop_count<g_collectiondb.getNumRecs(); loop_count++) {
+		if(s_lastCollnum >= g_collectiondb.getNumRecs())
 			s_lastCollnum = 0;
-			// and return so we don't spin 1000 times over a single coll.
-			return;
-		}
-
-		// limit to 1000 checks to save the cpu since we call this once
-		// every 2 seconds.
-		if ( ++count >= 1000 ) return;
 
 		CollectionRec *cr = g_collectiondb.getRec(s_lastCollnum);
-		if ( ! cr ) {
-			s_lastCollnum++;
+		s_lastCollnum++;
+		if(!cr)
 			continue;
-		}
 
-		bool force = false;
 		// args = niceness, forceMergeAll, doLog, minToMergeOverride
 		// if RdbBase::attemptMerge() returns true that means it
 		// launched a merge and it will call attemptMergeAll2() when
@@ -1465,13 +1456,10 @@ void attemptMergeAll() {
 		};
 		
 		for(unsigned i=0; i<sizeof(rdbid)/sizeof(rdbid[0]); i++) {
-			RdbBase *base  = cr->getBasePtr(rdbid[i]);
-			if(base && base->attemptMerge(niceness,force,true))
+			RdbBase *base = cr->getBasePtr(rdbid[i]);
+			if(base && base->attemptMerge(niceness,forceMergeAll,true))
 				return;
 		}
-
-		// try next collection
-		s_lastCollnum++;
 	}
 }
 
