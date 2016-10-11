@@ -5,6 +5,7 @@
 
 RdbMerge::RdbMerge()
   : m_doneMerging(false),
+    m_getListOutstanding(false),
     m_numThreads(0),
     m_startFileNum(0),
     m_numFiles(0),
@@ -394,32 +395,39 @@ bool RdbMerge::getAnotherList() {
 
 	int32_t bufSize = g_conf.m_mergeBufSize;
 	// get it
-	return m_msg5.getList ( m_rdbId        ,
-				m_collnum           ,
-				&m_list        ,
-				m_startKey     ,
-				newEndKey      , // usually is maxed!
-				bufSize        ,
-				false          , // includeTree?
-				0              , // max cache age for lookup
-				m_startFileNum , // startFileNum
-				m_numFiles     ,
-				this           , // state 
-				gotListWrapper , // callback
-				m_niceness     , // niceness
-				true           , // do error correction?
-				NULL           , // cache key ptr
-				0              , // retry #
-				nn + 75        , // max retries (mk it high)
-				false          , // compensate for merge?
-				-1LL           , // sync point
-				true           , // isRealMerge? absolutely!
-				false   );
+	m_getListOutstanding = true;
+	bool rc = m_msg5.getList(m_rdbId,
+				 m_collnum,
+				 &m_list,
+				 m_startKey,
+				 newEndKey,       // usually is maxed!
+				 bufSize,
+				 false,           // includeTree?
+				 0,               // max cache age for lookup
+				 m_startFileNum,  // startFileNum
+				 m_numFiles,
+				 this,            // state
+				 gotListWrapper,  // callback
+				 m_niceness,      // niceness
+				 true,            // do error correction?
+				 NULL,            // cache key ptr
+				 0,               // retry #
+				 nn + 75,         // max retries (mk it high)
+				 false,           // compensate for merge?
+				 -1LL,            // sync point
+				 true,            // isRealMerge? absolutely!
+				 false);
+	if(rc)
+		m_getListOutstanding = false;
+	return rc;
+	
 }
 
 void RdbMerge::gotListWrapper(void *state, RdbList *list, Msg5 *msg5) {
 	// get a ptr to ourselves
 	RdbMerge *THIS = (RdbMerge *)state;
+
+	THIS->m_getListOutstanding = false;
 
 	for (;;) {
 		// if g_errno is out of memory then msg3 wasn't able to get the lists

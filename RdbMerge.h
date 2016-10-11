@@ -56,7 +56,7 @@ public:
 	bool isSuspended() const { return m_isSuspended; }
 	bool isDumping() const { return m_dump.isDumping(); }
 
-	bool isActive() const { return m_numThreads>0 || m_dump.isDumping(); }
+	bool isActive() const { return m_getListOutstanding || m_numThreads>0 || m_dump.isDumping(); }
 
 	rdbid_t getRdbId() const { return m_rdbId; }
 
@@ -87,6 +87,8 @@ private:
 
 	// set to true when m_startKey wraps back to 0
 	bool m_doneMerging;
+
+	bool m_getListOutstanding;
 
 	int32_t m_numThreads;
 
