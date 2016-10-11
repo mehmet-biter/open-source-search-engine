@@ -56,7 +56,6 @@ public:
 	int32_t getNumThreads() const { return m_numThreads; }
 
 	bool isMerging() const { return m_isMerging; }
-	void setMerging(bool merging) { m_isMerging = merging; }
 
 	bool isSuspended() const { return m_isSuspended; }
 	bool isDumping() const { return m_dump.isDumping(); }
