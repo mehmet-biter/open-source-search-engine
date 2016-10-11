@@ -49,6 +49,14 @@ static char  *s_isnew;
 static int32_t   s_n = 0;
 static bool   s_initialized = 0;
 
+
+static bool allocationShouldFailRandomly() {
+	// . fail randomly
+	// . good for testing if we can handle out of memory gracefully
+	return g_conf.m_testMem && (rand() % 100) < 2;
+}
+
+
 // our own memory manager
 void operator delete (void *ptr) throw () {
 	logTrace( g_conf.m_logTraceMem, "ptr=%p", ptr );
@@ -95,16 +103,10 @@ void * operator new (size_t size) throw (std::bad_alloc) {
 	// don't let electric fence zap us
 	if ( size == 0 ) return (void *)0x7fffffff;
 
-	// . fail randomly
-	// . good for testing if we can handle out of memory gracefully
-	//static int32_t s_mcount = 0;
-	//s_mcount++;
-	//if ( s_mcount > 57 && (rand() % 1000) < 2 ) { 
-	if ( g_conf.m_testMem && (rand() % 100) < 2 ) { 
+	if ( allocationShouldFailRandomly() ) {
 		g_errno = ENOMEM; 
 		log(LOG_ERROR, "mem: new-fake(%zu): %s",size, mstrerror(g_errno));
 		throw std::bad_alloc(); 
-		// return NULL; }
 	} 
 
 	// hack so hostid #0 can use more mem
@@ -138,17 +140,6 @@ void * operator new [] (size_t size) throw (std::bad_alloc) {
 
 	// don't let electric fence zap us
 	if ( size == 0 ) return (void *)0x7fffffff;
-	// . fail randomly
-	// . good for testing if we can handle out of memory gracefully
-
-	//static int32_t s_count = 0;
-	//s_count++;
-	//if ( s_count > 3000 && (rand() % 100) < 2 ) { 
-	//	g_errno = ENOMEM; 
-	//	log("mem: new-fake(%i): %s",size, mstrerror(g_errno));
-	//	throw bad_alloc(); 
-	//	// return NULL; }
-	//} 
 	
 	size_t max = g_conf.m_maxMem;
 
@@ -168,7 +159,6 @@ void * operator new [] (size_t size) throw (std::bad_alloc) {
 		g_mem.incrementOOMCount();
 		log( LOG_WARN, "mem: new(%zu): %s", size, mstrerror(g_errno));
 		throw std::bad_alloc();
-		//return NULL;
 	}
 
 	g_mem.addMem ( (char*)mem , size, "TMPMEM" , 1 );
@@ -886,11 +876,7 @@ void *Mem::gbmalloc ( size_t size , const char *note ) {
 	// don't let electric fence zap us
 	if ( size == 0 ) return (void *)0x7fffffff;
 	
-	// random oom testing
-	//static int32_t s_mcount = 0;
-	//s_mcount++;
-	if ( g_conf.m_testMem && (rand() % 100) < 2 ) { 
-		//if ( s_mcount > 1055 && (rand() % 1000) < 2 ) { 
+	if ( allocationShouldFailRandomly() ) {
 		g_errno = ENOMEM; 
 		log( LOG_WARN, "mem: malloc-fake(%zu,%s): %s",size,note, mstrerror(g_errno));
 		return NULL;
