@@ -1,8 +1,5 @@
 // Copyright 2007, Gigablast Inc.
 
-#undef _XOPEN_SOURCE
-#define _XOPEN_SOURCE 500
-
 #include "gb-include.h"
 
 #include "Repair.h"

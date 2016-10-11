@@ -1,5 +1,3 @@
-#undef _XOPEN_SOURCE
-#define _XOPEN_SOURCE 500
 #include "RdbBuckets.h"
 #include "BigFile.h"      // for saving and loading the tree
 #include "RdbList.h"

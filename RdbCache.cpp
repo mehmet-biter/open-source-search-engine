@@ -1,7 +1,5 @@
 #include "gb-include.h"
 
-#undef _XOPEN_SOURCE
-#define _XOPEN_SOURCE 500
 #include <unistd.h>
 #include "JobScheduler.h"
 #include "RdbCache.h"

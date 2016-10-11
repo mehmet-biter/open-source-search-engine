@@ -1,7 +1,3 @@
-// JAB: this is required for pwrite() in this module
-#undef _XOPEN_SOURCE
-#define _XOPEN_SOURCE 500
-
 #include "gb-include.h"
 
 #include "RdbTree.h"
