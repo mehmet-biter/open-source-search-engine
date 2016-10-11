@@ -31,9 +31,6 @@ RdbMerge::~RdbMerge() {
 }
 
 void RdbMerge::reset() {
-	m_isMerging = false;
-
-	// Coverity
 	m_numThreads = 0;
 	m_startFileNum = 0;
 	m_numFiles = 0;
@@ -73,6 +70,10 @@ bool RdbMerge::merge(rdbid_t rdbId,
 {
 	if(m_isHalted) {
 		logTrace(g_conf.m_logTraceRdbBase, "END, merging is halted");
+		return true;
+	}
+	if(m_isMerging) {
+		logTrace(g_conf.m_logTraceRdbBase, "END, already merging");
 		return true;
 	}
 

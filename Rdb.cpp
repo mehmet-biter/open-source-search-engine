@@ -682,7 +682,7 @@ bool Rdb::close ( void *state , void (* callback)(void *state ), bool urgent , b
 	     // if we are merging this rdb...
 	     ! m_urgent &&
 	     g_merge.getRdbId() == m_rdbId &&
-	     g_merge.isActive() ) {
+	     g_merge.isMerging() ) {
 		// do not spam this message
 		int64_t now = gettimeofdayInMilliseconds();
 		if ( now - m_lastTime >= 500 ) {
@@ -1416,7 +1416,7 @@ void attemptMergeAllCallback ( int fd , void *state ) {
 void attemptMergeAll() {
 
 	// wait for any current merge to stop!
-	if ( g_merge.isActive() ) {
+	if ( g_merge.isMerging() ) {
 		log(LOG_INFO,"Attempted merge, but merge already running");
 		return;
 	}

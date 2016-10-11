@@ -55,7 +55,7 @@ public:
 
 	bool isHalted() const { return m_isHalted; }
 
-	bool isActive() const { return m_getListOutstanding || m_numThreads>0 || m_dump.isDumping(); }
+	bool isMerging() const { return m_isMerging; }
 
 	rdbid_t getRdbId() const { return m_rdbId; }
 

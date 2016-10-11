@@ -1513,7 +1513,7 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 		     numFiles, m_dbname, m_minToMerge );
 	}
 	
-	if ( g_merge.isActive() )
+	if ( g_merge.isMerging() )
 	{
 		logTrace( g_conf.m_logTraceRdbBase, "END, is merging" );
 		return false;
@@ -1611,7 +1611,7 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 	}
 
 	// sanity check
-	if ( m_isMerging || g_merge.isActive() ) {
+	if ( m_isMerging || g_merge.isMerging() ) {
 		//if ( m_doLog )
 			//log(LOG_INFO,
 			//"merge: Someone already merging. Waiting for "
