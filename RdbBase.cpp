@@ -1387,8 +1387,8 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 		return false;
 	}
 
-	// nor if the merge class is suspended
-	if ( g_merge.isSuspended()  ) {
+	// nor if the merge class is halted
+	if ( g_merge.isHalted()  ) {
 		logTrace( g_conf.m_logTraceRdbBase, "END, is suspended" );
 		return false;
 	}

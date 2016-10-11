@@ -14,7 +14,7 @@ RdbMerge::RdbMerge()
     m_targetMap(NULL),
     m_targetIndex(NULL),
     m_isMerging(false),
-    m_isSuspended(false),
+    m_isHalted(false),
     m_dump(),
     m_msg5(),
     m_list(),
@@ -32,7 +32,6 @@ RdbMerge::~RdbMerge() {
 
 void RdbMerge::reset() {
 	m_isMerging = false;
-	m_isSuspended = false;
 
 	// Coverity
 	m_numThreads = 0;
@@ -45,7 +44,7 @@ void RdbMerge::reset() {
 	memset(m_startKey, 0, sizeof(m_startKey));
 	memset(m_endKey, 0, sizeof(m_endKey));
 	m_isMerging = false;
-	m_isSuspended = false;
+	//m_isHalted = false; //not reset because halting is a one-way street
 	m_niceness = 0;
 	m_rdbId = RDB_NONE;
 	m_collnum = 0;
@@ -171,10 +170,6 @@ bool RdbMerge::gotLock() {
 	// we're now merging since the dump was set up successfully
 	m_isMerging     = true;
 
-	// make it suspended for now
-	m_isSuspended   = true;
-
-	// . this unsuspends it
 	// . this returns false on error and sets g_errno
 	// . it returns true if blocked or merge completed successfully
 	return resumeMerge ( );
@@ -185,11 +180,11 @@ void RdbMerge::suspendMerge ( ) {
 		return;
 	}
 
-	if (m_isSuspended) {
+	if(m_isHalted) {
 		return;
 	}
 
-	m_isSuspended = true;
+	m_isHalted = true;
 
 	// . we don't want the dump writing to an RdbMap that has been deleted
 	// . this can happen if the close is delayed because we are dumping
@@ -206,13 +201,9 @@ void RdbMerge::doSleep() {
 // . return false if blocked, otherwise true
 // . sets g_errno on error
 bool RdbMerge::resumeMerge() {
-	// return true if not suspended
-	if (!m_isSuspended) {
+	if(m_isHalted) {
 		return true;
 	}
-
-	// turn off the suspension so getNextList() will work
-	m_isSuspended = false;
 
 	// the usual loop
 	for (;;) {
@@ -253,7 +244,7 @@ bool RdbMerge::getNextList() {
 	}
 
 	// it's suspended so we count this as blocking
-	if (m_isSuspended) {
+	if(m_isHalted) {
 		return false;
 	}
 
@@ -542,7 +533,7 @@ bool RdbMerge::dumpList() {
 	// . it's suspended so we count this as blocking
 	// . resumeMerge() will call getNextList() again, not dumpList() so
 	//   don't advance m_startKey
-	if (m_isSuspended) {
+	if(m_isHalted) {
 		return false;
 	}
 
@@ -602,7 +593,6 @@ void RdbMerge::doneMerging() {
 	// . turn these off before calling incorporateMerge() since it
 	//   will call attemptMerge() on all the other dbs
 	m_isMerging     = false;
-	m_isSuspended   = false;
 
 	// if collection rec was deleted while merging files for it
 	// then the rdbbase should be NULL i guess.

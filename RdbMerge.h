@@ -53,7 +53,7 @@ public:
 	           int32_t numFiles,
 	           int32_t niceness);
 
-	bool isSuspended() const { return m_isSuspended; }
+	bool isHalted() const { return m_isHalted; }
 
 	bool isActive() const { return m_getListOutstanding || m_numThreads>0 || m_dump.isDumping(); }
 
@@ -103,7 +103,7 @@ private:
 	char m_endKey[MAX_KEY_BYTES];
 
 	bool m_isMerging;
-	bool m_isSuspended;
+	bool m_isHalted;
 
 	// for writing to target file
 	RdbDump m_dump;
