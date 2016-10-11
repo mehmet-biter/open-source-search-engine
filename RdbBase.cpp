@@ -1400,8 +1400,6 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 	}
 	
 
-	if (   niceness == 0 ) { g_process.shutdownAbort(true); }
-
 	if ( forceMergeAll ) m_nextMergeForced = true;
 
 	if ( m_nextMergeForced ) forceMergeAll = true;
@@ -2021,11 +2019,6 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 	m_isMerging = true;
 
 	m_rdb->incrementNumMerges();
-
-	// sanity check
-	if ( m_niceness == 0 ) {
-		g_process.shutdownAbort(true);
-	}
 
 	logTrace( g_conf.m_logTraceRdbBase, "merge!" );
 	// . start the merge
