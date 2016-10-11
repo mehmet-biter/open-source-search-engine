@@ -677,12 +677,12 @@ bool Rdb::close ( void *state , void (* callback)(void *state ), bool urgent , b
 	// if a write thread is outstanding, and we exit now, we can end up
 	// freeing the buffer it is writing and it will core... and things
 	// won't be in sync with the map when it is saved below...
-	if ( m_isReallyClosing && g_merge.isMerging() && 
+	if ( m_isReallyClosing &&
 	     // if we cored, we are urgent and need to make sure we save even
 	     // if we are merging this rdb...
 	     ! m_urgent &&
 	     g_merge.getRdbId() == m_rdbId &&
-	     ( g_merge.getNumThreads() || g_merge.isDumping() ) ) {
+	     g_merge.isActive() ) {
 		// do not spam this message
 		int64_t now = gettimeofdayInMilliseconds();
 		if ( now - m_lastTime >= 500 ) {
@@ -1416,7 +1416,7 @@ void attemptMergeAllCallback ( int fd , void *state ) {
 void attemptMergeAll() {
 
 	// wait for any current merge to stop!
-	if ( g_merge.isMerging() ) {
+	if ( g_merge.isActive() ) {
 		log(LOG_INFO,"Attempted merge, but merge already running");
 		return;
 	}
