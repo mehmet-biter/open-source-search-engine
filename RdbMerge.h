@@ -54,7 +54,6 @@ public:
 	           int32_t niceness);
 
 	bool isSuspended() const { return m_isSuspended; }
-	bool isDumping() const { return m_dump.isDumping(); }
 
 	bool isActive() const { return m_getListOutstanding || m_numThreads>0 || m_dump.isDumping(); }
 
