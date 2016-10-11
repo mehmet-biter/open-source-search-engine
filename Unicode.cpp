@@ -290,7 +290,7 @@ done:
 }
 
 int32_t stripAccentMarks (char *outbuf, int32_t outbufsize,
-		       unsigned char *p, int32_t inbuflen) {
+			  const unsigned char *p, int32_t inbuflen) {
 	char *s = (char *)p;
 	char *send = (char *)p + inbuflen;
 	int32_t cs;

@@ -214,7 +214,7 @@ inline char *getPrevUtf8Char ( char *p , char *start ) {
 }
 
 inline int32_t ucToUtf8(char *outbuf, int32_t outbuflen,
-			char *inbuf, int32_t inbuflen,
+			const char *inbuf, int32_t inbuflen,
 			const char *charset, int32_t ignoreBadChars) {
   return ucToAny(outbuf, outbuflen, "UTF-8",
 		 inbuf, inbuflen, charset, ignoreBadChars);
@@ -229,7 +229,7 @@ const char *	ucDetectBOM(const char *buf, int32_t bufsize);
 //int32_t utf8ToAscii(char *outbuf, int32_t outbufsize,
 //		  unsigned char *inbuf, int32_t inbuflen);
 int32_t stripAccentMarks(char *outbuf, int32_t outbufsize,
-		      unsigned char *inbuf, int32_t inbuflen);
+			 const unsigned char *inbuf, int32_t inbuflen);
 
 
 
