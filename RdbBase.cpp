@@ -118,8 +118,8 @@ bool RdbBase::init(const char *dir,
 	// set all our contained classes
 	// . "tmp" is bogus
 	// . /home/mwells/github/coll.john-test1113.654coll.john-test1113.655
-	char tmp[1024];
-	sprintf ( tmp , "%scoll.%s.%" PRId32 , dir , coll , (int32_t)collnum );
+	char collectionDirName[1024];
+	sprintf ( collectionDirName , "%scoll.%s.%" PRId32 , dir , coll , (int32_t)collnum );
 
 	// logDebugAdmin
 	log(LOG_DEBUG,"db: adding new base for dir=%s coll=%s collnum=%" PRId32" db=%s",
@@ -134,16 +134,16 @@ bool RdbBase::init(const char *dir,
 		}
 
 		// make a special "cat" dir for it if we need to
-		sprintf ( tmp , "%s%s" , dir , dbname );
-		int32_t status = ::mkdir ( tmp , getDirCreationFlags() );
+		sprintf ( collectionDirName , "%s%s" , dir , dbname );
+		int32_t status = ::mkdir ( collectionDirName , getDirCreationFlags() );
         if ( status == -1 && errno != EEXIST && errno ) {
-	        log( LOG_WARN, "db: Failed to make directory %s: %s.", tmp, mstrerror( errno ) );
+	        log( LOG_WARN, "db: Failed to make directory %s: %s.", collectionDirName, mstrerror( errno ) );
 	        return false;
         }
 	}
 
 	//m_dir.set ( dir , coll );
-	m_dir.set ( tmp );
+	m_dir.set ( collectionDirName );
 	m_coll    = coll;
 	m_collnum = collnum;
 	m_tree    = tree;
@@ -261,9 +261,8 @@ bool RdbBase::moveToTrash ( char *dstDir ) {
 	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) {
 		// . rename the map file
 		// . get the "base" filename, does not include directory
-		BigFile *f ;
+		BigFile *f = m_fileInfo[i].m_map->getFile();
 		char dstFilename [1024];
-		f = m_fileInfo[i].m_map->getFile();
 		sprintf ( dstFilename , "%s" , f->getFilename());
 
 		// ALWAYS log what we are doing
@@ -654,19 +653,19 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	mnew( f, sizeof( BigFile ), "RdbBFile" );
 
 	// set the data file's filename
-	char name[512];
+	char name[1024];
 	if ( mergeNum <= 0 ) {
 		if ( m_rdb->isTitledb() ) {
-			snprintf( name, 511, "%s%04" PRId32"-%03" PRId32".dat", m_dbname, fileId, fileId2 );
+			snprintf( name, sizeof(name), "%s%04" PRId32"-%03" PRId32".dat", m_dbname, fileId, fileId2 );
 		} else {
-			snprintf( name, 511, "%s%04" PRId32".dat", m_dbname, fileId );
+			snprintf( name, sizeof(name), "%s%04" PRId32".dat", m_dbname, fileId );
 		}
 	} else {
 		if ( m_rdb->isTitledb() ) {
-			snprintf( name, 511, "%s%04" PRId32"-%03" PRId32".%03" PRId32".%04" PRId32".dat",
+			snprintf( name, sizeof(name), "%s%04" PRId32"-%03" PRId32".%03" PRId32".%04" PRId32".dat",
 			          m_dbname, fileId, fileId2, mergeNum, endMergeFileId );
 		} else {
-			snprintf( name, 511, "%s%04" PRId32".%03" PRId32".%04" PRId32".dat",
+			snprintf( name, sizeof(name), "%s%04" PRId32".%03" PRId32".%04" PRId32".dat",
 			          m_dbname, fileId, mergeNum, endMergeFileId );
 		}
 	}
@@ -1220,13 +1219,13 @@ void RdbBase::unlinkDone() {
 		}
 	} else {
 		// rename to this (titledb%04" PRId32"-%03" PRId32".dat)
-		char buf [ 1024 ];
+		char newName[1024];
 
 		// use m_dbname in case its titledbRebuild
-		sprintf ( buf , "%s%04" PRId32"-%03" PRId32".dat", m_dbname, m_fileInfo[a].m_fileId, m_fileInfo[x].m_fileId2 );
+		sprintf ( newName , "%s%04" PRId32"-%03" PRId32".dat", m_dbname, m_fileInfo[a].m_fileId, m_fileInfo[x].m_fileId2 );
 
 		// rename it, this may block
-		if ( ! m_fileInfo[x].m_file->rename ( buf, renameDoneWrapper, this) ) {
+		if ( ! m_fileInfo[x].m_file->rename ( newName, renameDoneWrapper, this) ) {
 			m_numThreads++;
 		}
 	}
