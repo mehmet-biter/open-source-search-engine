@@ -1444,49 +1444,31 @@ void attemptMergeAll() {
 		}
 
 		bool force = false;
-		RdbBase *base ;
 		// args = niceness, forceMergeAll, doLog, minToMergeOverride
 		// if RdbBase::attemptMerge() returns true that means it
 		// launched a merge and it will call attemptMergeAll2() when
 		// the merge completes.
-		base = cr->getBasePtr(RDB_POSDB);
-		if ( base && base->attemptMerge(niceness,force,true) )
-			return;
-		base = cr->getBasePtr(RDB_TITLEDB);
-		if ( base && base->attemptMerge(niceness,force,true) )
-			return;
-		base = cr->getBasePtr(RDB_TAGDB);
-		if ( base && base->attemptMerge(niceness,force,true) )
-			return;
-		base = cr->getBasePtr(RDB_LINKDB);
-		if ( base && base->attemptMerge(niceness,force,true) )
-			return;
-		base = cr->getBasePtr(RDB_SPIDERDB);
-		if ( base && base->attemptMerge(niceness,force,true) )
-			return;
-		base = cr->getBasePtr(RDB_CLUSTERDB);
-		if ( base && base->attemptMerge(niceness,force,true) )
-			return;
-
-		// also try to merge on rdbs being rebuilt
-		base = cr->getBasePtr(RDB2_POSDB2);
-		if ( base && base->attemptMerge(niceness,force,true) )
-			return;
-		base = cr->getBasePtr(RDB2_TITLEDB2);
-		if ( base && base->attemptMerge(niceness,force,true) )
-			return;
-		base = cr->getBasePtr(RDB2_TAGDB2);
-		if ( base && base->attemptMerge(niceness,force,true) )
-			return;
-		base = cr->getBasePtr(RDB2_LINKDB2);
-		if ( base && base->attemptMerge(niceness,force,true) )
-			return;
-		base = cr->getBasePtr(RDB2_SPIDERDB2);
-		if ( base && base->attemptMerge(niceness,force,true) )
-			return;
-		base = cr->getBasePtr(RDB2_CLUSTERDB2);
-		if ( base && base->attemptMerge(niceness,force,true) )
-			return;
+		static const rdbid_t rdbid[] = {
+			RDB_POSDB,
+			RDB_TITLEDB,
+			RDB_TAGDB,
+			RDB_LINKDB,
+			RDB_SPIDERDB,
+			RDB_CLUSTERDB,
+			// also try to merge on rdbs being rebuilt
+			RDB2_POSDB2,
+			RDB2_TITLEDB2,
+			RDB2_TAGDB2,
+			RDB2_LINKDB2,
+			RDB2_SPIDERDB2,
+			RDB2_CLUSTERDB2
+		};
+		
+		for(unsigned i=0; i<sizeof(rdbid)/sizeof(rdbid[0]); i++) {
+			RdbBase *base  = cr->getBasePtr(rdbid[i]);
+			if(base && base->attemptMerge(niceness,force,true))
+				return;
+		}
 
 		// try next collection
 		s_lastCollnum++;
