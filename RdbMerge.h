@@ -59,8 +59,8 @@ public:
 
 	rdbid_t getRdbId() const { return m_rdbId; }
 
-	// suspend the merging until resumeMerge() is called
-	void suspendMerge();
+	// stop further actions
+	void haltMerge();
 
 private:
 	static void unlinkPartWrapper(void *state);

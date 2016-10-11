@@ -175,11 +175,7 @@ bool RdbMerge::gotLock() {
 	return resumeMerge ( );
 }
 
-void RdbMerge::suspendMerge ( ) {
-	if (!m_isMerging) {
-		return;
-	}
-
+void RdbMerge::haltMerge() {
 	if(m_isHalted) {
 		return;
 	}

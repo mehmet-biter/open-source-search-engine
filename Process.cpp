@@ -698,8 +698,8 @@ bool Process::shutdown2() {
 	// outstanding
 	g_jobScheduler.disallow_new_jobs();
 
-	// . suspend all merges
-	g_merge.suspendMerge () ;
+	// Stop merging
+	g_merge.haltMerge();
 
 	static bool s_printed = false;
 

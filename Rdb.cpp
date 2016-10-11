@@ -659,7 +659,7 @@ bool Rdb::close ( void *state , void (* callback)(void *state ), bool urgent , b
 	m_isSaving = true;
 	// suspend any merge permanently (not just for this rdb), we're exiting
 	if ( m_isReallyClosing ) {
-		g_merge.suspendMerge();
+		g_merge.haltMerge();
 	}
 	// . allow dumps to complete unless we're urgent
 	// . if we're urgent, we'll end up with a half dumped file, which
