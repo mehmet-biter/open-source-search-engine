@@ -37,13 +37,9 @@ public:
 	RdbMerge();
 	~RdbMerge();
 
-	// . selects the files to merge
-	// . uses keyMasks and files from the passed Rdb class
-	// . filter out keys where key & m_keyMask != m_maskValue
 	// . merge to a new file
 	// . new file name is stored in m_filename so Rdb can look at it
 	// . calls rdb->incorporateMerge() when done with merge or had error
-	// . "maxBufSize" is size of list to get then write (read/write buf)
 	bool merge(rdbid_t rdbId,
 	           collnum_t collnum,
 	           BigFile *targetFile,
