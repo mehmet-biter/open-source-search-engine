@@ -22,20 +22,22 @@ protected:
 
 	void SetUp() {
 		GbTest::initializeRdbs();
+		m_rdb = g_posdb.getRdb();
 	}
 
 	void TearDown() {
 		GbTest::resetRdbs();
 	}
+
+	Rdb *m_rdb;
 };
 
 TEST_F(PosdbTest, AddRecord) {
 	static const int total_records = 10;
 	static const int64_t docId = 1;
-	Rdb *rdb = g_posdb.getRdb();
 
 	for (int i = 1; i <= total_records; i++) {
-		GbTest::addPosdbKey(rdb, i, docId, 0);
+		GbTest::addPosdbKey(m_rdb, i, docId, 0);
 	}
 
 	// use extremes
@@ -60,17 +62,16 @@ TEST_F(PosdbTest, AddRecord) {
 TEST_F(PosdbTest, AddDeleteRecord) {
 	static const int total_records = 10;
 	static const int64_t docId = 1;
-	Rdb *rdb = g_posdb.getRdb();
 
 	// first round
 	for (int i = 1; i <= total_records; i++) {
-		GbTest::addPosdbKey(rdb, i, docId, 0);
+		GbTest::addPosdbKey(m_rdb, i, docId, 0);
 	}
 	saveAndReloadPosdbBucket();
 
 	// second round (document deleted)
 	for (int i = 1; i <= total_records; i++) {
-		GbTest::addPosdbKey(rdb, i, docId, 0, true);
+		GbTest::addPosdbKey(m_rdb, i, docId, 0, true);
 	}
 	saveAndReloadPosdbBucket();
 
@@ -96,24 +97,23 @@ TEST_F(PosdbTest, AddDeleteRecord) {
 
 TEST_F(PosdbTest, AddDeleteRecordMultiple) {
 	static const int64_t docId = 1;
-	Rdb *rdb = g_posdb.getRdb();
 
 	// first round
 	// doc contains 3 words (a, b, c)
-	GbTest::addPosdbKey(rdb, 'a', docId, 0);
-	GbTest::addPosdbKey(rdb, 'b', docId, 0);
-	GbTest::addPosdbKey(rdb, 'c', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'a', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'b', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'c', docId, 0);
 
 	// second round
 	// doc contains 3 words (a, c, d)
-	GbTest::addPosdbKey(rdb, 'b', docId, 0, true);
-	GbTest::addPosdbKey(rdb, 'd', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'b', docId, 0, true);
+	GbTest::addPosdbKey(m_rdb, 'd', docId, 0);
 
 	// third round
 	// doc contains 4 words (a, d, e, f)
-	GbTest::addPosdbKey(rdb, 'c', docId, 0, true);
-	GbTest::addPosdbKey(rdb, 'e', docId, 0);
-	GbTest::addPosdbKey(rdb, 'f', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'c', docId, 0, true);
+	GbTest::addPosdbKey(m_rdb, 'e', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'f', docId, 0);
 
 	/// @todo ALC add expected result
 
@@ -130,10 +130,9 @@ TEST_F(PosdbTest, AddDeleteRecordMultiple) {
 TEST_F(PosdbTest, AddRecordDeleteDoc) {
 	static const int total_records = 10;
 	static const int64_t docId = 1;
-	Rdb *rdb = g_posdb.getRdb();
 
 	for (int i = total_records; i >= 0; i--) {
-		GbTest::addPosdbKey(rdb, i, docId, 0, (i == 0));
+		GbTest::addPosdbKey(m_rdb, i, docId, 0, (i == 0));
 	}
 
 	saveAndReloadPosdbBucket();
@@ -170,11 +169,14 @@ protected:
 
 	void SetUp() {
 		GbTest::initializeRdbs();
+		m_rdb = g_posdb.getRdb();
 	}
 
 	void TearDown() {
 		GbTest::resetRdbs();
 	}
+
+	Rdb *m_rdb;
 
 	static bool m_savedMergeConf;
 };
@@ -184,10 +186,9 @@ bool PosdbNoMergeTest::m_savedMergeConf = g_conf.m_noInMemoryPosdbMerge;
 TEST_F(PosdbNoMergeTest, AddRecord) {
 	static const int total_records = 10;
 	static const int64_t docId = 1;
-	Rdb *rdb = g_posdb.getRdb();
 
 	for (int i = 1; i <= total_records; i++) {
-		GbTest::addPosdbKey(rdb, i, docId, 0);
+		GbTest::addPosdbKey(m_rdb, i, docId, 0);
 	}
 
 	// use extremes
@@ -212,17 +213,16 @@ TEST_F(PosdbNoMergeTest, AddRecord) {
 TEST_F(PosdbNoMergeTest, AddDeleteRecord) {
 	static const int total_records = 10;
 	static const int64_t docId = 1;
-	Rdb *rdb = g_posdb.getRdb();
 
 	// first round
 	for (int i = 1; i <= total_records; i++) {
-		GbTest::addPosdbKey(rdb, i, docId, 0);
+		GbTest::addPosdbKey(m_rdb, i, docId, 0);
 	}
 	saveAndReloadPosdbBucket();
 
 	// second round (document deleted)
 	for (int i = 1; i <= total_records; i++) {
-		GbTest::addPosdbKey(rdb, i, docId, 0, true);
+		GbTest::addPosdbKey(m_rdb, i, docId, 0, true);
 	}
 	saveAndReloadPosdbBucket();
 
@@ -250,29 +250,28 @@ static void expectRecord(RdbList *list, int64_t termId, int64_t docId, bool isDe
 
 TEST_F(PosdbNoMergeTest, AddDeleteRecordMultiple) {
 	static const int64_t docId = 1;
-	Rdb *rdb = g_posdb.getRdb();
 
 	// first round
 	// doc contains 3 words (a, b, c)
-	GbTest::addPosdbKey(rdb, 'a', docId, 0);
-	GbTest::addPosdbKey(rdb, 'b', docId, 0);
-	GbTest::addPosdbKey(rdb, 'c', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'a', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'b', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'c', docId, 0);
 
 	// second round
 	// doc contains 3 words (a, c, d)
-	GbTest::addPosdbKey(rdb, 'b', docId, 0, true);
-	GbTest::addPosdbKey(rdb, 'a', docId, 0);
-	GbTest::addPosdbKey(rdb, 'c', docId, 0);
-	GbTest::addPosdbKey(rdb, 'd', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'b', docId, 0, true);
+	GbTest::addPosdbKey(m_rdb, 'a', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'c', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'd', docId, 0);
 
 	// third round
 	// doc contains 4 words (a, d, e, f)
-	GbTest::addPosdbKey(rdb, 'c', docId, 0, true);
+	GbTest::addPosdbKey(m_rdb, 'c', docId, 0, true);
 
-	GbTest::addPosdbKey(rdb, 'a', docId, 0);
-	GbTest::addPosdbKey(rdb, 'd', docId, 0);
-	GbTest::addPosdbKey(rdb, 'e', docId, 0);
-	GbTest::addPosdbKey(rdb, 'f', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'a', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'd', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'e', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'f', docId, 0);
 
 	// use extremes
 	const char *startKey = KEYMIN();
@@ -302,13 +301,12 @@ TEST_F(PosdbNoMergeTest, AddRecordDeleteDocWithoutRdbFiles) {
 	int32_t numPosRecs  = 0;
 	int32_t numNegRecs = 0;
 
-	Rdb *rdb = g_posdb.getRdb();
 	RdbBuckets *buckets = g_posdb.getRdb()->getBuckets();
 	RdbList list;
 
 	// spider document
 	for (int i = 1; i < total_records; ++i) {
-		GbTest::addPosdbKey(rdb, i, docId, 0);
+		GbTest::addPosdbKey(m_rdb, i, docId, 0);
 	}
 	saveAndReloadPosdbBucket();
 
@@ -324,7 +322,7 @@ TEST_F(PosdbNoMergeTest, AddRecordDeleteDocWithoutRdbFiles) {
 
 	// deleted document
 	for (int i = 0; i < total_records; ++i) {
-		GbTest::addPosdbKey(rdb, i, docId, 0, true);
+		GbTest::addPosdbKey(m_rdb, i, docId, 0, true);
 	}
 	saveAndReloadPosdbBucket();
 
@@ -334,7 +332,7 @@ TEST_F(PosdbNoMergeTest, AddRecordDeleteDocWithoutRdbFiles) {
 
 	// respidered document
 	for (int i = 0; i < total_records; ++i) {
-		GbTest::addPosdbKey(rdb, i, docId, 0);
+		GbTest::addPosdbKey(m_rdb, i, docId, 0);
 	}
 	saveAndReloadPosdbBucket();
 
@@ -351,31 +349,30 @@ TEST_F(PosdbNoMergeTest, AddRecordDeleteDocWithoutRdbFiles) {
 
 TEST_F(PosdbNoMergeTest, AddRecordDeleteDocWithRdbFiles) {
 	static const int64_t docId = 1;
-	Rdb *rdb = g_posdb.getRdb();
 
 	// first round
 	// doc contains 3 words (a, b, c)
-	GbTest::addPosdbKey(rdb, 'a', docId, 0);
-	GbTest::addPosdbKey(rdb, 'b', docId, 0);
-	GbTest::addPosdbKey(rdb, 'c', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'a', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'b', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'c', docId, 0);
 	dumpPosdb();
 
 	// second round
 	// doc contains 3 words (a, c, d)
-	GbTest::addPosdbKey(rdb, 'a', docId, 0);
-	GbTest::addPosdbKey(rdb, 'c', docId, 0);
-	GbTest::addPosdbKey(rdb, 'd', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'a', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'c', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'd', docId, 0);
 	dumpPosdb();
 
 	// third round
 	// doc contains 4 words (a, d, e, f)
-	GbTest::addPosdbKey(rdb, 'a', docId, 0);
-	GbTest::addPosdbKey(rdb, 'd', docId, 0);
-	GbTest::addPosdbKey(rdb, 'e', docId, 0);
-	GbTest::addPosdbKey(rdb, 'f', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'a', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'd', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'e', docId, 0);
+	GbTest::addPosdbKey(m_rdb, 'f', docId, 0);
 	dumpPosdb();
 
-	GbTest::addPosdbKey(rdb, POSDB_DELETEDOC_TERMID, docId, 0, true);
+	GbTest::addPosdbKey(m_rdb, POSDB_DELETEDOC_TERMID, docId, 0, true);
 
 	// use extremes
 	const char *startKey = KEYMIN();
