@@ -46,7 +46,7 @@ public:
 	// . "maxBufSize" is size of list to get then write (read/write buf)
 	bool merge(rdbid_t rdbId,
 	           collnum_t collnum,
-	           BigFile *target,
+	           BigFile *targetFile,
 	           RdbMap *targetMap,
 	           RdbIndex *targetIndex,
 	           int32_t startFileNum,
@@ -95,7 +95,7 @@ private:
 	int32_t m_startFileNum;
 	int32_t m_numFiles;
 	int32_t m_fixedDataSize;
-	BigFile *m_target;
+	BigFile *m_targetFile;
 	RdbMap *m_targetMap;
 	RdbIndex *m_targetIndex;
 

@@ -10,7 +10,7 @@ RdbMerge::RdbMerge()
     m_startFileNum(0),
     m_numFiles(0),
     m_fixedDataSize(0),
-    m_target(NULL),
+    m_targetFile(NULL),
     m_targetMap(NULL),
     m_targetIndex(NULL),
     m_isMerging(false),
@@ -39,7 +39,7 @@ void RdbMerge::reset() {
 	m_startFileNum = 0;
 	m_numFiles = 0;
 	m_fixedDataSize = 0;
-	m_target = NULL;
+	m_targetFile = NULL;
 	m_targetMap = NULL;
 	m_targetIndex = NULL;
 	memset(m_startKey, 0, sizeof(m_startKey));
@@ -65,7 +65,7 @@ void RdbMerge::reset() {
 //   to finish in a decent amount of time and we end up getting too many files!
 bool RdbMerge::merge(rdbid_t rdbId,
                      collnum_t collnum,
-                     BigFile *target,
+                     BigFile *targetFile,
                      RdbMap *targetMap,
                      RdbIndex *targetIndex,
                      int32_t startFileNum,
@@ -90,7 +90,7 @@ bool RdbMerge::merge(rdbid_t rdbId,
 		m_collnum = 0;
 	}
 
-	m_target          = target;
+	m_targetFile      = targetFile;
 	m_targetMap       = targetMap;
 	m_targetIndex     = targetIndex;
 	m_startFileNum    = startFileNum;
@@ -147,7 +147,7 @@ bool RdbMerge::gotLock() {
 	// . this will open m_target as O_RDWR | O_NONBLOCK | O_ASYNC ...
 
 	m_dump.set(m_collnum,
-	           m_target,
+	           m_targetFile,
 	           NULL, // buckets to dump is NULL, we call dumpList
 	           NULL, // tree to dump is NULL, we call dumpList
 	           NULL,
