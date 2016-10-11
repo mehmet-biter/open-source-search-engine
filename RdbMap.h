@@ -203,11 +203,11 @@ class RdbMap {
 	}
 
 	char *getKeyPtr(int32_t page) {
-		return const_cast<char*>(getKeyPtr(page));
-	}
-	const char *getKeyPtr(int32_t page) const {
 		if ( page >= m_numPages ) return m_lastKey;
 		return &m_keys[page/PAGES_PER_SEG][(page%PAGES_PER_SEG)*m_ks];
+	}
+	const char *getKeyPtr(int32_t page) const {
+		return const_cast<RdbMap*>(this)->getKeyPtr(page);
 	}
 
 	int16_t getOffset(int32_t page) const {
