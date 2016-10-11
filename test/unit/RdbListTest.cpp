@@ -19,9 +19,6 @@ static const char* makePosdbKey(char *key, int64_t termId, uint64_t docId, int32
 class RdbListTest : public ::testing::Test {
 protected:
 	static void SetUpTestCase() {
-		g_conf.m_logTraceRdbList = true;
-		//g_conf.m_logTraceRdb = true;
-		//g_conf.m_logTraceRdbIndex = true;
 	}
 
 	static void TearDownTestCase() {
@@ -171,7 +168,6 @@ TEST_F(RdbListTest, MergeTestPosdbVerifyListOrder) {
 }
 
 TEST_F(RdbListTest, MergeTestPosdbVerifyRemoveNegRecords) {
-	g_conf.m_logTraceRdbList = true;
 	char key[MAX_KEY_BYTES];
 
 	// setup test
@@ -232,9 +228,6 @@ class RdbListNoMergeTest : public ::testing::Test {
 public:
 	static void SetUpTestCase() {
 		g_conf.m_noInMemoryPosdbMerge = true;
-		g_conf.m_logTraceRdbList = true;
-		//g_conf.m_logTraceRdb = true;
-		//g_conf.m_logTraceRdbIndex = true;
 	}
 
 	static void TearDownTestCase() {
