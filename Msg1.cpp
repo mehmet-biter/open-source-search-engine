@@ -580,14 +580,11 @@ static void handleRequest1(UdpSlot *slot, int32_t netnice) {
 	rdb->readRequestAdd ( readBufSize );
 	// reset g_errno
 	g_errno = 0;
+
 	// are we injecting some title recs?
-	bool injecting;
-	if ( *p & 0x80 ) injecting = true;
-	else             injecting = false;
 	p++;
+
 	// then collection
-	//char *coll = p;
-	//p += strlen (p) + 1;
 	collnum_t collnum = *(collnum_t *)p;
 	p += sizeof(collnum_t);
 	// . make a list from this data
@@ -603,18 +600,10 @@ static void handleRequest1(UdpSlot *slot, int32_t netnice) {
 		   false                   ,  // ownData?
 		   rdb->useHalfKeys()      ,
 		   rdb->getKeySize ()      ); 
-	// note it
-	//log("msg1: handlerequest1 calling addlist niceness=%" PRId32,niceness);
-	//log("msg1: handleRequest1 niceness=%" PRId32,niceness);
+
 	// this returns false and sets g_errno on error
 	rdb->addList ( collnum , &list , niceness);
-	// if titledb, add tfndb recs to map the title recs
-	//if ( ! g_errno && rdb == g_titledb.getRdb() && injecting ) 
-	//	updateTfndb ( coll , &list , true, 0);
-	// but if deleting a "new" and unforced record from spiderdb
-	// then only delete tfndb record if it was tfn=255
-	//if ( ! g_errno && rdb == g_spiderdb.getRdb() )
-	//	updateTfndb2 ( coll , &list , false );
+
 	// retry on some errors
 	addedList ( slot , rdb );
 }
