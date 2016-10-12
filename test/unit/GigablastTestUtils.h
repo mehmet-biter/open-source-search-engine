@@ -4,6 +4,7 @@
 class Rdb;
 class RdbBuckets;
 class RdbIndex;
+class RdbList;
 
 namespace GbTest {
 	void initializeRdbs();
@@ -12,7 +13,7 @@ namespace GbTest {
 	void addPosdbKey(Rdb *rdb, int64_t termId, int64_t docId, int32_t wordPos, bool isDelKey = false);
 	void addPosdbKey(RdbBuckets *buckets, int64_t termId, int64_t docId, int32_t wordPos, bool isDelKey = false);
 	void addPosdbKey(RdbIndex *index, int64_t termId, int64_t docId, int32_t wordPos, bool isDelKey = false);
-
+	void addPosdbKey(RdbList *list, int64_t termId, int64_t docId, int32_t wordPos, bool isDelKey = false);
 }
 
 

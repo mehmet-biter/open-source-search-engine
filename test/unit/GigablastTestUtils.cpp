@@ -98,3 +98,9 @@ void GbTest::addPosdbKey(RdbIndex *index, int64_t termId, int64_t docId, int32_t
 	::Posdb::makeKey(&key, termId, docId, wordPos, 0, 0, 0, 0, 0, 0, 0, false, isDelKey, false);
     index->addRecord(key);
 }
+
+void GbTest::addPosdbKey(RdbList *list, int64_t termId, int64_t docId, int32_t wordPos, bool isDelKey) {
+	char key[MAX_KEY_BYTES];
+	::Posdb::makeKey(&key, termId, docId, wordPos, 0, 0, 0, 0, 0, 0, 0, false, isDelKey, false);
+	list->addRecord(key, 0, NULL);
+}
