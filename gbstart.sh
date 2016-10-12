@@ -60,7 +60,7 @@ function backup_core() {
 		NOT_CURRENT_CORE=$?
 
 		if [ $IS_GB_CORE -eq 0 ] && [ $NOT_CURRENT_CORE -ne 0 ]; then
-			gdb --batch --quiet -ex "thread apply all bt full" -ex "quit" ./gb ${core_file} > lastcore.bt-bak$(date +%Y%m%d-%H%M%S).txt 2>/dev/null
+			gdb --batch --quiet -ex "thread apply all bt full" -ex "quit" ./gb ${core_file} > lastcore.bt-bak$(date -u +%Y%m%d-%H%M%S).txt 2>/dev/null
 			mv ${core_file} lastcore.core
 
 			# we only keep one copy to avoid filling up the disk if dumping repeatedly..
@@ -153,7 +153,7 @@ while true; do
 
 	# rename if exist
 	if [ -f file_state.txt ]; then
-		mv file_state.txt file_state-bak$(date +%Y%m%d-%H%M%S).txt
+		mv file_state.txt file_state-bak$(date -u +%Y%m%d-%H%M%S).txt
 	fi
 
 	# Dump list of files before allowing gb to continue running
