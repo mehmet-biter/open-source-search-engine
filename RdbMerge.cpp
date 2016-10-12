@@ -31,21 +31,8 @@ RdbMerge::~RdbMerge() {
 }
 
 void RdbMerge::reset() {
-	m_numThreads = 0;
-	m_startFileNum = 0;
-	m_numFiles = 0;
-	m_fixedDataSize = 0;
-	m_targetFile = NULL;
-	m_targetMap = NULL;
-	m_targetIndex = NULL;
-	memset(m_startKey, 0, sizeof(m_startKey));
-	memset(m_endKey, 0, sizeof(m_endKey));
 	m_isMerging = false;
 	//m_isHalted = false; //not reset because halting is a one-way street
-	m_niceness = 0;
-	m_rdbId = RDB_NONE;
-	m_collnum = 0;
-	m_ks = 0;
 }
 
 
