@@ -1348,7 +1348,10 @@ void Rdb::doneDumping ( ) {
 	}
 
 	for (collnum_t collnum = 0; collnum < getNumBases(); collnum++) {
-		getBase(collnum)->generateGlobalIndex();
+		RdbBase *base = getBase(collnum);
+		if (base) {
+			base->generateGlobalIndex();
+		}
 	}
 
 	// . tell RdbDump it is done
