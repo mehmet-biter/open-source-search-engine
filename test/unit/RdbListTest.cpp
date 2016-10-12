@@ -51,7 +51,7 @@ TEST_F(RdbListTest, MergeTestPosdbEmptyAll) {
 	RdbList final1;
 	final1.set(nullptr, 0, nullptr, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
 	final1.prepareForMerge(lists1, lists1_size, -1);
-	final1.merge_r(lists1, lists1_size, KEYMIN(), KEYMAX(), -1, true, RDB_POSDB, 0);
+	final1.merge_r(lists1, lists1_size, KEYMIN(), KEYMAX(), -1, true, RDB_POSDB, 0, 0);
 
 	// verify merged list
 	EXPECT_EQ(0, final1.getListSize());
@@ -82,7 +82,7 @@ TEST_F(RdbListTest, MergeTestPosdbEmptyOne) {
 	RdbList final1;
 	final1.set(nullptr, 0, nullptr, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
 	final1.prepareForMerge(lists1, lists1_size, -1);
-	final1.merge_r(lists1, lists1_size, KEYMIN(), KEYMAX(), -1, true, RDB_POSDB, 0);
+	final1.merge_r(lists1, lists1_size, KEYMIN(), KEYMAX(), -1, true, RDB_POSDB, 0, 0);
 
 	// verify merged list
 	EXPECT_EQ(list1.getListSize(), final1.getListSize());
@@ -101,7 +101,7 @@ TEST_F(RdbListTest, MergeTestPosdbEmptyOne) {
 	RdbList final2;
 	final2.set(nullptr, 0, nullptr, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
 	final2.prepareForMerge(lists2, lists2_size, -1);
-	final2.merge_r(lists2, lists2_size, KEYMIN(), KEYMAX(), -1, true, RDB_POSDB, 0);
+	final2.merge_r(lists2, lists2_size, KEYMIN(), KEYMAX(), -1, true, RDB_POSDB, 0, 0);
 
 	// verify merged list
 	EXPECT_EQ(list1.getListSize(), final2.getListSize());
@@ -142,7 +142,7 @@ TEST_F(RdbListTest, MergeTestPosdbVerifyListOrder) {
 	RdbList final1;
 	final1.set(nullptr, 0, nullptr, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
 	final1.prepareForMerge(lists1, lists1_size, -1);
-	final1.merge_r(lists1, lists1_size, KEYMIN(), KEYMAX(), -1, true, RDB_POSDB, 0);
+	final1.merge_r(lists1, lists1_size, KEYMIN(), KEYMAX(), -1, true, RDB_POSDB, 0, 0);
 
 	// verify merged list
 	EXPECT_EQ(0, final1.getListSize());
@@ -157,7 +157,7 @@ TEST_F(RdbListTest, MergeTestPosdbVerifyListOrder) {
 	RdbList final2;
 	final2.set(nullptr, 0, nullptr, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
 	final2.prepareForMerge(lists2, lists2_size, -1);
-	final2.merge_r(lists2, lists2_size, KEYMIN(), KEYMAX(), -1, true, RDB_POSDB, 0);
+	final2.merge_r(lists2, lists2_size, KEYMIN(), KEYMAX(), -1, true, RDB_POSDB, 0, 0);
 
 	// verify merged list
 	EXPECT_EQ(list1.getListSize(), final2.getListSize());
@@ -199,7 +199,7 @@ TEST_F(RdbListTest, MergeTestPosdbVerifyRemoveNegRecords) {
 	RdbList final1;
 	final1.set(nullptr, 0, nullptr, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
 	final1.prepareForMerge(lists1, lists1_size, -1);
-	final1.merge_r(lists1, lists1_size, KEYMIN(), KEYMAX(), -1, true, RDB_POSDB, 0);
+	final1.merge_r(lists1, lists1_size, KEYMIN(), KEYMAX(), -1, true, RDB_POSDB, 0, 0);
 
 	// verify merged list
 	EXPECT_EQ(0, final1.getListSize());
@@ -208,7 +208,7 @@ TEST_F(RdbListTest, MergeTestPosdbVerifyRemoveNegRecords) {
 	RdbList final2;
 	final2.set(nullptr, 0, nullptr, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
 	final2.prepareForMerge(lists1, lists1_size, -1);
-	final2.merge_r(lists1, lists1_size, KEYMIN(), KEYMAX(), -1, false, RDB_POSDB, 0);
+	final2.merge_r(lists1, lists1_size, KEYMIN(), KEYMAX(), -1, false, RDB_POSDB, 0, 0);
 
 	// verify merged list
 	EXPECT_EQ(list2.getListSize(), final2.getListSize());
@@ -302,7 +302,7 @@ TEST_F(RdbListNoMergeTest, MergeTestPosdbSingleDocSpiderSpiderSpider) {
 	RdbList final1;
 	final1.set(nullptr, 0, nullptr, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
 	final1.prepareForMerge(lists1, lists1_size, -1);
-	final1.merge_r(lists1, lists1_size, KEYMIN(), KEYMAX(), -1, false, RDB_POSDB, collNum);
+	final1.merge_r(lists1, lists1_size, KEYMIN(), KEYMAX(), -1, false, RDB_POSDB, collNum, 0);
 
 	EXPECT_EQ(list3.getListSize(), final1.getListSize());
 	for (list3.resetListPtr(), final1.resetListPtr(); !final1.isExhausted(); list3.skipCurrentRecord(), final1.skipCurrentRecord()) {
@@ -355,7 +355,7 @@ TEST_F(RdbListNoMergeTest, MergeTestPosdbSingleDocSpiderSpiderDelete) {
 	RdbList final1;
 	final1.set(nullptr, 0, nullptr, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
 	final1.prepareForMerge(lists1, lists1_size, -1);
-	final1.merge_r(lists1, lists1_size, KEYMIN(), KEYMAX(), -1, false, RDB_POSDB, collNum);
+	final1.merge_r(lists1, lists1_size, KEYMIN(), KEYMAX(), -1, false, RDB_POSDB, collNum, 0);
 
 	EXPECT_EQ(list3.getListSize(), final1.getListSize());
 	for (list3.resetListPtr(), final1.resetListPtr(); !final1.isExhausted(); list3.skipCurrentRecord(), final1.skipCurrentRecord()) {
@@ -408,7 +408,64 @@ TEST_F(RdbListNoMergeTest, MergeTestPosdbSingleDocSpiderDeleteSpider) {
 	RdbList final1;
 	final1.set(nullptr, 0, nullptr, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
 	final1.prepareForMerge(lists1, lists1_size, -1);
-	final1.merge_r(lists1, lists1_size, KEYMIN(), KEYMAX(), -1, false, RDB_POSDB, collNum);
+	final1.merge_r(lists1, lists1_size, KEYMIN(), KEYMAX(), -1, false, RDB_POSDB, collNum, 0);
+
+	EXPECT_EQ(list3.getListSize(), final1.getListSize());
+	for (list3.resetListPtr(), final1.resetListPtr(); !final1.isExhausted(); list3.skipCurrentRecord(), final1.skipCurrentRecord()) {
+		EXPECT_EQ(list3.getCurrentRecSize(), final1.getCurrentRecSize());
+		EXPECT_EQ(0, memcmp(list3.getCurrentRec(), final1.getCurrentRec(), list3.getCurrentRecSize()));
+	}
+}
+
+TEST_F(RdbListNoMergeTest, MergeTestPosdbSingleDocMergeStartSecondFile) {
+	char key[MAX_KEY_BYTES];
+	const rdbid_t rdbId = RDB_POSDB;
+	const collnum_t collNum = 0;
+	const int64_t docId = 1;
+
+
+	// spider doc (a, b, c, d, e)
+	RdbList list1;
+	list1.set(nullptr, 0, nullptr, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
+	list1.addRecord(makePosdbKey(key, 'a', docId, 0, false), 0, nullptr);
+	list1.addRecord(makePosdbKey(key, 'b', docId, 1, false), 0, nullptr);
+	list1.addRecord(makePosdbKey(key, 'c', docId, 2, false), 0, nullptr);
+	list1.addRecord(makePosdbKey(key, 'd', docId, 3, false), 0, nullptr);
+	list1.addRecord(makePosdbKey(key, 'e', docId, 4, false), 0, nullptr);
+	addListToTree(rdbId, collNum, &list1);
+
+	// respider doc (a, c, b, e, d)
+	RdbList list2;
+	list2.set(nullptr, 0, nullptr, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
+	list2.addRecord(makePosdbKey(key, 'a', docId, 0, false), 0, nullptr);
+	list2.addRecord(makePosdbKey(key, 'c', docId, 1, false), 0, nullptr);
+	list2.addRecord(makePosdbKey(key, 'b', docId, 2, false), 0, nullptr);
+	list2.addRecord(makePosdbKey(key, 'e', docId, 3, false), 0, nullptr);
+	list2.addRecord(makePosdbKey(key, 'd', docId, 4, false), 0, nullptr);
+	addListToTree(rdbId, collNum, &list2);
+
+	// respider doc (r, s, t, l, n)
+	RdbList list3;
+	list3.set(nullptr, 0, nullptr, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
+	list3.addRecord(makePosdbKey(key, 'r', docId, 0, false), 0, nullptr);
+	list3.addRecord(makePosdbKey(key, 's', docId, 1, false), 0, nullptr);
+	list3.addRecord(makePosdbKey(key, 't', docId, 2, false), 0, nullptr);
+	list3.addRecord(makePosdbKey(key, 'l', docId, 3, false), 0, nullptr);
+	list3.addRecord(makePosdbKey(key, 'n', docId, 4, false), 0, nullptr);
+	addListToTree(rdbId, collNum, &list3);
+
+	// keys go from oldest to newest
+	RdbList *lists1[2];
+	lists1[0] = &list2;
+	lists1[1] = &list3;
+
+	size_t lists1_size = sizeof_arr(lists1);
+
+	// merge
+	RdbList final1;
+	final1.set(nullptr, 0, nullptr, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
+	final1.prepareForMerge(lists1, lists1_size, -1);
+	final1.merge_r(lists1, lists1_size, KEYMIN(), KEYMAX(), -1, false, RDB_POSDB, collNum, 1);
 
 	EXPECT_EQ(list3.getListSize(), final1.getListSize());
 	for (list3.resetListPtr(), final1.resetListPtr(); !final1.isExhausted(); list3.skipCurrentRecord(), final1.skipCurrentRecord()) {
@@ -471,7 +528,7 @@ TEST_F(RdbListNoMergeTest, MergeTestPosdbMultiDocS1S2N1S2S1N2) {
 	RdbList final1;
 	final1.set(nullptr, 0, nullptr, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
 	final1.prepareForMerge(lists1, lists1_size, -1);
-	final1.merge_r(lists1, lists1_size, KEYMIN(), KEYMAX(), -1, false, RDB_POSDB, collNum);
+	final1.merge_r(lists1, lists1_size, KEYMIN(), KEYMAX(), -1, false, RDB_POSDB, collNum, 0);
 
 	EXPECT_EQ(list2.getListSize() + list3.getListSize(), final1.getListSize());
 
@@ -539,7 +596,7 @@ TEST_F(RdbListNoMergeTest, MergeTestPosdbMultiDocS1N2N1S2S1N2) {
 	RdbList final1;
 	final1.set(nullptr, 0, nullptr, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
 	final1.prepareForMerge(lists1, lists1_size, -1);
-	final1.merge_r(lists1, lists1_size, KEYMIN(), KEYMAX(), -1, false, RDB_POSDB, collNum);
+	final1.merge_r(lists1, lists1_size, KEYMIN(), KEYMAX(), -1, false, RDB_POSDB, collNum, 0);
 
 	EXPECT_EQ(list2.getListSize() + list3.getListSize(), final1.getListSize());
 
@@ -610,7 +667,7 @@ TEST_F(RdbListNoMergeTest, MergeTestPosdbMultiDocS1S2D1S2S1N2) {
 	RdbList final1;
 	final1.set(nullptr, 0, nullptr, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
 	final1.prepareForMerge(lists1, lists1_size, -1);
-	final1.merge_r(lists1, lists1_size, KEYMIN(), KEYMAX(), -1, false, RDB_POSDB, collNum);
+	final1.merge_r(lists1, lists1_size, KEYMIN(), KEYMAX(), -1, false, RDB_POSDB, collNum, 0);
 
 	// first record from list2 is not in output list
 	list2.resetListPtr();
@@ -685,7 +742,7 @@ TEST_F(RdbListNoMergeTest, MergeTestPosdbMultiDocS1S2D1S2S1D2) {
 	RdbList final1;
 	final1.set(nullptr, 0, nullptr, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
 	final1.prepareForMerge(lists1, lists1_size, -1);
-	final1.merge_r(lists1, lists1_size, KEYMIN(), KEYMAX(), -1, false, RDB_POSDB, collNum);
+	final1.merge_r(lists1, lists1_size, KEYMIN(), KEYMAX(), -1, false, RDB_POSDB, collNum, 0);
 
 	EXPECT_EQ(list3.getListSize(), final1.getListSize());
 	for (list3.resetListPtr(), final1.resetListPtr(); !final1.isExhausted(); list3.skipCurrentRecord(), final1.skipCurrentRecord()) {
@@ -748,7 +805,7 @@ static void createPosdbList(collnum_t collNum, RdbList *list, int64_t termId, ui
 	addListToTree(RDB_POSDB, collNum, list);
 }
 
-static void mergePosdbLists(collnum_t collNum, RdbList *final1, RdbList *list1, RdbList *list2) {
+static void mergePosdbLists(collnum_t collNum, RdbList *final1, RdbList *list1, RdbList *list2, int32_t startFileNum = 0) {
 	// keys go from oldest to newest
 	RdbList *lists1[2];
 	lists1[0] = list1;
@@ -759,7 +816,7 @@ static void mergePosdbLists(collnum_t collNum, RdbList *final1, RdbList *list1, 
 	// merge
 	final1->set(nullptr, 0, nullptr, 0, Posdb::getFixedDataSize(), true, Posdb::getUseHalfKeys(), Posdb::getKeySize());
 	final1->prepareForMerge(lists1, lists1_size, -1);
-	final1->merge_r(lists1, lists1_size, KEYMIN(), KEYMAX(), -1, false, RDB_POSDB, collNum);
+	final1->merge_r(lists1, lists1_size, KEYMIN(), KEYMAX(), -1, false, RDB_POSDB, collNum, startFileNum);
 }
 
 static void expectEqualList(RdbList *list1, RdbList *list2) {
@@ -904,7 +961,7 @@ TEST(RdbListTest, DISABLED_MergeTest1) {
 	logf(LOG_DEBUG,"starting merge");
 	int64_t t = gettimeofdayInMilliseconds();
 	// do it
-	list.merge_r(lists, numToMerge, KEYMIN(), KEYMAX(), numKeysWanted, true, RDB_NONE, 0);
+	list.merge_r(lists, numToMerge, KEYMIN(), KEYMAX(), numKeysWanted, true, RDB_NONE, 0, 0);
 
 	// completed
 	int64_t now = gettimeofdayInMilliseconds();
@@ -980,7 +1037,7 @@ TEST(RdbListTest, DISABLED_MergeTest2) {
 	logf(LOG_DEBUG, "-------list #3-------");
 	list3.printList();
 
-	final.merge_r(lists, 3, KEYMIN(), KEYMAX(), min, true, RDB_NONE, 0);
+	final.merge_r(lists, 3, KEYMIN(), KEYMAX(), min, true, RDB_NONE, 0, 0);
 
 	logf(LOG_DEBUG,"------list final------");
 	final.printList();

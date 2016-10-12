@@ -1690,7 +1690,7 @@ bool RdbList::posdbConstrain(const char *startKey, char *endKey, int32_t minRecS
 // . CAUTION: you should call constrain() on all "lists" before calling this
 //   so we don't have to do boundary checks on the keys here
 void RdbList::merge_r(RdbList **lists, int32_t numLists, const char *startKey, const char *endKey, int32_t minRecSizes,
-                      bool removeNegRecs, rdbid_t rdbId, collnum_t collNum) {
+                      bool removeNegRecs, rdbid_t rdbId, collnum_t collNum, int32_t startFileNum) {
 	// sanity
 	if (!m_ownData) {
 		log(LOG_ERROR, "list: merge_r data not owned");
@@ -1760,7 +1760,7 @@ void RdbList::merge_r(RdbList **lists, int32_t numLists, const char *startKey, c
 
 	Rdb* rdb = getRdbFromId(rdbId);
 	if (rdbId == RDB_POSDB) {
-		posdbMerge_r(lists, numLists, startKey, endKey, m_mergeMinListSize, removeNegRecs, rdb->isUseIndexFile(), collNum);
+		posdbMerge_r(lists, numLists, startKey, endKey, m_mergeMinListSize, removeNegRecs, rdb->isUseIndexFile(), collNum, startFileNum);
 		return;
 	}
 
@@ -2088,7 +2088,7 @@ skip:
 ///////
 
 bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startKey, const char *endKey, int32_t minRecSizes,
-                           bool removeNegKeys, bool useIndexFile, collnum_t collNum) {
+                           bool removeNegKeys, bool useIndexFile, collnum_t collNum, int32_t startFileNum) {
 	logTrace(g_conf.m_logTraceRdbList, "BEGIN");
 
 	// sanity
@@ -2269,8 +2269,7 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 
 			int32_t filePos = rdbIndexQuery.getFilePos(docId);
 
-			/// @todo ALC can we assume list number == rdb file idx?
-			if (filePos > mini + listOffset) {
+			if (filePos > (mini + listOffset) + startFileNum) {
 				// docId is present in newer file
 				logTrace(g_conf.m_logTraceRdbList, "docId in newer list. skip. filePos=%" PRId32" mini=%" PRId16, filePos, mini);
 				goto skip;
