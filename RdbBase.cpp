@@ -1887,16 +1887,14 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 
 
 		// debug the merge selection
-		char      tooBig   = 0;
 		int64_t prevSize = 0;
 		if ( i > 0 ) prevSize = m_fileInfo[i-1].m_file->getFileSize();
-		if ( i > 0 && prevSize < total/4 ) tooBig = 1;
 		log(LOG_INFO,"merge: i=%" PRId32" n=%" PRId32" ratio=%.2f adjratio=%.2f "
 		    "minr=%.2f mint=%" PRId64" mini=%" PRId32" prevFileSize=%" PRId64" "
-		    "mergeFileSize=%" PRId64" tooBig=%" PRId32" oldestfile=%.02fdays "
+		    "mergeFileSize=%" PRId64" oldestfile=%.02fdays "
 		    "collnum=%" PRId32,
 		    i,mergeNum,ratio,adjratio,minr,mint,mini,
-		    prevSize , total ,(int32_t)tooBig,
+		    prevSize , total,
 		    ((float)nowLocal-date)/(24*3600.0) ,
 		    (int32_t)m_collnum);
 
