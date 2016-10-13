@@ -3399,12 +3399,13 @@ void PosdbTable::slidingWindowAlgorithm(const char **miniMergedList, const char 
 		//
 		findMinTermPairScoreInWindow(xpos, highestScoringNonBodyPos, scoreMatrix);
 
-	 	bool advanceMin = false;
+	 	bool advanceMin;
 
 	 	do { 
+			advanceMin = false;
 			
 			//
-			// Find the min word pos still in body for any of the query terms.
+			// Find the minimum word position in the document body for ANY of the query terms.
 			// minPosTermIdx will contain the term index, minPos the position.
 			//
 			minPosTermIdx = -1;
@@ -3477,13 +3478,13 @@ void PosdbTable::slidingWindowAlgorithm(const char **miniMergedList, const char 
 						doneSliding = true;
 					}
 
-					// ok, now recompute the next min and advance him
+					// No more positions in current term list. Find new term list with lowest position.
 					advanceMin = true;
 				}
-
-				// if it left the body then advance some more i guess?
+				// if current term position is not in the document body, advance the pointer and look again.
 			} while( !advanceMin && !doneSliding && !s_inBody[Posdb::getHashGroup(xpos[minPosTermIdx])] );
 
+			// if current list is exhausted, find new term list with lowest position.
 		} while( advanceMin && !doneSliding );
 
 	} // while( !doneSliding )
