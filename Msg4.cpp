@@ -850,13 +850,16 @@ bool addMetaList ( const char *p , UdpSlot *slot ) {
 	Rdb  *rdb       = NULL;
 	char  lastRdbId = -1;
 
-	// . this request consists of multiple recs, so add each one
-	// . collnum(2bytes)/rdbId(1byte)/recSize(4bytes)/recData/...
+	/// @note we can have multiple meta list here
+
+	// check if we have enough room for the whole request
+	std::map<rdbid_t, std::pair<int32_t, int32_t>> rdbRecSizes;
+
+	const char *pstart = p;
 	while (p < pend) {
-		// extract collnum, rdbId, recSize
-		collnum_t collnum = *(collnum_t *)p;
+		// extract rdbId, recSize
 		p += sizeof(collnum_t);
-		char rdbId = *(char *)p;
+		rdbid_t rdbId = static_cast<rdbid_t>(*(char *)p);
 		p += 1;
 		int32_t recSize = *(int32_t *)p;
 		p += 4;
@@ -864,7 +867,14 @@ bool addMetaList ( const char *p , UdpSlot *slot ) {
 		// . get the rdb to which it belongs, use Msg0::getRdb()
 		// . do not call this for every rec if we do not have to
 		if (rdbId != lastRdbId) {
-			rdb = getRdbFromId((char)rdbId);
+			rdb = getRdbFromId(rdbId);
+
+			if (!rdb) {
+				log(LOG_WARN, "msg4: rdbId of %" PRId32" unrecognized from hostip=%s. dropping WHOLE request",
+				    (int32_t)rdbId, slot ? iptoa(slot->getIp()) : "unknown");
+				g_errno = ETRYAGAIN;
+				return false;
+			}
 
 			// an uninitialized secondary rdb? it will have a keysize
 			// of 0 if its never been intialized from the repair page.
@@ -873,7 +883,7 @@ bool addMetaList ( const char *p , UdpSlot *slot ) {
 			// g_conf.m_repairingEnabled to '1' so it can start its
 			// Repair.cpp repairWrapper() loop and init the secondary
 			// rdbs so "rdb" here won't be NULL any more.
-			if (rdb && rdb->getKeySize() <= 0) {
+			if (rdb->getKeySize() <= 0) {
 				time_t currentTime = getTime();
 				static time_t s_lastTime = 0;
 				if (currentTime > s_lastTime + 10) {
@@ -882,38 +892,74 @@ bool addMetaList ( const char *p , UdpSlot *slot ) {
 							"rdb and not in repair mode. waiting to be in repair mode.");
 					g_errno = ETRYAGAIN;
 					return false;
-					//g_process.shutdownAbort(true);
 				}
 			}
 
-			if (!rdb) {
-				if (slot) {
-					log(LOG_WARN, "msg4: rdbId of %" PRId32" unrecognized from hostip=%s. dropping WHOLE request",
-					    (int32_t)rdbId, iptoa(slot->getIp()));
-				} else {
-					log(LOG_WARN, "msg4: rdbId of %" PRId32" unrecognized. dropping WHOLE request", (int32_t)rdbId);
-				}
+			// . if already in addList and we are quickpoll interruptint, try again
+			// . happens if our niceness gets converted to 0
+			if (rdb->inAddList()) {
 				g_errno = ETRYAGAIN;
 				return false;
 			}
-		}
-
-		if (!rdb) {
-			logError("Attempt to work on NULL rdb object");
-			gbshutdownLogicError();
-		}
-
-		// . if already in addList and we are quickpoll interruptint, try again
-		// . happens if our niceness gets converted to 0
-		if (rdb->inAddList()) {
-			g_errno = ETRYAGAIN;
-			return false;
 		}
 
 		// sanity check
 		if (p + recSize > pend) {
 			g_errno = ECORRUPTDATA;
 			return false;
+		}
+
+		auto &item = rdbRecSizes[rdbId];
+		item.first += 1;
+
+		int32_t dataSize = recSize - rdb->getKeySize();
+		if (rdb->getFixedDataSize() == -1) {
+			dataSize -= 4;
+		}
+
+		item.second += dataSize;
+
+		// reset g_errno
+		g_errno = 0;
+
+		// advance over the rec data to point to next entry
+		p += recSize;
+	}
+
+	bool hasRoom = true;
+	for (auto item : rdbRecSizes) {
+		Rdb *rdb = getRdbFromId(item.first);
+		if (!rdb->hasRoom(item.second.first, item.second.second)) {
+			rdb->dumpTree(1);
+			hasRoom = false;
+		}
+	}
+
+	if (!hasRoom) {
+		g_errno = ETRYAGAIN;
+		return false;
+	}
+
+	/// @todo ALC we can probably improve performance by preprocessing records in previous loop
+
+	// reset p to before 'check' loop
+	p = pstart;
+
+	// . this request consists of multiple recs, so add each one
+	// . collnum(2bytes)/rdbId(1byte)/recSize(4bytes)/recData/...
+	while (p < pend) {
+		// extract collnum, rdbId, recSize
+		collnum_t collnum = *(collnum_t *)p;
+		p += sizeof(collnum_t);
+		rdbid_t rdbId = static_cast<rdbid_t>(*(char *)p);
+		p += 1;
+		int32_t recSize = *(int32_t *)p;
+		p += 4;
+
+		// . get the rdb to which it belongs, use Msg0::getRdb()
+		// . do not call this for every rec if we do not have to
+		if (rdbId != lastRdbId) {
+			rdb = getRdbFromId(rdbId);
 		}
 
 		// reset g_errno
@@ -923,13 +969,6 @@ bool addMetaList ( const char *p , UdpSlot *slot ) {
 		// . skip over the first 4 bytes which is the rdbId
 		// . TODO: embed the rdbId in the msgtype or something...
 		RdbList list;
-		// sanity check
-		if (rdb->getKeySize() == 0) {
-			log(LOG_WARN, "seems like a stray /e/repair-addsinprogress.dat file "
-					"rdbId=%" PRId32". waiting to be in repair mode.", (int32_t)rdbId);
-			g_errno = ETRYAGAIN;
-			return false;
-		}
 
 		// set the list
 		// todo: dodgy cast to char*. RdbList should be fixed
