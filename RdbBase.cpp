@@ -1377,7 +1377,7 @@ void RdbBase::buryFiles ( int32_t a , int32_t b ) {
 // . now return true if we started a merge, false otherwise
 // . TODO: fix Rdb::attemptMergeAll() to not remove from linked list if
 //   we had an error in addNewFile() or rdbmerge.cpp's call to rdbbase::addFile
-bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , int32_t minToMergeOverride ) {
+bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMergeOverride) {
 	logTrace( g_conf.m_logTraceRdbBase, "BEGIN. minToMergeOverride: %" PRId32, minToMergeOverride);
 
 	// don't do merge if we're in read only mode
@@ -1412,9 +1412,7 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 	// RdbDump::updateTfndbLoop() 
 	rdbid_t rdbId = getIdFromRdb ( m_rdb );
 	if ( rdbId == RDB_TITLEDB && g_titledb.getRdb()->isDumping() ) {
-		if ( doLog ) {
-			log( LOG_INFO, "db: Can not merge titledb while it is dumping." );
-		}
+		log( LOG_INFO, "db: Can not merge titledb while it is dumping." );
 		logTrace( g_conf.m_logTraceRdbBase, "END, wait for titledb dump" );
 		return false;
 	}
@@ -1432,10 +1430,9 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 	//   and it will mess up our merge
 	// . right after a merge we get a few of these printed out...
 	if ( m_numThreads > 0 ) {
-		if ( doLog )
-			log(LOG_INFO,"merge: Waiting for unlink/rename "
-			    "operations to finish before attempting merge "
-			    "for %s. (collnum=%" PRId32")",m_dbname,(int32_t)m_collnum);
+		log(LOG_INFO,"merge: Waiting for unlink/rename "
+		    "operations to finish before attempting merge "
+		    "for %s. (collnum=%" PRId32")",m_dbname,(int32_t)m_collnum);
 		logTrace( g_conf.m_logTraceRdbBase, "END, wait for unlink/rename" );
 		return false;
 	}
@@ -1504,13 +1501,10 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 		//m_minToMerge = 2;
 		g_process.shutdownAbort(true);
 	}
-	// mdw: comment this out to reduce log spam when we have 800 colls!
+
 	// print it
-	if ( doLog ) {
-		log( LOG_INFO, "merge: Attempting to merge %" PRId32" %s files on disk."
-				     " %" PRId32" files needed to trigger a merge.",
-		     numFiles, m_dbname, m_minToMerge );
-	}
+	log( LOG_INFO, "merge: Attempting to merge %" PRId32" %s files on disk. %" PRId32" files needed to trigger a merge.",
+	     numFiles, m_dbname, m_minToMerge );
 	
 	if ( g_merge.isMerging() )
 	{
@@ -1584,10 +1578,7 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 
 	// bail if already merging THIS class
 	if ( m_isMerging ) {
-		if ( doLog ) 
-			log(LOG_INFO,
-			    "merge: Waiting for other merge to complete "
-			    "before merging %s.",m_dbname);
+		log(LOG_INFO, "merge: Waiting for other merge to complete before merging %s.", m_dbname);
 		logTrace( g_conf.m_logTraceRdbBase, "END, already merging this" );
 		return false;
 	}
@@ -1607,11 +1598,10 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 
 	// sanity check
 	if ( m_isMerging || g_merge.isMerging() ) {
-		//if ( doLog )
-			//log(LOG_INFO,
-			//"merge: Someone already merging. Waiting for "
-			//"merge token "
-			//"in order to merge %s.",m_dbname);
+		//log(LOG_INFO,
+		//"merge: Someone already merging. Waiting for "
+		//"merge token "
+		//"in order to merge %s.",m_dbname);
 		logTrace( g_conf.m_logTraceRdbBase, "END, failed sanity check" );
 		return false;
 	}

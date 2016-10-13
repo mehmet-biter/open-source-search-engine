@@ -141,7 +141,6 @@ class RdbBase {
 	// returns true if merge was started, false if no merge could
 	// be launched right now for some reason.
 	bool attemptMerge ( int32_t niceness , bool forceMergeAll , 
-			    bool doLog = true ,
 			    // -1 means to not override it
 			    int32_t minToMergeOverride = -1 );
 

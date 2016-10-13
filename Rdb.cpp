@@ -1460,7 +1460,7 @@ void attemptMergeAll() {
 		
 		for(unsigned i=0; i<sizeof(rdbid)/sizeof(rdbid[0]); i++) {
 			RdbBase *base = cr->getBasePtr(rdbid[i]);
-			if(base && base->attemptMerge(niceness,forceMergeAll,true))
+			if(base && base->attemptMerge(niceness,forceMergeAll))
 				return;
 		}
 	}
