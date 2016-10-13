@@ -1521,7 +1521,6 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 
 	// if we are tfndb and someone else is merging, do not merge unless
 	// we have 3 or more files
-	int32_t minToMerge = m_minToMerge;
 
 	// are we resuming a killed merge?
 	bool resuming = false;
@@ -1575,12 +1574,12 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 
 	// . don't merge if we don't have the min # of files
 	// . but skip this check if there is a merge to be resumed from b4
-	if ( ! resuming && ! forceMergeAll && numFiles < minToMerge ) {
+	if ( ! resuming && ! forceMergeAll && numFiles < m_minToMerge ) {
 		// now we no longer have to check this collection rdb for
 		// merging. this will save a lot of cpu time when we have
 		// 20,000+ collections. if we dump a file to disk for it
 		// then we set this flag back to false in Rdb.cpp.
-		logTrace( g_conf.m_logTraceRdbBase, "END, min files not reached (%" PRId32" / %" PRId32")",numFiles,minToMerge);
+		logTrace( g_conf.m_logTraceRdbBase, "END, min files not reached (%" PRId32" / %" PRId32")",numFiles,m_minToMerge);
 		return false;
 	}
 
@@ -1762,8 +1761,6 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 		goto startMerge;
 	}
 
-	minToMerge = m_minToMerge;
-
 	// look at this merge:
 	// indexdb0003.dat.part1
 	// indexdb0003.dat.part2
@@ -1786,14 +1783,14 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 	// . just merge the minimum # of files to stay under m_minToMerge
 	// . files must be consecutive, however
 	// . but ALWAYS make sure file i-1 is bigger than file i
-	mergeNum = numFiles - minToMerge + 2 ;
+	mergeNum = numFiles - m_minToMerge + 2 ;
 
 	// titledb should always merge at least 50 files no matter what though
 	// cuz i don't want it merging its huge root file and just one
 	// other file... i've seen that happen... but don't know why it didn't
 	// merge two small files! i guess because the root file was the
 	// oldest file! (38.80 days old)???
-	if ( m_rdb->isTitledb() && mergeNum < 50 && minToMerge > 200 ) {
+	if ( m_rdb->isTitledb() && mergeNum < 50 && m_minToMerge > 200 ) {
 		// force it to 50 files to merge
 		mergeNum = 50;
 
