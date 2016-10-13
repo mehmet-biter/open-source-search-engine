@@ -49,7 +49,7 @@ RdbBase::RdbBase()
 	m_tree = NULL;
 	m_buckets = NULL;
 	m_dump = NULL;
-	m_minToMergeArg = 0;
+	m_minToMergeDefault = 0;
 	m_minToMerge = 0;
 	m_numFilesToMerge = 0;
 	m_mergeStartFileNum = 0;
@@ -210,7 +210,7 @@ bool RdbBase::init(const char *dir,
 	if ( minToMergeArg > MAX_RDB_FILES ) {
 		minToMergeArg = MAX_RDB_FILES;
 	}
-	m_minToMergeArg = minToMergeArg;
+	m_minToMergeDefault = minToMergeArg;
 
 	// . set our m_files array
 	// . m_dir is bogus causing this to fail
@@ -1447,9 +1447,9 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 	// is actually valid at this point, use it as is, therefore, just set
 	// cr to NULL
 
-	logTrace( g_conf.m_logTraceRdbBase, "m_minToMergeArg: %" PRId32, m_minToMergeArg);
+	logTrace( g_conf.m_logTraceRdbBase, "m_minToMergeDefault: %" PRId32, m_minToMergeDefault);
 		
-	m_minToMerge = m_minToMergeArg;
+	m_minToMerge = m_minToMergeDefault;
 	if ( cr && m_minToMerge > 0 ) cr = NULL;
 
 	// if cr is non-NULL use its value now

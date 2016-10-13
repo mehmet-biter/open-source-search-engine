@@ -287,7 +287,7 @@ private:
 	// for dumping a table to an rdb file
 	RdbDump    *m_dump;  
 
-	int32_t      m_minToMergeArg;
+	int32_t      m_minToMergeDefault; //from init() call
 	int32_t      m_minToMerge;  // need at least this many files b4 merging
 	int32_t      m_numFilesToMerge   ;
 	int32_t      m_mergeStartFileNum ;
