@@ -247,6 +247,8 @@ public:
 	static const uint64_t s_docIdFileIndex_filePosMask  = 0x000000000000ffffULL;
 
 private:
+	void selectFilesToMerge(int32_t mergeNum, int32_t numFiles, int32_t *p_mini);
+
 	static void unlinkDoneWrapper(void *state);
 	void unlinkDone();
 	static void renameDoneWrapper(void *state);

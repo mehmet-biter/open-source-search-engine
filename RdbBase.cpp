@@ -1788,134 +1788,8 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 		mergeNum = numFiles;
 	}
 
-	float minr;
-	minr = 99999999999.0;
-	int64_t mint;
-	mint = 0x7fffffffffffffffLL ;
 	int32_t mini;
-	mini = -1;
-	bool minOld;
-	minOld = false;
-	int32_t nowLocal;
-	nowLocal = getTimeLocal();
-	for ( int32_t i = 0 ; i + mergeNum <= numFiles ; i++ ) {
-		// oldest file
-		time_t date = -1;
-		// add up the string
-		int64_t total = 0;
-		for ( int32_t j = i ; j < i + mergeNum ; j++ ) {
-			total += m_fileInfo[j].m_file->getFileSize();
-			time_t mtime = m_fileInfo[j].m_file->getLastModifiedTime();
-			// skip on error
-			if ( mtime < 0 ) {
-				continue;
-			}
-
-			if ( mtime > date ) {
-				date = mtime;
-			}
-		}
-
-		// does it have a file more than 30 days old?
-		bool old = ( date < nowLocal - 30*24*3600 );
-
-		// not old if error (date will be -1)
-		if ( date < 0 ) {
-			old = false;
-		}
-
-		// if it does, and current winner does not, force ourselves!
-		if ( old && ! minOld ) {
-			mint = 0x7fffffffffffffffLL ;
-		}
-
-		// and if we are not old and the min is, do not consider
-		if ( ! old && minOld ) {
-			continue;
-		}
-
-		// if merging titledb, just pick by the lowest total
-		if ( m_rdb->isTitledb() ) {
-			if ( total < mint ) {
-				mini   = i;
-				mint   = total;
-				minOld = old;
-				log(LOG_INFO,"merge: titledb i=%" PRId32" n=%" PRId32" "
-				    "mint=%" PRId64" mini=%" PRId32" "
-				    "oldestfile=%.02fdays",
-				    i,mergeNum,mint,mini,
-				    ((float)nowLocal-date)/(24*3600.0) );
-			}
-			continue;
-		}
-
-		// . get the average ratio between mergees
-		// . ratio in [1.0,inf)
-		// . prefer the lowest average ratio
-		double ratio = 0.0;
-		for ( int32_t j = i ; j < i + mergeNum - 1 ; j++ ) {
-			int64_t s1 = m_fileInfo[j  ].m_file->getFileSize();
-			int64_t s2 = m_fileInfo[j+1].m_file->getFileSize();
-			int64_t tmp;
-			if ( s2 == 0 ) continue;
-			if ( s1 < s2 ) { tmp = s1; s1 = s2 ; s2 = tmp; }
-			ratio += (double)s1 / (double)s2 ;
-		}
-		if ( mergeNum >= 2 ) ratio /= (double)(mergeNum-1);
-		// sanity check
-		if ( ratio < 0.0 ) {
-			logf(LOG_LOGIC,"merge: ratio is negative %.02f",ratio);
-			g_process.shutdownAbort(true); 
-		}
-		// the adjusted ratio
-		double adjratio = ratio;
-		// . adjust ratio based on file size of current winner
-		// . if winner is ratio of 1:1 and we are 10:1 but winner
-		//   is 10 times bigger than us, then we have a tie. 
-		// . i think if we are 10:1 and winner is 3 times bigger
-		//   we should have a tie
-		if ( mini >= 0 && total > 0 && mint > 0 ) {
-			double sratio = (double)total/(double)mint;
-			//if ( mint>total ) sratio = (float)mint/(float)total;
-			//else              sratio = (float)total/(float)mint;
-			adjratio *= sratio;
-		}
-
-
-		// debug the merge selection
-		int64_t prevSize = 0;
-		if ( i > 0 ) prevSize = m_fileInfo[i-1].m_file->getFileSize();
-		log(LOG_INFO,"merge: i=%" PRId32" n=%" PRId32" ratio=%.2f adjratio=%.2f "
-		    "minr=%.2f mint=%" PRId64" mini=%" PRId32" prevFileSize=%" PRId64" "
-		    "mergeFileSize=%" PRId64" oldestfile=%.02fdays "
-		    "collnum=%" PRId32,
-		    i,mergeNum,ratio,adjratio,minr,mint,mini,
-		    prevSize , total,
-		    ((float)nowLocal-date)/(24*3600.0) ,
-		    (int32_t)m_collnum);
-
-		// bring back the greedy merge
-		if ( total >= mint ) {
-			continue;
-		}
-
-		// . don't get TOO lopsided on me now
-		// . allow it for now! this is the true greedy method... no!
-		// . an older small file can be cut off early on by a merge
-		//   of middle files. the little guy can end up never getting
-		//   merged unless we have this.
-		// . allow a file to be 4x bigger than the one before it, this
-		//   allows a little bit of lopsidedness.
-		if (i > 0  && m_fileInfo[i-1].m_file->getFileSize() < total/4 ) {
-			continue;
-		}
-
-		//min  = total;
-		minr   = ratio;
-		mint   = total;
-		mini   = i;
-		minOld = old;
-	}
+	selectFilesToMerge(mergeNum,numFiles,&mini);
 
 	// if no valid range, bail
 	if ( mini == -1 ) { 
@@ -2039,6 +1913,137 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 	log("merge: did not block for some reason.");
 	logTrace( g_conf.m_logTraceRdbBase, "END" );
 	return true;
+}
+
+
+void RdbBase::selectFilesToMerge(int32_t mergeNum, int32_t numFiles, int32_t *p_mini) {
+	float minr = 99999999999.0;
+	int64_t mint = 0x7fffffffffffffffLL ;
+	int32_t mini = -1;
+	bool minOld = false;
+	int32_t nowLocal = getTimeLocal();
+	for(int32_t i = 0; i + mergeNum <= numFiles; i++) {
+		// oldest file
+		time_t date = -1;
+		// add up the string
+		int64_t total = 0;
+		for(int32_t j = i; j < i + mergeNum; j++) {
+			total += m_fileInfo[j].m_file->getFileSize();
+			time_t mtime = m_fileInfo[j].m_file->getLastModifiedTime();
+			// skip on error
+			if(mtime < 0) {
+				continue;
+			}
+
+			if(mtime > date) {
+				date = mtime;
+			}
+		}
+
+		// does it have a file more than 30 days old?
+		bool old = ( date < nowLocal - 30*24*3600 );
+
+		// not old if error (date will be -1)
+		if(date < 0) {
+			old = false;
+		}
+
+		// if it does, and current winner does not, force ourselves!
+		if(old && ! minOld) {
+			mint = 0x7fffffffffffffffLL ;
+		}
+
+		// and if we are not old and the min is, do not consider
+		if(!old && minOld) {
+			continue;
+		}
+
+		// if merging titledb, just pick by the lowest total
+		if(m_rdb->isTitledb()) {
+			if(total < mint) {
+				mini   = i;
+				mint   = total;
+				minOld = old;
+				log(LOG_INFO,"merge: titledb i=%" PRId32" n=%" PRId32" "
+				    "mint=%" PRId64" mini=%" PRId32" "
+				    "oldestfile=%.02fdays",
+				    i,mergeNum,mint,mini,
+				    ((float)nowLocal-date)/(24*3600.0) );
+			}
+			continue;
+		}
+
+		// . get the average ratio between mergees
+		// . ratio in [1.0,inf)
+		// . prefer the lowest average ratio
+		double ratio = 0.0;
+		for(int32_t j = i; j < i + mergeNum - 1; j++) {
+			int64_t s1 = m_fileInfo[j  ].m_file->getFileSize();
+			int64_t s2 = m_fileInfo[j+1].m_file->getFileSize();
+			int64_t tmp;
+			if(s2 == 0 ) continue;
+			if(s1 < s2) { tmp = s1; s1 = s2 ; s2 = tmp; }
+			ratio += (double)s1 / (double)s2 ;
+		}
+		if(mergeNum >= 2 ) ratio /= (double)(mergeNum-1);
+		// sanity check
+		if(ratio < 0.0) {
+			logf(LOG_LOGIC,"merge: ratio is negative %.02f",ratio);
+			g_process.shutdownAbort(true);
+		}
+
+		// the adjusted ratio
+		double adjratio = ratio;
+		// . adjust ratio based on file size of current winner
+		// . if winner is ratio of 1:1 and we are 10:1 but winner
+		//   is 10 times bigger than us, then we have a tie.
+		// . i think if we are 10:1 and winner is 3 times bigger
+		//   we should have a tie
+		if(mini >= 0 && total > 0 && mint > 0) {
+			double sratio = (double)total/(double)mint;
+			//if(mint>total ) sratio = (float)mint/(float)total;
+			//else              sratio = (float)total/(float)mint;
+			adjratio *= sratio;
+		}
+
+
+		// debug the merge selection
+		int64_t prevSize = 0;
+		if(i > 0)
+			prevSize = m_fileInfo[i-1].m_file->getFileSize();
+		log(LOG_INFO,"merge: i=%" PRId32" n=%" PRId32" ratio=%.2f adjratio=%.2f "
+		    "minr=%.2f mint=%" PRId64" mini=%" PRId32" prevFileSize=%" PRId64" "
+		    "mergeFileSize=%" PRId64" oldestfile=%.02fdays "
+		    "collnum=%" PRId32,
+		    i,mergeNum,ratio,adjratio,minr,mint,mini,
+		    prevSize , total,
+		    ((float)nowLocal-date)/(24*3600.0) ,
+		    (int32_t)m_collnum);
+
+		// bring back the greedy merge
+		if(total >= mint) {
+			continue;
+		}
+
+		// . don't get TOO lopsided on me now
+		// . allow it for now! this is the true greedy method... no!
+		// . an older small file can be cut off early on by a merge
+		//   of middle files. the little guy can end up never getting
+		//   merged unless we have this.
+		// . allow a file to be 4x bigger than the one before it, this
+		//   allows a little bit of lopsidedness.
+		if(i > 0  && m_fileInfo[i-1].m_file->getFileSize() < total/4) {
+			continue;
+		}
+
+		//min  = total;
+		minr   = ratio;
+		mint   = total;
+		mini   = i;
+		minOld = old;
+	}
+
+	*p_mini = mini;
 }
 
 
