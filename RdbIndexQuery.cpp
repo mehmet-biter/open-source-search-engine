@@ -3,9 +3,9 @@
 #include <algorithm>
 
 RdbIndexQuery::RdbIndexQuery(RdbBase *base)
-	: RdbIndexQuery(base->getGlobalIndex() ? base->getGlobalIndex() : docidsconst_ptr_t(),
-	                base->getTreeIndex() ? base->getTreeIndex()->getDocIds() : docidsconst_ptr_t(),
-	                base->getNumFiles()) {
+	: RdbIndexQuery(base ? (base->getGlobalIndex() ? base->getGlobalIndex() : docidsconst_ptr_t()) : docidsconst_ptr_t(),
+	                base ? (base->getTreeIndex() ? base->getTreeIndex()->getDocIds() : docidsconst_ptr_t()) : docidsconst_ptr_t(),
+	                base ? base->getNumFiles() : 0) {
 }
 
 RdbIndexQuery::RdbIndexQuery(docidsconst_ptr_t globalIndexData, docidsconst_ptr_t treeIndexData, int32_t numFiles)
