@@ -1681,11 +1681,43 @@ bool Rdb::needsDump ( ) const {
 	return ( m_tree.getNumNegativeKeys() > 50000 );
 }
 
+bool Rdb::hasRoom(int32_t totalRecs, int32_t totalDataSize) {
+	logTrace(g_conf.m_logTraceRdb, "BEGIN %s: numRecs=%" PRId32" dataSize=%" PRId32" availMem=%" PRId32,
+	         m_dbname, totalRecs, totalDataSize, m_mem.getAvailMem());
+
+	// nodes
+	if (m_useTree) {
+		if (m_tree.getNumAvailNodes() < totalRecs) {
+			logTrace(g_conf.m_logTraceRdb, "END %s: Insufficient tree nodes. Returning false", m_dbname);
+			return false;
+		}
+	} else {
+		if (!m_buckets.hasRoom(totalRecs)) {
+			logTrace(g_conf.m_logTraceRdb, "END %s: Insufficient buckets. Returning false", m_dbname);
+			return false;
+		}
+	}
+
+	// memory (only use for data)
+	bool result = (m_mem.getAvailMem() >= totalDataSize);
+	logTrace(g_conf.m_logTraceRdb, "END %s: Memory check. Returning %s", m_dbname, result ? "true" : "false");
+	return result;
+}
+
+
 bool Rdb::hasRoom ( RdbList *list , int32_t niceness ) {
 	// how many nodes will tree need?
 	int32_t numNodes = list->getNumRecs( );
-	if ( !m_useTree && !m_buckets.hasRoom(numNodes)) {
-		return false;
+
+	// does tree have room for these nodes?
+	if (m_useTree) {
+		if (m_tree.getNumAvailNodes() < numNodes) {
+			return false;
+		}
+	} else {
+		if (!m_buckets.hasRoom(numNodes)) {
+			return false;
+		}
 	}
 
 	// how many nodes will tree need?
@@ -1697,9 +1729,6 @@ bool Rdb::hasRoom ( RdbList *list , int32_t niceness ) {
 
 	// how much mem will the data use?
 	int64_t dataSpace = (int64_t)list->getListSize() - ((int64_t)numNodes * overhead);
-
-	// does tree have room for these nodes?
-	if ( m_useTree && m_tree.getNumAvailNodes() < numNodes ) return false;
 
 	// if we are doledb, we are a tree-only rdb, so try to reclaim
 	// memory from deleted nodes. works by condesing the used memory.
