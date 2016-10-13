@@ -323,8 +323,6 @@ private:
 	int32_t m_numThreads;
 
 	bool m_isUnlinking;
-
-	bool m_doLog;
 };
 
 extern bool g_dumpMode;

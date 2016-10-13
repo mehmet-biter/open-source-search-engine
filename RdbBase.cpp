@@ -56,7 +56,6 @@ RdbBase::RdbBase()
 	m_niceness = 0;
 	m_numPos = 0;
 	m_numNeg = 0;
-	m_doLog = false;
 	memset(m_fileInfo, 0, sizeof(m_fileInfo));
 
 	reset();
@@ -1596,9 +1595,6 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 	// remember niceness for calling g_merge.merge()
 	m_niceness = niceness;
 
-	// save this so gotTokenForMerge() can use it
-	m_doLog = doLog;
-
 	// bitch if we got token because there was an error somewhere
 	if ( g_errno ) {
 		log(LOG_LOGIC,"merge: attemptMerge: %s failed: %s",
@@ -1611,7 +1607,7 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 
 	// sanity check
 	if ( m_isMerging || g_merge.isMerging() ) {
-		//if ( m_doLog )
+		//if ( doLog )
 			//log(LOG_INFO,
 			//"merge: Someone already merging. Waiting for "
 			//"merge token "
