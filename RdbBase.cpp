@@ -1969,8 +1969,8 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 
 	// . save the # of files we're merging for the cleanup process
 	// . don't include the first file, which is now file #0
-	m_numFilesToMerge   = mergeNum  ; // numFiles - 1;
-	m_mergeStartFileNum = mergeFileNum + 1; // 1
+	m_mergeStartFileNum = mergeFileNum + 1;
+	m_numFilesToMerge   = mergeNum;
 
 	const char *coll = "";
 	if ( cr ) coll = cr->m_coll;
