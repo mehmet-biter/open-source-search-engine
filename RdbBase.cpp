@@ -1628,13 +1628,7 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 	int32_t mergeFileNum;
 	int32_t endMergeFileId;
 	int32_t endMergeFileNum;
-	float     minr ;
-	int64_t mint ;
-	int32_t      mini ;
-	bool      minOld ;
-	int32_t      fileId2  = -1;
 	bool      overide = false;
-	int32_t      nowLocal = getTimeLocal();
 
 	logTrace( g_conf.m_logTraceRdbBase, "Checking files" );
 
@@ -1656,7 +1650,7 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 		// files being merged into have a filename like
 		// indexdb0000.003.dat where the 003 indicates how many files
 		// is is merging in case we have to resume them due to power loss or whatever
-		int32_t fileId;
+		int32_t fileId, fileId2;
 		if ( !parseFilename( m_fileInfo[j].m_file->getFilename(), &fileId, &fileId2, &mergeNum, &endMergeFileId ) ) {
 			continue;
 		}
@@ -1794,10 +1788,16 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 		mergeNum = numFiles;
 	}
 
+	float minr;
 	minr = 99999999999.0;
+	int64_t mint;
 	mint = 0x7fffffffffffffffLL ;
+	int32_t mini;
 	mini = -1;
+	bool minOld;
 	minOld = false;
+	int32_t nowLocal;
+	nowLocal = getTimeLocal();
 	for ( int32_t i = 0 ; i + mergeNum <= numFiles ; i++ ) {
 		// oldest file
 		time_t date = -1;
@@ -1928,6 +1928,7 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 	mergeFileId = m_fileInfo[mini].m_fileId - 1;
 
 	// get new id, -1 on error
+	int32_t      fileId2;
 	fileId2 = m_rdb->isTitledb() ? 0 : -1;
 
 	// . make a filename for the merge
