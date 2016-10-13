@@ -1411,15 +1411,7 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 		log(LOG_INFO,"merge: forcing merge for %s. (collnum=%" PRId32")",m_dbname,(int32_t)m_collnum);
 	}
 
-	// if we are trying to merge titledb but a titledb dump is going on
-	// then do not do the merge, we do not want to overwrite tfndb via
-	// RdbDump::updateTfndbLoop() 
 	rdbid_t rdbId = getIdFromRdb ( m_rdb );
-	if ( rdbId == RDB_TITLEDB && g_titledb.getRdb()->isDumping() ) {
-		log( LOG_INFO, "db: Can not merge titledb while it is dumping." );
-		logTrace( g_conf.m_logTraceRdbBase, "END, wait for titledb dump" );
-		return false;
-	}
 
 	// if a dump is happening it will always be the last file, do not
 	// include it in the merge
