@@ -289,7 +289,6 @@ private:
 
 	int32_t      m_minToMergeArg;
 	int32_t      m_minToMerge;  // need at least this many files b4 merging
-	int32_t      m_absMaxFiles;
 	int32_t      m_numFilesToMerge   ;
 	int32_t      m_mergeStartFileNum ;
 

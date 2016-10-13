@@ -21,6 +21,11 @@
 
 bool g_dumpMode = false;
 
+// NEVER merge more than this many files, our current merge routine
+// does not scale well to many files
+static const int32_t absoluteMaxFilesToMerge = 50;
+
+
 // since we only do one merge at a time, keep this class static
 class RdbMerge g_merge;
 
@@ -46,7 +51,6 @@ RdbBase::RdbBase()
 	m_dump = NULL;
 	m_minToMergeArg = 0;
 	m_minToMerge = 0;
-	m_absMaxFiles = 0;
 	m_numFilesToMerge = 0;
 	m_mergeStartFileNum = 0;
 	m_useHalfKeys = false;
@@ -1447,9 +1451,6 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 		log("merge: Could not find coll rec for %s.",m_coll);
 	}
 
-	// set the max files to merge in a single merge operation
-	m_absMaxFiles = 50;
-
 	// m_minToMerge is -1 if we should let cr override but if m_minToMerge
 	// is actually valid at this point, use it as is, therefore, just set
 	// cr to NULL
@@ -1786,10 +1787,8 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 		}
 	}
 
-	// NEVER merge more than this many files, our current merge routine
-	// does not scale well to many files
-	if ( m_absMaxFiles > 0 && mergeNum > m_absMaxFiles ) {
-		mergeNum = m_absMaxFiles;
+	if ( mergeNum > absoluteMaxFilesToMerge ) {
+		mergeNum = absoluteMaxFilesToMerge;
 	}
 
 	// but if we are forcing then merge ALL, except one being dumped
