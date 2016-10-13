@@ -1697,7 +1697,6 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 		// make a log note
 		log(LOG_INFO,"merge: Resuming killed merge for %s coll=%s.", m_dbname,m_coll);
 
-		// compute the total size of merged file
 		int32_t mm = 0;
 		for ( int32_t i = mergeFileNum ; i <= endMergeFileNum ; i++ ) {
 			if ( i >= m_numFiles ) {
