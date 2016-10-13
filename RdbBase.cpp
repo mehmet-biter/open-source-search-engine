@@ -1505,6 +1505,13 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 		return false;
 	}
 
+	// bail if already merging THIS class
+	if ( m_isMerging ) {
+		log(LOG_INFO, "merge: Waiting for other merge to complete before merging %s.", m_dbname);
+		logTrace( g_conf.m_logTraceRdbBase, "END, already merging this" );
+		return false;
+	}
+
 	// if we are tfndb and someone else is merging, do not merge unless
 	// we have 3 or more files
 
@@ -1566,13 +1573,6 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 		// 20,000+ collections. if we dump a file to disk for it
 		// then we set this flag back to false in Rdb.cpp.
 		logTrace( g_conf.m_logTraceRdbBase, "END, min files not reached (%" PRId32" / %" PRId32")",numFiles,m_minToMerge);
-		return false;
-	}
-
-	// bail if already merging THIS class
-	if ( m_isMerging ) {
-		log(LOG_INFO, "merge: Waiting for other merge to complete before merging %s.", m_dbname);
-		logTrace( g_conf.m_logTraceRdbBase, "END, already merging this" );
 		return false;
 	}
 
