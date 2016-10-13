@@ -1454,27 +1454,37 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 
 	// if cr is non-NULL use its value now
 	if ( cr ) {
-		if ( m_rdb == g_posdb.getRdb() ) {
-			m_minToMerge = cr->m_posdbMinFilesToMerge;
-			logTrace( g_conf.m_logTraceRdbBase, "posdb. m_minToMerge: %" PRId32, m_minToMerge );
-		} else if ( m_rdb == g_titledb.getRdb() ) {
-			m_minToMerge = cr->m_titledbMinFilesToMerge;
-			logTrace( g_conf.m_logTraceRdbBase, "titledb. m_minToMerge: %" PRId32, m_minToMerge );
-		} else if ( m_rdb == g_spiderdb.getRdb() ) {
-		    m_minToMerge = cr->m_spiderdbMinFilesToMerge;
-			logTrace( g_conf.m_logTraceRdbBase, "spiderdb. m_minToMerge: %" PRId32, m_minToMerge );
-		//} else if ( m_rdb == g_clusterdb.getRdb() ) {
-		//	m_minToMerge = cr->m_clusterdbMinFilesToMerge;
-		//  logTrace( g_conf.m_logTraceRdbBase, "clusterdb. m_minToMerge: %" PRId32, m_minToMerge );
-		//} else if ( m_rdb == g_statsdb.getRdb() )
-		//	m_minToMerge = g_conf.m_statsdbMinFilesToMerge;
-		//  logTrace( g_conf.m_logTraceRdbBase, "statdb. m_minToMerge: %" PRId32, m_minToMerge );
-		} else if ( m_rdb == g_linkdb.getRdb() ) {
-			m_minToMerge = cr->m_linkdbMinFilesToMerge;
-			logTrace( g_conf.m_logTraceRdbBase, "linkdb. m_minToMerge: %" PRId32, m_minToMerge );
-		} else if ( m_rdb == g_tagdb.getRdb() ) {
-			m_minToMerge = cr->m_tagdbMinFilesToMerge;
-			logTrace( g_conf.m_logTraceRdbBase, "tagdb. m_minToMerge: %" PRId32, m_minToMerge );
+		switch(rdbId) {
+			case RDB_POSDB:
+				m_minToMerge = cr->m_posdbMinFilesToMerge;
+				logTrace( g_conf.m_logTraceRdbBase, "posdb. m_minToMerge: %" PRId32, m_minToMerge );
+				break;
+			case RDB_TITLEDB:
+				m_minToMerge = cr->m_titledbMinFilesToMerge;
+				logTrace( g_conf.m_logTraceRdbBase, "titledb. m_minToMerge: %" PRId32, m_minToMerge );
+				break;
+			case RDB_SPIDERDB:
+				m_minToMerge = cr->m_spiderdbMinFilesToMerge;
+				logTrace( g_conf.m_logTraceRdbBase, "spiderdb. m_minToMerge: %" PRId32, m_minToMerge );
+				break;
+			// case RDB_CLUSTERDB:
+			//	m_minToMerge = cr->m_clusterdbMinFilesToMerge;
+			//	logTrace( g_conf.m_logTraceRdbBase, "clusterdb. m_minToMerge: %" PRId32, m_minToMerge );
+			//	break;
+			// case RDB_STATSDB:
+			//	m_minToMerge = g_conf.m_statsdbMinFilesToMerge;
+			//	logTrace( g_conf.m_logTraceRdbBase, "statdb. m_minToMerge: %" PRId32, m_minToMerge );
+			//	break;
+			case RDB_LINKDB:
+				m_minToMerge = cr->m_linkdbMinFilesToMerge;
+				logTrace( g_conf.m_logTraceRdbBase, "linkdb. m_minToMerge: %" PRId32, m_minToMerge );
+				break;
+			case RDB_TAGDB:
+				m_minToMerge = cr->m_tagdbMinFilesToMerge;
+				logTrace( g_conf.m_logTraceRdbBase, "tagdb. m_minToMerge: %" PRId32, m_minToMerge );
+				break;
+			default:
+				; //no per-collection override
 		}
 	}
 
