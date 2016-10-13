@@ -58,8 +58,8 @@ RdbBase::RdbBase()
 	m_ks = 0;
 	m_pageSize = 0;
 	m_niceness = 0;
-	m_numPos = 0;
-	m_numNeg = 0;
+	m_premergeNumPositiveRecords = 0;
+	m_premergeNumNegativeRecords = 0;
 	memset(m_fileInfo, 0, sizeof(m_fileInfo));
 
 	reset();
@@ -1052,20 +1052,20 @@ bool RdbBase::incorporateMerge ( ) {
 	//   and we can lose positives due to overwrites
 	// . i just re-added some partially indexed urls so indexdb will
 	//   have dup overwrites now too!!
-	if ( tp > m_numPos ) {
-		log(LOG_INFO,"merge: %s gained %" PRId64" positives.", m_dbname , tp - m_numPos );
+	if ( tp > m_premergeNumPositiveRecords ) {
+		log(LOG_INFO,"merge: %s gained %" PRId64" positives.", m_dbname , tp - m_premergeNumPositiveRecords );
 	}
 
-	if ( tp < m_numPos - m_numNeg ) {
-		log(LOG_INFO,"merge: %s: lost %" PRId64" positives", m_dbname , m_numPos - tp );
+	if ( tp < m_premergeNumPositiveRecords - m_premergeNumNegativeRecords ) {
+		log(LOG_INFO,"merge: %s: lost %" PRId64" positives", m_dbname , m_premergeNumPositiveRecords - tp );
 	}
 
-	if ( tn > m_numNeg ) {
-		log(LOG_INFO,"merge: %s: gained %" PRId64" negatives.", m_dbname , tn - m_numNeg );
+	if ( tn > m_premergeNumNegativeRecords ) {
+		log(LOG_INFO,"merge: %s: gained %" PRId64" negatives.", m_dbname , tn - m_premergeNumNegativeRecords );
 	}
 
-	if ( tn < m_numNeg - m_numPos ) {
-		log(LOG_INFO,"merge: %s: lost %" PRId64" negatives.", m_dbname , m_numNeg - tn );
+	if ( tn < m_premergeNumNegativeRecords - m_premergeNumPositiveRecords ) {
+		log(LOG_INFO,"merge: %s: lost %" PRId64" negatives.", m_dbname , m_premergeNumNegativeRecords - tn );
 	}
 
 	// assume no unlinks blocked
@@ -1981,11 +1981,11 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 	    mergeNum,m_dbname,mergeFileId,(int32_t)m_collnum,coll);
 
 	// print out file info
-	m_numPos = 0;
-	m_numNeg = 0;
+	m_premergeNumPositiveRecords = 0;
+	m_premergeNumNegativeRecords = 0;
 	for ( int32_t i = m_mergeStartFileNum; i < m_mergeStartFileNum + m_numFilesToMerge; ++i ) {
-		m_numPos += m_fileInfo[i].m_map->getNumPositiveRecs();		
-		m_numNeg += m_fileInfo[i].m_map->getNumNegativeRecs();
+		m_premergeNumPositiveRecords += m_fileInfo[i].m_map->getNumPositiveRecs();		
+		m_premergeNumNegativeRecords += m_fileInfo[i].m_map->getNumNegativeRecs();
 		log(LOG_INFO,"merge: %s (#%" PRId32") has %" PRId64" positive "
 		     "and %" PRId64" negative records." ,
 		     m_fileInfo[i].m_file->getFilename(),
@@ -1994,7 +1994,7 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 		     m_fileInfo[i].m_map->getNumNegativeRecs() );
 	}
 	log(LOG_INFO,"merge: Total positive = %" PRId64" Total negative = %" PRId64".",
-	     m_numPos,m_numNeg);
+	    m_premergeNumPositiveRecords,m_premergeNumNegativeRecords);
 
 	// assume we are now officially merging
 	m_isMerging = true;
