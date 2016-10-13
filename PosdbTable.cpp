@@ -218,7 +218,7 @@ void PosdbTable::init(Query *q, bool debug, void *logstate, TopTree *topTree, Ms
 //
 float PosdbTable::getBestScoreSumForSingleTerm(int32_t i, const char *wpi, const char *endi, DocIdScore *pdcs, const char **highestScoringNonBodyPos ) {
 	float nonBodyMax = -1.0;
-	int32_t minx = 0;
+	int32_t lowestScoreTermIdx = 0;
 	float bestScores[MAX_TOP] = {0};	// make Coverity happy
 	const char *bestwpi[MAX_TOP];
 	int32_t numTop = 0;
@@ -314,26 +314,26 @@ float PosdbTable::getBestScoreSumForSingleTerm(int32_t i, const char *wpi, const
 				numTop++;
 			}
 			else 
-			if ( score > bestScores[minx] ) {
+			if ( score > bestScores[lowestScoreTermIdx] ) {
 				//
 				// New hash group (or INLINKTEXT).
 				// We have NO free slots in the top-list.
 				// Replace lowest score in top-list with current higher score.
 				//
-				bestScores[minx] = score;
-				bestwpi   [minx] = wpi;
-				bestmhg   [minx] = mhg;
+				bestScores[lowestScoreTermIdx] = score;
+				bestwpi   [lowestScoreTermIdx] = wpi;
+				bestmhg   [lowestScoreTermIdx] = mhg;
 			}
 
-			// If top-list is full, make minx point to the lowest score
+			// If top-list is full, make lowestScoreTermIdx point to the lowest score
 			// in the top-list.
 			if ( numTop >= m_realMaxTop ) { // MAX_TOP ) {
-				minx = 0;
+				lowestScoreTermIdx = 0;
 				for ( int32_t k = 1 ; k < m_realMaxTop; k++ ) {//MAX_TOP ; k++ ) {
-					if ( bestScores[k] > bestScores[minx] ) {
+					if ( bestScores[k] > bestScores[lowestScoreTermIdx] ) {
 						continue;
 					}
-					minx = k;
+					lowestScoreTermIdx = k;
 				}
 			}
 
@@ -893,7 +893,7 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 	bool firstj = true;
 
 	float score;
-	int32_t  minx = -1;
+	int32_t  lowestScoreTermIdx = -1;
 	float bestScores[MAX_TOP] = {0};	 // make Coverity happy
 	const char *bestwpi   [MAX_TOP];
 	const char *bestwpj   [MAX_TOP];
@@ -1053,24 +1053,24 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 				numTop++;
 			}
 			else 
-			if ( minx >= 0 && score > bestScores[minx] ) {
-				bestScores[minx] = score;
-				bestwpi   [minx] = wpi;
-				bestwpj   [minx] = wpj;
-				bestmhg1  [minx] = mhg1;
-				bestmhg2  [minx] = mhg2;
-				bestFixed [minx] = fixedDistance;
+			if ( lowestScoreTermIdx >= 0 && score > bestScores[lowestScoreTermIdx] ) {
+				bestScores[lowestScoreTermIdx] = score;
+				bestwpi   [lowestScoreTermIdx] = wpi;
+				bestwpj   [lowestScoreTermIdx] = wpj;
+				bestmhg1  [lowestScoreTermIdx] = mhg1;
+				bestmhg2  [lowestScoreTermIdx] = mhg2;
+				bestFixed [lowestScoreTermIdx] = fixedDistance;
 			}
 			
-			// set "minx" to the lowest score out of the top scores
+			// set "lowestScoreTermIdx" to the lowest score out of the top scores
 			if ( numTop >= m_realMaxTop ) { // MAX_TOP ) {
-				minx = 0;
+				lowestScoreTermIdx = 0;
 				for ( int32_t k = 1 ; k < m_realMaxTop;k++){//MAX_TOP;k++
-					if (bestScores[k] > bestScores[minx] ) {
+					if (bestScores[k] > bestScores[lowestScoreTermIdx] ) {
 						continue;
 					}
 					
-					minx = k;
+					lowestScoreTermIdx = k;
 				}
 			}
 
@@ -1239,23 +1239,23 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 				bestFixed [numTop] = fixedDistance;
 				numTop++;
 			}
-			else if ( score > bestScores[minx] ) {
-				bestScores[minx] = score;
-				bestwpi   [minx] = wpi;
-				bestwpj   [minx] = wpj;
-				bestmhg1  [minx] = mhg1;
-				bestmhg2  [minx] = mhg2;
-				bestFixed [minx] = fixedDistance;
+			else if ( score > bestScores[lowestScoreTermIdx] ) {
+				bestScores[lowestScoreTermIdx] = score;
+				bestwpi   [lowestScoreTermIdx] = wpi;
+				bestwpj   [lowestScoreTermIdx] = wpj;
+				bestmhg1  [lowestScoreTermIdx] = mhg1;
+				bestmhg2  [lowestScoreTermIdx] = mhg2;
+				bestFixed [lowestScoreTermIdx] = fixedDistance;
 			}
 			
-			// set "minx" to the lowest score out of the top scores
+			// set "lowestScoreTermIdx" to the lowest score out of the top scores
 			if ( numTop >= m_realMaxTop ) { // MAX_TOP ) {
-				minx = 0;
+				lowestScoreTermIdx = 0;
 				for ( int32_t k = 1 ; k < m_realMaxTop;k++){//MAX_TOP;k++
-					if( bestScores[k] > bestScores[minx]) {
+					if( bestScores[k] > bestScores[lowestScoreTermIdx]) {
 						continue;
 					}
-					minx = k;
+					lowestScoreTermIdx = k;
 				}
 			}
 
@@ -3282,7 +3282,7 @@ void PosdbTable::findMinTermPairScoreInWindow(const char **ptrs, const char **hi
 
 
 void PosdbTable::slidingWindowAlgorithm(const char **miniMergedList, const char **miniMergedEnd, const char **highestScoringNonBodyPos, const char **winnerStack, const char **xpos, float *scoreMatrix) {
-	int32_t minx = 0;
+	int32_t minPosTermIdx = 0;
 	bool allNull;
 	int32_t minPos = 0;
 
@@ -3367,7 +3367,7 @@ void PosdbTable::slidingWindowAlgorithm(const char **miniMergedList, const char 
 		doneSliding = true;
 	}
 	else {
-		minx = -1;
+		minPosTermIdx = -1;
 	}
 
 	while( !doneSliding ) {
@@ -3382,7 +3382,7 @@ void PosdbTable::slidingWindowAlgorithm(const char **miniMergedList, const char 
 		// Will try to sub in s_highestScoringNonBodyPos[i] if better, but will fix 
 		// distance to FIXED_DISTANCE
 		//
-		// "minx" is who just got advanced, this saves time because we
+		// "minPosTermIdx" is who just got advanced, this saves time because we
 		// do not have to re-compute the scores of term pairs that consist
 		// of two terms that did not advance in the sliding window
 		//
@@ -3405,9 +3405,9 @@ void PosdbTable::slidingWindowAlgorithm(const char **miniMergedList, const char 
 			
 			//
 			// Find the min word pos still in body for any of the query terms.
-			// minx will contain the term index, minPos the position.
+			// minPosTermIdx will contain the term index, minPos the position.
 			//
-			minx = -1;
+			minPosTermIdx = -1;
 			for ( int32_t x = 0 ; x < m_numQueryTermInfos ; x++ ) {
 				// skip if to the left of a pipe operator
 				// and numeric posdb termlists do not have word positions,
@@ -3420,8 +3420,8 @@ void PosdbTable::slidingWindowAlgorithm(const char **miniMergedList, const char 
 					continue;
 				}
 
-				if ( xpos[x] && minx == -1 ) {
-					minx = x;
+				if ( xpos[x] && minPosTermIdx == -1 ) {
+					minPosTermIdx = x;
 					//minRec = xpos[x];
 					minPos = Posdb::getWordPos(xpos[x]);
 					continue;
@@ -3431,33 +3431,33 @@ void PosdbTable::slidingWindowAlgorithm(const char **miniMergedList, const char 
 					continue;
 				}
 
-				minx = x;
+				minPosTermIdx = x;
 				//minRec = xpos[x];
 				minPos = Posdb::getWordPos(xpos[x]);
 			}
 
 			// sanity
-			if ( minx < 0 ) {
+			if ( minPosTermIdx < 0 ) {
 				gbshutdownAbort(true);
 			}
 
 		 	do { 
 		 		//
 		 		// Advance the list pointer of the list containing the current
-		 		// minimum position (minx). If no more positions, set list to NULL.
+		 		// minimum position (minPosTermIdx). If no more positions, set list to NULL.
 		 		// If all lists are NULL, we are done sliding.
 		 		//
-				if ( ! (xpos[minx][0] & 0x04) ) {
-					xpos[minx] += 12;
+				if ( ! (xpos[minPosTermIdx][0] & 0x04) ) {
+					xpos[minPosTermIdx] += 12;
 				}
 				else {
-					xpos[minx] +=  6;
+					xpos[minPosTermIdx] +=  6;
 				}
 
 				// NULLify list if no more positions for this docid for that term.
-				if ( xpos[minx] >= miniMergedEnd[minx] || ! (xpos[minx][0] & 0x04) ) {
+				if ( xpos[minPosTermIdx] >= miniMergedEnd[minPosTermIdx] || ! (xpos[minPosTermIdx][0] & 0x04) ) {
 					// exhausted list now
-					xpos[minx] = NULL;
+					xpos[minPosTermIdx] = NULL;
 
 					// are all null now?
 					int32_t k; 
@@ -3482,7 +3482,7 @@ void PosdbTable::slidingWindowAlgorithm(const char **miniMergedList, const char 
 				}
 
 				// if it left the body then advance some more i guess?
-			} while( !advanceMin && !doneSliding && !s_inBody[Posdb::getHashGroup(xpos[minx])] );
+			} while( !advanceMin && !doneSliding && !s_inBody[Posdb::getHashGroup(xpos[minPosTermIdx])] );
 
 		} while( advanceMin && !doneSliding );
 
@@ -4047,13 +4047,14 @@ void PosdbTable::intersectLists10_r ( ) {
 				//# SLIDING WINDOW SCORING ALGORITHM
 				//#
 				//
-				// parms for sliding window algorithm
-				//
 				m_qpos				= qpos;
 				m_wikiPhraseIds		= wikiPhraseIds;
 				m_quotedStartIds	= quotedStartIds;
 				m_bestMinTermPairWindowScore	= -2.0;
 
+				// After calling this, m_bestMinTermPairWindowPtrs will point to the
+				// term positions set ("window") that has the highest minimum score. These
+				// pointers are used in getTermPairScoreForAny called below.
 				slidingWindowAlgorithm(miniMergedList, miniMergedEnd, highestScoringNonBodyPos, winnerStack, xpos, scoreMatrix);
 
 
@@ -4067,15 +4068,18 @@ void PosdbTable::intersectLists10_r ( ) {
 				logTrace(g_conf.m_logTracePosdb, "Zak algorithm begins");
 				minPairScore = -1.0;
 
-				for ( int32_t i = 0   ; i < m_numQueryTermInfos ; i++ ) {
-
+				for(int32_t i=0; i < m_numQueryTermInfos; i++) {
 					// skip if to the left of a pipe operator
 					if ( bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
 						continue;
 					}
 
-					for ( int32_t j = i+1 ; j < m_numQueryTermInfos ; j++ ) {
+					if ( ! miniMergedList[i] ) {
+						continue;
+					}
 
+
+					for ( int32_t j = i+1 ; j < m_numQueryTermInfos ; j++ ) {
 						// skip if to the left of a pipe operator
 						if ( bflags[j] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
 							continue;
@@ -4084,10 +4088,6 @@ void PosdbTable::intersectLists10_r ( ) {
 						//
 						// get score for term pair from non-body occuring terms
 						//
-						if ( ! miniMergedList[i] ) {
-							continue;
-						}
-						
 						if ( ! miniMergedList[j] ) {
 							continue;
 						}
