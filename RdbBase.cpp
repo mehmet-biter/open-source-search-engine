@@ -1811,7 +1811,6 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 		mergeNum = numFiles;
 	}
 
-	//tryAgain:
 	minr = 99999999999.0;
 	mint = 0x7fffffffffffffffLL ;
 	mini = -1;
