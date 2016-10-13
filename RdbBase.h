@@ -314,9 +314,10 @@ private:
 	// have we create the merge file?
 	bool      m_hasMergeFile;
 
-	// rec counts for files being merged
-	int64_t m_numPos ;
-	int64_t m_numNeg ;
+	// Record counts for files being merged. Calculated in attemptMerge() and then used
+	// for logging in incorporateMerge()
+	int64_t m_premergeNumPositiveRecords;
+	int64_t m_premergeNumNegativeRecords;
 
 	int32_t m_numThreads;
 
