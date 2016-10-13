@@ -818,7 +818,7 @@ void handleRequest4 ( UdpSlot *slot , int32_t netnice ) {
 
 	// this returns false with g_errno set on error
 	if (!addMetaList(readBuf, slot)) {
-		logError("call sendErrorReply error='%s", mstrerror(g_errno));
+		logError("calling sendErrorReply error='%s'", mstrerror(g_errno));
 		g_udpServer.sendErrorReply(slot,g_errno);
 
 		logTrace(g_conf.m_logTraceMsg4, "END - addMetaList returned false. g_errno=%d", g_errno);
