@@ -64,6 +64,11 @@ bool MergeSpaceCoordinator::acquire(uint64_t /*how_much*/) {
 	if(held_lock_number>=0)
 		return true;
 	
+	if(min_lock_files<=0) {
+		log(LOG_ERROR,"MergeSpaceCoordinator::acquire: min_lock_files=%d. Lockin will never succeed",min_lock_files);
+		return false;
+	}
+	
 	//verify or create lock directory
 	struct stat st;
 	if(stat(lock_dir.c_str(),&st)==0) {
@@ -112,7 +117,7 @@ bool MergeSpaceCoordinator::acquire(uint64_t /*how_much*/) {
 						}
 					} else {
 						//old pid in file. truncate it
-						log(LOG_DEBUG,"Old pid found in %s", filename.c_str());
+						log(LOG_DEBUG,"Old pid %ld found in %s, or errno=%d", pid, filename.c_str(), errno);
 						(void)ftruncate(fd,0);
 					}
 				} else {
