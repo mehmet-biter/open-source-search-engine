@@ -3282,7 +3282,6 @@ void PosdbTable::findMinTermPairScoreInWindow(const char **ptrs, const char **hi
 
 
 void PosdbTable::slidingWindowAlgorithm(const char **miniMergedList, const char **miniMergedEnd, const char **highestScoringNonBodyPos, const char **winnerStack, const char **xpos, float *scoreMatrix) {
-	int32_t minPosTermIdx = 0;
 	bool allNull;
 	int32_t minPos = 0;
 
@@ -3360,42 +3359,25 @@ void PosdbTable::slidingWindowAlgorithm(const char **miniMergedList, const char 
 	}
 
 
-	bool doneSliding = false;
-
 	// if no terms in body, no need to do sliding window
-	if ( allNull ) {
-		doneSliding = true;
-	}
-	else {
-		minPosTermIdx = -1;
-	}
+	bool doneSliding = allNull ? true : false;
+
 
 	while( !doneSliding ) {
 		//
-		// Now all xpos are in the body
+		// Now all xpos point to positions in the document body. Calc the "window" score (score
+		// for current term positions).
 		//
-		// Calc the "window" score.
+		// If window score beats m_bestMinTermPairWindowScore we store the term xpos pointers
+		// that define this window in the m_bestMinTermPairWindowPtrs[] array.
 		//
-		// If window score beats m_bestMinTermPairWindowScore we store the
-		// term xpos that define this window in m_bestMinTermPairWindowPtrs[] array
+		// Will try to substitute either of the two term positions with highestScoringNonBodyPos[i] 
+		// if better, but will fix the distance to FIXED_DISTANCE to give a distance penalty.
 		//
-		// Will try to sub in s_highestScoringNonBodyPos[i] if better, but will fix 
-		// distance to FIXED_DISTANCE
+		// "scoreMatrix" contains the highest scoring non-body term pair score, which will 
+		// be used if higher than the calculated score for the terms.
 		//
-		// "minPosTermIdx" is who just got advanced, this saves time because we
-		// do not have to re-compute the scores of term pairs that consist
-		// of two terms that did not advance in the sliding window
-		//
-		// "scoreMatrix" hold the highest scoring non-body term pair
-		// for sub-bing out the term pair in the body with
-		//
-		// Sets m_bestMinTermPairWindowScore if this window score beats it
-		//
-		// Does sub-outs with the non-body pairs and also the singles i guess
-		//
-		// Uses "highestScoringNonBodyPos[x]" to get best non-body scoring term for sub-outs -
-		// meaning, it will use the better scoring non-body position instead of the body
-		// position.
+		// Sets m_bestMinTermPairWindowScore if this window score beats it.
 		//
 		findMinTermPairScoreInWindow(xpos, highestScoringNonBodyPos, scoreMatrix);
 
@@ -3408,7 +3390,7 @@ void PosdbTable::slidingWindowAlgorithm(const char **miniMergedList, const char 
 			// Find the minimum word position in the document body for ANY of the query terms.
 			// minPosTermIdx will contain the term index, minPos the position.
 			//
-			minPosTermIdx = -1;
+			int32_t minPosTermIdx = -1;
 			for ( int32_t x = 0 ; x < m_numQueryTermInfos ; x++ ) {
 				// skip if to the left of a pipe operator
 				// and numeric posdb termlists do not have word positions,
@@ -3487,7 +3469,7 @@ void PosdbTable::slidingWindowAlgorithm(const char **miniMergedList, const char 
 			// if current list is exhausted, find new term list with lowest position.
 		} while( advanceMin && !doneSliding );
 
-	} // while( !doneSliding )
+	} // end of while( !doneSliding )
 }
 
 
