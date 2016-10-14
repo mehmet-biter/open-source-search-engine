@@ -135,6 +135,7 @@ void RdbList::set(char *list, int32_t listSize, char *alloc, int32_t allocSize, 
 	// sanity check (happens when IndexReadInfo exhausts a list to Msg2)
 	if (KEYCMP(startKey, endKey, m_ks) > 0) {
 		log(LOG_WARN, "db: rdblist: set: startKey > endKey.");
+		gbshutdownCorrupted();
 	}
 
 	// safety check
