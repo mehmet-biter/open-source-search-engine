@@ -1626,8 +1626,6 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 	int32_t mergeNum = 0;
 	int32_t mergeFileId;
 	int32_t mergeFileNum;
-	int32_t endMergeFileId;
-	int32_t endMergeFileNum;
 	bool      overide = false;
 
 	logTrace( g_conf.m_logTraceRdbBase, "Checking files" );
@@ -1651,6 +1649,7 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 		// indexdb0000.003.dat where the 003 indicates how many files
 		// is is merging in case we have to resume them due to power loss or whatever
 		int32_t fileId, fileId2;
+		int32_t endMergeFileId;
 		if ( !parseFilename( m_fileInfo[j].m_file->getFilename(), &fileId, &fileId2, &mergeNum, &endMergeFileId ) ) {
 			continue;
 		}
@@ -1812,7 +1811,9 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 	// . this now also sets m_mergeStartFileNum for us... but we override
 	//   below anyway. we have to set it there in case we startup and
 	//   are resuming a merge.
+	int32_t endMergeFileNum;
 	endMergeFileNum = mini + mergeNum - 1;
+	int32_t endMergeFileId;
 	endMergeFileId = m_fileInfo[endMergeFileNum].m_fileId;
 	log( LOG_INFO, "merge: n=%d mini=%d mergeFileId=%d endMergeFileNum=%d endMergeFileId=%d",
 	     mergeNum, mini, mergeFileId, endMergeFileNum, endMergeFileId );
@@ -1834,7 +1835,7 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
  startMerge:
 	// sanity check
 	if ( mergeNum <= 1 && ! overide ) {
-		log(LOG_LOGIC,"merge: gotTokenForMerge: Not merging %" PRId32" files.", mergeNum);
+		log(LOG_LOGIC,"merge: attemptMerge: Not merging %" PRId32" files.", mergeNum);
 		return false; 
 	}
 
