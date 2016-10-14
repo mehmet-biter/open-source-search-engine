@@ -125,7 +125,12 @@ class PosdbTable {
 	bool advanceTermListCursors(const char *docIdPtr, QueryTermInfo *qtibuf);
 	bool prefilterMaxPossibleScoreByDistance(QueryTermInfo *qtibuf, const int32_t *qpos, float minWinningScore);
 	void mergeTermSubListsForDocId(QueryTermInfo *qtibuf, char *miniMergeBuf, const char **miniMergedList, const char **miniMergedEnd, int *highestInlinkSiteRank);
+
+	void createNonBodyTermPairScoreMatrix(const char **miniMergedList, const char **miniMergedEnd, float *scoreMatrix);
+	float createHighestScoringNonBodyPosArray(const char **miniMergedList, const char **miniMergedEnd, const char **highestScoringNonBodyPos, DocIdScore *pdcs);
 	void slidingWindowAlgorithm(const char **miniMergedList, const char **miniMergedEnd, const char **highestScoringNonBodyPos, const char **winnerStack, const char **xpos, float *scoreMatrix);
+	float zakAlgorithm(const char **miniMergedList, const char **miniMergedEnd, DocIdScore *pdcs);
+
 
 	uint64_t m_docId;
 
@@ -133,8 +138,6 @@ class PosdbTable {
 
 	// hack for seo.cpp:
 	float m_finalScore;
-	float m_preFinalScore;
-
 	float m_siteRankMultiplier;
 
 	// how long to add the last batch of lists

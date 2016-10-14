@@ -89,7 +89,6 @@ void PosdbTable::reset() {
 	m_docId = 0;
 	m_hasMaxSerpScore = false;
 	m_finalScore = 0.0;
-	m_preFinalScore = 0.0;
 	m_siteRankMultiplier = 0.0;
 	m_addListsTime = 0;
 	m_t2 = 0;
@@ -3098,6 +3097,151 @@ void PosdbTable::mergeTermSubListsForDocId(QueryTermInfo *qtibuf, char *miniMerg
 
 
 
+//
+// Nested for loops to score the term pairs.
+//
+// Store best scores into the scoreMatrix so the sliding window
+// algorithm can use them from there to do sub-outs
+//
+void PosdbTable::createNonBodyTermPairScoreMatrix(const char **miniMergedList, const char **miniMergedEnd, float *scoreMatrix) {
+	int32_t qdist;
+
+	logTrace(g_conf.m_logTracePosdb, "BEGIN");
+
+	// scan over each query term (its synonyms are part of the
+	// QueryTermInfo)
+	for(int32_t i=0; i < m_numQueryTermInfos; i++) {
+		// skip if not part of score
+		if ( m_bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
+			continue;
+		}
+
+		// and pair it with each other possible query term
+		for ( int32_t j = i+1 ; j < m_numQueryTermInfos ; j++ ) {
+			// skip if not part of score
+			if ( m_bflags[j] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
+				continue;
+			}
+
+			// but if they are in the same wikipedia phrase
+			// then try to keep their positions as in the query.
+			// so for 'time enough for love' ideally we want
+			// 'time' to be 6 units apart from 'love'
+			float wts;
+			// zero means not in a phrase
+			if ( m_wikiPhraseIds[j] == m_wikiPhraseIds[i] && m_wikiPhraseIds[j] ) {
+				// . the distance between the terms in the query
+				// . ideally we'd like this distance to be reflected
+				//   in the matched terms in the body
+				qdist = m_qpos[j] - m_qpos[i];
+				// wiki weight
+				wts = (float)WIKI_WEIGHT; // .50;
+			}
+			else {
+				// basically try to get query words as close
+				// together as possible
+				qdist = 2;
+				// this should help fix
+				// 'what is an unsecured loan' so we are more likely
+				// to get the page that has that exact phrase in it.
+				// yes, but hurts how to make a lock pick set.
+				//qdist = qpos[j] - qpos[i];
+				// wiki weight
+				wts = 1.0;
+			}
+
+			float maxnbtp;
+			//
+			// get score for term pair from non-body occuring terms
+			//
+			if ( miniMergedList[i] && miniMergedList[j] ) {
+				maxnbtp = getMaxScoreForNonBodyTermPair( miniMergedList[i], miniMergedList[j],
+							   miniMergedEnd[i], miniMergedEnd[j], qdist);
+			}
+			else {
+				maxnbtp = -1;
+			}
+
+			// it's -1 if one term is in the body/header/menu/etc.
+			if ( maxnbtp < 0 ) {
+				wts = -1.00;
+			}
+			else {
+				wts *= maxnbtp;
+				wts *= m_freqWeights[i];
+				wts *= m_freqWeights[j];
+			}
+
+			// store in matrix for "sub out" algo below
+			// when doing sliding window
+			scoreMatrix[i*m_nqt+j] = wts;
+		}
+	}
+	logTrace(g_conf.m_logTracePosdb, "END");
+}
+
+
+
+float PosdbTable::createHighestScoringNonBodyPosArray(const char **miniMergedList, const char **miniMergedEnd, const char **highestScoringNonBodyPos, DocIdScore *pdcs) {
+	float minSingleScore = 999999999.0;
+
+	logTrace(g_conf.m_logTracePosdb, "BEGIN");
+
+	// Now add single word scores.
+	//
+	// Having inlink text from siterank 15 of max 
+	// diversity/density will result in the largest score, 
+	// but we add them all up...
+	//
+	// This should be highly negative if singles[i] has a '-' 
+	// termsign...
+	for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
+		if ( ! miniMergedList[i] ) {
+			continue;
+		}
+
+		// skip if to the left of a pipe operator
+		if( m_bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
+			continue;
+		}
+
+		// sometimes there is no wordpos subtermlist for this docid
+		// because it just has the bigram, like "streetlight" and not
+		// the word "light" by itself for the query 'street light'
+		//if ( miniMergedList[i] ) {
+		// assume all word positions are in body
+		//highestScoringNonBodyPos[i] = NULL;
+
+		// This scans all word positions for this term.
+		//
+		// This should ignore occurences in the body and only
+		// focus on inlink text, etc.
+		//
+		// Sets "highestScoringNonBodyPos" to point to the winning word 
+		// position which does NOT occur in the body.
+		//
+		// Adds up MAX_TOP top scores and returns that sum.
+		//
+		// pdcs is NULL if not currPassNum == INTERSECT_DEBUG_INFO
+		float sts = getBestScoreSumForSingleTerm(i, miniMergedList[i], miniMergedEnd[i], pdcs, &highestScoringNonBodyPos[i]);
+
+		// sanity check
+		if ( highestScoringNonBodyPos[i] && s_inBody[Posdb::getHashGroup(highestScoringNonBodyPos[i])] ) {
+			gbshutdownAbort(true);
+		}
+
+		//sts /= 3.0;
+		if ( sts < minSingleScore ) {
+			minSingleScore = sts;
+		}
+	}
+
+	logTrace(g_conf.m_logTracePosdb, "END. minSingleScore=%f", minSingleScore);
+	return minSingleScore;
+}
+
+
+
 // Like getTermPairScore, but uses the word positions currently pointed to by ptrs[i].
 // Does NOT scan the word position lists.
 // Also tries to sub-out each term with the title or linktext wordpos term
@@ -3473,6 +3617,56 @@ void PosdbTable::slidingWindowAlgorithm(const char **miniMergedList, const char 
 }
 
 
+float PosdbTable::zakAlgorithm(const char **miniMergedList, const char **miniMergedEnd, DocIdScore *pdcs) {
+	float minPairScore = -1.0;
+
+	logTrace(g_conf.m_logTracePosdb, "Zak algorithm begins");
+
+	for(int32_t i=0; i < m_numQueryTermInfos; i++) {
+		// skip if to the left of a pipe operator
+		if ( m_bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
+			continue;
+		}
+
+		if ( ! miniMergedList[i] ) {
+			continue;
+		}
+
+
+		for ( int32_t j = i+1 ; j < m_numQueryTermInfos ; j++ ) {
+			// skip if to the left of a pipe operator
+			if ( m_bflags[j] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
+				continue;
+			}
+
+			if ( ! miniMergedList[j] ) {
+				continue;
+			}
+
+			// . this limits its scoring to the winning sliding window
+			//   as far as the in-body terms are concerned
+			// . it will do sub-outs using the score matrix
+			// . this will skip over body terms that are not 
+			//   in the winning window defined by m_bestMinTermPairWindowPtrs[]
+			//   that we set in findMinTermPairScoreInWindow()
+			// . returns the best score for this term
+			float tpscore = getTermPairScoreForAny(i, j, miniMergedList[i], miniMergedList[j],
+							      miniMergedEnd[i], miniMergedEnd[j], pdcs);
+
+			// get min of all term pair scores
+			if ( tpscore >= minPairScore && minPairScore >= 0.0 ) {
+				continue;
+			}
+
+			// got a new min
+			minPairScore = tpscore;
+		}
+	}
+
+	logTrace(g_conf.m_logTracePosdb, "Zak algorithm ends. minPairScore=%f", minPairScore);
+	return minPairScore;
+}
+
 
 // . compare the output of this to intersectLists9_r()
 // . hopefully this will be easier to understand and faster
@@ -3558,6 +3752,8 @@ void PosdbTable::intersectLists10_r ( ) {
 	m_freqWeights = freqWeights;
 	m_qtermNums   = qtermNums;
 
+	m_bflags = bflags;
+
 
 
 	//////////
@@ -3576,10 +3772,7 @@ void PosdbTable::intersectLists10_r ( ) {
 	float score;
 	int32_t intScore = 0;
 	float minScore = 0.0;
-	float minPairScore;
 	float minSingleScore;
-	m_bflags = bflags;
-	int32_t qdist;
 	// scan the posdb keys in the smallest list
 	// raised from 200 to 300,000 for 'da da da' query
 	char miniMergeBuf[300000];
@@ -3588,7 +3781,6 @@ void PosdbTable::intersectLists10_r ( ) {
 	float minWinningScore = -1.0;
 	int32_t topCursor = -9;
 	int32_t numProcessed = 0;
-	
 	int32_t prefiltMaxPossScoreFail 		= 0;
 	int32_t prefiltMaxPossScorePass 		= 0;
 	int32_t prefiltBestDistMaxPossScoreFail = 0;
@@ -3657,13 +3849,13 @@ void PosdbTable::intersectLists10_r ( ) {
 			}
 		}
 
+
 		//
-		// the main loop for looping over each docid
+		// The main loop for looping over each docid
 		//
 		bool allDone = false;
-
 		while( !allDone && docIdPtr < docIdEnd ) {
-			logTrace(g_conf.m_logTracePosdb, "Handling next docID");
+			logTrace(g_conf.m_logTracePosdb, "Handling next docId");
 
 			bool skipToNextDocId = false;
 			siteRank				= 0;
@@ -3763,6 +3955,7 @@ void PosdbTable::intersectLists10_r ( ) {
 			}	// currPassNum == INTERSECT_SCORING
 
 
+
 			if ( m_q->m_isBoolean ) {
 				m_docId = *(uint32_t *)(docIdPtr+1);
 				m_docId <<= 8;
@@ -3816,7 +4009,7 @@ void PosdbTable::intersectLists10_r ( ) {
 			}
 
 			// Make sure miniMergeList[x] is NULL if it contains no values
-			for ( int32_t i = 0   ; i < m_numQueryTermInfos ; i++ ) {
+			for(int32_t i=0; i < m_numQueryTermInfos; i++) {
 				// skip if not part of score
 				if ( bflags[i] & (BF_PIPED|BF_NEGATIVE) ) {
 					continue;
@@ -3839,7 +4032,6 @@ void PosdbTable::intersectLists10_r ( ) {
 				//
 				// sanity check for all
 				//
-
 				// test it. first key is 12 bytes.
 				if ( psize && Posdb::getKeySize(plist) != 12 ) {
 					log(LOG_ERROR,"%s:%s:%d: psize=%" PRId32 "", __FILE__, __func__, __LINE__, psize);
@@ -3854,160 +4046,34 @@ void PosdbTable::intersectLists10_r ( ) {
 			}
 
 
-
 			//##
 			//## ACTUAL SCORING BEGINS
 			//##
 
 			if ( !m_q->m_isBoolean ) {
+				// Used by the various scoring functions called below
+				m_qpos				= qpos;
+				m_wikiPhraseIds		= wikiPhraseIds;
+				m_quotedStartIds	= quotedStartIds;
+				m_bestMinTermPairWindowScore	= -2.0;
 
-				//
+
 				//#
 				//# NON-BODY TERM PAIR SCORING LOOP
 				//#
-				//
-				// Nested for loops to score the term pairs.
-				//
-				// Store best scores into the scoreMatrix so the sliding window
-				// algorithm can use them from there to do sub-outs
-				//
-
-				logTrace(g_conf.m_logTracePosdb, "Non-body term pair scoring loop");
-					
-				// scan over each query term (its synonyms are part of the
-				// QueryTermInfo)
-				for(int32_t i=0; i < m_numQueryTermInfos; i++) {
-					// skip if not part of score
-					if ( bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
-						continue;
-					}
-
-					// and pair it with each other possible query term
-					for ( int32_t j = i+1 ; j < m_numQueryTermInfos ; j++ ) {
-						// skip if not part of score
-						if ( bflags[j] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
-							continue;
-						}
-
-						// but if they are in the same wikipedia phrase
-						// then try to keep their positions as in the query.
-						// so for 'time enough for love' ideally we want
-						// 'time' to be 6 units apart from 'love'
-						float wts;
-						if ( wikiPhraseIds[j] == wikiPhraseIds[i] &&
-						     // zero means not in a phrase
-						     wikiPhraseIds[j] ) {
-							// . the distance between the terms in the query
-							// . ideally we'd like this distance to be reflected
-							//   in the matched terms in the body
-							qdist = qpos[j] - qpos[i];
-							// wiki weight
-							wts = (float)WIKI_WEIGHT; // .50;
-						}
-						else {
-							// basically try to get query words as close
-							// together as possible
-							qdist = 2;
-							// this should help fix
-							// 'what is an unsecured loan' so we are more likely
-							// to get the page that has that exact phrase in it.
-							// yes, but hurts how to make a lock pick set.
-							//qdist = qpos[j] - qpos[i];
-							// wiki weight
-							wts = 1.0;
-						}
-						
-						float maxnbtp;
-						//
-						// get score for term pair from non-body occuring terms
-						//
-						if ( miniMergedList[i] && miniMergedList[j] ) {
-							maxnbtp = getMaxScoreForNonBodyTermPair( miniMergedList[i], miniMergedList[j],
-										   miniMergedEnd[i], miniMergedEnd[j], qdist);
-						}
-						else {
-							maxnbtp = -1;
-						}
-										   
-						// it's -1 if one term is in the body/header/menu/etc.
-						if ( maxnbtp < 0 ) {
-							wts = -1.00;
-						}
-						else {
-							wts *= maxnbtp;
-							wts *= m_freqWeights[i];
-							wts *= m_freqWeights[j];
-						}
-
-						// store in matrix for "sub out" algo below
-						// when doing sliding window
-						scoreMatrix[i*nqt+j] = wts;
-					}
-				}
+				createNonBodyTermPairScoreMatrix(miniMergedList, miniMergedEnd, scoreMatrix);
 
 
-				//
 				//#
 				//# SINGLE TERM SCORE LOOP
 				//#
-				//
-				logTrace(g_conf.m_logTracePosdb, "Single term scoring loop");
-				minSingleScore = 999999999.0;
-				
-				// Now add single word scores.
-				//
-				// Having inlink text from siterank 15 of max 
-				// diversity/density will result in the largest score, 
-				// but we add them all up...
-				//
-				// This should be highly negative if singles[i] has a '-' 
-				// termsign...
-				for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
-					if ( ! miniMergedList[i] ) {
-						continue;
-					}
-					
-					// skip if to the left of a pipe operator
-					if( bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
-						continue;
-					}
-
-					// sometimes there is no wordpos subtermlist for this docid
-					// because it just has the bigram, like "streetlight" and not
-					// the word "light" by itself for the query 'street light'
-					//if ( miniMergedList[i] ) {
-					// assume all word positions are in body
-					//highestScoringNonBodyPos[i] = NULL;
-
-					// This scans all word positions for this term.
-					//
-					// This should ignore occurences in the body and only
-					// focus on inlink text, etc.
-					//
-					// Sets "highestScoringNonBodyPos" to point to the winning word 
-					// position which does NOT occur in the body.
-					//
-					// Adds up MAX_TOP top scores and returns that sum.
-					//
-					// pdcs is NULL if not currPassNum == INTERSECT_DEBUG_INFO
-					float sts = getBestScoreSumForSingleTerm(i, miniMergedList[i], miniMergedEnd[i], pdcs, &highestScoringNonBodyPos[i]);
-								  
-					// sanity check
-					if ( highestScoringNonBodyPos[i] && s_inBody[Posdb::getHashGroup(highestScoringNonBodyPos[i])] ) {
-						gbshutdownAbort(true);
-					}
-
-					//sts /= 3.0;
-					if ( sts < minSingleScore ) {
-						minSingleScore = sts;
-					}
-				}
+				minSingleScore = createHighestScoringNonBodyPosArray(miniMergedList, miniMergedEnd, highestScoringNonBodyPos, pdcs);
 
 
 				//#
 				//# DOCID / SITERANK DETECTION
 				//#
-				for ( int32_t k = 0 ; k < m_numQueryTermInfos ; k++ ) {
+				for(int32_t k=0; k < m_numQueryTermInfos; k++) {
 					if ( ! miniMergedList[k] ) {
 						continue;
 					}
@@ -4025,119 +4091,52 @@ void PosdbTable::intersectLists10_r ( ) {
 				logTrace(g_conf.m_logTracePosdb, "Got siteRank %d and docLang %d", (int)siteRank, (int)docLang);
 
 
-				//
 				//#
 				//# SLIDING WINDOW SCORING ALGORITHM
 				//#
-				//
-				m_qpos				= qpos;
-				m_wikiPhraseIds		= wikiPhraseIds;
-				m_quotedStartIds	= quotedStartIds;
-				m_bestMinTermPairWindowScore	= -2.0;
-
 				// After calling this, m_bestMinTermPairWindowPtrs will point to the
 				// term positions set ("window") that has the highest minimum score. These
 				// pointers are used in getTermPairScoreForAny called below.
 				slidingWindowAlgorithm(miniMergedList, miniMergedEnd, highestScoringNonBodyPos, winnerStack, xpos, scoreMatrix);
 
 
-				//
-				//
-				// BEGIN ZAK'S ALGO, BUT RESTRICT ALL BODY TERMS TO SLIDING WINDOW
-				//
-				//
-				// (similar to NON-BODY TERM PAIR SCORING LOOP above)
-				//
-				logTrace(g_conf.m_logTracePosdb, "Zak algorithm begins");
-				minPairScore = -1.0;
-
-				for(int32_t i=0; i < m_numQueryTermInfos; i++) {
-					// skip if to the left of a pipe operator
-					if ( bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
-						continue;
-					}
-
-					if ( ! miniMergedList[i] ) {
-						continue;
-					}
+				//#
+				//# similar to NON-BODY TERM PAIR SCORING LOOP above
+				//#
+				float minPairScore = zakAlgorithm(miniMergedList, miniMergedEnd, pdcs);
 
 
-					for ( int32_t j = i+1 ; j < m_numQueryTermInfos ; j++ ) {
-						// skip if to the left of a pipe operator
-						if ( bflags[j] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) {
-							continue;
-						}
-
-						//
-						// get score for term pair from non-body occuring terms
-						//
-						if ( ! miniMergedList[j] ) {
-							continue;
-						}
-						
-						// . this limits its scoring to the winning sliding window
-						//   as far as the in-body terms are concerned
-						// . it will do sub-outs using the score matrix
-						// . this will skip over body terms that are not 
-						//   in the winning window defined by m_bestMinTermPairWindowPtrs[]
-						//   that we set in findMinTermPairScoreInWindow()
-						// . returns the best score for this term
-						float tpscore = getTermPairScoreForAny (i,
-										      j,
-										      miniMergedList[i],
-										      miniMergedList[j],
-										      miniMergedEnd[i],
-										      miniMergedEnd[j],
-										      pdcs );
-										      
-						// get min of all term pair scores
-						if ( tpscore >= minPairScore && minPairScore >= 0.0 ) {
-							continue;
-						}
-						
-						// got a new min
-						minPairScore = tpscore;
-					}
-				}
-				
-				//
-				//
-				// END ZAK'S ALGO
-				//
-				//
-
-				m_preFinalScore = minPairScore;
-
-				
+				//#
+				//# Find minimum score
+				//#
 				minScore = 999999999.0;
-						
 				// get a min score from all the term pairs
 				if ( minPairScore < minScore && minPairScore >= 0.0 ) {
 					minScore = minPairScore;
 				}
-
 				// if we only had one query term
 				if ( minSingleScore < minScore ) {
 					minScore = minSingleScore;
 				}
+				logTrace(g_conf.m_logTracePosdb, "minPairScore=%f, minScore=%f", minPairScore, minScore);
 
-
-				logTrace(g_conf.m_logTracePosdb, "m_preFinalScore=%f, minScore=%f", m_preFinalScore, minScore);
 				
-				// comment out for gbsectionhash: debug:
 				if ( minScore <= 0.0 ) {
 					// advance to next docid
 					docIdPtr += 6;
+
+					logTrace(g_conf.m_logTracePosdb, "Skipping docid %" PRIu64 " - no positive score", m_docId);
 					// Continue docid loop
 					continue;
 				}
-				
 			} // !m_q->m_isBoolean
 
 
-			float effectiveSiteRank;
+			//#
+			//# Calculate score and give boost based on siterank and highest inlinking siterank
+			//#
+			float effectiveSiteRank = siteRank;
 
-			effectiveSiteRank = siteRank;
 			if( highestInlinkSiteRank > siteRank ) {
 				//adjust effective siterank because a high-rank site linked to it. Don't adjust it too much though.
 				effectiveSiteRank = siteRank + (highestInlinkSiteRank-siteRank) / 3.0;
@@ -4145,11 +4144,15 @@ void PosdbTable::intersectLists10_r ( ) {
 			// try dividing it by 3! (or multiply by .33333 faster)
 			score = minScore * (effectiveSiteRank*m_siteRankMultiplier+1.0);
 
-			// . not foreign language? give a huge boost
-			// . use "qlang" parm to set the language. i.e. "&qlang=fr"
+
+			//# 
+			//# Give score boost if query and doc language is the same.
+			//# Use "qlang" parm to set the language. i.e. "&qlang=fr"
+			//#
 			if ( m_msg39req->m_language == 0 || docLang == 0 || m_msg39req->m_language == docLang) {
 				score *= (m_msg39req->m_sameLangWeight); //SAMELANGMULT;
 			}
+
 
 			// assume filtered out
 			if ( currPassNum == INTERSECT_SCORING ) {
@@ -4186,12 +4189,6 @@ void PosdbTable::intersectLists10_r ( ) {
 				// through the cracks in the widget.
 				//score = (float)intScore;
 			}
-
-			// this logic now moved into isTermValueInRange2() when we fill up
-			// the docidVoteBuf. we won't add the docid if it fails one
-			// of these range terms. But if we are a boolean query then
-			// we handle it in makeDocIdVoteBufForBoolQuery() below.
-			// [snip: range checks]
 
 
 			// now we have a maxscore/maxdocid upper range so the widget
@@ -4236,6 +4233,8 @@ void PosdbTable::intersectLists10_r ( ) {
 
 			// . seoDebug hack so we can set "dcs"
 			// . we only come here if we actually made it into m_topTree
+			// if doing the second pass for printing out transparency info
+			// then do not mess with top tree
 			if ( currPassNum == INTERSECT_DEBUG_INFO ) {
 				if( genDebugScoreInfo2(dcs, lastLen, lastDocId, siteRank, score, intScore, docLang) ) {
 					// advance to next docid
@@ -4244,9 +4243,9 @@ void PosdbTable::intersectLists10_r ( ) {
 					continue;
 				}
 			}
-			// if doing the second pass for printing out transparency info
-			// then do not mess with top tree
-			else { // currPassNum == INTERSECT_SCORING ) {
+
+
+			if( currPassNum == INTERSECT_SCORING ) {
 				// add to top tree then!
 				int32_t tn = m_topTree->getEmptyNode();
 				TopNode *t  = &m_topTree->m_nodes[tn];
@@ -5880,12 +5879,12 @@ static inline const char *getWordPosList(int64_t docId, const char *list, int32_
 
 // initialize the weights table
 static void initWeights ( ) {
-	logTrace(g_conf.m_logTracePosdb, "BEGIN.");
-	
 	ScopedLock sl(s_mtx_weights);
 	if ( s_init ) {
 		return;
 	}
+
+	logTrace(g_conf.m_logTracePosdb, "BEGIN.");
 	
 	for ( int32_t i = 0 ; i <= MAXDIVERSITYRANK ; i++ ) {
 		// disable for now
