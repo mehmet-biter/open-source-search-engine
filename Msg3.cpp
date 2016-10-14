@@ -497,10 +497,15 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		// . but iff p2 is NOT the last page in the map/file
 		// . maps[fn]->getKey(lastPage) will return the LAST KEY
 		//   and maps[fn]->getOffset(lastPage) the length of the file
-		if ( map->getNumPages() != p2 ) KEYDEC(endKey2,m_ks);
-		// otherwise, if we're reading all pages, then force the
-		// endKey to virtual inifinite
-		else KEYMAX(endKey2,m_ks);
+		if(map->getNumPages() != p2) {
+			//only decrease endKey2 if it larger than startKey2
+			if(KEYCMP(startKey2,endKey2,m_ks)<0)
+				KEYDEC(endKey2,m_ks);
+		} else {
+			// otherwise, if we're reading all pages, then force the
+			// endKey to virtual inifinite
+			KEYMAX(endKey2,m_ks);
+		}
 
 		// . set up the hints
 		// . these are only used if we are only reading from 1 file
