@@ -681,7 +681,7 @@ bool RdbMap::addRecord ( char *key, char *rec , int32_t recSize ) {
 
 		log(LOG_LOGIC,"build: RdbMap: added key out of order. count=%" PRId64" file=%s/%s.",
 			m_badKeys, m_file.getDir(), m_file.getFilename());
-		log(LOG_LOGIC,"build: offset=%" PRId64"k1=%s k2=%s", m_offset, KEYSTR(m_lastKey,m_ks), KEYSTR(key,m_ks));
+		log(LOG_LOGIC,"build: offset=%" PRId64" k1=%s k2=%s", m_offset, KEYSTR(m_lastKey,m_ks), KEYSTR(key,m_ks));
 
 		// @todo: Temporarily added for tracking down bug. We want the core. Keep permanently?
 
