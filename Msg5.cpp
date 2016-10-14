@@ -20,27 +20,7 @@ Msg5::Msg5() {
 	m_waitingForList = false;
 	//m_waitingForMerge = false;
 	m_numListPtrs = 0;
-	reset();
-}
 
-Msg5::~Msg5() {
-	reset();
-}
-
-// frees m_treeList
-void Msg5::reset() {
-	if ( m_waitingForList ) { // || m_waitingForMerge ) {
-		log("disk: Trying to reset a class waiting for a reply.");
-		// might being doing an urgent exit (mainShutdown(1)) or
-		// g_process.shutdown(), so do not core here
-		//g_process.shutdownAbort(true); 
-	}
-	m_msg3.reset();
-	KEYMIN(m_prevKey,MAX_KEY_BYTES);// m_ks); m_ks is invalid
-	m_numListPtrs = 0;
-	// and the tree list
-	m_treeList.freeList();
-	
 	// Coverity
 	m_list = NULL;
 	memset(m_startKey, 0, sizeof(m_startKey));
@@ -73,6 +53,29 @@ void Msg5::reset() {
 	m_allowPageCache = false;
 	m_collnum = 0;
 	m_errno = 0;
+
+	reset();
+}
+
+
+
+Msg5::~Msg5() {
+	reset();
+}
+
+// frees m_treeList
+void Msg5::reset() {
+	if ( m_waitingForList ) { // || m_waitingForMerge ) {
+		log("disk: Trying to reset a class waiting for a reply.");
+		// might being doing an urgent exit (mainShutdown(1)) or
+		// g_process.shutdown(), so do not core here
+		//g_process.shutdownAbort(true); 
+	}
+	m_msg3.reset();
+	KEYMIN(m_prevKey,MAX_KEY_BYTES);// m_ks); m_ks is invalid
+	m_numListPtrs = 0;
+	// and the tree list
+	m_treeList.freeList();
 }
 
 
