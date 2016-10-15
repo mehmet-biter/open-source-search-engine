@@ -3091,6 +3091,47 @@ void PosdbTable::mergeTermSubListsForDocId(QueryTermInfo *qtibuf, char *miniMerg
 		gbshutdownAbort(true);
 	}
 
+
+
+	// Make sure miniMergeList[x] is NULL if it contains no values
+	for(int32_t i=0; i < m_numQueryTermInfos; i++) {
+		// skip if not part of score
+		if ( m_bflags[i] & (BF_PIPED|BF_NEGATIVE) ) {
+			continue;
+		}
+
+		// get list
+		const char *plist	= miniMergedList[i];
+		const char *plistEnd= miniMergedEnd[i];
+		int32_t  psize		= plistEnd - plist;
+		
+		if( !psize ) {
+			// BR fix 20160918: Avoid working on empty lists where start and 
+			// end pointers are the same. This can happen if no positions are
+			// copied to the merged list because they are all synonyms or
+			// phrase terms. See "HACK OF CONFUSION" above..
+			miniMergedList[i] = NULL;
+		}
+
+
+		//
+		// sanity check for all
+		//
+		// test it. first key is 12 bytes.
+		if ( psize && Posdb::getKeySize(plist) != 12 ) {
+			log(LOG_ERROR,"%s:%s:%d: psize=%" PRId32 "", __FILE__, __func__, __LINE__, psize);
+			gbshutdownAbort(true);
+		}
+
+		// next key is 6
+		if ( psize > 12 && Posdb::getKeySize(plist+12) != 6) {
+			log(LOG_ERROR,"%s:%s:%d: next key size=%" PRId32 "", __FILE__, __func__, __LINE__, Posdb::getKeySize(plist+12));
+			gbshutdownAbort(true);
+		}
+	}
+
+
+
 	logTrace(g_conf.m_logTracePosdb, "END.");
 }
 
@@ -3846,9 +3887,11 @@ void PosdbTable::intersectLists10_r ( ) {
 		}
 
 
-		//
-		// The main loop for looping over each docid
-		//
+		
+		//#
+		//# MAIN LOOP for looping over each docid
+		//#
+
 		bool allDone = false;
 		while( !allDone && docIdPtr < docIdEnd ) {
 			logTrace(g_conf.m_logTracePosdb, "Handling next docId");
@@ -4004,42 +4047,6 @@ void PosdbTable::intersectLists10_r ( ) {
 				m_docId >>= 2;
 			}
 
-			// Make sure miniMergeList[x] is NULL if it contains no values
-			for(int32_t i=0; i < m_numQueryTermInfos; i++) {
-				// skip if not part of score
-				if ( bflags[i] & (BF_PIPED|BF_NEGATIVE) ) {
-					continue;
-				}
-
-				// get list
-				const char *plist	= miniMergedList[i];
-				const char *plistEnd= miniMergedEnd[i];
-				int32_t  psize		= plistEnd - plist;
-				
-				if( !psize ) {
-					// BR fix 20160918: Avoid working on empty lists where start and 
-					// end pointers are the same. This can happen if no positions are
-					// copied to the merged list because they are all synonyms or
-					// phrase terms. See "HACK OF CONFUSION" above..
-					miniMergedList[i] = NULL;
-				}
-
-
-				//
-				// sanity check for all
-				//
-				// test it. first key is 12 bytes.
-				if ( psize && Posdb::getKeySize(plist) != 12 ) {
-					log(LOG_ERROR,"%s:%s:%d: psize=%" PRId32 "", __FILE__, __func__, __LINE__, psize);
-					gbshutdownAbort(true);
-				}
-
-				// next key is 6
-				if ( psize > 12 && Posdb::getKeySize(plist+12) != 6) {
-					log(LOG_ERROR,"%s:%s:%d: next key size=%" PRId32 "", __FILE__, __func__, __LINE__, Posdb::getKeySize(plist+12));
-					gbshutdownAbort(true);
-				}
-			}
 
 
 			//##
@@ -4097,7 +4104,7 @@ void PosdbTable::intersectLists10_r ( ) {
 
 
 				//#
-				//# similar to NON-BODY TERM PAIR SCORING LOOP above
+				//# Similar to NON-BODY TERM PAIR SCORING LOOP above
 				//#
 				float minPairScore = zakAlgorithm(miniMergedList, miniMergedEnd, pdcs);
 
@@ -4117,6 +4124,7 @@ void PosdbTable::intersectLists10_r ( ) {
 				logTrace(g_conf.m_logTracePosdb, "minPairScore=%f, minScore=%f", minPairScore, minScore);
 
 				
+				// No positive score? Then skip the doc
 				if ( minScore <= 0.0 ) {
 					// advance to next docid
 					docIdPtr += 6;
