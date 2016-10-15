@@ -136,8 +136,6 @@ class PosdbTable {
 
 	bool m_hasMaxSerpScore;
 
-	// hack for seo.cpp:
-	float m_finalScore;
 	float m_siteRankMultiplier;
 
 	// how long to add the last batch of lists

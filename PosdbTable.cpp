@@ -88,7 +88,6 @@ void PosdbTable::reset() {
 	// Coverity
 	m_docId = 0;
 	m_hasMaxSerpScore = false;
-	m_finalScore = 0.0;
 	m_siteRankMultiplier = 0.0;
 	m_addListsTime = 0;
 	m_t2 = 0;
@@ -3675,9 +3674,6 @@ float PosdbTable::zakAlgorithm(const char **miniMergedList, const char **miniMer
 //   inlink text it could never beat the 10th score.
 void PosdbTable::intersectLists10_r ( ) {
 	logTrace(g_conf.m_logTracePosdb, "BEGIN. numTerms: %" PRId32, m_q->m_numTerms);
-
-
-	m_finalScore = 0.0;
 
 
 	prepareWhiteListTable();
