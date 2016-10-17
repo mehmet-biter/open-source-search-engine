@@ -98,15 +98,19 @@ class TopTree {
 	bool hasDocId ( int64_t d );
 
 	TopNode *getNode ( int32_t i ) { return &m_nodes[i]; }
+	bool nodesIsNull() const { return m_nodes==NULL; }
+	int32_t getNumNodes() const { return m_numNodes; }
+	int32_t getNumUsedNodes() const { return m_numUsedNodes; }
 
+
+	bool  m_doSiteClustering;
+	bool  m_useIntScores;
+	int32_t  m_docsWanted;
+
+private:
 	// ptr to the mem block
 	TopNode *m_nodes;
 	int32_t     m_allocSize;
-	// optional dedup vectors... very big, VECTOR_REC_SIZE-12 bytes each 
-	// (512) so we make this an option
-	//int32_t    *m_sampleVectors; 
-	//bool     m_useSampleVectors;
-	// which is next to be used, after m_nextPtr
 	int32_t m_numUsedNodes;
 	// total count
 	int32_t m_numNodes;
@@ -125,12 +129,9 @@ class TopTree {
 
 	bool m_pickRight;
 
-	float m_vcount  ;
-	int32_t  m_cap     ;
-	float m_partial ;
-	bool  m_doSiteClustering;
-	bool  m_useIntScores;
-	int32_t  m_docsWanted;
+	int32_t  m_cap;
+	float m_vcount;
+	float m_partial;
 	int64_t  m_ridiculousMax;
 	char  m_kickedOutDocIds;
 	//int64_t m_lastKickedOutDocId;
@@ -141,8 +142,6 @@ class TopTree {
 	// an embedded RdbTree for limiting the storing of keys to X
 	// keys per domHash, where X is usually "m_ridiculousMax"
 	RdbTree m_t2;
-
- private:
 
 	void deleteNode  ( int32_t i , uint8_t domHash ) ;
 	void setDepths   ( int32_t i ) ;

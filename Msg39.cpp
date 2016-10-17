@@ -731,7 +731,7 @@ bool Msg39::intersectLists ( ) { // bool updateReadInfo ) {
 	}
 
 	// if msg2 had ALL empty lists we can cut it short
-	if ( m_posdbTable.m_topTree->m_numNodes == 0 ) {
+	if ( m_posdbTable.m_topTree->getNumNodes() == 0 ) { //isj: shouldn't this call getNumUsedNodes() ?
 		//estimateHitsAndSendReply ( );
 		return true;
 	}
@@ -801,7 +801,7 @@ bool Msg39::intersectLists ( ) { // bool updateReadInfo ) {
 	//log(LOG_INFO,"query: Intersect thread creation failed. Doing "
 	//    "blocking. Hurts performance.");
 	// check tree
-	if ( m_toptree.m_nodes == NULL ) {
+	if ( m_toptree.nodesIsNull() ) { //isj: what is it trying to test here? and why aren't there a similar test in PosdbTable::intersect() ?
 		log(LOG_LOGIC,"query: msg39: Badness."); 
 		gbshutdownLogicError();
 	}
@@ -851,7 +851,7 @@ bool Msg39::getClusterRecs ( ) {
 
 	// make buf for arrays of the docids, cluster levels and cluster recs
 	int32_t nodeSize  = 8 + 1 + 12;
-	int32_t numDocIds = m_toptree.m_numUsedNodes;
+	int32_t numDocIds = m_toptree.getNumUsedNodes();
 	m_clusterBufSize = numDocIds * nodeSize;
 	m_clusterBuf = (char *)mmalloc(m_clusterBufSize, "Msg39cluster");
 	// on error, return true, g_errno should be set
@@ -879,7 +879,7 @@ bool Msg39::getClusterRecs ( ) {
 	      ti >= 0 ;
 	      ti = m_toptree.getPrev(ti) , nd++ ) {
 		// get the guy
-		TopNode *t = &m_toptree.m_nodes[ti];
+		TopNode *t = m_toptree.getNode(ti);
 		// get the docid
 		//int64_t  docId = getDocIdFromPtr(t->m_docIdPtr);
 		// store in array
@@ -895,7 +895,7 @@ bool Msg39::getClusterRecs ( ) {
 	m_numClusterDocIds = nd;
 
 	// sanity check
-	if ( nd != m_toptree.m_numUsedNodes ) gbshutdownLogicError();
+	if ( nd != m_toptree.getNumUsedNodes() ) gbshutdownLogicError();
 
 	// . ask msg51 to get us the cluster recs
 	// . it should read it all from the local drives
@@ -944,7 +944,7 @@ bool Msg39::gotClusterRecs() {
 	    ti >= 0;
 	    ti = m_toptree.getPrev(ti) , nd++ ) {
 		// get the guy
-		TopNode *t = &m_toptree.m_nodes[ti];
+		TopNode *t = m_toptree.getNode(ti);
 		// sanity check
 		if(t->m_docId!=m_clusterDocIds[nd]) gbshutdownLogicError();
 		// set it
@@ -971,7 +971,7 @@ void Msg39::estimateHitsAndSendReply() {
 	m_inUse = false;
 
 	// numDocIds counts docs in all tiers when using toptree.
-	int32_t numDocIds = m_toptree.m_numUsedNodes;
+	int32_t numDocIds = m_toptree.getNumUsedNodes();
 
 	// if we got clusterdb recs in here, use 'em
 	if(m_gotClusterRecs)
@@ -1057,7 +1057,7 @@ void Msg39::estimateHitsAndSendReply() {
 	    ti = m_toptree.getPrev(ti))
 	{
 		// get the guy
-		TopNode *t = &m_toptree.m_nodes[ti];
+		TopNode *t = m_toptree.getNode(ti);
 		// skip if clusterLevel is bad!
 		if(m_gotClusterRecs && t->m_clusterLevel!=CR_OK)
 			continue;

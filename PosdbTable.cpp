@@ -2324,7 +2324,7 @@ nextNode:
 		// if our query had a quoted phrase, might have had no
 		// docids in the top tree! getHighNode() can't handle
 		// that so handle it here
-		if ( m_topTree->m_numUsedNodes == 0 ) {
+		if ( m_topTree->getNumUsedNodes() == 0 ) {
 			return true;
 		}
 		
@@ -4252,7 +4252,7 @@ void PosdbTable::intersectLists10_r ( ) {
 			if( currPassNum == INTERSECT_SCORING ) {
 				// add to top tree then!
 				int32_t tn = m_topTree->getEmptyNode();
-				TopNode *t  = &m_topTree->m_nodes[tn];
+				TopNode *t  = m_topTree->getNode(tn);
 				// set the score and docid ptr
 				t->m_score = score;
 				t->m_docId = m_docId;
@@ -4286,11 +4286,11 @@ void PosdbTable::intersectLists10_r ( ) {
 				// enough domains represented in the search results.
 				// See TopTree::addNode(). it will not add the "t" node if
 				// its score is not high enough when the top tree is full.
-				if ( m_topTree->m_numUsedNodes > m_topTree->m_docsWanted ) {
+				if ( m_topTree->getNumUsedNodes() > m_topTree->m_docsWanted ) {
 					// get the lowest scoring node
 					int32_t lowNode = m_topTree->getLowNode();
 					// and record its score in "minWinningScore"
-					minWinningScore = m_topTree->m_nodes[lowNode].m_score;
+					minWinningScore = m_topTree->getNode(lowNode)->m_score;
 				}
 			}
 
