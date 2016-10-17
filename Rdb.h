@@ -382,8 +382,8 @@ private:
 
 	int32_t  m_fn;
 	
-	char m_treeName [64];
-	char m_memName  [64];
+	char m_treeAllocName[64]; //for memory used m_tree/m_buckets
+	char m_memAllocName[64]; //for memory used by m_mem
 
 	int64_t m_lastWrite;
 
