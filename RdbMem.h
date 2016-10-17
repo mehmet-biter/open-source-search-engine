@@ -75,7 +75,6 @@ private:
 	char *m_90up   ;
 	char *m_90down ;
 
-	char  m_ks;
 	const char *m_allocName;
 };
 
