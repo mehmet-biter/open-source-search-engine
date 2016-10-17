@@ -26,8 +26,7 @@ bool Clusterdb::init ( ) {
 	int32_t maxTreeNodes  = maxTreeMem / ( 16 + CLUSTER_REC_SIZE );
 
 	// initialize our own internal rdb
-	return m_rdb.init ( g_hostdb.m_dir  ,
-			    "clusterdb"   ,
+	return m_rdb.init ( "clusterdb"   ,
 			    0             , // no data now! just docid/s/c
 			    2, // g_conf.m_clusterdbMinFilesToMerge,
 			    g_conf.m_clusterdbMaxTreeMem,
@@ -43,8 +42,7 @@ bool Clusterdb::init2 ( int32_t treeMem ) {
 	// . 28 bytes per record when in the tree
 	int32_t maxTreeNodes  = treeMem / ( 16 + CLUSTER_REC_SIZE );
 	// initialize our own internal rdb
-	return m_rdb.init ( g_hostdb.m_dir     ,
-			    "clusterdbRebuild" ,
+	return m_rdb.init ( "clusterdbRebuild" ,
 			    0             , // no data now! just docid/s/c
 			    50            , // m_clusterdbMinFilesToMerge,
 			    treeMem       , // g_conf.m_clusterdbMaxTreeMem,

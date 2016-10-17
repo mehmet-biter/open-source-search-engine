@@ -1055,8 +1055,7 @@ bool Tagdb::init ( ) {
 	// . initialize our own internal rdb
 	// . i no longer use cache so changes to tagdb are instant
 	// . we still use page cache however, which is good enough!
-	return m_rdb.init ( g_hostdb.m_dir               ,
-			    "tagdb"                     ,
+	return m_rdb.init ( "tagdb"                     ,
 			    -1                         , // fixed record size
 			    -1,//g_conf.m_tagdbMinFilesToMerge   ,
 			    g_conf.m_tagdbMaxTreeMem  ,

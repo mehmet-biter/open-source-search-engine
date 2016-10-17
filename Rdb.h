@@ -68,8 +68,7 @@ public:
 	bool deleteAllRecs ( collnum_t collnum ) ;
 	bool deleteColl ( collnum_t collnum , collnum_t newCollnum ) ;
 
-	bool init ( const char  *dir          , // working directory
-		    const char  *dbname       , // "indexdb","tagdb",...
+	bool init ( const char  *dbname       , // "indexdb","tagdb",...
 		    int32_t   fixedDataSize   , //= -1   ,
 		    int32_t   minToMerge      , //, //=  2   ,
 		    int32_t   maxTreeMem      , //=  1024*1024*32 ,

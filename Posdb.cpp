@@ -132,8 +132,7 @@ bool Posdb::init ( ) {
 	//   must be able to fit all bins in memory
 	// . we do not want posdb's bin tree to ever hit disk since we
 	//   dump it to rdb files when it is 90% full (90% of bins in use)
-	return m_rdb.init ( g_hostdb.m_dir,
-	                    "posdb",
+	return m_rdb.init ( "posdb",
 	                    getFixedDataSize(),
 	                    // -1 means look in CollectionRec::m_posdbMinFilesToMerge
 	                    -1,
@@ -159,8 +158,7 @@ bool Posdb::init2 ( int32_t treeMem ) {
 	//   must be able to fit all bins in memory
 	// . we do not want posdb's bin tree to ever hit disk since we
 	//   dump it to rdb files when it is 90% full (90% of bins in use)
-	return m_rdb.init(g_hostdb.m_dir,
-	                  "posdbRebuild",
+	return m_rdb.init("posdbRebuild",
 	                  getFixedDataSize(),
 	                  1000, // min files to merge
 	                  treeMem,

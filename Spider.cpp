@@ -521,8 +521,7 @@ bool Spiderdb::init ( ) {
 	int32_t maxTreeNodes  = g_conf.m_spiderdbMaxTreeMem  / 78;
 
 	// initialize our own internal rdb
-	return m_rdb.init ( g_hostdb.m_dir ,
-			    "spiderdb"   ,
+	return m_rdb.init ( "spiderdb"   ,
 			    -1      , // fixedDataSize
 			    // now that we have MAX_WINNER_NODES allowed in doledb
 			    // we don't have to keep spiderdb so tightly merged i guess..
@@ -544,8 +543,7 @@ bool Spiderdb::init2 ( int32_t treeMem ) {
 	// . 45 + 33 bytes overhead in tree is 78
 	int32_t maxTreeNodes  = treeMem  / 78;
 	// initialize our own internal rdb
-	return m_rdb.init ( g_hostdb.m_dir ,
-			    "spiderdbRebuild"   ,
+	return m_rdb.init ( "spiderdbRebuild"   ,
 			    -1            , // fixedDataSize
 			    200           , // g_conf.m_spiderdbMinFilesToMerge
 			    treeMem       , // g_conf.m_spiderdbMaxTreeMem ,

@@ -107,8 +107,7 @@ bool Linkdb::init ( ) {
 	int32_t maxTreeNodes = maxTreeMem /(sizeof(key224_t)+16);
 
 	// init the rdb
-	return m_rdb.init ( g_hostdb.m_dir ,
-			    "linkdb" ,
+	return m_rdb.init ( "linkdb" ,
 			    0        , // fixeddatasize is 0 since no data
 			    // keep it high since we are mostly ssds now and
 			    // the reads are small...
@@ -131,8 +130,7 @@ bool Linkdb::init2 ( int32_t treeMem ) {
 	int32_t nodeSize = ( sizeof(key224_t) + 12 + 4 ) + sizeof(collnum_t);
 	int32_t maxTreeNodes  = treeMem / nodeSize;
 	// initialize our own internal rdb
-	return m_rdb.init ( g_hostdb.m_dir     ,
-			    "linkdbRebuild" ,
+	return m_rdb.init ( "linkdbRebuild" ,
 			    0             , // no data now! just docid/s/c
 			    50            , // m_clusterdbMinFilesToMerge,
 			    treeMem       , // g_conf.m_clusterdbMaxTreeMem,

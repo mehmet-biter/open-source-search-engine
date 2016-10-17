@@ -113,8 +113,7 @@ void Rdb::addBase ( collnum_t collnum , RdbBase *base ) {
 	      (PTRTYPE)base);
 }
 
-bool Rdb::init ( const char     *dir                  ,
-		  const char    *dbname               ,
+bool Rdb::init(const char *dbname,
 		  int32_t           fixedDataSize        ,
 		  int32_t           minToMerge           ,
 		  int32_t           maxTreeMem           ,
@@ -125,9 +124,6 @@ bool Rdb::init ( const char     *dir                  ,
 		 bool			useIndexFile ) {
 	// reset all
 	reset();
-
-	// sanity
-	if ( ! dir ) { g_process.shutdownAbort(true); }
 
 	// statsdb
 	m_isCollectionLess = isCollectionLess;
