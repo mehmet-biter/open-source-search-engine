@@ -443,7 +443,7 @@ bool RdbBase::setFiles ( ) {
 	// set our directory class
 	if ( ! m_dir.open ( ) ) {
 		// we are getting this from a bogus m_dir
-		log( LOG_WARN, "db: Had error opening directory %s", getDir() );
+		log( LOG_WARN, "db: Had error opening directory %s", m_dir.getDir());
 		return false;
 	}
 
@@ -672,7 +672,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 		}
 	}
 
-	f->set ( getDir() , name , NULL ); // g_conf.m_stripeDir );
+	f->set(m_dir.getDir(), name, NULL);
 
 	// if new ensure does not exist
 	if ( isNew && f->doesExist() ) {
@@ -777,7 +777,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 
 	// set the map file's  filename
 	sprintf ( name , "%s%04" PRId32".map", m_dbname, fileId );
-	m->set ( getDir(), name, m_fixedDataSize, m_useHalfKeys, m_ks, m_pageSize );
+	m->set(m_dir.getDir(), name, m_fixedDataSize, m_useHalfKeys, m_ks, m_pageSize);
 	if ( ! isNew && ! m->readMap ( f ) ) {
 		// if out of memory, do not try to regen for that
 		if ( g_errno == ENOMEM ) {
@@ -826,7 +826,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	if( m_useIndexFile ) {
 		// set the index file's  filename
 		sprintf(name, "%s%04" PRId32".idx", m_dbname, fileId);
-		in->set(getDir(), name, m_fixedDataSize, m_useHalfKeys, m_ks, m_rdb->getRdbId());
+		in->set(m_dir.getDir(), name, m_fixedDataSize, m_useHalfKeys, m_ks, m_rdb->getRdbId());
 		if (!isNew && !(in->readIndex() && in->verifyIndex())) {
 			// if out of memory, do not try to regen for that
 			if (g_errno == ENOMEM) {
