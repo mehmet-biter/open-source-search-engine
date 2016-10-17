@@ -179,18 +179,10 @@ bool Rdb::init(const char *dbname,
 		m_useTree = false;
 	}
 
-	sprintf(m_treeAllocName,"tree-%s",m_dbname);
-
-	// . if maxTreeNodes is -1, means auto compute it
-	// . set tree to use our fixed data size
-	// . returns false and sets g_errno on error
 	if(m_useTree) { 
-		int32_t rdbId = m_rdbId;
 		// statsdb is collectionless really so pass on to tree
-		if ( rdbId == RDB_STATSDB ) {
-			rdbId = -1;
-		}
-
+		int32_t rdbId = rdbId != RDB_STATSDB ? rdbId : -1;
+		sprintf(m_treeAllocName,"tree-%s",m_dbname);
 		if (!m_tree.set(fixedDataSize, maxTreeNodes, maxTreeMem, false, m_treeAllocName, false, m_dbname, m_ks, rdbId)) {
 			log( LOG_ERROR, "db: Failed to set tree." );
 			return false;
@@ -199,7 +191,6 @@ bool Rdb::init(const char *dbname,
 		if(treeFileExists()) {
 			m_tree.set(fixedDataSize, maxTreeNodes, maxTreeMem, false, m_treeAllocName, false, m_dbname, m_ks, m_rdbId);
 		}
-		// set this then
 		sprintf(m_treeAllocName,"buckets-%s",m_dbname);
 		if (!m_buckets.set(fixedDataSize, maxTreeMem, m_treeAllocName, m_rdbId, m_dbname, m_ks)) {
 			log( LOG_ERROR, "db: Failed to set buckets." );
