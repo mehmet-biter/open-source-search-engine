@@ -219,7 +219,7 @@ void flushStatsWrapper ( int fd , void *state ) {
 	if ( (float)tree->getNumUsedNodes() * 1.2 < 
 	     (float)tree->getNumAvailNodes () &&
 	     //tree->getNumAvailNodes () > 1000 &&
-	     rdb->getRdbMem()->getAvailMem() > 50000 )
+	     rdb->getAvailMem() > 50000 )
 		return;
 
 	if ( ! isClockInSync() ) return;

@@ -150,7 +150,8 @@ public:
 		return &m_buckets;
 	}
 
-	RdbMem     *getRdbMem  ( ) { return &m_mem; }
+	int32_t getAvailMem() const { return m_mem.getAvailMem(); }
+	int32_t getUsedMem() const { return m_mem.getUsedMem(); }
 	bool       useTree() const { return m_useTree;}
 
 	int32_t       getNumUsedNodes() const;

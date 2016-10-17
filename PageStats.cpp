@@ -1876,7 +1876,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 	p.safePrintf("<tr class=poo><td><b>rdb mem used</b></td>");
 	total = 0LL;
 	for ( int32_t i = 0 ; i < nr ; i++ ) {
-		int64_t val = rdbs[i]->getRdbMem()->getUsedMem();
+		int64_t val = rdbs[i]->getUsedMem();
 		total += val;
 		//p.safePrintf("<td>%" PRIu64"</td>",val);
 		printNumAbbr ( p , val );
@@ -1887,7 +1887,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 	p.safePrintf("<tr class=poo><td><b><nobr>rdb mem available</nobr></b></td>");
 	total = 0LL;
 	for ( int32_t i = 0 ; i < nr ; i++ ) {
-		int64_t val = rdbs[i]->getRdbMem()->getAvailMem();
+		int64_t val = rdbs[i]->getAvailMem();
 		total += val;
 		//p.safePrintf("<td>%" PRIu64"</td>",val);
 		printNumAbbr ( p , val );
