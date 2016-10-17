@@ -169,22 +169,23 @@ public:
 
 	void cleanTree();
 
-	RdbBase *getBase ( collnum_t collnum ) ;
-	int32_t getNumBases ( ) { 	return g_collectiondb.m_numRecs; }
+	RdbBase *getBase(collnum_t collnum );
+	const RdbBase *getBase(collnum_t collnum ) const { return const_cast<Rdb*>(this)->getBase(collnum); }
+	int32_t getNumBases() const { return g_collectiondb.m_numRecs; }
 	void addBase ( collnum_t collnum , class RdbBase *base ) ;
 
 
 	// how much mem is allocated for our maps?
-	int64_t getMapMemAllocated();
+	int64_t getMapMemAllocated() const;
 
-	int32_t       getNumFiles ( ) ;
+	int32_t getNumFiles() const;
 
 	// sum of all parts of all big files
-	int32_t      getNumSmallFiles ( ) ;
-	int64_t getDiskSpaceUsed ( );
+	int32_t getNumSmallFiles() const;
+	int64_t getDiskSpaceUsed() const;
 
 	// returns -1 if variable (variable dataSize)
-	int32_t getRecSize ( ) {
+	int32_t getRecSize() const {
 		if ( m_fixedDataSize == -1 ) {
 			return -1;
 		}
@@ -195,14 +196,14 @@ public:
 	// use the maps and tree to estimate the size of this list
 	int64_t getListSize(collnum_t collnum,
 			    const char *startKey, const char *endKey, char *maxKey,
-			    int64_t oldTruncationLimit);
+			    int64_t oldTruncationLimit) const;
 
 	// positive minus negative
-	int64_t getNumTotalRecs ( bool useCache = false ) ;
+	int64_t getNumTotalRecs(bool useCache = false) const;
 
-	int64_t getCollNumTotalRecs ( collnum_t collnum );
+	int64_t getCollNumTotalRecs(collnum_t collnum) const; //could technically be static
 
-	int64_t getNumGlobalRecs ( );
+	int64_t getNumGlobalRecs() const;
 
 	// used for keeping track of stats
 	void    didSeek() { m_numSeeks++; }
@@ -321,8 +322,8 @@ private:
 	// memory for us to use to avoid calling malloc()/mdup()/...
 	RdbMem    m_mem;
 
-	int32_t      m_cacheLastTime;
-	int64_t m_cacheLastTotal;
+	mutable int32_t m_cacheLastTime;
+	mutable int64_t m_cacheLastTotal;
 
 	bool m_inAddList;
 

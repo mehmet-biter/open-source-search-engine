@@ -2134,7 +2134,7 @@ bool Rdb::addRecord(collnum_t collnum, char *key, char *data, int32_t dataSize) 
 
 // . use the maps and tree to estimate the size of this list w/o hitting disk
 // . used by Indexdb.cpp to get the size of a list for IDF weighting purposes
-int64_t Rdb::getListSize(collnum_t collnum, const char *startKey, const char *endKey, char *max, int64_t oldTruncationLimit) {
+int64_t Rdb::getListSize(collnum_t collnum, const char *startKey, const char *endKey, char *max, int64_t oldTruncationLimit) const {
 	// pick it
 	if ( collnum < 0 || collnum > getNumBases() || ! getBase(collnum) ) {
 		log(LOG_WARN, "db: %s bad collnum of %i", m_dbname, collnum);
@@ -2143,12 +2143,12 @@ int64_t Rdb::getListSize(collnum_t collnum, const char *startKey, const char *en
 	return getBase(collnum)->getListSize(startKey, endKey, max, oldTruncationLimit);
 }
 
-int64_t Rdb::getNumGlobalRecs() {
+int64_t Rdb::getNumGlobalRecs() const {
 	return (getNumTotalRecs() * g_hostdb.m_numShards);
 }
 
 // . return number of positive records - negative records
-int64_t Rdb::getNumTotalRecs ( bool useCache ) {
+int64_t Rdb::getNumTotalRecs(bool useCache) const {
 
 	// are we statsdb? then we have no associated collections
 	// because we are used globally, by all collections
@@ -2190,7 +2190,7 @@ int64_t Rdb::getNumTotalRecs ( bool useCache ) {
 }
 
 
-int64_t Rdb::getCollNumTotalRecs ( collnum_t collnum ) {
+int64_t Rdb::getCollNumTotalRecs(collnum_t collnum) const {
 
 	if ( collnum < 0 ) return 0;
 
@@ -2209,7 +2209,7 @@ int64_t Rdb::getCollNumTotalRecs ( collnum_t collnum ) {
 
 // . how much mem is allocated for all of our maps?
 // . we have one map per file
-int64_t Rdb::getMapMemAllocated() {
+int64_t Rdb::getMapMemAllocated() const {
 	int64_t total = 0;
 	for ( int32_t i = 0 ; i < getNumBases() ; i++ ) {
 		// skip null base if swapped out
@@ -2223,7 +2223,7 @@ int64_t Rdb::getMapMemAllocated() {
 }
 
 // sum of all parts of all big files
-int32_t Rdb::getNumSmallFiles ( ) {
+int32_t Rdb::getNumSmallFiles() const {
 	int32_t total = 0;
 	for ( int32_t i = 0 ; i < getNumBases() ; i++ ) {
 		// skip null base if swapped out
@@ -2237,7 +2237,7 @@ int32_t Rdb::getNumSmallFiles ( ) {
 }
 
 // sum of all parts of all big files
-int32_t Rdb::getNumFiles ( ) {
+int32_t Rdb::getNumFiles() const {
 	int32_t total = 0;
 	for ( int32_t i = 0 ; i < getNumBases() ; i++ ) {
 		CollectionRec *cr = g_collectiondb.getRec(i);
@@ -2250,7 +2250,7 @@ int32_t Rdb::getNumFiles ( ) {
 	return total;
 }
 
-int64_t Rdb::getDiskSpaceUsed ( ) {
+int64_t Rdb::getDiskSpaceUsed() const {
 	int64_t total = 0;
 	for ( int32_t i = 0 ; i < getNumBases() ; i++ ) {
 		CollectionRec *cr = g_collectiondb.getRec(i);

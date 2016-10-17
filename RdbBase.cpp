@@ -2043,7 +2043,7 @@ void RdbBase::selectFilesToMerge(int32_t mergeFileCount, int32_t numFiles, int32
 // . use the maps and tree to estimate the size of this list w/o hitting disk
 // . used by Indexdb.cpp to get the size of a list for IDF weighting purposes
 int64_t RdbBase::getListSize(const char *startKey, const char *endKey, char *maxKey,
-			     int64_t oldTruncationLimit) {
+			     int64_t oldTruncationLimit) const {
 	// . reset this to low points
 	// . this is on
 	KEYSET(maxKey,endKey,m_ks);
