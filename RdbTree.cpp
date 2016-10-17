@@ -2828,8 +2828,7 @@ int32_t RdbTree::fastLoadBlock ( BigFile *f, int32_t start, int32_t totalNodes, 
 			if ( m_parents[i] != -2 ) bufSize += m_fixedDataSize;
 	}
 	// get space
-	char *dummy = NULL;
-	char *buf = (char *) stack->allocData ( dummy , bufSize , 0 );
+	char *buf = (char *) stack->allocData ( bufSize , 0 );
 	if ( ! buf ) {
 	        log( LOG_ERROR, "db: Failed to allocate %" PRId32" bytes to read %s. Increase tree size for it in gb.conf.",
 	             bufSize,f->getFilename());

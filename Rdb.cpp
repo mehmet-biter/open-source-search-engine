@@ -214,7 +214,7 @@ bool Rdb::init(const char *dbname,
 
 	sprintf(m_memName,"mem-%s",m_dbname);
 
-	if ( fixedDataSize != 0 && ! m_mem.init ( this , dataMem , m_ks , m_memName ) ) {
+	if ( fixedDataSize != 0 && ! m_mem.init ( this, dataMem, m_memName ) ) {
 		log( LOG_ERROR, "db: Failed to initialize memory: %s.", mstrerror( g_errno ) );
 		return false;
 	}
@@ -1849,7 +1849,7 @@ bool Rdb::addRecord(collnum_t collnum, char *key, char *data, int32_t dataSize) 
 			return false;
 		}
 
-		data = (char *) m_mem.dupData ( key, data, dataSize, collnum);
+		data = (char *) m_mem.dupData ( data, dataSize, collnum);
 		if ( ! data ) { 
 			g_errno = ETRYAGAIN; 
 			log(LOG_WARN, "db: Could not allocate %" PRId32" bytes to add data to %s. Retrying.",dataSize,m_dbname);

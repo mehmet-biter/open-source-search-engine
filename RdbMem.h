@@ -22,7 +22,7 @@ class RdbMem {
 	~RdbMem();
 
 	// initialize us with the RdbDump class your rdb is using
-	bool init(const Rdb *rdb, int32_t memToAlloc, char keySize,
+	bool init(const Rdb *rdb, int32_t memToAlloc,
 		  const char *allocName);
 
 	void clear();
@@ -30,13 +30,10 @@ class RdbMem {
 	void reset();
 
 	// . if a dump is not going on this uses the primary mem space
-	// . if a dump is going on and this key has already been dumped
-	//   (we check RdbDump::getFirstKey()/getLastKey()) add it to the
-	//   secondary mem space, otherwise add it to the primary mem space
-	void *dupData(const char *key, const char *data, int32_t dataSize, collnum_t collnum);
+	void *dupData(const char *data, int32_t dataSize, collnum_t collnum);
 
 	// used by dupData
-	void *allocData(const char *key, int32_t dataSize, collnum_t collnum);
+	void *allocData(int32_t dataSize, collnum_t collnum);
 
 	// how much mem is available?
 	int32_t getAvailMem() const {
