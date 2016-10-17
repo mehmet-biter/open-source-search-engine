@@ -49,6 +49,14 @@ static char  *s_isnew;
 static int32_t   s_n = 0;
 static bool   s_initialized = 0;
 
+
+static bool allocationShouldFailRandomly() {
+	// . fail randomly
+	// . good for testing if we can handle out of memory gracefully
+	return g_conf.m_testMem && (rand() % 100) < 2;
+}
+
+
 // our own memory manager
 void operator delete (void *ptr) throw () {
 	logTrace( g_conf.m_logTraceMem, "ptr=%p", ptr );
@@ -95,16 +103,10 @@ void * operator new (size_t size) throw (std::bad_alloc) {
 	// don't let electric fence zap us
 	if ( size == 0 ) return (void *)0x7fffffff;
 
-	// . fail randomly
-	// . good for testing if we can handle out of memory gracefully
-	//static int32_t s_mcount = 0;
-	//s_mcount++;
-	//if ( s_mcount > 57 && (rand() % 1000) < 2 ) { 
-	if ( g_conf.m_testMem && (rand() % 100) < 2 ) { 
+	if ( allocationShouldFailRandomly() ) {
 		g_errno = ENOMEM; 
 		log(LOG_ERROR, "mem: new-fake(%zu): %s",size, mstrerror(g_errno));
 		throw std::bad_alloc(); 
-		// return NULL; }
 	} 
 
 	// hack so hostid #0 can use more mem
@@ -138,17 +140,6 @@ void * operator new [] (size_t size) throw (std::bad_alloc) {
 
 	// don't let electric fence zap us
 	if ( size == 0 ) return (void *)0x7fffffff;
-	// . fail randomly
-	// . good for testing if we can handle out of memory gracefully
-
-	//static int32_t s_count = 0;
-	//s_count++;
-	//if ( s_count > 3000 && (rand() % 100) < 2 ) { 
-	//	g_errno = ENOMEM; 
-	//	log("mem: new-fake(%i): %s",size, mstrerror(g_errno));
-	//	throw bad_alloc(); 
-	//	// return NULL; }
-	//} 
 	
 	size_t max = g_conf.m_maxMem;
 
@@ -168,7 +159,6 @@ void * operator new [] (size_t size) throw (std::bad_alloc) {
 		g_mem.incrementOOMCount();
 		log( LOG_WARN, "mem: new(%zu): %s", size, mstrerror(g_errno));
 		throw std::bad_alloc();
-		//return NULL;
 	}
 
 	g_mem.addMem ( (char*)mem , size, "TMPMEM" , 1 );
@@ -183,7 +173,7 @@ Mem::Mem() {
 	m_numTotalAllocated = 0;
 	m_maxAlloc = 0;
 	m_maxAllocBy = "";
-	m_maxAlloced = 0;
+	m_maxAllocated = 0;
 
 	// count how many allocs/news failed
 	m_outOfMems = 0;
@@ -226,7 +216,7 @@ bool Mem::init  ( ) {
 
 	// reset this, our max mem used over time ever because we don't
 	// want the mem test we did above to count towards it
-	m_maxAlloced = 0;
+	m_maxAllocated = 0;
 
 	return true;
 }
@@ -380,7 +370,7 @@ void Mem::addMem ( void *mem , size_t size , const char *note , char isnew ) {
 	m_numAllocated++;
 	m_numTotalAllocated++;
 	if ( size > m_maxAlloc ) { m_maxAlloc = size; m_maxAllocBy = note; }
-	if ( m_used > m_maxAlloced ) m_maxAlloced = m_used;
+	if ( m_used > m_maxAllocated ) m_maxAllocated = m_used;
 
 
  skipMe:
@@ -692,7 +682,7 @@ bool Mem::rmMem(void *mem, size_t size, const char *note, bool checksize) {
 
 int32_t Mem::validate ( ) {
 	if ( ! s_mptrs ) return 1;
-	// stock up "p" and compute total bytes alloced
+	// stock up "p" and compute total bytes allocated
 	size_t total = 0;
 	int32_t count = 0;
 	for ( int32_t i = 0 ; i < (int32_t)m_memtablesize ; i++ ) {
@@ -854,7 +844,7 @@ int Mem::printMem ( ) {
 	// print table entries sorted by most mem first
 	int32_t *p = (int32_t *)sysmalloc ( m_memtablesize * 4 );
 	if ( ! p ) return 0;
-	// stock up "p" and compute total bytes alloced
+	// stock up "p" and compute total bytes allocated
 	int64_t total = 0;
 	int32_t np    = 0;
 	for ( int32_t i = 0 ; i < (int32_t)m_memtablesize ; i++ ) {
@@ -873,8 +863,8 @@ int Mem::printMem ( ) {
 	}
 	sysfree ( p );
 	log(LOG_INFO,"mem: # current objects allocated now = %" PRId32, np );
-	log(LOG_INFO,"mem: totalMem alloced now = %" PRId64, total );
-	//log("mem: max alloced at one time = %" PRId32, (int32_t)(m_maxAlloced));
+	log(LOG_INFO,"mem: totalMem allocated now = %" PRId64, total );
+	//log("mem: max allocated at one time = %" PRId32, (int32_t)(m_maxAllocated));
 	log(LOG_INFO,"mem: Memory allocated now: %" PRId64".\n", m_used );
 	log(LOG_INFO,"mem: Num allocs %" PRId32".\n", m_numAllocated );
 	return 1;
@@ -886,11 +876,7 @@ void *Mem::gbmalloc ( size_t size , const char *note ) {
 	// don't let electric fence zap us
 	if ( size == 0 ) return (void *)0x7fffffff;
 	
-	// random oom testing
-	//static int32_t s_mcount = 0;
-	//s_mcount++;
-	if ( g_conf.m_testMem && (rand() % 100) < 2 ) { 
-		//if ( s_mcount > 1055 && (rand() % 1000) < 2 ) { 
+	if ( allocationShouldFailRandomly() ) {
 		g_errno = ENOMEM; 
 		log( LOG_WARN, "mem: malloc-fake(%zu,%s): %s",size,note, mstrerror(g_errno));
 		return NULL;

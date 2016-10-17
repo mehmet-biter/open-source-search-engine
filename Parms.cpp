@@ -26,6 +26,7 @@
 #include "PageInject.h" // InjectionRequest
 #include "Posdb.h"
 #include "GigablastRequest.h"
+#include "SafeBuf.h"
 #include "GbUtil.h"
 
 
@@ -53,26 +54,24 @@ Parm::Parm() {
 	m_size = 0;
 	m_def = NULL;
 	m_defOff = 0;
-	m_cast = 0;
+	m_cast = false;
 	m_units = NULL;
-	m_addin = 0;
+	m_addin = false;
 	m_rowid = 0;
-	m_rdonly = 0;
-	m_hdrs = 0;
+	m_rdonly = false;
+	m_hdrs = false;
 	m_flags = 0;
 	m_parmNum = 0;
 	m_func = NULL;
 	m_func2 = NULL;
 	m_plen = 0;
 	m_group = false;
-	m_save = 0;
+	m_save = false;
 	m_min = 0;
 	m_sminc = 0;
 	m_smaxc = 0;
 	m_smin = 0;
 	m_smax = 0;
-	m_sprpg = 0;
-	m_sprpp = 0;
 	m_sync = false;
 	m_hash = 0;
 	m_cgiHash = 0;
@@ -82,31 +81,31 @@ Parm::~Parm() {
 }
 
 
-int32_t Parm::getNumInArray ( collnum_t collnum ) {
-	char *obj = (char *)&g_conf;
+int32_t Parm::getNumInArray(collnum_t collnum) const {
+	const char *obj = (const char*)&g_conf;
 	if ( m_obj == OBJ_COLL ) {
 		CollectionRec *cr = g_collectiondb.getRec ( collnum );
 		if ( ! cr ) return -1;
-		obj = (char *)cr;
+		obj = (const char*)cr;
 	}
 	
 	// beautiful pragma pack(4)/32-bit dependent original code. return *(int32_t *)(obj+m_off-4);
-	return *(int32_t *)(obj + m_arrayCountOffset);
+	return *(const int32_t*)(obj + m_arrayCountOffset);
 
 }
 
 
-bool Parm::printVal ( SafeBuf *sb , collnum_t collnum , int32_t occNum ) {
+bool Parm::printVal(SafeBuf *sb, collnum_t collnum, int32_t occNum) const {
 
-	CollectionRec *cr = NULL;
+	const CollectionRec *cr = NULL;
 	if ( collnum >= 0 ) cr = g_collectiondb.getRec ( collnum );
 
 	// no value if no storage record offset
 	//if ( m_off < 0 ) return true;
 
-	char *base;
-	if ( m_obj == OBJ_COLL ) base = (char *)cr;
-	else                     base = (char *)&g_conf;
+	const char *base;
+	if ( m_obj == OBJ_COLL ) base = (const char*)cr;
+	else                     base = (const char*)&g_conf;
 
 	if ( ! base ) {
 		log("parms: no collrec (%" PRId32") to change parm",(int32_t)collnum);
@@ -115,7 +114,7 @@ bool Parm::printVal ( SafeBuf *sb , collnum_t collnum , int32_t occNum ) {
 	}
 
 	// point to where to copy the data into collrect
-	char *val = (char *)base + m_off;
+	const char *val = (const char *)base + m_off;
 
 	if ( isArray() && occNum < 0 ) {
 		log("parms: bad occnum for %s",m_title);
@@ -186,33 +185,33 @@ bool Parm::printVal ( SafeBuf *sb , collnum_t collnum , int32_t occNum ) {
 // new functions to extricate info from parm recs
 //
 
-static int32_t getDataSizeFromParmRec ( char *rec ) {
-	return *(int32_t *)(rec+sizeof(key96_t));
+static int32_t getDataSizeFromParmRec(const char *rec) {
+	return *(const int32_t *)(rec+sizeof(key96_t));
 }
 
 static char *getDataFromParmRec ( char *rec ) {
 	return rec+sizeof(key96_t)+4;
 }
 
-static collnum_t getCollnumFromParmRec ( char *rec ) {
+static collnum_t getCollnumFromParmRec(const char *rec) {
 	key96_t *k = (key96_t *)rec;
 	return (collnum_t)k->n1;
 }
 
 // for parms that are arrays...
-static int16_t getOccNumFromParmRec ( char *rec ) {
-	key96_t *k = (key96_t *)rec;
+static int16_t getOccNumFromParmRec(const char *rec) {
+	const key96_t *k = (const key96_t *)rec;
 	return (int16_t)((k->n0>>16));
 }
 
-static Parm *getParmFromParmRec ( char *rec ) {
+static Parm *getParmFromParmRec(char *rec) {
 	key96_t *k = (key96_t *)rec;
 	int32_t cgiHash32 = (k->n0 >> 32);
 	return g_parms.getParmFast2 ( cgiHash32 );
 }
 
-static int32_t getHashFromParmRec ( char *rec ) {
-	key96_t *k = (key96_t *)rec;
+static int32_t getHashFromParmRec(const char *rec) {
+	const key96_t *k = (const key96_t *)rec;
 	int32_t cgiHash32 = (k->n0 >> 32);
 	return cgiHash32;
 }
@@ -220,7 +219,7 @@ static int32_t getHashFromParmRec ( char *rec ) {
 // . occNum is index # for parms that are arrays. it is -1 if not used.
 // . collnum is -1 for g_conf, which is not a collrec
 // . occNUm is -1 for a non-array parm
-static key96_t makeParmKey ( collnum_t collnum , Parm *m , int16_t occNum ) {
+static key96_t makeParmKey(collnum_t collnum, const Parm *m, int16_t occNum) {
 	key96_t k;
 	k.n1 = collnum;
 	k.n0 = (uint32_t)m->m_cgiHash; // 32 bit
@@ -3504,22 +3503,20 @@ void Parms::init ( ) {
 		m_parms[i].m_max    =  1         ; // max elements in array
 		m_parms[i].m_fixed  =  0         ; // size of fixed size array
 		m_parms[i].m_size   =  0         ; // max string size
-		m_parms[i].m_cast   =  1 ; // send to all hosts?
+		m_parms[i].m_cast   =  true ; // send to all hosts?
 		m_parms[i].m_rowid  = -1 ; // rowid of -1 means not in row
-		m_parms[i].m_addin  =  0 ; // add insert row command?
-		m_parms[i].m_rdonly =  0 ; // is command off in read-only mode?
-		m_parms[i].m_hdrs   =  1 ; // assume to always print headers
+		m_parms[i].m_addin  =  false ; // add insert row command?
+		m_parms[i].m_rdonly =  false ; // is command off in read-only mode?
+		m_parms[i].m_hdrs   =  true ; // assume to always print headers
 		m_parms[i].m_plen   = -1 ; // offset for strings length
 		m_parms[i].m_group  =  true      ; // start of a new group of controls?
-		m_parms[i].m_save   =  1 ; // save to xml file?
+		m_parms[i].m_save   =  true ; // save to xml file?
 		m_parms[i].m_min    = -1 ; // min value (for int32_t parms)
 		m_parms[i].m_flags  = 0;
 		m_parms[i].m_sminc  = -1;  // min in collection rec
 		m_parms[i].m_smaxc  = -1;  // max in collection rec
 		m_parms[i].m_smin   = 0x80000000; // 0xffffffff;
 		m_parms[i].m_smax   = 0x7fffffff;
-		m_parms[i].m_sprpg  =  1; // propagate to other pages via GET
-		m_parms[i].m_sprpp  =  1; // propagate to other pages via POST
 		m_parms[i].m_sync   = true;
 	}
 
@@ -3810,7 +3807,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_NONE;
 	m->m_obj   = OBJ_COLL;
 	m->m_func  = CommandInsertUrlFiltersRow;
-	m->m_cast  = 1;
+	m->m_cast  = true;
 	m->m_flags = PF_REBUILDURLFILTERS;
 	m++;
 
@@ -3821,7 +3818,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_NONE;
 	m->m_obj   = OBJ_COLL;
 	m->m_func  = CommandRemoveUrlFiltersRow;
-	m->m_cast  = 1;
+	m->m_cast  = true;
 	m->m_flags = PF_REBUILDURLFILTERS;
 	m++;
 
@@ -3833,7 +3830,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_NONE;
 	m->m_obj   = OBJ_COLL;
 	m->m_func2 = CommandDeleteColl;
-	m->m_cast  = 1;
+	m->m_cast  = true;
 	m++;
 
 	m->m_title = "delete collection 2";
@@ -3843,7 +3840,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_NONE;
 	m->m_obj   = OBJ_COLL;
 	m->m_func2 = CommandDeleteColl2;
-	m->m_cast  = 1;
+	m->m_cast  = true;
 	m++;
 
 	m->m_title = "delete collection";
@@ -3856,7 +3853,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_DELCOLL;
 	m->m_obj   = OBJ_COLL;
 	m->m_func2 = CommandDeleteColl2;
-	m->m_cast  = 1;
+	m->m_cast  = true;
 	m->m_flags = PF_API | PF_REQUIRED;
 	m++;
 
@@ -3868,7 +3865,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_CLONECOLL;
 	m->m_obj   = OBJ_COLL;
 	m->m_func  = CommandCloneColl;
-	m->m_cast  = 1;
+	m->m_cast  = true;
 	m->m_flags = PF_API | PF_REQUIRED;
 	m++;
 
@@ -3880,7 +3877,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_NONE;
 	m->m_obj   = OBJ_COLL;
 	m->m_func  = CommandAddColl;
-	m->m_cast  = 1;
+	m->m_cast  = true;
 	m++;
 
 	m->m_title = "add collection";
@@ -3892,7 +3889,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_ADDCOLL;
 	m->m_obj   = OBJ_COLL;
 	m->m_func  = CommandAddColl;
-	m->m_cast  = 1;
+	m->m_cast  = true;
 	m->m_flags = PF_API | PF_REQUIRED;
 	m++;
 #endif
@@ -3905,7 +3902,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_NONE;
 	m->m_obj   = OBJ_COLL;
 	m->m_func  = CommandInSync;
-	m->m_cast  = 1;
+	m->m_cast  = true;
 	m++;
 
 
@@ -3974,8 +3971,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_LONG;
 	m->m_cgi   = "s";
 	m->m_smin  = 0;
-	m->m_sprpg = 0;
-	m->m_sprpp = 0;
 	m->m_flags = PF_REDBOX;
 	m++;
 
@@ -4123,8 +4118,6 @@ void Parms::init ( ) {
 	m->m_def   = "0";
 	m->m_cgi   = "stream";
 	m->m_flags = PF_API;
-	m->m_sprpg = 0; // propagate to next 10
-	m->m_sprpp = 0;
 	m++;
 
 	m->m_title = "seconds back";
@@ -4660,7 +4653,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "resetproxytable";
 	m->m_type  = TYPE_CMD;
 	m->m_func  = CommandResetProxyTable;
-	m->m_cast  = 1;
+	m->m_cast  = true;
 	m->m_page  = PAGE_SPIDERPROXIES;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -4692,8 +4685,6 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(SearchInput,m_showImages);
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "1";
-	m->m_sprpg = 0;
-	m->m_sprpp = 0;
 	m->m_flags = PF_NOSAVE;
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
@@ -4718,8 +4709,6 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(SearchInput,m_rcache);
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "1";
-	m->m_sprpg = 0;
-	m->m_sprpp = 0;
 	m->m_flags = PF_NOSAVE;
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
@@ -4746,8 +4735,6 @@ void Parms::init ( ) {
 	m->m_cgi   = "minserpdocid";
 	m->m_flags = PF_API;
 	m->m_smin  = 0;
-	m->m_sprpg = 0;
-	m->m_sprpp = 0;
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
 	m++;
@@ -4762,8 +4749,6 @@ void Parms::init ( ) {
 	m->m_cgi   = "maxserpscore";
 	m->m_flags = PF_API;
 	m->m_smin  = 0;
-	m->m_sprpg = 0;
-	m->m_sprpp = 0;
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
 	m++;
@@ -4773,8 +4758,6 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(SearchInput,m_url);
 	m->m_type  = TYPE_CHARPTR;//STRING;
 	m->m_cgi   = "url";
-	m->m_sprpg = 0;
-	m->m_sprpp = 0;
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
 	m->m_flags = PF_NOAPI;
@@ -4785,8 +4768,6 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(SearchInput,m_link);
 	m->m_type  = TYPE_CHARPTR;//STRING;
 	m->m_cgi   = "link";
-	m->m_sprpg = 0;
-	m->m_sprpp = 0;
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
 	m++;
@@ -4797,8 +4778,6 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(SearchInput,m_quote1);
 	m->m_type  = TYPE_CHARPTR;//STRING;
 	m->m_cgi   = "quotea";
-	m->m_sprpg = 0;
-	m->m_sprpp = 0;
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
 	m->m_flags = PF_NOAPI;
@@ -4810,8 +4789,6 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(SearchInput,m_quote2);
 	m->m_type  = TYPE_CHARPTR;//STRING;
 	m->m_cgi   = "quoteb";
-	m->m_sprpg = 0;
-	m->m_sprpp = 0;
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
 	m->m_flags = PF_NOAPI;
@@ -4827,8 +4804,6 @@ void Parms::init ( ) {
 	m->m_cgi   = "sites";
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
-	m->m_sprpg = 1;
-	m->m_sprpp = 1;
 	m++;
 
 	m->m_title = "require these query terms";
@@ -4838,8 +4813,6 @@ void Parms::init ( ) {
 	m->m_def   = NULL;
 	m->m_type  = TYPE_CHARPTR;//STRING;
 	m->m_cgi   = "plus";
-	m->m_sprpg = 0;
-	m->m_sprpp = 0;
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
 	m->m_flags = PF_NOAPI;
@@ -4852,8 +4825,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_CHARPTR;//STRING;
 	m->m_cgi   = "minus";
 	//m->m_size  = 500;
-	m->m_sprpg = 0;
-	m->m_sprpp = 0;
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
 	m->m_flags = PF_NOAPI;
@@ -4911,8 +4882,6 @@ void Parms::init ( ) {
 	m->m_cgi   = "qh";
 	m->m_smin  = 0;
 	m->m_smax  = 8;
-	m->m_sprpg = 1; // turn off for now
-	m->m_sprpp = 1;
 	m->m_flags = PF_API;
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
@@ -4925,8 +4894,6 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(SearchInput,m_highlightQuery);
 	m->m_type  = TYPE_CHARPTR;//STRING;
 	m->m_cgi   = "hq";
-	m->m_sprpg = 0; // no need to propagate this one
-	m->m_sprpp = 0;
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
 	m++;
@@ -5040,8 +5007,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "1";
 	m->m_cgi   = "admin";
-	m->m_sprpg = 1; // propagate on GET request
-        m->m_sprpp = 1; // propagate on POST request
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
 	m++;
@@ -5212,7 +5177,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "poweron";
 	m->m_type  = TYPE_CMD;
 	m->m_func  = CommandPowerOnNotice;
-	m->m_cast  = 0;
+	m->m_cast  = false;
 	m->m_page  = PAGE_NONE;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5222,7 +5187,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "poweroff";
 	m->m_type  = TYPE_CMD;
 	m->m_func  = CommandPowerOffNotice;
-	m->m_cast  = 0;
+	m->m_cast  = false;
 	m->m_page  = PAGE_NONE;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5486,7 +5451,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "dump";
 	m->m_type  = TYPE_CMD;
 	m->m_func  = CommandDiskDump;
-	m->m_cast  = 1;
+	m->m_cast  = true;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5496,7 +5461,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "forceit";
 	m->m_type  = TYPE_CMD;
 	m->m_func  = CommandForceIt;
-	m->m_cast  = 1;
+	m->m_cast  = true;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
@@ -5507,7 +5472,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "pmerge";
 	m->m_type  = TYPE_CMD;
 	m->m_func  = CommandMergePosdb;
-	m->m_cast  = 1;
+	m->m_cast  = true;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5517,7 +5482,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "tmerge";
 	m->m_type  = TYPE_CMD;
 	m->m_func  = CommandMergeTitledb;
-	m->m_cast  = 1;
+	m->m_cast  = true;
 	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -5528,7 +5493,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "spmerge";
 	m->m_type  = TYPE_CMD;
 	m->m_func  = CommandMergeSpiderdb;
-	m->m_cast  = 1;
+	m->m_cast  = true;
 	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -5540,7 +5505,7 @@ void Parms::init ( ) {
         m->m_cgi   = "lmerge";
         m->m_type  = TYPE_CMD;
         m->m_func  = CommandMergeLinkdb;
-        m->m_cast  = 1;
+        m->m_cast  = true;
         m->m_group = false;
         m->m_page  = PAGE_MASTER;
         m->m_obj   = OBJ_CONF;
@@ -5552,7 +5517,7 @@ void Parms::init ( ) {
         m->m_cgi   = "lmerge";
         m->m_type  = TYPE_CMD;
         m->m_func  = CommandMergeTagdb;
-        m->m_cast  = 1;
+        m->m_cast  = true;
         m->m_group = false;
         m->m_page  = PAGE_MASTER;
         m->m_obj   = OBJ_CONF;
@@ -5567,7 +5532,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "clrkrnerr";
 	m->m_type  = TYPE_CMD;
 	m->m_func  = CommandClearKernelError;
-	m->m_cast  = 1;
+	m->m_cast  = true;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5579,7 +5544,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "dpco";
 	m->m_type  = TYPE_CMD;
 	m->m_func  = CommandDiskPageCacheOff;
-	m->m_cast  = 1;
+	m->m_cast  = true;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -7107,7 +7072,7 @@ void Parms::init ( ) {
 	m->m_rowid = 1;
 	m->m_def   = "50";
 	m->m_flags = PF_REBUILDURLFILTERS | PF_CLONE;
-	m->m_addin = 1; // "insert" follows?
+	m->m_addin = true; // "insert" follows?
 	m++;
 
 	///////////////////////////////////////////
@@ -7725,8 +7690,6 @@ void Parms::init ( ) {
 	m->m_cgi   = "qh";
 	m->m_smin  = 0;
 	m->m_smax  = 8;
-	m->m_sprpg = 1; // turn off for now
-	m->m_sprpp = 1;
 	m->m_flags = PF_API | PF_CLONE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -8268,7 +8231,7 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(Conf,m_clusterdbMinFilesToMerge);
 	m->m_def   = "-1"; // -1 means to use collection rec
 	m->m_type  = TYPE_LONG;
-	m->m_save  = 0;
+	m->m_save  = false;
 	m->m_page  = PAGE_NONE;
 	m->m_obj   = OBJ_CONF;
 	m->m_flags = PF_NOAPI;
@@ -8491,7 +8454,7 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(CollectionRec,m_titledbMinFilesToMerge);
 	m->m_def   = "6";
 	m->m_type  = TYPE_LONG;
-	//m->m_save  = 0;
+	//m->m_save  = false;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RDB;
 	m->m_obj   = OBJ_COLL;
@@ -8582,7 +8545,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_SPIDER;
 	m->m_obj   = OBJ_COLL;
 	m->m_func2 = CommandResetColl;
-	m->m_cast  = 1;
+	m->m_cast  = true;
 	m->m_flags = PF_HIDDEN;
 	m++;
 
@@ -8594,7 +8557,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_SPIDER;
 	m->m_obj   = OBJ_COLL;
 	m->m_func2 = CommandRestartColl;
-	m->m_cast  = 1;
+	m->m_cast  = true;
 	m++;
 #endif
 
@@ -9158,6 +9121,7 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_COLL;
 	m++;
 
+    // m_maxOtherDocLen controls the maximum document to be stored in titledb. If it is larger than titledb-tree-mem then sillyness happens
     m->m_title = "max text doc length";
     m->m_desc  = "Gigablast will not download, index or "
             "store more than this many bytes of an HTML or text "
@@ -9518,7 +9482,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_MASTERPASSWORDS;
 	//m->m_max   = MAX_MASTER_PASSWORDS;
 	//m->m_size  = PASSWORD_MAX_LEN+1;
-	//m->m_addin = 1; // "insert" follows?
+	//m->m_addin = true; // "insert" follows?
 	m->m_flags = PF_PRIVATE | PF_TEXTAREA | PF_SMALLTEXTAREA;
 	m++;
 

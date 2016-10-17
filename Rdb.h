@@ -68,8 +68,7 @@ public:
 	bool deleteAllRecs ( collnum_t collnum ) ;
 	bool deleteColl ( collnum_t collnum , collnum_t newCollnum ) ;
 
-	bool init ( const char  *dir          , // working directory
-		    const char  *dbname       , // "indexdb","tagdb",...
+	bool init ( const char  *dbname       , // "indexdb","tagdb",...
 		    int32_t   fixedDataSize   , //= -1   ,
 		    int32_t   minToMerge      , //, //=  2   ,
 		    int32_t   maxTreeMem      , //=  1024*1024*32 ,
@@ -114,9 +113,10 @@ public:
 	bool addRecord(collnum_t collnum, char *key, char *data, int32_t dataSize);
 
 	// returns false if no room in tree or m_mem for a list to add
-	bool hasRoom ( RdbList *list , int32_t niceness );
+	bool hasRoom(RdbList *list);
+	bool hasRoom(int32_t numRecs, int32_t dataSize);
 
-	int32_t reclaimMemFromDeletedTreeNodes( int32_t niceness ) ;
+	int32_t reclaimMemFromDeletedTreeNodes();
 	int32_t m_lastReclaim;
 
 	// . returns false on error and sets errno
@@ -131,9 +131,6 @@ public:
 	}
 	
 	bool isInitialized() const { return m_initialized; }
-
-	// get the directory name where this rdb stores it's files
-	const char *getDir() const { return g_hostdb.m_dir; }
 
 	int32_t getFixedDataSize() const { return m_fixedDataSize; }
 
@@ -153,13 +150,14 @@ public:
 		return &m_buckets;
 	}
 
-	RdbMem     *getRdbMem  ( ) { return &m_mem; }
+	int32_t getAvailMem() const { return m_mem.getAvailMem(); }
+	int32_t getUsedMem() const { return m_mem.getUsedMem(); }
 	bool       useTree() const { return m_useTree;}
 
 	int32_t       getNumUsedNodes() const;
 	int32_t       getMaxTreeMem() const;
 	int32_t       getTreeMemOccupied() const;
-	int32_t       getTreeMemAlloced() const;
+	int32_t       getTreeMemAllocated() const;
 	int32_t       getNumNegativeKeys() const;
 
 	void disableWrites();
@@ -168,22 +166,23 @@ public:
 
 	void cleanTree();
 
-	RdbBase *getBase ( collnum_t collnum ) ;
-	int32_t getNumBases ( ) { 	return g_collectiondb.m_numRecs; }
+	RdbBase *getBase(collnum_t collnum );
+	const RdbBase *getBase(collnum_t collnum ) const { return const_cast<Rdb*>(this)->getBase(collnum); }
+	int32_t getNumBases() const { return g_collectiondb.m_numRecs; }
 	void addBase ( collnum_t collnum , class RdbBase *base ) ;
 
 
-	// how much mem is alloced for our maps?
-	int64_t getMapMemAlloced ();
+	// how much mem is allocated for our maps?
+	int64_t getMapMemAllocated() const;
 
-	int32_t       getNumFiles ( ) ;
+	int32_t getNumFiles() const;
 
 	// sum of all parts of all big files
-	int32_t      getNumSmallFiles ( ) ;
-	int64_t getDiskSpaceUsed ( );
+	int32_t getNumSmallFiles() const;
+	int64_t getDiskSpaceUsed() const;
 
 	// returns -1 if variable (variable dataSize)
-	int32_t getRecSize ( ) {
+	int32_t getRecSize() const {
 		if ( m_fixedDataSize == -1 ) {
 			return -1;
 		}
@@ -192,22 +191,16 @@ public:
 	}
 
 	// use the maps and tree to estimate the size of this list
-	int64_t getListSize ( collnum_t collnum,
-			   char *startKey ,char *endKey , char *maxKey ,
-			   int64_t oldTruncationLimit ) ;
-
-	int64_t getListSize ( collnum_t collnum,
-			   key96_t startKey ,key96_t endKey , key96_t *maxKey ,
-			   int64_t oldTruncationLimit ) {
-		return getListSize(collnum,(char *)&startKey,(char *)&endKey,
-				   (char *)maxKey,oldTruncationLimit);}
+	int64_t getListSize(collnum_t collnum,
+			    const char *startKey, const char *endKey, char *maxKey,
+			    int64_t oldTruncationLimit) const;
 
 	// positive minus negative
-	int64_t getNumTotalRecs ( bool useCache = false ) ;
+	int64_t getNumTotalRecs(bool useCache = false) const;
 
-	int64_t getCollNumTotalRecs ( collnum_t collnum );
+	int64_t getCollNumTotalRecs(collnum_t collnum) const; //could technically be static
 
-	int64_t getNumGlobalRecs ( );
+	int64_t getNumGlobalRecs() const;
 
 	// used for keeping track of stats
 	void    didSeek() { m_numSeeks++; }
@@ -302,6 +295,9 @@ public:
 	static void doneDumpingCollWrapper(void *state);
 
 private:
+	// get the directory name where this rdb stores its files
+	const char *getDir() const { return g_hostdb.m_dir; }
+
 	int32_t      m_fixedDataSize;
 
 	char      m_dbname [32];
@@ -326,8 +322,8 @@ private:
 	// memory for us to use to avoid calling malloc()/mdup()/...
 	RdbMem    m_mem;
 
-	int32_t      m_cacheLastTime;
-	int64_t m_cacheLastTotal;
+	mutable int32_t m_cacheLastTime;
+	mutable int64_t m_cacheLastTotal;
 
 	bool m_inAddList;
 

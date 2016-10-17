@@ -1,7 +1,5 @@
 #include "gb-include.h"
 
-#undef _XOPEN_SOURCE
-#define _XOPEN_SOURCE 500
 #include <unistd.h>
 #include "JobScheduler.h"
 #include "RdbCache.h"
@@ -77,7 +75,7 @@ void RdbCache::reset ( ) {
 	//m_numPtrsMax  = 0;
 
 	m_memOccupied = 0;
-	m_memAlloced  = 0;
+	m_memAllocated = 0;
 	m_numHits     = 0;
 	m_numMisses   = 0;
 
@@ -169,15 +167,15 @@ bool RdbCache::init ( int32_t  maxMem        ,
 	// debug testing -- remove later
 	//m_crcs=(int32_t *)mcalloc(4*m_numPtrsMax,"RdbCache");
 	//if (!m_crcs)return log("RdbCache::init: %s", mstrerror(g_errno));
-	// update OUR mem alloced
-	m_memAlloced = m_numPtrsMax * sizeof(char *);
+	// update OUR mem allocated
+	m_memAllocated = m_numPtrsMax * sizeof(char *);
 	// include this
-	m_memOccupied = 0;	// m_memOccupied = m_memAlloced;
+	m_memOccupied = 0;
 
 	sprintf(ttt,"cbuf-%s",m_dbname);
 	// . make the 128MB buffers
 	// . if we do more than 128MB per buf then pthread_create() will fail
-	int32_t bufMem = m_maxMem - m_memAlloced;
+	int32_t bufMem = m_maxMem - m_memAllocated;
 	if( bufMem <= 0 ) {
 		log("rdbcache: cache for %s does not have enough mem. fix "
 		    "by increasing maxmem or number of recs, etc.",m_dbname);
@@ -207,7 +205,7 @@ bool RdbCache::init ( int32_t  maxMem        ,
 		}
 		m_numBufs++;
 		bufMem         -= size;
-		m_memAlloced   += size;
+		m_memAllocated += size;
 		m_totalBufSize += size;
 	}
 
@@ -1215,7 +1213,7 @@ void RdbCache::clearAll ( ) {
 	//m_numPtrsMax  = 0;
 
 	m_memOccupied = 0;
-	//m_memAlloced  = 0;
+	//m_memAllocated  = 0;
 	m_numHits     = 0;
 	m_numMisses   = 0;
 
@@ -1274,7 +1272,7 @@ bool RdbCache::save () {
 	}
 
 	// log
-	log(LOG_INIT,"db: Saving %" PRId32" bytes of cache to %s/%s.cache", m_memAlloced,g_hostdb.m_dir,m_dbname);
+	log(LOG_INIT,"db: Saving %" PRId32" bytes of cache to %s/%s.cache", m_memAllocated,g_hostdb.m_dir,m_dbname);
 
 	// do it directly
 	save_r();
@@ -1327,7 +1325,7 @@ bool RdbCache::save2_r ( int fd ) {
 	n = pwrite ( fd , &m_maxMem      , 4 , off ); off += 4;
 	if ( n != 4 ) return false;
 	// mem stuff
-	n = pwrite ( fd , &m_memAlloced  , 4 , off ); off += 4;
+	n = pwrite ( fd , &m_memAllocated, 4 , off ); off += 4;
 	if ( n != 4 ) return false;
 	n = pwrite ( fd , &m_memOccupied , 4 , off ); off += 4;
 	if ( n != 4 ) return false;
@@ -1483,7 +1481,7 @@ bool RdbCache::load ( const char *dbname ) {
 		return false;
 	}
 	// mem stuff
-	n = f.read ( &m_memAlloced  , 4 , off ); off += 4;
+	n = f.read ( &m_memAllocated, 4 , off ); off += 4;
 	if ( n != 4 ) return false;
 	n = f.read ( &m_memOccupied , 4 , off ); off += 4;
 	if ( n != 4 ) return false;

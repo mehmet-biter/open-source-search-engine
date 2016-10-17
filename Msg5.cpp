@@ -24,31 +24,6 @@ Msg5::Msg5()
 	//m_waitingForMerge = false;
 	m_numListPtrs = 0;
 	set_signature();
-	reset();
-if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
-}
-
-Msg5::~Msg5() {
-	verify_signature();
-	reset();
-	clear_signature();
-}
-
-// frees m_treeList
-void Msg5::reset() {
-	verify_signature();
-	if ( m_waitingForList ) { // || m_waitingForMerge ) {
-		log("disk: Trying to reset a class waiting for a reply.");
-		// might being doing an urgent exit (mainShutdown(1)) or
-		// g_process.shutdown(), so do not core here
-		//g_process.shutdownAbort(true); 
-	}
-	m_msg3.reset();
-	KEYMIN(m_prevKey,MAX_KEY_BYTES);// m_ks); m_ks is invalid
-	m_numListPtrs = 0;
-	// and the tree list
-	m_treeList.freeList();
-
 	// Coverity
 	m_list = NULL;
 	memset(m_startKey, 0, sizeof(m_startKey));
@@ -81,6 +56,31 @@ void Msg5::reset() {
 	m_allowPageCache = false;
 	m_collnum = 0;
 	m_errno = 0;
+
+	reset();
+if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
+}
+
+Msg5::~Msg5() {
+	verify_signature();
+	reset();
+	clear_signature();
+}
+
+// frees m_treeList
+void Msg5::reset() {
+	verify_signature();
+	if ( m_waitingForList ) { // || m_waitingForMerge ) {
+		log("disk: Trying to reset a class waiting for a reply.");
+		// might being doing an urgent exit (mainShutdown(1)) or
+		// g_process.shutdown(), so do not core here
+		//g_process.shutdownAbort(true); 
+	}
+	m_msg3.reset();
+	KEYMIN(m_prevKey,MAX_KEY_BYTES);// m_ks); m_ks is invalid
+	m_numListPtrs = 0;
+	// and the tree list
+	m_treeList.freeList();
 	verify_signature();
 }
 
@@ -106,6 +106,7 @@ bool Msg5::getSingleUnmergedList(rdbid_t       rdbId,
 		       niceness,
 		       false,NULL,0,-1,true,-1,false,true);
 }
+
 
 
 bool Msg5::getTreeList(RdbList *result, rdbid_t rdbId, collnum_t collnum, const void *startKey, const void *endKey) {
@@ -608,12 +609,13 @@ if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 	return true;
 }
 
-bool Msg5::needsRecall ( ) {
+bool Msg5::needsRecall() {
 	verify_signature();
 if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 	// get base, returns NULL and sets g_errno to ENOCOLLREC on error
 	Rdb *rdb = getRdbFromId(m_rdbId);
 	RdbBase *base = getRdbBase ( m_rdbId , m_collnum );
+
 	// if collection was deleted from under us, base will be NULL
 	if ( ! base && ! g_errno ) {
 		log("msg5: base lost for rdbid=%" PRId32" collnum %" PRId32,
@@ -621,51 +623,80 @@ if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 		g_errno = ENOCOLLREC;
 		return false;
 	}
+
+	bool rc = true;
+
 	// . return true if we're done reading
 	// . sometimes we'll need to read more because Msg3 will shorten the
 	//   endKey to better meat m_minRecSizes but because of 
 	//   positive/negative record annihilation on variable-length
 	//   records it won't read enough
-	if ( g_errno                         ) return false;
-	if ( m_newMinRecSizes    <= 0        ) return false;
+	if( g_errno || m_newMinRecSizes <= 0 ) {
+		rc = false;
+	}
+
 	// limit to just doledb for now in case it results in data loss
-	if(m_readAbsolutelyNothing&&
-	   (m_rdbId==RDB_DOLEDB||m_rdbId==RDB_SPIDERDB ) ) 
-		return false;
+	if( rc && m_readAbsolutelyNothing && (m_rdbId==RDB_DOLEDB||m_rdbId==RDB_SPIDERDB) ) {
+		rc = false;
+	}
+
 	// seems to be ok, let's open it up to fix this bug where we try
 	// to read too many bytes a small titledb and it does an infinite loop
-	if ( m_readAbsolutelyNothing ) {
-		log("rdb: read absolutely nothing more for dbname=%s on cn=%" PRId32,
-		    base->getDbName(),(int32_t)m_collnum);
-		return false;
+	if( rc && m_readAbsolutelyNothing ) {
+		log("rdb: read absolutely nothing more for dbname=%s on cn=%" PRId32, base->getDbName(),(int32_t)m_collnum);
+		rc = false;
 	}
-	if ( KEYCMP(m_list->getEndKey(),m_endKey,m_ks)>=0 ) return false;
 
-	// this is kinda important. we have to know if we are abusing
-	// the disk... we should really keep stats on this...
-	bool logIt = true;
-	if ( m_round > 100 && (m_round % 1000) != 0 ) logIt = false;
-	// seems very common when doing rebalancing then merging to have
-	// to do at least one round of re-reading, so note that
-	if ( m_round == 0 ) logIt = false;
-	// so common for doledb because of key annihilations
-	if ( m_rdbId == RDB_DOLEDB && m_round < 10 ) logIt = false;
-	if ( logIt )
-		log("db: Reading %" PRId32" again from %s (need %" PRId32" total "
-		     "got %" PRId32" totalListSizes=%" PRId32" sk=%s) "
-		     "cn=%" PRId32" this=0x%" PTRFMT" round=%" PRId32".", 
-		     m_newMinRecSizes , base->getDbName() , m_minRecSizes, 
-		     m_list->getListSize(),
-		     m_totalSize,
-		     KEYSTR(m_startKey,m_ks),
-		     (int32_t)m_collnum,(PTRTYPE)this, m_round );
+	if( rc && KEYCMP(m_list->getEndKey(), m_endKey, m_ks ) >= 0 ) {
+		rc = false;
+	}
+
+	if( rc ) {
+		// this is kinda important. we have to know if we are abusing
+		// the disk... we should really keep stats on this...
+		bool logIt = true;
+		if( m_round > 100 && (m_round % 1000) != 0 ) {
+			logIt = false;
+		}
+
+		// seems very common when doing rebalancing then merging to have
+		// to do at least one round of re-reading, so note that
+		if( m_round == 0 ) {
+			logIt = false;
+		}
+
+		// so common for doledb because of key annihilations
+		if( m_rdbId == RDB_DOLEDB && m_round < 10 ) {
+			logIt = false;
+		}
+
+		if ( logIt ) {
+			log("db: Reading %" PRId32" again from %s (need %" PRId32" total "
+			     "got %" PRId32" totalListSizes=%" PRId32" sk=%s) "
+			     "cn=%" PRId32" this=0x%" PTRFMT" round=%" PRId32".", 
+			     m_newMinRecSizes , base->getDbName() , m_minRecSizes, 
+			     m_list->getListSize(),
+			     m_totalSize,
+			     KEYSTR(m_startKey,m_ks),
+			     (int32_t)m_collnum,(PTRTYPE)this, m_round );
+		}
+
 		m_round++;
-	// record how many screw ups we had so we know if it hurts performance
-	rdb->didReSeek ( );
+		// record how many screw ups we had so we know if it hurts performance
+		rdb->didReSeek();
+		
+		// return true will try to read more from disk
+	}
+	else {
+		if( m_list ) {
+			m_list->resetListPtr();
+		}
+		// return false cuz we don't need a recall
+	}
 
-	// try to read more from disk
-	return true;
+	return rc;
 }
+
 
 
 void Msg5::gotListWrapper0(void *state) {
@@ -1242,10 +1273,8 @@ if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 	//   one of them was PROBABLY in the dump queue and we decided in
 	//   Rdb::addRecord() NOT to do the annihilation, therefore it's good
 	//   to do the merge to do the annihilation
-	//else
-	m_list->merge_r(m_listPtrs, m_numListPtrs, m_startKey, m_minEndKey, m_minRecSizes, m_removeNegRecs, m_rdbId);
-	m_list->resetListPtr(); //merge_r() doesn't rewind the list iterator/pointer (?)
-	
+	m_list->merge_r(m_listPtrs, m_numListPtrs, m_startKey, m_minEndKey, m_minRecSizes, m_removeNegRecs, m_rdbId, m_collnum, m_startFileNum);
+
 	// maintain this info for truncation purposes
 	if ( m_list->isLastKeyValid() ) 
 		//m_prevKey = m_list->getLastKey();

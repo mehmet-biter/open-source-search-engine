@@ -21,6 +21,11 @@
 
 bool g_dumpMode = false;
 
+// NEVER merge more than this many files, our current merge routine
+// does not scale well to many files
+static const int32_t absoluteMaxFilesToMerge = 50;
+
+
 // since we only do one merge at a time, keep this class static
 class RdbMerge g_merge;
 
@@ -44,9 +49,8 @@ RdbBase::RdbBase()
 	m_tree = NULL;
 	m_buckets = NULL;
 	m_dump = NULL;
-	m_minToMergeArg = 0;
+	m_minToMergeDefault = 0;
 	m_minToMerge = 0;
-	m_absMaxFiles = 0;
 	m_numFilesToMerge = 0;
 	m_mergeStartFileNum = 0;
 	m_useHalfKeys = false;
@@ -54,9 +58,8 @@ RdbBase::RdbBase()
 	m_ks = 0;
 	m_pageSize = 0;
 	m_niceness = 0;
-	m_numPos = 0;
-	m_numNeg = 0;
-	m_doLog = false;
+	m_premergeNumPositiveRecords = 0;
+	m_premergeNumNegativeRecords = 0;
 	memset(m_fileInfo, 0, sizeof(m_fileInfo));
 
 	reset();
@@ -75,7 +78,6 @@ void RdbBase::reset ( ) {
 	}
 
 	m_numFiles  = 0;
-	m_fileInfo[m_numFiles].m_file = NULL;
 	m_isMerging = false;
 	m_hasMergeFile = false;
 	m_isUnlinking  = false;
@@ -118,8 +120,8 @@ bool RdbBase::init(const char *dir,
 	// set all our contained classes
 	// . "tmp" is bogus
 	// . /home/mwells/github/coll.john-test1113.654coll.john-test1113.655
-	char tmp[1024];
-	sprintf ( tmp , "%scoll.%s.%" PRId32 , dir , coll , (int32_t)collnum );
+	char collectionDirName[1024];
+	sprintf ( collectionDirName , "%scoll.%s.%" PRId32 , dir , coll , (int32_t)collnum );
 
 	// logDebugAdmin
 	log(LOG_DEBUG,"db: adding new base for dir=%s coll=%s collnum=%" PRId32" db=%s",
@@ -134,16 +136,16 @@ bool RdbBase::init(const char *dir,
 		}
 
 		// make a special "cat" dir for it if we need to
-		sprintf ( tmp , "%s%s" , dir , dbname );
-		int32_t status = ::mkdir ( tmp , getDirCreationFlags() );
+		sprintf ( collectionDirName , "%s%s" , dir , dbname );
+		int32_t status = ::mkdir ( collectionDirName , getDirCreationFlags() );
         if ( status == -1 && errno != EEXIST && errno ) {
-	        log( LOG_WARN, "db: Failed to make directory %s: %s.", tmp, mstrerror( errno ) );
+	        log( LOG_WARN, "db: Failed to make directory %s: %s.", collectionDirName, mstrerror( errno ) );
 	        return false;
         }
 	}
 
 	//m_dir.set ( dir , coll );
-	m_dir.set ( tmp );
+	m_dir.set ( collectionDirName );
 	m_coll    = coll;
 	m_collnum = collnum;
 	m_tree    = tree;
@@ -207,7 +209,7 @@ bool RdbBase::init(const char *dir,
 	if ( minToMergeArg > MAX_RDB_FILES ) {
 		minToMergeArg = MAX_RDB_FILES;
 	}
-	m_minToMergeArg = minToMergeArg;
+	m_minToMergeDefault = minToMergeArg;
 
 	// . set our m_files array
 	// . m_dir is bogus causing this to fail
@@ -256,14 +258,13 @@ void RdbBase::specialInjectFileInit(const char *dir,
 // . move all files into trash subdir
 // . change name
 // . this is part of PageRepair's repair algorithm. all this stuff blocks.
-bool RdbBase::moveToTrash ( char *dstDir ) {
+bool RdbBase::moveToTrash(const char *dstDir) {
 	// loop over all files
 	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) {
 		// . rename the map file
 		// . get the "base" filename, does not include directory
-		BigFile *f ;
+		BigFile *f = m_fileInfo[i].m_map->getFile();
 		char dstFilename [1024];
-		f = m_fileInfo[i].m_map->getFile();
 		sprintf ( dstFilename , "%s" , f->getFilename());
 
 		// ALWAYS log what we are doing
@@ -442,7 +443,7 @@ bool RdbBase::setFiles ( ) {
 	// set our directory class
 	if ( ! m_dir.open ( ) ) {
 		// we are getting this from a bogus m_dir
-		log( LOG_WARN, "db: Had error opening directory %s", getDir() );
+		log( LOG_WARN, "db: Had error opening directory %s", m_dir.getDir());
 		return false;
 	}
 
@@ -654,24 +655,24 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	mnew( f, sizeof( BigFile ), "RdbBFile" );
 
 	// set the data file's filename
-	char name[512];
+	char name[1024];
 	if ( mergeNum <= 0 ) {
 		if ( m_rdb->isTitledb() ) {
-			snprintf( name, 511, "%s%04" PRId32"-%03" PRId32".dat", m_dbname, fileId, fileId2 );
+			snprintf( name, sizeof(name), "%s%04" PRId32"-%03" PRId32".dat", m_dbname, fileId, fileId2 );
 		} else {
-			snprintf( name, 511, "%s%04" PRId32".dat", m_dbname, fileId );
+			snprintf( name, sizeof(name), "%s%04" PRId32".dat", m_dbname, fileId );
 		}
 	} else {
 		if ( m_rdb->isTitledb() ) {
-			snprintf( name, 511, "%s%04" PRId32"-%03" PRId32".%03" PRId32".%04" PRId32".dat",
+			snprintf( name, sizeof(name), "%s%04" PRId32"-%03" PRId32".%03" PRId32".%04" PRId32".dat",
 			          m_dbname, fileId, fileId2, mergeNum, endMergeFileId );
 		} else {
-			snprintf( name, 511, "%s%04" PRId32".%03" PRId32".%04" PRId32".dat",
+			snprintf( name, sizeof(name), "%s%04" PRId32".%03" PRId32".%04" PRId32".dat",
 			          m_dbname, fileId, mergeNum, endMergeFileId );
 		}
 	}
 
-	f->set ( getDir() , name , NULL ); // g_conf.m_stripeDir );
+	f->set(m_dir.getDir(), name, NULL);
 
 	// if new ensure does not exist
 	if ( isNew && f->doesExist() ) {
@@ -776,7 +777,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 
 	// set the map file's  filename
 	sprintf ( name , "%s%04" PRId32".map", m_dbname, fileId );
-	m->set ( getDir(), name, m_fixedDataSize, m_useHalfKeys, m_ks, m_pageSize );
+	m->set(m_dir.getDir(), name, m_fixedDataSize, m_useHalfKeys, m_ks, m_pageSize);
 	if ( ! isNew && ! m->readMap ( f ) ) {
 		// if out of memory, do not try to regen for that
 		if ( g_errno == ENOMEM ) {
@@ -825,7 +826,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	if( m_useIndexFile ) {
 		// set the index file's  filename
 		sprintf(name, "%s%04" PRId32".idx", m_dbname, fileId);
-		in->set(getDir(), name, m_fixedDataSize, m_useHalfKeys, m_ks, m_rdb->getRdbId());
+		in->set(m_dir.getDir(), name, m_fixedDataSize, m_useHalfKeys, m_ks, m_rdb->getRdbId());
 		if (!isNew && !(in->readIndex() && in->verifyIndex())) {
 			// if out of memory, do not try to regen for that
 			if (g_errno == ENOMEM) {
@@ -929,8 +930,6 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	// debug note
 	//log("rdb: numFiles=%" PRId32" for collnum=%" PRId32" db=%s",
 	//    m_numFiles,(int32_t)m_collnum,m_dbname);
-	// keep it NULL terminated
-	m_fileInfo[m_numFiles].m_file = NULL;
 	// if we added a merge file, mark it
 	if ( mergeNum >= 0 ) {
 		m_hasMergeFile      = true;
@@ -986,8 +985,10 @@ bool RdbBase::incorporateMerge ( ) {
 	int32_t a = m_mergeStartFileNum;
 	int32_t b = m_mergeStartFileNum + m_numFilesToMerge;
 
+	if(b>m_numFiles) //definesive checks
+		b = m_numFiles;
 	// shouldn't be called if no files merged
-	if ( a == b ) {
+	if ( a >= b ) {
 		// unless resuming after a merge completed and we exited
 		// but forgot to finish renaming the final file!!!!
 		log("merge: renaming final file");
@@ -1050,20 +1051,20 @@ bool RdbBase::incorporateMerge ( ) {
 	//   and we can lose positives due to overwrites
 	// . i just re-added some partially indexed urls so indexdb will
 	//   have dup overwrites now too!!
-	if ( tp > m_numPos ) {
-		log(LOG_INFO,"merge: %s gained %" PRId64" positives.", m_dbname , tp - m_numPos );
+	if ( tp > m_premergeNumPositiveRecords ) {
+		log(LOG_INFO,"merge: %s gained %" PRId64" positives.", m_dbname , tp - m_premergeNumPositiveRecords );
 	}
 
-	if ( tp < m_numPos - m_numNeg ) {
-		log(LOG_INFO,"merge: %s: lost %" PRId64" positives", m_dbname , m_numPos - tp );
+	if ( tp < m_premergeNumPositiveRecords - m_premergeNumNegativeRecords ) {
+		log(LOG_INFO,"merge: %s: lost %" PRId64" positives", m_dbname , m_premergeNumPositiveRecords - tp );
 	}
 
-	if ( tn > m_numNeg ) {
-		log(LOG_INFO,"merge: %s: gained %" PRId64" negatives.", m_dbname , tn - m_numNeg );
+	if ( tn > m_premergeNumNegativeRecords ) {
+		log(LOG_INFO,"merge: %s: gained %" PRId64" negatives.", m_dbname , tn - m_premergeNumNegativeRecords );
 	}
 
-	if ( tn < m_numNeg - m_numPos ) {
-		log(LOG_INFO,"merge: %s: lost %" PRId64" negatives.", m_dbname , m_numNeg - tn );
+	if ( tn < m_premergeNumNegativeRecords - m_premergeNumPositiveRecords ) {
+		log(LOG_INFO,"merge: %s: lost %" PRId64" negatives.", m_dbname , m_premergeNumNegativeRecords - tn );
 	}
 
 	// assume no unlinks blocked
@@ -1094,7 +1095,7 @@ bool RdbBase::incorporateMerge ( ) {
 	}
 
 	// on success unlink the files we merged and free them
-	for ( int32_t i = a ; i < b ; i++ ) {
+	for ( int32_t i = a ; i < b && i < m_numFiles; i++ ) {
 		// incase we are starting with just the
 		// linkdb0001.003.dat file and not the stuff we merged
 		if ( ! m_fileInfo[i].m_file ) {
@@ -1220,13 +1221,13 @@ void RdbBase::unlinkDone() {
 		}
 	} else {
 		// rename to this (titledb%04" PRId32"-%03" PRId32".dat)
-		char buf [ 1024 ];
+		char newName[1024];
 
 		// use m_dbname in case its titledbRebuild
-		sprintf ( buf , "%s%04" PRId32"-%03" PRId32".dat", m_dbname, m_fileInfo[a].m_fileId, m_fileInfo[x].m_fileId2 );
+		sprintf ( newName , "%s%04" PRId32"-%03" PRId32".dat", m_dbname, m_fileInfo[a].m_fileId, m_fileInfo[x].m_fileId2 );
 
 		// rename it, this may block
-		if ( ! m_fileInfo[x].m_file->rename ( buf, renameDoneWrapper, this) ) {
+		if ( ! m_fileInfo[x].m_file->rename ( newName, renameDoneWrapper, this) ) {
 			m_numThreads++;
 		}
 	}
@@ -1365,8 +1366,6 @@ void RdbBase::buryFiles ( int32_t a , int32_t b ) {
 	// sanity
 	log("rdb: bury files: numFiles now %" PRId32" (b=%" PRId32" a=%" PRId32" collnum=%" PRId32")",
 	    m_numFiles,b,a,(int32_t)m_collnum);
-	// ensure last file is NULL (so BigFile knows the end of m_files)
-	m_fileInfo[m_numFiles].m_file = NULL;
 
 	// regenerate index since things have moved
 	generateGlobalIndex();
@@ -1379,7 +1378,7 @@ void RdbBase::buryFiles ( int32_t a , int32_t b ) {
 // . now return true if we started a merge, false otherwise
 // . TODO: fix Rdb::attemptMergeAll() to not remove from linked list if
 //   we had an error in addNewFile() or rdbmerge.cpp's call to rdbbase::addFile
-bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , int32_t minToMergeOverride ) {
+bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMergeOverride) {
 	logTrace( g_conf.m_logTraceRdbBase, "BEGIN. minToMergeOverride: %" PRId32, minToMergeOverride);
 
 	// don't do merge if we're in read only mode
@@ -1388,8 +1387,8 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 		return false;
 	}
 
-	// nor if the merge class is suspended
-	if ( g_merge.isSuspended()  ) {
+	// nor if the merge class is halted
+	if ( g_merge.isHalted()  ) {
 		logTrace( g_conf.m_logTraceRdbBase, "END, is suspended" );
 		return false;
 	}
@@ -1401,8 +1400,6 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 	}
 	
 
-	if (   niceness == 0 ) { g_process.shutdownAbort(true); }
-
 	if ( forceMergeAll ) m_nextMergeForced = true;
 
 	if ( m_nextMergeForced ) forceMergeAll = true;
@@ -1411,17 +1408,7 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 		log(LOG_INFO,"merge: forcing merge for %s. (collnum=%" PRId32")",m_dbname,(int32_t)m_collnum);
 	}
 
-	// if we are trying to merge titledb but a titledb dump is going on
-	// then do not do the merge, we do not want to overwrite tfndb via
-	// RdbDump::updateTfndbLoop() 
 	rdbid_t rdbId = getIdFromRdb ( m_rdb );
-	if ( rdbId == RDB_TITLEDB && g_titledb.getRdb()->isDumping() ) {
-		if ( doLog ) {
-			log( LOG_INFO, "db: Can not merge titledb while it is dumping." );
-		}
-		logTrace( g_conf.m_logTraceRdbBase, "END, wait for titledb dump" );
-		return false;
-	}
 
 	// if a dump is happening it will always be the last file, do not
 	// include it in the merge
@@ -1436,10 +1423,9 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 	//   and it will mess up our merge
 	// . right after a merge we get a few of these printed out...
 	if ( m_numThreads > 0 ) {
-		if ( doLog )
-			log(LOG_INFO,"merge: Waiting for unlink/rename "
-			    "operations to finish before attempting merge "
-			    "for %s. (collnum=%" PRId32")",m_dbname,(int32_t)m_collnum);
+		log(LOG_INFO,"merge: Waiting for unlink/rename "
+		    "operations to finish before attempting merge "
+		    "for %s. (collnum=%" PRId32")",m_dbname,(int32_t)m_collnum);
 		logTrace( g_conf.m_logTraceRdbBase, "END, wait for unlink/rename" );
 		return false;
 	}
@@ -1454,41 +1440,48 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 		log("merge: Could not find coll rec for %s.",m_coll);
 	}
 
-	// set the max files to merge in a single merge operation
-	m_absMaxFiles = 50;
-
 	// m_minToMerge is -1 if we should let cr override but if m_minToMerge
 	// is actually valid at this point, use it as is, therefore, just set
 	// cr to NULL
 
-	logTrace( g_conf.m_logTraceRdbBase, "m_minToMergeArg: %" PRId32, m_minToMergeArg);
+	logTrace( g_conf.m_logTraceRdbBase, "m_minToMergeDefault: %" PRId32, m_minToMergeDefault);
 		
-	m_minToMerge = m_minToMergeArg;
+	m_minToMerge = m_minToMergeDefault;
 	if ( cr && m_minToMerge > 0 ) cr = NULL;
 
 	// if cr is non-NULL use its value now
 	if ( cr ) {
-		if ( m_rdb == g_posdb.getRdb() ) {
-			m_minToMerge = cr->m_posdbMinFilesToMerge;
-			logTrace( g_conf.m_logTraceRdbBase, "posdb. m_minToMerge: %" PRId32, m_minToMerge );
-		} else if ( m_rdb == g_titledb.getRdb() ) {
-			m_minToMerge = cr->m_titledbMinFilesToMerge;
-			logTrace( g_conf.m_logTraceRdbBase, "titledb. m_minToMerge: %" PRId32, m_minToMerge );
-		} else if ( m_rdb == g_spiderdb.getRdb() ) {
-		    m_minToMerge = cr->m_spiderdbMinFilesToMerge;
-			logTrace( g_conf.m_logTraceRdbBase, "spiderdb. m_minToMerge: %" PRId32, m_minToMerge );
-		//} else if ( m_rdb == g_clusterdb.getRdb() ) {
-		//	m_minToMerge = cr->m_clusterdbMinFilesToMerge;
-		//  logTrace( g_conf.m_logTraceRdbBase, "clusterdb. m_minToMerge: %" PRId32, m_minToMerge );
-		//} else if ( m_rdb == g_statsdb.getRdb() )
-		//	m_minToMerge = g_conf.m_statsdbMinFilesToMerge;
-		//  logTrace( g_conf.m_logTraceRdbBase, "statdb. m_minToMerge: %" PRId32, m_minToMerge );
-		} else if ( m_rdb == g_linkdb.getRdb() ) {
-			m_minToMerge = cr->m_linkdbMinFilesToMerge;
-			logTrace( g_conf.m_logTraceRdbBase, "linkdb. m_minToMerge: %" PRId32, m_minToMerge );
-		} else if ( m_rdb == g_tagdb.getRdb() ) {
-			m_minToMerge = cr->m_tagdbMinFilesToMerge;
-			logTrace( g_conf.m_logTraceRdbBase, "tagdb. m_minToMerge: %" PRId32, m_minToMerge );
+		switch(rdbId) {
+			case RDB_POSDB:
+				m_minToMerge = cr->m_posdbMinFilesToMerge;
+				logTrace( g_conf.m_logTraceRdbBase, "posdb. m_minToMerge: %" PRId32, m_minToMerge );
+				break;
+			case RDB_TITLEDB:
+				m_minToMerge = cr->m_titledbMinFilesToMerge;
+				logTrace( g_conf.m_logTraceRdbBase, "titledb. m_minToMerge: %" PRId32, m_minToMerge );
+				break;
+			case RDB_SPIDERDB:
+				m_minToMerge = cr->m_spiderdbMinFilesToMerge;
+				logTrace( g_conf.m_logTraceRdbBase, "spiderdb. m_minToMerge: %" PRId32, m_minToMerge );
+				break;
+			// case RDB_CLUSTERDB:
+			//	m_minToMerge = cr->m_clusterdbMinFilesToMerge;
+			//	logTrace( g_conf.m_logTraceRdbBase, "clusterdb. m_minToMerge: %" PRId32, m_minToMerge );
+			//	break;
+			// case RDB_STATSDB:
+			//	m_minToMerge = g_conf.m_statsdbMinFilesToMerge;
+			//	logTrace( g_conf.m_logTraceRdbBase, "statdb. m_minToMerge: %" PRId32, m_minToMerge );
+			//	break;
+			case RDB_LINKDB:
+				m_minToMerge = cr->m_linkdbMinFilesToMerge;
+				logTrace( g_conf.m_logTraceRdbBase, "linkdb. m_minToMerge: %" PRId32, m_minToMerge );
+				break;
+			case RDB_TAGDB:
+				m_minToMerge = cr->m_tagdbMinFilesToMerge;
+				logTrace( g_conf.m_logTraceRdbBase, "tagdb. m_minToMerge: %" PRId32, m_minToMerge );
+				break;
+			default:
+				; //no per-collection override
 		}
 	}
 
@@ -1508,13 +1501,10 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 		//m_minToMerge = 2;
 		g_process.shutdownAbort(true);
 	}
-	// mdw: comment this out to reduce log spam when we have 800 colls!
+
 	// print it
-	if ( doLog ) {
-		log( LOG_INFO, "merge: Attempting to merge %" PRId32" %s files on disk."
-				     " %" PRId32" files needed to trigger a merge.",
-		     numFiles, m_dbname, m_minToMerge );
-	}
+	log( LOG_INFO, "merge: Attempting to merge %" PRId32" %s files on disk. %" PRId32" files needed to trigger a merge.",
+	     numFiles, m_dbname, m_minToMerge );
 	
 	if ( g_merge.isMerging() )
 	{
@@ -1522,9 +1512,15 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 		return false;
 	}
 
+	// bail if already merging THIS class
+	if ( m_isMerging ) {
+		log(LOG_INFO, "merge: Waiting for other merge to complete before merging %s.", m_dbname);
+		logTrace( g_conf.m_logTraceRdbBase, "END, already merging this" );
+		return false;
+	}
+
 	// if we are tfndb and someone else is merging, do not merge unless
 	// we have 3 or more files
-	int32_t minToMerge = m_minToMerge;
 
 	// are we resuming a killed merge?
 	bool resuming = false;
@@ -1578,30 +1574,17 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 
 	// . don't merge if we don't have the min # of files
 	// . but skip this check if there is a merge to be resumed from b4
-	if ( ! resuming && ! forceMergeAll && numFiles < minToMerge ) {
+	if ( ! resuming && ! forceMergeAll && numFiles < m_minToMerge ) {
 		// now we no longer have to check this collection rdb for
 		// merging. this will save a lot of cpu time when we have
 		// 20,000+ collections. if we dump a file to disk for it
 		// then we set this flag back to false in Rdb.cpp.
-		logTrace( g_conf.m_logTraceRdbBase, "END, min files not reached (%" PRId32" / %" PRId32")",numFiles,minToMerge);
-		return false;
-	}
-
-	// bail if already merging THIS class
-	if ( m_isMerging ) {
-		if ( doLog ) 
-			log(LOG_INFO,
-			    "merge: Waiting for other merge to complete "
-			    "before merging %s.",m_dbname);
-		logTrace( g_conf.m_logTraceRdbBase, "END, already merging this" );
+		logTrace( g_conf.m_logTraceRdbBase, "END, min files not reached (%" PRId32" / %" PRId32")",numFiles,m_minToMerge);
 		return false;
 	}
 
 	// remember niceness for calling g_merge.merge()
 	m_niceness = niceness;
-
-	// save this so gotTokenForMerge() can use it
-	m_doLog = doLog;
 
 	// bitch if we got token because there was an error somewhere
 	if ( g_errno ) {
@@ -1615,11 +1598,10 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 
 	// sanity check
 	if ( m_isMerging || g_merge.isMerging() ) {
-		//if ( m_doLog )
-			//log(LOG_INFO,
-			//"merge: Someone already merging. Waiting for "
-			//"merge token "
-			//"in order to merge %s.",m_dbname);
+		//log(LOG_INFO,
+		//"merge: Someone already merging. Waiting for "
+		//"merge token "
+		//"in order to merge %s.",m_dbname);
 		logTrace( g_conf.m_logTraceRdbBase, "END, failed sanity check" );
 		return false;
 	}
@@ -1638,18 +1620,10 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 	//   then merge F and E, but if D is < E merged D too, etc...
 	// . this merge algorithm is definitely better than merging everything
 	//   if we don't do much reading to the db, only writing
-	int32_t mergeNum = 0;
+	int32_t mergeFileCount = 0;
 	int32_t mergeFileId;
 	int32_t mergeFileNum;
-	int32_t endMergeFileId;
-	int32_t endMergeFileNum;
-	float     minr ;
-	int64_t mint ;
-	int32_t      mini ;
-	bool      minOld ;
-	int32_t      fileId2  = -1;
 	bool      overide = false;
-	int32_t      nowLocal = getTimeLocal();
 
 	logTrace( g_conf.m_logTraceRdbBase, "Checking files" );
 
@@ -1671,8 +1645,9 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 		// files being merged into have a filename like
 		// indexdb0000.003.dat where the 003 indicates how many files
 		// is is merging in case we have to resume them due to power loss or whatever
-		int32_t fileId;
-		if ( !parseFilename( m_fileInfo[j].m_file->getFilename(), &fileId, &fileId2, &mergeNum, &endMergeFileId ) ) {
+		int32_t fileId, fileId2;
+		int32_t endMergeFileId;
+		if ( !parseFilename( m_fileInfo[j].m_file->getFilename(), &fileId, &fileId2, &mergeFileCount, &endMergeFileId ) ) {
 			continue;
 		}
 
@@ -1689,7 +1664,7 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 		}
 
 		int32_t endMergeFileNum = 0;
-		int32_t kEnd = j + 1 + mergeNum;
+		int32_t kEnd = j + 1 + mergeFileCount;
 		for ( int32_t k = j + 1; k < kEnd; ++k ) {
 			if ( m_fileInfo[k].m_fileId == endMergeFileId ) {
 				endMergeFileNum = k;
@@ -1703,7 +1678,7 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 		}
 
 		// sanity check
-		if ( mergeNum <= 1 ) {
+		if ( mergeFileCount <= 1 ) {
 			log(LOG_LOGIC,"merge: attemptMerge: Resuming. bad "
 			    "engineer for %s coll=%s",m_dbname,m_coll);
 			return false;
@@ -1712,8 +1687,6 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 		// make a log note
 		log(LOG_INFO,"merge: Resuming killed merge for %s coll=%s.", m_dbname,m_coll);
 
-		// compute the total size of merged file
-		mint = 0;
 		int32_t mm = 0;
 		for ( int32_t i = mergeFileNum ; i <= endMergeFileNum ; i++ ) {
 			if ( i >= m_numFiles ) {
@@ -1722,30 +1695,23 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 				    "last merge. Probably because those files "
 				    "were deleted because they were "
 				    "exhausted and had no recs to offer."
-				    ,mergeNum,m_numFiles);
+				    ,mergeFileCount,m_numFiles);
 				//g_process.shutdownAbort(true);
 				break;
-			}
-
-			if ( ! m_fileInfo[i].m_file ) {
-				log(LOG_DEBUG, "merge: File #%" PRId32" is NULL, skipping.",i);
-				continue;
 			}
 
 			// only count files AFTER the file being merged to
 			if ( i > j ) {
 				mm++;
 			}
-
-			mint += m_fileInfo[i].m_file->getFileSize();
 		}
 
-		if ( mm != mergeNum ) {
-			log( LOG_INFO, "merge: Only merging %" PRId32" instead of the original %" PRId32" files.", mm, mergeNum );
+		if ( mm != mergeFileCount ) {
+			log( LOG_INFO, "merge: Only merging %" PRId32" instead of the original %" PRId32" files.", mm, mergeFileCount );
 		}
 
 		// how many files to merge?
-		mergeNum = mm;
+		mergeFileCount = mm;
 
 		// allow a single file to continue merging if the other
 		// file got merged out already
@@ -1764,8 +1730,6 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 		// resume the merging
 		goto startMerge;
 	}
-
-	minToMerge = m_minToMerge;
 
 	// look at this merge:
 	// indexdb0003.dat.part1
@@ -1789,159 +1753,34 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 	// . just merge the minimum # of files to stay under m_minToMerge
 	// . files must be consecutive, however
 	// . but ALWAYS make sure file i-1 is bigger than file i
-	mergeNum = numFiles - minToMerge + 2 ;
+	mergeFileCount = numFiles - m_minToMerge + 2 ;
 
 	// titledb should always merge at least 50 files no matter what though
 	// cuz i don't want it merging its huge root file and just one
 	// other file... i've seen that happen... but don't know why it didn't
 	// merge two small files! i guess because the root file was the
 	// oldest file! (38.80 days old)???
-	if ( m_rdb->isTitledb() && mergeNum < 50 && minToMerge > 200 ) {
+	if ( m_rdb->isTitledb() && mergeFileCount < 50 && m_minToMerge > 200 ) {
 		// force it to 50 files to merge
-		mergeNum = 50;
+		mergeFileCount = 50;
 
 		// but must not exceed numFiles!
-		if ( mergeNum > numFiles ) {
-			mergeNum = numFiles;
+		if ( mergeFileCount > numFiles ) {
+			mergeFileCount = numFiles;
 		}
 	}
 
-	// NEVER merge more than this many files, our current merge routine
-	// does not scale well to many files
-	if ( m_absMaxFiles > 0 && mergeNum > m_absMaxFiles ) {
-		mergeNum = m_absMaxFiles;
+	if ( mergeFileCount > absoluteMaxFilesToMerge ) {
+		mergeFileCount = absoluteMaxFilesToMerge;
 	}
 
 	// but if we are forcing then merge ALL, except one being dumped
 	if ( m_nextMergeForced ) {
-		mergeNum = numFiles;
+		mergeFileCount = numFiles;
 	}
 
-	//tryAgain:
-	minr = 99999999999.0;
-	mint = 0x7fffffffffffffffLL ;
-	mini = -1;
-	minOld = false;
-	for ( int32_t i = 0 ; i + mergeNum <= numFiles ; i++ ) {
-		// oldest file
-		time_t date = -1;
-		// add up the string
-		int64_t total = 0;
-		for ( int32_t j = i ; j < i + mergeNum ; j++ ) {
-			total += m_fileInfo[j].m_file->getFileSize();
-			time_t mtime = m_fileInfo[j].m_file->getLastModifiedTime();
-			// skip on error
-			if ( mtime < 0 ) {
-				continue;
-			}
-
-			if ( mtime > date ) {
-				date = mtime;
-			}
-		}
-
-		// does it have a file more than 30 days old?
-		bool old = ( date < nowLocal - 30*24*3600 );
-
-		// not old if error (date will be -1)
-		if ( date < 0 ) {
-			old = false;
-		}
-
-		// if it does, and current winner does not, force ourselves!
-		if ( old && ! minOld ) {
-			mint = 0x7fffffffffffffffLL ;
-		}
-
-		// and if we are not old and the min is, do not consider
-		if ( ! old && minOld ) {
-			continue;
-		}
-
-		// if merging titledb, just pick by the lowest total
-		if ( m_rdb->isTitledb() ) {
-			if ( total < mint ) {
-				mini   = i;
-				mint   = total;
-				minOld = old;
-				log(LOG_INFO,"merge: titledb i=%" PRId32" n=%" PRId32" "
-				    "mint=%" PRId64" mini=%" PRId32" "
-				    "oldestfile=%.02fdays",
-				    i,mergeNum,mint,mini,
-				    ((float)nowLocal-date)/(24*3600.0) );
-			}
-			continue;
-		}
-
-		// . get the average ratio between mergees
-		// . ratio in [1.0,inf)
-		// . prefer the lowest average ratio
-		double ratio = 0.0;
-		for ( int32_t j = i ; j < i + mergeNum - 1 ; j++ ) {
-			int64_t s1 = m_fileInfo[j  ].m_file->getFileSize();
-			int64_t s2 = m_fileInfo[j+1].m_file->getFileSize();
-			int64_t tmp;
-			if ( s2 == 0 ) continue;
-			if ( s1 < s2 ) { tmp = s1; s1 = s2 ; s2 = tmp; }
-			ratio += (double)s1 / (double)s2 ;
-		}
-		if ( mergeNum >= 2 ) ratio /= (double)(mergeNum-1);
-		// sanity check
-		if ( ratio < 0.0 ) {
-			logf(LOG_LOGIC,"merge: ratio is negative %.02f",ratio);
-			g_process.shutdownAbort(true); 
-		}
-		// the adjusted ratio
-		double adjratio = ratio;
-		// . adjust ratio based on file size of current winner
-		// . if winner is ratio of 1:1 and we are 10:1 but winner
-		//   is 10 times bigger than us, then we have a tie. 
-		// . i think if we are 10:1 and winner is 3 times bigger
-		//   we should have a tie
-		if ( mini >= 0 && total > 0 && mint > 0 ) {
-			double sratio = (double)total/(double)mint;
-			//if ( mint>total ) sratio = (float)mint/(float)total;
-			//else              sratio = (float)total/(float)mint;
-			adjratio *= sratio;
-		}
-
-
-		// debug the merge selection
-		char      tooBig   = 0;
-		int64_t prevSize = 0;
-		if ( i > 0 ) prevSize = m_fileInfo[i-1].m_file->getFileSize();
-		if ( i > 0 && prevSize < total/4 ) tooBig = 1;
-		log(LOG_INFO,"merge: i=%" PRId32" n=%" PRId32" ratio=%.2f adjratio=%.2f "
-		    "minr=%.2f mint=%" PRId64" mini=%" PRId32" prevFileSize=%" PRId64" "
-		    "mergeFileSize=%" PRId64" tooBig=%" PRId32" oldestfile=%.02fdays "
-		    "collnum=%" PRId32,
-		    i,mergeNum,ratio,adjratio,minr,mint,mini,
-		    prevSize , total ,(int32_t)tooBig,
-		    ((float)nowLocal-date)/(24*3600.0) ,
-		    (int32_t)m_collnum);
-
-		// bring back the greedy merge
-		if ( total >= mint ) {
-			continue;
-		}
-
-		// . don't get TOO lopsided on me now
-		// . allow it for now! this is the true greedy method... no!
-		// . an older small file can be cut off early on by a merge
-		//   of middle files. the little guy can end up never getting
-		//   merged unless we have this.
-		// . allow a file to be 4x bigger than the one before it, this
-		//   allows a little bit of lopsidedness.
-		if (i > 0  && m_fileInfo[i-1].m_file->getFileSize() < total/4 ) {
-			continue;
-		}
-
-		//min  = total;
-		minr   = ratio;
-		mint   = total;
-		mini   = i;
-		minOld = old;
-	}
+	int32_t mini;
+	selectFilesToMerge(mergeFileCount,numFiles,&mini);
 
 	// if no valid range, bail
 	if ( mini == -1 ) { 
@@ -1954,6 +1793,7 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 	mergeFileId = m_fileInfo[mini].m_fileId - 1;
 
 	// get new id, -1 on error
+	int32_t      fileId2;
 	fileId2 = m_rdb->isTitledb() ? 0 : -1;
 
 	// . make a filename for the merge
@@ -1963,12 +1803,14 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 	// . this now also sets m_mergeStartFileNum for us... but we override
 	//   below anyway. we have to set it there in case we startup and
 	//   are resuming a merge.
-	endMergeFileNum = mini + mergeNum - 1;
+	int32_t endMergeFileNum;
+	endMergeFileNum = mini + mergeFileCount - 1;
+	int32_t endMergeFileId;
 	endMergeFileId = m_fileInfo[endMergeFileNum].m_fileId;
-	log( LOG_INFO, "merge: n=%d mini=%d mergeFileId=%d endMergeFileNum=%d endMergeFileId=%d",
-	     mergeNum, mini, mergeFileId, endMergeFileNum, endMergeFileId );
+	log( LOG_INFO, "merge: mergeFileCount=%d mini=%d mergeFileId=%d endMergeFileNum=%d endMergeFileId=%d",
+	     mergeFileCount, mini, mergeFileId, endMergeFileNum, endMergeFileId );
 
-	mergeFileNum = addFile ( true, mergeFileId , fileId2, mergeNum, endMergeFileId );
+	mergeFileNum = addFile ( true, mergeFileId , fileId2, mergeFileCount, endMergeFileId );
 	if ( mergeFileNum < 0 ) {
 		log(LOG_LOGIC,"merge: attemptMerge: Could not add new file."); 
 		g_errno = 0;
@@ -1984,15 +1826,15 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 
  startMerge:
 	// sanity check
-	if ( mergeNum <= 1 && ! overide ) {
-		log(LOG_LOGIC,"merge: gotTokenForMerge: Not merging %" PRId32" files.", mergeNum);
+	if ( mergeFileCount <= 1 && ! overide ) {
+		log(LOG_LOGIC,"merge: attemptMerge: Not merging %" PRId32" files.", mergeFileCount);
 		return false; 
 	}
 
 	// . save the # of files we're merging for the cleanup process
 	// . don't include the first file, which is now file #0
-	m_numFilesToMerge   = mergeNum  ; // numFiles - 1;
-	m_mergeStartFileNum = mergeFileNum + 1; // 1
+	m_mergeStartFileNum = mergeFileNum + 1;
+	m_numFilesToMerge   = mergeFileCount;
 
 	const char *coll = "";
 	if ( cr ) coll = cr->m_coll;
@@ -2000,14 +1842,14 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 	// log merge parms
 	log(LOG_INFO,"merge: Merging %" PRId32" %s files to file id %" PRId32" now. "
 	    "collnum=%" PRId32" coll=%s",
-	    mergeNum,m_dbname,mergeFileId,(int32_t)m_collnum,coll);
+	    mergeFileCount,m_dbname,mergeFileId,(int32_t)m_collnum,coll);
 
 	// print out file info
-	m_numPos = 0;
-	m_numNeg = 0;
+	m_premergeNumPositiveRecords = 0;
+	m_premergeNumNegativeRecords = 0;
 	for ( int32_t i = m_mergeStartFileNum; i < m_mergeStartFileNum + m_numFilesToMerge; ++i ) {
-		m_numPos += m_fileInfo[i].m_map->getNumPositiveRecs();		
-		m_numNeg += m_fileInfo[i].m_map->getNumNegativeRecs();
+		m_premergeNumPositiveRecords += m_fileInfo[i].m_map->getNumPositiveRecs();		
+		m_premergeNumNegativeRecords += m_fileInfo[i].m_map->getNumNegativeRecs();
 		log(LOG_INFO,"merge: %s (#%" PRId32") has %" PRId64" positive "
 		     "and %" PRId64" negative records." ,
 		     m_fileInfo[i].m_file->getFilename(),
@@ -2016,17 +1858,12 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 		     m_fileInfo[i].m_map->getNumNegativeRecs() );
 	}
 	log(LOG_INFO,"merge: Total positive = %" PRId64" Total negative = %" PRId64".",
-	     m_numPos,m_numNeg);
+	    m_premergeNumPositiveRecords,m_premergeNumNegativeRecords);
 
 	// assume we are now officially merging
 	m_isMerging = true;
 
 	m_rdb->incrementNumMerges();
-
-	// sanity check
-	if ( m_niceness == 0 ) {
-		g_process.shutdownAbort(true);
-	}
 
 	logTrace( g_conf.m_logTraceRdbBase, "merge!" );
 	// . start the merge
@@ -2072,10 +1909,141 @@ bool RdbBase::attemptMerge( int32_t niceness, bool forceMergeAll, bool doLog , i
 }
 
 
+void RdbBase::selectFilesToMerge(int32_t mergeFileCount, int32_t numFiles, int32_t *p_mini) {
+	float minr = 99999999999.0;
+	int64_t mint = 0x7fffffffffffffffLL ;
+	int32_t mini = -1;
+	bool minOld = false;
+	int32_t nowLocal = getTimeLocal();
+	for(int32_t i = 0; i + mergeFileCount <= numFiles; i++) {
+		// oldest file
+		time_t date = -1;
+		// add up the string
+		int64_t total = 0;
+		for(int32_t j = i; j < i + mergeFileCount; j++) {
+			total += m_fileInfo[j].m_file->getFileSize();
+			time_t mtime = m_fileInfo[j].m_file->getLastModifiedTime();
+			// skip on error
+			if(mtime < 0) {
+				continue;
+			}
+
+			if(mtime > date) {
+				date = mtime;
+			}
+		}
+
+		// does it have a file more than 30 days old?
+		bool old = ( date < nowLocal - 30*24*3600 );
+
+		// not old if error (date will be -1)
+		if(date < 0) {
+			old = false;
+		}
+
+		// if it does, and current winner does not, force ourselves!
+		if(old && ! minOld) {
+			mint = 0x7fffffffffffffffLL ;
+		}
+
+		// and if we are not old and the min is, do not consider
+		if(!old && minOld) {
+			continue;
+		}
+
+		// if merging titledb, just pick by the lowest total
+		if(m_rdb->isTitledb()) {
+			if(total < mint) {
+				mini   = i;
+				mint   = total;
+				minOld = old;
+				log(LOG_INFO,"merge: titledb i=%" PRId32" mergeFileCount=%" PRId32" "
+				    "mint=%" PRId64" mini=%" PRId32" "
+				    "oldestfile=%.02fdays",
+				    i,mergeFileCount,mint,mini,
+				    ((float)nowLocal-date)/(24*3600.0) );
+			}
+			continue;
+		}
+
+		// . get the average ratio between mergees
+		// . ratio in [1.0,inf)
+		// . prefer the lowest average ratio
+		double ratio = 0.0;
+		for(int32_t j = i; j < i + mergeFileCount - 1; j++) {
+			int64_t s1 = m_fileInfo[j  ].m_file->getFileSize();
+			int64_t s2 = m_fileInfo[j+1].m_file->getFileSize();
+			int64_t tmp;
+			if(s2 == 0 ) continue;
+			if(s1 < s2) { tmp = s1; s1 = s2 ; s2 = tmp; }
+			ratio += (double)s1 / (double)s2 ;
+		}
+		if(mergeFileCount >= 2 ) ratio /= (double)(mergeFileCount-1);
+		// sanity check
+		if(ratio < 0.0) {
+			logf(LOG_LOGIC,"merge: ratio is negative %.02f",ratio);
+			g_process.shutdownAbort(true);
+		}
+
+		// the adjusted ratio
+		double adjratio = ratio;
+		// . adjust ratio based on file size of current winner
+		// . if winner is ratio of 1:1 and we are 10:1 but winner
+		//   is 10 times bigger than us, then we have a tie.
+		// . i think if we are 10:1 and winner is 3 times bigger
+		//   we should have a tie
+		if(mini >= 0 && total > 0 && mint > 0) {
+			double sratio = (double)total/(double)mint;
+			//if(mint>total ) sratio = (float)mint/(float)total;
+			//else              sratio = (float)total/(float)mint;
+			adjratio *= sratio;
+		}
+
+
+		// debug the merge selection
+		int64_t prevSize = 0;
+		if(i > 0)
+			prevSize = m_fileInfo[i-1].m_file->getFileSize();
+		log(LOG_INFO,"merge: i=%" PRId32" n=%" PRId32" ratio=%.2f adjratio=%.2f "
+		    "minr=%.2f mint=%" PRId64" mini=%" PRId32" prevFileSize=%" PRId64" "
+		    "mergeFileSize=%" PRId64" oldestfile=%.02fdays "
+		    "collnum=%" PRId32,
+		    i,mergeFileCount,ratio,adjratio,minr,mint,mini,
+		    prevSize , total,
+		    ((float)nowLocal-date)/(24*3600.0) ,
+		    (int32_t)m_collnum);
+
+		// bring back the greedy merge
+		if(total >= mint) {
+			continue;
+		}
+
+		// . don't get TOO lopsided on me now
+		// . allow it for now! this is the true greedy method... no!
+		// . an older small file can be cut off early on by a merge
+		//   of middle files. the little guy can end up never getting
+		//   merged unless we have this.
+		// . allow a file to be 4x bigger than the one before it, this
+		//   allows a little bit of lopsidedness.
+		if(i > 0  && m_fileInfo[i-1].m_file->getFileSize() < total/4) {
+			continue;
+		}
+
+		//min  = total;
+		minr   = ratio;
+		mint   = total;
+		mini   = i;
+		minOld = old;
+	}
+
+	*p_mini = mini;
+}
+
+
 // . use the maps and tree to estimate the size of this list w/o hitting disk
 // . used by Indexdb.cpp to get the size of a list for IDF weighting purposes
 int64_t RdbBase::getListSize(const char *startKey, const char *endKey, char *maxKey,
-			     int64_t oldTruncationLimit) {
+			     int64_t oldTruncationLimit) const {
 	// . reset this to low points
 	// . this is on
 	KEYSET(maxKey,endKey,m_ks);
@@ -2183,13 +2151,13 @@ int64_t RdbBase::getNumTotalRecs() const {
 	return numPositiveRecs - numNegativeRecs;
 }
 
-// . how much mem is alloced for all of our maps?
+// . how much mem is allocated for all of our maps?
 // . we have one map per file
-int64_t RdbBase::getMapMemAlloced() const {
-	int64_t alloced = 0;
+int64_t RdbBase::getMapMemAllocated() const {
+	int64_t allocated = 0;
 	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) 
-		alloced += m_fileInfo[i].m_map->getMemAlloced();
-	return alloced;
+		allocated += m_fileInfo[i].m_map->getMemAllocated();
+	return allocated;
 }
 
 // sum of all parts of all big files
@@ -2407,11 +2375,14 @@ void RdbBase::generateGlobalIndex() {
 		tmpDocIdFileIndex->reserve(tmpDocIdFileIndex->size() + docIds->size());
 		std::transform(docIds->begin(), docIds->end(), std::back_inserter(*tmpDocIdFileIndex),
 		               [i](uint64_t docId) {
-			               return ((docId << s_docIdFileIndex_docIdWithDelKeyOffset) | i);
+			               return ((docId << s_docIdFileIndex_docIdOffset) | i); // docId has delete key
 		               });
 	}
 
-	std::sort(tmpDocIdFileIndex->begin(), tmpDocIdFileIndex->end());
+	std::stable_sort(tmpDocIdFileIndex->begin(), tmpDocIdFileIndex->end(),
+	          [](uint64_t a, uint64_t b) {
+		          return (a & s_docIdFileIndex_docIdMask) < (b & s_docIdFileIndex_docIdMask);
+	          });
 
 	// in reverse because we want to keep the highest file position
 	auto it = std::unique(tmpDocIdFileIndex->rbegin(), tmpDocIdFileIndex->rend(),
@@ -2426,6 +2397,17 @@ void RdbBase::generateGlobalIndex() {
 	// replace with new index
 	ScopedLock sl(m_docIdFileIndexMtx);
 	m_docIdFileIndex.swap(tmpDocIdFileIndex);
+}
+
+void RdbBase::printGlobalIndex() {
+	auto globalIndex = getGlobalIndex();
+	for (auto key : *globalIndex) {
+		logf(LOG_TRACE, "db: docId=%" PRId64" index=%" PRId64" isDel=%d key=%" PRIx64,
+		     key >> RdbBase::s_docIdFileIndex_docIdDelKeyOffset,
+		     key & RdbBase::s_docIdFileIndex_filePosMask,
+		     ((key & RdbBase::s_docIdFileIndex_delBitMask) == 0),
+		     key);
+	}
 }
 
 docidsconst_ptr_t RdbBase::getGlobalIndex() {

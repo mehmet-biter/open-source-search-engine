@@ -3,6 +3,8 @@
 #include "Tagdb.h"
 #include "Spider.h"
 #include "BitOperations.h"
+#include "RdbIndexQuery.h"
+#include "Posdb.h"
 #include <set>
 #include <assert.h>
 
@@ -150,6 +152,7 @@ void RdbList::set(char *list, int32_t listSize, char *alloc, int32_t allocSize, 
 	// sanity check (happens when IndexReadInfo exhausts a list to Msg2)
 	if (KEYCMP(startKey, endKey, m_ks) > 0) {
 		log(LOG_WARN, "db: rdblist: set: startKey > endKey.");
+		gbshutdownCorrupted();
 	}
 
 	// safety check
@@ -1754,7 +1757,8 @@ bool RdbList::posdbConstrain(const char *startKey, char *endKey, int32_t minRecS
 //   before calling this
 // . CAUTION: you should call constrain() on all "lists" before calling this
 //   so we don't have to do boundary checks on the keys here
-void RdbList::merge_r(RdbList **lists, int32_t numLists, const char *startKey, const char *endKey, int32_t minRecSizes, bool removeNegRecs, rdbid_t rdbId) {
+void RdbList::merge_r(RdbList **lists, int32_t numLists, const char *startKey, const char *endKey, int32_t minRecSizes,
+                      bool removeNegRecs, rdbid_t rdbId, collnum_t collNum, int32_t startFileNum) {
 	assert(this);
 	verify_signature();
 	// sanity
@@ -1825,9 +1829,8 @@ void RdbList::merge_r(RdbList **lists, int32_t numLists, const char *startKey, c
 	}
 
 	Rdb* rdb = getRdbFromId(rdbId);
-
 	if (rdbId == RDB_POSDB) {
-		posdbMerge_r(lists, numLists, startKey, endKey, m_mergeMinListSize, removeNegRecs, rdb->isUseIndexFile());
+		posdbMerge_r(lists, numLists, startKey, endKey, m_mergeMinListSize, removeNegRecs, rdb->isUseIndexFile(), collNum, startFileNum);
 		verify_signature();
 		return;
 	}
@@ -2156,7 +2159,7 @@ skip:
 ///////
 
 bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startKey, const char *endKey, int32_t minRecSizes,
-                           bool removeNegKeys, bool useIndexFile) {
+                           bool removeNegKeys, bool useIndexFile, collnum_t collNum, int32_t startFileNum) {
 	logTrace(g_conf.m_logTraceRdbList, "BEGIN");
 
 	// sanity
@@ -2234,12 +2237,14 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 
 	// convenience ptr
 	for (int32_t i = 0; i < numLists; i++) {
+		logTrace(g_conf.m_logTraceRdbList, "===== dumping list #%" PRId32" =====", i);
+
 		// skip if empty
 		if (lists[i]->isEmpty()) {
+			logTrace(g_conf.m_logTraceRdbList, "empty list");
 			continue;
 		}
 
-		logTrace(g_conf.m_logTraceRdbList, "===== dumping list #%" PRId32" =====", i);
 		if (g_conf.m_logTraceRdbList) {
 			lists[i]->printList();
 		}
@@ -2275,14 +2280,18 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 	char *pp = NULL;
 
 	// see Posdb.h for format of a 18/12/6-byte posdb key
-
+	RdbIndexQuery rdbIndexQuery(getRdbBase(RDB_POSDB, collNum));
 	char *new_listPtr = m_listPtr;
+	int32_t listOffset = 0;
+
 	while (numLists > 0 && new_listPtr < maxPtr) {
 		// assume key in first list is the winner
 		const char *minPtrBase = ptrs  [0]; // lowest  6 bytes
 		const char *minPtrLo   = loKeys[0]; // next    6 bytes
 		const char *minPtrHi   = hiKeys[0]; // highest 6 bytes
 		int16_t mini = 0; // int16_t -> must be able to accomodate MAX_RDB_FILES!!
+
+		logTrace(g_conf.m_logTraceRdbList, "new_listPtr=%p numLists=%" PRId32". assume key in the first list is the winner", new_listPtr, numLists);
 
 		// merge loop over the lists, get the smallest key
 		for (int32_t i = 1; i < numLists; i++) {
@@ -2291,7 +2300,7 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 			// . continue if tie, so we get the oldest first
 			// . treat negative and positive keys as identical for this
 			if (ss < 0) {
-				logTrace(g_conf.m_logTraceRdbList, "ss < 0. continue");
+				logTrace(g_conf.m_logTraceRdbList, "i=%" PRId32" ss < 0. continue", i);
 				continue;
 			}
 
@@ -2299,7 +2308,7 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 			// and minPtrBase/Lo/Hi was a negative key! so this is
 			// the annihilation. skip the positive key.
 			if (ss == 0) {
-				logTrace(g_conf.m_logTraceRdbList, "ss == 0. skip");
+				logTrace(g_conf.m_logTraceRdbList, "i=%" PRId32" ss == 0. skip", i);
 				goto skip;
 			}
 
@@ -2316,6 +2325,26 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 		if (removeNegKeys && KEYNEG(minPtrBase)) {
 			logTrace(g_conf.m_logTraceRdbList, "removeNegKeys. skip");
 			goto skip;
+		}
+
+		if (useIndexFile) {
+			int64_t docId;
+
+			if (minPtrBase[0] & 0x04) {
+				// 6-byte pos key
+				docId = extract_bits(minPtrLo, 10, 48);
+			} else {
+				// 12-byte docid+pos key
+				docId = extract_bits(minPtrBase, 58, 96);
+			}
+
+			int32_t filePos = rdbIndexQuery.getFilePos(docId);
+
+			if (filePos > (mini + listOffset) + startFileNum) {
+				// docId is present in newer file
+				logTrace(g_conf.m_logTraceRdbList, "docId in newer list. skip. filePos=%" PRId32" mini=%" PRId16, filePos, mini);
+				goto skip;
+			}
 		}
 
 		// save ptr
@@ -2352,7 +2381,7 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 			new_listPtr += 6;
 			*pp = *pp&~0x06; //turn off all compression bits
 		}
-		
+
 		// . if it is truncated then we just skip it
 		// . it may have set oldList* stuff above, but that should not matter
 		// . TODO: BUT! if endKey has same termid as currently truncated key
@@ -2371,14 +2400,14 @@ skip:
 			// is new key 6 bytes? then do not touch hi/lo ptrs
 			if ( ptrs[mini][0] & 0x04 ) {
 				// no-op
-				logTrace(g_conf.m_logTraceRdbList, "new 6-byte key");
+				logTrace(g_conf.m_logTraceRdbList, "mini=%" PRId32" new 6-byte key", mini);
 			} else if ( ptrs[mini][0] & 0x02 ) {
 				// is new key 12 bytes?
-				logTrace(g_conf.m_logTraceRdbList, "new 12-byte key");
+				logTrace(g_conf.m_logTraceRdbList, "mini=%" PRId32" new 12-byte key", mini);
 				memcpy(loKeys[mini], ptrs[mini] +  6, 6);
 			} else {
 				// is new key 18 bytes? full key.
-				logTrace(g_conf.m_logTraceRdbList, "new 18-byte key");
+				logTrace(g_conf.m_logTraceRdbList, "mini=%" PRId32" new 18-byte key", mini);
 				memcpy(hiKeys[mini], ptrs[mini] + 12, 6);
 				memcpy(loKeys[mini], ptrs[mini] +  6, 6);
 			}
@@ -2386,7 +2415,7 @@ skip:
 			//
 			// REMOVE THE LIST at mini
 			//
-			logTrace(g_conf.m_logTraceRdbList, "remove list at mini=%" PRId32, mini);
+			logTrace(g_conf.m_logTraceRdbList, "remove list at mini=%" PRId32" numLists=%" PRId32, mini, numLists);
 
 			// otherwise, remove him from array
 			for (int32_t i = mini; i < numLists - 1; i++) {
@@ -2398,6 +2427,11 @@ skip:
 
 			// one less list to worry about
 			numLists--;
+
+			// only increase offset if it's not the last list we remove
+			if (mini < numLists) {
+				listOffset++;
+			}
 		}
 	}
 
@@ -2450,7 +2484,7 @@ skip:
 		if (g_conf.m_logTraceRdbList) {
 			printList();
 		}
-		logTrace(g_conf.m_logTraceRdbList, "END. Less than requested");
+		logTrace(g_conf.m_logTraceRdbList, "END. Less than requested m_listSize=%" PRId32" minRecSizes=%" PRId32, m_listSize, minRecSizes);
 		return true;
 	}
 

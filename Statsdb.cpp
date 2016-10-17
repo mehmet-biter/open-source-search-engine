@@ -181,8 +181,7 @@ bool Statsdb::init ( ) {
 	m_init   = true;
 
 	// make the rec cache 0 bytes, cuz we are just using page cache now
-	if ( ! m_rdb.init ( g_hostdb.m_dir		, // working directory
-			    "statsdb"			, // dbname
+	if ( ! m_rdb.init ( "statsdb"			, // dbname
 			    sizeof(StatData)            , // fixed record size
 			    200,//g_conf.m_statsdbMinFilesToMerge ,
 			    maxTreeMem                  ,
@@ -220,7 +219,7 @@ void flushStatsWrapper ( int fd , void *state ) {
 	if ( (float)tree->getNumUsedNodes() * 1.2 < 
 	     (float)tree->getNumAvailNodes () &&
 	     //tree->getNumAvailNodes () > 1000 &&
-	     rdb->getRdbMem()->getAvailMem() > 50000 )
+	     rdb->getAvailMem() > 50000 )
 		return;
 
 	if ( ! isClockInSync() ) return;

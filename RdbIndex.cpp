@@ -30,7 +30,7 @@ RdbIndex::RdbIndex()
 	, m_useHalfKeys(false)
 	, m_ks(0)
 	, m_rdbId(RDB_NONE)
-	, m_version(-1)
+	, m_version(s_rdbIndexCurrentVersion)
 	, m_docIds(new docids_t)
 	, m_docIdsMtx()
 	, m_pendingDocIdsMtx()
@@ -246,7 +246,8 @@ bool RdbIndex::verifyIndex() {
 	logTrace( g_conf.m_logTraceRdbIndex, "BEGIN. filename [%s]", m_file.getFilename());
 
 	if (m_version != s_rdbIndexCurrentVersion) {
-		logTrace(g_conf.m_logTraceRdbIndex, "END. Index format have changed. Returning false");
+		logTrace(g_conf.m_logTraceRdbIndex, "END. Index format have changed m_version=%" PRId64" currentVersion=%" PRId64". Returning false",
+		         m_version, s_rdbIndexCurrentVersion);
 		return false;
 	}
 

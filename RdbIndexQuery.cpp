@@ -3,9 +3,9 @@
 #include <algorithm>
 
 RdbIndexQuery::RdbIndexQuery(RdbBase *base)
-	: RdbIndexQuery(base->getGlobalIndex() ? base->getGlobalIndex() : docidsconst_ptr_t(),
-	                base->getTreeIndex() ? base->getTreeIndex()->getDocIds() : docidsconst_ptr_t(),
-	                base->getNumFiles()) {
+	: RdbIndexQuery(base ? (base->getGlobalIndex() ? base->getGlobalIndex() : docidsconst_ptr_t()) : docidsconst_ptr_t(),
+	                base ? (base->getTreeIndex() ? base->getTreeIndex()->getDocIds() : docidsconst_ptr_t()) : docidsconst_ptr_t(),
+	                base ? base->getNumFiles() : 0) {
 }
 
 RdbIndexQuery::RdbIndexQuery(docidsconst_ptr_t globalIndexData, docidsconst_ptr_t treeIndexData, int32_t numFiles)
@@ -28,8 +28,8 @@ int32_t RdbIndexQuery::getFilePos(uint64_t docId, bool *isDel) const {
 		}
 	}
 
-	auto it = std::lower_bound(m_globalIndexData->cbegin(), m_globalIndexData->cend(), docId << RdbBase::s_docIdFileIndex_docIdWithDelKeyOffset);
-	if (it != m_globalIndexData->cend() && ((*it >> RdbBase::s_docIdFileIndex_docIdOffset) == docId)) {
+	auto it = std::lower_bound(m_globalIndexData->cbegin(), m_globalIndexData->cend(), docId << RdbBase::s_docIdFileIndex_docIdDelKeyOffset);
+	if (it != m_globalIndexData->cend() && ((*it >> RdbBase::s_docIdFileIndex_docIdDelKeyOffset) == docId)) {
 		if (isDel) {
 			*isDel = ((*it & RdbBase::s_docIdFileIndex_delBitMask) == 0);
 		}
@@ -37,8 +37,14 @@ int32_t RdbIndexQuery::getFilePos(uint64_t docId, bool *isDel) const {
 	}
 
 	// mismatch in idx & data files?
-	logError("Unable to find docId=%lu in global index", docId);
-	gbshutdownLogicError();
+
+	/// @todo ALC we should core dump here instead (tmp workaround until nomerge branch is merged down to master)
+	/// this happens when pending docIds are not merged into RdbTree index (which should not happen with nomerge branch)
+	return m_numFiles;
+
+//	logError("Unable to find docId=%lu in global index", docId);
+//	printIndex();
+//	gbshutdownLogicError();
 }
 
 void RdbIndexQuery::printIndex() const {
@@ -52,9 +58,10 @@ void RdbIndexQuery::printIndex() const {
 	}
 
 	for (auto key : *m_globalIndexData) {
-		logf(LOG_TRACE, "db: docId=%" PRId64" index=%" PRId64" isDel=%d",
-		     (key & RdbBase::s_docIdFileIndex_docIdMask) >> RdbBase::s_docIdFileIndex_docIdOffset,
+		logf(LOG_TRACE, "db: docId=%" PRId64" index=%" PRId64" isDel=%d key=%" PRIx64,
+		     (key & RdbBase::s_docIdFileIndex_docIdMask) >> RdbBase::s_docIdFileIndex_docIdDelKeyOffset,
 		     key & RdbBase::s_docIdFileIndex_filePosMask,
-		     ((key & RdbBase::s_docIdFileIndex_delBitMask) == 0));
+		     ((key & RdbBase::s_docIdFileIndex_delBitMask) == 0),
+			 key);
 	}
 }

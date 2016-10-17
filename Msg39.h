@@ -168,7 +168,7 @@ private:
 	Msg39Request *m_msg39req;
 
 	// always use top tree now
-	bool m_allocedTree;
+	bool m_allocatedTree;
 	TopTree    m_toptree;
 
 	// . we hold our IndexLists here for passing to PosdbTable

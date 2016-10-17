@@ -9,7 +9,6 @@ RdbDump::RdbDump() {
    	m_isDumping = false; 
 
 	// Coverity
-	m_writing = false;
 	m_tree = NULL;
 	m_buckets = NULL;
 	m_treeIndex = NULL;
@@ -103,7 +102,6 @@ bool RdbDump::set(collnum_t collnum,
 	KEYMIN(m_firstKeyInQueue,m_ks);
 
 	m_isDumping     = false;
-	m_writing       = false;
 	m_buf           = NULL;
 	m_verifyBuf     = NULL;
 	m_maxBufSize    = maxBufSize;
@@ -639,8 +637,6 @@ bool RdbDump::dumpList(RdbList *list, int32_t niceness, bool recall) {
 	int64_t offset = m_offset;
 	// might as well update the offset now, even before write is done
 	m_offset += m_bytesToWrite ;
-	// write thread is out
-	m_writing = true;
 
 	// . if we're called by RdbMerge directly use m_callback/m_state
 	// . otherwise, use doneWritingWrapper() which will call dumpTree()
@@ -652,9 +648,6 @@ bool RdbDump::dumpList(RdbList *list, int32_t niceness, bool recall) {
 	if (!isDone) {
 		return false;
 	}
-
-	// done writing
-	m_writing = false;
 
 	// return true on error
 	if (g_errno) {
@@ -924,9 +917,6 @@ tryAgain:
 void RdbDump::doneWritingWrapper(void *state) {
 	// get THIS ptr from state
 	RdbDump *THIS = (RdbDump *)state;
-
-	// done writing
-	THIS->m_writing = false;
 
 	// bitch about errors
 	if (g_errno && THIS->m_file) {

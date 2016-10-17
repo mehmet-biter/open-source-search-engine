@@ -275,11 +275,11 @@ void DailyMerge::dailyMergeLoop ( ) {
 		RdbBase *base;
 
 		base = g_spiderdb.getRdb()->getBase(m_cr->m_collnum);
-		base->attemptMerge (1,true,false,2);
+		base->attemptMerge (1,true,2);
 		if ( base->getNumFiles() >= 2 ) return;
 
 		base = g_linkdb  .getRdb()->getBase(m_cr->m_collnum);
-		base->attemptMerge (1,true,false,2);
+		base->attemptMerge (1,true,2);
 		if ( base->getNumFiles() >= 2 ) return;
 
 		// . minimize titledb merging at spider time, too
@@ -293,7 +293,7 @@ void DailyMerge::dailyMergeLoop ( ) {
 		// we seem to dump about 70 per day at a decent spider rate
 		// so merge enough so that we don't have to merge while 
 		// spidering
-		base->attemptMerge (1,false,false,230-70);
+		base->attemptMerge (1,false,230-70);
 		if ( base->getNumFiles() >= 230-70 ) return;
 
 		// set m_cr to NULL up here, so that the last guy to

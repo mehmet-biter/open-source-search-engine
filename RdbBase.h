@@ -84,9 +84,6 @@ class RdbBase {
 	void saveTreeIndex();
 
 
-	// get the directory name where this rdb stores it's files
-	const char *getDir() { return m_dir.getDir(); }
-
 	int32_t getFixedDataSize() const { return m_fixedDataSize; }
 
 	bool useHalfKeys() const { return m_useHalfKeys; }
@@ -112,8 +109,8 @@ class RdbBase {
 
 	float getPercentNegativeRecsOnDisk ( int64_t *totalArg ) const;
 
-	// how much mem is alloced for our maps?
-	int64_t getMapMemAlloced() const;
+	// how much mem is allocated for our maps?
+	int64_t getMapMemAllocated() const;
 
 	int32_t       getNumFiles() const { return m_numFiles; }
 
@@ -129,7 +126,7 @@ class RdbBase {
 
 	// use the maps and tree to estimate the size of this list
 	int64_t getListSize(const char *startKey, const char *endKey, char *maxKey,
-	                    int64_t oldTruncationLimit);
+	                    int64_t oldTruncationLimit) const;
 
 	// positive minus negative
 	int64_t getNumTotalRecs() const;
@@ -141,7 +138,6 @@ class RdbBase {
 	// returns true if merge was started, false if no merge could
 	// be launched right now for some reason.
 	bool attemptMerge ( int32_t niceness , bool forceMergeAll , 
-			    bool doLog = true ,
 			    // -1 means to not override it
 			    int32_t minToMergeOverride = -1 );
 
@@ -184,7 +180,7 @@ class RdbBase {
 	// PageRepair indirectly calls this to move the map and data of this
 	// rdb into the trash subdir after renaming them, because they will
 	// be replaced by the rebuilt files.
-	bool moveToTrash ( char *dstDir ) ;
+	bool moveToTrash(const char *dstDir);
 	// PageRepair indirectly calls this to rename the map and data files
 	// of a secondary/rebuilt rdb to the filenames of the primary rdb.
 	// after that, RdbBase::setFiles() is called to reload them into
@@ -239,14 +235,17 @@ private:
 
 public:
 	void generateGlobalIndex();
+	void printGlobalIndex();
 
-	static const char s_docIdFileIndex_docIdWithDelKeyOffset = 24;
-	static const char s_docIdFileIndex_docIdOffset = 26;
+	static const char s_docIdFileIndex_docIdOffset = 24;
+	static const char s_docIdFileIndex_docIdDelKeyOffset = 26;
 	static const uint64_t s_docIdFileIndex_docIdMask    = 0xfffffffffc000000ULL;
 	static const uint64_t s_docIdFileIndex_delBitMask   = 0x0000000001000000ULL;
 	static const uint64_t s_docIdFileIndex_filePosMask  = 0x000000000000ffffULL;
 
 private:
+	void selectFilesToMerge(int32_t mergeNum, int32_t numFiles, int32_t *p_mini);
+
 	static void unlinkDoneWrapper(void *state);
 	void unlinkDone();
 	static void renameDoneWrapper(void *state);
@@ -287,9 +286,8 @@ private:
 	// for dumping a table to an rdb file
 	RdbDump    *m_dump;  
 
-	int32_t      m_minToMergeArg;
+	int32_t      m_minToMergeDefault; //from init() call
 	int32_t      m_minToMerge;  // need at least this many files b4 merging
-	int32_t      m_absMaxFiles;
 	int32_t      m_numFilesToMerge   ;
 	int32_t      m_mergeStartFileNum ;
 
@@ -315,15 +313,14 @@ private:
 	// have we create the merge file?
 	bool      m_hasMergeFile;
 
-	// rec counts for files being merged
-	int64_t m_numPos ;
-	int64_t m_numNeg ;
+	// Record counts for files being merged. Calculated in attemptMerge() and then used
+	// for logging in incorporateMerge()
+	int64_t m_premergeNumPositiveRecords;
+	int64_t m_premergeNumNegativeRecords;
 
 	int32_t m_numThreads;
 
 	bool m_isUnlinking;
-
-	bool m_doLog;
 };
 
 extern bool g_dumpMode;

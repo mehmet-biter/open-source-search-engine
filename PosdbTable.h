@@ -95,14 +95,10 @@ class PosdbTable {
 	// pre-allocate memory since intersection runs in a thread
 	bool allocTopScoringDocIdsData();
 
-	void  getTermPairScoreForNonBody( 	const char *wpi,  const char *wpj, const char *endi, const char *endj,
-					     				int32_t qdist, float *retMax );
-	float getSingleTermScore(int32_t i, const char *wpi, const char *endi,
-				 DocIdScore *pdcs,
-				 const char **bestPos);
-
-	void evalSlidingWindow(const char **ptrs, const char **bestPos, float *scoreMatrix);
-	float getTermPairScoreForWindow( const char *wpi, const char *wpj, int32_t fixedDistance);
+	float getMaxScoreForNonBodyTermPair(const char *wpi,  const char *wpj, const char *endi, const char *endj, int32_t qdist);
+	float getBestScoreSumForSingleTerm(int32_t i, const char *wpi, const char *endi, DocIdScore *pdcs, const char **highestScoringNonBodyPos);
+	float getScoreForTermPair(const char *wpi, const char *wpj, int32_t fixedDistance);
+	void findMinTermPairScoreInWindow(const char **ptrs, const char **highestScoringNonBodyPos, float *scoreMatrix);
 
 	float getTermPairScoreForAny   ( int32_t i, int32_t j,
 					 const char *wpi, const char *wpj, 
@@ -129,15 +125,16 @@ class PosdbTable {
 	bool advanceTermListCursors(const char *docIdPtr, QueryTermInfo *qtibuf);
 	bool prefilterMaxPossibleScoreByDistance(QueryTermInfo *qtibuf, const int32_t *qpos, float minWinningScore);
 	void mergeTermSubListsForDocId(QueryTermInfo *qtibuf, char *miniMergeBuf, const char **miniMergedList, const char **miniMergedEnd, int *highestInlinkSiteRank);
-	void slidingWindowAlgorithm(const char **miniMergedList, const char **miniMergedEnd, const char **bestPos, const char **winnerStack, const char **xpos, float *scoreMatrix);
+
+	void createNonBodyTermPairScoreMatrix(const char **miniMergedList, const char **miniMergedEnd, float *scoreMatrix);
+	float createHighestScoringNonBodyPosArray(const char **miniMergedList, const char **miniMergedEnd, const char **highestScoringNonBodyPos, DocIdScore *pdcs);
+	void slidingWindowAlgorithm(const char **miniMergedList, const char **miniMergedEnd, const char **highestScoringNonBodyPos, const char **winnerStack, const char **xpos, float *scoreMatrix);
+	float zakAlgorithm(const char **miniMergedList, const char **miniMergedEnd, DocIdScore *pdcs);
+
 
 	uint64_t m_docId;
 
 	bool m_hasMaxSerpScore;
-
-	// hack for seo.cpp:
-	float m_finalScore;
-	float m_preFinalScore;
 
 	float m_siteRankMultiplier;
 
@@ -161,8 +158,11 @@ class PosdbTable {
 	float *m_freqWeights;
 	char  *m_bflags;
 	int32_t  *m_qtermNums;
-	float m_bestWindowScore;
-	const char **m_windowTermPtrs;
+
+	// Best minimum score in a "sliding window"
+	float m_bestMinTermPairWindowScore;
+	// Position pointers of best minimum score
+	const char **m_bestMinTermPairWindowPtrs;
 
 	// how many docs in the collection?
 	int64_t m_docsInColl;

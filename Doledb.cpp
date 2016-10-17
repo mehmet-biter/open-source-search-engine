@@ -38,8 +38,7 @@ bool Doledb::init ( ) {
 	int32_t maxTreeNodes  = maxTreeMem / 78;
 
 	// initialize our own internal rdb
-	return m_rdb.init ( g_hostdb.m_dir              ,
-			    "doledb"                    ,
+	return m_rdb.init ( "doledb"                    ,
 			    -1                          , // fixedDataSize
 			    2                           , // MinFilesToMerge
 			    maxTreeMem                  ,

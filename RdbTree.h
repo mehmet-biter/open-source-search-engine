@@ -58,7 +58,7 @@ public:
 	~RdbTree       ( );
 
 	// . Rdb uses this to determine when to dump this tree to disk
-	// . look at % of memory occupied/alloced of max, as well as % of
+	// . look at % of memory occupied/allocated of max, as well as % of
 	//   nodes used
 	bool is90PercentFull() const {
 		// . m_memOccupied is amount of alloc'd mem that data occupies
@@ -211,7 +211,7 @@ public:
 	void setNumKeys ( class CollectionRec *cr ) ;
 
 	// how much mem, including data, is used by this class?
-	int32_t getMemAlloced       ( ) const { return m_memAlloced;  }
+	int32_t getMemAllocated() const { return m_memAllocated;  }
 	// . how much of the alloc'd mem is actually in use holding data
 	// . includes the tree infrastructure as well as the data itself
 	int32_t getMemOccupied      ( ) const { return m_memOccupied; }
@@ -228,7 +228,7 @@ public:
 	int32_t getMemOccupiedForList() const;
 
 	// . how much mem does this tree use, not including stored data
-	// . this will be the same as getMemAlloced() if fixedDataSize is 0
+	// . this will be the same as getMemAllocated() if fixedDataSize is 0
 	int32_t getTreeOverhead() const { return m_overhead * m_numNodes; }
 
 	// . throw all the records in this range into this list
@@ -376,10 +376,10 @@ private:
 	// the node at the top of the tree
 	int32_t    m_headNode;
 	// total mem this tree is using (including data that nodes point to)
-	int32_t    m_memAlloced;
-	// total amount of m_memAlloced that is occupied
+	int32_t    m_memAllocated;
+	// total amount of m_memAllocated that is occupied
 	int32_t    m_memOccupied; 
-	// max limit of m_memAlloced
+	// max limit of m_memAllocated
 	int32_t    m_maxMem;      
 	// mem allocated for overhead of tree structure
 	int32_t    m_baseMem;

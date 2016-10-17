@@ -150,7 +150,7 @@ Msg39::~Msg39 () {
 
 void Msg39::reset() {
 	if ( m_inUse ) gbshutdownLogicError();
-	m_allocedTree = false;
+	m_allocatedTree = false;
 	//m_numDocIdSplits = 1;
 	m_query.reset();
 	m_numTotalHits = 0;
@@ -756,7 +756,7 @@ void Msg39::intersectLists ( ) {
 	// . but if we are getting weights, we don't need m_toptree!
 	// . actually we were using it before for rat=0/bool queries but
 	//   i got rid of NO_RAT_SLOTS
-	if ( ! m_allocedTree && ! m_posdbTable.allocTopScoringDocIdsData() ) {
+	if ( ! m_allocatedTree && ! m_posdbTable.allocTopScoringDocIdsData() ) {
 		if ( ! g_errno ) {
 			gbshutdownLogicError();
 		}
@@ -782,7 +782,7 @@ void Msg39::intersectLists ( ) {
 	}
 
 	// do not re do it if doing docid range splitting
-	m_allocedTree = true;
+	m_allocatedTree = true;
 
 	// . now we must call this separately here, not in allocTopScoringDocIdsData()
 	// . we have to re-set the QueryTermInfos with each docid range split

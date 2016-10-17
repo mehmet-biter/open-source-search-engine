@@ -1,6 +1,3 @@
-#undef _XOPEN_SOURCE
-#define _XOPEN_SOURCE 500
-
 #include "gb-include.h"
 
 #include "HashTableX.h"

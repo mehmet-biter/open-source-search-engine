@@ -1,8 +1,7 @@
-#include "gb-include.h"
+#include "Unicode.h"
 
-#include "HashTable.h"
-#include "Titledb.h"
-#include "Process.h"
+#include "HashTableX.h"
+#include "Sanity.h"
 
 
 static HashTableX s_convTable;
@@ -29,8 +28,6 @@ iconv_t gbiconv_open( const char *tocode, const char *fromcode) {
 			log(LOG_WARN, "uni: failed to open converter for "
 			    "%s to %s: %s (%d)", fromcode, tocode, 
 			    strerror(errno), errno);
-			// need to stop if necessary converters don't open
-			//g_process.shutdownAbort(true);
 			g_errno = errno;
 			if (errno == EINVAL)
 				g_errno = EBADCHARSET;
@@ -293,7 +290,7 @@ done:
 }
 
 int32_t stripAccentMarks (char *outbuf, int32_t outbufsize,
-		       unsigned char *p, int32_t inbuflen) {
+			  const unsigned char *p, int32_t inbuflen) {
 	char *s = (char *)p;
 	char *send = (char *)p + inbuflen;
 	int32_t cs;
@@ -306,7 +303,7 @@ int32_t stripAccentMarks (char *outbuf, int32_t outbufsize,
 		// break "uc" into decomposition of UChar32s
 		UChar32 ttt[32];
 		int32_t klen = recursiveKDExpand(uc,ttt,32);
-		if(klen>32){g_process.shutdownAbort(true);}
+		if(klen>32) gbshutdownLogicError();
 		// sanity
 		if ( dst + 5 > outbuf+outbufsize ) return -1;
 		// if the same, leave it! it had no accent marks or other
@@ -323,7 +320,7 @@ int32_t stripAccentMarks (char *outbuf, int32_t outbufsize,
 		dst += stored;
 	}
 	// sanity. breach check
-	if ( dst > outbuf+outbufsize ) { g_process.shutdownAbort(true); }
+	if ( dst > outbuf+outbufsize ) gbshutdownLogicError();
 	// return # of bytes stored into outbuf
 	return dst - outbuf;
 }

@@ -45,8 +45,7 @@ bool Titledb::init ( ) {
 	int32_t maxTreeNodes  = g_conf.m_titledbMaxTreeMem / (1*1024);
 
 	// initialize our own internal rdb
-	return m_rdb.init ( g_hostdb.m_dir              ,
-			    "titledb"                   ,
+	return m_rdb.init ( "titledb"                   ,
 			    -1                          , // fixed record size
 			    //g_conf.m_titledbMinFilesToMerge ,
 			    // this should not really be changed...
@@ -66,8 +65,7 @@ bool Titledb::init2 ( int32_t treeMem ) {
 	// . NOTE: overhead is about 32 bytes per node
 	int32_t maxTreeNodes  = treeMem / (1*1024);
 	// initialize our own internal rdb
-	return m_rdb.init ( g_hostdb.m_dir              ,
-			    "titledbRebuild"            ,
+	return m_rdb.init ( "titledbRebuild"            ,
 			    -1                          , // fixed record size
 			    240                         , // MinFilesToMerge
 			    treeMem                     ,

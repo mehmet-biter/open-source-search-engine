@@ -41,7 +41,6 @@ RdbMem::RdbMem()
     m_is90PercentFull(false),
     m_90up(NULL),
     m_90down(NULL),
-    m_ks(0),
     m_allocName(NULL)
 {
 }
@@ -70,9 +69,8 @@ void RdbMem::clear() {
 
 
 // initialize us with the RdbDump class your rdb is using
-bool RdbMem::init(const Rdb *rdb, int32_t memToAlloc, char keySize, const char *allocName) {
+bool RdbMem::init(const Rdb *rdb, int32_t memToAlloc, const char *allocName) {
 	m_rdb  = rdb;
-	m_ks   = keySize;
 	m_allocName = allocName;
 	// return true if no mem
 	if(memToAlloc<=0)
@@ -105,8 +103,8 @@ bool RdbMem::init(const Rdb *rdb, int32_t memToAlloc, char keySize, const char *
 // . if a dump is going on and this key has already been dumped
 //   (we check RdbDump::getFirstKey()/getLastKey()) add it to the
 //   secondary mem space, otherwise add it to the primary mem space
-void *RdbMem::dupData(const char *key, const char *data, int32_t dataSize, collnum_t collnum ) {
-	char *s = (char*)allocData(key, dataSize, collnum);
+void *RdbMem::dupData(const char *data, int32_t dataSize, collnum_t collnum ) {
+	char *s = (char*)allocData(dataSize, collnum);
 	if(!s)
 		return NULL;
 	memcpy(s, data, dataSize);
@@ -114,25 +112,8 @@ void *RdbMem::dupData(const char *key, const char *data, int32_t dataSize, colln
 }
 
 
-void *RdbMem::allocData(const char *key, int32_t dataSize, collnum_t collnum) {
-	// if we're dumping and key has been dumped, use the secondary mem
-	//if ( m_dump->isDumping() && key < m_dump->getLastKeyInQueue() ) {
+void *RdbMem::allocData(int32_t dataSize, collnum_t collnum) {
 	if ( m_rdb->isInDumpLoop() ) {
-		/////
-		// MDW: 3/15/2016
-		// if we're dumping then ALWAYS use secondary mem, wtf...
-		// primary is being dumped out and when the dump completes
-		// the ptr gets reset so we'll end up point to garbage.
-		///////
-
-		// ( collnum < m_rdb->m_dumpCollnum ||
-		//   (collnum == m_rdb->m_dumpCollnum &&
-		// // if dump fails to alloc mem in RdbDump::dumpTree it does
-		// // a sleep wrapper and keeps retrying, and 
-		// // RdbDump::m_lastKeyInQueue can remain NULL because we've
-		// // never dumped out a list from the tree yet
-		// m_rdb->m_dump.m_lastKeyInQueue &&
-		// KEYCMP(key,m_rdb->m_dump.getLastKeyInQueue(),m_ks)<0)) ){
 		// if secondary mem is growing down...
 		if(m_ptr2>m_ptr1) {
 			// return NULL if it would breech,
@@ -184,7 +165,6 @@ void *RdbMem::allocData(const char *key, int32_t dataSize, collnum_t collnum) {
 	if(m_ptr1>m_90up)
 		m_is90PercentFull = true;
 	// note it
-	//if ( m_ks == 16 )
 	//log("rdbmem: ptr1b=%" PRIu32" size=%" PRId32,(int32_t)m_ptr1-dataSize,dataSize);
 	// return the ptr
 	return m_ptr1 - dataSize;
@@ -254,7 +234,7 @@ void RdbMem::freeDumpedMem( RdbTree *tree ) {
 			
 		// m_inDumpLoop is still true at this point so
 		// so allocData should return m_ptr2 guys
-		char *newData = (char *)allocData(NULL,size,0);
+		char *newData = (char *)allocData(size,0);
 		if(!newData) {
 			log("rdbmem: failed to alloc %i "
 				"bytes node %i",(int)size,(int)i);

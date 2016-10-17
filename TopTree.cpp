@@ -168,7 +168,7 @@ bool TopTree::setNumNodes ( int32_t docsWanted , bool doSiteClustering ) {
 	p += (numNodes+1) * sizeof(TopNode);
 	// vectors
 	//if ( m_useSampleVectors ) m_sampleVectors = (int32_t *)p;
-	// bail now if just realloced
+	// bail now if just reallocated
 	if ( updated ) return true;
 	// make empty the last
 	m_emptyNode = 0;

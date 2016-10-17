@@ -5,16 +5,16 @@
 
 RdbMerge::RdbMerge()
   : m_doneMerging(false),
+    m_getListOutstanding(false),
     m_numThreads(0),
     m_startFileNum(0),
     m_numFiles(0),
     m_fixedDataSize(0),
-    m_target(NULL),
+    m_targetFile(NULL),
     m_targetMap(NULL),
     m_targetIndex(NULL),
     m_isMerging(false),
-    m_isSuspended(false),
-    m_isReadyToSave(false),
+    m_isHalted(false),
     m_dump(),
     m_msg5(),
     m_list(),
@@ -32,25 +32,7 @@ RdbMerge::~RdbMerge() {
 
 void RdbMerge::reset() {
 	m_isMerging = false;
-	m_isSuspended = false;
-
-	// Coverity
-	m_numThreads = 0;
-	m_startFileNum = 0;
-	m_numFiles = 0;
-	m_fixedDataSize = 0;
-	m_target = NULL;
-	m_targetMap = NULL;
-	m_targetIndex = NULL;
-	memset(m_startKey, 0, sizeof(m_startKey));
-	memset(m_endKey, 0, sizeof(m_endKey));
-	m_isMerging = false;
-	m_isSuspended = false;
-	m_isReadyToSave = false;
-	m_niceness = 0;
-	m_rdbId = RDB_NONE;
-	m_collnum = 0;
-	m_ks = 0;
+	//m_isHalted = false; //not reset because halting is a one-way street
 }
 
 
@@ -66,12 +48,22 @@ void RdbMerge::reset() {
 //   to finish in a decent amount of time and we end up getting too many files!
 bool RdbMerge::merge(rdbid_t rdbId,
                      collnum_t collnum,
-                     BigFile *target,
+                     BigFile *targetFile,
                      RdbMap *targetMap,
                      RdbIndex *targetIndex,
                      int32_t startFileNum,
                      int32_t numFiles,
-                     int32_t niceness) {
+                     int32_t niceness)
+{
+	if(m_isHalted) {
+		logTrace(g_conf.m_logTraceRdbBase, "END, merging is halted");
+		return true;
+	}
+	if(m_isMerging) {
+		logTrace(g_conf.m_logTraceRdbBase, "END, already merging");
+		return true;
+	}
+
 	// reset ourselves
 	reset();
 
@@ -91,7 +83,7 @@ bool RdbMerge::merge(rdbid_t rdbId,
 		m_collnum = 0;
 	}
 
-	m_target          = target;
+	m_targetFile      = targetFile;
 	m_targetMap       = targetMap;
 	m_targetIndex     = targetIndex;
 	m_startFileNum    = startFileNum;
@@ -148,7 +140,7 @@ bool RdbMerge::gotLock() {
 	// . this will open m_target as O_RDWR | O_NONBLOCK | O_ASYNC ...
 
 	m_dump.set(m_collnum,
-	           m_target,
+	           m_targetFile,
 	           NULL, // buckets to dump is NULL, we call dumpList
 	           NULL, // tree to dump is NULL, we call dumpList
 	           NULL,
@@ -172,29 +164,17 @@ bool RdbMerge::gotLock() {
 	// we're now merging since the dump was set up successfully
 	m_isMerging     = true;
 
-	// make it suspended for now
-	m_isSuspended   = true;
-
-	// . this unsuspends it
 	// . this returns false on error and sets g_errno
 	// . it returns true if blocked or merge completed successfully
 	return resumeMerge ( );
 }
 
-void RdbMerge::suspendMerge ( ) {
-	if (!m_isMerging) {
+void RdbMerge::haltMerge() {
+	if(m_isHalted) {
 		return;
 	}
 
-	// do not reset m_isReadyToSave...
-	if (m_isSuspended) {
-		return;
-	}
-
-	m_isSuspended = true;
-
-	// we are waiting for the suspension to kick in really
-	m_isReadyToSave = false;
+	m_isHalted = true;
 
 	// . we don't want the dump writing to an RdbMap that has been deleted
 	// . this can happen if the close is delayed because we are dumping
@@ -211,13 +191,9 @@ void RdbMerge::doSleep() {
 // . return false if blocked, otherwise true
 // . sets g_errno on error
 bool RdbMerge::resumeMerge() {
-	// return true if not suspended
-	if (!m_isSuspended) {
+	if(m_isHalted) {
 		return true;
 	}
-
-	// turn off the suspension so getNextList() will work
-	m_isSuspended = false;
 
 	// the usual loop
 	for (;;) {
@@ -258,14 +234,12 @@ bool RdbMerge::getNextList() {
 	}
 
 	// it's suspended so we count this as blocking
-	if (m_isSuspended) {
-		m_isReadyToSave = true;
+	if(m_isHalted) {
 		return false;
 	}
 
 	// if the power is off, suspend the merging
 	if (!g_process.m_powerIsOn) {
-		m_isReadyToSave = true;
 		doSleep();
 		return false;
 	}
@@ -402,32 +376,39 @@ bool RdbMerge::getAnotherList() {
 
 	int32_t bufSize = g_conf.m_mergeBufSize;
 	// get it
-	return m_msg5.getList ( m_rdbId        ,
-				m_collnum           ,
-				&m_list        ,
-				m_startKey     ,
-				newEndKey      , // usually is maxed!
-				bufSize        ,
-				false          , // includeTree?
-				0              , // max cache age for lookup
-				m_startFileNum , // startFileNum
-				m_numFiles     ,
-				this           , // state 
-				gotListWrapper , // callback
-				m_niceness     , // niceness
-				true           , // do error correction?
-				NULL           , // cache key ptr
-				0              , // retry #
-				nn + 75        , // max retries (mk it high)
-				false          , // compensate for merge?
-				-1LL           , // sync point
-				true           , // isRealMerge? absolutely!
-				false   );
+	m_getListOutstanding = true;
+	bool rc = m_msg5.getList(m_rdbId,
+				 m_collnum,
+				 &m_list,
+				 m_startKey,
+				 newEndKey,       // usually is maxed!
+				 bufSize,
+				 false,           // includeTree?
+				 0,               // max cache age for lookup
+				 m_startFileNum,  // startFileNum
+				 m_numFiles,
+				 this,            // state
+				 gotListWrapper,  // callback
+				 m_niceness,      // niceness
+				 true,            // do error correction?
+				 NULL,            // cache key ptr
+				 0,               // retry #
+				 nn + 75,         // max retries (mk it high)
+				 false,           // compensate for merge?
+				 -1LL,            // sync point
+				 true,            // isRealMerge? absolutely!
+				 false);
+	if(rc)
+		m_getListOutstanding = false;
+	return rc;
+	
 }
 
 void RdbMerge::gotListWrapper(void *state, RdbList *list, Msg5 *msg5) {
 	// get a ptr to ourselves
 	RdbMerge *THIS = (RdbMerge *)state;
+
+	THIS->m_getListOutstanding = false;
 
 	for (;;) {
 		// if g_errno is out of memory then msg3 wasn't able to get the lists
@@ -542,8 +523,7 @@ bool RdbMerge::dumpList() {
 	// . it's suspended so we count this as blocking
 	// . resumeMerge() will call getNextList() again, not dumpList() so
 	//   don't advance m_startKey
-	if (m_isSuspended) {
-		m_isReadyToSave = true;
+	if(m_isHalted) {
 		return false;
 	}
 
@@ -582,7 +562,7 @@ bool RdbMerge::dumpList() {
 
 void RdbMerge::doneMerging() {
 	// save this
-	int32_t saved = g_errno;
+	int32_t saved_errno = g_errno;
 
 	// let RdbDump free its m_verifyBuf buffer if it existed
 	m_dump.reset();
@@ -603,11 +583,10 @@ void RdbMerge::doneMerging() {
 	// . turn these off before calling incorporateMerge() since it
 	//   will call attemptMerge() on all the other dbs
 	m_isMerging     = false;
-	m_isSuspended   = false;
 
 	// if collection rec was deleted while merging files for it
 	// then the rdbbase should be NULL i guess.
-	if (saved == ENOCOLLREC) {
+	if (saved_errno == ENOCOLLREC) {
 		return;
 	}
 

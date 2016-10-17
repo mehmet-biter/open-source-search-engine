@@ -113,8 +113,7 @@ void Rdb::addBase ( collnum_t collnum , RdbBase *base ) {
 	      (PTRTYPE)base);
 }
 
-bool Rdb::init ( const char     *dir                  ,
-		  const char    *dbname               ,
+bool Rdb::init(const char *dbname,
 		  int32_t           fixedDataSize        ,
 		  int32_t           minToMerge           ,
 		  int32_t           maxTreeMem           ,
@@ -125,9 +124,6 @@ bool Rdb::init ( const char     *dir                  ,
 		 bool			useIndexFile ) {
 	// reset all
 	reset();
-
-	// sanity
-	if ( ! dir ) { g_process.shutdownAbort(true); }
 
 	// statsdb
 	m_isCollectionLess = isCollectionLess;
@@ -218,7 +214,7 @@ bool Rdb::init ( const char     *dir                  ,
 
 	sprintf(m_memName,"mem-%s",m_dbname);
 
-	if ( fixedDataSize != 0 && ! m_mem.init ( this , dataMem , m_ks , m_memName ) ) {
+	if ( fixedDataSize != 0 && ! m_mem.init ( this, dataMem, m_memName ) ) {
 		log( LOG_ERROR, "db: Failed to initialize memory: %s.", mstrerror( g_errno ) );
 		return false;
 	}
@@ -659,7 +655,7 @@ bool Rdb::close ( void *state , void (* callback)(void *state ), bool urgent , b
 	m_isSaving = true;
 	// suspend any merge permanently (not just for this rdb), we're exiting
 	if ( m_isReallyClosing ) {
-		g_merge.suspendMerge();
+		g_merge.haltMerge();
 	}
 	// . allow dumps to complete unless we're urgent
 	// . if we're urgent, we'll end up with a half dumped file, which
@@ -677,12 +673,12 @@ bool Rdb::close ( void *state , void (* callback)(void *state ), bool urgent , b
 	// if a write thread is outstanding, and we exit now, we can end up
 	// freeing the buffer it is writing and it will core... and things
 	// won't be in sync with the map when it is saved below...
-	if ( m_isReallyClosing && g_merge.isMerging() && 
+	if ( m_isReallyClosing &&
 	     // if we cored, we are urgent and need to make sure we save even
 	     // if we are merging this rdb...
 	     ! m_urgent &&
 	     g_merge.getRdbId() == m_rdbId &&
-	     ( g_merge.getNumThreads() || g_merge.isDumping() ) ) {
+	     g_merge.isMerging() ) {
 		// do not spam this message
 		int64_t now = gettimeofdayInMilliseconds();
 		if ( now - m_lastTime >= 500 ) {
@@ -1348,7 +1344,10 @@ void Rdb::doneDumping ( ) {
 	}
 
 	for (collnum_t collnum = 0; collnum < getNumBases(); collnum++) {
-		getBase(collnum)->generateGlobalIndex();
+		RdbBase *base = getBase(collnum);
+		if (base) {
+			base->generateGlobalIndex();
+		}
 	}
 
 	// . tell RdbDump it is done
@@ -1410,7 +1409,7 @@ void attemptMergeAllCallback ( int fd , void *state ) {
 	attemptMergeAll();
 }
 
-// called by main.cpp
+
 // . TODO: if rdbbase::attemptMerge() needs to launch a merge but can't
 //   then do NOT remove from linked list. maybe set a flag like 'needsMerge'
 void attemptMergeAll() {
@@ -1421,75 +1420,45 @@ void attemptMergeAll() {
 		return;
 	}
 
-	int32_t niceness = MAX_NICENESS;
+	const int32_t niceness = MAX_NICENESS;
+	const bool forceMergeAll = false;
 	static collnum_t s_lastCollnum = 0;
-	int32_t count = 0;
 
-	for(;;) {
-		// if a collection got deleted, reset this to 0
-		if ( s_lastCollnum >= g_collectiondb.getNumRecs() ) {
+	// limit to 1000 checks to save the cpu since we call this once every 2 seconds.
+	for(int loop_count=0; loop_count<1000 && loop_count<g_collectiondb.getNumRecs(); loop_count++) {
+		if(s_lastCollnum >= g_collectiondb.getNumRecs())
 			s_lastCollnum = 0;
-			// and return so we don't spin 1000 times over a single coll.
-			return;
-		}
-
-		// limit to 1000 checks to save the cpu since we call this once
-		// every 2 seconds.
-		if ( ++count >= 1000 ) return;
 
 		CollectionRec *cr = g_collectiondb.getRec(s_lastCollnum);
-		if ( ! cr ) {
-			s_lastCollnum++;
+		s_lastCollnum++;
+		if(!cr)
 			continue;
-		}
 
-		bool force = false;
-		RdbBase *base ;
 		// args = niceness, forceMergeAll, doLog, minToMergeOverride
 		// if RdbBase::attemptMerge() returns true that means it
 		// launched a merge and it will call attemptMergeAll2() when
 		// the merge completes.
-		base = cr->getBasePtr(RDB_POSDB);
-		if ( base && base->attemptMerge(niceness,force,true) )
-			return;
-		base = cr->getBasePtr(RDB_TITLEDB);
-		if ( base && base->attemptMerge(niceness,force,true) )
-			return;
-		base = cr->getBasePtr(RDB_TAGDB);
-		if ( base && base->attemptMerge(niceness,force,true) )
-			return;
-		base = cr->getBasePtr(RDB_LINKDB);
-		if ( base && base->attemptMerge(niceness,force,true) )
-			return;
-		base = cr->getBasePtr(RDB_SPIDERDB);
-		if ( base && base->attemptMerge(niceness,force,true) )
-			return;
-		base = cr->getBasePtr(RDB_CLUSTERDB);
-		if ( base && base->attemptMerge(niceness,force,true) )
-			return;
-
-		// also try to merge on rdbs being rebuilt
-		base = cr->getBasePtr(RDB2_POSDB2);
-		if ( base && base->attemptMerge(niceness,force,true) )
-			return;
-		base = cr->getBasePtr(RDB2_TITLEDB2);
-		if ( base && base->attemptMerge(niceness,force,true) )
-			return;
-		base = cr->getBasePtr(RDB2_TAGDB2);
-		if ( base && base->attemptMerge(niceness,force,true) )
-			return;
-		base = cr->getBasePtr(RDB2_LINKDB2);
-		if ( base && base->attemptMerge(niceness,force,true) )
-			return;
-		base = cr->getBasePtr(RDB2_SPIDERDB2);
-		if ( base && base->attemptMerge(niceness,force,true) )
-			return;
-		base = cr->getBasePtr(RDB2_CLUSTERDB2);
-		if ( base && base->attemptMerge(niceness,force,true) )
-			return;
-
-		// try next collection
-		s_lastCollnum++;
+		static const rdbid_t rdbid[] = {
+			RDB_POSDB,
+			RDB_TITLEDB,
+			RDB_TAGDB,
+			RDB_LINKDB,
+			RDB_SPIDERDB,
+			RDB_CLUSTERDB,
+			// also try to merge on rdbs being rebuilt
+			RDB2_POSDB2,
+			RDB2_TITLEDB2,
+			RDB2_TAGDB2,
+			RDB2_LINKDB2,
+			RDB2_SPIDERDB2,
+			RDB2_CLUSTERDB2
+		};
+		
+		for(unsigned i=0; i<sizeof(rdbid)/sizeof(rdbid[0]); i++) {
+			RdbBase *base = cr->getBasePtr(rdbid[i]);
+			if(base && base->attemptMerge(niceness,forceMergeAll))
+				return;
+		}
 	}
 }
 
@@ -1561,7 +1530,7 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list, int32_t niceness ) {
 	// . if we don't have enough room to store list, initiate a dump and
 	//   return g_errno of ETRYAGAIN
 	// . otherwise, we're guaranteed to have room for this list
-	if ( ! hasRoom(list,niceness) ) { 
+	if ( ! hasRoom(list) ) {
 		// stop it
 		m_inAddList = false;
 		// if tree is empty, list will never fit!!!
@@ -1708,11 +1677,43 @@ bool Rdb::needsDump ( ) const {
 	return ( m_tree.getNumNegativeKeys() > 50000 );
 }
 
-bool Rdb::hasRoom ( RdbList *list , int32_t niceness ) {
+bool Rdb::hasRoom(int32_t totalRecs, int32_t totalDataSize) {
+	logTrace(g_conf.m_logTraceRdb, "BEGIN %s: numRecs=%" PRId32" dataSize=%" PRId32" availMem=%" PRId32,
+	         m_dbname, totalRecs, totalDataSize, m_mem.getAvailMem());
+
+	// nodes
+	if (m_useTree) {
+		if (m_tree.getNumAvailNodes() < totalRecs) {
+			logTrace(g_conf.m_logTraceRdb, "END %s: Insufficient tree nodes. Returning false", m_dbname);
+			return false;
+		}
+	} else {
+		if (!m_buckets.hasRoom(totalRecs)) {
+			logTrace(g_conf.m_logTraceRdb, "END %s: Insufficient buckets. Returning false", m_dbname);
+			return false;
+		}
+	}
+
+	// memory (only use for data)
+	bool result = (m_mem.getAvailMem() >= totalDataSize);
+	logTrace(g_conf.m_logTraceRdb, "END %s: Memory check. Returning %s", m_dbname, result ? "true" : "false");
+	return result;
+}
+
+
+bool Rdb::hasRoom(RdbList *list) {
 	// how many nodes will tree need?
 	int32_t numNodes = list->getNumRecs( );
-	if ( !m_useTree && !m_buckets.hasRoom(numNodes)) {
-		return false;
+
+	// does tree have room for these nodes?
+	if (m_useTree) {
+		if (m_tree.getNumAvailNodes() < numNodes) {
+			return false;
+		}
+	} else {
+		if (!m_buckets.hasRoom(numNodes)) {
+			return false;
+		}
 	}
 
 	// how many nodes will tree need?
@@ -1725,9 +1726,6 @@ bool Rdb::hasRoom ( RdbList *list , int32_t niceness ) {
 	// how much mem will the data use?
 	int64_t dataSpace = (int64_t)list->getListSize() - ((int64_t)numNodes * overhead);
 
-	// does tree have room for these nodes?
-	if ( m_useTree && m_tree.getNumAvailNodes() < numNodes ) return false;
-
 	// if we are doledb, we are a tree-only rdb, so try to reclaim
 	// memory from deleted nodes. works by condesing the used memory.
 	if ( m_rdbId == RDB_DOLEDB && 
@@ -1737,7 +1735,7 @@ bool Rdb::hasRoom ( RdbList *list , int32_t niceness ) {
 	     // and last time we tried this, if any, it reclaimed 1MB+
 	     (m_lastReclaim>1024*1024||m_lastReclaim==-1||g_conf.m_forceIt)){
 		// reclaim the memory now. returns -1 and sets g_errno on error
-		int32_t reclaimed = reclaimMemFromDeletedTreeNodes(niceness);
+		int32_t reclaimed = reclaimMemFromDeletedTreeNodes();
 		// reset force flag
 		g_conf.m_forceIt = false;
 		// ignore errors for now
@@ -1851,7 +1849,7 @@ bool Rdb::addRecord(collnum_t collnum, char *key, char *data, int32_t dataSize) 
 			return false;
 		}
 
-		data = (char *) m_mem.dupData ( key, data, dataSize, collnum);
+		data = (char *) m_mem.dupData ( data, dataSize, collnum);
 		if ( ! data ) { 
 			g_errno = ETRYAGAIN; 
 			log(LOG_WARN, "db: Could not allocate %" PRId32" bytes to add data to %s. Retrying.",dataSize,m_dbname);
@@ -2132,7 +2130,7 @@ bool Rdb::addRecord(collnum_t collnum, char *key, char *data, int32_t dataSize) 
 
 // . use the maps and tree to estimate the size of this list w/o hitting disk
 // . used by Indexdb.cpp to get the size of a list for IDF weighting purposes
-int64_t Rdb::getListSize(collnum_t collnum, char *startKey, char *endKey, char *max, int64_t oldTruncationLimit) {
+int64_t Rdb::getListSize(collnum_t collnum, const char *startKey, const char *endKey, char *max, int64_t oldTruncationLimit) const {
 	// pick it
 	if ( collnum < 0 || collnum > getNumBases() || ! getBase(collnum) ) {
 		log(LOG_WARN, "db: %s bad collnum of %i", m_dbname, collnum);
@@ -2141,12 +2139,12 @@ int64_t Rdb::getListSize(collnum_t collnum, char *startKey, char *endKey, char *
 	return getBase(collnum)->getListSize(startKey, endKey, max, oldTruncationLimit);
 }
 
-int64_t Rdb::getNumGlobalRecs() {
+int64_t Rdb::getNumGlobalRecs() const {
 	return (getNumTotalRecs() * g_hostdb.m_numShards);
 }
 
 // . return number of positive records - negative records
-int64_t Rdb::getNumTotalRecs ( bool useCache ) {
+int64_t Rdb::getNumTotalRecs(bool useCache) const {
 
 	// are we statsdb? then we have no associated collections
 	// because we are used globally, by all collections
@@ -2188,7 +2186,7 @@ int64_t Rdb::getNumTotalRecs ( bool useCache ) {
 }
 
 
-int64_t Rdb::getCollNumTotalRecs ( collnum_t collnum ) {
+int64_t Rdb::getCollNumTotalRecs(collnum_t collnum) const {
 
 	if ( collnum < 0 ) return 0;
 
@@ -2205,9 +2203,9 @@ int64_t Rdb::getCollNumTotalRecs ( collnum_t collnum ) {
 
 
 
-// . how much mem is alloced for all of our maps?
+// . how much mem is allocated for all of our maps?
 // . we have one map per file
-int64_t Rdb::getMapMemAlloced () {
+int64_t Rdb::getMapMemAllocated() const {
 	int64_t total = 0;
 	for ( int32_t i = 0 ; i < getNumBases() ; i++ ) {
 		// skip null base if swapped out
@@ -2215,13 +2213,13 @@ int64_t Rdb::getMapMemAlloced () {
 		if ( ! cr ) return true;
 		RdbBase *base = cr->getBasePtr(m_rdbId);		
 		if ( ! base ) continue;
-		total += base->getMapMemAlloced();
+		total += base->getMapMemAllocated();
 	}
 	return total;
 }
 
 // sum of all parts of all big files
-int32_t Rdb::getNumSmallFiles ( ) {
+int32_t Rdb::getNumSmallFiles() const {
 	int32_t total = 0;
 	for ( int32_t i = 0 ; i < getNumBases() ; i++ ) {
 		// skip null base if swapped out
@@ -2235,7 +2233,7 @@ int32_t Rdb::getNumSmallFiles ( ) {
 }
 
 // sum of all parts of all big files
-int32_t Rdb::getNumFiles ( ) {
+int32_t Rdb::getNumFiles() const {
 	int32_t total = 0;
 	for ( int32_t i = 0 ; i < getNumBases() ; i++ ) {
 		CollectionRec *cr = g_collectiondb.getRec(i);
@@ -2248,7 +2246,7 @@ int32_t Rdb::getNumFiles ( ) {
 	return total;
 }
 
-int64_t Rdb::getDiskSpaceUsed ( ) {
+int64_t Rdb::getDiskSpaceUsed() const {
 	int64_t total = 0;
 	for ( int32_t i = 0 ; i < getNumBases() ; i++ ) {
 		CollectionRec *cr = g_collectiondb.getRec(i);
@@ -2466,9 +2464,9 @@ int32_t Rdb::getTreeMemOccupied() const {
 	 return m_buckets.getMemOccupied();
 }
 
-int32_t Rdb::getTreeMemAlloced () const {
-	 if(m_useTree) return m_tree.getMemAlloced(); 
-	 return m_buckets.getMemAlloced();
+int32_t Rdb::getTreeMemAllocated () const {
+	 if(m_useTree) return m_tree.getMemAllocated(); 
+	 return m_buckets.getMemAllocated();
 }
 
 void Rdb::disableWrites () {
@@ -2498,7 +2496,7 @@ void Rdb::cleanTree() {
 // if we are doledb, we are a tree-only rdb, so try to reclaim
 // memory from deleted nodes. works by condensing the used memory.
 // returns how much we reclaimed.
-int32_t Rdb::reclaimMemFromDeletedTreeNodes( int32_t niceness ) {
+int32_t Rdb::reclaimMemFromDeletedTreeNodes() {
 
 	log("rdb: reclaiming tree mem for doledb");
 

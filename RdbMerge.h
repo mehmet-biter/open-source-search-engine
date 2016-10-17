@@ -37,34 +37,26 @@ public:
 	RdbMerge();
 	~RdbMerge();
 
-	// . selects the files to merge
-	// . uses keyMasks and files from the passed Rdb class
-	// . filter out keys where key & m_keyMask != m_maskValue
 	// . merge to a new file
 	// . new file name is stored in m_filename so Rdb can look at it
 	// . calls rdb->incorporateMerge() when done with merge or had error
-	// . "maxBufSize" is size of list to get then write (read/write buf)
 	bool merge(rdbid_t rdbId,
 	           collnum_t collnum,
-	           BigFile *target,
+	           BigFile *targetFile,
 	           RdbMap *targetMap,
 	           RdbIndex *targetIndex,
 	           int32_t startFileNum,
 	           int32_t numFiles,
 	           int32_t niceness);
 
-	int32_t getNumThreads() const { return m_numThreads; }
+	bool isHalted() const { return m_isHalted; }
 
 	bool isMerging() const { return m_isMerging; }
-	void setMerging(bool merging) { m_isMerging = merging; }
-
-	bool isSuspended() const { return m_isSuspended; }
-	bool isDumping() const { return m_dump.isDumping(); }
 
 	rdbid_t getRdbId() const { return m_rdbId; }
 
-	// suspend the merging until resumeMerge() is called
-	void suspendMerge();
+	// stop further actions
+	void haltMerge();
 
 private:
 	static void unlinkPartWrapper(void *state);
@@ -91,13 +83,15 @@ private:
 	// set to true when m_startKey wraps back to 0
 	bool m_doneMerging;
 
+	bool m_getListOutstanding;
+
 	int32_t m_numThreads;
 
 	// . we get the units from the master and the mergees from the units
 	int32_t m_startFileNum;
 	int32_t m_numFiles;
 	int32_t m_fixedDataSize;
-	BigFile *m_target;
+	BigFile *m_targetFile;
 	RdbMap *m_targetMap;
 	RdbIndex *m_targetIndex;
 
@@ -105,8 +99,7 @@ private:
 	char m_endKey[MAX_KEY_BYTES];
 
 	bool m_isMerging;
-	bool m_isSuspended;
-	bool m_isReadyToSave;
+	bool m_isHalted;
 
 	// for writing to target file
 	RdbDump m_dump;

@@ -1,8 +1,5 @@
 // Copyright 2007, Gigablast Inc.
 
-#undef _XOPEN_SOURCE
-#define _XOPEN_SOURCE 500
-
 #include "gb-include.h"
 
 #include "Repair.h"
@@ -240,7 +237,7 @@ void repairWrapper ( int fd , void *state ) {
 	// we can only enter repairMode 2 once all "writing" has stopped
 	if ( g_repairMode == 1 ) {
 		// wait for all merging to stop just to be on the safe side
-		if ( g_merge.isMerging () ) return;
+		if ( g_merge.isMerging() ) return;
 		// this is >= 0 is correct, -1 means no outstanding spiders
 		if ( g_spiderLoop.m_maxUsed >= 0 ) return;
 		// wait for ny outstanding unlinks or renames to finish
@@ -365,7 +362,7 @@ void repairWrapper ( int fd , void *state ) {
 		if ( ! g_repair.dumpsCompleted() ) return;
 		//}
 		// wait for all merging to stop just to be on the safe side
-		if ( g_merge.isMerging () ) return;
+		if ( g_merge.isMerging() ) return;
 		// wait for ny outstanding unlinks or renames to finish
 		if ( g_unlinkRenameThreads > 0 ) return;
 		// note it

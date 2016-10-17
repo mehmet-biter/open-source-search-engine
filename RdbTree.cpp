@@ -1,7 +1,3 @@
-// JAB: this is required for pwrite() in this module
-#undef _XOPEN_SOURCE
-#define _XOPEN_SOURCE 500
-
 #include "gb-include.h"
 
 #include "RdbTree.h"
@@ -25,7 +21,7 @@ RdbTree::RdbTree () {
 	m_headNode      = -1;
 	m_numNodes      =  0;
 	m_numUsedNodes  =  0;
-	m_memAlloced    =  0;
+	m_memAllocated  =  0;
 	m_memOccupied   =  0;
 	m_nextNode      =  0;
 	m_minUnusedNode =  0; 
@@ -164,7 +160,7 @@ void RdbTree::reset ( ) {
 	m_headNode      = -1;
 	m_numNodes      =  0;
 	m_numUsedNodes  =  0;
-	m_memAlloced    =  0;
+	m_memAllocated  =  0;
 	m_memOccupied   =  0;
 	m_nextNode      =  0;
 	m_minUnusedNode =  0; 
@@ -212,7 +208,7 @@ int32_t RdbTree::clear ( ) {
 		// free the data being pointed to
 		if ( m_ownData ) mfree ( m_data[i] , dataSize ,m_allocName);
 		// adjust our reported memory usage
-		m_memAlloced  -= dataSize;
+		m_memAllocated -= dataSize;
 		m_memOccupied -= dataSize;
 	}
 	// reset all these
@@ -459,8 +455,8 @@ int32_t RdbTree::addNode ( collnum_t collnum , const char *key , char *data , in
 	//     (*key & 0x02) ) {
 	//	g_process.shutdownAbort(true); }
 	// commented out because is90PercentFull checks m_memOccupied and
-	// we can breech m_memAlloced w/o breeching 90% of m_memOccupied
-	// if ( m_memAlloced + dataSize > m_maxMem) {
+	// we can breech m_memAllocated w/o breeching 90% of m_memOccupied
+	// if ( m_memAllocated + dataSize > m_maxMem) {
 	// . if no more mem, error out
 	// . we now use RdbMem class so this isn't necessary
 	//if ( m_memOccupied + dataSize > m_maxMem){g_errno=ENOMEM; return -1;}
@@ -534,11 +530,11 @@ int32_t RdbTree::addNode ( collnum_t collnum , const char *key , char *data , in
 		m_data [ i ] = data;
 		// ack used and occupied mem
 		if ( m_fixedDataSize >= 0 ) {
-			m_memAlloced  += m_fixedDataSize;
+			m_memAllocated += m_fixedDataSize;
 			m_memOccupied += m_fixedDataSize;
 		}
 		else {
-			m_memAlloced  += dataSize ; 
+			m_memAllocated += dataSize ; 
 			m_memOccupied += dataSize ;
 		}
 		// we may have a variable size of data as well
@@ -653,8 +649,8 @@ int32_t RdbTree::addNode ( collnum_t collnum , const char *key , char *data , in
 	// decrease mem occupied and increase by new size
 	m_memOccupied -= oldDataSize;
 	m_memOccupied += dataSize;
-	m_memAlloced  -= oldDataSize;
-	m_memAlloced  += dataSize;
+	m_memAllocated -= oldDataSize;
+	m_memAllocated += dataSize;
 	// otherwise set the data
 	m_data [ i ] = data;
 	// set the size if we need to as well
@@ -740,7 +736,7 @@ void RdbTree::deleteNode(int32_t i, bool freeData) {
 		int32_t dataSize = m_fixedDataSize;
 		if ( dataSize == -1 ) dataSize = m_sizes[i];
 		if ( m_ownData ) mfree ( m_data [i] , dataSize ,m_allocName);
-		m_memAlloced  -= dataSize;
+		m_memAllocated -= dataSize;
 		m_memOccupied -= dataSize;
 	}
 
@@ -1084,7 +1080,7 @@ bool RdbTree::fixTree ( ) {
 	// "clear" the tree as far as addNode() is concerned
 	m_headNode      = -1;
 	m_numUsedNodes  =  0;
-	m_memAlloced    =  0;
+	m_memAllocated  =  0;
 	m_memOccupied   =  0;
 	m_nextNode      =  0;
 	m_minUnusedNode =  0; 
@@ -1470,12 +1466,12 @@ bool RdbTree::growTree(int32_t nn) {
 	m_depth   = tp;
 
 	// adjust memory usage
-	m_memAlloced -= m_overhead * on;
-	m_memAlloced += m_overhead * nn;
+	m_memAllocated -= m_overhead * on;
+	m_memAllocated += m_overhead * nn;
 	// bitch an exit if too much
-	if ( m_memAlloced > m_maxMem ) {
+	if ( m_memAllocated > m_maxMem ) {
 		log( LOG_ERROR, "db: Trying to grow tree for %s to %" PRId32", but max is %" PRId32". Consider changing gb.conf.",
-		     m_dbname, m_memAlloced, m_maxMem );
+		     m_dbname, m_memAllocated, m_maxMem );
 		return false;
 	}
 	// base mem is mem that cannot be freed
@@ -2677,7 +2673,7 @@ bool RdbTree::fastLoad ( BigFile *f , RdbMem *stack ) {
 	while ( start < minUnusedNode ) {
 		// . returns next place to start scan
 		// . incs m_numPositive/NegativeKeys and m_numUsedNodes 
-		// . incs m_memAlloced and m_memOccupied
+		// . incs m_memAllocated and m_memOccupied
 		int32_t bytesRead =  fastLoadBlock ( f, start, minUnusedNode, stack, offset ) ;
 		if ( bytesRead < 0 ) {
 			f->close();
@@ -2832,8 +2828,7 @@ int32_t RdbTree::fastLoadBlock ( BigFile *f, int32_t start, int32_t totalNodes, 
 			if ( m_parents[i] != -2 ) bufSize += m_fixedDataSize;
 	}
 	// get space
-	char *dummy = NULL;
-	char *buf = (char *) stack->allocData ( dummy , bufSize , 0 );
+	char *buf = (char *) stack->allocData ( bufSize , 0 );
 	if ( ! buf ) {
 	        log( LOG_ERROR, "db: Failed to allocate %" PRId32" bytes to read %s. Increase tree size for it in gb.conf.",
 	             bufSize,f->getFilename());
@@ -2868,7 +2863,7 @@ int32_t RdbTree::fastLoadBlock ( BigFile *f, int32_t start, int32_t totalNodes, 
 		m_data[i]  = buf;
 		buf       += size;
 		// update these
-		m_memAlloced  += size;
+		m_memAllocated  += size;
 		m_memOccupied += size;
 	}
 	return offset - oldOffset ;
