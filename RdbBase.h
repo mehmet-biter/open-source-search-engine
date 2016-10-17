@@ -183,7 +183,7 @@ class RdbBase {
 	// PageRepair indirectly calls this to move the map and data of this
 	// rdb into the trash subdir after renaming them, because they will
 	// be replaced by the rebuilt files.
-	bool moveToTrash ( char *dstDir ) ;
+	bool moveToTrash(const char *dstDir);
 	// PageRepair indirectly calls this to rename the map and data files
 	// of a secondary/rebuilt rdb to the filenames of the primary rdb.
 	// after that, RdbBase::setFiles() is called to reload them into

@@ -258,7 +258,7 @@ void RdbBase::specialInjectFileInit(const char *dir,
 // . move all files into trash subdir
 // . change name
 // . this is part of PageRepair's repair algorithm. all this stuff blocks.
-bool RdbBase::moveToTrash ( char *dstDir ) {
+bool RdbBase::moveToTrash(const char *dstDir) {
 	// loop over all files
 	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) {
 		// . rename the map file
