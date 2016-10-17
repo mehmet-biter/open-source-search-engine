@@ -133,9 +133,6 @@ public:
 	
 	bool isInitialized() const { return m_initialized; }
 
-	// get the directory name where this rdb stores it's files
-	const char *getDir() const { return g_hostdb.m_dir; }
-
 	int32_t getFixedDataSize() const { return m_fixedDataSize; }
 
 	bool useHalfKeys() const { return m_useHalfKeys; }
@@ -298,6 +295,9 @@ public:
 	static void doneDumpingCollWrapper(void *state);
 
 private:
+	// get the directory name where this rdb stores its files
+	const char *getDir() const { return g_hostdb.m_dir; }
+
 	int32_t      m_fixedDataSize;
 
 	char      m_dbname [32];
