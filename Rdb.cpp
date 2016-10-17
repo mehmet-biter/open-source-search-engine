@@ -181,7 +181,7 @@ bool Rdb::init(const char *dbname,
 
 	if(m_useTree) { 
 		// statsdb is collectionless really so pass on to tree
-		int32_t rdbId = rdbId != RDB_STATSDB ? rdbId : -1;
+		int32_t rdbId = m_rdbId != RDB_STATSDB ? m_rdbId : -1;
 		sprintf(m_treeAllocName,"tree-%s",m_dbname);
 		if (!m_tree.set(fixedDataSize, maxTreeNodes, maxTreeMem, false, m_treeAllocName, false, m_dbname, m_ks, rdbId)) {
 			log( LOG_ERROR, "db: Failed to set tree." );
