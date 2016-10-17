@@ -1071,7 +1071,7 @@ void RdbMap::printMap () {
 }
 
 
-int64_t RdbMap::getMemAlloced() const {
+int64_t RdbMap::getMemAllocated() const {
 	// . how much space per segment?
 	// . each page has a key and a 2 byte offset
 	int64_t space = PAGES_PER_SEGMENT * (m_ks + 2);

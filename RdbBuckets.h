@@ -4,7 +4,7 @@
 // cache friendly than RdbTree.  Optimized for batched adds, amortized O(1)
 // add operation, O(log n) for retrival, ranged getList for k keys is 
 // O(log(n) + k) where as RdbTree is O(k * log(n)).
-// Memory is alloced and used on a on demand basis rather than all up
+// Memory is allocated and used on a on demand basis rather than all up
 // front as with RdbTree, so memory usage is much lower most of the time.
 
 // Collections are handled as a linked list, each RdbBuckets has a nextColl
@@ -164,7 +164,7 @@ public:
 
 	void setNeedsSave(bool s);
 
-	int32_t getMemAlloced() const;
+	int32_t getMemAllocated() const;
 	int32_t getMemAvailable() const;
 	bool is90PercentFull() const;
 	bool needsDump() const;

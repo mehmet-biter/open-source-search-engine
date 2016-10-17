@@ -41,7 +41,7 @@ void RdbBucket::reset() {
 	m_endKey = NULL;
 }
 
-int32_t RdbBuckets::getMemAlloced() const {
+int32_t RdbBuckets::getMemAllocated() const {
 	return (sizeof(RdbBuckets) + m_masterSize + m_dataMemOccupied);
 }
 
@@ -126,7 +126,7 @@ bool RdbBucket::sort() {
 	//sort the unsorted portion
 	// . use merge sort because it is stable, and we need to always keep
 	// . the identical keys that were added last
-	// . now we pass in a buffer to merge into, otherwise one is malloced,
+	// . now we pass in a buffer to merge into, otherwise one is mallocated,
 	// . which can fail.  It falls back on qsort which is not stable.
 	if (!m_parent->getSortBuf()) {
 		gbshutdownAbort(true);

@@ -110,7 +110,7 @@ class RdbBase {
 	float getPercentNegativeRecsOnDisk ( int64_t *totalArg ) const;
 
 	// how much mem is alloced for our maps?
-	int64_t getMapMemAlloced() const;
+	int64_t getMapMemAllocated() const;
 
 	int32_t       getNumFiles() const { return m_numFiles; }
 

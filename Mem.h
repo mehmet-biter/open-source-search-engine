@@ -38,8 +38,8 @@ class Mem {
 
 	// this one does not include new/delete mem, only *alloc()/free() mem
 	size_t getUsedMem() const;
-	// the max mem ever alloced
-	size_t getMaxAlloced() const { return m_maxAlloced; }
+	// the max mem ever allocated
+	size_t getMaxAllocated() const { return m_maxAllocated; }
 	size_t getMaxAlloc  () const { return m_maxAlloc; }
 	const char *getMaxAllocBy() const { return m_maxAllocBy; }
 	// the max mem we can use!
@@ -72,7 +72,7 @@ class Mem {
 				    char *lightblue, 
 				    char *darkblue);
 
-	size_t m_maxAlloced; // at any one time
+	size_t m_maxAllocated; // at any one time
 	size_t m_maxAlloc; // the biggest single alloc ever done
 	const char *m_maxAllocBy; // the biggest single alloc ever done
 

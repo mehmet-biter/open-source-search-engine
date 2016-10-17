@@ -2151,13 +2151,13 @@ int64_t RdbBase::getNumTotalRecs() const {
 	return numPositiveRecs - numNegativeRecs;
 }
 
-// . how much mem is alloced for all of our maps?
+// . how much mem is allocated for all of our maps?
 // . we have one map per file
-int64_t RdbBase::getMapMemAlloced() const {
-	int64_t alloced = 0;
+int64_t RdbBase::getMapMemAllocated() const {
+	int64_t allocated = 0;
 	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) 
-		alloced += m_fileInfo[i].m_map->getMemAlloced();
-	return alloced;
+		allocated += m_fileInfo[i].m_map->getMemAllocated();
+	return allocated;
 }
 
 // sum of all parts of all big files

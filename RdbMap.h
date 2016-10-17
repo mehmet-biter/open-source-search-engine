@@ -274,7 +274,7 @@ class RdbMap {
 	bool chopHead (int32_t fileSize );
 
 	// how much mem is being used by this map?
-	int64_t getMemAlloced() const;
+	int64_t getMemAllocated() const;
 
 	// . attempts to auto-generate from data file, f
 	// . returns false and sets g_errno on error

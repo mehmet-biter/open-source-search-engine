@@ -236,8 +236,8 @@ class RdbCache {
 		return m_memOccupied ;
 	}
 
-	int32_t getMemAlloced  () const {
-		return m_memAlloced ;
+	int32_t getMemAllocated() const {
+		return m_memAllocated;
 	}
 
 	int32_t getMaxMem      () const { return m_maxMem; }
@@ -305,9 +305,9 @@ private:
 	int32_t m_memOccupied;
 
 	// total memory allocated including dataSizes of our records
-	int32_t m_memAlloced;
+	int32_t m_memAllocated;
 
-	// don't let m_memAlloced exceed this
+	// don't let m_memAllocated exceed this
 	int32_t  m_maxMem;
 
 	// . data is stored in m_bufs, an array of buffers

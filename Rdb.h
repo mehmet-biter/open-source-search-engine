@@ -160,7 +160,7 @@ public:
 	int32_t       getNumUsedNodes() const;
 	int32_t       getMaxTreeMem() const;
 	int32_t       getTreeMemOccupied() const;
-	int32_t       getTreeMemAlloced() const;
+	int32_t       getTreeMemAllocated() const;
 	int32_t       getNumNegativeKeys() const;
 
 	void disableWrites();
@@ -174,8 +174,8 @@ public:
 	void addBase ( collnum_t collnum , class RdbBase *base ) ;
 
 
-	// how much mem is alloced for our maps?
-	int64_t getMapMemAlloced ();
+	// how much mem is allocated for our maps?
+	int64_t getMapMemAllocated();
 
 	int32_t       getNumFiles ( ) ;
 

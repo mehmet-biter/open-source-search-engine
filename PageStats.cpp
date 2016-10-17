@@ -125,7 +125,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 			      TABLE_STYLE ,
 			      g_mem.getUsedMem() ,
 			      g_mem.getMaxMem() ,
-			      g_mem.getMaxAlloced()
+			      g_mem.getMaxAllocated()
 			      );
 		p.safePrintf (
 			      "<tr class=poo><td>max single alloc</td>"
@@ -190,7 +190,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 			      "\t</memoryStats>\n"
 			      , g_mem.getUsedMem()
 			      , g_mem.getMaxMem() 
-			      , g_mem.getMaxAlloced() 
+			      , g_mem.getMaxAllocated() 
 			      , g_mem.getMaxAlloc()
 			      , g_mem.getMaxAllocBy() 
 			      , g_mem.getNumAllocated() 
@@ -208,7 +208,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 			      "\t},\n"
 			      , g_mem.getUsedMem()
 			      , g_mem.getMaxMem() 
-			      , g_mem.getMaxAlloced() 
+			      , g_mem.getMaxAllocated() 
 			      , g_mem.getMaxAlloc()
 			      , g_mem.getMaxAllocBy() 
 			      , g_mem.getNumAllocated() 
@@ -1854,7 +1854,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 	p.safePrintf("<tr class=poo><td><b>mem allocated</b></td>");
 	total = 0LL;
 	for ( int32_t i = 0 ; i < nr ; i++ ) {
-		int64_t val = rdbs[i]->getTreeMemAlloced();
+		int64_t val = rdbs[i]->getTreeMemAllocated();
 		total += val;
 		printNumAbbr ( p , val );
 		//p.safePrintf("<td>%" PRIu64"</td>",val);
@@ -1899,7 +1899,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 	p.safePrintf("<tr class=poo><td><b>map mem</b></td>");
 	total = 0LL;
 	for ( int32_t i = 0 ; i < nr ; i++ ) {
-		int64_t val = rdbs[i]->getMapMemAlloced();
+		int64_t val = rdbs[i]->getMapMemAllocated();
 		total += val;
 		p.safePrintf("<td>%" PRIu64"</td>",val);
 	}
@@ -2121,7 +2121,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 			p.safePrintf("<td>--</td>");
 			continue;
 		}
-		int64_t val = rpc->getMemAlloced();
+		int64_t val = rpc->getMemAllocated();
 		total += val;
 		printNumAbbr ( p , val );
 	}

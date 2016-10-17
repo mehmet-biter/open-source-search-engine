@@ -2207,9 +2207,9 @@ int64_t Rdb::getCollNumTotalRecs ( collnum_t collnum ) {
 
 
 
-// . how much mem is alloced for all of our maps?
+// . how much mem is allocated for all of our maps?
 // . we have one map per file
-int64_t Rdb::getMapMemAlloced () {
+int64_t Rdb::getMapMemAllocated() {
 	int64_t total = 0;
 	for ( int32_t i = 0 ; i < getNumBases() ; i++ ) {
 		// skip null base if swapped out
@@ -2217,7 +2217,7 @@ int64_t Rdb::getMapMemAlloced () {
 		if ( ! cr ) return true;
 		RdbBase *base = cr->getBasePtr(m_rdbId);		
 		if ( ! base ) continue;
-		total += base->getMapMemAlloced();
+		total += base->getMapMemAllocated();
 	}
 	return total;
 }
@@ -2468,9 +2468,9 @@ int32_t Rdb::getTreeMemOccupied() const {
 	 return m_buckets.getMemOccupied();
 }
 
-int32_t Rdb::getTreeMemAlloced () const {
-	 if(m_useTree) return m_tree.getMemAlloced(); 
-	 return m_buckets.getMemAlloced();
+int32_t Rdb::getTreeMemAllocated () const {
+	 if(m_useTree) return m_tree.getMemAllocated(); 
+	 return m_buckets.getMemAllocated();
 }
 
 void Rdb::disableWrites () {
