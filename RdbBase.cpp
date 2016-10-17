@@ -78,7 +78,6 @@ void RdbBase::reset ( ) {
 	}
 
 	m_numFiles  = 0;
-	m_fileInfo[m_numFiles].m_file = NULL;
 	m_isMerging = false;
 	m_hasMergeFile = false;
 	m_isUnlinking  = false;
@@ -931,8 +930,6 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	// debug note
 	//log("rdb: numFiles=%" PRId32" for collnum=%" PRId32" db=%s",
 	//    m_numFiles,(int32_t)m_collnum,m_dbname);
-	// keep it NULL terminated
-	m_fileInfo[m_numFiles].m_file = NULL;
 	// if we added a merge file, mark it
 	if ( mergeNum >= 0 ) {
 		m_hasMergeFile      = true;
@@ -988,8 +985,10 @@ bool RdbBase::incorporateMerge ( ) {
 	int32_t a = m_mergeStartFileNum;
 	int32_t b = m_mergeStartFileNum + m_numFilesToMerge;
 
+	if(b>m_numFiles) //definesive checks
+		b = m_numFiles;
 	// shouldn't be called if no files merged
-	if ( a == b ) {
+	if ( a >= b ) {
 		// unless resuming after a merge completed and we exited
 		// but forgot to finish renaming the final file!!!!
 		log("merge: renaming final file");
@@ -1096,7 +1095,7 @@ bool RdbBase::incorporateMerge ( ) {
 	}
 
 	// on success unlink the files we merged and free them
-	for ( int32_t i = a ; i < b ; i++ ) {
+	for ( int32_t i = a ; i < b && i < m_numFiles; i++ ) {
 		// incase we are starting with just the
 		// linkdb0001.003.dat file and not the stuff we merged
 		if ( ! m_fileInfo[i].m_file ) {
@@ -1367,8 +1366,6 @@ void RdbBase::buryFiles ( int32_t a , int32_t b ) {
 	// sanity
 	log("rdb: bury files: numFiles now %" PRId32" (b=%" PRId32" a=%" PRId32" collnum=%" PRId32")",
 	    m_numFiles,b,a,(int32_t)m_collnum);
-	// ensure last file is NULL (so BigFile knows the end of m_files)
-	m_fileInfo[m_numFiles].m_file = NULL;
 
 	// regenerate index since things have moved
 	generateGlobalIndex();
@@ -1701,11 +1698,6 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 				    ,mergeFileCount,m_numFiles);
 				//g_process.shutdownAbort(true);
 				break;
-			}
-
-			if ( ! m_fileInfo[i].m_file ) {
-				log(LOG_DEBUG, "merge: File #%" PRId32" is NULL, skipping.",i);
-				continue;
 			}
 
 			// only count files AFTER the file being merged to
