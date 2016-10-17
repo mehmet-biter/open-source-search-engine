@@ -167,7 +167,7 @@ private:
 	Msg39Request *m_msg39req;
 
 	// always use top tree now
-	bool m_allocedTree;
+	bool m_allocatedTree;
 	TopTree    m_toptree;
 
 	//subrange chunking controls / variables
