@@ -114,10 +114,10 @@ public:
 	bool addRecord(collnum_t collnum, char *key, char *data, int32_t dataSize);
 
 	// returns false if no room in tree or m_mem for a list to add
-	bool hasRoom ( RdbList *list , int32_t niceness );
+	bool hasRoom(RdbList *list);
 	bool hasRoom(int32_t numRecs, int32_t dataSize);
 
-	int32_t reclaimMemFromDeletedTreeNodes( int32_t niceness ) ;
+	int32_t reclaimMemFromDeletedTreeNodes();
 	int32_t m_lastReclaim;
 
 	// . returns false on error and sets errno

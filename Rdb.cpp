@@ -1534,7 +1534,7 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list, int32_t niceness ) {
 	// . if we don't have enough room to store list, initiate a dump and
 	//   return g_errno of ETRYAGAIN
 	// . otherwise, we're guaranteed to have room for this list
-	if ( ! hasRoom(list,niceness) ) { 
+	if ( ! hasRoom(list) ) {
 		// stop it
 		m_inAddList = false;
 		// if tree is empty, list will never fit!!!
@@ -1705,7 +1705,7 @@ bool Rdb::hasRoom(int32_t totalRecs, int32_t totalDataSize) {
 }
 
 
-bool Rdb::hasRoom ( RdbList *list , int32_t niceness ) {
+bool Rdb::hasRoom(RdbList *list) {
 	// how many nodes will tree need?
 	int32_t numNodes = list->getNumRecs( );
 
@@ -1739,7 +1739,7 @@ bool Rdb::hasRoom ( RdbList *list , int32_t niceness ) {
 	     // and last time we tried this, if any, it reclaimed 1MB+
 	     (m_lastReclaim>1024*1024||m_lastReclaim==-1||g_conf.m_forceIt)){
 		// reclaim the memory now. returns -1 and sets g_errno on error
-		int32_t reclaimed = reclaimMemFromDeletedTreeNodes(niceness);
+		int32_t reclaimed = reclaimMemFromDeletedTreeNodes();
 		// reset force flag
 		g_conf.m_forceIt = false;
 		// ignore errors for now
@@ -2500,7 +2500,7 @@ void Rdb::cleanTree() {
 // if we are doledb, we are a tree-only rdb, so try to reclaim
 // memory from deleted nodes. works by condensing the used memory.
 // returns how much we reclaimed.
-int32_t Rdb::reclaimMemFromDeletedTreeNodes( int32_t niceness ) {
+int32_t Rdb::reclaimMemFromDeletedTreeNodes() {
 
 	log("rdb: reclaiming tree mem for doledb");
 
