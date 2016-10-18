@@ -239,7 +239,7 @@ void doneSleepingWrapperSL ( int fd , void *state ) {
 	// wait for clock to sync with host #0
 	if ( ! isClockInSync() ) { 
 		// let admin know why we are not spidering
-		static char s_printed = false;
+		static bool s_printed = false;
 		if ( ! s_printed ) {
 			logf(LOG_DEBUG,"spider: NOT SPIDERING until clock "
 			     "is in sync with host #0.");
@@ -1258,7 +1258,7 @@ bool SpiderLoop::spiderUrl9 ( SpiderRequest *sreq ,
 	// spider it.
 	if ( ! isClockInSync() ) { 
 		// let admin know why we are not spidering
-		static char s_printed = false;
+		static bool s_printed = false;
 		if ( ! s_printed ) {
 			logf(LOG_DEBUG,"spider: NOT SPIDERING until clock "
 			     "is in sync with host #0.");
