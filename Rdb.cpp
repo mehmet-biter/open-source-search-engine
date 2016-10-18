@@ -29,7 +29,6 @@ Rdb::Rdb ( ) {
 	m_cacheLastTotal = 0LL;
 
 	//m_numBases = 0;
-	m_inAddList = false;
 	m_collectionlessBase = NULL;
 	m_initialized = false;
 	m_numMergesOut = 0;
@@ -1500,22 +1499,10 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list, int32_t niceness ) {
 		return false;
 	}
 
-	// prevent double entries
-	if ( m_inAddList ) { 
-		// i guess the msg1 handler makes it this far!
-		//log("db: msg1 add in an add.");
-		g_errno = ETRYAGAIN;
-		return false;
-	}
-	// lock it
-	m_inAddList = true;
-
 	// . if we don't have enough room to store list, initiate a dump and
 	//   return g_errno of ETRYAGAIN
 	// . otherwise, we're guaranteed to have room for this list
 	if ( ! hasRoom(list) ) {
-		// stop it
-		m_inAddList = false;
 		// if tree is empty, list will never fit!!!
 		if ( m_useTree && m_tree.getNumUsedNodes() <= 0 ) {
 			g_errno = ELISTTOOBIG;
@@ -1579,16 +1566,10 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list, int32_t niceness ) {
 				g_errno = ETRYAGAIN;
 			}
 
-			// stop it
-			m_inAddList = false;
-
 			// discontinue adding any more of the list
 			return false;
 		}
 	} while ( list->skipCurrentRecord() ); // skip to next record, returns false on end of list
-
-	// stop it
-	m_inAddList = false;
 
 	// if tree is >= 90% full dump it
 	if ( m_dump.isDumping() ) {

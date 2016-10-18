@@ -241,8 +241,6 @@ public:
 
 	bool isUseIndexFile() const { return m_useIndexFile; }
 
-	bool inAddList() const { return m_inAddList; }
-
 	// . you'll lose your data in this class if you call this
 	void reset();
 
@@ -324,8 +322,6 @@ private:
 
 	mutable int32_t m_cacheLastTime;
 	mutable int64_t m_cacheLastTotal;
-
-	bool m_inAddList;
 
 	std::atomic<int32_t> m_numMergesOut;
 
