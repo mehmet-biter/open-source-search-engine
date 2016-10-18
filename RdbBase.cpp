@@ -15,6 +15,7 @@
 #include "Rebalance.h"
 #include "JobScheduler.h"
 #include "Process.h"
+#include "GbMoveFile.h"
 #include "ScopedLock.h"
 #include <sys/stat.h> //mkdir()
 #include <algorithm>
@@ -456,9 +457,8 @@ bool RdbBase::setFiles ( ) {
 	//   (but not necessarily the file)
 	// . we now put a '*' at end of "*.dat*" since we may be reading in
 	//   some headless BigFiles left over froma killed merge
-	const char *filename;
 
-	while ( ( filename = m_dir.getNextFilename ( "*.dat*" ) ) ) {
+	while( const char *filename = m_dir.getNextFilename("*.dat*") ) {
 		// filename must be a certain length
 		int32_t filenameLen = strlen(filename);
 
@@ -626,10 +626,8 @@ bool RdbBase::setFiles ( ) {
 // return the fileNum we added it to in the array
 // reutrn -1 and set g_errno on error
 int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t mergeNum, int32_t endMergeFileId ) {
-	int32_t n = m_numFiles;
-
 	// can't exceed this
-	if ( n >= MAX_RDB_FILES ) {
+	if ( m_numFiles >= MAX_RDB_FILES ) {
 		g_errno = ETOOMANYFILES;
 		log( LOG_LOGIC, "db: Can not have more than %" PRId32" files. File add failed.", ( int32_t ) MAX_RDB_FILES );
 		return -1;
@@ -683,13 +681,11 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 		// move to trash if empty
 		if ( isEmpty ) {
 			// otherwise, move it to the trash
-			SafeBuf cmd;
-			cmd.safePrintf("mv %s/%s %s/trash/",
-				       f->getDir(),
-				       f->getFilename(),
-				       g_hostdb.m_dir);
-			log("rdb: %s",cmd.getBufStart() );
-			gbsystem ( cmd.getBufStart() );
+			SafeBuf src_filename;
+			src_filename.safePrintf("%s/%s", f->getDir(), f->getFilename());
+			SafeBuf dst_filename;
+			dst_filename.safePrintf("%s/trash/%s", g_hostdb.m_dir, f->getFilename());
+			moveFile(src_filename.getBufStart(), dst_filename.getBufStart());
 		}
 
 		// nuke it either way
