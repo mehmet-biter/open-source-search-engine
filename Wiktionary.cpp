@@ -1837,7 +1837,7 @@ bool Wiktionary::compile ( ) {
 			// must match
 			if ( kk != fh64 ) continue;
 			// get a form of the base form, wid64
-			char *data = (char *)m_tmp.getDataFromSlot(j);
+			char *data = (char *)m_tmp.getValueFromSlot(j);
 
 			// must be there
 			int32_t *offPtr = (int32_t *)m_debugMap.getValue(data);
@@ -1876,7 +1876,7 @@ bool Wiktionary::compile ( ) {
 		// need 2+ forms!
 		if ( formCount +stripCount <= 1 ) continue;
 		// base form
-		//int64_t wid = *(int64_t *)m_tmp.getDataFromSlot(i);
+		//int64_t wid = *(int64_t *)m_tmp.getValueFromSlot(i);
 		// remember buf start
 		int32_t bufLen = m_synBuf.length();
 		// remove dups
@@ -1902,7 +1902,7 @@ bool Wiktionary::compile ( ) {
 			// must match
 			if ( kk != fh64 ) continue;
 			// get a form of the base form, wid64
-			char *data = (char *)m_tmp.getDataFromSlot(j);
+			char *data = (char *)m_tmp.getValueFromSlot(j);
 			// get the word id
 			//int64_t wid =*(int64_t *)data;
 			// CRAP! this is a case dependent hash! we need 
@@ -2020,7 +2020,7 @@ bool Wiktionary::integrateUnifiedDict ( ) {
 		// skip empty slots
 		if ( ! ud->m_flags[i] ) continue;
 		// get ptrs
-		int32_t off = *(int32_t *)ud->getDataFromSlot(i);
+		int32_t off = *(int32_t *)ud->getValueFromSlot(i);
 		// refernce
 		char *p = g_speller.m_unifiedBuf + off;
 		// just one lang?
@@ -2038,7 +2038,7 @@ bool Wiktionary::integrateUnifiedDict ( ) {
 		// skip empty slots
 		if ( ! m_langTableTmp.m_flags[i] ) continue;
 		// check it
-		if ( *(uint8_t *)m_langTableTmp.getDataFromSlot(i) ==
+		if ( *(uint8_t *)m_langTableTmp.getValueFromSlot(i) ==
 		     langTranslingual ) 
 			continue;
 		// add it

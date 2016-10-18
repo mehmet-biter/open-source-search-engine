@@ -267,8 +267,6 @@ class HashTableX {
 
 	void *      getValueFromSlot ( int32_t n )       { return m_vals + n * m_ds; }
 	const void *getValueFromSlot ( int32_t n ) const { return m_vals + n * m_ds; }
-	void *      getDataFromSlot  ( int32_t n )       { return m_vals + n * m_ds; }
-	const void *getDataFromSlot  ( int32_t n ) const { return m_vals + n * m_ds; }
 
 	// frees the used memory, etc.
 	void  reset  ( );

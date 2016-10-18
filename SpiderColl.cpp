@@ -3065,7 +3065,7 @@ bool SpiderColl::scanListForWinners ( ) {
 		// so we can kick out a lower priority version of the same url.
 		int32_t winSlot = m_winnerTable.getSlot ( &uh48 );
 		if ( winSlot >= 0 ) {
-			key192_t *oldwk = (key192_t *)m_winnerTable.getDataFromSlot ( winSlot );
+			key192_t *oldwk = (key192_t *)m_winnerTable.getValueFromSlot ( winSlot );
 
 			// get the min hopcount  
 			SpiderRequest *wsreq ;
