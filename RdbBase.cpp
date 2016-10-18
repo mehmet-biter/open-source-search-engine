@@ -15,6 +15,7 @@
 #include "Rebalance.h"
 #include "JobScheduler.h"
 #include "Process.h"
+#include "Sanity.h"
 #include "GbMoveFile.h"
 #include "ScopedLock.h"
 #include <sys/stat.h> //mkdir(), stat()
@@ -617,6 +618,10 @@ bool RdbBase::setFiles ( ) {
 // return the fileNum we added it to in the array
 // reutrn -1 and set g_errno on error
 int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t mergeNum, int32_t endMergeFileId ) {
+	// sanity check
+	if ( fileId2 < 0 && m_rdb->isTitledb() )
+		gbshutdownLogicError();
+
 	// can't exceed this
 	if ( m_numFiles >= MAX_RDB_FILES ) {
 		g_errno = ETOOMANYFILES;
@@ -727,11 +732,6 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 
 	// reinstate the memory limit
 	g_conf.m_maxMem = mm;
-
-	// sanity check
-	if ( fileId2 < 0 && m_rdb->isTitledb() ) {
-		g_process.shutdownAbort(true);
-	}
 
 	// debug help
 	if ( isNew ) {
