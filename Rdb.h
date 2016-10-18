@@ -256,7 +256,6 @@ public:
 	// . load the tree named "saved.dat", keys must be out of order because
 	//   tree is not balanced
 	bool loadTree ( ) ;
-	bool treeFileExists ( ) ;
 
 	// . write out tree to a file with keys in order
 	// . only shift.cpp/reindex.cpp programs set niceness to 0

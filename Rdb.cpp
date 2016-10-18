@@ -187,9 +187,6 @@ bool Rdb::init(const char *dbname,
 			return false;
 		}
 	} else {
-		if(treeFileExists()) {
-			m_tree.set(fixedDataSize, maxTreeNodes, maxTreeMem, false, m_treeAllocName, false, m_dbname, m_ks, m_rdbId);
-		}
 		sprintf(m_treeAllocName,"buckets-%s",m_dbname);
 		if (!m_buckets.set(fixedDataSize, maxTreeMem, m_treeAllocName, m_rdbId, m_dbname, m_ks)) {
 			log( LOG_ERROR, "db: Failed to set buckets." );
@@ -856,14 +853,6 @@ bool Rdb::saveMaps () {
 		}
 	}
 	return true;
-}
-
-bool Rdb::treeFileExists ( ) {
-	char filename[256];
-	sprintf(filename,"%s-saved.dat",m_dbname);
-	BigFile file;
-	file.set ( getDir() , filename , NULL ); // g_conf.m_stripeDir );
-	return file.doesExist() > 0;
 }
 
 
