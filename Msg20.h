@@ -305,7 +305,7 @@ private:
 	// for sending the request
 	Multicast m_mcast;
 	
-	char       m_ownReply;
+	bool	m_ownReply;
 
 	bool     (*m_callback ) ( void *state );
 	void     (*m_callback2) ( void *state );
