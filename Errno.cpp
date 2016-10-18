@@ -14,7 +14,7 @@ static void g_errno_destroy(void *key) {
 }
 
 int* g_errno_location() {
-	static int s_init = false;
+	static bool s_init = false;
 	if (!s_init) {
 		s_init = true;
 		if (pthread_key_create(&s_g_errno_key, g_errno_destroy) != 0) {
