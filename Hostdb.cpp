@@ -1525,7 +1525,7 @@ int32_t Hostdb::getBestHosts2IP ( Host  *h ) {
 	unsigned char *b = (unsigned char *)&local->m_ipShotgun;
 	unsigned char *d = (unsigned char *)&local->m_ip;
 
-	char onSameNetwork = false;
+	bool onSameNetwork = false;
 
 	// if ip "a" in hosts2.conf is NOT INTERNAL (192.168.*) then see
 	// if it matches any ip (top 2 bytes) in hosts.conf
