@@ -18,6 +18,7 @@
 #include "Linkdb.h"
 #include "hash.h"
 #include "Stats.h"
+#include "GbMoveFile.h"
 #include "max_niceness.h"
 #include <sys/stat.h> //mdir()
 
@@ -302,13 +303,11 @@ bool Rdb::updateToRebuildFiles ( Rdb *rdb2 , char *coll ) {
 	}
 
 	const char *structName = m_useTree ? "tree" : "buckets";
-	char cmd[2048+32];
-	sprintf ( cmd , "mv %s %s",src,dst);
 
-	logf(LOG_INFO,"repair: Moving *-saved.dat %s. %s", structName, cmd);
+	logf(LOG_INFO,"repair: Moving *-saved.dat %s from %s to %s", structName, src, dst);
 
 	errno = 0;
-	if ( gbsystem ( cmd ) == -1 ) {
+	if ( moveFile(src,dst)!=0 ) {
 		log( LOG_ERROR, "repair: Moving saved %s had error: %s.", structName, mstrerror( errno ) );
 		return false;
 	}
