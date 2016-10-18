@@ -117,7 +117,7 @@ public:
 	int32_t           m_pingShotgun;
 	int32_t           m_pingMax;
 	// have we ever got a ping reply from him?
-	char           m_gotPingReply;
+	bool           m_gotPingReply;
 	double         m_loadAvg;
 	// the first time we went OOM (out of mem, i.e. >= 99% mem used)
 	int64_t      m_firstOOMTime;
@@ -134,9 +134,9 @@ public:
 	// . used so we can determine when to send an email alert
 	int64_t      m_startTime;
 	// is a ping in progress for this host?
-	char           m_inProgress1;
+	bool           m_inProgress1;
 	// shotgun
-	char           m_inProgress2;
+	bool           m_inProgress2;
 	int64_t      m_numPingReplies;
 
 	// send to eth 0 or 1 when sending to this host?
@@ -455,7 +455,7 @@ class Hostdb {
 	bool m_created;
 
 	int32_t m_crc;
-	int32_t m_crcValid;
+	bool m_crcValid;
 
 	bool  m_useTmpCluster;
 

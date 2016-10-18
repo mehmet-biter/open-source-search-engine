@@ -1511,8 +1511,8 @@ int32_t Hostdb::getBestHosts2IP ( Host  *h ) {
 	unsigned char *a = (unsigned char *)&h->m_ipShotgun;
 	unsigned char *c = (unsigned char *)&h->m_ip;
 
-	char isShotgunInternal = false;
-	char isPrimaryInternal = false;
+	bool isShotgunInternal = false;
+	bool isPrimaryInternal = false;
 	if ( a[0]==192 && a[1]==168 ) isShotgunInternal = true;
 	if ( a[0]==10  && a[1]==1   ) isShotgunInternal = true;
 	if ( a[0]==127 && a[1]==0   ) isShotgunInternal = true;
