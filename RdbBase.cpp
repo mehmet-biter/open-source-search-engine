@@ -17,7 +17,7 @@
 #include "Process.h"
 #include "GbMoveFile.h"
 #include "ScopedLock.h"
-#include <sys/stat.h> //mkdir()
+#include <sys/stat.h> //mkdir(), stat()
 #include <algorithm>
 
 bool g_dumpMode = false;
@@ -507,29 +507,18 @@ bool RdbBase::setFiles ( ) {
 		if(hasFileId(fileId))
 			continue;
 
-		// sometimes an unlink() does not complete properly and we
-		// end up with remnant files that are 0 bytes. so let's skip
-		// those guys.
-		File ff;
-		ff.set ( m_dir.getDir() , filename );
-
-		// does this file exist?
-		int32_t exists = ff.doesExist() ;
-
-		// core if does not exist (sanity check)
-		if ( exists == 0 ) {
-			log( LOG_WARN, "db: File %s does not exist.", filename );
+		// sometimes an unlink() does not complete properly and we end up with
+		// remnant files that are 0 bytes. so let's clean up and skip them
+		SafeBuf fullFilename;
+		fullFilename.safePrintf("%s/%s", m_dir.getDir(), filename);
+		struct stat st;
+		if(stat(fullFilename.getBufStart(),&st)!=0) {
+			log(LOG_ERROR,"stat(%s) failed with errno=%d (%s)", fullFilename.getBufStart(), errno, strerror(errno));
 			return false;
 		}
 
-		// bail on error calling ff.doesExist()
-		if ( exists == -1 ) {
-			return false;
-		}
-
-		// skip if 0 bytes or had error calling ff.getFileSize()
-		if ( ff.getFileSize() == 0 ) {
-			// actually, we have to move to trash because
+		// cleanup&skip if 0 bytes
+		if ( st.st_size==0 ) {
 			// if we leave it there and we start writing
 			// to that file id, exit, then restart, it
 			// causes problems...
