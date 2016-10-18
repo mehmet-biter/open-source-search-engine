@@ -108,7 +108,6 @@ SpiderLoop::SpiderLoop ( ) {
 	m_launches = 0;
 	m_maxUsed = 0;
 	m_sc = NULL;
-	m_outstanding1 = 0;
 	m_gettingDoledbList = false;
 	m_activeList = NULL;
 	m_bookmark = NULL;
@@ -157,8 +156,6 @@ void SpiderLoop::startLoop ( ) {
 	m_activeList = NULL;
 	m_recalcTime = 0;
 	m_recalcTimeValid = false;
-	// falsify this flag
-	m_outstanding1 = false;
 
 	// we aren't in the middle of waiting to get a list of SpiderRequests
 	m_gettingDoledbList = false;
