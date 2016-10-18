@@ -28,7 +28,6 @@ RdbTree::RdbTree () {
 	m_fixedDataSize = -1; // variable dataSize, depends on individual node
 	m_needsSave     = false;
 	m_pickRight     = false;
-	m_gettingList   = 0;
 
 	// before resetting... we have to set this so clear() won't breach buffers
 	m_rdbId = -1;
@@ -1626,20 +1625,6 @@ bool RdbTree::getList ( collnum_t collnum ,
 	// similar to above algorithm but we have data along with the keys
 	int32_t dataSize;
 
-	// if a niceness 0 msg4 tries to add to the tree, return ETRYAGAIN
-	// if it is hitting this quickpoll. increment it as a count in
-	// case we get quickpolled and call this function as niceness 0!
-	//
-	// i think we were getting a list for a doledb dump, and while
-	// getting that list in Rdb::getList(), a quickpoll was called
-	// to handle a msg4 addList request that had its niceness converted 
-	// to 0. and it deleted a record from the tree that we had just read
-	// from the tree and added to the list. so then when RdbDump.cpp
-	// called deleteList() after dumping that list to disk, one of the
-	// recs was no longer in the tree! that then caused a core. now we
-	// don't core, but i think i fixed it here.
-	m_gettingList++;
-
 	// stop when we've hit or just exceed minRecSizes
 	// or we're out of nodes
 	for ( ; node >= 0 && list->getListSize() < minRecSizes ; node = getNextNode ( node ) ) {
@@ -1662,7 +1647,6 @@ bool RdbTree::getList ( collnum_t collnum ,
 			//}
 
 			if ( ! list->addRecord(&m_keys[node*m_ks],0,NULL)) {
-				m_gettingList--;
 				log(LOG_WARN, "db: Failed to add record to tree list for %s: %s. Fix the growList algo.",
 				    m_dbname,mstrerror(g_errno));
 				return false;
@@ -1701,7 +1685,6 @@ bool RdbTree::getList ( collnum_t collnum ,
 			if ( ! list->addRecord ( key,//&m_keys[node*m_ks] ,
 						 dataSize     ,
 						 m_data[node] ) ) {
-				m_gettingList--;
 				log(LOG_WARN, "db: Failed to add record to tree list for %s: %s. Fix the growList algo.",
 				    m_dbname,mstrerror(g_errno));
 				return false;
@@ -1738,9 +1721,6 @@ bool RdbTree::getList ( collnum_t collnum ,
 		// advance to next node
 		//node = getNextNode ( node );
 	}
-
-	// allow msg4 to add/delete to/from this tree again
-	m_gettingList--;
 
 	// set counts to pass back
 	if ( numNegRecs ) *numNegRecs = numNeg;

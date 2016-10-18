@@ -1500,14 +1500,6 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list, int32_t niceness ) {
 		return false;
 	}
 
-	// if we are currently in a quickpoll, make sure we are not in
-	// RdbTree::getList(), because we could mess that loop up by adding
-	// or deleting a record into/from the tree now
-	if ( m_tree.isGettingList() ) {
-		g_errno = ETRYAGAIN;
-		return false;
-	}
-
 	// prevent double entries
 	if ( m_inAddList ) { 
 		// i guess the msg1 handler makes it this far!

@@ -170,7 +170,6 @@ public:
 		m_needsSave = needsSave;
 	}
 
-	bool isGettingList() const { return (m_gettingList != 0); }
 	bool isLoading() const { return m_isLoading; }
 
 	// since our arrays aren't public
@@ -327,8 +326,6 @@ private:
 	// . this stuff is accessed by thread an must be public
 	// . cannot add to tree when saving
 	bool    m_isSaving;
-
-	mutable int32_t    m_gettingList;
 
 	// loading?
 	bool    m_isLoading;
