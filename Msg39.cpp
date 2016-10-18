@@ -798,8 +798,7 @@ bool Msg39::intersectLists ( ) { // bool updateReadInfo ) {
 	}
 
 	// if it failed
-	//log(LOG_INFO,"query: Intersect thread creation failed. Doing "
-	//    "blocking. Hurts performance.");
+	log(LOG_WARN, "Intersect thread creation failed. Doing blocking. Hurts performance.");
 	// check tree
 	if ( m_toptree.nodesIsNull() ) { //isj: what is it trying to test here? and why aren't there a similar test in PosdbTable::intersect() ?
 		log(LOG_LOGIC,"query: msg39: Badness."); 
