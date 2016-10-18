@@ -5513,7 +5513,7 @@ Url **XmlDoc::getRedirUrl() {
 
 	// if redirect is setting cookies we have to follow the redirect
 	// all the way through so we can stop now.
-	if ( m_redirCookieBufValid && m_redirCookieBuf.getLength() ) {
+	if ( m_redirCookieBufValid && m_redirCookieBuf.length() ) {
 		allowSimplifiedRedirs = true;
 	}
 
@@ -12666,7 +12666,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 			ssb->pushChar(RDB_TITLEDB); // RDB2_TITLEDB2
 			ssb->safeMemcpy(&tkey, sizeof(key96_t));
 			m_metaList = ssb->getBufStart();
-			m_metaListSize = ssb->getLength();
+			m_metaListSize = ssb->length();
 			m_metaListValid = true;
 
 			logTrace( g_conf.m_logTraceXmlDoc, "END" );
@@ -12688,7 +12688,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 
 		// TODO: support titledb rebuild as well
 		m_metaList = m_spiderStatusDocMetaList.getBufStart();
-		m_metaListSize = m_spiderStatusDocMetaList.getLength();
+		m_metaListSize = m_spiderStatusDocMetaList.length();
 		m_metaListValid = true;
 
 		logTrace( g_conf.m_logTraceXmlDoc, "END, OK" );
@@ -16605,7 +16605,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		//   few h1 tags
 		// . we call SafeBuf::pushChar(0) to add each one
 		m_reply.ptr_htag = htb->getBufStart();
-		m_reply.size_htag = htb->getLength();
+		m_reply.size_htag = htb->length();
 	}
 
 	// get site
@@ -17478,7 +17478,7 @@ char *XmlDoc::getHighlightedSummary ( bool *isSetFromTagsPtr ) {
 	StackBuf(hb);
 
 	// highlight the query in it
-	int32_t hlen = hi.set ( &hb, tmpSum.getBufStart(), tmpSum.getLength(), q, "<b>", "</b>" );
+	int32_t hlen = hi.set ( &hb, tmpSum.getBufStart(), tmpSum.length(), q, "<b>", "</b>" );
 
 	// highlight::set() returns 0 on error
 	if ( hlen < 0 ) {

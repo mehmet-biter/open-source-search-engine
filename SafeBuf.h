@@ -58,8 +58,6 @@ public:
 	int32_t getCapacity() const { return m_capacity; }
 	int32_t getAvail() const { return m_capacity - m_length; }
 	int32_t length() const { return m_length; }
-	int32_t getLength() const { return m_length; }
-	int32_t getBufUsed() const { return m_length; }
 	void print() { 
 	  if ( write(1,m_buf,m_length) != m_length) { gbshutdownAbort(true); } }
 

@@ -146,10 +146,10 @@ void BigFile::logAllData(int32_t log_type)
 	loghex( log_type, m_tmpBaseBuf, sizeof(m_tmpBaseBuf),	"m_tmpBaseBuf...........: (hex dump)");
 	
 	// SafeBufs
-	loghex( log_type, m_dir.getBufStart(), m_dir.getBufUsed(),                  			"m_dir..................: (hex dump)");
-	loghex( log_type, m_baseFilename.getBufStart(), m_baseFilename.getBufUsed(),      		"m_baseFilename.........: (hex dump)");
-	loghex( log_type, m_newBaseFilename.getBufStart(), m_newBaseFilename.getBufUsed(),      "m_newBaseFilename......: (hex dump)");
-	loghex( log_type, m_newBaseFilenameDir.getBufStart(), m_newBaseFilenameDir.getBufUsed(),"m_newBaseFilenameDir...: (hex dump)");
+	loghex( log_type, m_dir.getBufStart(), m_dir.length(),                  			"m_dir..................: (hex dump)");
+	loghex( log_type, m_baseFilename.getBufStart(), m_baseFilename.length(),      		"m_baseFilename.........: (hex dump)");
+	loghex( log_type, m_newBaseFilename.getBufStart(), m_newBaseFilename.length(),      "m_newBaseFilename......: (hex dump)");
+	loghex( log_type, m_newBaseFilenameDir.getBufStart(), m_newBaseFilenameDir.length(),"m_newBaseFilenameDir...: (hex dump)");
 	
 	log(log_type, "g_lastDiskReadCompleted: %" PRId64, g_lastDiskReadCompleted);
 	log(log_type, "g_unlinkRenameThreads..: %" PRId32, g_unlinkRenameThreads);
@@ -307,7 +307,7 @@ bool BigFile::addPart ( int32_t n ) {
 	// . n's come in NOT necessarily in order!!!
 	int32_t need = (n+1) * sizeof(File *);
 	// capacity must be length always for this
-	if ( m_filePtrsBuf.getCapacity() != m_filePtrsBuf.getLength() ) {
+	if ( m_filePtrsBuf.getCapacity() != m_filePtrsBuf.length() ) {
 		log(LOG_ERROR, "%s:%s:%d: Capacity/Length mismatch when adding part %" PRId32, __FILE__, __func__, __LINE__, n);
 		logAllData(LOG_ERROR);
 		gbshutdownLogicError();
@@ -321,7 +321,7 @@ bool BigFile::addPart ( int32_t n ) {
 	}
 
 	// how much more mem do we need?
-	int32_t delta = need - m_filePtrsBuf.getLength();
+	int32_t delta = need - m_filePtrsBuf.length();
 
 	// . make sure our CAPACITY is increased by what we need
 	// . SafeBuf::reserve() ADDS this much to current capacity

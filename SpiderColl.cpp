@@ -3539,7 +3539,7 @@ bool SpiderColl::validateDoleBuf ( SafeBuf *doleBuf ) {
 	int32_t jump = *(int32_t *)p;
 	p += 4;
 	// sanity
-	if ( jump < 4 || jump > doleBuf->getLength() ) {
+	if ( jump < 4 || jump > doleBuf->length() ) {
 		g_process.shutdownAbort(true); }
 	bool gotIt = false;
 	for ( ; p < doleBuf->getBufPtr() ; ) {
@@ -3770,7 +3770,7 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 	char *p = doleBuf->getBufStart();
 	int32_t jump = *(int32_t *)p;
 	// sanity
-	if ( jump < 4 || jump > doleBuf->getLength() ) {
+	if ( jump < 4 || jump > doleBuf->length() ) {
 		g_process.shutdownAbort(true); }
 	// the jump includes itself
 	p += jump;
@@ -3870,7 +3870,7 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 		// NO! we do a copy in rdbcache and copy the thing over
 		// since we promote it. so this won't work...
 		*(int32_t *)x = newJump;
-		if ( newJump >= doleBuf->getLength() ) { g_process.shutdownAbort(true);}
+		if ( newJump >= doleBuf->length() ) { g_process.shutdownAbort(true);}
 		if ( newJump < 4 ) { g_process.shutdownAbort(true);}
 		if ( g_conf.m_logDebugSpider ) // || m_collnum == 18752 )
 			log("spider: rdbcache: updating "

@@ -612,7 +612,7 @@ bool Collectiondb::growRecPtrBuf ( collnum_t collnum ) {
 
 	// an add, make sure big enough
 	int32_t need = ((int32_t)collnum+1)*sizeof(CollectionRec *);
-	int32_t have = m_recPtrBuf.getLength();
+	int32_t have = m_recPtrBuf.length();
 	int32_t need2 = need - have;
 
 	// if already big enough

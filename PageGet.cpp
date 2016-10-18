@@ -299,7 +299,7 @@ bool processLoop ( void *state ) {
 		bool status = g_httpServer.sendDynamicPage (s,
 							    //buf,bufLen,
 							    sb->getBufStart(),
-							    sb->getLength(),
+							    sb->length(),
 							    -1,false,
 							    //"text/html",
 							    contentType,
@@ -391,7 +391,7 @@ bool processLoop ( void *state ) {
 
 	// query should be NULL terminated
 	char *q    = st->m_qsb.getBufStart();
-	int32_t  qlen = st->m_qsb.getLength(); // m_qlen;
+	int32_t  qlen = st->m_qsb.length(); // m_qlen;
 
 	char styleTitle[128] =  "font-size:14px;font-weight:600;"
 				"color:#000000;";
@@ -846,7 +846,7 @@ bool processLoop ( void *state ) {
 	// safebuf, sb, is a member of "st" so this should copy the buffer
 	// when it constructs the http reply, and we gotta call delete(st)
 	// AFTER this so sb is still valid.
-	bool status = g_httpServer.sendDynamicPage (s, sb->getBufStart(), sb->getLength(), -1, false,
+	bool status = g_httpServer.sendDynamicPage (s, sb->getBufStart(), sb->length(), -1, false,
 	                                            contentType, -1, NULL, "utf8" );
 
 	// nuke state2

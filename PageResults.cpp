@@ -2071,7 +2071,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		// As of the update on 5/13/2014, the end of sb may have whitespace, so first move away from that
 		int distance; // distance from end to first non-whitespace char
 		const char *end;
-		for (distance = 1; distance < sb->getLength(); distance++) {
+		for (distance = 1; distance < sb->length(); distance++) {
 		    end = sb->getBufPtr() - distance;
 		    if (!is_wspace_a(*end))
 		        break;
@@ -2512,11 +2512,11 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 
 	StackBuf(hb);
 	if ( str && strLen && si->m_doQueryHighlighting ) {
-		hlen = hi.set ( &hb, tmpTitle.getBufStart(), tmpTitle.getLength(), &si->m_hqq, frontTag, backTag);
+		hlen = hi.set ( &hb, tmpTitle.getBufStart(), tmpTitle.length(), &si->m_hqq, frontTag, backTag);
 
 		// reassign!
 		str = hb.getBufStart();
-		strLen = hb.getLength();
+		strLen = hb.length();
 	}
 
 	// . use "UNTITLED" if no title

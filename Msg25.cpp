@@ -507,7 +507,7 @@ void handleRequest25(UdpSlot *slot, int32_t netnice) {
 				   m25->m_linkInfoBuf ) ) // SafeBuf 4 output
 		return;
 
-	if(m25->m_linkInfoBuf->getLength()<=0&&!g_errno){ g_process.shutdownAbort(true); }
+	if(m25->m_linkInfoBuf->length()<=0&&!g_errno){ g_process.shutdownAbort(true); }
 
 	if ( g_errno == ETRYAGAIN ) { g_process.shutdownAbort(true); }
 

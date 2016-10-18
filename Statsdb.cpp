@@ -883,7 +883,7 @@ char *Statsdb::plotGraph ( char *pstart ,
 	char *p = pstart;
 
 	for ( ; p < pend ; p += 12 ) {
-		if ( m_gw.getLength() > 10000000 ) break;
+		if ( m_gw.length() > 10000000 ) break;
 		// get the y
 		float y2 = *(float *)(p+4);
 		// get color of this point
@@ -970,7 +970,7 @@ char *Statsdb::plotGraph ( char *pstart ,
 
 	// now the m_sb1 buffer consists of points to make lines with
 	for ( ; p < pend ; ) {
-		if ( m_gw.getLength() > 10000000 ) break;
+		if ( m_gw.length() > 10000000 ) break;
 		// first is x pixel pos
 		int32_t  x2 = *(int32_t *)p; p += 4;
 		// then y pos
@@ -1077,10 +1077,10 @@ char *Statsdb::plotGraph ( char *pstart ,
 		drawHR ( z , ymin , ymax , m_gw , label , zoff , color );
 		if(z == lastZ) break;
 		lastZ = z;
-		//if ( m_gw.getLength() > 10000000 ) break;
+		//if ( m_gw.length() > 10000000 ) break;
 	}
 
-	if ( m_gw.getLength() > 10000000 )
+	if ( m_gw.length() > 10000000 )
 		log("statsdb: graph too big");
 
 	return retp;

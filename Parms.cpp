@@ -11387,7 +11387,7 @@ bool Parms::broadcastParmList ( SafeBuf *parmList ,
 				int32_t hostId2 ) {
 
 	// empty list?
-	if ( parmList->getLength() <= 0 ) return true;
+	if ( parmList->length() <= 0 ) return true;
 
 	// only us? no need for this then. we now do this...
 	//if ( g_hostdb.m_numHosts <= 1 ) return true;
@@ -12452,7 +12452,7 @@ bool Parms::updateParm ( char *rec , WaitEntry *we ) {
 		// add the expression. this prevents the empty line from
 		// being added!
 		if ( parm->m_page == PAGE_FILTERS &&
-		     cr->m_regExs[occNum].getLength() == 0 )
+		     cr->m_regExs[occNum].length() == 0 )
 			updateCount = false;
 		// and for other pages, like master ips, skip if empty!
 		// PAGE_PASSWORDS, PAGE_MASTERPASSWORDS, ...

@@ -2017,7 +2017,7 @@ char *getMatchingUrlPattern ( SpiderColl *sc, SpiderRequest *sreq, char *tagArg 
 	// if we had a list of contains: or regex: directives in the sitelist
 	// we have to linear scan those
 	char *nb = sc->m_negSubstringBuf.getBufStart();
-	char *nbend = nb + sc->m_negSubstringBuf.getLength();
+	char *nbend = nb + sc->m_negSubstringBuf.length();
 	for ( ; nb && nb < nbend ; ) {
 		// return NULL if matches a negative substring
 		if ( strstr ( sreq->m_url , nb ) ) {

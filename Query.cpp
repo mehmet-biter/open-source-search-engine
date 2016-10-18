@@ -148,7 +148,7 @@ bool Query::set2 ( const char *query        ,
 	m_osb.nullTerm ();
 	
 	m_orig = m_osb.getBufStart();
-	m_origLen = m_osb.getLength();
+	m_origLen = m_osb.length();
 
 	log(LOG_DEBUG, "query: set called = %s", m_orig);
 
