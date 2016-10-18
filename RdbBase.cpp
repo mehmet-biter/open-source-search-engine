@@ -628,6 +628,24 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 		return -1;
 	}
 
+	// set the data file's filename
+	char name[1024];
+	if ( mergeNum <= 0 ) {
+		if ( m_rdb->isTitledb() ) {
+			snprintf( name, sizeof(name), "%s%04" PRId32"-%03" PRId32".dat", m_dbname, fileId, fileId2 );
+		} else {
+			snprintf( name, sizeof(name), "%s%04" PRId32".dat", m_dbname, fileId );
+		}
+	} else {
+		if ( m_rdb->isTitledb() ) {
+			snprintf( name, sizeof(name), "%s%04" PRId32"-%03" PRId32".%03" PRId32".%04" PRId32".dat",
+			          m_dbname, fileId, fileId2, mergeNum, endMergeFileId );
+		} else {
+			snprintf( name, sizeof(name), "%s%04" PRId32".%03" PRId32".%04" PRId32".dat",
+			          m_dbname, fileId, mergeNum, endMergeFileId );
+		}
+	}
+
 	// HACK: skip to avoid a OOM lockup. if RdbBase cannot dump
 	// its data to disk it can backlog everyone and memory will
 	// never get freed up.
@@ -646,24 +664,6 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 		return -1;
 	}
 	mnew( f, sizeof( BigFile ), "RdbBFile" );
-
-	// set the data file's filename
-	char name[1024];
-	if ( mergeNum <= 0 ) {
-		if ( m_rdb->isTitledb() ) {
-			snprintf( name, sizeof(name), "%s%04" PRId32"-%03" PRId32".dat", m_dbname, fileId, fileId2 );
-		} else {
-			snprintf( name, sizeof(name), "%s%04" PRId32".dat", m_dbname, fileId );
-		}
-	} else {
-		if ( m_rdb->isTitledb() ) {
-			snprintf( name, sizeof(name), "%s%04" PRId32"-%03" PRId32".%03" PRId32".%04" PRId32".dat",
-			          m_dbname, fileId, fileId2, mergeNum, endMergeFileId );
-		} else {
-			snprintf( name, sizeof(name), "%s%04" PRId32".%03" PRId32".%04" PRId32".dat",
-			          m_dbname, fileId, mergeNum, endMergeFileId );
-		}
-	}
 
 	f->set(m_dir.getDir(), name, NULL);
 
