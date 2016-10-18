@@ -113,9 +113,8 @@ bool RdbBase::init(const char *dir,
 	reset();
 
 	// sanity
-	if ( ! dir ) {
-		g_process.shutdownAbort(true);
-	}
+	if ( ! dir )
+		gbshutdownLogicError();
 
 	// set all our contained classes
 	//m_dir.set ( dir );
@@ -134,7 +133,7 @@ bool RdbBase::init(const char *dir,
 	if ( rdb->isCollectionless() ) {
 		if ( collnum != (collnum_t) 0 ) {
 			log( LOG_ERROR, "db: collnum not zero for collectionless rdb.");
-			g_process.shutdownAbort(true);
+			gbshutdownLogicError();
 		}
 
 		// make a special "cat" dir for it if we need to
@@ -998,7 +997,7 @@ bool RdbBase::incorporateMerge ( ) {
 		log( LOG_ERROR, "db: Merge failed for %s, Exiting.", m_dbname);
 
 		// we don't have a recovery system in place, so save state and dump core
-		g_process.shutdownAbort(true);
+		gbshutdownAbort(true);
 	}
 
 	// note
@@ -1010,7 +1009,7 @@ bool RdbBase::incorporateMerge ( ) {
 	bool status = m_fileInfo[x].m_map->writeMap( true );
 	if ( !status ) {
 		// unable to write, let's abort
-		g_process.shutdownAbort();
+		gbshutdownResourceError();
 	}
 
 	if( m_useIndexFile ) {
@@ -1018,7 +1017,7 @@ bool RdbBase::incorporateMerge ( ) {
 		if ( !status ) {
 			// unable to write, let's abort
 			log( LOG_ERROR, "db: Could not write index for %s, Exiting.", m_dbname);
-			g_process.shutdownAbort();
+			gbshutdownAbort(true);
 		}
 	}
 
@@ -1074,7 +1073,8 @@ bool RdbBase::incorporateMerge ( ) {
 		    "size for %s. Map says it should be %" PRId64" bytes but it "
 		    "is %" PRId64" bytes.",
 		    m_fileInfo[x].m_file->getFilename(), fs2 , fs );
-		if ( fs2-fs > 12 || fs-fs2 > 12 ) { g_process.shutdownAbort(true); }
+		if ( fs2-fs > 12 || fs-fs2 > 12 )
+			gbshutdownCorrupted();
 		// now print the exception
 		log( LOG_WARN, "build: continuing since difference is less than 12 "
 		    "bytes. Most likely a discrepancy caused by a power "
@@ -1194,7 +1194,7 @@ void RdbBase::unlinkDone() {
 	// compare
 	if ( fs != fs2 ) {
 		log("build: Map file size does not agree with actual file size");
-		g_process.shutdownAbort(true);
+		gbshutdownCorrupted();
 	}
 
 	if ( ! m_rdb->isTitledb() ) {
@@ -1269,7 +1269,7 @@ void RdbBase::renameDone() {
 	if ( wait ) {
 		log("db: waiting for read thread to exit on unlinked file");
 		if ( !g_loop.registerSleepCallback( 100, this, checkThreadsAgainWrapper ) ) {
-			g_process.shutdownAbort(true);
+			gbshutdownResourceError();
 		}
 		return;
 	}
@@ -1285,7 +1285,7 @@ void RdbBase::renameDone() {
 	// sanity check
 	if ( m_numFilesToMerge != (b-a) ) {
 		log(LOG_LOGIC,"db: Bury oops.");
-		g_process.shutdownAbort(true);
+		gbshutdownLogicError();
 	}
 
 	// we no longer have a merge file
@@ -1486,7 +1486,7 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 		    "CollectionRec.h.",
 		    m_minToMerge,m_dbname);
 		//m_minToMerge = 2;
-		g_process.shutdownAbort(true);
+		gbshutdownLogicError();
 	}
 
 	// print it
@@ -1641,9 +1641,8 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 		// validation
 
 		// if titledb we got a "-023" part now
-		if ( m_rdb->isTitledb() && fileId2 < 0 ) {
-			g_process.shutdownAbort(true);
-		}
+		if ( m_rdb->isTitledb() && fileId2 < 0 )
+			gbshutdownCorrupted();
 
 		if ( !endMergeFileId ) {
 			// bad file name (should not happen after the first run)
@@ -1969,7 +1968,7 @@ void RdbBase::selectFilesToMerge(int32_t mergeFileCount, int32_t numFiles, int32
 		// sanity check
 		if(ratio < 0.0) {
 			logf(LOG_LOGIC,"merge: ratio is negative %.02f",ratio);
-			g_process.shutdownAbort(true);
+			gbshutdownLogicError();
 		}
 
 		// the adjusted ratio
@@ -2167,7 +2166,7 @@ void RdbBase::closeMaps(bool urgent) {
 		bool status = m_fileInfo[i].m_map->close(urgent);
 		if (!status) {
 			// unable to write, let's abort
-			g_process.shutdownAbort();
+			gbshutdownResourceError();
 		}
 	}
 }
@@ -2178,7 +2177,7 @@ void RdbBase::closeIndexes(bool urgent) {
 			bool status = m_fileInfo[i].m_index->close(urgent);
 			if (!status) {
 				// unable to write, let's abort
-				g_process.shutdownAbort();
+				gbshutdownResourceError();
 			}
 		}
 	}
@@ -2194,7 +2193,7 @@ void RdbBase::saveMaps() {
 		bool status = m_fileInfo[i].m_map->writeMap ( false );
 		if ( !status ) {
 			// unable to write, let's abort
-			g_process.shutdownAbort();
+			gbshutdownResourceError();
 		}
 	}
 }
@@ -2206,7 +2205,7 @@ void RdbBase::saveTreeIndex() {
 
 	if (!m_treeIndex.writeIndex()) {
 		// unable to write, let's abort
-		g_process.shutdownAbort();
+		gbshutdownResourceError();
 	}
 }
 
@@ -2223,7 +2222,7 @@ void RdbBase::saveIndexes() {
 
 		if (!m_fileInfo[i].m_index->writeIndex()) {
 			// unable to write, let's abort
-			g_process.shutdownAbort();
+			gbshutdownResourceError();
 		}
 	}
 }
