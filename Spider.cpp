@@ -43,7 +43,7 @@ void testWinnerTreeKey ( ) ;
 
 int32_t g_corruptCount = 0;
 
-char s_countsAreValid = 1;
+bool s_countsAreValid = true;
 
 static int32_t getFakeIpForUrl2(Url *url2);
 

@@ -24,7 +24,7 @@
 #define MAXUDPSLOTS 300
 
 extern int32_t g_corruptCount;
-extern char s_countsAreValid;
+extern bool s_countsAreValid;
 
 
 // . this is in seconds
