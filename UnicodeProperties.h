@@ -30,10 +30,8 @@ unsigned char ucCombiningClass(UChar32 c);
 
 
 static inline bool ucIsWhiteSpace(UChar32 c);
-static inline bool is_wspace_uc(UChar32 c);
 static inline bool ucIsIdeograph(UChar32 c);
 static inline bool ucIsPunct(UChar32 c);
-static inline bool is_punct_uc(UChar32 c);
 static inline bool ucIsWordChar(UChar32 c);
 static inline bool ucIsIgnorable(UChar32 c);
 static inline bool ucIsExtend(UChar32 c);
@@ -209,12 +207,6 @@ static inline bool ucIsWhiteSpace(UChar32 c) {
 	return *(UCProps*)p & UC_WHITESPACE;	
 }
 
-static inline bool is_wspace_uc(UChar32 c) {
-	const void *p = g_ucProps.getValue(c);
-	if (!p) return false;
-	return *(UCProps*)p & UC_WHITESPACE;	
-}
-
 static inline bool ucIsIdeograph(UChar32 c) {
 	const void *p = g_ucProps.getValue(c);
 	if (!p) return false;
@@ -222,10 +214,6 @@ static inline bool ucIsIdeograph(UChar32 c) {
 }
 
 static inline bool ucIsPunct(UChar32 c) {
-	return !ucIsWordChar(c);
-}
-
-static inline bool is_punct_uc(UChar32 c) {
 	return !ucIsWordChar(c);
 }
 

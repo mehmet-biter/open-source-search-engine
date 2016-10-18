@@ -271,7 +271,7 @@ inline bool is_wspace_utf8 ( const uint8_t *src ) {
 	// convert to a code point
 	UChar32 x = utf8Decode((char *)src);
 	// is this codepoint a whitespace?
-	return is_wspace_uc ( x );
+	return ucIsWhiteSpace( x );
 }
 
 inline bool is_wspace_utf8 ( const char *src ) {
@@ -280,7 +280,7 @@ inline bool is_wspace_utf8 ( const char *src ) {
 	// convert to a code point
 	UChar32 x = utf8Decode((char *)src);
 	// is this codepoint a whitespace?
-	return is_wspace_uc ( x );
+	return ucIsWhiteSpace( x );
 }
 
 // . returns bytes stored into "dst" from "src"
