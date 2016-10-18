@@ -1701,8 +1701,7 @@ bool Rdb::hasRoom(RdbList *list) {
 	// memory from deleted nodes. works by condesing the used memory.
 	if ( m_rdbId == RDB_DOLEDB && 
 	     // if there is no room left in m_mem (RdbMem class)...
-	     ( m_mem.m_ptr2 - m_mem.m_ptr1 < dataSpace||g_conf.m_forceIt) &&
-	     //m_mem.m_ptr1 - m_mem.m_mem > 1024 ) {
+	     ( m_mem.getAvailMem() < dataSpace || g_conf.m_forceIt) &&
 	     // and last time we tried this, if any, it reclaimed 1MB+
 	     (m_lastReclaim>1024*1024||m_lastReclaim==-1||g_conf.m_forceIt)){
 		// reclaim the memory now. returns -1 and sets g_errno on error
