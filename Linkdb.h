@@ -1016,7 +1016,6 @@ public:
 
 	// for spidering links purposes, we consider "internal" to be same 
 	// hostname
-	bool isInternal     ( int32_t i ) {return (m_linkFlags[i] & LF_SAMEHOST);}
 	bool isInternalHost ( int32_t i ) {return (m_linkFlags[i] & LF_SAMEHOST);}
 
 	// we do not subjugate same domain links to link spam detection in
