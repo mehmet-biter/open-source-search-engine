@@ -1031,7 +1031,7 @@ uint32_t
 Profiler::getFuncBaseAddr(const char *funcName) {
 	for(int32_t i = 0; i < m_fn.getNumSlots(); ++i) {
 		if ( m_fn.isEmpty(i) ) continue;
-		uint32_t key = *(uint32_t *)m_fn.getKey(i);
+		uint32_t key = *(uint32_t *)m_fn.getKeyFromSlot(i);
 		FnInfo *info = (FnInfo *)m_fn.getValueFromSlot(i);
 		if(!info || strcmp(info->m_fnName, funcName)) continue;
 		return key;

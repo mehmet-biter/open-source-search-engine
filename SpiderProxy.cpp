@@ -215,7 +215,7 @@ bool buildProxyTable ( ) {
 		// skip empty buckets in hashtable s_iptab
 		if ( ! s_iptab.m_flags[i] ) continue;
 		// get the key
-		int64_t key = *(int64_t *)s_iptab.getKey(i);
+		int64_t key = *(int64_t *)s_iptab.getKeyFromSlot(i);
 		// must also exist in tmptab, otherwise it got removed by user
 		if ( tmptab.isInTable ( &key ) ) continue;
 		// skip if not in table

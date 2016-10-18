@@ -786,7 +786,7 @@ bool Statsdb::gifLoop ( ) {
 
 		int32_t x1 = pp->m_a;
 		int32_t x2 = pp->m_b;
-		int32_t y1 = *(int32_t *)m_ht3.getKey(i); // i value
+		int32_t y1 = *(int32_t *)m_ht3.getKeyFromSlot(i); // i value
 		// ensure at least 3 units wide for visibility
 		if ( x2 < x1 + 10 ) x2 = x1 + 10;
 		// . flip the y so we don't have to scroll the browser down

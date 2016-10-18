@@ -246,8 +246,6 @@ class HashTableX {
 
 	bool isTableEmpty ( ) const { return (m_numSlotsUsed == 0); }
 
-	void *      getKey ( int32_t n )       { return m_keys + n * m_ks; }
-	const void *getKey ( int32_t n ) const { return m_keys + n * m_ks; }
 	void *      getKeyFromSlot ( int32_t n )       { return m_keys + n * m_ks; }
 	const void *getKeyFromSlot ( int32_t n ) const { return m_keys + n * m_ks; }
 

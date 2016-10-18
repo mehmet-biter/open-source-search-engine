@@ -15396,7 +15396,7 @@ bool XmlDoc::addTable144 ( HashTableX *tt1 , int64_t docId , SafeBuf *buf ) {
 		// skip if empty
 		if ( tt1->m_flags[i] == 0 ) continue;
 		// get its key
-		char *kp = (char *)tt1->getKey ( i );
+		char *kp = (char *)tt1->getKeyFromSlot( i );
 		// store rdbid
 		*p++ = rdbId; // (rdbId | f);
 		// store it as is
@@ -15456,7 +15456,7 @@ bool XmlDoc::addTable224 ( HashTableX *tt1 ) {
 		// skip if empty
 		if ( tt1->m_flags[i] == 0 ) continue;
 		// get its key
-		char *kp = (char *)tt1->getKey ( i );
+		char *kp = (char *)tt1->getKeyFromSlot( i );
 		// store rdbid
 		*m_p++ = rdbId; // (rdbId | f);
 		// store it as is
