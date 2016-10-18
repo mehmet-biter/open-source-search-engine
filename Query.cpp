@@ -1287,7 +1287,7 @@ bool Query::setQWords ( char boolFlag ,
 	// is all alpha chars in query in upper case? caps lock on?
 	bool allUpper = true;
 	const char *p    = m_sb.getBufStart();//m_buf;
-	const char *pend = m_sb.getBuf(); // m_buf + m_bufLen;
+	const char *pend = m_sb.getBufPtr(); // m_buf + m_bufLen;
 	for ( ; p < pend ; p += getUtf8CharSize(p) )
 		if ( is_alpha_utf8 ( p ) && ! is_upper_utf8 ( p ) ) {
 			allUpper = false; break; }

@@ -1056,7 +1056,7 @@ bool ImportState::importLoop ( ) {
 	// then read data rec itself into it, compressed titlerec part
 	if ( dataSize > 0 ) {
 		// read in the titlerec after the key/datasize
-		status = m_bf.read ( sbuf->getBuf() , dataSize , m_fileOffset );
+		status = m_bf.read ( sbuf->getBufPtr() , dataSize , m_fileOffset );
 		if ( g_errno ) { // n != dataSize ) {
 			log( LOG_WARN, "main: failed to read in title rec file. %s. Skipping file %s",
 			     mstrerror(g_errno),m_bf.getFilename());

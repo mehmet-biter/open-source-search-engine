@@ -826,7 +826,7 @@ Tag *SafeBuf::addTag ( const char *mysite ,
 	if ( mysite ) need += strlen(mysite);
 	if ( ! reserve ( need ) ) return NULL;
 	if ( pushRdbId && ! pushChar(rdbId) ) return NULL;
-	Tag *tag = (Tag *)getBuf();
+	Tag *tag = (Tag *)getBufPtr();
 	tag->set(mysite,tagname,now,user,ip,data,dsize);
 	incrementLength ( tag->getRecSize() );
 	if ( tag->getRecSize() > need ) gbshutdownLogicError();
@@ -1372,7 +1372,7 @@ bool SafeBuf::base64Decode ( const char *src , int32_t srcLen ) {
 	if ( ! reserve ( srcLen * 2 + 1 ) ) return false;
 		
 	// leave room for \0
-	char *dst = getBuf();
+	char *dst = getBufPtr();
 	char *dstEnd = getBufEnd(); // dst + dstSize - 5;
 	nullTerm();
 	unsigned char *p    = (unsigned char *)src;

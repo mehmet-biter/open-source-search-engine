@@ -408,7 +408,7 @@ float PosdbTable::getBestScoreSumForSingleTerm(int32_t i, const char *wpi, const
 	}
 	
 	// point into buf
-	SingleScore *sx = (SingleScore *)m_singleScoreBuf.getBuf();
+	SingleScore *sx = (SingleScore *)m_singleScoreBuf.getBufPtr();
 	int32_t need = sizeof(SingleScore) * numTop;
 
 	// point to that
@@ -1350,7 +1350,7 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 	//
 
 	// point into buf
-	PairScore *px = (PairScore *)m_pairScoreBuf.getBuf();
+	PairScore *px = (PairScore *)m_pairScoreBuf.getBufPtr();
 	int32_t need = sizeof(PairScore) * numTop;
 
 	// point to that

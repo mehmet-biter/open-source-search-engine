@@ -3,7 +3,7 @@
 
 class JsonItem *Json::addNewItem () {
 
-	JsonItem *ji = (JsonItem *)m_sb.getBuf();
+	JsonItem *ji = (JsonItem *)m_sb.getBufPtr();
 
 	if ( m_sb.m_length + (int32_t)sizeof(JsonItem) > m_sb.m_capacity ) {
 		log("json: preventing buffer breach");
@@ -240,7 +240,7 @@ JsonItem *Json::parseJsonStringIntoJsonItems (const char *json ) {
 				}
 
 				// let's push this now so we can \0 term
-				char *savedStr = m_sb.getBuf();
+				char *savedStr = m_sb.getBufPtr();
 				m_sb.safeMemcpy ( str , slen );
 				m_sb.pushChar('\0');
 				// just set the name cursor

@@ -49,8 +49,6 @@ public:
 	bool stealBuf ( SafeBuf *sb );
 
 	//ACCESSORS
-	char       *getBuf()       { return m_buf + m_length; }
-	const char *getBuf() const { return m_buf + m_length; }
 	char       *getBufPtr()       { return m_buf + m_length; }
 	const char *getBufPtr() const { return m_buf + m_length; }
 	char       *getBufStart()       { return m_buf; }

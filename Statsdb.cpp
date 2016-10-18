@@ -1260,7 +1260,7 @@ StatState *Statsdb::getStatState ( int32_t us ) {
 	// reserve
 	if ( ! m_sb0.reserve2x ( sizeof(StatState  ) ) ) return NULL;
 	// make it otherwise
-	StatState *ss = (StatState *)m_sb0.getBuf();
+	StatState *ss = (StatState *)m_sb0.getBufPtr();
 	// store the offset
 	int32_t offset = m_sb0.length();
 	// skip that
@@ -1537,7 +1537,7 @@ bool Statsdb::addEventPoint ( int32_t  t1        ,
 		// make sure we got room
 		if ( ! m_sb3.reserve2x ( sizeof(EventPoint) ) ) return false;
 		// add it in
-		EventPoint *pp = (EventPoint *)m_sb3.getBuf();
+		EventPoint *pp = (EventPoint *)m_sb3.getBufPtr();
 		// set it
 		pp->m_a         = a;
 		pp->m_b         = b;

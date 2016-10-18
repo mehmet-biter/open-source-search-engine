@@ -3532,7 +3532,7 @@ bool SpiderColl::addWinnersIntoDoledb ( ) {
 
 
 bool SpiderColl::validateDoleBuf ( SafeBuf *doleBuf ) {
-	char *doleBufEnd = doleBuf->getBuf();
+	char *doleBufEnd = doleBuf->getBufPtr();
 	// get offset
 	char *pstart = doleBuf->getBufStart();
 	char *p = pstart;
@@ -3542,7 +3542,7 @@ bool SpiderColl::validateDoleBuf ( SafeBuf *doleBuf ) {
 	if ( jump < 4 || jump > doleBuf->getLength() ) {
 		g_process.shutdownAbort(true); }
 	bool gotIt = false;
-	for ( ; p < doleBuf->getBuf() ; ) {
+	for ( ; p < doleBuf->getBufPtr() ; ) {
 		if ( p == pstart + jump )
 			gotIt = true;
 		// first is doledbkey
@@ -3753,7 +3753,7 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 	// how did this happen?
 	//if ( ! m_msg1Avail ) { g_process.shutdownAbort(true); }
 
-	char *doleBufEnd = doleBuf->getBuf();
+	char *doleBufEnd = doleBuf->getBufPtr();
 
 	// add it to doledb ip table now so that waiting tree does not
 	// immediately get another spider request from this same ip added

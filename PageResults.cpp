@@ -1431,7 +1431,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 		logf(LOG_DEBUG,"query: Printing up to %" PRId32" results. "
 		     "bufStart=0x%" PTRFMT"",
 		     numResults,
-		     (PTRTYPE)sb->getBuf());
+		     (PTRTYPE)sb->getBufPtr());
 
 	return true;
 }
@@ -1449,7 +1449,7 @@ bool printSearchResultsTail ( State0 *st ) {
 
 	if ( si->m_format == FORMAT_JSON ) {	
 		// remove last },\n if there and replace with just \n
-		const char *e = sb->getBuf() - 2;
+		const char *e = sb->getBufPtr() - 2;
 		if ( sb->length()>=2 &&
 		     e[0]==',' && e[1]=='\n') {
 			sb->m_length -= 2;
@@ -2072,7 +2072,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		int distance; // distance from end to first non-whitespace char
 		const char *end;
 		for (distance = 1; distance < sb->getLength(); distance++) {
-		    end = sb->getBuf() - distance;
+		    end = sb->getBufPtr() - distance;
 		    if (!is_wspace_a(*end))
 		        break;
 		}

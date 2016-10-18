@@ -216,7 +216,7 @@ bool expandHtml (  SafeBuf& sb,
 
 		if ( head[i+1] == 'q' ) { 
 			// now we got the %q, insert the query
-			char *p    = (char*) sb.getBuf();
+			char *p    = (char*) sb.getBufPtr();
 			char *pend = (char*) sb.getBufEnd();
 			int32_t eqlen = dequote ( p , pend , q , qlen );
 			//p += eqlen;
@@ -299,7 +299,7 @@ bool expandHtml (  SafeBuf& sb,
 		}
 		if ( head[i+1] == 'e' ) { 
 			// now we got the %e, insert the query
-			char *p    = (char*) sb.getBuf();
+			char *p    = (char*) sb.getBufPtr();
 			int32_t  plen = sb.getAvail();
 			int32_t eqlen = urlEncode ( p , plen , q , qlen );
 			//p += eqlen;
@@ -315,7 +315,7 @@ bool expandHtml (  SafeBuf& sb,
 			// never allow to go negative
 			if ( c < 0 ) c = 0;
 			//p+=ulltoa(p,c);
-			char *p = (char*) sb.getBuf();
+			char *p = (char*) sb.getBufPtr();
 			sb.reserve2x(16);
 			int32_t len = ulltoa(p, c);
 			sb.incrementLength(len);
@@ -326,7 +326,7 @@ bool expandHtml (  SafeBuf& sb,
 		if ( head[i+1] == 'n' ) { 
 			// now we got the %n, insert the collection doc count
 			//p+=ulltoa(p,docsInColl);
-			char *p = (char*) sb.getBuf();
+			char *p = (char*) sb.getBufPtr();
 			sb.reserve2x(16);
 			int64_t docsInColl = 0;
 			if ( cr ) docsInColl = cr->getNumDocsIndexed();

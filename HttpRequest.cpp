@@ -1531,7 +1531,7 @@ bool HttpRequest::getCurrentUrl ( SafeBuf &cu ) {
 	}
 	// . scan path and change \0 back to = or &
 	// . similar logic in HttpServer.cpp for logging!
-	char *dst = cu.getBuf();
+	char *dst = cu.getBufPtr();
 	const char *src = path;
 	const char *srcEnd = path + plen;
 	char dd = '=';
@@ -1568,7 +1568,7 @@ bool HttpRequest::getCurrentUrlPath ( SafeBuf &cup ) {
 	}
 	// . scan path and change \0 back to = or &
 	// . similar logic in HttpServer.cpp for logging!
-	char *dst = cup.getBuf();
+	char *dst = cup.getBufPtr();
 	char *start = dst;
 	const char *src = path;
 	const char *srcEnd = path + plen;

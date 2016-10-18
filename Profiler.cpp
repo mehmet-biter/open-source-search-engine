@@ -1171,7 +1171,7 @@ Profiler::printRealTimeInfo(SafeBuf *sb, const char *coll) {
 	// system call to get the function names and line numbers
 	// just dump the buffer
 	char *ip = (char *)m_ipBuf.getBufStart();
-	char *ipEnd = (char *)m_ipBuf.getBuf();
+	char *ipEnd = (char *)m_ipBuf.getBufPtr();
 	SafeBuf ff;
 	ff.safePrintf("%strash/profile.txt",g_hostdb.m_dir);
 	char *filename = ff.getBufStart();
@@ -1258,7 +1258,7 @@ Profiler::printRealTimeInfo(SafeBuf *sb, const char *coll) {
 
 	// now scan m_ipBuf (Instruction Ptr Buf) and make the callstack hashes
 	ip = (char *)m_ipBuf.getBufStart();
-	ipEnd = (char *)m_ipBuf.getBuf();
+	ipEnd = (char *)m_ipBuf.getBufPtr();
 	char *firstOne = NULL;
 	bool missedQuickPoll = false;
 	uint64_t hhh = 0LL;

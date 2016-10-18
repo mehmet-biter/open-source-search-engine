@@ -317,7 +317,7 @@ bool Wiktionary::addSynsets ( const char *filename ) {
 	// get end of line
 	char *eol = p;
 	// sanity
-	char *bufEnd = m_localBuf.getBuf();
+	char *bufEnd = m_localBuf.getBufPtr();
 	if ( eol >= bufEnd ) 
 		return true;
 	for ( ; *eol && *eol != '\n' ; eol++ );
