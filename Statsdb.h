@@ -184,7 +184,6 @@ class StatData {
 	// set the m_key members based on the data members
 	float     getOldVal () { return m_totalQuantity; } // aliased
 	float     getNewVal () { return m_newVal ; }
-	bool      isStatusChange() { return (m_totalOps==0); }
 	bool      isEvent       () { return (m_totalOps==0); }
 } __attribute__((packed, aligned(4)));
 
