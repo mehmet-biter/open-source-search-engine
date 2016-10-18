@@ -400,18 +400,6 @@ private:
 	char m_ks;
 
 public:
-	bool m_useProtection;
-	bool m_isProtected;
-	void protect   () { 
-		if ( m_isProtected ) return;
-		m_isProtected = true; 
-		protect ( PROT_READ ); }
-	void unprotect () { 
-		if ( ! m_isProtected ) return;
-		m_isProtected = false; 
-		protect ( PROT_READ | PROT_WRITE ); }
-	void protect   ( int prot );
-	void gbmprotect ( void *p , int32_t size , int prot );
 
 	int32_t m_corrupt;
 };

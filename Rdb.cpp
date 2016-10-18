@@ -1547,12 +1547,6 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list, int32_t niceness ) {
 		return false;
 	}
 
-	// otherwise, add one record at a time
-	// unprotect tree from writes
-	if ( m_tree.m_useProtection ) {
-		m_tree.unprotect ( );
-	}
-
 	do {
 		char key[MAX_KEY_BYTES];
 		list->getCurrentKey(key);
@@ -1593,9 +1587,6 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list, int32_t niceness ) {
 				g_errno = ETRYAGAIN;
 			}
 
-			// reprotect tree from writes
-			if ( m_tree.m_useProtection ) m_tree.protect ( );
-
 			// stop it
 			m_inAddList = false;
 
@@ -1603,9 +1594,6 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list, int32_t niceness ) {
 			return false;
 		}
 	} while ( list->skipCurrentRecord() ); // skip to next record, returns false on end of list
-
-	// reprotect tree from writes
-	if ( m_tree.m_useProtection ) m_tree.protect ( );
 
 	// stop it
 	m_inAddList = false;
