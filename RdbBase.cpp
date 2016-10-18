@@ -887,13 +887,8 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 		return -1;
 	}
 
-	// shift everyone up if we need to fit this file in the middle somewher
-	if ( i < m_numFiles ) {
-		int nn = m_numFiles - i;
-		int dstIdx = i + 1;
-
-		memmove( m_fileInfo+dstIdx, m_fileInfo+i, nn*sizeof(m_fileInfo[0]));
-	}
+	// shift everyone up if we need to fit this file in the middle somewhere
+	memmove( m_fileInfo+i+1, m_fileInfo+i, (m_numFiles-i)*sizeof(m_fileInfo[0]));
 
 	// insert this file into position #i
 	m_fileInfo[i].m_fileId  = fileId;
