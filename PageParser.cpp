@@ -31,7 +31,7 @@ public:
 	int32_t m_recycle;
 	// recycle the link info that was imported from another coll?
 	int32_t m_recycle2;
-	int32_t m_render;
+	bool m_render;
 	char m_recompute;
 	int32_t m_oips;
 	char m_linkInfoColl[11];
@@ -234,7 +234,7 @@ static bool sendPageParser2 ( TcpSocket   *s ,
 	// should we recycle link info?
 	st->m_recycle  = r->getLong("recycle",0);
 	st->m_recycle2 = r->getLong("recycleimp",0);
-	st->m_render   = r->getLong("render" ,0);
+	st->m_render   = r->getLong("render" ,0) ? true : false;
 	// for quality computation... takes way longer cuz we have to 
 	// lookup the IP address of every outlink, so we can get its root
 	// quality using Msg25 which needs to filter out voters from that IP
@@ -782,7 +782,7 @@ bool sendPageAnalyze ( TcpSocket *s , HttpRequest *r ) {
 	// should we recycle link info?
 	st->m_recycle  = r->getLong("recycle",1);
 	st->m_recycle2 = r->getLong("recycleimp",0);
-	st->m_render   = r->getLong("render" ,0);
+	st->m_render   = r->getLong("render" ,0) ? true : false;
 	st->m_recompute = r->getLong("recompute" ,0);
 	// for quality computation... takes way longer cuz we have to 
 	// lookup the IP address of every outlink, so we can get its root

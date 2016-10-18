@@ -261,7 +261,7 @@ public:
 	//   otherwise, if false, it converts the "<" to &lt; etc. so we see the html
 	//   source view.
 	// . only Words.cpp looks at this flag
-	char  m_renderHtml;
+	bool m_renderHtml;
 };
 
 #define STRMACRO(s) #s
