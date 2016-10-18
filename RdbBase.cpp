@@ -437,6 +437,16 @@ bool RdbBase::parseFilename( const char* filename, int32_t *p_fileId, int32_t *p
 	return true;
 }
 
+
+bool RdbBase::hasFileId(int32_t fildId) const {
+	for(int i=0; i<m_numFiles; i++)
+		if(m_fileInfo[i].m_fileId==fildId)
+			return true;
+	return false;
+}
+
+
+
 // . this is called to open the initial rdb data and map files we have
 // . first file is always the merge file (may be empty)
 // . returns false on error
@@ -494,16 +504,8 @@ bool RdbBase::setFiles ( ) {
 		}
 
 		// don't add if already in there
-		int32_t i ;
-		for ( i = 0 ; i < m_numFiles ; i++ ) {
-			if ( m_fileInfo[i].m_fileId >= fileId ) {
-				break;
-			}
-		}
-
-		if ( i < m_numFiles && m_fileInfo[i].m_fileId == fileId ) {
+		if(hasFileId(fileId))
 			continue;
-		}
 
 		// sometimes an unlink() does not complete properly and we
 		// end up with remnant files that are 0 bytes. so let's skip

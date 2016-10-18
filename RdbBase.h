@@ -246,6 +246,8 @@ public:
 private:
 	void selectFilesToMerge(int32_t mergeNum, int32_t numFiles, int32_t *p_mini);
 
+	bool hasFileId(int32_t fildId) const;
+
 	static void unlinkDoneWrapper(void *state);
 	void unlinkDone();
 	static void renameDoneWrapper(void *state);
