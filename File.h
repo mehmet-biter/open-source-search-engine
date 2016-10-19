@@ -148,8 +148,8 @@ private:
 	int m_flags;
 	//int m_permissions;
 	
-	char m_calledOpen;
-	char m_calledSet;
+	bool m_calledOpen;
+	bool m_calledSet;
 
 	bool m_forceRename;
 	

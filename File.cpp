@@ -12,7 +12,7 @@
 
 // THE FOLLOWING IS ALL STATIC 'CUZ IT'S THE FD POOL
 // if someone is using a file we must make sure this is true...
-static int       s_isInitialized = false;
+static bool	s_isInitialized = false;
 
 static GbMutex s_mtx;
 static int64_t s_timestamps [ MAX_NUM_FDS ]; // when was it last accessed
