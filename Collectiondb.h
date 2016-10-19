@@ -449,7 +449,7 @@ class CollectionRec {
 	int32_t		m_spiderIpMaxSpiders [ MAX_FILTERS ];
 
 	int32_t		m_numHarvestLinks;
-	char		m_harvestLinks[ MAX_FILTERS ];
+	bool		m_harvestLinks[ MAX_FILTERS ];
 
 	int32_t		m_numForceDelete;
 	char		m_forceDelete[ MAX_FILTERS ];
@@ -504,7 +504,7 @@ class CollectionRec {
 	int32_t m_maxRobotsCacheAge;
 
 	// use query expansion for this collection?
-	char m_queryExpansion;
+	bool m_queryExpansion;
 
 	// read from cache
 	bool m_rcache;

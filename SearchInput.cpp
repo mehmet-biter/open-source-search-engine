@@ -79,7 +79,7 @@ SearchInput::SearchInput() {
 	m_displayOutlinks = 0;
 	m_docIdsOnly = 0;
 	m_formatStr = NULL;
-	m_queryExpansion = 0;
+	m_queryExpansion = false;
 	m_END_HASH = 0;
 	m_END_TEST = 0;
 }

@@ -559,7 +559,7 @@ bool Msg39::getLists () {
 			     qt->m_rightPhraseTerm->m_isWikiHalfStopBigram )
 				rightwikibigram = 1;
 
-			int32_t isSynonym = 0;
+			bool isSynonym = 0;
 			const QueryTerm *synterm = qt->m_synonymOf;
 			if ( synterm )
 				isSynonym = true;
@@ -582,7 +582,7 @@ bool Msg39::getLists () {
 			     "rightwikibigram=%" PRId32" "
 			     "hc=%" PRId32" "
 			     "otermLen=%" PRId32" "
-			     "isSynonym=%" PRId32" "
+			     "isSynonym=%s"
 			     "querylangid=%" PRId32" " ,
 			     (PTRTYPE)this ,
 			     i          ,
@@ -604,7 +604,7 @@ bool Msg39::getLists () {
 			     (int32_t)rightwikibigram,
 			     (int32_t)m_query.m_qterms[i].m_hardCount ,
 			     (int32_t)m_query.getTermLen(i) ,
-			     isSynonym,
+			     (isSynonym ? "true" : "false"),
 			     (int32_t)m_query.m_langId );
 			if ( synterm ) {
 				int32_t stnum = synterm - m_query.m_qterms;

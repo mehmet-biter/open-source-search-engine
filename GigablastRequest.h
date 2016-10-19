@@ -40,7 +40,7 @@ class GigablastRequest {
 	///////////
 	int64_t m_docId;
 	int32_t m_strip;
-	char m_includeHeader;
+	bool m_includeHeader;
 
 	///////////
 	//
@@ -48,8 +48,8 @@ class GigablastRequest {
 	//
 	///////////
 	char *m_urlsBuf;
-	char m_stripBox;
-	char  m_harvestLinks;
+	bool m_stripBox;
+	bool  m_harvestLinks;
 	SafeBuf m_listBuf;
 	Msg4 m_msg4;
 

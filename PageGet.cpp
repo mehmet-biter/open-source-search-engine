@@ -105,7 +105,7 @@ bool sendPageGet ( TcpSocket *s , HttpRequest *r ) {
 	// . we need to match summary here so we need to know this
 	//bool seq = r->getLong ( "seq" , false );
 	// restrict to root file?
-	bool rtq = r->getLong ( "rtq" , false );
+	bool rtq = r->getLong ( "rtq" , 0) ? true : false;
 
 	// . get the titleRec
 	// . TODO: redirect client to a better http server to save bandwidth
@@ -124,11 +124,11 @@ bool sendPageGet ( TcpSocket *s , HttpRequest *r ) {
 	st->m_docId    = docId;
 	st->m_printed  = false;
 	// include header ... "this page cached by Gigablast on..."
-	st->m_includeHeader     = r->getLong ("ih"    , true  );
-	st->m_includeBaseHref   = r->getLong ("ibh"   , false );
-	st->m_queryHighlighting = r->getLong ("qh"    , true  );
-	st->m_strip             = r->getLong ("strip" , 0     );
-	st->m_cnsPage           = r->getLong ("cnsp"  , true );
+	st->m_includeHeader     = r->getLong ("ih"    , 1) ? true : false;
+	st->m_includeBaseHref   = r->getLong ("ibh"   , 0) ? true : false;
+	st->m_queryHighlighting = r->getLong ("qh"    , 1) ? true : false;
+	st->m_strip             = r->getLong ("strip" , 0);
+	st->m_cnsPage           = r->getLong ("cnsp"  , 1) ? true : false;
 	const char *langAbbr = r->getString("qlang",NULL);
 	st->m_langId = langUnknown;
 	if ( langAbbr ) {
@@ -137,7 +137,7 @@ bool sendPageGet ( TcpSocket *s , HttpRequest *r ) {
 	}
 	strncpy ( st->m_coll , coll , MAX_COLL_LEN+1 );
 	// store query for query highlighting
-	st->m_netTestResults    = r->getLong ("rnettest", false );
+	st->m_netTestResults    = r->getLong ("rnettest", 0) ? true : false;
 	st->m_qsb.setBuf ( st->m_qtmpBuf,128,0,false );
 	st->m_qsb.setLabel ( "qsbpg" );
 

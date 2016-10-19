@@ -200,7 +200,7 @@ public:
 	char  *m_formatStr;
 
 	// this should be part of the key because it will affect the results!
-	char   m_queryExpansion;
+	bool   m_queryExpansion;
 
 	////////
 	//

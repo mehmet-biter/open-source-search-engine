@@ -40,18 +40,18 @@ class Msg39Request {
 	uint8_t m_language;
 
 	// flags
-	char    m_queryExpansion;
+	bool    m_queryExpansion;
 	bool    m_debug;
 	bool    m_doSiteClustering;
 	bool    m_hideAllClustered;
 	//char    m_doIpClustering;
 	bool    m_doDupContentRemoval;
-	char    m_addToCache;
+	bool    m_addToCache;
 	bool    m_familyFilter;
 	bool    m_getDocIdScoringInfo;
 	char    m_realMaxTop;
 	char    m_stripe;
-	char    m_useQueryStopWords;
+	bool    m_useQueryStopWords;
 	bool    m_allowHighFrequencyTermCache;
 	bool    m_doMaxScoreAlgo;
 
