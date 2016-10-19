@@ -912,7 +912,7 @@ public:
 	char m_useFakeMime;
 	char m_useSiteLinkBuf;
 	char m_usePageLinkBuf;
-	char m_printInXml;
+	bool m_printInXml;
 
 	SafeBuf m_tmpBuf11;
 	SafeBuf m_tmpBuf12;
