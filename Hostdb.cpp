@@ -271,6 +271,8 @@ createFile:
 	int32_t num_nospider = 0;
 	int32_t num_noquery  = 0;
 
+	char tmp[256];
+
 	for ( ; *p ; p++ , line++ ) {
 		if ( is_wspace_a (*p) ) continue;
 		// skip comments
@@ -621,7 +623,6 @@ createFile:
 		// get real path (no symlinks symbolic links)
 		// only if on same host, which we determine based on the IP-address.
 		if ( ip_distance(h->m_ip)==ip_distance_ourselves ) {
-			char tmp[256];
 			int32_t tlen = readlink ( wdir , tmp , 250 );
 			// if we got the actual path, copy that over
 			if ( tlen != -1 ) {
