@@ -834,7 +834,7 @@ Tag *SafeBuf::addTag ( const char *mysite ,
 }
 
 bool SafeBuf::addTag ( Tag *tag ) {
-	int32_t recSize = tag->getSize();
+	int32_t recSize = tag->getRecSize();
 	//tag->setDataSize();
 	if ( tag->m_recDataSize <= 16 ) { 
 		// note it
