@@ -444,11 +444,6 @@ class Spiderdb {
 		return (k->n0>>9)&DOCID_MASK;
 	}
 
-	// same as above
-	int64_t getDocId( key128_t *k ) {
-		return (k->n0>>9)&DOCID_MASK;
-	}
-
 	int32_t getFirstIp( key128_t *k ) {
 		return (k->n1>>32);
 	}
