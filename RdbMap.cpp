@@ -615,12 +615,12 @@ int64_t RdbMap::readSegment ( int32_t seg , int64_t offset , int32_t fileSize ) 
 	// do the read
 	g_errno = 0;
 	m_file.read ( (char *)m_keys[seg] , readSize , offset );
-	if ( g_errno ) return false; // log("RdbMapFile::readSegment: failed");
+	if ( g_errno ) return -1; // log("RdbMapFile::readSegment: failed");
 	offset += readSize;
 	// read the offsets of segment
 	readSize = numKeys * 2;
 	m_file.read ( (char *)m_offsets[seg] , readSize , offset );
-	if ( g_errno ) return false; // log("RdbMapFile::readSegment: failed");
+	if ( g_errno ) return -1; // log("RdbMapFile::readSegment: failed");
 	offset += readSize ;
 	// increase m_numPages based on the keys/pages read
 	m_numPages += numKeys;
