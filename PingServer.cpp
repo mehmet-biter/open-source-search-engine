@@ -604,11 +604,11 @@ void handleRequest11(UdpSlot *slot , int32_t niceness) {
 	uint32_t ip    = slot->getIp();
 	uint16_t port = slot->getPort();
 	// get the host entry
-	Host *h = g_hostdb.getHost ( ip , port );
+	Host *h = g_hostdb.getUdpHost ( ip , port );
 	// we may be the temporary cluster (grep for useTmpCluster) and
 	// the proxy is sending pings from its original port plus 1
 	if ( ! h ) {
-		h = g_hostdb.getHost ( ip , port + 1 );
+		h = g_hostdb.getUdpHost ( ip , port + 1 );
 	}
 	if ( ! h ) {
 		// size of 3 means it is a debug ping from

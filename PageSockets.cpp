@@ -313,7 +313,7 @@ void printUdpTable(SafeBuf *p, const char *title, UdpServer *server, const char 
 
 		// bgcolor is lighter for incoming requests
 		const char *bg = it->hasCallback() ? LIGHT_BLUE : LIGHTER_BLUE;
-		Host *h = g_hostdb.getHost(it->getIp(), it->getPort());
+		Host *h = g_hostdb.getUdpHost(it->getIp(), it->getPort());
 		const char *eip = "??";
 		uint16_t eport = 0;
 		const char *ehostId = "-1";

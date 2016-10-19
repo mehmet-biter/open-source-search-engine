@@ -408,7 +408,7 @@ bool UdpServer::sendRequest(char *msg,
 
 	// get it from g_hostdb2 then via ip lookup if still NULL
 	if ( ! h ) {
-		h = g_hostdb.getHost ( ip , port );
+		h = g_hostdb.getUdpHost ( ip , port );
 	}
 
 	// sanity check
@@ -555,7 +555,7 @@ void UdpServer::sendReply(char *msg, int32_t msgSize, char *alloc, int32_t alloc
 	//   ip/port that sent to us.
 	//if ( g_conf.m_useShotgun && ! useSameSwitch )
 	// now we always set m_host, we use s_shotgun to toggle
-	slot->m_host = g_hostdb.getHost ( slot->getIp() , slot->getPort() );
+	slot->m_host = g_hostdb.getUdpHost ( slot->getIp() , slot->getPort() );
 	//else slot->m_host = NULL;
 
 	ScopedLock sl(m_mtx);
@@ -995,7 +995,7 @@ int32_t UdpServer::readSock(UdpSlot **slotPtr, int64_t now) {
 	// since shotgunning may change the ip
 	ip2 = ip;
 	// i modified Hostdb::hashHosts() to hash the loopback ip now!
-	h   = g_hostdb.getHost ( ip , ntohs(from.sin_port) );
+	h   = g_hostdb.getUdpHost ( ip , ntohs(from.sin_port) );
 	// . just use ip for hosts from hosts2.conf
 	// . because sendReques() usually gets a hostId of -1 when sending
 	//   to a host in hosts2.conf and therefore makeKey() initially uses

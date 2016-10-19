@@ -956,7 +956,7 @@ bool Hostdb::hashHosts ( ) {
 	// . only do this if they did not already specify a 127.0.0.1 in
 	//   the hosts.conf i guess
 	int32_t lbip = atoip("127.0.0.1");
-	Host *hxx = getHost ( lbip , m_myHost->m_port );
+	Host *hxx = getUdpHost ( lbip , m_myHost->m_port );
 	// only do this if not explicitly assigned to 127.0.0.1 in hosts.conf
 	if ( ! hxx && (int32_t)m_myHost->m_ip != lbip ) {
 		int32_t loopbackIP = atoip("127.0.0.1",9);
@@ -1034,7 +1034,7 @@ bool Hostdb::hashHosts ( ) {
 
 bool Hostdb::hashHost (	bool udp , Host *h , uint32_t ip , uint16_t port ) {
 	Host *hh = NULL;
-	if ( udp ) hh = getHost ( ip , port );
+	if ( udp ) hh = getUdpHost ( ip , port );
 
 	if ( hh && port ) { 
 		log(LOG_WARN, "db: Must hash hosts.conf first, then hosts2.conf.");
@@ -1104,10 +1104,6 @@ int32_t Hostdb::getHostId ( uint32_t ip , uint16_t port ) {
 Host *Hostdb::getHostByIp ( uint32_t ip ) {
 	return getHostFromTable ( true , ip , 0 );	
 }
-
-Host *Hostdb::getHost ( uint32_t ip , uint16_t port ) {
-	return getHostFromTable ( true , ip , port );
-}	
 
 // . get Host entry from ip/port
 // . port defaults to 0 for no port

@@ -359,7 +359,6 @@ class Hostdb {
 	bool  hashHost ( bool udp , Host *h , uint32_t ip , uint16_t port ) ;
 	int32_t  getHostId        ( uint32_t ip , uint16_t port ) ;
 	Host *getHostByIp      ( uint32_t ip ) ;
-	Host *getHost          ( uint32_t ip , uint16_t port ) ;
 	Host *getUdpHost       ( uint32_t ip , uint16_t port ) ;
 	Host *getTcpHost       ( uint32_t ip , uint16_t port ) ;
 	bool isIpInNetwork     ( uint32_t ip ) ;

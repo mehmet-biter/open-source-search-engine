@@ -361,7 +361,7 @@ void Multicast::gotReply2 ( UdpSlot *slot ) {
 	//logIt = true;
 	// log a failure msg
 	if ( logIt ) { // m_errnos[i] != ETRYAGAIN ) {
-		Host *h = g_hostdb.getHost ( slot->getIp() ,slot->getPort() );
+		Host *h = g_hostdb.getUdpHost ( slot->getIp() ,slot->getPort() );
 		if ( h ) 
 			log("net: Got error sending request to hostId %" PRId32" "
 			    "(msgType=0x%02x transId=%" PRId32" net=%s): "
@@ -962,7 +962,7 @@ void Multicast::gotReply1 ( UdpSlot *slot ) {
 		// do not log not found on an external network
 		if ( g_errno != ENOTFOUND ) {
 			// log the error
-			Host *h = g_hostdb.getHost(slot->getIp(), slot->getPort());
+			Host *h = g_hostdb.getUdpHost(slot->getIp(), slot->getPort());
 			if (h) {
 				log(LOG_WARN, "net: Multicast got error in reply from "
 						    "hostId %" PRId32
