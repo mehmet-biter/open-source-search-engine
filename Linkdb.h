@@ -233,7 +233,7 @@ public:
 		return h;
 	}
 
-	static char isLinkSpam_uk (key224_t *key ) {
+	static bool isLinkSpam_uk (key224_t *key ) {
 		if ((key->n2) & 0x1000000000000LL) return true; 
 		return false;
 	}
