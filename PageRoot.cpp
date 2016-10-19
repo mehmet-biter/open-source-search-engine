@@ -1121,8 +1121,8 @@ public:
         bool       m_isMasterAdmin;
 	char       m_coll[MAX_COLL_LEN+1];
 	bool       m_goodAnswer;
-	int32_t       m_ufuLen;
-	char       m_ufu[MAX_URL_LEN];
+//	int32_t       m_ufuLen;
+//	char       m_ufu[MAX_URL_LEN];
 
 	int32_t    m_urlLen;
 	char       m_url[MAX_URL_LEN];
@@ -1150,14 +1150,14 @@ bool sendPageAddUrl ( TcpSocket *sock , HttpRequest *hr ) {
 	// see if they provided a url of a file of urls if they did not
 	// provide a url to add directly
 	bool isAdmin = g_conf.isCollAdmin ( sock , hr );
-	int32_t  ufuLen = 0;
-	char *ufu = NULL;
+//	int32_t  ufuLen = 0;
+//	char *ufu = NULL;
 	//if ( isAdmin )
 	//	// get the url of a file of urls (ufu)
 	//	ufu = hr->getString ( "ufu" , &ufuLen , NULL );
 
 	// can't be too long, that's obnoxious
-	if ( urlLen > MAX_URL_LEN || ufuLen > MAX_URL_LEN ) {
+	if ( urlLen > MAX_URL_LEN ) {	// || ufuLen > MAX_URL_LEN ) {
 		g_errno = EBUFTOOSMALL;
 		g_msg = " (error: url too long)";
 		return g_httpServer.sendErrorReply(sock,500,"url too long");
@@ -1274,10 +1274,10 @@ bool sendPageAddUrl ( TcpSocket *sock , HttpRequest *hr ) {
 	st1->m_isMasterAdmin = isAdmin;
 
 	// save the "ufu" (url of file of urls)
-	st1->m_ufu[0] = '\0';
-	st1->m_ufuLen  = ufuLen;
-	gbmemcpy ( st1->m_ufu , ufu , ufuLen );
-	st1->m_ufu[ufuLen] = '\0';
+//	st1->m_ufu[0] = '\0';
+//	st1->m_ufuLen  = ufuLen;
+//	gbmemcpy ( st1->m_ufu , ufu , ufuLen );
+//	st1->m_ufu[ufuLen] = '\0';
 
 	st1->m_spiderLinks = true;
 	st1->m_strip   = true;
