@@ -44,7 +44,7 @@ struct DnsState {
 	Dns        *m_this  ;
 	void       *m_state ;
 	void      (*m_callback) ( void *state , int32_t ip ) ;
-	char        m_freeit;
+	bool        m_freeit;
 	bool        m_cacheNotFounds;
 	char        m_hostname[MAX_DNS_HOSTNAME_LEN+1];
 

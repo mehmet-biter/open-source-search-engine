@@ -592,7 +592,7 @@ bool Dns::getIp ( const char *hostname,
 	ds->m_nameBufPtr   = ds->m_nameBuf ;
 	ds->m_nameBufEnd   = ds->m_nameBuf + 512;
 	ds->m_errno        = 0;
-	ds->m_recursionDesired = 1;
+	ds->m_recursionDesired = true;
 	// debug msg
 	//log("dns::getIp: %s (key=%" PRIu64") NOT in cache...",tmp,key.n0);
 
