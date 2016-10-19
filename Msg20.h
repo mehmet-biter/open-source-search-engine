@@ -135,7 +135,7 @@ public:
 	char       m_noArchive           ;
 	char       m_contentType         ;
 	char       m_siteRank            ;
-	char       m_isBanned            ;
+	bool       m_isBanned            ;
 	char       m_hopcount            ;
 	char       m_recycled            ;
 	uint8_t    m_language            ;
