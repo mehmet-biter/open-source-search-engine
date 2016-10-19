@@ -1145,11 +1145,11 @@ public:
 	bool  m_addSiteRootFlags;
 	char *m_coll;
 
-	char  m_flagged;
+	bool  m_flagged;
 
-	char  m_hasSelfPermalink;
-	char  m_hasRSSOutlink;
-	char  m_hasSubdirOutlink;
+	bool  m_hasSelfPermalink;
+	bool  m_hasRSSOutlink;
+	bool  m_hasSubdirOutlink;
 	char *m_rssOutlinkPtr;
 	int32_t  m_rssOutlinkLen;
 

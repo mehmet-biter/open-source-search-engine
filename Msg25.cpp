@@ -3365,9 +3365,9 @@ Links::Links() {
 	m_addSiteRootFlags = false;
 	m_coll = NULL;
 	m_flagged = false;
-	m_hasSelfPermalink = 0;
-	m_hasRSSOutlink = 0;
-	m_hasSubdirOutlink = 0;
+	m_hasSelfPermalink = false;
+	m_hasRSSOutlink = false;
+	m_hasSubdirOutlink = false;
 	m_rssOutlinkPtr = NULL;
 	m_rssOutlinkLen = 0;
 	m_numOutlinksAdded = 0;
