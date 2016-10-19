@@ -55,7 +55,7 @@ Conf::Conf ( ) {
 	m_wikiProxyPort = 0;
 	m_useProxyIps = false;
 	m_automaticallyUseProxyIps = false;
-	m_askRootNameservers = 0;
+	m_askRootNameservers = false;
 	m_numRns = 0;
 	memset(&m_rnsIps, 0, sizeof(m_rnsIps));
 	m_mergeBufSize = 0;
@@ -273,12 +273,12 @@ Conf::Conf ( ) {
 	m_useTmpCluster = 0;
 	m_timeSyncProxy = 0;
 	m_interfaceMachine = false;
-	m_allowScale = 0;
+	m_allowScale = true;
 	m_giveupOnDeadHosts = 0;
-	m_bypassValidation = 0;
+	m_bypassValidation = false;
 	m_maxHeartbeatDelay = 0;
 	m_maxCallbackDelay = 0;
-	m_repairingEnabled = 0;
+	m_repairingEnabled = false;
 	m_maxRepairSpiders = 0;
 	m_repairMem = 0;
 	m_fullRebuild = 0;

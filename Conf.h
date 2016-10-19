@@ -72,7 +72,7 @@ class Conf {
 	// if this is false, we do not save, used by dump routines
 	// in main.cpp so they can change parms here and not worry about
 	// a core dump saving them
-	char m_save;
+	bool m_save;
 
 	bool m_runAsDaemon;
 
@@ -105,7 +105,7 @@ class Conf {
 	SafeBuf m_proxyAuth;
 
 	// built-in dns parameters using name servers
-	char  m_askRootNameservers;
+	bool  m_askRootNameservers;
 	int32_t  m_numRns;
 	int32_t  m_rnsIps[MAX_RNSIPS];
 
@@ -473,19 +473,19 @@ class Conf {
 
 	// allow scaling up of hosts by removing recs not in the correct
 	// group. otherwise a sanity check will happen.
-	char  m_allowScale;
+	bool  m_allowScale;
 	// . timeout on dead hosts, only set when we know a host is dead and
 	//   will not come back online.  Messages will timeout on the dead
 	//   host, but not error, allowing outstanding spidering to finish
 	//   to the twin
 	char  m_giveupOnDeadHosts;
-	char  m_bypassValidation;
+	bool  m_bypassValidation;
 
 	int32_t  m_maxHeartbeatDelay;
 	int32_t  m_maxCallbackDelay;
 
 	// used by Repair.cpp
-	char  m_repairingEnabled  ;
+	bool  m_repairingEnabled  ;
 	int32_t  m_maxRepairSpiders  ;
 	int64_t  m_repairMem;
 	SafeBuf m_collsToRepair;
