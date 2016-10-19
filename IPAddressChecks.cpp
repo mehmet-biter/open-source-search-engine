@@ -77,6 +77,10 @@ unsigned ip_distance(uint32_t ip/*network-order*/)
 }
 
 
+//Determine if the IP is one that we would trust a UDP packet from without the
+//IP being part of the cluster. We trust loopback interface, private networks
+//and direct LAN networks by default. Eventually this may get extended with
+//configuration but this seems like the right thing to do out-of-the-box.
 bool is_internal_net_ip(uint32_t ip/*network-order*/)
 {
 	ip = ntohl(ip);
@@ -109,42 +113,6 @@ bool is_internal_net_ip(uint32_t ip/*network-order*/)
 	return false;
 }
 
-
-//Determine if the IP is one that we would trust a UDP packet from without the
-//IP being part of the cluster. We trust loopback interface, private networks
-//and direct LAN networks by default. Eventually this may get extended with
-//configuration but this seems like the right thing to do out-of-the-box.
-bool is_trusted_protocol_ip(uint32_t ip/*network-order*/)
-{
-	ip = ntohl(ip);
-	
-	//loopback?
-	if(ip==0x7f000001)
-		return true;
-	//linux loopback?
-	if((ip&0xff000000) == 0x7f000000)
-		return true;
-	
-	//private networks?
-	if((ip&0xff000000)==0x0a000000) //10.0.0.0/8
-		return true;
-	if((ip&0xfff00000)==0xac100000) //172.16.0.0/12
-		return true;
-	if((ip&0xffff0000)==0xc0a80000) //192.168.0.0/16
-		return true;
-	//Private networks could still be over a limited WAN link but at least
-	//it will not annoy external innocent parties.
-	
-	//On direct lan?
-	for(size_t i=0; i<local_nets; i++)
-		if((ip&local_net_mask[i])==(local_net_address[i]&local_net_mask[i]))
-			return ip_distance_lan;
-	
-	//todo: allow configuration of "intranet networks"
-	
-	//probably not an intranet host, so we err on the side of caution
-	return false;
-}
 
 
 #if 0

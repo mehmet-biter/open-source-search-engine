@@ -968,7 +968,7 @@ int32_t UdpServer::readSock(UdpSlot **slotPtr, int64_t now) {
 	// . don't bother checking for dns server, who knows where that is
 	// . now also allow all admin ips
 	else if ( m_proto->useAcks() &&
-		  ! is_trusted_protocol_ip(ip) &&
+		  ! is_internal_net_ip(ip) &&
 		  ! g_hostdb.isIpInNetwork ( ip ) &&
 		  ! g_conf.isMasterIp ( ip ) &&
 		  ! g_conf.isConnectIp ( ip ) ) {
