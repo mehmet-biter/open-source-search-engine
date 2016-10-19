@@ -61,7 +61,7 @@ RdbList::RdbList () {
 	m_allocSize   = 0;
 	m_useHalfKeys = false;
 	m_ownData     = false;
-	m_fixedDataSize = false;
+	m_fixedDataSize = 0;
 	reset();
 }
 
