@@ -102,7 +102,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 	if ( getrusage ( RUSAGE_SELF , &ru ) )
 		log("admin: getrusage: %s.",mstrerror(errno));
 
-	if ( format == FORMAT_HTML )
+	if ( format == FORMAT_HTML ) {
 		p.safePrintf(
 			     "<style>"
 			     ".poo { background-color:#%s;}\n"
@@ -110,7 +110,6 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 			     LIGHT_BLUE );
 
 	// memory in general table
-	if ( format == FORMAT_HTML ) {
 		p.safePrintf (
 			      "<table %s>"
 			      "<tr class=hdrow>"
@@ -383,9 +382,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 		else
 			p.safePrintf("</b></td><td>%f seconds</td></tr>\n"
 				     ,g_stats.m_avgQueryTime);
-	}
-			     
-	if ( format == FORMAT_HTML )
+
 		p.safePrintf(
 
 			     "<tr class=poo><td><b>Average queries/sec. for "
@@ -436,7 +433,8 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 				     g_stats.m_totalNumFails),
 			     days, hours, minutes, secs,
 			     g_stats.m_closedSockets );
-
+	}
+	
 	int64_t total = 0;
 	for ( int32_t i = 0 ; i <= CR_OK ; i++ )
 		total += g_stats.m_filterStats[i];
@@ -561,7 +559,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 	caches[numCaches++] = &g_spiderLoop.m_winnerListCache;
 	caches[numCaches++] = Msg8a::getCache();
 
-	if ( format == FORMAT_HTML )
+	if ( format == FORMAT_HTML ) {
 		p.safePrintf (
 		  "<table %s>"
 		  "<tr class=hdrow>"
@@ -571,9 +569,9 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 		  TABLE_STYLE,
 		  numCaches+2 );
 
-	if ( format == FORMAT_HTML )
 		// 1st column is empty
 		p.safePrintf ("<tr class=poo><td>&nbsp;</td>");  
+	}
 
 	for ( int32_t i = 0 ; format == FORMAT_XML && i < numCaches ; i++ ) {
 		p.safePrintf("\t<cacheStats>\n");
@@ -637,7 +635,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 	}
 	//p.safePrintf ("<td><b><i>Total</i></b></td></tr>\n" );
 
-	p.safePrintf ("</tr>\n<tr class=poo><td><b><nobr>hit ratio</td>" );
+	p.safePrintf ("</tr>\n<tr class=poo><td><b><nobr>hit ratio</nobr></b></td>" );
 	for ( int32_t i = 0 ; i < numCaches ; i++ ) {
 		int64_t a = caches[i]->getNumHits();
 		int64_t b = caches[i]->getNumMisses();
@@ -648,50 +646,50 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 			p.safePrintf("<td>--</td>");
 	}
 
-	p.safePrintf ("</tr>\n<tr class=poo><td><b><nobr>hits</td>" );
+	p.safePrintf ("</tr>\n<tr class=poo><td><b><nobr>hits</nobr></b></td>" );
 	for ( int32_t i = 0 ; i < numCaches ; i++ ) {
 		int64_t a = caches[i]->getNumHits();
 		p.safePrintf("<td>%" PRId64"</td>",a);
 	}
 
-	p.safePrintf ("</tr>\n<tr class=poo><td><b><nobr>tries</td>" );
+	p.safePrintf ("</tr>\n<tr class=poo><td><b><nobr>tries</nobr></b></td>" );
 	for ( int32_t i = 0 ; i < numCaches ; i++ ) {
 		int64_t a = caches[i]->getNumHits();
 		int64_t b = caches[i]->getNumMisses();
 		p.safePrintf("<td>%" PRId64"</td>",a+b);
 	}
 
-	p.safePrintf ("</tr>\n<tr class=poo><td><b><nobr>used slots</td>" );
+	p.safePrintf ("</tr>\n<tr class=poo><td><b><nobr>used slots</nobr></b></td>" );
 	for ( int32_t i = 0 ; i < numCaches ; i++ ) {
 		int64_t a = caches[i]->getNumUsedNodes();
 		p.safePrintf("<td>%" PRId64"</td>",a);
 	}
 
-	p.safePrintf ("</tr>\n<tr class=poo><td><b><nobr>max slots</td>" );
+	p.safePrintf ("</tr>\n<tr class=poo><td><b><nobr>max slots</nobr></b></td>" );
 	for ( int32_t i = 0 ; i < numCaches ; i++ ) {
 		int64_t a = caches[i]->getNumTotalNodes();
 		p.safePrintf("<td>%" PRId64"</td>",a);
 	}
 
-	p.safePrintf ("</tr>\n<tr class=poo><td><b><nobr>used bytes</td>" );
+	p.safePrintf ("</tr>\n<tr class=poo><td><b><nobr>used bytes</nobr></b></td>" );
 	for ( int32_t i = 0 ; i < numCaches ; i++ ) {
 		int64_t a = caches[i]->getMemOccupied();
 		p.safePrintf("<td>%" PRId64"</td>",a);
 	}
 
-	p.safePrintf ("</tr>\n<tr class=poo><td><b><nobr>max bytes</td>" );
+	p.safePrintf ("</tr>\n<tr class=poo><td><b><nobr>max bytes</nobr></b></td>" );
 	for ( int32_t i = 0 ; i < numCaches ; i++ ) {
 		int64_t a = caches[i]->getMaxMem();
 		p.safePrintf("<td>%" PRId64"</td>",a);
 	}
 
-	p.safePrintf ("</tr>\n<tr class=poo><td><b><nobr>dropped recs</td>" );
+	p.safePrintf ("</tr>\n<tr class=poo><td><b><nobr>dropped recs</nobr></b></td>" );
 	for ( int32_t i = 0 ; i < numCaches ; i++ ) {
 		int64_t a = caches[i]->getNumDeletes();
 		p.safePrintf("<td>%" PRId64"</td>",a);
 	}
 
-	p.safePrintf ("</tr>\n<tr class=poo><td><b><nobr>added recs</td>" );
+	p.safePrintf ("</tr>\n<tr class=poo><td><b><nobr>added recs</nobr></b></td>" );
 	for ( int32_t i = 0 ; i < numCaches ; i++ ) {
 		int64_t a = caches[i]->getNumAdds();
 		p.safePrintf("<td>%" PRId64"</td>",a);
@@ -703,7 +701,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 	//	p.safePrintf("<td>%" PRId64"</td>",a);
 	//}
 
-	p.safePrintf ("</tr>\n<tr class=poo><td><b><nobr>save to disk</td>" );
+	p.safePrintf ("</tr>\n<tr class=poo><td><b><nobr>save to disk</nobr></b></td>" );
 	for ( int32_t i = 0 ; i < numCaches ; i++ ) {
 		int64_t a = caches[i]->useDisk();
 		p.safePrintf("<td>%" PRId64"</td>",a);
@@ -1396,110 +1394,110 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 
 	// loop over niceness
 	for ( int32_t i3 = 0 ; i3 < 2 ; i3++ ) {
-	// print each msg stat
-	for ( int32_t i1 = 0 ; i1 < MAX_MSG_TYPES ; i1++ ) {
-		// skip it if has no handler
-		if ( ! g_udpServer.hasHandler(i1) ) continue;
-		if ( ! g_stats.m_reroutes   [i1][i3] &&
-		     ! g_stats.m_packetsIn  [i1][i3] &&
-		     ! g_stats.m_packetsOut [i1][i3] &&
-		     ! g_stats.m_errors     [i1][i3] &&
-		     ! g_stats.m_timeouts   [i1][i3] &&
-		     ! g_stats.m_nomem      [i1][i3] &&
-		     ! g_stats.m_dropped    [i1][i3] &&
-		     ! g_stats.m_cancelRead [i1][i3]  )
-			continue;
-		// print it all out.
-		if ( format == FORMAT_HTML )
-			p.safePrintf( 
-				     "<tr class=poo>"
-				     "<td>%" PRId32"</td>"    // niceness, 0 or 1
-				     "<td>0x%02x</td>" // msgType
-				     //"<td>%" PRId32"</td>"    // request?
-				     "<td>%" PRId32"</td>" // packets in
-				     "<td>%" PRId32"</td>" // packets out
-				     "<td>%" PRId32"</td>" // acks in
-				     "<td>%" PRId32"</td>" // acks out
-				     "<td>%" PRId32"</td>" // reroutes
-				     "<td>%" PRId32"</td>" // dropped
-				     "<td>%" PRId32"</td>" // cancel read
-				     "<td>%" PRId32"</td>" // errors
-				     "<td>%" PRId32"</td>" // timeouts
-				     "<td>%" PRId32"</td>" // nomem
-				     ,
-				     i3, // niceness
-				     (unsigned char)i1, // msgType
-				     //i2, // request?
-				     g_stats.m_packetsIn [i1][i3],
-				     g_stats.m_packetsOut[i1][i3],
-				     g_stats.m_acksIn [i1][i3],
-				     g_stats.m_acksOut[i1][i3],
-				     g_stats.m_reroutes[i1][i3],
-				     g_stats.m_dropped[i1][i3],
-				     g_stats.m_cancelRead[i1][i3],
-				     g_stats.m_errors[i1][i3],
-				     g_stats.m_timeouts[i1][i3],
-				     g_stats.m_nomem[i1][i3]
-				      );
-		if ( format == FORMAT_XML )
-			p.safePrintf(
-				     "\t<messageStat>\n"
-				     "\t\t<niceness>%" PRId32"</niceness>\n"
-				     "\t\t<msgType>0x%02x</msgType>\n"
-				     "\t\t<packetsIn>%" PRId32"</packetsIn>\n"
-				     "\t\t<packetsOut>%" PRId32"</packetsOut>\n"
-				     "\t\t<acksIn>%" PRId32"</acksIn>\n"
-				     "\t\t<acksOut>%" PRId32"</acksOut>\n"
-				     "\t\t<reroutes>%" PRId32"</reroutes>\n"
-				     "\t\t<dropped>%" PRId32"</dropped>\n"
-				     "\t\t<cancelsRead>%" PRId32"</cancelsRead>\n"
-				     "\t\t<errors>%" PRId32"</errors>\n"
-				     "\t\t<timeouts>%" PRId32"</timeouts>\n"
-				     "\t\t<noMem>%" PRId32"</noMem>\n"
-				     "\t</messageStat>\n"
-				     ,i3, // niceness
-				     (unsigned char)i1, // msgType
-				     g_stats.m_packetsIn [i1][i3],
-				     g_stats.m_packetsOut[i1][i3],
-				     g_stats.m_acksIn [i1][i3],
-				     g_stats.m_acksOut[i1][i3],
-				     g_stats.m_reroutes[i1][i3],
-				     g_stats.m_dropped[i1][i3],
-				     g_stats.m_cancelRead[i1][i3],
-				     g_stats.m_errors[i1][i3],
-				     g_stats.m_timeouts[i1][i3],
-				     g_stats.m_nomem[i1][i3]
-				      );
-		if ( format == FORMAT_JSON )
-			p.safePrintf(
-				     "\t\"messageStat\":{\n"
-				     "\t\t\"niceness\":%" PRId32",\n"
-				     "\t\t\"msgType\":\"0x%02x\",\n"
-				     "\t\t\"packetsIn\":%" PRId32",\n"
-				     "\t\t\"packetsOut\":%" PRId32",\n"
-				     "\t\t\"acksIn\":%" PRId32",\n"
-				     "\t\t\"acksOut\":%" PRId32",\n"
-				     "\t\t\"reroutes\":%" PRId32",\n"
-				     "\t\t\"dropped\":%" PRId32",\n"
-				     "\t\t\"cancelsRead\":%" PRId32",\n"
-				     "\t\t\"errors\":%" PRId32",\n"
-				     "\t\t\"timeouts\":%" PRId32",\n"
-				     "\t\t\"noMem\":%" PRId32"\n"
-				     "\t},\n"
-				     ,i3, // niceness
-				     (unsigned char)i1, // msgType
-				     g_stats.m_packetsIn [i1][i3],
-				     g_stats.m_packetsOut[i1][i3],
-				     g_stats.m_acksIn [i1][i3],
-				     g_stats.m_acksOut[i1][i3],
-				     g_stats.m_reroutes[i1][i3],
-				     g_stats.m_dropped[i1][i3],
-				     g_stats.m_cancelRead[i1][i3],
-				     g_stats.m_errors[i1][i3],
-				     g_stats.m_timeouts[i1][i3],
-				     g_stats.m_nomem[i1][i3]
-				      );
-	}
+		// print each msg stat
+		for ( int32_t i1 = 0 ; i1 < MAX_MSG_TYPES ; i1++ ) {
+			// skip it if has no handler
+			if ( ! g_udpServer.hasHandler(i1) ) continue;
+			if ( ! g_stats.m_reroutes   [i1][i3] &&
+			     ! g_stats.m_packetsIn  [i1][i3] &&
+			     ! g_stats.m_packetsOut [i1][i3] &&
+			     ! g_stats.m_errors     [i1][i3] &&
+			     ! g_stats.m_timeouts   [i1][i3] &&
+			     ! g_stats.m_nomem      [i1][i3] &&
+			     ! g_stats.m_dropped    [i1][i3] &&
+			     ! g_stats.m_cancelRead [i1][i3]  )
+				continue;
+			// print it all out.
+			if ( format == FORMAT_HTML )
+				p.safePrintf( 
+					     "<tr class=poo>"
+					     "<td>%" PRId32"</td>"    // niceness, 0 or 1
+					     "<td>0x%02x</td>" // msgType
+					     //"<td>%" PRId32"</td>"    // request?
+					     "<td>%" PRId32"</td>" // packets in
+					     "<td>%" PRId32"</td>" // packets out
+					     "<td>%" PRId32"</td>" // acks in
+					     "<td>%" PRId32"</td>" // acks out
+					     "<td>%" PRId32"</td>" // reroutes
+					     "<td>%" PRId32"</td>" // dropped
+					     "<td>%" PRId32"</td>" // cancel read
+					     "<td>%" PRId32"</td>" // errors
+					     "<td>%" PRId32"</td>" // timeouts
+					     "<td>%" PRId32"</td>" // nomem
+					     ,
+					     i3, // niceness
+					     (unsigned char)i1, // msgType
+					     //i2, // request?
+					     g_stats.m_packetsIn [i1][i3],
+					     g_stats.m_packetsOut[i1][i3],
+					     g_stats.m_acksIn [i1][i3],
+					     g_stats.m_acksOut[i1][i3],
+					     g_stats.m_reroutes[i1][i3],
+					     g_stats.m_dropped[i1][i3],
+					     g_stats.m_cancelRead[i1][i3],
+					     g_stats.m_errors[i1][i3],
+					     g_stats.m_timeouts[i1][i3],
+					     g_stats.m_nomem[i1][i3]
+					      );
+			if ( format == FORMAT_XML )
+				p.safePrintf(
+					     "\t<messageStat>\n"
+					     "\t\t<niceness>%" PRId32"</niceness>\n"
+					     "\t\t<msgType>0x%02x</msgType>\n"
+					     "\t\t<packetsIn>%" PRId32"</packetsIn>\n"
+					     "\t\t<packetsOut>%" PRId32"</packetsOut>\n"
+					     "\t\t<acksIn>%" PRId32"</acksIn>\n"
+					     "\t\t<acksOut>%" PRId32"</acksOut>\n"
+					     "\t\t<reroutes>%" PRId32"</reroutes>\n"
+					     "\t\t<dropped>%" PRId32"</dropped>\n"
+					     "\t\t<cancelsRead>%" PRId32"</cancelsRead>\n"
+					     "\t\t<errors>%" PRId32"</errors>\n"
+					     "\t\t<timeouts>%" PRId32"</timeouts>\n"
+					     "\t\t<noMem>%" PRId32"</noMem>\n"
+					     "\t</messageStat>\n"
+					     ,i3, // niceness
+					     (unsigned char)i1, // msgType
+					     g_stats.m_packetsIn [i1][i3],
+					     g_stats.m_packetsOut[i1][i3],
+					     g_stats.m_acksIn [i1][i3],
+					     g_stats.m_acksOut[i1][i3],
+					     g_stats.m_reroutes[i1][i3],
+					     g_stats.m_dropped[i1][i3],
+					     g_stats.m_cancelRead[i1][i3],
+					     g_stats.m_errors[i1][i3],
+					     g_stats.m_timeouts[i1][i3],
+					     g_stats.m_nomem[i1][i3]
+					      );
+			if ( format == FORMAT_JSON )
+				p.safePrintf(
+					     "\t\"messageStat\":{\n"
+					     "\t\t\"niceness\":%" PRId32",\n"
+					     "\t\t\"msgType\":\"0x%02x\",\n"
+					     "\t\t\"packetsIn\":%" PRId32",\n"
+					     "\t\t\"packetsOut\":%" PRId32",\n"
+					     "\t\t\"acksIn\":%" PRId32",\n"
+					     "\t\t\"acksOut\":%" PRId32",\n"
+					     "\t\t\"reroutes\":%" PRId32",\n"
+					     "\t\t\"dropped\":%" PRId32",\n"
+					     "\t\t\"cancelsRead\":%" PRId32",\n"
+					     "\t\t\"errors\":%" PRId32",\n"
+					     "\t\t\"timeouts\":%" PRId32",\n"
+					     "\t\t\"noMem\":%" PRId32"\n"
+					     "\t},\n"
+					     ,i3, // niceness
+					     (unsigned char)i1, // msgType
+					     g_stats.m_packetsIn [i1][i3],
+					     g_stats.m_packetsOut[i1][i3],
+					     g_stats.m_acksIn [i1][i3],
+					     g_stats.m_acksOut[i1][i3],
+					     g_stats.m_reroutes[i1][i3],
+					     g_stats.m_dropped[i1][i3],
+					     g_stats.m_cancelRead[i1][i3],
+					     g_stats.m_errors[i1][i3],
+					     g_stats.m_timeouts[i1][i3],
+					     g_stats.m_nomem[i1][i3]
+					      );
+		}
 	}
 
 
@@ -1522,14 +1520,12 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 						   0,false,"application/json");
 	}
 
-	if ( format == FORMAT_HTML )
+	if ( format == FORMAT_HTML ) {
 		p.safePrintf ( "</table><br><br>\n" );
 
-
-	//
-	// print msg send times
-	//
-	if ( format == FORMAT_HTML )
+		//
+		// print msg send times
+		//
 		p.safePrintf ( 
 			      "<table %s>"
 			      "<tr class=hdrow>"
@@ -1544,7 +1540,6 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 			      "<td><b>avg send time</td>\n" ,
 			      TABLE_STYLE);
 
-	if ( format == FORMAT_HTML ) {
 		// print bucket headers
 		for ( int32_t i = 0 ; i < MAX_BUCKETS ; i++ ) 
 			p.safePrintf("<td>%i+</td>\n",(1<<i)-1);
@@ -1553,54 +1548,52 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 
 	// loop over niceness
 	for ( int32_t i3 = 0 ; i3 < 2 ; i3++ ) {
-	// loop over isRequest?
-	for ( int32_t i2 = 0 ; i2 < 2 ; i2++ ) {
-	// print each msg stat
-	for ( int32_t i1 = 0 ; i1 < MAX_MSG_TYPES ; i1++ ) {
-	// skip it if has no handler
-	if ( ! g_udpServer.hasHandler(i1) ) continue;
-	// skip if xml
-	if ( format != FORMAT_HTML ) continue;
-		// print it all out.
-		// careful, second index is the nicenss, and third is
-		// the isReply. our loops are reversed.
-		int64_t total = g_stats.m_msgTotalOfSendTimes[i1][i3][i2];
-		int64_t nt    = g_stats.m_msgTotalSent       [i1][i3][i2];
-		// skip if no stat
-		if ( nt == 0 ) continue;
-		int32_t      avg   = 0;
-		if ( nt > 0 ) avg = total / nt;
-		p.safePrintf( 
-			     "<tr class=poo>"
-			      "<td>%" PRId32"</td>"    // niceness, 0 or 1
-			      "<td>%" PRId32"</td>"    // request?
-			      "<td>0x%02x</td>" // msgType
-			      "<td>%" PRId64"</td>" // total sent
-			      "<td>%" PRId32"ms</td>" ,// avg send time in ms
-			      i3, // niceness
-			      i2, // request?
-			      (unsigned char)i1, // msgType
-			      nt,
-			      avg );
-		// print buckets
-		for ( int32_t i4 = 0 ; i4 < MAX_BUCKETS ; i4++ ) {
-			int64_t count ;
-			count = g_stats.m_msgTotalSentByTime[i1][i3][i2][i4];
-			p.safePrintf("<td>%" PRId64"</td>",count);
+		// loop over isRequest?
+		for ( int32_t i2 = 0 ; i2 < 2 ; i2++ ) {
+			// print each msg stat
+			for ( int32_t i1 = 0 ; i1 < MAX_MSG_TYPES ; i1++ ) {
+				// skip it if has no handler
+				if ( ! g_udpServer.hasHandler(i1) ) continue;
+				// skip if xml
+				if ( format != FORMAT_HTML ) continue;
+					// print it all out.
+					// careful, second index is the nicenss, and third is
+					// the isReply. our loops are reversed.
+					int64_t total = g_stats.m_msgTotalOfSendTimes[i1][i3][i2];
+					int64_t nt    = g_stats.m_msgTotalSent       [i1][i3][i2];
+					// skip if no stat
+					if ( nt == 0 ) continue;
+					int32_t      avg   = 0;
+					if ( nt > 0 ) avg = total / nt;
+					p.safePrintf( 
+						     "<tr class=poo>"
+						      "<td>%" PRId32"</td>"    // niceness, 0 or 1
+						      "<td>%" PRId32"</td>"    // request?
+						      "<td>0x%02x</td>" // msgType
+						      "<td>%" PRId64"</td>" // total sent
+						      "<td>%" PRId32"ms</td>" ,// avg send time in ms
+						      i3, // niceness
+						      i2, // request?
+						      (unsigned char)i1, // msgType
+						      nt,
+						      avg );
+					// print buckets
+					for ( int32_t i4 = 0 ; i4 < MAX_BUCKETS ; i4++ ) {
+						int64_t count ;
+						count = g_stats.m_msgTotalSentByTime[i1][i3][i2][i4];
+						p.safePrintf("<td>%" PRId64"</td>",count);
+					}
+					p.safePrintf("</tr>\n");
+			}
 		}
-		p.safePrintf("</tr>\n");
-	}
-	}
 	}
 
-	if ( format == FORMAT_HTML )
+	if ( format == FORMAT_HTML ) {
 		p.safePrintf ( "</table><br><br>\n" );
 
-
-	//
-	// print msg queued times
-	//
-	if ( format == FORMAT_HTML ) {
+		//
+		// print msg queued times
+		//
 		p.safePrintf ( 
 			      "<table %s>"
 			      "<tr class=hdrow>"
@@ -1622,49 +1615,47 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 
 	// loop over niceness
 	for ( int32_t i3 = 0 ; i3 < 2 ; i3++ ) {
-	// print each msg stat
-	for ( int32_t i1 = 0 ; i1 < MAX_MSG_TYPES ; i1++ ) {
-		// only html
-		if ( format != FORMAT_HTML ) break;
-		// skip it if has no handler
-		if ( ! g_udpServer.hasHandler(i1) ) continue;
-		// print it all out
-		int64_t total = g_stats.m_msgTotalOfQueuedTimes[i1][i3];
-		int64_t nt    = g_stats.m_msgTotalQueued       [i1][i3];
-		// skip if no stat
-		if ( nt == 0 ) continue;
-		int32_t      avg   = 0;
-		if ( nt > 0 ) avg = total / nt;
-		p.safePrintf( 
-			     "<tr class=poo>"
-			      "<td>%" PRId32"</td>"    // niceness, 0 or 1
-			     "<td>0x%02x</td>" // msgType
-			      //"<td>%" PRId32"</td>"    // request?
-			      "<td>%" PRId64"</td>" // total done
-			      "<td>%" PRId32"ms</td>" ,// avg handler time in ms
-			      i3, // niceness
-			      (unsigned char)i1, // msgType
-			      //i2, // request?
-			      nt ,
-			      avg );
-		// print buckets
-		for ( int32_t i4 = 0 ; i4 < MAX_BUCKETS ; i4++ ) {
-			int64_t count ;
-			count = g_stats.m_msgTotalQueuedByTime[i1][i3][i4];
-			p.safePrintf("<td>%" PRId64"</td>",count);
+		// print each msg stat
+		for ( int32_t i1 = 0 ; i1 < MAX_MSG_TYPES ; i1++ ) {
+			// only html
+			if ( format != FORMAT_HTML ) break;
+			// skip it if has no handler
+			if ( ! g_udpServer.hasHandler(i1) ) continue;
+			// print it all out
+			int64_t total = g_stats.m_msgTotalOfQueuedTimes[i1][i3];
+			int64_t nt    = g_stats.m_msgTotalQueued       [i1][i3];
+			// skip if no stat
+			if ( nt == 0 ) continue;
+			int32_t      avg   = 0;
+			if ( nt > 0 ) avg = total / nt;
+			p.safePrintf( 
+				     "<tr class=poo>"
+				      "<td>%" PRId32"</td>"    // niceness, 0 or 1
+				     "<td>0x%02x</td>" // msgType
+				      //"<td>%" PRId32"</td>"    // request?
+				      "<td>%" PRId64"</td>" // total done
+				      "<td>%" PRId32"ms</td>" ,// avg handler time in ms
+				      i3, // niceness
+				      (unsigned char)i1, // msgType
+				      //i2, // request?
+				      nt ,
+				      avg );
+			// print buckets
+			for ( int32_t i4 = 0 ; i4 < MAX_BUCKETS ; i4++ ) {
+				int64_t count ;
+				count = g_stats.m_msgTotalQueuedByTime[i1][i3][i4];
+				p.safePrintf("<td>%" PRId64"</td>",count);
+			}
+			p.safePrintf("</tr>\n");
 		}
-		p.safePrintf("</tr>\n");
-	}
 	}
 
-	if ( format == FORMAT_HTML )
+	if ( format == FORMAT_HTML ) {
 		p.safePrintf ( "</table><br><br>\n" );
 
-
-	//
-	// print msg handler times
-	//
-	if ( format == FORMAT_HTML ) {
+		//
+		// print msg handler times
+		//
 		p.safePrintf ( 
 			      "<table %s>"
 			      "<tr class=hdrow>"
