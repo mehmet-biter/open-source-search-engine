@@ -254,7 +254,7 @@ bool RdbMap::writeMap2 ( ) {
 }
 
 
-int64_t RdbMap::writeSegment ( int32_t seg , int64_t offset ) {
+int64_t RdbMap::writeSegment( int32_t seg , int64_t offset ) {
 	// how many pages have we written?
 	int32_t pagesWritten = seg * PAGES_PER_SEGMENT;
 	// how many pages are left to write?
@@ -268,13 +268,13 @@ int64_t RdbMap::writeSegment ( int32_t seg , int64_t offset ) {
 	// write the keys segment
 	g_errno = 0;
 	m_file.write ( (char *)m_keys[seg] , writeSize , offset );
-	if ( g_errno ) return false;//log("RdbMapFile::writeSegment: failed");
+	if ( g_errno ) return -1;//log("RdbMapFile::writeSegment: failed");
 	offset += writeSize ;
 	// determine writeSize for relative 2-byte offsets
 	writeSize = pagesLeft * 2;
 	// write the offsets of segment
 	m_file.write ( (char *)m_offsets[seg] , writeSize , offset );
-	if ( g_errno ) return false;//log("RdbMapFile::writeSegment: failed");
+	if ( g_errno ) return -1;//log("RdbMapFile::writeSegment: failed");
 	offset += writeSize ;
 	// return the new offset
 	return offset ;
