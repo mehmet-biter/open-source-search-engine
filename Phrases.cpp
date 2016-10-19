@@ -77,7 +77,7 @@ bool Phrases::set( const Words *words, const Bits *bits ) {
 
 	// point to this info while we parse
 	m_words        = words;
-	m_wptrs        = words->getWords();
+	m_wptrs        = words->getWordPtrs();
 	m_wlens        = words->getWordLens();
 	m_wids         = words->getWordIds();
 	m_bits         = bits;

@@ -1618,7 +1618,7 @@ float Title::getSimilarity ( Words  *w1 , int32_t i0 , int32_t i1 ,
 // . returns false on error and sets g_errno
 bool Title::copyTitle(Words *w, int32_t t0, int32_t t1) {
 	// skip initial punct
-	const char *const *wp    = w->getWords();
+	const char *const *wp    = w->getWordPtrs();
 	const int32_t     *wlens = w->getWordLens();
 	int32_t            nw    = w->getNumWords();
 

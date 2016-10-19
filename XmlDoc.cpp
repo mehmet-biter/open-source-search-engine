@@ -3210,7 +3210,7 @@ static bool setLangVec ( Words *words ,
 			 Sections *ss ) {
 
 	const int64_t *wids       = words->getWordIds();
-	const char * const *wptrs = words->getWords();
+	const char * const *wptrs = words->getWordPtrs();
 	int32_t nw                = words->getNumWords();
 
 	// allocate
@@ -3489,7 +3489,7 @@ char XmlDoc::computeLangId ( Sections *sections , Words *words, char *lv ) {
 
 
 	int32_t             nw    = words->getNumWords();
-	const char * const *wptrs = words->getWords();
+	const char * const *wptrs = words->getWordPtrs();
 
 
 	// now set the langid
@@ -16986,7 +16986,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	char *node = xml->getNodePtr(linkNode)->m_node;
 	// . find the word index, "n" for this node
 	// . this is INEFFICIENT!!
-	char **wp = ww->getWords();
+	char **wp = ww->getWordPtrs();
 	int32_t   nw = ww->getNumWords();
 	int32_t   n;
 
@@ -20873,7 +20873,7 @@ bool getWordPosVec ( const Words *words ,
 	if ( sections ) sp = sections->m_sectionPtrs;
 	const nodeid_t *tids = words->getTagIds();
 	const int32_t *wlens = words->getWordLens();
-	const char *const*wptrs = words->getWords();
+	const char *const*wptrs = words->getWordPtrs();
 	int32_t nw = words->getNumWords();
 
 	if ( ! wpos->reserve ( nw * sizeof(int32_t) ) ) return false;

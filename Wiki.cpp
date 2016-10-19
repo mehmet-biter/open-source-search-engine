@@ -176,7 +176,7 @@ int32_t Wiki::getNumWordsInWikiPhrase ( int32_t i, const Words *w ) {
 	const int64_t *wids = w->getWordIds();
 	if ( ! wids[i] ) return 0;
 	int32_t nw = w->getNumWords();
-	const char * const *wptrs = w->getWords();
+	const char * const *wptrs = w->getWordPtrs();
 	const int32_t  *wlens = w->getWordLens();
 	// how many in the phrase
 	int32_t maxCount = 0;

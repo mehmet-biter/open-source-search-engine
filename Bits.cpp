@@ -65,7 +65,7 @@ bool Bits::set(const Words *words) {
 	}
 
 	const nodeid_t *tagIds = words->getTagIds();
-	const char *const*w = words->getWords();
+	const char *const*w = words->getWordPtrs();
 
 	int32_t brcount = 0;
 
@@ -129,7 +129,7 @@ void Bits::setInUrlBits () {
 	m_inUrlBitsSet = true;
 	const nodeid_t *tids  = m_words->getTagIds();
 	const int64_t *wids = m_words->getWordIds();
-	const char *const*wptrs    = m_words->getWords();
+	const char *const*wptrs    = m_words->getWordPtrs();
 	int32_t nw = m_words->getNumWords();
 	for ( int32_t i = 0 ; i < nw; i++ ) {
 		// look for protocol
@@ -244,7 +244,7 @@ bool Bits::setForSummary ( const Words *words ) {
 	// D_STARTS_FRAGMENT
 
 	const nodeid_t *tagIds = words->getTagIds();
-	const char *const*w = words->getWords();
+	const char *const*w = words->getWordPtrs();
 	const int32_t *wlens = words->getWordLens();
 	const int64_t *wids = words->getWordIds();
 

@@ -115,7 +115,7 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, uint8_t contentT
 	int64_t   *wids  = w->getWordIds  ();
 	nodeid_t    *tids  = w->getTagIds   ();
 	int32_t           nw  = w->getNumWords ();
-	char      **wptrs  = w->getWords    ();
+	char      **wptrs  = w->getWordPtrs();
 	int32_t        *wlens = w->getWordLens ();
 
 	// set these up
@@ -3078,7 +3078,7 @@ bool Sections::print( SafeBuf *sbuf, int32_t hiPos, int32_t *wposVec, char *dens
 
 	//verifySections();
 
-	char  **wptrs = m_words->getWords    ();
+	char  **wptrs = m_words->getWordPtrs();
 	int32_t   *wlens = m_words->getWordLens ();
 	int32_t    nw    = m_words->getNumWords ();
 

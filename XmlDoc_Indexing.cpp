@@ -1647,7 +1647,7 @@ bool XmlDoc::hashTitle ( HashTableX *tt ) {
 	// . use "title" as both prefix and description
 	//if ( ! hashWords (a,i,&hi ) ) return false;
 
-	char **wptrs = m_words.getWords();
+	char **wptrs = m_words.getWordPtrs();
 	int32_t  *wlens = m_words.getWordLens();
 	char  *title    = wptrs[a];
 	char  *titleEnd = wptrs[i-1] + wlens[i-1];
