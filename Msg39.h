@@ -41,19 +41,19 @@ class Msg39Request {
 
 	// flags
 	char    m_queryExpansion;
-	char    m_debug;
-	char    m_doSiteClustering;
-	char    m_hideAllClustered;
+	bool    m_debug;
+	bool    m_doSiteClustering;
+	bool    m_hideAllClustered;
 	//char    m_doIpClustering;
-	char    m_doDupContentRemoval;
+	bool    m_doDupContentRemoval;
 	char    m_addToCache;
-	char    m_familyFilter;
-	char    m_getDocIdScoringInfo;
+	bool    m_familyFilter;
+	bool    m_getDocIdScoringInfo;
 	char    m_realMaxTop;
 	char    m_stripe;
 	char    m_useQueryStopWords;
-	char    m_allowHighFrequencyTermCache;
-	char    m_doMaxScoreAlgo;
+	bool    m_allowHighFrequencyTermCache;
+	bool    m_doMaxScoreAlgo;
 
 	collnum_t m_collnum;
 

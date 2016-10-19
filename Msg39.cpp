@@ -34,7 +34,7 @@ void Msg39Request::reset() {
 	//m_compoundListMaxSize     = 20000000;
 	m_language                = 0;
 	m_queryExpansion          = false;
-	m_debug                   = 0;
+	m_debug                   = false;
 	m_getDocIdScoringInfo     = true;
 	m_doSiteClustering        = true;
 	m_hideAllClustered        = false;

@@ -1197,12 +1197,12 @@ CollectionRec::CollectionRec() {
 	m_summaryMaxLen = 0;
 	m_summaryMaxNumLines = 0;
 	m_summaryMaxNumCharsPerLine = 0;
-	m_getDocIdScoringInfo = 0;
+	m_getDocIdScoringInfo = false;
 	m_diffbotCrawlStartTime = 0;
 	m_diffbotCrawlEndTime = 0;
 	m_numRegExs9 = 0;
 	m_doQueryHighlighting = 0;
-	m_spellCheck = 0;
+	m_spellCheck = false;
 	m_spiderTimeMin = 0;
 	m_spiderTimeMax = 0;
 	m_maxAddUrlsPerIpDomPerDay = 0;
@@ -1211,8 +1211,8 @@ CollectionRec::CollectionRec() {
 	m_summaryMaxWidth = 0;
 	m_maxRobotsCacheAge = 0;
 	m_queryExpansion = 0;
-	m_rcache = 0;
-	m_hideAllClustered = 0;
+	m_rcache = false;
+	m_hideAllClustered = false;
 	m_END_COPY = 0;
 	m_hackFlag = 0;
 }

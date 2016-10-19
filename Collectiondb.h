@@ -387,7 +387,7 @@ class CollectionRec {
 	int32_t m_summaryMaxNumLines;
 	int32_t m_summaryMaxNumCharsPerLine;
 
-	char m_getDocIdScoringInfo;
+	bool m_getDocIdScoringInfo;
 
   /*****
    * !! Start Diffbot paramamters !! *
@@ -467,7 +467,7 @@ class CollectionRec {
 	SafeBuf m_htmlTail;
 
 	// SPELL CHECK
-	char  m_spellCheck;
+	bool  m_spellCheck;
 
 	char m_sendingAlertInProgress;
 
@@ -507,9 +507,9 @@ class CollectionRec {
 	char m_queryExpansion;
 
 	// read from cache
-	char m_rcache;
+	bool m_rcache;
 
-	char m_hideAllClustered;
+	bool m_hideAllClustered;
 
 	// special var to prevent Collectiondb.cpp from copying the crap
 	// below here
