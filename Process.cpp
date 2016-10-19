@@ -45,7 +45,6 @@ extern void reset_iana_charset ( );
 extern void resetDomains       ( );
 extern void resetEntities      ( );
 extern void resetQuery         ( );
-extern void resetStopWords     ( );
 extern void resetAbbrTable     ( );
 extern void resetUnicode       ( );
 
@@ -1160,7 +1159,6 @@ void Process::resetAll ( ) {
 	resetDomains();
 	resetEntities();
 	resetQuery();
-	resetStopWords();
 	resetAbbrTable();
 	resetUnicode();
 

@@ -176,7 +176,6 @@ extern void resetAdultBit      ( );
 extern void resetDomains       ( );
 extern void resetEntities      ( );
 extern void resetQuery         ( );
-extern void resetStopWords     ( );
 extern void resetUnicode       ( );
 
 extern void tryToSyncWrapper ( int fd , void *state ) ;

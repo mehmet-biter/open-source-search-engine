@@ -3856,10 +3856,3 @@ int32_t isCommonWord ( int64_t h ) {
 	return s_commonWordTable.getScore ( &h );
 }
 
-void resetStopWords ( ) {
-	s_stopWordTable.reset();
-	for ( int i = 0 ; i <= MAXLANGID ; i++ )
-		s_queryStopWordTables[i].reset();
-	s_commonWordTable.reset();
-}
-
