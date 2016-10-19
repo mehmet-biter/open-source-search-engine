@@ -721,7 +721,7 @@ void Blaster::gotDoc2 ( void *state, TcpSocket *s){
 	for (int32_t i=0;i<links2.getNumLinks();i++){
 		// The dots check if exactly google or gigablast are present
 		// in the link
-		char *ss=links2.getLink(i);
+		char *ss=links2.getLinkPtr(i);
 		char *p;
 		p=strstr(ss,domain2);
 		if(p) continue;
@@ -747,8 +747,8 @@ void Blaster::gotDoc2 ( void *state, TcpSocket *s){
 		if(p) continue;
 		if (m_verbose)
 			log(LOG_WARN,"blaster: link in Doc2=%s"
-			    ,links2.getLink(i));
-		uint32_t h=hash32Lower_a(links2.getLink(i),
+			    ,links2.getLinkPtr(i));
+		uint32_t h=hash32Lower_a(links2.getLinkPtr(i),
 					    links2.getLinkLen(i));
 		//should i check for conflict. no, because it doesn't matter
 		urlHash.addKey(h,1);
@@ -766,7 +766,7 @@ void Blaster::gotDoc2 ( void *state, TcpSocket *s){
 	if ( dom ) strncpy(domain1,dom,dlen);
 	domain1[dlen]='\0';
 	for (int32_t i=0;i<links1.getNumLinks();i++){
-		char *ss=links1.getLink(i);
+		char *ss=links1.getLinkPtr(i);
 		char *p;
 		p=strstr(ss,domain1);
 		if(p) continue;
@@ -792,8 +792,8 @@ void Blaster::gotDoc2 ( void *state, TcpSocket *s){
 		if(p) continue;
 		if (m_verbose)
 			log(LOG_WARN,"blaster: link in Doc1=%s"
-			    ,links1.getLink(i));
-		uint32_t h=hash32Lower_a(links1.getLink(i),
+			    ,links1.getLinkPtr(i));
+		uint32_t h=hash32Lower_a(links1.getLinkPtr(i),
 					    links1.getLinkLen(i));
 		int32_t slot= urlHash.getSlot(h);		
 		if(slot!=-1) continue;
@@ -801,7 +801,7 @@ void Blaster::gotDoc2 ( void *state, TcpSocket *s){
 		// if url is not present, get its doc.
 		if (m_verbose || m_justDisplay)
 			log(LOG_WARN,"blaster: NOT FOUND %s in %s"
-			    ,links1.getLink(i),domain2);
+			    ,links1.getLinkPtr(i),domain2);
 		numUrlsNotFound++;
 		//Don't do anything else if just have to display the urls
 		if (m_justDisplay) continue;
@@ -825,7 +825,7 @@ void Blaster::gotDoc2 ( void *state, TcpSocket *s){
 		//Msg16 does 6 redirects, so I do 6 too
 		st2->m_numRedirects=6;
 		//st2->m_url.set(links1.getLink(i),links1.getLinkLen(i));
-		st2->m_url = links1.getLink(i);
+		st2->m_url = links1.getLinkPtr(i);
 		// No need for a proxy ip here, since we are fetching
 		// doc's from different IPs. Faster this way
 		bool status = g_httpServer.getDoc ( st2->m_url, // url
@@ -1180,7 +1180,7 @@ void Blaster::gotDoc4 ( void *state, TcpSocket *s){
 		log(LOG_WARN, "blaster: Coudn't set Links class in gotDoc4");
 	}
 	for (int32_t i=0;i<links.getNumLinks();i++){
-		char *ss=links.getLink(i);
+		char *ss=links.getLinkPtr(i);
 		char *p;
 		// This page *should* always be a gigablast page. So not adding
 		// checks for msn or yahoo or google page.
@@ -1235,7 +1235,7 @@ void Blaster::gotDoc4 ( void *state, TcpSocket *s){
 		bool isFound=false;
 		// So now we search for tmp in the links
 		for (int32_t i=0;i<links.getNumLinks();i++){
-			if(strstr(links.getLink(i),tmp) && 
+			if(strstr(links.getLinkPtr(i),tmp) && 
 			   links.getLinkLen(i)==(int)strlen(tmp)){
 				isFound=true;
 				log(LOG_WARN,"blaster: %s in results1 but not"

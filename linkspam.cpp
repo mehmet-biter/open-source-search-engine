@@ -568,7 +568,7 @@ bool setLinkSpam ( int32_t       ip                 ,
 		if ( links->isInternalDom(i) ) continue;
 		// otherwise, normalize it...
 		Url uu;
-		uu.set( links->getLink( i ), links->getLinkLen( i ) );
+		uu.set( links->getLinkPtr( i ), links->getLinkLen( i ) );
 
 		// . is it near sporny links? (naughty domains or lotsa -'s)
 		// . if we are in a list of ads, chances are good the true
@@ -914,8 +914,8 @@ bool isLinkSpam ( const Url *linker,
 	// . if any of those areas are not link chains, then assume we are
 	//   not a link chain
 	for ( x++ ; x < nl ; x++ ) {
-		char *link    = links->getLink    (x);
-		int32_t  linkLen = links->getLinkLen (x);
+		char *link = links->getLinkPtr(x);
+		int32_t  linkLen = links->getLinkLen(x);
 		if ( ! link          ) continue;
 		if ( linkLen <= 0    ) continue;
 		if ( linkLen > uulen ) continue;

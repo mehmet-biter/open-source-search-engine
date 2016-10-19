@@ -15078,7 +15078,7 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		if ( flags & LF_NOFOLLOW ) continue;
 
 		// point to url
-		char *s    = links->getLink   (i);
+		char *s    = links->getLinkPtr(i);
 		int32_t  slen = links->getLinkLen(i);
 
 		// get hash
@@ -16862,7 +16862,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	// . the link we link to
 	// . important when getting site info because the link url
 	//   can be different than the root url!
-	m_reply. ptr_linkUrl = links->getLink   (linkNum);
+	m_reply. ptr_linkUrl = links->getLinkPtr(linkNum);
 	m_reply.size_linkUrl = links->getLinkLen(linkNum)+1;
 
 	// save the rss item in our state so we can point to it, include \0

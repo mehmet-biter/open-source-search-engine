@@ -1071,7 +1071,6 @@ public:
 	int32_t           getNumLinks   () { return m_numLinks; }
 
 	int32_t           getLinkLen    ( int32_t i ) { return m_linkLens  [i]; }
-	char          *getLink       ( int32_t i ) { return m_linkPtrs  [i]; }
 	char          *getLinkPtr    ( int32_t i ) { return m_linkPtrs  [i]; }
 	uint32_t       getLinkHash32 ( int32_t i ) { 
 		return (uint32_t)m_linkHashes[i]; }

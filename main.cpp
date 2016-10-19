@@ -7206,7 +7206,7 @@ void countdomains( const char* coll, int32_t numRecs, int32_t verbosity, int32_t
 		}
 			
 		for( int32_t i = 0; i < dlinks->getNumLinks(); i++ ) {
-			char *link = dlinks->getLink(i);
+			char *link = dlinks->getLinkPtr(i);
 			int32_t dlen;
 			const char *dom = getDomFast ( link , &dlen );
 			uint32_t lkey = hash32( dom , dlen );
