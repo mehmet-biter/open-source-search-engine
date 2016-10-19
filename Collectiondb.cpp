@@ -216,8 +216,11 @@ bool Collectiondb::addExistingColl ( const char *coll, collnum_t collnum ) {
 	}
 
 	// create the record in memory
-	CollectionRec *cr = new (CollectionRec);
-	if ( ! cr ) {
+	CollectionRec *cr;
+	try {
+		cr = new (CollectionRec);
+	}
+	catch(std::bad_alloc) {
 		log( LOG_WARN, "admin: Failed to allocated %" PRId32" bytes for new collection record for '%s'.",
 		     (int32_t)sizeof(CollectionRec),coll);
 		return false;
@@ -331,8 +334,11 @@ bool Collectiondb::addNewColl ( const char *coll, bool saveIt,
 	}
 
 	// create the record in memory
-	CollectionRec *cr = new (CollectionRec);
-	if ( ! cr ) {
+	CollectionRec *cr;
+	try {
+		cr = new (CollectionRec);
+	}
+	catch(std::bad_alloc) {
 		log( LOG_WARN, "admin: Failed to allocated %" PRId32" bytes for new collection record for '%s'.",
 		     ( int32_t ) sizeof( CollectionRec ), coll );
 		return false;
