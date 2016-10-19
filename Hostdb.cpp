@@ -371,31 +371,26 @@ createFile:
 		// skip spaces after hostid/port/spare keyword
 		while ( is_wspace_a(*p) ) p++;
 
-		int32_t port1 = 6002;
-		int32_t port2 = 7002;
-		int32_t port3 = 8002;
-		int32_t port4 = 9002;
-
 		// now the four ports
-		port1 = atol(p);
+		int32_t port1 = atol(p);
 		// skip digits
 		for ( ; is_digit(*p) ; p++ );
 		// skip spaces after it
 		while ( is_wspace_a(*p) ) p++;
 
-		port2 = atol(p);
+		int32_t port2 = atol(p);
 		// skip digits
 		for ( ; is_digit(*p) ; p++ );
 		// skip spaces after it
 		while ( is_wspace_a(*p) ) p++;
 
-		port3 = atol(p);
+		int32_t port3 = atol(p);
 		// skip digits
 		for ( ; is_digit(*p) ; p++ );
 		// skip spaces after it
 		while ( is_wspace_a(*p) ) p++;
 
-		port4 = atol(p);
+		int32_t port4 = atol(p);
 		// skip digits
 		for ( ; is_digit(*p) ; p++ );
 		// skip spaces after it
