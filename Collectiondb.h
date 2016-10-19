@@ -284,7 +284,7 @@ class CollectionRec {
 	HashTableX m_twitchyTable;
 
 	// spider controls for this collection
-	char m_spideringEnabled ;
+	bool m_spideringEnabled ;
 	int32_t  m_spiderDelayInMilliseconds;
 
 	// is in active list in spider.cpp?
@@ -325,7 +325,7 @@ class CollectionRec {
 	char  m_delete404s              ;
 	char  m_siteClusterByDefault    ;
 	char  m_doIpLookups             ; // considered iff using proxy
-	char  m_useRobotsTxt            ;
+	bool  m_useRobotsTxt            ;
 	char  m_obeyRelNoFollowLinks    ;
 	char  m_forceUseFloaters        ;
 	char  m_automaticallyUseProxies ;

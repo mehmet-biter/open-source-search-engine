@@ -21,7 +21,7 @@ public:
 
 	CollectionRec *m_cr;
 	char           m_mergeMode;
-	char           m_spideringEnabled;
+	bool           m_spideringEnabled;
 	char           m_injectionEnabled;
 	char           m_didDaily;
 	time_t         m_savedStartTime;

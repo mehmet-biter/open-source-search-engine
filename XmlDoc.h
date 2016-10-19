@@ -938,7 +938,7 @@ public:
 	char *m_httpReply;
 	char m_incrementedAttemptsCount;
 	char m_incrementedDownloadCount;
-	char m_useRobotsTxt;
+	bool m_useRobotsTxt;
 	int32_t m_robotsTxtLen;
 	int32_t m_httpReplySize;
 	int32_t m_httpReplyAllocSize;

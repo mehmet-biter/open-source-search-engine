@@ -1138,7 +1138,7 @@ CollectionRec::CollectionRec() {
 	m_dailyMergeTrigger = 0;
 	memset(m_dailyMergeDOWList, 0, sizeof(m_dailyMergeDOWList));
 	m_treeCount = 0;
-	m_spideringEnabled = 0;
+	m_spideringEnabled = true;
 	m_spiderDelayInMilliseconds = 0;
 	m_isActive = false;
 	m_spiderRoundStartTime = 0;
@@ -1164,7 +1164,7 @@ CollectionRec::CollectionRec() {
 	m_delete404s = 0;
 	m_siteClusterByDefault = 0;
 	m_doIpLookups = 0;
-	m_useRobotsTxt = 0;
+	m_useRobotsTxt = true;
 	m_obeyRelNoFollowLinks = 0;
 	m_forceUseFloaters = 0;
 	m_automaticallyUseProxies = 0;
