@@ -104,7 +104,7 @@ struct DnsState {
 
 	// we have to turn it off in some requests for some reason
 	// like for www.fsis.usda.gov, othewise we get a refused to talk error
-	char m_recursionDesired;
+	bool m_recursionDesired;
 
 	// have a total timeout function
 	int32_t m_startTime;
