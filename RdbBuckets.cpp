@@ -10,6 +10,16 @@
 #define INIT_SIZE 4096
 #define SAVE_VERSION 0
 
+
+RdbBucket::RdbBucket() {
+	m_endKey = NULL;
+	m_keys = NULL;
+	m_parent = NULL;
+	m_numKeys = 0;
+	m_lastSorted = 0;
+	m_collnum = 0;
+}
+
 bool RdbBucket::set(RdbBuckets* parent, char* newbuf) {
 	m_endKey = NULL;
 	m_parent = parent;
