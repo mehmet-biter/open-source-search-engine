@@ -1400,8 +1400,6 @@ void gotHttpReply2 ( void *state ,
 		}
 	}
 
-	// by default assume it has a good date
-	int32_t status = 1;
 
 	// sanity
 	if ( reply && replySize>0 && reply[replySize-1]!='\0') {
@@ -1412,8 +1410,7 @@ void gotHttpReply2 ( void *state ,
 		g_process.shutdownAbort(true); }
 
 	// these are typically roots!
-	if ( status == 1 && 
-	     // override HasIFrame with "FullPageRequested" if it has
+	if ( // override HasIFrame with "FullPageRequested" if it has
 	     // an iframe, because that is the overriding stat. i.e. if
 	     // we ignored if it had iframes, we'd still end up here...
 	     ( ! docsPtr || docsPtr == &g_stats.m_compressHasIframeDocs ) &&
@@ -1423,9 +1420,7 @@ void gotHttpReply2 ( void *state ,
 		bytesInPtr  = &g_stats.m_compressFullPageBytesIn;
 		bytesOutPtr = &g_stats.m_compressFullPageBytesOut;
 	}
-	// hey, it had a good date on it...
-	else if ( status == 1 && 
-		  ! docsPtr &&
+	else if ( ! docsPtr &&
 		  r->m_compressReply ) {
 		// record in the stats
 		docsPtr     = &g_stats.m_compressHasDateDocs;
@@ -1433,8 +1428,6 @@ void gotHttpReply2 ( void *state ,
 		bytesOutPtr = &g_stats.m_compressHasDateBytesOut;
 	}
 
-	// sanity check
-	if ( status != -1 && status != 0 && status != 1 ){g_process.shutdownAbort(true);}
 
 	if ( r->m_isRobotsTxt && 
 	     goodStatus &&
