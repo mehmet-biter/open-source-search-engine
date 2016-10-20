@@ -244,7 +244,7 @@ public:
 	// . you'll lose your data in this class if you call this
 	void reset();
 
-	bool isSavingTree ( ) ;
+	bool isSavingTree() const;
 
 	bool saveTree(bool useThread);
 	bool saveTreeIndex(bool useThread);

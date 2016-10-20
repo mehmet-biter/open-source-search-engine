@@ -771,7 +771,7 @@ void Rdb::doneSaving ( ) {
 	m_isSaving = false;
 }
 
-bool Rdb::isSavingTree ( ) {
+bool Rdb::isSavingTree() const {
 	if ( m_useTree ) return m_tree.isSaving();
 	return m_buckets.isSaving();
 }
