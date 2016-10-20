@@ -142,7 +142,7 @@ public:
 	// general parameters
         char   m_dedupURL;
 	int32_t   m_percentSimilarSummary;   // msg40
-	char   m_showBanned;
+	bool   m_showBanned;
 	int32_t   m_includeCachedCopy;
 	bool   m_familyFilter;            // msg40
 	bool   m_allowHighFrequencyTermCache;
