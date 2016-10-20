@@ -36,7 +36,7 @@ class Rebalance {
 	char m_nextKey[MAX_KEY_BYTES];
 	char m_endKey[MAX_KEY_BYTES];
 	bool m_needsRebalanceValid;
-	char m_needsRebalance;
+	char m_needsRebalance;	// may be -1
 	bool m_warnedUser;
 	bool m_userApproved;
 	bool m_isScanning;

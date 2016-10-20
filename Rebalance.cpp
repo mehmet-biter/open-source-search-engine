@@ -37,7 +37,7 @@ Rebalance::Rebalance ( ) {
 	KEYMIN ( m_nextKey , MAX_KEY_BYTES );
 	KEYMAX ( m_endKey , MAX_KEY_BYTES );
 	m_needsRebalanceValid = false;
-	m_needsRebalance = false;
+	m_needsRebalance = (char)false;
 	m_warnedUser = false;
 	m_userApproved = false;
 	m_isScanning = false;
@@ -61,7 +61,7 @@ const char *Rebalance::getNeedsRebalance ( ) {
 	// for simplicty,  only gb shards on stripe 0 should run this i guess
 	if ( g_hostdb.m_myHost->m_stripe != 0 ) {
 		m_needsRebalanceValid = true;
-		m_needsRebalance = false;
+		m_needsRebalance = (char)false;
 		return &m_needsRebalance;
 	}
 
@@ -82,7 +82,7 @@ const char *Rebalance::getNeedsRebalance ( ) {
 		saveRebalanceFile();
 		// assume we do not need a rebalance
 		m_needsRebalanceValid = true;
-		m_needsRebalance = false;
+		m_needsRebalance = (char)false;
 		return &m_needsRebalance;
 	}
 
@@ -90,7 +90,7 @@ const char *Rebalance::getNeedsRebalance ( ) {
 	if ( sb.length() <= 10 ) {
 		// we need it!
 		m_needsRebalanceValid = true;
-		m_needsRebalance = true;
+		m_needsRebalance = (char)true;
 		return &m_needsRebalance;
 	}
 
@@ -136,16 +136,16 @@ const char *Rebalance::getNeedsRebalance ( ) {
 	// we are valid now either way
 	m_needsRebalanceValid = true;
 	// assume ok
-	m_needsRebalance = false;
+	m_needsRebalance = (char)false;
 	// if hosts.conf is different and we are part of a different 
 	// shard then we must auto scale
-	if ( x != (int32_t)g_hostdb.m_myHost->m_shardNum) m_needsRebalance = true;
-	if ( y != g_hostdb.m_numShards          ) m_needsRebalance = true;
-	if ( z != g_hostdb.getNumHostsPerShard()) m_needsRebalance = true;
-	if ( rebalancing                        ) m_needsRebalance = true;
+	if ( x != (int32_t)g_hostdb.m_myHost->m_shardNum) m_needsRebalance = (char)true;
+	if ( y != g_hostdb.m_numShards          ) m_needsRebalance = (char)true;
+	if ( z != g_hostdb.getNumHostsPerShard()) m_needsRebalance = (char)true;
+	if ( rebalancing                        ) m_needsRebalance = (char)true;
 
 	// how can this be?
-	if ( m_numForeignRecs ) m_needsRebalance = true;
+	if ( m_numForeignRecs ) m_needsRebalance = (char)true;
 
 	// and we don't need user consent, they already did last time
 	if ( rebalancing ) {
@@ -276,7 +276,7 @@ void Rebalance::scanLoop ( ) {
 	// done:
 	// all done
 	m_isScanning     = false;
-	m_needsRebalance = false;
+	m_needsRebalance = (char)false;
 
 	// get rid of the 'F' flag in PageHosts.cpp
 	m_numForeignRecs = 0;
