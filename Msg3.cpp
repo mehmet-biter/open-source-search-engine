@@ -29,6 +29,11 @@ Msg3::Scan::Scan()
 
 Msg3::Msg3() : m_scan(NULL), m_numScansStarted(0), m_numScansCompleted(0)
 {
+	memset(m_constrainKey, 0, sizeof(m_constrainKey));
+	memset(m_startKey, 0, sizeof(m_startKey));
+	memset(m_endKey, 0, sizeof(m_endKey));
+	memset(m_endKeyOrig, 0, sizeof(m_endKeyOrig));
+	memset(m_hintKey, 0, sizeof(m_hintKey));
 	reset();
 }
 
@@ -293,9 +298,9 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 			startFileNum++;
 		}
 		// adjust num files if we need to, as well
-		if ( startFileNum < base->mergeStartFileNum() - 1 &&
+		if ( startFileNum < base->mergeStartFileNum() -1 &&
 		     numFiles != -1 &&
-		     startFileNum + numFiles - 1 >= base->mergeStartFileNum() - 1 ) {
+		     startFileNum + numFiles -1 >= base->mergeStartFileNum() -1 ) {
 			if ( g_conf.m_logDebugQuery )
 				log(LOG_DEBUG,"net: msg3: numFiles up one.");
 			// if merge file was inserted before us, inc our file number
@@ -724,11 +729,11 @@ bool Msg3::doneScanning ( ) {
 	// . if so, repeat ALL of the scans
 	g_errno = m_errno;
 	// 2 retry is the default
-	int32_t max = 2;
+	// int32_t max = 2;
 	// see if explicitly provided by the caller
-//	if ( m_maxRetries >= 0 ) max = m_maxRetries;
+	//	if ( m_maxRetries >= 0 ) max = m_maxRetries;
 	// now use -1 (no max) as the default no matter what
-	max = -1;
+	int32_t max = -1;
 	// ENOMEM is particulary contagious, so watch out with it...
 	if ( g_errno == ENOMEM && m_maxRetries == -1 ) max = 0;
 	// msg0 sets maxRetries to 2, don't let max stay set to -1
@@ -974,7 +979,7 @@ bool Msg3::doneScanning ( ) {
 			if ( inCache && 
 			     // 1st byte is RdbScan::m_shifted
 			     ( m_scan[i].m_list.getListSize() != recSize-1 ||
-			       memcmp ( m_scan[i].m_list.getList() , rec+1,recSize-1) ||
+			       memcmp ( m_scan[i].m_list.getList() , rec+1,recSize-1) != 0 ||
 			       *rec != m_scan[i].m_scan.shiftCount() ) ) {
 				log("msg3: cache did not validate");
 				g_process.shutdownAbort(true);
