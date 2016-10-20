@@ -658,8 +658,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	// HACK: skip to avoid a OOM lockup. if RdbBase cannot dump
 	// its data to disk it can backlog everyone and memory will
 	// never get freed up.
-	int64_t mm = g_conf.m_maxMem;
-	g_conf.m_maxMem = 0x0fffffffffffffffLL;
+	ScopedMemoryLimitBypass scopedMemmoryLimitBypass;
 	BigFile *f;
 
  tryAgain:
@@ -667,7 +666,6 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	try {
 		f = new (BigFile);
 	} catch ( ... ) {
-		g_conf.m_maxMem = mm;
 		g_errno = ENOMEM;
 		log( LOG_WARN, "RdbBase: new(%i): %s", ( int ) sizeof( BigFile ), mstrerror( g_errno ) );
 		return -1;
@@ -710,7 +708,6 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	try {
 		m = new (RdbMap);
 	} catch ( ... ) {
-		g_conf.m_maxMem = mm;
 		g_errno = ENOMEM;
 		log( LOG_WARN, "RdbBase: new(%i): %s", (int)sizeof(RdbMap), mstrerror(g_errno) );
 		mdelete ( f , sizeof(BigFile),"RdbBFile");
@@ -725,7 +722,6 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 		try {
 			in = new (RdbIndex);
 		} catch ( ... ) {
-			g_conf.m_maxMem = mm;
 			g_errno = ENOMEM;
 			log( LOG_WARN, "RdbBase: new(%i): %s", (int)sizeof(RdbIndex), mstrerror(g_errno) );
 			mdelete ( f , sizeof(BigFile),"RdbBFile");
@@ -739,7 +735,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	}
 
 	// reinstate the memory limit
-	g_conf.m_maxMem = mm;
+	scopedMemmoryLimitBypass.release();
 
 	// debug help
 	if ( isNew ) {

@@ -132,5 +132,14 @@ static inline bool relabel(void *ptr, size_t size, const char *note) {
 }
 
 
+class ScopedMemoryLimitBypass {
+	int64_t oldMaxMem;
+public:
+	ScopedMemoryLimitBypass();
+	~ScopedMemoryLimitBypass() {
+		release();
+	}
+	void release();
+};
 
 #endif // GB_MEM_H

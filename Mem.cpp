@@ -50,6 +50,24 @@ static int32_t   s_n = 0;
 static bool   s_initialized = 0;
 
 
+//note: the ScopedMemoryLimitBypass is not thread-safe. The "bypass" flag should really
+//be per-thread. Or RdbBase should be reworked to use another technique than artificially
+//raising the memory limit while adding a file. Eg. make freeCacheMem() work again?
+ScopedMemoryLimitBypass::ScopedMemoryLimitBypass()
+  : oldMaxMem(g_conf.m_maxMem)
+{
+	g_conf.m_maxMem = INT64_MAX;
+}
+
+void ScopedMemoryLimitBypass::release() {
+	if(oldMaxMem>=0) {
+		g_conf.m_maxMem = oldMaxMem;
+		oldMaxMem = -1;
+	}
+}
+
+
+
 static bool allocationShouldFailRandomly() {
 	// . fail randomly
 	// . good for testing if we can handle out of memory gracefully
