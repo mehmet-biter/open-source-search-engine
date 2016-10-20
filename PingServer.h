@@ -111,7 +111,7 @@ class PingServer {
 	// some cluster stats
 	int32_t m_numHostsWithForeignRecs;
 	int32_t m_numHostsDead;
-	int32_t m_hostsConfInAgreement;
+	bool m_hostsConfInAgreement;
 	bool m_hostsConfInDisagreement;
 };
 

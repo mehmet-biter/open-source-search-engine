@@ -257,7 +257,7 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 					count++;
 			}
 			// make sure count matches
-			if ( (!h->m_isProxy && count != g_hostdb.getNumHostsAlive()) ) {
+			if ( !h->m_isProxy && count != g_hostdb.getNumHostsAlive() ) {
 				g_process.shutdownAbort(true);
 			}
 		}
@@ -975,9 +975,10 @@ bool PingServer::sendEmail ( Host *h            ,
 		if ( now - s_lastOOMTime < 15*60 ) return true;
 		// set time
 		s_lastOOMTime = now;
+
+		// always force these now because they are messing up our latency graph
+		forceIt = true;
 	}
-	// always force these now because they are messing up our latency graph
-	if ( oom ) forceIt = true;
 	// . even if we don't send an email, log it
 	// . return if alerts disabled
 	if ( ! g_conf.m_sendEmailAlerts && ! forceIt ) {

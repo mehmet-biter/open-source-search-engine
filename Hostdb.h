@@ -214,7 +214,7 @@ public:
 	class Hostdb  *m_hostdb;
 
 	// Syncdb.cpp uses these
-	char           m_inSync ;
+	bool           m_inSync ;
 
 	// . used by Parms.cpp for broadcasting parm change requests
 	// . each parm change request has an id
