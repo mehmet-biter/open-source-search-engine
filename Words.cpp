@@ -14,6 +14,7 @@
 Words::Words ( ) {
 	m_buf = NULL;
 	m_bufSize = 0;
+	memset(m_localBuf, 0, sizeof(m_localBuf));
 	reset();
 }
 Words::~Words ( ) {
@@ -482,24 +483,6 @@ bool Words::allocateWordBuffers(int32_t count, bool tagIds) {
 	if ( p > m_buf + m_bufSize ) gbshutdownLogicError();
 
 	return true;
-}
-
-unsigned char Words::isBounded(int wordi) {
-	if(wordi+1 < m_numWords &&
-	   getWord(wordi)[getWordLen(wordi)] == '/'
-	   )
-		return(true);
-	if(wordi+1 < m_numWords &&
-	   (getWord(wordi)[getWordLen(wordi)] == '.' ||
-	    getWord(wordi)[getWordLen(wordi)] == '?') &&
-	   is_alnum_a(getWord(wordi)[getWordLen(wordi)+1]) )
-		return(true);
-	if(wordi > 0 &&
-	   (getWord(wordi)[-1] == '/' ||
-	    getWord(wordi)[-1] == '?'))
-		return(true);
-
-	return(false);
 }
 
 unsigned char getCharacterLanguage ( const char *utf8Char ) {

@@ -256,7 +256,6 @@ class Words {
 		return is_upper_utf8( m_words[n] );
 	}
 
-	unsigned char isBounded(int wordi);
 	 Words     ( );
 	~Words     ( );
 	void reset ( ); 
