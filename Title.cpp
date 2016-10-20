@@ -346,8 +346,8 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 
 	// scan to set link text flags
 	// loop over all "words" in the html body
-	char inLink   = false;
-	char selfLink = false;
+	bool inLink   = false;
+	bool selfLink = false;
 	for ( int32_t i = 0 ; i < NW ; i++ ) {
 		// if in a link that is not self link, cannot be in a candidate
 		if ( inLink && ! selfLink ) {
@@ -878,7 +878,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 			int32_t   b = bs[i];
 			// init
 			int32_t lasta = a;
-			char prev  = false;
+			bool prev  = false;
 			// char length in bytes
 			//int32_t charlen = 1;
 			// see how many we add
@@ -1026,7 +1026,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 		float qtb = 1.0;
 
 		// a flag
-		char uncapped = false;
+		bool uncapped = false;
 
 		// scan the words in this title candidate
 		for ( int32_t j = a ; j < b ; j++ ) {
