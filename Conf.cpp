@@ -281,16 +281,16 @@ Conf::Conf ( ) {
 	m_repairingEnabled = false;
 	m_maxRepairSpiders = 0;
 	m_repairMem = 0;
-	m_fullRebuild = 0;
-	m_rebuildAddOutlinks = 0;
-	m_rebuildRecycleLinkInfo = 0;
-	m_rebuildTitledb = 0;
-	m_rebuildPosdb = 0;
-	m_rebuildClusterdb = 0;
-	m_rebuildSpiderdb = 0;
-	m_rebuildLinkdb = 0;
-	m_rebuildRoots = 0;
-	m_rebuildNonRoots = 0;
+	m_fullRebuild = true;
+	m_rebuildAddOutlinks = false;
+	m_rebuildRecycleLinkInfo = true;
+	m_rebuildTitledb = false;
+	m_rebuildPosdb = false;
+	m_rebuildClusterdb = false;
+	m_rebuildSpiderdb = false;
+	m_rebuildLinkdb = false;
+	m_rebuildRoots = true;
+	m_rebuildNonRoots = true;
 }
 
 static bool isInWhiteSpaceList ( const char *p , const char *buf ) {
