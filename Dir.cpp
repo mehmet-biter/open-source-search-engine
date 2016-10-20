@@ -11,6 +11,7 @@
 Dir::Dir ( ) {
 	m_dirname = NULL;
 	m_dir     = NULL;
+	memset(m_dentryBuffer, 0, sizeof(m_dentryBuffer));
 }
 
 
@@ -60,10 +61,8 @@ bool Dir::open ( ) {
 		// interrupted system call
 	} while( ! m_dir && errno == EINTR );
 
-	if ( ! m_dir ) 
-		g_errno = errno;
-
 	if ( ! m_dir ) {
+		g_errno = errno;
 		log( LOG_WARN, "disk: opendir(%s) : %s", m_dirname,strerror( g_errno ) );
 		return false;
 	}
