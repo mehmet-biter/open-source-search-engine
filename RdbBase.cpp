@@ -1193,26 +1193,21 @@ void RdbBase::unlinkDone() {
 		gbshutdownCorrupted();
 	}
 
+	char newName[1024];
 	if ( ! m_rdb->isTitledb() ) {
-		// debug statement
-		log(LOG_INFO,"db: Renaming %s of size %" PRId64" to %s",
-		    m_fileInfo[x].m_file->getFilename(),fs , m_fileInfo[a].m_file->getFilename());
-
-		// rename it, this may block
-		if ( ! m_fileInfo[x].m_file->rename ( m_fileInfo[a].m_file->getFilename(), renameDoneWrapper, this) ) {
-			m_numThreads++;
-		}
+		strcpy(newName, m_fileInfo[a].m_file->getFilename());
 	} else {
 		// rename to this (titledb%04" PRId32"-%03" PRId32".dat)
-		char newName[1024];
-
 		// use m_dbname in case its titledbRebuild
 		sprintf ( newName , "%s%04" PRId32"-%03" PRId32".dat", m_dbname, m_fileInfo[a].m_fileId, m_fileInfo[x].m_fileId2 );
+	}
 
-		// rename it, this may block
-		if ( ! m_fileInfo[x].m_file->rename ( newName, renameDoneWrapper, this) ) {
-			m_numThreads++;
-		}
+	log(LOG_INFO,"db: Renaming %s of size %" PRId64" to %s",
+	    m_fileInfo[x].m_file->getFilename(), fs, newName);
+
+	// rename it, this may block
+	if ( ! m_fileInfo[x].m_file->rename ( m_fileInfo[a].m_file->getFilename(), renameDoneWrapper, this) ) {
+		m_numThreads++;
 	}
 
 	// if we blocked on all, keep going
