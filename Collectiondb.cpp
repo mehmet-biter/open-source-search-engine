@@ -299,7 +299,7 @@ bool Collectiondb::addNewColl ( const char *coll, bool saveIt,
 	if ( newCollnum < 0 ) { g_process.shutdownAbort(true); }
 
 	// if empty... bail, no longer accepted, use "main"
-	if ( ! coll || !coll[0] ) {
+	if ( !coll[0] ) {
 		g_errno = EBADENGINEER;
 		log( LOG_WARN, "admin: Trying to create a new collection but no collection name provided. "
 		     "Use the 'c' cgi parameter to specify it.");
@@ -326,8 +326,8 @@ bool Collectiondb::addNewColl ( const char *coll, bool saveIt,
 	char dname[512];
 	sprintf(dname, "%scoll.%s.%" PRId32"/",g_hostdb.m_dir,coll,(int32_t)newCollnum);
 	DIR *dir = opendir ( dname );
-	if ( dir ) closedir ( dir );
 	if ( dir ) {
+		closedir ( dir );
 		g_errno = EEXIST;
 		log(LOG_WARN, "admin: Trying to create collection %s but directory %s already exists on disk.",coll,dname);
 		return false;
@@ -420,7 +420,8 @@ bool Collectiondb::addNewColl ( const char *coll, bool saveIt,
 	}
 
 	// save it into this dir... might fail!
-	if ( saveIt && ! cr->save() ) {
+//	if ( saveIt && ! cr->save() ) {
+	if ( ! cr->save() ) {
 		mdelete ( cr , sizeof(CollectionRec) , "CollectionRec" );
 		delete ( cr );
 		log( LOG_WARN, "admin: Failed to save file %s: %s", dname,mstrerror(g_errno));
@@ -829,9 +830,8 @@ bool Collectiondb::resetColl2( collnum_t oldCollnum, collnum_t newCollnum, bool 
 		cr->m_coll,
 		(int32_t)newCollnum);
 	DIR *dir = opendir ( dname );
-	if ( dir )
-	     closedir ( dir );
 	if ( dir ) {
+	     closedir ( dir );
 		//g_errno = EEXIST;
 		log(LOG_WARN, "admin: Trying to create collection %s but "
 		    "directory %s already exists on disk.",cr->m_coll,dname);
@@ -921,10 +921,7 @@ CollectionRec *Collectiondb::getRec ( HttpRequest *r , bool useDefaultRec ) {
 	if ( ! coll && useDefaultRec ) {
 		CollectionRec *cr = g_collectiondb.getRec("main");
 		if ( cr ) return cr;
-	}
 
-	// try next in line
-	if ( ! coll && useDefaultRec ) {
 		return getFirstRec ();
 	}
 
@@ -1021,10 +1018,9 @@ collnum_t Collectiondb::getCollnum ( const char *coll , int32_t clen ) {
 	if ( coll && ! coll[0] ) coll = NULL;
 	if ( ! coll ) {
 		coll = g_conf.m_defaultColl;
-		if ( coll ) clen = strlen(coll);
-		else clen = 0;
+		clen = strlen(coll);
 	}
-	if ( ! coll || ! coll[0] ) {
+	if ( ! coll[0] ) {
 		coll = "main";
 		clen = strlen(coll);
 	}
@@ -1104,13 +1100,13 @@ CollectionRec::CollectionRec() {
 	m_collnum = -1;
 	m_coll[0] = '\0';
 	m_updateRoundNum = 0;
-	memset ( m_bases , 0 , sizeof(RdbBase *)*RDB_END );
+	memset(&m_bases, 0, sizeof(m_bases));
 	// how many keys in the tree of each rdb? we now store this stuff
 	// here and not in RdbTree.cpp because we no longer have a maximum
 	// # of collection recs... MAX_COLLS. each is a 32-bit "int32_t" so
 	// it is 4 * RDB_END...
-	memset ( m_numNegKeysInTree , 0 , 4*RDB_END );
-	memset ( m_numPosKeysInTree , 0 , 4*RDB_END );
+	memset(&m_numNegKeysInTree, 0, sizeof(m_numNegKeysInTree));
+	memset(&m_numPosKeysInTree, 0, sizeof(m_numPosKeysInTree));
 	m_spiderColl = NULL;
 	m_overflow  = 0x12345678;
 	m_overflow2 = 0x12345678;
@@ -1208,6 +1204,8 @@ CollectionRec::CollectionRec() {
 	m_diffbotCrawlEndTime = 0;
 	m_numRegExs9 = 0;
 	m_doQueryHighlighting = 0;
+	memset(m_summaryFrontHighlightTag, 0, sizeof(m_summaryFrontHighlightTag));
+	memset(m_summaryBackHighlightTag, 0, sizeof(m_summaryBackHighlightTag));
 	m_spellCheck = false;
 	m_spiderTimeMin = 0;
 	m_spiderTimeMax = 0;
@@ -1257,8 +1255,6 @@ void CollectionRec::reset() {
 	// . grows dynamically
 	// . setting to 0 buckets should never have error
 	//m_pageCountTable.set ( 4,4,0,NULL,0,false,MAX_NICENESS,"pctbl" );
-
-	m_sendingAlertInProgress = false;
 
 	// make sure we do not leave spiders "hanging" waiting for their
 	// callback to be called... and it never gets called

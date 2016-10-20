@@ -469,8 +469,6 @@ class CollectionRec {
 	// SPELL CHECK
 	bool  m_spellCheck;
 
-	char m_sendingAlertInProgress;
-
 	class SpiderColl *m_spiderColl;
 	GbMutex m_spiderCollMutex;
 
