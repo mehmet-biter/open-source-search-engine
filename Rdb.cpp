@@ -2341,11 +2341,14 @@ int32_t getDataSizeFromRdbId ( uint8_t rdbId ) {
 }
 
 // get the dbname
-const char *getDbnameFromId ( uint8_t rdbId ) {
-        Rdb *rdb = getRdbFromId ( rdbId );
-	if ( rdb ) return rdb->getDbname();
-	log(LOG_LOGIC,"db: rdbId of %" PRId32" is invalid.",(int32_t)rdbId);
-	return "INVALID";
+const char *getDbnameFromId(rdbid_t rdbId) {
+        const Rdb *rdb = getRdbFromId(rdbId);
+	if ( rdb )
+		return rdb->getDbname();
+	else {
+		log(LOG_LOGIC,"db: rdbId of %" PRId32" is invalid.",(int32_t)rdbId);
+		return "INVALID";
+	}
 }
 
 // get the RdbBase class for an rdbId and collection name

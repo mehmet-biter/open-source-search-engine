@@ -35,7 +35,7 @@ static inline bool isSecondaryRdb ( uint8_t rdbId ) {
 }
 
 // get the dbname
-const char *getDbnameFromId ( uint8_t rdbId ) ;
+const char *getDbnameFromId(rdbid_t rdbId);
 
 // size of keys
 char getKeySizeFromRdbId(rdbid_t rdbId);
