@@ -84,7 +84,7 @@ Repair::Repair() {
 	m_needsCallback = false;
 	m_docQuality = 0;
 	m_docId = 0;
-	m_isDelete = 0;
+	m_isDelete = false;
 	m_totalMem = 0;
 	m_stage = 0;
 	m_tfn = 0;
@@ -153,6 +153,10 @@ Repair::Repair() {
 	m_msg5InUse = false;
 	m_saveRepairState = false;
 	m_isRetrying = false;
+	
+	memset(m_newColl, 0, sizeof(m_newColl));
+	memset(&m_collOffs, 0, sizeof(m_collOffs));
+	memset(&m_collLens, 0, sizeof(m_collLens));
 }
 
 // main.cpp calls g_repair.init()
@@ -1170,7 +1174,7 @@ bool Repair::scanRecs ( ) {
 			      m_endKey         , // should be maxed!
 			      1024             , // min rec sizes
 			      true             , // include tree?
-			      false            , // includeCache
+			      0                , // max cache age
 			      0                , // startFileNum
 			      -1               , // m_numFiles   
 			      this             , // state 
@@ -1502,10 +1506,9 @@ bool Repair::injectTitleRec ( ) {
 
 	// not if rebuilding link info though! we assume the old link info is
 	// bad...
-	if ( m_rebuildLinkdb )
+	if ( m_rebuildLinkdb ) {
 		xd->m_useTagdb = false;
 
-	if ( m_rebuildLinkdb ) {
 		// also need to preserve the "lost link" flag somehow
 		// from the old linkdb...
 		//log("repair: would lose linkdb lost flag.");

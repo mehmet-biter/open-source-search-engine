@@ -74,7 +74,7 @@ public:
 	char       m_docQuality;
 	RdbList    m_titleRecList;
 	int64_t  m_docId;
-	char       m_isDelete;
+	bool       m_isDelete;
 	RdbList    m_ulist;
 	RdbList    m_addlist;
 	int64_t  m_totalMem;
