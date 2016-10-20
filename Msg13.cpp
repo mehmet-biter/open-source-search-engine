@@ -1400,11 +1400,6 @@ void gotHttpReply2 ( void *state ,
 		}
 	}
 
-
-	// sanity
-	if ( reply && replySize>0 && reply[replySize-1]!='\0') {
-		g_process.shutdownAbort(true); }
-
 	// sanity
 	if ( reply && replySize>0 && reply[replySize-1]!='\0') {
 		g_process.shutdownAbort(true); }
@@ -1573,8 +1568,6 @@ void gotHttpReply2 ( void *state ,
 			     err != EBADMIME &&
 			     // this happens sometimes in unzipReply()
 			     err != ENOMEM &&
-			     // this page had a bad mime
-			     err != ECORRUPTHTTPGZIP &&
 			     // broken pipe
 			     err != EPIPE &&
 			     // connection reset by peer
