@@ -1486,7 +1486,6 @@ bool Msg5::getRemoteList ( ) {
 				 -1                   , // numFiles (-1=all)
 				 60*60*24*1000            , // timeout
 				 -1                   , // syncPoint
-				 -1                   , // preferLocalReads
 				 NULL                 , // msg5
 				 m_isRealMerge        , // merging files?
 				 m_allowPageCache     , // allow page cache?

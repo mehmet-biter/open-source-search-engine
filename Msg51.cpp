@@ -314,7 +314,6 @@ bool Msg51::sendRequest ( int32_t    i ) {
 				     -1          , // numFiles
 				     30000       , // timeout
 				     -1          , // syncPoint
-				     false       , // preferLocalReads
 				     &m_slot[i].m_msg5, // use for local reads
 				     false       , // isRealMerge?
 				     true        , // allow page cache?

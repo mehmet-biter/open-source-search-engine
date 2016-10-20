@@ -4902,7 +4902,6 @@ RdbList *XmlDoc::getDupList ( ) {
 				// a host is down.
 				msg0_getlist_infinite_timeout , // timeout
 				-1 , // syncpoint
-				-1 , // preferlocal reads
 				NULL, // msg5
 				false , // isRealMerge
 				true , // allow page cache

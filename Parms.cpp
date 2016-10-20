@@ -6138,18 +6138,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
-	m->m_title = "prefer local reads";
-	m->m_desc  = "If you have scsi drives or a slow network, say yes here "
-		"to minimize data fetches across the network.";
-	m->m_cgi   = "plr";
-	m->m_off   = offsetof(Conf,m_preferLocalReads);
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
 	// this is ifdef'd out in Msg3.cpp for performance reasons,
 	// so do it here, too
 #ifdef GBSANITYCHECK

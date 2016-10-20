@@ -158,7 +158,6 @@ Conf::Conf ( ) {
 	m_allowCloudUsers = false;
 	m_readOnlyMode = false;
 	m_useEtcHosts = false;
-	m_preferLocalReads = false;
 	m_verifyDumpedLists = false;
 	m_flushWrites = false;
 	m_verifyWrites = false;

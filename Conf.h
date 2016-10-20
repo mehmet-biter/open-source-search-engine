@@ -277,10 +277,6 @@ class Conf {
 	// if this is true we use /etc/hosts for hostname lookup before dns
 	bool   m_useEtcHosts;
 
-	// . should we always read data from local machine if available?
-	// . if your network is not gigabit, this may be a good idea
-	bool   m_preferLocalReads;
-
 	// should we bypass load balancing and always send titledb record
 	// lookup requests to a host to maxmize tfndb page cache hits?
 	//bool   m_useBiasedTfndb;

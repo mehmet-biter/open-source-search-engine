@@ -323,7 +323,6 @@ bool SiteGetter::getSiteList ( ) {
 				         -1,  // numFiles
 				         msg0_getlist_infinite_timeout,  // timeout
 				         -1,  // syncPoint
-				         -1,  // preferLocalReads
 				         NULL,  // msg5
 				         false,  // isrealmerge?
 				         true,  // allowpagecache?
