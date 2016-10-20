@@ -239,9 +239,9 @@ bool HttpRequest::set (char *url,int32_t offset,int32_t size,time_t ifModifiedSi
 		hlen += strlen ( host + hlen );
 	}
 	// the if-modified-since field
-	char  ibuf[64];
 	const char *ims = "";
 #if 0
+	char  ibuf[64];
 	if ( ifModifiedSince ) {
 		struct tm tm_buf;
 		char buf[64];
