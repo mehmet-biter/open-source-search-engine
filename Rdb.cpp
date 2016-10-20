@@ -1193,7 +1193,7 @@ bool Rdb::dumpCollLoop ( ) {
 		int32_t id2 = isTitledb() ? 0 : -1;
 
 		// if we add to many files then we can not merge, because merge op
-		// needs to add a file and it calls addNewFile() too
+		// needs to add a file too
 		static int32_t s_flag = 0;
 		if ( base->getNumFiles() + 1 >= MAX_RDB_FILES ) {
 			if ( s_flag < 10 )
