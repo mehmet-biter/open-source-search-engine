@@ -938,10 +938,10 @@ bool Process::saveRdbTrees ( bool useThread , bool shuttingDown ) {
 	if ( g_conf.m_readOnlyMode ) return true;
 
 	// no thread if shutting down
-	if ( shuttingDown ) useThread = false;
-
-	// debug note
-	if ( shuttingDown ) log("gb: trying to shutdown");
+	if ( shuttingDown ) {
+		useThread = false;
+		log("gb: trying to shutdown");
+	}
 
 	// turn off statsdb until everyone is done
 	//g_statsdb.m_disabled = true;
