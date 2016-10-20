@@ -266,28 +266,21 @@ bool RdbBase::moveToTrash(const char *dstDir) {
 	// loop over all files
 	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) {
 		// . rename the map file
-		// . get the "base" filename, does not include directory
-		BigFile *f = m_fileInfo[i].m_map->getFile();
-		char dstFilename [1024];
-		sprintf ( dstFilename , "%s" , f->getFilename());
-
-		// ALWAYS log what we are doing
-		logf(LOG_INFO,"repair: Renaming %s to %s%s", f->getFilename(),dstDir,dstFilename);
-
-		if ( ! f->rename ( dstFilename , dstDir ) ) {
-			log( LOG_WARN, "repair: Moving file had error: %s.", mstrerror( errno ) );
-			return false;
+		{
+			BigFile *f = m_fileInfo[i].m_map->getFile();
+			logf(LOG_INFO,"repair: Renaming %s to %s%s", f->getFilename(), dstDir, f->getFilename());
+			if ( ! f->rename ( f->getFilename(), dstDir ) ) {
+				log( LOG_WARN, "repair: Moving file had error: %s.", mstrerror( errno ) );
+				return false;
+			}
 		}
 
+		//rename index file if used
 		if (m_useIndexFile) {
-			f = m_fileInfo[i].m_index->getFile();
-			sprintf(dstFilename, "%s", f->getFilename());
-
+			BigFile *f = m_fileInfo[i].m_index->getFile();
 			if (f->doesExist()) {
-				// ALWAYS log what we are doing
-				logf(LOG_INFO, "repair: Renaming %s to %s%s", f->getFilename(), dstDir, dstFilename);
-
-				if (!f->rename(dstFilename, dstDir)) {
+				logf(LOG_INFO, "repair: Renaming %s to %s%s", f->getFilename(), dstDir, f->getFilename());
+				if (!f->rename(f->getFilename(), dstDir)) {
 					log(LOG_WARN, "repair: Moving file had error: %s.", mstrerror(errno));
 					return false;
 				}
@@ -295,13 +288,13 @@ bool RdbBase::moveToTrash(const char *dstDir) {
 		}
 
 		// move the data file
-		f = m_fileInfo[i].m_file;
-		sprintf ( dstFilename , "%s" , f->getFilename());
-		// ALWAYS log what we are doing
-		logf(LOG_INFO,"repair: Renaming %s to %s%s", f->getFilename(),dstDir,dstFilename);
-		if ( ! f->rename ( dstFilename, dstDir  ) ) {
-			log( LOG_WARN, "repair: Moving file had error: %s.", mstrerror( errno ) );
-			return false;
+		{
+			BigFile *f = m_fileInfo[i].m_file;
+			logf(LOG_INFO,"repair: Renaming %s to %s%s", f->getFilename(), dstDir, f->getFilename());
+			if ( ! f->rename ( f->getFilename(), dstDir ) ) {
+				log( LOG_WARN, "repair: Moving file had error: %s.", mstrerror( errno ) );
+				return false;
+			}
 		}
 	}
 
