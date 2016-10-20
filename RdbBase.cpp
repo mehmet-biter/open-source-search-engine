@@ -469,13 +469,6 @@ bool RdbBase::setFiles ( ) {
 	//   some headless BigFiles left over froma killed merge
 
 	while( const char *filename = m_dir.getNextFilename("*.dat*") ) {
-		// filename must be a certain length
-		int32_t filenameLen = strlen(filename);
-
-		// we need at least "indexdb0000.dat"
-		if ( filenameLen < m_dbnameLen + 8 ) {
-			continue;
-		}
 
 		// ensure filename starts w/ our m_dbname
 		if ( strncmp ( filename , m_dbname , m_dbnameLen ) != 0 ) {
@@ -503,7 +496,7 @@ bool RdbBase::setFiles ( ) {
 			return false;
 		}
 
-		// don't add if already in there
+		// don't add if already in there (happens for eg dbname0001.dat.part*)
 		if(hasFileId(fileId))
 			continue;
 
