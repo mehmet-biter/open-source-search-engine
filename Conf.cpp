@@ -267,6 +267,7 @@ Conf::Conf ( ) {
 	m_logTimingRobots = false;
 	m_logReminders = false;
 	m_generateVectorAtQueryTime = false;
+	memset(m_redirect, 0, sizeof(m_redirect));
 	m_useCompressionProxy = 0;
 	m_gzipDownloads = 0;
 	m_useTmpCluster = 0;
