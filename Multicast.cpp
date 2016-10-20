@@ -70,8 +70,13 @@ Multicast::Multicast()
     m_retryCount(0),
     m_sentToTwin(false)
 {
-	constructor();
+	// PVS-Studio
+	memset(&m_retired, 0, sizeof(m_retired));
+	memset(&m_errnos, 0, sizeof(m_errnos));
+	memset(&m_inProgress, 0, sizeof(m_inProgress));
+	memset(&m_launchTime, 0, sizeof(m_launchTime));
 
+	constructor();
 }
 
 Multicast::~Multicast() {
@@ -240,8 +245,8 @@ void Multicast::sendToGroup() {
 		int16_t destPort = h->m_port;
 
 		// if from hosts2.conf pick the best ip!
-		int32_t  bestIp  = h->m_ip;
-		bestIp = g_hostdb.getBestHosts2IP ( h );
+		//int32_t  bestIp  = h->m_ip;
+		int32_t bestIp = g_hostdb.getBestHosts2IP ( h );
 
 		// retire the host to prevent resends
 		m_retired [ i ] = true;
@@ -651,8 +656,8 @@ bool Multicast::sendToHost ( int32_t i ) {
 	int16_t destPort = h->m_port;
 
 	// if from hosts2.conf pick the best ip!
-	int32_t  bestIp   = h->m_ip;
-	bestIp = g_hostdb.getBestHosts2IP ( h );
+	//int32_t  bestIp   = h->m_ip;
+	int32_t bestIp = g_hostdb.getBestHosts2IP ( h );
 
 	// sanity check
 	//if ( g_hostdb.isDead(h) ) {
