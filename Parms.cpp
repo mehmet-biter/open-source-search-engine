@@ -1119,11 +1119,11 @@ bool Parms::printParmTable ( SafeBuf *sb , TcpSocket *s , HttpRequest *r ) {
 	if ( page == PAGE_SPIDER && ! g_conf.m_spideringEnabled )
 		e1 = "<tr><td colspan=20><font color=#ff0000><b><center>"
 			"Spidering is temporarily disabled in Master Controls."
-			"</font></td></tr>\n";
+			"</center></b></font></td></tr>\n";
 	if ( page == PAGE_SPIDER && ! g_conf.m_addUrlEnabled )
 		e2 = "<tr><td colspan=20><font color=#ff0000><b><center>"
 			"Add url is temporarily disabled in Master Controls."
-			"</font></td></tr>\n";
+			"</center></b></font></td></tr>\n";
 
 	if( page == PAGE_INJECT )
 	{
