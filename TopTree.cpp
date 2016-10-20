@@ -39,7 +39,7 @@ TopTree::TopTree() {
 	m_doSiteClustering = false;
 	m_docsWanted = 0;
 	m_ridiculousMax = 0;
-	m_kickedOutDocIds = 0;
+	m_kickedOutDocIds = false;
 	memset(&m_domCount, 0, sizeof(m_domCount));
 	memset(&m_domMinNode, 0, sizeof(m_domMinNode));
 
@@ -229,20 +229,30 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 
 		if ( m_useIntScores ) {
 			if ( t->m_intScore < m_nodes[i].m_intScore ) {
-				m_kickedOutDocIds = true; return false; }
-			if ( t->m_intScore > m_nodes[i].m_intScore) goto addIt;
+				m_kickedOutDocIds = true;
+				return false;
+			}
+			if ( t->m_intScore > m_nodes[i].m_intScore) {
+				goto addIt;
+			}
 		}
 
 		else {
 			if ( t->m_score < m_nodes[i].m_score ) {
-				m_kickedOutDocIds = true; return false; }
-			if ( t->m_score > m_nodes[i].m_score ) goto addIt;
+				m_kickedOutDocIds = true;
+				return false;
+			}
+			if ( t->m_score > m_nodes[i].m_score ) {
+				goto addIt;
+			}
 		}
 
 		// . finally, compare docids, store lower ones first
 		// . docids should not tie...
 		if ( t->m_docId >= m_nodes[i].m_docId ) {
-			m_kickedOutDocIds = true; return false; }
+			m_kickedOutDocIds = true;
+			return false;
+		}
 		// we got a winner
 		goto addIt;
 		/*

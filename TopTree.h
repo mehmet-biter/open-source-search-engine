@@ -133,7 +133,7 @@ private:
 	float m_vcount;
 	float m_partial;
 	int64_t  m_ridiculousMax;
-	char  m_kickedOutDocIds;
+	bool  m_kickedOutDocIds;
 	//int64_t m_lastKickedOutDocId;
 	int32_t  m_domCount[256];
 	// the node with the minimum "score" for that domHash
