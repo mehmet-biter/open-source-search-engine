@@ -40,11 +40,14 @@ void Msg0::constructor ( ) {
 	m_state = NULL;
 	m_hostId = 0;
 	m_shardNum = 0;
+	memset(m_request, 0, sizeof(m_request));
 	m_requestSize = 0;
 	m_list = NULL;
 	m_fixedDataSize = 0;
 	m_useHalfKeys = false;
 	m_addToCache = false;
+	memset(m_startKey, 0, sizeof(m_startKey));
+	memset(m_endKey, 0, sizeof(m_endKey));
 	m_minRecSizes = 0;
 	m_rdbId = RDB_NONE;
 	m_collnum = 0;
