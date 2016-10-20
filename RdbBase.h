@@ -303,6 +303,8 @@ private:
 
 	bool	m_useIndexFile;
 
+	bool m_isTitledb;
+
 	// key size
 	char      m_ks;
 

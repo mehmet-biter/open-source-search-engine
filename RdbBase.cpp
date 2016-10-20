@@ -57,6 +57,7 @@ RdbBase::RdbBase()
 	m_mergeStartFileNum = 0;
 	m_useHalfKeys = false;
 	m_useIndexFile = false;
+	m_isTitledb = false;
 	m_ks = 0;
 	m_pageSize = 0;
 	m_niceness = 0;
@@ -161,6 +162,7 @@ bool RdbBase::init(const char *dir,
 	// store the other parameters
 	m_fixedDataSize    = fixedDataSize;
 	m_useHalfKeys      = useHalfKeys;
+	m_isTitledb        = rdb->isTitledb();
 	m_ks               = keySize;
 	m_pageSize         = pageSize;
 	m_useIndexFile		= useIndexFile;
@@ -250,6 +252,7 @@ void RdbBase::specialInjectFileInit(const char *dir,
 	m_rdb = rdb;
 	m_fixedDataSize = fixedDataSize;
 	m_useHalfKeys = useHalfKeys;
+	m_isTitledb = rdb->isTitledb();
 	m_ks = ks;
 	m_pageSize = pageSize;
 	m_minToMerge = minToMerge;
@@ -489,7 +492,7 @@ bool RdbBase::setFiles ( ) {
 		// if we are titledb, we got the secondary id
 		// . if we are titledb we should have a -xxx after
 		// . if none is there it needs to be converted!
-		if ( m_rdb->isTitledb() && fileId2 == -1 ) {
+		if ( m_isTitledb && fileId2 == -1 ) {
 			// critical
 			log("gb: bad title filename of %s. Halting.",filename);
 			g_errno = EBADENGINEER;
@@ -611,7 +614,7 @@ bool RdbBase::setFiles ( ) {
 //Generate filename from the total 4 combinations of titledb/not-titledb and normal-file/merging-file
 void RdbBase::generateFilename(char *buf, size_t bufsize, int32_t fileId, int32_t fileId2, int32_t mergeNum, int32_t endMergeFileId) {
 	if ( mergeNum <= 0 ) {
-		if ( m_rdb->isTitledb() ) {
+		if ( m_isTitledb ) {
 			snprintf( buf, bufsize, "%s%04" PRId32"-%03" PRId32".dat",
 			          m_dbname, fileId, fileId2 );
 		} else {
@@ -619,7 +622,7 @@ void RdbBase::generateFilename(char *buf, size_t bufsize, int32_t fileId, int32_
 			          m_dbname, fileId );
 		}
 	} else {
-		if ( m_rdb->isTitledb() ) {
+		if ( m_isTitledb ) {
 			snprintf( buf, bufsize, "%s%04" PRId32"-%03" PRId32".%03" PRId32".%04" PRId32".dat",
 			          m_dbname, fileId, fileId2, mergeNum, endMergeFileId );
 		} else {
@@ -634,7 +637,7 @@ void RdbBase::generateFilename(char *buf, size_t bufsize, int32_t fileId, int32_
 // reutrn -1 and set g_errno on error
 int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t mergeNum, int32_t endMergeFileId ) {
 	// sanity check
-	if ( fileId2 < 0 && m_rdb->isTitledb() )
+	if ( fileId2 < 0 && m_isTitledb )
 		gbshutdownLogicError();
 
 	// can't exceed this
@@ -920,7 +923,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 
 int32_t RdbBase::addNewFile() {
 	//No clue abotu why titledb is different. it just is.
-	int32_t id2 = m_rdb->isTitledb() ? 0 : -1;
+	int32_t id2 = m_isTitledb ? 0 : -1;
 	
 	int32_t maxFileId = 0;
 	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) {
@@ -1194,7 +1197,7 @@ void RdbBase::unlinkDone() {
 	}
 
 	char newName[1024];
-	if ( ! m_rdb->isTitledb() ) {
+	if ( ! m_isTitledb ) {
 		strcpy(newName, m_fileInfo[a].m_file->getFilename());
 	} else {
 		// rename to this (titledb%04" PRId32"-%03" PRId32".dat)
@@ -1299,7 +1302,7 @@ void RdbBase::renameFile( int32_t currentFileIdx, int32_t newFileId, int32_t new
 	// since it got nuked on disk incorporateMerge();
 	char fbuf[256];
 
-	if (m_rdb->isTitledb()) {
+	if(m_isTitledb) {
 		sprintf(fbuf, "%s%04" PRId32"-%03" PRId32".dat", m_dbname, newFileId, newFileId2);
 	} else {
 		sprintf(fbuf, "%s%04" PRId32".dat", m_dbname, newFileId);
@@ -1632,7 +1635,7 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 		// validation
 
 		// if titledb we got a "-023" part now
-		if ( m_rdb->isTitledb() && fileId2 < 0 )
+		if ( m_isTitledb && fileId2 < 0 )
 			gbshutdownCorrupted();
 
 		if ( !endMergeFileId ) {
@@ -1737,7 +1740,7 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 	// other file... i've seen that happen... but don't know why it didn't
 	// merge two small files! i guess because the root file was the
 	// oldest file! (38.80 days old)???
-	if ( m_rdb->isTitledb() && mergeFileCount < 50 && m_minToMerge > 200 ) {
+	if ( m_isTitledb && mergeFileCount < 50 && m_minToMerge > 200 ) {
 		// force it to 50 files to merge
 		mergeFileCount = 50;
 
@@ -1771,7 +1774,7 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 
 	// get new id, -1 on error
 	int32_t      fileId2;
-	fileId2 = m_rdb->isTitledb() ? 0 : -1;
+	fileId2 = m_isTitledb ? 0 : -1;
 
 	// . make a filename for the merge
 	// . always starts with file #0
@@ -1929,7 +1932,7 @@ void RdbBase::selectFilesToMerge(int32_t mergeFileCount, int32_t numFiles, int32
 		}
 
 		// if merging titledb, just pick by the lowest total
-		if(m_rdb->isTitledb()) {
+		if(m_isTitledb) {
 			if(total < mint) {
 				mini   = i;
 				mint   = total;
