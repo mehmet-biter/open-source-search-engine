@@ -918,7 +918,10 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	return i;
 }
 
-int32_t RdbBase::addNewFile ( int32_t id2 ) {
+int32_t RdbBase::addNewFile() {
+	//No clue abotu why titledb is different. it just is.
+	int32_t id2 = m_rdb->isTitledb() ? 0 : -1;
+	
 	int32_t maxFileId = 0;
 	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) {
 		if ( m_fileInfo[i].m_fileId > maxFileId ) {

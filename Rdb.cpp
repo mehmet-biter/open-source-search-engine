@@ -1189,8 +1189,6 @@ bool Rdb::dumpCollLoop ( ) {
 		}
 
 		// . MDW ADDING A NEW FILE SHOULD BE IN RDBDUMP.CPP NOW... NO!
-		// . get the biggest fileId
-		int32_t id2 = isTitledb() ? 0 : -1;
 
 		// if we add to many files then we can not merge, because merge op
 		// needs to add a file too
@@ -1206,7 +1204,7 @@ bool Rdb::dumpCollLoop ( ) {
 		}
 
 		// this file must not exist already, we are dumping the tree into it
-		m_fn = base->addNewFile ( id2 ) ;
+		m_fn = base->addNewFile();
 		if ( m_fn < 0 ) {
 			log( LOG_LOGIC, "db: rdb: Failed to add new file to dump %s: %s.", m_dbname, mstrerror( g_errno ) );
 			return false;

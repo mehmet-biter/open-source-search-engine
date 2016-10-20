@@ -155,7 +155,7 @@ class RdbBase {
 	// . add a (new) file to the m_files/m_maps/m_fileIds arrays
 	// . return array position we added it to
 	// . return -1 and set errno on error
-	int32_t addNewFile  ( int32_t id2 ) ;
+	int32_t addNewFile();
 
 	// these are used for computing load on a machine
 	bool isMerging() const { return m_isMerging; }
