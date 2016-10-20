@@ -515,7 +515,7 @@ bool Query::setQTerms ( Words &words ) {
 		qt->m_isUORed   = false;
 		qt->m_UORedTerm   = NULL;
 		qt->m_synonymOf = NULL;
-		qt->m_ignored   = 0;
+		qt->m_ignored   = false;
 		qt->m_term      = NULL;
 		qt->m_termLen   = 0;
 		qt->m_langIdBitsValid = false;
@@ -1660,10 +1660,11 @@ bool Query::setQWords ( char boolFlag ,
 			if ( wordSign != '-' && wordSign != '+') wordSign = 0; 
 			if ( wlen>1 &&!is_wspace_a (w[wlen-2]) ) wordSign = 0;
 			if ( i > 0 && wlen == 1                ) wordSign = 0;
+
+			// don't add any QueryWord for a punctuation word
+			continue;
 		}
 
-		// don't add any QueryWord for a punctuation word
-		if ( words.isPunct(i) ) continue;
 		// what is the sign of our term? +, -, *, ...
 		char mysign;
 		if      ( fieldCode ) mysign = fieldSign;
@@ -3392,16 +3393,16 @@ bool Expression::isTruth(const unsigned char *bitVec, int32_t vecSize) const {
 			// if first operation we encount is A AND B then
 			// default result to on. only allow an AND operation
 			// to turn if off.
-			if ( result == -1 ) result = true;
-			if ( ! prevResult ) result = false;
-			if ( !    opResult ) result = false;
+			if ( result == -1 ) result = 1;
+			if ( ! prevResult ) result = 0;
+			if ( !    opResult ) result = 0;
 		}
 		else if ( prevOpCode == OP_OR ) {
 			// if first operation we encount is A OR B then
 			// default result to off
-			if ( result == -1 ) result = false;
-			if ( prevResult ) result = true;
-			if (   opResult ) result = true;
+			if ( result == -1 ) result = 0;
+			if ( prevResult ) result = 1;
+			if (   opResult ) result = 1;
 		}
 	}
 
