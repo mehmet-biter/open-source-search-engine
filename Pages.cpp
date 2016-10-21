@@ -1000,7 +1000,7 @@ void Pages::printFormData( SafeBuf *sb, TcpSocket *s, HttpRequest *r ) {
 	// should any changes be broadcasted to all hosts?
 	sb->safePrintf ("<input type=\"hidden\" name=\"cast\" value=\"%" PRId32"\" "
 			"/>\n",
-			(int32_t)s_pages[page].m_cast);
+			page >= 0 ? (int32_t)s_pages[page].m_cast : 0);
 
 }
 
@@ -1697,7 +1697,10 @@ bool printApiForPage ( SafeBuf *sb , int32_t PAGENUM , CollectionRec *cr ) {
 			if ( ! def && parm->m_type == TYPE_IP) 
 				def = "0.0.0.0";
 			if ( ! def ) def = "";
-			if ( strcmp(tmp.getBufStart(),def) ) diff=1;
+
+			if ( strcmp(tmp.getBufStart(),def) != 0 ) {
+				diff=1;
+			}
 		}
 
 		// do not show passwords in this!
