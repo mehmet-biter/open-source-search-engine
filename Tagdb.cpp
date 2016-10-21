@@ -87,8 +87,10 @@ void Tag::set ( const char *site, const char *tagname, int32_t  timestamp, const
 	*p++ = '\0';
 
 	// store data now too
-	gbmemcpy ( p , data , dataSize );
-	p += dataSize;
+	if( data && dataSize ) {
+		gbmemcpy ( p , data , dataSize );
+		p += dataSize;
+	}
 
 	// NULL terminate if they did not! now all tag are strings and must
 	// be NULL terminated.
@@ -128,7 +130,7 @@ int32_t Tag::setFromBuf ( char *p , char *pend ) {
 	char *start = p;
 
 	// tags always start with " TAG="
-	if ( strncmp(p," TAG=",5) ) {
+	if ( strncmp(p," TAG=",5) != 0 ) {
 		log("tagdb: error processing tag in setFromBuf().");
 		return 0;
 	}
@@ -1999,7 +2001,7 @@ bool sendReply2 ( void *state ) {
 		// skip dups
 		if ( jtag->m_type == TT_DUP ) continue;
 		// count # of TagRecs contributing to the tags
-		if ( jtag && jtag->isType("site") ) numTagRecs++;
+		if ( jtag->isType("site") ) numTagRecs++;
 	}
 
 	// if we are displaying a COMBINATION of TagRecs merged together in 
