@@ -15,11 +15,11 @@ public:
 	bool set(const char *d1, const char *d2);
 
 	bool open();
-	bool close();
+	void close();
 
 	const char *getNextFilename(const char *pattern = NULL);
 
-	const char *getDir() { return m_dirname; }
+	const char *getDir() const { return m_dirname; }
 
 private:
 	char *m_dirname;

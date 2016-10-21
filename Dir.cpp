@@ -21,7 +21,7 @@ Dir::~Dir ( ) {
 
 void Dir::reset ( ) {
 	close();
-	if ( m_dirname ) free ( m_dirname );
+	free(m_dirname);
 	m_dirname = NULL;
 }
 
@@ -46,11 +46,10 @@ bool Dir::set ( const char *dirname ) {
 	return false;
 }
 
-bool Dir::close ( ) {
+void Dir::close() {
 	if ( m_dir )
 		closedir ( m_dir );
 	m_dir = NULL;
-	return true;
 }
 
 bool Dir::open ( ) {
