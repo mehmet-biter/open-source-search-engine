@@ -98,14 +98,13 @@ class Collectiondb  {
 	bool setRecPtr ( collnum_t collnum , CollectionRec *cr ) ;
 
 	// returns false if blocked, true otherwise.
-	bool deleteRec2 ( collnum_t collnum );//, WaitEntry *we ) ;
+	bool deleteRec2 ( collnum_t collnum );
 
 	//void deleteSpiderColl ( class SpiderColl *sc );
 
 	// returns false if blocked, true otherwise.
 	bool resetColl2 ( collnum_t oldCollnum,
 			  collnum_t newCollnum,
-			  //WaitEntry *we ,
 			  bool purgeSeeds );
 
 	// . keep up to 128 of them, these reference into m_list
