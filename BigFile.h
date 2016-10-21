@@ -94,9 +94,7 @@ class BigFile {
 	BigFile();
 
 	// . set a big file's name
-	// . we split little files that make up this BigFile between
-	//   "dir" and "stripeDir"
-	bool set ( const char *dir, const char *baseFilename, const char *stripeDir = NULL );
+	bool set ( const char *dir, const char *baseFilename);
 
 	bool doesExist() const;
 
@@ -260,7 +258,7 @@ private:
 	void doneUnlinkWrapper(File *f, int32_t i);
 
 	// . add all parts from this directory
-	// . called by set() above for normal dir as well as stripe dir
+	// . called by set() above for normal dir
 	bool addParts ( const char *dirname ) ;
 
 	bool addPart ( int32_t n ) ;

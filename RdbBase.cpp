@@ -670,7 +670,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	}
 	mnew( f, sizeof( BigFile ), "RdbBFile" );
 
-	f->set(m_collectionDirName, name, NULL);
+	f->set(m_collectionDirName, name);
 
 	// if new ensure does not exist
 	if ( isNew && f->doesExist() ) {

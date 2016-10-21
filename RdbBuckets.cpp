@@ -2046,7 +2046,7 @@ bool RdbBuckets::loadBuckets(const char *dbname) {
 		dir = ".";
 	}
 
-	file.set(dir, filename, NULL);
+	file.set(dir, filename);
 	if (!file.doesExist()) {
 		return true;
 	}
