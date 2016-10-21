@@ -440,9 +440,29 @@ bool RdbBase::hasFileId(int32_t fildId) const {
 // . first file is always the merge file (may be empty)
 // . returns false on error
 bool RdbBase::setFiles ( ) {
-	// set our directory class
+	if(!loadFilesFromDir(m_collectionDirName))
+		return false;
+
+	// spiderdb should start with file 0001.dat or 0000.dat
+	if ( m_numFiles > 0 && m_fileInfo[0].m_fileId > 1 && m_rdb->getRdbId() == RDB_SPIDERDB ) {
+		//isj: is that even true anymore? Ok, crashed merges and lost file0000* are not a
+		//good thing but I don't see why it should affect spiderdb especially bad.
+		return fixNonfirstSpiderdbFiles();
+	}
+
+
+	// ensure files are sharded correctly
+	verifyFileSharding();
+
+	return true;
+}
+
+
+bool RdbBase::loadFilesFromDir(const char *dirName) {
 	Dir dir;
-	dir.set(m_collectionDirName);
+	if(!dir.set(dirName))
+		return false;
+
 	if ( ! dir.open ( ) ) {
 		// we are getting this from a bogus dir
 		log( LOG_WARN, "db: Had error opening directory %s", m_collectionDirName);
@@ -450,8 +470,8 @@ bool RdbBase::setFiles ( ) {
 	}
 
 	// note it
-	log(LOG_DEBUG,"db: Loading files for %s coll=%s (%" PRId32").",
-	     m_dbname,m_coll,(int32_t)m_collnum );
+	log(LOG_DEBUG,"db: Loading files for %s coll=%s (%" PRId32") from %s",
+	     m_dbname, m_coll, (int32_t)m_collnum, dirName );
 	// . set our m_files array
 	// . addFile() will return -1 and set g_errno on error
 	// . the lower the fileId the older the data 
@@ -527,19 +547,6 @@ bool RdbBase::setFiles ( ) {
 			return false;
 		}
 	}
-
-	dir.close();
-
-	// spiderdb should start with file 0001.dat or 0000.dat
-	if ( m_numFiles > 0 && m_fileInfo[0].m_fileId > 1 && m_rdb->getRdbId() == RDB_SPIDERDB ) {
-		//isj: is that even true anymore? Ok, crashed merges and lost file0000* are not a
-		//good thing but I don't see why it should affect spiderdb especially bad.
-		return fixNonfirstSpiderdbFiles();
-	}
-
-
-	// ensure files are sharded correctly
-	verifyFileSharding();
 
 	return true;
 }
