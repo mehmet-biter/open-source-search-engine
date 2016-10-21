@@ -125,9 +125,9 @@ void doneReindexing ( void *state ) {
 
 	const char *ct = "text/html";
 	if ( format == FORMAT_JSON ) ct = "application/json";
-	if ( format == FORMAT_XML  ) ct = "text/xml";
+	if ( format == FORMAT_XML  ) {
+		ct = "text/xml";
 
-	if ( format == FORMAT_XML ) {
 		sb.safePrintf("<response>\n"
 			      "\t<statusCode>0</statusCode>\n"
 			      "\t<statusMsg>Success</statusMsg>\n"
@@ -348,7 +348,7 @@ bool Msg1c::gotList ( ) {
 		sr.reset();
 
 		// url is a docid!
-		sprintf ( sr.m_url , "%" PRIu64 , docId );
+		sprintf ( sr.m_url , "%" PRIu64 , (uint64_t)docId );
 
 		// make a fake first ip
 		// use only 64k values so we don't stress doledb/waittrees/etc.
