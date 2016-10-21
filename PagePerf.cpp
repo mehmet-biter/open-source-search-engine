@@ -63,10 +63,9 @@ bool sendPagePerf ( TcpSocket *s , HttpRequest *r ) {
 		     "} \n ",g_hostdb.m_hostId);
 
 		p.safePrintf( "// --></script>");
-	}
 
-	if(autoRefresh > 0) 
 		p.safePrintf("<body onLoad=\"timeit();\">"); 
+	}
 
 
 	//get the 'path' part of the request.
