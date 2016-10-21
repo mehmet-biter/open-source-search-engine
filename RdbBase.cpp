@@ -528,6 +528,8 @@ bool RdbBase::setFiles ( ) {
 		}
 	}
 
+	dir.close();
+
 	// spiderdb should start with file 0001.dat or 0000.dat
 	if ( m_numFiles > 0 && m_fileInfo[0].m_fileId > 1 && m_rdb->getRdbId() == RDB_SPIDERDB ) {
 		//isj: is that even true anymore? Ok, crashed merges and lost file0000* are not a
@@ -535,8 +537,6 @@ bool RdbBase::setFiles ( ) {
 		return fixNonfirstSpiderdbFiles();
 	}
 
-
-	dir.close();
 
 	// ensure files are sharded correctly
 	verifyFileSharding();
