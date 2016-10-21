@@ -32,8 +32,11 @@ bool Wiki::load() {
 	// load it from .dat file if exists and is newer
 	char ff1[256];
 	char ff2[256];
-	sprintf(ff1, "%swikititles.txt.part2", g_hostdb.m_dir);
-	sprintf(ff2, "%swikititles2.dat", g_hostdb.m_dir);
+	snprintf(ff1, sizeof(ff1), "%swikititles.txt.part2", g_hostdb.m_dir);
+	ff1[ sizeof(ff1)-1 ] = '\0';
+	snprintf(ff2, sizeof(ff2), "%swikititles2.dat", g_hostdb.m_dir);
+	ff2[ sizeof(ff2)-1 ] = '\0';
+
 	int fd1 = open ( ff1 , O_RDONLY );
 	if ( fd1 < 0 ) log(LOG_INFO,"wiki: open %s: %s",ff1,mstrerror(errno));
 	int fd2 = open ( ff2 , O_RDONLY );
@@ -73,12 +76,16 @@ bool Wiki::loadText ( int32_t fileSize ) {
 
 	SafeBuf sb;
 	char ff1[256];
-	sprintf(ff1, "%swikititles.txt.part1", g_hostdb.m_dir);
+	snprintf(ff1, sizeof(ff1), "%swikititles.txt.part1", g_hostdb.m_dir);
+	ff1[ sizeof(ff1)-1 ] = '\0';
+
 	log(LOG_INFO,"wiki: Loading %s",ff1);
 	if ( ! sb.fillFromFile(ff1) ) return false;
 
 	char ff2[256];
-	sprintf(ff2, "%swikititles.txt.part2", g_hostdb.m_dir);
+	snprintf(ff2, sizeof(ff2), "%swikititles.txt.part2", g_hostdb.m_dir);
+	ff2[ sizeof(ff2)-1 ] = '\0';
+	
 	log(LOG_INFO,"wiki: Loading %s",ff2);
 	if ( ! sb.catFile(ff2) ) return false;
 

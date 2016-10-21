@@ -32,7 +32,7 @@ private:
 	void *m_state;
 	void (* m_callback)(void *);
 
-	char m_opened;
+	bool m_opened;
 };
 
 extern class Wiki g_wiki;
