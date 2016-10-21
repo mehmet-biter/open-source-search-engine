@@ -19,6 +19,7 @@
 #include "Parms.h"
 #include "Process.h"
 #include "HttpRequest.h"
+#include "Dir.h"
 #include <sys/stat.h> //mkdir()
 
 static HashTableX g_collTable;
