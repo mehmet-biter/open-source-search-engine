@@ -19,8 +19,6 @@ public:
 
 	const char *getNextFilename(const char *pattern = NULL);
 
-	const char *getDir() const { return m_dirname; }
-
 private:
 	char *m_dirname;
 	DIR *m_dir;
