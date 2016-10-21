@@ -9,6 +9,7 @@ Pos::Pos() {
 	m_needsFree = false;
 	m_pos = NULL;
 	m_bufSize = 0;
+	memset(m_localBuf, 0, sizeof(m_localBuf));
 }
 
 Pos::~Pos () {
