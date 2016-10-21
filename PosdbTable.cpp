@@ -1436,10 +1436,10 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 
 		// flag it as in same wiki phrase
 		if ( wts == (float)WIKI_WEIGHT ) {
-			px->m_inSameWikiPhrase = true;
+			px->m_inSameWikiPhrase = 1;
 		}
 		else {
-			px->m_inSameWikiPhrase = false;
+			px->m_inSameWikiPhrase = 0;
 		}
 		
 #ifdef _VALGRIND_
@@ -2646,11 +2646,10 @@ bool PosdbTable::advanceTermListCursors(const char *docIdPtr, QueryTermInfo *qti
 //
 bool PosdbTable::prefilterMaxPossibleScoreByDistance(QueryTermInfo *qtibuf, const int32_t *qpos, float minWinningScore) {
 	unsigned char ringBuf[RINGBUFSIZE+10];
-	// for overflow conditions in loops below
-	ringBuf[RINGBUFSIZE+0] = 0xff;
-	ringBuf[RINGBUFSIZE+1] = 0xff;
-	ringBuf[RINGBUFSIZE+2] = 0xff;
-	ringBuf[RINGBUFSIZE+3] = 0xff;
+
+	// reset ring buf. make all slots 0xff. should be 1000 cycles or so.
+	memset ( ringBuf, 0xff, sizeof(ringBuf) );
+
 	unsigned char qt;
 	QueryTermInfo *qtx;
 	uint32_t wx;
@@ -2660,8 +2659,6 @@ bool PosdbTable::prefilterMaxPossibleScoreByDistance(QueryTermInfo *qtibuf, cons
 	logTrace(g_conf.m_logTracePosdb, "BEGIN");
 
 
-	// reset ring buf. make all slots 0xff. should be 1000 cycles or so.
-	memset ( ringBuf, 0xff, RINGBUFSIZE );
 
 	// now to speed up 'time enough for love' query which does not
 	// have many super high scoring guys on top we need a more restrictive
@@ -5770,6 +5767,7 @@ static inline bool isTermValueInRange( const char *p, const QueryTerm *qt ) {
 
 	// how did this happen?
 	gbshutdownAbort(true);
+	return false;	// shut up PVS-Studio
 }
 
 
