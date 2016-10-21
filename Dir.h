@@ -25,4 +25,16 @@ private:
 	char m_dentryBuffer[1024];
 };
 
+
+class DirIterator {
+public:
+	DirIterator(const char *dirName);
+	const char *getNextFilename(const char *pattern = NULL);
+private:
+	Dir m_dir;
+	bool opened;
+	bool exhausted;
+};
+
+
 #endif // GB_DIR_H
