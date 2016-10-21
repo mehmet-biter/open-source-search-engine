@@ -528,65 +528,11 @@ bool RdbBase::setFiles ( ) {
 		}
 	}
 
-	// everyone should start with file 0001.dat or 0000.dat
+	// spiderdb should start with file 0001.dat or 0000.dat
 	if ( m_numFiles > 0 && m_fileInfo[0].m_fileId > 1 && m_rdb->getRdbId() == RDB_SPIDERDB ) {
-		log( LOG_WARN, "db: missing file id 0001.dat for %s in coll %s. "
-		    "Fix this or it'll core later. Just rename the next file "
-		    "in line to 0001.dat/map. We probably cored at a "
-		    "really bad time during the end of a merge process.",
-		    m_dbname, m_coll );
-
-		// do not re-do repair! hmmm
-		if ( m_didRepair ) return false;
-
-		// just fix it for them
-		BigFile bf;
-		SafeBuf oldName;
-		oldName.safePrintf("%s%04" PRId32".dat", m_dbname, m_fileInfo[0].m_fileId);
-		bf.set ( m_collectionDirName, oldName.getBufStart() );
-
-		// rename it to like "spiderdb.0001.dat"
-		SafeBuf newName;
-		newName.safePrintf("%s/%s0001.dat",m_collectionDirName,m_dbname);
-		bf.rename ( newName.getBufStart() );
-
-		// and delete the old map
-		SafeBuf oldMap;
-		oldMap.safePrintf("%s/%s0001.map",m_collectionDirName,m_dbname);
-		File omf;
-		omf.set ( oldMap.getBufStart() );
-		omf.unlink();
-
-		// get the map file name we want to move to 0001.map
-		BigFile cmf;
-		SafeBuf curMap;
-		curMap.safePrintf("%s%04" PRId32".map", m_dbname, m_fileInfo[0].m_fileId);
-		cmf.set(m_collectionDirName, curMap.getBufStart());
-
-		// rename to spiderdb0081.map to spiderdb0001.map
-		cmf.rename ( oldMap.getBufStart() );
-
-		if( m_useIndexFile ) {
-			// and delete the old index
-			SafeBuf oldIndex;
-			oldIndex.safePrintf("%s/%s0001.idx",m_collectionDirName,m_dbname);
-			File oif;
-			oif.set ( oldIndex.getBufStart() );
-			oif.unlink();
-
-			// get the index file name we want to move to 0001.idx
-			BigFile cif;
-			SafeBuf curIndex;
-			curIndex.safePrintf("%s%04" PRId32".idx", m_dbname, m_fileInfo[0].m_fileId);
-			cif.set(m_collectionDirName, curIndex.getBufStart());
-
-			// rename to spiderdb0081.map to spiderdb0001.map
-			cif.rename ( oldIndex.getBufStart() );
-		}
-
-		// replace that first file then
-		m_didRepair = true;
-		return true;
+		//isj: is that even true anymore? Ok, crashed merges and lost file0000* are not a
+		//good thing but I don't see why it should affect spiderdb especially bad.
+		return fixNonfirstSpiderdbFiles();
 	}
 
 
@@ -595,6 +541,67 @@ bool RdbBase::setFiles ( ) {
 	// ensure files are sharded correctly
 	verifyFileSharding();
 
+	return true;
+}
+
+
+bool RdbBase::fixNonfirstSpiderdbFiles() {
+	log( LOG_WARN, "db: missing file id 0001.dat for %s in coll %s. "
+	    "Fix this or it'll core later. Just rename the next file "
+	    "in line to 0001.dat/map. We probably cored at a "
+	    "really bad time during the end of a merge process.",
+	    m_dbname, m_coll );
+
+	// do not re-do repair! hmmm
+	if ( m_didRepair ) return false;
+
+	// just fix it for them
+	BigFile bf;
+	SafeBuf oldName;
+	oldName.safePrintf("%s%04" PRId32".dat", m_dbname, m_fileInfo[0].m_fileId);
+	bf.set ( m_collectionDirName, oldName.getBufStart() );
+
+	// rename it to like "spiderdb.0001.dat"
+	SafeBuf newName;
+	newName.safePrintf("%s/%s0001.dat",m_collectionDirName,m_dbname);
+	bf.rename ( newName.getBufStart() );
+
+	// and delete the old map
+	SafeBuf oldMap;
+	oldMap.safePrintf("%s/%s0001.map",m_collectionDirName,m_dbname);
+	File omf;
+	omf.set ( oldMap.getBufStart() );
+	omf.unlink();
+
+	// get the map file name we want to move to 0001.map
+	BigFile cmf;
+	SafeBuf curMap;
+	curMap.safePrintf("%s%04" PRId32".map", m_dbname, m_fileInfo[0].m_fileId);
+	cmf.set(m_collectionDirName, curMap.getBufStart());
+
+	// rename to spiderdb0081.map to spiderdb0001.map
+	cmf.rename ( oldMap.getBufStart() );
+
+	if( m_useIndexFile ) {
+		// and delete the old index
+		SafeBuf oldIndex;
+		oldIndex.safePrintf("%s/%s0001.idx",m_collectionDirName,m_dbname);
+		File oif;
+		oif.set ( oldIndex.getBufStart() );
+		oif.unlink();
+
+		// get the index file name we want to move to 0001.idx
+		BigFile cif;
+		SafeBuf curIndex;
+		curIndex.safePrintf("%s%04" PRId32".idx", m_dbname, m_fileInfo[0].m_fileId);
+		cif.set(m_collectionDirName, curIndex.getBufStart());
+
+		// rename to spiderdb0081.map to spiderdb0001.map
+		cif.rename ( oldIndex.getBufStart() );
+	}
+
+	// replace that first file then
+	m_didRepair = true;
 	return true;
 }
 

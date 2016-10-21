@@ -248,6 +248,8 @@ private:
 	bool hasFileId(int32_t fildId) const;
 	void generateFilename(char *buf, size_t bufsize, int32_t fileId, int32_t fileId2, int32_t mergeNum, int32_t endMergeFileId);
 
+	bool fixNonfirstSpiderdbFiles();
+
 	static void unlinkDoneWrapper(void *state);
 	void unlinkDone();
 	static void renameDoneWrapper(void *state);
