@@ -78,6 +78,12 @@ Hostdb::Hostdb ( ) {
 	memset(m_shards, 0, sizeof(m_shards));
 	memset(m_spareHosts, 0, sizeof(m_spareHosts));
 	memset(m_proxyHosts, 0, sizeof(m_proxyHosts));
+	memset(m_buf, 0, sizeof(m_buf));
+	memset(m_dir, 0, sizeof(m_dir));
+	memset(m_httpRootDir, 0, sizeof(m_httpRootDir));
+	memset(m_logFilename, 0, sizeof(m_logFilename));
+	memset(m_netName, 0, sizeof(m_netName));
+	memset(&m_map, 0, sizeof(m_map));
 }
 
 
@@ -898,11 +904,16 @@ createFile:
 		return false;
 	}
 	// set m_dir to THIS host's working dir
-	strcpy ( m_dir , h->m_dir );
+	strncpy(m_dir, h->m_dir, sizeof(m_dir));
+	m_dir[sizeof(m_dir)-1] = '\0';
+	
 	// likewise, set m_htmlDir to this host's html dir
-	sprintf ( m_httpRootDir , "%shtml/" , m_dir );
-	sprintf ( m_logFilename , "%slog%03" PRId32, m_dir , m_hostId );
+	snprintf(m_httpRootDir, sizeof(m_httpRootDir), "%shtml/" , m_dir );
+	m_httpRootDir[sizeof(m_httpRootDir)-1] = '\0';
 
+	snprintf(m_logFilename, sizeof(m_logFilename), "%slog%03" PRId32, m_dir , m_hostId );
+	m_logFilename[sizeof(m_logFilename)-1] = '\0';
+	
 	if ( ! g_conf.m_runAsDaemon &&
 	     ! g_conf.m_logToFile )
 		sprintf(m_logFilename,"/dev/stderr");
@@ -1619,6 +1630,7 @@ uint32_t Hostdb::getShardNum(rdbid_t rdbId, const void *k) {
 
 	// core -- must be provided
 	g_process.shutdownAbort(true);
+	return 0;
 }
 
 uint32_t Hostdb::getShardNumFromDocId ( int64_t d ) {
@@ -1832,7 +1844,7 @@ Host *Hostdb::getHost2 ( const char *cwd , int32_t *localIps ) {
 		//   as well as cwd!
 		// . if the gb binary does not reside in the working dir
 		//   for this host, skip it, it's not our host
-		if ( strcmp(h->m_dir,cwd) ) continue;
+		if ( strcmp(h->m_dir,cwd) != 0 ) continue;
 		// now it must be our ip as well!
 		int32_t *ipPtr = localIps;
 		for ( ; *ipPtr ; ipPtr++ ) 
@@ -1851,7 +1863,7 @@ Host *Hostdb::getProxy2 ( const char *cwd , int32_t *localIps ) {
 		//   as well as cwd!
 		// . if the gb binary does not reside in the working dir
 		//   for this host, skip it, it's not our host
-		if ( strcmp(h->m_dir,cwd) ) continue;
+		if ( strcmp(h->m_dir,cwd) != 0 ) continue;
 		// now it must be our ip as well!
 		int32_t *ipPtr = localIps;
 		for ( ; *ipPtr ; ipPtr++ ) 
