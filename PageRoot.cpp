@@ -657,7 +657,7 @@ bool printFrontPageShell ( SafeBuf *sb , const char *tabName , CollectionRec *cr
 	sb->safePrintf("<meta name=\"keywords\" content=\"search, search engine, search engines, search the web, fresh index, green search engine, green search, clean search engine, clean search\">\n");
 
 	const char *title = "An Alternative Open Source Search Engine";
-	if ( strcasecmp(tabName,"search") ) {
+	if ( strcasecmp(tabName,"search") != 0 ) {
 		title = tabName;
 	}
 
@@ -887,10 +887,11 @@ static bool printAddUrlHomePage ( SafeBuf &sb , const char *url , HttpRequest *r
 		      "action=/addurl name=f>\n" );
 
 	const char *coll = "";
-	if ( cr ) coll = cr->m_coll;
-	if ( cr )
-		sb.safePrintf("<input type=hidden name=c value=\"%s\">",
-			      cr->m_coll);
+	if ( cr ) {
+		coll = cr->m_coll;
+
+		sb.safePrintf("<input type=hidden name=c value=\"%s\">", cr->m_coll);
+	}
 
 
 	// put search box in a box
