@@ -15,6 +15,11 @@ Wiktionary::Wiktionary () {
 	m_callback = NULL;
 	m_state    = NULL;
 	m_opened   = false;
+	
+	memset(m_buf, 0, sizeof(m_buf));
+	m_txtSize = 0;
+	m_errno = 0;
+	
 	// . use a 8 byte key size and 2 byte data size
 	// . allowDups = true!
 	// . now m_langTable just maps to langId, no POS bits...
@@ -114,7 +119,7 @@ bool Wiktionary::test2 ( ) {
 	//wid = hash64n(str);
 
 	Words words;
-	words.set ( str, true, 0 );
+	words.set ( str, strlen(str), 0 );
 
 	int32_t wordNum = 0;
 	char tmpBuf[1000];
@@ -154,10 +159,13 @@ bool Wiktionary::load() {
 	//char ff2[256];
 	char ff3[256];
 	char ff4[256];
-	sprintf(ff1, "%swiktionary.txt.aa", g_hostdb.m_dir);
+	snprintf(ff1, sizeof(ff1), "%swiktionary.txt.aa", g_hostdb.m_dir);
+	ff1[ sizeof(ff1)-1 ] = '\0';
 	//sprintf(ff2, "%swiktionary-mybuf.txt", g_hostdb.m_dir);
-	sprintf(ff3, "%swiktionary-syns.dat", g_hostdb.m_dir);
-	sprintf(ff4, "%swiktionary-buf.txt", g_hostdb.m_dir);
+	snprintf(ff3, sizeof(ff3), "%swiktionary-syns.dat", g_hostdb.m_dir);
+	ff3[ sizeof(ff3)-1 ] = '\0';
+	snprintf(ff4, sizeof(ff4), "%swiktionary-buf.txt", g_hostdb.m_dir);
+	ff4[ sizeof(ff4)-1 ] = '\0';
 	int fd1 = open ( ff1 , O_RDONLY );
 	int fd3 = open ( ff3 , O_RDONLY );
 	if ( fd3 < 0 ) {
@@ -447,7 +455,9 @@ bool Wiktionary::generateHashTableFromWiktionaryTxt ( int32_t sizen ) {
 	// wiktionary-lang.txt  (<landId>|<word>\n) (used by Speller.cpp)
 	//
 	char ff1[256];
-	sprintf(ff1, "%swiktionary.txt.aa", g_hostdb.m_dir);
+	snprintf(ff1, sizeof(ff1), "%swiktionary.txt.aa", g_hostdb.m_dir);
+	ff1[ sizeof(ff1)-1 ] = '\0';
+
 	log(LOG_INFO,"wikt: Loading %s",ff1);
 	int fd1 = open ( ff1 , O_RDONLY );
 	if ( fd1 < 0 ) {
@@ -491,7 +501,9 @@ bool Wiktionary::generateHashTableFromWiktionaryTxt ( int32_t sizen ) {
 		if ( round == 0 ) {
 			round++;
 			offset = 0;
-			sprintf(ff1,"%swiktionary.txt.ab",g_hostdb.m_dir);
+			snprintf(ff1, sizeof(ff1), "%swiktionary.txt.ab",g_hostdb.m_dir);
+			ff1[ sizeof(ff1)-1 ] = '\0';
+
 			log(LOG_INFO,"wikt: Loading %s",ff1);
 			fd1 = open ( ff1 , O_RDONLY );
 			if ( fd1 < 0 ) {
@@ -1095,7 +1107,7 @@ bool Wiktionary::generateHashTableFromWiktionaryTxt ( int32_t sizen ) {
 			addWord ( word, flag , langId , NULL );
 			goto lineLoop;
 		}
-		if ( ! strncasecmp(wp,"acronym",6) ) {
+		if ( ! strncasecmp(wp,"acronym",7) ) {
 			flag = WF_NOUN;
 			if ( debug ) 
 				fprintf(stderr,"%s -> (acronym)\n",word);
@@ -1966,12 +1978,10 @@ bool Wiktionary::compile ( ) {
 							 (unsigned char *)word,
 							 strlen(word));
 			// debug time
-			if ( stripLen > 0 ) a[stripLen] = 0;
-			//if ( stripLen > 0 ) 
-			//	log("wikt: %" PRId32") %s->%s",i,word,a);
-
-			// if same as original word, ignore it
 			if ( stripLen > 0 ) {
+				a[stripLen] = 0;
+	
+				// if same as original word, ignore it
 				int32_t wlen = strlen(word);
 				if ( wlen==stripLen && 
 				     strncmp(a,word,wlen) == 0 ) 
