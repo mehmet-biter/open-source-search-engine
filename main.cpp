@@ -3127,7 +3127,7 @@ void dumpWaitingTree (const char *coll ) {
 
 	// load in the waiting tree, IPs waiting to get into doledb
 	BigFile file;
-	file.set ( dir , "waitingtree-saved.dat" , NULL );
+	file.set(dir, "waitingtree-saved.dat");
 	bool treeExists = file.doesExist() > 0;
 	// load the table with file named "THISDIR/saved"
 	RdbMem wm;

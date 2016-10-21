@@ -43,7 +43,6 @@ Conf::Conf ( ) {
 	m_runAsDaemon = false;
 	m_logToFile = false;
 	m_isLocal = false;
-	memset(m_stripeDir, 0, sizeof(m_stripeDir));
 	memset(m_defaultColl, 0, sizeof(m_defaultColl));
 	memset(m_clusterName, 0, sizeof(m_clusterName));
 	m_numDns = 0;

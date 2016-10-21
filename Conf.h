@@ -80,9 +80,6 @@ class Conf {
 	
 	bool m_isLocal;
 
-	// an additional strip directory on a different drive
-	char m_stripeDir[256];
-
 	char m_defaultColl[MAX_COLL_LEN + 1];
 
 	char m_clusterName[32];

@@ -157,11 +157,10 @@ void BigFile::logAllData(int32_t log_type)
 
 
 
-// we alternate parts into "dirname" and "stripeDir"
 // . return false and set g_errno on error
-bool BigFile::set ( const char *dir, const char *baseFilename, const char *stripeDir ) {
+bool BigFile::set(const char *dir, const char *baseFilename) {
 
-	logTrace( g_conf.m_logTraceBigFile, "BEGIN. dir [%s] baseFilename [%s] stripeDir [%s]",dir, baseFilename, stripeDir);
+	logTrace( g_conf.m_logTraceBigFile, "BEGIN. dir [%s] baseFilename [%s]",dir, baseFilename);
 
 	// reset filsize
 	m_fileSize = -1;
@@ -215,15 +214,12 @@ bool BigFile::reset ( ) {
 	//sprintf(m_baseFilename ,"%s/%s", dirname  , baseFilename );
 	//strcpy ( m_baseFilename , baseFilename  );
 	//strcpy ( m_dir          , dir           );
-	//if ( stripeDir ) strcpy ( m_stripeDir    , stripeDir     );
-	//else             m_stripeDir[0] = '\0';
 	// reset # of parts
 	//m_numParts = 0;
 	//m_maxParts = 0;
 	// now add parts from both directories
 	// MDW: why is this in reset() function? remove...
 	//if ( ! addParts ( m_dir.getBufStart() ) ) return false;
-	//if ( ! addParts ( m_stripeDir ) ) return false;
 	return true;
 }
 	
@@ -422,7 +418,7 @@ bool BigFile::open(int flags) {
 	return true;
 }
 
-// get the filename of the nth file using m_dir/m_stripeDir & m_baseFilename
+// get the filename of the nth file using m_dir & m_baseFilename
 void BigFile::makeFilename_r ( char *baseFilename    , 
 			       char *baseFilenameDir , 
 			       int32_t  n               , 
@@ -436,10 +432,6 @@ void BigFile::makeFilename_r ( char *baseFilename    ,
 	// int32_t baseLen = strlen(baseFilename);
 	// int32_t need = dirLen + 1 + baseLen + 1;
 	// if ( need < bufSize ) gbshutdownLogicError();
-	//static char s[1024];
-	// if ( (n % 2) == 0 || ! m_stripeDir[0] ) 
-	// 	sprintf ( buf, "%s/%s",   dir      , baseFilename );
-	// else    sprintf ( buf, "%s/%s", m_stripeDir, baseFilename );
 	if ( n == 0 ) {
 		r = snprintf ( buf, bufSize, "%s/%s",dir,baseFilename);
 		if ( r < bufSize ) return;
@@ -1552,7 +1544,7 @@ void BigFile::renameWrapper(File *f, int32_t i) {
 	logTrace( g_conf.m_logTraceBigFile, "BEGIN" );
 
 	// . get the new full name for this file
-	// . based on m_dir/m_stripeDir and m_baseFilename
+	// . based on m_dir and m_baseFilename
 	char newFilename [ 1024 ];
 	makeFilename_r ( m_newBaseFilename.getBufStart(), m_newBaseFilenameDir.getBufStart(), i, newFilename, 1024 );
 
