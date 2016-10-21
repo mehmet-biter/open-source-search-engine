@@ -28,6 +28,10 @@ Matches::Matches()
     m_numMatchGroups(0)
 {
 	memset(&m_matches, 0, sizeof(m_matches));	//@todo: added to silence Coverity. Remove if impacting performance (quite big memset)
+	memset(&m_qtableIds, 0, sizeof(m_qtableIds));	// PVS-Studio
+	memset(&m_qtableWordNums, 0, sizeof(m_qtableWordNums));	// PVS-Studio
+	memset(&m_qtableFlags, 0, sizeof(m_qtableFlags));	// PVS-Studio
+	memset(m_tmpBuf, 0, sizeof(m_tmpBuf));	// PVS-Studio
 }
 
 
