@@ -109,31 +109,11 @@ bool Collectiondb::loadAllCollRecs ( ) {
 		return false;
 	}
 
-	int32_t count = 0;
-	const char *f;
-	while ( ( f = d.getNextFilename ( "*" ) ) ) {
-		// skip if first char not "coll."
-		if ( strncmp ( f , "coll." , 5 ) != 0 ) continue;
-		// must end on a digit (i.e. coll.main.0)
-		if ( ! is_digit (f[strlen(f)-1]) ) continue;
-		// count them
-		count++;
-	}
-
-	// reset directory for another scan
-	d.set ( dname );
-	if ( ! d.open ()) {
-		log( LOG_WARN, "admin: Could not load collection config files." );
-		return false;
-	}
-
 	// note it
 	//log(LOG_INFO,"db: loading collection config files.");
 	// . scan through all subdirs in the collections dir
 	// . they should be like, "coll.main/" and "coll.mycollection/"
-	while ( ( f = d.getNextFilename ( "*" ) ) ) {
-		// skip if first char not "coll."
-		if ( strncmp ( f , "coll." , 5 ) != 0 ) continue;
+	while ( const char *f = d.getNextFilename ( "coll.*" ) ) {
 		// must end on a digit (i.e. coll.main.0)
 		if ( ! is_digit (f[strlen(f)-1]) ) continue;
 		// point to collection
@@ -149,10 +129,6 @@ bool Collectiondb::loadAllCollRecs ( ) {
 		// add it
 		if ( ! addExistingColl ( collname, collnum ) )
 			return false;
-		// swap it out if we got 100+ collections
-		// if ( count < 100 ) continue;
-		// CollectionRec *cr = getRec ( collnum );
-		// if ( cr ) cr->swapOut();
 	}
 	// if no existing recs added... add coll.main.0 always at startup
 	if ( m_numRecs == 0 ) {
