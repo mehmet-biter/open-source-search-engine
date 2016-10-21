@@ -29,6 +29,24 @@ RdbTree::RdbTree () {
 	m_needsSave     = false;
 	m_pickRight     = false;
 
+	// PVS-Studio
+	memset(m_dir, 0, sizeof(m_dir));
+	memset(m_memTag, 0, sizeof(m_memTag));
+	m_state = NULL;
+	m_callback = NULL;
+	m_doBalancing = false;
+	m_ownData = false;
+	m_dataInPtrs = false;
+	m_overhead = 0;
+	m_maxMem = 0;
+	m_baseMem = 0;
+	m_allocName = NULL;
+	m_bytesWritten = 0;
+	m_bytesRead = 0;
+	m_errno = 0;
+	m_ks = 0;
+	m_corrupt = 0;
+	
 	// before resetting... we have to set this so clear() won't breach buffers
 	m_rdbId = -1;
 
@@ -100,8 +118,8 @@ void RdbTree::reset ( ) {
 	// . sanity check
 	// . SpiderCache.cpp uses a tree, but withou a dbname
 	if ( m_needsSave && m_dbname[0] && 
-	     strcmp(m_dbname,"accessdb") &&
-	     strcmp(m_dbname,"statsdb") ) {
+	     strcmp(m_dbname,"accessdb") != 0 &&
+	     strcmp(m_dbname,"statsdb") != 0 ) {
 	     //strcmp(m_dbname,"doledb") ) {
 		log(LOG_WARN, "rdb: RESETTING UNSAVED TREE %s.",m_dbname);
 		log(LOG_WARN, "rdb: RESETTING UNSAVED TREE %s.",m_dbname);
@@ -116,7 +134,7 @@ void RdbTree::reset ( ) {
 	if ( m_numNodes > 0 && 
 	     m_dbname[0] &&
 	     // don't be spammy we can have thousands of these, one per coll
-	     strcmp(m_dbname,"waitingtree") )
+	     strcmp(m_dbname,"waitingtree") != 0 )
 		log(LOG_INFO,"db: Resetting tree for %s.",m_dbname);
 
 	// liberate all the nodes
@@ -730,7 +748,7 @@ void RdbTree::deleteNode(int32_t i, bool freeData) {
 	if ( ( m_pickRight     && m_right[j] >= 0 ) || 
 	     ( m_left[j]   < 0 && m_right[j] >= 0 )  ) {
 		// try to pick a left kid next time
-		m_pickRight = 0;
+		m_pickRight = false;
 		// go to the right kid
 		j = m_right [ j ];
 		// now go left as much as we can
@@ -742,7 +760,7 @@ void RdbTree::deleteNode(int32_t i, bool freeData) {
 	// . this little routine is stolen from getPrevNode(i)
 	if ( m_left[j] >= 0 ) {
 		// try to pick a right kid next time
-		m_pickRight = 1;
+		m_pickRight = true;
 		// go to the left kid
 		j = m_left [ j ];
 		// now go right as much as we can
@@ -1064,7 +1082,7 @@ bool RdbTree::fixTree ( ) {
 			data -= 4;
 			SpiderRequest *sreq ;
 			sreq =(SpiderRequest *)data;
-			if ( strncmp(sreq->m_url,"http",4) ) {
+			if ( strncmp(sreq->m_url,"http",4) != 0 ) {
 				log("db: removing spiderrequest bad url "
 					"%s from tree",sreq->m_url);
 				//return false;
@@ -1118,7 +1136,7 @@ bool RdbTree::checkTree ( bool printMsgs , bool doChainTest ) {
 bool RdbTree::checkTree2 ( bool printMsgs , bool doChainTest ) {
 
 	int32_t hkp = 0;
-	char useHalfKeys = false;
+	bool useHalfKeys = false;
 
 	// these guy always use a collnum of 0
 	bool doCollRecCheck = true;
@@ -1165,7 +1183,7 @@ bool RdbTree::checkTree2 ( bool printMsgs , bool doChainTest ) {
 				data -= 4;
 				SpiderRequest *sreq ;
 				sreq =(SpiderRequest *)data;
-				if ( strncmp(sreq->m_url,"http",4) ) {
+				if ( strncmp(sreq->m_url,"http",4) != 0 ) {
 					log("db: spiderrequest bad url "
 						"%s",sreq->m_url);
 					return false;
@@ -2191,7 +2209,7 @@ bool RdbTree::fastSave ( const char *dir, const char *dbname, bool useThread, vo
 	m_dir[ sizeof(m_dir)-1 ] = '\0';
 
 	// sanity check
-	if ( dbname && strcmp(dbname,m_dbname) ) {
+	if ( dbname && strcmp(dbname,m_dbname) != 0 ) {
 		log( LOG_ERROR, "db: tree dbname mismatch." );
 		g_process.shutdownAbort(true);
 	}

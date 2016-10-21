@@ -369,7 +369,7 @@ private:
 	int32_t    m_overhead;     
 	// switch between picking left and right kids to replace deleted nodes
 	// in order to keep the tree more balanced
-	char    m_pickRight;
+	bool    m_pickRight;
 	// the node at the top of the tree
 	int32_t    m_headNode;
 	// total mem this tree is using (including data that nodes point to)
