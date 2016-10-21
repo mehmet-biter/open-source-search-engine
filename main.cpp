@@ -1934,7 +1934,7 @@ int main2 ( int argc , char *argv[] ) {
 	}
 
 	// force give up on dead hosts to false
-	g_conf.m_giveupOnDeadHosts = 0;
+	g_conf.m_giveupOnDeadHosts = false;
 
 	// shout out if we're in read only mode
 	if ( g_conf.m_readOnlyMode )
