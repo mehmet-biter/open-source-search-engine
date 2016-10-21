@@ -83,6 +83,35 @@ public:
 	// m_allocOff is offset into m_allocBuf where we start reading into 
 	// from the file
 	int64_t  m_allocOff;
+	
+	FileState() {
+		m_bigfile = NULL;
+		m_buf = NULL;
+		m_bytesToGo = 0;
+		m_offset = 0;
+		m_doWrite = false;
+		m_bytesDone = 0;
+		m_state = NULL;
+		m_callback = NULL;
+		m_niceness = 0;
+		m_filenum1 = 0;
+		m_filenum2 = 0;
+		m_fd1 = -1;
+		m_fd2 = -1;
+		memset(m_filename1, 0, sizeof(m_filename1));
+		memset(m_filename2, 0, sizeof(m_filename2));
+		m_errno = 0;
+		m_startTime = 0;
+		m_doneTime = 0;
+		m_vfd = 0;
+		m_closeCount1 = 0;
+		m_closeCount2 = 0;
+		m_flags = 0;
+		m_allocBuf = NULL;
+		m_allocSize = 0;
+		m_allocOff = 0;
+	};
+	~FileState() {};
 };
 
 
