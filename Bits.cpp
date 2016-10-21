@@ -12,6 +12,7 @@
 Bits::Bits() {
 	m_bits = NULL;
 	m_swbits = NULL;
+	memset(m_localBuf, 0, sizeof(m_localBuf));
 	reset();
 }
 
