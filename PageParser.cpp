@@ -590,10 +590,10 @@ static bool sendPageParser2 ( TcpSocket   *s ,
 
 
 	// if facebook, load xml content from title rec...
-	bool isFacebook = (bool)strstr(st->m_u,"http://www.facebook.com/");
+	bool isFacebook = strstr(st->m_u,"http://www.facebook.com/") ? true : false;
 	if ( isFacebook && ! content ) {
 		int64_t docId = Titledb::getProbableDocId((char*)st->m_u);
-		sprintf(sreq.m_url ,"%" PRIu64, docId );
+		sprintf(sreq.m_url ,"%" PRIu64 "", (uint64_t) docId);
 		sreq.m_isPageReindex = true;
 	}
 
