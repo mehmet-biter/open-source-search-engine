@@ -131,4 +131,5 @@ const char *DirIterator::getNextFilename(const char *pattern) {
 		exhausted = true;
 		m_dir.close();
 	}
+	return s;
 }
