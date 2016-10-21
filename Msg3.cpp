@@ -300,7 +300,7 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		// adjust num files if we need to, as well
 		if ( startFileNum < base->mergeStartFileNum() -1 &&
 		     numFiles != -1 &&
-		     startFileNum + numFiles -1 >= base->mergeStartFileNum() -1 ) {
+		     startFileNum + numFiles >= base->mergeStartFileNum() ) {
 			if ( g_conf.m_logDebugQuery )
 				log(LOG_DEBUG,"net: msg3: numFiles up one.");
 			// if merge file was inserted before us, inc our file number
