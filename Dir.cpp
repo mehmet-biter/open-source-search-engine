@@ -127,6 +127,8 @@ const char *DirIterator::getNextFilename(const char *pattern) {
 	if(exhausted)
 		return NULL;
 	const char *s = m_dir.getNextFilename();
-	if(!s)
+	if(!s) {
 		exhausted = true;
+		m_dir.close();
+	}
 }
