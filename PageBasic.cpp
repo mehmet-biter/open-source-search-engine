@@ -805,12 +805,11 @@ bool sendPageBasicStatus ( TcpSocket *socket , HttpRequest *hr ) {
 	}
 
 	// print standard header 
-	if ( format == FORMAT_HTML )
+	if ( format == FORMAT_HTML ) {
 		// this prints the <form tag as well
 		g_pages.printAdminTop ( &sb , socket , hr );
 
-	// table to split between widget and stats in left and right panes
-	if ( format == FORMAT_HTML ) {
+		// table to split between widget and stats in left and right panes
 		sb.safePrintf("<TABLE id=pane>"
 			      "<TR><TD valign=top>");
 	}
@@ -837,18 +836,12 @@ bool sendPageBasicStatus ( TcpSocket *socket , HttpRequest *hr ) {
 
 		savedLen2 = sb.length();
 
-	}
-
-	// the right table pane is the crawl stats
-	if ( format == FORMAT_HTML ) {
+		// the right table pane is the crawl stats
 		sb.safePrintf("</TD><TD valign=top>");
-	}
 
-
-	//
-	// show stats
-	//
-	if ( format == FORMAT_HTML ) {
+		//
+		// show stats
+		//
 		SafeBuf tmp;
 		int32_t crawlStatus = -1;
 		getSpiderStatusMsg ( cr , &tmp , &crawlStatus );
@@ -993,10 +986,7 @@ bool sendPageBasicStatus ( TcpSocket *socket , HttpRequest *hr ) {
 
 		sb.safePrintf("</table>\n\n");
 
-	}
-
-	// end the right table pane
-	if ( format == FORMAT_HTML ) {
+		// end the right table pane
 		sb.safePrintf("</TD></TR></TABLE>");
 	}
 
