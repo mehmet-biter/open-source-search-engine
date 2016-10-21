@@ -522,7 +522,7 @@ bool Collectiondb::addRdbBasesForCollRec ( CollectionRec *cr ) {
 }
 
 /// this deletes the collection, not just part of a reset.
-bool Collectiondb::deleteRec2 ( collnum_t collnum ) { //, WaitEntry *we ) {
+bool Collectiondb::deleteRec2 ( collnum_t collnum ) {
 	// do not allow this if in repair mode
 	if ( g_repair.isRepairActive() && g_repair.m_collnum == collnum ) {
 		log(LOG_WARN, "admin: Can not delete collection while in repair mode.");
