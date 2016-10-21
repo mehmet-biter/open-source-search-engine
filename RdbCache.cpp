@@ -15,7 +15,7 @@
 
 bool g_cacheWritesEnabled = true;
 
-static const int64_t m_maxColls = (1LL << (sizeof(collnum_t)*8));
+static const int64_t m_maxColls = (1LL << (sizeof(collnum_t)*8));	// 65536
 
 
 RdbCache::RdbCache() : m_dbname(NULL) {
@@ -739,7 +739,7 @@ bool RdbCache::addRecord ( collnum_t collnum ,
 
 	//int64_t startTime = gettimeofdayInMillisecondsLocal();
 	if ( collnum < (collnum_t)0) gbshutdownLogicError();
-	if ( collnum >= m_maxColls ) gbshutdownLogicError();
+	if ( (int64_t)collnum >= m_maxColls ) gbshutdownLogicError();
 	// full key not allowed because we use that in markDeletedRecord()
 	if ( KEYCMP(cacheKey,KEYMAX(),m_cks) == 0 ) gbshutdownLogicError();
 
@@ -933,7 +933,7 @@ bool RdbCache::deleteRec ( ) {
 	// . allow -1 collnum to exist, seems to happen in robots.txt cache
 	//   sometimes, maybe for delete collnum... not sure, but the timestamp
 	//   seems to be legit
-	if ( collnum >= m_maxColls || collnum < -1
+	if ( (int64_t)collnum >= m_maxColls || collnum < -1
 			       // we now call ::reset(oldcollnum)
 			       // when resetting a collection in
 			       // Collectiondb::resetColl() which calls
@@ -1652,7 +1652,7 @@ void RdbCache::verify(){
 		 collnum_t collnum = *(collnum_t *)p; p += sizeof(collnum_t);
 		 // -1 this means cleared! set in RdbCache::clear(collnum_t)
 		 // collnum can be 0 in case we have to go to next buffer
-		 if ( collnum != 0 && ( collnum >= m_maxColls || collnum <-1)){
+		 if ( collnum != 0 && ( (int64_t)collnum >= m_maxColls || collnum <-1)){
 			 //	!g_collectiondb.m_recs[collnum] ) ) {
 			 gbshutdownLogicError();
 		 }

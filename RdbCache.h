@@ -350,7 +350,7 @@ private:
 	int64_t m_adds;
 	int64_t m_deletes;
 
-	char m_needsSave;
+	bool m_needsSave;
 };	
 
 #endif // GB_RDBCACHE_H
