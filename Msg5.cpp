@@ -53,6 +53,9 @@ Msg5::Msg5() {
 	m_allowPageCache = false;
 	m_collnum = 0;
 	m_errno = 0;
+	// PVS-Studio
+	memset(m_fileStartKey, 0, sizeof(m_fileStartKey));
+	memset(m_minEndKey, 0, sizeof(m_minEndKey));
 
 	reset();
 }
@@ -91,7 +94,7 @@ bool Msg5::getTreeList(RdbList *result, const void *startKey, const void *endKey
 	int32_t *numNegativeRecs, int32_t *memUsedByTree, int32_t *numUsedNodes) {
 	RdbBase *base = getRdbBase(m_rdbId, m_collnum);
 	if(!base) {
-		log(LOG_DEBUG,"Msg5::getTreeList(): base %d/%d unknown",m_rdbId,m_collnum);
+		log(LOG_WARN,"%s:%s:%d: base %d/%d unknown", __FILE__, __func__, __LINE__, m_rdbId, m_collnum);
 		return false;
 	}
 	Rdb *rdb = getRdbFromId(m_rdbId);
@@ -106,6 +109,12 @@ bool Msg5::getTreeList(RdbList *result, const void *startKey, const void *endKey
 	if(rdb->useTree()) {
 		// get the mem tree for this rdb
 		RdbTree *tree = rdb->getTree();
+
+		if( !tree ) {
+			log(LOG_WARN,"%s:%s:%d: No tree!", __FILE__, __func__, __LINE__);
+			return false;
+		}
+
 		if(!tree->getList(base->getCollnum(),
 				  static_cast<const char*>(startKey),
 				  static_cast<const char*>(endKey),
@@ -120,6 +129,12 @@ bool Msg5::getTreeList(RdbList *result, const void *startKey, const void *endKey
 		*numUsedNodes = tree->getNumUsedNodes();
 	} else {
 		RdbBuckets *buckets = rdb->getBuckets();
+
+		if( !buckets ) {
+			log(LOG_WARN,"%s:%s:%d: No buckets!", __FILE__, __func__, __LINE__);
+			return false;
+		}
+
 		if(!buckets->getList(base->getCollnum(),
 				     static_cast<const char*>(startKey),
 				     static_cast<const char*>(endKey),
@@ -451,6 +466,10 @@ bool Msg5::readList ( ) {
 				}
 				else {
 					RdbBuckets *buckets = rdb->getBuckets();
+					if( !buckets ) {
+						log(LOG_WARN,"%s:%s:%d: No buckets!", __FILE__, __func__, __LINE__);
+						return false;
+					}
 
 					rs = buckets->getNumKeys() / buckets->getMemOccupied();
 					int32_t minrs = buckets->getRecSize() + 4;
