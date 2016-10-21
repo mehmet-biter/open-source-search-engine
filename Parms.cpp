@@ -174,6 +174,7 @@ bool Parm::printVal(SafeBuf *sb, collnum_t collnum, int32_t occNum) const {
 	log("parms: missing parm type!!");
 
 	g_process.shutdownAbort(true);
+	return false;
 }
 
 
@@ -1775,7 +1776,7 @@ bool Parms::printParm( SafeBuf* sb,
 	     m->m_obj != OBJ_NONE &&
 	     m->m_obj != OBJ_IR && // do not do for injectionrequest
 	     m->m_obj != OBJ_GBREQUEST && // do not do for GigablastRequest
-	     strcmp ( val1.getBufStart() , m->m_def ) )
+	     strcmp(val1.getBufStart(), m->m_def) != 0 )
 		// put non-default valued parms in orange!
 		bg = "ffa500";
 
@@ -1937,7 +1938,7 @@ bool Parms::printParm( SafeBuf* sb,
 		//if ( ! *s ) val = "N";
 		const char *val = "";
 		// "s" is invalid of parm has no "object"
-		if ( m->m_obj == OBJ_NONE && m->m_def[0] != '0' )
+		if ( m->m_obj == OBJ_NONE && m->m_def && m->m_def[0] != '0' )
 			val = " checked";
 		if ( m->m_obj != OBJ_NONE && s && *s )
 			val = " checked";
@@ -2627,7 +2628,7 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 		goto changed; 
 	}
 	else if ( t == TYPE_FLOAT ) {
-		if( fromRequest && *(float *)(THIS + m->m_off + 4*j) == (float)atof ( s ) ) {
+		if( fromRequest && *(float *)(THIS + m->m_off + 4*j) == (s ? (float)atof(s) : 0) ) {
 			return;
 		}
 		// if changed within .00001 that is ok too, do not count
@@ -2644,7 +2645,7 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 		goto changed; 
 	}
 	else if ( t == TYPE_DOUBLE ) {
-		if( fromRequest && *(double *)(THIS + m->m_off + 4*j) == (double)atof ( s ) ) {
+		if( fromRequest && *(double *)(THIS + m->m_off + 4*j) == ( s ? (double)atof(s) : 0) ) {
 			return;
 		}
 		if ( fromRequest ) {
@@ -2656,7 +2657,7 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 	}
 	else if ( t == TYPE_IP ) {
 		if ( fromRequest && *(int32_t *)(THIS + m->m_off + 4*j) ==
-		     (int32_t)atoip (s,strlen(s) ) )
+		     (s ? (int32_t)atoip(s,strlen(s)) : 0) )
 			return;
 		*(int32_t *)(THIS + m->m_off + 4*j) = s ? (int32_t)atoip(s,strlen(s)) : 0;
 		goto changed; 
@@ -2673,7 +2674,7 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 		goto changed; 
 	}
 	else if ( t == TYPE_LONG_LONG ) {
-		if ( fromRequest && *(uint64_t *)(THIS + m->m_off+8*j) == strtoull(s,NULL,10)) {
+		if ( fromRequest && *(uint64_t *)(THIS + m->m_off+8*j) == ( s ? strtoull(s,NULL,10) : 0) ) {
 			return;
 		}
 		*(int64_t *)(THIS + m->m_off + 8*j) = s ? strtoull(s,NULL,10) : 0;
@@ -2941,6 +2942,8 @@ bool Parms::setFromFile ( void *THIS        ,
 
 	int32_t  vlen;
 	char *v ;
+	// a tmp thingy
+	char tt[1];
 	//char  c ;
 	int32_t numNodes  = xml.getNumNodes();
 	int32_t numNodes2 = m_xml2.getNumNodes();
@@ -2974,8 +2977,6 @@ bool Parms::setFromFile ( void *THIS        ,
 		int32_t j = 0;
 		// node number
 		int32_t nn = 0;
-		// a tmp thingy
-		char tt[1];
 		int32_t nb;
 		int32_t newnn;
 	loop:
@@ -3168,8 +3169,8 @@ bool Parms::setFromFile ( void *THIS        ,
 		if ( pn->m_tagNameLen != 14 ) continue;
 		if ( xn->m_tagNameLen != 8 ) continue;
 		// if it is not the OLD supported tag then skip
-		if ( strncmp ( pn->m_tagName,"masterPassword",14 ) ) continue;
-		if ( strncmp ( xn->m_tagName,"![CDATA[",8 ) ) continue;
+		if ( strncmp ( pn->m_tagName,"masterPassword",14) != 0 ) continue;
+		if ( strncmp ( xn->m_tagName,"![CDATA[",8) != 0) continue;
 		// otherwise append to buf
 		char *text = xn->m_node + 9;
 		int32_t  tlen = xn->m_nodeLen - 12;
@@ -3189,8 +3190,8 @@ bool Parms::setFromFile ( void *THIS        ,
 		if ( pn->m_tagNameLen != 8 ) continue;
 		if ( xn->m_tagNameLen != 8 ) continue;
 		// if it is not the OLD supported tag then skip
-		if ( strncmp ( pn->m_tagName,"masterIp",8 ) ) continue;
-		if ( strncmp ( xn->m_tagName,"![CDATA[",8 ) ) continue;
+		if ( strncmp ( pn->m_tagName,"masterIp",8) != 0 ) continue;
+		if ( strncmp ( xn->m_tagName,"![CDATA[",8) != 0 ) continue;
 		// otherwise append to buf
 		char *text = xn->m_node + 9;
 		int32_t  tlen = xn->m_nodeLen - 12;
