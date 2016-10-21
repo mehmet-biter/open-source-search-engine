@@ -66,6 +66,7 @@ OBJS_O3 = \
 	UrlComponent.o UrlParser.o UdpStatistic.o \
 	MergeSpaceCoordinator.o \
 	GbMoveFile.o \
+	GbMakePath.o \
 	GbUtil.o \
 
 
