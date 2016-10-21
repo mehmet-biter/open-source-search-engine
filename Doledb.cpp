@@ -63,8 +63,6 @@ void nukeDoledb ( collnum_t collnum ) {
 
 	//g_spiderLoop.m_winnerListCache.verify();	
 
-	//WaitEntry *we = (WaitEntry *)state;
-
 	//if ( we->m_registered )
 	//	g_loop.unregisterSleepCallback ( we , doDoledbNuke );
 
