@@ -261,7 +261,7 @@ void printUdpTable(SafeBuf *p, const char *title, UdpServer *server, const char 
 
 	p->safePrintf ( "</table><br>" );
 
-	const char *dd = isDns ? "<td><b>hostname</b></td>" : "<td><b>msgType</td><td><b>desc</td><td><b>hostId</td>";
+	const char *dd = isDns ? "<td><b>hostname</b></td>" : "<td><b>msgType</b></td><td><b>desc</b></td><td><b>hostId</b></td>";
 	p->safePrintf ( "<table %s>"
 			"<tr class=hdrow><td colspan=19>"
 			"<center>"
