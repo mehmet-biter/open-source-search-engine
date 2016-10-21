@@ -42,6 +42,7 @@
 #include "Sanity.h"
 
 class Msg20Reply;
+class UdpSlot;
 
 void  handleRequest25 ( UdpSlot *slot , int32_t netnice ) ;
 

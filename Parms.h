@@ -10,6 +10,7 @@
 class CollectionRec;
 class UdpSlot;
 class SafeBuf;
+class WaitEntry;
 
 void handleRequest3e ( UdpSlot *slot , int32_t niceness ) ;
 void handleRequest3f ( UdpSlot *slot , int32_t niceness ) ;
