@@ -146,9 +146,9 @@ void SearchInput::test ( ) {
 	// loop through all possible cgi parms to set SearchInput
 	for ( int32_t i = 0 ; i < g_parms.m_numSearchParms ; i++ ) {
 		Parm *m = g_parms.m_searchParms[i];
-		char *x = (char *)this + m->m_off;
+		unsigned char *x = (unsigned char *)this + m->m_off;
 		if ( m->m_type != TYPE_BOOL ) *(int32_t *)x = 0xffffffff;
-		else                          *(char *)x = 0xff;
+		else                          *(unsigned char *)x = 0xff;
 	}
 	// ensure we're all zeros now!
 	int32_t fix = a - (char *)this;
@@ -586,19 +586,25 @@ bool SearchInput::setQueryBuffers ( HttpRequest *hr ) {
 			} else {
 				while (!isspace(*s2) && s2 < send) s2++;
 			}
-			if ( first ) m_sbuf1.safeStrcpy("(");
-			if ( first ) m_sbuf2.safeStrcpy("(");
-			if ( ! first ) m_sbuf1.safeStrcpy(" OR ");
-			if ( ! first ) m_sbuf2.safeStrcpy(" OR ");
+			if ( first ) {
+				m_sbuf1.safeStrcpy("(");
+				m_sbuf2.safeStrcpy("(");
+			}
+			if ( ! first ) {
+				m_sbuf1.safeStrcpy(" OR ");
+				m_sbuf2.safeStrcpy(" OR ");
+			}
 			first = false;
 			m_sbuf1.safeMemcpy ( s , s2 - s );
 			m_sbuf2.safeMemcpy ( s , s2 - s );
 			s = s2 + 1;
 		}
 	}
-	if ( ! first ) m_sbuf1.safeStrcpy(") AND ");
-	if ( ! first ) m_sbuf2.safeStrcpy(") AND ");
-	if ( ! first ) boolq = true;
+	if ( ! first ) {
+		m_sbuf1.safeStrcpy(") AND ");
+		m_sbuf2.safeStrcpy(") AND ");
+		boolq = true;
+	}
 
 	// and this
 	if ( m_secsBack > 0 ) {

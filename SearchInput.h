@@ -147,7 +147,7 @@ public:
 	bool   m_familyFilter;            // msg40
 	bool   m_allowHighFrequencyTermCache;
 	int64_t m_minMsg3aTimeout;
-	char   m_showErrors;
+	bool	m_showErrors;
 	bool   m_doSiteClustering;        // msg40
 	bool   m_doDupContentRemoval;     // msg40
 	bool   m_getDocIdScoringInfo;
