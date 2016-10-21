@@ -29,14 +29,16 @@ bool Titledb::init ( ) {
 	int32_t  dlen1 = uu.getDomainLen();
 	int32_t dlen2 = 0;
 	const char *d2 = getDomFast ( url , &dlen2 );
+	if ( !d1 || !d2 ) { g_process.shutdownAbort(true); }
 	if ( dlen1 != dlen2 ) { g_process.shutdownAbort(true); }
 	// another one
 	url = "http://ok/";
 	uu.set(url);
-	d1 = uu.getDomain();
+	const char *d1a = uu.getDomain();
 	dlen1 = uu.getDomainLen();
 	dlen2 = 0;
-	d2 = getDomFast ( url , &dlen2 );
+	const char *d2a = getDomFast ( url , &dlen2 );
+	if ( !d1a || !d2a ) { g_process.shutdownAbort(true); }
 	if ( dlen1 != dlen2 ) { g_process.shutdownAbort(true); }
 
 	// . what's max # of tree nodes?
