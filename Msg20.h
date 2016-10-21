@@ -55,7 +55,7 @@ class Msg20Request {
 
 	unsigned char       m_highlightQueryTerms       :1;
 	unsigned char       m_getSummaryVector          :1;
-	bool      m_showBanned                :1;
+	unsigned char       m_showBanned                :1;
 	unsigned char       m_includeCachedCopy         :1;
 	unsigned char       m_doLinkSpamCheck           :1;
 	unsigned char       m_isLinkSpam                :1; // Msg25 uses for storage

@@ -129,7 +129,7 @@ bool Msg22::getTitleRec ( Msg22Request  *r              ,
 	r->m_justCheckTfndb  = justCheckTfndb;
 	r->m_getAvailDocIdOnly   = getAvailDocIdOnly;
 	r->m_collnum         = g_collectiondb.getCollnum ( coll );
-	r->m_addToCache      = false;
+	r->m_addToCache      = 0;
 	r->m_maxCacheAge     = 0;
 	// url must start with http(s)://. must be normalized.
 	if ( url && url[0] != 'h' ) {
