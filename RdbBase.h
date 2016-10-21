@@ -32,7 +32,6 @@
 #include "RdbDump.h"
 #include "RdbMerge.h"
 #include "Msg3.h"               // MAX_RDB_FILES definition
-#include "Dir.h"
 #include "RdbMem.h"
 #include "RdbIndex.h"
 #include "GbMutex.h"
@@ -270,7 +269,7 @@ private:
 
 	int32_t      m_fixedDataSize;
 
-	Dir       m_dir;
+	char m_collectionDirName[1024];
 	char      m_dbname [32];
 	int32_t      m_dbnameLen;
 

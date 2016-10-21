@@ -72,6 +72,7 @@
 #include "SpiderProxy.h"
 #include "HashTable.h"
 #include "GbUtil.h"
+#include "Dir.h"
 #include <sys/stat.h> //umask()
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>

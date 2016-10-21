@@ -10,6 +10,7 @@
 #include "Stats.h"
 #include "Process.h"
 #include "GbUtil.h"
+#include "Dir.h"
 
 
 static bool sendHttpReply        ( void *state );

@@ -16,6 +16,7 @@
 #include "JobScheduler.h"
 #include "Process.h"
 #include "Sanity.h"
+#include "Dir.h"
 #include "GbMoveFile.h"
 #include "ScopedLock.h"
 #include <sys/stat.h> //mkdir(), stat()
@@ -36,6 +37,7 @@ RdbBase::RdbBase()
 	m_numFiles  = 0;
 	m_rdb = NULL;
 	m_nextMergeForced = false;
+	m_collectionDirName[0] = '\0';
 	m_dbname[0] = '\0';
 	m_dbnameLen = 0;
 
@@ -117,13 +119,7 @@ bool RdbBase::init(const char *dir,
 	if ( ! dir )
 		gbshutdownLogicError();
 
-	// set all our contained classes
-	//m_dir.set ( dir );
-	// set all our contained classes
-	// . "tmp" is bogus
-	// . /home/mwells/github/coll.john-test1113.654coll.john-test1113.655
-	char collectionDirName[1024];
-	sprintf ( collectionDirName , "%scoll.%s.%" PRId32 , dir , coll , (int32_t)collnum );
+	sprintf(m_collectionDirName, "%scoll.%s.%" PRId32, dir, coll, (int32_t)collnum);
 
 	// logDebugAdmin
 	log(LOG_DEBUG,"db: adding new base for dir=%s coll=%s collnum=%" PRId32" db=%s",
@@ -138,16 +134,14 @@ bool RdbBase::init(const char *dir,
 		}
 
 		// make a special "cat" dir for it if we need to
-		sprintf ( collectionDirName , "%s%s" , dir , dbname );
-		int32_t status = ::mkdir ( collectionDirName , getDirCreationFlags() );
-        if ( status == -1 && errno != EEXIST && errno ) {
-	        log( LOG_WARN, "db: Failed to make directory %s: %s.", collectionDirName, mstrerror( errno ) );
-	        return false;
-        }
+		sprintf(m_collectionDirName, "%s%s", dir, dbname);
+		int32_t status = ::mkdir ( m_collectionDirName , getDirCreationFlags() );
+		if ( status == -1 && errno != EEXIST && errno ) {
+			log( LOG_WARN, "db: Failed to make directory %s: %s.", m_collectionDirName, mstrerror( errno ) );
+			return false;
+		}
 	}
 
-	//m_dir.set ( dir , coll );
-	m_dir.set ( collectionDirName );
 	m_coll    = coll;
 	m_collnum = collnum;
 	m_tree    = tree;
@@ -170,7 +164,7 @@ bool RdbBase::init(const char *dir,
 	if (m_useIndexFile) {
 		char indexName[64];
 		sprintf(indexName, "%s-saved.idx", m_dbname);
-		m_treeIndex.set(m_dir.getDir(), indexName, m_fixedDataSize, m_useHalfKeys, m_ks, m_rdb->getRdbId());
+		m_treeIndex.set(m_collectionDirName, indexName, m_fixedDataSize, m_useHalfKeys, m_ks, m_rdb->getRdbId());
 
 		// only attempt to read/generate when we have tree/bucket
 		if ((m_tree && m_tree->getNumUsedNodes() > 0) || (m_buckets && m_buckets->getNumKeys() > 0)) {
@@ -184,11 +178,11 @@ bool RdbBase::init(const char *dir,
 				}
 
 				log(LOG_INFO, "db: Attempting to generate index file %s/%s-saved.dat. May take a while.",
-				    m_dir.getDir(), m_dbname);
+				    m_collectionDirName, m_dbname);
 
 				bool result = m_tree ? m_treeIndex.generateIndex(m_collnum, m_tree) : m_treeIndex.generateIndex(m_collnum, m_buckets);
 				if (!result) {
-					logError("db: Index generation failed for %s/%s-saved.dat.", m_dir.getDir(), m_dbname);
+					logError("db: Index generation failed for %s/%s-saved.dat.", m_collectionDirName, m_dbname);
 					gbshutdownCorrupted();
 				}
 
@@ -215,7 +209,6 @@ bool RdbBase::init(const char *dir,
 	m_minToMergeDefault = minToMergeArg;
 
 	// . set our m_files array
-	// . m_dir is bogus causing this to fail
 	if ( ! setFiles () ) {
 		// try again if we did a repair
 		if ( m_didRepair ) {
@@ -244,7 +237,7 @@ void RdbBase::specialInjectFileInit(const char *dir,
 	                            int32_t pageSize,
 	                            int32_t minToMerge)
 {
-	m_dir.set(dir);
+	strcpy(m_collectionDirName, dir);
 	strcpy(m_dbname,dbname);
 	m_dbnameLen = strlen(dbname);
 	m_coll = "main";
@@ -448,9 +441,11 @@ bool RdbBase::hasFileId(int32_t fildId) const {
 // . returns false on error
 bool RdbBase::setFiles ( ) {
 	// set our directory class
-	if ( ! m_dir.open ( ) ) {
-		// we are getting this from a bogus m_dir
-		log( LOG_WARN, "db: Had error opening directory %s", m_dir.getDir());
+	Dir dir;
+	dir.set(m_collectionDirName);
+	if ( ! dir.open ( ) ) {
+		// we are getting this from a bogus dir
+		log( LOG_WARN, "db: Had error opening directory %s", m_collectionDirName);
 		return false;
 	}
 
@@ -464,7 +459,7 @@ bool RdbBase::setFiles ( ) {
 	// . we now put a '*' at end of "*.dat*" since we may be reading in
 	//   some headless BigFiles left over froma killed merge
 
-	while( const char *filename = m_dir.getNextFilename("*.dat*") ) {
+	while( const char *filename = dir.getNextFilename("*.dat*") ) {
 
 		// ensure filename starts w/ our m_dbname
 		if ( strncmp ( filename , m_dbname , m_dbnameLen ) != 0 ) {
@@ -499,7 +494,7 @@ bool RdbBase::setFiles ( ) {
 		// sometimes an unlink() does not complete properly and we end up with
 		// remnant files that are 0 bytes. so let's clean up and skip them
 		SafeBuf fullFilename;
-		fullFilename.safePrintf("%s/%s", m_dir.getDir(), filename);
+		fullFilename.safePrintf("%s/%s", m_collectionDirName, filename);
 		struct stat st;
 		if(stat(fullFilename.getBufStart(),&st)!=0) {
 			log(LOG_ERROR,"stat(%s) failed with errno=%d (%s)", fullFilename.getBufStart(), errno, strerror(errno));
@@ -513,10 +508,10 @@ bool RdbBase::setFiles ( ) {
 			// causes problems...
 			char src[1024];
 			char dst[1024];
-			sprintf ( src , "%s/%s",m_dir.getDir(),filename);
+			sprintf ( src , "%s/%s", m_collectionDirName, filename);
 			sprintf ( dst , "%s/trash/%s", g_hostdb.m_dir,filename);
 			log( LOG_WARN, "db: Moving file %s/%s of 0 bytes into trash subdir. rename %s to %s",
-			     m_dir.getDir(), filename, src, dst );
+			     m_collectionDirName, filename, src, dst );
 			if ( ::rename ( src , dst ) ) {
 				log( LOG_WARN, "db: Moving file had error: %s.", mstrerror( errno ) );
 				return false;
@@ -548,16 +543,16 @@ bool RdbBase::setFiles ( ) {
 		BigFile bf;
 		SafeBuf oldName;
 		oldName.safePrintf("%s%04" PRId32".dat", m_dbname, m_fileInfo[0].m_fileId);
-		bf.set ( m_dir.getDir() , oldName.getBufStart() );
+		bf.set ( m_collectionDirName, oldName.getBufStart() );
 
 		// rename it to like "spiderdb.0001.dat"
 		SafeBuf newName;
-		newName.safePrintf("%s/%s0001.dat",m_dir.getDir(),m_dbname);
+		newName.safePrintf("%s/%s0001.dat",m_collectionDirName,m_dbname);
 		bf.rename ( newName.getBufStart() );
 
 		// and delete the old map
 		SafeBuf oldMap;
-		oldMap.safePrintf("%s/%s0001.map",m_dir.getDir(),m_dbname);
+		oldMap.safePrintf("%s/%s0001.map",m_collectionDirName,m_dbname);
 		File omf;
 		omf.set ( oldMap.getBufStart() );
 		omf.unlink();
@@ -566,7 +561,7 @@ bool RdbBase::setFiles ( ) {
 		BigFile cmf;
 		SafeBuf curMap;
 		curMap.safePrintf("%s%04" PRId32".map", m_dbname, m_fileInfo[0].m_fileId);
-		cmf.set ( m_dir.getDir(), curMap.getBufStart());
+		cmf.set(m_collectionDirName, curMap.getBufStart());
 
 		// rename to spiderdb0081.map to spiderdb0001.map
 		cmf.rename ( oldMap.getBufStart() );
@@ -574,7 +569,7 @@ bool RdbBase::setFiles ( ) {
 		if( m_useIndexFile ) {
 			// and delete the old index
 			SafeBuf oldIndex;
-			oldIndex.safePrintf("%s/%s0001.idx",m_dir.getDir(),m_dbname);
+			oldIndex.safePrintf("%s/%s0001.idx",m_collectionDirName,m_dbname);
 			File oif;
 			oif.set ( oldIndex.getBufStart() );
 			oif.unlink();
@@ -583,7 +578,7 @@ bool RdbBase::setFiles ( ) {
 			BigFile cif;
 			SafeBuf curIndex;
 			curIndex.safePrintf("%s%04" PRId32".idx", m_dbname, m_fileInfo[0].m_fileId);
-			cif.set ( m_dir.getDir(), curIndex.getBufStart());
+			cif.set(m_collectionDirName, curIndex.getBufStart());
 
 			// rename to spiderdb0081.map to spiderdb0001.map
 			cif.rename ( oldIndex.getBufStart() );
@@ -595,7 +590,7 @@ bool RdbBase::setFiles ( ) {
 	}
 
 
-	m_dir.close();
+	dir.close();
 
 	// ensure files are sharded correctly
 	verifyFileSharding();
@@ -661,7 +656,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	}
 	mnew( f, sizeof( BigFile ), "RdbBFile" );
 
-	f->set(m_dir.getDir(), name, NULL);
+	f->set(m_collectionDirName, name, NULL);
 
 	// if new ensure does not exist
 	if ( isNew && f->doesExist() ) {
@@ -757,7 +752,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 
 	// set the map file's  filename
 	sprintf ( name , "%s%04" PRId32".map", m_dbname, fileId );
-	m->set(m_dir.getDir(), name, m_fixedDataSize, m_useHalfKeys, m_ks, m_pageSize);
+	m->set(m_collectionDirName, name, m_fixedDataSize, m_useHalfKeys, m_ks, m_pageSize);
 	if ( ! isNew && ! m->readMap ( f ) ) {
 		// if out of memory, do not try to regen for that
 		if ( g_errno == ENOMEM ) {
@@ -806,7 +801,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	if( m_useIndexFile ) {
 		// set the index file's  filename
 		sprintf(name, "%s%04" PRId32".idx", m_dbname, fileId);
-		in->set(m_dir.getDir(), name, m_fixedDataSize, m_useHalfKeys, m_ks, m_rdb->getRdbId());
+		in->set(m_collectionDirName, name, m_fixedDataSize, m_useHalfKeys, m_ks, m_rdb->getRdbId());
 		if (!isNew && !(in->readIndex() && in->verifyIndex())) {
 			// if out of memory, do not try to regen for that
 			if (g_errno == ENOMEM) {
