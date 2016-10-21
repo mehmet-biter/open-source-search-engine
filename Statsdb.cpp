@@ -215,13 +215,14 @@ void flushStatsWrapper ( int fd , void *state ) {
 	// force a statsdb tree dump if running out of room
 	Rdb     *rdb  = &g_statsdb.m_rdb;
 	RdbTree *tree = rdb->getTree();
-	// if we got 20% room left and 50k available mem, do not dump
-	if ( (float)tree->getNumUsedNodes() * 1.2 < 
-	     (float)tree->getNumAvailNodes () &&
-	     //tree->getNumAvailNodes () > 1000 &&
-	     rdb->getAvailMem() > 50000 )
-		return;
-
+	if( tree ) {
+		// if we got 20% room left and 50k available mem, do not dump
+		if ( (float)tree->getNumUsedNodes() * 1.2 < 
+		     (float)tree->getNumAvailNodes () &&
+		     //tree->getNumAvailNodes () > 1000 &&
+		     rdb->getAvailMem() > 50000 )
+			return;
+	}
 	if ( ! isClockInSync() ) return;
 
 	// force a dump
@@ -318,8 +319,14 @@ bool Statsdb::addStat ( int32_t        niceness ,
 	if ( ! isClockInSync() ) return true;
 
 	RdbTree *tree = m_rdb.getTree();
+
+	if( !tree ) {
+		log(LOG_LOGIC,"%s:%s:%d: Rdb has no tree!", __FILE__, __func__, __LINE__);
+		gbshutdownLogicError();
+		return true;
+	}
 	// do not add stats to our tree if it is loading
-	if (tree->isLoading()) return true;
+	if(tree->isLoading()) return true;
 
 	// convert into host #0 synced time
 	t1Arg = localToGlobalTimeMilliseconds ( t1Arg );
@@ -500,8 +507,7 @@ bool Statsdb::makeGIF ( int32_t t1Arg ,
 	// . start at t1 and get stats lists, up to 1MB of stats at a time
 	// . subtract 60 seconds so we can have a better shot at having
 	//   a moving average for the last SAMPLE points
-	m_startKey.n1 = m_t1 - 60;
-	if ( m_startKey.n1 < 0 ) m_startKey.n1 = 0;
+	m_startKey.n1 = (m_t1 - 60 >= 0) ? m_t1 - 60 : 0;
 	m_startKey.n0 = 0x0000000000000000LL;
 	m_endKey.n1   = m_t2;
 	m_endKey.n0   = 0xffffffffffffffffLL;
@@ -1229,7 +1235,7 @@ class StatState {
 public:
 	float m_ringBuf     [MAXSAMPLES];
 	int32_t  m_ringBufTime [MAXSAMPLES];
-	char  m_valid       [MAXSAMPLES];
+	bool  m_valid       [MAXSAMPLES];
 	int32_t  m_numSamples ;
 	float m_sumVal  ;
 	int32_t  m_i           ;
