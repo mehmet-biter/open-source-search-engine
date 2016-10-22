@@ -808,7 +808,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 		g_statsdb.m_disabled = false;
 		if ( ! status ) {
 			log( LOG_ERROR, "db: Save failed." );
-			return false;
+			return -1;
 		}
 	}
 
@@ -855,7 +855,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 			g_statsdb.m_disabled = false;
 			if ( ! status ) {
 				log( LOG_ERROR, "db: Save failed." );
-				return false;
+				return -1;
 			}
 		}
 	}
@@ -863,10 +863,8 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	if ( ! isNew ) {
 		log( LOG_DEBUG, "db: Added %s for collnum=%" PRId32" pages=%" PRId32,
 		     name, ( int32_t ) m_collnum, m->getNumPages() );
-	}
 
-	// open this big data file for reading only
-	if ( ! isNew ) {
+		// open this big data file for reading only
 		if ( mergeNum < 0 ) {
 			f->open(O_RDONLY | O_NONBLOCK | O_ASYNC);
 		} else {
