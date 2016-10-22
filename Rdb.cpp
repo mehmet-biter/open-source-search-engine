@@ -54,6 +54,11 @@ Rdb::Rdb ( ) {
 	m_rdbId = RDB_NONE;
 	m_ks = 0;
 	m_pageSize = 0;
+	// PVS-Studio
+	m_isTitledb = false;
+	memset(m_dbname, 0, sizeof(m_dbname));
+	memset(m_treeAllocName, 0, sizeof(m_treeAllocName));
+	memset(m_memAllocName, 0, sizeof(m_memAllocName));
 
 	reset();
 }
@@ -241,11 +246,20 @@ bool Rdb::updateToRebuildFiles ( Rdb *rdb2 , char *coll ) {
 	uint32_t t = (uint32_t)getTime();
 	char dstDir[256];
 	// make the trash dir if not there
-	sprintf ( dstDir , "%s/trash/" , g_hostdb.m_dir );
+	snprintf(dstDir, sizeof(dstDir), "%s/trash/" , g_hostdb.m_dir );
+	dstDir[ sizeof(dstDir)-1 ] = '\0';
+	
 	int32_t status = ::mkdir ( dstDir , getDirCreationFlags() );
+	if ( status && errno != EEXIST ) {
+		g_errno = errno;
+		log(LOG_WARN, "repair: Could not mkdir(%s): %s",dstDir, mstrerror(errno));
+		return false;
+	}
 
 	// we have to create it
-	sprintf ( dstDir , "%s/trash/rebuilt%" PRIu32"/" , g_hostdb.m_dir , t );
+	snprintf(dstDir, sizeof(dstDir), "%s/trash/rebuilt%" PRIu32"/" , g_hostdb.m_dir , t );
+	dstDir[ sizeof(dstDir)-1 ] = '\0';
+	
 	status = ::mkdir ( dstDir , getDirCreationFlags() );
 	if ( status && errno != EEXIST ) {
 		g_errno = errno;
@@ -778,7 +792,7 @@ bool Rdb::isSavingTree() const {
 
 bool Rdb::saveTree ( bool useThread ) {
 	const char *dbn = m_dbname;
-	if ( ! dbn || ! dbn[0] ) {
+	if ( ! dbn[0] ) {
 		dbn = "unknown";
 	}
 
@@ -1829,7 +1843,7 @@ bool Rdb::addRecord(collnum_t collnum, char *key, char *data, int32_t dataSize) 
 	KEYXOR(oppKey, 0x01);
 
 	if (m_useIndexFile) {
-		bool isSpecialKey;
+		bool isSpecialKey = false;
 		if (m_rdbId == RDB_POSDB || m_rdbId == RDB2_POSDB2) {
 			isSpecialKey = (Posdb::getTermId(key) == POSDB_DELETEDOC_TERMID);
 		} else {
@@ -2071,7 +2085,7 @@ int64_t Rdb::getListSize(collnum_t collnum, const char *startKey, const char *en
 	// pick it
 	if ( collnum < 0 || collnum > getNumBases() || ! getBase(collnum) ) {
 		log(LOG_WARN, "db: %s bad collnum of %i", m_dbname, collnum);
-		return false;
+		return 0;
 	}
 	return getBase(collnum)->getListSize(startKey, endKey, max, oldTruncationLimit);
 }
@@ -2147,7 +2161,7 @@ int64_t Rdb::getMapMemAllocated() const {
 	for ( int32_t i = 0 ; i < getNumBases() ; i++ ) {
 		// skip null base if swapped out
 		CollectionRec *cr = g_collectiondb.getRec(i);
-		if ( ! cr ) return true;
+		if ( ! cr ) continue;
 		RdbBase *base = cr->getBasePtr(m_rdbId);		
 		if ( ! base ) continue;
 		total += base->getMapMemAllocated();
@@ -2161,7 +2175,7 @@ int32_t Rdb::getNumSmallFiles() const {
 	for ( int32_t i = 0 ; i < getNumBases() ; i++ ) {
 		// skip null base if swapped out
 		CollectionRec *cr = g_collectiondb.getRec(i);
-		if ( ! cr ) return true;
+		if ( ! cr ) continue;
 		RdbBase *base = cr->getBasePtr(m_rdbId);		
 		if ( ! base ) continue;
 		total += base->getNumSmallFiles();
