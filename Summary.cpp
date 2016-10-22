@@ -21,6 +21,12 @@ Summary::Summary()
     , m_wordWeightSize(0)
     , m_buf4(NULL)
     , m_buf4Size(0) {
+
+	// PVS-Studio
+	m_summary[0] = '\0';
+	memset(&m_summaryExcerptLen, 0, sizeof(m_summaryExcerptLen));
+	m_tmpWordWeightsBuf[0] = '\0';
+	m_tmpBuf4[0] = '\0';
 }
 
 Summary::~Summary() {
