@@ -502,7 +502,7 @@ bool SafeBuf::safeReplace2 (const char *s, int32_t slen,
 		// compare 2nd char
 		if ( slen >= 2 && p[1] != s[1] ) continue;
 		// check all chars now
-		if ( slen >= 3 && strncmp(p,s,slen) ) continue;
+		if ( slen >= 3 && strncmp(p,s,slen) != 0 ) continue;
 		// count them
 		count++;
 	}
@@ -530,7 +530,7 @@ bool SafeBuf::safeReplace2 (const char *s, int32_t slen,
 		// compare 2nd char
 		if ( slen >= 2 && p[1] != s[1] ) continue;
 		// check all chars now
-		if ( slen >= 3 && strncmp(p,s,slen) ) continue;
+		if ( slen >= 3 && strncmp(p,s,slen) != 0 ) continue;
 		// undo copy
 		gbmemcpy ( dst , t , tlen );
 		// advance for that
@@ -1437,27 +1437,55 @@ bool SafeBuf::printTimeAgo ( int32_t ago , int32_t now , bool shorthand ) {
 		if ( hrs  < 0 ) hrs  = 0;
 		if ( days < 0 ) days = 0;
 	}
-	bool printed = false;
+	bool printed = true;
 	// print the time ago
 	if ( shorthand ) {
-		if ( mins==0 ) safePrintf("%" PRId32" secs ago",secs);
-		else if ( mins ==1)safePrintf("%" PRId32" min ago",mins);
-		else if (mins<60)safePrintf ( "%" PRId32" mins ago",mins);
-		else if ( hrs == 1 )safePrintf ( "%" PRId32" hr ago",hrs);
-		else if ( hrs < 24 )safePrintf ( "%" PRId32" hrs ago",hrs);
-		else if ( days == 1 )safePrintf ( "%" PRId32" day ago",days);
-		else if (days< 7 )safePrintf ( "%" PRId32" days ago",days);
-		printed = true;
+		if ( mins == 0 ) 
+			safePrintf("%" PRId32" secs ago",secs);
+		else 
+		if ( mins == 1)
+			safePrintf("%" PRId32" min ago",mins);
+		else 
+		if (mins < 60)
+			safePrintf ( "%" PRId32" mins ago",mins);
+		else 
+		if ( hrs == 1 )
+			safePrintf ( "%" PRId32" hr ago",hrs);
+		else 
+		if ( hrs < 24 )
+			safePrintf ( "%" PRId32" hrs ago",hrs);
+		else 
+		if ( days == 1 )
+			safePrintf ( "%" PRId32" day ago",days);
+		else 
+		if (days < 7 )
+			safePrintf ( "%" PRId32" days ago",days);
+		else
+			printed = false;
 	}
 	else {
-		if ( mins==0 ) safePrintf("%" PRId32" seconds ago",secs);
-		else if ( mins ==1)safePrintf("%" PRId32" minute ago",mins);
-		else if (mins<60)safePrintf ( "%" PRId32" minutes ago",mins);
-		else if ( hrs == 1 )safePrintf ( "%" PRId32" hour ago",hrs);
-		else if ( hrs < 24 )safePrintf ( "%" PRId32" hours ago",hrs);
-		else if ( days == 1 )safePrintf ( "%" PRId32" day ago",days);
-		else if (days< 7 )safePrintf ( "%" PRId32" days ago",days);
-		printed = true;
+		if ( mins == 0 ) 
+			safePrintf("%" PRId32" seconds ago",secs);
+		else 
+		if ( mins == 1 )
+			safePrintf("%" PRId32" minute ago",mins);
+		else 
+		if (mins < 60 )
+			safePrintf ( "%" PRId32" minutes ago",mins);
+		else 
+		if ( hrs == 1 )
+			safePrintf ( "%" PRId32" hour ago",hrs);
+		else 
+		if ( hrs < 24 )
+			safePrintf ( "%" PRId32" hours ago",hrs);
+		else 
+		if ( days == 1 )
+			safePrintf ( "%" PRId32" day ago",days);
+		else 
+		if ( days < 7 )
+			safePrintf ( "%" PRId32" days ago",days);
+		else
+			printed = false;
 	}
 	// do not show if more than 1 wk old! we want to seem as
 	// fresh as possible
