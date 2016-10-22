@@ -1114,8 +1114,7 @@ int32_t UdpServer::readSock(UdpSlot **slotPtr, int64_t now) {
 			// . if this blocks, that sucks, we'll probably get
 			//   another untethered read... oh well...
 			// . ack from 0 to infinite to prevent more from coming
-			tmp.sendAck(m_sock,now,dgramNum,true/*weInit'ed?*/,
-				    true/*cancelTrans?*/);
+			tmp.sendAck(m_sock,now,dgramNum, 1/*weInit'ed?*/, true/*cancelTrans?*/);
 			//return 1;
 			goto discard;
 		}
@@ -1628,11 +1627,6 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 		//   udp slots
 		//if(g_niceness==0 && slot->m_niceness && g_errno!=ECANCELLED){
 		//	g_process.shutdownAbort(true);}
-
-		// sanity check. has this slot been excised from linked list?
-		if (slot->m_activeListPrev && slot->m_activeListPrev->m_activeListNext != slot) {
-			g_process.shutdownAbort(true);
-		}
 
 		// sanity check. has this slot been excised from linked list?
 		if (slot->m_activeListPrev && slot->m_activeListPrev->m_activeListNext != slot) {
