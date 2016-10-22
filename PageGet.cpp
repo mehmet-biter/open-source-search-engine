@@ -367,11 +367,8 @@ bool processLoop ( void *state ) {
 	//Url *redir = *xd->getRedirUrl();
 	if ( strip != 2 ) {
 		sb->safePrintf ( "<BASE HREF=\"%s\">" , base );
-		//p += strlen ( p );
-	}
 
-	// default colors in case css files missing
-	if ( strip != 2 ) {
+		// default colors in case css files missing
 		sb->safePrintf( "\n<style type=\"text/css\">\n"
 			  "body{background-color:white;color:black;}\n"
 			  "</style>\n");
@@ -643,11 +640,11 @@ bool processLoop ( void *state ) {
 	for ( char *t = sbstart ; t < sbend ; t++ ) {
 		// title tag?
 		if ( t[0]!='<' ) continue;
-		if ( to_lower_a(t[1])!='t' ) continue;
-		if ( to_lower_a(t[2])!='i' ) continue;
-		if ( to_lower_a(t[3])!='t' ) continue;
-		if ( to_lower_a(t[4])!='l' ) continue;
-		if ( to_lower_a(t[5])!='e' ) continue;
+		if ( to_lower_a(t[1])!='t' ||
+		     to_lower_a(t[2])!='i' ||
+		     to_lower_a(t[3])!='t' ||
+		     to_lower_a(t[4])!='l' ||
+		     to_lower_a(t[5])!='e' ) continue;
 		// point to it
 		char *x = t + 5;
 		// max - to keep things fast
