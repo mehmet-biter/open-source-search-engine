@@ -50,6 +50,7 @@ Profiler::Profiler() :
 	memset(&m_quickPollInfos, 0, sizeof(m_quickPollInfos));
 	m_lastQPUsed = 0;
 	m_lastAddressMapIndex = 0;
+	memset(&m_fnTime, 0, sizeof(m_fnTime));
 }
 
 Profiler::~Profiler() {//reset();
@@ -1033,7 +1034,7 @@ Profiler::getFuncBaseAddr(const char *funcName) {
 		if ( m_fn.isEmpty(i) ) continue;
 		uint32_t key = *(uint32_t *)m_fn.getKeyFromSlot(i);
 		FnInfo *info = (FnInfo *)m_fn.getValueFromSlot(i);
-		if(!info || strcmp(info->m_fnName, funcName)) continue;
+		if(!info || strcmp(info->m_fnName, funcName) != 0) continue;
 		return key;
 	}
 	return 0;
