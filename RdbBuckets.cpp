@@ -741,7 +741,7 @@ int32_t RdbBuckets::addNode(collnum_t collnum, const char *key, const char *data
 			m_numBuckets++;
 		} else {
 			RdbBucket *newBucket = bucketFactory();
-			if (m_buckets[i] == NULL) { //can't really happen here..
+			if ( !newBucket ) { 
 				g_errno = ENOMEM;
 				return -1;
 			}
