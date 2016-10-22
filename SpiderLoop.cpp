@@ -1150,7 +1150,7 @@ skipDoledbRec:
 		cr->localCrawlInfoUpdate();
 
 	// there are urls ready to spider
-	ci->m_hasUrlsReadyToSpider = true;
+	ci->m_hasUrlsReadyToSpider = 1;
 
 	// newly created crawls usually have this set to false so set it
 	// to true so getSpiderStatus() does not return that "the job
@@ -1163,7 +1163,7 @@ skipDoledbRec:
 		// to spider, so they do not re-report. we already
 		// had 'hasurlsreadytospider' set to true so we didn't get
 		// the reviving log msg.
-		cr->m_globalCrawlInfo.m_hasUrlsReadyToSpider = true;
+		cr->m_globalCrawlInfo.m_hasUrlsReadyToSpider = 1;
 
 		// set this right i guess...?
 		ci->m_lastSpiderAttempt = nowGlobal;
@@ -2092,8 +2092,8 @@ void spiderRoundIncremented ( CollectionRec *cr ) {
 	// . if we learnt that there really are no more urls ready to spider
 	//   then we'll go to the next round. but that can take like
 	//   SPIDER_DONE_TIMER seconds of getting nothing.
-	cr->m_localCrawlInfo.m_hasUrlsReadyToSpider = true;
-	cr->m_globalCrawlInfo.m_hasUrlsReadyToSpider = true;
+	cr->m_localCrawlInfo.m_hasUrlsReadyToSpider = 1;
+	cr->m_globalCrawlInfo.m_hasUrlsReadyToSpider = 1;
 
 	cr->m_localCrawlInfo.m_pageDownloadSuccessesThisRound = 0;
 	cr->m_localCrawlInfo.m_pageProcessSuccessesThisRound  = 0;
