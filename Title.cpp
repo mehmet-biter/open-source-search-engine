@@ -243,7 +243,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 		}
 
 		// skip if not from same host and should be
-		if ( strncmp( firstUrl->getHost(), u.getHost(), u.getHostLen() ) ) {
+		if ( strncmp( firstUrl->getHost(), u.getHost(), u.getHostLen()) != 0 ) {
 			sh = false;
 		}
 
