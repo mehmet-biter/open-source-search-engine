@@ -1311,7 +1311,6 @@ bool Sections::addSentenceSections ( ) {
 		h_the = hash64n("the");
 		h_and = hash64n("and");
 		h_a = hash64n("a");
-		h_a = hash64n("a");
 		h_at = hash64n("at");
 		h_for = hash64n("for");
 		h_to = hash64n("to");
@@ -2473,7 +2472,7 @@ bool Sections::setMenus ( ) {
 	int64_t h_copyright = hash64n("copyright");
 	// copyright check
 	// the copyright symbol in utf8 (see Entities.cpp for the code)
-	char copy[3];
+	unsigned char copy[3];
 	copy[0] = 0xc2;
 	copy[1] = 0xa9;
 	copy[2] = 0x00;
@@ -2489,7 +2488,7 @@ bool Sections::setMenus ( ) {
 			if ( m_wids[i] != h_copyright ) continue;
 		}
 		// must have copyright sign in it i guess
-		else if ( ! gb_strncasestr(m_wptrs[i],m_wlens[i],copy)) 
+		else if ( ! gb_strncasestr(m_wptrs[i],m_wlens[i],(char*)copy)) 
 			continue;
 		// mark section as copyright section then
 		Section *sp = m_sectionPtrs[i];
@@ -2848,8 +2847,6 @@ void Sections::setHeader ( int32_t r , Section *first , sec_t flag ) {
 		}
 	}
 
-	// strange?
-	if ( ! sr ) { g_process.shutdownAbort(true); }
 	// scan until outside biggest
 	int32_t lastb = biggest->m_b;
 	// . make sure sr does not contain any list in it
@@ -3143,8 +3140,11 @@ bool Sections::print( SafeBuf *sbuf, int32_t hiPos, int32_t *wposVec, char *dens
 		Section *parent = sn->m_parent;
 		int32_t pswn = -1;
 		int32_t pewn = -1;
-		if ( parent ) pswn = parent->m_a;
-		if ( parent ) pewn = parent->m_b;
+		if ( parent ) {
+			pswn = parent->m_a;
+			pewn = parent->m_b;
+		}
+
 		// print it
 		sbuf->safePrintf("<tr><td>%" PRId32"</td>\n"
 				 "<td>%" PRId32"</td>"
@@ -3231,9 +3231,8 @@ bool Sections::printSectionDiv( Section *sk ) {
 	if ( bp[0]<128 && bp[1]<128 && bp[2]<128 ) 
 		dark = true;
 	// or if two are less than 50
-	if ( bp[0]<100 && bp[1]<100 ) dark = true;
-	if ( bp[1]<100 && bp[2]<100 ) dark = true;
-	if ( bp[0]<100 && bp[2]<100 ) dark = true;
+	if ( (bp[0]<100 && bp[1]<100) || (bp[1]<100 && bp[2]<100) || (bp[0]<100 && bp[2]<100) ) dark = true;
+		
 	// if bg color is dark, make font color light
 	if ( dark ) {
 		fcolor = 0x00ffffff;
