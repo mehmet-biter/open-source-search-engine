@@ -857,7 +857,8 @@ bool ImportState::setCurrentTitleFileAndOffset ( ) {
 	if ( ! m_loadedPlaceHolder ) {
 		// read where we left off from file if possible
 		char fname[256];
-		sprintf(fname,"%slasttitledbinjectinfo.dat",g_hostdb.m_dir);
+		snprintf(fname, sizeof(fname), "%slasttitledbinjectinfo.dat",g_hostdb.m_dir);
+		fname[ sizeof(fname)-1 ] = '\0';
 		SafeBuf ff;
 		ff.fillFromFile(fname);
 		if ( ff.length() > 1 ) {
@@ -1230,7 +1231,8 @@ void ImportState::saveFileBookMark ( ) {
 	}
 
 	char fname[256];
-	sprintf(fname,"%slasttitledbinjectinfo.dat",g_hostdb.m_dir);
+	snprintf(fname, sizeof(fname), "%slasttitledbinjectinfo.dat",g_hostdb.m_dir);
+	fname[ sizeof(fname)-1 ] = '\0';
 	SafeBuf ff;
 	ff.safePrintf("%" PRId64",%" PRId32,minOff,minFileId);
 	ff.save ( fname );
