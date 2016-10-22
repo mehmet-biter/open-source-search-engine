@@ -108,7 +108,7 @@ size_t UCPropTable::serialize(char *buf, size_t bufSize) const {
 	if (p != buf + size) {
 		log(LOG_WARN, "UCPropTable: size mismatch: expected %" PRId32" bytes, "
 			"but wrote %" PRId32" instead", (int32_t) size, (int32_t) (p - buf));
-		return false;
+		return 0;
 	}
 	return p-buf;
 }
@@ -135,7 +135,7 @@ size_t UCPropTable::deserialize(const void *buf, size_t bufSize) {
 	m_data = (u_char**) mmalloc(m_numTables * sizeof(m_data[0]), "UCPropTable");
 	if (m_data == NULL) {
 		log(LOG_WARN, "UCPropTable: out of memory");
-		return false;
+		return 0;
 	}
 	memset(m_data, 0, m_numTables*sizeof(m_data[0]));
 	
@@ -145,7 +145,7 @@ size_t UCPropTable::deserialize(const void *buf, size_t bufSize) {
 		if ( prefix == RECORD_END ){
 			if (p != bufEnd ) {
 				log(LOG_WARN, "UCPropTable: unexpected end of record");
-				return false;
+				return 0;
 			}
 			//printf ("Read %d bytes after footer\n", p-bufStart);
 			return size;
@@ -155,7 +155,7 @@ size_t UCPropTable::deserialize(const void *buf, size_t bufSize) {
 			m_data[prefix] = (u_char*) mmalloc(m_tableSize, "UCPropTable");
 			if (m_data[prefix] == NULL) {
 				log(LOG_WARN, "UCPropTable: out of memory");
-				return false;
+				return 0;
 			}
 			memcpy(m_data[prefix], p, m_tableSize); p += m_tableSize;
 		} else
