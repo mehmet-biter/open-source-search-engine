@@ -1210,7 +1210,7 @@ bool Msg40::gotSummary ( ) {
 	// . set it to true on all but the last thing we send!
 	// . after each chunk of data we send out, TcpServer::sendChunk
 	//   will call our callback, doneSendingWrapper9 
-	if ( m_si->m_streamResults && st->m_socket )
+	if ( m_si && m_si->m_streamResults && st->m_socket )
 		st->m_socket->m_streamingMode = true;
 
 
