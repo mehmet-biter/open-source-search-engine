@@ -2072,7 +2072,7 @@ char *getMatchingUrlPattern ( SpiderColl *sc, SpiderRequest *sreq, char *tagArg 
 		// otherwise, it has a path. skip if we don't match path ptrn
 		if ( pd->m_pathOff ) {
 			if ( ! myPath ) myPath = sreq->getUrlPath();
-			if ( strncmp (myPath, patternStr + pd->m_pathOff, pd->m_pathLen ) ) {
+			if ( strncmp (myPath, patternStr + pd->m_pathOff, pd->m_pathLen ) != 0 ) {
 				continue;
 			}
 		}
@@ -2130,7 +2130,7 @@ char *getMatchingUrlPattern ( SpiderColl *sc, SpiderRequest *sreq, char *tagArg 
 
 			// compare tags
 			char *pdtag = pd->m_tagOff + buf;
-			if ( strncmp(tagArg,pdtag,pd->m_tagLen) ) {
+			if ( strncmp(tagArg,pdtag,pd->m_tagLen) != 0 ) {
 				continue;
 			}
 
@@ -3286,7 +3286,7 @@ checkNextRule:
 			if ( sign == SIGN_GE && a <  b ) continue;
 			if ( sign == SIGN_LE && a >  b ) continue;
 			// skip fast
-			p += 10;
+			//p += 10;
 			p = strstr(s, "&&");
 			//if nothing, else then it is a match
 			if ( ! p ) {
@@ -3321,7 +3321,7 @@ checkNextRule:
 			if ( sign == SIGN_GE && a <  b ) continue;
 			if ( sign == SIGN_LE && a >  b ) continue;
 			// skip fast
-			p += 9;
+			//p += 9;
 			p = strstr(s, "&&");
 			//if nothing, else then it is a match
 			if ( ! p ) {
@@ -3348,7 +3348,7 @@ checkNextRule:
 			if ( sign == SIGN_GE && a <  b ) continue;
 			if ( sign == SIGN_LE && a >  b ) continue;
 			// skip fast
-			p += 10;
+			//p += 10;
 			p = strstr(s, "&&");
 			//if nothing, else then it is a match
 			if ( ! p ) {
@@ -3394,7 +3394,7 @@ checkNextRule:
 			if ( sign == SIGN_GE && a <  b ) continue;
 			if ( sign == SIGN_LE && a >  b ) continue;
 			// skip fast
-			p += 14;
+			//p += 14;
 			p = strstr(s, "&&");
 			//if nothing, else then it is a match
 			if ( ! p ) {
