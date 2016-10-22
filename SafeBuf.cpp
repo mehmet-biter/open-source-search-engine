@@ -684,7 +684,7 @@ bool SafeBuf::htmlEncode(int32_t len ){
 	for (int32_t i = m_length-len; i < m_length ; i++){
 
 		if ( m_buf[i] == '"' ) {
-			if (!safeReplace("&#34;", 4, i, 1))
+			if (!safeReplace("&#34;", 5, i, 1))
 				return false;
 			continue;
 		}
