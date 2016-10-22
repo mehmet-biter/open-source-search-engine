@@ -2580,6 +2580,9 @@ int32_t *XmlDoc::getIndexCode ( ) {
 	if ( g_errno ) { g_process.shutdownAbort(true); }
 
 
+#if 0
+	// @todo: See if this spam-check should be re-enabled and improved. Was hard coded to OFF below.
+
 	// are we a root?
 	char *isRoot = getIsSiteRoot();
 	if ( ! isRoot || isRoot == (char *)-1 )
@@ -2615,6 +2618,7 @@ int32_t *XmlDoc::getIndexCode ( ) {
 			return &m_indexCode;
 		}
 	}
+#endif
 
 	// validate this here so getSpiderPriority(), which calls
 	// getUrlFilterNum(), which calls getNewSpiderReply(), which calls
@@ -4862,7 +4866,7 @@ RdbList *XmlDoc::getDupList ( ) {
 
 	// must match term in XmlDoc::hashVectors()
 	char qbuf[256];
-	snprintf(qbuf, 256, "%" PRIu64,*ph64);
+	snprintf(qbuf, 256, "%" PRIu64, (uint64_t)(*ph64));
 	int64_t pre     = hash64b ( "gbcontenthash" , 0LL );
 	int64_t rawHash = hash64b ( qbuf , 0LL );
 	int64_t termId  = hash64 ( rawHash , pre );
@@ -4874,7 +4878,7 @@ RdbList *XmlDoc::getDupList ( ) {
 	// note it
 	log(LOG_DEBUG,"build: check termid=%" PRIu64" for docid %" PRIu64
 	    ,(uint64_t)(termId&TERMID_MASK)
-	    ,m_docId);
+	    ,(uint64_t)m_docId);
 	// assume valid now
 	m_dupListValid = true;
 	// this is a no-split lookup by default now
@@ -5443,7 +5447,7 @@ Url **XmlDoc::getRedirUrl() {
 	int32_t ulen = f->getUrlLen();
 
 	// simpler if new path depth is shorter
-	if ( !simplifiedRedir && loc->getPathDepth( true ) < f->getPathDepth( true ) ) {
+	if ( loc->getPathDepth( true ) < f->getPathDepth( true ) ) {
 		simplifiedRedir = true;
 	}
 
@@ -7693,14 +7697,14 @@ char **XmlDoc::getHttpReply ( ) {
 		Url *ru = *redirp;
 		Url *cu = getCurrentUrl();
 		if ( ! cu || cu == (void *)-1) return (char **)cu;
-		if ( strcmp ( ru->getUrl() + ru->getSchemeLen(), cu->getUrl() + cu->getSchemeLen() ) ) {
+		if ( strcmp ( ru->getUrl() + ru->getSchemeLen(), cu->getUrl() + cu->getSchemeLen() ) != 0 ) {
 			// redo robots.txt lookup. might be cached.
 			m_isAllowedValid  = false;
 			m_crawlDelayValid = false;
 		}
 
 		// keep the same ip if hostname is unchanged
-		if ( ru->getHostLen() != cu->getHostLen() || strncmp ( ru->getHost() , cu->getHost(), cu->getHostLen() ) ) {
+		if ( ru->getHostLen() != cu->getHostLen() || strncmp(ru->getHost(), cu->getHost(), cu->getHostLen()) != 0 ) {
 			// ip is supposed to be that of the current url, which changed
 			m_ipValid = false;
 		}
@@ -7975,7 +7979,7 @@ char **XmlDoc::getHttpReply2 ( ) {
 	logTrace( g_conf.m_logTraceXmlDoc, "m_firstUrl.m_url [%s]", m_firstUrl.getUrl());
 
 	// if current url IS NOT EQUAL to first url then set redir flag
-	if ( strcmp(cu->getUrl(),m_firstUrl.getUrl()) )
+	if ( strcmp(cu->getUrl(),m_firstUrl.getUrl()) != 0 )
 		r->m_skipHammerCheck = 1;
 	// or if this an m_extraDoc or m_rootDoc for another url then
 	// do not bother printing the hammer ip msg in msg13.cpp either
@@ -8526,7 +8530,7 @@ static char getContentTypeFromContent(const char *p) {
 		if ( p[0] != '<' ) continue;
 		if ( p[1] != '!' ) continue;
 		if ( to_lower_a(p[2]) != 'd' ) continue;
-		if ( strncasecmp(p,"<!doctype ",10) ) continue;
+		if ( strncasecmp(p,"<!doctype ",10) != 0 ) continue;
 		const char *dt = p + 10;
 		// skip spaces
 		for ( ; *dt ; dt++ ) {
@@ -8627,7 +8631,7 @@ Url **XmlDoc::getCanonicalRedirUrl ( ) {
 		char *rel = xml->getString(i,"rel",&relLen);
 		if ( ! rel ) continue;
 		// skip if does not match "canonical"
-		if ( strncasecmp(rel,"canonical",relLen) ) continue;
+		if ( strncasecmp(rel,"canonical",relLen) != 0 ) continue;
 		// allow for relative urls
 		Url *cu = getCurrentUrl();
 		// set base to it
@@ -8711,7 +8715,7 @@ static bool setMetaRedirUrlFromTag ( char *p , Url *metaRedirUrl , char niceness
 	// skip whitespace some more
 	for ( ; *p && p < limit && is_wspace_a(*p) ; p++ );
 	// must have URL
-	if ( strncasecmp(p,"URL",3) ) return false;
+	if ( strncasecmp(p,"URL",3) != 0 ) return false;
 	// skip that
 	p += 3;
 	// skip white space
@@ -8853,16 +8857,16 @@ Url **XmlDoc::getMetaRedirUrl ( ) {
 		// base everything off the equal sign
 		if ( *p != '=' ) continue;
 		// did we match "http-equiv="?
-		if ( to_lower_a(p[-1]) != 'v' ) continue;
-		if ( to_lower_a(p[-2]) != 'i' ) continue;
-		if ( to_lower_a(p[-3]) != 'u' ) continue;
-		if ( to_lower_a(p[-4]) != 'q' ) continue;
-		if ( to_lower_a(p[-5]) != 'e' ) continue;
-		if (            p[-6]  != '-' ) continue;
-		if ( to_lower_a(p[-7]) != 'p' ) continue;
-		if ( to_lower_a(p[-8]) != 't' ) continue;
-		if ( to_lower_a(p[-9]) != 't' ) continue;
-		if ( to_lower_a(p[-10])!= 'h' ) continue;
+		if ( to_lower_a(p[-1]) != 'v' ||
+		     to_lower_a(p[-2]) != 'i' ||
+		     to_lower_a(p[-3]) != 'u' ||
+		     to_lower_a(p[-4]) != 'q' ||
+		     to_lower_a(p[-5]) != 'e' ||
+		                p[-6]  != '-' ||
+		     to_lower_a(p[-7]) != 'p' ||
+		     to_lower_a(p[-8]) != 't' ||
+		     to_lower_a(p[-9]) != 't' ||
+		     to_lower_a(p[-10])!= 'h' ) continue;
 
 		// BR 20160306: Fix comparison where we have spaces before and/or after =
 		// limit the # of white spaces
@@ -8886,7 +8890,7 @@ Url **XmlDoc::getMetaRedirUrl ( ) {
 		// skip quote if there
 		if ( *p == '\"' || *p == '\'' ) p++;
 		// must be "refresh", continue if not
-		if ( strncasecmp(p,"refresh",7) ) continue;
+		if ( strncasecmp(p,"refresh",7) != 0 ) continue;
 		// skip that
 		p += 7;
 		// skip another quote if there
@@ -8898,7 +8902,7 @@ Url **XmlDoc::getMetaRedirUrl ( ) {
 		while ( *p && p < limit && is_wspace_a(*p) ) p++;
 
 		// must be content now
-		if ( strncasecmp(p,"content",7) ) continue;
+		if ( strncasecmp(p,"content",7) != 0 ) continue;
 		// skip that
 		p += 7;
 
@@ -8973,7 +8977,7 @@ Url **XmlDoc::getMetaRedirUrl ( ) {
 		// skip if empty
 		if ( ! tag || tagLen <= 0 ) continue;
 		// if not a refresh, skip it
-		if ( strncasecmp ( tag , "refresh", 7 ) ) continue;
+		if ( strncasecmp ( tag , "refresh", 7 ) != 0 ) continue;
 		// get the content
 		tag = xml.getString ( i ,"content", &tagLen );
 		// skip if empty
@@ -9074,22 +9078,22 @@ static uint16_t getCharsetFast(HttpMime *mime,
 		char c = to_lower_a(p[-1]);
 		// did we match "charset="?
 		if ( c == 't' ) {
-			if ( to_lower_a(p[-2]) != 'e' ) continue;
-			if ( to_lower_a(p[-3]) != 's' ) continue;
-			if ( to_lower_a(p[-4]) != 'r' ) continue;
-			if ( to_lower_a(p[-5]) != 'a' ) continue;
-			if ( to_lower_a(p[-6]) != 'h' ) continue;
-			if ( to_lower_a(p[-7]) != 'c' ) continue;
+			if ( to_lower_a(p[-2]) != 'e' ||
+			     to_lower_a(p[-3]) != 's' ||
+			     to_lower_a(p[-4]) != 'r' ||
+			     to_lower_a(p[-5]) != 'a' ||
+			     to_lower_a(p[-6]) != 'h' ||
+			     to_lower_a(p[-7]) != 'c' ) continue;
 		}
 		// did we match "encoding="?
 		else if ( c == 'g' ) {
-			if ( to_lower_a(p[-2]) != 'n' ) continue;
-			if ( to_lower_a(p[-3]) != 'i' ) continue;
-			if ( to_lower_a(p[-4]) != 'd' ) continue;
-			if ( to_lower_a(p[-5]) != 'o' ) continue;
-			if ( to_lower_a(p[-6]) != 'c' ) continue;
-			if ( to_lower_a(p[-7]) != 'n' ) continue;
-			if ( to_lower_a(p[-8]) != 'e' ) continue;
+			if ( to_lower_a(p[-2]) != 'n' ||
+			     to_lower_a(p[-3]) != 'i' ||
+			     to_lower_a(p[-4]) != 'd' ||
+			     to_lower_a(p[-5]) != 'o' ||
+			     to_lower_a(p[-6]) != 'c' ||
+			     to_lower_a(p[-7]) != 'n' ||
+			     to_lower_a(p[-8]) != 'e' ) continue;
 		}
 		// if not either, go to next char
 		else
@@ -9314,111 +9318,111 @@ char **XmlDoc::getFilteredContent ( ) {
 	// 	g_process.shutdownAbort(true); }
 
 	int32_t max , max2;
-	CollectionRec *cr;
 	bool filterable = false;
+	
+	if ( !m_calledThread ) {
 
-	if ( m_calledThread ) goto skip;
-
-	// assume we do not need filtering by default
-	m_filteredContent      = m_content;
-	m_filteredContentLen   = m_contentLen;
-	m_filteredContentValid = true;
-	m_filteredContentAllocSize = 0;
-
-	// empty content?
-	if ( ! m_content ) return &m_filteredContent;
-
-	if ( *ct == CT_HTML    ) return &m_filteredContent;
-	if ( *ct == CT_TEXT    ) return &m_filteredContent;
-	if ( *ct == CT_XML     ) return &m_filteredContent;
-	// javascript - sometimes has address information in it, so keep it!
-	if ( *ct == CT_JS      ) return &m_filteredContent;
-	if ( m_contentLen == 0 ) return &m_filteredContent;
-
-	// we now support JSON for diffbot
-	if ( *ct == CT_JSON    ) return &m_filteredContent;
-
-	if ( *ct == CT_ARC     ) return &m_filteredContent;
-	if ( *ct == CT_WARC    ) return &m_filteredContent;
-
-	// unknown content types are 0 since it is probably binary... and
-	// we do not want to parse it!!
-	if ( *ct == CT_PDF ) filterable = true;
-	if ( *ct == CT_DOC ) filterable = true;
-	if ( *ct == CT_XLS ) filterable = true;
-	if ( *ct == CT_PPT ) filterable = true;
-	if ( *ct == CT_PS  ) filterable = true;
-
-	// if its a jpeg, gif, text/css etc. bail now
-	if ( ! filterable ) {
-		m_filteredContent      = NULL;
-		m_filteredContentLen   = 0;
+		// assume we do not need filtering by default
+		m_filteredContent      = m_content;
+		m_filteredContentLen   = m_contentLen;
 		m_filteredContentValid = true;
-		return &m_filteredContent;
+		m_filteredContentAllocSize = 0;
+
+		// empty content?
+		if ( ! m_content ) return &m_filteredContent;
+
+		if ( *ct == CT_HTML    ) return &m_filteredContent;
+		if ( *ct == CT_TEXT    ) return &m_filteredContent;
+		if ( *ct == CT_XML     ) return &m_filteredContent;
+		// javascript - sometimes has address information in it, so keep it!
+		if ( *ct == CT_JS      ) return &m_filteredContent;
+		if ( m_contentLen == 0 ) return &m_filteredContent;
+
+		// we now support JSON for diffbot
+		if ( *ct == CT_JSON    ) return &m_filteredContent;
+
+		if ( *ct == CT_ARC     ) return &m_filteredContent;
+		if ( *ct == CT_WARC    ) return &m_filteredContent;
+
+		// unknown content types are 0 since it is probably binary... and
+		// we do not want to parse it!!
+		if ( *ct == CT_PDF ) filterable = true;
+		if ( *ct == CT_DOC ) filterable = true;
+		if ( *ct == CT_XLS ) filterable = true;
+		if ( *ct == CT_PPT ) filterable = true;
+		if ( *ct == CT_PS  ) filterable = true;
+
+		// if its a jpeg, gif, text/css etc. bail now
+		if ( ! filterable ) {
+			m_filteredContent      = NULL;
+			m_filteredContentLen   = 0;
+			m_filteredContentValid = true;
+			return &m_filteredContent;
+		}
+
+		// invalidate
+		m_filteredContentValid = false;
+
+		CollectionRec *cr = getCollRec();
+		if( !cr ) {
+			return NULL;
+		}
+
+		// if not text/html or text/plain, use the other max
+		//max = MAXDOCLEN; // cr->m_maxOtherDocLen;
+		max = cr->m_maxOtherDocLen;
+
+		// if not text/html or text/plain, use the other max
+		// max = MAXDOCLEN; // cr->m_maxOtherDocLen;
+
+		// now we base this on the pre-filtered length to save memory because
+		// our maxOtherDocLen can be 30M and when we have a lot of injections
+		// at the same time we lose all our memory quickly
+		max2 = 5 * m_contentLen + 10*1024;
+		if ( max > max2 ) max = max2;
+		// user uses -1 to specify no maxTextDocLen or maxOtherDocLen
+		if ( max < 0    ) max = max2;
+		// make a buf to hold filtered reply
+		m_filteredContentAllocSize = max;
+		m_filteredContent = (char *)mmalloc(m_filteredContentAllocSize,"xdfc");
+		if ( ! m_filteredContent ) {
+			log("build: Could not allocate %" PRId32" bytes for call to "
+			    "content filter.",m_filteredContentMaxSize);
+			return NULL;
+		}
+
+		// reset this here in case thread gets killed by the kill() call below
+		m_filteredContentLen = 0;
+		// update status msg so its visible in the spider gui
+		setStatus ( "filtering content" );
+		// reset this... why?
+		g_errno = 0;
+		// . call thread to call popen
+		// . callThread returns true on success, in which case we block
+		// . do not repeat
+		m_calledThread = true;
+		// reset this since filterStart_r() will set it on error
+		m_errno = 0;
+
+		// how can this be? don't core like this in thread, because it
+		// does not save our files!!
+		if ( ! m_mimeValid ) { g_process.shutdownAbort(true); }
+
+		// do it
+		if ( g_jobScheduler.submit(filterStartWrapper_r, filterDoneWrapper, this, thread_type_spider_filter, MAX_NICENESS) ) {
+			// return -1 if blocked
+			return (char **) -1;
+		}
+
+		// clear error!
+		g_errno = 0;
+
+		// note it
+		log(LOG_INFO, "build: Could not spawn thread for call to content filter.");
+		// get the data
+		filterStart_r ( false ); // am thread?
 	}
-
-	// invalidate
-	m_filteredContentValid = false;
-
-	cr = getCollRec();
-	if ( ! cr ) return NULL;
-
-	// if not text/html or text/plain, use the other max
-	//max = MAXDOCLEN; // cr->m_maxOtherDocLen;
-	max = cr->m_maxOtherDocLen;
-
-	// if not text/html or text/plain, use the other max
-	// max = MAXDOCLEN; // cr->m_maxOtherDocLen;
-
-	// now we base this on the pre-filtered length to save memory because
-	// our maxOtherDocLen can be 30M and when we have a lot of injections
-	// at the same time we lose all our memory quickly
-	max2 = 5 * m_contentLen + 10*1024;
-	if ( max > max2 ) max = max2;
-	// user uses -1 to specify no maxTextDocLen or maxOtherDocLen
-	if ( max < 0    ) max = max2;
-	// make a buf to hold filtered reply
-	m_filteredContentAllocSize = max;
-	m_filteredContent = (char *)mmalloc(m_filteredContentAllocSize,"xdfc");
-	if ( ! m_filteredContent ) {
-		log("build: Could not allocate %" PRId32" bytes for call to "
-		    "content filter.",m_filteredContentMaxSize);
-		return NULL;
-	}
-
-	// reset this here in case thread gets killed by the kill() call below
-	m_filteredContentLen = 0;
-	// update status msg so its visible in the spider gui
-	setStatus ( "filtering content" );
-	// reset this... why?
-	g_errno = 0;
-	// . call thread to call popen
-	// . callThread returns true on success, in which case we block
-	// . do not repeat
-	m_calledThread = true;
-	// reset this since filterStart_r() will set it on error
-	m_errno = 0;
-
-	// how can this be? don't core like this in thread, because it
-	// does not save our files!!
-	if ( ! m_mimeValid ) { g_process.shutdownAbort(true); }
-
-	// do it
-	if ( g_jobScheduler.submit(filterStartWrapper_r, filterDoneWrapper, this, thread_type_spider_filter, MAX_NICENESS) ) {
-		// return -1 if blocked
-		return (char **) -1;
-	}
-
-	// clear error!
-	g_errno = 0;
-
-	// note it
-	log(LOG_INFO, "build: Could not spawn thread for call to content filter.");
-	// get the data
-	filterStart_r ( false ); // am thread?
-
 	// skip down here if thread has returned and we got re-called
-skip:
 
 	// if size is 0, free the buf
 	if ( m_filteredContentLen <= 0 ) {
@@ -10656,7 +10660,7 @@ char **XmlDoc::getThumbnailData ( ) {
 	ptr_imageData  = NULL;
 	size_imageData = 0;
 	m_imageDataValid = true;
-	if ( ! images || ! images->m_imageBufValid ) return &ptr_imageData;
+	if ( ! images->m_imageBufValid ) return &ptr_imageData;
 	if ( images->m_imageBuf.length() <= 0 ) return &ptr_imageData;
 	// this buffer is a ThumbnailArray
 	ptr_imageData  = images->m_imageBuf.getBufStart();
@@ -11795,7 +11799,7 @@ bool XmlDoc::logIt (SafeBuf *bb ) {
 	     m_useTitledb &&
 	     m_oldDocValid &&
 	     m_oldDoc &&
-	     strcmp(ptr_site,m_oldDoc->ptr_site) )
+	     strcmp(ptr_site,m_oldDoc->ptr_site) != 0 )
 		sb->safePrintf("oldsite=%s ",m_oldDoc->ptr_site);
 
 	if ( m_isAdultValid )
@@ -16856,14 +16860,13 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	// save the rss item in our state so we can point to it, include \0
 	if ( (size_t)rssItemLen > sizeof(m_rssItemBuf)-2)
 		rssItemLen = sizeof(m_rssItemBuf)-2;
+
 	if ( rssItemLen > 0) {
 		gbmemcpy ( m_rssItemBuf, rssItem , rssItemLen );
 		// NULL terminate it
 		m_rssItemBuf[rssItemLen] = 0;
-	}
 
-	// point to it, include the \0
-	if ( rssItemLen > 0 ) {
+		// point to it, include the \0
 		m_reply.ptr_rssItem  = m_rssItemBuf;
 		m_reply.size_rssItem = rssItemLen + 1;
 	}
@@ -17525,7 +17528,7 @@ char *XmlDoc::getIsNoArchive ( ) {
 		// skip leading spaces
 		while ( att < end && *att && is_wspace_a(*att) ) att++;
 		// is is noarchive? skip if no such match
-		if ( strncasecmp(att,"noarchive",9) ) continue;
+		if ( strncasecmp(att,"noarchive",9) != 0 ) continue;
 		// ok, we got it
 		m_isNoArchive = (char)true;
 		break;
@@ -18187,8 +18190,8 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 		       (int32_t)m_nextSpiderPriority );
 	*/
 
-	// must always start with http i guess!
-	if ( strncmp ( fu , "http" , 4 ) ) { g_process.shutdownAbort(true); }
+	// must always start with http
+	if ( strncmp ( fu , "http" , 4 ) != 0 ) { g_process.shutdownAbort(true); }
 	// show the host that should spider it
 	//int32_t domLen ; char *dom = getDomFast ( fu , &domLen , true );
 	//int32_t hostId;
@@ -18810,8 +18813,8 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 	}
 
 
-	// must always start with http i guess!
-	if ( strncmp ( fu , "http" , 4 ) ) { g_process.shutdownAbort(true); }
+	// must always start with http
+	if ( strncmp ( fu , "http" , 4 ) != 0 ) { g_process.shutdownAbort(true); }
 
 	struct tm tm_buf;
 	char buf[64];
@@ -19191,9 +19194,9 @@ bool XmlDoc::printRainbowSections ( SafeBuf *sb , HttpRequest *hr ) {
 		if ( bp[0]<128 && bp[1]<128 && bp[2]<128 )
 			dark = true;
 		// or if two are less than 50
-		if ( bp[0]<100 && bp[1]<100 ) dark = true;
-		if ( bp[1]<100 && bp[2]<100 ) dark = true;
-		if ( bp[0]<100 && bp[2]<100 ) dark = true;
+		if ( (bp[0]<100 && bp[1]<100) ||
+		     (bp[1]<100 && bp[2]<100) ||
+		     (bp[0]<100 && bp[2]<100) ) dark = true;
 		// if bg color is dark, make font color light
 		if ( dark ) {
 			fcolor = 0x00ffffff;
@@ -20203,7 +20206,7 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 	// add "site" tag
 	//
 	const char *oldsite = gr->getString( "site", NULL, NULL, &timestamp );
-	if ( ! oldsite || strcmp(oldsite,mysite) || now-timestamp > 10*86400)
+	if ( ! oldsite || strcmp(oldsite,mysite) != 0 || now-timestamp > 10*86400)
 		tbuf->addTag3(mysite,"site",now,"xmldoc",*ip,mysite,rdbId);
 
 	//
@@ -20248,7 +20251,7 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 	else if ( dsize != m_rootTitleBufSize )
 		addRootTitle = true;
 	// or if differs in content
-	else if ( memcmp(data,m_rootTitleBuf,m_rootTitleBufSize))
+	else if ( memcmp(data,m_rootTitleBuf,m_rootTitleBufSize) != 0 )
 		addRootTitle =true;
 	// or if it is 10 days old or more
 	if ( old1!=-1 && now-timestamp > 10*86400 ) addRootTitle = true;
@@ -20423,18 +20426,21 @@ char *XmlDoc::getWordSpamVec ( ) {
 	// if 20 words totally spammed, call it all spam?
 	m_numRepeatSpam = 20;
 
-	// shortcut
-	int32_t sni = m_siteNumInlinks;
 	if ( ! m_siteNumInlinksValid ) { g_process.shutdownAbort(true); }
 
+#if 0
+	// @todo: examine if this should be used. Was always hard coded to 25
+	// shortcut
+	int32_t sni = m_siteNumInlinks;
 	// set "m_maxPercent"
 	int32_t maxPercent = 6;
 	if ( sni > 10  ) maxPercent = 8;
         if ( sni > 30  ) maxPercent = 10;
         if ( sni > 100 ) maxPercent = 20;
         if ( sni > 500 ) maxPercent = 30;
+#endif
 	// fix this a bit so we're not always totally spammed
-	maxPercent = 25;
+	int32_t maxPercent = 25;
 
 	// get # of words we have to set spam for
 	int32_t numWords = words->getNumWords();
@@ -20823,6 +20829,7 @@ int32_t XmlDoc::getProbSpam(const int32_t *profile, int32_t plen, int32_t step) 
 	// plen  = 7   and  dev = 2.0  -->  50%
 
 	// NOTE: dev has been multiplied by 256 to avoid using floats
+	//@todo BR: So why do you compare with a float? 
 	if ( dev <= 51.2 ) return 100;  // (.2 * 256)
 	int32_t prob = ( (256*100/7) * plen ) / dev;
 
@@ -21296,6 +21303,9 @@ char *XmlDoc::getFragVec ( ) {
 	// handy ptr
 	char *ff = m_fragBuf.getBufStart();
 
+	// wtf?
+	if ( ! ff ) { g_process.shutdownAbort(true); }
+
 	// convert from floats into frag score, 0 or 1 really
 	for ( int32_t i = 0 ; i < nw ; i++ ) {
 		if ( ww[i] <= 0.0 ) ff[i] = 0;
@@ -21304,8 +21314,6 @@ char *XmlDoc::getFragVec ( ) {
 
 	if ( buf != tmpBuf ) mfree ( buf , need , "WeightsSet3" );
 
-	// wtf?
-	if ( ! ff ) { g_process.shutdownAbort(true); }
 
 	return ff;
 }
