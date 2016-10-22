@@ -3826,7 +3826,7 @@ int32_t isCommonWord ( int64_t h ) {
 		// set up the hash table
 		if ( ! s_commonWordTable.set (8,4,sizeof(s_commonWords)*2, NULL,0,false,"commonwrds") ) {
 			log(LOG_INIT, "query: Could not init common words table.");
-			return false;
+			return 0;
 		}
 		// now add in all the stop words
 		int32_t n = (int32_t)sizeof(s_commonWords)/ sizeof(char *); 
@@ -3836,7 +3836,7 @@ int32_t isCommonWord ( int64_t h ) {
 			// use the same algo that Words.cpp computeWordIds does
 			int64_t swh = hash64Lower_utf8 ( sw , swlen );
 			if ( ! s_commonWordTable.addTerm ( &swh,i+1 ) )
-				return false;
+				return 0;
 			// . add w/o accent marks too!
 			// . skip "fЭr" though because fur is an eng. word
 			//if ( *sw=='f' && *(sw+1)=='Э' &&
