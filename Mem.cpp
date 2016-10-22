@@ -189,6 +189,7 @@ Mem::Mem() {
 	m_used = 0;
 	m_numAllocated = 0;
 	m_numTotalAllocated = 0;
+	m_memtablesize = 0;
 	m_maxAlloc = 0;
 	m_maxAllocBy = "";
 	m_maxAllocated = 0;
@@ -292,8 +293,9 @@ void Mem::addMem ( void *mem , size_t size , const char *note , char isnew ) {
 	}
 
 	// umsg00
-	bool useElectricFence = false;
-	if ( ! isnew && ! useElectricFence ) {
+//	bool useElectricFence = false;
+//	if ( ! isnew && ! useElectricFence ) {
+	if ( ! isnew ) {
 		for ( int32_t i = 0 ; i < UNDERPAD ; i++ )
 			((char *)mem)[0-i-1] = MAGICCHAR;
 		for ( int32_t i = 0 ; i < OVERPAD ; i++ )
@@ -832,6 +834,7 @@ int Mem::printBreech ( int32_t i) {
 	if ( flag == 0 ) return 1;
 
 	gbshutdownCorrupted();
+	return 1;	//shut up PVS-studio
 }
 
 // check all allocated memory for buffer under/overruns
