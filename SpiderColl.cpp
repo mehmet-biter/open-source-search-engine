@@ -66,6 +66,59 @@ SpiderColl::SpiderColl () {
 	m_endKey2.setMax();
 	m_spidersOut = 0;
 	m_coll[0] = '\0';// = NULL;
+
+
+
+	// PVS-Studio
+	m_msg4Start = 0;
+	m_useTree = false;
+	m_lastReplyValid = false;
+	memset(m_lastReplyBuf, 0, sizeof(m_lastReplyBuf));
+	m_didRead = false;
+	m_siteListHasNegatives = false;
+	m_siteListIsEmpty = false;
+	m_tailIp = 0;
+	m_tailPriority = 0;
+	m_tailTimeMS = 0;
+	m_tailUh48 = 0;
+	m_tailHopCount = 0;
+	m_minFutureTimeMS = 0;
+	memset(&m_priorityToUfn, 0, sizeof(m_priorityToUfn));
+	m_gettingList2 = false;
+	m_lastScanTime = 0;
+	m_waitingTreeNeedsRebuild = false;
+	m_numAdded = 0;
+	m_numBytesScanned = 0;
+	m_lastPrintCount = 0;
+	m_lastPrinted = 0;
+	m_spidersOut = 0;
+	m_collnum = -1;
+	m_countingPagesIndexed = false;
+	m_lastReqUh48a = 0;
+	m_lastReqUh48b = 0;
+	m_lastRepUh48 = 0;
+	m_waitingTreeKeyValid = false;
+	m_scanningIp = 0;
+	m_gotNewDataForScanningIp = 0;
+	m_lastListSize = 0;
+	m_lastScanningIp = 0;
+	m_totalBytesScanned = 0;
+	m_deleteMyself = false;
+	m_didRound = false;
+	m_pri2 = 0;
+	m_twinDied = false;
+	m_lastUrlFiltersUpdate = 0;
+	m_gettingList1 = false;
+	memset(&m_outstandingSpiders, 0, sizeof(m_outstandingSpiders));
+	m_overflowList = NULL;
+	m_totalNewSpiderRequests = 0;
+	m_lastSreqUh48 = 0;
+	memset(&m_cblocks, 0, sizeof(m_cblocks));
+	m_pageNumInlinks = 0;
+	m_lastCBlockIp = 0;
+	m_lastOverflowFirstIp = 0;
+
+
 	reset();
 	// reset this
 	memset ( m_outstandingSpiders , 0 , 4 * MAX_SPIDER_PRIORITIES );
@@ -648,7 +701,7 @@ bool SpiderColl::addSpiderReply ( SpiderReply *srep ) {
 	/////
 	if (lock) {
 		lock->m_expires = nowGlobal + 2;
-		lock->m_spiderOutstanding = false;
+		lock->m_spiderOutstanding = 0;
 	} else {
 		// bitch if not in there
 		// when "rebuilding" (Rebuild.cpp) this msg gets triggered too much...
