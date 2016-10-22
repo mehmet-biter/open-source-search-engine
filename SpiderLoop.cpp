@@ -1141,13 +1141,13 @@ skipDoledbRec:
 	ci->m_lastSpiderCouldLaunch = nowGlobal;
 
 	// if we thought we were done, note it if something comes back up
-	if ( ! ci->m_hasUrlsReadyToSpider ) 
+	if ( ! ci->m_hasUrlsReadyToSpider ) {
 		log("spider: got a reviving url for coll %s (%" PRId32") to crawl %s",
 		    cr->m_coll,(int32_t)cr->m_collnum,sreq->m_url);
 
-	// if changing status, resend our local crawl info to all hosts?
-	if ( ! ci->m_hasUrlsReadyToSpider )
+		// if changing status, resend our local crawl info to all hosts?
 		cr->localCrawlInfoUpdate();
+	}
 
 	// there are urls ready to spider
 	ci->m_hasUrlsReadyToSpider = 1;
@@ -1405,8 +1405,15 @@ bool SpiderLoop::spiderUrl9 ( SpiderRequest *sreq ,
 
 	logDebug(g_conf.m_logDebugSpider, "spider: deleting doledb tree key=%s", KEYSTR(m_doledbKey, sizeof(*m_doledbKey)));
 
+	RdbTree *tree = g_doledb.m_rdb.getTree();
+	if( !tree ) {
+		// Sanity
+		gbshutdownLogicError();
+		return false;	// shut up, pvs..
+	}
+
 	// now we just take it out of doledb instantly
-	bool deleted = g_doledb.m_rdb.getTree()->deleteNode(m_collnum, (char *)m_doledbKey, true);
+	bool deleted = tree->deleteNode(m_collnum, (char *)m_doledbKey, true);
 
 	// if url filters rebuilt then doledb gets reset and i've seen us hit
 	// this node == -1 condition here... so maybe ignore it... just log
@@ -2265,8 +2272,8 @@ void gotCrawlInfoReply ( void *state , UdpSlot *slot ) {
 			// . no longer initializing?
 			// . sometimes other shards get the spider 
 			//  requests and not us!!!
-			if ( cr->m_spiderStatus == SP_INITIALIZING )
-				cr->m_spiderStatus = SP_INPROGRESS;
+			//if ( cr->m_spiderStatus == SP_INITIALIZING )
+			//	cr->m_spiderStatus = SP_INPROGRESS;
 			// i guess we are back in business even if
 			// m_spiderStatus was SP_ROUNDDONE...
 			cr->m_spiderStatus = SP_INPROGRESS;
