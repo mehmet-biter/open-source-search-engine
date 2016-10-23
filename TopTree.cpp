@@ -102,11 +102,13 @@ bool TopTree::setNumNodes ( int32_t docsWanted , bool doSiteClustering ) {
 	// craziness overflow?
 	if ( numNodes < 0 ) numNodes = MAXDOCIDSTOCOMPUTE;
 	// amp it up last minute, after we set numNodes, if we need to
-	if ( ! m_doSiteClustering ) m_ridiculousMax = 0x7fffffff;
+	if ( ! m_doSiteClustering ) {
+		m_ridiculousMax = 0x7fffffff;
 
-	// if not doing siteclustering... don't use 5gb of ram!
-	// add 1 for printing "next 10" link
-	if ( ! m_doSiteClustering ) numNodes = m_docsWanted + 1;
+		// if not doing siteclustering... don't use 5gb of ram!
+		// add 1 for printing "next 10" link
+		numNodes = m_docsWanted + 1;
+	}
 
 	// how many docids do we have, not FULLY counting docids from
 	// "dominating" domains? aka the "variety count"
