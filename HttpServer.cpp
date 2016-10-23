@@ -971,7 +971,8 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 	char fullPath[512];
 
 	// otherwise, look for special host
-	sprintf(fullPath,"%s/%s/%s", g_hostdb.m_httpRootDir, h, path );
+	snprintf(fullPath, sizeof(fullPath), "%s/%s/%s", g_hostdb.m_httpRootDir, h, path );
+	fullPath[ sizeof(fullPath)-1 ] = '\0';
 
 	// set filename to full path
 	f->set ( fullPath );
@@ -988,8 +989,9 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 			return g_pages.sendDynamicReply ( s , r , PAGE_ROOT );
 		}
 		// otherwise, use default html dir
-		sprintf(fullPath,"%s/%s", g_hostdb.m_httpRootDir , path );
-
+		snprintf(fullPath, sizeof(fullPath), "%s/%s", g_hostdb.m_httpRootDir , path );
+		fullPath[ sizeof(fullPath)-1 ] = '\0';
+		
 		// now retrieve the file
 		f->set ( fullPath );
 	}		
@@ -1826,7 +1828,7 @@ int32_t getMsgPiece ( TcpSocket *s ) {
 		if ( ! gb_strcasestr(f->getFilename(),"/doc." ) ) p = pend;
 		// do the replace
 		for ( ; p < pend ; p++ ) {
-			if ( strncasecmp(p,"google",6)) continue;
+			if ( strncasecmp(p,"google",6) != 0) continue;
 			// replace it
 			p[1]='x';
 			p[2]='x';
