@@ -1270,7 +1270,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 			maxi2 = i;
 		}
 		// only 1 term?
-		if ( maxtfw2 == 0.0 ) maxtfw2 = maxtfw1;
+		if ( almostEqualFloat(maxtfw2, 0.0) ) maxtfw2 = maxtfw1;
 		// best term freqs
 		max *= maxtfw1 * maxtfw2;
 		// site rank effect
@@ -3349,7 +3349,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 			if ( ps->m_qtermNum1 != fps->m_qtermNum1 ) break;
 			if ( ps->m_qtermNum2 != fps->m_qtermNum2 ) break;
 			// skip if 0. neighborhood terms have weight of 0 now
-			if ( ps->m_finalScore == 0.0 ) continue;
+			if ( almostEqualFloat(ps->m_finalScore, 0.0) ) continue;
 			// first time?
 			if ( firstTime && si->m_format == FORMAT_HTML ) {
 				Query *q = &si->m_q;
@@ -3401,7 +3401,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 			// stop if different single now
 			if ( ss->m_qtermNum != fss->m_qtermNum ) break;
 			// skip if 0. skip neighborhoods i guess
-			if ( ss->m_finalScore == 0.0 ) continue;
+			if ( almostEqualFloat(ss->m_finalScore, 0.0) ) continue;
 			// first time?
 			if ( firstTime && si->m_format == FORMAT_HTML ) {
 				Query *q = &si->m_q;
@@ -3964,7 +3964,7 @@ static bool printPairScore ( SafeBuf *sb , SearchInput *si , PairScore *ps , Msg
 				      ,
 				      a,b,ps->m_qdist,bes);
 		// wikipedia weight
-		if ( wiw != 1.0 )
+		if ( !almostEqualFloat(wiw, 1.0) )
 			sb->safePrintf("*%.01f", wiw );
 		sb->safePrintf("]]>"
 			      "</equation>\n" );
@@ -4172,7 +4172,7 @@ static bool printPairScore ( SafeBuf *sb , SearchInput *si , PairScore *ps , Msg
 			      ,
 			      a,b,ps->m_qdist,bes);
 	// wikipedia weight
-	if ( wiw != 1.0 )
+	if ( !almostEqualFloat(wiw, 1.0) )
 		sb->safePrintf("*%.01f", wiw );
 	sb->safePrintf( // end formula
 		      "</td></tr>"
