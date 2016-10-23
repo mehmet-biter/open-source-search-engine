@@ -1435,7 +1435,7 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 		px->m_bflags2        = m_bflags[j];
 
 		// flag it as in same wiki phrase
-		if ( wts == (float)WIKI_WEIGHT ) {
+		if ( almostEqualFloat(wts, (float)WIKI_WEIGHT) ) {
 			px->m_inSameWikiPhrase = 1;
 		}
 		else {
@@ -3391,7 +3391,7 @@ void PosdbTable::findMinTermPairScoreInWindow(const char **ptrs, const char **hi
 			}
 
 			// wikipedia phrase weight
-			if ( wikiWeight != 1.0 ) {
+			if ( !almostEqualFloat(wikiWeight, 1.0) ) {
 				max *= wikiWeight;
 			}
 
@@ -4226,7 +4226,8 @@ void PosdbTable::intersectLists10_r ( ) {
 							skipToNext = true;
 						}
 						else
-						if ( score == m_msg39req->m_maxSerpScore && (int64_t)m_docId <= m_msg39req->m_minSerpDocId ) {
+						if ( almostEqualFloat(score, (float)m_msg39req->m_maxSerpScore) && (int64_t)m_docId <= m_msg39req->m_minSerpDocId ) {
+							//@todo: Why is  m_msg39req->m_maxSerpScore double and score float?
 							skipToNext = true;
 						}
 					}
@@ -5742,7 +5743,7 @@ static inline bool isTermValueInRange( const char *p, const QueryTerm *qt ) {
 
 	if ( qt->m_fieldCode == FIELD_GBNUMBEREQUALFLOAT ) {
 		float score2 = Posdb::getFloat ( p );
-		return ( score2 == qt->m_qword->m_float );
+		return ( almostEqualFloat(score2, qt->m_qword->m_float) );
 	}
 
 	if ( qt->m_fieldCode == FIELD_GBNUMBERMININT ) {
