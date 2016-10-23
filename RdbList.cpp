@@ -62,6 +62,12 @@ RdbList::RdbList () {
 	m_useHalfKeys = false;
 	m_ownData     = false;
 	m_fixedDataSize = 0;
+	
+	// PVS-Studio
+	m_startKey[0] = '\0';
+	m_endKey[0] = '\0';
+	m_lastKey[0] = '\0';
+
 	reset();
 }
 
