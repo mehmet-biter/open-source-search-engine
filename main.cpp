@@ -911,10 +911,10 @@ int main2 ( int argc , char *argv[] ) {
 			g_proxy.m_proxyRunning = true;
 			int32_t hostId = -1;
 			int32_t spareId = -1;
-			if ( cmdarg + 2 < argc ) 
+			if ( cmdarg + 2 < argc ) {
 				hostId = atoi ( argv[cmdarg+2] );
-			if ( cmdarg + 2 < argc ) 
 				spareId = atoi ( argv[cmdarg+3] );
+			}
 			char replaceCmd[256];
 			sprintf(replaceCmd, "replacehost=1&rhost=%" PRId32"&rspare=%" PRId32, hostId, spareId);
 			return doCmd ( replaceCmd, -1, "admin/hosts", false, true);
@@ -1197,10 +1197,8 @@ int main2 ( int argc , char *argv[] ) {
 		int32_t hostId = -1;
 		if ( cmdarg + 1 < argc ) {
 			hostId = atoi( argv[ cmdarg + 1 ] );
-		}
 
-		// might have a range
-		if ( cmdarg + 1 < argc ) {
+			// might have a range
 			int32_t h1 = -1;
 			int32_t h2 = -1;
 			sscanf( argv[cmdarg+1], "%" PRId32"-%" PRId32, &h1, &h2 );
@@ -1216,9 +1214,10 @@ int main2 ( int argc , char *argv[] ) {
 	if ( strcmp ( cmd , "tmpstart" ) == 0 ) {	
 		// get hostId to install TO (-1 means all)
 		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
-		// might have a range
 		if ( cmdarg + 1 < argc ) {
+			hostId = atoi ( argv[cmdarg+1] );
+
+			// might have a range
 			int32_t h1 = -1;
 			int32_t h2 = -1;
 			sscanf ( argv[cmdarg+1],"%" PRId32"-%" PRId32,&h1,&h2);
@@ -1230,9 +1229,10 @@ int main2 ( int argc , char *argv[] ) {
 
 	if ( strcmp ( cmd , "tmpstop" ) == 0 ) {	
 		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
-		// might have a range
 		if ( cmdarg + 1 < argc ) {
+			hostId = atoi ( argv[cmdarg+1] );
+
+			// might have a range
 			int32_t h1 = -1;
 			int32_t h2 = -1;
 			sscanf ( argv[cmdarg+1],"%" PRId32"-%" PRId32,&h1,&h2);
@@ -1245,9 +1245,10 @@ int main2 ( int argc , char *argv[] ) {
 	if ( strcmp ( cmd , "kstop" ) == 0 ) {	
 		//same as stop, here for consistency
 		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
-		// might have a range
 		if ( cmdarg + 1 < argc ) {
+			hostId = atoi ( argv[cmdarg+1] );
+			// might have a range
+
 			int32_t h1 = -1;
 			int32_t h2 = -1;
 			sscanf ( argv[cmdarg+1],"%" PRId32"-%" PRId32,&h1,&h2);
@@ -1299,9 +1300,10 @@ int main2 ( int argc , char *argv[] ) {
 	// gb stop [hostId]
 	if ( strcmp ( cmd , "stop" ) == 0 ) {	
 		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
-		// might have a range
 		if ( cmdarg + 1 < argc ) {
+			hostId = atoi ( argv[cmdarg+1] );
+
+			// might have a range
 			int32_t h1 = -1;
 			int32_t h2 = -1;
 			sscanf ( argv[cmdarg+1],"%" PRId32"-%" PRId32,&h1,&h2);
@@ -1314,9 +1316,10 @@ int main2 ( int argc , char *argv[] ) {
 	// gb save [hostId]
 	if ( strcmp ( cmd , "save" ) == 0 ) {	
 		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
-		// might have a range
 		if ( cmdarg + 1 < argc ) {
+			hostId = atoi ( argv[cmdarg+1] );
+			// might have a range
+
 			int32_t h1 = -1;
 			int32_t h2 = -1;
 			sscanf ( argv[cmdarg+1],"%" PRId32"-%" PRId32,&h1,&h2);
@@ -1357,9 +1360,10 @@ int main2 ( int argc , char *argv[] ) {
 	// gb pmerge [hostId]
 	if ( strcmp ( cmd , "pmerge" ) == 0 ) {	
 		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
-		// might have a range
 		if ( cmdarg + 1 < argc ) {
+			hostId = atoi ( argv[cmdarg+1] );
+
+			// might have a range
 			int32_t h1 = -1;
 			int32_t h2 = -1;
 			sscanf ( argv[cmdarg+1],"%" PRId32"-%" PRId32,&h1,&h2);
@@ -1372,9 +1376,10 @@ int main2 ( int argc , char *argv[] ) {
 	// gb smerge [hostId]
 	if ( strcmp ( cmd , "smerge" ) == 0 ) {	
 		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
-		// might have a range
 		if ( cmdarg + 1 < argc ) {
+			hostId = atoi ( argv[cmdarg+1] );
+
+			// might have a range
 			int32_t h1 = -1;
 			int32_t h2 = -1;
 			sscanf ( argv[cmdarg+1],"%" PRId32"-%" PRId32,&h1,&h2);
@@ -1387,9 +1392,10 @@ int main2 ( int argc , char *argv[] ) {
 	// gb tmerge [hostId]
 	if ( strcmp ( cmd , "tmerge" ) == 0 ) {	
 		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
-		// might have a range
 		if ( cmdarg + 1 < argc ) {
+			hostId = atoi ( argv[cmdarg+1] );
+
+			// might have a range
 			int32_t h1 = -1;
 			int32_t h2 = -1;
 			sscanf ( argv[cmdarg+1],"%" PRId32"-%" PRId32,&h1,&h2);
@@ -1402,9 +1408,10 @@ int main2 ( int argc , char *argv[] ) {
 	// gb merge [hostId]
 	if ( strcmp ( cmd , "merge" ) == 0 ) {	
 		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
-		// might have a range
 		if ( cmdarg + 1 < argc ) {
+			hostId = atoi ( argv[cmdarg+1] );
+
+			// might have a range
 			int32_t h1 = -1;
 			int32_t h2 = -1;
 			sscanf ( argv[cmdarg+1],"%" PRId32"-%" PRId32,&h1,&h2);
