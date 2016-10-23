@@ -27,7 +27,7 @@ bool printNumAbbr ( SafeBuf &p, int64_t vvv ) {
 	const char *suffix = "K";
 	val /= 1024;
 	if ( val > 1000.0 ) { val /= 1024.0; suffix = "M"; }
-	if ( val == 0.0 ) 
+	if ( almostEqualFloat(val, 0.0) ) 
 		p.safePrintf("<td>0</td>");
 	else if ( suffix[0] =='K' )
 		p.safePrintf("<td>%.00f%s</td>",val,suffix);
