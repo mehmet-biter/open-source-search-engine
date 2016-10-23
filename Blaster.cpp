@@ -176,7 +176,7 @@ void Blaster::runBlaster(char *file1,char *file2,
 	// get file size
 	int32_t fileSize1 = f1.getFileSize() ;
 	// store a \0 at the end
-	int32_t m_bufSize1 = fileSize1 + 1;
+	m_bufSize1 = fileSize1 + 1;
 
 	m_doInjectionWithLinks = injectUrlWithLinks;
 	m_doInjection = injectUrl;
@@ -218,7 +218,7 @@ void Blaster::runBlaster(char *file1,char *file2,
 			return; 
 		}
 		int32_t fileSize2 = f2.getFileSize() ;
-		int32_t m_bufSize2 = fileSize2 + 1;
+		m_bufSize2 = fileSize2 + 1;
 		m_buf2 = (char *) mmalloc ( m_bufSize2 , "blaster2" );
 		if ( ! m_buf2) {
 			log(LOG_WARN, "blaster:mmalloc: %s",mstrerror(errno));
