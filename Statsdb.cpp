@@ -817,7 +817,7 @@ bool Statsdb::gifLoop ( ) {
 		// print the parm name and old/new values
 		m_sb2->safePrintf("<td><b>%s</b>",title);
 
-		if ( pp->m_oldVal != pp->m_newVal )
+		if ( !almostEqualFloat(pp->m_oldVal, pp->m_newVal) )
 			m_sb2->safePrintf(" (%.02f -> %.02f)",
 					 pp->m_oldVal,pp->m_newVal);
 
@@ -920,7 +920,7 @@ char *Statsdb::plotGraph ( char *pstart ,
 
 	
 	if( label->m_yscalar <= 0 ) {
-        if(ymax == ymin) {
+        if( almostEqualFloat(ymax, ymin)) {
             yscalar = 0;
         } else {
             yscalar = (float)DY2 / (ymax - ymin);
@@ -1005,7 +1005,7 @@ char *Statsdb::plotGraph ( char *pstart ,
 		float y1 = lasty;
 
 		// normalize y into pixel space
-		if(label->m_yscalar >= 0 && ymax != ymin) {
+		if(label->m_yscalar >= 0 && !almostEqualFloat(ymax, ymin) ) {
 			y2 = ((float)DY2 * (y2 - ymin)) / (ymax-ymin);
 		}
 		
@@ -1081,7 +1081,7 @@ char *Statsdb::plotGraph ( char *pstart ,
 	for ( float z = ymin ; z < ymax ; z += deltaz ) {
 		// draw it
 		drawHR ( z , ymin , ymax , m_gw , label , zoff , color );
-		if(z == lastZ) break;
+		if( almostEqualFloat(z, lastZ) ) break;
 		lastZ = z;
 		//if ( m_gw.length() > 10000000 ) break;
 	}
