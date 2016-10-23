@@ -5,6 +5,7 @@
 
 #include <sys/time.h>  // gettimeofday()
 #include <math.h>      // floor()
+#include <float.h>	// FLT_EPSILON, DBL_EPSILON
 #include "Unicode.h"
 #include "types.h"
 #include "Sanity.h"
@@ -93,6 +94,32 @@ static inline char *strncasestr( const char *haystack, const char *needle, int32
 	return strncasestr(const_cast<char*>(haystack),needle,haystackSize,needleSize);
 }
 
+// https://randomascii.wordpress.com/2012/02/25/comparing-floating-point-numbers-2012-edition/
+static inline bool almostEqualFloat(float A, float B, float maxRelDiff = FLT_EPSILON) {
+    // Calculate the difference.
+    float diff = fabs(A - B);
+    A = fabs(A);
+    B = fabs(B);
+    // Find the largest
+    float largest = (B > A) ? B : A;
+ 
+    if (diff <= largest * maxRelDiff)
+        return true;
+    return false;
+}
+
+static inline bool almostEqualDouble(double A, double B, double maxRelDiff = DBL_EPSILON) {
+    // Calculate the difference.
+    double diff = fabs(A - B);
+    A = fabs(A);
+    B = fabs(B);
+    // Find the largest
+    double largest = (B > A) ? B : A;
+ 
+    if (diff <= largest * maxRelDiff)
+        return true;
+    return false;
+}
 
 // independent of case
 char *gb_strcasestr ( char *haystack , const char *needle );
