@@ -399,7 +399,7 @@ bool Query::setQTerms ( Words &words ) {
 		if ( ! qw->m_phraseId ) continue;
 		if (   qw->m_ignorePhrase ) continue; // could be a repeat
 		// none if weight is absolute zero
-		if ( qw->m_userWeightPhrase == 0   && 
+		if ( almostEqualFloat(qw->m_userWeightPhrase, 0) && 
 		     qw->m_userTypePhrase   == 'a'  ) continue;
 		nqt++;
 	}
@@ -494,7 +494,7 @@ bool Query::setQTerms ( Words &words ) {
 		if ( ! qw->m_phraseId ) continue;
 		if (   qw->m_ignorePhrase ) continue; // could be a repeat
 		// none if weight is absolute zero
-		if ( qw->m_userWeightPhrase == 0   && 
+		if ( almostEqualFloat(qw->m_userWeightPhrase, 0) && 
 		     qw->m_userTypePhrase   == 'a'  ) continue;
 
 		// stop breach
