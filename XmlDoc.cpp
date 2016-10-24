@@ -4564,7 +4564,7 @@ float *XmlDoc::getPageSimilarity ( XmlDoc *xd2 ) {
 	if ( ! sv2 || sv2 == (int32_t *)-1 ) return (float *)sv2;
 	m_pageSimilarity = computeSimilarity ( sv1, sv2, NULL, NULL, NULL);
 	// this means error, g_errno should be set
-	if ( m_pageSimilarity == -1.0 ) return NULL;
+	if ( almostEqualFloat(m_pageSimilarity, -1.0) ) return NULL;
 	return &m_pageSimilarity;
 }
 
@@ -16009,7 +16009,7 @@ uint8_t score32to8 ( uint32_t score ) {
 	//double maxscore = ::log ( (double)(0x00ffffff - 127));
 	static double s_maxscore = -1.0;
 	static double s_minscore = -1.0;
-	if ( s_maxscore == -1.0 ) {
+	if ( almostEqualDouble(s_maxscore, -1.0) ) {
 		uint32_t max = ((0xffffffff +   0)/256) - 127 + 10;
 		uint32_t min = (  128                 ) - 127 + 10;
 		s_maxscore = ::log((double)max);
@@ -21056,11 +21056,16 @@ bool getDiversityVec( const Words *words, const Phrases *phrases, HashTableX *co
 
 	// convert from float into a rank from 0-15
 	for ( int32_t i = 0 ; i < nw ; i++ ) {
-		if ( ! ww[i] ) { nww[i] = 0; continue; }
+		if ( almostEqualFloat(ww[i], 0) ) { 
+			nww[i] = 0; 
+			continue; 
+		}
 		// 2.50 is max in getWordToPhraseRatioWeights() function
 		char wrank = (char) ((ww[i] * ((float)MAXDIVERSITYRANK))/.55);
 		// sanity
-		if ( wrank > MAXDIVERSITYRANK ) wrank = MAXDIVERSITYRANK;
+		if ( wrank > MAXDIVERSITYRANK ) {
+			wrank = MAXDIVERSITYRANK;
+		}
 		if ( wrank < 0 ) { g_process.shutdownAbort(true); }
 		// assign now
 		nww[i] = wrank;
