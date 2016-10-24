@@ -306,7 +306,8 @@ void RdbIndex::addRecord_unlocked(char *key, bool isGenerateIndex) {
 	if (m_rdbId == RDB_POSDB || m_rdbId == RDB2_POSDB2) {
 		if (key[0] & 0x02 || !(key[0] & 0x04)) {
 			//it is a 12-byte docid+pos or 18-byte termid+docid+pos key
-			uint64_t doc_id = ((extract_bits(key, 58, 96) << s_docIdOffset) | !KEYNEG(key));
+			uint64_t keyneg = !KEYNEG(key);
+			uint64_t doc_id = ((extract_bits(key, 58, 96) << s_docIdOffset) | keyneg);
 			if (doc_id != m_prevPendingDocId) {
 				m_pendingDocIds->push_back(doc_id);
 				m_prevPendingDocId = doc_id;
