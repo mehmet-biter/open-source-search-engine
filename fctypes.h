@@ -123,7 +123,14 @@ static inline bool almostEqualDouble(double A, double B, double maxRelDiff = DBL
 
 // independent of case
 char *gb_strcasestr ( char *haystack , const char *needle );
+static inline const char *gb_strcasestr(const char *haystack, const char *needle) {
+	return gb_strcasestr(const_cast<char*>(haystack),needle);
+}
+
 char *gb_strncasestr ( char *haystack , int32_t haystackSize , const char *needle ) ;
+static inline const char *gb_strncasestr(const char *haystack, int32_t haystackSize, const char *needle) {
+	return gb_strncasestr(const_cast<char*>(haystack),haystackSize,needle);
+}
 
 char *strnstr( const char *haystack, const char *needle, int32_t len);
 
