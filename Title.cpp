@@ -1198,7 +1198,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 			float fp = getSimilarity ( w2 , a2 , b2 , w1 , a1 , b1 );
 
 			// error?
-			if ( fp == -1.0 ) return false;
+			if ( almostEqualFloat(fp, -1.0) ) return false;
 
 			// custom boosting...
 			float boost = 1.0;
@@ -1605,7 +1605,10 @@ float Title::getSimilarity ( Words  *w1 , int32_t i0 , int32_t i1 ,
 	}
 
 	// do not divide by zero
-	if ( sum == 0.0 ) return 0.0;
+	if ( almostEqualFloat(sum, 0.0) ) {
+		return 0.0;
+	}
+
 	// sanity check
 	//if ( found > sum              ) { g_process.shutdownAbort(true); }
 	if ( found < 0.0 || sum < 0.0 ) { g_process.shutdownAbort(true); }
