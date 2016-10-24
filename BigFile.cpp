@@ -1226,11 +1226,50 @@ static bool readwrite_r ( FileState *fstate ) {
 bool BigFile::unlink ( ) {
 	logTrace( g_conf.m_logTraceBigFile, "BEGIN. filename [%s]", getFilename());
 	
-	bool rc = unlinkRename( NULL , -1 , false, NULL, NULL );
-	// rc indicates blocked/unblocked
+	if(g_conf.m_readOnlyMode) {
+		g_errno = EBADENGINEER;
+		log(LOG_WARN, "disk: cannot unlink or rename files in read only mode");
+		return true;
+	}
+	
+	if(m_numThreads>0) {
+		g_errno = EBADENGINEER;
+		log(LOG_ERROR, "%s:%s:%d: END. Unlink/rename threads already in progress. ", __FILE__, __func__, __LINE__ );
+		return true;
+	}
+	
+	// First mark the files for unlink so no further read-jobs will be submitted for those parts
+	for(int32_t i = 0; i < m_maxParts; i++) {
+		File *f = getFile2(i);
+		if(!f)
+			continue;
+		addPendingUnlink(f->getFilename());
+	}
+	//then cancel all queued read jobs for this bigfile
+	// remove all queued threads that point to us that have not
+	// yet been launched
+	g_jobScheduler.cancel_file_read_jobs(this);
+	
+	bool anyErrors = false;
+	for(int32_t i = 0; i < m_maxParts; i++) {
+		File *f = getFile2(i);
+		if(!f)
+			continue;
+		if(::unlink(f->getFilename())!=0) {
+			log(LOG_TRACE,"%s:%s:%d: disk: unlink [%s] has error [%s]", __FILE__, __func__, __LINE__,
+			    f->getFilename(), mstrerror(errno));
+			g_errno = errno;
+			anyErrors = true;
+		}
+		// we must close the file descriptor in the thread otherwise the
+		// file will not actually be unlinked in this thread
+		f->close1_r();
 
-	logTrace( g_conf.m_logTraceBigFile, "END. returning [%s]", rc?"true":"false");
-	return rc;
+		removePendingUnlink(f->getFilename());
+	}
+	
+	logTrace( g_conf.m_logTraceBigFile, "END. returning [%s]", !anyErrors?"true":"false");
+	return !anyErrors;
 }
 
 
