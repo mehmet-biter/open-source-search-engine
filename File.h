@@ -119,11 +119,9 @@ public:
 	char       *getFilename()       { return m_filename; }
 	const char *getFilename() const { return m_filename; }
 
-	// our filename allocated with strdup
-	// we publicize for ease of use
+private:
 	char m_filename [ MAX_FILENAME_LEN ];
 
-private:
 	bool m_closedIt;
 	
 	// initializes the fd pool
