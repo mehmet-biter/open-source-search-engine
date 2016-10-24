@@ -63,6 +63,11 @@ int main(void) {
 	rmdir("/tmp/GbMakePath/dir1");
 	rmdir("/tmp/GbMakePath");
 
+	assert(makePath("/tmp/GbMakePath//dir1//dir2",0777)==0);
+	rmdir("/tmp/GbMakePath/dir1/dir2");
+	rmdir("/tmp/GbMakePath/dir1");
+	rmdir("/tmp/GbMakePath");
+
 	assert(makePath("/tmp/GbMakePath/dir1/dir2",0777)==0);
 	assert(makePath("/tmp/GbMakePath/dir1/dir2",0777)==0);
 	assert(makePath("/tmp/GbMakePath/dir1",0777)==0);
