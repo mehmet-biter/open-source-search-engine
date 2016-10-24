@@ -18,27 +18,44 @@ class u_int96_t {
 	uint64_t n0; // the low  int64_t
 	uint32_t      n1; // the high int32_t 
 
-	u_int96_t (                ) { }
-	u_int96_t ( uint32_t i ) {	n0 = i; n1 = 0; }
+	u_int96_t() {
+		n0 = 0;
+		n1 = 0;
+	}
 
-	void setMin ( ) { n0 = 0LL; n1 = 0; }
+	u_int96_t(uint32_t i) {
+		n0 = i;
+		n1 = 0; 
+	}
 
-	void setMax ( ) { n0 = 0xffffffffffffffffLL; n1 = 0xffffffff; }
+	void setMin() {
+		n0 = 0LL; 
+		n1 = 0; 
+	}
+
+	void setMax() {
+		n0 = 0xffffffffffffffffLL; 
+		n1 = 0xffffffff; 
+	}
 
 	bool operator == ( u_int96_t i ) const {
-		return ( i.n0 == n0 && i.n1 == n1);}
+		return ( i.n0 == n0 && i.n1 == n1);
+	}
 	bool operator != ( u_int96_t i ) const {
-		return ( i.n0 != n0 || i.n1 != n1);}
+		return ( i.n0 != n0 || i.n1 != n1);
+	}
 	void operator =  ( u_int96_t i ) {
-		n0 = i.n0; n1 = i.n1; }
-
+		n0 = i.n0; n1 = i.n1; 
+	}
 	bool operator != ( uint32_t i ) const {
-		return ( i    != n0 ); }
+		return ( i    != n0 ); 
+	}
 	void operator =  ( uint32_t i ) {
-		n0 = i; n1 = 0; }
+		n0 = i; n1 = 0; 
+	}
 	int32_t operator &  ( uint32_t i ) const {
-		return n0 & i; }
-
+		return n0 & i; 
+	}
 	void operator |= ( u_int96_t i ) {
 		n0 |= i.n0;
 		n1 |= i.n1;
@@ -90,8 +107,14 @@ class u_int128_t {
 	uint64_t n0; // the low  int64_t
 	uint64_t n1; // the high int32_t 
 
-	u_int128_t (                ) { }
-	u_int128_t ( uint32_t i ) {	n0 = i; n1 = 0; }
+	u_int128_t() {
+		n0 = 0;
+		n1 = 0;
+	}
+	u_int128_t(uint32_t i) {
+		n0 = i;
+		n1 = 0;
+	}
 
 	void setMin ( ) { n0 = 0LL; n1 = 0LL; }
 
