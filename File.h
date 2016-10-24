@@ -52,10 +52,6 @@ public:
 		m_forceRename = forceRename;
 	}
 
-	bool getForceRename() const {
-		return m_forceRename;
-	}
-
 	bool calledOpen () { return m_calledOpen; }
 	bool calledSet  () { return m_calledSet; }
 

@@ -142,7 +142,7 @@ void File::set ( const char *filename ) {
 }
 
 bool File::rename ( const char *newFilename ) {
-	if ( getForceRename() || ::access( newFilename, F_OK ) != 0 ) {
+	if ( m_forceRename || ::access( newFilename, F_OK ) != 0 ) {
 		// suppress error (we will catch it in rename anyway)
 		errno = 0;
 
