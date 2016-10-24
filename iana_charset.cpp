@@ -846,7 +846,7 @@ int16_t get_iana_charset(const char *cs, int len)
 	// set up the hash table
 	if ( ! s_table.set ( 8,4,4096,NULL,0,false,"ianatbl") ) {
 		log(LOG_WARN, "build: Could not init table of IANA Charsets.");
-		return false;
+		return csUnknown;
 	}
 	// now add in all the charset entries
 	int32_t n = (int32_t)sizeof(s_charsets) / (int32_t)sizeof(IANACharset);
@@ -858,7 +858,7 @@ int16_t get_iana_charset(const char *cs, int len)
 	    // store the charset index in the hash table as score
 		if ( ! s_table.addTerm(&h, i+1) ) {
 			log(LOG_WARN, "build: add term failed");
-			return false;
+			return csUnknown;
 		}
 	}
 	g_conf.m_useQuickpoll = saved;
