@@ -277,9 +277,9 @@ private:
 				bool force = false );
 	//job/thread worker functions helping unlinkrename()
 	static void renameWrapper(void *state);
+	void renameWrapper(File *f, int32_t i);
 	static void doneRenameWrapper(void *state, job_exit_t exit_type);
 	void doneRenameWrapper(File *f);
-	void renameWrapper(File *f, int32_t i);
 	static void unlinkWrapper(void *state);
 	void unlinkWrapper(File *f);
 	static void doneUnlinkWrapper(void *state, job_exit_t exit_type);

@@ -362,7 +362,7 @@ bool BigFile::addPart ( int32_t n ) {
 	char buf[1024];
 
 	// make the filename for this new File class
-	makeFilename_r ( m_baseFilename.getBufStart() , NULL, n , buf , 1024 );
+	makeFilename_r(m_baseFilename.getBufStart(), NULL, n, buf, sizeof(buf));
 
 	// and set it with that
 	f->set ( buf );
@@ -1546,12 +1546,63 @@ void BigFile::renameWrapper(File *f, int32_t i) {
 	// . get the new full name for this file
 	// . based on m_dir and m_baseFilename
 	char newFilename [ 1024 ];
-	makeFilename_r ( m_newBaseFilename.getBufStart(), m_newBaseFilenameDir.getBufStart(), i, newFilename, 1024 );
+	makeFilename_r(m_newBaseFilename.getBufStart(), m_newBaseFilenameDir.getBufStart(), i, newFilename, sizeof(newFilename));
 
 	log( LOG_TRACE,"%s:%s:%d: disk: rename [%s] to [%s]", __FILE__, __func__, __LINE__, f->getFilename(), newFilename );
 
 	if (!f->rename(newFilename)) {
 		g_errno = errno;
+	}
+
+	logTrace( g_conf.m_logTraceBigFile, "END" );
+}
+
+
+
+void BigFile::doneRenameWrapper(void *state, job_exit_t /*exit_type*/) {
+	UnlinkRenameState *job_state = static_cast<UnlinkRenameState*>(state);
+
+	g_errno = job_state->m_errno;
+
+	BigFile *that = job_state->m_bigfile;
+	that->doneRenameWrapper(job_state->m_file);
+
+	mdelete(job_state, sizeof(FileState), "FileState");
+	delete job_state;
+}
+
+void BigFile::doneRenameWrapper(File *f) {
+	logTrace( g_conf.m_logTraceBigFile, "BEGIN" );
+
+	// one less
+	m_numThreads--;
+	g_unlinkRenameThreads--;
+
+	// otherwise, it's a more serious error i guess
+	if ( g_errno ) {
+		log(LOG_ERROR, "%s:%s:%d: doneRenameWrapper. rename failed: [%s] [%s]", __FILE__, __func__, __LINE__, getFilename(), mstrerror(g_errno));
+		logAllData(LOG_ERROR);
+		//@@@ BR: Why continue??
+	}
+
+	// one less part to do
+	m_partsRemaining--;
+	
+	// return if more to do
+	if ( m_partsRemaining > 0 ) {
+		logTrace( g_conf.m_logTraceBigFile, "END - still more parts" );
+		return;
+	}
+
+	// update OUR base filename now after all Files are renamed
+	m_baseFilename.reset();
+	m_baseFilename.setLabel("nbfnn");
+	m_baseFilename.safeStrcpy(m_newBaseFilename.getBufStart());
+
+	// . all done, call the main callback
+	// . this is NULL if we were not called in a thread
+	if ( m_callback ) {
+		m_callback ( m_state );
 	}
 
 	logTrace( g_conf.m_logTraceBigFile, "END" );
@@ -1610,56 +1661,6 @@ void BigFile::unlinkWrapper(File *f) {
 
 	logTrace( g_conf.m_logTraceBigFile, "END" );
 }
-
-void BigFile::doneRenameWrapper(void *state, job_exit_t /*exit_type*/) {
-	UnlinkRenameState *job_state = static_cast<UnlinkRenameState*>(state);
-
-	g_errno = job_state->m_errno;
-
-	BigFile *that = job_state->m_bigfile;
-	that->doneRenameWrapper(job_state->m_file);
-
-	mdelete(job_state, sizeof(FileState), "FileState");
-	delete job_state;
-}
-
-void BigFile::doneRenameWrapper(File *f) {
-	logTrace( g_conf.m_logTraceBigFile, "BEGIN" );
-
-	// one less
-	m_numThreads--;
-	g_unlinkRenameThreads--;
-
-	// otherwise, it's a more serious error i guess
-	if ( g_errno ) {
-		log(LOG_ERROR, "%s:%s:%d: doneRenameWrapper. rename failed: [%s] [%s]", __FILE__, __func__, __LINE__, getFilename(), mstrerror(g_errno));
-		logAllData(LOG_ERROR);
-		//@@@ BR: Why continue??
-	}
-
-	// one less part to do
-	m_partsRemaining--;
-	
-	// return if more to do
-	if ( m_partsRemaining > 0 ) {
-		logTrace( g_conf.m_logTraceBigFile, "END - still more parts" );
-		return;
-	}
-
-	// update OUR base filename now after all Files are renamed
-	m_baseFilename.reset();
-	m_baseFilename.setLabel("nbfnn");
-	m_baseFilename.safeStrcpy(m_newBaseFilename.getBufStart());
-
-	// . all done, call the main callback
-	// . this is NULL if we were not called in a thread
-	if ( m_callback ) {
-		m_callback ( m_state );
-	}
-
-	logTrace( g_conf.m_logTraceBigFile, "END" );
-}
-
 
 void BigFile::doneUnlinkWrapper(void *state, job_exit_t /*exit_type*/) {
 	UnlinkRenameState *job_state = static_cast<UnlinkRenameState*>(state);
