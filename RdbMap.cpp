@@ -1130,7 +1130,7 @@ void RdbMap::reduceMemFootPrint () {
 
 	// if it is like posdb0054.map then it is being merged into and
 	// we'll resume a killed merge, so don't mess with it, we'll need to add more pages.
-	char *s = m_file.getFilename();
+	const char *s = m_file.getFilename();
 	for ( ; s && *s && ! is_digit(*s) ; s++ )
 		;
 

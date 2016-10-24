@@ -151,7 +151,6 @@ class BigFile {
 	void invalidateFileSize() { m_fileSize = -1; }
 
 	// use the base filename as our filename
-	char       *getFilename()       { return m_baseFilename.getBufStart(); }
 	const char *getFilename() const { return m_baseFilename.getBufStart(); }
 
 	char *getDir() { return m_dir.getBufStart(); }

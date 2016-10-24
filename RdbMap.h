@@ -95,7 +95,6 @@ class RdbMap {
 		return m_file.rename ( newMapFilename , callback , state, force );
 	}
 
-	char       *getFilename()       { return m_file.getFilename(); }
 	const char *getFilename() const { return m_file.getFilename(); }
 
 	BigFile *getFile  ( ) { return &m_file; }

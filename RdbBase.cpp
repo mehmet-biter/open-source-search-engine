@@ -339,7 +339,7 @@ bool RdbBase::removeRebuildFromFilenames ( ) {
 
 bool RdbBase::removeRebuildFromFilename ( BigFile *f ) {
 	// get the filename
-	char *ff = f->getFilename();
+	const char *ff = f->getFilename();
 	// copy it
 	char buf[1024];
 	strncpy ( buf , ff, sizeof(buf) );
