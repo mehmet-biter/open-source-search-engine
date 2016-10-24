@@ -24,8 +24,8 @@ int makePath(const char *path, int mode) {
 		const char *component_end = strchr(component_start+1,'/');
 		if(!component_end) {
 			component_end = component_start;
-			while(*component_end++)
-				;
+			while(*component_end)
+				component_end++;
 		}
 		char buf[1024];
 		memcpy(buf, path, (size_t)(component_end-path));
@@ -59,11 +59,13 @@ int main(void) {
 	rmdir("/tmp/GbMakePath");
 
 	assert(makePath("/tmp/GbMakePath/dir1/dir2",0777)==0);
+	assert(access("/tmp/GbMakePath/dir1/dir2",X_OK)==0);
 	rmdir("/tmp/GbMakePath/dir1/dir2");
 	rmdir("/tmp/GbMakePath/dir1");
 	rmdir("/tmp/GbMakePath");
 
 	assert(makePath("/tmp/GbMakePath//dir1//dir2",0777)==0);
+	assert(access("/tmp/GbMakePath/dir1/dir2",X_OK)==0);
 	rmdir("/tmp/GbMakePath/dir1/dir2");
 	rmdir("/tmp/GbMakePath/dir1");
 	rmdir("/tmp/GbMakePath");
