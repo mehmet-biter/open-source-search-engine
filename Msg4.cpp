@@ -866,7 +866,7 @@ bool addMetaList ( const char *p , UdpSlot *slot ) {
 
 		// . get the rdb to which it belongs, use Msg0::getRdb()
 		// . do not call this for every rec if we do not have to
-		if (rdbId != lastRdbId) {
+		if (rdbId != lastRdbId || !rdb) {
 			rdb = getRdbFromId(rdbId);
 
 			if (!rdb) {
@@ -951,8 +951,15 @@ bool addMetaList ( const char *p , UdpSlot *slot ) {
 
 		// . get the rdb to which it belongs, use Msg0::getRdb()
 		// . do not call this for every rec if we do not have to
-		if (rdbId != lastRdbId) {
+		if (rdbId != lastRdbId || !rdb) {
 			rdb = getRdbFromId(rdbId);
+
+			if (!rdb) {
+				log(LOG_WARN, "msg4: rdbId of %" PRId32" unrecognized from hostip=%s. dropping WHOLE request",
+				    (int32_t)rdbId, slot ? iptoa(slot->getIp()) : "unknown");
+				g_errno = ETRYAGAIN;
+				return false;
+			}
 		}
 
 		// reset g_errno
