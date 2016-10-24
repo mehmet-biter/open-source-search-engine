@@ -116,7 +116,6 @@ public:
 	// . must call open() before calling this
 	int   getfd          ( ) ;
 
-	char       *getFilename()       { return m_filename; }
 	const char *getFilename() const { return m_filename; }
 
 private:
