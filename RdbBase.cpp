@@ -109,15 +109,13 @@ bool RdbBase::init(const char *dir,
                    Rdb *rdb,
                    bool useIndexFile) {
 
+	if(!dir)
+		gbshutdownLogicError();
 
 	m_didRepair = false;
  top:
 	// reset all
 	reset();
-
-	// sanity
-	if ( ! dir )
-		gbshutdownLogicError();
 
 	sprintf(m_collectionDirName, "%scoll.%s.%" PRId32, dir, coll, (int32_t)collnum);
 
