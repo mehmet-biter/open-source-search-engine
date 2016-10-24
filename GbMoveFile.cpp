@@ -9,6 +9,9 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+
+//note: keep copy functionality in-sync with copyFile()
+
 static const size_t io_buffer_size = 1024*1024;
 
 int moveFile(const char *src, const char *dst)
