@@ -1081,12 +1081,6 @@ bool RdbBase::incorporateMerge ( ) {
 
 	// on success unlink the files we merged and free them
 	for ( int32_t i = a ; i < b && i < m_numFiles; i++ ) {
-		// incase we are starting with just the
-		// linkdb0001.003.dat file and not the stuff we merged
-		if ( ! m_fileInfo[i].m_file ) {
-			continue;
-		}
-
 		// debug msg
 		log(LOG_INFO,"merge: Unlinking merged file %s/%s (#%" PRId32").",
 		    m_fileInfo[i].m_file->getDir(),m_fileInfo[i].m_file->getFilename(),i);
