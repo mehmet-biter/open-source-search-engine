@@ -1102,7 +1102,7 @@ bool saveTimeAdjustment ( ) {
 	// must be in sync!
 	if ( ! g_clockInSync ) return true;
 	// store it
-	int64_t local = gettimeofdayInMillisecondsLocal();
+	uint64_t local = gettimeofdayInMillisecondsLocal();
 	char wbuf[1024];
 	sprintf (wbuf,"%" PRIu64" %" PRId64"\n",local,s_adjustment);
 	// write it out
