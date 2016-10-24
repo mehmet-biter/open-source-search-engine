@@ -113,9 +113,6 @@ bool RdbBase::init(const char *dir,
 		gbshutdownLogicError();
 
 	m_didRepair = false;
- top:
-	// reset all
-	reset();
 
 	sprintf(m_collectionDirName, "%scoll.%s.%" PRId32, dir, coll, (int32_t)collnum);
 
@@ -139,6 +136,10 @@ bool RdbBase::init(const char *dir,
 			return false;
 		}
 	}
+
+ top:
+	// reset all
+	reset();
 
 	m_coll    = coll;
 	m_collnum = collnum;
