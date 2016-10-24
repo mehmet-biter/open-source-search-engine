@@ -3,6 +3,7 @@
 #include "File.h"
 #include "Conf.h"
 #include "Loop.h"            // MAX_NUM_FDS etc.
+#include "GbMoveFile2.h"
 #include "Sanity.h"
 #include "ScopedLock.h"
 #include "GbMutex.h"
@@ -170,6 +171,24 @@ bool File::rename ( const char *newFilename ) {
 	// set to our new name
 	set ( newFilename );
 
+	return true;
+}
+
+
+bool File::movePhase1(const char *newFilename) {
+	if(!m_forceRename && ::access( newFilename,F_OK) == 0) {
+		log(LOG_ERROR, "%s:%s:%d: disk: trying to rename [%s] to [%s] which exists.", __FILE__, __func__, __LINE__,
+		    getFilename(), newFilename);
+		gbshutdownLogicError();
+	}
+	if(moveFile2Phase1(getFilename(), newFilename) != 0)
+		return false;
+	return true;
+}
+
+bool File::movePhase2(const char *newFilename) {
+	if(moveFile2Phase2(getFilename(), newFilename) != 0)
+		return false;
 	return true;
 }
 
