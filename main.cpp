@@ -108,7 +108,7 @@ void dumpLinkdb          ( const char *coll, int32_t sfn, int32_t numFiles, bool
 int copyFiles ( const char *dstDir ) ;
 
 
-const char *getcwd2 ( char *arg ) ;
+const char *getAbsoluteGbDir(const char *argv0);
 
 static int32_t checkDirPerms ( char *dir ) ;
 
@@ -844,7 +844,7 @@ int main2 ( int argc , char *argv[] ) {
 	//
 	// get current working dir that the gb binary is in. all the data
 	// files should in there too!!
-	const char *workingDir = getcwd2 ( argv[0] );
+	const char *workingDir = getAbsoluteGbDir ( argv[0] );
 	if ( ! workingDir ) {
 		fprintf(stderr,"could not get working dir. Exiting.\n");
 		return 1;
@@ -7764,152 +7764,28 @@ int collinject ( char *newHostsConf ) {
 	return 1;
 }
 
-const char *getcwd2 ( char *arg2 ) {
-	char argBuf[1026];
-	char *arg = argBuf;
 
-	//
-	// arg2 examples:
-	// ./gb
-	// /bin/gb (symlink to ../../var/gigablast/data0/gb)
-	// /usr/bin/gb (symlink to ../../var/gigablast/data0/gb)
-	//
-
-	// 
-	// if it is a symbolic link...
-	// get real path (no symlinks symbolic links)
-	char tmp[1026];
-	int32_t tlen = readlink ( arg2 , tmp , sizeof(tmp)-1);
-
-	// if we got the actual path, copy that over
-	if ( tlen != -1 ) {
-		tmp[ tlen ] = '\0';
-
-		//fprintf(stderr,"tmp=%s\n",tmp);
-		// if symbolic link is relative...
-		if ( tlen >= 2 && tmp[0] == '.' && tmp[1] == '.') {
-			// store original path (/bin/gb --> ../../var/gigablast/data/gb)
-			strncpy(arg, arg2, sizeof(argBuf)-1); // /bin/gb
-			argBuf[ sizeof(argBuf)-1 ] = '\0';
-
-			// back up to /
-			while(arg[strlen(arg)-1] != '/' ) {
-				arg[strlen(arg)-1] = '\0';
-			}
-			int32_t len2 = strlen(arg);
-			strncpy(arg+len2, tmp, sizeof(argBuf)-len2-1);
-			argBuf[ sizeof(argBuf)-1 ] = '\0';
-		}
-		else {
-			strncpy(arg,tmp,sizeof(argBuf)-1);
-			argBuf[ sizeof(argBuf)-1 ] = '\0';
-		}
-	}
-	else {
-		strncpy(arg,arg2, sizeof(argBuf)-1);
-		argBuf[ sizeof(argBuf)-1 ] = '\0';
-	}
-
- again:
-	// now remove ..'s from path
-	char *p = arg;
-	// char *start = arg;
-	for ( ; *p ; p++ ) {
-		if (p[0] != '.' || p[1] !='.' ) continue;
-		// if .. is at start of string
-		if ( p == arg ) {
-			gbmemcpy ( arg , p+2,strlen(p+2)+1);
-			goto again;
-		}
-		// find previous /
-		char *slash = p-1;
-		if ( *slash !='/' ) { g_process.shutdownAbort(true); }
-		slash--;
-		for ( ; slash > arg && *slash != '/' ; slash-- );
-		if ( slash<arg) slash=arg;
-		gbmemcpy(slash,p+2,strlen(p+2)+1);
-		goto again;
-		// if can't back up anymore...
-	}
-
-	char *a = arg;
-
-	// remove "gb" from the end
-	int32_t alen = 0;
-	for ( ; *a ; a++ ) {
-		if ( *a != '/' ) continue;
-		alen = a - arg + 1;
-	}
-	if ( alen > 512 ) {
-		log("db: path is too long");
-		g_errno = EBADENGINEER;
+const char *getAbsoluteGbDir(const char *argv0) {
+	static char s_buf[1024];
+	
+	char *s = realpath(argv0, NULL);
+	if(!s)
+		return NULL;
+	if(strlen(s) >= sizeof(s_buf))
+		return NULL;
+	strcpy(s_buf,s);
+	free(s);
+	
+	//chop off last component, so we hae just the directory (including a trailing / )
+	char *slash = strrchr(s_buf, '/');
+	if(slash==NULL) {
+		//what? this is not supposed to happen that realpath returns an absolute path that doesn't contain a slash
 		return NULL;
 	}
-	// hack off the "gb" (seems to hack off the "/gb")
-	//*a = '\0';
-	// don't hack off the "/gb" just the "gb"
-	arg[alen] = '\0';
-
-	// get cwd which is only relevant to us if arg starts 
-	// with . at this point
-	static char s_cwdBuf[1025];
-	getcwd ( s_cwdBuf , 1020 );
-	char *end = s_cwdBuf + strlen(s_cwdBuf);
-	// make sure that shit ends in /
-	int32_t len=strlen(s_cwdBuf);
-	if( len == sizeof(s_cwdBuf) ) {
-		len--;
-	}
-	if ( !len || s_cwdBuf[len-1] != '/' ) {
-		s_cwdBuf[len] = '/';
-		s_cwdBuf[len+1] = '\0';
-		end++;
-	}
-
-	// if "arg" is a RELATIVE path then append it
-	if ( arg[0]!='/' ) {
-		if ( arg[0]=='.' && arg[1]=='/' ) {
-			gbmemcpy ( end , arg+2 , alen -2 );
-			end += alen - 2;
-		}
-		else {
-			gbmemcpy ( end , arg , alen );
-			end += alen;
-		}
-		*end = '\0';
-	}
-	// if our path started with / then it was absolute...
-	else {
-		strncpy(s_cwdBuf,arg,alen);
-		s_cwdBuf[alen]='\0';
-	}
-
-	// make sure it ends in / for consistency
-	int32_t clen = strlen(s_cwdBuf);
-	if ( clen && s_cwdBuf[clen-1] != '/' ) {
-		s_cwdBuf[clen-1] = '/';
-		s_cwdBuf[clen] = '\0';
-		clen--;
-	}
-
-	// ensure 'gb' binary exists in that dir. 
-	// binaryCmd is usually gb but use this just in case
-	char *ss = arg2;
-	char *binaryCmd = arg2 + strlen(arg2) - 1;
-	for ( ; binaryCmd > ss && binaryCmd[-1] && binaryCmd[-1] != '/' ; binaryCmd-- );
-	File fff;
-	fff.set (s_cwdBuf,binaryCmd);
-
-	// assume it is in the usual spot
-	if ( fff.doesExist() ) return s_cwdBuf;
-
-	// try just "gb" as binary
-	fff.set(s_cwdBuf,"gb");
-	if ( fff.doesExist() ) return s_cwdBuf;
-
-	// if nothing is found resort to the default location
-	return "/var/gigablast/data0/";
+	slash[1] = '\0';
+	return s_buf;
 }
+
 
 ///////
 //
