@@ -3461,8 +3461,8 @@ checkNextRule:
 			// make it point to the priority
 			float b = atof(s);
 			// compare
-			if ( sign == SIGN_EQ && a != b ) continue;
-			if ( sign == SIGN_NE && a == b ) continue;
+			if ( sign == SIGN_EQ && !almostEqualFloat(a, b) ) continue;
+			if ( sign == SIGN_NE && almostEqualFloat(a, b) ) continue;
 			if ( sign == SIGN_GT && a <= b ) continue;
 			if ( sign == SIGN_LT && a >= b ) continue;
 			if ( sign == SIGN_GE && a <  b ) continue;
