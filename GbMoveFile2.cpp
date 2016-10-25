@@ -28,6 +28,6 @@ int moveFile2Phase2(const char *src, const char *dst)
 	if(access(dst,F_OK)!=0)
 		return -1; //something has gone terribly wrong
 
-	return unlink(dst);
+	return unlink(src);
 }
 
