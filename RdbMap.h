@@ -91,8 +91,8 @@ class RdbMap {
 		return m_file.rename ( newMapFilename, NULL, true );
 	}
 
-	bool rename ( const char *newMapFilename, void (* callback)(void *state) , void *state, bool force = false ) {
-		return m_file.rename ( newMapFilename , callback , state, force );
+	bool rename ( const char *newMapFilename, void (* callback)(void *state) , void *state) {
+		return m_file.rename(newMapFilename , callback , state, false);
 	}
 
 	const char *getFilename() const { return m_file.getFilename(); }
