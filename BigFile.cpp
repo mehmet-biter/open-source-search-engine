@@ -1423,8 +1423,7 @@ bool BigFile::unlinkRename(const char *newBaseFilename, int32_t part,
 	if ( newBaseFilename ) {
 		// well, now Rdb.cpp's moveToTrash() moves an old rdb file
 		// into the trash subdir, so we must preserve the full path
-		const char *s ;
-		while( (s=strchr(newBaseFilename,'/'))) {
+		if(const char *s = strrchr(newBaseFilename,'/')) {
 			newBaseFilename = s+1;
 		}
 
