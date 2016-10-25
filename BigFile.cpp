@@ -1291,26 +1291,6 @@ bool BigFile::rename(const char *newBaseFilename, const char *newBaseFilenameDir
 		newBaseFilename = s+1;
 	}
 	
-	m_newBaseFilename.reset();
-	m_newBaseFilenameDir.reset();
-
-	m_newBaseFilename.setLabel("nbfn");
-	m_newBaseFilenameDir.setLabel("nbfnd");
-
-	if(!m_newBaseFilename.safeStrcpy(newBaseFilename)) {
-		log(LOG_ERROR, "%s:%s:%d: set m_newBaseFilename failed", __FILE__, __func__, __LINE__);
-		logAllData(LOG_ERROR);
-		return false;
-	}
-
-	if(!m_newBaseFilenameDir.safeStrcpy(newBaseFilenameDir)) {
-		log(LOG_ERROR, "%s:%s:%d: set m_newBaseFilenameDir failed", __FILE__, __func__, __LINE__);
-		logAllData(LOG_ERROR);
-		return false;
-	}
-	// in case newBaseFilenameDir was NULL
-	m_newBaseFilenameDir.nullTerm();
-	
 	//phase 1: link or copy
 	bool anyErrors = false;
 	int saved_errno;
@@ -1318,7 +1298,7 @@ bool BigFile::rename(const char *newBaseFilename, const char *newBaseFilenameDir
 		if(File *f = getFile2(i)) {
 			// . get the new full name for this file based on m_dir and m_baseFilename
 			char newFilename[1024];
-			makeFilename_r(m_newBaseFilename.getBufStart(), m_newBaseFilenameDir.getBufStart(), i, newFilename, sizeof(newFilename));
+			makeFilename_r(newBaseFilename, newBaseFilenameDir, i, newFilename, sizeof(newFilename));
 			
 			if(!f->movePhase1(newFilename)) {
 				anyErrors = true;
@@ -1335,7 +1315,7 @@ bool BigFile::rename(const char *newBaseFilename, const char *newBaseFilenameDir
 		for(int32_t i = 0; i < m_maxParts; i++) {
 			if(getFile2(i)) {
 				char newFilename[1024];
-				makeFilename_r(m_newBaseFilename.getBufStart(), m_newBaseFilenameDir.getBufStart(), i, newFilename, sizeof(newFilename));
+				makeFilename_r(newBaseFilename, newBaseFilenameDir, i, newFilename, sizeof(newFilename));
 				::unlink(newFilename);
 			}
 		}
@@ -1348,7 +1328,7 @@ bool BigFile::rename(const char *newBaseFilename, const char *newBaseFilenameDir
 		if(File *f = getFile2(i)) {
 			// . get the new full name for this file based on m_dir and m_baseFilename
 			char newFilename[1024];
-			makeFilename_r(m_newBaseFilename.getBufStart(), m_newBaseFilenameDir.getBufStart(), i, newFilename, sizeof(newFilename));
+			makeFilename_r(newBaseFilename, newBaseFilenameDir, i, newFilename, sizeof(newFilename));
 			
 			if(!f->movePhase2(newFilename)) {
 				log(LOG_ERROR,"movep2(%s,%s) failed wit errno=%d (%s)", f->getFilename(), newFilename, saved_errno, strerror(saved_errno));
