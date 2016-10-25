@@ -1262,7 +1262,7 @@ bool BigFile::unlink() {
 
 
 bool BigFile::move(const char *newDir) {
-	return rename(m_baseFilename.getBufStart(), newDir);
+	return rename(m_baseFilename.getBufStart(), newDir, false);
 }
 
 
