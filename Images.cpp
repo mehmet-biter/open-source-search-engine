@@ -797,7 +797,7 @@ bool Images::makeThumb ( ) {
 	// do not let UdpServer free the reply, we own it now
 	//slot->m_readBuf = NULL;
 
-	if ( ! m_imgReply || m_imgReplyLen == 0 ) {
+	if ( m_imgReplyLen == 0 ) {
 		log( LOG_DEBUG, "image: Returned empty image reply!" );
 		g_errno = EBADIMG;
 		return true;
