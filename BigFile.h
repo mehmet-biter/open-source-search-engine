@@ -264,8 +264,8 @@ private:
 			    int32_t  part                        ,
 			    void (* callback) ( void *state ) ,
 			    void *state                       ,
-			    const char *newBaseFilenameDir = NULL,
-				bool force = false );
+			    const char *newBaseFilenameDir,
+			    bool force);
 	//job/thread worker functions helping unlinkrename()
 	static void renameWrapper(void *state);
 	void renameWrapper(File *f, int32_t i);
