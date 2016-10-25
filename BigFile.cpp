@@ -1540,39 +1540,11 @@ bool BigFile::unlinkRename(const char *newBaseFilename, int32_t part,
 		m_state    = state;
 
 		// . we spawn the thread here now
-		// . returns true on successful spawning
-		// . we can't make a disk thread cuz Threads.cpp checks its
-		//   FileState member for readSize for thread throttling
-		if ( g_jobScheduler.submit(startRoutine, doneRoutine, job_state, thread_type_unlink, 1/*niceness*/) ) {
-			logTrace( g_conf.m_logTraceBigFile, "Thread function called OK" );
-			continue;
+		if( !g_jobScheduler.submit(startRoutine, doneRoutine, job_state, thread_type_unlink, 1/*niceness*/) ) {
+			// otherwise, thread spawn failed, do it blocking then
+			log( LOG_INFO, "disk: Failed to launch unlink/rename thread for %s, part=%" PRId32"/%" PRId32".", f->getFilename(),i,m_part);
+			return false;
 		}
-
-		// otherwise, thread spawn failed, do it blocking then
-		log( LOG_INFO, "disk: Failed to launch unlink/rename thread for %s. Doing blocking unlink. "
-				"part=%" PRId32"/%" PRId32". This will hurt performance.", f->getFilename(),i,m_part);
-
-		// log these for now, remove later
-		log(LOG_DEBUG,"disk: Unlinking/renaming %s without thread.", f->getFilename());
-
-		// before we call doneRoutine(), we must NULLify the callback 
-		m_callback = NULL;
-
-		// clear errno, cause startRoutine() may set it
-		errno = 0;
-		
-		// these are normally called from a thread
-		startRoutine ( job_state );
-		
-		// copy errno over to g_errno
-		if ( errno ) {
-			g_errno = errno;
-		}
-			
-		// wrap it up
-		doneRoutine  ( job_state , job_exit_normal );
-
-		// don't delete job_state (already deleted in doneRoutine)
 	}
 
 	// if one blocked, we block, but never return false if !useThread
