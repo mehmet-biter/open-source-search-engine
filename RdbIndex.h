@@ -32,7 +32,7 @@ public:
 	}
 
 	bool rename(const char *newIndexFilename, void (*callback)(void *state), void *state) {
-		return m_file.rename(newIndexFilename, callback, state, false);
+		return m_file.rename(newIndexFilename, callback, state);
 	}
 
 	const char *getFilename() const { return m_file.getFilename(); }

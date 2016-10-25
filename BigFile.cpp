@@ -1351,10 +1351,10 @@ bool BigFile::unlink(void (*callback)(void *state), void *state) {
 }
 
 
-bool BigFile::rename(const char *newBaseFilename, void (*callback)(void *state), void *state, bool force) {
+bool BigFile::rename(const char *newBaseFilename, void (*callback)(void *state), void *state) {
 	logTrace( g_conf.m_logTraceBigFile, "BEGIN. filename [%s] newBaseFilename [%s]", getFilename(), newBaseFilename);
 
-	bool rc=unlinkRename(newBaseFilename, -1, callback, state, NULL, force);
+	bool rc=unlinkRename(newBaseFilename, -1, callback, state, NULL, false);
 	// rc indicates blocked/unblocked
 	
 	logTrace( g_conf.m_logTraceBigFile, "END. returning [%s]", rc?"true":"false");

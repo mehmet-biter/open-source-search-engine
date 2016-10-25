@@ -92,7 +92,7 @@ class RdbMap {
 	}
 
 	bool rename ( const char *newMapFilename, void (* callback)(void *state) , void *state) {
-		return m_file.rename(newMapFilename , callback , state, false);
+		return m_file.rename(newMapFilename , callback , state);
 	}
 
 	const char *getFilename() const { return m_file.getFilename(); }

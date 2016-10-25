@@ -1202,7 +1202,7 @@ void RdbBase::unlinkDone() {
 	    m_fileInfo[x].m_file->getFilename(), fs, newName);
 
 	// rename it, this may block
-	if ( ! m_fileInfo[x].m_file->rename (m_fileInfo[a].m_file->getFilename(), renameDoneWrapper,this, false) ) {
+	if ( ! m_fileInfo[x].m_file->rename (m_fileInfo[a].m_file->getFilename(), renameDoneWrapper,this) ) {
 		m_numThreads++;
 	}
 

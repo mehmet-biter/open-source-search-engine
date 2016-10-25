@@ -197,7 +197,7 @@ class BigFile {
 	// . they set g_errno on error
 	bool unlink   ( void (* callback) ( void *state ) , 
 		        void *state ) ;
-	bool rename(const char *newBaseFilename, void (* callback)(void *state), void *state, bool force);
+	bool rename(const char *newBaseFilename, void (* callback)(void *state), void *state);
 	bool unlinkPart ( int32_t part , void (* callback) ( void *state ) , void *state ) ;
 
 	// closes all part files
