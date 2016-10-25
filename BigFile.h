@@ -270,7 +270,6 @@ private:
 	// . sets g_errno on error
 	bool unlinkRename ( const char *newBaseFilename,
 			    int32_t  part                        ,
-			    bool  useThread                   ,
 			    void (* callback) ( void *state ) ,
 			    void *state                       ,
 			    const char *newBaseFilenameDir = NULL,

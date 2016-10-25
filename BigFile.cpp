@@ -1412,7 +1412,7 @@ bool BigFile::unlinkPart(int32_t part) {
 bool BigFile::unlink(void (*callback)(void *state), void *state) {
 	logTrace( g_conf.m_logTraceBigFile, "BEGIN." );
 
-	bool rc = unlinkRename ( NULL , -1 , true, callback , state );
+	bool rc = unlinkRename(NULL, -1, callback, state);
 	// rc indicates blocked/unblocked
 	
 	logTrace( g_conf.m_logTraceBigFile, "END. returning [%s]", rc?"true":"false");
@@ -1423,7 +1423,7 @@ bool BigFile::unlink(void (*callback)(void *state), void *state) {
 bool BigFile::rename(const char *newBaseFilename, void (*callback)(void *state), void *state, bool force) {
 	logTrace( g_conf.m_logTraceBigFile, "BEGIN. filename [%s] newBaseFilename [%s]", getFilename(), newBaseFilename);
 
-	bool rc=unlinkRename ( newBaseFilename, -1, true, callback, state, NULL, force );
+	bool rc=unlinkRename(newBaseFilename, -1, callback, state, NULL, force);
 	// rc indicates blocked/unblocked
 	
 	logTrace( g_conf.m_logTraceBigFile, "END. returning [%s]", rc?"true":"false");
@@ -1435,7 +1435,7 @@ bool BigFile::unlinkPart(int32_t part, void (*callback)(void *state), void *stat
 	logTrace( g_conf.m_logTraceBigFile, "BEGIN. part %" PRId32, part);
 
 	// set return value to false if we blocked somewhere
-	bool rc = unlinkRename ( NULL, part, true, callback, state );
+	bool rc = unlinkRename(NULL, part, callback, state);
 	// rc indicates blocked/unblocked
 	
 	logTrace( g_conf.m_logTraceBigFile, "END. returning [%s]", rc?"true":"false");
@@ -1468,7 +1468,7 @@ struct UnlinkRenameState {
  * @return false if blocked, true otherwise
  */
 // . sets g_errno on error
-bool BigFile::unlinkRename(const char *newBaseFilename, int32_t part, bool useThread,
+bool BigFile::unlinkRename(const char *newBaseFilename, int32_t part,
                            void (*callback)(void *state), void *state, const char *newBaseFilenameDir, bool force) {
 	logTrace( g_conf.m_logTraceBigFile, "BEGIN" );
 
@@ -1608,25 +1608,22 @@ bool BigFile::unlinkRename(const char *newBaseFilename, int32_t part, bool useTh
 
 		mnew(job_state, sizeof(UnlinkRenameState), "UnlinkRenameState");
 
-		// use thread?
-		if ( useThread ) {
-			// save callback for when all parts are unlinked or renamed
-			m_callback = callback;
-			m_state    = state;
+		// save callback for when all parts are unlinked or renamed
+		m_callback = callback;
+		m_state    = state;
 
-			// . we spawn the thread here now
-			// . returns true on successful spawning
-			// . we can't make a disk thread cuz Threads.cpp checks its
-			//   FileState member for readSize for thread throttling
-			if ( g_jobScheduler.submit(startRoutine, doneRoutine, job_state, thread_type_unlink, 1/*niceness*/) ) {
-				logTrace( g_conf.m_logTraceBigFile, "Thread function called OK" );
-				continue;
-			}
-
-			// otherwise, thread spawn failed, do it blocking then
-			log( LOG_INFO, "disk: Failed to launch unlink/rename thread for %s. Doing blocking unlink. "
-					"part=%" PRId32"/%" PRId32". This will hurt performance.", f->getFilename(),i,m_part);
+		// . we spawn the thread here now
+		// . returns true on successful spawning
+		// . we can't make a disk thread cuz Threads.cpp checks its
+		//   FileState member for readSize for thread throttling
+		if ( g_jobScheduler.submit(startRoutine, doneRoutine, job_state, thread_type_unlink, 1/*niceness*/) ) {
+			logTrace( g_conf.m_logTraceBigFile, "Thread function called OK" );
+			continue;
 		}
+
+		// otherwise, thread spawn failed, do it blocking then
+		log( LOG_INFO, "disk: Failed to launch unlink/rename thread for %s. Doing blocking unlink. "
+				"part=%" PRId32"/%" PRId32". This will hurt performance.", f->getFilename(),i,m_part);
 
 		// log these for now, remove later
 		log(LOG_DEBUG,"disk: Unlinking/renaming %s without thread.", f->getFilename());
@@ -1652,7 +1649,7 @@ bool BigFile::unlinkRename(const char *newBaseFilename, int32_t part, bool useTh
 	}
 
 	// if one blocked, we block, but never return false if !useThread
-	if ( m_numThreads > 0 && useThread ) {
+	if ( m_numThreads > 0 ) {
 		logTrace( g_conf.m_logTraceBigFile, "m_numThreads [%" PRId32"] && useThread", m_numThreads );
 
 		return false;
