@@ -1300,7 +1300,7 @@ bool BigFile::rename(const char *newBaseFilename, const char *newBaseFilenameDir
 			if(!f->movePhase1(newFilename)) {
 				anyErrors = true;
 				saved_errno = errno;
-				log(LOG_ERROR,"movep1(%s,%s) failed wit errno=%d (%s)", f->getFilename(), newFilename, saved_errno, strerror(saved_errno));
+				log(LOG_ERROR,"movep1(%s,%s) failed with errno=%d (%s)", f->getFilename(), newFilename, saved_errno, strerror(saved_errno));
 				break;
 			}
 		}
@@ -1328,7 +1328,7 @@ bool BigFile::rename(const char *newBaseFilename, const char *newBaseFilenameDir
 			makeFilename_r(newBaseFilename, newBaseFilenameDir, i, newFilename, sizeof(newFilename));
 			
 			if(!f->movePhase2(newFilename)) {
-				log(LOG_ERROR,"movep2(%s,%s) failed wit errno=%d (%s)", f->getFilename(), newFilename, saved_errno, strerror(saved_errno));
+				log(LOG_ERROR,"movep2(%s,%s) failed with errno=%d (%s)", f->getFilename(), newFilename, errno, strerror(errno));
 				gbshutdownAbort(true);
 			}
 		}
