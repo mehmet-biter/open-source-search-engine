@@ -311,8 +311,8 @@ bool BigFile::addPart ( int32_t n ) {
 
 	// init using tiny buf to save a malloc for small files
 	if ( m_filePtrsBuf.getCapacity() == 0 ) {
-		memset (m_tinyBuf,0,8);
-		m_filePtrsBuf.setBuf ( m_tinyBuf,8,0,false);
+		memset (m_tinyBuf,0,sizeof(m_tinyBuf));
+		m_filePtrsBuf.setBuf ( m_tinyBuf,sizeof(m_tinyBuf),0,false);
 		m_filePtrsBuf.setLength ( m_filePtrsBuf.getCapacity() );
 	}
 

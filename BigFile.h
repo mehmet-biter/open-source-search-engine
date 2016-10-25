@@ -239,7 +239,7 @@ private:
 	// number of parts remaining to be unlinked/renamed
 	int32_t   m_partsRemaining;
 
-	char m_tinyBuf[8];
+	char m_tinyBuf[sizeof(File*)]; //used for File* pointers for small files
 
 	// to hold the array of Files
 	SafeBuf m_filePtrsBuf;
