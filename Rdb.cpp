@@ -923,7 +923,7 @@ bool Rdb::loadTree ( ) {
 			} else {
 				char newFilename[256];
 				sprintf(newFilename,"%s-%" PRId32".old", filename, (int32_t)getTime());
-				file.rename(newFilename);
+				file.rename(newFilename,NULL,false);
 				m_tree.reset();
 			}
 			file.close();

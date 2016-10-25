@@ -188,7 +188,7 @@ class BigFile {
 	// . doesn't change directory, just the base filename
 	// . use m_dir if newBaseFilenameDir is NULL
 	// . force = rename even if newFile exist
-	bool rename ( const char *newBaseFilename, const char *newBaseFilenameDir=NULL, bool force=false ) ;
+	bool rename(const char *newBaseFilename, const char *newBaseFilenameDir, bool force);
 
 	bool move ( const char *newDir );
 

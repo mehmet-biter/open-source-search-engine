@@ -261,7 +261,7 @@ bool RdbBase::moveToTrash(const char *dstDir) {
 		{
 			BigFile *f = m_fileInfo[i].m_map->getFile();
 			logf(LOG_INFO,"repair: Renaming %s to %s%s", f->getFilename(), dstDir, f->getFilename());
-			if ( ! f->rename ( f->getFilename(), dstDir ) ) {
+			if ( ! f->rename(f->getFilename(),dstDir,false) ) {
 				log( LOG_WARN, "repair: Moving file had error: %s.", mstrerror( errno ) );
 				return false;
 			}
@@ -272,7 +272,7 @@ bool RdbBase::moveToTrash(const char *dstDir) {
 			BigFile *f = m_fileInfo[i].m_index->getFile();
 			if (f->doesExist()) {
 				logf(LOG_INFO, "repair: Renaming %s to %s%s", f->getFilename(), dstDir, f->getFilename());
-				if (!f->rename(f->getFilename(), dstDir)) {
+				if (!f->rename(f->getFilename(),dstDir,false)) {
 					log(LOG_WARN, "repair: Moving file had error: %s.", mstrerror(errno));
 					return false;
 				}
@@ -283,7 +283,7 @@ bool RdbBase::moveToTrash(const char *dstDir) {
 		{
 			BigFile *f = m_fileInfo[i].m_file;
 			logf(LOG_INFO,"repair: Renaming %s to %s%s", f->getFilename(), dstDir, f->getFilename());
-			if ( ! f->rename ( f->getFilename(), dstDir ) ) {
+			if ( ! f->rename(f->getFilename(),dstDir,false) ) {
 				log( LOG_WARN, "repair: Moving file had error: %s.", mstrerror( errno ) );
 				return false;
 			}
@@ -360,7 +360,7 @@ bool RdbBase::removeRebuildFromFilename ( BigFile *f ) {
 	// now rename this file
 	logf(LOG_INFO,"repair: Renaming %s to %s",
 	     f->getFilename(),buf);
-	if ( ! f->rename ( buf ) ) {
+	if ( ! f->rename(buf,NULL,false) ) {
 		log( LOG_WARN, "repair: Rename to %s failed", buf );
 		return false;
 	}
@@ -570,7 +570,7 @@ bool RdbBase::fixNonfirstSpiderdbFiles() {
 	// rename it to like "spiderdb.0001.dat"
 	SafeBuf newName;
 	newName.safePrintf("%s/%s0001.dat",m_collectionDirName,m_dbname);
-	bf.rename ( newName.getBufStart() );
+	bf.rename(newName.getBufStart(),NULL,false);
 
 	// and delete the old map
 	SafeBuf oldMap;
@@ -586,7 +586,7 @@ bool RdbBase::fixNonfirstSpiderdbFiles() {
 	cmf.set(m_collectionDirName, curMap.getBufStart());
 
 	// rename to spiderdb0081.map to spiderdb0001.map
-	cmf.rename ( oldMap.getBufStart() );
+	cmf.rename(oldMap.getBufStart(), NULL, false);
 
 	if( m_useIndexFile ) {
 		// and delete the old index
@@ -603,7 +603,7 @@ bool RdbBase::fixNonfirstSpiderdbFiles() {
 		cif.set(m_collectionDirName, curIndex.getBufStart());
 
 		// rename to spiderdb0081.map to spiderdb0001.map
-		cif.rename ( oldIndex.getBufStart() );
+		cif.rename(oldIndex.getBufStart(),NULL,false);
 	}
 
 	// replace that first file then
@@ -1302,7 +1302,7 @@ void RdbBase::renameFile( int32_t currentFileIdx, int32_t newFileId, int32_t new
 	}
 
 	log(LOG_INFO, "merge: renaming final merged file %s", fbuf);
-	m_fileInfo[currentFileIdx].m_file->rename(fbuf);
+	m_fileInfo[currentFileIdx].m_file->rename(fbuf,NULL,false);
 
 	m_fileInfo[currentFileIdx].m_fileId = newFileId;
 	m_fileInfo[currentFileIdx].m_fileId2 = newFileId2;
