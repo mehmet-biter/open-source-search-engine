@@ -2645,7 +2645,7 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 		goto changed; 
 	}
 	else if ( t == TYPE_FLOAT ) {
-		if( fromRequest && *(float *)(THIS + m->m_off + 4*j) == (s ? (float)atof(s) : 0) ) {
+		if( fromRequest && almostEqualFloat(*(float *)(THIS + m->m_off + 4*j), (s ? (float)atof(s) : 0)) ) {
 			return;
 		}
 		// if changed within .00001 that is ok too, do not count
@@ -2662,7 +2662,7 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 		goto changed; 
 	}
 	else if ( t == TYPE_DOUBLE ) {
-		if( fromRequest && *(double *)(THIS + m->m_off + 4*j) == ( s ? (double)atof(s) : 0) ) {
+		if( fromRequest && almostEqualFloat(*(double *)(THIS + m->m_off + 4*j), ( s ? (double)atof(s) : 0)) ) {
 			return;
 		}
 		if ( fromRequest ) {
