@@ -192,10 +192,6 @@ class BigFile {
 
 	bool move ( const char *newDir );
 
-	// . returns false and sets g_errno on failure
-	// . chop only parts LESS THAN "part"
-	bool unlinkPart ( int32_t part );
-
 	// . these here all use threads and call your callback when done
 	// . they return false if blocked, true otherwise
 	// . they set g_errno on error
