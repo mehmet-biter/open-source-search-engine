@@ -1312,7 +1312,7 @@ void RdbBase::renameFile( int32_t currentFileIdx, int32_t newFileId, int32_t new
 	//     next start up, map file will be regenerated. means we now have both even & odd map files
 	sprintf(fbuf, "%s%04" PRId32".map", m_dbname, newFileId);
 	log(LOG_INFO, "merge: renaming final merged file %s", fbuf);
-	m_fileInfo[currentFileIdx].m_map->rename(fbuf, true);
+	m_fileInfo[currentFileIdx].m_map->rename(fbuf);
 
 	if (m_useIndexFile) {
 		sprintf(fbuf, "%s%04" PRId32".idx", m_dbname, newFileId);

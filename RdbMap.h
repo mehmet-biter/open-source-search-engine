@@ -87,8 +87,8 @@ class RdbMap {
 		   int32_t fixedDataSize , bool useHalfKeys , char keySize ,
 		   int32_t pageSize );
 
-	bool rename ( const char *newMapFilename, bool force = false ) {
-		return m_file.rename ( newMapFilename, NULL, force );
+	bool rename ( const char *newMapFilename ) {
+		return m_file.rename ( newMapFilename, NULL, true );
 	}
 
 	bool rename ( const char *newMapFilename, void (* callback)(void *state) , void *state, bool force = false ) {
