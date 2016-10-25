@@ -187,8 +187,7 @@ class BigFile {
 	// . renames ALL parts too
 	// . doesn't change directory, just the base filename
 	// . use m_dir if newBaseFilenameDir is NULL
-	// . force = rename even if newFile exist
-	bool rename(const char *newBaseFilename, const char *newBaseFilenameDir, bool force);
+	bool rename(const char *newBaseFilename, const char *newBaseFilenameDir);
 
 	bool move ( const char *newDir );
 
@@ -264,8 +263,7 @@ private:
 			    int32_t  part                        ,
 			    void (* callback) ( void *state ) ,
 			    void *state                       ,
-			    const char *newBaseFilenameDir,
-			    bool force);
+			    const char *newBaseFilenameDir);
 	//job/thread worker functions helping unlinkrename()
 	static void renameWrapper(void *state);
 	void renameWrapper(File *f, int32_t i);

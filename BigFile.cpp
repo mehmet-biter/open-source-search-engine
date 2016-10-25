@@ -1262,11 +1262,11 @@ bool BigFile::unlink() {
 
 
 bool BigFile::move(const char *newDir) {
-	return rename(m_baseFilename.getBufStart(), newDir, false);
+	return rename(m_baseFilename.getBufStart(), newDir);
 }
 
 
-bool BigFile::rename(const char *newBaseFilename, const char *newBaseFilenameDir, bool force ) {
+bool BigFile::rename(const char *newBaseFilename, const char *newBaseFilenameDir) {
 	logTrace( g_conf.m_logTraceBigFile, "BEGIN. newBaseFilename [%s] newBaseFilenameDir [%s]", newBaseFilename, newBaseFilenameDir);
 	
 	if(g_conf.m_readOnlyMode) {
@@ -1297,7 +1297,6 @@ bool BigFile::rename(const char *newBaseFilename, const char *newBaseFilenameDir
 			char newFilename[1024];
 			makeFilename_r(newBaseFilename, newBaseFilenameDir, i, newFilename, sizeof(newFilename));
 			
-			f->setForceRename(force);
 			if(!f->movePhase1(newFilename)) {
 				anyErrors = true;
 				saved_errno = errno;
@@ -1343,7 +1342,7 @@ bool BigFile::rename(const char *newBaseFilename, const char *newBaseFilenameDir
 bool BigFile::unlink(void (*callback)(void *state), void *state) {
 	logTrace( g_conf.m_logTraceBigFile, "BEGIN." );
 
-	bool rc = unlinkRename(NULL, -1, callback, state, NULL, false);
+	bool rc = unlinkRename(NULL, -1, callback, state, NULL);
 	// rc indicates blocked/unblocked
 	
 	logTrace( g_conf.m_logTraceBigFile, "END. returning [%s]", rc?"true":"false");
@@ -1354,7 +1353,7 @@ bool BigFile::unlink(void (*callback)(void *state), void *state) {
 bool BigFile::rename(const char *newBaseFilename, void (*callback)(void *state), void *state) {
 	logTrace( g_conf.m_logTraceBigFile, "BEGIN. filename [%s] newBaseFilename [%s]", getFilename(), newBaseFilename);
 
-	bool rc=unlinkRename(newBaseFilename, -1, callback, state, NULL, false);
+	bool rc=unlinkRename(newBaseFilename, -1, callback, state, NULL);
 	// rc indicates blocked/unblocked
 	
 	logTrace( g_conf.m_logTraceBigFile, "END. returning [%s]", rc?"true":"false");
@@ -1366,7 +1365,7 @@ bool BigFile::unlinkPart(int32_t part, void (*callback)(void *state), void *stat
 	logTrace( g_conf.m_logTraceBigFile, "BEGIN. part %" PRId32, part);
 
 	// set return value to false if we blocked somewhere
-	bool rc = unlinkRename(NULL, part, callback, state, NULL, false);
+	bool rc = unlinkRename(NULL, part, callback, state, NULL);
 	// rc indicates blocked/unblocked
 	
 	logTrace( g_conf.m_logTraceBigFile, "END. returning [%s]", rc?"true":"false");
@@ -1395,12 +1394,11 @@ struct UnlinkRenameState {
  * @param callback function to call when operation is done
  * @param state state to be passed to callback function
  * @param newBaseFilenameDir if NULL, defaults to m_dir, the current dir in which this file already exists
- * @param force should rename be done even if destination file exists
  * @return false if blocked, true otherwise
  */
 // . sets g_errno on error
 bool BigFile::unlinkRename(const char *newBaseFilename, int32_t part,
-                           void (*callback)(void *state), void *state, const char *newBaseFilenameDir, bool force) {
+                           void (*callback)(void *state), void *state, const char *newBaseFilenameDir) {
 	logTrace( g_conf.m_logTraceBigFile, "BEGIN" );
 
 	// fail in read only mode
@@ -1522,8 +1520,6 @@ bool BigFile::unlinkRename(const char *newBaseFilename, int32_t part,
 			startRoutine = renameWrapper;
 			doneRoutine  = doneRenameWrapper;
 		}
-
-		f->setForceRename( force );
 
 		// assume thread launched, doneRoutine() will decrement these
 		m_numThreads++; 

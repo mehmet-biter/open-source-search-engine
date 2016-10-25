@@ -85,7 +85,6 @@ File::File ( ) {
 	m_closedIt	= false;
 	m_closeCount = 0;
 	m_flags = 0;
-	m_forceRename = false;
 
 	pthread_mutex_init(&m_mtxFdManipulation,NULL);
 	
@@ -143,29 +142,24 @@ void File::set ( const char *filename ) {
 }
 
 bool File::rename ( const char *newFilename ) {
-	if ( m_forceRename || ::access( newFilename, F_OK ) != 0 ) {
-		// suppress error (we will catch it in rename anyway)
-		errno = 0;
-
-		// this returns 0 on success
-		if ( ::rename( getFilename(), newFilename ) != 0 ) {
-			// reset errno if file does not exist
-			if ( errno == ENOENT ) {
-				log( LOG_ERROR, "%s:%s:%d: disk: file [%s] does not exist.", __FILE__, __func__, __LINE__, getFilename() );
-				errno = 0;
-			} else {
-				log( LOG_ERROR, "%s:%s:%d: disk: rename [%s] to [%s]: [%s]",
-				     __FILE__, __func__, __LINE__, getFilename(), newFilename, mstrerror( errno ) );
-			}
-
-			logTrace( g_conf.m_logTraceFile, "END" );
-			return false;
-		}
-	} else {
+	if ( ::access(newFilename, F_OK) == 0 ) {
 		// new file exists
 		log( LOG_ERROR, "%s:%s:%d: disk: trying to rename [%s] to [%s] which exists.", __FILE__, __func__, __LINE__,
 		     getFilename(), newFilename );
-		gbshutdownAbort( true );
+		gbshutdownLogicError();
+	}
+
+	if ( ::rename(getFilename(), newFilename) != 0 ) {
+		// reset errno if file does not exist
+		if ( errno == ENOENT ) {
+			log( LOG_ERROR, "%s:%s:%d: disk: file [%s] does not exist.", __FILE__, __func__, __LINE__, getFilename() );
+			errno = 0;
+		} else {
+			log( LOG_ERROR, "%s:%s:%d: disk: rename [%s] to [%s]: [%s]",
+			     __FILE__, __func__, __LINE__, getFilename(), newFilename, mstrerror( errno ) );
+		}
+		logTrace( g_conf.m_logTraceFile, "END" );
+		return false;
 	}
 
 	// set to our new name
@@ -176,7 +170,7 @@ bool File::rename ( const char *newFilename ) {
 
 
 bool File::movePhase1(const char *newFilename) {
-	if(!m_forceRename && ::access( newFilename,F_OK) == 0) {
+	if(::access( newFilename,F_OK) == 0) {
 		log(LOG_ERROR, "%s:%s:%d: disk: trying to rename [%s] to [%s] which exists.", __FILE__, __func__, __LINE__,
 		    getFilename(), newFilename);
 		gbshutdownLogicError();

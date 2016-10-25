@@ -28,7 +28,7 @@ public:
 	void set(const char *dir, const char *indexFilename, int32_t fixedDataSize, bool useHalfKeys, char keySize, rdbid_t rdbId);
 
 	bool rename(const char *newIndexFilename) {
-		return m_file.rename(newIndexFilename, NULL, true);
+		return m_file.rename(newIndexFilename, NULL);
 	}
 
 	bool rename(const char *newIndexFilename, void (*callback)(void *state), void *state) {

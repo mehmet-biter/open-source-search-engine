@@ -48,10 +48,6 @@ public:
 	// returns false and sets errno on error, returns true on success
 	bool rename ( const char *newFilename );
 
-	void setForceRename( bool forceRename ) {
-		m_forceRename = forceRename;
-	}
-
 	bool movePhase1(const char *newFilename);
 	bool movePhase2(const char *newFilename);
 
@@ -147,8 +143,6 @@ private:
 	bool m_calledOpen;
 	bool m_calledSet;
 
-	bool m_forceRename;
-	
 	pthread_mutex_t m_mtxFdManipulation;
 	bool open_unlocked(int flags, int permissions);
 	bool close_unlocked();
