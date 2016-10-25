@@ -232,8 +232,6 @@ private:
 
 	void (*m_callback)(void *state);
 	void  *m_state;
-	// is the threaded op an unlink? (or rename?)
-	bool   m_isUnlink;
 	int32_t   m_part; // part # to unlink (-1 for all)
 
 	// number of parts remaining to be unlinked/renamed

@@ -97,7 +97,6 @@ BigFile::BigFile () {
 	g_lastDiskReadCompleted = 0;
 
 	// init rest to avoid logging junk
-	m_isUnlink=false;	
 	m_part=-1;
 	m_partsRemaining=-1;
 	memset(m_tinyBuf, 0, sizeof(m_tinyBuf));
@@ -137,7 +136,6 @@ void BigFile::logAllData(int32_t log_type)
 	
 	log(log_type, "m_numThreads...........: %" PRId32, m_numThreads);
 	log(log_type, "m_isClosing............: [%s]", m_isClosing?"true":"false");
-	log(log_type, "m_isUnlink.............: [%s]", m_isUnlink?"true":"false");
 	log(log_type, "m_part.................: %" PRId32, m_part);
 	log(log_type, "m_partsRemaining.......: %" PRId32, m_partsRemaining);
 
@@ -1422,6 +1420,7 @@ bool BigFile::unlinkRename(const char *newBaseFilename, int32_t part,
 	
 	// . is this a rename?
 	// . hack off any directory in newBaseFilename
+	bool isUnlink;
 	if ( newBaseFilename ) {
 		// well, now Rdb.cpp's moveToTrash() moves an old rdb file
 		// into the trash subdir, so we must preserve the full path
@@ -1453,11 +1452,11 @@ bool BigFile::unlinkRename(const char *newBaseFilename, int32_t part,
 		m_newBaseFilenameDir.nullTerm();
 		
 		// set the op flag
-		m_isUnlink = false;
+		isUnlink = false;
 
 		logTrace( g_conf.m_logTraceBigFile, "Rename mode" );
 	} else {
-		m_isUnlink = true;
+		isUnlink = true;
 		logTrace( g_conf.m_logTraceBigFile, "Unlink mode" );
 	}
 
@@ -1479,7 +1478,7 @@ bool BigFile::unlinkRename(const char *newBaseFilename, int32_t part,
 		m_partsRemaining = 1;
 	}
 
-	if (m_isUnlink) {
+	if(isUnlink) {
 		// First mark the files for unlink so no further read-jobs will be submitted for those parts
 		for ( int32_t i = startPartNumber ; i < m_maxParts ; i++ ) {
 			if ( m_part >= 0 && i != m_part )
@@ -1515,7 +1514,7 @@ bool BigFile::unlinkRename(const char *newBaseFilename, int32_t part,
 		}
 
 		// remove it from disk
-		if (  m_isUnlink ) {
+		if(isUnlink) {
 			startRoutine = unlinkWrapper;
 			doneRoutine  = doneUnlinkWrapper;
 		} else {
@@ -1588,7 +1587,7 @@ bool BigFile::unlinkRename(const char *newBaseFilename, int32_t part,
 	}
 	
 	// . if we launched no threads update OUR base filename right now
-	if ( ! m_isUnlink ) {
+	if(!isUnlink) {
 		m_baseFilename.set ( m_newBaseFilename.getBufStart() );
 	}
 		
