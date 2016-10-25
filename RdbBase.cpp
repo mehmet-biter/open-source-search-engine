@@ -1317,7 +1317,7 @@ void RdbBase::renameFile( int32_t currentFileIdx, int32_t newFileId, int32_t new
 	if (m_useIndexFile) {
 		sprintf(fbuf, "%s%04" PRId32".idx", m_dbname, newFileId);
 		log(LOG_INFO, "merge: renaming final merged file %s", fbuf);
-		m_fileInfo[currentFileIdx].m_index->rename(fbuf, true);
+		m_fileInfo[currentFileIdx].m_index->rename(fbuf);
 	}
 }
 

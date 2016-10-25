@@ -27,8 +27,8 @@ public:
 	// set the filename, and if it's fixed data size or not
 	void set(const char *dir, const char *indexFilename, int32_t fixedDataSize, bool useHalfKeys, char keySize, rdbid_t rdbId);
 
-	bool rename(const char *newIndexFilename, bool force = false) {
-		return m_file.rename(newIndexFilename, NULL, force);
+	bool rename(const char *newIndexFilename) {
+		return m_file.rename(newIndexFilename, NULL, true);
 	}
 
 	bool rename(const char *newIndexFilename, void (*callback)(void *state), void *state, bool force = false) {
