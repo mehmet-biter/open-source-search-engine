@@ -1297,6 +1297,7 @@ bool BigFile::rename(const char *newBaseFilename, const char *newBaseFilenameDir
 			char newFilename[1024];
 			makeFilename_r(newBaseFilename, newBaseFilenameDir, i, newFilename, sizeof(newFilename));
 			
+			f->setForceRename(force);
 			if(!f->movePhase1(newFilename)) {
 				anyErrors = true;
 				saved_errno = errno;
