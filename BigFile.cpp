@@ -1286,8 +1286,7 @@ bool BigFile::rename(const char *newBaseFilename, const char *newBaseFilenameDir
 	// . hack off any directory in newBaseFilename
 	// well, now Rdb.cpp's moveToTrash() moves an old rdb file
 	// into the trash subdir, so we must preserve the full path
-	const char *s;
-	while((s=strchr(newBaseFilename,'/'))) {
+	if(const char *s = strrchr(newBaseFilename,'/')) {
 		newBaseFilename = s+1;
 	}
 	
