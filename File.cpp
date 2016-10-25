@@ -189,6 +189,7 @@ bool File::movePhase1(const char *newFilename) {
 bool File::movePhase2(const char *newFilename) {
 	if(moveFile2Phase2(getFilename(), newFilename) != 0)
 		return false;
+	set(newFilename);
 	return true;
 }
 
