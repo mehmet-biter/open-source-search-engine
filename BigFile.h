@@ -224,11 +224,9 @@ class BigFile {
 
 private:
 	// makes the filename of part file #n
-	void makeFilename_r ( char *baseFilename    , 
-			      char *baseFilenameDir ,
-			      int32_t  n               , 
-			      char *buf             ,
-			      int32_t maxBufSize );
+	void makeFilename_r(const char *baseFilename, const char *baseFilenameDir,
+			    int32_t partNum,
+			    char *buf, int32_t maxBufSize) const;
 
 	void removePart ( int32_t i ) ;
 

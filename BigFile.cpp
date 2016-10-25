@@ -419,27 +419,20 @@ bool BigFile::open(int flags) {
 }
 
 // get the filename of the nth file using m_dir & m_baseFilename
-void BigFile::makeFilename_r ( char *baseFilename    , 
-			       char *baseFilenameDir , 
-			       int32_t  n               , 
-			       char *buf             ,
-			       int32_t bufSize ) {
-	char *dir = m_dir.getBufStart();
-	if ( baseFilenameDir && baseFilenameDir[0] ) dir = baseFilenameDir;
+void BigFile::makeFilename_r(const char *baseFilename, const char *baseFilenameDir,
+			     int32_t partNum,
+			     char *buf, int32_t bufSize) const {
+	const char *dir;
+	if(baseFilenameDir && baseFilenameDir[0])
+		dir = baseFilenameDir;
+	else
+		dir = m_dir.getBufStart();
 	int32_t r;
-	// ensure we do not breach the buffer
-	// int32_t dirLen = strlen(dir);
-	// int32_t baseLen = strlen(baseFilename);
-	// int32_t need = dirLen + 1 + baseLen + 1;
-	// if ( need < bufSize ) gbshutdownLogicError();
-	if ( n == 0 ) {
+	if(partNum == 0) {
 		r = snprintf ( buf, bufSize, "%s/%s",dir,baseFilename);
-		if ( r < bufSize ) return;
-		// truncation is bad
-		gbshutdownLogicError();
+	} else {
+		r = snprintf ( buf, bufSize, "%s/%s.part%" PRId32,dir,baseFilename,partNum);
 	}
-	// return if it fit into "buf"
-	r = snprintf ( buf, bufSize, "%s/%s.part%" PRId32,dir,baseFilename,n);
 	if ( r < bufSize ) return;
 	// truncation is bad
 	gbshutdownLogicError();
