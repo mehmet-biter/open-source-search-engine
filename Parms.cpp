@@ -1429,16 +1429,25 @@ bool Parms::printParms2 ( SafeBuf* sb ,
 
 		// get right ptr
 		char *THIS = NULL;
-		if ( m->m_obj == OBJ_CONF )
-			THIS = (char *)&g_conf;
-		if ( m->m_obj == OBJ_COLL ) {
-			THIS = (char *)cr;
-			if ( ! THIS ) continue;
+		switch(m->m_obj) {
+			case OBJ_CONF:
+				THIS = (char *)&g_conf;
+				break;
+			case OBJ_COLL:
+				THIS = (char *)cr;
+				break;
+			case OBJ_GBREQUEST:
+				THIS = (char *)&gr;
+				break;
+			case OBJ_IR:
+				THIS = (char *)&ir;
+				break;
+			//what about OBJ_SI ?
+			default:
+				log(LOG_LOGIC,"Unhandled parameter: %s", m->m_desc ? m->m_desc : "<no description>");
 		}
-		if ( m->m_obj == OBJ_GBREQUEST )
-			THIS = (char *)&gr;
-		if ( m->m_obj == OBJ_IR )
-			THIS = (char *)&ir;
+		if(!THIS)
+			continue;
 		// might have an array, do not exceed the array size
 		int32_t  jend = m->m_max;
 		int32_t  size = jend ;
