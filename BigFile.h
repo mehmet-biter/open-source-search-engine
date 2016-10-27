@@ -300,9 +300,9 @@ private:
 	// oldest of the last modified dates of all the part files
 	time_t m_lastModified;
 
-	// determined in open() override
+	// number of part files that actually exist
 	int       m_numParts;
-	// maximum part #
+	// size of File* array (number of max part + 1)
 	int32_t      m_maxParts;
 
 public:
