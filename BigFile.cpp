@@ -1403,12 +1403,10 @@ bool BigFile::unlink(int32_t part, void (*callback)(void *state), void *state) {
 	// . this should be -1 to unlink all at once
 
 	const int32_t startPartNumber = (part >= 0) ? part : 0;
+	const int32_t endPartNumber = (part >= 0) ? part+1 : m_maxParts;
 
 	// how many parts have we done? is it only 1 to be unlinked?
-	if ( part < 0 )
-		m_partsRemaining = m_maxParts;
-	else
-		m_partsRemaining = 1;
+	m_partsRemaining = endPartNumber - startPartNumber;
 
 	// First mark the files for unlink so no further read-jobs will be submitted for those parts
 	for ( int32_t i = startPartNumber ; i < m_maxParts ; i++ ) {
@@ -1432,12 +1430,7 @@ bool BigFile::unlink(int32_t part, void (*callback)(void *state), void *state) {
 	m_state    = state;
 
 	//then prepare/submit the rename/unlink
-	for ( int32_t i = startPartNumber; i < m_maxParts ; i++ ) {
-		// break out if we should only unlink one part
-		if ( part >= 0 && i != part ) {
-			break;
-		}
-
+	for ( int32_t i = startPartNumber; i < endPartNumber ; i++ ) {
 		// get the ith file to rename/unlink
 		File *f = getFile2(i);
 		if ( ! f ) {
@@ -1540,8 +1533,6 @@ bool BigFile::rename(const char *newBaseFilename,
 	// in case newBaseFilenameDir was NULL
 	m_newBaseFilenameDir.nullTerm();
 
-	const int32_t startPartNumber = 0;
-
 	// how many parts have we done?
 	m_partsRemaining = m_maxParts;
 
@@ -1550,7 +1541,7 @@ bool BigFile::rename(const char *newBaseFilename,
 	m_state    = state;
 
 	//then prepare/submit the rename
-	for ( int32_t i = startPartNumber; i < m_maxParts ; i++ ) {
+	for ( int32_t i = 0; i < m_maxParts ; i++ ) {
 		// get the ith file to rename
 		File *f = getFile2(i);
 		if ( ! f ) {
