@@ -296,6 +296,19 @@ private:
 	// if first char in this dir is 0 then use m_dir
 	SafeBuf m_newBaseFilenameDir ;
 
+	// prevent circular calls to BigFile::close() with this
+	bool m_isClosing;
+
+	mutable int64_t m_fileSize;
+
+	// oldest of the last modified dates of all the part files
+	time_t m_lastModified;
+
+	// determined in open() override
+	int       m_numParts;
+	// maximum part #
+	int32_t      m_maxParts;
+
 public:
 	File *getFile2 ( int32_t n ) { 
 		if ( n >= m_maxParts ) return NULL;
@@ -313,18 +326,8 @@ public:
 
 	bool reset ( );
 
-	// determined in open() override
-	int       m_numParts;
-	// maximum part #
-	int32_t      m_maxParts;
-
-	// prevent circular calls to BigFile::close() with this
-	bool m_isClosing;
-
-	mutable int64_t m_fileSize;
-
-	// oldest of the last modified dates of all the part files
-	time_t m_lastModified;
+	int32_t getMaxParts() const { return m_maxParts; }
+	
 	time_t getLastModifiedTime();
 };
 

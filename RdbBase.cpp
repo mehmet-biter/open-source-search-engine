@@ -741,7 +741,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	}
 
 	// if not a new file sanity check it
-	for ( int32_t j = 0 ; ! isNew && j < f->m_maxParts - 1 ; j++ ) {
+	for ( int32_t j = 0 ; ! isNew && j < f->getMaxParts() - 1 ; j++ ) {
 		// might be headless
 		File *ff = f->getFile2(j);
 		if ( ! ff ) {

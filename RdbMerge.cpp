@@ -273,7 +273,7 @@ bool RdbMerge::getNextList() {
 		// i've seen this bug happen if we chop a part off on our
 		// last dump and the merge never completes for some reason...
 		// so if we're in the last part then don't chop the part b4 us
-		if (part >= file->m_maxParts - 1) {
+		if (part >= file->getMaxParts() - 1) {
 			continue;
 		}
 

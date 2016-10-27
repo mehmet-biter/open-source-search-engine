@@ -403,7 +403,7 @@ bool RdbMap::verifyMap ( BigFile *dataFile ) {
 	// thereby producing a gap in the contiguous sequence of part files.
 	// let's ignore such islands. these islands can be more than one file
 	// too. let's verify they are unlinked after the merge completes.
-	int32_t numMissingParts = dataFile->m_maxParts;
+	int32_t numMissingParts = dataFile->getMaxParts();
 	
 	while ( numMissingParts > 0 && dataFile->doesPartExist ( numMissingParts-1 ) )
 		numMissingParts--;
