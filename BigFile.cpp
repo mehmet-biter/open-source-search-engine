@@ -1193,10 +1193,6 @@ static bool readwrite_r ( FileState *fstate ) {
 }
 
 
-////////////////////////////////////////
-// non-blocking unlink/rename code
-////////////////////////////////////////
-
 bool BigFile::unlink() {
 	logTrace( g_conf.m_logTraceBigFile, "BEGIN. filename [%s]", getFilename());
 	
@@ -1322,6 +1318,11 @@ bool BigFile::rename(const char *newBaseFilename, const char *newBaseFilenameDir
 }
 
 
+////////////////////////////////////////
+// non-blocking unlink/rename code
+////////////////////////////////////////
+
+
 bool BigFile::unlink(void (*callback)(void *state), void *state) {
 	logTrace( g_conf.m_logTraceBigFile, "BEGIN." );
 
@@ -1354,6 +1355,7 @@ bool BigFile::unlinkPart(int32_t part, void (*callback)(void *state), void *stat
 	logTrace( g_conf.m_logTraceBigFile, "END. returning [%s]", rc?"true":"false");
 	return rc;
 }
+
 
 struct UnlinkRenameState {
 	UnlinkRenameState(BigFile *bigfile, File *file, int32_t i)
