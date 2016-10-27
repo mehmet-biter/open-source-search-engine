@@ -302,7 +302,7 @@ private:
 
 	// number of part files that actually exist
 	int       m_numParts;
-	// size of File* array (number of max part + 1)
+	// size of File* array (number of pointers in m_filePtrsBuf)
 	int32_t      m_maxParts;
 
 public:
