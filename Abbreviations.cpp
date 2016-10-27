@@ -252,11 +252,11 @@ bool isAbbr ( int64_t h , bool *hasWordAfter ) {
 		// test it
 		int64_t h = hash64Lower_utf8("St");
 		if ( ! t->isInTable(&h) ) { g_process.shutdownAbort(true); }
-		int32_t sc = s_abbrTable.getScore ( &h );
+		int32_t sc = s_abbrTable.getScore(h);
 		if ( sc >= n ) { g_process.shutdownAbort(true); }
 	} 
 	// get from table
-	int32_t sc = s_abbrTable.getScore ( &h );
+	int32_t sc = s_abbrTable.getScore(h);
 	if ( sc <= 0 ) return false;
 	if ( hasWordAfter ) *hasWordAfter = s_abbrs99[sc-1].m_hasWordAfter;
 	return true;
