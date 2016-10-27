@@ -5,6 +5,7 @@
 #include "Titledb.h"
 #include "Process.h"
 #include <sys/stat.h> //stat()
+#include <fcntl.h>
 
 // the global instance
 Wiki g_wiki;

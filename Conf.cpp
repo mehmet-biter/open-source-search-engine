@@ -2,6 +2,7 @@
 
 #include "Conf.h"
 #include "Parms.h"
+#include "File.h"
 #include "Proxy.h"
 #include "Msg3a.h" // MAX_SHARDS
 #include "TcpSocket.h"

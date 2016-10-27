@@ -11,6 +11,7 @@
 #include "Process.h"
 #include "GbUtil.h"
 #include "Dir.h"
+#include <fcntl.h>
 
 
 static bool sendHttpReply        ( void *state );

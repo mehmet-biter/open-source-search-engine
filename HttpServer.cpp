@@ -11,6 +11,7 @@
 #include "Proxy.h"
 #include "Parms.h"
 #include "PageRoot.h"
+#include "File.h"
 #include "GigablastRequest.h"
 #include "Process.h"
 #include "GbUtil.h"

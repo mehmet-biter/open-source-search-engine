@@ -9,6 +9,7 @@
 #include "Hostdb.h"
 #include "Process.h"
 #include "Posdb.h"
+#include "File.h"
 #include <pthread.h>
 
 // TODO: image is bad if repeated on same page, check for that

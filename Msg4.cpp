@@ -16,6 +16,8 @@
 #include "PingServer.h"
 #include "max_niceness.h"
 #include <sys/stat.h> //stat()
+#include <fcntl.h>
+
 
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>

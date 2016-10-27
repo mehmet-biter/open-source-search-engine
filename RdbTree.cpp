@@ -6,6 +6,7 @@
 #include "Linkdb.h"
 #include "Spider.h"
 #include "Process.h"
+#include <fcntl.h>
 
 
 RdbTree::RdbTree () {

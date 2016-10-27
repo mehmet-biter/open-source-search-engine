@@ -4,6 +4,7 @@
 #include "BigFile.h"
 #include "Process.h"
 #include "BitOperations.h"
+#include "File.h"
 #include "Conf.h"
 #include "Mem.h"
 

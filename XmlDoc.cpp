@@ -39,6 +39,7 @@
 #include "Process.h"
 #include "Statistics.h"
 #include "GbUtil.h"
+#include <fcntl.h>
 
 
 #ifdef _VALGRIND_

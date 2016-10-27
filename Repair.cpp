@@ -18,6 +18,7 @@
 #include "Clusterdb.h"
 #include "Linkdb.h"
 #include "XmlDoc.h"
+#include "File.h"
 #include "max_niceness.h"
 
 

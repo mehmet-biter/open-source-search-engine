@@ -19,6 +19,7 @@
 #include "Spider.h"
 #include "Clusterdb.h"
 #include "Dns.h"
+#include "File.h"
 #include "IPAddressChecks.h"
 
 // a global class extern'd in .h file

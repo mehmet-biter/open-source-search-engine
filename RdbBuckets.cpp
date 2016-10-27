@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include "Rdb.h"
 #include "Sanity.h"
+#include <fcntl.h>
 
 #define BUCKET_SIZE 8192
 #define INIT_SIZE 4096

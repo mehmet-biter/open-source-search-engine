@@ -1,6 +1,7 @@
 #include "gb-include.h"
 
 #include "BigFile.h"
+#include "File.h"
 #include "Dir.h"
 #include "JobScheduler.h"
 #include "Stats.h"
@@ -8,6 +9,7 @@
 #include "Sanity.h"
 #include "GbMutex.h"
 #include "ScopedLock.h"
+#include <fcntl.h>
 #include <new>
 #include <vector>
 #include <pthread.h>
@@ -348,6 +350,16 @@ bool BigFile::addPart ( int32_t n ) {
 	
 	logTrace( g_conf.m_logTraceBigFile, "END - OK. New File object prepared. returning true" );
 	return true;
+}
+
+
+void BigFile::setBlocking() {
+	m_flags &= ~((int32_t)O_NONBLOCK);
+
+}
+
+void BigFile::setNonBlocking() {
+	m_flags |= O_NONBLOCK ;
 }
 
 

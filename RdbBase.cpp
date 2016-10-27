@@ -17,6 +17,7 @@
 #include "Process.h"
 #include "Sanity.h"
 #include "Dir.h"
+#include "File.h"
 #include "GbMoveFile.h"
 #include "ScopedLock.h"
 #include <sys/stat.h> //mkdir(), stat()

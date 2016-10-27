@@ -9,6 +9,7 @@
 #include "Dns.h"
 #include "BigFile.h"
 #include "Spider.h"
+#include "File.h"
 #include "ScopedLock.h"
 #include "Sanity.h"
 

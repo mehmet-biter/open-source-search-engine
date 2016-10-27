@@ -33,6 +33,7 @@
 #include "PageInject.h"
 #include "Timezone.h"
 #include "CountryCode.h"
+#include "File.h"
 #include <sys/statvfs.h>
 #include <pthread.h>
 

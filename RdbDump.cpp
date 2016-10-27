@@ -3,6 +3,7 @@
 #include "RdbCache.h"
 #include "Collectiondb.h"
 #include "Statsdb.h"
+#include <fcntl.h>
 
 
 RdbDump::RdbDump() {

@@ -12,6 +12,7 @@
 #include "RdbTree.h"
 #include "RdbBuckets.h"
 #include "ScopedLock.h"
+#include <fcntl.h>
 
 #include <iterator>
 

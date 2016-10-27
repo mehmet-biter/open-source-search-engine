@@ -7,6 +7,7 @@
 #include "Titledb.h"
 #include "Speller.h"
 #include <sys/stat.h> //stat()
+#include <fcntl.h>
 
 // the global instance
 Wiktionary g_wiktionary;

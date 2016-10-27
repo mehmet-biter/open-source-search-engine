@@ -10,7 +10,6 @@
 #ifndef GB_BIGFILE_H
 #define GB_BIGFILE_H
 
-#include "File.h"
 #include "JobScheduler.h" //for job_exit_t
 #include "SafeBuf.h"
 
@@ -23,6 +22,8 @@
 #else
 #define MAX_PART_SIZE  (20LL*1024LL*1024LL)
 #endif
+
+class File;
 
 
 class FileState {
@@ -138,8 +139,8 @@ class BigFile {
 
 	int getFlags() { return m_flags; }
 
-	void setBlocking    ( ) { m_flags &= ~((int32_t)O_NONBLOCK); }
-	void setNonBlocking ( ) { m_flags |=         O_NONBLOCK ; }
+	void setBlocking();
+	void setNonBlocking();
 
 	// . return -2 on error
 	// . return -1 if does not exist
