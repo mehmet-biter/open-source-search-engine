@@ -18,20 +18,10 @@
 // can complete
 static int32_t g_unlinkRenameThreads = 0;
 
-static int64_t g_lastDiskReadCompleted = 0LL;
-
 static void readwriteWrapper_r  ( void *state );
 
 static void  readwriteDoneWrapper(void *state, job_exit_t exit_type);
 static bool  readwrite_r        ( FileState *fstate );
-
-
-static void updateDiskReadCompleted() {
-	//Small function for easier suppression in debug build and running with helgrind or similar
-	//Original comment: this is thread safe...
-	//Technically it isn't but the variable isn't normally torn between cache lines and most modern architectures handles this fine.
-	g_lastDiskReadCompleted = gettimeofdayInMilliseconds();
-}
 
 
 //A set (list in this case) of filenames that we intend to unlink or rename (src name).
@@ -101,7 +91,6 @@ BigFile::BigFile () {
 	m_lastModified = -1;
 	m_numThreads = 0;
 	m_isClosing = false;
-	g_lastDiskReadCompleted = 0;
 
 	// init rest to avoid logging junk
 	m_partsRemaining=-1;
@@ -141,7 +130,6 @@ void BigFile::logAllData(int32_t log_type)
 	loghex( log_type, m_newBaseFilename.getBufStart(), m_newBaseFilename.length(),      "m_newBaseFilename......: (hex dump)");
 	loghex( log_type, m_newBaseFilenameDir.getBufStart(), m_newBaseFilenameDir.length(),"m_newBaseFilenameDir...: (hex dump)");
 	
-	log(log_type, "g_lastDiskReadCompleted: %" PRId64, g_lastDiskReadCompleted);
 	log(log_type, "g_unlinkRenameThreads..: %" PRId32, g_unlinkRenameThreads);
 }
 
@@ -1140,8 +1128,6 @@ static bool readwrite_r ( FileState *fstate ) {
 			    (int) getCloseCount_r(fstate->m_fd2),
 			    mstrerror(errno));
 		}
-
-		updateDiskReadCompleted();
 
 		// . if n is 0 that's strange!!
 		// . i think the fd will have been closed and re-opened on us if this
