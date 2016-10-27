@@ -146,7 +146,6 @@ class BigFile {
 	// . return -1 if does not exist
 	// . otherwise return the big file's complete file size (can b >2gb)
 	int64_t getFileSize() const;
-	int64_t getSize() const { return getFileSize(); }
 	void invalidateFileSize() { m_fileSize = -1; }
 
 	// use the base filename as our filename
