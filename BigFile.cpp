@@ -16,7 +16,7 @@
 
 // main.cpp will wait for this to be zero before exiting so all unlink/renames
 // can complete
-int32_t g_unlinkRenameThreads = 0;
+static int32_t g_unlinkRenameThreads = 0;
 
 static int64_t g_lastDiskReadCompleted = 0LL;
 
@@ -77,6 +77,11 @@ static void removePendingUnlink(const char *filename) {
 	}
 }
 
+
+
+bool BigFile::anyOngoingUnlinksOrRenames() {
+	return g_unlinkRenameThreads > 0;
+}
 
 
 BigFile::~BigFile () {

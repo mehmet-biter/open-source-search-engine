@@ -309,6 +309,8 @@ public:
 		return const_cast<BigFile*>(this)->getFile2(n);
 	}
 
+	static bool anyOngoingUnlinksOrRenames();
+
 	bool reset ( );
 
 	// determined in open() override
@@ -325,7 +327,5 @@ public:
 	time_t m_lastModified;
 	time_t getLastModifiedTime();
 };
-
-extern int32_t g_unlinkRenameThreads;
 
 #endif // GB_BIGFILE_H

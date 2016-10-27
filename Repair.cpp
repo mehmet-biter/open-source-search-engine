@@ -246,7 +246,7 @@ void repairWrapper ( int fd , void *state ) {
 		// this is >= 0 is correct, -1 means no outstanding spiders
 		if ( g_spiderLoop.m_maxUsed >= 0 ) return;
 		// wait for ny outstanding unlinks or renames to finish
-		if ( g_unlinkRenameThreads > 0 ) return;
+		if ( BigFile::anyOngoingUnlinksOrRenames() ) return;
 		// . make sure all Msg4s are done and have completely added all
 		//   recs they were supposed to
 		// . PROBLEM: if resuming a repair after re-starting, we can
@@ -369,7 +369,7 @@ void repairWrapper ( int fd , void *state ) {
 		// wait for all merging to stop just to be on the safe side
 		if ( g_merge.isMerging() ) return;
 		// wait for ny outstanding unlinks or renames to finish
-		if ( g_unlinkRenameThreads > 0 ) return;
+		if ( BigFile::anyOngoingUnlinksOrRenames() ) return;
 		// note it
 		log("repair: Final dump completed.");
 		log("repair: Updating rdbs to use newly repaired data.");
