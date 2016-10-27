@@ -1409,13 +1409,10 @@ bool BigFile::unlink(int32_t part, void (*callback)(void *state), void *state) {
 	m_partsRemaining = endPartNumber - startPartNumber;
 
 	// First mark the files for unlink so no further read-jobs will be submitted for those parts
-	for ( int32_t i = startPartNumber ; i < m_maxParts ; i++ ) {
-		if ( part >= 0 && i != part )
-			break;
-		File *f = getFile2(i);
-		if ( !f )
-			continue;
-		addPendingUnlink(f->getFilename());
+	for ( int32_t i = startPartNumber ; i < endPartNumber ; i++ ) {
+		if(File *f = getFile2(i)) {
+			addPendingUnlink(f->getFilename());
+		}
 	}
 	
 	//then cancel all queued read jobs for this bigfile
@@ -1425,7 +1422,7 @@ bool BigFile::unlink(int32_t part, void (*callback)(void *state), void *state) {
 		g_jobScheduler.cancel_file_read_jobs(this);
 	}
 
-	// save callback for when all parts are unlinked or renamed
+	// save callback for when all parts are unlinked
 	m_callback = callback;
 	m_state    = state;
 
