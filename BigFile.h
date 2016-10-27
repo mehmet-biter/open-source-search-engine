@@ -259,16 +259,18 @@ private:
 
 	// . returns false if blocked, true otherwise
 	// . sets g_errno on error
-	bool unlinkRename ( const char *newBaseFilename,
-			    int32_t  part                        ,
-			    void (* callback) ( void *state ) ,
-			    void *state                       ,
-			    const char *newBaseFilenameDir);
-	//job/thread worker functions helping unlinkrename()
+	bool rename(const char *newBaseFilename,
+		    void (*callback)(void *state), void *state,
+		    const char *newBaseFilenameDir);
+	//job/thread worker functions helping rename()
 	static void renameWrapper(void *state);
 	void renameWrapper(File *f, int32_t i);
 	static void doneRenameWrapper(void *state, job_exit_t exit_type);
 	void doneRenameWrapper(File *f);
+
+	bool unlink(int32_t  part,
+		    void (*callback)(void *state), void *state);
+	//job/thread worker functions helping unlink()
 	static void unlinkWrapper(void *state);
 	void unlinkWrapper(File *f);
 	static void doneUnlinkWrapper(void *state, job_exit_t exit_type);
