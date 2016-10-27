@@ -99,7 +99,6 @@ BigFile::BigFile () {
 	g_lastDiskReadCompleted = 0;
 
 	// init rest to avoid logging junk
-	m_part=-1;
 	m_partsRemaining=-1;
 	memset(m_tmpBaseBuf, 0, sizeof(m_tmpBaseBuf));
 	
@@ -127,7 +126,6 @@ void BigFile::logAllData(int32_t log_type)
 	
 	log(log_type, "m_numThreads...........: %" PRId32, m_numThreads);
 	log(log_type, "m_isClosing............: [%s]", m_isClosing?"true":"false");
-	log(log_type, "m_part.................: %" PRId32, m_part);
 	log(log_type, "m_partsRemaining.......: %" PRId32, m_partsRemaining);
 
 	loghex( log_type, m_tmpBaseBuf, sizeof(m_tmpBaseBuf),	"m_tmpBaseBuf...........: (hex dump)");
@@ -1403,20 +1401,18 @@ bool BigFile::unlink(int32_t part, void (*callback)(void *state), void *state) {
 	
 	// . unlink likes to sometimes just unlink one part at a time
 	// . this should be -1 to unlink all at once
-	m_part = part;
 
-
-	const int32_t startPartNumber = (m_part >= 0) ? m_part : 0;
+	const int32_t startPartNumber = (part >= 0) ? part : 0;
 
 	// how many parts have we done? is it only 1 to be unlinked?
-	if ( m_part < 0 )
+	if ( part < 0 )
 		m_partsRemaining = m_maxParts;
 	else
 		m_partsRemaining = 1;
 
 	// First mark the files for unlink so no further read-jobs will be submitted for those parts
 	for ( int32_t i = startPartNumber ; i < m_maxParts ; i++ ) {
-		if ( m_part >= 0 && i != m_part )
+		if ( part >= 0 && i != part )
 			break;
 		File *f = getFile2(i);
 		if ( !f )
@@ -1438,7 +1434,7 @@ bool BigFile::unlink(int32_t part, void (*callback)(void *state), void *state) {
 	//then prepare/submit the rename/unlink
 	for ( int32_t i = startPartNumber; i < m_maxParts ; i++ ) {
 		// break out if we should only unlink one part
-		if ( m_part >= 0 && i != m_part ) {
+		if ( part >= 0 && i != part ) {
 			break;
 		}
 
@@ -1468,7 +1464,7 @@ bool BigFile::unlink(int32_t part, void (*callback)(void *state), void *state) {
 		// . we spawn the thread here now
 		if( !g_jobScheduler.submit(unlinkWrapper, doneUnlinkWrapper, job_state, thread_type_unlink, 1/*niceness*/) ) {
 			// otherwise, thread spawn failed, do it blocking then
-			log( LOG_INFO, "disk: Failed to launch unlink/rename thread for %s, part=%" PRId32"/%" PRId32".", f->getFilename(),i,m_part);
+			log( LOG_INFO, "disk: Failed to launch unlink/rename thread for %s, part=%" PRId32"/%" PRId32".", f->getFilename(),i,part);
 			m_numThreads--;
 			g_unlinkRenameThreads--;
 			return false;
@@ -1581,7 +1577,7 @@ bool BigFile::rename(const char *newBaseFilename,
 		// . we spawn the thread here now
 		if( !g_jobScheduler.submit(renameWrapper, doneRenameWrapper, job_state, thread_type_unlink, 1/*niceness*/) ) {
 			// otherwise, thread spawn failed, do it blocking then
-			log( LOG_INFO, "disk: Failed to launch unlink/rename thread for %s, part=%" PRId32"/%" PRId32".", f->getFilename(),i,m_part);
+			log( LOG_INFO, "disk: Failed to launch unlink/rename thread for %s, part=%" PRId32".", f->getFilename(),i);
 			m_numThreads--;
 			g_unlinkRenameThreads--;
 			return false;
