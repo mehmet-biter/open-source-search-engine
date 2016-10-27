@@ -89,8 +89,8 @@ class HashTableX {
 	bool addScore(int32_t key, int32_t score = 1) {
 		return addTerm32(key, score);
 	}
-	uint32_t getScore32 ( const int32_t *wid ) const {
-		int32_t slot = getSlot ( wid );
+	uint32_t getScore32(int32_t wid) const {
+		int32_t slot = getSlot(&wid);
 		if ( slot < 0 ) return 0;
 		return *(const uint32_t *)getValueFromSlot ( slot );
 	}

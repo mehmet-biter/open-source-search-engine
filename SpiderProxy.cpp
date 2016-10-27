@@ -422,7 +422,7 @@ bool printSpiderProxyTable ( SafeBuf *sb ) {
 
 		sb->safePrintf("<td>%" PRId64"</td>",sp->m_timesUsed);
 
-		int32_t banCount = s_banCountTable.getScore32 ( &sp->m_ip );
+		int32_t banCount = s_banCountTable.getScore32(sp->m_ip);
 		if ( banCount < 0 ) banCount = 0;
 		sb->safePrintf("<td>%" PRId32"</td>",banCount);
 
