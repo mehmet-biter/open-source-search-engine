@@ -3126,7 +3126,7 @@ static bool initFieldTable(){
 			if ( s_table.isInTable ( &h ) ) continue;
 
 			// store the entity index in the hash table as score
-			if ( ! s_table.addTerm ( &h, i+1 ) ) return false;
+			if ( ! s_table.addTerm(h, i+1) ) return false;
 		}
 		s_isInitialized = true;
 	} 

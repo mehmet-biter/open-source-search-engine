@@ -56,7 +56,7 @@ static bool initEntityTable(){
 			// must not exist!
 			if ( s_table.isInTable(&h) ) { g_process.shutdownAbort(true);}
 			// store the entity index in the hash table as score
-			if ( ! s_table.addTerm ( &h, i+1 ) ) return false;
+			if ( ! s_table.addTerm(h, i+1) ) return false;
 		}
 		s_isInitialized = true;
 	} 

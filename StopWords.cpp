@@ -158,7 +158,7 @@ bool initWordTable( HashTableX *table, const char * const words[], const char *l
 		int32_t       swlen = strlen ( sw );
 		int64_t  swh   = hash64Lower_utf8 ( sw , swlen );
 		//log("ii: #%" PRId32"  %s",i,sw);
-		if ( ! table->addTerm (&swh,i+1) ) return false;
+		if ( ! table->addTerm(swh,i+1) ) return false;
 	}
 	return true;
 }
@@ -3835,14 +3835,14 @@ int32_t isCommonWord ( int64_t h ) {
 			int32_t  swlen = strlen ( sw );
 			// use the same algo that Words.cpp computeWordIds does
 			int64_t swh = hash64Lower_utf8 ( sw , swlen );
-			if ( ! s_commonWordTable.addTerm ( &swh,i+1 ) )
+			if ( ! s_commonWordTable.addTerm(swh,i+1 ) )
 				return 0;
 			// . add w/o accent marks too!
 			// . skip "fЭr" though because fur is an eng. word
 			//if ( *sw=='f' && *(sw+1)=='Э' &&
 			//     *(sw+2)=='r' && swlen == 3 ) continue;
 			//swh   = hash64AsciiLower ( sw , swlen );
-			//s_commonWordTable.addTerm (swh,i+1,i+1,true);
+			//s_commonWordTable.addTerm(swh,i+1,i+1,true);
 		}
 		s_commonWordsInitialized = true;
 	} 

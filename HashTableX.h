@@ -48,9 +48,9 @@ class HashTableX {
 
 
 	// a replacement for TermTable.cpp
-	bool addTerm ( const int64_t *wid , int32_t score = 1 ) {
-		int32_t slot = getSlot ( wid );
-                if ( slot<0 ) return addKey( wid ,&score,&slot);
+	bool addTerm(int64_t wid, int32_t score = 1) {
+		int32_t slot = getSlot(&wid);
+                if ( slot<0 ) return addKey(&wid ,&score,&slot);
                 uint32_t *val = (uint32_t *)getValueFromSlot ( slot );
 		// overflow check
 		if ( *val + (uint32_t)score < *val ) *val = 0xffffffff;

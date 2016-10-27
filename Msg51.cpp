@@ -527,7 +527,7 @@ bool setClusterLevels ( const key96_t   *clusterRecs,
 		score = ctab.getScore ( &h ) ;
 		// if still visible, just continue
 		if ( score < (uint32_t)maxDocIdsPerHostname ) {
-			if ( ! ctab.addTerm(&h))
+			if ( ! ctab.addTerm(h))
 				return false;
 			continue;
 		}

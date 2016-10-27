@@ -4023,7 +4023,7 @@ HashTableX *XmlDoc::getCountTable ( ) {
 		//   the first 80,000 words for performance reasons
 		if ( i < MAXFRAGWORDS && fv[i] == 0 ) continue;
 		// accumulate the wid with a score of 1 each time it occurs
-		if ( ! ct->addTerm ( &wid ) ) return (HashTableX *)NULL;
+		if ( ! ct->addTerm(wid) ) return (HashTableX *)NULL;
 		// skip if word #i does not start a phrase
 		if ( ! pids [i] ) continue;
 		// if phrase score is less than 100% do not consider as a
@@ -4034,7 +4034,7 @@ HashTableX *XmlDoc::getCountTable ( ) {
 		if ( wptr[1] == ',' ) continue;
 		if ( wptr[2] == ',' ) continue;
 		// put it in, accumulate, max score is 0x7fffffff
-		if ( ! ct->addTerm ( &pids[i] ) ) return (HashTableX *)NULL;
+		if ( ! ct->addTerm(pids[i]) ) return (HashTableX *)NULL;
 	}
 
 	// now add each meta tag to the pot
@@ -4109,7 +4109,7 @@ bool XmlDoc::hashString_ct ( HashTableX *ct , char *s , int32_t slen ) {
 		// . NO, we do not use this for these short strings
 		//if ( ww[i] == 0 ) continue;
 		// accumulate the wid with a score of 1 each time it occurs
-		if ( ! ct->addTerm ( &wid ) ) return false;
+		if ( ! ct->addTerm(wid) ) return false;
 		// skip if word #i does not start a phrase
 		if ( ! pids [i] ) continue;
 		// if phrase score is less than 100% do not consider as a
@@ -4123,7 +4123,7 @@ bool XmlDoc::hashString_ct ( HashTableX *ct , char *s , int32_t slen ) {
 			if ( wlen>=3 && wptr[2] == ',' ) continue;
 		}
 		// put it in, accumulate, max score is 0x7fffffff
-		if ( ! ct->addTerm ( &pids[i] ) ) return false;
+		if ( ! ct->addTerm(pids[i]) ) return false;
 	}
 	return true;
 }

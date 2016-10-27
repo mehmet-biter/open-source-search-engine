@@ -856,7 +856,7 @@ int16_t get_iana_charset(const char *cs, int len)
 	for ( int32_t i = 0 ; i < n ; i++ ) {
 	    int64_t h = hash64Lower_a ( s_charsets[i].name, strlen(s_charsets[i].name) );
 	    // store the charset index in the hash table as score
-		if ( ! s_table.addTerm(&h, i+1) ) {
+		if ( ! s_table.addTerm(h, i+1) ) {
 			log(LOG_WARN, "build: add term failed");
 			return csUnknown;
 		}
