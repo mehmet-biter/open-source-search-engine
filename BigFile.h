@@ -24,8 +24,6 @@
 #define MAX_PART_SIZE  (20LL*1024LL*1024LL)
 #endif
 
-#define LITTLEBUFSIZE sizeof(File)
-
 
 class FileState {
 public:
@@ -236,13 +234,8 @@ private:
 	// number of parts remaining to be unlinked/renamed
 	int32_t   m_partsRemaining;
 
-	char m_tinyBuf[sizeof(File*)]; //used for File* pointers for small files
-
 	// to hold the array of Files
 	SafeBuf m_filePtrsBuf;
-
-	// enough mem for our first File so we can avoid a malloc
-	char m_littleBuf[LITTLEBUFSIZE];
 
 	// . wrapper for all reads and writes
 	// . if doWrite is true then we'll do a write, otherwise we do a read

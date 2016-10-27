@@ -99,22 +99,11 @@ BigFile::BigFile () {
 	// init rest to avoid logging junk
 	m_part=-1;
 	m_partsRemaining=-1;
-	memset(m_tinyBuf, 0, sizeof(m_tinyBuf));
-	memset(m_littleBuf, 0, sizeof(m_littleBuf));
 	memset(m_tmpBaseBuf, 0, sizeof(m_tmpBaseBuf));
 	
 	// Coverity
 	m_callback = NULL;
 	m_state = NULL;
-
-	//memset ( m_littleBuf , 0 , LITTLEBUFSIZE );
-	// avoid a malloc for small files.
-	// this way we can save in memory RdbMaps upon a core, even malloc/free
-	// related cores, cuz we won't have to do a malloc to save!
-	//m_fileBuf.setBuf ( m_littleBuf,LITTLEBUFSIZE,0,false);
-	// for this make the length always equal the capacity so when we
-	// call reserve it builds on the whole thing
-	//m_fileBuf.setLength ( m_fileBuf.getCapacity() );
 }
 
 
@@ -139,8 +128,6 @@ void BigFile::logAllData(int32_t log_type)
 	log(log_type, "m_part.................: %" PRId32, m_part);
 	log(log_type, "m_partsRemaining.......: %" PRId32, m_partsRemaining);
 
-	loghex( log_type, m_tinyBuf, sizeof(m_tinyBuf), 		"m_tinyBuf..............: (hex dump)");
-	loghex( log_type, m_littleBuf, sizeof(m_littleBuf), 	"m_littleBuf............: (hex dump)");
 	loghex( log_type, m_tmpBaseBuf, sizeof(m_tmpBaseBuf),	"m_tmpBaseBuf...........: (hex dump)");
 	
 	// SafeBufs
@@ -307,13 +294,6 @@ bool BigFile::addPart ( int32_t n ) {
 		gbshutdownLogicError();
 	}
 
-	// init using tiny buf to save a malloc for small files
-	if ( m_filePtrsBuf.getCapacity() == 0 ) {
-		memset (m_tinyBuf,0,sizeof(m_tinyBuf));
-		m_filePtrsBuf.setBuf ( m_tinyBuf,sizeof(m_tinyBuf),0,false);
-		m_filePtrsBuf.setLength ( m_filePtrsBuf.getCapacity() );
-	}
-
 	// how much more mem do we need?
 	int32_t delta = need - m_filePtrsBuf.length();
 
@@ -336,26 +316,17 @@ bool BigFile::addPart ( int32_t n ) {
 
 	File *f = NULL;
 
-	if ( m_numParts == 0 ) {
-		if ( LITTLEBUFSIZE < sizeof(File) ) {
-			log(LOG_ERROR, "%s:%s:%d: LITTLEBUFSIZE too small", __FILE__, __func__, __LINE__ );
-			logAllData(LOG_ERROR);
-			gbshutdownLogicError();
-		}
-		f = new(m_littleBuf) File();
-	} else {
-		try {
-			f = new (File); 
-		} catch ( ... ) {
-			g_errno = ENOMEM;
+	try {
+		f = new (File); 
+	} catch ( ... ) {
+		g_errno = ENOMEM;
 
-			//### BR 20151217: Fix. Previously returned the return code from log(...)
-			logError("new failed. size: %i, err [%s]", (int)sizeof(File), mstrerror(g_errno));
-			logAllData(LOG_ERROR);
-			return false;
-		}
-		mnew ( f , sizeof(File) , "BigFile" );
+		//### BR 20151217: Fix. Previously returned the return code from log(...)
+		logError("new failed. size: %i, err [%s]", (int)sizeof(File), mstrerror(g_errno));
+		logAllData(LOG_ERROR);
+		return false;
 	}
+	mnew ( f , sizeof(File) , "BigFile" );
 	
 	char buf[1024];
 
@@ -1819,12 +1790,8 @@ void BigFile::removePart ( int32_t i ) {
 
 	// . thread should have stored the filename for unlinking
 	// . now delete it from memory
-	if ( f == (File *)m_littleBuf ) {
-		f->~File();
-	} else {
-		mdelete(f, sizeof(File), "BigFile");
-		delete (f);
-	}
+	mdelete(f, sizeof(File), "BigFile");
+	delete (f);
 
 	// and clear from our table
 	filePtrs[i] = NULL;
@@ -1869,12 +1836,6 @@ bool BigFile::close ( ) {
 		// the destructor calls close, no need to call here
 		//f->close();
 		//f->destructor();
-		// if we were using the stack buf in BigFile then just
-		// call File::destructor()
-		if ( f == (File *)m_littleBuf ) {
-			f->~File();
-			continue;
-		}
 		// otherwise, delete as we normally would
 		mdelete ( f , sizeof(File) , "BigFile" );
 		delete ( f );
