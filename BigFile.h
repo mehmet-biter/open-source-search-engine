@@ -12,6 +12,7 @@
 
 #include "JobScheduler.h" //for job_exit_t
 #include "SafeBuf.h"
+#include "GbMutex.h"
 
 
 #ifndef PRIVACORE_TEST_VERSION
@@ -222,13 +223,16 @@ private:
 
 	void removePart ( int32_t i ) ;
 
-	int32_t m_numThreads;
-
 	void (*m_callback)(void *state);
 	void  *m_state;
 
-	// number of parts remaining to be unlinked/renamed
-	int32_t   m_partsRemaining;
+	bool m_metaJobsBeingSubmitted;
+	int m_metaJobsSubmitted;
+	int m_metaJobsFinished;
+	GbMutex m_mtxMetaJobs;
+
+	void incrementMetaJobsSubmitted();
+	bool incrementMetaJobsFinished();
 
 	// to hold the array of Files
 	SafeBuf m_filePtrsBuf;

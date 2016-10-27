@@ -13,10 +13,11 @@
 #include <new>
 #include <vector>
 #include <pthread.h>
+#include <atomic>
 
 // main.cpp will wait for this to be zero before exiting so all unlink/renames
 // can complete
-static int32_t g_unlinkRenameThreads = 0;
+static std::atomic<unsigned> g_unlinkRenameThreads(0);
 
 static void readwriteWrapper_r  ( void *state );
 
@@ -80,7 +81,12 @@ BigFile::~BigFile () {
 
 //#define O_DIRECT 040000
 
-BigFile::BigFile () {
+BigFile::BigFile ()
+  : m_metaJobsBeingSubmitted(false),
+    m_metaJobsSubmitted(0),
+    m_metaJobsFinished(0),
+    m_mtxMetaJobs()
+{
 	//m_permissions = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH ;
 	m_flags       = O_RDWR ; // | O_DIRECT;
 	m_maxParts = 0;
@@ -89,12 +95,8 @@ BigFile::BigFile () {
 	//m_vfdAllowed = false;
 	m_fileSize = -1;
 	m_lastModified = -1;
-	m_numThreads = 0;
 	m_isClosing = false;
 
-	// init rest to avoid logging junk
-	m_partsRemaining=-1;
-	
 	// Coverity
 	m_callback = NULL;
 	m_state = NULL;
@@ -117,9 +119,9 @@ void BigFile::logAllData(int32_t log_type)
 	log(log_type, "m_fileSize.............: %" PRId64, m_fileSize);
 	log(log_type, "m_lastModified.........: %04d%02d%02d-%02d%02d%02d", stm->tm_year+1900,stm->tm_mon+1,stm->tm_mday,stm->tm_hour,stm->tm_min,stm->tm_sec);
 	
-	log(log_type, "m_numThreads...........: %" PRId32, m_numThreads);
+	log(log_type, "m_metaJobsSubmitted....: %d", m_metaJobsSubmitted);
+	log(log_type, "m_metaJobsFinished.....: %d", m_metaJobsFinished);
 	log(log_type, "m_isClosing............: [%s]", m_isClosing?"true":"false");
-	log(log_type, "m_partsRemaining.......: %" PRId32, m_partsRemaining);
 
 	// SafeBufs
 	loghex( log_type, m_dir.getBufStart(), m_dir.length(),                  			"m_dir..................: (hex dump)");
@@ -127,7 +129,7 @@ void BigFile::logAllData(int32_t log_type)
 	loghex( log_type, m_newBaseFilename.getBufStart(), m_newBaseFilename.length(),      "m_newBaseFilename......: (hex dump)");
 	loghex( log_type, m_newBaseFilenameDir.getBufStart(), m_newBaseFilenameDir.length(),"m_newBaseFilenameDir...: (hex dump)");
 	
-	log(log_type, "g_unlinkRenameThreads..: %" PRId32, g_unlinkRenameThreads);
+	log(log_type, "g_unlinkRenameThreads..: %u", (unsigned)g_unlinkRenameThreads);
 }
 
 
@@ -1179,7 +1181,7 @@ bool BigFile::unlink() {
 		return true;
 	}
 	
-	if(m_numThreads>0) {
+	if(m_metaJobsSubmitted>m_metaJobsFinished) {
 		g_errno = EBADENGINEER;
 		log(LOG_ERROR, "%s:%s:%d: END. Unlink/rename threads already in progress. ", __FILE__, __func__, __LINE__ );
 		return true;
@@ -1231,7 +1233,7 @@ bool BigFile::rename(const char *newBaseFilename, const char *newBaseFilenameDir
 		return true;
 	}
 	
-	if(m_numThreads>0) {
+	if(m_metaJobsSubmitted>m_metaJobsFinished) {
 		g_errno = EBADENGINEER;
 		log(LOG_ERROR, "%s:%s:%d: END. Unlink/rename threads already in progress. ", __FILE__, __func__, __LINE__ );
 		return true;
@@ -1334,6 +1336,21 @@ bool BigFile::unlinkPart(int32_t part, void (*callback)(void *state), void *stat
 }
 
 
+
+void BigFile::incrementMetaJobsSubmitted() {
+	ScopedLock sl(m_mtxMetaJobs);
+	m_metaJobsSubmitted++;
+	if(m_metaJobsFinished>=m_metaJobsSubmitted) gbshutdownLogicError();
+}
+
+bool BigFile::incrementMetaJobsFinished() {
+	ScopedLock sl(m_mtxMetaJobs);
+	m_metaJobsFinished++;
+	if(m_metaJobsFinished>m_metaJobsSubmitted) gbshutdownLogicError();
+	return m_metaJobsFinished==m_metaJobsSubmitted && !m_metaJobsBeingSubmitted;
+}
+
+
 struct UnlinkRenameState {
 	UnlinkRenameState(BigFile *bigfile, File *file, int32_t i)
 		: m_bigfile(bigfile)
@@ -1369,7 +1386,7 @@ bool BigFile::unlink(int32_t part, void (*callback)(void *state), void *state) {
 	// . wait for any previous unlink to finish
 	// . we can only store one callback at a time, m_callback, so we
 	//   must do this for now
-	if(m_numThreads > 0) {
+	if(m_metaJobsSubmitted>m_metaJobsFinished) {
 		//unlinking multiple parts one at a time is fine.
 		if(part<0 || ( callback != m_callback || state != m_state ) ) {
 			g_errno = EBADENGINEER;
@@ -1384,8 +1401,10 @@ bool BigFile::unlink(int32_t part, void (*callback)(void *state), void *state) {
 	const int32_t startPartNumber = (part >= 0) ? part : 0;
 	const int32_t endPartNumber = (part >= 0) ? part+1 : m_maxParts;
 
-	// how many parts have we done? is it only 1 to be unlinked?
-	m_partsRemaining = endPartNumber - startPartNumber;
+	{
+		ScopedLock sl(m_mtxMetaJobs);
+		m_metaJobsBeingSubmitted = true;
+	}
 
 	// First mark the files for unlink so no further read-jobs will be submitted for those parts
 	for ( int32_t i = startPartNumber ; i < endPartNumber ; i++ ) {
@@ -1410,13 +1429,11 @@ bool BigFile::unlink(int32_t part, void (*callback)(void *state), void *state) {
 		// get the ith file to rename/unlink
 		File *f = getFile2(i);
 		if ( ! f ) {
-			// one less part to do
-			m_partsRemaining--;
+			// part doesn't exist
 			continue;
 		}
 
 		// assume thread launched, doneRoutine() will decrement these
-		m_numThreads++; 
 		g_unlinkRenameThreads++;
 
 		UnlinkRenameState *job_state;
@@ -1434,17 +1451,18 @@ bool BigFile::unlink(int32_t part, void (*callback)(void *state), void *state) {
 		if( !g_jobScheduler.submit(unlinkWrapper, doneUnlinkWrapper, job_state, thread_type_unlink, 1/*niceness*/) ) {
 			// otherwise, thread spawn failed, do it blocking then
 			log( LOG_INFO, "disk: Failed to launch unlink/rename thread for %s, part=%" PRId32"/%" PRId32".", f->getFilename(),i,part);
-			m_numThreads--;
 			g_unlinkRenameThreads--;
 			return false;
 		}
+		incrementMetaJobsSubmitted();
 	}
 
-	// if one blocked, we block, but never return false if !useThread
-	if ( m_numThreads > 0 ) {
-		logTrace( g_conf.m_logTraceBigFile, "m_numThreads [%" PRId32"] && useThread", m_numThreads );
-
-		return false;
+	{
+		ScopedLock sl(m_mtxMetaJobs);
+		m_metaJobsBeingSubmitted = false;
+		
+		if(m_metaJobsSubmitted!=m_metaJobsFinished)
+			return false; //not completed yet
 	}
 	
 	// we did not block
@@ -1475,7 +1493,7 @@ bool BigFile::rename(const char *newBaseFilename,
 	// . wait for any previous rename to finish
 	// . we can only store one callback at a time, m_callback, so we
 	//   must do this for now
-	if(m_numThreads > 0) {
+	if(m_metaJobsSubmitted>m_metaJobsFinished) {
 		g_errno = EBADENGINEER;
 		log(LOG_ERROR, "%s:%s:%d: END. Unlink/rename threads already in progress. ", __FILE__, __func__, __LINE__ );
 		return true;
@@ -1509,8 +1527,10 @@ bool BigFile::rename(const char *newBaseFilename,
 	// in case newBaseFilenameDir was NULL
 	m_newBaseFilenameDir.nullTerm();
 
-	// how many parts have we done?
-	m_partsRemaining = m_maxParts;
+	{
+		ScopedLock sl(m_mtxMetaJobs);
+		m_metaJobsBeingSubmitted = true;
+	}
 
 	// save callback for when all parts are unlinked or renamed
 	m_callback = callback;
@@ -1521,13 +1541,11 @@ bool BigFile::rename(const char *newBaseFilename,
 		// get the ith file to rename
 		File *f = getFile2(i);
 		if ( ! f ) {
-			// one less part to do
-			m_partsRemaining--;
+			// part does not exist
 			continue;
 		}
 
 		// assume thread launched, doneRoutine() will decrement these
-		m_numThreads++; 
 		g_unlinkRenameThreads++;
 
 		UnlinkRenameState *job_state;
@@ -1545,20 +1563,21 @@ bool BigFile::rename(const char *newBaseFilename,
 		if( !g_jobScheduler.submit(renameWrapper, doneRenameWrapper, job_state, thread_type_unlink, 1/*niceness*/) ) {
 			// otherwise, thread spawn failed, do it blocking then
 			log( LOG_INFO, "disk: Failed to launch unlink/rename thread for %s, part=%" PRId32".", f->getFilename(),i);
-			m_numThreads--;
 			g_unlinkRenameThreads--;
 			return false;
 		}
+		incrementMetaJobsSubmitted();
 	}
 
-	// if one blocked, we block, but never return false if !useThread
-	if ( m_numThreads > 0 ) {
-		logTrace( g_conf.m_logTraceBigFile, "m_numThreads [%" PRId32"] && useThread", m_numThreads );
-
-		return false;
+	{
+		ScopedLock sl(m_mtxMetaJobs);
+		m_metaJobsBeingSubmitted = false;
+		
+		if(m_metaJobsSubmitted!=m_metaJobsFinished)
+			return false; //not completed yet
 	}
 	
-	// . if we launched no threads update OUR base filename right now
+	// update our base filename right now
 	m_baseFilename.set ( m_newBaseFilename.getBufStart() );
 		
 	// we did not block
@@ -1613,7 +1632,6 @@ void BigFile::doneRenameWrapper(File *f) {
 	logTrace( g_conf.m_logTraceBigFile, "BEGIN" );
 
 	// one less
-	m_numThreads--;
 	g_unlinkRenameThreads--;
 
 	// otherwise, it's a more serious error i guess
@@ -1623,27 +1641,22 @@ void BigFile::doneRenameWrapper(File *f) {
 		//@@@ BR: Why continue??
 	}
 
-	// one less part to do
-	m_partsRemaining--;
-	
-	// return if more to do
-	if ( m_partsRemaining > 0 ) {
+	if(incrementMetaJobsFinished()) {
+		// update our base filename now after all Files are renamed
+		m_baseFilename.reset();
+		m_baseFilename.setLabel("nbfnn");
+		m_baseFilename.safeStrcpy(m_newBaseFilename.getBufStart());
+
+		// . all done, call the main callback
+		// . this is NULL if we were not called in a thread
+		if ( m_callback ) {
+			m_callback ( m_state );
+		}
+		logTrace( g_conf.m_logTraceBigFile, "END" );
+	} else {
 		logTrace( g_conf.m_logTraceBigFile, "END - still more parts" );
-		return;
 	}
 
-	// update OUR base filename now after all Files are renamed
-	m_baseFilename.reset();
-	m_baseFilename.setLabel("nbfnn");
-	m_baseFilename.safeStrcpy(m_newBaseFilename.getBufStart());
-
-	// . all done, call the main callback
-	// . this is NULL if we were not called in a thread
-	if ( m_callback ) {
-		m_callback ( m_state );
-	}
-
-	logTrace( g_conf.m_logTraceBigFile, "END" );
 }
 
 
@@ -1722,7 +1735,6 @@ void BigFile::doneUnlinkWrapper(File *f, int32_t i) {
 	f->close2();
 
 	// one less
-	m_numThreads--;
 	g_unlinkRenameThreads--;
 
 	// otherwise, it's a more serious error i guess
@@ -1742,19 +1754,12 @@ void BigFile::doneUnlinkWrapper(File *f, int32_t i) {
 		logAllData(LOG_ERROR);
 	}
 
-	// one less part to do
-	m_partsRemaining--;
-
-	// return if more to do
-	if ( m_partsRemaining > 0 ) {
-		logTrace( g_conf.m_logTraceBigFile, "END - still more parts" );
-		return;
-	}
-
-	// . all done, call the main callback
-	// . this is NULL if we were not called in a thread
-	if ( m_callback ) {
-		m_callback ( m_state );
+	if(incrementMetaJobsFinished()) {
+		// . all done, call the main callback
+		// . this is NULL if we were not called in a thread
+		if ( m_callback ) {
+			m_callback ( m_state );
+		}
 	}
 
 	logTrace( g_conf.m_logTraceBigFile, "END" );
