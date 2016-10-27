@@ -4675,7 +4675,7 @@ float computeSimilarity ( const int32_t   *vec0,
 		if ( dedupVectors ) {
 			// accumulate all the scores into this one bucket
 			// in the case of p being a dup
-			if ( ! ht.addTerm32 ( p , score ) ) return -1;
+			if ( ! ht.addTerm32(*p, score) ) return -1;
 		}
 		else {
 			// otherwise, add each into its own bucket since

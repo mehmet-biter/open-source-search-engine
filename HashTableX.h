@@ -68,18 +68,18 @@ class HashTableX {
 		return *(const uint64_t *)getValueFromSlot ( slot ); }
 
 
-	bool addTerm32 ( const int32_t *wid , int32_t score = 1 ) {
-		int32_t slot = getSlot ( wid );
-                if ( slot<0 ) return addKey( wid ,&score,&slot);
+	bool addTerm32 (int32_t wid, int32_t score = 1) {
+		int32_t slot = getSlot ( &wid );
+                if ( slot<0 ) return addKey( &wid ,&score,&slot);
                 uint32_t *val = (uint32_t *)getValueFromSlot ( slot );
 		// overflow check
 		if ( *val + (uint32_t)score < *val ) *val = 0xffffffff;
 		else                                 *val = *val + score;
 		return true;
 	}
-	bool addTerm32 ( const uint32_t *wid , int32_t score = 1 ) {
-		int32_t slot = getSlot ( wid );
-                if ( slot<0 ) return addKey( wid ,&score,&slot);
+	bool addTerm32(uint32_t wid, int32_t score = 1) {
+		int32_t slot = getSlot ( &wid );
+                if ( slot<0 ) return addKey( &wid ,&score,&slot);
                 uint32_t *val = (uint32_t *)getValueFromSlot ( slot );
 		// overflow check
 		if ( *val + (uint32_t)score < *val ) *val = 0xffffffff;
@@ -87,7 +87,7 @@ class HashTableX {
 		return true;
 	}
 	bool addScore ( const int32_t *key , int32_t score = 1 ) {
-		return addTerm32 ( key , score ); 
+		return addTerm32 ( *key , score );
 	}
 	uint32_t getScore32 ( const int32_t *wid ) const {
 		int32_t slot = getSlot ( wid );

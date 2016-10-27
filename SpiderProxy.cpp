@@ -532,7 +532,7 @@ void handleRequest54 ( UdpSlot *udpSlot , int32_t niceness ) {
 			s_proxyBannedTable.addKey ( &h64 );
 			// for stats counting. each proxy ip maps to #
 			// of unique website IPs that have banned it.
-			s_banCountTable.addTerm32 ( (int32_t *)&pip );
+			s_banCountTable.addTerm32((uint32_t)pip);
 		}
 	}
 	
