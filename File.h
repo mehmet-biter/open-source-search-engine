@@ -104,7 +104,6 @@ public:
 	// . a simple stat check
 	int32_t doesExist() const;
 
-	// . static so you don't need an instant of this class to call it
 	// . returns false and sets errno on error
 	bool unlink ( );
 
