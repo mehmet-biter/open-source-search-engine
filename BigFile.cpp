@@ -274,12 +274,6 @@ bool BigFile::addPart ( int32_t n ) {
 	// . grow our dynamic array and return ptr to last element
 	// . n's come in NOT necessarily in order!!!
 	int32_t need = (n+1) * sizeof(File *);
-	// capacity must be length always for this
-	if ( m_filePtrsBuf.getCapacity() != m_filePtrsBuf.length() ) {
-		log(LOG_ERROR, "%s:%s:%d: Capacity/Length mismatch when adding part %" PRId32, __FILE__, __func__, __LINE__, n);
-		logAllData(LOG_ERROR);
-		gbshutdownLogicError();
-	}
 
 	// how much more mem do we need?
 	int32_t delta = need - m_filePtrsBuf.length();
