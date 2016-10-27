@@ -94,7 +94,6 @@ BigFile::BigFile () {
 
 	// init rest to avoid logging junk
 	m_partsRemaining=-1;
-	memset(m_tmpBaseBuf, 0, sizeof(m_tmpBaseBuf));
 	
 	// Coverity
 	m_callback = NULL;
@@ -122,8 +121,6 @@ void BigFile::logAllData(int32_t log_type)
 	log(log_type, "m_isClosing............: [%s]", m_isClosing?"true":"false");
 	log(log_type, "m_partsRemaining.......: %" PRId32, m_partsRemaining);
 
-	loghex( log_type, m_tmpBaseBuf, sizeof(m_tmpBaseBuf),	"m_tmpBaseBuf...........: (hex dump)");
-	
 	// SafeBufs
 	loghex( log_type, m_dir.getBufStart(), m_dir.length(),                  			"m_dir..................: (hex dump)");
 	loghex( log_type, m_baseFilename.getBufStart(), m_baseFilename.length(),      		"m_baseFilename.........: (hex dump)");
@@ -149,9 +146,6 @@ bool BigFile::set(const char *dir, const char *baseFilename) {
 
 	m_dir.setLabel("bfd");
 	m_baseFilename.setLabel("bfbf");
-
-	// use this 32 byte char buf to avoid a malloc if possible
-	m_baseFilename.setBuf (m_tmpBaseBuf,sizeof(m_tmpBaseBuf),0,false);
 
 	if ( ! m_dir.safeStrcpy( dir ) ) {
 		logTrace( g_conf.m_logTraceBigFile, "END. Return false, m_dir.safeStrcpy failed" );

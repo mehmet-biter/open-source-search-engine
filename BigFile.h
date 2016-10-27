@@ -276,10 +276,6 @@ private:
 	bool addPart ( int32_t n ) ;
 
 
-	// for basefilename to avoid an alloc
-	char m_tmpBaseBuf[32];
-
-
 	//int32_t m_permissions;
 	int32_t m_flags;
 
