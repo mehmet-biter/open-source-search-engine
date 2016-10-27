@@ -58,8 +58,8 @@ class HashTableX {
 		return true;
 	}
 	// a replacement for TermTable.cpp
-	uint32_t getScore ( const int64_t *wid ) const {
-		int32_t slot = getSlot ( wid );
+	uint32_t getScore(int64_t wid) const {
+		int32_t slot = getSlot(&wid);
 		if ( slot < 0 ) return 0;
 		return *(const uint32_t *)getValueFromSlot ( slot );
 	}

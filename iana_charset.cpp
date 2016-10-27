@@ -866,7 +866,7 @@ int16_t get_iana_charset(const char *cs, int len)
     }
     int64_t h = hash64Lower_a ( cs , len );
     // get the entity index from table (stored in the score field)
-    int32_t i = (int32_t) s_table.getScore ( &h );
+    int32_t i = (int32_t) s_table.getScore(h);
     // return 0 if no match
     if ( i == 0 ) return csUnknown;
     // return the iso character

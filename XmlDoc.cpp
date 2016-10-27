@@ -20010,7 +20010,7 @@ char *XmlDoc::getTitleBuf ( ) {
 		// add to it. return NULL with g_errno set on error
 		if ( ! dupTable.addKey(&h) ) return NULL;
 		// is it in there?
-		bk[i].m_score = 1; // scoreTable.getScore ( &h );
+		bk[i].m_score = 1; // scoreTable.getScore(h);
 	}
 	// now sort the bk array by m_score
 	//gbsort ( bk , linkNum , sizeof(Binky), cmpbk );
@@ -21450,10 +21450,10 @@ static void getWordToPhraseRatioWeights ( int64_t   pid1 , // pre phrase
 	int32_t wrdcount1 = 0;
 	int32_t wrdcount2 = 0;
 	if ( !tt1->isTableEmpty() ) {
-		if (pid1) phrcount1 = tt1->getScore(&pid1);
-		if (pid2) phrcount2 = tt1->getScore(&pid2);
-		if (wid1) wrdcount1 = tt1->getScore(&wid1);
-		if (wid2) wrdcount2 = tt1->getScore(&wid2);
+		if (pid1) phrcount1 = tt1->getScore(pid1);
+		if (pid2) phrcount2 = tt1->getScore(pid2);
+		if (wid1) wrdcount1 = tt1->getScore(wid1);
+		if (wid2) wrdcount2 = tt1->getScore(wid2);
 	}
 	// if we are always ending the same phrase, like "Mexico"
 	// in "New Mexico"... get the most popular phrase this word is

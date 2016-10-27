@@ -177,7 +177,7 @@ bool isStopWord ( const char *s , int32_t len , int64_t h ) {
 	if ( len == 1 && is_alpha_a(*s) ) return true;
 
 	// get from table
-	return s_stopWordTable.getScore ( &h );
+	return s_stopWordTable.getScore(h);
 }		
 
 // . damn i forgot to include these above
@@ -2022,7 +2022,7 @@ bool isQueryStopWord ( const char *s , int32_t len , int64_t h , int32_t langId 
 	if ( ! s_queryStopWords2[langId] ) langId = langUnknown;
 
 	// get from table
-	return s_queryStopWordTables[langId].getScore ( &h );
+	return s_queryStopWordTables[langId].getScore(h);
 }
 
 // is it a stop word?
@@ -3853,6 +3853,6 @@ int32_t isCommonWord ( int64_t h ) {
 	//if ( len == 1 && is_alpha_a(*s) ) return true;
 
 	// get from table
-	return s_commonWordTable.getScore ( &h );
+	return s_commonWordTable.getScore(h);
 }
 

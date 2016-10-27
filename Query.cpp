@@ -3145,7 +3145,7 @@ char getFieldCode ( const char *s , int32_t len , bool *hasColon ) {
 	}
 
 	int64_t h = hash64Lower_a( s, len );
-	int32_t i = (int32_t) s_table.getScore ( &h ) ;
+	int32_t i = (int32_t) s_table.getScore(h);
 
 	if ( i == 0 ) {
 		return FIELD_GENERIC;

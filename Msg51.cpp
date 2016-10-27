@@ -524,7 +524,7 @@ bool setClusterLevels ( const key96_t   *clusterRecs,
 		//if ( checkNegative && sht.getSlot((int64_t)h) > 0 ) {
 		//	*level = CR_BLACKLISTED_SITE; goto loop; }
 		// look it up
-		score = ctab.getScore ( &h ) ;
+		score = ctab.getScore(h) ;
 		// if still visible, just continue
 		if ( score < (uint32_t)maxDocIdsPerHostname ) {
 			if ( ! ctab.addTerm(h))
