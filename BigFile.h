@@ -183,9 +183,8 @@ class BigFile {
 	// unlinks all part files
 	bool unlink ( );
 
-	// . renames ALL parts too
-	// . doesn't change directory, just the base filename
-	// . use m_dir if newBaseFilenameDir is NULL
+	// . renames all parts
+	// . uses m_dir if newBaseFilenameDir is NULL
 	bool rename(const char *newBaseFilename, const char *newBaseFilenameDir);
 
 	bool move ( const char *newDir );
@@ -204,10 +203,10 @@ class BigFile {
 	// just close all the fds of the part files, used by RdbMap.cpp.
 	bool closeFds ( ) ;
 
-	// what part (little File) of this BigFile has offset "offset"?
+	// which part (little File) of this BigFile has offset "offset"?
 	int getPartNum(int64_t offset) const { return offset / MAX_PART_SIZE; }
 
-	// . opens the nth file if necessary to get it's fd
+	// . opens the nth file if necessary to get its fd
 	// . returns -1 if none, >=0 on success
 	int getfd ( int32_t n , bool forReading );//, int32_t *vfd = NULL );
 
@@ -224,8 +223,6 @@ private:
 
 	void removePart ( int32_t i ) ;
 
-	// don't launch a threaded rename/unlink if one already in progress
-	// since we only have one callback, m_callback
 	int32_t m_numThreads;
 
 	void (*m_callback)(void *state);
@@ -276,12 +273,11 @@ private:
 	bool addPart ( int32_t n ) ;
 
 
-	//int32_t m_permissions;
 	int32_t m_flags;
 
 	int32_t             m_vfd;
 
-	// our most important the directory and filename
+	// our directory and filename
 	SafeBuf m_dir      ;
 	SafeBuf m_baseFilename ;
 
