@@ -1421,11 +1421,16 @@ bool BigFile::unlink(int32_t part, void (*callback)(void *state), void *state) {
 	// . wait for any previous unlink to finish
 	// . we can only store one callback at a time, m_callback, so we
 	//   must do this for now
-	if(m_outstandingUnlinkJobCount!=0 || m_outstandingRenameP1JobCount!=0 || m_outstandingRenameP2JobCount!=0) {
+	if(m_outstandingRenameP1JobCount!=0 || m_outstandingRenameP2JobCount!=0) {
+		g_errno = EBADENGINEER;
+		log(LOG_ERROR, "%s:%s:%d: END. Unlinkrename threads already in progress. ", __FILE__, __func__, __LINE__ );
+		return true;
+	}
+	if(m_outstandingUnlinkJobCount!=0) {
 		//unlinking multiple parts one at a time is fine.
 		if(part<0 || ( callback != m_callback || state != m_state ) ) {
 			g_errno = EBADENGINEER;
-			log(LOG_ERROR, "%s:%s:%d: END. Unlink/rename threads already in progress. ", __FILE__, __func__, __LINE__ );
+			log(LOG_ERROR, "%s:%s:%d: END. Unlink threads already in progress. ", __FILE__, __func__, __LINE__ );
 			return true;
 		}
 	}
@@ -1528,7 +1533,7 @@ bool BigFile::rename(const char *newBaseFilename,
 	// . wait for any previous rename to finish
 	// . we can only store one callback at a time, m_callback, so we
 	//   must do this for now
-	if(m_outstandingRenameP1JobCount!=0) {
+	if(m_outstandingUnlinkJobCount!=0 || m_outstandingRenameP1JobCount!=0 || m_outstandingRenameP2JobCount!=0) {
 		g_errno = EBADENGINEER;
 		log(LOG_ERROR, "%s:%s:%d: END. Unlink/rename threads already in progress. ", __FILE__, __func__, __LINE__ );
 		return true;
