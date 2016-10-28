@@ -1088,7 +1088,7 @@ void Msg3a::printTerms ( ) {
 void setTermFreqWeights ( collnum_t collnum , Query *q ) {
 	int64_t numDocsInColl = 0;
 	RdbBase *base = getRdbBase ( RDB_CLUSTERDB, collnum );
-	if ( base ) numDocsInColl = base->getNumGlobalRecs();
+	if ( base ) numDocsInColl = base->estimateNumGlobalRecs();
 
 	// issue? set it to 1000 if so
 	if ( numDocsInColl < 0 ) {

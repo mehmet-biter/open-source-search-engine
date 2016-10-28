@@ -130,7 +130,7 @@ class RdbBase {
 	// positive minus negative
 	int64_t getNumTotalRecs() const;
 
-	int64_t getNumGlobalRecs() const;
+	int64_t estimateNumGlobalRecs() const;
 	
 	// private:
 

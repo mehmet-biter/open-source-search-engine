@@ -967,7 +967,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 
 	// estimate it
 	if ( base ) {
-		docsInColl = base->getNumGlobalRecs();
+		docsInColl = base->estimateNumGlobalRecs();
 	}
 
 	// include number of docs in the collection corpus

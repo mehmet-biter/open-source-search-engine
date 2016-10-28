@@ -2662,7 +2662,7 @@ bool CollectionRec::rebuildUrlFilters ( ) {
 int64_t CollectionRec::getNumDocsIndexed() {
 	RdbBase *base = getBase(RDB_TITLEDB);//m_bases[RDB_TITLEDB];
 	if ( ! base ) return 0LL;
-	return base->getNumGlobalRecs();
+	return base->estimateNumGlobalRecs();
 }
 
 // messes with m_spiderColl->m_sendLocalCrawlInfoToHost[MAX_HOSTS]

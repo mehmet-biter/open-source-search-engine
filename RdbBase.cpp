@@ -2094,7 +2094,7 @@ int64_t RdbBase::estimateListSize(const char *startKey, const char *endKey, char
 	return totalBytes;
 }
 
-int64_t RdbBase::getNumGlobalRecs() const {
+int64_t RdbBase::estimateNumGlobalRecs() const {
 	return getNumTotalRecs() * g_hostdb.m_numShards;
 }
 
