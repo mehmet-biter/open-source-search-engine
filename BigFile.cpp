@@ -444,7 +444,7 @@ int BigFile::getfd ( int32_t n , bool forReading ) {
 
 	// open it if not opened
 	if (!f->calledOpen()) {
-		if (!f->open(m_flags, getFileCreationFlags())) {
+		if (!f->open(m_flags)) {
 			log(LOG_WARN, "disk: Failed to open file part #%" PRId32".", n);
 			return -1;
 		}

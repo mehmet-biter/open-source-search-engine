@@ -65,8 +65,7 @@ public:
 	// . open() returns true on success, false on failure, errno is set.
 	// . opens for reading/writing only
 	// . returns false if does not exist
-	bool open  ( int flags , int permissions = 
-		     S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH );
+	bool open(int flags);
 
 	// . use an offset of -1 to use current file seek position
 	// . returns what ::read returns

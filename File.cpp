@@ -199,9 +199,9 @@ void File::rollbackMovePhase1(const char *newFilename) {
 
 // . open the file
 // . only call once per File after calling set()
-bool File::open ( int flags , int permissions ) {
+bool File::open(int flags) {
 	ScopedLock sl(m_mtxFdManipulation);
-	return open_unlocked(flags,permissions);
+	return open_unlocked(flags,getFileCreationFlags());
 }
 
 bool File::open_unlocked(int flags, int permissions) {
