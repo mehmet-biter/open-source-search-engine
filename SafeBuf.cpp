@@ -352,6 +352,9 @@ int32_t SafeBuf::safeSave(const char *filename) const {
 		return -1;
 	}
 
+	//unlink temporary .saving file. Ignore any errors because they are harmless
+	(void)::unlink(fn.getBufStart());
+
 	return m_length;
 }
 
