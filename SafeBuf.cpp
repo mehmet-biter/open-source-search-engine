@@ -289,7 +289,6 @@ int32_t SafeBuf::save(const char *fullFilename) const {
 int32_t SafeBuf::dumpToFile(const char *filename ) const {
 	int32_t fd = open ( filename , O_CREAT | O_WRONLY | O_TRUNC ,
 			    getFileCreationFlags() );
-			    //S_IRUSR |S_IWUSR |S_IRGRP |S_IWGRP| S_IROTH );
 	if ( fd < 0 ) {
 		log("safebuf: Failed to open %s for writing: %s", 
 		    filename,mstrerror(errno));
@@ -319,7 +318,6 @@ int32_t SafeBuf::safeSave(const char *filename) const {
 	int32_t fd = open ( fn.getBufStart() ,
 			    O_CREAT | O_WRONLY | O_TRUNC ,
 			    getFileCreationFlags() );
-			 // S_IRUSR |S_IWUSR |S_IRGRP |S_IWGRP| S_IROTH );
 	if ( fd < 0 ) {
 		log("safebuf: Failed to open %s for writing: %s", 
 		    fn.getBufStart(), mstrerror(errno));

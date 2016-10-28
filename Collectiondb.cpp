@@ -816,9 +816,6 @@ bool Collectiondb::resetColl2( collnum_t oldCollnum, collnum_t newCollnum, bool 
 	}
 	if ( ::mkdir ( dname ,
 		       getDirCreationFlags() ) ) {
-		       // S_IRUSR | S_IWUSR | S_IXUSR |
-		       // S_IRGRP | S_IWGRP | S_IXGRP |
-		       // S_IROTH | S_IXOTH ) ) {
 		// valgrind?
 		//if ( errno == EINTR ) goto retry22;
 		//g_errno = errno;

@@ -98,7 +98,6 @@ bool Log::init ( const char *filename ) {
 	m_fd = open ( m_filename , 
 		      O_APPEND | O_CREAT | O_RDWR ,
 		      getFileCreationFlags() );
-		      // S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH );
 	if ( m_fd >= 0 ) return true;
 	// bitch to stderr and return false on error
 	fprintf(stderr,"could not open log file %s for appending\n",
@@ -339,7 +338,6 @@ bool Log::makeNewLogFile ( ) {
 	m_fd = open ( m_filename , 
 		      O_APPEND | O_CREAT | O_RDWR ,
 		      getFileCreationFlags() );
-		      // S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH );
 	if ( m_fd >= 0 ) return true;
 	// bitch to stderr and return false on error
 	fprintf(stderr,"could not open new log file %s for appending\n",

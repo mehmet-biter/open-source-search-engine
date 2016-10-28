@@ -94,7 +94,6 @@ BigFile::BigFile ()
     m_latestsRenameP1Errno(0),
     m_mtxMetaJobs()
 {
-	//m_permissions = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH ;
 	m_flags       = O_RDWR ; // | O_DIRECT;
 	m_maxParts = 0;
 	m_numParts = 0;

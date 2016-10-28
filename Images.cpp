@@ -935,7 +935,6 @@ void Images::thumbStart_r ( bool amThread ) {
         int   fhndl;
         if( (fhndl = open( in, O_RDWR+O_CREAT ,
 			   getFileCreationFlags()
-			   // //			   S_IWUSR+S_IRUSR 
 			   )) < 0 ) {
                log(LOG_WARN,  "image: Could not open file, %s, for writing: %s - %d.",
        		    in, mstrerror( m_errno ), fhndl );

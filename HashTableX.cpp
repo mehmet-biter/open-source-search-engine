@@ -500,8 +500,6 @@ bool HashTableX::save ( const char *dir ,
 	int fd = ::open ( s , 
 			  O_RDWR | O_CREAT | O_TRUNC ,
 			  getFileCreationFlags() );
-			  // S_IRUSR | S_IWUSR | 
-			  // S_IRGRP | S_IWGRP | S_IROTH);
 	if ( fd < 0 ) {
 		//m_errno = errno;
 		log(LOG_WARN, "db: Could not open %s for writing: %s.", s,mstrerror(errno));
