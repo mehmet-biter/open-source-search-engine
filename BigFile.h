@@ -172,7 +172,7 @@ class BigFile {
 	// . IMPORTANT: if returns -1 it MAY have written some bytes 
 	//   successfully to OTHER parts that's why caller should be 
 	//   responsible for maintaining current write offset
-	bool  write ( void       *buf    ,
+	bool  write ( const void    *buf,
 	              int64_t        size   ,
 		      int64_t   offset                         , 
 		      FileState  *fs                      = NULL , 

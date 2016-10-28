@@ -546,7 +546,7 @@ bool BigFile::read  ( void       *buf    ,
 
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
-bool BigFile::write ( void       *buf    ,
+bool BigFile::write ( const void    *buf,
                       int64_t        size   ,
 		      int64_t   offset , 
 		      FileState  *fs     ,
@@ -560,7 +560,7 @@ bool BigFile::write ( void       *buf    ,
 		return true;
 	}
 	g_errno = 0;
-	return readwrite ( buf , size , offset , true/*doWrite?*/ , 
+	return readwrite(const_cast<void*>(buf), size, offset, true/*doWrite?*/,
 			   fs  , state, callback , niceness , 0 );
 }
 
