@@ -83,14 +83,11 @@ BigFile::~BigFile () {
 
 BigFile::BigFile ()
   : m_unlinkJobsBeingSubmitted(false),
-    m_unlinkJobsSubmitted(0),
-    m_unlinkJobsFinished(0),
+    m_outstandingUnlinkJobCount(0),
     m_renameP1JobsBeingSubmitted(false),
-    m_renameP1JobsSubmitted(0),
-    m_renameP1JobsFinished(0),
+    m_outstandingRenameP1JobCount(0),
     m_renameP2JobsBeingSubmitted(false),
-    m_renameP2JobsSubmitted(0),
-    m_renameP2JobsFinished(0),
+    m_outstandingRenameP2JobCount(0),
     m_latestsRenameP1Errno(0),
     m_mtxMetaJobs()
 {
@@ -125,10 +122,9 @@ void BigFile::logAllData(int32_t log_type)
 	log(log_type, "m_fileSize.............: %" PRId64, m_fileSize);
 	log(log_type, "m_lastModified.........: %04d%02d%02d-%02d%02d%02d", stm->tm_year+1900,stm->tm_mon+1,stm->tm_mday,stm->tm_hour,stm->tm_min,stm->tm_sec);
 	
-	log(log_type, "m_renameP1JobsSubmitted: %d", m_renameP1JobsSubmitted);
-	log(log_type, "m_renameP1JobsFinished.: %d", m_renameP1JobsFinished);
-	log(log_type, "m_renameP2JobsSubmitted: %d", m_renameP2JobsSubmitted);
-	log(log_type, "m_renameP2JobsFinished.: %d", m_renameP2JobsFinished);
+	log(log_type, "m_outstandingUnlinkJobCount: %d", m_outstandingUnlinkJobCount);
+	log(log_type, "m_outstandingRenameP1JobCount: %d", m_outstandingRenameP1JobCount);
+	log(log_type, "m_outstandingRenameP2JobCount: %d", m_outstandingRenameP2JobCount);
 	log(log_type, "m_isClosing............: [%s]", m_isClosing?"true":"false");
 
 	// SafeBufs
@@ -1189,7 +1185,7 @@ bool BigFile::unlink() {
 		return true;
 	}
 	
-	if(m_unlinkJobsSubmitted>m_unlinkJobsFinished || m_renameP1JobsSubmitted> m_renameP1JobsFinished || m_renameP2JobsSubmitted>m_renameP2JobsFinished) {
+	if(m_outstandingUnlinkJobCount!=0 || m_outstandingRenameP1JobCount!=0 || m_outstandingRenameP2JobCount!=0) {
 		g_errno = EBADENGINEER;
 		log(LOG_ERROR, "%s:%s:%d: END. Unlink/rename threads already in progress. ", __FILE__, __func__, __LINE__ );
 		return true;
@@ -1241,7 +1237,7 @@ bool BigFile::rename(const char *newBaseFilename, const char *newBaseFilenameDir
 		return true;
 	}
 	
-	if(m_renameP1JobsSubmitted>m_renameP1JobsFinished) {
+	if(m_outstandingRenameP1JobCount!=0) {
 		g_errno = EBADENGINEER;
 		log(LOG_ERROR, "%s:%s:%d: END. Unlink/rename threads already in progress. ", __FILE__, __func__, __LINE__ );
 		return true;
@@ -1352,41 +1348,41 @@ bool BigFile::unlinkPart(int32_t part, void (*callback)(void *state), void *stat
 
 void BigFile::incrementUnlinkJobsSubmitted() {
 	ScopedLock sl(m_mtxMetaJobs);
-	m_unlinkJobsSubmitted++;
-	if(m_unlinkJobsFinished>=m_unlinkJobsSubmitted) gbshutdownLogicError();
+	m_outstandingUnlinkJobCount++;
+	if(m_outstandingUnlinkJobCount<=0) gbshutdownLogicError();
 }
 
 bool BigFile::incrementUnlinkJobsFinished() {
 	ScopedLock sl(m_mtxMetaJobs);
-	m_unlinkJobsFinished++;
-	if(m_unlinkJobsFinished>m_unlinkJobsSubmitted) gbshutdownLogicError();
-	return m_unlinkJobsFinished==m_unlinkJobsSubmitted && !m_unlinkJobsBeingSubmitted;
+	if(m_outstandingUnlinkJobCount<=0) gbshutdownLogicError();
+	m_outstandingUnlinkJobCount--;
+	return m_outstandingUnlinkJobCount==0 && !m_unlinkJobsBeingSubmitted;
 }
 
 void BigFile::incrementRenameP1JobsSubmitted() {
 	ScopedLock sl(m_mtxMetaJobs);
-	m_renameP1JobsSubmitted++;
-	if(m_renameP1JobsFinished>=m_renameP1JobsSubmitted) gbshutdownLogicError();
+	m_outstandingRenameP1JobCount++;
+	if(m_outstandingRenameP1JobCount<=0) gbshutdownLogicError();
 }
 
 bool BigFile::incrementRenameP1JobsFinished() {
 	ScopedLock sl(m_mtxMetaJobs);
-	m_renameP1JobsFinished++;
-	if(m_renameP1JobsFinished>m_renameP1JobsSubmitted) gbshutdownLogicError();
-	return m_renameP1JobsFinished==m_renameP1JobsSubmitted && !m_renameP1JobsBeingSubmitted;
+	if(m_outstandingRenameP1JobCount<=0) gbshutdownLogicError();
+	m_outstandingRenameP1JobCount--;
+	return m_outstandingRenameP1JobCount==0 && !m_renameP1JobsBeingSubmitted;
 }
 
 void BigFile::incrementRenameP2JobsSubmitted() {
 	ScopedLock sl(m_mtxMetaJobs);
-	m_renameP2JobsSubmitted++;
-	if(m_renameP2JobsFinished>=m_renameP2JobsSubmitted) gbshutdownLogicError();
+	m_outstandingRenameP2JobCount++;
+	if(m_outstandingRenameP2JobCount<=0) gbshutdownLogicError();
 }
 
 bool BigFile::incrementRenameP2JobsFinished() {
 	ScopedLock sl(m_mtxMetaJobs);
-	m_renameP2JobsFinished++;
-	if(m_renameP2JobsFinished>m_renameP2JobsSubmitted) gbshutdownLogicError();
-	return m_renameP2JobsFinished==m_renameP2JobsSubmitted && !m_renameP2JobsBeingSubmitted;
+	if(m_outstandingRenameP2JobCount<=0) gbshutdownLogicError();
+	m_outstandingRenameP2JobCount--;
+	return m_outstandingRenameP2JobCount==0 && !m_renameP2JobsBeingSubmitted;
 }
 
 
@@ -1425,7 +1421,7 @@ bool BigFile::unlink(int32_t part, void (*callback)(void *state), void *state) {
 	// . wait for any previous unlink to finish
 	// . we can only store one callback at a time, m_callback, so we
 	//   must do this for now
-	if(m_unlinkJobsSubmitted>m_unlinkJobsFinished || m_renameP1JobsSubmitted> m_renameP1JobsFinished || m_renameP2JobsSubmitted>m_renameP2JobsFinished) {
+	if(m_outstandingUnlinkJobCount!=0 || m_outstandingRenameP1JobCount!=0 || m_outstandingRenameP2JobCount!=0) {
 		//unlinking multiple parts one at a time is fine.
 		if(part<0 || ( callback != m_callback || state != m_state ) ) {
 			g_errno = EBADENGINEER;
@@ -1500,7 +1496,7 @@ bool BigFile::unlink(int32_t part, void (*callback)(void *state), void *state) {
 		ScopedLock sl(m_mtxMetaJobs);
 		m_unlinkJobsBeingSubmitted = false;
 		
-		if(m_unlinkJobsSubmitted!=m_unlinkJobsFinished)
+		if(m_outstandingUnlinkJobCount!=0)
 			return false; //not completed yet
 	}
 	
@@ -1532,7 +1528,7 @@ bool BigFile::rename(const char *newBaseFilename,
 	// . wait for any previous rename to finish
 	// . we can only store one callback at a time, m_callback, so we
 	//   must do this for now
-	if(m_renameP1JobsSubmitted>m_renameP1JobsFinished) {
+	if(m_outstandingRenameP1JobCount!=0) {
 		g_errno = EBADENGINEER;
 		log(LOG_ERROR, "%s:%s:%d: END. Unlink/rename threads already in progress. ", __FILE__, __func__, __LINE__ );
 		return true;
@@ -1611,7 +1607,7 @@ bool BigFile::rename(const char *newBaseFilename,
 		ScopedLock sl(m_mtxMetaJobs);
 		m_renameP1JobsBeingSubmitted = false;
 		
-		if(m_renameP1JobsSubmitted!=m_renameP1JobsFinished)
+		if(m_outstandingRenameP1JobCount!=0)
 			return false; //not completed yet
 	}
 	
@@ -1748,7 +1744,7 @@ void BigFile::doneP1RenameWrapper(File *f) {
 		ScopedLock sl(m_mtxMetaJobs);
 		m_renameP2JobsBeingSubmitted = false;
 		
-		if(m_renameP2JobsSubmitted!=m_renameP2JobsFinished)
+		if(m_outstandingRenameP2JobCount!=0)
 			return; //not completed yet
 	}
 

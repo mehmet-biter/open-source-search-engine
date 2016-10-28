@@ -228,15 +228,12 @@ private:
 
 	//counters for keeping track of unlinking
 	bool m_unlinkJobsBeingSubmitted;
-	int m_unlinkJobsSubmitted;
-	int m_unlinkJobsFinished;
+	int m_outstandingUnlinkJobCount;
 	//counters for keeping track of renaming
 	bool m_renameP1JobsBeingSubmitted;
-	int m_renameP1JobsSubmitted;
-	int m_renameP1JobsFinished;
+	int m_outstandingRenameP1JobCount;
 	bool m_renameP2JobsBeingSubmitted;
-	int m_renameP2JobsSubmitted;
-	int m_renameP2JobsFinished;
+	int m_outstandingRenameP2JobCount;
 	int m_latestsRenameP1Errno;
 	GbMutex m_mtxMetaJobs; //protects above counters
 
