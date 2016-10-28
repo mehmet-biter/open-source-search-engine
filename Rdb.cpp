@@ -2087,7 +2087,7 @@ int64_t Rdb::getListSize(collnum_t collnum, const char *startKey, const char *en
 		log(LOG_WARN, "db: %s bad collnum of %i", m_dbname, collnum);
 		return 0;
 	}
-	return getBase(collnum)->getListSize(startKey, endKey, max, oldTruncationLimit);
+	return getBase(collnum)->estimateListSize(startKey, endKey, max, oldTruncationLimit);
 }
 
 int64_t Rdb::getNumGlobalRecs() const {
