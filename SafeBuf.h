@@ -58,17 +58,18 @@ public:
 	int32_t getCapacity() const { return m_capacity; }
 	int32_t getAvail() const { return m_capacity - m_length; }
 	int32_t length() const { return m_length; }
-	void print() { 
-	  if ( write(1,m_buf,m_length) != m_length) { gbshutdownAbort(true); } }
+	void print() const {
+		if ( write(1,m_buf,m_length) != m_length) { gbshutdownAbort(true); }
+	}
 
 	// . returns bytes written to file, 0 is acceptable if m_length == 0
 	// . returns -1 on error and sets g_errno
-	int32_t saveToFile ( const char *dir, const char *filename );
-	int32_t dumpToFile(const char *filename);
-	int32_t save ( const char *dir, const char *fname) {return saveToFile(dir,fname); }
-	int32_t save ( const char *fullFilename ) ;
+	int32_t saveToFile(const char *dir, const char *filename) const;
+	int32_t dumpToFile(const char *filename) const;
+	int32_t save(const char *dir, const char *fname) const { return saveToFile(dir,fname); }
+	int32_t save(const char *fullFilename) const;
 	// saves to tmp file and if that succeeds then renames to orig filename
-	int32_t safeSave (char *filename );
+	int32_t safeSave(const char *filename) const;
 
 	int32_t  fillFromFile(const char *filename);
 	int32_t  fillFromFile(const char *dir, const char *filename, const char *label=NULL);

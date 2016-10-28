@@ -276,17 +276,17 @@ bool SafeBuf::reserve2x(int32_t i, const char *label) {
 	else return true;
 }
 
-int32_t SafeBuf::saveToFile ( const char *dir, const char *filename ) {
+int32_t SafeBuf::saveToFile(const char *dir, const char *filename) const {
 	char buf[1024];
 	snprintf(buf,1024,"%s/%s",dir,filename);
 	return dumpToFile ( buf );
 }
 
-int32_t SafeBuf::save ( const char *fullFilename ) {
+int32_t SafeBuf::save(const char *fullFilename) const {
 	return dumpToFile ( fullFilename );
 }
 
-int32_t SafeBuf::dumpToFile(const char *filename ) {
+int32_t SafeBuf::dumpToFile(const char *filename ) const {
 	int32_t fd = open ( filename , O_CREAT | O_WRONLY | O_TRUNC ,
 			    getFileCreationFlags() );
 			    //S_IRUSR |S_IWUSR |S_IRGRP |S_IWGRP| S_IROTH );
@@ -309,7 +309,7 @@ int32_t SafeBuf::dumpToFile(const char *filename ) {
 }
 
 // return -1 on error
-int32_t SafeBuf::safeSave (char *filename ) {
+int32_t SafeBuf::safeSave(const char *filename) const {
 
 	// first write to tmp file
 	char tmp[1024];
