@@ -226,13 +226,26 @@ private:
 	void (*m_callback)(void *state);
 	void  *m_state;
 
-	bool m_metaJobsBeingSubmitted;
-	int m_metaJobsSubmitted;
-	int m_metaJobsFinished;
-	GbMutex m_mtxMetaJobs;
+	//counters for keeping track of unlinking
+	bool m_unlinkJobsBeingSubmitted;
+	int m_unlinkJobsSubmitted;
+	int m_unlinkJobsFinished;
+	//counters for keeping track of renaming
+	bool m_renameP1JobsBeingSubmitted;
+	int m_renameP1JobsSubmitted;
+	int m_renameP1JobsFinished;
+	bool m_renameP2JobsBeingSubmitted;
+	int m_renameP2JobsSubmitted;
+	int m_renameP2JobsFinished;
+	int m_latestsRenameP1Errno;
+	GbMutex m_mtxMetaJobs; //protects above counters
 
-	void incrementMetaJobsSubmitted();
-	bool incrementMetaJobsFinished();
+	void incrementUnlinkJobsSubmitted();
+	bool incrementUnlinkJobsFinished();
+	void incrementRenameP1JobsSubmitted();
+	bool incrementRenameP1JobsFinished();
+	void incrementRenameP2JobsSubmitted();
+	bool incrementRenameP2JobsFinished();
 
 	// to hold the array of Files
 	SafeBuf m_filePtrsBuf;
@@ -256,10 +269,14 @@ private:
 		    void (*callback)(void *state), void *state,
 		    const char *newBaseFilenameDir);
 	//job/thread worker functions helping rename()
-	static void renameWrapper(void *state);
-	void renameWrapper(File *f, int32_t i);
-	static void doneRenameWrapper(void *state, job_exit_t exit_type);
-	void doneRenameWrapper(File *f);
+	static void renameP1Wrapper(void *state);
+	void renameP1Wrapper(File *f, int32_t i);
+	static void doneP1RenameWrapper(void *state, job_exit_t exit_type);
+	void doneP1RenameWrapper(File *f);
+	static void renameP2Wrapper(void *state);
+	void renameP2Wrapper(File *f, int32_t i);
+	static void doneP2RenameWrapper(void *state, job_exit_t exit_type);
+	void doneP2RenameWrapper(File *f);
 
 	bool unlink(int32_t  part,
 		    void (*callback)(void *state), void *state);

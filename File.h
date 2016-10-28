@@ -50,6 +50,7 @@ public:
 
 	bool movePhase1(const char *newFilename);
 	bool movePhase2(const char *newFilename);
+	void rollbackMovePhase1(const char *newFilename);
 
 	bool calledOpen () { return m_calledOpen; }
 	bool calledSet  () { return m_calledSet; }

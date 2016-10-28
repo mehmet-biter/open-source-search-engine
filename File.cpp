@@ -188,6 +188,15 @@ bool File::movePhase2(const char *newFilename) {
 }
 
 
+void File::rollbackMovePhase1(const char *newFilename) {
+	if(::unlink(newFilename)!=0) {
+		log(LOG_ERROR, "%s:%s:%d: disk: trying to rollback renmae-phase1 [%s] to [%s], unlink() failed with errno=%d.", __FILE__, __func__, __LINE__,
+		    getFilename(), newFilename, errno);
+	}
+	//yes, we return void because when a rollback doesn't work then there isn't much we can do
+}
+
+
 // . open the file
 // . only call once per File after calling set()
 bool File::open ( int flags , int permissions ) {
