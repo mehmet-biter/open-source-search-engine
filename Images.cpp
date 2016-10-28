@@ -11,6 +11,7 @@
 #include "Posdb.h"
 #include "File.h"
 #include <pthread.h>
+#include <fcntl.h>
 
 // TODO: image is bad if repeated on same page, check for that
 

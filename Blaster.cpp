@@ -11,6 +11,7 @@
 #include "HttpMime.h"
 #include "Process.h"
 #include "GbUtil.h"
+#include <fcntl.h>
 
 
 struct StateBD {

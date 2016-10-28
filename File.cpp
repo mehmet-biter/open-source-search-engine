@@ -8,6 +8,7 @@
 #include "ScopedLock.h"
 #include "GbMutex.h"
 #include <pthread.h>
+#include <fcntl.h>
 #include <sys/types.h>       // for open/lseek
 #include <sys/stat.h>        // for open
 

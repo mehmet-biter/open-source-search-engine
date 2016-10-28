@@ -21,6 +21,7 @@
 #include "Dns.h"
 #include "File.h"
 #include "IPAddressChecks.h"
+#include <fcntl.h>
 
 // a global class extern'd in .h file
 Hostdb g_hostdb;

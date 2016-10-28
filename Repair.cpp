@@ -20,6 +20,7 @@
 #include "XmlDoc.h"
 #include "File.h"
 #include "max_niceness.h"
+#include <fcntl.h>
 
 
 static void repairWrapper ( int fd , void *state ) ;

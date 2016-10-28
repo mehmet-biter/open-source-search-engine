@@ -75,6 +75,7 @@
 #include "Dir.h"
 #include "File.h"
 #include <sys/stat.h> //umask()
+#include <fcntl.h>
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
 #include <valgrind/helgrind.h>

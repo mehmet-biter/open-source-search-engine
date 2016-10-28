@@ -19,7 +19,6 @@
 
 #define MAX_FILENAME_LEN 128
 
-#include <fcntl.h>           // for open
 #include <pthread.h>
 
 

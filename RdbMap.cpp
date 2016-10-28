@@ -7,6 +7,8 @@
 #include "File.h"
 #include "Conf.h"
 #include "Mem.h"
+#include <fcntl.h>
+
 
 RdbMap::RdbMap() {
 	m_numSegments = 0;

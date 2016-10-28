@@ -7,6 +7,7 @@
 #include "types.h"
 #include "Process.h"
 #include "File.h"
+#include <fcntl.h>
 
 
 template<class Key_t, class Val_t> 

@@ -21,6 +21,7 @@
 #include "GbMoveFile.h"
 #include "ScopedLock.h"
 #include <sys/stat.h> //mkdir(), stat()
+#include <fcntl.h>
 #include <algorithm>
 
 bool g_dumpMode = false;

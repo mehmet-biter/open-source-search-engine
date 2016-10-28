@@ -12,6 +12,7 @@
 #include "File.h"
 #include "GbMutex.h"
 #include "ScopedLock.h"
+#include <fcntl.h>
 
 // a global class extern'd in Log.h
 Log g_log;

@@ -9,6 +9,7 @@
 #include "File.h"
 #include "Conf.h"
 #include "Sanity.h"
+#include <fcntl.h>
 
 
 HashTableX::HashTableX () {

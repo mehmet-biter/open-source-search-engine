@@ -36,6 +36,7 @@
 #include "File.h"
 #include <sys/statvfs.h>
 #include <pthread.h>
+#include <fcntl.h>
 
 bool g_inAutoSave;
 
