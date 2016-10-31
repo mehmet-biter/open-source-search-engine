@@ -19436,9 +19436,10 @@ bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {
 		"<td><b>Term</b></td>"
 
 		"<td><b>Desc</b></td>"
-
-		"<td><b>N</b></td>"
-		"<td><b>S</b></td>"
+		"<td><b>Density</b></td>"
+		"<td><b>Diversity</b></td>"
+		"<td><b>Spam</b></td>"
+		"<td><b>Inlink PR</b></td>"
 		"<td><b>Score</b></td>"
 
 		"</tr>\n"
@@ -19534,29 +19535,58 @@ bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {
 		}
 
 		int32_t dn = (int32_t)tp[i]->m_densityRank;
-		if ( isXml )
+		if ( isXml ) {
 			sb->safePrintf("\t\t<dens>%" PRId32"</dens>\n",dn);
+		}
+		else {
+			if( dn >= MAXDENSITYRANK ) {
+				sb->safePrintf("<td>%" PRId32"</td>\n",dn);
+			}
+			else {
+				sb->safePrintf("<td><font color=purple>%" PRId32"</font></td>",dn);
+			}
+		}
 
-		if ( ! isXml && dn >= MAXDENSITYRANK )
-			sb->safePrintf("<td>%" PRId32"</td>\n",dn);
-		else if ( ! isXml )
-			sb->safePrintf("<td><font color=purple>%" PRId32"</font>"
-				       "</td>",dn);
+		int32_t dv = (int32_t)tp[i]->m_diversityRank;
+		if ( isXml ) {
+			sb->safePrintf("\t\t<divers>%" PRId32"</divers>\n",dv);
+		}
+		else {
+			if( dv >= MAXDIVERSITYRANK ) {
+				sb->safePrintf("<td>%" PRId32"</td>\n",dv);
+			}
+			else {
+				sb->safePrintf("<td><font color=purple>%" PRId32"</font></td>",dv);
+			}
+		}
 
-		// the diversityrank/wordspamrank
+
+		// the wordspamrank
 		int32_t ws = (int32_t)tp[i]->m_wordSpamRank;
 
-		if ( isXml && hg == HASHGROUP_INLINKTEXT )
-			sb->safePrintf("\t\t<linkerSiteRank>%" PRId32
-				       "</linkerSiteRank>\n",ws);
-		else if ( isXml )
-			sb->safePrintf("\t\t<spam>%" PRId32"</spam>\n",ws);
-
-		if ( ! isXml && ws >= MAXWORDSPAMRANK )
-			sb->safePrintf("<td>%" PRId32"</td>",ws);
-		else if ( ! isXml )
-			sb->safePrintf("<td><font color=red>%" PRId32"</font></td>",
-				       ws);
+		if ( isXml ) {
+			if( hg == HASHGROUP_INLINKTEXT ) {
+				sb->safePrintf("\t\t<linkerSiteRank>%" PRId32 "</linkerSiteRank>\n",ws);
+			}
+			else {
+				sb->safePrintf("\t\t<spam>%" PRId32"</spam>\n",ws);
+			}
+		}
+		else {
+			if( hg == HASHGROUP_INLINKTEXT ) {
+				sb->safePrintf("<td></td>");
+				sb->safePrintf("<td>%" PRId32"</td>",ws);
+			}
+			else {
+				if ( ws >= MAXWORDSPAMRANK ) {
+					sb->safePrintf("<td>%" PRId32"</td>",ws);
+				}
+				else {
+					sb->safePrintf("<td><font color=red>%" PRId32"</font></td>", ws);
+				}
+				sb->safePrintf("<td></td>");
+			}
+		}
 
 		float score = 1.0;
 		// square this like we do in the query ranking algo
