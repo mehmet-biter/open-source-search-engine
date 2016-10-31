@@ -232,7 +232,7 @@ void doneSleepingWrapperSL ( int fd , void *state ) {
 	
 	//if ( ! g_conf.m_webSpideringEnabled )  return;
 	// or if trying to exit
-	if ( g_process.m_mode == EXIT_MODE ) return;	
+	if ( g_process.m_mode == Process::EXIT_MODE ) return;	
 	// skip if udp table is full
 	if ( g_udpServer.getNumUsedSlotsIncoming() >= MAXUDPSLOTS ) return;
 
@@ -426,7 +426,7 @@ subloop:
 	}
 
 	// or if trying to exit
-	if ( g_process.m_mode == EXIT_MODE ) {
+	if ( g_process.m_mode == Process::EXIT_MODE ) {
 		logTrace( g_conf.m_logTraceSpider, "END, shutting down"  );
 		return;	
 	}
@@ -1269,7 +1269,7 @@ bool SpiderLoop::spiderUrl9 ( SpiderRequest *sreq ,
 	// turned off?
 	if ( ( (! g_conf.m_spideringEnabled ||
 		// or if trying to exit
-		g_process.m_mode == EXIT_MODE
+		g_process.m_mode == Process::EXIT_MODE
 		) && // ! g_conf.m_webSpideringEnabled ) &&
 	       ! sreq->m_isInjecting ) || 
 	     // repairing the collection's rdbs?

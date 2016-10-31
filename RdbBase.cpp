@@ -1370,7 +1370,7 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 	}
 	
 	// shutting down? do not start another merge then
-	if ( g_process.m_mode == EXIT_MODE ) {
+	if ( g_process.m_mode == Process::EXIT_MODE ) {
 		logTrace( g_conf.m_logTraceRdbBase, "END, shutting down" );
 		return false;
 	}

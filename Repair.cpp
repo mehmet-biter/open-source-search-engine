@@ -885,7 +885,7 @@ bool Repair::loop ( void *state ) {
 
  loop1:
 
-	if ( g_process.m_mode == EXIT_MODE )
+	if ( g_process.m_mode == Process::EXIT_MODE )
 	{
 		return true;
 	}

@@ -592,7 +592,7 @@ void RdbMerge::doneMerging() {
 
 	// if we are exiting then dont bother renaming the files around now.
 	// this prevents a core in RdbBase::incorporateMerge()
-	if (g_process.m_mode == EXIT_MODE) {
+	if (g_process.m_mode == Process::EXIT_MODE) {
 		log(LOG_INFO, "merge: exiting. not ending merge.");
 		return;
 	}

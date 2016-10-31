@@ -968,7 +968,7 @@ bool Rdb::dumpTree ( int32_t niceness ) {
 	}
 
 	// . if Process is saving, don't start a dump
-	if ( g_process.m_mode == SAVE_MODE ) {
+	if ( g_process.m_mode == Process::SAVE_MODE ) {
 		logTrace( g_conf.m_logTraceRdb, "END. %s: Process is in save mode. Returning true", m_dbname );
 		return true;
 	}
