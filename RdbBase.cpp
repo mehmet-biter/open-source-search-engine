@@ -254,7 +254,6 @@ void RdbBase::specialInjectFileInit(const char *dir,
 
 
 // . move all files into trash subdir
-// . change name
 // . this is part of PageRepair's repair algorithm. all this stuff blocks.
 bool RdbBase::moveToTrash(const char *dstDir) {
 	// loop over all files
@@ -637,7 +636,7 @@ void RdbBase::generateFilename(char *buf, size_t bufsize, int32_t fileId, int32_
 
 
 // return the fileNum we added it to in the array
-// reutrn -1 and set g_errno on error
+// return -1 and set g_errno on error
 int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t mergeNum, int32_t endMergeFileId ) {
 	// sanity check
 	if ( fileId2 < 0 && m_isTitledb )
@@ -910,9 +909,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 
 	// inc # of files we have
 	m_numFiles++;
-	// debug note
-	//log("rdb: numFiles=%" PRId32" for collnum=%" PRId32" db=%s",
-	//    m_numFiles,(int32_t)m_collnum,m_dbname);
+
 	// if we added a merge file, mark it
 	if ( mergeNum >= 0 ) {
 		m_hasMergeFile      = true;
@@ -923,7 +920,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 }
 
 int32_t RdbBase::addNewFile() {
-	//No clue abotu why titledb is different. it just is.
+	//No clue about why titledb is different. it just is.
 	int32_t id2 = m_isTitledb ? 0 : -1;
 	
 	int32_t maxFileId = 0;
@@ -971,7 +968,7 @@ bool RdbBase::incorporateMerge ( ) {
 	int32_t a = m_mergeStartFileNum;
 	int32_t b = m_mergeStartFileNum + m_numFilesToMerge;
 
-	if(b>m_numFiles) //definesive checks
+	if(b>m_numFiles) //defensive checks
 		b = m_numFiles;
 	// shouldn't be called if no files merged
 	if ( a >= b ) {
@@ -1029,14 +1026,6 @@ bool RdbBase::incorporateMerge ( ) {
 
 
 	// . bitch if bad news
-	// . sanity checks to make sure we didn't mess up our data from merging
-	// . these cause a seg fault on problem, seg fault should save and
-	//   dump core. sometimes we'll have a chance to re-merge the 
-	//   candidates to see what caused the problem.
-	// . only do these checks for indexdb, titledb can have key overwrites
-	//   and we can lose positives due to overwrites
-	// . i just re-added some partially indexed urls so indexdb will
-	//   have dup overwrites now too!!
 	if ( tp > m_premergeNumPositiveRecords ) {
 		log(LOG_INFO,"merge: %s gained %" PRId64" positives.", m_dbname , tp - m_premergeNumPositiveRecords );
 	}
@@ -1165,7 +1154,7 @@ void RdbBase::unlinkDone() {
 	int32_t x = m_x;
 	int32_t a = m_a;
 
-	// . the fileId of the merge file becomes that of a
+	// . the fileId of the merge file becomes that of 'a'
 	// . but secondary id should remain the same
 	m_fileInfo[x].m_fileId = m_fileInfo[a].m_fileId;
 
@@ -1352,8 +1341,6 @@ void RdbBase::buryFiles ( int32_t a , int32_t b ) {
 //   "minToMergeOverride" to "2". (i.e. perform a merge if you got 2 or more 
 //   files)
 // . now return true if we started a merge, false otherwise
-// . TODO: fix Rdb::attemptMergeAll() to not remove from linked list if
-//   we had an error in addNewFile() or rdbmerge.cpp's call to rdbbase::addFile
 bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMergeOverride) {
 	logTrace( g_conf.m_logTraceRdbBase, "BEGIN. minToMergeOverride: %" PRId32, minToMergeOverride);
 
@@ -1390,10 +1377,7 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 	// include it in the merge
 	int32_t numFiles = m_numFiles;
 	if ( numFiles > 0 && m_dump->isDumping() ) numFiles--;
-	// need at least 1 file to merge, stupid (& don't forget: u r stooopid)
-	// crap, we need to recover those tagdb0000.002.dat files, so
-	// comment this out so we can do a resume on it
-	//if ( numFiles <= 1 ) return;
+
 	// . wait for all unlinking and renaming activity to flush out
 	// . otherwise, a rename or unlink might still be waiting to happen
 	//   and it will mess up our merge
@@ -1494,9 +1478,6 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 		logTrace( g_conf.m_logTraceRdbBase, "END, already merging this" );
 		return false;
 	}
-
-	// if we are tfndb and someone else is merging, do not merge unless
-	// we have 3 or more files
 
 	// are we resuming a killed merge?
 	bool resuming = false;
@@ -1861,23 +1842,12 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 	// decerment this count
 	m_rdb->decrementNumMerges();
 
-	// . if we have no g_errno that is bad!!!
-	// . we should dump core here or something cuz we have to remove the
-	//   merge file still to be correct
-	//if ( ! g_errno )
-	//	log(LOG_INFO,"merge: Got token without blocking.");
-	// we now set this in init() by calling m_merge.init() so it
-	// can pre-alloc it's lists in it's s_msg3 class
-	//		       g_conf.m_mergeMaxBufSize ) ) return ;
 	// bitch on g_errno then clear it
 	if ( g_errno ) {
 		log( LOG_WARN, "merge: Had error getting merge token for %s: %s.", m_dbname, mstrerror( g_errno ) );
 	}
 	g_errno = 0;
 
-	// try again
-	//m_rdb->attemptMerge( m_niceness, false , true );
-	// how did this happen?
 	log("merge: did not block for some reason.");
 	logTrace( g_conf.m_logTraceRdbBase, "END" );
 	return true;
