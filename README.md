@@ -39,6 +39,10 @@ Migrating Gigablast to our fork
 | Rebuild | Rebuild the posdb data files through the web UI. This is needed because we store less data in posdb than the original version, and GB cannot clean this 'junk' data up when re-indexing pages.|
 
 
+SUPPORTED PLATFORMS
+-------------------
+Ubuntu 14.04 - compile with g++ 4.9.3
+
 RUNNING GIGABLAST
 -----------------
 See <a href=html/faq.html>html/faq.html</a> for all administrative documentation including the quick start instructions.
