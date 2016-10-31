@@ -19,10 +19,14 @@
 #include "Dir.h"
 #include "File.h"
 #include "GbMoveFile.h"
+#include "GbMakePath.h"
 #include "ScopedLock.h"
 #include <sys/stat.h> //mkdir(), stat()
 #include <fcntl.h>
 #include <algorithm>
+#include <set>
+#include <signal.h>
+
 
 bool g_dumpMode = false;
 
@@ -35,11 +39,17 @@ static const int32_t absoluteMaxFilesToMerge = 50;
 class RdbMerge g_merge;
 
 RdbBase::RdbBase()
-	: m_docIdFileIndex(new docids_t) {
-	m_numFiles  = 0;
+  : m_numFiles(0),
+    m_mtxFileInfo(),
+    m_docIdFileIndex(new docids_t),
+    m_submittingJobs(false),
+    m_outstandingJobCount(0),
+    m_mtxJobCount()
+{
 	m_rdb = NULL;
 	m_nextMergeForced = false;
 	m_collectionDirName[0] = '\0';
+	m_mergeDirName[0] = '\0';
 	m_dbname[0] = '\0';
 	m_dbnameLen = 0;
 
@@ -86,9 +96,6 @@ void RdbBase::reset ( ) {
 
 	m_numFiles  = 0;
 	m_isMerging = false;
-	m_hasMergeFile = false;
-	m_isUnlinking  = false;
-	m_numThreads = 0;
 }
 
 RdbBase::~RdbBase ( ) {
@@ -117,6 +124,7 @@ bool RdbBase::init(const char *dir,
 	m_didRepair = false;
 
 	sprintf(m_collectionDirName, "%scoll.%s.%" PRId32, dir, coll, (int32_t)collnum);
+	sprintf(m_mergeDirName, "%s/%d/coll.%s.%d", g_conf.m_mergespaceDirectory, getMyShardNum(), coll, (int32_t)collnum);
 
 	// logDebugAdmin
 	log(LOG_DEBUG,"db: adding new base for dir=%s coll=%s collnum=%" PRId32" db=%s",
@@ -137,6 +145,13 @@ bool RdbBase::init(const char *dir,
 			log( LOG_WARN, "db: Failed to make directory %s: %s.", m_collectionDirName, mstrerror( errno ) );
 			return false;
 		}
+	}
+
+	//make sure merge space directory exists
+	if(makePath(m_mergeDirName,getDirCreationFlags())!=0) {
+		g_errno = errno;
+		log(LOG_ERROR, "makePath(%s) failed with errno=%d (%s)", m_mergeDirName, errno, strerror(errno));
+		return false;
 	}
 
  top:
@@ -440,7 +455,12 @@ bool RdbBase::hasFileId(int32_t fildId) const {
 // . first file is always the merge file (may be empty)
 // . returns false on error
 bool RdbBase::setFiles ( ) {
-	if(!loadFilesFromDir(m_collectionDirName))
+	if(!cleanupAnyChrashedMerged())
+		return false;
+
+	if(!loadFilesFromDir(m_collectionDirName,false))
+		return false;
+	if(!loadFilesFromDir(m_mergeDirName,true))
 		return false;
 
 	// spiderdb should start with file 0001.dat or 0000.dat
@@ -450,7 +470,6 @@ bool RdbBase::setFiles ( ) {
 		return fixNonfirstSpiderdbFiles();
 	}
 
-
 	// ensure files are sharded correctly
 	verifyFileSharding();
 
@@ -458,7 +477,137 @@ bool RdbBase::setFiles ( ) {
 }
 
 
-bool RdbBase::loadFilesFromDir(const char *dirName) {
+//Clean up any unfinished and unrecoverable merge
+//  Because a half-finished mergedir/mergefile.dat can be resumed easily we don't clean
+//  up mergedir/*.dat.  Half-copied datadir/mergefile.dat are removed because the
+//  copy/move can easily be restarted (and it would be too much effort to restart copying
+//  halfway).  Orphaned mergedir/*.map and mergedir/*.idx are removed.  Orphaned data/*.map
+//  and data/*.idx are removed.  Missing *.map and *.idx are automatically regenerated.
+bool RdbBase::cleanupAnyChrashedMerged() {
+	//note: we could submit the unlik() calls to the jobscheduler if we really wanted
+	//but since this recovery-cleanup is done during startup I don't see a big problem
+	//with waiting for unlink() to finish because the collection will not be ready for
+	//use until cleanup has happened.
+
+	log(LOG_DEBUG, "Cleaning up any unfinished merges of %s %s", m_coll, m_dbname);
+
+	//Remove datadir/mergefile.dat
+	{
+		Dir dir;
+		dir.set(m_collectionDirName);
+		if(!dir.open())
+			return false;
+		char pattern[128];
+		sprintf(pattern,"%s*",m_dbname);
+		while(const char *filename = dir.getNextFilename(pattern)) {
+			if(strstr(pattern,".dat")!=NULL) {
+				int32_t fileId, fileId2;
+				int32_t mergeNum, endMergeFileId;
+				if(parseFilename(filename,&fileId,&fileId2,&mergeNum,&endMergeFileId)) {
+					if((fileId%2)==0) {
+						char fullname[1024];
+						sprintf(fullname,"%s/%s",m_collectionDirName,filename);
+						log(LOG_DEBUG,"Removing %s", fullname);
+						if(unlink(fullname)!=0) {
+							g_errno = errno;
+							log(LOG_ERROR,"unlink(%s) failed with errno=%d (%s)", fullname, errno, strerror(errno));
+							return false;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	//Remove orphaned datadir/*.map and datadir/*.idx
+	{
+		std::set<int32_t> existingDataDirFileIds;
+		Dir dir;
+		dir.set(m_mergeDirName);
+		if(!dir.open())
+			return false;
+		char pattern[128];
+		sprintf(pattern,"%s*",m_dbname);
+		while(const char *filename = dir.getNextFilename(pattern)) {
+			if(strstr(pattern,".dat")!=NULL) {
+				int32_t fileId, fileId2;
+				int32_t mergeNum, endMergeFileId;
+				if(parseFilename(filename,&fileId,&fileId2,&mergeNum,&endMergeFileId)) {
+					existingDataDirFileIds.insert(fileId);
+				}
+			}
+		}
+		dir.close();
+		if(!dir.open())
+			return false;
+		while(const char *filename = dir.getNextFilename(pattern)) {
+			int32_t fileId, fileId2;
+			int32_t mergeNum, endMergeFileId;
+			if(parseFilename(filename,&fileId,&fileId2,&mergeNum,&endMergeFileId)) {
+				if(existingDataDirFileIds.find(fileId)==existingDataDirFileIds.end() &&  //unseen fileid
+				   (strstr(filename,".map")!=NULL || strstr(filename,".idx")!=NULL))     //.map or .idx
+				{
+					char fullname[1024];
+					sprintf(fullname,"%s/%s",m_collectionDirName,filename);
+					log(LOG_DEBUG,"Removing %s", fullname);
+					if(unlink(fullname)!=0) {
+						g_errno = errno;
+						log(LOG_ERROR,"unlink(%s) failed with errno=%d (%s)", fullname, errno, strerror(errno));
+						return false;
+					}
+				}
+			}
+		}
+	}
+	
+	//Remove orphaned mergedir/*.map and mergedir/*.idx
+	{
+		std::set<int32_t> existingMergeDirFileIds;
+		Dir dir;
+		dir.set(m_mergeDirName);
+		if(!dir.open())
+			return false;
+		char pattern[128];
+		sprintf(pattern,"%s*",m_dbname);
+		while(const char *filename = dir.getNextFilename(pattern)) {
+			if(strstr(pattern,".dat")!=NULL) {
+				int32_t fileId, fileId2;
+				int32_t mergeNum, endMergeFileId;
+				if(parseFilename(filename,&fileId,&fileId2,&mergeNum,&endMergeFileId)) {
+					existingMergeDirFileIds.insert(fileId);
+				}
+			}
+		}
+		dir.close();
+		if(!dir.open())
+			return false;
+		while(const char *filename = dir.getNextFilename(pattern)) {
+			int32_t fileId, fileId2;
+			int32_t mergeNum, endMergeFileId;
+			if(parseFilename(filename,&fileId,&fileId2,&mergeNum,&endMergeFileId)) {
+				if(existingMergeDirFileIds.find(fileId)==existingMergeDirFileIds.end() &&  //unseen fileid
+				   (strstr(filename,".map")!=NULL || strstr(filename,".idx")!=NULL))     //.map or .idx
+				{
+					char fullname[1024];
+					sprintf(fullname,"%s/%s",m_collectionDirName,filename);
+					log(LOG_DEBUG,"Removing %s", fullname);
+					if(unlink(fullname)!=0) {
+						g_errno = errno;
+						log(LOG_ERROR,"unlink(%s) failed with errno=%d (%s)", fullname, errno, strerror(errno));
+						return false;
+					}
+				}
+			}
+		}
+	}
+
+	log(LOG_DEBUG, "Cleaned up any unfinished merges of %s %s", m_coll, m_dbname);
+	return true;
+}
+
+
+
+bool RdbBase::loadFilesFromDir(const char *dirName, bool isInMergeDir) {
 	Dir dir;
 	if(!dir.set(dirName))
 		return false;
@@ -543,7 +692,7 @@ bool RdbBase::loadFilesFromDir(const char *dirName) {
 		// . MUST be in order of fileId for merging purposes
 		// . we assume older files come first so newer can override
 		//   in RdbList::merge() routine
-		if ( addFile( false, fileId, fileId2, mergeNum, endMergeFileId ) < 0 ) {
+		if ( addFile( false, fileId, fileId2, mergeNum, endMergeFileId, isInMergeDir ) < 0 ) {
 			return false;
 		}
 	}
@@ -637,7 +786,7 @@ void RdbBase::generateFilename(char *buf, size_t bufsize, int32_t fileId, int32_
 
 // return the fileNum we added it to in the array
 // return -1 and set g_errno on error
-int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t mergeNum, int32_t endMergeFileId ) {
+int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t mergeNum, int32_t endMergeFileId, bool isInMergeDir ) {
 	// sanity check
 	if ( fileId2 < 0 && m_isTitledb )
 		gbshutdownLogicError();
@@ -659,6 +808,8 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	ScopedMemoryLimitBypass scopedMemmoryLimitBypass;
 	BigFile *f;
 
+	const char *dirName = !isInMergeDir ? m_collectionDirName : m_mergeDirName ;
+	
  tryAgain:
 
 	try {
@@ -670,7 +821,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	}
 	mnew( f, sizeof( BigFile ), "RdbBFile" );
 
-	f->set(m_collectionDirName, name);
+	f->set(dirName, name);
 
 	// if new ensure does not exist
 	if ( isNew && f->doesExist() ) {
@@ -766,7 +917,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 
 	// set the map file's  filename
 	sprintf ( name , "%s%04" PRId32".map", m_dbname, fileId );
-	m->set(m_collectionDirName, name, m_fixedDataSize, m_useHalfKeys, m_ks, m_pageSize);
+	m->set(dirName, name, m_fixedDataSize, m_useHalfKeys, m_ks, m_pageSize);
 	if ( ! isNew && ! m->readMap ( f ) ) {
 		// if out of memory, do not try to regen for that
 		if ( g_errno == ENOMEM ) {
@@ -815,7 +966,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	if( m_useIndexFile ) {
 		// set the index file's  filename
 		sprintf(name, "%s%04" PRId32".idx", m_dbname, fileId);
-		in->set(m_collectionDirName, name, m_fixedDataSize, m_useHalfKeys, m_ks, m_rdb->getRdbId());
+		in->set(dirName, name, m_fixedDataSize, m_useHalfKeys, m_ks, m_rdb->getRdbId());
 		if (!isNew && !(in->readIndex() && in->verifyIndex())) {
 			// if out of memory, do not try to regen for that
 			if (g_errno == ENOMEM) {
@@ -897,6 +1048,14 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	m_fileInfo[i].m_file    = f;
 	m_fileInfo[i].m_map     = m;
 	m_fileInfo[i].m_index   = in;
+	if(!isInMergeDir) {
+		if(fileId&1)
+			m_fileInfo[i].m_allowReads = true;
+		else
+			m_fileInfo[i].m_allowReads = false;
+	} else {
+		m_fileInfo[i].m_allowReads = false;//until we know for sure it is finished
+	}
 
 	// are we resuming a killed merge?
 	if ( g_conf.m_readOnlyMode && ((fileId & 0x01)==0) ) {
@@ -912,7 +1071,6 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 
 	// if we added a merge file, mark it
 	if ( mergeNum >= 0 ) {
-		m_hasMergeFile      = true;
 		m_mergeStartFileNum = i + 1 ; //merge was starting w/ this file
 	}
 
@@ -923,6 +1081,9 @@ int32_t RdbBase::addNewFile() {
 	//No clue about why titledb is different. it just is.
 	int32_t id2 = m_isTitledb ? 0 : -1;
 	
+	ScopedLock sl(m_mtxFileInfo); //a bit heavy-handed but incorporateMerge modifies and may call
+	                              //attemptMerge again while the normalt RdbDump calls addFile() too.
+
 	int32_t maxFileId = 0;
 	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) {
 		if ( m_fileInfo[i].m_fileId > maxFileId ) {
@@ -951,14 +1112,30 @@ int32_t RdbBase::addNewFile() {
 	int32_t fileId = maxFileId + ( ( ( maxFileId & 0x01 ) == 0 ) ? 1 : 2 );
 
 	// otherwise, set it
-	return addFile( true, fileId, id2, -1, -1 );
+	return addFile( true, fileId, id2, -1, -1, false );
 }
 
 
 bool RdbBase::isManipulatingFiles() const {
 	//note: incomplete check but not worse than the original
-	return m_numThreads>0;
+	ScopedLock sl(const_cast<RdbBase*>(this)->m_mtxJobCount);
+	return m_submittingJobs || m_outstandingJobCount!=0;
 }
+
+
+void RdbBase::incrementOutstandingJobs() {
+	ScopedLock sl(m_mtxJobCount);
+	m_outstandingJobCount++;
+	if(m_outstandingJobCount<=0) gbshutdownLogicError();
+}
+
+bool RdbBase::decrementOustandingJobs() {
+	ScopedLock sl(m_mtxJobCount);
+	if(m_outstandingJobCount<=0) gbshutdownLogicError();
+	m_outstandingJobCount--;
+	return m_outstandingJobCount==0 && !m_submittingJobs;
+}
+
 
 
 // . called after the merge has successfully completed
@@ -1042,8 +1219,11 @@ bool RdbBase::incorporateMerge ( ) {
 		log(LOG_INFO,"merge: %s: lost %" PRId64" negatives.", m_dbname, m_premergeNumNegativeRecords - postmergeNegativeRecords);
 	}
 
-	// assume no unlinks blocked
-	m_numThreads = 0;
+	{
+		ScopedLock sl(m_mtxJobCount);
+		if(m_outstandingJobCount!=0)
+			gbshutdownCorrupted();
+	}
 
 	// . before unlinking the files, ensure merged file is the right size!!
 	// . this will save us some anguish
@@ -1070,6 +1250,21 @@ bool RdbBase::incorporateMerge ( ) {
 		    "outage and the generated map file is off a bit.");
 	}
 
+	//allow/disallow reads while incorporating merged file
+	m_fileInfo[x].m_allowReads = true; //newly merge file is finished and valid
+	for(int i=a; i<b; i++)
+		m_fileInfo[i].m_allowReads = false; //source files will be deleted shortly
+
+
+	{
+		ScopedLock sl(m_mtxJobCount);
+		m_submittingJobs = true;
+	}
+	
+	// save x&a so unlinkDone has access to the values
+	m_x = x;
+	m_a = a;
+
 	// on success unlink the files we merged and free them
 	for ( int32_t i = a ; i < b && i < m_numFiles; i++ ) {
 		// debug msg
@@ -1080,7 +1275,7 @@ bool RdbBase::incorporateMerge ( ) {
 		// . they will save the filename before spawning so we can
 		//   delete the m_fileInfo[i].m_file now
 		if ( ! m_fileInfo[i].m_file->unlink(unlinkDoneWrapper, this) ) {
-			m_numThreads++;
+			incrementOutstandingJobs();
 		} else {
 			// debug msg
 			// MDW this cores if file is bad... if collection got delete from under us i guess!!
@@ -1091,7 +1286,7 @@ bool RdbBase::incorporateMerge ( ) {
 		log(LOG_INFO,"merge: Unlinking map file %s (#%" PRId32").", m_fileInfo[i].m_map->getFilename(),i);
 
 		if ( ! m_fileInfo[i].m_map->unlink(unlinkDoneWrapper, this) ) {
-			m_numThreads++;
+			incrementOutstandingJobs();
 		} else {
 			// debug msg
 			log(LOG_INFO,"merge: Unlinked %s (#%" PRId32").", m_fileInfo[i].m_map->getFilename(), i);
@@ -1101,7 +1296,7 @@ bool RdbBase::incorporateMerge ( ) {
 			log(LOG_INFO,"merge: Unlinking index file %s (#%" PRId32").", m_fileInfo[i].m_index->getFilename(),i);
 
 			if ( ! m_fileInfo[i].m_index->unlink(unlinkDoneWrapper, this) ) {
-				m_numThreads++;
+				incrementOutstandingJobs();
 			} else {
 				// debug msg
 				log(LOG_INFO,"merge: Unlinked %s (#%" PRId32").", m_fileInfo[i].m_index->getFilename(), i);
@@ -1109,47 +1304,36 @@ bool RdbBase::incorporateMerge ( ) {
 		}
 	}
 
-	// save for re-use
-	m_x = x;
-	m_a = a;
-
 	// wait for the above unlinks to finish before we do this rename
 	// otherwise, we might end up doing this rename first and deleting
 	// it!
-	
-	// if we blocked on all, keep going
-	if ( m_numThreads == 0 ) {
-		unlinkDone();
-		return true;
+	{
+		ScopedLock sl(m_mtxJobCount);
+		m_submittingJobs = false;
+		if(m_outstandingJobCount!=0)
+			return true;
 	}
 
-	// . otherwise we blocked
-	// . we are now unlinking
-	// . this is so Msg3.cpp can avoid reading the [a,b) files
-	m_isUnlinking = true;
-
+	unlinkDone();
 	return true;
 }
 
 
 void RdbBase::unlinkDoneWrapper(void *state) {
 	RdbBase *that = static_cast<RdbBase*>(state);
-	log("merge: done unlinking file. #threads=%" PRId32, that->m_numThreads);
+	log("merge: done unlinking file for collnum=%d #outstanding_jobs=%d",
+	    (int)that->m_collnum, that->m_outstandingJobCount);
 	that->unlinkDone();
 }
 
 
 void RdbBase::unlinkDone() {
 	// bail if waiting for more to come back
-	if ( m_numThreads > 0 ) {
-		if ( --m_numThreads > 0 ) return;
-	}
+	if(!decrementOustandingJobs())
+		return; //still more to finish
 
 	// debug msg
 	log (LOG_INFO,"merge: Done unlinking all files.");
-
-	// could be negative if all did not block
-	m_numThreads = 0;
 
 	int32_t x = m_x;
 	int32_t a = m_a;
@@ -1158,14 +1342,19 @@ void RdbBase::unlinkDone() {
 	// . but secondary id should remain the same
 	m_fileInfo[x].m_fileId = m_fileInfo[a].m_fileId;
 
+	{
+		ScopedLock sl(m_mtxJobCount);
+		m_submittingJobs = true;
+	}
+	
 	log(LOG_INFO,"db: Renaming %s to %s", m_fileInfo[x].m_file->getFilename(), m_fileInfo[a].m_file->getFilename());
-	if ( ! m_fileInfo[x].m_map->rename( m_fileInfo[a].m_map->getFilename(), renameDoneWrapper, this) ) {
-		m_numThreads++;
+	if ( ! m_fileInfo[x].m_map->rename( m_fileInfo[a].m_map->getFilename(), m_collectionDirName, renameDoneWrapper, this) ) {
+		incrementOutstandingJobs();
 	}
 
 	if( m_useIndexFile ) {
-		if ( ! m_fileInfo[x].m_index->rename( m_fileInfo[a].m_index->getFilename(), renameDoneWrapper, this) ) {
-			m_numThreads++;
+		if ( ! m_fileInfo[x].m_index->rename( m_fileInfo[a].m_index->getFilename(), m_collectionDirName, renameDoneWrapper, this) ) {
+			incrementOutstandingJobs();
 		}
 	}
 
@@ -1193,27 +1382,25 @@ void RdbBase::unlinkDone() {
 	    m_fileInfo[x].m_file->getFilename(), fs, newName);
 
 	// rename it, this may block
-	if ( ! m_fileInfo[x].m_file->rename (m_fileInfo[a].m_file->getFilename(), renameDoneWrapper,this) ) {
-		m_numThreads++;
+	if ( ! m_fileInfo[x].m_file->rename (m_fileInfo[a].m_file->getFilename(), m_collectionDirName, renameDoneWrapper,this) ) {
+		incrementOutstandingJobs();
 	}
 
-	// if we blocked on all, keep going
-	if ( m_numThreads == 0 ) {
-		renameDone();
-		return ;
+	{
+		ScopedLock sl(m_mtxJobCount);
+		m_submittingJobs = false;
+		if(m_outstandingJobCount!=0)
+			return;
 	}
-
-	// . otherwise we blocked
-	// . we are now unlinking
-	// . this is so Msg3.cpp can avoid reading the [a,b) files
-	m_isUnlinking = true;
+	
+	renameDone();
 }
 
 
 void RdbBase::renameDoneWrapper(void *state) {
 	RdbBase *that = static_cast<RdbBase*>(state);
-	log(LOG_DEBUG, "rdb: thread completed rename operation for collnum=%" PRId32" #thisbaserenamethreads=%" PRId32,
-	    (int32_t)that->m_collnum, that->m_numThreads-1);
+	log(LOG_DEBUG, "rdb: thread completed rename operation for collnum=%d #outstanding_jobs=%d",
+	    (int)that->m_collnum, that->m_outstandingJobCount);
 	that->renameDone();
 }
 
@@ -1227,9 +1414,8 @@ void RdbBase::checkThreadsAgainWrapper(int /*fd*/, void *state) {
 
 void RdbBase::renameDone() {
 	// bail if waiting for more to come back
-	if ( m_numThreads > 0 ) {
-		if ( --m_numThreads > 0 ) return;
-	}
+	if(!decrementOustandingJobs())
+		return;
 
 	// some shorthand variable notation
 	int32_t a = m_mergeStartFileNum;
@@ -1253,21 +1439,17 @@ void RdbBase::renameDone() {
 	}
 
 
-	// . we are no longer unlinking
-	// . this is so Msg3.cpp can avoid reading the [a,b) files
-	m_isUnlinking = false;
 	// file #x is the merge file
-	//int32_t x = a - 1; 
 	// rid ourselves of these files
-	buryFiles ( a , b );
+	{
+		ScopedLock sl(m_mtxFileInfo); //lock while manipulating m_fileInfo
+		buryFiles(a, b);
+	}
 	// sanity check
 	if ( m_numFilesToMerge != (b-a) ) {
 		log(LOG_LOGIC,"db: Bury oops.");
 		gbshutdownLogicError();
 	}
-
-	// we no longer have a merge file
-	m_hasMergeFile = false;
 
 	// decrement this count
 	if ( m_isMerging ) {
@@ -1362,6 +1544,17 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 		return false;
 	}
 	
+	// . wait for all unlinking and renaming activity to flush out
+	// . otherwise, a rename or unlink might still be waiting to happen
+	//   and it will mess up our merge
+	// . right after a merge we get a few of these printed out...
+	if(m_outstandingJobCount) {
+		log(LOG_INFO,"merge: Waiting for unlink/rename "
+		    "operations to finish before attempting merge "
+		    "for %s. (collnum=%" PRId32")",m_dbname,(int32_t)m_collnum);
+		logTrace( g_conf.m_logTraceRdbBase, "END, wait for unlink/rename" );
+		return false;
+	}
 
 	if ( forceMergeAll ) m_nextMergeForced = true;
 
@@ -1377,19 +1570,6 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 	// include it in the merge
 	int32_t numFiles = m_numFiles;
 	if ( numFiles > 0 && m_dump->isDumping() ) numFiles--;
-
-	// . wait for all unlinking and renaming activity to flush out
-	// . otherwise, a rename or unlink might still be waiting to happen
-	//   and it will mess up our merge
-	// . right after a merge we get a few of these printed out...
-	if ( m_numThreads > 0 ) {
-		log(LOG_INFO,"merge: Waiting for unlink/rename "
-		    "operations to finish before attempting merge "
-		    "for %s. (collnum=%" PRId32")",m_dbname,(int32_t)m_collnum);
-		logTrace( g_conf.m_logTraceRdbBase, "END, wait for unlink/rename" );
-		return false;
-	}
-
 
 	// set m_minToMerge from coll rec if we're indexdb
 	CollectionRec *cr = g_collectiondb.m_recs [ m_collnum ];
@@ -1553,18 +1733,13 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 		return false;
 	}
 
-	// sanity check
 	if ( m_isMerging || g_merge.isMerging() ) {
-		//log(LOG_INFO,
-		//"merge: Someone already merging. Waiting for "
-		//"merge token "
-		//"in order to merge %s.",m_dbname);
-		logTrace( g_conf.m_logTraceRdbBase, "END, failed sanity check" );
+		logTrace(g_conf.m_logTraceRdbBase, "END, already merging");
 		return false;
 	}
 
 	// or if # threads out is positive
-	if ( m_numThreads > 0 ) {
+	if(m_outstandingJobCount!=0) {
 		logTrace( g_conf.m_logTraceRdbBase, "END, threads already running" );
 		return false;
 	}
@@ -1766,7 +1941,13 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 	log( LOG_INFO, "merge: mergeFileCount=%d mini=%d mergeFileId=%d endMergeFileNum=%d endMergeFileId=%d",
 	     mergeFileCount, mini, mergeFileId, endMergeFileNum, endMergeFileId );
 
-	mergeFileNum = addFile ( true, mergeFileId , fileId2, mergeFileCount, endMergeFileId );
+	{
+		//The lock of m_mtxFileInfo is delayed until now because the previous accesses were reads only, but
+		// we must hold the mutex while colling addFile() which modifies the array.
+		ScopedLock sl(m_mtxFileInfo);
+		mergeFileNum = addFile ( true, mergeFileId , fileId2, mergeFileCount, endMergeFileId, true );
+	}
+
 	if ( mergeFileNum < 0 ) {
 		log(LOG_LOGIC,"merge: attemptMerge: Could not add new file."); 
 		g_errno = 0;
@@ -2120,6 +2301,20 @@ int64_t RdbBase::getDiskSpaceUsed() const {
 	return count;
 }
 
+
+//Calculate how much space will be needed for merging files [startFileNum .. startFileNum+numFiles)
+//The estimate is an upper bound.
+uint64_t RdbBase::getSpaceNeededForMerge(int startFileNum, int numFiles) const {
+	//The "upper bound" is implicitly true. Due to internal fragmenation in the file system we will
+	//likely use a fewer blocks/segments than the original files. It can be wrong if the target
+	//file system  uses blocks/sectors/segments/extends much larger than the source file system.
+	uint64_t total = 0;
+	for(int i=0; i<startFileNum+numFiles && i<m_numFiles; i++)
+		total += m_fileInfo[i].m_file->getFileSize();
+	return total;
+}
+
+
 void RdbBase::closeMaps(bool urgent) {
 	for (int32_t i = 0; i < m_numFiles; i++) {
 		bool status = m_fileInfo[i].m_map->close(urgent);
@@ -2232,7 +2427,6 @@ bool RdbBase::verifyFileSharding ( ) {
 			      NULL          , // cachekey
 			      0             , // retryNum
 			      -1            , // maxRetries
-			      true          , // compenstateForMerge
 			      -1LL          , // syncPint
 			      true          , // isRealMerge
 			      true)) {        // allowPageCache

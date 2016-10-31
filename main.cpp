@@ -2923,7 +2923,6 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 			      NULL          , // cache key ptr
 			      0             , // retry num
 			      -1            , // maxRetries
-			      true          , // compensate for merge
 			      -1LL,           // sync point
 			      false,          // isRealMerge
 			      true))          // allowPageCache
@@ -3196,7 +3195,6 @@ void dumpDoledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool 
 			      NULL,           // cacheKeyPtr
 			      0,              // retryNum
 			      -1,             // maxRetries
-			      true,           // compensateForMerge
 			      -1,             // syncPoint
 			      false,          // isRealMerge
 			      true))          // allowPageCache
@@ -3448,7 +3446,6 @@ int32_t dumpSpiderdb ( const char *coll, int32_t startFileNum, int32_t numFiles,
 			      NULL,           // cacheKeyPtr
 			      0,              // retryNum
 			      -1,             // maxRetries
-			      true,           // compensateForMerge
 			      -1,             // syncPoint
 			      false,          // isRealMerge
 			      true))          // allowPageCache
@@ -4177,7 +4174,6 @@ void dumpTagdb( const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 			      NULL,           // cacheKeyPtr
 			      0,              // retryNum
 			      -1,             // maxRetries
-			      true,           // compensateForMerge
 			      -1,             // syncPoint
 			      false,          // isRealMerge
 			      true))          // allowPageCache
@@ -4355,7 +4351,6 @@ bool parseTest ( const char *coll, int64_t docId, const char *query ) {
 			      NULL           , // cache key ptr
 			      0              , // retry num
 			      -1             , // maxRetries
-			      true           , // compensate for merge
 			      -1LL,            // sync point
 			      false,           // isRealMerge
 			      true))         { // allowPageCache
@@ -4730,7 +4725,6 @@ void dumpPosdb (const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 		                  NULL,           // cacheKeyPtr
 		                  0,              // retryNum
 		                  -1,             // maxRetries
-		                  true,           // compensateForMerge
 		                  -1,             // syncPoint
 		                  false,          // isRealMerge
 		                  true))          // allowPageCache
@@ -4878,7 +4872,6 @@ void dumpClusterdb ( const char *coll,
 			      NULL,           // cacheKeyPtr
 			      0,              // retryNum
 			      -1,             // maxRetries
-			      true,           // compensateForMerge
 			      -1,             // syncPoint
 			      false,          // isRealMerge
 			      true))          // allowPageCache
@@ -4984,7 +4977,6 @@ void dumpLinkdb ( const char *coll,
 			      NULL,           // cacheKeyPtr
 			      0,              // retryNum
 			      -1,             // maxRetries
-			      true,           // compensateForMerge
 			      -1,             // syncPoint
 			      false,          // isRealMerge
 			      true))          // allowPageCache
@@ -5598,7 +5590,6 @@ void doInject ( int fd , void *state ) {
 			       NULL           , // cache key ptr
 			       0              , // retry num
 			       -1             , // maxRetries
-			       true           , // compensate for merge
 			       -1LL,            // sync point
 			       false,           // isRealMerge
 			       true);           // allowPageCache
@@ -7100,7 +7091,6 @@ void countdomains( const char* coll, int32_t numRecs, int32_t verbosity, int32_t
 			      NULL          , // cache key ptr
 			      0             , // retry num
 			      -1            , // maxRetries
-			      true          , // compensate for merge
 			      -1LL,           // syncPoint
 			      false,          // isRealMerge
 			      true))          // allowPageCache

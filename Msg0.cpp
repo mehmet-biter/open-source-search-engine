@@ -294,7 +294,6 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 					 NULL , // cacheKeyPtr
 					 0    , // retryNum
 					 -1   , // maxRetries
-					 true , // compensateForMerge
 					 syncPoint ,
 					 m_isRealMerge ,
 					 m_allowPageCache ) ) {
@@ -665,7 +664,6 @@ void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 				     NULL , // cacheKeyPtr
 				     0    , // retryNum
 				     2    , // maxRetries
-				     true , // compensateForMerge
 				     syncPoint ,
 				     false,
 				     allowPageCache ) ) {

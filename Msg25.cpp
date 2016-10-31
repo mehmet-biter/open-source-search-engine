@@ -838,7 +838,6 @@ bool Msg25::doReadLoop() {
 				NULL, //cachekey
 				0,                //retryNum
 				-1,               //maxRetries
-				true,             //comp-for-merge
 				-1,               //syncPoint
 				false,            //isRealMerge
 				true))            //allowPageCache

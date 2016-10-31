@@ -46,7 +46,6 @@ Msg5::Msg5() {
 	memset(m_listPtrs, 0, sizeof(m_listPtrs));
 	m_removeNegRecs = false;
 	m_oldListSize = 0;
-	m_compensateForMerge = false;
 	m_maxRetries = 0;
 	m_isRealMerge = false;
 	m_ks = 0;
@@ -194,7 +193,6 @@ bool Msg5::getList ( rdbid_t     rdbId,
 		     char    *cacheKeyPtr   , // NULL if none
 		     int32_t     retryNum      ,
 		     int32_t     maxRetries    ,
-		     bool     compensateForMerge ,
 		     int64_t syncPoint ,
 		     bool        isRealMerge ,
 		     bool        allowPageCache ) {
@@ -287,7 +285,6 @@ bool Msg5::getList ( rdbid_t     rdbId,
 	m_niceness      = niceness;
 	m_maxRetries    = maxRetries;
 	m_oldListSize   = 0;
-	m_compensateForMerge = compensateForMerge;
 	m_isRealMerge        = isRealMerge;
 	m_allowPageCache     = allowPageCache;
 
@@ -406,7 +403,6 @@ bool Msg5::readList ( ) {
 					   niceness         ,
 					   0                , // retry num
 					   m_maxRetries     , // -1=def
-					   m_compensateForMerge ,
 					   true);             // just get endKey?
 			if ( g_errno ) {
 				log("db: Msg5: getting endKey: %s",mstrerror(g_errno));
@@ -563,8 +559,6 @@ bool Msg5::readList ( ) {
 		// . now get from disk
 		// . use the cache-modified constraints to reduce reading time
 		// . return false if it blocked
-		// . if compensateForMerge is true then m_startFileNum/m_numFiles
-		//   will be appropriately mapped around the merge
 		if ( ! m_msg3.readList  ( m_rdbId          ,
 					  m_collnum        ,
 					  m_fileStartKey   , // modified by gotList()
@@ -577,7 +571,6 @@ bool Msg5::readList ( ) {
 					  niceness         ,
 					  0                , // retry num
 					  m_maxRetries     , // max retries (-1=def)
-					  m_compensateForMerge ,
 					  false))
 			return false;
 		// . this returns false if blocked, true otherwise

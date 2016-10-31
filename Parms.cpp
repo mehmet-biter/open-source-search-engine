@@ -8466,6 +8466,49 @@ void Parms::init ( ) {
 	m->m_group = false;
 	m++;
 
+	//////////////
+	// merge space
+
+	m->m_title = "Merge space lock directory";
+	m->m_desc  = "Location of merge-space lock files";
+	m->m_cgi   = "mergespacelockdir";
+	m->m_off   = offsetof(Conf,m_mergespaceLockDirectory);
+	m->m_type  = TYPE_STRING;
+	m->m_size  = sizeof(Conf::m_mergespaceLockDirectory);
+	m->m_def   = "/tmp/gb_merge_locks";
+	m->m_flags = 0;
+	m->m_page  = PAGE_RDB;
+	m->m_obj   = OBJ_CONF;
+	m->m_group = true;
+	m++;
+
+	m->m_title = "Merge space lock files";
+	m->m_desc  = "Number of merge-space lock files";
+	m->m_cgi   = "mergespacelockfiles";
+	m->m_off   = offsetof(Conf,m_mergespaceMinLockFiles);
+	m->m_type  = TYPE_LONG;
+	m->m_def   = "3";
+	m->m_flags = 0;
+	m->m_page  = PAGE_RDB;
+	m->m_obj   = OBJ_CONF;
+	m->m_group = false;
+	m++;
+
+	m->m_title = "Merge space directory";
+	m->m_desc  = "Location of merge-space";
+	m->m_cgi   = "mergespacedir";
+	m->m_off   = offsetof(Conf,m_mergespaceDirectory);
+	m->m_type  = TYPE_STRING;
+	m->m_size  = sizeof(Conf::m_mergespaceDirectory);
+	m->m_def   = "/tmp/gb_merge_space";
+	m->m_flags = 0;
+	m->m_page  = PAGE_RDB;
+	m->m_obj   = OBJ_CONF;
+	m->m_group = false;
+	m++;
+
+	
+
 	///////////////////////////////////////////
 	// PAGE SPIDER CONTROLS
 	///////////////////////////////////////////

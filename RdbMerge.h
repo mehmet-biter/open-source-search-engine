@@ -31,6 +31,8 @@
 #include "Msg5.h"
 
 class RdbIndex;
+class MergeSpaceCoordinator;
+
 
 class RdbMerge {
 public:
@@ -59,6 +61,8 @@ public:
 	void haltMerge();
 
 private:
+	static void getLockWrapper(int /*fd*/, void *state);
+	void getLock();
 	static void unlinkPartWrapper(void *state);
 	static void dumpListWrapper(void *state);
 	static void gotListWrapper(void *state, RdbList *list, Msg5 *msg5);
@@ -80,6 +84,10 @@ private:
 
 	void doSleep();
 
+	void relinquishMergespaceLock();
+
+	MergeSpaceCoordinator *m_mergeSpaceCoordinator;
+
 	// set to true when m_startKey wraps back to 0
 	bool m_doneMerging;
 
@@ -87,6 +95,7 @@ private:
 
 	int32_t m_numThreads;
 
+	uint64_t m_spaceNeededForMerge;
 	// . we get the units from the master and the mergees from the units
 	int32_t m_startFileNum;
 	int32_t m_numFiles;

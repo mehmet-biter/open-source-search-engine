@@ -74,7 +74,6 @@ void Msg3::reset() {
 	m_maxRetries = 0;
 	m_startTime = 0;
 	m_hintOffset = 0;
-	m_compensateForMerge = false;
 	m_numChunks = 0;
 	m_ks = 0;
 	m_listsChecked = false;
@@ -194,7 +193,6 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 		       int32_t           niceness      ,
 		       int32_t           retryNum      ,
 		       int32_t           maxRetries    ,
-		       bool           compensateForMerge ,
 		       bool           justGetEndKey) {
 
 	// reset m_alloc and data in all lists in case we are a re-call
@@ -228,7 +226,6 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 	m_numScansCompleted  = 0;
 	m_retryNum           = retryNum;
 	m_maxRetries         = maxRetries;
-	m_compensateForMerge = compensateForMerge;
 	m_hadCorruption      = false;
 	// get keySize of rdb
 	m_ks = getKeySizeFromRdbId ( m_rdbId );
@@ -249,10 +246,6 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 	if (  KEYNEG(endKeyArg) )
 		log(LOG_REMIND,"net: msg3: EndKey lastbit clear."); 
 
-	// declare vars here becaues of 'goto skip' below
-	int32_t mergeFileNum = -1 ;
-	int32_t max ;
-
 	// get base, returns NULL and sets g_errno to ENOCOLLREC on error
 	RdbBase *base = getRdbBase( m_rdbId, m_collnum );
 	if ( ! base ) {
@@ -263,74 +256,36 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 	m_startFileNum = startFileNum;
 	m_numFiles     = numFiles;
 
-	// . if we have a merge going on, we may have to change startFileNum
-	// . if some files get unlinked because merge completes then our 
-	//   reads will detect the error and loop back here
-	// . we launch are reads right after this without giving up the cpu
-	//   and we use file descriptors, so any changes to Rdb::m_files[]
-	//   should not hurt us
-	// . WARNING: just make sure you don't lose control of cpu until after
-	//   you call RdbScan::set()
-	// . we use hasMergeFile() instead of isMerging() because he may not 
-	//   be merging cuz he got suspended or he restarted and
-	//   hasn't called attemptMerge() yet, but he may still contain it
 	if ( g_conf.m_logDebugQuery )
 		log(LOG_DEBUG,
 		    "net: msg3: "
-		    "c=%" PRId32" hmf=%" PRId32" sfn=%" PRId32" msfn=%" PRId32" nf=%" PRId32" db=%s.",
-		     (int32_t)compensateForMerge,(int32_t)base->hasMergeFile(),
-		     (int32_t)startFileNum,(int32_t)base->mergeStartFileNum()-1,
+		    "sfn=%" PRId32" nf=%" PRId32" db=%s.",
+		     (int32_t)startFileNum,
 		     (int32_t)numFiles,base->getDbName());
-	int32_t pre = -10;
-	if ( compensateForMerge && base->hasMergeFile() ) {
-		if ( startFileNum >= base->mergeStartFileNum() - 1 &&
-		     (startFileNum > 0 || numFiles != -1) ) {
-			// now also include the file being merged into, but only
-			// if we are reading from a file being merged...
-			if ( startFileNum < base->mergeStartFileNum() +
-			     base->numFilesToMerge() - 1 )
-				pre = base->mergeStartFileNum() - 1;
-			if ( g_conf.m_logDebugQuery )
-				log(LOG_DEBUG,
-				   "net: msg3: startFileNum from %" PRId32" to %" PRId32" (mfn=%" PRId32")",
-				    startFileNum,startFileNum+1,mergeFileNum);
-			// if merge file was inserted before us, inc our file number
-			startFileNum++;
-		}
-		// adjust num files if we need to, as well
-		if ( startFileNum < base->mergeStartFileNum() -1 &&
-		     numFiles != -1 &&
-		     startFileNum + numFiles >= base->mergeStartFileNum() ) {
-			if ( g_conf.m_logDebugQuery )
-				log(LOG_DEBUG,"net: msg3: numFiles up one.");
-			// if merge file was inserted before us, inc our file number
-			numFiles++;
-		}
-	}
 
-	// . how many rdb files does this base have?
-	// . IMPORTANT: this can change since files are unstable because they
-	//   might have all got merged into one!
-	// . so do this check to make sure we're safe... especially if
-	//   there was an error before and we called readList() on ourselves
-	max = base->getNumFiles();
-	// -1 means we should scan ALL the files in the base
-	if ( numFiles == -1 ) numFiles = max;
-	// limit it by startFileNum, however
-	if ( numFiles > max - startFileNum ) numFiles = max - startFileNum;
-	// set g_errno and return true if it is < 0
-	if ( numFiles < 0 ) { 
-		log(LOG_LOGIC,
-		   "net: msg3: readList: numFiles = %" PRId32" < 0 (max=%" PRId32")(sf=%" PRId32")",
-		    numFiles , max , startFileNum );
-		g_errno = EBADENGINEER; 
-		// force core dump
-		g_process.shutdownAbort(true);
+	// If we have a merge going on then a tmp.merge.file exist in the files of RdbBase.
+	// The tmp-merge.file or the source files are marked unreadable (because they are
+	// unfinished to about to be deleted).
+	// The input parameters startFileNum and numFiles are very general, but in reality
+	// they are either (0,-1) or (x,1), that is: read all files or a single one. So that
+	// is what we will support as best we can. The non-happening corner-cases about
+	// overlapping ranges with the merge merge etc are on a best-effort basis, viz. result
+	// may be incomplete.
+	if(numFiles==-1) {
+		//all files
+		m_numChunks = base->getNumFiles() - startFileNum;
+	} else {
+		//a specific range (typically just a single file)
+		m_numChunks = numFiles;
+		if(startFileNum+m_numChunks > base->getNumFiles())
+			m_numChunks = base->getNumFiles() - startFileNum;
 	}
-
-	int32_t nn   = numFiles;
-	if ( pre != -10 ) nn++;
-	m_numChunks = nn;
+	if(m_numChunks<0) {
+		//can happen if a merge finishes and deletes files between the upper-logic
+		//iteration over files and this calculation.
+		m_numChunks = 0;
+	}
+	
 	try {
 		m_scan = new Scan[m_numChunks];
 	} catch(std::bad_alloc&) {
@@ -341,28 +296,13 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 	//Mem.cpp has bad logic concerning arrays
 	//mnew(m_scan,sizeof(*m_scan)*m_numChunks,"Msg3:scan");
 	
-	// store the file numbers in the array, these are the files we read
+	// store the file numbers in the scan array, these are the files we read
 	m_numFileNums = 0;
-
-	// make fix from up top
-	if ( pre != -10 ) m_scan[m_numFileNums++].m_fileNum = pre;
-
-	// store them all
-	for ( int32_t i = startFileNum ; i < startFileNum + numFiles ; i++ )
-		m_scan[m_numFileNums++].m_fileNum = i;
-
-	// . remove file nums that are being unlinked after a merge now
-	// . keep it here (below skip: label) so sync point reads can use it
-	int32_t n = 0;
-	for ( int32_t i = 0 ; i < m_numFileNums ; i++ ) {
-		// skip those that are being unlinked after the merge
-		if(base->isFileBeingUnlinked(m_scan[i].m_fileNum))
-			continue;
-		// otherwise, keep it
-		m_scan[n++].m_fileNum = m_scan[i].m_fileNum;
+	for(int32_t i=startFileNum; i < startFileNum+m_numChunks; i++) {
+		if(base->isReadable(i))
+			m_scan[m_numFileNums++].m_fileNum = i;
 	}
-	m_numFileNums = n;
-
+	
 	// remember the file range we should scan
 	m_numScansStarted    = 0;
 	m_numScansCompleted  = 0;
@@ -370,7 +310,6 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 	KEYSET(m_endKey,endKeyArg,m_ks);
 	KEYSET(m_constrainKey,endKeyArg,m_ks);//set incase justGetEndKey istrue
 	m_minRecSizes        = minRecSizes;
-	m_compensateForMerge = compensateForMerge;
 
 	// bail if 0 files to scan -- no! need to set startKey/endKey
 	if ( numFiles == 0 ) return true;
@@ -408,12 +347,6 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 
 	// Msg5 likes to get the endkey for getting the list from the tree
 	if ( justGetEndKey ) return true;
-
-	// sanity check
-	if ( m_numFileNums > nn ) {
-		log(LOG_LOGIC,"disk: Failed sanity check in Msg3.");
-		g_process.shutdownAbort(true);
-	}
 
 	Rdb *rdb = getRdbFromId(m_rdbId);
 
@@ -834,8 +767,7 @@ bool Msg3::doneScanning ( ) {
 	// . if we had a ETRYAGAIN error, then try again now
 	// . it usually means the whole file or a part of it was deleted 
 	//   before we could finish reading it, so we should re-read all now
-	// . RdbMerge deletes BigFiles after it merges them and also chops
-	//   off file heads
+	// . RdbMerge deletes BigFiles after it merges them
 	// . now that we have threads i'd imagine we'd get EBADFD or something
 	// . i've also seen "illegal seek" as well
 	if ( m_errno && (m_retryNum < max || max < 0) ) {
@@ -1058,7 +990,6 @@ bool Msg3::doneSleeping ( ) {
 			  m_niceness         ,
 			  m_retryNum         ,
 			  m_maxRetries       ,
-			  m_compensateForMerge ,
 			  false                ) ) return false;
 	return true;
 }

@@ -252,7 +252,6 @@ bool Msg2::getLists ( ) {
 					   NULL , // cachekeyptr
 					   0, // retrynum
 					   -1, // maxretries
-					   true, // compensateformerge?
 					   -1, // syncpoint
 					   false, // isrealmerge?
 					   true) ) { // allow disk page cache?
@@ -355,7 +354,6 @@ bool Msg2::getLists ( ) {
 					   NULL , // cachekeyptr
 					   0, // retrynum
 					   -1, // maxretries
-					   true, // compensateformerge?
 					   -1, // syncpoint
 					   false, // isrealmerge?
 					   true ) ) { // allow disk page cache?

@@ -791,7 +791,6 @@ subloopNextPriority:
 				NULL,             // cacheKeyPtr
 			        0,                // retryNum
 			        -1,               // maxRetries
-			        true,             // compensateForMerge
 			        -1,               // syncPoint
 			        false,            // isRealMerge
 			        true))            // allowPageCache

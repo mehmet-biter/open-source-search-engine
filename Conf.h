@@ -118,6 +118,10 @@ class Conf {
 	int64_t m_tagdbFileCacheSize;
 	int32_t  m_tagdbMaxTreeMem;
 
+	char m_mergespaceLockDirectory[1024];
+	int32_t m_mergespaceMinLockFiles;
+	char m_mergespaceDirectory[1024];
+
 	// clusterdb for site clustering, each rec is 16 bytes
 	int64_t m_clusterdbFileCacheSize;
 	int32_t  m_clusterdbMaxTreeMem;

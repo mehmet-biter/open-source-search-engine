@@ -53,7 +53,6 @@ class Msg5 {
 		       char         *cacheKeyPtr,
 		       int32_t       retryNum,
 		       int32_t       maxRetries,
-		       bool          compensateForMerge,
 		       int64_t       syncPoint,
 		       bool          isRealMerge,
 		       bool          allowPageCache);
@@ -77,7 +76,6 @@ class Msg5 {
 		       key96_t        *cacheKeyPtr,
 		       int32_t       retryNum,
 		       int32_t       maxRetries,
-		       bool          compensateForMerge,
 		       int64_t       syncPoint,
 		       bool          isRealMerge,
 		       bool          allowPageCache) {
@@ -98,7 +96,6 @@ class Msg5 {
 				 (char *)cacheKeyPtr   ,
 				 retryNum      ,
 				 maxRetries    ,
-				 compensateForMerge ,
 				 syncPoint     ,
 				 isRealMerge   ,
 				 allowPageCache ); }
@@ -195,8 +192,6 @@ private:
 
 	int32_t  m_oldListSize;
 	
-	bool m_compensateForMerge;
-
 	int32_t m_maxRetries;
 
 	bool        m_isRealMerge;

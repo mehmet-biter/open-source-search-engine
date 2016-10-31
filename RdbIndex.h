@@ -31,8 +31,8 @@ public:
 		return m_file.rename(newIndexFilename, NULL);
 	}
 
-	bool rename(const char *newIndexFilename, void (*callback)(void *state), void *state) {
-		return m_file.rename(newIndexFilename, callback, state);
+	bool rename(const char *newIndexFilename, const char *newDir, void (*callback)(void *state), void *state) {
+		return m_file.rename(newIndexFilename, newDir, callback, state);
 	}
 
 	const char *getFilename() const { return m_file.getFilename(); }

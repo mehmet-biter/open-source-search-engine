@@ -584,7 +584,6 @@ bool Spiderdb::verify ( char *coll ) {
 			      NULL          , // cache key
 			      0             , // retryNum
 			      -1            , // maxRetries
-			      true          , // compenstateForMerge
 			      -1LL          , // syncPoint
 			      true          , // isRealMerge
 			      true          )) { // allowPageCache
@@ -1210,7 +1209,6 @@ static bool loadLoop ( State11 *st ) {
 				     NULL,                 // cacheKeyPtr
 			             0,                    // retryNum
 			             -1,                   // maxRetries
-			             true,                 // compensateForMerge
 			             -1,                   // syncPoint
 			             false,                // isRealMerge
 			             true))                // allowPageCache

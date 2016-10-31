@@ -297,7 +297,6 @@ bool SpiderColl::makeDoleIPTable ( ) {
 			      NULL          , // cache key ptr
 			      0             , // retry num
 			      -1            , // maxRetries
-			      true          , // compensate for merge
 			      -1LL          , // sync point
 			      false,          // isRealMerge
 			      true))          // allowPageCache
@@ -388,7 +387,6 @@ bool SpiderColl::makeWaitingTree ( ) {
 			      NULL          , // cache key ptr
 			      0             , // retry num
 			      -1            , // maxRetries
-			      true          , // compensate for merge
 			      -1LL          , // sync point
 			      false,          // isRealMerge
 			      true))          // allowPageCache
@@ -1546,7 +1544,6 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 					 NULL,            // cachekey
 					 0,               // retryNum
 					 -1,              // maxRetries
-					 true,            // compensateForMerge
 					 -1,              // syncPoint
 					 false,           // isRealMerge
 					 true))           // allowPageCache
@@ -2456,7 +2453,6 @@ bool SpiderColl::readListFromSpiderdb ( ) {
 				NULL,            // cachekey
 				0,               // retryNum
 				-1,              // maxRetries
-				true,            // compensateForMerge
 				-1,              // syncPoint
 				false,           // isRealMerge
 				true ))          // allowPageCache
