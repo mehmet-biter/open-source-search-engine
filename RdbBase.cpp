@@ -1019,27 +1019,27 @@ bool RdbBase::incorporateMerge ( ) {
 	}
 
 	// print out info of newly merged file
-	int64_t tp = m_fileInfo[x].m_map->getNumPositiveRecs();
-	int64_t tn = m_fileInfo[x].m_map->getNumNegativeRecs();
+	int64_t postmergePositiveRecords = m_fileInfo[x].m_map->getNumPositiveRecs();
+	int64_t postmergeNegativeRecords = m_fileInfo[x].m_map->getNumNegativeRecs();
 	log(LOG_INFO, "merge: Merge succeeded. %s (#%" PRId32") has %" PRId64" positive "
-	    "and %" PRId64" negative recs.", m_fileInfo[x].m_file->getFilename(), x, tp, tn);
+	    "and %" PRId64" negative recs.", m_fileInfo[x].m_file->getFilename(), x, postmergePositiveRecords, postmergeNegativeRecords);
 
 
 	// . bitch if bad news
-	if ( tp > m_premergeNumPositiveRecords ) {
-		log(LOG_INFO,"merge: %s gained %" PRId64" positives.", m_dbname , tp - m_premergeNumPositiveRecords );
+	if ( postmergePositiveRecords > m_premergeNumPositiveRecords ) {
+		log(LOG_INFO,"merge: %s gained %" PRId64" positives.", m_dbname, postmergePositiveRecords - m_premergeNumPositiveRecords);
 	}
 
-	if ( tp < m_premergeNumPositiveRecords - m_premergeNumNegativeRecords ) {
-		log(LOG_INFO,"merge: %s: lost %" PRId64" positives", m_dbname , m_premergeNumPositiveRecords - tp );
+	if ( postmergePositiveRecords < m_premergeNumPositiveRecords - m_premergeNumNegativeRecords ) {
+		log(LOG_INFO,"merge: %s: lost %" PRId64" positives", m_dbname, m_premergeNumPositiveRecords - postmergePositiveRecords);
 	}
 
-	if ( tn > m_premergeNumNegativeRecords ) {
-		log(LOG_INFO,"merge: %s: gained %" PRId64" negatives.", m_dbname , tn - m_premergeNumNegativeRecords );
+	if ( postmergeNegativeRecords > m_premergeNumNegativeRecords ) {
+		log(LOG_INFO,"merge: %s: gained %" PRId64" negatives.", m_dbname, postmergeNegativeRecords - m_premergeNumNegativeRecords);
 	}
 
-	if ( tn < m_premergeNumNegativeRecords - m_premergeNumPositiveRecords ) {
-		log(LOG_INFO,"merge: %s: lost %" PRId64" negatives.", m_dbname , m_premergeNumNegativeRecords - tn );
+	if ( postmergeNegativeRecords < m_premergeNumNegativeRecords - m_premergeNumPositiveRecords ) {
+		log(LOG_INFO,"merge: %s: lost %" PRId64" negatives.", m_dbname, m_premergeNumNegativeRecords - postmergeNegativeRecords);
 	}
 
 	// assume no unlinks blocked
