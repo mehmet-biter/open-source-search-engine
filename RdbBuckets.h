@@ -47,7 +47,7 @@ class RdbBuckets;
  */
 class RdbBucket {
 public:
-	RdbBucket() {}
+	RdbBucket();
 	~RdbBucket();
 
 	bool set(RdbBuckets *parent, char *newbuf);

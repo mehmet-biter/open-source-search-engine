@@ -28,6 +28,10 @@ Matches::Matches()
     m_numMatchGroups(0)
 {
 	memset(&m_matches, 0, sizeof(m_matches));	//@todo: added to silence Coverity. Remove if impacting performance (quite big memset)
+	memset(&m_qtableIds, 0, sizeof(m_qtableIds));	// PVS-Studio
+	memset(&m_qtableWordNums, 0, sizeof(m_qtableWordNums));	// PVS-Studio
+	memset(&m_qtableFlags, 0, sizeof(m_qtableFlags));	// PVS-Studio
+	memset(m_tmpBuf, 0, sizeof(m_tmpBuf));	// PVS-Studio
 }
 
 
@@ -457,7 +461,7 @@ bool Matches::addMatches(Words *words, Phrases *phrases, Sections *sections, Bit
 	uint32_t mask = m_numSlots - 1;
 	const int64_t *wids = words->getWordIds();
 	const int32_t *wlens = words->getWordLens();
-	const char * const *wptrs = words->getWords();
+	const char * const *wptrs = words->getWordPtrs();
 	nodeid_t *tids = words->getTagIds();
 	int32_t nw = words->getNumWords();
 	int32_t n;
@@ -772,7 +776,7 @@ int32_t Matches::getNumWordsInMatch(Words *words, int32_t wn, int32_t n, int32_t
 	// get word ids array for the doc
 	int64_t  *wids   = words->getWordIds();
 	//int64_t  *swids  = words->getStripWordIds();
-	char      **ws     = words->getWords();
+	char      **ws     = words->getWordPtrs();
 	int32_t       *wl     = words->getWordLens();
 	//the word we match in the query appears in quotes in the query
 	int32_t k     = -1;

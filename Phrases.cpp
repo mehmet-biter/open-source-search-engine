@@ -8,6 +8,20 @@
 
 
 Phrases::Phrases() : m_buf(NULL) {
+
+	memset(m_localBuf, 0, sizeof(m_localBuf));
+
+	// Coverity
+	m_bufSize = 0;
+	m_phraseIds2 = NULL;
+	m_numWordsTotal2 = NULL;
+	m_numPhrases = 0;
+	m_words = NULL;
+	m_wids = NULL;
+	m_wptrs = NULL;
+	m_wlens = NULL;
+	m_bits = NULL;
+
 	reset();
 }
 
@@ -20,17 +34,6 @@ void Phrases::reset() {
 		mfree ( m_buf , m_bufSize , "Phrases" );
 	}
 	m_buf = NULL;
-
-	// Coverity
-	m_bufSize = 0;
-	m_phraseIds2 = NULL;
-	m_numWordsTotal2 = NULL;
-	m_numPhrases = 0;
-	m_words = NULL;
-	m_wids = NULL;
-	m_wptrs = NULL;
-	m_wlens = NULL;
-	m_bits = NULL;
 }
 
 
@@ -77,7 +80,7 @@ bool Phrases::set( const Words *words, const Bits *bits ) {
 
 	// point to this info while we parse
 	m_words        = words;
-	m_wptrs        = words->getWords();
+	m_wptrs        = words->getWordPtrs();
 	m_wlens        = words->getWordLens();
 	m_wids         = words->getWordIds();
 	m_bits         = bits;

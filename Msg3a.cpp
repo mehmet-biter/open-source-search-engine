@@ -48,6 +48,7 @@ void Msg3a::constructor ( ) {
 	m_pctSearched = 0.0;
 	m_r = NULL;
 	m_rbufSize = 0;
+	memset(m_rbuf, 0, sizeof(m_rbuf));
 	m_debug = false;
 	m_docIds = NULL;
 	m_scores = NULL;
@@ -55,6 +56,7 @@ void Msg3a::constructor ( ) {
 	m_clusterRecs = NULL;
 	m_clusterLevels = NULL;
 	m_cursor = 0;
+	memset(&m_replyMaxSize, 0, sizeof(m_replyMaxSize));
 }
 
 Msg3a::~Msg3a ( ) {
@@ -1086,7 +1088,7 @@ void Msg3a::printTerms ( ) {
 void setTermFreqWeights ( collnum_t collnum , Query *q ) {
 	int64_t numDocsInColl = 0;
 	RdbBase *base = getRdbBase ( RDB_CLUSTERDB, collnum );
-	if ( base ) numDocsInColl = base->getNumGlobalRecs();
+	if ( base ) numDocsInColl = base->estimateNumGlobalRecs();
 
 	// issue? set it to 1000 if so
 	if ( numDocsInColl < 0 ) {

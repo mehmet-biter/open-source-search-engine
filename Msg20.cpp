@@ -499,7 +499,7 @@ Msg20Reply::Msg20Reply ( ) {
 	m_noArchive = 0;
 	m_contentType = 0;
 	m_siteRank = 0;
-	m_isBanned = 0;
+	m_isBanned = false;
 	m_hopcount = 0;
 	m_recycled = 0;
 	m_language = langUnknown;

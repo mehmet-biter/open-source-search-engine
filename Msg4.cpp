@@ -16,6 +16,8 @@
 #include "PingServer.h"
 #include "max_niceness.h"
 #include <sys/stat.h> //stat()
+#include <fcntl.h>
+
 
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
@@ -866,7 +868,7 @@ bool addMetaList ( const char *p , UdpSlot *slot ) {
 
 		// . get the rdb to which it belongs, use Msg0::getRdb()
 		// . do not call this for every rec if we do not have to
-		if (rdbId != lastRdbId) {
+		if (rdbId != lastRdbId || !rdb) {
 			rdb = getRdbFromId(rdbId);
 
 			if (!rdb) {
@@ -893,13 +895,6 @@ bool addMetaList ( const char *p , UdpSlot *slot ) {
 					g_errno = ETRYAGAIN;
 					return false;
 				}
-			}
-
-			// . if already in addList and we are quickpoll interruptint, try again
-			// . happens if our niceness gets converted to 0
-			if (rdb->inAddList()) {
-				g_errno = ETRYAGAIN;
-				return false;
 			}
 		}
 
@@ -958,8 +953,15 @@ bool addMetaList ( const char *p , UdpSlot *slot ) {
 
 		// . get the rdb to which it belongs, use Msg0::getRdb()
 		// . do not call this for every rec if we do not have to
-		if (rdbId != lastRdbId) {
+		if (rdbId != lastRdbId || !rdb) {
 			rdb = getRdbFromId(rdbId);
+
+			if (!rdb) {
+				log(LOG_WARN, "msg4: rdbId of %" PRId32" unrecognized from hostip=%s. dropping WHOLE request",
+				    (int32_t)rdbId, slot ? iptoa(slot->getIp()) : "unknown");
+				g_errno = ETRYAGAIN;
+				return false;
+			}
 		}
 
 		// reset g_errno

@@ -293,19 +293,19 @@ bool Msg51::sendRequest ( int32_t    i ) {
 	key96_t endKey   = g_clusterdb.makeLastClusterRecKey  ( d );
 	
 	// bias clusterdb lookups (from Msg22.cpp)
-	int32_t           numTwins     = g_hostdb.getNumHostsPerShard();
-	int64_t      sectionWidth = (DOCID_MASK/(int64_t)numTwins) + 1;
-	int32_t           hostNum      = (d & DOCID_MASK) / sectionWidth;
-	int32_t           numHosts     = g_hostdb.getNumHostsPerShard();
-	uint32_t  shardNum     = getShardNum(RDB_CLUSTERDB,&startKey);
-	Host          *hosts        = g_hostdb.getShard ( shardNum );
-	if ( hostNum >= numHosts ) gbshutdownLogicError();
-	int32_t firstHostId = hosts [ hostNum ].m_hostId ;
+//	int32_t           numTwins     = g_hostdb.getNumHostsPerShard();
+//	int64_t      sectionWidth = (DOCID_MASK/(int64_t)numTwins) + 1;
+//	int32_t           hostNum      = (d & DOCID_MASK) / sectionWidth;
+//	int32_t           numHosts     = g_hostdb.getNumHostsPerShard();
+//	uint32_t  shardNum     = getShardNum(RDB_CLUSTERDB,&startKey);
+//	Host          *hosts        = g_hostdb.getShard ( shardNum );
+//	if ( hostNum >= numHosts ) gbshutdownLogicError();
+//	int32_t firstHostId = hosts [ hostNum ].m_hostId ;
 
 	// if we are doing a full split, keep it local, going across the net
 	// is too slow!
 	//if ( g_conf.m_fullSplit ) firstHostId = -1;
-	firstHostId = -1;
+	int32_t firstHostId = -1;
 	
 	// . send the request for the cluster rec, use Msg0
 	// . returns false and sets g_errno on error
@@ -332,7 +332,6 @@ bool Msg51::sendRequest ( int32_t    i ) {
 				     -1          , // numFiles
 				     30000       , // timeout
 				     -1          , // syncPoint
-				     false       , // preferLocalReads
 				     &m_slot[i].m_msg5, // use for local reads
 				     false       , // isRealMerge?
 				     true        , // allow page cache?
@@ -540,10 +539,10 @@ bool setClusterLevels ( const key96_t   *clusterRecs,
 		//if ( checkNegative && sht.getSlot((int64_t)h) > 0 ) {
 		//	*level = CR_BLACKLISTED_SITE; goto loop; }
 		// look it up
-		score = ctab.getScore ( &h ) ;
+		score = ctab.getScore(h) ;
 		// if still visible, just continue
 		if ( score < (uint32_t)maxDocIdsPerHostname ) {
-			if ( ! ctab.addTerm(&h))
+			if ( ! ctab.addTerm(h))
 				return false;
 			continue;
 		}

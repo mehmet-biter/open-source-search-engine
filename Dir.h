@@ -15,16 +15,26 @@ public:
 	bool set(const char *d1, const char *d2);
 
 	bool open();
-	bool close();
+	void close();
 
 	const char *getNextFilename(const char *pattern = NULL);
-
-	const char *getDir() { return m_dirname; }
 
 private:
 	char *m_dirname;
 	DIR *m_dir;
 	char m_dentryBuffer[1024];
 };
+
+
+class DirIterator {
+public:
+	DirIterator(const char *dirName);
+	const char *getNextFilename(const char *pattern = NULL);
+private:
+	Dir m_dir;
+	bool opened;
+	bool exhausted;
+};
+
 
 #endif // GB_DIR_H

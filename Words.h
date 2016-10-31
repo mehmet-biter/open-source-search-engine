@@ -191,8 +191,6 @@ class Words {
 	// CAUTION!!!
 	nodeid_t       *getTagIds()       { return m_tagIds; }
 	const nodeid_t *getTagIds() const { return m_tagIds; }
-	char           *       *getWords()       { return m_words; }
-	const char     * const *getWords() const { return (const char*const*)m_words; }
 	char           *       *getWordPtrs()       { return m_words; }
 	const char     * const *getWordPtrs() const { return (const char*const*)m_words; }
 	int32_t        *getWordLens()       { return m_wordLens; }
@@ -258,7 +256,6 @@ class Words {
 		return is_upper_utf8( m_words[n] );
 	}
 
-	unsigned char isBounded(int wordi);
 	 Words     ( );
 	~Words     ( );
 	void reset ( ); 

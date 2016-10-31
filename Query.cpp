@@ -33,6 +33,26 @@ void Query::constructor ( ) {
 	m_qwords               = NULL;
 	m_numTerms = 0;
 
+	// Coverity
+	m_requiredBits = 0;
+	m_matchRequiredBits = 0;
+	m_negativeBits = 0;
+	m_forcedBits = 0;
+	m_synonymBits = 0;
+	m_numRequired = 0;
+	m_langId = 0;
+	m_useQueryStopWords = false;
+	m_numTermsUntruncated = 0;
+	m_isBoolean = false;
+	m_orig = NULL;
+	m_maxQueryTerms = 0;
+	m_queryExpansion = false;
+
+	memset(&m_expressions, 0, sizeof(m_expressions));
+	memset(m_gbuf, 0, sizeof(m_gbuf));
+	memset(m_tmpBuf3, 0, sizeof(m_tmpBuf3));
+	memset(m_otmpBuf, 0, sizeof(m_otmpBuf));
+
 	reset ( );
 }
 
@@ -78,22 +98,6 @@ void Query::reset ( ) {
 	m_hasSubUrlField       = false;
 	m_hasQuotaField        = false;
 	m_truncated            = false;
-
-	// Coverity
-	m_requiredBits = 0;
-	m_matchRequiredBits = 0;
-	m_negativeBits = 0;
-	m_forcedBits = 0;
-	m_synonymBits = 0;
-	m_numRequired = 0;
-	m_langId = 0;
-	m_useQueryStopWords = false;
-	m_numTermsUntruncated = 0;
-	m_isBoolean = false;
-	m_orig = NULL;
-	memset(&m_expressions, 0, sizeof(m_expressions));
-	m_maxQueryTerms = 0;
-	m_queryExpansion = false;
 }
 
 // . returns false and sets g_errno on error
@@ -150,7 +154,7 @@ bool Query::set2 ( const char *query        ,
 	m_osb.nullTerm ();
 	
 	m_orig = m_osb.getBufStart();
-	m_origLen = m_osb.getLength();
+	m_origLen = m_osb.length();
 
 	log(LOG_DEBUG, "query: set called = %s", m_orig);
 
@@ -397,7 +401,7 @@ bool Query::setQTerms ( Words &words ) {
 		if ( ! qw->m_phraseId ) continue;
 		if (   qw->m_ignorePhrase ) continue; // could be a repeat
 		// none if weight is absolute zero
-		if ( qw->m_userWeightPhrase == 0   && 
+		if ( almostEqualFloat(qw->m_userWeightPhrase, 0) && 
 		     qw->m_userTypePhrase   == 'a'  ) continue;
 		nqt++;
 	}
@@ -492,7 +496,7 @@ bool Query::setQTerms ( Words &words ) {
 		if ( ! qw->m_phraseId ) continue;
 		if (   qw->m_ignorePhrase ) continue; // could be a repeat
 		// none if weight is absolute zero
-		if ( qw->m_userWeightPhrase == 0   && 
+		if ( almostEqualFloat(qw->m_userWeightPhrase, 0) && 
 		     qw->m_userTypePhrase   == 'a'  ) continue;
 
 		// stop breach
@@ -517,7 +521,7 @@ bool Query::setQTerms ( Words &words ) {
 		qt->m_isUORed   = false;
 		qt->m_UORedTerm   = NULL;
 		qt->m_synonymOf = NULL;
-		qt->m_ignored   = 0;
+		qt->m_ignored   = false;
 		qt->m_term      = NULL;
 		qt->m_termLen   = 0;
 		qt->m_langIdBitsValid = false;
@@ -1289,7 +1293,7 @@ bool Query::setQWords ( char boolFlag ,
 	// is all alpha chars in query in upper case? caps lock on?
 	bool allUpper = true;
 	const char *p    = m_sb.getBufStart();//m_buf;
-	const char *pend = m_sb.getBuf(); // m_buf + m_bufLen;
+	const char *pend = m_sb.getBufPtr(); // m_buf + m_bufLen;
 	for ( ; p < pend ; p += getUtf8CharSize(p) )
 		if ( is_alpha_utf8 ( p ) && ! is_upper_utf8 ( p ) ) {
 			allUpper = false; break; }
@@ -1662,10 +1666,11 @@ bool Query::setQWords ( char boolFlag ,
 			if ( wordSign != '-' && wordSign != '+') wordSign = 0; 
 			if ( wlen>1 &&!is_wspace_a (w[wlen-2]) ) wordSign = 0;
 			if ( i > 0 && wlen == 1                ) wordSign = 0;
+
+			// don't add any QueryWord for a punctuation word
+			continue;
 		}
 
-		// don't add any QueryWord for a punctuation word
-		if ( words.isPunct(i) ) continue;
 		// what is the sign of our term? +, -, *, ...
 		char mysign;
 		if      ( fieldCode ) mysign = fieldSign;
@@ -3125,7 +3130,7 @@ static bool initFieldTable(){
 			if ( s_table.isInTable ( &h ) ) continue;
 
 			// store the entity index in the hash table as score
-			if ( ! s_table.addTerm ( &h, i+1 ) ) return false;
+			if ( ! s_table.addTerm(h, i+1) ) return false;
 		}
 		s_isInitialized = true;
 	} 
@@ -3144,7 +3149,7 @@ char getFieldCode ( const char *s , int32_t len , bool *hasColon ) {
 	}
 
 	int64_t h = hash64Lower_a( s, len );
-	int32_t i = (int32_t) s_table.getScore ( &h ) ;
+	int32_t i = (int32_t) s_table.getScore(h);
 
 	if ( i == 0 ) {
 		return FIELD_GENERIC;
@@ -3396,16 +3401,16 @@ bool Expression::isTruth(const unsigned char *bitVec, int32_t vecSize) const {
 			// if first operation we encount is A AND B then
 			// default result to on. only allow an AND operation
 			// to turn if off.
-			if ( result == -1 ) result = true;
-			if ( ! prevResult ) result = false;
-			if ( !    opResult ) result = false;
+			if ( result == -1 ) result = 1;
+			if ( ! prevResult ) result = 0;
+			if ( !    opResult ) result = 0;
 		}
 		else if ( prevOpCode == OP_OR ) {
 			// if first operation we encount is A OR B then
 			// default result to off
-			if ( result == -1 ) result = false;
-			if ( prevResult ) result = true;
-			if (   opResult ) result = true;
+			if ( result == -1 ) result = 0;
+			if ( prevResult ) result = 1;
+			if (   opResult ) result = 1;
 		}
 	}
 

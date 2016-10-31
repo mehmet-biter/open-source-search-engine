@@ -72,7 +72,10 @@
 #include "SpiderProxy.h"
 #include "HashTable.h"
 #include "GbUtil.h"
+#include "Dir.h"
+#include "File.h"
 #include <sys/stat.h> //umask()
+#include <fcntl.h>
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
 #include <valgrind/helgrind.h>
@@ -107,7 +110,7 @@ void dumpLinkdb          ( const char *coll, int32_t sfn, int32_t numFiles, bool
 int copyFiles ( const char *dstDir ) ;
 
 
-const char *getcwd2 ( char *arg ) ;
+const char *getAbsoluteGbDir(const char *argv0);
 
 static int32_t checkDirPerms ( char *dir ) ;
 
@@ -176,7 +179,6 @@ extern void resetAdultBit      ( );
 extern void resetDomains       ( );
 extern void resetEntities      ( );
 extern void resetQuery         ( );
-extern void resetStopWords     ( );
 extern void resetUnicode       ( );
 
 extern void tryToSyncWrapper ( int fd , void *state ) ;
@@ -844,7 +846,7 @@ int main2 ( int argc , char *argv[] ) {
 	//
 	// get current working dir that the gb binary is in. all the data
 	// files should in there too!!
-	const char *workingDir = getcwd2 ( argv[0] );
+	const char *workingDir = getAbsoluteGbDir ( argv[0] );
 	if ( ! workingDir ) {
 		fprintf(stderr,"could not get working dir. Exiting.\n");
 		return 1;
@@ -911,10 +913,10 @@ int main2 ( int argc , char *argv[] ) {
 			g_proxy.m_proxyRunning = true;
 			int32_t hostId = -1;
 			int32_t spareId = -1;
-			if ( cmdarg + 2 < argc ) 
+			if ( cmdarg + 2 < argc ) {
 				hostId = atoi ( argv[cmdarg+2] );
-			if ( cmdarg + 2 < argc ) 
 				spareId = atoi ( argv[cmdarg+3] );
+			}
 			char replaceCmd[256];
 			sprintf(replaceCmd, "replacehost=1&rhost=%" PRId32"&rspare=%" PRId32, hostId, spareId);
 			return doCmd ( replaceCmd, -1, "admin/hosts", false, true);
@@ -1197,10 +1199,8 @@ int main2 ( int argc , char *argv[] ) {
 		int32_t hostId = -1;
 		if ( cmdarg + 1 < argc ) {
 			hostId = atoi( argv[ cmdarg + 1 ] );
-		}
 
-		// might have a range
-		if ( cmdarg + 1 < argc ) {
+			// might have a range
 			int32_t h1 = -1;
 			int32_t h2 = -1;
 			sscanf( argv[cmdarg+1], "%" PRId32"-%" PRId32, &h1, &h2 );
@@ -1216,9 +1216,10 @@ int main2 ( int argc , char *argv[] ) {
 	if ( strcmp ( cmd , "tmpstart" ) == 0 ) {	
 		// get hostId to install TO (-1 means all)
 		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
-		// might have a range
 		if ( cmdarg + 1 < argc ) {
+			hostId = atoi ( argv[cmdarg+1] );
+
+			// might have a range
 			int32_t h1 = -1;
 			int32_t h2 = -1;
 			sscanf ( argv[cmdarg+1],"%" PRId32"-%" PRId32,&h1,&h2);
@@ -1230,9 +1231,10 @@ int main2 ( int argc , char *argv[] ) {
 
 	if ( strcmp ( cmd , "tmpstop" ) == 0 ) {	
 		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
-		// might have a range
 		if ( cmdarg + 1 < argc ) {
+			hostId = atoi ( argv[cmdarg+1] );
+
+			// might have a range
 			int32_t h1 = -1;
 			int32_t h2 = -1;
 			sscanf ( argv[cmdarg+1],"%" PRId32"-%" PRId32,&h1,&h2);
@@ -1245,9 +1247,10 @@ int main2 ( int argc , char *argv[] ) {
 	if ( strcmp ( cmd , "kstop" ) == 0 ) {	
 		//same as stop, here for consistency
 		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
-		// might have a range
 		if ( cmdarg + 1 < argc ) {
+			hostId = atoi ( argv[cmdarg+1] );
+			// might have a range
+
 			int32_t h1 = -1;
 			int32_t h2 = -1;
 			sscanf ( argv[cmdarg+1],"%" PRId32"-%" PRId32,&h1,&h2);
@@ -1299,9 +1302,10 @@ int main2 ( int argc , char *argv[] ) {
 	// gb stop [hostId]
 	if ( strcmp ( cmd , "stop" ) == 0 ) {	
 		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
-		// might have a range
 		if ( cmdarg + 1 < argc ) {
+			hostId = atoi ( argv[cmdarg+1] );
+
+			// might have a range
 			int32_t h1 = -1;
 			int32_t h2 = -1;
 			sscanf ( argv[cmdarg+1],"%" PRId32"-%" PRId32,&h1,&h2);
@@ -1314,9 +1318,10 @@ int main2 ( int argc , char *argv[] ) {
 	// gb save [hostId]
 	if ( strcmp ( cmd , "save" ) == 0 ) {	
 		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
-		// might have a range
 		if ( cmdarg + 1 < argc ) {
+			hostId = atoi ( argv[cmdarg+1] );
+			// might have a range
+
 			int32_t h1 = -1;
 			int32_t h2 = -1;
 			sscanf ( argv[cmdarg+1],"%" PRId32"-%" PRId32,&h1,&h2);
@@ -1357,9 +1362,10 @@ int main2 ( int argc , char *argv[] ) {
 	// gb pmerge [hostId]
 	if ( strcmp ( cmd , "pmerge" ) == 0 ) {	
 		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
-		// might have a range
 		if ( cmdarg + 1 < argc ) {
+			hostId = atoi ( argv[cmdarg+1] );
+
+			// might have a range
 			int32_t h1 = -1;
 			int32_t h2 = -1;
 			sscanf ( argv[cmdarg+1],"%" PRId32"-%" PRId32,&h1,&h2);
@@ -1372,9 +1378,10 @@ int main2 ( int argc , char *argv[] ) {
 	// gb smerge [hostId]
 	if ( strcmp ( cmd , "smerge" ) == 0 ) {	
 		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
-		// might have a range
 		if ( cmdarg + 1 < argc ) {
+			hostId = atoi ( argv[cmdarg+1] );
+
+			// might have a range
 			int32_t h1 = -1;
 			int32_t h2 = -1;
 			sscanf ( argv[cmdarg+1],"%" PRId32"-%" PRId32,&h1,&h2);
@@ -1387,9 +1394,10 @@ int main2 ( int argc , char *argv[] ) {
 	// gb tmerge [hostId]
 	if ( strcmp ( cmd , "tmerge" ) == 0 ) {	
 		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
-		// might have a range
 		if ( cmdarg + 1 < argc ) {
+			hostId = atoi ( argv[cmdarg+1] );
+
+			// might have a range
 			int32_t h1 = -1;
 			int32_t h2 = -1;
 			sscanf ( argv[cmdarg+1],"%" PRId32"-%" PRId32,&h1,&h2);
@@ -1402,9 +1410,10 @@ int main2 ( int argc , char *argv[] ) {
 	// gb merge [hostId]
 	if ( strcmp ( cmd , "merge" ) == 0 ) {	
 		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
-		// might have a range
 		if ( cmdarg + 1 < argc ) {
+			hostId = atoi ( argv[cmdarg+1] );
+
+			// might have a range
 			int32_t h1 = -1;
 			int32_t h2 = -1;
 			sscanf ( argv[cmdarg+1],"%" PRId32"-%" PRId32,&h1,&h2);
@@ -1419,9 +1428,9 @@ int main2 ( int argc , char *argv[] ) {
 		int32_t hostId;
 		char *note;
 		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
-		else return false;
+		else return 0;
 		if ( cmdarg + 2 < argc ) note = argv[cmdarg+2];
-		else return false;
+		else return 0;
 		char urlnote[1024];
 		urlEncode(urlnote, 1024, note, strlen(note));
 		log ( LOG_INIT, "conf: setnote %" PRId32": %s", hostId, urlnote );
@@ -1436,9 +1445,9 @@ int main2 ( int argc , char *argv[] ) {
 		int32_t spareId;
 		char *note;
 		if ( cmdarg + 1 < argc ) spareId = atoi ( argv[cmdarg+1] );
-		else return false;
+		else return 0;
 		if ( cmdarg + 2 < argc ) note = argv[cmdarg+2];
-		else return false;
+		else return 0;
 		char urlnote[1024];
 		urlEncode(urlnote, 1024, note, strlen(note));
 		log(LOG_INIT, "conf: setsparenote %" PRId32": %s", spareId, urlnote);
@@ -1935,7 +1944,7 @@ int main2 ( int argc , char *argv[] ) {
 	}
 
 	// force give up on dead hosts to false
-	g_conf.m_giveupOnDeadHosts = 0;
+	g_conf.m_giveupOnDeadHosts = false;
 
 	// shout out if we're in read only mode
 	if ( g_conf.m_readOnlyMode )
@@ -2123,17 +2132,17 @@ int main2 ( int argc , char *argv[] ) {
 	// . put this in here instead of Rdb.cpp because we don't want generator commands merging on us
 	// . niceness is 1
 	// BR: Upped from 2 sec to 60. No need to check for merge every 2 seconds.
-	if ( !g_loop.registerSleepCallback( 60000, (void *)1, attemptMergeAllCallback, 1, true ) ) {
+	if ( !g_loop.registerSleepCallback( 60000, NULL, attemptMergeAllCallback, 1, true ) ) {
 		log( LOG_WARN, "db: Failed to init merge sleep callback." );
 	}
 
 	// try to sync parms (and collection recs) with host 0
 	if ( !g_loop.registerSleepCallback(1000, NULL, tryToSyncWrapper, 0 ) ) {
-		return false;
+		return 0;
 	}
 
 	if ( !Statistics::initialize() ) {
-		return false;
+		return 0;
 	}
 
 	if(g_recoveryMode) {
@@ -2164,6 +2173,7 @@ int main2 ( int argc , char *argv[] ) {
 	// . it should block forever
 	// . when it gets a signal it dispatches to a server or db to handle it
 	g_loop.runLoop();
+	return 0; // shut up pvs-studio
 }
 
 /// @todo ALC wouldn't it be faster to actually check the dir permission instead of trying to write a tmp file?
@@ -2223,7 +2233,7 @@ bool doCmd ( const char *cmd , int32_t hostId , const char *filename ,
 	log(LOG_INFO,"admin: broadcasting %s",cmd);
 	// make a fake http request
 	sprintf ( s_buffer , "GET /%s?%s HTTP/1.0" , filename , cmd );
-	TcpSocket sock; sock.m_ip = 0;
+	TcpSocket sock; 
 	// make it local loopback so it passes the permission test in
 	// doCmdAll()'s call to convertHttpRequestToParmList
 	sock.m_ip = atoip("127.0.0.1");
@@ -2234,6 +2244,7 @@ bool doCmd ( const char *cmd , int32_t hostId , const char *filename ,
 
 	// run the loop
 	g_loop.runLoop();
+	return true;	// shut up pvs-studio
 }
 
 [[ noreturn ]] void doneCmdAll ( void *state ) {
@@ -3015,7 +3026,7 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 					//hostHash ,
 					//contentHash ,
 					recSize - 16 ,
-					xd->m_contentHash32,
+					(uint32_t)xd->m_contentHash32,
 					xd->size_utf8Content,//tr.getContentLen
 					xd->m_charset,//tr.getCharset(),
 					xd->m_langId,//tr.getLanguage(),
@@ -3087,7 +3098,7 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 			k.n1 , k.n0 , 
 			docId ,
 			recSize - 16 ,
-			xd->m_contentHash32,
+			(uint32_t)xd->m_contentHash32,
 			xd->size_utf8Content,//tr.getContentLen() ,
 			xd->m_charset,//tr.getCharset(),
 			g_contentTypeStrings[xd->m_contentType],
@@ -3127,7 +3138,7 @@ void dumpWaitingTree (const char *coll ) {
 
 	// load in the waiting tree, IPs waiting to get into doledb
 	BigFile file;
-	file.set ( dir , "waitingtree-saved.dat" , NULL );
+	file.set(dir, "waitingtree-saved.dat");
 	bool treeExists = file.doesExist() > 0;
 	// load the table with file named "THISDIR/saved"
 	RdbMem wm;
@@ -3219,7 +3230,7 @@ void dumpDoledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool 
 			k.n1,
 			k.n0,
 			(int32_t)g_doledb.getPriority(&k),
-			g_doledb.getSpiderTime(&k),
+			(uint32_t)g_doledb.getSpiderTime(&k),
 			g_doledb.getUrlHash48(&k));
 		fprintf(stdout,"spiderkey=");
 		// print it
@@ -3510,7 +3521,7 @@ int32_t dumpSpiderdb ( const char *coll, int32_t startFileNum, int32_t numFiles,
 			printf( "offset=%" PRId64" ",curOff);
 			g_spiderdb.print ( srec );
 
-			printf(" requestage=%" PRId32"s",now-sreq->m_addedTime);
+			printf(" requestage=%" PRId32"s", (int32_t)(now-sreq->m_addedTime));
 			printf(" hadReply=%" PRId32,(int32_t)hadReply);
 
 			printf(" errcount=%" PRId32,(int32_t)s_lastErrCount);
@@ -3802,7 +3813,6 @@ bool treetest ( ) {
 	// get the list
 	key96_t kk;
 	kk.n0 = 0LL;
-	kk.n1 = 0;
 	kk.n1 = 1234567;
 	int32_t n = rt.getNextNode ( (collnum_t)0, (char *)&kk );
 	// loop it
@@ -4335,7 +4345,7 @@ bool parseTest ( const char *coll, int64_t docId, const char *query ) {
 			      endKey         , // should be maxed!
 			      9999999        , // min rec sizes
 			      true           , // include tree?
-			      false          , // includeCache
+			      0              , // maxCacheAge
 			      0              , // startFileNum
 			      -1             , // m_numFiles   
 			      NULL           , // state 
@@ -4675,7 +4685,7 @@ void dumpPosdb (const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 	if ( termId >= 0 ) {
 		g_posdb.makeStartKey ( &startKey, termId );
 		g_posdb.makeEndKey  ( &endKey, termId );
-		printf("termid=%" PRIu64"\n",termId);
+		printf("termid=%" PRIu64"\n", (uint64_t)termId);
 		printf("startkey=%s\n",KEYSTR(&startKey,sizeof(posdbkey_t)));
 		printf("endkey=%s\n",KEYSTR(&endKey,sizeof(posdbkey_t)));
 	}
@@ -4799,7 +4809,7 @@ void dumpPosdb (const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 					       "%s" // err
 					       "\n",
 			       KEYSTR(&k, sizeof(key144_t)),
-			       (int64_t)g_posdb.getTermId(&k),
+			       (uint64_t)g_posdb.getTermId(&k),
 			       d,
 			       (int32_t)g_posdb.getSiteRank(&k),
 			       (int32_t)g_posdb.getLangId(&k),
@@ -4907,7 +4917,7 @@ void dumpClusterdb ( const char *coll,
 		       strLanguage,
 		       g_clusterdb.getSiteHash26((char*)&k)    ,
 		       dd ,
-		       hh->m_hostId ,
+		       (uint32_t)hh->m_hostId ,
 		       shardNum);
 		continue;
 	}
@@ -4992,7 +5002,7 @@ void dumpLinkdb ( const char *coll,
 		// is it a delete?
 		const char *dd = "";
 		if ( (k.n0 & 0x01) == 0x00 ) dd = " (delete)";
-		int64_t docId = (int64_t)Linkdb::getLinkerDocId_uk(&k);
+		uint64_t docId = (uint64_t)Linkdb::getLinkerDocId_uk(&k);
 		int32_t shardNum = getShardNum(RDB_LINKDB,&k);
 		printf("k=%s "
 		       "linkeesitehash32=0x%08" PRIx32" "
@@ -5015,10 +5025,10 @@ void dumpLinkdb ( const char *coll,
 		       //hc,//Linkdb::getLinkerHopCount_uk(&k),
 		       iptoa((int32_t)Linkdb::getLinkerIp_uk(&k)),
 		       docId,
-		       (int32_t)Linkdb::getDiscoveryDate_uk(&k),
-		       (int32_t)Linkdb::getLostDate_uk(&k),
+		       (uint32_t)Linkdb::getDiscoveryDate_uk(&k),
+		       (uint32_t)Linkdb::getLostDate_uk(&k),
 		       (int32_t)Linkdb::getLinkerSiteHash32_uk(&k),
-		       shardNum,
+		       (uint32_t)shardNum,
 		       dd );
 	}
 
@@ -5202,7 +5212,7 @@ int injectFileTest ( int32_t reqLen , int32_t hid ) {
 	// now store random words (just numbers of 8 digits each)
 	while ( p + 12 < pend ) {
 		int32_t r ; r = rand();
-		sprintf ( p , "%010" PRIu32" " , r );
+		sprintf ( p , "%010" PRIu32" " , (uint32_t)r );
 		p += strlen ( p );
 	}
 	// set content length
@@ -5211,7 +5221,7 @@ int injectFileTest ( int32_t reqLen , int32_t hid ) {
 	// find start of the 9 zeroes
 	while ( *ptr != '0' || ptr[1] !='0' ) ptr++;
 	// store length there
-	sprintf ( ptr , "%09" PRIu32 , clen );
+	sprintf ( ptr , "%09" PRIu32 , (uint32_t)clen );
 	// remove the \0
 	ptr += strlen(ptr); *ptr = '\r';
 
@@ -5260,14 +5270,14 @@ static int32_t      s_registered = 1;
 static int32_t      s_maxSockets = MAX_INJECT_SOCKETS;
 static int32_t      s_outstanding = 0;
 static bool s_isDelete;
-static int32_t s_injectTitledb;
-static int32_t s_injectWarc;
-static int32_t s_injectArc;
+static bool s_injectTitledb;
+static bool s_injectWarc;
+static bool s_injectArc;
 static const char *s_coll = NULL;
 static key96_t s_titledbKey;
 static char *s_req  [MAX_INJECT_SOCKETS];
 static int64_t s_docId[MAX_INJECT_SOCKETS];
-static char s_init5 = false;
+static bool s_init5 = false;
 static int64_t s_endDocId;
 
 int injectFile ( const char *filename , char *ips , const char *coll ) {
@@ -5351,14 +5361,14 @@ int injectFile ( const char *filename , char *ips , const char *coll ) {
 	// set up the loop
 	if ( ! g_loop.init() ) {
 		log(LOG_WARN, "build: inject: Loop init failed.");
-		return false;
+		return 0;
 	}
 	// init the tcp server, client side only
 	if ( ! s_tcp.init( NULL , // requestHandlerWrapper       ,
 			   getMsgSize, 
 			   NULL , // getMsgPiece                 ,
 			   0    , // port, only needed for server ,
-			   &s_maxSockets    ) ) return false;
+			   &s_maxSockets    ) ) return 0;
 
 	s_tcp.m_doReadRateTimeouts = false;
 
@@ -5472,7 +5482,7 @@ int injectFile ( const char *filename , char *ips , const char *coll ) {
 		// titledb-
 		if ( strlen(filename)<=8 ) {
 			log(LOG_WARN, "build: need titledb-coll.main.0 or titledb-gk144 not just 'titledb'");
-			return false;
+			return -1;
 		}
 		const char *coll2 = filename + 8;
 
@@ -5524,6 +5534,7 @@ int injectFile ( const char *filename , char *ips , const char *coll ) {
 
 	// run the loop
 	g_loop.runLoop();
+	return 0;	// shut up pvs-studio
 }
 
 void doInject ( int fd , void *state ) {
@@ -5688,7 +5699,7 @@ void doInject ( int fd , void *state ) {
 		}
 		// set content length
 		char *start = strstr(req,"c=");
-		int32_t realContentLen = strlen(start);
+		uint32_t realContentLen = (uint32_t)strlen(start);
 		char *ptr = req ;
 		// find start of the 9 zeroes
 		while ( *ptr != '0' || ptr[1] !='0' ) ptr++;
@@ -5735,7 +5746,7 @@ void doInject ( int fd , void *state ) {
 		if ( pbuf[0] == '\n' ) pbuf++;
 		if ( pbuf[0] == '\n' ) pbuf++;
 		// need "++URL: "
-		for ( ; *pbuf && strncmp(pbuf,"+++URL: ",8) ; pbuf++ );
+		for ( ; *pbuf && strncmp(pbuf,"+++URL: ",8) != 0 ; pbuf++ );
 		// none?
 		if ( ! *pbuf ) {
 			log("inject: done!");
@@ -5854,7 +5865,7 @@ void doInject ( int fd , void *state ) {
 
 		// set content length
 		char *start = strstr(req,"c=");
-		int32_t realContentLen = strlen(start);
+		uint32_t realContentLen = (uint32_t)strlen(start);
 		char *ptr = req ;
 		// find start of the 9 zeroes
 		while ( *ptr != '0' || ptr[1] !='0' ) ptr++;
@@ -5989,7 +6000,7 @@ void doInjectWarc ( int64_t fsize ) {
 
 	// find "WARC/1.0" or whatever
 	char *whp = s_pbuf;
-	for ( ; *whp && strncmp(whp,"WARC/",5) ; whp++ );
+	for ( ; *whp && strncmp(whp,"WARC/",5) != 0 ; whp++ );
 	// none?
 	if ( ! *whp ) {
 		log("inject: could not find WARC/1 header start for file=%s",
@@ -6094,14 +6105,14 @@ void doInjectWarc ( int64_t fsize ) {
 
 	// if WARC-Type: is not response, skip it. so if it
 	// is a revisit then skip it i guess.
-	if ( strncmp ( warcType,"response", 8 ) ) {
+	if ( strncmp ( warcType,"response", 8 ) != 0 ) {
 		// read another warc record
 		goto loop;
 	}
 
 	// warcConType needs to be 
 	// application/http; msgtype=response
-	if ( strncmp(warcConType,"application/http; msgtype=response", 34) ) {
+	if ( strncmp(warcConType,"application/http; msgtype=response", 34) != 0 ) {
 		// read another warc record
 		goto loop;
 	}
@@ -6110,7 +6121,7 @@ void doInjectWarc ( int64_t fsize ) {
 	int64_t warcTime = 0;
 	char *warcDateStr = strstr(warcHeader,"WARC-Date:");
 	if( warcDateStr ) {
-		if ( warcDateStr ) warcDateStr += 10;
+		warcDateStr += 10;
 		for(;warcDateStr && is_wspace_a(*warcDateStr);warcDateStr++);
 		if ( warcDateStr ) warcTime = atotime ( warcDateStr );
 	}
@@ -6215,7 +6226,7 @@ void doInjectWarc ( int64_t fsize ) {
 
 	// replace 00000 with the REAL content length
 	char *start = strstr(req.getBufStart(),"c=");
-	int32_t realContentLen = strlen(start);
+	uint32_t realContentLen = (uint32_t)strlen(start);
 	char *ptr = req.getBufStart() ;
 	// find start of the 9 zeroes
 	while ( *ptr != '0' || ptr[1] !='0' ) ptr++;
@@ -6362,7 +6373,7 @@ void doInjectArc ( int64_t fsize ) {
 	char *whp = s_pbuf;
 	for ( ; *whp ; whp++ ) {
 		if ( whp[0] != '\n' ) continue;
-		if ( strncmp(whp+1,"http://",7) ) continue;
+		if ( strncmp(whp+1,"http://",7) != 0 ) continue;
 		break;
 	}
 	// none?
@@ -6537,7 +6548,7 @@ void doInjectArc ( int64_t fsize ) {
 
 	// replace 00000 with the REAL content length
 	char *start = strstr(req.getBufStart(),"c=");
-	int32_t realContentLen = strlen(start);
+	uint32_t realContentLen = (uint32_t)strlen(start);
 	char *ptr = req.getBufStart() ;
 	// find start of the 9 zeroes
 	while ( *ptr != '0' || ptr[1] !='0' ) ptr++;
@@ -6702,7 +6713,7 @@ bool memTest() {
 	fprintf(stderr, "memtest: Testing 8KB L1 cache.\n");
 	membustest ( 8000 , 100000 , true );
 
-	fprintf(stderr, "memtest: Allocating up to %" PRId64" bytes\n",
+	fprintf(stderr, "memtest: Allocating up to %" PRIu64" bytes\n",
 		g_conf.m_maxMem);
 	for (i=0;i<4096;i++) {
 		ptrs[numPtrs] = mmalloc(1024*1024, "memtest");
@@ -6710,9 +6721,9 @@ bool memTest() {
 		numPtrs++;
 	}
 
-	fprintf(stderr, "memtest: Was able to allocate %" PRId64" bytes of a "
+	fprintf(stderr, "memtest: Was able to allocate %" PRIu64" bytes of a "
 		"total of "
-	    "%" PRId64" bytes of memory attempted.\n",
+	    "%" PRIu64" bytes of memory attempted.\n",
 	    g_mem.getUsedMem(),g_conf.m_maxMem);
 
 	return true;
@@ -6804,7 +6815,7 @@ void membustest ( int32_t nb , int32_t loops , bool readf ) {
 	if ( ! readf ) op = "wrote";
 	fprintf(stderr,"memtest: %s %" PRId32" bytes (x%" PRId32") in"
 		"%" PRIu64" ms.\n",
-		 op , n , loops , now - t );
+		 op , n , loops , (uint64_t)(now - t) );
 	// stats
 	if ( now - t == 0 ) now++;
 	double d = (1000.0*(double)loops*(double)(n)) / ((double)(now - t));
@@ -7207,7 +7218,7 @@ void countdomains( const char* coll, int32_t numRecs, int32_t verbosity, int32_t
 		}
 			
 		for( int32_t i = 0; i < dlinks->getNumLinks(); i++ ) {
-			char *link = dlinks->getLink(i);
+			char *link = dlinks->getLinkPtr(i);
 			int32_t dlen;
 			const char *dom = getDomFast ( link , &dlen );
 			uint32_t lkey = hash32( dom , dlen );
@@ -7303,7 +7314,8 @@ void countdomains( const char* coll, int32_t numRecs, int32_t verbosity, int32_t
 		char out[128];
 		if( output != 9 ) goto printHtml;
 		// Dump raw data to a file to parse later
-		sprintf( out, "%scntdom.xml", g_hostdb.m_dir );
+		snprintf( out, sizeof(out), "%scntdom.xml", g_hostdb.m_dir );
+		out[ sizeof(out)-1 ] = '\0';
 		if( !(fhndl = fopen( out, "wb" )) ) {
 			log( LOG_INFO, "cntDm: File Open Failed." );
 			return;
@@ -7370,7 +7382,8 @@ void countdomains( const char* coll, int32_t numRecs, int32_t verbosity, int32_t
 
 	printHtml:
 		// HTML file Output
-		sprintf( out, "%scntdom.html", g_hostdb.m_dir );
+		snprintf( out, sizeof(out), "%scntdom.html", g_hostdb.m_dir );
+		out[ sizeof(out)-1 ] = '\0';
 		if( !(fhndl = fopen( out, "wb" )) ) {
 			log( LOG_INFO, "cntDm: File Open Failed." );
 			return;
@@ -7753,148 +7766,28 @@ int collinject ( char *newHostsConf ) {
 	return 1;
 }
 
-const char *getcwd2 ( char *arg2 ) {
-	char argBuf[1026];
-	char *arg = argBuf;
 
-	//
-	// arg2 examples:
-	// ./gb
-	// /bin/gb (symlink to ../../var/gigablast/data0/gb)
-	// /usr/bin/gb (symlink to ../../var/gigablast/data0/gb)
-	//
-
-	// 
-	// if it is a symbolic link...
-	// get real path (no symlinks symbolic links)
-	char tmp[1026];
-	int32_t tlen = readlink ( arg2 , tmp , sizeof(tmp)-1);
-
-	// if we got the actual path, copy that over
-	if ( tlen != -1 ) {
-		tmp[ tlen ] = '\0';
-
-		//fprintf(stderr,"tmp=%s\n",tmp);
-		// if symbolic link is relative...
-		if ( tlen >= 2 && tmp[0] == '.' && tmp[1] == '.') {
-			// store original path (/bin/gb --> ../../var/gigablast/data/gb)
-			strncpy(arg, arg2, sizeof(argBuf)-1); // /bin/gb
-			argBuf[ sizeof(argBuf)-1 ] = '\0';
-
-			// back up to /
-			while(arg[strlen(arg)-1] != '/' ) {
-				arg[strlen(arg)-1] = '\0';
-			}
-			int32_t len2 = strlen(arg);
-			strncpy(arg+len2, tmp, sizeof(argBuf)-len2-1);
-			argBuf[ sizeof(argBuf)-1 ] = '\0';
-		}
-		else {
-			strncpy(arg,tmp,sizeof(argBuf)-1);
-			argBuf[ sizeof(argBuf)-1 ] = '\0';
-		}
-	}
-	else {
-		strncpy(arg,arg2, sizeof(argBuf)-1);
-		argBuf[ sizeof(argBuf)-1 ] = '\0';
-	}
-
- again:
-	// now remove ..'s from path
-	char *p = arg;
-	// char *start = arg;
-	for ( ; *p ; p++ ) {
-		if (p[0] != '.' || p[1] !='.' ) continue;
-		// if .. is at start of string
-		if ( p == arg ) {
-			gbmemcpy ( arg , p+2,strlen(p+2)+1);
-			goto again;
-		}
-		// find previous /
-		char *slash = p-1;
-		if ( *slash !='/' ) { g_process.shutdownAbort(true); }
-		slash--;
-		for ( ; slash > arg && *slash != '/' ; slash-- );
-		if ( slash<arg) slash=arg;
-		gbmemcpy(slash,p+2,strlen(p+2)+1);
-		goto again;
-		// if can't back up anymore...
-	}
-
-	char *a = arg;
-
-	// remove "gb" from the end
-	int32_t alen = 0;
-	for ( ; *a ; a++ ) {
-		if ( *a != '/' ) continue;
-		alen = a - arg + 1;
-	}
-	if ( alen > 512 ) {
-		log("db: path is too long");
-		g_errno = EBADENGINEER;
+const char *getAbsoluteGbDir(const char *argv0) {
+	static char s_buf[1024];
+	
+	char *s = realpath(argv0, NULL);
+	if(!s)
+		return NULL;
+	if(strlen(s) >= sizeof(s_buf))
+		return NULL;
+	strcpy(s_buf,s);
+	free(s);
+	
+	//chop off last component, so we hae just the directory (including a trailing / )
+	char *slash = strrchr(s_buf, '/');
+	if(slash==NULL) {
+		//what? this is not supposed to happen that realpath returns an absolute path that doesn't contain a slash
 		return NULL;
 	}
-	// hack off the "gb" (seems to hack off the "/gb")
-	//*a = '\0';
-	// don't hack off the "/gb" just the "gb"
-	arg[alen] = '\0';
-
-	// get cwd which is only relevant to us if arg starts 
-	// with . at this point
-	static char s_cwdBuf[1025];
-	getcwd ( s_cwdBuf , 1020 );
-	char *end = s_cwdBuf + strlen(s_cwdBuf);
-	// make sure that shit ends in /
-	if ( s_cwdBuf[strlen(s_cwdBuf)-1] != '/' ) {
-		int32_t len = strlen(s_cwdBuf);
-		s_cwdBuf[len] = '/';
-		s_cwdBuf[len+1] = '\0';
-		end++;
-	}
-
-	// if "arg" is a RELATIVE path then append it
-	if ( arg[0]!='/' ) {
-		if ( arg[0]=='.' && arg[1]=='/' ) {
-			gbmemcpy ( end , arg+2 , alen -2 );
-			end += alen - 2;
-		}
-		else {
-			gbmemcpy ( end , arg , alen );
-			end += alen;
-		}
-		*end = '\0';
-	}
-	// if our path started with / then it was absolute...
-	else {
-		strncpy(s_cwdBuf,arg,alen);
-		s_cwdBuf[alen]='\0';
-	}
-
-	// make sure it ends in / for consistency
-	int32_t clen = strlen(s_cwdBuf);
-	if ( s_cwdBuf[clen-1] != '/' ) {
-		s_cwdBuf[clen-1] = '/';
-		s_cwdBuf[clen] = '\0';
-		clen--;
-	}
-
-	// ensure 'gb' binary exists in that dir. 
-	// binaryCmd is usually gb but use this just in case
-	char *binaryCmd = arg2 + strlen(arg2) - 1;
-	for ( ; binaryCmd[-1] && binaryCmd[-1] != '/' ; binaryCmd-- );
-	File fff;
-	fff.set (s_cwdBuf,binaryCmd);
-
-	// assume it is in the usual spot
-	if ( fff.doesExist() ) return s_cwdBuf;
-
-	// try just "gb" as binary
-	fff.set(s_cwdBuf,"gb");
-	if ( fff.doesExist() ) return s_cwdBuf;
-
-	// if nothing is found resort to the default location
-	return "/var/gigablast/data0/";
+	slash[1] = '\0';
+	return s_buf;
 }
+
 
 ///////
 //

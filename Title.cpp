@@ -243,7 +243,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 		}
 
 		// skip if not from same host and should be
-		if ( strncmp( firstUrl->getHost(), u.getHost(), u.getHostLen() ) ) {
+		if ( strncmp( firstUrl->getHost(), u.getHost(), u.getHostLen()) != 0 ) {
 			sh = false;
 		}
 
@@ -346,8 +346,8 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 
 	// scan to set link text flags
 	// loop over all "words" in the html body
-	char inLink   = false;
-	char selfLink = false;
+	bool inLink   = false;
+	bool selfLink = false;
 	for ( int32_t i = 0 ; i < NW ; i++ ) {
 		// if in a link that is not self link, cannot be in a candidate
 		if ( inLink && ! selfLink ) {
@@ -878,7 +878,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 			int32_t   b = bs[i];
 			// init
 			int32_t lasta = a;
-			char prev  = false;
+			bool prev  = false;
 			// char length in bytes
 			//int32_t charlen = 1;
 			// see how many we add
@@ -1026,7 +1026,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 		float qtb = 1.0;
 
 		// a flag
-		char uncapped = false;
+		bool uncapped = false;
 
 		// scan the words in this title candidate
 		for ( int32_t j = a ; j < b ; j++ ) {
@@ -1198,7 +1198,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 			float fp = getSimilarity ( w2 , a2 , b2 , w1 , a1 , b1 );
 
 			// error?
-			if ( fp == -1.0 ) return false;
+			if ( almostEqualFloat(fp, -1.0) ) return false;
 
 			// custom boosting...
 			float boost = 1.0;
@@ -1605,7 +1605,10 @@ float Title::getSimilarity ( Words  *w1 , int32_t i0 , int32_t i1 ,
 	}
 
 	// do not divide by zero
-	if ( sum == 0.0 ) return 0.0;
+	if ( almostEqualFloat(sum, 0.0) ) {
+		return 0.0;
+	}
+
 	// sanity check
 	//if ( found > sum              ) { g_process.shutdownAbort(true); }
 	if ( found < 0.0 || sum < 0.0 ) { g_process.shutdownAbort(true); }
@@ -1618,7 +1621,7 @@ float Title::getSimilarity ( Words  *w1 , int32_t i0 , int32_t i1 ,
 // . returns false on error and sets g_errno
 bool Title::copyTitle(Words *w, int32_t t0, int32_t t1) {
 	// skip initial punct
-	const char *const *wp    = w->getWords();
+	const char *const *wp    = w->getWordPtrs();
 	const int32_t     *wlens = w->getWordLens();
 	int32_t            nw    = w->getNumWords();
 

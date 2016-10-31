@@ -108,7 +108,6 @@ SpiderLoop::SpiderLoop ( ) {
 	m_launches = 0;
 	m_maxUsed = 0;
 	m_sc = NULL;
-	m_outstanding1 = 0;
 	m_gettingDoledbList = false;
 	m_activeList = NULL;
 	m_bookmark = NULL;
@@ -157,8 +156,6 @@ void SpiderLoop::startLoop ( ) {
 	m_activeList = NULL;
 	m_recalcTime = 0;
 	m_recalcTimeValid = false;
-	// falsify this flag
-	m_outstanding1 = false;
 
 	// we aren't in the middle of waiting to get a list of SpiderRequests
 	m_gettingDoledbList = false;
@@ -242,7 +239,7 @@ void doneSleepingWrapperSL ( int fd , void *state ) {
 	// wait for clock to sync with host #0
 	if ( ! isClockInSync() ) { 
 		// let admin know why we are not spidering
-		static char s_printed = false;
+		static bool s_printed = false;
 		if ( ! s_printed ) {
 			logf(LOG_DEBUG,"spider: NOT SPIDERING until clock "
 			     "is in sync with host #0.");
@@ -1144,16 +1141,16 @@ skipDoledbRec:
 	ci->m_lastSpiderCouldLaunch = nowGlobal;
 
 	// if we thought we were done, note it if something comes back up
-	if ( ! ci->m_hasUrlsReadyToSpider ) 
+	if ( ! ci->m_hasUrlsReadyToSpider ) {
 		log("spider: got a reviving url for coll %s (%" PRId32") to crawl %s",
 		    cr->m_coll,(int32_t)cr->m_collnum,sreq->m_url);
 
-	// if changing status, resend our local crawl info to all hosts?
-	if ( ! ci->m_hasUrlsReadyToSpider )
+		// if changing status, resend our local crawl info to all hosts?
 		cr->localCrawlInfoUpdate();
+	}
 
 	// there are urls ready to spider
-	ci->m_hasUrlsReadyToSpider = true;
+	ci->m_hasUrlsReadyToSpider = 1;
 
 	// newly created crawls usually have this set to false so set it
 	// to true so getSpiderStatus() does not return that "the job
@@ -1166,7 +1163,7 @@ skipDoledbRec:
 		// to spider, so they do not re-report. we already
 		// had 'hasurlsreadytospider' set to true so we didn't get
 		// the reviving log msg.
-		cr->m_globalCrawlInfo.m_hasUrlsReadyToSpider = true;
+		cr->m_globalCrawlInfo.m_hasUrlsReadyToSpider = 1;
 
 		// set this right i guess...?
 		ci->m_lastSpiderAttempt = nowGlobal;
@@ -1261,7 +1258,7 @@ bool SpiderLoop::spiderUrl9 ( SpiderRequest *sreq ,
 	// spider it.
 	if ( ! isClockInSync() ) { 
 		// let admin know why we are not spidering
-		static char s_printed = false;
+		static bool s_printed = false;
 		if ( ! s_printed ) {
 			logf(LOG_DEBUG,"spider: NOT SPIDERING until clock "
 			     "is in sync with host #0.");
@@ -1408,8 +1405,15 @@ bool SpiderLoop::spiderUrl9 ( SpiderRequest *sreq ,
 
 	logDebug(g_conf.m_logDebugSpider, "spider: deleting doledb tree key=%s", KEYSTR(m_doledbKey, sizeof(*m_doledbKey)));
 
+	RdbTree *tree = g_doledb.m_rdb.getTree();
+	if( !tree ) {
+		// Sanity
+		gbshutdownLogicError();
+		return false;	// shut up, pvs..
+	}
+
 	// now we just take it out of doledb instantly
-	bool deleted = g_doledb.m_rdb.getTree()->deleteNode(m_collnum, (char *)m_doledbKey, true);
+	bool deleted = tree->deleteNode(m_collnum, (char *)m_doledbKey, true);
 
 	// if url filters rebuilt then doledb gets reset and i've seen us hit
 	// this node == -1 condition here... so maybe ignore it... just log
@@ -2095,8 +2099,8 @@ void spiderRoundIncremented ( CollectionRec *cr ) {
 	// . if we learnt that there really are no more urls ready to spider
 	//   then we'll go to the next round. but that can take like
 	//   SPIDER_DONE_TIMER seconds of getting nothing.
-	cr->m_localCrawlInfo.m_hasUrlsReadyToSpider = true;
-	cr->m_globalCrawlInfo.m_hasUrlsReadyToSpider = true;
+	cr->m_localCrawlInfo.m_hasUrlsReadyToSpider = 1;
+	cr->m_globalCrawlInfo.m_hasUrlsReadyToSpider = 1;
 
 	cr->m_localCrawlInfo.m_pageDownloadSuccessesThisRound = 0;
 	cr->m_localCrawlInfo.m_pageProcessSuccessesThisRound  = 0;
@@ -2268,8 +2272,8 @@ void gotCrawlInfoReply ( void *state , UdpSlot *slot ) {
 			// . no longer initializing?
 			// . sometimes other shards get the spider 
 			//  requests and not us!!!
-			if ( cr->m_spiderStatus == SP_INITIALIZING )
-				cr->m_spiderStatus = SP_INPROGRESS;
+			//if ( cr->m_spiderStatus == SP_INITIALIZING )
+			//	cr->m_spiderStatus = SP_INPROGRESS;
 			// i guess we are back in business even if
 			// m_spiderStatus was SP_ROUNDDONE...
 			cr->m_spiderStatus = SP_INPROGRESS;

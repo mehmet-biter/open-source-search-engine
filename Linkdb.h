@@ -42,6 +42,7 @@
 #include "Sanity.h"
 
 class Msg20Reply;
+class UdpSlot;
 
 void  handleRequest25 ( UdpSlot *slot , int32_t netnice ) ;
 
@@ -233,7 +234,7 @@ public:
 		return h;
 	}
 
-	static char isLinkSpam_uk (key224_t *key ) {
+	static bool isLinkSpam_uk (key224_t *key ) {
 		if ((key->n2) & 0x1000000000000LL) return true; 
 		return false;
 	}
@@ -1016,7 +1017,6 @@ public:
 
 	// for spidering links purposes, we consider "internal" to be same 
 	// hostname
-	bool isInternal     ( int32_t i ) {return (m_linkFlags[i] & LF_SAMEHOST);}
 	bool isInternalHost ( int32_t i ) {return (m_linkFlags[i] & LF_SAMEHOST);}
 
 	// we do not subjugate same domain links to link spam detection in
@@ -1072,7 +1072,6 @@ public:
 	int32_t           getNumLinks   () { return m_numLinks; }
 
 	int32_t           getLinkLen    ( int32_t i ) { return m_linkLens  [i]; }
-	char          *getLink       ( int32_t i ) { return m_linkPtrs  [i]; }
 	char          *getLinkPtr    ( int32_t i ) { return m_linkPtrs  [i]; }
 	uint32_t       getLinkHash32 ( int32_t i ) { 
 		return (uint32_t)m_linkHashes[i]; }
@@ -1147,11 +1146,11 @@ public:
 	bool  m_addSiteRootFlags;
 	char *m_coll;
 
-	char  m_flagged;
+	bool  m_flagged;
 
-	char  m_hasSelfPermalink;
-	char  m_hasRSSOutlink;
-	char  m_hasSubdirOutlink;
+	bool  m_hasSelfPermalink;
+	bool  m_hasRSSOutlink;
+	bool  m_hasSubdirOutlink;
 	char *m_rssOutlinkPtr;
 	int32_t  m_rssOutlinkLen;
 

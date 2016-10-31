@@ -86,7 +86,7 @@ SiteGetter::SiteGetter ( ) {
 	m_maxPathDepth = 0;
 	m_niceness = 0;
 	m_oldSitePathDepth = 0;
-	m_allDone = 0;
+	m_allDone = false;
 	m_timestamp = 0;
 	m_hasSubdomain = false;
 	m_tryAgain = false;
@@ -225,8 +225,8 @@ bool SiteGetter::getSite ( char *url, TagRec *gr, int32_t timestamp, collnum_t c
 	//   then we need the first set to take precedence!
 	m_pathDepth = 0;
 
-	// must have http:// i guess
-	if ( strncmp( m_url, "http", 4 ) ) {
+	// must have http://
+	if ( strncmp( m_url, "http", 4 ) != 0 ) {
 		g_errno = EBADURL;
 		return true;
 	}
@@ -323,7 +323,6 @@ bool SiteGetter::getSiteList ( ) {
 				         -1,  // numFiles
 				         msg0_getlist_infinite_timeout,  // timeout
 				         -1,  // syncPoint
-				         -1,  // preferLocalReads
 				         NULL,  // msg5
 				         false,  // isrealmerge?
 				         true,  // allowpagecache?
@@ -509,7 +508,7 @@ bool SiteGetter::setRecognizedSite ( ) {
 	p += len;
 
 	// assume there is NOT an alpha char after this
-	char username = false;
+	bool username = false;
 
 	// . skip to next / OR ?
 	// . stop at . or -, because we do not allow those in usernames and

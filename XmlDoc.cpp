@@ -40,6 +40,8 @@
 #include "Statistics.h"
 #include "GbUtil.h"
 #include "ScopedLock.h"
+#include <fcntl.h>
+
 
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
@@ -96,7 +98,7 @@ XmlDoc::XmlDoc() {
 	m_metaListSize = 0;
 	m_metaListAllocSize = 0;
 	m_rootTitleRec = NULL;
-	m_isIndexed = false;
+	m_isIndexed = 0;	// may be -1
 	m_isInIndex = false;
 	m_wasInIndex = false;
 	m_outlinkHopCountVector = NULL;
@@ -1422,8 +1424,8 @@ bool XmlDoc::injectDoc ( const char *url ,
 
 	// avoid looking up ip of each outlink to add "firstip" tag to tagdb
 	// because that can be slow!!!!!!!
-	m_spiderLinks = spiderLinks;
-	m_spiderLinks2 = spiderLinks;
+	m_spiderLinks = (char)spiderLinks;
+	m_spiderLinks2 = (char)spiderLinks;
 	m_spiderLinksValid = true;
 
 	// . newOnly is true --> do not inject if document is already indexed!
@@ -2580,6 +2582,9 @@ int32_t *XmlDoc::getIndexCode ( ) {
 	if ( g_errno ) { g_process.shutdownAbort(true); }
 
 
+#if 0
+	// @todo: See if this spam-check should be re-enabled and improved. Was hard coded to OFF below.
+
 	// are we a root?
 	char *isRoot = getIsSiteRoot();
 	if ( ! isRoot || isRoot == (char *)-1 )
@@ -2615,6 +2620,7 @@ int32_t *XmlDoc::getIndexCode ( ) {
 			return &m_indexCode;
 		}
 	}
+#endif
 
 	// validate this here so getSpiderPriority(), which calls
 	// getUrlFilterNum(), which calls getNewSpiderReply(), which calls
@@ -3210,7 +3216,7 @@ static bool setLangVec ( Words *words ,
 			 Sections *ss ) {
 
 	const int64_t *wids       = words->getWordIds();
-	const char * const *wptrs = words->getWords();
+	const char * const *wptrs = words->getWordPtrs();
 	int32_t nw                = words->getNumWords();
 
 	// allocate
@@ -3489,7 +3495,7 @@ char XmlDoc::computeLangId ( Sections *sections , Words *words, char *lv ) {
 
 
 	int32_t             nw    = words->getNumWords();
-	const char * const *wptrs = words->getWords();
+	const char * const *wptrs = words->getWordPtrs();
 
 
 	// now set the langid
@@ -4019,7 +4025,7 @@ HashTableX *XmlDoc::getCountTable ( ) {
 		//   the first 80,000 words for performance reasons
 		if ( i < MAXFRAGWORDS && fv[i] == 0 ) continue;
 		// accumulate the wid with a score of 1 each time it occurs
-		if ( ! ct->addTerm ( &wid ) ) return (HashTableX *)NULL;
+		if ( ! ct->addTerm(wid) ) return (HashTableX *)NULL;
 		// skip if word #i does not start a phrase
 		if ( ! pids [i] ) continue;
 		// if phrase score is less than 100% do not consider as a
@@ -4030,7 +4036,7 @@ HashTableX *XmlDoc::getCountTable ( ) {
 		if ( wptr[1] == ',' ) continue;
 		if ( wptr[2] == ',' ) continue;
 		// put it in, accumulate, max score is 0x7fffffff
-		if ( ! ct->addTerm ( &pids[i] ) ) return (HashTableX *)NULL;
+		if ( ! ct->addTerm(pids[i]) ) return (HashTableX *)NULL;
 	}
 
 	// now add each meta tag to the pot
@@ -4105,7 +4111,7 @@ bool XmlDoc::hashString_ct ( HashTableX *ct , char *s , int32_t slen ) {
 		// . NO, we do not use this for these short strings
 		//if ( ww[i] == 0 ) continue;
 		// accumulate the wid with a score of 1 each time it occurs
-		if ( ! ct->addTerm ( &wid ) ) return false;
+		if ( ! ct->addTerm(wid) ) return false;
 		// skip if word #i does not start a phrase
 		if ( ! pids [i] ) continue;
 		// if phrase score is less than 100% do not consider as a
@@ -4119,7 +4125,7 @@ bool XmlDoc::hashString_ct ( HashTableX *ct , char *s , int32_t slen ) {
 			if ( wlen>=3 && wptr[2] == ',' ) continue;
 		}
 		// put it in, accumulate, max score is 0x7fffffff
-		if ( ! ct->addTerm ( &pids[i] ) ) return false;
+		if ( ! ct->addTerm(pids[i]) ) return false;
 	}
 	return true;
 }
@@ -4560,7 +4566,7 @@ float *XmlDoc::getPageSimilarity ( XmlDoc *xd2 ) {
 	if ( ! sv2 || sv2 == (int32_t *)-1 ) return (float *)sv2;
 	m_pageSimilarity = computeSimilarity ( sv1, sv2, NULL, NULL, NULL);
 	// this means error, g_errno should be set
-	if ( m_pageSimilarity == -1.0 ) return NULL;
+	if ( almostEqualFloat(m_pageSimilarity, -1.0) ) return NULL;
 	return &m_pageSimilarity;
 }
 
@@ -4647,7 +4653,7 @@ float computeSimilarity ( const int32_t   *vec0,
 	if ( ! ht.set ( 4,4,-1,hbuf,10000,allowDups,"xmlqvtbl2"))
 		return -1;
 
-	bool useScores  = (bool)s0;
+	bool useScores  = s0 ? true : false;
 
 	int32_t matches    = 0;
 	int32_t total      = 0;
@@ -4671,7 +4677,7 @@ float computeSimilarity ( const int32_t   *vec0,
 		if ( dedupVectors ) {
 			// accumulate all the scores into this one bucket
 			// in the case of p being a dup
-			if ( ! ht.addTerm32 ( p , score ) ) return -1;
+			if ( ! ht.addTerm32(*p, score) ) return -1;
 		}
 		else {
 			// otherwise, add each into its own bucket since
@@ -4862,7 +4868,7 @@ RdbList *XmlDoc::getDupList ( ) {
 
 	// must match term in XmlDoc::hashVectors()
 	char qbuf[256];
-	snprintf(qbuf, 256, "%" PRIu64,*ph64);
+	snprintf(qbuf, 256, "%" PRIu64, (uint64_t)(*ph64));
 	int64_t pre     = hash64b ( "gbcontenthash" , 0LL );
 	int64_t rawHash = hash64b ( qbuf , 0LL );
 	int64_t termId  = hash64 ( rawHash , pre );
@@ -4874,7 +4880,7 @@ RdbList *XmlDoc::getDupList ( ) {
 	// note it
 	log(LOG_DEBUG,"build: check termid=%" PRIu64" for docid %" PRIu64
 	    ,(uint64_t)(termId&TERMID_MASK)
-	    ,m_docId);
+	    ,(uint64_t)m_docId);
 	// assume valid now
 	m_dupListValid = true;
 	// this is a no-split lookup by default now
@@ -4902,7 +4908,6 @@ RdbList *XmlDoc::getDupList ( ) {
 				// a host is down.
 				msg0_getlist_infinite_timeout , // timeout
 				-1 , // syncpoint
-				-1 , // preferlocal reads
 				NULL, // msg5
 				false , // isRealMerge
 				true , // allow page cache
@@ -4932,7 +4937,7 @@ char *XmlDoc::getIsDup ( ) {
 	}
 
 	// assume we are not a dup
-	m_isDup = false;
+	m_isDup = (char)false;
 	// get it
 	CollectionRec *cr = getCollRec();
 	if ( ! cr )
@@ -4980,7 +4985,7 @@ char *XmlDoc::getIsDup ( ) {
 	int32_t myRank = getSiteRank ( );
 
 	// assume not a dup
-	m_isDup = false;
+	m_isDup = (char)false;
 	// get the docid that we are a dup of
 	for ( ; ! list->isExhausted() ; list->skipCurrentRecord() ) {
 		char *rec = list->getCurrentRec();
@@ -5000,7 +5005,7 @@ char *XmlDoc::getIsDup ( ) {
 		if ( sr >= myRank ) {
 			log("build: doc %s is dup of docid %" PRId64,
 			    m_firstUrl.getUrl(),d);
-			m_isDup = true;
+			m_isDup = (char)true;
 			m_isDupValid = true;
 			m_docIdWeAreADupOf = d;
 			logTrace( g_conf.m_logTraceXmlDoc, "END, we are a duplicate" );;
@@ -5009,7 +5014,7 @@ char *XmlDoc::getIsDup ( ) {
 
 	}
 
-	m_isDup = false;
+	m_isDup = (char)false;
 	m_isDupValid = true;
 	logTrace( g_conf.m_logTraceXmlDoc, "END, done. Not dup." );;
 	return &m_isDup;
@@ -5298,8 +5303,6 @@ Url **XmlDoc::getRedirUrl() {
 		if ( strcmp ( cu->getUrl(), tt->getUrl() ) != 0 ) {
 			m_redirUrlValid = true;
 			m_redirUrlPtr   = &m_redirUrl;
-
-			m_redirUrlValid = true;
 			ptr_redirUrl    = m_redirUrl.getUrl();
 			size_redirUrl   = m_redirUrl.getUrlLen()+1;
 
@@ -5446,7 +5449,7 @@ Url **XmlDoc::getRedirUrl() {
 	int32_t ulen = f->getUrlLen();
 
 	// simpler if new path depth is shorter
-	if ( !simplifiedRedir && loc->getPathDepth( true ) < f->getPathDepth( true ) ) {
+	if ( loc->getPathDepth( true ) < f->getPathDepth( true ) ) {
 		simplifiedRedir = true;
 	}
 
@@ -5513,7 +5516,7 @@ Url **XmlDoc::getRedirUrl() {
 
 	// if redirect is setting cookies we have to follow the redirect
 	// all the way through so we can stop now.
-	if ( m_redirCookieBufValid && m_redirCookieBuf.getLength() ) {
+	if ( m_redirCookieBufValid && m_redirCookieBuf.length() ) {
 		allowSimplifiedRedirs = true;
 	}
 
@@ -6273,8 +6276,8 @@ char *XmlDoc::getIsIndexed ( ) {
 
 	if ( m_oldDocValid ) {
 		m_isIndexedValid = true;
-		if ( m_oldDoc ) m_isIndexed = true;
-		else            m_isIndexed = false;
+		if ( m_oldDoc ) m_isIndexed = (char)true;
+		else            m_isIndexed = (char)false;
 		return &m_isIndexed;
 	}
 
@@ -6327,7 +6330,7 @@ char *XmlDoc::getIsIndexed ( ) {
 	// error?
 	if ( g_errno ) return NULL;
 	// get it
-	m_isIndexed = m_msg22e.wasFound();
+	m_isIndexed = (char)m_msg22e.wasFound();
 
 	// validate
 	m_isIndexedValid = true;
@@ -7214,7 +7217,7 @@ char *XmlDoc::getIsWWWDup ( ) {
 
 	// could be turned off for everyone
 	if ( ! cr->m_dupCheckWWW ) {
-		m_isWWWDup      = false;
+		m_isWWWDup      = (char)false;
 		m_isWWWDupValid = true;
 		return &m_isWWWDup;
 	}
@@ -7222,14 +7225,14 @@ char *XmlDoc::getIsWWWDup ( ) {
 	Url *u = getFirstUrl(); // CurrentUrl();
 	// if we are NOT a DOMAIN-ONLY url, then no need to do this dup check
 	if ( u->getDomainLen() != u->getHostLen() ) {
-		m_isWWWDup      = false;
+		m_isWWWDup      = (char)false;
 		m_isWWWDupValid = true;
 		return &m_isWWWDup;
 	}
 
 	// must NOT have a www
 	if ( ! u->isHostWWW() ) {
-		m_isWWWDup      = false;
+		m_isWWWDup      = (char)false;
 		m_isWWWDupValid = true;
 		return &m_isWWWDup;
 	}
@@ -7239,7 +7242,7 @@ char *XmlDoc::getIsWWWDup ( ) {
 	// is gov.uk and gov.za
 	if ( u->getDomain() &&
 	     strncmp ( u->getDomain() , "www." , 4 ) == 0 ) {
-		m_isWWWDup      = false;
+		m_isWWWDup      = (char)false;
 		m_isWWWDupValid = true;
 		return &m_isWWWDup;
 	}
@@ -7251,7 +7254,7 @@ char *XmlDoc::getIsWWWDup ( ) {
 	sprintf(withoutWWW,"%s://%s",proto,u->getDomain());
 
 	// assume yes
-	m_isWWWDup = true;
+	m_isWWWDup = (char)true;
 
 	if ( ! m_calledMsg22f )
 		setStatus ( "getting possible www dup title rec" );
@@ -7285,17 +7288,13 @@ char *XmlDoc::getIsWWWDup ( ) {
 	// found?
 	if(!g_errno && m_msg22f.wasFound()) {
 		// crap we are a dup
-		m_isWWWDup = true;
+		m_isWWWDup = (char)true;
 		// set the index code
 		//m_indexCode = EDOCDUPWWW;
 	}
 	// return us
 	return &m_isWWWDup;
 }
-
-
-
-
 
 
 
@@ -7699,14 +7698,14 @@ char **XmlDoc::getHttpReply ( ) {
 		Url *ru = *redirp;
 		Url *cu = getCurrentUrl();
 		if ( ! cu || cu == (void *)-1) return (char **)cu;
-		if ( strcmp ( ru->getUrl() + ru->getSchemeLen(), cu->getUrl() + cu->getSchemeLen() ) ) {
+		if ( strcmp ( ru->getUrl() + ru->getSchemeLen(), cu->getUrl() + cu->getSchemeLen() ) != 0 ) {
 			// redo robots.txt lookup. might be cached.
 			m_isAllowedValid  = false;
 			m_crawlDelayValid = false;
 		}
 
 		// keep the same ip if hostname is unchanged
-		if ( ru->getHostLen() != cu->getHostLen() || strncmp ( ru->getHost() , cu->getHost(), cu->getHostLen() ) ) {
+		if ( ru->getHostLen() != cu->getHostLen() || strncmp(ru->getHost(), cu->getHost(), cu->getHostLen()) != 0 ) {
 			// ip is supposed to be that of the current url, which changed
 			m_ipValid = false;
 		}
@@ -7981,7 +7980,7 @@ char **XmlDoc::getHttpReply2 ( ) {
 	logTrace( g_conf.m_logTraceXmlDoc, "m_firstUrl.m_url [%s]", m_firstUrl.getUrl());
 
 	// if current url IS NOT EQUAL to first url then set redir flag
-	if ( strcmp(cu->getUrl(),m_firstUrl.getUrl()) )
+	if ( strcmp(cu->getUrl(),m_firstUrl.getUrl()) != 0 )
 		r->m_skipHammerCheck = 1;
 	// or if this an m_extraDoc or m_rootDoc for another url then
 	// do not bother printing the hammer ip msg in msg13.cpp either
@@ -8532,7 +8531,7 @@ static char getContentTypeFromContent(const char *p) {
 		if ( p[0] != '<' ) continue;
 		if ( p[1] != '!' ) continue;
 		if ( to_lower_a(p[2]) != 'd' ) continue;
-		if ( strncasecmp(p,"<!doctype ",10) ) continue;
+		if ( strncasecmp(p,"<!doctype ",10) != 0 ) continue;
 		const char *dt = p + 10;
 		// skip spaces
 		for ( ; *dt ; dt++ ) {
@@ -8633,7 +8632,7 @@ Url **XmlDoc::getCanonicalRedirUrl ( ) {
 		char *rel = xml->getString(i,"rel",&relLen);
 		if ( ! rel ) continue;
 		// skip if does not match "canonical"
-		if ( strncasecmp(rel,"canonical",relLen) ) continue;
+		if ( strncasecmp(rel,"canonical",relLen) != 0 ) continue;
 		// allow for relative urls
 		Url *cu = getCurrentUrl();
 		// set base to it
@@ -8717,7 +8716,7 @@ static bool setMetaRedirUrlFromTag ( char *p , Url *metaRedirUrl , char niceness
 	// skip whitespace some more
 	for ( ; *p && p < limit && is_wspace_a(*p) ; p++ );
 	// must have URL
-	if ( strncasecmp(p,"URL",3) ) return false;
+	if ( strncasecmp(p,"URL",3) != 0 ) return false;
 	// skip that
 	p += 3;
 	// skip white space
@@ -8859,16 +8858,16 @@ Url **XmlDoc::getMetaRedirUrl ( ) {
 		// base everything off the equal sign
 		if ( *p != '=' ) continue;
 		// did we match "http-equiv="?
-		if ( to_lower_a(p[-1]) != 'v' ) continue;
-		if ( to_lower_a(p[-2]) != 'i' ) continue;
-		if ( to_lower_a(p[-3]) != 'u' ) continue;
-		if ( to_lower_a(p[-4]) != 'q' ) continue;
-		if ( to_lower_a(p[-5]) != 'e' ) continue;
-		if (            p[-6]  != '-' ) continue;
-		if ( to_lower_a(p[-7]) != 'p' ) continue;
-		if ( to_lower_a(p[-8]) != 't' ) continue;
-		if ( to_lower_a(p[-9]) != 't' ) continue;
-		if ( to_lower_a(p[-10])!= 'h' ) continue;
+		if ( to_lower_a(p[-1]) != 'v' ||
+		     to_lower_a(p[-2]) != 'i' ||
+		     to_lower_a(p[-3]) != 'u' ||
+		     to_lower_a(p[-4]) != 'q' ||
+		     to_lower_a(p[-5]) != 'e' ||
+		                p[-6]  != '-' ||
+		     to_lower_a(p[-7]) != 'p' ||
+		     to_lower_a(p[-8]) != 't' ||
+		     to_lower_a(p[-9]) != 't' ||
+		     to_lower_a(p[-10])!= 'h' ) continue;
 
 		// BR 20160306: Fix comparison where we have spaces before and/or after =
 		// limit the # of white spaces
@@ -8892,7 +8891,7 @@ Url **XmlDoc::getMetaRedirUrl ( ) {
 		// skip quote if there
 		if ( *p == '\"' || *p == '\'' ) p++;
 		// must be "refresh", continue if not
-		if ( strncasecmp(p,"refresh",7) ) continue;
+		if ( strncasecmp(p,"refresh",7) != 0 ) continue;
 		// skip that
 		p += 7;
 		// skip another quote if there
@@ -8904,7 +8903,7 @@ Url **XmlDoc::getMetaRedirUrl ( ) {
 		while ( *p && p < limit && is_wspace_a(*p) ) p++;
 
 		// must be content now
-		if ( strncasecmp(p,"content",7) ) continue;
+		if ( strncasecmp(p,"content",7) != 0 ) continue;
 		// skip that
 		p += 7;
 
@@ -8979,7 +8978,7 @@ Url **XmlDoc::getMetaRedirUrl ( ) {
 		// skip if empty
 		if ( ! tag || tagLen <= 0 ) continue;
 		// if not a refresh, skip it
-		if ( strncasecmp ( tag , "refresh", 7 ) ) continue;
+		if ( strncasecmp ( tag , "refresh", 7 ) != 0 ) continue;
 		// get the content
 		tag = xml.getString ( i ,"content", &tagLen );
 		// skip if empty
@@ -9080,22 +9079,22 @@ static uint16_t getCharsetFast(HttpMime *mime,
 		char c = to_lower_a(p[-1]);
 		// did we match "charset="?
 		if ( c == 't' ) {
-			if ( to_lower_a(p[-2]) != 'e' ) continue;
-			if ( to_lower_a(p[-3]) != 's' ) continue;
-			if ( to_lower_a(p[-4]) != 'r' ) continue;
-			if ( to_lower_a(p[-5]) != 'a' ) continue;
-			if ( to_lower_a(p[-6]) != 'h' ) continue;
-			if ( to_lower_a(p[-7]) != 'c' ) continue;
+			if ( to_lower_a(p[-2]) != 'e' ||
+			     to_lower_a(p[-3]) != 's' ||
+			     to_lower_a(p[-4]) != 'r' ||
+			     to_lower_a(p[-5]) != 'a' ||
+			     to_lower_a(p[-6]) != 'h' ||
+			     to_lower_a(p[-7]) != 'c' ) continue;
 		}
 		// did we match "encoding="?
 		else if ( c == 'g' ) {
-			if ( to_lower_a(p[-2]) != 'n' ) continue;
-			if ( to_lower_a(p[-3]) != 'i' ) continue;
-			if ( to_lower_a(p[-4]) != 'd' ) continue;
-			if ( to_lower_a(p[-5]) != 'o' ) continue;
-			if ( to_lower_a(p[-6]) != 'c' ) continue;
-			if ( to_lower_a(p[-7]) != 'n' ) continue;
-			if ( to_lower_a(p[-8]) != 'e' ) continue;
+			if ( to_lower_a(p[-2]) != 'n' ||
+			     to_lower_a(p[-3]) != 'i' ||
+			     to_lower_a(p[-4]) != 'd' ||
+			     to_lower_a(p[-5]) != 'o' ||
+			     to_lower_a(p[-6]) != 'c' ||
+			     to_lower_a(p[-7]) != 'n' ||
+			     to_lower_a(p[-8]) != 'e' ) continue;
 		}
 		// if not either, go to next char
 		else
@@ -9320,111 +9319,111 @@ char **XmlDoc::getFilteredContent ( ) {
 	// 	g_process.shutdownAbort(true); }
 
 	int32_t max , max2;
-	CollectionRec *cr;
 	bool filterable = false;
+	
+	if ( !m_calledThread ) {
 
-	if ( m_calledThread ) goto skip;
-
-	// assume we do not need filtering by default
-	m_filteredContent      = m_content;
-	m_filteredContentLen   = m_contentLen;
-	m_filteredContentValid = true;
-	m_filteredContentAllocSize = 0;
-
-	// empty content?
-	if ( ! m_content ) return &m_filteredContent;
-
-	if ( *ct == CT_HTML    ) return &m_filteredContent;
-	if ( *ct == CT_TEXT    ) return &m_filteredContent;
-	if ( *ct == CT_XML     ) return &m_filteredContent;
-	// javascript - sometimes has address information in it, so keep it!
-	if ( *ct == CT_JS      ) return &m_filteredContent;
-	if ( m_contentLen == 0 ) return &m_filteredContent;
-
-	// we now support JSON for diffbot
-	if ( *ct == CT_JSON    ) return &m_filteredContent;
-
-	if ( *ct == CT_ARC     ) return &m_filteredContent;
-	if ( *ct == CT_WARC    ) return &m_filteredContent;
-
-	// unknown content types are 0 since it is probably binary... and
-	// we do not want to parse it!!
-	if ( *ct == CT_PDF ) filterable = true;
-	if ( *ct == CT_DOC ) filterable = true;
-	if ( *ct == CT_XLS ) filterable = true;
-	if ( *ct == CT_PPT ) filterable = true;
-	if ( *ct == CT_PS  ) filterable = true;
-
-	// if its a jpeg, gif, text/css etc. bail now
-	if ( ! filterable ) {
-		m_filteredContent      = NULL;
-		m_filteredContentLen   = 0;
+		// assume we do not need filtering by default
+		m_filteredContent      = m_content;
+		m_filteredContentLen   = m_contentLen;
 		m_filteredContentValid = true;
-		return &m_filteredContent;
+		m_filteredContentAllocSize = 0;
+
+		// empty content?
+		if ( ! m_content ) return &m_filteredContent;
+
+		if ( *ct == CT_HTML    ) return &m_filteredContent;
+		if ( *ct == CT_TEXT    ) return &m_filteredContent;
+		if ( *ct == CT_XML     ) return &m_filteredContent;
+		// javascript - sometimes has address information in it, so keep it!
+		if ( *ct == CT_JS      ) return &m_filteredContent;
+		if ( m_contentLen == 0 ) return &m_filteredContent;
+
+		// we now support JSON for diffbot
+		if ( *ct == CT_JSON    ) return &m_filteredContent;
+
+		if ( *ct == CT_ARC     ) return &m_filteredContent;
+		if ( *ct == CT_WARC    ) return &m_filteredContent;
+
+		// unknown content types are 0 since it is probably binary... and
+		// we do not want to parse it!!
+		if ( *ct == CT_PDF ) filterable = true;
+		if ( *ct == CT_DOC ) filterable = true;
+		if ( *ct == CT_XLS ) filterable = true;
+		if ( *ct == CT_PPT ) filterable = true;
+		if ( *ct == CT_PS  ) filterable = true;
+
+		// if its a jpeg, gif, text/css etc. bail now
+		if ( ! filterable ) {
+			m_filteredContent      = NULL;
+			m_filteredContentLen   = 0;
+			m_filteredContentValid = true;
+			return &m_filteredContent;
+		}
+
+		// invalidate
+		m_filteredContentValid = false;
+
+		CollectionRec *cr = getCollRec();
+		if( !cr ) {
+			return NULL;
+		}
+
+		// if not text/html or text/plain, use the other max
+		//max = MAXDOCLEN; // cr->m_maxOtherDocLen;
+		max = cr->m_maxOtherDocLen;
+
+		// if not text/html or text/plain, use the other max
+		// max = MAXDOCLEN; // cr->m_maxOtherDocLen;
+
+		// now we base this on the pre-filtered length to save memory because
+		// our maxOtherDocLen can be 30M and when we have a lot of injections
+		// at the same time we lose all our memory quickly
+		max2 = 5 * m_contentLen + 10*1024;
+		if ( max > max2 ) max = max2;
+		// user uses -1 to specify no maxTextDocLen or maxOtherDocLen
+		if ( max < 0    ) max = max2;
+		// make a buf to hold filtered reply
+		m_filteredContentAllocSize = max;
+		m_filteredContent = (char *)mmalloc(m_filteredContentAllocSize,"xdfc");
+		if ( ! m_filteredContent ) {
+			log("build: Could not allocate %" PRId32" bytes for call to "
+			    "content filter.",m_filteredContentMaxSize);
+			return NULL;
+		}
+
+		// reset this here in case thread gets killed by the kill() call below
+		m_filteredContentLen = 0;
+		// update status msg so its visible in the spider gui
+		setStatus ( "filtering content" );
+		// reset this... why?
+		g_errno = 0;
+		// . call thread to call popen
+		// . callThread returns true on success, in which case we block
+		// . do not repeat
+		m_calledThread = true;
+		// reset this since filterStart_r() will set it on error
+		m_errno = 0;
+
+		// how can this be? don't core like this in thread, because it
+		// does not save our files!!
+		if ( ! m_mimeValid ) { g_process.shutdownAbort(true); }
+
+		// do it
+		if ( g_jobScheduler.submit(filterStartWrapper_r, filterDoneWrapper, this, thread_type_spider_filter, MAX_NICENESS) ) {
+			// return -1 if blocked
+			return (char **) -1;
+		}
+
+		// clear error!
+		g_errno = 0;
+
+		// note it
+		log(LOG_INFO, "build: Could not spawn thread for call to content filter.");
+		// get the data
+		filterStart_r ( false ); // am thread?
 	}
-
-	// invalidate
-	m_filteredContentValid = false;
-
-	cr = getCollRec();
-	if ( ! cr ) return NULL;
-
-	// if not text/html or text/plain, use the other max
-	//max = MAXDOCLEN; // cr->m_maxOtherDocLen;
-	max = cr->m_maxOtherDocLen;
-
-	// if not text/html or text/plain, use the other max
-	// max = MAXDOCLEN; // cr->m_maxOtherDocLen;
-
-	// now we base this on the pre-filtered length to save memory because
-	// our maxOtherDocLen can be 30M and when we have a lot of injections
-	// at the same time we lose all our memory quickly
-	max2 = 5 * m_contentLen + 10*1024;
-	if ( max > max2 ) max = max2;
-	// user uses -1 to specify no maxTextDocLen or maxOtherDocLen
-	if ( max < 0    ) max = max2;
-	// make a buf to hold filtered reply
-	m_filteredContentAllocSize = max;
-	m_filteredContent = (char *)mmalloc(m_filteredContentAllocSize,"xdfc");
-	if ( ! m_filteredContent ) {
-		log("build: Could not allocate %" PRId32" bytes for call to "
-		    "content filter.",m_filteredContentMaxSize);
-		return NULL;
-	}
-
-	// reset this here in case thread gets killed by the kill() call below
-	m_filteredContentLen = 0;
-	// update status msg so its visible in the spider gui
-	setStatus ( "filtering content" );
-	// reset this... why?
-	g_errno = 0;
-	// . call thread to call popen
-	// . callThread returns true on success, in which case we block
-	// . do not repeat
-	m_calledThread = true;
-	// reset this since filterStart_r() will set it on error
-	m_errno = 0;
-
-	// how can this be? don't core like this in thread, because it
-	// does not save our files!!
-	if ( ! m_mimeValid ) { g_process.shutdownAbort(true); }
-
-	// do it
-	if ( g_jobScheduler.submit(filterStartWrapper_r, filterDoneWrapper, this, thread_type_spider_filter, MAX_NICENESS) ) {
-		// return -1 if blocked
-		return (char **) -1;
-	}
-
-	// clear error!
-	g_errno = 0;
-
-	// note it
-	log(LOG_INFO, "build: Could not spawn thread for call to content filter.");
-	// get the data
-	filterStart_r ( false ); // am thread?
-
 	// skip down here if thread has returned and we got re-called
-skip:
 
 	// if size is 0, free the buf
 	if ( m_filteredContentLen <= 0 ) {
@@ -10247,11 +10246,6 @@ char **XmlDoc::getUtf8Content ( ) {
 	// sanity
 	if ( m_expandedUtf8Content[n] != '\0' ) { g_process.shutdownAbort(true); }
 
-	// sanity
-	if ( n > m_expandedUtf8ContentSize-1 ) {g_process.shutdownAbort(true); }
-	// sanity
-	if ( m_expandedUtf8Content[n] != '\0' ) { g_process.shutdownAbort(true); }
-
 	// finally transform utf8 apostrophe's into regular apostrophes
 	// to make parsing easier
 	uint8_t *p   = (uint8_t *)m_expandedUtf8Content;
@@ -10667,7 +10661,7 @@ char **XmlDoc::getThumbnailData ( ) {
 	ptr_imageData  = NULL;
 	size_imageData = 0;
 	m_imageDataValid = true;
-	if ( ! images || ! images->m_imageBufValid ) return &ptr_imageData;
+	if ( ! images->m_imageBufValid ) return &ptr_imageData;
 	if ( images->m_imageBuf.length() <= 0 ) return &ptr_imageData;
 	// this buffer is a ThumbnailArray
 	ptr_imageData  = images->m_imageBuf.getBufStart();
@@ -10857,7 +10851,7 @@ char *XmlDoc::hasNoIndexMetaTag() {
 	if ( m_hasNoIndexMetaTagValid )
 		return &m_hasNoIndexMetaTag;
 	// assume none
-	m_hasNoIndexMetaTag = false;
+	m_hasNoIndexMetaTag = (char)false;
 	// store value/content of meta tag in here
 	char mbuf[16];
 	mbuf[0] = '\0';
@@ -10867,7 +10861,7 @@ char *XmlDoc::hasNoIndexMetaTag() {
 	Xml *xml = getXml();
 	if ( ! xml || xml == (Xml *)-1 ) return (char *)xml;
 	xml->getMetaContent ( mbuf, 16 , tag , tlen );
-	if ( mbuf[0] == '1' ) m_hasNoIndexMetaTag = true;
+	if ( mbuf[0] == '1' ) m_hasNoIndexMetaTag = (char)true;
 	m_hasNoIndexMetaTagValid = true;
 	return &m_hasNoIndexMetaTag;
 }
@@ -10886,8 +10880,8 @@ char *XmlDoc::hasFakeIpsMetaTag ( ) {
 	if ( ! xml || xml == (Xml *)-1 ) return (char *)xml;
 	xml->getMetaContent ( mbuf, 16 , tag , tlen );
 
-	m_hasUseFakeIpsMetaTag = false;
-	if ( mbuf[0] == '1' ) m_hasUseFakeIpsMetaTag = true;
+	m_hasUseFakeIpsMetaTag = (char)false;
+	if ( mbuf[0] == '1' ) m_hasUseFakeIpsMetaTag = (char)true;
 	m_hasUseFakeIpsMetaTagValid = true;
 	return &m_hasUseFakeIpsMetaTag;
 }
@@ -11251,8 +11245,8 @@ char *XmlDoc::getSpiderLinks ( ) {
 	// shoot. set2() already sets m_spiderLinksValid to true so we
 	// have to override if importing.
 	if ( m_isImporting && m_isImportingValid ) {
-		m_spiderLinks  = false;
-		m_spiderLinks2 = false;
+		m_spiderLinks  = (char)false;
+		m_spiderLinks2 = (char)false;
 		m_spiderLinksValid = true;
 		return &m_spiderLinks2;
 	}
@@ -11271,8 +11265,8 @@ char *XmlDoc::getSpiderLinks ( ) {
 	// if url filters forbids it
 	if ( ! cr->m_harvestLinks[*ufn] ) {
 		m_spiderLinksValid = true;
-		m_spiderLinks2 = false;
-		m_spiderLinks  = false;
+		m_spiderLinks2 = (char)false;
+		m_spiderLinks  = (char)false;
 		return &m_spiderLinks2;
 	}
 
@@ -11281,7 +11275,7 @@ char *XmlDoc::getSpiderLinks ( ) {
 	if ( ! xml || xml == (Xml *)-1 ) return (char *)xml;
 
 	// assume true
-	m_spiderLinks = true;
+	m_spiderLinks = (char)true;
 
 	// or if meta tag says not to
 	char buf1 [256];
@@ -11295,17 +11289,17 @@ char *XmlDoc::getSpiderLinks ( ) {
 	     strstr ( buf2 , "nofollow" ) ||
 	     strstr ( buf1 , "none"     ) ||
 	     strstr ( buf2 , "none"     ) )
-		m_spiderLinks = false;
+		m_spiderLinks = (char)false;
 
 	// spider links if not using robots.txt
 	if ( ! m_useRobotsTxt )
-		m_spiderLinks = true;
+		m_spiderLinks = (char)true;
 
 	// spider request forbade it? diffbot.cpp crawlbot api when
 	// specifying urldata (list of urls to add to spiderdb) usually
 	// they do not want the links crawled i'd imagine.
 	if ( m_sreqValid && m_sreq.m_avoidSpiderLinks )
-		m_spiderLinks = false;
+		m_spiderLinks = (char)false;
 
 
 	// also check in url filters now too
@@ -11806,7 +11800,7 @@ bool XmlDoc::logIt (SafeBuf *bb ) {
 	     m_useTitledb &&
 	     m_oldDocValid &&
 	     m_oldDoc &&
-	     strcmp(ptr_site,m_oldDoc->ptr_site) )
+	     strcmp(ptr_site,m_oldDoc->ptr_site) != 0 )
 		sb->safePrintf("oldsite=%s ",m_oldDoc->ptr_site);
 
 	if ( m_isAdultValid )
@@ -12109,10 +12103,10 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 		if ( ks > MAX_KEY_BYTES ) { g_process.shutdownAbort(true); }
 		gbmemcpy ( &k , p , ks );
 		// is it a negative key?
-		char neg = false;
+		bool neg = false;
 		if ( ! ( p[0] & 0x01 ) ) neg = true;
 		// this is now a bit in the posdb key so we can rebalance
-		char shardByTermId = false;
+		bool shardByTermId = false;
 		if ( rdbId==RDB_POSDB && Posdb::isShardedByTermId(k))
 			shardByTermId = true;
 		// skip it
@@ -12403,7 +12397,7 @@ bool XmlDoc::hashMetaList ( HashTableX *ht        ,
 		// sanity check
 		if ( ks > 28 ) { g_process.shutdownAbort(true); }
 		// is it a delete key?
-		char del ;
+		bool del;
 		if ( ( p[0] & 0x01 ) == 0x00 ) del = true;
 		else                           del = false;
 		// convert into a key128_t, the biggest possible key
@@ -12518,7 +12512,7 @@ bool XmlDoc::hashMetaList ( HashTableX *ht        ,
 		// keep on chugging if they match
 		if ( recSize2==recSize && !memcmp(rec,rec2,recSize) ) continue;
 		// otherwise, bitch
-		char shardByTermId = false;
+		bool shardByTermId = false;
 		if ( rdbId == RDB_POSDB )
 			shardByTermId = Posdb::isShardedByTermId(rec2);
 		log("build: data not equal for key=%s "
@@ -12665,7 +12659,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 			ssb->pushChar(RDB_TITLEDB); // RDB2_TITLEDB2
 			ssb->safeMemcpy(&tkey, sizeof(key96_t));
 			m_metaList = ssb->getBufStart();
-			m_metaListSize = ssb->getLength();
+			m_metaListSize = ssb->length();
 			m_metaListValid = true;
 
 			logTrace( g_conf.m_logTraceXmlDoc, "END" );
@@ -12687,7 +12681,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 
 		// TODO: support titledb rebuild as well
 		m_metaList = m_spiderStatusDocMetaList.getBufStart();
-		m_metaListSize = m_spiderStatusDocMetaList.getLength();
+		m_metaListSize = m_spiderStatusDocMetaList.length();
 		m_metaListValid = true;
 
 		logTrace( g_conf.m_logTraceXmlDoc, "END, OK" );
@@ -12716,7 +12710,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 		m_langId = 1;
 		m_siteNumInlinksValid = true;
 		m_siteNumInlinks = 0;
-		m_isIndexed = true;
+		m_isIndexed = (char)true;	// may be -1
 		m_isIndexedValid = true;
 		m_ipValid = true;
 		m_ip = 123456;
@@ -15077,7 +15071,7 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		if ( flags & LF_NOFOLLOW ) continue;
 
 		// point to url
-		char *s    = links->getLink   (i);
+		char *s    = links->getLinkPtr(i);
 		int32_t  slen = links->getLinkLen(i);
 
 		// get hash
@@ -15395,7 +15389,7 @@ bool XmlDoc::addTable144 ( HashTableX *tt1 , int64_t docId , SafeBuf *buf ) {
 		// skip if empty
 		if ( tt1->m_flags[i] == 0 ) continue;
 		// get its key
-		char *kp = (char *)tt1->getKey ( i );
+		char *kp = (char *)tt1->getKeyFromSlot( i );
 		// store rdbid
 		*p++ = rdbId; // (rdbId | f);
 		// store it as is
@@ -15455,7 +15449,7 @@ bool XmlDoc::addTable224 ( HashTableX *tt1 ) {
 		// skip if empty
 		if ( tt1->m_flags[i] == 0 ) continue;
 		// get its key
-		char *kp = (char *)tt1->getKey ( i );
+		char *kp = (char *)tt1->getKeyFromSlot( i );
 		// store rdbid
 		*m_p++ = rdbId; // (rdbId | f);
 		// store it as is
@@ -16016,7 +16010,7 @@ uint8_t score32to8 ( uint32_t score ) {
 	//double maxscore = ::log ( (double)(0x00ffffff - 127));
 	static double s_maxscore = -1.0;
 	static double s_minscore = -1.0;
-	if ( s_maxscore == -1.0 ) {
+	if ( almostEqualDouble(s_maxscore, -1.0) ) {
 		uint32_t max = ((0xffffffff +   0)/256) - 127 + 10;
 		uint32_t min = (  128                 ) - 127 + 10;
 		s_maxscore = ::log((double)max);
@@ -16700,7 +16694,7 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 		//   few h1 tags
 		// . we call SafeBuf::pushChar(0) to add each one
 		m_reply.ptr_htag = htb->getBufStart();
-		m_reply.size_htag = htb->getLength();
+		m_reply.size_htag = htb->length();
 	}
 
 	// get site
@@ -16956,26 +16950,25 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 	// . the link we link to
 	// . important when getting site info because the link url
 	//   can be different than the root url!
-	m_reply. ptr_linkUrl = links->getLink   (linkNum);
+	m_reply. ptr_linkUrl = links->getLinkPtr(linkNum);
 	m_reply.size_linkUrl = links->getLinkLen(linkNum)+1;
 
 	// save the rss item in our state so we can point to it, include \0
 	if ( (size_t)rssItemLen > sizeof(m_rssItemBuf)-2)
 		rssItemLen = sizeof(m_rssItemBuf)-2;
+
 	if ( rssItemLen > 0) {
 		gbmemcpy ( m_rssItemBuf, rssItem , rssItemLen );
 		// NULL terminate it
 		m_rssItemBuf[rssItemLen] = 0;
-	}
 
-	// point to it, include the \0
-	if ( rssItemLen > 0 ) {
+		// point to it, include the \0
 		m_reply.ptr_rssItem  = m_rssItemBuf;
 		m_reply.size_rssItem = rssItemLen + 1;
 	}
 
 	if ( ! m_req->m_doLinkSpamCheck )
-		m_reply.m_isLinkSpam = false;
+		m_reply.m_isLinkSpam = 0;
 
 	if ( m_req->m_doLinkSpamCheck ) {
 		// reset to NULL to avoid strlen segfault
@@ -17025,7 +17018,8 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 	// . skip all this junk if we are a spammy voter
 	// . we get the title above in "getThatTitle"
 	if ( m_reply.m_isLinkSpam ) {
-		m_replyValid = true; return &m_reply;
+		m_replyValid = true; 
+		return &m_reply;
 	}
 
 	// . this vector is set from a sample of the entire doc
@@ -17080,7 +17074,7 @@ Msg20Reply *XmlDoc::getMsg20ReplyStepwise() {
 	char *node = xml->getNodePtr(linkNode)->m_node;
 	// . find the word index, "n" for this node
 	// . this is INEFFICIENT!!
-	char **wp = ww->getWords();
+	char **wp = ww->getWordPtrs();
 	int32_t   nw = ww->getNumWords();
 	int32_t   n;
 
@@ -17588,7 +17582,7 @@ char *XmlDoc::getHighlightedSummary ( bool *isSetFromTagsPtr ) {
 	StackBuf(hb);
 
 	// highlight the query in it
-	int32_t hlen = hi.set ( &hb, tmpSum.getBufStart(), tmpSum.getLength(), q, "<b>", "</b>" );
+	int32_t hlen = hi.set ( &hb, tmpSum.getBufStart(), tmpSum.length(), q, "<b>", "</b>" );
 
 	// highlight::set() returns 0 on error
 	if ( hlen < 0 ) {
@@ -17615,7 +17609,7 @@ char *XmlDoc::getIsNoArchive ( ) {
 	if ( m_isNoArchiveValid ) return &m_isNoArchive;
 	Xml *xml = getXml();
 	if ( ! xml || xml == (void *)-1 ) return (char *)xml;
-	m_isNoArchive      = false;
+	m_isNoArchive      = (char)false;
 	m_isNoArchiveValid = true;
 	int32_t     n     = xml->getNumNodes();
 	XmlNode *nodes = xml->getNodes();
@@ -17646,9 +17640,9 @@ char *XmlDoc::getIsNoArchive ( ) {
 		// skip leading spaces
 		while ( att < end && *att && is_wspace_a(*att) ) att++;
 		// is is noarchive? skip if no such match
-		if ( strncasecmp(att,"noarchive",9) ) continue;
+		if ( strncasecmp(att,"noarchive",9) != 0 ) continue;
 		// ok, we got it
-		m_isNoArchive = true;
+		m_isNoArchive = (char)true;
 		break;
 	}
 	// return what we got
@@ -17828,7 +17822,7 @@ char *XmlDoc::getIsErrorPage ( ) {
 	//if(xml->getContentLen() > 4096) return false;
 
 	// assume not
-	m_isErrorPage      = false;
+	m_isErrorPage      = (char)false;
 	m_isErrorPageValid = true;
 
 	int32_t nn = xml->getNumNodes();
@@ -17884,7 +17878,7 @@ char *XmlDoc::getIsErrorPage ( ) {
 		}
 	}
 
-	m_isErrorPage = true;
+	m_isErrorPage = (char)true;
 	return &m_isErrorPage;
 }
 
@@ -18068,7 +18062,7 @@ static int cmptp2 (const void *v1, const void *v2) {
 
 static bool printLangBits ( SafeBuf *sb , TermDebugInfo *tp ) {
 
-	char printed = false;
+	bool printed = false;
 	if ( tp->m_synSrc ) {
 		sb->safePrintf("&nbsp;");
 		printed = true;
@@ -18308,8 +18302,8 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 		       (int32_t)m_nextSpiderPriority );
 	*/
 
-	// must always start with http i guess!
-	if ( strncmp ( fu , "http" , 4 ) ) { g_process.shutdownAbort(true); }
+	// must always start with http
+	if ( strncmp ( fu , "http" , 4 ) != 0 ) { g_process.shutdownAbort(true); }
 	// show the host that should spider it
 	//int32_t domLen ; char *dom = getDomFast ( fu , &domLen , true );
 	//int32_t hostId;
@@ -18931,8 +18925,8 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 	}
 
 
-	// must always start with http i guess!
-	if ( strncmp ( fu , "http" , 4 ) ) { g_process.shutdownAbort(true); }
+	// must always start with http
+	if ( strncmp ( fu , "http" , 4 ) != 0 ) { g_process.shutdownAbort(true); }
 
 	struct tm tm_buf;
 	char buf[64];
@@ -19206,8 +19200,8 @@ bool XmlDoc::printRainbowSections ( SafeBuf *sb , HttpRequest *hr ) {
 	int32_t nw = words->getNumWords();
 	int64_t *wids = words->getWordIds();
 
-	int32_t isXml = false;
-	if ( hr ) isXml = (bool)hr->getLong("xml",0);
+	int32_t isXml = 0;
+	if ( hr ) isXml = hr->getLong("xml",0);
 
 	// now complement, cuz bigger is better in the ranking world
 	SafeBuf densBuf;
@@ -19256,9 +19250,7 @@ bool XmlDoc::printRainbowSections ( SafeBuf *sb , HttpRequest *hr ) {
 			       "<br>"
 			       ""
 			       );
-	}
 
-	if ( ! isXml ) {
 		// try the new print function
 		sections->print( sb, hiPos, wposVec, densityVec, wordSpamVec, fragVec );
 		return true;
@@ -19314,9 +19306,9 @@ bool XmlDoc::printRainbowSections ( SafeBuf *sb , HttpRequest *hr ) {
 		if ( bp[0]<128 && bp[1]<128 && bp[2]<128 )
 			dark = true;
 		// or if two are less than 50
-		if ( bp[0]<100 && bp[1]<100 ) dark = true;
-		if ( bp[1]<100 && bp[2]<100 ) dark = true;
-		if ( bp[0]<100 && bp[2]<100 ) dark = true;
+		if ( (bp[0]<100 && bp[1]<100) ||
+		     (bp[1]<100 && bp[2]<100) ||
+		     (bp[0]<100 && bp[2]<100) ) dark = true;
 		// if bg color is dark, make font color light
 		if ( dark ) {
 			fcolor = 0x00ffffff;
@@ -19586,42 +19578,27 @@ bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {
 			sb->safePrintf("\t\t<prefix><![CDATA[%s]]>"
 				       "</prefix>\n",prefix);
 
-		if ( ! isXml )
-		{
+		if ( ! isXml ) {
 			sb->safePrintf ( "<tr>");
-		}
-
-
-		if ( ! isXml )
-		{
 			// Show termId in decimal, masked as it would be stored in posdb
 			sb->safePrintf("<td align=\"right\">%" PRId64"</td>", (int64_t)(tp[i]->m_termId & TERMID_MASK));
-		}
 
-
-		if( ! isXml )
-		{
 			if ( prefix )
 				sb->safePrintf("<td>%s:</td>",prefix);
 			else
 				sb->safePrintf("<td>&nbsp;</td>");
-		}
 
-		if ( ! isXml )
-		{
 			sb->safePrintf("<td>%" PRId32
 				       "/%" PRId32
 				       "</td>" ,
 				       tp[i]->m_wordPos
 				       ,tp[i]->m_wordNum
 				       );
-		}
 
-		// print out all langs word is in if it's not clear
-		// what language it is. we use a sliding window to
-		// resolve some ambiguity, but not all, so print out
-		// the possible langs here
-		if ( ! isXml ) {
+			// print out all langs word is in if it's not clear
+			// what language it is. we use a sliding window to
+			// resolve some ambiguity, but not all, so print out
+			// the possible langs here
 			sb->safePrintf("<td>");
 			printLangBits ( sb , tp[i] );
 			sb->safePrintf("</td>");
@@ -20145,7 +20122,7 @@ char *XmlDoc::getTitleBuf ( ) {
 		// add to it. return NULL with g_errno set on error
 		if ( ! dupTable.addKey(&h) ) return NULL;
 		// is it in there?
-		bk[i].m_score = 1; // scoreTable.getScore ( &h );
+		bk[i].m_score = 1; // scoreTable.getScore(h);
 	}
 	// now sort the bk array by m_score
 	//gbsort ( bk , linkNum , sizeof(Binky), cmpbk );
@@ -20341,7 +20318,7 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 	// add "site" tag
 	//
 	const char *oldsite = gr->getString( "site", NULL, NULL, &timestamp );
-	if ( ! oldsite || strcmp(oldsite,mysite) || now-timestamp > 10*86400)
+	if ( ! oldsite || strcmp(oldsite,mysite) != 0 || now-timestamp > 10*86400)
 		tbuf->addTag3(mysite,"site",now,"xmldoc",*ip,mysite,rdbId);
 
 	//
@@ -20386,7 +20363,7 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 	else if ( dsize != m_rootTitleBufSize )
 		addRootTitle = true;
 	// or if differs in content
-	else if ( memcmp(data,m_rootTitleBuf,m_rootTitleBufSize))
+	else if ( memcmp(data,m_rootTitleBuf,m_rootTitleBufSize) != 0 )
 		addRootTitle =true;
 	// or if it is 10 days old or more
 	if ( old1!=-1 && now-timestamp > 10*86400 ) addRootTitle = true;
@@ -20561,18 +20538,21 @@ char *XmlDoc::getWordSpamVec ( ) {
 	// if 20 words totally spammed, call it all spam?
 	m_numRepeatSpam = 20;
 
-	// shortcut
-	int32_t sni = m_siteNumInlinks;
 	if ( ! m_siteNumInlinksValid ) { g_process.shutdownAbort(true); }
 
+#if 0
+	// @todo: examine if this should be used. Was always hard coded to 25
+	// shortcut
+	int32_t sni = m_siteNumInlinks;
 	// set "m_maxPercent"
 	int32_t maxPercent = 6;
 	if ( sni > 10  ) maxPercent = 8;
         if ( sni > 30  ) maxPercent = 10;
         if ( sni > 100 ) maxPercent = 20;
         if ( sni > 500 ) maxPercent = 30;
+#endif
 	// fix this a bit so we're not always totally spammed
-	maxPercent = 25;
+	int32_t maxPercent = 25;
 
 	// get # of words we have to set spam for
 	int32_t numWords = words->getNumWords();
@@ -20961,6 +20941,7 @@ int32_t XmlDoc::getProbSpam(const int32_t *profile, int32_t plen, int32_t step) 
 	// plen  = 7   and  dev = 2.0  -->  50%
 
 	// NOTE: dev has been multiplied by 256 to avoid using floats
+	//@todo BR: So why do you compare with a float? 
 	if ( dev <= 51.2 ) return 100;  // (.2 * 256)
 	int32_t prob = ( (256*100/7) * plen ) / dev;
 
@@ -20983,7 +20964,7 @@ bool getWordPosVec ( const Words *words ,
 	if ( sections ) sp = sections->m_sectionPtrs;
 	const nodeid_t *tids = words->getTagIds();
 	const int32_t *wlens = words->getWordLens();
-	const char *const*wptrs = words->getWords();
+	const char *const*wptrs = words->getWordPtrs();
 	int32_t nw = words->getNumWords();
 
 	if ( ! wpos->reserve ( nw * sizeof(int32_t) ) ) return false;
@@ -21187,11 +21168,16 @@ bool getDiversityVec( const Words *words, const Phrases *phrases, HashTableX *co
 
 	// convert from float into a rank from 0-15
 	for ( int32_t i = 0 ; i < nw ; i++ ) {
-		if ( ! ww[i] ) { nww[i] = 0; continue; }
+		if ( almostEqualFloat(ww[i], 0) ) { 
+			nww[i] = 0; 
+			continue; 
+		}
 		// 2.50 is max in getWordToPhraseRatioWeights() function
 		char wrank = (char) ((ww[i] * ((float)MAXDIVERSITYRANK))/.55);
 		// sanity
-		if ( wrank > MAXDIVERSITYRANK ) wrank = MAXDIVERSITYRANK;
+		if ( wrank > MAXDIVERSITYRANK ) {
+			wrank = MAXDIVERSITYRANK;
+		}
 		if ( wrank < 0 ) { g_process.shutdownAbort(true); }
 		// assign now
 		nww[i] = wrank;
@@ -21434,6 +21420,9 @@ char *XmlDoc::getFragVec ( ) {
 	// handy ptr
 	char *ff = m_fragBuf.getBufStart();
 
+	// wtf?
+	if ( ! ff ) { g_process.shutdownAbort(true); }
+
 	// convert from floats into frag score, 0 or 1 really
 	for ( int32_t i = 0 ; i < nw ; i++ ) {
 		if ( ww[i] <= 0.0 ) ff[i] = 0;
@@ -21442,8 +21431,6 @@ char *XmlDoc::getFragVec ( ) {
 
 	if ( buf != tmpBuf ) mfree ( buf , need , "WeightsSet3" );
 
-	// wtf?
-	if ( ! ff ) { g_process.shutdownAbort(true); }
 
 	return ff;
 }
@@ -21575,10 +21562,10 @@ static void getWordToPhraseRatioWeights ( int64_t   pid1 , // pre phrase
 	int32_t wrdcount1 = 0;
 	int32_t wrdcount2 = 0;
 	if ( !tt1->isTableEmpty() ) {
-		if (pid1) phrcount1 = tt1->getScore(&pid1);
-		if (pid2) phrcount2 = tt1->getScore(&pid2);
-		if (wid1) wrdcount1 = tt1->getScore(&wid1);
-		if (wid2) wrdcount2 = tt1->getScore(&wid2);
+		if (pid1) phrcount1 = tt1->getScore(pid1);
+		if (pid2) phrcount2 = tt1->getScore(pid2);
+		if (wid1) wrdcount1 = tt1->getScore(wid1);
+		if (wid2) wrdcount2 = tt1->getScore(wid2);
 	}
 	// if we are always ending the same phrase, like "Mexico"
 	// in "New Mexico"... get the most popular phrase this word is

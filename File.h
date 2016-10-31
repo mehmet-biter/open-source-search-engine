@@ -19,7 +19,6 @@
 
 #define MAX_FILENAME_LEN 128
 
-#include <fcntl.h>           // for open
 #include <pthread.h>
 
 
@@ -48,13 +47,9 @@ public:
 	// returns false and sets errno on error, returns true on success
 	bool rename ( const char *newFilename );
 
-	void setForceRename( bool forceRename ) {
-		m_forceRename = forceRename;
-	}
-
-	bool getForceRename() const {
-		return m_forceRename;
-	}
+	bool movePhase1(const char *newFilename);
+	bool movePhase2(const char *newFilename);
+	void rollbackMovePhase1(const char *newFilename);
 
 	bool calledOpen () { return m_calledOpen; }
 	bool calledSet  () { return m_calledSet; }
@@ -69,8 +64,7 @@ public:
 	// . open() returns true on success, false on failure, errno is set.
 	// . opens for reading/writing only
 	// . returns false if does not exist
-	bool open  ( int flags , int permissions = 
-		     S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH );
+	bool open(int flags);
 
 	// . use an offset of -1 to use current file seek position
 	// . returns what ::read returns
@@ -109,7 +103,6 @@ public:
 	// . a simple stat check
 	int32_t doesExist() const;
 
-	// . static so you don't need an instant of this class to call it
 	// . returns false and sets errno on error
 	bool unlink ( );
 
@@ -120,14 +113,11 @@ public:
 	// . must call open() before calling this
 	int   getfd          ( ) ;
 
-	char       *getFilename()       { return m_filename; }
 	const char *getFilename() const { return m_filename; }
 
-	// our filename allocated with strdup
-	// we publicize for ease of use
+private:
 	char m_filename [ MAX_FILENAME_LEN ];
 
-private:
 	bool m_closedIt;
 	
 	// initializes the fd pool
@@ -148,11 +138,9 @@ private:
 	int m_flags;
 	//int m_permissions;
 	
-	char m_calledOpen;
-	char m_calledSet;
+	bool m_calledOpen;
+	bool m_calledSet;
 
-	bool m_forceRename;
-	
 	pthread_mutex_t m_mtxFdManipulation;
 	bool open_unlocked(int flags, int permissions);
 	bool close_unlocked();

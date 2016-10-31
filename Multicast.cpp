@@ -70,8 +70,13 @@ Multicast::Multicast()
     m_retryCount(0),
     m_sentToTwin(false)
 {
-	constructor();
+	// PVS-Studio
+	memset(&m_retired, 0, sizeof(m_retired));
+	memset(&m_errnos, 0, sizeof(m_errnos));
+	memset(&m_inProgress, 0, sizeof(m_inProgress));
+	memset(&m_launchTime, 0, sizeof(m_launchTime));
 
+	constructor();
 }
 
 Multicast::~Multicast() {
@@ -240,8 +245,8 @@ void Multicast::sendToGroup() {
 		int16_t destPort = h->m_port;
 
 		// if from hosts2.conf pick the best ip!
-		int32_t  bestIp  = h->m_ip;
-		bestIp = g_hostdb.getBestHosts2IP ( h );
+		//int32_t  bestIp  = h->m_ip;
+		int32_t bestIp = g_hostdb.getBestHosts2IP ( h );
 
 		// retire the host to prevent resends
 		m_retired [ i ] = true;
@@ -361,7 +366,7 @@ void Multicast::gotReply2 ( UdpSlot *slot ) {
 	//logIt = true;
 	// log a failure msg
 	if ( logIt ) { // m_errnos[i] != ETRYAGAIN ) {
-		Host *h = g_hostdb.getHost ( slot->getIp() ,slot->getPort() );
+		Host *h = g_hostdb.getUdpHost ( slot->getIp() ,slot->getPort() );
 		if ( h ) 
 			log("net: Got error sending request to hostId %" PRId32" "
 			    "(msgType=0x%02x transId=%" PRId32" net=%s): "
@@ -651,8 +656,8 @@ bool Multicast::sendToHost ( int32_t i ) {
 	int16_t destPort = h->m_port;
 
 	// if from hosts2.conf pick the best ip!
-	int32_t  bestIp   = h->m_ip;
-	bestIp = g_hostdb.getBestHosts2IP ( h );
+	//int32_t  bestIp   = h->m_ip;
+	int32_t bestIp = g_hostdb.getBestHosts2IP ( h );
 
 	// sanity check
 	//if ( g_hostdb.isDead(h) ) {
@@ -962,7 +967,7 @@ void Multicast::gotReply1 ( UdpSlot *slot ) {
 		// do not log not found on an external network
 		if ( g_errno != ENOTFOUND ) {
 			// log the error
-			Host *h = g_hostdb.getHost(slot->getIp(), slot->getPort());
+			Host *h = g_hostdb.getUdpHost(slot->getIp(), slot->getPort());
 			if (h) {
 				log(LOG_WARN, "net: Multicast got error in reply from "
 						    "hostId %" PRId32

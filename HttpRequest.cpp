@@ -239,26 +239,30 @@ bool HttpRequest::set (char *url,int32_t offset,int32_t size,time_t ifModifiedSi
 		hlen += strlen ( host + hlen );
 	}
 	// the if-modified-since field
-	char  ibuf[64];
 	const char *ims = "";
+#if 0
+	char  ibuf[64];
 	if ( ifModifiedSince ) {
 		struct tm tm_buf;
 		char buf[64];
 		// NOTE: ctime appends a \n 
-		sprintf(ibuf,"If-Modified-Since: %s UTC",
+		snprintf(ibuf, sizeof(ibuf), "If-Modified-Since: %s UTC",
 			asctime_r(gmtime_r(&ifModifiedSince,&tm_buf),buf));
 		// get the length
 		int32_t ilen = strlen(ibuf);
-		// hack off \n from ctime - replace with \r\n\0
-		ibuf [ ilen - 1 ] = '\r';
-		ibuf [ ilen     ] = '\n';
-		ibuf [ ilen + 1 ] = '\0';
-		// set ims to this string
-		ims = ibuf;
+		if( ilen && ilen < (int32_t)sizeof(ibuf)-1 ) {
+			// hack off \n from ctime - replace with \r\n\0
+			ibuf [ ilen - 1 ] = '\r';
+			ibuf [ ilen     ] = '\n';
+			ibuf [ ilen + 1 ] = '\0';
+			// set ims to this string
+			ims = ibuf;
+		}
 	}
 	// . until we fix if-modified-since, take it out
 	// . seems like we are being called with it as true when should not be
 	ims="";
+#endif
 
 	// . use one in conf file if caller did not provide
 	// . this is usually Gigabot/1.0
@@ -335,7 +339,8 @@ bool HttpRequest::set (char *url,int32_t offset,int32_t size,time_t ifModifiedSi
 			   path , proto, host , 
 			   ims , userAgent , accept , up );
 	 }
-	 else if ( size != -1 ) 
+	 else 
+	 if ( size != -1 ) 
 		 m_reqBuf.safePrintf (
 			   "%s %s %s\r\n" 
 			   "Host: %s\r\n"
@@ -359,7 +364,8 @@ bool HttpRequest::set (char *url,int32_t offset,int32_t size,time_t ifModifiedSi
 			   offset ,
 			   offset + size ,
 				      up);
-	 else if ( offset > 0  && size == -1 ) 
+	 else 
+	 if ( offset > 0 ) 	// size is -1
 		 m_reqBuf.safePrintf (
 			   "%s %s %s\r\n" 
 			   "Host: %s\r\n"
@@ -648,14 +654,14 @@ bool HttpRequest::set ( char *origReq , int32_t origReqLen , TcpSocket *sock ) {
 			 // advance
 			 p = end;
 			 // this is always a match
-			 if ( end-start == 3 && strncmp(start,"*:*",3)==0 ) {
+			 if ( end-start == 3 && strncmp(start,"*:*",3) == 0 ) {
 				 matched = true;
 				 break;
 			 }
 			 // compare now
 			 if ( tmp.length() != end-start ) 
 				 continue;
-			 if ( strncmp(tmp.getBufStart(),start,end-start))
+			 if ( strncmp(tmp.getBufStart(),start,end-start) != 0 )
 				 continue;
 			 // we got a match
 			 matched = true;
@@ -933,7 +939,7 @@ bool HttpRequest::set ( char *origReq , int32_t origReqLen , TcpSocket *sock ) {
 		 // update it
 		 last = h->m_ip;
 		 // returns number of top bytes in comon
-		 int32_t nt = ipCmp ( sock->m_ip , h->m_ip );
+		 int32_t nt = sock ? ipCmp ( sock->m_ip , h->m_ip ) : 0;
 		 // at least be in the same c-block as a host in hosts.conf
 		 if ( nt < 3 ) continue;
 		 m_isLocal = true;
@@ -958,11 +964,11 @@ bool HttpRequest::set ( char *origReq , int32_t origReqLen , TcpSocket *sock ) {
 	 // check for body if it was a POST request
 	 //if ( m_requestType == RT_POST ) d = strstr ( req , "\r\n\r\n" );
 
-	 // now put d's char back, just in case... does it really matter?
-	 if ( d ) *d = dc;
-
 	 // return true now if no cgi stuff to parse
 	 if ( d ) {
+	 	// now put d's char back, just in case... does it really matter?
+		*d = dc;
+
 		 char *post    = d + 4;
 		 int32_t  postLen = reqLen-(d+4-req) ;
 		 // post sometimes has a \r or\n after it
@@ -1185,7 +1191,7 @@ const char *HttpRequest::getStringFromCookie ( const char *field      ,
 		// check first char
 		if ( *p != *field ) continue;
 		// does it match? continue if not a match
-		if ( strncmp ( p , field , flen ) ) continue;
+		if ( strncmp ( p , field , flen ) != 0 ) continue;
 		// point to value
 		char *val = p + flen;
 		// must be an equal sign
@@ -1531,7 +1537,7 @@ bool HttpRequest::getCurrentUrl ( SafeBuf &cu ) {
 	}
 	// . scan path and change \0 back to = or &
 	// . similar logic in HttpServer.cpp for logging!
-	char *dst = cu.getBuf();
+	char *dst = cu.getBufPtr();
 	const char *src = path;
 	const char *srcEnd = path + plen;
 	char dd = '=';
@@ -1568,7 +1574,7 @@ bool HttpRequest::getCurrentUrlPath ( SafeBuf &cup ) {
 	}
 	// . scan path and change \0 back to = or &
 	// . similar logic in HttpServer.cpp for logging!
-	char *dst = cup.getBuf();
+	char *dst = cup.getBufPtr();
 	char *start = dst;
 	const char *src = path;
 	const char *srcEnd = path + plen;

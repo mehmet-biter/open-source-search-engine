@@ -409,7 +409,7 @@ bool UdpServer::sendRequest(char *msg,
 
 	// get it from g_hostdb2 then via ip lookup if still NULL
 	if ( ! h ) {
-		h = g_hostdb.getHost ( ip , port );
+		h = g_hostdb.getUdpHost ( ip , port );
 	}
 
 	// sanity check
@@ -556,7 +556,7 @@ void UdpServer::sendReply(char *msg, int32_t msgSize, char *alloc, int32_t alloc
 	//   ip/port that sent to us.
 	//if ( g_conf.m_useShotgun && ! useSameSwitch )
 	// now we always set m_host, we use s_shotgun to toggle
-	slot->m_host = g_hostdb.getHost ( slot->getIp() , slot->getPort() );
+	slot->m_host = g_hostdb.getUdpHost ( slot->getIp() , slot->getPort() );
 	//else slot->m_host = NULL;
 
 	ScopedLock sl(m_mtx);
@@ -997,7 +997,7 @@ int32_t UdpServer::readSock(UdpSlot **slotPtr, int64_t now) {
 	// since shotgunning may change the ip
 	ip2 = ip;
 	// i modified Hostdb::hashHosts() to hash the loopback ip now!
-	h   = g_hostdb.getHost ( ip , ntohs(from.sin_port) );
+	h   = g_hostdb.getUdpHost ( ip , ntohs(from.sin_port) );
 	// . just use ip for hosts from hosts2.conf
 	// . because sendReques() usually gets a hostId of -1 when sending
 	//   to a host in hosts2.conf and therefore makeKey() initially uses
@@ -1116,8 +1116,7 @@ int32_t UdpServer::readSock(UdpSlot **slotPtr, int64_t now) {
 			// . if this blocks, that sucks, we'll probably get
 			//   another untethered read... oh well...
 			// . ack from 0 to infinite to prevent more from coming
-			tmp.sendAck(m_sock,now,dgramNum,true/*weInit'ed?*/,
-				    true/*cancelTrans?*/);
+			tmp.sendAck(m_sock,now,dgramNum, 1/*weInit'ed?*/, true/*cancelTrans?*/);
 			//return 1;
 			goto discard;
 		}
@@ -1630,11 +1629,6 @@ bool UdpServer::makeCallback(UdpSlot *slot) {
 		//   udp slots
 		//if(g_niceness==0 && slot->m_niceness && g_errno!=ECANCELLED){
 		//	g_process.shutdownAbort(true);}
-
-		// sanity check. has this slot been excised from linked list?
-		if (slot->m_activeListPrev && slot->m_activeListPrev->m_activeListNext != slot) {
-			g_process.shutdownAbort(true);
-		}
 
 		// sanity check. has this slot been excised from linked list?
 		if (slot->m_activeListPrev && slot->m_activeListPrev->m_activeListNext != slot) {

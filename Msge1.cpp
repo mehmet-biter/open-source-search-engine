@@ -6,21 +6,6 @@
 Msge1::Msge1() {
 	m_buf = NULL;
 	m_numReplies = 0;
-	reset();
-}
-
-Msge1::~Msge1() {
-	reset();
-}
-
-void Msge1::reset() {
-	m_errno = 0;
-	m_ipBuf = NULL;
-	if ( m_buf ) {
-		mfree(m_buf, m_bufSize, "Msge1buf");
-		m_buf = NULL;
-	}
-	m_numReplies = 0;
 
 	// Coverity
 	m_coll = NULL;
@@ -40,6 +25,24 @@ void Msge1::reset() {
 	m_state = NULL;
 	m_callback = NULL;
 	m_nowGlobal = 0;
+	memset(&m_ns, 0, sizeof(m_ns));
+	memset(&m_used, 0, sizeof(m_used));
+
+	reset();
+}
+
+Msge1::~Msge1() {
+	reset();
+}
+
+void Msge1::reset() {
+	m_errno = 0;
+	m_ipBuf = NULL;
+	if ( m_buf ) {
+		mfree(m_buf, m_bufSize, "Msge1buf");
+		m_buf = NULL;
+	}
+	m_numReplies = 0;
 }
 
 // . get various information for each url in a list of urls

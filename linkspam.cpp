@@ -568,7 +568,7 @@ bool setLinkSpam ( int32_t       ip                 ,
 		if ( links->isInternalDom(i) ) continue;
 		// otherwise, normalize it...
 		Url uu;
-		uu.set( links->getLink( i ), links->getLinkLen( i ) );
+		uu.set( links->getLinkPtr( i ), links->getLinkLen( i ) );
 
 		// . is it near sporny links? (naughty domains or lotsa -'s)
 		// . if we are in a list of ads, chances are good the true
@@ -914,12 +914,12 @@ bool isLinkSpam ( const Url *linker,
 	// . if any of those areas are not link chains, then assume we are
 	//   not a link chain
 	for ( x++ ; x < nl ; x++ ) {
-		char *link    = links->getLink    (x);
-		int32_t  linkLen = links->getLinkLen (x);
+		char *link = links->getLinkPtr(x);
+		int32_t  linkLen = links->getLinkLen(x);
 		if ( ! link          ) continue;
 		if ( linkLen <= 0    ) continue;
 		if ( linkLen > uulen ) continue;
-		if ( strncmp ( link , uu , uulen ) ) continue;
+		if ( strncmp ( link , uu , uulen ) != 0 ) continue;
 		// got a match, is it a link chain? if not, them we are not
 		goto loop;
 	}
@@ -1040,10 +1040,10 @@ static bool isLinkChain ( Xml *xml, const Url *linker, const Url *linkee, int32_
 		//   there is left/right text, like the guy that had a list
 		//   to 3 different gigablast.com links in a row with no
 		//   text in between
-		if ( leftUrl.getDomainLen() != linkee->getDomainLen()  ) break;
-		if ( strncmp ( leftUrl.getDomain() ,
-			       linkee->getDomain() ,
-			       linkee->getDomainLen()   )       ) break;
+		if ( leftUrl.getDomainLen() != linkee->getDomainLen()  ) 
+			break;
+		if( strncmp(leftUrl.getDomain(), linkee->getDomain(), linkee->getDomainLen()) != 0 ) 
+			break;
 	}
 
 	// we start off in link text, since linkNode is an <a> tag
@@ -1111,10 +1111,10 @@ static bool isLinkChain ( Xml *xml, const Url *linker, const Url *linkee, int32_
 		//   there is left/right text, like the guy that had a list
 		//   to 3 different gigablast.com links in a row with no
 		//   text in between
-		if ( rightUrl.getDomainLen() != linkee->getDomainLen()  ) break;
-		if ( strncmp ( rightUrl.getDomain() ,
-			       linkee->getDomain()  ,
-			       linkee->getDomainLen()    )       ) break;
+		if ( rightUrl.getDomainLen() != linkee->getDomainLen() ) 
+			break;
+		if ( strncmp(rightUrl.getDomain(), linkee->getDomain(), linkee->getDomainLen()) != 0 ) 
+			break;
 	}
 
 	if ( tableLeft && tableRight ) {

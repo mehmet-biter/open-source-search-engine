@@ -99,10 +99,6 @@ class SpiderLoop {
 
 	class SpiderColl *m_sc;
 
-	// used to avoid calling getRec() twice!
-	//bool m_gettingList0;
-
-	int32_t m_outstanding1;
 	bool m_gettingDoledbList;
 	HashTableX m_lockTable;
 	// save on msg12 lookups! keep somewhat local...

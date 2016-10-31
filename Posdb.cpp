@@ -438,7 +438,14 @@ int64_t Posdb::getTermFreq ( collnum_t collnum, int64_t termId ) {
 					    (char *)&maxKey,
 					    oldTrunc );
 
-	int64_t numBytes = m_rdb.getBuckets()->getListSize(collnum, (char *)&startKey, (char *)&endKey, NULL, NULL);
+	RdbBuckets *buckets = m_rdb.getBuckets();
+	if( !buckets ) {
+		log(LOG_LOGIC, "%s:%s:%d: No buckets!", __FILE__, __func__, __LINE__);
+		gbshutdownLogicError();
+		return -1;	// for code analyzers not catching the abort above
+	}
+
+	int64_t numBytes = buckets->getListSize(collnum, (char *)&startKey, (char *)&endKey, NULL, NULL);
 
 	// convert from size in bytes to # of recs
 	maxRecs += numBytes / sizeof(posdbkey_t);
@@ -556,11 +563,9 @@ void Posdb::printKey(const char *k) {
 }
 
 int Posdb::printList ( RdbList &list ) {
-	bool justVerify = false;
 	posdbkey_t lastKey;
 	// loop over entries in list
-	for ( list.resetListPtr() ; ! list.isExhausted() && ! justVerify ;
-	      list.skipCurrentRecord() ) {
+	for ( list.resetListPtr(); ! list.isExhausted(); list.skipCurrentRecord() ) {
 		key144_t k; list.getCurrentKey(&k);
 		// compare to last
 		const char *err = "";

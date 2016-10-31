@@ -6,6 +6,7 @@
 #include "Linkdb.h"
 #include "Spider.h"
 #include "Process.h"
+#include <fcntl.h>
 
 
 RdbTree::RdbTree () {
@@ -26,12 +27,27 @@ RdbTree::RdbTree () {
 	m_nextNode      =  0;
 	m_minUnusedNode =  0; 
 	m_fixedDataSize = -1; // variable dataSize, depends on individual node
-	m_isProtected   = false;
 	m_needsSave     = false;
-	m_useProtection = false;
 	m_pickRight     = false;
-	m_gettingList   = 0;
 
+	// PVS-Studio
+	memset(m_dir, 0, sizeof(m_dir));
+	memset(m_memTag, 0, sizeof(m_memTag));
+	m_state = NULL;
+	m_callback = NULL;
+	m_doBalancing = false;
+	m_ownData = false;
+	m_dataInPtrs = false;
+	m_overhead = 0;
+	m_maxMem = 0;
+	m_baseMem = 0;
+	m_allocName = NULL;
+	m_bytesWritten = 0;
+	m_bytesRead = 0;
+	m_errno = 0;
+	m_ks = 0;
+	m_corrupt = 0;
+	
 	// before resetting... we have to set this so clear() won't breach buffers
 	m_rdbId = -1;
 
@@ -53,9 +69,6 @@ bool RdbTree::set(int32_t fixedDataSize, int32_t maxNumNodes, int32_t memMax, bo
 	m_allocName       = allocName;
 	m_dataInPtrs      = dataInPtrs;
 	m_ks              = keySize;
-
-	// make useProtection true for debugging
-	m_useProtection   = false;
 
 	m_needsSave       = false;
 
@@ -98,8 +111,6 @@ bool RdbTree::set(int32_t fixedDataSize, int32_t maxNumNodes, int32_t memMax, bo
 		maxNumNodes = m_maxMem / m_overhead;
 		if(maxNumNodes > 10000000) maxNumNodes = 10000000;
 	}
-	// initiate protection
-	if ( m_useProtection ) protect();
 	// allocate the nodes
 	return growTree(maxNumNodes);
 }
@@ -108,8 +119,8 @@ void RdbTree::reset ( ) {
 	// . sanity check
 	// . SpiderCache.cpp uses a tree, but withou a dbname
 	if ( m_needsSave && m_dbname[0] && 
-	     strcmp(m_dbname,"accessdb") &&
-	     strcmp(m_dbname,"statsdb") ) {
+	     strcmp(m_dbname,"accessdb") != 0 &&
+	     strcmp(m_dbname,"statsdb") != 0 ) {
 	     //strcmp(m_dbname,"doledb") ) {
 		log(LOG_WARN, "rdb: RESETTING UNSAVED TREE %s.",m_dbname);
 		log(LOG_WARN, "rdb: RESETTING UNSAVED TREE %s.",m_dbname);
@@ -120,13 +131,11 @@ void RdbTree::reset ( ) {
 		// which was coring here! so take this out
 		//g_process.shutdownAbort(true);
 	}
-	// unprotect it all
-	if ( m_useProtection ) unprotect ( );
 	// make sure string is NULL temrinated. this strlen() should 
 	if ( m_numNodes > 0 && 
 	     m_dbname[0] &&
 	     // don't be spammy we can have thousands of these, one per coll
-	     strcmp(m_dbname,"waitingtree") )
+	     strcmp(m_dbname,"waitingtree") != 0 )
 		log(LOG_INFO,"db: Resetting tree for %s.",m_dbname);
 
 	// liberate all the nodes
@@ -465,12 +474,6 @@ int32_t RdbTree::addNode ( collnum_t collnum , const char *key , char *data , in
 	int32_t rightGuy;
 	// this is -1 iff there are no nodes used in the tree
 	int32_t i = m_headNode;
-	// disable mem protection
-	bool undo = false;
-	if ( m_useProtection ) {
-		undo = m_isProtected;
-		unprotect ( );
-	}
 	// . find the parent of node i and call it "iparent"
 	// . if a node exists with our key then replace it
 	while ( i != -1 ) {
@@ -623,8 +626,6 @@ int32_t RdbTree::addNode ( collnum_t collnum , const char *key , char *data , in
 		// . will balance if child depths differ by 2 or more
 		setDepths ( iparent );
 	}
-	// re-enable mem protection
-	if ( m_useProtection && undo ) protect ( );
 	// return the node number of the node we occupied
 	return i; 
 
@@ -634,7 +635,6 @@ int32_t RdbTree::addNode ( collnum_t collnum , const char *key , char *data , in
 	//fprintf(stderr,"replaced it!\n");
 	// if we don't support any data then we're done
 	if ( m_fixedDataSize == 0 ) {
-		if ( m_useProtection && undo ) protect();
 		return i;
 	}
 	// get dataSize
@@ -655,8 +655,6 @@ int32_t RdbTree::addNode ( collnum_t collnum , const char *key , char *data , in
 	m_data [ i ] = data;
 	// set the size if we need to as well
 	if ( m_fixedDataSize < 0 ) m_sizes [ i ] = dataSize;
-	// re-enable mem protection if we should
-	if ( m_useProtection && undo ) protect();
 	return i;
 }
 
@@ -680,9 +678,6 @@ void RdbTree::deleteNodes(collnum_t collnum, const char *startKey, const char *e
 		//g_process.shutdownAbort(true);
 	}
 
-	// protect it all from writes again
-	if ( m_useProtection ) unprotect ( );
-
 	int32_t node = getNextNode ( collnum , startKey );
 	while ( node >= 0 ) {
 		//int32_t next = getNextNode ( node );
@@ -695,9 +690,6 @@ void RdbTree::deleteNodes(collnum_t collnum, const char *startKey, const char *e
 		//node = next;
 		node = getNextNode ( collnum , startKey );
 	}
-
-	// protect it all from writes again
-	if ( m_useProtection ) protect ( );
 }
 
 // . deletes node i from the tree
@@ -740,14 +732,6 @@ void RdbTree::deleteNode(int32_t i, bool freeData) {
 		m_memOccupied -= dataSize;
 	}
 
-	// protect it all from writes again
-	char undo ;
-	if ( m_useProtection ) { 
-		if ( m_isProtected ) undo = 1; 
-		else                 undo = 0;
-		unprotect ( ); 
-	}
-
 	//fprintf(stderr,"headNode=%i,numUsed=%i, before deleting node #%i\n",
 	//m_headNode,m_numUsedNodes,i);
 	//printTree();
@@ -765,7 +749,7 @@ void RdbTree::deleteNode(int32_t i, bool freeData) {
 	if ( ( m_pickRight     && m_right[j] >= 0 ) || 
 	     ( m_left[j]   < 0 && m_right[j] >= 0 )  ) {
 		// try to pick a left kid next time
-		m_pickRight = 0;
+		m_pickRight = false;
 		// go to the right kid
 		j = m_right [ j ];
 		// now go left as much as we can
@@ -777,7 +761,7 @@ void RdbTree::deleteNode(int32_t i, bool freeData) {
 	// . this little routine is stolen from getPrevNode(i)
 	if ( m_left[j] >= 0 ) {
 		// try to pick a right kid next time
-		m_pickRight = 1;
+		m_pickRight = true;
 		// go to the left kid
 		j = m_left [ j ];
 		// now go right as much as we can
@@ -829,9 +813,6 @@ void RdbTree::deleteNode(int32_t i, bool freeData) {
 	// . reset the depths starting at iparent and going up until unchanged
 	// . will balance at pivot nodes that need it
 	if ( m_doBalancing ) setDepths ( iparent );
-
-	// protect it all from writes again
-	if ( m_useProtection && undo ) protect ( );
 
 	// return if there are still people
 	if ( m_numUsedNodes > 0 ) return;
@@ -942,8 +923,6 @@ void RdbTree::deleteNode(int32_t i, bool freeData) {
 	//fprintf(stderr,"- #%" PRId32" %" PRId64" %" PRId32"\n",i,m_keys[i].n0,iparent);
 	// return if we don't have to balance
 	if ( ! m_doBalancing ) {
-		// protect it all from writes again
-		if ( m_useProtection && undo ) protect ( );
 		return;
 	}
 	// our depth becomes that of the node we replaced, unless moving j
@@ -960,8 +939,6 @@ void RdbTree::deleteNode(int32_t i, bool freeData) {
 	// do a grow/shrink test and shrink if we need to
 	//	return growTable ( );
 	// done:
-	// protect it all from writes again
-	if ( m_useProtection && undo ) protect ( );
 }
 
 // . TODO: speed up since keys are usually ordered (use getNextNode())
@@ -978,11 +955,6 @@ bool RdbTree::deleteList(collnum_t collnum, RdbList *list) {
 		return true;
 	}
 
-	// disable mem protection
-	if (m_useProtection) {
-		unprotect();
-	}
-
 	// a key not found?
 	bool allgood = true;
 
@@ -992,11 +964,6 @@ bool RdbTree::deleteList(collnum_t collnum, RdbList *list) {
 		if (!deleteNode(collnum, key, true)) {
 			allgood = false;
 		}
-	}
-
-	// enable protection again
-	if (m_useProtection) {
-		protect();
 	}
 
 	// return false if a key was not found
@@ -1017,8 +984,6 @@ void RdbTree::deleteOrderedList(collnum_t collnum, RdbList *list) {
 	// get the node whose keys is just <= key
 	int32_t node = getPrevNode ( collnum , key );
 
-	// disable mem protection
-	if ( m_useProtection ) unprotect ( );
  top:
 	// bail if no nodes in tree left that have keys >= "key"
 	if ( node == -1 ) goto done;
@@ -1058,9 +1023,7 @@ void RdbTree::deleteOrderedList(collnum_t collnum, RdbList *list) {
 	goto top2;
 
  done:
-
-	// re-enable mem protection
-	if ( m_useProtection ) protect ( );
+	;
 }
 
 // . this fixes the tree
@@ -1120,7 +1083,7 @@ bool RdbTree::fixTree ( ) {
 			data -= 4;
 			SpiderRequest *sreq ;
 			sreq =(SpiderRequest *)data;
-			if ( strncmp(sreq->m_url,"http",4) ) {
+			if ( strncmp(sreq->m_url,"http",4) != 0 ) {
 				log("db: removing spiderrequest bad url "
 					"%s from tree",sreq->m_url);
 				//return false;
@@ -1174,7 +1137,7 @@ bool RdbTree::checkTree ( bool printMsgs , bool doChainTest ) {
 bool RdbTree::checkTree2 ( bool printMsgs , bool doChainTest ) {
 
 	int32_t hkp = 0;
-	char useHalfKeys = false;
+	bool useHalfKeys = false;
 
 	// these guy always use a collnum of 0
 	bool doCollRecCheck = true;
@@ -1221,7 +1184,7 @@ bool RdbTree::checkTree2 ( bool printMsgs , bool doChainTest ) {
 				data -= 4;
 				SpiderRequest *sreq ;
 				sreq =(SpiderRequest *)data;
-				if ( strncmp(sreq->m_url,"http",4) ) {
+				if ( strncmp(sreq->m_url,"http",4) != 0 ) {
 					log("db: spiderrequest bad url "
 						"%s",sreq->m_url);
 					return false;
@@ -1405,9 +1368,6 @@ bool RdbTree::growTree(int32_t nn) {
 	char  *tp = NULL;
 	collnum_t *cp = NULL;
 
-	// unprotect it all
-	if ( m_useProtection ) unprotect ( );
-
 	// do the reallocs
 	int32_t cs = sizeof(collnum_t);
 	cp =(collnum_t *)mrealloc (m_collnums, on*cs,nn*cs,m_allocName);
@@ -1479,8 +1439,6 @@ bool RdbTree::growTree(int32_t nn) {
 	// and the new # of nodes we have
 	m_numNodes = nn;
 
-	// protect it from writes
-	if ( m_useProtection ) protect ( );
 	return true;
 
  error:
@@ -1537,38 +1495,6 @@ bool RdbTree::growTree(int32_t nn) {
 	return false;
 }
 
-void RdbTree::protect ( int prot ) {
-	// old number of nodes
-	int32_t on = m_numNodes;
-	gbmprotect ( m_collnums , on*sizeof(collnum_t) , prot );
-	gbmprotect ( m_keys     , on*m_ks, prot );
-	gbmprotect ( m_left     , on*4  , prot );
-	gbmprotect ( m_right    , on*4  , prot );
-	gbmprotect ( m_parents  , on*4  , prot );
-	if ( m_data  ) gbmprotect ( m_data  , on*sizeof(char *) , prot );
-	if ( m_sizes ) gbmprotect ( m_sizes , on*4 , prot );
-	if ( m_depth ) gbmprotect ( m_depth , on   , prot );
-}
-
-void RdbTree::gbmprotect ( void *p , int32_t size , int prot ) {
-	if ( ! p || size <= 0 ) return;
-	// align on page
-	//p = (p + PAGESIZE) & (PAGESIZE-1);
-	char *np = ((char *)p + (8*1024));
-	// mask out lower bits
-	np = (char *)((PTRTYPE)np & ~((8*1024)-1));
-	size -= (np-(char *)p);
-	if ( size <= 0 ) return;
-	// align size, too
-	int32_t nsize = size & (~(8*1024-1));
-	if ( nsize <= 0 ) return;
-	if ( mprotect ( np , nsize , prot ) == -1 )
-		log("db: mprotect (size=%" PRId32"): %s.",nsize,mstrerror(errno)); 
-	//if ( prot == (PROT_READ | PROT_WRITE) )
-	//	log("db: unprotect: 0x%" PRIx32" size=%" PRId32,(int32_t)np,nsize);
-	//else
-	//	log("db: protect: 0x%" PRIx32" size=%" PRId32,(int32_t)np,nsize);
-}
 
 int32_t RdbTree::getMemOccupiedForList2 ( collnum_t collnum  ,
 				       const char      *startKey,
@@ -1718,20 +1644,6 @@ bool RdbTree::getList ( collnum_t collnum ,
 	// similar to above algorithm but we have data along with the keys
 	int32_t dataSize;
 
-	// if a niceness 0 msg4 tries to add to the tree, return ETRYAGAIN
-	// if it is hitting this quickpoll. increment it as a count in
-	// case we get quickpolled and call this function as niceness 0!
-	//
-	// i think we were getting a list for a doledb dump, and while
-	// getting that list in Rdb::getList(), a quickpoll was called
-	// to handle a msg4 addList request that had its niceness converted 
-	// to 0. and it deleted a record from the tree that we had just read
-	// from the tree and added to the list. so then when RdbDump.cpp
-	// called deleteList() after dumping that list to disk, one of the
-	// recs was no longer in the tree! that then caused a core. now we
-	// don't core, but i think i fixed it here.
-	m_gettingList++;
-
 	// stop when we've hit or just exceed minRecSizes
 	// or we're out of nodes
 	for ( ; node >= 0 && list->getListSize() < minRecSizes ; node = getNextNode ( node ) ) {
@@ -1754,7 +1666,6 @@ bool RdbTree::getList ( collnum_t collnum ,
 			//}
 
 			if ( ! list->addRecord(&m_keys[node*m_ks],0,NULL)) {
-				m_gettingList--;
 				log(LOG_WARN, "db: Failed to add record to tree list for %s: %s. Fix the growList algo.",
 				    m_dbname,mstrerror(g_errno));
 				return false;
@@ -1793,7 +1704,6 @@ bool RdbTree::getList ( collnum_t collnum ,
 			if ( ! list->addRecord ( key,//&m_keys[node*m_ks] ,
 						 dataSize     ,
 						 m_data[node] ) ) {
-				m_gettingList--;
 				log(LOG_WARN, "db: Failed to add record to tree list for %s: %s. Fix the growList algo.",
 				    m_dbname,mstrerror(g_errno));
 				return false;
@@ -1830,9 +1740,6 @@ bool RdbTree::getList ( collnum_t collnum ,
 		// advance to next node
 		//node = getNextNode ( node );
 	}
-
-	// allow msg4 to add/delete to/from this tree again
-	m_gettingList--;
 
 	// set counts to pass back
 	if ( numNegRecs ) *numNegRecs = numNeg;
@@ -2303,7 +2210,7 @@ bool RdbTree::fastSave ( const char *dir, const char *dbname, bool useThread, vo
 	m_dir[ sizeof(m_dir)-1 ] = '\0';
 
 	// sanity check
-	if ( dbname && strcmp(dbname,m_dbname) ) {
+	if ( dbname && strcmp(dbname,m_dbname) != 0 ) {
 		log( LOG_ERROR, "db: tree dbname mismatch." );
 		g_process.shutdownAbort(true);
 	}
@@ -2664,8 +2571,6 @@ bool RdbTree::fastLoad ( BigFile *f , RdbMem *stack ) {
 	// we'll read this many
 	int32_t start = 0;
 
-	if ( m_useProtection ) unprotect();
-
 	// reset corruption count
 	m_corrupt = 0;
 
@@ -2677,9 +2582,6 @@ bool RdbTree::fastLoad ( BigFile *f , RdbMem *stack ) {
 		int32_t bytesRead =  fastLoadBlock ( f, start, minUnusedNode, stack, offset ) ;
 		if ( bytesRead < 0 ) {
 			f->close();
-			if ( m_useProtection ) {
-				protect();
-			}
 			g_errno = errno;
 			m_isLoading = false;
 			return false;
@@ -2697,8 +2599,6 @@ bool RdbTree::fastLoad ( BigFile *f , RdbMem *stack ) {
 		log( LOG_WARN, "admin: Loaded %" PRId32" corrupted recs in tree for %s.", m_corrupt, m_dbname );
 	}
 
-	// re-enable protection
-	if ( m_useProtection ) protect();
 	// remember total bytes read
 	m_bytesRead = offset;
 	// set these

@@ -11,6 +11,7 @@
 #include "Msg1.h"
 #include "SafeBuf.h"
 #include "HashTableX.h"
+#include "fctypes.h"
 
 #define ST_BUF_SIZE (32*1024)
 
@@ -184,8 +185,7 @@ class StatData {
 	// set the m_key members based on the data members
 	float     getOldVal () { return m_totalQuantity; } // aliased
 	float     getNewVal () { return m_newVal ; }
-	bool      isStatusChange() { return (m_totalOps==0); }
-	bool      isEvent       () { return (m_totalOps==0); }
+	bool      isEvent       () { return almostEqualFloat(m_totalOps, 0.0); }
 } __attribute__((packed, aligned(4)));
 
 #endif // GB_STATSDB_H

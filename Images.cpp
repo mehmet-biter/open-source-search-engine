@@ -9,7 +9,9 @@
 #include "Hostdb.h"
 #include "Process.h"
 #include "Posdb.h"
+#include "File.h"
 #include <pthread.h>
+#include <fcntl.h>
 
 // TODO: image is bad if repeated on same page, check for that
 
@@ -370,7 +372,6 @@ bool Images::getThumbnail ( char *pageSite ,
 				-1    , // numFiles
 				30000 , // timeout
 				-1    , // syncpoint
-				-1    , // preferlocalreads
 				NULL  , // msg5
 				false , // isRealMerge?
 				true  , // allow pg cache
@@ -459,7 +460,6 @@ bool Images::launchRequests ( ) {
 					-1    , // numFiles
 					30000 , // timeout
 					-1    , // syncpoint
-					-1    , // preferlocalreads
 					NULL  , // msg5
 					false , // isRealMerge?
 					true  , // allow pg cache
@@ -799,7 +799,7 @@ bool Images::makeThumb ( ) {
 	// do not let UdpServer free the reply, we own it now
 	//slot->m_readBuf = NULL;
 
-	if ( ! m_imgReply || m_imgReplyLen == 0 ) {
+	if ( m_imgReplyLen == 0 ) {
 		log( LOG_DEBUG, "image: Returned empty image reply!" );
 		g_errno = EBADIMG;
 		return true;
@@ -936,7 +936,6 @@ void Images::thumbStart_r ( bool amThread ) {
         int   fhndl;
         if( (fhndl = open( in, O_RDWR+O_CREAT ,
 			   getFileCreationFlags()
-			   // //			   S_IWUSR+S_IRUSR 
 			   )) < 0 ) {
                log(LOG_WARN,  "image: Could not open file, %s, for writing: %s - %d.",
        		    in, mstrerror( m_errno ), fhndl );

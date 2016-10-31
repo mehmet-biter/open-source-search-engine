@@ -2,6 +2,7 @@
 
 #include "Conf.h"
 #include "Parms.h"
+#include "File.h"
 #include "Proxy.h"
 #include "Msg3a.h" // MAX_SHARDS
 #include "TcpSocket.h"
@@ -43,7 +44,6 @@ Conf::Conf ( ) {
 	m_runAsDaemon = false;
 	m_logToFile = false;
 	m_isLocal = false;
-	memset(m_stripeDir, 0, sizeof(m_stripeDir));
 	memset(m_defaultColl, 0, sizeof(m_defaultColl));
 	memset(m_clusterName, 0, sizeof(m_clusterName));
 	m_numDns = 0;
@@ -55,7 +55,7 @@ Conf::Conf ( ) {
 	m_wikiProxyPort = 0;
 	m_useProxyIps = false;
 	m_automaticallyUseProxyIps = false;
-	m_askRootNameservers = 0;
+	m_askRootNameservers = false;
 	m_numRns = 0;
 	memset(&m_rnsIps, 0, sizeof(m_rnsIps));
 	m_mergeBufSize = 0;
@@ -86,7 +86,7 @@ Conf::Conf ( ) {
 	max_docid_splits = 0;
 	m_msg40_msg39_timeout = 0;
 	m_msg3a_msg39_network_overhead = 0;
-	m_useHighFrequencyTermCache = 0;
+	m_useHighFrequencyTermCache = false;
 	m_spideringEnabled = false;
 	m_injectionsEnabled = false;
 	m_queryingEnabled = false;
@@ -145,10 +145,10 @@ Conf::Conf ( ) {
 	memset(m_errstr1, 0, sizeof(m_errstr1));
 	memset(m_errstr2, 0, sizeof(m_errstr2));
 	memset(m_errstr3, 0, sizeof(m_errstr3));
-	m_sendParmChangeAlertsToEmail1 = 0;
-	m_sendParmChangeAlertsToEmail2 = 0;
-	m_sendParmChangeAlertsToEmail3 = 0;
-	m_sendParmChangeAlertsToEmail4 = 0;
+	m_sendParmChangeAlertsToEmail1 = false;
+	m_sendParmChangeAlertsToEmail2 = false;
+	m_sendParmChangeAlertsToEmail3 = false;
+	m_sendParmChangeAlertsToEmail4 = false;
 	m_avgQueryTimeThreshold = 0.0;
 	m_querySuccessThreshold = 0.0;
 	m_numQueryTimes = 0;
@@ -158,7 +158,6 @@ Conf::Conf ( ) {
 	m_allowCloudUsers = false;
 	m_readOnlyMode = false;
 	m_useEtcHosts = false;
-	m_preferLocalReads = false;
 	m_verifyDumpedLists = false;
 	m_flushWrites = false;
 	m_verifyWrites = false;
@@ -268,29 +267,30 @@ Conf::Conf ( ) {
 	m_logTimingRobots = false;
 	m_logReminders = false;
 	m_generateVectorAtQueryTime = false;
-	m_useCompressionProxy = 0;
-	m_gzipDownloads = 0;
-	m_useTmpCluster = 0;
-	m_timeSyncProxy = 0;
+	memset(m_redirect, 0, sizeof(m_redirect));
+	m_useCompressionProxy = false;
+	m_gzipDownloads = false;
+	m_useTmpCluster = false;
+	m_timeSyncProxy = false;
 	m_interfaceMachine = false;
-	m_allowScale = 0;
-	m_giveupOnDeadHosts = 0;
-	m_bypassValidation = 0;
+	m_allowScale = true;
+	m_giveupOnDeadHosts = false;
+	m_bypassValidation = false;
 	m_maxHeartbeatDelay = 0;
 	m_maxCallbackDelay = 0;
-	m_repairingEnabled = 0;
+	m_repairingEnabled = false;
 	m_maxRepairSpiders = 0;
 	m_repairMem = 0;
-	m_fullRebuild = 0;
-	m_rebuildAddOutlinks = 0;
-	m_rebuildRecycleLinkInfo = 0;
-	m_rebuildTitledb = 0;
-	m_rebuildPosdb = 0;
-	m_rebuildClusterdb = 0;
-	m_rebuildSpiderdb = 0;
-	m_rebuildLinkdb = 0;
-	m_rebuildRoots = 0;
-	m_rebuildNonRoots = 0;
+	m_fullRebuild = true;
+	m_rebuildAddOutlinks = false;
+	m_rebuildRecycleLinkInfo = true;
+	m_rebuildTitledb = false;
+	m_rebuildPosdb = false;
+	m_rebuildClusterdb = false;
+	m_rebuildSpiderdb = false;
+	m_rebuildLinkdb = false;
+	m_rebuildRoots = true;
+	m_rebuildNonRoots = true;
 }
 
 static bool isInWhiteSpaceList ( const char *p , const char *buf ) {

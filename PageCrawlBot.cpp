@@ -223,7 +223,7 @@ bool getSpiderRequestMetaList ( const char *doc, SafeBuf *listBuf, bool spiderLi
 		sreq.setKey ( sreq.m_firstIp , probDocId , false );
 
 		int32_t oldBufSize = listBuf->getCapacity();
-		int32_t need = listBuf->getLength() + 100 + sreq.getRecSize();
+		int32_t need = listBuf->length() + 100 + sreq.getRecSize();
 		int32_t newBufSize = 0;
 
 		if ( need > oldBufSize ) {

@@ -64,7 +64,6 @@ class Msg0 {
 		       int32_t      numFiles          = -1   ,
 		       int64_t      timeout           = 30000   ,
 		       int64_t syncPoint         = -1   ,
-		       int32_t      preferLocalReads  = -1   , // -1=use g_conf
 		       class Msg5 *msg5            = NULL ,
 		       bool        isRealMerge     = false , // file merge?
 		       bool        allowPageCache  = true ,

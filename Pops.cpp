@@ -10,6 +10,7 @@
 Pops::Pops () {
 	m_pops = NULL;
 	m_popsSize = 0;
+	memset(m_localBuf, 0, sizeof(m_localBuf));
 }
 
 Pops::~Pops() {

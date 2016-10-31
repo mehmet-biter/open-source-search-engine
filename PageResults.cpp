@@ -747,9 +747,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 	if ( si->m_format==FORMAT_WIDGET_IFRAME ) {
 		printCSSHead ( sb ,si->m_format );
 		sb->safePrintf("<body style=padding:0px;margin:0px;>");
-	}
 
-	if ( si->m_format == FORMAT_WIDGET_IFRAME ) {
 		int32_t refresh = hr->getLong("refresh",0);
 		if ( refresh )
 			sb->safePrintf("<meta http-equiv=\"refresh\" "
@@ -767,9 +765,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 	// the header of <?xml...> or whatever
 	if ( si->m_format == FORMAT_HTML ) {
 		printLeftNavColumn ( *sb,st );
-	}
 
-	if ( si->m_format == FORMAT_HTML ) {
 		printLogoAndSearchBox ( sb, &st->m_hr, si );
 	}
 
@@ -971,7 +967,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 
 	// estimate it
 	if ( base ) {
-		docsInColl = base->getNumGlobalRecs();
+		docsInColl = base->estimateNumGlobalRecs();
 	}
 
 	// include number of docs in the collection corpus
@@ -1274,7 +1270,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 			maxi2 = i;
 		}
 		// only 1 term?
-		if ( maxtfw2 == 0.0 ) maxtfw2 = maxtfw1;
+		if ( almostEqualFloat(maxtfw2, 0.0) ) maxtfw2 = maxtfw1;
 		// best term freqs
 		max *= maxtfw1 * maxtfw2;
 		// site rank effect
@@ -1393,11 +1389,12 @@ bool printSearchResultsHeader ( State0 *st ) {
 	printIgnoredWords ( sb , si );
 
 
-	if ( si->m_format == FORMAT_HTML ) sb->safePrintf("<br><br>");
+	if ( si->m_format == FORMAT_HTML ) {
+		sb->safePrintf("<br><br>");
 
-	if ( si->m_format == FORMAT_HTML )
 		sb->safePrintf("<table cellpadding=0 cellspacing=0>"
 			      "<tr><td valign=top>");
+	}
 
 	// two pane table
 	//if ( si->m_format == FORMAT_HTML ) 
@@ -1431,7 +1428,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 		logf(LOG_DEBUG,"query: Printing up to %" PRId32" results. "
 		     "bufStart=0x%" PTRFMT"",
 		     numResults,
-		     (PTRTYPE)sb->getBuf());
+		     (PTRTYPE)sb->getBufPtr());
 
 	return true;
 }
@@ -1449,7 +1446,7 @@ bool printSearchResultsTail ( State0 *st ) {
 
 	if ( si->m_format == FORMAT_JSON ) {	
 		// remove last },\n if there and replace with just \n
-		const char *e = sb->getBuf() - 2;
+		const char *e = sb->getBufPtr() - 2;
 		if ( sb->length()>=2 &&
 		     e[0]==',' && e[1]=='\n') {
 			sb->m_length -= 2;
@@ -1718,11 +1715,10 @@ bool printSearchResultsTail ( State0 *st ) {
 				 "&bull; "
 				 //"Copyright &copy; 2014. All Rights "
 				 //"Reserved.<br/>"
-				"Powered by <a href=http://www.diffbot.com/>"
+				"Powered by <a href=http://www.diffbot.com>"
 				 "Diffbot</a>."
 				"</font>"
 				"</center>\n"
-				
 				"</body>\n"
 				"</html>\n"
 				 );
@@ -2071,8 +2067,8 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		// As of the update on 5/13/2014, the end of sb may have whitespace, so first move away from that
 		int distance; // distance from end to first non-whitespace char
 		const char *end;
-		for (distance = 1; distance < sb->getLength(); distance++) {
-		    end = sb->getBuf() - distance;
+		for (distance = 1; distance < sb->length(); distance++) {
+		    end = sb->getBufPtr() - distance;
 		    if (!is_wspace_a(*end))
 		        break;
 		}
@@ -2512,11 +2508,11 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 
 	StackBuf(hb);
 	if ( str && strLen && si->m_doQueryHighlighting ) {
-		hlen = hi.set ( &hb, tmpTitle.getBufStart(), tmpTitle.getLength(), &si->m_hqq, frontTag, backTag);
+		hlen = hi.set ( &hb, tmpTitle.getBufStart(), tmpTitle.length(), &si->m_hqq, frontTag, backTag);
 
 		// reassign!
 		str = hb.getBufStart();
-		strLen = hb.getLength();
+		strLen = hb.length();
 	}
 
 	// . use "UNTITLED" if no title
@@ -2940,9 +2936,9 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	if ( si->m_format == FORMAT_HTML ) {
 		int32_t lang = mr->m_language;
 		if ( lang ) sb->safePrintf(" - %s",getLanguageString(lang));
-	}
 
-	if ( si->m_format == FORMAT_HTML ) sb->safePrintf("<br>\n");
+		sb->safePrintf("<br>\n");
+	}
 
 	//char *coll = si->m_cr->m_coll;
 
@@ -2995,10 +2991,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 			       , ix 
 			       );
 		placeHolderLen = sb->length() - placeHolder;
-	}
 
-
-	if ( si->m_format == FORMAT_HTML && si->m_getDocIdScoringInfo ) {
 		// unhide the scoring table on click
 		sb->safePrintf (" - <a onclick="
 
@@ -3031,9 +3024,8 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		uint64_t rand64 = gettimeofdayInMillisecondsLocal();
 		sb->safePrintf("&c=%s&rand64=%" PRIu64"\">respider</a>\n",
 			       coll,rand64);
-	}
 
-	if ( si->m_format == FORMAT_HTML ) {
+
 		sb->safePrintf (" - "
 				"<a style=color:blue; "
 				"href=\"/search?sb=1&c=%s&"
@@ -3046,12 +3038,12 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		sb->safePrintf ( "\">"
 				 "spider info</a>\n"
 			       );
-	}
 
-	//
-	// show rainbow sections link
-	//
-	if ( si->m_format == FORMAT_HTML ) {
+
+		//
+		// show rainbow sections link
+		//
+
 		sb->safePrintf ( " - <a style=color:blue; href=\""
 				 "/get?"
 				 // show rainbow sections
@@ -3067,9 +3059,8 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 				 si->m_defaultSortLang,
 				 coll , 
 				 mr->m_docId ); 
-	}
 
-	if ( si->m_format == FORMAT_HTML ) {
+
 		sb->safePrintf ( " - <a style=color:blue; href=\""
 				 "/get?"
 				 // show rainbow sections
@@ -3085,9 +3076,8 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 				 //si->m_defaultSortLang,
 				 coll , 
 				 mr->m_docId ); 
-	}
 
-	if ( si->m_format == FORMAT_HTML ) {
+
 		sb->safePrintf ( " - <a style=color:blue; href=\""
 				 "/get?"
 				 // show rainbow sections
@@ -3103,10 +3093,9 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 				 //si->m_defaultSortLang,
 				 coll , 
 				 mr->m_docId ); 
-	}
 
-	// this stuff is secret just for local guys! not any more
-	if ( si->m_format == FORMAT_HTML ) {
+		// this stuff is secret just for local guys! not any more
+
 		// now the ip of url
 		//int32_t urlip = msg40->getIp(i);
 		// don't combine this with the sprintf above cuz
@@ -3129,6 +3118,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 
 	char dbuf [ MAX_URL_LEN ];
 	int32_t dlen = uu.getDomainLen();
+
 	if ( si->m_format == FORMAT_HTML ) {
 		gbmemcpy ( dbuf , uu.getDomain() , dlen );
 		dbuf [ dlen ] = '\0';
@@ -3138,11 +3128,8 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 			gbmemcpy ( dbuf , uu.getHost() , dlen );
 			dbuf [ dlen ] = '\0';
 		}
-	}
 
-
-	// admin always gets the site: option so he can ban
-	if ( si->m_format == FORMAT_HTML ) {
+		// admin always gets the site: option so he can ban
 		sb->safePrintf (" - "
 			       " <a style=color:blue; href=\"/search?"
 			       "q=site%%3A%s&sc=0&c=%s\">"
@@ -3362,7 +3349,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 			if ( ps->m_qtermNum1 != fps->m_qtermNum1 ) break;
 			if ( ps->m_qtermNum2 != fps->m_qtermNum2 ) break;
 			// skip if 0. neighborhood terms have weight of 0 now
-			if ( ps->m_finalScore == 0.0 ) continue;
+			if ( almostEqualFloat(ps->m_finalScore, 0.0) ) continue;
 			// first time?
 			if ( firstTime && si->m_format == FORMAT_HTML ) {
 				Query *q = &si->m_q;
@@ -3414,7 +3401,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 			// stop if different single now
 			if ( ss->m_qtermNum != fss->m_qtermNum ) break;
 			// skip if 0. skip neighborhoods i guess
-			if ( ss->m_finalScore == 0.0 ) continue;
+			if ( almostEqualFloat(ss->m_finalScore, 0.0) ) continue;
 			// first time?
 			if ( firstTime && si->m_format == FORMAT_HTML ) {
 				Query *q = &si->m_q;
@@ -3977,7 +3964,7 @@ static bool printPairScore ( SafeBuf *sb , SearchInput *si , PairScore *ps , Msg
 				      ,
 				      a,b,ps->m_qdist,bes);
 		// wikipedia weight
-		if ( wiw != 1.0 )
+		if ( !almostEqualFloat(wiw, 1.0) )
 			sb->safePrintf("*%.01f", wiw );
 		sb->safePrintf("]]>"
 			      "</equation>\n" );
@@ -4185,7 +4172,7 @@ static bool printPairScore ( SafeBuf *sb , SearchInput *si , PairScore *ps , Msg
 			      ,
 			      a,b,ps->m_qdist,bes);
 	// wikipedia weight
-	if ( wiw != 1.0 )
+	if ( !almostEqualFloat(wiw, 1.0) )
 		sb->safePrintf("*%.01f", wiw );
 	sb->safePrintf( // end formula
 		      "</td></tr>"

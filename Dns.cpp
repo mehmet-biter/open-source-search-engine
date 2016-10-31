@@ -4,6 +4,7 @@
 #include "HashTableT.h"
 #include "Process.h"
 #include "File.h"
+#include <fcntl.h>
 
 
 // comment out the following line to disable DNS TLD caching
@@ -593,12 +594,12 @@ bool Dns::getIp ( const char *hostname,
 	ds->m_nameBufPtr   = ds->m_nameBuf ;
 	ds->m_nameBufEnd   = ds->m_nameBuf + 512;
 	ds->m_errno        = 0;
-	ds->m_recursionDesired = 1;
+	ds->m_recursionDesired = true;
 	// debug msg
 	//log("dns::getIp: %s (key=%" PRIu64") NOT in cache...",tmp,key.n0);
 
 	// reset m_loopCount and startTime if we are just starting
-	if ( ds && callback != gotIpOfDNSWrapper ) {
+	if ( callback != gotIpOfDNSWrapper ) {
 		ds->m_loopCount = 0;
 		ds->m_startTime = getTime();//time(NULL);//getTimeLocal();
 	}
@@ -1028,11 +1029,10 @@ bool Dns::sendToNextDNS ( DnsState *ds ) {
 			else               g_errno = EDNSTIMEDOUT; 
 			return true;
 		}
-	}
 
-	// ok, we have more chains to explore starting at this decreased depth
-	// so take it from the top, "depth" as been decreased.
-	if ( n == -1 ) {
+		// ok, we have more chains to explore starting at this decreased depth
+		// so take it from the top, "depth" as been decreased.
+
 		log(LOG_DEBUG, "dns: "
 		    "SendToNextDNS going back to top 1 for '%s'",
 			ds->m_hostname);
@@ -2012,9 +2012,9 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 
 				// so we have to start over...
 				int32_t d = ds->m_depth+1;
-				const TLDIPEntry*	cached;
-				if ( g_conf.m_askRootNameservers && 
-				    (cached = getTLDIP(ds))) {
+				const TLDIPEntry *cached = getTLDIP(ds);
+
+				if ( g_conf.m_askRootNameservers && cached) {
 					gbmemcpy( ds->m_dnsIps[d],
 						cached->TLDIP,
 						cached->numTLDIPs *
@@ -2026,7 +2026,8 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 					numIps = cached->numTLDIPs;
 
 				} 
-				else if ( g_conf.m_askRootNameservers ) {
+				else 
+				if ( g_conf.m_askRootNameservers ) {
 					gbmemcpy ( ds->m_dnsIps[d],
 						 g_conf.m_rnsIps,
 						 g_conf.m_numRns * 4);

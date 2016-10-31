@@ -4,6 +4,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <sys/statvfs.h>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
@@ -26,13 +27,14 @@ static std::string make_lock_filename(const std::string &lock_dir, int lock_numb
 }
 
 
-MergeSpaceCoordinator::MergeSpaceCoordinator(const char *lock_dir_, int min_lock_files_, const char * /*merge_space_dir*/)
+MergeSpaceCoordinator::MergeSpaceCoordinator(const char *lock_dir_, int min_lock_files_, const char *merge_space_dir_)
   : hold_lock_thread_running(false),
     mtx(),
     please_shutdown(false),
     held_lock_number(-1),
     lock_dir(lock_dir_),
-    min_lock_files(min_lock_files_)
+    min_lock_files(min_lock_files_),
+    merge_space_dir(merge_space_dir_)
 {
 	pthread_cond_init(&cond,NULL);
 	int rc = pthread_create(&hold_lock_tid,NULL,hold_lock_thread_function_trampoline,this);
@@ -57,7 +59,7 @@ MergeSpaceCoordinator::~MergeSpaceCoordinator() {
 }
 
 
-bool MergeSpaceCoordinator::acquire(uint64_t /*how_much*/) {
+bool MergeSpaceCoordinator::acquire(uint64_t how_much) {
 	if(please_shutdown)
 		return false;
 	
@@ -67,6 +69,13 @@ bool MergeSpaceCoordinator::acquire(uint64_t /*how_much*/) {
 	if(min_lock_files<=0) {
 		log(LOG_ERROR,"MergeSpaceCoordinator::acquire: min_lock_files=%d. Lockin will never succeed",min_lock_files);
 		return false;
+	}
+	
+	struct statvfs svfs;
+	if(statvfs(merge_space_dir.c_str(),&svfs)==0) {
+		unsigned long free_bytes = svfs.f_bavail * svfs.f_bsize;
+		if(free_bytes < how_much)
+			return false;
 	}
 	
 	//verify or create lock directory

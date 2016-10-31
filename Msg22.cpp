@@ -11,7 +11,7 @@ static void handleRequest22 ( UdpSlot *slot , int32_t netnice ) ;
 Msg22Request::Msg22Request() {
 	//use memset() to clear out the padding bytes in the structure
 	memset(this, 0, sizeof(*this));
-	m_inUse = 0;
+	m_inUse = false;
 }
 
 bool Msg22::registerHandler ( ) {
@@ -126,10 +126,10 @@ bool Msg22::getTitleRec ( Msg22Request  *r              ,
 	// set request
 	r->m_docId           = docId;
 	r->m_niceness        = niceness;
-	r->m_justCheckTfndb  = (bool)justCheckTfndb;
-	r->m_getAvailDocIdOnly   = (bool)getAvailDocIdOnly;
+	r->m_justCheckTfndb  = justCheckTfndb;
+	r->m_getAvailDocIdOnly   = getAvailDocIdOnly;
 	r->m_collnum         = g_collectiondb.getCollnum ( coll );
-	r->m_addToCache      = false;
+	r->m_addToCache      = 0;
 	r->m_maxCacheAge     = 0;
 	// url must start with http(s)://. must be normalized.
 	if ( url && url[0] != 'h' ) {
@@ -167,7 +167,7 @@ bool Msg22::getTitleRec ( Msg22Request  *r              ,
 	int32_t firstHostId = firstHost->m_hostId;
 
 	m_outstanding = true;
-	r->m_inUse    = 1;
+	r->m_inUse    = true;
 
 	// . send this request to the least-loaded host that can handle it
 	// . returns false and sets g_errno on error
@@ -198,7 +198,7 @@ void Msg22::gotReply ( ) {
 	Msg22Request *r = m_r;
 	// back
 	m_outstanding = false;
-	r->m_inUse    = 0;
+	r->m_inUse    = false;
 
 	// bail on error, multicast will free the reply buffer if it should
 	if ( g_errno ) {

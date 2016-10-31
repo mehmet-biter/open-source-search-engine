@@ -242,7 +242,7 @@ class SpiderColl {
 	int32_t       m_lastScanningIp;
 	int64_t  m_totalBytesScanned;
 
-	char m_deleteMyself;
+	bool m_deleteMyself;
 
 	// start key for reading doledb
 	key96_t m_msg5StartKey;

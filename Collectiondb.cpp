@@ -19,6 +19,8 @@
 #include "Parms.h"
 #include "Process.h"
 #include "HttpRequest.h"
+#include "Dir.h"
+#include "File.h"
 #include <sys/stat.h> //mkdir()
 
 static HashTableX g_collTable;
@@ -108,31 +110,11 @@ bool Collectiondb::loadAllCollRecs ( ) {
 		return false;
 	}
 
-	int32_t count = 0;
-	const char *f;
-	while ( ( f = d.getNextFilename ( "*" ) ) ) {
-		// skip if first char not "coll."
-		if ( strncmp ( f , "coll." , 5 ) != 0 ) continue;
-		// must end on a digit (i.e. coll.main.0)
-		if ( ! is_digit (f[strlen(f)-1]) ) continue;
-		// count them
-		count++;
-	}
-
-	// reset directory for another scan
-	d.set ( dname );
-	if ( ! d.open ()) {
-		log( LOG_WARN, "admin: Could not load collection config files." );
-		return false;
-	}
-
 	// note it
 	//log(LOG_INFO,"db: loading collection config files.");
 	// . scan through all subdirs in the collections dir
 	// . they should be like, "coll.main/" and "coll.mycollection/"
-	while ( ( f = d.getNextFilename ( "*" ) ) ) {
-		// skip if first char not "coll."
-		if ( strncmp ( f , "coll." , 5 ) != 0 ) continue;
+	while ( const char *f = d.getNextFilename ( "coll.*" ) ) {
 		// must end on a digit (i.e. coll.main.0)
 		if ( ! is_digit (f[strlen(f)-1]) ) continue;
 		// point to collection
@@ -148,10 +130,6 @@ bool Collectiondb::loadAllCollRecs ( ) {
 		// add it
 		if ( ! addExistingColl ( collname, collnum ) )
 			return false;
-		// swap it out if we got 100+ collections
-		// if ( count < 100 ) continue;
-		// CollectionRec *cr = getRec ( collnum );
-		// if ( cr ) cr->swapOut();
 	}
 	// if no existing recs added... add coll.main.0 always at startup
 	if ( m_numRecs == 0 ) {
@@ -216,8 +194,11 @@ bool Collectiondb::addExistingColl ( const char *coll, collnum_t collnum ) {
 	}
 
 	// create the record in memory
-	CollectionRec *cr = new (CollectionRec);
-	if ( ! cr ) {
+	CollectionRec *cr;
+	try {
+		cr = new (CollectionRec);
+	}
+	catch(std::bad_alloc) {
 		log( LOG_WARN, "admin: Failed to allocated %" PRId32" bytes for new collection record for '%s'.",
 		     (int32_t)sizeof(CollectionRec),coll);
 		return false;
@@ -296,7 +277,7 @@ bool Collectiondb::addNewColl ( const char *coll, bool saveIt,
 	if ( newCollnum < 0 ) { g_process.shutdownAbort(true); }
 
 	// if empty... bail, no longer accepted, use "main"
-	if ( ! coll || !coll[0] ) {
+	if ( !coll[0] ) {
 		g_errno = EBADENGINEER;
 		log( LOG_WARN, "admin: Trying to create a new collection but no collection name provided. "
 		     "Use the 'c' cgi parameter to specify it.");
@@ -323,16 +304,19 @@ bool Collectiondb::addNewColl ( const char *coll, bool saveIt,
 	char dname[512];
 	sprintf(dname, "%scoll.%s.%" PRId32"/",g_hostdb.m_dir,coll,(int32_t)newCollnum);
 	DIR *dir = opendir ( dname );
-	if ( dir ) closedir ( dir );
 	if ( dir ) {
+		closedir ( dir );
 		g_errno = EEXIST;
 		log(LOG_WARN, "admin: Trying to create collection %s but directory %s already exists on disk.",coll,dname);
 		return false;
 	}
 
 	// create the record in memory
-	CollectionRec *cr = new (CollectionRec);
-	if ( ! cr ) {
+	CollectionRec *cr;
+	try {
+		cr = new (CollectionRec);
+	}
+	catch(std::bad_alloc) {
 		log( LOG_WARN, "admin: Failed to allocated %" PRId32" bytes for new collection record for '%s'.",
 		     ( int32_t ) sizeof( CollectionRec ), coll );
 		return false;
@@ -414,7 +398,8 @@ bool Collectiondb::addNewColl ( const char *coll, bool saveIt,
 	}
 
 	// save it into this dir... might fail!
-	if ( saveIt && ! cr->save() ) {
+//	if ( saveIt && ! cr->save() ) {
+	if ( ! cr->save() ) {
 		mdelete ( cr , sizeof(CollectionRec) , "CollectionRec" );
 		delete ( cr );
 		log( LOG_WARN, "admin: Failed to save file %s: %s", dname,mstrerror(g_errno));
@@ -514,7 +499,7 @@ bool Collectiondb::addRdbBasesForCollRec ( CollectionRec *cr ) {
 }
 
 /// this deletes the collection, not just part of a reset.
-bool Collectiondb::deleteRec2 ( collnum_t collnum ) { //, WaitEntry *we ) {
+bool Collectiondb::deleteRec2 ( collnum_t collnum ) {
 	// do not allow this if in repair mode
 	if ( g_repair.isRepairActive() && g_repair.m_collnum == collnum ) {
 		log(LOG_WARN, "admin: Can not delete collection while in repair mode.");
@@ -612,7 +597,7 @@ bool Collectiondb::growRecPtrBuf ( collnum_t collnum ) {
 
 	// an add, make sure big enough
 	int32_t need = ((int32_t)collnum+1)*sizeof(CollectionRec *);
-	int32_t have = m_recPtrBuf.getLength();
+	int32_t have = m_recPtrBuf.length();
 	int32_t need2 = need - have;
 
 	// if already big enough
@@ -823,18 +808,14 @@ bool Collectiondb::resetColl2( collnum_t oldCollnum, collnum_t newCollnum, bool 
 		cr->m_coll,
 		(int32_t)newCollnum);
 	DIR *dir = opendir ( dname );
-	if ( dir )
-	     closedir ( dir );
 	if ( dir ) {
+	     closedir ( dir );
 		//g_errno = EEXIST;
 		log(LOG_WARN, "admin: Trying to create collection %s but "
 		    "directory %s already exists on disk.",cr->m_coll,dname);
 	}
 	if ( ::mkdir ( dname ,
 		       getDirCreationFlags() ) ) {
-		       // S_IRUSR | S_IWUSR | S_IXUSR |
-		       // S_IRGRP | S_IWGRP | S_IXGRP |
-		       // S_IROTH | S_IXOTH ) ) {
 		// valgrind?
 		//if ( errno == EINTR ) goto retry22;
 		//g_errno = errno;
@@ -915,10 +896,7 @@ CollectionRec *Collectiondb::getRec ( HttpRequest *r , bool useDefaultRec ) {
 	if ( ! coll && useDefaultRec ) {
 		CollectionRec *cr = g_collectiondb.getRec("main");
 		if ( cr ) return cr;
-	}
 
-	// try next in line
-	if ( ! coll && useDefaultRec ) {
 		return getFirstRec ();
 	}
 
@@ -1015,10 +993,9 @@ collnum_t Collectiondb::getCollnum ( const char *coll , int32_t clen ) {
 	if ( coll && ! coll[0] ) coll = NULL;
 	if ( ! coll ) {
 		coll = g_conf.m_defaultColl;
-		if ( coll ) clen = strlen(coll);
-		else clen = 0;
+		clen = strlen(coll);
 	}
-	if ( ! coll || ! coll[0] ) {
+	if ( ! coll[0] ) {
 		coll = "main";
 		clen = strlen(coll);
 	}
@@ -1098,13 +1075,13 @@ CollectionRec::CollectionRec() {
 	m_collnum = -1;
 	m_coll[0] = '\0';
 	m_updateRoundNum = 0;
-	memset ( m_bases , 0 , sizeof(RdbBase *)*RDB_END );
+	memset(&m_bases, 0, sizeof(m_bases));
 	// how many keys in the tree of each rdb? we now store this stuff
 	// here and not in RdbTree.cpp because we no longer have a maximum
 	// # of collection recs... MAX_COLLS. each is a 32-bit "int32_t" so
 	// it is 4 * RDB_END...
-	memset ( m_numNegKeysInTree , 0 , 4*RDB_END );
-	memset ( m_numPosKeysInTree , 0 , 4*RDB_END );
+	memset(&m_numNegKeysInTree, 0, sizeof(m_numNegKeysInTree));
+	memset(&m_numPosKeysInTree, 0, sizeof(m_numPosKeysInTree));
 	m_spiderColl = NULL;
 	m_overflow  = 0x12345678;
 	m_overflow2 = 0x12345678;
@@ -1138,7 +1115,7 @@ CollectionRec::CollectionRec() {
 	m_dailyMergeTrigger = 0;
 	memset(m_dailyMergeDOWList, 0, sizeof(m_dailyMergeDOWList));
 	m_treeCount = 0;
-	m_spideringEnabled = 0;
+	m_spideringEnabled = true;
 	m_spiderDelayInMilliseconds = 0;
 	m_isActive = false;
 	m_spiderRoundStartTime = 0;
@@ -1164,7 +1141,7 @@ CollectionRec::CollectionRec() {
 	m_delete404s = 0;
 	m_siteClusterByDefault = 0;
 	m_doIpLookups = 0;
-	m_useRobotsTxt = 0;
+	m_useRobotsTxt = true;
 	m_obeyRelNoFollowLinks = 0;
 	m_forceUseFloaters = 0;
 	m_automaticallyUseProxies = 0;
@@ -1197,12 +1174,14 @@ CollectionRec::CollectionRec() {
 	m_summaryMaxLen = 0;
 	m_summaryMaxNumLines = 0;
 	m_summaryMaxNumCharsPerLine = 0;
-	m_getDocIdScoringInfo = 0;
+	m_getDocIdScoringInfo = false;
 	m_diffbotCrawlStartTime = 0;
 	m_diffbotCrawlEndTime = 0;
 	m_numRegExs9 = 0;
 	m_doQueryHighlighting = 0;
-	m_spellCheck = 0;
+	memset(m_summaryFrontHighlightTag, 0, sizeof(m_summaryFrontHighlightTag));
+	memset(m_summaryBackHighlightTag, 0, sizeof(m_summaryBackHighlightTag));
+	m_spellCheck = false;
 	m_spiderTimeMin = 0;
 	m_spiderTimeMax = 0;
 	m_maxAddUrlsPerIpDomPerDay = 0;
@@ -1210,9 +1189,9 @@ CollectionRec::CollectionRec() {
 	m_maxOtherDocLen = 0;
 	m_summaryMaxWidth = 0;
 	m_maxRobotsCacheAge = 0;
-	m_queryExpansion = 0;
-	m_rcache = 0;
-	m_hideAllClustered = 0;
+	m_queryExpansion = false;
+	m_rcache = false;
+	m_hideAllClustered = false;
 	m_END_COPY = 0;
 	m_hackFlag = 0;
 }
@@ -1251,8 +1230,6 @@ void CollectionRec::reset() {
 	// . grows dynamically
 	// . setting to 0 buckets should never have error
 	//m_pageCountTable.set ( 4,4,0,NULL,0,false,MAX_NICENESS,"pctbl" );
-
-	m_sendingAlertInProgress = false;
 
 	// make sure we do not leave spiders "hanging" waiting for their
 	// callback to be called... and it never gets called
@@ -1464,14 +1441,14 @@ bool CollectionRec::rebuildUrlFilters2 ( ) {
 	m_maxSpidersPerRule[n] = 99;
 	m_spiderIpWaits[n] = 1000;
 	m_spiderIpMaxSpiders[n] = 7;
-	m_harvestLinks[n] = 1;
+	m_harvestLinks[n] = true;
 	*/
 
 	// max spiders per ip
 	int32_t ipms = 7;
 
 	m_regExs[n].set("isreindex");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 0; // 30 days default
 	m_maxSpidersPerRule  [n] = 99; // max spiders
 	m_spiderIpMaxSpiders [n] = 1; // max spiders per ip
@@ -1481,7 +1458,7 @@ bool CollectionRec::rebuildUrlFilters2 ( ) {
 
 	// if not in the site list then nuke it
 	m_regExs[n].set("!ismanualadd && !insitelist");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 0; // 30 days default
 	m_maxSpidersPerRule  [n] = 99; // max spiders
 	m_spiderIpMaxSpiders [n] = 1; // max spiders per ip
@@ -1491,7 +1468,7 @@ bool CollectionRec::rebuildUrlFilters2 ( ) {
 	n++;
 
 	m_regExs[n].set("errorcount>=3 && hastmperror");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 1; // 30 days default
 	m_maxSpidersPerRule  [n] = 1; // max spiders
 	m_spiderIpMaxSpiders [n] = 1; // max spiders per ip
@@ -1501,7 +1478,7 @@ bool CollectionRec::rebuildUrlFilters2 ( ) {
 	n++;
 
 	m_regExs[n].set("errorcount>=1 && hastmperror");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 1; // 30 days default
 	m_maxSpidersPerRule  [n] = 1; // max spiders
 	m_spiderIpMaxSpiders [n] = 1; // max spiders per ip
@@ -1513,7 +1490,7 @@ bool CollectionRec::rebuildUrlFilters2 ( ) {
 
 	// a non temporary error, like a 404? retry once per 5 days
 	m_regExs[n].set("errorcount>=1");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 5; // 5 day retry
 	m_maxSpidersPerRule  [n] = 1; // max spiders
 	m_spiderIpMaxSpiders [n] = 1; // max spiders per ip
@@ -1523,7 +1500,7 @@ bool CollectionRec::rebuildUrlFilters2 ( ) {
 	n++;
 
 	m_regExs[n].set("isaddurl");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 7; // 30 days default
 	m_maxSpidersPerRule  [n] = 99; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -1535,7 +1512,7 @@ bool CollectionRec::rebuildUrlFilters2 ( ) {
 
 	// 20+ unique c block parent request urls means it is important!
 	m_regExs[n].set("numinlinks>7 && isnew");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 7; // 30 days default
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -1547,7 +1524,7 @@ bool CollectionRec::rebuildUrlFilters2 ( ) {
 
 	// 20+ unique c block parent request urls means it is important!
 	m_regExs[n].set("numinlinks>7");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 7; // 30 days default
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -1560,7 +1537,7 @@ bool CollectionRec::rebuildUrlFilters2 ( ) {
 
 
 	m_regExs[n].set("hopcount==0 && iswww && isnew");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 7; // 30 days default
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -1571,7 +1548,7 @@ bool CollectionRec::rebuildUrlFilters2 ( ) {
 	n++;
 
 	m_regExs[n].set("hopcount==0 && iswww");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 7.0; // days b4 respider
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -1582,7 +1559,7 @@ bool CollectionRec::rebuildUrlFilters2 ( ) {
 	n++;
 
 	m_regExs[n].set("hopcount==0 && isnew");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 7.0;
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -1593,7 +1570,7 @@ bool CollectionRec::rebuildUrlFilters2 ( ) {
 	n++;
 
 	m_regExs[n].set("hopcount==0");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 10.0;
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -1604,7 +1581,7 @@ bool CollectionRec::rebuildUrlFilters2 ( ) {
 	n++;
 
 	m_regExs[n].set("hopcount==1 && isnew");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 20.0;
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -1615,7 +1592,7 @@ bool CollectionRec::rebuildUrlFilters2 ( ) {
 	n++;
 
 	m_regExs[n].set("hopcount==1");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 20.0;
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -1626,7 +1603,7 @@ bool CollectionRec::rebuildUrlFilters2 ( ) {
 	n++;
 
 	m_regExs[n].set("hopcount==2 && isnew");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 40;
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -1635,12 +1612,12 @@ bool CollectionRec::rebuildUrlFilters2 ( ) {
 	// do not harvest links if we are spiderings NEWS
 	if ( ! strcmp(s,"news") ) {
 		m_spiderFreqs  [n] = 5.0;
-		m_harvestLinks [n] = 0;
+		m_harvestLinks [n] = false;
 	}
 	n++;
 
 	m_regExs[n].set("hopcount==2");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 40;
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -1649,12 +1626,12 @@ bool CollectionRec::rebuildUrlFilters2 ( ) {
 	// do not harvest links if we are spiderings NEWS
 	if ( ! strcmp(s,"news") ) {
 		m_spiderFreqs  [n] = 5.0;
-		m_harvestLinks [n] = 0;
+		m_harvestLinks [n] = false;
 	}
 	n++;
 
 	m_regExs[n].set("hopcount>=3 && isnew");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 60;
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -1663,14 +1640,14 @@ bool CollectionRec::rebuildUrlFilters2 ( ) {
 	// turn off spidering if hopcount is too big and we are spiderings NEWS
 	if ( ! strcmp(s,"news") ) {
 		m_maxSpidersPerRule [n] = 0;
-		m_harvestLinks      [n] = 0;
+		m_harvestLinks      [n] = false;
 	}
 	else {
 		n++;
 	}
 
 	m_regExs[n].set("hopcount>=3");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 60;
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -1679,14 +1656,14 @@ bool CollectionRec::rebuildUrlFilters2 ( ) {
 	// turn off spidering if hopcount is too big and we are spiderings NEWS
 	if ( ! strcmp(s,"news") ) {
 		m_maxSpidersPerRule [n] = 0;
-		m_harvestLinks      [n] = 0;
+		m_harvestLinks      [n] = false;
 	}
 	else {
 		n++;
 	}
 
 	m_regExs[n].set("default");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 60;
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -1694,7 +1671,7 @@ bool CollectionRec::rebuildUrlFilters2 ( ) {
 	m_spiderPriorities   [n] = 1;
 	if ( ! strcmp(s,"news") ) {
 		m_maxSpidersPerRule [n] = 0;
-		m_harvestLinks      [n] = 0;
+		m_harvestLinks      [n] = false;
 	}
 	n++;
 
@@ -1722,7 +1699,7 @@ bool CollectionRec::rebuildPrivacoreRules () {
 	int32_t n = 0;
 
 	m_regExs[n].set("isreindex");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 0; 		// 0 days default
 	m_maxSpidersPerRule  [n] = 99; 		// max spiders
 	m_spiderIpMaxSpiders [n] = 1; 		// max spiders per ip
@@ -1732,7 +1709,7 @@ bool CollectionRec::rebuildPrivacoreRules () {
 
 	m_regExs[n].reset();
 	m_regExs[n].safePrintf("lang!=%s", langWhitelistStr);
-	m_harvestLinks       [n] = 0;
+	m_harvestLinks       [n] = false;
 	m_spiderFreqs        [n] = 0; 		// 0 days default
 	m_maxSpidersPerRule  [n] = 99; 		// max spiders
 	m_spiderIpMaxSpiders [n] = 1; 		// max spiders per ip
@@ -1743,7 +1720,7 @@ bool CollectionRec::rebuildPrivacoreRules () {
 
 	m_regExs[n].reset();
 	m_regExs[n].safePrintf("tld==%s", getPrivacoreBlacklistedTLD());
-	m_harvestLinks       [n] = 0;
+	m_harvestLinks       [n] = false;
 	m_spiderFreqs        [n] = 0; 		// 0 days default
 	m_maxSpidersPerRule  [n] = 99; 		// max spiders
 	m_spiderIpMaxSpiders [n] = 1; 		// max spiders per ip
@@ -1754,7 +1731,7 @@ bool CollectionRec::rebuildPrivacoreRules () {
 
 	// 3 or more non-temporary errors - delete it
 	m_regExs[n].set("errorcount>=3 && !hastmperror");
-	m_harvestLinks       [n] = 0;
+	m_harvestLinks       [n] = false;
 	m_spiderFreqs        [n] = 0; 		// 1 days default
 	m_maxSpidersPerRule  [n] = 99; 		// max spiders
 	m_spiderIpMaxSpiders [n] = 1; 		// max spiders per ip
@@ -1765,7 +1742,7 @@ bool CollectionRec::rebuildPrivacoreRules () {
 
 	// 3 or more temporary errors - slow down retries a bit
 	m_regExs[n].set("errorcount>=3 && hastmperror");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 3; 		// 1 days default
 	m_maxSpidersPerRule  [n] = 1; 		// max spiders
 	m_spiderIpMaxSpiders [n] = 1; 		// max spiders per ip
@@ -1776,7 +1753,7 @@ bool CollectionRec::rebuildPrivacoreRules () {
 
 	// 1 or more temporary errors - retry in a day
 	m_regExs[n].set("errorcount>=1 && hastmperror");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 1; 		// 1 days default
 	m_maxSpidersPerRule  [n] = 1; 		// max spiders
 	m_spiderIpMaxSpiders [n] = 1; 		// max spiders per ip
@@ -1786,7 +1763,7 @@ bool CollectionRec::rebuildPrivacoreRules () {
 	n++;
 
 	m_regExs[n].set("isaddurl");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 7; 		// 7 days default
 	m_maxSpidersPerRule  [n] = 99; 		// max spiders
 	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
@@ -1796,7 +1773,7 @@ bool CollectionRec::rebuildPrivacoreRules () {
 	n++;
 
 	m_regExs[n].set("hopcount==0 && iswww && isnew");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 7; 		// 7 days default
 	m_maxSpidersPerRule  [n] = 9; 		// max spiders
 	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
@@ -1806,7 +1783,7 @@ bool CollectionRec::rebuildPrivacoreRules () {
 	n++;
 
 	m_regExs[n].set("hopcount==0 && iswww");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 7.0; 	// 7 days before respider
 	m_maxSpidersPerRule  [n] = 9; 		// max spiders
 	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
@@ -1816,7 +1793,7 @@ bool CollectionRec::rebuildPrivacoreRules () {
 	n++;
 
 	m_regExs[n].set("hopcount==0 && isnew");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 7.0;		// 7 days before respider
 	m_maxSpidersPerRule  [n] = 9; 		// max spiders
 	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
@@ -1826,7 +1803,7 @@ bool CollectionRec::rebuildPrivacoreRules () {
 	n++;
 
 	m_regExs[n].set("hopcount==0");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 10.0;	// 10 days before respider
 	m_maxSpidersPerRule  [n] = 9; 		// max spiders
 	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
@@ -1836,7 +1813,7 @@ bool CollectionRec::rebuildPrivacoreRules () {
 	n++;
 
 	m_regExs[n].set("hopcount==1 && isnew");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 20.0;	// 20 days before respider
 	m_maxSpidersPerRule  [n] = 9; 		// max spiders
 	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
@@ -1846,7 +1823,7 @@ bool CollectionRec::rebuildPrivacoreRules () {
 	n++;
 
 	m_regExs[n].set("hopcount==1");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 20.0;	// 20 days before respider
 	m_maxSpidersPerRule  [n] = 9; 		// max spiders
 	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
@@ -1856,7 +1833,7 @@ bool CollectionRec::rebuildPrivacoreRules () {
 	n++;
 
 	m_regExs[n].set("hopcount==2 && isnew");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 40;		// 40 days before respider
 	m_maxSpidersPerRule  [n] = 9; 		// max spiders
 	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
@@ -1866,7 +1843,7 @@ bool CollectionRec::rebuildPrivacoreRules () {
 	n++;
 
 	m_regExs[n].set("hopcount==2");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 40;		// 40 days before respider
 	m_maxSpidersPerRule  [n] = 9; 		// max spiders
 	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
@@ -1876,7 +1853,7 @@ bool CollectionRec::rebuildPrivacoreRules () {
 	n++;
 
 	m_regExs[n].set("hopcount>=3 && isnew");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 60;		// 60 days before respider
 	m_maxSpidersPerRule  [n] = 9; 		// max spiders
 	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
@@ -1886,7 +1863,7 @@ bool CollectionRec::rebuildPrivacoreRules () {
 	n++;
 
 	m_regExs[n].set("hopcount>=3");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 60;		// 60 days before respider
 	m_maxSpidersPerRule  [n] = 9; 		// max spiders
 	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
@@ -1896,7 +1873,7 @@ bool CollectionRec::rebuildPrivacoreRules () {
 	n++;
 
 	m_regExs[n].set("default");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 60;		// 60 days before respider
 	m_maxSpidersPerRule  [n] = 9; 		// max spiders
 	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
@@ -1929,7 +1906,7 @@ bool CollectionRec::rebuildLangRules ( const char *langStr , const char *tldStr 
 	int32_t n = 0;
 
 	m_regExs[n].set("isreindex");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 0; // 30 days default
 	m_maxSpidersPerRule  [n] = 99; // max spiders
 	m_spiderIpMaxSpiders [n] = 1; // max spiders per ip
@@ -1939,7 +1916,7 @@ bool CollectionRec::rebuildLangRules ( const char *langStr , const char *tldStr 
 
 	// if not in the site list then nuke it
 	m_regExs[n].set("!ismanualadd && !insitelist");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 0; // 30 days default
 	m_maxSpidersPerRule  [n] = 99; // max spiders
 	m_spiderIpMaxSpiders [n] = 1; // max spiders per ip
@@ -1949,7 +1926,7 @@ bool CollectionRec::rebuildLangRules ( const char *langStr , const char *tldStr 
 	n++;
 
 	m_regExs[n].set("errorcount>=3 && hastmperror");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 1; // 30 days default
 	m_maxSpidersPerRule  [n] = 1; // max spiders
 	m_spiderIpMaxSpiders [n] = 1; // max spiders per ip
@@ -1959,7 +1936,7 @@ bool CollectionRec::rebuildLangRules ( const char *langStr , const char *tldStr 
 	n++;
 
 	m_regExs[n].set("errorcount>=1 && hastmperror");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 1; // 30 days default
 	m_maxSpidersPerRule  [n] = 1; // max spiders
 	m_spiderIpMaxSpiders [n] = 1; // max spiders per ip
@@ -1968,7 +1945,7 @@ bool CollectionRec::rebuildLangRules ( const char *langStr , const char *tldStr 
 	n++;
 
 	m_regExs[n].set("isaddurl");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 7; // 30 days default
 	m_maxSpidersPerRule  [n] = 99; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -1979,7 +1956,7 @@ bool CollectionRec::rebuildLangRules ( const char *langStr , const char *tldStr 
 	m_regExs[n].reset();
 	m_regExs[n].safePrintf("hopcount==0 && iswww && isnew && tld==%s",
 			       tldStr);
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 7; // 30 days default
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -1991,7 +1968,7 @@ bool CollectionRec::rebuildLangRules ( const char *langStr , const char *tldStr 
 	m_regExs[n].safePrintf("hopcount==0 && iswww && isnew && "
 			       "lang==%s,xx"
 			       ,langStr);
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 7; // 30 days default
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -2000,7 +1977,7 @@ bool CollectionRec::rebuildLangRules ( const char *langStr , const char *tldStr 
 	n++;
 
 	// m_regExs[n].set("hopcount==0 && iswww && isnew");
-	// m_harvestLinks       [n] = 1;
+	// m_harvestLinks       [n] = true;
 	// m_spiderFreqs        [n] = 7; // 30 days default
 	// m_maxSpidersPerRule  [n] = 9; // max spiders
 	// m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -2012,7 +1989,7 @@ bool CollectionRec::rebuildLangRules ( const char *langStr , const char *tldStr 
 
 	m_regExs[n].reset();
 	m_regExs[n].safePrintf("hopcount==0 && iswww && tld==%s",tldStr);
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 7.0; // days b4 respider
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -2023,7 +2000,7 @@ bool CollectionRec::rebuildLangRules ( const char *langStr , const char *tldStr 
 	m_regExs[n].reset();
 	m_regExs[n].safePrintf("hopcount==0 && iswww && lang==%s,xx",
 			       langStr);
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 7.0; // days b4 respider
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -2032,7 +2009,7 @@ bool CollectionRec::rebuildLangRules ( const char *langStr , const char *tldStr 
 	n++;
 
 	m_regExs[n].set("hopcount==0 && iswww");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 7.0; // days b4 respider
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -2046,7 +2023,7 @@ bool CollectionRec::rebuildLangRules ( const char *langStr , const char *tldStr 
 
 	m_regExs[n].reset();
 	m_regExs[n].safePrintf("hopcount==0 && isnew && tld==%s",tldStr);
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 7.0;
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -2057,7 +2034,7 @@ bool CollectionRec::rebuildLangRules ( const char *langStr , const char *tldStr 
 	m_regExs[n].reset();
 	m_regExs[n].safePrintf("hopcount==0 && isnew && lang==%s,xx",
 			       langStr);
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 7.0;
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -2066,7 +2043,7 @@ bool CollectionRec::rebuildLangRules ( const char *langStr , const char *tldStr 
 	n++;
 
 	m_regExs[n].set("hopcount==0 && isnew");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 7.0;
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -2078,7 +2055,7 @@ bool CollectionRec::rebuildLangRules ( const char *langStr , const char *tldStr 
 
 	m_regExs[n].reset();
 	m_regExs[n].safePrintf("hopcount==0 && tld==%s",tldStr);
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 10.0;
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -2088,7 +2065,7 @@ bool CollectionRec::rebuildLangRules ( const char *langStr , const char *tldStr 
 
 	m_regExs[n].reset();
 	m_regExs[n].safePrintf("hopcount==0 && lang==%s,xx",langStr);
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 10.0;
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -2097,7 +2074,7 @@ bool CollectionRec::rebuildLangRules ( const char *langStr , const char *tldStr 
 	n++;
 
 	m_regExs[n].set("hopcount==0");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 10.0;
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -2110,7 +2087,7 @@ bool CollectionRec::rebuildLangRules ( const char *langStr , const char *tldStr 
 
 	m_regExs[n].reset();
 	m_regExs[n].safePrintf("hopcount==1 && isnew && tld==%s",tldStr);
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 20.0;
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -2121,7 +2098,7 @@ bool CollectionRec::rebuildLangRules ( const char *langStr , const char *tldStr 
 	m_regExs[n].reset();
 	m_regExs[n].safePrintf("hopcount==1 && isnew && lang==%s,xx",
 			       tldStr);
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 20.0;
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -2130,7 +2107,7 @@ bool CollectionRec::rebuildLangRules ( const char *langStr , const char *tldStr 
 	n++;
 
 	m_regExs[n].set("hopcount==1 && isnew");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 20.0;
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -2142,7 +2119,7 @@ bool CollectionRec::rebuildLangRules ( const char *langStr , const char *tldStr 
 
 	m_regExs[n].reset();
 	m_regExs[n].safePrintf("hopcount==1 && tld==%s",tldStr);
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 20.0;
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -2152,7 +2129,7 @@ bool CollectionRec::rebuildLangRules ( const char *langStr , const char *tldStr 
 
 	m_regExs[n].reset();
 	m_regExs[n].safePrintf("hopcount==1 && lang==%s,xx",langStr);
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 20.0;
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -2161,7 +2138,7 @@ bool CollectionRec::rebuildLangRules ( const char *langStr , const char *tldStr 
 	n++;
 
 	m_regExs[n].set("hopcount==1");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 20.0;
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -2173,7 +2150,7 @@ bool CollectionRec::rebuildLangRules ( const char *langStr , const char *tldStr 
 
 	m_regExs[n].reset();
 	m_regExs[n].safePrintf("hopcount==2 && isnew && tld==%s",tldStr);
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 40;
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -2184,7 +2161,7 @@ bool CollectionRec::rebuildLangRules ( const char *langStr , const char *tldStr 
 	m_regExs[n].reset();
 	m_regExs[n].safePrintf("hopcount==2 && isnew && lang==%s,xx",
 			       langStr);
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 40;
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -2193,7 +2170,7 @@ bool CollectionRec::rebuildLangRules ( const char *langStr , const char *tldStr 
 	n++;
 
 	m_regExs[n].set("hopcount==2 && isnew");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 40;
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -2206,7 +2183,7 @@ bool CollectionRec::rebuildLangRules ( const char *langStr , const char *tldStr 
 
 	m_regExs[n].reset();
 	m_regExs[n].safePrintf("hopcount==2 && tld==%s",tldStr);
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 40;
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -2216,7 +2193,7 @@ bool CollectionRec::rebuildLangRules ( const char *langStr , const char *tldStr 
 
 	m_regExs[n].reset();
 	m_regExs[n].safePrintf("hopcount==2 && lang==%s,xx",langStr);
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 40;
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -2225,7 +2202,7 @@ bool CollectionRec::rebuildLangRules ( const char *langStr , const char *tldStr 
 	n++;
 
 	m_regExs[n].set("hopcount==2");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 40;
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -2238,7 +2215,7 @@ bool CollectionRec::rebuildLangRules ( const char *langStr , const char *tldStr 
 
 	m_regExs[n].reset();
 	m_regExs[n].safePrintf("hopcount>=3 && isnew && tld==%s",tldStr);
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 60;
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -2249,7 +2226,7 @@ bool CollectionRec::rebuildLangRules ( const char *langStr , const char *tldStr 
 	m_regExs[n].reset();
 	m_regExs[n].safePrintf("hopcount>=3 && isnew && lang==%s,xx",
 			       langStr);
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 60;
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -2258,7 +2235,7 @@ bool CollectionRec::rebuildLangRules ( const char *langStr , const char *tldStr 
 	n++;
 
 	m_regExs[n].set("hopcount>=3 && isnew");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 60;
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -2271,7 +2248,7 @@ bool CollectionRec::rebuildLangRules ( const char *langStr , const char *tldStr 
 
 	m_regExs[n].reset();
 	m_regExs[n].safePrintf("hopcount>=3 && tld==%s",tldStr);
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 60;
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -2281,7 +2258,7 @@ bool CollectionRec::rebuildLangRules ( const char *langStr , const char *tldStr 
 
 	m_regExs[n].reset();
 	m_regExs[n].safePrintf("hopcount>=3 && lang==%s,xx",langStr);
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 60;
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -2290,7 +2267,7 @@ bool CollectionRec::rebuildLangRules ( const char *langStr , const char *tldStr 
 	n++;
 
 	m_regExs[n].set("hopcount>=3");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 60;
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -2301,7 +2278,7 @@ bool CollectionRec::rebuildLangRules ( const char *langStr , const char *tldStr 
 
 
 	m_regExs[n].set("default");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 60;
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -2330,7 +2307,7 @@ bool CollectionRec::rebuildShallowRules ( ) {
 	int32_t n = 0;
 
 	m_regExs[n].set("isreindex");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 0; // 30 days default
 	m_maxSpidersPerRule  [n] = 99; // max spiders
 	m_spiderIpMaxSpiders [n] = 1; // max spiders per ip
@@ -2340,7 +2317,7 @@ bool CollectionRec::rebuildShallowRules ( ) {
 
 	// if not in the site list then nuke it
 	m_regExs[n].set("!ismanualadd && !insitelist");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 0; // 30 days default
 	m_maxSpidersPerRule  [n] = 99; // max spiders
 	m_spiderIpMaxSpiders [n] = 1; // max spiders per ip
@@ -2350,7 +2327,7 @@ bool CollectionRec::rebuildShallowRules ( ) {
 	n++;
 
 	m_regExs[n].set("errorcount>=3 && hastmperror");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 1; // 30 days default
 	m_maxSpidersPerRule  [n] = 1; // max spiders
 	m_spiderIpMaxSpiders [n] = 1; // max spiders per ip
@@ -2360,7 +2337,7 @@ bool CollectionRec::rebuildShallowRules ( ) {
 	n++;
 
 	m_regExs[n].set("errorcount>=1 && hastmperror");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 1; // 30 days default
 	m_maxSpidersPerRule  [n] = 1; // max spiders
 	m_spiderIpMaxSpiders [n] = 1; // max spiders per ip
@@ -2369,7 +2346,7 @@ bool CollectionRec::rebuildShallowRules ( ) {
 	n++;
 
 	m_regExs[n].set("isaddurl");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 7; // 30 days default
 	m_maxSpidersPerRule  [n] = 99; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -2384,7 +2361,7 @@ bool CollectionRec::rebuildShallowRules ( ) {
 	// stop if hopcount>=2 for things tagged shallow in sitelist
 	//
 	m_regExs[n].set("tag:shallow && hopcount>=2");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 40;
 	m_maxSpidersPerRule  [n] = 0; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -2395,7 +2372,7 @@ bool CollectionRec::rebuildShallowRules ( ) {
 
 	// if # of pages in this site indexed is >= 10 then stop as well...
 	m_regExs[n].set("tag:shallow && sitepages>=10");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 40;
 	m_maxSpidersPerRule  [n] = 0; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -2407,7 +2384,7 @@ bool CollectionRec::rebuildShallowRules ( ) {
 
 
 	m_regExs[n].set("hopcount==0 && iswww && isnew");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 7; // 30 days default
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -2416,7 +2393,7 @@ bool CollectionRec::rebuildShallowRules ( ) {
 	n++;
 
 	m_regExs[n].set("hopcount==0 && iswww");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 7.0; // days b4 respider
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -2428,7 +2405,7 @@ bool CollectionRec::rebuildShallowRules ( ) {
 
 
 	m_regExs[n].set("hopcount==0 && isnew");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 7.0;
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -2440,7 +2417,7 @@ bool CollectionRec::rebuildShallowRules ( ) {
 
 
 	m_regExs[n].set("hopcount==0");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 10.0;
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -2453,7 +2430,7 @@ bool CollectionRec::rebuildShallowRules ( ) {
 
 
 	m_regExs[n].set("hopcount==1 && isnew");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 20.0;
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -2463,7 +2440,7 @@ bool CollectionRec::rebuildShallowRules ( ) {
 
 
 	m_regExs[n].set("hopcount==1");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 20.0;
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -2475,7 +2452,7 @@ bool CollectionRec::rebuildShallowRules ( ) {
 
 
 	m_regExs[n].set("hopcount==2 && isnew");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 40;
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -2484,7 +2461,7 @@ bool CollectionRec::rebuildShallowRules ( ) {
 	n++;
 
 	m_regExs[n].set("hopcount==2");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 40;
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -2496,7 +2473,7 @@ bool CollectionRec::rebuildShallowRules ( ) {
 
 
 	m_regExs[n].set("hopcount>=3 && isnew");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 60;
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -2505,7 +2482,7 @@ bool CollectionRec::rebuildShallowRules ( ) {
 	n++;
 
 	m_regExs[n].set("hopcount>=3");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 60;
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -2516,7 +2493,7 @@ bool CollectionRec::rebuildShallowRules ( ) {
 
 
 	m_regExs[n].set("default");
-	m_harvestLinks       [n] = 1;
+	m_harvestLinks       [n] = true;
 	m_spiderFreqs        [n] = 60;
 	m_maxSpidersPerRule  [n] = 9; // max spiders
 	m_spiderIpMaxSpiders [n] = ipms; // max spiders per ip
@@ -2685,7 +2662,7 @@ bool CollectionRec::rebuildUrlFilters ( ) {
 int64_t CollectionRec::getNumDocsIndexed() {
 	RdbBase *base = getBase(RDB_TITLEDB);//m_bases[RDB_TITLEDB];
 	if ( ! base ) return 0LL;
-	return base->getNumGlobalRecs();
+	return base->estimateNumGlobalRecs();
 }
 
 // messes with m_spiderColl->m_sendLocalCrawlInfoToHost[MAX_HOSTS]

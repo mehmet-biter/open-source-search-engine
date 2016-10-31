@@ -39,7 +39,7 @@ TopTree::TopTree() {
 	m_doSiteClustering = false;
 	m_docsWanted = 0;
 	m_ridiculousMax = 0;
-	m_kickedOutDocIds = 0;
+	m_kickedOutDocIds = false;
 	memset(&m_domCount, 0, sizeof(m_domCount));
 	memset(&m_domMinNode, 0, sizeof(m_domMinNode));
 
@@ -102,11 +102,13 @@ bool TopTree::setNumNodes ( int32_t docsWanted , bool doSiteClustering ) {
 	// craziness overflow?
 	if ( numNodes < 0 ) numNodes = MAXDOCIDSTOCOMPUTE;
 	// amp it up last minute, after we set numNodes, if we need to
-	if ( ! m_doSiteClustering ) m_ridiculousMax = 0x7fffffff;
+	if ( ! m_doSiteClustering ) {
+		m_ridiculousMax = 0x7fffffff;
 
-	// if not doing siteclustering... don't use 5gb of ram!
-	// add 1 for printing "next 10" link
-	if ( ! m_doSiteClustering ) numNodes = m_docsWanted + 1;
+		// if not doing siteclustering... don't use 5gb of ram!
+		// add 1 for printing "next 10" link
+		numNodes = m_docsWanted + 1;
+	}
 
 	// how many docids do we have, not FULLY counting docids from
 	// "dominating" domains? aka the "variety count"
@@ -229,20 +231,30 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 
 		if ( m_useIntScores ) {
 			if ( t->m_intScore < m_nodes[i].m_intScore ) {
-				m_kickedOutDocIds = true; return false; }
-			if ( t->m_intScore > m_nodes[i].m_intScore) goto addIt;
+				m_kickedOutDocIds = true;
+				return false;
+			}
+			if ( t->m_intScore > m_nodes[i].m_intScore) {
+				goto addIt;
+			}
 		}
 
 		else {
 			if ( t->m_score < m_nodes[i].m_score ) {
-				m_kickedOutDocIds = true; return false; }
-			if ( t->m_score > m_nodes[i].m_score ) goto addIt;
+				m_kickedOutDocIds = true;
+				return false;
+			}
+			if ( t->m_score > m_nodes[i].m_score ) {
+				goto addIt;
+			}
 		}
 
 		// . finally, compare docids, store lower ones first
 		// . docids should not tie...
 		if ( t->m_docId >= m_nodes[i].m_docId ) {
-			m_kickedOutDocIds = true; return false; }
+			m_kickedOutDocIds = true;
+			return false;
+		}
 		// we got a winner
 		goto addIt;
 		/*

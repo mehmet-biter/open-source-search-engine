@@ -5,6 +5,7 @@
 
 #include <sys/time.h>  // gettimeofday()
 #include <math.h>      // floor()
+#include <float.h>	// FLT_EPSILON, DBL_EPSILON
 #include "Unicode.h"
 #include "types.h"
 #include "Sanity.h"
@@ -93,10 +94,43 @@ static inline char *strncasestr( const char *haystack, const char *needle, int32
 	return strncasestr(const_cast<char*>(haystack),needle,haystackSize,needleSize);
 }
 
+// https://randomascii.wordpress.com/2012/02/25/comparing-floating-point-numbers-2012-edition/
+static inline bool almostEqualFloat(float A, float B, float maxRelDiff = FLT_EPSILON) {
+    // Calculate the difference.
+    float diff = fabs(A - B);
+    A = fabs(A);
+    B = fabs(B);
+    // Find the largest
+    float largest = (B > A) ? B : A;
+ 
+    if (diff <= largest * maxRelDiff)
+        return true;
+    return false;
+}
+
+static inline bool almostEqualDouble(double A, double B, double maxRelDiff = DBL_EPSILON) {
+    // Calculate the difference.
+    double diff = fabs(A - B);
+    A = fabs(A);
+    B = fabs(B);
+    // Find the largest
+    double largest = (B > A) ? B : A;
+ 
+    if (diff <= largest * maxRelDiff)
+        return true;
+    return false;
+}
 
 // independent of case
 char *gb_strcasestr ( char *haystack , const char *needle );
+static inline const char *gb_strcasestr(const char *haystack, const char *needle) {
+	return gb_strcasestr(const_cast<char*>(haystack),needle);
+}
+
 char *gb_strncasestr ( char *haystack , int32_t haystackSize , const char *needle ) ;
+static inline const char *gb_strncasestr(const char *haystack, int32_t haystackSize, const char *needle) {
+	return gb_strncasestr(const_cast<char*>(haystack),haystackSize,needle);
+}
 
 char *strnstr( const char *haystack, const char *needle, int32_t len);
 
@@ -271,7 +305,7 @@ inline bool is_wspace_utf8 ( const uint8_t *src ) {
 	// convert to a code point
 	UChar32 x = utf8Decode((char *)src);
 	// is this codepoint a whitespace?
-	return is_wspace_uc ( x );
+	return ucIsWhiteSpace( x );
 }
 
 inline bool is_wspace_utf8 ( const char *src ) {
@@ -280,7 +314,7 @@ inline bool is_wspace_utf8 ( const char *src ) {
 	// convert to a code point
 	UChar32 x = utf8Decode((char *)src);
 	// is this codepoint a whitespace?
-	return is_wspace_uc ( x );
+	return ucIsWhiteSpace( x );
 }
 
 // . returns bytes stored into "dst" from "src"

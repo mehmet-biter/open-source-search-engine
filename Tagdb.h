@@ -24,7 +24,6 @@
 class Tag {
  public:
 
-	int32_t  getSize    ( ) { return sizeof(key128_t) + 4 + m_recDataSize; }
 	int32_t  getRecSize ( ) { return sizeof(key128_t) + 4 + m_recDataSize; }
 
 	void set ( const char *site, const char *tagname, int32_t  timestamp, const char *user,

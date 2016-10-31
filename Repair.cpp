@@ -18,7 +18,9 @@
 #include "Clusterdb.h"
 #include "Linkdb.h"
 #include "XmlDoc.h"
+#include "File.h"
 #include "max_niceness.h"
+#include <fcntl.h>
 
 
 static void repairWrapper ( int fd , void *state ) ;
@@ -84,7 +86,7 @@ Repair::Repair() {
 	m_needsCallback = false;
 	m_docQuality = 0;
 	m_docId = 0;
-	m_isDelete = 0;
+	m_isDelete = false;
 	m_totalMem = 0;
 	m_stage = 0;
 	m_tfn = 0;
@@ -129,16 +131,16 @@ Repair::Repair() {
 	m_spiderRecSetErrors = 0;
 	m_spiderRecNotAssigned = 0;
 	m_spiderRecBadTLD = 0;
-	m_rebuildTitledb = 0;
-	m_rebuildPosdb = 0;
-	m_rebuildClusterdb = 0;
-	m_rebuildSpiderdb = 0;
-	m_rebuildSitedb = 0;
-	m_rebuildLinkdb = 0;
-	m_rebuildTagdb = 0;
-	m_fullRebuild = 0;
-	m_rebuildRoots = 0;
-	m_rebuildNonRoots = 0;
+	m_rebuildTitledb = false;
+	m_rebuildPosdb = false;
+	m_rebuildClusterdb = false;
+	m_rebuildSpiderdb = false;
+	m_rebuildSitedb = false;
+	m_rebuildLinkdb = false;
+	m_rebuildTagdb = false;
+	m_fullRebuild = true;
+	m_rebuildRoots = true;
+	m_rebuildNonRoots = true;
 	m_collnum = 0;
 	m_newCollLen = 0;
 	m_newCollnum = 0;
@@ -147,12 +149,16 @@ Repair::Repair() {
 	m_SAVE_END = 0;
 	m_cr=NULL;
 	m_startTime = 0;
-	m_isSuspended = 0;
+	m_isSuspended = false;
 	m_numOutstandingInjects = 0;
 	m_allowInjectToLoop = false;
 	m_msg5InUse = false;
 	m_saveRepairState = false;
 	m_isRetrying = false;
+	
+	memset(m_newColl, 0, sizeof(m_newColl));
+	memset(&m_collOffs, 0, sizeof(m_collOffs));
+	memset(&m_collLens, 0, sizeof(m_collLens));
 }
 
 // main.cpp calls g_repair.init()
@@ -241,7 +247,7 @@ void repairWrapper ( int fd , void *state ) {
 		// this is >= 0 is correct, -1 means no outstanding spiders
 		if ( g_spiderLoop.m_maxUsed >= 0 ) return;
 		// wait for ny outstanding unlinks or renames to finish
-		if ( g_unlinkRenameThreads > 0 ) return;
+		if ( BigFile::anyOngoingUnlinksOrRenames() ) return;
 		// . make sure all Msg4s are done and have completely added all
 		//   recs they were supposed to
 		// . PROBLEM: if resuming a repair after re-starting, we can
@@ -364,7 +370,7 @@ void repairWrapper ( int fd , void *state ) {
 		// wait for all merging to stop just to be on the safe side
 		if ( g_merge.isMerging() ) return;
 		// wait for ny outstanding unlinks or renames to finish
-		if ( g_unlinkRenameThreads > 0 ) return;
+		if ( BigFile::anyOngoingUnlinksOrRenames() ) return;
 		// note it
 		log("repair: Final dump completed.");
 		log("repair: Updating rdbs to use newly repaired data.");
@@ -1170,7 +1176,7 @@ bool Repair::scanRecs ( ) {
 			      m_endKey         , // should be maxed!
 			      1024             , // min rec sizes
 			      true             , // include tree?
-			      false            , // includeCache
+			      0                , // max cache age
 			      0                , // startFileNum
 			      -1               , // m_numFiles   
 			      this             , // state 
@@ -1502,10 +1508,9 @@ bool Repair::injectTitleRec ( ) {
 
 	// not if rebuilding link info though! we assume the old link info is
 	// bad...
-	if ( m_rebuildLinkdb )
+	if ( m_rebuildLinkdb ) {
 		xd->m_useTagdb = false;
 
-	if ( m_rebuildLinkdb ) {
 		// also need to preserve the "lost link" flag somehow
 		// from the old linkdb...
 		//log("repair: would lose linkdb lost flag.");

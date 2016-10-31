@@ -257,7 +257,7 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 					count++;
 			}
 			// make sure count matches
-			if ( (!h->m_isProxy && count != g_hostdb.getNumHostsAlive()) ) {
+			if ( !h->m_isProxy && count != g_hostdb.getNumHostsAlive() ) {
 				g_process.shutdownAbort(true);
 			}
 		}
@@ -604,11 +604,11 @@ void handleRequest11(UdpSlot *slot , int32_t niceness) {
 	uint32_t ip    = slot->getIp();
 	uint16_t port = slot->getPort();
 	// get the host entry
-	Host *h = g_hostdb.getHost ( ip , port );
+	Host *h = g_hostdb.getUdpHost ( ip , port );
 	// we may be the temporary cluster (grep for useTmpCluster) and
 	// the proxy is sending pings from its original port plus 1
 	if ( ! h ) {
-		h = g_hostdb.getHost ( ip , port + 1 );
+		h = g_hostdb.getUdpHost ( ip , port + 1 );
 	}
 	if ( ! h ) {
 		// size of 3 means it is a debug ping from
@@ -975,9 +975,10 @@ bool PingServer::sendEmail ( Host *h            ,
 		if ( now - s_lastOOMTime < 15*60 ) return true;
 		// set time
 		s_lastOOMTime = now;
+
+		// always force these now because they are messing up our latency graph
+		forceIt = true;
 	}
-	// always force these now because they are messing up our latency graph
-	if ( oom ) forceIt = true;
 	// . even if we don't send an email, log it
 	// . return if alerts disabled
 	if ( ! g_conf.m_sendEmailAlerts && ! forceIt ) {

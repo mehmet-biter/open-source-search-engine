@@ -72,8 +72,8 @@ class HashTableT {
 	// how many are there total? used and unused.
 	int32_t getNumSlots ( ) const { return m_numSlots; }
 
-	void setAllowDupKeys(char allow) { m_allowDupKeys = allow; }
-	char getAllowDupKeys( ) const { return m_allowDupKeys; }
+	void setAllowDupKeys(bool allow) { m_allowDupKeys = allow; }
+	bool getAllowDupKeys( ) const { return m_allowDupKeys; }
 
 	bool serialize(SafeBuf& sb);
 	int32_t deserialize(char* s);
@@ -92,9 +92,9 @@ class HashTableT {
 	int32_t m_numSlots;
 	int32_t m_numSlotsUsed;
 
-	char m_allowDupKeys;
+	bool m_allowDupKeys;
 
-	char m_doFree;
+	bool m_doFree;
 
 	char *m_buf; //. hash table buffer points to callers buffer on stack
 	int32_t m_bufSize;

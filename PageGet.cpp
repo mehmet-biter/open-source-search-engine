@@ -105,7 +105,7 @@ bool sendPageGet ( TcpSocket *s , HttpRequest *r ) {
 	// . we need to match summary here so we need to know this
 	//bool seq = r->getLong ( "seq" , false );
 	// restrict to root file?
-	bool rtq = r->getLong ( "rtq" , false );
+	bool rtq = r->getLong ( "rtq" , 0) ? true : false;
 
 	// . get the titleRec
 	// . TODO: redirect client to a better http server to save bandwidth
@@ -124,11 +124,11 @@ bool sendPageGet ( TcpSocket *s , HttpRequest *r ) {
 	st->m_docId    = docId;
 	st->m_printed  = false;
 	// include header ... "this page cached by Gigablast on..."
-	st->m_includeHeader     = r->getLong ("ih"    , true  );
-	st->m_includeBaseHref   = r->getLong ("ibh"   , false );
-	st->m_queryHighlighting = r->getLong ("qh"    , true  );
-	st->m_strip             = r->getLong ("strip" , 0     );
-	st->m_cnsPage           = r->getLong ("cnsp"  , true );
+	st->m_includeHeader     = r->getLong ("ih"    , 1) ? true : false;
+	st->m_includeBaseHref   = r->getLong ("ibh"   , 0) ? true : false;
+	st->m_queryHighlighting = r->getLong ("qh"    , 1) ? true : false;
+	st->m_strip             = r->getLong ("strip" , 0);
+	st->m_cnsPage           = r->getLong ("cnsp"  , 1) ? true : false;
 	const char *langAbbr = r->getString("qlang",NULL);
 	st->m_langId = langUnknown;
 	if ( langAbbr ) {
@@ -137,7 +137,7 @@ bool sendPageGet ( TcpSocket *s , HttpRequest *r ) {
 	}
 	strncpy ( st->m_coll , coll , MAX_COLL_LEN+1 );
 	// store query for query highlighting
-	st->m_netTestResults    = r->getLong ("rnettest", false );
+	st->m_netTestResults    = r->getLong ("rnettest", 0) ? true : false;
 	st->m_qsb.setBuf ( st->m_qtmpBuf,128,0,false );
 	st->m_qsb.setLabel ( "qsbpg" );
 
@@ -299,7 +299,7 @@ bool processLoop ( void *state ) {
 		bool status = g_httpServer.sendDynamicPage (s,
 							    //buf,bufLen,
 							    sb->getBufStart(),
-							    sb->getLength(),
+							    sb->length(),
 							    -1,false,
 							    //"text/html",
 							    contentType,
@@ -367,11 +367,8 @@ bool processLoop ( void *state ) {
 	//Url *redir = *xd->getRedirUrl();
 	if ( strip != 2 ) {
 		sb->safePrintf ( "<BASE HREF=\"%s\">" , base );
-		//p += strlen ( p );
-	}
 
-	// default colors in case css files missing
-	if ( strip != 2 ) {
+		// default colors in case css files missing
 		sb->safePrintf( "\n<style type=\"text/css\">\n"
 			  "body{background-color:white;color:black;}\n"
 			  "</style>\n");
@@ -391,7 +388,7 @@ bool processLoop ( void *state ) {
 
 	// query should be NULL terminated
 	char *q    = st->m_qsb.getBufStart();
-	int32_t  qlen = st->m_qsb.getLength(); // m_qlen;
+	int32_t  qlen = st->m_qsb.length(); // m_qlen;
 
 	char styleTitle[128] =  "font-size:14px;font-weight:600;"
 				"color:#000000;";
@@ -643,11 +640,11 @@ bool processLoop ( void *state ) {
 	for ( char *t = sbstart ; t < sbend ; t++ ) {
 		// title tag?
 		if ( t[0]!='<' ) continue;
-		if ( to_lower_a(t[1])!='t' ) continue;
-		if ( to_lower_a(t[2])!='i' ) continue;
-		if ( to_lower_a(t[3])!='t' ) continue;
-		if ( to_lower_a(t[4])!='l' ) continue;
-		if ( to_lower_a(t[5])!='e' ) continue;
+		if ( to_lower_a(t[1])!='t' ||
+		     to_lower_a(t[2])!='i' ||
+		     to_lower_a(t[3])!='t' ||
+		     to_lower_a(t[4])!='l' ||
+		     to_lower_a(t[5])!='e' ) continue;
 		// point to it
 		char *x = t + 5;
 		// max - to keep things fast
@@ -846,7 +843,7 @@ bool processLoop ( void *state ) {
 	// safebuf, sb, is a member of "st" so this should copy the buffer
 	// when it constructs the http reply, and we gotta call delete(st)
 	// AFTER this so sb is still valid.
-	bool status = g_httpServer.sendDynamicPage (s, sb->getBufStart(), sb->getLength(), -1, false,
+	bool status = g_httpServer.sendDynamicPage (s, sb->getBufStart(), sb->length(), -1, false,
 	                                            contentType, -1, NULL, "utf8" );
 
 	// nuke state2

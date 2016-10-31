@@ -118,6 +118,8 @@ Msg25::Msg25() {
 	m_requestSize = 0;
 	m_qbuf = NULL;
 	m_qbufSize = 0;
+	memset(m_buf, 0, sizeof(m_buf));
+	memset(m_request, 0, sizeof(m_request));
 }
 
 
@@ -507,7 +509,7 @@ void handleRequest25(UdpSlot *slot, int32_t netnice) {
 				   m25->m_linkInfoBuf ) ) // SafeBuf 4 output
 		return;
 
-	if(m25->m_linkInfoBuf->getLength()<=0&&!g_errno){ g_process.shutdownAbort(true); }
+	if(m25->m_linkInfoBuf->length()<=0&&!g_errno){ g_process.shutdownAbort(true); }
 
 	if ( g_errno == ETRYAGAIN ) { g_process.shutdownAbort(true); }
 
@@ -1111,7 +1113,7 @@ bool Msg25::sendRequests() {
 			itop       = Linkdb::getLinkerIp24_uk     ( &key );
 			ip32       = Linkdb::getLinkerIp_uk     ( &key );
 
-			isLinkSpam = false;
+			isLinkSpam = 0;
 			docId      = Linkdb::getLinkerDocId_uk    ( &key );
 
 			discovered = Linkdb::getDiscoveryDate_uk(&key);
@@ -1129,7 +1131,7 @@ bool Msg25::sendRequests() {
 
 		// clear this if we should
 		if ( ! m_doLinkSpamCheck )
-			isLinkSpam = false;
+			isLinkSpam = 0;
 
 		// if it is no longer there, just ignore
 		if ( lostDate ) {
@@ -1464,7 +1466,7 @@ static const char *getExplanation(const char *note) {
 
 	int32_t n = sizeof(s_notes)/ sizeof(char *);
 	for ( int32_t i = 0 ; i < n ; i += 2 ) {
-		if ( strcmp(note,s_notes[i]) ) continue;
+		if ( strcmp(note,s_notes[i]) != 0 ) continue;
 		return s_notes[i+1];
 	}
 
@@ -2788,7 +2790,7 @@ static LinkInfo *makeLinkInfo(const char     *coll,
 		
 		// linkspam?
 		if ( r->ptr_note ) {
-			r->m_isLinkSpam = true;
+			r->m_isLinkSpam = 1;
 			continue;
 		}
 
@@ -3365,12 +3367,11 @@ Links::Links() {
 	m_addSiteRootFlags = false;
 	m_coll = NULL;
 	m_flagged = false;
-	m_hasSelfPermalink = 0;
-	m_hasRSSOutlink = 0;
-	m_hasSubdirOutlink = 0;
+	m_hasSelfPermalink = false;
+	m_hasRSSOutlink = false;
+	m_hasSubdirOutlink = false;
 	m_rssOutlinkPtr = NULL;
 	m_rssOutlinkLen = 0;
-	m_numOutlinksAdded = 0;
 }
 
 
@@ -3400,7 +3401,8 @@ void Links::reset() {
 
 
 bool Links::set(bool useRelNoFollow,
-		Xml *xml, Url *parentUrl, bool setLinkHash,
+		Xml *xml, Url *parentUrl, 
+		bool setLinkHash,
 		//bool useBaseHref , 
 		// use null for this if you do not want to use it
 		Url *baseUrl, 
@@ -3415,6 +3417,7 @@ bool Links::set(bool useRelNoFollow,
 	reset();
 
 	// always for this to true now since we need them for linkdb
+	//@todo NR: Remove from function call then?
 	setLinkHash = true;
 	if ( doQuickSet ) setLinkHash = false;
 
@@ -4127,7 +4130,7 @@ bool Links::addLink(const char *link, int32_t linkLen, int32_t nodeNum,
 		// same host str check
 		else if ( strncmp( m_parentUrl->getHost() ,
 				   url.getHost() ,
-				   url.getHostLen()) )
+				   url.getHostLen()) != 0 )
 			pathOverride = NULL;
 		// must be in bounds		
 		else if ( url.getUrlLen() <= m_parentUrl->getUrlLen() )
@@ -4332,7 +4335,7 @@ int32_t Links::getLinkText2(int32_t i,
 			if ( xmlNodes[j].m_nodeId == TAG_TEXTNODE ) continue;
 			// check the tag
 			if(xmlNodes[j].m_tagNameLen != dlen) continue;
-			if(strncasecmp(xmlNodes[j].m_tagName,del,dlen))
+			if(strncasecmp(xmlNodes[j].m_tagName,del,dlen) != 0)
 				continue;
 			break;
 		}
@@ -4363,7 +4366,7 @@ int32_t Links::getLinkText2(int32_t i,
 			// skip script sections, inside script tags
 			if ( nn->m_nodeId == TAG_SCRIPTTEXT ) continue;
 			if(nn->m_tagNameLen != dlen) continue;
-			if(strncasecmp(nn->m_tagName,del,dlen))	continue;
+			if(strncasecmp(nn->m_tagName,del,dlen) != 0)	continue;
 			//if ( nn->m_tagNameLen != dlen           ) continue;
 			//if ( strncasecmp(nn->m_tagName,del,dlen)) continue;
 			// we got the end of the item, set "send"
@@ -4721,7 +4724,7 @@ bool isPermalink(Links       *links,
 	// or if we only got digits and they were in the cgi
 	if ( hcount < 2 && ! hasp && digitsInCgi ) no = 0;
 	// do the outlink loop
-	for ( int32_t i = 0 ; i < no ; i++ ) {
+	for ( int32_t i = 0 ; links && i < no ; i++ ) {
 		// get the flags
 		linkflags_t flags = links->m_linkFlags[i];
 		// skip if not a match. match the match flags = "mf"
@@ -4741,7 +4744,7 @@ bool isPermalink(Links       *links,
 	// look for strong permalink outlinks
 	mf = (LF_STRONGPERM| LF_SAMEHOST );
 	// loop over all outlinks we have
-	for ( int32_t i = 0 ; i < no ; i++ ) {
+	for ( int32_t i = 0 ; links && i < no ; i++ ) {
 		// get the flags
 		linkflags_t flags = links->m_linkFlags[i];
 		// . if we are NOT a "strong permalink" but we have a same host

@@ -75,7 +75,7 @@ public:
 	char *m_nextPtr;
 
 	int32_t    m_ns          [ MAX_OUTSTANDING_MSGE1 ]; 
-	char    m_used        [ MAX_OUTSTANDING_MSGE1 ]; 
+	bool    m_used        [ MAX_OUTSTANDING_MSGE1 ]; 
 	MsgC    m_msgCs       [ MAX_OUTSTANDING_MSGE1 ]; // ips
 
 	// vector of TagRec ptrs

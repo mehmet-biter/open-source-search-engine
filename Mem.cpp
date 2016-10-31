@@ -50,6 +50,24 @@ static int32_t   s_n = 0;
 static bool   s_initialized = 0;
 
 
+//note: the ScopedMemoryLimitBypass is not thread-safe. The "bypass" flag should really
+//be per-thread. Or RdbBase should be reworked to use another technique than artificially
+//raising the memory limit while adding a file. Eg. make freeCacheMem() work again?
+ScopedMemoryLimitBypass::ScopedMemoryLimitBypass()
+  : oldMaxMem(g_conf.m_maxMem)
+{
+	g_conf.m_maxMem = INT64_MAX;
+}
+
+void ScopedMemoryLimitBypass::release() {
+	if(oldMaxMem>=0) {
+		g_conf.m_maxMem = oldMaxMem;
+		oldMaxMem = -1;
+	}
+}
+
+
+
 static bool allocationShouldFailRandomly() {
 	// . fail randomly
 	// . good for testing if we can handle out of memory gracefully
@@ -171,6 +189,7 @@ Mem::Mem() {
 	m_used = 0;
 	m_numAllocated = 0;
 	m_numTotalAllocated = 0;
+	m_memtablesize = 0;
 	m_maxAlloc = 0;
 	m_maxAllocBy = "";
 	m_maxAllocated = 0;
@@ -274,8 +293,9 @@ void Mem::addMem ( void *mem , size_t size , const char *note , char isnew ) {
 	}
 
 	// umsg00
-	bool useElectricFence = false;
-	if ( ! isnew && ! useElectricFence ) {
+//	bool useElectricFence = false;
+//	if ( ! isnew && ! useElectricFence ) {
+	if ( ! isnew ) {
 		for ( int32_t i = 0 ; i < UNDERPAD ; i++ )
 			((char *)mem)[0-i-1] = MAGICCHAR;
 		for ( int32_t i = 0 ; i < OVERPAD ; i++ )
@@ -814,6 +834,7 @@ int Mem::printBreech ( int32_t i) {
 	if ( flag == 0 ) return 1;
 
 	gbshutdownCorrupted();
+	return 1;	//shut up PVS-studio
 }
 
 // check all allocated memory for buffer under/overruns

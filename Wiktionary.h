@@ -171,7 +171,7 @@ class Wiktionary {
 
 	int32_t m_errno;
 
-	char m_opened;
+	bool m_opened;
 	FileState m_fs;
 };
 

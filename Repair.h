@@ -74,7 +74,7 @@ public:
 	char       m_docQuality;
 	RdbList    m_titleRecList;
 	int64_t  m_docId;
-	char       m_isDelete;
+	bool       m_isDelete;
 	RdbList    m_ulist;
 	RdbList    m_addlist;
 	int64_t  m_totalMem;
@@ -136,17 +136,17 @@ public:
 	int32_t       m_spiderRecBadTLD      ;
 
 	// generic scan parms
-	char       m_rebuildTitledb    ;
-	char       m_rebuildPosdb    ;
-	char       m_rebuildClusterdb  ;
-	char       m_rebuildSpiderdb   ;
-	char       m_rebuildSitedb     ;
-	char       m_rebuildLinkdb     ;
-	char       m_rebuildTagdb      ;
-	char       m_fullRebuild       ;
+	bool       m_rebuildTitledb    ;
+	bool       m_rebuildPosdb    ;
+	bool       m_rebuildClusterdb  ;
+	bool       m_rebuildSpiderdb   ;
+	bool       m_rebuildSitedb     ;
+	bool       m_rebuildLinkdb     ;
+	bool       m_rebuildTagdb      ;
+	bool       m_fullRebuild       ;
 
-	char       m_rebuildRoots      ;
-	char       m_rebuildNonRoots   ;
+	bool       m_rebuildRoots      ;
+	bool       m_rebuildNonRoots   ;
 
 	// current collection being repaired
 	//int32_t       m_collLen;
@@ -175,7 +175,7 @@ public:
 	int64_t  m_startTime;
 
 	// if repairing is disabled in the middle of a repair
-	char       m_isSuspended;
+	bool       m_isSuspended;
 
 	// keep track of how many injects we have out
 	int32_t       m_numOutstandingInjects;

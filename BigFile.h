@@ -10,9 +10,9 @@
 #ifndef GB_BIGFILE_H
 #define GB_BIGFILE_H
 
-#include "File.h"
 #include "JobScheduler.h" //for job_exit_t
 #include "SafeBuf.h"
+#include "GbMutex.h"
 
 
 #ifndef PRIVACORE_TEST_VERSION
@@ -24,7 +24,7 @@
 #define MAX_PART_SIZE  (20LL*1024LL*1024LL)
 #endif
 
-#define LITTLEBUFSIZE sizeof(File)
+class File;
 
 
 class FileState {
@@ -83,6 +83,35 @@ public:
 	// m_allocOff is offset into m_allocBuf where we start reading into 
 	// from the file
 	int64_t  m_allocOff;
+	
+	FileState() {
+		m_bigfile = NULL;
+		m_buf = NULL;
+		m_bytesToGo = 0;
+		m_offset = 0;
+		m_doWrite = false;
+		m_bytesDone = 0;
+		m_state = NULL;
+		m_callback = NULL;
+		m_niceness = 0;
+		m_filenum1 = 0;
+		m_filenum2 = 0;
+		m_fd1 = -1;
+		m_fd2 = -1;
+		memset(m_filename1, 0, sizeof(m_filename1));
+		memset(m_filename2, 0, sizeof(m_filename2));
+		m_errno = 0;
+		m_startTime = 0;
+		m_doneTime = 0;
+		m_vfd = 0;
+		m_closeCount1 = 0;
+		m_closeCount2 = 0;
+		m_flags = 0;
+		m_allocBuf = NULL;
+		m_allocSize = 0;
+		m_allocOff = 0;
+	};
+	~FileState() {};
 };
 
 
@@ -94,9 +123,7 @@ class BigFile {
 	BigFile();
 
 	// . set a big file's name
-	// . we split little files that make up this BigFile between
-	//   "dir" and "stripeDir"
-	bool set ( const char *dir, const char *baseFilename, const char *stripeDir = NULL );
+	bool set ( const char *dir, const char *baseFilename);
 
 	bool doesExist() const;
 
@@ -113,18 +140,16 @@ class BigFile {
 
 	int getFlags() { return m_flags; }
 
-	void setBlocking    ( ) { m_flags &= ~((int32_t)O_NONBLOCK); }
-	void setNonBlocking ( ) { m_flags |=         O_NONBLOCK ; }
+	void setBlocking();
+	void setNonBlocking();
 
 	// . return -2 on error
 	// . return -1 if does not exist
 	// . otherwise return the big file's complete file size (can b >2gb)
 	int64_t getFileSize() const;
-	int64_t getSize() const { return getFileSize(); }
 	void invalidateFileSize() { m_fileSize = -1; }
 
 	// use the base filename as our filename
-	char       *getFilename()       { return m_baseFilename.getBufStart(); }
 	const char *getFilename() const { return m_baseFilename.getBufStart(); }
 
 	char *getDir() { return m_dir.getBufStart(); }
@@ -147,7 +172,7 @@ class BigFile {
 	// . IMPORTANT: if returns -1 it MAY have written some bytes 
 	//   successfully to OTHER parts that's why caller should be 
 	//   responsible for maintaining current write offset
-	bool  write ( void       *buf    ,
+	bool  write ( const void    *buf,
 	              int64_t        size   ,
 		      int64_t   offset                         , 
 		      FileState  *fs                      = NULL , 
@@ -158,25 +183,20 @@ class BigFile {
 	// unlinks all part files
 	bool unlink ( );
 
-	// . renames ALL parts too
-	// . doesn't change directory, just the base filename
-	// . use m_dir if newBaseFilenameDir is NULL
-	// . force = rename even if newFile exist
-	bool rename ( const char *newBaseFilename, const char *newBaseFilenameDir=NULL, bool force=false ) ;
+	// . renames all parts
+	// . uses m_dir if newBaseFilenameDir is NULL
+	bool rename(const char *newBaseFilename, const char *newBaseFilenameDir);
 
 	bool move ( const char *newDir );
-
-	// . returns false and sets g_errno on failure
-	// . chop only parts LESS THAN "part"
-	bool unlinkPart ( int32_t part );
 
 	// . these here all use threads and call your callback when done
 	// . they return false if blocked, true otherwise
 	// . they set g_errno on error
 	bool unlink   ( void (* callback) ( void *state ) , 
 		        void *state ) ;
-	bool rename   ( const char *newBaseFilename, void (* callback) ( void *state ) , void *state, bool force=false ) ;
 	bool unlinkPart ( int32_t part , void (* callback) ( void *state ) , void *state ) ;
+	bool rename(const char *newBaseFilename, void (* callback)(void *state), void *state);
+	bool rename(const char *newBaseFilename, const char *newBaseFilenameDir, void (* callback)(void *state), void *state);
 
 	// closes all part files
 	bool close ();
@@ -184,10 +204,10 @@ class BigFile {
 	// just close all the fds of the part files, used by RdbMap.cpp.
 	bool closeFds ( ) ;
 
-	// what part (little File) of this BigFile has offset "offset"?
+	// which part (little File) of this BigFile has offset "offset"?
 	int getPartNum(int64_t offset) const { return offset / MAX_PART_SIZE; }
 
-	// . opens the nth file if necessary to get it's fd
+	// . opens the nth file if necessary to get its fd
 	// . returns -1 if none, >=0 on success
 	int getfd ( int32_t n , bool forReading );//, int32_t *vfd = NULL );
 
@@ -198,34 +218,35 @@ class BigFile {
 
 private:
 	// makes the filename of part file #n
-	void makeFilename_r ( char *baseFilename    , 
-			      char *baseFilenameDir ,
-			      int32_t  n               , 
-			      char *buf             ,
-			      int32_t maxBufSize );
+	void makeFilename_r(const char *baseFilename, const char *baseFilenameDir,
+			    int32_t partNum,
+			    char *buf, int32_t maxBufSize) const;
 
 	void removePart ( int32_t i ) ;
 
-	// don't launch a threaded rename/unlink if one already in progress
-	// since we only have one callback, m_callback
-	int32_t m_numThreads;
-
 	void (*m_callback)(void *state);
 	void  *m_state;
-	// is the threaded op an unlink? (or rename?)
-	bool   m_isUnlink;
-	int32_t   m_part; // part # to unlink (-1 for all)
 
-	// number of parts remaining to be unlinked/renamed
-	int32_t   m_partsRemaining;
+	//counters for keeping track of unlinking
+	bool m_unlinkJobsBeingSubmitted;
+	int m_outstandingUnlinkJobCount;
+	//counters for keeping track of renaming
+	bool m_renameP1JobsBeingSubmitted;
+	int m_outstandingRenameP1JobCount;
+	bool m_renameP2JobsBeingSubmitted;
+	int m_outstandingRenameP2JobCount;
+	int m_latestsRenameP1Errno;
+	GbMutex m_mtxMetaJobs; //protects above counters
 
-	char m_tinyBuf[8];
+	void incrementUnlinkJobsSubmitted();
+	bool incrementUnlinkJobsFinished();
+	void incrementRenameP1JobsSubmitted();
+	bool incrementRenameP1JobsFinished();
+	void incrementRenameP2JobsSubmitted();
+	bool incrementRenameP2JobsFinished();
 
 	// to hold the array of Files
 	SafeBuf m_filePtrsBuf;
-
-	// enough mem for our first File so we can avoid a malloc
-	char m_littleBuf[LITTLEBUFSIZE];
 
 	// . wrapper for all reads and writes
 	// . if doWrite is true then we'll do a write, otherwise we do a read
@@ -242,40 +263,39 @@ private:
 
 	// . returns false if blocked, true otherwise
 	// . sets g_errno on error
-	bool unlinkRename ( const char *newBaseFilename,
-			    int32_t  part                        ,
-			    bool  useThread                   ,
-			    void (* callback) ( void *state ) ,
-			    void *state                       ,
-			    const char *newBaseFilenameDir = NULL,
-				bool force = false );
-	//job/thread worker functions helping unlinkrename()
-	static void renameWrapper(void *state);
-	static void doneRenameWrapper(void *state, job_exit_t exit_type);
-	void doneRenameWrapper(File *f);
-	void renameWrapper(File *f, int32_t i);
+	bool rename(const char *newBaseFilename,
+		    void (*callback)(void *state), void *state,
+		    const char *newBaseFilenameDir);
+	//job/thread worker functions helping rename()
+	static void renameP1Wrapper(void *state);
+	void renameP1Wrapper(File *f, int32_t i);
+	static void doneP1RenameWrapper(void *state, job_exit_t exit_type);
+	void doneP1RenameWrapper(File *f);
+	static void renameP2Wrapper(void *state);
+	void renameP2Wrapper(File *f, int32_t i);
+	static void doneP2RenameWrapper(void *state, job_exit_t exit_type);
+	void doneP2RenameWrapper(File *f);
+
+	bool unlink(int32_t  part,
+		    void (*callback)(void *state), void *state);
+	//job/thread worker functions helping unlink()
 	static void unlinkWrapper(void *state);
 	void unlinkWrapper(File *f);
 	static void doneUnlinkWrapper(void *state, job_exit_t exit_type);
 	void doneUnlinkWrapper(File *f, int32_t i);
 
 	// . add all parts from this directory
-	// . called by set() above for normal dir as well as stripe dir
+	// . called by set() above for normal dir
 	bool addParts ( const char *dirname ) ;
 
 	bool addPart ( int32_t n ) ;
 
 
-	// for basefilename to avoid an alloc
-	char m_tmpBaseBuf[32];
-
-
-	//int32_t m_permissions;
 	int32_t m_flags;
 
 	int32_t             m_vfd;
 
-	// our most important the directory and filename
+	// our directory and filename
 	SafeBuf m_dir      ;
 	SafeBuf m_baseFilename ;
 
@@ -285,6 +305,19 @@ private:
 
 	// if first char in this dir is 0 then use m_dir
 	SafeBuf m_newBaseFilenameDir ;
+
+	// prevent circular calls to BigFile::close() with this
+	bool m_isClosing;
+
+	mutable int64_t m_fileSize;
+
+	// oldest of the last modified dates of all the part files
+	time_t m_lastModified;
+
+	// number of part files that actually exist
+	int       m_numParts;
+	// size of File* array (number of pointers in m_filePtrsBuf)
+	int32_t      m_maxParts;
 
 public:
 	File *getFile2 ( int32_t n ) { 
@@ -299,23 +332,13 @@ public:
 		return const_cast<BigFile*>(this)->getFile2(n);
 	}
 
+	static bool anyOngoingUnlinksOrRenames();
+
 	bool reset ( );
 
-	// determined in open() override
-	int       m_numParts;
-	// maximum part #
-	int32_t      m_maxParts;
-
-	// prevent circular calls to BigFile::close() with this
-	bool m_isClosing;
-
-	mutable int64_t m_fileSize;
-
-	// oldest of the last modified dates of all the part files
-	time_t m_lastModified;
+	int32_t getMaxParts() const { return m_maxParts; }
+	
 	time_t getLastModifiedTime();
 };
-
-extern int32_t g_unlinkRenameThreads;
 
 #endif // GB_BIGFILE_H

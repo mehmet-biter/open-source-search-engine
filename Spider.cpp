@@ -43,7 +43,7 @@ void testWinnerTreeKey ( ) ;
 
 int32_t g_corruptCount = 0;
 
-char s_countsAreValid = 1;
+bool s_countsAreValid = true;
 
 static int32_t getFakeIpForUrl2(Url *url2);
 
@@ -2017,7 +2017,7 @@ char *getMatchingUrlPattern ( SpiderColl *sc, SpiderRequest *sreq, char *tagArg 
 	// if we had a list of contains: or regex: directives in the sitelist
 	// we have to linear scan those
 	char *nb = sc->m_negSubstringBuf.getBufStart();
-	char *nbend = nb + sc->m_negSubstringBuf.getLength();
+	char *nbend = nb + sc->m_negSubstringBuf.length();
 	for ( ; nb && nb < nbend ; ) {
 		// return NULL if matches a negative substring
 		if ( strstr ( sreq->m_url , nb ) ) {
@@ -2072,7 +2072,7 @@ char *getMatchingUrlPattern ( SpiderColl *sc, SpiderRequest *sreq, char *tagArg 
 		// otherwise, it has a path. skip if we don't match path ptrn
 		if ( pd->m_pathOff ) {
 			if ( ! myPath ) myPath = sreq->getUrlPath();
-			if ( strncmp (myPath, patternStr + pd->m_pathOff, pd->m_pathLen ) ) {
+			if ( strncmp (myPath, patternStr + pd->m_pathOff, pd->m_pathLen ) != 0 ) {
 				continue;
 			}
 		}
@@ -2130,7 +2130,7 @@ char *getMatchingUrlPattern ( SpiderColl *sc, SpiderRequest *sreq, char *tagArg 
 
 			// compare tags
 			char *pdtag = pd->m_tagOff + buf;
-			if ( strncmp(tagArg,pdtag,pd->m_tagLen) ) {
+			if ( strncmp(tagArg,pdtag,pd->m_tagLen) != 0 ) {
 				continue;
 			}
 
@@ -3286,7 +3286,7 @@ checkNextRule:
 			if ( sign == SIGN_GE && a <  b ) continue;
 			if ( sign == SIGN_LE && a >  b ) continue;
 			// skip fast
-			p += 10;
+			//p += 10;
 			p = strstr(s, "&&");
 			//if nothing, else then it is a match
 			if ( ! p ) {
@@ -3321,7 +3321,7 @@ checkNextRule:
 			if ( sign == SIGN_GE && a <  b ) continue;
 			if ( sign == SIGN_LE && a >  b ) continue;
 			// skip fast
-			p += 9;
+			//p += 9;
 			p = strstr(s, "&&");
 			//if nothing, else then it is a match
 			if ( ! p ) {
@@ -3348,7 +3348,7 @@ checkNextRule:
 			if ( sign == SIGN_GE && a <  b ) continue;
 			if ( sign == SIGN_LE && a >  b ) continue;
 			// skip fast
-			p += 10;
+			//p += 10;
 			p = strstr(s, "&&");
 			//if nothing, else then it is a match
 			if ( ! p ) {
@@ -3394,7 +3394,7 @@ checkNextRule:
 			if ( sign == SIGN_GE && a <  b ) continue;
 			if ( sign == SIGN_LE && a >  b ) continue;
 			// skip fast
-			p += 14;
+			//p += 14;
 			p = strstr(s, "&&");
 			//if nothing, else then it is a match
 			if ( ! p ) {
@@ -3461,8 +3461,8 @@ checkNextRule:
 			// make it point to the priority
 			float b = atof(s);
 			// compare
-			if ( sign == SIGN_EQ && a != b ) continue;
-			if ( sign == SIGN_NE && a == b ) continue;
+			if ( sign == SIGN_EQ && !almostEqualFloat(a, b) ) continue;
+			if ( sign == SIGN_NE && almostEqualFloat(a, b) ) continue;
 			if ( sign == SIGN_GT && a <= b ) continue;
 			if ( sign == SIGN_LT && a >= b ) continue;
 			if ( sign == SIGN_GE && a <  b ) continue;

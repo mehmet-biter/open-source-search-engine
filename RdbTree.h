@@ -170,7 +170,6 @@ public:
 		m_needsSave = needsSave;
 	}
 
-	bool isGettingList() const { return (m_gettingList != 0); }
 	bool isLoading() const { return m_isLoading; }
 
 	// since our arrays aren't public
@@ -328,8 +327,6 @@ private:
 	// . cannot add to tree when saving
 	bool    m_isSaving;
 
-	mutable int32_t    m_gettingList;
-
 	// loading?
 	bool    m_isLoading;
 
@@ -372,7 +369,7 @@ private:
 	int32_t    m_overhead;     
 	// switch between picking left and right kids to replace deleted nodes
 	// in order to keep the tree more balanced
-	char    m_pickRight;
+	bool    m_pickRight;
 	// the node at the top of the tree
 	int32_t    m_headNode;
 	// total mem this tree is using (including data that nodes point to)
@@ -400,18 +397,6 @@ private:
 	char m_ks;
 
 public:
-	bool m_useProtection;
-	bool m_isProtected;
-	void protect   () { 
-		if ( m_isProtected ) return;
-		m_isProtected = true; 
-		protect ( PROT_READ ); }
-	void unprotect () { 
-		if ( ! m_isProtected ) return;
-		m_isProtected = false; 
-		protect ( PROT_READ | PROT_WRITE ); }
-	void protect   ( int prot );
-	void gbmprotect ( void *p , int32_t size , int prot );
 
 	int32_t m_corrupt;
 };

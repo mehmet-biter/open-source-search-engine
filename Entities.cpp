@@ -59,7 +59,7 @@ static bool initEntityTable(){
 			// must not exist!
 			if ( s_table.isInTable(&h) ) { g_process.shutdownAbort(true);}
 			// store the entity index in the hash table as score
-			if ( ! s_table.addTerm ( &h, i+1 ) ) return false;
+			if ( ! s_table.addTerm(h, i+1) ) return false;
 		}
 		s_isInitialized = true;
 	} 
@@ -78,7 +78,7 @@ static const Entity *getTextEntity ( const char *s , int32_t len ) {
 	// compute the hash of the entity including &, but not ;
 	int64_t h = hash64 ( s , len );
 	// get the entity index from table (stored in the score field)
-	int32_t i = (int32_t) s_table.getScore ( &h );
+	int32_t i = (int32_t) s_table.getScore(h);
 	// return 0 if no match
 	if ( i == 0 )
 		return NULL;

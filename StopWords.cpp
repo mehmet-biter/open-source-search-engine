@@ -159,7 +159,7 @@ bool initWordTable( HashTableX *table, const char * const words[], const char *l
 		int32_t       swlen = strlen ( sw );
 		int64_t  swh   = hash64Lower_utf8 ( sw , swlen );
 		//log("ii: #%" PRId32"  %s",i,sw);
-		if ( ! table->addTerm (&swh,i+1) ) return false;
+		if ( ! table->addTerm(swh,i+1) ) return false;
 	}
 	return true;
 }
@@ -180,7 +180,7 @@ bool isStopWord ( const char *s , int32_t len , int64_t h ) {
 	if ( len == 1 && is_alpha_a(*s) ) return true;
 
 	// get from table
-	return s_stopWordTable.getScore ( &h );
+	return s_stopWordTable.getScore(h);
 }		
 
 // . damn i forgot to include these above
@@ -2028,7 +2028,7 @@ bool isQueryStopWord ( const char *s , int32_t len , int64_t h , int32_t langId 
 	if ( ! s_queryStopWords2[langId] ) langId = langUnknown;
 
 	// get from table
-	return s_queryStopWordTables[langId].getScore ( &h );
+	return s_queryStopWordTables[langId].getScore(h);
 }
 
 // is it a stop word?
@@ -3832,7 +3832,7 @@ int32_t isCommonWord ( int64_t h ) {
 		// set up the hash table
 		if ( ! s_commonWordTable.set (8,4,sizeof(s_commonWords)*2, NULL,0,false,"commonwrds") ) {
 			log(LOG_INIT, "query: Could not init common words table.");
-			return false;
+			return 0;
 		}
 		// now add in all the stop words
 		int32_t n = (int32_t)sizeof(s_commonWords)/ sizeof(char *); 
@@ -3841,14 +3841,14 @@ int32_t isCommonWord ( int64_t h ) {
 			int32_t  swlen = strlen ( sw );
 			// use the same algo that Words.cpp computeWordIds does
 			int64_t swh = hash64Lower_utf8 ( sw , swlen );
-			if ( ! s_commonWordTable.addTerm ( &swh,i+1 ) )
-				return false;
+			if ( ! s_commonWordTable.addTerm(swh,i+1 ) )
+				return 0;
 			// . add w/o accent marks too!
 			// . skip "fЭr" though because fur is an eng. word
 			//if ( *sw=='f' && *(sw+1)=='Э' &&
 			//     *(sw+2)=='r' && swlen == 3 ) continue;
 			//swh   = hash64AsciiLower ( sw , swlen );
-			//s_commonWordTable.addTerm (swh,i+1,i+1,true);
+			//s_commonWordTable.addTerm(swh,i+1,i+1,true);
 		}
 		s_commonWordsInitialized = true;
 	} 
@@ -3859,13 +3859,6 @@ int32_t isCommonWord ( int64_t h ) {
 	//if ( len == 1 && is_alpha_a(*s) ) return true;
 
 	// get from table
-	return s_commonWordTable.getScore ( &h );
-}
-
-void resetStopWords ( ) {
-	s_stopWordTable.reset();
-	for ( int i = 0 ; i <= MAXLANGID ; i++ )
-		s_queryStopWordTables[i].reset();
-	s_commonWordTable.reset();
+	return s_commonWordTable.getScore(h);
 }
 

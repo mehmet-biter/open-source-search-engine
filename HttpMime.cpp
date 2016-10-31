@@ -45,7 +45,16 @@ const char * const g_contentTypeStrings [] = {
 	"warc"	// 21
 };
 
-HttpMime::HttpMime () { reset(); }
+HttpMime::HttpMime () { 
+	// Coverity
+	m_content = NULL;
+	memset(m_buf, 0, sizeof(m_buf));
+	m_bufLen = 0;
+	m_contentEncoding = 0;
+	m_boundaryLen = 0;
+
+	reset(); 
+}
 
 void HttpMime::reset ( ) {
 	m_mimeStartPtr     = NULL;
@@ -54,7 +63,6 @@ void HttpMime::reset ( ) {
 	m_contentLen       = -1;
 	m_lastModifiedDate =  0;
 	m_contentType      =  CT_HTML;
-	m_lastModifiedDate =  0;
 	m_charset          =  NULL;
 	m_charsetLen       =  0;
 	m_cookie           =  NULL;
@@ -64,11 +72,6 @@ void HttpMime::reset ( ) {
 	m_contentEncodingPos = NULL;
 	m_contentLengthPos = NULL;
 	m_contentTypePos   = NULL;
-	// Coverity
-	m_content = NULL;
-	m_bufLen = 0;
-	m_contentEncoding = 0;
-	m_boundaryLen = 0;
 }
 
 // . returns false if could not get a valid mime
@@ -204,7 +207,7 @@ bool HttpMime::parse ( char *mime , int32_t mimeLen , Url *url ) {
 			while ( *s == ' ' || *s == '\t' ) s++;
 			m_contentTypePos = s;
 		}
-		else if ( strncasecmp ( p , "Set-Cookie:"   ,10) == 0 ) {
+		else if ( strncasecmp ( p , "Set-Cookie:"   ,11) == 0 ) {
 			if ( ! m_firstCookie ) m_firstCookie = p;
 			m_cookie = p + 11;
 			if ( m_cookie[0] == ' ' ) m_cookie++;
@@ -962,8 +965,9 @@ void HttpMime::makeMime  ( int32_t    totalContentLen    ,
 	if (cookie) {
 		// now it is a list of Set-Cookie: x=y\r\n lines
 		//p += sprintf ( p, "Set-Cookie: %s\r\n", cookie);
-		if ( strncmp(cookie,"Set-Cookie",10 ) )
+		if ( strncmp(cookie, "Set-Cookie", 10) != 0 ) {
 			p += sprintf(p,"Set-Cookie: ");
+		}
 		p += sprintf ( p, "%s", cookie);
 		if ( p[-1] != '\n' && p[-2] != '\r' ) {
 			*p++ = '\r';
@@ -1214,7 +1218,7 @@ bool HttpMime::addCookiesIntoBuffer ( SafeBuf *sb ) {
 		char c = p [ len ];
 		p [ len ] = '\0';
 		// parse out some meaningful data
-		if ( strncasecmp ( p , "Set-Cookie:"   ,10) == 0 ) {
+		if ( strncasecmp ( p , "Set-Cookie:", 11) == 0 ) {
 			char *cookie = p + 11;
 			if ( cookie[0] == ' ' ) cookie++;
 			char *cookieEnd = cookie;

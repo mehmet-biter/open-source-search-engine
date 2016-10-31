@@ -1277,7 +1277,7 @@ void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripParams, bool 
 	}
 
 	// append a '/' to m_url then bail if there is no m_path after the port
-	if ( s[i]=='\0' || s[i] != '/') {
+	if ( s[i] != '/') {
 		m_path    = m_url + m_ulen;
 		m_path[0] = '/';
 		m_plen    = 1;
@@ -1465,10 +1465,10 @@ int32_t  Url::getPathDepth ( bool countFilename ) const {
 
 bool Url::isHostWWW ( ) const {
 	if ( m_hlen < 4 ) return false;
-	if ( m_host[0] != 'w' ) return false;
-	if ( m_host[1] != 'w' ) return false;
-	if ( m_host[2] != 'w' ) return false;
-	if ( m_host[3] != '.' ) return false;
+	if ( m_host[0] != 'w' ||
+	     m_host[1] != 'w' ||
+	     m_host[2] != 'w' ||
+	     m_host[3] != '.' ) return false;
 	return true;
 }
 

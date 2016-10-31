@@ -30,6 +30,23 @@
 #include "GbUtil.h"
 
 
+class WaitEntry {
+public:
+	void (* m_callback) (void *state);
+	// ptr to list of parm recs for Parms.cpp
+	char *m_parmPtr;
+	char *m_parmEnd;
+	class UdpSlot *m_slot;
+	bool m_doRebuilds;
+	bool m_rebuildActiveList;
+	bool m_doProxyRebuild;
+	bool m_updatedRound;
+	collnum_t m_collnum;
+	int32_t m_errno;
+	bool m_sentReply;
+};
+
+
 Parms g_parms;
 
 #include "Spider.h"
@@ -174,6 +191,7 @@ bool Parm::printVal(SafeBuf *sb, collnum_t collnum, int32_t occNum) const {
 	log("parms: missing parm type!!");
 
 	g_process.shutdownAbort(true);
+	return false;
 }
 
 
@@ -1119,11 +1137,11 @@ bool Parms::printParmTable ( SafeBuf *sb , TcpSocket *s , HttpRequest *r ) {
 	if ( page == PAGE_SPIDER && ! g_conf.m_spideringEnabled )
 		e1 = "<tr><td colspan=20><font color=#ff0000><b><center>"
 			"Spidering is temporarily disabled in Master Controls."
-			"</font></td></tr>\n";
+			"</center></b></font></td></tr>\n";
 	if ( page == PAGE_SPIDER && ! g_conf.m_addUrlEnabled )
 		e2 = "<tr><td colspan=20><font color=#ff0000><b><center>"
 			"Add url is temporarily disabled in Master Controls."
-			"</font></td></tr>\n";
+			"</center></b></font></td></tr>\n";
 
 	if( page == PAGE_INJECT )
 	{
@@ -1411,16 +1429,25 @@ bool Parms::printParms2 ( SafeBuf* sb ,
 
 		// get right ptr
 		char *THIS = NULL;
-		if ( m->m_obj == OBJ_CONF )
-			THIS = (char *)&g_conf;
-		if ( m->m_obj == OBJ_COLL ) {
-			THIS = (char *)cr;
-			if ( ! THIS ) continue;
+		switch(m->m_obj) {
+			case OBJ_CONF:
+				THIS = (char *)&g_conf;
+				break;
+			case OBJ_COLL:
+				THIS = (char *)cr;
+				break;
+			case OBJ_GBREQUEST:
+				THIS = (char *)&gr;
+				break;
+			case OBJ_IR:
+				THIS = (char *)&ir;
+				break;
+			//what about OBJ_SI ?
+			default:
+				log(LOG_LOGIC,"Unhandled parameter: %s", m->m_desc ? m->m_desc : "<no description>");
 		}
-		if ( m->m_obj == OBJ_GBREQUEST )
-			THIS = (char *)&gr;
-		if ( m->m_obj == OBJ_IR )
-			THIS = (char *)&ir;
+		if(!THIS)
+			continue;
 		// might have an array, do not exceed the array size
 		int32_t  jend = m->m_max;
 		int32_t  size = jend ;
@@ -1775,7 +1802,7 @@ bool Parms::printParm( SafeBuf* sb,
 	     m->m_obj != OBJ_NONE &&
 	     m->m_obj != OBJ_IR && // do not do for injectionrequest
 	     m->m_obj != OBJ_GBREQUEST && // do not do for GigablastRequest
-	     strcmp ( val1.getBufStart() , m->m_def ) )
+	     strcmp(val1.getBufStart(), m->m_def) != 0 )
 		// put non-default valued parms in orange!
 		bg = "ffa500";
 
@@ -1937,7 +1964,7 @@ bool Parms::printParm( SafeBuf* sb,
 		//if ( ! *s ) val = "N";
 		const char *val = "";
 		// "s" is invalid of parm has no "object"
-		if ( m->m_obj == OBJ_NONE && m->m_def[0] != '0' )
+		if ( m->m_obj == OBJ_NONE && m->m_def && m->m_def[0] != '0' )
 			val = " checked";
 		if ( m->m_obj != OBJ_NONE && s && *s )
 			val = " checked";
@@ -2627,7 +2654,7 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 		goto changed; 
 	}
 	else if ( t == TYPE_FLOAT ) {
-		if( fromRequest && *(float *)(THIS + m->m_off + 4*j) == (float)atof ( s ) ) {
+		if( fromRequest && almostEqualFloat(*(float *)(THIS + m->m_off + 4*j), (s ? (float)atof(s) : 0)) ) {
 			return;
 		}
 		// if changed within .00001 that is ok too, do not count
@@ -2644,7 +2671,7 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 		goto changed; 
 	}
 	else if ( t == TYPE_DOUBLE ) {
-		if( fromRequest && *(double *)(THIS + m->m_off + 4*j) == (double)atof ( s ) ) {
+		if( fromRequest && almostEqualFloat(*(double *)(THIS + m->m_off + 4*j), ( s ? (double)atof(s) : 0)) ) {
 			return;
 		}
 		if ( fromRequest ) {
@@ -2656,7 +2683,7 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 	}
 	else if ( t == TYPE_IP ) {
 		if ( fromRequest && *(int32_t *)(THIS + m->m_off + 4*j) ==
-		     (int32_t)atoip (s,strlen(s) ) )
+		     (s ? (int32_t)atoip(s,strlen(s)) : 0) )
 			return;
 		*(int32_t *)(THIS + m->m_off + 4*j) = s ? (int32_t)atoip(s,strlen(s)) : 0;
 		goto changed; 
@@ -2673,7 +2700,7 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 		goto changed; 
 	}
 	else if ( t == TYPE_LONG_LONG ) {
-		if ( fromRequest && *(uint64_t *)(THIS + m->m_off+8*j) == strtoull(s,NULL,10)) {
+		if ( fromRequest && *(uint64_t *)(THIS + m->m_off+8*j) == ( s ? strtoull(s,NULL,10) : 0) ) {
 			return;
 		}
 		*(int64_t *)(THIS + m->m_off + 8*j) = s ? strtoull(s,NULL,10) : 0;
@@ -2941,6 +2968,8 @@ bool Parms::setFromFile ( void *THIS        ,
 
 	int32_t  vlen;
 	char *v ;
+	// a tmp thingy
+	char tt[1];
 	//char  c ;
 	int32_t numNodes  = xml.getNumNodes();
 	int32_t numNodes2 = m_xml2.getNumNodes();
@@ -2974,8 +3003,6 @@ bool Parms::setFromFile ( void *THIS        ,
 		int32_t j = 0;
 		// node number
 		int32_t nn = 0;
-		// a tmp thingy
-		char tt[1];
 		int32_t nb;
 		int32_t newnn;
 	loop:
@@ -3168,8 +3195,8 @@ bool Parms::setFromFile ( void *THIS        ,
 		if ( pn->m_tagNameLen != 14 ) continue;
 		if ( xn->m_tagNameLen != 8 ) continue;
 		// if it is not the OLD supported tag then skip
-		if ( strncmp ( pn->m_tagName,"masterPassword",14 ) ) continue;
-		if ( strncmp ( xn->m_tagName,"![CDATA[",8 ) ) continue;
+		if ( strncmp ( pn->m_tagName,"masterPassword",14) != 0 ) continue;
+		if ( strncmp ( xn->m_tagName,"![CDATA[",8) != 0) continue;
 		// otherwise append to buf
 		char *text = xn->m_node + 9;
 		int32_t  tlen = xn->m_nodeLen - 12;
@@ -3189,8 +3216,8 @@ bool Parms::setFromFile ( void *THIS        ,
 		if ( pn->m_tagNameLen != 8 ) continue;
 		if ( xn->m_tagNameLen != 8 ) continue;
 		// if it is not the OLD supported tag then skip
-		if ( strncmp ( pn->m_tagName,"masterIp",8 ) ) continue;
-		if ( strncmp ( xn->m_tagName,"![CDATA[",8 ) ) continue;
+		if ( strncmp ( pn->m_tagName,"masterIp",8) != 0 ) continue;
+		if ( strncmp ( xn->m_tagName,"![CDATA[",8) != 0 ) continue;
 		// otherwise append to buf
 		char *text = xn->m_node + 9;
 		int32_t  tlen = xn->m_nodeLen - 12;
@@ -6133,18 +6160,6 @@ void Parms::init ( ) {
 	m->m_def   = "sysadmin@example.com";
 	m->m_size  = sizeof(Conf::m_email4From);
 	m->m_group = false;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	m->m_title = "prefer local reads";
-	m->m_desc  = "If you have scsi drives or a slow network, say yes here "
-		"to minimize data fetches across the network.";
-	m->m_cgi   = "plr";
-	m->m_off   = offsetof(Conf,m_preferLocalReads);
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -11417,7 +11432,7 @@ bool Parms::broadcastParmList ( SafeBuf *parmList ,
 				int32_t hostId2 ) {
 
 	// empty list?
-	if ( parmList->getLength() <= 0 ) return true;
+	if ( parmList->length() <= 0 ) return true;
 
 	// only us? no need for this then. we now do this...
 	//if ( g_hostdb.m_numHosts <= 1 ) return true;
@@ -12482,7 +12497,7 @@ bool Parms::updateParm ( char *rec , WaitEntry *we ) {
 		// add the expression. this prevents the empty line from
 		// being added!
 		if ( parm->m_page == PAGE_FILTERS &&
-		     cr->m_regExs[occNum].getLength() == 0 )
+		     cr->m_regExs[occNum].length() == 0 )
 			updateCount = false;
 		// and for other pages, like master ips, skip if empty!
 		// PAGE_PASSWORDS, PAGE_MASTERPASSWORDS, ...

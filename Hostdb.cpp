@@ -19,7 +19,9 @@
 #include "Spider.h"
 #include "Clusterdb.h"
 #include "Dns.h"
+#include "File.h"
 #include "IPAddressChecks.h"
+#include <fcntl.h>
 
 // a global class extern'd in .h file
 Hostdb g_hostdb;
@@ -78,6 +80,12 @@ Hostdb::Hostdb ( ) {
 	memset(m_shards, 0, sizeof(m_shards));
 	memset(m_spareHosts, 0, sizeof(m_spareHosts));
 	memset(m_proxyHosts, 0, sizeof(m_proxyHosts));
+	memset(m_buf, 0, sizeof(m_buf));
+	memset(m_dir, 0, sizeof(m_dir));
+	memset(m_httpRootDir, 0, sizeof(m_httpRootDir));
+	memset(m_logFilename, 0, sizeof(m_logFilename));
+	memset(m_netName, 0, sizeof(m_netName));
+	memset(&m_map, 0, sizeof(m_map));
 }
 
 
@@ -271,6 +279,8 @@ createFile:
 	int32_t num_nospider = 0;
 	int32_t num_noquery  = 0;
 
+	char tmp[256];
+
 	for ( ; *p ; p++ , line++ ) {
 		if ( is_wspace_a (*p) ) continue;
 		// skip comments
@@ -369,31 +379,26 @@ createFile:
 		// skip spaces after hostid/port/spare keyword
 		while ( is_wspace_a(*p) ) p++;
 
-		int32_t port1 = 6002;
-		int32_t port2 = 7002;
-		int32_t port3 = 8002;
-		int32_t port4 = 9002;
-
 		// now the four ports
-		port1 = atol(p);
+		int32_t port1 = atol(p);
 		// skip digits
 		for ( ; is_digit(*p) ; p++ );
 		// skip spaces after it
 		while ( is_wspace_a(*p) ) p++;
 
-		port2 = atol(p);
+		int32_t port2 = atol(p);
 		// skip digits
 		for ( ; is_digit(*p) ; p++ );
 		// skip spaces after it
 		while ( is_wspace_a(*p) ) p++;
 
-		port3 = atol(p);
+		int32_t port3 = atol(p);
 		// skip digits
 		for ( ; is_digit(*p) ; p++ );
 		// skip spaces after it
 		while ( is_wspace_a(*p) ) p++;
 
-		port4 = atol(p);
+		int32_t port4 = atol(p);
 		// skip digits
 		for ( ; is_digit(*p) ; p++ );
 		// skip spaces after it
@@ -621,7 +626,6 @@ createFile:
 		// get real path (no symlinks symbolic links)
 		// only if on same host, which we determine based on the IP-address.
 		if ( ip_distance(h->m_ip)==ip_distance_ourselves ) {
-			char tmp[256];
 			int32_t tlen = readlink ( wdir , tmp , 250 );
 			// if we got the actual path, copy that over
 			if ( tlen != -1 ) {
@@ -902,11 +906,16 @@ createFile:
 		return false;
 	}
 	// set m_dir to THIS host's working dir
-	strcpy ( m_dir , h->m_dir );
+	strncpy(m_dir, h->m_dir, sizeof(m_dir));
+	m_dir[sizeof(m_dir)-1] = '\0';
+	
 	// likewise, set m_htmlDir to this host's html dir
-	sprintf ( m_httpRootDir , "%shtml/" , m_dir );
-	sprintf ( m_logFilename , "%slog%03" PRId32, m_dir , m_hostId );
+	snprintf(m_httpRootDir, sizeof(m_httpRootDir), "%shtml/" , m_dir );
+	m_httpRootDir[sizeof(m_httpRootDir)-1] = '\0';
 
+	snprintf(m_logFilename, sizeof(m_logFilename), "%slog%03" PRId32, m_dir , m_hostId );
+	m_logFilename[sizeof(m_logFilename)-1] = '\0';
+	
 	if ( ! g_conf.m_runAsDaemon &&
 	     ! g_conf.m_logToFile )
 		sprintf(m_logFilename,"/dev/stderr");
@@ -960,7 +969,7 @@ bool Hostdb::hashHosts ( ) {
 	// . only do this if they did not already specify a 127.0.0.1 in
 	//   the hosts.conf i guess
 	int32_t lbip = atoip("127.0.0.1");
-	Host *hxx = getHost ( lbip , m_myHost->m_port );
+	Host *hxx = getUdpHost ( lbip , m_myHost->m_port );
 	// only do this if not explicitly assigned to 127.0.0.1 in hosts.conf
 	if ( ! hxx && (int32_t)m_myHost->m_ip != lbip ) {
 		int32_t loopbackIP = atoip("127.0.0.1",9);
@@ -1038,7 +1047,7 @@ bool Hostdb::hashHosts ( ) {
 
 bool Hostdb::hashHost (	bool udp , Host *h , uint32_t ip , uint16_t port ) {
 	Host *hh = NULL;
-	if ( udp ) hh = getHost ( ip , port );
+	if ( udp ) hh = getUdpHost ( ip , port );
 
 	if ( hh && port ) { 
 		log(LOG_WARN, "db: Must hash hosts.conf first, then hosts2.conf.");
@@ -1108,10 +1117,6 @@ int32_t Hostdb::getHostId ( uint32_t ip , uint16_t port ) {
 Host *Hostdb::getHostByIp ( uint32_t ip ) {
 	return getHostFromTable ( true , ip , 0 );	
 }
-
-Host *Hostdb::getHost ( uint32_t ip , uint16_t port ) {
-	return getHostFromTable ( true , ip , port );
-}	
 
 // . get Host entry from ip/port
 // . port defaults to 0 for no port
@@ -1511,8 +1516,8 @@ int32_t Hostdb::getBestHosts2IP ( Host  *h ) {
 	unsigned char *a = (unsigned char *)&h->m_ipShotgun;
 	unsigned char *c = (unsigned char *)&h->m_ip;
 
-	char isShotgunInternal = false;
-	char isPrimaryInternal = false;
+	bool isShotgunInternal = false;
+	bool isPrimaryInternal = false;
 	if ( a[0]==192 && a[1]==168 ) isShotgunInternal = true;
 	if ( a[0]==10  && a[1]==1   ) isShotgunInternal = true;
 	if ( a[0]==127 && a[1]==0   ) isShotgunInternal = true;
@@ -1525,7 +1530,7 @@ int32_t Hostdb::getBestHosts2IP ( Host  *h ) {
 	unsigned char *b = (unsigned char *)&local->m_ipShotgun;
 	unsigned char *d = (unsigned char *)&local->m_ip;
 
-	char onSameNetwork = false;
+	bool onSameNetwork = false;
 
 	// if ip "a" in hosts2.conf is NOT INTERNAL (192.168.*) then see
 	// if it matches any ip (top 2 bytes) in hosts.conf
@@ -1627,6 +1632,7 @@ uint32_t Hostdb::getShardNum(rdbid_t rdbId, const void *k) {
 
 	// core -- must be provided
 	g_process.shutdownAbort(true);
+	return 0;
 }
 
 uint32_t Hostdb::getShardNumFromDocId ( int64_t d ) {
@@ -1840,7 +1846,7 @@ Host *Hostdb::getHost2 ( const char *cwd , int32_t *localIps ) {
 		//   as well as cwd!
 		// . if the gb binary does not reside in the working dir
 		//   for this host, skip it, it's not our host
-		if ( strcmp(h->m_dir,cwd) ) continue;
+		if ( strcmp(h->m_dir,cwd) != 0 ) continue;
 		// now it must be our ip as well!
 		int32_t *ipPtr = localIps;
 		for ( ; *ipPtr ; ipPtr++ ) 
@@ -1859,7 +1865,7 @@ Host *Hostdb::getProxy2 ( const char *cwd , int32_t *localIps ) {
 		//   as well as cwd!
 		// . if the gb binary does not reside in the working dir
 		//   for this host, skip it, it's not our host
-		if ( strcmp(h->m_dir,cwd) ) continue;
+		if ( strcmp(h->m_dir,cwd) != 0 ) continue;
 		// now it must be our ip as well!
 		int32_t *ipPtr = localIps;
 		for ( ; *ipPtr ; ipPtr++ ) 

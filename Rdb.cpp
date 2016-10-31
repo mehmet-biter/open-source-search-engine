@@ -18,6 +18,7 @@
 #include "Linkdb.h"
 #include "hash.h"
 #include "Stats.h"
+#include "GbMoveFile.h"
 #include "max_niceness.h"
 #include <sys/stat.h> //mdir()
 
@@ -29,7 +30,6 @@ Rdb::Rdb ( ) {
 	m_cacheLastTotal = 0LL;
 
 	//m_numBases = 0;
-	m_inAddList = false;
 	m_collectionlessBase = NULL;
 	m_initialized = false;
 	m_numMergesOut = 0;
@@ -54,6 +54,11 @@ Rdb::Rdb ( ) {
 	m_rdbId = RDB_NONE;
 	m_ks = 0;
 	m_pageSize = 0;
+	// PVS-Studio
+	m_isTitledb = false;
+	memset(m_dbname, 0, sizeof(m_dbname));
+	memset(m_treeAllocName, 0, sizeof(m_treeAllocName));
+	memset(m_memAllocName, 0, sizeof(m_memAllocName));
 
 	reset();
 }
@@ -181,16 +186,13 @@ bool Rdb::init(const char *dbname,
 
 	if(m_useTree) { 
 		// statsdb is collectionless really so pass on to tree
-		int32_t rdbId = rdbId != RDB_STATSDB ? rdbId : -1;
+		int32_t rdbId = m_rdbId != RDB_STATSDB ? m_rdbId : -1;
 		sprintf(m_treeAllocName,"tree-%s",m_dbname);
 		if (!m_tree.set(fixedDataSize, maxTreeNodes, maxTreeMem, false, m_treeAllocName, false, m_dbname, m_ks, rdbId)) {
 			log( LOG_ERROR, "db: Failed to set tree." );
 			return false;
 		}
 	} else {
-		if(treeFileExists()) {
-			m_tree.set(fixedDataSize, maxTreeNodes, maxTreeMem, false, m_treeAllocName, false, m_dbname, m_ks, m_rdbId);
-		}
 		sprintf(m_treeAllocName,"buckets-%s",m_dbname);
 		if (!m_buckets.set(fixedDataSize, maxTreeMem, m_treeAllocName, m_rdbId, m_dbname, m_ks)) {
 			log( LOG_ERROR, "db: Failed to set buckets." );
@@ -244,11 +246,20 @@ bool Rdb::updateToRebuildFiles ( Rdb *rdb2 , char *coll ) {
 	uint32_t t = (uint32_t)getTime();
 	char dstDir[256];
 	// make the trash dir if not there
-	sprintf ( dstDir , "%s/trash/" , g_hostdb.m_dir );
+	snprintf(dstDir, sizeof(dstDir), "%s/trash/" , g_hostdb.m_dir );
+	dstDir[ sizeof(dstDir)-1 ] = '\0';
+	
 	int32_t status = ::mkdir ( dstDir , getDirCreationFlags() );
+	if ( status && errno != EEXIST ) {
+		g_errno = errno;
+		log(LOG_WARN, "repair: Could not mkdir(%s): %s",dstDir, mstrerror(errno));
+		return false;
+	}
 
 	// we have to create it
-	sprintf ( dstDir , "%s/trash/rebuilt%" PRIu32"/" , g_hostdb.m_dir , t );
+	snprintf(dstDir, sizeof(dstDir), "%s/trash/rebuilt%" PRIu32"/" , g_hostdb.m_dir , t );
+	dstDir[ sizeof(dstDir)-1 ] = '\0';
+	
 	status = ::mkdir ( dstDir , getDirCreationFlags() );
 	if ( status && errno != EEXIST ) {
 		g_errno = errno;
@@ -306,13 +317,11 @@ bool Rdb::updateToRebuildFiles ( Rdb *rdb2 , char *coll ) {
 	}
 
 	const char *structName = m_useTree ? "tree" : "buckets";
-	char cmd[2048+32];
-	sprintf ( cmd , "mv %s %s",src,dst);
 
-	logf(LOG_INFO,"repair: Moving *-saved.dat %s. %s", structName, cmd);
+	logf(LOG_INFO,"repair: Moving *-saved.dat %s from %s to %s", structName, src, dst);
 
 	errno = 0;
-	if ( gbsystem ( cmd ) == -1 ) {
+	if ( moveFile(src,dst)!=0 ) {
 		log( LOG_ERROR, "repair: Moving saved %s had error: %s.", structName, mstrerror( errno ) );
 		return false;
 	}
@@ -776,14 +785,14 @@ void Rdb::doneSaving ( ) {
 	m_isSaving = false;
 }
 
-bool Rdb::isSavingTree ( ) {
+bool Rdb::isSavingTree() const {
 	if ( m_useTree ) return m_tree.isSaving();
 	return m_buckets.isSaving();
 }
 
 bool Rdb::saveTree ( bool useThread ) {
 	const char *dbn = m_dbname;
-	if ( ! dbn || ! dbn[0] ) {
+	if ( ! dbn[0] ) {
 		dbn = "unknown";
 	}
 
@@ -859,14 +868,6 @@ bool Rdb::saveMaps () {
 	return true;
 }
 
-bool Rdb::treeFileExists ( ) {
-	char filename[256];
-	sprintf(filename,"%s-saved.dat",m_dbname);
-	BigFile file;
-	file.set ( getDir() , filename , NULL ); // g_conf.m_stripeDir );
-	return file.doesExist() > 0;
-}
-
 
 // returns false and sets g_errno on error
 bool Rdb::loadTree ( ) {
@@ -878,7 +879,7 @@ bool Rdb::loadTree ( ) {
 
 	// set a BigFile to this filename
 	BigFile file;
-	file.set ( getDir(), filename , NULL ); // g_conf.m_stripeDir );
+	file.set ( getDir(), filename);
 	bool treeExists = file.doesExist();
 	bool status = false ;
 	if ( treeExists ) {
@@ -922,7 +923,7 @@ bool Rdb::loadTree ( ) {
 			} else {
 				char newFilename[256];
 				sprintf(newFilename,"%s-%" PRId32".old", filename, (int32_t)getTime());
-				file.rename(newFilename);
+				file.rename(newFilename,NULL);
 				m_tree.reset();
 			}
 			file.close();
@@ -1202,11 +1203,9 @@ bool Rdb::dumpCollLoop ( ) {
 		}
 
 		// . MDW ADDING A NEW FILE SHOULD BE IN RDBDUMP.CPP NOW... NO!
-		// . get the biggest fileId
-		int32_t id2 = isTitledb() ? 0 : -1;
 
 		// if we add to many files then we can not merge, because merge op
-		// needs to add a file and it calls addNewFile() too
+		// needs to add a file too
 		static int32_t s_flag = 0;
 		if ( base->getNumFiles() + 1 >= MAX_RDB_FILES ) {
 			if ( s_flag < 10 )
@@ -1219,7 +1218,7 @@ bool Rdb::dumpCollLoop ( ) {
 		}
 
 		// this file must not exist already, we are dumping the tree into it
-		m_fn = base->addNewFile ( id2 ) ;
+		m_fn = base->addNewFile();
 		if ( m_fn < 0 ) {
 			log( LOG_LOGIC, "db: rdb: Failed to add new file to dump %s: %s.", m_dbname, mstrerror( g_errno ) );
 			return false;
@@ -1500,30 +1499,10 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list, int32_t niceness ) {
 		return false;
 	}
 
-	// if we are currently in a quickpoll, make sure we are not in
-	// RdbTree::getList(), because we could mess that loop up by adding
-	// or deleting a record into/from the tree now
-	if ( m_tree.isGettingList() ) {
-		g_errno = ETRYAGAIN;
-		return false;
-	}
-
-	// prevent double entries
-	if ( m_inAddList ) { 
-		// i guess the msg1 handler makes it this far!
-		//log("db: msg1 add in an add.");
-		g_errno = ETRYAGAIN;
-		return false;
-	}
-	// lock it
-	m_inAddList = true;
-
 	// . if we don't have enough room to store list, initiate a dump and
 	//   return g_errno of ETRYAGAIN
 	// . otherwise, we're guaranteed to have room for this list
 	if ( ! hasRoom(list) ) {
-		// stop it
-		m_inAddList = false;
 		// if tree is empty, list will never fit!!!
 		if ( m_useTree && m_tree.getNumUsedNodes() <= 0 ) {
 			g_errno = ELISTTOOBIG;
@@ -1545,12 +1524,6 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list, int32_t niceness ) {
 
 		// return false since we didn't add the list
 		return false;
-	}
-
-	// otherwise, add one record at a time
-	// unprotect tree from writes
-	if ( m_tree.m_useProtection ) {
-		m_tree.unprotect ( );
 	}
 
 	do {
@@ -1593,22 +1566,10 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list, int32_t niceness ) {
 				g_errno = ETRYAGAIN;
 			}
 
-			// reprotect tree from writes
-			if ( m_tree.m_useProtection ) m_tree.protect ( );
-
-			// stop it
-			m_inAddList = false;
-
 			// discontinue adding any more of the list
 			return false;
 		}
 	} while ( list->skipCurrentRecord() ); // skip to next record, returns false on end of list
-
-	// reprotect tree from writes
-	if ( m_tree.m_useProtection ) m_tree.protect ( );
-
-	// stop it
-	m_inAddList = false;
 
 	// if tree is >= 90% full dump it
 	if ( m_dump.isDumping() ) {
@@ -1721,8 +1682,7 @@ bool Rdb::hasRoom(RdbList *list) {
 	// memory from deleted nodes. works by condesing the used memory.
 	if ( m_rdbId == RDB_DOLEDB && 
 	     // if there is no room left in m_mem (RdbMem class)...
-	     ( m_mem.m_ptr2 - m_mem.m_ptr1 < dataSpace||g_conf.m_forceIt) &&
-	     //m_mem.m_ptr1 - m_mem.m_mem > 1024 ) {
+	     ( m_mem.getAvailMem() < dataSpace || g_conf.m_forceIt) &&
 	     // and last time we tried this, if any, it reclaimed 1MB+
 	     (m_lastReclaim>1024*1024||m_lastReclaim==-1||g_conf.m_forceIt)){
 		// reclaim the memory now. returns -1 and sets g_errno on error
@@ -1883,7 +1843,7 @@ bool Rdb::addRecord(collnum_t collnum, char *key, char *data, int32_t dataSize) 
 	KEYXOR(oppKey, 0x01);
 
 	if (m_useIndexFile) {
-		bool isSpecialKey;
+		bool isSpecialKey = false;
 		if (m_rdbId == RDB_POSDB || m_rdbId == RDB2_POSDB2) {
 			isSpecialKey = (Posdb::getTermId(key) == POSDB_DELETEDOC_TERMID);
 		} else {
@@ -2125,9 +2085,9 @@ int64_t Rdb::getListSize(collnum_t collnum, const char *startKey, const char *en
 	// pick it
 	if ( collnum < 0 || collnum > getNumBases() || ! getBase(collnum) ) {
 		log(LOG_WARN, "db: %s bad collnum of %i", m_dbname, collnum);
-		return false;
+		return 0;
 	}
-	return getBase(collnum)->getListSize(startKey, endKey, max, oldTruncationLimit);
+	return getBase(collnum)->estimateListSize(startKey, endKey, max, oldTruncationLimit);
 }
 
 int64_t Rdb::getNumGlobalRecs() const {
@@ -2201,7 +2161,7 @@ int64_t Rdb::getMapMemAllocated() const {
 	for ( int32_t i = 0 ; i < getNumBases() ; i++ ) {
 		// skip null base if swapped out
 		CollectionRec *cr = g_collectiondb.getRec(i);
-		if ( ! cr ) return true;
+		if ( ! cr ) continue;
 		RdbBase *base = cr->getBasePtr(m_rdbId);		
 		if ( ! base ) continue;
 		total += base->getMapMemAllocated();
@@ -2215,7 +2175,7 @@ int32_t Rdb::getNumSmallFiles() const {
 	for ( int32_t i = 0 ; i < getNumBases() ; i++ ) {
 		// skip null base if swapped out
 		CollectionRec *cr = g_collectiondb.getRec(i);
-		if ( ! cr ) return true;
+		if ( ! cr ) continue;
 		RdbBase *base = cr->getBasePtr(m_rdbId);		
 		if ( ! base ) continue;
 		total += base->getNumSmallFiles();
@@ -2395,11 +2355,14 @@ int32_t getDataSizeFromRdbId ( uint8_t rdbId ) {
 }
 
 // get the dbname
-const char *getDbnameFromId ( uint8_t rdbId ) {
-        Rdb *rdb = getRdbFromId ( rdbId );
-	if ( rdb ) return rdb->getDbname();
-	log(LOG_LOGIC,"db: rdbId of %" PRId32" is invalid.",(int32_t)rdbId);
-	return "INVALID";
+const char *getDbnameFromId(rdbid_t rdbId) {
+        const Rdb *rdb = getRdbFromId(rdbId);
+	if ( rdb )
+		return rdb->getDbname();
+	else {
+		log(LOG_LOGIC,"db: rdbId of %" PRId32" is invalid.",(int32_t)rdbId);
+		return "INVALID";
+	}
 }
 
 // get the RdbBase class for an rdbId and collection name

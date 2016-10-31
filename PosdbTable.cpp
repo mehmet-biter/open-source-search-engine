@@ -109,8 +109,8 @@ void PosdbTable::reset() {
 	m_nqt = 0;
 	m_debug = false;
 	m_logstate = NULL;
-	m_sortByTermNum = 0;
-	m_sortByTermNumInt = 0;
+	m_sortByTermNum = -1;
+	m_sortByTermNumInt = -1;
 	m_sortByTermInfoNum = 0;
 	m_sortByTermInfoNumInt = 0;
 	m_minScoreTermNum = 0;
@@ -397,11 +397,9 @@ float PosdbTable::getBestScoreSumForSingleTerm(int32_t i, const char *wpi, const
 	}
 
 
-	//
-	//
-	// The below is for visual presentation of the scoring ONLY
-	//
-	//
+	//#
+	//# The below is for visual presentation of the scoring ONLY
+	//#
 		
 	// none? wtf?
 	if ( numTop <= 0 ) {
@@ -410,7 +408,7 @@ float PosdbTable::getBestScoreSumForSingleTerm(int32_t i, const char *wpi, const
 	}
 	
 	// point into buf
-	SingleScore *sx = (SingleScore *)m_singleScoreBuf.getBuf();
+	SingleScore *sx = (SingleScore *)m_singleScoreBuf.getBufPtr();
 	int32_t need = sizeof(SingleScore) * numTop;
 
 	// point to that
@@ -1356,7 +1354,7 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 	//
 
 	// point into buf
-	PairScore *px = (PairScore *)m_pairScoreBuf.getBuf();
+	PairScore *px = (PairScore *)m_pairScoreBuf.getBufPtr();
 	int32_t need = sizeof(PairScore) * numTop;
 
 	// point to that
@@ -1441,11 +1439,11 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 		px->m_bflags2        = m_bflags[j];
 
 		// flag it as in same wiki phrase
-		if ( wts == (float)WIKI_WEIGHT ) {
-			px->m_inSameWikiPhrase = true;
+		if ( almostEqualFloat(wts, (float)WIKI_WEIGHT) ) {
+			px->m_inSameWikiPhrase = 1;
 		}
 		else {
-			px->m_inSameWikiPhrase = false;
+			px->m_inSameWikiPhrase = 0;
 		}
 		
 #ifdef _VALGRIND_
@@ -2328,7 +2326,7 @@ nextNode:
 		// if our query had a quoted phrase, might have had no
 		// docids in the top tree! getHighNode() can't handle
 		// that so handle it here
-		if ( m_topTree->m_numUsedNodes == 0 ) {
+		if ( m_topTree->getNumUsedNodes() == 0 ) {
 			return true;
 		}
 		
@@ -2652,11 +2650,10 @@ bool PosdbTable::advanceTermListCursors(const char *docIdPtr, QueryTermInfo *qti
 //
 bool PosdbTable::prefilterMaxPossibleScoreByDistance(QueryTermInfo *qtibuf, const int32_t *qpos, float minWinningScore) {
 	unsigned char ringBuf[RINGBUFSIZE+10];
-	// for overflow conditions in loops below
-	ringBuf[RINGBUFSIZE+0] = 0xff;
-	ringBuf[RINGBUFSIZE+1] = 0xff;
-	ringBuf[RINGBUFSIZE+2] = 0xff;
-	ringBuf[RINGBUFSIZE+3] = 0xff;
+
+	// reset ring buf. make all slots 0xff. should be 1000 cycles or so.
+	memset ( ringBuf, 0xff, sizeof(ringBuf) );
+
 	unsigned char qt;
 	QueryTermInfo *qtx;
 	uint32_t wx;
@@ -2666,8 +2663,6 @@ bool PosdbTable::prefilterMaxPossibleScoreByDistance(QueryTermInfo *qtibuf, cons
 	logTrace(g_conf.m_logTracePosdb, "BEGIN");
 
 
-	// reset ring buf. make all slots 0xff. should be 1000 cycles or so.
-	memset ( ringBuf, 0xff, RINGBUFSIZE );
 
 	// now to speed up 'time enough for love' query which does not
 	// have many super high scoring guys on top we need a more restrictive
@@ -3225,8 +3220,11 @@ void PosdbTable::createNonBodyTermPairScoreMatrix(const char **miniMergedList, c
 }
 
 
-
-float PosdbTable::createHighestScoringNonBodyPosArray(const char **miniMergedList, const char **miniMergedEnd, const char **highestScoringNonBodyPos, DocIdScore *pdcs) {
+//
+// Finds the highest single term score sum.
+// Creates array of highest scoring non-body positions
+//
+float PosdbTable::getMinSingleTermScoreSum(const char **miniMergedList, const char **miniMergedEnd, const char **highestScoringNonBodyPos, DocIdScore *pdcs) {
 	float minSingleScore = 999999999.0;
 
 	logTrace(g_conf.m_logTracePosdb, "BEGIN");
@@ -3290,6 +3288,11 @@ float PosdbTable::createHighestScoringNonBodyPosArray(const char **miniMergedLis
 // Does NOT scan the word position lists.
 // Also tries to sub-out each term with the title or linktext wordpos term
 //   pointed to by "highestScoringNonBodyPos[i]".
+//
+// OUTPUT:
+//   m_bestMinTermPairWindowScore: The best minimum window score
+//   m_bestMinTermPairWindowPtrs : Pointers to query term positions giving the best minimum score
+//
 void PosdbTable::findMinTermPairScoreInWindow(const char **ptrs, const char **highestScoringNonBodyPos, float *scoreMatrix) {
 	const char *wpi;
 	const char *wpj;
@@ -3392,7 +3395,7 @@ void PosdbTable::findMinTermPairScoreInWindow(const char **ptrs, const char **hi
 			}
 
 			// wikipedia phrase weight
-			if ( wikiWeight != 1.0 ) {
+			if ( !almostEqualFloat(wikiWeight, 1.0) ) {
 				max *= wikiWeight;
 			}
 
@@ -3469,7 +3472,7 @@ void PosdbTable::findMinTermPairScoreInWindow(const char **ptrs, const char **hi
 
 
 
-void PosdbTable::slidingWindowAlgorithm(const char **miniMergedList, const char **miniMergedEnd, const char **highestScoringNonBodyPos, const char **winnerStack, const char **xpos, float *scoreMatrix) {
+float PosdbTable::getMinTermPairScoreSlidingWindow(const char **miniMergedList, const char **miniMergedEnd, const char **highestScoringNonBodyPos, const char **winnerStack, const char **xpos, float *scoreMatrix, DocIdScore *pdcs) {
 	bool allNull;
 	int32_t minPos = 0;
 
@@ -3565,7 +3568,7 @@ void PosdbTable::slidingWindowAlgorithm(const char **miniMergedList, const char 
 		// "scoreMatrix" contains the highest scoring non-body term pair score, which will 
 		// be used if higher than the calculated score for the terms.
 		//
-		// Sets m_bestMinTermPairWindowScore if this window score beats it.
+		// Sets m_bestMinTermPairWindowScore and m_bestMinTermPairWindowPtrs if this window score beats it.
 		//
 		findMinTermPairScoreInWindow(xpos, highestScoringNonBodyPos, scoreMatrix);
 
@@ -3658,12 +3661,9 @@ void PosdbTable::slidingWindowAlgorithm(const char **miniMergedList, const char 
 		} while( advanceMin && !doneSliding );
 
 	} // end of while( !doneSliding )
-}
 
 
-float PosdbTable::zakAlgorithm(const char **miniMergedList, const char **miniMergedEnd, DocIdScore *pdcs) {
 	float minPairScore = -1.0;
-
 	logTrace(g_conf.m_logTracePosdb, "Zak algorithm begins");
 
 	for(int32_t i=0; i < m_numQueryTermInfos; i++) {
@@ -3710,6 +3710,9 @@ float PosdbTable::zakAlgorithm(const char **miniMergedList, const char **miniMer
 	logTrace(g_conf.m_logTracePosdb, "Zak algorithm ends. minPairScore=%f", minPairScore);
 	return minPairScore;
 }
+
+
+
 
 
 // . compare the output of this to intersectLists9_r()
@@ -3930,16 +3933,21 @@ void PosdbTable::intersectLists10_r ( ) {
 					//## score, before entering the main scoring loop below
 					//##
 
-
+					//
 					// TODO: consider skipping this pre-filter if it sucks, as it does
 					// for 'time enough for love'. it might save time!
 					//
 					// Calculate maximum possible score for a document. If the max score
 					// is lower than the current minimum winning score, give up already
-					// now and skip to the next docid.
+					// now and skip to the next docid. 
+					//
+					// minWinningScore is the score of the lowest scoring doc in m_topTree IF
+					// the topTree contains the number of docs requested. Otherwise it is -1
+					// and the doc is inserted no matter the score.
 					//
 					// Only go through this if we actually have a minimum score to compare with ...
-					// No need if minWinningScore is still -1
+					// No need if minWinningScore is still -1.
+					//
 					if ( minWinningScore >= 0.0 ) {
 						logTrace(g_conf.m_logTracePosdb, "Compute 'upper bound' for each query term");
 
@@ -4074,7 +4082,7 @@ void PosdbTable::intersectLists10_r ( ) {
 				//#
 				//# SINGLE TERM SCORE LOOP
 				//#
-				minSingleScore = createHighestScoringNonBodyPosArray(miniMergedList, miniMergedEnd, highestScoringNonBodyPos, pdcs);
+				minSingleScore = getMinSingleTermScoreSum(miniMergedList, miniMergedEnd, highestScoringNonBodyPos, pdcs);
 
 
 				//#
@@ -4103,18 +4111,13 @@ void PosdbTable::intersectLists10_r ( ) {
 				//#
 				// After calling this, m_bestMinTermPairWindowPtrs will point to the
 				// term positions set ("window") that has the highest minimum score. These
-				// pointers are used in getTermPairScoreForAny called below.
-				slidingWindowAlgorithm(miniMergedList, miniMergedEnd, highestScoringNonBodyPos, winnerStack, xpos, scoreMatrix);
+				// pointers are used when determining the minimum term pair score returned
+				// by the function.
+				float minPairScore = getMinTermPairScoreSlidingWindow(miniMergedList, miniMergedEnd, highestScoringNonBodyPos, winnerStack, xpos, scoreMatrix, pdcs);
 
 
 				//#
-				//# Similar to NON-BODY TERM PAIR SCORING LOOP above
-				//#
-				float minPairScore = zakAlgorithm(miniMergedList, miniMergedEnd, pdcs);
-
-
-				//#
-				//# Find minimum score
+				//# Find minimum score - either single term or term pair
 				//#
 				minScore = 999999999.0;
 				// get a min score from all the term pairs
@@ -4125,7 +4128,7 @@ void PosdbTable::intersectLists10_r ( ) {
 				if ( minSingleScore < minScore ) {
 					minScore = minSingleScore;
 				}
-				logTrace(g_conf.m_logTracePosdb, "minPairScore=%f, minScore=%f", minPairScore, minScore);
+				logTrace(g_conf.m_logTracePosdb, "minPairScore=%f, minScore=%f for docId %" PRIu64 "", minPairScore, minScore, m_docId);
 
 				
 				// No positive score? Then skip the doc
@@ -4148,9 +4151,10 @@ void PosdbTable::intersectLists10_r ( ) {
 			if( highestInlinkSiteRank > siteRank ) {
 				//adjust effective siterank because a high-rank site linked to it. Don't adjust it too much though.
 				effectiveSiteRank = siteRank + (highestInlinkSiteRank-siteRank) / 3.0;
+				logTrace(g_conf.m_logTracePosdb, "Highest inlink siterank %d > siterank %d. Adjusting to %f for docId %" PRIu64 "", highestInlinkSiteRank, (int)siteRank, effectiveSiteRank, m_docId);
 			}
-			// try dividing it by 3! (or multiply by .33333 faster)
 			score = minScore * (effectiveSiteRank*m_siteRankMultiplier+1.0);
+			logTrace(g_conf.m_logTracePosdb, "Score %f for docId %" PRIu64 "", score, m_docId);
 
 
 			//# 
@@ -4159,85 +4163,93 @@ void PosdbTable::intersectLists10_r ( ) {
 			//#
 			if ( m_msg39req->m_language == 0 || docLang == 0 || m_msg39req->m_language == docLang) {
 				score *= (m_msg39req->m_sameLangWeight); //SAMELANGMULT;
+				logTrace(g_conf.m_logTracePosdb, "Giving score a matching language boost of x%f: %f for docId %" PRIu64 "", m_msg39req->m_sameLangWeight, score, m_docId);
 			}
 
 
-			// assume filtered out
-			if ( currPassNum == INTERSECT_SCORING ) {
-				m_filtered++;
-			}
 
-			//
-			// if we have a gbsortby:price term then score exclusively on that
-			//
-			if ( m_sortByTermNum >= 0 ) {
-				// no term?
-				if ( ! miniMergedList[m_sortByTermInfoNum] ) {
-					// advance to next docid
-					docIdPtr += 6;
-					// Continue docIdPtr < docIdEnd loop
-					continue;
+			//#
+			//# Handle sortby int/float and minimum docid/score pairs
+			//#
+
+			if( m_sortByTermNum >= 0 || m_sortByTermNumInt >= 0 || m_hasMaxSerpScore ) {
+				// assume filtered out
+				if ( currPassNum == INTERSECT_SCORING ) {
+					m_filtered++;
 				}
-				
-				score = Posdb::getFloat (miniMergedList[m_sortByTermInfoNum]);
-			}
 
-			if ( m_sortByTermNumInt >= 0 ) {
-				// no term?
-				if ( ! miniMergedList[m_sortByTermInfoNumInt] ) {
-					// advance to next docid
-					docIdPtr += 6;
-					// Continue docIdPtr < docIdEnd loop
-					continue;
+				//
+				// if we have a gbsortby:price term then score exclusively on that
+				//
+				if ( m_sortByTermNum >= 0 ) {
+					// no term?
+					if ( ! miniMergedList[m_sortByTermInfoNum] ) {
+						// advance to next docid
+						docIdPtr += 6;
+						// Continue docIdPtr < docIdEnd loop
+						continue;
+					}
+
+					score = Posdb::getFloat(miniMergedList[m_sortByTermInfoNum]);
 				}
-				
-				intScore = Posdb::getInt(miniMergedList[m_sortByTermInfoNumInt]);
-				// do this so hasMaxSerpScore below works, although
-				// because of roundoff errors we might lose a docid
-				// through the cracks in the widget.
-				//score = (float)intScore;
-			}
 
-
-			// now we have a maxscore/maxdocid upper range so the widget
-			// can append only new results to an older result set.
-			if ( m_hasMaxSerpScore ) {
-				bool skipToNext = false;
-				// if dealing with an "int" score use the extra precision
-				// of the double that m_maxSerpScore is!
 				if ( m_sortByTermNumInt >= 0 ) {
-					if ( intScore > (int32_t)m_msg39req->m_maxSerpScore ) {
-						skipToNext = true;
+					// no term?
+					if ( ! miniMergedList[m_sortByTermInfoNumInt] ) {
+						// advance to next docid
+						docIdPtr += 6;
+						// Continue docIdPtr < docIdEnd loop
+						continue;
 					}
-					else
-					if ( intScore == (int32_t)m_msg39req->m_maxSerpScore && (int64_t)m_docId <= m_msg39req->m_minSerpDocId ) {
-						skipToNext = true;
-					}
+
+					intScore = Posdb::getInt(miniMergedList[m_sortByTermInfoNumInt]);
+					// do this so hasMaxSerpScore below works, although
+					// because of roundoff errors we might lose a docid
+					// through the cracks in the widget.
+					//score = (float)intScore;
 				}
-				else {
-					if ( score > (float)m_msg39req->m_maxSerpScore ) {
-						skipToNext = true;
+
+
+				// now we have a maxscore/maxdocid upper range so the widget
+				// can append only new results to an older result set.
+				if ( m_hasMaxSerpScore ) {
+					bool skipToNext = false;
+					// if dealing with an "int" score use the extra precision
+					// of the double that m_maxSerpScore is!
+					if ( m_sortByTermNumInt >= 0 ) {
+						if ( intScore > (int32_t)m_msg39req->m_maxSerpScore ) {
+							skipToNext = true;
+						}
+						else
+						if ( intScore == (int32_t)m_msg39req->m_maxSerpScore && (int64_t)m_docId <= m_msg39req->m_minSerpDocId ) {
+							skipToNext = true;
+						}
 					}
-					else
-					if ( score == m_msg39req->m_maxSerpScore && (int64_t)m_docId <= m_msg39req->m_minSerpDocId ) {
-						skipToNext = true;
+					else {
+						if ( score > (float)m_msg39req->m_maxSerpScore ) {
+							skipToNext = true;
+						}
+						else
+						if ( almostEqualFloat(score, (float)m_msg39req->m_maxSerpScore) && (int64_t)m_docId <= m_msg39req->m_minSerpDocId ) {
+							//@todo: Why is  m_msg39req->m_maxSerpScore double and score float?
+							skipToNext = true;
+						}
+					}
+
+					if( skipToNext ) {				
+						// advance to next docid
+						docIdPtr += 6;
+						// Continue docIdPtr < docIdEnd loop
+						continue;
 					}
 				}
 
-				if( skipToNext ) {				
-					// advance to next docid
-					docIdPtr += 6;
-					// Continue docIdPtr < docIdEnd loop
-					continue;
+				// we did not get filtered out
+				if ( currPassNum == INTERSECT_SCORING ) {
+					m_filtered--;
 				}
 			}
 
-
-			// we did not get filtered out
-			if ( currPassNum == INTERSECT_SCORING ) {
-				m_filtered--;
-			}
-			
 
 			// . seoDebug hack so we can set "dcs"
 			// . we only come here if we actually made it into m_topTree
@@ -4254,32 +4266,42 @@ void PosdbTable::intersectLists10_r ( ) {
 
 
 			if( currPassNum == INTERSECT_SCORING ) {
-				// add to top tree then!
+
+				//#
+				//# SCORING DONE! Add to top-scorer tree.
+				//#
+
 				int32_t tn = m_topTree->getEmptyNode();
-				TopNode *t  = &m_topTree->m_nodes[tn];
+
+				// Sanity check
+				if( tn < 0 ) {
+					log(LOG_LOGIC,"%s:%s:%d: No space left in m_topTree", __FILE__, __func__, __LINE__);
+					gbshutdownLogicError();
+				}
+
+				TopNode *t  = m_topTree->getNode(tn);
+
 				// set the score and docid ptr
 				t->m_score = score;
 				t->m_docId = m_docId;
-				// sanity
-				// take this out i've seen this core here before, no idea
-				// why, but why core?
-				//if ( m_docId == 0 )
-				//	gbshutdownAbort(true);
+
 				// use an integer score like lastSpidered timestamp?
 				if ( m_sortByTermNumInt >= 0 ) {
 					t->m_intScore = intScore;
 					t->m_score = 0.0;
 					
 					if ( ! m_topTree->m_useIntScores) {
-						gbshutdownAbort(true);
+						log(LOG_LOGIC,"%s:%s:%d: Got int score, but m_topTree not setup for int scores!", __FILE__, __func__, __LINE__);
+						gbshutdownLogicError();
 					}
 				}
-				
-				// . this will not add if tree is full and it is less than the 
-				//   m_lowNode in score
-				// . if it does get added to a full tree, lowNode will be 
-				//   removed
-				m_topTree->addNode ( t, tn);
+
+				//
+				// This will not add if tree is full and it is less than the m_lowNode in score.
+				//
+				// If it does get added to a full tree, lowNode will be removed.
+				//
+				m_topTree->addNode(t, tn);
 
 				// top tree only holds enough docids to satisfy the
 				// m_msg39request::m_docsToGet (m_msg39req->m_docsToGet) request 
@@ -4290,11 +4312,11 @@ void PosdbTable::intersectLists10_r ( ) {
 				// enough domains represented in the search results.
 				// See TopTree::addNode(). it will not add the "t" node if
 				// its score is not high enough when the top tree is full.
-				if ( m_topTree->m_numUsedNodes > m_topTree->m_docsWanted ) {
+				if ( m_topTree->getNumUsedNodes() > m_topTree->m_docsWanted ) {
 					// get the lowest scoring node
 					int32_t lowNode = m_topTree->getLowNode();
 					// and record its score in "minWinningScore"
-					minWinningScore = m_topTree->m_nodes[lowNode].m_score;
+					minWinningScore = m_topTree->getNode(lowNode)->m_score;
 				}
 			}
 
@@ -5725,7 +5747,7 @@ static inline bool isTermValueInRange( const char *p, const QueryTerm *qt ) {
 
 	if ( qt->m_fieldCode == FIELD_GBNUMBEREQUALFLOAT ) {
 		float score2 = Posdb::getFloat ( p );
-		return ( score2 == qt->m_qword->m_float );
+		return ( almostEqualFloat(score2, qt->m_qword->m_float) );
 	}
 
 	if ( qt->m_fieldCode == FIELD_GBNUMBERMININT ) {
@@ -5750,6 +5772,7 @@ static inline bool isTermValueInRange( const char *p, const QueryTerm *qt ) {
 
 	// how did this happen?
 	gbshutdownAbort(true);
+	return false;	// shut up PVS-Studio
 }
 
 

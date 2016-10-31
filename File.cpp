@@ -3,16 +3,18 @@
 #include "File.h"
 #include "Conf.h"
 #include "Loop.h"            // MAX_NUM_FDS etc.
+#include "GbMoveFile2.h"
 #include "Sanity.h"
 #include "ScopedLock.h"
 #include "GbMutex.h"
 #include <pthread.h>
+#include <fcntl.h>
 #include <sys/types.h>       // for open/lseek
 #include <sys/stat.h>        // for open
 
 // THE FOLLOWING IS ALL STATIC 'CUZ IT'S THE FD POOL
 // if someone is using a file we must make sure this is true...
-static int       s_isInitialized = false;
+static bool	s_isInitialized = false;
 
 static GbMutex s_mtx;
 static int64_t s_timestamps [ MAX_NUM_FDS ]; // when was it last accessed
@@ -84,7 +86,6 @@ File::File ( ) {
 	m_closedIt	= false;
 	m_closeCount = 0;
 	m_flags = 0;
-	m_forceRename = false;
 
 	pthread_mutex_init(&m_mtxFdManipulation,NULL);
 	
@@ -142,29 +143,24 @@ void File::set ( const char *filename ) {
 }
 
 bool File::rename ( const char *newFilename ) {
-	if ( getForceRename() || ::access( newFilename, F_OK ) != 0 ) {
-		// suppress error (we will catch it in rename anyway)
-		errno = 0;
-
-		// this returns 0 on success
-		if ( ::rename( getFilename(), newFilename ) != 0 ) {
-			// reset errno if file does not exist
-			if ( errno == ENOENT ) {
-				log( LOG_ERROR, "%s:%s:%d: disk: file [%s] does not exist.", __FILE__, __func__, __LINE__, getFilename() );
-				errno = 0;
-			} else {
-				log( LOG_ERROR, "%s:%s:%d: disk: rename [%s] to [%s]: [%s]",
-				     __FILE__, __func__, __LINE__, getFilename(), newFilename, mstrerror( errno ) );
-			}
-
-			logTrace( g_conf.m_logTraceFile, "END" );
-			return false;
-		}
-	} else {
+	if ( ::access(newFilename, F_OK) == 0 ) {
 		// new file exists
 		log( LOG_ERROR, "%s:%s:%d: disk: trying to rename [%s] to [%s] which exists.", __FILE__, __func__, __LINE__,
 		     getFilename(), newFilename );
-		gbshutdownAbort( true );
+		gbshutdownLogicError();
+	}
+
+	if ( ::rename(getFilename(), newFilename) != 0 ) {
+		// reset errno if file does not exist
+		if ( errno == ENOENT ) {
+			log( LOG_ERROR, "%s:%s:%d: disk: file [%s] does not exist.", __FILE__, __func__, __LINE__, getFilename() );
+			errno = 0;
+		} else {
+			log( LOG_ERROR, "%s:%s:%d: disk: rename [%s] to [%s]: [%s]",
+			     __FILE__, __func__, __LINE__, getFilename(), newFilename, mstrerror( errno ) );
+		}
+		logTrace( g_conf.m_logTraceFile, "END" );
+		return false;
 	}
 
 	// set to our new name
@@ -174,11 +170,39 @@ bool File::rename ( const char *newFilename ) {
 }
 
 
+bool File::movePhase1(const char *newFilename) {
+	if(::access( newFilename,F_OK) == 0) {
+		log(LOG_ERROR, "%s:%s:%d: disk: trying to rename [%s] to [%s] which exists.", __FILE__, __func__, __LINE__,
+		    getFilename(), newFilename);
+		gbshutdownLogicError();
+	}
+	if(moveFile2Phase1(getFilename(), newFilename) != 0)
+		return false;
+	return true;
+}
+
+bool File::movePhase2(const char *newFilename) {
+	if(moveFile2Phase2(getFilename(), newFilename) != 0)
+		return false;
+	set(newFilename);
+	return true;
+}
+
+
+void File::rollbackMovePhase1(const char *newFilename) {
+	if(::unlink(newFilename)!=0) {
+		log(LOG_ERROR, "%s:%s:%d: disk: trying to rollback renmae-phase1 [%s] to [%s], unlink() failed with errno=%d.", __FILE__, __func__, __LINE__,
+		    getFilename(), newFilename, errno);
+	}
+	//yes, we return void because when a rollback doesn't work then there isn't much we can do
+}
+
+
 // . open the file
 // . only call once per File after calling set()
-bool File::open ( int flags , int permissions ) {
+bool File::open(int flags) {
 	ScopedLock sl(m_mtxFdManipulation);
-	return open_unlocked(flags,permissions);
+	return open_unlocked(flags,getFileCreationFlags());
 }
 
 bool File::open_unlocked(int flags, int permissions) {

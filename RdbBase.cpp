@@ -15,8 +15,13 @@
 #include "Rebalance.h"
 #include "JobScheduler.h"
 #include "Process.h"
+#include "Sanity.h"
+#include "Dir.h"
+#include "File.h"
+#include "GbMoveFile.h"
 #include "ScopedLock.h"
-#include <sys/stat.h> //mkdir()
+#include <sys/stat.h> //mkdir(), stat()
+#include <fcntl.h>
 #include <algorithm>
 
 bool g_dumpMode = false;
@@ -34,6 +39,7 @@ RdbBase::RdbBase()
 	m_numFiles  = 0;
 	m_rdb = NULL;
 	m_nextMergeForced = false;
+	m_collectionDirName[0] = '\0';
 	m_dbname[0] = '\0';
 	m_dbnameLen = 0;
 
@@ -55,6 +61,7 @@ RdbBase::RdbBase()
 	m_mergeStartFileNum = 0;
 	m_useHalfKeys = false;
 	m_useIndexFile = false;
+	m_isTitledb = false;
 	m_ks = 0;
 	m_pageSize = 0;
 	m_niceness = 0;
@@ -104,24 +111,12 @@ bool RdbBase::init(const char *dir,
                    Rdb *rdb,
                    bool useIndexFile) {
 
+	if(!dir)
+		gbshutdownLogicError();
 
 	m_didRepair = false;
- top:
-	// reset all
-	reset();
 
-	// sanity
-	if ( ! dir ) {
-		g_process.shutdownAbort(true);
-	}
-
-	// set all our contained classes
-	//m_dir.set ( dir );
-	// set all our contained classes
-	// . "tmp" is bogus
-	// . /home/mwells/github/coll.john-test1113.654coll.john-test1113.655
-	char collectionDirName[1024];
-	sprintf ( collectionDirName , "%scoll.%s.%" PRId32 , dir , coll , (int32_t)collnum );
+	sprintf(m_collectionDirName, "%scoll.%s.%" PRId32, dir, coll, (int32_t)collnum);
 
 	// logDebugAdmin
 	log(LOG_DEBUG,"db: adding new base for dir=%s coll=%s collnum=%" PRId32" db=%s",
@@ -132,20 +127,22 @@ bool RdbBase::init(const char *dir,
 	if ( rdb->isCollectionless() ) {
 		if ( collnum != (collnum_t) 0 ) {
 			log( LOG_ERROR, "db: collnum not zero for collectionless rdb.");
-			g_process.shutdownAbort(true);
+			gbshutdownLogicError();
 		}
 
 		// make a special "cat" dir for it if we need to
-		sprintf ( collectionDirName , "%s%s" , dir , dbname );
-		int32_t status = ::mkdir ( collectionDirName , getDirCreationFlags() );
-        if ( status == -1 && errno != EEXIST && errno ) {
-	        log( LOG_WARN, "db: Failed to make directory %s: %s.", collectionDirName, mstrerror( errno ) );
-	        return false;
-        }
+		sprintf(m_collectionDirName, "%s%s", dir, dbname);
+		int32_t status = ::mkdir ( m_collectionDirName , getDirCreationFlags() );
+		if ( status == -1 && errno != EEXIST && errno ) {
+			log( LOG_WARN, "db: Failed to make directory %s: %s.", m_collectionDirName, mstrerror( errno ) );
+			return false;
+		}
 	}
 
-	//m_dir.set ( dir , coll );
-	m_dir.set ( collectionDirName );
+ top:
+	// reset all
+	reset();
+
 	m_coll    = coll;
 	m_collnum = collnum;
 	m_tree    = tree;
@@ -160,6 +157,7 @@ bool RdbBase::init(const char *dir,
 	// store the other parameters
 	m_fixedDataSize    = fixedDataSize;
 	m_useHalfKeys      = useHalfKeys;
+	m_isTitledb        = rdb->isTitledb();
 	m_ks               = keySize;
 	m_pageSize         = pageSize;
 	m_useIndexFile		= useIndexFile;
@@ -167,7 +165,7 @@ bool RdbBase::init(const char *dir,
 	if (m_useIndexFile) {
 		char indexName[64];
 		sprintf(indexName, "%s-saved.idx", m_dbname);
-		m_treeIndex.set(m_dir.getDir(), indexName, m_fixedDataSize, m_useHalfKeys, m_ks, m_rdb->getRdbId());
+		m_treeIndex.set(m_collectionDirName, indexName, m_fixedDataSize, m_useHalfKeys, m_ks, m_rdb->getRdbId());
 
 		// only attempt to read/generate when we have tree/bucket
 		if ((m_tree && m_tree->getNumUsedNodes() > 0) || (m_buckets && m_buckets->getNumKeys() > 0)) {
@@ -181,11 +179,11 @@ bool RdbBase::init(const char *dir,
 				}
 
 				log(LOG_INFO, "db: Attempting to generate index file %s/%s-saved.dat. May take a while.",
-				    m_dir.getDir(), m_dbname);
+				    m_collectionDirName, m_dbname);
 
 				bool result = m_tree ? m_treeIndex.generateIndex(m_collnum, m_tree) : m_treeIndex.generateIndex(m_collnum, m_buckets);
 				if (!result) {
-					logError("db: Index generation failed for %s/%s-saved.dat.", m_dir.getDir(), m_dbname);
+					logError("db: Index generation failed for %s/%s-saved.dat.", m_collectionDirName, m_dbname);
 					gbshutdownCorrupted();
 				}
 
@@ -212,7 +210,6 @@ bool RdbBase::init(const char *dir,
 	m_minToMergeDefault = minToMergeArg;
 
 	// . set our m_files array
-	// . m_dir is bogus causing this to fail
 	if ( ! setFiles () ) {
 		// try again if we did a repair
 		if ( m_didRepair ) {
@@ -241,7 +238,7 @@ void RdbBase::specialInjectFileInit(const char *dir,
 	                            int32_t pageSize,
 	                            int32_t minToMerge)
 {
-	m_dir.set(dir);
+	strcpy(m_collectionDirName, dir);
 	strcpy(m_dbname,dbname);
 	m_dbnameLen = strlen(dbname);
 	m_coll = "main";
@@ -249,6 +246,7 @@ void RdbBase::specialInjectFileInit(const char *dir,
 	m_rdb = rdb;
 	m_fixedDataSize = fixedDataSize;
 	m_useHalfKeys = useHalfKeys;
+	m_isTitledb = rdb->isTitledb();
 	m_ks = ks;
 	m_pageSize = pageSize;
 	m_minToMerge = minToMerge;
@@ -262,28 +260,21 @@ bool RdbBase::moveToTrash(const char *dstDir) {
 	// loop over all files
 	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) {
 		// . rename the map file
-		// . get the "base" filename, does not include directory
-		BigFile *f = m_fileInfo[i].m_map->getFile();
-		char dstFilename [1024];
-		sprintf ( dstFilename , "%s" , f->getFilename());
-
-		// ALWAYS log what we are doing
-		logf(LOG_INFO,"repair: Renaming %s to %s%s", f->getFilename(),dstDir,dstFilename);
-
-		if ( ! f->rename ( dstFilename , dstDir ) ) {
-			log( LOG_WARN, "repair: Moving file had error: %s.", mstrerror( errno ) );
-			return false;
+		{
+			BigFile *f = m_fileInfo[i].m_map->getFile();
+			logf(LOG_INFO,"repair: Renaming %s to %s%s", f->getFilename(), dstDir, f->getFilename());
+			if ( ! f->rename(f->getFilename(),dstDir) ) {
+				log( LOG_WARN, "repair: Moving file had error: %s.", mstrerror( errno ) );
+				return false;
+			}
 		}
 
+		//rename index file if used
 		if (m_useIndexFile) {
-			f = m_fileInfo[i].m_index->getFile();
-			sprintf(dstFilename, "%s", f->getFilename());
-
+			BigFile *f = m_fileInfo[i].m_index->getFile();
 			if (f->doesExist()) {
-				// ALWAYS log what we are doing
-				logf(LOG_INFO, "repair: Renaming %s to %s%s", f->getFilename(), dstDir, dstFilename);
-
-				if (!f->rename(dstFilename, dstDir)) {
+				logf(LOG_INFO, "repair: Renaming %s to %s%s", f->getFilename(), dstDir, f->getFilename());
+				if (!f->rename(f->getFilename(),dstDir)) {
 					log(LOG_WARN, "repair: Moving file had error: %s.", mstrerror(errno));
 					return false;
 				}
@@ -291,13 +282,13 @@ bool RdbBase::moveToTrash(const char *dstDir) {
 		}
 
 		// move the data file
-		f = m_fileInfo[i].m_file;
-		sprintf ( dstFilename , "%s" , f->getFilename());
-		// ALWAYS log what we are doing
-		logf(LOG_INFO,"repair: Renaming %s to %s%s", f->getFilename(),dstDir,dstFilename);
-		if ( ! f->rename ( dstFilename, dstDir  ) ) {
-			log( LOG_WARN, "repair: Moving file had error: %s.", mstrerror( errno ) );
-			return false;
+		{
+			BigFile *f = m_fileInfo[i].m_file;
+			logf(LOG_INFO,"repair: Renaming %s to %s%s", f->getFilename(), dstDir, f->getFilename());
+			if ( ! f->rename(f->getFilename(),dstDir) ) {
+				log( LOG_WARN, "repair: Moving file had error: %s.", mstrerror( errno ) );
+				return false;
+			}
 		}
 	}
 
@@ -350,7 +341,7 @@ bool RdbBase::removeRebuildFromFilenames ( ) {
 
 bool RdbBase::removeRebuildFromFilename ( BigFile *f ) {
 	// get the filename
-	char *ff = f->getFilename();
+	const char *ff = f->getFilename();
 	// copy it
 	char buf[1024];
 	strncpy ( buf , ff, sizeof(buf) );
@@ -371,7 +362,7 @@ bool RdbBase::removeRebuildFromFilename ( BigFile *f ) {
 	// now rename this file
 	logf(LOG_INFO,"repair: Renaming %s to %s",
 	     f->getFilename(),buf);
-	if ( ! f->rename ( buf ) ) {
+	if ( ! f->rename(buf,NULL) ) {
 		log( LOG_WARN, "repair: Rename to %s failed", buf );
 		return false;
 	}
@@ -436,36 +427,60 @@ bool RdbBase::parseFilename( const char* filename, int32_t *p_fileId, int32_t *p
 	return true;
 }
 
+
+bool RdbBase::hasFileId(int32_t fildId) const {
+	for(int i=0; i<m_numFiles; i++)
+		if(m_fileInfo[i].m_fileId==fildId)
+			return true;
+	return false;
+}
+
+
+
 // . this is called to open the initial rdb data and map files we have
 // . first file is always the merge file (may be empty)
 // . returns false on error
 bool RdbBase::setFiles ( ) {
-	// set our directory class
-	if ( ! m_dir.open ( ) ) {
-		// we are getting this from a bogus m_dir
-		log( LOG_WARN, "db: Had error opening directory %s", m_dir.getDir());
+	if(!loadFilesFromDir(m_collectionDirName))
+		return false;
+
+	// spiderdb should start with file 0001.dat or 0000.dat
+	if ( m_numFiles > 0 && m_fileInfo[0].m_fileId > 1 && m_rdb->getRdbId() == RDB_SPIDERDB ) {
+		//isj: is that even true anymore? Ok, crashed merges and lost file0000* are not a
+		//good thing but I don't see why it should affect spiderdb especially bad.
+		return fixNonfirstSpiderdbFiles();
+	}
+
+
+	// ensure files are sharded correctly
+	verifyFileSharding();
+
+	return true;
+}
+
+
+bool RdbBase::loadFilesFromDir(const char *dirName) {
+	Dir dir;
+	if(!dir.set(dirName))
+		return false;
+
+	if ( ! dir.open ( ) ) {
+		// we are getting this from a bogus dir
+		log( LOG_WARN, "db: Had error opening directory %s", m_collectionDirName);
 		return false;
 	}
 
 	// note it
-	log(LOG_DEBUG,"db: Loading files for %s coll=%s (%" PRId32").",
-	     m_dbname,m_coll,(int32_t)m_collnum );
+	log(LOG_DEBUG,"db: Loading files for %s coll=%s (%" PRId32") from %s",
+	     m_dbname, m_coll, (int32_t)m_collnum, dirName );
 	// . set our m_files array
 	// . addFile() will return -1 and set g_errno on error
 	// . the lower the fileId the older the data 
 	//   (but not necessarily the file)
 	// . we now put a '*' at end of "*.dat*" since we may be reading in
 	//   some headless BigFiles left over froma killed merge
-	const char *filename;
 
-	while ( ( filename = m_dir.getNextFilename ( "*.dat*" ) ) ) {
-		// filename must be a certain length
-		int32_t filenameLen = strlen(filename);
-
-		// we need at least "indexdb0000.dat"
-		if ( filenameLen < m_dbnameLen + 8 ) {
-			continue;
-		}
+	while( const char *filename = dir.getNextFilename("*.dat*") ) {
 
 		// ensure filename starts w/ our m_dbname
 		if ( strncmp ( filename , m_dbname , m_dbnameLen ) != 0 ) {
@@ -486,57 +501,38 @@ bool RdbBase::setFiles ( ) {
 		// if we are titledb, we got the secondary id
 		// . if we are titledb we should have a -xxx after
 		// . if none is there it needs to be converted!
-		if ( m_rdb->isTitledb() && fileId2 == -1 ) {
+		if ( m_isTitledb && fileId2 == -1 ) {
 			// critical
 			log("gb: bad title filename of %s. Halting.",filename);
 			g_errno = EBADENGINEER;
 			return false;
 		}
 
-		// don't add if already in there
-		int32_t i ;
-		for ( i = 0 ; i < m_numFiles ; i++ ) {
-			if ( m_fileInfo[i].m_fileId >= fileId ) {
-				break;
-			}
-		}
-
-		if ( i < m_numFiles && m_fileInfo[i].m_fileId == fileId ) {
+		// don't add if already in there (happens for eg dbname0001.dat.part*)
+		if(hasFileId(fileId))
 			continue;
-		}
 
-		// sometimes an unlink() does not complete properly and we
-		// end up with remnant files that are 0 bytes. so let's skip
-		// those guys.
-		File ff;
-		ff.set ( m_dir.getDir() , filename );
-
-		// does this file exist?
-		int32_t exists = ff.doesExist() ;
-
-		// core if does not exist (sanity check)
-		if ( exists == 0 ) {
-			log( LOG_WARN, "db: File %s does not exist.", filename );
+		// sometimes an unlink() does not complete properly and we end up with
+		// remnant files that are 0 bytes. so let's clean up and skip them
+		SafeBuf fullFilename;
+		fullFilename.safePrintf("%s/%s", m_collectionDirName, filename);
+		struct stat st;
+		if(stat(fullFilename.getBufStart(),&st)!=0) {
+			log(LOG_ERROR,"stat(%s) failed with errno=%d (%s)", fullFilename.getBufStart(), errno, strerror(errno));
 			return false;
 		}
 
-		// bail on error calling ff.doesExist()
-		if ( exists == -1 ) {
-			return false;
-		}
-
-		// skip if 0 bytes or had error calling ff.getFileSize()
-		if ( ff.getFileSize() == 0 ) {
-			// actually, we have to move to trash because
+		// cleanup&skip if 0 bytes
+		if ( st.st_size==0 ) {
 			// if we leave it there and we start writing
 			// to that file id, exit, then restart, it
 			// causes problems...
 			char src[1024];
 			char dst[1024];
-			sprintf ( src , "%s/%s",m_dir.getDir(),filename);
+			sprintf ( src , "%s/%s", m_collectionDirName, filename);
 			sprintf ( dst , "%s/trash/%s", g_hostdb.m_dir,filename);
 			log( LOG_WARN, "db: Moving file %s/%s of 0 bytes into trash subdir. rename %s to %s",
-			     m_dir.getDir(), filename, src, dst );
+			     m_collectionDirName, filename, src, dst );
 			if ( ::rename ( src , dst ) ) {
 				log( LOG_WARN, "db: Moving file had error: %s.", mstrerror( errno ) );
 				return false;
@@ -553,93 +549,115 @@ bool RdbBase::setFiles ( ) {
 		}
 	}
 
-	// everyone should start with file 0001.dat or 0000.dat
-	if ( m_numFiles > 0 && m_fileInfo[0].m_fileId > 1 && m_rdb->getRdbId() == RDB_SPIDERDB ) {
-		log( LOG_WARN, "db: missing file id 0001.dat for %s in coll %s. "
-		    "Fix this or it'll core later. Just rename the next file "
-		    "in line to 0001.dat/map. We probably cored at a "
-		    "really bad time during the end of a merge process.",
-		    m_dbname, m_coll );
-
-		// do not re-do repair! hmmm
-		if ( m_didRepair ) return false;
-
-		// just fix it for them
-		BigFile bf;
-		SafeBuf oldName;
-		oldName.safePrintf("%s%04" PRId32".dat", m_dbname, m_fileInfo[0].m_fileId);
-		bf.set ( m_dir.getDir() , oldName.getBufStart() );
-
-		// rename it to like "spiderdb.0001.dat"
-		SafeBuf newName;
-		newName.safePrintf("%s/%s0001.dat",m_dir.getDir(),m_dbname);
-		bf.rename ( newName.getBufStart() );
-
-		// and delete the old map
-		SafeBuf oldMap;
-		oldMap.safePrintf("%s/%s0001.map",m_dir.getDir(),m_dbname);
-		File omf;
-		omf.set ( oldMap.getBufStart() );
-		omf.unlink();
-
-		// get the map file name we want to move to 0001.map
-		BigFile cmf;
-		SafeBuf curMap;
-		curMap.safePrintf("%s%04" PRId32".map", m_dbname, m_fileInfo[0].m_fileId);
-		cmf.set ( m_dir.getDir(), curMap.getBufStart());
-
-		// rename to spiderdb0081.map to spiderdb0001.map
-		cmf.rename ( oldMap.getBufStart() );
-
-		if( m_useIndexFile ) {
-			// and delete the old index
-			SafeBuf oldIndex;
-			oldIndex.safePrintf("%s/%s0001.idx",m_dir.getDir(),m_dbname);
-			File oif;
-			oif.set ( oldIndex.getBufStart() );
-			oif.unlink();
-
-			// get the index file name we want to move to 0001.idx
-			BigFile cif;
-			SafeBuf curIndex;
-			curIndex.safePrintf("%s%04" PRId32".idx", m_dbname, m_fileInfo[0].m_fileId);
-			cif.set ( m_dir.getDir(), curIndex.getBufStart());
-
-			// rename to spiderdb0081.map to spiderdb0001.map
-			cif.rename ( oldIndex.getBufStart() );
-		}
-
-		// replace that first file then
-		m_didRepair = true;
-		return true;
-	}
-
-
-	m_dir.close();
-
-	// ensure files are sharded correctly
-	verifyFileSharding();
-
 	return true;
 }
+
+
+bool RdbBase::fixNonfirstSpiderdbFiles() {
+	log( LOG_WARN, "db: missing file id 0001.dat for %s in coll %s. "
+	    "Fix this or it'll core later. Just rename the next file "
+	    "in line to 0001.dat/map. We probably cored at a "
+	    "really bad time during the end of a merge process.",
+	    m_dbname, m_coll );
+
+	// do not re-do repair! hmmm
+	if ( m_didRepair ) return false;
+
+	// just fix it for them
+	BigFile bf;
+	SafeBuf oldName;
+	oldName.safePrintf("%s%04" PRId32".dat", m_dbname, m_fileInfo[0].m_fileId);
+	bf.set ( m_collectionDirName, oldName.getBufStart() );
+
+	// rename it to like "spiderdb.0001.dat"
+	SafeBuf newName;
+	newName.safePrintf("%s/%s0001.dat",m_collectionDirName,m_dbname);
+	bf.rename(newName.getBufStart(),NULL);
+
+	// and delete the old map
+	SafeBuf oldMap;
+	oldMap.safePrintf("%s/%s0001.map",m_collectionDirName,m_dbname);
+	File omf;
+	omf.set ( oldMap.getBufStart() );
+	omf.unlink();
+
+	// get the map file name we want to move to 0001.map
+	BigFile cmf;
+	SafeBuf curMap;
+	curMap.safePrintf("%s%04" PRId32".map", m_dbname, m_fileInfo[0].m_fileId);
+	cmf.set(m_collectionDirName, curMap.getBufStart());
+
+	// rename to spiderdb0081.map to spiderdb0001.map
+	cmf.rename(oldMap.getBufStart(), NULL);
+
+	if( m_useIndexFile ) {
+		// and delete the old index
+		SafeBuf oldIndex;
+		oldIndex.safePrintf("%s/%s0001.idx",m_collectionDirName,m_dbname);
+		File oif;
+		oif.set ( oldIndex.getBufStart() );
+		oif.unlink();
+
+		// get the index file name we want to move to 0001.idx
+		BigFile cif;
+		SafeBuf curIndex;
+		curIndex.safePrintf("%s%04" PRId32".idx", m_dbname, m_fileInfo[0].m_fileId);
+		cif.set(m_collectionDirName, curIndex.getBufStart());
+
+		// rename to spiderdb0081.map to spiderdb0001.map
+		cif.rename(oldIndex.getBufStart(),NULL);
+	}
+
+	// replace that first file then
+	m_didRepair = true;
+	return true;
+}
+
+
+//Generate filename from the total 4 combinations of titledb/not-titledb and normal-file/merging-file
+void RdbBase::generateFilename(char *buf, size_t bufsize, int32_t fileId, int32_t fileId2, int32_t mergeNum, int32_t endMergeFileId) {
+	if ( mergeNum <= 0 ) {
+		if ( m_isTitledb ) {
+			snprintf( buf, bufsize, "%s%04" PRId32"-%03" PRId32".dat",
+			          m_dbname, fileId, fileId2 );
+		} else {
+			snprintf( buf, bufsize, "%s%04" PRId32".dat",
+			          m_dbname, fileId );
+		}
+	} else {
+		if ( m_isTitledb ) {
+			snprintf( buf, bufsize, "%s%04" PRId32"-%03" PRId32".%03" PRId32".%04" PRId32".dat",
+			          m_dbname, fileId, fileId2, mergeNum, endMergeFileId );
+		} else {
+			snprintf( buf, bufsize, "%s%04" PRId32".%03" PRId32".%04" PRId32".dat",
+			          m_dbname, fileId, mergeNum, endMergeFileId );
+		}
+	}
+}
+
 
 // return the fileNum we added it to in the array
 // reutrn -1 and set g_errno on error
 int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t mergeNum, int32_t endMergeFileId ) {
-	int32_t n = m_numFiles;
+	// sanity check
+	if ( fileId2 < 0 && m_isTitledb )
+		gbshutdownLogicError();
 
 	// can't exceed this
-	if ( n >= MAX_RDB_FILES ) {
+	if ( m_numFiles >= MAX_RDB_FILES ) {
 		g_errno = ETOOMANYFILES;
 		log( LOG_LOGIC, "db: Can not have more than %" PRId32" files. File add failed.", ( int32_t ) MAX_RDB_FILES );
 		return -1;
 	}
 
+	// set the data file's filename
+	char name[1024];
+	generateFilename(name, sizeof(name), fileId, fileId2, mergeNum, endMergeFileId);
+
 	// HACK: skip to avoid a OOM lockup. if RdbBase cannot dump
 	// its data to disk it can backlog everyone and memory will
 	// never get freed up.
-	int64_t mm = g_conf.m_maxMem;
-	g_conf.m_maxMem = 0x0fffffffffffffffLL;
+	ScopedMemoryLimitBypass scopedMemmoryLimitBypass;
 	BigFile *f;
 
  tryAgain:
@@ -647,32 +665,13 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	try {
 		f = new (BigFile);
 	} catch ( ... ) {
-		g_conf.m_maxMem = mm;
 		g_errno = ENOMEM;
 		log( LOG_WARN, "RdbBase: new(%i): %s", ( int ) sizeof( BigFile ), mstrerror( g_errno ) );
 		return -1;
 	}
 	mnew( f, sizeof( BigFile ), "RdbBFile" );
 
-	// set the data file's filename
-	char name[1024];
-	if ( mergeNum <= 0 ) {
-		if ( m_rdb->isTitledb() ) {
-			snprintf( name, sizeof(name), "%s%04" PRId32"-%03" PRId32".dat", m_dbname, fileId, fileId2 );
-		} else {
-			snprintf( name, sizeof(name), "%s%04" PRId32".dat", m_dbname, fileId );
-		}
-	} else {
-		if ( m_rdb->isTitledb() ) {
-			snprintf( name, sizeof(name), "%s%04" PRId32"-%03" PRId32".%03" PRId32".%04" PRId32".dat",
-			          m_dbname, fileId, fileId2, mergeNum, endMergeFileId );
-		} else {
-			snprintf( name, sizeof(name), "%s%04" PRId32".%03" PRId32".%04" PRId32".dat",
-			          m_dbname, fileId, mergeNum, endMergeFileId );
-		}
-	}
-
-	f->set(m_dir.getDir(), name, NULL);
+	f->set(m_collectionDirName, name);
 
 	// if new ensure does not exist
 	if ( isNew && f->doesExist() ) {
@@ -683,13 +682,11 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 		// move to trash if empty
 		if ( isEmpty ) {
 			// otherwise, move it to the trash
-			SafeBuf cmd;
-			cmd.safePrintf("mv %s/%s %s/trash/",
-				       f->getDir(),
-				       f->getFilename(),
-				       g_hostdb.m_dir);
-			log("rdb: %s",cmd.getBufStart() );
-			gbsystem ( cmd.getBufStart() );
+			SafeBuf src_filename;
+			src_filename.safePrintf("%s/%s", f->getDir(), f->getFilename());
+			SafeBuf dst_filename;
+			dst_filename.safePrintf("%s/trash/%s", g_hostdb.m_dir, f->getFilename());
+			moveFile(src_filename.getBufStart(), dst_filename.getBufStart());
 		}
 
 		// nuke it either way
@@ -710,7 +707,6 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	try {
 		m = new (RdbMap);
 	} catch ( ... ) {
-		g_conf.m_maxMem = mm;
 		g_errno = ENOMEM;
 		log( LOG_WARN, "RdbBase: new(%i): %s", (int)sizeof(RdbMap), mstrerror(g_errno) );
 		mdelete ( f , sizeof(BigFile),"RdbBFile");
@@ -725,7 +721,6 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 		try {
 			in = new (RdbIndex);
 		} catch ( ... ) {
-			g_conf.m_maxMem = mm;
 			g_errno = ENOMEM;
 			log( LOG_WARN, "RdbBase: new(%i): %s", (int)sizeof(RdbIndex), mstrerror(g_errno) );
 			mdelete ( f , sizeof(BigFile),"RdbBFile");
@@ -739,12 +734,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	}
 
 	// reinstate the memory limit
-	g_conf.m_maxMem = mm;
-
-	// sanity check
-	if ( fileId2 < 0 && m_rdb->isTitledb() ) {
-		g_process.shutdownAbort(true);
-	}
+	scopedMemmoryLimitBypass.release();
 
 	// debug help
 	if ( isNew ) {
@@ -752,7 +742,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	}
 
 	// if not a new file sanity check it
-	for ( int32_t j = 0 ; ! isNew && j < f->m_maxParts - 1 ; j++ ) {
+	for ( int32_t j = 0 ; ! isNew && j < f->getMaxParts() - 1 ; j++ ) {
 		// might be headless
 		File *ff = f->getFile2(j);
 		if ( ! ff ) {
@@ -777,7 +767,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 
 	// set the map file's  filename
 	sprintf ( name , "%s%04" PRId32".map", m_dbname, fileId );
-	m->set(m_dir.getDir(), name, m_fixedDataSize, m_useHalfKeys, m_ks, m_pageSize);
+	m->set(m_collectionDirName, name, m_fixedDataSize, m_useHalfKeys, m_ks, m_pageSize);
 	if ( ! isNew && ! m->readMap ( f ) ) {
 		// if out of memory, do not try to regen for that
 		if ( g_errno == ENOMEM ) {
@@ -819,14 +809,14 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 		g_statsdb.m_disabled = false;
 		if ( ! status ) {
 			log( LOG_ERROR, "db: Save failed." );
-			return false;
+			return -1;
 		}
 	}
 
 	if( m_useIndexFile ) {
 		// set the index file's  filename
 		sprintf(name, "%s%04" PRId32".idx", m_dbname, fileId);
-		in->set(m_dir.getDir(), name, m_fixedDataSize, m_useHalfKeys, m_ks, m_rdb->getRdbId());
+		in->set(m_collectionDirName, name, m_fixedDataSize, m_useHalfKeys, m_ks, m_rdb->getRdbId());
 		if (!isNew && !(in->readIndex() && in->verifyIndex())) {
 			// if out of memory, do not try to regen for that
 			if (g_errno == ENOMEM) {
@@ -866,7 +856,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 			g_statsdb.m_disabled = false;
 			if ( ! status ) {
 				log( LOG_ERROR, "db: Save failed." );
-				return false;
+				return -1;
 			}
 		}
 	}
@@ -874,10 +864,8 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	if ( ! isNew ) {
 		log( LOG_DEBUG, "db: Added %s for collnum=%" PRId32" pages=%" PRId32,
 		     name, ( int32_t ) m_collnum, m->getNumPages() );
-	}
 
-	// open this big data file for reading only
-	if ( ! isNew ) {
+		// open this big data file for reading only
 		if ( mergeNum < 0 ) {
 			f->open(O_RDONLY | O_NONBLOCK | O_ASYNC);
 		} else {
@@ -901,13 +889,8 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 		return -1;
 	}
 
-	// shift everyone up if we need to fit this file in the middle somewher
-	if ( i < m_numFiles ) {
-		int nn = m_numFiles - i;
-		int dstIdx = i + 1;
-
-		memmove( m_fileInfo+dstIdx, m_fileInfo+i, nn*sizeof(m_fileInfo[0]));
-	}
+	// shift everyone up if we need to fit this file in the middle somewhere
+	memmove( m_fileInfo+i+1, m_fileInfo+i, (m_numFiles-i)*sizeof(m_fileInfo[0]));
 
 	// insert this file into position #i
 	m_fileInfo[i].m_fileId  = fileId;
@@ -939,7 +922,10 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	return i;
 }
 
-int32_t RdbBase::addNewFile ( int32_t id2 ) {
+int32_t RdbBase::addNewFile() {
+	//No clue abotu why titledb is different. it just is.
+	int32_t id2 = m_isTitledb ? 0 : -1;
+	
 	int32_t maxFileId = 0;
 	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) {
 		if ( m_fileInfo[i].m_fileId > maxFileId ) {
@@ -1011,7 +997,7 @@ bool RdbBase::incorporateMerge ( ) {
 		log( LOG_ERROR, "db: Merge failed for %s, Exiting.", m_dbname);
 
 		// we don't have a recovery system in place, so save state and dump core
-		g_process.shutdownAbort(true);
+		gbshutdownAbort(true);
 	}
 
 	// note
@@ -1023,7 +1009,7 @@ bool RdbBase::incorporateMerge ( ) {
 	bool status = m_fileInfo[x].m_map->writeMap( true );
 	if ( !status ) {
 		// unable to write, let's abort
-		g_process.shutdownAbort();
+		gbshutdownResourceError();
 	}
 
 	if( m_useIndexFile ) {
@@ -1031,7 +1017,7 @@ bool RdbBase::incorporateMerge ( ) {
 		if ( !status ) {
 			// unable to write, let's abort
 			log( LOG_ERROR, "db: Could not write index for %s, Exiting.", m_dbname);
-			g_process.shutdownAbort();
+			gbshutdownAbort(true);
 		}
 	}
 
@@ -1087,7 +1073,8 @@ bool RdbBase::incorporateMerge ( ) {
 		    "size for %s. Map says it should be %" PRId64" bytes but it "
 		    "is %" PRId64" bytes.",
 		    m_fileInfo[x].m_file->getFilename(), fs2 , fs );
-		if ( fs2-fs > 12 || fs-fs2 > 12 ) { g_process.shutdownAbort(true); }
+		if ( fs2-fs > 12 || fs-fs2 > 12 )
+			gbshutdownCorrupted();
 		// now print the exception
 		log( LOG_WARN, "build: continuing since difference is less than 12 "
 		    "bytes. Most likely a discrepancy caused by a power "
@@ -1096,12 +1083,6 @@ bool RdbBase::incorporateMerge ( ) {
 
 	// on success unlink the files we merged and free them
 	for ( int32_t i = a ; i < b && i < m_numFiles; i++ ) {
-		// incase we are starting with just the
-		// linkdb0001.003.dat file and not the stuff we merged
-		if ( ! m_fileInfo[i].m_file ) {
-			continue;
-		}
-
 		// debug msg
 		log(LOG_INFO,"merge: Unlinking merged file %s/%s (#%" PRId32").",
 		    m_fileInfo[i].m_file->getDir(),m_fileInfo[i].m_file->getFilename(),i);
@@ -1207,29 +1188,24 @@ void RdbBase::unlinkDone() {
 	// compare
 	if ( fs != fs2 ) {
 		log("build: Map file size does not agree with actual file size");
-		g_process.shutdownAbort(true);
+		gbshutdownCorrupted();
 	}
 
-	if ( ! m_rdb->isTitledb() ) {
-		// debug statement
-		log(LOG_INFO,"db: Renaming %s of size %" PRId64" to %s",
-		    m_fileInfo[x].m_file->getFilename(),fs , m_fileInfo[a].m_file->getFilename());
-
-		// rename it, this may block
-		if ( ! m_fileInfo[x].m_file->rename ( m_fileInfo[a].m_file->getFilename(), renameDoneWrapper, this) ) {
-			m_numThreads++;
-		}
+	char newName[1024];
+	if ( ! m_isTitledb ) {
+		strcpy(newName, m_fileInfo[a].m_file->getFilename());
 	} else {
 		// rename to this (titledb%04" PRId32"-%03" PRId32".dat)
-		char newName[1024];
-
 		// use m_dbname in case its titledbRebuild
 		sprintf ( newName , "%s%04" PRId32"-%03" PRId32".dat", m_dbname, m_fileInfo[a].m_fileId, m_fileInfo[x].m_fileId2 );
+	}
 
-		// rename it, this may block
-		if ( ! m_fileInfo[x].m_file->rename ( newName, renameDoneWrapper, this) ) {
-			m_numThreads++;
-		}
+	log(LOG_INFO,"db: Renaming %s of size %" PRId64" to %s",
+	    m_fileInfo[x].m_file->getFilename(), fs, newName);
+
+	// rename it, this may block
+	if ( ! m_fileInfo[x].m_file->rename (m_fileInfo[a].m_file->getFilename(), renameDoneWrapper,this) ) {
+		m_numThreads++;
 	}
 
 	// if we blocked on all, keep going
@@ -1282,7 +1258,7 @@ void RdbBase::renameDone() {
 	if ( wait ) {
 		log("db: waiting for read thread to exit on unlinked file");
 		if ( !g_loop.registerSleepCallback( 100, this, checkThreadsAgainWrapper ) ) {
-			g_process.shutdownAbort(true);
+			gbshutdownResourceError();
 		}
 		return;
 	}
@@ -1298,7 +1274,7 @@ void RdbBase::renameDone() {
 	// sanity check
 	if ( m_numFilesToMerge != (b-a) ) {
 		log(LOG_LOGIC,"db: Bury oops.");
-		g_process.shutdownAbort(true);
+		gbshutdownLogicError();
 	}
 
 	// we no longer have a merge file
@@ -1321,14 +1297,14 @@ void RdbBase::renameFile( int32_t currentFileIdx, int32_t newFileId, int32_t new
 	// since it got nuked on disk incorporateMerge();
 	char fbuf[256];
 
-	if (m_rdb->isTitledb()) {
+	if(m_isTitledb) {
 		sprintf(fbuf, "%s%04" PRId32"-%03" PRId32".dat", m_dbname, newFileId, newFileId2);
 	} else {
 		sprintf(fbuf, "%s%04" PRId32".dat", m_dbname, newFileId);
 	}
 
 	log(LOG_INFO, "merge: renaming final merged file %s", fbuf);
-	m_fileInfo[currentFileIdx].m_file->rename(fbuf);
+	m_fileInfo[currentFileIdx].m_file->rename(fbuf,NULL);
 
 	m_fileInfo[currentFileIdx].m_fileId = newFileId;
 	m_fileInfo[currentFileIdx].m_fileId2 = newFileId2;
@@ -1338,12 +1314,12 @@ void RdbBase::renameFile( int32_t currentFileIdx, int32_t newFileId, int32_t new
 	//     next start up, map file will be regenerated. means we now have both even & odd map files
 	sprintf(fbuf, "%s%04" PRId32".map", m_dbname, newFileId);
 	log(LOG_INFO, "merge: renaming final merged file %s", fbuf);
-	m_fileInfo[currentFileIdx].m_map->rename(fbuf, true);
+	m_fileInfo[currentFileIdx].m_map->rename(fbuf);
 
 	if (m_useIndexFile) {
 		sprintf(fbuf, "%s%04" PRId32".idx", m_dbname, newFileId);
 		log(LOG_INFO, "merge: renaming final merged file %s", fbuf);
-		m_fileInfo[currentFileIdx].m_index->rename(fbuf, true);
+		m_fileInfo[currentFileIdx].m_index->rename(fbuf);
 	}
 }
 
@@ -1499,7 +1475,7 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 		    "CollectionRec.h.",
 		    m_minToMerge,m_dbname);
 		//m_minToMerge = 2;
-		g_process.shutdownAbort(true);
+		gbshutdownLogicError();
 	}
 
 	// print it
@@ -1654,9 +1630,8 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 		// validation
 
 		// if titledb we got a "-023" part now
-		if ( m_rdb->isTitledb() && fileId2 < 0 ) {
-			g_process.shutdownAbort(true);
-		}
+		if ( m_isTitledb && fileId2 < 0 )
+			gbshutdownCorrupted();
 
 		if ( !endMergeFileId ) {
 			// bad file name (should not happen after the first run)
@@ -1760,7 +1735,7 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 	// other file... i've seen that happen... but don't know why it didn't
 	// merge two small files! i guess because the root file was the
 	// oldest file! (38.80 days old)???
-	if ( m_rdb->isTitledb() && mergeFileCount < 50 && m_minToMerge > 200 ) {
+	if ( m_isTitledb && mergeFileCount < 50 && m_minToMerge > 200 ) {
 		// force it to 50 files to merge
 		mergeFileCount = 50;
 
@@ -1794,7 +1769,7 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 
 	// get new id, -1 on error
 	int32_t      fileId2;
-	fileId2 = m_rdb->isTitledb() ? 0 : -1;
+	fileId2 = m_isTitledb ? 0 : -1;
 
 	// . make a filename for the merge
 	// . always starts with file #0
@@ -1952,7 +1927,7 @@ void RdbBase::selectFilesToMerge(int32_t mergeFileCount, int32_t numFiles, int32
 		}
 
 		// if merging titledb, just pick by the lowest total
-		if(m_rdb->isTitledb()) {
+		if(m_isTitledb) {
 			if(total < mint) {
 				mini   = i;
 				mint   = total;
@@ -1982,7 +1957,7 @@ void RdbBase::selectFilesToMerge(int32_t mergeFileCount, int32_t numFiles, int32
 		// sanity check
 		if(ratio < 0.0) {
 			logf(LOG_LOGIC,"merge: ratio is negative %.02f",ratio);
-			g_process.shutdownAbort(true);
+			gbshutdownLogicError();
 		}
 
 		// the adjusted ratio
@@ -2042,8 +2017,8 @@ void RdbBase::selectFilesToMerge(int32_t mergeFileCount, int32_t numFiles, int32
 
 // . use the maps and tree to estimate the size of this list w/o hitting disk
 // . used by Indexdb.cpp to get the size of a list for IDF weighting purposes
-int64_t RdbBase::getListSize(const char *startKey, const char *endKey, char *maxKey,
-			     int64_t oldTruncationLimit) const {
+int64_t RdbBase::estimateListSize(const char *startKey, const char *endKey, char *maxKey,
+			          int64_t oldTruncationLimit) const {
 	// . reset this to low points
 	// . this is on
 	KEYSET(maxKey,endKey,m_ks);
@@ -2119,7 +2094,7 @@ int64_t RdbBase::getListSize(const char *startKey, const char *endKey, char *max
 	return totalBytes;
 }
 
-int64_t RdbBase::getNumGlobalRecs() const {
+int64_t RdbBase::estimateNumGlobalRecs() const {
 	return getNumTotalRecs() * g_hostdb.m_numShards;
 }
 
@@ -2180,7 +2155,7 @@ void RdbBase::closeMaps(bool urgent) {
 		bool status = m_fileInfo[i].m_map->close(urgent);
 		if (!status) {
 			// unable to write, let's abort
-			g_process.shutdownAbort();
+			gbshutdownResourceError();
 		}
 	}
 }
@@ -2191,7 +2166,7 @@ void RdbBase::closeIndexes(bool urgent) {
 			bool status = m_fileInfo[i].m_index->close(urgent);
 			if (!status) {
 				// unable to write, let's abort
-				g_process.shutdownAbort();
+				gbshutdownResourceError();
 			}
 		}
 	}
@@ -2207,7 +2182,7 @@ void RdbBase::saveMaps() {
 		bool status = m_fileInfo[i].m_map->writeMap ( false );
 		if ( !status ) {
 			// unable to write, let's abort
-			g_process.shutdownAbort();
+			gbshutdownResourceError();
 		}
 	}
 }
@@ -2219,7 +2194,7 @@ void RdbBase::saveTreeIndex() {
 
 	if (!m_treeIndex.writeIndex()) {
 		// unable to write, let's abort
-		g_process.shutdownAbort();
+		gbshutdownResourceError();
 	}
 }
 
@@ -2236,7 +2211,7 @@ void RdbBase::saveIndexes() {
 
 		if (!m_fileInfo[i].m_index->writeIndex()) {
 			// unable to write, let's abort
-			g_process.shutdownAbort();
+			gbshutdownResourceError();
 		}
 	}
 }

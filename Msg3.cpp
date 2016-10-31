@@ -35,6 +35,11 @@ Msg3::Msg3()
 {
 //	log(LOG_TRACE,"Msg3(%p)::Msg3()",this);
 	set_signature();
+	memset(m_constrainKey, 0, sizeof(m_constrainKey));
+	memset(m_startKey, 0, sizeof(m_startKey));
+	memset(m_endKey, 0, sizeof(m_endKey));
+	memset(m_endKeyOrig, 0, sizeof(m_endKeyOrig));
+	memset(m_hintKey, 0, sizeof(m_hintKey));
 	reset();
 }
 
@@ -326,9 +331,9 @@ bool Msg3::readList  ( rdbid_t           rdbId,
 			startFileNum++;
 		}
 		// adjust num files if we need to, as well
-		if ( startFileNum < base->mergeStartFileNum() - 1 &&
+		if ( startFileNum < base->mergeStartFileNum() -1 &&
 		     numFiles != -1 &&
-		     startFileNum + numFiles - 1 >= base->mergeStartFileNum() - 1 ) {
+		     startFileNum + numFiles >= base->mergeStartFileNum() ) {
 			if ( g_conf.m_logDebugQuery )
 				log(LOG_DEBUG,"net: msg3: numFiles up one.");
 			// if merge file was inserted before us, inc our file number
@@ -781,11 +786,11 @@ bool Msg3::doneScanning ( ) {
 	// . if so, repeat ALL of the scans
 	g_errno = m_errno;
 	// 2 retry is the default
-	int32_t max = 2;
+	// int32_t max = 2;
 	// see if explicitly provided by the caller
-//	if ( m_maxRetries >= 0 ) max = m_maxRetries;
+	//	if ( m_maxRetries >= 0 ) max = m_maxRetries;
 	// now use -1 (no max) as the default no matter what
-	max = -1;
+	int32_t max = -1;
 	// ENOMEM is particulary contagious, so watch out with it...
 	if ( g_errno == ENOMEM && m_maxRetries == -1 ) max = 0;
 	// msg0 sets maxRetries to 2, don't let max stay set to -1
@@ -1035,7 +1040,7 @@ bool Msg3::doneScanning ( ) {
 			if ( inCache && 
 			     // 1st byte is RdbScan::m_shifted
 			     ( m_scan[i].m_list.getListSize() != recSize-1 ||
-			       memcmp ( m_scan[i].m_list.getList() , rec+1,recSize-1) ||
+			       memcmp ( m_scan[i].m_list.getList() , rec+1,recSize-1) != 0 ||
 			       *rec != m_scan[i].m_scan.shiftCount() ) ) {
 				log("msg3: cache did not validate");
 				g_process.shutdownAbort(true);
@@ -1073,7 +1078,7 @@ bool Msg3::doneScanning ( ) {
 		if (!m_scan[i].m_list.constrain(m_startKey, m_constrainKey, mrs, m_scan[i].m_hintOffset, m_scan[i].m_hintKey, m_rdbId, filename)) {
 			log(LOG_WARN, "net: Had error while constraining list read from %s: %s/%s. vfd=%" PRId32" parts=%" PRId32". "
 			    "This is likely caused by corrupted data on disk.",
-			    mstrerror(g_errno), ff->getDir(), ff->getFilename(), ff->getVfd(), (int32_t)ff->m_numParts );
+			    mstrerror(g_errno), ff->getDir(), ff->getFilename(), ff->getVfd(), (int32_t)ff->getNumParts() );
 			continue;
 		}
 	}

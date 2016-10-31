@@ -13,6 +13,27 @@ Msge0::Msge0() {
 	m_slab = NULL;
 	m_baseTagRec = NULL;
 	m_tagRecPtrs = NULL;
+
+	// Coverity
+	m_collnum = 0;
+	m_niceness = 0;
+	m_urlPtrs = NULL;
+	m_urlFlags = NULL;
+	m_numUrls = 0;
+	m_skipOldLinks = 0;
+	m_bufSize = 0;
+	m_slab = NULL;
+	m_baseTagRec = NULL;
+	m_tagRecErrors = NULL;
+	m_tagRecPtrs = NULL;
+	m_numTags = NULL;
+	m_numRequests = 0;
+	m_i = 0;
+	m_nextPtr = NULL;
+	m_state = NULL;
+	m_callback = NULL;
+	memset(&m_ns, 0, sizeof(m_ns));
+	memset(&m_used, 0, sizeof(m_used));
 	reset();
 }
 
@@ -50,25 +71,6 @@ void Msge0::reset() {
 	m_buf = NULL;
 	m_numReplies = 0;
 	m_n = 0;
-
-	// Coverity
-	m_collnum = 0;
-	m_niceness = 0;
-	m_urlPtrs = NULL;
-	m_urlFlags = NULL;
-	m_numUrls = 0;
-	m_skipOldLinks = 0;
-	m_bufSize = 0;
-	m_slab = NULL;
-	m_baseTagRec = NULL;
-	m_tagRecErrors = NULL;
-	m_tagRecPtrs = NULL;
-	m_numTags = NULL;
-	m_numRequests = 0;
-	m_i = 0;
-	m_nextPtr = NULL;
-	m_state = NULL;
-	m_callback = NULL;
 }
 
 

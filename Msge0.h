@@ -70,7 +70,7 @@ public:
 
 	Url     m_urls        [ MAX_OUTSTANDING_MSGE0 ]; 
 	int32_t    m_ns          [ MAX_OUTSTANDING_MSGE0 ]; 
-	char    m_used        [ MAX_OUTSTANDING_MSGE0 ]; 
+	bool    m_used        [ MAX_OUTSTANDING_MSGE0 ]; 
 	Msg8a   m_msg8as      [ MAX_OUTSTANDING_MSGE0 ]; //for getting tag bufs
 	//TagRec  m_tagRecs   [ MAX_OUTSTANDING_MSGE0 ];
 

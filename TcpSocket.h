@@ -98,7 +98,7 @@ class TcpSocket {
 
 	//char        m_tmpBuf[TCP_READ_BUF_SIZE];
 
-	char        m_waitingOnHandler;
+	bool        m_waitingOnHandler;
 	
 	char        m_prefLevel;
 	// is it in incoming request socket?
@@ -114,7 +114,7 @@ class TcpSocket {
 	int32_t        m_maxOtherDocLen; // if reading other doc types
 
 	char        m_niceness;
-	char        m_streamingMode;
+	bool        m_streamingMode;
 
 	bool m_writeRegistered;
 

@@ -66,6 +66,59 @@ SpiderColl::SpiderColl () {
 	m_endKey2.setMax();
 	m_spidersOut = 0;
 	m_coll[0] = '\0';// = NULL;
+
+
+
+	// PVS-Studio
+	m_msg4Start = 0;
+	m_useTree = false;
+	m_lastReplyValid = false;
+	memset(m_lastReplyBuf, 0, sizeof(m_lastReplyBuf));
+	m_didRead = false;
+	m_siteListHasNegatives = false;
+	m_siteListIsEmpty = false;
+	m_tailIp = 0;
+	m_tailPriority = 0;
+	m_tailTimeMS = 0;
+	m_tailUh48 = 0;
+	m_tailHopCount = 0;
+	m_minFutureTimeMS = 0;
+	memset(&m_priorityToUfn, 0, sizeof(m_priorityToUfn));
+	m_gettingList2 = false;
+	m_lastScanTime = 0;
+	m_waitingTreeNeedsRebuild = false;
+	m_numAdded = 0;
+	m_numBytesScanned = 0;
+	m_lastPrintCount = 0;
+	m_lastPrinted = 0;
+	m_spidersOut = 0;
+	m_collnum = -1;
+	m_countingPagesIndexed = false;
+	m_lastReqUh48a = 0;
+	m_lastReqUh48b = 0;
+	m_lastRepUh48 = 0;
+	m_waitingTreeKeyValid = false;
+	m_scanningIp = 0;
+	m_gotNewDataForScanningIp = 0;
+	m_lastListSize = 0;
+	m_lastScanningIp = 0;
+	m_totalBytesScanned = 0;
+	m_deleteMyself = false;
+	m_didRound = false;
+	m_pri2 = 0;
+	m_twinDied = false;
+	m_lastUrlFiltersUpdate = 0;
+	m_gettingList1 = false;
+	memset(&m_outstandingSpiders, 0, sizeof(m_outstandingSpiders));
+	m_overflowList = NULL;
+	m_totalNewSpiderRequests = 0;
+	m_lastSreqUh48 = 0;
+	memset(&m_cblocks, 0, sizeof(m_cblocks));
+	m_pageNumInlinks = 0;
+	m_lastCBlockIp = 0;
+	m_lastOverflowFirstIp = 0;
+
+
 	reset();
 	// reset this
 	memset ( m_outstandingSpiders , 0 , 4 * MAX_SPIDER_PRIORITIES );
@@ -166,7 +219,7 @@ bool SpiderColl::load ( ) {
 
 	// load in the waiting tree, IPs waiting to get into doledb
 	BigFile file;
-	file.set ( dir , "waitingtree-saved.dat" , NULL );
+	file.set ( dir , "waitingtree-saved.dat");
 	bool treeExists = file.doesExist() > 0;
 
 	// load the table with file named "THISDIR/saved"
@@ -648,7 +701,7 @@ bool SpiderColl::addSpiderReply ( SpiderReply *srep ) {
 	/////
 	if (lock) {
 		lock->m_expires = nowGlobal + 2;
-		lock->m_spiderOutstanding = false;
+		lock->m_spiderOutstanding = 0;
 	} else {
 		// bitch if not in there
 		// when "rebuilding" (Rebuild.cpp) this msg gets triggered too much...
@@ -2700,9 +2753,9 @@ bool SpiderColl::scanListForWinners ( ) {
 				// seeds as "manual adds" as well as normal pg
 				int32_t h32;
 				h32 = sreq->m_siteHash32 ^ 0x123456;
-				m_localTable.addScore(&h32);
+				m_localTable.addScore(h32);
 				h32 = sreq->m_domHash32 ^ 0x123456;
-				m_localTable.addScore(&h32);
+				m_localTable.addScore(h32);
 			}
 			// unique votes per other for quota
 			if ( uh48 == m_lastReqUh48b ) continue;
@@ -2716,9 +2769,9 @@ bool SpiderColl::scanListForWinners ( ) {
 			// TODO: what is srep->m_isIndexedINValid is set????
 			if ( ! srep->m_isIndexed ) continue;
 			// keep count per site and firstip
-			m_localTable.addScore(&sreq->m_firstIp,1);
-			m_localTable.addScore(&sreq->m_siteHash32,1);
-			m_localTable.addScore(&sreq->m_domHash32,1);
+			m_localTable.addScore(sreq->m_firstIp,1);
+			m_localTable.addScore(sreq->m_siteHash32,1);
+			m_localTable.addScore(sreq->m_domHash32,1);
 
 			int32_t *tmpNum = (int32_t *)m_localTable.getValue( &( sreq->m_siteHash32 ) );
 			logDebug( g_conf.m_logDebugSpider, "spider: sitequota: got %" PRId32" indexed docs for site from "
@@ -3054,7 +3107,7 @@ bool SpiderColl::scanListForWinners ( ) {
 		// so we can kick out a lower priority version of the same url.
 		int32_t winSlot = m_winnerTable.getSlot ( &uh48 );
 		if ( winSlot >= 0 ) {
-			key192_t *oldwk = (key192_t *)m_winnerTable.getDataFromSlot ( winSlot );
+			key192_t *oldwk = (key192_t *)m_winnerTable.getValueFromSlot ( winSlot );
 
 			// get the min hopcount  
 			SpiderRequest *wsreq ;
@@ -3521,17 +3574,17 @@ bool SpiderColl::addWinnersIntoDoledb ( ) {
 
 
 bool SpiderColl::validateDoleBuf ( SafeBuf *doleBuf ) {
-	char *doleBufEnd = doleBuf->getBuf();
+	char *doleBufEnd = doleBuf->getBufPtr();
 	// get offset
 	char *pstart = doleBuf->getBufStart();
 	char *p = pstart;
 	int32_t jump = *(int32_t *)p;
 	p += 4;
 	// sanity
-	if ( jump < 4 || jump > doleBuf->getLength() ) {
+	if ( jump < 4 || jump > doleBuf->length() ) {
 		g_process.shutdownAbort(true); }
 	bool gotIt = false;
-	for ( ; p < doleBuf->getBuf() ; ) {
+	for ( ; p < doleBuf->getBufPtr() ; ) {
 		if ( p == pstart + jump )
 			gotIt = true;
 		// first is doledbkey
@@ -3742,7 +3795,7 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 	// how did this happen?
 	//if ( ! m_msg1Avail ) { g_process.shutdownAbort(true); }
 
-	char *doleBufEnd = doleBuf->getBuf();
+	char *doleBufEnd = doleBuf->getBufPtr();
 
 	// add it to doledb ip table now so that waiting tree does not
 	// immediately get another spider request from this same ip added
@@ -3759,7 +3812,7 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 	char *p = doleBuf->getBufStart();
 	int32_t jump = *(int32_t *)p;
 	// sanity
-	if ( jump < 4 || jump > doleBuf->getLength() ) {
+	if ( jump < 4 || jump > doleBuf->length() ) {
 		g_process.shutdownAbort(true); }
 	// the jump includes itself
 	p += jump;
@@ -3860,7 +3913,7 @@ bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 		// NO! we do a copy in rdbcache and copy the thing over
 		// since we promote it. so this won't work...
 		*(int32_t *)x = newJump;
-		if ( newJump >= doleBuf->getLength() ) { g_process.shutdownAbort(true);}
+		if ( newJump >= doleBuf->length() ) { g_process.shutdownAbort(true);}
 		if ( newJump < 4 ) { g_process.shutdownAbort(true);}
 		if ( g_conf.m_logDebugSpider ) // || m_collnum == 18752 )
 			log("spider: rdbcache: updating "

@@ -32,7 +32,6 @@
 #include "RdbDump.h"
 #include "RdbMerge.h"
 #include "Msg3.h"               // MAX_RDB_FILES definition
-#include "Dir.h"
 #include "RdbMem.h"
 #include "RdbIndex.h"
 #include "GbMutex.h"
@@ -125,13 +124,13 @@ class RdbBase {
 	}
 
 	// use the maps and tree to estimate the size of this list
-	int64_t getListSize(const char *startKey, const char *endKey, char *maxKey,
-	                    int64_t oldTruncationLimit) const;
+	int64_t estimateListSize(const char *startKey, const char *endKey, char *maxKey,
+	                         int64_t oldTruncationLimit) const;
 
 	// positive minus negative
 	int64_t getNumTotalRecs() const;
 
-	int64_t getNumGlobalRecs() const;
+	int64_t estimateNumGlobalRecs() const;
 	
 	// private:
 
@@ -155,7 +154,7 @@ class RdbBase {
 	// . add a (new) file to the m_files/m_maps/m_fileIds arrays
 	// . return array position we added it to
 	// . return -1 and set errno on error
-	int32_t addNewFile  ( int32_t id2 ) ;
+	int32_t addNewFile();
 
 	// these are used for computing load on a machine
 	bool isMerging() const { return m_isMerging; }
@@ -246,6 +245,12 @@ public:
 private:
 	void selectFilesToMerge(int32_t mergeNum, int32_t numFiles, int32_t *p_mini);
 
+	bool hasFileId(int32_t fildId) const;
+	void generateFilename(char *buf, size_t bufsize, int32_t fileId, int32_t fileId2, int32_t mergeNum, int32_t endMergeFileId);
+
+	bool loadFilesFromDir(const char *dirName);
+	bool fixNonfirstSpiderdbFiles();
+
 	static void unlinkDoneWrapper(void *state);
 	void unlinkDone();
 	static void renameDoneWrapper(void *state);
@@ -267,7 +272,7 @@ private:
 
 	int32_t      m_fixedDataSize;
 
-	Dir       m_dir;
+	char m_collectionDirName[1024];
 	char      m_dbname [32];
 	int32_t      m_dbnameLen;
 
@@ -299,6 +304,8 @@ private:
 	bool      m_useHalfKeys;
 
 	bool	m_useIndexFile;
+
+	bool m_isTitledb;
 
 	// key size
 	char      m_ks;

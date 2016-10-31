@@ -302,7 +302,7 @@ bool Speller::loadUnifiedDict() {
 		// now add in from wiktionary
 		int32_t slot = wkfMap.getSlot ( &key );
 		for ( ; slot >= 0 ; slot = wkfMap.getNextSlot(slot,&key) ) {
-			uint8_t langId = *(char *)wkfMap.getDataFromSlot(slot);
+			uint8_t langId = *(char *)wkfMap.getValueFromSlot(slot);
 			if ( langId == langUnknown ) continue;
 			if ( langId == langTranslingual ) continue;
 			// if it marked as already in that dictionary, cont
@@ -403,7 +403,7 @@ bool Speller::loadUnifiedDict() {
 		// now add in from wiktionary map
 		int32_t slot = wkfMap.getSlot ( &key );
 		for ( ; slot >= 0 ; slot = wkfMap.getNextSlot(slot,&key) ) {
-			uint8_t langId = *(char *)wkfMap.getDataFromSlot(slot);
+			uint8_t langId = *(char *)wkfMap.getValueFromSlot(slot);
 			if ( langId == langUnknown ) continue;
 			if ( langId == langTranslingual ) continue;
 			if ( pops[langId] ) continue;

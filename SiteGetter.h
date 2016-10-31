@@ -46,7 +46,7 @@ public:
 	int32_t   m_maxPathDepth;
 	int32_t   m_niceness;
 	int32_t   m_oldSitePathDepth;
-	char   m_allDone;
+	bool   m_allDone;
 	int32_t   m_timestamp;
 
 	bool   m_hasSubdomain;

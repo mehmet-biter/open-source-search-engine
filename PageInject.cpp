@@ -10,6 +10,8 @@
 #include "Stats.h"
 #include "Process.h"
 #include "GbUtil.h"
+#include "Dir.h"
+#include <fcntl.h>
 
 
 static bool sendHttpReply        ( void *state );
@@ -856,7 +858,8 @@ bool ImportState::setCurrentTitleFileAndOffset ( ) {
 	if ( ! m_loadedPlaceHolder ) {
 		// read where we left off from file if possible
 		char fname[256];
-		sprintf(fname,"%slasttitledbinjectinfo.dat",g_hostdb.m_dir);
+		snprintf(fname, sizeof(fname), "%slasttitledbinjectinfo.dat",g_hostdb.m_dir);
+		fname[ sizeof(fname)-1 ] = '\0';
 		SafeBuf ff;
 		ff.fillFromFile(fname);
 		if ( ff.length() > 1 ) {
@@ -877,9 +880,9 @@ bool ImportState::setCurrentTitleFileAndOffset ( ) {
 	tmp.safePrintf("titledb%04" PRId32"-000.dat"
 		       //,dir.getDirname()
 		       ,minFileId);
-	m_bf.set ( dir.getDir() ,tmp.getBufStart() );
+	m_bf.set ( ddd.getBufStart(), tmp.getBufStart() );
 	if ( ! m_bf.open( O_RDONLY ) ) {
-		log(LOG_WARN, "inject: import: could not open %s%s for reading", dir.getDir(),tmp.getBufStart());
+		log(LOG_WARN, "inject: import: could not open %s%s for reading", ddd.getBufStart(), tmp.getBufStart());
 		return false;
 	}
 	m_bfFileId = minFileId;
@@ -1056,7 +1059,7 @@ bool ImportState::importLoop ( ) {
 	// then read data rec itself into it, compressed titlerec part
 	if ( dataSize > 0 ) {
 		// read in the titlerec after the key/datasize
-		status = m_bf.read ( sbuf->getBuf() , dataSize , m_fileOffset );
+		status = m_bf.read ( sbuf->getBufPtr() , dataSize , m_fileOffset );
 		if ( g_errno ) { // n != dataSize ) {
 			log( LOG_WARN, "main: failed to read in title rec file. %s. Skipping file %s",
 			     mstrerror(g_errno),m_bf.getFilename());
@@ -1229,7 +1232,8 @@ void ImportState::saveFileBookMark ( ) {
 	}
 
 	char fname[256];
-	sprintf(fname,"%slasttitledbinjectinfo.dat",g_hostdb.m_dir);
+	snprintf(fname, sizeof(fname), "%slasttitledbinjectinfo.dat",g_hostdb.m_dir);
+	fname[ sizeof(fname)-1 ] = '\0';
 	SafeBuf ff;
 	ff.safePrintf("%" PRId64",%" PRId32,minOff,minFileId);
 	ff.save ( fname );

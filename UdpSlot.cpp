@@ -48,13 +48,15 @@ int32_t g_cancelAcksRead = 0;
 //   pings that are like 50ms...
 // . this was at 70 but gk0 pings to scproxy1 at like 150ms a lot via
 //   the roadrunner wireless link, so lets crank this up
+
+//@todo: BR: We should experiment with these
 #define RESEND_0 170
 
 // . for short msgs we can resend more rapidly
 // . it doesn't help to go lower than 20ms cuz that's sigtimedwait()'s limit
 // . keep it to 40ms due to kernel time slicing problems
 // we are going over the internet to our query compression proxy now
-#define RESEND_0_SHORT 170
+#define RESEND_0_SHORT 150
 
 // start resend time for niceness 1+
 // because of roadrunner... (See above)

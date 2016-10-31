@@ -215,13 +215,14 @@ void flushStatsWrapper ( int fd , void *state ) {
 	// force a statsdb tree dump if running out of room
 	Rdb     *rdb  = &g_statsdb.m_rdb;
 	RdbTree *tree = rdb->getTree();
-	// if we got 20% room left and 50k available mem, do not dump
-	if ( (float)tree->getNumUsedNodes() * 1.2 < 
-	     (float)tree->getNumAvailNodes () &&
-	     //tree->getNumAvailNodes () > 1000 &&
-	     rdb->getAvailMem() > 50000 )
-		return;
-
+	if( tree ) {
+		// if we got 20% room left and 50k available mem, do not dump
+		if ( (float)tree->getNumUsedNodes() * 1.2 < 
+		     (float)tree->getNumAvailNodes () &&
+		     //tree->getNumAvailNodes () > 1000 &&
+		     rdb->getAvailMem() > 50000 )
+			return;
+	}
 	if ( ! isClockInSync() ) return;
 
 	// force a dump
@@ -318,8 +319,14 @@ bool Statsdb::addStat ( int32_t        niceness ,
 	if ( ! isClockInSync() ) return true;
 
 	RdbTree *tree = m_rdb.getTree();
+
+	if( !tree ) {
+		log(LOG_LOGIC,"%s:%s:%d: Rdb has no tree!", __FILE__, __func__, __LINE__);
+		gbshutdownLogicError();
+		return true;
+	}
 	// do not add stats to our tree if it is loading
-	if (tree->isLoading()) return true;
+	if(tree->isLoading()) return true;
 
 	// convert into host #0 synced time
 	t1Arg = localToGlobalTimeMilliseconds ( t1Arg );
@@ -500,8 +507,7 @@ bool Statsdb::makeGIF ( int32_t t1Arg ,
 	// . start at t1 and get stats lists, up to 1MB of stats at a time
 	// . subtract 60 seconds so we can have a better shot at having
 	//   a moving average for the last SAMPLE points
-	m_startKey.n1 = m_t1 - 60;
-	if ( m_startKey.n1 < 0 ) m_startKey.n1 = 0;
+	m_startKey.n1 = (m_t1 - 60 >= 0) ? m_t1 - 60 : 0;
 	m_startKey.n0 = 0x0000000000000000LL;
 	m_endKey.n1   = m_t2;
 	m_endKey.n0   = 0xffffffffffffffffLL;
@@ -786,7 +792,7 @@ bool Statsdb::gifLoop ( ) {
 
 		int32_t x1 = pp->m_a;
 		int32_t x2 = pp->m_b;
-		int32_t y1 = *(int32_t *)m_ht3.getKey(i); // i value
+		int32_t y1 = *(int32_t *)m_ht3.getKeyFromSlot(i); // i value
 		// ensure at least 3 units wide for visibility
 		if ( x2 < x1 + 10 ) x2 = x1 + 10;
 		// . flip the y so we don't have to scroll the browser down
@@ -811,7 +817,7 @@ bool Statsdb::gifLoop ( ) {
 		// print the parm name and old/new values
 		m_sb2->safePrintf("<td><b>%s</b>",title);
 
-		if ( pp->m_oldVal != pp->m_newVal )
+		if ( !almostEqualFloat(pp->m_oldVal, pp->m_newVal) )
 			m_sb2->safePrintf(" (%.02f -> %.02f)",
 					 pp->m_oldVal,pp->m_newVal);
 
@@ -883,7 +889,7 @@ char *Statsdb::plotGraph ( char *pstart ,
 	char *p = pstart;
 
 	for ( ; p < pend ; p += 12 ) {
-		if ( m_gw.getLength() > 10000000 ) break;
+		if ( m_gw.length() > 10000000 ) break;
 		// get the y
 		float y2 = *(float *)(p+4);
 		// get color of this point
@@ -914,7 +920,7 @@ char *Statsdb::plotGraph ( char *pstart ,
 
 	
 	if( label->m_yscalar <= 0 ) {
-        if(ymax == ymin) {
+        if( almostEqualFloat(ymax, ymin)) {
             yscalar = 0;
         } else {
             yscalar = (float)DY2 / (ymax - ymin);
@@ -970,7 +976,7 @@ char *Statsdb::plotGraph ( char *pstart ,
 
 	// now the m_sb1 buffer consists of points to make lines with
 	for ( ; p < pend ; ) {
-		if ( m_gw.getLength() > 10000000 ) break;
+		if ( m_gw.length() > 10000000 ) break;
 		// first is x pixel pos
 		int32_t  x2 = *(int32_t *)p; p += 4;
 		// then y pos
@@ -999,7 +1005,7 @@ char *Statsdb::plotGraph ( char *pstart ,
 		float y1 = lasty;
 
 		// normalize y into pixel space
-		if(label->m_yscalar >= 0 && ymax != ymin) {
+		if(label->m_yscalar >= 0 && !almostEqualFloat(ymax, ymin) ) {
 			y2 = ((float)DY2 * (y2 - ymin)) / (ymax-ymin);
 		}
 		
@@ -1075,12 +1081,12 @@ char *Statsdb::plotGraph ( char *pstart ,
 	for ( float z = ymin ; z < ymax ; z += deltaz ) {
 		// draw it
 		drawHR ( z , ymin , ymax , m_gw , label , zoff , color );
-		if(z == lastZ) break;
+		if( almostEqualFloat(z, lastZ) ) break;
 		lastZ = z;
-		//if ( m_gw.getLength() > 10000000 ) break;
+		//if ( m_gw.length() > 10000000 ) break;
 	}
 
-	if ( m_gw.getLength() > 10000000 )
+	if ( m_gw.length() > 10000000 )
 		log("statsdb: graph too big");
 
 	return retp;
@@ -1229,7 +1235,7 @@ class StatState {
 public:
 	float m_ringBuf     [MAXSAMPLES];
 	int32_t  m_ringBufTime [MAXSAMPLES];
-	char  m_valid       [MAXSAMPLES];
+	bool  m_valid       [MAXSAMPLES];
 	int32_t  m_numSamples ;
 	float m_sumVal  ;
 	int32_t  m_i           ;
@@ -1260,7 +1266,7 @@ StatState *Statsdb::getStatState ( int32_t us ) {
 	// reserve
 	if ( ! m_sb0.reserve2x ( sizeof(StatState  ) ) ) return NULL;
 	// make it otherwise
-	StatState *ss = (StatState *)m_sb0.getBuf();
+	StatState *ss = (StatState *)m_sb0.getBufPtr();
 	// store the offset
 	int32_t offset = m_sb0.length();
 	// skip that
@@ -1537,7 +1543,7 @@ bool Statsdb::addEventPoint ( int32_t  t1        ,
 		// make sure we got room
 		if ( ! m_sb3.reserve2x ( sizeof(EventPoint) ) ) return false;
 		// add it in
-		EventPoint *pp = (EventPoint *)m_sb3.getBuf();
+		EventPoint *pp = (EventPoint *)m_sb3.getBufPtr();
 		// set it
 		pp->m_a         = a;
 		pp->m_b         = b;

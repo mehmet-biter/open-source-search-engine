@@ -619,7 +619,7 @@ public:
 	Url        m_canonicalRedirUrl;
 	Url       *m_canonicalRedirUrlPtr;
 	int32_t       m_redirError;
-	char       m_allowSimplifiedRedirs;
+	bool       m_allowSimplifiedRedirs;
 	Url        m_firstUrl;
 	int64_t  m_firstUrlHash48;
 	int64_t  m_firstUrlHash64;
@@ -846,7 +846,7 @@ public:
 	char m_isRSS2;
 	char m_isPermalink2;
 	char m_isAdult2;
-	char m_spiderLinks2;
+	char m_spiderLinks2;		// May be -1
 	char m_isContentTruncated2;
 	char m_isLinkSpam2;
 	char m_isSiteRoot2;
@@ -871,7 +871,7 @@ public:
 	RdbList m_dupList;
 	int64_t m_exactContentHash64;
 	Msg0 m_msg0;
-	char m_isDup;
+	char m_isDup;	// may be -1
 	int64_t m_docIdWeAreADupOf;
 	Msg22Request m_msg22Request;
 	Msg22Request m_msg22Requestc;
@@ -899,12 +899,12 @@ public:
 	int32_t    m_oldTitleRecSize;
 	char   *m_rootTitleRec;
 	int32_t    m_rootTitleRecSize;
-	char    m_isIndexed;
+	char    m_isIndexed;	// may be -1
 
 	// confusing, i know! these are used exclsusively by
 	// getNewSpiderReply() for now
-	char m_isInIndex;
-	char m_wasInIndex;
+	bool m_isInIndex;
+	bool m_wasInIndex;
 
 	Msg8a   m_msg8a;
 
@@ -913,12 +913,12 @@ public:
 	SafeBuf m_mySiteLinkInfoBuf;
 	SafeBuf m_myPageLinkInfoBuf;
 
-	char m_isInjecting;
-	char m_isImporting;
-	char m_useFakeMime;
-	char m_useSiteLinkBuf;
-	char m_usePageLinkBuf;
-	char m_printInXml;
+	bool m_isInjecting;
+	bool m_isImporting;
+	bool m_useFakeMime;
+	bool m_useSiteLinkBuf;
+	bool m_usePageLinkBuf;
+	bool m_printInXml;
 
 	SafeBuf m_tmpBuf11;
 	SafeBuf m_tmpBuf12;
@@ -933,7 +933,7 @@ public:
 	// for limiting # of iframe tag expansions
 	int32_t m_numExpansions;
 	char m_newOnly;
-	char m_isWWWDup;
+	char m_isWWWDup;	// May be -1
 
 	SafeBuf m_linkSiteHashBuf;
 	SafeBuf m_linkdbDataBuf;
@@ -942,9 +942,9 @@ public:
 	SiteGetter m_siteGetter;
 	int32_t m_siteHash32;
 	char *m_httpReply;
-	char m_incrementedAttemptsCount;
-	char m_incrementedDownloadCount;
-	char m_useRobotsTxt;
+	bool m_incrementedAttemptsCount;
+	bool m_incrementedDownloadCount;
+	bool m_useRobotsTxt;
 	int32_t m_robotsTxtLen;
 	int32_t m_httpReplySize;
 	int32_t m_httpReplyAllocSize;
@@ -952,7 +952,7 @@ public:
 	int32_t m_filteredContentLen;
 	int32_t m_filteredContentAllocSize;
 	int32_t m_filteredContentMaxSize;
-	char m_calledThread;
+	bool m_calledThread;
 	int32_t m_errno;
 	int32_t m_hostHash32a;
 	int32_t m_domHash32;
@@ -963,8 +963,8 @@ public:
 	// this points into m_msge1 i guess
 	int32_t *m_outlinkIpVector;
 	SafeBuf m_fakeIpBuf;
-	char m_hasNoIndexMetaTag;
-	char m_hasUseFakeIpsMetaTag;
+	char m_hasNoIndexMetaTag;		// May be -1
+	char m_hasUseFakeIpsMetaTag;	// May be -1
 	Msge1 m_msge1;
 	TagRec **m_outlinkTagRecVector;
 	SafeBuf m_fakeTagRecPtrBuf;
@@ -1006,8 +1006,8 @@ public:
 	SafeBuf m_htb;
 	Title m_title;
 	Summary m_summary;
-	char m_isNoArchive;
-	char m_isErrorPage;
+	char m_isNoArchive;		// May be -1
+	char m_isErrorPage;		// May be -1
 
 	// stuff
 	const char *m_statusMsg;

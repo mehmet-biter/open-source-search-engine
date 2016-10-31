@@ -89,7 +89,7 @@ inline char getUtf8CharSize2 ( const uint8_t *p ) {
 bool inline isValidUtf8Char(const char *s) {
 	const uint8_t *u = (uint8_t*)s;
 
-	if (u[0] >= 0x00 && u[0] <= 0x7F) { // U+0000..U+007F
+	if (  u[0] <= 0x7F) { // U+0000..U+007F
 		return true;
 	} else if (u[0] >= 0xC2 && u[0] <= 0xDF) { // U+0080..U+07FF
 		if (u[1] >= 0x80 && u[1] <= 0xBF) {
@@ -199,7 +199,7 @@ bool inline isUtf8UnwantedSymbols(const char *s) {
 // 1110yyyy 10yyyyxx 10xxxxxx
 // 11110zzz 10zzyyyy 10yyyyxx 10xxxxxx
 // TODO: make a table for this as well
-inline char isFirstUtf8Char(const char *p) {
+inline bool isFirstUtf8Char(const char *p) {
 	// non-first chars have the top bit set and next bit unset
 	if ( (p[0] & 0xc0) == 0x80 ) return false;
 	// we are the first char in a sequence

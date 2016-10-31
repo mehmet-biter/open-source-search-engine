@@ -231,7 +231,9 @@ retry16:
 		m_ctx = SSL_CTX_new(meth);
 		// get the certificate location
 		char sslCertificate[256];
-		sprintf(sslCertificate, "%sgb.pem", g_hostdb.m_dir);
+		snprintf(sslCertificate, sizeof(sslCertificate), "%sgb.pem", g_hostdb.m_dir);
+		sslCertificate[ sizeof(sslCertificate)-1 ] = '\0';
+
 		//char sslBundleFilename[256];
 		//sprintf(sslBundleFilename, "%sgd_bundle.crt",g_hostdb.m_dir);
 		log(LOG_INFO, "https: Reading SSL certificate from: %s", 
@@ -1984,14 +1986,14 @@ int32_t TcpServer::writeSocket ( TcpSocket *s ) {
 	// "reading" and return true
 	if ( s->isSendingRequest() ) {
 		s->m_sockState = ST_READING;
-		return 1 ;
+		return 1;
 	}
 
 	if ( s->m_streamingMode ) {
 		log("tcp: not destroying sock in streaming mode after "
 		    "writing data. s=0x%" PTRFMT,
 		    (PTRTYPE)s);
-		return true;
+		return 1;
 	}
 
 	// close it. without this here the socket only gets
@@ -2000,7 +2002,7 @@ int32_t TcpServer::writeSocket ( TcpSocket *s ) {
 
 	// . otherwise, we finished sending a reply
 	// . our caller should call recycleSocket ( s ) to keep it alive
-	return true ;
+	return 1;
 } 
 
 // . returns -1 on error and sets g_errno, 0 if blocked, 1 if completed
@@ -2628,6 +2630,10 @@ TcpSocket *TcpServer::acceptSocket ( ) {
 
 // returns false on critical error in which case "s" should be destroyed
 bool TcpServer::sslAccept ( TcpSocket *s ) {
+	if( !s ) {
+		log(LOG_LOGIC,"%s:%s:%d: input socket is NULL!", __FILE__, __func__, __LINE__);
+		gbshutdownLogicError();
+	}
 
 	int32_t newsd = s->m_sd;
 
@@ -2635,17 +2641,17 @@ bool TcpServer::sslAccept ( TcpSocket *s ) {
 	if ( ! s->m_ssl ) {
 		//log("ssl: SSL_new");
 		SSL *ssl = SSL_new(m_ctx);
+		// wtf?
+		if ( ! ssl ) {
+			log("tcp: sslAccept had null ssl");
+			return false;
+		}
 		//log("ssl: SSL_set_fd %" PRId32,(int32_t)newsd);
 		SSL_set_fd(ssl, newsd);
 		//log("ssl: SSL_set_accept_state");
 		SSL_set_accept_state(ssl);
 		//g_loop.setNonBlocking ( newsd, s->m_niceness );
 		s->m_ssl = ssl;
-		// wtf?
-		if ( ! ssl ) {
-			log("tcp: sslAccept had null ssl");
-			return false;
-		}
 	}
 
 	//log("ssl: SSL_accept %" PRId32,newsd);
@@ -2773,6 +2779,13 @@ int TcpServer::sslHandshake ( TcpSocket *s ) {
 	// steal from ssl tcp server i guess in case we are not it
 	if ( ! s->m_ssl ) {
 		s->m_ssl = SSL_new(g_httpServer.m_ssltcp.m_ctx);
+
+		if ( !s->m_ssl ) {
+			log("ssl: SSL is NULL after SSL_new");
+			g_process.shutdownAbort(true);
+			return -1; // for code analyzers..
+		}
+
 		SSL_set_fd(s->m_ssl, s->m_sd);
 		SSL_set_connect_state(s->m_ssl);
 	}
@@ -2789,10 +2802,6 @@ int TcpServer::sslHandshake ( TcpSocket *s ) {
 		log( "tcp: ssl handshake on sd=%" PRId32 " r=%i", (int32_t)s->m_sd, r );
 	}
 
-	if (!s->m_ssl) {
-		log("ssl: SSL is NULL after connect.");
-		g_process.shutdownAbort(true);
-	}
 	// if the connection happened return r, should be 1
 	if ( r > 0 ) {
 		if ( g_conf.m_logDebugTcp )

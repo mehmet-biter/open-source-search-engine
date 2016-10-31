@@ -3,7 +3,7 @@
 
 class JsonItem *Json::addNewItem () {
 
-	JsonItem *ji = (JsonItem *)m_sb.getBuf();
+	JsonItem *ji = (JsonItem *)m_sb.getBufPtr();
 
 	if ( m_sb.m_length + (int32_t)sizeof(JsonItem) > m_sb.m_capacity ) {
 		log("json: preventing buffer breach");
@@ -240,7 +240,7 @@ JsonItem *Json::parseJsonStringIntoJsonItems (const char *json ) {
 				}
 
 				// let's push this now so we can \0 term
-				char *savedStr = m_sb.getBuf();
+				char *savedStr = m_sb.getBufPtr();
 				m_sb.safeMemcpy ( str , slen );
 				m_sb.pushChar('\0');
 				// just set the name cursor
@@ -453,12 +453,12 @@ char *JsonItem::getValueAsString ( int32_t *valueLen ) {
 	// seems like when this overflowed when it was 64 bytes
 	// it went into s_vbuf in Version.cpp
 	static char s_numBuf[256];
-	if ( (float)m_valueLong == m_valueDouble ) {
+	if ( almostEqualDouble((double)m_valueLong, m_valueDouble) ) {
 		*valueLen = snprintf ( s_numBuf,255,"%" PRId32, m_valueLong );
 		return s_numBuf;
 	}
 
-	if ( (double)m_value64 == m_valueDouble ) {
+	if ( almostEqualDouble((double)m_value64, m_valueDouble) ) {
 		*valueLen = snprintf ( s_numBuf,255,"%" PRId64, m_value64 );
 		return s_numBuf;
 	}

@@ -68,7 +68,13 @@ RdbList::RdbList () {
 	m_allocSize   = 0;
 	m_useHalfKeys = false;
 	m_ownData     = false;
-	m_fixedDataSize = false;
+	m_fixedDataSize = 0;
+	
+	// PVS-Studio
+	m_startKey[0] = '\0';
+	m_endKey[0] = '\0';
+	m_lastKey[0] = '\0';
+
 	reset();
 }
 
@@ -1793,7 +1799,7 @@ void RdbList::merge_r(RdbList **lists, int32_t numLists, const char *startKey, c
 	// warning msg
 	if ( m_listPtr != m_listEnd ) {
 		log(LOG_LOGIC, "db: rdblist: merge_r: warning. merge not storing at end of list for %s.",
-		    getDbnameFromId((uint8_t)rdbId));
+		    getDbnameFromId(rdbId));
 	}
 
 	// set our key range

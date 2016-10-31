@@ -276,20 +276,19 @@ bool SafeBuf::reserve2x(int32_t i, const char *label) {
 	else return true;
 }
 
-int32_t SafeBuf::saveToFile ( const char *dir, const char *filename ) {
+int32_t SafeBuf::saveToFile(const char *dir, const char *filename) const {
 	char buf[1024];
 	snprintf(buf,1024,"%s/%s",dir,filename);
 	return dumpToFile ( buf );
 }
 
-int32_t SafeBuf::save ( const char *fullFilename ) {
+int32_t SafeBuf::save(const char *fullFilename) const {
 	return dumpToFile ( fullFilename );
 }
 
-int32_t SafeBuf::dumpToFile(const char *filename ) {
+int32_t SafeBuf::dumpToFile(const char *filename ) const {
 	int32_t fd = open ( filename , O_CREAT | O_WRONLY | O_TRUNC ,
 			    getFileCreationFlags() );
-			    //S_IRUSR |S_IWUSR |S_IRGRP |S_IWGRP| S_IROTH );
 	if ( fd < 0 ) {
 		log("safebuf: Failed to open %s for writing: %s", 
 		    filename,mstrerror(errno));
@@ -309,7 +308,7 @@ int32_t SafeBuf::dumpToFile(const char *filename ) {
 }
 
 // return -1 on error
-int32_t SafeBuf::safeSave (char *filename ) {
+int32_t SafeBuf::safeSave(const char *filename) const {
 
 	// first write to tmp file
 	char tmp[1024];
@@ -319,7 +318,6 @@ int32_t SafeBuf::safeSave (char *filename ) {
 	int32_t fd = open ( fn.getBufStart() ,
 			    O_CREAT | O_WRONLY | O_TRUNC ,
 			    getFileCreationFlags() );
-			 // S_IRUSR |S_IWUSR |S_IRGRP |S_IWGRP| S_IROTH );
 	if ( fd < 0 ) {
 		log("safebuf: Failed to open %s for writing: %s", 
 		    fn.getBufStart(), mstrerror(errno));
@@ -351,6 +349,9 @@ int32_t SafeBuf::safeSave (char *filename ) {
 		log("sb: safeBuf::safeSave::link: %s",mstrerror(errno));
 		return -1;
 	}
+
+	//unlink temporary .saving file. Ignore any errors because they are harmless
+	(void)::unlink(fn.getBufStart());
 
 	return m_length;
 }
@@ -502,7 +503,7 @@ bool SafeBuf::safeReplace2 (const char *s, int32_t slen,
 		// compare 2nd char
 		if ( slen >= 2 && p[1] != s[1] ) continue;
 		// check all chars now
-		if ( slen >= 3 && strncmp(p,s,slen) ) continue;
+		if ( slen >= 3 && strncmp(p,s,slen) != 0 ) continue;
 		// count them
 		count++;
 	}
@@ -530,7 +531,7 @@ bool SafeBuf::safeReplace2 (const char *s, int32_t slen,
 		// compare 2nd char
 		if ( slen >= 2 && p[1] != s[1] ) continue;
 		// check all chars now
-		if ( slen >= 3 && strncmp(p,s,slen) ) continue;
+		if ( slen >= 3 && strncmp(p,s,slen) != 0 ) continue;
 		// undo copy
 		gbmemcpy ( dst , t , tlen );
 		// advance for that
@@ -684,7 +685,7 @@ bool SafeBuf::htmlEncode(int32_t len ){
 	for (int32_t i = m_length-len; i < m_length ; i++){
 
 		if ( m_buf[i] == '"' ) {
-			if (!safeReplace("&#34;", 4, i, 1))
+			if (!safeReplace("&#34;", 5, i, 1))
 				return false;
 			continue;
 		}
@@ -826,7 +827,7 @@ Tag *SafeBuf::addTag ( const char *mysite ,
 	if ( mysite ) need += strlen(mysite);
 	if ( ! reserve ( need ) ) return NULL;
 	if ( pushRdbId && ! pushChar(rdbId) ) return NULL;
-	Tag *tag = (Tag *)getBuf();
+	Tag *tag = (Tag *)getBufPtr();
 	tag->set(mysite,tagname,now,user,ip,data,dsize);
 	incrementLength ( tag->getRecSize() );
 	if ( tag->getRecSize() > need ) gbshutdownLogicError();
@@ -834,7 +835,7 @@ Tag *SafeBuf::addTag ( const char *mysite ,
 }
 
 bool SafeBuf::addTag ( Tag *tag ) {
-	int32_t recSize = tag->getSize();
+	int32_t recSize = tag->getRecSize();
 	//tag->setDataSize();
 	if ( tag->m_recDataSize <= 16 ) { 
 		// note it
@@ -1372,7 +1373,7 @@ bool SafeBuf::base64Decode ( const char *src , int32_t srcLen ) {
 	if ( ! reserve ( srcLen * 2 + 1 ) ) return false;
 		
 	// leave room for \0
-	char *dst = getBuf();
+	char *dst = getBufPtr();
 	char *dstEnd = getBufEnd(); // dst + dstSize - 5;
 	nullTerm();
 	unsigned char *p    = (unsigned char *)src;
@@ -1437,27 +1438,55 @@ bool SafeBuf::printTimeAgo ( int32_t ago , int32_t now , bool shorthand ) {
 		if ( hrs  < 0 ) hrs  = 0;
 		if ( days < 0 ) days = 0;
 	}
-	bool printed = false;
+	bool printed = true;
 	// print the time ago
 	if ( shorthand ) {
-		if ( mins==0 ) safePrintf("%" PRId32" secs ago",secs);
-		else if ( mins ==1)safePrintf("%" PRId32" min ago",mins);
-		else if (mins<60)safePrintf ( "%" PRId32" mins ago",mins);
-		else if ( hrs == 1 )safePrintf ( "%" PRId32" hr ago",hrs);
-		else if ( hrs < 24 )safePrintf ( "%" PRId32" hrs ago",hrs);
-		else if ( days == 1 )safePrintf ( "%" PRId32" day ago",days);
-		else if (days< 7 )safePrintf ( "%" PRId32" days ago",days);
-		printed = true;
+		if ( mins == 0 ) 
+			safePrintf("%" PRId32" secs ago",secs);
+		else 
+		if ( mins == 1)
+			safePrintf("%" PRId32" min ago",mins);
+		else 
+		if (mins < 60)
+			safePrintf ( "%" PRId32" mins ago",mins);
+		else 
+		if ( hrs == 1 )
+			safePrintf ( "%" PRId32" hr ago",hrs);
+		else 
+		if ( hrs < 24 )
+			safePrintf ( "%" PRId32" hrs ago",hrs);
+		else 
+		if ( days == 1 )
+			safePrintf ( "%" PRId32" day ago",days);
+		else 
+		if (days < 7 )
+			safePrintf ( "%" PRId32" days ago",days);
+		else
+			printed = false;
 	}
 	else {
-		if ( mins==0 ) safePrintf("%" PRId32" seconds ago",secs);
-		else if ( mins ==1)safePrintf("%" PRId32" minute ago",mins);
-		else if (mins<60)safePrintf ( "%" PRId32" minutes ago",mins);
-		else if ( hrs == 1 )safePrintf ( "%" PRId32" hour ago",hrs);
-		else if ( hrs < 24 )safePrintf ( "%" PRId32" hours ago",hrs);
-		else if ( days == 1 )safePrintf ( "%" PRId32" day ago",days);
-		else if (days< 7 )safePrintf ( "%" PRId32" days ago",days);
-		printed = true;
+		if ( mins == 0 ) 
+			safePrintf("%" PRId32" seconds ago",secs);
+		else 
+		if ( mins == 1 )
+			safePrintf("%" PRId32" minute ago",mins);
+		else 
+		if (mins < 60 )
+			safePrintf ( "%" PRId32" minutes ago",mins);
+		else 
+		if ( hrs == 1 )
+			safePrintf ( "%" PRId32" hour ago",hrs);
+		else 
+		if ( hrs < 24 )
+			safePrintf ( "%" PRId32" hours ago",hrs);
+		else 
+		if ( days == 1 )
+			safePrintf ( "%" PRId32" day ago",days);
+		else 
+		if ( days < 7 )
+			safePrintf ( "%" PRId32" days ago",days);
+		else
+			printed = false;
 	}
 	// do not show if more than 1 wk old! we want to seem as
 	// fresh as possible

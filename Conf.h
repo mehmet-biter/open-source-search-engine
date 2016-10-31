@@ -41,14 +41,14 @@ class Conf {
 
 	Conf();
 
-	bool isCollAdmin ( TcpSocket *socket , HttpRequest *hr ) ;
+	bool isCollAdmin ( TcpSocket *socket , HttpRequest *hr );
 	bool isCollAdminForColl (TcpSocket *sock, HttpRequest *hr, const char *coll );
 	bool isCollAdmin2 (TcpSocket *socket , HttpRequest *hr,
-			   class CollectionRec *cr) ;
+			   class CollectionRec *cr);
 
 
-	bool isMasterAdmin ( TcpSocket *socket , HttpRequest *hr ) ;
-	bool hasMasterPwd ( HttpRequest *hr ) ;
+	bool isMasterAdmin ( TcpSocket *socket , HttpRequest *hr );
+	bool hasMasterPwd ( HttpRequest *hr );
 	bool isMasterIp      ( uint32_t ip );
 	bool isConnectIp    ( uint32_t ip );
 
@@ -72,7 +72,7 @@ class Conf {
 	// if this is false, we do not save, used by dump routines
 	// in main.cpp so they can change parms here and not worry about
 	// a core dump saving them
-	char m_save;
+	bool m_save;
 
 	bool m_runAsDaemon;
 
@@ -80,16 +80,13 @@ class Conf {
 	
 	bool m_isLocal;
 
-	// an additional strip directory on a different drive
-	char m_stripeDir[256];
-
-	char m_defaultColl [ MAX_COLL_LEN + 1 ];
+	char m_defaultColl[MAX_COLL_LEN + 1];
 
 	char m_clusterName[32];
 
 	// . dns parameters
 	// . dnsDir should hold our saved cached (TODO: save the dns cache)
-	int32_t  m_numDns ;
+	int32_t  m_numDns;
 	int32_t  m_dnsIps[MAX_DNSIPS];
 	int16_t m_dnsPorts[MAX_DNSIPS];            
 
@@ -105,7 +102,7 @@ class Conf {
 	SafeBuf m_proxyAuth;
 
 	// built-in dns parameters using name servers
-	char  m_askRootNameservers;
+	bool  m_askRootNameservers;
 	int32_t  m_numRns;
 	int32_t  m_rnsIps[MAX_RNSIPS];
 
@@ -164,15 +161,15 @@ class Conf {
 	int64_t  m_msg40_msg39_timeout; //timeout for entire get-docid-list phase, in milliseconds.
 	int64_t  m_msg3a_msg39_network_overhead; //additional latency/overhead of sending reqeust+response over network.
 
-	char	m_useHighFrequencyTermCache;
+	bool	m_useHighFrequencyTermCache;
 
-	bool  m_spideringEnabled     ;
-	bool  m_injectionsEnabled     ;
-	bool  m_queryingEnabled ;
+	bool  m_spideringEnabled;
+	bool  m_injectionsEnabled;
+	bool  m_queryingEnabled;
 	bool  m_returnResultsAnyway;
 
-	bool  m_addUrlEnabled        ; // TODO: use at http interface level
-	bool  m_doStripeBalancing    ;
+	bool  m_addUrlEnabled; // TODO: use at http interface level
+	bool  m_doStripeBalancing;
 
 	// . true if the server is on the production cluster
 	// . we enforce the 'elvtune -w 32 /dev/sd?' cmd on all drives because
@@ -185,13 +182,13 @@ class Conf {
 	int32_t  m_indexdbMaxIndexListAge;
 
 	// TODO: parse these out!!!!
-	int32_t  m_httpMaxSockets     ;
-	int32_t  m_httpsMaxSockets    ;
-	int32_t  m_httpMaxSendBufSize ;
+	int32_t  m_httpMaxSockets;
+	int32_t  m_httpsMaxSockets;
+	int32_t  m_httpMaxSendBufSize;
 
 	// a search results cache (for Msg40)
-	int32_t  m_searchResultsMaxCacheMem    ;
-	int32_t  m_searchResultsMaxCacheAge    ; // in seconds
+	int32_t  m_searchResultsMaxCacheMem;
+	int32_t  m_searchResultsMaxCacheAge; // in seconds
 	int64_t m_docSummaryWithDescriptionMaxCacheAge; //cache timeout for document summaries for documents with a meta-tag with description, in milliseconds
 
 	// for Weights.cpp
@@ -255,10 +252,10 @@ class Conf {
 	char   m_errstr2[MAX_URL_LEN];	
 	char   m_errstr3[MAX_URL_LEN];
 
-	char   m_sendParmChangeAlertsToEmail1;
-	char   m_sendParmChangeAlertsToEmail2;
-	char   m_sendParmChangeAlertsToEmail3;
-	char   m_sendParmChangeAlertsToEmail4;
+	bool   m_sendParmChangeAlertsToEmail1;
+	bool   m_sendParmChangeAlertsToEmail2;
+	bool   m_sendParmChangeAlertsToEmail3;
+	bool   m_sendParmChangeAlertsToEmail4;
 
 	float m_avgQueryTimeThreshold;
 	//float m_maxQueryTime;
@@ -279,10 +276,6 @@ class Conf {
 	// if this is true we use /etc/hosts for hostname lookup before dns
 	bool   m_useEtcHosts;
 
-	// . should we always read data from local machine if available?
-	// . if your network is not gigabit, this may be a good idea
-	bool   m_preferLocalReads;
-
 	// should we bypass load balancing and always send titledb record
 	// lookup requests to a host to maxmize tfndb page cache hits?
 	//bool   m_useBiasedTfndb;
@@ -293,7 +286,7 @@ class Conf {
 	bool m_verifyDumpedLists;
 
 	// calls fsync(fd) if true after each write
-	bool   m_flushWrites ; 
+	bool   m_flushWrites; 
 	bool   m_verifyWrites;
 	int32_t   m_corruptRetries;
 
@@ -331,9 +324,9 @@ class Conf {
 	bool   m_doConsistencyTesting;
 
 	// defaults to "Gigabot/1.0"
-	char m_spiderUserAgent [ USERAGENTMAXSIZE ];
+	char m_spiderUserAgent[USERAGENTMAXSIZE];
 
-	char m_spiderBotName [ USERAGENTMAXSIZE ];
+	char m_spiderBotName[USERAGENTMAXSIZE];
 
 	int32_t m_autoSaveFrequency;
 
@@ -368,48 +361,48 @@ class Conf {
 	// doc quota limits, url truncation limits
 	bool  m_logLimits;
 	// log debug switches
-	bool  m_logDebugAddurl  ;
-	bool  m_logDebugAdmin   ;
-	bool  m_logDebugBuild   ;
-	bool  m_logDebugBuildTime ;
-	bool  m_logDebugDb      ;
-	bool  m_logDebugDirty   ;
-	bool  m_logDebugDisk    ;
+	bool  m_logDebugAddurl;
+	bool  m_logDebugAdmin;
+	bool  m_logDebugBuild;
+	bool  m_logDebugBuildTime;
+	bool  m_logDebugDb;
+	bool  m_logDebugDirty;
+	bool  m_logDebugDisk;
 	bool  m_logDebugDiskPageCache;
-	bool  m_logDebugDns     ;
+	bool  m_logDebugDns;
 	bool  m_logDebugDownloads;
-	bool  m_logDebugHttp    ;
-	bool  m_logDebugImage   ;
-	bool  m_logDebugLoop    ;
-	bool  m_logDebugLang    ;
-	bool  m_logDebugLinkInfo ;
-	bool  m_logDebugMem     ;
+	bool  m_logDebugHttp;
+	bool  m_logDebugImage;
+	bool  m_logDebugLoop;
+	bool  m_logDebugLang;
+	bool  m_logDebugLinkInfo;
+	bool  m_logDebugMem;
 	bool  m_logDebugMemUsage;
-	bool  m_logDebugMerge   ;
-	bool  m_logDebugNet     ;
-	bool  m_logDebugProxies ;
-	bool  m_logDebugQuery   ;
-	bool  m_logDebugQuota   ;
+	bool  m_logDebugMerge;
+	bool  m_logDebugNet;
+	bool  m_logDebugProxies;
+	bool  m_logDebugQuery;
+	bool  m_logDebugQuota;
 	bool  m_logDebugRobots	;
-	bool  m_logDebugSpcache ; // SpiderCache.cpp debug
-	bool  m_logDebugSpeller ;
-	bool  m_logDebugTagdb   ;
+	bool  m_logDebugSpcache; // SpiderCache.cpp debug
+	bool  m_logDebugSpeller;
+	bool  m_logDebugTagdb;
 	bool  m_logDebugSections;
 	bool  m_logDebugSEO;
-	bool  m_logDebugStats   ;
-	bool  m_logDebugSummary ;
-	bool  m_logDebugSpider  ;
-	bool  m_logDebugMsg13   ;
-	bool  m_logDebugUrlAttempts ;
-	bool  m_logDebugTcp     ;
-	bool  m_logDebugTcpBuf  ;
-	bool  m_logDebugThread  ;
-	bool  m_logDebugTitle   ;
-	bool  m_logDebugTopDocs ;
-	bool  m_logDebugUdp     ;
-	bool  m_logDebugUnicode ;
-	bool  m_logDebugRepair  ;
-	bool  m_logDebugDate    ;
+	bool  m_logDebugStats;
+	bool  m_logDebugSummary;
+	bool  m_logDebugSpider;
+	bool  m_logDebugMsg13;
+	bool  m_logDebugUrlAttempts;
+	bool  m_logDebugTcp;
+	bool  m_logDebugTcpBuf;
+	bool  m_logDebugThread;
+	bool  m_logDebugTitle;
+	bool  m_logDebugTopDocs;
+	bool  m_logDebugUdp;
+	bool  m_logDebugUnicode;
+	bool  m_logDebugRepair;
+	bool  m_logDebugDate;
 	bool  m_logDebugDetailed;
 
 	bool m_logTraceBigFile;
@@ -434,8 +427,8 @@ class Conf {
 	bool m_logTraceXmlDoc;
 
 	// expensive timing messages
-	bool m_logTimingAddurl  ;
-	bool m_logTimingAdmin   ;
+	bool m_logTimingAddurl;
+	bool m_logTimingAdmin;
 	bool m_logTimingBuild;
 	bool m_logTimingDb;
 	bool m_logTimingNet;
@@ -457,14 +450,14 @@ class Conf {
 	bool m_generateVectorAtQueryTime;
 
 	char m_redirect[MAX_URL_LEN];
-	char m_useCompressionProxy;
-	char m_gzipDownloads;
+	bool m_useCompressionProxy;
+	bool m_gzipDownloads;
 
 	// used by proxy to make proxy point to the temp cluster while
 	// the original cluster is updated
-	char m_useTmpCluster;
+	bool m_useTmpCluster;
 
-	char m_timeSyncProxy;
+	bool m_timeSyncProxy;
 
 	Xml   m_xml;
 
@@ -475,32 +468,32 @@ class Conf {
 
 	// allow scaling up of hosts by removing recs not in the correct
 	// group. otherwise a sanity check will happen.
-	char  m_allowScale;
+	bool  m_allowScale;
 	// . timeout on dead hosts, only set when we know a host is dead and
 	//   will not come back online.  Messages will timeout on the dead
 	//   host, but not error, allowing outstanding spidering to finish
 	//   to the twin
-	char  m_giveupOnDeadHosts;
-	char  m_bypassValidation;
+	bool  m_giveupOnDeadHosts;
+	bool  m_bypassValidation;
 
 	int32_t  m_maxHeartbeatDelay;
 	int32_t  m_maxCallbackDelay;
 
 	// used by Repair.cpp
-	char  m_repairingEnabled  ;
-	int32_t  m_maxRepairSpiders  ;
+	bool  m_repairingEnabled;
+	int32_t  m_maxRepairSpiders;
 	int64_t  m_repairMem;
 	SafeBuf m_collsToRepair;
-	char  m_fullRebuild       ;
-	char  m_rebuildAddOutlinks;
-	char  m_rebuildRecycleLinkInfo  ;
-	char  m_rebuildTitledb    ;
-	char  m_rebuildPosdb    ;
-	char  m_rebuildClusterdb  ;
-	char  m_rebuildSpiderdb   ;
-	char  m_rebuildLinkdb     ;
-	char  m_rebuildRoots      ;
-	char  m_rebuildNonRoots   ;
+	bool  m_fullRebuild;
+	bool  m_rebuildAddOutlinks;
+	bool  m_rebuildRecycleLinkInfo;
+	bool  m_rebuildTitledb;
+	bool  m_rebuildPosdb;
+	bool  m_rebuildClusterdb;
+	bool  m_rebuildSpiderdb;
+	bool  m_rebuildLinkdb;
+	bool  m_rebuildRoots;
+	bool  m_rebuildNonRoots;
 };
 
 extern class Conf g_conf;

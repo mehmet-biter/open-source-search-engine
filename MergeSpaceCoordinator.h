@@ -19,6 +19,7 @@ class MergeSpaceCoordinator {
 	int held_lock_number; //-1 = none
 	std::string lock_dir;
 	int min_lock_files;
+	std::string merge_space_dir;
 	
 	friend void *hold_lock_thread_function_trampoline(void*);
 	void hold_lock_thread_function();

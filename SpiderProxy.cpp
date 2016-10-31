@@ -215,7 +215,7 @@ bool buildProxyTable ( ) {
 		// skip empty buckets in hashtable s_iptab
 		if ( ! s_iptab.m_flags[i] ) continue;
 		// get the key
-		int64_t key = *(int64_t *)s_iptab.getKey(i);
+		int64_t key = *(int64_t *)s_iptab.getKeyFromSlot(i);
 		// must also exist in tmptab, otherwise it got removed by user
 		if ( tmptab.isInTable ( &key ) ) continue;
 		// skip if not in table
@@ -422,7 +422,7 @@ bool printSpiderProxyTable ( SafeBuf *sb ) {
 
 		sb->safePrintf("<td>%" PRId64"</td>",sp->m_timesUsed);
 
-		int32_t banCount = s_banCountTable.getScore32 ( &sp->m_ip );
+		int32_t banCount = s_banCountTable.getScore32(sp->m_ip);
 		if ( banCount < 0 ) banCount = 0;
 		sb->safePrintf("<td>%" PRId32"</td>",banCount);
 
@@ -532,7 +532,7 @@ void handleRequest54 ( UdpSlot *udpSlot , int32_t niceness ) {
 			s_proxyBannedTable.addKey ( &h64 );
 			// for stats counting. each proxy ip maps to #
 			// of unique website IPs that have banned it.
-			s_banCountTable.addTerm32 ( (int32_t *)&pip );
+			s_banCountTable.addTerm32((uint32_t)pip);
 		}
 	}
 	

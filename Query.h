@@ -206,7 +206,7 @@ class QueryWord {
 	char        m_ignorePhrase ;
 
 	// so we ignore gbsortby:offerprice in bool expressions
-	char        m_ignoreWordInBoolQuery;
+	bool        m_ignoreWordInBoolQuery;
 
 	// is this query single word in quotes?
 	bool        m_inQuotes ; 
@@ -340,7 +340,7 @@ class QueryTerm {
 
 	// . we ignore component terms unless their compound term is not cached
 	// . now this is used to ignore low tf synonym terms only
-	char m_ignored ;
+	bool m_ignored ;
 
 	// is it part of a UOR chain?
 	bool m_isUORed;
@@ -498,7 +498,7 @@ class Query {
 	bool m_hasIpField;
 	bool m_hasUrlField;
 	bool m_hasSubUrlField;
-	char m_hasQuotaField;
+	bool m_hasQuotaField;
 
 	// . we set this to true if it is a boolean query
 	// . when calling Query::set() above you can tell it explicitly

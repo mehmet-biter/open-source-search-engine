@@ -31,8 +31,8 @@ public:
 	int32_t m_recycle;
 	// recycle the link info that was imported from another coll?
 	int32_t m_recycle2;
-	int32_t m_render;
-	char m_recompute;
+	bool m_render;
+	bool m_recompute;
 	int32_t m_oips;
 	char m_linkInfoColl[11];
 	//	char m_buf[16384 * 1024];
@@ -63,9 +63,9 @@ public:
 	int32_t      m_indexCode;
 	//uint64_t m_chksum1;
 
-	char m_didRootDom;
-	char m_didRootWWW;
-	char m_wasRootDom;
+	bool m_didRootDom;
+	bool m_didRootWWW;
+	bool m_wasRootDom;
 
 	// call Msg16 with a versino of title rec to do
 	int32_t m_titleRecVersion;
@@ -234,7 +234,7 @@ static bool sendPageParser2 ( TcpSocket   *s ,
 	// should we recycle link info?
 	st->m_recycle  = r->getLong("recycle",0);
 	st->m_recycle2 = r->getLong("recycleimp",0);
-	st->m_render   = r->getLong("render" ,0);
+	st->m_render   = r->getLong("render" ,0) ? true : false;
 	// for quality computation... takes way longer cuz we have to 
 	// lookup the IP address of every outlink, so we can get its root
 	// quality using Msg25 which needs to filter out voters from that IP
@@ -590,10 +590,10 @@ static bool sendPageParser2 ( TcpSocket   *s ,
 
 
 	// if facebook, load xml content from title rec...
-	bool isFacebook = (bool)strstr(st->m_u,"http://www.facebook.com/");
+	bool isFacebook = strstr(st->m_u,"http://www.facebook.com/") ? true : false;
 	if ( isFacebook && ! content ) {
 		int64_t docId = Titledb::getProbableDocId((char*)st->m_u);
-		sprintf(sreq.m_url ,"%" PRIu64, docId );
+		sprintf(sreq.m_url ,"%" PRIu64 "", (uint64_t) docId);
 		sreq.m_isPageReindex = true;
 	}
 
@@ -782,8 +782,8 @@ bool sendPageAnalyze ( TcpSocket *s , HttpRequest *r ) {
 	// should we recycle link info?
 	st->m_recycle  = r->getLong("recycle",1);
 	st->m_recycle2 = r->getLong("recycleimp",0);
-	st->m_render   = r->getLong("render" ,0);
-	st->m_recompute = r->getLong("recompute" ,0);
+	st->m_render   = r->getLong("render" ,0) ? true : false;
+	st->m_recompute = r->getLong("recompute" ,0) ? true : false;
 	// for quality computation... takes way longer cuz we have to 
 	// lookup the IP address of every outlink, so we can get its root
 	// quality using Msg25 which needs to filter out voters from that IP

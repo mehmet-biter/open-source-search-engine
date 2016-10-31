@@ -50,6 +50,7 @@ Profiler::Profiler() :
 	memset(&m_quickPollInfos, 0, sizeof(m_quickPollInfos));
 	m_lastQPUsed = 0;
 	m_lastAddressMapIndex = 0;
+	memset(&m_fnTime, 0, sizeof(m_fnTime));
 }
 
 Profiler::~Profiler() {//reset();
@@ -1031,9 +1032,9 @@ uint32_t
 Profiler::getFuncBaseAddr(const char *funcName) {
 	for(int32_t i = 0; i < m_fn.getNumSlots(); ++i) {
 		if ( m_fn.isEmpty(i) ) continue;
-		uint32_t key = *(uint32_t *)m_fn.getKey(i);
+		uint32_t key = *(uint32_t *)m_fn.getKeyFromSlot(i);
 		FnInfo *info = (FnInfo *)m_fn.getValueFromSlot(i);
-		if(!info || strcmp(info->m_fnName, funcName)) continue;
+		if(!info || strcmp(info->m_fnName, funcName) != 0) continue;
 		return key;
 	}
 	return 0;
@@ -1171,7 +1172,7 @@ Profiler::printRealTimeInfo(SafeBuf *sb, const char *coll) {
 	// system call to get the function names and line numbers
 	// just dump the buffer
 	char *ip = (char *)m_ipBuf.getBufStart();
-	char *ipEnd = (char *)m_ipBuf.getBuf();
+	char *ipEnd = (char *)m_ipBuf.getBufPtr();
 	SafeBuf ff;
 	ff.safePrintf("%strash/profile.txt",g_hostdb.m_dir);
 	char *filename = ff.getBufStart();
@@ -1258,7 +1259,7 @@ Profiler::printRealTimeInfo(SafeBuf *sb, const char *coll) {
 
 	// now scan m_ipBuf (Instruction Ptr Buf) and make the callstack hashes
 	ip = (char *)m_ipBuf.getBufStart();
-	ipEnd = (char *)m_ipBuf.getBuf();
+	ipEnd = (char *)m_ipBuf.getBufPtr();
 	char *firstOne = NULL;
 	bool missedQuickPoll = false;
 	uint64_t hhh = 0LL;

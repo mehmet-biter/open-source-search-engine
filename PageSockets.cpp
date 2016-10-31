@@ -261,7 +261,7 @@ void printUdpTable(SafeBuf *p, const char *title, UdpServer *server, const char 
 
 	p->safePrintf ( "</table><br>" );
 
-	const char *dd = isDns ? "<td><b>hostname</b></td>" : "<td><b>msgType</td><td><b>desc</td><td><b>hostId</td>";
+	const char *dd = isDns ? "<td><b>hostname</b></td>" : "<td><b>msgType</b></td><td><b>desc</b></td><td><b>hostId</b></td>";
 	p->safePrintf ( "<table %s>"
 			"<tr class=hdrow><td colspan=19>"
 			"<center>"
@@ -313,7 +313,7 @@ void printUdpTable(SafeBuf *p, const char *title, UdpServer *server, const char 
 
 		// bgcolor is lighter for incoming requests
 		const char *bg = it->hasCallback() ? LIGHT_BLUE : LIGHTER_BLUE;
-		Host *h = g_hostdb.getHost(it->getIp(), it->getPort());
+		Host *h = g_hostdb.getUdpHost(it->getIp(), it->getPort());
 		const char *eip = "??";
 		uint16_t eport = 0;
 		const char *ehostId = "-1";

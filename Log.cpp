@@ -12,6 +12,7 @@
 #include "File.h"
 #include "GbMutex.h"
 #include "ScopedLock.h"
+#include <fcntl.h>
 
 // a global class extern'd in Log.h
 Log g_log;
@@ -98,7 +99,6 @@ bool Log::init ( const char *filename ) {
 	m_fd = open ( m_filename , 
 		      O_APPEND | O_CREAT | O_RDWR ,
 		      getFileCreationFlags() );
-		      // S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH );
 	if ( m_fd >= 0 ) return true;
 	// bitch to stderr and return false on error
 	fprintf(stderr,"could not open log file %s for appending\n",
@@ -243,14 +243,11 @@ bool Log::logR ( int64_t now, int32_t type, const char *msg, bool forced ) {
         else
         {
             if ( g_hostdb.getNumHosts() <= 999 )
-                    p += sprintf ( p , "%" PRIu64" %03" PRId32" ",
-                              now , g_hostdb.m_hostId );
+                    p += sprintf ( p , "%" PRIu64 " %03" PRId32 " ", (uint64_t)now , g_hostdb.m_hostId );
             else if ( g_hostdb.getNumHosts() <= 9999 )
-                    p += sprintf ( p , "%" PRIu64" %04" PRId32" ",
-                              now , g_hostdb.m_hostId );
+                    p += sprintf ( p , "%" PRIu64" %04" PRId32" ", (uint64_t)now , g_hostdb.m_hostId );
             else if ( g_hostdb.getNumHosts() <= 99999 )
-                    p += sprintf ( p , "%" PRIu64" %05" PRId32" ",
-                              now , g_hostdb.m_hostId );
+                    p += sprintf ( p , "%" PRIu64" %05" PRId32" ", (uint64_t)now , g_hostdb.m_hostId );
         }
 	}
 
@@ -342,7 +339,6 @@ bool Log::makeNewLogFile ( ) {
 	m_fd = open ( m_filename , 
 		      O_APPEND | O_CREAT | O_RDWR ,
 		      getFileCreationFlags() );
-		      // S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH );
 	if ( m_fd >= 0 ) return true;
 	// bitch to stderr and return false on error
 	fprintf(stderr,"could not open new log file %s for appending\n",

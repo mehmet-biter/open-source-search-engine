@@ -4,8 +4,11 @@
 #include "BigFile.h"
 #include "Process.h"
 #include "BitOperations.h"
+#include "File.h"
 #include "Conf.h"
 #include "Mem.h"
+#include <fcntl.h>
+
 
 RdbMap::RdbMap() {
 	m_numSegments = 0;
@@ -254,7 +257,7 @@ bool RdbMap::writeMap2 ( ) {
 }
 
 
-int64_t RdbMap::writeSegment ( int32_t seg , int64_t offset ) {
+int64_t RdbMap::writeSegment( int32_t seg , int64_t offset ) {
 	// how many pages have we written?
 	int32_t pagesWritten = seg * PAGES_PER_SEGMENT;
 	// how many pages are left to write?
@@ -268,13 +271,13 @@ int64_t RdbMap::writeSegment ( int32_t seg , int64_t offset ) {
 	// write the keys segment
 	g_errno = 0;
 	m_file.write ( (char *)m_keys[seg] , writeSize , offset );
-	if ( g_errno ) return false;//log("RdbMapFile::writeSegment: failed");
+	if ( g_errno ) return -1;//log("RdbMapFile::writeSegment: failed");
 	offset += writeSize ;
 	// determine writeSize for relative 2-byte offsets
 	writeSize = pagesLeft * 2;
 	// write the offsets of segment
 	m_file.write ( (char *)m_offsets[seg] , writeSize , offset );
-	if ( g_errno ) return false;//log("RdbMapFile::writeSegment: failed");
+	if ( g_errno ) return -1;//log("RdbMapFile::writeSegment: failed");
 	offset += writeSize ;
 	// return the new offset
 	return offset ;
@@ -402,7 +405,7 @@ bool RdbMap::verifyMap ( BigFile *dataFile ) {
 	// thereby producing a gap in the contiguous sequence of part files.
 	// let's ignore such islands. these islands can be more than one file
 	// too. let's verify they are unlinked after the merge completes.
-	int32_t numMissingParts = dataFile->m_maxParts;
+	int32_t numMissingParts = dataFile->getMaxParts();
 	
 	while ( numMissingParts > 0 && dataFile->doesPartExist ( numMissingParts-1 ) )
 		numMissingParts--;
@@ -615,12 +618,12 @@ int64_t RdbMap::readSegment ( int32_t seg , int64_t offset , int32_t fileSize ) 
 	// do the read
 	g_errno = 0;
 	m_file.read ( (char *)m_keys[seg] , readSize , offset );
-	if ( g_errno ) return false; // log("RdbMapFile::readSegment: failed");
+	if ( g_errno ) return -1; // log("RdbMapFile::readSegment: failed");
 	offset += readSize;
 	// read the offsets of segment
 	readSize = numKeys * 2;
 	m_file.read ( (char *)m_offsets[seg] , readSize , offset );
-	if ( g_errno ) return false; // log("RdbMapFile::readSegment: failed");
+	if ( g_errno ) return -1; // log("RdbMapFile::readSegment: failed");
 	offset += readSize ;
 	// increase m_numPages based on the keys/pages read
 	m_numPages += numKeys;
@@ -1130,7 +1133,7 @@ void RdbMap::reduceMemFootPrint () {
 
 	// if it is like posdb0054.map then it is being merged into and
 	// we'll resume a killed merge, so don't mess with it, we'll need to add more pages.
-	char *s = m_file.getFilename();
+	const char *s = m_file.getFilename();
 	for ( ; s && *s && ! is_digit(*s) ; s++ )
 		;
 

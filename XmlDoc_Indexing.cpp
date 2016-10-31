@@ -168,7 +168,7 @@ bool XmlDoc::hashNoSplit ( HashTableX *tt ) {
 	// for exact content deduping
 	setStatus ( "hashing gbcontenthash (deduping) no-split keys" );
 	char cbuf[64];
-	int32_t clen = sprintf(cbuf,"%" PRIu64,*pch64);
+	int32_t clen = sprintf(cbuf,"%" PRIu64,(uint64_t)*pch64);
 	hi.m_prefix    = "gbcontenthash";
 	if ( ! hashString ( cbuf,clen,&hi ) ) return false;
 
@@ -1210,7 +1210,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 	int pbufLen=0;
 	int32_t port = fu->getPort();
 	if( port > 0 && port != 80 && port != 443 ) {
-		pbufLen=snprintf(pbuf, 12, ":%" PRIu32,fu->getPort());
+		pbufLen=snprintf(pbuf, 12, ":%" PRIu32, (uint32_t)fu->getPort());
 	}
 
 
@@ -1290,7 +1290,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 		const char *dotpos 	= (const char *)memchr(name,'.',nameLen);
 		const char *slashpos= (const char *)memchr(name+dom_offset,'/',nameLen-dom_offset);
 	
-		if( dotpos && ( (slashpos && slashpos > dotpos) || !slashpos) )
+		if( dotpos && (!slashpos || (slashpos > dotpos)) )
 		{
 			dom_valid = true;
 		}
@@ -1332,7 +1332,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 	// no longer, we just index json now
 	//if ( isStatusDoc ) hi.m_prefix = "gbdocid2";
 	char buf2[32];
-	sprintf(buf2,"%" PRIu64,(m_docId) );
+	sprintf(buf2,"%" PRIu64, (uint64_t)m_docId );
 	if ( ! hashSingleTerm(buf2,strlen(buf2),&hi) ) return false;
 
 	//if ( isStatusDoc ) return true;
@@ -1647,7 +1647,7 @@ bool XmlDoc::hashTitle ( HashTableX *tt ) {
 	// . use "title" as both prefix and description
 	//if ( ! hashWords (a,i,&hi ) ) return false;
 
-	char **wptrs = m_words.getWords();
+	char **wptrs = m_words.getWordPtrs();
 	int32_t  *wlens = m_words.getWordLens();
 	char  *title    = wptrs[a];
 	char  *titleEnd = wptrs[i-1] + wlens[i-1];

@@ -15,20 +15,20 @@ SearchInput::SearchInput() {
 	m_niceness = 0;
 	m_displayQuery = NULL;
 	m_cr = NULL;
-	m_isMasterAdmin = 0;
-	m_isCollAdmin = 0;
+	m_isMasterAdmin = false;
+	m_isCollAdmin = false;
 	m_queryLangId = 0;
 	m_format = 0;
 	m_START = 0;
 	m_coll = NULL;
 	m_query = NULL;
 	m_prepend = NULL;
-	m_showImages = 0;
-	m_useCache = 0;
-	m_rcache = 0;
-	m_wcache = 0;
-	m_debug = 0;
-	m_spellCheck = 0;
+	m_showImages = false;
+	m_useCache = -1;	// default from Param.cc
+	m_rcache = false;
+	m_wcache = -1;		// default from Param.cc
+	m_debug = false;
+	m_spellCheck = false;
 	m_displayMetas = NULL;
 	m_queryCharset = NULL;
 	m_gbcountry = NULL;
@@ -50,20 +50,20 @@ SearchInput::SearchInput() {
 	m_defaultSortLang = NULL;
 	m_dedupURL = 0;
 	m_percentSimilarSummary = 0;
-	m_showBanned = 0;
+	m_showBanned = false;
 	m_includeCachedCopy = 0;
-	m_familyFilter = 0;
-	m_allowHighFrequencyTermCache = 0;
+	m_familyFilter = false;
+	m_allowHighFrequencyTermCache = false;
 	m_minMsg3aTimeout = 0;
-	m_showErrors = 0;
-	m_doSiteClustering = 0;
-	m_doDupContentRemoval = 0;
-	m_getDocIdScoringInfo = 0;
-	m_hideAllClustered = 0;
-	m_askOtherShards = 0;
+	m_showErrors = false;
+	m_doSiteClustering = false;
+	m_doDupContentRemoval = false;
+	m_getDocIdScoringInfo = false;
+	m_hideAllClustered = false;
+	m_askOtherShards = false;
 	memset(m_queryId, 0, sizeof(m_queryId));
-	m_doMaxScoreAlgo = 0;
-	m_streamResults = 0;
+	m_doMaxScoreAlgo = false;
+	m_streamResults = false;
 	m_secsBack = 0;
 	m_sortBy = 0;
 	m_filetype = NULL;
@@ -79,7 +79,7 @@ SearchInput::SearchInput() {
 	m_displayOutlinks = 0;
 	m_docIdsOnly = 0;
 	m_formatStr = NULL;
-	m_queryExpansion = 0;
+	m_queryExpansion = false;
 	m_END_HASH = 0;
 	m_END_TEST = 0;
 }
@@ -146,9 +146,9 @@ void SearchInput::test ( ) {
 	// loop through all possible cgi parms to set SearchInput
 	for ( int32_t i = 0 ; i < g_parms.m_numSearchParms ; i++ ) {
 		Parm *m = g_parms.m_searchParms[i];
-		char *x = (char *)this + m->m_off;
+		unsigned char *x = (unsigned char *)this + m->m_off;
 		if ( m->m_type != TYPE_BOOL ) *(int32_t *)x = 0xffffffff;
-		else                          *(char *)x = 0xff;
+		else                          *(unsigned char *)x = 0xff;
 	}
 	// ensure we're all zeros now!
 	int32_t fix = a - (char *)this;
@@ -274,7 +274,7 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) {
 	char tmpFormat = m_hr.getReplyFormat();
 	// now override automatic defaults for special cases
 	if ( tmpFormat != FORMAT_HTML ) {
-		m_familyFilter            = 0;
+		m_familyFilter            = false;
 		m_doQueryHighlighting     = 0;
 		m_getDocIdScoringInfo = false;
 	}
@@ -309,7 +309,7 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) {
 
 	// set m_isMasterAdmin to zero if no correct ip or password
 	if ( ! g_conf.isMasterAdmin ( sock , &m_hr ) ) {
-		m_isMasterAdmin = 0;
+		m_isMasterAdmin = false;
 	}
 
 	// collection admin?
@@ -525,7 +525,7 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) {
 
 	bool readFromCache = false;
 	if ( m_useCache ==  1  ) readFromCache = true;
-	if ( m_rcache   ==  0  ) readFromCache = false;
+	if ( !m_rcache ) readFromCache = false;
 	if ( m_useCache ==  0  ) readFromCache = false;
 
 	// if useCache is false, don't write to cache if it was not specified
@@ -586,19 +586,25 @@ bool SearchInput::setQueryBuffers ( HttpRequest *hr ) {
 			} else {
 				while (!isspace(*s2) && s2 < send) s2++;
 			}
-			if ( first ) m_sbuf1.safeStrcpy("(");
-			if ( first ) m_sbuf2.safeStrcpy("(");
-			if ( ! first ) m_sbuf1.safeStrcpy(" OR ");
-			if ( ! first ) m_sbuf2.safeStrcpy(" OR ");
+			if ( first ) {
+				m_sbuf1.safeStrcpy("(");
+				m_sbuf2.safeStrcpy("(");
+			}
+			if ( ! first ) {
+				m_sbuf1.safeStrcpy(" OR ");
+				m_sbuf2.safeStrcpy(" OR ");
+			}
 			first = false;
 			m_sbuf1.safeMemcpy ( s , s2 - s );
 			m_sbuf2.safeMemcpy ( s , s2 - s );
 			s = s2 + 1;
 		}
 	}
-	if ( ! first ) m_sbuf1.safeStrcpy(") AND ");
-	if ( ! first ) m_sbuf2.safeStrcpy(") AND ");
-	if ( ! first ) boolq = true;
+	if ( ! first ) {
+		m_sbuf1.safeStrcpy(") AND ");
+		m_sbuf2.safeStrcpy(") AND ");
+		boolq = true;
+	}
 
 	// and this
 	if ( m_secsBack > 0 ) {

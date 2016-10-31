@@ -63,8 +63,8 @@ public:
 	// the final compiled query goes here
 	Query          m_q;
 
-	char           m_isMasterAdmin;
-	char           m_isCollAdmin;
+	bool           m_isMasterAdmin;
+	bool           m_isCollAdmin;
 
 	// these are set from things above
 	SafeBuf m_sbuf1;
@@ -94,16 +94,16 @@ public:
 	
 	char *m_prepend;
 
-	char  m_showImages;
+	bool  m_showImages;
 
 	// general parms, not part of makeKey(), but should be serialized
-	char   m_useCache;                   // msg40
-	char   m_rcache;                     // msg40
-	char   m_wcache;                     // msg40
+	char   m_useCache;                   // msg40. Can be -1
+	bool   m_rcache;                     // msg40
+	char   m_wcache;                     // msg40. Can be -1
 
-	char   m_debug;                      // msg40
+	bool   m_debug;                      // msg40
 
-	char   m_spellCheck;
+	bool   m_spellCheck;
 
 	char  *m_displayMetas;               // msg40
 
@@ -142,28 +142,28 @@ public:
 	// general parameters
         char   m_dedupURL;
 	int32_t   m_percentSimilarSummary;   // msg40
-	char   m_showBanned;
+	bool   m_showBanned;
 	int32_t   m_includeCachedCopy;
-	char   m_familyFilter;            // msg40
-	char   m_allowHighFrequencyTermCache;
+	bool   m_familyFilter;            // msg40
+	bool   m_allowHighFrequencyTermCache;
 	int64_t m_minMsg3aTimeout;
-	char   m_showErrors;
-	char   m_doSiteClustering;        // msg40
-	char   m_doDupContentRemoval;     // msg40
-	char   m_getDocIdScoringInfo;
+	bool	m_showErrors;
+	bool   m_doSiteClustering;        // msg40
+	bool   m_doDupContentRemoval;     // msg40
+	bool   m_getDocIdScoringInfo;
 
-	char   m_hideAllClustered;
+	bool   m_hideAllClustered;
 
-	char   m_askOtherShards;
+	bool   m_askOtherShards;
 
 	char   m_queryId[32];             //for log and correlation
 
 	// ranking algos
-	char   m_doMaxScoreAlgo;
+	bool   m_doMaxScoreAlgo;
 
 	// stream results back on socket in streaming mode, usefule when 
 	// thousands of results are requested
-	char   m_streamResults;
+	bool   m_streamResults;
 
 	// limit search results to pages spidered this many seconds ago
 	int32_t   m_secsBack;
@@ -200,7 +200,7 @@ public:
 	char  *m_formatStr;
 
 	// this should be part of the key because it will affect the results!
-	char   m_queryExpansion;
+	bool   m_queryExpansion;
 
 	////////
 	//

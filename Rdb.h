@@ -35,7 +35,7 @@ static inline bool isSecondaryRdb ( uint8_t rdbId ) {
 }
 
 // get the dbname
-const char *getDbnameFromId ( uint8_t rdbId ) ;
+const char *getDbnameFromId(rdbid_t rdbId);
 
 // size of keys
 char getKeySizeFromRdbId(rdbid_t rdbId);
@@ -241,12 +241,10 @@ public:
 
 	bool isUseIndexFile() const { return m_useIndexFile; }
 
-	bool inAddList() const { return m_inAddList; }
-
 	// . you'll lose your data in this class if you call this
 	void reset();
 
-	bool isSavingTree ( ) ;
+	bool isSavingTree() const;
 
 	bool saveTree(bool useThread);
 	bool saveTreeIndex(bool useThread);
@@ -258,7 +256,6 @@ public:
 	// . load the tree named "saved.dat", keys must be out of order because
 	//   tree is not balanced
 	bool loadTree ( ) ;
-	bool treeFileExists ( ) ;
 
 	// . write out tree to a file with keys in order
 	// . only shift.cpp/reindex.cpp programs set niceness to 0
@@ -324,8 +321,6 @@ private:
 
 	mutable int32_t m_cacheLastTime;
 	mutable int64_t m_cacheLastTotal;
-
-	bool m_inAddList;
 
 	std::atomic<int32_t> m_numMergesOut;
 

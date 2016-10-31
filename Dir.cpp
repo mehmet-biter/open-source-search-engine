@@ -11,6 +11,7 @@
 Dir::Dir ( ) {
 	m_dirname = NULL;
 	m_dir     = NULL;
+	memset(m_dentryBuffer, 0, sizeof(m_dentryBuffer));
 }
 
 
@@ -20,7 +21,7 @@ Dir::~Dir ( ) {
 
 void Dir::reset ( ) {
 	close();
-	if ( m_dirname ) free ( m_dirname );
+	free(m_dirname);
 	m_dirname = NULL;
 }
 
@@ -45,11 +46,10 @@ bool Dir::set ( const char *dirname ) {
 	return false;
 }
 
-bool Dir::close ( ) {
+void Dir::close() {
 	if ( m_dir )
 		closedir ( m_dir );
 	m_dir = NULL;
-	return true;
 }
 
 bool Dir::open ( ) {
@@ -60,10 +60,8 @@ bool Dir::open ( ) {
 		// interrupted system call
 	} while( ! m_dir && errno == EINTR );
 
-	if ( ! m_dir ) 
-		g_errno = errno;
-
 	if ( ! m_dir ) {
+		g_errno = errno;
 		log( LOG_WARN, "disk: opendir(%s) : %s", m_dirname,strerror( g_errno ) );
 		return false;
 	}
@@ -108,4 +106,30 @@ const char *Dir::getNextFilename ( const char *pattern ) {
 	}
 
 	return NULL;
+}
+
+
+
+DirIterator::DirIterator(const char *dirName)
+  : m_dir(),
+    opened(false),
+    exhausted(false)
+{
+	m_dir.set(dirName);
+}
+
+
+const char *DirIterator::getNextFilename(const char *pattern) {
+	if(!opened) {
+		if(!m_dir.open())
+			return NULL;
+	}
+	if(exhausted)
+		return NULL;
+	const char *s = m_dir.getNextFilename();
+	if(!s) {
+		exhausted = true;
+		m_dir.close();
+	}
+	return s;
 }

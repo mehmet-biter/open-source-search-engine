@@ -11,22 +11,6 @@
 
 bool addCollToTable ( const char *coll , collnum_t collnum ) ;
 
-class WaitEntry {
-public:
-	void (* m_callback) (void *state);
-	// ptr to list of parm recs for Parms.cpp
-	char *m_parmPtr;
-	char *m_parmEnd;
-	class UdpSlot *m_slot;
-	bool m_doRebuilds;
-	bool m_rebuildActiveList;
-	bool m_doProxyRebuild;
-	bool m_updatedRound;
-	collnum_t m_collnum;
-	int32_t m_errno;
-	bool m_sentReply;
-};
-
 class Collectiondb  {
 
  public:
@@ -98,14 +82,13 @@ class Collectiondb  {
 	bool setRecPtr ( collnum_t collnum , CollectionRec *cr ) ;
 
 	// returns false if blocked, true otherwise.
-	bool deleteRec2 ( collnum_t collnum );//, WaitEntry *we ) ;
+	bool deleteRec2 ( collnum_t collnum );
 
 	//void deleteSpiderColl ( class SpiderColl *sc );
 
 	// returns false if blocked, true otherwise.
 	bool resetColl2 ( collnum_t oldCollnum,
 			  collnum_t newCollnum,
-			  //WaitEntry *we ,
 			  bool purgeSeeds );
 
 	// . keep up to 128 of them, these reference into m_list
@@ -284,7 +267,7 @@ class CollectionRec {
 	HashTableX m_twitchyTable;
 
 	// spider controls for this collection
-	char m_spideringEnabled ;
+	bool m_spideringEnabled ;
 	int32_t  m_spiderDelayInMilliseconds;
 
 	// is in active list in spider.cpp?
@@ -325,7 +308,7 @@ class CollectionRec {
 	char  m_delete404s              ;
 	char  m_siteClusterByDefault    ;
 	char  m_doIpLookups             ; // considered iff using proxy
-	char  m_useRobotsTxt            ;
+	bool  m_useRobotsTxt            ;
 	char  m_obeyRelNoFollowLinks    ;
 	char  m_forceUseFloaters        ;
 	char  m_automaticallyUseProxies ;
@@ -387,7 +370,7 @@ class CollectionRec {
 	int32_t m_summaryMaxNumLines;
 	int32_t m_summaryMaxNumCharsPerLine;
 
-	char m_getDocIdScoringInfo;
+	bool m_getDocIdScoringInfo;
 
   /*****
    * !! Start Diffbot paramamters !! *
@@ -449,7 +432,7 @@ class CollectionRec {
 	int32_t		m_spiderIpMaxSpiders [ MAX_FILTERS ];
 
 	int32_t		m_numHarvestLinks;
-	char		m_harvestLinks[ MAX_FILTERS ];
+	bool		m_harvestLinks[ MAX_FILTERS ];
 
 	int32_t		m_numForceDelete;
 	char		m_forceDelete[ MAX_FILTERS ];
@@ -467,9 +450,7 @@ class CollectionRec {
 	SafeBuf m_htmlTail;
 
 	// SPELL CHECK
-	char  m_spellCheck;
-
-	char m_sendingAlertInProgress;
+	bool  m_spellCheck;
 
 	class SpiderColl *m_spiderColl;
 	GbMutex m_spiderCollMutex;
@@ -504,12 +485,12 @@ class CollectionRec {
 	int32_t m_maxRobotsCacheAge;
 
 	// use query expansion for this collection?
-	char m_queryExpansion;
+	bool m_queryExpansion;
 
 	// read from cache
-	char m_rcache;
+	bool m_rcache;
 
-	char m_hideAllClustered;
+	bool m_hideAllClustered;
 
 	// special var to prevent Collectiondb.cpp from copying the crap
 	// below here

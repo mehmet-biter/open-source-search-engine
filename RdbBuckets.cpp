@@ -5,10 +5,21 @@
 #include <unistd.h>
 #include "Rdb.h"
 #include "Sanity.h"
+#include <fcntl.h>
 
 #define BUCKET_SIZE 8192
 #define INIT_SIZE 4096
 #define SAVE_VERSION 0
+
+
+RdbBucket::RdbBucket() {
+	m_endKey = NULL;
+	m_keys = NULL;
+	m_parent = NULL;
+	m_numKeys = 0;
+	m_lastSorted = 0;
+	m_collnum = 0;
+}
 
 bool RdbBucket::set(RdbBuckets* parent, char* newbuf) {
 	m_endKey = NULL;
@@ -731,7 +742,7 @@ int32_t RdbBuckets::addNode(collnum_t collnum, const char *key, const char *data
 			m_numBuckets++;
 		} else {
 			RdbBucket *newBucket = bucketFactory();
-			if (m_buckets[i] == NULL) { //can't really happen here..
+			if ( !newBucket ) { 
 				g_errno = ENOMEM;
 				return -1;
 			}
@@ -2036,7 +2047,7 @@ bool RdbBuckets::loadBuckets(const char *dbname) {
 		dir = ".";
 	}
 
-	file.set(dir, filename, NULL);
+	file.set(dir, filename);
 	if (!file.doesExist()) {
 		return true;
 	}
