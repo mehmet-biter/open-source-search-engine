@@ -86,7 +86,7 @@ CPPFLAGS += -std=c++11
 
 
 # optimization
-ifeq ($(config),$(filter $(config),release))
+ifeq ($(config),$(filter $(config),release release-safe))
 O1 = -O1
 O2 = -O2
 O3 = -O3
@@ -121,10 +121,9 @@ else ifeq ($(config),sanitize-leak)
 CONFIG_CPPFLAGS += -fsanitize=leak # liblsan
 endif
 
-else ifeq ($(config),release)
+else ifeq ($(config),release-safe)
 # if defined, UI options that can damage our production index will be disabled
 DEFS += -DPRIVACORE_SAFE_VERSION
-
 endif
 
 CPPFLAGS += $(CONFIG_CPPFLAGS)
@@ -371,6 +370,10 @@ cleandb:
 
 
 # shortcuts
+.PHONY: release-safe
+release-safe:
+	$(MAKE) config=release-safe
+
 .PHONY: debug
 debug:
 	$(MAKE) config=debug
