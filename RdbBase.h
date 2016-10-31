@@ -88,7 +88,7 @@ class RdbBase {
 	bool useHalfKeys() const { return m_useHalfKeys; }
 
 	BigFile *getFile(int32_t n) { return m_fileInfo[n].m_file; }
-	int32_t getFileId(int32_t n) { return m_fileInfo[n].m_fileId; }
+	int32_t isRootFile(int32_t n) { return n==0 || m_fileInfo[n].m_fileId==1; }
 	RdbMap *getMap(int32_t n) { return m_fileInfo[n].m_map; }
 	RdbIndex *getIndex(int32_t n) { return m_fileInfo[n].m_index; }
 

@@ -911,12 +911,7 @@ bool Msg5::gotList2 ( ) {
 	// . should we remove negative recs from final merged list?
 	// . if we're reading from root and tmp merge file of root
 	// . should we keep this out of the thread in case a file created?
-	int32_t fn = 0;
-	if ( base->getNumFiles() > 0 ) {
-		fn = base->getFileId(m_startFileNum);
-	}
-
-	m_removeNegRecs = ( fn == 0 || fn == 1 );
+	m_removeNegRecs = base->isRootFile(m_startFileNum);
 
 	// . if we only have one list, just use it
 	// . Msg3 should have called constrain() on it so it's m_list so
