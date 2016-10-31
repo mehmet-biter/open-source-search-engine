@@ -15,13 +15,14 @@ Our aim is *not* to maintain backwards compatibility with the original Gigablast
 | Multi-threading | Many improvements have been made with regards to multi-threading and general optimizations.|
 | Stability | Numerous general bugfixes and major improvements in thread safety.|
 | Data formats | Posdb is being changed to store a complete copy of a page in a single Posdb file, rather than spreading out a page content across multiple files and merging the data in memory + handling delete keys at query time. A new index file will point to the file containing the newest version of a document.|
-| Data file merging | Our version will use a dedicated drive for merging, instead of merging + deleting part files on-the-fly on the same data drive. We will create a completely merged file on the merge drive, temporarily make GB use that file for queries, delete the original files, copy the newly merged file back to the 'production drive', switch back query handling to that drive and delete the temporary file.|
-| Alerting | Start script improved to send alerts if GB crashes.|
+| Data file merging | Our version will use a dedicated drive for merging, instead of merging + deleting part files on-the-fly on the same data drive. We will create a completely merged file on the merge drive, temporarily make GB use that file for queries, delete the original files, copy the newly merged file back to the 'production drive', switch back query handling to that drive and delete the temporary file. The merge drive must be big enough to hold at least 1 instance's posdb data.|
+| Alerting | Start script improved to send alerts if GB crashes (and avoid successive coredumps, but stay down for analysis).|
 | Trace log | Lots of options to add very detailed trace log to different parts of the code.|
 | Summaries | Improvements in search results summary generation.|
 | Language detection | Google's CLD2 library integrated to improve language detection.|
 | Code removed | About half of the original source has been removed, e.g. Diffbot specific integrations.|
 | Disk space | Lots of 'junk' removed from the Posdb data files, reducing space usage significantly. This means that if you use our version with old Gigablast data files, data will not be cleaned up correctly when re-indexing a page. You will need to rebuild the Posdb data files.|
+| Ranking | Ranking weights made configurable. |
 |...|and much more...|
 
 Migrating Gigablast to our fork
