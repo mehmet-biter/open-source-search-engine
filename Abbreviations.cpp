@@ -233,11 +233,9 @@ static GbMutex s_mtx;
 bool isAbbr ( int64_t h , bool *hasWordAfter ) {
 	ScopedLock sl(s_mtx);
 	if ( ! s_abbrInitialized ) {
-		// shortcut
-		HashTableX *t = &s_abbrTable;
 		// set up the hash table
 		int32_t n = ((int32_t)sizeof(s_abbrs99))/ ((int32_t)sizeof(Abbr));
-		if ( ! t->set ( 8,4,n*4, NULL,0,false,"abbrtbl")) {
+		if ( ! s_abbrTable.set ( 8,4,n*4, NULL,0,false,"abbrtbl")) {
 			log( LOG_ERROR, "build: Could not init abbrev table." );
 			return false;
 		}
@@ -246,12 +244,12 @@ bool isAbbr ( int64_t h , bool *hasWordAfter ) {
 			const char      *sw    = s_abbrs99[i].m_str;
 			int64_t  swh   = hash64Lower_utf8 ( sw );
 			int32_t val = i + 1;
-			if ( ! t->addKey (&swh,&val) ) return false;
+			if ( ! s_abbrTable.addKey (&swh,&val) ) return false;
 		}
 		s_abbrInitialized = true;
 		// test it
 		int64_t h = hash64Lower_utf8("St");
-		if ( ! t->isInTable(&h) ) { g_process.shutdownAbort(true); }
+		if ( ! s_abbrTable.isInTable(&h) ) { g_process.shutdownAbort(true); }
 		int32_t sc = s_abbrTable.getScore(h);
 		if ( sc >= n ) { g_process.shutdownAbort(true); }
 	} 

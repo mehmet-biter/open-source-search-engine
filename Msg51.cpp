@@ -408,21 +408,18 @@ void Msg51::gotClusterRec(Slot *slot) {
 	// it is legit, set to CR_OK
 	m_clusterLevels[ci] = CR_OK;
 
-	// shortcut
-	RdbCache *c = &s_clusterdbQuickCache;
-	
 	// . init the quick cache
 	// . use 100k
 	if ( ! s_cacheInit && 
-	     c->init ( 200*1024      ,  // maxMem
-		       sizeof(key96_t) ,  // fixedDataSize (clusterdb rec)
-		       false         ,  // support lists
-		       10000         ,  // max recs
-		       false         ,  // use half keys?
-		       "clusterdbQuickCache" ,
-		       false         ,  // load from disk?
-		       sizeof(key96_t) ,  // cache key size
-		       sizeof(key96_t) )) // cache key size
+	     s_clusterdbQuickCache.init(200*1024      ,  // maxMem
+					sizeof(key96_t) ,  // fixedDataSize (clusterdb rec)
+					false         ,  // support lists
+					10000         ,  // max recs
+					false         ,  // use half keys?
+					"clusterdbQuickCache" ,
+					false         ,  // load from disk?
+					sizeof(key96_t) ,  // cache key size
+					sizeof(key96_t) )) // cache key size
 		// only init once if successful
 		s_cacheInit = true;
 
@@ -433,11 +430,11 @@ void Msg51::gotClusterRec(Slot *slot) {
 	// . add the record to our quick cache as a int64_t
 	// . ignore any error
 	if ( s_cacheInit )
-		c->addRecord ( m_collnum        ,
-			       (key96_t)docId  , // docid is key
-			       (char *)rec   ,
-			       sizeof(key96_t) , // recSize
-			       0             );// timestamp
+		s_clusterdbQuickCache.addRecord(m_collnum,
+						(key96_t)docId, // docid is key
+						(char *)rec,
+						sizeof(key96_t), // recSize
+						0);
 
 	// clear it in case the cache set it, we don't care
 	g_errno = 0;

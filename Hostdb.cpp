@@ -1067,7 +1067,6 @@ bool Hostdb::hashHost (	bool udp , Host *h , uint32_t ip , uint16_t port ) {
 		g_listNumTotal++;
 	}
 
-	// shortcut
 	HashTableX *t;
 	if ( udp ) t = &g_hostTableUdp;
 	else       t = &g_hostTableTcp;
@@ -1141,7 +1140,6 @@ bool Hostdb::isIpInNetwork ( uint32_t ip ) {
 // . this works on proxy hosts as well!
 // . use a port of 0 if we should disregard port
 Host *Hostdb::getHostFromTable ( bool udp , uint32_t ip , uint16_t port ) {
-	// shortcut
 	HashTableX *t;
 	if ( udp ) t = &g_hostTableUdp;
 	else       t = &g_hostTableTcp;

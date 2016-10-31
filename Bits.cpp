@@ -74,7 +74,6 @@ bool Bits::set(const Words *words) {
 
 	for ( int32_t i = 0 ; i < numBits ; i++ ) {
 		if ( tagIds && tagIds[i] ) {
-			// shortcut
 			nodeid_t tid = tagIds[i] & BACKBITCOMP;
 			// count the <br>s, we can't pair across more than 1
 			if ( g_nodes[tid].m_isBreaking ) {

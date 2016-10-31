@@ -2042,7 +2042,6 @@ bool Rdb::addRecord(collnum_t collnum, char *key, char *data, int32_t dataSize) 
 			sc->addSpiderRequest(sreq, gettimeofdayInMilliseconds());
 		} else {
 			// otherwise repl
-			// shortcut - cast it to reply
 			SpiderReply *rr = (SpiderReply *)sreq;
 
 			// log that. why isn't this undoling always

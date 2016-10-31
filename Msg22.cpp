@@ -194,20 +194,18 @@ void Msg22::gotReplyWrapper22(void *state1, void *state2) {
 void Msg22::gotReply ( ) {
 	// save g_errno
 	m_errno = g_errno;
-	// shortcut
-	Msg22Request *r = m_r;
 	// back
 	m_outstanding = false;
-	r->m_inUse    = false;
+	m_r->m_inUse    = false;
 
 	// bail on error, multicast will free the reply buffer if it should
 	if ( g_errno ) {
-		if ( r->m_url[0] )
+		if ( m_r->m_url[0] )
 			log("db: Had error getting title record for %s : %s.",
-			    r->m_url,mstrerror(g_errno));
+			    m_r->m_url,mstrerror(g_errno));
 		else
 			log("db: Had error getting title record for docId of "
-			    "%" PRId64": %s.",r->m_docId,mstrerror(g_errno));
+			    "%" PRId64": %s.",m_r->m_docId,mstrerror(g_errno));
 		// free reply buf right away
 		m_mcast.reset();
 		m_callback ( m_state );
@@ -257,7 +255,7 @@ void Msg22::gotReply ( ) {
 	m_found = true;
 
 	// if just checking tfndb, do not set this, reply will be empty!
-	if ( ! r->m_justCheckTfndb ) {
+	if ( ! m_r->m_justCheckTfndb ) {
 		*m_titleRecPtrPtr  = reply;
 		*m_titleRecSizePtr = replySize;
 	}
@@ -310,8 +308,6 @@ public:
 static void gotTitleList ( void *state , RdbList *list , Msg5 *msg5 ) ;
 
 void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
-	// shortcut
-	UdpServer *us = &g_udpServer;
 	// get the request
 	Msg22Request *r = (Msg22Request *)slot->m_readBuf;
 
@@ -321,7 +317,7 @@ void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
 		log(LOG_WARN, "db: Got bad request size of %" PRId32" bytes for title record. "
 		    "Need at least 28.",  requestSize );
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
-		us->sendErrorReply ( slot , EBADREQUESTSIZE );
+		g_udpServer.sendErrorReply ( slot , EBADREQUESTSIZE );
 		return;
 	}
 
@@ -331,7 +327,7 @@ void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
 		log(LOG_WARN, "db: Could not get title rec in collection # %" PRId32" because rdbbase is null.", (int32_t)r->m_collnum);
 		g_errno = EBADENGINEER;
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
-		us->sendErrorReply ( slot , g_errno ); 
+		g_udpServer.sendErrorReply ( slot , g_errno );
 		return; 
 	}
 
@@ -357,7 +353,7 @@ void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
 		log(LOG_WARN, "query: Msg22: new(%" PRId32"): %s", (int32_t)sizeof(State22),
 		mstrerror(g_errno));
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
-		us->sendErrorReply ( slot , g_errno );
+		g_udpServer.sendErrorReply ( slot , g_errno );
 		return;
 	}
 	mnew ( st , sizeof(State22) , "Msg22" );
@@ -408,7 +404,7 @@ void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
 		   r->m_url,slot->m_host->m_hostId);
 	       g_errno = EBADURL;
 	       log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
-	       us->sendErrorReply ( slot , g_errno );
+	       g_udpServer.sendErrorReply ( slot , g_errno );
 	       mdelete ( st , sizeof(State22) , "Msg22" );
 	       delete ( st );
 	       return;
