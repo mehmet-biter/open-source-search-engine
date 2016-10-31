@@ -1501,12 +1501,12 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 	// are we resuming a killed merge?
 	bool resuming = false;
 	for ( int32_t j = 0 ; j < numFiles ; j++ ) {
-		// skip odd numbered files
-		if ( m_fileInfo[j].m_fileId & 0x01 ) continue;
-		// yes we are resuming a merge
-		resuming = true;
-		logTrace( g_conf.m_logTraceRdbBase, "Resuming a merge" );
-		break;
+		// if an even-numered file exist then we are resuming a merge
+		if((m_fileInfo[j].m_fileId & 0x01) == 0) {
+			resuming = true;
+			logTrace( g_conf.m_logTraceRdbBase, "Resuming a merge" );
+			break;
+		}
 	}
 
 	// this triggers the negative rec concentration msg below and
