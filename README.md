@@ -33,7 +33,9 @@ Migrating Gigablast to our fork
 | Build | git clone https://github.com/privacore/open-source-search-engine.git <br>git submodule init <br>git submodule update<br>make -j4<br>make dist|
 | Copy | Stop your running GB instances. Copy the files contained in the new gb-[date]-[rev].tar.gz file to your GB instance 0.|
 | Install | Go to your GB instance 0 and do a './gb install' to copy the binary and needed files to all instances.|
-| Run! | './gb start' from your instance 0 and you should be on your way.|
+| Remove files | Remove the posdb files from your collections |
+| Start | './gb start' from your instance 0 and you should be on your way.|
+| Rebuild | Rebuild the posdb data files through the web UI. This is needed because we store less data in posdb than the original version, and GB cannot clean this 'junk' data up when re-indexing pages.|
 
 
 RUNNING GIGABLAST
