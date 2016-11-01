@@ -635,9 +635,6 @@ bool processLoop ( void *state ) {
 	// error?
 	if ( g_errno ) return sendErrorReply ( st , g_errno );
 
-	// shortcut
-	SafeBuf *xbuf = &st->m_xbuf;
-
 	if ( st->m_u && st->m_u[0] ) {
 		// now get the meta list, in the process it will print out a 
 		// bunch of junk into st->m_xbuf
@@ -648,12 +645,12 @@ bool processLoop ( void *state ) {
 		// for debug...
 		if ( ! xd->m_indexCode ) xd->doConsistencyTest ( false );
 		// print it out
-		xd->printDoc( xbuf );
+		xd->printDoc( &st->m_xbuf );
 	}
 
 	// print reason we can't analyze it (or index it)
 	//if ( st->m_indexCode != 0 ) {
-	//	xbuf->safePrintf ("<br><br><b>indexCode: %s</b>\n<br>", 
+	//	st->m_xbuf.safePrintf ("<br><br><b>indexCode: %s</b>\n<br>", 
 	//			  mstrerror(st->m_indexCode));
 	//}
 
@@ -664,8 +661,8 @@ bool processLoop ( void *state ) {
 	
 	// now encapsulate it in html head/tail and send it off
 	bool status = g_httpServer.sendDynamicPage( st->m_s , 
-						    xbuf->getBufStart(), 
-						    xbuf->length() ,
+						    st->m_xbuf.getBufStart(), 
+						    st->m_xbuf.length() ,
 						    -1, //cachtime
 						    false ,//postreply?
 						    NULL, //ctype
@@ -810,7 +807,7 @@ bool sendPageAnalyze ( TcpSocket *s , HttpRequest *r ) {
  	st->m_rootQuality=-1;
 
 	// header
-	//xbuf->safePrintf("<meta http-equiv=\"Content-Type\" "
+	//st->m_xbuf.safePrintf("<meta http-equiv=\"Content-Type\" "
 	//		 "content=\"text/html; charset=utf-8\">\n");
 
 	XmlDoc *xd = &st->m_xd;
@@ -927,9 +924,6 @@ bool gotXmlDoc ( void *state ) {
 	// error?
 	if ( g_errno ) return sendErrorReply ( st , g_errno );
 
-	// shortcut
-	SafeBuf *xbuf = &st->m_xbuf;
-
 	bool printIt = false;
 	if ( st->m_u && st->m_u[0] ) printIt = true;
 	if ( st->m_docId != -1LL ) printIt = true;
@@ -958,7 +952,7 @@ bool gotXmlDoc ( void *state ) {
 		// . print it out
 		// . returns false if blocks, true otherwise
 		// . sets g_errno on error
-		if ( ! xd->printDocForProCog ( xbuf , &st->m_r ) )
+		if ( ! xd->printDocForProCog ( &st->m_xbuf, &st->m_r ) )
 			return false;
 		// error?
 		if ( g_errno ) return sendErrorReply ( st , g_errno );
@@ -969,8 +963,8 @@ bool gotXmlDoc ( void *state ) {
 	if ( isXml ) ctype2 = CT_XML;
 	// now encapsulate it in html head/tail and send it off
 	bool status = g_httpServer.sendDynamicPage( st->m_s , 
-						    xbuf->getBufStart(), 
-						    xbuf->length() ,
+						    st->m_xbuf.getBufStart(), 
+						    st->m_xbuf.length() ,
 						    -1, //cachtime
 						    false ,//postreply?
 						    &ctype2,

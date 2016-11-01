@@ -669,9 +669,7 @@ bool SpiderColl::addSpiderReply ( SpiderReply *srep ) {
 	//////
 	int64_t lockKey = makeLockTableKey ( srep );
 	
-	// shortcut
-	HashTableX *ht = &g_spiderLoop.m_lockTable;
-	UrlLock *lock = (UrlLock *)ht->getValue ( &lockKey );
+	UrlLock *lock = (UrlLock *)g_spiderLoop.m_lockTable.getValue ( &lockKey );
 	time_t nowGlobal = getTimeGlobal();
 
 	logDebug(g_conf.m_logDebugSpider, "spider: removing lock uh48=%" PRId64" lockKey=%" PRIu64, srep->getUrlHash48(), lockKey);
@@ -1571,10 +1569,8 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 		return;
 	}
 
-	// shortcut
-	RdbList *list = &m_list2;
 	// ensure we point to the top of the list
-	list->resetListPtr();
+	m_list2.resetListPtr();
 	// bail on error
 	if ( g_errno ) {
 		log("spider: Had error getting list of urls from spiderdb2: %s.", mstrerror(g_errno));
@@ -1585,11 +1581,11 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 
 	int32_t lastOne = 0;
 	// loop over all serialized spiderdb records in the list
-	for ( ; ! list->isExhausted() ; ) {
+	for ( ; ! m_list.isExhausted() ; ) {
 		// get spiderdb rec in its serialized form
-		char *rec = list->getCurrentRec();
+		char *rec = m_list.getCurrentRec();
 		// skip to next guy
-		list->skipCurrentRecord();
+		m_list.skipCurrentRecord();
 		// negative? wtf?
 		if ( (rec[0] & 0x01) == 0x00 ) {
 			//logf(LOG_DEBUG,"spider: got negative spider rec");
@@ -1685,9 +1681,9 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 	}
 
 	// are we the final list in the scan?
-	bool shortRead = ( list->getListSize() <= 0);//(int32_t)SR_READ_SIZE) ;
+	bool shortRead = ( m_list.getListSize() <= 0);//(int32_t)SR_READ_SIZE) ;
 
-	m_numBytesScanned += list->getListSize();
+	m_numBytesScanned += m_list.getListSize();
 
 	// reset? still left over from our first scan?
 	if ( m_lastPrintCount > m_numBytesScanned )
@@ -1702,7 +1698,7 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 	}
 
 	// debug info
-	log(LOG_DEBUG,"spider: Read2 %" PRId32" spiderdb bytes.",list->getListSize());
+	log(LOG_DEBUG,"spider: Read2 %" PRId32" spiderdb bytes.",m_list.getListSize());
 	// reset any errno cuz we're just a cache
 	g_errno = 0;
 
@@ -1710,7 +1706,7 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 	if ( ! shortRead ) {
 		// . inc it here
 		// . it can also be reset on a collection rec update
-		key128_t lastKey  = *(key128_t *)list->getLastKey();
+		key128_t lastKey  = *(key128_t *)m_list.getLastKey();
 
 		if ( lastKey < m_nextKey2 ) {
 			log("spider: got corruption 9. spiderdb "
@@ -1770,7 +1766,7 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 	}
 
 	// free list to save memory
-	list->freeList();
+	m_list.freeList();
 	// wait for sleepwrapper to call us again with our updated m_nextKey2
 	logTrace( g_conf.m_logTraceSpider, "END, done" );
 	return;
@@ -2516,10 +2512,8 @@ bool SpiderColl::scanListForWinners ( ) {
 	if (wt->isSaving() || !wt->isWritable())
 		return true;
 
-	// shortcut
-	RdbList *list = &m_list;
 	// ensure we point to the top of the list
-	list->resetListPtr();
+	m_list.resetListPtr();
 
 	// get this
 	int64_t nowGlobalMS = gettimeofdayInMillisecondsGlobal();//Local();
@@ -2542,19 +2536,19 @@ bool SpiderColl::scanListForWinners ( ) {
 	// if we don't read minRecSizes worth of data that MUST indicate
 	// there is no more data to read. put this theory to the test
 	// before we use it to indcate an end of list condition.
-	if ( list->getListSize() > 0 && 
+	if ( m_list.getListSize() > 0 && 
 	     m_lastScanningIp == m_scanningIp &&
 	     m_lastListSize < (int32_t)SR_READ_SIZE &&
 	     m_lastListSize >= 0 ) {
 		log("spider: shucks. spiderdb reads not full.");
 	}
 
-	m_lastListSize = list->getListSize();
+	m_lastListSize = m_list.getListSize();
 	m_lastScanningIp = m_scanningIp;
 
-	m_totalBytesScanned += list->getListSize();
+	m_totalBytesScanned += m_list.getListSize();
 
-	if ( list->isEmpty() ) {
+	if ( m_list.isEmpty() ) {
 		logDebug( g_conf.m_logDebugSpider, "spider: failed to get rec for ip=%s", iptoa( m_scanningIp ) );
 	}
 
@@ -2565,17 +2559,17 @@ bool SpiderColl::scanListForWinners ( ) {
 	int32_t recCount = 0;
 
 	// loop over all serialized spiderdb records in the list
-	for ( ; ! list->isExhausted() ; ) {
+	for ( ; ! m_list.isExhausted() ; ) {
 		// stop coring on empty lists
-		if ( list->isEmpty() ) break;
+		if ( m_list.isEmpty() ) break;
 		// get spiderdb rec in its serialized form
-		char *rec = list->getCurrentRec();
+		char *rec = m_list.getCurrentRec();
 		// count it
 		recCount++;
 		// sanity
 		gbmemcpy ( (char *)&finalKey , rec , sizeof(key128_t) );
 		// skip to next guy
-		list->skipCurrentRecord();
+		m_list.skipCurrentRecord();
 		// negative? wtf?
 		if ( (rec[0] & 0x01) == 0x00 ) {
 			logf(LOG_DEBUG,"spider: got negative spider rec");
@@ -3293,7 +3287,7 @@ bool SpiderColl::scanListForWinners ( ) {
 
 	logDebug(g_conf.m_logDebugSpider, "spider: Checked list of %" PRId32" spiderdb bytes (%" PRId32" recs) "
 		    "for winners for firstip=%s. winnerTreeUsedNodes=%" PRId32" #newreqs=%" PRId64,
-	         list->getListSize(), recCount,
+	         m_list.getListSize(), recCount,
 	         iptoa( m_scanningIp ), m_winnerTree.getNumUsedNodes(), m_totalNewSpiderRequests );
 
 	// reset any errno cuz we're just a cache

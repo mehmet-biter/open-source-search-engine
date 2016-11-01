@@ -334,9 +334,6 @@ bool processLoop ( void *state ) {
 	char *content    = xd->ptr_utf8Content;
 	int32_t  contentLen = xd->size_utf8Content - 1;
 
-	// shortcut
-	char strip = st->m_strip;
-
 	// alloc buffer now
 	//char *buf = NULL;
 	//int32_t  bufMaxSize = 0;
@@ -354,7 +351,7 @@ bool processLoop ( void *state ) {
 	int32_t startLen1 = sb->length();
 
 	// we are always utfu
-	if ( strip != 2 )
+	if ( st->m_strip != 2 )
 		sb->safePrintf( "<meta http-equiv=\"Content-Type\" "
 			     "content=\"text/html;charset=utf8\">\n");
 
@@ -365,7 +362,7 @@ bool processLoop ( void *state ) {
 	char *base = xd->ptr_firstUrl;
 	if ( xd->ptr_redirUrl ) base = xd->ptr_redirUrl;
 	//Url *redir = *xd->getRedirUrl();
-	if ( strip != 2 ) {
+	if ( st->m_strip != 2 ) {
 		sb->safePrintf ( "<BASE HREF=\"%s\">" , base );
 
 		// default colors in case css files missing
@@ -824,7 +821,7 @@ bool processLoop ( void *state ) {
 	// now encapsulate it in html head/tail and send it off
 	// sendErr:
 	contentType = "text/html";
-	if ( strip == 2 ) contentType = "text/xml";
+	if ( st->m_strip == 2 ) contentType = "text/xml";
 	// xml is usually buggy and this throws browser off
 	//if ( ctype == CT_XML ) contentType = "text/xml";
 

@@ -2676,8 +2676,6 @@ int32_t RdbTree::fastLoadBlock ( BigFile *f, int32_t start, int32_t totalNodes, 
 	//if ( max >= MAX_COLLS ) { g_process.shutdownAbort(true); }
 	// define ending node for all loops
 	int32_t end = start + n ;
-	// shortcut
-	CollectionRec **recs = g_collectiondb.m_recs;
 	// store into tree in the appropriate nodes
 	for ( int32_t i = start ; i < end ; i++ ) {
 		// skip if empty
@@ -2691,7 +2689,7 @@ int32_t RdbTree::fastLoadBlock ( BigFile *f, int32_t start, int32_t totalNodes, 
 		// must have rec as well. unless it its statsdb tree
 		// or m_waitingTree which are collection-less and always use
 		// 0 for their collnum. if collection-less m_rdbId==-1.
-		if ( ! recs[c] && m_rdbId >= 0 ) {
+		if ( ! g_collectiondb.m_recs[c] && m_rdbId >= 0 ) {
 			m_corrupt++;
 			continue;
 		}
@@ -2704,7 +2702,7 @@ int32_t RdbTree::fastLoadBlock ( BigFile *f, int32_t start, int32_t totalNodes, 
 			// this is only used for Rdb::m_trees
 			//if ( m_isRealTree )
 			if ( m_rdbId >= 0 )
-				recs[c]->m_numNegKeysInTree[(unsigned char)m_rdbId]++;
+				g_collectiondb.m_recs[c]->m_numNegKeysInTree[(unsigned char)m_rdbId]++;
 		}
 		else {
 			m_numPositiveKeys++;
@@ -2712,7 +2710,7 @@ int32_t RdbTree::fastLoadBlock ( BigFile *f, int32_t start, int32_t totalNodes, 
 			// this is only used for Rdb::m_trees
 			//if ( m_isRealTree )
 			if ( m_rdbId >= 0 )
-				recs[c]->m_numPosKeysInTree[(unsigned char)m_rdbId]++;
+				g_collectiondb.m_recs[c]->m_numPosKeysInTree[(unsigned char)m_rdbId]++;
 		}
 	}
 	// bail now if we can 
