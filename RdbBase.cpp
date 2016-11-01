@@ -522,13 +522,13 @@ bool RdbBase::cleanupAnyChrashedMerged() {
 	{
 		std::set<int32_t> existingDataDirFileIds;
 		Dir dir;
-		dir.set(m_mergeDirName);
+		dir.set(m_collectionDirName);
 		if(!dir.open())
 			return false;
 		char pattern[128];
 		sprintf(pattern,"%s*",m_dbname);
 		while(const char *filename = dir.getNextFilename(pattern)) {
-			if(strstr(pattern,".dat")!=NULL) {
+			if(strstr(filename,".dat")!=NULL) {
 				int32_t fileId, fileId2;
 				int32_t mergeNum, endMergeFileId;
 				if(parseFilename(filename,&fileId,&fileId2,&mergeNum,&endMergeFileId)) {
@@ -537,6 +537,7 @@ bool RdbBase::cleanupAnyChrashedMerged() {
 			}
 		}
 		dir.close();
+		log(LOG_DEBUG,"Found %lu .dat files for %s", existingDataDirFileIds.size(), m_dbname);
 		if(!dir.open())
 			return false;
 		while(const char *filename = dir.getNextFilename(pattern)) {
@@ -569,7 +570,7 @@ bool RdbBase::cleanupAnyChrashedMerged() {
 		char pattern[128];
 		sprintf(pattern,"%s*",m_dbname);
 		while(const char *filename = dir.getNextFilename(pattern)) {
-			if(strstr(pattern,".dat")!=NULL) {
+			if(strstr(filename,".dat")!=NULL) {
 				int32_t fileId, fileId2;
 				int32_t mergeNum, endMergeFileId;
 				if(parseFilename(filename,&fileId,&fileId2,&mergeNum,&endMergeFileId)) {
@@ -578,6 +579,7 @@ bool RdbBase::cleanupAnyChrashedMerged() {
 			}
 		}
 		dir.close();
+		log(LOG_DEBUG,"Found %lu .dat files for %s in merge-space", existingMergeDirFileIds.size(), m_dbname);
 		if(!dir.open())
 			return false;
 		while(const char *filename = dir.getNextFilename(pattern)) {
@@ -588,7 +590,7 @@ bool RdbBase::cleanupAnyChrashedMerged() {
 				   (strstr(filename,".map")!=NULL || strstr(filename,".idx")!=NULL))     //.map or .idx
 				{
 					char fullname[1024];
-					sprintf(fullname,"%s/%s",m_collectionDirName,filename);
+					sprintf(fullname,"%s/%s",m_mergeDirName,filename);
 					log(LOG_DEBUG,"Removing %s", fullname);
 					if(unlink(fullname)!=0) {
 						g_errno = errno;
