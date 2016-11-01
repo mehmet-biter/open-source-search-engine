@@ -662,7 +662,7 @@ bool RdbBase::loadFilesFromDir(const char *dirName, bool isInMergeDir) {
 		// sometimes an unlink() does not complete properly and we end up with
 		// remnant files that are 0 bytes. so let's clean up and skip them
 		SafeBuf fullFilename;
-		fullFilename.safePrintf("%s/%s", m_collectionDirName, filename);
+		fullFilename.safePrintf("%s/%s", isInMergeDir ? m_mergeDirName : m_collectionDirName, filename);
 		struct stat st;
 		if(stat(fullFilename.getBufStart(),&st)!=0) {
 			log(LOG_ERROR,"stat(%s) failed with errno=%d (%s)", fullFilename.getBufStart(), errno, strerror(errno));
