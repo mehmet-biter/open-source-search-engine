@@ -256,9 +256,6 @@ private:
 	// Return return array position of new entry, or -1 on error
 	int32_t addFile(bool isNew, int32_t fileId, int32_t fileId2, int32_t mergeNum, int32_t endMergeFileId, bool isInMergeDir);
 
-	int32_t m_x;
-	int32_t m_a;
-
 	// this class contains a ptr to us
 	class Rdb           *m_rdb;
 

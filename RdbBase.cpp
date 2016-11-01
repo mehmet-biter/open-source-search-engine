@@ -26,6 +26,7 @@
 #include <algorithm>
 #include <set>
 #include <signal.h>
+#include <algorithm>
 
 
 bool g_dumpMode = false;
@@ -57,8 +58,6 @@ RdbBase::RdbBase()
 	m_collnum = -1;
 
 	// init below mainly to quiet coverity
-	m_x = 0;
-	m_a = 0;
 	m_fixedDataSize = 0;
 	m_coll = NULL;
 	m_didRepair = false;
@@ -1141,12 +1140,11 @@ bool RdbBase::decrementOustandingJobs() {
 // . called after the merge has successfully completed
 // . the final merge file is always file #0 (i.e. "indexdb0000.dat/map")
 bool RdbBase::incorporateMerge ( ) {
-	// some shorthand variable notation
+	// merge source range [a..b), merge target x
 	int32_t a = m_mergeStartFileNum;
-	int32_t b = m_mergeStartFileNum + m_numFilesToMerge;
+	int32_t b = std::min(m_mergeStartFileNum + m_numFilesToMerge, m_numFiles);
+	int32_t x = a - 1; // file #x is the merged file
 
-	if(b>m_numFiles) //defensive checks
-		b = m_numFiles;
 	// shouldn't be called if no files merged
 	if ( a >= b ) {
 		// unless resuming after a merge completed and we exited
@@ -1162,8 +1160,6 @@ bool RdbBase::incorporateMerge ( ) {
 		m_isMerging = false;
 	}
 
-	// file #x is the merge file
-	int32_t x = a - 1; 
 
 	// . we can't just unlink the merge file on error anymore
 	// . it may have some data that was deleted from the original file
@@ -1261,10 +1257,6 @@ bool RdbBase::incorporateMerge ( ) {
 		m_submittingJobs = true;
 	}
 	
-	// save x&a so unlinkDone has access to the values
-	m_x = x;
-	m_a = a;
-
 	// on success unlink the files we merged and free them
 	for ( int32_t i = a ; i < b && i < m_numFiles; i++ ) {
 		// debug msg
@@ -1335,8 +1327,10 @@ void RdbBase::unlinkDone() {
 	// debug msg
 	log (LOG_INFO,"merge: Done unlinking all files.");
 
-	int32_t x = m_x;
-	int32_t a = m_a;
+	// merge source range [a..b), merge target x
+	int32_t a = m_mergeStartFileNum;
+	//int32_t b = std::min(m_mergeStartFileNum + m_numFilesToMerge, m_numFiles);
+	int32_t x = a - 1; // file #x is the merged file
 
 	// . the fileId of the merge file becomes that of 'a'
 	// . but secondary id should remain the same
