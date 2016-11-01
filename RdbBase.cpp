@@ -1110,8 +1110,21 @@ int32_t RdbBase::addNewFile() {
 	// . we like to keep even #'s for merge file names
 	int32_t fileId = maxFileId + ( ( ( maxFileId & 0x01 ) == 0 ) ? 1 : 2 );
 
-	// otherwise, set it
-	return addFile( true, fileId, id2, -1, -1, false );
+	int32_t rc = addFile( true, fileId, id2, -1, -1, false );
+	if(rc>=0)
+		m_fileInfo[rc].m_allowReads = false; //until we know for sure. See markNewFileReadable()
+	return rc;
+}
+
+
+//Mark a newly dumped file as finished
+void RdbBase::markNewFileReadable() {
+	ScopedLock sl(m_mtxFileInfo);
+	if(m_numFiles==0)
+		gbshutdownLogicError();
+	if(m_fileInfo[m_numFiles-1].m_allowReads)
+		gbshutdownLogicError();
+	m_fileInfo[m_numFiles-1].m_allowReads = true;
 }
 
 

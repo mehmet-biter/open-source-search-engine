@@ -1337,6 +1337,7 @@ void Rdb::doneDumping ( ) {
 		RdbBase *base = getBase(collnum);
 		if (base) {
 			base->generateGlobalIndex();
+			base->markNewFileReadable();
 		}
 	}
 

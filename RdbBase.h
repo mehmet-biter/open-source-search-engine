@@ -158,6 +158,7 @@ class RdbBase {
 	// . return array position we added it to
 	// . return -1 and set errno on error
 	int32_t addNewFile();
+	void markNewFileReadable();
 
 	// these are used for computing load on a machine
 	bool isMerging() const { return m_isMerging; }
