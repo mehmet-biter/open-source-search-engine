@@ -41,19 +41,19 @@ TEST_P(RdbBasePosdbIndexSingleDocTest, PosdbGenerateIndexSingleDocId) {
 
 	RdbBase *base = g_posdb.getRdb()->getBase(collNum);
 
-	ASSERT_EQ(0, base->addNewFile(-1));
+	ASSERT_EQ(0, base->addNewFile());
 	RdbIndex *index0 = base->getIndex(0);
 	int64_t termId0 = ::testing::get<0>(GetParam());
 	GbTest::addPosdbKey(index0, termId0, docId, 0, ::testing::get<0>(GetParam()) == POSDB_DELETEDOC_TERMID);
 	index0->writeIndex();
 
-	ASSERT_EQ(1, base->addNewFile(-1));
+	ASSERT_EQ(1, base->addNewFile());
 	RdbIndex *index1 = base->getIndex(1);
 	int64_t termId1 = ::testing::get<1>(GetParam());
 	GbTest::addPosdbKey(index1, termId1, docId, 0, ::testing::get<1>(GetParam()) == POSDB_DELETEDOC_TERMID);
 	index1->writeIndex();
 
-	ASSERT_EQ(2, base->addNewFile(-1));
+	ASSERT_EQ(2, base->addNewFile());
 	RdbIndex *index2 = base->getIndex(2);
 	int64_t termId2 = ::testing::get<2>(GetParam());
 	GbTest::addPosdbKey(index2, termId2, docId, 0, ::testing::get<2>(GetParam()) == POSDB_DELETEDOC_TERMID);

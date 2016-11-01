@@ -36,7 +36,7 @@ static void deleteRdbFiles() {
 
 			// unlink tree/buckets as well
 			if (rdb->getNumUsedNodes() > 0) {
-				std::string path(rdb->getDir());
+				std::string path(g_hostdb.m_dir);
 				path.append("/").append(rdb->getDbname()).append(rdb->useTree() ? "" : "-buckets").append("-saved.dat");
 				unlink(path.c_str());
 			}
