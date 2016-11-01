@@ -47,6 +47,10 @@ int moveFile(const char *src, const char *dst)
 				errno = saved_errno;
 				return -1;
 			}
+		} else {
+			log(LOG_ERROR,"moveFile:open(%s) failed with errno=%d (%s)", src, errno, strerror(errno));
+			errno = saved_errno;
+			return -1;
 		}
 	}
 	//Tell the OS that we are going to read the source file sequentially
@@ -80,7 +84,7 @@ int moveFile(const char *src, const char *dst)
 				break;
 			if(bytes_read<0) {
 				int saved_errno = errno;
-				log(LOG_ERROR,"moveFile:open(%s) failed with errno=%d (%s)", src,errno,strerror(errno));
+				log(LOG_ERROR,"moveFile:read(%s) failed with errno=%d (%s)", src,errno,strerror(errno));
 				close(fd_src);
 				close(fd_dst);
 				unlink(dst);
