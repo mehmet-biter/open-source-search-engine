@@ -272,7 +272,7 @@ void RdbBase::specialInjectFileInit(const char *dir,
 bool RdbBase::moveToTrash(const char *dstDir) {
 	// loop over all files
 	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) {
-		// . rename the map file
+		// rename the map file
 		{
 			BigFile *f = m_fileInfo[i].m_map->getFile();
 			logf(LOG_INFO,"repair: Renaming %s to %s%s", f->getFilename(), dstDir, f->getFilename());
@@ -282,7 +282,7 @@ bool RdbBase::moveToTrash(const char *dstDir) {
 			}
 		}
 
-		//rename index file if used
+		// rename index file if used
 		if (m_useIndexFile) {
 			BigFile *f = m_fileInfo[i].m_index->getFile();
 			if (f->doesExist()) {
@@ -306,8 +306,17 @@ bool RdbBase::moveToTrash(const char *dstDir) {
 	}
 
 	if (m_useIndexFile) {
-
+		// rename tree index file
+		BigFile *f = m_treeIndex.getFile();
+		if (f->doesExist()) {
+			logf(LOG_INFO, "repair: Renaming %s to %s%s", f->getFilename(), dstDir, f->getFilename());
+			if (!f->rename(f->getFilename(),dstDir)) {
+				log(LOG_WARN, "repair: Moving file had error: %s.", mstrerror(errno));
+				return false;
+			}
+		}
 	}
+
 	// now just reset the files so we are empty, we should have our
 	// setFiles() called again once the newly rebuilt rdb files are
 	// renamed, when RdbBase::rename() is called below
@@ -320,34 +329,30 @@ bool RdbBase::moveToTrash(const char *dstDir) {
 // . newly rebuilt rdb gets renamed to the original, after we call 
 //   RdbBase::trash() on the original.
 // . this is part of PageRepair's repair algorithm. all this stuff blocks.
-bool RdbBase::removeRebuildFromFilenames ( ) {
+bool RdbBase::removeRebuildFromFilenames() {
 	// loop over all files
-	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) {
-		// . rename the map file
-		// . get the "base" filename, does not include directory
-		BigFile *f = m_fileInfo[i].m_file;
-		// return false if it fails
-		//if ( ! removeRebuildFromFilename(f) ) return false;
-		// DON'T STOP IF ONE FAILS
-		removeRebuildFromFilename(f);
-		// rename the map file now too!
-		f = m_fileInfo[i].m_map->getFile();
-		// return false if it fails
-		//if ( ! removeRebuildFromFilename(f) ) return false;
-		// DON'T STOP IF ONE FAILS
-		removeRebuildFromFilename(f);
+	// DON'T STOP IF ONE FAILS
+	for (int32_t i = 0; i < m_numFiles; i++) {
+		// rename the map file
+		// get the "base" filename, does not include directory
+		removeRebuildFromFilename(m_fileInfo[i].m_file);
 
-		if( m_useIndexFile ) {
-			// rename the index file now too!
-			f = m_fileInfo[i].m_index->getFile();
-			// return false if it fails
-			//if ( ! removeRebuildFromFilename(f) ) return false;
-			// DON'T STOP IF ONE FAILS
-			removeRebuildFromFilename(f);
+		// rename the map file
+		removeRebuildFromFilename(m_fileInfo[i].m_map->getFile());
+
+		// rename the index file
+		if (m_useIndexFile) {
+			removeRebuildFromFilename(m_fileInfo[i].m_index->getFile());
 		}
 	}
+
+	if (m_useIndexFile) {
+		removeRebuildFromFilename(m_treeIndex.getFile());
+	}
+
 	// reset all now
 	reset();
+
 	// now PageRepair should reload the original
 	return true;
 }
