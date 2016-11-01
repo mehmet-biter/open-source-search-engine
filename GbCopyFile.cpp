@@ -38,22 +38,11 @@ int copyFile(const char *src, const char *dst)
 	int fd_dst = open(dst,O_CREAT|O_TRUNC|O_WRONLY,0666);
 	if(fd_dst<0) {
 		int saved_errno = errno;
-		if(errno==EINVAL) {
-			//open(...O_DIRECT) can fail due to filesystem (eg. on development machines /tmp can be a
-			//tmpfs which curiously doesn't support O_DIRECT. Other file systems, eg.  NFS have the same issue.
-			fd_src = open(src,O_RDONLY);
-			if(fd_src<0) {
-				saved_errno = errno;
-				log(LOG_ERROR,"copyFile:open(%s) failed with errno=%d (%s)", src, errno, strerror(errno));
-				delete[] buffer;
-				errno = saved_errno;
-				return -1;
-			}
-		} else {
-			log(LOG_ERROR,"copyFile:open(%s) failed with errno=%d (%s)", src, errno, strerror(errno));
-			errno = saved_errno;
-			return -1;
-		}
+		log(LOG_ERROR,"move_file:open(%s) failed with errno=%d (%s)", dst,errno,strerror(errno));
+		(void)close(fd_src);
+		delete[] buffer;
+		errno = saved_errno;
+		return -1;
 	}
 	
 	struct stat st_src;
@@ -70,7 +59,7 @@ int copyFile(const char *src, const char *dst)
 				break;
 			if(bytes_read<0) {
 				int saved_errno = errno;
-				log(LOG_ERROR,"copyFile:open(%s) failed with errno=%d (%s)", src,errno,strerror(errno));
+				log(LOG_ERROR,"moveFile:open(%s) failed with errno=%d (%s)", src,errno,strerror(errno));
 				close(fd_src);
 				close(fd_dst);
 				unlink(dst);
@@ -81,7 +70,7 @@ int copyFile(const char *src, const char *dst)
 			long bytes_written = write(fd_dst, buffer, (size_t)bytes_read);
 			if(bytes_written!=bytes_read) {
 				int saved_errno = errno;
-				log(LOG_ERROR,"copyFile:write(%s) failed with errno=%d (%s)", dst,errno,strerror(errno));
+				log(LOG_ERROR,"moveFile:write(%s) failed with errno=%d (%s)", dst,errno,strerror(errno));
 				close(fd_src);
 				close(fd_dst);
 				unlink(dst);
