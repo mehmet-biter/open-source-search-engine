@@ -43,7 +43,7 @@ SUPPORTED PLATFORMS
 -------------------
 Primary:
 
-*    Ubuntu 14.04 - compile with g++ 4.9.3
+*    Ubuntu 14.04, g++ 4.9.3, Python 2.7.6
 
 Secondary:
 
