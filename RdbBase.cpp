@@ -233,9 +233,6 @@ bool RdbBase::init(const char *dir,
 		return false;
 	}
 
-	// create global index
-	generateGlobalIndex();
-
 	// now diskpagecache is much simpler, just basically rdbcache...
 	return true;
 }
@@ -473,6 +470,9 @@ bool RdbBase::setFiles ( ) {
 		//good thing but I don't see why it should affect spiderdb especially bad.
 		return fixNonfirstSpiderdbFiles();
 	}
+
+	// create global index
+	generateGlobalIndex();
 
 	// ensure files are sharded correctly
 	verifyFileSharding();
