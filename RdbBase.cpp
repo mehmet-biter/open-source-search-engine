@@ -668,7 +668,7 @@ bool RdbBase::loadFilesFromDir(const char *dirName, bool isInMergeDir) {
 		// sometimes an unlink() does not complete properly and we end up with
 		// remnant files that are 0 bytes. so let's clean up and skip them
 		SafeBuf fullFilename;
-		fullFilename.safePrintf("%s/%s", isInMergeDir ? m_mergeDirName : m_collectionDirName, filename);
+		fullFilename.safePrintf("%s/%s", dirName, filename);
 		struct stat st;
 		if (stat(fullFilename.getBufStart(), &st) != 0) {
 			logError("stat(%s) failed with errno=%d (%s)", fullFilename.getBufStart(), errno, strerror(errno));
@@ -680,13 +680,11 @@ bool RdbBase::loadFilesFromDir(const char *dirName, bool isInMergeDir) {
 			// if we leave it there and we start writing
 			// to that file id, exit, then restart, it
 			// causes problems...
-			char src[1024];
 			char dst[1024];
-			sprintf(src, "%s/%s", m_collectionDirName, filename);
 			sprintf(dst, "%s/trash/%s", g_hostdb.m_dir, filename);
-			log(LOG_WARN, "db: Moving file %s/%s of 0 bytes into trash subdir. rename %s to %s",
-			    m_collectionDirName, filename, src, dst);
-			if (::rename(src, dst)) {
+			log(LOG_WARN, "db: Moving file %s of 0 bytes into trash subdir. Move to %s",
+			    fullFilename.getBufStart(), dst);
+			if (::rename(fullFilename.getBufStart(), dst)) {
 				log(LOG_WARN, "db: Moving file had error: %s.", mstrerror(errno));
 				return false;
 			}
