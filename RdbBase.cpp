@@ -2407,7 +2407,7 @@ bool RdbBase::verifyFileSharding ( ) {
 	static int32_t s_count = 0;
 	s_count++;
 	if ( s_count == 50 )
-		log("db: skipping shard verification for remaining files");
+		log(LOG_WARN, "db: skipping shard verification for remaining files");
 	if ( s_count >= 50 ) 
 		return true;
 
