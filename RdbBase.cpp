@@ -810,7 +810,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	// HACK: skip to avoid a OOM lockup. if RdbBase cannot dump
 	// its data to disk it can backlog everyone and memory will
 	// never get freed up.
-	ScopedMemoryLimitBypass scopedMemmoryLimitBypass;
+	ScopedMemoryLimitBypass scopedMemoryLimitBypass;
 	BigFile *f;
 
 	const char *dirName = !isInMergeDir ? m_collectionDirName : m_mergeDirName ;
@@ -889,7 +889,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	}
 
 	// reinstate the memory limit
-	scopedMemmoryLimitBypass.release();
+	scopedMemoryLimitBypass.release();
 
 	// debug help
 	if ( isNew ) {
