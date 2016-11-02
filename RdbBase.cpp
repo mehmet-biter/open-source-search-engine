@@ -891,7 +891,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 
 	// debug help
 	if ( isNew ) {
-		log( LOG_DEBUG, "rdb: adding new file %s/%s", f->getDir(), f->getFilename() );
+		log( LOG_DEBUG, "db: adding new file %s/%s", f->getDir(), f->getFilename() );
 	}
 
 	// if not a new file sanity check it
@@ -919,8 +919,9 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 	}
 
 	// set the map file's  filename
-	sprintf ( name , "%s%04" PRId32".map", m_dbname, fileId );
-	m->set(dirName, name, m_fixedDataSize, m_useHalfKeys, m_ks, m_pageSize);
+	char mapName[1024];
+	sprintf ( mapName , "%s%04" PRId32".map", m_dbname, fileId );
+	m->set(dirName, mapName, m_fixedDataSize, m_useHalfKeys, m_ks, m_pageSize);
 	if ( ! isNew && ! m->readMap ( f ) ) {
 		// if out of memory, do not try to regen for that
 		if ( g_errno == ENOMEM ) {
@@ -928,7 +929,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 		}
 
 		g_errno = 0;
-		log("db: Could not read map file %s",name);
+		log("db: Could not read map file %s",mapName);
 
 		// if 'gb dump X collname' was called, bail, we do not
 		// want to write any data
@@ -966,10 +967,17 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 		}
 	}
 
+	if (!isNew) {
+		log(LOG_DEBUG, "db: Added %s for collnum=%" PRId32" pages=%" PRId32,
+		    mapName, (int32_t)m_collnum, m->getNumPages());
+	}
+
 	if( m_useIndexFile ) {
+		char indexName[1024];
+
 		// set the index file's  filename
-		sprintf(name, "%s%04" PRId32".idx", m_dbname, fileId);
-		in->set(dirName, name, m_fixedDataSize, m_useHalfKeys, m_ks, m_rdb->getRdbId());
+		sprintf(indexName, "%s%04" PRId32".idx", m_dbname, fileId);
+		in->set(dirName, indexName, m_fixedDataSize, m_useHalfKeys, m_ks, m_rdb->getRdbId());
 		if (!isNew && !(in->readIndex() && in->verifyIndex())) {
 			// if out of memory, do not try to regen for that
 			if (g_errno == ENOMEM) {
@@ -977,7 +985,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 			}
 
 			g_errno = 0;
-			log(LOG_WARN, "db: Could not read index file %s",name);
+			log(LOG_WARN, "db: Could not read index file %s",indexName);
 
 			// if 'gb dump X collname' was called, bail, we do not want to write any data
 			if (g_dumpMode) {
@@ -1012,12 +1020,14 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 				return -1;
 			}
 		}
+
+		if (!isNew) {
+			log(LOG_DEBUG, "db: Added %s for collnum=%" PRId32" docId count=%" PRIu64,
+			    indexName, (int32_t)m_collnum, in->getDocIds()->size());
+		}
 	}
 
-	if ( ! isNew ) {
-		log( LOG_DEBUG, "db: Added %s for collnum=%" PRId32" pages=%" PRId32,
-		     name, ( int32_t ) m_collnum, m->getNumPages() );
-
+	if (!isNew) {
 		// open this big data file for reading only
 		if ( mergeNum < 0 ) {
 			f->open(O_RDONLY | O_NONBLOCK | O_ASYNC);
