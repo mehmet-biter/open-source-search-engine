@@ -321,7 +321,9 @@ bool Rdb::updateToRebuildFiles ( Rdb *rdb2 , char *coll ) {
 	logf(LOG_INFO,"repair: Moving *-saved.dat %s from %s to %s", structName, src, dst);
 
 	errno = 0;
-	if ( moveFile(src,dst)!=0 ) {
+
+	// ignore missing file error
+	if (moveFile(src, dst) != 0 && errno != ENOENT) {
 		log( LOG_ERROR, "repair: Moving saved %s had error: %s.", structName, mstrerror( errno ) );
 		return false;
 	}
