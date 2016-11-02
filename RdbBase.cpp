@@ -2418,7 +2418,7 @@ bool RdbBase::verifyFileSharding ( ) {
 	KEYMIN(startKey,MAX_KEY_BYTES);
 	KEYMAX(endKey,MAX_KEY_BYTES);
 	int32_t minRecSizes = 64000;
-	char rdbId = m_rdb->getRdbId();
+	rdbid_t rdbId = m_rdb->getRdbId();
 	if ( rdbId == RDB_TITLEDB ) minRecSizes = 640000;
 	
 	log ( LOG_DEBUG, "db: Verifying shard parity for %s of %" PRId32" bytes for coll %s (collnum=%" PRId32")...",
