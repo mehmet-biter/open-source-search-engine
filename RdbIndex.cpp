@@ -87,8 +87,6 @@ bool RdbIndex::close(bool urgent) {
 }
 
 bool RdbIndex::writeIndex() {
-	log(LOG_INFO, "db: Saving %s", m_file.getFilename());
-
 	logTrace(g_conf.m_logTraceRdbIndex, "BEGIN. filename [%s]", m_file.getFilename());
 
 	if (g_conf.m_readOnlyMode) {
@@ -102,6 +100,8 @@ bool RdbIndex::writeIndex() {
 		         m_file.getFilename());
 		return true;
 	}
+
+	log(LOG_INFO, "db: Saving %s", m_file.getFilename());
 
 	// open a new file
 	if (!m_file.open(O_RDWR | O_CREAT | O_TRUNC)) {
