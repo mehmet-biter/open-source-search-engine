@@ -2454,16 +2454,12 @@ bool RdbBase::verifyFileSharding ( ) {
 	char k[MAX_KEY_BYTES];
 
 	for ( list.resetListPtr() ; ! list.isExhausted() ; list.skipCurrentRecord() ) {
-		//key144_t k;
 		list.getCurrentKey(k);
 
 		// skip negative keys
 		if ( (k[0] & 0x01) == 0x00 ) continue;
 
 		count++;
-		//uint32_t groupId = k.n1 & g_hostdb.m_groupMask;
-		//uint32_t groupId = getGroupId ( RDB_POSDB , &k );
-		//if ( groupId == g_hostdb.m_groupId ) got++;
 		uint32_t shardNum = getShardNum( rdbId , k );
 
 		if ( shardNum == getMyShardNum() ) {
