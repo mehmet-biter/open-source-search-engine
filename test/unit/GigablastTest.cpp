@@ -31,6 +31,14 @@ int main(int argc, char **argv) {
 
 	g_log.init("/dev/stdout");
 
+	// merge space
+	strcpy(g_conf.m_mergespaceLockDirectory, currentPath);
+	strcat(g_conf.m_mergespaceLockDirectory, "tmp/gb_merge_locks");
+	strcpy(g_conf.m_mergespaceDirectory, currentPath);
+	strcat(g_conf.m_mergespaceDirectory, "tmp/gb_merge_space");
+
+	/// @todo ALC cleanup tmp merge space
+
 	if ( !ucInit() ) {
 		log("Unicode initialization failed!");
 		exit(1);
