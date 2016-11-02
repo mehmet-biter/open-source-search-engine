@@ -2457,7 +2457,9 @@ bool RdbBase::verifyFileSharding ( ) {
 		list.getCurrentKey(k);
 
 		// skip negative keys
-		if ( (k[0] & 0x01) == 0x00 ) continue;
+		if (KEYNEG(k)) {
+			continue;
+		}
 
 		count++;
 		uint32_t shardNum = getShardNum( rdbId , k );
