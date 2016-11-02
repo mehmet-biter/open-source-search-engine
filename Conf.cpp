@@ -63,6 +63,9 @@ Conf::Conf ( ) {
 	m_posdbMaxTreeMem = 0;
 	m_tagdbFileCacheSize = 0;
 	m_tagdbMaxTreeMem = 0;
+	m_mergespaceLockDirectory[0] = '\0';
+	m_mergespaceMinLockFiles = 0;
+	m_mergespaceDirectory[0] = '\0';
 	m_clusterdbFileCacheSize = 0;
 	m_clusterdbMaxTreeMem = 0;
 	m_clusterdbMinFilesToMerge = 0;
