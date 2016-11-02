@@ -615,29 +615,28 @@ bool RdbBase::cleanupAnyChrashedMerged() {
 
 bool RdbBase::loadFilesFromDir(const char *dirName, bool isInMergeDir) {
 	Dir dir;
-	if(!dir.set(dirName))
+	if (!dir.set(dirName))
 		return false;
 
-	if ( ! dir.open ( ) ) {
+	if (!dir.open()) {
 		// we are getting this from a bogus dir
 		log( LOG_WARN, "db: Had error opening directory %s", m_collectionDirName);
 		return false;
 	}
 
 	// note it
-	log(LOG_DEBUG,"db: Loading files for %s coll=%s (%" PRId32") from %s",
-	     m_dbname, m_coll, (int32_t)m_collnum, dirName );
+	log(LOG_DEBUG, "db: Loading files for %s coll=%s (%" PRId32") from %s",
+	    m_dbname, m_coll, (int32_t)m_collnum, dirName);
+
 	// . set our m_files array
 	// . addFile() will return -1 and set g_errno on error
 	// . the lower the fileId the older the data 
 	//   (but not necessarily the file)
 	// . we now put a '*' at end of "*.dat*" since we may be reading in
 	//   some headless BigFiles left over froma killed merge
-
-	while( const char *filename = dir.getNextFilename("*.dat*") ) {
-
+	while (const char *filename = dir.getNextFilename("*.dat*")) {
 		// ensure filename starts w/ our m_dbname
-		if ( strncmp ( filename , m_dbname , m_dbnameLen ) != 0 ) {
+		if (strncmp(filename, m_dbname, m_dbnameLen) != 0) {
 			continue;
 		}
 
@@ -646,7 +645,7 @@ bool RdbBase::loadFilesFromDir(const char *dirName, bool isInMergeDir) {
 		int32_t mergeNum;
 		int32_t endMergeFileId;
 
-		if ( !parseFilename( filename, &fileId, &fileId2, &mergeNum, &endMergeFileId ) ) {
+		if (!parseFilename(filename, &fileId, &fileId2, &mergeNum, &endMergeFileId)) {
 			continue;
 		}
 
@@ -655,7 +654,7 @@ bool RdbBase::loadFilesFromDir(const char *dirName, bool isInMergeDir) {
 		// if we are titledb, we got the secondary id
 		// . if we are titledb we should have a -xxx after
 		// . if none is there it needs to be converted!
-		if ( m_isTitledb && fileId2 == -1 ) {
+		if (m_isTitledb && fileId2 == -1) {
 			// critical
 			log("gb: bad title filename of %s. Halting.",filename);
 			g_errno = EBADENGINEER;
@@ -663,7 +662,7 @@ bool RdbBase::loadFilesFromDir(const char *dirName, bool isInMergeDir) {
 		}
 
 		// don't add if already in there (happens for eg dbname0001.dat.part*)
-		if(hasFileId(fileId))
+		if (hasFileId(fileId))
 			continue;
 
 		// sometimes an unlink() does not complete properly and we end up with
@@ -677,18 +676,18 @@ bool RdbBase::loadFilesFromDir(const char *dirName, bool isInMergeDir) {
 		}
 
 		// cleanup&skip if 0 bytes
-		if ( st.st_size==0 ) {
+		if (st.st_size == 0) {
 			// if we leave it there and we start writing
 			// to that file id, exit, then restart, it
 			// causes problems...
 			char src[1024];
 			char dst[1024];
-			sprintf ( src , "%s/%s", m_collectionDirName, filename);
-			sprintf ( dst , "%s/trash/%s", g_hostdb.m_dir,filename);
-			log( LOG_WARN, "db: Moving file %s/%s of 0 bytes into trash subdir. rename %s to %s",
-			     m_collectionDirName, filename, src, dst );
-			if ( ::rename ( src , dst ) ) {
-				log( LOG_WARN, "db: Moving file had error: %s.", mstrerror( errno ) );
+			sprintf(src, "%s/%s", m_collectionDirName, filename);
+			sprintf(dst, "%s/trash/%s", g_hostdb.m_dir, filename);
+			log(LOG_WARN, "db: Moving file %s/%s of 0 bytes into trash subdir. rename %s to %s",
+			    m_collectionDirName, filename, src, dst);
+			if (::rename(src, dst)) {
+				log(LOG_WARN, "db: Moving file had error: %s.", mstrerror(errno));
 				return false;
 			}
 			continue;
@@ -698,7 +697,7 @@ bool RdbBase::loadFilesFromDir(const char *dirName, bool isInMergeDir) {
 		// . MUST be in order of fileId for merging purposes
 		// . we assume older files come first so newer can override
 		//   in RdbList::merge() routine
-		if ( addFile( false, fileId, fileId2, mergeNum, endMergeFileId, isInMergeDir ) < 0 ) {
+		if (addFile(false, fileId, fileId2, mergeNum, endMergeFileId, isInMergeDir) < 0) {
 			return false;
 		}
 	}
