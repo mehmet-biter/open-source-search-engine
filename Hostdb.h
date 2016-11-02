@@ -46,14 +46,11 @@ enum {
 #define HT_PROXY   0x04
 #define HT_QCPROXY 0x08
 #define HT_SCPROXY 0x10
-#define HT_ALL_PROXIES (HT_PROXY|HT_QCPROXY|HT_SCPROXY)
 
 int32_t *getLocalIps ( ) ;
 
 class PingInfo {
- public:
-	// m_lastPing MUST be on top for now...
-	//int64_t m_lastPing;
+public:
 	// this timestamp MUST be on top because we set requestSize to 8
 	// and treat it like an old 8-byte ping in PingServer.cpp
 	int64_t m_localHostTimeMS;
@@ -82,7 +79,6 @@ class PingInfo {
 
 	char m_gbVersionStr[21];
 	char m_repairMode;
-	char m_kernelErrors;
 	uint8_t m_recoveryLevel;
 };
 
@@ -121,9 +117,6 @@ public:
 	double         m_loadAvg;
 	// the first time we went OOM (out of mem, i.e. >= 99% mem used)
 	int64_t      m_firstOOMTime;
-
-	// did gb log system errors that were given in g_conf.m_errstr ?
-	bool           m_kernelErrorReported;
 
 	// last time g_hostdb.ping(i) was called for this host in milliseconds.
 	int64_t      m_lastPing;
@@ -287,8 +280,6 @@ class Hostdb {
 	bool  isDead ( Host *h ) ;
 
 	bool hasDeadHost ( );
-
-	bool kernelErrors (Host *h) { return h->m_pingInfo.m_kernelErrors; }
 
 	int64_t getNumGlobalRecs ( );
 

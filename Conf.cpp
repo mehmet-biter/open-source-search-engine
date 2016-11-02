@@ -145,9 +145,6 @@ Conf::Conf ( ) {
 	memset(m_email4MX, 0, sizeof(m_email4MX));
 	memset(m_email4Addr, 0, sizeof(m_email4Addr));
 	memset(m_email4From, 0, sizeof(m_email4From));
-	memset(m_errstr1, 0, sizeof(m_errstr1));
-	memset(m_errstr2, 0, sizeof(m_errstr2));
-	memset(m_errstr3, 0, sizeof(m_errstr3));
 	m_sendParmChangeAlertsToEmail1 = false;
 	m_sendParmChangeAlertsToEmail2 = false;
 	m_sendParmChangeAlertsToEmail3 = false;

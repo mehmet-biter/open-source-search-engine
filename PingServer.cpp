@@ -35,11 +35,7 @@ int32_t g_recoveryLevel = 0;
 // a global class extern'd in .h file
 PingServer g_pingServer;
 
-static char s_kernelRingBuf[4097];
-static int32_t s_kernelRingBufLen = 0;
-
 static void sleepWrapper ( int fd , void *state ) ;
-static void checkKernelErrors( int fd, void *state );
 static void gotReplyWrapperP ( void *state , UdpSlot *slot ) ;
 static void handleRequest11 ( UdpSlot *slot , int32_t niceness ) ;
 static void gotReplyWrapperP2 ( void *state , UdpSlot *slot );
@@ -100,8 +96,6 @@ bool PingServer::init ( ) {
 	m_maxRepairModeHost         = NULL;
 	m_minRepairModeBesides0Host = NULL;
 
-	initKernelErrorCheck();
-
 	// invalid info init
 	m_currentPing  = -1;
 	m_bestPing     = -1;
@@ -115,49 +109,6 @@ bool PingServer::init ( ) {
 	// we're done
 	return true;
 }
-
-void PingServer::initKernelErrorCheck(){
-	// Most of the important logfiles are gathered in a single 
-	// directory - /var/log
-
-	// * /var/log/dmesg - boot time hardware detection and driver setup
-	// * /var/log/messages - general system messages, includes most of
-	//   what is in dmesg if it hasn't "rolled over".
-	// * /var/log/syslog - like the "messages" log, but sometimes includes
-	//   other details
-	// * /var/log/mythtv/mythbackend.log - status logs from the MythTV
-	//   backend server
-	// * /var/log/mysql/mysql.err - errors from the database server
-	//   (usually empty!)
-	// * /var/log/daemon.log - messages from service tasks like lircd
-	// * /var/log/kern.log - if something has gone wrong with a kernel
-	//   module, you may find something here.
-	// * /var/log/Xorg.0.log - start up log from the X server (GUI
-	//   environment), including hardware detection and modes (resolution)
-	//   selected
-
-	// BUT FOUND A BETTER WAY THAN TO READ LOG FILES!
-	// directly read the kernel ring buffer every x sec using klogctl.
-	// look for errors directly in the kernel ring buffer.
-
-	// fill the kernel ring buf with info that was available before startup
-	s_kernelRingBufLen = klogctl( 3, s_kernelRingBuf, 4096 );
-	if ( s_kernelRingBufLen < 0 ){
-		log ("db: klogctl returned error");
-	}
-
-	// clear the kernel Errors 
-	for ( int32_t i = 0; i < g_hostdb.getNumHosts(); i++ ){
-		g_hostdb.m_hosts[i].m_pingInfo.m_kernelErrors = 0;
-		g_hostdb.m_hosts[i].m_kernelErrorReported = false;
-	}
-
-	if ( !g_loop.registerSleepCallback( 30000, NULL, checkKernelErrors,0)) {
-		log( LOG_WARN, "registering kern.log failed" );
-	}
-	return;
-}
-
 
 void PingServer::sendPingsToAll ( ) {
 	// if we are the query/spider compr. proxy then do not send out pings
@@ -533,21 +484,6 @@ void gotReplyWrapperP ( void *state , UdpSlot *slot ) {
 	// . send it iff both ports (if using shotgun) are dead
 	if ( ! isAlive && nowms - h->m_startTime >= g_conf.m_sendEmailTimeout) 
 		g_pingServer.sendEmail ( h ) ;
-
-
-	PingInfo *pi = &h->m_pingInfo;
-
-	// if this host is alive but has some kernel error, then send an
-	// email alert.
-	if ( pi->m_kernelErrors && !h->m_kernelErrorReported ){
-		log("net: Host #%" PRId32" is reporting kernel errors.",
-		    h->m_hostId);
-		h->m_kernelErrorReported = true;
-	}
-	
-	// reset if the machine has come back up
-	if ( !pi->m_kernelErrors && h->m_kernelErrorReported )
-		h->m_kernelErrorReported = false;
 
 	// reset in case sendEmail() set it
 	g_errno = 0;
@@ -954,8 +890,7 @@ static void sleepWrapper ( int fd , void *state ) {
 bool PingServer::sendEmail ( Host *h            , 
 			     char *errmsg       , 
 			     bool  sendToAdmin  ,
-			     bool  oom          , 
-			     bool  kernelErrors , 
+			     bool  oom          ,
 			     bool  parmChanged  ,
 			     bool  forceIt      ,
 			     int32_t  mxIP         ) { // 0 means none
@@ -1045,10 +980,6 @@ bool PingServer::sendEmail ( Host *h            ,
 			    "Sending email alert.",h->m_hostname,nm,
 			    h->m_hostId,
 			    (int32_t)g_conf.m_sendEmailTimeout);
-		else if ( kernelErrors )
-			log("net: %s %s #%" PRId32" has an error in the kernel. "
-			    "Sending email alert.",h->m_hostname,nm,
-			    h->m_hostId);
 		else
 			log("net: %s %s #%" PRId32" is dead. Has not responded to "
 			    "ping in %" PRId32" ms. Sending email alert.",
@@ -1061,7 +992,6 @@ bool PingServer::sendEmail ( Host *h            ,
 		if ( h0 ) ip0 = h0->m_ip;
 		const char *desc = "dead";
 		if ( oom ) desc = "out of memory";
-		else if ( kernelErrors ) desc = "having kernel errors";
 		sprintf ( msgbuf , "%s %s %" PRId32" is %s. cluster=%s (%s)",
 			  h->m_hostname,nm,
 			  h->m_hostId, desc, g_conf.m_clusterName,iptoa(ip0));
@@ -1089,8 +1019,8 @@ bool PingServer::sendEmail ( Host *h            ,
 	m_maxRequests2 = m_numRequests2;
 
 	bool delay = g_conf.m_delayNonCriticalEmailAlerts;
-	// oom is always critical, as is kernel errors
-	if ( oom || kernelErrors ) delay = false;
+	// oom is always critical
+	if ( oom ) delay = false;
 
 	// if delay non critical email alerts is true do not send email 
 	// alerts about dead hosts to anyone except sysadmin@example.com
@@ -1464,118 +1394,6 @@ void updatePingTime ( Host *h , int32_t *pingPtr , int32_t tripTime ) {
 	}
 }
 
-void checkKernelErrors( int fd, void *state ){
-	Host *me = g_hostdb.m_myHost;
-
-	int64_t st = gettimeofdayInMilliseconds();
-	char buf[4098];
-	// klogctl reads the last 4k lines of the kernel ring buffer
-	int bufLen = klogctl(3,buf,4096);
-
-	if ( bufLen < 0 ){
-		log ("db: klogctl returned error: %s",mstrerror(errno));
-		return;
-	}
-
-	int64_t took = gettimeofdayInMilliseconds() - st;
-
-	if ( took >= 3 ) {
-		int32_t len = bufLen;
-		if ( len > 200 ) len = 200;
-		char c = buf[len];
-		buf[len] = '\0';
-		log("db: klogctl took %" PRId64" ms to read %s",took, buf);
-		buf[len] = c;
-	}
-
-	// make sure not too big!
-	if ( bufLen >= 4097 ) {
-		log ("db: klogctl overflow");
-		return;
-	}
-	buf[bufLen] = '\0';
-
-	// compare it to the old buffer
-	if ( s_kernelRingBufLen == bufLen && 
-	     strncmp ( s_kernelRingBuf, buf, bufLen ) == 0 )
-		// nothing has changed so return
-		return;
-
-	// somethings changed. find out what part has changed
-	// sometimes the kernel ring buffer gets full and overwrites itself.
-	// in that case compare only latter half of the old buffer
-	char *oldKernBuf = s_kernelRingBuf;
-	int32_t oldKernBufLen = s_kernelRingBufLen;
-	if ( s_kernelRingBufLen > 3 * 1024 ){
-		oldKernBuf = s_kernelRingBuf + s_kernelRingBufLen / 2;
-		oldKernBufLen = strlen( oldKernBuf );
-	}
-
-	// somethings changed. find out what part has changed
-	char *changedBuf = strstr ( buf, oldKernBuf );
-	// we found the old buf. skip it and go to the part that has changed
-	if ( changedBuf ) 
-		changedBuf += oldKernBufLen;
-	// we couldn't find the old buf in the new buf!
-	else 
-		changedBuf = buf;
-	int32_t changedBufLen = strlen(changedBuf);
-	
-	// copy the new buf over to the old buf 
-	strcpy ( s_kernelRingBuf, buf );
-	s_kernelRingBufLen = bufLen;
-
-	static int32_t s_lastCount = 0;
-
-	// since we do not know if this host has been fixed or not by looking
-	// at the kernel ring buffer, keep returning until someone clicks
-	// 'clear kernel error message' control in Master Controls. 
-	// but don't return before copying over the new buffer
-	if ( me->m_pingInfo.m_kernelErrors > 0 ) return;
-
-	// check if we match any error strings in master controls
-	char *p = NULL;
-	if ( strlen(g_conf.m_errstr1) > 0 )
-		p = strstr( changedBuf, g_conf.m_errstr1 );
-
-	if ( !p && strlen(g_conf.m_errstr2) > 0 )
-		p = strstr( changedBuf, g_conf.m_errstr2 );
-
-	if ( !p && strlen(g_conf.m_errstr3) > 0 )
-		p = strstr( changedBuf, g_conf.m_errstr3 );
-
-	if ( p ){
-		// a kernel error that we cared for has happened!
-		// check what kind of an error is this
-		// isolate that line from the rest of the buf
-		while ( p < changedBuf + changedBufLen && *p != '\n' )
-			p++;
-		*p = '\0';
-
-		while ( p > changedBuf && *(p-1) != '\n' )
-			p--;
-	
-		if ( strncasestr ( p, strlen(p) , "scsi" ) &&
-		     g_numIOErrors > s_lastCount ) {
-			me->m_pingInfo.m_kernelErrors = ME_IOERR;
-			s_lastCount = g_numIOErrors;
-		}
-		else if ( strncasestr ( p, strlen(p), "100 mbps" ) )
-			me->m_pingInfo.m_kernelErrors = ME_100MBPS;
-		// assume an I/O IO error here otherwise
-		else if ( g_numIOErrors > s_lastCount ) {
-			me->m_pingInfo.m_kernelErrors = ME_UNKNWN;
-			s_lastCount = g_numIOErrors;
-		}
-		log ( LOG_DEBUG,"PingServer: error message in "
-		      "kernel ring buffer, \"%s\"", p );
-		log ( LOG_WARN,"PingServer: this host shall be "
-		      "dead to all other hosts unless the problem is fixed "
-		      "and kernel error message cleared in Master Controls." );
-	}
-	return;
-}
-
 void PingServer::sendEmailMsg ( int32_t *lastTimeStamp , const char *msg ) {
 	// leave if we already sent and alert within 5 mins
 	//static int32_t s_lasttime = 0;
@@ -1593,7 +1411,6 @@ void PingServer::sendEmailMsg ( int32_t *lastTimeStamp , const char *msg ) {
 				 msgbuf , // char *errmsg = NULL , 
 				 true   , // bool sendToAdmin = true ,
 				 false  , // bool oom = false ,
-				 false  , // bool kernelErrors = false ,
 				 false  , // bool parmChanged  = false ,
 				 true   );// bool forceIt      = false );
 	*lastTimeStamp = now;

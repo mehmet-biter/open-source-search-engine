@@ -248,12 +248,6 @@ class Conf {
 	char   m_email4Addr[MAX_EMAIL_LEN];
 	char   m_email4From[MAX_EMAIL_LEN];
 
-	//bool   m_sendEmailAlertsToSabino;
-
-	char   m_errstr1[MAX_URL_LEN];
-	char   m_errstr2[MAX_URL_LEN];	
-	char   m_errstr3[MAX_URL_LEN];
-
 	bool   m_sendParmChangeAlertsToEmail1;
 	bool   m_sendParmChangeAlertsToEmail2;
 	bool   m_sendParmChangeAlertsToEmail3;

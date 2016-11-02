@@ -767,12 +767,6 @@ static bool CommandSaveAndExit ( char *rec ) {
 	return true;
 }
 
-
-static bool CommandClearKernelError ( char *rec ) {
-	g_hostdb.m_myHost->m_pingInfo.m_kernelErrors = 0;
-	return true;
-}
-
 static bool CommandPowerNotice ( int32_t hasPower ) {
 
 	//int32_t hasPower = r->getLong("haspower",-1);
@@ -824,7 +818,6 @@ static bool CommandPowerNotice ( int32_t hasPower ) {
 				 tmp   , // msg
 				 true  , // sendToAdmin
 				 false , // oom?
-				 false , // kernel error?
 				 true  , // parm change?
 				 // force it? even if disabled?
 				 false  );
@@ -2839,7 +2832,6 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char
 				 tmp   , // msg
 				 true  , // sendToAdmin
 				 false , // oom?
-				 false , // kernel error?
 				 true  , // parm change?
 				 true  );// force it? even if disabled?
 
@@ -5550,20 +5542,6 @@ void Parms::init ( ) {
         m->m_obj   = OBJ_CONF;
         m++;
 
-
-
-	m->m_title = "clear kernel error message";
-	m->m_desc  = "Clears the kernel error message. You must do this "
-		"to stop getting email alerts for a kernel ring buffer "
-		"error alert.";
-	m->m_cgi   = "clrkrnerr";
-	m->m_type  = TYPE_CMD;
-	m->m_func  = CommandClearKernelError;
-	m->m_cast  = true;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
 	m->m_title = "disk page cache off";
 	m->m_desc  = "Disable all disk page caches to save mem for "
 		"tmp cluster. Run "
@@ -5875,47 +5853,6 @@ void Parms::init ( ) {
 	m->m_def   = "5";
 	m->m_group = false;
 	m->m_flags = PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	m->m_title = "error string 1";
-	m->m_desc  = "Look for this string in the kernel buffer for sending "
-		"email alert. Useful for detecting some strange "
-		"hard drive failures that really slow performance.";
-	m->m_cgi   = "errstrone";
-	m->m_off   = offsetof(Conf,m_errstr1);
-	m->m_type  = TYPE_STRING;
-	m->m_def   = "I/O error";
-	m->m_size  = sizeof(Conf::m_errstr1);
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	m->m_title = "error string 2";
-	m->m_desc  = "Look for this string in the kernel buffer for sending "
-		"email alert. Useful for detecting some strange "
-		"hard drive failures that really slow performance.";
-	m->m_cgi   = "errstrtwo";
-	m->m_off   = offsetof(Conf,m_errstr2);
-	m->m_type  = TYPE_STRING;
-	m->m_def   = "";
-	m->m_size  = sizeof(Conf::m_errstr2);
-	m->m_group = false;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	m->m_title = "error string 3";
-	m->m_desc  = "Look for this string in the kernel buffer for sending "
-		"email alert. Useful for detecting some strange "
-		"hard drive failures that really slow performance.";
-	m->m_cgi   = "errstrthree";
-	m->m_off   = offsetof(Conf,m_errstr3);
-	m->m_type  = TYPE_STRING;
-	m->m_def   = "";
-	m->m_size  = sizeof(Conf::m_errstr3);
-	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
