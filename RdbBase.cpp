@@ -620,7 +620,7 @@ bool RdbBase::loadFilesFromDir(const char *dirName, bool isInMergeDir) {
 
 	if (!dir.open()) {
 		// we are getting this from a bogus dir
-		log( LOG_WARN, "db: Had error opening directory %s", m_collectionDirName);
+		log(LOG_WARN, "db: Had error opening directory %s", dirName);
 		return false;
 	}
 
@@ -656,7 +656,7 @@ bool RdbBase::loadFilesFromDir(const char *dirName, bool isInMergeDir) {
 		// . if none is there it needs to be converted!
 		if (m_isTitledb && fileId2 == -1) {
 			// critical
-			log("gb: bad title filename of %s. Halting.",filename);
+			log(LOG_ERROR, "gb: bad title filename of %s. Halting.", filename);
 			g_errno = EBADENGINEER;
 			return false;
 		}
@@ -670,8 +670,8 @@ bool RdbBase::loadFilesFromDir(const char *dirName, bool isInMergeDir) {
 		SafeBuf fullFilename;
 		fullFilename.safePrintf("%s/%s", isInMergeDir ? m_mergeDirName : m_collectionDirName, filename);
 		struct stat st;
-		if(stat(fullFilename.getBufStart(),&st)!=0) {
-			log(LOG_ERROR,"stat(%s) failed with errno=%d (%s)", fullFilename.getBufStart(), errno, strerror(errno));
+		if (stat(fullFilename.getBufStart(), &st) != 0) {
+			logError("stat(%s) failed with errno=%d (%s)", fullFilename.getBufStart(), errno, strerror(errno));
 			return false;
 		}
 
