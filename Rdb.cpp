@@ -307,13 +307,16 @@ bool Rdb::updateToRebuildFiles ( Rdb *rdb2 , char *coll ) {
 	// now MOVE the tree file on disk
 	char src[1024];
 	char dst[1024];
+	char rebuildFilePath[1024];
 	if(m_useTree) {
 		sprintf ( src , "%s/%s-saved.dat" , g_hostdb.m_dir , m_dbname );
 		sprintf ( dst , "%s/%s-saved.dat" ,         dstDir , m_dbname );
+		sprintf(rebuildFilePath, "%s/%s-saved.dat", g_hostdb.m_dir, rdb2->m_dbname);
 	}
 	else {
 		sprintf ( src , "%s/%s-buckets-saved.dat", g_hostdb.m_dir , m_dbname );
 		sprintf ( dst , "%s/%s-buckets-saved.dat", dstDir , m_dbname );
+		sprintf(rebuildFilePath, "%s/%s-buckets-saved.dat", g_hostdb.m_dir, rdb2->m_dbname);
 	}
 
 	const char *structName = m_useTree ? "tree" : "buckets";
@@ -344,6 +347,10 @@ bool Rdb::updateToRebuildFiles ( Rdb *rdb2 , char *coll ) {
 		log(LOG_WARN, "repair: Renaming old rdb for %s failed.", coll);
 		return false;
 	}
+
+	// delete unneeded rebuild files (everything is already dumped to Rdb files)
+	base2->getTreeIndex()->unlink();
+	::unlink(rebuildFilePath);
 
 	// reset the rdb bases (clears out files and maps from mem)
 	base->reset ();
