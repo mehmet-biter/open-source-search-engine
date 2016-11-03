@@ -226,12 +226,6 @@ void repairWrapper ( int fd , void *state ) {
 	if ( g_repairMode == 0 ) {
 		// turn spiders off since repairing is enabled
 		g_conf.m_spideringEnabled = false;
-		//g_conf.m_injectionEnabled = false;
-		// wait for a previous repair to finish?
-		//if ( g_pingServer.getMinRepairMode() != 0 ) return;
-		// if some are not done yet with the previous repair, wait...
-		// no because we are trying to load up repair.dat
-		//if ( g_pingServer.getMaxRepairMode() == 8 ) return;
 
 		g_repair.m_startTime = gettimeofdayInMilliseconds();
 		// enter repair mode level 1
@@ -358,15 +352,13 @@ void repairWrapper ( int fd , void *state ) {
 		// data might arrive in the middle of the dumping and it stays
 		// in the in-memory RdbTree!
 		if ( g_pingServer.getMinRepairMode() < 6 ) return;
-		// do not dump if we are doing a full rebuild or a
-		// no split list rebuild -- why?
-		//if(! g_repair.m_fullRebuild && ! g_repair.m_rebuildNoSplits){
-		//if ( ! g_repair.m_rebuildNoSplits ) {
+
 		// we might have to dump again
 		g_repair.dumpLoop();
+
 		// are we done dumping?
 		if ( ! g_repair.dumpsCompleted() ) return;
-		//}
+
 		// wait for all merging to stop just to be on the safe side
 		if ( g_merge.isMerging() ) return;
 		// wait for ny outstanding unlinks or renames to finish
@@ -949,7 +941,6 @@ bool Repair::loop ( void *state ) {
 	if ( m_stage == STAGE_TITLEDB_4  ) {
 		if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: STAGE_TITLEDB_4", __FILE__, __func__, __LINE__);
 		m_stage++;
-		//if ( ! addToTfndb2()       ) return false;
 	}
 
 	// if we are not done with the titledb scan loop back up
@@ -969,70 +960,7 @@ bool Repair::loop ( void *state ) {
 	}
 
 	// reset list
-	//m_list.reset();
-
-	// . spiderdb scan
-	// . put new spider recs into g_spiderdb2
-	/*
- loop2:
-	if ( m_stage == STAGE_SPIDERDB_0 ) {
-		m_stage++;
-		if ( ! scanSpiderdb()     ) return false;
-	}
-	if ( m_stage == STAGE_SPIDERDB_1 ) {
-		m_stage++;
-		if ( ! getTfndbListPart2()  ) return false;
-	}
-	if ( m_stage == STAGE_SPIDERDB_2A ) {
-		m_stage++;
-		if ( ! getTagRecPart2()  ) return false;
-	}
-	if ( m_stage == STAGE_SPIDERDB_2B ) {
-		m_stage++;
-		if ( ! getRootQualityPart2()  ) return false;
-	}
-	if ( m_stage == STAGE_SPIDERDB_3 ) {
-		m_stage++;
-		if ( ! addToSpiderdb2Part2()  ) return false;
-	}
-	if ( m_stage == STAGE_SPIDERDB_4 ) {
-		m_stage++;
-		if ( ! addToTfndb2Part2()  ) return false;
-	}
-	// if we are not done with the titledb scan loop back up
-	if ( ! m_completedSpiderdbScan ) {
-		m_stage = STAGE_SPIDERDB_0;
-		goto loop2;
-	}
-	*/
-
-	// reset list
 	m_titleRecList.reset();
-
-	// . indexdb scan
-	// . delete indexdb recs whose docid is not in tfndb
-	// . delete duplicate docid in same termlist docids
-	// . turn this off for now to get buzz ready faster
-	/*
- loop3:
-	if ( m_stage == STAGE_INDEXDB_0 ) {
-		m_stage++;
-		if ( ! scanIndexdb()      ) return false;
-	}
-	if ( m_stage == STAGE_INDEXDB_1 ) {
-		m_stage++;
-		if ( ! gotIndexRecList()  ) return false;
-	}
-	if ( m_stage == STAGE_INDEXDB_2 ) {
-		m_stage++;
-		if ( ! addToIndexdb2()    ) return false;
-	}
-	// if we are not done with the titledb scan loop back up
-	if ( ! m_completedIndexdbScan ) {
-		m_stage = STAGE_INDEXDB_0;
-		goto loop3;
-	}
-	*/
 
 	// in order for dump to work we must be in mode 4 because
 	// Rdb::dumpTree() checks that
@@ -1340,7 +1268,7 @@ bool Repair::gotScanRecList ( ) {
 	// . are we the host this url is meant for?
 	// . however, if you are rebuilding tfndb, each twin must scan all
 	//   title recs and make individual entries for those title recs
-	if ( hosts[ii].m_hostId != g_hostdb.m_hostId ){//&&!m_rebuildTfndb ) {
+	if ( hosts[ii].m_hostId != g_hostdb.m_hostId ){
 		m_recsUnassigned++;
 		m_stage = STAGE_TITLEDB_0;
 		return true;
@@ -2013,12 +1941,9 @@ bool saveAllRdbs ( void *state , void (* callback)(void *state) ) {
 	}
 	// set it
 	s_savingAll = true;
+
 	// TODO: why is this called like 100x per second when a merge is
 	// going on? why don't we sleep longer in between?
-	//bool close ( void *state , 
-	//	     void (* callback)(void *state ) ,
-	//	     bool urgent ,
-	//	     bool exitAfterClosing );
 
 	int32_t nsr;
 	Rdb **rdbs = getAllRdbs ( &nsr );
