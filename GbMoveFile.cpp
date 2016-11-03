@@ -50,6 +50,7 @@ int moveFile(const char *src, const char *dst)
 		} else {
 			log(LOG_ERROR,"moveFile:open(%s) failed with errno=%d (%s)", src, errno, strerror(errno));
 			errno = saved_errno;
+			delete[] buffer;
 			return -1;
 		}
 	}
