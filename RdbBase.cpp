@@ -60,10 +60,14 @@
 // TitleDB is special due to legacy. The *.dat files have an additional component that is always "000". eg:
 //   titledb0001-000.dat
 //   titledb0000-000.002.0003.dat
+// The extra component is not used anymore and there are no clues about what it was used for.
 //
 // RdbBase::attemptMerge() is called periodically and for various reasons and with different parameters. It selects
-// are consecutive range of files to merge (eg 0231..0235), inserts a lowId-1 file (0230), and then hands off the
+// a consecutive range of files to merge (eg 0231..0235), inserts a lowId-1 file (0230), and then hands off the
 // hard work to RdbMerge.
+//
+// During merge, files can be marked as unreadable (testable with RdbBase::isReadable()) because the file may be
+// incomplete (eg. the destination merge file) or about to be deleted (source files when merge has finishes).
 //
 // When RdbMerge finishes it calls back to RdbBase::incorporateMerge() which makes a circus trick with finishing
 // the merge with multiple callbacks, phases and error recovery strategies. Ultimately, RdbBase::renamesDone() is
