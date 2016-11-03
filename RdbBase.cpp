@@ -28,6 +28,47 @@
 #include <signal.h>
 #include <algorithm>
 
+// An RdbBase instance is a set of files for a database, eg PosDB. Each file consists of one data file (which may
+// actually be multiple part files), one map file, and optionally one index file. Example:
+//   posdb0001.dat
+//   posdb0001.map
+//   posdb0151.dat
+//   posdb0151.map
+//   posdb0231.dat
+//   posdb0231.map
+//   posdb0233.dat
+//   posdb0233.map
+//   posdb0235.dat
+//   posdb0235.map
+// The files (RdbBase::FileInfo) are kept in RdbBase::m_fileInfo and are sorted according to file-id. The file ID
+// is the number (1/151/231/233/235 in above example). Normal files have an odd number. During merge the temporary
+// destination merge file has an even number and additional filename components. Eg:
+//   posdb0001.dat
+//   posdb0001.map
+//   posdb0151.dat
+//   posdb0151.map
+//   posdb0230.003.0235.dat
+//   posdb0230.003.0235.map
+//   posdb0231.dat
+//   posdb0231.map
+//   posdb0233.dat
+//   posdb0233.map
+//   posdb0235.dat
+//   posdb0235.map
+// The extra filename components are the source file count and the fileId of the last source file.
+//
+// TitleDB is special due to legacy. The *.dat files have an additional component that is always "000". eg:
+//   titledb0001-000.dat
+//   titledb0000-000.002.0003.dat
+//
+// RdbBase::attemptMerge() is called periodically and for various reasons and with different parameters. It selects
+// are consecutive range of files to merge (eg 0231..0235), inserts a lowId-1 file (0230), and then hands off the
+// hard work to RdbMerge.
+//
+// When RdbMerge finishes it calls back to RdbBase::incorporateMerge() which makes a circus trick with finishing
+// the merge with multiple callbacks, phases and error recovery strategies. Ultimately, RdbBase::renamesDone() is
+// called which cleans up (removes knowledge of deleted files, relinquishes merge space lock, ..)
+
 
 bool g_dumpMode = false;
 
