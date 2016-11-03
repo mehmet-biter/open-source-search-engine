@@ -221,10 +221,12 @@ void repairWrapper ( int fd , void *state ) {
 	//
 	// ok, repairing is enabled at this point
 	//
+	static bool s_oldConfSpideringEnabled = false;
 
 	// are we just starting?
 	if ( g_repairMode == 0 ) {
 		// turn spiders off since repairing is enabled
+		s_oldConfSpideringEnabled = g_conf.m_spideringEnabled;
 		g_conf.m_spideringEnabled = false;
 
 		g_repair.m_startTime = gettimeofdayInMilliseconds();
@@ -428,6 +430,11 @@ void repairWrapper ( int fd , void *state ) {
 		    gettimeofdayInMilliseconds() - g_repair.m_startTime);
 		// turn it off to prevent going back to mode 1 again
 		g_conf.m_repairingEnabled = false;
+
+		// restore spider config
+		g_conf.m_spideringEnabled = s_oldConfSpideringEnabled;
+		s_oldConfSpideringEnabled = false;
+
 		// ok reset
 		g_repairMode = 0;
 	}
