@@ -70,7 +70,7 @@ void Msg20::reset() {
 	// not allowed to reset one in progress
 	if ( m_inProgress ) { 
 		// do not core on abrupt exits!
-		if (g_process.m_mode == EXIT_MODE ) {
+		if (g_process.m_mode == Process::EXIT_MODE ) {
 			log("msg20: msg20 not being freed because exiting.");
 			return;
 		}

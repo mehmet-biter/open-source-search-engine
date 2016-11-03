@@ -168,7 +168,6 @@ bool Linkdb::verify ( char *coll ) {
 			      NULL          , // cacheKey
 			      0             , // retryNum
 			      -1            , // maxRetries
-			      true          , // compensateForMerge
 			      -1LL          , // syncPoint
 			      true          , // isRealMerge
 			      true))          // allowPageCache

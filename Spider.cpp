@@ -584,7 +584,6 @@ bool Spiderdb::verify ( char *coll ) {
 			      NULL          , // cache key
 			      0             , // retryNum
 			      -1            , // maxRetries
-			      true          , // compenstateForMerge
 			      -1LL          , // syncPoint
 			      true          , // isRealMerge
 			      true          )) { // allowPageCache
@@ -1210,7 +1209,6 @@ static bool loadLoop ( State11 *st ) {
 				     NULL,                 // cacheKeyPtr
 			             0,                    // retryNum
 			             -1,                   // maxRetries
-			             true,                 // compensateForMerge
 			             -1,                   // syncPoint
 			             false,                // isRealMerge
 			             true))                // allowPageCache
@@ -1319,9 +1317,6 @@ static bool printList ( State11 *st ) {
 }
 
 static bool sendPage(State11 *st) {
-	// shortcut
-	SafeBuf *sbTable = &st->m_safeBuf;
-
 	// generate a query string to pass to host bar
 	char qs[64]; sprintf ( qs , "&n=%" PRId32, st->m_numRecs );
 
@@ -1392,14 +1387,12 @@ static bool sendPage(State11 *st) {
 			);
 	// the table headers so SpiderRequest::printToTable() works
 	if ( ! SpiderRequest::printTableHeader ( &sb , true ) ) return false;
-	// shortcut
-	XmlDoc **docs = g_spiderLoop.m_docs;
 	// count # of spiders out
 	int32_t j = 0;
 	// first print the spider recs we are spidering
 	for ( int32_t i = 0 ; i < (int32_t)MAX_SPIDERS ; i++ ) {
 		// get it
-		XmlDoc *xd = docs[i];
+		XmlDoc *xd = g_spiderLoop.m_docs[i];
 		// skip if empty
 		if ( ! xd ) continue;
 		// sanity check
@@ -1496,7 +1489,7 @@ static bool sendPage(State11 *st) {
 	// the table headers so SpiderRequest::printToTable() works
 	if ( ! SpiderRequest::printTableHeader ( &sb ,false ) ) return false;
 	// the the doledb spider recs
-	char *bs = sbTable->getBufStart();
+	char *bs = st->m_safeBuf.getBufStart();
 	if ( bs && ! sb.safePrintf("%s",bs) ) return false;
 	// end the table
 	sb.safePrintf ( "</table>\n" );
@@ -1552,7 +1545,7 @@ static bool sendPage(State11 *st) {
 		key96_t *key = (key96_t *)sc->m_waitingTree.getKey(node);
 		// get ip from that
 		int32_t firstIp = (key->n0) & 0xffffffff;
-		// get the time
+		// get the timedocs
 		uint64_t spiderTimeMS = key->n1;
 		// shift upp
 		spiderTimeMS <<= 32;
@@ -2863,7 +2856,6 @@ checkNextRule:
 			// this happens if INJECTING a url from the
 			// "add url" function on homepage
 			if ( ! valPtr ) a=0;//continue;//{g_process.shutdownAbort(true);}
-			// shortcut
 			else a = *valPtr;
 			//log("siteadds=%" PRId32" for %s",a,sreq->m_url);
 			// what is the provided value in the url filter rule?
@@ -2950,7 +2942,6 @@ checkNextRule:
 			int32_t a;
 			if ( ! valPtr ) a = 0;//{ g_process.shutdownAbort(true); }
 			else a = *valPtr;
-			// shortcut
 			//log("sitepgs=%" PRId32" for %s",a,sreq->m_url);
 			// what is the provided value in the url filter rule?
 			int32_t b = atoi(s);

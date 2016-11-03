@@ -499,10 +499,8 @@ int32_t Multicast::pickBestHost ( uint32_t key , int32_t firstHostId ) {
 			    "in group.", firstHostId );
 			g_process.shutdownAbort(true);
 		}
-		// if we got a match and it's not dead, and not reporting
-		// system errors, return it
-		if ( i < m_numHosts && ! g_hostdb.isDead ( m_hostPtrs[i] ) &&
-		     ! g_hostdb.kernelErrors ( m_hostPtrs[i] ) ) 
+		// if we got a match and it's not dead, return it
+		if ( i < m_numHosts && ! g_hostdb.isDead ( m_hostPtrs[i] ) )
 			return i;
 	}
 
@@ -533,16 +531,15 @@ int32_t Multicast::pickBestHost ( uint32_t key , int32_t firstHostId ) {
 		uint32_t i = hashLong ( key ) % m_numHosts;
 		// if he's not dead or retired use him right away
 		if ( ! m_retired[i] &&
-		     ! g_hostdb.isDead ( m_hostPtrs[i] ) &&
-		     ! g_hostdb.kernelErrors( m_hostPtrs[i] ) ) return i;
+		     ! g_hostdb.isDead ( m_hostPtrs[i] ) )
+			return i;
 	}
 
 	// no no no we need to randomize the order that we try them
 	Host *fh = m_hostPtrs[n];
-	// if this host is not dead,  and not reporting system errors, use him
+	// if this host is not dead, use him
 	if ( ! m_retired[n] &&
-	     ! g_hostdb.isDead(fh) && 
-	     ! g_hostdb.kernelErrors(fh) )
+	     ! g_hostdb.isDead(fh) )
 		return n;
 
 	// . ok now select the kth available host
@@ -552,14 +549,13 @@ int32_t Multicast::pickBestHost ( uint32_t key , int32_t firstHostId ) {
 	for ( int32_t i = 0 ; i < m_numHosts ; i++ ) {
 		// get the host
 		Host *h = m_hostPtrs[i];
-		// count those that are dead or are reporting system errors
-		if ( g_hostdb.isDead ( h ) || g_hostdb.kernelErrors(h) )
+		// count those that are dead
+		if ( g_hostdb.isDead ( h ) )
 			numDead++;
 		// skip host if we've retired it
 		if ( m_retired[i] ) continue;
-		// if this host is not dead,  and not reporting system errors,
-		// use him
-		if ( !g_hostdb.isDead(h) && !g_hostdb.kernelErrors(h) )
+		// if this host is not dead use him
+		if ( !g_hostdb.isDead(h) )
 			cand[nc++] = i;
 		// pick a dead that isn't retired
 		dead = i;

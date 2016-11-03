@@ -795,7 +795,7 @@ bool Msg25::doReadLoop() {
 		    ms,m_site,m_url,m_docId,KEYSTR(&startKey,LDBKS));
 	}
 
-        if ( g_process.m_mode == EXIT_MODE ) {
+        if ( g_process.m_mode == Process::EXIT_MODE ) {
 		log(LOG_DEBUG, "linkdb: shutting down. exiting link text loop.");
 		g_errno = ESHUTTINGDOWN;
 		return false;
@@ -838,7 +838,6 @@ bool Msg25::doReadLoop() {
 				NULL, //cachekey
 				0,                //retryNum
 				-1,               //maxRetries
-				true,             //comp-for-merge
 				-1,               //syncPoint
 				false,            //isRealMerge
 				true))            //allowPageCache

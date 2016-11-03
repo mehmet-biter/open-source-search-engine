@@ -549,10 +549,6 @@ void Msg39::getLists(int fileNum, int64_t docIdStart, int64_t docIdEnd) {
 	// set startkey/endkey for each term/termlist
 	//
 	for ( int32_t i = 0 ; i < m_query.getNumTerms() ; i++ ) {
-		// shortcuts
-		QueryTerm *qterm = &m_query.m_qterms[i];
-		char *sk = qterm->m_startKey;
-		char *ek = qterm->m_endKey;
 		// get the term id
 		int64_t tid = m_query.getTermId(i);
 		// if only 1 stripe
@@ -569,9 +565,9 @@ void Msg39::getLists(int fileNum, int64_t docIdStart, int64_t docIdEnd) {
 			    , tid
 			    );
 		// store now in qterm
-		g_posdb.makeStartKey ( sk , tid , docIdStart );
-		g_posdb.makeEndKey   ( ek , tid , docIdEnd   );
-		qterm->m_ks = sizeof(posdbkey_t);
+		g_posdb.makeStartKey ( m_query.m_qterms[i].m_startKey, tid, docIdStart );
+		g_posdb.makeEndKey   ( m_query.m_qterms[i].m_endKey,   tid, docIdEnd   );
+		m_query.m_qterms[i].m_ks = sizeof(posdbkey_t);
 	}
 
 	// debug msg
@@ -1030,17 +1026,15 @@ void Msg39::estimateHitsAndSendReply(double pctSearched) {
 	mr.m_nqt = nqt;
 	// the m_errno if any
 	mr.m_errno = m_errno;
-	// shortcut
-	PosdbTable *pt = &m_posdbTable;
 	// the score info, in no particular order right now
-	mr.ptr_scoreInfo  = pt->m_scoreInfoBuf.getBufStart();
-	mr.size_scoreInfo = pt->m_scoreInfoBuf.length();
+	mr.ptr_scoreInfo  = m_posdbTable.m_scoreInfoBuf.getBufStart();
+	mr.size_scoreInfo = m_posdbTable.m_scoreInfoBuf.length();
 	// that has offset references into posdbtable::m_pairScoreBuf
 	// and m_singleScoreBuf, so we need those too now
-	mr.ptr_pairScoreBuf    = pt->m_pairScoreBuf.getBufStart();
-	mr.size_pairScoreBuf   = pt->m_pairScoreBuf.length();
-	mr.ptr_singleScoreBuf  = pt->m_singleScoreBuf.getBufStart();
-	mr.size_singleScoreBuf = pt->m_singleScoreBuf.length();
+	mr.ptr_pairScoreBuf    = m_posdbTable.m_pairScoreBuf.getBufStart();
+	mr.size_pairScoreBuf   = m_posdbTable.m_pairScoreBuf.length();
+	mr.ptr_singleScoreBuf  = m_posdbTable.m_singleScoreBuf.getBufStart();
+	mr.size_singleScoreBuf = m_posdbTable.m_singleScoreBuf.length();
 
 	// reserve space for these guys, we fill them in below
 	mr.ptr_docIds       = NULL;

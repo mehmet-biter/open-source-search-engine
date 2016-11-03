@@ -88,7 +88,7 @@ CPPFLAGS += -std=c++11
 
 
 # optimization
-ifeq ($(config),$(filter $(config),release))
+ifeq ($(config),$(filter $(config),release release-safe))
 O1 = -O1
 O2 = -O2
 O3 = -O3
@@ -123,10 +123,9 @@ else ifeq ($(config),sanitize-leak)
 CONFIG_CPPFLAGS += -fsanitize=leak # liblsan
 endif
 
-else ifeq ($(config),release)
+else ifeq ($(config),release-safe)
 # if defined, UI options that can damage our production index will be disabled
 DEFS += -DPRIVACORE_SAFE_VERSION
-
 endif
 
 CPPFLAGS += $(CONFIG_CPPFLAGS)
@@ -165,12 +164,15 @@ CPPFLAGS += -Wswitch-bool
 CPPFLAGS += -Wlogical-not-parentheses
 CPPFLAGS += -Wsizeof-array-argument
 CPPFLAGS += -Wbool-compare
-CPPFLAGS += -Wsuggest-final-types
-CPPFLAGS += -Wsuggest-final-methods
+#CPPFLAGS += -Wsuggest-final-types
+#CPPFLAGS += -Wsuggest-final-methods
 endif
 
 # disable offsetof warnings
 CPPFLAGS += -Wno-invalid-offsetof
+
+# gcc's semantics are sub-optimal
+CPPFLAGS += -Wno-unused-result
 
 # other warnings (to be moved above or re-enabled when we have cleaned up the code sufficiently)
 CPPFLAGS += -Wstrict-aliasing=0
@@ -178,7 +180,6 @@ CPPFLAGS += -Wno-write-strings
 CPPFLAGS += -Wno-maybe-uninitialized
 CPPFLAGS += -Wno-unused-but-set-variable
 CPPFLAGS += -Wno-unused-parameter
-CPPFLAGS += -Wno-unused-result            #gcc's semantics are sub-optimal
 
 else ifeq ($(CXX), clang++)
 # dependencies
@@ -216,6 +217,7 @@ CPPFLAGS += -Wno-reserved-id-macro -Wno-unused-macros
 CPPFLAGS += -Wno-missing-field-initializers
 CPPFLAGS += -Wno-covered-switch-default
 CPPFLAGS += -Wno-date-time
+CPPFLAGS += -Wno-format-nonliteral
 
 endif
 
@@ -373,6 +375,10 @@ cleandb:
 
 
 # shortcuts
+.PHONY: release-safe
+release-safe:
+	$(MAKE) config=release-safe
+
 .PHONY: debug
 debug:
 	$(MAKE) config=debug

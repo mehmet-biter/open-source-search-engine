@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>
 #include "BigFile.h"
 #include "Process.h"
+#include <fcntl.h>
 
 static void createFile( BigFile *file, const char *file_name ) {
 	int32_t bufSize = 1024;
@@ -27,7 +28,7 @@ TEST( BigFileTest, FileRenameDestExist ) {
 	BigFile file02;
 	createFile( &file02, "testfile02" );
 
-	EXPECT_EXIT( file02.rename( "testfile01" ), ::testing::KilledBySignal(SIGABRT), "" );
+	EXPECT_EXIT( file02.rename( "testfile01", NULL ), ::testing::KilledBySignal(SIGABRT), "" );
 
 	// verify files
 	struct stat buffer;
@@ -44,7 +45,7 @@ TEST( BigFileTest, FileRenameDestNotExist ) {
 	BigFile file01;
 	createFile( &file01, "testfile01" );
 
-	ASSERT_TRUE( file01.rename( "testfile02" ) );
+	ASSERT_TRUE( file01.rename( "testfile02", NULL ) );
 
 	// verify files
 	struct stat buffer;

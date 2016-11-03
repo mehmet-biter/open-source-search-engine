@@ -472,7 +472,6 @@ int64_t BigFile::getFileSize() const {
 	// add up the sizes of each file
 	int64_t totalSize = 0;
 	for ( int32_t n = 0 ; n < m_maxParts ; n++ ) {
-		// shortcut
 		const File *f = getFile2(n);
 		// we can have headless big files... count the heads.
 		// this can happen if the first Files were deleted because
@@ -504,7 +503,6 @@ time_t BigFile::getLastModifiedTime ( ) {
 	// add up the sizes of each file
 	time_t min = -1;
 	for ( int32_t n = 0 ; n < m_maxParts ; n++ ) {
-		// shortcut
 		File *f = getFile2(n);
 		// we can have headless big files... count the heads
 		if ( ! f ) continue;

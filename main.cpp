@@ -91,8 +91,8 @@ static void dumpTitledb  (const char *coll, int32_t sfn, int32_t numFiles, bool 
 static int32_t dumpSpiderdb ( const char *coll,int32_t sfn,int32_t numFiles,bool includeTree,
 			   char printStats , int32_t firstIp );
 
-static void dumpTagdb( const char *coll, int32_t sfn, int32_t numFiles, bool includeTree, char rec = 0,
-					   int32_t rdbId = RDB_TAGDB, const char *site = NULL );
+static void dumpTagdb(const char *coll, int32_t sfn, int32_t numFiles, bool includeTree, char req,
+		      const char *site);
 
 void dumpPosdb  ( const char *coll,int32_t sfn,int32_t numFiles,bool includeTree, 
 		  int64_t termId , bool justVerify ) ;
@@ -1630,19 +1630,19 @@ int main2 ( int argc , char *argv[] ) {
 			if ( cmdarg+6 < argc ) {
 				site = argv[ cmdarg + 6 ];
 			}
-			dumpTagdb( coll, startFileNum, numFiles, includeTree, 0, RDB_TAGDB, site );
+			dumpTagdb( coll, startFileNum, numFiles, includeTree, 0, site );
 		} else if ( argv[cmdarg+1][0] == 'z' ) {
 			char *site = NULL;
 			if ( cmdarg+6 < argc ) {
 				site = argv[ cmdarg + 6 ];
 			}
-			dumpTagdb( coll, startFileNum, numFiles, includeTree, 'z', RDB_TAGDB, site );
+			dumpTagdb( coll, startFileNum, numFiles, includeTree, 'z', site );
 		} else if ( argv[cmdarg+1][0] == 'A' ) {
-			dumpTagdb( coll, startFileNum, numFiles, includeTree, 'A' );
+			dumpTagdb( coll, startFileNum, numFiles, includeTree, 'A', NULL );
 		} else if ( argv[cmdarg+1][0] == 'G' ) {
-			dumpTagdb( coll, startFileNum, numFiles, includeTree, 'G' );
+			dumpTagdb( coll, startFileNum, numFiles, includeTree, 'G', NULL );
 		} else if ( argv[cmdarg+1][0] == 'W' ) {
-			dumpTagdb( coll, startFileNum, numFiles, includeTree );
+			dumpTagdb( coll, startFileNum, numFiles, includeTree,   0, NULL );
 		} else if ( argv[cmdarg+1][0] == 'l' )
 			dumpClusterdb (coll,startFileNum,numFiles,includeTree);
 		//else if ( argv[cmdarg+1][0] == 'z' )
@@ -2923,7 +2923,6 @@ void dumpTitledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool
 			      NULL          , // cache key ptr
 			      0             , // retry num
 			      -1            , // maxRetries
-			      true          , // compensate for merge
 			      -1LL,           // sync point
 			      false,          // isRealMerge
 			      true))          // allowPageCache
@@ -3196,7 +3195,6 @@ void dumpDoledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool 
 			      NULL,           // cacheKeyPtr
 			      0,              // retryNum
 			      -1,             // maxRetries
-			      true,           // compensateForMerge
 			      -1,             // syncPoint
 			      false,          // isRealMerge
 			      true))          // allowPageCache
@@ -3448,7 +3446,6 @@ int32_t dumpSpiderdb ( const char *coll, int32_t startFileNum, int32_t numFiles,
 			      NULL,           // cacheKeyPtr
 			      0,              // retryNum
 			      -1,             // maxRetries
-			      true,           // compensateForMerge
 			      -1,             // syncPoint
 			      false,          // isRealMerge
 			      true))          // allowPageCache
@@ -4109,9 +4106,7 @@ void startUp ( void *state ) {
 		int64_t start = gettimeofdayInMilliseconds();
 		s_f.read ( buf , size , off );
 		int64_t now = gettimeofdayInMilliseconds();
-#undef usleep
 		usleep(0);
-#define usleep(a) { g_process.shutdownAbort(true); }
 		s_count++;
 		float sps = (float)((float)s_count * 1000.0) / 
 			(float)(now - s_startTime);
@@ -4125,13 +4120,11 @@ void startUp ( void *state ) {
 	}
 }
 
-void dumpTagdb( const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree, char req, int32_t rdbId,
-		const char *siteArg ) {
+static void dumpTagdb(const char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree, char req,
+		      const char *siteArg) {
 	g_tagdb.init ();
 
-	if ( rdbId == RDB_TAGDB ) {
-		g_tagdb.getRdb()->addRdbBase1(coll );
-	}
+	g_tagdb.getRdb()->addRdbBase1(coll );
 
 	key128_t startKey ;
 	key128_t endKey   ;
@@ -4160,7 +4153,7 @@ void dumpTagdb( const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 
  loop:
 	// use msg5 to get the list, should ALWAYS block since no threads
-	if ( ! msg5.getList ( (rdbid_t)rdbId,
+	if ( ! msg5.getList ( RDB_TAGDB,
 			      cr->m_collnum      ,
 			      &list         ,
 			      (char *)&startKey      ,
@@ -4177,7 +4170,6 @@ void dumpTagdb( const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 			      NULL,           // cacheKeyPtr
 			      0,              // retryNum
 			      -1,             // maxRetries
-			      true,           // compensateForMerge
 			      -1,             // syncPoint
 			      false,          // isRealMerge
 			      true))          // allowPageCache
@@ -4355,7 +4347,6 @@ bool parseTest ( const char *coll, int64_t docId, const char *query ) {
 			      NULL           , // cache key ptr
 			      0              , // retry num
 			      -1             , // maxRetries
-			      true           , // compensate for merge
 			      -1LL,            // sync point
 			      false,           // isRealMerge
 			      true))         { // allowPageCache
@@ -4730,7 +4721,6 @@ void dumpPosdb (const char *coll, int32_t startFileNum, int32_t numFiles, bool i
 		                  NULL,           // cacheKeyPtr
 		                  0,              // retryNum
 		                  -1,             // maxRetries
-		                  true,           // compensateForMerge
 		                  -1,             // syncPoint
 		                  false,          // isRealMerge
 		                  true))          // allowPageCache
@@ -4878,7 +4868,6 @@ void dumpClusterdb ( const char *coll,
 			      NULL,           // cacheKeyPtr
 			      0,              // retryNum
 			      -1,             // maxRetries
-			      true,           // compensateForMerge
 			      -1,             // syncPoint
 			      false,          // isRealMerge
 			      true))          // allowPageCache
@@ -4984,7 +4973,6 @@ void dumpLinkdb ( const char *coll,
 			      NULL,           // cacheKeyPtr
 			      0,              // retryNum
 			      -1,             // maxRetries
-			      true,           // compensateForMerge
 			      -1,             // syncPoint
 			      false,          // isRealMerge
 			      true))          // allowPageCache
@@ -5598,7 +5586,6 @@ void doInject ( int fd , void *state ) {
 			       NULL           , // cache key ptr
 			       0              , // retry num
 			       -1             , // maxRetries
-			       true           , // compensate for merge
 			       -1LL,            // sync point
 			       false,           // isRealMerge
 			       true);           // allowPageCache
@@ -7100,7 +7087,6 @@ void countdomains( const char* coll, int32_t numRecs, int32_t verbosity, int32_t
 			      NULL          , // cache key ptr
 			      0             , // retry num
 			      -1            , // maxRetries
-			      true          , // compensate for merge
 			      -1LL,           // syncPoint
 			      false,          // isRealMerge
 			      true))          // allowPageCache

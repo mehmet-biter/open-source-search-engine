@@ -1196,7 +1196,7 @@ bool RdbList::constrain(const char *startKey, char *endKey, int32_t minRecSizes,
 		return false;
 	}
 
-	if ( rdbId == RDB_POSDB ) {
+	if ( rdbId == RDB_POSDB || rdbId == RDB2_POSDB2 ) {
 		return posdbConstrain(startKey, endKey, minRecSizes, hintOffset, hintKey, filename);
 	}
 
@@ -1835,8 +1835,8 @@ void RdbList::merge_r(RdbList **lists, int32_t numLists, const char *startKey, c
 	}
 
 	Rdb* rdb = getRdbFromId(rdbId);
-	if (rdbId == RDB_POSDB) {
-		posdbMerge_r(lists, numLists, startKey, endKey, m_mergeMinListSize, removeNegRecs, rdb->isUseIndexFile(), collNum, startFileNum);
+	if (rdbId == RDB_POSDB || rdbId == RDB2_POSDB2) {
+		posdbMerge_r(lists, numLists, startKey, endKey, m_mergeMinListSize, rdbId, removeNegRecs, rdb->isUseIndexFile(), collNum, startFileNum);
 		verify_signature();
 		return;
 	}
@@ -2165,7 +2165,7 @@ skip:
 ///////
 
 bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startKey, const char *endKey, int32_t minRecSizes,
-                           bool removeNegKeys, bool useIndexFile, collnum_t collNum, int32_t startFileNum) {
+                           rdbid_t rdbId, bool removeNegKeys, bool useIndexFile, collnum_t collNum, int32_t startFileNum) {
 	logTrace(g_conf.m_logTraceRdbList, "BEGIN");
 
 	// sanity
@@ -2286,7 +2286,7 @@ bool RdbList::posdbMerge_r(RdbList **lists, int32_t numLists, const char *startK
 	char *pp = NULL;
 
 	// see Posdb.h for format of a 18/12/6-byte posdb key
-	RdbIndexQuery rdbIndexQuery(getRdbBase(RDB_POSDB, collNum));
+	RdbIndexQuery rdbIndexQuery(getRdbBase(rdbId, collNum));
 	char *new_listPtr = m_listPtr;
 	int32_t listOffset = 0;
 

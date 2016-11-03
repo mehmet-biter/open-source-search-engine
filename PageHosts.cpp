@@ -1507,8 +1507,8 @@ static int32_t generatePingMsg( Host *h, int64_t nowms, char *buf ) {
         // show ping age first
         int32_t pingAge = nowms- h->m_lastPing;
         // if host is us, we don't ping ourselves
-        if ( h->m_hostId == g_hostdb.m_hostId && h == g_hostdb.m_myHost) 
-                pingAge = 0; 
+        if ( h->m_hostId == g_hostdb.m_hostId && h == g_hostdb.m_myHost)
+                pingAge = 0;
         // if last ping is still 0, we haven't pinged it yet
         if ( h->m_lastPing == 0 ) pingAge = 0;
         // ping to string
@@ -1517,18 +1517,6 @@ static int32_t generatePingMsg( Host *h, int64_t nowms, char *buf ) {
         // make it "DEAD" if > 6000
         if ( ping >= g_conf.m_deadHostTimeout ) {
             sprintf(buf, "<font color=#ff0000><b>DEAD</b></font>");
-        }
-        // for kernel errors
-        else if ( h->m_pingInfo.m_kernelErrors > 0 ){
-                if ( h->m_pingInfo.m_kernelErrors == ME_IOERR )
-                        sprintf(buf, "<font color=#ff0080><b>IOERR"
-                                "</b></font>");
-                else if ( h->m_pingInfo.m_kernelErrors == ME_100MBPS )
-                        sprintf(buf, "<font color=#ff0080><b>100MBPS"
-                                "</b></font>");
-                else
-                        sprintf(buf, "<font color=#ff0080><b>KERNELERR"
-                                "</b></font>");
         }
 
 	if ( ! g_conf.m_useShotgun ) return pingAge;
@@ -1551,16 +1539,7 @@ static int32_t generatePingMsg( Host *h, int64_t nowms, char *buf ) {
 int defaultSort   ( const void *i1, const void *i2 ) {
 	Host *h1 = g_hostdb.getHost ( *(int32_t*)i1 );
 	Host *h2 = g_hostdb.getHost ( *(int32_t*)i2 );
-	PingInfo *p1 = &h1->m_pingInfo;
-	PingInfo *p2 = &h2->m_pingInfo;
-	// float up to the top if the host is reporting kernel errors
-	// even if the ping is normal
-	if ( p1->m_kernelErrors  > 0 && p2->m_kernelErrors <= 0 ) return -1;
-	if ( p2->m_kernelErrors  > 0 && p1->m_kernelErrors <= 0 ) return  1;
-	if ( p2->m_kernelErrors  > 0 && p1->m_kernelErrors > 0 ) {
-		if ( h1->m_hostId < h2->m_hostId ) return -1;
-		return 1;
-	}
+
 	if ( g_hostdb.isDead(h1) && ! g_hostdb.isDead(h2) ) return -1;
 	if ( g_hostdb.isDead(h2) && ! g_hostdb.isDead(h1) ) return  1;
 
@@ -1571,12 +1550,6 @@ int defaultSort   ( const void *i1, const void *i2 ) {
 int pingSort1    ( const void *i1, const void *i2 ) {
 	Host *h1 = g_hostdb.getHost ( *(int32_t*)i1 );
 	Host *h2 = g_hostdb.getHost ( *(int32_t*)i2 );
-	PingInfo *p1 = &h1->m_pingInfo;
-	PingInfo *p2 = &h2->m_pingInfo;
-	// float up to the top if the host is reporting kernel errors
-	// even if the ping is normal
-	if ( p1->m_kernelErrors  > 0 ) return -1;
-	if ( p2->m_kernelErrors  > 0 ) return  1;
 	if ( h1->m_ping > h2->m_ping ) return -1;
 	if ( h1->m_ping < h2->m_ping ) return  1;
 	return 0;
@@ -1585,12 +1558,6 @@ int pingSort1    ( const void *i1, const void *i2 ) {
 int pingSort2    ( const void *i1, const void *i2 ) {
 	Host *h1 = g_hostdb.getHost ( *(int32_t*)i1 );
 	Host *h2 = g_hostdb.getHost ( *(int32_t*)i2 );
-	PingInfo *p1 = &h1->m_pingInfo;
-	PingInfo *p2 = &h2->m_pingInfo;
-	// float up to the top if the host is reporting kernel errors
-	// even if the ping is normal
-	if ( p1->m_kernelErrors  > 0 ) return -1;
-	if ( p2->m_kernelErrors  > 0 ) return  1;
 	if ( h1->m_pingShotgun > h2->m_pingShotgun ) return -1;
 	if ( h1->m_pingShotgun < h2->m_pingShotgun ) return  1;
 	return 0;

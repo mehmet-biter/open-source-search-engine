@@ -189,7 +189,7 @@ Mem::Mem() {
 	m_used = 0;
 	m_numAllocated = 0;
 	m_numTotalAllocated = 0;
-	m_memtablesize = 0;
+	// DO NOT INIT THIS:	m_memtablesize = 0;
 	m_maxAlloc = 0;
 	m_maxAllocBy = "";
 	m_maxAllocated = 0;

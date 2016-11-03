@@ -63,7 +63,6 @@ class Msg3 {
 			 int32_t           niceness      , // = MAX_NICENESS ,
 			 int32_t           retryNum      , // = 0             ,
 			 int32_t           maxRetries    , // = -1
-			 bool           compensateForMerge ,
 			 bool           justGetEndKey = false);
 
 	// for retrieving unmerged lists
@@ -170,8 +169,6 @@ private:
 	// . used to quickly contrain the tail of a 1-list read
 	int32_t        m_hintOffset;
 	char        m_hintKey[MAX_KEY_BYTES];
-
-	bool        m_compensateForMerge;
 
 	int32_t  m_numChunks;
 	char  m_ks;

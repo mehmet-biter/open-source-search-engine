@@ -19,8 +19,6 @@ class PingServer {
 	// . gets filename from Conf.h class
 	bool init ( );
 
-	void initKernelErrorCheck();
-	
 	// for dealing with pings
 	bool registerHandler ( );
 
@@ -42,7 +40,6 @@ class PingServer {
 			 char *errmsg = NULL , 
 			 bool sendToAdmin = true ,
 			 bool oom = false ,
-			 bool kernelErrors = false ,
 			 bool parmChanged  = false ,
 			 bool forceIt      = false ,
 			 int32_t mxIP = 0 );

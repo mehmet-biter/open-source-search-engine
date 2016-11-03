@@ -80,7 +80,6 @@ bool Clusterdb::verify(const char *coll) {
 			      NULL          ,
 			      0             ,
 			      -1            ,
-			      true          ,
 			      -1LL          ,
 			      true,           // isRealMerge
 			      true))          // allowPageCache

@@ -118,6 +118,10 @@ class Conf {
 	int64_t m_tagdbFileCacheSize;
 	int32_t  m_tagdbMaxTreeMem;
 
+	char m_mergespaceLockDirectory[1024];
+	int32_t m_mergespaceMinLockFiles;
+	char m_mergespaceDirectory[1024];
+
 	// clusterdb for site clustering, each rec is 16 bytes
 	int64_t m_clusterdbFileCacheSize;
 	int32_t  m_clusterdbMaxTreeMem;
@@ -245,12 +249,6 @@ class Conf {
 	char   m_email4MX[MAX_MX_LEN];
 	char   m_email4Addr[MAX_EMAIL_LEN];
 	char   m_email4From[MAX_EMAIL_LEN];
-
-	//bool   m_sendEmailAlertsToSabino;
-
-	char   m_errstr1[MAX_URL_LEN];
-	char   m_errstr2[MAX_URL_LEN];	
-	char   m_errstr3[MAX_URL_LEN];
 
 	bool   m_sendParmChangeAlertsToEmail1;
 	bool   m_sendParmChangeAlertsToEmail2;
@@ -425,6 +423,7 @@ class Conf {
 	bool m_logTraceRobots;
 	bool m_logTraceSpider;
 	bool m_logTraceXmlDoc;
+	bool m_logTracePhrases;
 
 	// expensive timing messages
 	bool m_logTimingAddurl;

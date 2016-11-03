@@ -567,16 +567,13 @@ static void gotListWrapper ( void *state , RdbList *list, Msg5 *msg5 ) ;
 
 // returns false if blocked, true otherwise
 bool Statsdb::gifLoop ( ) {
-	// shortcut
-	Msg5 *m = &m_msg5;
-
 	//#ifndef _USEPLOTTER_
 	//return true;
 	//#endif
 
 	// loop over all the lists in the time range, [m_t1,m_t2]
 	for ( ; ! m_done ; ) {
-		if ( ! m->getList ( RDB_STATSDB,
+		if( !m_msg5.getList(RDB_STATSDB,
 				    (collnum_t)0,//"statsdb" , // coll
 				    &m_list		,
 				    (char *)&m_startKey	,
@@ -593,7 +590,6 @@ bool Statsdb::gifLoop ( ) {
 				    NULL	, // cache key pointer
 				    0		, // # retries
 				    -1		, // max # retries
-				    true	, // compensate for merge?
 				    -1		, // sync point
 				    false,        // isRealMerge
 				    true))        // allowPageCache

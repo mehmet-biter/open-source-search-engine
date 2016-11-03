@@ -442,7 +442,6 @@ bool Matches::addMatches(Words *words, Phrases *phrases, Sections *sections, Bit
 		return true;
 	}
 
-	// shortcut
 	Section *sp = NULL;
 	if ( sections ) {
 		sp = sections->m_sections;

@@ -36,8 +36,10 @@ extern const char *g_msg;
 bool sendPageWidgets ( TcpSocket *socket , HttpRequest *hr ) ;
 bool sendPageBasicStatus     ( TcpSocket *s , HttpRequest *r );
 
-bool printGigabotAdvice ( SafeBuf *sb , int32_t page , HttpRequest *hr ,
-			  char *gerrmsg ) ;
+bool printGigabotAdvice(SafeBuf *sb,
+			int32_t page,
+			const HttpRequest *hr,
+			const char *gerrmsg);
 
 bool sendPageRoot     ( TcpSocket *s , HttpRequest *r );
 bool sendPageRoot     ( TcpSocket *s , HttpRequest *r, char *cookie );

@@ -34,12 +34,14 @@
 #include "Msg3.h"               // MAX_RDB_FILES definition
 #include "RdbMem.h"
 #include "RdbIndex.h"
+#include "rdbid_t.h"
 #include "GbMutex.h"
 
 extern RdbMerge g_merge;
 
 class RdbBuckets;
 class RdbTree;
+class CollectionRec;
 
 class RdbBase {
 
@@ -88,9 +90,10 @@ class RdbBase {
 	bool useHalfKeys() const { return m_useHalfKeys; }
 
 	BigFile *getFile(int32_t n) { return m_fileInfo[n].m_file; }
-	int32_t getFileId(int32_t n) { return m_fileInfo[n].m_fileId; }
+	int32_t isRootFile(int32_t n) { return n==0 || m_fileInfo[n].m_fileId==1; }
 	RdbMap *getMap(int32_t n) { return m_fileInfo[n].m_map; }
 	RdbIndex *getIndex(int32_t n) { return m_fileInfo[n].m_index; }
+	bool isReadable(int32_t n) { return m_fileInfo[n].m_allowReads; }
 
 	RdbIndex *getTreeIndex() {
 		if (m_useIndexFile) {
@@ -117,6 +120,8 @@ class RdbBase {
 	int32_t      getNumSmallFiles() const;
 	int64_t getDiskSpaceUsed() const;
 
+	uint64_t getSpaceNeededForMerge(int startFileNum, int numFiles) const;
+
 	// returns -1 if variable (variable dataSize)
 	int32_t getRecSize ( ) const {
 		if ( m_fixedDataSize == -1 ) return -1;
@@ -133,6 +138,8 @@ class RdbBase {
 	int64_t estimateNumGlobalRecs() const;
 	
 	// private:
+
+	int32_t getMinToMerge(const CollectionRec *cr, rdbid_t rdbId, int32_t minToMergeOverride) const;
 
 	// returns true if merge was started, false if no merge could
 	// be launched right now for some reason.
@@ -155,23 +162,14 @@ class RdbBase {
 	// . return array position we added it to
 	// . return -1 and set errno on error
 	int32_t addNewFile();
+	void markNewFileReadable();
 
 	// these are used for computing load on a machine
 	bool isMerging() const { return m_isMerging; }
 	bool isDumping() const { return m_dump->isDumping(); }
 
-	bool hasMergeFile() const {
-		return m_hasMergeFile;
-	}
-
 	//are files being unlinked or renamed?
 	bool isManipulatingFiles() const;
-	
-	bool isFileBeingUnlinked(int32_t fileNum) const {
-		return m_isUnlinking &&
-		       fileNum >= m_mergeStartFileNum &&
-		       fileNum <  m_mergeStartFileNum+m_numFilesToMerge;
-	}
 	
 	// bury m_files[] in [a,b)
 	void buryFiles ( int32_t a , int32_t b );
@@ -199,10 +197,6 @@ class RdbBase {
 
 	void forceNextMerge() { m_nextMergeForced = true; }
 
-	//msg3 needs to know so it can compensate for ongoing merges
-	int32_t mergeStartFileNum() const { return m_mergeStartFileNum; }
-	int32_t numFilesToMerge() const { return m_numFilesToMerge; }
-
 private:
 	bool parseFilename( const char* filename, int32_t *p_fileId, int32_t *p_fileId2,
 	                    int32_t *p_mergeNum, int32_t *p_endMergeFileId );
@@ -221,8 +215,10 @@ private:
 		int32_t m_fileId2; // for titledb/tfndb linking
 		RdbMap *m_map;
 		RdbIndex *m_index;
+		bool m_allowReads;
 	} m_fileInfo[MAX_RDB_FILES + 1];
 	int32_t m_numFiles;
+	GbMutex m_mtxFileInfo;  //protects modification of m_fileInfo/m_numFiles
 
 	// mapping of docId to file
 	// key format
@@ -246,26 +242,36 @@ private:
 	void selectFilesToMerge(int32_t mergeNum, int32_t numFiles, int32_t *p_mini);
 
 	bool hasFileId(int32_t fildId) const;
-	void generateFilename(char *buf, size_t bufsize, int32_t fileId, int32_t fileId2, int32_t mergeNum, int32_t endMergeFileId);
 
-	bool loadFilesFromDir(const char *dirName);
+	void generateFilename(char *buf, size_t bufsize, int32_t fileId, int32_t fileId2, int32_t mergeNum, int32_t endMergeFileId, const char *extension);
+	void generateDataFilename(char *buf, size_t bufsize, int32_t fileId, int32_t fileId2, int32_t mergeNum, int32_t endMergeFileId) {
+		generateFilename(buf,bufsize,fileId,fileId2,mergeNum,endMergeFileId,"dat");
+	}
+	void generateMapFilename(char *buf, size_t bufsize, int32_t fileId, int32_t /*fileId2*/, int32_t mergeNum, int32_t endMergeFileId) {
+		generateFilename(buf,bufsize,fileId,-1,mergeNum,endMergeFileId,"map");
+	}
+	void generateIndexFilename(char *buf, size_t bufsize, int32_t fileId, int32_t /*fileId2*/, int32_t mergeNum, int32_t endMergeFileId) {
+		generateFilename(buf,bufsize,fileId,-1,mergeNum,endMergeFileId,"idx");
+	}
+
+	bool cleanupAnyChrashedMerged();
+	bool loadFilesFromDir(const char *dirName, bool isInMergeDir);
 	bool fixNonfirstSpiderdbFiles();
 
 	static void unlinkDoneWrapper(void *state);
 	void unlinkDone();
+	void unlinksDone();
 	static void renameDoneWrapper(void *state);
 	static void checkThreadsAgainWrapper(int /*fd*/, void *state);
 	void renameDone();
+	void renamesDone();
 	bool removeRebuildFromFilename(BigFile *f);
 
 	void renameFile( int32_t currentFileIdx, int32_t newFileId, int32_t newFileId2 );
 
 	// Add a (new) file to the m_files/m_maps/m_fileIds arrays
 	// Return return array position of new entry, or -1 on error
-	int32_t addFile(bool isNew, int32_t fileId, int32_t fileId2, int32_t mergeNum, int32_t endMergeFileId);
-
-	int32_t m_x;
-	int32_t m_a;
+	int32_t addFile(bool isNew, int32_t fileId, int32_t fileId2, int32_t mergeNum, int32_t endMergeFileId, bool isInMergeDir);
 
 	// this class contains a ptr to us
 	class Rdb           *m_rdb;
@@ -273,6 +279,7 @@ private:
 	int32_t      m_fixedDataSize;
 
 	char m_collectionDirName[1024];
+	char m_mergeDirName[1024];
 	char      m_dbname [32];
 	int32_t      m_dbnameLen;
 
@@ -317,17 +324,16 @@ private:
 	// we now determine when in merge mode
 	bool      m_isMerging;
 
-	// have we create the merge file?
-	bool      m_hasMergeFile;
-
 	// Record counts for files being merged. Calculated in attemptMerge() and then used
 	// for logging in incorporateMerge()
 	int64_t m_premergeNumPositiveRecords;
 	int64_t m_premergeNumNegativeRecords;
 
-	int32_t m_numThreads;
-
-	bool m_isUnlinking;
+	bool m_submittingJobs;
+	int m_outstandingJobCount;
+	GbMutex m_mtxJobCount;
+	void incrementOutstandingJobs();
+	bool decrementOustandingJobs();
 };
 
 extern bool g_dumpMode;

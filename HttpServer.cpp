@@ -1167,14 +1167,14 @@ bool HttpServer::sendReply2 ( const char *mime,
 
 	char *rb = s->m_readBuf;
 	// shortcut
-	int32_t ht = g_hostdb.m_myHost->m_type;
+	int32_t myHostType = g_hostdb.m_myHost->m_type;
 	// get the server this socket uses
 	TcpServer *tcp = s->m_this;
 	// . move the reply to a send buffer
 	// . don't make sendBuf bigger than g_httpMaxSendBufSize
 	int32_t sendBufSize = mimeLen + contentLen;
 	// if we are a regular proxy and this is compressed, just forward it
-	//if ( (ht & HT_PROXY) && *rb == 'Z' && alreadyCompressed ) {
+	//if ( (myHostType & HT_PROXY) && *rb == 'Z' && alreadyCompressed ) {
 	if ( alreadyCompressed ) {
 		sendBufSize = contentLen;
 		//if ( mimeLen ) { g_process.shutdownAbort(true); }
@@ -1201,11 +1201,11 @@ bool HttpServer::sendReply2 ( const char *mime,
 	// we swap out the GET for a ZET
 	bool doCompression = ( rb[0] == 'Z' );
 	// qtproxy never compresses a reply
-	if ( ht & HT_QCPROXY ) doCompression = false;
+	if ( myHostType & HT_QCPROXY ) doCompression = false;
 	// . only grunts do the compression now to prevent proxy overload
 	// . but if we are originating the msg ourselves, then we should
 	//   indeed do compres
-	//if ( ! ( ht & HT_GRUNT) && ! originates ) doCompression = false;
+	//if ( ! ( myHostType & HT_GRUNT) && ! originates ) doCompression = false;
 	if ( alreadyCompressed ) doCompression = false;
 	// p is a moving ptr into "sendBuf"
 	unsigned char *p    = (unsigned char *)sendBuf;
@@ -1251,7 +1251,7 @@ bool HttpServer::sendReply2 ( const char *mime,
 	}
 	// if we are a proxy, and not a compression proxy, then just forward
 	// the blob as-is if it is a "ZET" (GET-compressed=ZET)
-	else if ( (ht & HT_PROXY) && (*rb == 'Z') ) {
+	else if ( (myHostType & HT_PROXY) && (*rb == 'Z') ) {
 		gbmemcpy ( sendBuf , content, contentLen );
 		// sanity check
 		if ( sendBufSize != contentLen ) { g_process.shutdownAbort(true); }

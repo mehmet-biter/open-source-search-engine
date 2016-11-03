@@ -36,10 +36,23 @@ int moveFile(const char *src, const char *dst)
 	int fd_src = open(src,O_RDONLY|O_DIRECT);
 	if(fd_src<0) {
 	        int saved_errno = errno;
-		log(LOG_ERROR,"moveFile:open(%s) failed with errno=%d (%s)", src, errno, strerror(errno));
-		delete[] buffer;
-		errno = saved_errno;
-		return -1;
+		if(errno==EINVAL) {
+			//open(...O_DIRECT) can fail due to filesystem (eg. on development machines /tmp can be a
+			//tmpfs which curiously doesn't support O_DIRECT. Other file systems, eg.  NFS have the same issue.
+			fd_src = open(src,O_RDONLY);
+			if(fd_src<0) {
+				saved_errno = errno;
+				log(LOG_ERROR,"moveFile:open(%s) failed with errno=%d (%s)", src, errno, strerror(errno));
+				delete[] buffer;
+				errno = saved_errno;
+				return -1;
+			}
+		} else {
+			log(LOG_ERROR,"moveFile:open(%s) failed with errno=%d (%s)", src, errno, strerror(errno));
+			errno = saved_errno;
+			delete[] buffer;
+			return -1;
+		}
 	}
 	//Tell the OS that we are going to read the source file sequentially
 	(void)posix_fadvise(fd_src,0,0,POSIX_FADV_SEQUENTIAL);
@@ -72,7 +85,7 @@ int moveFile(const char *src, const char *dst)
 				break;
 			if(bytes_read<0) {
 				int saved_errno = errno;
-				log(LOG_ERROR,"moveFile:open(%s) failed with errno=%d (%s)", src,errno,strerror(errno));
+				log(LOG_ERROR,"moveFile:read(%s) failed with errno=%d (%s)", src,errno,strerror(errno));
 				close(fd_src);
 				close(fd_dst);
 				unlink(dst);

@@ -63,6 +63,9 @@ Conf::Conf ( ) {
 	m_posdbMaxTreeMem = 0;
 	m_tagdbFileCacheSize = 0;
 	m_tagdbMaxTreeMem = 0;
+	m_mergespaceLockDirectory[0] = '\0';
+	m_mergespaceMinLockFiles = 0;
+	m_mergespaceDirectory[0] = '\0';
 	m_clusterdbFileCacheSize = 0;
 	m_clusterdbMaxTreeMem = 0;
 	m_clusterdbMinFilesToMerge = 0;
@@ -142,9 +145,6 @@ Conf::Conf ( ) {
 	memset(m_email4MX, 0, sizeof(m_email4MX));
 	memset(m_email4Addr, 0, sizeof(m_email4Addr));
 	memset(m_email4From, 0, sizeof(m_email4From));
-	memset(m_errstr1, 0, sizeof(m_errstr1));
-	memset(m_errstr2, 0, sizeof(m_errstr2));
-	memset(m_errstr3, 0, sizeof(m_errstr3));
 	m_sendParmChangeAlertsToEmail1 = false;
 	m_sendParmChangeAlertsToEmail2 = false;
 	m_sendParmChangeAlertsToEmail3 = false;
@@ -257,6 +257,7 @@ Conf::Conf ( ) {
 	m_logTraceRobots = false;
 	m_logTraceSpider = false;
 	m_logTraceXmlDoc = false;
+	m_logTracePhrases= false;
 	m_logTimingAddurl = false;
 	m_logTimingAdmin = false;
 	m_logTimingBuild = false;

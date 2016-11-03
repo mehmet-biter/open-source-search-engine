@@ -220,7 +220,7 @@ static void diskUsageWrapper(int fd, void *state);
 
 
 Process::Process ( ) {
-	m_mode = NO_MODE;
+	m_mode = Process::NO_MODE;
 	m_exiting = false;
 	m_powerIsOn = true;
 	m_totalDocsIndexed = -1LL;
@@ -356,7 +356,7 @@ static float getDiskUsage ( int64_t *diskAvail ) {
 
 void diskUsageWrapper(int /*fd*/, void * /*state*/) {
 	// skip if exiting
-	if ( g_process.m_mode == EXIT_MODE ) {
+	if ( g_process.m_mode == Process::Process::EXIT_MODE ) {
 		return;
 	}
 
@@ -401,22 +401,22 @@ int64_t Process::getTotalDocsIndexed() {
 
 void processSleepWrapper(int /*fd*/, void * /*state*/) {
 
-	if ( g_process.m_mode == EXIT_MODE ) {
+	if ( g_process.m_mode == Process::Process::EXIT_MODE ) {
 		g_process.shutdown2();
 		return;
 	}
 
-	if ( g_process.m_mode == SAVE_MODE ) {
+	if ( g_process.m_mode == Process::SAVE_MODE ) {
 		g_process.save2();
 		return;
 	}
 
-	if ( g_process.m_mode == LOCK_MODE ) {
+	if ( g_process.m_mode == Process::LOCK_MODE ) {
 		g_process.save2();
 		return;
 	}
 
-	if ( g_process.m_mode != NO_MODE ) {
+	if ( g_process.m_mode != Process::NO_MODE ) {
 		return;
 	}
 
@@ -527,7 +527,7 @@ bool Process::save ( ) {
 	if ( m_mode != 0 ) return true;
 	// log it
 	logf(LOG_INFO,"db: Entering lock mode for saving.");
-	m_mode   = LOCK_MODE; // SAVE_MODE;
+	m_mode   = Process::LOCK_MODE; // Process::SAVE_MODE;
 	m_urgent = false;
 	m_calledSave = false;
 	return save2();
@@ -560,7 +560,7 @@ bool Process::shutdown ( bool urgent, void  *state, void (*callback) (void *stat
 	// bail if doing something already
 	if ( m_mode != 0 ) {
 		// if already in exit mode, just return
-		if ( m_mode == EXIT_MODE ) {
+		if ( m_mode == Process::Process::EXIT_MODE ) {
 			return true;
 		}
 
@@ -570,7 +570,7 @@ bool Process::shutdown ( bool urgent, void  *state, void (*callback) (void *stat
 		return true;
 	}
 
-	m_mode   = EXIT_MODE;
+	m_mode   = Process::Process::EXIT_MODE;
 	m_urgent = urgent;
 
 	m_calledSave = false;
@@ -600,7 +600,7 @@ bool Process::save2 ( ) {
 	// . when merging titldb, it sets Rdb::m_dump.m_isDumping to true
 	//   because it is dumping the results of the merge to a file.
 	//   occasionally it will initiate a dump of tfndb which will not be 
-	//   possible because Rdb/RdbDump checks g_process.m_mode == SAVE_MODE,
+	//   possible because Rdb/RdbDump checks g_process.m_mode == Process::SAVE_MODE,
 	//   and do not allow dumps to begin if that is true! so we end up in 
 	//   deadlock! the save can not complete 
 	if ( isRdbDumping() ) {
@@ -609,8 +609,8 @@ bool Process::save2 ( ) {
 
 	// ok, now nobody is dumping, etc. make it so no dumps can start.
 	// Rdb.cpp/RdbDump.cpp check for this and will not dump if it is 
-	// set to SAVE_MODE
-	m_mode = SAVE_MODE;
+	// set to Process::SAVE_MODE
+	m_mode = Process::SAVE_MODE;
 
 	logf(LOG_INFO,"gb: Saving data to disk. Disabling writes.");
 
@@ -664,7 +664,7 @@ bool Process::save2 ( ) {
 	//m_lastSaveTime = gettimeofdayInMillisecondsLocal();
 
 	// unlock
-	m_mode = NO_MODE;
+	m_mode = Process::NO_MODE;
 
 	return true;
 }

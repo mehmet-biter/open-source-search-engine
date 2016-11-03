@@ -21,7 +21,7 @@ HttpRequest::~HttpRequest() {
 }
 
 
-char HttpRequest::getReplyFormat() {
+char HttpRequest::getReplyFormat() const {
 	if ( m_replyFormatValid ) return m_replyFormat;
 
 	const char *formatStr = getString("format");

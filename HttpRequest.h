@@ -64,10 +64,10 @@ class HttpRequest {
 	}
 
 	// FORMAT_HTML FORMAT_JSON FORMAT_XML
-	char getFormat() { return getReplyFormat(); }
-	char getReplyFormat();
-	bool m_replyFormatValid;
-	char m_replyFormat;
+	char getFormat() const { return getReplyFormat(); }
+	char getReplyFormat() const;
+	mutable bool m_replyFormatValid;
+	mutable char m_replyFormat;
 
 	// get the referer field of the MIME header
 	char *getReferer () { return m_ref; }

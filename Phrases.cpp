@@ -4,6 +4,7 @@
 #include "Words.h"
 #include "Bits.h"
 #include "Mem.h"
+#include "Conf.h"
 #include "Sanity.h"
 
 
@@ -106,6 +107,8 @@ bool Phrases::set( const Words *words, const Bits *bits ) {
 // . ofmice
 // . mice.andmen
 void Phrases::setPhrase ( int32_t i ) {
+	logTrace( g_conf.m_logTracePhrases, "i=%3" PRId32 " BEGIN", i);
+
 	// hash of the phrase
 	int64_t h   = 0LL; 
 
@@ -152,10 +155,15 @@ void Phrases::setPhrase ( int32_t i ) {
 	hasStopWord2 = m_bits->isStopWord(i);
 
 	for ( j = i + 1 ; j < nw ; j++ ) {
-		// . do not allow more than 32 alnum/punct "words" in a phrase
-		// . this prevents phrases with 100,000 words from slowing
-		//   us down. would put us in a huge double-nested for loop
+		logTrace( g_conf.m_logTracePhrases, "i=%3" PRId32 ", j=%3" PRId32 ", wids[i]=%20" PRIu64", wids[j]=%20" PRIu64". LOOP START", i, j, m_wids[i], m_wids[j] );
+
+		// Do not allow more than 32 alnum/punct "words" in a phrase.
+		// Tthis prevents phrases with 100,000 words from slowing
+		// us down. would put us in a huge double-nested for loop
+		// BR: But it will never happen? It breaks out of the loop
+		//     when the phrase contains 2 (real) words?
 		if ( j > i + 32 ) {
+			logTrace( g_conf.m_logTracePhrases, "i=%3" PRId32 ", j=%3" PRId32 ", wids[i]=%20" PRIu64", wids[j]=%20" PRIu64". j > i+32. no phrase", i, j, m_wids[i], m_wids[j] );
 			goto nophrase;
 		}
 
@@ -163,14 +171,18 @@ void Phrases::setPhrase ( int32_t i ) {
 		if ( ! m_wids[j] ) {
 			// if we cannot pair across word j then break
 			if ( !m_bits->canPairAcross( j ) ) {
+				logTrace( g_conf.m_logTracePhrases, "i=%3" PRId32 ", j=%3" PRId32 ", wids[i]=%20" PRIu64", wids[j]=%20" PRIu64". Pair cannot cross. Breaking.", i, j, m_wids[i], m_wids[j] );
 				break;
 			}
 
 			// does it have a hyphen?
 			if ( j == i + 1 && m_words->hasChar( j, '-' ) ) {
 				hasHyphen = true;
+				logTrace( g_conf.m_logTracePhrases, "i=%3" PRId32 ", j=%3" PRId32 ", wids[i]=%20" PRIu64", wids[j]=%20" PRIu64 ". j is hyphen, NOT adding to phrase", i, j, m_wids[i], m_wids[j] );
 			}
-
+			else {
+				logTrace( g_conf.m_logTracePhrases, "i=%3" PRId32 ", j=%3" PRId32 ", wids[i]=%20" PRIu64", wids[j]=%20" PRIu64 ". j is space, NOT adding to phrase", i, j, m_wids[i], m_wids[j] );
+			}
 			continue;
 		}
 
@@ -188,29 +200,40 @@ void Phrases::setPhrase ( int32_t i ) {
 
 			++numWordsInPhrase;
 
+			logTrace( g_conf.m_logTracePhrases, "i=%3" PRId32 ", j=%3" PRId32 ", wids[i]=%20" PRIu64", wids[j]=%20" PRIu64". CAN be in phrase. Adding j's hash. numWordsInPhrase=%" PRId32 "", i, j, m_wids[i], m_wids[j], numWordsInPhrase);
+
+
 			// N-word phrases?
 			if ( numWordsInPhrase == 2 ) {
 				h2 = h;
 				m_numWordsTotal2[i] = j - i + 1;
 				hasStopWord2 = m_bits->isStopWord(j);
 
+				logTrace( g_conf.m_logTracePhrases, "i=%3" PRId32 ", j=%3" PRId32 ", wids[i]=%20" PRIu64", wids[j]=%20" PRIu64". Words in phrase is 2. Breaking.", i, j, m_wids[i], m_wids[j] );
 				break;
 			}
 		}
+		else {
+			logTrace( g_conf.m_logTracePhrases, "i=%3" PRId32 ", j=%3" PRId32 ", wids[i]=%20" PRIu64", wids[j]=%20" PRIu64". j cannot be in a phrase.", i, j, m_wids[i], m_wids[j] );
+		}
+			
 
 		// if we cannot pair across word j then break
 		if ( ! m_bits->canPairAcross (j) ) {
+			logTrace( g_conf.m_logTracePhrases, "i=%3" PRId32 ", j=%3" PRId32 ", wids[i]=%20" PRIu64", wids[j]=%20" PRIu64". Cannot pair across. Breaking.", i, j, m_wids[i], m_wids[j] );
 			break;
 		}
 
 		// otherwise, get the next word
+		logTrace( g_conf.m_logTracePhrases, "i=%3" PRId32 ", j=%3" PRId32 ", wids[i]=%20" PRIu64", wids[j]=%20" PRIu64". Get next word", i, j, m_wids[i], m_wids[j] );
 	}
 
-	// if we had no phrase then use 0 as id (need 2+ words to be a pharse)
+	// if we had no phrase then use 0 as id (need 2+ words to be a phrase)
 	if ( numWordsInPhrase <= 1 ) { 
 	nophrase:
 		m_phraseIds2[i]      = 0LL; 
 		m_numWordsTotal2[i]   = 0;
+		logTrace( g_conf.m_logTracePhrases, "i=%3" PRId32 ", j=%3" PRId32 ", wids[i]=%20" PRIu64", wids[j]=%20" PRIu64". END. Not a phrase. m_phraseIds2[i]=%" PRIu64 "", i, j, m_wids[i], m_wids[j], m_phraseIds2[i]);
 		return;
 	}
 
@@ -230,13 +253,17 @@ void Phrases::setPhrase ( int32_t i ) {
 	// . "e-mail"    -> email
 	if ( hasHyphen || ! hasStopWord2 ) {
 		m_phraseIds2[i] = h2;
+		logTrace( g_conf.m_logTracePhrases, "i=%3" PRId32 ", j=%3" PRId32 ", wids[i]=%20" PRIu64", wids[j]=%20" PRIu64". END. Has hyphen or no stopword. m_phraseIds2[i]=%" PRIu64 "", i, j, m_wids[i], m_wids[j], m_phraseIds2[i] );
 	}
 	// . "st. and"    !-> stand
 	// . "the rapist" !-> therapist
 	else {
 		m_phraseIds2[i] = h2 ^ 0x768867;
+		logTrace( g_conf.m_logTracePhrases, "i=%3" PRId32 ", j=%3" PRId32 ", wids[i]=%20" PRIu64", wids[j]=%20" PRIu64". END. either no hyphen or a stopword. m_phraseIds2[i]=%" PRIu64 "", i, j, m_wids[i], m_wids[j], m_phraseIds2[i] );
 	}
 }
+
+
 
 // . store phrase that starts with word #i into "printBuf"
 // . return bytes stored in "printBuf"

@@ -6,11 +6,6 @@
 #include <inttypes.h>
 #include <stddef.h>
 
-#define NO_MODE   0
-#define EXIT_MODE 1
-#define SAVE_MODE 2
-#define LOCK_MODE 3
-
 
 class Process {
 
@@ -64,7 +59,12 @@ class Process {
 	class Rdb *m_rdbs[32];
 	int32_t       m_numRdbs;
 	bool       m_urgent;
-	char       m_mode;
+	enum {
+		NO_MODE   = 0,
+		EXIT_MODE = 1,
+		SAVE_MODE = 2,
+		LOCK_MODE = 3
+	} m_mode;
 	int64_t  m_lastSaveTime;
 	int64_t  m_processStartTime;
 	bool       m_sentShutdownNote;

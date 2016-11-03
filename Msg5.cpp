@@ -49,7 +49,6 @@ Msg5::Msg5()
 	memset(m_listPtrs, 0, sizeof(m_listPtrs));
 	m_removeNegRecs = false;
 	m_oldListSize = 0;
-	m_compensateForMerge = false;
 	m_maxRetries = 0;
 	m_isRealMerge = false;
 	m_ks = 0;
@@ -107,7 +106,7 @@ bool Msg5::getSingleUnmergedList(rdbid_t       rdbId,
 		       fileNum, 1, //startFileNum, numFiles
 		       state, callback,
 		       niceness,
-		       false,NULL,0,-1,true,-1,false,true);
+		       false,NULL,0,-1,-1,false,true);
 }
 
 
@@ -223,7 +222,6 @@ bool Msg5::getList ( rdbid_t     rdbId,
 		     char    *cacheKeyPtr   , // NULL if none
 		     int32_t     retryNum      ,
 		     int32_t     maxRetries    ,
-		     bool     compensateForMerge ,
 		     int64_t syncPoint ,
 		     bool        isRealMerge ,
 		     bool        allowPageCache ) {
@@ -319,7 +317,6 @@ if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 	m_niceness      = niceness;
 	m_maxRetries    = maxRetries;
 	m_oldListSize   = 0;
-	m_compensateForMerge = compensateForMerge;
 	m_isRealMerge        = isRealMerge;
 	m_allowPageCache     = allowPageCache;
 
@@ -441,7 +438,6 @@ if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 					   niceness         ,
 					   0                , // retry num
 					   m_maxRetries     , // -1=def
-					   m_compensateForMerge ,
 					   true);             // just get endKey?
 			if ( g_errno ) {
 				log("db: Msg5: getting endKey: %s",mstrerror(g_errno));
@@ -595,8 +591,6 @@ if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 		// . now get from disk
 		// . use the cache-modified constraints to reduce reading time
 		// . return false if it blocked
-		// . if compensateForMerge is true then m_startFileNum/m_numFiles
-		//   will be appropriately mapped around the merge
 		if ( ! m_msg3.readList  ( m_rdbId          ,
 					  m_collnum        ,
 					  m_fileStartKey   , // modified by gotList()
@@ -609,7 +603,6 @@ if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 					  niceness         ,
 					  0                , // retry num
 					  m_maxRetries     , // max retries (-1=def)
-					  m_compensateForMerge ,
 					  false))
 			return false;
 		// . this returns false if blocked, true otherwise
@@ -954,12 +947,7 @@ if(m_rdbId==RDB_POSDB && !m_isSingleUnmergedListGet) abort();
 	// . should we remove negative recs from final merged list?
 	// . if we're reading from root and tmp merge file of root
 	// . should we keep this out of the thread in case a file created?
-	int32_t fn = 0;
-	if ( base->getNumFiles() > 0 ) {
-		fn = base->getFileId(m_startFileNum);
-	}
-
-	m_removeNegRecs = ( fn == 0 || fn == 1 );
+	m_removeNegRecs = base->isRootFile(m_startFileNum);
 
 	// . if we only have one list, just use it
 	// . Msg3 should have called constrain() on it so it's m_list so

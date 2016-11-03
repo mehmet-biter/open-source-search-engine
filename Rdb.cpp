@@ -321,7 +321,9 @@ bool Rdb::updateToRebuildFiles ( Rdb *rdb2 , char *coll ) {
 	logf(LOG_INFO,"repair: Moving *-saved.dat %s from %s to %s", structName, src, dst);
 
 	errno = 0;
-	if ( moveFile(src,dst)!=0 ) {
+
+	// ignore missing file error
+	if (moveFile(src, dst) != 0 && errno != ENOENT) {
 		log( LOG_ERROR, "repair: Moving saved %s had error: %s.", structName, mstrerror( errno ) );
 		return false;
 	}
@@ -968,7 +970,7 @@ bool Rdb::dumpTree ( int32_t niceness ) {
 	}
 
 	// . if Process is saving, don't start a dump
-	if ( g_process.m_mode == SAVE_MODE ) {
+	if ( g_process.m_mode == Process::SAVE_MODE ) {
 		logTrace( g_conf.m_logTraceRdb, "END. %s: Process is in save mode. Returning true", m_dbname );
 		return true;
 	}
@@ -1337,6 +1339,7 @@ void Rdb::doneDumping ( ) {
 		RdbBase *base = getBase(collnum);
 		if (base) {
 			base->generateGlobalIndex();
+			base->markNewFileReadable();
 		}
 	}
 
@@ -2042,7 +2045,6 @@ bool Rdb::addRecord(collnum_t collnum, char *key, char *data, int32_t dataSize) 
 			sc->addSpiderRequest(sreq, gettimeofdayInMilliseconds());
 		} else {
 			// otherwise repl
-			// shortcut - cast it to reply
 			SpiderReply *rr = (SpiderReply *)sreq;
 
 			// log that. why isn't this undoling always
@@ -2275,38 +2277,25 @@ bool isSecondaryRdb ( rdbid_t rdbId ) {
 
 // use a quick table now...
 char getKeySizeFromRdbId(rdbid_t rdbId) {
-	static bool s_flag = true;
-	static char s_table1[RDB_END];
-	if ( s_flag ) {
-		// only stock the table once
-		s_flag = false;
-
-		// . loop over all possible rdbIds
-		// . RDB_NONE is 0!
-		for (int32_t i = 1; i < RDB_END; ++i) {
-			// assume 12
-			int32_t ks = 12;
-
-			if (i == RDB_SPIDERDB || i == RDB2_SPIDERDB2 || i == RDB_TAGDB || i == RDB2_TAGDB2) {
-				ks = 16;
-			} else if (i == RDB_POSDB || i == RDB2_POSDB2) {
-				ks = sizeof(key144_t);
-			} else if (i == RDB_LINKDB || i == RDB2_LINKDB2) {
-				ks = sizeof(key224_t);
-			}
-
-			// set the table
-			s_table1[i] = ks;
-		}
+	switch(rdbId) {
+		case RDB_SPIDERDB:
+		case RDB2_SPIDERDB2:
+		case RDB_TAGDB:
+		case RDB2_TAGDB2:
+			return sizeof(key128_t); //16
+		case RDB_POSDB:
+		case RDB2_POSDB2:
+			return sizeof(key144_t);
+		case RDB_LINKDB:
+		case RDB2_LINKDB2:
+			return sizeof(key224_t);
+		case RDB_NONE:
+		case RDB_END:
+			log(LOG_ERROR, "rdb: bad lookup rdbid of %i", (int)rdbId);
+			g_process.shutdownAbort(true);
+		default:
+			return sizeof(key96_t); //12
 	}
-
-	// sanity check
-	if (s_table1[rdbId] == 0) {
-		log(LOG_ERROR, "rdb: bad lookup rdbid of %i", (int)rdbId);
-		g_process.shutdownAbort(true); 
-	}
-
-	return s_table1[rdbId];
 }
 
 // returns -1 if dataSize is variable

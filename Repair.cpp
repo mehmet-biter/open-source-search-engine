@@ -885,7 +885,7 @@ bool Repair::loop ( void *state ) {
 
  loop1:
 
-	if ( g_process.m_mode == EXIT_MODE )
+	if ( g_process.m_mode == Process::EXIT_MODE )
 	{
 		return true;
 	}
@@ -1186,7 +1186,6 @@ bool Repair::scanRecs ( ) {
 			      NULL             , // cache key ptr
 			      0                , // retry num
 			      -1               , // maxRetries
-			      true             , // compensate for merge
 			      -1LL,              // sync point
 			      false,             // isRealMerge
 			      true))             // allowPageCache

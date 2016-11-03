@@ -232,7 +232,7 @@ void doneSleepingWrapperSL ( int fd , void *state ) {
 	
 	//if ( ! g_conf.m_webSpideringEnabled )  return;
 	// or if trying to exit
-	if ( g_process.m_mode == EXIT_MODE ) return;	
+	if ( g_process.m_mode == Process::EXIT_MODE ) return;	
 	// skip if udp table is full
 	if ( g_udpServer.getNumUsedSlotsIncoming() >= MAXUDPSLOTS ) return;
 
@@ -426,7 +426,7 @@ subloop:
 	}
 
 	// or if trying to exit
-	if ( g_process.m_mode == EXIT_MODE ) {
+	if ( g_process.m_mode == Process::EXIT_MODE ) {
 		logTrace( g_conf.m_logTraceSpider, "END, shutting down"  );
 		return;	
 	}
@@ -791,7 +791,6 @@ subloopNextPriority:
 				NULL,             // cacheKeyPtr
 			        0,                // retryNum
 			        -1,               // maxRetries
-			        true,             // compensateForMerge
 			        -1,               // syncPoint
 			        false,            // isRealMerge
 			        true))            // allowPageCache
@@ -1088,7 +1087,6 @@ skipDoledbRec:
 	// in doledb.
 	HashTableX *ht = &g_spiderLoop.m_lockTable;
 
-	// shortcut
 	int64_t lockKey = makeLockTableKey ( sreq );
 
 	// get the lock... only avoid if confirmed!
@@ -1269,7 +1267,7 @@ bool SpiderLoop::spiderUrl9 ( SpiderRequest *sreq ,
 	// turned off?
 	if ( ( (! g_conf.m_spideringEnabled ||
 		// or if trying to exit
-		g_process.m_mode == EXIT_MODE
+		g_process.m_mode == Process::EXIT_MODE
 		) && // ! g_conf.m_webSpideringEnabled ) &&
 	       ! sreq->m_isInjecting ) || 
 	     // repairing the collection's rdbs?
@@ -1324,7 +1322,6 @@ bool SpiderLoop::spiderUrl9 ( SpiderRequest *sreq ,
 	// we store this in msg12 for making a fakedb key
 	//collnum_t collnum = g_collectiondb.getCollnum ( coll );
 
-	// shortcut
 	int64_t lockKeyUh48 = makeLockTableKey ( sreq );
 
 	// . now that we have to use msg12 to see if the thing is locked
@@ -1959,13 +1956,10 @@ void removeExpiredLocks ( int32_t hostId ) {
 	// only do this once per second at the most
 	if ( nowGlobal <= s_lastTime ) return;
 
-	// shortcut
-	HashTableX *ht = &g_spiderLoop.m_lockTable;
-
 	restart:
 
 	// scan the slots
-	int32_t ns = ht->m_numSlots;
+	int32_t ns = g_spiderLoop.m_lockTable.m_numSlots;
 	// . clean out expired locks...
 	// . if lock was there and m_expired is up, then nuke it!
 	// . when Rdb.cpp receives the "fake" title rec it removes the
@@ -1977,10 +1971,10 @@ void removeExpiredLocks ( int32_t hostId ) {
 	//   we get the lock, but we avoided the negative doledb key.
 	for ( int32_t i = 0 ; i < ns ; i++ ) {
 		// skip if empty
-		if ( ! ht->m_flags[i] ) continue;
+		if ( ! g_spiderLoop.m_lockTable.m_flags[i] ) continue;
 		// cast lock
-		UrlLock *lock = (UrlLock *)ht->getValueFromSlot(i);
-		int64_t lockKey = *(int64_t *)ht->getKeyFromSlot(i);
+		UrlLock *lock = (UrlLock *)g_spiderLoop.m_lockTable.getValueFromSlot(i);
+		int64_t lockKey = *(int64_t *)g_spiderLoop.m_lockTable.getKeyFromSlot(i);
 		// if collnum got deleted or reset
 		collnum_t collnum = lock->m_collnum;
 		if ( collnum >= g_collectiondb.m_numRecs ||
@@ -2003,7 +1997,7 @@ void removeExpiredLocks ( int32_t hostId ) {
 			    (uint32_t)nowGlobal);
 		nuke:
 		// nuke the slot and possibly re-chain
-		ht->removeSlot ( i );
+		g_spiderLoop.m_lockTable.removeSlot ( i );
 		// gotta restart from the top since table may have shrunk
 		goto restart;
 	}

@@ -187,19 +187,16 @@ bool Msg13::getDoc ( Msg13Request *r, void *state, void(*callback)(void *) ) {
 
 bool Msg13::forwardRequest ( ) {
 
-	// shortcut
-	Msg13Request *r = m_request;
-
 	//
 	// forward this request to the host responsible for this url's ip
 	//
 	int32_t nh     = g_hostdb.getNumHosts();
-	int32_t hostId = hash32h(((uint32_t)r->m_firstIp >> 8), 0) % nh;
+	int32_t hostId = hash32h(((uint32_t)m_request->m_firstIp >> 8), 0) % nh;
 
-	if((uint32_t)r->m_firstIp >> 8 == 0) {
+	if((uint32_t)m_request->m_firstIp >> 8 == 0) {
 		// If the first IP is not set for the request then we don't
 		// want to hammer the first host with spidering enabled.
-		hostId = hash32n ( r->ptr_url ) % nh;
+		hostId = hash32n ( m_request->ptr_url ) % nh;
 	}
 
 	// get host to send to from hostId
@@ -237,20 +234,20 @@ bool Msg13::forwardRequest ( ) {
 		logf ( LOG_DEBUG, 
 		       "spider: sending download request of %s firstIp=%s "
 		       "uh48=%" PRIu64" to "
-		       "host %" PRId32" (child=%" PRId32")", r->ptr_url, iptoa(r->m_firstIp), 
-		       r->m_urlHash48, hostId,
-		       r->m_skipHammerCheck);
+		       "host %" PRId32" (child=%" PRId32")", m_request->ptr_url, iptoa(m_request->m_firstIp),
+		       m_request->m_urlHash48, hostId,
+		       m_request->m_skipHammerCheck);
 
 	// fill up the request
-	int32_t requestBufSize = r->getSize();
+	int32_t requestBufSize = m_request->getSize();
 
 	// we have to serialize it now because it has cookies as well as
 	// the url.
 	char *requestBuf = serializeMsg ( sizeof(Msg13Request),
-					  &r->size_url,
-					  &r->size_cookie,
-					  &r->ptr_url,
-					  r,
+					  &m_request->size_url,
+					  &m_request->size_cookie,
+					  &m_request->ptr_url,
+					  m_request,
 					  &requestBufSize ,
 					  NULL , 
 					  0); //RBUF_SIZE
@@ -275,7 +272,6 @@ bool Msg13::forwardRequest ( ) {
 }
 
 void gotForwardedReplyWrapper ( void *state , UdpSlot *slot ) {
-	// shortcut
 	Msg13 *THIS = (Msg13 *)state;
 	// return if this blocked
 	if ( ! THIS->gotForwardedReply ( slot ) ) return;
@@ -311,12 +307,9 @@ bool Msg13::gotFinalReply ( char *reply, int32_t replySize, int32_t replyAllocSi
 	m_replyBuf     = NULL;
 	m_replyBufSize = 0;
 
-	// shortcut
-	Msg13Request *r = m_request;
-
 	if ( g_conf.m_logDebugRobots || g_conf.m_logDebugDownloads )
 		logf(LOG_DEBUG,"spider: FINALIZED %s firstIp=%s",
-		     r->ptr_url,iptoa(r->m_firstIp));
+		     m_request->ptr_url,iptoa(m_request->m_firstIp));
 
 
 	// . if timed out probably the host is now dead so try another one!
@@ -324,7 +317,7 @@ bool Msg13::gotFinalReply ( char *reply, int32_t replySize, int32_t replyAllocSi
 	if ( g_errno == EUDPTIMEDOUT ) {
 		// try again
 		log("spider: retrying1. had error for %s : %s",
-		    r->ptr_url,mstrerror(g_errno));
+		    m_request->ptr_url,mstrerror(g_errno));
 		// return if that blocked
 		if ( ! forwardRequest ( ) ) return false;
 		// a different g_errno should be set now!
@@ -335,7 +328,7 @@ bool Msg13::gotFinalReply ( char *reply, int32_t replySize, int32_t replyAllocSi
 		// for it here
 		if ( g_conf.m_logDebugSpider )
 			log("spider: error for %s: %s",
-			    r->ptr_url,mstrerror(g_errno));
+			    m_request->ptr_url,mstrerror(g_errno));
 		return true;
 	}
 
@@ -351,7 +344,7 @@ bool Msg13::gotFinalReply ( char *reply, int32_t replySize, int32_t replyAllocSi
 	if ( replySize == 0 ) return true;
 
 	// if it was not compressed we are done! no need to uncompress it
-	if ( ! r->m_compressReply ) return true;
+	if ( ! m_request->m_compressReply ) return true;
 
 	// get uncompressed size
 	uint32_t unzippedLen = *(int32_t*)reply;
@@ -401,7 +394,7 @@ bool Msg13::gotFinalReply ( char *reply, int32_t replySize, int32_t replyAllocSi
 	// log it for now
 	if ( g_conf.m_logDebugSpider )
 		log("http: got doc %s %" PRId32" to %" PRId32,
-		    r->ptr_url,(int32_t)replySize,(int32_t)uncompressedLen);
+		    m_request->ptr_url,(int32_t)replySize,(int32_t)uncompressedLen);
 
 	return true;
 }
@@ -659,7 +652,6 @@ void downloadTheDocForReals2 ( Msg13Request *r ) {
 }
 
 void gotProxyHostReplyWrapper ( void *state , UdpSlot *slot ) {
-	// shortcut
 	Msg13Request *r = (Msg13Request *)state;
 	//Msg13 *THIS = r->m_parent;
 	// don't let udpserver free the request, it's our m_urlIp
@@ -1542,9 +1534,6 @@ void gotHttpReply2 ( void *state ,
 		g_errno = 0;
 	}
 
-	// shortcut
-	UdpServer *us = &g_udpServer;
-
 	// how many have this key?
 	int32_t count = s_rt.getCount ( &r->m_cacheKey );
 	// sanity check
@@ -1627,7 +1616,7 @@ void gotHttpReply2 ( void *state ,
 			log("msg13: sending reply for %s",r->ptr_url);
 
 		// send reply
-		us->sendReply(copy, replySize, copy, copyAllocSize, slot);
+		g_udpServer.sendReply(copy, replySize, copy, copyAllocSize, slot);
 
 		// now final udp slot will free the reply, so tcp server
 		// no longer has to. set this tcp buf to null then.

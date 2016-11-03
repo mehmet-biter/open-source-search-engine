@@ -1,10 +1,14 @@
 #include "RdbMerge.h"
 #include "Rdb.h"
 #include "Process.h"
-#include "Spider.h"
+#include "Spider.h" //dedupSpiderdbList()
+#include "MergeSpaceCoordinator.h"
+#include "Conf.h"
+
 
 RdbMerge::RdbMerge()
-  : m_doneMerging(false),
+  : m_mergeSpaceCoordinator(NULL),
+    m_doneMerging(false),
     m_getListOutstanding(false),
     m_numThreads(0),
     m_startFileNum(0),
@@ -28,6 +32,7 @@ RdbMerge::RdbMerge()
 }
 
 RdbMerge::~RdbMerge() {
+	delete m_mergeSpaceCoordinator;
 }
 
 void RdbMerge::reset() {
@@ -66,6 +71,9 @@ bool RdbMerge::merge(rdbid_t rdbId,
 
 	// reset ourselves
 	reset();
+
+	if(!m_mergeSpaceCoordinator)
+		m_mergeSpaceCoordinator = new MergeSpaceCoordinator(g_conf.m_mergespaceLockDirectory, g_conf.m_mergespaceMinLockFiles, g_conf.m_mergespaceDirectory);
 
 	// set it
 	m_rdbId = rdbId;
@@ -107,8 +115,32 @@ bool RdbMerge::merge(rdbid_t rdbId,
 		KEYINC(m_startKey,m_ks);
 	}
 
-	return gotLock();
+	//calculate how much space we need for resulting merged file
+	m_spaceNeededForMerge = base->getSpaceNeededForMerge(m_startFileNum,m_numFiles);
+	
+	g_loop.registerSleepCallback(5000, this, getLockWrapper, 0, true);
+	
+	return false;
 }
+
+
+void RdbMerge::getLockWrapper(int /*fd*/, void *state) {
+	log(LOG_TRACE,"RdbMerge::getLockWrapper(%p)",state);
+	RdbMerge *that = static_cast<RdbMerge*>(state);
+	that->getLock();
+}
+
+
+void RdbMerge::getLock() {
+	log(LOG_DEBUG,"Rdbmerge(%p)::getLock(), m_rdbId=%d",this,m_rdbId);
+	if(m_mergeSpaceCoordinator->acquire(m_spaceNeededForMerge)) {
+		log(LOG_INFO,"Rdbmerge(%p)::getLock(), m_rdbId=%d: got lock for %" PRIu64 " bytes", this, m_rdbId, m_spaceNeededForMerge);
+		g_loop.unregisterSleepCallback(this,getLockWrapper);
+		gotLock();
+	} else
+		log(LOG_INFO,"Rdbmerge(%p)::getLock(), m_rdbId=%d: Didn't get lock for %" PRIu64 " bytes; retrying in a bit...", this, m_rdbId, m_spaceNeededForMerge);
+}
+
 
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
@@ -132,6 +164,7 @@ bool RdbMerge::gotLock() {
 	// get base, returns NULL and sets g_errno to ENOCOLLREC on error
 	RdbBase *base = getRdbBase(m_rdbId, m_collnum);
 	if (!base) {
+		relinquishMergespaceLock();
 		return true;
 	}
 
@@ -158,6 +191,7 @@ bool RdbMerge::gotLock() {
 	// what kind of error?
 	if ( g_errno ) {
 		log( LOG_WARN, "db: gotLock: %s.", mstrerror(g_errno) );
+		relinquishMergespaceLock();
 		return true;
 	}
 
@@ -244,9 +278,6 @@ bool RdbMerge::getNextList() {
 		return false;
 	}
 
-	// no chop threads
-	m_numThreads = 0;
-
 	// get base, returns NULL and sets g_errno to ENOCOLLREC on error
 	RdbBase *base = getRdbBase(m_rdbId, m_collnum);
 	if (!base) {
@@ -255,64 +286,6 @@ bool RdbMerge::getNextList() {
 		// rec is deleted for the collnum
 		g_errno = ENOCOLLREC;
 		return true;
-	}
-
-	/// @todo ALC we should not chop head here once we start using additional disk for merging
-	// . if a contributor has just surpassed a "part" in his BigFile
-	//   then we can delete that part from the BigFile and the map
-	for (int32_t i = m_startFileNum; i < m_startFileNum + m_numFiles; ++i) {
-		RdbMap *map = base->getMap(i);
-		int32_t page = map->getPage(m_startKey);
-		int64_t offset = map->getAbsoluteOffset(page);
-		BigFile *file = base->getFile(i);
-		int32_t part = file->getPartNum(offset);
-		if (part == 0) {
-			continue;
-		}
-
-		// i've seen this bug happen if we chop a part off on our
-		// last dump and the merge never completes for some reason...
-		// so if we're in the last part then don't chop the part b4 us
-		if (part >= file->getMaxParts() - 1) {
-			continue;
-		}
-
-		// if we already unlinked part # (part-1) then continue
-		if (!file->doesPartExist(part - 1)) {
-			continue;
-		}
-
-		// . otherwise, excise from the map
-		// . we must be able to chop the mapped segments corresponding
-		//   EXACTLY to the part file
-		// . therefore, PAGES_PER_SEGMENT define'd in RdbMap.h must
-		//   evenly divide MAX_PART_SIZE in BigFile.h
-		// . i do this check in RdbMap.cpp
-		if (!map->chopHead(MAX_PART_SIZE)) {
-			// we had an error!
-			log(LOG_WARN, "db: Failed to remove data from map for %s.part%" PRId32".", file->getFilename(), part);
-			return true;
-		}
-
-		// . also, unlink any part files BELOW part # "part"
-		// . this returns false if it blocked, true otherwise
-		// . this sets g_errno on error
-		// . now we just unlink part file #(part-1) explicitly
-		if (!file->unlinkPart(part - 1, unlinkPartWrapper, this)) {
-			m_numThreads++;
-		}
-
-		if (!g_errno) {
-			continue;
-		}
-
-		log(LOG_WARN, "db: Failed to unlink file %s.part%" PRId32".", file->getFilename(), part);
-		return true;
-	}
-
-	// wait for file to be unlinked before getting list
-	if (m_numThreads > 0) {
-		return false;
 	}
 
 	// otherwise, get it now
@@ -394,7 +367,6 @@ bool RdbMerge::getAnotherList() {
 				 NULL,            // cache key ptr
 				 0,               // retry #
 				 nn + 75,         // max retries (mk it high)
-				 false,           // compensate for merge?
 				 -1LL,            // sync point
 				 true,            // isRealMerge? absolutely!
 				 false);
@@ -580,8 +552,6 @@ void RdbMerge::doneMerging() {
 	m_msg5.reset();
 
 	// . do we really need these anymore?
-	// . turn these off before calling incorporateMerge() since it
-	//   will call attemptMerge() on all the other dbs
 	m_isMerging     = false;
 
 	// if collection rec was deleted while merging files for it
@@ -592,7 +562,7 @@ void RdbMerge::doneMerging() {
 
 	// if we are exiting then dont bother renaming the files around now.
 	// this prevents a core in RdbBase::incorporateMerge()
-	if (g_process.m_mode == EXIT_MODE) {
+	if (g_process.m_mode == Process::EXIT_MODE) {
 		log(LOG_INFO, "merge: exiting. not ending merge.");
 		return;
 	}
@@ -605,4 +575,12 @@ void RdbMerge::doneMerging() {
 
 	// pass g_errno on to incorporate merge so merged file can be unlinked
 	base->incorporateMerge();
+
+	relinquishMergespaceLock();
+}
+
+
+void RdbMerge::relinquishMergespaceLock() {
+	if(m_mergeSpaceCoordinator)
+		m_mergeSpaceCoordinator->relinquish();
 }
