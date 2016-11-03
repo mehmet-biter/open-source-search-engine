@@ -461,6 +461,7 @@ bool RdbBase::setFiles ( ) {
 
 	if(!loadFilesFromDir(m_collectionDirName,false))
 		return false;
+
 	if(!loadFilesFromDir(m_mergeDirName,true))
 		return false;
 
@@ -766,22 +767,22 @@ bool RdbBase::fixNonfirstSpiderdbFiles() {
 
 
 //Generate filename from the total 4 combinations of titledb/not-titledb and normal-file/merging-file
-void RdbBase::generateFilename(char *buf, size_t bufsize, int32_t fileId, int32_t fileId2, int32_t mergeNum, int32_t endMergeFileId) {
+void RdbBase::generateFilename(char *buf, size_t bufsize, int32_t fileId, int32_t fileId2, int32_t mergeNum, int32_t endMergeFileId, const char *extension) {
 	if ( mergeNum <= 0 ) {
-		if ( m_isTitledb ) {
-			snprintf( buf, bufsize, "%s%04" PRId32"-%03" PRId32".dat",
-			          m_dbname, fileId, fileId2 );
+		if ( m_isTitledb && fileId2>=0 ) {
+			snprintf( buf, bufsize, "%s%04d-%03d.%s",
+			          m_dbname, fileId, fileId2, extension );
 		} else {
-			snprintf( buf, bufsize, "%s%04" PRId32".dat",
-			          m_dbname, fileId );
+			snprintf( buf, bufsize, "%s%04d.%s",
+			          m_dbname, fileId, extension );
 		}
 	} else {
-		if ( m_isTitledb ) {
-			snprintf( buf, bufsize, "%s%04" PRId32"-%03" PRId32".%03" PRId32".%04" PRId32".dat",
-			          m_dbname, fileId, fileId2, mergeNum, endMergeFileId );
+		if ( m_isTitledb && fileId2>=0 ) {
+			snprintf( buf, bufsize, "%s%04d-%03d.%03d.%04d.%s",
+			          m_dbname, fileId, fileId2, mergeNum, endMergeFileId, extension );
 		} else {
-			snprintf( buf, bufsize, "%s%04" PRId32".%03" PRId32".%04" PRId32".dat",
-			          m_dbname, fileId, mergeNum, endMergeFileId );
+			snprintf( buf, bufsize, "%s%04d.%03d.%04d.%s",
+			          m_dbname, fileId, mergeNum, endMergeFileId, extension );
 		}
 	}
 }
@@ -803,7 +804,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 
 	// set the data file's filename
 	char name[1024];
-	generateFilename(name, sizeof(name), fileId, fileId2, mergeNum, endMergeFileId);
+	generateDataFilename(name, sizeof(name), fileId, fileId2, mergeNum, endMergeFileId);
 
 	// HACK: skip to avoid a OOM lockup. if RdbBase cannot dump
 	// its data to disk it can backlog everyone and memory will
@@ -920,7 +921,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 
 	// set the map file's  filename
 	char mapName[1024];
-	sprintf ( mapName , "%s%04" PRId32".map", m_dbname, fileId );
+	generateMapFilename(mapName,sizeof(mapName),fileId,fileId2,0,-1);
 	m->set(dirName, mapName, m_fixedDataSize, m_useHalfKeys, m_ks, m_pageSize);
 	if ( ! isNew && ! m->readMap ( f ) ) {
 		// if out of memory, do not try to regen for that
@@ -976,7 +977,7 @@ int32_t RdbBase::addFile ( bool isNew, int32_t fileId, int32_t fileId2, int32_t 
 		char indexName[1024];
 
 		// set the index file's  filename
-		sprintf(indexName, "%s%04" PRId32".idx", m_dbname, fileId);
+		generateIndexFilename(indexName,sizeof(indexName),fileId,fileId2,0,-1);
 		in->set(dirName, indexName, m_fixedDataSize, m_useHalfKeys, m_ks, m_rdb->getRdbId());
 		if (!isNew && !(in->readIndex() && in->verifyIndex())) {
 			// if out of memory, do not try to regen for that
@@ -1333,7 +1334,7 @@ bool RdbBase::incorporateMerge ( ) {
 			return true;
 	}
 
-	unlinkDone();
+	unlinksDone();
 	return true;
 }
 
@@ -1350,7 +1351,10 @@ void RdbBase::unlinkDone() {
 	// bail if waiting for more to come back
 	if(!decrementOustandingJobs())
 		return; //still more to finish
+	unlinksDone();
+}
 
+void RdbBase::unlinksDone() {
 	// debug msg
 	log (LOG_INFO,"merge: Done unlinking all files.");
 
@@ -1358,26 +1362,6 @@ void RdbBase::unlinkDone() {
 	int32_t a = m_mergeStartFileNum;
 	//int32_t b = std::min(m_mergeStartFileNum + m_numFilesToMerge, m_numFiles);
 	int32_t x = a - 1; // file #x is the merged file
-
-	// . the fileId of the merge file becomes that of 'a'
-	// . but secondary id should remain the same
-	m_fileInfo[x].m_fileId = m_fileInfo[a].m_fileId;
-
-	{
-		ScopedLock sl(m_mtxJobCount);
-		m_submittingJobs = true;
-	}
-	
-	log(LOG_INFO,"db: Renaming %s to %s", m_fileInfo[x].m_file->getFilename(), m_fileInfo[a].m_file->getFilename());
-	if ( ! m_fileInfo[x].m_map->rename( m_fileInfo[a].m_map->getFilename(), m_collectionDirName, renameDoneWrapper, this) ) {
-		incrementOutstandingJobs();
-	}
-
-	if( m_useIndexFile ) {
-		if ( ! m_fileInfo[x].m_index->rename( m_fileInfo[a].m_index->getFilename(), m_collectionDirName, renameDoneWrapper, this) ) {
-			incrementOutstandingJobs();
-		}
-	}
 
 	// sanity check
 	m_fileInfo[x].m_file->invalidateFileSize();
@@ -1390,20 +1374,35 @@ void RdbBase::unlinkDone() {
 		gbshutdownCorrupted();
 	}
 
-	char newName[1024];
-	if ( ! m_isTitledb ) {
-		strcpy(newName, m_fileInfo[a].m_file->getFilename());
-	} else {
-		// rename to this (titledb%04" PRId32"-%03" PRId32".dat)
-		// use m_dbname in case its titledbRebuild
-		sprintf ( newName , "%s%04" PRId32"-%03" PRId32".dat", m_dbname, m_fileInfo[a].m_fileId, m_fileInfo[x].m_fileId2 );
+	// . the fileId of the merge file becomes that of the first sourcefile, which happens to be one more than the tmp.merge file
+	// . but secondary id should remain the same
+	m_fileInfo[x].m_fileId |= 1;
+
+	{
+		ScopedLock sl(m_mtxJobCount);
+		m_submittingJobs = true;
+	}
+	
+	log(LOG_INFO,"db: Renaming %s of size %" PRId64" to to final filename(s)", m_fileInfo[x].m_file->getFilename(), fs);
+
+	char newMapFilename[1024];
+	generateMapFilename(newMapFilename,sizeof(newMapFilename),m_fileInfo[x].m_fileId,m_fileInfo[x].m_fileId2,0,-1);
+	if ( ! m_fileInfo[x].m_map->rename(newMapFilename, m_collectionDirName, renameDoneWrapper, this) ) {
+		incrementOutstandingJobs();
 	}
 
-	log(LOG_INFO,"db: Renaming %s of size %" PRId64" to %s",
-	    m_fileInfo[x].m_file->getFilename(), fs, newName);
+	if( m_useIndexFile ) {
+		char newIndexFilename[1024];
+		generateIndexFilename(newIndexFilename,sizeof(newIndexFilename),m_fileInfo[x].m_fileId,m_fileInfo[x].m_fileId2,0,-1);
+		if ( ! m_fileInfo[x].m_index->rename(newIndexFilename, m_collectionDirName, renameDoneWrapper, this) ) {
+			incrementOutstandingJobs();
+		}
+	}
 
+	char newDataName[1024];
+	generateDataFilename(newDataName,sizeof(newDataName),m_fileInfo[x].m_fileId,m_fileInfo[x].m_fileId2,0,-1);
 	// rename it, this may block
-	if ( ! m_fileInfo[x].m_file->rename (m_fileInfo[a].m_file->getFilename(), m_collectionDirName, renameDoneWrapper,this) ) {
+	if ( ! m_fileInfo[x].m_file->rename(newDataName, m_collectionDirName, renameDoneWrapper,this) ) {
 		incrementOutstandingJobs();
 	}
 
@@ -1414,7 +1413,7 @@ void RdbBase::unlinkDone() {
 			return;
 	}
 	
-	renameDone();
+	renamesDone();
 }
 
 
@@ -1437,7 +1436,10 @@ void RdbBase::renameDone() {
 	// bail if waiting for more to come back
 	if(!decrementOustandingJobs())
 		return;
+	renamesDone();
+}
 
+void RdbBase::renamesDone() {
 	// some shorthand variable notation
 	int32_t a = m_mergeStartFileNum;
 	int32_t b = m_mergeStartFileNum + m_numFilesToMerge;
@@ -1776,226 +1778,199 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 	int32_t mergeFileCount = 0;
 	int32_t mergeFileId;
 	int32_t mergeFileNum;
-	bool      overide = false;
+	bool    foundInterruptedMerge = false;
 
 	logTrace( g_conf.m_logTraceRdbBase, "Checking files" );
 
-	// if one file is even #'ed then we were merging into that, but
-	// got interrupted and restarted. maybe the power went off or maybe
-	// gb saved and exited w/o finishing the merge.
-	for ( int32_t j = 0 ; j < numFiles ; j++ ) {
+	// Detect interrupted merges
+	for(int32_t i = 0; i < numFiles; i++) {
 		// skip odd numbered files
-		if ( m_fileInfo[j].m_fileId & 0x01 ) {
+		if(m_fileInfo[i].m_fileId & 0x01) {
 			continue;
 		}
+		log(LOG_DEBUG,"merge:found interrupted merge file %s", m_fileInfo[i].m_file->getFilename());
 
-		// hey, we got a file that was being merged into
-		mergeFileId = m_fileInfo[j].m_fileId;
-
-		// store the merged data into this file #
-		mergeFileNum = j ;
+		// store the merged data into this fileid and number
+		mergeFileId = m_fileInfo[i].m_fileId;
+		mergeFileNum = i;
 
 		// files being merged into have a filename like
 		// indexdb0000.003.dat where the 003 indicates how many files
 		// is is merging in case we have to resume them due to power loss or whatever
+		//todo: don't re-parse filename. Just store the count+end in FileInfo structure
 		int32_t fileId, fileId2;
 		int32_t endMergeFileId;
-		if ( !parseFilename( m_fileInfo[j].m_file->getFilename(), &fileId, &fileId2, &mergeFileCount, &endMergeFileId ) ) {
-			continue;
+		if(!parseFilename( m_fileInfo[i].m_file->getFilename(), &fileId, &fileId2, &mergeFileCount, &endMergeFileId )) {
+			log(LOG_LOGIC,"merge:attemptMerge:resuming: couln't parse pre-accepted filename of %s", m_fileInfo[i].m_file->getFilename());
+			gbshutdownLogicError();
 		}
 
-		// validation
-
-		// if titledb we got a "-023" part now
-		if ( m_isTitledb && fileId2 < 0 )
-			gbshutdownCorrupted();
-
-		if ( !endMergeFileId ) {
-			// bad file name (should not happen after the first run)
+		if(m_isTitledb && fileId2 < 0) { // if titledb we must have a "-023" part now
+			log(LOG_LOGIC,"merge:attemptMerge:resuming: unexpected filename for %s coll=%s file=%s",m_dbname,m_coll,m_fileInfo[i].m_file->getFilename());
 			gbshutdownCorrupted();
 		}
 
-		int32_t endMergeFileNum = 0;
-		int32_t kEnd = j + 1 + mergeFileCount;
-		for ( int32_t k = j + 1; k < kEnd; ++k ) {
-			if ( m_fileInfo[k].m_fileId == endMergeFileId ) {
-				endMergeFileNum = k;
-				break;
+		if(mergeFileCount <= 0) {
+			log(LOG_LOGIC,"merge:attemptMerge:resuming: unexpected filename for %s coll=%s file=%s",m_dbname,m_coll,m_fileInfo[i].m_file->getFilename());
+			gbshutdownCorrupted();
+		}
+		if(mergeFileCount == 1) {
+			log(LOG_LOGIC,"merge:attemptMerge:resuming: fishy filename for %s coll=%s file=%s",m_dbname,m_coll,m_fileInfo[i].m_file->getFilename());
+		}
+
+		if(endMergeFileId <= 0) {
+			log(LOG_LOGIC,"merge:attemptMerge:resuming: unexpected filename for %s coll=%s file=%s",m_dbname,m_coll,m_fileInfo[i].m_file->getFilename());
+			gbshutdownCorrupted();
+		}
+
+		int32_t endMergeFileNum = mergeFileNum;
+		for(int32_t j = mergeFileNum+1; j < mergeFileNum+mergeFileCount && j<m_numFiles; j++) {
+			if(m_fileInfo[j].m_fileId <= endMergeFileId) {
+				endMergeFileNum = j;
 			}
 		}
 
-		if ( endMergeFileNum < mergeFileNum ) {
-			// missing end merge file id. assume no files to merge.
-			endMergeFileNum = mergeFileNum;
-		}
+		log(LOG_INFO,"merge: Resuming interrupted merge for %s coll=%s, mergefile=%s", m_dbname,m_coll,m_fileInfo[i].m_file->getFilename());
 
-		// sanity check
-		if ( mergeFileCount <= 1 ) {
-			log(LOG_LOGIC,"merge: attemptMerge: Resuming. bad "
-			    "engineer for %s coll=%s",m_dbname,m_coll);
-			return false;
-		}
+		int32_t currentFilesToMerge = endMergeFileNum - mergeFileNum;
+		if(currentFilesToMerge<0)
+			gbshutdownLogicError();
 
-		// make a log note
-		log(LOG_INFO,"merge: Resuming killed merge for %s coll=%s.", m_dbname,m_coll);
-
-		int32_t mm = 0;
-		for ( int32_t i = mergeFileNum ; i <= endMergeFileNum ; i++ ) {
-			if ( i >= m_numFiles ) {
-				log( LOG_INFO, "merge: Number of files to merge has "
-				    "shrunk from %" PRId32" to %" PRId32" since time of "
-				    "last merge. Probably because those files "
-				    "were deleted because they were "
-				    "exhausted and had no recs to offer."
-				    ,mergeFileCount,m_numFiles);
-				//g_process.shutdownAbort(true);
-				break;
-			}
-
-			// only count files AFTER the file being merged to
-			if ( i > j ) {
-				mm++;
-			}
-		}
-
-		if ( mm != mergeFileCount ) {
-			log( LOG_INFO, "merge: Only merging %" PRId32" instead of the original %" PRId32" files.", mm, mergeFileCount );
+		if(currentFilesToMerge <= mergeFileCount) {
+			log(LOG_INFO, "merge: Only merging %" PRId32" instead of the original %" PRId32" files.", currentFilesToMerge, mergeFileCount);
+		} else if(currentFilesToMerge == mergeFileCount) {
+			//excellent
+		} else {
+			//What? This should not happen. Eg if we have these files:
+			//  file0000.002.0007.dat
+			//  file0001.dat
+			//  file0003.dat
+			//  file0005.dat
+			//  file0007.dat
+			//then somehow extra files came into existence where they shouldn't
+			log(LOG_ERROR,"merge:attemptMerge:resuming: found more merge-source files than expected for %s coll=%s file=%s",m_dbname,m_coll,m_fileInfo[i].m_file->getFilename());
+			gbshutdownCorrupted();
 		}
 
 		// how many files to merge?
-		mergeFileCount = mm;
+		mergeFileCount = currentFilesToMerge;
 
-		// allow a single file to continue merging if the other
-		// file got merged out already
-		if ( mm > 0 ) {
-			overide = true;
-		}
-
-		// if we've already merged and already unlinked, then the process exited, now we restart with just the rename
-		if ( mm == 0 && rdbId != RDB_TITLEDB ) {
-			m_isMerging = false;
-			renameFile( j, mergeFileId + 1, fileId2 );
-
-			return false;
-		}
-
-		// resume the merging
-		goto startMerge;
+		foundInterruptedMerge = true;
+		break;
 	}
 
-	// look at this merge:
-	// indexdb0003.dat.part1
-	// indexdb0003.dat.part2
-	// indexdb0003.dat.part3
-	// indexdb0003.dat.part4
-	// indexdb0003.dat.part5
-	// indexdb0003.dat.part6
-	// indexdb0003.dat.part7
-	// indexdb0039.dat
-	// indexdb0039.dat.part1
-	// indexdb0045.dat
-	// indexdb0047.dat
-	// indexdb0002.002.dat
-	// indexdb0002.002.dat.part1
-	// it should have merged 45 and 46 since they are so much smaller
-	// even though the ratio between 3 and 39 is lower. we did not compute
-	// our dtotal correctly...
+	//If there isn't an interrupted merge then we can do a normal new merge
+	if(!foundInterruptedMerge) {
+		// look at this merge:
+		// indexdb0003.dat.part1
+		// indexdb0003.dat.part2
+		// indexdb0003.dat.part3
+		// indexdb0003.dat.part4
+		// indexdb0003.dat.part5
+		// indexdb0003.dat.part6
+		// indexdb0003.dat.part7
+		// indexdb0039.dat
+		// indexdb0039.dat.part1
+		// indexdb0045.dat
+		// indexdb0047.dat
+		// indexdb0002.002.dat
+		// indexdb0002.002.dat.part1
+		// it should have merged 45 and 46 since they are so much smaller
+		// even though the ratio between 3 and 39 is lower. we did not compute
+		// our dtotal correctly...
 
-	// . use greedy method
-	// . just merge the minimum # of files to stay under m_minToMerge
-	// . files must be consecutive, however
-	// . but ALWAYS make sure file i-1 is bigger than file i
-	mergeFileCount = numFiles - m_minToMerge + 2 ;
+		// . use greedy method
+		// . just merge the minimum # of files to stay under m_minToMerge
+		// . files must be consecutive, however
+		// . but ALWAYS make sure file i-1 is bigger than file i
+		mergeFileCount = numFiles - m_minToMerge + 2 ;
 
-	// titledb should always merge at least 50 files no matter what though
-	// cuz i don't want it merging its huge root file and just one
-	// other file... i've seen that happen... but don't know why it didn't
-	// merge two small files! i guess because the root file was the
-	// oldest file! (38.80 days old)???
-	if ( m_isTitledb && mergeFileCount < 50 && m_minToMerge > 200 ) {
-		// force it to 50 files to merge
-		mergeFileCount = 50;
+		// titledb should always merge at least 50 files no matter what though
+		// cuz i don't want it merging its huge root file and just one
+		// other file... i've seen that happen... but don't know why it didn't
+		// merge two small files! i guess because the root file was the
+		// oldest file! (38.80 days old)???
+		if ( m_isTitledb && mergeFileCount < 50 && m_minToMerge > 200 ) {
+			// force it to 50 files to merge
+			mergeFileCount = 50;
 
-		// but must not exceed numFiles!
-		if ( mergeFileCount > numFiles ) {
+			// but must not exceed numFiles!
+			if ( mergeFileCount > numFiles ) {
+				mergeFileCount = numFiles;
+			}
+		}
+
+		if ( mergeFileCount > absoluteMaxFilesToMerge ) {
+			mergeFileCount = absoluteMaxFilesToMerge;
+		}
+
+		// but if we are forcing then merge ALL, except one being dumped
+		if ( m_nextMergeForced ) {
 			mergeFileCount = numFiles;
 		}
+
+		int32_t mini;
+		selectFilesToMerge(mergeFileCount,numFiles,&mini);
+
+		// if no valid range, bail
+		if ( mini == -1 ) { 
+			log(LOG_LOGIC,"merge: gotTokenForMerge: Bad engineer. mini is -1.");
+			return false; 
+		}
+		// . merge from file #mini through file #(mini+n)
+		// . these files should all have ODD fileIds so we can sneak a new
+		//   mergeFileId in there
+		mergeFileId = m_fileInfo[mini].m_fileId - 1;
+
+		// get new id, -1 on error
+		int32_t      fileId2;
+		fileId2 = m_isTitledb ? 0 : -1;
+
+		// . make a filename for the merge
+		// . always starts with file #0
+		// . merge targets are named like "indexdb0000.002.dat"
+		// . for titledb is "titledb0000-023.dat.003" (23 is id2)
+		// . this now also sets m_mergeStartFileNum for us... but we override
+		//   below anyway. we have to set it there in case we startup and
+		//   are resuming a merge.
+		int32_t endMergeFileNum = mini + mergeFileCount - 1;
+		int32_t endMergeFileId = m_fileInfo[endMergeFileNum].m_fileId;
+		log( LOG_INFO, "merge: mergeFileCount=%d mini=%d mergeFileId=%d endMergeFileNum=%d endMergeFileId=%d",
+		     mergeFileCount, mini, mergeFileId, endMergeFileNum, endMergeFileId );
+
+		{
+			//The lock of m_mtxFileInfo is delayed until now because the previous accesses were reads only, but
+			// we must hold the mutex while colling addFile() which modifies the array.
+			ScopedLock sl(m_mtxFileInfo);
+			mergeFileNum = addFile ( true, mergeFileId , fileId2, mergeFileCount, endMergeFileId, true );
+		}
+
+		if ( mergeFileNum < 0 ) {
+			log(LOG_LOGIC,"merge: attemptMerge: Could not add new file."); 
+			g_errno = 0;
+			return false; 
+		}
+
+		// is it a force?
+		if ( m_nextMergeForced ) {
+			log(LOG_INFO, "merge: Force merging all %s files, except those being dumped now.", m_dbname);
+		}
+		// clear after each call to attemptMerge()
+		m_nextMergeForced = false;
+		
+		// sanity check
+		if ( mergeFileCount <= 1 ) {
+			log(LOG_LOGIC,"merge: attemptMerge: Not merging %" PRId32" files.", mergeFileCount);
+			return false; 
+		}
 	}
+	
 
-	if ( mergeFileCount > absoluteMaxFilesToMerge ) {
-		mergeFileCount = absoluteMaxFilesToMerge;
-	}
-
-	// but if we are forcing then merge ALL, except one being dumped
-	if ( m_nextMergeForced ) {
-		mergeFileCount = numFiles;
-	}
-
-	int32_t mini;
-	selectFilesToMerge(mergeFileCount,numFiles,&mini);
-
-	// if no valid range, bail
-	if ( mini == -1 ) { 
-		log(LOG_LOGIC,"merge: gotTokenForMerge: Bad engineer. mini is -1.");
-		return false; 
-	}
-	// . merge from file #mini through file #(mini+n)
-	// . these files should all have ODD fileIds so we can sneak a new
-	//   mergeFileId in there
-	mergeFileId = m_fileInfo[mini].m_fileId - 1;
-
-	// get new id, -1 on error
-	int32_t      fileId2;
-	fileId2 = m_isTitledb ? 0 : -1;
-
-	// . make a filename for the merge
-	// . always starts with file #0
-	// . merge targets are named like "indexdb0000.002.dat"
-	// . for titledb is "titledb0000-023.dat.003" (23 is id2)
-	// . this now also sets m_mergeStartFileNum for us... but we override
-	//   below anyway. we have to set it there in case we startup and
-	//   are resuming a merge.
-	int32_t endMergeFileNum;
-	endMergeFileNum = mini + mergeFileCount - 1;
-	int32_t endMergeFileId;
-	endMergeFileId = m_fileInfo[endMergeFileNum].m_fileId;
-	log( LOG_INFO, "merge: mergeFileCount=%d mini=%d mergeFileId=%d endMergeFileNum=%d endMergeFileId=%d",
-	     mergeFileCount, mini, mergeFileId, endMergeFileNum, endMergeFileId );
-
-	{
-		//The lock of m_mtxFileInfo is delayed until now because the previous accesses were reads only, but
-		// we must hold the mutex while colling addFile() which modifies the array.
-		ScopedLock sl(m_mtxFileInfo);
-		mergeFileNum = addFile ( true, mergeFileId , fileId2, mergeFileCount, endMergeFileId, true );
-	}
-
-	if ( mergeFileNum < 0 ) {
-		log(LOG_LOGIC,"merge: attemptMerge: Could not add new file."); 
-		g_errno = 0;
-		return false; 
-	}
-
-	// is it a force?
-	if ( m_nextMergeForced ) {
-		log(LOG_INFO, "merge: Force merging all %s files, except those being dumped now.", m_dbname);
-	}
-	// clear after each call to attemptMerge()
-	m_nextMergeForced = false;
-
- startMerge:
-	// sanity check
-	if ( mergeFileCount <= 1 && ! overide ) {
-		log(LOG_LOGIC,"merge: attemptMerge: Not merging %" PRId32" files.", mergeFileCount);
-		return false; 
-	}
-
-	// . save the # of files we're merging for the cleanup process
-	// . don't include the first file, which is now file #0
+	// . save the start number and the count of files we're merging
 	m_mergeStartFileNum = mergeFileNum + 1;
 	m_numFilesToMerge   = mergeFileCount;
 
-	const char *coll = "";
-	if ( cr ) coll = cr->m_coll;
+	const char *coll = cr ? cr->m_coll : "";
 
 	// log merge parms
 	log(LOG_INFO,"merge: Merging %" PRId32" %s files to file id %" PRId32" now. "
