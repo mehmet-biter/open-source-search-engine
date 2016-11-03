@@ -152,10 +152,12 @@ bool RdbIndex::writeIndex2() {
 
 	offset += sizeof(docid_count);
 
-	m_file.write(&(*tmpDocIds)[0], docid_count * sizeof((*tmpDocIds)[0]), offset);
-	if (g_errno) {
-		logError("Failed to write to %s (docids): %s", m_file.getFilename(), mstrerror(g_errno));
-		return false;
+	if (docid_count) {
+		m_file.write(&(*tmpDocIds)[0], docid_count * sizeof((*tmpDocIds)[0]), offset);
+		if (g_errno) {
+			logError("Failed to write to %s (docids): %s", m_file.getFilename(), mstrerror(g_errno));
+			return false;
+		}
 	}
 
 	log(LOG_INFO, "db: Saved %zu index keys for %s", docid_count, getDbnameFromId(m_rdbId));
@@ -381,6 +383,7 @@ bool RdbIndex::generateIndex(collnum_t collnum, const RdbTree *tree) {
 	}
 
 	log(LOG_INFO, "db: Generating index for %s tree", getDbnameFromId(m_rdbId));
+	m_needToWrite = true;
 
 	// use extremes
 	const char *startKey = KEYMIN();
@@ -410,6 +413,7 @@ bool RdbIndex::generateIndex(collnum_t collnum, const RdbBuckets *buckets) {
 	}
 
 	log(LOG_INFO, "db: Generating index for %s buckets", getDbnameFromId(m_rdbId));
+	m_needToWrite = true;
 
 	// use extremes
 	const char *startKey = KEYMIN();
@@ -440,13 +444,14 @@ bool RdbIndex::generateIndex(BigFile *f) {
 		return false;
 	}
 
-	log(LOG_INFO, "db: Generating index for %s/%s", f->getDir(), f->getFilename());
-
 	if (!f->doesPartExist(0)) {
 		g_errno = EBADENGINEER;
 		log(LOG_WARN, "db: Cannot generate index for this headless data file");
 		return false;
 	}
+
+	log(LOG_INFO, "db: Generating index for %s/%s", f->getDir(), f->getFilename());
+	m_needToWrite = true;
 
 	// scan through all the recs in f
 	int64_t offset = 0;
