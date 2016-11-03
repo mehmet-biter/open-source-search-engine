@@ -4312,13 +4312,10 @@ int32_t *XmlDoc::getSummaryVector ( ) {
 	sb.safeMemcpy ( s->getSummary() , slen );
 
 	// null terminate it
-	sb.nullTerm();
+	//sb.nullTerm();
 	//workaround for truncation causing a multibyte utf8 character to be
 	//split and then text parsing traversing past the defined bytes.
-	sb.nullTerm();
-	sb.nullTerm();
-	sb.nullTerm();
-	sb.nullTerm();
+	sb.nullTerm4();
 
 	// word-ify it
 	Words words;

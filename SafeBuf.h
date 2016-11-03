@@ -205,6 +205,16 @@ public:
 		m_buf[m_length] = '\0';
 		return true;
 	}
+	//utf8 hack. make sure the buffer has 4 NULs beyond the end so we can use the fast approach to decoding utf8 characters
+	bool nullTerm4() {
+		if(m_length >= m_capacity && !reserve(m_capacity + 4) )
+			return false;
+		m_buf[m_length+0] = '\0';
+		m_buf[m_length+1] = '\0';
+		m_buf[m_length+2] = '\0';
+		m_buf[m_length+3] = '\0';
+		return true;
+	}
 
 	int32_t indexOf(char c) const;
 
