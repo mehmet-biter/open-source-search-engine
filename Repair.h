@@ -35,28 +35,8 @@ public:
 	// titledbscan functions
 	bool scanRecs();
 	bool gotScanRecList ( );
-	//bool gotTfndbList ( );
-	//bool getTagRec ( void **state ) ;
 	bool getTitleRec ( );
 	bool injectTitleRec ( ) ; // TitleRec *tr );
-	//bool computeRecs ( );
-	//bool getRootQuality ( );
-	//bool addToSpiderdb2 ( ) ; 
-	//bool addToTfndb2 ( ); 
-	//bool addToClusterdb2 ( );
-	//bool addToIndexdb2 ( );
-	//bool addToIndexdb2b( );
-	//bool addToDatedb2 ( );
-	//bool addToTitledb2 ( );
-	//bool addToLinkdb2 ( );
-
-	// spiderdb scan functions
-	//bool scanSpiderdb ( );
-	//bool getTfndbListPart2 ( );
-	//bool getTagRecPart2 ( );
-	//bool getRootQualityPart2 ( );
-	//bool addToSpiderdb2Part2 ( );
-	//bool addToTfndb2Part2 ( );
 
 	// called by Pages.cpp
 	bool printRepairStatus ( SafeBuf *sb , int32_t fromIp );
