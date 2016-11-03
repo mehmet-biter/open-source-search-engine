@@ -2431,7 +2431,7 @@ bool RdbBase::verifyFileSharding ( ) {
 	log ( LOG_DEBUG, "db: Verifying shard parity for %s of %" PRId32" bytes for coll %s (collnum=%" PRId32")...",
 	      m_dbname , minRecSizes, m_coll , (int32_t)m_collnum );
 
-	if ( ! msg5.getList ( m_rdb->getRdbId(), //RDB_POSDB   ,
+	if ( ! msg5.getList ( m_rdb->getRdbId(),
 			      m_collnum       ,
 			      &list         ,
 			      startKey      ,

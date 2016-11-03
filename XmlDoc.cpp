@@ -12054,7 +12054,7 @@ void XmlDoc::printMetaList() const {
 		// skip data if not zero
 		p += ds;
 
-		if (rdbId == RDB_POSDB) {
+		if (rdbId == RDB_POSDB || rdbId == RDB2_POSDB2) {
 			Posdb::printKey(key);
 		} else {
 			/// @todo ALC implement other rdb types
@@ -12513,7 +12513,7 @@ bool XmlDoc::hashMetaList ( HashTableX *ht        ,
 		if ( recSize2==recSize && !memcmp(rec,rec2,recSize) ) continue;
 		// otherwise, bitch
 		bool shardByTermId = false;
-		if ( rdbId == RDB_POSDB )
+		if ( rdbId == RDB_POSDB || rdbId == RDB2_POSDB2 )
 			shardByTermId = Posdb::isShardedByTermId(rec2);
 		log("build: data not equal for key=%s "
 		    "rdb=%s splitbytermid=%" PRId32" dataSize=%" PRId32,
@@ -13625,7 +13625,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 					}
 
 					// add posdb doc key
-					*m_p++ = RDB_POSDB;
+					*m_p++ = m_useSecondaryRdbs ? RDB2_POSDB2 : RDB_POSDB;
 
 					Posdb::makeKey(&key, POSDB_DELETEDOC_TERMID, docId, 0, 0, 0, 0, 0, 0, 0, 0, 0, delKey, false);
 					memcpy(m_p, &key, sizeof(posdbkey_t));

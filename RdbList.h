@@ -262,7 +262,7 @@ private:
 	                    int32_t hintOffset, const char *hintKey, const char *filename);
 
 	bool posdbMerge_r(RdbList **lists, int32_t numLists, const char *startKey, const char *endKey, int32_t minRecSizes,
-	                  bool removeNegKeys, bool useIndexFile, collnum_t collNum, int32_t startFileNum);
+	                  rdbid_t rdbId, bool removeNegKeys, bool useIndexFile, collnum_t collNum, int32_t startFileNum);
 
 	// the unalterd raw list. keys may be outside of [m_startKey,m_endKey]
 	char *m_list;
