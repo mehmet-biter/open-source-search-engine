@@ -1524,26 +1524,26 @@ bool printSearchResultsTail ( State0 *st ) {
 		// . add our cgi to the original url
 		// . so if it has &qlang=de and they select &qlang=en
 		//   we have to replace it... etc.
-		StackBuf(newUrl);
+		StackBuf<> newUrl;
 		// show banned results
 		replaceParm2 ("sb=1",
 			      &newUrl,
 			      hr->m_origUrlRequest,
 			      hr->m_origUrlRequestLen );
 		// no deduping by summary or content hash etc.
-		StackBuf(newUrl2);
+		StackBuf<> newUrl2;
 		replaceParm2("dr=0",&newUrl2,newUrl.getBufStart(),
 			     newUrl.length());
 		// and no site clustering
-		StackBuf( newUrl3 );
+		StackBuf<> newUrl3;
 		replaceParm2 ( "sc=0", &newUrl3 , newUrl2.getBufStart(),
 			     newUrl2.length());
 		// start at results #0 again
-		StackBuf( newUrl4 );
+		StackBuf<> newUrl4;
 		replaceParm2 ( "s=0", &newUrl4 , newUrl3.getBufStart(),
 			     newUrl3.length());
 		// show errors
-		StackBuf( newUrl5 );
+		StackBuf<> newUrl5;
 		replaceParm2 ( "showerrors=1", 
 			       &newUrl5 , 
 			       newUrl4.getBufStart(),
@@ -1583,7 +1583,7 @@ bool printSearchResultsTail ( State0 *st ) {
 		char nsbuf[128];
 		sprintf(nsbuf,"s=%" PRId32,ss);
 		// get the original url and add/replace in &s=xxx
-		StackBuf ( newUrl );
+		StackBuf<> newUrl;
 		replaceParm ( nsbuf , &newUrl , hr );
 
 
@@ -1615,7 +1615,7 @@ bool printSearchResultsTail ( State0 *st ) {
 		char nsbuf[128];
 		sprintf(nsbuf,"s=%" PRId32,ss);
 		// get the original url and add/replace in &s=xxx
-		StackBuf(newUrl);
+		StackBuf<> newUrl;
 		replaceParm ( nsbuf , &newUrl , hr );
 
 		// close it up
@@ -2501,12 +2501,12 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	int32_t cols = si->m_summaryMaxWidth;
 
 	// url encode title
-	StackBuf(tmpTitle);
+	StackBuf<> tmpTitle;
 	if ( str && strLen ) {
 		tmpTitle.htmlEncode(str, strLen, false);
 	}
 
-	StackBuf(hb);
+	StackBuf<> hb;
 	if ( str && strLen && si->m_doQueryHighlighting ) {
 		hlen = hi.set ( &hb, tmpTitle.getBufStart(), tmpTitle.length(), &si->m_hqq, frontTag, backTag);
 
@@ -2707,7 +2707,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	//
 	////////////
 
-	StackBuf(tmpBuf);
+	StackBuf<> tmpBuf;
 	char* displayUrl = Url::getDisplayUrl(url, &tmpBuf);
 	uint32_t displayUrlLen = tmpBuf.length();
 

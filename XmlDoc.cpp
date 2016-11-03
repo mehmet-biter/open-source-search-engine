@@ -17464,11 +17464,11 @@ char *XmlDoc::getHighlightedSummary ( bool *isSetFromTagsPtr ) {
 	if ( ! m_langIdValid ) { g_process.shutdownAbort(true); }
 
 	// url encode summary
-	StackBuf(tmpSum);
+	StackBuf<> tmpSum;
 	tmpSum.htmlEncode(sum, sumLen, false);
 
 	Highlight hi;
-	StackBuf(hb);
+	StackBuf<> hb;
 
 	// highlight the query in it
 	int32_t hlen = hi.set ( &hb, tmpSum.getBufStart(), tmpSum.length(), q, "<b>", "</b>" );

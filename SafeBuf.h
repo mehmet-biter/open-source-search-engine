@@ -265,12 +265,14 @@ public:
 	bool m_renderHtml;
 };
 
-#define STRMACRO(s) #s
-#define TOKENPASTE(x, y) x ## y
-#define TOKENPASTE2(x, y) TOKENPASTE(x, y)
 
-#define StackBuf(name) char TOKENPASTE2(tmpsafebuf, __LINE__)[1024];	\
-	SafeBuf name(TOKENPASTE2(tmpsafebuf, __LINE__), 1024, STRMACRO(TOKENPASTE2(__FILE__, __LINE__)))
+template<int n=1024>
+class StackBuf : public SafeBuf {
+	char buf[n];
+public:
+	StackBuf() : SafeBuf(buf,sizeof(buf)) {}
+};
+
 
 
 #endif // GB_SAFEBUF_H
