@@ -377,11 +377,13 @@ void repairWrapper ( int fd , void *state ) {
 	// into the trash and replace it with the new data.
 	if ( g_repairMode == 7 ) {
 		// wait for autosave...
-		if ( g_process.m_mode ) return; // = SAVE_MODE;		
+		if ( g_process.m_mode ) return; // = SAVE_MODE;
+
 		// save to disk so it zeroes out indexdbRebuild-saved.dat
 		// which should have 0 records in it cuz we dumped it above
 		// in g_repair.dumpLoop()
 		if ( ! saveAllRdbs ( NULL , NULL ) ) return;
+
 		// . this blocks and gets the job done
 		// . this will move the old *.dat and *-saved.dat files into
 		//   a subdir in the trash subdir
@@ -392,30 +394,38 @@ void repairWrapper ( int fd , void *state ) {
 		// . this will not allow itself to be called more than once
 		//   per scan/repair process
 		g_repair.updateRdbs();
-		// note this
+
 		log("repair: resetting secondary rdbs.");
+
 		// . only do this after indexdbRebuild-saved.dat has had a
 		//   chance to save to "zero-out" its file on disk
 		// . all done with these guys, free their mem
 		g_repair.resetSecondaryRdbs();
+
 		// save "repair-addsinprogress" now so that the file will 
-		// be saved as essentially an empty file at this 
-		// point. 
+		// be saved as essentially an empty file at this point.
 		saveAddsInProgress ( "repair-" );
+
 		// reset it again in case it gets saved again later
 		g_repair.resetForNewCollection();
+
 		// unlink the repair.dat file, in case we core and are unable
 		// to save the freshly-reset repair.dat file
 		log("repair: unlinking repair.dat");
+
 		char tmp[1024];
 		sprintf ( tmp, "%s/repair.dat", g_hostdb.m_dir );
 		::unlink ( tmp );
+
 		// do not save it again! we just unlinked it!!
 		g_repair.m_saveRepairState = false;
+
 		// note it
 		log("repair: Waiting for other hosts to complete update.");
+
 		// ready to reset
 		g_repairMode = 8;
+
 		// mark it
 		g_repair.m_completed = true;
 	}
