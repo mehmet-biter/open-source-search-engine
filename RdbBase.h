@@ -34,12 +34,14 @@
 #include "Msg3.h"               // MAX_RDB_FILES definition
 #include "RdbMem.h"
 #include "RdbIndex.h"
+#include "rdbid_t.h"
 #include "GbMutex.h"
 
 extern RdbMerge g_merge;
 
 class RdbBuckets;
 class RdbTree;
+class CollectionRec;
 
 class RdbBase {
 
@@ -136,6 +138,8 @@ class RdbBase {
 	int64_t estimateNumGlobalRecs() const;
 	
 	// private:
+
+	int32_t getMinToMerge(const CollectionRec *cr, rdbid_t rdbId, int32_t minToMergeOverride) const;
 
 	// returns true if merge was started, false if no merge could
 	// be launched right now for some reason.

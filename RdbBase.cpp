@@ -1541,6 +1541,66 @@ void RdbBase::buryFiles ( int32_t a , int32_t b ) {
 	generateGlobalIndex();
 }
 
+
+//Get the min-to-merge configuration for this collection and/or RDB
+int32_t RdbBase::getMinToMerge(const CollectionRec *cr, rdbid_t rdbId, int32_t minToMergeOverride) const {
+	// always obey the override
+	if(minToMergeOverride >= 2) {
+		log(LOG_INFO, "merge: Overriding min files to merge of %d with %d", m_minToMerge, minToMergeOverride);
+		return minToMergeOverride;
+	}
+	
+	// if m_minToMerge is -1 then we should let cr override, but if m_minToMerge
+	// is actually valid at this point, use it as is
+	if(m_minToMerge>0) {
+		log(LOG_INFO, "merge: Using already-set m_minToMerge of %d", m_minToMerge);
+		return m_minToMerge;
+	}
+	
+	logTrace(g_conf.m_logTraceRdbBase, "m_minToMergeDefault: %d", m_minToMergeDefault);
+
+	int32_t result = m_minToMergeDefault;
+
+	// if the collection exist use its values
+	if (cr) {
+		switch(rdbId) {
+			case RDB_POSDB:
+				result = cr->m_posdbMinFilesToMerge;
+				logTrace(g_conf.m_logTraceRdbBase, "posdb. m_minToMerge: %d", m_minToMerge);
+				break;
+			case RDB_TITLEDB:
+				result = cr->m_titledbMinFilesToMerge;
+				logTrace(g_conf.m_logTraceRdbBase, "titledb. m_minToMerge: %d", m_minToMerge);
+				break;
+			case RDB_SPIDERDB:
+				result = cr->m_spiderdbMinFilesToMerge;
+				logTrace(g_conf.m_logTraceRdbBase, "spiderdb. m_minToMerge: %d", m_minToMerge);
+				break;
+			// case RDB_CLUSTERDB:
+			//	result = cr->m_clusterdbMinFilesToMerge;
+			//	logTrace(g_conf.m_logTraceRdbBase, "clusterdb. m_minToMerge: %d", m_minToMerge);
+			//	break;
+			// case RDB_STATSDB:
+			//	result = g_conf.m_statsdbMinFilesToMerge;
+			//	logTrace(g_conf.m_logTraceRdbBase, "statdb. m_minToMerge: %d", m_minToMerge);
+			//	break;
+			case RDB_LINKDB:
+				result = cr->m_linkdbMinFilesToMerge;
+				logTrace(g_conf.m_logTraceRdbBase, "linkdb. m_minToMerge: %d", m_minToMerge);
+				break;
+			case RDB_TAGDB:
+				result = cr->m_tagdbMinFilesToMerge;
+				logTrace(g_conf.m_logTraceRdbBase, "tagdb. m_minToMerge: %d", m_minToMerge);
+				break;
+			default:
+				; //no per-collection override
+		}
+	}
+	log(LOG_INFO, "merge: Using min files to merge %d", result);
+	return result;
+}
+
+
 // . the DailyMerge.cpp will set minToMergeOverride for titledb, and this
 //   overrides "forceMergeAll" which is the same as setting 
 //   "minToMergeOverride" to "2". (i.e. perform a merge if you got 2 or more 
@@ -1603,57 +1663,7 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 		log("merge: Could not find coll rec for %s.",m_coll);
 	}
 
-	// m_minToMerge is -1 if we should let cr override but if m_minToMerge
-	// is actually valid at this point, use it as is, therefore, just set
-	// cr to NULL
-
-	logTrace( g_conf.m_logTraceRdbBase, "m_minToMergeDefault: %" PRId32, m_minToMergeDefault);
-		
-	m_minToMerge = m_minToMergeDefault;
-	if ( cr && m_minToMerge > 0 ) cr = NULL;
-
-	// if cr is non-NULL use its value now
-	if ( cr ) {
-		switch(rdbId) {
-			case RDB_POSDB:
-				m_minToMerge = cr->m_posdbMinFilesToMerge;
-				logTrace( g_conf.m_logTraceRdbBase, "posdb. m_minToMerge: %" PRId32, m_minToMerge );
-				break;
-			case RDB_TITLEDB:
-				m_minToMerge = cr->m_titledbMinFilesToMerge;
-				logTrace( g_conf.m_logTraceRdbBase, "titledb. m_minToMerge: %" PRId32, m_minToMerge );
-				break;
-			case RDB_SPIDERDB:
-				m_minToMerge = cr->m_spiderdbMinFilesToMerge;
-				logTrace( g_conf.m_logTraceRdbBase, "spiderdb. m_minToMerge: %" PRId32, m_minToMerge );
-				break;
-			// case RDB_CLUSTERDB:
-			//	m_minToMerge = cr->m_clusterdbMinFilesToMerge;
-			//	logTrace( g_conf.m_logTraceRdbBase, "clusterdb. m_minToMerge: %" PRId32, m_minToMerge );
-			//	break;
-			// case RDB_STATSDB:
-			//	m_minToMerge = g_conf.m_statsdbMinFilesToMerge;
-			//	logTrace( g_conf.m_logTraceRdbBase, "statdb. m_minToMerge: %" PRId32, m_minToMerge );
-			//	break;
-			case RDB_LINKDB:
-				m_minToMerge = cr->m_linkdbMinFilesToMerge;
-				logTrace( g_conf.m_logTraceRdbBase, "linkdb. m_minToMerge: %" PRId32, m_minToMerge );
-				break;
-			case RDB_TAGDB:
-				m_minToMerge = cr->m_tagdbMinFilesToMerge;
-				logTrace( g_conf.m_logTraceRdbBase, "tagdb. m_minToMerge: %" PRId32, m_minToMerge );
-				break;
-			default:
-				; //no per-collection override
-		}
-	}
-
-	// always obey the override
-	if ( minToMergeOverride >= 2 ) {
-		log( LOG_INFO, "merge: Overriding min files to merge of %" PRId32" with %" PRId32, m_minToMerge, minToMergeOverride );
-		m_minToMerge = minToMergeOverride;
-		logTrace( g_conf.m_logTraceRdbBase, "Overriding. m_minToMerge: %" PRId32, m_minToMerge );
-	}
+	m_minToMerge = getMinToMerge(cr,rdbId,minToMergeOverride);
 
 	// if still -1 that is a problem
 	if ( m_minToMerge <= 0 ) {
