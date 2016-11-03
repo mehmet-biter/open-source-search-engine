@@ -4106,9 +4106,7 @@ void startUp ( void *state ) {
 		int64_t start = gettimeofdayInMilliseconds();
 		s_f.read ( buf , size , off );
 		int64_t now = gettimeofdayInMilliseconds();
-#undef usleep
 		usleep(0);
-#define usleep(a) { g_process.shutdownAbort(true); }
 		s_count++;
 		float sps = (float)((float)s_count * 1000.0) / 
 			(float)(now - s_startTime);
