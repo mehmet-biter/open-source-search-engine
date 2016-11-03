@@ -864,10 +864,10 @@ bool Pages::printAdminTop (SafeBuf     *sb   ,
 	return true;
 }
 
-bool printGigabotAdvice ( SafeBuf *sb , 
-			  int32_t page , 
-			  HttpRequest *hr ,
-			  char *errMsg ) {
+bool printGigabotAdvice(SafeBuf *sb,
+			int32_t page,
+			const HttpRequest *hr,
+			const char *errMsg) {
 
 	char format = hr->getFormat();
 	if ( format != FORMAT_HTML ) return true;
