@@ -213,6 +213,10 @@ void Phrases::setPhrase ( int32_t i ) {
 				break;
 			}
 		}
+		else {
+			logTrace( g_conf.m_logTracePhrases, "i=%3" PRId32 ", j=%3" PRId32 ", wids[i]=%20" PRIu64", wids[j]=%20" PRIu64". j cannot be in a phrase.", i, j, m_wids[i], m_wids[j] );
+		}
+			
 
 		// if we cannot pair across word j then break
 		if ( ! m_bits->canPairAcross (j) ) {
