@@ -10166,6 +10166,15 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
+	m->m_title = "log trace info for Phrases";
+	m->m_cgi   = "ltrc_phrases";
+	m->m_off   = offsetof(Conf,m_logTracePhrases);
+	m->m_type  = TYPE_BOOL;
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m->m_obj   = OBJ_CONF;
+	m++;
+
 	m->m_title = "log timing messages for build";
 	m->m_desc  = "Log various timing related messages.";
 	m->m_cgi   = "ltb";
