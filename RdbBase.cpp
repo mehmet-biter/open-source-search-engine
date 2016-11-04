@@ -388,10 +388,6 @@ bool RdbBase::removeRebuildFromFilenames() {
 		}
 	}
 
-	if (m_useIndexFile) {
-		removeRebuildFromFilename(m_treeIndex.getFile());
-	}
-
 	// reset all now
 	reset();
 
