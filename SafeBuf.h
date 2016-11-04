@@ -191,7 +191,7 @@ public:
 	}
 	//utf8 hack. make sure the buffer has 4 NULs beyond the end so we can use the fast approach to decoding utf8 characters
 	bool nullTerm4() {
-		if(m_length >= m_capacity && !reserve(m_capacity + 4) )
+		if(m_length+3 >= m_capacity && !reserve(m_capacity + 4) )
 			return false;
 		m_buf[m_length+0] = '\0';
 		m_buf[m_length+1] = '\0';
