@@ -5302,7 +5302,10 @@ int injectFile ( const char *filename , char *ips , const char *coll ) {
 			// now inject the warc gz files in there
 			Dir dir;
 			dir.set ( p );
-			dir.open();
+			if(!dir.open()) {
+				log("bad directory. exiting\n");
+				exit(0);
+			}
 			log("setting dir to %s",p);
 		subloop:
 			const char *xarcFilename = dir.getNextFilename("*arc.gz");
