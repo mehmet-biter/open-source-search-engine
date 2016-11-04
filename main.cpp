@@ -2173,7 +2173,6 @@ int main2 ( int argc , char *argv[] ) {
 	// . it should block forever
 	// . when it gets a signal it dispatches to a server or db to handle it
 	g_loop.runLoop();
-	return 0; // shut up pvs-studio
 }
 
 /// @todo ALC wouldn't it be faster to actually check the dir permission instead of trying to write a tmp file?
@@ -2244,7 +2243,6 @@ bool doCmd ( const char *cmd , int32_t hostId , const char *filename ,
 
 	// run the loop
 	g_loop.runLoop();
-	return true;	// shut up pvs-studio
 }
 
 [[ noreturn ]] void doneCmdAll ( void *state ) {
@@ -5522,7 +5520,6 @@ int injectFile ( const char *filename , char *ips , const char *coll ) {
 
 	// run the loop
 	g_loop.runLoop();
-	return 0;	// shut up pvs-studio
 }
 
 void doInject ( int fd , void *state ) {
