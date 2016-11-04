@@ -1,0 +1,16 @@
+language: cpp
+sudo: required
+dist: trusty
+compiler:
+- gcc
+- clang
+os:
+- linux
+script: make
+branches:
+  only:
+  - master
+addons:
+  apt:
+    packages:
+    - libssl-dev
