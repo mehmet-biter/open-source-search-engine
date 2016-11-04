@@ -785,8 +785,6 @@ const char& SafeBuf::operator[](int32_t i) const {
 	return m_buf[i];
 }
 
-#include "Tagdb.h"
-
 // this puts a \0 at the end but does not update m_length for the \0 
 bool  SafeBuf::safeStrcpy ( const char *s ) {
 	if ( ! s ) return true;
