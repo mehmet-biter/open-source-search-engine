@@ -106,6 +106,8 @@ bool HighFrequencyTermShortcuts::load()
 		uint32_t posdb_entries = *(const uint32_t*)p;
 		p += 4;
 		
+		if(posdb_entries>100000)
+			break; //invalid (highly unlikely)
 		if(p + posdb_entries*18 >end)
 			break; //invalid
 		
