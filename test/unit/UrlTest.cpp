@@ -93,7 +93,7 @@ TEST( UrlTest, GetDisplayUrlFromCharArray ) {
 	};
 
 	for ( auto it = test_cases.begin(); it != test_cases.end(); ++it ) {
-		StackBuf( tmpBuf );
+		StackBuf<> tmpBuf;
 		EXPECT_STREQ( std::get<1>( *it ), ( const char * ) Url::getDisplayUrl( std::get<0>( *it ), &tmpBuf ) );
 	}
 }
@@ -134,7 +134,7 @@ TEST( UrlTest, GetDisplayUrlFromUrl ) {
 		Url url;
 		url.set( std::get<0>( *it ) );
 
-		StackBuf( tmpBuf );
+		StackBuf<> tmpBuf;
 		EXPECT_STREQ( std::get<1>( *it ), (const char*)Url::getDisplayUrl( url.getUrl(), &tmpBuf ) );
 	}
 }

@@ -734,16 +734,17 @@ bool TagRec::setFromHttpRequest ( HttpRequest *r, TcpSocket *s ) {
 			// . add to tag rdb recs in safebuf
 			// . this pushes the rdbid as first byte
 			// . mdwmdwmdw
-			Tag *tag = m_sbuf.addTag ( urlPtr,
-						   tagTypeStr ,
-						   tagTime ,
-						   tagUser ,
-						   tagIp ,
-						   dataPtr,
-						   dataSize ,
-						   RDB_TAGDB,
-						   // do not push rdbid into safebuf
-						   false ) ;
+			Tag *tag = Tagdb::addTag(&m_sbuf,
+						 urlPtr,
+						 tagTypeStr ,
+						 tagTime ,
+						 tagUser ,
+						 tagIp ,
+						 dataPtr,
+						 dataSize ,
+						 RDB_TAGDB,
+						 // do not push rdbid into safebuf
+						 false);
 			// error?
 			if ( ! tag ) {
 				return false;
@@ -823,7 +824,7 @@ bool TagRec::serialize ( SafeBuf &dst ) {
 	Tag *tag = getFirstTag();
 	for ( ; tag ; tag = getNextTag ( tag ) ) {
 		if ( tag->m_type == TT_DUP ) continue;
-		if ( ! dst.addTag ( tag ) ) return false;
+		if ( ! Tagdb::addTag(&dst,tag) ) return false;
 	}
 	return true;
 }
@@ -2556,3 +2557,65 @@ int32_t Tagdb::getMinSiteInlinks ( uint32_t hostHash32 ) {
 	}
 	return fp[i].m_siteNumInlinksUniqueCBlock;
 }
+
+
+Tag *Tagdb::addTag(SafeBuf *sb,
+		   const char *mysite,
+		   const char *tagname,
+		   int32_t  now,
+		   const char *user,
+		   int32_t  ip,
+		   const char *data,
+		   int32_t  dsize,
+		   rdbid_t rdbId,
+		   bool  pushRdbId) {
+	int32_t need = dsize + 32 + sizeof(Tag);
+	if(user  ) need += strlen(user);
+	if(mysite) need += strlen(mysite);
+	if(!sb->reserve(need)) return NULL;
+	if(pushRdbId && !sb->pushChar(rdbId)) return NULL;
+	Tag *tag = (Tag *)sb->getBufPtr();
+	tag->set(mysite,tagname,now,user,ip,data,dsize);
+	sb->incrementLength(tag->getRecSize());
+	if(tag->getRecSize() > need) gbshutdownLogicError();
+	return tag;
+}
+
+Tag *Tagdb::addTag2(SafeBuf *sb,
+		    const char *mysite,
+		    const char *tagname,
+		    int32_t  now,
+		    const char *user,
+		    int32_t  ip,
+		    int32_t  val,
+		    rdbid_t rdbId) {
+	char buf[64];
+	sprintf(buf,"%" PRId32,val);
+	int32_t dsize = strlen(buf) + 1;
+	return addTag(sb,mysite,tagname,now,user,ip,buf,dsize,rdbId,true);
+}
+
+Tag *Tagdb::addTag3(SafeBuf *sb,
+		    const char *mysite,
+		    const char *tagname,
+		    int32_t  now,
+		    const char *user,
+		    int32_t  ip,
+		    const char *data,
+		    rdbid_t rdbId) {
+	int32_t dsize = strlen(data) + 1;
+	return addTag(sb,mysite,tagname,now,user,ip,data,dsize,rdbId,true);
+}
+
+bool Tagdb::addTag(SafeBuf *sb,
+		   Tag *tag) {
+	int32_t recSize = tag->getRecSize();
+	if(tag->m_recDataSize <= 16) {
+		// note it
+		log(LOG_WARN, "safebuf: encountered corrupted tag datasize=%" PRId32".", tag->m_recDataSize);
+		return false;
+		//g_process.shutdownAbort(true); }
+	}
+	return sb->safeMemcpy((char *)tag, recSize);
+}
+

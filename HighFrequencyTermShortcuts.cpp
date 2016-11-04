@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
+#include <stdlib.h>
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
 #endif
@@ -43,6 +44,24 @@
 HighFrequencyTermShortcuts g_hfts;
 
 static const char filename[] = "high_frequency_term_posdb_shortcuts.dat";
+
+
+//like memcmp() but compares in reverse direction
+static int memcmpr(const void *p1_, const void *p2_, size_t sz) {
+	const uint8_t *p1 = (const uint8_t*)p1_;
+	const uint8_t *p2 = (const uint8_t*)p2_;
+	for(size_t i=0; i<sz; i++) {
+		uint8_t b1 = p1[sz-i-1];
+		uint8_t b2 = p2[sz-i-1];
+		if(b1<b2) return -1;
+		if(b1>b2) return  1;
+	}
+	return 0;
+}
+
+static int cmp18(const void *p1, const void *p2) {
+	return memcmpr(p1,p2,18);
+}
 
 
 bool HighFrequencyTermShortcuts::load()
@@ -89,8 +108,19 @@ bool HighFrequencyTermShortcuts::load()
 		
 		if(p + posdb_entries*18 >end)
 			break; //invalid
+		
+		//entries per term are not guaranteed to be sorted. do that now
+		qsort(p, posdb_entries, 18, cmp18);
+		
 		new_entries[term_id].p = p;
 		new_entries[term_id].bytes = posdb_entries*18;
+		if(posdb_entries>0) {
+			memcpy(new_entries[term_id].start_key, p, 18);
+			memcpy(new_entries[term_id].end_key, p+(posdb_entries-1)*18, 18);
+		} else {
+			memset(new_entries[term_id].start_key, 0, 18);
+			memset(new_entries[term_id].end_key, 0, 18);
+		}
 		p += posdb_entries*18;
 	}
 	if(p!=end) {
@@ -156,7 +186,9 @@ void HighFrequencyTermShortcuts::unload()
 
 
 
-bool HighFrequencyTermShortcuts::query_term_shortcut(uint64_t term_id, const void **posdb_entries, size_t *bytes)
+bool HighFrequencyTermShortcuts::query_term_shortcut(uint64_t term_id,
+                                                     const void **posdb_entries, size_t *bytes,
+                                                     void *start_key, void *end_key)
 {
 	std::map<uint64_t,TermEntry>::const_iterator i = entries.find(term_id);
 	if(i==entries.end())
@@ -164,6 +196,8 @@ bool HighFrequencyTermShortcuts::query_term_shortcut(uint64_t term_id, const voi
 	else {
 		*posdb_entries = i->second.p;
 		*bytes = i->second.bytes;
+		memcpy(start_key, i->second.start_key, 18);
+		memcpy(end_key, i->second.end_key, 18);
 		return true;
 	}
 }

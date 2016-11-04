@@ -388,10 +388,6 @@ bool RdbBase::removeRebuildFromFilenames() {
 		}
 	}
 
-	if (m_useIndexFile) {
-		removeRebuildFromFilename(m_treeIndex.getFile());
-	}
-
 	// reset all now
 	reset();
 
@@ -2367,6 +2363,7 @@ uint64_t RdbBase::getSpaceNeededForMerge(int startFileNum, int numFiles) const {
 
 
 void RdbBase::closeMaps(bool urgent) {
+	logTrace(g_conf.m_logTraceRdbBase, "BEGIN");
 	for (int32_t i = 0; i < m_numFiles; i++) {
 		bool status = m_fileInfo[i].m_map->close(urgent);
 		if (!status) {
@@ -2374,11 +2371,19 @@ void RdbBase::closeMaps(bool urgent) {
 			gbshutdownResourceError();
 		}
 	}
+	logTrace(g_conf.m_logTraceRdbBase, "END");
 }
 
 void RdbBase::closeIndexes(bool urgent) {
+	logTrace(g_conf.m_logTraceRdbBase, "BEGIN");
+
+	if (!m_useIndexFile) {
+		logTrace(g_conf.m_logTraceRdbBase, "END. useIndexFile disabled");
+		return;
+	}
+
 	for (int32_t i = 0; i < m_numFiles; i++) {
-		if (m_useIndexFile && m_fileInfo[i].m_index) {
+		if (m_fileInfo[i].m_index) {
 			bool status = m_fileInfo[i].m_index->close(urgent);
 			if (!status) {
 				// unable to write, let's abort
@@ -2386,9 +2391,12 @@ void RdbBase::closeIndexes(bool urgent) {
 			}
 		}
 	}
+	logTrace(g_conf.m_logTraceRdbBase, "END");
 }
 
 void RdbBase::saveMaps() {
+	logTrace(g_conf.m_logTraceRdbBase, "BEGIN");
+
 	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) {
 		if ( ! m_fileInfo[i].m_map ) {
 			log("base: map for file #%i is null", i);
@@ -2401,10 +2409,15 @@ void RdbBase::saveMaps() {
 			gbshutdownResourceError();
 		}
 	}
+
+	logTrace(g_conf.m_logTraceRdbBase, "END");
 }
 
 void RdbBase::saveTreeIndex() {
+	logTrace(g_conf.m_logTraceRdbBase, "BEGIN");
+
 	if (!m_useIndexFile) {
+		logTrace(g_conf.m_logTraceRdbBase, "END. useIndexFile disabled");
 		return;
 	}
 
@@ -2412,9 +2425,13 @@ void RdbBase::saveTreeIndex() {
 		// unable to write, let's abort
 		gbshutdownResourceError();
 	}
+
+	logTrace(g_conf.m_logTraceRdbBase, "END");
 }
 
 void RdbBase::saveIndexes() {
+	logTrace(g_conf.m_logTraceRdbBase, "BEGIN");
+
 	if (!m_useIndexFile) {
 		return;
 	}
@@ -2430,6 +2447,7 @@ void RdbBase::saveIndexes() {
 			gbshutdownResourceError();
 		}
 	}
+	logTrace(g_conf.m_logTraceRdbBase, "END");
 }
 
 bool RdbBase::verifyFileSharding ( ) {

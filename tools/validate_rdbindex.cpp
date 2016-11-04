@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <unordered_set>
 #include <assert.h>
+#include <fcntl.h>
 #include <RdbIndexQuery.h>
 
 static void print_usage(const char *argv0) {

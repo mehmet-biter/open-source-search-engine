@@ -221,17 +221,13 @@ void repairWrapper ( int fd , void *state ) {
 	//
 	// ok, repairing is enabled at this point
 	//
+	static bool s_oldConfSpideringEnabled = false;
 
 	// are we just starting?
 	if ( g_repairMode == 0 ) {
 		// turn spiders off since repairing is enabled
+		s_oldConfSpideringEnabled = g_conf.m_spideringEnabled;
 		g_conf.m_spideringEnabled = false;
-		//g_conf.m_injectionEnabled = false;
-		// wait for a previous repair to finish?
-		//if ( g_pingServer.getMinRepairMode() != 0 ) return;
-		// if some are not done yet with the previous repair, wait...
-		// no because we are trying to load up repair.dat
-		//if ( g_pingServer.getMaxRepairMode() == 8 ) return;
 
 		g_repair.m_startTime = gettimeofdayInMilliseconds();
 		// enter repair mode level 1
@@ -358,15 +354,13 @@ void repairWrapper ( int fd , void *state ) {
 		// data might arrive in the middle of the dumping and it stays
 		// in the in-memory RdbTree!
 		if ( g_pingServer.getMinRepairMode() < 6 ) return;
-		// do not dump if we are doing a full rebuild or a
-		// no split list rebuild -- why?
-		//if(! g_repair.m_fullRebuild && ! g_repair.m_rebuildNoSplits){
-		//if ( ! g_repair.m_rebuildNoSplits ) {
+
 		// we might have to dump again
 		g_repair.dumpLoop();
+
 		// are we done dumping?
 		if ( ! g_repair.dumpsCompleted() ) return;
-		//}
+
 		// wait for all merging to stop just to be on the safe side
 		if ( g_merge.isMerging() ) return;
 		// wait for ny outstanding unlinks or renames to finish
@@ -383,11 +377,13 @@ void repairWrapper ( int fd , void *state ) {
 	// into the trash and replace it with the new data.
 	if ( g_repairMode == 7 ) {
 		// wait for autosave...
-		if ( g_process.m_mode ) return; // = SAVE_MODE;		
+		if ( g_process.m_mode ) return; // = SAVE_MODE;
+
 		// save to disk so it zeroes out indexdbRebuild-saved.dat
 		// which should have 0 records in it cuz we dumped it above
 		// in g_repair.dumpLoop()
 		if ( ! saveAllRdbs ( NULL , NULL ) ) return;
+
 		// . this blocks and gets the job done
 		// . this will move the old *.dat and *-saved.dat files into
 		//   a subdir in the trash subdir
@@ -398,30 +394,38 @@ void repairWrapper ( int fd , void *state ) {
 		// . this will not allow itself to be called more than once
 		//   per scan/repair process
 		g_repair.updateRdbs();
-		// note this
+
 		log("repair: resetting secondary rdbs.");
+
 		// . only do this after indexdbRebuild-saved.dat has had a
 		//   chance to save to "zero-out" its file on disk
 		// . all done with these guys, free their mem
 		g_repair.resetSecondaryRdbs();
+
 		// save "repair-addsinprogress" now so that the file will 
-		// be saved as essentially an empty file at this 
-		// point. 
+		// be saved as essentially an empty file at this point.
 		saveAddsInProgress ( "repair-" );
+
 		// reset it again in case it gets saved again later
 		g_repair.resetForNewCollection();
+
 		// unlink the repair.dat file, in case we core and are unable
 		// to save the freshly-reset repair.dat file
 		log("repair: unlinking repair.dat");
+
 		char tmp[1024];
 		sprintf ( tmp, "%s/repair.dat", g_hostdb.m_dir );
 		::unlink ( tmp );
+
 		// do not save it again! we just unlinked it!!
 		g_repair.m_saveRepairState = false;
+
 		// note it
 		log("repair: Waiting for other hosts to complete update.");
+
 		// ready to reset
 		g_repairMode = 8;
+
 		// mark it
 		g_repair.m_completed = true;
 	}
@@ -436,6 +440,11 @@ void repairWrapper ( int fd , void *state ) {
 		    gettimeofdayInMilliseconds() - g_repair.m_startTime);
 		// turn it off to prevent going back to mode 1 again
 		g_conf.m_repairingEnabled = false;
+
+		// restore spider config
+		g_conf.m_spideringEnabled = s_oldConfSpideringEnabled;
+		s_oldConfSpideringEnabled = false;
+
 		// ok reset
 		g_repairMode = 0;
 	}
@@ -949,7 +958,6 @@ bool Repair::loop ( void *state ) {
 	if ( m_stage == STAGE_TITLEDB_4  ) {
 		if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: STAGE_TITLEDB_4", __FILE__, __func__, __LINE__);
 		m_stage++;
-		//if ( ! addToTfndb2()       ) return false;
 	}
 
 	// if we are not done with the titledb scan loop back up
@@ -969,70 +977,7 @@ bool Repair::loop ( void *state ) {
 	}
 
 	// reset list
-	//m_list.reset();
-
-	// . spiderdb scan
-	// . put new spider recs into g_spiderdb2
-	/*
- loop2:
-	if ( m_stage == STAGE_SPIDERDB_0 ) {
-		m_stage++;
-		if ( ! scanSpiderdb()     ) return false;
-	}
-	if ( m_stage == STAGE_SPIDERDB_1 ) {
-		m_stage++;
-		if ( ! getTfndbListPart2()  ) return false;
-	}
-	if ( m_stage == STAGE_SPIDERDB_2A ) {
-		m_stage++;
-		if ( ! getTagRecPart2()  ) return false;
-	}
-	if ( m_stage == STAGE_SPIDERDB_2B ) {
-		m_stage++;
-		if ( ! getRootQualityPart2()  ) return false;
-	}
-	if ( m_stage == STAGE_SPIDERDB_3 ) {
-		m_stage++;
-		if ( ! addToSpiderdb2Part2()  ) return false;
-	}
-	if ( m_stage == STAGE_SPIDERDB_4 ) {
-		m_stage++;
-		if ( ! addToTfndb2Part2()  ) return false;
-	}
-	// if we are not done with the titledb scan loop back up
-	if ( ! m_completedSpiderdbScan ) {
-		m_stage = STAGE_SPIDERDB_0;
-		goto loop2;
-	}
-	*/
-
-	// reset list
 	m_titleRecList.reset();
-
-	// . indexdb scan
-	// . delete indexdb recs whose docid is not in tfndb
-	// . delete duplicate docid in same termlist docids
-	// . turn this off for now to get buzz ready faster
-	/*
- loop3:
-	if ( m_stage == STAGE_INDEXDB_0 ) {
-		m_stage++;
-		if ( ! scanIndexdb()      ) return false;
-	}
-	if ( m_stage == STAGE_INDEXDB_1 ) {
-		m_stage++;
-		if ( ! gotIndexRecList()  ) return false;
-	}
-	if ( m_stage == STAGE_INDEXDB_2 ) {
-		m_stage++;
-		if ( ! addToIndexdb2()    ) return false;
-	}
-	// if we are not done with the titledb scan loop back up
-	if ( ! m_completedIndexdbScan ) {
-		m_stage = STAGE_INDEXDB_0;
-		goto loop3;
-	}
-	*/
 
 	// in order for dump to work we must be in mode 4 because
 	// Rdb::dumpTree() checks that
@@ -1340,7 +1285,7 @@ bool Repair::gotScanRecList ( ) {
 	// . are we the host this url is meant for?
 	// . however, if you are rebuilding tfndb, each twin must scan all
 	//   title recs and make individual entries for those title recs
-	if ( hosts[ii].m_hostId != g_hostdb.m_hostId ){//&&!m_rebuildTfndb ) {
+	if ( hosts[ii].m_hostId != g_hostdb.m_hostId ){
 		m_recsUnassigned++;
 		m_stage = STAGE_TITLEDB_0;
 		return true;
@@ -2013,12 +1958,9 @@ bool saveAllRdbs ( void *state , void (* callback)(void *state) ) {
 	}
 	// set it
 	s_savingAll = true;
+
 	// TODO: why is this called like 100x per second when a merge is
 	// going on? why don't we sleep longer in between?
-	//bool close ( void *state , 
-	//	     void (* callback)(void *state ) ,
-	//	     bool urgent ,
-	//	     bool exitAfterClosing );
 
 	int32_t nsr;
 	Rdb **rdbs = getAllRdbs ( &nsr );

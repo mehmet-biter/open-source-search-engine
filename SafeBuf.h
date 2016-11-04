@@ -10,11 +10,8 @@
  */
 
 #include "iana_charset.h"
-#include "rdbid_t.h"
 #include "Sanity.h"
 
-
-class Words;
 
 class SafeBuf {
 public:
@@ -167,19 +164,6 @@ public:
 	// . "ts" is the delta-t in seconds
 	bool printTimeAgo (int32_t ts , int32_t now , bool shorthand = false ) ;
 
-	// . a function for adding Tags to buffer, like from Tagdb.cpp
-	// . if safebuf is a buffer of Tags from Tagdb.cpp
-	class Tag *addTag2( const char *mysite,const  char *tagname, int32_t now, const char *user, int32_t ip, int32_t val,
-						rdbid_t rdbId);
-
-	class Tag *addTag3( const char *mysite, const char *tagname, int32_t now, const char *user, int32_t ip, const char *data,
-						rdbid_t rdbId);
-
-	class Tag *addTag( const char *mysite, const char *tagname, int32_t now, const char *user, int32_t ip,const  char *data,
-					   int32_t dsize, rdbid_t rdbId, bool pushRdbId);
-
-	bool addTag ( class Tag *tag );
-
 	bool utf8Encode2( char *s, int32_t len, bool htmlEncode = false);
 
 	bool utf32Encode(UChar32* codePoints, int32_t cpLen);
@@ -203,6 +187,16 @@ public:
 		if(m_length >= m_capacity && !reserve(m_capacity + 1) )
 			return false;
 		m_buf[m_length] = '\0';
+		return true;
+	}
+	//utf8 hack. make sure the buffer has 4 NULs beyond the end so we can use the fast approach to decoding utf8 characters
+	bool nullTerm4() {
+		if(m_length+3 >= m_capacity && !reserve(m_capacity + 4) )
+			return false;
+		m_buf[m_length+0] = '\0';
+		m_buf[m_length+1] = '\0';
+		m_buf[m_length+2] = '\0';
+		m_buf[m_length+3] = '\0';
 		return true;
 	}
 
@@ -265,12 +259,14 @@ public:
 	bool m_renderHtml;
 };
 
-#define STRMACRO(s) #s
-#define TOKENPASTE(x, y) x ## y
-#define TOKENPASTE2(x, y) TOKENPASTE(x, y)
 
-#define StackBuf(name) char TOKENPASTE2(tmpsafebuf, __LINE__)[1024];	\
-	SafeBuf name(TOKENPASTE2(tmpsafebuf, __LINE__), 1024, STRMACRO(TOKENPASTE2(__FILE__, __LINE__)))
+template<int n=1024>
+class StackBuf : public SafeBuf {
+	char buf[n];
+public:
+	StackBuf() : SafeBuf(buf,sizeof(buf)) {}
+};
+
 
 
 #endif // GB_SAFEBUF_H

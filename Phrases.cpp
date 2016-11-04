@@ -130,8 +130,7 @@ void Phrases::setPhrase ( int32_t i ) {
 	int32_t lastWordj = -1;
 
 	// loop over following words
-	int32_t j;
-	bool hasHyphen ;
+	bool hasHyphen;
 	bool hasStopWord2 ;
 
 	// . NOTE: a token can start a phrase but NOT be in it. 
@@ -154,7 +153,7 @@ void Phrases::setPhrase ( int32_t i ) {
 	hasHyphen = false;
 	hasStopWord2 = m_bits->isStopWord(i);
 
-	for ( j = i + 1 ; j < nw ; j++ ) {
+	for( int32_t j = i + 1 ; j < nw ; j++ ) {
 		logTrace( g_conf.m_logTracePhrases, "i=%3" PRId32 ", j=%3" PRId32 ", wids[i]=%20" PRIu64", wids[j]=%20" PRIu64". LOOP START", i, j, m_wids[i], m_wids[j] );
 
 		// Do not allow more than 32 alnum/punct "words" in a phrase.
@@ -233,7 +232,7 @@ void Phrases::setPhrase ( int32_t i ) {
 	nophrase:
 		m_phraseIds2[i]      = 0LL; 
 		m_numWordsTotal2[i]   = 0;
-		logTrace( g_conf.m_logTracePhrases, "i=%3" PRId32 ", j=%3" PRId32 ", wids[i]=%20" PRIu64", wids[j]=%20" PRIu64". END. Not a phrase. m_phraseIds2[i]=%" PRIu64 "", i, j, m_wids[i], m_wids[j], m_phraseIds2[i]);
+		logTrace( g_conf.m_logTracePhrases, "i=%3" PRId32 ", wids[i]=%20" PRIu64". END. Not a phrase. m_phraseIds2[i]=%" PRIu64 "", i, m_wids[i], m_phraseIds2[i]);
 		return;
 	}
 
@@ -253,13 +252,13 @@ void Phrases::setPhrase ( int32_t i ) {
 	// . "e-mail"    -> email
 	if ( hasHyphen || ! hasStopWord2 ) {
 		m_phraseIds2[i] = h2;
-		logTrace( g_conf.m_logTracePhrases, "i=%3" PRId32 ", j=%3" PRId32 ", wids[i]=%20" PRIu64", wids[j]=%20" PRIu64". END. Has hyphen or no stopword. m_phraseIds2[i]=%" PRIu64 "", i, j, m_wids[i], m_wids[j], m_phraseIds2[i] );
+		logTrace( g_conf.m_logTracePhrases, "i=%3" PRId32 ", wids[i]=%20" PRIu64". END. Has hyphen or no stopword. m_phraseIds2[i]=%" PRIu64 "", i, m_wids[i], m_phraseIds2[i] );
 	}
 	// . "st. and"    !-> stand
 	// . "the rapist" !-> therapist
 	else {
 		m_phraseIds2[i] = h2 ^ 0x768867;
-		logTrace( g_conf.m_logTracePhrases, "i=%3" PRId32 ", j=%3" PRId32 ", wids[i]=%20" PRIu64", wids[j]=%20" PRIu64". END. either no hyphen or a stopword. m_phraseIds2[i]=%" PRIu64 "", i, j, m_wids[i], m_wids[j], m_phraseIds2[i] );
+		logTrace( g_conf.m_logTracePhrases, "i=%3" PRId32 ", wids[i]=%20" PRIu64". END. either no hyphen or a stopword. m_phraseIds2[i]=%" PRIu64 "", i, m_wids[i], m_phraseIds2[i]);
 	}
 }
 

@@ -2,6 +2,7 @@
 #define GB_RDBINDEX_H
 
 #include "BigFile.h"
+#include "rdbid_t.h"
 #include "Sanity.h"
 #include "GbMutex.h"
 #include <vector>
