@@ -10,11 +10,8 @@
  */
 
 #include "iana_charset.h"
-#include "rdbid_t.h"
 #include "Sanity.h"
 
-
-class Words;
 
 class SafeBuf {
 public:
