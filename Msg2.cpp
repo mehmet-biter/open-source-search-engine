@@ -197,15 +197,14 @@ bool Msg2::getLists ( ) {
 		//if the term is a high-frequency one then use the PosDB shortcuts
 		const void *hfterm_shortcut_posdb_buffer;
 		size_t hfterm_shortcut_buffer_bytes;
+		char startKey[18], endKey[18];
 		if(g_conf.m_useHighFrequencyTermCache &&
 		   m_allowHighFrequencyTermCache &&
-		   g_hfts.query_term_shortcut(m_qterms[m_i].m_termId,&hfterm_shortcut_posdb_buffer,&hfterm_shortcut_buffer_bytes))
+		   g_hfts.query_term_shortcut(m_qterms[m_i].m_termId,&hfterm_shortcut_posdb_buffer,&hfterm_shortcut_buffer_bytes,startKey,endKey))
 		{
 			log("query: term %" PRId64" (%*.*s) is a high-frequency term",
 			    m_qterms[m_i].m_termId,qt->m_qword->m_wordLen,qt->m_qword->m_wordLen,qt->m_qword->m_word);
 			//use PosDB shortcut buffer, put into RdbList and avoid actually going into PosDB
-			char *startKey = (char*)hfterm_shortcut_posdb_buffer;
-			char *endKey = ((char*)hfterm_shortcut_posdb_buffer)+hfterm_shortcut_buffer_bytes-18;
 			
 			char *rdblistmem = (char*)mmalloc(hfterm_shortcut_buffer_bytes,"RdbList");
 			memcpy(rdblistmem,hfterm_shortcut_posdb_buffer,hfterm_shortcut_buffer_bytes);

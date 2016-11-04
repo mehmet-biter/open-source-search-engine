@@ -114,6 +114,13 @@ bool HighFrequencyTermShortcuts::load()
 		
 		new_entries[term_id].p = p;
 		new_entries[term_id].bytes = posdb_entries*18;
+		if(posdb_entries>0) {
+			memcpy(new_entries[term_id].start_key, p, 18);
+			memcpy(new_entries[term_id].end_key, p+(posdb_entries-1)*18, 18);
+		} else {
+			memset(new_entries[term_id].start_key, 0, 18);
+			memset(new_entries[term_id].end_key, 0, 18);
+		}
 		p += posdb_entries*18;
 	}
 	if(p!=end) {
@@ -179,7 +186,9 @@ void HighFrequencyTermShortcuts::unload()
 
 
 
-bool HighFrequencyTermShortcuts::query_term_shortcut(uint64_t term_id, const void **posdb_entries, size_t *bytes)
+bool HighFrequencyTermShortcuts::query_term_shortcut(uint64_t term_id,
+                                                     const void **posdb_entries, size_t *bytes,
+                                                     void *start_key, void *end_key)
 {
 	std::map<uint64_t,TermEntry>::const_iterator i = entries.find(term_id);
 	if(i==entries.end())
@@ -187,6 +196,8 @@ bool HighFrequencyTermShortcuts::query_term_shortcut(uint64_t term_id, const voi
 	else {
 		*posdb_entries = i->second.p;
 		*bytes = i->second.bytes;
+		memcpy(start_key, i->second.start_key, 18);
+		memcpy(end_key, i->second.end_key, 18);
 		return true;
 	}
 }

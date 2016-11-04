@@ -13,6 +13,8 @@ class HighFrequencyTermShortcuts {
 	struct TermEntry {
 		const void *p;
 		size_t bytes;
+		char start_key[18];
+		char end_key[18];
 	};
 	std::map<uint64_t,TermEntry> entries;
 	void *buffer;
@@ -29,7 +31,9 @@ public:
 	
 	bool empty() const { return entries.empty(); }
 	
-	bool query_term_shortcut(uint64_t term_id, const void **posdb_entries, size_t *bytes);
+	bool query_term_shortcut(uint64_t term_id,
+	                         const void **posdb_entries, size_t *bytes,
+	                         void *start_key, void *end_key);
 };
 
 extern HighFrequencyTermShortcuts g_hfts;
