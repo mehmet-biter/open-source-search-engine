@@ -222,10 +222,6 @@ void SpiderLoop::startLoop ( ) {
 // call this every 50ms it seems to try to spider urls and populate doledb
 // from the waiting tree
 void doneSleepingWrapperSL ( int fd , void *state ) {
-	//SpiderLoop *THIS = (SpiderLoop *)state;
-	// dole some out
-	//g_spiderLoop.doleUrls1();
-
 	// if spidering disabled then do not do this crap
 	if ( ! g_conf.m_spideringEnabled )  return;
 	if ( ! g_hostdb.getMyHost( )->m_spiderEnabled ) return;
@@ -247,8 +243,6 @@ void doneSleepingWrapperSL ( int fd , void *state ) {
 		return;
 	}
 
-	//if ( g_hostdb.hasDeadHost() ) return;
-
 	static int32_t s_count = -1;
 	// count these calls
 	s_count++;
@@ -259,7 +253,6 @@ void doneSleepingWrapperSL ( int fd , void *state ) {
 	CollectionRec *nextActive = g_spiderLoop.getActiveList(); 
 	collnum_t nextActiveCollnum = nextActive ? nextActive->m_collnum : static_cast<collnum_t>( -1 );
 
-	//for ( int32_t i = 0 ; i < nc ; i++ ) {
 	for ( ; nextActive ;  ) {
 		// before we assign crp to nextActive, ensure that it did not get deleted on us.
 		// if the next collrec got deleted, tr will be NULL
@@ -2363,8 +2356,6 @@ void handleRequestc1 ( UdpSlot *slot , int32_t niceness ) {
 	uint32_t now = (uint32_t)getTimeGlobalNoCore();
 
 	uint64_t nowMS = gettimeofdayInMillisecondsGlobalNoCore();
-
-	//SpiderColl *sc = g_spiderCache.getSpiderColl(collnum);
 
 	for ( int32_t i = 0 ; i < g_collectiondb.m_numRecs ; i++ ) {
 		CollectionRec *cr = g_collectiondb.m_recs[i];
