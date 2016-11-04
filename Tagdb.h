@@ -178,6 +178,13 @@ class Tagdb  {
 	SafeBuf m_siteBuf1;
 	SafeBuf m_siteBuf2;
 
+	static Tag *addTag (SafeBuf *sb, const char *mysite, const char *tagname, int32_t now, const char *user, int32_t ip,
+			    const  char *data, int32_t dsize, rdbid_t rdbId, bool pushRdbId);
+	static Tag *addTag2(SafeBuf *sb, const char *mysite,const  char *tagname, int32_t now, const char *user, int32_t ip,
+			    int32_t val, rdbid_t rdbId);
+	static Tag *addTag3(SafeBuf *sb, const char *mysite, const char *tagname, int32_t now, const char *user, int32_t ip,
+			    const char *data, rdbid_t rdbId);
+	static bool addTag (SafeBuf *sb, Tag *tag);
 };
 
 extern class Tagdb  g_tagdb;

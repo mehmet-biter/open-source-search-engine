@@ -787,65 +787,6 @@ const char& SafeBuf::operator[](int32_t i) const {
 
 #include "Tagdb.h"
 
-// if safebuf is a buffer of Tags from Tagdb.cpp
-Tag *SafeBuf::addTag2 ( const char *mysite ,
-			const char *tagname ,
-			int32_t  now ,
-			const char *user ,
-			int32_t  ip ,
-			int32_t  val ,
-			rdbid_t rdbId) {
-	char buf[64];
-	sprintf(buf,"%" PRId32,val);
-	int32_t dsize = strlen(buf) + 1;
-	return addTag ( mysite,tagname,now,user,ip,buf,dsize,rdbId,true);
-}
-
-// if safebuf is a buffer of Tags from Tagdb.cpp
-Tag *SafeBuf::addTag3 ( const char *mysite ,
-			const char *tagname ,
-			int32_t  now ,
-			const char *user ,
-			int32_t  ip ,
-			const char *data ,
-			rdbid_t rdbId) {
-	int32_t dsize = strlen(data) + 1;
-	return addTag ( mysite,tagname,now,user,ip,data,dsize,rdbId,true);
-}
-
-Tag *SafeBuf::addTag ( const char *mysite ,
-		       const char *tagname ,
-		       int32_t  now ,
-		       const char *user ,
-		       int32_t  ip ,
-		       const char *data ,
-		       int32_t  dsize ,
-		       rdbid_t rdbId,
-		       bool  pushRdbId ) {
-	int32_t need = dsize + 32 + sizeof(Tag);
-	if ( user   ) need += strlen(user);
-	if ( mysite ) need += strlen(mysite);
-	if ( ! reserve ( need ) ) return NULL;
-	if ( pushRdbId && ! pushChar(rdbId) ) return NULL;
-	Tag *tag = (Tag *)getBufPtr();
-	tag->set(mysite,tagname,now,user,ip,data,dsize);
-	incrementLength ( tag->getRecSize() );
-	if ( tag->getRecSize() > need ) gbshutdownLogicError();
-	return tag;
-}
-
-bool SafeBuf::addTag ( Tag *tag ) {
-	int32_t recSize = tag->getRecSize();
-	//tag->setDataSize();
-	if ( tag->m_recDataSize <= 16 ) { 
-		// note it
-		log(LOG_WARN, "safebuf: encountered corrupted tag datasize=%" PRId32".", tag->m_recDataSize);
-		return false;
-		//g_process.shutdownAbort(true); }
-	}
-	return safeMemcpy ( (char *)tag , recSize );
-}
-
 // this puts a \0 at the end but does not update m_length for the \0 
 bool  SafeBuf::safeStrcpy ( const char *s ) {
 	if ( ! s ) return true;

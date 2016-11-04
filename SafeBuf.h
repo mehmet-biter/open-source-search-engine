@@ -167,19 +167,6 @@ public:
 	// . "ts" is the delta-t in seconds
 	bool printTimeAgo (int32_t ts , int32_t now , bool shorthand = false ) ;
 
-	// . a function for adding Tags to buffer, like from Tagdb.cpp
-	// . if safebuf is a buffer of Tags from Tagdb.cpp
-	class Tag *addTag2( const char *mysite,const  char *tagname, int32_t now, const char *user, int32_t ip, int32_t val,
-						rdbid_t rdbId);
-
-	class Tag *addTag3( const char *mysite, const char *tagname, int32_t now, const char *user, int32_t ip, const char *data,
-						rdbid_t rdbId);
-
-	class Tag *addTag( const char *mysite, const char *tagname, int32_t now, const char *user, int32_t ip,const  char *data,
-					   int32_t dsize, rdbid_t rdbId, bool pushRdbId);
-
-	bool addTag ( class Tag *tag );
-
 	bool utf8Encode2( char *s, int32_t len, bool htmlEncode = false);
 
 	bool utf32Encode(UChar32* codePoints, int32_t cpLen);

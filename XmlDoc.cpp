@@ -20137,9 +20137,9 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 		if ( g_conf.m_logDebugLinkInfo )
 			log("xmldoc: adding tag site=%s sitenuminlinks=%" PRId32,
 			    mysite,m_siteNumInlinks);
-		if ( ! m_newTagBuf.addTag2(mysite,"sitenuminlinks",now,
-					   "xmldoc",
-					   *ip,m_siteNumInlinks,rdbId) )
+		if ( ! Tagdb::addTag2(&m_newTagBuf, mysite,"sitenuminlinks",now,
+				      "xmldoc",
+				      *ip,m_siteNumInlinks,rdbId) )
 			return NULL;
 		return &m_newTagBuf;
 	}
@@ -20235,7 +20235,7 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 	//
 	const char *oldsite = gr->getString( "site", NULL, NULL, &timestamp );
 	if ( ! oldsite || strcmp(oldsite,mysite) != 0 || now-timestamp > 10*86400)
-		tbuf->addTag3(mysite,"site",now,"xmldoc",*ip,mysite,rdbId);
+		Tagdb::addTag3(tbuf,mysite,"site",now,"xmldoc",*ip,mysite,rdbId);
 
 	//
 	// add firstip if not there at all
@@ -20247,8 +20247,8 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 	// if not there or if bogus, add it!! should override bogus firstips
 	if ( ! ip3 || ip3 == -1 ) {
 		char *ipstr = iptoa(m_ip);
-		tbuf->addTag3(mysite,"firstip",now,"xmldoc",*ip,ipstr,
-			     rdbId);
+		Tagdb::addTag3(tbuf,mysite,"firstip",now,"xmldoc",*ip,ipstr,
+			       rdbId);
 	}
 
 	// sitenuminlinks
@@ -20257,8 +20257,8 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 		if ( g_conf.m_logDebugLinkInfo )
 			log("xmldoc: adding tag site=%s sitenuminlinks=%" PRId32,
 			    mysite,m_siteNumInlinks);
-		if ( ! tbuf->addTag2(mysite,"sitenuminlinks",now,"xmldoc",
-				    *ip,m_siteNumInlinks,rdbId) )
+		if ( ! Tagdb::addTag2(tbuf,mysite,"sitenuminlinks",now,"xmldoc",
+				      *ip,m_siteNumInlinks,rdbId) )
 			return NULL;
 	}
 
@@ -20287,8 +20287,8 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 	if ( m_wasContentInjected && ! *isRoot ) addRootTitle = false;
 	// add it then
 	if ( addRootTitle &&
-	     ! tbuf->addTag(mysite,"roottitles",now,"xmldoc",
-			    *ip,m_rootTitleBuf,m_rootTitleBufSize,
+	     ! Tagdb::addTag(tbuf,mysite,"roottitles",now,"xmldoc",
+			     *ip,m_rootTitleBuf,m_rootTitleBufSize,
 			    rdbId,true) )
 		return NULL;
 
@@ -20371,8 +20371,8 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 		if ( ! ips && linkIp && linkIp != -1 ) {
 			// make it
 			char *ips = iptoa(linkIp);
-			if (!tbuf->addTag3(site,"firstip",now,"xmldoc",*ip,ips,
-					  rdbId))
+			if (!Tagdb::addTag3(tbuf,site,"firstip",now,"xmldoc",*ip,ips,
+					    rdbId))
 				return NULL;
 		}
 
@@ -20388,8 +20388,8 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 		// add tag for this outlink
 		// link is linked to by a high quality site! 500+ inlinks.
 		if ( gr->getNumTagTypes("authorityinlink") < 5 &&
-		     ! tbuf->addTag(site,"authorityinlink",now,"xmldoc",
-				    *ip,"1",2,rdbId,true) )
+		     ! Tagdb::addTag(tbuf,site,"authorityinlink",now,"xmldoc",
+				     *ip,"1",2,rdbId,true) )
 			return NULL;
 	}
 
