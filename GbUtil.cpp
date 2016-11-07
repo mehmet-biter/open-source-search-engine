@@ -118,10 +118,10 @@ bool printTimeAgo(SafeBuf *sb, time_t ago, time_t now, bool shorthand) {
 	
 	if(ago<0)
 		ago = 0;
-	int secs = (int32_t)((ago)/1);
-	int mins = (int32_t)((ago)/60);
-	int hrs  = (int32_t)((ago)/3600);
-	int days = (int32_t)((ago)/(3600*24));
+	int secs = (int)((ago)/1);
+	int mins = (int)((ago)/60);
+	int hrs  = (int)((ago)/3600);
+	int days = (int)((ago)/(3600*24));
 	
 	bool printed = true;
 	// print the time ago
