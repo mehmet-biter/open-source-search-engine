@@ -2888,7 +2888,7 @@ bool SpiderColl::scanListForWinners ( ) {
 		if ( priority >= MAX_SPIDER_PRIORITIES) {g_process.shutdownAbort(true);}
 
 		logDebug( g_conf.m_logDebugSpider, "spider: got ufn=%" PRId32" for %s (%" PRId64")",
-		          ufn, sreq->m_url, sreq->getUrlHash48() )
+		          ufn, sreq->m_url, sreq->getUrlHash48() );
 
 		if ( srep )
 			logDebug(g_conf.m_logDebugSpider, "spider: lastspidered=%" PRIu32, srep->m_spideredTime );

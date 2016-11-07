@@ -105,14 +105,19 @@ void loghex( int32_t type, void const *data, const unsigned int len, const char 
 	logf(LOG_ERROR, "%s:%s:%d: " msg, __FILE__, __func__, __LINE__, ##__VA_ARGS__)
 
 #define logDebug(condition, ...) \
-    if (condition) { \
-        logf(LOG_DEBUG, __VA_ARGS__); \
-    }
+	do { \
+		if (condition) { \
+			logf(LOG_DEBUG, __VA_ARGS__); \
+		} \
+	} while (0)
 
 #define logTrace(condition, msg, ...) \
-	if (condition) { \
-		logf(LOG_TRACE, "%s:%s:%d: " msg, __FILE__, __func__, __LINE__, ##__VA_ARGS__); \
-	}
+	do { \
+		if (condition) { \
+			logf(LOG_TRACE, "%s:%s:%d: " msg, __FILE__, __func__, __LINE__, ##__VA_ARGS__); \
+		} \
+	} while (0)
+
 
 class Log { 
 
