@@ -7,8 +7,9 @@ compiler:
 os:
 - linux
 script:
+ - ./runSonarQubeAnalysis.sh
 #- if [[ "$TRAVIS_EVENT_TYPE" == "cron" ]]; then
- -   sonar-scanner -Dsonar.login=$SONAR_TOKEN -e -X
+#    sonar-scanner -Dsonar.login=$SONAR_TOKEN -e -X
 #  else
 #    make
 #  fi
