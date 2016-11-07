@@ -239,11 +239,10 @@ public:
 public:
 	int32_t  m_capacity;
 	int32_t  m_length;
-protected:
+private:
 	char *m_buf;
-public:
-	const char *m_label;
 	bool  m_usingStack;
+	const char *m_label;
 };
 
 
