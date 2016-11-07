@@ -7,9 +7,9 @@ os:
 - linux
 script:
 - if [[ "$TRAVIS_EVENT_TYPE" == "cron" ]]; then
-    ./runSonarQubeAnalysis.sh
+    ./runSonarQubeAnalysis.sh;
   else
-    make
+    make;
   fi
 branches:
   only:
