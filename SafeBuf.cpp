@@ -16,8 +16,6 @@ SafeBuf::SafeBuf(int32_t initSize, const char *label ) {
 	m_buf = (char*)mrealloc(NULL, 0, m_capacity, m_label );
 	if(!m_buf) m_capacity = 0;
 	m_usingStack = false;
-	m_encoding = csUTF8;
-	m_renderHtml = false;
 }
 
 void SafeBuf::constructor ( ) {
@@ -25,9 +23,7 @@ void SafeBuf::constructor ( ) {
 	m_length = 0;
 	m_buf = NULL;
 	m_usingStack = false;
-	m_encoding = csUTF8;
 	m_label = NULL;
-	m_renderHtml = false;
 }	
 
 SafeBuf::SafeBuf() {
@@ -35,9 +31,7 @@ SafeBuf::SafeBuf() {
 	m_length = 0;
 	m_buf = NULL;
 	m_usingStack = false;
-	m_encoding = csUTF8;
 	m_label = NULL;
-	m_renderHtml = false;
 }
 
 void SafeBuf::setLabel ( const char *label ) {
@@ -49,9 +43,7 @@ SafeBuf::SafeBuf(char* stackBuf, int32_t cap, const char* label) {
 	m_capacity = cap;
 	m_buf = stackBuf;
 	m_length = 0;
-	m_encoding = csUTF8;
 	m_label = label;
-	m_renderHtml = false;
 }
 
 SafeBuf::SafeBuf(char *heapBuf, int32_t bufMax, int32_t bytesInUse, bool ownData) {
@@ -63,9 +55,7 @@ SafeBuf::SafeBuf(char *heapBuf, int32_t bufMax, int32_t bytesInUse, bool ownData
 	m_capacity = bufMax;
 	m_buf = heapBuf;
 	m_length = bytesInUse;
-	m_encoding = csUTF8;
 	m_label = NULL;
-	m_renderHtml = false;
 }
 
 SafeBuf::~SafeBuf() {
@@ -74,8 +64,7 @@ SafeBuf::~SafeBuf() {
 	m_buf = NULL;
 }
 
-bool SafeBuf::setBuf(char *newBuf, int32_t bufMax, int32_t bytesInUse, bool ownData,
-		     int16_t encoding ){
+bool SafeBuf::setBuf(char *newBuf, int32_t bufMax, int32_t bytesInUse, bool ownData) {
 	// . Passing in a null or a capacity smaller than the
 	//   used portion of the buffer is pointless, we have
 	//   more reliable functions for emptying a buffer.
@@ -89,8 +78,6 @@ bool SafeBuf::setBuf(char *newBuf, int32_t bufMax, int32_t bytesInUse, bool ownD
 	m_buf = newBuf;
 	m_capacity = bufMax;
 	m_length = bytesInUse;
-	m_encoding = csUTF8;
-	if ( encoding > 0 ) m_encoding = encoding;
 	return true;
 }
 
@@ -101,7 +88,6 @@ void SafeBuf::purge() {
 	m_capacity = 0;
 	m_length = 0;
 	m_usingStack = false;
-	m_encoding = csUTF8;
 }
 
 bool SafeBuf::safePrintf(const char *formatString , ...) {
@@ -549,11 +535,7 @@ bool SafeBuf::safeReplace2 (const char *s, int32_t slen,
 
 bool  SafeBuf::utf8Encode2(char *s, int32_t len, bool encodeHTML) {
 	int32_t tmp = m_length;
-	if ( m_encoding == csUTF8 ) {
-		if (! safeMemcpy(s,len)) return false;
-	} else {
-		return false;
-	}
+	if (! safeMemcpy(s,len)) return false;
 	if (!encodeHTML) return true;
 	return htmlEncode(m_length-tmp);
 }
@@ -561,8 +543,6 @@ bool  SafeBuf::utf8Encode2(char *s, int32_t len, bool encodeHTML) {
 
 
 bool SafeBuf::utf32Encode(UChar32* codePoints, int32_t cpLen) {
-	if(m_encoding != csUTF8) return safePrintf("FIXME %s:%i", __FILE__, __LINE__);
-
     int32_t need = 0;
     for(int32_t i = 0; i < cpLen;i++) need += utf8Size(codePoints[i]);
 	if(!reserve(need)) return false;
@@ -576,8 +556,6 @@ bool SafeBuf::utf32Encode(UChar32* codePoints, int32_t cpLen) {
 
 bool  SafeBuf::htmlEncode(const char *s, int32_t lenArg, bool encodePoundSign , int32_t truncateLen ) {
 	// . we assume we are encoding into utf8
-	// . sanity check
-	if ( m_encoding == csUTF16 ) gbshutdownLogicError();
 
 	// the new truncation logic
 	int32_t len = lenArg;
@@ -743,7 +721,6 @@ bool SafeBuf::stealBuf ( SafeBuf *sb ) {
 	m_length     = sb->m_length;
 	m_buf        = sb->m_buf;
 	m_usingStack = sb->m_usingStack;
-	m_encoding   = sb->m_encoding;
 	// clear his ptrs
 	sb->m_buf = NULL;
 	sb->m_capacity = 0;
@@ -1358,88 +1335,6 @@ bool SafeBuf::base64Decode ( const char *src , int32_t srcLen ) {
 	return true;
 }
 
-
-// "ts" is a delta-t in seconds
-bool SafeBuf::printTimeAgo ( int32_t ago , int32_t now , bool shorthand ) {
-	// Jul 23, 1971
-	if ( ! reserve2x(200) ) return false;
-	// for printing
-	int32_t secs = 1000;
-	int32_t mins = 1000;
-	int32_t hrs  = 1000;
-	int32_t days = 0;
-	if ( ago > 0 ) {
-		secs = (int32_t)((ago)/1);
-		mins = (int32_t)((ago)/60);
-		hrs  = (int32_t)((ago)/3600);
-		days = (int32_t)((ago)/(3600*24));
-		if ( mins < 0 ) mins = 0;
-		if ( hrs  < 0 ) hrs  = 0;
-		if ( days < 0 ) days = 0;
-	}
-	bool printed = true;
-	// print the time ago
-	if ( shorthand ) {
-		if ( mins == 0 ) 
-			safePrintf("%" PRId32" secs ago",secs);
-		else 
-		if ( mins == 1)
-			safePrintf("%" PRId32" min ago",mins);
-		else 
-		if (mins < 60)
-			safePrintf ( "%" PRId32" mins ago",mins);
-		else 
-		if ( hrs == 1 )
-			safePrintf ( "%" PRId32" hr ago",hrs);
-		else 
-		if ( hrs < 24 )
-			safePrintf ( "%" PRId32" hrs ago",hrs);
-		else 
-		if ( days == 1 )
-			safePrintf ( "%" PRId32" day ago",days);
-		else 
-		if (days < 7 )
-			safePrintf ( "%" PRId32" days ago",days);
-		else
-			printed = false;
-	}
-	else {
-		if ( mins == 0 ) 
-			safePrintf("%" PRId32" seconds ago",secs);
-		else 
-		if ( mins == 1 )
-			safePrintf("%" PRId32" minute ago",mins);
-		else 
-		if (mins < 60 )
-			safePrintf ( "%" PRId32" minutes ago",mins);
-		else 
-		if ( hrs == 1 )
-			safePrintf ( "%" PRId32" hour ago",hrs);
-		else 
-		if ( hrs < 24 )
-			safePrintf ( "%" PRId32" hours ago",hrs);
-		else 
-		if ( days == 1 )
-			safePrintf ( "%" PRId32" day ago",days);
-		else 
-		if ( days < 7 )
-			safePrintf ( "%" PRId32" days ago",days);
-		else
-			printed = false;
-	}
-	// do not show if more than 1 wk old! we want to seem as
-	// fresh as possible
-
-	if ( ! printed && ago > 0 ) { // && si->m_isMasterAdmin ) {
-		time_t ts = now - ago;
-		struct tm tm_buf;
-		struct tm *timeStruct = localtime_r(&ts,&tm_buf);
-		char tmp[100];
-		strftime(tmp,100,"%b %d %Y",timeStruct);
-		safeStrcpy(tmp);
-	}
-	return true;
-}
 
 bool SafeBuf::hasDigits() const {
 	if ( m_length <= 0 ) return false;

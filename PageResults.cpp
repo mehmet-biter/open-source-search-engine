@@ -1748,47 +1748,6 @@ bool printSearchResultsTail ( State0 *st ) {
 	return true;
 }
 
-static bool printTimeAgo ( SafeBuf *sb, time_t ts , const char *prefix , SearchInput *si ) {
-	// Jul 23, 1971
-	sb->reserve2x(200);
-	int32_t now = getTimeGlobal();
-	// for printing
-	int32_t mins = 1000;
-	int32_t hrs  = 1000;
-	int32_t days = 1000;
-	if ( ts > 0 ) {
-		mins = (int32_t)((now - ts)/60);
-		hrs  = (int32_t)((now - ts)/3600);
-		days = (int32_t)((now - ts)/(3600*24));
-		if ( mins < 0 ) mins = 0;
-		if ( hrs  < 0 ) hrs  = 0;
-		if ( days < 0 ) days = 0;
-	}
-	// print the time ago
-	if      ( mins ==1)
-		sb->safePrintf(" - %s: %" PRId32" minute ago",prefix,mins);
-	else if (mins<60)
-		sb->safePrintf ( " - %s: %" PRId32" minutes ago",prefix,mins);
-	else if ( hrs == 1 )
-		sb->safePrintf ( " - %s: %" PRId32" hour ago",prefix,hrs);
-	else if ( hrs < 24 )
-		sb->safePrintf ( " - %s: %" PRId32" hours ago",prefix,hrs);
-	else if ( days == 1 )
-		sb->safePrintf ( " - %s: %" PRId32" day ago",prefix,days);
-	else if (days< 7 )
-		sb->safePrintf ( " - %s: %" PRId32" days ago",prefix,days);
-	// do not show if more than 1 wk old! we want to seem as
-	// fresh as possible
-	else if ( ts > 0 ) { // && si->m_isMasterAdmin ) {
-		struct tm tm_buf;
-		struct tm *timeStruct = localtime_r(&ts,&tm_buf);
-		sb->safePrintf(" - %s: ",prefix);
-		char tmp[100];
-		strftime(tmp,100,"%b %d %Y",timeStruct);
-		sb->safeStrcpy(tmp);
-	}
-	return true;
-}
 
 static int linkSiteRankCmp (const void *v1, const void *v2) {
 	Inlink *i1 = *(Inlink **)v1;
@@ -2779,13 +2738,19 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 
 	// now the last spidered date of the document
 	time_t ts = mr->m_lastSpidered;
-	if ( si->m_format == FORMAT_HTML ) 
-		printTimeAgo ( sb , ts , "indexed" , si );
+	if(si->m_format == FORMAT_HTML && ts>0) {
+		sb->safePrintf(" - indexed: ");
+		time_t now = getTimeGlobal();
+		printTimeAgo(sb, now-ts, now, false);
+	}
 
 	// the date it was last modified
 	ts = mr->m_lastModified;
-	if ( si->m_format == FORMAT_HTML ) 
-		printTimeAgo ( sb , ts , "modified" , si );
+	if(si->m_format == FORMAT_HTML && ts>0) {
+		sb->safePrintf(" - modified: ");
+		time_t now = getTimeGlobal();
+		printTimeAgo(sb, now-ts, now, false);
+	}
 
 	//
 	// more xml stuff

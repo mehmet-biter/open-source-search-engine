@@ -36,6 +36,7 @@ int copyFile(const char *src, const char *dst)
 			}
 		} else {
 			log(LOG_ERROR,"copyFile:open(%s) failed with errno=%d (%s)", src, errno, strerror(errno));
+			delete[] buffer;
 			errno = saved_errno;
 			return -1;
 		}

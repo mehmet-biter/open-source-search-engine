@@ -39,8 +39,7 @@ public:
 	bool setBuf(char *newBuf, 
 		    int32_t bufMax, 
 		    int32_t bytesInUse, 
-		    bool ownData,
-		    int16_t encoding = csUTF8 );
+		    bool ownData);
 
 	// set buffer from another safebuf, stealing it
 	bool stealBuf ( SafeBuf *sb );
@@ -160,10 +159,6 @@ public:
 
 	bool hasDigits() const;
 
-	// . like "1 minute ago" "5 hours ago" "3 days ago" etc.
-	// . "ts" is the delta-t in seconds
-	bool printTimeAgo (int32_t ts , int32_t now , bool shorthand = false ) ;
-
 	bool utf8Encode2( char *s, int32_t len, bool htmlEncode = false);
 
 	bool utf32Encode(UChar32* codePoints, int32_t cpLen);
@@ -242,21 +237,12 @@ public:
 	const char& operator[](int32_t i) const;
 	
 public:
-	int32_t  m_capacity;
 	int32_t  m_length;
-protected:
+private:
+	int32_t  m_capacity;
 	char *m_buf;
-public:
-	const char *m_label;
 	bool  m_usingStack;
-	int16_t m_encoding; // output charset
-
-	// . a special flag used by PageParser.cpp
-	// . if this is true it PageParser shows the page in its html form,
-	//   otherwise, if false, it converts the "<" to &lt; etc. so we see the html
-	//   source view.
-	// . only Words.cpp looks at this flag
-	bool m_renderHtml;
+	const char *m_label;
 };
 
 

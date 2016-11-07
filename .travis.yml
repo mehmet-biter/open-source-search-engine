@@ -1,0 +1,21 @@
+language: cpp
+sudo: required
+dist: trusty
+compiler:
+- gcc
+os:
+- linux
+script:
+- if [[ "$TRAVIS_EVENT_TYPE" == "cron" ]]; then
+    ./runSonarQubeAnalysis.sh;
+  else
+    make;
+  fi
+branches:
+  only:
+  - master
+addons:
+  sonarqube: true
+  apt:
+    packages:
+    - libssl-dev

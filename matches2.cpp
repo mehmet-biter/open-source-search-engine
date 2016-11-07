@@ -15,7 +15,7 @@
 // . a space (includes \r \n) in a needle will match a consecutive sequence
 //   of spaces in the haystack
 
-#define BITVEC uint64_t
+typedef uint64_t BITVEC;
 
 char *getMatches2 ( Needle *needles          , 
 		    int32_t    numNeedles       ,
@@ -116,14 +116,12 @@ char *getMatches2 ( Needle *needles          ,
 	s3 = (BITVEC *)(buf + offset);
 	offset += sizeof(BITVEC)*256;
 
-	BITVEC mask;
-
 	// set the letter tables, s0[] through sN[], for each needle
 	for ( int32_t i = 0 ; i < numNeedlesToInit ; i++ ) {
 		unsigned char *w    = (unsigned char *)needles[i].m_string;
 		unsigned char *wend = w + needles[i].m_stringSize;
 		// BITVEC is now 64 bits
-		mask = (1<<(i&0x3f)); // (1<<(i%64));
+		BITVEC mask = ((BITVEC)1)<<(i&0x3f); // (1<<(i%64));
 		// if the needle is small, fill up the remaining letter tables
 		// with its mask... so it matches any character in haystack.
 		s0[(unsigned char)to_lower_a(*w)] |= mask;
@@ -182,7 +180,7 @@ char *getMatches2 ( Needle *needles          ,
 		// analytics...
 		
 		// is this a possible match? (this should be VERY fast)
-		mask  = s0[*(p+0)];
+		BITVEC mask  = s0[*(p+0)];
 		if ( ! mask ) continue;
 		mask &= s1[*(p+1)];
 		if ( ! mask ) continue;
@@ -315,7 +313,7 @@ char *getMatches2 ( Needle *needles          ,
 	for ( ; p < pend ; p++ ) {
 
 		// is this a possible match? (this should be VERY fast)
-		mask  = s0[*(p+0)];
+		BITVEC mask  = s0[*(p+0)];
 		if ( ! mask ) continue;
 		if ( p+1 < pend ) {
 			mask &= s1[*(p+1)];

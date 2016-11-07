@@ -99,7 +99,7 @@ bool Profiler::init() {
 	// if ( ! m_quickpollMissBuf.reserve ( 20000 ) )
 	// 	return false;
 
-	if ( m_ipBuf.m_capacity <= 0 &&
+	if ( m_ipBuf.getCapacity() <= 0 &&
 	     ! m_ipBuf.reserve ( 5000000 , "profbuf" ) )
 		return false;
 
@@ -942,8 +942,7 @@ Profiler::getStackFrame() {
 	// 	return;
 
 	// the lines calling functions
-	if ( g_profiler.m_ipBuf.m_length + 8*32 >= 
-	     g_profiler.m_ipBuf.m_capacity )
+	if ( g_profiler.m_ipBuf.getAvail() <= 8*32 )
 	 	return;
 
 	// support 64-bit

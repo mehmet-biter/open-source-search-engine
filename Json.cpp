@@ -5,7 +5,7 @@ class JsonItem *Json::addNewItem () {
 
 	JsonItem *ji = (JsonItem *)m_sb.getBufPtr();
 
-	if ( m_sb.m_length + (int32_t)sizeof(JsonItem) > m_sb.m_capacity ) {
+	if(m_sb.getAvail() < (int32_t)sizeof(JsonItem)) {
 		log("json: preventing buffer breach");
 		return NULL;
 	}

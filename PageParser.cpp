@@ -247,10 +247,6 @@ static bool sendPageParser2 ( TcpSocket   *s ,
 	if ( linkInfoColl ) strcpy ( st->m_linkInfoColl , linkInfoColl );
 	else st->m_linkInfoColl[0] = '\0';
 	
-	// set the flag in our SafeBuf class so that Words.cpp knows to show 
-	// html or html source depending on this value
-	st->m_xbuf.m_renderHtml = st->m_render;
-
 	// should we use the old title rec?
 	st->m_old    = old;
 	// are we coming from a local machine?
@@ -794,10 +790,6 @@ bool sendPageAnalyze ( TcpSocket *s , HttpRequest *r ) {
 	if ( linkInfoColl ) strcpy ( st->m_linkInfoColl , linkInfoColl );
 	else st->m_linkInfoColl[0] = '\0';
 	
-	// set the flag in our SafeBuf class so that Words.cpp knows to show 
-	// html or html source depending on this value
-	//st->m_xbuf.m_renderHtml = st->m_render;
-
 	// should we use the old title rec?
 	st->m_old    = old;
 	// are we coming from a local machine?

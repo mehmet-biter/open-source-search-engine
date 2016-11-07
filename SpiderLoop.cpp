@@ -178,7 +178,7 @@ void SpiderLoop::startLoop ( ) {
 				  false , // use half keys
 				  "lockcache", // dbname
 				  false  ) )
-		log("spider: failed to init lock cache. performance hit." );
+		log(LOG_WARN, "spider: failed to init lock cache. performance hit." );
 
 
 	if ( ! m_winnerListCache.init ( 20000000 , // maxcachemem, 20MB
@@ -188,7 +188,7 @@ void SpiderLoop::startLoop ( ) {
 					false , // use half keys
 					"winnerspidercache", // dbname
 					false  ) )
-		log("spider: failed to init winnerlist cache. slows down.");
+		log(LOG_WARN, "spider: failed to init winnerlist cache. slows down.");
 
 	// dole some out
 	//g_spiderLoop.doleUrls1();
@@ -222,10 +222,6 @@ void SpiderLoop::startLoop ( ) {
 // call this every 50ms it seems to try to spider urls and populate doledb
 // from the waiting tree
 void doneSleepingWrapperSL ( int fd , void *state ) {
-	//SpiderLoop *THIS = (SpiderLoop *)state;
-	// dole some out
-	//g_spiderLoop.doleUrls1();
-
 	// if spidering disabled then do not do this crap
 	if ( ! g_conf.m_spideringEnabled )  return;
 	if ( ! g_hostdb.getMyHost( )->m_spiderEnabled ) return;
@@ -241,14 +237,11 @@ void doneSleepingWrapperSL ( int fd , void *state ) {
 		// let admin know why we are not spidering
 		static bool s_printed = false;
 		if ( ! s_printed ) {
-			logf(LOG_DEBUG,"spider: NOT SPIDERING until clock "
-			     "is in sync with host #0.");
+			logf(LOG_DEBUG,"spider: NOT SPIDERING until clock is in sync with host #0.");
 			s_printed = true;
 		}
 		return;
 	}
-
-	//if ( g_hostdb.hasDeadHost() ) return;
 
 	static int32_t s_count = -1;
 	// count these calls
@@ -260,7 +253,6 @@ void doneSleepingWrapperSL ( int fd , void *state ) {
 	CollectionRec *nextActive = g_spiderLoop.getActiveList(); 
 	collnum_t nextActiveCollnum = nextActive ? nextActive->m_collnum : static_cast<collnum_t>( -1 );
 
-	//for ( int32_t i = 0 ; i < nc ; i++ ) {
 	for ( ; nextActive ;  ) {
 		// before we assign crp to nextActive, ensure that it did not get deleted on us.
 		// if the next collrec got deleted, tr will be NULL
@@ -2051,7 +2043,7 @@ void updateAllCrawlInfosSleepWrapper ( int fd , void *state ) {
 		s_requests++;
 		// launch it
 		if (!g_udpServer.sendRequest(request, requestSize, msg_type_c1, h->m_ip, h->m_port, h->m_hostId, NULL, NULL, gotCrawlInfoReply)) {
-			log("spider: error sending c1 request: %s", mstrerror(g_errno));
+			log(LOG_WARN, "spider: error sending c1 request: %s", mstrerror(g_errno));
 			s_replies++;
 		}
 	}
@@ -2352,8 +2344,7 @@ void handleRequestc1 ( UdpSlot *slot , int32_t niceness ) {
 	char *req = slot->m_readBuf;
 
 	if ( ! slot->m_host ) {
-		log("handc1: no slot->m_host from ip=%s udpport=%i",
-		    iptoa(slot->getIp()),(int)slot->getPort());
+		log(LOG_WARN, "handc1: no slot->m_host from ip=%s udpport=%i", iptoa(slot->getIp()),(int)slot->getPort());
 		g_errno = ENOHOSTS;
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__ );
 		g_udpServer.sendErrorReply ( slot , g_errno );
@@ -2365,8 +2356,6 @@ void handleRequestc1 ( UdpSlot *slot , int32_t niceness ) {
 	uint32_t now = (uint32_t)getTimeGlobalNoCore();
 
 	uint64_t nowMS = gettimeofdayInMillisecondsGlobalNoCore();
-
-	//SpiderColl *sc = g_spiderCache.getSpiderColl(collnum);
 
 	for ( int32_t i = 0 ; i < g_collectiondb.m_numRecs ; i++ ) {
 		CollectionRec *cr = g_collectiondb.m_recs[i];
