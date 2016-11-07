@@ -237,9 +237,9 @@ public:
 	const char& operator[](int32_t i) const;
 	
 public:
-	int32_t  m_capacity;
 	int32_t  m_length;
 private:
+	int32_t  m_capacity;
 	char *m_buf;
 	bool  m_usingStack;
 	const char *m_label;
