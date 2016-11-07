@@ -74,9 +74,9 @@ public:
 		    int32_t   maxTreeMem      , //=  1024*1024*32 ,
 		    int32_t   maxTreeNodes    ,
 		    bool   useHalfKeys     ,
-		    char   keySize = 12    ,
-		    bool   isCollectionLess = false,
-		    bool	useIndexFile = false );
+		    char   keySize,
+		    bool   isCollectionLess,
+		    bool   useIndexFile);
 	// . frees up all the memory and closes all files
 	// . suspends any current merge (saves state to disk)
 	// . calls reset() for each file

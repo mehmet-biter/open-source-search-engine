@@ -14,6 +14,7 @@ public:
 	~RdbIndexQuery();
 
 	int32_t getFilePos(uint64_t docId, bool *isDel = NULL) const;
+	bool documentIsInFile(uint64_t docId, int32_t filenum) const;
 
 	void printIndex() const;
 

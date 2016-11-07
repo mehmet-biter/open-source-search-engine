@@ -119,7 +119,9 @@ bool Linkdb::init ( ) {
 			    maxTreeMem ,
 			    maxTreeNodes ,
 			    false, // true     , // use half keys
-			    sizeof(key224_t) );
+			    sizeof(key224_t),    // key size
+			    false,          //isCollectionLess
+			    false);         //useIndexFile
 }
 
 // init the rebuild/secondary rdb, used by PageRepair.cpp
@@ -136,7 +138,9 @@ bool Linkdb::init2 ( int32_t treeMem ) {
 			    treeMem       , // g_conf.m_clusterdbMaxTreeMem,
 			    maxTreeNodes  ,
 			    false, // true          , // half keys?
-			    sizeof(key224_t)); // key size
+			    sizeof(key224_t),  // key size
+			    false,          //isCollectionLess
+			    false);         //useIndexFile
 }
 
 bool Linkdb::verify ( char *coll ) {

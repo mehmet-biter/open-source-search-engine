@@ -32,7 +32,9 @@ bool Clusterdb::init ( ) {
 			    g_conf.m_clusterdbMaxTreeMem,
 			    maxTreeNodes  , // maxTreeNodes  ,
 			    true          , // half keys?
-			    12);     // key size
+			    12,             // key size
+			    false,          //isCollectionLess
+			    false);         //useIndexFile
 }
 
 // init the rebuild/secondary rdb, used by PageRepair.cpp
@@ -48,7 +50,9 @@ bool Clusterdb::init2 ( int32_t treeMem ) {
 			    treeMem       , // g_conf.m_clusterdbMaxTreeMem,
 			    maxTreeNodes  ,
 			    true          , // half keys?
-			    12            );     // key size
+			    12,             // key size
+			    false,          //isCollectionLess
+			    false);         //useIndexFile
 }
 
 bool Clusterdb::verify(const char *coll) {

@@ -1065,7 +1065,9 @@ bool Tagdb::init ( ) {
 			    maxTreeNodes               ,
 			    // now we balance so Sync.cpp can ordered huge list
 			    false                      , // half keys?
-			    sizeof(key128_t));     // key size
+			    sizeof(key128_t),    // key size
+			    false,               //isCollectionLess
+			    false);              //useIndexFile
 }
 
 bool Tagdb::verify ( const char *coll ) {

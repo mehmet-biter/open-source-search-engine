@@ -43,7 +43,10 @@ bool Doledb::init ( ) {
 			    2                           , // MinFilesToMerge
 			    maxTreeMem                  ,
 			    maxTreeNodes                ,
-			    false                       ); // half keys?
+			    false,                         // half keys?
+			    12,             // key size
+			    false,          //isCollectionLess
+			    false);         //useIndexFile
 }
 
 //
