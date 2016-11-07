@@ -47,6 +47,26 @@ int32_t RdbIndexQuery::getFilePos(uint64_t docId, bool *isDel) const {
 //	gbshutdownLogicError();
 }
 
+bool RdbIndexQuery::documentIsInFile(uint64_t docId, int32_t fileNum) const {
+	if (fileNum == m_numFiles) {
+		if (m_treeIndexData.get()) {
+			auto it = std::lower_bound(m_treeIndexData->cbegin(), m_treeIndexData->cend(), docId << RdbIndex::s_docIdOffset);
+			if (it != m_treeIndexData->cend() && ((*it >> RdbIndex::s_docIdOffset) == docId)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	auto it = std::lower_bound(m_globalIndexData->cbegin(), m_globalIndexData->cend(), docId << RdbBase::s_docIdFileIndex_docIdDelKeyOffset);
+	if (it != m_globalIndexData->cend() && ((*it >> RdbBase::s_docIdFileIndex_docIdDelKeyOffset) == docId)) {
+		return (static_cast<int32_t>(*it & RdbBase::s_docIdFileIndex_filePosMask) == fileNum);
+	}
+
+	return false;
+}
+
 void RdbIndexQuery::printIndex() const {
 	if (m_treeIndexData.get()) {
 		for (auto key : *m_treeIndexData) {
