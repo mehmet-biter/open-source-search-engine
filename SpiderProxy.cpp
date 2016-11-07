@@ -12,6 +12,7 @@
 #include "UdpSlot.h"
 #include "UdpServer.h"
 #include "Loop.h"
+#include "GbUtil.h"
 
 
 //#define LOADPOINT_EXPIRE_MS (10*60*1000)
@@ -442,7 +443,7 @@ bool printSpiderProxyTable ( SafeBuf *sb ) {
 		if ( sp->m_lastSuccessfulTestMS <= 0 )
 			sb->safePrintf("none");
 		else
-			sb->printTimeAgo ( ago , now , true );
+			printTimeAgo(sb, ago, now, true);
 		sb->safePrintf("</td>");
 
 		// last download time ago
@@ -452,7 +453,7 @@ bool printSpiderProxyTable ( SafeBuf *sb ) {
 		if ( sp->m_lastDownloadTestAttemptMS<= 0 )
 			sb->safePrintf("none");
 		else
-			sb->printTimeAgo ( ago , now , true );
+			printTimeAgo(sb, ago, now, true);
 		sb->safePrintf("</td>");
 
 		// how long to download the test url?

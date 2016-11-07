@@ -109,3 +109,65 @@ bool urlEncode(SafeBuf *dstBuf,
 	dstBuf->nullTerm();
 	return true; //todo: uhm... aren't we supposed to return success/failure?
 }
+
+
+
+bool printTimeAgo(SafeBuf *sb, time_t ago, time_t now, bool shorthand) {
+	if(! sb->reserve(200))
+		return false;
+	
+	if(ago<0)
+		ago = 0;
+	int secs = (int32_t)((ago)/1);
+	int mins = (int32_t)((ago)/60);
+	int hrs  = (int32_t)((ago)/3600);
+	int days = (int32_t)((ago)/(3600*24));
+	
+	bool printed = true;
+	// print the time ago
+	if(shorthand) {
+		if(mins == 0)
+			sb->safePrintf("%d secs ago",secs);
+		else if(mins == 1)
+			sb->safePrintf("%d min ago",mins);
+		else if (mins < 60)
+			sb->safePrintf("%d mins ago",mins);
+		else if(hrs == 1)
+			sb->safePrintf("%d hr ago",hrs);
+		else if(hrs < 24)
+			sb->safePrintf("%d hrs ago",hrs);
+		else if(days == 1)
+			sb->safePrintf("%d day ago",days);
+		else if (days < 7)
+			sb->safePrintf("%d days ago",days);
+		else
+			printed = false;
+	} else {
+		if(mins == 0)
+			sb->safePrintf("%d seconds ago",secs);
+		else if(mins == 1)
+			sb->safePrintf("%d minute ago",mins);
+		else if (mins < 60)
+			sb->safePrintf("%d minutes ago",mins);
+		else if(hrs == 1)
+			sb->safePrintf("%d hour ago",hrs);
+		else if(hrs < 24)
+			sb->safePrintf("%d hours ago",hrs);
+		else if(days == 1)
+			sb->safePrintf("%d day ago",days);
+		else if(days < 7)
+			sb->safePrintf("%d days ago",days);
+		else
+			printed = false;
+	}
+
+	if(!printed && ago > 0) {
+		time_t ts = now - ago;
+		struct tm tm_buf;
+		struct tm *timeStruct = localtime_r(&ts,&tm_buf);
+		char tmp[100];
+		strftime(tmp,100,"%B %d %Y",timeStruct);
+		sb->safeStrcpy(tmp);
+	}
+	return true;
+}

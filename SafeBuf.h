@@ -160,10 +160,6 @@ public:
 
 	bool hasDigits() const;
 
-	// . like "1 minute ago" "5 hours ago" "3 days ago" etc.
-	// . "ts" is the delta-t in seconds
-	bool printTimeAgo (int32_t ts , int32_t now , bool shorthand = false ) ;
-
 	bool utf8Encode2( char *s, int32_t len, bool htmlEncode = false);
 
 	bool utf32Encode(UChar32* codePoints, int32_t cpLen);
