@@ -78,11 +78,7 @@ class HttpRequest {
 	// just does a simply gbmemcpy() operation, since it should be pointing
 	// into the TcpSocket's buffer which is safe until after reply is sent
 	// . returns false and sets g_errno on error, true otherwise
-	bool copy ( class HttpRequest *r , bool steal = false ) ;
-
-	// like copy() but doesn't do a copy, steals the ptrs and sets
-	// hr->m_usingStack to true so it won't free its buffer
-	bool stealBuf ( class HttpRequest *hr ) {return copy ( hr , true ); }
+	bool copy(const HttpRequest *r);
 
 	// . the url being reuqested
 	// . removes &code= facebook cruft
