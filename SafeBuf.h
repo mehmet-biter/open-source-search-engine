@@ -245,7 +245,6 @@ protected:
 public:
 	const char *m_label;
 	bool  m_usingStack;
-	int16_t m_encoding; // output charset
 };
 
 

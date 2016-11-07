@@ -16,7 +16,6 @@ SafeBuf::SafeBuf(int32_t initSize, const char *label ) {
 	m_buf = (char*)mrealloc(NULL, 0, m_capacity, m_label );
 	if(!m_buf) m_capacity = 0;
 	m_usingStack = false;
-	m_encoding = csUTF8;
 }
 
 void SafeBuf::constructor ( ) {
@@ -24,7 +23,6 @@ void SafeBuf::constructor ( ) {
 	m_length = 0;
 	m_buf = NULL;
 	m_usingStack = false;
-	m_encoding = csUTF8;
 	m_label = NULL;
 }	
 
@@ -33,7 +31,6 @@ SafeBuf::SafeBuf() {
 	m_length = 0;
 	m_buf = NULL;
 	m_usingStack = false;
-	m_encoding = csUTF8;
 	m_label = NULL;
 }
 
@@ -46,7 +43,6 @@ SafeBuf::SafeBuf(char* stackBuf, int32_t cap, const char* label) {
 	m_capacity = cap;
 	m_buf = stackBuf;
 	m_length = 0;
-	m_encoding = csUTF8;
 	m_label = label;
 }
 
@@ -59,7 +55,6 @@ SafeBuf::SafeBuf(char *heapBuf, int32_t bufMax, int32_t bytesInUse, bool ownData
 	m_capacity = bufMax;
 	m_buf = heapBuf;
 	m_length = bytesInUse;
-	m_encoding = csUTF8;
 	m_label = NULL;
 }
 
@@ -84,8 +79,6 @@ bool SafeBuf::setBuf(char *newBuf, int32_t bufMax, int32_t bytesInUse, bool ownD
 	m_buf = newBuf;
 	m_capacity = bufMax;
 	m_length = bytesInUse;
-	m_encoding = csUTF8;
-	if ( encoding > 0 ) m_encoding = encoding;
 	return true;
 }
 
@@ -96,7 +89,6 @@ void SafeBuf::purge() {
 	m_capacity = 0;
 	m_length = 0;
 	m_usingStack = false;
-	m_encoding = csUTF8;
 }
 
 bool SafeBuf::safePrintf(const char *formatString , ...) {
@@ -544,11 +536,7 @@ bool SafeBuf::safeReplace2 (const char *s, int32_t slen,
 
 bool  SafeBuf::utf8Encode2(char *s, int32_t len, bool encodeHTML) {
 	int32_t tmp = m_length;
-	if ( m_encoding == csUTF8 ) {
-		if (! safeMemcpy(s,len)) return false;
-	} else {
-		return false;
-	}
+	if (! safeMemcpy(s,len)) return false;
 	if (!encodeHTML) return true;
 	return htmlEncode(m_length-tmp);
 }
@@ -556,8 +544,6 @@ bool  SafeBuf::utf8Encode2(char *s, int32_t len, bool encodeHTML) {
 
 
 bool SafeBuf::utf32Encode(UChar32* codePoints, int32_t cpLen) {
-	if(m_encoding != csUTF8) return safePrintf("FIXME %s:%i", __FILE__, __LINE__);
-
     int32_t need = 0;
     for(int32_t i = 0; i < cpLen;i++) need += utf8Size(codePoints[i]);
 	if(!reserve(need)) return false;
@@ -571,8 +557,6 @@ bool SafeBuf::utf32Encode(UChar32* codePoints, int32_t cpLen) {
 
 bool  SafeBuf::htmlEncode(const char *s, int32_t lenArg, bool encodePoundSign , int32_t truncateLen ) {
 	// . we assume we are encoding into utf8
-	// . sanity check
-	if ( m_encoding == csUTF16 ) gbshutdownLogicError();
 
 	// the new truncation logic
 	int32_t len = lenArg;
@@ -738,7 +722,6 @@ bool SafeBuf::stealBuf ( SafeBuf *sb ) {
 	m_length     = sb->m_length;
 	m_buf        = sb->m_buf;
 	m_usingStack = sb->m_usingStack;
-	m_encoding   = sb->m_encoding;
 	// clear his ptrs
 	sb->m_buf = NULL;
 	sb->m_capacity = 0;

@@ -135,7 +135,6 @@ bool HttpRequest::copy ( class HttpRequest *r , bool stealBuf ) {
 	m_reqBuf.m_length = 0;
 	//m_reqBuf.m_buf = NULL;
 	m_reqBuf.m_usingStack = false;
-	m_reqBuf.m_encoding = csUTF8;
 
 	if ( stealBuf ) {
 		// if he's on the stack, that's a problem!
