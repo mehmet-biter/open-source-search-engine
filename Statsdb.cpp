@@ -188,7 +188,8 @@ bool Statsdb::init ( ) {
 			    maxTreeNodes		,
 			    false			, // use half keys?
 			    sizeof(key96_t)		, // key size
-			    true ) ) // is collectionless?
+			    true,                         // isCollectionLess
+			    false) )                      // useIndexFile
 		return false;
 
 	m_disabled = false;

@@ -55,7 +55,10 @@ bool Titledb::init ( ) {
 			    -1,
 			    g_conf.m_titledbMaxTreeMem  ,
 			    maxTreeNodes                ,
-			    false                       ); // half keys?
+			    false,                         // half keys?
+			    12,             // key size
+			    false,          //isCollectionLess
+			    false);         //useIndexFile
 
 	// validate
 	//return verify ( );
@@ -73,7 +76,10 @@ bool Titledb::init2 ( int32_t treeMem ) {
 			    240                         , // MinFilesToMerge
 			    treeMem                     ,
 			    maxTreeNodes                ,
-			    false                       ); // half keys?
+			    false,                         // half keys?
+			    12,             // key size
+			    false,          //isCollectionLess
+			    false);         //useIndexFile
 
 	// validate
 	//return verify ( );
