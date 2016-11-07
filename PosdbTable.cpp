@@ -146,7 +146,7 @@ void PosdbTable::freeMem ( ) {
 //         quickly using Msg36!
 // . we now support multiple plus signs before the query term
 // . lists[] and termFreqs[] must be 1-1 with q->m_qterms[]
-void PosdbTable::init(Query *q, bool debug, void *logstate, TopTree *topTree, Msg2 *msg2, Msg39Request *r) {
+void PosdbTable::init(Query *q, bool debug, void *logstate, TopTree *topTree, const RdbIndexQuery &indexQuery, Msg2 *msg2, Msg39Request *r) {
 	// sanity check -- watch out for double calls
 	if ( m_initialized )
 		gbshutdownAbort(true);
@@ -179,7 +179,7 @@ void PosdbTable::init(Query *q, bool debug, void *logstate, TopTree *topTree, Ms
 	// set this now
 	//m_collnum = cr->m_collnum;
 
-	// save it
+	m_indexQuery = &indexQuery;
 	m_topTree = topTree;
 
 	// remember the query class, it has all the info about the termIds

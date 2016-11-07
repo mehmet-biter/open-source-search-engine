@@ -4,6 +4,7 @@
 #include "JobScheduler.h"
 #include "UdpServer.h"
 #include "RdbList.h"
+#include "RdbIndexQuery.h"
 #include "Sanity.h"
 #include "Posdb.h"
 #include "Mem.h"
@@ -383,8 +384,15 @@ void Msg39::controlLoop ( ) {
 //	log(LOG_DEBUG,"query: Msg39(%p)::controlLoop(): m_msg39req->m_numDocIdSplits=%d m_msg39req->m_timeout=%" PRId64, this, m_msg39req->m_numDocIdSplits, m_msg39req->m_timeout);
 //log("@@@ Msg39::controlLoop: m_startTimeQuery=%" PRId64, m_startTimeQuery);
 	//log("@@@ Msg39::controlLoop: now             =%" PRId64, gettimeofdayInMilliseconds());
-	
-	const int numFiles = getRdbBase(RDB_POSDB,m_msg39req->m_collnum)->getNumFiles();
+
+	RdbBase *base = getRdbBase(RDB_POSDB,m_msg39req->m_collnum);
+	if(base==NULL) {
+		log(LOG_ERROR,"query: Collection %d disappeared", m_msg39req->m_collnum);
+		g_errno = ENOCOLLREC;
+	}
+
+	RdbIndexQuery indexQuery(base);
+	const int numFiles = base->getNumFiles(); //todo: this can vary if a merge finishes during the query
 //	log(LOG_DEBUG,"controlLoop(): numFiles=%d",numFiles);
 	
 	//todo: choose docid splits based on expected largest rdblist / most common term
@@ -394,12 +402,20 @@ void Msg39::controlLoop ( ) {
 	const int totalChunks = (numFiles+1)*numDocIdSplits;
 	int chunksSearched = 0;
 	
+	if(g_errno) //ugly logic due to C++ prohibited jump over local variable initialization
+		goto hadError;
+
 	for(int fileNum = 0; fileNum<numFiles+1; fileNum++) {
 //		if(fileNum!=numFiles)
 //			log(LOG_DEBUG,"controlLoop(): fileNum=%d (of %d)", fileNum, numFiles);
 //		else
 //			log(LOG_DEBUG,"controlLoop(): fileNum=tree");
 		
+		if(fileNum<numFiles && !base->isReadable(fileNum)) {
+			log(LOG_DEBUG,"posdb file #%d is not currently readable. Skipping", fileNum);
+			continue;
+		}
+
 		int64_t docidRangeStart = 0;
 		const int64_t docidRangeDelta = MAX_DOCID / (int64_t)numDocIdSplits;
 		
@@ -422,6 +438,11 @@ void Msg39::controlLoop ( ) {
 				}
 			}
 			
+			if(fileNum<numFiles && !base->isReadable(fileNum)) {
+				log(LOG_DEBUG,"posdb file #%d is not currently readable. Skipping", fileNum);
+				//todo: if a file suddenly becomes unreadable then it means that a merge has started or finihsed and we should really redo the whole query
+				break;
+			}
 			// Reset ourselves, partially, anyway, not m_query etc.
 			reset2();
 			
@@ -445,7 +466,7 @@ void Msg39::controlLoop ( ) {
 			}
 
 			// Intersect the lists we loaded (using a thread)
-			intersectLists();
+			intersectLists(fileNum, indexQuery);
 			if ( g_errno ) {
 				log(LOG_ERROR,"Msg39::controlLoop: got error %d after intersectLists()", g_errno);
 				goto hadError;
@@ -718,7 +739,7 @@ void Msg39::getLists(int fileNum, int64_t docIdStart, int64_t docIdEnd) {
 // . now come here when we got the necessary index lists
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
-void Msg39::intersectLists ( ) {
+void Msg39::intersectLists(int fileNum, const RdbIndexQuery &indexQuery) {
 	log(LOG_DEBUG, "query: msg39(this=%p)::intersectLists()",this);
 	// timestamp log
 	if ( m_debug ) {
@@ -746,7 +767,7 @@ void Msg39::intersectLists ( ) {
 	// . this will actually calculate the top
 	// . this might also change m_query.m_termSigns
 	// . this won't do anything if it was already called
-	m_posdbTable.init ( &m_query, m_debug, this, &m_toptree, &m_msg2, m_msg39req);
+	m_posdbTable.init ( &m_query, m_debug, this, &m_toptree, indexQuery, &m_msg2, m_msg39req);
 
 	// . we have to do this here now too
 	// . but if we are getting weights, we don't need m_toptree!
