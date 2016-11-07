@@ -3,16 +3,14 @@ sudo: required
 dist: trusty
 compiler:
 - gcc
-- clang
 os:
 - linux
 script:
- - ./runSonarQubeAnalysis.sh
-#- if [[ "$TRAVIS_EVENT_TYPE" == "cron" ]]; then
-#    sonar-scanner -Dsonar.login=$SONAR_TOKEN -e -X
-#  else
-#    make
-#  fi
+- if [[ "$TRAVIS_EVENT_TYPE" == "cron" ]]; then
+    ./runSonarQubeAnalysis.sh
+  else
+    make
+  fi
 branches:
   only:
   - master
