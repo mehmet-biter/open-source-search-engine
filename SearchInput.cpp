@@ -183,9 +183,7 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) {
 	// zero out everything, set niceness to 0
 	clear ( 0 ) ;
 
-	// still his buffer. m_hr will free the stuff, but "r" can
-	// still access it for the time being, and not free it
-	m_hr.stealBuf ( r );
+	m_hr.copy(r);
 
 	const char *coll = g_collectiondb.getDefaultColl ( r );
 
