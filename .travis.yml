@@ -8,7 +8,7 @@ os:
 - linux
 script:
 #- if [[ "$TRAVIS_EVENT_TYPE" == "cron" ]]; then
- -   sonar-scanner -Dsonar.login=$SONAR_TOKEN
+ -   sonar-scanner -Dsonar.login=$SONAR_TOKEN -e -X
 #  else
 #    make
 #  fi
