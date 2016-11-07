@@ -6,11 +6,17 @@ compiler:
 - clang
 os:
 - linux
-script: make
+script:
+#- if [[ "$TRAVIS_EVENT_TYPE" == "cron" ]]; then
+ -   sonar-scanner -Dsonar.login=$SONAR_TOKEN
+#  else
+#    make
+#  fi
 branches:
   only:
   - master
 addons:
+  sonarqube: true
   apt:
     packages:
     - libssl-dev
