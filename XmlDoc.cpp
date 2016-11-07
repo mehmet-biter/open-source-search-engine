@@ -880,8 +880,7 @@ bool XmlDoc::set2 ( char    *titleRec ,
 	m_titleRecBuf.setBuf ( titleRec ,
 			       titleRecSize , // bufmax
 			       titleRecSize ,  // bytes in use
-			       false, // ownData?
-			       csUTF8); // encoding
+			       false); // ownData?
 	m_titleRecBufValid = true;
 
 

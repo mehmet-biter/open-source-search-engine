@@ -64,8 +64,7 @@ SafeBuf::~SafeBuf() {
 	m_buf = NULL;
 }
 
-bool SafeBuf::setBuf(char *newBuf, int32_t bufMax, int32_t bytesInUse, bool ownData,
-		     int16_t encoding ){
+bool SafeBuf::setBuf(char *newBuf, int32_t bufMax, int32_t bytesInUse, bool ownData) {
 	// . Passing in a null or a capacity smaller than the
 	//   used portion of the buffer is pointless, we have
 	//   more reliable functions for emptying a buffer.

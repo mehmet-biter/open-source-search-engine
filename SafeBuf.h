@@ -39,8 +39,7 @@ public:
 	bool setBuf(char *newBuf, 
 		    int32_t bufMax, 
 		    int32_t bytesInUse, 
-		    bool ownData,
-		    int16_t encoding = csUTF8 );
+		    bool ownData);
 
 	// set buffer from another safebuf, stealing it
 	bool stealBuf ( SafeBuf *sb );
