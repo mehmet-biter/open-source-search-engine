@@ -6,11 +6,11 @@ compiler:
 os:
 - linux
 script:
-- if [[ "$TRAVIS_EVENT_TYPE" == "cron" ]]; then
-    ./runSonarQubeAnalysis.sh;
-  else
-    make;
-  fi
+#- if [[ "$TRAVIS_EVENT_TYPE" == "cron" ]]; then
+-    ./runSonarQubeAnalysis.sh;
+#  else
+#    make;
+#  fi
 branches:
   only:
   - master
