@@ -1744,44 +1744,13 @@ bool RdbBase::attemptMerge(int32_t niceness, bool forceMergeAll, int32_t minToMe
 		}
 	}
 
-	// this triggers the negative rec concentration msg below and
+	// this triggers the negative rec concentration and
 	// tries to merge on one file...
 	if ( ! resuming && m_numFiles <= 1 ) {
 		m_nextMergeForced = false;
 		logTrace( g_conf.m_logTraceRdbBase, "END, too few files (%" PRId32")", m_numFiles);
 		return false;
 	}
-
-	// what percent of recs in the collections' rdb are negative?
-	// the rdbmaps hold this info
-	int64_t totalRecs = 0LL;
-	float percentNegativeRecs = getPercentNegativeRecsOnDisk ( &totalRecs);
-	bool doNegCheck = false;
-	// 1. if disk space is tight and >20% negative recs, force it
-	if ( doNegCheck &&
-	     g_process.m_diskAvail >= 0 && 
-	     g_process.m_diskAvail < 10000000000LL && // 10GB
-	     percentNegativeRecs > .20 ) {
-		m_nextMergeForced = true;
-		forceMergeAll = true;
-		log( LOG_INFO, "rdb: hit negative rec concentration of %f "
-		    "(total=%" PRId64") for "
-		    "collnum %" PRId32" on db %s when diskAvail=%" PRId64" bytes",
-		    percentNegativeRecs,totalRecs,(int32_t)m_collnum,
-		    m_rdb->getDbname(),g_process.m_diskAvail);
-	}
-	// 2. if >40% negative recs force it
-	if ( doNegCheck && 
-	     percentNegativeRecs > .40 ) {
-		m_nextMergeForced = true;
-		forceMergeAll = true;
-		log( LOG_INFO, "rdb: hit negative rec concentration of %f "
-		    "(total=%" PRId64") for "
-		    "collnum %" PRId32" on db %s",
-		    percentNegativeRecs,totalRecs,(int32_t)m_collnum,
-		    m_rdb->getDbname());
-	}
-
 
 	// . don't merge if we don't have the min # of files
 	// . but skip this check if there is a merge to be resumed from b4
