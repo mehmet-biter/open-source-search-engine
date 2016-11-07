@@ -16,7 +16,7 @@ installBuildWrapper() {
 installBuildWrapper
 
 # make using build-wrapper
-build-wrapper-linux-x86-64 make
+build-wrapper-linux-x86-64 --out-dir sonar-out make
 
 # And run the analysis
 sonar-scanner -Dsonar.login=$SONAR_TOKEN
