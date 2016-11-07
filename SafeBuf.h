@@ -246,13 +246,6 @@ public:
 	const char *m_label;
 	bool  m_usingStack;
 	int16_t m_encoding; // output charset
-
-	// . a special flag used by PageParser.cpp
-	// . if this is true it PageParser shows the page in its html form,
-	//   otherwise, if false, it converts the "<" to &lt; etc. so we see the html
-	//   source view.
-	// . only Words.cpp looks at this flag
-	bool m_renderHtml;
 };
 
 

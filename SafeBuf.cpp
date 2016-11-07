@@ -17,7 +17,6 @@ SafeBuf::SafeBuf(int32_t initSize, const char *label ) {
 	if(!m_buf) m_capacity = 0;
 	m_usingStack = false;
 	m_encoding = csUTF8;
-	m_renderHtml = false;
 }
 
 void SafeBuf::constructor ( ) {
@@ -27,7 +26,6 @@ void SafeBuf::constructor ( ) {
 	m_usingStack = false;
 	m_encoding = csUTF8;
 	m_label = NULL;
-	m_renderHtml = false;
 }	
 
 SafeBuf::SafeBuf() {
@@ -37,7 +35,6 @@ SafeBuf::SafeBuf() {
 	m_usingStack = false;
 	m_encoding = csUTF8;
 	m_label = NULL;
-	m_renderHtml = false;
 }
 
 void SafeBuf::setLabel ( const char *label ) {
@@ -51,7 +48,6 @@ SafeBuf::SafeBuf(char* stackBuf, int32_t cap, const char* label) {
 	m_length = 0;
 	m_encoding = csUTF8;
 	m_label = label;
-	m_renderHtml = false;
 }
 
 SafeBuf::SafeBuf(char *heapBuf, int32_t bufMax, int32_t bytesInUse, bool ownData) {
@@ -65,7 +61,6 @@ SafeBuf::SafeBuf(char *heapBuf, int32_t bufMax, int32_t bytesInUse, bool ownData
 	m_length = bytesInUse;
 	m_encoding = csUTF8;
 	m_label = NULL;
-	m_renderHtml = false;
 }
 
 SafeBuf::~SafeBuf() {
