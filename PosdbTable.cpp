@@ -28,6 +28,9 @@
 #define BF_BIGRAM             0x10
 #define BF_NUMBER             0x20  // is it like gbsortby:price? numeric?
 
+static const int INTERSECT_SCORING    = 0;
+static const int INTERSECT_DEBUG_INFO = 1;
+
 
 static bool  s_init = false;
 static GbMutex s_mtx_weights;
