@@ -15,6 +15,8 @@ installBuildWrapper() {
 # Install the build-wrapper
 installBuildWrapper
 
+make clean
+
 # make using build-wrapper
 build-wrapper-linux-x86-64 --out-dir sonar-out make
 
