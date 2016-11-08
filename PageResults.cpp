@@ -3257,6 +3257,8 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		if ( si->m_format != FORMAT_HTML ) return true;
 
 		sb->safePrintf("</table>\n");
+		//blank out the "xxxxx backlinks" part
+		memset(sb->getBufStart() + placeHolder, ' ', placeHolderLen);
 
 		return true;
 	}
@@ -3575,21 +3577,20 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 
 	// space out 0000 backlinks
 	char *p = sb->getBufStart() + placeHolder;
-	int32_t plen = placeHolderLen;
 	if ( numInlinks == 0 ) 
-		memset ( p , ' ' , plen );
-	if ( numInlinks > 0 && numInlinks < 99999 ) {
+		memset(p, ' ', placeHolderLen);
+	else if ( numInlinks > 0 && numInlinks < 99999 ) {
 		char *ss = strstr ( p, "00000" );
 		if ( ss ) {
 			char c = ss[5];
 			sprintf(ss,"%5" PRId32,numInlinks);
 			ss[5] = c;
 		}
-	}
-	// print "1 backlink" not "1 backlinks"
-	if ( numInlinks == 1 ) {
-		char *xx = strstr(p,"backlinks");
-		if ( xx ) xx[8] = ' ';
+		// print "1 backlink" not "1 backlinks"
+		if ( numInlinks == 1 ) {
+			char *xx = strstr(p,"backlinks");
+			if ( xx ) xx[8] = ' ';
+		}
 	}
 
 	return true;
