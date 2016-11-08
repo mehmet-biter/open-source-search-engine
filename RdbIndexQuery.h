@@ -1,10 +1,8 @@
 #ifndef GB_RDBINDEXQUERY_H
 #define GB_RDBINDEXQUERY_H
 
-#include <memory>
-#include <vector>
-#include <stdint.h>
 #include "RdbIndex.h"
+#include <stdint.h>
 
 class RdbBase;
 
