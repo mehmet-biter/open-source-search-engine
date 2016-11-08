@@ -658,7 +658,7 @@ bool Rdb::close ( void *state , void (* callback)(void *state ), bool urgent , b
 	m_closeCallback    = callback;
 	m_urgent           = urgent;
 	m_isReallyClosing = isReallyClosing;
-        if ( m_isReallyClosing ) m_isClosing = true;
+	if ( m_isReallyClosing ) m_isClosing = true;
 	// . don't call more than once
 	// . really only for when isReallyClosing is false... just a quick save
 	m_isSaving = true;
@@ -1504,7 +1504,7 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list, int32_t niceness ) {
 	       m_rdbId == RDB_SPIDERDB   ) ) {
 
 		// allow banning of sites still
-		log("db: How did an add come in while in repair mode? rdbId=%" PRId32,(int32_t)m_rdbId);
+		log(LOG_WARN, "db: How did an add come in while in repair mode? rdbName=%s", getDbnameFromId(m_rdbId));
 		g_errno = EREPAIRING;
 		return false;
 	}
