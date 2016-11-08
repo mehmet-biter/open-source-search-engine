@@ -2306,9 +2306,9 @@ bool PosdbTable::findCandidateDocIds() {
 }
 
 
-bool PosdbTable::genDebugScoreInfo1(int32_t &numProcessed, int32_t &topCursor, QueryTermInfo *qtibuf) {
+bool PosdbTable::genDebugScoreInfo1(int32_t *numProcessed, int32_t *topCursor, QueryTermInfo *qtibuf) {
 	// did we get enough score info?
-	if ( numProcessed >= m_msg39req->m_docsToGet ) {
+	if ( *numProcessed >= m_msg39req->m_docsToGet ) {
 		return true;
 	}
 	
@@ -2316,12 +2316,12 @@ bool PosdbTable::genDebugScoreInfo1(int32_t &numProcessed, int32_t &topCursor, Q
 nextNode:
 	
 	// this mean top tree empty basically
-	if ( topCursor == -1 ) {
+	if ( *topCursor == -1 ) {
 		return true;
 	}
 	
 	// get the #1 docid/score node #
-	if ( topCursor == -9 ) {
+	if ( *topCursor == -9 ) {
 		// if our query had a quoted phrase, might have had no
 		// docids in the top tree! getHighNode() can't handle
 		// that so handle it here
@@ -2330,15 +2330,15 @@ nextNode:
 		}
 		
 		// otherwise, initialize topCursor
-		topCursor = m_topTree->getHighNode();
+		*topCursor = m_topTree->getHighNode();
 	}
 	
 	// get current node
-	TopNode *tn = m_topTree->getNode ( topCursor );
+	TopNode *tn = m_topTree->getNode ( *topCursor );
 	// advance
-	topCursor = m_topTree->getPrev ( topCursor );
+	*topCursor = m_topTree->getPrev ( *topCursor );
 	// count how many so we do not exceed requested #
-	numProcessed++;
+	(*numProcessed)++;
 	// shortcut
 	m_docId = tn->m_docId;
 	
@@ -2405,7 +2405,7 @@ nextNode:
 }
 
 
-bool PosdbTable::genDebugScoreInfo2(DocIdScore &dcs, int32_t &lastLen, uint64_t &lastDocId, char siteRank, float score, int32_t intScore, char docLang) {
+bool PosdbTable::genDebugScoreInfo2(DocIdScore *dcs, int32_t *lastLen, uint64_t *lastDocId, char siteRank, float score, int32_t intScore, char docLang) {
 	char *sx;
 	char *sxEnd;
 	int32_t pairOffset;
@@ -2414,18 +2414,18 @@ bool PosdbTable::genDebugScoreInfo2(DocIdScore &dcs, int32_t &lastLen, uint64_t 
 	int32_t singleSize;
 
 
-	dcs.m_siteRank   = siteRank;
-	dcs.m_finalScore = score;
+	dcs->m_siteRank   = siteRank;
+	dcs->m_finalScore = score;
 	
 	// a double can capture an int without dropping any bits,
 	// inlike a mere float
 	if ( m_sortByTermNumInt >= 0 ) {
-		dcs.m_finalScore = (double)intScore;
+		dcs->m_finalScore = (double)intScore;
 	}
 	
-	dcs.m_docId      = m_docId;
-	dcs.m_numRequiredTerms = m_numQueryTermInfos;
-	dcs.m_docLang = docLang;
+	dcs->m_docId      = m_docId;
+	dcs->m_numRequiredTerms = m_numQueryTermInfos;
+	dcs->m_docLang = docLang;
 	
 	// ensure enough room we can't allocate in a thread!
 	if ( m_scoreInfoBuf.getAvail()<(int32_t)sizeof(DocIdScore)+1) {
@@ -2434,8 +2434,8 @@ bool PosdbTable::genDebugScoreInfo2(DocIdScore &dcs, int32_t &lastLen, uint64_t 
 	
 	// if same as last docid, overwrite it since we have a higher
 	// siterank or langid i guess
-	if ( m_docId == lastDocId ) {
-		m_scoreInfoBuf.m_length = lastLen;
+	if ( m_docId == *lastDocId ) {
+		m_scoreInfoBuf.m_length = *lastLen;
 	}
 	
 	// save that
@@ -2447,9 +2447,9 @@ VALGRIND_CHECK_MEM_IS_DEFINED(&dcs,sizeof(dcs));
 #endif
 	m_scoreInfoBuf.safeMemcpy ( (char *)&dcs, sizeof(DocIdScore) );
 	// save that
-	lastLen = len;
+	*lastLen = len;
 	// save it
-	lastDocId = m_docId;
+	*lastDocId = m_docId;
 	// try to fix dup docid problem! it was hitting the
 	// overflow check right above here... strange!!!
 	//m_docIdTable.removeKey ( &docId );
@@ -2544,7 +2544,7 @@ VALGRIND_CHECK_MEM_IS_DEFINED(&dcs,sizeof(dcs));
 	}
 	
 	// adjust this too!
-	lastLen -= sizeof(DocIdScore);
+	*lastLen -= sizeof(DocIdScore);
 
 	return false;
 }
@@ -3909,7 +3909,7 @@ void PosdbTable::intersectLists10_r ( ) {
 
 			// second pass? for printing out transparency info.
 			if ( currPassNum == INTERSECT_DEBUG_INFO ) {
-				if( genDebugScoreInfo1(numProcessed, topCursor, qtibuf) ) {
+				if( genDebugScoreInfo1(&numProcessed, &topCursor, qtibuf) ) {
 					// returns true if no more docids to handle
 					allDone = true;
 					break;	// break out of docIdPtr < docIdEnd loop
@@ -4255,7 +4255,7 @@ void PosdbTable::intersectLists10_r ( ) {
 			// if doing the second pass for printing out transparency info
 			// then do not mess with top tree
 			if ( currPassNum == INTERSECT_DEBUG_INFO ) {
-				if( genDebugScoreInfo2(dcs, lastLen, lastDocId, siteRank, score, intScore, docLang) ) {
+				if( genDebugScoreInfo2(&dcs, &lastLen, &lastDocId, siteRank, score, intScore, docLang) ) {
 					// advance to next docid
 					docIdPtr += 6;
 					// Continue docIdPtr < docIdEnd loop
