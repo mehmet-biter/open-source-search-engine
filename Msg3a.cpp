@@ -691,7 +691,7 @@ bool Msg3a::gotAllShardReplies ( ) {
 bool Msg3a::mergeLists() {
 
 	// time how long the merge takes
-	if ( m_debug ) {
+	if(m_debug) {
 		logf( LOG_DEBUG, "query: msg3a: --- Final DocIds --- " );
 		m_startTime = gettimeofdayInMilliseconds();
 	}
@@ -704,6 +704,9 @@ bool Msg3a::mergeLists() {
 	m_moreDocIdsAvail = true;
 
 
+	if(m_numQueriedHosts > MAX_SHARDS) { g_process.shutdownAbort(true); }
+	if(m_docsToGet <= 0) { g_process.shutdownAbort(true); }
+
 	// . point to the various docids, etc. in each shard reply
 	// . tcPtr = term count. how many required query terms does the doc
 	//   have? formerly called topExplicits in IndexTable2.cpp
@@ -711,50 +714,45 @@ bool Msg3a::mergeLists() {
 	double        *rsPtr [MAX_SHARDS];
 	key96_t         *ksPtr [MAX_SHARDS];
 	int64_t     *diEnd [MAX_SHARDS];
-	for ( int32_t j = 0; j < m_numQueriedHosts ; j++ ) {
-		// how does this happen?
-		if ( j >= MAX_SHARDS ) { g_process.shutdownAbort(true); }
-		Msg39Reply *mr =m_reply[j];
-		// if we have gbdocid:| in query this could be NULL
-		if ( ! mr ) {
+	for(int32_t j = 0; j < m_numQueriedHosts ; j++) {
+		if(Msg39Reply *mr =m_reply[j]) {
+			diPtr[j] = (int64_t*)mr->ptr_docIds;
+			rsPtr[j] = (double*) mr->ptr_scores;
+			ksPtr[j] = (key96_t*)mr->ptr_clusterRecs;
+			diEnd[j] = (int64_t*)(mr->ptr_docIds + mr->m_numDocIds * 8);
+		} else {
+			// if we have gbdocid:| in query this could be NULL
 			diPtr[j] = NULL;
 			diEnd[j] = NULL;
 			rsPtr[j] = NULL;
 			ksPtr[j] = NULL;
-			continue;
 		}
-		diPtr [j] = (int64_t *)mr->ptr_docIds;
-		rsPtr [j] = (double    *)mr->ptr_scores;
-		ksPtr [j] = (key96_t     *)mr->ptr_clusterRecs;
-		diEnd [j] = (int64_t *)(mr->ptr_docIds +
-					  mr->m_numDocIds * 8);
 	}
 
 	// clear if we had it
-	if ( m_finalBuf ) {
-		mfree ( m_finalBuf, m_finalBufSize, "Msg3aF" );
+	if(m_finalBuf) {
+		mfree(m_finalBuf, m_finalBufSize, "Msg3aF" );
 		m_finalBuf     = NULL;
 		m_finalBufSize = 0;
 	}
 
-	if ( m_docsToGet <= 0 ) { g_process.shutdownAbort(true); }
 
 	// . how much do we need to store final merged docids, etc.?
 	// . docid=8 score=4 bitScore=1 clusterRecs=key96_t clusterLevls=1
 	int32_t nd1 = m_docsToGet;
 	int32_t nd2 = 0;
-	for ( int32_t j = 0; j < m_numQueriedHosts; j++ ) {
-		Msg39Reply *mr = m_reply[j];
-		if ( ! mr ) continue;
-		nd2 += mr->m_numDocIds;
+	for(int32_t j = 0; j < m_numQueriedHosts; j++) {
+		if(Msg39Reply *mr = m_reply[j])
+			nd2 += mr->m_numDocIds;
 	}
 	// pick the min docid count from the above two methods
 	int32_t nd = nd1;
-	if ( nd2 < nd1 ) nd = nd2;
+	if(nd2 < nd1)
+		nd = nd2;
 
 	int32_t need =  nd * (8+sizeof(double)+
 			   sizeof(key96_t)+sizeof(DocIdScore *)+1);
-	if ( need < 0 ) {
+	if(need < 0) {
 		log("msg3a: need is %i, nd = %i is too many docids",
 		    (int)need,(int)nd);
 		g_errno = EBUFTOOSMALL;
@@ -762,30 +760,26 @@ bool Msg3a::mergeLists() {
 	}
 
 	// allocate it
-	m_finalBuf     = (char *)mmalloc ( need , "finalBuf" );
+	m_finalBuf     = (char *)mmalloc(need , "finalBuf" );
 	m_finalBufSize = need;
 	// g_errno should be set if this fails
-	if ( ! m_finalBuf ) return true;
+	if(!m_finalBuf)
+		return true;
 	// hook into it
 	char *p = m_finalBuf;
-	m_docIds        = (int64_t *)p; p += nd * 8;
-	m_scores        = (double    *)p; p += nd * sizeof(double);
-	m_clusterRecs   = (key96_t     *)p; p += nd * sizeof(key96_t);
-	m_clusterLevels = (char      *)p; p += nd * 1;
-	m_scoreInfos    = (DocIdScore **)p;p+=nd*sizeof(DocIdScore *);
+	m_docIds        = (int64_t*)    p; p += nd * 8;
+	m_scores        = (double*)     p; p += nd * sizeof(double);
+	m_clusterRecs   = (key96_t*)    p; p += nd * sizeof(key96_t);
+	m_clusterLevels = (char*)       p; p += nd * 1;
+	m_scoreInfos    = (DocIdScore**)p; p+=nd*sizeof(DocIdScore *);
 
 	// sanity check
 	char *pend = m_finalBuf + need;
-	if ( p != pend ) { g_process.shutdownAbort(true); }
-	// . now allocate for hash table
-	// . get at least twice as many slots as docids
-	HashTableT<int64_t,char> htable;
-	// returns false and sets g_errno on error
-	if ( ! htable.set ( nd * 2 ) ) return true;
+	if(p != pend) { g_process.shutdownAbort(true); }
 	// hash table for doing site clustering, provided we
 	// are fully split and we got the site recs now
 	HashTableT<int64_t,int32_t> htable2;
-	if ( m_r->m_doSiteClustering && ! htable2.set ( nd * 2 ) )
+	if(m_r->m_doSiteClustering && !htable2.set (nd*2))
 		return true;
 
 	//
@@ -795,209 +789,183 @@ bool Msg3a::mergeLists() {
 	// . we may be re-called later after m_docsToGet is increased
 	//   if too many docids were clustered/filtered out after the call
 	//   to Msg51.
- mergeLoop:
+	do {
+		// the winning docid will be diPtr[maxj]
+		int32_t maxj = -1;
 
-	// the winning docid will be diPtr[maxj]
-	int32_t maxj = -1;
-	//Msg39Reply *mr;
-	int32_t hslot;
+		// get the next highest-scoring docids from all shard termlists
+		for(int32_t j = 0; j < m_numQueriedHosts; j++) {
+			// . skip exhausted lists
+			// . these both should be NULL if reply was skipped because
+			//   we did a gbdocid:| query
+			if(diPtr[j] >= diEnd[j]) {
+				continue;
+			}
+			// compare the score
+			if(maxj == -1) { 
+				maxj = j; 
+				continue; 
+			}
+			if(*rsPtr[j] < *rsPtr[maxj]) {
+				continue;
+			}
+			if(*rsPtr[j] > *rsPtr[maxj]) { 
+				maxj = j; 
+				continue; 
+			}
+			// prefer lower docids on top
+			if(*diPtr[j] < *diPtr[maxj]) { 
+				maxj = j; 
+				continue;
+			}
+		}
 
-	// get the next highest-scoring docids from all shard termlists
-	for ( int32_t j = 0; j < m_numQueriedHosts; j++ ) {
-		// . skip exhausted lists
-		// . these both should be NULL if reply was skipped because
-		//   we did a gbdocid:| query
-		if ( diPtr[j] >= diEnd[j] ) {
-			continue;
+		if(maxj == -1) {
+			m_moreDocIdsAvail = false;
+			goto doneMerge;
 		}
-		// compare the score
-		if ( maxj == -1 ) { 
-			maxj = j; 
-			continue; 
-		}
-		if ( *rsPtr[j] < *rsPtr[maxj] ) {
-			continue;
-		}
-		if ( *rsPtr[j] > *rsPtr[maxj] ) { 
-			maxj = j; 
-			continue; 
-		}
-		// prefer lower docids on top
-		if ( *diPtr[j] < *diPtr[maxj] ) { 
-			maxj = j; 
-			continue;
-		}
-	}
 
-	if ( maxj == -1 ) {
-		m_moreDocIdsAvail = false;
-		goto doneMerge;
-	}
-
-	// only do this logic if we have clusterdb recs included
-	if ( m_r->m_doSiteClustering     &&
-	     // if the clusterLevel was set to CR_*errorCode* then this key
-	     // will be 0, so in that case, it might have been a not found
-	     // or whatever, so let it through regardless
-	     ksPtr[maxj]->n0 != 0LL &&
-	     ksPtr[maxj]->n1 != 0   ) {
-		// if family filter on and is adult...
-		if ( m_r->m_familyFilter &&
-		     g_clusterdb.hasAdultContent((char *)ksPtr[maxj]) )
-			goto skip;
-		// get the hostname hash, a int64_t
-		int32_t sh = g_clusterdb.getSiteHash26 ((char *)ksPtr[maxj]);
-		// do we have enough from this hostname already?
-		int32_t slot = htable2.getSlot ( sh );
-		// if this hostname already visible, do not over-display it...
-		if ( slot >= 0 ) {
-			// get the count
-			int32_t val = htable2.getValueFromSlot ( slot );
-			// . if already 2 or more, give up
-			// . if the site hash is 0, that usually means a
-			//   "not found" in clusterdb, and the accompanying
-			//   cluster level would be set as such, but since we
-			//   did not copy the cluster levels over in the merge
-			//   algo above, we don't know for sure... cluster recs
-			//   are set to 0 in the Msg39.cpp clustering.
-			if ( sh && val >= 2 ) goto skip;
-			// if only allowing one...
-			if ( sh && val >= 1 && m_r->m_hideAllClustered )
+		// only do this logic if we have clusterdb recs included
+		if(m_r->m_doSiteClustering &&
+		     // if the clusterLevel was set to CR_*errorCode* then this key
+		     // will be 0, so in that case, it might have been a not found
+		     // or whatever, so let it through regardless
+		     ksPtr[maxj]->n0 != 0LL &&
+		     ksPtr[maxj]->n1 != 0  ) {
+			// if family filter on and is adult...
+			if(m_r->m_familyFilter &&
+			     g_clusterdb.hasAdultContent((char*)ksPtr[maxj]) )
 				goto skip;
-			// inc the count
-			val++;
-			// store it
-			htable2.setValue ( slot , val );
-		}
-		// . add it, this should be pre-allocated!
-		// . returns false and sets g_errno on error
-		else if ( ! htable2.addKey(sh,1) ) return true;
-	}
-
-	hslot = htable.getSlot ( *diPtr[maxj] );
-
-	// . only add it to the final list if the docid is "unique"
-	// . BUT since different event ids share the same docid, exception!
-	if ( hslot >= 0 ) goto skip; // < 0 ) {
-
-	// always inc this
-	//m_totalDocCount++;
-	// only do this if we need more
-	if ( m_numDocIds < m_docsToGet ) {
-		// get DocIdScore class for this docid
-		Msg39Reply *mr = m_reply[maxj];
-		// point to the array of DocIdScores
-		DocIdScore *ds = (DocIdScore *)mr->ptr_scoreInfo;
-		int32_t nds = mr->size_scoreInfo/sizeof(DocIdScore);
-		DocIdScore *dp = NULL;
-		for ( int32_t i = 0 ; i < nds ; i++ ) {
-			if ( ds[i].m_docId != *diPtr[maxj] )  continue;
-			dp = &ds[i];
-			break;
-		}
-		// add the max to the final merged lists
-		m_docIds    [m_numDocIds] = *diPtr[maxj];
-
-		// wtf?
-		if ( ! dp ) {
-			// this is empty if no scoring info
-			// supplied!
-			if ( m_r->m_getDocIdScoringInfo )
-				log("msg3a: CRAP! got empty score "
-				    "info for "
-				    "d=%" PRId64,
-				    m_docIds[m_numDocIds]);
-			//g_process.shutdownAbort(true);  261561804684
-			// qry = www.yahoo
-		}
-		// point to the single DocIdScore for this docid
-		m_scoreInfos[m_numDocIds] = dp;
-
-		// reset this just in case
-		if ( dp ) {
-			dp->m_singleScores = NULL;
-			dp->m_pairScores   = NULL;
+			// get the hostname hash, a int64_t
+			int32_t sh = g_clusterdb.getSiteHash26 ((char*)ksPtr[maxj]);
+			// do we have enough from this hostname already?
+			int32_t slot = htable2.getSlot(sh );
+			// if this hostname already visible, do not over-display it...
+			if(slot >= 0) {
+				// get the count
+				int32_t val = htable2.getValueFromSlot(slot );
+				// . if already 2 or more, give up
+				// . if the site hash is 0, that usually means a
+				//   "not found" in clusterdb, and the accompanying
+				//   cluster level would be set as such, but since we
+				//   did not copy the cluster levels over in the merge
+				//   algo above, we don't know for sure... cluster recs
+				//   are set to 0 in the Msg39.cpp clustering.
+				if(sh && val >= 2)
+					goto skip;
+				// if only allowing one...
+				if(sh && val >= 1 && m_r->m_hideAllClustered)
+					goto skip;
+				// inc the count
+				val++;
+				// store it
+				htable2.setValue(slot , val );
+			}
+			// . add it, this should be pre-allocated!
+			// . returns false and sets g_errno on error
+			else if(! htable2.addKey(sh,1))
+				return true;
 		}
 
-		// now fix DocIdScore::m_pairScores and m_singleScores
-		// ptrs so they reference into the
-		// Msg39Reply::ptr_pairScoreBuf and ptr_singleSingleBuf
-		// like they should. it seems we do not free the
-		// Msg39Replies so we should be ok referencing them.
-		if ( dp && dp->m_singlesOffset >= 0 )
-			dp->m_singleScores =
-				(SingleScore *)(mr->ptr_singleScoreBuf+
-						dp->m_singlesOffset) ;
-		if ( dp && dp->m_pairsOffset >= 0 )
-			dp->m_pairScores =
-				(PairScore *)(mr->ptr_pairScoreBuf +
-					      dp->m_pairsOffset );
+		// always inc this
+		//m_totalDocCount++;
+		// only do this if we need more
+		if(m_numDocIds < m_docsToGet) {
+			// get DocIdScore class for this docid
+			Msg39Reply *mr = m_reply[maxj];
+			// point to the array of DocIdScores
+			DocIdScore *ds = (DocIdScore *)mr->ptr_scoreInfo;
+			int32_t nds = mr->size_scoreInfo/sizeof(DocIdScore);
+			DocIdScore *dp = NULL;
+			for(int32_t i = 0; i < nds; i++) {
+				if(ds[i].m_docId == *diPtr[maxj]) {
+					dp = &ds[i];
+					break;
+				}
+			}
+			// add the max to the final merged lists
+			m_docIds[m_numDocIds] = *diPtr[maxj];
+
+			// wtf?
+			if(!dp) {
+				// this is empty if no scoring info
+				// supplied!
+				if(m_r->m_getDocIdScoringInfo)
+					log("msg3a: CRAP! got empty score info for d=%" PRId64,
+					    m_docIds[m_numDocIds]);
+			}
+			// point to the single DocIdScore for this docid
+			m_scoreInfos[m_numDocIds] = dp;
+
+			// reset this just in case
+			if(dp) {
+				dp->m_singleScores = NULL;
+				dp->m_pairScores   = NULL;
+			}
+
+			// now fix DocIdScore::m_pairScores and m_singleScores
+			// ptrs so they reference into the
+			// Msg39Reply::ptr_pairScoreBuf and ptr_singleSingleBuf
+			// like they should. it seems we do not free the
+			// Msg39Replies so we should be ok referencing them.
+			if(dp && dp->m_singlesOffset >= 0)
+				dp->m_singleScores =
+					(SingleScore*)(mr->ptr_singleScoreBuf+dp->m_singlesOffset);
+			if(dp && dp->m_pairsOffset >= 0)
+				dp->m_pairScores =
+					(PairScore*)  (mr->ptr_pairScoreBuf +dp->m_pairsOffset);
 
 
-		// turn it into a float, that is what rscore_t is.
-		// we do this to make it easier for PostQueryRerank.cpp
-		m_scores    [m_numDocIds]=(double)*rsPtr[maxj];
-		if ( m_r->m_doSiteClustering )
-			m_clusterRecs[m_numDocIds]= *ksPtr[maxj];
-		// clear this out
-		//m_eventIdBits[m_numDocIds].clear();
-		// set this for use below
-		
-		//@@@ BR: Something is wrong here... the assignment below is never used.
-		// Found by Coverity and disabled.
-//		hslot = m_numDocIds;
+			// turn it into a float, that is what rscore_t is.
+			// we do this to make it easier for PostQueryRerank.cpp
+			m_scores[m_numDocIds]=(double)*rsPtr[maxj];
+			if(m_r->m_doSiteClustering)
+				m_clusterRecs[m_numDocIds]= *ksPtr[maxj];
 
-		// point to next available slot to add to
-		m_numDocIds++;
-	}
+			// point to next available slot to add to
+			m_numDocIds++;
+		}
 
 
-	// if it has ALL the required query terms, count it
-	//if ( *bsPtr[maxj] & 0x60 ) m_numAbove++;
-	// . add it, this should be pre-allocated!
-	// . returns false and sets g_errno on error
-	if ( ! htable.addKey(*diPtr[maxj],1) ) return true;
+		// if it has ALL the required query terms, count it
+		//if(*bsPtr[maxj] & 0x60 ) m_numAbove++;
 
- skip:
-	// increment the shard pointers from which we took the max
-	rsPtr[maxj]++;
-	diPtr[maxj]++;
-	ksPtr[maxj]++;
-	// get the next highest docid and add it in
-	if ( m_numDocIds < m_docsToGet ) goto mergeLoop;
+	 skip:
+		// increment the shard pointers from which we took the max
+		rsPtr[maxj]++;
+		diPtr[maxj]++;
+		ksPtr[maxj]++;
+		// get the next highest docid and add it in
+	} while(m_numDocIds < m_docsToGet);
 
  doneMerge:
 
-	if ( m_debug ) {
+	if(m_debug) {
 		// show how long it took
-		logf( LOG_DEBUG,"query: msg3a: [%" PTRFMT"] merged %" PRId32" docs from %" PRId32" "
-		      "shards in %" PRIu64" ms. "
-		      ,
+		logf( LOG_DEBUG,"query: msg3a: [%" PTRFMT"] merged %" PRId32" docs from %" PRId32" shards in %" PRIu64" ms. ",
 		      (PTRTYPE)this,
 		       m_numDocIds, (int32_t)m_numQueriedHosts,
 		       gettimeofdayInMilliseconds() - m_startTime
 		      );
 		// show the final merged docids
-		for ( int32_t i = 0 ; i < m_numDocIds ; i++ ) {
+		for(int32_t i = 0; i < m_numDocIds; i++) {
 			int32_t sh = 0;
-			if ( m_r->m_doSiteClustering )
+			if(m_r->m_doSiteClustering )
 				sh=g_clusterdb.getSiteHash26((char *)
 							   &m_clusterRecs[i]);
 			// print out score_t
-			logf(LOG_DEBUG,"query: msg3a: [%" PTRFMT"] "
-			    "%03" PRId32") merged docId=%012" PRIu64" "
-			    "score=%f hosthash=0x%" PRIx32,
+			logf(LOG_DEBUG,"query: msg3a: [%" PTRFMT"] %03" PRId32") merged docId=%012" PRIu64" score=%f hosthash=0x%" PRIx32,
 			    (PTRTYPE)this,
 			     i,
-			     m_docIds    [i] ,
-			     (double)m_scores    [i] ,
-			     sh );
+			     m_docIds[i],
+			     (double)m_scores[i],
+			     sh);
 		}
 	}
 
 	// if we had a full split, we should have gotten the cluster recs
 	// from each shard already
-	memset ( m_clusterLevels , CR_OK , m_numDocIds );
+	memset(m_clusterLevels , CR_OK , m_numDocIds );
 
 	return true;
 }

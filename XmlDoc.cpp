@@ -12283,8 +12283,6 @@ bool XmlDoc::verifyMetaList ( char *p , char *pend , bool forDelete ) {
 	// store each record in the list into the send buffers
 	for ( ; p < pend ; ) {
 		// first is rdbId
-		//char rdbId = -1; // m_rdbId;
-		//if ( rdbId < 0 ) rdbId = *p++;
 		rdbid_t rdbId = (rdbid_t)(*p++ & 0x7f);
 
 		// negative key?
