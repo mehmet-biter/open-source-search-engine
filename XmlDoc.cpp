@@ -13926,8 +13926,6 @@ skipNewAdd2:
 		g_process.shutdownAbort(true);
 	}
 
-	int32_t now = getTimeGlobal();
-
 	/////////////////
 	//
 	// INCREMENTAL INDEXING / INCREMENTAL UPDATING
@@ -13983,12 +13981,6 @@ skipNewAdd2:
 			// tally this up in case we have to add the delete
 			// version of this key back (add 1 for rdbId)
 			needx += ks + 1;
-
-			// for linkdb, sometimes we also add a "lost" link
-			// key in addition to deleting the old key! see below
-			if (rdbId == RDB_LINKDB) {
-				needx += ks + 1;
-			}
 
 			// do not add it if datasize > 0
 			// do not include discovery or lost dates in the linkdb key...
@@ -14142,34 +14134,6 @@ skipNewAdd2:
 
 			// skip it
 			nptr += ks;
-
-			// if it is from linkdb, and unmet, then it is a
-			// lost link, so set the lost date of it. we keep
-			// these so we can graph lost links
-			if (rdbId == RDB_LINKDB) {
-				// the real linkdb rec is at rec+1
-				int32_t lost = Linkdb::getLostDate_uk( rec+1 );
-
-				// how can it be non-zero? it should have
-				// been freshly made from the old titlerec...
-				if (lost) {
-					g_process.shutdownAbort(true);
-				}
-
-				// copy the rdbId byte and key
-				gbmemcpy ( nptr , rec , 1 + ks );
-
-				// set it in there now
-				Linkdb::setLostDate_uk(nptr+1,now);
-
-				// carry it through on revdb, do not delete
-				// it! we want a linkdb history for seomasters
-				nptr += 1 + ks;
-
-				// and go on to delete the old linkdb key that
-				// did not have a lost date
-				//continue;
-			}
 		}
 
 		// sanity. check for metalist breach
