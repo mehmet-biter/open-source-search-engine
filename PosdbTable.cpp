@@ -12,6 +12,7 @@
 #include "Stats.h"
 #include "Conf.h"
 #include "TopTree.h"
+#include "DocumentIndexChecker.h"
 #include "GbMutex.h"
 #include "ScopedLock.h"
 #include <math.h>
@@ -149,7 +150,7 @@ void PosdbTable::freeMem ( ) {
 //         quickly using Msg36!
 // . we now support multiple plus signs before the query term
 // . lists[] and termFreqs[] must be 1-1 with q->m_qterms[]
-void PosdbTable::init(Query *q, bool debug, void *logstate, TopTree *topTree, const RdbIndexQuery &indexQuery, Msg2 *msg2, Msg39Request *r) {
+void PosdbTable::init(Query *q, bool debug, void *logstate, TopTree *topTree, const DocumentIndexChecker &documentIndexChecker, Msg2 *msg2, Msg39Request *r) {
 	// sanity check -- watch out for double calls
 	if ( m_initialized )
 		gbshutdownAbort(true);
@@ -182,7 +183,7 @@ void PosdbTable::init(Query *q, bool debug, void *logstate, TopTree *topTree, co
 	// set this now
 	//m_collnum = cr->m_collnum;
 
-	m_indexQuery = &indexQuery;
+	m_documentIndexChecker = &documentIndexChecker;
 	m_topTree = topTree;
 
 	// remember the query class, it has all the info about the termIds
@@ -3911,6 +3912,22 @@ void PosdbTable::intersectLists10_r ( ) {
 			docLang					= langUnknown;
 			highestInlinkSiteRank 	= -1;
 
+			m_docId = *(uint32_t *)(docIdPtr+1);
+			m_docId <<= 8;
+			m_docId |= (unsigned char)docIdPtr[0];
+			m_docId >>= 2;
+
+			if(!m_documentIndexChecker->exists(m_docId)) {
+				logTrace(g_conf.m_logTracePosdb, "Document %" PRId64 " doesn't exist (in this file)", m_docId);
+				if( !advanceTermListCursors(docIdPtr, qtibuf) ) {
+					logTrace(g_conf.m_logTracePosdb, "END. advanceTermListCursors failed");
+					return;
+				}
+				docIdPtr += 6;
+				continue;
+			}
+			logTrace(g_conf.m_logTracePosdb, "Document %" PRId64 " exists (in this file)", m_docId);
+
 			// second pass? for printing out transparency info.
 			if ( currPassNum == INTERSECT_DEBUG_INFO ) {
 				if( genDebugScoreInfo1(numProcessed, topCursor, qtibuf) ) {
@@ -4011,10 +4028,6 @@ void PosdbTable::intersectLists10_r ( ) {
 
 
 			if ( m_q->m_isBoolean ) {
-				m_docId = *(uint32_t *)(docIdPtr+1);
-				m_docId <<= 8;
-				m_docId |= (unsigned char)docIdPtr[0];
-				m_docId >>= 2;
 				// add one point for each term matched in the bool query
 				// this is really just for when the terms are from different
 				// fields. if we have unfielded boolean terms we should
@@ -4051,15 +4064,6 @@ void PosdbTable::intersectLists10_r ( ) {
 			if ( currPassNum == INTERSECT_DEBUG_INFO ) {
 				dcs.reset();
 				pdcs = &dcs;
-			}
-
-			// second pass already sets m_docId above
-			if ( currPassNum == INTERSECT_SCORING ) {
-				// docid ptr points to 5 bytes of docid shifted up 2
-				m_docId = *(uint32_t *)(docIdPtr+1);
-				m_docId <<= 8;
-				m_docId |= (unsigned char)docIdPtr[0];
-				m_docId >>= 2;
 			}
 
 

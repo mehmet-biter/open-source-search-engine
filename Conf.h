@@ -302,9 +302,6 @@ class Conf {
 	//bool   m_onlyAddUnchangedTermIds;
 	bool   m_doIncrementalUpdating;
 
-	// Temporary (?) setting for new Posdb no-in-memory-merge feature
-	bool   m_noInMemoryPosdbMerge;
-
 	bool   m_useQuickpoll;
 
 	int64_t m_stableSummaryCacheSize;

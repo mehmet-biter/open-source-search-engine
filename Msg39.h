@@ -15,7 +15,7 @@
 
 
 class UdpSlot;
-class RdbIndexQuery;
+class DocumentIndexChecker;
 
 
 class Msg39Request {
@@ -149,7 +149,7 @@ private:
 	// retrieves the lists needed as specified by termIds and PosdbTable
 	void getLists(int fileNum, int64_t docIdStart, int64_t docIdEnd);
 	// called when lists have been retrieved, uses PosdbTable to hash lists
-	void intersectLists(int fileNum, const RdbIndexQuery &indexQuery);
+	void intersectLists(const DocumentIndexChecker &documentIndexChecker);
 
 	// . this is used by handler to reconstruct the incoming Query class
 	// . TODO: have a serialize/deserialize for Query class

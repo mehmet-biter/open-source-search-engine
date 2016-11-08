@@ -5230,17 +5230,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
-	m->m_title = "Use new no-in-memory-merge feature";
-	m->m_desc  = "Posdb will no longer contain delete keys, and the entire document is indexed every time a change is found. "
-	             "(Changes requires restart)";
-	m->m_cgi   = "noinmemmerge";
-	m->m_off   = offsetof(Conf,m_noInMemoryPosdbMerge);
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
 
 
 	m->m_title = "injections enabled";

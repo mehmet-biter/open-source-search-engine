@@ -4,7 +4,7 @@
 #include "JobScheduler.h"
 #include "UdpServer.h"
 #include "RdbList.h"
-#include "RdbIndexQuery.h"
+#include "DocumentIndexChecker.h"
 #include "Sanity.h"
 #include "Posdb.h"
 #include "Mem.h"
@@ -391,7 +391,7 @@ void Msg39::controlLoop ( ) {
 		g_errno = ENOCOLLREC;
 	}
 
-	RdbIndexQuery indexQuery(base);
+	DocumentIndexChecker documentIndexChecker(base);
 	const int numFiles = base->getNumFiles(); //todo: this can vary if a merge finishes during the query
 //	log(LOG_DEBUG,"controlLoop(): numFiles=%d",numFiles);
 	
@@ -466,7 +466,8 @@ void Msg39::controlLoop ( ) {
 			}
 
 			// Intersect the lists we loaded (using a thread)
-			intersectLists(fileNum, indexQuery);
+			documentIndexChecker.setFileNum(fileNum);
+			intersectLists(documentIndexChecker);
 			if ( g_errno ) {
 				log(LOG_ERROR,"Msg39::controlLoop: got error %d after intersectLists()", g_errno);
 				goto hadError;
@@ -739,7 +740,7 @@ void Msg39::getLists(int fileNum, int64_t docIdStart, int64_t docIdEnd) {
 // . now come here when we got the necessary index lists
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
-void Msg39::intersectLists(int fileNum, const RdbIndexQuery &indexQuery) {
+void Msg39::intersectLists(const DocumentIndexChecker &documentIndexChecker) {
 	log(LOG_DEBUG, "query: msg39(this=%p)::intersectLists()",this);
 	// timestamp log
 	if ( m_debug ) {
@@ -767,7 +768,7 @@ void Msg39::intersectLists(int fileNum, const RdbIndexQuery &indexQuery) {
 	// . this will actually calculate the top
 	// . this might also change m_query.m_termSigns
 	// . this won't do anything if it was already called
-	m_posdbTable.init ( &m_query, m_debug, this, &m_toptree, indexQuery, &m_msg2, m_msg39req);
+	m_posdbTable.init ( &m_query, m_debug, this, &m_toptree, documentIndexChecker, &m_msg2, m_msg39req);
 
 	// . we have to do this here now too
 	// . but if we are getting weights, we don't need m_toptree!

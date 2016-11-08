@@ -13604,29 +13604,27 @@ char *XmlDoc::getMetaList(bool forDelete) {
 		// we need to add delete key per document when it's deleted (with term 0)
 		// we also need to add positive key per document when it's new
 		// in case there is already a delete key in the tree/bucket (this will not be persisted and will be removed in Rdb::addRecord)
-		if (g_conf.m_noInMemoryPosdbMerge) {
-			// we don't need to do this if getMetaList is called to get negative keys
-			if (!forDelete) {
-				if ((m_isInIndex && !m_wasInIndex) || (!m_isInIndex && m_wasInIndex)) {
-					char key[MAX_KEY_BYTES];
+		// we don't need to do this if getMetaList is called to get negative keys
+		if (!forDelete) {
+			if ((m_isInIndex && !m_wasInIndex) || (!m_isInIndex && m_wasInIndex)) {
+				char key[MAX_KEY_BYTES];
 
-					int64_t docId;
-					bool delKey = (!m_isInIndex);
-					if (!m_isInIndex) {
-						// deleted doc
-						docId = *od->getDocId();
-					} else {
-						// new doc
-						docId = *nd->getDocId();
-					}
-
-					// add posdb doc key
-					*m_p++ = m_useSecondaryRdbs ? RDB2_POSDB2 : RDB_POSDB;
-
-					Posdb::makeKey(&key, POSDB_DELETEDOC_TERMID, docId, 0, 0, 0, 0, 0, 0, 0, 0, 0, delKey, false);
-					memcpy(m_p, &key, sizeof(posdbkey_t));
-					m_p += sizeof(posdbkey_t);
+				int64_t docId;
+				bool delKey = (!m_isInIndex);
+				if (!m_isInIndex) {
+					// deleted doc
+					docId = *od->getDocId();
+				} else {
+					// new doc
+					docId = *nd->getDocId();
 				}
+				
+				// add posdb doc key
+				*m_p++ = m_useSecondaryRdbs ? RDB2_POSDB2 : RDB_POSDB;
+
+				Posdb::makeKey(&key, POSDB_DELETEDOC_TERMID, docId, 0, 0, 0, 0, 0, 0, 0, 0, 0, delKey, false);
+				memcpy(m_p, &key, sizeof(posdbkey_t));
+				m_p += sizeof(posdbkey_t);
 			}
 		}
 	}

@@ -26,7 +26,7 @@ void printTermList ( int32_t i, const char *list, int32_t listSize ) ;
 
 
 //forward declarations
-class RdbIndexQuery;
+class DocumentIndexChecker;
 class TopTree;
 class Msg2;
 class Msg39Request;
@@ -80,7 +80,7 @@ class PosdbTable {
 	// . returns false on error and sets errno
 	// . "termFreqs" are 1-1 with q->m_qterms[]
 	// . sets m_q to point to q
-	void init(Query *q, bool debug, void *logstate, TopTree *topTree, const RdbIndexQuery &indexQuery, Msg2 *msg2, Msg39Request *r);
+	void init(Query *q, bool debug, void *logstate, TopTree *topTree, const DocumentIndexChecker &documentIndexChecker, Msg2 *msg2, Msg39Request *r);
 
 	// pre-allocate m_whiteListTable
 	bool allocWhiteListTable ( ) ;
@@ -163,7 +163,7 @@ class PosdbTable {
 
 	Msg2 *m_msg2;
 
-	const RdbIndexQuery *m_indexQuery;
+	const DocumentIndexChecker *m_documentIndexChecker;
 
 	// if getting more than MAX_RESULTS results, use this top tree to hold
 	// them rather than the m_top*[] arrays above
