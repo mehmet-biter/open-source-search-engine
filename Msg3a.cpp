@@ -776,12 +776,6 @@ bool Msg3a::mergeLists() {
 	// sanity check
 	char *pend = m_finalBuf + need;
 	if(p != pend) { g_process.shutdownAbort(true); }
-	// . now allocate for hash table
-	// . get at least twice as many slots as docids
-	HashTableT<int64_t,char> htable;
-	// returns false and sets g_errno on error
-	if(!htable.set(nd*2))
-		return true;
 	// hash table for doing site clustering, provided we
 	// are fully split and we got the site recs now
 	HashTableT<int64_t,int32_t> htable2;
@@ -798,8 +792,6 @@ bool Msg3a::mergeLists() {
 	do {
 		// the winning docid will be diPtr[maxj]
 		int32_t maxj = -1;
-		//Msg39Reply *mr;
-		int32_t hslot;
 
 		// get the next highest-scoring docids from all shard termlists
 		for(int32_t j = 0; j < m_numQueriedHosts; j++) {
@@ -875,13 +867,6 @@ bool Msg3a::mergeLists() {
 				return true;
 		}
 
-		hslot = htable.getSlot(*diPtr[maxj] );
-
-		// . only add it to the final list if the docid is "unique"
-		// . BUT since different event ids share the same docid, exception!
-		if(hslot >= 0)
-			goto skip;
-
 		// always inc this
 		//m_totalDocCount++;
 		// only do this if we need more
@@ -944,10 +929,6 @@ bool Msg3a::mergeLists() {
 
 		// if it has ALL the required query terms, count it
 		//if(*bsPtr[maxj] & 0x60 ) m_numAbove++;
-		// . add it, this should be pre-allocated!
-		// . returns false and sets g_errno on error
-		if(! htable.addKey(*diPtr[maxj],1))
-			return true;
 
 	 skip:
 		// increment the shard pointers from which we took the max
