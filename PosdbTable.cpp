@@ -2104,9 +2104,9 @@ bool PosdbTable::findCandidateDocIds() {
 		
 		// remember to swap back when done!!
 		char ttt[12];
-		gbmemcpy ( ttt   , p       , 12 );
-		gbmemcpy ( p     , p + 12 , 6   );
-		gbmemcpy ( p + 6 , ttt     , 12 );
+		memcpy ( ttt   , p       , 12 );
+		memcpy ( p     , p + 12  ,  6 );
+		memcpy ( p + 6 , ttt     , 12 );
 
 		// point to the low "hks" bytes now, skipping the termid
 		p += 6;
@@ -5656,7 +5656,7 @@ bool PosdbTable::makeDocIdVoteBufForBoolQuery( ) {
 			// shift up
 			docId <<= 2;
 			// a 6 byte key means you pass
-			gbmemcpy ( dst, &docId, 6 );
+			memcpy ( dst, &docId, 6 );
 			dst += 6;
 			continue;
 		}
@@ -5675,7 +5675,7 @@ bool PosdbTable::makeDocIdVoteBufForBoolQuery( ) {
 			// shift up
 			docId <<= 2;
 			// a 6 byte key means you pass
-			gbmemcpy ( dst, &docId, 6 );
+			memcpy ( dst, &docId, 6 );
 			
 			// test it
 			if ( m_debug ) {
