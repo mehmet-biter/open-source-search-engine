@@ -20367,18 +20367,27 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 
 #define WTMPBUFSIZE (MAX_WORDS *21*3)
 
-// . RULE #28, repetitive word/phrase spam detector
-// . set's the "spam" member of each word from 0(no spam) to 100(100% spam)
-// . "bits" describe each word in phrasing terminology
-// . if more than maxPercent of the words are spammed to some degree then we
-//   consider all of the words to be spammed, and give each word the minimum
-//   score possible when indexing the document.
-// . returns false and sets g_errno on error
-char *XmlDoc::getWordSpamVec ( ) {
+// RULE #28, repetitive word/phrase spam detector
+// Set's the "spam" member of each word from 0(no spam) to 100(100% spam).
+//
+// "bits" describe each word in phrasing terminology.
+//
+// If more than maxPercent of the words are spammed to some degree then we
+// consider all of the words to be spammed, and give each word the minimum
+// score possible when indexing the document.
+//
+// Returns false and sets g_errno on error
+char *XmlDoc::getWordSpamVec() {
 
+	logTrace( g_conf.m_logTraceWordSpam, "BEGIN" );
+	
 	if ( m_wordSpamBufValid ) {
 		char *wbuf = m_wordSpamBuf.getBufStart();
-		if ( ! wbuf ) return (char *)0x01;
+		if ( ! wbuf ) {
+			logTrace( g_conf.m_logTraceWordSpam, "END - no buffer" );
+			return (char *)0x01;
+		}
+		logTrace( g_conf.m_logTraceWordSpam, "END - Valid" );
 		return wbuf;
 	}
 
@@ -20388,34 +20397,43 @@ char *XmlDoc::getWordSpamVec ( ) {
 	m_isRepeatSpammer = false;
 
 	Words *words = getWords();
-	if ( ! words || words == (Words *)-1 ) return (char *)words;
+	if ( ! words || words == (Words *)-1 ) {
+		logTrace( g_conf.m_logTraceWordSpam, "END - no Words obj" );
+		return (char *)words;
+	}
 
 	m_wordSpamBuf.purge();
 
 	int32_t nw = words->getNumWords();
 	if ( nw <= 0 ) {
 		m_wordSpamBufValid = true;
+		logTrace( g_conf.m_logTraceWordSpam, "END - no words" );
 		return (char *)0x01;
 	}
 
 	Phrases *phrases = getPhrases ();
-	if ( ! phrases || phrases == (void *)-1 ) return (char *)phrases;
+	if ( ! phrases || phrases == (void *)-1 ) {
+		logTrace( g_conf.m_logTraceWordSpam, "END - no Phrases" );
+		return (char *)phrases;
+	}
 	Bits *bits = getBits();
-	if ( ! bits ) return (char *)NULL;
+	if ( ! bits ) {
+		logTrace( g_conf.m_logTraceWordSpam, "END - no Bits" );
+		return (char *)NULL;
+	}
 
 	m_wordSpamBufValid = true;
 
 	//if ( m_isLinkText   ) return true;
 	//if ( m_isCountTable ) return true;
 
-	// shortcuts
-	//Words *words = m_words;
-	//Bits  *bits  = m_bits;
 
 	// if 20 words totally spammed, call it all spam?
 	m_numRepeatSpam = 20;
 
-	if ( ! m_siteNumInlinksValid ) { g_process.shutdownAbort(true); }
+	if ( ! m_siteNumInlinksValid ) {
+		g_process.shutdownAbort(true);
+	}
 
 #if 0
 	// @todo: examine if this should be used. Was always hard coded to 25
@@ -20435,125 +20453,184 @@ char *XmlDoc::getWordSpamVec ( ) {
 	int32_t numWords = words->getNumWords();
 
 	// set up the size of the hash table (number of buckets)
-	int32_t  size = numWords * 3;
+	int32_t  numBuckets = numWords * 3;
 
 	// . add a tmp buf as a scratch pad -- will be freed right after
 	// . allocate this second to avoid mem fragmentation more
 	// . * 2 for double the buckets
-	char  tmpBuf [ WTMPBUFSIZE ];
-	char *tmp     = tmpBuf;
-	int32_t  need    = (numWords * 21) * 3 + numWords;
+	char tmpBuf[WTMPBUFSIZE];
+	char *tmp = tmpBuf;
+								// next, bucketHash, bucketWordPos, profile, commonWords
+	int32_t need = (numWords * (sizeof(int32_t) + sizeof(int64_t) + sizeof(int32_t) + sizeof(int32_t) + sizeof(char))) * 3 + numWords;
+
+	logTrace( g_conf.m_logTraceWordSpam, "numWords: %" PRId32 ", numBuckets: %" PRId32 ", need: %" PRId32 "", numWords, numBuckets, need);
+
 	if ( need > WTMPBUFSIZE ) {
 		tmp = (char *) mmalloc ( need , "Spam" );
 		if ( ! tmp ) {
-			log("build: Failed to allocate %" PRId32" more "
-			    "bytes for spam detection:  %s.",
-			    need,mstrerror(g_errno));
+			log(LOG_WARN, "Failed to allocate %" PRId32" more bytes for spam detection:  %s.", need, mstrerror(g_errno));
+			logTrace( g_conf.m_logTraceWordSpam, "END - oom" );
 			return NULL;
 		}
 	}
 
-	// set up ptrs
+	
+	//#
+	//# We use one single memory block to store all data.
+	//# Set up the pointers to each sub-block here.
+	//#
 	char *p = tmp;
-	// first this
-	unsigned char *spam      = (unsigned char *)p; p += numWords ;
-	// . this allows us to make linked lists of indices of words
-	// . i.e. next[13] = 23--> word #23 FOLLOWS word #13 in the linked list
-	int32_t      *next          = (int32_t      *)p;  p += size * 4;
-	// hash of this word's stem (or word itself if useStem if false)
-	int64_t *bucketHash    = (int64_t *)p;  p += size * 8;
-	// that word's position in document
-	int32_t      *bucketWordPos = (int32_t      *)p;  p += size * 4;
-	// profile of a word
-	int32_t      *profile       = (int32_t      *)p;  p += size * 4;
-	// is it a common word?
-	char      *commonWords   = (char      *)p;  p += size * 1;
+	
+	// One 1-byte spam indicator per word
+	unsigned char *spam = (unsigned char *)p;
+	p += numWords * sizeof(unsigned char);	// one per word, not per bucket
+	
+	// One "next pointer" per bucket.
+	// This allows us to make linked lists of indices of words.
+	// i.e. next[13] = 23 -> word #23 FOLLOWS word #13 in the linked list
+	int32_t *next = (int32_t *)p;
+	p += numBuckets * sizeof(int32_t);
+
+	// Hash table of word IDs 
+	int64_t *bucketHash = (int64_t *)p;
+	p += numBuckets * sizeof(int64_t);
+
+	// Position in document of word in bucketHash
+	int32_t *bucketWordPos = (int32_t *)p;
+	p += numBuckets * sizeof(int32_t);
+
+	// Profile of word in bucketHash
+	int32_t *profile = (int32_t *)p;
+	p += numBuckets * sizeof(int32_t);
+
+	// Is word in bucketHash a stopword or number?
+	char *commonWords = (char *)p;
+	p += numBuckets * sizeof(char);
 
 	// sanity check
-	if ( p - tmp > need ) { g_process.shutdownAbort(true); }
+	if ( p - tmp > need ) {
+		g_process.shutdownAbort(true);
+	}
 
 	// clear all our spam percentages for these words
-	memset ( spam , 0 , numWords );
+	memset(spam, 0, numWords);
 
-	int32_t np;
-        // clear the hash table
-        int32_t i;
-        for ( i = 0 ; i < size ; i++ ) {
-                bucketHash   [i] =  0;
-                bucketWordPos[i] = -1;
+    // clear the hash table
+    int32_t i;
+    for(i=0; i < numBuckets; i++) {
+		bucketHash   [i] =  0;
+		bucketWordPos[i] = -1;
 		commonWords  [i] =  0;
-        }
+    }
 
-	// count position since Words class can now have tags in it
-	//
-	//int32_t pos = 0;
-	//bool usePos = false;
-	//if ( words->m_tagIds ) usePos = true;
 
 	int64_t *wids = words->getWordIds();
+	const char *const*wptrs = words->getWordPtrs();
+	const int32_t  *wlens = words->getWordLens();
 
-	// . loop through each word
-	// . hash their stems and place in linked list
-	// . if no stemming then don't do stemming
-	for ( i = 0 ; i < numWords ; i++ ) {
-		// . skip punctuation
-		// . this includes tags now , too i guess
-		if ( wids[i] == 0 ) continue;
 
-		// get the hash of the ith word
+	//#
+	//# Register all word occurrences in our hash table
+	//#
+	for(i=0; i < numWords; i++) {
+		// Skip punctuation, spaces and other non-word entries
+		if ( wids[i] == 0 ) {
+			continue;
+		}
+
+		// Get the hash of the ith word
 		int64_t h = words->getWordId(i);
 
 		// "j" is the bucket index
-		int32_t j = (uint64_t)h % size;
+		int32_t j = (uint64_t)h % numBuckets;
 
-		// make sure j points to the right bucket
-		while (bucketHash[j]) {
-			if ( h == bucketHash[j] ) break;
-			if (++j == size) j = 0;
+		// If the hash bucket is already used, see if it is by our
+		// word, otherwise increase the index until a free bucket
+		// is found.
+		while( bucketHash[j] ) {
+			if ( h == bucketHash[j] ) {
+				break;
+			}
+			if (++j == numBuckets) {
+				j = 0;
+			}
 		}
-		// if this bucket is occupied by a word then replace it but
-		// make sure it adds onto the "linked list"
-		if (bucketHash[j])  {
-			// add onto linked list for the ith word
-			next[i]  = bucketWordPos[j];
+		// j now points to either a free bucket or a bucket already
+		// occupied by a previous instance of our word.
+
+		if (bucketHash[j]) {
+			// Bucket already occupied by a previous instance of our word.
+			// Add the previous word position into the "linked list" for the ith word.
+			// So if the bucket was used by word 6 and this is word 10, we set
+			// next[10] to 6. If word 6 collided with word 4, next[6] will point to 4.
+			next[i] = bucketWordPos[j];
 
 			// replace bucket with index to this word
 			bucketWordPos[j] = i;
 		}
-		// otherwise, we have a new occurence of this word
 		else {
-			bucketHash  [j] = h;
+			// Bucket is free. We have the first occurence of this word
+			bucketHash[j] = h;
 
-			// store our position # (i) in bucket
+			// Store our position (i) in bucket
 			bucketWordPos[j] = i;
 
 			// no next occurence of the ith word yet
 			next[i] = -1;
 		}
+
 		// if stop word or number then mark it
-		if ( bits->isStopWord(i) ) commonWords[j] = 1;
-		if ( words->isNum ( i )  ) commonWords[j] = 1;
+		if ( bits->isStopWord(i) ) {
+			commonWords[j] = 1;
+		}
+		if ( words->isNum(i) ) {
+			commonWords[j] = 1;
+		}
+
+		logTrace( g_conf.m_logTraceWordSpam, "Word[%" PRId32 "] [%.*s] (%" PRIu64 ") -> bucket %" PRId32 ", next[%" PRId32 "]=%" PRId32"", i, wlens[i], wptrs[i], wids[i], j, i, next[i]);
 	}
+
+
 	// count distinct candidates that had spam and did not have spam
 	int32_t spamWords = 0;
 	int32_t goodWords = 0;
-	// . now cruise down the hash table looking for filled buckets
-	// . grab the linked list of indices and make a "profile"
-	for ( i = 0 ; i < size ; i++ ) {
+	int32_t numpos;
+
+
+	//#
+	//# Loop through the hash table looking for filled buckets.
+	//# Grab the linked list of indices and make a "profile"
+	//#
+	for ( i=0; i < numBuckets; i++ ) {
 		// skip empty buckets
-		if (bucketHash[i] == 0) continue;
-		np=0;
+		if( bucketHash[i] == 0 ) {
+			continue;
+		}
+
 		// word #j is in bucket #i
 		int32_t j = bucketWordPos[i];
-		// . cruise down the linked list for this word
-		while ( j!=-1) {
-			// store position of occurence of this word in profile
-			profile [ np++ ] = j;
+
+		// Loop through the linked list for this word
+		numpos=0;
+		while( j != -1 ) {
+			// Store position of occurence of this word in profile
+			profile[numpos++] = j;
 			// get the position of next occurence of this word
-			j = next[ j ];
+			j = next[j];
 		}
+
 		// if 2 or less occurences of this word, don't check for spam
-		if ( np < 3 ) { goodWords++; continue; }
+		if ( numpos < 3 ) {
+			goodWords++;
+			continue;
+		}
+
+
+#if 0
+		// @todo: BR 20161109: This code is defective. It checks for <a tags in Words, 
+		// but there are NO tags in Words. It also checks for separator using is_alnum_a
+		// which does not consider a space a separator. In the current condition it
+		// will never catch anything.
 
 		//
 		// set m_isRepeatSpammer
@@ -20563,10 +20640,13 @@ char *XmlDoc::getWordSpamVec ( ) {
 		//
 		int32_t max = 0;
 		int32_t count = 0;
-		int32_t knp = np;
+		int32_t knp = numpos;
+
 		// must be 3+ letters, not a stop word, not a number
-		if ( words->getWordLen(profile[0]) <= 2 || commonWords[i] )
+		if ( words->getWordLen(profile[0]) <= 2 || commonWords[i] ) {
 			knp = 0;
+		}
+
 		// scan to see if they are a tight list
 		for ( int32_t k = 1 ; k < knp ; k++ ) {
 			// are they close together? if not, bail
@@ -20574,44 +20654,68 @@ char *XmlDoc::getWordSpamVec ( ) {
 				count = 0;
 				continue;
 			}
+
 			// otherwise inc it
 			count++;
+
 			// must have another word in between or tag
 			int32_t a = profile[k];
 			int32_t b = profile[k-1];
 			bool gotSep = false;
 			bool inLink = false;
-			for ( int32_t j = a+1 ; j <b ; j++ ) {
+
+
+			for(int32_t j=a+1; j < b; j++) {
 				// if in link do not count, chinese spammer
 				// does not have his crap in links
-				if ( words->getWord(j)[0] == '<' &&
-				     words->getWordLen(j)>=3 ) {
+				// @@@ BR: There are never tags in Words.. will never catch anything
+				if ( words->getWord(j)[0] == '<' && words->getWordLen(j) >= 3 ) {
 					// get the next char after the <
 					char nc;
 					nc=to_lower_a(words->getWord(j)[1]);
+
 					// now check it for anchor tag
 					if ( nc == 'a' ) {
-						inLink = true; break; }
+						inLink = true;
+						break;
+					}
 				}
-				if ( words->getWord(j)[0] == '<' )
+				if ( words->getWord(j)[0] == '<' ) {
 					gotSep = true;
-				if ( is_alnum_a(words->getWord(j)[0]) )
+				}
+
+				//@@@ BR: Returns false for space .. which is what it always checks
+				if ( is_alnum_a(words->getWord(j)[0]) ) {
 					gotSep = true;
+				}
 			}
+
 			// . the chinese spammer always has a separator,
 			//   usually another tag
 			// . and fix "BOW BOW BOW..." which has no separators
-			if      ( ! gotSep  ) count--;
-			else if (   inLink  ) count--;
+			if( !gotSep ) {
+				count--;
+			}
+			else 
+			if( inLink ) {
+				count--;
+			}
+
 			// get the max
-			if ( count > max ) max = count;
+			if ( count > max ) {
+				max = count;
+			}
 		}
+
 		// a count of 50 such monsters indicates the chinese spammer
-		if ( max >= 50 )
+		if ( max >= 50 ) {
 			m_isRepeatSpammer = true;
+		}
 		//
 		// end m_isRepeatSpammer detection
 		//
+#endif
+
 
 		// . determine the probability this word was spammed by looking
 		//   at the distribution of it's positions in the document
@@ -20619,28 +20723,44 @@ char *XmlDoc::getWordSpamVec ( ) {
 		// . don't check if word occurred 2 or less times
 		// . TODO: what about TORA! TORA! TORA!
 		// . returns true if 1+ occurences were considered spam
-		bool isSpam = setSpam ( profile , np , numWords , spam );
+		bool isSpam = setSpam(profile, numpos, numWords, spam);
+
 		// don't count stop words or numbers towards this threshold
-		if ( commonWords[i] ) continue;
+		if ( commonWords[i] ) {
+			continue;
+		}
+
 		// tally them up
-		if ( isSpam ) spamWords++;
-		else          goodWords++;
+		if ( isSpam ) {
+			spamWords++;
+		}
+		else {
+			goodWords++;
+		}
 	}
+
 	// what percent of distinct cadidate words were spammed?
 	int32_t totalWords = spamWords + goodWords;
-	// if no or ver few words return true
+
+	// if no or very few words return true
 	int32_t percent;
-	if ( totalWords <= 10 ) goto done;
+	if ( totalWords <= 10 ) {
+		goto done;
+	}
 	percent    = ( spamWords * 100 ) / totalWords;
 	// if 20% of words we're spammed punish everybody now to 100% spam
 	// if we had < 100 candidates and < 20% spam, don't bother
 	//if ( percent < 5 ) goto done;
-	if ( percent <= maxPercent ) goto done;
+	if ( percent <= maxPercent ) {
+		goto done;
+	}
 
 	// now only set to 99 so each singleton usually gets hashed
-	for ( i = 0 ; i < numWords ; i++ )
-		if ( words->getWordId(i) && spam[i] < 99 )
+	for ( i = 0 ; i < numWords ; i++ ) {
+		if ( words->getWordId(i) && spam[i] < 99 ) {
 			spam[i] = 99;
+		}
+	}
  done:
 
 	// update the weights for the words
@@ -20654,16 +20774,22 @@ char *XmlDoc::getWordSpamVec ( ) {
 	//}
 
 	// convert from percent spammed into rank.. from 0 to 10 i guess
-	for ( i = 0 ; i < numWords ; i++ )
+	for ( i = 0 ; i < numWords ; i++ ) {
 		spam[i] = (MAXWORDSPAMRANK * (100 - spam[i])) / 100;
+	}
 
 	// copy into our buffer
-	if ( ! m_wordSpamBuf.safeMemcpy ( (char *)spam , numWords ) )
+	if ( ! m_wordSpamBuf.safeMemcpy ( (char *)spam , numWords ) ) {
+		logTrace( g_conf.m_logTraceWordSpam, "END - buffer copy failed" );
 		return NULL;
+	}
 
 	// free our temporary table stuff
-	if ( tmp != tmpBuf ) mfree ( tmp , need , "Spam" );
+	if ( tmp != tmpBuf ) {
+		mfree ( tmp , need , "Spam" );
+	}
 
+	logTrace( g_conf.m_logTraceWordSpam, "END - done" );
 	return m_wordSpamBuf.getBufStart();
 }
 
