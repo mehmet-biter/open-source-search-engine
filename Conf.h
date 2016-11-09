@@ -422,6 +422,7 @@ class Conf {
 	bool m_logTraceSpider;
 	bool m_logTraceXmlDoc;
 	bool m_logTracePhrases;
+	bool m_logTraceWordSpam;
 
 	// expensive timing messages
 	bool m_logTimingAddurl;
