@@ -2445,7 +2445,7 @@ bool PosdbTable::genDebugScoreInfo2(DocIdScore *dcs, int32_t *lastLen, uint64_t 
 #ifdef _VALGRIND_
 VALGRIND_CHECK_MEM_IS_DEFINED(&dcs,sizeof(dcs));
 #endif
-	m_scoreInfoBuf.safeMemcpy ( (char *)&dcs, sizeof(DocIdScore) );
+	m_scoreInfoBuf.safeMemcpy ( (char *)dcs, sizeof(DocIdScore) );
 	// save that
 	*lastLen = len;
 	// save it
