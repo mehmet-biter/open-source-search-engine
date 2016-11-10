@@ -5,6 +5,7 @@
 #include "BitOperations.h"
 #include "RdbIndexQuery.h"
 #include "Posdb.h"
+#include "Linkdb.h"
 #include <set>
 #include <assert.h>
 
@@ -1981,7 +1982,14 @@ top:
 			required -= tag->getRecSize();
 			goto skip;
 		}
+	} else if (rdbId == RDB_LINKDB) {
+		/// @todo ALC remove this when all linkdb are merged
+		if (Linkdb::getLostDate_uk(lists[mini]->getCurrentRec()) != 0) {
+			required -= lists[mini]->getCurrentRecSize();
+			goto skip;
+		}
 	}
+
 
 	// remember state before we are stored in case we're annihilated and
 	// we hafta roll back to it

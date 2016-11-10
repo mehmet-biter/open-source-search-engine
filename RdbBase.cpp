@@ -2574,6 +2574,70 @@ void RdbBase::generateGlobalIndex() {
 	m_docIdFileIndex.swap(tmpDocIdFileIndex);
 }
 
+void RdbBase::updateGlobalIndexInsertFile(int32_t mergeFilePos) {
+	if (!m_useIndexFile) {
+		return;
+	}
+
+	ScopedLock sl(m_docIdFileIndexMtx);
+	docids_ptr_t tmpDocIdFileIndex(new docids_t(*m_docIdFileIndex.get()));
+	sl.unlock();
+
+	for (auto it = tmpDocIdFileIndex->begin(); it != tmpDocIdFileIndex->end(); ++it) {
+		int32_t filePos = static_cast<int32_t>(*it & RdbBase::s_docIdFileIndex_filePosMask);
+		if (filePos >= mergeFilePos) {
+			*it = (*it & ~s_docIdFileIndex_filePosMask) | (filePos + 1);
+		}
+	}
+
+	// replace with new index
+	ScopedLock sl2(m_docIdFileIndexMtx);
+	m_docIdFileIndex.swap(tmpDocIdFileIndex);
+}
+
+void RdbBase::updateGlobalIndexUpdateFile(int32_t mergeFilePos, int32_t startFilePos, int32_t fileMergeCount) {
+	if (!m_useIndexFile) {
+		return;
+	}
+
+	ScopedLock sl(m_docIdFileIndexMtx);
+	docids_ptr_t tmpDocIdFileIndex(new docids_t(*m_docIdFileIndex.get()));
+	sl.unlock();
+
+	int32_t endFilePos = startFilePos + fileMergeCount;
+	for (auto it = tmpDocIdFileIndex->begin(); it != tmpDocIdFileIndex->end(); ++it) {
+		int32_t filePos = static_cast<int32_t>(*it & RdbBase::s_docIdFileIndex_filePosMask);
+		if (filePos >= startFilePos && filePos <  endFilePos) {
+			*it = (*it & ~s_docIdFileIndex_filePosMask) | mergeFilePos;
+		}
+	}
+
+	// replace with new index
+	ScopedLock sl2(m_docIdFileIndexMtx);
+	m_docIdFileIndex.swap(tmpDocIdFileIndex);
+}
+
+void RdbBase::updateGlobalIndexDeleteFile(int32_t mergeFilePos, int32_t fileMergeCount) {
+	if (!m_useIndexFile) {
+		return;
+	}
+
+	ScopedLock sl(m_docIdFileIndexMtx);
+	docids_ptr_t tmpDocIdFileIndex(new docids_t(*m_docIdFileIndex.get()));
+	sl.unlock();
+
+	for (auto it = tmpDocIdFileIndex->begin(); it != tmpDocIdFileIndex->end(); ++it) {
+		int32_t filePos = static_cast<int32_t>(*it & RdbBase::s_docIdFileIndex_filePosMask);
+		if (filePos > mergeFilePos) {
+			*it = (*it & ~s_docIdFileIndex_filePosMask) | (filePos - fileMergeCount);
+		}
+	}
+
+	// replace with new index
+	ScopedLock sl2(m_docIdFileIndexMtx);
+	m_docIdFileIndex.swap(tmpDocIdFileIndex);
+}
+
 void RdbBase::printGlobalIndex() {
 	auto globalIndex = getGlobalIndex();
 	for (auto key : *globalIndex) {

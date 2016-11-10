@@ -1,9 +1,8 @@
 #ifndef GB_POSDB_TABLE_H
 #define GB_POSDB_TABLE_H
 
-#include "Rdb.h"
+#include "RdbList.h"
 #include "HashTableX.h"
-#include "Query.h"         // MAX_QUERY_TERMS, qvec_t
 
 
 float getDiversityWeight ( unsigned char diversityRank );
@@ -31,6 +30,8 @@ class TopTree;
 class Msg2;
 class Msg39Request;
 class DocIdScore;
+class Query;
+class QueryTerm;
 
 
 #define MAX_SUBLISTS 50
@@ -115,8 +116,8 @@ class PosdbTable {
 	}
 
 	// functions used by intersectlist
-	bool genDebugScoreInfo1(int32_t &numProcessed, int32_t &topCursor, QueryTermInfo *qtibuf);
-	bool genDebugScoreInfo2(DocIdScore &dcs, int32_t &lastLen, uint64_t &lastDocId, char siteRank, float score, int32_t intScore, char docLang);
+	bool genDebugScoreInfo1(int32_t *numProcessed, int32_t *topCursor, QueryTermInfo *qtibuf);
+	bool genDebugScoreInfo2(DocIdScore *dcs, int32_t *lastLen, uint64_t *lastDocId, char siteRank, float score, int32_t intScore, char docLang);
 	bool advanceTermListCursors(const char *docIdPtr, QueryTermInfo *qtibuf);
 	bool prefilterMaxPossibleScoreByDistance(QueryTermInfo *qtibuf, const int32_t *qpos, float minWinningScore);
 	void mergeTermSubListsForDocId(QueryTermInfo *qtibuf, char *miniMergeBuf, const char **miniMergedList, const char **miniMergedEnd, int *highestInlinkSiteRank);

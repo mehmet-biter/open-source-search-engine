@@ -110,8 +110,8 @@ public:
 		m_allocBuf = NULL;
 		m_allocSize = 0;
 		m_allocOff = 0;
-	};
-	~FileState() {};
+	}
+	~FileState() {}
 };
 
 

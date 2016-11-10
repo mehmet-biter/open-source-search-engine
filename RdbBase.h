@@ -230,6 +230,9 @@ private:
 
 public:
 	void generateGlobalIndex();
+	void updateGlobalIndexInsertFile(int32_t mergeFilePos);
+	void updateGlobalIndexUpdateFile(int32_t mergeFilePos, int32_t startFilePos, int32_t fileMergeCount);
+	void updateGlobalIndexDeleteFile(int32_t mergeFilePos, int32_t fileMergeCount);
 	void printGlobalIndex();
 
 	static const char s_docIdFileIndex_docIdOffset = 24;

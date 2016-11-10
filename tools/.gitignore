@@ -1,2 +1,5 @@
+decode_posdbkey
+dump_rdbbuckets
+dump_rdbindex
 generate_rdbindex
 validate_rdbindex
