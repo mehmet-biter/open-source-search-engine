@@ -1497,7 +1497,7 @@ bool BigFile::unlink(int32_t part, void (*callback)(void *state), void *state) {
 		mnew(job_state, sizeof(*job_state), "UnlinkRenameState");
 
 		// . we spawn the thread here now
-		if( !g_jobScheduler.submit(unlinkWrapper, doneUnlinkWrapper, job_state, thread_type_unlink, 1/*niceness*/) ) {
+		if( !g_jobScheduler.submit(unlinkWrapper, doneUnlinkWrapper, job_state, thread_type_file_meta_data, 1/*niceness*/) ) {
 			// otherwise, thread spawn failed, do it blocking then
 			log( LOG_INFO, "disk: Failed to launch unlink/rename thread for %s, part=%" PRId32"/%" PRId32".", f->getFilename(),i,part);
 			g_unlinkRenameThreads--;
@@ -1608,7 +1608,7 @@ bool BigFile::rename(const char *newBaseFilename,
 
 		logTrace(LOG_TRACE, "rename: submitting rename of %s to %s part #%d", m_baseFilename.getBufStart(), m_newBaseFilename.getBufStart(), i);
 		// . we spawn the thread here now
-		if( !g_jobScheduler.submit(renameP1Wrapper, doneP1RenameWrapper, job_state, thread_type_unlink, 1/*niceness*/) ) {
+		if( !g_jobScheduler.submit(renameP1Wrapper, doneP1RenameWrapper, job_state, thread_type_file_meta_data, 1/*niceness*/) ) {
 			// otherwise, thread spawn failed, do it blocking then
 			log( LOG_INFO, "disk: Failed to launch unlink/rename thread for %s, part=%" PRId32".", f->getFilename(),i);
 			g_unlinkRenameThreads--;
@@ -1744,7 +1744,7 @@ void BigFile::doneP1RenameWrapper(File *f) {
 			mnew(job_state, sizeof(*job_state), "UnlinkRenameState");
 			
 			g_unlinkRenameThreads++;
-			if( !g_jobScheduler.submit(renameP2Wrapper, doneP2RenameWrapper, job_state, thread_type_unlink, 1/*niceness*/) ) {
+			if( !g_jobScheduler.submit(renameP2Wrapper, doneP2RenameWrapper, job_state, thread_type_file_meta_data, 1/*niceness*/) ) {
 				// otherwise, thread spawn failed, do it blocking then
 				log( LOG_INFO, "disk: Failed to launch unlink/rename thread for %s, part=%" PRId32".", f->getFilename(),i);
 				g_unlinkRenameThreads--;

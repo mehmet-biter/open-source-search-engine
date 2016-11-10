@@ -393,7 +393,6 @@ bool JobScheduler_impl::submit(thread_type_t thread_type, JobEntry &e)
 			case thread_type_file_meta_data:     job_queue = &cpu_job_queue;      break;
 			case thread_type_statistics:         job_queue = &cpu_job_queue;      break;
 			case thread_type_unspecified_io:     job_queue = &cpu_job_queue;      break;
-			case thread_type_unlink:             job_queue = &cpu_job_queue;      break;
 			case thread_type_generate_thumbnail: job_queue = &external_job_queue; break;
 			default:
 				assert(false);
