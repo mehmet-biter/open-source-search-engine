@@ -564,11 +564,6 @@ bool Msg3a::gotAllShardReplies ( ) {
 					     &replyMaxSize,
 					     &freeit,
 					     true); //stealIt?
-		// cast it
-		Msg39Reply *mr = (Msg39Reply *)rbuf;
-		// in case of mem leak, re-label from "mcast" to this so we
-		// can determine where it came from, "Msg3a-GBR"
-		relabel( rbuf, replyMaxSize , "Msg3a-GBR" );
 		// . we must be able to free it... we must own it
 		// . this is true if we should free it, but we should not have
 		//   to free it since it is owned by the slot?
@@ -576,8 +571,13 @@ bool Msg3a::gotAllShardReplies ( ) {
 			log(LOG_LOGIC,"query: msg3a: Steal failed.");
 			g_process.shutdownAbort(true);
 		}
+		if(rbuf) {
+			// in case of mem leak, re-label from "mcast" to this so we
+			// can determine where it came from, "Msg3a-GBR"
+			relabel( rbuf, replyMaxSize , "Msg3a-GBR" );
+		}
 		// bad reply?
-		if ( ! mr || replySize < 29 ) {
+		if ( ! rbuf || replySize < 29 ) {
 			m_skippedShards++;
 			log(LOG_LOGIC,"query: msg3a: Bad reply (size=%i) from "
 			    "host #%" PRId32". Dead? Timeout? OOM?"
@@ -589,6 +589,8 @@ bool Msg3a::gotAllShardReplies ( ) {
 			// it might have been timd out, just ignore it!!
 			continue;
 		}
+		// cast it
+		Msg39Reply *mr = (Msg39Reply *)rbuf;
 		// how did this happen?
 		// if ( replySize < 29 && ! mr->m_errno ) {
 		// 	// if size is 0 it can be Msg39 giving us an error!
