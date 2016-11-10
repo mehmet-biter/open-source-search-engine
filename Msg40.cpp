@@ -1261,7 +1261,7 @@ bool Msg40::gotSummary ( ) {
 		// merge more docids from the shards' termlists
 		m_msg3a.m_docsToGet = need;
 		// sanity. the original msg39request must be there
-		if ( ! m_msg3a.m_r ) { g_process.shutdownAbort(true); }
+		if ( ! m_msg3a.m_req39 ) { g_process.shutdownAbort(true); }
 		// this should increase m_msg3a.m_numDocIds
 		m_msg3a.mergeLists();
 	}

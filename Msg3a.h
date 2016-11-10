@@ -118,7 +118,7 @@ public:
 	double m_pctSearched;
 
 	// we have one request that we send to each split
-	class Msg39Request *m_r;
+	class Msg39Request *m_req39;
 	char               *m_rbufPtr;
 	int32_t                m_rbufSize;
 	char                m_rbuf [ RBUF_SIZE ];
