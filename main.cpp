@@ -1482,7 +1482,7 @@ int main2 ( int argc , char *argv[] ) {
 		return 1;
 	}
 
-	if ( ! g_jobScheduler.initialize(g_conf.m_maxCpuThreads, g_conf.m_maxIOThreads, g_conf.m_maxExternalThreads, wakeupPollLoop)) {
+	if ( ! g_jobScheduler.initialize(g_conf.m_maxCpuThreads, g_conf.m_maxIOThreads, g_conf.m_maxExternalThreads, g_conf.m_maxFileMetaThreads, wakeupPollLoop)) {
 		log( LOG_ERROR, "db: JobScheduler init failed." );
 		return 1;
 	}
@@ -4005,7 +4005,7 @@ static int64_t s_startTime = 0;
 void seektest ( const char *testdir, int32_t numThreads, int32_t maxReadSize , const char *filename ) {
 
 	g_loop.init();
-	g_jobScheduler.initialize(numThreads,numThreads,numThreads);
+	g_jobScheduler.initialize(numThreads,numThreads,numThreads,numThreads);
 	s_numThreads = numThreads;
 	s_maxReadSize = maxReadSize;
 	if ( s_maxReadSize <= 0 ) s_maxReadSize = 1;
@@ -5409,7 +5409,7 @@ int injectFile ( const char *filename , char *ips , const char *coll ) {
 		if ( ! g_loop.init() ) {
 			log("db: Loop init failed." ); exit(0); }
 		// set up the threads, might need g_conf
-		if ( ! g_jobScheduler.initialize(2,4,2) ) {
+		if ( ! g_jobScheduler.initialize(2,4,2,1) ) {
 			log("db: Threads init failed." ); exit(0); }
 		s_injectTitledb = true;
 		s_titledbKey.setMin();

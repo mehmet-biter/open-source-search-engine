@@ -6632,8 +6632,23 @@ void Parms::init ( ) {
 	m->m_title = "max external threads";
 	m->m_desc  = "Maximum number of threads to use per Gigablast process "
 		"for doing external calss with system() or similar..";
-	m->m_cgi   = "max_ext_threads";
+	m->m_cgi   = "max_file_meta_threads";
 	m->m_off   = offsetof(Conf,m_maxExternalThreads);
+	m->m_type  = TYPE_LONG;
+	m->m_def   = "2";
+	m->m_units = "threads";
+	m->m_min   = 0;
+	m->m_flags = 0;
+	m->m_page  = PAGE_MASTER;
+	m->m_obj   = OBJ_CONF;
+	m->m_group = false;
+	m++;
+
+	m->m_title = "max file meta threads";
+	m->m_desc  = "Maximum number of threads to use per Gigablast process "
+		"for doing file unlinks and renames";
+	m->m_cgi   = "max_ext_threads";
+	m->m_off   = offsetof(Conf,m_maxFileMetaThreads);
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "2";
 	m->m_units = "threads";

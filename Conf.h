@@ -150,6 +150,7 @@ class Conf {
 	int32_t  m_maxCpuThreads;
 	int32_t  m_maxIOThreads;
 	int32_t  m_maxExternalThreads;
+	int32_t  m_maxFileMetaThreads;
 
 	int32_t  m_deadHostTimeout;
 	int32_t  m_sendEmailTimeout;

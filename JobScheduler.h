@@ -81,7 +81,7 @@ public:
 	JobScheduler();
 	~JobScheduler();
 	
-	bool initialize(unsigned num_cpu_threads, unsigned num_io_threads, unsigned num_external_threads, job_done_notify_t job_done_notify=0);
+	bool initialize(unsigned num_cpu_threads, unsigned num_io_threads, unsigned num_external_threads, unsigned num_file_meta_threads, job_done_notify_t job_done_notify=0);
 	void finalize();
 	
 	bool submit(start_routine_t   start_routine,
