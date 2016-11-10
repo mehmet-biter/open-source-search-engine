@@ -474,6 +474,10 @@ inline uint32_t getMyShardNum ( ) {
 	return g_hostdb.m_myHost->m_shardNum; 
 }
 
+inline int32_t getMyHostId() {
+	return g_hostdb.m_myHost->m_hostId;
+}
+
 inline uint32_t getShardNumFromDocId ( int64_t d ) {
 	return g_hostdb.getShardNumFromDocId ( d );
 }
