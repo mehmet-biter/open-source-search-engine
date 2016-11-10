@@ -555,19 +555,17 @@ bool Msg3a::gotAllShardReplies ( ) {
 		bool freeit = false;
 		int32_t  replySize = 0;
 		int32_t  replyMaxSize;
-		char *rbuf;
-		Msg39Reply *mr;
 		// . only get it if the reply not already full
 		// . if reply already processed, skip
 		// . perhaps it had no more docids to give us or all termlists
 		//   were exhausted on its disk and this is a re-call
 		// . we have to re-process it for count m_numTotalEstHits, etc.
-		rbuf = m->getBestReply ( &replySize    ,
-					 &replyMaxSize ,
-					 &freeit       ,
-					 true          ); //stealIt?
+		char *rbuf = m->getBestReply(&replySize,
+					     &replyMaxSize,
+					     &freeit,
+					     true); //stealIt?
 		// cast it
-		mr = (Msg39Reply *)rbuf;
+		Msg39Reply *mr = (Msg39Reply *)rbuf;
 		// in case of mem leak, re-label from "mcast" to this so we
 		// can determine where it came from, "Msg3a-GBR"
 		relabel( rbuf, replyMaxSize , "Msg3a-GBR" );
