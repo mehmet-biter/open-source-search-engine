@@ -1270,6 +1270,7 @@ bool RdbBase::incorporateMerge ( ) {
 	// . bitch if bad news
 	if ( postmergePositiveRecords > m_premergeNumPositiveRecords ) {
 		log(LOG_INFO,"merge: %s gained %" PRId64" positives.", m_dbname, postmergePositiveRecords - m_premergeNumPositiveRecords);
+		//note: also seen when resuming an interrupted merge, inwhich case there is probably nothing wrong
 	}
 
 	if ( postmergePositiveRecords < m_premergeNumPositiveRecords - m_premergeNumNegativeRecords ) {
