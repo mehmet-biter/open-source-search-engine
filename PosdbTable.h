@@ -1,9 +1,8 @@
 #ifndef GB_POSDB_TABLE_H
 #define GB_POSDB_TABLE_H
 
-#include "Rdb.h"
+#include "RdbList.h"
 #include "HashTableX.h"
-#include "Query.h"         // MAX_QUERY_TERMS, qvec_t
 
 
 float getDiversityWeight ( unsigned char diversityRank );
@@ -30,6 +29,8 @@ class TopTree;
 class Msg2;
 class Msg39Request;
 class DocIdScore;
+class Query;
+class QueryTerm;
 
 
 #define MAX_SUBLISTS 50
