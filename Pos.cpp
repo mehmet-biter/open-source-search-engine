@@ -439,7 +439,7 @@ int32_t Pos::filter( const Words *words, int32_t a, int32_t b, bool addEllipsis,
 	}
 
 	/// @todo ALC configurable minRemoveEllipsisLen so we can tweak this as needed
-	const int minRemoveEllipsisLen = 120;
+	const int minRemoveEllipsisLen = 90;
 
 	logTrace(g_conf.m_logTracePos, "len=%ld", (f - fstart));
 
