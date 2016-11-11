@@ -305,16 +305,19 @@ int32_t Pos::filter( const Words *words, int32_t a, int32_t b, bool addEllipsis,
 							f = lastEllipsis;
 						}
 					} else {
+						logTrace(g_conf.m_logTracePos, "addEllipsis=true");
 						addEllipsis = true;
 					}
 
 					if (addEllipsis) {
+						logTrace(g_conf.m_logTracePos, "addEllipsis");
+
 						if ( f != fstart && *(f - 1) != ' ' ) {
 							*f++ = ' ';
 						}
 
 						lastSpace = true;
-						memcpy ( f, " \342\200\246", 4 ); //horizontal ellipsis, code point 0x2026
+						memcpy ( f, "\342\200\246 ", 4 ); //horizontal ellipsis, code point 0x2026
 						f += 4;
 
 						lastEllipsis = f;
