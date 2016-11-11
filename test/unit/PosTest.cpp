@@ -23,8 +23,8 @@ TEST( PosTest, FilterAllCaps ) {
 	ASSERT_EQ( sizeof( input_strs ) / sizeof( input_strs[0] ),
 			   sizeof( expected_output ) / sizeof( expected_output[0] ) );
 
-	size_t len = sizeof( input_strs ) / sizeof( input_strs[0] );
-	for ( size_t i = 0; i < len; i++ ) {
+	size_t input_len = sizeof( input_strs ) / sizeof( input_strs[0] );
+	for ( size_t i = 0; i < input_len; i++ ) {
 		Words words;
 		Pos pos;
 		char buf[MAX_BUF_SIZE];
@@ -104,8 +104,8 @@ TEST( PosTest, FilterEnding ) {
 	ASSERT_EQ( sizeof( input_strs ) / sizeof( input_strs[0] ),
 			   sizeof( expected_output ) / sizeof( expected_output[0] ) );
 
-	size_t len = sizeof( input_strs ) / sizeof( input_strs[0] );
-	for ( size_t i = 0; i < len; i++ ) {
+	size_t input_len = sizeof( input_strs ) / sizeof( input_strs[0] );
+	for ( size_t i = 0; i < input_len; i++ ) {
 		Words words;
 		Pos pos;
 		char buf[MAX_BUF_SIZE];
@@ -133,8 +133,8 @@ TEST( PosTest, FilterTags ) {
 	ASSERT_EQ( sizeof( input_strs ) / sizeof( input_strs[0] ),
 			   sizeof( expected_output ) / sizeof( expected_output[0] ) );
 
-	size_t len = sizeof( input_strs ) / sizeof( input_strs[0] );
-	for ( size_t i = 0; i < len; i++ ) {
+	size_t input_len = sizeof( input_strs ) / sizeof( input_strs[0] );
+	for ( size_t i = 0; i < input_len; i++ ) {
 		Xml xml;
 		Words words;
 		Pos pos;
@@ -176,8 +176,8 @@ TEST( PosTest, FilterSamePunct ) {
 	ASSERT_EQ( sizeof( input_strs ) / sizeof( input_strs[0] ),
 			   sizeof( expected_output ) / sizeof( expected_output[0] ) );
 
-	size_t len = sizeof( input_strs ) / sizeof( input_strs[0] );
-	for ( size_t i = 0; i < len; i++ ) {
+	size_t input_len = sizeof( input_strs ) / sizeof( input_strs[0] );
+	for ( size_t i = 0; i < input_len; i++ ) {
 		Words words;
 		Pos pos;
 		char buf[MAX_BUF_SIZE];
@@ -217,8 +217,8 @@ TEST( PosTest, DecodeHTMLEntities ) {
 	ASSERT_EQ( sizeof( input_strs ) / sizeof( input_strs[0] ),
 			   sizeof( expected_output ) / sizeof( expected_output[0] ) );
 
-	size_t len = sizeof( input_strs ) / sizeof( input_strs[0] );
-	for ( size_t i = 0; i < len; i++ ) {
+	size_t input_len = sizeof( input_strs ) / sizeof( input_strs[0] );
+	for ( size_t i = 0; i < input_len; i++ ) {
 		Words words;
 		Pos pos;
 		char buf[MAX_BUF_SIZE];
