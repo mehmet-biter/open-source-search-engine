@@ -2564,8 +2564,6 @@ public:
 	TcpSocket *m_sock;
 	// store the ip here
 	int32_t m_ip;
-	// not really needed but saves a malloc
-	DnsState m_dnsState;
 
 	Msg13 m_msg13;
 	Msg13Request m_request;
@@ -2643,8 +2641,7 @@ bool HttpServer::processSquidProxyRequest ( TcpSocket *sock, HttpRequest *hr) {
 			     hlen,
 			     &sqs->m_ip,
 			     sqs,
-			     gotSquidProxiedUrlIp,
-			     &sqs->m_dnsState) )
+			     gotSquidProxiedUrlIp) )
 		return false;
 
 	// error?
