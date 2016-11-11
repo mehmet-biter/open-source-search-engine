@@ -138,6 +138,8 @@ int32_t Pos::filter( const Words *words, int32_t a, int32_t b, bool addEllipsis,
 
 		// is tag?
 		if ( tids && tids[i] ) {
+			logTrace(g_conf.m_logTracePos, "tags");
+
 			// let's not get from bad tags
 			if ( inTag( tids[i], TAG_STYLE, &inBadTags ) ) {
 				continue;
@@ -296,6 +298,7 @@ int32_t Pos::filter( const Words *words, int32_t a, int32_t b, bool addEllipsis,
 						// if all from f to last ellipsis are punctuation, skip to last ellipsis
 						for ( char *c = lastEllipsis + 1; c < f; ++c) {
 							if ( is_alnum_utf8( c ) ) {
+								logTrace(g_conf.m_logTracePos, "addEllipsis=true");
 								addEllipsis = true;
 								break;
 							}
@@ -411,6 +414,8 @@ int32_t Pos::filter( const Words *words, int32_t a, int32_t b, bool addEllipsis,
 
 	// only capitalize first letter in a word for a sentence with all caps
 	if ( capCount > minCapCount && capCount == ( f - fstart ) ) {
+		logTrace(g_conf.m_logTracePos, "all caps");
+
 		bool isFirstLetter = true;
 
 		unsigned char cs = 0;

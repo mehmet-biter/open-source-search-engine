@@ -10181,6 +10181,15 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
+	m->m_title = "log trace info for Summary";
+	m->m_cgi   = "ltrc_sum";
+	m->m_off   = offsetof(Conf,m_logTraceSummary);
+	m->m_type  = TYPE_BOOL;
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m->m_obj   = OBJ_CONF;
+	m++;
+
 	m->m_title = "log trace info for XmlDoc";
 	m->m_cgi   = "ltrc_xmldoc";
 	m->m_off   = offsetof(Conf,m_logTraceXmlDoc);
