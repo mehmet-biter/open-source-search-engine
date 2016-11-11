@@ -1,6 +1,12 @@
 #ifndef GB_SPIDERPROXY_H
 #define GB_SPIDERPROXY_H
 
+#include "types.h"
+#include <inttypes.h>
+
+class SafeBuf;
+
+
 // called by main.cpp to set msg handlers for 0x54 and 0x55
 bool initSpiderProxyStuff();
 
