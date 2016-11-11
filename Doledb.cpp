@@ -1,22 +1,6 @@
-#include "gb-include.h"
-#include "Spider.h"
+#include "Doledb.h"
 #include "SpiderLoop.h"
 #include "SpiderColl.h"
-#include "Doledb.h"
-#include "Msg5.h"
-#include "Collectiondb.h"
-#include "XmlDoc.h"    // score8to32()
-#include "Stats.h"
-#include "SafeBuf.h"
-#include "Repair.h"
-#include "CountryCode.h"
-#include "DailyMerge.h"
-#include "Process.h"
-#include "XmlDoc.h"
-#include "HttpServer.h"
-#include "Pages.h"
-#include "Parms.h"
-#include "Rebalance.h"
 
 
 Doledb g_doledb;
@@ -111,6 +95,3 @@ void nukeDoledb ( collnum_t collnum ) {
 	log("spider: finished nuking doledb for coll (%" PRId32")",
 	    (int32_t)collnum);
 }
-
-
-
