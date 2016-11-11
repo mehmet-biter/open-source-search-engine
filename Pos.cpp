@@ -42,6 +42,8 @@ static bool inTag( nodeid_t tagId, nodeid_t expectedTagId, int *count ) {
 }
 
 int32_t Pos::filter( const Words *words, int32_t a, int32_t b, bool addEllipsis, char *f, char *fend, int32_t version ) {
+	logTrace(g_conf.m_logTracePos, "BEGIN");
+
 	const nodeid_t *tids = words->getTagIds();
 
 	// save start point for filtering
@@ -439,9 +441,13 @@ int32_t Pos::filter( const Words *words, int32_t a, int32_t b, bool addEllipsis,
 	/// @todo ALC configurable minRemoveEllipsisLen so we can tweak this as needed
 	const int minRemoveEllipsisLen = 120;
 
+	logTrace(g_conf.m_logTracePos, "len=%ld", (f - fstart));
+
 	// let's remove ellipsis (...) at the end
 	if ( (f - fstart) >= minRemoveEllipsisLen && dotCount == 3 ) {
+		logTrace(g_conf.m_logTracePos, "remove ellipsis");
 		if ( is_ascii3( *dotPrevChar ) ) {
+			logTrace(g_conf.m_logTracePos, "dotPrevChar=%c", *dotPrevChar);
 			switch ( *dotPrevChar ) {
 				case ',':
 					trunc = true;
@@ -463,6 +469,7 @@ int32_t Pos::filter( const Words *words, int32_t a, int32_t b, bool addEllipsis,
 					trunc = true;
 
 					if ( lastBreakPrevChar ) {
+						logTrace(g_conf.m_logTracePos, "lastBreakPrevChar=%c", *lastBreakPrevChar);
 						if ( is_ascii( *( lastBreakPrevChar ) ) ) {
 							switch ( *( lastBreakPrevChar ) ) {
 								case '!':
@@ -484,7 +491,10 @@ int32_t Pos::filter( const Words *words, int32_t a, int32_t b, bool addEllipsis,
 	}
 
 	if ( trunc ) {
+		logTrace(g_conf.m_logTracePos, "trunc");
+
 		if ( lastBreak == NULL ) {
+			logTrace(g_conf.m_logTracePos, "END. Return 0");
 			return 0;
 		}
 
@@ -492,6 +502,7 @@ int32_t Pos::filter( const Words *words, int32_t a, int32_t b, bool addEllipsis,
 
 		/// @todo ALC we should cater ellipsis for different languages
 		if ( addEllipsis ) {
+			logTrace(g_conf.m_logTracePos, "addEllipsis");
 			if ( (fend - f) > 4 ) {
 				memcpy ( f, " \342\200\246", 4 ); //horizontal ellipsis, code point 0x2026
 				f += 4;
@@ -502,7 +513,11 @@ int32_t Pos::filter( const Words *words, int32_t a, int32_t b, bool addEllipsis,
 	// NULL terminate f
 	*f = '\0';
 
-	return (f - fstart);
+	int bytesStored = static_cast<int>(f - fstart);
+
+	logTrace(g_conf.m_logTracePos, "END. Return %d", bytesStored);
+
+	return bytesStored;
 }
 
 bool Pos::set( const Words *words, int32_t a, int32_t b ) {

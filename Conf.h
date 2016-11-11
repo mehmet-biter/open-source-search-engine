@@ -408,6 +408,7 @@ class Conf {
 	bool m_logTraceMem;
 	bool m_logTraceMsg0;
 	bool m_logTraceMsg4;
+	bool m_logTracePos;
 	bool m_logTracePosdb;
 	bool m_logTraceRdb;
 	bool m_logTraceRdbBase;

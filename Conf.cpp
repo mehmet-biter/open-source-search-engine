@@ -244,6 +244,7 @@ Conf::Conf ( ) {
 	m_logTraceMem = false;
 	m_logTraceMsg0 = false;
 	m_logTraceMsg4 = false;
+	m_logTracePos = false;
 	m_logTracePosdb = false;
 	m_logTraceRdb = false;
 	m_logTraceRdbBase = false;
