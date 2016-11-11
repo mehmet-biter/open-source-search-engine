@@ -331,6 +331,7 @@ JobScheduler_impl::~JobScheduler_impl() {
 	cpu_thread_pool.initiate_stop();
 	io_thread_pool.initiate_stop();
 	external_thread_pool.initiate_stop();
+	file_meta_thread_pool.initiate_stop();
 
 	//Then wake them if they are sleeping
 	pthread_cond_broadcast(&cpu_job_queue.cond_not_empty);
