@@ -6,13 +6,13 @@
 #ifndef GB_LANG_H
 #define GB_LANG_H
 
+#include <inttypes.h>
+
 #define MAX_LANGUAGES 64
 // for langs 1-55, exclude translingual
 // 64 - 8 is 56, then minus 1 is 55 bits
 // translingual is the 31st bit, english is the first bit
 #define LANG_BIT_MASK 0x007fffffffffffffLL
-#include "Unicode.h"
-#include "iana_charset.h"
 
 enum {
 	langUnknown     = 0,
@@ -81,6 +81,6 @@ void        languageToString ( unsigned char lang , char *buf );
 const char* getLanguageString ( unsigned char lang);
 const char* getLanguageAbbr ( unsigned char langId);
 
-bool     isAdult( char *s, int32_t slen, const char **loc = NULL );
+bool     isAdult( char *s, int32_t slen, const char **loc = nullptr );
 
 #endif // GB_LANG_H
