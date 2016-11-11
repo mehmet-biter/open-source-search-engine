@@ -4,6 +4,9 @@
 
 #ifndef GB_IANACHARSET_H
 #define GB_IANACHARSET_H
+
+#include <inttypes.h>
+
 enum eIANACharset{
 	csOther = 1, // unregistered character set
 	csUnknown = 2, // used as a default value

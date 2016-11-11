@@ -87,6 +87,9 @@ print CFILE "// Generated automatically by parse_iana_charsets.pl ".gmtime()."\n
 print CFILE "// DO NOT EDIT!!!\n\n";
 print CFILE "#ifndef GB_IANACHARSET_H\n";
 print CFILE "#define GB_IANACHARSET_H\n";
+print CFILE "\n";
+print CFILE "#include <inttypes.h>";
+print CFILE "\n";
 
 print CFILE "enum eIANACharset{\n";
 print CFILE "\tcsOther = 1, // unregistered character set\n";
@@ -107,6 +110,7 @@ print CFILE "short get_iana_charset(char *cs, int len); \n";
 print CFILE "const char *get_charset_str(short cs); \n";
 print CFILE "bool supportedCharset(short cs); \n";
 print CFILE "void setSupportedCharsets(short *cs, int numCharsets);\n";
+print CFILE "\n";
 print CFILE "#endif // GB_IANACHARSET_H\n";
 close CFILE;
 
@@ -125,14 +129,14 @@ print CFILE<<EOL;
 typedef struct {
     const char *name;
     const char *mime;
-    short mib_enum;
-    char supported;
+    int16_t mib_enum;
+    bool supported;
 } IANACharset;
 
 EOL
     
 
-my $str = "static IANACharset s_charsets[] = {\n";
+my $str = "static const IANACharset s_charsets[] = {\n";
 foreach my $cs (sort {$a->{enum_val} <=> $b->{enum_val}} values %charsets){
     next if !defined($cs->{enum_val});
     my $enum_name = $cs->{names}[$cs->{enum_name}];
@@ -152,7 +156,7 @@ foreach my $cs (sort {$a->{enum_val} <=> $b->{enum_val}} values %charsets){
 	#print ">>>$enum_name: $cs->{enum_val}\n";
     }
     foreach my $name (@{$cs->{names}}){
-	my $supported = $supportedCharsets{$cs->{enum_val}}?"1":"0";
+	my $supported = $supportedCharsets{$cs->{enum_val}}?"true":"false";
 	#print "supportedCharsets: ",%supportedCharsets,"\n";
 	#print "$name $cs->{enum_val}: $supportedCharsets{$cs->{enum_val}}\n";
 	$str .= "\t{\"$name\", \"$mime_name\", $cs->{enum_val}, $supported},\n";
@@ -176,7 +180,7 @@ void reset_iana_charset ( ) {
 }
 
 // Slightly modified from getTextEntity
-short get_iana_charset(char *cs, int len)
+int16_t get_iana_charset(const char *cs, int len)
 {
     if (!s_isInitialized){
 	// set up the hash table
@@ -209,7 +213,7 @@ short get_iana_charset(char *cs, int len)
     return (short)s_charsets[i-1].mib_enum;
 }
 
-const char *get_charset_str(short cs)
+const char *get_charset_str(int16_t cs)
 {
     int s=0;
     int e=sizeof(s_charsets)/sizeof(IANACharset)-2;
@@ -218,7 +222,7 @@ const char *get_charset_str(short cs)
     if (cs > s_charsets[e].mib_enum) return NULL;
     
     // Binary search
-    while (1){
+    for(;;) {
 	// Check endpoints
 	if (cs == s_charsets[s].mib_enum) return s_charsets[s].mime;
 	if (cs ==s_charsets[e].mib_enum) return s_charsets[e].mime;
@@ -238,7 +242,7 @@ const char *get_charset_str(short cs)
 }
 
 // is this charset supported?
-bool supportedCharset(short cs) {
+bool supportedCharset(int16_t cs) {
     int s=0;
     int e=sizeof(s_charsets)/sizeof(IANACharset)-2;
     int i;
@@ -246,10 +250,10 @@ bool supportedCharset(short cs) {
     if (cs > s_charsets[e].mib_enum) return false;
     
     // Binary search
-    while (1){
+    for(;;) {
 	// Check endpoints
 	if (cs == s_charsets[s].mib_enum) return s_charsets[s].supported;
-	if (cs ==s_charsets[e].mib_enum) return s_charsets[e].supported;
+	if (cs == s_charsets[e].mib_enum) return s_charsets[e].supported;
 
 	// check midpoint
 	i = (s+e)/2;
