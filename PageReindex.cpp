@@ -9,7 +9,6 @@
 #include "RdbList.h"
 #include "Pages.h"
 #include "Msg3a.h"
-#include "Msg40.h"
 #include "sort.h"
 #include "Spider.h"
 #include "XmlDoc.h"
