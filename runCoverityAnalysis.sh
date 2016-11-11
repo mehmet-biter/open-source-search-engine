@@ -11,7 +11,7 @@ then
 fi
 
 # setup parameters
-export COVERITY_SCAN_PROJECT_NAME="os search engine"
+export COVERITY_SCAN_PROJECT_NAME="os+search+engine"
 export COVERITY_SCAN_NOTIFICATION_EMAIL="br@privacore.com"
 export COVERITY_SCAN_BUILD_COMMAND_PREPEND="make clean && make libcld2_full.so slacktee.sh"
 export COVERITY_SCAN_BUILD_COMMAND="make"
