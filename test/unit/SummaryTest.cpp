@@ -85,7 +85,7 @@ TEST( SummaryTest, StripSamePunct ) {
 	EXPECT_STREQ("CANDRA BUDGE | $22.00 | … | JESSE NICLEY | $34.00 …", summary.getSummary());
 }
 
-TEST( SummaryTest, BUGNoEllipsisAdded ) {
+TEST( SummaryTest, DISABLED_BUGNoEllipsisAdded ) {
 	const char *head =
 		"<title>Instrument prices by Acme Inc.</title>\n"
 		"<meta name=\"description\" content=\"Unorthodox musical instrument value estimation\">\n";
@@ -102,10 +102,10 @@ TEST( SummaryTest, BUGNoEllipsisAdded ) {
 	generateSummary(summary, input, "saxophone", "http://www.example.com/");
 
 	/// @todo ALC we're not adding ellipsis here due to lack of space. we should take one less word instead and add ellipsis.
-	EXPECT_STREQ( "Unusual saxophone valuation. Looking for knowing how much your saxophone is worth and what an appropriate insurance should be?. We provide that and other relevant information such", summary.getSummary() );
+	EXPECT_STREQ( "Unusual saxophone valuation. Looking for knowing how much your saxophone is worth and what an appropriate insurance should be?. We provide that and other relevant information …", summary.getSummary() );
 }
 
-TEST( SummaryTest, BUGEllipsisAdded ) {
+TEST( SummaryTest, DISABLED_BUGEllipsisAdded ) {
 	const char *body = "Giraffe on rollerblades. Penguin on skateboard. The giraffe is way faster than that plumb bird with pathetic wings.\n";
 
 	char input[MAX_BUF_SIZE];
@@ -115,7 +115,7 @@ TEST( SummaryTest, BUGEllipsisAdded ) {
 	generateSummary(summary, input, "giraffe", "http://www.example.com/");
 
 	/// @todo ALC we're adding ellipsis even with a full sentence.
-	EXPECT_STREQ( "Giraffe on rollerblades. Penguin on skateboard. The giraffe is way faster than that plumb bird with pathetic wings.  …", summary.getSummary() );
+	EXPECT_STREQ( "Giraffe on rollerblades. Penguin on skateboard. The giraffe is way faster than that plumb bird with pathetic wings.", summary.getSummary() );
 }
 
 TEST( SummaryTest, DefaultSummary ) {
