@@ -3,6 +3,7 @@
 #include "Clusterdb.h"
 #include "Rebalance.h"
 #include "JobScheduler.h"
+#include "Conf.h"
 
 // a global class extern'd in .h file
 Clusterdb g_clusterdb;

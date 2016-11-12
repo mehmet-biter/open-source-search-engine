@@ -7,6 +7,7 @@
 #include "Pos.h"
 #include "Matches.h"
 #include "Process.h"
+#include "Conf.h"
 
 
 Summary::Summary()

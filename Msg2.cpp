@@ -8,6 +8,7 @@
 #include "Msg3a.h" // DEFAULT_POSDB_READ_SIZE
 #include "HighFrequencyTermShortcuts.h"
 #include "Sanity.h"
+#include "Conf.h"
 
 
 static int countWhitelistItems(const char *whitelist) {

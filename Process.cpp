@@ -34,6 +34,7 @@
 #include "Timezone.h"
 #include "CountryCode.h"
 #include "File.h"
+#include "Conf.h"
 #include <sys/statvfs.h>
 #include <pthread.h>
 #include <fcntl.h>

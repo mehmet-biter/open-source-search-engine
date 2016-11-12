@@ -1,6 +1,7 @@
 #include "gb-include.h"
 
 #include "Rdb.h"
+#include "Conf.h"
 #include "Clusterdb.h"
 #include "Hostdb.h"
 #include "Tagdb.h"

@@ -168,7 +168,7 @@ public:
 
 	RdbBase *getBase(collnum_t collnum );
 	const RdbBase *getBase(collnum_t collnum ) const { return const_cast<Rdb*>(this)->getBase(collnum); }
-	int32_t getNumBases() const { return g_collectiondb.m_numRecs; }
+	int32_t getNumBases() const;
 	void addBase ( collnum_t collnum , class RdbBase *base ) ;
 
 

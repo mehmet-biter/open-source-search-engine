@@ -7,6 +7,7 @@
 #include "Hostdb.h"
 #include "HashTableT.h"
 #include "UdpServer.h"
+#include "Conf.h"
 #include "JobScheduler.h"
 #include "max_niceness.h"
 #include "Process.h"

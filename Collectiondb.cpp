@@ -21,6 +21,7 @@
 #include "HttpRequest.h"
 #include "Dir.h"
 #include "File.h"
+#include "Conf.h"
 #include <sys/stat.h> //mkdir()
 
 static HashTableX g_collTable;

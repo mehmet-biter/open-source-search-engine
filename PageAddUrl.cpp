@@ -6,6 +6,7 @@
 #include "Spider.h"
 #include "Parms.h"
 #include "GigablastRequest.h"
+#include "Conf.h"
 
 static bool sendReply( void *state );
 

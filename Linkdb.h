@@ -36,7 +36,6 @@
 //                   year 2010
 #define LINKDBEPOCH (1325376000-365*86400*4)
 
-#include "Conf.h"
 #include "Rdb.h"
 #include "Titledb.h"
 #include "Sanity.h"

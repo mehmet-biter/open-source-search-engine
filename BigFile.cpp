@@ -3,6 +3,7 @@
 #include "BigFile.h"
 #include "File.h"
 #include "Dir.h"
+#include "Conf.h"
 #include "JobScheduler.h"
 #include "Stats.h"
 #include "Statsdb.h"

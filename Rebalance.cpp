@@ -18,6 +18,7 @@
 #include "Process.h"
 #include "Parms.h"
 #include "max_niceness.h"
+#include "Conf.h"
 
 Rebalance g_rebalance;
 

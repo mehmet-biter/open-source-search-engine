@@ -26,7 +26,6 @@
 #ifndef GB_RDBBASE_H
 #define GB_RDBBASE_H
 
-#include "Conf.h"
 #include "Mem.h"
 #include "RdbScan.h"
 #include "RdbDump.h"

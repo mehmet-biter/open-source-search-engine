@@ -3,6 +3,8 @@
 #include "Pos.h"
 #include "Words.h"
 #include "Sections.h"
+#include "Conf.h"
+
 
 Pos::Pos() {
 	m_buf = NULL;

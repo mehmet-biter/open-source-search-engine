@@ -13,6 +13,7 @@
 #include "GbUtil.h"
 #include "Dir.h"
 #include "ip.h"
+#include "Conf.h"
 #include <fcntl.h>
 
 

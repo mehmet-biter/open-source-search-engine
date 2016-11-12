@@ -12,6 +12,7 @@
 #include "Process.h"
 #include "PingServer.h"
 #include "ip.h"
+#include "Conf.h"
 #include "GbUtil.h"
 
 

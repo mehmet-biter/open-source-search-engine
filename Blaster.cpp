@@ -5,6 +5,7 @@
 #include "gb-include.h"
 
 #include "Blaster.h"
+#include "Conf.h"
 #include "File.h"
 #include "Titledb.h" // TITLEREC_CURRENT_VERSION
 #include "Linkdb.h"

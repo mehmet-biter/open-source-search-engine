@@ -4,6 +4,7 @@
 #include "JobScheduler.h"
 #include "Rebalance.h"
 #include "Process.h"
+#include "Conf.h"
 
 
 Titledb g_titledb;

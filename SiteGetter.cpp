@@ -3,6 +3,7 @@
 #include "Msg1.h"
 #include "Rdb.h"
 #include "Posdb.h"
+#include "Conf.h"
 #include "Process.h"
 
 //

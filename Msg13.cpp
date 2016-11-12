@@ -2,6 +2,7 @@
 #include "UdpServer.h"
 #include "UdpSlot.h"
 #include "HttpServer.h"
+#include "Conf.h"
 #include "Stats.h"
 #include "HashTableX.h"
 #include "XmlDoc.h"

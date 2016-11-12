@@ -8,6 +8,7 @@
 #include "Words.h"
 #include "Pos.h"
 #include "Sanity.h"
+#include "Conf.h"
 
 
 Xml::Xml  () { 

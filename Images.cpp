@@ -1,5 +1,6 @@
 #include "gb-include.h"
 #include "Images.h"
+#include "Conf.h"
 #include "Query.h"
 #include "Xml.h"
 #include "Words.h"

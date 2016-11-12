@@ -12,6 +12,7 @@
 #include "File.h"
 #include "ScopedLock.h"
 #include "Sanity.h"
+#include "Conf.h"
 #include <fcntl.h>
 
 

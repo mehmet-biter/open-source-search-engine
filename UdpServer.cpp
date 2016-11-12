@@ -19,6 +19,7 @@
 #include "ScopedLock.h"
 #include <netinet/in.h>        // ntohl() ntohs()
 #include "ip.h"
+#include "Conf.h"
 
 // . any changes made to the slots should only be done without risk of
 //   interruption because makeCallbacks() reads from the slots to call

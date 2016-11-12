@@ -1,4 +1,5 @@
 #include "Linkdb.h"
+#include "Conf.h"
 #include "Titledb.h"
 #include "linkspam.h"
 #include "Rebalance.h"

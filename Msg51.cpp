@@ -12,6 +12,8 @@
 #include "RdbCache.h"
 #include "Sanity.h"
 #include "Titledb.h"
+#include "Collectiondb.h"
+
 
 // how many Msg0 requests can we launch at the same time?
 #define MSG51_MAX_REQUESTS 60

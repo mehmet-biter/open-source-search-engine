@@ -10,6 +10,7 @@
 #include "Process.h"
 #include "ip.h"
 #include "Sanity.h"
+#include "Conf.h"
 
 
 //#define GBSANITYCHECK

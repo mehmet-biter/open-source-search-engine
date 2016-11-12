@@ -13,6 +13,7 @@
 
 class RdbList;
 class HashTableX;
+class SpiderColl;
 
 // lower from 1300 to 300
 #define MAXUDPSLOTS 300

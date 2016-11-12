@@ -7,6 +7,7 @@
 #include "Hostdb.h"
 #include "SafeBuf.h"
 #include "max_niceness.h"
+#include "Conf.h"
 
 class StateStatsdb {
  public:

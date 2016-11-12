@@ -6,6 +6,7 @@
 #include "RdbList.h"
 #include "Sanity.h"
 #include "Posdb.h"
+#include "Conf.h"
 #include "Mem.h"
 #include <new>
 

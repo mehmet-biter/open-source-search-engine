@@ -4,7 +4,6 @@
 #define GB_SPIDERLOOP_H
 
 #include "Rdb.h"
-#include "Conf.h"
 #include "Titledb.h"
 #include "Hostdb.h"
 #include "RdbList.h"

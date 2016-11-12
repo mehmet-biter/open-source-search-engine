@@ -13,6 +13,7 @@
 #include "Stats.h"
 #include "PingServer.h"
 #include "ip.h"
+#include "Conf.h"
 
 Proxy g_proxy;
 

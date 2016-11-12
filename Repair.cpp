@@ -21,6 +21,7 @@
 #include "XmlDoc.h"
 #include "File.h"
 #include "max_niceness.h"
+#include "Conf.h"
 #include <fcntl.h>
 
 

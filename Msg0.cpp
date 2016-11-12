@@ -1,6 +1,7 @@
 #include "gb-include.h"
 
 #include "Msg0.h"
+#include "Conf.h"
 #include "Clusterdb.h"
 #include "Stats.h"
 #include "Tagdb.h"

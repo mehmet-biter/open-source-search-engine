@@ -9,6 +9,7 @@
 #include "Process.h"
 #include "ip.h"
 #include "Posdb.h"
+#include "Conf.h"
 
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>

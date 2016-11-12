@@ -3,6 +3,7 @@
 #include <sys/stat.h>
 #include "Titledb.h"
 #include "Tagdb.h"
+#include "Conf.h"       // for setting rdb from Conf file
 #include "Unicode.h"
 #include "JobScheduler.h"
 #include "Msg1.h"

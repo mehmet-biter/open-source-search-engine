@@ -1,6 +1,7 @@
 #include "gb-include.h"
 
 #include "HttpServer.h"
+#include "Conf.h"
 #include "Pages.h"
 #include "HttpRequest.h"          // for parsing/forming HTTP requests
 #include "Collectiondb.h"
