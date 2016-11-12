@@ -10,6 +10,7 @@
 #include "Linkdb.h"
 #include "HttpMime.h"
 #include "Process.h"
+#include "ip.h"
 #include "GbUtil.h"
 #include <fcntl.h>
 

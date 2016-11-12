@@ -12,6 +12,7 @@
 #include "Process.h"
 #include "GbUtil.h"
 #include "Dir.h"
+#include "ip.h"
 #include <fcntl.h>
 
 

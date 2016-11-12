@@ -20,6 +20,7 @@
 #include "Parms.h"
 #include "PingServer.h"
 #include "Rebalance.h"
+#include "ip.h"
 
 
 // . this was 10 but cpu is getting pegged, so i set to 45

@@ -8,6 +8,7 @@
 #include "Msg1.h"
 #include "Pages.h"
 #include "PingServer.h"
+#include "ip.h"
 #include "Spider.h"
 #include "SpiderColl.h"
 #include "SpiderLoop.h"

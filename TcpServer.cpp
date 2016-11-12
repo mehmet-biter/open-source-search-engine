@@ -13,6 +13,7 @@
 #include "Mem.h"     // for mem routines
 #include "max_niceness.h"
 #include "Process.h"
+#include "ip.h"
 #include <sys/time.h>             // time()
 #include <sys/types.h>            // setsockopt()
 #include <sys/socket.h>           // setsockopt()

@@ -6,6 +6,7 @@
 #include "Dns.h"
 #include "Conf.h"
 #include "Hostdb.h"
+#include "ip.h"
 #include "Mem.h"
 
 

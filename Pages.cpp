@@ -11,6 +11,7 @@
 #include "PageRoot.h"
 #include "Process.h"
 #include "PingServer.h"
+#include "ip.h"
 #include "GbUtil.h"
 
 

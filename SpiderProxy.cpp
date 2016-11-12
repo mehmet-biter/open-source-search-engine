@@ -12,6 +12,7 @@
 #include "UdpSlot.h"
 #include "UdpServer.h"
 #include "Loop.h"
+#include "ip.h"
 #include "GbUtil.h"
 
 

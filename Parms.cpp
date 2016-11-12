@@ -27,6 +27,7 @@
 #include "PageInject.h" // InjectionRequest
 #include "Posdb.h"
 #include "GigablastRequest.h"
+#include "ip.h"
 #include "SafeBuf.h"
 #include "GbUtil.h"
 

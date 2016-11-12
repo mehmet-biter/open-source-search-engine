@@ -44,6 +44,7 @@
 #include "Rebalance.h"
 #include "PageInject.h" //getInjectHead()
 #include "PingServer.h"
+#include "ip.h"
 #include "ScopedLock.h"
 #include <list>
 

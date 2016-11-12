@@ -10,6 +10,7 @@
 #include "UdpServer.h"
 #include "UdpSlot.h"
 #include "Dns.h"
+#include "ip.h"
 #include "Proxy.h"
 #include "Parms.h"
 #include "PageRoot.h"

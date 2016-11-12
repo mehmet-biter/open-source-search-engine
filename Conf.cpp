@@ -8,6 +8,7 @@
 #include "TcpSocket.h"
 #include "HttpRequest.h"
 #include "Process.h"
+#include "ip.h"
 #include <sys/stat.h> //umask()
 
 

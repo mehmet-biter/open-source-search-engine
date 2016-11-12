@@ -19,6 +19,7 @@
 #include "hash.h"
 #include "Stats.h"
 #include "GbMoveFile.h"
+#include "ip.h"
 #include "max_niceness.h"
 #include <sys/stat.h> //mdir()
 

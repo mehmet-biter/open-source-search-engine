@@ -18,6 +18,7 @@
 #include "HttpServer.h"
 #include "Pages.h"
 #include "Parms.h"
+#include "ip.h"
 #include "Rebalance.h"
 
 

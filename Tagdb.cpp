@@ -13,6 +13,7 @@
 #include "Process.h"
 #include "Rebalance.h"
 #include "RdbCache.h"
+#include "ip.h"
 #include "GbMutex.h"
 #include "GbUtil.h"
 #include "ScopedLock.h"

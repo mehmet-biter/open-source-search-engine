@@ -28,6 +28,7 @@
 #include "Process.h"
 #include "Linkdb.h"
 #include "XmlDoc.h"
+#include "ip.h"
 #include "GbUtil.h"
 
 static bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) ;

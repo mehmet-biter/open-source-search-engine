@@ -5,6 +5,7 @@
 #include "Conf.h"
 #include "Hostdb.h"
 #include "Dns_internals.h"
+#include "ip.h"
 #include <fcntl.h>
 
 

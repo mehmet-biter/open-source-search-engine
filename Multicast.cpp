@@ -7,6 +7,7 @@
 #include "Loop.h"         // registerSleepCallback()
 #include "ScopedLock.h"
 #include "Process.h"
+#include "ip.h"
 #include "Mem.h"
 
 // up to 10 twins in a group
