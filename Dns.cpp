@@ -27,7 +27,6 @@ struct DnsState {
 	void       *m_state;
 	void      (*m_callback)(void *state, int32_t ip);
 	bool        m_freeit;
-	bool        m_cacheNotFounds;
 	char        m_hostname[MAX_DNS_HOSTNAME_LEN+1];
 
 	// . point to the replies received from dns servers
@@ -649,10 +648,6 @@ bool Dns::getIp ( const char *hostname,
 		ds->m_loopCount = 0;
 		ds->m_startTime = getTime();//time(NULL);//getTimeLocal();
 	}
-
-	// so monitor.cpp can avoid caching not founds or timeouts in case
-	// the network goes down on gk267
-	ds->m_cacheNotFounds = true;
 
 	// set the ce.m_ds to our dns state so if a key collides later
 	// we can check DnsState::m_hostname. actually i think this is only
@@ -1439,8 +1434,6 @@ void Dns::returnIp(DnsState *ds, int32_t ip) {
 	// and NEVER cache a timeout on a root server or root TLD server
 	if ( g_conf.m_askRootNameservers && ds->m_rootTLD[ds->m_depth] )
 		cache = false;
-	// monitor.cpp should have option to not cache timeouts!!!!
-	if ( ! ds->m_cacheNotFounds ) cache = false;
 
 	// cache for 6 hrs, these things slow us down
 	if ( cache ) g_dns.addToCache ( ds->m_hostnameKey, -1, 3600*6 );
