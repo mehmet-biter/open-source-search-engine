@@ -669,21 +669,20 @@ int32_t HttpMime::getContentTypePrivate ( char *s ) {
 		// skip spaces
 		while ( *t==' ' || *t=='\t' ) t++;
 		// get charset name "charset=euc-jp"
-		if ( strncasecmp ( t , "charset" , 7 ) != 0 ) goto next;
-		// skip it
-		t += 7;
-		// skip spaces, equal, spaces
-		while ( *t==' ' || *t=='\t' ) t++;
-		if    ( *t=='='             ) t++;
-		while ( *t==' ' || *t=='\t' ) t++;
-		// get charset
-		m_charset = t;
-		// get length
-		while ( *t && *t!='\r' && *t!='\n' && *t!=' ' && *t!='\t') t++;
-		m_charsetLen = t - m_charset;
+		if ( strncasecmp ( t , "charset" , 7 ) == 0 ) {
+			// skip it
+			t += 7;
+			// skip spaces, equal, spaces
+			while ( *t==' ' || *t=='\t' ) t++;
+			if    ( *t=='='             ) t++;
+			while ( *t==' ' || *t=='\t' ) t++;
+			// get charset
+			m_charset = t;
+			// get length
+			while ( *t && *t!='\r' && *t!='\n' && *t!=' ' && *t!='\t') t++;
+			m_charsetLen = t - m_charset;
+		}
 	}
-
- next:
 
 	// temp term it for the strcmp() function
 	c = *send; *send = '\0';
