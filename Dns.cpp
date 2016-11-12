@@ -19,6 +19,14 @@
 // TODO: use the canonical name as a normalization!!
 
 
+#define MAX_DEPTH 18 // we can have a lot of CNAME aliases w/ akamai
+#define MAX_TRIED_IPS 32 // stop after asking 32 nameservers, return timed out
+#define LOOP_BUF_SIZE 26100
+#define MAX_DNS_HOSTNAME_LEN	127
+// use a default of 1 day for both caches
+#define DNS_CACHE_MAX_AGE       (60*60*24)
+
+
 struct DnsState {
 	key96_t     m_hostnameKey;
 	// key for lookup into s_dnsTable hash table
