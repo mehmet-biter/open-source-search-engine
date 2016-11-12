@@ -701,30 +701,18 @@ bool BigFile::readwrite ( void         *buf      ,
 	fstate->m_startTime   = gettimeofdayInMilliseconds();
 	fstate->m_vfd         = m_vfd;
 
-	// . if we're blocking then do it now
-	// . this should return false and set g_errno on error, true otherwise
-	if ( !isNonBlocking || !callback || !g_jobScheduler.are_new_jobs_allowed() ) 	{
-		goto skipThread;
+	if(isNonBlocking && callback && g_jobScheduler.are_new_jobs_allowed()) {
+		// . spawn a thread to do this i/o
+		// . this returns false and sets g_errno on error, true on success
+		// . we should return false cuz we blocked
+		// . thread will add signal to g_loop on completion to call
+		if ( g_jobScheduler.submit_io(readwriteWrapper_r, readwriteDoneWrapper, fstate, thread_type_unspecified_io, niceness, doWrite) ) {
+			return false;
+		}
+		// thread spawn failed, do it blocking then
+		log(LOG_INFO, "disk: Doing blocking disk access. This will hurt performance. isWrite=%" PRId32".",(int32_t)doWrite);
 	}
-
-	// . otherwise, spawn a thread to do this i/o
-	// . this returns false and sets g_errno on error, true on success
-	// . we should return false cuz we blocked
-	// . thread will add signal to g_loop on completion to call
-	if ( g_jobScheduler.submit_io(readwriteWrapper_r, readwriteDoneWrapper, fstate, thread_type_unspecified_io, niceness, doWrite) ) {
-		return false;
-	}
-
-	// sanity check
-	if ( ! callback ) {
-		gbshutdownLogicError();
-	}
-
-	// thread spawn failed, do it blocking then
-	log(LOG_INFO, "disk: Doing blocking disk access. This will hurt performance. isWrite=%" PRId32".",(int32_t)doWrite);
-
 	// come here if we haven't spawned a thread
-skipThread:
 
 	// if there was no room in the thread queue, then we must do this here
 	fstate->m_fd1         = getfd ( fstate->m_filenum1 , !doWrite );
