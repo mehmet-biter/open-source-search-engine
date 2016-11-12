@@ -16,7 +16,8 @@
 
 #include "Query.h" // MAX_QUERY_LEN
 #include "HttpRequest.h"
-#include "Collectiondb.h"
+
+class CollectionRec;
 
 class SearchInput {
 public:

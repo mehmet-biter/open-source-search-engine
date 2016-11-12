@@ -21,6 +21,7 @@
 #include "HttpServer.h"
 #include "Pages.h" // g_msg
 #include "PageInject.h" // Msg7
+#include "Collectiondb.h"
 #include "Repair.h"
 #include "Parms.h"
 #include "SpiderLoop.h"
