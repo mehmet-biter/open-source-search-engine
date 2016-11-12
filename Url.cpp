@@ -1509,20 +1509,18 @@ bool Url::isSpam() const {
 	char *send = s + slen;
 	char *p    = s;
 
- loop:
-	// if done, return
-	if ( p >= send ) return false;
-	// find the next period or hyphen
-	char *pend = p;
-	while ( pend < send && *pend != '.' && *pend !='-' ) pend++;
-	// ok NULL terminate it
-	*pend = '\0';
-	// check that
-	if ( isSpam ( p , pend - p ) ) return true;
-	// point to next
-	p = pend + 1;
-	// loop back
-	goto loop;
+	while(p<send) {
+		// find the next period or hyphen
+		char *pend = p;
+		while ( pend < send && *pend != '.' && *pend !='-' ) pend++;
+		// ok NULL terminate it
+		*pend = '\0';
+		// check that
+		if ( isSpam ( p , pend - p ) ) return true;
+		// point to next
+		p = pend + 1;
+	}
+	return false;
 }
 
 bool Url::isSpam ( char *s , int32_t slen ) const {	
