@@ -2,6 +2,7 @@
 
 #include "Clusterdb.h"
 #include "Rebalance.h"
+#include "Collectiondb.h"
 #include "JobScheduler.h"
 #include "Conf.h"
 

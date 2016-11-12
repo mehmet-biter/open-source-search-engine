@@ -4,6 +4,7 @@
 #include "Titledb.h"
 #include "Tagdb.h"
 #include "Conf.h"       // for setting rdb from Conf file
+#include "Collectiondb.h"
 #include "Unicode.h"
 #include "JobScheduler.h"
 #include "Msg1.h"

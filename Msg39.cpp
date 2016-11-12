@@ -4,6 +4,7 @@
 #include "JobScheduler.h"
 #include "UdpServer.h"
 #include "RdbList.h"
+#include "Collectiondb.h"
 #include "Sanity.h"
 #include "Posdb.h"
 #include "Conf.h"

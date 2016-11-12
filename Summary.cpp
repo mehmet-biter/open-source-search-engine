@@ -8,6 +8,7 @@
 #include "Matches.h"
 #include "Process.h"
 #include "Conf.h"
+#include "Url.h"
 
 
 Summary::Summary()

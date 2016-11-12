@@ -2,6 +2,7 @@
 #include "Conf.h"
 #include "Titledb.h"
 #include "linkspam.h"
+#include "Collectiondb.h"
 #include "Rebalance.h"
 #include "Process.h"
 

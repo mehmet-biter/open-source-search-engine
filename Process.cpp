@@ -3,6 +3,7 @@
 #include "Process.h"
 #include "Rdb.h"
 #include "Clusterdb.h"
+#include "Collectiondb.h"
 #include "Hostdb.h"
 #include "Tagdb.h"
 #include "Posdb.h"

@@ -5,6 +5,7 @@
 #include "File.h"
 #include "Proxy.h"
 #include "Msg3a.h" // MAX_SHARDS
+#include "Collectiondb.h"
 #include "TcpSocket.h"
 #include "HttpRequest.h"
 #include "Process.h"

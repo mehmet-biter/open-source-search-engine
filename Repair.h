@@ -8,6 +8,7 @@
 #include "Msg1.h"
 #include "Msg4.h"
 #include "Tagdb.h"
+#include "max_coll_len.h"
 
 #define SR_BUFSIZE 2048
 

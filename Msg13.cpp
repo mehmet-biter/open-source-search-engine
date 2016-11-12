@@ -8,6 +8,7 @@
 #include "XmlDoc.h"
 #include "SpiderProxy.h" // OP_GETPROXY OP_RETPROXY
 #include "RdbCache.h"
+#include "Collectiondb.h"
 #include "Process.h"
 #include "ip.h"
 #include "GbUtil.h"

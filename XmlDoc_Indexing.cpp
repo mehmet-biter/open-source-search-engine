@@ -4,6 +4,7 @@
 
 #include "XmlDoc.h"
 #include "CountryCode.h" // g_countryCode
+#include "Collectiondb.h"
 #include "Speller.h"
 #include "Synonyms.h"
 #include "Process.h"

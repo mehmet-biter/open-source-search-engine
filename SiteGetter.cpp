@@ -4,6 +4,7 @@
 #include "Rdb.h"
 #include "Posdb.h"
 #include "Conf.h"
+#include "Collectiondb.h"
 #include "Process.h"
 
 //

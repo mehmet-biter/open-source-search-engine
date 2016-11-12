@@ -4,6 +4,7 @@
 #include "Statsdb.h"
 #include "Process.h"
 #include "Msg13.h"
+#include "Collectiondb.h"
 #include "Dns.h"
 #include "UdpSlot.h"
 #include "XmlDoc.h" //gbuncompress()

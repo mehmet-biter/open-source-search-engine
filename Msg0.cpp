@@ -3,6 +3,7 @@
 #include "Msg0.h"
 #include "Conf.h"
 #include "Clusterdb.h"
+#include "Collectiondb.h"
 #include "Stats.h"
 #include "Tagdb.h"
 #include "Posdb.h"

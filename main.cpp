@@ -23,6 +23,7 @@
 #include "SpiderLoop.h"
 #include "Doledb.h"
 #include "Clusterdb.h"
+#include "Collectiondb.h"
 #include "Sections.h"
 #include "Statsdb.h"
 #include "UdpServer.h"

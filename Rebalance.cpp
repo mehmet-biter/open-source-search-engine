@@ -12,6 +12,7 @@
 #include "Rdb.h"
 #include "Spider.h"
 #include "Msg4.h"
+#include "Collectiondb.h"
 #include "Pages.h"
 #include "PingServer.h"
 #include "Spider.h"

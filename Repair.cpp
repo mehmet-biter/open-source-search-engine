@@ -20,6 +20,7 @@
 #include "Linkdb.h"
 #include "XmlDoc.h"
 #include "File.h"
+#include "Collectiondb.h"
 #include "max_niceness.h"
 #include "Conf.h"
 #include <fcntl.h>

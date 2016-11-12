@@ -16,6 +16,7 @@
 #include "hash.h"
 #include "RdbCache.h"
 #include "Spider.h"
+#include "max_coll_len.h"
 
 
 #define OVERFLOWLISTSIZE 200

@@ -2,6 +2,7 @@
 
 #include "RdbTree.h"
 #include "Loop.h"
+#include "Collectiondb.h"
 #include "JobScheduler.h"
 #include "Linkdb.h"
 #include "Spider.h"

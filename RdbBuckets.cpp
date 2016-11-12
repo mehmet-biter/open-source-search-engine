@@ -6,6 +6,7 @@
 #include "Rdb.h"
 #include "Sanity.h"
 #include "Conf.h"
+#include "Collectiondb.h"
 #include <fcntl.h>
 
 #define BUCKET_SIZE 8192
@@ -1739,7 +1740,7 @@ void RdbBuckets::cleanBuckets() {
 		for (int32_t i = 0; i < m_numBuckets; i++) {
 			RdbBucket *b = m_buckets[i];
 			collnum_t collnum = b->getCollnum();
-			if (collnum < g_collectiondb.m_numRecs) {
+			if (collnum < g_collectiondb.getNumRecs()) {
 				if (g_collectiondb.m_recs[collnum]) {
 					continue;
 				}

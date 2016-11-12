@@ -6,6 +6,7 @@
 #include "Words.h"
 #include "Sections.h"
 #include "XmlDoc.h"
+#include "Collectiondb.h"
 #include "JobScheduler.h"
 #include "Hostdb.h"
 #include "Process.h"

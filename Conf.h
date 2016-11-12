@@ -13,7 +13,8 @@
 #ifndef GB_CONF_H
 #define GB_CONF_H
 
-#include "Collectiondb.h"     // MAX_COLL_LEN
+#include "max_coll_len.h"
+#include "max_url_len.h"
 #include "SafeBuf.h"
 #include "Xml.h"
 

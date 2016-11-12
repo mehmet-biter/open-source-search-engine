@@ -6,10 +6,7 @@
 #ifndef GB_URL_H
 #define GB_URL_H
 
-#define MAX_URL_LEN 1024
-
-// where should i put this #define? for now i'll keep it here
-#define MAX_COLL_LEN  64
+#include "max_url_len.h"
 
 #include "TitleRecVersion.h"
 #include <cstddef>

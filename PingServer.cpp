@@ -22,6 +22,7 @@ int32_t klogctl( int, char *,int ) { return 0; }
 #include "Spider.h"
 #include "SpiderColl.h"
 #include "SpiderLoop.h"
+#include "Collectiondb.h"
 #include "Rebalance.h"
 #include "Stats.h"
 #include "ip.h"
