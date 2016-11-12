@@ -166,7 +166,7 @@ const char* getLanguageAbbr ( unsigned char langId ) {
 //   in the url domain. 
 // . s/slen is a full word that is found in our "dictionary" so using
 //   phrases like biglittlestuff probably should not go here.
-bool isAdult( char *s, int32_t slen, const char **loc ) {
+bool isAdult(const char *s, int32_t slen, const char **loc) {
 	const char *a = NULL;
 	const char **p = &a;
 
