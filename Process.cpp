@@ -777,7 +777,7 @@ bool Process::shutdown2() {
 	bool udpUrgent = m_urgent;
 	if ( now - m_firstShutdownTime >= 3000 ) udpUrgent = true;
 
-	if ( ! g_dns.m_udpServer.shutdown ( udpUrgent ) )
+	if ( ! g_dns.getUdpServer().shutdown ( udpUrgent ) )
 		if ( ! udpUrgent ) return false;
 
 	// . send notes to all the hosts in the network telling them we're

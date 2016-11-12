@@ -41,7 +41,7 @@ bool sendPageSockets ( TcpSocket *s , HttpRequest *r ) {
 	printTcpTable(&p,"HTTP Server"    ,g_httpServer.getTcp());
 	printTcpTable(&p,"HTTPS Server"    ,g_httpServer.getSSLTcp());
 	printUdpTable(&p, "Udp Server", &g_udpServer, coll, s->m_ip);
-	printUdpTable(&p, "Udp Server (dns)", &g_dns.m_udpServer, coll, s->m_ip, true);
+	printUdpTable(&p, "Udp Server (dns)", &g_dns.getUdpServer(), coll, s->m_ip, true);
 
 	// from msg13.cpp print the queued url download requests
 	printHammerQueueTable ( &p );

@@ -27,9 +27,6 @@ static int64_t s_antiLockCount = 1LL;
 #define TIMEOUT_SINGLE_HOST_MS 30000
 #define TIMEOUT_TOTAL       90
 
-static void gotIpWrapper ( void *state , UdpSlot *slot ) ;
-static void gotIpOfDNSWrapper ( void *state , int32_t ip ) ;
-static void returnIp ( DnsState *ds , int32_t ip ) ;
 
 // CallbackEntry now defined in HashTableT.cpp
 static HashTableT<int64_t,CallbackEntry> s_dnstable;
@@ -806,7 +803,7 @@ bool Dns::getIpOfDNS ( DnsState *ds ) {
 	return true;
 }
 
-void gotIpOfDNSWrapper ( void *state , int32_t ip ) {
+void Dns::gotIpOfDNSWrapper(void *state, int32_t ip) {
 	DnsState *ds = (DnsState *)state;
 	// log debug msg
 	//DnsState *ds2 = (DnsState *)ds->m_buf;
@@ -1199,7 +1196,7 @@ bool Dns::sendToNextDNS ( DnsState *ds ) {
 }
 
 
-void gotIpWrapper ( void *state , UdpSlot *slot ) {
+void Dns::gotIpWrapper(void *state, UdpSlot *slot) {
 	DnsState *ds = (DnsState *) state;
 	log(LOG_DEBUG, "dns: gotIpWrapper for '%s'", ds->m_hostname);
 	//log(LOG_DEBUG, "dns: gotIpWrapper depth %d", ds->m_depth);
@@ -1325,7 +1322,7 @@ void gotIpWrapper ( void *state , UdpSlot *slot ) {
 }
 
 // caller should set g_errno because we call the callbacks here
-void returnIp ( DnsState *ds , int32_t ip ) {
+void Dns::returnIp(DnsState *ds, int32_t ip) {
 	// ok, we got the final answer at this point
 	// debug msg
 	const char *pre = "";

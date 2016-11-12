@@ -141,7 +141,7 @@ class Dns {
 	// . we create our own udpServer in here since we can't share that
 	//   because of the protocol differences
 	// . read our dns servers from the conf file
-	bool init ( uint16_t clientPort );
+	bool init(uint16_t clientPort);
 
 	// . check errno to on return or on callback to ensure no error
 	// . we set ip to 0 if not found
@@ -151,16 +151,44 @@ class Dns {
 		     int32_t   hostnameLen ,
 		     int32_t  *ip ,
 		     void  *state ,
-		     void (* callback) ( void *state , int32_t ip ) ,
+		     void (*callback)(void *state, int32_t ip) ,
 		     DnsState *ds = NULL ,
 		     int32_t   timeout   = 60    ,
 		     bool   dnsLookup = false ,
 		     // monitor.cpp passes in false for this:
-		     bool   cacheNotFounds = true );
+		     bool   cacheNotFounds = true);
 
-	bool sendToNextDNS ( struct DnsState *ds ) ;
+	const UdpServer& getUdpServer() const { return m_udpServer; }
+	UdpServer&       getUdpServer()       { return m_udpServer; }
+	RdbCache *getCache () { return &m_rdbCache; }
+	RdbCache *getCacheLocal () { return &m_rdbCacheLocal; }
 
-	bool getIpOfDNS ( DnsState *ds ) ;
+	// returns true if in cache, and sets *ip
+	bool isInCache(key96_t key, int32_t *ip);
+
+	// add this hostnamekey/ip pair to the cache
+	void addToCache(key96_t hostnameKey, int32_t ip, int32_t ttl = -1);
+
+	// is it in the /etc/hosts file?
+	bool isInFile(key96_t key, int32_t *ip);
+
+	static key96_t getKey(const char *hostname, int32_t hostnameLen);
+
+	Host *getResponsibleHost(key96_t key);
+
+private:
+	static void gotIpWrapper(void *state, UdpSlot *slot);
+	static void gotIpOfDNSWrapper(void *state , int32_t ip);
+	static void returnIp(DnsState *ds, int32_t ip);
+
+	bool loadFile();
+
+	bool sendToNextDNS(struct DnsState *ds);
+
+	bool getIpOfDNS(DnsState *ds);
+
+	// . pull the hostname out of a dns reply packet's query resource rec.
+	bool extractHostname(const char *dgram, const char *record, char *hostname);
 
 	// . returns the ip
 	// . called to parse the ip out of the reply in "slot"
@@ -168,37 +196,12 @@ class Dns {
 	// . also update the timestamps in our private hostmap
 	// . returns -1 on error
 	// . returns 0 if ip does not exist
-	int32_t gotIp ( UdpSlot *slot , struct DnsState *dnsState );
+	int32_t gotIp(UdpSlot *slot, struct DnsState *dnsState);
 
 	// . we have our own udp server
 	// . it contains our HostMap and DnsProtocol ptrs
 	// . keep public so gotIpWrapper() can use it to destroy the slot
 	UdpServer m_udpServer;
-
-	RdbCache *getCache () { return &m_rdbCache; }
-	RdbCache *getCacheLocal () { return &m_rdbCacheLocal; }
-
-	// . pull the hostname out of a dns reply packet's query resource rec.
-	bool extractHostname ( const char *dgram, const char *record, char *hostname );
-
-	// returns true if in cache, and sets *ip
-	bool isInCache (key96_t key , int32_t *ip );
-
-	// add this hostnamekey/ip pair to the cache
-	void addToCache ( key96_t hostnameKey , int32_t ip , int32_t ttl = -1 ) ;
-
-	// is it in the /etc/hosts file?
-	bool isInFile (key96_t key , int32_t *ip );
-
-	static key96_t getKey ( const char *hostname , int32_t hostnameLen ) ;
-
-	Host *getResponsibleHost ( key96_t key ) ;
-
- private:
-
-	bool loadFile ( );
-
-	//uint16_t m_dnsTransId;
 
 	// . key is a hash of hostname
 	// . record/slot contains a 4 byte ip entry (if in key is in cache)
