@@ -60,7 +60,7 @@ void Speller::test ( char *ff ) {
 	fclose(fd);
 }
 
-bool Speller::generateDicts ( int32_t numWordsToDump , char *coll ){
+bool Speller::generateDicts(int32_t numWordsToDump, const char *coll) {
 	//m_language[2].setLang(2);
 	//m_language[2].generateDicts ( numWordsToDump, coll );
 	return false;
@@ -549,7 +549,7 @@ int32_t Speller::getPhrasePopularity( const char *str, uint64_t h, unsigned char
 
 bool Speller::canSplitWords( char *s, int32_t slen, bool *isPorn, char *splitWords, unsigned char langId ) {
 	*isPorn = false;
-	char *index[1024];
+	const char *index[1024];
 	if ( slen == 0 )
 		return true;
 	*splitWords = '\0';
@@ -559,7 +559,7 @@ bool Speller::canSplitWords( char *s, int32_t slen, bool *isPorn, char *splitWor
 	index[curr++] = s;
 	index[curr] = s + slen;
 	while ( curr > 0 ){
-		char *nextWord = NULL;
+		const char *nextWord = NULL;
 		while (findNext( index[curr - 1], index[curr], &nextWord, isPorn, langId )){
 			// next word in chain
 			index[curr++] = nextWord;
@@ -591,7 +591,7 @@ bool Speller::canSplitWords( char *s, int32_t slen, bool *isPorn, char *splitWor
 	return false;
 }
 
-bool Speller::findNext( char *s, char *send, char **nextWord, bool *isPorn, unsigned char langId ) {
+bool Speller::findNext(const char *s, const char *send, const char **nextWord, bool *isPorn, unsigned char langId) {
 	const char *loc = NULL;
 	int32_t slen = send - s;
 	// check if there is an adult word in there
@@ -607,7 +607,7 @@ bool Speller::findNext( char *s, char *send, char **nextWord, bool *isPorn, unsi
 			return true;
 		}
 	}
-	for ( char *a = send; a > s; a-- ){
+	for(const char *a = send; a > s; a--) {
 		// a hack, if the word is only one letter long, check if it
 		// is 'a' or 'i'. If not then continue
 		if ( a - s == 1 && *s != 'a' && *s != 'i')
@@ -770,7 +770,7 @@ bool Speller::findNext( char *s, char *send, char **nextWord, bool *isPorn, unsi
 // This isn't really much use except for the spider
 // language detection to keep from making 32 sequential
 // calls for the same phrase to isolate the language.
-char *Speller::getPhraseRecord(char *phrase, int len ) {
+const char *Speller::getPhraseRecord(const char *phrase, int len ) {
 	//g_process.shutdownAbort(true);
 	if ( !phrase ) return NULL;
 	//char *rv = NULL;
@@ -841,14 +841,14 @@ int64_t Speller::getLangBits64 ( int64_t wid ) {
 	return bits;
 }
 
-bool Speller::getPhraseLanguages(char *phrase, int len,
+bool Speller::getPhraseLanguages(const char *phrase, int len,
 				 int64_t *array) {
-	char *phraseRec = getPhraseRecord(phrase, len);
+	const char *phraseRec = getPhraseRecord(phrase, len);
 	if(!phraseRec || !array) return false;
 	return getPhraseLanguages2 ( phraseRec,array );
 }
 
-bool Speller::getPhraseLanguages2 (char *phraseRec , int64_t *array) {
+bool Speller::getPhraseLanguages2(const char *phraseRec , int64_t *array) {
 
 	int64_t l = 0;
 	memset(array, 0, sizeof(int64_t)*MAX_LANGUAGES);

@@ -36,21 +36,21 @@ class Speller {
 
 	bool canSplitWords( char *s, int32_t slen, bool *isPorn, char *splitWords, unsigned char langId );
 	
-	bool findNext( char *s, char *send, char **nextWord, bool *isPorn, unsigned char langId );
+	bool findNext(const char *s, const char *send, const char **nextWord, bool *isPorn, unsigned char langId);
 
 	// . dump out the first "numWordsToDump" words and phrases
 	//   encountered will scanning the records in Titledb
 	// . use these words/phrases to make the dictionaries
-	bool generateDicts ( int32_t numWordsToDump , char *coll );
+	bool generateDicts(int32_t numWordsToDump, const char *coll);
 
 	bool loadUnifiedDict();
 
 	void dictLookupTest ( char *ff );
 
-	char *getPhraseRecord(char *phrase, int len);
+	const char *getPhraseRecord(const char *phrase, int len);
 
-	bool getPhraseLanguages(char *phrase, int len, int64_t *array);
-	bool getPhraseLanguages2 (char *phraseRec , int64_t *array) ;
+	bool getPhraseLanguages(const char *phrase, int len, int64_t *array);
+	bool getPhraseLanguages2(const char *phraseRec, int64_t *array) ;
 
 	HashTableX m_unifiedDict;
 
