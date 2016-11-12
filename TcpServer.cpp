@@ -6,6 +6,7 @@
 #include "PingServer.h"
 #include "HttpServer.h" //g_httpServer.m_ssltcp.m_ctx
 #include "Hostdb.h"
+#include "Dns.h"
 #include "Loop.h"      // g_loop.registerRead/WriteCallback()
 #include "Conf.h"
 #include "MsgC.h"           // for udp-only, non-blocking dns lookups

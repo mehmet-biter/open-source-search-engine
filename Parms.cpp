@@ -4,6 +4,7 @@
 #include "File.h"
 #include "Conf.h"
 #include "TcpSocket.h"
+#include "UdpSlot.h"
 #include "HttpRequest.h"
 #include "Pages.h"         // g_pages
 #include "Tagdb.h"        // g_tagdb

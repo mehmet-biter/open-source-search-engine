@@ -2,6 +2,8 @@
 #include "Process.h"
 
 #include "MsgC.h"
+#include "UdpServer.h"
+#include "Dns.h"
 #include "Conf.h"
 #include "Hostdb.h"
 #include "Mem.h"

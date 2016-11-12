@@ -1,5 +1,6 @@
 #include "Msg13.h"
 #include "UdpServer.h"
+#include "UdpSlot.h"
 #include "HttpServer.h"
 #include "Stats.h"
 #include "HashTableX.h"

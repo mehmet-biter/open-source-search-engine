@@ -7,6 +7,7 @@
 #include "PageParser.h"
 #include "Repair.h"
 #include "HttpRequest.h"
+#include "UdpSlot.h"
 #include "Stats.h"
 #include "Process.h"
 #include "GbUtil.h"

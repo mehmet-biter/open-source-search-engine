@@ -5,6 +5,7 @@
 #include "SpiderLoop.h"
 #include "Doledb.h"
 #include "Msg5.h"
+#include "UdpSlot.h"
 #include "Collectiondb.h"
 #include "XmlDoc.h"    // score8to32()
 #include "Stats.h"

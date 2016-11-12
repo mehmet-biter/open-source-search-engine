@@ -1,4 +1,5 @@
 #include "Linkdb.h"
+#include "UdpSlot.h"
 #include "linkspam.h"
 #include "XmlDoc.h" // score32to8()
 #include "HashTableX.h"

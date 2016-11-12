@@ -9,6 +9,7 @@
 #include "Spider.h"
 #include "Linkdb.h"
 #include "Msg5.h"                 // local getList()
+#include "UdpSlot.h"
 #include "XmlDoc.h"
 #include "Process.h"
 

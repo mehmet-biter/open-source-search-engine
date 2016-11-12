@@ -8,6 +8,8 @@
 #include "Stats.h"
 #include "XmlDoc.h" // gbzip
 #include "UdpServer.h"
+#include "UdpSlot.h"
+#include "Dns.h"
 #include "Proxy.h"
 #include "Parms.h"
 #include "PageRoot.h"

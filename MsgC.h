@@ -16,8 +16,6 @@ returned result (the IP address) should be stored in all 4 caches.*/
 #ifndef GB_MSGC_H
 #define GB_MSGC_H
 
-#include "UdpServer.h"
-#include "Dns.h"
 #include "Multicast.h"
 #include "Url.h"
 
