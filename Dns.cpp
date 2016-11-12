@@ -4,6 +4,7 @@
 #include "HashTableT.h"
 #include "Process.h"
 #include "File.h"
+#include "Dns_internals.h"
 #include <fcntl.h>
 
 
@@ -16,6 +17,83 @@
 // See section 7. RESOLVER IMPLEMENTATION in the rfc 1035
 
 // TODO: use the canonical name as a normalization!!
+
+
+struct DnsState {
+	key96_t     m_hostnameKey;
+	// key for lookup into s_dnsTable hash table
+	int64_t     m_tableKey;
+	Dns        *m_this ;
+	void       *m_state;
+	void      (*m_callback)(void *state, int32_t ip);
+	bool        m_freeit;
+	bool        m_cacheNotFounds;
+	char        m_hostname[MAX_DNS_HOSTNAME_LEN+1];
+
+	// . point to the replies received from dns servers
+	// . m_dnsNames[] should point into these reply buffers
+	//char *m_replyBufPtrs[6];
+	//int32_t  m_numReplies;
+
+	// we can do a recursion up to 5 levels deep. sometimes the reply
+	// we get back is a list of ips of nameservers we need to ask.
+	// that can happen a few times in a row, and we have to keep track
+	// of the depth here. initially we set these ips to those of the
+	// root servers (or sometimes the local bind servers).
+	bool    m_rootTLD  [MAX_DEPTH];
+	int32_t m_fallbacks[MAX_DEPTH];
+	int32_t m_dnsIps   [MAX_DEPTH][MAX_DNS_IPS];
+	int32_t m_numDnsIps[MAX_DEPTH];
+	int32_t m_depth;  // current depth
+
+	// . use these nameservers to do the lookup
+	// . if not provided, they default to the root nameservers
+	// . the first one we ask is based on hash of hostname % m_numDns,
+	//   if that times out, the 2nd is right after the first, etc. so we
+	//   always stay in order.
+	// . m_dnsNames point into m_nameBuf, m_namePtr pts to the end of
+	//   m_nameBuf so you can add new names to it.
+	//   m_dnsNames are NULLified when getIPOfDNS() get their ip address
+	//   which is then added to m_dnsIps[]
+	char   *m_dnsNames    [MAX_DEPTH][MAX_DNS_IPS];
+	int32_t m_numDnsNames [MAX_DEPTH];
+	char    m_nameBuf     [512];
+	char   *m_nameBufPtr;
+	char   *m_nameBufEnd;
+
+	// this holds the one and only dns request
+	char  m_request[512];
+	int32_t  m_requestSize;
+
+	// after we send to a nameserver add its ip to this list so we don't
+	// send to it again. or so we do not even add it to m_dnsIps again.
+	int32_t m_triedIps[MAX_TRIED_IPS];
+	int32_t m_numTried;
+
+	// if we have to get the ip of the dns, then we get back more dns
+	// that refer to that dns and we have to get the ip of those, ... etc.
+	// for getting the ip of a dns we cast m_buf as a DnsState and use
+	// that to avoid having to allocate more memory. however, we have to
+	// keep track of how many times we do that recursively until we run
+	// out of m_buf.
+	int32_t m_loopCount;
+
+	// set to EDNSDEAD (hostname does not exist) if we encounter that
+	// error, however, we continue to ask other dns servers about the
+	// hostname because we can often uncover the ip address that way.
+	// but if we never do, we want to return this error, not ETIMEDOUT.
+	int32_t m_errno;
+
+	// we have to turn it off in some requests for some reason
+	// like for www.fsis.usda.gov, othewise we get a refused to talk error
+	bool m_recursionDesired;
+
+	// have a total timeout function
+	int32_t m_startTime;
+
+	char m_buf[LOOP_BUF_SIZE];
+};
+
 
 // a global class extern'd in .h file
 Dns g_dns;
@@ -764,7 +842,8 @@ bool Dns::getIpOfDNS ( DnsState *ds ) {
 			    gotIpOfDNSWrapper , //state,ip
 			    ds2 ,
 			    5   , // timeout
-			    true )) { // dns lookup?
+			    true,     // dns lookup?
+			    true )) { // cacheNotFound
 	     log(LOG_DEBUG, "dns: no block for getIp for '%s'", hostname);
 	     return false;
 	}
