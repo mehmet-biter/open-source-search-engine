@@ -56,7 +56,7 @@ class Dns {
 		     void (*callback)(void *state, int32_t ip))
 	{
 		return getIp(hostname,hostnameLen,ip,state,callback,
-		             NULL, 60, false, true);
+		             NULL, 60, false);
 	}
 
 	const UdpServer& getUdpServer() const { return m_udpServer; }
@@ -98,8 +98,7 @@ private:
 		     void (*callback)(void *state, int32_t ip),
 		     DnsState *ds,
 		     int32_t   timeout,
-		     bool   dnsLookup,
-		     bool   cacheNotFounds);
+		     bool   dnsLookup);
 
 	// . returns the ip
 	// . called to parse the ip out of the reply in "slot"

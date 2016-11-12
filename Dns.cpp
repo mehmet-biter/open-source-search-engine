@@ -379,9 +379,7 @@ bool Dns::getIp ( const char *hostname,
 		  void (* callback ) ( void *state , int32_t ip ) ,
 		  DnsState *ds ,
 		  int32_t   timeout     ,
-		  bool   dnsLookup   ,
-		  // monitor.cpp passes in false for this:
-		  bool   cacheNotFounds ) {
+		  bool   dnsLookup) {
 
 	// . don't accept large hostnames
 	// . technically the limit is 255 but i'm stricter
@@ -654,7 +652,7 @@ bool Dns::getIp ( const char *hostname,
 
 	// so monitor.cpp can avoid caching not founds or timeouts in case
 	// the network goes down on gk267
-	ds->m_cacheNotFounds = cacheNotFounds;
+	ds->m_cacheNotFounds = true;
 
 	// set the ce.m_ds to our dns state so if a key collides later
 	// we can check DnsState::m_hostname. actually i think this is only
@@ -842,8 +840,7 @@ bool Dns::getIpOfDNS ( DnsState *ds ) {
 			    gotIpOfDNSWrapper , //state,ip
 			    ds2 ,
 			    5   , // timeout
-			    true,     // dns lookup?
-			    true )) { // cacheNotFound
+			    true )) { // dns lookup?
 	     log(LOG_DEBUG, "dns: no block for getIp for '%s'", hostname);
 	     return false;
 	}
