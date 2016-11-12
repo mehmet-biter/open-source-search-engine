@@ -1,9 +1,9 @@
-#include "gb-include.h"
-
 #include "Dns.h"
 #include "HashTableT.h"
 #include "Process.h"
 #include "File.h"
+#include "Conf.h"
+#include "Hostdb.h"
 #include "Dns_internals.h"
 #include <fcntl.h>
 

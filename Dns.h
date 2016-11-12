@@ -13,14 +13,13 @@
 
 #include "UdpServer.h"
 #include "DnsProtocol.h"
-#include "Hostdb.h"
 #include "RdbCache.h"
-#include "Conf.h"
 
 #define MAX_DNS_IPS 32
 
 
 struct DnsState;
+class Host;
 
 
 class Dns { 
