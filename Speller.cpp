@@ -547,7 +547,7 @@ int32_t Speller::getPhrasePopularity( const char *str, uint64_t h, unsigned char
 // TODO: chatswingers.com NOT identified as porn because it is split as 
 // 'chats' and 'wingers'.
 
-bool Speller::canSplitWords( char *s, int32_t slen, bool *isPorn, char *splitWords, unsigned char langId ) {
+bool Speller::canSplitWords(const char *s, int32_t slen, bool *isPorn, char *splitWords, unsigned char langId) {
 	*isPorn = false;
 	const char *index[1024];
 	if ( slen == 0 )
