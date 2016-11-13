@@ -1506,15 +1506,13 @@ bool Url::isSpam() const {
 	// 
 
 	// check each thing separated by periods for porn
-	char *send = s + slen;
-	char *p    = s;
+	const char *send = s + slen;
+	const char *p    = s;
 
 	while(p<send) {
 		// find the next period or hyphen
-		char *pend = p;
+		const char *pend = p;
 		while ( pend < send && *pend != '.' && *pend !='-' ) pend++;
-		// ok NULL terminate it
-		*pend = '\0';
 		// check that
 		if ( isSpam ( p , pend - p ) ) return true;
 		// point to next
@@ -1523,7 +1521,7 @@ bool Url::isSpam() const {
 	return false;
 }
 
-bool Url::isSpam ( char *s , int32_t slen ) const {	
+bool Url::isSpam(const char *s, int32_t slen) const {
 
 	// no need to indent below, keep it clearer
 	if ( ! isAdult ( s, slen ) ) return false;
@@ -1533,8 +1531,8 @@ bool Url::isSpam ( char *s , int32_t slen ) const {
 	// because it has 'anal' in the hostname.
 	// send each phrase seperately to be tested.
 	// hotjobs.yahoo.com
-	char *a = s;
-	char *p = s;
+	const char *a = s;
+	const char *p = s;
 	bool foundCleanSequence = false;
 	char splitWords[1024];
 	char *splitp = splitWords;
@@ -2361,9 +2359,9 @@ char *getPathFast ( char *url ) {
 	return pe;
 }
 
-const char *getTLDFast ( char *url , int32_t *tldLen , bool hasHttp ) {
+const char *getTLDFast(const char *url, int32_t *tldLen, bool hasHttp) {
 	// point to the url
-	char *pp = url;
+	const char *pp = url;
 	// only do this for some
 	if ( hasHttp ) {
 		// skip http(s):// or ftp:// (always there?)
@@ -2372,13 +2370,13 @@ const char *getTLDFast ( char *url , int32_t *tldLen , bool hasHttp ) {
 		pp += 3;
 	}
 	// point "uhost" to hostname right away
-	char *uhost = pp;
+	const char *uhost = pp;
 
 	// advance "pp" till we hit a / or :<port> or \0
 	while ( *pp && *pp !='/' && *pp !=':' ) pp++;
 
 	// advance "pe" over the port
-	char *pe = pp;
+	const char *pe = pp;
 	if ( *pp == ':' ) {
 		while ( *pe && *pe != '/' ) {
 			pe++;
@@ -2389,7 +2387,7 @@ const char *getTLDFast ( char *url , int32_t *tldLen , bool hasHttp ) {
 	int32_t uhostLen = pp - uhost;
 	// . is the hostname just an IP address?
 	// . if it is an ip based url make domain the hostname
-	char *ss = uhost;
+	const char *ss = uhost;
 	bool isIp = true;
 	for ( ; *ss && ss<pp ; ss++ ) {
 		if ( is_alpha_a( *ss ) ) {
@@ -2420,9 +2418,9 @@ const char *getTLDFast ( char *url , int32_t *tldLen , bool hasHttp ) {
 	return tld;
 }
 
-bool hasSubdomain ( char *url ) {
+bool hasSubdomain(const char *url) {
 	// point to the url
-	char *pp = url;
+	const char *pp = url;
 	// skip http if there
 	if (      pp[0] == 'h' &&
 		  pp[1] == 't' &&
@@ -2442,13 +2440,13 @@ bool hasSubdomain ( char *url ) {
 		  pp[7] == '/' )
 		pp += 8;
 	// point "uhost" to hostname right away
-	char *uhost = pp;
+	const char *uhost = pp;
 	// advance "pp" till we hit a / or :<port>
 	while ( *pp && *pp !='/' && *pp !=':' ) pp++;
 	// are we a root? assume so.
 	//char isRoot = true;
 	// advance "pe" over the port
-	char *pe = pp;
+	const char *pe = pp;
 	if ( *pp == ':' )
 		while ( *pe && *pe != '/' ) pe++;
 	// but not if something follows the '/'
@@ -2459,7 +2457,7 @@ bool hasSubdomain ( char *url ) {
 	//char *hostEnd = uhost + uhostLen;
 	// . is the hostname just an IP address?
 	// . if it is an ip based url make domain the hostname
-	char *ss = uhost;
+	const char *ss = uhost;
 	while ( *ss && !is_alpha_a(*ss) && ss<pp ) ss++;
 	// if we are an ip, say yes
 	if ( ss == pp ) return true;
@@ -2486,9 +2484,9 @@ bool hasSubdomain ( char *url ) {
 // was happening when a host gave us a bad redir url and xmldoc tried
 // to set extra doc's robot.txt url to it "http://2010/robots.txt" where
 // the host said "Location: 2010 ...".
-const char *getDomFast ( char *url , int32_t *domLen , bool hasHttp ) {
+const char *getDomFast ( const char *url , int32_t *domLen , bool hasHttp ) {
 	// point to the url
-	char *pp = url;
+	const char *pp = url;
 	// skip http if there
 	if ( hasHttp ) {
 		// skip http(s):// or ftp:// (always there?)
@@ -2497,22 +2495,22 @@ const char *getDomFast ( char *url , int32_t *domLen , bool hasHttp ) {
 		pp += 3;
 	}
 	// point "uhost" to hostname right away
-	char *uhost = pp;
+	const char *uhost = pp;
 	// advance "pp" till we hit a / or :<port>
 	while ( *pp && *pp !='/' && *pp !=':' ) pp++;
 
 	// advance "pe" over the port
-	char *pe = pp;
+	const char *pe = pp;
 	if ( *pp == ':' )
 		while ( *pe && *pe != '/' ) pe++;
 
 	// set length
 	int32_t uhostLen = pp - uhost;
 	// get end
-	char *hostEnd = uhost + uhostLen;
+	const char *hostEnd = uhost + uhostLen;
 	// . is the hostname just an IP address?
 	// . if it is an ip based url make domain the hostname
-	char *ss = uhost;
+	const char *ss = uhost;
 	while ( *ss && !is_alpha_a(*ss) && ss<pp ) ss++;
 	//bool isIp = false;
 	//if ( ss == pp ) isIp = true;
@@ -2644,7 +2642,7 @@ char *getPathEnd ( char *s , int32_t desiredDepth ) {
 // . pathDepth==1 for "www.xyz.com/foo/x"
 // . pathDepth==2 for "www.xyz.com/foo/x/"
 // . pathDepth==2 for "www.xyz.com/foo/x/y"
-int32_t getPathDepth ( char *s , bool hasHttp ) {
+int32_t getPathDepth(const char *s, bool hasHttp) {
 	// skip http:// if we got it
 	if ( hasHttp ) {
 		// skip proto

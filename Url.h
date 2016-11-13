@@ -15,12 +15,9 @@
 class SafeBuf;
 
 char *getPathFast  ( char *url );
-const char *getTLDFast   ( char *url , int32_t *tldLen  , bool hasHttp = true ) ;
-const char       *getDomFast   ( char       *url, int32_t *domLen, bool hasHttp = true ) ;
-static inline const char *getDomFast   ( const char *url, int32_t *domLen, bool hasHttp = true ) {
-	return getDomFast(const_cast<char*>(url),domLen,hasHttp);
-}
-bool  hasSubdomain ( char *url );
+const char *getTLDFast(const char *url, int32_t *tldLen, bool hasHttp = true);
+const char *getDomFast(const char *url, int32_t *domLen, bool hasHttp = true);
+bool  hasSubdomain(const char *url);
 const char *getHostFast  ( const char *url , int32_t *hostLen , int32_t *port = NULL ) ;
 
 // . returns the host of a normalized url pointed to by "s"
@@ -40,7 +37,7 @@ const char *getScheme( const char *s , int32_t *hostLen );
 // . if num==1 just use "www.xyz.com/foo/" as site
 char *getPathEnd ( char *s , int32_t num );
 
-int32_t getPathDepth ( char *s , bool hasHttp );
+int32_t getPathDepth(const char *s, bool hasHttp);
 
 class Url {
 public:
@@ -206,7 +203,7 @@ private:
 	void set( const char *s, int32_t len, bool addWWW, bool stripParams, bool stripPound, bool stripCommonFile,
 	          int32_t titledbVersion );
 
-	bool isSpam ( char *s , int32_t slen ) const;
+	bool isSpam(const char *s, int32_t slen) const;
 
 	// the normalized url
 	char m_url[MAX_URL_LEN];
