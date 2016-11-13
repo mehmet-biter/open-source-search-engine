@@ -1,20 +1,14 @@
 // Copyright 2007, Gigablast Inc.
 
-#include "gb-include.h"
-
 #include "Repair.h"
 #include "Rdb.h"
 #include "Spider.h"
-#include "Msg1.h"
 #include "Pages.h"
 #include "PingServer.h"
 #include "ip.h"
 #include "Spider.h"
-#include "SpiderColl.h"
 #include "SpiderLoop.h"
 #include "Process.h"
-#include "Tagdb.h"
-#include "Sections.h"
 #include "Posdb.h"
 #include "Clusterdb.h"
 #include "Linkdb.h"
