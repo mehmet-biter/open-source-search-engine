@@ -4,19 +4,22 @@
 #define GB_SPIDERCOLL_H
 
 
-#include "Titledb.h"
-#include "Hostdb.h"
 #include "RdbList.h"
 #include "RdbTree.h"
 #include "HashTableX.h"
-#include <time.h>
-#include "Msg5.h"      // local getList()
+#include "Msg5.h"
 #include "Msg4.h"
-#include "Msg1.h"
 #include "hash.h"
 #include "RdbCache.h"
-#include "Spider.h"
+#include "Spider.h"  //MAX_SP_REPLY_SIZE
+#include "types.h"
 #include "max_coll_len.h"
+#include <time.h>
+
+
+class CollectionRec;
+class SpiderRequest;
+class SpiderReply;
 
 
 #define OVERFLOWLISTSIZE 200
@@ -112,9 +115,6 @@ class SpiderColl {
 	char m_sendLocalCrawlInfoToHost[MAX_HOSTS];
 
 	Msg4 m_msg4x;
-	//Msg4 m_msg4;
-	//Msg1 m_msg1;
-	//bool m_msg1Avail;
 	RdbList m_tmpList;
 
 	bool isInDupCache ( SpiderRequest *sreq , bool addToCache ) ;

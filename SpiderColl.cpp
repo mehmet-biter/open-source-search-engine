@@ -1,25 +1,15 @@
-
-#include "gb-include.h"
+#include "SpiderColl.h"
 #include "Spider.h"
 #include "SpiderLoop.h"
-#include "SpiderColl.h"
 #include "Doledb.h"
-#include "Msg5.h"
 #include "Collectiondb.h"
-#include "XmlDoc.h"    // score8to32()
 #include "Stats.h"
 #include "SafeBuf.h"
-#include "Repair.h"
-#include "CountryCode.h"
-#include "DailyMerge.h"
+#include "Repair.h" //g_repairMode
 #include "Process.h"
 #include "JobScheduler.h"
 #include "XmlDoc.h"
-#include "HttpServer.h"
-#include "Pages.h"
-#include "Parms.h"
 #include "ip.h"
-#include "Rebalance.h"
 #include "Conf.h"
 
 
