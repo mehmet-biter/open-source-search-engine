@@ -1,17 +1,12 @@
-#include "gb-include.h"
-
+#include "SpiderLoop.h"
 #include "Spider.h"
 #include "SpiderColl.h"
-#include "SpiderLoop.h"
 #include "Doledb.h"
-#include "Msg5.h"
 #include "UdpSlot.h"
 #include "Collectiondb.h"
-#include "XmlDoc.h"    // score8to32()
 #include "Stats.h"
 #include "SafeBuf.h"
 #include "Repair.h"
-#include "CountryCode.h"
 #include "DailyMerge.h"
 #include "Process.h"
 #include "XmlDoc.h"
@@ -19,7 +14,6 @@
 #include "Pages.h"
 #include "Parms.h"
 #include "PingServer.h"
-#include "Rebalance.h"
 #include "ip.h"
 #include "Conf.h"
 

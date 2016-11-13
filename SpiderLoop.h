@@ -3,19 +3,12 @@
 #ifndef GB_SPIDERLOOP_H
 #define GB_SPIDERLOOP_H
 
-#include "Rdb.h"
-#include "Titledb.h"
-#include "Hostdb.h"
 #include "RdbList.h"
-#include "RdbTree.h"
 #include "HashTableX.h"
-#include <time.h>
-#include "Msg5.h"      // local getList()
-#include "Msg4.h"
-#include "Msg1.h"
+#include "Msg5.h"
 #include "hash.h"
 #include "RdbCache.h"
-#include "Spider.h"
+#include <time.h>
 
 // . the spider loop
 // . it gets urls to spider from the SpiderCache global class, g_spiderCache
@@ -27,6 +20,13 @@
 // . max spiders we can have going at once for this process
 // . limit to 50 to preven OOM conditions
 #define MAX_SPIDERS 300
+
+
+class UdpSlot;
+class SpiderRequest;
+class SpiderColl;
+class CollectionRec;
+class XmlDoc;
 
 
 class SpiderLoop {
