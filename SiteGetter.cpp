@@ -266,7 +266,7 @@ bool SiteGetter::getSiteList ( ) {
 		//   from 1 to N
 		// . if m_pathDepth==0 use "www.xyz.com" as site
 		// . if m_pathDepth==1 use "www.xyz.com/foo/" as site ...
-		char *pend = getPathEnd( m_url, m_pathDepth );
+		const char *pend = getPathEnd(m_url, m_pathDepth);
 
 		// hash up to that
 		const char *host = getHostFast( m_url, NULL );
@@ -422,7 +422,7 @@ bool SiteGetter::setSite ( ) {
 	// . get the host of our normalized url
 	// . assume the hostname is the site
 	int32_t hostLen;
-	char *host = ::getHost ( m_url , &hostLen );
+	const char *host = ::getHost(m_url, &hostLen);
 
 	// truncated?
 	if ( hostLen + 6 > MAX_SITE_LEN ) {

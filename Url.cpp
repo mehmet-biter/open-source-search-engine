@@ -2566,13 +2566,13 @@ bool Url::isPingServer ( ) const {
 
 
 // "s" point to the start of a normalized url (includes http://, etc.)
-char *getHost ( char *s , int32_t *hostLen ) {
+const char *getHost(const char *s, int32_t *hostLen) {
 	// skip proto
 	while ( *s != ':' ) s++;
 	// skip ://
 	s += 3;
 	// that is the host
-	char *host = s;
+	const char *host = s;
 	// get length of hostname
 	for ( s++; *s && *s != '/' ; s++ );
 	// that is it
@@ -2598,7 +2598,7 @@ const char *getScheme ( const char *s , int32_t *schemeLen )
 
 // . return ptrs to the end
 // . the character it points to SHOULD NOT BE part of the site
-char *getPathEnd ( char *s , int32_t desiredDepth ) {
+const char *getPathEnd(const char *s, int32_t desiredDepth) {
 	// skip proto
 	while ( *s != ':' ) s++;
 	// skip ://

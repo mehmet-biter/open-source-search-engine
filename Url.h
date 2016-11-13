@@ -23,7 +23,7 @@ const char *getHostFast  ( const char *url , int32_t *hostLen , int32_t *port = 
 // . returns the host of a normalized url pointed to by "s"
 // . i.e. "s" must start with the protocol (i.e. http:// or https:// etc.)
 // . used by Links.cpp for fast parsing and SiteGetter.cpp too
-char *getHost ( char *s , int32_t *hostLen ) ;
+const char *getHost(const char *s, int32_t *hostLen);
 
 // . returns the scheme of a normalized url pointed to by "s"
 // . i.e. "s" must start with the protocol (i.e. http:// or https:// etc.)
@@ -35,7 +35,7 @@ const char *getScheme( const char *s , int32_t *hostLen );
 // . used by SiteGetter.cpp
 // . if num==0 just use "www.xyz.com" as site (the hostname)
 // . if num==1 just use "www.xyz.com/foo/" as site
-char *getPathEnd ( char *s , int32_t num );
+const char *getPathEnd(const char *s, int32_t num);
 
 int32_t getPathDepth(const char *s, bool hasHttp);
 
