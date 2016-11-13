@@ -1578,54 +1578,59 @@ uint32_t Hostdb::getShardNumByTermId ( const void *k ) {
 // . now we can use 3 stripes of 96 hosts each so spiders will almost never
 //   go down
 uint32_t Hostdb::getShardNum(rdbid_t rdbId, const void *k) {
+	switch(rdbId) {
+		case RDB_POSDB:
+		case RDB2_POSDB2:
+			if( g_posdb.isShardedByTermId ( k ) ) {
+				// based on termid NOT docid!!!!!!
+				// good for page checksums so we only have to do disk
+				// seek on one shard, not all shards.
+				// use top 13 bits of key.
+				return m_map [(*(uint16_t *)((char *)k + 16))>>3];
+			} else {
+				uint64_t d = g_posdb.getDocId ( k );
+				return m_map [ ((d>>14)^(d>>7)) & (MAX_KSLOTS-1) ];
+			}
 
-	if ( (rdbId == RDB_POSDB || rdbId == RDB2_POSDB2) &&
-	     // split by termid and not docid?
-	     g_posdb.isShardedByTermId ( k ) ) {
-		// based on termid NOT docid!!!!!!
-		// good for page checksums so we only have to do disk
-		// seek on one shard, not all shards.
-		// use top 13 bits of key.
-		return m_map [(*(uint16_t *)((char *)k + 16))>>3];
-	}
+		case RDB_LINKDB:
+		case RDB2_LINKDB2:
+			return m_map [(*(uint16_t *)((char *)k + 26))>>3];
 
-	// try to put those most popular ones first for speed
-	if      ( rdbId == RDB_POSDB || rdbId == RDB2_POSDB2 ) {
-		uint64_t d = g_posdb.getDocId ( k );
-		return m_map [ ((d>>14)^(d>>7)) & (MAX_KSLOTS-1) ];
-	}
-	else if ( rdbId == RDB_LINKDB || rdbId == RDB2_LINKDB2 ) {
-		return m_map [(*(uint16_t *)((char *)k + 26))>>3];	
-	}
-	else if ( rdbId == RDB_TITLEDB || rdbId == RDB2_TITLEDB2 ) {
-		uint64_t d = Titledb::getDocId ( (key96_t *)k );
-		return m_map [ ((d>>14)^(d>>7)) & (MAX_KSLOTS-1) ];
-	}
-	else if ( rdbId == RDB_SPIDERDB || rdbId == RDB2_SPIDERDB2 ) {
-		int32_t firstIp = g_spiderdb.getFirstIp((key128_t *)k);
-		// do what Spider.h getGroupId() used to do so we are
-		// backwards compatible
-		uint32_t h = (uint32_t)hash32h(firstIp,0x123456);
-		// use that for getting the group
-		return m_map [ h & (MAX_KSLOTS-1)];
-	}
-	else if ( rdbId == RDB_CLUSTERDB || rdbId == RDB2_CLUSTERDB2 ) {
-		uint64_t d = g_clusterdb.getDocId ( k );
-		return m_map [ ((d>>14)^(d>>7)) & (MAX_KSLOTS-1) ];
-	}
-	else if ( rdbId == RDB_TAGDB || 
-		  rdbId == RDB2_TAGDB2 ) {
-		return m_map [(*(uint16_t *)((char *)k + 10))>>3];
-	}
-	else if ( rdbId == RDB_DOLEDB ) {
-		// HACK:!!!!!!  this is a trick!!! it is us!!!
-		//return g_hostdb.m_myHost->m_groupId;
-		return g_hostdb.m_myHost->m_shardNum;
-	}
+		case RDB_TITLEDB:
+		case RDB2_TITLEDB2: {
+			uint64_t d = Titledb::getDocId ( (key96_t *)k );
+			return m_map [ ((d>>14)^(d>>7)) & (MAX_KSLOTS-1) ];
+		}
 
-	// core -- must be provided
-	g_process.shutdownAbort(true);
-	return 0;
+		case RDB_SPIDERDB:
+		case RDB2_SPIDERDB2: {
+			int32_t firstIp = g_spiderdb.getFirstIp((key128_t *)k);
+			// do what Spider.h getGroupId() used to do so we are
+			// backwards compatible
+			uint32_t h = (uint32_t)hash32h(firstIp,0x123456);
+			// use that for getting the group
+			return m_map [ h & (MAX_KSLOTS-1)];
+		}
+
+		case RDB_CLUSTERDB:
+		case RDB2_CLUSTERDB2: {
+			uint64_t d = g_clusterdb.getDocId ( k );
+			return m_map [ ((d>>14)^(d>>7)) & (MAX_KSLOTS-1) ];
+		}
+
+		case RDB_TAGDB:
+		case RDB2_TAGDB2:
+			return m_map [(*(uint16_t *)((char *)k + 10))>>3];
+
+		case RDB_DOLEDB:
+			// HACK:!!!!!!  this is a trick!!! it is us!!!
+			//return g_hostdb.m_myHost->m_groupId;
+			return g_hostdb.m_myHost->m_shardNum;
+
+		default:
+			// core -- must be provided
+			g_process.shutdownAbort(true);
+	}
 }
 
 uint32_t Hostdb::getShardNumFromDocId ( int64_t d ) {
