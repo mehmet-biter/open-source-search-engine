@@ -1,18 +1,9 @@
-#include <sys/types.h>
-#include <ifaddrs.h>
-
-
-#include "gb-include.h"
-
 #include "Hostdb.h"
-#include "HashTableT.h"
 #include "UdpServer.h"
 #include "Conf.h"
 #include "JobScheduler.h"
 #include "max_niceness.h"
 #include "Process.h"
-#include <sched.h>
-#include <sys/types.h>
 #include "sort.h"
 #include "Rdb.h"
 #include "Posdb.h"
@@ -24,6 +15,9 @@
 #include "IPAddressChecks.h"
 #include "ip.h"
 #include <fcntl.h>
+#include <sys/types.h>
+#include <ifaddrs.h>
+#include <sys/types.h>
 
 // a global class extern'd in .h file
 Hostdb g_hostdb;

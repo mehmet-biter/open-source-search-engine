@@ -12,9 +12,7 @@
 #ifndef GB_HOSTDB_H
 #define GB_HOSTDB_H
 
-#include <sys/ioctl.h>            // ioctl() - get our ip address from a socket
-#include <net/if.h>               // for struct ifreq passed to ioctl()    
-#include "Xml.h" // host file in xml
+#include "types.h"
 #include "rdbid_t.h"
 #include "Sanity.h"
 #include <atomic>
