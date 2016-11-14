@@ -285,23 +285,6 @@ bool RdbMerge::getNextList() {
 	return getAnotherList();
 }
 
-void RdbMerge::unlinkPartWrapper(void *state) {
-	RdbMerge *THIS = (RdbMerge *)state;
-
-	// wait for all threads to complete
-	if (--THIS->m_numThreads > 0) {
-		return;
-	}
-
-	// return if this blocks
-	if (!THIS->getAnotherList()) {
-		return;
-	}
-
-	// otherwise, continue the merge loop
-	THIS->resumeMerge();
-}
-
 bool RdbMerge::getAnotherList() {
 	log(LOG_DEBUG,"db: Getting another list for merge.");
 

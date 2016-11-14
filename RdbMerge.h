@@ -63,7 +63,6 @@ public:
 private:
 	static void getLockWrapper(int /*fd*/, void *state);
 	void getLock();
-	static void unlinkPartWrapper(void *state);
 	static void dumpListWrapper(void *state);
 	static void gotListWrapper(void *state, RdbList *list, Msg5 *msg5);
 	static void tryAgainWrapper(int fd, void *state);
