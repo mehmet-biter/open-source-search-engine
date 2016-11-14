@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Original from https://scan.coverity.com/scripts/travisci_build_coverity_scan.sh
 
 # Exit on failure
