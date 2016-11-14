@@ -1,6 +1,9 @@
 #include <gtest/gtest.h>
 #include "XmlDoc.h"
 #include "GigablastTestUtils.h"
+#include "Conf.h"
+#include "Collectiondb.h"
+#include "ip.h"
 
 class XmlDocTest : public ::testing::Test {
 protected:

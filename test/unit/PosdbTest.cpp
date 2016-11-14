@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include "Posdb.h"
 #include "GigablastTestUtils.h"
+#include "Conf.h"
 
 static void saveAndReloadPosdbBucket() {
 	g_posdb.getRdb()->saveTree(false);
