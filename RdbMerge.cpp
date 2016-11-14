@@ -118,7 +118,8 @@ bool RdbMerge::merge(rdbid_t rdbId,
 	//calculate how much space we need for resulting merged file
 	m_spaceNeededForMerge = base->getSpaceNeededForMerge(m_startFileNum,m_numFiles);
 	
-	g_loop.registerSleepCallback(5000, this, getLockWrapper, 0, true);
+	if(!g_loop.registerSleepCallback(5000, this, getLockWrapper, 0, true))
+		return true;
 	
 	return false;
 }
