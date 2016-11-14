@@ -10,7 +10,6 @@ RdbMerge::RdbMerge()
   : m_mergeSpaceCoordinator(NULL),
     m_doneMerging(false),
     m_getListOutstanding(false),
-    m_numThreads(0),
     m_startFileNum(0),
     m_numFiles(0),
     m_fixedDataSize(0),

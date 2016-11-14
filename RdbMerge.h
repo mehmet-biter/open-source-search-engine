@@ -91,8 +91,6 @@ private:
 
 	bool m_getListOutstanding;
 
-	int32_t m_numThreads;
-
 	uint64_t m_spaceNeededForMerge;
 	// . we get the units from the master and the mergees from the units
 	int32_t m_startFileNum;
