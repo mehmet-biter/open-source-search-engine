@@ -99,6 +99,7 @@ response=$(curl \
   --form version=$SHA \
   --form description="Travis CI build" \
   $UPLOAD_URL)
+echo "$response"
 status_code=$(echo "$response" | sed -n '$p')
 if [ "$status_code" != "201" ]; then
   TEXT=$(echo "$response" | sed '$d')
