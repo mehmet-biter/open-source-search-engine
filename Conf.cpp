@@ -104,8 +104,6 @@ Conf::Conf ( ) {
 	m_httpMaxSockets = 0;
 	m_httpsMaxSockets = 0;
 	m_httpMaxSendBufSize = 0;
-	m_searchResultsMaxCacheMem = 0;
-	m_searchResultsMaxCacheAge = 0;
 	m_docSummaryWithDescriptionMaxCacheAge = 0;
 	m_sliderParm = 0;
 	m_termFreqWeightFreqMin = 0.0;

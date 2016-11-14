@@ -191,8 +191,6 @@ class Conf {
 	int32_t  m_httpMaxSendBufSize;
 
 	// a search results cache (for Msg40)
-	int32_t  m_searchResultsMaxCacheMem;
-	int32_t  m_searchResultsMaxCacheAge; // in seconds
 	int64_t m_docSummaryWithDescriptionMaxCacheAge; //cache timeout for document summaries for documents with a meta-tag with description, in milliseconds
 
 	// for Weights.cpp

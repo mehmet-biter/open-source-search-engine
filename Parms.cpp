@@ -3678,16 +3678,6 @@ void Parms::init ( ) {
 	m->m_flags = PF_NOAPI;
 	m++;
 
-	m->m_title = "search results max cache mem";
-	m->m_desc  = "Bytes to use for caching search result pages.";
-	m->m_off   = offsetof(Conf,m_searchResultsMaxCacheMem);
-	m->m_def   = "100000";
-	m->m_type  = TYPE_LONG;
-	m->m_flags = PF_NOSYNC|PF_NOAPI;
-	m->m_page  = PAGE_NONE;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
 	m->m_title = "read only mode";
 	m->m_desc  = "Read only mode does not allow spidering.";
 	m->m_cgi   = "readonlymode";
@@ -5604,18 +5594,6 @@ void Parms::init ( ) {
 	// not sure exactly, but i don't like going OOM. so maybe until
 	// that is fixed leave this off.
 	m->m_def   = "0";
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	m->m_title = "search results cache max age";
-	m->m_desc = "How many seconds should we cache a search results "
-		"page for?";
-	m->m_cgi  = "srcma";
-	m->m_off  = offsetof(Conf,m_searchResultsMaxCacheAge);
-	m->m_def  = "10800"; // 3 hrs
-	m->m_type = TYPE_LONG;
-	m->m_units = "seconds";
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
