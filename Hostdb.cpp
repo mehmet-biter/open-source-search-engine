@@ -549,6 +549,21 @@ createFile:
 			return false;
 		}
 
+		// skip spaces or until \n
+		for ( ; *p == ' ' ; p++ );
+		// then skip spaces
+		for ( ; *p && (*p==' '|| *p=='\t') ; p++ );
+
+		char *mdir = NULL;
+		int32_t mdirlen = 0;
+
+		// check for merge dir override
+		if ( *p == '/' ) {
+			mdir = p;
+			while ( *p && ! isspace(*p) ) p++;
+			mdirlen = p - mdir;
+		}
+
 		h->m_queryEnabled = true;
 		h->m_spiderEnabled = true;
 
@@ -643,8 +658,10 @@ createFile:
 		}
 
 		// copy it over
-		gbmemcpy(m_hosts[i].m_dir, wdir, wdirlen);
+		memcpy(m_hosts[i].m_dir, wdir, wdirlen);
 		m_hosts[i].m_dir[wdirlen] = '\0';
+		memcpy(m_hosts[i].m_mergeDir, mdir, mdirlen);
+		m_hosts[i].m_mergeDir[mdirlen] = '\0';
 		
 		// reset this
 		m_hosts[i].m_lastPing = 0LL;
@@ -1744,8 +1761,9 @@ bool Hostdb::createHostsConf( const char *cwd ) {
 	sb.safePrintf("# fifth   column: port that udp server listens on\n");
 	sb.safePrintf("# sixth   column: IP address or hostname that has an IP address in /etc/hosts\n");
 	sb.safePrintf("# seventh column: like sixth column but for secondary ethernet port. Can be the same as the sixth column.\n");
-	sb.safePrintf("# eigth column: An optional text note that will "
-		      "display in the hosts table for this host.\n");
+	sb.safePrintf("# eigth   column: Working directory");
+	sb.safePrintf("# ninth   column: An optional merge directory override");
+	sb.safePrintf("# tenth   column: An optional text note that will display in the hosts table for this host.\n");
 	sb.safePrintf("\n");
 	sb.safePrintf("\n");
 
@@ -1762,6 +1780,14 @@ bool Hostdb::createHostsConf( const char *cwd ) {
 	sb.safePrintf("#1 5997 7001 8001 9001 192.0.2.4 192.0.2.5 /home/mwells/host1/\n");
 	sb.safePrintf("#2 5996 7002 8002 9002 192.0.2.4 192.0.2.5 /home/mwells/host2/\n");
 	sb.safePrintf("#3 5995 7003 8003 9003 192.0.2.4 192.0.2.5 /home/mwells/host3/\n");
+
+	sb.safePrintf("\n");
+	sb.safePrintf("# A four-node cluster with different merge dir:\n");
+	sb.safePrintf("#0 5998 7000 8000 9000 192.0.2.4 192.0.2.5 /home/mwells/host0/ /mnt/merge/host0/\n");
+	sb.safePrintf("#1 5997 7001 8001 9001 192.0.2.4 192.0.2.5 /home/mwells/host1/ /mnt/merge/host1/\n");
+	sb.safePrintf("#2 5996 7002 8002 9002 192.0.2.4 192.0.2.5 /home/mwells/host2/ /mnt/merge/host2/\n");
+	sb.safePrintf("#3 5995 7003 8003 9003 192.0.2.4 192.0.2.5 /home/mwells/host3/ /mnt/merge/host3/\n");
+
 	sb.safePrintf("\n");
 	sb.safePrintf("# A four-node cluster on four different servers:\n");
 	sb.safePrintf("#0 5998 7000 8000 9000 192.0.2.4 192.0.2.5 /home/mwells/gigablast/\n");

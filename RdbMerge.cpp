@@ -64,8 +64,10 @@ bool RdbMerge::merge(rdbid_t rdbId,
 		return true;
 	}
 
-	if(!m_mergeSpaceCoordinator)
-		m_mergeSpaceCoordinator = new MergeSpaceCoordinator(g_conf.m_mergespaceLockDirectory, g_conf.m_mergespaceMinLockFiles, g_conf.m_mergespaceDirectory);
+	if(!m_mergeSpaceCoordinator) {
+		const char *mergeSpaceDir = strlen(g_hostdb.m_myHost->m_mergeDir) > 0 ? g_hostdb.m_myHost->m_mergeDir : g_conf.m_mergespaceDirectory;
+		m_mergeSpaceCoordinator = new MergeSpaceCoordinator(g_conf.m_mergespaceLockDirectory, g_conf.m_mergespaceMinLockFiles, mergeSpaceDir);
+	}
 
 	// get base, returns NULL and sets g_errno to ENOCOLLREC on error
 	RdbBase *base = getRdbBase(rdbId, collnum);

@@ -169,7 +169,10 @@ bool RdbBase::init(const char *dir,
 	m_didRepair = false;
 
 	sprintf(m_collectionDirName, "%scoll.%s.%" PRId32, dir, coll, (int32_t)collnum);
-	sprintf(m_mergeDirName, "%s/%d/coll.%s.%d", g_conf.m_mergespaceDirectory, getMyHostId(), coll, (int32_t)collnum);
+
+	// use override from hosts.conf if present
+	const char *mergeSpaceDir = strlen(g_hostdb.m_myHost->m_mergeDir) > 0 ? g_hostdb.m_myHost->m_mergeDir : g_conf.m_mergespaceDirectory;
+	sprintf(m_mergeDirName, "%s/%d/coll.%s.%d", mergeSpaceDir, getMyHostId(), coll, (int32_t)collnum);
 
 	// logDebugAdmin
 	log(LOG_DEBUG,"db: adding new base for dir=%s coll=%s collnum=%" PRId32" db=%s",
