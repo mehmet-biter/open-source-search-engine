@@ -166,6 +166,7 @@ bool RdbMerge::gotLock() {
 	RdbBase *base = getRdbBase(m_rdbId, m_collnum);
 	if (!base) {
 		relinquishMergespaceLock();
+		m_isMerging = false;
 		return true;
 	}
 
@@ -191,8 +192,9 @@ bool RdbMerge::gotLock() {
 	           NULL);
 	// what kind of error?
 	if ( g_errno ) {
-		log( LOG_WARN, "db: gotLock: %s.", mstrerror(g_errno) );
+		log(LOG_WARN, "db: gotLock: merge.set: %s.", mstrerror(g_errno));
 		relinquishMergespaceLock();
+		base->incorporateMerge();
 		return true;
 	}
 
