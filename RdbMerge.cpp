@@ -35,11 +35,6 @@ RdbMerge::~RdbMerge() {
 	delete m_mergeSpaceCoordinator;
 }
 
-void RdbMerge::reset() {
-	m_isMerging = false;
-	//m_isHalted = false; //not reset because halting is a one-way street
-}
-
 
 
 // . return false if blocked, true otherwise
@@ -69,28 +64,19 @@ bool RdbMerge::merge(rdbid_t rdbId,
 		return true;
 	}
 
-	// reset ourselves
-	reset();
-
 	if(!m_mergeSpaceCoordinator)
 		m_mergeSpaceCoordinator = new MergeSpaceCoordinator(g_conf.m_mergespaceLockDirectory, g_conf.m_mergespaceMinLockFiles, g_conf.m_mergespaceDirectory);
 
-	// set it
-	m_rdbId = rdbId;
-
-	Rdb *rdb = getRdbFromId(rdbId);
-
 	// get base, returns NULL and sets g_errno to ENOCOLLREC on error
-	RdbBase *base = getRdbBase(m_rdbId, collnum);
+	RdbBase *base = getRdbBase(rdbId, collnum);
 	if (!base) {
 		return true;
 	}
 
-	m_collnum = collnum;
-	if (rdb->isCollectionless()) {
-		m_collnum = 0;
-	}
+	Rdb *rdb = getRdbFromId(rdbId);
 
+	m_rdbId           = rdbId;
+	m_collnum         = rdb->isCollectionless() ? 0 : collnum;
 	m_targetFile      = targetFile;
 	m_targetMap       = targetMap;
 	m_targetIndex     = targetIndex;
@@ -99,7 +85,7 @@ bool RdbMerge::merge(rdbid_t rdbId,
 	m_fixedDataSize   = base->getFixedDataSize();
 	m_niceness        = niceness;
 	m_doneMerging     = false;
-	m_ks              = getKeySizeFromRdbId(rdbId);
+	m_ks              = rdb->getKeySize();
 
 	// . set the key range we want to retrieve from the files
 	// . just get from the files, not tree (not cache?)
@@ -120,7 +106,10 @@ bool RdbMerge::merge(rdbid_t rdbId,
 	
 	if(!g_loop.registerSleepCallback(5000, this, getLockWrapper, 0, true))
 		return true;
-	
+
+	// we're now merging since we accepted to try
+	m_isMerging = true;
+
 	return false;
 }
 
@@ -167,6 +156,7 @@ bool RdbMerge::gotLock() {
 	if (!base) {
 		relinquishMergespaceLock();
 		m_isMerging = false;
+		//no need for calling incorporateMerge() because the base/collection is cone
 		return true;
 	}
 
@@ -194,12 +184,10 @@ bool RdbMerge::gotLock() {
 	if ( g_errno ) {
 		log(LOG_WARN, "db: gotLock: merge.set: %s.", mstrerror(g_errno));
 		relinquishMergespaceLock();
+		m_isMerging = false;
 		base->incorporateMerge();
 		return true;
 	}
-
-	// we're now merging since the dump was set up successfully
-	m_isMerging     = true;
 
 	// . this returns false on error and sets g_errno
 	// . it returns true if blocked or merge completed successfully

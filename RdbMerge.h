@@ -68,7 +68,6 @@ private:
 	static void gotListWrapper(void *state, RdbList *list, Msg5 *msg5);
 	static void tryAgainWrapper(int fd, void *state);
 
-	void reset();
 	bool dumpList();
 	bool getNextList();
 	bool getAnotherList();
