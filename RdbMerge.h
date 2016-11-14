@@ -123,4 +123,6 @@ private:
 	char m_ks;
 };
 
+extern RdbMerge g_merge;
+
 #endif // GB_RDBMERGE_H

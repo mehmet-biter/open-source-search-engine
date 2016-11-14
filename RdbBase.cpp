@@ -12,6 +12,7 @@
 #include "Statsdb.h"
 #include "Linkdb.h"
 #include "Collectiondb.h"
+#include "RdbMerge.h"
 #include "Repair.h"
 #include "Rebalance.h"
 #include "JobScheduler.h"
@@ -81,9 +82,6 @@ bool g_dumpMode = false;
 // does not scale well to many files
 static const int32_t absoluteMaxFilesToMerge = 50;
 
-
-// since we only do one merge at a time, keep this class static
-class RdbMerge g_merge;
 
 RdbBase::RdbBase()
   : m_numFiles(0),

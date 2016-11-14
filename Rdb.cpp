@@ -9,6 +9,7 @@
 #include "Spider.h"
 #include "Spider.h"
 #include "Repair.h"
+#include "RdbMerge.h"
 #include "Process.h"
 #include "Statsdb.h"
 #include "Sections.h"

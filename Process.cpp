@@ -19,6 +19,7 @@
 #include "Dns.h"
 #include "Repair.h"
 #include "RdbCache.h"
+#include "RdbMerge.h"
 #include "Spider.h"
 #include "HttpServer.h"
 #include "Speller.h"

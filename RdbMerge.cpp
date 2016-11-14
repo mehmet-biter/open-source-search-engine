@@ -6,6 +6,9 @@
 #include "Conf.h"
 
 
+RdbMerge g_merge;
+
+
 RdbMerge::RdbMerge()
   : m_mergeSpaceCoordinator(NULL),
     m_doneMerging(false),
