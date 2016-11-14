@@ -39,6 +39,9 @@ int main(void) {
 		assert(msc.acquired());
 		assert(access((std::string(LOCK_DIR)+"/lock0").c_str(),F_OK)==0);
 		msc.relinquish();
+		struct stat st;
+		assert(stat(LOCK_DIR"/lock0", &st)==0);
+		assert(st.st_size==0);
 	}
 	cleanup();
 	
@@ -73,13 +76,14 @@ int main(void) {
 		fclose(fp);
 		MergeSpaceCoordinator msc(LOCK_DIR,1,"unittest_data_dir");
 		assert(msc.acquire(17));
-		msc.relinquish();
 		fp = fopen(LOCK_DIR "/lock0", "r");
+		assert(fp!=NULL);
 		char buf[ 20];
 		fgets(buf,sizeof(buf),fp);
 		fclose(fp);
 		assert(strcmp(buf,"banana")!=0);
 		assert(strtol(buf,0,0)>0);
+		msc.relinquish();
 	}
 	cleanup();
 
