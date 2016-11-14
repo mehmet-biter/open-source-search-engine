@@ -357,7 +357,8 @@ bool Rdb::updateToRebuildFiles ( Rdb *rdb2 , char *coll ) {
 	}
 
 	// delete unneeded rebuild files (everything is already dumped to Rdb files)
-	base2->getTreeIndex()->unlink();
+	if(base2->getTreeIndex())
+		base2->getTreeIndex()->unlink();
 	::unlink(rebuildFilePath);
 
 	// reset the rdb bases (clears out files and maps from mem)
