@@ -12,9 +12,7 @@
 #ifndef GB_HOSTDB_H
 #define GB_HOSTDB_H
 
-#include <sys/ioctl.h>            // ioctl() - get our ip address from a socket
-#include <net/if.h>               // for struct ifreq passed to ioctl()    
-#include "Xml.h" // host file in xml
+#include "types.h"
 #include "rdbid_t.h"
 #include "Sanity.h"
 #include <atomic>
@@ -150,7 +148,8 @@ public:
 
 	// we now include the working dir in the hosts.conf file
 	// so main.cpp can do gb --install and gb --allstart
-	char           m_dir [ 128 ];
+	char           m_dir[128];
+	char           m_mergeDir[128];
 
 	char           m_hostname[16];
 
@@ -472,6 +471,10 @@ static inline uint32_t getShardNum(rdbid_t rdbId, const void *key) {
 
 inline uint32_t getMyShardNum ( ) { 
 	return g_hostdb.m_myHost->m_shardNum; 
+}
+
+inline int32_t getMyHostId() {
+	return g_hostdb.m_myHost->m_hostId;
 }
 
 inline uint32_t getShardNumFromDocId ( int64_t d ) {

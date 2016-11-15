@@ -147,7 +147,7 @@ extern class Collectiondb g_collectiondb;
 
 #define SUMMARYHIGHLIGHTTAGMAXSIZE 128
 
-#include "Url.h"  // MAX_COLL_LEN
+#include "max_coll_len.h"
 #include "HashTableX.h"
 
 // fake this for now

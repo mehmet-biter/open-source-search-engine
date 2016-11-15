@@ -9,6 +9,8 @@
 #include "SearchInput.h"
 #include "Process.h"
 #include "Posdb.h"
+#include "Collectiondb.h"
+#include "Conf.h"
 
 static void gotReplyWrapper3a     ( void *state , void *state2 ) ;
 

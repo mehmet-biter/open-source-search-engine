@@ -9,6 +9,8 @@
 #include "SpiderLoop.h"
 #include "Proxy.h"
 #include "Linkdb.h"
+#include "Conf.h"
+#include "Collectiondb.h"
 
 static void dailyMergeWrapper ( int fd , void *state ) ;
 

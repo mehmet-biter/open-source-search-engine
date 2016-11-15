@@ -2,8 +2,10 @@
 #define GB_PAGEROOT_H
 
 #include "SafeBuf.h"
-#include "Collectiondb.h"
+
 class SearchInput;
+class CollectionRec;
+class HttpRequest;
 
 bool printFrontPageShell ( SafeBuf *sb,
                            const char *tabName,

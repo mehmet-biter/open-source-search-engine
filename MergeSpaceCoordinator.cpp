@@ -196,9 +196,10 @@ bool MergeSpaceCoordinator::acquired() const {
 void MergeSpaceCoordinator::relinquish() {
 	if(held_lock_number>=0) {
 		ScopedLock sl(mtx);
+		int tmp = held_lock_number;
 		held_lock_number = -1;
 		sl.unlock();
-		std::string filename(make_lock_filename(lock_dir,held_lock_number));
+		std::string filename(make_lock_filename(lock_dir,tmp));
 		int fd = open(filename.c_str(),O_WRONLY|O_TRUNC,0666);
 		if(fd>=0)
 			close(fd);

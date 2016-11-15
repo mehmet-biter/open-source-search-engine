@@ -1,17 +1,9 @@
-#include <sys/types.h>
-#include <ifaddrs.h>
-
-
-#include "gb-include.h"
-
 #include "Hostdb.h"
-#include "HashTableT.h"
 #include "UdpServer.h"
+#include "Conf.h"
 #include "JobScheduler.h"
 #include "max_niceness.h"
 #include "Process.h"
-#include <sched.h>
-#include <sys/types.h>
 #include "sort.h"
 #include "Rdb.h"
 #include "Posdb.h"
@@ -21,7 +13,11 @@
 #include "Dns.h"
 #include "File.h"
 #include "IPAddressChecks.h"
+#include "ip.h"
 #include <fcntl.h>
+#include <sys/types.h>
+#include <ifaddrs.h>
+#include <sys/types.h>
 
 // a global class extern'd in .h file
 Hostdb g_hostdb;
@@ -553,6 +549,21 @@ createFile:
 			return false;
 		}
 
+		// skip spaces or until \n
+		for ( ; *p == ' ' ; p++ );
+		// then skip spaces
+		for ( ; *p && (*p==' '|| *p=='\t') ; p++ );
+
+		char *mdir = NULL;
+		int32_t mdirlen = 0;
+
+		// check for merge dir override
+		if ( *p == '/' ) {
+			mdir = p;
+			while ( *p && ! isspace(*p) ) p++;
+			mdirlen = p - mdir;
+		}
+
 		h->m_queryEnabled = true;
 		h->m_spiderEnabled = true;
 
@@ -647,8 +658,10 @@ createFile:
 		}
 
 		// copy it over
-		gbmemcpy(m_hosts[i].m_dir, wdir, wdirlen);
+		memcpy(m_hosts[i].m_dir, wdir, wdirlen);
 		m_hosts[i].m_dir[wdirlen] = '\0';
+		memcpy(m_hosts[i].m_mergeDir, mdir, mdirlen);
+		m_hosts[i].m_mergeDir[mdirlen] = '\0';
 		
 		// reset this
 		m_hosts[i].m_lastPing = 0LL;
@@ -1582,54 +1595,59 @@ uint32_t Hostdb::getShardNumByTermId ( const void *k ) {
 // . now we can use 3 stripes of 96 hosts each so spiders will almost never
 //   go down
 uint32_t Hostdb::getShardNum(rdbid_t rdbId, const void *k) {
+	switch(rdbId) {
+		case RDB_POSDB:
+		case RDB2_POSDB2:
+			if( g_posdb.isShardedByTermId ( k ) ) {
+				// based on termid NOT docid!!!!!!
+				// good for page checksums so we only have to do disk
+				// seek on one shard, not all shards.
+				// use top 13 bits of key.
+				return m_map [(*(uint16_t *)((char *)k + 16))>>3];
+			} else {
+				uint64_t d = g_posdb.getDocId ( k );
+				return m_map [ ((d>>14)^(d>>7)) & (MAX_KSLOTS-1) ];
+			}
 
-	if ( (rdbId == RDB_POSDB || rdbId == RDB2_POSDB2) &&
-	     // split by termid and not docid?
-	     g_posdb.isShardedByTermId ( k ) ) {
-		// based on termid NOT docid!!!!!!
-		// good for page checksums so we only have to do disk
-		// seek on one shard, not all shards.
-		// use top 13 bits of key.
-		return m_map [(*(uint16_t *)((char *)k + 16))>>3];
-	}
+		case RDB_LINKDB:
+		case RDB2_LINKDB2:
+			return m_map [(*(uint16_t *)((char *)k + 26))>>3];
 
-	// try to put those most popular ones first for speed
-	if      ( rdbId == RDB_POSDB || rdbId == RDB2_POSDB2 ) {
-		uint64_t d = g_posdb.getDocId ( k );
-		return m_map [ ((d>>14)^(d>>7)) & (MAX_KSLOTS-1) ];
-	}
-	else if ( rdbId == RDB_LINKDB || rdbId == RDB2_LINKDB2 ) {
-		return m_map [(*(uint16_t *)((char *)k + 26))>>3];	
-	}
-	else if ( rdbId == RDB_TITLEDB || rdbId == RDB2_TITLEDB2 ) {
-		uint64_t d = Titledb::getDocId ( (key96_t *)k );
-		return m_map [ ((d>>14)^(d>>7)) & (MAX_KSLOTS-1) ];
-	}
-	else if ( rdbId == RDB_SPIDERDB || rdbId == RDB2_SPIDERDB2 ) {
-		int32_t firstIp = g_spiderdb.getFirstIp((key128_t *)k);
-		// do what Spider.h getGroupId() used to do so we are
-		// backwards compatible
-		uint32_t h = (uint32_t)hash32h(firstIp,0x123456);
-		// use that for getting the group
-		return m_map [ h & (MAX_KSLOTS-1)];
-	}
-	else if ( rdbId == RDB_CLUSTERDB || rdbId == RDB2_CLUSTERDB2 ) {
-		uint64_t d = g_clusterdb.getDocId ( k );
-		return m_map [ ((d>>14)^(d>>7)) & (MAX_KSLOTS-1) ];
-	}
-	else if ( rdbId == RDB_TAGDB || 
-		  rdbId == RDB2_TAGDB2 ) {
-		return m_map [(*(uint16_t *)((char *)k + 10))>>3];
-	}
-	else if ( rdbId == RDB_DOLEDB ) {
-		// HACK:!!!!!!  this is a trick!!! it is us!!!
-		//return g_hostdb.m_myHost->m_groupId;
-		return g_hostdb.m_myHost->m_shardNum;
-	}
+		case RDB_TITLEDB:
+		case RDB2_TITLEDB2: {
+			uint64_t d = Titledb::getDocId ( (key96_t *)k );
+			return m_map [ ((d>>14)^(d>>7)) & (MAX_KSLOTS-1) ];
+		}
 
-	// core -- must be provided
-	g_process.shutdownAbort(true);
-	return 0;
+		case RDB_SPIDERDB:
+		case RDB2_SPIDERDB2: {
+			int32_t firstIp = g_spiderdb.getFirstIp((key128_t *)k);
+			// do what Spider.h getGroupId() used to do so we are
+			// backwards compatible
+			uint32_t h = (uint32_t)hash32h(firstIp,0x123456);
+			// use that for getting the group
+			return m_map [ h & (MAX_KSLOTS-1)];
+		}
+
+		case RDB_CLUSTERDB:
+		case RDB2_CLUSTERDB2: {
+			uint64_t d = g_clusterdb.getDocId ( k );
+			return m_map [ ((d>>14)^(d>>7)) & (MAX_KSLOTS-1) ];
+		}
+
+		case RDB_TAGDB:
+		case RDB2_TAGDB2:
+			return m_map [(*(uint16_t *)((char *)k + 10))>>3];
+
+		case RDB_DOLEDB:
+			// HACK:!!!!!!  this is a trick!!! it is us!!!
+			//return g_hostdb.m_myHost->m_groupId;
+			return g_hostdb.m_myHost->m_shardNum;
+
+		default:
+			// core -- must be provided
+			g_process.shutdownAbort(true);
+	}
 }
 
 uint32_t Hostdb::getShardNumFromDocId ( int64_t d ) {
@@ -1743,8 +1761,9 @@ bool Hostdb::createHostsConf( const char *cwd ) {
 	sb.safePrintf("# fifth   column: port that udp server listens on\n");
 	sb.safePrintf("# sixth   column: IP address or hostname that has an IP address in /etc/hosts\n");
 	sb.safePrintf("# seventh column: like sixth column but for secondary ethernet port. Can be the same as the sixth column.\n");
-	sb.safePrintf("# eigth column: An optional text note that will "
-		      "display in the hosts table for this host.\n");
+	sb.safePrintf("# eigth   column: Working directory");
+	sb.safePrintf("# ninth   column: An optional merge directory override");
+	sb.safePrintf("# tenth   column: An optional text note that will display in the hosts table for this host.\n");
 	sb.safePrintf("\n");
 	sb.safePrintf("\n");
 
@@ -1761,6 +1780,14 @@ bool Hostdb::createHostsConf( const char *cwd ) {
 	sb.safePrintf("#1 5997 7001 8001 9001 192.0.2.4 192.0.2.5 /home/mwells/host1/\n");
 	sb.safePrintf("#2 5996 7002 8002 9002 192.0.2.4 192.0.2.5 /home/mwells/host2/\n");
 	sb.safePrintf("#3 5995 7003 8003 9003 192.0.2.4 192.0.2.5 /home/mwells/host3/\n");
+
+	sb.safePrintf("\n");
+	sb.safePrintf("# A four-node cluster with different merge dir:\n");
+	sb.safePrintf("#0 5998 7000 8000 9000 192.0.2.4 192.0.2.5 /home/mwells/host0/ /mnt/merge/host0/\n");
+	sb.safePrintf("#1 5997 7001 8001 9001 192.0.2.4 192.0.2.5 /home/mwells/host1/ /mnt/merge/host1/\n");
+	sb.safePrintf("#2 5996 7002 8002 9002 192.0.2.4 192.0.2.5 /home/mwells/host2/ /mnt/merge/host2/\n");
+	sb.safePrintf("#3 5995 7003 8003 9003 192.0.2.4 192.0.2.5 /home/mwells/host3/ /mnt/merge/host3/\n");
+
 	sb.safePrintf("\n");
 	sb.safePrintf("# A four-node cluster on four different servers:\n");
 	sb.safePrintf("#0 5998 7000 8000 9000 192.0.2.4 192.0.2.5 /home/mwells/gigablast/\n");

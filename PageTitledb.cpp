@@ -11,6 +11,7 @@
 #include "Tagdb.h"
 #include "Spider.h"
 #include "Process.h"
+#include "Conf.h"
 
 // TODO: meta redirect tag to host if hostId not ours
 static bool gotTitleRec        ( void *state );

@@ -12,7 +12,9 @@
 #include "SafeBuf.h"
 #include "Proxy.h"
 #include "HashTable.h"
+#include "ip.h"
 #include "GbUtil.h"
+#include "Conf.h"
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
 #endif

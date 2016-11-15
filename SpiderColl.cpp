@@ -1,24 +1,16 @@
-
-#include "gb-include.h"
+#include "SpiderColl.h"
 #include "Spider.h"
 #include "SpiderLoop.h"
-#include "SpiderColl.h"
 #include "Doledb.h"
-#include "Msg5.h"
 #include "Collectiondb.h"
-#include "XmlDoc.h"    // score8to32()
 #include "Stats.h"
 #include "SafeBuf.h"
-#include "Repair.h"
-#include "CountryCode.h"
-#include "DailyMerge.h"
+#include "Repair.h" //g_repairMode
 #include "Process.h"
 #include "JobScheduler.h"
 #include "XmlDoc.h"
-#include "HttpServer.h"
-#include "Pages.h"
-#include "Parms.h"
-#include "Rebalance.h"
+#include "ip.h"
+#include "Conf.h"
 
 
 
@@ -1586,11 +1578,11 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 
 	int32_t lastOne = 0;
 	// loop over all serialized spiderdb records in the list
-	for ( ; ! m_list.isExhausted() ; ) {
+	for ( ; ! m_list2.isExhausted() ; ) {
 		// get spiderdb rec in its serialized form
-		char *rec = m_list.getCurrentRec();
+		char *rec = m_list2.getCurrentRec();
 		// skip to next guy
-		m_list.skipCurrentRecord();
+		m_list2.skipCurrentRecord();
 		// negative? wtf?
 		if ( (rec[0] & 0x01) == 0x00 ) {
 			//logf(LOG_DEBUG,"spider: got negative spider rec");
@@ -1686,9 +1678,9 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 	}
 
 	// are we the final list in the scan?
-	bool shortRead = ( m_list.getListSize() <= 0);//(int32_t)SR_READ_SIZE) ;
+	bool shortRead = ( m_list2.getListSize() <= 0);//(int32_t)SR_READ_SIZE) ;
 
-	m_numBytesScanned += m_list.getListSize();
+	m_numBytesScanned += m_list2.getListSize();
 
 	// reset? still left over from our first scan?
 	if ( m_lastPrintCount > m_numBytesScanned )
@@ -1703,7 +1695,7 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 	}
 
 	// debug info
-	log(LOG_DEBUG,"spider: Read2 %" PRId32" spiderdb bytes.",m_list.getListSize());
+	log(LOG_DEBUG,"spider: Read2 %" PRId32" spiderdb bytes.",m_list2.getListSize());
 	// reset any errno cuz we're just a cache
 	g_errno = 0;
 
@@ -1711,7 +1703,7 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 	if ( ! shortRead ) {
 		// . inc it here
 		// . it can also be reset on a collection rec update
-		key128_t lastKey  = *(key128_t *)m_list.getLastKey();
+		key128_t lastKey  = *(key128_t *)m_list2.getLastKey();
 
 		if ( lastKey < m_nextKey2 ) {
 			log("spider: got corruption 9. spiderdb "
@@ -1771,7 +1763,7 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 	}
 
 	// free list to save memory
-	m_list.freeList();
+	m_list2.freeList();
 	// wait for sleepwrapper to call us again with our updated m_nextKey2
 	logTrace( g_conf.m_logTraceSpider, "END, done" );
 	return;

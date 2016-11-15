@@ -1,6 +1,7 @@
 #include "SafeBuf.h"
 #include "HttpRequest.h"
 #include "SearchInput.h"
+#include "Collectiondb.h"
 #include "Pages.h"
 #include "Parms.h"
 #include "Spider.h"

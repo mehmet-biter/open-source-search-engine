@@ -6,6 +6,7 @@
 #include "Hostdb.h"
 #include "sort.h"
 #include "Conf.h"
+#include "ip.h"
 #include "GbUtil.h"
 
 static int defaultSort    ( const void *i1, const void *i2 );

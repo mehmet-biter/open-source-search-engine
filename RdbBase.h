@@ -26,18 +26,15 @@
 #ifndef GB_RDBBASE_H
 #define GB_RDBBASE_H
 
-#include "Conf.h"
 #include "Mem.h"
 #include "RdbScan.h"
 #include "RdbDump.h"
-#include "RdbMerge.h"
 #include "Msg3.h"               // MAX_RDB_FILES definition
 #include "RdbMem.h"
 #include "RdbIndex.h"
 #include "rdbid_t.h"
 #include "GbMutex.h"
 
-extern RdbMerge g_merge;
 
 class RdbBuckets;
 class RdbTree;

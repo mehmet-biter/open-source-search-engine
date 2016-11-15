@@ -6,12 +6,8 @@
 #ifndef GB_URL_H
 #define GB_URL_H
 
-#define MAX_URL_LEN 1024
+#include "max_url_len.h"
 
-// where should i put this #define? for now i'll keep it here
-#define MAX_COLL_LEN  64
-
-#include "ip.h"      // atoip ( s,len)
 #include "TitleRecVersion.h"
 #include <cstddef>
 #include <string.h>
@@ -19,18 +15,15 @@
 class SafeBuf;
 
 char *getPathFast  ( char *url );
-const char *getTLDFast   ( char *url , int32_t *tldLen  , bool hasHttp = true ) ;
-const char       *getDomFast   ( char       *url, int32_t *domLen, bool hasHttp = true ) ;
-static inline const char *getDomFast   ( const char *url, int32_t *domLen, bool hasHttp = true ) {
-	return getDomFast(const_cast<char*>(url),domLen,hasHttp);
-}
-bool  hasSubdomain ( char *url );
+const char *getTLDFast(const char *url, int32_t *tldLen, bool hasHttp = true);
+const char *getDomFast(const char *url, int32_t *domLen, bool hasHttp = true);
+bool  hasSubdomain(const char *url);
 const char *getHostFast  ( const char *url , int32_t *hostLen , int32_t *port = NULL ) ;
 
 // . returns the host of a normalized url pointed to by "s"
 // . i.e. "s" must start with the protocol (i.e. http:// or https:// etc.)
 // . used by Links.cpp for fast parsing and SiteGetter.cpp too
-char *getHost ( char *s , int32_t *hostLen ) ;
+const char *getHost(const char *s, int32_t *hostLen);
 
 // . returns the scheme of a normalized url pointed to by "s"
 // . i.e. "s" must start with the protocol (i.e. http:// or https:// etc.)
@@ -42,9 +35,9 @@ const char *getScheme( const char *s , int32_t *hostLen );
 // . used by SiteGetter.cpp
 // . if num==0 just use "www.xyz.com" as site (the hostname)
 // . if num==1 just use "www.xyz.com/foo/" as site
-char *getPathEnd ( char *s , int32_t num );
+const char *getPathEnd(const char *s, int32_t num);
 
-int32_t getPathDepth ( char *s , bool hasHttp );
+int32_t getPathDepth(const char *s, bool hasHttp);
 
 class Url {
 public:
@@ -210,7 +203,7 @@ private:
 	void set( const char *s, int32_t len, bool addWWW, bool stripParams, bool stripPound, bool stripCommonFile,
 	          int32_t titledbVersion );
 
-	bool isSpam ( char *s , int32_t slen ) const;
+	bool isSpam(const char *s, int32_t slen) const;
 
 	// the normalized url
 	char m_url[MAX_URL_LEN];

@@ -38,12 +38,11 @@
 #ifndef GB_RDBTREE_H
 #define GB_RDBTREE_H
 
-#include "Mem.h"          // for g_mem.calloc and g_mem.malloc
-#include "BigFile.h"      // for saving and loading the tree
-#include "RdbList.h"
-#include "BigFile.h"
 #include "RdbMem.h"
-#include <sys/mman.h> //PROT_READ etc.
+#include "JobScheduler.h" //for job_exit_t
+
+class RdbList;
+class BigFile;
 
 class RdbTree {
 

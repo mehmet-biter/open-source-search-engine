@@ -3,6 +3,7 @@
 #include "Pages.h"
 #include "HttpRequest.h"
 #include "Process.h"
+#include "Conf.h"
 
 #define PP_NICENESS 2
 

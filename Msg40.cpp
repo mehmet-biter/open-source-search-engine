@@ -14,6 +14,7 @@
 #include "HashTable.h"
 #include "AdultCheck.h"
 #include "Process.h"
+#include "Conf.h"
 #include "GbMutex.h"
 #include "ScopedLock.h"
 #include <new>

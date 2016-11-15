@@ -7,6 +7,7 @@
 #include "types.h"
 #include "Process.h"
 #include "File.h"
+#include "Dns_internals.h"
 #include <fcntl.h>
 
 

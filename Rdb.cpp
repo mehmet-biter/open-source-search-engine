@@ -9,6 +9,7 @@
 #include "Spider.h"
 #include "Spider.h"
 #include "Repair.h"
+#include "RdbMerge.h"
 #include "Process.h"
 #include "Statsdb.h"
 #include "Sections.h"
@@ -16,10 +17,13 @@
 #include "SpiderColl.h"
 #include "Doledb.h"
 #include "Linkdb.h"
+#include "Collectiondb.h"
 #include "hash.h"
 #include "Stats.h"
 #include "GbMoveFile.h"
+#include "ip.h"
 #include "max_niceness.h"
+#include "Conf.h"
 #include <sys/stat.h> //mdir()
 
 Rdb::Rdb ( ) {
@@ -86,6 +90,11 @@ void Rdb::reset ( ) {
 
 Rdb::~Rdb ( ) {
 	reset();
+}
+
+
+int32_t Rdb::getNumBases() const {
+	return g_collectiondb.m_numRecs;
 }
 
 RdbBase *Rdb::getBase ( collnum_t collnum )  {
@@ -349,7 +358,8 @@ bool Rdb::updateToRebuildFiles ( Rdb *rdb2 , char *coll ) {
 	}
 
 	// delete unneeded rebuild files (everything is already dumped to Rdb files)
-	base2->getTreeIndex()->unlink();
+	if(base2->getTreeIndex())
+		base2->getTreeIndex()->unlink();
 	::unlink(rebuildFilePath);
 
 	// reset the rdb bases (clears out files and maps from mem)

@@ -4,6 +4,7 @@
 #include "Conf.h"
 #include "Query.h"     // getFieldCode()
 #include "Clusterdb.h" // g_clusterdb
+#include "Collectiondb.h"
 #include "iana_charset.h"
 #include "Stats.h"
 #include "Sanity.h"

@@ -39,7 +39,6 @@ enum thread_type_t {
 	thread_type_file_meta_data,     //unlink/rename
 	thread_type_statistics,         //mostly i/o
 	thread_type_unspecified_io,     //until we can be more specific
-	thread_type_unlink,             //unlnk()
 	thread_type_generate_thumbnail,
 };
 
@@ -83,7 +82,7 @@ public:
 	JobScheduler();
 	~JobScheduler();
 	
-	bool initialize(unsigned num_coordinator_threads, unsigned num_cpu_threads, unsigned num_summary_threads, unsigned num_io_threads, unsigned num_external_threads, job_done_notify_t job_done_notify=0);
+	bool initialize(unsigned num_coordinator_threads, unsigned num_cpu_threads, unsigned num_summary_threads, unsigned num_io_threads, unsigned num_external_threads, unsigned num_file_meta_threads, job_done_notify_t job_done_notify=0);
 	void finalize();
 	
 	bool submit(start_routine_t   start_routine,

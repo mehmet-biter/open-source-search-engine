@@ -1,5 +1,7 @@
 #include "gb-include.h"
 #include "Process.h"
+#include "ip.h"
+#include "Conf.h"
 
 #include "Msge1.h"
 

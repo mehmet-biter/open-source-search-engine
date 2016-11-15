@@ -11,6 +11,7 @@
 #include "RdbDump.h"
 #include "RdbBuckets.h"
 #include "RdbIndex.h"
+#include "Msg5.h"
 #include "Hostdb.h"
 #include "rdbid_t.h"
 #include <atomic>
@@ -168,7 +169,7 @@ public:
 
 	RdbBase *getBase(collnum_t collnum );
 	const RdbBase *getBase(collnum_t collnum ) const { return const_cast<Rdb*>(this)->getBase(collnum); }
-	int32_t getNumBases() const { return g_collectiondb.m_numRecs; }
+	int32_t getNumBases() const;
 	void addBase ( collnum_t collnum , class RdbBase *base ) ;
 
 

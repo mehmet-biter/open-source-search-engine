@@ -7,10 +7,14 @@
 #include "PageParser.h"
 #include "Repair.h"
 #include "HttpRequest.h"
+#include "UdpSlot.h"
 #include "Stats.h"
+#include "Collectiondb.h"
 #include "Process.h"
 #include "GbUtil.h"
 #include "Dir.h"
+#include "ip.h"
+#include "Conf.h"
 #include <fcntl.h>
 
 

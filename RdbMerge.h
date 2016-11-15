@@ -63,12 +63,10 @@ public:
 private:
 	static void getLockWrapper(int /*fd*/, void *state);
 	void getLock();
-	static void unlinkPartWrapper(void *state);
 	static void dumpListWrapper(void *state);
 	static void gotListWrapper(void *state, RdbList *list, Msg5 *msg5);
 	static void tryAgainWrapper(int fd, void *state);
 
-	void reset();
 	bool dumpList();
 	bool getNextList();
 	bool getAnotherList();
@@ -92,8 +90,6 @@ private:
 	bool m_doneMerging;
 
 	bool m_getListOutstanding;
-
-	int32_t m_numThreads;
 
 	uint64_t m_spaceNeededForMerge;
 	// . we get the units from the master and the mergees from the units
@@ -126,5 +122,7 @@ private:
 
 	char m_ks;
 };
+
+extern RdbMerge g_merge;
 
 #endif // GB_RDBMERGE_H

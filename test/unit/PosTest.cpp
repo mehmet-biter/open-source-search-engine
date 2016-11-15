@@ -4,12 +4,11 @@
 #include "Words.h"
 #include "Xml.h"
 #include "HttpMime.h"
-#include <cstdio>
 
 #define MAX_BUF_SIZE 1024
 
 TEST( PosTest, FilterAllCaps ) {
-	char *input_strs[] = {
+	const char *input_strs[] = {
 		"ALL YOUR BASES ARE BELONG TO US!!!", "The quick brown FOX jumps over THE lazy dog",
 		"PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS",
 		"QUIZDELTAGERNE SPISTE JORDBÆR MED FLØDE, MENS CIRKUSKLOVNEN WALTHER SPILLEDE PÅ XYLOFON"
@@ -24,13 +23,13 @@ TEST( PosTest, FilterAllCaps ) {
 	ASSERT_EQ( sizeof( input_strs ) / sizeof( input_strs[0] ),
 			   sizeof( expected_output ) / sizeof( expected_output[0] ) );
 
-	size_t len = sizeof( input_strs ) / sizeof( input_strs[0] );
-	for ( size_t i = 0; i < len; i++ ) {
+	size_t input_len = sizeof( input_strs ) / sizeof( input_strs[0] );
+	for ( size_t i = 0; i < input_len; i++ ) {
 		Words words;
 		Pos pos;
 		char buf[MAX_BUF_SIZE];
 
-		ASSERT_TRUE( words.set( input_strs[i], true ) );
+		ASSERT_TRUE( words.set( const_cast<char*>(input_strs[i]), true ) );
 
 		int32_t len = pos.filter( &words, 0, words.getNumWords(), false, buf, buf + MAX_BUF_SIZE );
 
@@ -40,7 +39,7 @@ TEST( PosTest, FilterAllCaps ) {
 }
 
 TEST( PosTest, FilterEnding ) {
-	char *input_strs[] = {
+	const char *input_strs[] = {
 		"\"So computers are tools of the devil?\" thought Newt. He had no problem believing it. Computers "
 		"had to be the tools of somebody, and all he knew for certain w...",
 
@@ -105,13 +104,13 @@ TEST( PosTest, FilterEnding ) {
 	ASSERT_EQ( sizeof( input_strs ) / sizeof( input_strs[0] ),
 			   sizeof( expected_output ) / sizeof( expected_output[0] ) );
 
-	size_t len = sizeof( input_strs ) / sizeof( input_strs[0] );
-	for ( size_t i = 0; i < len; i++ ) {
+	size_t input_len = sizeof( input_strs ) / sizeof( input_strs[0] );
+	for ( size_t i = 0; i < input_len; i++ ) {
 		Words words;
 		Pos pos;
 		char buf[MAX_BUF_SIZE];
 
-		ASSERT_TRUE( words.set( input_strs[i], true ) );
+		ASSERT_TRUE( words.set( const_cast<char*>(input_strs[i]), true ) );
 
 		int32_t len = pos.filter( &words, 0, -1, true, buf, buf + 180 );
 
@@ -121,7 +120,7 @@ TEST( PosTest, FilterEnding ) {
 }
 
 TEST( PosTest, FilterTags ) {
-	char *input_strs[] = {
+	const char *input_strs[] = {
 		"First line.<br>Second line.<br/>Third line.<br />Fourth line.",
 	    "<li>item 1</li><li>item 2</li><li>item 3</li>"
 	};
@@ -134,8 +133,8 @@ TEST( PosTest, FilterTags ) {
 	ASSERT_EQ( sizeof( input_strs ) / sizeof( input_strs[0] ),
 			   sizeof( expected_output ) / sizeof( expected_output[0] ) );
 
-	size_t len = sizeof( input_strs ) / sizeof( input_strs[0] );
-	for ( size_t i = 0; i < len; i++ ) {
+	size_t input_len = sizeof( input_strs ) / sizeof( input_strs[0] );
+	for ( size_t i = 0; i < input_len; i++ ) {
 		Xml xml;
 		Words words;
 		Pos pos;
@@ -155,7 +154,7 @@ TEST( PosTest, FilterTags ) {
 }
 
 TEST( PosTest, FilterSamePunct ) {
-	char *input_strs[] = {
+	const char *input_strs[] = {
 		"| ADAM RASMUSSON                                 |                       $40.00 |\n"
 		"---------------------------------------------------------------------------------\n"
 		"| BRIAN AUSTIN                                   |                       $40.00 |\n"
@@ -177,13 +176,13 @@ TEST( PosTest, FilterSamePunct ) {
 	ASSERT_EQ( sizeof( input_strs ) / sizeof( input_strs[0] ),
 			   sizeof( expected_output ) / sizeof( expected_output[0] ) );
 
-	size_t len = sizeof( input_strs ) / sizeof( input_strs[0] );
-	for ( size_t i = 0; i < len; i++ ) {
+	size_t input_len = sizeof( input_strs ) / sizeof( input_strs[0] );
+	for ( size_t i = 0; i < input_len; i++ ) {
 		Words words;
 		Pos pos;
 		char buf[MAX_BUF_SIZE];
 
-		ASSERT_TRUE( words.set( input_strs[i], true ) );
+		ASSERT_TRUE( words.set( const_cast<char*>(input_strs[i]), true ) );
 
 		int32_t len = pos.filter( &words, 0, -1, true, buf, buf + 180 );
 
@@ -193,7 +192,7 @@ TEST( PosTest, FilterSamePunct ) {
 }
 
 TEST( PosTest, DecodeHTMLEntities ) {
-	char *input_strs[] = {
+	const char *input_strs[] = {
 		"abc &gt; efg",
 	    "abc&gt;efg",
 	    "abc &amp; efg",
@@ -218,13 +217,13 @@ TEST( PosTest, DecodeHTMLEntities ) {
 	ASSERT_EQ( sizeof( input_strs ) / sizeof( input_strs[0] ),
 			   sizeof( expected_output ) / sizeof( expected_output[0] ) );
 
-	size_t len = sizeof( input_strs ) / sizeof( input_strs[0] );
-	for ( size_t i = 0; i < len; i++ ) {
+	size_t input_len = sizeof( input_strs ) / sizeof( input_strs[0] );
+	for ( size_t i = 0; i < input_len; i++ ) {
 		Words words;
 		Pos pos;
 		char buf[MAX_BUF_SIZE];
 
-		ASSERT_TRUE( words.set( input_strs[i], true ) );
+		ASSERT_TRUE( words.set( const_cast<char*>(input_strs[i]), true ) );
 
 		int32_t len = pos.filter( &words, 0, -1, true, buf, buf + 180 );
 

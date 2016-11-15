@@ -12,12 +12,14 @@
 #include "Rdb.h"
 #include "Spider.h"
 #include "Msg4.h"
+#include "Collectiondb.h"
 #include "Pages.h"
 #include "PingServer.h"
 #include "Spider.h"
 #include "Process.h"
 #include "Parms.h"
 #include "max_niceness.h"
+#include "Conf.h"
 
 Rebalance g_rebalance;
 
@@ -258,7 +260,6 @@ void Rebalance::scanLoop ( ) {
 			    "%s for coll.%s.%" PRId32,
 			    m_rebalanceCount,m_scannedCount,
 			    rdb->getDbname(),cr->m_coll,(int32_t)cr->m_collnum);
-			//if ( m_rebalanceCount ) goto done;
 			m_rebalanceCount = 0;
 			m_scannedCount = 0;
 			m_lastPercent = -1;
@@ -378,46 +379,44 @@ bool Rebalance::scanRdb ( ) {
 		return false;
 	}
 
- readAnother:
+	for(;;) {
+		if ( g_process.m_mode == Process::EXIT_MODE ) return false;
 
-	if ( g_process.m_mode == Process::EXIT_MODE ) return false;
+		//log("rebal: loading list start = %s",KEYSTR(m_nextKey,rdb->m_ks));
 
-	//log("rebal: loading list start = %s",KEYSTR(m_nextKey,rdb->m_ks));
+		if ( ! m_msg5.getList ( rdb->getRdbId()     ,
+					m_collnum, // coll             ,
+					&m_list          ,
+					m_nextKey        ,
+					m_endKey         , // should be maxed!
+					100024             , // min rec sizes
+					true             , // include tree?
+					0                , // maxCacheAge
+					0                , // startFileNum
+					-1               , // m_numFiles   
+					this             , // state 
+					gotListWrapper   , // callback
+					MAX_NICENESS     , // niceness
+					true             , // do error correction?
+					NULL             , // cache key ptr
+					0                , // retry num
+					-1               , // maxRetries
+					-1LL             , // sync point
+					false,             // isRealMerge
+					true))             // allowPageCache
+			return false;
 
-	if ( ! m_msg5.getList ( rdb->getRdbId()     ,
-				m_collnum, // coll             ,
-				&m_list          ,
-				m_nextKey        ,
-				m_endKey         , // should be maxed!
-				100024             , // min rec sizes
-				true             , // include tree?
-				0                , // maxCacheAge
-				0                , // startFileNum
-				-1               , // m_numFiles   
-				this             , // state 
-				gotListWrapper   , // callback
-				MAX_NICENESS     , // niceness
-				true             , // do error correction?
-				NULL             , // cache key ptr
-				0                , // retry num
-				-1               , // maxRetries
-				-1LL             , // sync point
-				false,             // isRealMerge
-				true))             // allowPageCache
-		return false;
+		//
+		// msg5 did not block on i/o if we made it here
+		//
 
-	//
-	// msg5 did not block on i/o if we made it here
-	//
+		// all done if list empty
+		if ( m_list.isEmpty() ) return true;
 
-	// all done if list empty
-	if ( m_list.isEmpty() ) return true;
+		// process that list. return false if blocked.
+		if ( ! gotList() ) return false;
 
-	// process that list. return false if blocked.
-	if ( ! gotList() ) return false;
-
-	// get another list
-	goto readAnother;
+	}
 }
 
 static void doneAddingMetaWrapper ( void *state ) {

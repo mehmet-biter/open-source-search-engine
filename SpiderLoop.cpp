@@ -1,16 +1,12 @@
-#include "gb-include.h"
-
+#include "SpiderLoop.h"
 #include "Spider.h"
 #include "SpiderColl.h"
-#include "SpiderLoop.h"
 #include "Doledb.h"
-#include "Msg5.h"
+#include "UdpSlot.h"
 #include "Collectiondb.h"
-#include "XmlDoc.h"    // score8to32()
 #include "Stats.h"
 #include "SafeBuf.h"
 #include "Repair.h"
-#include "CountryCode.h"
 #include "DailyMerge.h"
 #include "Process.h"
 #include "XmlDoc.h"
@@ -18,7 +14,8 @@
 #include "Pages.h"
 #include "Parms.h"
 #include "PingServer.h"
-#include "Rebalance.h"
+#include "ip.h"
+#include "Conf.h"
 
 
 // . this was 10 but cpu is getting pegged, so i set to 45
@@ -2229,23 +2226,38 @@ void gotCrawlInfoReply ( void *state , UdpSlot *slot ) {
 		// if empty for all hosts, i guess no stats...
 		if ( ! cia ) continue;
 
+		bool crazy = false;
 		for ( int32_t k = 0 ; k < g_hostdb.getNumHosts(); k++ ) {
 			// get the CrawlInfo for the ith host
 			CrawlInfo *stats = &cia[k];
 			// point to the stats for that host
 			int64_t *ss = (int64_t *)stats;
 			int64_t *gs = (int64_t *)gi;
-			// add each hosts counts into the global accumulators
+			// are stats crazy?
 			for ( int32_t j = 0 ; j < NUMCRAWLSTATS ; j++ ) {
-				*gs = *gs + *ss;
 				// crazy stat?
 				if ( *ss > 1000000000LL || *ss < -1000000000LL ) {
-					log( LOG_WARN, "spider: crazy stats %" PRId64" from host #%" PRId32" coll=%s",
+					log( LOG_WARN, "spider: crazy stats %" PRId64" from host #%" PRId32" coll=%s. ignoring.",
 					     *ss, k, cr->m_coll );
+					crazy = true;
+					break;
 				}
+				ss++;
+			}
+
+			// reset ptr to accumulate
+			ss = (int64_t *)stats;
+			for ( int32_t j = 0 ; j < NUMCRAWLSTATS ; j++ ) {
+				// do not accumulate if corrupted.
+				// probably mem got corrupted and it saved to disk
+				if (crazy) {
+					break;
+				}
+				*gs = *gs + *ss;
 				gs++;
 				ss++;
 			}
+
 			// . special counts
 			gi->m_pageDownloadSuccessesThisRound +=
 				stats->m_pageDownloadSuccessesThisRound;

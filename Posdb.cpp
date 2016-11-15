@@ -1,11 +1,8 @@
 #include "Posdb.h"
-
-#include "gb-include.h"
-
-#include "Posdb.h"
 #include "JobScheduler.h"
 #include "Rebalance.h"
 #include "RdbCache.h"
+#include "Conf.h"
 #include "Sanity.h"
 
 #ifdef _VALGRIND_

@@ -255,39 +255,39 @@ bool sendPageAddDelColl ( TcpSocket *s , HttpRequest *r , bool add ) {
 	//	return g_parms.sendPageGeneric2 ( s , r , PAGE_SEARCH ,
 	//					  nc , pwd );
 
-	if ( g_collectiondb.m_numRecsUsed <= 0 ) goto skip;
-
-	// print all collections out in a checklist so you can check the
-	// ones you want to delete, the values will be the id of that collectn
-	p.safePrintf (
-		  "<center>\n<table %s>\n"
-		  "<tr class=hdrow><td><center><b>Delete Collections"
-		  "</b></center></td></tr>\n"
-		  "<tr bgcolor=#%s><td>"
-		  "<center><b>Select the collections you wish to delete. "
-		  //"<font color=red>This feature is currently under "
-		  //"development.</font>"
-		  "</b></center></td></tr>\n"
-		  "<tr bgcolor=#%s><td>"
-		  // table within a table
-		  "<center><table width=20%%>\n",
-		  TABLE_STYLE,
-		  LIGHT_BLUE,
-		  DARK_BLUE
-		      );
-
-	for ( int32_t i = 0 ; i < g_collectiondb.m_numRecs ; i++ ) {
-		CollectionRec *cr = g_collectiondb.m_recs[i];
-		if ( ! cr ) continue;
+	if ( g_collectiondb.m_numRecsUsed > 0 ) {
+		// print all collections out in a checklist so you can check the
+		// ones you want to delete, the values will be the id of that collectn
 		p.safePrintf (
+			  "<center>\n<table %s>\n"
+			  "<tr class=hdrow><td><center><b>Delete Collections"
+			  "</b></center></td></tr>\n"
 			  "<tr bgcolor=#%s><td>"
-			  "<input type=checkbox name=delcoll value=\"%s\"> "
-			  "%s</td></tr>\n",
-			  DARK_BLUE,
-			  cr->m_coll,cr->m_coll);
+			  "<center><b>Select the collections you wish to delete. "
+			  //"<font color=red>This feature is currently under "
+			  //"development.</font>"
+			  "</b></center></td></tr>\n"
+			  "<tr bgcolor=#%s><td>"
+			  // table within a table
+			  "<center><table width=20%%>\n",
+			  TABLE_STYLE,
+			  LIGHT_BLUE,
+			  DARK_BLUE
+			      );
+
+		for ( int32_t i = 0 ; i < g_collectiondb.m_numRecs ; i++ ) {
+			CollectionRec *cr = g_collectiondb.m_recs[i];
+			if ( ! cr ) continue;
+			p.safePrintf (
+				  "<tr bgcolor=#%s><td>"
+				  "<input type=checkbox name=delcoll value=\"%s\"> "
+				  "%s</td></tr>\n",
+				  DARK_BLUE,
+				  cr->m_coll,cr->m_coll);
+		}
+		p.safePrintf( "</table></center></td></tr></table><br>\n" );
 	}
-	p.safePrintf( "</table></center></td></tr></table><br>\n" );
-skip:
+
 	// wrap up the form started by printAdminTop
 	g_pages.printAdminBottom ( &p );
 	int32_t bufLen = p.length();

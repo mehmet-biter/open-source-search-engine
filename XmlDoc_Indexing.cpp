@@ -4,10 +4,13 @@
 
 #include "XmlDoc.h"
 #include "CountryCode.h" // g_countryCode
+#include "Collectiondb.h"
 #include "Speller.h"
 #include "Synonyms.h"
 #include "Process.h"
+#include "ip.h"
 #include "Posdb.h"
+#include "Conf.h"
 
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>

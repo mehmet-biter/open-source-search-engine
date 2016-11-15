@@ -1,6 +1,7 @@
 #include "gb-include.h"
 
 #include "Rdb.h"
+#include "Conf.h"
 #include "Clusterdb.h"
 #include "Hostdb.h"
 #include "Tagdb.h"
@@ -11,6 +12,7 @@
 #include "Statsdb.h"
 #include "Linkdb.h"
 #include "Collectiondb.h"
+#include "RdbMerge.h"
 #include "Repair.h"
 #include "Rebalance.h"
 #include "JobScheduler.h"
@@ -80,9 +82,6 @@ bool g_dumpMode = false;
 // does not scale well to many files
 static const int32_t absoluteMaxFilesToMerge = 50;
 
-
-// since we only do one merge at a time, keep this class static
-class RdbMerge g_merge;
 
 RdbBase::RdbBase()
   : m_numFiles(0),
@@ -168,7 +167,10 @@ bool RdbBase::init(const char *dir,
 	m_didRepair = false;
 
 	sprintf(m_collectionDirName, "%scoll.%s.%" PRId32, dir, coll, (int32_t)collnum);
-	sprintf(m_mergeDirName, "%s/%d/coll.%s.%d", g_conf.m_mergespaceDirectory, getMyShardNum(), coll, (int32_t)collnum);
+
+	// use override from hosts.conf if present
+	const char *mergeSpaceDir = strlen(g_hostdb.m_myHost->m_mergeDir) > 0 ? g_hostdb.m_myHost->m_mergeDir : g_conf.m_mergespaceDirectory;
+	sprintf(m_mergeDirName, "%s/%d/coll.%s.%d", mergeSpaceDir, getMyHostId(), coll, (int32_t)collnum);
 
 	// logDebugAdmin
 	log(LOG_DEBUG,"db: adding new base for dir=%s coll=%s collnum=%" PRId32" db=%s",
@@ -1270,6 +1272,7 @@ bool RdbBase::incorporateMerge ( ) {
 	// . bitch if bad news
 	if ( postmergePositiveRecords > m_premergeNumPositiveRecords ) {
 		log(LOG_INFO,"merge: %s gained %" PRId64" positives.", m_dbname, postmergePositiveRecords - m_premergeNumPositiveRecords);
+		//note: also seen when resuming an interrupted merge, inwhich case there is probably nothing wrong
 	}
 
 	if ( postmergePositiveRecords < m_premergeNumPositiveRecords - m_premergeNumNegativeRecords ) {

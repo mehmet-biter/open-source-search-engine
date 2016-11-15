@@ -13,7 +13,8 @@
 #ifndef GB_CONF_H
 #define GB_CONF_H
 
-#include "Collectiondb.h"     // MAX_COLL_LEN
+#include "max_coll_len.h"
+#include "max_url_len.h"
 #include "SafeBuf.h"
 #include "Xml.h"
 
@@ -152,6 +153,7 @@ class Conf {
 	int32_t  m_maxSummaryThreads;
 	int32_t  m_maxIOThreads;
 	int32_t  m_maxExternalThreads;
+	int32_t  m_maxFileMetaThreads;
 
 	int32_t  m_deadHostTimeout;
 	int32_t  m_sendEmailTimeout;
@@ -191,8 +193,6 @@ class Conf {
 	int32_t  m_httpMaxSendBufSize;
 
 	// a search results cache (for Msg40)
-	int32_t  m_searchResultsMaxCacheMem;
-	int32_t  m_searchResultsMaxCacheAge; // in seconds
 	int64_t m_docSummaryWithDescriptionMaxCacheAge; //cache timeout for document summaries for documents with a meta-tag with description, in milliseconds
 
 	// for Weights.cpp
@@ -406,6 +406,7 @@ class Conf {
 	bool m_logTraceMem;
 	bool m_logTraceMsg0;
 	bool m_logTraceMsg4;
+	bool m_logTracePos;
 	bool m_logTracePosdb;
 	bool m_logTraceRdb;
 	bool m_logTraceRdbBase;
@@ -419,6 +420,7 @@ class Conf {
 	bool m_logTraceRepairs;
 	bool m_logTraceRobots;
 	bool m_logTraceSpider;
+	bool m_logTraceSummary;
 	bool m_logTraceXmlDoc;
 	bool m_logTracePhrases;
 	bool m_logTraceWordSpam;

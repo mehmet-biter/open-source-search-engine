@@ -7,6 +7,7 @@
 #include <math.h>
 #include "Conf.h"
 #include "PingServer.h"
+#include "ip.h"
 #include "Mem.h"
 //#include "Statsdb.h"
 

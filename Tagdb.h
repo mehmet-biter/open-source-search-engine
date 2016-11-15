@@ -3,7 +3,6 @@
 #ifndef GB_TAGDB_H
 #define GB_TAGDB_H
 
-#include "Conf.h"       // for setting rdb from Conf file
 #include "Rdb.h"
 #include "Xml.h"
 #include "Url.h"
@@ -19,6 +18,9 @@
 #define TT_DUP 123456
 
 #define TAGDB_KEY key128_t
+
+class HttpRequest;
+class TcpSocket;
 
 // a TagRec can contain multiple Tags, even of the same Tag::m_type
 class Tag {

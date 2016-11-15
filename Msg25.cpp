@@ -1,4 +1,5 @@
 #include "Linkdb.h"
+#include "UdpSlot.h"
 #include "linkspam.h"
 #include "XmlDoc.h" // score32to8()
 #include "HashTableX.h"
@@ -10,6 +11,7 @@
 #include "IPAddressChecks.h"
 #include "GbMutex.h"
 #include "ScopedLock.h"
+#include "Conf.h"
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
 #endif

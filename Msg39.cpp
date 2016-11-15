@@ -4,9 +4,11 @@
 #include "JobScheduler.h"
 #include "UdpServer.h"
 #include "RdbList.h"
+#include "Collectiondb.h"
 #include "DocumentIndexChecker.h"
 #include "Sanity.h"
 #include "Posdb.h"
+#include "Conf.h"
 #include "Mem.h"
 #include "GbSignature.h"
 #include <new>

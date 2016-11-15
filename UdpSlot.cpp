@@ -2,12 +2,14 @@
 
 #include "UdpSlot.h"
 #include "UdpServer.h"
+#include "Hostdb.h"
 #include "Stats.h"
 #include "Proxy.h"
 #include "IPAddressChecks.h"
 #include "BitOperations.h"
 #include "Process.h"
 #include "Conf.h"
+#include "ip.h"
 #include "Mem.h"
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>

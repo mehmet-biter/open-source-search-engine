@@ -5,9 +5,11 @@
 #include "File.h"
 #include "Proxy.h"
 #include "Msg3a.h" // MAX_SHARDS
+#include "Collectiondb.h"
 #include "TcpSocket.h"
 #include "HttpRequest.h"
 #include "Process.h"
+#include "ip.h"
 #include <sys/stat.h> //umask()
 
 
@@ -102,8 +104,6 @@ Conf::Conf ( ) {
 	m_httpMaxSockets = 0;
 	m_httpsMaxSockets = 0;
 	m_httpMaxSendBufSize = 0;
-	m_searchResultsMaxCacheMem = 0;
-	m_searchResultsMaxCacheAge = 0;
 	m_docSummaryWithDescriptionMaxCacheAge = 0;
 	m_sliderParm = 0;
 	m_termFreqWeightFreqMin = 0.0;
@@ -243,6 +243,7 @@ Conf::Conf ( ) {
 	m_logTraceMem = false;
 	m_logTraceMsg0 = false;
 	m_logTraceMsg4 = false;
+	m_logTracePos = false;
 	m_logTracePosdb = false;
 	m_logTraceRdb = false;
 	m_logTraceRdbBase = false;
@@ -255,6 +256,7 @@ Conf::Conf ( ) {
 	m_logTraceRepairs = false;
 	m_logTraceRobots = false;
 	m_logTraceSpider = false;
+	m_logTraceSummary = false;
 	m_logTraceXmlDoc = false;
 	m_logTracePhrases= false;
 	m_logTraceWordSpam=false;

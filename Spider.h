@@ -7,18 +7,13 @@
 #define MAX_DAYS 365
 
 #include "Rdb.h"
-#include "Conf.h"
-#include "Titledb.h"
-#include "Hostdb.h"
-#include "RdbList.h"
-#include "RdbTree.h"
-#include "HashTableX.h"
-#include <time.h>
-#include "Msg5.h"      // local getList()
-#include "Msg4.h"
-#include "Msg1.h"
+#include "Titledb.h" //DOCID_MASK
 #include "hash.h"
 
+
+class RdbList;
+class HashTableX;
+class SpiderColl;
 
 // lower from 1300 to 300
 #define MAXUDPSLOTS 300

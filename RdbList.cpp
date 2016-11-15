@@ -6,6 +6,7 @@
 #include "RdbIndexQuery.h"
 #include "Posdb.h"
 #include "Linkdb.h"
+#include "Conf.h"
 #include <set>
 #include <assert.h>
 

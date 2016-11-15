@@ -54,10 +54,8 @@
 #define GB_POSDB_H
 
 #include "Rdb.h"
-#include "Conf.h"
-#include "Titledb.h" // DOCID_MASK
+#include "Titledb.h" // DOCID_MASK/MAX_DOCID
 #include "HashTableX.h"
-#include "Sections.h"
 #include "Sanity.h"
 #include "termid_mask.h"
 

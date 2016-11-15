@@ -1,7 +1,9 @@
 #include "gb-include.h"
 
 #include "Msg0.h"
+#include "Conf.h"
 #include "Clusterdb.h"
+#include "Collectiondb.h"
 #include "Stats.h"
 #include "Tagdb.h"
 #include "Posdb.h"
@@ -9,8 +11,10 @@
 #include "Spider.h"
 #include "Linkdb.h"
 #include "Msg5.h"                 // local getList()
+#include "UdpSlot.h"
 #include "XmlDoc.h"
 #include "Process.h"
+#include "ip.h"
 
 
 static void handleRequest0           ( UdpSlot *slot , int32_t niceness ) ;

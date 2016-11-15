@@ -6,6 +6,8 @@
 #include "CountryCode.h"
 #include "PageResults.h"
 #include "GbUtil.h"
+#include "Collectiondb.h"
+#include "Conf.h"
 
 #include <third-party/cld2/public/compact_lang_det.h>
 #include <third-party/cld2/public/encodings.h>

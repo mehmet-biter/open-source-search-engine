@@ -8,6 +8,7 @@
 #include "GbMutex.h"
 #include "ScopedLock.h"
 #include "Sanity.h"
+#include "Conf.h"
 #include <new>
 
 static const int signature_init = 0x1f2b3a4c;

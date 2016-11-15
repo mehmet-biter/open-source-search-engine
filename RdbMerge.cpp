@@ -6,11 +6,13 @@
 #include "Conf.h"
 
 
+RdbMerge g_merge;
+
+
 RdbMerge::RdbMerge()
   : m_mergeSpaceCoordinator(NULL),
     m_doneMerging(false),
     m_getListOutstanding(false),
-    m_numThreads(0),
     m_startFileNum(0),
     m_numFiles(0),
     m_fixedDataSize(0),
@@ -33,11 +35,6 @@ RdbMerge::RdbMerge()
 
 RdbMerge::~RdbMerge() {
 	delete m_mergeSpaceCoordinator;
-}
-
-void RdbMerge::reset() {
-	m_isMerging = false;
-	//m_isHalted = false; //not reset because halting is a one-way street
 }
 
 
@@ -69,28 +66,21 @@ bool RdbMerge::merge(rdbid_t rdbId,
 		return true;
 	}
 
-	// reset ourselves
-	reset();
-
-	if(!m_mergeSpaceCoordinator)
-		m_mergeSpaceCoordinator = new MergeSpaceCoordinator(g_conf.m_mergespaceLockDirectory, g_conf.m_mergespaceMinLockFiles, g_conf.m_mergespaceDirectory);
-
-	// set it
-	m_rdbId = rdbId;
-
-	Rdb *rdb = getRdbFromId(rdbId);
+	if(!m_mergeSpaceCoordinator) {
+		const char *mergeSpaceDir = strlen(g_hostdb.m_myHost->m_mergeDir) > 0 ? g_hostdb.m_myHost->m_mergeDir : g_conf.m_mergespaceDirectory;
+		m_mergeSpaceCoordinator = new MergeSpaceCoordinator(g_conf.m_mergespaceLockDirectory, g_conf.m_mergespaceMinLockFiles, mergeSpaceDir);
+	}
 
 	// get base, returns NULL and sets g_errno to ENOCOLLREC on error
-	RdbBase *base = getRdbBase(m_rdbId, collnum);
+	RdbBase *base = getRdbBase(rdbId, collnum);
 	if (!base) {
 		return true;
 	}
 
-	m_collnum = collnum;
-	if (rdb->isCollectionless()) {
-		m_collnum = 0;
-	}
+	Rdb *rdb = getRdbFromId(rdbId);
 
+	m_rdbId           = rdbId;
+	m_collnum         = rdb->isCollectionless() ? 0 : collnum;
 	m_targetFile      = targetFile;
 	m_targetMap       = targetMap;
 	m_targetIndex     = targetIndex;
@@ -99,7 +89,7 @@ bool RdbMerge::merge(rdbid_t rdbId,
 	m_fixedDataSize   = base->getFixedDataSize();
 	m_niceness        = niceness;
 	m_doneMerging     = false;
-	m_ks              = getKeySizeFromRdbId(rdbId);
+	m_ks              = rdb->getKeySize();
 
 	// . set the key range we want to retrieve from the files
 	// . just get from the files, not tree (not cache?)
@@ -118,8 +108,12 @@ bool RdbMerge::merge(rdbid_t rdbId,
 	//calculate how much space we need for resulting merged file
 	m_spaceNeededForMerge = base->getSpaceNeededForMerge(m_startFileNum,m_numFiles);
 	
-	g_loop.registerSleepCallback(5000, this, getLockWrapper, 0, true);
-	
+	if(!g_loop.registerSleepCallback(5000, this, getLockWrapper, 0, true))
+		return true;
+
+	// we're now merging since we accepted to try
+	m_isMerging = true;
+
 	return false;
 }
 
@@ -165,6 +159,8 @@ bool RdbMerge::gotLock() {
 	RdbBase *base = getRdbBase(m_rdbId, m_collnum);
 	if (!base) {
 		relinquishMergespaceLock();
+		m_isMerging = false;
+		//no need for calling incorporateMerge() because the base/collection is cone
 		return true;
 	}
 
@@ -190,13 +186,12 @@ bool RdbMerge::gotLock() {
 	           NULL);
 	// what kind of error?
 	if ( g_errno ) {
-		log( LOG_WARN, "db: gotLock: %s.", mstrerror(g_errno) );
+		log(LOG_WARN, "db: gotLock: merge.set: %s.", mstrerror(g_errno));
 		relinquishMergespaceLock();
+		m_isMerging = false;
+		base->incorporateMerge();
 		return true;
 	}
-
-	// we're now merging since the dump was set up successfully
-	m_isMerging     = true;
 
 	// . this returns false on error and sets g_errno
 	// . it returns true if blocked or merge completed successfully
@@ -290,23 +285,6 @@ bool RdbMerge::getNextList() {
 
 	// otherwise, get it now
 	return getAnotherList();
-}
-
-void RdbMerge::unlinkPartWrapper(void *state) {
-	RdbMerge *THIS = (RdbMerge *)state;
-
-	// wait for all threads to complete
-	if (--THIS->m_numThreads > 0) {
-		return;
-	}
-
-	// return if this blocks
-	if (!THIS->getAnotherList()) {
-		return;
-	}
-
-	// otherwise, continue the merge loop
-	THIS->resumeMerge();
 }
 
 bool RdbMerge::getAnotherList() {

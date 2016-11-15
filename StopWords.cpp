@@ -5,6 +5,7 @@
 #include "HashTableX.h"
 #include "Speller.h"
 #include "Loop.h"
+#include "Lang.h"
 #include "Posdb.h" // MAXLANGID
 #include "GbMutex.h"
 #include "ScopedLock.h"

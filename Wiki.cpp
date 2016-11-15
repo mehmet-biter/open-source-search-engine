@@ -4,6 +4,7 @@
 #include "Words.h"
 #include "Titledb.h"
 #include "Process.h"
+#include "Conf.h"
 #include <sys/stat.h> //stat()
 #include <fcntl.h>
 

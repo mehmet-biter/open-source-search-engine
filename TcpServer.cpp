@@ -6,12 +6,14 @@
 #include "PingServer.h"
 #include "HttpServer.h" //g_httpServer.m_ssltcp.m_ctx
 #include "Hostdb.h"
+#include "Dns.h"
 #include "Loop.h"      // g_loop.registerRead/WriteCallback()
 #include "Conf.h"
 #include "MsgC.h"           // for udp-only, non-blocking dns lookups
 #include "Mem.h"     // for mem routines
 #include "max_niceness.h"
 #include "Process.h"
+#include "ip.h"
 #include <sys/time.h>             // time()
 #include <sys/types.h>            // setsockopt()
 #include <sys/socket.h>           // setsockopt()

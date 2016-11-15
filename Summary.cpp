@@ -7,6 +7,8 @@
 #include "Pos.h"
 #include "Matches.h"
 #include "Process.h"
+#include "Conf.h"
+#include "Url.h"
 
 
 Summary::Summary()
@@ -397,11 +399,6 @@ bool Summary::setSummary ( Xml *xml, Words *words, Sections *sections, Pos *pos,
 	
 		// retire the query words in the winning summary
 
-		
-		//log( LOG_WARN,"summary: took %" PRId64" ms to finish getbestwindo",
-		//    gettimeofdayInMilliseconds() - stget );
-
-
 		// all done if no winner was made
 		if ( maxi == -1 || maxa == -1 || maxb == -1) {
 			break;
@@ -439,6 +436,7 @@ bool Summary::setSummary ( Xml *xml, Words *words, Sections *sections, Pos *pos,
 		}
 
 		if ( needEllipsis ) {
+			logTrace(g_conf.m_logTraceSummary, "needEllipsis");
 			// break out if no room for "..."
 			if ( p + 4 + 2 > pend ) {
 				break;
@@ -463,6 +461,7 @@ bool Summary::setSummary ( Xml *xml, Words *words, Sections *sections, Pos *pos,
 		}
 
 		// assume we need a trailing ellipsis
+		logTrace(g_conf.m_logTraceSummary, "needEllipsis=true");
 		needEllipsis = true;
 
 		// so next excerpt does not need to have an ellipsis if we 
@@ -523,6 +522,7 @@ bool Summary::setSummary ( Xml *xml, Words *words, Sections *sections, Pos *pos,
 		// if we ended on punct that can be paired across we need
 		// to add an ellipsis
 		if ( needEllipsis ) {
+			logTrace(g_conf.m_logTraceSummary, "needEllipsis");
 			if ( p + 4 + 2 > pend ) {
 				break;
 			}

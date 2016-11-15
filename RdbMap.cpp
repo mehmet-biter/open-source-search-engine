@@ -1321,16 +1321,16 @@ bool RdbMap::generateMap ( BigFile *f ) {
 
 	// find first existing part file
 	bool firstRead = true;
-	int32_t fp = 0;
-	for (;; fp++) {
+	int32_t firstFilePartNum = 0;
+	for (;; firstFilePartNum++) {
 		// stop when the part file exists
-		if (f->doesPartExist(fp)) {
+		if (f->doesPartExist(firstFilePartNum)) {
 			break;
 		}
 	}
 
-	if (fp > 0) {
-		offset = MAX_PART_SIZE * fp;
+	if (firstFilePartNum > 0) {
+		offset = MAX_PART_SIZE * firstFilePartNum;
 	}
 
 	// don't read in more than 10 megs at a time initially
@@ -1404,7 +1404,7 @@ readLoop:
 	RdbList list;
 
 	// if we were headless then first key on that page could be cut
-	if ( fp > 0 && firstRead ) {
+	if ( firstFilePartNum > 0 && firstRead ) {
 		firstRead = false;
 
 		// scan the buffer to find the right key.

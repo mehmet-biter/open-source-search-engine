@@ -4,6 +4,7 @@
 #include "File.h"
 #include "Conf.h"
 #include "TcpSocket.h"
+#include "UdpSlot.h"
 #include "HttpRequest.h"
 #include "Pages.h"         // g_pages
 #include "Tagdb.h"        // g_tagdb
@@ -26,6 +27,7 @@
 #include "PageInject.h" // InjectionRequest
 #include "Posdb.h"
 #include "GigablastRequest.h"
+#include "ip.h"
 #include "SafeBuf.h"
 #include "GbUtil.h"
 
@@ -3676,16 +3678,6 @@ void Parms::init ( ) {
 	m->m_flags = PF_NOAPI;
 	m++;
 
-	m->m_title = "search results max cache mem";
-	m->m_desc  = "Bytes to use for caching search result pages.";
-	m->m_off   = offsetof(Conf,m_searchResultsMaxCacheMem);
-	m->m_def   = "100000";
-	m->m_type  = TYPE_LONG;
-	m->m_flags = PF_NOSYNC|PF_NOAPI;
-	m->m_page  = PAGE_NONE;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
 	m->m_title = "read only mode";
 	m->m_desc  = "Read only mode does not allow spidering.";
 	m->m_cgi   = "readonlymode";
@@ -5595,18 +5587,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
-	m->m_title = "search results cache max age";
-	m->m_desc = "How many seconds should we cache a search results "
-		"page for?";
-	m->m_cgi  = "srcma";
-	m->m_off  = offsetof(Conf,m_searchResultsMaxCacheAge);
-	m->m_def  = "10800"; // 3 hrs
-	m->m_type = TYPE_LONG;
-	m->m_units = "seconds";
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
 	m->m_title = "document summary (w/desc) cache max age";
 	m->m_desc = "How many milliseconds should we cache document summaries";
 	m->m_cgi  = "dswdmca";
@@ -6651,8 +6631,23 @@ void Parms::init ( ) {
 	m->m_title = "max external threads";
 	m->m_desc  = "Maximum number of threads to use per Gigablast process "
 		"for doing external calss with system() or similar..";
-	m->m_cgi   = "max_ext_threads";
+	m->m_cgi   = "max_file_meta_threads";
 	m->m_off   = offsetof(Conf,m_maxExternalThreads);
+	m->m_type  = TYPE_LONG;
+	m->m_def   = "2";
+	m->m_units = "threads";
+	m->m_min   = 0;
+	m->m_flags = 0;
+	m->m_page  = PAGE_MASTER;
+	m->m_obj   = OBJ_CONF;
+	m->m_group = false;
+	m++;
+
+	m->m_title = "max file meta threads";
+	m->m_desc  = "Maximum number of threads to use per Gigablast process "
+		"for doing file unlinks and renames";
+	m->m_cgi   = "max_ext_threads";
+	m->m_off   = offsetof(Conf,m_maxFileMetaThreads);
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "2";
 	m->m_units = "threads";
@@ -10068,6 +10063,15 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
+	m->m_title = "log trace info for Pos";
+	m->m_cgi   = "ltrc_pos";
+	m->m_off   = offsetof(Conf,m_logTracePos);
+	m->m_type  = TYPE_BOOL;
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m->m_obj   = OBJ_CONF;
+	m++;
+
 	m->m_title = "log trace info for Posdb";
 	m->m_cgi   = "ltrc_posdb";
 	m->m_off   = offsetof(Conf,m_logTracePosdb);
@@ -10170,6 +10174,15 @@ void Parms::init ( ) {
 	m->m_title = "log trace info for Spider";
 	m->m_cgi   = "ltrc_sp";
 	m->m_off   = offsetof(Conf,m_logTraceSpider);
+	m->m_type  = TYPE_BOOL;
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m->m_obj   = OBJ_CONF;
+	m++;
+
+	m->m_title = "log trace info for Summary";
+	m->m_cgi   = "ltrc_sum";
+	m->m_off   = offsetof(Conf,m_logTraceSummary);
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
 	m->m_page  = PAGE_LOG;

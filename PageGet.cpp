@@ -11,7 +11,9 @@
 #include "Tagdb.h"
 #include "XmlDoc.h"
 #include "Process.h"
+#include "ip.h"
 #include "GbUtil.h"
+#include "Conf.h"
 
 // TODO: redirect to host that has the titleRec locally
 

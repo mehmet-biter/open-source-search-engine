@@ -150,7 +150,7 @@ void RdbScan::gotList ( ) {
 	int32_t  allocSize = m_fstate.m_allocSize;
 
 	// just return on error, do nothing
-	if ( g_errno ) {
+	if ( g_errno || m_fstate.m_errno ) {
 		// free buffer though!! don't forget!
 		if ( allocBuf ) {
 			mfree( allocBuf, allocSize, "RdbScan" );

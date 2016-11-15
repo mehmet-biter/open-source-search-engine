@@ -12,7 +12,7 @@
 #include "Dns.h"
 #include "TcpServer.h"
 #include "UdpServer.h"
-#include "Msg40.h"       // g_resultsCache
+#include "Msg51.h"
 #include "Pages.h"
 #include "Stats.h"
 #include <sys/time.h>      // getrlimit()

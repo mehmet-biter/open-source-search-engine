@@ -1,9 +1,11 @@
-#include "gb-include.h"
-
 #include "Dns.h"
 #include "HashTableT.h"
 #include "Process.h"
 #include "File.h"
+#include "Conf.h"
+#include "Hostdb.h"
+#include "Dns_internals.h"
+#include "ip.h"
 #include <fcntl.h>
 
 
@@ -17,6 +19,90 @@
 
 // TODO: use the canonical name as a normalization!!
 
+
+#define MAX_DEPTH 18 // we can have a lot of CNAME aliases w/ akamai
+#define MAX_TRIED_IPS 32 // stop after asking 32 nameservers, return timed out
+#define LOOP_BUF_SIZE 26100
+#define MAX_DNS_HOSTNAME_LEN	127
+// use a default of 1 day for both caches
+#define DNS_CACHE_MAX_AGE       (60*60*24)
+
+
+struct DnsState {
+	key96_t     m_hostnameKey;
+	// key for lookup into s_dnsTable hash table
+	int64_t     m_tableKey;
+	Dns        *m_this ;
+	void       *m_state;
+	void      (*m_callback)(void *state, int32_t ip);
+	bool        m_freeit;
+	char        m_hostname[MAX_DNS_HOSTNAME_LEN+1];
+
+	// . point to the replies received from dns servers
+	// . m_dnsNames[] should point into these reply buffers
+	//char *m_replyBufPtrs[6];
+	//int32_t  m_numReplies;
+
+	// we can do a recursion up to 5 levels deep. sometimes the reply
+	// we get back is a list of ips of nameservers we need to ask.
+	// that can happen a few times in a row, and we have to keep track
+	// of the depth here. initially we set these ips to those of the
+	// root servers (or sometimes the local bind servers).
+	bool    m_rootTLD  [MAX_DEPTH];
+	int32_t m_fallbacks[MAX_DEPTH];
+	int32_t m_dnsIps   [MAX_DEPTH][MAX_DNS_IPS];
+	int32_t m_numDnsIps[MAX_DEPTH];
+	int32_t m_depth;  // current depth
+
+	// . use these nameservers to do the lookup
+	// . if not provided, they default to the root nameservers
+	// . the first one we ask is based on hash of hostname % m_numDns,
+	//   if that times out, the 2nd is right after the first, etc. so we
+	//   always stay in order.
+	// . m_dnsNames point into m_nameBuf, m_namePtr pts to the end of
+	//   m_nameBuf so you can add new names to it.
+	//   m_dnsNames are NULLified when getIPOfDNS() get their ip address
+	//   which is then added to m_dnsIps[]
+	char   *m_dnsNames    [MAX_DEPTH][MAX_DNS_IPS];
+	int32_t m_numDnsNames [MAX_DEPTH];
+	char    m_nameBuf     [512];
+	char   *m_nameBufPtr;
+	char   *m_nameBufEnd;
+
+	// this holds the one and only dns request
+	char  m_request[512];
+	int32_t  m_requestSize;
+
+	// after we send to a nameserver add its ip to this list so we don't
+	// send to it again. or so we do not even add it to m_dnsIps again.
+	int32_t m_triedIps[MAX_TRIED_IPS];
+	int32_t m_numTried;
+
+	// if we have to get the ip of the dns, then we get back more dns
+	// that refer to that dns and we have to get the ip of those, ... etc.
+	// for getting the ip of a dns we cast m_buf as a DnsState and use
+	// that to avoid having to allocate more memory. however, we have to
+	// keep track of how many times we do that recursively until we run
+	// out of m_buf.
+	int32_t m_loopCount;
+
+	// set to EDNSDEAD (hostname does not exist) if we encounter that
+	// error, however, we continue to ask other dns servers about the
+	// hostname because we can often uncover the ip address that way.
+	// but if we never do, we want to return this error, not ETIMEDOUT.
+	int32_t m_errno;
+
+	// we have to turn it off in some requests for some reason
+	// like for www.fsis.usda.gov, othewise we get a refused to talk error
+	bool m_recursionDesired;
+
+	// have a total timeout function
+	int32_t m_startTime;
+
+	char m_buf[LOOP_BUF_SIZE];
+};
+
+
 // a global class extern'd in .h file
 Dns g_dns;
 
@@ -27,9 +113,6 @@ static int64_t s_antiLockCount = 1LL;
 #define TIMEOUT_SINGLE_HOST_MS 30000
 #define TIMEOUT_TOTAL       90
 
-static void gotIpWrapper ( void *state , UdpSlot *slot ) ;
-static void gotIpOfDNSWrapper ( void *state , int32_t ip ) ;
-static void returnIp ( DnsState *ds , int32_t ip ) ;
 
 // CallbackEntry now defined in HashTableT.cpp
 static HashTableT<int64_t,CallbackEntry> s_dnstable;
@@ -305,9 +388,7 @@ bool Dns::getIp ( const char *hostname,
 		  void (* callback ) ( void *state , int32_t ip ) ,
 		  DnsState *ds ,
 		  int32_t   timeout     ,
-		  bool   dnsLookup   ,
-		  // monitor.cpp passes in false for this:
-		  bool   cacheNotFounds ) {
+		  bool   dnsLookup) {
 
 	// . don't accept large hostnames
 	// . technically the limit is 255 but i'm stricter
@@ -578,10 +659,6 @@ bool Dns::getIp ( const char *hostname,
 		ds->m_startTime = getTime();//time(NULL);//getTimeLocal();
 	}
 
-	// so monitor.cpp can avoid caching not founds or timeouts in case
-	// the network goes down on gk267
-	ds->m_cacheNotFounds = cacheNotFounds;
-
 	// set the ce.m_ds to our dns state so if a key collides later
 	// we can check DnsState::m_hostname. actually i think this is only
 	// used for sanity checking now.
@@ -807,7 +884,7 @@ bool Dns::getIpOfDNS ( DnsState *ds ) {
 	return true;
 }
 
-void gotIpOfDNSWrapper ( void *state , int32_t ip ) {
+void Dns::gotIpOfDNSWrapper(void *state, int32_t ip) {
 	DnsState *ds = (DnsState *)state;
 	// log debug msg
 	//DnsState *ds2 = (DnsState *)ds->m_buf;
@@ -1200,7 +1277,7 @@ bool Dns::sendToNextDNS ( DnsState *ds ) {
 }
 
 
-void gotIpWrapper ( void *state , UdpSlot *slot ) {
+void Dns::gotIpWrapper(void *state, UdpSlot *slot) {
 	DnsState *ds = (DnsState *) state;
 	log(LOG_DEBUG, "dns: gotIpWrapper for '%s'", ds->m_hostname);
 	//log(LOG_DEBUG, "dns: gotIpWrapper depth %d", ds->m_depth);
@@ -1327,7 +1404,7 @@ void gotIpWrapper ( void *state , UdpSlot *slot ) {
 }
 
 // caller should set g_errno because we call the callbacks here
-void returnIp ( DnsState *ds , int32_t ip ) {
+void Dns::returnIp(DnsState *ds, int32_t ip) {
 	// ok, we got the final answer at this point
 	// debug msg
 	const char *pre = "";
@@ -1368,8 +1445,6 @@ void returnIp ( DnsState *ds , int32_t ip ) {
 	// and NEVER cache a timeout on a root server or root TLD server
 	if ( g_conf.m_askRootNameservers && ds->m_rootTLD[ds->m_depth] )
 		cache = false;
-	// monitor.cpp should have option to not cache timeouts!!!!
-	if ( ! ds->m_cacheNotFounds ) cache = false;
 
 	// cache for 6 hrs, these things slow us down
 	if ( cache ) g_dns.addToCache ( ds->m_hostnameKey, -1, 3600*6 );

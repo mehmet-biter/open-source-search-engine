@@ -5,19 +5,13 @@
 
 
 #include "Rdb.h"
-#include "Conf.h"
-#include "Titledb.h"
-#include "Hostdb.h"
-#include "RdbList.h"
-#include "RdbTree.h"
-#include "HashTableX.h"
-#include <time.h>
-#include "Msg5.h"      // local getList()
-#include "Msg4.h"
-#include "Msg1.h"
+#include "types.h"
 #include "hash.h"
 #include "Sanity.h"
 
+
+class Msg5;
+class RdbList;
 
 void gotDoledbListWrapper2 ( void *state , RdbList *list , Msg5 *msg5 ) ;
 
@@ -67,7 +61,7 @@ class Doledb {
 	// . a docid-based spider request
 	// . crap, might we have collisions between a uh48 and docid????
 	key96_t makeReindexKey ( int32_t priority ,
-			       uint32_t spiderTime , // time_t
+			       uint32_t spiderTime,
 			       int64_t docId ,
 			       bool isDelete ) {
 		return makeKey ( priority,spiderTime,docId,isDelete); }

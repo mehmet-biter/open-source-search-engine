@@ -4,6 +4,7 @@
 #include "Hostdb.h"
 #include "Msg0.h"      // for getRdb(char rdbId)
 #include "Msg4.h"
+#include "Conf.h"
 #include "UdpSlot.h"
 #include "Clusterdb.h"
 #include "Spider.h"
@@ -14,6 +15,7 @@
 #include "JobScheduler.h"
 #include "Process.h"
 #include "PingServer.h"
+#include "ip.h"
 #include "max_niceness.h"
 #include <sys/stat.h> //stat()
 #include <fcntl.h>

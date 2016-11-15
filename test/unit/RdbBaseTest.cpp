@@ -1,7 +1,8 @@
 #include <gtest/gtest.h>
-#include <Posdb.h>
 #include "RdbBase.h"
+#include "Posdb.h"
 #include "GigablastTestUtils.h"
+#include "Conf.h"
 
 class RdbBaseTest : public ::testing::Test {
 public:

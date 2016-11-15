@@ -3,6 +3,8 @@
 #include <sys/stat.h>
 #include "Titledb.h"
 #include "Tagdb.h"
+#include "Conf.h"       // for setting rdb from Conf file
+#include "Collectiondb.h"
 #include "Unicode.h"
 #include "JobScheduler.h"
 #include "Msg1.h"
@@ -13,6 +15,7 @@
 #include "Process.h"
 #include "Rebalance.h"
 #include "RdbCache.h"
+#include "ip.h"
 #include "GbMutex.h"
 #include "GbUtil.h"
 #include "ScopedLock.h"

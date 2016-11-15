@@ -5,11 +5,13 @@
 #include "gb-include.h"
 
 #include "Blaster.h"
+#include "Conf.h"
 #include "File.h"
 #include "Titledb.h" // TITLEREC_CURRENT_VERSION
 #include "Linkdb.h"
 #include "HttpMime.h"
 #include "Process.h"
+#include "ip.h"
 #include "GbUtil.h"
 #include <fcntl.h>
 

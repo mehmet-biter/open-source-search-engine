@@ -3,6 +3,7 @@
 #include "Posdb.h"
 #include "sort.h"
 #include "GigablastTestUtils.h"
+#include "Conf.h"
 
 #define sizeof_arr(x) (sizeof(x) / sizeof(x[0]))
 

@@ -3,6 +3,7 @@
 #include "BigFile.h"
 #include "File.h"
 #include "Dir.h"
+#include "Conf.h"
 #include "JobScheduler.h"
 #include "Stats.h"
 #include "Statsdb.h"
@@ -700,30 +701,18 @@ bool BigFile::readwrite ( void         *buf      ,
 	fstate->m_startTime   = gettimeofdayInMilliseconds();
 	fstate->m_vfd         = m_vfd;
 
-	// . if we're blocking then do it now
-	// . this should return false and set g_errno on error, true otherwise
-	if ( !isNonBlocking || !callback || !g_jobScheduler.are_new_jobs_allowed() ) 	{
-		goto skipThread;
+	if(isNonBlocking && callback && g_jobScheduler.are_new_jobs_allowed()) {
+		// . spawn a thread to do this i/o
+		// . this returns false and sets g_errno on error, true on success
+		// . we should return false cuz we blocked
+		// . thread will add signal to g_loop on completion to call
+		if ( g_jobScheduler.submit_io(readwriteWrapper_r, readwriteDoneWrapper, fstate, thread_type_unspecified_io, niceness, doWrite) ) {
+			return false;
+		}
+		// thread spawn failed, do it blocking then
+		log(LOG_INFO, "disk: Doing blocking disk access. This will hurt performance. isWrite=%" PRId32".",(int32_t)doWrite);
 	}
-
-	// . otherwise, spawn a thread to do this i/o
-	// . this returns false and sets g_errno on error, true on success
-	// . we should return false cuz we blocked
-	// . thread will add signal to g_loop on completion to call
-	if ( g_jobScheduler.submit_io(readwriteWrapper_r, readwriteDoneWrapper, fstate, thread_type_unspecified_io, niceness, doWrite) ) {
-		return false;
-	}
-
-	// sanity check
-	if ( ! callback ) {
-		gbshutdownLogicError();
-	}
-
-	// thread spawn failed, do it blocking then
-	log(LOG_INFO, "disk: Doing blocking disk access. This will hurt performance. isWrite=%" PRId32".",(int32_t)doWrite);
-
 	// come here if we haven't spawned a thread
-skipThread:
 
 	// if there was no room in the thread queue, then we must do this here
 	fstate->m_fd1         = getfd ( fstate->m_filenum1 , !doWrite );
@@ -1497,7 +1486,7 @@ bool BigFile::unlink(int32_t part, void (*callback)(void *state), void *state) {
 		mnew(job_state, sizeof(*job_state), "UnlinkRenameState");
 
 		// . we spawn the thread here now
-		if( !g_jobScheduler.submit(unlinkWrapper, doneUnlinkWrapper, job_state, thread_type_unlink, 1/*niceness*/) ) {
+		if( !g_jobScheduler.submit(unlinkWrapper, doneUnlinkWrapper, job_state, thread_type_file_meta_data, 1/*niceness*/) ) {
 			// otherwise, thread spawn failed, do it blocking then
 			log( LOG_INFO, "disk: Failed to launch unlink/rename thread for %s, part=%" PRId32"/%" PRId32".", f->getFilename(),i,part);
 			g_unlinkRenameThreads--;
@@ -1608,7 +1597,7 @@ bool BigFile::rename(const char *newBaseFilename,
 
 		logTrace(LOG_TRACE, "rename: submitting rename of %s to %s part #%d", m_baseFilename.getBufStart(), m_newBaseFilename.getBufStart(), i);
 		// . we spawn the thread here now
-		if( !g_jobScheduler.submit(renameP1Wrapper, doneP1RenameWrapper, job_state, thread_type_unlink, 1/*niceness*/) ) {
+		if( !g_jobScheduler.submit(renameP1Wrapper, doneP1RenameWrapper, job_state, thread_type_file_meta_data, 1/*niceness*/) ) {
 			// otherwise, thread spawn failed, do it blocking then
 			log( LOG_INFO, "disk: Failed to launch unlink/rename thread for %s, part=%" PRId32".", f->getFilename(),i);
 			g_unlinkRenameThreads--;
@@ -1744,7 +1733,7 @@ void BigFile::doneP1RenameWrapper(File *f) {
 			mnew(job_state, sizeof(*job_state), "UnlinkRenameState");
 			
 			g_unlinkRenameThreads++;
-			if( !g_jobScheduler.submit(renameP2Wrapper, doneP2RenameWrapper, job_state, thread_type_unlink, 1/*niceness*/) ) {
+			if( !g_jobScheduler.submit(renameP2Wrapper, doneP2RenameWrapper, job_state, thread_type_file_meta_data, 1/*niceness*/) ) {
 				// otherwise, thread spawn failed, do it blocking then
 				log( LOG_INFO, "disk: Failed to launch unlink/rename thread for %s, part=%" PRId32".", f->getFilename(),i);
 				g_unlinkRenameThreads--;
