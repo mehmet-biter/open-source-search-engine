@@ -594,7 +594,6 @@ class Msg25 {
 	int32_t      m_ipDupsLinkdb;
 	int32_t      m_docIdDupsLinkdb;
 	int32_t      m_linkSpamLinkdb;
-	int32_t      m_lostLinks;
 	int32_t      m_ipDups;
 
 	uint32_t  m_groupId;

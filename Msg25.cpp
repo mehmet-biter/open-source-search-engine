@@ -110,7 +110,6 @@ Msg25::Msg25() {
 	m_ipDupsLinkdb = 0;
 	m_docIdDupsLinkdb = 0;
 	m_linkSpamLinkdb = 0;
-	m_lostLinks = 0;
 	m_ipDups = 0;
 	m_groupId = 0;
 	m_probDocId = 0;
@@ -682,7 +681,6 @@ bool Msg25::getLinkInfo2(char      *site,
 	m_reciprocal          = 0;
 	m_ipDupsLinkdb        = 0;
 	m_docIdDupsLinkdb     = 0;
-	m_lostLinks           = 0;
 	m_ipDups              = 0;
 	m_linkSpamLinkdb      = 0;
 	//m_url                 = url;
@@ -1068,8 +1066,6 @@ bool Msg25::sendRequests() {
 		uint32_t     ip32;
 		uint64_t docId ;
 		int32_t     discovered = 0;
-		// was the link lost?
-		int32_t     lostDate = 0; 
 
 		// . recycle inlinks from the old link info guy
 		// . this keeps our inlinks persistent!!! very nice...
@@ -1099,8 +1095,7 @@ bool Msg25::sendRequests() {
 			isLinkSpam = Linkdb::isLinkSpam_uk  ( &key );
 			docId      = Linkdb::getLinkerDocId_uk    ( &key );
 			discovered = Linkdb::getDiscoveryDate_uk(&key);
-			// is it expired?
-			lostDate = Linkdb::getLostDate_uk(&key);
+
 			// update this
 			gbmemcpy ( &m_nextKey  , &key , LDBKS );
 
@@ -1118,8 +1113,7 @@ bool Msg25::sendRequests() {
 			docId      = Linkdb::getLinkerDocId_uk    ( &key );
 
 			discovered = Linkdb::getDiscoveryDate_uk(&key);
-			// is it expired?
-			lostDate = Linkdb::getLostDate_uk(&key);
+
 			// update this
 			gbmemcpy ( &m_nextKey  , &key , LDBKS );
 
@@ -1133,12 +1127,6 @@ bool Msg25::sendRequests() {
 		// clear this if we should
 		if ( ! m_doLinkSpamCheck )
 			isLinkSpam = 0;
-
-		// if it is no longer there, just ignore
-		if ( lostDate ) {
-			m_lostLinks++;
-			continue;
-		}
 
 		// try using this to save mem then
 		if ( docId == lastDocId ) {
