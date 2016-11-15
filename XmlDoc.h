@@ -92,13 +92,6 @@ float computeSimilarity ( const int32_t   *vec0,
 			  // behavior though.
 			  bool dedupVecs = false );
 
-bool isSimilar_sorted ( int32_t   *vec0 , 
-			int32_t   *vec1 ,
-			int32_t nv0 , // how many int32_ts in vec?
-			int32_t nv1 , // how many int32_ts in vec?
-			// they must be this similar or more to return true
-			int32_t percentSimilar) ;
-
 
 // tell zlib to use our malloc/free functions
 int gbuncompress ( unsigned char *dest      ,

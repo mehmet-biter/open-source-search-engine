@@ -2569,6 +2569,81 @@ Msg20Reply *Msg25::getLoser(Msg20Reply *r, Msg20Reply *p) {
 }
 
 
+// this returns true if the two vecs are "percentSimilar" or more similar
+static bool isSimilar_sorted ( int32_t   *vec0 ,
+                        int32_t   *vec1 ,
+                        int32_t nv0 , // how many int32_ts in vec?
+                        int32_t nv1 , // how many int32_ts in vec?
+		// they must be this similar or more to return true
+		                int32_t percentSimilar) {
+	// if both empty, assume not similar at all
+	if ( *vec0 == 0 && *vec1 == 0 ) return 0;
+	// if either is empty, return 0 to be on the safe side
+	if ( *vec0 == 0 ) return 0;
+	if ( *vec1 == 0 ) return 0;
+
+	// do not include last 0
+	nv0--;
+	nv1--;
+	int32_t total = nv0 + nv1;
+
+	// so if the "noMatched" count ever EXCEEDS (not equals) this
+	// "brink" we can bail early because there's no chance of getting
+	// the similarity "percentSimilar" provided. should save some time.
+	int32_t brink = ((100-percentSimilar) * total) / 100;
+
+	// scan each like doing a merge
+	int32_t *p0 = vec0;
+	int32_t *p1 = vec1;
+	int32_t yesMatched = 0;
+	int32_t noMatched  = 0;
+
+mergeLoop:
+
+	// stop if both exhausted. we didn't bail on brink, so it's a match
+	if ( *p0 == 0 && *p1 == 0 )
+		return true;
+
+	if ( *p0 < *p1 || *p1 == 0 ) {
+		p0++;
+		if ( ++noMatched > brink ) return false;
+		goto mergeLoop;
+	}
+
+	if ( *p1 < *p0 || *p0 == 0 ) {
+		p1++;
+		if ( ++noMatched > brink ) return false;
+		goto mergeLoop;
+	}
+
+	yesMatched += 2;
+	p1++;
+	p0++;
+	goto mergeLoop;
+}
+
+
+/// @todo ALC move to unit test
+/*
+// test similarity
+int32_t v1[] = {86845183, 126041601, 193138017, 194832692, 209041345, 237913907,
+		253753116, 420176029, 425806029, 469664463, 474491119, 486025959, 524746875,
+		565034969, 651889954, 723451712, 735373612, 740115430, 889005385,
+		1104585188, 1180264907, 1190905206, 1555245401, 1585281138, 1775919002,
+		1780336562, 1784029178, 1799261433, 2013337516, 2095261394, 2137774538, 0};
+int32_t v2[] = {51207128, 126041601, 237913907, 253753116, 315255440, 394767298,
+		420176029, 435382723, 469664463, 486025959, 536944585, 556667308, 565034969,
+		615792190, 624608202, 629600018, 807226240, 1107373572, 1113238204,
+		1134807359, 1135960080, 1200900964, 1527062593, 1585281138, 1634165777,
+		1694464250, 1802457437, 1943916889, 1960218442, 2058631149, -2130866760, 0};
+
+int32_t nv1 = sizeof(v1)/4;
+int32_t nv2 = sizeof(v2)/4;
+if ( isSimilar_sorted (v1,v2,nv1,nv2,80,0) ) {
+	g_process.shutdownAbort(true);
+}
+*/
+
 // . is "p" a dup of "r"?
 // . we will kick out the worst one so it cannot vote
 // . returns NULL if not a dup

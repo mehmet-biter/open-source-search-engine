@@ -4737,59 +4737,6 @@ float computeSimilarity ( const int32_t   *vec0,
 	return percent;
 }
 
-// this returns true if the two vecs are "percentSimilar" or more similar
-bool isSimilar_sorted ( int32_t   *vec0 ,
-			int32_t   *vec1 ,
-			int32_t nv0 , // how many int32_ts in vec?
-			int32_t nv1 , // how many int32_ts in vec?
-			// they must be this similar or more to return true
-			int32_t percentSimilar) {
-	// if both empty, assume not similar at all
-	if ( *vec0 == 0 && *vec1 == 0 ) return 0;
-	// if either is empty, return 0 to be on the safe side
-	if ( *vec0 == 0 ) return 0;
-	if ( *vec1 == 0 ) return 0;
-
-	// do not include last 0
-	nv0--;
-	nv1--;
-	int32_t total = nv0 + nv1;
-
-	// so if the "noMatched" count ever EXCEEDS (not equals) this
-	// "brink" we can bail early because there's no chance of getting
-	// the similarity "percentSimilar" provided. should save some time.
-	int32_t brink = ((100-percentSimilar) * total) / 100;
-
-	// scan each like doing a merge
-	int32_t *p0 = vec0;
-	int32_t *p1 = vec1;
-	int32_t yesMatched = 0;
-	int32_t noMatched  = 0;
-
- mergeLoop:
-
-	// stop if both exhausted. we didn't bail on brink, so it's a match
-	if ( *p0 == 0 && *p1 == 0 )
-		return true;
-
-	if ( *p0 < *p1 || *p1 == 0 ) {
-		p0++;
-		if ( ++noMatched > brink ) return false;
-		goto mergeLoop;
-	}
-
-	if ( *p1 < *p0 || *p0 == 0 ) {
-		p1++;
-		if ( ++noMatched > brink ) return false;
-		goto mergeLoop;
-	}
-
-	yesMatched += 2;
-	p1++;
-	p0++;
-	goto mergeLoop;
-}
-
 int64_t *XmlDoc::getExactContentHash64 ( ) {
 
 	if ( m_exactContentHash64Valid )
