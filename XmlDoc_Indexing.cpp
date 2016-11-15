@@ -1032,7 +1032,6 @@ bool XmlDoc::hashLinksForLinkdb ( HashTableX *dt ) {
 	uint64_t tmp3 = *getDocId();
 	VALGRIND_CHECK_MEM_IS_DEFINED(&tmp3,sizeof(tmp3));
 	VALGRIND_CHECK_MEM_IS_DEFINED(&discoveryDate,sizeof(discoveryDate));
-	VALGRIND_CHECK_MEM_IS_DEFINED(&lostDate,sizeof(lostDate));
 	VALGRIND_CHECK_MEM_IS_DEFINED(&linkerSiteHash32,sizeof(linkerSiteHash32));
 #endif
 		// set this key, it is the entire record
