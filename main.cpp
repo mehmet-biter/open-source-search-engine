@@ -3233,11 +3233,11 @@ void dumpDoledb (const char *coll, int32_t startFileNum, int32_t numFiles, bool 
 			g_doledb.getUrlHash48(&k));
 		fprintf(stdout,"spiderkey=");
 		// print it
-		g_spiderdb.print ( srec );
+		Spiderdb::print ( srec );
 		// the \n
 		printf("\n");
 		// must be a request -- for now, for stats
-		if ( ! g_spiderdb.isSpiderRequest((key128_t *)srec) ) {
+		if ( ! Spiderdb::isSpiderRequest((key128_t *)srec) ) {
 			// error!
 			continue;
 		}
@@ -3379,8 +3379,8 @@ int32_t dumpSpiderdb ( const char *coll, int32_t startFileNum, int32_t numFiles,
 
 	// start based on firstip if non-zero
 	if ( firstIp ) {
-		startKey = g_spiderdb.makeFirstKey ( firstIp );
-		endKey  = g_spiderdb.makeLastKey ( firstIp );
+		startKey = Spiderdb::makeFirstKey ( firstIp );
+		endKey  = Spiderdb::makeLastKey ( firstIp );
 	} else {
 		startKey.setMin();
 		endKey.setMax();
@@ -3477,11 +3477,11 @@ int32_t dumpSpiderdb ( const char *coll, int32_t startFileNum, int32_t numFiles,
 		offset += list.getCurrentRecSize();
 
 		// must be a request -- for now, for stats
-		if ( g_spiderdb.isSpiderReply((key128_t *)srec) ) {
+		if ( Spiderdb::isSpiderReply((key128_t *)srec) ) {
 			// print it
 			if ( ! printStats ) {
 				printf( "offset=%" PRId64" ",curOff);
-				g_spiderdb.print ( srec );
+				Spiderdb::print ( srec );
 				printf("\n");
 			}
 
@@ -3517,7 +3517,7 @@ int32_t dumpSpiderdb ( const char *coll, int32_t startFileNum, int32_t numFiles,
 		// print it
 		if ( ! printStats ) {
 			printf( "offset=%" PRId64" ",curOff);
-			g_spiderdb.print ( srec );
+			Spiderdb::print ( srec );
 
 			printf(" requestage=%" PRId32"s", (int32_t)(now-sreq->m_addedTime));
 			printf(" hadReply=%" PRId32,(int32_t)hadReply);

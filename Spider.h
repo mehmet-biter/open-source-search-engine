@@ -719,11 +719,11 @@ public:
 	void setDataSize ( );
 
 	int64_t  getUrlHash48() {
-		return g_spiderdb.getUrlHash48( &m_key );
+		return Spiderdb::getUrlHash48( &m_key );
 	}
 
 	int64_t getParentDocId() {
-		return g_spiderdb.getParentDocId( &m_key );
+		return Spiderdb::getParentDocId( &m_key );
 	}
 
 	int32_t print( class SafeBuf *sb );
@@ -886,11 +886,11 @@ public:
 	int32_t print ( class SafeBuf *sbarg );
 
 	int64_t  getUrlHash48  () {
-		return g_spiderdb.getUrlHash48(&m_key);
+		return Spiderdb::getUrlHash48(&m_key);
 	}
 
 	int64_t getParentDocId (){
-		return g_spiderdb.getParentDocId(&m_key);
+		return Spiderdb::getParentDocId(&m_key);
 	}
 } __attribute__((packed, aligned(4)));
 

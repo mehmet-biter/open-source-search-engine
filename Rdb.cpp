@@ -1953,7 +1953,7 @@ bool Rdb::addRecord(collnum_t collnum, char *key, char *data, int32_t dataSize) 
 		SpiderRequest *sreq = (SpiderRequest *)(orig - 4 - sizeof(key128_t));
 
 		// is it really a request and not a SpiderReply?
-		if (g_spiderdb.isSpiderRequest(&(sreq->m_key))) {
+		if (Spiderdb::isSpiderRequest(&(sreq->m_key))) {
 			// skip if in dup cache. do NOT add to cache since
 			// addToWaitingTree() in Spider.cpp will do that when called
 			// from addSpiderRequest() below
@@ -2044,7 +2044,7 @@ bool Rdb::addRecord(collnum_t collnum, char *key, char *data, int32_t dataSize) 
 		SpiderRequest *sreq = (SpiderRequest *)(orig - 4 - sizeof(key128_t));
 
 		// is it really a request and not a SpiderReply?
-		if (g_spiderdb.isSpiderRequest(&sreq->m_key)) {
+		if (Spiderdb::isSpiderRequest(&sreq->m_key)) {
 			// add the request
 
 			// log that. why isn't this undoling always

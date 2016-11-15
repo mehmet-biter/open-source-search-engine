@@ -1498,7 +1498,7 @@ void XmlDoc::getRevisedSpiderRequest ( SpiderRequest *revisedReq ) {
 
 	// set the key properly to reflect the new "first ip" since
 	// we shard spiderdb by that.
-	revisedReq->m_key = g_spiderdb.makeKey ( m_firstIp, uh48, true, parentDocId, false );
+	revisedReq->m_key = Spiderdb::makeKey ( m_firstIp, uh48, true, parentDocId, false );
 	revisedReq->setDataSize();
 }
 
@@ -1549,7 +1549,7 @@ void XmlDoc::getRebuiltSpiderRequest ( SpiderRequest *sreq ) {
 	long long uh48 = fu->getUrlHash48();
 	// set the key properly to reflect the new "first ip"
 	// since we shard spiderdb by that.
-	sreq->m_key = g_spiderdb.makeKey ( m_firstIp, uh48, true, 0LL, false );
+	sreq->m_key = Spiderdb::makeKey ( m_firstIp, uh48, true, 0LL, false );
 	sreq->setDataSize();
 }
 
@@ -12164,7 +12164,7 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 		else if ( rdbId == RDB_SPIDERDB ) {
 			sb->safePrintf("<td><nobr>");
 			key128_t *k2 = (key128_t *)k;
-			if ( g_spiderdb.isSpiderRequest(k2) ) {
+			if ( Spiderdb::isSpiderRequest(k2) ) {
 				SpiderRequest *sreq = (SpiderRequest *)rec;
 				sreq->print ( sb );
 			}
@@ -12469,7 +12469,7 @@ bool XmlDoc::hashMetaList ( HashTableX *ht        ,
 		// print it out
 		if ( rdbId == RDB_SPIDERDB ) {
 			// get rec
-			if ( g_spiderdb.isSpiderRequest((key128_t *)rec) ) {
+			if ( Spiderdb::isSpiderRequest((key128_t *)rec) ) {
 				SpiderRequest *sreq1 = (SpiderRequest *)rec;
 				SpiderRequest *sreq2 = (SpiderRequest *)rec2;
 				sreq1->print(&sb1);
@@ -13701,7 +13701,7 @@ char *XmlDoc::getMetaList(bool forDelete) {
 		m_addedSpiderReplySizeValid = true;
 
 		// sanity check - must not be a request, this is a reply
-		if (g_spiderdb.isSpiderRequest(&newsr->m_key)) {
+		if (Spiderdb::isSpiderRequest(&newsr->m_key)) {
 			g_process.shutdownAbort(true);
 		}
 

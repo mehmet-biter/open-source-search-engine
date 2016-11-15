@@ -688,7 +688,7 @@ bool RdbList::checkList_r(bool abortOnProblem, rdbid_t rdbId) {
 		     getCurrentDataSize() > 0 ) {
 			char *rec = getCurrentRec();
 			// bad url in spider request?
-			if ( g_spiderdb.isSpiderRequest ( (key128_t *)rec ) ){
+			if ( Spiderdb::isSpiderRequest ( (key128_t *)rec ) ){
 				SpiderRequest *sr = (SpiderRequest *)rec;
 				if ( sr->isCorrupt() ) {
 					log(LOG_ERROR, "db: spider req corrupt");

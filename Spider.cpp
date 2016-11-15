@@ -65,7 +65,7 @@ void SpiderRequest::setKey (int32_t firstIp, int64_t parentDocId, int64_t uh48, 
 	// sanity
 	if ( firstIp == 0 || firstIp == -1 ) { g_process.shutdownAbort(true); }
 
-	m_key = g_spiderdb.makeKey ( firstIp, uh48, true, parentDocId, isDel );
+	m_key = Spiderdb::makeKey ( firstIp, uh48, true, parentDocId, isDel );
 	// set dataSize too!
 	setDataSize();
 }
@@ -169,7 +169,7 @@ int32_t SpiderRequest::print ( SafeBuf *sbarg ) {
 }
 
 void SpiderReply::setKey ( int32_t firstIp, int64_t parentDocId, int64_t uh48, bool isDel ) {
-	m_key = g_spiderdb.makeKey ( firstIp, uh48, false, parentDocId, isDel );
+	m_key = Spiderdb::makeKey ( firstIp, uh48, false, parentDocId, isDel );
 	// set dataSize too!
 	m_dataSize = sizeof(SpiderReply) - sizeof(key128_t) - 4;
 }
@@ -530,10 +530,10 @@ bool Spiderdb::init ( ) {
 	// spiderdb key test
 	int64_t docId = 123456789;
 	int32_t firstIp = 0x23991688;
-	key128_t sk = g_spiderdb.makeKey ( firstIp, urlHash48, 1, docId, false );
-	if ( ! g_spiderdb.isSpiderRequest (&sk) ) { g_process.shutdownAbort(true); }
-	if ( g_spiderdb.getUrlHash48(&sk) != urlHash48){g_process.shutdownAbort(true);}
-	if ( g_spiderdb.getFirstIp(&sk) != firstIp) {g_process.shutdownAbort(true);}
+	key128_t sk = Spiderdb::makeKey ( firstIp, urlHash48, 1, docId, false );
+	if ( ! Spiderdb::isSpiderRequest (&sk) ) { g_process.shutdownAbort(true); }
+	if ( Spiderdb::getUrlHash48(&sk) != urlHash48){g_process.shutdownAbort(true);}
+	if ( Spiderdb::getFirstIp(&sk) != firstIp) {g_process.shutdownAbort(true);}
 
 	testWinnerTreeKey();
 
@@ -1307,7 +1307,7 @@ static bool printList ( State11 *st ) {
 		// what is this?
 		if ( list->getCurrentRecSize() <= 16 ) { g_process.shutdownAbort(true);}
 		// sanity check. requests ONLY in doledb
-		if ( ! g_spiderdb.isSpiderRequest ( (key128_t *)rec )) {
+		if ( ! Spiderdb::isSpiderRequest ( (key128_t *)rec )) {
 			log("spider: not printing spiderreply");
 			continue;
 			//g_process.shutdownAbort(true);
@@ -1546,9 +1546,9 @@ static bool sendPage(State11 *st) {
 		      sc->m_waitingTree.getNumUsedNodes(),
 		      sc->m_waitingTable.getNumUsedSlots());
 
-	double a = (double)g_spiderdb.getUrlHash48 ( &sc->m_firstKey );
-	double b = (double)g_spiderdb.getUrlHash48 ( &sc->m_endKey );
-	double c = (double)g_spiderdb.getUrlHash48 ( &sc->m_nextKey );
+	double a = (double)Spiderdb::getUrlHash48 ( &sc->m_firstKey );
+	double b = (double)Spiderdb::getUrlHash48 ( &sc->m_endKey );
+	double c = (double)Spiderdb::getUrlHash48 ( &sc->m_nextKey );
 	double percent = (100.0 * (c-a)) ;
 	if ( b-a > 0 ) percent /= (b-a);
 	if ( percent > 100.0 ) percent = 100.0;
@@ -3754,7 +3754,7 @@ void dedupSpiderdbList ( RdbList *list ) {
 		}
 
 		// is it a reply?
-		if ( g_spiderdb.isSpiderReply ( (key128_t *)rec ) ) {
+		if ( Spiderdb::isSpiderReply ( (key128_t *)rec ) ) {
 			// cast it
 			SpiderReply *srep = (SpiderReply *)rec;
 
@@ -3980,7 +3980,7 @@ void dedupSpiderdbList ( RdbList *list ) {
 		}
 
 		// is it a reply?
-		if ( g_spiderdb.isSpiderReply ( (key128_t *)rec ) ) {
+		if ( Spiderdb::isSpiderReply ( (key128_t *)rec ) ) {
 			SpiderReply *srep = (SpiderReply *)rec;
 			int32_t recSize = srep->getRecSize();
 			lastKey = dst;
