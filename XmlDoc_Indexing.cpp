@@ -981,7 +981,6 @@ bool XmlDoc::hashLinksForLinkdb ( HashTableX *dt ) {
 	// use spidered time! might not be current time! like if rebuilding
 	// or injecting from a past spider time
 	int32_t discoveryDate = getSpideredTime();//TimeGlobal();
-	int32_t lostDate      = 0;
 
 	// add in new links
 	for ( int32_t i = 0 ; i < m_links.m_numLinks ; i++ ) {
@@ -1049,7 +1048,7 @@ bool XmlDoc::hashLinksForLinkdb ( HashTableX *dt ) {
 					  ip,
 					  *getDocId()    ,
 					  discoveryDate      ,
-					  lostDate           ,
+					  0           ,
 					  false              , // new add?
 					  linkerSiteHash32   ,
 					  false              );// delete?
