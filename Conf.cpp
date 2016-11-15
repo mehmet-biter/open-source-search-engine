@@ -52,9 +52,6 @@ Conf::Conf ( ) {
 	memset(&m_dnsIps, 0, sizeof(m_dnsIps));
 	memset(&m_dnsPorts, 0, sizeof(m_dnsPorts));
 	m_dnsMaxCacheMem = 0;
-	m_dnsSaveCache = false;
-	m_wikiProxyIp = 0;
-	m_wikiProxyPort = 0;
 	m_useProxyIps = false;
 	m_automaticallyUseProxyIps = false;
 	m_askRootNameservers = false;
@@ -202,7 +199,6 @@ Conf::Conf ( ) {
 	m_logDebugDb = false;
 	m_logDebugDirty = false;
 	m_logDebugDisk = false;
-	m_logDebugDiskPageCache = false;
 	m_logDebugDns = false;
 	m_logDebugDownloads = false;
 	m_logDebugHttp = false;
@@ -275,12 +271,10 @@ Conf::Conf ( ) {
 	m_useCompressionProxy = false;
 	m_gzipDownloads = false;
 	m_useTmpCluster = false;
-	m_timeSyncProxy = false;
 	m_interfaceMachine = false;
 	m_allowScale = true;
 	m_giveupOnDeadHosts = false;
 	m_bypassValidation = false;
-	m_maxHeartbeatDelay = 0;
 	m_maxCallbackDelay = 0;
 	m_repairingEnabled = false;
 	m_maxRepairSpiders = 0;
