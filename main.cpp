@@ -54,6 +54,7 @@
 #include "Msg13.h"
 #include "Msg20.h"
 #include "Msg22.h"
+#include "Msg25.h"
 #include "Msg39.h"
 #include "Msg40.h"    // g_resultsCache
 #include "Parms.h"

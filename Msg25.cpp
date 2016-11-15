@@ -1,3 +1,4 @@
+#include "Msg25.h"
 #include "Linkdb.h"
 #include "UdpSlot.h"
 #include "linkspam.h"
@@ -16,6 +17,17 @@
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
 #endif
+
+
+// used by Msg25::addNote()
+#define MAX_ENTRY_DOCIDS 10
+class NoteEntry {
+public:
+	int32_t             m_count;
+	char            *m_note;
+	int64_t        m_docIds[MAX_ENTRY_DOCIDS];
+};
+
 
 static LinkInfo *makeLinkInfo(const char   *coll,
 			      int32_t       ip,
