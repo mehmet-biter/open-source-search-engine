@@ -501,6 +501,19 @@ int32_t Spiderdb::print( char *srec , SafeBuf *sb ) {
 	return 0;
 }
 
+void Spiderdb::printKey(const char *k) {
+	key128_t *key = (key128_t*)k;
+
+	SafeBuf sb;
+	// get if request or reply and print it
+	if ( isSpiderRequest (key ) ) {
+		((SpiderRequest *)key)->print(&sb);
+	} else {
+		((SpiderReply *)key)->print(&sb);
+	}
+
+	logf(LOG_TRACE, "%s", sb.getBufStart());
+}
 
 bool Spiderdb::init ( ) {
 	char      priority   = 12;

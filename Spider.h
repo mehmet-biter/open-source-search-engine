@@ -454,7 +454,8 @@ class Spiderdb {
 	}
 
 	// print the spider rec
-	int32_t print( char *srec , SafeBuf *sb = NULL );
+	static int32_t print( char *srec , SafeBuf *sb = NULL );
+	static void printKey(const char *k);
 };
 
 void dedupSpiderdbList ( RdbList *list );

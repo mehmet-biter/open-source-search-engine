@@ -1,5 +1,6 @@
-#include "Posdb.h"
 #include "Linkdb.h"
+#include "Posdb.h"
+#include "Spider.h"
 #include "Log.h"
 #include "Conf.h"
 #include <libgen.h>
@@ -59,10 +60,12 @@ int main(int argc, char **argv) {
 	}
 
 	const char *rdb = argv[1];
-	if (strcmp(rdb, "posdb") == 0) {
-		Posdb::printKey(key);
-	} else if (strcmp(rdb, "linkdb") == 0) {
+	if (strcmp(rdb, "linkdb") == 0) {
 		Linkdb::printKey(key);
+	} else if (strcmp(rdb, "posdb") == 0) {
+		Posdb::printKey(key);
+	} else if (strcmp(rdb, "spiderdb") == 0) {
+		Spiderdb::printKey(key);
 	} else {
 		fprintf(stdout, "Unsupported RDB %s\n", rdb);
 		return 1;
