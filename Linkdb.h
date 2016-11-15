@@ -38,6 +38,7 @@
 
 #include "Rdb.h"
 #include "Titledb.h"
+#include "SafeBuf.h"
 #include "Sanity.h"
 #include "max_coll_len.h"
 #include "max_url_len.h"
@@ -358,7 +359,6 @@ extern class Linkdb g_linkdb2;
 // . merge them into a final LinkInfo class for your url
 
 #include "Msg20.h"     // for getting this url's LinkInfo from another cluster
-#include "SafeBuf.h"
 #include "HashTableX.h"
 #include "Msg22.h"
 
@@ -632,7 +632,7 @@ public:
 //   below
 // . THINK OF THIS CLASS as a Msg25 reply ("Msg25Reply") class
 
-#include "Xml.h"
+class Xml;
 
 // how big can the rss item we store in the Inlink::ptr_rssItem be?
 #define MAX_RSSITEM_SIZE 30000

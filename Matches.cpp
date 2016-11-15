@@ -9,6 +9,7 @@
 #include "Domains.h"
 #include "Sections.h"
 #include "Linkdb.h"
+#include "Xml.h"
 #include "BitOperations.h"
 #include "Process.h"
 
