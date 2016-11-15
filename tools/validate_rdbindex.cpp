@@ -2,13 +2,15 @@
 #include "RdbIndex.h"
 #include "Posdb.h"
 #include "Log.h"
+#include "Conf.h"
+#include "RdbIndexQuery.h"
+#include "Collectiondb.h"
 #include <libgen.h>
 #include <stdlib.h>
 #include <algorithm>
 #include <unordered_set>
 #include <assert.h>
 #include <fcntl.h>
-#include <RdbIndexQuery.h>
 
 static void print_usage(const char *argv0) {
 	fprintf(stdout, "Usage: %s [-h] PATH RDB\n", argv0);
