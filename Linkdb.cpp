@@ -300,3 +300,31 @@ key224_t Linkdb::makeKey_uk ( uint32_t  linkeeSiteHash32       ,
  
 	return k;
 }
+
+void Linkdb::printKey(const char *k) {
+	key224_t *key = (key224_t*)k;
+	logf(LOG_TRACE, "k=%s "
+			     "linkeesitehash32=0x%08" PRIx32" "
+			     "linkeeurlhash=0x%012" PRIx64" "
+			     "linkspam=%" PRId32" "
+			     "siterank=%02" PRId32" "
+			     "ip32=%s "
+			     "docId=%012" PRIu64" "
+			     "discovered=%" PRIu32" "
+			     "lost=%" PRIu32" "
+			     "sitehash32=0x%08" PRIx32" "
+			     "shardNum=%" PRIu32" "
+			     "%s",
+	     KEYSTR(&k, sizeof(key224_t)),
+	     (int32_t)Linkdb::getLinkeeSiteHash32_uk(key),
+	     (int64_t)Linkdb::getLinkeeUrlHash64_uk(key),
+	     (int32_t)Linkdb::isLinkSpam_uk(key),
+	     (int32_t)Linkdb::getLinkerSiteRank_uk(key),
+	     iptoa((int32_t)Linkdb::getLinkerIp_uk(key)),
+	     (uint64_t)Linkdb::getLinkerDocId_uk(key),
+	     (uint32_t)Linkdb::getDiscoveryDate_uk(key),
+	     (uint32_t)Linkdb::getLostDate_uk(key),
+	     (int32_t)Linkdb::getLinkerSiteHash32_uk(key),
+	     (uint32_t)getShardNum(RDB_LINKDB, k),
+	     KEYNEG(k) ? " (delete)" : "");
+}

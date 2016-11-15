@@ -342,6 +342,7 @@ public:
 		return sh32;
 	}
 
+	static void printKey(const char *k);
 private:
 	Rdb m_rdb;
 };
