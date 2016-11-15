@@ -22,7 +22,7 @@
 // node cluster....
 #define MAX_OUTSTANDING_MSG20S 200
 
-bool printHttpMime ( class State0 *st ) ;
+static bool printHttpMime(State0 *st);
 
 static void gotDocIdsWrapper             ( void *state );
 static bool gotSummaryWrapper            ( void *state );
@@ -2099,7 +2099,7 @@ bool Msg40::printSearchResult9 ( int32_t ix , int32_t *numPrintedSoFar ,
 }
 	
 
-bool printHttpMime ( State0 *st ) {
+static bool printHttpMime(State0 *st) {
 
 	SearchInput *si = &st->m_si;
 
