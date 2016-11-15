@@ -963,11 +963,9 @@ bool XmlDoc::hashLinksForLinkdb ( HashTableX *dt ) {
 	if ( ! m_linksValid ) { g_process.shutdownAbort(true); }
 
 	int32_t *linkSiteHashes = getLinkSiteHashes();
-	if ( ! linkSiteHashes || linkSiteHashes == (void *)-1 ){
-		g_process.shutdownAbort(true);}
-
-	// convert siteNumInlinks into a score
-	//int32_t numSiteInlinks = *xd->getSiteNumInlinks();
+	if ( ! linkSiteHashes || linkSiteHashes == (void *)-1 ) {
+		g_process.shutdownAbort(true);
+	}
 
 	unsigned char hopCount = *getHopCount();
 
@@ -978,13 +976,14 @@ bool XmlDoc::hashLinksForLinkdb ( HashTableX *dt ) {
 	// add in new links
 	for ( int32_t i = 0 ; i < m_links.m_numLinks ; i++ ) {
 		// skip if empty
-		if ( m_links.m_linkLens[i] == 0 ) continue;
+		if (m_links.m_linkLens[i] == 0) {
+			continue;
+		}
+
 		// . skip if spam, ALWAYS allow internal outlinks though!!
 		// . CAUTION: now we must version islinkspam()
-		bool spam = m_links.isLinkSpam(i) ;
-		// or if it has no link text, skip it
-		//if ( ! links->hasLinkText(i,TITLEREC_CURRENT_VERSION) )
-		//continue;
+		bool spam = m_links.isLinkSpam(i);
+
 		// get site of outlink from tagrec if in there
 		int32_t linkeeSiteHash32 = linkSiteHashes[i];
 
@@ -1007,12 +1006,12 @@ bool XmlDoc::hashLinksForLinkdb ( HashTableX *dt ) {
 	VALGRIND_CHECK_MEM_IS_DEFINED(&discoveryDate,sizeof(discoveryDate));
 	VALGRIND_CHECK_MEM_IS_DEFINED(&linkerSiteHash32,sizeof(linkerSiteHash32));
 #endif
-		// set this key, it is the entire record
-		key224_t k;
+
 		int32_t *ipptr = getIp();
 		int32_t ip = ipptr ? *ipptr : 0;
 
-		k = Linkdb::makeKey_uk ( linkeeSiteHash32 ,
+		// set this key, it is the entire record
+		key224_t k = Linkdb::makeKey_uk ( linkeeSiteHash32 ,
 					  m_links.getLinkHash64(i)   ,
 					  spam               , // link spam?
 					  siteRank     , // was quality
@@ -1029,7 +1028,9 @@ bool XmlDoc::hashLinksForLinkdb ( HashTableX *dt ) {
 #endif
 
 		// store in hash table
-		if ( ! dt->addKey ( &k , NULL ) ) return false;
+		if (!dt->addKey(&k, NULL)) {
+			return false;
+		}
 	}
 	return true;
 }
