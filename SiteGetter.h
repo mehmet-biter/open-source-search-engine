@@ -18,7 +18,7 @@ public:
 
 	// . returns false if blocked, true otherwise
 	// . sets g_errno on erorr
-	bool getSite ( char *url, class TagRec *gr, int32_t timestamp, collnum_t collnum, int32_t niceness,
+	bool getSite ( const char *url, class TagRec *gr, int32_t timestamp, collnum_t collnum, int32_t niceness,
 	               void *state    = NULL, void (* callback)(void *) = NULL ) ;
 
 
@@ -31,7 +31,7 @@ public:
 	bool gotSiteList ( ) ;
 	bool setSite ( ) ;
 
-	char         *m_url;
+	const char         *m_url;
 	collnum_t m_collnum;
 	void         *m_state;
 	void        (*m_callback) (void *state );

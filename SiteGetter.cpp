@@ -105,7 +105,7 @@ SiteGetter::~SiteGetter ( ) {
 //   pass a bunch of site ptrs to msg9a
 // . "url" MUST BE NORMALIZED via Url.cpp. so using Links' buffer is ok!
 // . TODO: consider setting "state" to null if your url host has tons of inlinx
-bool SiteGetter::getSite ( char *url, TagRec *gr, int32_t timestamp, collnum_t collnum, int32_t niceness,
+bool SiteGetter::getSite ( const char *url, TagRec *gr, int32_t timestamp, collnum_t collnum, int32_t niceness,
                            void   *state, void (* callback)(void *) ) {
 	// save it
 	m_url      = url;
@@ -470,14 +470,14 @@ bool SiteGetter::setRecognizedSite ( ) {
 	g_errno = 0;
 
 	// get path of url
-	char *p = m_url;
+	const char *p = m_url;
 	for ( ; *p && *p != ':' ; p++ );
 	// error?
 	if ( *p != ':' ) return false;
 	// skip ://
 	p += 3;
 	// save host ptr
-	char *host = p;
+	const char *host = p;
 	// then another / for the path
 	for ( ; *p && *p != '/' ; p++ );
 	// error?
@@ -485,7 +485,7 @@ bool SiteGetter::setRecognizedSite ( ) {
 	//
 	// ok, "p" now points to the path
 	//
-	char *path = p;
+	const char *path = p;
 
 	// convenience vars
 	int32_t  len = 0;
@@ -564,15 +564,10 @@ bool SiteGetter::setRecognizedSite ( ) {
 	// popular homesteads
 	//
 	int32_t depth = 0;
-	// term host
-	char c = *path;
-	*path = '\0';
-	if ( strstr(host,"vimeo.com"      ) ) depth = 1;
-	if ( strstr(host,"www.myspace.com") ) depth = 1;
-	if ( strstr(host,"twitter.com"    ) ) depth = 1;
-	if ( strstr(host,"www.facebook.com") ) depth = 1;
-	// revert
-	*path = c;
+	if (strnstr(host, "vimeo.com", 9)) depth = 1;
+	if (strnstr(host, "www.myspace.com", 15)) depth = 1;
+	if (strnstr(host, "twitter.com", 11)) depth = 1;
+	if (strnstr(host, "www.facebook.com", 16)) depth = 1;
 
 	// return false to indicate no recognized site detected
 	if ( ! depth ) {
